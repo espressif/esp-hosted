@@ -33,6 +33,10 @@ struct esp_adapter {
 	struct workqueue_struct 	*rx_workqueue;
 	struct work_struct		rx_work;
 
+	/* Process TX work */
+	struct workqueue_struct 	*tx_workqueue;
+	struct work_struct		tx_work;
+
 	/* TX queue */
 	struct sk_buff_head 		tx_q;
 
@@ -54,9 +58,13 @@ struct esp32_payload_header {
 	u8				pkt_type:2;
 	u8				if_type:3;
 	u8				if_num:3;
+	u8				reserved1;
 	u16				len;
 	u16				offset;
-	u8				reserved[3];
+	u8				reserved2[2];
 }__packed;
 
+struct esp32_skb_cb {
+	struct esp_private		*priv;
+};
 #endif
