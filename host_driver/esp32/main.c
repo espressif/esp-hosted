@@ -10,6 +10,8 @@
 #include "esp_sdio_decl.h"
 #include <linux/slab.h>
 #include <linux/timekeeping.h>
+#include <linux/etherdevice.h>
+#include <linux/netdevice.h>
 #include "esp_sdio_api.h"
 #include "esp.h"
 
@@ -21,7 +23,7 @@ MODULE_VERSION("0.01");
 u8 *buf;
 u8 *rx_buf;
 
-struct esp_adapter *adapter;
+struct esp_adapter adapter;
 
 #define CHECK_SDIO_RW_ERROR(ret) do {			\
 	if (ret)						\
@@ -35,6 +37,80 @@ static const struct sdio_device_id esp32_devices[] = {
 	{}
 };
 
+static int esp32_open(struct net_device *ndev);
+static int esp32_stop(struct net_device *ndev);
+static int esp32_hard_start_xmit(struct sk_buff *skb, struct net_device *ndev);
+static int esp32_set_mac_address(struct net_device *ndev, void *addr);
+static void esp32_tx_timeout(struct net_device *ndev);
+/*static struct net_device_stats esp32_get_stats(struct net_device *ndev);*/
+static void esp32_set_rx_mode(struct net_device *ndev);
+
+static const struct net_device_ops esp32_netdev_ops = {
+	.ndo_open = esp32_open,
+	.ndo_stop = esp32_stop,
+	.ndo_start_xmit = esp32_hard_start_xmit,
+	.ndo_set_mac_address = esp32_set_mac_address,
+	.ndo_validate_addr = eth_validate_addr,
+	.ndo_tx_timeout = esp32_tx_timeout,
+/*	.ndo_get_stats = esp32_get_stats,*/
+	.ndo_set_rx_mode = esp32_set_rx_mode,
+};
+
+static int esp32_open(struct net_device *ndev)
+{
+	printk (KERN_ERR "%s\n", __func__);
+	netif_start_queue(ndev);
+	return 0;
+}
+
+static int esp32_stop(struct net_device *ndev)
+{
+	printk (KERN_ERR "%s\n", __func__);
+	netif_stop_queue(ndev);
+	return 0;
+}
+
+#if 0
+static struct net_device_stats esp32_get_stats(struct net_device *ndev)
+{
+	printk (KERN_ERR "%s\n", __func__);
+	return 0;
+}
+#endif
+
+static int esp32_set_mac_address(struct net_device *ndev, void *addr)
+{
+	printk (KERN_ERR "%s\n", __func__);
+	return 0;
+}
+
+static void esp32_tx_timeout(struct net_device *ndev)
+{
+	printk (KERN_ERR "%s\n", __func__);
+}
+
+static void esp32_set_rx_mode(struct net_device *ndev)
+{
+	printk (KERN_ERR "%s\n", __func__);
+}
+
+static int esp32_hard_start_xmit(struct sk_buff *skb, struct net_device *ndev)
+{
+	u8 *data;
+	u32 len;
+
+	/* check skb->len */
+
+	/* get cb pointer from skb and set interface number and type in it */
+
+	/* if pending packets in queue are greater than max, stop the data path */
+
+	/* incremenet tx_pending and queue the packet - skb_queue_tail */
+
+	printk (KERN_ERR "%s\n", __func__);
+	dev_kfree_skb(skb);
+	return 0;
+}
 
 static int esp32_get_len_from_slave(struct esp32_sdio_context *context, u32 *rx_size)
 {
@@ -201,24 +277,16 @@ static int esp32_send_packet(struct esp32_sdio_context *context, u8 *buf, u32 si
 
 static void esp32_process_interrupt(struct esp32_sdio_context *context, u32 int_status)
 {
-	struct esp_adapter *adapter = container_of(context, struct esp_adapter, context);
-
 	if (!context) {
 		return;
 	}
 
 	sdio_release_host(context->func);
 	if (int_status & ESP_SLAVE_RX_NEW_PACKET_INT) {
-/*		esp32_get_packets(context);*/
+/*		printk (KERN_ERR "%s: NEW PACKET INT from interface: %d\n",*/
+/*				__func__, adapter->if_type);*/
+		queue_work(adapter.rx_workqueue, &adapter.rx_work);
 
-#if 1
-		if (adapter) {
-/*			printk (KERN_ERR "%s: NEW PACKET INT from interface: %d\n",*/
-/*					__func__, adapter->if_type);*/
-			queue_work(adapter->rx_workqueue, &adapter->rx_work);
-
-		}
-#endif
 	}
 	sdio_claim_host(context->func);
 
@@ -275,6 +343,172 @@ static int esp32_register_sdio_interrupt(struct sdio_func *func)
 	return ret;
 }
 
+static int insert_priv_to_adapter(struct esp_private *priv)
+{
+	int i = 0;
+
+	for (i = 0; i < ESP_MAX_INTERFACE; i++) {
+		/* Check if priv can be added */
+		if (adapter.priv[i] == NULL) {
+			adapter.priv[i] = priv;
+			return 0;
+		}
+	}
+
+	return -1;
+}
+
+static int esp32_init_priv(struct esp_private *priv, struct net_device *dev,
+		u8 if_type, u8 if_num)
+{
+	int ret = 0;
+
+	if (!priv || !dev)
+		return -EINVAL;
+
+	ret = insert_priv_to_adapter(priv);
+	if (ret)
+		return ret;
+
+	priv->ndev = dev;
+	priv->if_type = if_type;
+	priv->if_num = if_num;
+	priv->link_state = ESP_LINK_DOWN;
+	priv->adapter = &adapter;
+
+	/* TODO: get mac address from slave */
+	priv->mac_address[0] = 0xb8;
+	priv->mac_address[1] = 0x27;
+	priv->mac_address[2] = 0xeb;
+	priv->mac_address[3] = 0xe5;
+	priv->mac_address[4] = 0x9e;
+	priv->mac_address[5] = if_type+100;
+
+	return 0;
+}
+
+static int esp32_init_net_dev(struct net_device *ndev, struct esp_private *priv)
+{
+	int ret = 0;
+	/* Set netdev */
+/*	SET_NETDEV_DEV(ndev, &adapter->context.func->dev);*/
+
+	/* set net dev ops */
+	ndev->netdev_ops = &esp32_netdev_ops;
+
+	ether_addr_copy(ndev->dev_addr, priv->mac_address);
+	/* set ethtool ops */
+
+	/* update features supported */
+
+	/* min mtu */
+
+	/* register netdev */
+	ret = register_netdev(ndev);
+
+	netif_start_queue(ndev);
+	/* ndev->needs_free_netdev = true; */
+
+	/* set watchdog timeout */
+
+	return ret;
+}
+
+static int esp32_add_interface(struct esp_adapter *adapter, u8 if_type, u8 if_num, char *name)
+{
+	struct net_device *ndev = NULL;
+	struct esp_private *priv = NULL;
+	int ret = 0;
+
+	ndev = alloc_netdev_mqs(sizeof(struct esp_private), name,
+			NET_NAME_ENUM, ether_setup, 1, 1);
+
+	if (!ndev) {
+		return -ENOMEM;
+	}
+
+	priv = netdev_priv(ndev);
+
+	/* Init priv */
+	ret = esp32_init_priv(priv, ndev, if_type, if_num);
+	if (ret) {
+		goto error_exit;
+	}
+
+	ret = esp32_init_net_dev(ndev, priv);
+	if (ret) {
+		goto error_exit;
+	}
+
+	return ret;
+
+error_exit:
+	free_netdev(ndev);
+	return ret;
+}
+
+static int esp32_init_interfaces(void)
+{
+	int ret = 0;
+
+	/* Add interface STA and AP */
+	ret = esp32_add_interface(&adapter, ESP_STA_IF, 0, "ethsta%d");
+	if (ret)
+		return ret;
+	ret = esp32_add_interface(&adapter, ESP_AP_IF, 0, "ethap%d");
+	if (ret)
+		return ret;
+	return ret;
+}
+
+static struct esp32_sdio_context * init_sdio_func(struct sdio_func *func)
+{
+	struct esp32_sdio_context *context = NULL;
+	int ret = 0;
+
+	if (!func)
+		return NULL;
+
+	/* TODO add lock for accessing context */
+	context = &adapter.context;
+
+	context->func = func;
+
+	sdio_claim_host(func);
+
+	/* Enable Function */
+	ret = sdio_enable_func(func);
+	if (ret) {
+		return NULL;
+	}
+
+	/* Register IRQ */
+	ret = sdio_claim_irq(func, esp32_handle_isr);
+	if (ret) {
+		sdio_disable_func(func);
+		return NULL;
+	}
+
+	/* Set private data */
+	sdio_set_drvdata(func, context);
+
+	context->state = ESP_CONTEXT_INIT;
+
+	sdio_release_host(func);
+
+	return context;
+}
+
+static void deinit_sdio_func(struct sdio_func *func)
+{
+	sdio_claim_host(func);
+	/* Release IRQ */
+	sdio_release_irq(func);
+	/* Disable sdio function */
+	sdio_disable_func(func);
+	sdio_release_host(func);
+}
+
 static int esp32_probe(struct sdio_func *func,
 				  const struct sdio_device_id *id)
 {
@@ -283,59 +517,33 @@ static int esp32_probe(struct sdio_func *func,
 	u8 data = 0;
 	u32 len = 0;
 
-#if 0
-	printk(KERN_ERR "MANGESH: %s -> Probe Start", __func__);
-
-	if (id)
-		printk(KERN_ERR "MANGESH: %s -> Device: %d %d %d\n", __func__, id->class,
-				id->vendor, id->device);
-
-	if (func)
-		printk(KERN_ERR "MANGESH: %s -> Function num: %d\n", __func__, func->num);
-#endif
 	if (func->num != 1) {
 		return -EINVAL;
 	}
 
-	context = &adapter->context;
+	context = init_sdio_func(func);
 
-	context->func = func;
+	if (!context) {
+		return -ENOMEM;
+	}
 
-/*	ret = esp32_register_sdio_interrupt(func);*/
-
-	sdio_claim_host(func);
-
-	/* Enable Function */
-	ret = sdio_enable_func(func);
-
-	/* Register IRQ */
-	ret = sdio_claim_irq(func, esp32_handle_isr);
-
-	/* Set private data */
-	sdio_set_drvdata(func, context);
-
-	sdio_release_host(func);
-
-#if 0
-	/* Read length */
-	ret = esp32_read_reg(context, ESP_SLAVE_PACKET_LEN_REG,
-			(u8 *) &len, sizeof(len));
-	printk (KERN_ERR "MANGESH-> Wait for data from slave: 0x%x\n", len);
+#if 1
+	ret = esp32_init_interfaces();
+	if (ret) {
+		deinit_sdio_func(func);
+		return ret;
+	}
 #endif
 
-	buf = kmalloc(2048, GFP_KERNEL);
+	context->state = ESP_CONTEXT_READY;
 
-	if (buf)
-		memset(buf, 0, 2048);
+	buf = kzalloc(2048, GFP_KERNEL);
 
-	rx_buf = kmalloc(2048, GFP_KERNEL);
+	rx_buf = kzalloc(2048, GFP_KERNEL);
 
-	if (rx_buf)
-		memset(rx_buf, 0, 2048);
-
-	msleep(200);
-	data = 1;
-	esp32_write_reg(context, (ESP_SLAVE_SCRATCH_REG_7), &data, sizeof(data));
+/*	msleep(200);*/
+/*	data = 1;*/
+/*	esp32_write_reg(context, (ESP_SLAVE_SCRATCH_REG_7), &data, sizeof(data));*/
 #if 0
 	for (j = 0; j < 100; j++) {
 		for (i = 0; i < 2048; i++)
@@ -351,11 +559,21 @@ static int esp32_probe(struct sdio_func *func,
 	return ret;
 }
 
+static void esp32_remove_network_interfaces(void)
+{
+	netif_stop_queue(adapter.priv[0]->ndev);
+	unregister_netdev(adapter.priv[0]->ndev);
+	netif_stop_queue(adapter.priv[1]->ndev);
+	unregister_netdev(adapter.priv[1]->ndev);
+}
+
 static void esp32_remove(struct sdio_func *func)
 {
 	struct esp32_sdio_context *context;
 
 	printk(KERN_ERR "MANGESH: %s -> Remove card", __func__);
+
+	esp32_remove_network_interfaces();
 
 	if (func)
 		printk(KERN_ERR "MANGESH: %s -> Function num: %d\n", __func__, func->num);
@@ -366,57 +584,38 @@ static void esp32_remove(struct sdio_func *func)
 	if (rx_buf)
 		kfree(rx_buf);
 
-	sdio_claim_host(func);
-	/* Release IRQ */
-	sdio_release_irq(func);
-	/* Disable sdio function */
-	sdio_disable_func(func);
-	sdio_release_host(func);
-	/* Free context memory */
+	deinit_sdio_func(func);
+	/* TODO: Free context memory and update adapter */
 	context = sdio_get_drvdata(func);
 
 	memset(context, 0, sizeof(struct esp32_sdio_context));
-
 }
 
 static void esp_rx_work (struct work_struct *work)
 {
 	struct esp_adapter *adapter = container_of(work, struct esp_adapter, rx_work);
-	esp32_get_packets(&adapter->context);
-}
 
 #if 0
-static void esp_rx_tasklet(unsigned long data)
-{
-	struct esp_adapter *adapter = (struct esp_adapter *) data;
-	sdio_release_host(adapter->context.func);
-	esp32_get_packets(&adapter->context);
-	sdio_claim_host(adapter->context.func);
-}
+	if (adapter->context.state != READY)
+		return;
 #endif
+
+	esp32_get_packets(&adapter->context);
+}
 
 static int init_adapter(void)
 {
 	int ret = 0;
 
-	adapter = kzalloc(sizeof(struct esp_adapter), GFP_KERNEL);
+	memset(&adapter, 0, sizeof(adapter));
 
-	if (!adapter) {
+	adapter.rx_workqueue = create_workqueue("ESP_RX_WORK_QUEUE");
+
+	if (!adapter.rx_workqueue) {
 		return -ENOMEM;
 	}
 
-	adapter->if_type = ESP_IF_TYPE_SDIO;
-
-#if 1
-	adapter->rx_workqueue = create_workqueue("ESP_RX_WORK_QUEUE");
-
-	if (!adapter->rx_workqueue) {
-		kfree(adapter);
-		return -ENOMEM;
-	}
-
-	INIT_WORK(&adapter->rx_work, esp_rx_work);
-#endif
+	INIT_WORK(&adapter.rx_work, esp_rx_work);
 
 	return ret;
 }
