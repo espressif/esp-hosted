@@ -10,15 +10,12 @@
 #include "esp_decl.h"
 #include <linux/slab.h>
 #include <linux/timekeeping.h>
+#include "esp_sdio_api.h"
 
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Mangesh Malusare <mangesh.malusare@espressif.com>");
 MODULE_DESCRIPTION("SDIO driver for ESP32 module");
 MODULE_VERSION("0.01");
-
-#define ESP_VENDOR_ID 		0x6666
-#define ESP_DEVICE_ID_1		0x2222
-#define ESP_DEVICE_ID_2		0x3333
 
 #define CHECK_SDIO_RW_ERROR(ret) do {			\
 	if (ret)						\
@@ -33,135 +30,8 @@ static const struct sdio_device_id esp32_devices[] = {
 };
 
 
-struct esp32_context {
-	struct sdio_func	*func;
-	u32 			rx_byte_count;
-	u32 			tx_byte_count;
-};
-
-struct esp32_sdio_card {
-	struct sdio_func	*func;
-};
-
-static int esp32_read_byte(struct esp32_context *context, u32 reg, u8 *data)
-{
-	struct sdio_func *func = NULL;
-	int ret;
-
-	if (!context || !context->func || !data) {
-		printk (KERN_ERR "%s: Invalid or incomplete arguments!\n", __func__);
-		return -1;
-	}
-
-	func = context->func;
-
-	sdio_claim_host(func);
-	*data = sdio_readb(func, reg, &ret);
-	sdio_release_host(func);
-
-	return ret;
-}
-
-static int esp32_write_byte(struct esp32_context *context, u32 reg, u8 data)
-{
-	struct sdio_func *func = NULL;
-	int ret;
-
-	if (!context || !context->func) {
-		printk (KERN_ERR "%s: Invalid or incomplete arguments!\n", __func__);
-		return -1;
-	}
-
-	func = context->func;
-
-	sdio_claim_host(func);
-	sdio_writeb(func, data, reg, &ret);
-	sdio_release_host(func);
-
-	return ret;
-}
-
-static int esp32_read_multi_byte(struct esp32_context *context, u32 reg, u8 *data, u16 size)
-{
-	struct sdio_func *func = NULL;
-	int ret;
-
-	if (!context || !context->func || !data) {
-		printk (KERN_ERR "%s: Invalid or incomplete arguments!\n", __func__);
-		return -1;
-	}
-
-	func = context->func;
-
-	sdio_claim_host(func);
-	ret = sdio_memcpy_fromio(func, data, reg, size);
-	sdio_release_host(func);
-
-	return ret;
-}
-
-static int esp32_write_multi_byte(struct esp32_context *context, u32 reg, u8 *data, u16 size)
-{
-	struct sdio_func *func = NULL;
-	int ret;
-
-	if (!context || !context->func || !data) {
-		printk (KERN_ERR "%s: Invalid or incomplete arguments!\n", __func__);
-		return -1;
-	}
-
-	func = context->func;
-
-	sdio_claim_host(func);
-	ret = sdio_memcpy_toio(func, reg, data, size);
-	sdio_release_host(func);
-
-	return ret;
-}
-
-static int esp32_read_reg(struct esp32_context *context, u32 reg, u8 *data, u16 size)
-{
-	/* Need to apply address mask when reading/writing slave registers */
-	reg &= ESP_ADDRESS_MASK;
-
-	if (size <= 1) {
-		return esp32_read_byte(context, reg, data);
-	} else {
-		return esp32_read_multi_byte(context, reg, data, size);
-	}
-}
-
-static int esp32_read_block(struct esp32_context *context, u32 reg, u8 *data, u16 size)
-{
-	if (size <= 1) {
-		return esp32_read_byte(context, reg, data);
-	} else {
-		return esp32_read_multi_byte(context, reg, data, size);
-	}
-}
-
-static int esp32_write_reg(struct esp32_context *context, u32 reg, u8 *data, u16 size)
-{
-	/* Need to apply address mask when reading/writing slave registers */
-	reg &= ESP_ADDRESS_MASK;
-
-	if (size <= 1) {
-		return esp32_write_byte(context, reg, *data);
-	} else {
-		return esp32_write_multi_byte(context, reg, data, size);
-	}
-}
-
-static int esp32_write_block(struct esp32_context *context, u32 reg, u8 *data, u16 size)
-{
-	if (size <= 1) {
-		return esp32_write_byte(context, reg, *data);
-	} else {
-		return esp32_write_multi_byte(context, reg, data, size);
-	}
-}
-
 u8 *buf;
+u8 *rx_buf;
 
 static int esp32_get_len_from_slave(struct esp32_context *context, u32 *rx_size)
 {
@@ -197,12 +67,15 @@ static int esp32_get_packets(struct esp32_context *context)
 	if (ret)
 		return ret;
 
+	if (!rx_buf) {
+		printk(KERN_ERR "No rx buffers available on host\n");
+		return -ENOMEM;
+	}
+
 	size = ESP_BLOCK_SIZE * 4;
 /*	printk(KERN_ERR "MANGESH: %s: Slave has a data: 0x%x\n", __func__, len_from_slave);*/
-	buf = kmalloc(size, GFP_KERNEL);
-	memset(buf, 0, size);
 
-	pos = buf;
+	pos = rx_buf;
 
 	if (len_from_slave > size) {
 		len_from_slave = size;
@@ -232,7 +105,6 @@ static int esp32_get_packets(struct esp32_context *context)
 
 		if (ret) {
 			printk (KERN_ERR "%s: Failed to read data\n", __func__);
-			kfree(buf);
 			return ret;
 		}
 
@@ -249,8 +121,7 @@ static int esp32_get_packets(struct esp32_context *context)
 	}
 
 /*	print_hex_dump_bytes("Rx:", DUMP_PREFIX_NONE, buf, len_from_slave);*/
-
-	kfree(buf);
+	printk(KERN_ERR "%s RX --> %d\n", __func__, rx_buf[0]);
 
 	return ret;
 }
@@ -266,7 +137,7 @@ static int esp32_slave_get_tx_buffer_num(struct esp32_context *context, u32 *tx_
 	    return ret;
 
     len = (len >> 16) & ESP_TX_BUFFER_MASK;
-    printk (KERN_ERR "%s: Buf cnt form reg %d\n", __func__, len);
+/*    printk (KERN_ERR "%s: Buf cnt form reg %d\n", __func__, len);*/
     len = (len + ESP_TX_BUFFER_MAX - context->tx_byte_count) % ESP_TX_BUFFER_MAX;
 
     *tx_num = len;
@@ -286,7 +157,7 @@ static int esp32_send_packet(struct esp32_context *context, u8 *buf, u32 size)
 
 	ret = esp32_slave_get_tx_buffer_num(context, &buf_available);
 
-	printk(KERN_ERR "%s: Buf Available [%d], Buf needed [%d]\n", __func__, buf_available, buf_needed);
+	printk(KERN_ERR "%s: TX -> Available [%d], needed [%d]\n", __func__, buf_available, buf_needed);
 
 	if (buf_available < buf_needed) {
 		printk(KERN_ERR "%s: Not enough buffers available\n", __func__);
@@ -439,27 +310,33 @@ static int esp32_probe(struct sdio_func *func,
 	ret = esp32_read_reg(context, ESP_SLAVE_PACKET_LEN_REG,
 			(u8 *) &len, sizeof(len));
 	printk (KERN_ERR "MANGESH-> Wait for data from slave: 0x%x\n", len);
-	data = 1;
-	esp32_write_reg(context, (ESP_SLAVE_SCRATCH_REG_7), &data, sizeof(data));
-	msleep(20);
 #endif
 
-	msleep(200);
-
 	buf = kmalloc(2048, GFP_KERNEL);
-	memset(buf, 0, 2048);
 
+	if (buf)
+		memset(buf, 0, 2048);
+
+	rx_buf = kmalloc(2048, GFP_KERNEL);
+
+	if (rx_buf)
+		memset(rx_buf, 0, 2048);
+
+	msleep(200);
+	data = 1;
+	esp32_write_reg(context, (ESP_SLAVE_SCRATCH_REG_7), &data, sizeof(data));
+#if 1
 	for (j = 0; j < 100; j++) {
 		for (i = 0; i < 2048; i++)
 			buf[i] = j+1;
 
 		ret = esp32_send_packet(context, buf, 2048);
-/*		msleep(20);*/
+		msleep(1);
 
 /*		printk (KERN_ERR "---> Wrote 512 bytes [%d]\n", ret);*/
 	}
 
-	kfree(buf);
+#endif
 	return ret;
 }
 
@@ -469,6 +346,12 @@ static void esp32_remove(struct sdio_func *func)
 
 	if (func)
 		printk(KERN_ERR "MANGESH: %s -> Function num: %d\n", __func__, func->num);
+
+	if (buf)
+		kfree(buf);
+
+	if (rx_buf)
+		kfree(rx_buf);
 
 	sdio_claim_host(func);
 	/* Release IRQ */

@@ -2,7 +2,7 @@ CR_C := arm-linux-gnueabihf-
 PWD := $(shell pwd)
 obj-m := esp32.o
 
-esp32-y := main.o
+esp32-y := esp32_sdio.o main.o
 
 all:
 	@echo ${PWD}
