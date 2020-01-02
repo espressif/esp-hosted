@@ -57,9 +57,11 @@
 
 #define ESP_ADDRESS_MASK		0x3FF
 
-#define ESP_VENDOR_ID 		0x6666
-#define ESP_DEVICE_ID_1		0x2222
-#define ESP_DEVICE_ID_2		0x3333
+#define ESP_VENDOR_ID 			0x6666
+#define ESP_DEVICE_ID_1			0x2222
+#define ESP_DEVICE_ID_2			0x3333
+
+#define ESP32_PAYLOAD_HEADER		8
 
 enum context_state {
 	ESP_CONTEXT_DISABLED = 0,

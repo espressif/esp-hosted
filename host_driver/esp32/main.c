@@ -96,9 +96,6 @@ static void esp32_set_rx_mode(struct net_device *ndev)
 
 static int esp32_hard_start_xmit(struct sk_buff *skb, struct net_device *ndev)
 {
-	u8 *data;
-	u32 len;
-
 	/* check skb->len */
 
 	/* get cb pointer from skb and set interface number and type in it */
@@ -107,7 +104,7 @@ static int esp32_hard_start_xmit(struct sk_buff *skb, struct net_device *ndev)
 
 	/* incremenet tx_pending and queue the packet - skb_queue_tail */
 
-	printk (KERN_ERR "%s\n", __func__);
+/*	printk (KERN_ERR "%s\n", __func__);*/
 	dev_kfree_skb(skb);
 	return 0;
 }
@@ -132,33 +129,117 @@ static int esp32_get_len_from_slave(struct esp32_sdio_context *context, u32 *rx_
 
 u64 start_time, end_time;
 
+struct esp_private * get_priv_from_payload_header(struct esp32_payload_header *header)
+{
+	struct esp_private *priv;
+	u8 i;
+
+	if (!header)
+		return NULL;
+
+	for (i = 0; i < ESP_MAX_INTERFACE; i++) {
+		priv = adapter.priv[i];
+
+		if (!priv)
+			continue;
+
+		if (priv->if_type == header->if_type &&
+				priv->if_num == header->if_num) {
+			return priv;
+		}
+	}
+
+	return NULL;
+}
+
+
+static void process_rx_packet(void)
+{
+	struct sk_buff *skb;
+	struct esp_private *priv;
+	struct esp32_payload_header *payload_header;
+
+	/* Process all SKB's in the queue */
+	while ((skb = skb_dequeue(&adapter.rx_q))) {
+		/* Steps to process:
+		 * 	- Read payload header
+		 * 	- Chop payload header from skb
+		 * 	- Based on header, retrieve priv
+		 * 	- Set netdev in skb
+		 * 	- set eth_type_trans
+		 * 	- send skb to kernel
+		 *
+		 * */
+
+		/* get the paload header */
+		payload_header = (struct esp32_payload_header *) skb->data;
+/*		print_hex_dump_bytes("Rx header:", DUMP_PREFIX_NONE, payload_header, 8);*/
+
+		/* chop off the header from skb */
+		skb_pull(skb, payload_header->offset);
+
+		/* retrieve priv based on payload header contents */
+		priv = get_priv_from_payload_header(payload_header);
+
+		if (!priv) {
+			printk (KERN_ERR "%s: empty priv\n", __func__);
+			dev_kfree_skb_any(skb);
+			continue;
+		}
+
+		skb->dev = priv->ndev;
+		skb->protocol = eth_type_trans(skb, priv->ndev);
+		skb->ip_summed = CHECKSUM_NONE;
+
+		/* Forward skb to kernel */
+		netif_rx(skb);
+	}
+}
+
+struct sk_buff * esp32_alloc_skb(u32 len)
+{
+	struct sk_buff *skb;
+
+	skb = netdev_alloc_skb(NULL, len);
+
+	if (skb) {
+		skb_reserve(skb, ESP32_PAYLOAD_HEADER);
+	}
+
+	return skb;
+}
+
 static int esp32_get_packets(struct esp32_sdio_context *context)
 {
 	u32 len_from_slave, data_left, len_to_read, size, num_blocks;
 	int ret = 0;
+	struct sk_buff *skb;
 	u8 *pos;
 
 	data_left = len_to_read = len_from_slave = num_blocks = 0;
 
+	/* TODO: handle a case of multiple packets in same buffer */
 	/* Read length */
 	ret = esp32_get_len_from_slave(context, &len_from_slave);
 
 	if (ret)
 		return ret;
 
-	if (!rx_buf) {
-		printk(KERN_ERR "No rx buffers available on host\n");
-		return -ENOMEM;
-	}
-
 	size = ESP_BLOCK_SIZE * 4;
 /*	printk(KERN_ERR "MANGESH: %s: Slave has a data: 0x%x\n", __func__, len_from_slave);*/
-
-	pos = rx_buf;
 
 	if (len_from_slave > size) {
 		len_from_slave = size;
 	}
+
+	skb = esp32_alloc_skb(len_from_slave);
+
+	if (!skb) {
+		return -ENOMEM;
+	}
+
+	skb_put(skb, len_from_slave);
+	pos = skb->data;
 
 	data_left = len_from_slave;
 
@@ -200,7 +281,11 @@ static int esp32_get_packets(struct esp32_sdio_context *context)
 	}
 
 /*	print_hex_dump_bytes("Rx:", DUMP_PREFIX_NONE, buf, len_from_slave);*/
-	printk(KERN_ERR "%s RX --> %d\n", __func__, rx_buf[0]);
+	printk(KERN_ERR "%s RX --> %d\n", __func__, context->rx_byte_count);
+
+	/* Queue the received skb */
+	skb_queue_tail(&adapter.rx_q, skb);
+/*	process_rx_packet(rx_buf, len_from_slave);*/
 
 	return ret;
 }
@@ -285,6 +370,7 @@ static void esp32_process_interrupt(struct esp32_sdio_context *context, u32 int_
 	if (int_status & ESP_SLAVE_RX_NEW_PACKET_INT) {
 /*		printk (KERN_ERR "%s: NEW PACKET INT from interface: %d\n",*/
 /*				__func__, adapter->if_type);*/
+		esp32_get_packets(&adapter.context);
 		queue_work(adapter.rx_workqueue, &adapter.rx_work);
 
 	}
@@ -541,9 +627,9 @@ static int esp32_probe(struct sdio_func *func,
 
 	rx_buf = kzalloc(2048, GFP_KERNEL);
 
-/*	msleep(200);*/
-/*	data = 1;*/
-/*	esp32_write_reg(context, (ESP_SLAVE_SCRATCH_REG_7), &data, sizeof(data));*/
+	msleep(200);
+	data = 1;
+	esp32_write_reg(context, (ESP_SLAVE_SCRATCH_REG_7), &data, sizeof(data));
 #if 0
 	for (j = 0; j < 100; j++) {
 		for (i = 0; i < 2048; i++)
@@ -556,6 +642,8 @@ static int esp32_probe(struct sdio_func *func,
 	}
 
 #endif
+
+/*	process_rx_packet();*/
 	return ret;
 }
 
@@ -587,20 +675,20 @@ static void esp32_remove(struct sdio_func *func)
 	deinit_sdio_func(func);
 	/* TODO: Free context memory and update adapter */
 	context = sdio_get_drvdata(func);
+	adapter.priv[0] = NULL;
+	adapter.priv[1] = NULL;
 
 	memset(context, 0, sizeof(struct esp32_sdio_context));
 }
 
 static void esp_rx_work (struct work_struct *work)
 {
-	struct esp_adapter *adapter = container_of(work, struct esp_adapter, rx_work);
-
 #if 0
 	if (adapter->context.state != READY)
 		return;
 #endif
 
-	esp32_get_packets(&adapter->context);
+	process_rx_packet();
 }
 
 static int init_adapter(void)
@@ -609,6 +697,7 @@ static int init_adapter(void)
 
 	memset(&adapter, 0, sizeof(adapter));
 
+	/* Prepare RX work */
 	adapter.rx_workqueue = create_workqueue("ESP_RX_WORK_QUEUE");
 
 	if (!adapter.rx_workqueue) {
@@ -616,6 +705,10 @@ static int init_adapter(void)
 	}
 
 	INIT_WORK(&adapter.rx_work, esp_rx_work);
+
+	/* Prepare TX work */
+	skb_queue_head_init(&adapter.tx_q);
+	skb_queue_head_init(&adapter.rx_q);
 
 	return ret;
 }

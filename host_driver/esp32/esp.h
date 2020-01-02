@@ -21,10 +21,23 @@ struct esp_private;
 
 struct esp_adapter {
 	u8				if_type;
+
+	/* Context of a transport layer */
+	/* TODO: make it a void pointer so that multiple transport layers can be supported */
+	struct esp32_sdio_context	context;
+
+	/* Private for each interface */
+	struct esp_private		*priv[ESP_MAX_INTERFACE];
+
+	/* Process RX work */
 	struct workqueue_struct 	*rx_workqueue;
 	struct work_struct		rx_work;
-	struct esp32_sdio_context	context;
-	struct esp_private		*priv[ESP_MAX_INTERFACE];
+
+	/* TX queue */
+	struct sk_buff_head 		tx_q;
+
+	/* RX Queue */
+	struct sk_buff_head 		rx_q;
 };
 
 
@@ -36,5 +49,14 @@ struct esp_private {
 	u8 				if_type;
 	u8			 	if_num;
 };
+
+struct esp32_payload_header {
+	u8				pkt_type:2;
+	u8				if_type:3;
+	u8				if_num:3;
+	u16				len;
+	u16				offset;
+	u8				reserved[3];
+}__packed;
 
 #endif
