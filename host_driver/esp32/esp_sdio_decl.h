@@ -61,8 +61,15 @@
 #define ESP_DEVICE_ID_1		0x2222
 #define ESP_DEVICE_ID_2		0x3333
 
+enum context_state {
+	ESP_CONTEXT_DISABLED = 0,
+	ESP_CONTEXT_INIT,
+	ESP_CONTEXT_READY
+};
+
 struct esp32_sdio_context {
 	struct sdio_func	*func;
+	enum context_state	state;
 	u32 			rx_byte_count;
 	u32 			tx_buffer_count;
 };
