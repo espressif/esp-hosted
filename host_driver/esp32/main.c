@@ -44,6 +44,7 @@ static int esp32_set_mac_address(struct net_device *ndev, void *addr);
 static void esp32_tx_timeout(struct net_device *ndev);
 /*static struct net_device_stats esp32_get_stats(struct net_device *ndev);*/
 static void esp32_set_rx_mode(struct net_device *ndev);
+static int esp32_send_packet(struct esp32_sdio_context *context, u8 *buf, u32 size);
 
 static const struct net_device_ops esp32_netdev_ops = {
 	.ndo_open = esp32_open,
@@ -96,16 +97,43 @@ static void esp32_set_rx_mode(struct net_device *ndev)
 
 static int esp32_hard_start_xmit(struct sk_buff *skb, struct net_device *ndev)
 {
-	/* check skb->len */
+	struct sk_buff *new_skb;
+	struct esp_private *priv = netdev_priv(ndev);
+	struct esp32_skb_cb *cb;
 
-	/* get cb pointer from skb and set interface number and type in it */
+	if (!priv) {
+		dev_kfree_skb(skb);
+		return -EINVAL;
+	}
 
-	/* if pending packets in queue are greater than max, stop the data path */
+	if (!skb->len || (skb->len > ETH_FRAME_LEN)) {
+		printk (KERN_ERR "%s: Bad len %d\n", __func__, skb->len);
+		dev_kfree_skb(skb);
+		return -EINVAL;
+	}
 
-	/* incremenet tx_pending and queue the packet - skb_queue_tail */
+	if (skb_headroom(skb) < ESP32_PAYLOAD_HEADER) {
+		/* Insufficient space. Realloc skb. */
+		new_skb = skb_realloc_headroom(skb, ESP32_PAYLOAD_HEADER);
 
-/*	printk (KERN_ERR "%s\n", __func__);*/
-	dev_kfree_skb(skb);
+		if (unlikely(!new_skb)) {
+			printk (KERN_ERR "%s: Failed to allocate SKB\n", __func__);
+			dev_kfree_skb(skb);
+			return -ENOMEM;
+		}
+		dev_kfree_skb(skb);
+
+		skb = new_skb;
+	}
+
+	cb = (struct esp32_skb_cb *) skb->cb;
+	cb->priv = priv;
+
+	print_hex_dump_bytes("Tx:", DUMP_PREFIX_NONE, skb->data, skb->len);
+
+	/* TODO: add counters and check pending packets.. stop the queue as required */
+	skb_queue_tail(&adapter.tx_q, skb);
+	queue_work(adapter.tx_workqueue, &adapter.tx_work);
 	return 0;
 }
 
@@ -152,6 +180,53 @@ struct esp_private * get_priv_from_payload_header(struct esp32_payload_header *h
 	return NULL;
 }
 
+static void process_tx_packet (void)
+{
+	struct sk_buff *skb;
+	struct esp_private *priv;
+	struct esp32_skb_cb *cb;
+	struct esp32_payload_header *payload_header;
+	int ret = 0;
+	u8 pad_len = 0;
+
+	/* Process TX as follows:
+	 * 	- dequeue SKB
+	 * 	- extract priv from skb->cb
+	 * 	- create space for payload header by pushing skb
+	 * 	- Add payload header to skb
+	 * 	- Write the packet to slave
+	 * 	- free skb
+	 * */
+
+	while ((skb = skb_dequeue(&adapter.tx_q))) {
+		/* Get the priv */
+		cb = (struct esp32_skb_cb *) skb->cb;
+		priv = cb->priv;
+
+		/* Create space for payload header */
+		pad_len = sizeof(struct esp32_payload_header);
+
+		skb_push(skb, pad_len);
+
+		/* Set payload header */
+		payload_header = (struct esp32_payload_header *) skb->data;
+		memset(payload_header, 0, pad_len);
+
+		payload_header->if_type = priv->if_type;
+		payload_header->if_num = priv->if_num;
+		payload_header->len = skb->len - pad_len;
+		payload_header->offset = pad_len;
+
+		ret = esp32_send_packet(&priv->adapter->context, skb->data, skb->len);
+
+		if (ret) {
+			printk (KERN_ERR "%s: Failed to transmit data\n", __func__);
+			/* TODO: Stop the datapath if error count exceeds max count*/
+		}
+
+		dev_kfree_skb_any(skb);
+	}
+}
 
 static void process_rx_packet(void)
 {
@@ -408,7 +483,7 @@ static void esp32_handle_isr(struct sdio_func *func)
 	/* Clear interrupt status */
 	ret = esp32_write_reg(context, ESP_SLAVE_INT_CLR_REG,
 			(u8 *) &int_status, sizeof(int_status));
-	if (int_status)
+/*	if (int_status)*/
 /*		printk (KERN_ERR "MANGESH: %s -> interrupt status [0x%x]\n", __func__, int_status);*/
 
 	CHECK_SDIO_RW_ERROR(ret);
@@ -627,10 +702,10 @@ static int esp32_probe(struct sdio_func *func,
 
 	rx_buf = kzalloc(2048, GFP_KERNEL);
 
+#if 0
 	msleep(200);
 	data = 1;
 	esp32_write_reg(context, (ESP_SLAVE_SCRATCH_REG_7), &data, sizeof(data));
-#if 0
 	for (j = 0; j < 100; j++) {
 		for (i = 0; i < 2048; i++)
 			buf[i] = j+1;
@@ -681,6 +756,16 @@ static void esp32_remove(struct sdio_func *func)
 	memset(context, 0, sizeof(struct esp32_sdio_context));
 }
 
+static void esp_tx_work (struct work_struct *work)
+{
+#if 0
+	if (adapter->context.state != READY)
+		return;
+#endif
+
+	process_tx_packet();
+}
+
 static void esp_rx_work (struct work_struct *work)
 {
 #if 0
@@ -705,6 +790,15 @@ static int init_adapter(void)
 	}
 
 	INIT_WORK(&adapter.rx_work, esp_rx_work);
+
+	/* Prepare TX work */
+	adapter.tx_workqueue = create_workqueue("ESP_TX_WORK_QUEUE");
+
+	if (!adapter.tx_workqueue) {
+		return -ENOMEM;
+	}
+
+	INIT_WORK(&adapter.tx_work, esp_tx_work);
 
 	/* Prepare TX work */
 	skb_queue_head_init(&adapter.tx_q);
