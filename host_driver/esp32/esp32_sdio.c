@@ -5,7 +5,7 @@
 #include <linux/mmc/host.h>
 #include "esp_sdio_api.h"
 
-static int esp32_read_byte(struct esp32_context *context, u32 reg, u8 *data)
+static int esp32_read_byte(struct esp32_sdio_context *context, u32 reg, u8 *data)
 {
 	struct sdio_func *func = NULL;
 	int ret;
@@ -24,7 +24,7 @@ static int esp32_read_byte(struct esp32_context *context, u32 reg, u8 *data)
 	return ret;
 }
 
-static int esp32_write_byte(struct esp32_context *context, u32 reg, u8 data)
+static int esp32_write_byte(struct esp32_sdio_context *context, u32 reg, u8 data)
 {
 	struct sdio_func *func = NULL;
 	int ret;
@@ -43,7 +43,7 @@ static int esp32_write_byte(struct esp32_context *context, u32 reg, u8 data)
 	return ret;
 }
 
-static int esp32_read_multi_byte(struct esp32_context *context, u32 reg, u8 *data, u16 size)
+static int esp32_read_multi_byte(struct esp32_sdio_context *context, u32 reg, u8 *data, u16 size)
 {
 	struct sdio_func *func = NULL;
 	int ret;
@@ -62,7 +62,7 @@ static int esp32_read_multi_byte(struct esp32_context *context, u32 reg, u8 *dat
 	return ret;
 }
 
-static int esp32_write_multi_byte(struct esp32_context *context, u32 reg, u8 *data, u16 size)
+static int esp32_write_multi_byte(struct esp32_sdio_context *context, u32 reg, u8 *data, u16 size)
 {
 	struct sdio_func *func = NULL;
 	int ret;
@@ -81,7 +81,7 @@ static int esp32_write_multi_byte(struct esp32_context *context, u32 reg, u8 *da
 	return ret;
 }
 
-int esp32_read_reg(struct esp32_context *context, u32 reg, u8 *data, u16 size)
+int esp32_read_reg(struct esp32_sdio_context *context, u32 reg, u8 *data, u16 size)
 {
 	/* Need to apply address mask when reading/writing slave registers */
 	reg &= ESP_ADDRESS_MASK;
@@ -93,7 +93,7 @@ int esp32_read_reg(struct esp32_context *context, u32 reg, u8 *data, u16 size)
 	}
 }
 
-int esp32_read_block(struct esp32_context *context, u32 reg, u8 *data, u16 size)
+int esp32_read_block(struct esp32_sdio_context *context, u32 reg, u8 *data, u16 size)
 {
 	if (size <= 1) {
 		return esp32_read_byte(context, reg, data);
@@ -102,7 +102,7 @@ int esp32_read_block(struct esp32_context *context, u32 reg, u8 *data, u16 size)
 	}
 }
 
-int esp32_write_reg(struct esp32_context *context, u32 reg, u8 *data, u16 size)
+int esp32_write_reg(struct esp32_sdio_context *context, u32 reg, u8 *data, u16 size)
 {
 	/* Need to apply address mask when reading/writing slave registers */
 	reg &= ESP_ADDRESS_MASK;
@@ -114,7 +114,7 @@ int esp32_write_reg(struct esp32_context *context, u32 reg, u8 *data, u16 size)
 	}
 }
 
-int esp32_write_block(struct esp32_context *context, u32 reg, u8 *data, u16 size)
+int esp32_write_block(struct esp32_sdio_context *context, u32 reg, u8 *data, u16 size)
 {
 	if (size <= 1) {
 		return esp32_write_byte(context, reg, *data);

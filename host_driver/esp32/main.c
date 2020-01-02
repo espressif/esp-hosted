@@ -7,15 +7,21 @@
 #include <linux/mmc/sdio_ids.h>
 #include <linux/mmc/card.h>
 #include <linux/mmc/host.h>
-#include "esp_decl.h"
+#include "esp_sdio_decl.h"
 #include <linux/slab.h>
 #include <linux/timekeeping.h>
 #include "esp_sdio_api.h"
+#include "esp.h"
 
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Mangesh Malusare <mangesh.malusare@espressif.com>");
 MODULE_DESCRIPTION("SDIO driver for ESP32 module");
 MODULE_VERSION("0.01");
+
+u8 *buf;
+u8 *rx_buf;
+
+struct esp_adapter *adapter;
 
 #define CHECK_SDIO_RW_ERROR(ret) do {			\
 	if (ret)						\
@@ -30,10 +36,7 @@ static const struct sdio_device_id esp32_devices[] = {
 };
 
 
-u8 *buf;
-u8 *rx_buf;
-
-static int esp32_get_len_from_slave(struct esp32_context *context, u32 *rx_size)
+static int esp32_get_len_from_slave(struct esp32_sdio_context *context, u32 *rx_size)
 {
     u32 len;
     int ret = 0;
@@ -53,7 +56,7 @@ static int esp32_get_len_from_slave(struct esp32_context *context, u32 *rx_size)
 
 u64 start_time, end_time;
 
-static int esp32_get_packets(struct esp32_context *context)
+static int esp32_get_packets(struct esp32_sdio_context *context)
 {
 	u32 len_from_slave, data_left, len_to_read, size, num_blocks;
 	int ret = 0;
@@ -126,7 +129,7 @@ static int esp32_get_packets(struct esp32_context *context)
 	return ret;
 }
 
-static int esp32_slave_get_tx_buffer_num(struct esp32_context *context, u32 *tx_num)
+static int esp32_slave_get_tx_buffer_num(struct esp32_sdio_context *context, u32 *tx_num)
 {
     u32 len;
     int ret = 0;
@@ -138,14 +141,14 @@ static int esp32_slave_get_tx_buffer_num(struct esp32_context *context, u32 *tx_
 
     len = (len >> 16) & ESP_TX_BUFFER_MASK;
 /*    printk (KERN_ERR "%s: Buf cnt form reg %d\n", __func__, len);*/
-    len = (len + ESP_TX_BUFFER_MAX - context->tx_byte_count) % ESP_TX_BUFFER_MAX;
+    len = (len + ESP_TX_BUFFER_MAX - context->tx_buffer_count) % ESP_TX_BUFFER_MAX;
 
     *tx_num = len;
 
     return ret;
 }
 
-static int esp32_send_packet(struct esp32_context *context, u8 *buf, u32 size)
+static int esp32_send_packet(struct esp32_sdio_context *context, u8 *buf, u32 size)
 {
 	u32 block_cnt = 0, buf_needed = 0;
 	u32 buf_available = 0;
@@ -190,21 +193,32 @@ static int esp32_send_packet(struct esp32_context *context, u8 *buf, u32 size)
 		data_left -= len_to_send;
 		pos += len_to_send;
 	} while (data_left);
-	context->tx_byte_count += buf_needed;
+	context->tx_buffer_count += buf_needed;
 
 
 	return 0;
 }
 
-static void esp32_process_interrupt(struct esp32_context *context, u32 int_status)
+static void esp32_process_interrupt(struct esp32_sdio_context *context, u32 int_status)
 {
+	struct esp_adapter *adapter = container_of(context, struct esp_adapter, context);
+
 	if (!context) {
 		return;
 	}
 
 	sdio_release_host(context->func);
 	if (int_status & ESP_SLAVE_RX_NEW_PACKET_INT) {
-		esp32_get_packets(context);
+/*		esp32_get_packets(context);*/
+
+#if 1
+		if (adapter) {
+/*			printk (KERN_ERR "%s: NEW PACKET INT from interface: %d\n",*/
+/*					__func__, adapter->if_type);*/
+			queue_work(adapter->rx_workqueue, &adapter->rx_work);
+
+		}
+#endif
 	}
 	sdio_claim_host(context->func);
 
@@ -219,7 +233,7 @@ static void esp32_process_interrupt(struct esp32_context *context, u32 int_statu
 
 static void esp32_handle_isr(struct sdio_func *func)
 {
-	struct esp32_context *context = NULL;
+	struct esp32_sdio_context *context = NULL;
 	u32 int_status = 0;
 	int ret;
 
@@ -264,7 +278,7 @@ static int esp32_register_sdio_interrupt(struct sdio_func *func)
 static int esp32_probe(struct sdio_func *func,
 				  const struct sdio_device_id *id)
 {
-	struct esp32_context *context = NULL;
+	struct esp32_sdio_context *context = NULL;
 	int ret = 0, i, j =0;
 	u8 data = 0;
 	u32 len = 0;
@@ -283,10 +297,7 @@ static int esp32_probe(struct sdio_func *func,
 		return -EINVAL;
 	}
 
-	context = devm_kzalloc(&func->dev, sizeof(*context), GFP_KERNEL);
-	if (!context)
-		return -ENOMEM;
-	memset(context, 0, sizeof(*context));
+	context = &adapter->context;
 
 	context->func = func;
 
@@ -325,7 +336,7 @@ static int esp32_probe(struct sdio_func *func,
 	msleep(200);
 	data = 1;
 	esp32_write_reg(context, (ESP_SLAVE_SCRATCH_REG_7), &data, sizeof(data));
-#if 1
+#if 0
 	for (j = 0; j < 100; j++) {
 		for (i = 0; i < 2048; i++)
 			buf[i] = j+1;
@@ -342,6 +353,8 @@ static int esp32_probe(struct sdio_func *func,
 
 static void esp32_remove(struct sdio_func *func)
 {
+	struct esp32_sdio_context *context;
+
 	printk(KERN_ERR "MANGESH: %s -> Remove card", __func__);
 
 	if (func)
@@ -360,6 +373,52 @@ static void esp32_remove(struct sdio_func *func)
 	sdio_disable_func(func);
 	sdio_release_host(func);
 	/* Free context memory */
+	context = sdio_get_drvdata(func);
+
+	memset(context, 0, sizeof(struct esp32_sdio_context));
+
+}
+
+static void esp_rx_work (struct work_struct *work)
+{
+	struct esp_adapter *adapter = container_of(work, struct esp_adapter, rx_work);
+	esp32_get_packets(&adapter->context);
+}
+
+#if 0
+static void esp_rx_tasklet(unsigned long data)
+{
+	struct esp_adapter *adapter = (struct esp_adapter *) data;
+	sdio_release_host(adapter->context.func);
+	esp32_get_packets(&adapter->context);
+	sdio_claim_host(adapter->context.func);
+}
+#endif
+
+static int init_adapter(void)
+{
+	int ret = 0;
+
+	adapter = kzalloc(sizeof(struct esp_adapter), GFP_KERNEL);
+
+	if (!adapter) {
+		return -ENOMEM;
+	}
+
+	adapter->if_type = ESP_IF_TYPE_SDIO;
+
+#if 1
+	adapter->rx_workqueue = create_workqueue("ESP_RX_WORK_QUEUE");
+
+	if (!adapter->rx_workqueue) {
+		kfree(adapter);
+		return -ENOMEM;
+	}
+
+	INIT_WORK(&adapter->rx_work, esp_rx_work);
+#endif
+
+	return ret;
 }
 
 /* SDIO driver structure to be registered with kernel */
@@ -372,7 +431,15 @@ static struct sdio_driver esp_sdio_driver = {
 
 static int __init esp32_init(void)
 {
+	int ret = 0;
 	printk(KERN_INFO "Module start\n");
+
+	/* Init driver */
+	ret = init_adapter();
+
+	if (ret)
+		return ret;
+
 	sdio_register_driver(&esp_sdio_driver);
 	return 0;
 }

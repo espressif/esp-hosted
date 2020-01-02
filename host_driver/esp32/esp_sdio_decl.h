@@ -61,14 +61,10 @@
 #define ESP_DEVICE_ID_1		0x2222
 #define ESP_DEVICE_ID_2		0x3333
 
-struct esp32_context {
+struct esp32_sdio_context {
 	struct sdio_func	*func;
 	u32 			rx_byte_count;
-	u32 			tx_byte_count;
-};
-
-struct esp32_sdio_card {
-	struct sdio_func	*func;
+	u32 			tx_buffer_count;
 };
 
 #endif
