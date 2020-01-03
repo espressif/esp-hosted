@@ -68,9 +68,11 @@
 
 #define EV_STR(s) "================ "s" ================"
 static const char TAG[] = "example_slave";
+static const char TAG_RX[] = "RX";
+static const char TAG_TX[] = "TX";
 uint8_t buffer[BUFFER_NUM][BUFFER_SIZE];
 uint8_t buf[BUFFER_SIZE];
-uint8_t action = 0;
+volatile uint8_t action = 0;
 
 enum PACKET_TYPE {
 	DATA_PACKET = 0,
@@ -173,22 +175,18 @@ void send_task(void* pvParameters)
     	while (1) {
 
 	    if (action) {
-		    sleep(10);
+		    sleep(4);
 		    ESP_LOGE(TAG, "send data to host");
 		    action = 0;
 
-		    while (count <= 100) {
-#if 0
-			    for (int i=0; i < BUFFER_SIZE; i++) {
-				    buf[i] = count;
-			    }
-#endif
-
+		    while (count <= 10000) {
 			    count++;
-			    ESP_LOGE(TAG, "Tx: %d", count);
+			    ESP_LOG_BUFFER_HEXDUMP(TAG_TX, buf, 8, ESP_LOG_INFO);
 			    write_data(buf, sizeof(temp));
 			    usleep(10000);
 		    }
+
+		    count = 0;
 	    }
 
 	    sleep(1);
@@ -216,16 +214,9 @@ void recv_task(void* pvParameters)
 	ptr += header->offset;
 	length -= header->offset;
 
-#if 0
 	if (length) {
-		ESP_LOGE(TAG, "RX: %d %d  %d %d %d %d", header->pkt_data,
-				header->reserved1, header->len,
-				header->offset, header->reserved2[0],
-				header->reserved2[1]);
-		ESP_LOG_BUFFER_HEXDUMP(TAG, ptr, 8, ESP_LOG_INFO);
-/*		ESP_LOGE(TAG, "RX: %d", ptr[0]);*/
+		ESP_LOG_BUFFER_HEXDUMP(TAG_RX, ptr, 8, ESP_LOG_INFO);
 	}
-#endif
 
 	// free recv buffer
 	sdio_slave_recv_load_buf(handle);
