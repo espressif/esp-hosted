@@ -12,7 +12,9 @@
 #include <linux/timekeeping.h>
 #include <linux/etherdevice.h>
 #include <linux/netdevice.h>
+
 #include "esp_sdio_api.h"
+#include "esp_serial.h"
 #include "esp.h"
 
 MODULE_LICENSE("GPL");
@@ -41,7 +43,7 @@ static int esp32_set_mac_address(struct net_device *ndev, void *addr);
 static void esp32_tx_timeout(struct net_device *ndev);
 /*static struct net_device_stats esp32_get_stats(struct net_device *ndev);*/
 static void esp32_set_rx_mode(struct net_device *ndev);
-static int esp32_send_packet(struct esp32_sdio_context *context, u8 *buf, u32 size);
+int esp32_send_packet(struct esp32_sdio_context *context, u8 *buf, u32 size);
 
 static const struct net_device_ops esp32_netdev_ops = {
 	.ndo_open = esp32_open,
@@ -233,25 +235,29 @@ static void process_rx_packet(void)
 		payload_header = (struct esp32_payload_header *) skb->data;
 		print_hex_dump_bytes("Rx:", DUMP_PREFIX_NONE, (skb->data + 8), 8);
 
-		/* chop off the header from skb */
-		skb_pull(skb, payload_header->offset);
+		if (payload_header->if_type == ESP_IF_SERIAL) {
+			esp_serial_data_received(payload_header->if_num, skb->data + 8, payload_header->len);
+		} else if (payload_header->if_type == ESP_STA_IF || payload_header->if_type == ESP_AP_IF) {
+			/* chop off the header from skb */
+			skb_pull(skb, payload_header->offset);
 
-		/* retrieve priv based on payload header contents */
-		priv = get_priv_from_payload_header(payload_header);
+			/* retrieve priv based on payload header contents */
+			priv = get_priv_from_payload_header(payload_header);
 
-		if (!priv) {
-			printk (KERN_ERR "%s: empty priv\n", __func__);
-			dev_kfree_skb_any(skb);
-			continue;
+			if (!priv) {
+				printk (KERN_ERR "%s: empty priv\n", __func__);
+				dev_kfree_skb_any(skb);
+				continue;
+			}
+
+			skb->dev = priv->ndev;
+			skb->protocol = eth_type_trans(skb, priv->ndev);
+			skb->ip_summed = CHECKSUM_NONE;
+			/*		print_hex_dump_bytes("Rx:", DUMP_PREFIX_NONE, skb->data, 8);*/
+
+			/* Forward skb to kernel */
+			netif_rx(skb);
 		}
-
-		skb->dev = priv->ndev;
-		skb->protocol = eth_type_trans(skb, priv->ndev);
-		skb->ip_summed = CHECKSUM_NONE;
-/*		print_hex_dump_bytes("Rx:", DUMP_PREFIX_NONE, skb->data, 8);*/
-
-		/* Forward skb to kernel */
-		netif_rx(skb);
 	}
 }
 
@@ -369,7 +375,7 @@ static int esp32_slave_get_tx_buffer_num(struct esp32_sdio_context *context, u32
     return ret;
 }
 
-static int esp32_send_packet(struct esp32_sdio_context *context, u8 *buf, u32 size)
+int esp32_send_packet(struct esp32_sdio_context *context, u8 *buf, u32 size)
 {
 	u32 block_cnt = 0, buf_needed = 0;
 	u32 buf_available = 0;
@@ -672,6 +678,12 @@ static int esp32_probe(struct sdio_func *func,
 		return -ENOMEM;
 	}
 
+	ret = esp_serial_init((void *) context);
+	if (ret != 0) {
+		printk(KERN_ERR "Error initialising serial interface\n");
+		return ret;
+	}
+
 	ret = esp32_init_interfaces();
 	if (ret) {
 		deinit_sdio_func(func);
@@ -704,6 +716,8 @@ static void esp32_remove(struct sdio_func *func)
 	printk(KERN_ERR "%s -> Remove card", __func__);
 
 	esp32_remove_network_interfaces();
+
+	esp_serial_cleanup();
 
 	deinit_sdio_func(func);
 	/* TODO: Free context memory and update adapter */

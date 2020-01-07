@@ -3,6 +3,7 @@
 
 #include <linux/workqueue.h>
 #include <linux/interrupt.h>
+#include <linux/netdevice.h>
 #include "esp_sdio_decl.h"
 
 #define ESP_IF_TYPE_SDIO		1
@@ -14,6 +15,7 @@
 /* Network Interface Type */
 #define ESP_STA_IF			0
 #define ESP_AP_IF			1
+#define ESP_IF_SERIAL			(1<<1)
 
 #define ESP_MAX_INTERFACE		2
 
