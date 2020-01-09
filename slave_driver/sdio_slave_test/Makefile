@@ -4,6 +4,6 @@
 #
 
 PROJECT_NAME := sdio_slave
-
+EXTRA_LDFLAGS += -lesp32_at_core
 include $(IDF_PATH)/make/project.mk
 

@@ -17,9 +17,14 @@
 #include "soc/sdio_slave_periph.h"
 #include "freertos/task.h"
 #include "freertos/ringbuf.h"
+#include "esp_event_loop.h"
+#include "nvs_flash.h"
 #include "sdkconfig.h"
 #include <unistd.h>
+#include "xtensa/core-macros.h"
+#include "esp_wifi_internal.h"
 
+#include <esp_at.h>
 /*
    sdio slave example.
 
@@ -69,7 +74,7 @@
 #define EV_STR(s) "================ "s" ================"
 static const char TAG[] = "example_slave";
 static const char TAG_RX[] = "RX";
-static const char TAG_TX[] = "TX";
+//static const char TAG_TX[] = "TX";
 uint8_t buffer[BUFFER_NUM][BUFFER_SIZE];
 uint8_t buf[BUFFER_SIZE];
 volatile uint8_t action = 0;
@@ -81,13 +86,16 @@ enum PACKET_TYPE {
 enum INTERFACE_TYPE {
 	STA_INTF = 0,
 	AP_INTF,
+    SERIAL_INTF = (1<<1),
 };
 struct payload_header {
-	uint8_t 			     pkt_data;
-	uint8_t			             reserved1;
-	uint16_t                             len;
-	uint16_t                             offset;
-	uint8_t                              reserved2[2];
+	uint8_t 			     pkt_type:2;
+	uint8_t 			     if_type:3;
+	uint8_t 			     if_num:3;
+	uint8_t			         reserved1;
+	uint16_t                 len;
+	uint16_t                 offset;
+	uint8_t                  reserved2[2];
 } __attribute__((packed));
 
 //reset counters of the slave hardware, and clean the receive buffer (normally they should be sent back to the host)
@@ -111,7 +119,7 @@ static esp_err_t slave_reset()
     return ESP_OK;
 }
 
-int32_t write_data(uint8_t* data, int32_t len)
+int32_t write_data(uint8_t if_type, uint8_t if_num, uint8_t* data, int32_t len)
 {
     esp_err_t ret = ESP_OK;
     int32_t total_len = len + sizeof (struct payload_header);
@@ -134,7 +142,9 @@ int32_t write_data(uint8_t* data, int32_t len)
     memset (header, 0, sizeof(struct payload_header));
 
     /* Initialize header */
-    header->pkt_data = (STA_INTF << 2) | DATA_PACKET;
+    header->pkt_type = DATA_PACKET;
+    header->if_type = if_type;
+    header->if_num = if_num;
     header->len = len;
     header->offset = sizeof(struct payload_header);
 
@@ -168,8 +178,9 @@ static void event_cb(uint8_t pos)
 void send_task(void* pvParameters)
 {
 	int count = 1;
-	uint8_t temp[] = {0x01, 0x00, 0x5E, 0x00, 0x00, 0x0D,  0xC2, 0x03, 0x3D, 0x80, 0x00, 0x01, 0x08, 0x00, 0x45, 0xC0, 0x00, 0x36, 0x00, 0xA3, 0x00, 0x00, 0x01, 0x67, 0xCD, 0xE4, 0x0A, 0x00, 0x00, 0x0D, 0xE0, 0x00, 0x00, 0x0D, 0x20, 0x00, 0xB5, 0x2E, 0x00, 0x01, 0x00, 0x02, 0x00, 0x69, 0x00, 0x14, 0x00, 0x04, 0xD7, 0x70, 0x51, 0xAB, 0x00, 0x13, 0x00, 0x04, 0x00, 0x00, 0x00, 0x01, 0x00, 0x15, 0x00, 0x04, 0x01, 0x00, 0x00, 0x00};
-
+	uint8_t temp[1300] = {0x01, 0x00, 0x5E, 0x00, 0x00, 0x0D,  0xC2, 0x03, 0x3D, 0x80, 0x00, 0x01, 0x08, 0x00, 0x45, 0xC0, 0x00, 0x36, 0x00, 0xA3, 0x00, 0x00, 0x01, 0x67, 0xCD, 0xE4, 0x0A, 0x00, 0x00, 0x0D, 0xE0, 0x00, 0x00, 0x0D, 0x20, 0x00, 0xB5, 0x2E, 0x00, 0x01, 0x00, 0x02, 0x00, 0x69, 0x00, 0x14, 0x00, 0x04, 0xD7, 0x70, 0x51, 0xAB, 0x00, 0x13, 0x00, 0x04, 0x00, 0x00, 0x00, 0x01, 0x00, 0x15, 0x00, 0x04, 0x01, 0x00, 0x00, 0x00};
+    int t1, t2, t_total = 0;
+    int d_total = 0;
 	memcpy(buf, temp, sizeof(temp));
 
     	while (1) {
@@ -179,20 +190,42 @@ void send_task(void* pvParameters)
 		    ESP_LOGE(TAG, "send data to host");
 		    action = 0;
 
-		    while (count <= 10000) {
+		    while (count <= 10) {
+#if 0
+			    for (int i=0; i < BUFFER_SIZE; i++) {
+				    buf[i] = count;
+			    }
+#endif
+
 			    count++;
-			    ESP_LOG_BUFFER_HEXDUMP(TAG_TX, buf, 8, ESP_LOG_INFO);
-			    write_data(buf, sizeof(temp));
-			    usleep(10000);
+//			    ESP_LOGE(TAG, "Tx: %d", count);
+                t1 = XTHAL_GET_CCOUNT();
+			    write_data(STA_INTF, 0, buf, sizeof(temp));
+                t2 = XTHAL_GET_CCOUNT();
+                t_total += t2 - t1;
+                d_total += sizeof(temp);
+//			    usleep(10000);
 		    }
 
 		    count = 0;
 	    }
-
+        if (t_total) {
+            printf("TX complete. Total time spent in tx = %d for %d bytes\n", t_total, d_total);
+            t_total = 0;
+        }
 	    sleep(1);
     }
 }
 
+static struct rx_data {
+    uint8_t valid;
+    int len;
+    uint8_t data[1024];
+} r;
+//#define min(x, y) ((x) < (y) ? (x) : (y))
+static inline int min(int x, int y) {
+    return (x < y) ? x : y;
+}
 void recv_task(void* pvParameters)
 {
     sdio_slave_buf_handle_t handle;
@@ -215,15 +248,75 @@ void recv_task(void* pvParameters)
 	length -= header->offset;
 
 	if (length) {
+        ESP_LOGE(TAG_RX, "Recv %d %d %d %d %d\n", header->pkt_type, header->if_type, header->if_num, header->len, header->offset);
 		ESP_LOG_BUFFER_HEXDUMP(TAG_RX, ptr, 8, ESP_LOG_INFO);
 	}
 
+    /* Implement echo functionality for serial interface */
+    if (header->if_type == SERIAL_INTF) {
+//        write_data(SERIAL_INTF, 0, ptr, length);
+        memcpy(r.data, ptr, min(length, sizeof(r.data)));
+        r.valid = 1;
+        r.len = min(length, sizeof(r.data));
+        esp_at_port_recv_data_notify(length, portMAX_DELAY);
+    }
 	// free recv buffer
 	sdio_slave_recv_load_buf(handle);
 /*	usleep(100);*/
     }
 }
+static int32_t at_sdio_hosted_read_data(uint8_t *data, int32_t len)
+{
+    printf("at_sdio_hosted_read_data\n");
+    len = min(len, r.len);
+    if (r.valid) {
+        memcpy(data, r.data, len);
+        r.valid = 0;
+        r.len = 0;
+    } else {
+        printf("No data to be read\n");
+    }
+    return len;
+}
+static int32_t at_sdio_hosted_write_data(uint8_t* data, int32_t len)
+{
+    printf("at_sdio_hosted_write_data %d\n", len);
+    write_data(SERIAL_INTF, 0, data, len);
+    return len;
+}
+uint32_t esp_at_get_task_stack_size(void)
+{
+    return 4096;
+}
+void at_interface_init(void)
+{
+    write_data(SERIAL_INTF, 0, (uint8_t *)"\r\nready\r\n", 9);
+    esp_at_device_ops_struct esp_at_device_ops = {
+        .read_data = at_sdio_hosted_read_data,
+        .write_data = at_sdio_hosted_write_data,
+        .get_data_length = NULL,
+        .wait_write_complete = NULL,
+    };
+    esp_at_device_ops_regist(&esp_at_device_ops);
+}
+void at_set_echo_flag(bool enable);
+static esp_err_t at_wifi_event_handler(void *ctx, system_event_t *event)
+{
+    esp_err_t ret = esp_at_wifi_event_handler(ctx, event);
 
+    return ret;
+}
+
+static void initialise_wifi(void)
+{
+    wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
+
+    ESP_ERROR_CHECK( esp_event_loop_init(at_wifi_event_handler, NULL) );
+
+    ESP_ERROR_CHECK( esp_wifi_init_internal(&cfg) );
+    ESP_ERROR_CHECK( esp_wifi_set_storage(WIFI_STORAGE_RAM) );
+    ESP_ERROR_CHECK( esp_wifi_start() );
+}
 //Main application
 void app_main()
 {
@@ -263,18 +356,7 @@ void app_main()
     }
 
     sdio_slave_set_host_intena(SDIO_SLAVE_HOSTINT_SEND_NEW_PACKET |
-            SDIO_SLAVE_HOSTINT_BIT0
-#if 0
-	    |
-            SDIO_SLAVE_HOSTINT_BIT1|
-            SDIO_SLAVE_HOSTINT_BIT2|
-            SDIO_SLAVE_HOSTINT_BIT3|
-            SDIO_SLAVE_HOSTINT_BIT4|
-            SDIO_SLAVE_HOSTINT_BIT5|
-            SDIO_SLAVE_HOSTINT_BIT6|
-            SDIO_SLAVE_HOSTINT_BIT7
-#endif
-	    );
+            SDIO_SLAVE_HOSTINT_BIT0);
 
     sdio_slave_start();
 
@@ -282,91 +364,21 @@ void app_main()
     xTaskCreate(recv_task , "at_sdio_recv_task" , 4096 , NULL , 18 , NULL);
     xTaskCreate(send_task , "at_sdio_send_task" , 4096 , NULL , 18 , NULL);
 
-#if 0
-    int count = 1;
-    while (1) {
-	    if (action) {
-		    ESP_LOGE(TAG, "send data to host");
-		    action = 0;
-
-		    while (count <= 100) {
-			    for (int i=0; i < BUFFER_SIZE; i++) {
-				    buf[i] = count;
-			    }
-
-			    count++;
-			    write_data(buf, BUFFER_SIZE);
-			    usleep(100);
-		    }
-	    }
-	    usleep(100);
+    at_interface_init();
+    esp_at_module_init(1, (uint8_t *)"custom_version 1.0");
+    at_set_echo_flag(false);
+    if(esp_at_base_cmd_regist() == false) {
+        printf("regist base cmd fail\r\n");
+        return 0;
+    }
+#if 1
+    nvs_flash_init();
+    tcpip_adapter_init();
+    initialise_wifi();
+    if(esp_at_wifi_cmd_regist() == false) {
+        printf("regist wifi cmd fail\r\n");
     }
 #endif
 }
 
-#if 0
-    ESP_LOGI(TAG, EV_STR("slave ready"));
-
-    for(;;) {
-        //receive data and send back to host.
-        size_t length;
-        uint8_t *ptr;
-
-        const TickType_t non_blocking = 0;
-        ret = sdio_slave_recv(&handle, &ptr, &length, non_blocking);
-        if (ret == ESP_OK) {
-            ESP_LOGI(TAG, "handle: %p, recv len: %d, data:", handle, length);
-            ESP_LOG_BUFFER_HEXDUMP(TAG, ptr, length, ESP_LOG_INFO);
-            /* If buffer is no longer used, call sdio_slave_recv_load_buf to return it here.  Since we wants to show how
-             * to share large buffers between drivers here (we share between sending and receiving), keep the buffer
-             * until the buffer is sent by sending driver.
-             */
-
-            //send the received buffer to host, with the handle as the argument
-            ret = sdio_slave_send_queue(ptr, length, handle, non_blocking);
-            if (ret == ESP_ERR_TIMEOUT) {
-                // send failed, direct return the buffer to rx
-                ESP_LOGE(TAG, "send_queue full, discard received.");
-                ret = sdio_slave_recv_load_buf(handle);
-            }
-            ESP_ERROR_CHECK(ret);
-        }
-
-        // if there's finished sending desc, return the buffer to receiving driver
-        for(;;){
-            sdio_slave_buf_handle_t handle;
-            ret = sdio_slave_send_get_finished(&handle, 0);
-            if (ret == ESP_ERR_TIMEOUT) break;
-            ESP_ERROR_CHECK(ret);
-            ret = sdio_slave_recv_load_buf(handle);
-            ESP_ERROR_CHECK(ret);
-        }
-
-        if (s_job != 0) {
-            for(int i = 0; i < 8; i++) {
-                if (s_job & BIT(i)) {
-                    ESP_LOGI(TAG, EV_STR("%s"), job_desc[i+1]);
-                    s_job &= ~BIT(i);
-
-                    switch(BIT(i)) {
-                    case JOB_SEND_INT:
-                        ret = task_hostint();
-                        ESP_ERROR_CHECK(ret);
-                        break;
-                    case JOB_RESET:
-                        ret = slave_reset();
-                        ESP_ERROR_CHECK(ret);
-                        break;
-                    case JOB_WRITE_REG:
-                        ret = task_write_reg();
-                        ESP_ERROR_CHECK(ret);
-                        break;
-                    }
-                }
-            }
-        }
-        vTaskDelay(1);
-    }
-}
-#endif
 
