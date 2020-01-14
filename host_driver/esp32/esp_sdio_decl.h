@@ -25,6 +25,7 @@
 
 #define ESP_TX_BUFFER_MASK		0xFFF
 #define ESP_TX_BUFFER_MAX   		0x1000
+#define ESP_MAX_BUF_CNT			10
 
 #define ESP_SLAVE_SLCHOST_BASE      	0x3FF55000
 

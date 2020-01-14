@@ -32,6 +32,7 @@ static int esp_serial_read(struct file *file, char __user *user_buffer, size_t s
 	printk(KERN_ERR "%s\n", __func__);
        	dev = (struct esp_serial_devs *) file->private_data;
 	size = esp_rb_read_by_user(&dev->rb, user_buffer, size, file->f_flags & O_NONBLOCK);
+/*	print_hex_dump_bytes("Rx:", DUMP_PREFIX_NONE, user_buffer, size);*/
 	if (size == 0) {
 		return -EAGAIN;
 	}
@@ -67,9 +68,11 @@ static int esp_serial_write(struct file *file, const char __user *user_buffer, s
 	ret = copy_from_user(buf + hdr->offset, user_buffer, size);
 	if (ret != 0) {
 		kfree(buf);
+		printk(KERN_ERR "Error copying buffer to send serial data\n");
 		return -EFAULT;
 	}
 
+	print_hex_dump_bytes("Tx:", DUMP_PREFIX_NONE, buf, total_len);
 	ret = esp32_send_packet(dev->priv, buf, total_len);
 	if (ret) {
 		printk (KERN_ERR "%s: Failed to transmit data\n", __func__);

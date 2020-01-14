@@ -87,6 +87,8 @@ uint32_t from_wlan_count = 0;
 uint32_t to_host_count = 0;
 uint32_t to_host_sent_count = 0;
 
+static SemaphoreHandle_t sdio_write_lock = NULL;
+
 /* Ring Buffer: WLAN driver -> sdio interface */
 RingbufHandle_t rb_handle_wlan_to_sdio = NULL;
 RingbufHandle_t rb_handle_sdio_to_wlan = NULL;
@@ -158,8 +160,48 @@ typedef struct {
 	void		*buf_ptr;
 }wlan_buffer;
 
+esp_err_t wlan_ap_rx_callback(void *buffer, uint16_t len, void *eb)
+{
+	esp_err_t ret = ESP_OK;
+	uint16_t buf_size;
+	wlan_buffer wlan_buf;
 
-esp_err_t wlan_rx_callback(void *buffer, uint16_t len, void *eb)
+	if (!buffer || !eb) {
+		if (eb) {
+			esp_wifi_internal_free_rx_buffer(eb);
+		}
+		return ESP_OK;
+	}
+
+	buf_size = xRingbufferGetCurFreeSize(rb_handle_wlan_to_sdio);
+	if (buf_size < sizeof(wlan_buf)) {
+		ESP_LOGE(TAG, "WLAN -> SDIO: Not enough buffer space available: %d\n", buf_size);
+		goto DONE;
+	}
+
+	/* Prepare buffer descriptor */
+	memset(&wlan_buf, 0, sizeof(wlan_buf));
+
+	wlan_buf.if_type = AP_INTF;
+	wlan_buf.len = len;
+	wlan_buf.buf = buffer;
+	wlan_buf.buf_ptr = eb;
+
+	ret = xRingbufferSend(rb_handle_wlan_to_sdio, &wlan_buf, sizeof(wlan_buf), portMAX_DELAY);
+
+	if (ret != pdTRUE) {
+		ESP_LOGE(TAG, "WLAN -> SDIO: Failed to write to ring buffer\n");
+		goto DONE;
+	}
+
+	return ESP_OK;
+
+DONE:
+	esp_wifi_internal_free_rx_buffer(eb);
+	return ESP_OK;
+}
+
+esp_err_t wlan_sta_rx_callback(void *buffer, uint16_t len, void *eb)
 {
 	esp_err_t ret = ESP_OK;
 	uint16_t buf_size;
@@ -317,7 +359,10 @@ void send_task(void* pvParameters)
 				/* Send data */
 				t1 = XTHAL_GET_CCOUNT();
 
+/*				xSemaphoreTake(sdio_write_lock, (portTickType)portMAX_DELAY);*/
 				write_data(wlan_buf->if_type, 0, wlan_buf->buf, wlan_buf->len);
+/*				xSemaphoreGive(sdio_write_lock);*/
+
 				t2 = XTHAL_GET_CCOUNT();
 				t_total += t2 - t1;
 				d_total += wlan_buf->len;
@@ -445,7 +490,7 @@ void recv_task(void* pvParameters)
 
 static int32_t at_sdio_hosted_read_data(uint8_t *data, int32_t len)
 {
-    printf("at_sdio_hosted_read_data\n");
+    ESP_LOGE(TAG, "at_sdio_hosted_read_data\n");
     len = min(len, r.len);
     if (r.valid) {
         memcpy(data, r.data, len);
@@ -458,8 +503,12 @@ static int32_t at_sdio_hosted_read_data(uint8_t *data, int32_t len)
 }
 static int32_t at_sdio_hosted_write_data(uint8_t* data, int32_t len)
 {
-    printf("at_sdio_hosted_write_data %d\n", len);
+    ESP_LOGE(TAG, "at_sdio_hosted_write_data %d\n", len);
+
+/*    xSemaphoreTake(sdio_write_lock, (portTickType)portMAX_DELAY);*/
     write_data(SERIAL_INTF, 0, data, len);
+/*    xSemaphoreGive(sdio_write_lock);*/
+
     ESP_LOG_BUFFER_HEXDUMP(TAG_TX_S, data, len, ESP_LOG_INFO);
     return len;
 }
@@ -469,7 +518,10 @@ uint32_t esp_at_get_task_stack_size(void)
 }
 void at_interface_init(void)
 {
-    write_data(SERIAL_INTF, 0, (uint8_t *)"\r\nready\r\n", 9);
+/*    xSemaphoreTake(sdio_write_lock, (portTickType)portMAX_DELAY);*/
+/*    write_data(SERIAL_INTF, 0, (uint8_t *)"\r\nready\r\n", 9);*/
+/*    xSemaphoreGive(sdio_write_lock);*/
+
     esp_at_device_ops_struct esp_at_device_ops = {
         .read_data = at_sdio_hosted_read_data,
         .write_data = at_sdio_hosted_write_data,
@@ -485,11 +537,14 @@ static esp_err_t at_wifi_event_handler(void *ctx, system_event_t *event)
 
     if (event->event_id == SYSTEM_EVENT_STA_CONNECTED) {
 	    ESP_LOGE (TAG, "STA connected: Registered callback\n");
-	    esp_wifi_internal_reg_rxcb(ESP_IF_WIFI_STA, (wifi_rxcb_t)wlan_rx_callback);
+	    esp_wifi_internal_reg_rxcb(ESP_IF_WIFI_STA, (wifi_rxcb_t) wlan_sta_rx_callback);
 	    sta_connected = 1;
     } else if (event->event_id == SYSTEM_EVENT_STA_DISCONNECTED) {
 	    ESP_LOGE (TAG, "STA disconnected\n");
 	    sta_connected = 0;
+    } else if (event->event_id == SYSTEM_EVENT_AP_START) {
+	    ESP_LOGE (TAG, "AP START\n");
+	    esp_wifi_internal_reg_rxcb(ESP_IF_WIFI_AP, (wifi_rxcb_t) wlan_ap_rx_callback);
     }
 
     return ret;
@@ -564,6 +619,13 @@ void app_main()
     }
 
     ESP_ERROR_CHECK(ret);
+
+    sdio_write_lock = xSemaphoreCreateBinary();
+
+    assert (sdio_write_lock != NULL);
+
+    /* by default it will be in taken state.. release it */
+    xSemaphoreGive(sdio_write_lock);
 
     ESP_LOGI(TAG, EV_STR("slave ready"));
     xTaskCreate(recv_task , "sdio_recv_task" , 4096 , NULL , 18 , NULL);

@@ -35,6 +35,9 @@ struct esp_adapter {
 	struct workqueue_struct 	*rx_workqueue;
 	struct work_struct		rx_work;
 
+	struct workqueue_struct 	*if_rx_workqueue;
+	struct work_struct		if_rx_work;
+
 	/* Process TX work */
 	struct workqueue_struct 	*tx_workqueue;
 	struct work_struct		tx_work;
