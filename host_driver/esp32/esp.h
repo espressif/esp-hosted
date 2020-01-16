@@ -19,6 +19,11 @@
 
 #define ESP_MAX_INTERFACE		2
 
+/* Interrupt Slave */
+#define SLAVE_OPEN_PORT			(1<<0)
+#define SLAVE_CLOSE_PORT		(1<<1)
+#define SLAVE_RESET			(1<<2)
+
 struct esp_private;
 
 struct esp_adapter {
@@ -47,6 +52,10 @@ struct esp_adapter {
 
 	/* RX Queue */
 	struct sk_buff_head 		rx_q;
+
+	/* Counters */
+	atomic_t			tx_pending;
+	atomic_t			rx_pending;
 };
 
 

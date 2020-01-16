@@ -151,6 +151,7 @@ static int esp32_hard_start_xmit(struct sk_buff *skb, struct net_device *ndev)
 
 	/* TODO: add counters and check pending packets.. stop the queue as required */
 	skb_queue_tail(&adapter.tx_q, skb);
+	atomic_inc(&adapter.tx_pending);
 	queue_work(adapter.tx_workqueue, &adapter.tx_work);
 
 	return 0;
@@ -256,6 +257,7 @@ static void process_tx_packet (void)
 		}
 
 		dev_kfree_skb_any(skb);
+		atomic_dec(&adapter.tx_pending);
 	}
 }
 
@@ -290,6 +292,7 @@ static void process_rx_packet(void)
 			if (!priv) {
 				printk (KERN_ERR "%s: empty priv\n", __func__);
 				dev_kfree_skb_any(skb);
+				atomic_dec(&adapter.rx_pending);
 				continue;
 			}
 
@@ -301,6 +304,7 @@ static void process_rx_packet(void)
 			/* Forward skb to kernel */
 			netif_rx(skb);
 		}
+		atomic_dec(&adapter.rx_pending);
 	}
 }
 
@@ -398,6 +402,7 @@ static int esp32_get_packets(struct esp32_sdio_context *context, u8 action)
 		dev_kfree_skb(skb);
 	} else {
 		skb_queue_tail(&adapter.rx_q, skb);
+		atomic_inc(&adapter.rx_pending);
 	}
 
 	return len_from_slave;
@@ -485,8 +490,6 @@ int esp32_send_packet(struct esp32_sdio_context *context, u8 *buf, u32 size)
 
 static void esp32_process_interrupt(struct esp32_sdio_context *context, u32 int_status)
 {
-	int ret = 0;
-
 	if (!context) {
 		return;
 	}
@@ -533,17 +536,6 @@ static void esp32_handle_isr(struct sdio_func *func)
 	CHECK_SDIO_RW_ERROR(ret);
 }
 
-static int esp32_register_sdio_interrupt(struct sdio_func *func)
-{
-	int ret;
-
-	sdio_claim_host(func);
-	ret = sdio_claim_irq(func, esp32_handle_isr);
-	sdio_release_host(func);
-
-	return ret;
-}
-
 static int insert_priv_to_adapter(struct esp_private *priv)
 {
 	int i = 0;
@@ -576,16 +568,6 @@ static int esp32_init_priv(struct esp_private *priv, struct net_device *dev,
 	priv->if_num = if_num;
 	priv->link_state = ESP_LINK_DOWN;
 	priv->adapter = &adapter;
-
-	/* TODO: get mac address from slave */
-#if 0
-	priv->mac_address[0] = 0x3c;
-	priv->mac_address[1] = 0x71;
-	priv->mac_address[2] = 0xbf;
-	priv->mac_address[3] = 0x9a;
-	priv->mac_address[4] = 0xc2;
-	priv->mac_address[5] = 0x64+if_type;
-#endif
 
 	return 0;
 }
@@ -805,9 +787,8 @@ static int esp32_probe(struct sdio_func *func,
 				  const struct sdio_device_id *id)
 {
 	struct esp32_sdio_context *context = NULL;
-	int ret = 0, i, j =0;
+	int ret = 0;
 	u8 data = 0;
-	u32 len_from_slave = 0;
 
 	if (func->num != 1) {
 		return -EINVAL;
@@ -818,6 +799,10 @@ static int esp32_probe(struct sdio_func *func,
 	if (!context) {
 		return -ENOMEM;
 	}
+
+	data = SLAVE_RESET;
+	esp32_write_reg(context, (ESP_SLAVE_SCRATCH_REG_7), &data, sizeof(data));
+	msleep(200);
 
 	ret = init_context(context);
 	if (ret) {
@@ -851,7 +836,7 @@ static int esp32_probe(struct sdio_func *func,
 #endif
 #if 1
 	msleep(200);
-	data = 1;
+	data = SLAVE_OPEN_PORT;
 	esp32_write_reg(context, (ESP_SLAVE_SCRATCH_REG_7), &data, sizeof(data));
 #endif
 	return ret;
@@ -859,7 +844,7 @@ static int esp32_probe(struct sdio_func *func,
 
 static void flush_sdio(struct esp32_sdio_context *context)
 {
-	u8 data = 2;
+	u8 data = SLAVE_CLOSE_PORT;
 	int ret = 0;
 
 	if (!context)
@@ -874,6 +859,25 @@ static void flush_sdio(struct esp32_sdio_context *context)
 
 		if (ret <= 0)
 			break;
+	}
+}
+
+static void flush_ring_buffers(void)
+{
+	struct sk_buff *skb;
+
+	printk (KERN_INFO "%s: Flush Pending SKBs: %d %d\n", __func__,
+			atomic_read(&adapter.tx_pending),
+			atomic_read(&adapter.rx_pending));
+
+	while ((skb = skb_dequeue(&adapter.tx_q))) {
+		dev_kfree_skb_any(skb);
+		atomic_dec(&adapter.tx_pending);
+	}
+
+	while ((skb = skb_dequeue(&adapter.rx_q))) {
+		dev_kfree_skb_any(skb);
+		atomic_dec(&adapter.rx_pending);
 	}
 }
 
@@ -896,9 +900,22 @@ static void esp32_remove(struct sdio_func *func)
 		kthread_stop(monitor_thread);
 
 	stop_data = 1;
+
+	/* Flush workqueues */
+	if (adapter.if_rx_workqueue)
+		flush_workqueue(adapter.if_rx_workqueue);
+
+	if (adapter.rx_workqueue)
+		flush_workqueue(adapter.rx_workqueue);
+
+	if (adapter.tx_workqueue)
+		flush_workqueue(adapter.tx_workqueue);
+
 	flush_sdio(context);
 
 	esp32_remove_network_interfaces();
+
+	flush_ring_buffers();
 
 #ifdef CONFIG_SUPPORT_ESP_SERIAL
 	esp_serial_cleanup();
@@ -911,6 +928,9 @@ static void esp32_remove(struct sdio_func *func)
 
 	adapter.priv[0] = NULL;
 	adapter.priv[1] = NULL;
+
+	atomic_set(&adapter.tx_pending, 0);
+	atomic_set(&adapter.rx_pending, 0);
 
 	memset(context, 0, sizeof(struct esp32_sdio_context));
 }
@@ -982,6 +1002,9 @@ static int init_adapter(void)
 	skb_queue_head_init(&adapter.tx_q);
 	skb_queue_head_init(&adapter.rx_q);
 
+	atomic_set(&adapter.tx_pending, 0);
+	atomic_set(&adapter.rx_pending, 0);
+
 	return ret;
 }
 
@@ -1009,6 +1032,15 @@ static int __init esp32_init(void)
 
 static void __exit esp32_exit(void)
 {
+	if (adapter.if_rx_workqueue)
+		destroy_workqueue(adapter.if_rx_workqueue);
+
+	if (adapter.rx_workqueue)
+		destroy_workqueue(adapter.rx_workqueue);
+
+	if (adapter.tx_workqueue)
+		destroy_workqueue(adapter.tx_workqueue);
+
 	sdio_unregister_driver(&esp_sdio_driver);
 }
 
