@@ -101,6 +101,7 @@ enum PACKET_TYPE {
 enum HOST_INTERRUPTS {
 	START_DATA_PATH = 0,
 	STOP_DATA_PATH,
+	SDIO_RESET,
 };
 
 enum INTERFACE_TYPE {
@@ -160,13 +161,41 @@ typedef struct {
 	void		*buf_ptr;
 }wlan_buffer;
 
+static esp_err_t slave_reset()
+{
+	esp_err_t ret;
+
+	sdio_slave_stop();
+
+	ret = sdio_slave_reset();
+	if (ret != ESP_OK)
+		return ret;
+
+	ret = sdio_slave_start();
+	if (ret != ESP_OK)
+		return ret;
+
+	while(1) {
+		sdio_slave_buf_handle_t handle;
+
+		/* Return buffers to driver */
+		ret = sdio_slave_send_get_finished(&handle, 0);
+		if (ret != ESP_OK)
+			break;
+
+		ret = sdio_slave_recv_load_buf(handle);
+		ESP_ERROR_CHECK(ret);
+	}
+	return ESP_OK;
+}
+
 esp_err_t wlan_ap_rx_callback(void *buffer, uint16_t len, void *eb)
 {
 	esp_err_t ret = ESP_OK;
 	uint16_t buf_size;
 	wlan_buffer wlan_buf;
 
-	if (!buffer || !eb) {
+	if (!buffer || !eb || !datapath) {
 		if (eb) {
 			esp_wifi_internal_free_rx_buffer(eb);
 		}
@@ -207,17 +236,14 @@ esp_err_t wlan_sta_rx_callback(void *buffer, uint16_t len, void *eb)
 	uint16_t buf_size;
 	wlan_buffer wlan_buf;
 
-	from_wlan_count++;
-
-/*	if (from_wlan_count - to_host_count > 10)*/
-/*	ESP_LOGE(TAG, "WLAN -> SDIO: [%d %d %d]", from_wlan_count, to_host_count, to_host_sent_count);*/
-
-	if (!buffer || !eb) {
+	if (!buffer || !eb || !datapath) {
 		if (eb) {
 			esp_wifi_internal_free_rx_buffer(eb);
 		}
 		return ESP_OK;
 	}
+
+	from_wlan_count++;
 
 	buf_size = xRingbufferGetCurFreeSize(rb_handle_wlan_to_sdio);
 	if (buf_size < sizeof(wlan_buf)) {
@@ -245,28 +271,6 @@ esp_err_t wlan_sta_rx_callback(void *buffer, uint16_t len, void *eb)
 DONE:
 	esp_wifi_internal_free_rx_buffer(eb);
 	return ESP_OK;
-}
-
-
-//reset counters of the slave hardware, and clean the receive buffer (normally they should be sent back to the host)
-static esp_err_t slave_reset()
-{
-    esp_err_t ret;
-    sdio_slave_stop();
-    ret = sdio_slave_reset();
-    if (ret != ESP_OK) return ret;
-    ret = sdio_slave_start();
-    if (ret != ESP_OK) return ret;
-
-    //Since the buffer will not be sent any more, we return them back to receving driver
-    while(1) {
-        sdio_slave_buf_handle_t handle;
-        ret = sdio_slave_send_get_finished(&handle, 0);
-        if (ret != ESP_OK) break;
-        ret = sdio_slave_recv_load_buf(handle);
-        ESP_ERROR_CHECK(ret);
-    }
-    return ESP_OK;
 }
 
 int32_t write_data(uint8_t if_type, uint8_t if_num, uint8_t* data, int32_t len)
@@ -315,18 +319,23 @@ int32_t write_data(uint8_t if_type, uint8_t if_num, uint8_t* data, int32_t len)
 //``sdio_slave_wait_int`` is another way to handle interrupts
 static void event_cb(uint8_t pos)
 {
-    ESP_EARLY_LOGE(TAG, "event: %d", pos);
-#if 1
+/*    ESP_EARLY_LOGE(TAG, "event: %d", pos);*/
     switch(pos) {
         case START_DATA_PATH:
+		ESP_EARLY_LOGE(TAG, "Start Data Path");
 		datapath = 1;
 		break;
 
 	case STOP_DATA_PATH:
+		ESP_EARLY_LOGE(TAG, "Stop Data Path");
 		datapath = 0;
 		break;
+
+	case SDIO_RESET:
+		ESP_EARLY_LOGE(TAG, "Reset slave");
+		slave_reset();
+		break;
     }
-#endif
 }
 
 /* Send data to host */
@@ -386,13 +395,14 @@ void send_task(void* pvParameters)
 
 		} else {
 			if (wlan_buf) {
+				ESP_LOGE (TAG_TX, "Data path stopped");
+				ESP_LOG_BUFFER_HEXDUMP(TAG_TX, wlan_buf->buf, 32, ESP_LOG_INFO);
 				if (wlan_buf->buf_ptr)
 					esp_wifi_internal_free_rx_buffer(wlan_buf->buf_ptr);
 
 				vRingbufferReturnItem(rb_handle_wlan_to_sdio, wlan_buf);
 			}
 
-			ESP_LOGE (TAG_TX, "Data path stopped");
 			sleep(1);
 		}
 	}
@@ -506,7 +516,8 @@ static int32_t at_sdio_hosted_write_data(uint8_t* data, int32_t len)
     ESP_LOGE(TAG, "at_sdio_hosted_write_data %d\n", len);
 
 /*    xSemaphoreTake(sdio_write_lock, (portTickType)portMAX_DELAY);*/
-    write_data(SERIAL_INTF, 0, data, len);
+    if (datapath)
+	    write_data(SERIAL_INTF, 0, data, len);
 /*    xSemaphoreGive(sdio_write_lock);*/
 
     ESP_LOG_BUFFER_HEXDUMP(TAG_TX_S, data, len, ESP_LOG_INFO);
@@ -637,7 +648,7 @@ void app_main()
     at_set_echo_flag(false);
     if(esp_at_base_cmd_regist() == false) {
         printf("regist base cmd fail\r\n");
-        return 0;
+        return;
     }
 #if 1
     nvs_flash_init();
