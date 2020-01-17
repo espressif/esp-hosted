@@ -47,7 +47,7 @@ static int esp32_stop(struct net_device *ndev);
 static int esp32_hard_start_xmit(struct sk_buff *skb, struct net_device *ndev);
 static int esp32_set_mac_address(struct net_device *ndev, void *addr);
 static void esp32_tx_timeout(struct net_device *ndev);
-/*static struct net_device_stats esp32_get_stats(struct net_device *ndev);*/
+static struct net_device_stats* esp32_get_stats(struct net_device *ndev);
 static void esp32_set_rx_mode(struct net_device *ndev);
 int esp32_send_packet(struct esp32_sdio_context *context, u8 *buf, u32 size);
 
@@ -58,7 +58,7 @@ static const struct net_device_ops esp32_netdev_ops = {
 	.ndo_set_mac_address = esp32_set_mac_address,
 	.ndo_validate_addr = eth_validate_addr,
 	.ndo_tx_timeout = esp32_tx_timeout,
-/*	.ndo_get_stats = esp32_get_stats,*/
+	.ndo_get_stats = esp32_get_stats,
 	.ndo_set_rx_mode = esp32_set_rx_mode,
 };
 
@@ -78,13 +78,11 @@ static int esp32_stop(struct net_device *ndev)
 	return 0;
 }
 
-#if 0
-static struct net_device_stats esp32_get_stats(struct net_device *ndev)
+static struct net_device_stats* esp32_get_stats(struct net_device *ndev)
 {
-	printk (KERN_ERR "%s\n", __func__);
-	return 0;
+	struct esp_private *priv = netdev_priv(ndev);
+	return &priv->stats;
 }
-#endif
 
 static int esp32_set_mac_address(struct net_device *ndev, void *data)
 {
@@ -124,6 +122,7 @@ static int esp32_hard_start_xmit(struct sk_buff *skb, struct net_device *ndev)
 
 	if (!skb->len || (skb->len > ETH_FRAME_LEN)) {
 		printk (KERN_ERR "%s: Bad len %d\n", __func__, skb->len);
+		priv->stats.tx_dropped++;
 		dev_kfree_skb(skb);
 		return -EINVAL;
 	}
@@ -134,6 +133,7 @@ static int esp32_hard_start_xmit(struct sk_buff *skb, struct net_device *ndev)
 
 		if (unlikely(!new_skb)) {
 			printk (KERN_ERR "%s: Failed to allocate SKB\n", __func__);
+			priv->stats.tx_dropped++;
 			dev_kfree_skb(skb);
 			return -ENOMEM;
 		}
@@ -248,12 +248,18 @@ static void process_tx_packet (void)
 /*		printk (KERN_ERR "H -> S: %d %d %d %d", len, payload_header->offset,*/
 /*				payload_header->len, payload_header->reserved1);*/
 
-		if (!stop_data)
+		if (!stop_data) {
 			ret = esp32_send_packet(&priv->adapter->context, skb->data, skb->len);
 
-		if (ret) {
-			printk (KERN_ERR "%s: Failed to transmit data\n", __func__);
-			/* TODO: Stop the datapath if error count exceeds max count*/
+			if (ret) {
+				printk (KERN_ERR "%s: Failed to transmit data\n", __func__);
+				priv->stats.tx_errors++;
+			} else {
+				priv->stats.tx_packets++;
+				priv->stats.tx_bytes += skb->len;
+			}
+		} else {
+			priv->stats.tx_dropped++;
 		}
 
 		dev_kfree_skb_any(skb);
@@ -303,6 +309,9 @@ static void process_rx_packet(void)
 
 			/* Forward skb to kernel */
 			netif_rx(skb);
+
+			priv->stats.rx_bytes += skb->len;
+			priv->stats.rx_packets++;
 		}
 		atomic_dec(&adapter.rx_pending);
 	}
@@ -323,6 +332,8 @@ static int esp32_get_packets(struct esp32_sdio_context *context, u8 action)
 	int ret = 0;
 	struct sk_buff *skb;
 	u8 *pos;
+	struct esp_private *priv = NULL;
+	struct esp32_payload_header *header;
 
 	data_left = len_to_read = len_from_slave = num_blocks = 0;
 
@@ -399,6 +410,15 @@ static int esp32_get_packets(struct esp32_sdio_context *context, u8 action)
 
 	/* Queue the received skb */
 	if (action == ACTION_DROP) {
+		header = (struct esp32_payload_header *) skb->data;
+
+		/* retrieve priv based on payload header contents */
+		priv = get_priv_from_payload_header(header);
+
+		if (priv) {
+			priv->stats.rx_dropped++;
+		}
+
 		dev_kfree_skb(skb);
 	} else {
 		skb_queue_tail(&adapter.rx_q, skb);
@@ -568,6 +588,7 @@ static int esp32_init_priv(struct esp_private *priv, struct net_device *dev,
 	priv->if_num = if_num;
 	priv->link_state = ESP_LINK_DOWN;
 	priv->adapter = &adapter;
+	memset(&priv->stats, 0, sizeof(priv->stats));
 
 	return 0;
 }

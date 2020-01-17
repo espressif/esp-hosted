@@ -62,6 +62,7 @@ struct esp_adapter {
 struct esp_private {
 	struct esp_adapter		*adapter;
 	struct net_device		*ndev;
+	struct net_device_stats 	stats;
 	u8				link_state;
 	u8				mac_address[6];
 	u8 				if_type;
