@@ -2,23 +2,16 @@
 #include <linux/module.h>
 #include <linux/kernel.h>
 #include <linux/delay.h>
-#include <linux/mmc/sdio.h>
-#include <linux/mmc/sdio_func.h>
-#include <linux/mmc/sdio_ids.h>
-#include <linux/mmc/card.h>
-#include <linux/mmc/host.h>
-#include "esp_sdio_decl.h"
 #include <linux/slab.h>
 #include <linux/timekeeping.h>
 #include <linux/etherdevice.h>
 #include <linux/netdevice.h>
 
 #include "esp.h"
-#include "esp_sdio_api.h"
+#include "esp_if.h"
 #ifdef CONFIG_SUPPORT_ESP_SERIAL
 #include "esp_serial.h"
 #endif
-#include <linux/kthread.h>
 
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Mangesh Malusare <mangesh.malusare@espressif.com>");
@@ -27,20 +20,8 @@ MODULE_VERSION("0.01");
 
 struct esp_adapter adapter;
 volatile u8 stop_data = 0;
-struct task_struct *monitor_thread;
 
 #define ACTION_DROP 1
-#define CHECK_SDIO_RW_ERROR(ret) do {			\
-	if (ret)						\
-	printk(KERN_ERR "%s: CMD53 read/write error at %d\n", __func__, __LINE__);	\
-} while (0);
-
-
-static const struct sdio_device_id esp32_devices[] = {
-	{ SDIO_DEVICE(ESP_VENDOR_ID, ESP_DEVICE_ID_1) },
-	{ SDIO_DEVICE(ESP_VENDOR_ID, ESP_DEVICE_ID_2) },
-	{}
-};
 
 static int esp32_open(struct net_device *ndev);
 static int esp32_stop(struct net_device *ndev);
@@ -49,7 +30,7 @@ static int esp32_set_mac_address(struct net_device *ndev, void *addr);
 static void esp32_tx_timeout(struct net_device *ndev);
 static struct net_device_stats* esp32_get_stats(struct net_device *ndev);
 static void esp32_set_rx_mode(struct net_device *ndev);
-int esp32_send_packet(struct esp32_sdio_context *context, u8 *buf, u32 size);
+int esp32_send_packet(struct esp_adapter *adapter, u8 *buf, u32 size);
 
 static const struct net_device_ops esp32_netdev_ops = {
 	.ndo_open = esp32_open,
@@ -65,6 +46,11 @@ static const struct net_device_ops esp32_netdev_ops = {
 #if 0
 u64 start_time, end_time;
 #endif
+
+struct esp_adapter * get_adapter(void)
+{
+	return &adapter;
+}
 
 static int esp32_open(struct net_device *ndev)
 {
@@ -157,37 +143,6 @@ static int esp32_hard_start_xmit(struct sk_buff *skb, struct net_device *ndev)
 	return 0;
 }
 
-static int esp32_get_len_from_slave(struct esp32_sdio_context *context, u32 *rx_size)
-{
-    u32 len, temp;
-    int ret = 0;
-
-    ret = esp32_read_reg(context, ESP_SLAVE_PACKET_LEN_REG,
-		    (u8 *) &len, sizeof(len));
-
-    if (ret)
-	    return ret;
-
-    len &= ESP_SLAVE_LEN_MASK;
-
-    if (len >= context->rx_byte_count)
-	    len = (len + ESP_RX_BYTE_MAX - context->rx_byte_count) % ESP_RX_BYTE_MAX;
-    else {
-/*	    printk (KERN_ERR "%s: Roll Over: %d %d\n", __func__, len, context->rx_byte_count);*/
-	    /* Handle a case of roll over */
-	    temp = ESP_RX_BYTE_MAX - context->rx_byte_count;
-	    len = temp + len;
-
-	    if (len > ESP_RX_BUFFER_SIZE) {
-		    printk(KERN_ERR "%s: Len from slave[%d] exceeds max [%d]\n",
-				    __func__, len, ESP_RX_BUFFER_SIZE);
-	    }
-    }
-    *rx_size = len;
-
-    return 0;
-}
-
 struct esp_private * get_priv_from_payload_header(struct esp32_payload_header *header)
 {
 	struct esp_private *priv;
@@ -211,6 +166,12 @@ struct esp_private * get_priv_from_payload_header(struct esp32_payload_header *h
 	return NULL;
 }
 
+void process_new_packet_intr(struct esp_adapter *adapter)
+{
+	if(adapter)
+		queue_work(adapter->if_rx_workqueue, &adapter->if_rx_work);
+}
+
 static void process_tx_packet (void)
 {
 	struct sk_buff *skb;
@@ -227,6 +188,12 @@ static void process_tx_packet (void)
 		/* Get the priv */
 		cb = (struct esp32_skb_cb *) skb->cb;
 		priv = cb->priv;
+
+		if (!priv) {
+			dev_kfree_skb_any(skb);
+			atomic_dec(&adapter.tx_pending);
+			continue;
+		}
 
 		len = skb->len;
 
@@ -249,7 +216,7 @@ static void process_tx_packet (void)
 /*				payload_header->len, payload_header->reserved1);*/
 
 		if (!stop_data) {
-			ret = esp32_send_packet(&priv->adapter->context, skb->data, skb->len);
+			ret = esp32_send_packet(priv->adapter, skb->data, skb->len);
 
 			if (ret) {
 				printk (KERN_ERR "%s: Failed to transmit data\n", __func__);
@@ -326,87 +293,19 @@ struct sk_buff * esp32_alloc_skb(u32 len)
 }
 
 
-static int esp32_get_packets(struct esp32_sdio_context *context, u8 action)
+static int esp32_get_packets(struct esp_adapter *adapter, u8 action)
 {
-	u32 len_from_slave, data_left, len_to_read, size, num_blocks;
-	int ret = 0;
 	struct sk_buff *skb;
-	u8 *pos;
 	struct esp_private *priv = NULL;
 	struct esp32_payload_header *header;
 
-	data_left = len_to_read = len_from_slave = num_blocks = 0;
+	if (!adapter || !adapter->if_ops || !adapter->if_ops->read)
+		return -EINVAL;
 
-	/* TODO: handle a case of multiple packets in same buffer */
-	/* Read length */
-	ret = esp32_get_len_from_slave(context, &len_from_slave);
+	skb = adapter->if_ops->read(adapter);
 
-	if (action)
-		printk (KERN_ERR "LEN FROM SLAVE: %d\n", len_from_slave);
-
-	if (ret || !len_from_slave)
-		return ret;
-
-	size = ESP_BLOCK_SIZE * 4;
-
-	if (len_from_slave > size) {
-		len_from_slave = size;
-	}
-
-	skb = esp32_alloc_skb(len_from_slave);
-
-	if (!skb) {
-		return -ENOMEM;
-	}
-
-	skb_put(skb, len_from_slave);
-	pos = skb->data;
-
-	data_left = len_from_slave;
-
-	do {
-		num_blocks = data_left/ESP_BLOCK_SIZE;
-
-#if 0
-		if (!context->rx_byte_count) {
-			start_time = ktime_get_ns();
-		}
-#endif
-
-		if (num_blocks) {
-			len_to_read = num_blocks * ESP_BLOCK_SIZE;
-			ret = esp32_read_block(context,
-					ESP_SLAVE_CMD53_END_ADDR - len_to_read,
-					pos, len_to_read);
-		} else {
-			len_to_read = data_left;
-			/* 4 byte aligned length */
-			ret = esp32_read_block(context,
-					ESP_SLAVE_CMD53_END_ADDR - len_to_read,
-					pos, (len_to_read + 3) & (~3));
-		}
-
-		if (ret) {
-			printk (KERN_ERR "%s: Failed to read data\n", __func__);
-			return ret;
-		}
-
-		data_left -= len_to_read;
-		pos += len_to_read;
-		context->rx_byte_count += len_to_read;
-		context->rx_byte_count = context->rx_byte_count % ESP_RX_BYTE_MAX;
-
-	} while (data_left);
-
-#if 0
-	if (context->rx_byte_count >= 204800) {
-		end_time = ktime_get_ns();
-		printk(KERN_ERR "---> Total bytes received: %d\n", context->rx_byte_count);
-		printk(KERN_ERR "---> In time: %llu\n", (end_time - start_time));
-	}
-
-	printk(KERN_ERR "%s RX --> %d\n", __func__, context->rx_byte_count);
-#endif
+	if (!skb)
+		return -EFAULT;
 
 	/* Queue the received skb */
 	if (action == ACTION_DROP) {
@@ -421,139 +320,19 @@ static int esp32_get_packets(struct esp32_sdio_context *context, u8 action)
 
 		dev_kfree_skb(skb);
 	} else {
-		skb_queue_tail(&adapter.rx_q, skb);
-		atomic_inc(&adapter.rx_pending);
+		skb_queue_tail(&adapter->rx_q, skb);
+		atomic_inc(&adapter->rx_pending);
 	}
 
-	return len_from_slave;
+	return skb->len;
 }
 
-static int esp32_slave_get_tx_buffer_num(struct esp32_sdio_context *context, u32 *tx_num)
+int esp32_send_packet(struct esp_adapter *adapter, u8 *buf, u32 size)
 {
-    u32 len;
-    int ret = 0;
+	if (!adapter || !adapter->if_ops || !adapter->if_ops->write)
+		return -EINVAL;
 
-    ret = esp32_read_reg(context, ESP_SLAVE_TOKEN_RDATA, (uint8_t*)&len, 4);
-
-    if (ret)
-	    return ret;
-
-    len = (len >> 16) & ESP_TX_BUFFER_MASK;
-/*    printk (KERN_ERR "%s: Buf cnt form reg %d\n", __func__, len);*/
-    len = (len + ESP_TX_BUFFER_MAX - context->tx_buffer_count) % ESP_TX_BUFFER_MAX;
-
-    *tx_num = len;
-
-    return ret;
-}
-
-int esp32_send_packet(struct esp32_sdio_context *context, u8 *buf, u32 size)
-{
-	u32 block_cnt = 0, buf_needed = 0;
-	u32 buf_available = 0;
-	int ret = 0;
-	u8 *pos = NULL;
-	u32 data_left, len_to_send, pad;
-
-	buf_needed = (size + ESP_RX_BUFFER_SIZE - 1) / ESP_RX_BUFFER_SIZE;
-
-	ret = esp32_slave_get_tx_buffer_num(context, &buf_available);
-
-/*	printk(KERN_ERR "%s: TX -> Available [%d], needed [%d]\n", __func__, buf_available, buf_needed);*/
-
-	if (buf_available < buf_needed) {
-		printk(KERN_ERR "%s: Not enough buffers available: availabale [%d], needed [%d]\n", __func__,
-				buf_available, buf_needed);
-		return -ENOMEM;
-	}
-
-	pos = buf;
-	data_left = len_to_send = 0;
-
-	data_left = size;
-	pad = ESP_BLOCK_SIZE - (data_left % ESP_BLOCK_SIZE);
-	data_left += pad;
-
-
-	do {
-		block_cnt = data_left / ESP_BLOCK_SIZE;
-#if 0
-		if (block_cnt) {
-			len_to_send = block_cnt * ESP_BLOCK_SIZE;
-			ret = esp32_write_block(context, ESP_SLAVE_CMD53_END_ADDR - len_to_send,
-					pos, len_to_send);
-		} else {
-			len_to_send = data_left;
-			ret = esp32_write_block(context, ESP_SLAVE_CMD53_END_ADDR - len_to_send,
-					pos, (len_to_send + 3) & (~3));
-		}
-#endif
-		len_to_send = data_left;
-		ret = esp32_write_block(context, ESP_SLAVE_CMD53_END_ADDR - len_to_send,
-				pos, (len_to_send + 3) & (~3));
-
-		if (ret) {
-			printk (KERN_ERR "%s: Failed to send data\n", __func__);
-			return ret;
-		}
-/*		printk (KERN_ERR "--> %d %d %d\n", block_cnt, data_left, len_to_send);*/
-
-		data_left -= len_to_send;
-		pos += len_to_send;
-	} while (data_left);
-
-	context->tx_buffer_count += buf_needed;
-	context->tx_buffer_count = context->tx_buffer_count % ESP_TX_BUFFER_MAX;
-
-	return 0;
-}
-
-static void esp32_process_interrupt(struct esp32_sdio_context *context, u32 int_status)
-{
-	if (!context) {
-		return;
-	}
-
-	if (int_status & ESP_SLAVE_RX_NEW_PACKET_INT) {
-		queue_work(adapter.if_rx_workqueue, &adapter.if_rx_work);
-	}
-
-	if (int_status & ESP_SLAVE_RX_UNDERFLOW_INT) {
-		printk(KERN_ERR "%s: Buffer underflow at Slave\n", __func__);
-	}
-
-	if (int_status & ESP_SLAVE_TX_OVERFLOW_INT) {
-		printk(KERN_ERR "%s: Buffer overflow at Slave\n", __func__);
-	}
-}
-
-static void esp32_handle_isr(struct sdio_func *func)
-{
-	struct esp32_sdio_context *context = NULL;
-	u32 int_status = 0;
-	int ret;
-
-	if (!func) {
-		return;
-	}
-
-	context = sdio_get_drvdata(func);
-
-	if (!context) {
-		return;
-	}
-
-	/* Read interrupt status register */
-	ret = esp32_read_reg(context, ESP_SLAVE_INT_ST_REG,
-			(u8 *) &int_status, sizeof(int_status));
-	CHECK_SDIO_RW_ERROR(ret);
-
-	esp32_process_interrupt(context, int_status);
-
-	/* Clear interrupt status */
-	ret = esp32_write_reg(context, ESP_SLAVE_INT_CLR_REG,
-			(u8 *) &int_status, sizeof(int_status));
-	CHECK_SDIO_RW_ERROR(ret);
+	return adapter->if_ops->write(adapter, buf, size);
 }
 
 static int insert_priv_to_adapter(struct esp_private *priv)
@@ -630,6 +409,7 @@ static int esp32_add_interface(struct esp_adapter *adapter, u8 if_type, u8 if_nu
 			NET_NAME_ENUM, ether_setup, 1, 1);
 
 	if (!ndev) {
+		printk(KERN_ERR "%s: alloc failed\n", __func__);
 		return -ENOMEM;
 	}
 
@@ -638,11 +418,13 @@ static int esp32_add_interface(struct esp_adapter *adapter, u8 if_type, u8 if_nu
 	/* Init priv */
 	ret = esp32_init_priv(priv, ndev, if_type, if_num);
 	if (ret) {
+		printk(KERN_ERR "%s: Init priv failed\n", __func__);
 		goto error_exit;
 	}
 
 	ret = esp32_init_net_dev(ndev, priv);
 	if (ret) {
+		printk(KERN_ERR "%s: Init netdev failed\n", __func__);
 		goto error_exit;
 	}
 
@@ -653,308 +435,97 @@ error_exit:
 	return ret;
 }
 
-static int init_interfaces(void)
-{
-	int ret = 0;
-
-	/* Add interface STA and AP */
-	ret = esp32_add_interface(&adapter, ESP_STA_IF, 0, "ethsta%d");
-	if (ret)
-		return ret;
-	ret = esp32_add_interface(&adapter, ESP_AP_IF, 0, "ethap%d");
-	if (ret)
-		return ret;
-	return ret;
-}
-
-static struct esp32_sdio_context * init_sdio_func(struct sdio_func *func)
-{
-	struct esp32_sdio_context *context = NULL;
-	int ret = 0;
-
-	if (!func)
-		return NULL;
-
-	/* TODO add lock for accessing context */
-	context = &adapter.context;
-
-	context->func = func;
-
-	sdio_claim_host(func);
-
-	/* Enable Function */
-	ret = sdio_enable_func(func);
-	if (ret) {
-		return NULL;
-	}
-
-	/* Register IRQ */
-	ret = sdio_claim_irq(func, esp32_handle_isr);
-	if (ret) {
-		sdio_disable_func(func);
-		return NULL;
-	}
-
-	/* Set private data */
-	sdio_set_drvdata(func, context);
-
-	context->state = ESP_CONTEXT_INIT;
-
-	sdio_release_host(func);
-
-	return context;
-}
-
-static int init_context(struct esp32_sdio_context *context)
-{
-	int ret = 0;
-	u32 val;
-
-	if (!context) {
-		return -EINVAL;
-	}
-
-	/* Initialize rx_byte_count */
-	ret = esp32_read_reg(context, ESP_SLAVE_PACKET_LEN_REG,
-			(u8 *) &val, sizeof(val));
-	if (ret)
-		return ret;
-
-	printk (KERN_ERR "%s: LEN %d\n", __func__, (val & ESP_SLAVE_LEN_MASK));
-
-	context->rx_byte_count = val & ESP_SLAVE_LEN_MASK;
-
-	/* Initialize tx_buffer_count */
-	ret = esp32_read_reg(context, ESP_SLAVE_TOKEN_RDATA, (u8 *) &val,
-			sizeof(val));
-
-	if (ret)
-		return ret;
-
-	val = ((val >> 16) & ESP_TX_BUFFER_MASK);
-
-	printk (KERN_ERR "%s: BUF_CNT %d\n", __func__, val);
-
-	if (val >= ESP_MAX_BUF_CNT)
-		context->tx_buffer_count = val - ESP_MAX_BUF_CNT;
-	else
-		context->tx_buffer_count = 0;
-
-	printk (KERN_ERR "%s: Context init %d - %d\n", __func__, context->rx_byte_count,
-			context->tx_buffer_count);
-
-	return ret;
-}
-
-static int monitor_process(void *data)
-{
-	u32 val, intr, len_reg, rdata, old_len;
-	struct esp32_sdio_context *context = (struct esp32_sdio_context *) data;
-	int ret;
-
-	while (!kthread_should_stop()) {
-		msleep(100);
-
-		val = intr = len_reg = rdata = 0;
-
-		esp32_read_reg(context, ESP_SLAVE_PACKET_LEN_REG,
-				(u8 *) &val, sizeof(val));
-
-		len_reg = val & ESP_SLAVE_LEN_MASK;
-
-		val = 0;
-		esp32_read_reg(context, ESP_SLAVE_TOKEN_RDATA, (u8 *) &val,
-				sizeof(val));
-
-		rdata = ((val >> 16) & ESP_TX_BUFFER_MASK);
-
-		esp32_read_reg(context, ESP_SLAVE_INT_ST_REG,
-				(u8 *) &intr, sizeof(intr));
-
-
-		if (len_reg > context->rx_byte_count) {
-			if (context->rx_byte_count == old_len) {
-				printk (KERN_ERR "----> [%d - %d] [%d - %d] %d\n", len_reg, context->rx_byte_count,
-						rdata, context->tx_buffer_count, intr);
-
-				printk (KERN_ERR "RX Stuck!!!\n");
-
-				ret = esp32_get_packets(&adapter.context, 1);
-#if 0
-				if (ret)
-					queue_work(adapter.rx_workqueue, &adapter.rx_work);
-#endif
-			}
-		}
-
-		old_len = context->rx_byte_count;
-	}
-
-	do_exit(0);
-	return 0;
-}
-
-static void deinit_sdio_func(struct sdio_func *func)
-{
-	sdio_claim_host(func);
-	/* Release IRQ */
-	sdio_release_irq(func);
-	/* Disable sdio function */
-	sdio_disable_func(func);
-	sdio_release_host(func);
-}
-
-static int esp32_probe(struct sdio_func *func,
-				  const struct sdio_device_id *id)
-{
-	struct esp32_sdio_context *context = NULL;
-	int ret = 0;
-	u8 data = 0;
-
-	if (func->num != 1) {
-		return -EINVAL;
-	}
-
-	context = init_sdio_func(func);
-
-	if (!context) {
-		return -ENOMEM;
-	}
-
-	data = SLAVE_RESET;
-	esp32_write_reg(context, (ESP_SLAVE_SCRATCH_REG_7), &data, sizeof(data));
-	msleep(200);
-
-	ret = init_context(context);
-	if (ret) {
-		deinit_sdio_func(func);
-		return ret;
-	}
-
-#ifdef CONFIG_SUPPORT_ESP_SERIAL
-	printk(KERN_ERR "Initialising ESP Serial support\n");
-	ret = esp_serial_init((void *) context);
-	if (ret != 0) {
-		printk(KERN_ERR "Error initialising serial interface\n");
-		return ret;
-	}
-#endif
-
-	ret = init_interfaces();
-	if (ret) {
-		deinit_sdio_func(func);
-		return ret;
-	}
-
-	context->state = ESP_CONTEXT_READY;
-	stop_data = 0;
-
-#if 0
-	monitor_thread = kthread_run(monitor_process, context, "Monitor process");
-
-	if (!monitor_thread)
-		printk (KERN_ERR "Failed to create monitor thread\n");
-#endif
-#if 1
-	msleep(200);
-	data = SLAVE_OPEN_PORT;
-	esp32_write_reg(context, (ESP_SLAVE_SCRATCH_REG_7), &data, sizeof(data));
-#endif
-	return ret;
-}
-
-static void flush_sdio(struct esp32_sdio_context *context)
-{
-	u8 data = SLAVE_CLOSE_PORT;
-	int ret = 0;
-
-	if (!context)
-		return;
-
-	esp32_write_reg(context, (ESP_SLAVE_SCRATCH_REG_7), &data, sizeof(data));
-	msleep(200);
-
-	while (1) {
-		ret = esp32_get_packets(&adapter.context, ACTION_DROP);
-		printk (KERN_ERR "Dropped packet with len %d\n", ret);
-
-		if (ret <= 0)
-			break;
-	}
-}
-
-static void flush_ring_buffers(void)
+static void flush_ring_buffers(struct esp_adapter *adapter)
 {
 	struct sk_buff *skb;
 
 	printk (KERN_INFO "%s: Flush Pending SKBs: %d %d\n", __func__,
-			atomic_read(&adapter.tx_pending),
-			atomic_read(&adapter.rx_pending));
+			atomic_read(&adapter->tx_pending),
+			atomic_read(&adapter->rx_pending));
 
-	while ((skb = skb_dequeue(&adapter.tx_q))) {
+	while ((skb = skb_dequeue(&adapter->tx_q))) {
 		dev_kfree_skb_any(skb);
-		atomic_dec(&adapter.tx_pending);
+		atomic_dec(&adapter->tx_pending);
 	}
 
-	while ((skb = skb_dequeue(&adapter.rx_q))) {
+	while ((skb = skb_dequeue(&adapter->rx_q))) {
 		dev_kfree_skb_any(skb);
-		atomic_dec(&adapter.rx_pending);
+		atomic_dec(&adapter->rx_pending);
 	}
 }
 
-static void esp32_remove_network_interfaces(void)
+static void esp32_remove_network_interfaces(struct esp_adapter *adapter)
 {
-	netif_stop_queue(adapter.priv[0]->ndev);
-	unregister_netdev(adapter.priv[0]->ndev);
-	netif_stop_queue(adapter.priv[1]->ndev);
-	unregister_netdev(adapter.priv[1]->ndev);
+	if (adapter->priv[0]->ndev) {
+		netif_stop_queue(adapter->priv[0]->ndev);
+		unregister_netdev(adapter->priv[0]->ndev);
+		free_netdev(adapter->priv[0]->ndev);
+	}
+
+	if (adapter->priv[1]->ndev) {
+		netif_stop_queue(adapter->priv[1]->ndev);
+		unregister_netdev(adapter->priv[1]->ndev);
+		free_netdev(adapter->priv[1]->ndev);
+	}
 }
 
-static void esp32_remove(struct sdio_func *func)
+int add_card(struct esp_adapter *adapter)
 {
-	struct esp32_sdio_context *context;
-	context = sdio_get_drvdata(func);
+	int ret = 0;
 
-	printk(KERN_ERR "%s -> Remove card", __func__);
+	if (!adapter) {
+		printk(KERN_ERR "%s: Invalid args\n", __func__);
+		return -EINVAL;
+	}
 
-	if (monitor_thread)
-		kthread_stop(monitor_thread);
+	stop_data = 0;
 
+	/* Add interface STA and AP */
+	ret = esp32_add_interface(adapter, ESP_STA_IF, 0, "ethsta%d");
+	if (ret) {
+		printk(KERN_ERR "%s: Failed to add STA\n", __func__);
+		return ret;
+	}
+
+	ret = esp32_add_interface(adapter, ESP_AP_IF, 0, "ethap%d");
+	if (ret) {
+		printk(KERN_ERR "%s: Failed to add AP\n", __func__);
+		esp32_remove_network_interfaces(adapter);
+	}
+
+	return ret;
+}
+
+int remove_card(struct esp_adapter *adapter)
+{
 	stop_data = 1;
 
+	if (!adapter)
+		return 0;
+
 	/* Flush workqueues */
-	if (adapter.if_rx_workqueue)
-		flush_workqueue(adapter.if_rx_workqueue);
+	if (adapter->if_rx_workqueue)
+		flush_workqueue(adapter->if_rx_workqueue);
 
-	if (adapter.rx_workqueue)
-		flush_workqueue(adapter.rx_workqueue);
+	if (adapter->rx_workqueue)
+		flush_workqueue(adapter->rx_workqueue);
 
-	if (adapter.tx_workqueue)
-		flush_workqueue(adapter.tx_workqueue);
+	if (adapter->tx_workqueue)
+		flush_workqueue(adapter->tx_workqueue);
 
-	flush_sdio(context);
+	esp32_remove_network_interfaces(adapter);
 
-	esp32_remove_network_interfaces();
+	flush_ring_buffers(adapter);
 
-	flush_ring_buffers();
+	adapter->priv[0] = NULL;
+	adapter->priv[1] = NULL;
 
-#ifdef CONFIG_SUPPORT_ESP_SERIAL
-	esp_serial_cleanup();
-#endif
-	deinit_sdio_func(func);
-	/* TODO: Free context memory and update adapter */
+	atomic_set(&adapter->tx_pending, 0);
+	atomic_set(&adapter->rx_pending, 0);
 
-	printk (KERN_ERR "%s: Context deinit %d - %d\n", __func__, context->rx_byte_count,
-			context->tx_buffer_count);
-
-	adapter.priv[0] = NULL;
-	adapter.priv[1] = NULL;
-
-	atomic_set(&adapter.tx_pending, 0);
-	atomic_set(&adapter.rx_pending, 0);
-
-	memset(context, 0, sizeof(struct esp32_sdio_context));
+	return 0;
 }
+
 
 static void esp_tx_work (struct work_struct *work)
 {
@@ -970,7 +541,7 @@ static void esp_if_rx_work (struct work_struct *work)
 {
 	int ret = 0;
 
-	ret = esp32_get_packets(&adapter.context, 0);
+	ret = esp32_get_packets(&adapter, 0);
 
 	if (ret)
 		queue_work(adapter.rx_workqueue, &adapter.rx_work);
@@ -986,17 +557,28 @@ static void esp_rx_work (struct work_struct *work)
 	process_rx_packet();
 }
 
-static int init_adapter(void)
+static void deinit_adapter(void)
 {
-	int ret = 0;
+	if (adapter.if_rx_workqueue)
+		destroy_workqueue(adapter.if_rx_workqueue);
 
+	if (adapter.rx_workqueue)
+		destroy_workqueue(adapter.rx_workqueue);
+
+	if (adapter.tx_workqueue)
+		destroy_workqueue(adapter.tx_workqueue);
+}
+
+static struct esp_adapter * init_adapter(void)
+{
 	memset(&adapter, 0, sizeof(adapter));
 
 	/* Prepare interface RX work */
 	adapter.if_rx_workqueue = create_workqueue("ESP_IF_RX_WORK_QUEUE");
 
 	if (!adapter.if_rx_workqueue) {
-		return -ENOMEM;
+		deinit_adapter();
+		return NULL;
 	}
 
 	INIT_WORK(&adapter.if_rx_work, esp_if_rx_work);
@@ -1005,7 +587,8 @@ static int init_adapter(void)
 	adapter.rx_workqueue = create_workqueue("ESP_RX_WORK_QUEUE");
 
 	if (!adapter.rx_workqueue) {
-		return -ENOMEM;
+		deinit_adapter();
+		return NULL;
 	}
 
 	INIT_WORK(&adapter.rx_work, esp_rx_work);
@@ -1014,7 +597,8 @@ static int init_adapter(void)
 	adapter.tx_workqueue = create_workqueue("ESP_TX_WORK_QUEUE");
 
 	if (!adapter.tx_workqueue) {
-		return -ENOMEM;
+		deinit_adapter();
+		return NULL;
 	}
 
 	INIT_WORK(&adapter.tx_work, esp_tx_work);
@@ -1026,43 +610,35 @@ static int init_adapter(void)
 	atomic_set(&adapter.tx_pending, 0);
 	atomic_set(&adapter.rx_pending, 0);
 
-	return ret;
+	return &adapter;
 }
 
-/* SDIO driver structure to be registered with kernel */
-static struct sdio_driver esp_sdio_driver = {
-	.name		= "esp32_sdio",
-	.id_table	= esp32_devices,
-	.probe		= esp32_probe,
-	.remove		= esp32_remove,
-};
 
 static int __init esp32_init(void)
 {
 	int ret = 0;
+	struct esp_adapter	*adapter;
 
-	/* Init driver */
-	ret = init_adapter();
+	/* Init adapter */
+	adapter = init_adapter();
 
-	if (ret)
-		return ret;
+	if (!adapter)
+		return -EFAULT;
 
-	sdio_register_driver(&esp_sdio_driver);
-	return 0;
+	/* Init transport layer */
+	ret = init_interface_layer(adapter);
+
+	if (ret != 0) {
+		deinit_adapter();
+	}
+
+	return ret;
 }
 
 static void __exit esp32_exit(void)
 {
-	if (adapter.if_rx_workqueue)
-		destroy_workqueue(adapter.if_rx_workqueue);
-
-	if (adapter.rx_workqueue)
-		destroy_workqueue(adapter.rx_workqueue);
-
-	if (adapter.tx_workqueue)
-		destroy_workqueue(adapter.tx_workqueue);
-
-	sdio_unregister_driver(&esp_sdio_driver);
+	deinit_interface_layer();
+	deinit_adapter();
 }
 
 module_init(esp32_init);

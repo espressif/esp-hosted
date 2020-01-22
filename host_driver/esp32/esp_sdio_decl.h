@@ -2,6 +2,7 @@
 #define _ESP_DECL_H_
 
 #include <linux/bits.h>
+#include "esp.h"
 
 /* Interrupt Status */
 #define ESP_SLAVE_BIT0_INT		BIT(0)
@@ -62,7 +63,6 @@
 #define ESP_DEVICE_ID_1			0x2222
 #define ESP_DEVICE_ID_2			0x3333
 
-#define ESP32_PAYLOAD_HEADER		8
 
 enum context_state {
 	ESP_CONTEXT_DISABLED = 0,
@@ -71,6 +71,7 @@ enum context_state {
 };
 
 struct esp32_sdio_context {
+	struct esp_adapter 	*adapter;
 	struct sdio_func	*func;
 	enum context_state	state;
 	u32 			rx_byte_count;

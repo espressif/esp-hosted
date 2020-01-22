@@ -4,7 +4,6 @@
 #include <linux/workqueue.h>
 #include <linux/interrupt.h>
 #include <linux/netdevice.h>
-#include "esp_sdio_decl.h"
 
 #define ESP_IF_TYPE_SDIO		1
 
@@ -24,14 +23,18 @@
 #define SLAVE_CLOSE_PORT		(1<<1)
 #define SLAVE_RESET			(1<<2)
 
+#define ESP32_PAYLOAD_HEADER		8
 struct esp_private;
+struct esp_adapter;
 
 struct esp_adapter {
 	u8				if_type;
 
-	/* Context of a transport layer */
-	/* TODO: make it a void pointer so that multiple transport layers can be supported */
-	struct esp32_sdio_context	context;
+	/* Possible types:
+	 * 	struct esp32_sdio_context */
+	void				*if_context;
+
+	struct esp_if_ops		*if_ops;
 
 	/* Private for each interface */
 	struct esp_private		*priv[ESP_MAX_INTERFACE];

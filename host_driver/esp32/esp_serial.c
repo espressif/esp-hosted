@@ -10,6 +10,7 @@
 
 #include "esp.h"
 #include "esp_rb.h"
+#include "esp_api.h"
 
 #define ESP_SERIAL_MAJOR	221
 #define ESP_SERIAL_MINOR_MAX	2
@@ -17,7 +18,6 @@
 
 //#define ESP_SERIAL_TEST
 
-extern int esp32_send_packet(struct esp32_sdio_context *context, u8 *buf, u32 size);
 
 static struct esp_serial_devs {
 	struct cdev cdev;
@@ -29,7 +29,6 @@ static struct esp_serial_devs {
 static int esp_serial_read(struct file *file, char __user *user_buffer, size_t size, loff_t *offset)
 {
 	struct esp_serial_devs *dev;
-	printk(KERN_ERR "%s\n", __func__);
        	dev = (struct esp_serial_devs *) file->private_data;
 	size = esp_rb_read_by_user(&dev->rb, user_buffer, size, file->f_flags & O_NONBLOCK);
 /*	print_hex_dump_bytes("Rx:", DUMP_PREFIX_NONE, user_buffer, size);*/
@@ -48,7 +47,6 @@ static int esp_serial_write(struct file *file, const char __user *user_buffer, s
 	int ret;
 	size_t total_len;
 
-	printk(KERN_ERR "%s\n", __func__);
        	dev = (struct esp_serial_devs *) file->private_data;
 	total_len = size + sizeof(struct esp32_payload_header);
 
@@ -147,7 +145,6 @@ int esp_serial_init(void *priv)
 	int err;
 	int i;
 
-	printk(KERN_ERR "%s\n", __func__);
 	err = register_chrdev_region(MKDEV(ESP_SERIAL_MAJOR, 0), ESP_SERIAL_MINOR_MAX, "esp_serial_driver");
 	if (err) {
 		printk(KERN_ERR "Error registering chrdev region %d\n", err);
@@ -171,7 +168,6 @@ int esp_serial_init(void *priv)
 void esp_serial_cleanup(void)
 {
 	int i;
-	printk(KERN_ERR "%s\n", __func__);
 	for (i = 0; i < ESP_SERIAL_MINOR_MAX; i++) {
 		cdev_del(&devs[i].cdev);
 	}

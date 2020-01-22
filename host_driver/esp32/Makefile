@@ -8,7 +8,7 @@ CR_C := arm-linux-gnueabihf-
 PWD := $(shell pwd)
 obj-m := esp32.o
 
-esp32-y := esp32_sdio.o main.o
+esp32-y := esp_sdio.o esp_sdio_api.o main.o
 ifeq ($(CONFIG_SUPPORT_ESP_SERIAL), y)
 esp32-y += esp_serial.o esp_rb.o
 endif
