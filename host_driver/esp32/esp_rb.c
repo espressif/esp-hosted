@@ -31,7 +31,7 @@ ssize_t esp_rb_read_by_user(esp_rb_t *rb, const char __user *buf, size_t sz, int
 	if (down_interruptible(&rb->sem)) {
 		return -ERESTARTSYS; /* Signal interruption */
 	}
-	
+
 	while(rb->rp == rb->wp) {
 		up(&rb->sem);
 		if (block == 0) {
@@ -77,7 +77,7 @@ ssize_t esp_rb_write_by_kernel(esp_rb_t *rb, const char *buf, size_t sz)
 	if (down_interruptible(&rb->sem)) {
 		return -ERESTARTSYS;
 	}
-	
+
 	if (get_free_space(rb) == 0) {
 		up(&rb->sem);
 		printk(KERN_ERR "Ringbuffer full, no space to write\n");

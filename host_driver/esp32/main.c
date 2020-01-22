@@ -1,3 +1,22 @@
+/*
+ * Espressif Systems Wireless LAN device driver
+ *
+ * Copyright (C) 2015-2020 Espressif Systems (Shanghai) PTE LTD
+ *
+ * This software file (the "File") is distributed by Espressif Systems (Shanghai)
+ * PTE LTD under the terms of the GNU General Public License Version 2, June 1991
+ * (the "License").  You may use, redistribute and/or modify this File in
+ * accordance with the terms and conditions of the License, a copy of which
+ * is available by writing to the Free Software Foundation, Inc.,
+ * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA or on the
+ * worldwide web at http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
+ *
+ * THE FILE IS DISTRIBUTED AS-IS, WITHOUT WARRANTY OF ANY KIND, AND THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE
+ * ARE EXPRESSLY DISCLAIMED.  The License provides additional details about
+ * this warranty disclaimer.
+ */
+
 #include <linux/init.h>
 #include <linux/module.h>
 #include <linux/kernel.h>
@@ -14,8 +33,9 @@
 #endif
 
 MODULE_LICENSE("GPL");
+MODULE_AUTHOR("Amey Inamdar <amey.inamdar@espressif.com>");
 MODULE_AUTHOR("Mangesh Malusare <mangesh.malusare@espressif.com>");
-MODULE_DESCRIPTION("SDIO driver for ESP32 module");
+MODULE_DESCRIPTION("WLAN device driver for ESP32 module");
 MODULE_VERSION("0.01");
 
 struct esp_adapter adapter;
@@ -75,8 +95,6 @@ static int esp32_set_mac_address(struct net_device *ndev, void *data)
 	struct esp_private *priv = netdev_priv(ndev);
 	struct sockaddr *mac_addr = data;
 
-	printk (KERN_ERR "%s\n", __func__);
-
 	if (!priv)
 		return -EINVAL;
 
@@ -87,12 +105,10 @@ static int esp32_set_mac_address(struct net_device *ndev, void *data)
 
 static void esp32_tx_timeout(struct net_device *ndev)
 {
-	printk (KERN_ERR "%s\n", __func__);
 }
 
 static void esp32_set_rx_mode(struct net_device *ndev)
 {
-/*	printk (KERN_ERR "%s\n", __func__);*/
 }
 
 static int esp32_hard_start_xmit(struct sk_buff *skb, struct net_device *ndev)
@@ -135,7 +151,6 @@ static int esp32_hard_start_xmit(struct sk_buff *skb, struct net_device *ndev)
 
 /*	print_hex_dump_bytes("Tx:", DUMP_PREFIX_NONE, skb->data, 8);*/
 
-	/* TODO: add counters and check pending packets.. stop the queue as required */
 	skb_queue_tail(&adapter.tx_q, skb);
 	atomic_inc(&adapter.tx_pending);
 	queue_work(adapter.tx_workqueue, &adapter.tx_work);

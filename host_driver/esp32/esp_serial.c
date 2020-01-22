@@ -1,3 +1,22 @@
+/*
+ * Espressif Systems Wireless LAN device driver
+ *
+ * Copyright (C) 2015-2020 Espressif Systems (Shanghai) PTE LTD
+ *
+ * This software file (the "File") is distributed by Espressif Systems (Shanghai)
+ * PTE LTD under the terms of the GNU General Public License Version 2, June 1991
+ * (the "License").  You may use, redistribute and/or modify this File in
+ * accordance with the terms and conditions of the License, a copy of which
+ * is available by writing to the Free Software Foundation, Inc.,
+ * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA or on the
+ * worldwide web at http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
+ *
+ * THE FILE IS DISTRIBUTED AS-IS, WITHOUT WARRANTY OF ANY KIND, AND THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE
+ * ARE EXPRESSLY DISCLAIMED.  The License provides additional details about
+ * this warranty disclaimer.
+ */
+
 #include <linux/init.h>
 #include <linux/module.h>
 #include <linux/kernel.h>
@@ -62,7 +81,7 @@ static int esp_serial_write(struct file *file, const char __user *user_buffer, s
 	hdr->if_num = dev->dev_index;
 	hdr->len = size;
 	hdr->offset = sizeof(struct esp32_payload_header);
-	
+
 	ret = copy_from_user(buf + hdr->offset, user_buffer, size);
 	if (ret != 0) {
 		kfree(buf);
@@ -76,14 +95,14 @@ static int esp_serial_write(struct file *file, const char __user *user_buffer, s
 		printk (KERN_ERR "%s: Failed to transmit data\n", __func__);
 		/* TODO: Stop the datapath if error count exceeds max count*/
 	}
-	
+
 	kfree(buf);
 	return size;
 }
 
 static long esp_serial_ioctl (struct file *file, unsigned int cmd, unsigned long arg)
 {
-	printk(KERN_ERR "%s IOCTL %d\n", __func__, cmd);
+	printk(KERN_INFO "%s IOCTL %d\n", __func__, cmd);
 	return 0;
 }
 
@@ -93,7 +112,7 @@ static int esp_serial_open(struct inode *inode, struct file *file)
 
 	devs = container_of(inode->i_cdev, struct esp_serial_devs, cdev);
 	file->private_data = devs;
-	printk(KERN_ERR "%s on device %d\n", __func__, devs->dev_index);
+	printk(KERN_INFO "%s on device %d\n", __func__, devs->dev_index);
 
 	return 0;
 }
@@ -111,7 +130,7 @@ int esp_serial_data_received(int dev_index, const char *data, size_t len)
 	int ret;
 	size_t ret_len = 0;
 
-	while (ret_len != len) { 
+	while (ret_len != len) {
 		ret = esp_rb_write_by_kernel(&devs[dev_index].rb, data, len);
 		ret_len += ret;
 		if (ret == 0) {
@@ -151,7 +170,7 @@ int esp_serial_init(void *priv)
 		return -1;
 	}
 
-	for (i = 0; i < ESP_SERIAL_MINOR_MAX; i++) { 
+	for (i = 0; i < ESP_SERIAL_MINOR_MAX; i++) {
 		cdev_init(&devs[i].cdev, &esp_serial_fops);
 		devs[i].dev_index = i;
 		cdev_add(&devs[i].cdev, MKDEV(ESP_SERIAL_MAJOR, i), 1);
@@ -159,10 +178,10 @@ int esp_serial_init(void *priv)
 		devs[i].priv = priv;
 	}
 
-#ifdef ESP_SERIAL_TEST	
+#ifdef ESP_SERIAL_TEST
 	kthread_run(thread_fn, NULL, "esptest-thread");
 #endif
-	return 0;	
+	return 0;
 }
 
 void esp_serial_cleanup(void)

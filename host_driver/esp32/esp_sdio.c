@@ -1,3 +1,22 @@
+/*
+ * Espressif Systems Wireless LAN device driver
+ *
+ * Copyright (C) 2015-2020 Espressif Systems (Shanghai) PTE LTD
+ *
+ * This software file (the "File") is distributed by Espressif Systems (Shanghai)
+ * PTE LTD under the terms of the GNU General Public License Version 2, June 1991
+ * (the "License").  You may use, redistribute and/or modify this File in
+ * accordance with the terms and conditions of the License, a copy of which
+ * is available by writing to the Free Software Foundation, Inc.,
+ * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA or on the
+ * worldwide web at http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
+ *
+ * THE FILE IS DISTRIBUTED AS-IS, WITHOUT WARRANTY OF ANY KIND, AND THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE
+ * ARE EXPRESSLY DISCLAIMED.  The License provides additional details about
+ * this warranty disclaimer.
+ */
+
 #include <linux/mmc/sdio.h>
 #include <linux/mmc/sdio_func.h>
 #include <linux/mmc/sdio_ids.h>
@@ -38,14 +57,6 @@ static void esp32_process_interrupt(struct esp32_sdio_context *context, u32 int_
 
 	if (int_status & ESP_SLAVE_RX_NEW_PACKET_INT) {
 		process_new_packet_intr(context->adapter);
-	}
-
-	if (int_status & ESP_SLAVE_RX_UNDERFLOW_INT) {
-		printk(KERN_ERR "%s: Buffer underflow at Slave\n", __func__);
-	}
-
-	if (int_status & ESP_SLAVE_TX_OVERFLOW_INT) {
-		printk(KERN_ERR "%s: Buffer overflow at Slave\n", __func__);
 	}
 }
 
@@ -108,7 +119,6 @@ static int esp32_slave_get_tx_buffer_num(struct esp32_sdio_context *context, u32
 	    return ret;
 
     len = (len >> 16) & ESP_TX_BUFFER_MASK;
-/*    printk (KERN_ERR "%s: Buf cnt form reg %d\n", __func__, len);*/
     len = (len + ESP_TX_BUFFER_MAX - context->tx_buffer_count) % ESP_TX_BUFFER_MAX;
 
     *tx_num = len;
@@ -132,13 +142,12 @@ static int esp32_get_len_from_slave(struct esp32_sdio_context *context, u32 *rx_
     if (len >= context->rx_byte_count)
 	    len = (len + ESP_RX_BYTE_MAX - context->rx_byte_count) % ESP_RX_BYTE_MAX;
     else {
-/*	    printk (KERN_ERR "%s: Roll Over: %d %d\n", __func__, len, context->rx_byte_count);*/
 	    /* Handle a case of roll over */
 	    temp = ESP_RX_BYTE_MAX - context->rx_byte_count;
 	    len = temp + len;
 
 	    if (len > ESP_RX_BUFFER_SIZE) {
-		    printk(KERN_ERR "%s: Len from slave[%d] exceeds max [%d]\n",
+		    printk(KERN_INFO "%s: Len from slave[%d] exceeds max [%d]\n",
 				    __func__, len, ESP_RX_BUFFER_SIZE);
 	    }
     }
@@ -163,7 +172,7 @@ static void flush_sdio(struct esp32_sdio_context *context)
 		}
 
 		if (skb->len)
-			printk (KERN_ERR "%s: Flushed %d bytes\n", __func__, skb->len);
+			printk (KERN_INFO "%s: Flushed %d bytes\n", __func__, skb->len);
 		dev_kfree_skb(skb);
 	}
 }
@@ -173,7 +182,7 @@ static void esp32_remove(struct sdio_func *func)
 	struct esp32_sdio_context *context;
 	context = sdio_get_drvdata(func);
 
-	printk(KERN_ERR "%s -> Remove card", __func__);
+	printk(KERN_INFO "%s -> Remove card", __func__);
 
 #ifdef CONFIG_SUPPORT_ESP_SERIAL
 	esp_serial_cleanup();
@@ -196,7 +205,7 @@ static void esp32_remove(struct sdio_func *func)
 	deinit_sdio_func(func);
 	/* TODO: Free context memory and update adapter */
 
-	printk (KERN_ERR "%s: Context deinit %d - %d\n", __func__, context->rx_byte_count,
+	printk (KERN_INFO "%s: Context deinit %d - %d\n", __func__, context->rx_byte_count,
 			context->tx_buffer_count);
 
 }
@@ -261,7 +270,7 @@ static struct sk_buff * read_packet(struct esp_adapter *adapter)
 	struct esp32_sdio_context *context;
 
 	if (!adapter || !adapter->if_context) {
-		printk (KERN_ERR "%s: INVALID\n", __func__);
+		printk (KERN_ERR "%s: INVALID args\n", __func__);
 		return NULL;
 	}
 
@@ -401,7 +410,6 @@ static struct esp32_sdio_context * init_sdio_func(struct sdio_func *func)
 	if (!func)
 		return NULL;
 
-	/* TODO add lock for accessing context */
 	context = &sdio_context;
 
 	context->func = func;
@@ -431,35 +439,7 @@ static struct esp32_sdio_context * init_sdio_func(struct sdio_func *func)
 	return context;
 }
 
-#if 0
-int deinit_context(struct esp_adapter *adapter)
-{
-	struct esp32_sdio_context *context;
-	u8 data = SLAVE_CLOSE_PORT;
-	struct sk_buff *skb;
 
-	if (!adapter || !adapter->if_context)
-		return -EINVAL;
-
-	context = adapter->if_context;
-
-	esp32_write_reg(context, (ESP_SLAVE_SCRATCH_REG_7), &data, sizeof(data));
-	msleep(200);
-
-	while (1) {
-		skb = read_packet(adapter);
-
-		if (!skb)
-			break;
-
-		dev_kfree_skb(skb);
-	}
-
-	return 0;
-}
-#endif
-
-#if 1
 static int monitor_process(void *data)
 {
 	u32 val, intr, len_reg, rdata, old_len;
@@ -487,17 +467,11 @@ static int monitor_process(void *data)
 
 		if (len_reg > context->rx_byte_count) {
 			if (context->rx_byte_count == old_len) {
-				printk (KERN_ERR "----> [%d - %d] [%d - %d] %d\n", len_reg, context->rx_byte_count,
+				printk (KERN_INFO "Monitor thread ----> [%d - %d] [%d - %d] %d\n", len_reg, context->rx_byte_count,
 						rdata, context->tx_buffer_count, intr);
 
-/*				printk (KERN_ERR "RX Stuck!!!\n");*/
 				flush_sdio(context);
 
-#if 0
-				ret = esp32_get_packets(&adapter, 1);
-				if (ret)
-					queue_work(adapter.rx_workqueue, &adapter.rx_work);
-#endif
 			}
 		}
 
@@ -507,7 +481,7 @@ static int monitor_process(void *data)
 	do_exit(0);
 	return 0;
 }
-#endif
+
 static int esp32_probe(struct sdio_func *func,
 				  const struct sdio_device_id *id)
 {
@@ -534,7 +508,7 @@ static int esp32_probe(struct sdio_func *func,
 	}
 
 #ifdef CONFIG_SUPPORT_ESP_SERIAL
-	printk(KERN_ERR "Initialising ESP Serial support\n");
+	printk(KERN_INFO "Initialising ESP Serial support\n");
 	ret = esp_serial_init((void *) context->adapter);
 	if (ret != 0) {
 		esp32_remove(func);
@@ -553,17 +527,16 @@ static int esp32_probe(struct sdio_func *func,
 
 	context->state = ESP_CONTEXT_READY;
 
-#if 1
 	monitor_thread = kthread_run(monitor_process, context, "Monitor process");
 
 	if (!monitor_thread)
 		printk (KERN_ERR "Failed to create monitor thread\n");
-#endif
+
 	printk(KERN_INFO "%s: ESP network device detected\n", __func__);
-#if 1
+
 	msleep(200);
 	generate_slave_intr(context, SLAVE_OPEN_PORT);
-#endif
+
 	return ret;
 }
 
