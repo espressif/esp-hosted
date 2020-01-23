@@ -60,7 +60,7 @@ TBD
 ## How to Run scripts on Raspberry-Pi(rpi)
 There is `esp_at` folder in which "AT commands" python library is present. User can make use of python functions to get access of wifi functionalities of ESP32.
 
-first run `./rpi_init.sh` to compile and insert ESP32 host driver on rpi. This script also creates /dev/esps0 which is used as WLAN control interface.
+first run `./rpi_init.sh` to compile and insert ESP32 host driver on rpi. This script also creates `/dev/esps0` which is used as WLAN control interface.
 
 There are three python script for station connect to AP, station disconnect from AP and softAP configuration.
 
@@ -73,12 +73,16 @@ Note: This script should run in bash
 ex.
 python3 station_connect.py 'xyz' 'xyz123456' '0'
 ```
-2. station_disconnect.py is a python script to disconnect ESP32 station from AP.
+2. `station_disconnect.py` is a python script to disconnect ESP32 station from AP.
 
 ```
 python3 station_disconnect.py
 ```
-3. softap_config.py is a python script for configure ESP32 softAP mode. User should provide parameters like ssid, password(password length should be 8~64 bytes ASCII), channel ID (It can be any number between 1 to 11), encryption method (0 : OPEN, 2: WPA_PSK, 3:WPA2_PSK, 4: WPA_WPA2_PSK), max connection count( number of Stations to which ESP32 SoftAP can be connected, within the range of [1, 10]) and ssid hidden (it can set to 1 if softAP shouldnt broadcast its ssid else 0). max connection count and ssid hidden parameters are optional user can set this filed to 0.
+3. `softap_config.py` is a python script for configure ESP32 `softAP mode`. User should provide parameters like ssid, password(password length should be 8~64 bytes ASCII), channel ID (It can be any number between 1 to 11), encryption method (0 : OPEN, 2: WPA_PSK, 3:WPA2_PSK, 4: WPA_WPA2_PSK), max connection count( number of Stations to which ESP32 SoftAP can be connected, within the range of [1, 10]) and ssid hidden (it can set to 1 if softAP shouldnt broadcast its ssid else 0). max connection count and ssid hidden parameters are optional user can set this filed to 0.
+---
+Note: This script should run in bash
+
+---
 
 ```
 ex. python3 softap_config.py 'xyz' 'xyz123456' 1 3 4 0

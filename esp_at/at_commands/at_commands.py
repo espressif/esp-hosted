@@ -36,7 +36,7 @@ def check_others(string,sub_string):
     #print(x)
     if (x == -1):
         return 0
-    else: 
+    else:
         return 1
 
 def check(string, sub_string):
@@ -50,7 +50,7 @@ def check(string, sub_string):
     x = ' '.join([str(elem) for elem in x])
     #print(x)
     if ('OK' == sub_string):
-        ret = check_ok(x) 
+        ret = check_ok(x)
         return ret
     else:
         ret = check_others(x,sub_string)
@@ -320,7 +320,7 @@ def wifi_get_ap_config():
 #user must send ssid, pwd, bssid of AP // bssid needed
 def wifi_set_ap_config(ssid,pwd,bssid):
     if (str(bssid) != '0'):
-    	command = 'AT+CWJAP='+'"'+str(ssid)+'"'+','+'"'+str(pwd)+'"'+','+'"'+str(bssid)+'"'
+        command = 'AT+CWJAP='+'"'+str(ssid)+'"'+','+'"'+str(pwd)+'"'+','+'"'+str(bssid)+'"'
     else :
         command = 'AT+CWJAP='+'"'+str(ssid)+'"'+','+'"'+str(pwd)+'"'
     #print(command)
@@ -347,8 +347,7 @@ def wifi_get_ap_list():
         else:
             return 'OK'
     else:
-        return failure 
-   
+        return failure
 
 # get a query from specific ap
 # bssid is mandatory parameter while mac_addr,channel are optional
@@ -486,7 +485,7 @@ def get_ap_mac():
             return 'OK'
     else:
         return failure
-    
+
 #get mac address of station
 def get_sta_mac():
     command = 'AT+CWSTAMAC?'
@@ -509,4 +508,3 @@ def get_sta_mac():
             return 'OK'
     else:
         return failure
-    

@@ -73,25 +73,24 @@ if (flag == 'failure'):
 if (flag == 'success'):
     command = 'sudo ifconfig ethsta0 down'
     os.system(command)
-    print(command)    
-    
+    print(command)
+
     command = 'sudo ifconfig ethsta0 hw ether '+str(sta_mac)
     os.system(command)
-    print(command)    
-    
+    print(command)
+
     command = 'ifconfig ethsta0 up'
     os.system(command)
     print(command)
-    
+
     time.sleep(5)
 
     command = 'dhclient ethsta0 -r'
     os.system(command)
     print(command)
-    
+
     command = 'dhclient ethsta0 -v'
     os.system(command)
     print(command)
-    
-    print("Success in setting AP config")
 
+    print("Success in setting AP config")
