@@ -1,3 +1,10 @@
+/*
+ * The citation should list that the code comes from the book "Linux Device
+ * Drivers" by Alessandro Rubini and Jonathan Corbet, published
+ * by O'Reilly & Associates.No warranty is attached;
+ *
+ * */
+
 #ifndef _ESP_RB_H_
 #define _ESP_RB_H_
 

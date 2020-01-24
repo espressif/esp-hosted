@@ -1,3 +1,10 @@
+/*
+ * The citation should list that the code comes from the book "Linux Device
+ * Drivers" by Alessandro Rubini and Jonathan Corbet, published
+ * by O'Reilly & Associates.No warranty is attached;
+ *
+ * */
+
 #include <linux/kernel.h>
 #include <linux/errno.h>
 #include <linux/sched.h>
