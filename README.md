@@ -27,6 +27,14 @@ We recommend full version Raspbian install on Raspberry-Pi to ensure easy driver
 $ sudo apt update
 $ sudo apt-get install raspberrypi-kernel-headers
 ```
+Verify that kernel headers are installed properly by running following command. Failure of this command indicates that kernel headers are not installed. In such case, upgrade/downgrade kernel and reinstall kernel headers.
+```sh
+$ ls /lib/modules/$(uname -r)/build
+```
+Python is required to run utility scripts. Please install it as:
+```sh
+$ sudo apt-get install python3
+```
 By default, the SDIO pins of Raspberry-pi are not configured and are internally used for built-in Wi-Fi interface. Please enable SDIO pins by appending following line to _/boot/config.txt_ file
 ```
 dtoverlay=sdio,poll_once=off
@@ -152,3 +160,12 @@ ex. python3 softap_config.py 'xyz' 'xyz123456' 1 3 4 0
 Note: To start data connection, user needs to setup a DHCP server on rpi or set static IP address for AP interface i.e. ethap0
 
 ---
+
+# Open air throughput test results
+Following are the test results conducted in open air.
+```
+UDP Tx: 16.4 Mbps
+UDP Rx: 16.8 Mbps
+TCP Tx: 14 Mbps
+TCP Rx: 12 Mbps
+```
