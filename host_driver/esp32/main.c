@@ -249,53 +249,50 @@ static void process_tx_packet (void)
 	}
 }
 
-static void process_rx_packet(void)
+static void process_rx_packet(struct sk_buff *skb)
 {
-	struct sk_buff *skb;
 	struct esp_private *priv;
 	struct esp32_payload_header *payload_header;
 
-	/* Process all SKB's in the queue */
-	while ((skb = skb_dequeue(&adapter.rx_q))) {
+	if (!skb)
+		return;
 
-		/* get the paload header */
-		payload_header = (struct esp32_payload_header *) skb->data;
-/*		print_hex_dump_bytes("Rx:", DUMP_PREFIX_NONE, (skb->data + 8), 32);*/
+	/* get the paload header */
+	payload_header = (struct esp32_payload_header *) skb->data;
+	/*		print_hex_dump_bytes("Rx:", DUMP_PREFIX_NONE, (skb->data + 8), 32);*/
 
-		if (payload_header->if_type == ESP_IF_SERIAL) {
-			print_hex_dump_bytes("Rx:", DUMP_PREFIX_NONE, (skb->data + 8), payload_header->len);
+	if (payload_header->if_type == ESP_IF_SERIAL) {
+		print_hex_dump_bytes("Rx:", DUMP_PREFIX_NONE, (skb->data + 8), payload_header->len);
 #ifdef CONFIG_SUPPORT_ESP_SERIAL
-			esp_serial_data_received(payload_header->if_num, skb->data + 8, payload_header->len);
+		esp_serial_data_received(payload_header->if_num, skb->data + 8, payload_header->len);
 #else
-			printk(KERN_ERR "Dropping unsupported serial frame\n");
+		printk(KERN_ERR "Dropping unsupported serial frame\n");
 #endif
+		dev_kfree_skb_any(skb);
+	} else if (payload_header->if_type == ESP_STA_IF || payload_header->if_type == ESP_AP_IF) {
+		/* chop off the header from skb */
+		skb_pull(skb, payload_header->offset);
+
+		/* retrieve priv based on payload header contents */
+		priv = get_priv_from_payload_header(payload_header);
+
+		if (!priv) {
+			printk (KERN_ERR "%s: empty priv\n", __func__);
 			dev_kfree_skb_any(skb);
-		} else if (payload_header->if_type == ESP_STA_IF || payload_header->if_type == ESP_AP_IF) {
-			/* chop off the header from skb */
-			skb_pull(skb, payload_header->offset);
-
-			/* retrieve priv based on payload header contents */
-			priv = get_priv_from_payload_header(payload_header);
-
-			if (!priv) {
-				printk (KERN_ERR "%s: empty priv\n", __func__);
-				dev_kfree_skb_any(skb);
-				atomic_dec(&adapter.rx_pending);
-				continue;
-			}
-
-			skb->dev = priv->ndev;
-			skb->protocol = eth_type_trans(skb, priv->ndev);
-			skb->ip_summed = CHECKSUM_NONE;
-			/*		print_hex_dump_bytes("Rx:", DUMP_PREFIX_NONE, skb->data, 8);*/
-
-			/* Forward skb to kernel */
-			netif_rx(skb);
-
-			priv->stats.rx_bytes += skb->len;
-			priv->stats.rx_packets++;
+/*			atomic_dec(&adapter.rx_pending);*/
+			return;
 		}
-		atomic_dec(&adapter.rx_pending);
+
+		skb->dev = priv->ndev;
+		skb->protocol = eth_type_trans(skb, priv->ndev);
+		skb->ip_summed = CHECKSUM_NONE;
+		/*		print_hex_dump_bytes("Rx:", DUMP_PREFIX_NONE, skb->data, 8);*/
+
+		/* Forward skb to kernel */
+		netif_rx(skb);
+
+		priv->stats.rx_bytes += skb->len;
+		priv->stats.rx_packets++;
 	}
 }
 
@@ -308,11 +305,9 @@ struct sk_buff * esp32_alloc_skb(u32 len)
 }
 
 
-static int esp32_get_packets(struct esp_adapter *adapter, u8 action)
+static int esp32_get_packets(struct esp_adapter *adapter)
 {
 	struct sk_buff *skb;
-	struct esp_private *priv = NULL;
-	struct esp32_payload_header *header;
 
 	if (!adapter || !adapter->if_ops || !adapter->if_ops->read)
 		return -EINVAL;
@@ -322,24 +317,9 @@ static int esp32_get_packets(struct esp_adapter *adapter, u8 action)
 	if (!skb)
 		return -EFAULT;
 
-	/* Queue the received skb */
-	if (action == ACTION_DROP) {
-		header = (struct esp32_payload_header *) skb->data;
+	process_rx_packet(skb);
 
-		/* retrieve priv based on payload header contents */
-		priv = get_priv_from_payload_header(header);
-
-		if (priv) {
-			priv->stats.rx_dropped++;
-		}
-
-		dev_kfree_skb(skb);
-	} else {
-		skb_queue_tail(&adapter->rx_q, skb);
-		atomic_inc(&adapter->rx_pending);
-	}
-
-	return skb->len;
+	return 0;
 }
 
 int esp32_send_packet(struct esp_adapter *adapter, u8 *buf, u32 size)
@@ -522,9 +502,6 @@ int remove_card(struct esp_adapter *adapter)
 	if (adapter->if_rx_workqueue)
 		flush_workqueue(adapter->if_rx_workqueue);
 
-	if (adapter->rx_workqueue)
-		flush_workqueue(adapter->rx_workqueue);
-
 	if (adapter->tx_workqueue)
 		flush_workqueue(adapter->tx_workqueue);
 
@@ -544,41 +521,19 @@ int remove_card(struct esp_adapter *adapter)
 
 static void esp_tx_work (struct work_struct *work)
 {
-#if 0
-	if (adapter->context.state != READY)
-		return;
-#endif
-
 	process_tx_packet();
 }
 
 static void esp_if_rx_work (struct work_struct *work)
 {
-	int ret = 0;
-
-	ret = esp32_get_packets(&adapter, 0);
-
-	if (ret)
-		queue_work(adapter.rx_workqueue, &adapter.rx_work);
-}
-
-static void esp_rx_work (struct work_struct *work)
-{
-#if 0
-	if (adapter->context.state != READY)
-		return;
-#endif
-
-	process_rx_packet();
+	/* read inbound packet and forward it to network/serial interface */
+	esp32_get_packets(&adapter);
 }
 
 static void deinit_adapter(void)
 {
 	if (adapter.if_rx_workqueue)
 		destroy_workqueue(adapter.if_rx_workqueue);
-
-	if (adapter.rx_workqueue)
-		destroy_workqueue(adapter.rx_workqueue);
 
 	if (adapter.tx_workqueue)
 		destroy_workqueue(adapter.tx_workqueue);
@@ -597,16 +552,6 @@ static struct esp_adapter * init_adapter(void)
 	}
 
 	INIT_WORK(&adapter.if_rx_work, esp_if_rx_work);
-
-	/* Prepare RX work */
-	adapter.rx_workqueue = create_workqueue("ESP_RX_WORK_QUEUE");
-
-	if (!adapter.rx_workqueue) {
-		deinit_adapter();
-		return NULL;
-	}
-
-	INIT_WORK(&adapter.rx_work, esp_rx_work);
 
 	/* Prepare TX work */
 	adapter.tx_workqueue = create_workqueue("ESP_TX_WORK_QUEUE");

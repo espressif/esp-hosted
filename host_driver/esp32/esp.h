@@ -58,10 +58,6 @@ struct esp_adapter {
 	/* Private for each interface */
 	struct esp_private		*priv[ESP_MAX_INTERFACE];
 
-	/* Process RX work */
-	struct workqueue_struct 	*rx_workqueue;
-	struct work_struct		rx_work;
-
 	struct workqueue_struct 	*if_rx_workqueue;
 	struct work_struct		if_rx_work;
 

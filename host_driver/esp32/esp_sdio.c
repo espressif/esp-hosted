@@ -17,6 +17,7 @@
  * this warranty disclaimer.
  */
 
+#include <linux/mutex.h>
 #include <linux/mmc/sdio.h>
 #include <linux/mmc/sdio_func.h>
 #include <linux/mmc/sdio_ids.h>
@@ -48,6 +49,8 @@ static const struct sdio_device_id esp32_devices[] = {
 	{ SDIO_DEVICE(ESP_VENDOR_ID, ESP_DEVICE_ID_2) },
 	{}
 };
+
+DEFINE_MUTEX(read_lock);
 
 static void esp32_process_interrupt(struct esp32_sdio_context *context, u32 int_status)
 {
@@ -278,6 +281,8 @@ static struct sk_buff * read_packet(struct esp_adapter *adapter)
 
 	data_left = len_to_read = len_from_slave = num_blocks = 0;
 
+	mutex_lock(&read_lock);
+
 	/* TODO: handle a case of multiple packets in same buffer */
 	/* Read length */
 	ret = esp32_get_len_from_slave(context, &len_from_slave);
@@ -340,6 +345,8 @@ static struct sk_buff * read_packet(struct esp_adapter *adapter)
 		context->rx_byte_count = context->rx_byte_count % ESP_RX_BYTE_MAX;
 
 	} while (data_left > 0);
+
+	mutex_unlock(&read_lock);
 
 	return skb;
 }
@@ -444,6 +451,7 @@ static int monitor_process(void *data)
 {
 	u32 val, intr, len_reg, rdata, old_len;
 	struct esp32_sdio_context *context = (struct esp32_sdio_context *) data;
+	struct sk_buff *skb;
 
 	while (!kthread_should_stop()) {
 		msleep(1000);
@@ -470,8 +478,16 @@ static int monitor_process(void *data)
 				printk (KERN_INFO "Monitor thread ----> [%d - %d] [%d - %d] %d\n", len_reg, context->rx_byte_count,
 						rdata, context->tx_buffer_count, intr);
 
-				flush_sdio(context);
+				skb = read_packet(context->adapter);
 
+				if (!skb)
+					continue;
+
+				if (skb->len)
+					printk (KERN_INFO "%s: Flushed %d bytes\n", __func__, skb->len);
+
+				/* drop the packet */
+				dev_kfree_skb(skb);
 			}
 		}
 
