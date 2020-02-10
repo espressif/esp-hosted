@@ -19,6 +19,10 @@ Please connect ESP32 board to Raspberry-Pi with jumper cables as mentioned below
 
 RPI pinout can be found [here!](https://pinout.xyz/pinout/sdio)
 
+Setup image is here.
+
+![alt text](setup_image/rpi_esp_setup.jpeg "setup of RPI as host and ESP32 as slave")
+
 Power ESP32 and Raspberry Pi separately with a power supply that provide sufficient power. ESP32 can be powered through PC using micro-USB cable.
 
 ## Raspberry-Pi Software Setup
@@ -42,7 +46,7 @@ dtoverlay=sdio,poll_once=off
 Please reboot Raspberry-Pi after changing this file.
 
 ## ESP32 Setup
-On ESP32 either use pre-provided hosted mode firmware binary or if you have source, compile the app against ESP-IDF 3.3 release by running command as `make SILENCE=0 ESP_AT_PROJECT_PLATFORM=esp32_at_core`. Program the WROVER-KIT using standard flash programming procedure with
+On ESP32 either use pre-provided hosted mode firmware binary or if you have source, compile the app against ESP-IDF 3.3 release by running command as `make SILENCE=0 ESP_AT_PROJECT_PLATFORM=esp32_at_core` in `slave_driver/sdio_slave_test` directory. Program the WROVER-KIT using standard flash programming procedure with
 ```sh
 $ make flash
 ```
@@ -130,17 +134,18 @@ Host sets bit 1 of 0x3FF5508C interrupt register. This tells slave device to sto
 There is `esp_at` folder in which "AT commands" python library is present. User can make use of python functions to get access of wifi functionalities of ESP32.
 
 first run `./rpi_init.sh` to compile and insert ESP32 host driver on rpi. This script also creates `/dev/esps0` which is used as WLAN control interface.
+These scripts to be run as root. Execute following command in terminal.
+
+```
+sudo bash
+```
 
 There are three python script for station connect to AP, station disconnect from AP and softAP configuration.
 
 1. `station_connect.py` is a python script which configure ESP32 in `station mode`, connects rpi to external AP with credentials user has provided. Also it ups the station interface and run DHCP client. User should provide parameters like ssid, password, mac address of AP(user can set mac address as 0 if doesnt want to set).
----
-Note: This script should run in bash
 
----
 ```
-ex.
-python3 station_connect.py 'xyz' 'xyz123456' '0'
+ex. python3 station_connect.py 'xyz' 'xyz123456' '0'
 ```
 2. `station_disconnect.py` is a python script to disconnect ESP32 station from AP.
 
@@ -148,10 +153,6 @@ python3 station_connect.py 'xyz' 'xyz123456' '0'
 python3 station_disconnect.py
 ```
 3. `softap_config.py` is a python script for configure ESP32 `softAP mode`. User should provide parameters like ssid, password(password length should be 8~64 bytes ASCII), channel ID (It can be any number between 1 to 11), encryption method (0 : OPEN, 2: WPA_PSK, 3:WPA2_PSK, 4: WPA_WPA2_PSK), max connection count( number of Stations to which ESP32 SoftAP can be connected, within the range of [1, 10]) and ssid hidden (it can set to 1 if softAP shouldnt broadcast its ssid else 0). max connection count and ssid hidden parameters are optional user can set this filed to 0.
----
-Note: This script should run in bash
-
----
 
 ```
 ex. python3 softap_config.py 'xyz' 'xyz123456' 1 3 4 0
