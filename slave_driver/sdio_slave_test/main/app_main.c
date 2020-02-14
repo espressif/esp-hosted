@@ -519,13 +519,6 @@ void app_main()
 		   */
 		//.flags              = SDIO_SLAVE_FLAG_INTERNAL_PULLUP,
 	};
-#ifdef CONFIG_SDIO_DAT2_DISABLED
-	/* For slave chips with 3.3V flash, DAT2 pullup conflicts with the pulldown
-	   required by strapping pin (MTDI). We can either burn the EFUSE for the
-	   strapping or just disable the DAT2 and work in 1-bit mode.
-	   */
-	config.flags |= SDIO_SLAVE_FLAG_DAT2_DISABLED;
-#endif
 	sdio_slave_buf_handle_t handle;
 
 	ret = sdio_slave_initialize(&config);
