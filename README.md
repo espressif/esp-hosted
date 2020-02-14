@@ -46,7 +46,7 @@ dtoverlay=sdio,poll_once=off
 Please reboot Raspberry-Pi after changing this file.
 
 ## ESP32 Setup
-On ESP32 either use pre-provided hosted mode firmware binary or if you have source, compile the app against ESP-IDF 3.3 release by running command as `make SILENCE=0 ESP_AT_PROJECT_PLATFORM=esp32_at_core` in `slave_driver/sdio_slave_test` directory. Program the WROVER-KIT using standard flash programming procedure with
+On ESP32 either use pre-provided hosted mode firmware binary or if you have source, compile the app against ESP-IDF 3.3 release by running command as `make SILENCE=0 ESP_AT_PROJECT_PLATFORM=esp32_at_core` in `slave_driver/network_adapter` directory. Program the WROVER-KIT using standard flash programming procedure with
 ```sh
 $ make flash
 ```
