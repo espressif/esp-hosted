@@ -16,36 +16,28 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include "driver/sdio_slave.h"
 #include "esp_log.h"
 #include "rom/lldesc.h"
 #include "rom/queue.h"
 #include "soc/soc.h"
-#include "soc/sdio_slave_periph.h"
-#include "freertos/task.h"
-#include "freertos/ringbuf.h"
 #include "esp_event_loop.h"
 #include "nvs_flash.h"
 #include "sdkconfig.h"
 #include <unistd.h>
 #include "xtensa/core-macros.h"
 #include "esp_wifi_internal.h"
-
+#include "interface.h"
+#include "adapter.h"
 #include <esp_at.h>
-
-#define SDIO_SLAVE_QUEUE_SIZE 20
-
-#define BUFFER_SIZE     2048
-#define BUFFER_NUM      20
+#include "freertos/task.h"
+#include "freertos/ringbuf.h"
 
 #define EV_STR(s) "================ "s" ================"
-static const char TAG[] = "ESP_SLAVE";
+static const char TAG[] = "NETWORK_ADAPTER";
 static const char TAG_RX[] = "H -> S";
 static const char TAG_RX_S[] = "CONTROL H -> S";
 static const char TAG_TX[] = "S -> H";
 static const char TAG_TX_S[] = "CONTROL S -> H";
-uint8_t buffer[BUFFER_NUM][BUFFER_SIZE];
-uint8_t buf[BUFFER_SIZE];
 volatile uint8_t action = 0;
 volatile uint8_t datapath = 0;
 volatile uint8_t sta_connected = 0;
@@ -54,37 +46,14 @@ uint32_t from_wlan_count = 0;
 uint32_t to_host_count = 0;
 uint32_t to_host_sent_count = 0;
 
+interface_context_t *if_context = NULL;
+
 static SemaphoreHandle_t sdio_write_lock = NULL;
 
 /* Ring Buffer: WLAN driver -> sdio interface */
 RingbufHandle_t rb_handle_wlan_to_sdio = NULL;
 RingbufHandle_t rb_handle_sdio_to_wlan = NULL;
 #define RING_BUFFER_SIZE	1600
-
-enum PACKET_TYPE {
-	DATA_PACKET = 0,
-};
-
-enum HOST_INTERRUPTS {
-	START_DATA_PATH = 0,
-	STOP_DATA_PATH,
-	SDIO_RESET,
-};
-
-enum INTERFACE_TYPE {
-	STA_INTF = 0,
-	AP_INTF,
-	SERIAL_INTF = (1<<1),
-};
-struct payload_header {
-	uint8_t 		 pkt_type:2;
-	uint8_t 		 if_type:3;
-	uint8_t 		 if_num:3;
-	uint8_t			 reserved1;
-	uint16_t                 len;
-	uint16_t                 offset;
-	uint8_t                  reserved2[2];
-} __attribute__((packed));
 
 static struct rx_data {
     uint8_t valid;
@@ -94,41 +63,6 @@ static struct rx_data {
 //#define min(x, y) ((x) < (y) ? (x) : (y))
 static inline int min(int x, int y) {
     return (x < y) ? x : y;
-}
-
-typedef struct {
-	uint8_t		if_type;
-	uint16_t	len;
-	void 		*buf;
-	void		*buf_ptr;
-}wlan_buffer;
-
-static esp_err_t slave_reset()
-{
-	esp_err_t ret;
-
-	sdio_slave_stop();
-
-	ret = sdio_slave_reset();
-	if (ret != ESP_OK)
-		return ret;
-
-	ret = sdio_slave_start();
-	if (ret != ESP_OK)
-		return ret;
-
-	while(1) {
-		sdio_slave_buf_handle_t handle;
-
-		/* Return buffers to driver */
-		ret = sdio_slave_send_get_finished(&handle, 0);
-		if (ret != ESP_OK)
-			break;
-
-		ret = sdio_slave_recv_load_buf(handle);
-		ESP_ERROR_CHECK(ret);
-	}
-	return ESP_OK;
 }
 
 esp_err_t wlan_ap_rx_callback(void *buffer, uint16_t len, void *eb)
@@ -215,71 +149,6 @@ DONE:
 	return ESP_OK;
 }
 
-int32_t write_data(uint8_t if_type, uint8_t if_num, uint8_t* data, int32_t len)
-{
-    esp_err_t ret = ESP_OK;
-    int32_t total_len = len + sizeof (struct payload_header);
-    uint8_t* sendbuf = NULL;
-    struct payload_header *header;
-
-    if (len < 0 || data == NULL) {
-        ESP_LOGE(TAG , "Write data error, len:%d", len);
-        return -1;
-    }
-
-    sendbuf = heap_caps_malloc(total_len, MALLOC_CAP_DMA);
-    if (sendbuf == NULL) {
-        ESP_LOGE(TAG , "Malloc send buffer fail!");
-        return 0;
-    }
-
-    header = (struct payload_header *) sendbuf;
-
-    memset (header, 0, sizeof(struct payload_header));
-
-    /* Initialize header */
-    header->pkt_type = DATA_PACKET;
-    header->if_type = if_type;
-    header->if_num = if_num;
-    header->len = len;
-    header->offset = sizeof(struct payload_header);
-
-    memcpy(sendbuf + header->offset, data, len);
-
-    ret = sdio_slave_transmit(sendbuf, total_len);
-    if (ret != ESP_OK) {
-        ESP_LOGE(TAG , "sdio slave transmit error, ret : 0x%x\r\n", ret);
-    }
-
-
-    free(sendbuf);
-    return len;
-}
-
-//we use the event callback (in ISR) in this example to get higer responding speed
-//note you can't do delay in the ISR
-//``sdio_slave_wait_int`` is another way to handle interrupts
-static void event_cb(uint8_t pos)
-{
-/*    ESP_EARLY_LOGE(TAG, "event: %d", pos);*/
-    switch(pos) {
-        case START_DATA_PATH:
-		ESP_EARLY_LOGE(TAG, "Start Data Path");
-		datapath = 1;
-		break;
-
-	case STOP_DATA_PATH:
-		ESP_EARLY_LOGE(TAG, "Stop Data Path");
-		datapath = 0;
-		break;
-
-	case SDIO_RESET:
-		ESP_EARLY_LOGE(TAG, "Reset slave");
-		slave_reset();
-		break;
-    }
-}
-
 /* Send data to host */
 void send_task(void* pvParameters)
 {
@@ -299,9 +168,10 @@ void send_task(void* pvParameters)
 				/* Send data */
 				t1 = XTHAL_GET_CCOUNT();
 
-/*				xSemaphoreTake(sdio_write_lock, (portTickType)portMAX_DELAY);*/
-				write_data(wlan_buf->if_type, 0, wlan_buf->buf, wlan_buf->len);
-/*				xSemaphoreGive(sdio_write_lock);*/
+				if (if_context && if_context->if_ops && if_context->if_ops->write) {
+					if_context->if_ops->write(wlan_buf->if_type, 0,
+							wlan_buf->buf, wlan_buf->len);
+				}
 
 				t2 = XTHAL_GET_CCOUNT();
 				t_total += t2 - t1;
@@ -352,20 +222,26 @@ void wlan_rx_task(void* pvParameters)
 		}
 
 		if ((wlan_buf->if_type == STA_INTF) && sta_connected) {
+			/* Forward data to wlan driver */
 			esp_wifi_internal_tx(ESP_IF_WIFI_STA, wlan_buf->buf, wlan_buf->len);
 		} else if (wlan_buf->if_type == AP_INTF) {
+			/* Forward data to wlan driver */
 			esp_wifi_internal_tx(ESP_IF_WIFI_AP, wlan_buf->buf, wlan_buf->len);
 		} else if (wlan_buf->if_type == SERIAL_INTF) {
-			//        write_data(SERIAL_INTF, 0, ptr, length);
+			/* Process AT command*/
 			memcpy(r.data, wlan_buf->buf, min(wlan_buf->len, sizeof(r.data)));
 			r.valid = 1;
 			r.len = min(wlan_buf->len, sizeof(r.data));
+
 			ESP_LOG_BUFFER_HEXDUMP(TAG_RX_S, r.data, r.len, ESP_LOG_INFO);
 			esp_at_port_recv_data_notify(r.len, portMAX_DELAY);
 		}
 
-		if (wlan_buf->buf_ptr)
-			sdio_slave_recv_load_buf(wlan_buf->buf_ptr);
+		/* Free buffer handle */
+		if (if_context && if_context->if_ops && if_context->if_ops->read_post_process) {
+			if (wlan_buf->buf_ptr)
+				if_context->if_ops->read_post_process(wlan_buf->buf_ptr);
+		}
 
 		vRingbufferReturnItem(rb_handle_sdio_to_wlan, wlan_buf);
 	}
@@ -374,22 +250,23 @@ void wlan_rx_task(void* pvParameters)
 /* Get data from host */
 void recv_task(void* pvParameters)
 {
-	sdio_slave_buf_handle_t handle;
-	size_t length = 0, len = 0;
+	void * handle;
+	size_t length = 0;
 	uint8_t* ptr = NULL;
 	struct payload_header *header;
 	uint16_t buf_size;
 	wlan_buffer wlan_buf;
+	esp_err_t ret;
 
 	for (;;) {
 
-		// receive data from SDIO host
-		esp_err_t ret = sdio_slave_recv(&handle, &ptr, &length, portMAX_DELAY);
-		if (ret != ESP_OK) {
-			continue;
+		// receive data from transport layer
+		if (if_context && if_context->if_ops && if_context->if_ops->read) {
+			esp_err_t ret = if_context->if_ops->read(&handle, &ptr, &length);
+			if (ret != ESP_OK) {
+				continue;
+			}
 		}
-
-		len = length;
 
 		if (length) {
 			header = (struct payload_header *) ptr;
@@ -401,7 +278,10 @@ void recv_task(void* pvParameters)
 
 			if (buf_size < sizeof(wlan_buf)) {
 				ESP_LOGE(TAG, "SDIO -> WLAN: Not enough buffer space available: %d\n", buf_size);
-				sdio_slave_recv_load_buf(handle);
+
+				if (if_context && if_context->if_ops && if_context->if_ops->read_post_process) {
+					if_context->if_ops->read_post_process(handle);
+				}
 				continue;
 			}
 
@@ -416,7 +296,10 @@ void recv_task(void* pvParameters)
 			ret = xRingbufferSend(rb_handle_sdio_to_wlan, &wlan_buf, sizeof(wlan_buf), portMAX_DELAY);
 			if (ret != pdTRUE) {
 				ESP_LOGE(TAG, "SDIO -> WLAN: Failed to write to ring buffer\n");
-				sdio_slave_recv_load_buf(handle);
+
+				if (if_context && if_context->if_ops && if_context->if_ops->read_post_process) {
+					if_context->if_ops->read_post_process(handle);
+				}
 			}
 		}
 	}
@@ -440,10 +323,8 @@ static int32_t at_sdio_hosted_write_data(uint8_t* data, int32_t len)
 {
 	ESP_LOGE(TAG, "at_sdio_hosted_write_data %d\n", len);
 
-	/*    xSemaphoreTake(sdio_write_lock, (portTickType)portMAX_DELAY);*/
-	if (datapath)
-		write_data(SERIAL_INTF, 0, data, len);
-	/*    xSemaphoreGive(sdio_write_lock);*/
+	if (datapath && if_context && if_context->if_ops && if_context->if_ops->write)
+		if_context->if_ops->write(SERIAL_INTF, 0, data, len);
 
 	ESP_LOG_BUFFER_HEXDUMP(TAG_TX_S, data, len, ESP_LOG_INFO);
 	return len;
@@ -501,47 +382,26 @@ static void initialise_wifi(void)
 	ESP_ERROR_CHECK( esp_wifi_start() );
 }
 
+int event_callback(uint8_t val)
+{
+	switch(val) {
+		case START_DATA_PATH:
+			ESP_EARLY_LOGE(TAG, "Start Data Path");
+			datapath = 1;
+			break;
+
+		case STOP_DATA_PATH:
+			ESP_EARLY_LOGE(TAG, "Stop Data Path");
+			datapath = 0;
+			break;
+	}
+	return 0;
+}
+
 //Main application
 void app_main()
 {
 	esp_err_t ret;
-
-	sdio_slave_config_t config = {
-		.sending_mode       = SDIO_SLAVE_SEND_STREAM,
-		.send_queue_size    = SDIO_SLAVE_QUEUE_SIZE,
-		.recv_buffer_size   = BUFFER_SIZE,
-		.event_cb           = event_cb,
-		/* Note: For small devkits there may be no pullups on the board.
-		   This enables the internal pullups to help evaluate the driver
-		   quickly. However the internal pullups are not sufficient and not
-		   reliable, please make sure external pullups are connected to the
-		   bus in your real design.
-		   */
-		//.flags              = SDIO_SLAVE_FLAG_INTERNAL_PULLUP,
-	};
-	sdio_slave_buf_handle_t handle;
-
-	ret = sdio_slave_initialize(&config);
-	ESP_ERROR_CHECK(ret);
-
-	for(int i = 0; i < BUFFER_NUM; i++) {
-		handle = sdio_slave_recv_register_buf(buffer[i]);
-		assert(handle != NULL);
-
-		ret = sdio_slave_recv_load_buf(handle);
-		ESP_ERROR_CHECK(ret);
-	}
-
-	sdio_slave_set_host_intena(SDIO_SLAVE_HOSTINT_SEND_NEW_PACKET |
-			SDIO_SLAVE_HOSTINT_BIT0);
-
-	sdio_slave_start();
-
-	rb_handle_wlan_to_sdio = xRingbufferCreate(RING_BUFFER_SIZE, RINGBUF_TYPE_NOSPLIT);
-	assert(rb_handle_wlan_to_sdio != NULL);
-
-	rb_handle_sdio_to_wlan = xRingbufferCreate(RING_BUFFER_SIZE, RINGBUF_TYPE_NOSPLIT);
-	assert(rb_handle_sdio_to_wlan != NULL);
 
 	//Initialize NVS
 	ret = nvs_flash_init();
@@ -550,6 +410,26 @@ void app_main()
 		ESP_ERROR_CHECK(nvs_flash_erase());
 		ret = nvs_flash_init();
 	}
+
+	if_context = insert_driver(event_callback);
+
+	if (!if_context || !if_context->if_ops) {
+		ESP_LOGE(TAG, "Failed to insert driver\n");
+		return;
+	}
+
+	ret = if_context->if_ops->init();
+
+	if (ret) {
+		ESP_LOGE(TAG, "Failed to initialize driver\n");
+		return;
+	}
+
+	rb_handle_wlan_to_sdio = xRingbufferCreate(RING_BUFFER_SIZE, RINGBUF_TYPE_NOSPLIT);
+	assert(rb_handle_wlan_to_sdio != NULL);
+
+	rb_handle_sdio_to_wlan = xRingbufferCreate(RING_BUFFER_SIZE, RINGBUF_TYPE_NOSPLIT);
+	assert(rb_handle_sdio_to_wlan != NULL);
 
 	ESP_ERROR_CHECK(ret);
 

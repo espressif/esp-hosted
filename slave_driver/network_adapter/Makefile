@@ -3,7 +3,7 @@
 # project subdirectory.
 #
 
-PROJECT_NAME := sdio_slave
+PROJECT_NAME := network_adapter
 EXTRA_LDFLAGS += -lesp32_at_core
 include $(IDF_PATH)/make/project.mk
 
