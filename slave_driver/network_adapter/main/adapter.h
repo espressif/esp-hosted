@@ -28,10 +28,11 @@ enum INTERFACE_TYPE {
 
 typedef struct {
 	uint8_t		if_type;
+	uint8_t		if_num;
 	uint16_t	len;
 	void 		*buf;
 	void		*buf_ptr;
-}wlan_buffer;
+} buf_descriptor_t;
 
 typedef struct {
 	interface_context_t *context;

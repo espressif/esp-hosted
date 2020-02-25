@@ -30,7 +30,7 @@
 #include "adapter.h"
 #include <esp_at.h>
 #include "freertos/task.h"
-#include "freertos/ringbuf.h"
+#include "freertos/queue.h"
 
 #define EV_STR(s) "================ "s" ================"
 static const char TAG[] = "NETWORK_ADAPTER";
@@ -38,6 +38,7 @@ static const char TAG_RX[] = "H -> S";
 static const char TAG_RX_S[] = "CONTROL H -> S";
 static const char TAG_TX[] = "S -> H";
 static const char TAG_TX_S[] = "CONTROL S -> H";
+
 volatile uint8_t action = 0;
 volatile uint8_t datapath = 0;
 volatile uint8_t sta_connected = 0;
@@ -50,10 +51,9 @@ interface_context_t *if_context = NULL;
 
 static SemaphoreHandle_t sdio_write_lock = NULL;
 
-/* Ring Buffer: WLAN driver -> sdio interface */
-RingbufHandle_t rb_handle_wlan_to_sdio = NULL;
-RingbufHandle_t rb_handle_sdio_to_wlan = NULL;
-#define RING_BUFFER_SIZE	1600
+QueueHandle_t to_host_queue = NULL;
+QueueHandle_t from_host_queue = NULL;
+#define QUEUE_SIZE	100
 
 static struct rx_data {
     uint8_t valid;
@@ -68,8 +68,7 @@ static inline int min(int x, int y) {
 esp_err_t wlan_ap_rx_callback(void *buffer, uint16_t len, void *eb)
 {
 	esp_err_t ret = ESP_OK;
-	uint16_t buf_size;
-	wlan_buffer wlan_buf;
+	buf_descriptor_t buf_desc;
 
 	if (!buffer || !eb || !datapath) {
 		if (eb) {
@@ -78,24 +77,19 @@ esp_err_t wlan_ap_rx_callback(void *buffer, uint16_t len, void *eb)
 		return ESP_OK;
 	}
 
-	buf_size = xRingbufferGetCurFreeSize(rb_handle_wlan_to_sdio);
-	if (buf_size < sizeof(wlan_buf)) {
-		ESP_LOGE(TAG, "WLAN -> SDIO: Not enough buffer space available: %d\n", buf_size);
-		goto DONE;
-	}
-
 	/* Prepare buffer descriptor */
-	memset(&wlan_buf, 0, sizeof(wlan_buf));
+	memset(&buf_desc, 0, sizeof(buf_desc));
 
-	wlan_buf.if_type = AP_INTF;
-	wlan_buf.len = len;
-	wlan_buf.buf = buffer;
-	wlan_buf.buf_ptr = eb;
+	buf_desc.if_type = AP_INTF;
+	buf_desc.if_num = 0;
+	buf_desc.len = len;
+	buf_desc.buf = buffer;
+	buf_desc.buf_ptr = eb;
 
-	ret = xRingbufferSend(rb_handle_wlan_to_sdio, &wlan_buf, sizeof(wlan_buf), portMAX_DELAY);
+	ret = xQueueSend(to_host_queue, &buf_desc, portMAX_DELAY);
 
 	if (ret != pdTRUE) {
-		ESP_LOGE(TAG, "WLAN -> SDIO: Failed to write to ring buffer\n");
+		ESP_LOGE(TAG, "Slave -> Host: Failed to send buffer\n");
 		goto DONE;
 	}
 
@@ -109,8 +103,7 @@ DONE:
 esp_err_t wlan_sta_rx_callback(void *buffer, uint16_t len, void *eb)
 {
 	esp_err_t ret = ESP_OK;
-	uint16_t buf_size;
-	wlan_buffer wlan_buf;
+	buf_descriptor_t buf_desc;
 
 	if (!buffer || !eb || !datapath) {
 		if (eb) {
@@ -121,24 +114,19 @@ esp_err_t wlan_sta_rx_callback(void *buffer, uint16_t len, void *eb)
 
 	from_wlan_count++;
 
-	buf_size = xRingbufferGetCurFreeSize(rb_handle_wlan_to_sdio);
-	if (buf_size < sizeof(wlan_buf)) {
-		ESP_LOGE(TAG, "WLAN -> SDIO: Not enough buffer space available: %d\n", buf_size);
-		goto DONE;
-	}
-
 	/* Prepare buffer descriptor */
-	memset(&wlan_buf, 0, sizeof(wlan_buf));
+	memset(&buf_desc, 0, sizeof(buf_desc));
 
-	wlan_buf.if_type = STA_INTF;
-	wlan_buf.len = len;
-	wlan_buf.buf = buffer;
-	wlan_buf.buf_ptr = eb;
+	buf_desc.if_type = STA_INTF;
+	buf_desc.if_num = 0;
+	buf_desc.len = len;
+	buf_desc.buf = buffer;
+	buf_desc.buf_ptr = eb;
 
-	ret = xRingbufferSend(rb_handle_wlan_to_sdio, &wlan_buf, sizeof(wlan_buf), portMAX_DELAY);
+	ret = xQueueSend(to_host_queue, &buf_desc, portMAX_DELAY);
 
 	if (ret != pdTRUE) {
-		ESP_LOGE(TAG, "WLAN -> SDIO: Failed to write to ring buffer\n");
+		ESP_LOGE(TAG, "Slave -> Host: Failed to send buffer\n");
 		goto DONE;
 	}
 
@@ -152,39 +140,38 @@ DONE:
 /* Send data to host */
 void send_task(void* pvParameters)
 {
-	wlan_buffer *wlan_buf = NULL;
-	size_t size = 0;
+	esp_err_t ret = ESP_OK;
+	buf_descriptor_t buf_desc = {0};
 	int t1, t2, t_total = 0;
 	int d_total = 0;
 
 
 	while (1) {
 
-		wlan_buf = (wlan_buffer *) xRingbufferReceive(rb_handle_wlan_to_sdio, &size, portMAX_DELAY);
+		ret = xQueueReceive(to_host_queue, &buf_desc, portMAX_DELAY);
 
 		if (datapath) {
-			if (wlan_buf) {
+			if (ret == pdTRUE) {
 				to_host_count++;
 				/* Send data */
 				t1 = XTHAL_GET_CCOUNT();
 
 				if (if_context && if_context->if_ops && if_context->if_ops->write) {
-					if_context->if_ops->write(wlan_buf->if_type, 0,
-							wlan_buf->buf, wlan_buf->len);
+					if_context->if_ops->write(buf_desc.if_type, buf_desc.if_num,
+							buf_desc.buf, buf_desc.len);
 				}
 
 				t2 = XTHAL_GET_CCOUNT();
 				t_total += t2 - t1;
-				d_total += wlan_buf->len;
+				d_total += buf_desc.len;
 
 /*				usleep(100);*/
-/*				ESP_LOG_BUFFER_HEXDUMP(TAG_TX, wlan_buf->buf, 8, ESP_LOG_INFO);*/
+/*				ESP_LOG_BUFFER_HEXDUMP(TAG_TX, buf_desc.buf, 8, ESP_LOG_INFO);*/
 
 				/* Post processing */
-				if (wlan_buf->buf_ptr)
-					esp_wifi_internal_free_rx_buffer(wlan_buf->buf_ptr);
+				if (buf_desc.buf_ptr)
+					esp_wifi_internal_free_rx_buffer(buf_desc.buf_ptr);
 
-				vRingbufferReturnItem(rb_handle_wlan_to_sdio, wlan_buf);
 				to_host_sent_count++;
 			} else {
 				/*			ESP_LOGE (TAG_TX, "No data available\n");*/
@@ -195,13 +182,11 @@ void send_task(void* pvParameters)
 			}
 
 		} else {
-			if (wlan_buf) {
+			if (ret == pdTRUE) {
 				ESP_LOGE (TAG_TX, "Data path stopped");
-				ESP_LOG_BUFFER_HEXDUMP(TAG_TX, wlan_buf->buf, 32, ESP_LOG_INFO);
-				if (wlan_buf->buf_ptr)
-					esp_wifi_internal_free_rx_buffer(wlan_buf->buf_ptr);
-
-				vRingbufferReturnItem(rb_handle_wlan_to_sdio, wlan_buf);
+				ESP_LOG_BUFFER_HEXDUMP(TAG_TX, buf_desc.buf, 32, ESP_LOG_INFO);
+				if (buf_desc.buf_ptr)
+					esp_wifi_internal_free_rx_buffer(buf_desc.buf_ptr);
 			}
 
 			sleep(1);
@@ -211,27 +196,27 @@ void send_task(void* pvParameters)
 
 void wlan_rx_task(void* pvParameters)
 {
-	wlan_buffer *wlan_buf = NULL;
-	size_t size = 0;
+	esp_err_t ret = ESP_OK;
+	buf_descriptor_t buf_desc = {0};
 
 	while (1) {
-		wlan_buf = (wlan_buffer *) xRingbufferReceive(rb_handle_sdio_to_wlan, &size, portMAX_DELAY);
+		ret = xQueueReceive(from_host_queue, &buf_desc, portMAX_DELAY);
 
-		if (!wlan_buf) {
+		if (ret != pdTRUE) {
 			continue;
 		}
 
-		if ((wlan_buf->if_type == STA_INTF) && sta_connected) {
+		if ((buf_desc.if_type == STA_INTF) && sta_connected) {
 			/* Forward data to wlan driver */
-			esp_wifi_internal_tx(ESP_IF_WIFI_STA, wlan_buf->buf, wlan_buf->len);
-		} else if (wlan_buf->if_type == AP_INTF) {
+			esp_wifi_internal_tx(ESP_IF_WIFI_STA, buf_desc.buf, buf_desc.len);
+		} else if (buf_desc.if_type == AP_INTF) {
 			/* Forward data to wlan driver */
-			esp_wifi_internal_tx(ESP_IF_WIFI_AP, wlan_buf->buf, wlan_buf->len);
-		} else if (wlan_buf->if_type == SERIAL_INTF) {
+			esp_wifi_internal_tx(ESP_IF_WIFI_AP, buf_desc.buf, buf_desc.len);
+		} else if (buf_desc.if_type == SERIAL_INTF) {
 			/* Process AT command*/
-			memcpy(r.data, wlan_buf->buf, min(wlan_buf->len, sizeof(r.data)));
+			memcpy(r.data, buf_desc.buf, min(buf_desc.len, sizeof(r.data)));
 			r.valid = 1;
-			r.len = min(wlan_buf->len, sizeof(r.data));
+			r.len = min(buf_desc.len, sizeof(r.data));
 
 			ESP_LOG_BUFFER_HEXDUMP(TAG_RX_S, r.data, r.len, ESP_LOG_INFO);
 			esp_at_port_recv_data_notify(r.len, portMAX_DELAY);
@@ -239,11 +224,9 @@ void wlan_rx_task(void* pvParameters)
 
 		/* Free buffer handle */
 		if (if_context && if_context->if_ops && if_context->if_ops->read_post_process) {
-			if (wlan_buf->buf_ptr)
-				if_context->if_ops->read_post_process(wlan_buf->buf_ptr);
+			if (buf_desc.buf_ptr)
+				if_context->if_ops->read_post_process(buf_desc.buf_ptr);
 		}
-
-		vRingbufferReturnItem(rb_handle_sdio_to_wlan, wlan_buf);
 	}
 }
 
@@ -254,8 +237,7 @@ void recv_task(void* pvParameters)
 	size_t length = 0;
 	uint8_t* ptr = NULL;
 	struct payload_header *header;
-	uint16_t buf_size;
-	wlan_buffer wlan_buf;
+	buf_descriptor_t buf_desc;
 	esp_err_t ret;
 
 	for (;;) {
@@ -274,30 +256,23 @@ void recv_task(void* pvParameters)
 			length -= header->offset;
 
 /*			ESP_LOG_BUFFER_HEXDUMP(TAG_RX, ptr, 8, ESP_LOG_INFO);*/
-			buf_size = xRingbufferGetCurFreeSize(rb_handle_sdio_to_wlan);
-
-			if (buf_size < sizeof(wlan_buf)) {
-				ESP_LOGE(TAG, "SDIO -> WLAN: Not enough buffer space available: %d\n", buf_size);
-
-				if (if_context && if_context->if_ops && if_context->if_ops->read_post_process) {
-					if_context->if_ops->read_post_process(handle);
-				}
-				continue;
-			}
 
 			/* Prepare buffer descriptor */
-			memset(&wlan_buf, 0, sizeof(wlan_buf));
+			memset(&buf_desc, 0, sizeof(buf_desc));
 
-			wlan_buf.if_type = header->if_type;
-			wlan_buf.len = header->len;
-			wlan_buf.buf = ptr;
-			wlan_buf.buf_ptr = handle;
+			buf_desc.if_type = header->if_type;
+			buf_desc.if_num = header->if_num;
+			buf_desc.len = header->len;
+			buf_desc.buf = ptr;
+			buf_desc.buf_ptr = handle;
 
-			ret = xRingbufferSend(rb_handle_sdio_to_wlan, &wlan_buf, sizeof(wlan_buf), portMAX_DELAY);
+			ret = xQueueSend(from_host_queue, &buf_desc, portMAX_DELAY);
+
 			if (ret != pdTRUE) {
-				ESP_LOGE(TAG, "SDIO -> WLAN: Failed to write to ring buffer\n");
+				ESP_LOGE(TAG, "Host -> Slave: Failed to send buffer\n");
 
-				if (if_context && if_context->if_ops && if_context->if_ops->read_post_process) {
+				if (if_context && if_context->if_ops &&
+						if_context->if_ops->read_post_process) {
 					if_context->if_ops->read_post_process(handle);
 				}
 			}
@@ -425,11 +400,11 @@ void app_main()
 		return;
 	}
 
-	rb_handle_wlan_to_sdio = xRingbufferCreate(RING_BUFFER_SIZE, RINGBUF_TYPE_NOSPLIT);
-	assert(rb_handle_wlan_to_sdio != NULL);
+	to_host_queue = xQueueCreate(QUEUE_SIZE, sizeof(buf_descriptor_t));
+	assert(to_host_queue != NULL);
 
-	rb_handle_sdio_to_wlan = xRingbufferCreate(RING_BUFFER_SIZE, RINGBUF_TYPE_NOSPLIT);
-	assert(rb_handle_sdio_to_wlan != NULL);
+	from_host_queue = xQueueCreate(QUEUE_SIZE, sizeof(buf_descriptor_t));
+	assert(from_host_queue != NULL);
 
 	ESP_ERROR_CHECK(ret);
 
