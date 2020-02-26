@@ -1,0 +1,83 @@
+syntax = "proto3";
+
+message CmdGetStatus {
+	string cmd = 1;
+    int32 mode = 2;
+}
+
+message RespGetStatus {
+	string resp = 1;
+    int32 mode = 2;
+}
+
+enum EncryptionMode {
+    Type_Open = 0;
+    Type_WPA_PSK = 1;
+    Type_WPA2_PSK = 2;
+    Type_WPA_WPA2_PSK = 3;
+}
+
+message CmdConfig {
+    string ssid = 1;
+    string pwd = 2;
+    EncryptionMode ecn = 3;
+    int32 chnl = 4;
+    int32 max_conn = 5;
+    bool ssid_hidden = 6;
+    string bssid = 7;
+    int32 rssi = 8;
+	string status = 9;
+}
+
+message RespConfig {
+    string ssid = 1;
+    string pwd = 2;
+    EncryptionMode ecn = 3;
+    int32 chnl = 4;
+    int32 max_conn = 5;
+    bool ssid_hidden = 6;
+    string bssid = 7;
+    int32 rssi = 8;
+	string status = 9;
+}
+
+enum SlaveConfigMsgType {
+    TypeCmdGetMACAddress = 0;
+    TypeRespGetMACAddress = 1;
+    TypeCmdGetWiFiMode = 2;
+    TypeRespGetWiFiMode = 3;
+    TypeCmdSetWiFiMode = 4;
+    TypeRespSetWiFiMode = 5;
+    TypeCmdGetAPConfig = 6;
+    TypeRespGetAPConfig = 7;
+	TypeCmdSetAPConfig = 8;
+    TypeRespSetAPConfig = 9;
+	TypeCmdGetSoftAPConfig = 10;
+    TypeRespGetSoftAPConfig = 11;
+    TypeCmdSetSoftAPConfig = 12;
+    TypeRespSetSoftAPConfig = 13;
+	TypeCmdDisconnectAP = 14;
+	TypeRespDisconnectAP = 15;
+}
+
+message SlaveConfigPayload {
+    SlaveConfigMsgType msg = 1;
+    oneof payload {
+        CmdGetStatus cmd_get_mac_address = 10;
+        RespGetStatus resp_get_mac_address = 11;
+        CmdGetStatus cmd_get_wifi_mode = 12;
+        RespGetStatus resp_get_wifi_mode = 13;
+        CmdGetStatus cmd_set_wifi_mode = 14;
+        RespGetStatus resp_set_wifi_mode = 15;
+        CmdConfig cmd_get_ap_config = 16;
+        RespConfig resp_get_ap_config = 17;
+		CmdConfig cmd_set_ap_config = 18;
+        RespConfig resp_set_ap_config = 19;
+		CmdConfig cmd_get_softap_config = 20;
+        RespConfig resp_get_softap_config = 21;
+        CmdConfig cmd_set_softap_config = 22;
+        RespConfig resp_set_softap_config = 23;
+        CmdGetStatus cmd_disconnect_ap = 24;
+        RespGetStatus resp_disconnect_ap = 25;
+    }
+}
