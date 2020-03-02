@@ -17,15 +17,16 @@ import argparse
 import time
 import os
 
-parser = argparse.ArgumentParser(description='station_connect.py is a python script which connect ESPstation to AP. User should provide ssid, password and bssid. In case user dont want to enter password,bssid then set field as 0. bssid i.e MAC address of AP in case of multiple AP has same ssid. ex. python3 station_connect.py \'xyz\' \'xyz123456\' \'0\'')
+parser = argparse.ArgumentParser(description='station_connect.py is a python script which connect ESPstation to AP. ex. python3 station_connect.py \'xyz\' \'xyz123456\' --bssid=\'e5:6c:67:3c:cf:65\'')
 
-parser.add_argument("ssid", type=str, default='0', help="ssid")
+parser.add_argument("ssid", type=str, default='0', help="ssid of AP")
 
-parser.add_argument("password", type=str, default='0', help="password")
+parser.add_argument("password", type=str, default='0', help="password of AP")
 
-parser.add_argument("bssid", type=str, default='0', help="bssid")
+parser.add_argument("--bssid", type=str, default='0', help="bssid i.e MAC address of AP in case of multiple AP has same ssid (default: '0')")
 
 args = parser.parse_args()
+
 flag = 'success'
 station_status = 'Nothing set'
 current_ssid = '0'
@@ -94,3 +95,4 @@ if (flag == 'success'):
     print(command)
 
     print("Success in setting AP config")
+
