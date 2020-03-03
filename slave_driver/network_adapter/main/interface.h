@@ -16,6 +16,7 @@
 #ifndef __TRANSPORT_LAYER_INTERFACE_H
 #define __TRANSPORT_LAYER_INTERFACE_H
 #include "esp_err.h"
+#include "driver/sdio_slave.h"
 
 typedef enum {
 	SDIO = 0,
@@ -28,22 +29,18 @@ enum HOST_INTERRUPTS {
 	RESET,
 };
 
-struct payload_header {
-	uint8_t 		 pkt_type:2;
-	uint8_t 		 if_type:3;
-	uint8_t 		 if_num:3;
-	uint8_t			 reserved1;
-	uint16_t                 len;
-	uint16_t                 offset;
-	uint8_t                  reserved2[2];
-} __attribute__((packed));
+typedef struct {
+	union {
+		sdio_slave_buf_handle_t buf_handle;
+	};
+}interface_handle_t;
 
 typedef struct {
 	esp_err_t (*init)();
-	int32_t (*write)(uint8_t if_type, uint8_t if_num, uint8_t* data, int32_t len);
-	esp_err_t (*read)(void **handle, uint8_t **out_addr, size_t *out_len);
+	int32_t (*write)(uint8_t if_type, uint8_t if_num, uint8_t* payload, int32_t payload_len);
+	esp_err_t (*read)(interface_handle_t *handle, uint8_t **out_addr, size_t *out_len);
 	esp_err_t (*reset)();
-	void (*read_post_process)(void *handle);
+	void (*read_post_process)(interface_handle_t *handle);
 	void (*deinit)();
 } if_ops_t;
 
@@ -51,9 +48,9 @@ typedef struct {
 	transport_layer type;
 	void *priv;
 	if_ops_t *if_ops;
-	int (*callback_func)(uint8_t bitmap);
+	int (*event_handler)(uint8_t bitmap);
 } interface_context_t;
 
-interface_context_t * insert_driver(int (*callback)(uint8_t val));
-int remove_driver();
+interface_context_t * interface_insert_driver(int (*callback)(uint8_t val));
+int interface_remove_driver();
 #endif

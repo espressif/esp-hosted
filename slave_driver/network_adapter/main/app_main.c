@@ -27,7 +27,7 @@
 #include "xtensa/core-macros.h"
 #include "esp_wifi_internal.h"
 #include "interface.h"
-#include "adapter.h"
+#include "app_main.h"
 #include <esp_at.h>
 #include "freertos/task.h"
 #include "freertos/queue.h"
@@ -224,8 +224,10 @@ void wlan_rx_task(void* pvParameters)
 
 		/* Free buffer handle */
 		if (if_context && if_context->if_ops && if_context->if_ops->read_post_process) {
-			if (buf_desc.buf_ptr)
-				if_context->if_ops->read_post_process(buf_desc.buf_ptr);
+			if (buf_desc.buf_ptr) {
+				if_context->if_ops->read_post_process((interface_handle_t *)buf_desc.buf_ptr);
+				free(buf_desc.buf_ptr);
+			}
 		}
 	}
 }
@@ -233,25 +235,31 @@ void wlan_rx_task(void* pvParameters)
 /* Get data from host */
 void recv_task(void* pvParameters)
 {
-	void * handle;
+	interface_handle_t *if_handle = NULL;
 	size_t length = 0;
 	uint8_t* ptr = NULL;
-	struct payload_header *header;
+	struct esp_payload_header *header;
 	buf_descriptor_t buf_desc;
 	esp_err_t ret;
 
 	for (;;) {
 
+		if (!if_handle) {
+			if_handle = (interface_handle_t *) malloc(sizeof(interface_handle_t));
+			assert(if_handle != NULL);
+		}
+
 		// receive data from transport layer
 		if (if_context && if_context->if_ops && if_context->if_ops->read) {
-			esp_err_t ret = if_context->if_ops->read(&handle, &ptr, &length);
+			esp_err_t ret = if_context->if_ops->read(if_handle, &ptr, &length);
 			if (ret != ESP_OK) {
+				ESP_LOGE(TAG, "Failed to read %d\n", length);
 				continue;
 			}
 		}
 
 		if (length) {
-			header = (struct payload_header *) ptr;
+			header = (struct esp_payload_header *) ptr;
 			ptr += header->offset;
 			length -= header->offset;
 
@@ -264,7 +272,7 @@ void recv_task(void* pvParameters)
 			buf_desc.if_num = header->if_num;
 			buf_desc.len = header->len;
 			buf_desc.buf = ptr;
-			buf_desc.buf_ptr = handle;
+			buf_desc.buf_ptr = (void *) if_handle;
 
 			ret = xQueueSend(from_host_queue, &buf_desc, portMAX_DELAY);
 
@@ -273,9 +281,12 @@ void recv_task(void* pvParameters)
 
 				if (if_context && if_context->if_ops &&
 						if_context->if_ops->read_post_process) {
-					if_context->if_ops->read_post_process(handle);
+					if_context->if_ops->read_post_process(if_handle);
+					free(if_handle);
 				}
 			}
+
+			if_handle = NULL;
 		}
 	}
 }
@@ -357,7 +368,7 @@ static void initialise_wifi(void)
 	ESP_ERROR_CHECK( esp_wifi_start() );
 }
 
-int event_callback(uint8_t val)
+int event_handler(uint8_t val)
 {
 	switch(val) {
 		case START_DATA_PATH:
@@ -386,7 +397,7 @@ void app_main()
 		ret = nvs_flash_init();
 	}
 
-	if_context = insert_driver(event_callback);
+	if_context = interface_insert_driver(event_handler);
 
 	if (!if_context || !if_context->if_ops) {
 		ESP_LOGE(TAG, "Failed to insert driver\n");

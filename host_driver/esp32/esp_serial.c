@@ -60,14 +60,14 @@ static int esp_serial_read(struct file *file, char __user *user_buffer, size_t s
 
 static int esp_serial_write(struct file *file, const char __user *user_buffer, size_t size, loff_t * offset)
 {
-	struct esp32_payload_header *hdr;
+	struct esp_payload_header *hdr;
 	char *buf;
 	struct esp_serial_devs *dev;
 	int ret;
 	size_t total_len;
 
        	dev = (struct esp_serial_devs *) file->private_data;
-	total_len = size + sizeof(struct esp32_payload_header);
+	total_len = size + sizeof(struct esp_payload_header);
 
 	buf = kmalloc(total_len, GFP_KERNEL);
 	if (!buf) {
@@ -75,12 +75,12 @@ static int esp_serial_write(struct file *file, const char __user *user_buffer, s
 		return -ENOMEM;
 	}
 
-	hdr = (struct esp32_payload_header *) buf;
+	hdr = (struct esp_payload_header *) buf;
 
 	hdr->if_type = ESP_IF_SERIAL;
 	hdr->if_num = dev->dev_index;
 	hdr->len = size;
-	hdr->offset = sizeof(struct esp32_payload_header);
+	hdr->offset = sizeof(struct esp_payload_header);
 
 	ret = copy_from_user(buf + hdr->offset, user_buffer, size);
 	if (ret != 0) {

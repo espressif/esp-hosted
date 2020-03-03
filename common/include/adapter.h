@@ -13,28 +13,16 @@
 // limitations under the License.
 //
 
-#ifndef __NETWORK_ADAPTER__H
-#define __NETWORK_ADAPTER__H
+#ifndef __ESP_NETWORK_ADAPTER__H
+#define __ESP_NETWORK_ADAPTER__H
 
-enum PACKET_TYPE {
-	DATA_PACKET = 0,
-};
+struct esp_payload_header {
+	uint8_t 		 if_type:4;
+	uint8_t 		 if_num:4;
+	uint8_t			 reserved1;
+	uint16_t                 len;
+	uint16_t                 offset;
+	uint8_t                  reserved2[2];
+} __attribute__((packed));
 
-enum INTERFACE_TYPE {
-	STA_INTF = 0,
-	AP_INTF,
-	SERIAL_INTF = (1<<1),
-};
-
-typedef struct {
-	uint8_t		if_type;
-	uint8_t		if_num;
-	uint16_t	len;
-	void 		*buf;
-	void		*buf_ptr;
-} buf_descriptor_t;
-
-typedef struct {
-	interface_context_t *context;
-} adapter;
 #endif

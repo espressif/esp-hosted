@@ -23,6 +23,7 @@
 #include <linux/workqueue.h>
 #include <linux/interrupt.h>
 #include <linux/netdevice.h>
+#include "adapter.h"
 
 #define ESP_IF_TYPE_SDIO		1
 
@@ -86,16 +87,6 @@ struct esp_private {
 	u8 				if_type;
 	u8			 	if_num;
 };
-
-struct esp32_payload_header {
-	u8				pkt_type:2;
-	u8				if_type:3;
-	u8				if_num:3;
-	u8				reserved1;
-	u16				len;
-	u16				offset;
-	u8				reserved2[2];
-}__packed;
 
 struct esp32_skb_cb {
 	struct esp_private		*priv;
