@@ -25,4 +25,16 @@ struct esp_payload_header {
 	uint8_t                  reserved2[2];
 } __attribute__((packed));
 
+typedef enum {
+	ESP_STA_IF,
+	ESP_AP_IF,
+	ESP_SERIAL_IF,
+} ESP_INTERFACE_TYPE;
+
+typedef enum {
+	ESP_OPEN_DATA_PATH,
+	ESP_CLOSE_DATA_PATH,
+	ESP_RESET,
+} ESP_HOST_INTERRUPT;
+
 #endif

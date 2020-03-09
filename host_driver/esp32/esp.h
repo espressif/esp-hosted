@@ -31,17 +31,7 @@
 #define ESP_LINK_DOWN			0
 #define ESP_LINK_UP			1
 
-/* Network Interface Type */
-#define ESP_STA_IF			0
-#define ESP_AP_IF			1
-#define ESP_IF_SERIAL			(1<<1)
-
 #define ESP_MAX_INTERFACE		2
-
-/* Interrupt Slave */
-#define SLAVE_OPEN_PORT			(1<<0)
-#define SLAVE_CLOSE_PORT		(1<<1)
-#define SLAVE_RESET			(1<<2)
 
 #define ESP32_PAYLOAD_HEADER		8
 struct esp_private;

@@ -18,30 +18,48 @@
 #include "esp_err.h"
 #include "driver/sdio_slave.h"
 
+typedef void *wlan_buf_handle_t;
+
 typedef enum {
 	SDIO = 0,
 	SPI = 1,
 } transport_layer;
 
-enum HOST_INTERRUPTS {
-	START_DATA_PATH = 0,
-	STOP_DATA_PATH,
-	RESET,
-};
+typedef enum {
+	DEINIT,
+	INIT,
+	ACTIVE,
+	DEACTIVE,
+} INTERFACE_STATE;
 
 typedef struct {
 	union {
-		sdio_slave_buf_handle_t buf_handle;
+		sdio_slave_buf_handle_t sdio_buf_handle;
+		wlan_buf_handle_t	wlan_buf_handle;
+		void *priv_buffer_handle;
 	};
+	uint8_t if_type;
+	uint8_t if_num;
+	uint8_t *payload;
+	size_t payload_len;
+
+	void (*free_buf_handle)(void *buf_handle);
+} interface_buffer_handle_t;
+
+typedef struct {
+	/*
+	union {
+	} phy_context;
+	*/
+	INTERFACE_STATE state;
 }interface_handle_t;
 
 typedef struct {
-	esp_err_t (*init)();
-	int32_t (*write)(uint8_t if_type, uint8_t if_num, uint8_t* payload, int32_t payload_len);
-	esp_err_t (*read)(interface_handle_t *handle, uint8_t **out_addr, size_t *out_len);
-	esp_err_t (*reset)();
-	void (*read_post_process)(interface_handle_t *handle);
-	void (*deinit)();
+	interface_handle_t * (*init)();
+	int32_t (*write)(interface_handle_t *handle, interface_buffer_handle_t *buf_handle);
+	interface_buffer_handle_t * (*read)(interface_handle_t *handle);
+	esp_err_t (*reset)(interface_handle_t *handle);
+	void (*deinit)(interface_handle_t *handle);
 } if_ops_t;
 
 typedef struct {

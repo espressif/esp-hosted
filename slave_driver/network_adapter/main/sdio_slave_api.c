@@ -14,21 +14,20 @@
 uint8_t sdio_slave_rx_buffer[BUFFER_NUM][BUFFER_SIZE];
 
 interface_context_t context;
+interface_handle_t if_handle_g;
 static const char TAG[] = "SDIO_SLAVE";
 
-static esp_err_t sdio_init();
-static int32_t sdio_write(uint8_t if_type, uint8_t if_num, uint8_t* payload, int32_t payload_len);
-static esp_err_t sdio_read(interface_handle_t *if_handle, uint8_t **out_addr, size_t *out_len);
-static esp_err_t sdio_reset();
-static void sdio_read_done(interface_handle_t *if_handle);
-static void sdio_deinit();
+static interface_handle_t * sdio_init();
+static int32_t sdio_write(interface_handle_t *handle, interface_buffer_handle_t *buf_handle);
+interface_buffer_handle_t * sdio_read(interface_handle_t *if_handle);
+static esp_err_t sdio_reset(interface_handle_t *handle);
+static void sdio_deinit(interface_handle_t *handle);
 
 if_ops_t if_ops = {
 	.init = sdio_init,
 	.write = sdio_write,
 	.read = sdio_read,
 	.reset = sdio_reset,
-	.read_post_process = sdio_read_done,
 	.deinit = sdio_deinit,
 };
 
@@ -51,8 +50,8 @@ int interface_remove_driver()
 
 static void event_cb(uint8_t val)
 {
-	if (val == RESET) {
-		sdio_reset();
+	if (val == ESP_RESET) {
+		sdio_reset(&if_handle_g);
 		return;
 	}
 
@@ -62,7 +61,13 @@ static void event_cb(uint8_t val)
 
 }
 
-static esp_err_t sdio_init()
+static void sdio_read_done(void *handle)
+{
+	sdio_slave_recv_load_buf((sdio_slave_buf_handle_t) handle);
+}
+
+
+static interface_handle_t * sdio_init()
 {
 	esp_err_t ret = 0;
 	sdio_slave_config_t config = {
@@ -82,8 +87,7 @@ static esp_err_t sdio_init()
 
 	ret = sdio_slave_initialize(&config);
 	if (ret != ESP_OK) {
-		ESP_LOGE(TAG, "%s %d\n", __func__, __LINE__);
-		return ret;
+		return NULL;
 	}
 
 	for(int i = 0; i < BUFFER_NUM; i++) {
@@ -93,8 +97,7 @@ static esp_err_t sdio_init()
 		ret = sdio_slave_recv_load_buf(handle);
 		if (ret != ESP_OK) {
 			sdio_slave_deinit();
-			ESP_LOGE(TAG, "%s %d\n", __func__, __LINE__);
-			return ret;
+			return NULL;
 		}
 	}
 
@@ -111,25 +114,38 @@ static esp_err_t sdio_init()
 	ret = sdio_slave_start();
 	if (ret != ESP_OK) {
 		sdio_slave_deinit();
-		ESP_LOGE(TAG, "%s %d\n", __func__, __LINE__);
-		return ret;
+		return NULL;
 	}
 
-	ESP_LOGE(TAG, "%s %d %d\n", __func__, __LINE__, ret);
-	return ret;
+	memset(&if_handle_g, 0, sizeof(if_handle_g));
+	if_handle_g.state = INIT;
+
+	return &if_handle_g;
 }
 
-static int32_t sdio_write(uint8_t if_type, uint8_t if_num, uint8_t* payload, int32_t payload_len)
+static int32_t sdio_write(interface_handle_t *handle, interface_buffer_handle_t *buf_handle)
 {
 	esp_err_t ret = ESP_OK;
-	int32_t total_len = payload_len + sizeof (struct esp_payload_header);
+	int32_t total_len;
 	uint8_t* sendbuf = NULL;
 	struct esp_payload_header *header;
 
-	if (payload_len < 0 || payload == NULL) {
-		ESP_LOGE(TAG , "Invalid arguments, len:%d", payload_len);
+	if (!handle || !buf_handle) {
+		ESP_LOGE(TAG , "Invalid arguments");
 		return ESP_FAIL;
 	}
+
+	if (handle->state != ACTIVE) {
+		return ESP_FAIL;
+	}
+
+
+	if (!buf_handle->payload_len || !buf_handle->payload) {
+		ESP_LOGE(TAG , "Invalid arguments, len:%d", buf_handle->payload_len);
+		return ESP_FAIL;
+	}
+
+	total_len = buf_handle->payload_len + sizeof (struct esp_payload_header);
 
 	sendbuf = heap_caps_malloc(total_len, MALLOC_CAP_DMA);
 	if (sendbuf == NULL) {
@@ -142,36 +158,57 @@ static int32_t sdio_write(uint8_t if_type, uint8_t if_num, uint8_t* payload, int
 	memset (header, 0, sizeof(struct esp_payload_header));
 
 	/* Initialize header */
-	header->if_type = if_type;
-	header->if_num = if_num;
-	header->len = payload_len;
+	header->if_type = buf_handle->if_type;
+	header->if_num = buf_handle->if_num;
+	header->len = buf_handle->payload_len;
 	header->offset = sizeof(struct esp_payload_header);
 
-	memcpy(sendbuf + header->offset, payload, payload_len);
+	memcpy(sendbuf + header->offset, buf_handle->payload, buf_handle->payload_len);
 	ret = sdio_slave_transmit(sendbuf, total_len);
 	if (ret != ESP_OK) {
 		ESP_LOGE(TAG , "sdio slave transmit error, ret : 0x%x\r\n", ret);
 		free(sendbuf);
 		return ESP_FAIL;
 	}
+
 	free(sendbuf);
-	return payload_len;
+
+	return buf_handle->payload_len;
 }
 
-static esp_err_t sdio_read(interface_handle_t *if_handle, uint8_t **out_addr, size_t *out_len)
+interface_buffer_handle_t * sdio_read(interface_handle_t *if_handle)
 {
-	esp_err_t ret = ESP_OK;
+	interface_buffer_handle_t *buf_handle = NULL;
+	struct esp_payload_header *header;
 
 	if (!if_handle) {
 		ESP_LOGE(TAG, "Invalid arguments to sdio_read");
-		return ESP_FAIL;
+		return NULL;
 	}
 
-	ret = sdio_slave_recv(&(if_handle->buf_handle), out_addr, out_len, portMAX_DELAY);
-	return ret;
+	if (if_handle->state != ACTIVE) {
+		return NULL;
+	}
+
+	buf_handle = malloc(sizeof(interface_buffer_handle_t));
+	if (!buf_handle) {
+		ESP_LOGE(TAG, "Failed to allocate memory");
+		return NULL;
+	}
+
+	sdio_slave_recv(&(buf_handle->sdio_buf_handle), &(buf_handle->payload),
+			&(buf_handle->payload_len), portMAX_DELAY);
+
+	header = (struct esp_payload_header *) buf_handle->payload;
+
+	buf_handle->if_type = header->if_type;
+	buf_handle->if_num = header->if_num;
+	buf_handle->free_buf_handle = sdio_read_done;
+
+	return buf_handle;
 }
 
-static esp_err_t sdio_reset()
+static esp_err_t sdio_reset(interface_handle_t *handle)
 {
 	esp_err_t ret;
 
@@ -200,13 +237,7 @@ static esp_err_t sdio_reset()
 	return ESP_OK;
 }
 
-static void sdio_read_done(interface_handle_t *if_handle)
-{
-	if (if_handle)
-		sdio_slave_recv_load_buf(if_handle->buf_handle);
-}
-
-static void sdio_deinit()
+static void sdio_deinit(interface_handle_t *handle)
 {
 	sdio_slave_stop();
 	sdio_slave_reset();

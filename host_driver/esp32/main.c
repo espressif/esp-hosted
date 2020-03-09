@@ -261,7 +261,7 @@ static void process_rx_packet(struct sk_buff *skb)
 	payload_header = (struct esp_payload_header *) skb->data;
 	/*		print_hex_dump_bytes("Rx:", DUMP_PREFIX_NONE, (skb->data + 8), 32);*/
 
-	if (payload_header->if_type == ESP_IF_SERIAL) {
+	if (payload_header->if_type == ESP_SERIAL_IF) {
 		print_hex_dump_bytes("Rx:", DUMP_PREFIX_NONE, (skb->data + 8), payload_header->len);
 #ifdef CONFIG_SUPPORT_ESP_SERIAL
 		esp_serial_data_received(payload_header->if_num, skb->data + 8, payload_header->len);

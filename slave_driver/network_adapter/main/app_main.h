@@ -18,20 +18,6 @@
 
 #include "adapter.h"
 
-enum INTERFACE_TYPE {
-	STA_INTF,
-	AP_INTF,
-	SERIAL_INTF,
-};
-
-typedef struct {
-	uint8_t		if_type;
-	uint8_t		if_num;
-	uint16_t	len;
-	void 		*buf;
-	void		*buf_ptr;
-} buf_descriptor_t;
-
 typedef struct {
 	interface_context_t *context;
 } adapter;

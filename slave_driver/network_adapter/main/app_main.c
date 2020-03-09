@@ -48,8 +48,7 @@ uint32_t to_host_count = 0;
 uint32_t to_host_sent_count = 0;
 
 interface_context_t *if_context = NULL;
-
-static SemaphoreHandle_t sdio_write_lock = NULL;
+interface_handle_t *if_handle = NULL;
 
 QueueHandle_t to_host_queue = NULL;
 QueueHandle_t from_host_queue = NULL;
@@ -68,7 +67,7 @@ static inline int min(int x, int y) {
 esp_err_t wlan_ap_rx_callback(void *buffer, uint16_t len, void *eb)
 {
 	esp_err_t ret = ESP_OK;
-	buf_descriptor_t buf_desc;
+	interface_buffer_handle_t buf_handle;
 
 	if (!buffer || !eb || !datapath) {
 		if (eb) {
@@ -78,15 +77,16 @@ esp_err_t wlan_ap_rx_callback(void *buffer, uint16_t len, void *eb)
 	}
 
 	/* Prepare buffer descriptor */
-	memset(&buf_desc, 0, sizeof(buf_desc));
+	memset(&buf_handle, 0, sizeof(buf_handle));
 
-	buf_desc.if_type = AP_INTF;
-	buf_desc.if_num = 0;
-	buf_desc.len = len;
-	buf_desc.buf = buffer;
-	buf_desc.buf_ptr = eb;
+	buf_handle.if_type = ESP_AP_IF;
+	buf_handle.if_num = 0;
+	buf_handle.payload_len = len;
+	buf_handle.payload = buffer;
+	buf_handle.wlan_buf_handle = eb;
+	buf_handle.free_buf_handle = esp_wifi_internal_free_rx_buffer;
 
-	ret = xQueueSend(to_host_queue, &buf_desc, portMAX_DELAY);
+	ret = xQueueSend(to_host_queue, &buf_handle, portMAX_DELAY);
 
 	if (ret != pdTRUE) {
 		ESP_LOGE(TAG, "Slave -> Host: Failed to send buffer\n");
@@ -103,7 +103,7 @@ DONE:
 esp_err_t wlan_sta_rx_callback(void *buffer, uint16_t len, void *eb)
 {
 	esp_err_t ret = ESP_OK;
-	buf_descriptor_t buf_desc;
+	interface_buffer_handle_t buf_handle;
 
 	if (!buffer || !eb || !datapath) {
 		if (eb) {
@@ -115,15 +115,16 @@ esp_err_t wlan_sta_rx_callback(void *buffer, uint16_t len, void *eb)
 	from_wlan_count++;
 
 	/* Prepare buffer descriptor */
-	memset(&buf_desc, 0, sizeof(buf_desc));
+	memset(&buf_handle, 0, sizeof(buf_handle));
 
-	buf_desc.if_type = STA_INTF;
-	buf_desc.if_num = 0;
-	buf_desc.len = len;
-	buf_desc.buf = buffer;
-	buf_desc.buf_ptr = eb;
+	buf_handle.if_type = ESP_STA_IF;
+	buf_handle.if_num = 0;
+	buf_handle.payload_len = len;
+	buf_handle.payload = buffer;
+	buf_handle.wlan_buf_handle = eb;
+	buf_handle.free_buf_handle = esp_wifi_internal_free_rx_buffer;
 
-	ret = xQueueSend(to_host_queue, &buf_desc, portMAX_DELAY);
+	ret = xQueueSend(to_host_queue, &buf_handle, portMAX_DELAY);
 
 	if (ret != pdTRUE) {
 		ESP_LOGE(TAG, "Slave -> Host: Failed to send buffer\n");
@@ -141,40 +142,37 @@ DONE:
 void send_task(void* pvParameters)
 {
 	esp_err_t ret = ESP_OK;
-	buf_descriptor_t buf_desc = {0};
 	int t1, t2, t_total = 0;
 	int d_total = 0;
+	interface_buffer_handle_t buf_handle = {0};
 
 
 	while (1) {
 
-		ret = xQueueReceive(to_host_queue, &buf_desc, portMAX_DELAY);
+		ret = xQueueReceive(to_host_queue, &buf_handle, portMAX_DELAY);
 
 		if (datapath) {
 			if (ret == pdTRUE) {
 				to_host_count++;
+
 				/* Send data */
 				t1 = XTHAL_GET_CCOUNT();
 
 				if (if_context && if_context->if_ops && if_context->if_ops->write) {
-					if_context->if_ops->write(buf_desc.if_type, buf_desc.if_num,
-							buf_desc.buf, buf_desc.len);
+					if_context->if_ops->write(if_handle, &buf_handle);
 				}
 
 				t2 = XTHAL_GET_CCOUNT();
 				t_total += t2 - t1;
-				d_total += buf_desc.len;
+				d_total += buf_handle.payload_len;
 
-/*				usleep(100);*/
-/*				ESP_LOG_BUFFER_HEXDUMP(TAG_TX, buf_desc.buf, 8, ESP_LOG_INFO);*/
+/*				ESP_LOG_BUFFER_HEXDUMP(TAG_TX, buf_handle.buf, 8, ESP_LOG_INFO);*/
 
 				/* Post processing */
-				if (buf_desc.buf_ptr)
-					esp_wifi_internal_free_rx_buffer(buf_desc.buf_ptr);
+				if (buf_handle.free_buf_handle)
+					buf_handle.free_buf_handle(buf_handle.priv_buffer_handle);
 
 				to_host_sent_count++;
-			} else {
-				/*			ESP_LOGE (TAG_TX, "No data available\n");*/
 			}
 			if (t_total) {
 /*				printf("TX complete. Total time spent in tx = %d for %d bytes\n", t_total, d_total);*/
@@ -183,10 +181,11 @@ void send_task(void* pvParameters)
 
 		} else {
 			if (ret == pdTRUE) {
-				ESP_LOGE (TAG_TX, "Data path stopped");
-				ESP_LOG_BUFFER_HEXDUMP(TAG_TX, buf_desc.buf, 32, ESP_LOG_INFO);
-				if (buf_desc.buf_ptr)
-					esp_wifi_internal_free_rx_buffer(buf_desc.buf_ptr);
+				ESP_LOGD (TAG_TX, "Data path stopped");
+
+				/* Post processing */
+				if (buf_handle.free_buf_handle)
+					buf_handle.free_buf_handle(buf_handle.priv_buffer_handle);
 			}
 
 			sleep(1);
@@ -197,37 +196,41 @@ void send_task(void* pvParameters)
 void wlan_rx_task(void* pvParameters)
 {
 	esp_err_t ret = ESP_OK;
-	buf_descriptor_t buf_desc = {0};
+	interface_buffer_handle_t buf_handle = {0};
+	struct esp_payload_header *header;
+	uint8_t *payload;
+	uint16_t payload_len;
 
 	while (1) {
-		ret = xQueueReceive(from_host_queue, &buf_desc, portMAX_DELAY);
+		ret = xQueueReceive(from_host_queue, &buf_handle, portMAX_DELAY);
 
 		if (ret != pdTRUE) {
 			continue;
 		}
 
-		if ((buf_desc.if_type == STA_INTF) && sta_connected) {
+		header = (struct esp_payload_header *) buf_handle.payload;
+		payload = buf_handle.payload + header->offset;
+		payload_len = header->len;
+
+		if ((buf_handle.if_type == ESP_STA_IF) && sta_connected) {
 			/* Forward data to wlan driver */
-			esp_wifi_internal_tx(ESP_IF_WIFI_STA, buf_desc.buf, buf_desc.len);
-		} else if (buf_desc.if_type == AP_INTF) {
+			esp_wifi_internal_tx(ESP_IF_WIFI_STA, payload, payload_len);
+		} else if (buf_handle.if_type == ESP_AP_IF) {
 			/* Forward data to wlan driver */
-			esp_wifi_internal_tx(ESP_IF_WIFI_AP, buf_desc.buf, buf_desc.len);
-		} else if (buf_desc.if_type == SERIAL_INTF) {
+			esp_wifi_internal_tx(ESP_IF_WIFI_AP, payload, payload_len);
+		} else if (buf_handle.if_type == ESP_SERIAL_IF) {
 			/* Process AT command*/
-			memcpy(r.data, buf_desc.buf, min(buf_desc.len, sizeof(r.data)));
+			memcpy(r.data, payload, min(payload_len, sizeof(r.data)));
 			r.valid = 1;
-			r.len = min(buf_desc.len, sizeof(r.data));
+			r.len = min(payload_len, sizeof(r.data));
 
 			ESP_LOG_BUFFER_HEXDUMP(TAG_RX_S, r.data, r.len, ESP_LOG_INFO);
 			esp_at_port_recv_data_notify(r.len, portMAX_DELAY);
 		}
 
 		/* Free buffer handle */
-		if (if_context && if_context->if_ops && if_context->if_ops->read_post_process) {
-			if (buf_desc.buf_ptr) {
-				if_context->if_ops->read_post_process((interface_handle_t *)buf_desc.buf_ptr);
-				free(buf_desc.buf_ptr);
-			}
+		if (buf_handle.free_buf_handle) {
+			buf_handle.free_buf_handle(buf_handle.priv_buffer_handle);
 		}
 	}
 }
@@ -235,59 +238,29 @@ void wlan_rx_task(void* pvParameters)
 /* Get data from host */
 void recv_task(void* pvParameters)
 {
-	interface_handle_t *if_handle = NULL;
-	size_t length = 0;
-	uint8_t* ptr = NULL;
-	struct esp_payload_header *header;
-	buf_descriptor_t buf_desc;
+	interface_buffer_handle_t *buf_handle = NULL;
 	esp_err_t ret;
 
 	for (;;) {
 
-		if (!if_handle) {
-			if_handle = (interface_handle_t *) malloc(sizeof(interface_handle_t));
-			assert(if_handle != NULL);
-		}
-
 		// receive data from transport layer
 		if (if_context && if_context->if_ops && if_context->if_ops->read) {
-			esp_err_t ret = if_context->if_ops->read(if_handle, &ptr, &length);
-			if (ret != ESP_OK) {
-				ESP_LOGE(TAG, "Failed to read %d\n", length);
+			buf_handle = if_context->if_ops->read(if_handle);
+			if (!buf_handle) {
 				continue;
 			}
 		}
 
-		if (length) {
-			header = (struct esp_payload_header *) ptr;
-			ptr += header->offset;
-			length -= header->offset;
+		ret = xQueueSend(from_host_queue, buf_handle, portMAX_DELAY);
 
-/*			ESP_LOG_BUFFER_HEXDUMP(TAG_RX, ptr, 8, ESP_LOG_INFO);*/
-
-			/* Prepare buffer descriptor */
-			memset(&buf_desc, 0, sizeof(buf_desc));
-
-			buf_desc.if_type = header->if_type;
-			buf_desc.if_num = header->if_num;
-			buf_desc.len = header->len;
-			buf_desc.buf = ptr;
-			buf_desc.buf_ptr = (void *) if_handle;
-
-			ret = xQueueSend(from_host_queue, &buf_desc, portMAX_DELAY);
-
-			if (ret != pdTRUE) {
-				ESP_LOGE(TAG, "Host -> Slave: Failed to send buffer\n");
-
-				if (if_context && if_context->if_ops &&
-						if_context->if_ops->read_post_process) {
-					if_context->if_ops->read_post_process(if_handle);
-					free(if_handle);
-				}
+		if (ret != pdTRUE) {
+			ESP_LOGE(TAG, "Host -> Slave: Failed to send buffer\n");
+			if (buf_handle->free_buf_handle) {
+				buf_handle->free_buf_handle(buf_handle->priv_buffer_handle);
 			}
-
-			if_handle = NULL;
 		}
+
+		free(buf_handle);
 	}
 }
 
@@ -307,10 +280,16 @@ static int32_t at_sdio_hosted_read_data(uint8_t *data, int32_t len)
 
 static int32_t at_sdio_hosted_write_data(uint8_t* data, int32_t len)
 {
+	interface_buffer_handle_t buf_handle = {0};
 	ESP_LOGE(TAG, "at_sdio_hosted_write_data %d\n", len);
 
+	buf_handle.if_type = ESP_SERIAL_IF;
+	buf_handle.if_num = 0;
+	buf_handle.payload = data;
+	buf_handle.payload_len = len;
+
 	if (datapath && if_context && if_context->if_ops && if_context->if_ops->write)
-		if_context->if_ops->write(SERIAL_INTF, 0, data, len);
+		if_context->if_ops->write(if_handle, &buf_handle);
 
 	ESP_LOG_BUFFER_HEXDUMP(TAG_TX_S, data, len, ESP_LOG_INFO);
 	return len;
@@ -323,10 +302,6 @@ uint32_t esp_at_get_task_stack_size(void)
 
 void at_interface_init(void)
 {
-	/*    xSemaphoreTake(sdio_write_lock, (portTickType)portMAX_DELAY);*/
-	/*    write_data(SERIAL_INTF, 0, (uint8_t *)"\r\nready\r\n", 9);*/
-	/*    xSemaphoreGive(sdio_write_lock);*/
-
 	esp_at_device_ops_struct esp_at_device_ops = {
 		.read_data = at_sdio_hosted_read_data,
 		.write_data = at_sdio_hosted_write_data,
@@ -371,20 +346,21 @@ static void initialise_wifi(void)
 int event_handler(uint8_t val)
 {
 	switch(val) {
-		case START_DATA_PATH:
-			ESP_EARLY_LOGE(TAG, "Start Data Path");
+		case ESP_OPEN_DATA_PATH:
+			ESP_EARLY_LOGI(TAG, "Start Data Path");
 			datapath = 1;
+			if_handle->state = ACTIVE;
 			break;
 
-		case STOP_DATA_PATH:
-			ESP_EARLY_LOGE(TAG, "Stop Data Path");
+		case ESP_CLOSE_DATA_PATH:
+			ESP_EARLY_LOGI(TAG, "Stop Data Path");
 			datapath = 0;
+			if_handle->state = DEACTIVE;
 			break;
 	}
 	return 0;
 }
 
-//Main application
 void app_main()
 {
 	esp_err_t ret;
@@ -404,27 +380,20 @@ void app_main()
 		return;
 	}
 
-	ret = if_context->if_ops->init();
+	if_handle = if_context->if_ops->init();
 
-	if (ret) {
+	if (!if_handle) {
 		ESP_LOGE(TAG, "Failed to initialize driver\n");
 		return;
 	}
 
-	to_host_queue = xQueueCreate(QUEUE_SIZE, sizeof(buf_descriptor_t));
+	to_host_queue = xQueueCreate(QUEUE_SIZE, sizeof(interface_buffer_handle_t));
 	assert(to_host_queue != NULL);
 
-	from_host_queue = xQueueCreate(QUEUE_SIZE, sizeof(buf_descriptor_t));
+	from_host_queue = xQueueCreate(QUEUE_SIZE, sizeof(interface_buffer_handle_t));
 	assert(from_host_queue != NULL);
 
 	ESP_ERROR_CHECK(ret);
-
-	sdio_write_lock = xSemaphoreCreateBinary();
-
-	assert (sdio_write_lock != NULL);
-
-	/* by default it will be in taken state.. release it */
-	xSemaphoreGive(sdio_write_lock);
 
 	ESP_LOGI(TAG, EV_STR("slave ready"));
 	xTaskCreate(recv_task , "sdio_recv_task" , 4096 , NULL , 18 , NULL);
