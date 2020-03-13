@@ -36,6 +36,7 @@
 #include "esp_bt.h"
 #include "driver/uart.h"
 #endif
+#include "endian.h"
 
 #include <protocomm.h>
 #include "protocomm_pserial.h"
@@ -284,8 +285,8 @@ void wlan_rx_task(void* pvParameters)
 		}
 
 		header = (struct esp_payload_header *) buf_handle.payload;
-		payload = buf_handle.payload + header->offset;
-		payload_len = header->len;
+		payload = buf_handle.payload + le16toh(header->offset);
+		payload_len = le16toh(header->len);
 
 #if CONFIG_ESP_WLAN_DEBUG
 		ESP_LOG_BUFFER_HEXDUMP(TAG_RX, payload, 8, ESP_LOG_INFO);

@@ -223,8 +223,8 @@ static void process_tx_packet (void)
 
 		payload_header->if_type = priv->if_type;
 		payload_header->if_num = priv->if_num;
-		payload_header->len = skb->len - pad_len;
-		payload_header->offset = pad_len;
+		payload_header->len = cpu_to_le16(skb->len - pad_len);
+		payload_header->offset = cpu_to_le16(pad_len);
 		payload_header->reserved1 = c % 255;
 
 /*		printk (KERN_ERR "H -> S: %d %d %d %d", len, payload_header->offset,*/
@@ -252,6 +252,7 @@ static void process_rx_packet(struct sk_buff *skb)
 {
 	struct esp_private *priv;
 	struct esp_payload_header *payload_header;
+	u16 len, offset;
 
 	if (!skb)
 		return;
@@ -260,17 +261,20 @@ static void process_rx_packet(struct sk_buff *skb)
 	payload_header = (struct esp_payload_header *) skb->data;
 	/*		print_hex_dump_bytes("Rx:", DUMP_PREFIX_NONE, (skb->data + 8), 32);*/
 
+	len = le16_to_cpu(payload_header->len);
+	offset = le16_to_cpu(payload_header->offset);
+
 	if (payload_header->if_type == ESP_SERIAL_IF) {
-		print_hex_dump_bytes("Rx:", DUMP_PREFIX_NONE, (skb->data + 8), payload_header->len);
+		print_hex_dump_bytes("Rx:", DUMP_PREFIX_NONE, (skb->data + offset), len);
 #ifdef CONFIG_SUPPORT_ESP_SERIAL
-		esp_serial_data_received(payload_header->if_num, skb->data + 8, payload_header->len);
+		esp_serial_data_received(payload_header->if_num, skb->data + offset, len);
 #else
 		printk(KERN_ERR "Dropping unsupported serial frame\n");
 #endif
 		dev_kfree_skb_any(skb);
 	} else if (payload_header->if_type == ESP_STA_IF || payload_header->if_type == ESP_AP_IF) {
 		/* chop off the header from skb */
-		skb_pull(skb, payload_header->offset);
+		skb_pull(skb, offset);
 
 		/* retrieve priv based on payload header contents */
 		priv = get_priv_from_payload_header(payload_header);

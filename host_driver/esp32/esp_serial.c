@@ -79,8 +79,8 @@ static int esp_serial_write(struct file *file, const char __user *user_buffer, s
 
 	hdr->if_type = ESP_SERIAL_IF;
 	hdr->if_num = dev->dev_index;
-	hdr->len = size;
-	hdr->offset = sizeof(struct esp_payload_header);
+	hdr->len = cpu_to_le16(size);
+	hdr->offset = cpu_to_le16(sizeof(struct esp_payload_header));
 
 	ret = copy_from_user(buf + hdr->offset, user_buffer, size);
 	if (ret != 0) {

@@ -21,6 +21,7 @@
 #include "sdio_slave_api.h"
 #include "driver/sdio_slave.h"
 #include "soc/sdio_slave_periph.h"
+#include "endian.h"
 
 #define SDIO_SLAVE_QUEUE_SIZE 20
 #define BUFFER_SIZE     2048
@@ -142,6 +143,7 @@ static int32_t sdio_write(interface_handle_t *handle, interface_buffer_handle_t 
 	esp_err_t ret = ESP_OK;
 	int32_t total_len;
 	uint8_t* sendbuf = NULL;
+	uint16_t offset = 0;
 	struct esp_payload_header *header;
 
 	if (!handle || !buf_handle) {
@@ -174,10 +176,11 @@ static int32_t sdio_write(interface_handle_t *handle, interface_buffer_handle_t 
 	/* Initialize header */
 	header->if_type = buf_handle->if_type;
 	header->if_num = buf_handle->if_num;
-	header->len = buf_handle->payload_len;
-	header->offset = sizeof(struct esp_payload_header);
+	header->len = htole16(buf_handle->payload_len);
+	offset = sizeof(struct esp_payload_header);
+	header->offset = htole16(offset);
 
-	memcpy(sendbuf + header->offset, buf_handle->payload, buf_handle->payload_len);
+	memcpy(sendbuf + offset, buf_handle->payload, buf_handle->payload_len);
 	ret = sdio_slave_transmit(sendbuf, total_len);
 	if (ret != ESP_OK) {
 		ESP_LOGE(TAG , "sdio slave transmit error, ret : 0x%x\r\n", ret);
