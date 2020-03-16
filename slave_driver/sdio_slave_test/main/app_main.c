@@ -369,7 +369,7 @@ void wlan_rx_task(void* pvParameters)
 			//printf("length after copying into r data %d \n",r.len);
 			//ESP_LOG_BUFFER_HEXDUMP(TAG_RX_S, r.data, r.len, ESP_LOG_INFO);
 			//esp_at_port_recv_data_notify(r.len, portMAX_DELAY);
-            protocomm_pserial_data_ready(pc_pserial, r.len);
+			protocomm_pserial_data_ready(pc_pserial, r.len);
 		}
 
 		if (wlan_buf->buf_ptr)
@@ -616,7 +616,11 @@ void app_main()
 		return;
 	}	
 	ESP_LOGI(TAG,"wifi init \n");
-    pc_pserial = protocomm_new();
+	pc_pserial = protocomm_new();
+	if (pc_pserial == NULL) {
+		ESP_LOGE(TAG,"Failed to allocate memory for new instance of protocomm ");
+		return;
+	}
 
 	if (protocomm_add_endpoint(pc_pserial, "control", data_transfer_handler, NULL) != ESP_OK) {
 		ESP_LOGE(TAG, "Failed to add enpoint");
@@ -627,5 +631,3 @@ void app_main()
     protocomm_pserial_start(pc_pserial, at_sdio_hosted_write_data, at_sdio_hosted_read_data);
 	ESP_LOGI(TAG,"pserial start \n");
 }
-
-
