@@ -131,7 +131,7 @@ def wifi_disconnect_ap():
      protodata = disconnect_ap.SerializeToString()
      #print("serialized data "+str(protodata))
      tp = transport.Transport_pserial(interface)
-     response = tp.send_data(endpoint,protodata,10)
+     response = tp.send_data(endpoint,protodata,0.3)
      #print("response from slave "+str(response))
      disconnect_ap.ParseFromString(response)
      #print("parsed output "+str(disconnect_ap.resp_disconnect_ap.mode )
@@ -152,22 +152,69 @@ def wifi_disconnect_ap():
 # ssid_hidden : softAP should broadcast its SSID or not
 #   ( 0 : SSID is broadcast
 #     1 : SSID is not broadcast )
-def wifi_set_softap_config(ssid, pwd, chnl, ecn, max_conn, ssid_hidden):
+# bw : set bandwidth of ESP32 softAP
+#   ( 1 : WIFI_BW_HT20
+#     2 : WIFI_BW_HT40 )
+
+def wifi_set_softap_config(ssid, pwd, chnl, ecn, max_conn, ssid_hidden, bw):
+    set_softap_config = slave_config_pb2.SlaveConfigPayload()
+    set_softap_config.msg = slave_config_pb2.SlaveConfigMsgType.TypeCmdSetSoftAPConfig
+    set_softap_config.cmd_set_softap_config.ssid = str(ssid)
+    print(str(ssid))
+    print("input ssid")
+    print(set_softap_config.cmd_set_softap_config.ssid)
+    set_softap_config.cmd_set_softap_config.pwd = str(pwd)
+    print(str(pwd))
+    print("input pwd")
+    print(set_softap_config.cmd_set_softap_config.pwd)
+    set_softap_config.cmd_set_softap_config.chnl = chnl
+    print(chnl)
+    print("input chnl")
+    print(set_softap_config.cmd_set_softap_config.chnl )
+    set_softap_config.cmd_set_softap_config.ecn = ecn
+    print(ecn)
+    print("ecn method")
+    print(set_softap_config.cmd_set_softap_config.ecn )
+    set_softap_config.cmd_set_softap_config.max_conn = max_conn
+    print(max_conn)
+    print("max conn")
+    print(set_softap_config.cmd_set_softap_config.max_conn)
+    set_softap_config.cmd_set_softap_config.ssid_hidden = ssid_hidden
+    print(ssid_hidden)
+    print("ssid hidden")
+    print(set_softap_config.cmd_set_softap_config.ssid_hidden)
+    set_softap_config.cmd_set_softap_config.bw = bw
+    print(bw)
+    print("bw")
+    print(set_softap_config.cmd_set_softap_config.bw )
+    protodata = set_softap_config.SerializeToString()
+    #print("serialized data "+str(protodata))
+    tp = transport.Transport_pserial(interface)
+    response = tp.send_data(endpoint,protodata,0.3)
+    #print("response from slave "+str(response))
+    set_softap_config.ParseFromString(response)
+    #print("parsed output "+str(set_softap_config.cmd_set_softap_config.status )
+    status = set_softap_config.resp_set_softap_config.status
+    return status
+
+def wifi_get_softap_config():
     get_softap_config = slave_config_pb2.SlaveConfigPayload()
     get_softap_config.msg = slave_config_pb2.SlaveConfigMsgType.TypeCmdGetSoftAPConfig
-    get_softap_config.cmd_set_softap_config.ssid = str(ssid)
-    get_softap_config.cmd_set_softap_config.pwd = str(pwd)
-    get_softap_config.cmd_set_softap_config.chnl = chnl
-    get_softap_config.cmd_set_softap_config.ecn = ecn
-    get_softap_config.cmd_set_softap_config.max_conn = max_conn
-    get_softap_config.cmd_set_softap_config.ssid_hidden = ssid_hidden
     protodata = get_softap_config.SerializeToString()
     #print("serialized data "+str(protodata))
     tp = transport.Transport_pserial(interface)
     response = tp.send_data(endpoint,protodata,0.3)
     #print("response from slave "+str(response))
     get_softap_config.ParseFromString(response)
-    #print("parsed output "+str(get_ap_config.resp_set_wifi_mode.mode )
-    status = get_softap_config.resp_get_softap_config.status
-    return status
-
+    #print("parsed output "+str(get_softap_config.resp_get_softap_config.status )
+    ssid = str(get_softap_config.resp_get_softap_config.ssid)
+    print(ssid)
+    print("ssid here")
+    pwd = str(get_softap_config.resp_get_softap_config.pwd)
+    en = get_softap_config.resp_get_softap_config.ecn
+    chnl  = get_softap_config.resp_get_softap_config.chnl
+    max_conn = get_softap_config.resp_get_softap_config.max_conn
+    ssid_hidden  = get_softap_config.resp_get_softap_config.ssid_hidden
+    status  = str(get_softap_config.resp_get_softap_config.status)
+    bw = get_softap_config.resp_get_softap_config.bw
+    return ssid,pwd,en,chnl,max_conn,ssid_hidden,status,bw

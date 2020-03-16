@@ -17,11 +17,9 @@ from host_commands import slave_comm
 '''
 # 1 : station
 # 2 : softAP
+
 x = slave_comm.get_mac(2)
 print("sta mac "+str(x))
-
-x = slave_comm.get_ap_mac()
-print("softAP mac "+str(x))
 
 # 0: null Mode, Wi-Fi mode not set
 # 1: station mode
@@ -31,10 +29,13 @@ print("softAP mac "+str(x))
 x = slave_comm.get_wifi_mode()
 print("wifi mode is "+str(x))
 
-x = slave_comm.set_wifi_mode(1)
+x = slave_comm.set_wifi_mode(2)
 print("connected mode is "+str(x))
+
+x = slave_comm.get_wifi_mode()
+print("wifi mode is "+str(x))
 '''
-x = slave_comm.wifi_set_ap_config('ESPIndia','gobig||home','0')
+x = slave_comm.wifi_set_ap_config('Siddhesh','sid123456','0')
 print(x)
 
 x = slave_comm.wifi_get_ap_config()
@@ -43,6 +44,12 @@ print(x)
 x = slave_comm.wifi_disconnect_ap()
 print(x)
 '''
-x = slave_comm.wifi_set_softap_config('ESP12','0',4,4,5,0)
+# need to accept default badwidth as 20 and make it as optional parameter
+x = slave_comm.wifi_set_softap_config('ESP12','0',4,0,5,0,1)
+print("output is here")
+print(x)
+
+x = slave_comm.wifi_get_softap_config()
+print("get softap output here")
 print(x)
 '''

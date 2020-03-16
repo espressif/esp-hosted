@@ -324,7 +324,7 @@ const ProtobufCMessageDescriptor resp_get_status__descriptor =
   (ProtobufCMessageInit) resp_get_status__init,
   NULL,NULL,NULL    /* reserved[123] */
 };
-static const ProtobufCFieldDescriptor cmd_config__field_descriptors[9] =
+static const ProtobufCFieldDescriptor cmd_config__field_descriptors[10] =
 {
   {
     "ssid",
@@ -434,9 +434,22 @@ static const ProtobufCFieldDescriptor cmd_config__field_descriptors[9] =
     0,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
+  {
+    "bw",
+    10,
+    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_TYPE_INT32,
+    offsetof(CmdConfig, has_bw),
+    offsetof(CmdConfig, bw),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
 };
 static const unsigned cmd_config__field_indices_by_name[] = {
   6,   /* field[6] = bssid */
+  9,   /* field[9] = bw */
   3,   /* field[3] = chnl */
   2,   /* field[2] = ecn */
   4,   /* field[4] = max_conn */
@@ -449,7 +462,7 @@ static const unsigned cmd_config__field_indices_by_name[] = {
 static const ProtobufCIntRange cmd_config__number_ranges[1 + 1] =
 {
   { 1, 0 },
-  { 0, 9 }
+  { 0, 10 }
 };
 const ProtobufCMessageDescriptor cmd_config__descriptor =
 {
@@ -459,14 +472,14 @@ const ProtobufCMessageDescriptor cmd_config__descriptor =
   "CmdConfig",
   "",
   sizeof(CmdConfig),
-  9,
+  10,
   cmd_config__field_descriptors,
   cmd_config__field_indices_by_name,
   1,  cmd_config__number_ranges,
   (ProtobufCMessageInit) cmd_config__init,
   NULL,NULL,NULL    /* reserved[123] */
 };
-static const ProtobufCFieldDescriptor resp_config__field_descriptors[9] =
+static const ProtobufCFieldDescriptor resp_config__field_descriptors[10] =
 {
   {
     "ssid",
@@ -576,9 +589,22 @@ static const ProtobufCFieldDescriptor resp_config__field_descriptors[9] =
     0,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
+  {
+    "bw",
+    10,
+    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_TYPE_INT32,
+    offsetof(RespConfig, has_bw),
+    offsetof(RespConfig, bw),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
 };
 static const unsigned resp_config__field_indices_by_name[] = {
   6,   /* field[6] = bssid */
+  9,   /* field[9] = bw */
   3,   /* field[3] = chnl */
   2,   /* field[2] = ecn */
   4,   /* field[4] = max_conn */
@@ -591,7 +617,7 @@ static const unsigned resp_config__field_indices_by_name[] = {
 static const ProtobufCIntRange resp_config__number_ranges[1 + 1] =
 {
   { 1, 0 },
-  { 0, 9 }
+  { 0, 10 }
 };
 const ProtobufCMessageDescriptor resp_config__descriptor =
 {
@@ -601,7 +627,7 @@ const ProtobufCMessageDescriptor resp_config__descriptor =
   "RespConfig",
   "",
   sizeof(RespConfig),
-  9,
+  10,
   resp_config__field_descriptors,
   resp_config__field_indices_by_name,
   1,  resp_config__number_ranges,

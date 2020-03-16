@@ -94,10 +94,12 @@ struct  _CmdConfig
   protobuf_c_boolean has_rssi;
   int32_t rssi;
   char *status;
+  protobuf_c_boolean has_bw;
+  int32_t bw;
 };
 #define CMD_CONFIG__INIT \
  { PROTOBUF_C_MESSAGE_INIT (&cmd_config__descriptor) \
-    , NULL, NULL, 0,0, 0,0, 0,0, 0,0, NULL, 0,0, NULL }
+    , NULL, NULL, 0,0, 0,0, 0,0, 0,0, NULL, 0,0, NULL, 0,0 }
 
 
 struct  _RespConfig
@@ -117,10 +119,12 @@ struct  _RespConfig
   protobuf_c_boolean has_rssi;
   int32_t rssi;
   char *status;
+  protobuf_c_boolean has_bw;
+  int32_t bw;
 };
 #define RESP_CONFIG__INIT \
  { PROTOBUF_C_MESSAGE_INIT (&resp_config__descriptor) \
-    , NULL, NULL, 0,0, 0,0, 0,0, 0,0, NULL, 0,0, NULL }
+    , NULL, NULL, 0,0, 0,0, 0,0, 0,0, NULL, 0,0, NULL, 0,0 }
 
 
 typedef enum {

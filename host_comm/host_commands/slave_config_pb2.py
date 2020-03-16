@@ -19,7 +19,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   package='',
   syntax='proto3',
   serialized_options=None,
-  serialized_pb=b'\n\x12slave_config.proto\")\n\x0c\x43mdGetStatus\x12\x0b\n\x03\x63md\x18\x01 \x01(\t\x12\x0c\n\x04mode\x18\x02 \x01(\x05\"+\n\rRespGetStatus\x12\x0c\n\x04resp\x18\x01 \x01(\t\x12\x0c\n\x04mode\x18\x02 \x01(\x05\"\xa6\x01\n\tCmdConfig\x12\x0c\n\x04ssid\x18\x01 \x01(\t\x12\x0b\n\x03pwd\x18\x02 \x01(\t\x12\x1c\n\x03\x65\x63n\x18\x03 \x01(\x0e\x32\x0f.EncryptionMode\x12\x0c\n\x04\x63hnl\x18\x04 \x01(\x05\x12\x10\n\x08max_conn\x18\x05 \x01(\x05\x12\x13\n\x0bssid_hidden\x18\x06 \x01(\x08\x12\r\n\x05\x62ssid\x18\x07 \x01(\t\x12\x0c\n\x04rssi\x18\x08 \x01(\x05\x12\x0e\n\x06status\x18\t \x01(\t\"\xa7\x01\n\nRespConfig\x12\x0c\n\x04ssid\x18\x01 \x01(\t\x12\x0b\n\x03pwd\x18\x02 \x01(\t\x12\x1c\n\x03\x65\x63n\x18\x03 \x01(\x0e\x32\x0f.EncryptionMode\x12\x0c\n\x04\x63hnl\x18\x04 \x01(\x05\x12\x10\n\x08max_conn\x18\x05 \x01(\x05\x12\x13\n\x0bssid_hidden\x18\x06 \x01(\x08\x12\r\n\x05\x62ssid\x18\x07 \x01(\t\x12\x0c\n\x04rssi\x18\x08 \x01(\x05\x12\x0e\n\x06status\x18\t \x01(\t\"\x8d\x06\n\x12SlaveConfigPayload\x12 \n\x03msg\x18\x01 \x01(\x0e\x32\x13.SlaveConfigMsgType\x12,\n\x13\x63md_get_mac_address\x18\n \x01(\x0b\x32\r.CmdGetStatusH\x00\x12.\n\x14resp_get_mac_address\x18\x0b \x01(\x0b\x32\x0e.RespGetStatusH\x00\x12*\n\x11\x63md_get_wifi_mode\x18\x0c \x01(\x0b\x32\r.CmdGetStatusH\x00\x12,\n\x12resp_get_wifi_mode\x18\r \x01(\x0b\x32\x0e.RespGetStatusH\x00\x12*\n\x11\x63md_set_wifi_mode\x18\x0e \x01(\x0b\x32\r.CmdGetStatusH\x00\x12,\n\x12resp_set_wifi_mode\x18\x0f \x01(\x0b\x32\x0e.RespGetStatusH\x00\x12\'\n\x11\x63md_get_ap_config\x18\x10 \x01(\x0b\x32\n.CmdConfigH\x00\x12)\n\x12resp_get_ap_config\x18\x11 \x01(\x0b\x32\x0b.RespConfigH\x00\x12\'\n\x11\x63md_set_ap_config\x18\x12 \x01(\x0b\x32\n.CmdConfigH\x00\x12)\n\x12resp_set_ap_config\x18\x13 \x01(\x0b\x32\x0b.RespConfigH\x00\x12+\n\x15\x63md_get_softap_config\x18\x14 \x01(\x0b\x32\n.CmdConfigH\x00\x12-\n\x16resp_get_softap_config\x18\x15 \x01(\x0b\x32\x0b.RespConfigH\x00\x12+\n\x15\x63md_set_softap_config\x18\x16 \x01(\x0b\x32\n.CmdConfigH\x00\x12-\n\x16resp_set_softap_config\x18\x17 \x01(\x0b\x32\x0b.RespConfigH\x00\x12*\n\x11\x63md_disconnect_ap\x18\x18 \x01(\x0b\x32\r.CmdGetStatusH\x00\x12,\n\x12resp_disconnect_ap\x18\x19 \x01(\x0b\x32\x0e.RespGetStatusH\x00\x42\t\n\x07payload*[\n\x0e\x45ncryptionMode\x12\r\n\tType_Open\x10\x00\x12\x10\n\x0cType_WPA_PSK\x10\x01\x12\x11\n\rType_WPA2_PSK\x10\x02\x12\x15\n\x11Type_WPA_WPA2_PSK\x10\x03*\xb2\x03\n\x12SlaveConfigMsgType\x12\x18\n\x14TypeCmdGetMACAddress\x10\x00\x12\x19\n\x15TypeRespGetMACAddress\x10\x01\x12\x16\n\x12TypeCmdGetWiFiMode\x10\x02\x12\x17\n\x13TypeRespGetWiFiMode\x10\x03\x12\x16\n\x12TypeCmdSetWiFiMode\x10\x04\x12\x17\n\x13TypeRespSetWiFiMode\x10\x05\x12\x16\n\x12TypeCmdGetAPConfig\x10\x06\x12\x17\n\x13TypeRespGetAPConfig\x10\x07\x12\x16\n\x12TypeCmdSetAPConfig\x10\x08\x12\x17\n\x13TypeRespSetAPConfig\x10\t\x12\x1a\n\x16TypeCmdGetSoftAPConfig\x10\n\x12\x1b\n\x17TypeRespGetSoftAPConfig\x10\x0b\x12\x1a\n\x16TypeCmdSetSoftAPConfig\x10\x0c\x12\x1b\n\x17TypeRespSetSoftAPConfig\x10\r\x12\x17\n\x13TypeCmdDisconnectAP\x10\x0e\x12\x18\n\x14TypeRespDisconnectAP\x10\x0f\x62\x06proto3'
+  serialized_pb=b'\n\x12slave_config.proto\")\n\x0c\x43mdGetStatus\x12\x0b\n\x03\x63md\x18\x01 \x01(\t\x12\x0c\n\x04mode\x18\x02 \x01(\x05\"+\n\rRespGetStatus\x12\x0c\n\x04resp\x18\x01 \x01(\t\x12\x0c\n\x04mode\x18\x02 \x01(\x05\"\xb2\x01\n\tCmdConfig\x12\x0c\n\x04ssid\x18\x01 \x01(\t\x12\x0b\n\x03pwd\x18\x02 \x01(\t\x12\x1c\n\x03\x65\x63n\x18\x03 \x01(\x0e\x32\x0f.EncryptionMode\x12\x0c\n\x04\x63hnl\x18\x04 \x01(\x05\x12\x10\n\x08max_conn\x18\x05 \x01(\x05\x12\x13\n\x0bssid_hidden\x18\x06 \x01(\x08\x12\r\n\x05\x62ssid\x18\x07 \x01(\t\x12\x0c\n\x04rssi\x18\x08 \x01(\x05\x12\x0e\n\x06status\x18\t \x01(\t\x12\n\n\x02\x62w\x18\n \x01(\x05\"\xb3\x01\n\nRespConfig\x12\x0c\n\x04ssid\x18\x01 \x01(\t\x12\x0b\n\x03pwd\x18\x02 \x01(\t\x12\x1c\n\x03\x65\x63n\x18\x03 \x01(\x0e\x32\x0f.EncryptionMode\x12\x0c\n\x04\x63hnl\x18\x04 \x01(\x05\x12\x10\n\x08max_conn\x18\x05 \x01(\x05\x12\x13\n\x0bssid_hidden\x18\x06 \x01(\x08\x12\r\n\x05\x62ssid\x18\x07 \x01(\t\x12\x0c\n\x04rssi\x18\x08 \x01(\x05\x12\x0e\n\x06status\x18\t \x01(\t\x12\n\n\x02\x62w\x18\n \x01(\x05\"\x8d\x06\n\x12SlaveConfigPayload\x12 \n\x03msg\x18\x01 \x01(\x0e\x32\x13.SlaveConfigMsgType\x12,\n\x13\x63md_get_mac_address\x18\n \x01(\x0b\x32\r.CmdGetStatusH\x00\x12.\n\x14resp_get_mac_address\x18\x0b \x01(\x0b\x32\x0e.RespGetStatusH\x00\x12*\n\x11\x63md_get_wifi_mode\x18\x0c \x01(\x0b\x32\r.CmdGetStatusH\x00\x12,\n\x12resp_get_wifi_mode\x18\r \x01(\x0b\x32\x0e.RespGetStatusH\x00\x12*\n\x11\x63md_set_wifi_mode\x18\x0e \x01(\x0b\x32\r.CmdGetStatusH\x00\x12,\n\x12resp_set_wifi_mode\x18\x0f \x01(\x0b\x32\x0e.RespGetStatusH\x00\x12\'\n\x11\x63md_get_ap_config\x18\x10 \x01(\x0b\x32\n.CmdConfigH\x00\x12)\n\x12resp_get_ap_config\x18\x11 \x01(\x0b\x32\x0b.RespConfigH\x00\x12\'\n\x11\x63md_set_ap_config\x18\x12 \x01(\x0b\x32\n.CmdConfigH\x00\x12)\n\x12resp_set_ap_config\x18\x13 \x01(\x0b\x32\x0b.RespConfigH\x00\x12+\n\x15\x63md_get_softap_config\x18\x14 \x01(\x0b\x32\n.CmdConfigH\x00\x12-\n\x16resp_get_softap_config\x18\x15 \x01(\x0b\x32\x0b.RespConfigH\x00\x12+\n\x15\x63md_set_softap_config\x18\x16 \x01(\x0b\x32\n.CmdConfigH\x00\x12-\n\x16resp_set_softap_config\x18\x17 \x01(\x0b\x32\x0b.RespConfigH\x00\x12*\n\x11\x63md_disconnect_ap\x18\x18 \x01(\x0b\x32\r.CmdGetStatusH\x00\x12,\n\x12resp_disconnect_ap\x18\x19 \x01(\x0b\x32\x0e.RespGetStatusH\x00\x42\t\n\x07payload*[\n\x0e\x45ncryptionMode\x12\r\n\tType_Open\x10\x00\x12\x10\n\x0cType_WPA_PSK\x10\x01\x12\x11\n\rType_WPA2_PSK\x10\x02\x12\x15\n\x11Type_WPA_WPA2_PSK\x10\x03*\xb2\x03\n\x12SlaveConfigMsgType\x12\x18\n\x14TypeCmdGetMACAddress\x10\x00\x12\x19\n\x15TypeRespGetMACAddress\x10\x01\x12\x16\n\x12TypeCmdGetWiFiMode\x10\x02\x12\x17\n\x13TypeRespGetWiFiMode\x10\x03\x12\x16\n\x12TypeCmdSetWiFiMode\x10\x04\x12\x17\n\x13TypeRespSetWiFiMode\x10\x05\x12\x16\n\x12TypeCmdGetAPConfig\x10\x06\x12\x17\n\x13TypeRespGetAPConfig\x10\x07\x12\x16\n\x12TypeCmdSetAPConfig\x10\x08\x12\x17\n\x13TypeRespSetAPConfig\x10\t\x12\x1a\n\x16TypeCmdGetSoftAPConfig\x10\n\x12\x1b\n\x17TypeRespGetSoftAPConfig\x10\x0b\x12\x1a\n\x16TypeCmdSetSoftAPConfig\x10\x0c\x12\x1b\n\x17TypeRespSetSoftAPConfig\x10\r\x12\x17\n\x13TypeCmdDisconnectAP\x10\x0e\x12\x18\n\x14TypeRespDisconnectAP\x10\x0f\x62\x06proto3'
 )
 
 _ENCRYPTIONMODE = _descriptor.EnumDescriptor(
@@ -47,8 +47,8 @@ _ENCRYPTIONMODE = _descriptor.EnumDescriptor(
   ],
   containing_type=None,
   serialized_options=None,
-  serialized_start=1233,
-  serialized_end=1324,
+  serialized_start=1257,
+  serialized_end=1348,
 )
 _sym_db.RegisterEnumDescriptor(_ENCRYPTIONMODE)
 
@@ -126,8 +126,8 @@ _SLAVECONFIGMSGTYPE = _descriptor.EnumDescriptor(
   ],
   containing_type=None,
   serialized_options=None,
-  serialized_start=1327,
-  serialized_end=1761,
+  serialized_start=1351,
+  serialized_end=1785,
 )
 _sym_db.RegisterEnumDescriptor(_SLAVECONFIGMSGTYPE)
 
@@ -301,6 +301,13 @@ _CMDCONFIG = _descriptor.Descriptor(
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='bw', full_name='CmdConfig.bw', index=9,
+      number=10, type=5, cpp_type=1, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
   ],
   extensions=[
   ],
@@ -314,7 +321,7 @@ _CMDCONFIG = _descriptor.Descriptor(
   oneofs=[
   ],
   serialized_start=111,
-  serialized_end=277,
+  serialized_end=289,
 )
 
 
@@ -388,6 +395,13 @@ _RESPCONFIG = _descriptor.Descriptor(
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='bw', full_name='RespConfig.bw', index=9,
+      number=10, type=5, cpp_type=1, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
   ],
   extensions=[
   ],
@@ -400,8 +414,8 @@ _RESPCONFIG = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=280,
-  serialized_end=447,
+  serialized_start=292,
+  serialized_end=471,
 )
 
 
@@ -546,8 +560,8 @@ _SLAVECONFIGPAYLOAD = _descriptor.Descriptor(
       name='payload', full_name='SlaveConfigPayload.payload',
       index=0, containing_type=None, fields=[]),
   ],
-  serialized_start=450,
-  serialized_end=1231,
+  serialized_start=474,
+  serialized_end=1255,
 )
 
 _CMDCONFIG.fields_by_name['ecn'].enum_type = _ENCRYPTIONMODE
