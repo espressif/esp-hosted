@@ -34,10 +34,16 @@
 
 #define EV_STR(s) "================ "s" ================"
 static const char TAG[] = "NETWORK_ADAPTER";
+
+#if CONFIG_ESP_WLAN_DEBUG
 static const char TAG_RX[] = "H -> S";
-static const char TAG_RX_S[] = "CONTROL H -> S";
 static const char TAG_TX[] = "S -> H";
+#endif
+
+#if CONFIG_ESP_SERIAL_DEBUG
+static const char TAG_RX_S[] = "CONTROL H -> S";
 static const char TAG_TX_S[] = "CONTROL S -> H";
+#endif
 
 volatile uint8_t action = 0;
 volatile uint8_t datapath = 0;
@@ -52,7 +58,8 @@ interface_handle_t *if_handle = NULL;
 
 QueueHandle_t to_host_queue = NULL;
 QueueHandle_t from_host_queue = NULL;
-#define QUEUE_SIZE	100
+#define TO_HOST_QUEUE_SIZE	100
+#define FROM_HOST_QUEUE_SIZE	100
 
 static struct rx_data {
     uint8_t valid;
@@ -166,8 +173,9 @@ void send_task(void* pvParameters)
 				t_total += t2 - t1;
 				d_total += buf_handle.payload_len;
 
-/*				ESP_LOG_BUFFER_HEXDUMP(TAG_TX, buf_handle.buf, 8, ESP_LOG_INFO);*/
-
+#if CONFIG_ESP_WLAN_DEBUG
+				ESP_LOG_BUFFER_HEXDUMP(TAG_TX, buf_handle.buf, 8, ESP_LOG_INFO);
+#endif
 				/* Post processing */
 				if (buf_handle.free_buf_handle)
 					buf_handle.free_buf_handle(buf_handle.priv_buffer_handle);
@@ -181,7 +189,9 @@ void send_task(void* pvParameters)
 
 		} else {
 			if (ret == pdTRUE) {
+#if CONFIG_ESP_WLAN_DEBUG
 				ESP_LOGD (TAG_TX, "Data path stopped");
+#endif
 
 				/* Post processing */
 				if (buf_handle.free_buf_handle)
@@ -212,6 +222,10 @@ void wlan_rx_task(void* pvParameters)
 		payload = buf_handle.payload + header->offset;
 		payload_len = header->len;
 
+#if CONFIG_ESP_WLAN_DEBUG
+		ESP_LOG_BUFFER_HEXDUMP(TAG_RX, payload, 8, ESP_LOG_INFO);
+#endif
+
 		if ((buf_handle.if_type == ESP_STA_IF) && sta_connected) {
 			/* Forward data to wlan driver */
 			esp_wifi_internal_tx(ESP_IF_WIFI_STA, payload, payload_len);
@@ -223,8 +237,9 @@ void wlan_rx_task(void* pvParameters)
 			memcpy(r.data, payload, min(payload_len, sizeof(r.data)));
 			r.valid = 1;
 			r.len = min(payload_len, sizeof(r.data));
-
+#if CONFIG_ESP_SERIAL_DEBUG
 			ESP_LOG_BUFFER_HEXDUMP(TAG_RX_S, r.data, r.len, ESP_LOG_INFO);
+#endif
 			esp_at_port_recv_data_notify(r.len, portMAX_DELAY);
 		}
 
@@ -290,8 +305,9 @@ static int32_t at_sdio_hosted_write_data(uint8_t* data, int32_t len)
 
 	if (datapath && if_context && if_context->if_ops && if_context->if_ops->write)
 		if_context->if_ops->write(if_handle, &buf_handle);
-
+#if CONFIG_ESP_SERIAL_DEBUG
 	ESP_LOG_BUFFER_HEXDUMP(TAG_TX_S, data, len, ESP_LOG_INFO);
+#endif
 	return len;
 }
 
@@ -387,10 +403,10 @@ void app_main()
 		return;
 	}
 
-	to_host_queue = xQueueCreate(QUEUE_SIZE, sizeof(interface_buffer_handle_t));
+	to_host_queue = xQueueCreate(TO_HOST_QUEUE_SIZE, sizeof(interface_buffer_handle_t));
 	assert(to_host_queue != NULL);
 
-	from_host_queue = xQueueCreate(QUEUE_SIZE, sizeof(interface_buffer_handle_t));
+	from_host_queue = xQueueCreate(FROM_HOST_QUEUE_SIZE, sizeof(interface_buffer_handle_t));
 	assert(from_host_queue != NULL);
 
 	ESP_ERROR_CHECK(ret);

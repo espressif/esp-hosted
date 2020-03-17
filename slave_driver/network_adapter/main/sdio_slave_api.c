@@ -11,7 +11,7 @@
 #define SDIO_SLAVE_QUEUE_SIZE 20
 #define BUFFER_SIZE     2048
 #define BUFFER_NUM      20
-uint8_t sdio_slave_rx_buffer[BUFFER_NUM][BUFFER_SIZE];
+static uint8_t sdio_slave_rx_buffer[BUFFER_NUM][BUFFER_SIZE];
 
 interface_context_t context;
 interface_handle_t if_handle_g;
