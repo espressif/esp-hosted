@@ -194,7 +194,7 @@ static void esp32_remove(struct sdio_func *func)
 		kthread_stop(monitor_thread);
 
 	if (context) {
-		generate_slave_intr(context, SLAVE_CLOSE_PORT);
+		generate_slave_intr(context, BIT(ESP_CLOSE_DATA_PATH));
 		msleep(100);
 
 		flush_sdio(context);
@@ -514,7 +514,8 @@ static int esp32_probe(struct sdio_func *func,
 		return -ENOMEM;
 	}
 
-	generate_slave_intr(context, SLAVE_RESET);
+	generate_slave_intr(context, BIT(ESP_RESET));
+
 	msleep(200);
 
 	ret = init_context(context);
@@ -551,7 +552,7 @@ static int esp32_probe(struct sdio_func *func,
 	printk(KERN_INFO "%s: ESP network device detected\n", __func__);
 
 	msleep(200);
-	generate_slave_intr(context, SLAVE_OPEN_PORT);
+	generate_slave_intr(context, BIT(ESP_OPEN_DATA_PATH));
 
 	return ret;
 }

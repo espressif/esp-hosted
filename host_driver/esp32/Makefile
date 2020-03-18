@@ -4,6 +4,8 @@ ifeq ($(CONFIG_SUPPORT_ESP_SERIAL), y)
 	EXTRA_CFLAGS += -DCONFIG_SUPPORT_ESP_SERIAL
 endif
 
+EXTRA_CFLAGS += -I$(PWD)/../../common/include
+
 CR_C := arm-linux-gnueabihf-
 PWD := $(shell pwd)
 obj-m := esp32.o

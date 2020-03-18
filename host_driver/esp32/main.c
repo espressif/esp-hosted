@@ -158,7 +158,7 @@ static int esp32_hard_start_xmit(struct sk_buff *skb, struct net_device *ndev)
 	return 0;
 }
 
-struct esp_private * get_priv_from_payload_header(struct esp32_payload_header *header)
+struct esp_private * get_priv_from_payload_header(struct esp_payload_header *header)
 {
 	struct esp_private *priv;
 	u8 i;
@@ -192,7 +192,7 @@ static void process_tx_packet (void)
 	struct sk_buff *skb;
 	struct esp_private *priv;
 	struct esp32_skb_cb *cb;
-	struct esp32_payload_header *payload_header;
+	struct esp_payload_header *payload_header;
 	int ret = 0;
 	u8 pad_len = 0;
 	u16 len = 0;
@@ -213,12 +213,12 @@ static void process_tx_packet (void)
 		len = skb->len;
 
 		/* Create space for payload header */
-		pad_len = sizeof(struct esp32_payload_header);
+		pad_len = sizeof(struct esp_payload_header);
 
 		skb_push(skb, pad_len);
 
 		/* Set payload header */
-		payload_header = (struct esp32_payload_header *) skb->data;
+		payload_header = (struct esp_payload_header *) skb->data;
 		memset(payload_header, 0, pad_len);
 
 		payload_header->if_type = priv->if_type;
@@ -252,16 +252,16 @@ static void process_tx_packet (void)
 static void process_rx_packet(struct sk_buff *skb)
 {
 	struct esp_private *priv;
-	struct esp32_payload_header *payload_header;
+	struct esp_payload_header *payload_header;
 
 	if (!skb)
 		return;
 
 	/* get the paload header */
-	payload_header = (struct esp32_payload_header *) skb->data;
+	payload_header = (struct esp_payload_header *) skb->data;
 	/*		print_hex_dump_bytes("Rx:", DUMP_PREFIX_NONE, (skb->data + 8), 32);*/
 
-	if (payload_header->if_type == ESP_IF_SERIAL) {
+	if (payload_header->if_type == ESP_SERIAL_IF) {
 		print_hex_dump_bytes("Rx:", DUMP_PREFIX_NONE, (skb->data + 8), payload_header->len);
 #ifdef CONFIG_SUPPORT_ESP_SERIAL
 		esp_serial_data_received(payload_header->if_num, skb->data + 8, payload_header->len);
