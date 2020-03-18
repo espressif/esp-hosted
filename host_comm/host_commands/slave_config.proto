@@ -12,9 +12,11 @@ message RespGetStatus {
 
 enum EncryptionMode {
     Type_Open = 0;
-    Type_WPA_PSK = 1;
-    Type_WPA2_PSK = 2;
-    Type_WPA_WPA2_PSK = 3;
+    Type_WEP = 1;
+    Type_WPA_PSK = 2;
+    Type_WPA2_PSK = 3;
+    Type_WPA_WPA2_PSK = 4;
+    Type_WPA2_ENTERPRISE = 5;
 }
 
 message CmdConfig {
@@ -43,6 +45,24 @@ message RespConfig {
 	int32 bw = 10;
 }
 
+message ScanResult {
+	bytes ssid = 1;
+	uint32 chnl = 2;
+	int32 rssi = 3;
+	bytes bssid = 4;
+	EncryptionMode ecn = 5;
+}
+
+message CmdScanResult {
+	uint32 count = 1;
+}
+
+message RespScanResult {
+	repeated ScanResult entries = 1;
+	uint32 count = 2;
+}
+
+
 enum SlaveConfigMsgType {
     TypeCmdGetMACAddress = 0;
     TypeRespGetMACAddress = 1;
@@ -58,8 +78,10 @@ enum SlaveConfigMsgType {
     TypeRespGetSoftAPConfig = 11;
     TypeCmdSetSoftAPConfig = 12;
     TypeRespSetSoftAPConfig = 13;
-	TypeCmdDisconnectAP = 14;
-	TypeRespDisconnectAP = 15;
+    TypeCmdDisconnectAP = 14;
+    TypeRespDisconnectAP = 15;
+    TypeCmdGetAPScanList = 16;
+    TypeRespGetAPScanList = 17;
 }
 
 message SlaveConfigPayload {
@@ -81,5 +103,7 @@ message SlaveConfigPayload {
         RespConfig resp_set_softap_config = 23;
         CmdGetStatus cmd_disconnect_ap = 24;
         RespGetStatus resp_disconnect_ap = 25;
+        CmdScanResult cmd_scan_ap_list = 26;
+        RespScanResult resp_scan_ap_list = 27;
     }
 }

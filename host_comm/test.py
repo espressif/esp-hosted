@@ -53,3 +53,8 @@ x = slave_comm.wifi_get_softap_config()
 print("get softap output here")
 print(x)
 '''
+# user should give number max scan AP count
+# output is list of Aplist class instances
+x = slave_comm.wifi_ap_scan_list(10)
+for obj in x:
+    print(obj.ssid,obj.chnl,obj.rssi,obj.bssid,obj.ecn)

@@ -73,6 +73,7 @@ static credentials_t credentials;
 
 // sattion got IP event is remain
 static int s_retry_num = 0;
+static bool scan_done = false;
 
 static void ap_event_handler(void* arg, esp_event_base_t event_base,
                                 int32_t event_id, void* event_data)
@@ -114,6 +115,14 @@ static void softap_event_handler(void* arg, esp_event_base_t event_base,
     }
 }
 
+static void ap_scan_list_event_handler(void* arg, esp_event_base_t event_base,
+                                int32_t event_id, void* event_data)
+{
+    if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_SCAN_DONE) {
+        scan_done = true;
+    }
+}
+
 static void ap_event_register(void)
 {
 	ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID, &ap_event_handler, NULL));
@@ -134,6 +143,10 @@ static void softap_event_register(void)
 	ESP_LOGI(TAG,"SoftAP Event group registered");
 }
 
+static void ap_scan_list_event_register(void)
+{
+	ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID, &ap_scan_list_event_handler, NULL));
+}
 
 typedef struct slave_config_cmd {
     int cmd_num;
@@ -168,7 +181,7 @@ static esp_err_t cmd_get_mac_address_handler(SlaveConfigPayload *req,
 		//resp->resp_get_mac_address->resp = FAILURE;
 		return ESP_FAIL;
 	}
-	
+
 	sprintf(mac_str,MACSTR,MAC2STR(mac));
 	RespGetStatus *resp_payload = (RespGetStatus *)calloc(1,sizeof(RespGetStatus));
 	if (resp_payload == NULL) {
@@ -506,12 +519,12 @@ static esp_err_t cmd_set_softap_config_handler (SlaveConfigPayload *req,
 	if (wifi_config->ap.authmode != WIFI_AUTH_OPEN)	{
     	memcpy(wifi_config->ap.password,req->cmd_set_softap_config->pwd,pwd_length);
 	}
-	
-    memcpy(wifi_config->ap.ssid,req->cmd_set_softap_config->ssid,ssid_length);
-    printf("ssid len %d and password len %d \n",ssid_length, pwd_length);
+
+	memcpy(wifi_config->ap.ssid,req->cmd_set_softap_config->ssid,ssid_length);
+	printf("ssid len %d and password len %d \n",ssid_length, pwd_length);
 	wifi_config->ap.ssid_len = ssid_length;
 	wifi_config->ap.channel = req->cmd_set_softap_config->chnl;
-	
+
 	wifi_config->ap.max_connection = req->cmd_set_softap_config-> max_conn;
 	wifi_config->ap.ssid_hidden = req->cmd_set_softap_config->ssid_hidden;
 	uint8_t mac[6];
@@ -555,12 +568,86 @@ static esp_err_t cmd_set_softap_config_handler (SlaveConfigPayload *req,
 	resp->payload_case = SLAVE_CONFIG_PAYLOAD__PAYLOAD_RESP_SET_SOFTAP_CONFIG ;
 	resp->resp_set_softap_config = resp_payload;
 	ESP_LOGI(TAG,"ESp32 SoftAP is avaliable ");
-	
+
 	hosted_flags.is_softap_started = true;
 	free(wifi_config);
 	return ESP_OK;
 }
 
+static esp_err_t cmd_get_ap_scan_list_handler (SlaveConfigPayload *req,
+                                        SlaveConfigPayload *resp, void *priv_data)
+{
+	printf("Inside get AP Scan list handler");
+	printf("scan entry %d \n",req->cmd_scan_ap_list->count);
+	ap_scan_list_event_register();
+	ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
+	ESP_ERROR_CHECK(esp_wifi_start());
+	ESP_ERROR_CHECK(esp_wifi_scan_start(NULL, true));
+
+	esp_err_t ret;
+	uint16_t scan_count = req->cmd_scan_ap_list->count;
+	uint16_t ap_count = 0;
+
+	wifi_ap_record_t *ap_info = (wifi_ap_record_t *)calloc(scan_count,sizeof(wifi_ap_record_t));
+	if (ap_info == NULL) {
+		ESP_LOGE(TAG,"Failed to allocate memory");
+		return ESP_ERR_NO_MEM;
+	}
+	esp_wifi_scan_get_ap_records(&scan_count,ap_info);
+	esp_wifi_scan_get_ap_num(&ap_count);
+	ESP_LOGI(TAG,"Total APs scanned = %u",ap_count);
+	RespScanResult * resp_payload = (RespScanResult *)calloc(1,sizeof(RespScanResult));
+	if (resp_payload == NULL) {
+		ESP_LOGE(TAG,"Failed To allocate memory");
+		return ESP_ERR_NO_MEM;
+	}
+	resp_scan_result__init(resp_payload);
+	resp->payload_case = SLAVE_CONFIG_PAYLOAD__PAYLOAD_RESP_SCAN_AP_LIST ;
+	resp_payload->has_count = 1;
+	resp_payload->count = (scan_count <= ap_count ) ? scan_count: ap_count;
+	resp_payload->n_entries = scan_count;
+	printf("n_entries %d \n",resp_payload->n_entries);
+	ScanResult **results = (ScanResult **) calloc(scan_count,sizeof(ScanResult));
+	if (results == NULL) {
+		ESP_LOGE(TAG,"Failed To allocate memory");
+		return ESP_ERR_NO_MEM;
+    }
+	printf("address of results %p \n",results);
+	resp_payload->entries = results;
+	for (int i = 0; (i < scan_count) && (i < ap_count); i++ ) {
+		ESP_LOGI(TAG,"SSID \t\t%s", ap_info[i].ssid);
+		ESP_LOGI(TAG,"RSSI \t\t%d", ap_info[i].rssi);
+		ESP_LOGI(TAG,"Channel \t\t%d\n", ap_info[i].primary);
+		results[i] = (ScanResult *)calloc(1,sizeof(ScanResult));
+		scan_result__init(results[i]);
+		printf("scan init on %dth location done \n",i);
+		results[i]->has_ssid = 1;
+		results[i]->ssid.len = strnlen((char *)ap_info[i].ssid, 32);
+		memcpy(credentials.ssid,ap_info[i].ssid,results[i]->ssid.len);
+		results[i]->ssid.data = (uint8_t *)credentials.ssid;
+		printf("ssid scan %s %d \n", results[i]->ssid.data,results[i]->ssid.len );
+		results[i]->has_chnl = 1;
+		credentials.chnl = ap_info[i].primary;
+		results[i]->chnl = credentials.chnl;
+		printf("chnl scan %d %d \n",results[i]->chnl,resp_payload->entries[i]->chnl );
+		results[i]->has_rssi = 1;
+		credentials.rssi = ap_info[i].rssi;
+		results[i]->rssi = credentials.rssi;
+		printf("chnl scan %d \n",resp_payload->entries[i]->rssi );
+		results[i]->has_bssid = 1;
+		sprintf((char *)credentials.bssid,MACSTR,MAC2STR(ap_info[i].bssid));
+		results[i]->bssid.len = strnlen((char *)credentials.bssid,19);
+		results[i]->bssid.data = credentials.bssid;
+		printf("bssid %s \n", results[i]->bssid.data);
+		results[i]->has_ecn = 1;
+		credentials.ecn = ap_info[i].authmode;
+		results[i]->ecn = credentials.ecn;
+		printf("auth mode %d \n", results[i]->ecn);
+	}
+
+	resp->resp_scan_ap_list = resp_payload;
+	return ESP_OK;
+}
 static slave_config_cmd_t cmd_table[] = {
     {
         .cmd_num = SLAVE_CONFIG_MSG_TYPE__TypeCmdGetMACAddress ,
@@ -594,7 +681,10 @@ static slave_config_cmd_t cmd_table[] = {
         .cmd_num =  SLAVE_CONFIG_MSG_TYPE__TypeCmdDisconnectAP ,
         .command_handler = cmd_disconnect_ap_handler
     },
-
+	{
+		.cmd_num = SLAVE_CONFIG_MSG_TYPE__TypeCmdGetAPScanList ,
+		.command_handler = cmd_get_ap_scan_list_handler
+	},
 };
 
 

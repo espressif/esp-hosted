@@ -16,6 +16,14 @@ import transport
 import slave_config_pb2
 import binascii
 
+class Aplist:
+    def __init__(self,ssid,chnl,rssi,bssid,ecn):
+        self.ssid = ssid
+        self.chnl = chnl
+        self.rssi = rssi
+        self.bssid = bssid
+        self.ecn = ecn
+
 #default parameters
 interface = "/dev/esps0"
 endpoint = "control"
@@ -218,3 +226,26 @@ def wifi_get_softap_config():
     status  = str(get_softap_config.resp_get_softap_config.status)
     bw = get_softap_config.resp_get_softap_config.bw
     return ssid,pwd,en,chnl,max_conn,ssid_hidden,status,bw
+
+def wifi_ap_scan_list(scan_count):
+    print(scan_count)
+    get_ap_scan_list = slave_config_pb2.SlaveConfigPayload()
+    get_ap_scan_list.msg = slave_config_pb2.SlaveConfigMsgType.TypeCmdGetAPScanList
+    get_ap_scan_list.cmd_scan_ap_list.count = scan_count
+    print(get_ap_scan_list.cmd_scan_ap_list.count )
+    protodata = get_ap_scan_list.SerializeToString()
+    #print("serialized data "+str(protodata))
+    tp = transport.Transport_pserial(interface)
+    response = tp.send_data(endpoint,protodata,10)
+    #print("response from slave "+str(response))
+    get_ap_scan_list.ParseFromString(response)
+    count = get_ap_scan_list.resp_scan_ap_list.count
+    ap_list = []
+    for i in range(count) :
+        ssid = get_ap_scan_list.resp_scan_ap_list.entries[i].ssid
+        chnl = get_ap_scan_list.resp_scan_ap_list.entries[i].chnl
+        rssi = get_ap_scan_list.resp_scan_ap_list.entries[i].rssi
+        bssid = get_ap_scan_list.resp_scan_ap_list.entries[i].bssid
+        ecn = get_ap_scan_list.resp_scan_ap_list.entries[i].ecn
+        ap_list.append(Aplist(ssid,chnl,rssi,bssid,ecn))
+    return ap_list

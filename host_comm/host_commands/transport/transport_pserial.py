@@ -20,8 +20,8 @@ import utils
 
 class Transport_pserial(Transport):
     def __init__(self, devname):
-        self.f1 = open(devname, "wb",buffering = 1024)
-        self.f2 = open(devname, "rb",buffering = 1024)
+        self.f1 = open(devname, "wb",buffering = 5120)
+        self.f2 = open(devname, "rb",buffering = 5120)
 
     def send_data(self, ep_name, data, wait):
         buf = bytearray([0x01])
@@ -37,7 +37,7 @@ class Transport_pserial(Transport):
         s = self.f1.write(buf)
         self.f1.flush()
         time.sleep(wait)
-        s = self.f2.read(1024)
+        s = self.f2.read(5120)
         self.f2.flush()
         return s
         
