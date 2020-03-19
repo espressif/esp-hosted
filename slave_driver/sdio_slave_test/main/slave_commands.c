@@ -32,13 +32,6 @@
 #define MACSTR "%02x:%02x:%02x:%02x:%02x:%02x"
 #define SUCCESS "success"
 #define FAILURE "failure"
-#define NULL_CHK(a) {\
-			if (a == NULL) {\
-				ESP_LOGE(TAG,"memory allocation failed");\
-				return ESP_FAIL;\
-			} else\
-				ESP_LOGI(TAG,"memory allocated");\
-		}
 
 static const char* TAG = "slave_commands";
 
@@ -54,7 +47,8 @@ typedef struct {
 	int8_t rssi;
 	bool ssid_hidden;
 	wifi_auth_mode_t ecn;
-	uint8_t bw;	
+	uint8_t bw;
+	uint16_t count;
 } credentials_t;
 
 typedef struct {
@@ -160,25 +154,26 @@ static esp_err_t cmd_get_mac_address_handler(SlaveConfigPayload *req,
 	esp_err_t ret;
 	uint8_t mac[6];
 	char *mac_str = (char *)calloc(1,19);
+	if (mac_str == NULL) {
+		ESP_LOGE(TAG, "Failed to allocate memory");
+		return ESP_ERR_NO_MEM;
+	}
 	if (strcmp(req->cmd_get_mac_address->cmd, "1") == 0) {
 		ret = esp_wifi_get_mac(ESP_IF_WIFI_STA , mac);
-		printf("get station mac address \n");
+		ESP_LOGI(TAG,"get station mac address");
 		if (ret != ESP_OK) {
 			ESP_LOGE(TAG,"Error in getting MAC of ESP Station %d", ret);
-			//resp->resp_get_mac_address->resp = FAILURE;
 			return ESP_FAIL;
 		}
 	} else if (strcmp(req->cmd_get_mac_address->cmd,"2") == 0) {
 		ret = esp_wifi_get_mac(ESP_IF_WIFI_AP, mac);
-		printf("get AP mac address \n");
+		ESP_LOGI(TAG,"get AP mac address");
 		if (ret != ESP_OK) {
 			ESP_LOGE(TAG,"Error in getting MAC of ESP AP %d", ret);
-			//resp->resp_get_mac_address->resp = FAILURE;
 			return ESP_FAIL;
 		}
 	} else {
-		printf("Invalid msg type");
-		//resp->resp_get_mac_address->resp = FAILURE;
+		ESP_LOGI(TAG,"Invalid msg type");
 		return ESP_FAIL;
 	}
 
@@ -186,37 +181,34 @@ static esp_err_t cmd_get_mac_address_handler(SlaveConfigPayload *req,
 	RespGetStatus *resp_payload = (RespGetStatus *)calloc(1,sizeof(RespGetStatus));
 	if (resp_payload == NULL) {
 		ESP_LOGE(TAG,"Failed to allocate memory");
-		//resp->resp_get_mac_address->resp = FAILURE;
-		return ESP_FAIL;
+		return ESP_ERR_NO_MEM;
 	}
-	resp_get_status__init(resp_payload);	
-    printf("mac [%s] \n", mac_str);
+	resp_get_status__init(resp_payload);
+	ESP_LOGI(TAG,"mac [%s] ", mac_str);
 	resp_payload->resp = mac_str;
 	resp->payload_case = SLAVE_CONFIG_PAYLOAD__PAYLOAD_RESP_GET_MAC_ADDRESS ;
 	resp->resp_get_mac_address = resp_payload;
-	printf("mac address %s \n", resp->resp_get_mac_address->resp);
+	ESP_LOGI(TAG,"mac address %s ", resp->resp_get_mac_address->resp);
 	return ESP_OK;
 }
 
 static esp_err_t cmd_get_wifi_mode_handler (SlaveConfigPayload *req,
                                         SlaveConfigPayload *resp, void *priv_data)
 {
-	printf("inside get wifi mode\n");
+	ESP_LOGI(TAG,"inside get wifi mode");
 	esp_err_t ret;
 	wifi_mode_t mode;
 	ret = esp_wifi_get_mode(&mode);
 	if (ret != ESP_OK) {
 		ESP_LOGE(TAG, "Failed to get wifi mode %d", ret);
-		//resp->resp_get_wifi_mode->resp = FAILURE;
 		return ESP_FAIL;
 	}
 	RespGetStatus *resp_payload = (RespGetStatus *)calloc(1,sizeof(RespGetStatus));
 	if (resp_payload == NULL) {
 		ESP_LOGE(TAG,"Failed to allocate memory");
-		//resp->resp_get_wifi_mode->resp = FAILURE;
-        return ESP_FAIL;
+		return ESP_ERR_NO_MEM;
 	}
-	resp_get_status__init(resp_payload);	
+	resp_get_status__init(resp_payload);
 	resp->payload_case = SLAVE_CONFIG_PAYLOAD__PAYLOAD_RESP_GET_WIFI_MODE ;
 	resp_payload->has_mode = 1;
 	resp_payload->mode = mode;
@@ -229,21 +221,19 @@ static esp_err_t cmd_set_wifi_mode_handler (SlaveConfigPayload *req,
 {
 	esp_err_t ret;
 	wifi_mode_t num = req->cmd_set_wifi_mode->mode;
-	printf("num %d \n", num);
+	ESP_LOGI(TAG,"num %d ", num);
 	ret = esp_wifi_set_mode(num);
 	if (ret != ESP_OK) {
 		ESP_LOGE(TAG,"Failed to set mode");
-		//resp->resp_set_wifi_mode->resp = FAILURE;
 		return ESP_FAIL;
 	}
-	/* printf("set mode done \n");
+	/* ESP_LOGI(TAG,"set mode done");
 	esp_wifi_get_mode(&num);
-	printf("current set mode is %d \n", num); */
+	ESP_LOGI(TAG,"current set mode is %d", num); */
 	RespGetStatus *resp_payload = (RespGetStatus *)calloc(1,sizeof(RespGetStatus));
 	if (resp_payload == NULL) {
 		ESP_LOGE(TAG,"Failed to allocate memory");
-		//resp->resp_set_wifi_mode->resp = FAILURE;
-        return ESP_FAIL;
+		return ESP_ERR_NO_MEM;
 	}
 	resp_get_status__init(resp_payload);
 	resp_payload->has_mode = 1;
@@ -257,38 +247,38 @@ static esp_err_t cmd_set_ap_config_handler (SlaveConfigPayload *req,
                                         SlaveConfigPayload *resp, void *priv_data)
 {
 	ESP_LOGI(TAG,"connect to AP function");
-	/* BSSID is remaining */
 	esp_err_t ret;
 	s_wifi_event_group = xEventGroupCreate();
 	ap_event_register();
 	ret = esp_wifi_set_mode(WIFI_MODE_STA);
 	if (ret != ESP_OK) {
 		ESP_LOGE(TAG,"failed to set mode");
-		//resp->resp_set_ap_config->status = FAILURE;
 		return ESP_FAIL;
 	}
 	wifi_config_t* wifi_cfg = (wifi_config_t *)calloc(1,sizeof(wifi_config_t));
 	if (wifi_cfg == NULL) {
 		ESP_LOGE(TAG,"failed to allocate memory");
-		//resp->resp_set_ap_config->status = FAILURE;
-        return ESP_FAIL;
+		return ESP_ERR_NO_MEM;
 	}
 	memcpy(wifi_cfg->sta.ssid,req->cmd_set_ap_config->ssid,strlen(req->cmd_set_ap_config->ssid));
 	memcpy(wifi_cfg->sta.password,req->cmd_set_ap_config->pwd,strlen(req->cmd_set_ap_config->pwd));
-	printf("final AP name %s \n", wifi_cfg->sta.ssid);
-	printf("final AP password %s \n", wifi_cfg->sta.password);
+	if (strlen(req->cmd_set_ap_config->bssid)) {
+		wifi_cfg->sta.bssid_set = true;
+		memcpy(wifi_cfg->sta.bssid,req->cmd_set_ap_config->bssid,6);
+	}
+
+	ESP_LOGI(TAG,"final AP name %s ", wifi_cfg->sta.ssid);
+	ESP_LOGI(TAG,"final AP password %s", wifi_cfg->sta.password);
  	ret = esp_wifi_set_config(ESP_IF_WIFI_STA, wifi_cfg);
 	if (ret != ESP_OK) {
 		ESP_LOGE(TAG,"Failed to set wifi softAP mode");
-		//resp->resp_set_ap_config->status = FAILURE;
 		return ESP_FAIL;
 	}
 	ret = esp_wifi_start();
 	if (ret != ESP_OK) {
-    	ESP_LOGE(TAG,"Failed to start wifi");
-		//resp->resp_set_ap_config->status = FAILURE;
-    	return ESP_FAIL;
-    }
+		ESP_LOGE(TAG,"Failed to start wifi");
+		return ESP_FAIL;
+	}
 	ESP_LOGI(TAG,"wifi start is called");
 	EventBits_t bits = xEventGroupWaitBits(s_wifi_event_group,
             WIFI_CONNECTED_BIT | WIFI_FAIL_BIT,
@@ -296,35 +286,33 @@ static esp_err_t cmd_set_ap_config_handler (SlaveConfigPayload *req,
             pdFALSE,
             portMAX_DELAY);
 	if (bits & WIFI_CONNECTED_BIT) {
-        ESP_LOGI(TAG, "connected to ap SSID:%s password:%s", req->cmd_set_ap_config->ssid , req->cmd_set_ap_config->pwd );
-    } else if (bits & WIFI_FAIL_BIT) {
-        ESP_LOGI(TAG, "Failed to connect to SSID:%s, password:%s", req->cmd_set_ap_config->ssid , req->cmd_set_ap_config->pwd );
-    } else {
-        ESP_LOGE(TAG, "UNEXPECTED EVENT");
-    }
+		ESP_LOGI(TAG, "connected to ap SSID:%s password:%s", req->cmd_set_ap_config->ssid , req->cmd_set_ap_config->pwd );
+	} else if (bits & WIFI_FAIL_BIT) {
+		ESP_LOGI(TAG, "Failed to connect to SSID:%s, password:%s", req->cmd_set_ap_config->ssid , req->cmd_set_ap_config->pwd );
+	} else {
+		ESP_LOGE(TAG, "UNEXPECTED EVENT");
+	}
 	/* To check ESP station is connected to AP */
 	/* wifi_ap_record_t ap_info;
 	ret = esp_wifi_sta_get_ap_info(&ap_info));
 	if (ret != ESP_OK) {
-        ESP_LOGE(TAG,"Failed to AP info to which ESP32 is connected");
-		//resp->resp_set_ap_config->status = FAILURE;
-        return ESP_FAIL;
-    }
+		ESP_LOGE(TAG,"Failed to AP info to which ESP32 is connected");
+		return ESP_FAIL;
+	}
 	ESP_LOGI(TAG,"ssid %s", (char*)ap_info.ssid); */
 	hosted_flags.is_ap_connected = true;
 	RespConfig *resp_payload = (RespConfig *)calloc(1,sizeof(RespConfig));
 	if (resp_payload == NULL) {
 		ESP_LOGE(TAG,"Failed to allocate memory");
-		//resp->resp_set_ap_config->status = FAILURE;
-		return ESP_FAIL;
+		return ESP_ERR_NO_MEM;
 	}
-    resp_config__init (resp_payload);
+	resp_config__init (resp_payload);
 	resp_payload->status = SUCCESS;
 	resp->payload_case = SLAVE_CONFIG_PAYLOAD__PAYLOAD_RESP_SET_AP_CONFIG ;
 	resp->resp_set_ap_config = resp_payload;
 	ap_event_unregister();
 
-	printf("connected to AP ssid \n");
+	ESP_LOGI(TAG,"connected to AP ssid");
 	vEventGroupDelete(s_wifi_event_group);
 	free(wifi_cfg);
 	return ESP_OK;
@@ -335,7 +323,6 @@ static esp_err_t cmd_get_ap_config_handler (SlaveConfigPayload *req,
 {
 	if (hosted_flags.is_ap_connected == false) {
 		ESP_LOGI(TAG,"ESP32 station is not connected with AP, can't get AP configuration");
-		//resp->resp_get_ap_config->status = FAILURE;
 		return ESP_FAIL;
 	}
 	esp_err_t ret;
@@ -343,31 +330,28 @@ static esp_err_t cmd_get_ap_config_handler (SlaveConfigPayload *req,
 	wifi_ap_record_t *ap_info = (wifi_ap_record_t *)calloc(1,sizeof(wifi_ap_record_t));
 	if (ap_info == NULL) {
 		ESP_LOGE(TAG,"Failed to allocate memory");
-		//resp->resp_get_ap_config->status = FAILURE;
-    	return ESP_FAIL;
+		return ESP_ERR_NO_MEM;
 	}
 
 	ret = esp_wifi_sta_get_ap_info(ap_info);
 	if (ret != ESP_OK) {
 		ESP_LOGE(TAG,"Failed to get AP config %d \n", ret);
-		//resp->resp_get_ap_config->status = FAILURE;
 		free(ap_info);
 		return ESP_FAIL;
 	}
 
-	printf("AP ssid %s AP bssid %s \n",ap_info->ssid,ap_info->bssid);
-	printf("sizeof rssi %d channel %d \n ", sizeof(ap_info->rssi), sizeof(ap_info->primary));
+	ESP_LOGI(TAG,"AP ssid %s AP bssid %s",ap_info->ssid,ap_info->bssid);
+	ESP_LOGI(TAG,"sizeof rssi %d channel %d ", sizeof(ap_info->rssi), sizeof(ap_info->primary));
 	sprintf((char *)credentials.bssid,MACSTR,MAC2STR(ap_info->bssid));
 	memcpy(credentials.ssid,ap_info->ssid,strlen((char *)ap_info->ssid));
 	credentials.rssi = ap_info->rssi;
 	credentials.chnl = ap_info->primary;
-	printf("afetr memcpy ssid %s bssid %s \n",credentials.ssid, credentials.bssid);
-	printf("data present in rssi %d and channel field %d \n", credentials.rssi, credentials.chnl);
+	ESP_LOGI(TAG,"afetr memcpy ssid %s bssid %s",credentials.ssid, credentials.bssid);
+	ESP_LOGI(TAG,"data present in rssi %d and channel field %d ", credentials.rssi, credentials.chnl);
 	RespConfig *resp_payload = (RespConfig *)calloc(1,sizeof(RespConfig));
 	if (resp_payload == NULL) {
 		ESP_LOGE(TAG,"failed to allocate memory");
-		//resp->resp_get_ap_config->status = FAILURE;
-		return ESP_FAIL;
+		return ESP_ERR_NO_MEM;
 	}
 	resp_config__init (resp_payload);
 	resp_payload->ssid = (char *)credentials.ssid;
@@ -393,19 +377,18 @@ static esp_err_t cmd_disconnect_ap_handler (SlaveConfigPayload *req,
 	esp_err_t ret;
 	ret = esp_wifi_disconnect();
 	if (ret != ESP_OK) {
-		ESP_LOGE(TAG,"Failed to disconnect");	
+		ESP_LOGE(TAG,"Failed to disconnect");
 		return ESP_FAIL;
 	}
 	RespGetStatus *resp_payload = (RespGetStatus *)calloc(1,sizeof(RespGetStatus));
 	if (resp_payload == NULL) {
-    	ESP_LOGE(TAG,"failed to allocate memory");
-		//resp->resp_disconnect_ap->resp = FAILURE;
-    	return ESP_FAIL;
+		ESP_LOGE(TAG,"failed to allocate memory");
+		return ESP_ERR_NO_MEM;
 	}
 	resp_get_status__init(resp_payload);
-	printf("resp_payload address %p and resp also %p\n", resp_payload, resp_payload->resp);
+	ESP_LOGI(TAG,"resp_payload address %p and resp also %p", resp_payload, resp_payload->resp);
 	resp_payload->resp = SUCCESS;
-	printf("response success string %s \n",resp_payload->resp);
+	ESP_LOGI(TAG,"response success string %s",resp_payload->resp);
 	resp->payload_case = SLAVE_CONFIG_PAYLOAD__PAYLOAD_RESP_DISCONNECT_AP;
 	resp->resp_disconnect_ap = resp_payload;
 	ESP_LOGI(TAG,"disconnect AP here");
@@ -418,7 +401,6 @@ static esp_err_t cmd_get_softap_config_handler (SlaveConfigPayload *req,
 {
 	if (!hosted_flags.is_softap_started) {
 		ESP_LOGI(TAG,"ESP32 SoftAP mode aren't set, So can't get config");
-		//resp->resp_get_softap_config->status = FAILURE;
 		return ESP_FAIL;
 	}
 	ESP_LOGI(TAG,"get soft AP handler");
@@ -426,36 +408,32 @@ static esp_err_t cmd_get_softap_config_handler (SlaveConfigPayload *req,
 	wifi_config_t *get_conf = (wifi_config_t *)calloc(1,sizeof(wifi_config_t));
 	if (get_conf == NULL) {
 		ESP_LOGE(TAG,"Failed to allocate memory");
-		//resp->resp_get_softap_config->status = FAILURE;
-		return ESP_FAIL;
+		return ESP_ERR_NO_MEM;
 	}
 	wifi_bandwidth_t *get_bw = (wifi_bandwidth_t *)calloc(1,sizeof(wifi_bandwidth_t));
 	if (get_bw == NULL) {
 		ESP_LOGE(TAG,"Failed to allocate memory");
-		//resp->resp_get_softap_config->status = FAILURE;
-		return ESP_FAIL;
+		return ESP_ERR_NO_MEM;
 	}
 	ret = esp_wifi_get_config(ESP_IF_WIFI_AP, get_conf);
 	if (ret != ESP_OK) {
 		ESP_LOGE(TAG,"Failed to get SoftAP config");
-		//resp->resp_get_softap_config->status = FAILURE;
 		return ESP_FAIL;
 	}
 	RespConfig *resp_payload = (RespConfig *)calloc(1,sizeof(RespConfig));
 	if (resp_payload == NULL) {
 		ESP_LOGE(TAG,"Failed to allocate memory");
-		//resp->resp_get_softap_config->status = FAILURE;
-		return ESP_FAIL;
+		return ESP_ERR_NO_MEM;
 	}
 	resp_config__init (resp_payload);
-	printf("ssid name %s \n",get_conf->ap.ssid);
-	printf("pwd %s \n",get_conf->ap.password);
-	printf("chnl %d \n",get_conf->ap.channel);
-	printf("ecn %d \n",get_conf->ap.authmode);
-	printf("max conn %d \n",get_conf->ap.max_connection);
-	printf("ssid hidden %d \n",get_conf->ap.ssid_hidden);
-	printf("len of ssid %d \n", strlen((char *)get_conf->ap.ssid));
-	printf("len of pwd %d \n",strlen((char *)get_conf->ap.password));
+	ESP_LOGI(TAG,"ssid name %s",get_conf->ap.ssid);
+	ESP_LOGI(TAG,"pwd %s",get_conf->ap.password);
+	ESP_LOGI(TAG,"chnl %d",get_conf->ap.channel);
+	ESP_LOGI(TAG,"ecn %d",get_conf->ap.authmode);
+	ESP_LOGI(TAG,"max conn %d",get_conf->ap.max_connection);
+	ESP_LOGI(TAG,"ssid hidden %d",get_conf->ap.ssid_hidden);
+	ESP_LOGI(TAG,"len of ssid %d", strlen((char *)get_conf->ap.ssid));
+	ESP_LOGI(TAG,"len of pwd %d",strlen((char *)get_conf->ap.password));
 	memcpy(credentials.ssid,get_conf->ap.ssid,strlen((char *)get_conf->ap.ssid));
 	if (strlen((char*)get_conf->ap.password)) {
 		memcpy(credentials.pwd,get_conf->ap.password,strlen((char *)get_conf->ap.password));
@@ -464,7 +442,7 @@ static esp_err_t cmd_get_softap_config_handler (SlaveConfigPayload *req,
 	credentials.max_conn = get_conf->ap.max_connection;
 	credentials.ecn = get_conf->ap.authmode;
 	credentials.ssid_hidden = get_conf->ap.ssid_hidden;
-	printf("ssid %s pwd %s chnl %d ecn %d max_conn %d ssid_hidden %d \n",credentials.ssid, credentials.pwd, credentials.chnl, credentials.ecn, credentials.max_conn, credentials.ssid_hidden );
+	ESP_LOGI(TAG,"ssid %s pwd %s chnl %d ecn %d max_conn %d ssid_hidden %d",credentials.ssid, credentials.pwd, credentials.chnl, credentials.ecn, credentials.max_conn, credentials.ssid_hidden );
 	resp_payload->ssid = (char *)credentials.ssid;
 	resp_payload->pwd = (char *)credentials.pwd;
 	resp_payload->has_chnl = 1;
@@ -477,13 +455,11 @@ static esp_err_t cmd_get_softap_config_handler (SlaveConfigPayload *req,
 	ret = esp_wifi_get_bandwidth(ESP_IF_WIFI_AP,get_bw);
 	if (ret != ESP_OK) {
 		ESP_LOGE(TAG,"Failed to get bandwidth");
-		//resp->resp_get_softap_config->status = FAILURE;
-		//return ESP_FAIL;  //  maybe return is not needed
 	}
-	printf("got bandwidth now %d \n", *get_bw);
+	ESP_LOGI(TAG,"got bandwidth now %d", *get_bw);
 	resp_payload->bw = *(int *)get_bw;
 	resp_payload->status = SUCCESS;
-	printf("response success string %s \n",resp_payload->status);
+	ESP_LOGI(TAG,"response success string %s",resp_payload->status);
 	resp->payload_case = SLAVE_CONFIG_PAYLOAD__PAYLOAD_RESP_GET_SOFTAP_CONFIG  ;
 	resp->resp_get_softap_config = resp_payload;
 	free(get_conf);
@@ -495,33 +471,30 @@ static esp_err_t cmd_set_softap_config_handler (SlaveConfigPayload *req,
                                         SlaveConfigPayload *resp, void *priv_data)
 {
 	ESP_LOGI(TAG,"set soft AP handler");
-	wifi_mode_t mode;
 	esp_err_t ret;
-	ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID, &softap_event_register, NULL));
-	printf("event handler registered in set softap config \n");
+	softap_event_register();
+	ESP_LOGI(TAG,"event handler registered in set softap config ");
 	ret = esp_wifi_set_mode(WIFI_MODE_AP);
 	if (ret != ESP_OK) {
 		ESP_LOGE(TAG,"Failed to set mode");
-		//resp->resp_set_softap_config->status = FAILURE;
 		return ESP_FAIL;
 	}
-	printf("set mode as softAP \n");
+	ESP_LOGI(TAG,"set mode as softAP");
 	wifi_config_t *wifi_config = (wifi_config_t *)calloc(1,sizeof(wifi_config_t));
 	if (wifi_config == NULL) {
-    	ESP_LOGE(TAG,"Failed to allocate memory");
-		//resp->resp_set_softap_config->status = FAILURE;
-    	return ESP_FAIL;
-    }
+		ESP_LOGE(TAG,"Failed to allocate memory");
+		return ESP_ERR_NO_MEM;
+	}
 	uint8_t ssid_length = strlen(req->cmd_set_softap_config->ssid);
 	wifi_config->ap.authmode = req->cmd_set_softap_config->ecn;
 	uint8_t pwd_length = strlen(req->cmd_set_softap_config->pwd);
 
 	if (wifi_config->ap.authmode != WIFI_AUTH_OPEN)	{
-    	memcpy(wifi_config->ap.password,req->cmd_set_softap_config->pwd,pwd_length);
+		memcpy(wifi_config->ap.password,req->cmd_set_softap_config->pwd,pwd_length);
 	}
 
 	memcpy(wifi_config->ap.ssid,req->cmd_set_softap_config->ssid,ssid_length);
-	printf("ssid len %d and password len %d \n",ssid_length, pwd_length);
+	ESP_LOGI(TAG,"ssid len %d and password len %d",ssid_length, pwd_length);
 	wifi_config->ap.ssid_len = ssid_length;
 	wifi_config->ap.channel = req->cmd_set_softap_config->chnl;
 
@@ -531,40 +504,35 @@ static esp_err_t cmd_set_softap_config_handler (SlaveConfigPayload *req,
 	ret = esp_wifi_get_mac(WIFI_IF_AP, mac);
 	if (ret != ESP_OK) {
 		ESP_LOGE(TAG,"Failed to get MAC address");
-		//resp->resp_set_softap_config->status = FAILURE;
 		return ESP_FAIL;
 	}
 	ret = esp_wifi_set_bandwidth(ESP_IF_WIFI_AP,req->cmd_set_softap_config->bw);
 	if (ret != ESP_OK) {
 		ESP_LOGE(TAG,"Failed to set MAC address");
-		//resp->resp_set_softap_config->status = FAILURE;
 		return ESP_FAIL;
 	}
 	ESP_LOGI(TAG, MACSTR, MAC2STR(mac));
 	ret = esp_wifi_set_config(ESP_IF_WIFI_AP, wifi_config);
 	if (ret != ESP_OK) {
-    	ESP_LOGE(TAG,"Failed to set AP config");
-		//resp->resp_set_softap_config->status = FAILURE;
-    	return ESP_FAIL;
-    }
+		ESP_LOGE(TAG,"Failed to set AP config");
+		return ESP_FAIL;
+	}
 	ret = esp_wifi_start();
 	if (ret != ESP_OK) {
-    	ESP_LOGE(TAG,"Failed to start WiFi");
-		//resp->resp_set_softap_config->status = FAILURE;
-    	return ESP_FAIL;
-    }
-	printf("ssid %d %s pwd %d %s authmode %d ssid_hidden %d max_conn %d\n channel %d",ssid_length, wifi_config->ap.ssid, pwd_length, wifi_config->ap.password, wifi_config->ap.authmode,wifi_config->ap.ssid_hidden,wifi_config->ap.max_connection,wifi_config->ap.channel);
+		ESP_LOGE(TAG,"Failed to start WiFi");
+		return ESP_FAIL;
+	}
+	ESP_LOGI(TAG,"ssid %d %s pwd %d %s authmode %d ssid_hidden %d max_conn %d channel %d",ssid_length, wifi_config->ap.ssid, pwd_length, wifi_config->ap.password, wifi_config->ap.authmode,wifi_config->ap.ssid_hidden,wifi_config->ap.max_connection,wifi_config->ap.channel);
 
 	RespConfig *resp_payload = (RespConfig *)calloc(1,sizeof(RespConfig));
 	if (resp_payload == NULL) {
 		ESP_LOGE(TAG,"Failed to allocate memory");
-		//resp->resp_set_softap_config->status = FAILURE;
-    	return ESP_FAIL;
+		return ESP_ERR_NO_MEM;
 	}
 	resp_config__init (resp_payload);
-	printf("resp_payload address %p and status also %p\n", resp_payload, resp_payload->status);
+	ESP_LOGI(TAG,"resp_payload address %p and status also %p", resp_payload, resp_payload->status);
 	resp_payload->status = SUCCESS;
-	printf("response success string %s \n",resp_payload->status);
+	ESP_LOGI(TAG,"response success string %s",resp_payload->status);
 	resp->payload_case = SLAVE_CONFIG_PAYLOAD__PAYLOAD_RESP_SET_SOFTAP_CONFIG ;
 	resp->resp_set_softap_config = resp_payload;
 	ESP_LOGI(TAG,"ESp32 SoftAP is avaliable ");
@@ -577,14 +545,13 @@ static esp_err_t cmd_set_softap_config_handler (SlaveConfigPayload *req,
 static esp_err_t cmd_get_ap_scan_list_handler (SlaveConfigPayload *req,
                                         SlaveConfigPayload *resp, void *priv_data)
 {
-	printf("Inside get AP Scan list handler");
-	printf("scan entry %d \n",req->cmd_scan_ap_list->count);
+	ESP_LOGI(TAG,"Inside get AP Scan list handler");
+	ESP_LOGI(TAG,"scan entry %d",req->cmd_scan_ap_list->count);
 	ap_scan_list_event_register();
 	ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
 	ESP_ERROR_CHECK(esp_wifi_start());
 	ESP_ERROR_CHECK(esp_wifi_scan_start(NULL, true));
 
-	esp_err_t ret;
 	uint16_t scan_count = req->cmd_scan_ap_list->count;
 	uint16_t ap_count = 0;
 
@@ -593,9 +560,10 @@ static esp_err_t cmd_get_ap_scan_list_handler (SlaveConfigPayload *req,
 		ESP_LOGE(TAG,"Failed to allocate memory");
 		return ESP_ERR_NO_MEM;
 	}
-	esp_wifi_scan_get_ap_records(&scan_count,ap_info);
-	esp_wifi_scan_get_ap_num(&ap_count);
+	ESP_ERROR_CHECK(esp_wifi_scan_get_ap_records(&scan_count,ap_info));
+	ESP_ERROR_CHECK(esp_wifi_scan_get_ap_num(&ap_count));
 	ESP_LOGI(TAG,"Total APs scanned = %u",ap_count);
+	credentials.count = (scan_count <= ap_count ) ? scan_count: ap_count;
 	RespScanResult * resp_payload = (RespScanResult *)calloc(1,sizeof(RespScanResult));
 	if (resp_payload == NULL) {
 		ESP_LOGE(TAG,"Failed To allocate memory");
@@ -604,83 +572,94 @@ static esp_err_t cmd_get_ap_scan_list_handler (SlaveConfigPayload *req,
 	resp_scan_result__init(resp_payload);
 	resp->payload_case = SLAVE_CONFIG_PAYLOAD__PAYLOAD_RESP_SCAN_AP_LIST ;
 	resp_payload->has_count = 1;
-	resp_payload->count = (scan_count <= ap_count ) ? scan_count: ap_count;
+	resp_payload->count = credentials.count;
 	resp_payload->n_entries = scan_count;
-	printf("n_entries %d \n",resp_payload->n_entries);
+	ESP_LOGI(TAG,"n_entries %d",resp_payload->n_entries);
 	ScanResult **results = (ScanResult **) calloc(scan_count,sizeof(ScanResult));
 	if (results == NULL) {
 		ESP_LOGE(TAG,"Failed To allocate memory");
 		return ESP_ERR_NO_MEM;
-    }
-	printf("address of results %p \n",results);
+	}
+	ESP_LOGI(TAG,"address of results %p",results);
 	resp_payload->entries = results;
-	for (int i = 0; (i < scan_count) && (i < ap_count); i++ ) {
+	for (int i = 0; i < credentials.count; i++ ) {
 		ESP_LOGI(TAG,"SSID \t\t%s", ap_info[i].ssid);
 		ESP_LOGI(TAG,"RSSI \t\t%d", ap_info[i].rssi);
 		ESP_LOGI(TAG,"Channel \t\t%d\n", ap_info[i].primary);
 		results[i] = (ScanResult *)calloc(1,sizeof(ScanResult));
+		if (results[i] == NULL) {
+			ESP_LOGE(TAG,"Failed to allocate memory");
+			return ESP_ERR_NO_MEM;
+		}
 		scan_result__init(results[i]);
-		printf("scan init on %dth location done \n",i);
+		ESP_LOGI(TAG,"scan init on %dth location done ",i);
 		results[i]->has_ssid = 1;
 		results[i]->ssid.len = strnlen((char *)ap_info[i].ssid, 32);
-		memcpy(credentials.ssid,ap_info[i].ssid,results[i]->ssid.len);
-		results[i]->ssid.data = (uint8_t *)credentials.ssid;
-		printf("ssid scan %s %d \n", results[i]->ssid.data,results[i]->ssid.len );
+		results[i]->ssid.data = (uint8_t *)strndup((char *)ap_info[i].ssid,32);
+		if (!results[i]->ssid.data) {
+			ESP_LOGE(TAG,"Failed to allocate memory for scan result entry SSID");
+			return ESP_ERR_NO_MEM;
+		}
+		ESP_LOGI(TAG,"ssid scan %s %d", results[i]->ssid.data,results[i]->ssid.len );
 		results[i]->has_chnl = 1;
 		credentials.chnl = ap_info[i].primary;
 		results[i]->chnl = credentials.chnl;
-		printf("chnl scan %d %d \n",results[i]->chnl,resp_payload->entries[i]->chnl );
+		ESP_LOGI(TAG,"chnl scan %d %d",results[i]->chnl,resp_payload->entries[i]->chnl );
 		results[i]->has_rssi = 1;
 		credentials.rssi = ap_info[i].rssi;
 		results[i]->rssi = credentials.rssi;
-		printf("chnl scan %d \n",resp_payload->entries[i]->rssi );
+		ESP_LOGI(TAG,"chnl scan %d",resp_payload->entries[i]->rssi );
 		results[i]->has_bssid = 1;
 		sprintf((char *)credentials.bssid,MACSTR,MAC2STR(ap_info[i].bssid));
 		results[i]->bssid.len = strnlen((char *)credentials.bssid,19);
-		results[i]->bssid.data = credentials.bssid;
-		printf("bssid %s \n", results[i]->bssid.data);
+		results[i]->bssid.data = (uint8_t *)strndup((char *)credentials.bssid,19);
+		if (!results[i]->bssid.data) {
+			ESP_LOGE(TAG, "Failed to allocate memory for scan result entry BSSID");
+			return ESP_ERR_NO_MEM;
+		}
+		ESP_LOGI(TAG,"bssid %s", results[i]->bssid.data);
 		results[i]->has_ecn = 1;
 		credentials.ecn = ap_info[i].authmode;
 		results[i]->ecn = credentials.ecn;
-		printf("auth mode %d \n", results[i]->ecn);
+		ESP_LOGI(TAG,"auth mode %d", results[i]->ecn);
 	}
 
 	resp->resp_scan_ap_list = resp_payload;
 	return ESP_OK;
 }
 static slave_config_cmd_t cmd_table[] = {
-    {
-        .cmd_num = SLAVE_CONFIG_MSG_TYPE__TypeCmdGetMACAddress ,
-        .command_handler = cmd_get_mac_address_handler
-    },
- 	{
- 	    .cmd_num = SLAVE_CONFIG_MSG_TYPE__TypeCmdGetWiFiMode,
- 	    .command_handler = cmd_get_wifi_mode_handler
- 	},
 	{
-        .cmd_num = SLAVE_CONFIG_MSG_TYPE__TypeCmdSetWiFiMode, 
-        .command_handler = cmd_set_wifi_mode_handler
-    },
+		.cmd_num = SLAVE_CONFIG_MSG_TYPE__TypeCmdGetMACAddress ,
+		.command_handler = cmd_get_mac_address_handler
+	},
 	{
-        .cmd_num = SLAVE_CONFIG_MSG_TYPE__TypeCmdGetAPConfig , 
-        .command_handler = cmd_get_ap_config_handler 
-    },
+		.cmd_num = SLAVE_CONFIG_MSG_TYPE__TypeCmdGetWiFiMode,
+		.command_handler = cmd_get_wifi_mode_handler
+	},
 	{
-        .cmd_num = SLAVE_CONFIG_MSG_TYPE__TypeCmdSetAPConfig , 
-        .command_handler = cmd_set_ap_config_handler 
-    },
+		.cmd_num = SLAVE_CONFIG_MSG_TYPE__TypeCmdSetWiFiMode,
+		.command_handler = cmd_set_wifi_mode_handler
+	},
 	{
-        .cmd_num =  SLAVE_CONFIG_MSG_TYPE__TypeCmdGetSoftAPConfig ,
-        .command_handler = cmd_get_softap_config_handler
-    },
+		.cmd_num = SLAVE_CONFIG_MSG_TYPE__TypeCmdGetAPConfig ,
+		.command_handler = cmd_get_ap_config_handler
+	},
 	{
-        .cmd_num = SLAVE_CONFIG_MSG_TYPE__TypeCmdSetSoftAPConfig ,
-        .command_handler = cmd_set_softap_config_handler
-    },
+		.cmd_num = SLAVE_CONFIG_MSG_TYPE__TypeCmdSetAPConfig ,
+		.command_handler = cmd_set_ap_config_handler
+	},
 	{
-        .cmd_num =  SLAVE_CONFIG_MSG_TYPE__TypeCmdDisconnectAP ,
-        .command_handler = cmd_disconnect_ap_handler
-    },
+		.cmd_num =  SLAVE_CONFIG_MSG_TYPE__TypeCmdGetSoftAPConfig ,
+		.command_handler = cmd_get_softap_config_handler
+	},
+	{
+		.cmd_num = SLAVE_CONFIG_MSG_TYPE__TypeCmdSetSoftAPConfig ,
+		.command_handler = cmd_set_softap_config_handler
+	},
+	{
+		.cmd_num =  SLAVE_CONFIG_MSG_TYPE__TypeCmdDisconnectAP ,
+		.command_handler = cmd_disconnect_ap_handler
+	},
 	{
 		.cmd_num = SLAVE_CONFIG_MSG_TYPE__TypeCmdGetAPScanList ,
 		.command_handler = cmd_get_ap_scan_list_handler
@@ -703,16 +682,16 @@ static esp_err_t slave_config_command_dispatcher(SlaveConfigPayload *req, SlaveC
 	esp_err_t ret;
 	ESP_LOGI(TAG, "Inside command Dispatcher");
 	int cmd_index = lookup_cmd_handler(req->msg);
-    if (cmd_index < 0) {
-         ESP_LOGE(TAG, "Invalid command handler lookup");
-         return ESP_FAIL;
-     }
-     
-    ret = cmd_table[cmd_index].command_handler(req, resp, priv_data);
-    if (ret != ESP_OK) {
-         ESP_LOGE(TAG, "Error executing command handler");
-         return ESP_FAIL;
-    }
+	if (cmd_index < 0) {
+		ESP_LOGE(TAG, "Invalid command handler lookup");
+		return ESP_FAIL;
+	}
+
+	ret = cmd_table[cmd_index].command_handler(req, resp, priv_data);
+	if (ret != ESP_OK) {
+		ESP_LOGE(TAG, "Error executing command handler");
+		return ESP_FAIL;
+	}
 
 	return ESP_OK;
 }
@@ -782,6 +761,24 @@ static void slave_config_cleanup(SlaveConfigPayload *resp)
 			}
 		}
 		break;
+		case (SLAVE_CONFIG_MSG_TYPE__TypeRespGetAPScanList) : {
+			if (resp->resp_scan_ap_list) {
+				if (resp->resp_scan_ap_list->entries) {
+					for (int i=0 ; i<resp->resp_scan_ap_list->n_entries; i++) {
+						if (resp->resp_scan_ap_list->entries[i]) {
+							free(resp->resp_scan_ap_list->entries[i]->ssid.data);
+							free(resp->resp_scan_ap_list->entries[i]->bssid.data);
+							free(resp->resp_scan_ap_list->entries[i]);
+						}
+					}
+					free(resp->resp_scan_ap_list->entries);
+				}
+				free(resp->resp_scan_ap_list);
+				memset(&credentials,0,sizeof(credentials_t));
+				ESP_LOGI(TAG, "resp get AP Scan List freed");
+			}
+		}
+		break;
 		default:
 			ESP_LOGE(TAG, "Unsupported response type");
 			break;
@@ -793,11 +790,11 @@ esp_err_t data_transfer_handler(uint32_t session_id,const uint8_t *inbuf, ssize_
 {
 	SlaveConfigPayload *req;
 	SlaveConfigPayload resp;
-   
+
 	esp_err_t ret = ESP_OK;
-	printf("Hello inside transfer handler \n");
+	ESP_LOGI(TAG,"Hello inside transfer handler");
 	if (inbuf == NULL || outbuf == NULL || outlen == NULL) {
-		printf("buffers are NULL \n");
+		ESP_LOGE(TAG,"buffers are NULL");
 		return ESP_FAIL;
 	}
 
@@ -810,14 +807,14 @@ esp_err_t data_transfer_handler(uint32_t session_id,const uint8_t *inbuf, ssize_
 	slave_config_payload__init (&resp);
 	ret = slave_config_command_dispatcher(req,&resp,NULL);
 	if (ret != ESP_OK) {
-		ESP_LOGE(TAG, "command dispatching no happening");	
-    	return ESP_FAIL;
-    }
+		ESP_LOGE(TAG, "command dispatching no happening");
+		return ESP_FAIL;
+	}
 	slave_config_payload__free_unpacked(req, NULL);
 	resp.has_msg = 1;
 	resp.msg = req->msg + 1;
 	*outlen = slave_config_payload__get_packed_size (&resp);
-	printf("outlen %d \n",*outlen);
+	ESP_LOGI(TAG,"outlen %d ",*outlen);
 	if (*outlen <= 0) {
 		ESP_LOGE(TAG, "Invalid encoding for response");
 		return ESP_FAIL;
@@ -827,14 +824,7 @@ esp_err_t data_transfer_handler(uint32_t session_id,const uint8_t *inbuf, ssize_
 		ESP_LOGE(TAG, "No memory allocated for outbuf");
 		return ESP_ERR_NO_MEM;
 	}
-//	uint8_t *trial = (uint8_t *)calloc(1,*outlen);
 	slave_config_payload__pack (&resp, *outbuf);
-//	memcpy(trial,*outbuf,*outlen);
-/*	for (int i=0; i< *outlen; i++) {
-		printf("%2x \n", *trial);
-		trial++;
-	} */
 	slave_config_cleanup(&resp);
-//	free(trial);
 	return ESP_OK;
 }

@@ -184,7 +184,7 @@ esp_err_t protocomm_pserial_start(protocomm_t *pc, pserial_xmit xmit, pserial_re
     pserial_cfg = (struct pserial_config *) malloc(sizeof(struct pserial_config));
     if (pserial_cfg == NULL) {
         ESP_LOGE(TAG,"Failed to allocate memory");
-        return;
+        return ESP_ERR_NO_MEM;
     }
     pserial_cfg->xmit = xmit;
     pserial_cfg->recv = recv;

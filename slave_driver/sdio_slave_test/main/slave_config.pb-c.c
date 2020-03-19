@@ -179,6 +179,135 @@ void   resp_config__free_unpacked
   assert(message->base.descriptor == &resp_config__descriptor);
   protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
 }
+void   scan_result__init
+                     (ScanResult         *message)
+{
+  static ScanResult init_value = SCAN_RESULT__INIT;
+  *message = init_value;
+}
+size_t scan_result__get_packed_size
+                     (const ScanResult *message)
+{
+  assert(message->base.descriptor == &scan_result__descriptor);
+  return protobuf_c_message_get_packed_size ((const ProtobufCMessage*)(message));
+}
+size_t scan_result__pack
+                     (const ScanResult *message,
+                      uint8_t       *out)
+{
+  assert(message->base.descriptor == &scan_result__descriptor);
+  return protobuf_c_message_pack ((const ProtobufCMessage*)message, out);
+}
+size_t scan_result__pack_to_buffer
+                     (const ScanResult *message,
+                      ProtobufCBuffer *buffer)
+{
+  assert(message->base.descriptor == &scan_result__descriptor);
+  return protobuf_c_message_pack_to_buffer ((const ProtobufCMessage*)message, buffer);
+}
+ScanResult *
+       scan_result__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data)
+{
+  return (ScanResult *)
+     protobuf_c_message_unpack (&scan_result__descriptor,
+                                allocator, len, data);
+}
+void   scan_result__free_unpacked
+                     (ScanResult *message,
+                      ProtobufCAllocator *allocator)
+{
+  assert(message->base.descriptor == &scan_result__descriptor);
+  protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
+}
+void   cmd_scan_result__init
+                     (CmdScanResult         *message)
+{
+  static CmdScanResult init_value = CMD_SCAN_RESULT__INIT;
+  *message = init_value;
+}
+size_t cmd_scan_result__get_packed_size
+                     (const CmdScanResult *message)
+{
+  assert(message->base.descriptor == &cmd_scan_result__descriptor);
+  return protobuf_c_message_get_packed_size ((const ProtobufCMessage*)(message));
+}
+size_t cmd_scan_result__pack
+                     (const CmdScanResult *message,
+                      uint8_t       *out)
+{
+  assert(message->base.descriptor == &cmd_scan_result__descriptor);
+  return protobuf_c_message_pack ((const ProtobufCMessage*)message, out);
+}
+size_t cmd_scan_result__pack_to_buffer
+                     (const CmdScanResult *message,
+                      ProtobufCBuffer *buffer)
+{
+  assert(message->base.descriptor == &cmd_scan_result__descriptor);
+  return protobuf_c_message_pack_to_buffer ((const ProtobufCMessage*)message, buffer);
+}
+CmdScanResult *
+       cmd_scan_result__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data)
+{
+  return (CmdScanResult *)
+     protobuf_c_message_unpack (&cmd_scan_result__descriptor,
+                                allocator, len, data);
+}
+void   cmd_scan_result__free_unpacked
+                     (CmdScanResult *message,
+                      ProtobufCAllocator *allocator)
+{
+  assert(message->base.descriptor == &cmd_scan_result__descriptor);
+  protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
+}
+void   resp_scan_result__init
+                     (RespScanResult         *message)
+{
+  static RespScanResult init_value = RESP_SCAN_RESULT__INIT;
+  *message = init_value;
+}
+size_t resp_scan_result__get_packed_size
+                     (const RespScanResult *message)
+{
+  assert(message->base.descriptor == &resp_scan_result__descriptor);
+  return protobuf_c_message_get_packed_size ((const ProtobufCMessage*)(message));
+}
+size_t resp_scan_result__pack
+                     (const RespScanResult *message,
+                      uint8_t       *out)
+{
+  assert(message->base.descriptor == &resp_scan_result__descriptor);
+  return protobuf_c_message_pack ((const ProtobufCMessage*)message, out);
+}
+size_t resp_scan_result__pack_to_buffer
+                     (const RespScanResult *message,
+                      ProtobufCBuffer *buffer)
+{
+  assert(message->base.descriptor == &resp_scan_result__descriptor);
+  return protobuf_c_message_pack_to_buffer ((const ProtobufCMessage*)message, buffer);
+}
+RespScanResult *
+       resp_scan_result__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data)
+{
+  return (RespScanResult *)
+     protobuf_c_message_unpack (&resp_scan_result__descriptor,
+                                allocator, len, data);
+}
+void   resp_scan_result__free_unpacked
+                     (RespScanResult *message,
+                      ProtobufCAllocator *allocator)
+{
+  assert(message->base.descriptor == &resp_scan_result__descriptor);
+  protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
+}
 void   slave_config_payload__init
                      (SlaveConfigPayload         *message)
 {
@@ -634,7 +763,186 @@ const ProtobufCMessageDescriptor resp_config__descriptor =
   (ProtobufCMessageInit) resp_config__init,
   NULL,NULL,NULL    /* reserved[123] */
 };
-static const ProtobufCFieldDescriptor slave_config_payload__field_descriptors[17] =
+static const ProtobufCFieldDescriptor scan_result__field_descriptors[5] =
+{
+  {
+    "ssid",
+    1,
+    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_TYPE_BYTES,
+    offsetof(ScanResult, has_ssid),
+    offsetof(ScanResult, ssid),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "chnl",
+    2,
+    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_TYPE_UINT32,
+    offsetof(ScanResult, has_chnl),
+    offsetof(ScanResult, chnl),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "rssi",
+    3,
+    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_TYPE_INT32,
+    offsetof(ScanResult, has_rssi),
+    offsetof(ScanResult, rssi),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "bssid",
+    4,
+    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_TYPE_BYTES,
+    offsetof(ScanResult, has_bssid),
+    offsetof(ScanResult, bssid),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "ecn",
+    5,
+    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_TYPE_ENUM,
+    offsetof(ScanResult, has_ecn),
+    offsetof(ScanResult, ecn),
+    &encryption_mode__descriptor,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+};
+static const unsigned scan_result__field_indices_by_name[] = {
+  3,   /* field[3] = bssid */
+  1,   /* field[1] = chnl */
+  4,   /* field[4] = ecn */
+  2,   /* field[2] = rssi */
+  0,   /* field[0] = ssid */
+};
+static const ProtobufCIntRange scan_result__number_ranges[1 + 1] =
+{
+  { 1, 0 },
+  { 0, 5 }
+};
+const ProtobufCMessageDescriptor scan_result__descriptor =
+{
+  PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
+  "ScanResult",
+  "ScanResult",
+  "ScanResult",
+  "",
+  sizeof(ScanResult),
+  5,
+  scan_result__field_descriptors,
+  scan_result__field_indices_by_name,
+  1,  scan_result__number_ranges,
+  (ProtobufCMessageInit) scan_result__init,
+  NULL,NULL,NULL    /* reserved[123] */
+};
+static const ProtobufCFieldDescriptor cmd_scan_result__field_descriptors[1] =
+{
+  {
+    "count",
+    1,
+    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_TYPE_UINT32,
+    offsetof(CmdScanResult, has_count),
+    offsetof(CmdScanResult, count),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+};
+static const unsigned cmd_scan_result__field_indices_by_name[] = {
+  0,   /* field[0] = count */
+};
+static const ProtobufCIntRange cmd_scan_result__number_ranges[1 + 1] =
+{
+  { 1, 0 },
+  { 0, 1 }
+};
+const ProtobufCMessageDescriptor cmd_scan_result__descriptor =
+{
+  PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
+  "CmdScanResult",
+  "CmdScanResult",
+  "CmdScanResult",
+  "",
+  sizeof(CmdScanResult),
+  1,
+  cmd_scan_result__field_descriptors,
+  cmd_scan_result__field_indices_by_name,
+  1,  cmd_scan_result__number_ranges,
+  (ProtobufCMessageInit) cmd_scan_result__init,
+  NULL,NULL,NULL    /* reserved[123] */
+};
+static const ProtobufCFieldDescriptor resp_scan_result__field_descriptors[2] =
+{
+  {
+    "count",
+    1,
+    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_TYPE_UINT32,
+    offsetof(RespScanResult, has_count),
+    offsetof(RespScanResult, count),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "entries",
+    2,
+    PROTOBUF_C_LABEL_REPEATED,
+    PROTOBUF_C_TYPE_MESSAGE,
+    offsetof(RespScanResult, n_entries),
+    offsetof(RespScanResult, entries),
+    &scan_result__descriptor,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+};
+static const unsigned resp_scan_result__field_indices_by_name[] = {
+  0,   /* field[0] = count */
+  1,   /* field[1] = entries */
+};
+static const ProtobufCIntRange resp_scan_result__number_ranges[1 + 1] =
+{
+  { 1, 0 },
+  { 0, 2 }
+};
+const ProtobufCMessageDescriptor resp_scan_result__descriptor =
+{
+  PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
+  "RespScanResult",
+  "RespScanResult",
+  "RespScanResult",
+  "",
+  sizeof(RespScanResult),
+  2,
+  resp_scan_result__field_descriptors,
+  resp_scan_result__field_indices_by_name,
+  1,  resp_scan_result__number_ranges,
+  (ProtobufCMessageInit) resp_scan_result__init,
+  NULL,NULL,NULL    /* reserved[123] */
+};
+static const ProtobufCFieldDescriptor slave_config_payload__field_descriptors[19] =
 {
   {
     "msg",
@@ -840,6 +1148,30 @@ static const ProtobufCFieldDescriptor slave_config_payload__field_descriptors[17
     0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
+  {
+    "cmd_scan_ap_list",
+    26,
+    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_TYPE_MESSAGE,
+    offsetof(SlaveConfigPayload, payload_case),
+    offsetof(SlaveConfigPayload, cmd_scan_ap_list),
+    &cmd_scan_result__descriptor,
+    NULL,
+    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "resp_scan_ap_list",
+    27,
+    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_TYPE_MESSAGE,
+    offsetof(SlaveConfigPayload, payload_case),
+    offsetof(SlaveConfigPayload, resp_scan_ap_list),
+    &resp_scan_result__descriptor,
+    NULL,
+    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
 };
 static const unsigned slave_config_payload__field_indices_by_name[] = {
   15,   /* field[15] = cmd_disconnect_ap */
@@ -847,6 +1179,7 @@ static const unsigned slave_config_payload__field_indices_by_name[] = {
   1,   /* field[1] = cmd_get_mac_address */
   11,   /* field[11] = cmd_get_softap_config */
   3,   /* field[3] = cmd_get_wifi_mode */
+  17,   /* field[17] = cmd_scan_ap_list */
   9,   /* field[9] = cmd_set_ap_config */
   13,   /* field[13] = cmd_set_softap_config */
   5,   /* field[5] = cmd_set_wifi_mode */
@@ -856,6 +1189,7 @@ static const unsigned slave_config_payload__field_indices_by_name[] = {
   2,   /* field[2] = resp_get_mac_address */
   12,   /* field[12] = resp_get_softap_config */
   4,   /* field[4] = resp_get_wifi_mode */
+  18,   /* field[18] = resp_scan_ap_list */
   10,   /* field[10] = resp_set_ap_config */
   14,   /* field[14] = resp_set_softap_config */
   6,   /* field[6] = resp_set_wifi_mode */
@@ -864,7 +1198,7 @@ static const ProtobufCIntRange slave_config_payload__number_ranges[2 + 1] =
 {
   { 1, 0 },
   { 10, 1 },
-  { 0, 17 }
+  { 0, 19 }
 };
 const ProtobufCMessageDescriptor slave_config_payload__descriptor =
 {
@@ -874,29 +1208,33 @@ const ProtobufCMessageDescriptor slave_config_payload__descriptor =
   "SlaveConfigPayload",
   "",
   sizeof(SlaveConfigPayload),
-  17,
+  19,
   slave_config_payload__field_descriptors,
   slave_config_payload__field_indices_by_name,
   2,  slave_config_payload__number_ranges,
   (ProtobufCMessageInit) slave_config_payload__init,
   NULL,NULL,NULL    /* reserved[123] */
 };
-static const ProtobufCEnumValue encryption_mode__enum_values_by_number[4] =
+static const ProtobufCEnumValue encryption_mode__enum_values_by_number[6] =
 {
   { "Type_Open", "ENCRYPTION_MODE__Type_Open", 0 },
-  { "Type_WPA_PSK", "ENCRYPTION_MODE__Type_WPA_PSK", 1 },
-  { "Type_WPA2_PSK", "ENCRYPTION_MODE__Type_WPA2_PSK", 2 },
-  { "Type_WPA_WPA2_PSK", "ENCRYPTION_MODE__Type_WPA_WPA2_PSK", 3 },
+  { "Type_WEP", "ENCRYPTION_MODE__Type_WEP", 1 },
+  { "Type_WPA_PSK", "ENCRYPTION_MODE__Type_WPA_PSK", 2 },
+  { "Type_WPA2_PSK", "ENCRYPTION_MODE__Type_WPA2_PSK", 3 },
+  { "Type_WPA_WPA2_PSK", "ENCRYPTION_MODE__Type_WPA_WPA2_PSK", 4 },
+  { "Type_WPA2_ENTERPRISE", "ENCRYPTION_MODE__Type_WPA2_ENTERPRISE", 5 },
 };
 static const ProtobufCIntRange encryption_mode__value_ranges[] = {
-{0, 0},{0, 4}
+{0, 0},{0, 6}
 };
-static const ProtobufCEnumValueIndex encryption_mode__enum_values_by_name[4] =
+static const ProtobufCEnumValueIndex encryption_mode__enum_values_by_name[6] =
 {
   { "Type_Open", 0 },
-  { "Type_WPA2_PSK", 2 },
-  { "Type_WPA_PSK", 1 },
-  { "Type_WPA_WPA2_PSK", 3 },
+  { "Type_WEP", 1 },
+  { "Type_WPA2_ENTERPRISE", 5 },
+  { "Type_WPA2_PSK", 3 },
+  { "Type_WPA_PSK", 2 },
+  { "Type_WPA_WPA2_PSK", 4 },
 };
 const ProtobufCEnumDescriptor encryption_mode__descriptor =
 {
@@ -905,15 +1243,15 @@ const ProtobufCEnumDescriptor encryption_mode__descriptor =
   "EncryptionMode",
   "EncryptionMode",
   "",
-  4,
+  6,
   encryption_mode__enum_values_by_number,
-  4,
+  6,
   encryption_mode__enum_values_by_name,
   1,
   encryption_mode__value_ranges,
   NULL,NULL,NULL,NULL   /* reserved[1234] */
 };
-static const ProtobufCEnumValue slave_config_msg_type__enum_values_by_number[16] =
+static const ProtobufCEnumValue slave_config_msg_type__enum_values_by_number[18] =
 {
   { "TypeCmdGetMACAddress", "SLAVE_CONFIG_MSG_TYPE__TypeCmdGetMACAddress", 0 },
   { "TypeRespGetMACAddress", "SLAVE_CONFIG_MSG_TYPE__TypeRespGetMACAddress", 1 },
@@ -931,14 +1269,17 @@ static const ProtobufCEnumValue slave_config_msg_type__enum_values_by_number[16]
   { "TypeRespSetSoftAPConfig", "SLAVE_CONFIG_MSG_TYPE__TypeRespSetSoftAPConfig", 13 },
   { "TypeCmdDisconnectAP", "SLAVE_CONFIG_MSG_TYPE__TypeCmdDisconnectAP", 14 },
   { "TypeRespDisconnectAP", "SLAVE_CONFIG_MSG_TYPE__TypeRespDisconnectAP", 15 },
+  { "TypeCmdGetAPScanList", "SLAVE_CONFIG_MSG_TYPE__TypeCmdGetAPScanList", 16 },
+  { "TypeRespGetAPScanList", "SLAVE_CONFIG_MSG_TYPE__TypeRespGetAPScanList", 17 },
 };
 static const ProtobufCIntRange slave_config_msg_type__value_ranges[] = {
-{0, 0},{0, 16}
+{0, 0},{0, 18}
 };
-static const ProtobufCEnumValueIndex slave_config_msg_type__enum_values_by_name[16] =
+static const ProtobufCEnumValueIndex slave_config_msg_type__enum_values_by_name[18] =
 {
   { "TypeCmdDisconnectAP", 14 },
   { "TypeCmdGetAPConfig", 6 },
+  { "TypeCmdGetAPScanList", 16 },
   { "TypeCmdGetMACAddress", 0 },
   { "TypeCmdGetSoftAPConfig", 10 },
   { "TypeCmdGetWiFiMode", 2 },
@@ -947,6 +1288,7 @@ static const ProtobufCEnumValueIndex slave_config_msg_type__enum_values_by_name[
   { "TypeCmdSetWiFiMode", 4 },
   { "TypeRespDisconnectAP", 15 },
   { "TypeRespGetAPConfig", 7 },
+  { "TypeRespGetAPScanList", 17 },
   { "TypeRespGetMACAddress", 1 },
   { "TypeRespGetSoftAPConfig", 11 },
   { "TypeRespGetWiFiMode", 3 },
@@ -961,9 +1303,9 @@ const ProtobufCEnumDescriptor slave_config_msg_type__descriptor =
   "SlaveConfigMsgType",
   "SlaveConfigMsgType",
   "",
-  16,
+  18,
   slave_config_msg_type__enum_values_by_number,
-  16,
+  18,
   slave_config_msg_type__enum_values_by_name,
   1,
   slave_config_msg_type__value_ranges,

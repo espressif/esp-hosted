@@ -121,7 +121,8 @@ def wifi_set_ap_config(ssid, pwd, bssid):
     set_ap_config.msg = slave_config_pb2.SlaveConfigMsgType.TypeCmdSetAPConfig
     set_ap_config.cmd_set_ap_config.ssid = str(ssid)
     set_ap_config.cmd_set_ap_config.pwd = str(pwd)
-    set_ap_config.cmd_set_ap_config.bssid = str(bssid)
+    if (str(bssid) != '0') :
+        set_ap_config.cmd_set_ap_config.bssid = str(bssid)
     protodata = set_ap_config.SerializeToString()
     #print("serialized data "+str(protodata))
     tp = transport.Transport_pserial(interface)
@@ -168,33 +169,12 @@ def wifi_set_softap_config(ssid, pwd, chnl, ecn, max_conn, ssid_hidden, bw):
     set_softap_config = slave_config_pb2.SlaveConfigPayload()
     set_softap_config.msg = slave_config_pb2.SlaveConfigMsgType.TypeCmdSetSoftAPConfig
     set_softap_config.cmd_set_softap_config.ssid = str(ssid)
-    print(str(ssid))
-    print("input ssid")
-    print(set_softap_config.cmd_set_softap_config.ssid)
     set_softap_config.cmd_set_softap_config.pwd = str(pwd)
-    print(str(pwd))
-    print("input pwd")
-    print(set_softap_config.cmd_set_softap_config.pwd)
     set_softap_config.cmd_set_softap_config.chnl = chnl
-    print(chnl)
-    print("input chnl")
-    print(set_softap_config.cmd_set_softap_config.chnl )
     set_softap_config.cmd_set_softap_config.ecn = ecn
-    print(ecn)
-    print("ecn method")
-    print(set_softap_config.cmd_set_softap_config.ecn )
     set_softap_config.cmd_set_softap_config.max_conn = max_conn
-    print(max_conn)
-    print("max conn")
-    print(set_softap_config.cmd_set_softap_config.max_conn)
     set_softap_config.cmd_set_softap_config.ssid_hidden = ssid_hidden
-    print(ssid_hidden)
-    print("ssid hidden")
-    print(set_softap_config.cmd_set_softap_config.ssid_hidden)
     set_softap_config.cmd_set_softap_config.bw = bw
-    print(bw)
-    print("bw")
-    print(set_softap_config.cmd_set_softap_config.bw )
     protodata = set_softap_config.SerializeToString()
     #print("serialized data "+str(protodata))
     tp = transport.Transport_pserial(interface)
@@ -216,8 +196,6 @@ def wifi_get_softap_config():
     get_softap_config.ParseFromString(response)
     #print("parsed output "+str(get_softap_config.resp_get_softap_config.status )
     ssid = str(get_softap_config.resp_get_softap_config.ssid)
-    print(ssid)
-    print("ssid here")
     pwd = str(get_softap_config.resp_get_softap_config.pwd)
     en = get_softap_config.resp_get_softap_config.ecn
     chnl  = get_softap_config.resp_get_softap_config.chnl

@@ -20,8 +20,8 @@ import utils
 
 class Transport_pserial(Transport):
     def __init__(self, devname):
-        self.f1 = open(devname, "wb",buffering = 5120)
-        self.f2 = open(devname, "rb",buffering = 5120)
+        self.f1 = open(devname, "wb",buffering = 1024)
+        self.f2 = open(devname, "rb",buffering = 1024)
 
     def send_data(self, ep_name, data, wait):
         buf = bytearray([0x01])
@@ -30,14 +30,11 @@ class Transport_pserial(Transport):
         buf.extend(b'\x02')
         buf.extend(pack('<H', len(data)))
         print(bytearray(data))
-       # print(bytearray(data,'utf-8'))
-       # buf.extend(bytearray(data, 'utf8'))
         buf.extend(bytearray(data))
-        #print(utils.str_to_hexstr(str(buf)))
         s = self.f1.write(buf)
         self.f1.flush()
         time.sleep(wait)
-        s = self.f2.read(5120)
+        s = self.f2.read()
         self.f2.flush()
         return s
         

@@ -28,8 +28,8 @@ message CmdConfig {
     bool ssid_hidden = 6;
     string bssid = 7;
     int32 rssi = 8;
-	string status = 9;
-	int32 bw = 10;
+    string status = 9;
+    int32 bw = 10;
 }
 
 message RespConfig {
@@ -41,25 +41,25 @@ message RespConfig {
     bool ssid_hidden = 6;
     string bssid = 7;
     int32 rssi = 8;
-	string status = 9;
-	int32 bw = 10;
+    string status = 9;
+    int32 bw = 10;
 }
 
 message ScanResult {
-	bytes ssid = 1;
-	uint32 chnl = 2;
-	int32 rssi = 3;
-	bytes bssid = 4;
-	EncryptionMode ecn = 5;
+    bytes ssid = 1;
+    uint32 chnl = 2;
+    int32 rssi = 3;
+    bytes bssid = 4;
+    EncryptionMode ecn = 5;
 }
 
 message CmdScanResult {
-	uint32 count = 1;
+    uint32 count = 1;
 }
 
 message RespScanResult {
-	repeated ScanResult entries = 1;
-	uint32 count = 2;
+    uint32 count = 1;
+    repeated ScanResult entries = 2;
 }
 
 
@@ -74,7 +74,7 @@ enum SlaveConfigMsgType {
     TypeRespGetAPConfig = 7;
 	TypeCmdSetAPConfig = 8;
     TypeRespSetAPConfig = 9;
-	TypeCmdGetSoftAPConfig = 10;
+    TypeCmdGetSoftAPConfig = 10;
     TypeRespGetSoftAPConfig = 11;
     TypeCmdSetSoftAPConfig = 12;
     TypeRespSetSoftAPConfig = 13;
@@ -97,7 +97,7 @@ message SlaveConfigPayload {
         RespConfig resp_get_ap_config = 17;
 		CmdConfig cmd_set_ap_config = 18;
         RespConfig resp_set_ap_config = 19;
-		CmdConfig cmd_get_softap_config = 20;
+        CmdConfig cmd_get_softap_config = 20;
         RespConfig resp_get_softap_config = 21;
         CmdConfig cmd_set_softap_config = 22;
         RespConfig resp_set_softap_config = 23;

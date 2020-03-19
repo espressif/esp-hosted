@@ -19,6 +19,9 @@ typedef struct _CmdGetStatus CmdGetStatus;
 typedef struct _RespGetStatus RespGetStatus;
 typedef struct _CmdConfig CmdConfig;
 typedef struct _RespConfig RespConfig;
+typedef struct _ScanResult ScanResult;
+typedef struct _CmdScanResult CmdScanResult;
+typedef struct _RespScanResult RespScanResult;
 typedef struct _SlaveConfigPayload SlaveConfigPayload;
 
 
@@ -26,9 +29,11 @@ typedef struct _SlaveConfigPayload SlaveConfigPayload;
 
 typedef enum _EncryptionMode {
   ENCRYPTION_MODE__Type_Open = 0,
-  ENCRYPTION_MODE__Type_WPA_PSK = 1,
-  ENCRYPTION_MODE__Type_WPA2_PSK = 2,
-  ENCRYPTION_MODE__Type_WPA_WPA2_PSK = 3
+  ENCRYPTION_MODE__Type_WEP = 1,
+  ENCRYPTION_MODE__Type_WPA_PSK = 2,
+  ENCRYPTION_MODE__Type_WPA2_PSK = 3,
+  ENCRYPTION_MODE__Type_WPA_WPA2_PSK = 4,
+  ENCRYPTION_MODE__Type_WPA2_ENTERPRISE = 5
     PROTOBUF_C__FORCE_ENUM_TO_BE_INT_SIZE(ENCRYPTION_MODE)
 } EncryptionMode;
 typedef enum _SlaveConfigMsgType {
@@ -47,7 +52,9 @@ typedef enum _SlaveConfigMsgType {
   SLAVE_CONFIG_MSG_TYPE__TypeCmdSetSoftAPConfig = 12,
   SLAVE_CONFIG_MSG_TYPE__TypeRespSetSoftAPConfig = 13,
   SLAVE_CONFIG_MSG_TYPE__TypeCmdDisconnectAP = 14,
-  SLAVE_CONFIG_MSG_TYPE__TypeRespDisconnectAP = 15
+  SLAVE_CONFIG_MSG_TYPE__TypeRespDisconnectAP = 15,
+  SLAVE_CONFIG_MSG_TYPE__TypeCmdGetAPScanList = 16,
+  SLAVE_CONFIG_MSG_TYPE__TypeRespGetAPScanList = 17
     PROTOBUF_C__FORCE_ENUM_TO_BE_INT_SIZE(SLAVE_CONFIG_MSG_TYPE)
 } SlaveConfigMsgType;
 
@@ -127,6 +134,49 @@ struct  _RespConfig
     , NULL, NULL, 0,0, 0,0, 0,0, 0,0, NULL, 0,0, NULL, 0,0 }
 
 
+struct  _ScanResult
+{
+  ProtobufCMessage base;
+  protobuf_c_boolean has_ssid;
+  ProtobufCBinaryData ssid;
+  protobuf_c_boolean has_chnl;
+  uint32_t chnl;
+  protobuf_c_boolean has_rssi;
+  int32_t rssi;
+  protobuf_c_boolean has_bssid;
+  ProtobufCBinaryData bssid;
+  protobuf_c_boolean has_ecn;
+  EncryptionMode ecn;
+};
+#define SCAN_RESULT__INIT \
+ { PROTOBUF_C_MESSAGE_INIT (&scan_result__descriptor) \
+    , 0,{0,NULL}, 0,0, 0,0, 0,{0,NULL}, 0,0 }
+
+
+struct  _CmdScanResult
+{
+  ProtobufCMessage base;
+  protobuf_c_boolean has_count;
+  uint32_t count;
+};
+#define CMD_SCAN_RESULT__INIT \
+ { PROTOBUF_C_MESSAGE_INIT (&cmd_scan_result__descriptor) \
+    , 0,0 }
+
+
+struct  _RespScanResult
+{
+  ProtobufCMessage base;
+  protobuf_c_boolean has_count;
+  uint32_t count;
+  size_t n_entries;
+  ScanResult **entries;
+};
+#define RESP_SCAN_RESULT__INIT \
+ { PROTOBUF_C_MESSAGE_INIT (&resp_scan_result__descriptor) \
+    , 0,0, 0,NULL }
+
+
 typedef enum {
   SLAVE_CONFIG_PAYLOAD__PAYLOAD__NOT_SET = 0,
   SLAVE_CONFIG_PAYLOAD__PAYLOAD_CMD_GET_MAC_ADDRESS = 10,
@@ -145,6 +195,8 @@ typedef enum {
   SLAVE_CONFIG_PAYLOAD__PAYLOAD_RESP_SET_SOFTAP_CONFIG = 23,
   SLAVE_CONFIG_PAYLOAD__PAYLOAD_CMD_DISCONNECT_AP = 24,
   SLAVE_CONFIG_PAYLOAD__PAYLOAD_RESP_DISCONNECT_AP = 25,
+  SLAVE_CONFIG_PAYLOAD__PAYLOAD_CMD_SCAN_AP_LIST = 26,
+  SLAVE_CONFIG_PAYLOAD__PAYLOAD_RESP_SCAN_AP_LIST = 27,
 } SlaveConfigPayload__PayloadCase;
 
 struct  _SlaveConfigPayload
@@ -170,6 +222,8 @@ struct  _SlaveConfigPayload
     RespConfig *resp_set_softap_config;
     CmdGetStatus *cmd_disconnect_ap;
     RespGetStatus *resp_disconnect_ap;
+    CmdScanResult *cmd_scan_ap_list;
+    RespScanResult *resp_scan_ap_list;
   };
 };
 #define SLAVE_CONFIG_PAYLOAD__INIT \
@@ -253,6 +307,63 @@ RespConfig *
 void   resp_config__free_unpacked
                      (RespConfig *message,
                       ProtobufCAllocator *allocator);
+/* ScanResult methods */
+void   scan_result__init
+                     (ScanResult         *message);
+size_t scan_result__get_packed_size
+                     (const ScanResult   *message);
+size_t scan_result__pack
+                     (const ScanResult   *message,
+                      uint8_t             *out);
+size_t scan_result__pack_to_buffer
+                     (const ScanResult   *message,
+                      ProtobufCBuffer     *buffer);
+ScanResult *
+       scan_result__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data);
+void   scan_result__free_unpacked
+                     (ScanResult *message,
+                      ProtobufCAllocator *allocator);
+/* CmdScanResult methods */
+void   cmd_scan_result__init
+                     (CmdScanResult         *message);
+size_t cmd_scan_result__get_packed_size
+                     (const CmdScanResult   *message);
+size_t cmd_scan_result__pack
+                     (const CmdScanResult   *message,
+                      uint8_t             *out);
+size_t cmd_scan_result__pack_to_buffer
+                     (const CmdScanResult   *message,
+                      ProtobufCBuffer     *buffer);
+CmdScanResult *
+       cmd_scan_result__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data);
+void   cmd_scan_result__free_unpacked
+                     (CmdScanResult *message,
+                      ProtobufCAllocator *allocator);
+/* RespScanResult methods */
+void   resp_scan_result__init
+                     (RespScanResult         *message);
+size_t resp_scan_result__get_packed_size
+                     (const RespScanResult   *message);
+size_t resp_scan_result__pack
+                     (const RespScanResult   *message,
+                      uint8_t             *out);
+size_t resp_scan_result__pack_to_buffer
+                     (const RespScanResult   *message,
+                      ProtobufCBuffer     *buffer);
+RespScanResult *
+       resp_scan_result__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data);
+void   resp_scan_result__free_unpacked
+                     (RespScanResult *message,
+                      ProtobufCAllocator *allocator);
 /* SlaveConfigPayload methods */
 void   slave_config_payload__init
                      (SlaveConfigPayload         *message);
@@ -286,6 +397,15 @@ typedef void (*CmdConfig_Closure)
 typedef void (*RespConfig_Closure)
                  (const RespConfig *message,
                   void *closure_data);
+typedef void (*ScanResult_Closure)
+                 (const ScanResult *message,
+                  void *closure_data);
+typedef void (*CmdScanResult_Closure)
+                 (const CmdScanResult *message,
+                  void *closure_data);
+typedef void (*RespScanResult_Closure)
+                 (const RespScanResult *message,
+                  void *closure_data);
 typedef void (*SlaveConfigPayload_Closure)
                  (const SlaveConfigPayload *message,
                   void *closure_data);
@@ -301,6 +421,9 @@ extern const ProtobufCMessageDescriptor cmd_get_status__descriptor;
 extern const ProtobufCMessageDescriptor resp_get_status__descriptor;
 extern const ProtobufCMessageDescriptor cmd_config__descriptor;
 extern const ProtobufCMessageDescriptor resp_config__descriptor;
+extern const ProtobufCMessageDescriptor scan_result__descriptor;
+extern const ProtobufCMessageDescriptor cmd_scan_result__descriptor;
+extern const ProtobufCMessageDescriptor resp_scan_result__descriptor;
 extern const ProtobufCMessageDescriptor slave_config_payload__descriptor;
 
 PROTOBUF_C__END_DECLS
