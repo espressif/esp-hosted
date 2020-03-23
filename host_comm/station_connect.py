@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from at_commands import at_commands
+from host_commands import slave_comm
 import argparse
 import time
 import os
@@ -32,44 +32,15 @@ station_status = 'Nothing set'
 current_ssid = '0'
 wifi_mode = 0
 
-sta_mac = at_commands.get_sta_mac()
+sta_mac = slave_comm.get_mac(1)
 print("station MAC address "+str(sta_mac))
 
-if (sta_mac == 'failure'):
+station_status = slave_comm.wifi_set_ap_config(args.ssid,args.password,args.bssid)
+if (station_status == 'failure'):
     flag = 'failure'
-
-if (flag == 'success'):
-    wifi_mode = at_commands.wifi_get_mode()
-    print("current wifi mode is "+str(wifi_mode))
-    if (wifi_mode != '1' and wifi_mode != 'failure'):
-    	print("set wifi mode to 1 (i.e. station mode)")
-    	wifi_mode = at_commands.wifi_set_mode(1)
-
-if (wifi_mode == 'failure'):
-    print("wifi get\set mode failed")
-    flag = 'failure'
-
-if (flag == 'success'):
-    print("Get previously entered AP configuration")
-    station_status = at_commands.wifi_get_ap_config()
-    if (station_status == 'failure'):    
-        print("Failed to get previous AP configuration ")
-        flag = 'failure'
-if (flag == 'success' and station_status != 'OK'):
-    current_ssid = station_status[0]
-    current_ssid = current_ssid[1:-1]
-    print("previous AP ssid "+str(current_ssid))
-if ((flag == 'success') and ((station_status == 'OK') or (current_ssid != args.ssid))):
-    print("set AP config")
-    station_status = at_commands.wifi_set_ap_config(args.ssid,args.password,args.bssid)
-    if (station_status == 'failure'):
-        flag = 'failure'
-        print("Failed to set AP config")
-elif((current_ssid == args.ssid) and flag == 'success'):
-    print("entered ssid is same as previous configuration")
-
-if (flag == 'failure'):
-    print("failure in setting AP config")
+    print("Failed to set AP config")
+elif (station_status == 'success'):
+    print("Connected to given AP")
 
 if (flag == 'success'):
     command = 'sudo ifconfig ethsta0 down'

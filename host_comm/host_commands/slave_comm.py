@@ -30,7 +30,9 @@ endpoint = "control"
 not_set = "0"
 
 #get mac address of station
-def get_sta_mac(): 
+# mode == 1 for station mac
+# mode == 2 for softAP mac
+def get_mac(mode):
     req_sta_mac = slave_config_pb2.SlaveConfigPayload()
     req_sta_mac.msg = slave_config_pb2.SlaveConfigMsgType.TypeCmdGetMACAddress
     #for station mode set cmd as 1
@@ -43,22 +45,6 @@ def get_sta_mac():
     req_sta_mac.ParseFromString(response)
     #print("parsed output "+str(req_sta_mac.resp_get_mac_address.resp))
     return req_sta_mac.resp_get_mac_address.resp
-    
-    
-#get mac address of softAP
-def get_ap_mac(): 
-    req_ap_mac = slave_config_pb2.SlaveConfigPayload()
-    req_ap_mac.msg = slave_config_pb2.SlaveConfigMsgType.TypeCmdGetMACAddress
-    #for softAP mode set cmd as 2
-    req_ap_mac.cmd_get_mac_address.cmd = '2';
-    protodata = req_ap_mac.SerializeToString()
-    #print("serialized data "+str(protodata))
-    tp = transport.Transport_pserial("/dev/esps0")
-    response = tp.send_data('control',protodata)
-    #print("response from slave "+str(response))
-    req_ap_mac.ParseFromString(response)
-    #print("parsed output "+str(req_ap_mac.resp_get_mac_address.resp))
-    return req_ap_mac.resp_get_mac_address.resp
 
 #get wifi mode
 # 0: null Mode, Wi-Fi mode not set
@@ -121,8 +107,7 @@ def wifi_set_ap_config(ssid, pwd, bssid):
     set_ap_config.msg = slave_config_pb2.SlaveConfigMsgType.TypeCmdSetAPConfig
     set_ap_config.cmd_set_ap_config.ssid = str(ssid)
     set_ap_config.cmd_set_ap_config.pwd = str(pwd)
-    if (str(bssid) != '0') :
-        set_ap_config.cmd_set_ap_config.bssid = str(bssid)
+    set_ap_config.cmd_set_ap_config.bssid = str(bssid)
     protodata = set_ap_config.SerializeToString()
     #print("serialized data "+str(protodata))
     tp = transport.Transport_pserial(interface)
@@ -203,7 +188,7 @@ def wifi_get_softap_config():
     ssid_hidden  = get_softap_config.resp_get_softap_config.ssid_hidden
     status  = str(get_softap_config.resp_get_softap_config.status)
     bw = get_softap_config.resp_get_softap_config.bw
-    return ssid,pwd,en,chnl,max_conn,ssid_hidden,status,bw
+    return ssid,pwd,chnl,ecn,max_conn,ssid_hidden,status,bw
 
 def wifi_ap_scan_list(scan_count):
     print(scan_count)

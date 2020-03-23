@@ -12,22 +12,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from at_commands import at_commands
+from host_commands import slave_comm
 import argparse
 
 parser = argparse.ArgumentParser(description='station_disconnect.py script will disconnect ESPStation from AP ex. python3 station_disconnect.py')
 
-wifi_mode = at_commands.wifi_get_mode()
+wifi_mode = slave_comm.get_wifi_mode()
 print(wifi_mode)
 
-if (wifi_mode == '1'):
-    disconnect = at_commands.wifi_disconnect_ap()
+if (wifi_mode == 1 or wifi_mode == 3):
+    disconnect = slave_comm.wifi_disconnect_ap()
     print(disconnect)
     print("Disconnected from AP")
-elif (wifi_mode == 'failure'):
-    print("failure in disconnect")
 else :
-    print("station mode is not selected, current mode is "+str(wifi_mode))
+    print("wifi_disconnect_ap failed, current mode is "+str(wifi_mode))
     print("0: null Mode, Wi-Fi RF will be disabled")
     print("1: station mode")
     print("2: softAP mode")
