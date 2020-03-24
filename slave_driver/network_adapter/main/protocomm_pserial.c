@@ -114,6 +114,7 @@ static esp_err_t protocomm_pserial_common_handler(protocomm_t *pc, uint8_t *in, 
 
 esp_err_t protocomm_pserial_data_ready(protocomm_t *pc, int len)
 {
+	printf("data ready \n");
     struct pserial_config *pserial_cfg;
     pserial_cfg = (struct pserial_config *) pc->priv;
     if (!pserial_cfg) {
@@ -172,6 +173,7 @@ static void pserial_task(void *params)
 
 esp_err_t protocomm_pserial_start(protocomm_t *pc, pserial_xmit xmit, pserial_recv recv)
 {
+	printf("pserial start \n");
     struct pserial_config *pserial_cfg;
 
     if (pc == NULL) {

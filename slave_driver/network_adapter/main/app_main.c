@@ -25,16 +25,20 @@
 #include "sdkconfig.h"
 #include <unistd.h>
 #include "xtensa/core-macros.h"
-#include "esp_wifi_internal.h"
+#include <esp_private/wifi.h>
 #include "interface.h"
 #include "app_main.h"
-#include <esp_at.h>
+
 #include "freertos/task.h"
 #include "freertos/queue.h"
 #ifdef CONFIG_BT_ENABLED
 #include "esp_bt.h"
 #include "driver/uart.h"
 #endif
+
+#include <protocomm.h>
+#include "protocomm_pserial.h"
+#include "slave_commands.h"
 
 #define EV_STR(s) "================ "s" ================"
 static const char TAG[] = "NETWORK_ADAPTER";
@@ -71,6 +75,8 @@ QueueHandle_t to_host_queue = NULL;
 QueueHandle_t from_host_queue = NULL;
 #define TO_HOST_QUEUE_SIZE	100
 #define FROM_HOST_QUEUE_SIZE	100
+
+static protocomm_t *pc_pserial;
 
 static struct rx_data {
     uint8_t valid;
@@ -251,7 +257,7 @@ void wlan_rx_task(void* pvParameters)
 #if CONFIG_ESP_SERIAL_DEBUG
 			ESP_LOG_BUFFER_HEXDUMP(TAG_RX_S, r.data, r.len, ESP_LOG_INFO);
 #endif
-			esp_at_port_recv_data_notify(r.len, portMAX_DELAY);
+			protocomm_pserial_data_ready(pc_pserial, r.len);
 		}
 
 		/* Free buffer handle */
@@ -459,27 +465,40 @@ void app_main()
 	xTaskCreate(send_task , "sdio_send_task" , 4096 , NULL , 18 , NULL);
 	xTaskCreate(wlan_rx_task , "wlan_task" , 4096 , NULL , 18 , NULL);
 
-	at_interface_init();
-	esp_at_module_init(1, (uint8_t *)"custom_version 1.0");
-	at_set_echo_flag(false);
-	if(esp_at_base_cmd_regist() == false) {
-		printf("regist base cmd fail\r\n");
+	wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
+	ret = nvs_flash_init();
+	if (ret != ESP_OK) {
+		ESP_LOGE(TAG,"Failed to init NVS");
 		return;
 	}
-
-	nvs_flash_init();
+	ESP_LOGI(TAG,"nvs flash init \n");
 
 	tcpip_adapter_init();
+	ESP_LOGI(TAG,"tcpip_adapter_init done");
 
-	initialise_wifi();
-
-	if(esp_at_wifi_cmd_regist() == false) {
-		printf("regist wifi cmd fail\r\n");
+	ESP_ERROR_CHECK(esp_event_loop_create_default());
+	ret = esp_wifi_init(&cfg);
+	if (ret != ESP_OK) {
+		ESP_LOGE(TAG,"Failed to Init WiFi %d", ret);
+		return;
+	}
+	ESP_LOGI(TAG,"wifi init \n");
+	pc_pserial = protocomm_new();
+	if (pc_pserial == NULL) {
+		ESP_LOGE(TAG,"Failed to allocate memory for new instance of protocomm ");
+		return;
 	}
 
 #ifdef CONFIG_BT_ENABLED
 	initialise_bluetooth();
 #endif
+
+	if (protocomm_add_endpoint(pc_pserial, "control", data_transfer_handler, NULL) != ESP_OK) {
+		ESP_LOGE(TAG, "Failed to add enpoint");
+		return;
+	}
+
+	ESP_LOGI(TAG,"endpoint added \n");
+	protocomm_pserial_start(pc_pserial, at_sdio_hosted_write_data, at_sdio_hosted_read_data);
+	ESP_LOGI(TAG,"pserial start \n");
 }
-
-
