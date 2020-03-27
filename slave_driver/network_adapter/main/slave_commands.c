@@ -22,9 +22,7 @@
 #include <esp_err.h>
 #include <esp_log.h>
 #include "esp_system.h"
-
-#include "lwip/err.h"
-#include "lwip/sys.h"
+#include "esp_private/wifi.h"
 #include "slave_commands.h"
 #include "slave_config.pb-c.h"
 
@@ -68,33 +66,36 @@ static credentials_t credentials;
 static int s_retry_num = 0;
 static bool scan_done = false;
 
-static void ap_event_handler(void* arg, esp_event_base_t event_base,
+extern esp_err_t wlan_sta_rx_callback(void *buffer, uint16_t len, void *eb);
+
+extern esp_err_t wlan_ap_rx_callback(void *buffer, uint16_t len, void *eb);
+
+extern volatile uint8_t sta_connected;
+
+void ap_event_handler(void* arg, esp_event_base_t event_base,
                                 int32_t event_id, void* event_data)
 {
-    if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_START) {
-        esp_wifi_connect();
-		ESP_LOGI(TAG,"wifi connect called");
-
-    } else if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_DISCONNECTED) {
-        if (s_retry_num < MAX_RETRY) {
-            esp_wifi_connect();
-            s_retry_num++;
-            ESP_LOGI(TAG, "retry to connect to the AP");
-        } else {
-            xEventGroupSetBits(s_wifi_event_group, WIFI_FAIL_BIT);
+	if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_DISCONNECTED) {
+		if (s_retry_num < MAX_RETRY) {
+			esp_wifi_connect();
+			s_retry_num++;
+			ESP_LOGI(TAG, "retry to connect to the AP");
+		} else {
+			xEventGroupSetBits(s_wifi_event_group, WIFI_FAIL_BIT);
 			ESP_LOGI(TAG,"sta disconncted, set group bit");
-        }
-        ESP_LOGI(TAG,"connect to the AP fail");
-    } else if (event_base == IP_EVENT && event_id == IP_EVENT_STA_GOT_IP) {
-        ip_event_got_ip_t* event = (ip_event_got_ip_t*) event_data;
-        ESP_LOGI(TAG, "got ip:%s",
-                 ip4addr_ntoa(&event->ip_info.ip));
-        s_retry_num = 0;
-        xEventGroupSetBits(s_wifi_event_group, WIFI_CONNECTED_BIT);
-    }
+			sta_connected = 0;
+			esp_wifi_internal_reg_rxcb(ESP_IF_WIFI_STA,NULL);
+		}
+	} else if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_CONNECTED) {
+		ESP_LOGI(TAG,"connected to AP");
+		esp_wifi_internal_reg_rxcb(ESP_IF_WIFI_STA, (wifi_rxcb_t) wlan_sta_rx_callback);
+		sta_connected = 1;
+		s_retry_num = 0;
+		xEventGroupSetBits(s_wifi_event_group, WIFI_CONNECTED_BIT);
+	}
 }
 
-static void softap_event_handler(void* arg, esp_event_base_t event_base,
+void softap_event_handler(void* arg, esp_event_base_t event_base,
                                     int32_t event_id, void* event_data)
 {
     if (event_id == WIFI_EVENT_AP_STACONNECTED) {
@@ -105,10 +106,16 @@ static void softap_event_handler(void* arg, esp_event_base_t event_base,
         wifi_event_ap_stadisconnected_t* event = (wifi_event_ap_stadisconnected_t*) event_data;
         ESP_LOGI(TAG, "station "MACSTR" leave, AID=%d",
                  MAC2STR(event->mac), event->aid);
-    }
+	} else if (event_id == WIFI_EVENT_AP_START) {
+		ESP_LOGI(TAG,"AP Start handler start");
+		esp_wifi_internal_reg_rxcb(ESP_IF_WIFI_AP, (wifi_rxcb_t) wlan_ap_rx_callback);
+	} else if (event_id == WIFI_EVENT_AP_STOP) {
+		ESP_LOGI(TAG,"AP Stop handler stop");
+		esp_wifi_internal_reg_rxcb(ESP_IF_WIFI_AP,NULL);
+	}
 }
 
-static void ap_scan_list_event_handler(void* arg, esp_event_base_t event_base,
+void ap_scan_list_event_handler(void* arg, esp_event_base_t event_base,
                                 int32_t event_id, void* event_data)
 {
     if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_SCAN_DONE) {
@@ -118,27 +125,39 @@ static void ap_scan_list_event_handler(void* arg, esp_event_base_t event_base,
 
 static void ap_event_register(void)
 {
-	ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID, &ap_event_handler, NULL));
-	ESP_ERROR_CHECK(esp_event_handler_register(IP_EVENT, IP_EVENT_STA_GOT_IP, &ap_event_handler, NULL));
+	ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT, WIFI_EVENT_STA_CONNECTED, &ap_event_handler, NULL));
+	ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT, WIFI_EVENT_STA_DISCONNECTED, &ap_event_handler, NULL));
 	ESP_LOGI(TAG,"AP Event group registered");
 }
 
 static void ap_event_unregister(void)
 {
-	ESP_ERROR_CHECK(esp_event_handler_unregister(WIFI_EVENT, ESP_EVENT_ANY_ID, &ap_event_handler));
-	ESP_ERROR_CHECK(esp_event_handler_unregister(IP_EVENT, IP_EVENT_STA_GOT_IP, &ap_event_handler));
+	ESP_ERROR_CHECK(esp_event_handler_unregister(WIFI_EVENT, WIFI_EVENT_STA_CONNECTED, &ap_event_handler));
+	ESP_ERROR_CHECK(esp_event_handler_unregister(WIFI_EVENT, WIFI_EVENT_STA_DISCONNECTED, &ap_event_handler));
 	ESP_LOGI(TAG, "AP Event group unregistered");
 }
 
 static void softap_event_register(void)
 {
-	ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID, &softap_event_handler, NULL));
+	ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT, WIFI_EVENT_AP_START, &softap_event_handler, NULL));
+	ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT, WIFI_EVENT_AP_STOP, &softap_event_handler, NULL));
+	ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT, WIFI_EVENT_AP_STACONNECTED, &softap_event_handler, NULL));
+	ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT, WIFI_EVENT_AP_STADISCONNECTED, &softap_event_handler, NULL));
 	ESP_LOGI(TAG,"SoftAP Event group registered");
+}
+
+static void softap_event_unregister(void)
+{
+	ESP_ERROR_CHECK(esp_event_handler_unregister(WIFI_EVENT, WIFI_EVENT_AP_START, &softap_event_handler));
+	ESP_ERROR_CHECK(esp_event_handler_unregister(WIFI_EVENT, WIFI_EVENT_AP_STOP, &softap_event_handler));
+	ESP_ERROR_CHECK(esp_event_handler_unregister(WIFI_EVENT, WIFI_EVENT_AP_STACONNECTED, &softap_event_handler));
+	ESP_ERROR_CHECK(esp_event_handler_unregister(WIFI_EVENT, WIFI_EVENT_AP_STADISCONNECTED, &softap_event_handler));
+	ESP_LOGI(TAG,"SoftAP Event group unregistered");
 }
 
 static void ap_scan_list_event_register(void)
 {
-	ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID, &ap_scan_list_event_handler, NULL));
+	ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT, WIFI_EVENT_SCAN_DONE, &ap_scan_list_event_handler, NULL));
 }
 
 typedef struct slave_config_cmd {
@@ -192,7 +211,6 @@ static esp_err_t cmd_get_mac_address_handler(SlaveConfigPayload *req,
 	resp_payload->resp = mac_str;
 	resp->payload_case = SLAVE_CONFIG_PAYLOAD__PAYLOAD_RESP_GET_MAC_ADDRESS ;
 	resp->resp_get_mac_address = resp_payload;
-	ESP_LOGI(TAG,"mac address %s ", resp->resp_get_mac_address->resp);
 	return ESP_OK;
 }
 
@@ -273,7 +291,6 @@ static esp_err_t cmd_set_ap_config_handler (SlaveConfigPayload *req,
 	memcpy(wifi_cfg->sta.ssid,req->cmd_set_ap_config->ssid,sizeof(wifi_cfg->sta.ssid));
 	memcpy(wifi_cfg->sta.password,req->cmd_set_ap_config->pwd,sizeof(wifi_cfg->sta.password));
 	if (strlen(req->cmd_set_ap_config->bssid) > 1) {
-		printf("bssid %s \n",req->cmd_set_ap_config->bssid);
 		wifi_cfg->sta.bssid_set = true;
 		memcpy(wifi_cfg->sta.bssid,req->cmd_set_ap_config->bssid,sizeof(wifi_cfg->sta.bssid));
 	}
@@ -283,13 +300,11 @@ static esp_err_t cmd_set_ap_config_handler (SlaveConfigPayload *req,
 		free(wifi_cfg);
 		return ESP_FAIL;
 	}
-	ret = esp_wifi_start();
+	ret = esp_wifi_connect();
 	if (ret != ESP_OK) {
-		ESP_LOGE(TAG,"Failed to start wifi");
-		free(wifi_cfg);
+		ESP_LOGE(TAG,"Failed to connect to wifi");
 		return ESP_FAIL;
 	}
-	ESP_LOGI(TAG,"wifi start is called");
 	EventBits_t bits = xEventGroupWaitBits(s_wifi_event_group,
             WIFI_CONNECTED_BIT | WIFI_FAIL_BIT,
             pdFALSE,
@@ -297,10 +312,13 @@ static esp_err_t cmd_set_ap_config_handler (SlaveConfigPayload *req,
             portMAX_DELAY);
 	if (bits & WIFI_CONNECTED_BIT) {
 		ESP_LOGI(TAG, "connected to ap SSID:%s password:%s", req->cmd_set_ap_config->ssid , req->cmd_set_ap_config->pwd );
+	hosted_flags.is_ap_connected = true;
 	} else if (bits & WIFI_FAIL_BIT) {
 		ESP_LOGI(TAG, "Failed to connect to SSID:%s, password:%s", req->cmd_set_ap_config->ssid , req->cmd_set_ap_config->pwd );
+	hosted_flags.is_ap_connected = false;
 	} else {
 		ESP_LOGE(TAG, "UNEXPECTED EVENT");
+		hosted_flags.is_ap_connected = false;
 	}
 	/* To check ESP station is connected to AP */
 	/* wifi_ap_record_t ap_info;
@@ -311,7 +329,7 @@ static esp_err_t cmd_set_ap_config_handler (SlaveConfigPayload *req,
 		return ESP_FAIL;
 	}
 	ESP_LOGI(TAG,"ssid %s", (char*)ap_info.ssid); */
-	hosted_flags.is_ap_connected = true;
+
 	RespConfig *resp_payload = (RespConfig *)calloc(1,sizeof(RespConfig));
 	if (resp_payload == NULL) {
 		ESP_LOGE(TAG,"Failed to allocate memory");
@@ -321,7 +339,12 @@ static esp_err_t cmd_set_ap_config_handler (SlaveConfigPayload *req,
 		return ESP_ERR_NO_MEM;
 	}
 	resp_config__init (resp_payload);
-	resp_payload->status = SUCCESS;
+	if (hosted_flags.is_ap_connected) {
+		resp_payload->status = SUCCESS;
+	} else {
+		resp_payload->status = FAILURE;
+	}
+
 	resp->payload_case = SLAVE_CONFIG_PAYLOAD__PAYLOAD_RESP_SET_AP_CONFIG ;
 	resp->resp_set_ap_config = resp_payload;
 	ap_event_unregister();
@@ -335,7 +358,7 @@ static esp_err_t cmd_set_ap_config_handler (SlaveConfigPayload *req,
 static esp_err_t cmd_get_ap_config_handler (SlaveConfigPayload *req,
                                         SlaveConfigPayload *resp, void *priv_data)
 {
-	if (hosted_flags.is_ap_connected == false) {
+	if (!hosted_flags.is_ap_connected) {
 		ESP_LOGI(TAG,"ESP32 station is not connected with AP, can't get AP configuration");
 		return ESP_FAIL;
 	}
@@ -383,7 +406,7 @@ static esp_err_t cmd_get_ap_config_handler (SlaveConfigPayload *req,
 static esp_err_t cmd_disconnect_ap_handler (SlaveConfigPayload *req,
                                         SlaveConfigPayload *resp, void *priv_data)
 {
-	if (hosted_flags.is_ap_connected == false) {
+	if (!hosted_flags.is_ap_connected) {
 		ESP_LOGI(TAG,"ESP32 station is not connected with AP, can't disconnect from AP");
 		return ESP_FAIL;
 	}
@@ -403,7 +426,7 @@ static esp_err_t cmd_disconnect_ap_handler (SlaveConfigPayload *req,
 	resp->payload_case = SLAVE_CONFIG_PAYLOAD__PAYLOAD_RESP_DISCONNECT_AP;
 	resp->resp_disconnect_ap = resp_payload;
 	ESP_LOGI(TAG,"disconnected from AP");
-
+	hosted_flags.is_ap_connected = false;
 	return ESP_OK;
 }
 
@@ -530,12 +553,6 @@ static esp_err_t cmd_set_softap_config_handler (SlaveConfigPayload *req,
 		free(wifi_config);
 		return ESP_FAIL;
 	}
-	ret = esp_wifi_start();
-	if (ret != ESP_OK) {
-		ESP_LOGE(TAG,"Failed to start WiFi");
-		free(wifi_config);
-		return ESP_FAIL;
-	}
 	ESP_LOGI(TAG,"ssid %s pwd %s authmode %d ssid_hidden %d max_conn %d channel %d", wifi_config->ap.ssid, wifi_config->ap.password, wifi_config->ap.authmode,wifi_config->ap.ssid_hidden,wifi_config->ap.max_connection,wifi_config->ap.channel);
 
 	RespConfig *resp_payload = (RespConfig *)calloc(1,sizeof(RespConfig));
@@ -548,7 +565,7 @@ static esp_err_t cmd_set_softap_config_handler (SlaveConfigPayload *req,
 	resp_payload->status = SUCCESS;
 	resp->payload_case = SLAVE_CONFIG_PAYLOAD__PAYLOAD_RESP_SET_SOFTAP_CONFIG ;
 	resp->resp_set_softap_config = resp_payload;
-	ESP_LOGI(TAG,"ESp32 SoftAP is avaliable ");
+	ESP_LOGI(TAG,"ESP32 SoftAP is avaliable ");
 
 	hosted_flags.is_softap_started = true;
 	free(wifi_config);
@@ -559,10 +576,15 @@ static esp_err_t cmd_get_ap_scan_list_handler (SlaveConfigPayload *req,
                                         SlaveConfigPayload *resp, void *priv_data)
 {
 	ESP_LOGI(TAG,"Inside get AP Scan list handler");
-	ESP_LOGI(TAG,"scan entry %d",req->cmd_scan_ap_list->count);
+	ESP_LOGI(TAG,"scan entry requested %d",req->cmd_scan_ap_list->count);
 	ap_scan_list_event_register();
-	ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
-	ESP_ERROR_CHECK(esp_wifi_start());
+	if (hosted_flags.is_softap_started) {
+		ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_APSTA));
+		ESP_LOGI(TAG,"APSTA mode set in scan handler");
+	} else {
+		ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
+		ESP_LOGI(TAG,"STA mode set in scan handler");
+	}
 	ESP_ERROR_CHECK(esp_wifi_scan_start(NULL, true));
 
 	uint16_t scan_count = req->cmd_scan_ap_list->count;
