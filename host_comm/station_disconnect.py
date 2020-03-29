@@ -1,4 +1,4 @@
-# Copyright 2019 Espressif Systems (Shanghai) PTE LTD
+# Copyright 2015-2020 Espressif Systems (Shanghai) PTE LTD
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -15,12 +15,27 @@
 from host_commands import slave_comm
 import argparse
 
-parser = argparse.ArgumentParser(description='station_disconnect.py script will disconnect ESPStation from AP ex. python3 station_disconnect.py')
+# WiFi Mode
+# NULL              0
+# Station           1
+# SoftAP            2
+# Station + SoftAP  3
+
+null = 0
+station = 1
+softap = 2
+station_softap = 3
+failure = "failure"
+disconnect = "Not set"
+
+parser = argparse.ArgumentParser(description='station_disconnect.py script will disconnect ESPStation from AP ex. python station_disconnect.py')
 
 wifi_mode = slave_comm.get_wifi_mode()
 print(wifi_mode)
 
-if (wifi_mode == 1 or wifi_mode == 3):
+if (wifi_mode == failure):
+    print("failure in getting wifi mode")
+elif (wifi_mode == station or wifi_mode == station_softap):
     disconnect = slave_comm.wifi_disconnect_ap()
     print(disconnect)
     print("Disconnected from AP")

@@ -1,4 +1,4 @@
-# Copyright 2019 Espressif Systems (Shanghai) PTE LTD
+# Copyright 2015-2020 Espressif Systems (Shanghai) PTE LTD
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -18,6 +18,8 @@ import binascii
 import time
 import utils
 
+failure = "failure"
+
 class Transport_pserial(Transport):
     def __init__(self, devname):
         self.f1 = open(devname, "wb",buffering = 1024)
@@ -34,7 +36,10 @@ class Transport_pserial(Transport):
         s = self.f1.write(buf)
         self.f1.flush()
         time.sleep(wait)
-        s = self.f2.read()
+        try:
+            s = self.f2.read()
+        except IOError:
+            return failure
         self.f2.flush()
         return s
         

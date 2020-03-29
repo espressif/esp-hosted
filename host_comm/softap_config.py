@@ -1,4 +1,4 @@
-# Copyright 2019 Espressif Systems (Shanghai) PTE LTD
+# Copyright 2015-2020 Espressif Systems (Shanghai) PTE LTD
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -17,7 +17,22 @@ import argparse
 import time
 import os
 
-parser = argparse.ArgumentParser(description='softap_config.py script to configure ESP32 softAP mode. ex. python3 softap_config.py \'xyz\' \'xyz123456\' 1 3 --max_conn=4 --ssid_hidden=0 --bw=0')
+# WiFi Mode
+# NULL                  0
+# Station               1
+# SoftAP                2
+# Station+SoftAP        3
+
+null = 0
+station = 1
+softap = 2
+station_softap = 3
+success = 'success'
+failure = 'failure'
+flag = success
+softap_config = 'Not set'
+
+parser = argparse.ArgumentParser(description='softap_config.py script to configure ESP32 softAP mode. ex. python softap_config.py \'xyz\' \'xyz123456\' 1 3 --max_conn=4 --ssid_hidden=0 --bw=0')
 
 parser.add_argument("ssid", type=str, default='0', help="ssid")
 
@@ -35,30 +50,25 @@ parser.add_argument("--bw", type=int, default=1, help="Bandwidth (1: WIFI_BW_HT2
 
 args = parser.parse_args()
 
-flag = 'success'
-softap_config = 'failure'
-ssid = '0'
-pwd = '0'
-chnl = 0
-encrp_mthd = 0
-max_conn = 0
-ssid_hidden = 0
-wifi_mode = 0
+ap_mac = slave_comm.get_mac(softap)
+if (ap_mac == failure):
+    print("Failed to get AP mac address")
+    flag = failure
+else :
+    print("AP MAC Address "+str(ap_mac))
 
-ap_mac = slave_comm.get_mac(2)
-print("AP MAC Address "+str(ap_mac))
-
-softap_config = slave_comm.wifi_set_softap_config(args.ssid, args.password, args.channel_id, args.encrp_mthd, args.max_conn, args.ssid_hidden, args.bw)
-if (softap_config != 'success'):
-    print("setting softap config failed")
-    flag = 'failure'
-else:
-    print("setting softap config success")
+if (flag == success):
+    softap_config = slave_comm.wifi_set_softap_config(args.ssid, args.password, args.channel_id, args.encrp_mthd, args.max_conn, args.ssid_hidden, args.bw)
+    if (softap_config == failure):
+        print("setting softap config failed")
+        flag = failure
+    else:
+        print("setting softap config success")
  
-if (flag == 'failure'):
+if (flag == failure):
     print("failure in setting AP config")
 
-if (flag == 'success'):
+if (flag == success):
     command = 'sudo ifconfig ethap0 down'
     os.system(command)
     print(command)    
@@ -67,10 +77,10 @@ if (flag == 'success'):
     os.system(command)
     print(command)    
     
-    command = 'ifconfig ethap0 up'
+    command = 'sudo ifconfig ethap0 up'
     os.system(command)
     print(command)
     
-    time.sleep(5)
+    time.sleep(1)
  
     print("softAP config successfully set")

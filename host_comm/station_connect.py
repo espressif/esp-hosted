@@ -1,4 +1,4 @@
-# Copyright 2019 Espressif Systems (Shanghai) PTE LTD
+# Copyright 2015-2020 Espressif Systems (Shanghai) PTE LTD
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -17,7 +17,22 @@ import argparse
 import time
 import os
 
-parser = argparse.ArgumentParser(description='station_connect.py is a python script which connect ESPstation to AP. ex. python3 station_connect.py \'xyz\' \'xyz123456\' --bssid=\'e5:6c:67:3c:cf:65\'')
+# WiFi Mode
+# NULL              0
+# Station           1
+# SoftAP            2
+# Station + SoftAP  3
+
+null = 0
+station = 1
+softap = 2
+station_softap = 3
+failure = "failure"
+success = "success"
+flag = success
+station_status = 'Nothing set'
+
+parser = argparse.ArgumentParser(description='station_connect.py is a python script which connect ESPstation to AP. ex. python station_connect.py \'xyz\' \'xyz123456\' --bssid=\'e5:6c:67:3c:cf:65\'')
 
 parser.add_argument("ssid", type=str, default='0', help="ssid of AP")
 
@@ -27,22 +42,21 @@ parser.add_argument("--bssid", type=str, default='0', help="bssid i.e MAC addres
 
 args = parser.parse_args()
 
-flag = 'success'
-station_status = 'Nothing set'
-current_ssid = '0'
-wifi_mode = 0
+sta_mac = slave_comm.get_mac(station)
+if (sta_mac == failure):
+    flag = failure
+else :
+    print("station MAC address "+str(sta_mac))
 
-sta_mac = slave_comm.get_mac(1)
-print("station MAC address "+str(sta_mac))
+if (flag == success):
+    station_status = slave_comm.wifi_set_ap_config(args.ssid,args.password,args.bssid)
+    if (station_status == failure):
+        flag = failure
+        print("Failed to set AP config")
+    elif (station_status == success):
+        print("Connected to given AP")
 
-station_status = slave_comm.wifi_set_ap_config(args.ssid,args.password,args.bssid)
-if (station_status == 'failure'):
-    flag = 'failure'
-    print("Failed to set AP config")
-elif (station_status == 'success'):
-    print("Connected to given AP")
-
-if (flag == 'success'):
+if (flag == success):
     command = 'sudo ifconfig ethsta0 down'
     os.system(command)
     print(command)
@@ -51,17 +65,17 @@ if (flag == 'success'):
     os.system(command)
     print(command)
 
-    command = 'ifconfig ethsta0 up'
+    command = 'sudo ifconfig ethsta0 up'
     os.system(command)
     print(command)
 
-    time.sleep(5)
+    time.sleep(1)
 
-    command = 'dhclient ethsta0 -r'
+    command = 'sudo dhclient ethsta0 -r'
     os.system(command)
     print(command)
 
-    command = 'dhclient ethsta0 -v'
+    command = 'sudo dhclient ethsta0 -v'
     os.system(command)
     print(command)
 
