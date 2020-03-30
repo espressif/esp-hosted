@@ -25,7 +25,7 @@
 #include "sdkconfig.h"
 #include <unistd.h>
 #include "xtensa/core-macros.h"
-#include <esp_private/wifi.h>
+#include "esp_private/wifi.h"
 #include "interface.h"
 #include "esp_wpa.h"
 #include "app_main.h"

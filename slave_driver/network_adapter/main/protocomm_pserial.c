@@ -1,4 +1,4 @@
-// Copyright 2018 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2015-2020 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -148,7 +148,6 @@ static void pserial_task(void *params)
     struct pserial_config *pserial_cfg;
     int len;
     uint8_t *buf;
-    int ret;
 
     pserial_cfg = (struct pserial_config *) pc->priv;
     if (!pserial_cfg) {
@@ -173,7 +172,6 @@ static void pserial_task(void *params)
 
 esp_err_t protocomm_pserial_start(protocomm_t *pc, pserial_xmit xmit, pserial_recv recv)
 {
-	printf("pserial start \n");
     struct pserial_config *pserial_cfg;
 
     if (pc == NULL) {

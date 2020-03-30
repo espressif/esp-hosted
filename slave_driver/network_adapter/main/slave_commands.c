@@ -1,4 +1,4 @@
-// Copyright 2018 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2015-2020 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,12 +15,12 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/event_groups.h"
-#include <esp_wifi.h>
-#include <esp_event.h>
-#include <esp_wifi_types.h>
+#include "esp_wifi.h"
+#include "esp_event.h"
+#include "esp_wifi_types.h"
 #include <string.h>
-#include <esp_err.h>
-#include <esp_log.h>
+#include "esp_err.h"
+#include "esp_log.h"
 #include "esp_system.h"
 #include "esp_private/wifi.h"
 #include "slave_commands.h"
