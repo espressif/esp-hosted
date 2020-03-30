@@ -200,13 +200,8 @@ Host sets bit 1 of 0x3FF5508C interrupt register. This tells slave device to sto
 There is `host_comm` folder in which `host_commands` python library is present. User can make use of python functions to get access of wifi functionalities of ESP32.
 
 first run `./rpi_init.sh wlan` to compile and insert ESP32 host driver on rpi. This script also creates `/dev/esps0` which is used as WLAN control interface.
-These scripts to be run as root. Execute following command in terminal.
 
-```
-sudo bash
-```
-
-There are three python script for station connect to AP, station disconnect from AP and softAP configuration.
+There are four python script for station connect to AP, station disconnect from AP and softAP configuration.
 
 1. `station_connect.py` is a python script which configure ESP32 in `station mode`, connects rpi to external AP with credentials user has provided. Also it ups the station interface and run DHCP client. User should provide parameters like ssid, password, mac address of AP(Its optional parameter).
 
@@ -223,6 +218,10 @@ python station_disconnect.py
 ```
 ex. python softap_config.py 'xyz' 'xyz123456' 1 3 --max_conn=4 --ssid_hidden=0
 ```
+4. `softap_stop.py` is python script to stop ESP32 softap. This script will change wifi mode to `null` if only softAP is running or to `station` mode if softAP and station both are on.
+
+```
+ex. python softap_stop.py
 ---
 Note: To start data connection, user needs to setup a DHCP server on rpi or set static IP address for AP interface i.e. ethap0
 
