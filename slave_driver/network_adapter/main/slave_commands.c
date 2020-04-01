@@ -661,6 +661,91 @@ static esp_err_t cmd_get_ap_scan_list_handler (SlaveConfigPayload *req,
 	resp->resp_scan_ap_list = resp_payload;
 	return ESP_OK;
 }
+
+static esp_err_t get_connected_sta_list_handler (SlaveConfigPayload *req,
+                                        SlaveConfigPayload *resp, void *priv_data)
+{
+	ESP_LOGI(TAG,"Inside get connected sta list handler");
+	esp_err_t ret;
+	wifi_mode_t mode;
+	ret = esp_wifi_get_mode(&mode);
+	if (ret != ESP_OK) {
+		ESP_LOGE(TAG, "Failed to get wifi mode %d", ret);
+		return ESP_FAIL;
+	}
+	if (mode == WIFI_MODE_STA || mode == WIFI_MODE_NULL) {
+		ESP_LOGE(TAG,"currnet mode is %d", mode);
+		return ESP_FAIL;
+	}
+	if (!hosted_flags.is_softap_started) {
+		ESP_LOGE(TAG,"SoftAP is not started, cant get connected stations List");
+		return ESP_FAIL;
+	}
+	if (!req->cmd_connected_stas_list->num) {
+		ESP_LOGE(TAG,"Connected stations list request is invalid");
+		return ESP_FAIL;
+	} else if (req->cmd_connected_stas_list->num > 10) {
+		ESP_LOGI(TAG,"Request for %d stations came, but can give max 10 connected stations list if connected", req->cmd_connected_stas_list->num);
+	}
+	wifi_sta_list_t* stas_info = (wifi_sta_list_t *) calloc(1,sizeof(wifi_sta_list_t));
+	if (stas_info == NULL) {
+		ESP_LOGE(TAG,"Failed to allocate memory stas_info");
+		return ESP_ERR_NO_MEM;
+	}
+	ret = esp_wifi_ap_get_sta_list(stas_info);
+	if (ret != ESP_OK) {
+		ESP_LOGE(TAG,"Failed to get connected stations list");
+		free(stas_info);
+		return ESP_FAIL;
+	}
+	if (!stas_info->num) {
+		ESP_LOGE(TAG,"No station is connected");
+	}
+	RespConnectedSTA *resp_payload = (RespConnectedSTA *)calloc(1,sizeof(RespConnectedSTA));
+	if (resp_payload == NULL) {
+		ESP_LOGE(TAG,"failed to allocate memory resp payload");
+		free(stas_info);
+		return ESP_ERR_NO_MEM;
+	}
+	resp_connected_sta__init(resp_payload);
+	resp->payload_case = SLAVE_CONFIG_PAYLOAD__PAYLOAD_RESP_CONNECTED_STAS_LIST ;
+	resp->resp_connected_stas_list = resp_payload;
+	resp_payload->has_num = 1;
+	resp_payload->num = stas_info->num;
+	if (stas_info->num) {
+		resp_payload->n_stations = stas_info->num;
+		ConnectedSTAList **results = (ConnectedSTAList **) calloc(stas_info->num,sizeof(ConnectedSTAList));
+		if (results == NULL) {
+			ESP_LOGE(TAG,"Failed to allocate memory connected sta");
+			free(stas_info);
+			return ESP_ERR_NO_MEM;
+		}
+		resp_payload->stations = results;
+		for (int i = 0; i < stas_info->num ; i++) {
+			sprintf((char *)credentials.bssid,MACSTR,MAC2STR(stas_info->sta[i].mac));
+			results[i] = (ConnectedSTAList *)calloc(1,sizeof(ConnectedSTAList));
+			if (results[i] == NULL) {
+				ESP_LOGE(TAG,"Failed to allocated memory");
+				free(stas_info);
+				return ESP_ERR_NO_MEM;
+			}
+			connected_stalist__init(results[i]);
+			results[i]->has_mac = 1;
+			results[i]->mac.len = strnlen((char *)credentials.bssid,19);
+			results[i]->mac.data = (uint8_t *)strndup((char *)credentials.bssid,19);
+			results[i]->has_rssi = 1;
+			results[i]->rssi = stas_info->sta[i].rssi;
+			if (!results[i]->mac.data) {
+				ESP_LOGE(TAG,"Failed to allocate memory mac address");
+				return ESP_ERR_NO_MEM;
+			}
+			ESP_LOGI(TAG,"MAC of %dth station %s",i, results[i]->mac.data);
+		}
+	}
+	free(stas_info);
+	return ESP_OK;
+}
+
 static slave_config_cmd_t cmd_table[] = {
 	{
 		.cmd_num = SLAVE_CONFIG_MSG_TYPE__TypeCmdGetMACAddress ,
@@ -697,6 +782,10 @@ static slave_config_cmd_t cmd_table[] = {
 	{
 		.cmd_num = SLAVE_CONFIG_MSG_TYPE__TypeCmdGetAPScanList ,
 		.command_handler = cmd_get_ap_scan_list_handler
+	},
+	{
+		.cmd_num = SLAVE_CONFIG_MSG_TYPE__TypeCmdGetConnectedSTAList ,
+		.command_handler = get_connected_sta_list_handler
 	},
 };
 
@@ -813,6 +902,23 @@ static void slave_config_cleanup(SlaveConfigPayload *resp)
 			}
 		}
 		break;
+		case (SLAVE_CONFIG_MSG_TYPE__TypeRespGetConnectedSTAList ) : {
+			if (resp->resp_connected_stas_list) {
+				if (resp->resp_connected_stas_list->stations) {
+					for (int i=0 ; i < resp->resp_connected_stas_list->num; i++) {
+						if (resp->resp_connected_stas_list->stations[i]) {
+							free(resp->resp_connected_stas_list->stations[i]->mac.data);
+							free(resp->resp_connected_stas_list->stations[i]);
+						}
+					}
+					free(resp->resp_connected_stas_list->stations);
+				}
+				free(resp->resp_connected_stas_list);
+				memset(&credentials,0,sizeof(credentials_t));
+				ESP_LOGI(TAG,"resp connected stas list freed ");
+			}
+		}
+		break;
 		default:
 			ESP_LOGE(TAG, "Unsupported response type");
 			break;
@@ -839,23 +945,25 @@ esp_err_t data_transfer_handler(uint32_t session_id,const uint8_t *inbuf, ssize_
 	}
 
 	slave_config_payload__init (&resp);
+	resp.has_msg = 1;
+	resp.msg = req->msg + 1;
 	ret = slave_config_command_dispatcher(req,&resp,NULL);
 	if (ret != ESP_OK) {
-		ESP_LOGE(TAG, "command dispatching no happening");
+		ESP_LOGE(TAG, "command dispatching not happening");
+		slave_config_cleanup(&resp);
 		return ESP_FAIL;
 	}
 	slave_config_payload__free_unpacked(req, NULL);
-	resp.has_msg = 1;
-	resp.msg = req->msg + 1;
 	*outlen = slave_config_payload__get_packed_size (&resp);
-	ESP_LOGI(TAG,"outlen %d ",*outlen);
 	if (*outlen <= 0) {
 		ESP_LOGE(TAG, "Invalid encoding for response");
+		slave_config_cleanup(&resp);
 		return ESP_FAIL;
 	}
 	*outbuf = (uint8_t *)calloc(1,*outlen);
 	if (!*outbuf) {
 		ESP_LOGE(TAG, "No memory allocated for outbuf");
+		slave_config_cleanup(&resp);
 		return ESP_ERR_NO_MEM;
 	}
 	slave_config_payload__pack (&resp, *outbuf);

@@ -19,7 +19,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   package='',
   syntax='proto3',
   serialized_options=None,
-  serialized_pb=b'\n\x12slave_config.proto\")\n\x0c\x43mdGetStatus\x12\x0b\n\x03\x63md\x18\x01 \x01(\t\x12\x0c\n\x04mode\x18\x02 \x01(\x05\"+\n\rRespGetStatus\x12\x0c\n\x04resp\x18\x01 \x01(\t\x12\x0c\n\x04mode\x18\x02 \x01(\x05\"\xb2\x01\n\tCmdConfig\x12\x0c\n\x04ssid\x18\x01 \x01(\t\x12\x0b\n\x03pwd\x18\x02 \x01(\t\x12\x1c\n\x03\x65\x63n\x18\x03 \x01(\x0e\x32\x0f.EncryptionMode\x12\x0c\n\x04\x63hnl\x18\x04 \x01(\x05\x12\x10\n\x08max_conn\x18\x05 \x01(\x05\x12\x13\n\x0bssid_hidden\x18\x06 \x01(\x08\x12\r\n\x05\x62ssid\x18\x07 \x01(\t\x12\x0c\n\x04rssi\x18\x08 \x01(\x05\x12\x0e\n\x06status\x18\t \x01(\t\x12\n\n\x02\x62w\x18\n \x01(\x05\"\xb3\x01\n\nRespConfig\x12\x0c\n\x04ssid\x18\x01 \x01(\t\x12\x0b\n\x03pwd\x18\x02 \x01(\t\x12\x1c\n\x03\x65\x63n\x18\x03 \x01(\x0e\x32\x0f.EncryptionMode\x12\x0c\n\x04\x63hnl\x18\x04 \x01(\x05\x12\x10\n\x08max_conn\x18\x05 \x01(\x05\x12\x13\n\x0bssid_hidden\x18\x06 \x01(\x08\x12\r\n\x05\x62ssid\x18\x07 \x01(\t\x12\x0c\n\x04rssi\x18\x08 \x01(\x05\x12\x0e\n\x06status\x18\t \x01(\t\x12\n\n\x02\x62w\x18\n \x01(\x05\"c\n\nScanResult\x12\x0c\n\x04ssid\x18\x01 \x01(\x0c\x12\x0c\n\x04\x63hnl\x18\x02 \x01(\r\x12\x0c\n\x04rssi\x18\x03 \x01(\x05\x12\r\n\x05\x62ssid\x18\x04 \x01(\x0c\x12\x1c\n\x03\x65\x63n\x18\x05 \x01(\x0e\x32\x0f.EncryptionMode\"\x1e\n\rCmdScanResult\x12\r\n\x05\x63ount\x18\x01 \x01(\r\"=\n\x0eRespScanResult\x12\r\n\x05\x63ount\x18\x01 \x01(\r\x12\x1c\n\x07\x65ntries\x18\x02 \x03(\x0b\x32\x0b.ScanResult\"\xe7\x06\n\x12SlaveConfigPayload\x12 \n\x03msg\x18\x01 \x01(\x0e\x32\x13.SlaveConfigMsgType\x12,\n\x13\x63md_get_mac_address\x18\n \x01(\x0b\x32\r.CmdGetStatusH\x00\x12.\n\x14resp_get_mac_address\x18\x0b \x01(\x0b\x32\x0e.RespGetStatusH\x00\x12*\n\x11\x63md_get_wifi_mode\x18\x0c \x01(\x0b\x32\r.CmdGetStatusH\x00\x12,\n\x12resp_get_wifi_mode\x18\r \x01(\x0b\x32\x0e.RespGetStatusH\x00\x12*\n\x11\x63md_set_wifi_mode\x18\x0e \x01(\x0b\x32\r.CmdGetStatusH\x00\x12,\n\x12resp_set_wifi_mode\x18\x0f \x01(\x0b\x32\x0e.RespGetStatusH\x00\x12\'\n\x11\x63md_get_ap_config\x18\x10 \x01(\x0b\x32\n.CmdConfigH\x00\x12)\n\x12resp_get_ap_config\x18\x11 \x01(\x0b\x32\x0b.RespConfigH\x00\x12\'\n\x11\x63md_set_ap_config\x18\x12 \x01(\x0b\x32\n.CmdConfigH\x00\x12)\n\x12resp_set_ap_config\x18\x13 \x01(\x0b\x32\x0b.RespConfigH\x00\x12+\n\x15\x63md_get_softap_config\x18\x14 \x01(\x0b\x32\n.CmdConfigH\x00\x12-\n\x16resp_get_softap_config\x18\x15 \x01(\x0b\x32\x0b.RespConfigH\x00\x12+\n\x15\x63md_set_softap_config\x18\x16 \x01(\x0b\x32\n.CmdConfigH\x00\x12-\n\x16resp_set_softap_config\x18\x17 \x01(\x0b\x32\x0b.RespConfigH\x00\x12*\n\x11\x63md_disconnect_ap\x18\x18 \x01(\x0b\x32\r.CmdGetStatusH\x00\x12,\n\x12resp_disconnect_ap\x18\x19 \x01(\x0b\x32\x0e.RespGetStatusH\x00\x12*\n\x10\x63md_scan_ap_list\x18\x1a \x01(\x0b\x32\x0e.CmdScanResultH\x00\x12,\n\x11resp_scan_ap_list\x18\x1b \x01(\x0b\x32\x0f.RespScanResultH\x00\x42\t\n\x07payload*\x83\x01\n\x0e\x45ncryptionMode\x12\r\n\tType_Open\x10\x00\x12\x0c\n\x08Type_WEP\x10\x01\x12\x10\n\x0cType_WPA_PSK\x10\x02\x12\x11\n\rType_WPA2_PSK\x10\x03\x12\x15\n\x11Type_WPA_WPA2_PSK\x10\x04\x12\x18\n\x14Type_WPA2_ENTERPRISE\x10\x05*\xe7\x03\n\x12SlaveConfigMsgType\x12\x18\n\x14TypeCmdGetMACAddress\x10\x00\x12\x19\n\x15TypeRespGetMACAddress\x10\x01\x12\x16\n\x12TypeCmdGetWiFiMode\x10\x02\x12\x17\n\x13TypeRespGetWiFiMode\x10\x03\x12\x16\n\x12TypeCmdSetWiFiMode\x10\x04\x12\x17\n\x13TypeRespSetWiFiMode\x10\x05\x12\x16\n\x12TypeCmdGetAPConfig\x10\x06\x12\x17\n\x13TypeRespGetAPConfig\x10\x07\x12\x16\n\x12TypeCmdSetAPConfig\x10\x08\x12\x17\n\x13TypeRespSetAPConfig\x10\t\x12\x1a\n\x16TypeCmdGetSoftAPConfig\x10\n\x12\x1b\n\x17TypeRespGetSoftAPConfig\x10\x0b\x12\x1a\n\x16TypeCmdSetSoftAPConfig\x10\x0c\x12\x1b\n\x17TypeRespSetSoftAPConfig\x10\r\x12\x17\n\x13TypeCmdDisconnectAP\x10\x0e\x12\x18\n\x14TypeRespDisconnectAP\x10\x0f\x12\x18\n\x14TypeCmdGetAPScanList\x10\x10\x12\x19\n\x15TypeRespGetAPScanList\x10\x11\x62\x06proto3'
+  serialized_pb=b'\n\x12slave_config.proto\")\n\x0c\x43mdGetStatus\x12\x0b\n\x03\x63md\x18\x01 \x01(\t\x12\x0c\n\x04mode\x18\x02 \x01(\x05\"+\n\rRespGetStatus\x12\x0c\n\x04resp\x18\x01 \x01(\t\x12\x0c\n\x04mode\x18\x02 \x01(\x05\"\xb2\x01\n\tCmdConfig\x12\x0c\n\x04ssid\x18\x01 \x01(\t\x12\x0b\n\x03pwd\x18\x02 \x01(\t\x12\x1c\n\x03\x65\x63n\x18\x03 \x01(\x0e\x32\x0f.EncryptionMode\x12\x0c\n\x04\x63hnl\x18\x04 \x01(\x05\x12\x10\n\x08max_conn\x18\x05 \x01(\x05\x12\x13\n\x0bssid_hidden\x18\x06 \x01(\x08\x12\r\n\x05\x62ssid\x18\x07 \x01(\t\x12\x0c\n\x04rssi\x18\x08 \x01(\x05\x12\x0e\n\x06status\x18\t \x01(\t\x12\n\n\x02\x62w\x18\n \x01(\x05\"\xb3\x01\n\nRespConfig\x12\x0c\n\x04ssid\x18\x01 \x01(\t\x12\x0b\n\x03pwd\x18\x02 \x01(\t\x12\x1c\n\x03\x65\x63n\x18\x03 \x01(\x0e\x32\x0f.EncryptionMode\x12\x0c\n\x04\x63hnl\x18\x04 \x01(\x05\x12\x10\n\x08max_conn\x18\x05 \x01(\x05\x12\x13\n\x0bssid_hidden\x18\x06 \x01(\x08\x12\r\n\x05\x62ssid\x18\x07 \x01(\t\x12\x0c\n\x04rssi\x18\x08 \x01(\x05\x12\x0e\n\x06status\x18\t \x01(\t\x12\n\n\x02\x62w\x18\n \x01(\x05\"c\n\nScanResult\x12\x0c\n\x04ssid\x18\x01 \x01(\x0c\x12\x0c\n\x04\x63hnl\x18\x02 \x01(\r\x12\x0c\n\x04rssi\x18\x03 \x01(\x05\x12\r\n\x05\x62ssid\x18\x04 \x01(\x0c\x12\x1c\n\x03\x65\x63n\x18\x05 \x01(\x0e\x32\x0f.EncryptionMode\"\x1e\n\rCmdScanResult\x12\r\n\x05\x63ount\x18\x01 \x01(\r\"=\n\x0eRespScanResult\x12\r\n\x05\x63ount\x18\x01 \x01(\r\x12\x1c\n\x07\x65ntries\x18\x02 \x03(\x0b\x32\x0b.ScanResult\"-\n\x10\x43onnectedSTAList\x12\x0b\n\x03mac\x18\x01 \x01(\x0c\x12\x0c\n\x04rssi\x18\x02 \x01(\x05\"\x1e\n\x0f\x43mdConnectedSTA\x12\x0b\n\x03num\x18\x01 \x01(\r\"D\n\x10RespConnectedSTA\x12\x0b\n\x03num\x18\x01 \x01(\r\x12#\n\x08stations\x18\x02 \x03(\x0b\x32\x11.ConnectedSTAList\"\xd3\x07\n\x12SlaveConfigPayload\x12 \n\x03msg\x18\x01 \x01(\x0e\x32\x13.SlaveConfigMsgType\x12,\n\x13\x63md_get_mac_address\x18\n \x01(\x0b\x32\r.CmdGetStatusH\x00\x12.\n\x14resp_get_mac_address\x18\x0b \x01(\x0b\x32\x0e.RespGetStatusH\x00\x12*\n\x11\x63md_get_wifi_mode\x18\x0c \x01(\x0b\x32\r.CmdGetStatusH\x00\x12,\n\x12resp_get_wifi_mode\x18\r \x01(\x0b\x32\x0e.RespGetStatusH\x00\x12*\n\x11\x63md_set_wifi_mode\x18\x0e \x01(\x0b\x32\r.CmdGetStatusH\x00\x12,\n\x12resp_set_wifi_mode\x18\x0f \x01(\x0b\x32\x0e.RespGetStatusH\x00\x12\'\n\x11\x63md_get_ap_config\x18\x10 \x01(\x0b\x32\n.CmdConfigH\x00\x12)\n\x12resp_get_ap_config\x18\x11 \x01(\x0b\x32\x0b.RespConfigH\x00\x12\'\n\x11\x63md_set_ap_config\x18\x12 \x01(\x0b\x32\n.CmdConfigH\x00\x12)\n\x12resp_set_ap_config\x18\x13 \x01(\x0b\x32\x0b.RespConfigH\x00\x12+\n\x15\x63md_get_softap_config\x18\x14 \x01(\x0b\x32\n.CmdConfigH\x00\x12-\n\x16resp_get_softap_config\x18\x15 \x01(\x0b\x32\x0b.RespConfigH\x00\x12+\n\x15\x63md_set_softap_config\x18\x16 \x01(\x0b\x32\n.CmdConfigH\x00\x12-\n\x16resp_set_softap_config\x18\x17 \x01(\x0b\x32\x0b.RespConfigH\x00\x12*\n\x11\x63md_disconnect_ap\x18\x18 \x01(\x0b\x32\r.CmdGetStatusH\x00\x12,\n\x12resp_disconnect_ap\x18\x19 \x01(\x0b\x32\x0e.RespGetStatusH\x00\x12*\n\x10\x63md_scan_ap_list\x18\x1a \x01(\x0b\x32\x0e.CmdScanResultH\x00\x12,\n\x11resp_scan_ap_list\x18\x1b \x01(\x0b\x32\x0f.RespScanResultH\x00\x12\x33\n\x17\x63md_connected_stas_list\x18\x1c \x01(\x0b\x32\x10.CmdConnectedSTAH\x00\x12\x35\n\x18resp_connected_stas_list\x18\x1d \x01(\x0b\x32\x11.RespConnectedSTAH\x00\x42\t\n\x07payload*\x83\x01\n\x0e\x45ncryptionMode\x12\r\n\tType_Open\x10\x00\x12\x0c\n\x08Type_WEP\x10\x01\x12\x10\n\x0cType_WPA_PSK\x10\x02\x12\x11\n\rType_WPA2_PSK\x10\x03\x12\x15\n\x11Type_WPA_WPA2_PSK\x10\x04\x12\x18\n\x14Type_WPA2_ENTERPRISE\x10\x05*\xa8\x04\n\x12SlaveConfigMsgType\x12\x18\n\x14TypeCmdGetMACAddress\x10\x00\x12\x19\n\x15TypeRespGetMACAddress\x10\x01\x12\x16\n\x12TypeCmdGetWiFiMode\x10\x02\x12\x17\n\x13TypeRespGetWiFiMode\x10\x03\x12\x16\n\x12TypeCmdSetWiFiMode\x10\x04\x12\x17\n\x13TypeRespSetWiFiMode\x10\x05\x12\x16\n\x12TypeCmdGetAPConfig\x10\x06\x12\x17\n\x13TypeRespGetAPConfig\x10\x07\x12\x16\n\x12TypeCmdSetAPConfig\x10\x08\x12\x17\n\x13TypeRespSetAPConfig\x10\t\x12\x1a\n\x16TypeCmdGetSoftAPConfig\x10\n\x12\x1b\n\x17TypeRespGetSoftAPConfig\x10\x0b\x12\x1a\n\x16TypeCmdSetSoftAPConfig\x10\x0c\x12\x1b\n\x17TypeRespSetSoftAPConfig\x10\r\x12\x17\n\x13TypeCmdDisconnectAP\x10\x0e\x12\x18\n\x14TypeRespDisconnectAP\x10\x0f\x12\x18\n\x14TypeCmdGetAPScanList\x10\x10\x12\x19\n\x15TypeRespGetAPScanList\x10\x11\x12\x1e\n\x1aTypeCmdGetConnectedSTAList\x10\x12\x12\x1f\n\x1bTypeRespGetConnectedSTAList\x10\x13\x62\x06proto3'
 )
 
 _ENCRYPTIONMODE = _descriptor.EnumDescriptor(
@@ -55,8 +55,8 @@ _ENCRYPTIONMODE = _descriptor.EnumDescriptor(
   ],
   containing_type=None,
   serialized_options=None,
-  serialized_start=1544,
-  serialized_end=1675,
+  serialized_start=1801,
+  serialized_end=1932,
 )
 _sym_db.RegisterEnumDescriptor(_ENCRYPTIONMODE)
 
@@ -139,11 +139,19 @@ _SLAVECONFIGMSGTYPE = _descriptor.EnumDescriptor(
       name='TypeRespGetAPScanList', index=17, number=17,
       serialized_options=None,
       type=None),
+    _descriptor.EnumValueDescriptor(
+      name='TypeCmdGetConnectedSTAList', index=18, number=18,
+      serialized_options=None,
+      type=None),
+    _descriptor.EnumValueDescriptor(
+      name='TypeRespGetConnectedSTAList', index=19, number=19,
+      serialized_options=None,
+      type=None),
   ],
   containing_type=None,
   serialized_options=None,
-  serialized_start=1678,
-  serialized_end=2165,
+  serialized_start=1935,
+  serialized_end=2487,
 )
 _sym_db.RegisterEnumDescriptor(_SLAVECONFIGMSGTYPE)
 
@@ -172,6 +180,8 @@ TypeCmdDisconnectAP = 14
 TypeRespDisconnectAP = 15
 TypeCmdGetAPScanList = 16
 TypeRespGetAPScanList = 17
+TypeCmdGetConnectedSTAList = 18
+TypeRespGetConnectedSTAList = 19
 
 
 
@@ -567,6 +577,113 @@ _RESPSCANRESULT = _descriptor.Descriptor(
 )
 
 
+_CONNECTEDSTALIST = _descriptor.Descriptor(
+  name='ConnectedSTAList',
+  full_name='ConnectedSTAList',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='mac', full_name='ConnectedSTAList.mac', index=0,
+      number=1, type=12, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"",
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='rssi', full_name='ConnectedSTAList.rssi', index=1,
+      number=2, type=5, cpp_type=1, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=669,
+  serialized_end=714,
+)
+
+
+_CMDCONNECTEDSTA = _descriptor.Descriptor(
+  name='CmdConnectedSTA',
+  full_name='CmdConnectedSTA',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='num', full_name='CmdConnectedSTA.num', index=0,
+      number=1, type=13, cpp_type=3, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=716,
+  serialized_end=746,
+)
+
+
+_RESPCONNECTEDSTA = _descriptor.Descriptor(
+  name='RespConnectedSTA',
+  full_name='RespConnectedSTA',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='num', full_name='RespConnectedSTA.num', index=0,
+      number=1, type=13, cpp_type=3, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='stations', full_name='RespConnectedSTA.stations', index=1,
+      number=2, type=11, cpp_type=10, label=3,
+      has_default_value=False, default_value=[],
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=748,
+  serialized_end=816,
+)
+
+
 _SLAVECONFIGPAYLOAD = _descriptor.Descriptor(
   name='SlaveConfigPayload',
   full_name='SlaveConfigPayload',
@@ -707,6 +824,20 @@ _SLAVECONFIGPAYLOAD = _descriptor.Descriptor(
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='cmd_connected_stas_list', full_name='SlaveConfigPayload.cmd_connected_stas_list', index=19,
+      number=28, type=11, cpp_type=10, label=1,
+      has_default_value=False, default_value=None,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='resp_connected_stas_list', full_name='SlaveConfigPayload.resp_connected_stas_list', index=20,
+      number=29, type=11, cpp_type=10, label=1,
+      has_default_value=False, default_value=None,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
   ],
   extensions=[
   ],
@@ -722,14 +853,15 @@ _SLAVECONFIGPAYLOAD = _descriptor.Descriptor(
       name='payload', full_name='SlaveConfigPayload.payload',
       index=0, containing_type=None, fields=[]),
   ],
-  serialized_start=670,
-  serialized_end=1541,
+  serialized_start=819,
+  serialized_end=1798,
 )
 
 _CMDCONFIG.fields_by_name['ecn'].enum_type = _ENCRYPTIONMODE
 _RESPCONFIG.fields_by_name['ecn'].enum_type = _ENCRYPTIONMODE
 _SCANRESULT.fields_by_name['ecn'].enum_type = _ENCRYPTIONMODE
 _RESPSCANRESULT.fields_by_name['entries'].message_type = _SCANRESULT
+_RESPCONNECTEDSTA.fields_by_name['stations'].message_type = _CONNECTEDSTALIST
 _SLAVECONFIGPAYLOAD.fields_by_name['msg'].enum_type = _SLAVECONFIGMSGTYPE
 _SLAVECONFIGPAYLOAD.fields_by_name['cmd_get_mac_address'].message_type = _CMDGETSTATUS
 _SLAVECONFIGPAYLOAD.fields_by_name['resp_get_mac_address'].message_type = _RESPGETSTATUS
@@ -749,6 +881,8 @@ _SLAVECONFIGPAYLOAD.fields_by_name['cmd_disconnect_ap'].message_type = _CMDGETST
 _SLAVECONFIGPAYLOAD.fields_by_name['resp_disconnect_ap'].message_type = _RESPGETSTATUS
 _SLAVECONFIGPAYLOAD.fields_by_name['cmd_scan_ap_list'].message_type = _CMDSCANRESULT
 _SLAVECONFIGPAYLOAD.fields_by_name['resp_scan_ap_list'].message_type = _RESPSCANRESULT
+_SLAVECONFIGPAYLOAD.fields_by_name['cmd_connected_stas_list'].message_type = _CMDCONNECTEDSTA
+_SLAVECONFIGPAYLOAD.fields_by_name['resp_connected_stas_list'].message_type = _RESPCONNECTEDSTA
 _SLAVECONFIGPAYLOAD.oneofs_by_name['payload'].fields.append(
   _SLAVECONFIGPAYLOAD.fields_by_name['cmd_get_mac_address'])
 _SLAVECONFIGPAYLOAD.fields_by_name['cmd_get_mac_address'].containing_oneof = _SLAVECONFIGPAYLOAD.oneofs_by_name['payload']
@@ -803,6 +937,12 @@ _SLAVECONFIGPAYLOAD.fields_by_name['cmd_scan_ap_list'].containing_oneof = _SLAVE
 _SLAVECONFIGPAYLOAD.oneofs_by_name['payload'].fields.append(
   _SLAVECONFIGPAYLOAD.fields_by_name['resp_scan_ap_list'])
 _SLAVECONFIGPAYLOAD.fields_by_name['resp_scan_ap_list'].containing_oneof = _SLAVECONFIGPAYLOAD.oneofs_by_name['payload']
+_SLAVECONFIGPAYLOAD.oneofs_by_name['payload'].fields.append(
+  _SLAVECONFIGPAYLOAD.fields_by_name['cmd_connected_stas_list'])
+_SLAVECONFIGPAYLOAD.fields_by_name['cmd_connected_stas_list'].containing_oneof = _SLAVECONFIGPAYLOAD.oneofs_by_name['payload']
+_SLAVECONFIGPAYLOAD.oneofs_by_name['payload'].fields.append(
+  _SLAVECONFIGPAYLOAD.fields_by_name['resp_connected_stas_list'])
+_SLAVECONFIGPAYLOAD.fields_by_name['resp_connected_stas_list'].containing_oneof = _SLAVECONFIGPAYLOAD.oneofs_by_name['payload']
 DESCRIPTOR.message_types_by_name['CmdGetStatus'] = _CMDGETSTATUS
 DESCRIPTOR.message_types_by_name['RespGetStatus'] = _RESPGETSTATUS
 DESCRIPTOR.message_types_by_name['CmdConfig'] = _CMDCONFIG
@@ -810,6 +950,9 @@ DESCRIPTOR.message_types_by_name['RespConfig'] = _RESPCONFIG
 DESCRIPTOR.message_types_by_name['ScanResult'] = _SCANRESULT
 DESCRIPTOR.message_types_by_name['CmdScanResult'] = _CMDSCANRESULT
 DESCRIPTOR.message_types_by_name['RespScanResult'] = _RESPSCANRESULT
+DESCRIPTOR.message_types_by_name['ConnectedSTAList'] = _CONNECTEDSTALIST
+DESCRIPTOR.message_types_by_name['CmdConnectedSTA'] = _CMDCONNECTEDSTA
+DESCRIPTOR.message_types_by_name['RespConnectedSTA'] = _RESPCONNECTEDSTA
 DESCRIPTOR.message_types_by_name['SlaveConfigPayload'] = _SLAVECONFIGPAYLOAD
 DESCRIPTOR.enum_types_by_name['EncryptionMode'] = _ENCRYPTIONMODE
 DESCRIPTOR.enum_types_by_name['SlaveConfigMsgType'] = _SLAVECONFIGMSGTYPE
@@ -863,6 +1006,27 @@ RespScanResult = _reflection.GeneratedProtocolMessageType('RespScanResult', (_me
   # @@protoc_insertion_point(class_scope:RespScanResult)
   })
 _sym_db.RegisterMessage(RespScanResult)
+
+ConnectedSTAList = _reflection.GeneratedProtocolMessageType('ConnectedSTAList', (_message.Message,), {
+  'DESCRIPTOR' : _CONNECTEDSTALIST,
+  '__module__' : 'slave_config_pb2'
+  # @@protoc_insertion_point(class_scope:ConnectedSTAList)
+  })
+_sym_db.RegisterMessage(ConnectedSTAList)
+
+CmdConnectedSTA = _reflection.GeneratedProtocolMessageType('CmdConnectedSTA', (_message.Message,), {
+  'DESCRIPTOR' : _CMDCONNECTEDSTA,
+  '__module__' : 'slave_config_pb2'
+  # @@protoc_insertion_point(class_scope:CmdConnectedSTA)
+  })
+_sym_db.RegisterMessage(CmdConnectedSTA)
+
+RespConnectedSTA = _reflection.GeneratedProtocolMessageType('RespConnectedSTA', (_message.Message,), {
+  'DESCRIPTOR' : _RESPCONNECTEDSTA,
+  '__module__' : 'slave_config_pb2'
+  # @@protoc_insertion_point(class_scope:RespConnectedSTA)
+  })
+_sym_db.RegisterMessage(RespConnectedSTA)
 
 SlaveConfigPayload = _reflection.GeneratedProtocolMessageType('SlaveConfigPayload', (_message.Message,), {
   'DESCRIPTOR' : _SLAVECONFIGPAYLOAD,

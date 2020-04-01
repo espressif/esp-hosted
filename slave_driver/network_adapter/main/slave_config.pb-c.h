@@ -22,6 +22,9 @@ typedef struct _RespConfig RespConfig;
 typedef struct _ScanResult ScanResult;
 typedef struct _CmdScanResult CmdScanResult;
 typedef struct _RespScanResult RespScanResult;
+typedef struct _ConnectedSTAList ConnectedSTAList;
+typedef struct _CmdConnectedSTA CmdConnectedSTA;
+typedef struct _RespConnectedSTA RespConnectedSTA;
 typedef struct _SlaveConfigPayload SlaveConfigPayload;
 
 
@@ -54,7 +57,9 @@ typedef enum _SlaveConfigMsgType {
   SLAVE_CONFIG_MSG_TYPE__TypeCmdDisconnectAP = 14,
   SLAVE_CONFIG_MSG_TYPE__TypeRespDisconnectAP = 15,
   SLAVE_CONFIG_MSG_TYPE__TypeCmdGetAPScanList = 16,
-  SLAVE_CONFIG_MSG_TYPE__TypeRespGetAPScanList = 17
+  SLAVE_CONFIG_MSG_TYPE__TypeRespGetAPScanList = 17,
+  SLAVE_CONFIG_MSG_TYPE__TypeCmdGetConnectedSTAList = 18,
+  SLAVE_CONFIG_MSG_TYPE__TypeRespGetConnectedSTAList = 19
     PROTOBUF_C__FORCE_ENUM_TO_BE_INT_SIZE(SLAVE_CONFIG_MSG_TYPE)
 } SlaveConfigMsgType;
 
@@ -177,6 +182,43 @@ struct  _RespScanResult
     , 0,0, 0,NULL }
 
 
+struct  _ConnectedSTAList
+{
+  ProtobufCMessage base;
+  protobuf_c_boolean has_mac;
+  ProtobufCBinaryData mac;
+  protobuf_c_boolean has_rssi;
+  int32_t rssi;
+};
+#define CONNECTED_STALIST__INIT \
+ { PROTOBUF_C_MESSAGE_INIT (&connected_stalist__descriptor) \
+    , 0,{0,NULL}, 0,0 }
+
+
+struct  _CmdConnectedSTA
+{
+  ProtobufCMessage base;
+  protobuf_c_boolean has_num;
+  uint32_t num;
+};
+#define CMD_CONNECTED_STA__INIT \
+ { PROTOBUF_C_MESSAGE_INIT (&cmd_connected_sta__descriptor) \
+    , 0,0 }
+
+
+struct  _RespConnectedSTA
+{
+  ProtobufCMessage base;
+  protobuf_c_boolean has_num;
+  uint32_t num;
+  size_t n_stations;
+  ConnectedSTAList **stations;
+};
+#define RESP_CONNECTED_STA__INIT \
+ { PROTOBUF_C_MESSAGE_INIT (&resp_connected_sta__descriptor) \
+    , 0,0, 0,NULL }
+
+
 typedef enum {
   SLAVE_CONFIG_PAYLOAD__PAYLOAD__NOT_SET = 0,
   SLAVE_CONFIG_PAYLOAD__PAYLOAD_CMD_GET_MAC_ADDRESS = 10,
@@ -197,6 +239,8 @@ typedef enum {
   SLAVE_CONFIG_PAYLOAD__PAYLOAD_RESP_DISCONNECT_AP = 25,
   SLAVE_CONFIG_PAYLOAD__PAYLOAD_CMD_SCAN_AP_LIST = 26,
   SLAVE_CONFIG_PAYLOAD__PAYLOAD_RESP_SCAN_AP_LIST = 27,
+  SLAVE_CONFIG_PAYLOAD__PAYLOAD_CMD_CONNECTED_STAS_LIST = 28,
+  SLAVE_CONFIG_PAYLOAD__PAYLOAD_RESP_CONNECTED_STAS_LIST = 29,
 } SlaveConfigPayload__PayloadCase;
 
 struct  _SlaveConfigPayload
@@ -224,6 +268,8 @@ struct  _SlaveConfigPayload
     RespGetStatus *resp_disconnect_ap;
     CmdScanResult *cmd_scan_ap_list;
     RespScanResult *resp_scan_ap_list;
+    CmdConnectedSTA *cmd_connected_stas_list;
+    RespConnectedSTA *resp_connected_stas_list;
   };
 };
 #define SLAVE_CONFIG_PAYLOAD__INIT \
@@ -364,6 +410,63 @@ RespScanResult *
 void   resp_scan_result__free_unpacked
                      (RespScanResult *message,
                       ProtobufCAllocator *allocator);
+/* ConnectedSTAList methods */
+void   connected_stalist__init
+                     (ConnectedSTAList         *message);
+size_t connected_stalist__get_packed_size
+                     (const ConnectedSTAList   *message);
+size_t connected_stalist__pack
+                     (const ConnectedSTAList   *message,
+                      uint8_t             *out);
+size_t connected_stalist__pack_to_buffer
+                     (const ConnectedSTAList   *message,
+                      ProtobufCBuffer     *buffer);
+ConnectedSTAList *
+       connected_stalist__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data);
+void   connected_stalist__free_unpacked
+                     (ConnectedSTAList *message,
+                      ProtobufCAllocator *allocator);
+/* CmdConnectedSTA methods */
+void   cmd_connected_sta__init
+                     (CmdConnectedSTA         *message);
+size_t cmd_connected_sta__get_packed_size
+                     (const CmdConnectedSTA   *message);
+size_t cmd_connected_sta__pack
+                     (const CmdConnectedSTA   *message,
+                      uint8_t             *out);
+size_t cmd_connected_sta__pack_to_buffer
+                     (const CmdConnectedSTA   *message,
+                      ProtobufCBuffer     *buffer);
+CmdConnectedSTA *
+       cmd_connected_sta__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data);
+void   cmd_connected_sta__free_unpacked
+                     (CmdConnectedSTA *message,
+                      ProtobufCAllocator *allocator);
+/* RespConnectedSTA methods */
+void   resp_connected_sta__init
+                     (RespConnectedSTA         *message);
+size_t resp_connected_sta__get_packed_size
+                     (const RespConnectedSTA   *message);
+size_t resp_connected_sta__pack
+                     (const RespConnectedSTA   *message,
+                      uint8_t             *out);
+size_t resp_connected_sta__pack_to_buffer
+                     (const RespConnectedSTA   *message,
+                      ProtobufCBuffer     *buffer);
+RespConnectedSTA *
+       resp_connected_sta__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data);
+void   resp_connected_sta__free_unpacked
+                     (RespConnectedSTA *message,
+                      ProtobufCAllocator *allocator);
 /* SlaveConfigPayload methods */
 void   slave_config_payload__init
                      (SlaveConfigPayload         *message);
@@ -406,6 +509,15 @@ typedef void (*CmdScanResult_Closure)
 typedef void (*RespScanResult_Closure)
                  (const RespScanResult *message,
                   void *closure_data);
+typedef void (*ConnectedSTAList_Closure)
+                 (const ConnectedSTAList *message,
+                  void *closure_data);
+typedef void (*CmdConnectedSTA_Closure)
+                 (const CmdConnectedSTA *message,
+                  void *closure_data);
+typedef void (*RespConnectedSTA_Closure)
+                 (const RespConnectedSTA *message,
+                  void *closure_data);
 typedef void (*SlaveConfigPayload_Closure)
                  (const SlaveConfigPayload *message,
                   void *closure_data);
@@ -424,6 +536,9 @@ extern const ProtobufCMessageDescriptor resp_config__descriptor;
 extern const ProtobufCMessageDescriptor scan_result__descriptor;
 extern const ProtobufCMessageDescriptor cmd_scan_result__descriptor;
 extern const ProtobufCMessageDescriptor resp_scan_result__descriptor;
+extern const ProtobufCMessageDescriptor connected_stalist__descriptor;
+extern const ProtobufCMessageDescriptor cmd_connected_sta__descriptor;
+extern const ProtobufCMessageDescriptor resp_connected_sta__descriptor;
 extern const ProtobufCMessageDescriptor slave_config_payload__descriptor;
 
 PROTOBUF_C__END_DECLS

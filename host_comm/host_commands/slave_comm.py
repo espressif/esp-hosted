@@ -24,11 +24,17 @@ class Aplist:
         self.bssid = bssid
         self.ecn = ecn
 
+class Stationlist:
+    def __init__(self,mac,rssi):
+        self.mac = mac
+        self.rssi = rssi
+
 #default parameters
 interface = "/dev/esps0"
 endpoint = "control"
 not_set = "0"
 failure = "failure"
+max_stations_list = 10
 
 #get mac address of station
 # mode == 1 for station mac
@@ -221,3 +227,31 @@ def wifi_ap_scan_list(scan_count):
         ecn = get_ap_scan_list.resp_scan_ap_list.entries[i].ecn
         ap_list.append(Aplist(ssid,chnl,rssi,bssid,ecn))
     return ap_list
+
+# This function returns the number of connected stations to softAP
+# Maximum 10 connected stations info can get
+# Failure will return if no station is connected
+# output is list of Stationlist class instances
+
+def wifi_connected_stations_list():
+    get_connected_stations_list = slave_config_pb2.SlaveConfigPayload()
+    get_connected_stations_list.msg = slave_config_pb2.SlaveConfigMsgType.TypeCmdGetConnectedSTAList
+    get_connected_stations_list.cmd_connected_stas_list.num = max_stations_list
+    protodata = get_connected_stations_list.SerializeToString()
+    #print("serialized data "+str(protodata))
+    tp = transport.Transport_pserial(interface)
+    response = tp.send_data(endpoint,protodata,1)
+    if response == failure :
+        return failure
+    #print("response from slave "+str(response))
+    get_connected_stations_list.ParseFromString(response)
+    num = get_connected_stations_list.resp_connected_stas_list.num
+    if (num == 0) :
+        return failure
+    else :
+        stas_list = []
+        for i in range(num) :
+            mac = get_connected_stations_list.resp_connected_stas_list.stations[i].mac
+            rssi = get_connected_stations_list.resp_connected_stas_list.stations[i].rssi
+            stas_list.append(Stationlist(mac,rssi))
+        return stas_list

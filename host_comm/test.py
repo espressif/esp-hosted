@@ -13,6 +13,7 @@
 # limitations under the License.
 
 from host_commands import slave_comm
+failure = 'failure'
 # get mac address
 '''
 # 1 : station
@@ -35,16 +36,16 @@ print("connected mode is "+str(x))
 
 x = slave_comm.get_wifi_mode()
 print("wifi mode is "+str(x))
-'''
+
 x = slave_comm.wifi_set_ap_config('Siddhesh','sid123456','0')
 print(x)
-'''
+
 x = slave_comm.wifi_get_ap_config()
 print(x)
 
 x = slave_comm.wifi_disconnect_ap()
 print(x)
-'''
+
 # need to accept default badwidth as 20 and make it as optional parameter
 x = slave_comm.wifi_set_softap_config('ESP12','0',4,0,5,0,1)
 print("output is here")
@@ -52,7 +53,7 @@ print(x)
 
 x = slave_comm.get_wifi_mode()
 print("wifi mode is "+str(x))
-'''
+
 x = slave_comm.wifi_get_softap_config()
 print("get softap output here")
 print(x)
@@ -63,4 +64,15 @@ x = slave_comm.wifi_ap_scan_list(10)
 print(x)
 for obj in x:
     print(obj.ssid,obj.chnl,obj.rssi,obj.bssid,obj.ecn)
+
 '''
+# User should give number of stations list needed
+# output is list of Stationlist class instances
+x = slave_comm.wifi_connected_stations_list()
+print(x)
+if (x == failure):
+    print(failure)
+else :
+    for obj in x:
+        print(obj.mac)
+

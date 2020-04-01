@@ -308,6 +308,135 @@ void   resp_scan_result__free_unpacked
   assert(message->base.descriptor == &resp_scan_result__descriptor);
   protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
 }
+void   connected_stalist__init
+                     (ConnectedSTAList         *message)
+{
+  static ConnectedSTAList init_value = CONNECTED_STALIST__INIT;
+  *message = init_value;
+}
+size_t connected_stalist__get_packed_size
+                     (const ConnectedSTAList *message)
+{
+  assert(message->base.descriptor == &connected_stalist__descriptor);
+  return protobuf_c_message_get_packed_size ((const ProtobufCMessage*)(message));
+}
+size_t connected_stalist__pack
+                     (const ConnectedSTAList *message,
+                      uint8_t       *out)
+{
+  assert(message->base.descriptor == &connected_stalist__descriptor);
+  return protobuf_c_message_pack ((const ProtobufCMessage*)message, out);
+}
+size_t connected_stalist__pack_to_buffer
+                     (const ConnectedSTAList *message,
+                      ProtobufCBuffer *buffer)
+{
+  assert(message->base.descriptor == &connected_stalist__descriptor);
+  return protobuf_c_message_pack_to_buffer ((const ProtobufCMessage*)message, buffer);
+}
+ConnectedSTAList *
+       connected_stalist__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data)
+{
+  return (ConnectedSTAList *)
+     protobuf_c_message_unpack (&connected_stalist__descriptor,
+                                allocator, len, data);
+}
+void   connected_stalist__free_unpacked
+                     (ConnectedSTAList *message,
+                      ProtobufCAllocator *allocator)
+{
+  assert(message->base.descriptor == &connected_stalist__descriptor);
+  protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
+}
+void   cmd_connected_sta__init
+                     (CmdConnectedSTA         *message)
+{
+  static CmdConnectedSTA init_value = CMD_CONNECTED_STA__INIT;
+  *message = init_value;
+}
+size_t cmd_connected_sta__get_packed_size
+                     (const CmdConnectedSTA *message)
+{
+  assert(message->base.descriptor == &cmd_connected_sta__descriptor);
+  return protobuf_c_message_get_packed_size ((const ProtobufCMessage*)(message));
+}
+size_t cmd_connected_sta__pack
+                     (const CmdConnectedSTA *message,
+                      uint8_t       *out)
+{
+  assert(message->base.descriptor == &cmd_connected_sta__descriptor);
+  return protobuf_c_message_pack ((const ProtobufCMessage*)message, out);
+}
+size_t cmd_connected_sta__pack_to_buffer
+                     (const CmdConnectedSTA *message,
+                      ProtobufCBuffer *buffer)
+{
+  assert(message->base.descriptor == &cmd_connected_sta__descriptor);
+  return protobuf_c_message_pack_to_buffer ((const ProtobufCMessage*)message, buffer);
+}
+CmdConnectedSTA *
+       cmd_connected_sta__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data)
+{
+  return (CmdConnectedSTA *)
+     protobuf_c_message_unpack (&cmd_connected_sta__descriptor,
+                                allocator, len, data);
+}
+void   cmd_connected_sta__free_unpacked
+                     (CmdConnectedSTA *message,
+                      ProtobufCAllocator *allocator)
+{
+  assert(message->base.descriptor == &cmd_connected_sta__descriptor);
+  protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
+}
+void   resp_connected_sta__init
+                     (RespConnectedSTA         *message)
+{
+  static RespConnectedSTA init_value = RESP_CONNECTED_STA__INIT;
+  *message = init_value;
+}
+size_t resp_connected_sta__get_packed_size
+                     (const RespConnectedSTA *message)
+{
+  assert(message->base.descriptor == &resp_connected_sta__descriptor);
+  return protobuf_c_message_get_packed_size ((const ProtobufCMessage*)(message));
+}
+size_t resp_connected_sta__pack
+                     (const RespConnectedSTA *message,
+                      uint8_t       *out)
+{
+  assert(message->base.descriptor == &resp_connected_sta__descriptor);
+  return protobuf_c_message_pack ((const ProtobufCMessage*)message, out);
+}
+size_t resp_connected_sta__pack_to_buffer
+                     (const RespConnectedSTA *message,
+                      ProtobufCBuffer *buffer)
+{
+  assert(message->base.descriptor == &resp_connected_sta__descriptor);
+  return protobuf_c_message_pack_to_buffer ((const ProtobufCMessage*)message, buffer);
+}
+RespConnectedSTA *
+       resp_connected_sta__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data)
+{
+  return (RespConnectedSTA *)
+     protobuf_c_message_unpack (&resp_connected_sta__descriptor,
+                                allocator, len, data);
+}
+void   resp_connected_sta__free_unpacked
+                     (RespConnectedSTA *message,
+                      ProtobufCAllocator *allocator)
+{
+  assert(message->base.descriptor == &resp_connected_sta__descriptor);
+  protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
+}
 void   slave_config_payload__init
                      (SlaveConfigPayload         *message)
 {
@@ -942,7 +1071,147 @@ const ProtobufCMessageDescriptor resp_scan_result__descriptor =
   (ProtobufCMessageInit) resp_scan_result__init,
   NULL,NULL,NULL    /* reserved[123] */
 };
-static const ProtobufCFieldDescriptor slave_config_payload__field_descriptors[19] =
+static const ProtobufCFieldDescriptor connected_stalist__field_descriptors[2] =
+{
+  {
+    "mac",
+    1,
+    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_TYPE_BYTES,
+    offsetof(ConnectedSTAList, has_mac),
+    offsetof(ConnectedSTAList, mac),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "rssi",
+    2,
+    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_TYPE_INT32,
+    offsetof(ConnectedSTAList, has_rssi),
+    offsetof(ConnectedSTAList, rssi),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+};
+static const unsigned connected_stalist__field_indices_by_name[] = {
+  0,   /* field[0] = mac */
+  1,   /* field[1] = rssi */
+};
+static const ProtobufCIntRange connected_stalist__number_ranges[1 + 1] =
+{
+  { 1, 0 },
+  { 0, 2 }
+};
+const ProtobufCMessageDescriptor connected_stalist__descriptor =
+{
+  PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
+  "ConnectedSTAList",
+  "ConnectedSTAList",
+  "ConnectedSTAList",
+  "",
+  sizeof(ConnectedSTAList),
+  2,
+  connected_stalist__field_descriptors,
+  connected_stalist__field_indices_by_name,
+  1,  connected_stalist__number_ranges,
+  (ProtobufCMessageInit) connected_stalist__init,
+  NULL,NULL,NULL    /* reserved[123] */
+};
+static const ProtobufCFieldDescriptor cmd_connected_sta__field_descriptors[1] =
+{
+  {
+    "num",
+    1,
+    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_TYPE_UINT32,
+    offsetof(CmdConnectedSTA, has_num),
+    offsetof(CmdConnectedSTA, num),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+};
+static const unsigned cmd_connected_sta__field_indices_by_name[] = {
+  0,   /* field[0] = num */
+};
+static const ProtobufCIntRange cmd_connected_sta__number_ranges[1 + 1] =
+{
+  { 1, 0 },
+  { 0, 1 }
+};
+const ProtobufCMessageDescriptor cmd_connected_sta__descriptor =
+{
+  PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
+  "CmdConnectedSTA",
+  "CmdConnectedSTA",
+  "CmdConnectedSTA",
+  "",
+  sizeof(CmdConnectedSTA),
+  1,
+  cmd_connected_sta__field_descriptors,
+  cmd_connected_sta__field_indices_by_name,
+  1,  cmd_connected_sta__number_ranges,
+  (ProtobufCMessageInit) cmd_connected_sta__init,
+  NULL,NULL,NULL    /* reserved[123] */
+};
+static const ProtobufCFieldDescriptor resp_connected_sta__field_descriptors[2] =
+{
+  {
+    "num",
+    1,
+    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_TYPE_UINT32,
+    offsetof(RespConnectedSTA, has_num),
+    offsetof(RespConnectedSTA, num),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "stations",
+    2,
+    PROTOBUF_C_LABEL_REPEATED,
+    PROTOBUF_C_TYPE_MESSAGE,
+    offsetof(RespConnectedSTA, n_stations),
+    offsetof(RespConnectedSTA, stations),
+    &connected_stalist__descriptor,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+};
+static const unsigned resp_connected_sta__field_indices_by_name[] = {
+  0,   /* field[0] = num */
+  1,   /* field[1] = stations */
+};
+static const ProtobufCIntRange resp_connected_sta__number_ranges[1 + 1] =
+{
+  { 1, 0 },
+  { 0, 2 }
+};
+const ProtobufCMessageDescriptor resp_connected_sta__descriptor =
+{
+  PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
+  "RespConnectedSTA",
+  "RespConnectedSTA",
+  "RespConnectedSTA",
+  "",
+  sizeof(RespConnectedSTA),
+  2,
+  resp_connected_sta__field_descriptors,
+  resp_connected_sta__field_indices_by_name,
+  1,  resp_connected_sta__number_ranges,
+  (ProtobufCMessageInit) resp_connected_sta__init,
+  NULL,NULL,NULL    /* reserved[123] */
+};
+static const ProtobufCFieldDescriptor slave_config_payload__field_descriptors[21] =
 {
   {
     "msg",
@@ -1172,8 +1441,33 @@ static const ProtobufCFieldDescriptor slave_config_payload__field_descriptors[19
     0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
+  {
+    "cmd_connected_stas_list",
+    28,
+    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_TYPE_MESSAGE,
+    offsetof(SlaveConfigPayload, payload_case),
+    offsetof(SlaveConfigPayload, cmd_connected_stas_list),
+    &cmd_connected_sta__descriptor,
+    NULL,
+    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "resp_connected_stas_list",
+    29,
+    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_TYPE_MESSAGE,
+    offsetof(SlaveConfigPayload, payload_case),
+    offsetof(SlaveConfigPayload, resp_connected_stas_list),
+    &resp_connected_sta__descriptor,
+    NULL,
+    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
 };
 static const unsigned slave_config_payload__field_indices_by_name[] = {
+  19,   /* field[19] = cmd_connected_stas_list */
   15,   /* field[15] = cmd_disconnect_ap */
   7,   /* field[7] = cmd_get_ap_config */
   1,   /* field[1] = cmd_get_mac_address */
@@ -1184,6 +1478,7 @@ static const unsigned slave_config_payload__field_indices_by_name[] = {
   13,   /* field[13] = cmd_set_softap_config */
   5,   /* field[5] = cmd_set_wifi_mode */
   0,   /* field[0] = msg */
+  20,   /* field[20] = resp_connected_stas_list */
   16,   /* field[16] = resp_disconnect_ap */
   8,   /* field[8] = resp_get_ap_config */
   2,   /* field[2] = resp_get_mac_address */
@@ -1198,7 +1493,7 @@ static const ProtobufCIntRange slave_config_payload__number_ranges[2 + 1] =
 {
   { 1, 0 },
   { 10, 1 },
-  { 0, 19 }
+  { 0, 21 }
 };
 const ProtobufCMessageDescriptor slave_config_payload__descriptor =
 {
@@ -1208,7 +1503,7 @@ const ProtobufCMessageDescriptor slave_config_payload__descriptor =
   "SlaveConfigPayload",
   "",
   sizeof(SlaveConfigPayload),
-  19,
+  21,
   slave_config_payload__field_descriptors,
   slave_config_payload__field_indices_by_name,
   2,  slave_config_payload__number_ranges,
@@ -1251,7 +1546,7 @@ const ProtobufCEnumDescriptor encryption_mode__descriptor =
   encryption_mode__value_ranges,
   NULL,NULL,NULL,NULL   /* reserved[1234] */
 };
-static const ProtobufCEnumValue slave_config_msg_type__enum_values_by_number[18] =
+static const ProtobufCEnumValue slave_config_msg_type__enum_values_by_number[20] =
 {
   { "TypeCmdGetMACAddress", "SLAVE_CONFIG_MSG_TYPE__TypeCmdGetMACAddress", 0 },
   { "TypeRespGetMACAddress", "SLAVE_CONFIG_MSG_TYPE__TypeRespGetMACAddress", 1 },
@@ -1271,15 +1566,18 @@ static const ProtobufCEnumValue slave_config_msg_type__enum_values_by_number[18]
   { "TypeRespDisconnectAP", "SLAVE_CONFIG_MSG_TYPE__TypeRespDisconnectAP", 15 },
   { "TypeCmdGetAPScanList", "SLAVE_CONFIG_MSG_TYPE__TypeCmdGetAPScanList", 16 },
   { "TypeRespGetAPScanList", "SLAVE_CONFIG_MSG_TYPE__TypeRespGetAPScanList", 17 },
+  { "TypeCmdGetConnectedSTAList", "SLAVE_CONFIG_MSG_TYPE__TypeCmdGetConnectedSTAList", 18 },
+  { "TypeRespGetConnectedSTAList", "SLAVE_CONFIG_MSG_TYPE__TypeRespGetConnectedSTAList", 19 },
 };
 static const ProtobufCIntRange slave_config_msg_type__value_ranges[] = {
-{0, 0},{0, 18}
+{0, 0},{0, 20}
 };
-static const ProtobufCEnumValueIndex slave_config_msg_type__enum_values_by_name[18] =
+static const ProtobufCEnumValueIndex slave_config_msg_type__enum_values_by_name[20] =
 {
   { "TypeCmdDisconnectAP", 14 },
   { "TypeCmdGetAPConfig", 6 },
   { "TypeCmdGetAPScanList", 16 },
+  { "TypeCmdGetConnectedSTAList", 18 },
   { "TypeCmdGetMACAddress", 0 },
   { "TypeCmdGetSoftAPConfig", 10 },
   { "TypeCmdGetWiFiMode", 2 },
@@ -1289,6 +1587,7 @@ static const ProtobufCEnumValueIndex slave_config_msg_type__enum_values_by_name[
   { "TypeRespDisconnectAP", 15 },
   { "TypeRespGetAPConfig", 7 },
   { "TypeRespGetAPScanList", 17 },
+  { "TypeRespGetConnectedSTAList", 19 },
   { "TypeRespGetMACAddress", 1 },
   { "TypeRespGetSoftAPConfig", 11 },
   { "TypeRespGetWiFiMode", 3 },
@@ -1303,9 +1602,9 @@ const ProtobufCEnumDescriptor slave_config_msg_type__descriptor =
   "SlaveConfigMsgType",
   "SlaveConfigMsgType",
   "",
-  18,
+  20,
   slave_config_msg_type__enum_values_by_number,
-  18,
+  20,
   slave_config_msg_type__enum_values_by_name,
   1,
   slave_config_msg_type__value_ranges,
