@@ -577,15 +577,32 @@ static esp_err_t cmd_get_ap_scan_list_handler (SlaveConfigPayload *req,
 {
 	ESP_LOGI(TAG,"Inside get AP Scan list handler");
 	ESP_LOGI(TAG,"scan entry requested %d",req->cmd_scan_ap_list->count);
-	ap_scan_list_event_register();
-	if (hosted_flags.is_softap_started) {
+
+	if (!req->cmd_scan_ap_list->count) {
+		ESP_LOGE(TAG,"Invalid scan ap count");
+		return ESP_FAIL;
+	}
+	esp_err_t ret;
+	wifi_mode_t mode;
+	ret = esp_wifi_get_mode(&mode);	
+	if (ret != ESP_OK) {
+		ESP_LOGE(TAG,"Failed to get wifi mode");
+		return ESP_FAIL;
+	}
+	if (hosted_flags.is_softap_started && (mode != WIFI_MODE_STA && mode != WIFI_MODE_NULL)) {
 		ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_APSTA));
 		ESP_LOGI(TAG,"APSTA mode set in scan handler");
 	} else {
 		ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
 		ESP_LOGI(TAG,"STA mode set in scan handler");
 	}
-	ESP_ERROR_CHECK(esp_wifi_scan_start(NULL, true));
+
+	ap_scan_list_event_register();
+	ret = esp_wifi_scan_start(NULL, true);
+	if (ret != ESP_OK) {
+		ESP_LOGE(TAG,"Failed to start scan start command");
+		return ESP_FAIL;
+	}
 
 	uint16_t scan_count = req->cmd_scan_ap_list->count;
 	uint16_t ap_count = 0;
@@ -595,24 +612,42 @@ static esp_err_t cmd_get_ap_scan_list_handler (SlaveConfigPayload *req,
 		ESP_LOGE(TAG,"Failed to allocate memory");
 		return ESP_ERR_NO_MEM;
 	}
-	ESP_ERROR_CHECK(esp_wifi_scan_get_ap_records(&scan_count,ap_info));
-	ESP_ERROR_CHECK(esp_wifi_scan_get_ap_num(&ap_count));
+	ret = esp_wifi_scan_get_ap_records(&scan_count,ap_info);
+	if (ret != ESP_OK) {
+		ESP_LOGE(TAG,"Failed to scan ap records");
+		free(ap_info);
+		return ESP_FAIL;
+	}
+	ret = esp_wifi_scan_get_ap_num(&ap_count);
+	if (ret != ESP_OK) {
+		ESP_LOGE(TAG,"Failed to get scan AP number");
+		free(ap_info);
+		return ESP_FAIL;
+	}
 	ESP_LOGI(TAG,"Total APs scanned = %u",ap_count);
 	credentials.count = (scan_count <= ap_count ) ? scan_count: ap_count;
 	RespScanResult * resp_payload = (RespScanResult *)calloc(1,sizeof(RespScanResult));
 	if (resp_payload == NULL) {
 		ESP_LOGE(TAG,"Failed To allocate memory");
+		free(ap_info);
 		return ESP_ERR_NO_MEM;
 	}
 	resp_scan_result__init(resp_payload);
 	resp->payload_case = SLAVE_CONFIG_PAYLOAD__PAYLOAD_RESP_SCAN_AP_LIST ;
+	resp->resp_scan_ap_list = resp_payload;
+	if (!credentials.count) {
+		ESP_LOGE(TAG,"No AP available");
+		free(ap_info);
+		return ESP_FAIL;
+	}
 	resp_payload->has_count = 1;
 	resp_payload->count = credentials.count;
-	resp_payload->n_entries = scan_count;
+	resp_payload->n_entries = credentials.count;
 	ESP_LOGI(TAG,"n_entries %d",resp_payload->n_entries);
-	ScanResult **results = (ScanResult **) calloc(scan_count,sizeof(ScanResult));
+	ScanResult **results = (ScanResult **) calloc(credentials.count,sizeof(ScanResult));
 	if (results == NULL) {
 		ESP_LOGE(TAG,"Failed To allocate memory");
+		free(ap_info);
 		return ESP_ERR_NO_MEM;
 	}
 	resp_payload->entries = results;
@@ -623,6 +658,7 @@ static esp_err_t cmd_get_ap_scan_list_handler (SlaveConfigPayload *req,
 		results[i] = (ScanResult *)calloc(1,sizeof(ScanResult));
 		if (results[i] == NULL) {
 			ESP_LOGE(TAG,"Failed to allocate memory");
+			free(ap_info);
 			return ESP_ERR_NO_MEM;
 		}
 		scan_result__init(results[i]);
@@ -632,6 +668,7 @@ static esp_err_t cmd_get_ap_scan_list_handler (SlaveConfigPayload *req,
 		results[i]->ssid.data = (uint8_t *)strndup((char *)ap_info[i].ssid,32);
 		if (!results[i]->ssid.data) {
 			ESP_LOGE(TAG,"Failed to allocate memory for scan result entry SSID");
+			free(ap_info);
 			return ESP_ERR_NO_MEM;
 		}
 		ESP_LOGI(TAG,"ssid %s ssid lenghth %d", results[i]->ssid.data,results[i]->ssid.len );
@@ -649,6 +686,7 @@ static esp_err_t cmd_get_ap_scan_list_handler (SlaveConfigPayload *req,
 		results[i]->bssid.data = (uint8_t *)strndup((char *)credentials.bssid,19);
 		if (!results[i]->bssid.data) {
 			ESP_LOGE(TAG, "Failed to allocate memory for scan result entry BSSID");
+			free(ap_info);
 			return ESP_ERR_NO_MEM;
 		}
 		ESP_LOGI(TAG,"bssid %s", results[i]->bssid.data);
@@ -657,8 +695,7 @@ static esp_err_t cmd_get_ap_scan_list_handler (SlaveConfigPayload *req,
 		results[i]->ecn = credentials.ecn;
 		ESP_LOGI(TAG,"auth mode %d", results[i]->ecn);
 	}
-
-	resp->resp_scan_ap_list = resp_payload;
+	free(ap_info);
 	return ESP_OK;
 }
 
@@ -733,12 +770,13 @@ static esp_err_t get_connected_sta_list_handler (SlaveConfigPayload *req,
 			results[i]->has_mac = 1;
 			results[i]->mac.len = strnlen((char *)credentials.bssid,19);
 			results[i]->mac.data = (uint8_t *)strndup((char *)credentials.bssid,19);
-			results[i]->has_rssi = 1;
-			results[i]->rssi = stas_info->sta[i].rssi;
 			if (!results[i]->mac.data) {
 				ESP_LOGE(TAG,"Failed to allocate memory mac address");
+				free(stas_info);
 				return ESP_ERR_NO_MEM;
 			}
+			results[i]->has_rssi = 1;
+			results[i]->rssi = stas_info->sta[i].rssi;
 			ESP_LOGI(TAG,"MAC of %dth station %s",i, results[i]->mac.data);
 		}
 	}

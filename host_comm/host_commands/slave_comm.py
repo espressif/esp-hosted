@@ -36,7 +36,7 @@ not_set = "0"
 failure = "failure"
 max_stations_list = 10
 
-#get mac address of station
+#get mac address
 # mode == 1 for station mac
 # mode == 2 for softAP mac
 def get_mac(mode):
@@ -184,6 +184,25 @@ def wifi_set_softap_config(ssid, pwd, chnl, ecn, max_conn, ssid_hidden, bw):
     status = set_softap_config.resp_set_softap_config.status
     return status
 
+# get softAP configuration
+# It returns ssid,pwd,chnl,ecn,max_conn,ssid_hidden,status,bw
+# ssid : string parameter, ssid of SoftAP
+# pwd  : string parameter, length of password should be 8~64 bytes ASCII
+# chnl : channel ID will be in range of 1 to 11
+# ecn  : Encryption method
+#   ( 0 : OPEN,
+#     2 : WPA_PSK,
+#     3 : WPA2_PSK,
+#     4 : WPA_WPA2_PSK)
+# max_conn : maximum number of stations can connect to ESP32 SoftAP (will be in range of 1 to 10)
+# ssid_hidden : softAP should broadcast its SSID or not
+#   ( 0 : SSID is broadcast
+#     1 : SSID is not broadcast )
+# status : return SUCCESS or FAILURE as result of read operation
+# bw : bandwidth of ESP32 softAP
+#   ( 1 : WIFI_BW_HT20
+#     2 : WIFI_BW_HT40 )
+
 def wifi_get_softap_config():
     get_softap_config = slave_config_pb2.SlaveConfigPayload()
     get_softap_config.msg = slave_config_pb2.SlaveConfigMsgType.TypeCmdGetSoftAPConfig
@@ -204,6 +223,10 @@ def wifi_get_softap_config():
     status  = str(get_softap_config.resp_get_softap_config.status)
     bw = get_softap_config.resp_get_softap_config.bw
     return ssid,pwd,chnl,ecn,max_conn,ssid_hidden,status,bw
+
+# Scan AP list
+# It scans the available APs, User should pass scan_count (i.e how many AP's count wanted)
+# output is list of Aplist class instances(ssid,chnl,rssi,bssid,ecn)
 
 def wifi_ap_scan_list(scan_count):
     get_ap_scan_list = slave_config_pb2.SlaveConfigPayload()
@@ -230,7 +253,7 @@ def wifi_ap_scan_list(scan_count):
 
 # This function returns the number of connected stations to softAP
 # Maximum 10 connected stations info can get
-# Failure will return if no station is connected
+# If no station is connected, failure return from slave
 # output is list of Stationlist class instances
 
 def wifi_connected_stations_list():

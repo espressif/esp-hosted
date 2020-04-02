@@ -31,7 +31,7 @@ class Transport_pserial(Transport):
         buf.extend(map(ord,ep_name))
         buf.extend(b'\x02')
         buf.extend(pack('<H', len(data)))
-        print(bytearray(data))
+        #print(bytearray(data))
         buf.extend(bytearray(data))
         s = self.f1.write(buf)
         self.f1.flush()
