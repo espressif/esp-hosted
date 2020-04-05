@@ -37,6 +37,9 @@
 struct esp_private;
 struct esp_adapter;
 
+#define TRUE				1
+#define FALSE				0
+
 struct esp_adapter {
 	u8				if_type;
 

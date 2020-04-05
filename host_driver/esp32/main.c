@@ -234,7 +234,6 @@ static void process_tx_packet (void)
 			ret = esp32_send_packet(priv->adapter, skb->data, skb->len);
 
 			if (ret) {
-				printk (KERN_ERR "%s: Failed to transmit data\n", __func__);
 				priv->stats.tx_errors++;
 			} else {
 				priv->stats.tx_packets++;

@@ -50,8 +50,6 @@ static const struct sdio_device_id esp32_devices[] = {
 	{}
 };
 
-DEFINE_MUTEX(read_lock);
-
 static void esp32_process_interrupt(struct esp32_sdio_context *context, u32 int_status)
 {
 	if (!context) {
@@ -81,14 +79,14 @@ static void esp32_handle_isr(struct sdio_func *func)
 
 	/* Read interrupt status register */
 	ret = esp32_read_reg(context, ESP_SLAVE_INT_ST_REG,
-			(u8 *) &int_status, sizeof(int_status));
+			(u8 *) &int_status, sizeof(int_status), TRUE);
 	CHECK_SDIO_RW_ERROR(ret);
 
 	esp32_process_interrupt(context, int_status);
 
 	/* Clear interrupt status */
 	ret = esp32_write_reg(context, ESP_SLAVE_INT_CLR_REG,
-			(u8 *) &int_status, sizeof(int_status));
+			(u8 *) &int_status, sizeof(int_status), TRUE);
 	CHECK_SDIO_RW_ERROR(ret);
 }
 
@@ -98,7 +96,7 @@ int generate_slave_intr(struct esp32_sdio_context *context, u8 data)
 		return -EINVAL;
 
 	return esp32_write_reg(context, ESP_SLAVE_SCRATCH_REG_7, &data,
-			sizeof(data));
+			sizeof(data), TRUE);
 }
 
 static void deinit_sdio_func(struct sdio_func *func)
@@ -111,12 +109,12 @@ static void deinit_sdio_func(struct sdio_func *func)
 	sdio_release_host(func);
 }
 
-static int esp32_slave_get_tx_buffer_num(struct esp32_sdio_context *context, u32 *tx_num)
+static int esp32_slave_get_tx_buffer_num(struct esp32_sdio_context *context, u32 *tx_num, u8 is_lock_needed)
 {
     u32 len;
     int ret = 0;
 
-    ret = esp32_read_reg(context, ESP_SLAVE_TOKEN_RDATA, (uint8_t*)&len, 4);
+    ret = esp32_read_reg(context, ESP_SLAVE_TOKEN_RDATA, (uint8_t*)&len, 4, is_lock_needed);
 
     if (ret)
 	    return ret;
@@ -129,13 +127,13 @@ static int esp32_slave_get_tx_buffer_num(struct esp32_sdio_context *context, u32
     return ret;
 }
 
-static int esp32_get_len_from_slave(struct esp32_sdio_context *context, u32 *rx_size)
+static int esp32_get_len_from_slave(struct esp32_sdio_context *context, u32 *rx_size, u8 is_lock_needed)
 {
     u32 len, temp;
     int ret = 0;
 
     ret = esp32_read_reg(context, ESP_SLAVE_PACKET_LEN_REG,
-		    (u8 *) &len, sizeof(len));
+		    (u8 *) &len, sizeof(len), is_lock_needed);
 
     if (ret)
 	    return ret;
@@ -229,7 +227,7 @@ static int init_context(struct esp32_sdio_context *context)
 
 	/* Initialize rx_byte_count */
 	ret = esp32_read_reg(context, ESP_SLAVE_PACKET_LEN_REG,
-			(u8 *) &val, sizeof(val));
+			(u8 *) &val, sizeof(val), TRUE);
 	if (ret)
 		return ret;
 
@@ -239,7 +237,7 @@ static int init_context(struct esp32_sdio_context *context)
 
 	/* Initialize tx_buffer_count */
 	ret = esp32_read_reg(context, ESP_SLAVE_TOKEN_RDATA, (u8 *) &val,
-			sizeof(val));
+			sizeof(val), TRUE);
 
 	if (ret)
 		return ret;
@@ -279,17 +277,18 @@ static struct sk_buff * read_packet(struct esp_adapter *adapter)
 
 	context = adapter->if_context;
 
-	data_left = len_to_read = len_from_slave = num_blocks = 0;
+	sdio_claim_host(context->func);
 
-	mutex_lock(&read_lock);
+	data_left = len_to_read = len_from_slave = num_blocks = 0;
 
 	/* TODO: handle a case of multiple packets in same buffer */
 	/* Read length */
-	ret = esp32_get_len_from_slave(context, &len_from_slave);
+	ret = esp32_get_len_from_slave(context, &len_from_slave, FALSE);
 
 /*	printk (KERN_DEBUG "LEN FROM SLAVE: %d\n", len_from_slave);*/
 
 	if (ret || !len_from_slave) {
+		sdio_release_host(context->func);
 		return NULL;
 	}
 
@@ -303,6 +302,7 @@ static struct sk_buff * read_packet(struct esp_adapter *adapter)
 
 	if (!skb) {
 		printk (KERN_ERR "%s: SKB alloc failed\n", __func__);
+		sdio_release_host(context->func);
 		return NULL;
 	}
 
@@ -324,18 +324,19 @@ static struct sk_buff * read_packet(struct esp_adapter *adapter)
 			len_to_read = num_blocks * ESP_BLOCK_SIZE;
 			ret = esp32_read_block(context,
 					ESP_SLAVE_CMD53_END_ADDR - len_to_read,
-					pos, len_to_read);
+					pos, len_to_read, FALSE);
 		} else {
 			len_to_read = data_left;
 			/* 4 byte aligned length */
 			ret = esp32_read_block(context,
 					ESP_SLAVE_CMD53_END_ADDR - len_to_read,
-					pos, (len_to_read + 3) & (~3));
+					pos, (len_to_read + 3) & (~3), FALSE);
 		}
 
 		if (ret) {
 			printk (KERN_ERR "%s: Failed to read data\n", __func__);
 			dev_kfree_skb(skb);
+			sdio_release_host(context->func);
 			return NULL;
 		}
 
@@ -346,7 +347,7 @@ static struct sk_buff * read_packet(struct esp_adapter *adapter)
 
 	} while (data_left > 0);
 
-	mutex_unlock(&read_lock);
+	sdio_release_host(context->func);
 
 	return skb;
 }
@@ -367,15 +368,18 @@ static int write_packet(struct esp_adapter *adapter, u8 *buf, u32 size)
 
 	context = adapter->if_context;
 
+	sdio_claim_host(context->func);
+
 	buf_needed = (size + ESP_RX_BUFFER_SIZE - 1) / ESP_RX_BUFFER_SIZE;
 
-	ret = esp32_slave_get_tx_buffer_num(context, &buf_available);
+	ret = esp32_slave_get_tx_buffer_num(context, &buf_available, FALSE);
 
 /*	printk(KERN_ERR "%s: TX -> Available [%d], needed [%d]\n", __func__, buf_available, buf_needed);*/
 
 	if (buf_available < buf_needed) {
-		printk(KERN_ERR "%s: Not enough buffers available: availabale [%d], needed [%d]\n", __func__,
+		printk(KERN_DEBUG "%s: Not enough buffers available: availabale [%d], needed [%d]\n", __func__,
 				buf_available, buf_needed);
+		sdio_release_host(context->func);
 		return -ENOMEM;
 	}
 
@@ -391,10 +395,11 @@ static int write_packet(struct esp_adapter *adapter, u8 *buf, u32 size)
 		block_cnt = data_left / ESP_BLOCK_SIZE;
 		len_to_send = data_left;
 		ret = esp32_write_block(context, ESP_SLAVE_CMD53_END_ADDR - len_to_send,
-				pos, (len_to_send + 3) & (~3));
+				pos, (len_to_send + 3) & (~3), FALSE);
 
 		if (ret) {
 			printk (KERN_ERR "%s: Failed to send data\n", __func__);
+			sdio_release_host(context->func);
 			return ret;
 		}
 /*		printk (KERN_ERR "--> %d %d %d\n", block_cnt, data_left, len_to_send);*/
@@ -405,6 +410,8 @@ static int write_packet(struct esp_adapter *adapter, u8 *buf, u32 size)
 
 	context->tx_buffer_count += buf_needed;
 	context->tx_buffer_count = context->tx_buffer_count % ESP_TX_BUFFER_MAX;
+
+	sdio_release_host(context->func);
 
 	return 0;
 }
@@ -449,33 +456,34 @@ static struct esp32_sdio_context * init_sdio_func(struct sdio_func *func)
 
 static int monitor_process(void *data)
 {
-	u32 val, intr, len_reg, rdata, old_len;
+	u32 val, intr, len_reg, rdata, old_len = 0;
 	struct esp32_sdio_context *context = (struct esp32_sdio_context *) data;
 	struct sk_buff *skb;
 
 	while (!kthread_should_stop()) {
-		msleep(1000);
+		msleep(5000);
 
 		val = intr = len_reg = rdata = 0;
 
 		esp32_read_reg(context, ESP_SLAVE_PACKET_LEN_REG,
-				(u8 *) &val, sizeof(val));
+				(u8 *) &val, sizeof(val), TRUE);
 
 		len_reg = val & ESP_SLAVE_LEN_MASK;
 
 		val = 0;
 		esp32_read_reg(context, ESP_SLAVE_TOKEN_RDATA, (u8 *) &val,
-				sizeof(val));
+				sizeof(val), TRUE);
 
 		rdata = ((val >> 16) & ESP_TX_BUFFER_MASK);
 
 		esp32_read_reg(context, ESP_SLAVE_INT_ST_REG,
-				(u8 *) &intr, sizeof(intr));
+				(u8 *) &intr, sizeof(intr), TRUE);
 
 
 		if (len_reg > context->rx_byte_count) {
-			if (context->rx_byte_count == old_len) {
-				printk (KERN_INFO "Monitor thread ----> [%d - %d] [%d - %d] %d\n", len_reg, context->rx_byte_count,
+			if (old_len && (context->rx_byte_count == old_len)) {
+				printk (KERN_DEBUG "Monitor thread ----> [%d - %d] [%d - %d] %d\n",
+						len_reg, context->rx_byte_count,
 						rdata, context->tx_buffer_count, intr);
 
 				skb = read_packet(context->adapter);
@@ -484,7 +492,7 @@ static int monitor_process(void *data)
 					continue;
 
 				if (skb->len)
-					printk (KERN_INFO "%s: Flushed %d bytes\n", __func__, skb->len);
+					printk (KERN_DEBUG "%s: Flushed %d bytes\n", __func__, skb->len);
 
 				/* drop the packet */
 				dev_kfree_skb(skb);
