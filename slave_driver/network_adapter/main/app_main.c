@@ -31,6 +31,10 @@
 #include <esp_at.h>
 #include "freertos/task.h"
 #include "freertos/queue.h"
+#ifdef CONFIG_BT_ENABLED
+#include "esp_bt.h"
+#include "driver/uart.h"
+#endif
 
 #define EV_STR(s) "================ "s" ================"
 static const char TAG[] = "NETWORK_ADAPTER";
@@ -43,6 +47,13 @@ static const char TAG_TX[] = "S -> H";
 #if CONFIG_ESP_SERIAL_DEBUG
 static const char TAG_RX_S[] = "CONTROL H -> S";
 static const char TAG_TX_S[] = "CONTROL S -> H";
+#endif
+
+#ifdef CONFIG_BT_ENABLED
+#define BT_TX_PIN	5
+#define BT_RX_PIN	18
+#define BT_RTS_PIN	19
+#define BT_CTS_PIN	23
 #endif
 
 volatile uint8_t action = 0;
@@ -258,6 +269,11 @@ void recv_task(void* pvParameters)
 
 	for (;;) {
 
+		if (!datapath) {
+			/* Datapath is not enabled by host yet*/
+			sleep(1);
+		}
+
 		// receive data from transport layer
 		if (if_context && if_context->if_ops && if_context->if_ops->read) {
 			buf_handle = if_context->if_ops->read(if_handle);
@@ -359,6 +375,33 @@ static void initialise_wifi(void)
 	ESP_ERROR_CHECK( esp_wifi_start() );
 }
 
+#ifdef CONFIG_BT_ENABLED
+static void initialise_bluetooth(void)
+{
+	esp_bt_controller_config_t bt_cfg = BT_CONTROLLER_INIT_CONFIG_DEFAULT();
+
+#if CONFIG_BT_HCI_UART_NO == 1
+	periph_module_enable(PERIPH_UART1_MODULE);
+#elif CONFIG_BT_HCI_UART_NO == 2
+	periph_module_enable(PERIPH_UART2_MODULE);
+#endif
+
+	periph_module_enable(PERIPH_UHCI0_MODULE);
+	ESP_ERROR_CHECK( uart_set_pin(CONFIG_BT_HCI_UART_NO, BT_TX_PIN,
+				BT_RX_PIN, BT_RTS_PIN, BT_CTS_PIN) );
+
+	ESP_ERROR_CHECK( esp_bt_controller_init(&bt_cfg) );
+#ifdef CONFIG_BTDM_CONTROLLER_MODE_BLE_ONLY
+	ESP_ERROR_CHECK( esp_bt_controller_enable(ESP_BT_MODE_BLE) );
+#elif CONFIG_BTDM_CONTROLLER_MODE_BR_EDR_ONLY
+	ESP_ERROR_CHECK( esp_bt_controller_enable(ESP_BT_MODE_CLASSIC_BT) );
+#elif CONFIG_BTDM_CONTROLLER_MODE_BTDM
+	ESP_ERROR_CHECK( esp_bt_controller_enable(ESP_BT_MODE_BTDM) );
+#endif
+}
+#endif
+
+
 int event_handler(uint8_t val)
 {
 	switch(val) {
@@ -433,6 +476,10 @@ void app_main()
 	if(esp_at_wifi_cmd_regist() == false) {
 		printf("regist wifi cmd fail\r\n");
 	}
+
+#ifdef CONFIG_BT_ENABLED
+	initialise_bluetooth();
+#endif
 }
 
 

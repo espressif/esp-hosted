@@ -1,11 +1,37 @@
 # Hosted solution with ESP32
-This project adds a capability to use ESP32 as a communication processor for Wi-Fi connectivity with an external host. This uses a subset of AT command-set for control path and uses a separate connection (currently supported on SDIO) for data path. The ESP32 provides a simple interface to the host to provide ethernet interface that can transmit and receive 802.3 frames. This allows the TCP/IP and higher level protocol stack to run on the host. The project provides ESP32 side firmware, example Linux driver and protocol description. This can directly be used with Linux based hosts or can easily be ported to other MCUs with available open protocol description.
+This project adds a capability to use ESP32 as a communication processor for Wi-Fi and bluetooth/BLE connectivity with an external host. The project provides ESP32 side firmware, example Linux driver and protocol description. This can directly be used with Linux based hosts or can easily be ported to other MCUs with available open protocol description.
+
+## Wi-Fi connectivity solution
+This project uses a subset of AT command-set for control path and uses a separate connection (currently supported on SDIO) for data path. The ESP32 provides a simple interface to the host to provide ethernet interface that can transmit and receive 802.3 frames. This allows the TCP/IP and higher level protocol stack to run on the host.
+
+## Bluetooth/BLE connectivity solution
+An external host is provided with a serial interface over UART. ESP32 firmware provides bluetooth/ble functionality over this interface. Linux based host can use standard hci tools/commands to control this interface.
 
 # Setup
 Currently we support ESP32 WROVER-Kit with Raspberry-Pi (3 Model B+, 4 Model B) for evaluation with Raspbian operating system.
 
-## Hardware Setup / Connections
-Please connect ESP32 board to Raspberry-Pi with jumper cables as mentioned below. It may be good to use small length cables to ensure signal integrity.
+## Raspberry-Pi Software Setup
+We recommend full version Raspbian install on Raspberry-Pi to ensure easy driver compilation. In addition for driver compilation, kernel headers are required. Please install them as:
+```sh
+$ sudo apt update
+$ sudo apt-get install raspberrypi-kernel-headers
+```
+Verify that kernel headers are installed properly by running following command. Failure of this command indicates that kernel headers are not installed. In such case, upgrade/downgrade kernel and reinstall kernel headers.
+```sh
+$ ls /lib/modules/$(uname -r)/build
+```
+Python is required to run utility scripts. Please install it as:
+```sh
+$ sudo apt-get install python3
+```
+Raspi-gpio utility is required to configure GPIO pins. Please install it as:
+```sh
+$ sudo apt-get install raspi-gpio
+```
+
+## Wi-Fi connectivity Setup
+### Hardware Setup/Connections
+In this setup, ESP32 board acts as a SDIO peripheral and provides Wi-FI capabilities to host. Please connect ESP32 board to Raspberry-Pi with jumper cables as mentioned below. It may be good to use small length cables to ensure signal integrity.
 
 | RPi Pin | ESP32 Pin | Function |
 |:-------:|:---------:|:--------:|
@@ -25,28 +51,58 @@ Setup image is here.
 
 Power ESP32 and Raspberry Pi separately with a power supply that provide sufficient power. ESP32 can be powered through PC using micro-USB cable.
 
-## Raspberry-Pi Software Setup
-We recommend full version Raspbian install on Raspberry-Pi to ensure easy driver compilation. In addition for driver compilation, kernel headers are required. Please install them as:
-```sh
-$ sudo apt update
-$ sudo apt-get install raspberrypi-kernel-headers
-```
-Verify that kernel headers are installed properly by running following command. Failure of this command indicates that kernel headers are not installed. In such case, upgrade/downgrade kernel and reinstall kernel headers.
-```sh
-$ ls /lib/modules/$(uname -r)/build
-```
-Python is required to run utility scripts. Please install it as:
-```sh
-$ sudo apt-get install python3
-```
+### Software setup
 By default, the SDIO pins of Raspberry-pi are not configured and are internally used for built-in Wi-Fi interface. Please enable SDIO pins by appending following line to _/boot/config.txt_ file
 ```
 dtoverlay=sdio,poll_once=off
 ```
 Please reboot Raspberry-Pi after changing this file.
 
+## Bluetooth/BLE connectivity Setup
+### Hardware Setup/Connections
+In this setup, ESP32 board provides Bluetooth/BLE capabilities to host over UART interface. Please connect ESP32 board to Raspberry-Pi with jumper cables as below. As mentioned above, use small length cables.
+
+| RPi Pin Function | RPi Pin | ESP32 Pin | ESP32 Pin Function |
+|:-------:|:--------:|:---------:|:--------:|
+| RX | 10 | IO5 | TX |
+| TX | 8 | IO18 | RX |
+| CTS | 36 | I19 | RTS |
+| RTS | 11 | IO23 | CTS |
+| Ground | 39 | GND | Ground |
+
+### Software setup
+By default, the UART pins on Raspberry-Pi are in disabled state. In order to enable UART and setup it for bluetooth connection, follow below steps.
+1. Enable UART pins and disable in built bluetooth on Raspberry-Pi by appending following lines to _/boot/config.txt_ file
+```
+enable_uart=1
+dtoverlay=disable-bt
+```
+2. Remove following from _/boot/cmdline.txt_. Leave everything else untouched.
+```
+console=serial0,115200
+```
+e.g. If _/boot/cmdline.txt_ is as below:
+```
+# cat /boot/cmdline.txt
+dwc_otg.lpm_enable=0 console=tty1 console=serial0,115200 root=PARTUUID=5c2c80d1-02 rootfstype=ext4 elevator=deadline fsck.repair=yes rootwait quiet splash plymouth.ignore-serial-consoles spidev.bufsiz=32768
+````
+Then after removal of above mentioned arguments, it should look as below:
+```
+# cat /boot/cmdline.txt
+dwc_otg.lpm_enable=0 console=tty1 root=PARTUUID=5c2c80d1-02 rootfstype=ext4 elevator=deadline fsck.repair=yes rootwait quiet splash plymouth.ignore-serial-consoles spidev.bufsiz=32768
+```
+3. Disable hciuart on Raspberry-Pi
+```
+# systemctl disable hciuart
+```
+4. Reboot Raspberry-Pi
+
 ## ESP32 Setup
-On ESP32 either use pre-provided hosted mode firmware binary or if you have source, compile the app against ESP-IDF 3.3 release by running command as `make SILENCE=0 ESP_AT_PROJECT_PLATFORM=esp32_at_core` in `slave_driver/network_adapter` directory. Program the WROVER-KIT using standard flash programming procedure with
+On ESP32 either use pre-provided hosted mode firmware binary or if you have source, compile the app against ESP-IDF 3.3 release by running below command in `slave_driver/network_adapter` directory. 
+```sh
+$ make SILENCE=0 ESP_AT_PROJECT_PLATFORM=esp32_at_core
+```
+Program the WROVER-KIT using standard flash programming procedure with
 ```sh
 $ make flash
 ```
@@ -55,16 +111,19 @@ $ make flash
 Once ESP32 has a valid firmware and booted successfully, you should be able to see successful enumeration on Raspberry Pi side as:
 ```sh
 $ dmesg
-[  769.531080] mmc1: queuing unknown CIS tuple 0x01 (3 bytes)
-[  769.541087] mmc1: queuing unknown CIS tuple 0x1a (5 bytes)
-[  769.545546] mmc1: queuing unknown CIS tuple 0x1b (8 bytes)
-[  769.547832] mmc1: queuing unknown CIS tuple 0x80 (1 bytes)
-[  769.547928] mmc1: queuing unknown CIS tuple 0x81 (1 bytes)
-[  769.548023] mmc1: queuing unknown CIS tuple 0x82 (1 bytes)
-[  769.549804] mmc1: queuing unknown CIS tuple 0x80 (1 bytes)
-[  769.549900] mmc1: queuing unknown CIS tuple 0x81 (1 bytes)
-[  769.550000] mmc1: queuing unknown CIS tuple 0x82 (1 bytes)
-[  769.550195] mmc1: new SDIO card at address 0001
+[  143.606119] mmc1: queuing unknown CIS tuple 0x01 (3 bytes)
+[  143.613524] mmc1: queuing unknown CIS tuple 0x1a (5 bytes)
+[  143.617844] mmc1: queuing unknown CIS tuple 0x1b (8 bytes)
+[  143.620070] mmc1: queuing unknown CIS tuple 0x80 (1 bytes)
+[  143.620167] mmc1: queuing unknown CIS tuple 0x81 (1 bytes)
+[  143.620265] mmc1: queuing unknown CIS tuple 0x82 (1 bytes)
+[  143.622073] mmc1: queuing unknown CIS tuple 0x80 (1 bytes)
+[  143.622169] mmc1: queuing unknown CIS tuple 0x81 (1 bytes)
+[  143.622266] mmc1: queuing unknown CIS tuple 0x82 (1 bytes)
+[  143.622461] mmc1: new SDIO card at address 0001
+[  148.095780] esp32: loading out-of-tree module taints kernel.
+[  148.314969] Initialising ESP Serial support
+[  148.320686] esp32_probe: ESP network device detected
 ```
 Once the module is inserted, you should see ethap0 and ethsta0 interfaces using _ifconfig_ command.
 
@@ -84,9 +143,9 @@ ESP32 module advertises 2 SDIO functions, of which function 1 implements WLAN sl
 * 0x3FF55044: Accumulated number of buffers for receiving packets at slave
 
 ## Initialization of slave device
-1. Reset slave
-	1. Host resets slave by setting bit 2 of register at 0x3FF5508C
-	2. This generates an interrupt for slave device, on which slave resets itself
+1. Soft reset sdio slave
+	1. Host resets sdio part of slave by setting bit 2 of register at 0x3FF5508C
+	2. This generates an interrupt for slave device, on which firmware on slave resets its sdio related data structures.
 2. Host reads accumulated length and buffer count at slave.
 	1. Host reads and processes 0x3FF55060 and 0x3FF55044 registers and stores the values in it's data structure
 	2. These counters are required while performing read and write operation on SDIO interface
@@ -131,9 +190,10 @@ Host sets bit 1 of 0x3FF5508C interrupt register. This tells slave device to sto
 | reserved | 2 bytes  | Not in use |
 
 # How to Run scripts on Raspberry-Pi(rpi)
+## For Wi-Fi Connectivity
 There is `esp_at` folder in which "AT commands" python library is present. User can make use of python functions to get access of wifi functionalities of ESP32.
 
-first run `./rpi_init.sh` to compile and insert ESP32 host driver on rpi. This script also creates `/dev/esps0` which is used as WLAN control interface.
+first run `./rpi_init.sh wlan` to compile and insert ESP32 host driver on rpi. This script also creates `/dev/esps0` which is used as WLAN control interface.
 These scripts to be run as root. Execute following command in terminal.
 
 ```
@@ -162,7 +222,7 @@ Note: To start data connection, user needs to setup a DHCP server on rpi or set 
 
 ---
 
-# Open air throughput test results
+### Open air throughput test results for WLAN
 Following are the test results conducted in open air.
 ```
 UDP Tx: 16.4 Mbps
@@ -170,3 +230,19 @@ UDP Rx: 16.8 Mbps
 TCP Tx: 14 Mbps
 TCP Rx: 12 Mbps
 ```
+
+## For Bluetooth/BLE functionality
+1. Execute `./rpi_init.sh bt` to prepare RPi for Bluetooth operation
+2. Execute `hciattach` command as below to add hci interface
+```
+$ sudo hciattach -s 115200 /dev/serial0 any 115200 flow
+```
+3. Perform bluetooth/ble operations
+```
+e.g.
+$ hcitool scan
+```
+
+## For simulteneous usage of Bluetooth/BLE and WLAN
+1. Execute `./rpi_init.sh` without any arguments. This will setup RPi for both bluetooth and wlan operations.
+2. Follow steps mentioned in above section to initialize and use bluetooth and wlan
