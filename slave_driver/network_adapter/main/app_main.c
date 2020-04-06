@@ -351,7 +351,7 @@ void recv_task(void* pvParameters)
 
 static int32_t sdio_hosted_read_data(uint8_t *data, int32_t len)
 {
-	ESP_LOGE(TAG, "sdio_hosted_read_data\n");
+	ESP_LOGI(TAG, "sdio_hosted_read_data\n");
 	len = min(len, r.len);
 	if (r.valid) {
 		memcpy(data, r.data, len);
@@ -366,7 +366,7 @@ static int32_t sdio_hosted_read_data(uint8_t *data, int32_t len)
 static int32_t sdio_hosted_write_data(uint8_t* data, int32_t len)
 {
 	interface_buffer_handle_t buf_handle = {0};
-	ESP_LOGE(TAG, "sdio_hosted_write_data %d\n", len);
+	ESP_LOGI(TAG, "sdio_hosted_write_data %d\n", len);
 
 	buf_handle.if_type = ESP_SERIAL_IF;
 	buf_handle.if_num = 0;

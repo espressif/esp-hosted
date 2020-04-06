@@ -198,12 +198,10 @@ struct  _ConnectedSTAList
 struct  _CmdConnectedSTA
 {
   ProtobufCMessage base;
-  protobuf_c_boolean has_num;
-  uint32_t num;
 };
 #define CMD_CONNECTED_STA__INIT \
  { PROTOBUF_C_MESSAGE_INIT (&cmd_connected_sta__descriptor) \
-    , 0,0 }
+     }
 
 
 struct  _RespConnectedSTA

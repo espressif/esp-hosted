@@ -14,6 +14,7 @@
 
 from host_commands import slave_comm
 import argparse
+import os
 
 # WiFi Mode
 # NULL              0
@@ -21,12 +22,14 @@ import argparse
 # SoftAP            2
 # Station + SoftAP  3
 
-null = 0
+none = 0
 station = 1
 softap = 2
 station_softap = 3
 failure = "failure"
+success = "success"
 stop = "Not set"
+flag = success
 
 parser = argparse.ArgumentParser(description='softap_stop.py script will stop ESP32 softap ex. python softap_close.py')
 
@@ -35,15 +38,24 @@ print(wifi_mode)
 
 if (wifi_mode == failure):
     print("failure in getting wifi mode")
+    flag = failure 
 elif (wifi_mode == softap):
-    wifi_mode = slave_comm.set_wifi_mode(null)
+    wifi_mode = slave_comm.set_wifi_mode(none)
     if (wifi_mode == failure):
         print("failure in stopping softap")
+        flag = failure
     else :
         print("SoftAP stopped")
 elif (wifi_mode == station_softap):
     wifi_mode = slave_comm.set_wifi_mode(station)
     if (wifi_mode == failure):
         print("failure in stopping softap")
+        flag = failure
     else :
         print("SoftAP stopped")
+
+if (flag == success):
+    command = 'sudo ifconfig ethap0 down'
+    os.system(command)
+    print(command)
+    print("softAP interface down")

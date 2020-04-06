@@ -23,7 +23,7 @@ import os
 # SoftAP                2
 # Station+SoftAP        3
 
-null = 0
+none = 0
 station = 1
 softap = 2
 station_softap = 3

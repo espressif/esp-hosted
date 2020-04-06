@@ -1122,29 +1122,9 @@ const ProtobufCMessageDescriptor connected_stalist__descriptor =
   (ProtobufCMessageInit) connected_stalist__init,
   NULL,NULL,NULL    /* reserved[123] */
 };
-static const ProtobufCFieldDescriptor cmd_connected_sta__field_descriptors[1] =
-{
-  {
-    "num",
-    1,
-    PROTOBUF_C_LABEL_OPTIONAL,
-    PROTOBUF_C_TYPE_UINT32,
-    offsetof(CmdConnectedSTA, has_num),
-    offsetof(CmdConnectedSTA, num),
-    NULL,
-    NULL,
-    0,             /* flags */
-    0,NULL,NULL    /* reserved1,reserved2, etc */
-  },
-};
-static const unsigned cmd_connected_sta__field_indices_by_name[] = {
-  0,   /* field[0] = num */
-};
-static const ProtobufCIntRange cmd_connected_sta__number_ranges[1 + 1] =
-{
-  { 1, 0 },
-  { 0, 1 }
-};
+#define cmd_connected_sta__field_descriptors NULL
+#define cmd_connected_sta__field_indices_by_name NULL
+#define cmd_connected_sta__number_ranges NULL
 const ProtobufCMessageDescriptor cmd_connected_sta__descriptor =
 {
   PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
@@ -1153,10 +1133,10 @@ const ProtobufCMessageDescriptor cmd_connected_sta__descriptor =
   "CmdConnectedSTA",
   "",
   sizeof(CmdConnectedSTA),
-  1,
+  0,
   cmd_connected_sta__field_descriptors,
   cmd_connected_sta__field_indices_by_name,
-  1,  cmd_connected_sta__number_ranges,
+  0,  cmd_connected_sta__number_ranges,
   (ProtobufCMessageInit) cmd_connected_sta__init,
   NULL,NULL,NULL    /* reserved[123] */
 };

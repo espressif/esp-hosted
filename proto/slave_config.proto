@@ -68,7 +68,6 @@ message ConnectedSTAList {
 }
 
 message CmdConnectedSTA {
-	uint32 num = 1;
 }
 
 message RespConnectedSTA {

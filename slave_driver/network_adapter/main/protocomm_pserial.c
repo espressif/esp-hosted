@@ -76,7 +76,7 @@ static esp_err_t protocomm_pserial_common_handler(protocomm_t *pc, uint8_t *in, 
     memset(epname, 0, EPNAME_MAX);
 
     while (parse_tlv(&buf, &total_len, &type, &len, &ptr) == 0) {
-        ESP_LOGI(TAG, "Parsed type %d len %d", type, len);
+        //ESP_LOGI(TAG, "Parsed type %d len %d", type, len);
         switch(type) {
             case PROTO_PSER_TLV_T_EPNAME:
                 if (len >= EPNAME_MAX - 1) {
@@ -84,7 +84,7 @@ static esp_err_t protocomm_pserial_common_handler(protocomm_t *pc, uint8_t *in, 
                     return ESP_FAIL;
                 }
                 memcpy(epname, ptr, len);
-                ESP_LOGI(TAG, "Found ep %s", epname);
+                //ESP_LOGI(TAG, "Found ep %s", epname);
                 break;
             case PROTO_PSER_TLV_T_DATA:
                 data = ptr;
@@ -156,7 +156,7 @@ static void pserial_task(void *params)
     }
 
     while (xQueueReceive(pserial_cfg->req_queue, &len, portMAX_DELAY) == pdTRUE) {
-        ESP_LOGI(TAG, "Read request for %d", len);
+        //ESP_LOGI(TAG, "Read request for %d", len);
         buf = (uint8_t *) malloc(len);
         if (buf == NULL) {
             ESP_LOGE(TAG,"Failed to allocate memory");

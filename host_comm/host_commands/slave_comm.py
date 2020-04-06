@@ -34,7 +34,6 @@ interface = "/dev/esps0"
 endpoint = "control"
 not_set = "0"
 failure = "failure"
-max_stations_list = 10
 
 #get mac address
 # mode == 1 for station mac
@@ -259,7 +258,6 @@ def wifi_ap_scan_list(scan_count):
 def wifi_connected_stations_list():
     get_connected_stations_list = slave_config_pb2.SlaveConfigPayload()
     get_connected_stations_list.msg = slave_config_pb2.SlaveConfigMsgType.TypeCmdGetConnectedSTAList
-    get_connected_stations_list.cmd_connected_stas_list.num = max_stations_list
     protodata = get_connected_stations_list.SerializeToString()
     #print("serialized data "+str(protodata))
     tp = transport.Transport_pserial(interface)

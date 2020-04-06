@@ -27,10 +27,10 @@ print("sta mac "+str(x))
 # 2: softAP mode
 # 3: softAP+station mode
 # or Failure 
-
+'''
 x = slave_comm.get_wifi_mode()
 print("wifi mode is "+str(x))
-
+'''
 x = slave_comm.set_wifi_mode(2)
 print("connected mode is "+str(x))
 
@@ -46,7 +46,6 @@ print(x)
 x = slave_comm.wifi_disconnect_ap()
 print(x)
 
-# need to accept default badwidth as 20 and make it as optional parameter
 x = slave_comm.wifi_set_softap_config('ESP12','0',4,0,5,0,1)
 print("output is here")
 print(x)
@@ -62,11 +61,13 @@ print(x)
 # output is list of Aplist class instances
 x = slave_comm.wifi_ap_scan_list(10)
 print(x)
-for obj in x:
-    print(obj.ssid,obj.chnl,obj.rssi,obj.bssid,obj.ecn)
+if (x == failure):
+    print(failure)
+else:
+    for obj in x:
+        print(obj.ssid,obj.chnl,obj.rssi,obj.bssid,obj.ecn)
 
 '''
-# User should give number of stations list needed
 # output is list of Stationlist class instances
 x = slave_comm.wifi_connected_stations_list()
 print(x)

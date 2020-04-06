@@ -14,6 +14,7 @@
 
 from host_commands import slave_comm
 import argparse
+import os
 
 # WiFi Mode
 # NULL              0
@@ -21,11 +22,13 @@ import argparse
 # SoftAP            2
 # Station + SoftAP  3
 
-null = 0
+none = 0
 station = 1
 softap = 2
 station_softap = 3
 failure = "failure"
+success = "success"
+flag = success
 disconnect = "Not set"
 
 parser = argparse.ArgumentParser(description='station_disconnect.py script will disconnect ESPStation from AP ex. python station_disconnect.py')
@@ -35,13 +38,23 @@ print(wifi_mode)
 
 if (wifi_mode == failure):
     print("failure in getting wifi mode")
+    flag = failure
 elif (wifi_mode == station or wifi_mode == station_softap):
     disconnect = slave_comm.wifi_disconnect_ap()
-    print(disconnect)
-    print("Disconnected from AP")
+    if (disconnect == failure):
+        print("Failed to Disconnected from AP")
+        flag = failure
+    else :
+        print("Success in Disconnecting from AP")
 else :
     print("wifi_disconnect_ap failed, current mode is "+str(wifi_mode))
     print("0: null Mode, Wi-Fi RF will be disabled")
     print("1: station mode")
     print("2: softAP mode")
     print("3: softAP+station mode")
+    flag = failure
+
+if (flag == success):
+    command = 'sudo ifconfig ethsta0 down'
+    os.system(command)
+    print(command)

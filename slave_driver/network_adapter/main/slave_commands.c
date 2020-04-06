@@ -107,7 +107,6 @@ void softap_event_handler(void* arg, esp_event_base_t event_base,
         ESP_LOGI(TAG, "station "MACSTR" leave, AID=%d",
                  MAC2STR(event->mac), event->aid);
 	} else if (event_id == WIFI_EVENT_AP_START) {
-		ESP_LOGI(TAG,"AP Start handler start");
 		esp_wifi_internal_reg_rxcb(ESP_IF_WIFI_AP, (wifi_rxcb_t) wlan_ap_rx_callback);
 	} else if (event_id == WIFI_EVENT_AP_STOP) {
 		ESP_LOGI(TAG,"AP Stop handler stop");
@@ -127,14 +126,12 @@ static void ap_event_register(void)
 {
 	ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT, WIFI_EVENT_STA_CONNECTED, &ap_event_handler, NULL));
 	ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT, WIFI_EVENT_STA_DISCONNECTED, &ap_event_handler, NULL));
-	ESP_LOGI(TAG,"AP Event group registered");
 }
 
 static void ap_event_unregister(void)
 {
 	ESP_ERROR_CHECK(esp_event_handler_unregister(WIFI_EVENT, WIFI_EVENT_STA_CONNECTED, &ap_event_handler));
 	ESP_ERROR_CHECK(esp_event_handler_unregister(WIFI_EVENT, WIFI_EVENT_STA_DISCONNECTED, &ap_event_handler));
-	ESP_LOGI(TAG, "AP Event group unregistered");
 }
 
 static void softap_event_register(void)
@@ -143,7 +140,6 @@ static void softap_event_register(void)
 	ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT, WIFI_EVENT_AP_STOP, &softap_event_handler, NULL));
 	ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT, WIFI_EVENT_AP_STACONNECTED, &softap_event_handler, NULL));
 	ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT, WIFI_EVENT_AP_STADISCONNECTED, &softap_event_handler, NULL));
-	ESP_LOGI(TAG,"SoftAP Event group registered");
 }
 
 static void softap_event_unregister(void)
@@ -152,7 +148,6 @@ static void softap_event_unregister(void)
 	ESP_ERROR_CHECK(esp_event_handler_unregister(WIFI_EVENT, WIFI_EVENT_AP_STOP, &softap_event_handler));
 	ESP_ERROR_CHECK(esp_event_handler_unregister(WIFI_EVENT, WIFI_EVENT_AP_STACONNECTED, &softap_event_handler));
 	ESP_ERROR_CHECK(esp_event_handler_unregister(WIFI_EVENT, WIFI_EVENT_AP_STADISCONNECTED, &softap_event_handler));
-	ESP_LOGI(TAG,"SoftAP Event group unregistered");
 }
 
 static void ap_scan_list_event_register(void)
@@ -169,7 +164,6 @@ typedef struct slave_config_cmd {
 static esp_err_t cmd_get_mac_address_handler(SlaveConfigPayload *req,
                                         SlaveConfigPayload *resp, void *priv_data)
 {
-	ESP_LOGI(TAG,"Inside get MAC address");
 	esp_err_t ret;
 	uint8_t mac[6];
 	char *mac_str = (char *)calloc(1,19);
@@ -194,7 +188,7 @@ static esp_err_t cmd_get_mac_address_handler(SlaveConfigPayload *req,
 			return ESP_FAIL;
 		}
 	} else {
-		ESP_LOGI(TAG,"Invalid msg type");
+		ESP_LOGI(TAG,"Invalid get mac msg type");
 		free(mac_str);
 		return ESP_FAIL;
 	}
@@ -217,7 +211,6 @@ static esp_err_t cmd_get_mac_address_handler(SlaveConfigPayload *req,
 static esp_err_t cmd_get_wifi_mode_handler (SlaveConfigPayload *req,
                                         SlaveConfigPayload *resp, void *priv_data)
 {
-	ESP_LOGI(TAG,"inside get wifi mode");
 	esp_err_t ret;
 	wifi_mode_t mode;
 	ret = esp_wifi_get_mode(&mode);
@@ -249,9 +242,6 @@ static esp_err_t cmd_set_wifi_mode_handler (SlaveConfigPayload *req,
 		ESP_LOGE(TAG,"Failed to set mode");
 		return ESP_FAIL;
 	}
-	/* ESP_LOGI(TAG,"set mode done");
-	esp_wifi_get_mode(&num);
-	ESP_LOGI(TAG,"current set mode is %d", num); */
 	RespGetStatus *resp_payload = (RespGetStatus *)calloc(1,sizeof(RespGetStatus));
 	if (resp_payload == NULL) {
 		ESP_LOGE(TAG,"Failed to allocate memory");
@@ -268,7 +258,6 @@ static esp_err_t cmd_set_wifi_mode_handler (SlaveConfigPayload *req,
 static esp_err_t cmd_set_ap_config_handler (SlaveConfigPayload *req,
                                         SlaveConfigPayload *resp, void *priv_data)
 {
-	ESP_LOGI(TAG,"connect to AP function");
 	esp_err_t ret;
 	s_wifi_event_group = xEventGroupCreate();
 	ap_event_register();
@@ -349,7 +338,6 @@ static esp_err_t cmd_set_ap_config_handler (SlaveConfigPayload *req,
 	resp->resp_set_ap_config = resp_payload;
 	ap_event_unregister();
 
-	ESP_LOGI(TAG,"connected to AP");
 	vEventGroupDelete(s_wifi_event_group);
 	free(wifi_cfg);
 	return ESP_OK;
@@ -363,7 +351,6 @@ static esp_err_t cmd_get_ap_config_handler (SlaveConfigPayload *req,
 		return ESP_FAIL;
 	}
 	esp_err_t ret;
-	ESP_LOGI(TAG,"Inside get ap config function");
 	wifi_ap_record_t *ap_info = (wifi_ap_record_t *)calloc(1,sizeof(wifi_ap_record_t));
 	if (ap_info == NULL) {
 		ESP_LOGE(TAG,"Failed to allocate memory");
@@ -381,8 +368,8 @@ static esp_err_t cmd_get_ap_config_handler (SlaveConfigPayload *req,
 	memcpy(credentials.ssid,ap_info->ssid,sizeof(credentials.ssid));
 	credentials.rssi = ap_info->rssi;
 	credentials.chnl = ap_info->primary;
-	ESP_LOGI(TAG,"ssid %s bssid %s",credentials.ssid, credentials.bssid);
-	ESP_LOGI(TAG,"rssi %d channel %d ", credentials.rssi, credentials.chnl);
+	//ESP_LOGI(TAG,"ssid %s bssid %s",credentials.ssid, credentials.bssid);
+	//ESP_LOGI(TAG,"rssi %d channel %d ", credentials.rssi, credentials.chnl);
 	RespConfig *resp_payload = (RespConfig *)calloc(1,sizeof(RespConfig));
 	if (resp_payload == NULL) {
 		ESP_LOGE(TAG,"failed to allocate memory");
@@ -473,7 +460,7 @@ static esp_err_t cmd_get_softap_config_handler (SlaveConfigPayload *req,
 	credentials.max_conn = get_conf->ap.max_connection;
 	credentials.ecn = get_conf->ap.authmode;
 	credentials.ssid_hidden = get_conf->ap.ssid_hidden;
-	ESP_LOGI(TAG,"ssid %s pwd %s chnl %d ecn %d max_conn %d ssid_hidden %d",credentials.ssid, credentials.pwd, credentials.chnl, credentials.ecn, credentials.max_conn, credentials.ssid_hidden );
+	//ESP_LOGI(TAG,"ssid %s pwd %s chnl %d ecn %d max_conn %d ssid_hidden %d",credentials.ssid, credentials.pwd, credentials.chnl, credentials.ecn, credentials.max_conn, credentials.ssid_hidden );
 	resp_payload->ssid = (char *)credentials.ssid;
 	resp_payload->pwd = (char *)credentials.pwd;
 	resp_payload->has_chnl = 1;
@@ -487,23 +474,22 @@ static esp_err_t cmd_get_softap_config_handler (SlaveConfigPayload *req,
 	if (ret != ESP_OK) {
 		ESP_LOGE(TAG,"Failed to get bandwidth");
 	}
-	ESP_LOGI(TAG,"got bandwidth now %d", *get_bw); //check here
+	//ESP_LOGI(TAG,"got bandwidth now %d", *get_bw); //check here
 	resp_payload->bw = *(int *)get_bw;
 	resp_payload->status = SUCCESS;
 	resp->payload_case = SLAVE_CONFIG_PAYLOAD__PAYLOAD_RESP_GET_SOFTAP_CONFIG;
 	resp->resp_get_softap_config = resp_payload;
 	free(get_conf);
 	free(get_bw);
+	//softap_event_unregister();
 	return ESP_OK;
 }
 
 static esp_err_t cmd_set_softap_config_handler (SlaveConfigPayload *req,
                                         SlaveConfigPayload *resp, void *priv_data)
 {
-	ESP_LOGI(TAG,"Inside set soft AP function");
 	esp_err_t ret;
 	softap_event_register();
-	ESP_LOGI(TAG,"event handler registered in set softap config ");
 	if (hosted_flags.is_ap_connected) {
 		ret = esp_wifi_set_mode(WIFI_MODE_APSTA);
 		ESP_LOGI(TAG,"APSTA mode set");
@@ -515,7 +501,6 @@ static esp_err_t cmd_set_softap_config_handler (SlaveConfigPayload *req,
 		ESP_LOGE(TAG,"Failed to set mode");
 		return ESP_FAIL;
 	}
-	ESP_LOGI(TAG,"set mode as softAP");
 	wifi_config_t *wifi_config = (wifi_config_t *)calloc(1,sizeof(wifi_config_t));
 	if (wifi_config == NULL) {
 		ESP_LOGE(TAG,"Failed to allocate memory");
@@ -575,7 +560,6 @@ static esp_err_t cmd_set_softap_config_handler (SlaveConfigPayload *req,
 static esp_err_t cmd_get_ap_scan_list_handler (SlaveConfigPayload *req,
                                         SlaveConfigPayload *resp, void *priv_data)
 {
-	ESP_LOGI(TAG,"Inside get AP Scan list handler");
 	ESP_LOGI(TAG,"scan entry requested %d",req->cmd_scan_ap_list->count);
 
 	if (!req->cmd_scan_ap_list->count) {
@@ -643,7 +627,6 @@ static esp_err_t cmd_get_ap_scan_list_handler (SlaveConfigPayload *req,
 	resp_payload->has_count = 1;
 	resp_payload->count = credentials.count;
 	resp_payload->n_entries = credentials.count;
-	ESP_LOGI(TAG,"n_entries %d",resp_payload->n_entries);
 	ScanResult **results = (ScanResult **) calloc(credentials.count,sizeof(ScanResult));
 	if (results == NULL) {
 		ESP_LOGE(TAG,"Failed To allocate memory");
@@ -702,7 +685,6 @@ static esp_err_t cmd_get_ap_scan_list_handler (SlaveConfigPayload *req,
 static esp_err_t get_connected_sta_list_handler (SlaveConfigPayload *req,
                                         SlaveConfigPayload *resp, void *priv_data)
 {
-	ESP_LOGI(TAG,"Inside get connected sta list handler");
 	esp_err_t ret;
 	wifi_mode_t mode;
 	ret = esp_wifi_get_mode(&mode);
@@ -717,12 +699,6 @@ static esp_err_t get_connected_sta_list_handler (SlaveConfigPayload *req,
 	if (!hosted_flags.is_softap_started) {
 		ESP_LOGE(TAG,"SoftAP is not started, cant get connected stations List");
 		return ESP_FAIL;
-	}
-	if (!req->cmd_connected_stas_list->num) {
-		ESP_LOGE(TAG,"Connected stations list request is invalid");
-		return ESP_FAIL;
-	} else if (req->cmd_connected_stas_list->num > 10) {
-		ESP_LOGI(TAG,"Request for %d stations came, but can give max 10 connected stations list if connected", req->cmd_connected_stas_list->num);
 	}
 	wifi_sta_list_t* stas_info = (wifi_sta_list_t *) calloc(1,sizeof(wifi_sta_list_t));
 	if (stas_info == NULL) {
@@ -841,7 +817,6 @@ static int lookup_cmd_handler(int cmd_id)
 static esp_err_t slave_config_command_dispatcher(SlaveConfigPayload *req, SlaveConfigPayload *resp, void *priv_data)
 {
 	esp_err_t ret;
-	ESP_LOGI(TAG, "Inside command Dispatcher");
 	int cmd_index = lookup_cmd_handler(req->msg);
 	if (cmd_index < 0) {
 		ESP_LOGE(TAG, "Invalid command handler lookup");
@@ -867,21 +842,18 @@ static void slave_config_cleanup(SlaveConfigPayload *resp)
 			if (resp->resp_get_mac_address) {
 				free(resp->resp_get_mac_address->resp);
 				free(resp->resp_get_mac_address);
-				ESP_LOGI(TAG,"resp get mac address freed");
 			}
 		}
 		break;
 		case (SLAVE_CONFIG_MSG_TYPE__TypeRespGetWiFiMode) : {
 			if (resp->resp_get_wifi_mode) {
 				free(resp->resp_get_wifi_mode);
-				ESP_LOGI(TAG,"resp get wifi mode freed");
 			}
 		}
 		break;
 		case (SLAVE_CONFIG_MSG_TYPE__TypeRespSetWiFiMode ) : {
 			if (resp->resp_set_wifi_mode) {
 				free(resp->resp_set_wifi_mode);
-				ESP_LOGI(TAG,"resp set wifi mode freed");
 			}
 		}
 		break;
@@ -889,14 +861,12 @@ static void slave_config_cleanup(SlaveConfigPayload *resp)
 			if (resp->resp_get_ap_config) {
 				free(resp->resp_get_ap_config);
 				memset(&credentials,0,sizeof(credentials_t));
-				ESP_LOGI(TAG,"resp get ap config freed");
 			}
 		}
 		break;
 		case (SLAVE_CONFIG_MSG_TYPE__TypeRespSetAPConfig ) : {
 			if (resp->resp_set_ap_config) {
 				free(resp->resp_set_ap_config);
-				ESP_LOGI(TAG,"resp set ap config freed");
 			}
 		}
 		break;
@@ -904,21 +874,18 @@ static void slave_config_cleanup(SlaveConfigPayload *resp)
 			if (resp->resp_get_softap_config) {
 				free(resp->resp_get_softap_config);
 				memset(&credentials,0,sizeof(credentials_t));
-				ESP_LOGI(TAG,"resp get sta config freed");
 			}
 		}
 		break;
 		case (SLAVE_CONFIG_MSG_TYPE__TypeRespSetSoftAPConfig ) : {
 			if (resp->resp_set_softap_config) {
 				free(resp->resp_set_softap_config);
-				ESP_LOGI(TAG,"resp set softap config freed");
 			}
 		}
 		break;
 		case (SLAVE_CONFIG_MSG_TYPE__TypeRespDisconnectAP ) : {
 			if (resp->resp_disconnect_ap) {
 				free(resp->resp_disconnect_ap);
-				ESP_LOGI(TAG, "resp disconnect ap freed");
 			}
 		}
 		break;
@@ -936,7 +903,6 @@ static void slave_config_cleanup(SlaveConfigPayload *resp)
 				}
 				free(resp->resp_scan_ap_list);
 				memset(&credentials,0,sizeof(credentials_t));
-				ESP_LOGI(TAG, "resp get AP Scan List freed");
 			}
 		}
 		break;
@@ -953,7 +919,6 @@ static void slave_config_cleanup(SlaveConfigPayload *resp)
 				}
 				free(resp->resp_connected_stas_list);
 				memset(&credentials,0,sizeof(credentials_t));
-				ESP_LOGI(TAG,"resp connected stas list freed ");
 			}
 		}
 		break;
@@ -970,7 +935,6 @@ esp_err_t data_transfer_handler(uint32_t session_id,const uint8_t *inbuf, ssize_
 	SlaveConfigPayload resp;
 
 	esp_err_t ret = ESP_OK;
-	ESP_LOGI(TAG,"Hello inside transfer handler");
 	if (inbuf == NULL || outbuf == NULL || outlen == NULL) {
 		ESP_LOGE(TAG,"buffers are NULL");
 		return ESP_FAIL;
