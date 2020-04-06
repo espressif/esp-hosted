@@ -37,7 +37,10 @@
 } while (0);
 
 struct esp32_sdio_context sdio_context;
+
+#ifdef CONFIG_ENABLE_MONITOR_PROCESS
 struct task_struct *monitor_thread;
+#endif
 
 static int init_context(struct esp32_sdio_context *context);
 static struct sk_buff * read_packet(struct esp_adapter *adapter);
@@ -79,14 +82,14 @@ static void esp32_handle_isr(struct sdio_func *func)
 
 	/* Read interrupt status register */
 	ret = esp32_read_reg(context, ESP_SLAVE_INT_ST_REG,
-			(u8 *) &int_status, sizeof(int_status), TRUE);
+			(u8 *) &int_status, sizeof(int_status), ACQUIRE_LOCK);
 	CHECK_SDIO_RW_ERROR(ret);
 
 	esp32_process_interrupt(context, int_status);
 
 	/* Clear interrupt status */
 	ret = esp32_write_reg(context, ESP_SLAVE_INT_CLR_REG,
-			(u8 *) &int_status, sizeof(int_status), TRUE);
+			(u8 *) &int_status, sizeof(int_status), ACQUIRE_LOCK);
 	CHECK_SDIO_RW_ERROR(ret);
 }
 
@@ -96,7 +99,7 @@ int generate_slave_intr(struct esp32_sdio_context *context, u8 data)
 		return -EINVAL;
 
 	return esp32_write_reg(context, ESP_SLAVE_SCRATCH_REG_7, &data,
-			sizeof(data), TRUE);
+			sizeof(data), ACQUIRE_LOCK);
 }
 
 static void deinit_sdio_func(struct sdio_func *func)
@@ -188,8 +191,11 @@ static void esp32_remove(struct sdio_func *func)
 #ifdef CONFIG_SUPPORT_ESP_SERIAL
 	esp_serial_cleanup();
 #endif
+
+#ifdef CONFIG_ENABLE_MONITOR_PROCESS
 	if (monitor_thread)
 		kthread_stop(monitor_thread);
+#endif
 
 	if (context) {
 		generate_slave_intr(context, BIT(ESP_CLOSE_DATA_PATH));
@@ -227,7 +233,7 @@ static int init_context(struct esp32_sdio_context *context)
 
 	/* Initialize rx_byte_count */
 	ret = esp32_read_reg(context, ESP_SLAVE_PACKET_LEN_REG,
-			(u8 *) &val, sizeof(val), TRUE);
+			(u8 *) &val, sizeof(val), ACQUIRE_LOCK);
 	if (ret)
 		return ret;
 
@@ -237,7 +243,7 @@ static int init_context(struct esp32_sdio_context *context)
 
 	/* Initialize tx_buffer_count */
 	ret = esp32_read_reg(context, ESP_SLAVE_TOKEN_RDATA, (u8 *) &val,
-			sizeof(val), TRUE);
+			sizeof(val), ACQUIRE_LOCK);
 
 	if (ret)
 		return ret;
@@ -283,7 +289,7 @@ static struct sk_buff * read_packet(struct esp_adapter *adapter)
 
 	/* TODO: handle a case of multiple packets in same buffer */
 	/* Read length */
-	ret = esp32_get_len_from_slave(context, &len_from_slave, FALSE);
+	ret = esp32_get_len_from_slave(context, &len_from_slave, LOCK_ALREADY_ACQUIRED);
 
 /*	printk (KERN_DEBUG "LEN FROM SLAVE: %d\n", len_from_slave);*/
 
@@ -324,13 +330,13 @@ static struct sk_buff * read_packet(struct esp_adapter *adapter)
 			len_to_read = num_blocks * ESP_BLOCK_SIZE;
 			ret = esp32_read_block(context,
 					ESP_SLAVE_CMD53_END_ADDR - len_to_read,
-					pos, len_to_read, FALSE);
+					pos, len_to_read, LOCK_ALREADY_ACQUIRED);
 		} else {
 			len_to_read = data_left;
 			/* 4 byte aligned length */
 			ret = esp32_read_block(context,
 					ESP_SLAVE_CMD53_END_ADDR - len_to_read,
-					pos, (len_to_read + 3) & (~3), FALSE);
+					pos, (len_to_read + 3) & (~3), LOCK_ALREADY_ACQUIRED);
 		}
 
 		if (ret) {
@@ -372,7 +378,7 @@ static int write_packet(struct esp_adapter *adapter, u8 *buf, u32 size)
 
 	buf_needed = (size + ESP_RX_BUFFER_SIZE - 1) / ESP_RX_BUFFER_SIZE;
 
-	ret = esp32_slave_get_tx_buffer_num(context, &buf_available, FALSE);
+	ret = esp32_slave_get_tx_buffer_num(context, &buf_available, LOCK_ALREADY_ACQUIRED);
 
 /*	printk(KERN_ERR "%s: TX -> Available [%d], needed [%d]\n", __func__, buf_available, buf_needed);*/
 
@@ -395,7 +401,7 @@ static int write_packet(struct esp_adapter *adapter, u8 *buf, u32 size)
 		block_cnt = data_left / ESP_BLOCK_SIZE;
 		len_to_send = data_left;
 		ret = esp32_write_block(context, ESP_SLAVE_CMD53_END_ADDR - len_to_send,
-				pos, (len_to_send + 3) & (~3), FALSE);
+				pos, (len_to_send + 3) & (~3), LOCK_ALREADY_ACQUIRED);
 
 		if (ret) {
 			printk (KERN_ERR "%s: Failed to send data\n", __func__);
@@ -453,7 +459,7 @@ static struct esp32_sdio_context * init_sdio_func(struct sdio_func *func)
 	return context;
 }
 
-
+#ifdef CONFIG_ENABLE_MONITOR_PROCESS
 static int monitor_process(void *data)
 {
 	u32 val, intr, len_reg, rdata, old_len = 0;
@@ -466,18 +472,18 @@ static int monitor_process(void *data)
 		val = intr = len_reg = rdata = 0;
 
 		esp32_read_reg(context, ESP_SLAVE_PACKET_LEN_REG,
-				(u8 *) &val, sizeof(val), TRUE);
+				(u8 *) &val, sizeof(val), ACQUIRE_LOCK);
 
 		len_reg = val & ESP_SLAVE_LEN_MASK;
 
 		val = 0;
 		esp32_read_reg(context, ESP_SLAVE_TOKEN_RDATA, (u8 *) &val,
-				sizeof(val), TRUE);
+				sizeof(val), ACQUIRE_LOCK);
 
 		rdata = ((val >> 16) & ESP_TX_BUFFER_MASK);
 
 		esp32_read_reg(context, ESP_SLAVE_INT_ST_REG,
-				(u8 *) &intr, sizeof(intr), TRUE);
+				(u8 *) &intr, sizeof(intr), ACQUIRE_LOCK);
 
 
 		if (len_reg > context->rx_byte_count) {
@@ -505,6 +511,7 @@ static int monitor_process(void *data)
 	do_exit(0);
 	return 0;
 }
+#endif
 
 static int esp32_probe(struct sdio_func *func,
 				  const struct sdio_device_id *id)
@@ -552,10 +559,12 @@ static int esp32_probe(struct sdio_func *func,
 
 	context->state = ESP_CONTEXT_READY;
 
+#ifdef CONFIG_ENABLE_MONITOR_PROCESS
 	monitor_thread = kthread_run(monitor_process, context, "Monitor process");
 
 	if (!monitor_thread)
 		printk (KERN_ERR "Failed to create monitor thread\n");
+#endif
 
 	printk(KERN_INFO "%s: ESP network device detected\n", __func__);
 

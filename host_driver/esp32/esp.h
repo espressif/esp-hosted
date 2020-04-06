@@ -37,8 +37,8 @@
 struct esp_private;
 struct esp_adapter;
 
-#define TRUE				1
-#define FALSE				0
+#define ACQUIRE_LOCK			1
+#define LOCK_ALREADY_ACQUIRED		0
 
 struct esp_adapter {
 	u8				if_type;
