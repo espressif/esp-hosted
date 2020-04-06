@@ -197,7 +197,24 @@ Host sets bit 1 of 0x3FF5508C interrupt register. This tells slave device to sto
 
 # How to Run scripts on Raspberry-Pi(rpi)
 ## For Wi-Fi Connectivity
-There is `host_comm` folder in which `host_commands` python library is present. User can make use of python functions to get access of wifi functionalities of ESP32.
+There is `host_comm` folder in which `host_commands` python library is present. It contains following functions.
+```
+get_mac(mode)
+get_wifi_mode()
+set_wifi_mode(mode)
+wifi_set_ap_config(ssid, pwd, bssid)
+wifi_get_ap_config()
+wifi_disconnect_ap()
+wifi_set_softap_config(ssid, pwd, chnl, ecn, max_conn, ssid_hidden, bw)
+wifi_get_softap_config()
+wifi_ap_scan_list(scan_count)
+wifi_connected_stations_list()
+```
+
+User can make use of these python functions to get access of wifi functionalities of ESP32. Also in `host_comm/host_commands` folder `test.py` python script present to try those python functions. User can use it by running following command.
+```
+python test.py
+```
 
 first run `./rpi_init.sh wlan` to compile and insert ESP32 host driver on rpi. This script also creates `/dev/esps0` which is used as WLAN control interface.
 
@@ -222,6 +239,7 @@ ex. python softap_config.py 'xyz' 'xyz123456' 1 3 --max_conn=4 --ssid_hidden=0
 
 ```
 ex. python softap_stop.py
+```
 ---
 Note: To start data connection, user needs to setup a DHCP server on rpi or set static IP address for AP interface i.e. ethap0
 
