@@ -71,7 +71,7 @@ In this setup, ESP32 board provides Bluetooth/BLE capabilities to host over UART
 |:-------:|:--------:|:---------:|:--------:|
 | RX | 10 | IO5 | TX |
 | TX | 8 | IO18 | RX |
-| CTS | 36 | I19 | RTS |
+| CTS | 36 | IO19 | RTS |
 | RTS | 11 | IO23 | CTS |
 | Ground | 39 | GND | Ground |
 
