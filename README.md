@@ -2,7 +2,7 @@
 This project adds a capability to use ESP32 as a communication processor for Wi-Fi and bluetooth/BLE connectivity with an external host. The project provides ESP32 side firmware, example Linux driver and protocol description. This can directly be used with Linux based hosts or can easily be ported to other MCUs with available open protocol description.
 
 ## Wi-Fi connectivity solution
-This project uses a subset of AT command-set for control path and uses a separate connection (currently supported on SDIO) for data path. The ESP32 provides a simple interface to the host to provide ethernet interface that can transmit and receive 802.3 frames. This allows the TCP/IP and higher level protocol stack to run on the host.
+This project uses a protobuf based command-set for control path and uses a separate connection (currently supported on SDIO) for data path. The ESP32 provides a simple interface to the host to provide ethernet interface that can transmit and receive 802.3 frames. This allows the TCP/IP and higher level protocol stack to run on the host.
 
 ## Bluetooth/BLE connectivity solution
 An external host is provided with a serial interface over UART. ESP32 firmware provides bluetooth/ble functionality over this interface. Linux based host can use standard hci tools/commands to control this interface.
@@ -22,7 +22,12 @@ $ ls /lib/modules/$(uname -r)/build
 ```
 Python is required to run utility scripts. Please install it as:
 ```sh
-$ sudo apt-get install python3
+$ sudo apt-get install python
+```
+To start with control path on Raspberry-Pi, `protobuf` and `utils` python modules are needed. User can install these modules by running following commands.
+```
+pip install utils
+pip install protobuf
 ```
 Raspi-gpio utility is required to configure GPIO pins. Please install it as:
 ```sh
@@ -98,11 +103,12 @@ dwc_otg.lpm_enable=0 console=tty1 root=PARTUUID=5c2c80d1-02 rootfstype=ext4 elev
 4. Reboot Raspberry-Pi
 
 ## ESP32 Setup
-On ESP32 either use pre-provided hosted mode firmware binary or if you have source, compile the app against ESP-IDF 3.3 release by running below command in `slave_driver/network_adapter` directory. 
-```sh
-$ make SILENCE=0 ESP_AT_PROJECT_PLATFORM=esp32_at_core
+The control path between Raspberry-Pi and ESP32 is based on `protobuf`. For that `protocomm` layer from ESP-IDF is used. Make sure ESP-IDF on branch `release/v4.0`. Run follwing command on esp32 to make `protocomm_priv.h` available for control path.
 ```
-Program the WROVER-KIT using standard flash programming procedure with
+git mv components/protocomm/src/common/protocomm_priv.h components/protocomm/include/common/
+```
+
+On ESP32 either use pre-provided hosted mode firmware binary or if you have source, compile the app against ESP-IDF 4.0 release by running command as `make` in `slave_driver/network_adapter` directory. Program the WROVER-KIT using standard flash programming procedure with
 ```sh
 $ make flash
 ```
@@ -191,31 +197,48 @@ Host sets bit 1 of 0x3FF5508C interrupt register. This tells slave device to sto
 
 # How to Run scripts on Raspberry-Pi(rpi)
 ## For Wi-Fi Connectivity
-There is `esp_at` folder in which "AT commands" python library is present. User can make use of python functions to get access of wifi functionalities of ESP32.
+There is `host_comm` folder in which `host_commands` python library is present. It contains following functions.
+```
+get_mac(mode)
+get_wifi_mode()
+set_wifi_mode(mode)
+wifi_set_ap_config(ssid, pwd, bssid)
+wifi_get_ap_config()
+wifi_disconnect_ap()
+wifi_set_softap_config(ssid, pwd, chnl, ecn, max_conn, ssid_hidden, bw)
+wifi_get_softap_config()
+wifi_ap_scan_list(scan_count)
+wifi_connected_stations_list()
+```
+
+User can make use of these python functions to get access of wifi functionalities of ESP32. Also in `host_comm/host_commands` folder `test.py` python script present to try those python functions. User can use it by running following command.
+```
+python test.py
+```
 
 first run `./rpi_init.sh wlan` to compile and insert ESP32 host driver on rpi. This script also creates `/dev/esps0` which is used as WLAN control interface.
-These scripts to be run as root. Execute following command in terminal.
 
-```
-sudo bash
-```
-
-There are three python script for station connect to AP, station disconnect from AP and softAP configuration.
+There are four python script for station connect to AP, station disconnect from AP and softAP configuration.
 
 1. `station_connect.py` is a python script which configure ESP32 in `station mode`, connects rpi to external AP with credentials user has provided. Also it ups the station interface and run DHCP client. User should provide parameters like ssid, password, mac address of AP(Its optional parameter).
 
 ```
-ex. python3 station_connect.py 'xyz' 'xyz123456' --bssid='e5:6c:67:3c:cf:65'
+ex. python station_connect.py 'xyz' 'xyz123456' --bssid='e5:6c:67:3c:cf:65'
 ```
 2. `station_disconnect.py` is a python script to disconnect ESP32 station from AP.
 
 ```
-python3 station_disconnect.py
+python station_disconnect.py
 ```
 3. `softap_config.py` is a python script for configure ESP32 `softAP mode`. User should provide parameters like ssid, password(password length should be 8~64 bytes ASCII), channel ID (It can be any number between 1 to 11), encryption method (0 : OPEN, 2: WPA_PSK, 3:WPA2_PSK, 4: WPA_WPA2_PSK), max connection count( number of Stations to which ESP32 SoftAP can be connected, within the range of [1, 10]) and ssid hidden (it can set to 1 if softAP shouldnt broadcast its ssid else 0). max connection count and ssid hidden parameters are optional.
 
 ```
-ex. python3 softap_config.py 'xyz' 'xyz123456' 1 3 --max_conn=4 --ssid_hidden=0
+ex. python softap_config.py 'xyz' 'xyz123456' 1 3 --max_conn=4 --ssid_hidden=0
+```
+4. `softap_stop.py` is python script to stop ESP32 softap. This script will change wifi mode to `null` if only softAP is running or to `station` mode if softAP and station both are on.
+
+```
+ex. python softap_stop.py
 ```
 ---
 Note: To start data connection, user needs to setup a DHCP server on rpi or set static IP address for AP interface i.e. ethap0

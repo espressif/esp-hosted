@@ -25,16 +25,21 @@
 #include "sdkconfig.h"
 #include <unistd.h>
 #include "xtensa/core-macros.h"
-#include "esp_wifi_internal.h"
+#include "esp_private/wifi.h"
 #include "interface.h"
+#include "esp_wpa.h"
 #include "app_main.h"
-#include <esp_at.h>
+
 #include "freertos/task.h"
 #include "freertos/queue.h"
 #ifdef CONFIG_BT_ENABLED
 #include "esp_bt.h"
 #include "driver/uart.h"
 #endif
+
+#include <protocomm.h>
+#include "protocomm_pserial.h"
+#include "slave_commands.h"
 
 #define EV_STR(s) "================ "s" ================"
 static const char TAG[] = "NETWORK_ADAPTER";
@@ -72,6 +77,8 @@ QueueHandle_t from_host_queue = NULL;
 #define TO_HOST_QUEUE_SIZE	100
 #define FROM_HOST_QUEUE_SIZE	100
 
+static protocomm_t *pc_pserial;
+
 static struct rx_data {
     uint8_t valid;
     int len;
@@ -80,6 +87,53 @@ static struct rx_data {
 //#define min(x, y) ((x) < (y) ? (x) : (y))
 static inline int min(int x, int y) {
     return (x < y) ? x : y;
+}
+
+static void esp_wifi_set_debug_log()
+{
+    /* set WiFi log level and module */
+#if CONFIG_ESP32_WIFI_DEBUG_LOG_ENABLE
+    uint32_t g_wifi_log_level = WIFI_LOG_INFO;
+    uint32_t g_wifi_log_module = 0;
+    uint32_t g_wifi_log_submodule = 0;
+#if CONFIG_ESP32_WIFI_DEBUG_LOG_DEBUG
+    g_wifi_log_level = WIFI_LOG_DEBUG;
+#endif
+#if CONFIG_ESP32_WIFI_DEBUG_LOG_VERBOSE
+    g_wifi_log_level = WIFI_LOG_VERBOSE;
+#endif
+#if CONFIG_ESP32_WIFI_DEBUG_LOG_MODULE_ALL
+    g_wifi_log_module = WIFI_LOG_MODULE_ALL;
+#endif
+#if CONFIG_ESP32_WIFI_DEBUG_LOG_MODULE_WIFI
+    g_wifi_log_module = WIFI_LOG_MODULE_WIFI;
+#endif
+#if CONFIG_ESP32_WIFI_DEBUG_LOG_MODULE_COEX
+    g_wifi_log_module = WIFI_LOG_MODULE_COEX;
+#endif
+#if CONFIG_ESP32_WIFI_DEBUG_LOG_MODULE_MESH
+    g_wifi_log_module = WIFI_LOG_MODULE_MESH;
+#endif
+#if CONFIG_ESP32_WIFI_DEBUG_LOG_SUBMODULE_ALL
+    g_wifi_log_submodule |= WIFI_LOG_SUBMODULE_ALL;
+#endif
+#if CONFIG_ESP32_WIFI_DEBUG_LOG_SUBMODULE_INIT
+    g_wifi_log_submodule |= WIFI_LOG_SUBMODULE_INIT;
+#endif
+#if CONFIG_ESP32_WIFI_DEBUG_LOG_SUBMODULE_IOCTL
+    g_wifi_log_submodule |= WIFI_LOG_SUBMODULE_IOCTL;
+#endif
+#if CONFIG_ESP32_WIFI_DEBUG_LOG_SUBMODULE_CONN
+    g_wifi_log_submodule |= WIFI_LOG_SUBMODULE_CONN;
+#endif
+#if CONFIG_ESP32_WIFI_DEBUG_LOG_SUBMODULE_SCAN
+    g_wifi_log_submodule |= WIFI_LOG_SUBMODULE_SCAN;
+#endif
+    esp_wifi_internal_set_log_level(g_wifi_log_level);
+    esp_wifi_internal_set_log_mod(g_wifi_log_module, g_wifi_log_submodule, true);
+
+#endif /* CONFIG_ESP32_WIFI_DEBUG_LOG_ENABLE*/
+
 }
 
 esp_err_t wlan_ap_rx_callback(void *buffer, uint16_t len, void *eb)
@@ -251,7 +305,7 @@ void wlan_rx_task(void* pvParameters)
 #if CONFIG_ESP_SERIAL_DEBUG
 			ESP_LOG_BUFFER_HEXDUMP(TAG_RX_S, r.data, r.len, ESP_LOG_INFO);
 #endif
-			esp_at_port_recv_data_notify(r.len, portMAX_DELAY);
+			protocomm_pserial_data_ready(pc_pserial, r.len);
 		}
 
 		/* Free buffer handle */
@@ -295,9 +349,9 @@ void recv_task(void* pvParameters)
 	}
 }
 
-static int32_t at_sdio_hosted_read_data(uint8_t *data, int32_t len)
+static int32_t sdio_hosted_read_data(uint8_t *data, int32_t len)
 {
-	ESP_LOGE(TAG, "at_sdio_hosted_read_data\n");
+	ESP_LOGI(TAG, "sdio_hosted_read_data\n");
 	len = min(len, r.len);
 	if (r.valid) {
 		memcpy(data, r.data, len);
@@ -309,10 +363,10 @@ static int32_t at_sdio_hosted_read_data(uint8_t *data, int32_t len)
 	return len;
 }
 
-static int32_t at_sdio_hosted_write_data(uint8_t* data, int32_t len)
+static int32_t sdio_hosted_write_data(uint8_t* data, int32_t len)
 {
 	interface_buffer_handle_t buf_handle = {0};
-	ESP_LOGE(TAG, "at_sdio_hosted_write_data %d\n", len);
+	ESP_LOGI(TAG, "sdio_hosted_write_data %d\n", len);
 
 	buf_handle.if_type = ESP_SERIAL_IF;
 	buf_handle.if_num = 0;
@@ -325,54 +379,6 @@ static int32_t at_sdio_hosted_write_data(uint8_t* data, int32_t len)
 	ESP_LOG_BUFFER_HEXDUMP(TAG_TX_S, data, len, ESP_LOG_INFO);
 #endif
 	return len;
-}
-
-uint32_t esp_at_get_task_stack_size(void)
-{
-	return 4096;
-}
-
-void at_interface_init(void)
-{
-	esp_at_device_ops_struct esp_at_device_ops = {
-		.read_data = at_sdio_hosted_read_data,
-		.write_data = at_sdio_hosted_write_data,
-		.get_data_length = NULL,
-		.wait_write_complete = NULL,
-	};
-	esp_at_device_ops_regist(&esp_at_device_ops);
-}
-
-void at_set_echo_flag(bool enable);
-
-static esp_err_t at_wifi_event_handler(void *ctx, system_event_t *event)
-{
-	esp_err_t ret = esp_at_wifi_event_handler(ctx, event);
-
-	if (event->event_id == SYSTEM_EVENT_STA_CONNECTED) {
-		ESP_LOGE (TAG, "STA connected: Registered callback\n");
-		esp_wifi_internal_reg_rxcb(ESP_IF_WIFI_STA, (wifi_rxcb_t) wlan_sta_rx_callback);
-		sta_connected = 1;
-	} else if (event->event_id == SYSTEM_EVENT_STA_DISCONNECTED) {
-		ESP_LOGE (TAG, "STA disconnected\n");
-		sta_connected = 0;
-	} else if (event->event_id == SYSTEM_EVENT_AP_START) {
-		ESP_LOGE (TAG, "AP START\n");
-		esp_wifi_internal_reg_rxcb(ESP_IF_WIFI_AP, (wifi_rxcb_t) wlan_ap_rx_callback);
-	}
-
-	return ret;
-}
-
-static void initialise_wifi(void)
-{
-	wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
-
-	ESP_ERROR_CHECK( esp_event_loop_init(at_wifi_event_handler, NULL) );
-
-	ESP_ERROR_CHECK( esp_wifi_init_internal(&cfg) );
-	ESP_ERROR_CHECK( esp_wifi_set_storage(WIFI_STORAGE_RAM) );
-	ESP_ERROR_CHECK( esp_wifi_start() );
 }
 
 #ifdef CONFIG_BT_ENABLED
@@ -401,6 +407,33 @@ static void initialise_bluetooth(void)
 }
 #endif
 
+static esp_err_t initialise_wifi(void)
+{
+	wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
+	ESP_ERROR_CHECK(esp_event_loop_create_default());
+	esp_err_t result = esp_wifi_init_internal(&cfg);
+	if (result != ESP_OK) {
+		ESP_LOGE(TAG,"Init internal failed");
+		return result;
+	}
+	esp_wifi_set_debug_log();
+	result = esp_supplicant_init();
+	if (result != ESP_OK) {
+		ESP_LOGE(TAG, "Failed to init supplicant (0x%x)", result);
+		esp_err_t deinit_ret = esp_wifi_deinit_internal();
+		if (deinit_ret != ESP_OK) {
+			ESP_LOGE(TAG, "Failed to deinit Wi-Fi internal (0x%x)", deinit_ret);
+			return deinit_ret;
+		}
+		return result;
+	}
+	result = esp_wifi_start();
+	if (result != ESP_OK) {
+		ESP_LOGI(TAG,"Failed to start WiFi");
+		return result;
+	}
+	return result;
+}
 
 int event_handler(uint8_t val)
 {
@@ -459,27 +492,25 @@ void app_main()
 	xTaskCreate(send_task , "sdio_send_task" , 4096 , NULL , 18 , NULL);
 	xTaskCreate(wlan_rx_task , "wlan_task" , 4096 , NULL , 18 , NULL);
 
-	at_interface_init();
-	esp_at_module_init(1, (uint8_t *)"custom_version 1.0");
-	at_set_echo_flag(false);
-	if(esp_at_base_cmd_regist() == false) {
-		printf("regist base cmd fail\r\n");
-		return;
-	}
-
-	nvs_flash_init();
-
 	tcpip_adapter_init();
 
-	initialise_wifi();
+	ESP_ERROR_CHECK(initialise_wifi());
 
-	if(esp_at_wifi_cmd_regist() == false) {
-		printf("regist wifi cmd fail\r\n");
+	pc_pserial = protocomm_new();
+	if (pc_pserial == NULL) {
+		ESP_LOGE(TAG,"Failed to allocate memory for new instance of protocomm ");
+		return;
 	}
 
 #ifdef CONFIG_BT_ENABLED
 	initialise_bluetooth();
 #endif
+
+	if (protocomm_add_endpoint(pc_pserial, "control", data_transfer_handler, NULL) != ESP_OK) {
+		ESP_LOGE(TAG, "Failed to add enpoint");
+		return;
+	}
+
+	protocomm_pserial_start(pc_pserial, sdio_hosted_write_data, sdio_hosted_read_data);
+	ESP_LOGI(TAG,"Initial set up done");
 }
-
-
