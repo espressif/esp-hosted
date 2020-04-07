@@ -260,7 +260,23 @@ TCP Rx: 12 Mbps
 ```
 $ sudo hciattach -s 115200 /dev/serial0 any 115200 flow
 ```
-3. Perform bluetooth/ble operations
+3. Using following command verify that bluetooth is not blocked on raspberry pi
+```
+rfkill list
+```
+expected output should be:
+```
+1: hci0: Bluetooth
+	Soft blocked: no
+	Hard blocked: no
+```
+Use below command to unblock bluetooth if it is blocked
+```
+rfkill unblock bluetooth
+```
+check `rfkill list` once.
+
+4. Perform bluetooth/ble operations
 ```
 e.g.
 $ hcitool scan
