@@ -268,6 +268,7 @@ def wifi_connected_stations_list():
     get_connected_stations_list.ParseFromString(response)
     num = get_connected_stations_list.resp_connected_stas_list.num
     if (num == 0) :
+        print("No station is connected")
         return failure
     else :
         stas_list = []

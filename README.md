@@ -218,7 +218,7 @@ python test.py
 
 first run `./rpi_init.sh wlan` to compile and insert ESP32 host driver on rpi. This script also creates `/dev/esps0` which is used as WLAN control interface.
 
-There are four python script for station connect to AP, station disconnect from AP and softAP configuration.
+There are six python script for station connect to AP, station disconnect from AP and softAP configuration.
 
 1. `station_connect.py` is a python script which configure ESP32 in `station mode`, connects rpi to external AP with credentials user has provided. Also it ups the station interface and run DHCP client. User should provide parameters like ssid, password, mac address of AP(Its optional parameter).
 
@@ -244,7 +244,11 @@ ex. python softap_stop.py
 Note: To start data connection, user needs to setup a DHCP server on rpi or set static IP address for AP interface i.e. ethap0
 
 ---
+6. `connected_stations_list.py` is python script returns list of mac addresses of stations connected to softAP.
 
+```
+ex. python connected_stations_list.py
+```
 ### Open air throughput test results for WLAN
 Following are the test results conducted in open air.
 ```
