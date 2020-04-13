@@ -155,6 +155,11 @@ static void ap_scan_list_event_register(void)
 	ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT, WIFI_EVENT_SCAN_DONE, &ap_scan_list_event_handler, NULL));
 }
 
+static void ap_scan_list_event_unregister(void)
+{
+	ESP_ERROR_CHECK(esp_event_handler_unregister(WIFI_EVENT,WIFI_EVENT_SCAN_DONE, &ap_scan_list_event_handler));
+}
+
 typedef struct slave_config_cmd {
     int cmd_num;
     esp_err_t (*command_handler)(SlaveConfigPayload *req,
@@ -560,15 +565,9 @@ static esp_err_t cmd_set_softap_config_handler (SlaveConfigPayload *req,
 static esp_err_t cmd_get_ap_scan_list_handler (SlaveConfigPayload *req,
                                         SlaveConfigPayload *resp, void *priv_data)
 {
-	ESP_LOGI(TAG,"scan entry requested %d",req->cmd_scan_ap_list->count);
-
-	if (!req->cmd_scan_ap_list->count) {
-		ESP_LOGE(TAG,"Invalid scan ap count");
-		return ESP_FAIL;
-	}
 	esp_err_t ret;
 	wifi_mode_t mode;
-	ret = esp_wifi_get_mode(&mode);	
+	ret = esp_wifi_get_mode(&mode);
 	if (ret != ESP_OK) {
 		ESP_LOGE(TAG,"Failed to get wifi mode");
 		return ESP_FAIL;
@@ -587,29 +586,25 @@ static esp_err_t cmd_get_ap_scan_list_handler (SlaveConfigPayload *req,
 		ESP_LOGE(TAG,"Failed to start scan start command");
 		return ESP_FAIL;
 	}
-
-	uint16_t scan_count = req->cmd_scan_ap_list->count;
 	uint16_t ap_count = 0;
-
-	wifi_ap_record_t *ap_info = (wifi_ap_record_t *)calloc(scan_count,sizeof(wifi_ap_record_t));
+	ret = esp_wifi_scan_get_ap_num(&ap_count);
+	if (ret != ESP_OK) {
+		ESP_LOGE(TAG,"Failed to get scan AP number");
+		return ESP_FAIL;
+	}
+	wifi_ap_record_t *ap_info = (wifi_ap_record_t *)calloc(ap_count,sizeof(wifi_ap_record_t));
 	if (ap_info == NULL) {
 		ESP_LOGE(TAG,"Failed to allocate memory");
 		return ESP_ERR_NO_MEM;
 	}
-	ret = esp_wifi_scan_get_ap_records(&scan_count,ap_info);
+	ret = esp_wifi_scan_get_ap_records(&ap_count,ap_info);
 	if (ret != ESP_OK) {
 		ESP_LOGE(TAG,"Failed to scan ap records");
 		free(ap_info);
 		return ESP_FAIL;
 	}
-	ret = esp_wifi_scan_get_ap_num(&ap_count);
-	if (ret != ESP_OK) {
-		ESP_LOGE(TAG,"Failed to get scan AP number");
-		free(ap_info);
-		return ESP_FAIL;
-	}
 	ESP_LOGI(TAG,"Total APs scanned = %u",ap_count);
-	credentials.count = (scan_count <= ap_count ) ? scan_count: ap_count;
+	credentials.count = ap_count;
 	RespScanResult * resp_payload = (RespScanResult *)calloc(1,sizeof(RespScanResult));
 	if (resp_payload == NULL) {
 		ESP_LOGE(TAG,"Failed To allocate memory");
@@ -619,13 +614,13 @@ static esp_err_t cmd_get_ap_scan_list_handler (SlaveConfigPayload *req,
 	resp_scan_result__init(resp_payload);
 	resp->payload_case = SLAVE_CONFIG_PAYLOAD__PAYLOAD_RESP_SCAN_AP_LIST ;
 	resp->resp_scan_ap_list = resp_payload;
+	resp_payload->has_count = 1;
+	resp_payload->count = credentials.count;
 	if (!credentials.count) {
 		ESP_LOGE(TAG,"No AP available");
 		free(ap_info);
 		return ESP_FAIL;
 	}
-	resp_payload->has_count = 1;
-	resp_payload->count = credentials.count;
 	resp_payload->n_entries = credentials.count;
 	ScanResult **results = (ScanResult **) calloc(credentials.count,sizeof(ScanResult));
 	if (results == NULL) {
@@ -635,9 +630,6 @@ static esp_err_t cmd_get_ap_scan_list_handler (SlaveConfigPayload *req,
 	}
 	resp_payload->entries = results;
 	for (int i = 0; i < credentials.count; i++ ) {
-		ESP_LOGI(TAG,"SSID \t\t%s", ap_info[i].ssid);
-		ESP_LOGI(TAG,"RSSI \t\t%d", ap_info[i].rssi);
-		ESP_LOGI(TAG,"Channel \t\t%d\n", ap_info[i].primary);
 		results[i] = (ScanResult *)calloc(1,sizeof(ScanResult));
 		if (results[i] == NULL) {
 			ESP_LOGE(TAG,"Failed to allocate memory");
@@ -645,7 +637,7 @@ static esp_err_t cmd_get_ap_scan_list_handler (SlaveConfigPayload *req,
 			return ESP_ERR_NO_MEM;
 		}
 		scan_result__init(results[i]);
-		ESP_LOGI(TAG,"scan init on %dth location done ",i);
+		ESP_LOGI(TAG,"details of AP no %d",i);
 		results[i]->has_ssid = 1;
 		results[i]->ssid.len = strnlen((char *)ap_info[i].ssid, 32);
 		results[i]->ssid.data = (uint8_t *)strndup((char *)ap_info[i].ssid,32);
@@ -654,15 +646,12 @@ static esp_err_t cmd_get_ap_scan_list_handler (SlaveConfigPayload *req,
 			free(ap_info);
 			return ESP_ERR_NO_MEM;
 		}
-		ESP_LOGI(TAG,"ssid %s ssid lenghth %d", results[i]->ssid.data,results[i]->ssid.len );
 		results[i]->has_chnl = 1;
 		credentials.chnl = ap_info[i].primary;
 		results[i]->chnl = credentials.chnl;
-		ESP_LOGI(TAG,"chnl %d ",results[i]->chnl);
 		results[i]->has_rssi = 1;
 		credentials.rssi = ap_info[i].rssi;
 		results[i]->rssi = credentials.rssi;
-		ESP_LOGI(TAG,"rssi %d",results[i]->rssi );
 		results[i]->has_bssid = 1;
 		sprintf((char *)credentials.bssid,MACSTR,MAC2STR(ap_info[i].bssid));
 		results[i]->bssid.len = strnlen((char *)credentials.bssid,19);
@@ -672,13 +661,17 @@ static esp_err_t cmd_get_ap_scan_list_handler (SlaveConfigPayload *req,
 			free(ap_info);
 			return ESP_ERR_NO_MEM;
 		}
-		ESP_LOGI(TAG,"bssid %s", results[i]->bssid.data);
 		results[i]->has_ecn = 1;
 		credentials.ecn = ap_info[i].authmode;
 		results[i]->ecn = credentials.ecn;
-		ESP_LOGI(TAG,"auth mode %d", results[i]->ecn);
+		ESP_LOGI(TAG,"SSID \t\t%s", results[i]->ssid.data);
+		ESP_LOGI(TAG,"RSSI \t\t%d", results[i]->rssi);
+		ESP_LOGI(TAG,"Channel \t\t%d", results[i]->chnl);
+		ESP_LOGI(TAG,"BSSID \t\t%s", results[i]->bssid.data);
+		ESP_LOGI(TAG,"Auth mode \t\t%d\n", results[i]->ecn);
 	}
 	free(ap_info);
+	ap_scan_list_event_unregister();
 	return ESP_OK;
 }
 

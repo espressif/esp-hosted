@@ -49,9 +49,8 @@ print(x)
 x = slave_comm.wifi_get_softap_config()
 print(x)
 
-# user should give number max scan AP count
 # output is list of Aplist class instances
-x = slave_comm.wifi_ap_scan_list(10)
+x = slave_comm.wifi_ap_scan_list()
 print(x)
 if (x == failure):
     print(failure)

@@ -54,7 +54,6 @@ message ScanResult {
 }
 
 message CmdScanResult {
-    uint32 count = 1;
 }
 
 message RespScanResult {

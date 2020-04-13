@@ -207,7 +207,7 @@ wifi_get_ap_config()
 wifi_disconnect_ap()
 wifi_set_softap_config(ssid, pwd, chnl, ecn, max_conn, ssid_hidden, bw)
 wifi_get_softap_config()
-wifi_ap_scan_list(scan_count)
+wifi_ap_scan_list()
 wifi_connected_stations_list()
 ```
 
@@ -218,7 +218,7 @@ python test.py
 
 first run `./rpi_init.sh wlan` to compile and insert ESP32 host driver on rpi. This script also creates `/dev/esps0` which is used as WLAN control interface.
 
-There are four python script for station connect to AP, station disconnect from AP and softAP configuration.
+There are five python script for station connect to AP, station disconnect from AP and softAP configuration.
 
 1. `station_connect.py` is a python script which configure ESP32 in `station mode`, connects rpi to external AP with credentials user has provided. Also it ups the station interface and run DHCP client. User should provide parameters like ssid, password, mac address of AP(Its optional parameter).
 
@@ -235,15 +235,19 @@ python station_disconnect.py
 ```
 ex. python softap_config.py 'xyz' 'xyz123456' 1 3 --max_conn=4 --ssid_hidden=0
 ```
+---
+Note: To start data connection, user needs to setup a DHCP server on rpi or set static IP address for AP interface i.e. ethap0
+
+---
 4. `softap_stop.py` is python script to stop ESP32 softap. This script will change wifi mode to `null` if only softAP is running or to `station` mode if softAP and station both are on.
 
 ```
 ex. python softap_stop.py
 ```
----
-Note: To start data connection, user needs to setup a DHCP server on rpi or set static IP address for AP interface i.e. ethap0
-
----
+5. `ap_scan_list.py` is python script which gives scanned list of available APs. list contains ssid, channel number, rssi, mac address and authentication mode of AP.
+```
+ex. python ap_scan_list.py
+```
 
 ### Open air throughput test results for WLAN
 Following are the test results conducted in open air.
