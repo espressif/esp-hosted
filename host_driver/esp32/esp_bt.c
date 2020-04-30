@@ -1,0 +1,152 @@
+/*
+ * Espressif Systems Wireless LAN device driver
+ *
+ * Copyright (C) 2015-2020 Espressif Systems (Shanghai) PTE LTD
+ *
+ * This software file (the "File") is distributed by Espressif Systems (Shanghai)
+ * PTE LTD under the terms of the GNU General Public License Version 2, June 1991
+ * (the "License").  You may use, redistribute and/or modify this File in
+ * accordance with the terms and conditions of the License, a copy of which
+ * is available by writing to the Free Software Foundation, Inc.,
+ * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA or on the
+ * worldwide web at http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
+ *
+ * THE FILE IS DISTRIBUTED AS-IS, WITHOUT WARRANTY OF ANY KIND, AND THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE
+ * ARE EXPRESSLY DISCLAIMED.  The License provides additional details about
+ * this warranty disclaimer.
+ */
+#include "esp_bt_api.h"
+#include "esp_api.h"
+
+static int esp_bt_open(struct hci_dev *hdev)
+{
+	return 0;
+}
+
+static int esp_bt_close(struct hci_dev *hdev)
+{
+	return 0;
+}
+
+static int esp_bt_flush(struct hci_dev *hdev)
+{
+	return 0;
+}
+
+static int esp_bt_send_frame(struct hci_dev *hdev, struct sk_buff *skb)
+{
+	struct esp_payload_header *hdr;
+	size_t total_len, len = skb->len;
+	int ret = 0;
+	struct esp_adapter *adapter = hci_get_drvdata(hdev);
+	struct sk_buff *new_skb;
+
+	if (!adapter) {
+		printk(KERN_ERR "%s: invalid args", __func__);
+		return -EINVAL;
+	}
+
+	total_len = len + sizeof(struct esp_payload_header);
+
+	if (skb_headroom(skb) < sizeof(struct esp_payload_header)) {
+		/* insufficent headroom to add payload header */
+		new_skb = skb_realloc_headroom(skb, sizeof(struct esp_payload_header));
+
+		if(!new_skb) {
+			printk(KERN_ERR "%s: Failed to allocate SKB", __func__);
+			dev_kfree_skb(skb);
+			return -ENOMEM;
+		}
+
+		dev_kfree_skb(skb);
+
+		skb = new_skb;
+	}
+
+	skb_push(skb, sizeof(struct esp_payload_header));
+
+	hdr = (struct esp_payload_header *) skb->data;
+
+	memset (hdr, 0, sizeof(struct esp_payload_header));
+
+	hdr->if_type = ESP_HCI_IF;
+	hdr->if_num = 0;
+	hdr->len = cpu_to_le16(len);
+	hdr->offset = cpu_to_le16(sizeof(struct esp_payload_header));
+	hdr->hci_pkt_type = hci_skb_pkt_type(skb);
+
+/*	print_hex_dump_bytes("Tx:", DUMP_PREFIX_NONE, skb->data, skb->len);*/
+	ret = esp32_send_packet(adapter, skb->data, skb->len);
+
+	dev_kfree_skb(skb);
+
+	return 0;
+}
+
+static int esp_bt_setup(struct hci_dev *hdev)
+{
+	return 0;
+}
+
+static int esp_bt_set_bdaddr(struct hci_dev *hdev, const bdaddr_t *bdaddr)
+{
+	return 0;
+}
+
+int esp_deinit_bt(struct esp_adapter *adapter)
+{
+	struct hci_dev *hdev = NULL;
+
+	hdev = adapter->hcidev;
+
+	hci_unregister_dev(hdev);
+	hci_free_dev(hdev);
+
+	adapter->hcidev = NULL;
+
+	return 0;
+}
+
+int esp_init_bt(struct esp_adapter *adapter)
+{
+	int ret = 0;
+	struct hci_dev *hdev = NULL;
+
+	if (!adapter) {
+		return -EINVAL;
+	}
+
+	if (adapter->hcidev) {
+		return -EEXIST;
+	}
+
+	hdev = hci_alloc_dev();
+
+	if (!hdev) {
+		BT_ERR("Can not allocate HCI device");
+		return -ENOMEM;
+	}
+
+	adapter->hcidev = hdev;
+	hci_set_drvdata(hdev, adapter);
+
+	hdev->bus   = HCI_SDIO;
+	hdev->open  = esp_bt_open;
+	hdev->close = esp_bt_close;
+	hdev->flush = esp_bt_flush;
+	hdev->send  = esp_bt_send_frame;
+	hdev->setup = esp_bt_setup;
+	hdev->set_bdaddr = esp_bt_set_bdaddr;
+
+	hdev->dev_type = HCI_PRIMARY;
+
+	ret = hci_register_dev(hdev);
+	if (ret < 0) {
+		BT_ERR("Can not register HCI device");
+		hci_free_dev(hdev);
+		return -ENOMEM;
+	}
+
+	return 0;
+}

@@ -5,7 +5,7 @@ This project adds a capability to use ESP32 as a communication processor for Wi-
 This project uses a protobuf based command-set for control path and uses a separate connection (currently supported on SDIO) for data path. The ESP32 provides a simple interface to the host to provide ethernet interface that can transmit and receive 802.3 frames. This allows the TCP/IP and higher level protocol stack to run on the host.
 
 ## Bluetooth/BLE connectivity solution
-An external host is provided with a serial interface over UART. ESP32 firmware provides bluetooth/ble functionality over this interface. Linux based host can use standard hci tools/commands to control this interface.
+This functionality is provided through standard HCI interface created either over SDIO or UART. Linux based host can use standard hci tools/commands to control this interface.
 
 # Setup
 Currently we support ESP32 WROVER-Kit with Raspberry-Pi (3 Model B+, 4 Model B) for evaluation with Raspbian operating system.
@@ -34,7 +34,7 @@ Raspi-gpio utility is required to configure GPIO pins. Please install it as:
 $ sudo apt-get install raspi-gpio
 ```
 
-## Wi-Fi connectivity Setup
+## Wi-Fi and BT/BLE connectivity Setup over SDIO
 ### Hardware Setup/Connections
 In this setup, ESP32 board acts as a SDIO peripheral and provides Wi-FI capabilities to host. Please connect ESP32 board to Raspberry-Pi with jumper cables as mentioned below. It may be good to use small length cables to ensure signal integrity.
 
@@ -63,7 +63,7 @@ dtoverlay=sdio,poll_once=off
 ```
 Please reboot Raspberry-Pi after changing this file.
 
-## Bluetooth/BLE connectivity Setup
+## Bluetooth/BLE connectivity Setup over UART
 ### Hardware Setup/Connections
 In this setup, ESP32 board provides Bluetooth/BLE capabilities to host over UART interface. Please connect ESP32 board to Raspberry-Pi with jumper cables as below. As mentioned above, use small length cables.
 
@@ -248,7 +248,6 @@ ex. python softap_stop.py
 ```
 ex. python ap_scan_list.py
 ```
-=======
 ---
 Note: To start data connection, user needs to setup a DHCP server on rpi or set static IP address for AP interface i.e. ethap0
 
@@ -268,33 +267,13 @@ TCP Rx: 12 Mbps
 ```
 
 ## For Bluetooth/BLE functionality
-1. Execute `./rpi_init.sh bt` to prepare RPi for Bluetooth operation
+### UART based setup
+1. Execute `./rpi_init.sh btuart` to prepare RPi for Bluetooth operation
 2. Execute `hciattach` command as below to add hci interface
 ```
 $ sudo hciattach -s 115200 /dev/serial0 any 115200 flow
 ```
-3. Using following command verify that bluetooth is not blocked on raspberry pi
-```
-rfkill list
-```
-expected output should be:
-```
-1: hci0: Bluetooth
-	Soft blocked: no
-	Hard blocked: no
-```
-Use below command to unblock bluetooth if it is blocked
-```
-rfkill unblock bluetooth
-```
-check `rfkill list` once.
 
-4. Perform bluetooth/ble operations
-```
-e.g.
-$ hcitool scan
-```
-
-## For simulteneous usage of Bluetooth/BLE and WLAN
-1. Execute `./rpi_init.sh` without any arguments. This will setup RPi for both bluetooth and wlan operations.
-2. Follow steps mentioned in above section to initialize and use bluetooth and wlan
+### SDIO based setup
+HCI interface will be available for use as soon as host driver detects esp32 device over SDIO interface.
+User can use standard hci utilities over this interface to make use of BT/BLE feature.

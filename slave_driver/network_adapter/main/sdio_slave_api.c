@@ -32,7 +32,7 @@ interface_context_t context;
 interface_handle_t if_handle_g;
 static const char TAG[] = "SDIO_SLAVE";
 
-static interface_handle_t * sdio_init();
+static interface_handle_t * sdio_init(uint8_t capabilities);
 static int32_t sdio_write(interface_handle_t *handle, interface_buffer_handle_t *buf_handle);
 interface_buffer_handle_t * sdio_read(interface_handle_t *if_handle);
 static esp_err_t sdio_reset(interface_handle_t *handle);
@@ -82,7 +82,7 @@ static void sdio_read_done(void *handle)
 }
 
 
-static interface_handle_t * sdio_init()
+static interface_handle_t * sdio_init(uint8_t capabilities)
 {
 	esp_err_t ret = 0;
 	sdio_slave_config_t config = {
@@ -131,6 +131,9 @@ static interface_handle_t * sdio_init()
 		sdio_slave_deinit();
 		return NULL;
 	}
+
+	/* Advertise slave capabilities at 0th offset of reg HOST_SLCHOST_CONF_W0_REG */
+	sdio_slave_write_reg(0, capabilities);
 
 	memset(&if_handle_g, 0, sizeof(if_handle_g));
 	if_handle_g.state = INIT;
