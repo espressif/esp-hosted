@@ -189,6 +189,7 @@ void esp_serial_cleanup(void)
 	int i;
 	for (i = 0; i < ESP_SERIAL_MINOR_MAX; i++) {
 		cdev_del(&devs[i].cdev);
+		esp_rb_cleanup(&devs[i].rb);
 	}
 	unregister_chrdev_region(MKDEV(ESP_SERIAL_MAJOR, 0), ESP_SERIAL_MINOR_MAX);
 	return;

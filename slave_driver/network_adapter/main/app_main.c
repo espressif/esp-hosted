@@ -17,8 +17,8 @@
 #include <stdio.h>
 #include <string.h>
 #include "esp_log.h"
-#include "rom/lldesc.h"
-#include "rom/queue.h"
+#include "esp32/rom/lldesc.h"
+#include "sys/queue.h"
 #include "soc/soc.h"
 #include "esp_event_loop.h"
 #include "nvs_flash.h"
