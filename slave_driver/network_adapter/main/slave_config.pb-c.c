@@ -982,29 +982,9 @@ const ProtobufCMessageDescriptor scan_result__descriptor =
   (ProtobufCMessageInit) scan_result__init,
   NULL,NULL,NULL    /* reserved[123] */
 };
-static const ProtobufCFieldDescriptor cmd_scan_result__field_descriptors[1] =
-{
-  {
-    "count",
-    1,
-    PROTOBUF_C_LABEL_OPTIONAL,
-    PROTOBUF_C_TYPE_UINT32,
-    offsetof(CmdScanResult, has_count),
-    offsetof(CmdScanResult, count),
-    NULL,
-    NULL,
-    0,             /* flags */
-    0,NULL,NULL    /* reserved1,reserved2, etc */
-  },
-};
-static const unsigned cmd_scan_result__field_indices_by_name[] = {
-  0,   /* field[0] = count */
-};
-static const ProtobufCIntRange cmd_scan_result__number_ranges[1 + 1] =
-{
-  { 1, 0 },
-  { 0, 1 }
-};
+#define cmd_scan_result__field_descriptors NULL
+#define cmd_scan_result__field_indices_by_name NULL
+#define cmd_scan_result__number_ranges NULL
 const ProtobufCMessageDescriptor cmd_scan_result__descriptor =
 {
   PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
@@ -1013,10 +993,10 @@ const ProtobufCMessageDescriptor cmd_scan_result__descriptor =
   "CmdScanResult",
   "",
   sizeof(CmdScanResult),
-  1,
+  0,
   cmd_scan_result__field_descriptors,
   cmd_scan_result__field_indices_by_name,
-  1,  cmd_scan_result__number_ranges,
+  0,  cmd_scan_result__number_ranges,
   (ProtobufCMessageInit) cmd_scan_result__init,
   NULL,NULL,NULL    /* reserved[123] */
 };

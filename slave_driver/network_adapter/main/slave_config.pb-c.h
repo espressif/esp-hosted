@@ -161,12 +161,10 @@ struct  _ScanResult
 struct  _CmdScanResult
 {
   ProtobufCMessage base;
-  protobuf_c_boolean has_count;
-  uint32_t count;
 };
 #define CMD_SCAN_RESULT__INIT \
  { PROTOBUF_C_MESSAGE_INIT (&cmd_scan_result__descriptor) \
-    , 0,0 }
+     }
 
 
 struct  _RespScanResult

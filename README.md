@@ -207,7 +207,7 @@ wifi_get_ap_config()
 wifi_disconnect_ap()
 wifi_set_softap_config(ssid, pwd, chnl, ecn, max_conn, ssid_hidden, bw)
 wifi_get_softap_config()
-wifi_ap_scan_list(scan_count)
+wifi_ap_scan_list()
 wifi_connected_stations_list()
 ```
 
@@ -235,11 +235,20 @@ python station_disconnect.py
 ```
 ex. python softap_config.py 'xyz' 'xyz123456' 1 3 --max_conn=4 --ssid_hidden=0
 ```
+---
+Note: To start data connection, user needs to setup a DHCP server on rpi or set static IP address for AP interface i.e. ethap0
+
+---
 4. `softap_stop.py` is python script to stop ESP32 softap. This script will change wifi mode to `null` if only softAP is running or to `station` mode if softAP and station both are on.
 
 ```
 ex. python softap_stop.py
 ```
+5. `ap_scan_list.py` is python script which gives scanned list of available APs. list contains ssid, channel number, rssi, mac address and authentication mode of AP.
+```
+ex. python ap_scan_list.py
+```
+=======
 ---
 Note: To start data connection, user needs to setup a DHCP server on rpi or set static IP address for AP interface i.e. ethap0
 

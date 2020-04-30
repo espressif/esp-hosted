@@ -224,13 +224,12 @@ def wifi_get_softap_config():
     return ssid,pwd,chnl,ecn,max_conn,ssid_hidden,status,bw
 
 # Scan AP list
-# It scans the available APs, User should pass scan_count (i.e how many AP's count wanted)
+# It scans the available APs
 # output is list of Aplist class instances(ssid,chnl,rssi,bssid,ecn)
 
-def wifi_ap_scan_list(scan_count):
+def wifi_ap_scan_list():
     get_ap_scan_list = slave_config_pb2.SlaveConfigPayload()
     get_ap_scan_list.msg = slave_config_pb2.SlaveConfigMsgType.TypeCmdGetAPScanList
-    get_ap_scan_list.cmd_scan_ap_list.count = scan_count
     protodata = get_ap_scan_list.SerializeToString()
     #print("serialized data "+str(protodata))
     tp = transport.Transport_pserial(interface)
