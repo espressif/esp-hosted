@@ -31,6 +31,7 @@
 #ifdef CONFIG_SUPPORT_ESP_SERIAL
 #include "esp_serial.h"
 #endif
+#include "esp_bt_api.h"
 
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Amey Inamdar <amey.inamdar@espressif.com>");
@@ -329,7 +330,12 @@ static void process_rx_packet(struct sk_buff *skb)
 			type = skb->data;
 			hci_skb_pkt_type(skb) = *type;
 			skb_pull(skb, 1);
-			hci_recv_frame(hdev, skb);
+
+			if (hci_recv_frame(hdev, skb)) {
+				hdev->stat.err_rx++;
+			} else {
+				esp_hci_update_rx_counter(hdev, *type, skb->len);
+			}
 		}
 	}
 }
