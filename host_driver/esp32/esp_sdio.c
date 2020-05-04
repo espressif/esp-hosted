@@ -65,12 +65,13 @@ static void print_capabilities(u32 cap)
 			printk(KERN_INFO "\t   - HCI over UART\n");
 		if (cap & ESP_BT_SDIO_SUPPORT)
 			printk(KERN_INFO "\t   - HCI over SDIO\n");
-		if (cap & ESP_BLE_ONLY_SUPPORT)
-			printk(KERN_INFO "\t   - BLE only\n");
-		if (cap & ESP_BR_EDR_ONLY_SUPPORT)
-			printk(KERN_INFO "\t   - BR EDR only\n");
-		if (cap & ESP_BTDM_SUPPORT)
+
+		if ((cap & ESP_BLE_ONLY_SUPPORT) && (cap & ESP_BR_EDR_ONLY_SUPPORT))
 			printk(KERN_INFO "\t   - BT/BLE dual mode\n");
+		else if (cap & ESP_BLE_ONLY_SUPPORT)
+			printk(KERN_INFO "\t   - BLE only\n");
+		else if (cap & ESP_BR_EDR_ONLY_SUPPORT)
+			printk(KERN_INFO "\t   - BR EDR only\n");
 	}
 }
 

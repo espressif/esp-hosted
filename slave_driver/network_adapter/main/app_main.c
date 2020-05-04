@@ -123,7 +123,7 @@ static uint8_t get_capabilities()
 	cap |= ESP_BR_EDR_ONLY_SUPPORT;
 #elif CONFIG_BTDM_CTRL_MODE_BTDM
 	ESP_LOGI(TAG, "   - BT/BLE dual mode");
-	cap |= ESP_BTDM_SUPPORT;
+	cap |= ESP_BLE_ONLY_SUPPORT | ESP_BR_EDR_ONLY_SUPPORT;
 #endif
 #endif
 
