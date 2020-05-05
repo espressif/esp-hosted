@@ -19,6 +19,36 @@
 #include "esp_bt_api.h"
 #include "esp_api.h"
 
+void esp_hci_update_tx_counter(struct hci_dev *hdev, u8 pkt_type, size_t len)
+{
+	if (hdev) {
+		if (pkt_type == HCI_COMMAND_PKT) {
+			hdev->stat.cmd_tx++;
+		} else if (pkt_type == HCI_ACLDATA_PKT) {
+			hdev->stat.acl_tx++;
+		} else if (pkt_type == HCI_SCODATA_PKT) {
+			hdev->stat.sco_tx++;
+		}
+
+		hdev->stat.byte_tx += len;
+	}
+}
+
+void esp_hci_update_rx_counter(struct hci_dev *hdev, u8 pkt_type, size_t len)
+{
+	if (hdev) {
+		if (pkt_type == HCI_EVENT_PKT) {
+			hdev->stat.evt_rx++;
+		} else if (pkt_type == HCI_ACLDATA_PKT) {
+			hdev->stat.acl_rx++;
+		} else if (pkt_type == HCI_SCODATA_PKT) {
+			hdev->stat.sco_rx++;
+		}
+
+		hdev->stat.byte_rx += len;
+	}
+}
+
 static int esp_bt_open(struct hci_dev *hdev)
 {
 	return 0;
@@ -56,6 +86,7 @@ static int esp_bt_send_frame(struct hci_dev *hdev, struct sk_buff *skb)
 		if(!new_skb) {
 			printk(KERN_ERR "%s: Failed to allocate SKB", __func__);
 			dev_kfree_skb(skb);
+			hdev->stat.err_tx++;
 			return -ENOMEM;
 		}
 
@@ -78,6 +109,12 @@ static int esp_bt_send_frame(struct hci_dev *hdev, struct sk_buff *skb)
 
 /*	print_hex_dump_bytes("Tx:", DUMP_PREFIX_NONE, skb->data, skb->len);*/
 	ret = esp32_send_packet(adapter, skb->data, skb->len);
+
+	if (ret) {
+		hdev->stat.err_tx++;
+	} else {
+		esp_hci_update_tx_counter(hdev, hdr->hci_pkt_type, skb->len);
+	}
 
 	dev_kfree_skb(skb);
 
