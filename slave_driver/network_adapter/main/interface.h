@@ -55,7 +55,7 @@ typedef struct {
 }interface_handle_t;
 
 typedef struct {
-	interface_handle_t * (*init)();
+	interface_handle_t * (*init)(uint8_t capabilities);
 	int32_t (*write)(interface_handle_t *handle, interface_buffer_handle_t *buf_handle);
 	interface_buffer_handle_t * (*read)(interface_handle_t *handle);
 	esp_err_t (*reset)(interface_handle_t *handle);

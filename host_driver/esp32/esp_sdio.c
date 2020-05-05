@@ -26,6 +26,7 @@
 #include "esp_if.h"
 #include "esp_sdio_api.h"
 #include "esp_api.h"
+#include "esp_bt_api.h"
 #ifdef CONFIG_SUPPORT_ESP_SERIAL
 #include "esp_serial.h"
 #endif
@@ -52,6 +53,27 @@ static const struct sdio_device_id esp32_devices[] = {
 	{ SDIO_DEVICE(ESP_VENDOR_ID, ESP_DEVICE_ID_2) },
 	{}
 };
+
+static void print_capabilities(u32 cap)
+{
+	printk(KERN_INFO "Features supported are:\n");
+	if (cap & ESP_WLAN_SUPPORT)
+		printk(KERN_INFO "\t * WLAN\n");
+	if ((cap & ESP_BT_UART_SUPPORT) || (cap & ESP_BT_SDIO_SUPPORT)) {
+		printk(KERN_INFO "\t * BT/BLE\n");
+		if (cap & ESP_BT_UART_SUPPORT)
+			printk(KERN_INFO "\t   - HCI over UART\n");
+		if (cap & ESP_BT_SDIO_SUPPORT)
+			printk(KERN_INFO "\t   - HCI over SDIO\n");
+
+		if ((cap & ESP_BLE_ONLY_SUPPORT) && (cap & ESP_BR_EDR_ONLY_SUPPORT))
+			printk(KERN_INFO "\t   - BT/BLE dual mode\n");
+		else if (cap & ESP_BLE_ONLY_SUPPORT)
+			printk(KERN_INFO "\t   - BLE only\n");
+		else if (cap & ESP_BR_EDR_ONLY_SUPPORT)
+			printk(KERN_INFO "\t   - BR EDR only\n");
+	}
+}
 
 static void esp32_process_interrupt(struct esp32_sdio_context *context, u32 int_status)
 {
@@ -110,6 +132,7 @@ static void deinit_sdio_func(struct sdio_func *func)
 	/* Disable sdio function */
 	sdio_disable_func(func);
 	sdio_release_host(func);
+	sdio_set_drvdata(func, NULL);
 }
 
 static int esp32_slave_get_tx_buffer_num(struct esp32_sdio_context *context, u32 *tx_num, u8 is_lock_needed)
@@ -205,7 +228,13 @@ static void esp32_remove(struct sdio_func *func)
 
 		if (context->adapter) {
 			remove_card(context->adapter);
+
+			if (context->adapter->hcidev) {
+				esp_deinit_bt(context->adapter);
+			}
+
 		}
+
 		memset(context, 0, sizeof(struct esp32_sdio_context));
 	}
 
@@ -518,10 +547,13 @@ static int esp32_probe(struct sdio_func *func,
 {
 	struct esp32_sdio_context *context = NULL;
 	int ret = 0;
+	uint32_t cap = 0;
 
 	if (func->num != 1) {
 		return -EINVAL;
 	}
+
+	printk(KERN_INFO "%s: ESP network device detected\n", __func__);
 
 	context = init_sdio_func(func);
 
@@ -540,7 +572,6 @@ static int esp32_probe(struct sdio_func *func,
 	}
 
 #ifdef CONFIG_SUPPORT_ESP_SERIAL
-	printk(KERN_INFO "Initialising ESP Serial support\n");
 	ret = esp_serial_init((void *) context->adapter);
 	if (ret != 0) {
 		esp32_remove(func);
@@ -557,6 +588,24 @@ static int esp32_probe(struct sdio_func *func,
 		return ret;
 	}
 
+	/* Read slave capabilities */
+	esp32_read_reg(context, ESP_SLAVE_SCRATCH_REG_0,
+			(u8 *) &cap, sizeof(cap), ACQUIRE_LOCK);
+
+	context->adapter->capabilities = cap;
+
+	print_capabilities(cap);
+
+	if (is_bt_supported_over_sdio(cap)) {
+		ret = esp_init_bt(context->adapter);
+		if (ret) {
+			esp32_remove(func);
+			printk (KERN_ERR "Failed to init BT\n");
+			deinit_sdio_func(func);
+			return ret;
+		}
+	}
+
 	context->state = ESP_CONTEXT_READY;
 
 #ifdef CONFIG_ENABLE_MONITOR_PROCESS
@@ -566,11 +615,9 @@ static int esp32_probe(struct sdio_func *func,
 		printk (KERN_ERR "Failed to create monitor thread\n");
 #endif
 
-	printk(KERN_INFO "%s: ESP network device detected\n", __func__);
 
 	msleep(200);
 	generate_slave_intr(context, BIT(ESP_OPEN_DATA_PATH));
-
 	return ret;
 }
 

@@ -21,6 +21,7 @@
 #include "sdio_slave_api.h"
 #include "driver/sdio_slave.h"
 #include "soc/sdio_slave_periph.h"
+#include "endian.h"
 
 #define SDIO_SLAVE_QUEUE_SIZE 20
 #define BUFFER_SIZE     2048
@@ -31,7 +32,7 @@ interface_context_t context;
 interface_handle_t if_handle_g;
 static const char TAG[] = "SDIO_SLAVE";
 
-static interface_handle_t * sdio_init();
+static interface_handle_t * sdio_init(uint8_t capabilities);
 static int32_t sdio_write(interface_handle_t *handle, interface_buffer_handle_t *buf_handle);
 interface_buffer_handle_t * sdio_read(interface_handle_t *if_handle);
 static esp_err_t sdio_reset(interface_handle_t *handle);
@@ -81,7 +82,7 @@ static void sdio_read_done(void *handle)
 }
 
 
-static interface_handle_t * sdio_init()
+static interface_handle_t * sdio_init(uint8_t capabilities)
 {
 	esp_err_t ret = 0;
 	sdio_slave_config_t config = {
@@ -131,6 +132,9 @@ static interface_handle_t * sdio_init()
 		return NULL;
 	}
 
+	/* Advertise slave capabilities at 0th offset of reg HOST_SLCHOST_CONF_W0_REG */
+	sdio_slave_write_reg(0, capabilities);
+
 	memset(&if_handle_g, 0, sizeof(if_handle_g));
 	if_handle_g.state = INIT;
 
@@ -142,6 +146,7 @@ static int32_t sdio_write(interface_handle_t *handle, interface_buffer_handle_t 
 	esp_err_t ret = ESP_OK;
 	int32_t total_len;
 	uint8_t* sendbuf = NULL;
+	uint16_t offset = 0;
 	struct esp_payload_header *header;
 
 	if (!handle || !buf_handle) {
@@ -174,10 +179,11 @@ static int32_t sdio_write(interface_handle_t *handle, interface_buffer_handle_t 
 	/* Initialize header */
 	header->if_type = buf_handle->if_type;
 	header->if_num = buf_handle->if_num;
-	header->len = buf_handle->payload_len;
-	header->offset = sizeof(struct esp_payload_header);
+	header->len = htole16(buf_handle->payload_len);
+	offset = sizeof(struct esp_payload_header);
+	header->offset = htole16(offset);
 
-	memcpy(sendbuf + header->offset, buf_handle->payload, buf_handle->payload_len);
+	memcpy(sendbuf + offset, buf_handle->payload, buf_handle->payload_len);
 	ret = sdio_slave_transmit(sendbuf, total_len);
 	if (ret != ESP_OK) {
 		ESP_LOGE(TAG , "sdio slave transmit error, ret : 0x%x\r\n", ret);

@@ -158,6 +158,11 @@ static int esp32_hard_start_xmit(struct sk_buff *skb, struct net_device *ndev)
 	return 0;
 }
 
+u8 is_bt_supported_over_sdio(u32 cap)
+{
+	return (cap & ESP_BT_SDIO_SUPPORT);
+}
+
 struct esp_private * get_priv_from_payload_header(struct esp_payload_header *header)
 {
 	struct esp_private *priv;
@@ -193,6 +198,7 @@ static void process_tx_packet (void)
 	struct esp_private *priv;
 	struct esp32_skb_cb *cb;
 	struct esp_payload_header *payload_header;
+	struct sk_buff *new_skb;
 	int ret = 0;
 	u8 pad_len = 0;
 	u16 len = 0;
@@ -215,6 +221,22 @@ static void process_tx_packet (void)
 		/* Create space for payload header */
 		pad_len = sizeof(struct esp_payload_header);
 
+		if (skb_headroom(skb) < pad_len) {
+			/* insufficent headroom to add payload header */
+			new_skb = skb_realloc_headroom(skb, pad_len);
+
+			if(!new_skb) {
+				printk(KERN_ERR "%s: Failed to allocate SKB", __func__);
+				dev_kfree_skb(skb);
+				atomic_dec(&adapter.tx_pending);
+				continue;
+			}
+
+			dev_kfree_skb(skb);
+
+			skb = new_skb;
+		}
+
 		skb_push(skb, pad_len);
 
 		/* Set payload header */
@@ -223,8 +245,8 @@ static void process_tx_packet (void)
 
 		payload_header->if_type = priv->if_type;
 		payload_header->if_num = priv->if_num;
-		payload_header->len = skb->len - pad_len;
-		payload_header->offset = pad_len;
+		payload_header->len = cpu_to_le16(skb->len - pad_len);
+		payload_header->offset = cpu_to_le16(pad_len);
 		payload_header->reserved1 = c % 255;
 
 /*		printk (KERN_ERR "H -> S: %d %d %d %d", len, payload_header->offset,*/
@@ -252,6 +274,9 @@ static void process_rx_packet(struct sk_buff *skb)
 {
 	struct esp_private *priv;
 	struct esp_payload_header *payload_header;
+	u16 len, offset;
+	struct hci_dev *hdev = adapter.hcidev;
+	u8 *type;
 
 	if (!skb)
 		return;
@@ -260,17 +285,20 @@ static void process_rx_packet(struct sk_buff *skb)
 	payload_header = (struct esp_payload_header *) skb->data;
 	/*		print_hex_dump_bytes("Rx:", DUMP_PREFIX_NONE, (skb->data + 8), 32);*/
 
+	len = le16_to_cpu(payload_header->len);
+	offset = le16_to_cpu(payload_header->offset);
+
 	if (payload_header->if_type == ESP_SERIAL_IF) {
-		print_hex_dump_bytes("Rx:", DUMP_PREFIX_NONE, (skb->data + 8), payload_header->len);
+		print_hex_dump_bytes("Rx:", DUMP_PREFIX_NONE, (skb->data + offset), len);
 #ifdef CONFIG_SUPPORT_ESP_SERIAL
-		esp_serial_data_received(payload_header->if_num, skb->data + 8, payload_header->len);
+		esp_serial_data_received(payload_header->if_num, skb->data + offset, len);
 #else
 		printk(KERN_ERR "Dropping unsupported serial frame\n");
 #endif
 		dev_kfree_skb_any(skb);
 	} else if (payload_header->if_type == ESP_STA_IF || payload_header->if_type == ESP_AP_IF) {
 		/* chop off the header from skb */
-		skb_pull(skb, payload_header->offset);
+		skb_pull(skb, offset);
 
 		/* retrieve priv based on payload header contents */
 		priv = get_priv_from_payload_header(payload_header);
@@ -292,6 +320,17 @@ static void process_rx_packet(struct sk_buff *skb)
 
 		priv->stats.rx_bytes += skb->len;
 		priv->stats.rx_packets++;
+	} else if (payload_header->if_type == ESP_HCI_IF) {
+		if (hdev) {
+			/* chop off the header from skb */
+			skb_pull(skb, offset);
+
+/*			print_hex_dump_bytes("Rx:", DUMP_PREFIX_NONE, skb->data, skb->len);*/
+			type = skb->data;
+			hci_skb_pkt_type(skb) = *type;
+			skb_pull(skb, 1);
+			hci_recv_frame(hdev, skb);
+		}
 	}
 }
 

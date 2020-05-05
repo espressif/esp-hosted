@@ -23,6 +23,8 @@
 #include <linux/workqueue.h>
 #include <linux/interrupt.h>
 #include <linux/netdevice.h>
+#include <net/bluetooth/bluetooth.h>
+#include <net/bluetooth/hci_core.h>
 #include "adapter.h"
 
 #define ESP_IF_TYPE_SDIO		1
@@ -42,6 +44,7 @@ struct esp_adapter;
 
 struct esp_adapter {
 	u8				if_type;
+	u32				capabilities;
 
 	/* Possible types:
 	 * 	struct esp32_sdio_context */
@@ -51,6 +54,7 @@ struct esp_adapter {
 
 	/* Private for each interface */
 	struct esp_private		*priv[ESP_MAX_INTERFACE];
+	struct hci_dev 			*hcidev;
 
 	struct workqueue_struct 	*if_rx_workqueue;
 	struct work_struct		if_rx_work;

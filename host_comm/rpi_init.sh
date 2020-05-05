@@ -15,26 +15,22 @@ bt_init()
 	sudo raspi-gpio set 17 a3 pn
 }
 
-if [ $# -eq 0 ]; then
-	wlan_init
-	bt_init
-fi
-
-if [ "$1" = "wlan" ]; then
-	wlan_init
-fi
-
-if [ "$1" = "bt" ]; then
-	bt_init
-fi
-
 if [ "$1" = "-h" ]; then
-	echo "Usage: ./rpi_init.sh [arguments]"
+	echo "This script prepares RPI for wlan and bt/ble operation over esp32 device"
+	echo "\nUsage: ./rpi_init.sh [arguments]"
 	echo "\nArguments are optional and are as below"
-	echo "	wlan:	Insert and setup esp32 network driver"
-	echo "	bt:	Set GPIO pins on RPi for bluetooth operation"
+	echo "	btuart:	Set GPIO pins on RPi for HCI UART operations"
 	echo "\nExample:"
-	echo "	- Prepare RPi for WLAN operation: 		./rpi_init.sh wlan"
-	echo "	- Prepare RPi for Bluetooth operation: 		./rpi_init.sh bt"
-	echo "	- Prepare RPi for both WLAN and Bluetoorh: 	./rpi_init.sh"
+	echo "  - Prepare RPi for WLAN and bt/ble operation on SDIO"
+	echo "	 # ./rpi_init.sh"
+	echo "\n  - Prepare RPi for bt/ble operation over UART and WLAN over SDIO"
+	echo "	 # ./rpi_init.sh btuart"
+	exit 0
 fi
+
+wlan_init
+
+if [ "$1" = "btuart" ]; then
+	bt_init
+fi
+
