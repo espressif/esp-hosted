@@ -142,14 +142,6 @@ static void softap_event_register(void)
 	ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT, WIFI_EVENT_AP_STADISCONNECTED, &softap_event_handler, NULL));
 }
 
-static void softap_event_unregister(void)
-{
-	ESP_ERROR_CHECK(esp_event_handler_unregister(WIFI_EVENT, WIFI_EVENT_AP_START, &softap_event_handler));
-	ESP_ERROR_CHECK(esp_event_handler_unregister(WIFI_EVENT, WIFI_EVENT_AP_STOP, &softap_event_handler));
-	ESP_ERROR_CHECK(esp_event_handler_unregister(WIFI_EVENT, WIFI_EVENT_AP_STACONNECTED, &softap_event_handler));
-	ESP_ERROR_CHECK(esp_event_handler_unregister(WIFI_EVENT, WIFI_EVENT_AP_STADISCONNECTED, &softap_event_handler));
-}
-
 static void ap_scan_list_event_register(void)
 {
 	ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT, WIFI_EVENT_SCAN_DONE, &ap_scan_list_event_handler, NULL));
@@ -166,6 +158,7 @@ typedef struct slave_config_cmd {
                                  SlaveConfigPayload *resp, void *priv_data);
 } slave_config_cmd_t;
 
+// Function returns mac address of station/ softAP
 static esp_err_t cmd_get_mac_address_handler(SlaveConfigPayload *req,
                                         SlaveConfigPayload *resp, void *priv_data)
 {
@@ -213,6 +206,7 @@ static esp_err_t cmd_get_mac_address_handler(SlaveConfigPayload *req,
 	return ESP_OK;
 }
 
+// Function returns wifi mode of esp32
 static esp_err_t cmd_get_wifi_mode_handler (SlaveConfigPayload *req,
                                         SlaveConfigPayload *resp, void *priv_data)
 {
@@ -236,6 +230,7 @@ static esp_err_t cmd_get_wifi_mode_handler (SlaveConfigPayload *req,
 	return ESP_OK;
 }
 
+// Function sets wifi mode for esp32
 static esp_err_t cmd_set_wifi_mode_handler (SlaveConfigPayload *req,
                                         SlaveConfigPayload *resp, void *priv_data)
 {
@@ -260,6 +255,7 @@ static esp_err_t cmd_set_wifi_mode_handler (SlaveConfigPayload *req,
 	return ESP_OK;
 }
 
+// Function connects to received AP configuration.
 static esp_err_t cmd_set_ap_config_handler (SlaveConfigPayload *req,
                                         SlaveConfigPayload *resp, void *priv_data)
 {
@@ -348,6 +344,7 @@ static esp_err_t cmd_set_ap_config_handler (SlaveConfigPayload *req,
 	return ESP_OK;
 }
 
+// Function sends connected AP's configuration
 static esp_err_t cmd_get_ap_config_handler (SlaveConfigPayload *req,
                                         SlaveConfigPayload *resp, void *priv_data)
 {
@@ -395,6 +392,7 @@ static esp_err_t cmd_get_ap_config_handler (SlaveConfigPayload *req,
 	return ESP_OK;
 }
 
+// Functions disconnects from AP.
 static esp_err_t cmd_disconnect_ap_handler (SlaveConfigPayload *req,
                                         SlaveConfigPayload *resp, void *priv_data)
 {
@@ -422,6 +420,7 @@ static esp_err_t cmd_disconnect_ap_handler (SlaveConfigPayload *req,
 	return ESP_OK;
 }
 
+// Function returns softAP's configuration
 static esp_err_t cmd_get_softap_config_handler (SlaveConfigPayload *req,
                                         SlaveConfigPayload *resp, void *priv_data)
 {
@@ -479,17 +478,16 @@ static esp_err_t cmd_get_softap_config_handler (SlaveConfigPayload *req,
 	if (ret != ESP_OK) {
 		ESP_LOGE(TAG,"Failed to get bandwidth");
 	}
-	//ESP_LOGI(TAG,"got bandwidth now %d", *get_bw); //check here
 	resp_payload->bw = *(int *)get_bw;
 	resp_payload->status = SUCCESS;
 	resp->payload_case = SLAVE_CONFIG_PAYLOAD__PAYLOAD_RESP_GET_SOFTAP_CONFIG;
 	resp->resp_get_softap_config = resp_payload;
 	free(get_conf);
 	free(get_bw);
-	//softap_event_unregister();
 	return ESP_OK;
 }
 
+// Function sets softAP's configuration
 static esp_err_t cmd_set_softap_config_handler (SlaveConfigPayload *req,
                                         SlaveConfigPayload *resp, void *priv_data)
 {
@@ -562,6 +560,7 @@ static esp_err_t cmd_set_softap_config_handler (SlaveConfigPayload *req,
 	return ESP_OK;
 }
 
+// Function sends available AP's list
 static esp_err_t cmd_get_ap_scan_list_handler (SlaveConfigPayload *req,
                                         SlaveConfigPayload *resp, void *priv_data)
 {
@@ -675,6 +674,7 @@ static esp_err_t cmd_get_ap_scan_list_handler (SlaveConfigPayload *req,
 	return ESP_OK;
 }
 
+// Function returns list of softAP's connected stations
 static esp_err_t get_connected_sta_list_handler (SlaveConfigPayload *req,
                                         SlaveConfigPayload *resp, void *priv_data)
 {
