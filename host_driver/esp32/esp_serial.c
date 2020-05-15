@@ -90,10 +90,9 @@ static int esp_serial_write(struct file *file, const char __user *user_buffer, s
 	}
 
 	print_hex_dump_bytes("Tx:", DUMP_PREFIX_NONE, buf, total_len);
-	ret = esp32_send_packet(dev->priv, buf, total_len);
+	ret = esp_send_packet(dev->priv, buf, total_len);
 	if (ret) {
 		printk (KERN_ERR "%s: Failed to transmit data\n", __func__);
-		/* TODO: Stop the datapath if error count exceeds max count*/
 	}
 
 	kfree(buf);

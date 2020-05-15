@@ -89,7 +89,7 @@ enum context_state {
 	ESP_CONTEXT_READY
 };
 
-struct esp32_sdio_context {
+struct esp_sdio_context {
 	struct esp_adapter 	*adapter;
 	struct sdio_func	*func;
 	enum context_state	state;

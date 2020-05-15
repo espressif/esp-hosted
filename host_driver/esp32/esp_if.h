@@ -29,7 +29,7 @@ struct esp_if_ops {
 	int (*deinit)(struct esp_adapter *adapter);
 };
 
-int init_interface_layer(struct esp_adapter *adapter);
-void deinit_interface_layer(void);
+int esp_init_interface_layer(struct esp_adapter *adapter);
+void esp_deinit_interface_layer(void);
 
 #endif

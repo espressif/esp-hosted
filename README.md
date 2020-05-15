@@ -154,9 +154,22 @@ ESP32 module advertises 2 SDIO functions, of which function 1 implements WLAN sl
 
 ## Important registers provided by ESP32 wlan device
 * 0x3FF5508C: Interrupt vector used by host to interrupt slave
+```
+bit 0: Open data path on slave device
+bit 1: Close data path on slave device
+bit 2: Reset SDIO queues on slave device
+```
 * 0x3FF55058: Interrupt status register used by slave to interrupt host
 * 0x3FF55060: Accumulated value of data length sent by slave
 * 0x3FF55044: Accumulated number of buffers for receiving packets at slave
+* 0x3FF5506C: Device capabilities. Indicates features supported by esp32 device.
+```
+bit 0: WLAN support
+bit 1: BT supported over UART
+bit 2: BT supported over SDIO
+bit 3: BT mode - BLE only mode
+bit 4: BT mode - BR/EDR only mode
+```
 
 ## Initialization of slave device
 1. Soft reset sdio slave
@@ -326,3 +339,56 @@ User can run `hcitool scan` for BT device scanning.
 ## BLE scan
 
 User can run `hcitool lescan` for BLE device scanning.
+
+
+# Troubleshoot instructions
+## Host fails to detect esp device
+1. Make sure to use esp32 wrover kit. If you are using a different esp32 module/board, please check pull up requirements (https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/peripherals/sd_pullup_requirements.html)
+2. Recheck jumper cable connections. Try to use cables that are smaller in length.
+3. Make sure that driver module is loaded.
+```
+$ sudo lsmod | grep esp32
+esp32                  28672  0
+```
+4. Check if host could perform sdio level enumeration. Assuming esp32 gets detected as mmc1, execute following and check the output.
+```
+$ sudo cat /sys/devices/platform/soc/fe300000.mmc/mmc_host/mmc1/mmc1\:0001/mmc1\:0001\:1/uevent
+SDIO_CLASS=00
+SDIO_ID=6666:2222
+MODALIAS=sdio:c00v6666d2222
+```
+5. In case issue persists, collect and send following logs to Espressif support.
+* dmesg log on host
+* Output of above mentioned commands
+* ESP32 console log
+
+## Network interfaces are not seen on host
+Network interfaces are by default in down state. Execute `ifconfig -a` to see those.
+In case issue persists, collect and send following logs to Espressif support.
+* dmesg log on host
+* Output of above mentioned commands
+* ESP32 console log
+
+## WLAN datapath does not work
+1. Check esp32 console log for wlan disconnect event. For reconnection, execute provided python script.
+2. Execute `route -n` command on host and verify that appropriate routes are configured.
+3. In case issue persists, collect and send following logs to Espressif support.
+* dmesg log on host
+* Output of above mentioned commands
+* ESP32 console log
+* WLAN air capture log
+
+## Bluetooth does not work
+1. Make sure that bluetooth is not blocked on host
+```
+$ sudo rfkill list
+1: hci0: Bluetooth
+    Soft blocked: no
+    Hard blocked: no
+```
+2. Execute `hciconfig` command to ensure that device is detected and initialized properly
+3. In case issue persists, collect and send following logs to Espressif support.
+* dmesg log on host
+* Output of above mentioned commands
+* ESP32 console log
+* hcidump log (`hcidump -X -t`)
