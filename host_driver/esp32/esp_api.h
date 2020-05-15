@@ -22,12 +22,12 @@
 
 #include "esp.h"
 
-int add_card(struct esp_adapter *adapter);
-int remove_card(struct esp_adapter *adapter);
-void process_new_packet_intr(struct esp_adapter *adapter);
-struct esp_adapter * get_adapter(void);
-struct sk_buff * esp32_alloc_skb(u32 len);
-int esp32_send_packet(struct esp_adapter *adapter, u8 *buf, u32 size);
-u8 is_bt_supported_over_sdio(u32 cap);
+int esp_add_card(struct esp_adapter *adapter);
+int esp_remove_card(struct esp_adapter *adapter);
+void esp_process_new_packet_intr(struct esp_adapter *adapter);
+struct esp_adapter * esp_get_adapter(void);
+struct sk_buff * esp_alloc_skb(u32 len);
+int esp_send_packet(struct esp_adapter *adapter, u8 *buf, u32 size);
+u8 esp_is_bt_supported_over_sdio(u32 cap);
 
 #endif

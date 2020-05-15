@@ -44,54 +44,54 @@ volatile u8 stop_data = 0;
 
 #define ACTION_DROP 1
 
-static int esp32_open(struct net_device *ndev);
-static int esp32_stop(struct net_device *ndev);
-static int esp32_hard_start_xmit(struct sk_buff *skb, struct net_device *ndev);
-static int esp32_set_mac_address(struct net_device *ndev, void *addr);
-static void esp32_tx_timeout(struct net_device *ndev);
-static struct net_device_stats* esp32_get_stats(struct net_device *ndev);
-static void esp32_set_rx_mode(struct net_device *ndev);
-int esp32_send_packet(struct esp_adapter *adapter, u8 *buf, u32 size);
+static int esp_open(struct net_device *ndev);
+static int esp_stop(struct net_device *ndev);
+static int esp_hard_start_xmit(struct sk_buff *skb, struct net_device *ndev);
+static int esp_set_mac_address(struct net_device *ndev, void *addr);
+static void esp_tx_timeout(struct net_device *ndev);
+static struct net_device_stats* esp_get_stats(struct net_device *ndev);
+static void esp_set_rx_mode(struct net_device *ndev);
+int esp_send_packet(struct esp_adapter *adapter, u8 *buf, u32 size);
 
-static const struct net_device_ops esp32_netdev_ops = {
-	.ndo_open = esp32_open,
-	.ndo_stop = esp32_stop,
-	.ndo_start_xmit = esp32_hard_start_xmit,
-	.ndo_set_mac_address = esp32_set_mac_address,
+static const struct net_device_ops esp_netdev_ops = {
+	.ndo_open = esp_open,
+	.ndo_stop = esp_stop,
+	.ndo_start_xmit = esp_hard_start_xmit,
+	.ndo_set_mac_address = esp_set_mac_address,
 	.ndo_validate_addr = eth_validate_addr,
-	.ndo_tx_timeout = esp32_tx_timeout,
-	.ndo_get_stats = esp32_get_stats,
-	.ndo_set_rx_mode = esp32_set_rx_mode,
+	.ndo_tx_timeout = esp_tx_timeout,
+	.ndo_get_stats = esp_get_stats,
+	.ndo_set_rx_mode = esp_set_rx_mode,
 };
 
 #if 0
 u64 start_time, end_time;
 #endif
 
-struct esp_adapter * get_adapter(void)
+struct esp_adapter * esp_get_adapter(void)
 {
 	return &adapter;
 }
 
-static int esp32_open(struct net_device *ndev)
+static int esp_open(struct net_device *ndev)
 {
 	netif_start_queue(ndev);
 	return 0;
 }
 
-static int esp32_stop(struct net_device *ndev)
+static int esp_stop(struct net_device *ndev)
 {
 	netif_stop_queue(ndev);
 	return 0;
 }
 
-static struct net_device_stats* esp32_get_stats(struct net_device *ndev)
+static struct net_device_stats* esp_get_stats(struct net_device *ndev)
 {
 	struct esp_private *priv = netdev_priv(ndev);
 	return &priv->stats;
 }
 
-static int esp32_set_mac_address(struct net_device *ndev, void *data)
+static int esp_set_mac_address(struct net_device *ndev, void *data)
 {
 	struct esp_private *priv = netdev_priv(ndev);
 	struct sockaddr *mac_addr = data;
@@ -104,19 +104,19 @@ static int esp32_set_mac_address(struct net_device *ndev, void *data)
 	return 0;
 }
 
-static void esp32_tx_timeout(struct net_device *ndev)
+static void esp_tx_timeout(struct net_device *ndev)
 {
 }
 
-static void esp32_set_rx_mode(struct net_device *ndev)
+static void esp_set_rx_mode(struct net_device *ndev)
 {
 }
 
-static int esp32_hard_start_xmit(struct sk_buff *skb, struct net_device *ndev)
+static int esp_hard_start_xmit(struct sk_buff *skb, struct net_device *ndev)
 {
 	struct sk_buff *new_skb;
 	struct esp_private *priv = netdev_priv(ndev);
-	struct esp32_skb_cb *cb;
+	struct esp_skb_cb *cb;
 
 	if (!priv) {
 		dev_kfree_skb(skb);
@@ -130,9 +130,9 @@ static int esp32_hard_start_xmit(struct sk_buff *skb, struct net_device *ndev)
 		return -EINVAL;
 	}
 
-	if (skb_headroom(skb) < ESP32_PAYLOAD_HEADER) {
+	if (skb_headroom(skb) < ESP_PAYLOAD_HEADER) {
 		/* Insufficient space. Realloc skb. */
-		new_skb = skb_realloc_headroom(skb, ESP32_PAYLOAD_HEADER);
+		new_skb = skb_realloc_headroom(skb, ESP_PAYLOAD_HEADER);
 
 		if (unlikely(!new_skb)) {
 			printk (KERN_ERR "%s: Failed to allocate SKB\n", __func__);
@@ -147,7 +147,7 @@ static int esp32_hard_start_xmit(struct sk_buff *skb, struct net_device *ndev)
 		skb = new_skb;
 	}
 
-	cb = (struct esp32_skb_cb *) skb->cb;
+	cb = (struct esp_skb_cb *) skb->cb;
 	cb->priv = priv;
 
 /*	print_hex_dump_bytes("Tx:", DUMP_PREFIX_NONE, skb->data, 8);*/
@@ -159,12 +159,12 @@ static int esp32_hard_start_xmit(struct sk_buff *skb, struct net_device *ndev)
 	return 0;
 }
 
-u8 is_bt_supported_over_sdio(u32 cap)
+u8 esp_is_bt_supported_over_sdio(u32 cap)
 {
 	return (cap & ESP_BT_SDIO_SUPPORT);
 }
 
-struct esp_private * get_priv_from_payload_header(struct esp_payload_header *header)
+static struct esp_private * get_priv_from_payload_header(struct esp_payload_header *header)
 {
 	struct esp_private *priv;
 	u8 i;
@@ -187,7 +187,7 @@ struct esp_private * get_priv_from_payload_header(struct esp_payload_header *hea
 	return NULL;
 }
 
-void process_new_packet_intr(struct esp_adapter *adapter)
+void esp_process_new_packet_intr(struct esp_adapter *adapter)
 {
 	if(adapter)
 		queue_work(adapter->if_rx_workqueue, &adapter->if_rx_work);
@@ -197,7 +197,7 @@ static void process_tx_packet (void)
 {
 	struct sk_buff *skb;
 	struct esp_private *priv;
-	struct esp32_skb_cb *cb;
+	struct esp_skb_cb *cb;
 	struct esp_payload_header *payload_header;
 	struct sk_buff *new_skb;
 	int ret = 0;
@@ -208,7 +208,7 @@ static void process_tx_packet (void)
 	while ((skb = skb_dequeue(&adapter.tx_q))) {
 		c++;
 		/* Get the priv */
-		cb = (struct esp32_skb_cb *) skb->cb;
+		cb = (struct esp_skb_cb *) skb->cb;
 		priv = cb->priv;
 
 		if (!priv) {
@@ -254,7 +254,7 @@ static void process_tx_packet (void)
 /*				payload_header->len, payload_header->reserved1);*/
 
 		if (!stop_data) {
-			ret = esp32_send_packet(priv->adapter, skb->data, skb->len);
+			ret = esp_send_packet(priv->adapter, skb->data, skb->len);
 
 			if (ret) {
 				priv->stats.tx_errors++;
@@ -340,7 +340,7 @@ static void process_rx_packet(struct sk_buff *skb)
 	}
 }
 
-struct sk_buff * esp32_alloc_skb(u32 len)
+struct sk_buff * esp_alloc_skb(u32 len)
 {
 	struct sk_buff *skb;
 
@@ -349,7 +349,7 @@ struct sk_buff * esp32_alloc_skb(u32 len)
 }
 
 
-static int esp32_get_packets(struct esp_adapter *adapter)
+static int esp_get_packets(struct esp_adapter *adapter)
 {
 	struct sk_buff *skb;
 
@@ -366,7 +366,7 @@ static int esp32_get_packets(struct esp_adapter *adapter)
 	return 0;
 }
 
-int esp32_send_packet(struct esp_adapter *adapter, u8 *buf, u32 size)
+int esp_send_packet(struct esp_adapter *adapter, u8 *buf, u32 size)
 {
 	if (!adapter || !adapter->if_ops || !adapter->if_ops->write)
 		return -EINVAL;
@@ -389,7 +389,7 @@ static int insert_priv_to_adapter(struct esp_private *priv)
 	return -1;
 }
 
-static int esp32_init_priv(struct esp_private *priv, struct net_device *dev,
+static int esp_init_priv(struct esp_private *priv, struct net_device *dev,
 		u8 if_type, u8 if_num)
 {
 	int ret = 0;
@@ -411,14 +411,14 @@ static int esp32_init_priv(struct esp_private *priv, struct net_device *dev,
 	return 0;
 }
 
-static int esp32_init_net_dev(struct net_device *ndev, struct esp_private *priv)
+static int esp_init_net_dev(struct net_device *ndev, struct esp_private *priv)
 {
 	int ret = 0;
 	/* Set netdev */
 /*	SET_NETDEV_DEV(ndev, &adapter->context.func->dev);*/
 
 	/* set net dev ops */
-	ndev->netdev_ops = &esp32_netdev_ops;
+	ndev->netdev_ops = &esp_netdev_ops;
 
 	ether_addr_copy(ndev->dev_addr, priv->mac_address);
 	/* set ethtool ops */
@@ -438,7 +438,7 @@ static int esp32_init_net_dev(struct net_device *ndev, struct esp_private *priv)
 	return ret;
 }
 
-static int esp32_add_interface(struct esp_adapter *adapter, u8 if_type, u8 if_num, char *name)
+static int esp_add_interface(struct esp_adapter *adapter, u8 if_type, u8 if_num, char *name)
 {
 	struct net_device *ndev = NULL;
 	struct esp_private *priv = NULL;
@@ -455,13 +455,13 @@ static int esp32_add_interface(struct esp_adapter *adapter, u8 if_type, u8 if_nu
 	priv = netdev_priv(ndev);
 
 	/* Init priv */
-	ret = esp32_init_priv(priv, ndev, if_type, if_num);
+	ret = esp_init_priv(priv, ndev, if_type, if_num);
 	if (ret) {
 		printk(KERN_ERR "%s: Init priv failed\n", __func__);
 		goto error_exit;
 	}
 
-	ret = esp32_init_net_dev(ndev, priv);
+	ret = esp_init_net_dev(ndev, priv);
 	if (ret) {
 		printk(KERN_ERR "%s: Init netdev failed\n", __func__);
 		goto error_exit;
@@ -493,7 +493,7 @@ static void flush_ring_buffers(struct esp_adapter *adapter)
 	}
 }
 
-static void esp32_remove_network_interfaces(struct esp_adapter *adapter)
+static void esp_remove_network_interfaces(struct esp_adapter *adapter)
 {
 	if (adapter->priv[0]->ndev) {
 		netif_stop_queue(adapter->priv[0]->ndev);
@@ -508,7 +508,7 @@ static void esp32_remove_network_interfaces(struct esp_adapter *adapter)
 	}
 }
 
-int add_card(struct esp_adapter *adapter)
+int esp_add_card(struct esp_adapter *adapter)
 {
 	int ret = 0;
 
@@ -520,22 +520,22 @@ int add_card(struct esp_adapter *adapter)
 	stop_data = 0;
 
 	/* Add interface STA and AP */
-	ret = esp32_add_interface(adapter, ESP_STA_IF, 0, "ethsta%d");
+	ret = esp_add_interface(adapter, ESP_STA_IF, 0, "ethsta%d");
 	if (ret) {
 		printk(KERN_ERR "%s: Failed to add STA\n", __func__);
 		return ret;
 	}
 
-	ret = esp32_add_interface(adapter, ESP_AP_IF, 0, "ethap%d");
+	ret = esp_add_interface(adapter, ESP_AP_IF, 0, "ethap%d");
 	if (ret) {
 		printk(KERN_ERR "%s: Failed to add AP\n", __func__);
-		esp32_remove_network_interfaces(adapter);
+		esp_remove_network_interfaces(adapter);
 	}
 
 	return ret;
 }
 
-int remove_card(struct esp_adapter *adapter)
+int esp_remove_card(struct esp_adapter *adapter)
 {
 	stop_data = 1;
 
@@ -549,7 +549,7 @@ int remove_card(struct esp_adapter *adapter)
 	if (adapter->tx_workqueue)
 		flush_workqueue(adapter->tx_workqueue);
 
-	esp32_remove_network_interfaces(adapter);
+	esp_remove_network_interfaces(adapter);
 
 	flush_ring_buffers(adapter);
 
@@ -571,7 +571,7 @@ static void esp_tx_work (struct work_struct *work)
 static void esp_if_rx_work (struct work_struct *work)
 {
 	/* read inbound packet and forward it to network/serial interface */
-	esp32_get_packets(&adapter);
+	esp_get_packets(&adapter);
 }
 
 static void deinit_adapter(void)
@@ -618,7 +618,7 @@ static struct esp_adapter * init_adapter(void)
 }
 
 
-static int __init esp32_init(void)
+static int __init esp_init(void)
 {
 	int ret = 0;
 	struct esp_adapter	*adapter;
@@ -630,7 +630,7 @@ static int __init esp32_init(void)
 		return -EFAULT;
 
 	/* Init transport layer */
-	ret = init_interface_layer(adapter);
+	ret = esp_init_interface_layer(adapter);
 
 	if (ret != 0) {
 		deinit_adapter();
@@ -639,11 +639,11 @@ static int __init esp32_init(void)
 	return ret;
 }
 
-static void __exit esp32_exit(void)
+static void __exit esp_exit(void)
 {
-	deinit_interface_layer();
+	esp_deinit_interface_layer();
 	deinit_adapter();
 }
 
-module_init(esp32_init);
-module_exit(esp32_exit);
+module_init(esp_init);
+module_exit(esp_exit);

@@ -35,7 +35,7 @@
 
 #define ESP_MAX_INTERFACE		2
 
-#define ESP32_PAYLOAD_HEADER		8
+#define ESP_PAYLOAD_HEADER		8
 struct esp_private;
 struct esp_adapter;
 
@@ -47,7 +47,7 @@ struct esp_adapter {
 	u32				capabilities;
 
 	/* Possible types:
-	 * 	struct esp32_sdio_context */
+	 * 	struct esp_sdio_context */
 	void				*if_context;
 
 	struct esp_if_ops		*if_ops;
@@ -85,7 +85,7 @@ struct esp_private {
 	u8			 	if_num;
 };
 
-struct esp32_skb_cb {
+struct esp_skb_cb {
 	struct esp_private		*priv;
 };
 #endif

@@ -108,7 +108,7 @@ static int esp_bt_send_frame(struct hci_dev *hdev, struct sk_buff *skb)
 	hdr->hci_pkt_type = hci_skb_pkt_type(skb);
 
 /*	print_hex_dump_bytes("Tx:", DUMP_PREFIX_NONE, skb->data, skb->len);*/
-	ret = esp32_send_packet(adapter, skb->data, skb->len);
+	ret = esp_send_packet(adapter, skb->data, skb->len);
 
 	if (ret) {
 		hdev->stat.err_tx++;

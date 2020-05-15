@@ -24,7 +24,7 @@
 #include <linux/mmc/host.h>
 #include "esp_sdio_api.h"
 
-static int esp32_read_byte(struct esp32_sdio_context *context, u32 reg, u8 *data, u8 is_lock_needed)
+static int esp_read_byte(struct esp_sdio_context *context, u32 reg, u8 *data, u8 is_lock_needed)
 {
 	struct sdio_func *func = NULL;
 	int ret;
@@ -47,7 +47,7 @@ static int esp32_read_byte(struct esp32_sdio_context *context, u32 reg, u8 *data
 	return ret;
 }
 
-static int esp32_write_byte(struct esp32_sdio_context *context, u32 reg, u8 data, u8 is_lock_needed)
+static int esp_write_byte(struct esp_sdio_context *context, u32 reg, u8 data, u8 is_lock_needed)
 {
 	struct sdio_func *func = NULL;
 	int ret;
@@ -70,7 +70,7 @@ static int esp32_write_byte(struct esp32_sdio_context *context, u32 reg, u8 data
 	return ret;
 }
 
-static int esp32_read_multi_byte(struct esp32_sdio_context *context, u32 reg, u8 *data, u16 size, u8 is_lock_needed)
+static int esp_read_multi_byte(struct esp_sdio_context *context, u32 reg, u8 *data, u16 size, u8 is_lock_needed)
 {
 	struct sdio_func *func = NULL;
 	int ret;
@@ -93,7 +93,7 @@ static int esp32_read_multi_byte(struct esp32_sdio_context *context, u32 reg, u8
 	return ret;
 }
 
-static int esp32_write_multi_byte(struct esp32_sdio_context *context, u32 reg, u8 *data, u16 size, u8 is_lock_needed)
+static int esp_write_multi_byte(struct esp_sdio_context *context, u32 reg, u8 *data, u16 size, u8 is_lock_needed)
 {
 	struct sdio_func *func = NULL;
 	int ret;
@@ -116,45 +116,45 @@ static int esp32_write_multi_byte(struct esp32_sdio_context *context, u32 reg, u
 	return ret;
 }
 
-int esp32_read_reg(struct esp32_sdio_context *context, u32 reg, u8 *data, u16 size, u8 is_lock_needed)
+int esp_read_reg(struct esp_sdio_context *context, u32 reg, u8 *data, u16 size, u8 is_lock_needed)
 {
 	/* Need to apply address mask when reading/writing slave registers */
 	reg &= ESP_ADDRESS_MASK;
 
 	if (size <= 1) {
-		return esp32_read_byte(context, reg, data, is_lock_needed);
+		return esp_read_byte(context, reg, data, is_lock_needed);
 	} else {
-		return esp32_read_multi_byte(context, reg, data, size, is_lock_needed);
+		return esp_read_multi_byte(context, reg, data, size, is_lock_needed);
 	}
 }
 
-int esp32_read_block(struct esp32_sdio_context *context, u32 reg, u8 *data, u16 size, u8 is_lock_needed)
+int esp_read_block(struct esp_sdio_context *context, u32 reg, u8 *data, u16 size, u8 is_lock_needed)
 {
 	if (size <= 1) {
-		return esp32_read_byte(context, reg, data, is_lock_needed);
+		return esp_read_byte(context, reg, data, is_lock_needed);
 	} else {
-		return esp32_read_multi_byte(context, reg, data, size, is_lock_needed);
+		return esp_read_multi_byte(context, reg, data, size, is_lock_needed);
 	}
 }
 
-int esp32_write_reg(struct esp32_sdio_context *context, u32 reg, u8 *data, u16 size, u8 is_lock_needed)
+int esp_write_reg(struct esp_sdio_context *context, u32 reg, u8 *data, u16 size, u8 is_lock_needed)
 {
 	/* Need to apply address mask when reading/writing slave registers */
 	reg &= ESP_ADDRESS_MASK;
 
 	if (size <= 1) {
-		return esp32_write_byte(context, reg, *data, is_lock_needed);
+		return esp_write_byte(context, reg, *data, is_lock_needed);
 	} else {
-		return esp32_write_multi_byte(context, reg, data, size, is_lock_needed);
+		return esp_write_multi_byte(context, reg, data, size, is_lock_needed);
 	}
 }
 
-int esp32_write_block(struct esp32_sdio_context *context, u32 reg, u8 *data, u16 size, u8 is_lock_needed)
+int esp_write_block(struct esp_sdio_context *context, u32 reg, u8 *data, u16 size, u8 is_lock_needed)
 {
 	if (size <= 1) {
-		return esp32_write_byte(context, reg, *data, is_lock_needed);
+		return esp_write_byte(context, reg, *data, is_lock_needed);
 	} else {
-		return esp32_write_multi_byte(context, reg, data, size, is_lock_needed);
+		return esp_write_multi_byte(context, reg, data, size, is_lock_needed);
 	}
 }
 
