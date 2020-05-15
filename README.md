@@ -34,6 +34,15 @@ Raspi-gpio utility is required to configure GPIO pins. Please install it as:
 $ sudo apt-get install raspi-gpio
 ```
 
+To test BT/BLE functionality on Raspberry-Pi `bluez`(official Linux Bluetooth protocol stack) is needed. check if Raspberry-Pi has installed `bluez` or not.
+[link that can help to install bluez](https://scribles.net/updating-bluez-on-raspberry-pi-from-5-43-to-5-50/)
+
+### Note
+```
+We have tested BT/BLE solution at bluez 5.43 and 5.45.
+```
+make sure Raspberry-Pi should have `bluetoothctl`, `bluetoothd`, `hcitool`, `hciconfig` utilities.
+
 ## Wi-Fi and BT/BLE connectivity Setup over SDIO
 ### Hardware Setup/Connections
 In this setup, ESP32 board acts as a SDIO peripheral and provides Wi-FI capabilities to host. Please connect ESP32 board to Raspberry-Pi with jumper cables as mentioned below. It may be good to use small length cables to ensure signal integrity.
@@ -60,6 +69,7 @@ Power ESP32 and Raspberry Pi separately with a power supply that provide suffici
 By default, the SDIO pins of Raspberry-pi are not configured and are internally used for built-in Wi-Fi interface. Please enable SDIO pins by appending following line to _/boot/config.txt_ file
 ```
 dtoverlay=sdio,poll_once=off
+dtoverlay=disable-bt
 ```
 Please reboot Raspberry-Pi after changing this file.
 
@@ -103,7 +113,7 @@ dwc_otg.lpm_enable=0 console=tty1 root=PARTUUID=5c2c80d1-02 rootfstype=ext4 elev
 4. Reboot Raspberry-Pi
 
 ## ESP32 Setup
-The control path between Raspberry-Pi and ESP32 is based on `protobuf`. For that `protocomm` layer from ESP-IDF is used. Make sure ESP-IDF on branch `release/v4.0`. Run follwing command on esp32 to make `protocomm_priv.h` available for control path.
+The control path between Raspberry-Pi and ESP32 is based on `protobuf`. For that `protocomm` layer from ESP-IDF is used. Make sure ESP-IDF on branch `release/v4.0`. Run following command on esp32 to make `protocomm_priv.h` available for control path.
 ```
 git mv components/protocomm/src/common/protocomm_priv.h components/protocomm/include/common/
 ```
@@ -216,11 +226,11 @@ User can make use of these python functions to get access of wifi functionalitie
 python test.py
 ```
 
-first run `./rpi_init.sh wlan` to compile and insert ESP32 host driver on rpi. This script also creates `/dev/esps0` which is used as WLAN control interface.
+first run `./rpi_init.sh` to compile and insert ESP32 host driver on rpi. This script also creates `/dev/esps0` which is used as a WLAN/BT/BLE control interface.
 
-There are six python script for station connect to AP, station disconnect from AP and softAP configuration.
+There are six python scripts for station connect to AP, station disconnect from AP ,start softAP, stop softAP, scan available APs and list stations connected to softAP.
 
-1. `station_connect.py` is a python script which configure ESP32 in `station mode`, connects rpi to external AP with credentials user has provided. Also it ups the station interface and run DHCP client. User should provide parameters like ssid, password, mac address of AP(Its optional parameter).
+1. `station_connect.py` is a python script which configures ESP32 in `station mode`, connects rpi to external AP with credentials the user has provided. Also it ups the station interface and runs DHCP client. User should provide parameters like ssid, password, mac address of AP(Its optional parameter).
 
 ```
 ex. python station_connect.py 'xyz' 'xyz123456' --bssid='e5:6c:67:3c:cf:65'
@@ -230,7 +240,7 @@ ex. python station_connect.py 'xyz' 'xyz123456' --bssid='e5:6c:67:3c:cf:65'
 ```
 python station_disconnect.py
 ```
-3. `softap_config.py` is a python script for configure ESP32 `softAP mode`. User should provide parameters like ssid, password(password length should be 8~64 bytes ASCII), channel ID (It can be any number between 1 to 11), encryption method (0 : OPEN, 2: WPA_PSK, 3:WPA2_PSK, 4: WPA_WPA2_PSK), max connection count( number of Stations to which ESP32 SoftAP can be connected, within the range of [1, 10]) and ssid hidden (it can set to 1 if softAP shouldnt broadcast its ssid else 0). max connection count and ssid hidden parameters are optional.
+3. `softap_config.py` is a python script for configuring ESP32 `softAP mode`. User should provide parameters like ssid, password(password length should be 8~64 bytes ASCII), channel ID (It can be any numberbetween 1 to 11), encryption method (0 : OPEN, 2: WPA_PSK, 3:WPA2_PSK, 4: WPA_WPA2_PSK), max connection count( number of Stations to which ESP32 SoftAP can be connected, within the range of [1, 10]) and ssid hidden (it can set to 1 if softAP shouldnt broadcast its ssid else 0). max connection count and ssid hidden parameters are optional.
 
 ```
 ex. python softap_config.py 'xyz' 'xyz123456' 1 3 --max_conn=4 --ssid_hidden=0
@@ -239,12 +249,12 @@ ex. python softap_config.py 'xyz' 'xyz123456' 1 3 --max_conn=4 --ssid_hidden=0
 Note: To start data connection, user needs to setup a DHCP server on rpi or set static IP address for AP interface i.e. ethap0
 
 ---
-4. `softap_stop.py` is python script to stop ESP32 softap. This script will change wifi mode to `null` if only softAP is running or to `station` mode if softAP and station both are on.
+4. `softap_stop.py` is a python script to stop ESP32 softap. This script will change wifi mode to `null` if only softAP is running or to `station` mode if softAP and station both are on.
 
 ```
 ex. python softap_stop.py
 ```
-5. `ap_scan_list.py` is python script which gives scanned list of available APs. list contains ssid, channel number, rssi, mac address and authentication mode of AP.
+5. `ap_scan_list.py` is a python script which gives a scanned list of available APs. list contains ssid, channel number, rssi, mac address and authentication mode of AP.
 ```
 ex. python ap_scan_list.py
 ```
@@ -252,7 +262,7 @@ ex. python ap_scan_list.py
 Note: To start data connection, user needs to setup a DHCP server on rpi or set static IP address for AP interface i.e. ethap0
 
 ---
-6. `connected_stations_list.py` is python script returns list of mac addresses of stations connected to softAP.
+6. `connected_stations_list.py` is a python script that returns list of mac addresses of stations connected to softAP.
 
 ```
 ex. python connected_stations_list.py
@@ -277,3 +287,42 @@ $ sudo hciattach -s 115200 /dev/serial0 any 115200 flow
 ### SDIO based setup
 HCI interface will be available for use as soon as host driver detects esp32 device over SDIO interface.
 User can use standard hci utilities over this interface to make use of BT/BLE feature.
+
+## For Testing of BT/BLE connection
+
+We have used [nRF connect for mobile APP](https://play.google.com/store/apps/details?id=no.nordicsemi.android.mcp&hl=en_IN) for testing of BT/BLE.
+
+### GATT server
+
+1. `sudo modprobe bluetooth` on rpi
+2. run `hciconfig`. Output should show only one `SDIO` interface.
+```
+hci0:	Type: Primary  Bus: SDIO
+	BD Address: 3C:71:BF:9A:C2:46  ACL MTU: 1021:9  SCO MTU: 255:4
+	UP RUNNING PSCAN
+	RX bytes:8801 acl:1000 sco:0 events:406 errors:0
+	TX bytes:5097 acl:147 sco:0 commands:52 errors:0
+```
+3. Go to `bluez-5.xx` folder. Run `./test/example-gatt-server`. This will start gatt server on Raspberry-Pi.
+
+4. Now start advertising. Run `sudo hciconfig hci0 leadv`.
+
+5. Now esp32's mac address should be listed in scan list of mobile app.
+
+6. Connect to esp32's mac address with mobile as gatt client.
+
+7. User can check read/write characteristics fields in `Heart Rate` service.
+
+## GATT Client
+
+1. User can run `./test/example-gatt-client` on rpi. This will start gatt client on Raspberry-Pi.
+
+2. User will receive `Heart Rate Measurement` field in rpi console.
+
+## BT scan
+
+User can run `hcitool scan` for BT device scanning.
+
+## BLE scan
+
+User can run `hcitool lescan` for BLE device scanning.
