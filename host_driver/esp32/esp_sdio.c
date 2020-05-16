@@ -328,7 +328,7 @@ static struct sk_buff * read_packet(struct esp_adapter *adapter)
 	size = ESP_BLOCK_SIZE * 4;
 
 	if (len_from_slave > size) {
-		len_from_slave = size;
+		printk(KERN_INFO,"Rx large packet: %d\n", len_from_slave);
 	}
 
 	skb = esp_alloc_skb(len_from_slave);
@@ -643,4 +643,3 @@ void esp_deinit_interface_layer(void)
 {
 	sdio_unregister_driver(&esp_sdio_driver);
 }
-

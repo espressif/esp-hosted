@@ -24,5 +24,5 @@ ap_list = slave_comm.wifi_ap_scan_list()
 if (ap_list == failure):
     print("Failed to get AP scan list")
 else:
-    for obj in stations_list:
+    for obj in ap_list:
         print(obj.ssid,obj.chnl,obj.rssi,obj.bssid,obj.ecn)
