@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from host_commands import slave_comm
+from host_commands import commands
 import argparse
 import time
 import os
@@ -32,7 +32,7 @@ failure = 'failure'
 flag = success
 softap_config = 'Not set'
 
-parser = argparse.ArgumentParser(description='softap_config.py script to configure ESP32 softAP mode. ex. python softap_config.py \'xyz\' \'xyz123456\' 1 3 --max_conn=4 --ssid_hidden=0 --bw=0')
+parser = argparse.ArgumentParser(description='softap_config.py script to configure ESP32 softAP mode. ex. python softap_config.py \'xyz\' \'xyz123456\' 1 3 --max_conn=4 --ssid_hidden=0 --bw=1')
 
 parser.add_argument("ssid", type=str, default='0', help="ssid")
 
@@ -50,15 +50,15 @@ parser.add_argument("--bw", type=int, default=1, help="Bandwidth (1: WIFI_BW_HT2
 
 args = parser.parse_args()
 
-ap_mac = slave_comm.get_mac(softap)
+ap_mac = commands.get_mac(softap)
 if (ap_mac == failure):
-    print("Failed to get AP mac address")
+    print("Failed to get is SoftAP mac address")
     flag = failure
 else :
-    print("AP MAC Address "+str(ap_mac))
+    print("SoftAP MAC Address "+str(ap_mac))
 
 if (flag == success):
-    softap_config = slave_comm.wifi_set_softap_config(args.ssid, args.password, args.channel_id, args.encrp_mthd, args.max_conn, args.ssid_hidden, args.bw)
+    softap_config = commands.wifi_set_softap_config(args.ssid, args.password, args.channel_id, args.encrp_mthd, args.max_conn, args.ssid_hidden, args.bw)
     if (softap_config == failure):
         print("setting softap config failed")
         flag = failure
@@ -66,7 +66,7 @@ if (flag == success):
         print("setting softap config success")
  
 if (flag == failure):
-    print("failure in setting AP config")
+    print("failure in setting SoftAP config")
 
 if (flag == success):
     command = 'sudo ifconfig ethap0 down'

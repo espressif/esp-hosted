@@ -28,6 +28,7 @@ if [ "$1" = "-h" ]; then
 	exit 0
 fi
 
+sudo modprobe bluetooth
 wlan_init
 
 if [ "$1" = "btuart" ]; then

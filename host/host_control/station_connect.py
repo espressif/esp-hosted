@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from host_commands import slave_comm
+from host_commands import commands
 import argparse
 import time
 import os
@@ -42,19 +42,23 @@ parser.add_argument("--bssid", type=str, default='0', help="bssid i.e MAC addres
 
 args = parser.parse_args()
 
-sta_mac = slave_comm.get_mac(station)
+sta_mac = commands.get_mac(station)
 if (sta_mac == failure):
     flag = failure
+    print("Failed to get station MAC address")
 else :
     print("station MAC address "+str(sta_mac))
 
 if (flag == success):
-    station_status = slave_comm.wifi_set_ap_config(args.ssid,args.password,args.bssid)
+    station_status = commands.wifi_set_ap_config(args.ssid,args.password,args.bssid)
     if (station_status == failure):
         flag = failure
         print("Failed to set AP config")
     elif (station_status == success):
-        print("Connected to given AP")
+        print("Connected to "+args.ssid)
+
+if (flag == failure):
+    print("Failed to connect with AP")
 
 if (flag == success):
     command = 'sudo ifconfig ethsta0 down'

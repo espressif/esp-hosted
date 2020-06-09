@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from host_commands import slave_comm
+from host_commands import commands
 import argparse
 
 failure = "failure"
@@ -20,7 +20,7 @@ ap_list = 'No APs Available'
 
 parser = argparse.ArgumentParser(description='ap_scan_list.py is a python script which gives scanned list of available APs. list contains ssid, channel number, rssi, mac address and authentication mode of AP. ex. python ap_scan_list.py')
 
-ap_list = slave_comm.wifi_ap_scan_list()
+ap_list = commands.wifi_ap_scan_list()
 if (ap_list == failure):
     print("Failed to get AP scan list")
 else:

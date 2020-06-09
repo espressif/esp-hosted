@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from host_commands import slave_comm
+from host_commands import commands
 import argparse
 import os
 
@@ -33,28 +33,29 @@ disconnect = "Not set"
 
 parser = argparse.ArgumentParser(description='station_disconnect.py script will disconnect ESPStation from AP ex. python station_disconnect.py')
 
-wifi_mode = slave_comm.get_wifi_mode()
-print(wifi_mode)
+wifi_mode = commands.get_wifi_mode()
+print("WiFi Mode: "+str(wifi_mode))
 
 if (wifi_mode == failure):
-    print("failure in getting wifi mode")
+    print("Failed to get WiFi Mode")
     flag = failure
 elif (wifi_mode == station or wifi_mode == station_softap):
-    disconnect = slave_comm.wifi_disconnect_ap()
+    disconnect = commands.wifi_disconnect_ap()
     if (disconnect == failure):
         print("Failed to Disconnected from AP")
         flag = failure
     else :
         print("Success in Disconnecting from AP")
 else :
-    print("wifi_disconnect_ap failed, current mode is "+str(wifi_mode))
-    print("0: null Mode, Wi-Fi RF will be disabled")
-    print("1: station mode")
-    print("2: softAP mode")
-    print("3: softAP+station mode")
+    print("Station is not enabled")
     flag = failure
 
 if (flag == success):
-    command = 'sudo ifconfig ethsta0 down'
+    command = 'sudo dhclient ethsta0 -r'
+    print('$ '+command)
     os.system(command)
-    print(command)
+    
+    command = 'sudo ifconfig ethsta0 down'
+    print('$ '+command)
+    os.system(command)
+
