@@ -74,7 +74,7 @@ message RespConnectedSTA {
 	repeated ConnectedSTAList stations = 2;
 }
 
-enum SlaveConfigMsgType {
+enum EspHostedConfigMsgType {
     TypeCmdGetMACAddress = 0;
     TypeRespGetMACAddress = 1;
     TypeCmdGetWiFiMode = 2;
@@ -97,8 +97,8 @@ enum SlaveConfigMsgType {
     TypeRespGetConnectedSTAList = 19;
 }
 
-message SlaveConfigPayload {
-    SlaveConfigMsgType msg = 1;
+message EspHostedConfigPayload {
+    EspHostedConfigMsgType msg = 1;
     oneof payload {
         CmdGetStatus cmd_get_mac_address = 10;
         RespGetStatus resp_get_mac_address = 11;
