@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from host_commands import slave_comm
+from host_commands import commands
 import argparse
 import os
 
@@ -28,34 +28,34 @@ softap = 2
 station_softap = 3
 failure = "failure"
 success = "success"
-stop = "Not set"
 flag = success
+disconnect = "Not set"
 
-parser = argparse.ArgumentParser(description='softap_stop.py script will stop ESP32 softap ex. python softap_close.py')
+parser = argparse.ArgumentParser(description='station_disconnect.py script will disconnect ESPStation from AP ex. python station_disconnect.py')
 
-wifi_mode = slave_comm.get_wifi_mode()
-print(wifi_mode)
+wifi_mode = commands.get_wifi_mode()
+print("WiFi Mode: "+str(wifi_mode))
 
 if (wifi_mode == failure):
-    print("failure in getting wifi mode")
-    flag = failure 
-elif (wifi_mode == softap):
-    wifi_mode = slave_comm.set_wifi_mode(none)
-    if (wifi_mode == failure):
-        print("failure in stopping softap")
+    print("Failed to get WiFi Mode")
+    flag = failure
+elif (wifi_mode == station or wifi_mode == station_softap):
+    disconnect = commands.wifi_disconnect_ap()
+    if (disconnect == failure):
+        print("Failed to Disconnected from AP")
         flag = failure
     else :
-        print("SoftAP stopped")
-elif (wifi_mode == station_softap):
-    wifi_mode = slave_comm.set_wifi_mode(station)
-    if (wifi_mode == failure):
-        print("failure in stopping softap")
-        flag = failure
-    else :
-        print("SoftAP stopped")
+        print("Success in Disconnecting from AP")
+else :
+    print("Station is not enabled")
+    flag = failure
 
 if (flag == success):
-    command = 'sudo ifconfig ethap0 down'
+    command = 'sudo dhclient ethsta0 -r'
+    print('$ '+command)
     os.system(command)
-    print(command)
-    print("softAP interface down")
+    
+    command = 'sudo ifconfig ethsta0 down'
+    print('$ '+command)
+    os.system(command)
+

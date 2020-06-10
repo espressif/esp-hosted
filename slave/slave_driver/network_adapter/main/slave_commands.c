@@ -24,7 +24,7 @@
 #include "esp_system.h"
 #include "esp_private/wifi.h"
 #include "slave_commands.h"
-#include "slave_config.pb-c.h"
+#include "esp_hosted_config.pb-c.h"
 
 #define MAC2STR(a) (a)[0], (a)[1], (a)[2], (a)[3], (a)[4], (a)[5]
 #define MACSTR "%02x:%02x:%02x:%02x:%02x:%02x"
@@ -152,15 +152,15 @@ static void ap_scan_list_event_unregister(void)
 	ESP_ERROR_CHECK(esp_event_handler_unregister(WIFI_EVENT,WIFI_EVENT_SCAN_DONE, &ap_scan_list_event_handler));
 }
 
-typedef struct slave_config_cmd {
+typedef struct esp_hosted_config_cmd {
     int cmd_num;
-    esp_err_t (*command_handler)(SlaveConfigPayload *req,
-                                 SlaveConfigPayload *resp, void *priv_data);
-} slave_config_cmd_t;
+    esp_err_t (*command_handler)(EspHostedConfigPayload *req,
+                                 EspHostedConfigPayload *resp, void *priv_data);
+} esp_hosted_config_cmd_t;
 
 // Function returns mac address of station/ softAP
-static esp_err_t cmd_get_mac_address_handler(SlaveConfigPayload *req,
-                                        SlaveConfigPayload *resp, void *priv_data)
+static esp_err_t cmd_get_mac_address_handler(EspHostedConfigPayload *req,
+                                        EspHostedConfigPayload *resp, void *priv_data)
 {
 	esp_err_t ret;
 	uint8_t mac[6];
@@ -201,14 +201,14 @@ static esp_err_t cmd_get_mac_address_handler(SlaveConfigPayload *req,
 	resp_get_status__init(resp_payload);
 	ESP_LOGI(TAG,"mac [%s] ", mac_str);
 	resp_payload->resp = mac_str;
-	resp->payload_case = SLAVE_CONFIG_PAYLOAD__PAYLOAD_RESP_GET_MAC_ADDRESS ;
+	resp->payload_case = ESP_HOSTED_CONFIG_PAYLOAD__PAYLOAD_RESP_GET_MAC_ADDRESS ;
 	resp->resp_get_mac_address = resp_payload;
 	return ESP_OK;
 }
 
 // Function returns wifi mode of esp32
-static esp_err_t cmd_get_wifi_mode_handler (SlaveConfigPayload *req,
-                                        SlaveConfigPayload *resp, void *priv_data)
+static esp_err_t cmd_get_wifi_mode_handler (EspHostedConfigPayload *req,
+                                        EspHostedConfigPayload *resp, void *priv_data)
 {
 	esp_err_t ret;
 	wifi_mode_t mode;
@@ -223,7 +223,7 @@ static esp_err_t cmd_get_wifi_mode_handler (SlaveConfigPayload *req,
 		return ESP_ERR_NO_MEM;
 	}
 	resp_get_status__init(resp_payload);
-	resp->payload_case = SLAVE_CONFIG_PAYLOAD__PAYLOAD_RESP_GET_WIFI_MODE ;
+	resp->payload_case = ESP_HOSTED_CONFIG_PAYLOAD__PAYLOAD_RESP_GET_WIFI_MODE ;
 	resp_payload->has_mode = 1;
 	resp_payload->mode = mode;
 	resp->resp_get_wifi_mode = resp_payload;
@@ -231,8 +231,8 @@ static esp_err_t cmd_get_wifi_mode_handler (SlaveConfigPayload *req,
 }
 
 // Function sets wifi mode for esp32
-static esp_err_t cmd_set_wifi_mode_handler (SlaveConfigPayload *req,
-                                        SlaveConfigPayload *resp, void *priv_data)
+static esp_err_t cmd_set_wifi_mode_handler (EspHostedConfigPayload *req,
+                                        EspHostedConfigPayload *resp, void *priv_data)
 {
 	esp_err_t ret;
 	wifi_mode_t num = req->cmd_set_wifi_mode->mode;
@@ -250,14 +250,14 @@ static esp_err_t cmd_set_wifi_mode_handler (SlaveConfigPayload *req,
 	resp_get_status__init(resp_payload);
 	resp_payload->has_mode = 1;
 	resp_payload->mode = num;
-	resp->payload_case = SLAVE_CONFIG_PAYLOAD__PAYLOAD_RESP_SET_WIFI_MODE ;
+	resp->payload_case = ESP_HOSTED_CONFIG_PAYLOAD__PAYLOAD_RESP_SET_WIFI_MODE ;
 	resp->resp_set_wifi_mode = resp_payload;
 	return ESP_OK;
 }
 
 // Function connects to received AP configuration.
-static esp_err_t cmd_set_ap_config_handler (SlaveConfigPayload *req,
-                                        SlaveConfigPayload *resp, void *priv_data)
+static esp_err_t cmd_set_ap_config_handler (EspHostedConfigPayload *req,
+                                        EspHostedConfigPayload *resp, void *priv_data)
 {
 	esp_err_t ret;
 	s_wifi_event_group = xEventGroupCreate();
@@ -335,7 +335,7 @@ static esp_err_t cmd_set_ap_config_handler (SlaveConfigPayload *req,
 		resp_payload->status = FAILURE;
 	}
 
-	resp->payload_case = SLAVE_CONFIG_PAYLOAD__PAYLOAD_RESP_SET_AP_CONFIG ;
+	resp->payload_case = ESP_HOSTED_CONFIG_PAYLOAD__PAYLOAD_RESP_SET_AP_CONFIG ;
 	resp->resp_set_ap_config = resp_payload;
 	ap_event_unregister();
 
@@ -345,8 +345,8 @@ static esp_err_t cmd_set_ap_config_handler (SlaveConfigPayload *req,
 }
 
 // Function sends connected AP's configuration
-static esp_err_t cmd_get_ap_config_handler (SlaveConfigPayload *req,
-                                        SlaveConfigPayload *resp, void *priv_data)
+static esp_err_t cmd_get_ap_config_handler (EspHostedConfigPayload *req,
+                                        EspHostedConfigPayload *resp, void *priv_data)
 {
 	if (!hosted_flags.is_ap_connected) {
 		ESP_LOGI(TAG,"ESP32 station is not connected with AP, can't get AP configuration");
@@ -386,15 +386,15 @@ static esp_err_t cmd_get_ap_config_handler (SlaveConfigPayload *req,
 	resp_payload->has_chnl = 1;
 	resp_payload->chnl = credentials.chnl;
 	resp_payload->status = SUCCESS;
-	resp->payload_case = SLAVE_CONFIG_PAYLOAD__PAYLOAD_RESP_GET_AP_CONFIG ;
+	resp->payload_case = ESP_HOSTED_CONFIG_PAYLOAD__PAYLOAD_RESP_GET_AP_CONFIG ;
 	resp->resp_get_ap_config = resp_payload;
 	free(ap_info);
 	return ESP_OK;
 }
 
 // Functions disconnects from AP.
-static esp_err_t cmd_disconnect_ap_handler (SlaveConfigPayload *req,
-                                        SlaveConfigPayload *resp, void *priv_data)
+static esp_err_t cmd_disconnect_ap_handler (EspHostedConfigPayload *req,
+                                        EspHostedConfigPayload *resp, void *priv_data)
 {
 	if (!hosted_flags.is_ap_connected) {
 		ESP_LOGI(TAG,"ESP32 station is not connected with AP, can't disconnect from AP");
@@ -413,7 +413,7 @@ static esp_err_t cmd_disconnect_ap_handler (SlaveConfigPayload *req,
 	}
 	resp_get_status__init(resp_payload);
 	resp_payload->resp = SUCCESS;
-	resp->payload_case = SLAVE_CONFIG_PAYLOAD__PAYLOAD_RESP_DISCONNECT_AP;
+	resp->payload_case = ESP_HOSTED_CONFIG_PAYLOAD__PAYLOAD_RESP_DISCONNECT_AP;
 	resp->resp_disconnect_ap = resp_payload;
 	ESP_LOGI(TAG,"disconnected from AP");
 	hosted_flags.is_ap_connected = false;
@@ -421,8 +421,8 @@ static esp_err_t cmd_disconnect_ap_handler (SlaveConfigPayload *req,
 }
 
 // Function returns softAP's configuration
-static esp_err_t cmd_get_softap_config_handler (SlaveConfigPayload *req,
-                                        SlaveConfigPayload *resp, void *priv_data)
+static esp_err_t cmd_get_softap_config_handler (EspHostedConfigPayload *req,
+                                        EspHostedConfigPayload *resp, void *priv_data)
 {
 	if (!hosted_flags.is_softap_started) {
 		ESP_LOGI(TAG,"ESP32 SoftAP mode aren't set, So can't get config");
@@ -480,7 +480,7 @@ static esp_err_t cmd_get_softap_config_handler (SlaveConfigPayload *req,
 	}
 	resp_payload->bw = *(int *)get_bw;
 	resp_payload->status = SUCCESS;
-	resp->payload_case = SLAVE_CONFIG_PAYLOAD__PAYLOAD_RESP_GET_SOFTAP_CONFIG;
+	resp->payload_case = ESP_HOSTED_CONFIG_PAYLOAD__PAYLOAD_RESP_GET_SOFTAP_CONFIG;
 	resp->resp_get_softap_config = resp_payload;
 	free(get_conf);
 	free(get_bw);
@@ -488,8 +488,8 @@ static esp_err_t cmd_get_softap_config_handler (SlaveConfigPayload *req,
 }
 
 // Function sets softAP's configuration
-static esp_err_t cmd_set_softap_config_handler (SlaveConfigPayload *req,
-                                        SlaveConfigPayload *resp, void *priv_data)
+static esp_err_t cmd_set_softap_config_handler (EspHostedConfigPayload *req,
+                                        EspHostedConfigPayload *resp, void *priv_data)
 {
 	esp_err_t ret;
 	softap_event_register();
@@ -551,7 +551,7 @@ static esp_err_t cmd_set_softap_config_handler (SlaveConfigPayload *req,
 	}
 	resp_config__init (resp_payload);
 	resp_payload->status = SUCCESS;
-	resp->payload_case = SLAVE_CONFIG_PAYLOAD__PAYLOAD_RESP_SET_SOFTAP_CONFIG ;
+	resp->payload_case = ESP_HOSTED_CONFIG_PAYLOAD__PAYLOAD_RESP_SET_SOFTAP_CONFIG ;
 	resp->resp_set_softap_config = resp_payload;
 	ESP_LOGI(TAG,"ESP32 SoftAP is avaliable ");
 
@@ -561,8 +561,8 @@ static esp_err_t cmd_set_softap_config_handler (SlaveConfigPayload *req,
 }
 
 // Function sends available AP's list
-static esp_err_t cmd_get_ap_scan_list_handler (SlaveConfigPayload *req,
-                                        SlaveConfigPayload *resp, void *priv_data)
+static esp_err_t cmd_get_ap_scan_list_handler (EspHostedConfigPayload *req,
+                                        EspHostedConfigPayload *resp, void *priv_data)
 {
 	esp_err_t ret;
 	wifi_mode_t mode;
@@ -611,7 +611,7 @@ static esp_err_t cmd_get_ap_scan_list_handler (SlaveConfigPayload *req,
 		return ESP_ERR_NO_MEM;
 	}
 	resp_scan_result__init(resp_payload);
-	resp->payload_case = SLAVE_CONFIG_PAYLOAD__PAYLOAD_RESP_SCAN_AP_LIST ;
+	resp->payload_case = ESP_HOSTED_CONFIG_PAYLOAD__PAYLOAD_RESP_SCAN_AP_LIST ;
 	resp->resp_scan_ap_list = resp_payload;
 	resp_payload->has_count = 1;
 	resp_payload->count = credentials.count;
@@ -675,8 +675,8 @@ static esp_err_t cmd_get_ap_scan_list_handler (SlaveConfigPayload *req,
 }
 
 // Function returns list of softAP's connected stations
-static esp_err_t get_connected_sta_list_handler (SlaveConfigPayload *req,
-                                        SlaveConfigPayload *resp, void *priv_data)
+static esp_err_t get_connected_sta_list_handler (EspHostedConfigPayload *req,
+                                        EspHostedConfigPayload *resp, void *priv_data)
 {
 	esp_err_t ret;
 	wifi_mode_t mode;
@@ -714,7 +714,7 @@ static esp_err_t get_connected_sta_list_handler (SlaveConfigPayload *req,
 		return ESP_ERR_NO_MEM;
 	}
 	resp_connected_sta__init(resp_payload);
-	resp->payload_case = SLAVE_CONFIG_PAYLOAD__PAYLOAD_RESP_CONNECTED_STAS_LIST ;
+	resp->payload_case = ESP_HOSTED_CONFIG_PAYLOAD__PAYLOAD_RESP_CONNECTED_STAS_LIST ;
 	resp->resp_connected_stas_list = resp_payload;
 	resp_payload->has_num = 1;
 	resp_payload->num = stas_info->num;
@@ -753,45 +753,45 @@ static esp_err_t get_connected_sta_list_handler (SlaveConfigPayload *req,
 	return ESP_OK;
 }
 
-static slave_config_cmd_t cmd_table[] = {
+static esp_hosted_config_cmd_t cmd_table[] = {
 	{
-		.cmd_num = SLAVE_CONFIG_MSG_TYPE__TypeCmdGetMACAddress ,
+		.cmd_num = ESP_HOSTED_CONFIG_MSG_TYPE__TypeCmdGetMACAddress ,
 		.command_handler = cmd_get_mac_address_handler
 	},
 	{
-		.cmd_num = SLAVE_CONFIG_MSG_TYPE__TypeCmdGetWiFiMode,
+		.cmd_num = ESP_HOSTED_CONFIG_MSG_TYPE__TypeCmdGetWiFiMode,
 		.command_handler = cmd_get_wifi_mode_handler
 	},
 	{
-		.cmd_num = SLAVE_CONFIG_MSG_TYPE__TypeCmdSetWiFiMode,
+		.cmd_num = ESP_HOSTED_CONFIG_MSG_TYPE__TypeCmdSetWiFiMode,
 		.command_handler = cmd_set_wifi_mode_handler
 	},
 	{
-		.cmd_num = SLAVE_CONFIG_MSG_TYPE__TypeCmdGetAPConfig ,
+		.cmd_num = ESP_HOSTED_CONFIG_MSG_TYPE__TypeCmdGetAPConfig ,
 		.command_handler = cmd_get_ap_config_handler
 	},
 	{
-		.cmd_num = SLAVE_CONFIG_MSG_TYPE__TypeCmdSetAPConfig ,
+		.cmd_num = ESP_HOSTED_CONFIG_MSG_TYPE__TypeCmdSetAPConfig ,
 		.command_handler = cmd_set_ap_config_handler
 	},
 	{
-		.cmd_num =  SLAVE_CONFIG_MSG_TYPE__TypeCmdGetSoftAPConfig ,
+		.cmd_num =  ESP_HOSTED_CONFIG_MSG_TYPE__TypeCmdGetSoftAPConfig ,
 		.command_handler = cmd_get_softap_config_handler
 	},
 	{
-		.cmd_num = SLAVE_CONFIG_MSG_TYPE__TypeCmdSetSoftAPConfig ,
+		.cmd_num = ESP_HOSTED_CONFIG_MSG_TYPE__TypeCmdSetSoftAPConfig ,
 		.command_handler = cmd_set_softap_config_handler
 	},
 	{
-		.cmd_num =  SLAVE_CONFIG_MSG_TYPE__TypeCmdDisconnectAP ,
+		.cmd_num =  ESP_HOSTED_CONFIG_MSG_TYPE__TypeCmdDisconnectAP ,
 		.command_handler = cmd_disconnect_ap_handler
 	},
 	{
-		.cmd_num = SLAVE_CONFIG_MSG_TYPE__TypeCmdGetAPScanList ,
+		.cmd_num = ESP_HOSTED_CONFIG_MSG_TYPE__TypeCmdGetAPScanList ,
 		.command_handler = cmd_get_ap_scan_list_handler
 	},
 	{
-		.cmd_num = SLAVE_CONFIG_MSG_TYPE__TypeCmdGetConnectedSTAList ,
+		.cmd_num = ESP_HOSTED_CONFIG_MSG_TYPE__TypeCmdGetConnectedSTAList ,
 		.command_handler = get_connected_sta_list_handler
 	},
 };
@@ -799,7 +799,7 @@ static slave_config_cmd_t cmd_table[] = {
 
 static int lookup_cmd_handler(int cmd_id)
 {
-    for (int i = 0; i < sizeof(cmd_table)/sizeof(slave_config_cmd_t); i++) {
+    for (int i = 0; i < sizeof(cmd_table)/sizeof(esp_hosted_config_cmd_t); i++) {
         if (cmd_table[i].cmd_num == cmd_id) {
             return i;
         }
@@ -807,7 +807,7 @@ static int lookup_cmd_handler(int cmd_id)
     return -1;
 }
 
-static esp_err_t slave_config_command_dispatcher(SlaveConfigPayload *req, SlaveConfigPayload *resp, void *priv_data)
+static esp_err_t esp_hosted_config_command_dispatcher(EspHostedConfigPayload *req, EspHostedConfigPayload *resp, void *priv_data)
 {
 	esp_err_t ret;
 	int cmd_index = lookup_cmd_handler(req->msg);
@@ -825,64 +825,64 @@ static esp_err_t slave_config_command_dispatcher(SlaveConfigPayload *req, SlaveC
 	return ESP_OK;
 }
 
-static void slave_config_cleanup(SlaveConfigPayload *resp)
+static void esp_hosted_config_cleanup(EspHostedConfigPayload *resp)
 {
 	if (!resp) {
 		return;
 	}
 	switch (resp->msg) {
-		case (SLAVE_CONFIG_MSG_TYPE__TypeRespGetMACAddress ) : {
+		case (ESP_HOSTED_CONFIG_MSG_TYPE__TypeRespGetMACAddress ) : {
 			if (resp->resp_get_mac_address) {
 				free(resp->resp_get_mac_address->resp);
 				free(resp->resp_get_mac_address);
 			}
 		}
 		break;
-		case (SLAVE_CONFIG_MSG_TYPE__TypeRespGetWiFiMode) : {
+		case (ESP_HOSTED_CONFIG_MSG_TYPE__TypeRespGetWiFiMode) : {
 			if (resp->resp_get_wifi_mode) {
 				free(resp->resp_get_wifi_mode);
 			}
 		}
 		break;
-		case (SLAVE_CONFIG_MSG_TYPE__TypeRespSetWiFiMode ) : {
+		case (ESP_HOSTED_CONFIG_MSG_TYPE__TypeRespSetWiFiMode ) : {
 			if (resp->resp_set_wifi_mode) {
 				free(resp->resp_set_wifi_mode);
 			}
 		}
 		break;
-		case (SLAVE_CONFIG_MSG_TYPE__TypeRespGetAPConfig ) : {
+		case (ESP_HOSTED_CONFIG_MSG_TYPE__TypeRespGetAPConfig ) : {
 			if (resp->resp_get_ap_config) {
 				free(resp->resp_get_ap_config);
 				memset(&credentials,0,sizeof(credentials_t));
 			}
 		}
 		break;
-		case (SLAVE_CONFIG_MSG_TYPE__TypeRespSetAPConfig ) : {
+		case (ESP_HOSTED_CONFIG_MSG_TYPE__TypeRespSetAPConfig ) : {
 			if (resp->resp_set_ap_config) {
 				free(resp->resp_set_ap_config);
 			}
 		}
 		break;
-		case (SLAVE_CONFIG_MSG_TYPE__TypeRespGetSoftAPConfig ) : {
+		case (ESP_HOSTED_CONFIG_MSG_TYPE__TypeRespGetSoftAPConfig ) : {
 			if (resp->resp_get_softap_config) {
 				free(resp->resp_get_softap_config);
 				memset(&credentials,0,sizeof(credentials_t));
 			}
 		}
 		break;
-		case (SLAVE_CONFIG_MSG_TYPE__TypeRespSetSoftAPConfig ) : {
+		case (ESP_HOSTED_CONFIG_MSG_TYPE__TypeRespSetSoftAPConfig ) : {
 			if (resp->resp_set_softap_config) {
 				free(resp->resp_set_softap_config);
 			}
 		}
 		break;
-		case (SLAVE_CONFIG_MSG_TYPE__TypeRespDisconnectAP ) : {
+		case (ESP_HOSTED_CONFIG_MSG_TYPE__TypeRespDisconnectAP ) : {
 			if (resp->resp_disconnect_ap) {
 				free(resp->resp_disconnect_ap);
 			}
 		}
 		break;
-		case (SLAVE_CONFIG_MSG_TYPE__TypeRespGetAPScanList) : {
+		case (ESP_HOSTED_CONFIG_MSG_TYPE__TypeRespGetAPScanList) : {
 			if (resp->resp_scan_ap_list) {
 				if (resp->resp_scan_ap_list->entries) {
 					for (int i=0 ; i<resp->resp_scan_ap_list->n_entries; i++) {
@@ -899,7 +899,7 @@ static void slave_config_cleanup(SlaveConfigPayload *resp)
 			}
 		}
 		break;
-		case (SLAVE_CONFIG_MSG_TYPE__TypeRespGetConnectedSTAList ) : {
+		case (ESP_HOSTED_CONFIG_MSG_TYPE__TypeRespGetConnectedSTAList ) : {
 			if (resp->resp_connected_stas_list) {
 				if (resp->resp_connected_stas_list->stations) {
 					for (int i=0 ; i < resp->resp_connected_stas_list->num; i++) {
@@ -924,8 +924,8 @@ static void slave_config_cleanup(SlaveConfigPayload *resp)
 
 esp_err_t data_transfer_handler(uint32_t session_id,const uint8_t *inbuf, ssize_t inlen,uint8_t **outbuf, ssize_t *outlen, void *priv_data)
 {
-	SlaveConfigPayload *req;
-	SlaveConfigPayload resp;
+	EspHostedConfigPayload *req;
+	EspHostedConfigPayload resp;
 
 	esp_err_t ret = ESP_OK;
 	if (inbuf == NULL || outbuf == NULL || outlen == NULL) {
@@ -933,35 +933,35 @@ esp_err_t data_transfer_handler(uint32_t session_id,const uint8_t *inbuf, ssize_
 		return ESP_FAIL;
 	}
 
-	req = slave_config_payload__unpack(NULL, inlen, inbuf);
+	req = esp_hosted_config_payload__unpack(NULL, inlen, inbuf);
 	if (!req) {
 		ESP_LOGE(TAG, "unable to unpack config data");
 		return ESP_FAIL;
 	}
 
-	slave_config_payload__init (&resp);
+	esp_hosted_config_payload__init (&resp);
 	resp.has_msg = 1;
 	resp.msg = req->msg + 1;
-	ret = slave_config_command_dispatcher(req,&resp,NULL);
+	ret = esp_hosted_config_command_dispatcher(req,&resp,NULL);
 	if (ret != ESP_OK) {
 		ESP_LOGE(TAG, "command dispatching not happening");
-		slave_config_cleanup(&resp);
+		esp_hosted_config_cleanup(&resp);
 		return ESP_FAIL;
 	}
-	slave_config_payload__free_unpacked(req, NULL);
-	*outlen = slave_config_payload__get_packed_size (&resp);
+	esp_hosted_config_payload__free_unpacked(req, NULL);
+	*outlen = esp_hosted_config_payload__get_packed_size (&resp);
 	if (*outlen <= 0) {
 		ESP_LOGE(TAG, "Invalid encoding for response");
-		slave_config_cleanup(&resp);
+		esp_hosted_config_cleanup(&resp);
 		return ESP_FAIL;
 	}
 	*outbuf = (uint8_t *)calloc(1,*outlen);
 	if (!*outbuf) {
 		ESP_LOGE(TAG, "No memory allocated for outbuf");
-		slave_config_cleanup(&resp);
+		esp_hosted_config_cleanup(&resp);
 		return ESP_ERR_NO_MEM;
 	}
-	slave_config_payload__pack (&resp, *outbuf);
-	slave_config_cleanup(&resp);
+	esp_hosted_config_payload__pack (&resp, *outbuf);
+	esp_hosted_config_cleanup(&resp);
 	return ESP_OK;
 }
