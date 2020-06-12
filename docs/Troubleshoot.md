@@ -1,7 +1,7 @@
 # Troubleshoot instructions
 ## Host fails to detect esp device
 1. Make sure to use esp32 wrover kit. If you are using a different esp32 module/board, please check pull up requirements (https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/peripherals/sd_pullup_requirements.html)
-2. Recheck jumper cable connections. Try to use cables that are smaller in length.
+2. Recheck jumper cable connections. Try to use cables that are smaller in length(less than 10 cm should work).
 3. Make sure that driver module is loaded.
 ```
 $ sudo lsmod | grep esp32

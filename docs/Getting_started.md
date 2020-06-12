@@ -19,7 +19,7 @@ User can make use of these python functions to get access of wifi functionalitie
 python test.py
 ```
 
-first run `./rpi_init.sh` to compile and insert ESP32 host driver on rpi. This script also creates `/dev/esps0` which is used as a WLAN/BT/BLE control interface.
+Go to `host/host_control/` folder and run `./rpi_init.sh` to compile and insert ESP32 host driver on rpi. This script also creates `/dev/esps0` which is used as a WLAN/BT/BLE control interface.
 
 There are six python scripts for station connect to AP, station disconnect from AP ,start softAP, stop softAP, scan available APs and list stations connected to softAP.
 
@@ -28,7 +28,9 @@ There are six python scripts for station connect to AP, station disconnect from 
 ```
 ex. python station_connect.py 'xyz' 'xyz123456' --bssid='e5:6c:67:3c:cf:65'
 ```
-2. `station_disconnect.py` is a python script to disconnect ESP32 station from AP.
+User can see ethsta0 interface is up, using _ifconfig_.
+
+2. `station_disconnect.py` is a python script to disconnect ESP32 station from AP. Now ethsta0 interface is down.
 
 ```
 python station_disconnect.py
@@ -39,10 +41,10 @@ python station_disconnect.py
 ex. python softap_config.py 'xyz' 'xyz123456' 1 3 --max_conn=4 --ssid_hidden=0 --bw=1
 ```
 ---
-Note: To start data connection, user needs to setup a DHCP server on rpi or set static IP address for AP interface i.e. ethap0
+Note: User can see ethap0 interface is up, using _ifconfig_. To start data connection, user needs to setup a DHCP server on rpi or set static IP address for AP interface i.e. ethap0
 
 ---
-4. `softap_stop.py` is a python script to stop ESP32 softap. This script will change wifi mode to `null` if only softAP is running or to `station` mode if softAP and station both are on.
+4. `softap_stop.py` is a python script to stop ESP32 softap. This script will change wifi mode to `null` if only softAP is running or to `station` mode if softAP and station both are on. Now ethap0 interface is down.
 
 ```
 ex. python softap_stop.py
@@ -70,6 +72,9 @@ TCP Rx: 12 Mbps
 ```
 
 ## For Bluetooth/BLE functionality
+
+Go to `host/host_control/` folder to run following script.
+
 ### UART based setup
 1. Execute `./rpi_init.sh btuart` to prepare RPi for Bluetooth operation
 2. Execute `hciattach` command as below to add hci interface
