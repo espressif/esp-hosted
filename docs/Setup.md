@@ -109,7 +109,7 @@ The control path between Raspberry-Pi and ESP32 is based on `protobuf`. For that
 git mv components/protocomm/src/common/protocomm_priv.h components/protocomm/include/common/
 ```
 
-On ESP32 either use pre-provided hosted mode firmware binary or if you have source, compile the app against ESP-IDF 4.0 release by running command as `make` in `slave_driver/network_adapter` directory. Program the WROVER-KIT using standard flash programming procedure with
+On ESP32 either use pre-provided hosted mode firmware binary or if you have source, compile the app against ESP-IDF 4.0 release by running command as `make` in `esp/esp_driver/network_adapter` directory. Program the WROVER-KIT using standard flash programming procedure with
 ```sh
 $ make flash
 ```
@@ -118,18 +118,21 @@ $ make flash
 Once ESP32 has a valid firmware and booted successfully, you should be able to see successful enumeration on Raspberry Pi side as:
 ```sh
 $ dmesg
-[  143.606119] mmc1: queuing unknown CIS tuple 0x01 (3 bytes)
-[  143.613524] mmc1: queuing unknown CIS tuple 0x1a (5 bytes)
-[  143.617844] mmc1: queuing unknown CIS tuple 0x1b (8 bytes)
-[  143.620070] mmc1: queuing unknown CIS tuple 0x80 (1 bytes)
-[  143.620167] mmc1: queuing unknown CIS tuple 0x81 (1 bytes)
-[  143.620265] mmc1: queuing unknown CIS tuple 0x82 (1 bytes)
-[  143.622073] mmc1: queuing unknown CIS tuple 0x80 (1 bytes)
-[  143.622169] mmc1: queuing unknown CIS tuple 0x81 (1 bytes)
-[  143.622266] mmc1: queuing unknown CIS tuple 0x82 (1 bytes)
-[  143.622461] mmc1: new SDIO card at address 0001
-[  148.095780] esp32: loading out-of-tree module taints kernel.
-[  148.314969] Initialising ESP Serial support
-[  148.320686] esp32_probe: ESP network device detected
+[   45.926409] Bluetooth: Core ver 2.22
+[   45.926507] NET: Registered protocol family 31
+[   45.926513] Bluetooth: HCI device and connection manager initialized
+[   45.926542] Bluetooth: HCI socket layer initialized
+[   45.926556] Bluetooth: L2CAP socket layer initialized
+[   45.926596] Bluetooth: SCO socket layer initialized
+[   50.263509] esp32: loading out-of-tree module taints kernel.
+[   50.266361] esp_probe: ESP network device detected
+[   50.485777] Features supported are:
+[   50.485783] 	 * WLAN
+[   50.485785] 	 * BT/BLE
+[   50.485787] 	   - HCI over SDIO
+[   50.485789] 	   - BT/BLE dual mode
+[   50.702391] esp_sdio: probe of mmc1:0001:2 failed with error -22
+[   50.723218] Bluetooth: BNEP (Ethernet Emulation) ver 1.3
+[   50.723232] Bluetooth: BNEP filters: protocol multicast
+[   50.723256] Bluetooth: BNEP socket layer initialized
 ```
-Once the module is inserted, you should see ethap0 and ethsta0 interfaces using _ifconfig_ command.
