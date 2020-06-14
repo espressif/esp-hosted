@@ -1,18 +1,15 @@
-# Hosted solution with ESP32
-This project adds a capability to use ESP32 as a communication processor for Wi-Fi and bluetooth/BLE connectivity with an external host. The project provides ESP32 side firmware, example Linux driver and protocol description. This can directly be used with Linux based hosts or can easily be ported to other MCUs with available open protocol description.
+# ESP-Hosted solution
+ESP-Hosted project provides a way to use ESP32 as a communication processor providing Wi-Fi and Bluetooth/BLE connectivity to the host MCU. It provides a standard network interface implementation for the host to receive and transmit 802.3 frames from the host. The host can use its own TCP/IP and TLS stack above the network interface that the application can use. For BT connectivity, it provides a standard HCI interface to the host so that the host can run a Bluetooth host stack on the same. Please note that this project doesn't provide standard 802.11 interface to the host and for the control path, it provides custom command implementation on host and ESP32 side based on Protobufs.
+The below diagram shows hardware and software block diagram for a typical system built with ESP-Hosted.
 
-## Wi-Fi connectivity solution
-This project uses a protobuf based command-set for control path and uses a separate connection (currently supported on SDIO) for data path. The ESP32 provides a simple interface to the host to provide ethernet interface that can transmit and receive 802.3 frames. This allows the TCP/IP and higher level protocol stack to run on the host.
+![alt text](esp-hosted-block-diagram.png "ESP-Hosted Block Diagram")
 
-## Bluetooth/BLE connectivity solution
-This functionality is provided through standard HCI interface created either over SDIO or UART. Linux based host can use standard hci tools/commands to control this interface.
+# Getting Started 
 
-## Pointers to start with ESP-Hosted Solutions
+[Hardware Setup and Compilation](docs/Setup.md)
 
-[For hardware setup and initial configuration](docs/Setup.md)
+[Getting Started](docs/Getting_started.md)
 
-[Understanding Protocol followed behind ESP-Hosted](docs/Design.md)
+[Protocol Design](docs/Design.md)
 
-[Starting with ESP-Hosted](docs/Getting_started.md)
-
-[Stuck somewhere? Here is basic troubleshoot guide](docs/Troubleshoot.md)
+[Troubleshooting Guide](docs/Troubleshoot.md)
