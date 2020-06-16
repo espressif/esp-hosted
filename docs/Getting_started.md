@@ -19,11 +19,11 @@ User can make use of these python functions to get access of wifi functionalitie
 python test.py
 ```
 
-Go to `host/host_control/` folder and run `./rpi_init.sh` to compile and insert ESP32 host driver on rpi. This script also creates `/dev/esps0` which is used as a WLAN/BT/BLE control interface.
+Go to `host/host_control/` folder and run `./rpi_init.sh` to compile and insert host driver on Raspberry-Pi. This script also creates `/dev/esps0` which is used as a WLAN control interface.
 
 There are six python scripts for station connect to AP, station disconnect from AP ,start softAP, stop softAP, scan available APs and list stations connected to softAP.
 
-1. `station_connect.py` is a python script which configures ESP32 in `station mode`, connects rpi to external AP with credentials the user has provided. Also it ups the station interface and runs DHCP client. User should provide parameters like ssid, password, mac address of AP(Its optional parameter).
+1. `station_connect.py` is a python script which configures ESP32 in `station mode`, connects Raspberry-Pi to external AP with credentials the user has provided. Also it ups the station interface and runs DHCP client. User should provide parameters like ssid, password, mac address of AP(Its optional parameter).
 
 ```
 ex. python station_connect.py 'xyz' 'xyz123456' --bssid='e5:6c:67:3c:cf:65'
@@ -41,7 +41,7 @@ python station_disconnect.py
 ex. python softap_config.py 'xyz' 'xyz123456' 1 3 --max_conn=4 --ssid_hidden=0 --bw=1
 ```
 ---
-Note: User can see ethap0 interface is up, using _ifconfig_. To start data connection, user needs to setup a DHCP server on rpi or set static IP address for AP interface i.e. ethap0
+Note: User can see ethap0 interface is up, using _ifconfig_. To start data connection, user needs to setup a DHCP server on Raspberry-Pi or set static IP address for AP interface i.e. ethap0
 
 ---
 4. `softap_stop.py` is a python script to stop ESP32 softap. This script will change wifi mode to `null` if only softAP is running or to `station` mode if softAP and station both are on. Now ethap0 interface is down.
@@ -53,10 +53,6 @@ ex. python softap_stop.py
 ```
 ex. python ap_scan_list.py
 ```
----
-Note: To start data connection, user needs to setup a DHCP server on rpi or set static IP address for AP interface i.e. ethap0
-
----
 6. `connected_stations_list.py` is a python script that returns list of mac addresses of stations connected to softAP.
 
 ```
@@ -72,26 +68,25 @@ TCP Rx: 12 Mbps
 ```
 
 ## For Bluetooth/BLE functionality
+- Ensure that bluez is installed on Raspberry-Pi and it is downloaded in source format as well. Please refer [Setup](docs/Setup.md) instructions for more details.
+- In following test, Android device was used as a BT/BLE test device. For BLE testing, [nRF connect for mobile APP](https://play.google.com/store/apps/details?id=no.nordicsemi.android.mcp&hl=en_IN) was used.
 
-Go to `host/host_control/` folder to run following script.
+- Go to `host/host_control/` folder to run following script.
 
 ### UART based setup
-1. Execute `./rpi_init.sh btuart` to prepare RPi for Bluetooth operation
-2. Execute `hciattach` command as below to add hci interface
+1. Execute `./rpi_init.sh btuart` to prepare Raspberry-Pi for Bluetooth operation
+2. Execute `hciattach` command as below to add hci interface (i.e. hciX)
 ```
 $ sudo hciattach -s 115200 /dev/serial0 any 115200 flow
 ```
 
 ### SDIO based setup
-Execute `./rpi_init.sh` to prepare RPi for SDIO+BT operation.
-HCI interface will be available for use as soon as host driver detects esp32 device over SDIO interface.
+Execute `./rpi_init.sh` to prepare Raspberry-Pi for SDIO+BT operation.
+HCI interface (i.e hciX) will be available for use as soon as host driver detects ESP32 module over SDIO interface.
 User can use standard hci utilities over this interface to make use of BT/BLE feature.
 
-### For Testing of BT/BLE connection
-
-We have used [nRF connect for mobile APP](https://play.google.com/store/apps/details?id=no.nordicsemi.android.mcp&hl=en_IN) for testing of BT/BLE.
-
-### GATT server
+### BT/BLE Test procedure
+#### GATT server
 
 1. run `hciconfig`. Output should show only one `SDIO` interface.
 ```
@@ -105,22 +100,22 @@ hci0:	Type: Primary  Bus: SDIO
 
 3. Now start advertising. Run `sudo hciconfig hci0 leadv`.
 
-4. Now esp32's mac address should be listed in scan list of mobile app.
+4. Now ESP32's mac address should be listed in scan list of mobile app.
 
-5. Connect to esp32's mac address with mobile as gatt client.
+5. Connect to ESP32's mac address with mobile as gatt client.
 
 6. User can check read/write characteristics fields in `Heart Rate` service.
 
-### GATT Client
+#### GATT Client
 
-1. User can run `./test/example-gatt-client` on rpi. This will start gatt client on Raspberry-Pi.
+1. User can run `./test/example-gatt-client` on Raspberry-Pi. This will start gatt client on Raspberry-Pi.
 
-2. User will receive `Heart Rate Measurement` field in rpi console.
+2. User will receive `Heart Rate Measurement` field in Raspberry-Pi console.
 
-### BT scan
+#### BT scan
 
 User can run `hcitool scan` for BT device scanning.
 
-### BLE scan
+#### BLE scan
 
 User can run `hcitool lescan` for BLE device scanning.

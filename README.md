@@ -4,6 +4,16 @@ The below diagram shows hardware and software block diagram for a typical system
 
 ![alt text](docs/esp-hosted-block-diagram.png "ESP-Hosted Block Diagram")
 
+ESP hosted solution provides following WLAN and BT/BLE features to host:
+- WLAN Features:
+	- 802.11b/g/n
+	- WLAN Station
+	- WLAN Soft AP
+
+- BT/BLE Features:
+	- v4.2 BR/EDR and BLE
+
+
 # Getting Started 
 
 [Hardware Setup and Compilation](docs/Setup.md)
