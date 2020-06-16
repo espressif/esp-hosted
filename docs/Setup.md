@@ -2,7 +2,7 @@
 Currently we support ESP32 WROVER-Kit with Raspberry-Pi (3 Model B+, 4 Model B) for evaluation with Raspbian operating system.
 
 ## Raspberry-Pi Software Setup
-We recommend full version Raspbian install on Raspberry-Pi to ensure easy driver compilation. In addition for driver compilation, kernel headers are required. Please install them as:
+We recommend full version Raspbian install on Raspberry-Pi to ensure easy driver compilation. Please make sure to use kernel version `v4.19` and above. Prior kernel versions may work, but are not tested. Kernel headers are required for driver compilation. Please install them as:
 ```sh
 $ sudo apt update
 $ sudo apt-get install raspberrypi-kernel-headers
@@ -38,7 +38,7 @@ make sure Raspberry-Pi should have `bluetoothctl`, `bluetoothd`, `hcitool`, `hci
 ### Hardware Setup/Connections
 In this setup, ESP32 board acts as a SDIO peripheral and provides Wi-FI capabilities to host. Please connect ESP32 board to Raspberry-Pi with jumper cables as mentioned below. It may be good to use small length cables to ensure signal integrity.
 
-| RPi Pin | ESP32 Pin | Function |
+| Raspberry-Pi Pin | ESP32 Pin | Function |
 |:-------:|:---------:|:--------:|
 | 13 | IO13 | DAT3 |
 | 15 | IO14 | CLK |
@@ -48,11 +48,11 @@ In this setup, ESP32 board acts as a SDIO peripheral and provides Wi-FI capabili
 | 37 | IO12 | DAT2 |
 | 39 | GND | GND |
 
-RPI pinout can be found [here!](https://pinout.xyz/pinout/sdio)
+Raspberry-Pi pinout can be found [here!](https://pinout.xyz/pinout/sdio)
 
 Setup image is here.
 
-![alt text](rpi_esp_setup.jpeg "setup of RPI as host and ESP32 as slave")
+![alt text](rpi_esp_setup.jpeg "setup of Raspberry-Pi as host and ESP32 as slave")
 
 Power ESP32 and Raspberry Pi separately with a power supply that provide sufficient power. ESP32 can be powered through PC using micro-USB cable.
 
@@ -68,7 +68,7 @@ Please reboot Raspberry-Pi after changing this file.
 ### Hardware Setup/Connections
 In this setup, ESP32 board provides Bluetooth/BLE capabilities to host over UART interface. Please connect ESP32 board to Raspberry-Pi with jumper cables as below. As mentioned above, use small length cables.
 
-| RPi Pin Function | RPi Pin | ESP32 Pin | ESP32 Pin Function |
+| Raspberry-Pi Pin Function | Raspberry-Pi Pin | ESP32 Pin | ESP32 Pin Function |
 |:-------:|:--------:|:---------:|:--------:|
 | RX | 10 | IO5 | TX |
 | TX | 8 | IO18 | RX |
@@ -104,7 +104,7 @@ dwc_otg.lpm_enable=0 console=tty1 root=PARTUUID=5c2c80d1-02 rootfstype=ext4 elev
 4. Reboot Raspberry-Pi
 
 ## ESP32 Setup
-The control path between Raspberry-Pi and ESP32 is based on `protobuf`. For that `protocomm` layer from ESP-IDF is used. Make sure ESP-IDF on branch `release/v4.0`. Run following command on esp32 to make `protocomm_priv.h` available for control path.
+The control path between Raspberry-Pi and ESP32 is based on `protobuf`. For that `protocomm` layer from ESP-IDF is used. Make sure ESP-IDF on branch `release/v4.0`. Run following command on ESP32 to make `protocomm_priv.h` available for control path.
 ```
 git mv components/protocomm/src/common/protocomm_priv.h components/protocomm/include/common/
 ```
