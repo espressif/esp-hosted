@@ -1,6 +1,6 @@
 # How to Run scripts on Raspberry-Pi(rpi)
 ## For Wi-Fi Connectivity
-There is `host/host_control` folder in which `host_commands` python library is present. It contains following functions.
+There is `host/linux/host_control` folder in which `host_commands` python library is present. It contains following functions.
 ```
 get_mac(mode)
 get_wifi_mode()
@@ -14,12 +14,12 @@ wifi_ap_scan_list()
 wifi_connected_stations_list()
 ```
 
-User can make use of these python functions to get access of wifi functionalities of ESP32. Also in `host/host_control/host_commands` folder `test.py` python script present to try those python functions. User can use it by running following command.
+User can make use of these python functions to get access of wifi functionalities of ESP32. Also in `host/linux/host_control/host_commands` folder `test.py` python script present to try those python functions. User can use it by running following command.
 ```
 python test.py
 ```
 
-Go to `host/host_control/` folder and run `./rpi_init.sh` to compile and insert host driver on Raspberry-Pi. This script also creates `/dev/esps0` which is used as a WLAN control interface.
+Go to `host/linux/host_control/` folder and run `./rpi_init.sh` to compile and insert host driver on Raspberry-Pi. This script also creates `/dev/esps0` which is used as a WLAN control interface.
 
 There are six python scripts for station connect to AP, station disconnect from AP ,start softAP, stop softAP, scan available APs and list stations connected to softAP.
 
@@ -71,7 +71,7 @@ TCP Rx: 12 Mbps
 - Ensure that bluez is installed on Raspberry-Pi and it is downloaded in source format as well. Please refer [Setup](docs/Setup.md) instructions for more details.
 - In following test, Android device was used as a BT/BLE test device. For BLE testing, [nRF connect for mobile APP](https://play.google.com/store/apps/details?id=no.nordicsemi.android.mcp&hl=en_IN) was used.
 
-- Go to `host/host_control/` folder to run following script.
+- Go to `host/linux/host_control/` folder to run following script.
 
 ### UART based setup
 1. Execute `./rpi_init.sh btuart` to prepare Raspberry-Pi for Bluetooth operation
