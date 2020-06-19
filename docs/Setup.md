@@ -2,6 +2,8 @@
 Currently we support ESP32 WROVER-Kit with Raspberry-Pi (3 Model B+, 4 Model B) for evaluation with Raspbian operating system.
 
 ## Raspberry-Pi Software Setup
+
+### Kernel setup:
 We recommend full version Raspbian install on Raspberry-Pi to ensure easy driver compilation. Please make sure to use kernel version `v4.19` and above. Prior kernel versions may work, but are not tested. Kernel headers are required for driver compilation. Please install them as:
 ```sh
 $ sudo apt update
@@ -11,6 +13,8 @@ Verify that kernel headers are installed properly by running following command. 
 ```sh
 $ ls /lib/modules/$(uname -r)/build
 ```
+
+### Python setup:
 Python is required to run utility scripts. Please install it as:
 ```sh
 $ sudo apt-get install python
@@ -20,19 +24,19 @@ To start with control path on Raspberry-Pi, `protobuf` and `utils` python module
 pip install utils
 pip install protobuf
 ```
-Raspi-gpio utility is required to configure GPIO pins. Please install it as:
+
+### Source code repository:
+* Clone esp-hosted repository on Raspberry Pi.
+
+* To test BT/BLE functionality on Raspberry-Pi `bluez`(official Linux Bluetooth protocol stack) is needed. check if Raspberry-Pi has installed `bluez` or not.
+[link that can help to install bluez](https://scribles.net/updating-bluez-on-raspberry-pi-from-5-43-to-5-50/). We have tested BT/BLE solution at bluez 5.43 and 5.45.
+
+### Utilities:
+* Raspi-gpio utility is required to configure GPIO pins. Please install it as:
 ```sh
 $ sudo apt-get install raspi-gpio
 ```
-
-To test BT/BLE functionality on Raspberry-Pi `bluez`(official Linux Bluetooth protocol stack) is needed. check if Raspberry-Pi has installed `bluez` or not.
-[link that can help to install bluez](https://scribles.net/updating-bluez-on-raspberry-pi-from-5-43-to-5-50/)
-
-### Note
-```
-We have tested BT/BLE solution at bluez 5.43 and 5.45.
-```
-make sure Raspberry-Pi should have `bluetoothctl`, `bluetoothd`, `hcitool`, `hciconfig` utilities.
+* make sure Raspberry-Pi should have `bluetoothctl`, `bluetoothd`, `hcitool`, `hciconfig` utilities.
 
 ## Wi-Fi and BT/BLE connectivity Setup over SDIO
 ### Hardware Setup/Connections

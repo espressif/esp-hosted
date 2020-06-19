@@ -18,9 +18,18 @@ wlan_init()
 {
 	cd ../host_driver/esp32/
 	make -j8
+	if [ `lsmod | grep esp32 | wc -l` != "0" ]; then
+		sudo rmmod esp32
+		sudo rm /dev/esps0
+	fi
 	sudo insmod esp32.ko
-	sudo mknod /dev/esps0 c 221 0
-	sudo chmod 666 /dev/esps0
+	if [ `lsmod | grep esp32 | wc -l` != "0" ]; then
+		echo "esp32 module inserted "
+		sudo mknod /dev/esps0 c 221 0
+		sudo chmod 666 /dev/esps0
+		echo "/dev/esps0 device created"
+		echo "RPi init successfully completed"
+	fi
 }
 
 bt_init()
@@ -42,10 +51,15 @@ if [ "$1" = "-h" ]; then
 	exit 0
 fi
 
-sudo modprobe bluetooth
-wlan_init
+if [ `lsmod | grep bluetooth | wc -l` = "0" ]; then
+	echo "bluetooth module inserted"
+	sudo modprobe bluetooth
+fi
+
+if [ `lsmod | grep bluetooth | wc -l` != "0" ]; then
+	wlan_init
+fi
 
 if [ "$1" = "btuart" ]; then
 	bt_init
 fi
-
