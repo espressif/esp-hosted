@@ -16,7 +16,7 @@ wifi_ap_scan_list()
 wifi_connected_stations_list()
 ```
 
-These python functions can be used to control Wi-Fi functionality of the ESP32. Also see [host/linux/host_control/host_commands/test.py](../host/linux/host_control/host_commands/test.py) script for an example of using these functions. You can run the script as follows:
+These python functions can be used to control Wi-Fi functionality of the ESP32. Also see [host/linux/host_control/test.py](../host/linux/host_control/test.py) script for an example of using these functions. You can run the script as follows:
 ```
 python test.py
 ```
@@ -67,7 +67,7 @@ python softap_config.py 'xyz' 'xyz123456' 1 3 --max_conn=4 --ssid_hidden=0 --bw=
 
 You can check that `ethap0` interface is up (enabled) using `ifconfig`.
 
-To start data connection, set up a DHCP server on the Raspberry Pim, or configure a static IP address for AP interface (`ethap0`).
+To start data connection, set up a DHCP server on the Raspberry Pi, or configure a static IP address for AP interface (`ethap0`).
 
 4. `softap_stop.py` is a python script to disable ESP32 softAP mode. This script will change wifi mode to `null` if only softAP is running, or to `station` mode if softAP and station both are on.
 
@@ -102,7 +102,7 @@ TCP Rx: 12 Mbps
 
 ## For Bluetooth/BLE functionality
 
-- Ensure that bluez is installed on Raspberry Pi and it is downloaded in source format as well. Please refer [Setup](docs/Setup.md) instructions for more details.
+- Ensure that bluez is installed on Raspberry Pi and it is downloaded in source format as well. Please refer to [Setup](Setup.md) instructions for more details.
 - In following test, Android device was used as a BT/BLE test device. For BLE testing, [nRF connect for mobile APP](https://play.google.com/store/apps/details?id=no.nordicsemi.android.mcp&hl=en_IN) was used.
 - Go to `host/linux/host_control/` folder to run following script.
 
