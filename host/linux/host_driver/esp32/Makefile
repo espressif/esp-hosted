@@ -9,7 +9,7 @@ ifeq ($(CONFIG_ENABLE_MONITOR_PROCESS), y)
 	EXTRA_CFLAGS += -DCONFIG_ENABLE_MONITOR_PROCESS
 endif
 
-EXTRA_CFLAGS += -I$(PWD)/../../../common/include
+EXTRA_CFLAGS += -I$(PWD)/../../../../common/include
 
 CR_C := arm-linux-gnueabihf-
 PWD := $(shell pwd)
