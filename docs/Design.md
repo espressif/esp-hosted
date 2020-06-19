@@ -1,7 +1,7 @@
 # Architecture
 Following diagram depicts s/w and h/w components that are part of ESP hosted solution. This document briefly explains the software components that are part of this system.
 
-![alt text](docs/esp-hosted-block-diagram.png "ESP-Hosted Block Diagram").
+![ESP-Hosted Block Diagram](esp-hosted-block-diagram.png).
 
 ## The Host Software
 The host software consists of the host driver and a control path implementation.
