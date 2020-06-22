@@ -70,9 +70,9 @@ bit 4: BT mode - BR/EDR only mode
 ```
 
 ### Initialization of slave device
-1. Soft reset sdio slave
-	1. Host resets sdio part of slave by setting bit 2 of register at 0x3FF5508C
-	2. This generates an interrupt for slave device, on which firmware on slave resets its sdio related data structures.
+1. Soft reset SDIO slave
+	1. Host resets SDIO part of slave by setting bit 2 of register at 0x3FF5508C
+	2. This generates an interrupt for slave device, on which firmware on slave resets its SDIO related data structures.
 2. Host reads accumulated length and buffer count at slave.
 	1. Host reads and processes 0x3FF55060 and 0x3FF55044 registers and stores the values in it's data structure
 	2. These counters are required while performing read and write operation on SDIO interface
@@ -90,7 +90,7 @@ bit 4: BT mode - BR/EDR only mode
 3. Host then updates it's own counter that keeps track of number of buffers it has transmitted.
 
 ### Data transfer from slave to host
-1. Whenever slave has data to tranfser, it updates the length in 0x3FF55060 registers and generates an interrupt for host.
+1. Whenever slave has data to transfer, it updates the length in 0x3FF55060 registers and generates an interrupt for host.
 2. On interruption, host reads interrupt status register [0x3FF55058]. Bit 23 of this register tells host that slave desires to send data.
 3. Host then gets the length set by slave by reading register mentioned in step 1. Based on previous received byte count and this length, host understands the actual length of data packet.
 4. Host performs read operation to get data from slave
