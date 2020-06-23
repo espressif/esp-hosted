@@ -118,6 +118,11 @@ Execute `./rpi_init.sh` to prepare Raspberry-Pi for SDIO+BT operation.
 HCI interface (i.e hciX) will be available for use as soon as host driver detects ESP32 module over SDIO interface.
 You can use standard HCI utilities over this interface to make use of BT/BLE feature.
 
+### Reset Pin Configuration
+This is optional configuration to change the host GPIO pin used to reset ESP32.
+As mentioned in hardware Setup, host uses BCM 6 (Pin31) which is default value. User can change the GPIO in BCM format.
+Execute `./rpi_init.sh resetpin=5` to use BCM 5 (pin 29) 
+
 ### BT/BLE Test procedure
 #### GATT server
 
