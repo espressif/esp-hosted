@@ -25,6 +25,7 @@
 #include <linux/timekeeping.h>
 #include <linux/etherdevice.h>
 #include <linux/netdevice.h>
+#include <linux/gpio.h>
 
 #include "esp.h"
 #include "esp_if.h"
@@ -36,13 +37,22 @@
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Amey Inamdar <amey.inamdar@espressif.com>");
 MODULE_AUTHOR("Mangesh Malusare <mangesh.malusare@espressif.com>");
-MODULE_DESCRIPTION("WLAN device driver for ESP32 module");
+MODULE_AUTHOR("Yogesh Mantri <yogesh.mantri@espressif.com>");
+MODULE_DESCRIPTION("Host driver for ESP32 Hosted solution");
 MODULE_VERSION("0.01");
 
 struct esp_adapter adapter;
 volatile u8 stop_data = 0;
 
 #define ACTION_DROP 1
+/* Unless specified as part of argument, resetpin,
+ * do not reset ESP32.
+ */
+#define HOST_GPIO_PIN_INVALID -1
+static int resetpin = HOST_GPIO_PIN_INVALID;
+
+module_param(resetpin, int, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
+MODULE_PARM_DESC(resetpin, "Host's GPIO pin number which is connected to ESP32's EN to reset ESP32");
 
 static int esp_open(struct net_device *ndev);
 static int esp_stop(struct net_device *ndev);
@@ -583,6 +593,33 @@ static void deinit_adapter(void)
 		destroy_workqueue(adapter.tx_workqueue);
 }
 
+static void esp_reset(void)
+{
+	if (resetpin != HOST_GPIO_PIN_INVALID) {
+		/* Check valid GPIO or not */
+		if (!gpio_is_valid(resetpin)) {
+			printk(KERN_WARNING "esp32: host resetpin (%d) configured is invalid GPIO\n", resetpin);
+			resetpin = HOST_GPIO_PIN_INVALID;
+		}
+		else {
+			printk(KERN_DEBUG "esp32: Resetpin of Host is %d\n", resetpin);
+			gpio_request(resetpin, "sysfs");
+
+			/* HOST's resetpin set to OUTPUT, HIGH */
+			gpio_direction_output(resetpin, true);
+
+			/* HOST's resetpin set to LOW */
+			gpio_set_value(resetpin, 0);
+			udelay(100);
+
+			/* HOST's resetpin set to INPUT */
+			gpio_direction_input(resetpin);
+
+			printk(KERN_DEBUG "esp32: Triggering ESP reset.\n");
+		}
+	}
+}
+
 static struct esp_adapter * init_adapter(void)
 {
 	memset(&adapter, 0, sizeof(adapter));
@@ -623,6 +660,9 @@ static int __init esp_init(void)
 	int ret = 0;
 	struct esp_adapter	*adapter;
 
+	/* Reset ESP, Clean start ESP */
+	esp_reset();
+
 	/* Init adapter */
 	adapter = init_adapter();
 
@@ -643,6 +683,9 @@ static void __exit esp_exit(void)
 {
 	esp_deinit_interface_layer();
 	deinit_adapter();
+	if (resetpin != HOST_GPIO_PIN_INVALID) {
+		gpio_free(resetpin);
+	}
 }
 
 module_init(esp_init);

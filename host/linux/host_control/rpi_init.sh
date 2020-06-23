@@ -14,6 +14,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+RESETPIN=""
+BT_INIT_SET="0"
+
 wlan_init()
 {
 	cd ../host_driver/esp32/
@@ -22,7 +25,13 @@ wlan_init()
 		sudo rmmod esp32
 		sudo rm /dev/esps0
 	fi
-	sudo insmod esp32.ko
+	if [ "$RESETPIN" = "" ] ; then
+		#By Default, BCM6 is GPIO on host. use resetpin=6
+		sudo insmod esp32.ko resetpin=6
+	else
+		#Use resetpin value from argument
+		sudo insmod esp32.ko $RESETPIN
+	fi
 	if [ `lsmod | grep esp32 | wc -l` != "0" ]; then
 		echo "esp32 module inserted "
 		sudo mknod /dev/esps0 c 221 0
@@ -38,19 +47,54 @@ bt_init()
 	sudo raspi-gpio set 17 a3 pn
 }
 
-if [ "$1" = "-h" ]; then
+usage()
+{
 	echo "This script prepares RPI for wlan and bt/ble operation over esp32 device"
 	echo "\nUsage: ./rpi_init.sh [arguments]"
 	echo "\nArguments are optional and are as below"
 	echo "	btuart:	Set GPIO pins on RPi for HCI UART operations"
+	echo "	resetpin=6:	Set GPIO pins on RPi connected to EN pin of ESP, used to reset ESP (default:6 for BCM6)"
 	echo "\nExample:"
 	echo "  - Prepare RPi for WLAN and bt/ble operation on SDIO"
 	echo "	 # ./rpi_init.sh"
 	echo "\n  - Prepare RPi for bt/ble operation over UART and WLAN over SDIO"
 	echo "	 # ./rpi_init.sh btuart"
-	exit 0
-fi
+	echo "\n  - use GPIO pin BCM5 (GPIO29) for reset"
+	echo "	 # ./rpi_init.sh resetpin=5"
+	echo "\n  - do btuart, use GPIO pin BCM5 (GPIO29) for reset"
+	echo "	 # ./rpi_init.sh btuart resetpin=5"
+}
 
+parse_arguments()
+{
+	while [ "$1" != "" ] ; do
+		case $1 in
+			--help | -h )
+				usage
+				exit 0
+				;;
+
+			btuart)
+				echo "Recvd Option: $1"
+				BT_INIT_SET="1"
+				;;
+
+			resetpin=*)
+				echo "Recvd Option: $1"
+				RESETPIN=$1
+				;;
+			*)
+				echo "$1 : unknown option"
+				usage
+				exit 1
+				;;
+		esac
+		shift
+	done
+}
+
+
+parse_arguments $*
 if [ `lsmod | grep bluetooth | wc -l` = "0" ]; then
 	echo "bluetooth module inserted"
 	sudo modprobe bluetooth
@@ -60,6 +104,6 @@ if [ `lsmod | grep bluetooth | wc -l` != "0" ]; then
 	wlan_init
 fi
 
-if [ "$1" = "btuart" ]; then
+if [ "$BT_INIT_SET" = "1" ] ; then
 	bt_init
 fi
