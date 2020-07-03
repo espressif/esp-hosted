@@ -16,21 +16,23 @@
 
 RESETPIN=""
 BT_INIT_SET="0"
+IF_TYPE="sdio"
+MODULE_NAME="esp32_${IF_TYPE}.ko"
 
 wlan_init()
 {
 	cd ../host_driver/esp32/
-	make -j8
+	make -j8 target=$IF_TYPE
 	if [ `lsmod | grep esp32 | wc -l` != "0" ]; then
-		sudo rmmod esp32
+		sudo rmmod esp32_sdio &> /dev/null
 		sudo rm /dev/esps0
 	fi
 	if [ "$RESETPIN" = "" ] ; then
 		#By Default, BCM6 is GPIO on host. use resetpin=6
-		sudo insmod esp32.ko resetpin=6
+		sudo insmod $MODULE_NAME resetpin=6
 	else
 		#Use resetpin value from argument
-		sudo insmod esp32.ko $RESETPIN
+		sudo insmod $MODULE_NAME $RESETPIN
 	fi
 	if [ `lsmod | grep esp32 | wc -l` != "0" ]; then
 		echo "esp32 module inserted "
@@ -63,6 +65,8 @@ usage()
 	echo "	 # ./rpi_init.sh resetpin=5"
 	echo "\n  - do btuart, use GPIO pin BCM5 (GPIO29) for reset"
 	echo "	 # ./rpi_init.sh btuart resetpin=5"
+	echo "\n  - Use sdio for host<->esp32 communication. sdio is default if no interface mentioned"
+	echo "	 # ./rpi_init.sh sdio"
 }
 
 parse_arguments()
@@ -83,6 +87,11 @@ parse_arguments()
 				echo "Recvd Option: $1"
 				RESETPIN=$1
 				;;
+
+			sdio)
+				IF_TYPE=$1
+				;;
+
 			*)
 				echo "$1 : unknown option"
 				usage
@@ -95,6 +104,15 @@ parse_arguments()
 
 
 parse_arguments $*
+if [ "$IF_TYPE" = "" ] ; then
+	echo "Error: No protocol selected"
+	usage
+	exit 1
+else
+	echo "Building for $IF_TYPE protocol"
+	MODULE_NAME=esp32_${IF_TYPE}.ko
+fi
+
 if [ `lsmod | grep bluetooth | wc -l` = "0" ]; then
 	echo "bluetooth module inserted"
 	sudo modprobe bluetooth
