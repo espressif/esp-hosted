@@ -41,8 +41,7 @@ failure = "failure"
 def get_mac(mode):
     req_sta_mac = esp_hosted_config_pb2.EspHostedConfigPayload()
     req_sta_mac.msg = esp_hosted_config_pb2.EspHostedConfigMsgType.TypeCmdGetMACAddress
-    #for station mode set cmd as 1
-    req_sta_mac.cmd_get_mac_address.cmd = str(mode)
+    req_sta_mac.cmd_get_mac_address.mode = mode
     protodata = req_sta_mac.SerializeToString()
     #print("serialized data "+str(protodata))
     tp = transport.Transport_pserial(interface)
