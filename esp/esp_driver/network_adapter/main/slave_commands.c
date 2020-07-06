@@ -169,7 +169,7 @@ static esp_err_t cmd_get_mac_address_handler(EspHostedConfigPayload *req,
 		ESP_LOGE(TAG, "Failed to allocate memory");
 		return ESP_ERR_NO_MEM;
 	}
-	if (strcmp(req->cmd_get_mac_address->cmd, "1") == 0) {
+	if (req->cmd_get_mac_address->mode == WIFI_MODE_STA) {
 		ret = esp_wifi_get_mac(ESP_IF_WIFI_STA , mac);
 		ESP_LOGI(TAG,"get station mac address");
 		if (ret != ESP_OK) {
@@ -177,7 +177,7 @@ static esp_err_t cmd_get_mac_address_handler(EspHostedConfigPayload *req,
 			free(mac_str);
 			return ESP_FAIL;
 		}
-	} else if (strcmp(req->cmd_get_mac_address->cmd,"2") == 0) {
+	} else if (req->cmd_get_mac_address->mode == WIFI_MODE_AP) {
 		ret = esp_wifi_get_mac(ESP_IF_WIFI_AP, mac);
 		ESP_LOGI(TAG,"get AP mac address");
 		if (ret != ESP_OK) {
