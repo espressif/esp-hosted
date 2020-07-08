@@ -17,6 +17,8 @@ enum EncryptionMode {
     Type_WPA2_PSK = 3;
     Type_WPA_WPA2_PSK = 4;
     Type_WPA2_ENTERPRISE = 5;
+    Type_WPA3_PSK = 6;
+    Type_WPA2_WPA3_PSK = 7;
 }
 
 message CmdConfig {
@@ -30,6 +32,7 @@ message CmdConfig {
     int32 rssi = 8;
     string status = 9;
     int32 bw = 10;
+    bool is_wpa3_supported = 11;
 }
 
 message RespConfig {
@@ -43,6 +46,7 @@ message RespConfig {
     int32 rssi = 8;
     string status = 9;
     int32 bw = 10;
+    bool is_wpa3_supported = 11;
 }
 
 message ScanResult {

@@ -36,7 +36,9 @@ typedef enum _EncryptionMode {
   ENCRYPTION_MODE__Type_WPA_PSK = 2,
   ENCRYPTION_MODE__Type_WPA2_PSK = 3,
   ENCRYPTION_MODE__Type_WPA_WPA2_PSK = 4,
-  ENCRYPTION_MODE__Type_WPA2_ENTERPRISE = 5
+  ENCRYPTION_MODE__Type_WPA2_ENTERPRISE = 5,
+  ENCRYPTION_MODE__Type_WPA3_PSK = 6,
+  ENCRYPTION_MODE__Type_WPA2_WPA3_PSK = 7
     PROTOBUF_C__FORCE_ENUM_TO_BE_INT_SIZE(ENCRYPTION_MODE)
 } EncryptionMode;
 typedef enum _EspHostedConfigMsgType {
@@ -108,10 +110,12 @@ struct  _CmdConfig
   char *status;
   protobuf_c_boolean has_bw;
   int32_t bw;
+  protobuf_c_boolean has_is_wpa3_supported;
+  protobuf_c_boolean is_wpa3_supported;
 };
 #define CMD_CONFIG__INIT \
  { PROTOBUF_C_MESSAGE_INIT (&cmd_config__descriptor) \
-    , NULL, NULL, 0,0, 0,0, 0,0, 0,0, NULL, 0,0, NULL, 0,0 }
+    , NULL, NULL, 0,0, 0,0, 0,0, 0,0, NULL, 0,0, NULL, 0,0, 0,0 }
 
 
 struct  _RespConfig
@@ -133,10 +137,12 @@ struct  _RespConfig
   char *status;
   protobuf_c_boolean has_bw;
   int32_t bw;
+  protobuf_c_boolean has_is_wpa3_supported;
+  protobuf_c_boolean is_wpa3_supported;
 };
 #define RESP_CONFIG__INIT \
  { PROTOBUF_C_MESSAGE_INIT (&resp_config__descriptor) \
-    , NULL, NULL, 0,0, 0,0, 0,0, 0,0, NULL, 0,0, NULL, 0,0 }
+    , NULL, NULL, 0,0, 0,0, 0,0, 0,0, NULL, 0,0, NULL, 0,0, 0,0 }
 
 
 struct  _ScanResult

@@ -7,7 +7,7 @@
 get_mac(mode)
 get_wifi_mode()
 set_wifi_mode(mode)
-wifi_set_ap_config(ssid, pwd, bssid)
+wifi_set_ap_config(ssid, pwd, bssid, is_wpa3_supported)
 wifi_get_ap_config()
 wifi_disconnect_ap()
 wifi_set_softap_config(ssid, pwd, chnl, ecn, max_conn, ssid_hidden, bw)
@@ -32,13 +32,13 @@ The other scripts in the same directory can be used to:
 - scan available APs
 - list stations connected to softAP
 
-1. `station_connect.py` is a python script which configures ESP32 in station mode, and connects to an external AP with user-provided credentials. Also it enables the station interface and runs DHCP client. The script accepts arguments such as SSID, password, and optionally the MAC address of the AP. For example:
+1. `station_connect.py` is a python script which configures ESP32 in station mode, and connects to an external AP with user-provided credentials. Also it enables the station interface and runs DHCP client. The script accepts arguments such as SSID, password, optionally MAC address and wpa3 support. For example:
 
 ```
-python station_connect.py 'xyz' 'xyz123456' --bssid='e5:6c:67:3c:cf:65'
+python station_connect.py 'xyz' 'xyz123456' --bssid='e5:6c:67:3c:cf:65' --is_wpa3_supported=True
 ```
 
-You can check that `ethsta0` interface is up (enabled) using `ifconfig`.
+You can check that `ethsta0` interface is up (enabled) using `ifconfig`. WPA3 option is only applicable if target AP supports WPA3.
 
 2. `station_disconnect.py` is a python script to disconnect ESP32 station from AP.
 
@@ -66,6 +66,7 @@ python softap_config.py 'xyz' 'xyz123456' 1 3 --max_conn=4 --ssid_hidden=0 --bw=
 ```
 
 You can check that `ethap0` interface is up (enabled) using `ifconfig`.
+`Note: Currently WPA3 support is not present for ESP32 softAP mode.`
 
 To start data connection, set up a DHCP server on the Raspberry Pi, or configure a static IP address for AP interface (`ethap0`).
 
@@ -121,7 +122,7 @@ You can use standard HCI utilities over this interface to make use of BT/BLE fea
 ### Reset Pin Configuration
 This is optional configuration to change the host GPIO pin used to reset ESP32.
 As mentioned in hardware Setup, host uses BCM 6 (Pin31) which is default value. User can change the GPIO in BCM format.
-Execute `./rpi_init.sh resetpin=5` to use BCM 5 (pin 29) 
+Execute `./rpi_init.sh resetpin=5` to use BCM 5 (pin 29)
 
 ### BT/BLE Test procedure
 #### GATT server

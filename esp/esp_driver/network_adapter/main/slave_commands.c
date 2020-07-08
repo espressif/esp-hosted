@@ -284,6 +284,10 @@ static esp_err_t cmd_set_ap_config_handler (EspHostedConfigPayload *req,
 		wifi_cfg->sta.bssid_set = true;
 		memcpy(wifi_cfg->sta.bssid,req->cmd_set_ap_config->bssid,sizeof(wifi_cfg->sta.bssid));
 	}
+	if (req->cmd_set_ap_config->is_wpa3_supported) {
+		wifi_cfg->sta.pmf_cfg.capable = true;
+		wifi_cfg->sta.pmf_cfg.required = false;
+	}
  	ret = esp_wifi_set_config(ESP_IF_WIFI_STA, wifi_cfg);
 	if (ret != ESP_OK) {
 		ESP_LOGE(TAG,"Failed to set wifi softAP mode");
@@ -370,6 +374,7 @@ static esp_err_t cmd_get_ap_config_handler (EspHostedConfigPayload *req,
 	memcpy(credentials.ssid,ap_info->ssid,sizeof(credentials.ssid));
 	credentials.rssi = ap_info->rssi;
 	credentials.chnl = ap_info->primary;
+	credentials.ecn = ap_info->authmode;
 	//ESP_LOGI(TAG,"ssid %s bssid %s",credentials.ssid, credentials.bssid);
 	//ESP_LOGI(TAG,"rssi %d channel %d ", credentials.rssi, credentials.chnl);
 	RespConfig *resp_payload = (RespConfig *)calloc(1,sizeof(RespConfig));
@@ -385,6 +390,8 @@ static esp_err_t cmd_get_ap_config_handler (EspHostedConfigPayload *req,
 	resp_payload->rssi = credentials.rssi;
 	resp_payload->has_chnl = 1;
 	resp_payload->chnl = credentials.chnl;
+	resp_payload->has_ecn = 1;
+	resp_payload->ecn = credentials.ecn;
 	resp_payload->status = SUCCESS;
 	resp->payload_case = ESP_HOSTED_CONFIG_PAYLOAD__PAYLOAD_RESP_GET_AP_CONFIG ;
 	resp->resp_get_ap_config = resp_payload;

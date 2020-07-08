@@ -32,13 +32,15 @@ success = "success"
 flag = success
 station_status = 'Nothing set'
 
-parser = argparse.ArgumentParser(description='station_connect.py is a python script which connect ESPstation to AP. ex. python station_connect.py \'xyz\' \'xyz123456\' --bssid=\'e5:6c:67:3c:cf:65\'')
+parser = argparse.ArgumentParser(description='station_connect.py is a python script which connect ESPstation to AP. ex. python station_connect.py \'xyz\' \'xyz123456\' --bssid=\'e5:6c:67:3c:cf:65\' --is_wpa3_supported=True')
 
 parser.add_argument("ssid", type=str, default='0', help="ssid of AP")
 
 parser.add_argument("password", type=str, default='0', help="password of AP")
 
 parser.add_argument("--bssid", type=str, default='0', help="bssid i.e MAC address of AP in case of multiple AP has same ssid (default: '0')")
+
+parser.add_argument("--is_wpa3_supported", type=bool, default=False, help="wpa3 support present on AP (False:Unsupported) (True: Supported)")
 
 args = parser.parse_args()
 
@@ -50,7 +52,7 @@ else :
     print("station MAC address "+str(sta_mac))
 
 if (flag == success):
-    station_status = commands.wifi_set_ap_config(args.ssid,args.password,args.bssid)
+    station_status = commands.wifi_set_ap_config(args.ssid,args.password,args.bssid,args.is_wpa3_supported)
     if (station_status == failure):
         flag = failure
         print("Failed to set AP config")
