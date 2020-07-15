@@ -22,11 +22,13 @@ MODULE_NAME="esp32_${IF_TYPE}.ko"
 wlan_init()
 {
 	cd ../host_driver/esp32/
-	make -j8 target=$IF_TYPE
 	if [ `lsmod | grep esp32 | wc -l` != "0" ]; then
-		sudo rmmod esp32_sdio &> /dev/null
 		sudo rm /dev/esps0
+		sudo rmmod esp32_sdio &> /dev/null
 	fi
+
+	make -j8 target=$IF_TYPE
+
 	if [ "$RESETPIN" = "" ] ; then
 		#By Default, BCM6 is GPIO on host. use resetpin=6
 		sudo insmod $MODULE_NAME resetpin=6
