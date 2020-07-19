@@ -34,7 +34,7 @@ print("wifi mode is "+str(x))
 x = commands.set_wifi_mode(2)
 print("connected mode is "+str(x))
 
-x = commands.wifi_set_ap_config('xyz','xyz123456','0')
+x = commands.wifi_set_ap_config('xyz','xyz123456','0',False)
 print(x)
 
 x = commands.wifi_get_ap_config()

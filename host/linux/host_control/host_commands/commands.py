@@ -91,7 +91,7 @@ def set_wifi_mode(mode):
      return set_wifi_mode.resp_set_wifi_mode.mode
 
 # get AP config to which ESP station is connected
-# It returns ssid, bssid, channel and rssi
+# It returns ssid, bssid, channel, rssi and ecn
 def wifi_get_ap_config():
      get_ap_config = esp_hosted_config_pb2.EspHostedConfigPayload()
      get_ap_config.msg = esp_hosted_config_pb2.EspHostedConfigMsgType.TypeCmdGetAPConfig
@@ -107,16 +107,26 @@ def wifi_get_ap_config():
      bssid = str(get_ap_config.resp_get_ap_config.bssid)
      channel = get_ap_config.resp_get_ap_config.chnl
      rssi = get_ap_config.resp_get_ap_config.rssi
-     return ssid,bssid,channel,rssi
+     ecn = get_ap_config.resp_get_ap_config.ecn
+     return ssid,bssid,channel,rssi,ecn
 
 # set AP config to which ESP station should connect
-# User should provide ssid, password, bssid
-def wifi_set_ap_config(ssid, pwd, bssid):
+# User should provide following parameters
+#
+# ssid              : string parameter, ssid of SoftAP
+# pwd               : string parameter, length of password should be 8~64 bytes ASCII
+# bssid             : MAC address of AP, To differentiate between APs, In case multiple AP has same ssid
+# is_wpa3_supported : status of wpa3 supplicant present on AP
+#            (False : Unsupported
+#              True : Supported )
+
+def wifi_set_ap_config(ssid, pwd, bssid, is_wpa3_supported):
     set_ap_config = esp_hosted_config_pb2.EspHostedConfigPayload()
     set_ap_config.msg = esp_hosted_config_pb2.EspHostedConfigMsgType.TypeCmdSetAPConfig
     set_ap_config.cmd_set_ap_config.ssid = str(ssid)
     set_ap_config.cmd_set_ap_config.pwd = str(pwd)
     set_ap_config.cmd_set_ap_config.bssid = str(bssid)
+    set_ap_config.cmd_set_ap_config.is_wpa3_supported = is_wpa3_supported
     protodata = set_ap_config.SerializeToString()
     #print("serialized data "+str(protodata))
     tp = transport.Transport_pserial(interface)
@@ -167,7 +177,11 @@ def wifi_set_softap_config(ssid, pwd, chnl, ecn, max_conn, ssid_hidden, bw):
     set_softap_config.cmd_set_softap_config.ssid = str(ssid)
     set_softap_config.cmd_set_softap_config.pwd = str(pwd)
     set_softap_config.cmd_set_softap_config.chnl = chnl
-    set_softap_config.cmd_set_softap_config.ecn = ecn
+    if ecn < esp_hosted_config_pb2.EncryptionMode.Type_WPA3_PSK:
+        set_softap_config.cmd_set_softap_config.ecn = ecn
+    else:
+        set_softap_config.cmd_set_softap_config.ecn = esp_hosted_config_pb2.EncryptionMode.Type_WPA2_PSK
+        print("Asked Encryption method is not supported in SoftAP mode, Setting Encryption method as WPA2_PSK")
     set_softap_config.cmd_set_softap_config.max_conn = max_conn
     set_softap_config.cmd_set_softap_config.ssid_hidden = ssid_hidden
     set_softap_config.cmd_set_softap_config.bw = bw
