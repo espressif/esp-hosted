@@ -26,11 +26,14 @@
 
 static const char TAG[] = "protocomm_pserial";
 
-#define EPNAME_MAX                  16
-#define REQ_Q_MAX                   4
+#define EPNAME_MAX                   16
+#define REQ_Q_MAX                     4
 
-#define PROTO_PSER_TLV_T_EPNAME     1
-#define PROTO_PSER_TLV_T_DATA       2
+#define SIZE_OF_TYPE                  1
+#define SIZE_OF_LENGTH                2
+
+#define PROTO_PSER_TLV_T_EPNAME       1
+#define PROTO_PSER_TLV_T_DATA         2
 
 struct pserial_config {
     pserial_xmit    xmit;
@@ -54,6 +57,50 @@ static esp_err_t parse_tlv(uint8_t **buf, size_t *total_len, int *type, size_t *
 	//printf("*len %d \n", *len);
     *total_len -= (*len + 1 + 2);
     *buf = b + 1 + 2 + (*len);
+    return ESP_OK;
+}
+
+static esp_err_t compose_tlv(uint8_t **out, size_t *outlen)
+{
+    char *epname = "control";
+    uint16_t len = 0;
+    uint16_t ep_len = strlen(epname);
+    /*
+     * TLV (Type - Length - Value) structure is as follows:
+     * --------------------------------------------------------------------------------------------
+     *  Endpoint Type | Endpoint Length | Endpoint Value  | Data Type | Data Length | Data Value  |
+     * --------------------------------------------------------------------------------------------
+     *
+     *  Bytes used per field as follows:
+     * --------------------------------------------------------------------------------------------
+     *       1        |        2        | Endpoint length |     1     |      2      | Data length |
+     * --------------------------------------------------------------------------------------------
+     */  
+    uint32_t buf_len = SIZE_OF_TYPE + SIZE_OF_LENGTH + ep_len + SIZE_OF_TYPE + SIZE_OF_LENGTH + *outlen; 
+    uint8_t *buf = (uint8_t *)calloc(1, buf_len);
+    if (buf == NULL) {
+        ESP_LOGE(TAG,"Failed to allocate memory");
+        return ESP_FAIL;
+    }
+    buf[len] = PROTO_PSER_TLV_T_EPNAME;
+    len++;
+    buf[len] = (ep_len & 0xFF);
+    len++;
+    buf[len] = ((ep_len >> 8) & 0xFF);
+    len++;
+    memcpy(&buf[len], epname, strlen(epname));
+    len = len + strlen(epname) ;
+    buf[len] = PROTO_PSER_TLV_T_DATA;
+    len++;
+    buf[len] = (*outlen & 0xFF);
+    len++;
+    buf[len] = ((*outlen >> 8) & 0xFF);
+    len++;
+    buf_len = len + *outlen;
+    memcpy(&buf[len], (*out), *outlen);
+    free(*out);
+    *out = buf;
+    *outlen = buf_len;
     return ESP_OK;
 }
 
@@ -106,6 +153,7 @@ static esp_err_t protocomm_pserial_common_handler(protocomm_t *pc, uint8_t *in, 
     }
 
     pserial_cfg = pc->priv;
+    ret = compose_tlv(&out, &outlen);
     ret = (pserial_cfg->xmit)(out, (ssize_t) outlen);
 
     free(out);

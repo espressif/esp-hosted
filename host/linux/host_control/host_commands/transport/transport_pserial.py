@@ -20,16 +20,38 @@ import utils
 
 failure = "failure"
 
+PROTO_PSER_TLV_T_EPNAME = b'\x01'
+PROTO_PSER_TLV_T_DATA   = b'\x02'
+
 class Transport_pserial(Transport):
     def __init__(self, devname):
         self.f1 = open(devname, "wb",buffering = 1024)
         self.f2 = open(devname, "rb",buffering = 1024)
 
+    def parse_tlv(self, ep_name, in_buf):
+        if in_buf[0] == PROTO_PSER_TLV_T_EPNAME:
+            if in_buf[1:3] == bytearray(pack('<H',len(ep_name))):
+                length = 3 + len(ep_name)
+                if in_buf[3:length] == ep_name:
+                    if in_buf[length] == PROTO_PSER_TLV_T_DATA:
+                        length = length + 3
+                        in_buf = in_buf[length:]
+                        return in_buf
+                    else:
+                        print("Data type not matched")
+                else:
+                    print("Endpoint name not matched")
+            else:
+                print("Endpoint length not matched")
+        else:
+            print("Endpoint type not matched")
+        return failure
+
     def send_data(self, ep_name, data, wait):
-        buf = bytearray([0x01])
+        buf = bytearray([PROTO_PSER_TLV_T_EPNAME])
         buf.extend(pack('<H', len(ep_name)))
         buf.extend(map(ord,ep_name))
-        buf.extend(b'\x02')
+        buf.extend([PROTO_PSER_TLV_T_DATA])
         buf.extend(pack('<H', len(data)))
         #print(bytearray(data))
         buf.extend(bytearray(data))
@@ -41,5 +63,4 @@ class Transport_pserial(Transport):
         except IOError:
             return failure
         self.f2.flush()
-        return s
-        
+        return self.parse_tlv(ep_name,s)
