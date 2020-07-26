@@ -260,6 +260,14 @@ static esp_err_t cmd_set_ap_config_handler (EspHostedConfigPayload *req,
                                         EspHostedConfigPayload *resp, void *priv_data)
 {
 	esp_err_t ret;
+	if (hosted_flags.is_ap_connected) {
+		ESP_LOGI(TAG, "Disconnecting from previously connected AP");
+		ret = esp_wifi_disconnect();
+		if (ret != ESP_OK) {
+			ESP_LOGE(TAG, "Failed to disconnect");
+			return ESP_FAIL;
+		}
+	}
 	s_wifi_event_group = xEventGroupCreate();
 	ap_event_register();
 	if (hosted_flags.is_softap_started) {
