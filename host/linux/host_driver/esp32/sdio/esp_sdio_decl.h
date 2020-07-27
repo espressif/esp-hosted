@@ -20,7 +20,6 @@
 #ifndef _ESP_DECL_H_
 #define _ESP_DECL_H_
 
-#include <linux/bits.h>
 #include "esp.h"
 
 /* Interrupt Status */
