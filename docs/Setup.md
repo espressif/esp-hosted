@@ -9,7 +9,7 @@ We recommend full version Raspbian install on Raspberry-Pi to ensure easy driver
 $ sudo apt update
 $ sudo apt-get install raspberrypi-kernel-headers
 ```
-Verify that kernel headers are installed properly by running following command. Failure of this command indicates that kernel headers are not installed. In such case, upgrade/downgrade kernel and reinstall kernel headers.
+Verify that kernel headers are installed properly by running following command. Failure of this command indicates that kernel headers are not installed correctly. In such case, follow https://github.com/notro/rpi-source/wiki and run rpi-source to get current kernel headers. Alternatively upgrade/downgrade kernel and reinstall kernel headers.
 ```sh
 $ ls /lib/modules/$(uname -r)/build
 ```
