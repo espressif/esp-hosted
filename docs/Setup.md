@@ -114,9 +114,13 @@ The control path between Raspberry-Pi and ESP32 is based on `protobuf`. For that
 git mv components/protocomm/src/common/protocomm_priv.h components/protocomm/include/common/
 ```
 
-On ESP32 either use pre-provided hosted mode firmware binary or if you have source, compile the app against ESP-IDF 4.0 release by running command as `make` in `esp/esp_driver/network_adapter` directory. Program the WROVER-KIT using standard flash programming procedure with
+On ESP32 either use pre-provided hosted mode firmware binary or if you have source, compile the app against ESP-IDF 4.0 release by running command as `make` in `esp/esp_driver/network_adapter` directory. Program the WROVER-KIT using standard flash programming procedure with `make`
 ```sh
 $ make flash
+```
+Or to compile and flash using `cmake` run following command in `esp/esp_driver/network_adapter` directory. Read more about [idf.py](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/build-system.html#using-the-build-system) here.
+```sh
+$ idf.py -p <serial_port> build flash
 ```
 
 ## Checking the Setup
