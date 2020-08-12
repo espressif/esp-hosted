@@ -20,12 +20,12 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   syntax='proto3',
   serialized_options=None,
   create_key=_descriptor._internal_create_key,
-  serialized_pb=b'\n\x17\x65sp_hosted_config.proto\")\n\x0c\x43mdGetStatus\x12\x0b\n\x03\x63md\x18\x01 \x01(\t\x12\x0c\n\x04mode\x18\x02 \x01(\x05\"+\n\rRespGetStatus\x12\x0c\n\x04resp\x18\x01 \x01(\t\x12\x0c\n\x04mode\x18\x02 \x01(\x05\"\xcd\x01\n\tCmdConfig\x12\x0c\n\x04ssid\x18\x01 \x01(\t\x12\x0b\n\x03pwd\x18\x02 \x01(\t\x12\x1c\n\x03\x65\x63n\x18\x03 \x01(\x0e\x32\x0f.EncryptionMode\x12\x0c\n\x04\x63hnl\x18\x04 \x01(\x05\x12\x10\n\x08max_conn\x18\x05 \x01(\x05\x12\x13\n\x0bssid_hidden\x18\x06 \x01(\x08\x12\r\n\x05\x62ssid\x18\x07 \x01(\t\x12\x0c\n\x04rssi\x18\x08 \x01(\x05\x12\x0e\n\x06status\x18\t \x01(\t\x12\n\n\x02\x62w\x18\n \x01(\x05\x12\x19\n\x11is_wpa3_supported\x18\x0b \x01(\x08\"\xce\x01\n\nRespConfig\x12\x0c\n\x04ssid\x18\x01 \x01(\t\x12\x0b\n\x03pwd\x18\x02 \x01(\t\x12\x1c\n\x03\x65\x63n\x18\x03 \x01(\x0e\x32\x0f.EncryptionMode\x12\x0c\n\x04\x63hnl\x18\x04 \x01(\x05\x12\x10\n\x08max_conn\x18\x05 \x01(\x05\x12\x13\n\x0bssid_hidden\x18\x06 \x01(\x08\x12\r\n\x05\x62ssid\x18\x07 \x01(\t\x12\x0c\n\x04rssi\x18\x08 \x01(\x05\x12\x0e\n\x06status\x18\t \x01(\t\x12\n\n\x02\x62w\x18\n \x01(\x05\x12\x19\n\x11is_wpa3_supported\x18\x0b \x01(\x08\"c\n\nScanResult\x12\x0c\n\x04ssid\x18\x01 \x01(\x0c\x12\x0c\n\x04\x63hnl\x18\x02 \x01(\r\x12\x0c\n\x04rssi\x18\x03 \x01(\x05\x12\r\n\x05\x62ssid\x18\x04 \x01(\x0c\x12\x1c\n\x03\x65\x63n\x18\x05 \x01(\x0e\x32\x0f.EncryptionMode\"\x0f\n\rCmdScanResult\"=\n\x0eRespScanResult\x12\r\n\x05\x63ount\x18\x01 \x01(\r\x12\x1c\n\x07\x65ntries\x18\x02 \x03(\x0b\x32\x0b.ScanResult\"-\n\x10\x43onnectedSTAList\x12\x0b\n\x03mac\x18\x01 \x01(\x0c\x12\x0c\n\x04rssi\x18\x02 \x01(\x05\"\x11\n\x0f\x43mdConnectedSTA\"D\n\x10RespConnectedSTA\x12\x0b\n\x03num\x18\x01 \x01(\r\x12#\n\x08stations\x18\x02 \x03(\x0b\x32\x11.ConnectedSTAList\"\xdb\x07\n\x16\x45spHostedConfigPayload\x12$\n\x03msg\x18\x01 \x01(\x0e\x32\x17.EspHostedConfigMsgType\x12,\n\x13\x63md_get_mac_address\x18\n \x01(\x0b\x32\r.CmdGetStatusH\x00\x12.\n\x14resp_get_mac_address\x18\x0b \x01(\x0b\x32\x0e.RespGetStatusH\x00\x12*\n\x11\x63md_get_wifi_mode\x18\x0c \x01(\x0b\x32\r.CmdGetStatusH\x00\x12,\n\x12resp_get_wifi_mode\x18\r \x01(\x0b\x32\x0e.RespGetStatusH\x00\x12*\n\x11\x63md_set_wifi_mode\x18\x0e \x01(\x0b\x32\r.CmdGetStatusH\x00\x12,\n\x12resp_set_wifi_mode\x18\x0f \x01(\x0b\x32\x0e.RespGetStatusH\x00\x12\'\n\x11\x63md_get_ap_config\x18\x10 \x01(\x0b\x32\n.CmdConfigH\x00\x12)\n\x12resp_get_ap_config\x18\x11 \x01(\x0b\x32\x0b.RespConfigH\x00\x12\'\n\x11\x63md_set_ap_config\x18\x12 \x01(\x0b\x32\n.CmdConfigH\x00\x12)\n\x12resp_set_ap_config\x18\x13 \x01(\x0b\x32\x0b.RespConfigH\x00\x12+\n\x15\x63md_get_softap_config\x18\x14 \x01(\x0b\x32\n.CmdConfigH\x00\x12-\n\x16resp_get_softap_config\x18\x15 \x01(\x0b\x32\x0b.RespConfigH\x00\x12+\n\x15\x63md_set_softap_config\x18\x16 \x01(\x0b\x32\n.CmdConfigH\x00\x12-\n\x16resp_set_softap_config\x18\x17 \x01(\x0b\x32\x0b.RespConfigH\x00\x12*\n\x11\x63md_disconnect_ap\x18\x18 \x01(\x0b\x32\r.CmdGetStatusH\x00\x12,\n\x12resp_disconnect_ap\x18\x19 \x01(\x0b\x32\x0e.RespGetStatusH\x00\x12*\n\x10\x63md_scan_ap_list\x18\x1a \x01(\x0b\x32\x0e.CmdScanResultH\x00\x12,\n\x11resp_scan_ap_list\x18\x1b \x01(\x0b\x32\x0f.RespScanResultH\x00\x12\x33\n\x17\x63md_connected_stas_list\x18\x1c \x01(\x0b\x32\x10.CmdConnectedSTAH\x00\x12\x35\n\x18resp_connected_stas_list\x18\x1d \x01(\x0b\x32\x11.RespConnectedSTAH\x00\x42\t\n\x07payload*\xae\x01\n\x0e\x45ncryptionMode\x12\r\n\tType_Open\x10\x00\x12\x0c\n\x08Type_WEP\x10\x01\x12\x10\n\x0cType_WPA_PSK\x10\x02\x12\x11\n\rType_WPA2_PSK\x10\x03\x12\x15\n\x11Type_WPA_WPA2_PSK\x10\x04\x12\x18\n\x14Type_WPA2_ENTERPRISE\x10\x05\x12\x11\n\rType_WPA3_PSK\x10\x06\x12\x16\n\x12Type_WPA2_WPA3_PSK\x10\x07*\xac\x04\n\x16\x45spHostedConfigMsgType\x12\x18\n\x14TypeCmdGetMACAddress\x10\x00\x12\x19\n\x15TypeRespGetMACAddress\x10\x01\x12\x16\n\x12TypeCmdGetWiFiMode\x10\x02\x12\x17\n\x13TypeRespGetWiFiMode\x10\x03\x12\x16\n\x12TypeCmdSetWiFiMode\x10\x04\x12\x17\n\x13TypeRespSetWiFiMode\x10\x05\x12\x16\n\x12TypeCmdGetAPConfig\x10\x06\x12\x17\n\x13TypeRespGetAPConfig\x10\x07\x12\x16\n\x12TypeCmdSetAPConfig\x10\x08\x12\x17\n\x13TypeRespSetAPConfig\x10\t\x12\x1a\n\x16TypeCmdGetSoftAPConfig\x10\n\x12\x1b\n\x17TypeRespGetSoftAPConfig\x10\x0b\x12\x1a\n\x16TypeCmdSetSoftAPConfig\x10\x0c\x12\x1b\n\x17TypeRespSetSoftAPConfig\x10\r\x12\x17\n\x13TypeCmdDisconnectAP\x10\x0e\x12\x18\n\x14TypeRespDisconnectAP\x10\x0f\x12\x18\n\x14TypeCmdGetAPScanList\x10\x10\x12\x19\n\x15TypeRespGetAPScanList\x10\x11\x12\x1e\n\x1aTypeCmdGetConnectedSTAList\x10\x12\x12\x1f\n\x1bTypeRespGetConnectedSTAList\x10\x13\x62\x06proto3'
+  serialized_pb=b'\n\x17\x65sp_hosted_config.proto\"2\n\x15\x45spHostedCmdGetStatus\x12\x0b\n\x03\x63md\x18\x01 \x01(\t\x12\x0c\n\x04mode\x18\x02 \x01(\x05\"4\n\x16\x45spHostedRespGetStatus\x12\x0c\n\x04resp\x18\x01 \x01(\t\x12\x0c\n\x04mode\x18\x02 \x01(\x05\"\xdf\x01\n\x12\x45spHostedCmdConfig\x12\x0c\n\x04ssid\x18\x01 \x01(\t\x12\x0b\n\x03pwd\x18\x02 \x01(\t\x12%\n\x03\x65\x63n\x18\x03 \x01(\x0e\x32\x18.EspHostedEncryptionMode\x12\x0c\n\x04\x63hnl\x18\x04 \x01(\x05\x12\x10\n\x08max_conn\x18\x05 \x01(\x05\x12\x13\n\x0bssid_hidden\x18\x06 \x01(\x08\x12\r\n\x05\x62ssid\x18\x07 \x01(\t\x12\x0c\n\x04rssi\x18\x08 \x01(\x05\x12\x0e\n\x06status\x18\t \x01(\t\x12\n\n\x02\x62w\x18\n \x01(\x05\x12\x19\n\x11is_wpa3_supported\x18\x0b \x01(\x08\"\xe0\x01\n\x13\x45spHostedRespConfig\x12\x0c\n\x04ssid\x18\x01 \x01(\t\x12\x0b\n\x03pwd\x18\x02 \x01(\t\x12%\n\x03\x65\x63n\x18\x03 \x01(\x0e\x32\x18.EspHostedEncryptionMode\x12\x0c\n\x04\x63hnl\x18\x04 \x01(\x05\x12\x10\n\x08max_conn\x18\x05 \x01(\x05\x12\x13\n\x0bssid_hidden\x18\x06 \x01(\x08\x12\r\n\x05\x62ssid\x18\x07 \x01(\t\x12\x0c\n\x04rssi\x18\x08 \x01(\x05\x12\x0e\n\x06status\x18\t \x01(\t\x12\n\n\x02\x62w\x18\n \x01(\x05\x12\x19\n\x11is_wpa3_supported\x18\x0b \x01(\x08\"u\n\x13\x45spHostedScanResult\x12\x0c\n\x04ssid\x18\x01 \x01(\x0c\x12\x0c\n\x04\x63hnl\x18\x02 \x01(\r\x12\x0c\n\x04rssi\x18\x03 \x01(\x05\x12\r\n\x05\x62ssid\x18\x04 \x01(\x0c\x12%\n\x03\x65\x63n\x18\x05 \x01(\x0e\x32\x18.EspHostedEncryptionMode\"\x18\n\x16\x45spHostedCmdScanResult\"O\n\x17\x45spHostedRespScanResult\x12\r\n\x05\x63ount\x18\x01 \x01(\r\x12%\n\x07\x65ntries\x18\x02 \x03(\x0b\x32\x14.EspHostedScanResult\"6\n\x19\x45spHostedConnectedSTAList\x12\x0b\n\x03mac\x18\x01 \x01(\x0c\x12\x0c\n\x04rssi\x18\x02 \x01(\x05\"\x1a\n\x18\x45spHostedCmdConnectedSTA\"V\n\x19\x45spHostedRespConnectedSTA\x12\x0b\n\x03num\x18\x01 \x01(\r\x12,\n\x08stations\x18\x02 \x03(\x0b\x32\x1a.EspHostedConnectedSTAList\"\x8f\t\n\x16\x45spHostedConfigPayload\x12$\n\x03msg\x18\x01 \x01(\x0e\x32\x17.EspHostedConfigMsgType\x12\x35\n\x13\x63md_get_mac_address\x18\n \x01(\x0b\x32\x16.EspHostedCmdGetStatusH\x00\x12\x37\n\x14resp_get_mac_address\x18\x0b \x01(\x0b\x32\x17.EspHostedRespGetStatusH\x00\x12\x33\n\x11\x63md_get_wifi_mode\x18\x0c \x01(\x0b\x32\x16.EspHostedCmdGetStatusH\x00\x12\x35\n\x12resp_get_wifi_mode\x18\r \x01(\x0b\x32\x17.EspHostedRespGetStatusH\x00\x12\x33\n\x11\x63md_set_wifi_mode\x18\x0e \x01(\x0b\x32\x16.EspHostedCmdGetStatusH\x00\x12\x35\n\x12resp_set_wifi_mode\x18\x0f \x01(\x0b\x32\x17.EspHostedRespGetStatusH\x00\x12\x30\n\x11\x63md_get_ap_config\x18\x10 \x01(\x0b\x32\x13.EspHostedCmdConfigH\x00\x12\x32\n\x12resp_get_ap_config\x18\x11 \x01(\x0b\x32\x14.EspHostedRespConfigH\x00\x12\x30\n\x11\x63md_set_ap_config\x18\x12 \x01(\x0b\x32\x13.EspHostedCmdConfigH\x00\x12\x32\n\x12resp_set_ap_config\x18\x13 \x01(\x0b\x32\x14.EspHostedRespConfigH\x00\x12\x34\n\x15\x63md_get_softap_config\x18\x14 \x01(\x0b\x32\x13.EspHostedCmdConfigH\x00\x12\x36\n\x16resp_get_softap_config\x18\x15 \x01(\x0b\x32\x14.EspHostedRespConfigH\x00\x12\x34\n\x15\x63md_set_softap_config\x18\x16 \x01(\x0b\x32\x13.EspHostedCmdConfigH\x00\x12\x36\n\x16resp_set_softap_config\x18\x17 \x01(\x0b\x32\x14.EspHostedRespConfigH\x00\x12\x33\n\x11\x63md_disconnect_ap\x18\x18 \x01(\x0b\x32\x16.EspHostedCmdGetStatusH\x00\x12\x35\n\x12resp_disconnect_ap\x18\x19 \x01(\x0b\x32\x17.EspHostedRespGetStatusH\x00\x12\x33\n\x10\x63md_scan_ap_list\x18\x1a \x01(\x0b\x32\x17.EspHostedCmdScanResultH\x00\x12\x35\n\x11resp_scan_ap_list\x18\x1b \x01(\x0b\x32\x18.EspHostedRespScanResultH\x00\x12<\n\x17\x63md_connected_stas_list\x18\x1c \x01(\x0b\x32\x19.EspHostedCmdConnectedSTAH\x00\x12>\n\x18resp_connected_stas_list\x18\x1d \x01(\x0b\x32\x1a.EspHostedRespConnectedSTAH\x00\x42\t\n\x07payload*\xb7\x01\n\x17\x45spHostedEncryptionMode\x12\r\n\tType_Open\x10\x00\x12\x0c\n\x08Type_WEP\x10\x01\x12\x10\n\x0cType_WPA_PSK\x10\x02\x12\x11\n\rType_WPA2_PSK\x10\x03\x12\x15\n\x11Type_WPA_WPA2_PSK\x10\x04\x12\x18\n\x14Type_WPA2_ENTERPRISE\x10\x05\x12\x11\n\rType_WPA3_PSK\x10\x06\x12\x16\n\x12Type_WPA2_WPA3_PSK\x10\x07*\xac\x04\n\x16\x45spHostedConfigMsgType\x12\x18\n\x14TypeCmdGetMACAddress\x10\x00\x12\x19\n\x15TypeRespGetMACAddress\x10\x01\x12\x16\n\x12TypeCmdGetWiFiMode\x10\x02\x12\x17\n\x13TypeRespGetWiFiMode\x10\x03\x12\x16\n\x12TypeCmdSetWiFiMode\x10\x04\x12\x17\n\x13TypeRespSetWiFiMode\x10\x05\x12\x16\n\x12TypeCmdGetAPConfig\x10\x06\x12\x17\n\x13TypeRespGetAPConfig\x10\x07\x12\x16\n\x12TypeCmdSetAPConfig\x10\x08\x12\x17\n\x13TypeRespSetAPConfig\x10\t\x12\x1a\n\x16TypeCmdGetSoftAPConfig\x10\n\x12\x1b\n\x17TypeRespGetSoftAPConfig\x10\x0b\x12\x1a\n\x16TypeCmdSetSoftAPConfig\x10\x0c\x12\x1b\n\x17TypeRespSetSoftAPConfig\x10\r\x12\x17\n\x13TypeCmdDisconnectAP\x10\x0e\x12\x18\n\x14TypeRespDisconnectAP\x10\x0f\x12\x18\n\x14TypeCmdGetAPScanList\x10\x10\x12\x19\n\x15TypeRespGetAPScanList\x10\x11\x12\x1e\n\x1aTypeCmdGetConnectedSTAList\x10\x12\x12\x1f\n\x1bTypeRespGetConnectedSTAList\x10\x13\x62\x06proto3'
 )
 
-_ENCRYPTIONMODE = _descriptor.EnumDescriptor(
-  name='EncryptionMode',
-  full_name='EncryptionMode',
+_ESPHOSTEDENCRYPTIONMODE = _descriptor.EnumDescriptor(
+  name='EspHostedEncryptionMode',
+  full_name='EspHostedEncryptionMode',
   filename=None,
   file=DESCRIPTOR,
   create_key=_descriptor._internal_create_key,
@@ -73,12 +73,12 @@ _ENCRYPTIONMODE = _descriptor.EnumDescriptor(
   ],
   containing_type=None,
   serialized_options=None,
-  serialized_start=1840,
-  serialized_end=2014,
+  serialized_start=2155,
+  serialized_end=2338,
 )
-_sym_db.RegisterEnumDescriptor(_ENCRYPTIONMODE)
+_sym_db.RegisterEnumDescriptor(_ESPHOSTEDENCRYPTIONMODE)
 
-EncryptionMode = enum_type_wrapper.EnumTypeWrapper(_ENCRYPTIONMODE)
+EspHostedEncryptionMode = enum_type_wrapper.EnumTypeWrapper(_ESPHOSTEDENCRYPTIONMODE)
 _ESPHOSTEDCONFIGMSGTYPE = _descriptor.EnumDescriptor(
   name='EspHostedConfigMsgType',
   full_name='EspHostedConfigMsgType',
@@ -189,8 +189,8 @@ _ESPHOSTEDCONFIGMSGTYPE = _descriptor.EnumDescriptor(
   ],
   containing_type=None,
   serialized_options=None,
-  serialized_start=2017,
-  serialized_end=2573,
+  serialized_start=2341,
+  serialized_end=2897,
 )
 _sym_db.RegisterEnumDescriptor(_ESPHOSTEDCONFIGMSGTYPE)
 
@@ -226,23 +226,23 @@ TypeRespGetConnectedSTAList = 19
 
 
 
-_CMDGETSTATUS = _descriptor.Descriptor(
-  name='CmdGetStatus',
-  full_name='CmdGetStatus',
+_ESPHOSTEDCMDGETSTATUS = _descriptor.Descriptor(
+  name='EspHostedCmdGetStatus',
+  full_name='EspHostedCmdGetStatus',
   filename=None,
   file=DESCRIPTOR,
   containing_type=None,
   create_key=_descriptor._internal_create_key,
   fields=[
     _descriptor.FieldDescriptor(
-      name='cmd', full_name='CmdGetStatus.cmd', index=0,
+      name='cmd', full_name='EspHostedCmdGetStatus.cmd', index=0,
       number=1, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=b"".decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='mode', full_name='CmdGetStatus.mode', index=1,
+      name='mode', full_name='EspHostedCmdGetStatus.mode', index=1,
       number=2, type=5, cpp_type=1, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
@@ -261,27 +261,27 @@ _CMDGETSTATUS = _descriptor.Descriptor(
   oneofs=[
   ],
   serialized_start=27,
-  serialized_end=68,
+  serialized_end=77,
 )
 
 
-_RESPGETSTATUS = _descriptor.Descriptor(
-  name='RespGetStatus',
-  full_name='RespGetStatus',
+_ESPHOSTEDRESPGETSTATUS = _descriptor.Descriptor(
+  name='EspHostedRespGetStatus',
+  full_name='EspHostedRespGetStatus',
   filename=None,
   file=DESCRIPTOR,
   containing_type=None,
   create_key=_descriptor._internal_create_key,
   fields=[
     _descriptor.FieldDescriptor(
-      name='resp', full_name='RespGetStatus.resp', index=0,
+      name='resp', full_name='EspHostedRespGetStatus.resp', index=0,
       number=1, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=b"".decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='mode', full_name='RespGetStatus.mode', index=1,
+      name='mode', full_name='EspHostedRespGetStatus.mode', index=1,
       number=2, type=5, cpp_type=1, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
@@ -299,91 +299,91 @@ _RESPGETSTATUS = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=70,
-  serialized_end=113,
+  serialized_start=79,
+  serialized_end=131,
 )
 
 
-_CMDCONFIG = _descriptor.Descriptor(
-  name='CmdConfig',
-  full_name='CmdConfig',
+_ESPHOSTEDCMDCONFIG = _descriptor.Descriptor(
+  name='EspHostedCmdConfig',
+  full_name='EspHostedCmdConfig',
   filename=None,
   file=DESCRIPTOR,
   containing_type=None,
   create_key=_descriptor._internal_create_key,
   fields=[
     _descriptor.FieldDescriptor(
-      name='ssid', full_name='CmdConfig.ssid', index=0,
+      name='ssid', full_name='EspHostedCmdConfig.ssid', index=0,
       number=1, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=b"".decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='pwd', full_name='CmdConfig.pwd', index=1,
+      name='pwd', full_name='EspHostedCmdConfig.pwd', index=1,
       number=2, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=b"".decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='ecn', full_name='CmdConfig.ecn', index=2,
+      name='ecn', full_name='EspHostedCmdConfig.ecn', index=2,
       number=3, type=14, cpp_type=8, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='chnl', full_name='CmdConfig.chnl', index=3,
+      name='chnl', full_name='EspHostedCmdConfig.chnl', index=3,
       number=4, type=5, cpp_type=1, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='max_conn', full_name='CmdConfig.max_conn', index=4,
+      name='max_conn', full_name='EspHostedCmdConfig.max_conn', index=4,
       number=5, type=5, cpp_type=1, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='ssid_hidden', full_name='CmdConfig.ssid_hidden', index=5,
+      name='ssid_hidden', full_name='EspHostedCmdConfig.ssid_hidden', index=5,
       number=6, type=8, cpp_type=7, label=1,
       has_default_value=False, default_value=False,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='bssid', full_name='CmdConfig.bssid', index=6,
+      name='bssid', full_name='EspHostedCmdConfig.bssid', index=6,
       number=7, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=b"".decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='rssi', full_name='CmdConfig.rssi', index=7,
+      name='rssi', full_name='EspHostedCmdConfig.rssi', index=7,
       number=8, type=5, cpp_type=1, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='status', full_name='CmdConfig.status', index=8,
+      name='status', full_name='EspHostedCmdConfig.status', index=8,
       number=9, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=b"".decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='bw', full_name='CmdConfig.bw', index=9,
+      name='bw', full_name='EspHostedCmdConfig.bw', index=9,
       number=10, type=5, cpp_type=1, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='is_wpa3_supported', full_name='CmdConfig.is_wpa3_supported', index=10,
+      name='is_wpa3_supported', full_name='EspHostedCmdConfig.is_wpa3_supported', index=10,
       number=11, type=8, cpp_type=7, label=1,
       has_default_value=False, default_value=False,
       message_type=None, enum_type=None, containing_type=None,
@@ -401,91 +401,91 @@ _CMDCONFIG = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=116,
-  serialized_end=321,
+  serialized_start=134,
+  serialized_end=357,
 )
 
 
-_RESPCONFIG = _descriptor.Descriptor(
-  name='RespConfig',
-  full_name='RespConfig',
+_ESPHOSTEDRESPCONFIG = _descriptor.Descriptor(
+  name='EspHostedRespConfig',
+  full_name='EspHostedRespConfig',
   filename=None,
   file=DESCRIPTOR,
   containing_type=None,
   create_key=_descriptor._internal_create_key,
   fields=[
     _descriptor.FieldDescriptor(
-      name='ssid', full_name='RespConfig.ssid', index=0,
+      name='ssid', full_name='EspHostedRespConfig.ssid', index=0,
       number=1, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=b"".decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='pwd', full_name='RespConfig.pwd', index=1,
+      name='pwd', full_name='EspHostedRespConfig.pwd', index=1,
       number=2, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=b"".decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='ecn', full_name='RespConfig.ecn', index=2,
+      name='ecn', full_name='EspHostedRespConfig.ecn', index=2,
       number=3, type=14, cpp_type=8, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='chnl', full_name='RespConfig.chnl', index=3,
+      name='chnl', full_name='EspHostedRespConfig.chnl', index=3,
       number=4, type=5, cpp_type=1, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='max_conn', full_name='RespConfig.max_conn', index=4,
+      name='max_conn', full_name='EspHostedRespConfig.max_conn', index=4,
       number=5, type=5, cpp_type=1, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='ssid_hidden', full_name='RespConfig.ssid_hidden', index=5,
+      name='ssid_hidden', full_name='EspHostedRespConfig.ssid_hidden', index=5,
       number=6, type=8, cpp_type=7, label=1,
       has_default_value=False, default_value=False,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='bssid', full_name='RespConfig.bssid', index=6,
+      name='bssid', full_name='EspHostedRespConfig.bssid', index=6,
       number=7, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=b"".decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='rssi', full_name='RespConfig.rssi', index=7,
+      name='rssi', full_name='EspHostedRespConfig.rssi', index=7,
       number=8, type=5, cpp_type=1, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='status', full_name='RespConfig.status', index=8,
+      name='status', full_name='EspHostedRespConfig.status', index=8,
       number=9, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=b"".decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='bw', full_name='RespConfig.bw', index=9,
+      name='bw', full_name='EspHostedRespConfig.bw', index=9,
       number=10, type=5, cpp_type=1, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='is_wpa3_supported', full_name='RespConfig.is_wpa3_supported', index=10,
+      name='is_wpa3_supported', full_name='EspHostedRespConfig.is_wpa3_supported', index=10,
       number=11, type=8, cpp_type=7, label=1,
       has_default_value=False, default_value=False,
       message_type=None, enum_type=None, containing_type=None,
@@ -503,49 +503,49 @@ _RESPCONFIG = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=324,
-  serialized_end=530,
+  serialized_start=360,
+  serialized_end=584,
 )
 
 
-_SCANRESULT = _descriptor.Descriptor(
-  name='ScanResult',
-  full_name='ScanResult',
+_ESPHOSTEDSCANRESULT = _descriptor.Descriptor(
+  name='EspHostedScanResult',
+  full_name='EspHostedScanResult',
   filename=None,
   file=DESCRIPTOR,
   containing_type=None,
   create_key=_descriptor._internal_create_key,
   fields=[
     _descriptor.FieldDescriptor(
-      name='ssid', full_name='ScanResult.ssid', index=0,
+      name='ssid', full_name='EspHostedScanResult.ssid', index=0,
       number=1, type=12, cpp_type=9, label=1,
       has_default_value=False, default_value=b"",
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='chnl', full_name='ScanResult.chnl', index=1,
+      name='chnl', full_name='EspHostedScanResult.chnl', index=1,
       number=2, type=13, cpp_type=3, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='rssi', full_name='ScanResult.rssi', index=2,
+      name='rssi', full_name='EspHostedScanResult.rssi', index=2,
       number=3, type=5, cpp_type=1, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='bssid', full_name='ScanResult.bssid', index=3,
+      name='bssid', full_name='EspHostedScanResult.bssid', index=3,
       number=4, type=12, cpp_type=9, label=1,
       has_default_value=False, default_value=b"",
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='ecn', full_name='ScanResult.ecn', index=4,
+      name='ecn', full_name='EspHostedScanResult.ecn', index=4,
       number=5, type=14, cpp_type=8, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
@@ -563,14 +563,14 @@ _SCANRESULT = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=532,
-  serialized_end=631,
+  serialized_start=586,
+  serialized_end=703,
 )
 
 
-_CMDSCANRESULT = _descriptor.Descriptor(
-  name='CmdScanResult',
-  full_name='CmdScanResult',
+_ESPHOSTEDCMDSCANRESULT = _descriptor.Descriptor(
+  name='EspHostedCmdScanResult',
+  full_name='EspHostedCmdScanResult',
   filename=None,
   file=DESCRIPTOR,
   containing_type=None,
@@ -588,28 +588,28 @@ _CMDSCANRESULT = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=633,
-  serialized_end=648,
+  serialized_start=705,
+  serialized_end=729,
 )
 
 
-_RESPSCANRESULT = _descriptor.Descriptor(
-  name='RespScanResult',
-  full_name='RespScanResult',
+_ESPHOSTEDRESPSCANRESULT = _descriptor.Descriptor(
+  name='EspHostedRespScanResult',
+  full_name='EspHostedRespScanResult',
   filename=None,
   file=DESCRIPTOR,
   containing_type=None,
   create_key=_descriptor._internal_create_key,
   fields=[
     _descriptor.FieldDescriptor(
-      name='count', full_name='RespScanResult.count', index=0,
+      name='count', full_name='EspHostedRespScanResult.count', index=0,
       number=1, type=13, cpp_type=3, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='entries', full_name='RespScanResult.entries', index=1,
+      name='entries', full_name='EspHostedRespScanResult.entries', index=1,
       number=2, type=11, cpp_type=10, label=3,
       has_default_value=False, default_value=[],
       message_type=None, enum_type=None, containing_type=None,
@@ -627,28 +627,28 @@ _RESPSCANRESULT = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=650,
-  serialized_end=711,
+  serialized_start=731,
+  serialized_end=810,
 )
 
 
-_CONNECTEDSTALIST = _descriptor.Descriptor(
-  name='ConnectedSTAList',
-  full_name='ConnectedSTAList',
+_ESPHOSTEDCONNECTEDSTALIST = _descriptor.Descriptor(
+  name='EspHostedConnectedSTAList',
+  full_name='EspHostedConnectedSTAList',
   filename=None,
   file=DESCRIPTOR,
   containing_type=None,
   create_key=_descriptor._internal_create_key,
   fields=[
     _descriptor.FieldDescriptor(
-      name='mac', full_name='ConnectedSTAList.mac', index=0,
+      name='mac', full_name='EspHostedConnectedSTAList.mac', index=0,
       number=1, type=12, cpp_type=9, label=1,
       has_default_value=False, default_value=b"",
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='rssi', full_name='ConnectedSTAList.rssi', index=1,
+      name='rssi', full_name='EspHostedConnectedSTAList.rssi', index=1,
       number=2, type=5, cpp_type=1, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
@@ -666,14 +666,14 @@ _CONNECTEDSTALIST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=713,
-  serialized_end=758,
+  serialized_start=812,
+  serialized_end=866,
 )
 
 
-_CMDCONNECTEDSTA = _descriptor.Descriptor(
-  name='CmdConnectedSTA',
-  full_name='CmdConnectedSTA',
+_ESPHOSTEDCMDCONNECTEDSTA = _descriptor.Descriptor(
+  name='EspHostedCmdConnectedSTA',
+  full_name='EspHostedCmdConnectedSTA',
   filename=None,
   file=DESCRIPTOR,
   containing_type=None,
@@ -691,28 +691,28 @@ _CMDCONNECTEDSTA = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=760,
-  serialized_end=777,
+  serialized_start=868,
+  serialized_end=894,
 )
 
 
-_RESPCONNECTEDSTA = _descriptor.Descriptor(
-  name='RespConnectedSTA',
-  full_name='RespConnectedSTA',
+_ESPHOSTEDRESPCONNECTEDSTA = _descriptor.Descriptor(
+  name='EspHostedRespConnectedSTA',
+  full_name='EspHostedRespConnectedSTA',
   filename=None,
   file=DESCRIPTOR,
   containing_type=None,
   create_key=_descriptor._internal_create_key,
   fields=[
     _descriptor.FieldDescriptor(
-      name='num', full_name='RespConnectedSTA.num', index=0,
+      name='num', full_name='EspHostedRespConnectedSTA.num', index=0,
       number=1, type=13, cpp_type=3, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='stations', full_name='RespConnectedSTA.stations', index=1,
+      name='stations', full_name='EspHostedRespConnectedSTA.stations', index=1,
       number=2, type=11, cpp_type=10, label=3,
       has_default_value=False, default_value=[],
       message_type=None, enum_type=None, containing_type=None,
@@ -730,8 +730,8 @@ _RESPCONNECTEDSTA = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=779,
-  serialized_end=847,
+  serialized_start=896,
+  serialized_end=982,
 )
 
 
@@ -907,36 +907,36 @@ _ESPHOSTEDCONFIGPAYLOAD = _descriptor.Descriptor(
       create_key=_descriptor._internal_create_key,
     fields=[]),
   ],
-  serialized_start=850,
-  serialized_end=1837,
+  serialized_start=985,
+  serialized_end=2152,
 )
 
-_CMDCONFIG.fields_by_name['ecn'].enum_type = _ENCRYPTIONMODE
-_RESPCONFIG.fields_by_name['ecn'].enum_type = _ENCRYPTIONMODE
-_SCANRESULT.fields_by_name['ecn'].enum_type = _ENCRYPTIONMODE
-_RESPSCANRESULT.fields_by_name['entries'].message_type = _SCANRESULT
-_RESPCONNECTEDSTA.fields_by_name['stations'].message_type = _CONNECTEDSTALIST
+_ESPHOSTEDCMDCONFIG.fields_by_name['ecn'].enum_type = _ESPHOSTEDENCRYPTIONMODE
+_ESPHOSTEDRESPCONFIG.fields_by_name['ecn'].enum_type = _ESPHOSTEDENCRYPTIONMODE
+_ESPHOSTEDSCANRESULT.fields_by_name['ecn'].enum_type = _ESPHOSTEDENCRYPTIONMODE
+_ESPHOSTEDRESPSCANRESULT.fields_by_name['entries'].message_type = _ESPHOSTEDSCANRESULT
+_ESPHOSTEDRESPCONNECTEDSTA.fields_by_name['stations'].message_type = _ESPHOSTEDCONNECTEDSTALIST
 _ESPHOSTEDCONFIGPAYLOAD.fields_by_name['msg'].enum_type = _ESPHOSTEDCONFIGMSGTYPE
-_ESPHOSTEDCONFIGPAYLOAD.fields_by_name['cmd_get_mac_address'].message_type = _CMDGETSTATUS
-_ESPHOSTEDCONFIGPAYLOAD.fields_by_name['resp_get_mac_address'].message_type = _RESPGETSTATUS
-_ESPHOSTEDCONFIGPAYLOAD.fields_by_name['cmd_get_wifi_mode'].message_type = _CMDGETSTATUS
-_ESPHOSTEDCONFIGPAYLOAD.fields_by_name['resp_get_wifi_mode'].message_type = _RESPGETSTATUS
-_ESPHOSTEDCONFIGPAYLOAD.fields_by_name['cmd_set_wifi_mode'].message_type = _CMDGETSTATUS
-_ESPHOSTEDCONFIGPAYLOAD.fields_by_name['resp_set_wifi_mode'].message_type = _RESPGETSTATUS
-_ESPHOSTEDCONFIGPAYLOAD.fields_by_name['cmd_get_ap_config'].message_type = _CMDCONFIG
-_ESPHOSTEDCONFIGPAYLOAD.fields_by_name['resp_get_ap_config'].message_type = _RESPCONFIG
-_ESPHOSTEDCONFIGPAYLOAD.fields_by_name['cmd_set_ap_config'].message_type = _CMDCONFIG
-_ESPHOSTEDCONFIGPAYLOAD.fields_by_name['resp_set_ap_config'].message_type = _RESPCONFIG
-_ESPHOSTEDCONFIGPAYLOAD.fields_by_name['cmd_get_softap_config'].message_type = _CMDCONFIG
-_ESPHOSTEDCONFIGPAYLOAD.fields_by_name['resp_get_softap_config'].message_type = _RESPCONFIG
-_ESPHOSTEDCONFIGPAYLOAD.fields_by_name['cmd_set_softap_config'].message_type = _CMDCONFIG
-_ESPHOSTEDCONFIGPAYLOAD.fields_by_name['resp_set_softap_config'].message_type = _RESPCONFIG
-_ESPHOSTEDCONFIGPAYLOAD.fields_by_name['cmd_disconnect_ap'].message_type = _CMDGETSTATUS
-_ESPHOSTEDCONFIGPAYLOAD.fields_by_name['resp_disconnect_ap'].message_type = _RESPGETSTATUS
-_ESPHOSTEDCONFIGPAYLOAD.fields_by_name['cmd_scan_ap_list'].message_type = _CMDSCANRESULT
-_ESPHOSTEDCONFIGPAYLOAD.fields_by_name['resp_scan_ap_list'].message_type = _RESPSCANRESULT
-_ESPHOSTEDCONFIGPAYLOAD.fields_by_name['cmd_connected_stas_list'].message_type = _CMDCONNECTEDSTA
-_ESPHOSTEDCONFIGPAYLOAD.fields_by_name['resp_connected_stas_list'].message_type = _RESPCONNECTEDSTA
+_ESPHOSTEDCONFIGPAYLOAD.fields_by_name['cmd_get_mac_address'].message_type = _ESPHOSTEDCMDGETSTATUS
+_ESPHOSTEDCONFIGPAYLOAD.fields_by_name['resp_get_mac_address'].message_type = _ESPHOSTEDRESPGETSTATUS
+_ESPHOSTEDCONFIGPAYLOAD.fields_by_name['cmd_get_wifi_mode'].message_type = _ESPHOSTEDCMDGETSTATUS
+_ESPHOSTEDCONFIGPAYLOAD.fields_by_name['resp_get_wifi_mode'].message_type = _ESPHOSTEDRESPGETSTATUS
+_ESPHOSTEDCONFIGPAYLOAD.fields_by_name['cmd_set_wifi_mode'].message_type = _ESPHOSTEDCMDGETSTATUS
+_ESPHOSTEDCONFIGPAYLOAD.fields_by_name['resp_set_wifi_mode'].message_type = _ESPHOSTEDRESPGETSTATUS
+_ESPHOSTEDCONFIGPAYLOAD.fields_by_name['cmd_get_ap_config'].message_type = _ESPHOSTEDCMDCONFIG
+_ESPHOSTEDCONFIGPAYLOAD.fields_by_name['resp_get_ap_config'].message_type = _ESPHOSTEDRESPCONFIG
+_ESPHOSTEDCONFIGPAYLOAD.fields_by_name['cmd_set_ap_config'].message_type = _ESPHOSTEDCMDCONFIG
+_ESPHOSTEDCONFIGPAYLOAD.fields_by_name['resp_set_ap_config'].message_type = _ESPHOSTEDRESPCONFIG
+_ESPHOSTEDCONFIGPAYLOAD.fields_by_name['cmd_get_softap_config'].message_type = _ESPHOSTEDCMDCONFIG
+_ESPHOSTEDCONFIGPAYLOAD.fields_by_name['resp_get_softap_config'].message_type = _ESPHOSTEDRESPCONFIG
+_ESPHOSTEDCONFIGPAYLOAD.fields_by_name['cmd_set_softap_config'].message_type = _ESPHOSTEDCMDCONFIG
+_ESPHOSTEDCONFIGPAYLOAD.fields_by_name['resp_set_softap_config'].message_type = _ESPHOSTEDRESPCONFIG
+_ESPHOSTEDCONFIGPAYLOAD.fields_by_name['cmd_disconnect_ap'].message_type = _ESPHOSTEDCMDGETSTATUS
+_ESPHOSTEDCONFIGPAYLOAD.fields_by_name['resp_disconnect_ap'].message_type = _ESPHOSTEDRESPGETSTATUS
+_ESPHOSTEDCONFIGPAYLOAD.fields_by_name['cmd_scan_ap_list'].message_type = _ESPHOSTEDCMDSCANRESULT
+_ESPHOSTEDCONFIGPAYLOAD.fields_by_name['resp_scan_ap_list'].message_type = _ESPHOSTEDRESPSCANRESULT
+_ESPHOSTEDCONFIGPAYLOAD.fields_by_name['cmd_connected_stas_list'].message_type = _ESPHOSTEDCMDCONNECTEDSTA
+_ESPHOSTEDCONFIGPAYLOAD.fields_by_name['resp_connected_stas_list'].message_type = _ESPHOSTEDRESPCONNECTEDSTA
 _ESPHOSTEDCONFIGPAYLOAD.oneofs_by_name['payload'].fields.append(
   _ESPHOSTEDCONFIGPAYLOAD.fields_by_name['cmd_get_mac_address'])
 _ESPHOSTEDCONFIGPAYLOAD.fields_by_name['cmd_get_mac_address'].containing_oneof = _ESPHOSTEDCONFIGPAYLOAD.oneofs_by_name['payload']
@@ -997,90 +997,90 @@ _ESPHOSTEDCONFIGPAYLOAD.fields_by_name['cmd_connected_stas_list'].containing_one
 _ESPHOSTEDCONFIGPAYLOAD.oneofs_by_name['payload'].fields.append(
   _ESPHOSTEDCONFIGPAYLOAD.fields_by_name['resp_connected_stas_list'])
 _ESPHOSTEDCONFIGPAYLOAD.fields_by_name['resp_connected_stas_list'].containing_oneof = _ESPHOSTEDCONFIGPAYLOAD.oneofs_by_name['payload']
-DESCRIPTOR.message_types_by_name['CmdGetStatus'] = _CMDGETSTATUS
-DESCRIPTOR.message_types_by_name['RespGetStatus'] = _RESPGETSTATUS
-DESCRIPTOR.message_types_by_name['CmdConfig'] = _CMDCONFIG
-DESCRIPTOR.message_types_by_name['RespConfig'] = _RESPCONFIG
-DESCRIPTOR.message_types_by_name['ScanResult'] = _SCANRESULT
-DESCRIPTOR.message_types_by_name['CmdScanResult'] = _CMDSCANRESULT
-DESCRIPTOR.message_types_by_name['RespScanResult'] = _RESPSCANRESULT
-DESCRIPTOR.message_types_by_name['ConnectedSTAList'] = _CONNECTEDSTALIST
-DESCRIPTOR.message_types_by_name['CmdConnectedSTA'] = _CMDCONNECTEDSTA
-DESCRIPTOR.message_types_by_name['RespConnectedSTA'] = _RESPCONNECTEDSTA
+DESCRIPTOR.message_types_by_name['EspHostedCmdGetStatus'] = _ESPHOSTEDCMDGETSTATUS
+DESCRIPTOR.message_types_by_name['EspHostedRespGetStatus'] = _ESPHOSTEDRESPGETSTATUS
+DESCRIPTOR.message_types_by_name['EspHostedCmdConfig'] = _ESPHOSTEDCMDCONFIG
+DESCRIPTOR.message_types_by_name['EspHostedRespConfig'] = _ESPHOSTEDRESPCONFIG
+DESCRIPTOR.message_types_by_name['EspHostedScanResult'] = _ESPHOSTEDSCANRESULT
+DESCRIPTOR.message_types_by_name['EspHostedCmdScanResult'] = _ESPHOSTEDCMDSCANRESULT
+DESCRIPTOR.message_types_by_name['EspHostedRespScanResult'] = _ESPHOSTEDRESPSCANRESULT
+DESCRIPTOR.message_types_by_name['EspHostedConnectedSTAList'] = _ESPHOSTEDCONNECTEDSTALIST
+DESCRIPTOR.message_types_by_name['EspHostedCmdConnectedSTA'] = _ESPHOSTEDCMDCONNECTEDSTA
+DESCRIPTOR.message_types_by_name['EspHostedRespConnectedSTA'] = _ESPHOSTEDRESPCONNECTEDSTA
 DESCRIPTOR.message_types_by_name['EspHostedConfigPayload'] = _ESPHOSTEDCONFIGPAYLOAD
-DESCRIPTOR.enum_types_by_name['EncryptionMode'] = _ENCRYPTIONMODE
+DESCRIPTOR.enum_types_by_name['EspHostedEncryptionMode'] = _ESPHOSTEDENCRYPTIONMODE
 DESCRIPTOR.enum_types_by_name['EspHostedConfigMsgType'] = _ESPHOSTEDCONFIGMSGTYPE
 _sym_db.RegisterFileDescriptor(DESCRIPTOR)
 
-CmdGetStatus = _reflection.GeneratedProtocolMessageType('CmdGetStatus', (_message.Message,), {
-  'DESCRIPTOR' : _CMDGETSTATUS,
+EspHostedCmdGetStatus = _reflection.GeneratedProtocolMessageType('EspHostedCmdGetStatus', (_message.Message,), {
+  'DESCRIPTOR' : _ESPHOSTEDCMDGETSTATUS,
   '__module__' : 'esp_hosted_config_pb2'
-  # @@protoc_insertion_point(class_scope:CmdGetStatus)
+  # @@protoc_insertion_point(class_scope:EspHostedCmdGetStatus)
   })
-_sym_db.RegisterMessage(CmdGetStatus)
+_sym_db.RegisterMessage(EspHostedCmdGetStatus)
 
-RespGetStatus = _reflection.GeneratedProtocolMessageType('RespGetStatus', (_message.Message,), {
-  'DESCRIPTOR' : _RESPGETSTATUS,
+EspHostedRespGetStatus = _reflection.GeneratedProtocolMessageType('EspHostedRespGetStatus', (_message.Message,), {
+  'DESCRIPTOR' : _ESPHOSTEDRESPGETSTATUS,
   '__module__' : 'esp_hosted_config_pb2'
-  # @@protoc_insertion_point(class_scope:RespGetStatus)
+  # @@protoc_insertion_point(class_scope:EspHostedRespGetStatus)
   })
-_sym_db.RegisterMessage(RespGetStatus)
+_sym_db.RegisterMessage(EspHostedRespGetStatus)
 
-CmdConfig = _reflection.GeneratedProtocolMessageType('CmdConfig', (_message.Message,), {
-  'DESCRIPTOR' : _CMDCONFIG,
+EspHostedCmdConfig = _reflection.GeneratedProtocolMessageType('EspHostedCmdConfig', (_message.Message,), {
+  'DESCRIPTOR' : _ESPHOSTEDCMDCONFIG,
   '__module__' : 'esp_hosted_config_pb2'
-  # @@protoc_insertion_point(class_scope:CmdConfig)
+  # @@protoc_insertion_point(class_scope:EspHostedCmdConfig)
   })
-_sym_db.RegisterMessage(CmdConfig)
+_sym_db.RegisterMessage(EspHostedCmdConfig)
 
-RespConfig = _reflection.GeneratedProtocolMessageType('RespConfig', (_message.Message,), {
-  'DESCRIPTOR' : _RESPCONFIG,
+EspHostedRespConfig = _reflection.GeneratedProtocolMessageType('EspHostedRespConfig', (_message.Message,), {
+  'DESCRIPTOR' : _ESPHOSTEDRESPCONFIG,
   '__module__' : 'esp_hosted_config_pb2'
-  # @@protoc_insertion_point(class_scope:RespConfig)
+  # @@protoc_insertion_point(class_scope:EspHostedRespConfig)
   })
-_sym_db.RegisterMessage(RespConfig)
+_sym_db.RegisterMessage(EspHostedRespConfig)
 
-ScanResult = _reflection.GeneratedProtocolMessageType('ScanResult', (_message.Message,), {
-  'DESCRIPTOR' : _SCANRESULT,
+EspHostedScanResult = _reflection.GeneratedProtocolMessageType('EspHostedScanResult', (_message.Message,), {
+  'DESCRIPTOR' : _ESPHOSTEDSCANRESULT,
   '__module__' : 'esp_hosted_config_pb2'
-  # @@protoc_insertion_point(class_scope:ScanResult)
+  # @@protoc_insertion_point(class_scope:EspHostedScanResult)
   })
-_sym_db.RegisterMessage(ScanResult)
+_sym_db.RegisterMessage(EspHostedScanResult)
 
-CmdScanResult = _reflection.GeneratedProtocolMessageType('CmdScanResult', (_message.Message,), {
-  'DESCRIPTOR' : _CMDSCANRESULT,
+EspHostedCmdScanResult = _reflection.GeneratedProtocolMessageType('EspHostedCmdScanResult', (_message.Message,), {
+  'DESCRIPTOR' : _ESPHOSTEDCMDSCANRESULT,
   '__module__' : 'esp_hosted_config_pb2'
-  # @@protoc_insertion_point(class_scope:CmdScanResult)
+  # @@protoc_insertion_point(class_scope:EspHostedCmdScanResult)
   })
-_sym_db.RegisterMessage(CmdScanResult)
+_sym_db.RegisterMessage(EspHostedCmdScanResult)
 
-RespScanResult = _reflection.GeneratedProtocolMessageType('RespScanResult', (_message.Message,), {
-  'DESCRIPTOR' : _RESPSCANRESULT,
+EspHostedRespScanResult = _reflection.GeneratedProtocolMessageType('EspHostedRespScanResult', (_message.Message,), {
+  'DESCRIPTOR' : _ESPHOSTEDRESPSCANRESULT,
   '__module__' : 'esp_hosted_config_pb2'
-  # @@protoc_insertion_point(class_scope:RespScanResult)
+  # @@protoc_insertion_point(class_scope:EspHostedRespScanResult)
   })
-_sym_db.RegisterMessage(RespScanResult)
+_sym_db.RegisterMessage(EspHostedRespScanResult)
 
-ConnectedSTAList = _reflection.GeneratedProtocolMessageType('ConnectedSTAList', (_message.Message,), {
-  'DESCRIPTOR' : _CONNECTEDSTALIST,
+EspHostedConnectedSTAList = _reflection.GeneratedProtocolMessageType('EspHostedConnectedSTAList', (_message.Message,), {
+  'DESCRIPTOR' : _ESPHOSTEDCONNECTEDSTALIST,
   '__module__' : 'esp_hosted_config_pb2'
-  # @@protoc_insertion_point(class_scope:ConnectedSTAList)
+  # @@protoc_insertion_point(class_scope:EspHostedConnectedSTAList)
   })
-_sym_db.RegisterMessage(ConnectedSTAList)
+_sym_db.RegisterMessage(EspHostedConnectedSTAList)
 
-CmdConnectedSTA = _reflection.GeneratedProtocolMessageType('CmdConnectedSTA', (_message.Message,), {
-  'DESCRIPTOR' : _CMDCONNECTEDSTA,
+EspHostedCmdConnectedSTA = _reflection.GeneratedProtocolMessageType('EspHostedCmdConnectedSTA', (_message.Message,), {
+  'DESCRIPTOR' : _ESPHOSTEDCMDCONNECTEDSTA,
   '__module__' : 'esp_hosted_config_pb2'
-  # @@protoc_insertion_point(class_scope:CmdConnectedSTA)
+  # @@protoc_insertion_point(class_scope:EspHostedCmdConnectedSTA)
   })
-_sym_db.RegisterMessage(CmdConnectedSTA)
+_sym_db.RegisterMessage(EspHostedCmdConnectedSTA)
 
-RespConnectedSTA = _reflection.GeneratedProtocolMessageType('RespConnectedSTA', (_message.Message,), {
-  'DESCRIPTOR' : _RESPCONNECTEDSTA,
+EspHostedRespConnectedSTA = _reflection.GeneratedProtocolMessageType('EspHostedRespConnectedSTA', (_message.Message,), {
+  'DESCRIPTOR' : _ESPHOSTEDRESPCONNECTEDSTA,
   '__module__' : 'esp_hosted_config_pb2'
-  # @@protoc_insertion_point(class_scope:RespConnectedSTA)
+  # @@protoc_insertion_point(class_scope:EspHostedRespConnectedSTA)
   })
-_sym_db.RegisterMessage(RespConnectedSTA)
+_sym_db.RegisterMessage(EspHostedRespConnectedSTA)
 
 EspHostedConfigPayload = _reflection.GeneratedProtocolMessageType('EspHostedConfigPayload', (_message.Message,), {
   'DESCRIPTOR' : _ESPHOSTEDCONFIGPAYLOAD,

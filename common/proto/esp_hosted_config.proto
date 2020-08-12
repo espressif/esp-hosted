@@ -1,16 +1,16 @@
 syntax = "proto3";
 
-message CmdGetStatus {
+message EspHostedCmdGetStatus {
     string cmd = 1;
     int32 mode = 2;
 }
 
-message RespGetStatus {
+message EspHostedRespGetStatus {
     string resp = 1;
     int32 mode = 2;
 }
 
-enum EncryptionMode {
+enum EspHostedEncryptionMode {
     Type_Open = 0;
     Type_WEP = 1;
     Type_WPA_PSK = 2;
@@ -21,10 +21,10 @@ enum EncryptionMode {
     Type_WPA2_WPA3_PSK = 7;
 }
 
-message CmdConfig {
+message EspHostedCmdConfig {
     string ssid = 1;
     string pwd = 2;
-    EncryptionMode ecn = 3;
+    EspHostedEncryptionMode ecn = 3;
     int32 chnl = 4;
     int32 max_conn = 5;
     bool ssid_hidden = 6;
@@ -35,10 +35,10 @@ message CmdConfig {
     bool is_wpa3_supported = 11;
 }
 
-message RespConfig {
+message EspHostedRespConfig {
     string ssid = 1;
     string pwd = 2;
-    EncryptionMode ecn = 3;
+    EspHostedEncryptionMode ecn = 3;
     int32 chnl = 4;
     int32 max_conn = 5;
     bool ssid_hidden = 6;
@@ -49,33 +49,33 @@ message RespConfig {
     bool is_wpa3_supported = 11;
 }
 
-message ScanResult {
+message EspHostedScanResult {
     bytes ssid = 1;
     uint32 chnl = 2;
     int32 rssi = 3;
     bytes bssid = 4;
-    EncryptionMode ecn = 5;
+    EspHostedEncryptionMode ecn = 5;
 }
 
-message CmdScanResult {
+message EspHostedCmdScanResult {
 }
 
-message RespScanResult {
+message EspHostedRespScanResult {
     uint32 count = 1;
-    repeated ScanResult entries = 2;
+    repeated EspHostedScanResult entries = 2;
 }
 
-message ConnectedSTAList {
+message EspHostedConnectedSTAList {
 	bytes mac = 1;
 	int32 rssi = 2;
 }
 
-message CmdConnectedSTA {
+message EspHostedCmdConnectedSTA {
 }
 
-message RespConnectedSTA {
+message EspHostedRespConnectedSTA {
 	uint32 num = 1;
-	repeated ConnectedSTAList stations = 2;
+	repeated EspHostedConnectedSTAList stations = 2;
 }
 
 enum EspHostedConfigMsgType {
@@ -104,25 +104,25 @@ enum EspHostedConfigMsgType {
 message EspHostedConfigPayload {
     EspHostedConfigMsgType msg = 1;
     oneof payload {
-        CmdGetStatus cmd_get_mac_address = 10;
-        RespGetStatus resp_get_mac_address = 11;
-        CmdGetStatus cmd_get_wifi_mode = 12;
-        RespGetStatus resp_get_wifi_mode = 13;
-        CmdGetStatus cmd_set_wifi_mode = 14;
-        RespGetStatus resp_set_wifi_mode = 15;
-        CmdConfig cmd_get_ap_config = 16;
-        RespConfig resp_get_ap_config = 17;
-        CmdConfig cmd_set_ap_config = 18;
-        RespConfig resp_set_ap_config = 19;
-        CmdConfig cmd_get_softap_config = 20;
-        RespConfig resp_get_softap_config = 21;
-        CmdConfig cmd_set_softap_config = 22;
-        RespConfig resp_set_softap_config = 23;
-        CmdGetStatus cmd_disconnect_ap = 24;
-        RespGetStatus resp_disconnect_ap = 25;
-        CmdScanResult cmd_scan_ap_list = 26;
-        RespScanResult resp_scan_ap_list = 27;
-        CmdConnectedSTA cmd_connected_stas_list = 28;
-        RespConnectedSTA resp_connected_stas_list = 29;
+        EspHostedCmdGetStatus cmd_get_mac_address = 10;
+        EspHostedRespGetStatus resp_get_mac_address = 11;
+        EspHostedCmdGetStatus cmd_get_wifi_mode = 12;
+        EspHostedRespGetStatus resp_get_wifi_mode = 13;
+        EspHostedCmdGetStatus cmd_set_wifi_mode = 14;
+        EspHostedRespGetStatus resp_set_wifi_mode = 15;
+        EspHostedCmdConfig cmd_get_ap_config = 16;
+        EspHostedRespConfig resp_get_ap_config = 17;
+        EspHostedCmdConfig cmd_set_ap_config = 18;
+        EspHostedRespConfig resp_set_ap_config = 19;
+        EspHostedCmdConfig cmd_get_softap_config = 20;
+        EspHostedRespConfig resp_get_softap_config = 21;
+        EspHostedCmdConfig cmd_set_softap_config = 22;
+        EspHostedRespConfig resp_set_softap_config = 23;
+        EspHostedCmdGetStatus cmd_disconnect_ap = 24;
+        EspHostedRespGetStatus resp_disconnect_ap = 25;
+        EspHostedCmdScanResult cmd_scan_ap_list = 26;
+        EspHostedRespScanResult resp_scan_ap_list = 27;
+        EspHostedCmdConnectedSTA cmd_connected_stas_list = 28;
+        EspHostedRespConnectedSTA resp_connected_stas_list = 29;
     }
 }
