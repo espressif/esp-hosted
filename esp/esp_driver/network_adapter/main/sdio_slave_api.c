@@ -48,6 +48,7 @@ if_ops_t if_ops = {
 
 interface_context_t *interface_insert_driver(int (*event_handler)(uint8_t val))
 {
+	ESP_LOGI(TAG, "Using SDIO interface");
 	memset(&context, 0, sizeof(context));
 
 	context.type = SDIO;

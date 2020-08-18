@@ -105,10 +105,17 @@ static uint8_t get_capabilities()
 
 	ESP_LOGI(TAG, "Supported features are:");
 	ESP_LOGI(TAG, "- WLAN");
+#if CONFIG_SPI_ENABLED
+	cap |= ESP_WLAN_SPI_SUPPORT;
+#else
 	cap |= ESP_WLAN_SUPPORT;
+#endif
 #ifdef CONFIG_BT_ENABLED
 	ESP_LOGI(TAG, "- BT/BLE");
-#if CONFIG_BTDM_CONTROLLER_HCI_MODE_VHCI
+#if CONFIG_SPI_ENABLED
+	ESP_LOGI(TAG, "   - HCI Over SDIO");
+	cap |= ESP_BT_SPI_SUPPORT
+#elif CONFIG_BTDM_CONTROLLER_HCI_MODE_VHCI
 	ESP_LOGI(TAG, "   - HCI Over SDIO");
 	cap |= ESP_BT_SDIO_SUPPORT;
 #elif CONFIG_BT_HCI_UART
@@ -387,6 +394,7 @@ void recv_task(void* pvParameters)
 		if (!datapath) {
 			/* Datapath is not enabled by host yet*/
 			sleep(1);
+			continue;
 		}
 
 		// receive data from transport layer
@@ -412,7 +420,6 @@ void recv_task(void* pvParameters)
 
 static int32_t serial_read_data(uint8_t *data, int32_t len)
 {
-	ESP_LOGI(TAG, "serial_read_data\n");
 	len = min(len, r.len);
 	if (r.valid) {
 		memcpy(data, r.data, len);
@@ -427,7 +434,6 @@ static int32_t serial_read_data(uint8_t *data, int32_t len)
 static int32_t serial_write_data(uint8_t* data, int32_t len)
 {
 	interface_buffer_handle_t buf_handle = {0};
-	ESP_LOGI(TAG, "serial_write_data %d\n", len);
 
 	buf_handle.if_type = ESP_SERIAL_IF;
 	buf_handle.if_num = 0;
@@ -616,6 +622,7 @@ void app_main()
 	}
 
 	if_context = interface_insert_driver(event_handler);
+	datapath = 1;
 
 	if (!if_context || !if_context->if_ops) {
 		ESP_LOGE(TAG, "Failed to insert driver\n");
@@ -636,6 +643,7 @@ void app_main()
 	assert(from_host_queue != NULL);
 
 	ESP_ERROR_CHECK(ret);
+	sleep(3);
 
 	xTaskCreate(recv_task , "recv_task" , 4096 , NULL , 18 , NULL);
 	xTaskCreate(send_task , "send_task" , 4096 , NULL , 18 , NULL);

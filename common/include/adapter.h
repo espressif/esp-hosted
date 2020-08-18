@@ -37,5 +37,7 @@ typedef enum {
 	ESP_BT_SDIO_SUPPORT = (1 << 2),
 	ESP_BLE_ONLY_SUPPORT = (1 << 3),
 	ESP_BR_EDR_ONLY_SUPPORT = (1 << 4),
+	ESP_WLAN_SPI_SUPPORT = (1 << 5),
+	ESP_BT_SPI_SUPPORT = (1 << 6),
 } ESP_CAPABILITIES;
 #endif

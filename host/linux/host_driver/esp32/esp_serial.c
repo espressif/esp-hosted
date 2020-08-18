@@ -89,7 +89,6 @@ static int esp_serial_write(struct file *file, const char __user *user_buffer, s
 		return -EFAULT;
 	}
 
-	print_hex_dump_bytes("Tx:", DUMP_PREFIX_NONE, buf, total_len);
 	ret = esp_send_packet(dev->priv, buf, total_len);
 	if (ret) {
 		printk (KERN_ERR "%s: Failed to transmit data\n", __func__);
@@ -111,7 +110,6 @@ static int esp_serial_open(struct inode *inode, struct file *file)
 
 	devs = container_of(inode->i_cdev, struct esp_serial_devs, cdev);
 	file->private_data = devs;
-	printk(KERN_INFO "%s on device %d\n", __func__, devs->dev_index);
 
 	return 0;
 }

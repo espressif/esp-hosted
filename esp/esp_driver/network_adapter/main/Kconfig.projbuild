@@ -1,5 +1,18 @@
 menu "Example Configuration"
 
+    config ESP_SDIO_HOST_INTERFACE
+        bool "SDIO interface between Host and ESP32"
+        default 1
+	depends on !ESP_SPI_HOST_INTERFACE
+        help
+            Enable/Disable SDIO host interface
+
+    config ESP_SPI_HOST_INTERFACE
+        bool "SPI interface between Host and ESP32"
+        default 0
+        help
+            Enable/Disable SPI host interface
+
     config ESP_SERIAL_DEBUG
         bool "Debug Serial driver data path"
         default 0
@@ -11,4 +24,16 @@ menu "Example Configuration"
         default 0
         help
             Enable/disable debug prints in wlan driver data path
+
+    config ESP_SPI_CONTROLLER
+        int "SPI controller to use"
+        default 2
+        help
+            SPI controller to be used. SPI1->0, SPI2->1, SPI3->2
+
+    config ESP_SPI_GPIO_HANDSHAKE
+        int "GPIO pin for handshake"
+        default 2
+        help
+            GPIO to use for handshake with other spi controller
 endmenu
