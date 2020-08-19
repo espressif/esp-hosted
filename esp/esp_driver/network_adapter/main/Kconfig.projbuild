@@ -28,8 +28,9 @@ menu "Example Configuration"
     config ESP_SPI_CONTROLLER
         int "SPI controller to use"
         default 2
+	range 1 2
         help
-            SPI controller to be used. SPI1->0, SPI2->1, SPI3->2
+            SPI controller to be used. HSPI->1, VSPI->2
 
     config ESP_SPI_GPIO_HANDSHAKE
         int "GPIO pin for handshake"

@@ -50,25 +50,25 @@ static const char TAG[] = "SPI_DRIVER";
     #error "Please choose correct ESP SPI"
 #endif
 
-#define SPI_BUFFER_SIZE 2048
-#define SPI_QUEUE_SIZE 3
+#define SPI_BUFFER_SIZE 	 2048
+#define SPI_QUEUE_SIZE 		 3
+#define SPI_RX_QUEUE_SIZE        50
+#define SPI_TX_QUEUE_SIZE        50
 
-interface_context_t context;
-interface_handle_t if_handle_g;
-uint8_t gpio_handshake=CONFIG_ESP_SPI_GPIO_HANDSHAKE;
+static interface_context_t context;
+static interface_handle_t if_handle_g;
+static uint8_t gpio_handshake=CONFIG_ESP_SPI_GPIO_HANDSHAKE;
 
 static interface_handle_t * esp_spi_init(uint8_t capabilities);
 static int32_t esp_spi_write(interface_handle_t *handle,
 				interface_buffer_handle_t *buf_handle);
-interface_buffer_handle_t * esp_spi_read(interface_handle_t *if_handle);
+static interface_buffer_handle_t * esp_spi_read(interface_handle_t *if_handle);
 static esp_err_t esp_spi_reset(interface_handle_t *handle);
 static void esp_spi_deinit(interface_handle_t *handle);
 static void esp_spi_read_done(void *handle);
 
-QueueHandle_t spi_rx_queue = NULL;
-QueueHandle_t spi_tx_queue = NULL;
-#define SPI_RX_QUEUE_SIZE        50
-#define SPI_TX_QUEUE_SIZE        50
+static QueueHandle_t spi_rx_queue = NULL;
+static QueueHandle_t spi_tx_queue = NULL;
 
 if_ops_t if_ops = {
 	.init = esp_spi_init,
@@ -213,6 +213,55 @@ void spi_transaction_task(void* pvParameters)
 	}
 }
 
+static void generate_startup_event(uint8_t cap)
+{
+	struct esp_payload_header *header;
+	interface_buffer_handle_t buf_handle;
+	struct esp_priv_event *event;
+	uint8_t *pos;
+	uint16_t len = 0;
+
+	memset(&buf_handle, 0, sizeof(buf_handle));
+
+	buf_handle.payload = heap_caps_malloc(SPI_BUFFER_SIZE, MALLOC_CAP_DMA);
+
+	header = (struct esp_payload_header *) buf_handle.payload;
+
+	header->if_type = ESP_PRIV_IF;
+	header->if_num = 0;
+	header->offset = htole16(sizeof(struct esp_payload_header));
+	header->priv_pkt_type = ESP_PACKET_TYPE_EVENT;
+
+	/* Populate event data */
+	event = (struct esp_priv_event *) (buf_handle.payload + sizeof(struct esp_payload_header));
+
+	event->event_type = ESP_PRIV_EVENT_INIT;
+
+	/* Populate TLVs for event */
+	pos = event->event_data;
+	/* Tag [1 byte] */
+	*pos = ESP_PRIV_CAPABILITY;
+	pos++;len++;
+
+	/* Length of value field [1 byte] */
+	*pos = 1;
+	pos++;len++;
+
+	/* Value */
+	*pos = cap;
+	pos++;len++;
+
+	event->event_len = len;
+
+	/* payload len = Event len + sizeof(event type) + sizeof(event len) */
+	len += 2;
+	header->len = htole16(len);
+
+	buf_handle.payload_len = len + sizeof(struct esp_payload_header);
+
+	xQueueSend(spi_tx_queue, &buf_handle, portMAX_DELAY);
+}
+
 static interface_handle_t * esp_spi_init(uint8_t capabilities)
 {
 	esp_err_t ret = ESP_OK;
@@ -266,6 +315,10 @@ static interface_handle_t * esp_spi_init(uint8_t capabilities)
 
 	spi_tx_queue = xQueueCreate(SPI_TX_QUEUE_SIZE, sizeof(interface_buffer_handle_t));
 	assert(spi_tx_queue != NULL);
+
+	generate_startup_event(capabilities);
+
+	usleep(200);
 
 	xTaskCreate(spi_transaction_task , "spi_task" , 4096 , NULL , 18 , NULL);
 	return &if_handle_g;
@@ -342,7 +395,7 @@ static void esp_spi_read_done(void *handle)
 	}
 }
 
-interface_buffer_handle_t * esp_spi_read(interface_handle_t *if_handle)
+static interface_buffer_handle_t * esp_spi_read(interface_handle_t *if_handle)
 {
 	interface_buffer_handle_t *buf_handle = NULL;
 	esp_err_t ret = ESP_OK;

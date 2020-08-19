@@ -104,20 +104,23 @@ static uint8_t get_capabilities()
 	uint8_t cap = 0;
 
 	ESP_LOGI(TAG, "Supported features are:");
-	ESP_LOGI(TAG, "- WLAN");
-#if CONFIG_SPI_ENABLED
+#if CONFIG_ESP_SPI_HOST_INTERFACE
+	ESP_LOGI(TAG, "- WLAN over SPI");
 	cap |= ESP_WLAN_SPI_SUPPORT;
 #else
-	cap |= ESP_WLAN_SUPPORT;
+	ESP_LOGI(TAG, "- WLAN over SDIO");
+	cap |= ESP_WLAN_SDIO_SUPPORT;
 #endif
 #ifdef CONFIG_BT_ENABLED
 	ESP_LOGI(TAG, "- BT/BLE");
-#if CONFIG_SPI_ENABLED
-	ESP_LOGI(TAG, "   - HCI Over SDIO");
-	cap |= ESP_BT_SPI_SUPPORT
-#elif CONFIG_BTDM_CONTROLLER_HCI_MODE_VHCI
+#if CONFIG_BTDM_CONTROLLER_HCI_MODE_VHCI
+#if CONFIG_ESP_SPI_HOST_INTERFACE
+	ESP_LOGI(TAG, "   - HCI Over SPI");
+	cap |= ESP_BT_SPI_SUPPORT;
+#else
 	ESP_LOGI(TAG, "   - HCI Over SDIO");
 	cap |= ESP_BT_SDIO_SUPPORT;
+#endif
 #elif CONFIG_BT_HCI_UART
 	ESP_LOGI(TAG, "   - HCI Over UART");
 	cap |= ESP_BT_UART_SUPPORT;
