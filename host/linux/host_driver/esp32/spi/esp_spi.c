@@ -29,12 +29,26 @@ static struct sk_buff * read_packet(struct esp_adapter *adapter);
 static int write_packet(struct esp_adapter *adapter, u8 *buf, u32 size);
 static void spi_exit(void);
 
+volatile u8 data_path = 0;
+static struct esp_spi_context spi_context;
+
 static struct esp_if_ops if_ops = {
 	.read		= read_packet,
 	.write		= write_packet,
 };
 
-static struct esp_spi_context spi_context;
+
+static void open_data_path(void)
+{
+	msleep(200);
+	data_path = OPEN_DATAPATH;
+}
+
+static void close_data_path(void)
+{
+	data_path = CLOSE_DATAPATH;
+	msleep(200);
+}
 
 static irqreturn_t spi_interrupt_handler(int irq, void * dev)
 {
@@ -49,6 +63,10 @@ static struct sk_buff * read_packet(struct esp_adapter *adapter)
 {
 	struct esp_spi_context *context;
 	struct sk_buff *skb = NULL;
+
+	if (!data_path) {
+		return NULL;
+	}
 
 	if (!adapter || !adapter->if_context) {
 		printk (KERN_ERR "%s: Invalid args\n", __func__);
@@ -76,6 +94,10 @@ static int write_packet(struct esp_adapter *adapter, u8 *buf, u32 size)
 	if (!adapter || !adapter->if_context || !buf || !size || (size > SPI_BUF_SIZE)) {
 		printk (KERN_ERR "%s: Invalid args\n", __func__);
 		return -EINVAL;
+	}
+
+	if (!data_path) {
+		return -EPERM;
 	}
 
 	/* Adjust length to make it multiple of 4 bytes  */
@@ -150,6 +172,7 @@ static void esp_spi_work(struct work_struct *work)
 	int ret = 0;
 
 	memset(&trans, 0, sizeof(trans));
+	tx_skb = NULL;
 
 	/* Setup and execute SPI transaction
 	 * 	Tx_buf: Check if tx_q has valid buffer for transmission,
@@ -161,7 +184,8 @@ static void esp_spi_work(struct work_struct *work)
 	 * */
 
 	/* Configure TX buffer if available */
-	tx_skb = skb_dequeue(&spi_context.tx_q);
+	if (data_path)
+		tx_skb = skb_dequeue(&spi_context.tx_q);
 
 	if (tx_skb) {
 		trans.tx_buf = tx_skb->data;
@@ -183,7 +207,7 @@ static void esp_spi_work(struct work_struct *work)
 	}
 
 	/* Free rx_skb if received data is not valid */
-	if (process_rx_buf(rx_skb)) {
+	if (!data_path || process_rx_buf(rx_skb)) {
 		dev_kfree_skb(rx_skb);
 	}
 
@@ -269,7 +293,7 @@ static int spi_init(void)
 		return status;
 	}
 
-	msleep(200);
+	open_data_path();
 
 #ifdef CONFIG_SUPPORT_ESP_SERIAL
 	status = esp_serial_init((void *) spi_context.adapter);
@@ -301,8 +325,16 @@ static int spi_init(void)
 
 static void spi_exit(void)
 {
+	disable_irq(SPI_IRQ);
+	close_data_path();
+	msleep(200);
+
+	skb_queue_purge(&spi_context.tx_q);
+	skb_queue_purge(&spi_context.rx_q);
+
 	if (spi_context.spi_workqueue) {
 		destroy_workqueue(spi_context.spi_workqueue);
+		spi_context.spi_workqueue = NULL;
 	}
 
 	esp_serial_cleanup();
@@ -310,6 +342,8 @@ static void spi_exit(void)
 
 	if (spi_context.adapter->hcidev)
 		esp_deinit_bt(spi_context.adapter);
+
+	free_irq(SPI_IRQ, spi_context.esp_spi_dev);
 
 	gpio_free(HANDSHAKE_PIN);
 
