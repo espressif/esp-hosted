@@ -646,7 +646,6 @@ void app_main()
 	assert(from_host_queue != NULL);
 
 	ESP_ERROR_CHECK(ret);
-	sleep(3);
 
 	xTaskCreate(recv_task , "recv_task" , 4096 , NULL , 18 , NULL);
 	xTaskCreate(send_task , "send_task" , 4096 , NULL , 18 , NULL);

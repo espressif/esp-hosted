@@ -318,7 +318,7 @@ static interface_handle_t * esp_spi_init(uint8_t capabilities)
 
 	generate_startup_event(capabilities);
 
-	usleep(200);
+	usleep(500);
 
 	xTaskCreate(spi_transaction_task , "spi_task" , 4096 , NULL , 18 , NULL);
 	return &if_handle_g;

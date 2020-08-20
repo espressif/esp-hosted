@@ -126,6 +126,78 @@ static int write_packet(struct esp_adapter *adapter, u8 *buf, u32 size)
 	return 0;
 }
 
+static void process_capabilities(u8 cap)
+{
+	printk (KERN_INFO "ESP32 capabilities: 0x%x", cap);
+
+	/* Reset BT */
+	esp_deinit_bt(spi_context.adapter);
+
+	if ((cap & ESP_BT_SPI_SUPPORT) || (cap & ESP_BT_SDIO_SUPPORT)) {
+		msleep(200);
+		esp_init_bt(spi_context.adapter);
+	}
+}
+
+static void process_init_event(u8 *evt_buf, u8 len)
+{
+	u8 len_left = len, tag_len;
+	u8 *pos;
+
+	if (!evt_buf)
+		return;
+
+	pos = evt_buf;
+
+	while (len_left) {
+		tag_len = *(pos + 1);
+		if (*pos == ESP_PRIV_CAPABILITY) {
+			process_capabilities(*(pos + 2));
+		} else {
+			printk (KERN_WARNING "Unsupported tag in event");
+		}
+		len_left = len_left - (tag_len + 2);
+	}
+}
+
+static void process_event(u8 *evt_buf, u16 len)
+{
+	struct esp_priv_event *event;
+
+	if (!evt_buf || !len)
+		return;
+
+	event = (struct esp_priv_event *) evt_buf;
+
+	if (event->event_type == ESP_PRIV_EVENT_INIT) {
+		printk (KERN_INFO "Received INIT event from esp32");
+		process_init_event(event->event_data, event->event_len);
+	} else {
+		printk (KERN_WARNING "Drop unknown event");
+	}
+}
+
+static void process_priv_communication(struct sk_buff *skb)
+{
+	struct esp_payload_header *header;
+	u8 *payload;
+	u16 len;
+
+	if (!skb || !skb->data)
+		return;
+
+	header = (struct esp_payload_header *) skb->data;
+
+	payload = skb->data + le16_to_cpu(header->offset);
+	len = le16_to_cpu(header->len);
+
+	if (header->priv_pkt_type == ESP_PACKET_TYPE_EVENT) {
+		process_event(payload, len);
+	}
+
+	dev_kfree_skb(skb);
+}
+
 static int process_rx_buf(struct sk_buff *skb)
 {
 	struct esp_payload_header *header;
@@ -154,6 +226,14 @@ static int process_rx_buf(struct sk_buff *skb)
 
 	/* Trim SKB to actual size */
 	skb_trim(skb, len);
+
+	if (header->if_type == ESP_PRIV_IF) {
+		process_priv_communication(skb);
+		return 0;
+	}
+
+	if (!data_path)
+		return -EPERM;
 
 	/* enqueue skb for read_packet to pick it */
 	skb_queue_tail(&spi_context.rx_q, skb);
@@ -207,7 +287,7 @@ static void esp_spi_work(struct work_struct *work)
 	}
 
 	/* Free rx_skb if received data is not valid */
-	if (!data_path || process_rx_buf(rx_skb)) {
+	if (process_rx_buf(rx_skb)) {
 		dev_kfree_skb(rx_skb);
 	}
 
@@ -224,7 +304,7 @@ static int spi_init(void)
 	strlcpy(esp_board.modalias, "esp_spi", sizeof(esp_board.modalias));
 	esp_board.mode = SPI_MODE_3;
 	/* 10MHz */
-	esp_board.max_speed_hz = 10000000;
+	esp_board.max_speed_hz = 8000000;
 	esp_board.bus_num = 0;
 	esp_board.chip_select = 0;
 
@@ -311,13 +391,6 @@ static int spi_init(void)
 		return status;
 	}
 
-	status = esp_init_bt(spi_context.adapter);
-	if (status) {
-		spi_exit();
-		printk (KERN_ERR "Failed to init BT\n");
-		return status;
-	}
-
 	msleep(200);
 
 	return status;
@@ -362,6 +435,7 @@ int esp_init_interface_layer(struct esp_adapter *adapter)
 
 	adapter->if_context = &spi_context;
 	adapter->if_ops = &if_ops;
+	adapter->if_type = ESP_IF_TYPE_SPI;
 	spi_context.adapter = adapter;
 
 	return spi_init();
