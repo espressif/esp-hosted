@@ -36,12 +36,14 @@ static const char TAG[] = "SPI_DRIVER";
 #define MAKE_SPI_DMA_ALIGNED(VAL)  (VAL += SPI_DMA_ALIGNMENT_BYTES - \
 				((VAL)& SPI_DMA_ALIGNMENT_MASK))
 
-#if (CONFIG_ESP_SPI_CONTROLLER == 2)
+#if (CONFIG_ESP_SPI_CONTROLLER == 3)
+    #define ESP_SPI_CONTROLLER 2
     #define GPIO_MOSI 23
     #define GPIO_MISO 19
     #define GPIO_SCLK 18
     #define GPIO_CS    5
-#elif (CONFIG_ESP_SPI_CONTROLLER == 1)
+#elif (CONFIG_ESP_SPI_CONTROLLER == 2)
+    #define ESP_SPI_CONTROLLER 1
     #define GPIO_MOSI 12
     #define GPIO_MISO 13
     #define GPIO_SCLK 15
@@ -195,7 +197,7 @@ void spi_transaction_task(void* pvParameters)
 		spi_trans.length = SPI_BUFFER_SIZE * SPI_BITS_PER_WORD;
 
 		/* Execute transaction */
-		ret = spi_slave_transmit(CONFIG_ESP_SPI_CONTROLLER, &spi_trans,
+		ret = spi_slave_transmit(ESP_SPI_CONTROLLER, &spi_trans,
 				portMAX_DELAY);
 		if (ret != ESP_OK) {
 			ESP_LOGE(TAG , "spi transmit error, ret : 0x%x\r\n", ret);
@@ -304,7 +306,7 @@ static interface_handle_t * esp_spi_init(uint8_t capabilities)
 	gpio_set_pull_mode(GPIO_CS, GPIO_PULLUP_ONLY);
 
 	/* Initialize SPI slave interface */
-	ret=spi_slave_initialize(CONFIG_ESP_SPI_CONTROLLER, &buscfg, &slvcfg, DMA_CHAN);
+	ret=spi_slave_initialize(ESP_SPI_CONTROLLER, &buscfg, &slvcfg, DMA_CHAN);
 	assert(ret==ESP_OK);
 
 	memset(&if_handle_g, 0, sizeof(if_handle_g));
@@ -423,7 +425,7 @@ static interface_buffer_handle_t * esp_spi_read(interface_handle_t *if_handle)
 static esp_err_t esp_spi_reset(interface_handle_t *handle)
 {
 	esp_err_t ret;
-	ret = spi_slave_free(CONFIG_ESP_SPI_CONTROLLER);
+	ret = spi_slave_free(ESP_SPI_CONTROLLER);
 	if (ESP_OK != ret) {
 		ESP_LOGE(TAG, "spi slave bus free failed\n");
 	}
@@ -433,13 +435,13 @@ static esp_err_t esp_spi_reset(interface_handle_t *handle)
 static void esp_spi_deinit(interface_handle_t *handle)
 {
 	esp_err_t ret;
-	ret = spi_slave_free(CONFIG_ESP_SPI_CONTROLLER);
+	ret = spi_slave_free(ESP_SPI_CONTROLLER);
 	if (ESP_OK != ret) {
 		ESP_LOGE(TAG, "spi slave bus free failed\n");
 		return;
 	}
 
-	ret = spi_bus_free(CONFIG_ESP_SPI_CONTROLLER);
+	ret = spi_bus_free(ESP_SPI_CONTROLLER);
 	if (ESP_OK != ret) {
 		ESP_LOGE(TAG, "spi all bus free failed\n");
 		return;

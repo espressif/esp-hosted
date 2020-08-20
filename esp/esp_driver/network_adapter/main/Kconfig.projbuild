@@ -1,17 +1,21 @@
 menu "Example Configuration"
 
-    config ESP_SDIO_HOST_INTERFACE
-        bool "SDIO interface between Host and ESP32"
-        default 1
-	depends on !ESP_SPI_HOST_INTERFACE
+    choice ESP_HOST_INTERFACE
+        bool "Transport layer"
+        default ESP_SDIO_HOST_INTERFACE
         help
-            Enable/Disable SDIO host interface
+	    Bus interface to be used for communication with the host
 
-    config ESP_SPI_HOST_INTERFACE
-        bool "SPI interface between Host and ESP32"
-        default 0
-        help
-            Enable/Disable SPI host interface
+        config ESP_SDIO_HOST_INTERFACE
+            bool "SDIO interface"
+            help
+                Enable/Disable SDIO host interface
+
+        config ESP_SPI_HOST_INTERFACE
+            bool "SPI interface"
+            help
+                Enable/Disable SPI host interface
+    endchoice
 
     config ESP_SERIAL_DEBUG
         bool "Debug Serial driver data path"
@@ -27,10 +31,10 @@ menu "Example Configuration"
 
     config ESP_SPI_CONTROLLER
         int "SPI controller to use"
-        default 2
-	range 1 2
+        default 3
+	range 2 3
         help
-            SPI controller to be used. HSPI->1, VSPI->2
+            SPI controller to be used. HSPI->2, VSPI->3
 
     config ESP_SPI_GPIO_HANDSHAKE
         int "GPIO pin for handshake"
