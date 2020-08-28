@@ -624,6 +624,19 @@ void app_main()
 		ret = nvs_flash_init();
 	}
 
+	pc_pserial = protocomm_new();
+	if (pc_pserial == NULL) {
+		ESP_LOGE(TAG,"Failed to allocate memory for new instance of protocomm ");
+		return;
+	}
+
+	if (protocomm_add_endpoint(pc_pserial, "control", data_transfer_handler, NULL) != ESP_OK) {
+		ESP_LOGE(TAG, "Failed to add enpoint");
+		return;
+	}
+
+	protocomm_pserial_start(pc_pserial, serial_write_data, serial_read_data);
+
 	if_context = interface_insert_driver(event_handler);
 	datapath = 1;
 
@@ -655,22 +668,9 @@ void app_main()
 
 	ESP_ERROR_CHECK(initialise_wifi());
 
-	pc_pserial = protocomm_new();
-	if (pc_pserial == NULL) {
-		ESP_LOGE(TAG,"Failed to allocate memory for new instance of protocomm ");
-		return;
-	}
-
 #ifdef CONFIG_BT_ENABLED
 	initialise_bluetooth();
 #endif
-
-	if (protocomm_add_endpoint(pc_pserial, "control", data_transfer_handler, NULL) != ESP_OK) {
-		ESP_LOGE(TAG, "Failed to add enpoint");
-		return;
-	}
-
-	protocomm_pserial_start(pc_pserial, serial_write_data, serial_read_data);
 	ESP_LOGI(TAG,"Initial set up done");
 
 }
