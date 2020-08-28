@@ -116,6 +116,8 @@ uint8_t * get_next_tx_buffer(uint32_t *len)
 {
 	interface_buffer_handle_t buf_handle = {0};
 	esp_err_t ret = ESP_OK;
+	uint8_t *sendbuf = NULL;
+	struct esp_payload_header *header;
 
 	ret = xQueueReceive(spi_tx_queue, &buf_handle, 0);
 	if (ret == pdTRUE && buf_handle.payload) {
@@ -123,9 +125,27 @@ uint8_t * get_next_tx_buffer(uint32_t *len)
 		return buf_handle.payload;
 	}
 
-	*len = 0;
+	/* Nothing to send.. Create dummy tx buffer */
+	sendbuf = heap_caps_malloc(SPI_BUFFER_SIZE, MALLOC_CAP_DMA);
+	if (!sendbuf) {
+		ESP_LOGE(TAG, "Memory allocation failed");
+		*len = 0;
+		return NULL;
+	}
 
-	return NULL;
+	memset(sendbuf, 0, SPI_BUFFER_SIZE);
+
+	/* Initialize header */
+	header = (struct esp_payload_header *) sendbuf;
+
+	/* Populate header to indicate it as a dummy buffer */
+	header->if_type = 0xF;
+	header->if_num = 0xF;
+	header->len = 0;
+
+	*len = SPI_BUFFER_SIZE;
+
+	return sendbuf;
 }
 
 static int process_spi_rx(interface_buffer_handle_t *buf_handle)
