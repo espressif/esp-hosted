@@ -294,13 +294,11 @@ static void process_rx_packet(struct sk_buff *skb)
 
 	/* get the paload header */
 	payload_header = (struct esp_payload_header *) skb->data;
-	/*		print_hex_dump_bytes("Rx:", DUMP_PREFIX_NONE, (skb->data + 8), 32);*/
 
 	len = le16_to_cpu(payload_header->len);
 	offset = le16_to_cpu(payload_header->offset);
 
 	if (payload_header->if_type == ESP_SERIAL_IF) {
-		print_hex_dump_bytes("Rx:", DUMP_PREFIX_NONE, (skb->data + offset), len);
 #ifdef CONFIG_SUPPORT_ESP_SERIAL
 		esp_serial_data_received(payload_header->if_num, skb->data + offset, len);
 #else

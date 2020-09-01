@@ -28,6 +28,7 @@
 #include "adapter.h"
 
 #define ESP_IF_TYPE_SDIO		1
+#define ESP_IF_TYPE_SPI		2
 
 /* Network link status */
 #define ESP_LINK_DOWN			0

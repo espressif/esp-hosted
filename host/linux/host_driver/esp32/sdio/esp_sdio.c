@@ -293,6 +293,8 @@ static int init_context(struct esp_sdio_context *context)
 	if (!context->adapter)
 		printk (KERN_ERR "%s: Failed to get adapter\n", __func__);
 
+	context->adapter->if_type = ESP_IF_TYPE_SDIO;
+
 	return ret;
 }
 

@@ -135,6 +135,9 @@ int esp_deinit_bt(struct esp_adapter *adapter)
 {
 	struct hci_dev *hdev = NULL;
 
+	if (!adapter || !adapter->hcidev)
+		return 0;
+
 	hdev = adapter->hcidev;
 
 	hci_unregister_dev(hdev);
@@ -168,7 +171,11 @@ int esp_init_bt(struct esp_adapter *adapter)
 	adapter->hcidev = hdev;
 	hci_set_drvdata(hdev, adapter);
 
-	hdev->bus   = HCI_SDIO;
+	if (adapter->if_type == ESP_IF_TYPE_SDIO)
+		hdev->bus   = HCI_SDIO;
+	else if (adapter->if_type == ESP_IF_TYPE_SPI)
+		hdev->bus   = HCI_SPI;
+
 	hdev->open  = esp_bt_open;
 	hdev->close = esp_bt_close;
 	hdev->flush = esp_bt_flush;
