@@ -24,11 +24,14 @@ wlan_init()
 	cd ../host_driver/esp32/
 	if [ `lsmod | grep esp32 | wc -l` != "0" ]; then
 		sudo rm /dev/esps0
-		sudo rmmod esp32_sdio &> /dev/null
+		if [ `lsmod | grep esp32_sdio | wc -l` != "0" ]; then
+			sudo rmmod esp32_sdio &> /dev/null
+		else
+			sudo rmmod esp32_spi &> /dev/null
+		fi
 	fi
 
 	make -j8 target=$IF_TYPE
-
 	if [ "$RESETPIN" = "" ] ; then
 		#By Default, BCM6 is GPIO on host. use resetpin=6
 		sudo insmod $MODULE_NAME resetpin=6
@@ -56,19 +59,21 @@ usage()
 	echo "This script prepares RPI for wlan and bt/ble operation over esp32 device"
 	echo "\nUsage: ./rpi_init.sh [arguments]"
 	echo "\nArguments are optional and are as below"
+	echo "  spi:    sets esp<->RPi communication over SPI"
+	echo "  sdio:   sets esp<->RPi communication over SDIO"
 	echo "	btuart:	Set GPIO pins on RPi for HCI UART operations"
 	echo "	resetpin=6:	Set GPIO pins on RPi connected to EN pin of ESP, used to reset ESP (default:6 for BCM6)"
 	echo "\nExample:"
-	echo "  - Prepare RPi for WLAN and bt/ble operation on SDIO"
-	echo "	 # ./rpi_init.sh"
-	echo "\n  - Prepare RPi for bt/ble operation over UART and WLAN over SDIO"
-	echo "	 # ./rpi_init.sh btuart"
+	echo "  - Prepare RPi for WLAN operation on SDIO. sdio is default if no interface mentioned"
+	echo "	 # ./rpi_init.sh or ./rpi_init.sh sdio"
+	echo "\n  - Use spi for host<->esp32 communication. sdio is default if no interface mentioned"
+	echo "	 # ./rpi_init.sh spi"
+	echo "\n  - Prepare RPi for bt/ble operation over UART and WLAN over SDIO/SPI"
+	echo "	 # ./rpi_init.sh sdio btuart or ./rpi_init.sh spi btuart"
 	echo "\n  - use GPIO pin BCM5 (GPIO29) for reset"
 	echo "	 # ./rpi_init.sh resetpin=5"
-	echo "\n  - do btuart, use GPIO pin BCM5 (GPIO29) for reset"
-	echo "	 # ./rpi_init.sh btuart resetpin=5"
-	echo "\n  - Use sdio for host<->esp32 communication. sdio is default if no interface mentioned"
-	echo "	 # ./rpi_init.sh sdio"
+	echo "\n  - do btuart, use GPIO pin BCM5 (GPIO29) for reset over SDIO/SPI"
+	echo "	 # ./rpi_init.sh sdio btuart resetpin=5 or ./rpi_init.sh spi btuart resetpin=5"
 }
 
 parse_arguments()
@@ -79,21 +84,20 @@ parse_arguments()
 				usage
 				exit 0
 				;;
-
-			btuart)
-				echo "Recvd Option: $1"
-				BT_INIT_SET="1"
+			sdio)
+				IF_TYPE=$1
 				;;
-
+			spi)
+				IF_TYPE=$1
+				;;
 			resetpin=*)
 				echo "Recvd Option: $1"
 				RESETPIN=$1
 				;;
-
-			sdio)
-				IF_TYPE=$1
+			btuart)
+				echo "Recvd Option: $1"
+				BT_INIT_SET="1"
 				;;
-
 			*)
 				echo "$1 : unknown option"
 				usage
@@ -113,6 +117,13 @@ if [ "$IF_TYPE" = "" ] ; then
 else
 	echo "Building for $IF_TYPE protocol"
 	MODULE_NAME=esp32_${IF_TYPE}.ko
+fi
+
+if [ "$IF_TYPE" = "spi" ] ; then
+	rm spidev_disabler.dtbo
+	# Disable default spidev driver
+	dtc spidev_disabler.dts -O dtb > spidev_disabler.dtbo
+	sudo dtoverlay -d . spidev_disabler
 fi
 
 if [ `lsmod | grep bluetooth | wc -l` = "0" ]; then
