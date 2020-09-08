@@ -17,9 +17,7 @@
 #include "usart.h"
 #include "cmsis_os.h"
 #include "spi_drv.h"
-/* TODO: these both inclusions should be done from control path */
-/* Next patch would cover this */
-#include "serial_if.h"
+#include "control.h"
 #include "trace.h"
 
 /** Constants/Macros **/
@@ -33,9 +31,6 @@
 
 /** Exported variables **/
 
-/* TODO: instance will be moved to control path,
- * once control path come in picture */
-serial_handle_t * serial_if_g;
 
 /** Function declaration **/
 static void reset_slave(void);
@@ -78,12 +73,61 @@ static void reset_slave(void)
 	hard_delay(50000);
 }
 
-/* TODO: this function should be called from control path */
-/* Next patch would cover this */
-static void application_incoming_data_ind(void)
+
+/**
+  * @brief  Control path event handler callback
+  * @param  event - spi_drv_events_e event to be handled
+  * @retval None
+  */
+static void control_path_event_handler(uint8_t event)
 {
-	/* Empty function now, will be used/replaced by control path code */
+	switch(event)
+	{
+		case STATION_CONNECTED:
+		{
+			printf("station connected\n\r");
+			break;
+		}
+		case STATION_DISCONNECTED:
+		{
+			printf("station disconnected\n\r");
+			break;
+		}
+		case SOFTAP_STARTED:
+		{
+			printf("softap started\n\r");
+			break;
+		}
+		case SOFTAP_STOPPED:
+		{
+			printf("softap stopped\n\r");
+			break;
+		}
+		default:
+		break;
+	}
 }
+
+/**
+  * @brief  SPI driver event handler callback
+  * @param  event - spi_drv_events_e event to be handled
+  * @retval None
+  */
+static void spi_driver_event_handler(uint8_t event)
+{
+	switch(event)
+	{
+		case SPI_DRIVER_ACTIVE:
+		{
+			/* Initiate control path now */
+			control_path_init(control_path_event_handler);
+			break;
+		}
+		default:
+		break;
+	}
+}
+
 
 /** Exported functions **/
 
@@ -96,22 +140,8 @@ void MX_FREERTOS_Init(void)
 {
 	reset_slave();
 
-	stm_spi_init();
-
-	/* TODO: This serial interface instanciation will be
-	 * moved to control path. This is showing how to use
-	 * */
-	serial_if_g = serial_init(application_incoming_data_ind);
-	if (serial_if_g == NULL) {
-	    printf("Serial interface creation failed\n\r");
-	    assert(serial_if_g);
-	}
-	if (STM_OK != serial_if_g->fops->open(serial_if_g)) {
-		printf("Serial interface open failed\n\r");
-	}
-	if (STM_OK != serial_if_g->fops->close(serial_if_g)) {
-		printf("Serial interface close failed\n\r");
-	}
+	/* init spi driver */
+	stm_spi_init(spi_driver_event_handler);
 }
 
 /**

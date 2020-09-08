@@ -49,12 +49,12 @@ struct file_operations {
 	/**
 	 * @brief  Serial interface read non blocking
 	 *         This is non blocking receive
-	 *         In case higher layer using serial interface needs to make 
-	 *         blocking read, it should register serial_rx_callback through 
+	 *         In case higher layer using serial interface needs to make
+	 *         blocking read, it should register serial_rx_callback through
 	 *         serial_init.
 	 *
-	 *         serial_rx_callback is notification mechanism to implementer of 
-	 *         serial interface. Higher layer would understand there is data 
+	 *         serial_rx_callback is notification mechanism to implementer of
+	 *         serial interface. Higher layer would understand there is data
 	 *         is ready through this notification. Then higer layer should do
 	 *         serial_read API to receive actual data.
 	 *

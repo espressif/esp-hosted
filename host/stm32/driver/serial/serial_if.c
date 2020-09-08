@@ -34,7 +34,6 @@ typedef enum {
 /* data structures needed for serial driver */
 static QueueHandle_t to_serial_intf_queue[MAX_SERIAL_INTF];
 static serial_handle_t * interface_handle_g[MAX_SERIAL_INTF] = {NULL};
-
 static uint8_t conn_num = 0;
 
 /** Function Declarations **/

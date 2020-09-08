@@ -32,6 +32,16 @@
 	</natures>
 	<linkedResources>
 		<link>
+			<name>common</name>
+			<type>2</type>
+			<locationURI>CODE_BASE/common</locationURI>
+		</link>
+		<link>
+			<name>host_common</name>
+			<type>2</type>
+			<locationURI>CODE_BASE/host/host_common</locationURI>
+		</link>
+		<link>
 			<name>stm32</name>
 			<type>2</type>
 			<locationURI>CODE_BASE/host/stm32</locationURI>

@@ -31,8 +31,8 @@
 
 #define MAX_PAYLOAD_SIZE (MAX_SPI_BUFFER_SIZE-sizeof(struct esp_payload_header))
 
-
 /** Exported variables **/
+
 static osSemaphoreId osSemaphore;
 
 static osThreadId process_rx_task_id = 0;
@@ -42,9 +42,11 @@ static osThreadId transaction_task_id = 0;
 static QueueHandle_t to_slave_queue = NULL;
 static QueueHandle_t from_slave_queue = NULL;
 
+/* callback of event handler */
+static void (*spi_drv_evt_handler_fp) (uint8_t);
+
 /** function declaration **/
 /** Exported functions **/
-void MX_FREERTOS_Init(void);
 static void transaction_task(void const* pvParameters);
 static void process_rx_task(void const* pvParameters);
 static uint8_t * get_tx_buffer(void);
@@ -55,11 +57,13 @@ static uint8_t * get_tx_buffer(void);
 /** Exported Functions **/
 /**
   * @brief  spi driver initialize
-  * @param  None
+  * @param  spi_drv_evt_handler - event handler of type spi_drv_events_e
   * @retval None
   */
-void stm_spi_init(void)
+void stm_spi_init(void(*spi_drv_evt_handler)(uint8_t))
 {
+	/* register callback */
+	spi_drv_evt_handler_fp = spi_drv_evt_handler;
 	osSemaphoreDef(SEM);
 
 	/* spi handshake semaphore */
@@ -328,6 +332,9 @@ static void process_rx_task(void const* pvParameters)
 				/* halt spi transactions for some time, this is one time delay,
 				 * to give breathing time to slave before spi trans start */
 				stop_spi_transactions_for_msec(50000);
+				if (spi_drv_evt_handler_fp) {
+					spi_drv_evt_handler_fp(SPI_DRIVER_ACTIVE);
+				}
 			} else {
 				/* User can re-use this type of transaction */
 			}
