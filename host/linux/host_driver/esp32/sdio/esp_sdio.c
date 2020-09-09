@@ -57,7 +57,7 @@ static const struct sdio_device_id esp_devices[] = {
 static void print_capabilities(u32 cap)
 {
 	printk(KERN_INFO "Features supported are:\n");
-	if (cap & ESP_WLAN_SUPPORT)
+	if (cap & ESP_WLAN_SDIO_SUPPORT)
 		printk(KERN_INFO "\t * WLAN\n");
 	if ((cap & ESP_BT_UART_SUPPORT) || (cap & ESP_BT_SDIO_SUPPORT)) {
 		printk(KERN_INFO "\t * BT/BLE\n");
