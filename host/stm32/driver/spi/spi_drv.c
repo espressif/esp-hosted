@@ -20,6 +20,7 @@
 #include "trace.h"
 #include "spi_drv.h"
 #include "adapter.h"
+#include "serial_drv.h"
 
 /** Constants/Macros **/
 #define TO_SLAVE_QUEUE_SIZE	              20
@@ -308,11 +309,11 @@ static void process_rx_task(void const* pvParameters)
 		/* process received buffer for all possible interface types */
 		if (buf_handle.if_type == ESP_SERIAL_IF) {
 
-			/* TODO: hook  handler of serial interface rx functionaliy. */
-			/* Next patch will cover this functionality */
 			/* serial interface path */
-			UNUSED_VAR(payload);
-
+			if (STM_OK == serial_rx_handler(buf_handle, payload,
+						buf_handle.payload_len)) {
+				free_needed = 0;
+			}
 		} else if(buf_handle.if_type == ESP_STA_IF) {
 
 			/* TODO: Handle handle packets from esp station */
@@ -402,4 +403,3 @@ done:
 
 	return sendbuf;
 }
-
