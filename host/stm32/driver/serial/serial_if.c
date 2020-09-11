@@ -139,7 +139,6 @@ static uint8_t * serial_read(const serial_handle_t * serial_hdl,
 							 uint16_t * rlen)
 {
 	/* This is a non-blocking call */
-	uint8_t *rbuffer = NULL;
 	interface_buffer_handle_t buf_handle = {0};
 
 	/* Initial value */
@@ -178,25 +177,9 @@ static uint8_t * serial_read(const serial_handle_t * serial_hdl,
 		return NULL;
 	}
 
-	/* SPI driver allocates buffer for interface header + payload.
-	 * Here onward we do not need interface header, so strip off
-	 * interface header and only allocate buffer for payload_len.
-	 */
-	rbuffer = (uint8_t*)malloc(buf_handle.payload_len);
-	if (! rbuffer) {
-		printf("serial read malloc failed\n\r");
-		return NULL;
-	}
-
 	*rlen = buf_handle.payload_len;
-	memcpy(rbuffer, buf_handle.payload, buf_handle.payload_len);
 
-	/* free up lower level spi driver buffer */
-	if (buf_handle.free_buf_handle) {
-		buf_handle.free_buf_handle(buf_handle.priv_buffer_handle);
-	}
-
-	return rbuffer;
+	return buf_handle.payload;
 }
 
 /**
@@ -228,22 +211,28 @@ static int serial_write(const serial_handle_t * serial_hdl,
   *         rx_len - size of rxbuff
   * @retval None
   */
-stm_ret_t serial_rx_handler(interface_buffer_handle_t buf_handle,
-	uint8_t *rxbuff, uint16_t rx_len)
+stm_ret_t serial_rx_handler(uint8_t if_num, uint8_t *rxbuff, uint16_t rx_len)
 {
+	interface_buffer_handle_t buf_handle = {0};
 	serial_handle_t * serial_hdl = NULL;
 
-	serial_hdl = get_serial_handle(buf_handle.if_num);
+	serial_hdl = get_serial_handle(if_num);
 
 	if ((! serial_hdl) || (serial_hdl->state != ACTIVE)) {
 		printf("Serial interface not registered yet\n\r");
 		return STM_FAIL ;
 	}
+	buf_handle.if_type = ESP_SERIAL_IF;
+	buf_handle.if_num = if_num;
+	buf_handle.payload_len = rx_len;
+	buf_handle.payload = rxbuff;
+	buf_handle.priv_buffer_handle = rxbuff;
+	buf_handle.free_buf_handle = free;
 
 	/* send to serial queue */
 	if (pdTRUE != xQueueSend(serial_hdl->queue,
 		    &buf_handle, portMAX_DELAY)) {
-		printf("Failed send serialif queue[%u]\n\r", buf_handle.if_num);
+		printf("Failed send serialif queue[%u]\n\r", if_num);
 		return STM_FAIL;
 	}
 

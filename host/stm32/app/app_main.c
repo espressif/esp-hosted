@@ -19,8 +19,13 @@
 #include "spi_drv.h"
 #include "control.h"
 #include "trace.h"
+#include "app_main.h"
+#include "netdev_api.h"
+#include "arp_server_stub.h"
 
 /** Constants/Macros **/
+#define ARPING_PATH_TASK_STACK_SIZE     4096
+
 #ifdef __GNUC__
 /* With GCC, small printf (option LD Linker->Libraries->Small printf
    set to 'Yes') calls __io_putchar() */
@@ -31,15 +36,19 @@
 
 /** Exported variables **/
 
-
 /** Function declaration **/
+static void init_sta(void);
+static void init_ap(void);
 static void reset_slave(void);
+static void arping_task(void const *arg);
 
 /* GetIdleTaskMemory prototype (linked to static allocation support) */
 void vApplicationGetIdleTaskMemory( StaticTask_t **ppxIdleTaskTCBBuffer,
 	StackType_t **ppxIdleTaskStackBuffer, uint32_t *pulIdleTaskStackSize );
 
 
+struct network_handle *sta_handle, *ap_handle;
+static osThreadId arping_task_id = 0;
 
 /** function definition **/
 
@@ -85,7 +94,7 @@ static void control_path_event_handler(uint8_t event)
 	{
 		case STATION_CONNECTED:
 		{
-			printf("station connected\n\r");
+			init_sta();
 			break;
 		}
 		case STATION_DISCONNECTED:
@@ -95,7 +104,7 @@ static void control_path_event_handler(uint8_t event)
 		}
 		case SOFTAP_STARTED:
 		{
-			printf("softap started\n\r");
+			init_ap();
 			break;
 		}
 		case SOFTAP_STOPPED:
@@ -140,8 +149,17 @@ void MX_FREERTOS_Init(void)
 {
 	reset_slave();
 
+	/* Init network interface */
+	network_init();
+
 	/* init spi driver */
 	stm_spi_init(spi_driver_event_handler);
+
+	/* Create thread for arping */
+	osThreadDef(Arping_Thread, arping_task, osPriorityNormal, 0,
+			ARPING_PATH_TASK_STACK_SIZE);
+	arping_task_id = osThreadCreate(osThread(Arping_Thread), NULL);
+	assert(arping_task_id);
 }
 
 /**
@@ -188,4 +206,150 @@ void vApplicationGetIdleTaskMemory( StaticTask_t **ppxIdleTaskTCBBuffer,
 	Note that, as the array is necessarily of type StackType_t,
 	configMINIMAL_STACK_SIZE is specified in words, not bytes. */
 	*pulIdleTaskStackSize = configMINIMAL_STACK_SIZE;
+}
+
+/**
+  * @brief Station mode rx callback
+  * @param  net_handle - station network handle
+  * @retval None
+  */
+static void sta_rx_callback(struct network_handle *net_handle)
+{
+	struct pbuf *rx_buffer = NULL;
+	struct pbuf *snd_buffer = NULL;
+	uint8_t *arp_resp = NULL;
+	uint16_t arp_resp_len = 0;
+	uint32_t sta_ip = 0;
+	int ret;
+
+	rx_buffer = network_read(net_handle, 0);
+
+	if (get_self_ip_station(&sta_ip)) {
+		printf("Problem getting self station ip\n\r");
+		if(rx_buffer) {
+			free(rx_buffer->payload);
+			free(rx_buffer);
+		}
+		return;
+	}
+
+	if (rx_buffer) {
+		arp_resp = arp_req_handler(&sta_ip, get_self_mac_station(), rx_buffer->payload,
+				rx_buffer->len, &arp_resp_len);
+
+		if (arp_resp) {
+			snd_buffer = malloc(sizeof(struct pbuf));
+			assert(snd_buffer);
+
+			snd_buffer->payload = arp_resp;
+			snd_buffer->len = arp_resp_len;
+
+			ret = network_write(net_handle, snd_buffer);
+
+			if (ret)
+				printf("%s: Failed to send arp response\n\r", __func__);
+		}
+
+		free(rx_buffer->payload);
+		free(rx_buffer);
+	}
+}
+
+/**
+  * @brief Softap mode rx callback
+  * @param  net_handle - Softap network handle
+  * @retval None
+  */
+static void ap_rx_callback(struct network_handle *net_handle)
+{
+	struct pbuf *rx_buffer = NULL;
+	struct pbuf *snd_buffer = NULL;
+	uint8_t *arp_resp = NULL;
+	uint16_t arp_resp_len = 0;
+	int ret;
+	uint32_t softap_ip = 0;
+
+	rx_buffer = network_read(net_handle, 0);
+
+	if (get_self_ip_softap(&softap_ip)) {
+		printf("Problem getting self softap ip\n\r");
+		if(rx_buffer) {
+			free(rx_buffer->payload);
+			free(rx_buffer);
+		}
+		return;
+	}
+
+	if (rx_buffer) {
+		arp_resp = arp_req_handler(&softap_ip, get_self_mac_softap(),
+				rx_buffer->payload, rx_buffer->len, &arp_resp_len);
+
+		if (arp_resp) {
+			snd_buffer = malloc(sizeof(struct pbuf));
+			assert(snd_buffer);
+
+			snd_buffer->payload = arp_resp;
+			snd_buffer->len = arp_resp_len;
+
+			ret = network_write(net_handle, snd_buffer);
+
+			if (ret)
+				printf("%s: Failed to send arp response\n\r", __func__);
+		}
+
+		free(rx_buffer->payload);
+		free(rx_buffer);
+	}
+}
+
+
+/**
+  * @brief start station mode network path
+  * @param None
+  * @retval None
+  */
+static void init_sta(void)
+{
+	sta_handle = network_open(STA_INTERFACE, sta_rx_callback);
+	assert(sta_handle);
+}
+
+/**
+  * @brief start softap mode network path
+  * @param None
+  * @retval None
+  */
+static void init_ap(void)
+{
+	ap_handle = network_open(SOFTAP_INTERFACE, ap_rx_callback);
+	assert(ap_handle);
+}
+
+/**
+  * @brief task initiate arping req periodically
+  * @param Not used
+  * @retval None
+  */
+static void arping_task(void const *arg)
+{
+	uint32_t sta_ip, softap_ip;
+	uint32_t sta_dest_ip, softap_dest_ip;
+	uint8_t  dst_mac_bytes[MAC_LEN] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
+
+	sta_ip = softap_ip = sta_dest_ip = softap_dest_ip = 0;
+
+	get_self_ip_station(&sta_ip);
+	get_self_ip_softap(&softap_ip);
+	get_arp_dst_ip_station(&sta_dest_ip);
+	get_arp_dst_ip_softap(&softap_dest_ip);
+
+	while (1) {
+		if (sta_handle)
+			send_arp_req(sta_handle, get_self_mac_station(), &sta_ip, dst_mac_bytes, &sta_dest_ip);
+
+		if(ap_handle)
+			send_arp_req(ap_handle, get_self_mac_softap(), &softap_ip, dst_mac_bytes, &softap_dest_ip);
+
+		osDelay(1000);
+	}
 }

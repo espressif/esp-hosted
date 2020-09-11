@@ -66,7 +66,7 @@ static int esp_serial_write(struct file *file, const char __user *user_buffer, s
 	int ret;
 	size_t total_len;
 
-       	dev = (struct esp_serial_devs *) file->private_data;
+	dev = (struct esp_serial_devs *) file->private_data;
 	total_len = size + sizeof(struct esp_payload_header);
 
 	buf = kmalloc(total_len, GFP_KERNEL);

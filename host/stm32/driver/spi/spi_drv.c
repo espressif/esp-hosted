@@ -21,6 +21,7 @@
 #include "spi_drv.h"
 #include "adapter.h"
 #include "serial_drv.h"
+#include "netdev_if.h"
 
 /** Constants/Macros **/
 #define TO_SLAVE_QUEUE_SIZE	              20
@@ -30,6 +31,18 @@
 #define PROCESS_RX_TASK_STACK_SIZE        4096
 
 #define MAX_PAYLOAD_SIZE (MAX_SPI_BUFFER_SIZE-sizeof(struct esp_payload_header))
+
+static int esp_netdev_open(netdev_handle_t netdev);
+static int esp_netdev_close(netdev_handle_t netdev);
+static int esp_netdev_xmit(netdev_handle_t netdev, struct pbuf *net_buf);
+
+static struct esp_private *esp_priv[MAX_NETWORK_INTERFACES];
+
+static struct netdev_ops esp_net_ops = {
+	.netdev_open = esp_netdev_open,
+	.netdev_close = esp_netdev_close,
+	.netdev_xmit = esp_netdev_xmit,
+};
 
 /** Exported variables **/
 
@@ -50,7 +63,135 @@ static void (*spi_drv_evt_handler_fp) (uint8_t);
 static void transaction_task(void const* pvParameters);
 static void process_rx_task(void const* pvParameters);
 static uint8_t * get_tx_buffer(void);
+static void deinit_netdev(void);
 
+/**
+  * @brief  get private interface of expected type and number
+  * @param  if_type - interface type
+  *         if_num - interface number
+  * @retval interface handle if found, else NULL
+  */
+static struct esp_private * get_priv(uint8_t if_type, uint8_t if_num)
+{
+	int i = 0;
+
+	for (i = 0; i < MAX_NETWORK_INTERFACES; i++) {
+		if((esp_priv[i]) &&
+			(esp_priv[i]->if_type == if_type) &&
+			(esp_priv[i]->if_num == if_num))
+			return esp_priv[i];
+	}
+
+	return NULL;
+}
+
+/**
+  * @brief  open virtual network device
+  * @param  netdev - network device
+  * @retval 0 on success
+  */
+static int esp_netdev_open(netdev_handle_t netdev)
+{
+	return STM_OK;
+}
+
+/**
+  * @brief  close virtual network device
+  * @param  netdev - network device
+  * @retval 0 on success
+  */
+static int esp_netdev_close(netdev_handle_t netdev)
+{
+	return STM_OK;
+}
+
+/**
+  * @brief  transmit on virtual network device
+  * @param  netdev - network device
+  *         net_buf - buffer to transmit
+  * @retval None
+  */
+static int esp_netdev_xmit(netdev_handle_t netdev, struct pbuf *net_buf)
+{
+	struct esp_private *priv;
+	int ret;
+
+	if (!netdev || !net_buf)
+		return STM_FAIL;
+	priv = (struct esp_private *) netdev_get_priv(netdev);
+
+	if (!priv)
+		return STM_FAIL;
+
+	ret = send_to_slave(priv->if_type, priv->if_num,
+			net_buf->payload, net_buf->len);
+	free(net_buf);
+
+	return ret;
+}
+
+/**
+  * @brief  create virtual network device
+  * @param  None
+  * @retval None
+  */
+static int init_netdev(void)
+{
+	void *ndev = NULL;
+	int i = 0;
+	struct esp_private *priv = NULL;
+	char *if_name = STA_INTERFACE;
+	uint8_t if_type = ESP_STA_IF;
+
+	for (i = 0; i < MAX_NETWORK_INTERFACES; i++) {
+		/* Alloc and init netdev */
+		ndev = netdev_alloc(sizeof(struct esp_private), if_name);
+		if (!ndev) {
+			deinit_netdev();
+			return STM_FAIL;
+		}
+
+		priv = (struct esp_private *) netdev_get_priv(ndev);
+		if (!priv) {
+			deinit_netdev();
+			return STM_FAIL;
+		}
+
+		priv->netdev = ndev;
+		priv->if_type = if_type;
+		priv->if_num = 0;
+
+		if (netdev_register(ndev, &esp_net_ops)) {
+			deinit_netdev();
+			return STM_FAIL;
+		}
+
+		if_name = SOFTAP_INTERFACE;
+		if_type = ESP_AP_IF;
+
+		esp_priv[i] = priv;
+	}
+
+	return STM_OK;
+}
+
+/**
+  * @brief  destroy virtual network device
+  * @param  None
+  * @retval None
+  */
+static void deinit_netdev(void)
+{
+	for (int i = 0; i < MAX_NETWORK_INTERFACES; i++) {
+		if (esp_priv[i]) {
+			if (esp_priv[i]->netdev) {
+				netdev_unregister(esp_priv[i]->netdev);
+				netdev_free(esp_priv[i]->netdev);
+			}
+			esp_priv[i] = NULL;
+		}
+	}
+}
 
 /** function definition **/
 
@@ -66,6 +207,7 @@ void stm_spi_init(void(*spi_drv_evt_handler)(uint8_t))
 	spi_drv_evt_handler_fp = spi_drv_evt_handler;
 	osSemaphoreDef(SEM);
 
+	init_netdev();
 	/* spi handshake semaphore */
 	osSemaphore = osSemaphoreCreate(osSemaphore(SEM) , 1);
 	assert(osSemaphore);
@@ -139,11 +281,10 @@ stm_ret_t send_to_slave(uint8_t iface_type, uint8_t iface_num,
 	buf_handle.if_num = iface_num;
 	buf_handle.payload_len = wlen;
 	buf_handle.payload = wbuffer;
-	buf_handle.priv_buffer_handle = NULL;
-	buf_handle.free_buf_handle = NULL;
+	buf_handle.priv_buffer_handle = wbuffer;
+	buf_handle.free_buf_handle = free;
 
-	if (pdTRUE != xQueueSend(to_slave_queue, &buf_handle, portMAX_DELAY))
-	{
+	if (pdTRUE != xQueueSend(to_slave_queue, &buf_handle, portMAX_DELAY)) {
 		printf("Failed to send buffer to_slave_queue\n\r");
 		return STM_FAIL;
 	}
@@ -178,7 +319,7 @@ static stm_ret_t spi_transaction(uint8_t * txbuff)
 	assert(txbuff);
 
 	/* Allocate rx buffer */
-	rxbuff = (uint8_t *) malloc(MAX_SPI_BUFFER_SIZE);
+	rxbuff = (uint8_t *)malloc(MAX_SPI_BUFFER_SIZE);
 	assert(rxbuff);
 
 	memset(rxbuff, 0, MAX_SPI_BUFFER_SIZE);
@@ -205,7 +346,8 @@ static stm_ret_t spi_transaction(uint8_t * txbuff)
 				/* Free up buffer, as one of following -
 				 * 1. no payload to process
 				 * 2. input packet size > driver capacity
-				 * 3. payload header size mismatch, wrong header/bit packing?
+				 * 3. payload header size mismatch,
+				 * wrong header/bit packing?
 				 * */
 				if (rxbuff) {
 					free(rxbuff);
@@ -296,9 +438,11 @@ static void process_rx_task(void const* pvParameters)
 {
 	stm_ret_t ret = STM_OK;
 	interface_buffer_handle_t buf_handle = {0};
-	uint8_t free_needed = 1;
 	uint8_t *payload = NULL;
+	struct pbuf *buffer = NULL;
 	struct esp_priv_event *event = NULL;
+	struct esp_private *priv = NULL;
+	uint8_t *serial_buf = NULL;
 
 	while (1) {
 		ret = xQueueReceive(from_slave_queue, &buf_handle, portMAX_DELAY);
@@ -313,24 +457,41 @@ static void process_rx_task(void const* pvParameters)
 		/* process received buffer for all possible interface types */
 		if (buf_handle.if_type == ESP_SERIAL_IF) {
 
-			/* serial interface path */
-			if (STM_OK == serial_rx_handler(buf_handle, payload,
-						buf_handle.payload_len)) {
-				free_needed = 0;
-			}
-		} else if(buf_handle.if_type == ESP_STA_IF) {
+			serial_buf = (uint8_t *)malloc(buf_handle.payload_len);
+			assert(serial_buf);
 
-			/* TODO: Handle handle packets from esp station */
-			/* Next patch will cover this functionality */
-			UNUSED_VAR(payload);
+			memcpy(serial_buf, payload, buf_handle.payload_len);
+
+			/* serial interface path */
+			serial_rx_handler(buf_handle.if_num, serial_buf,
+					buf_handle.payload_len);
+
+		} else if((buf_handle.if_type == ESP_STA_IF) ||
+				(buf_handle.if_type == ESP_AP_IF)) {
+			priv = get_priv(buf_handle.if_type, buf_handle.if_num);
+
+			if (priv) {
+				buffer = (struct pbuf *)malloc(sizeof(struct pbuf));
+				assert(buffer);
+
+				buffer->len = buf_handle.payload_len;
+				buffer->payload = malloc(buf_handle.payload_len);
+				assert(buffer->payload);
+
+				memcpy(buffer->payload, buf_handle.payload,
+						buf_handle.payload_len);
+
+				netdev_rx(priv->netdev, buffer);
+			}
 
 		} else if (buf_handle.if_type == ESP_PRIV_IF) {
 			/* priv transaction received */
 
 			event = (struct esp_priv_event *) (payload);
 			if (event->event_type == ESP_PRIV_EVENT_INIT) {
-				/* halt spi transactions for some time, this is one time delay,
-				 * to give breathing time to slave before spi trans start */
+				/* halt spi transactions for some time,
+				 * this is one time delay, to give breathing
+				 * time to slave before spi trans start */
 				stop_spi_transactions_for_msec(50000);
 				if (spi_drv_evt_handler_fp) {
 					spi_drv_evt_handler_fp(SPI_DRIVER_ACTIVE);
@@ -345,10 +506,8 @@ static void process_rx_task(void const* pvParameters)
 		 * responsible for freeing buffer. In case not offloaded or
 		 * failed to offload, buffer should be freed here.
 		 */
-		if (free_needed) {
-			if (buf_handle.free_buf_handle) {
-				buf_handle.free_buf_handle(buf_handle.priv_buffer_handle);
-			}
+		if (buf_handle.free_buf_handle) {
+			buf_handle.free_buf_handle(buf_handle.priv_buffer_handle);
 		}
 	}
 }

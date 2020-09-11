@@ -33,6 +33,12 @@ extern "C" {
 #define htole16(x)                        ((uint16_t)(x))
 #define le16toh(x)                        ((uint16_t)(x))
 
+#define IP_ADDR_LEN				          4
+#define MAC_LEN                           6
+#define MIN_MAC_STRING_LEN                17
+
+
+
 typedef enum stm_ret_s {
 	STM_FAIL = -1,
 	STM_OK = 0
@@ -64,6 +70,15 @@ typedef struct {
 /** Exported variables **/
 
 /** Exported Functions **/
+uint16_t hton_short (uint16_t x);
+uint32_t hton_long (uint32_t x);
+
+#define ntoh_long hton_long
+#define ntoh_short hton_short
+
+typedef unsigned char   u_char;
+typedef unsigned long   u_long;
+
 void hard_delay(int x);
 int min(int x, int y);
 

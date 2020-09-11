@@ -24,6 +24,10 @@ extern "C" {
 #include "common.h"
 
 /** constants/macros **/
+#define MAX_NETWORK_INTERFACES  2
+#define STA_INTERFACE           "ESP_STATION"
+#define SOFTAP_INTERFACE        "ESP_SOFTAP"
+
 typedef enum spi_drv_events_s {
 	SPI_DRIVER_ACTIVE
 } spi_drv_events_e;
@@ -38,6 +42,12 @@ typedef enum spi_drv_events_s {
 void stm_spi_init(void(*spi_drv_evt_handler)(uint8_t));
 stm_ret_t send_to_slave(uint8_t iface_type, uint8_t iface_num,
 		uint8_t * wbuffer, uint16_t wlen);
+
+struct esp_private {
+	uint8_t     if_type;
+	uint8_t     if_num;
+	void        *netdev;
+};
 
 #ifdef __cplusplus
 }
