@@ -5,6 +5,20 @@
 			<storageModule buildSystemId="org.eclipse.cdt.managedbuilder.core.configurationDataProvider" id="com.st.stm32cube.ide.mcu.gnu.managedbuild.config.exe.debug.661834455" moduleId="org.eclipse.cdt.core.settings" name="Debug">
 				<macros>
 					<stringMacro name="CODE_BASE" type="VALUE_PATH_DIR" value="/my/abs/git/repo/path/of/hosted"/>
+					<stringMacro name="INPUT__OPERATING_MODE" type="VALUE_TEXT" value="&quot;STATION&quot;"/>
+					<stringMacro name="INPUT_STATION_IS_WPA3_SUPPORTED" type="VALUE_TEXT" value="0"/>
+					<stringMacro name="INPUT_SOFTAP_SSID_HIDDEN" type="VALUE_TEXT" value="0"/>
+					<stringMacro name="INPUT_GET_CONNECTED_STATIONS_LIST" type="VALUE_TEXT" value="1"/>
+					<stringMacro name="INPUT_STATION_BSSID" type="VALUE_TEXT" value="&quot;0&quot;"/>
+					<stringMacro name="INPUT_SOFTAP_CHANNEL" type="VALUE_TEXT" value="1"/>
+					<stringMacro name="INPUT_STATION_PASSWORD" type="VALUE_TEXT" value="&quot;MyWifi@123&quot;"/>
+					<stringMacro name="INPUT_GET_AP_SCAN_LIST" type="VALUE_TEXT" value="0"/>
+					<stringMacro name="INPUT_SOFTAP_PASSWORD" type="VALUE_TEXT" value="&quot;ESPWifi@123&quot;"/>
+					<stringMacro name="INPUT_SOFTAP__SSID" type="VALUE_TEXT" value="&quot;ESPWifi&quot;"/>
+					<stringMacro name="INPUT_SOFTAP_BANDWIDTH" type="VALUE_TEXT" value="2"/>
+					<stringMacro name="INPUT_SOFTAP_ENCRYPTION" type="VALUE_TEXT" value="3"/>
+					<stringMacro name="INPUT_SOFTAP_MAX_CONN" type="VALUE_TEXT" value="4"/>
+					<stringMacro name="INPUT_STATION__SSID" type="VALUE_TEXT" value="&quot;MyWifi&quot;"/>
 				</macros>
 				<externalSettings/>
 				<extensions>
@@ -35,12 +49,29 @@
 								<option id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.assembler.option.debuglevel.1189166482" name="Debug level" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.assembler.option.debuglevel" value="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.assembler.option.debuglevel.value.g3" valueType="enumerated"/>
 								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.assembler.option.definedsymbols.795265648" name="Define symbols (-D)" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.assembler.option.definedsymbols" valueType="definedSymbols">
 									<listOptionValue builtIn="false" value="&quot;CODE_BASE=${CODE_BASE}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;INPUT_STATION__SSID=${INPUT_STATION__SSID}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;INPUT_STATION_PASSWORD=${INPUT_STATION_PASSWORD}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;INPUT_STATION_BSSID=${INPUT_STATION_BSSID}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;INPUT_STATION_IS_WPA3_SUPPORTED=${INPUT_STATION_IS_WPA3_SUPPORTED}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;INPUT_SOFTAP__SSID=${INPUT_SOFTAP__SSID}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;INPUT_SOFTAP_PASSWORD=${INPUT_SOFTAP_PASSWORD}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;INPUT_SOFTAP_CHANNEL=${INPUT_SOFTAP_CHANNEL}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;INPUT_SOFTAP_ENCRYPTION=${INPUT_SOFTAP_ENCRYPTION}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;INPUT_SOFTAP_MAX_CONN=${INPUT_SOFTAP_MAX_CONN}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;INPUT_SOFTAP_SSID_HIDDEN=${INPUT_SOFTAP_SSID_HIDDEN}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;INPUT_SOFTAP_BANDWIDTH=${INPUT_SOFTAP_BANDWIDTH}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;INPUT__OPERATING_MODE=${INPUT__OPERATING_MODE}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;INPUT_GET_AP_SCAN_LIST=${INPUT_GET_AP_SCAN_LIST}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;INPUT_GET_CONNECTED_STATIONS_LIST=${INPUT_GET_CONNECTED_STATIONS_LIST}&quot;"/>
 								</option>
 								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.assembler.option.includepaths.884108698" name="Include paths (-I)" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.assembler.option.includepaths" valueType="includePath">
 									<listOptionValue builtIn="false" value="&quot;${CODE_BASE}/common/include&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${CODE_BASE}/common/protobuf-c&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${CODE_BASE}/host/stm32/driver/spi&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${CODE_BASE}/host/stm32/driver/serial/&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${CODE_BASE}/host/stm32/app/control&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${CODE_BASE}/host/stm32/common&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${CODE_BASE}/host/host_common/include&quot;"/>
 								</option>
 								<inputType id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.assembler.input.500360763" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.assembler.input"/>
 							</tool>
@@ -52,6 +83,20 @@
 									<listOptionValue builtIn="false" value="STM32F469xx"/>
 									<listOptionValue builtIn="false" value="DEBUG"/>
 									<listOptionValue builtIn="false" value="&quot;CODE_BASE=${CODE_BASE}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;INPUT_STATION__SSID=${INPUT_STATION__SSID}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;INPUT_STATION_PASSWORD=${INPUT_STATION_PASSWORD}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;INPUT_STATION_BSSID=${INPUT_STATION_BSSID}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;INPUT_STATION_IS_WPA3_SUPPORTED=${INPUT_STATION_IS_WPA3_SUPPORTED}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;INPUT_SOFTAP__SSID=${INPUT_SOFTAP__SSID}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;INPUT_SOFTAP_PASSWORD=${INPUT_SOFTAP_PASSWORD}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;INPUT_SOFTAP_CHANNEL=${INPUT_SOFTAP_CHANNEL}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;INPUT_SOFTAP_ENCRYPTION=${INPUT_SOFTAP_ENCRYPTION}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;INPUT_SOFTAP_MAX_CONN=${INPUT_SOFTAP_MAX_CONN}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;INPUT_SOFTAP_SSID_HIDDEN=${INPUT_SOFTAP_SSID_HIDDEN}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;INPUT_SOFTAP_BANDWIDTH=${INPUT_SOFTAP_BANDWIDTH}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;INPUT__OPERATING_MODE=${INPUT__OPERATING_MODE}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;INPUT_GET_AP_SCAN_LIST=${INPUT_GET_AP_SCAN_LIST}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;INPUT_GET_CONNECTED_STATIONS_LIST=${INPUT_GET_CONNECTED_STATIONS_LIST}&quot;"/>
 								</option>
 								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.option.includepaths.438442903" name="Include paths (-I)" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.option.includepaths" useByScannerDiscovery="false" valueType="includePath">
 									<listOptionValue builtIn="false" value="../Core/Inc"/>
@@ -63,9 +108,13 @@
 									<listOptionValue builtIn="false" value="../Drivers/CMSIS/Device/ST/STM32F4xx/Include"/>
 									<listOptionValue builtIn="false" value="../Drivers/CMSIS/Include"/>
 									<listOptionValue builtIn="false" value="&quot;${CODE_BASE}/common/include&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${CODE_BASE}/common/protobuf-c&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${CODE_BASE}/host/host_common/include&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${CODE_BASE}/host/stm32/common&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${CODE_BASE}/host/stm32/driver/serial&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${CODE_BASE}/host/stm32/driver/spi&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${CODE_BASE}/host/stm32/app/control&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${CODE_BASE}/host/stm32/app&quot;"/>
 								</option>
 								<inputType id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.input.c.163265464" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.input.c"/>
 							</tool>
@@ -97,6 +146,8 @@
 						<entry excluding="Src/freertos.c" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="Core"/>
 						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="Drivers"/>
 						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="Middlewares"/>
+						<entry excluding="protobuf-c/t/" flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="common"/>
+						<entry excluding="linux/" flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="host_common"/>
 						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="stm32"/>
 					</sourceEntries>
 				</configuration>

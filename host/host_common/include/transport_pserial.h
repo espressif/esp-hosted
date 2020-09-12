@@ -3,7 +3,7 @@
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-
+//
 //     http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
@@ -13,34 +13,16 @@
 // limitations under the License.
 
 /** prevent recursive inclusion **/
-#ifndef __SPI_DRV_H
-#define __SPI_DRV_H
+#ifndef __TRANSPORT_PSERIAL_H
+#define __TRANSPORT_PSERIAL_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdint.h>
 
-/** Includes **/
-#include "common.h"
+uint16_t compose_tlv(uint8_t* buf, uint8_t* data, uint16_t data_length);
 
-/** constants/macros **/
-typedef enum spi_drv_events_s {
-	SPI_DRIVER_ACTIVE
-} spi_drv_events_e;
+uint8_t parse_tlv(uint8_t* data, uint32_t* pro_len);
 
-/** Exported Structures **/
-
-/** Exported variables **/
-
-/** Inline functions **/
-
-/** Exported Functions **/
-void stm_spi_init(void(*spi_drv_evt_handler)(uint8_t));
-stm_ret_t send_to_slave(uint8_t iface_type, uint8_t iface_num,
-		uint8_t * wbuffer, uint16_t wlen);
-
-#ifdef __cplusplus
-}
-#endif
-
+uint8_t * transport_pserial_data_handler(uint8_t *data, uint16_t data_length, uint8_t wait, uint32_t* pro_len);
 #endif

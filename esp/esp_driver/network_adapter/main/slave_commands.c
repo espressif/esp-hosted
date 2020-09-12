@@ -493,7 +493,8 @@ static esp_err_t cmd_get_softap_config_handler (EspHostedConfigPayload *req,
 	if (ret != ESP_OK) {
 		ESP_LOGE(TAG,"Failed to get bandwidth");
 	}
-	resp_payload->bw = *(int *)get_bw;
+	resp_payload->has_bw = 1;
+	resp_payload->bw = *get_bw;
 	resp_payload->status = SUCCESS;
 	resp->payload_case = ESP_HOSTED_CONFIG_PAYLOAD__PAYLOAD_RESP_GET_SOFTAP_CONFIG;
 	resp->resp_get_softap_config = resp_payload;
@@ -545,7 +546,7 @@ static esp_err_t cmd_set_softap_config_handler (EspHostedConfigPayload *req,
 	}
 	ret = esp_wifi_set_bandwidth(ESP_IF_WIFI_AP,req->cmd_set_softap_config->bw);
 	if (ret != ESP_OK) {
-		ESP_LOGE(TAG,"Failed to set MAC address");
+		ESP_LOGE(TAG,"Failed to set bandwidth");
 		free(wifi_config);
 		return ESP_FAIL;
 	}
@@ -606,6 +607,10 @@ static esp_err_t cmd_get_ap_scan_list_handler (EspHostedConfigPayload *req,
 		ESP_LOGE(TAG,"Failed to get scan AP number");
 		return ESP_FAIL;
 	}
+	if (!ap_count) {
+		ESP_LOGE(TAG,"No AP available");
+		return ESP_FAIL;
+	}
 	wifi_ap_record_t *ap_info = (wifi_ap_record_t *)calloc(ap_count,sizeof(wifi_ap_record_t));
 	if (ap_info == NULL) {
 		ESP_LOGE(TAG,"Failed to allocate memory");
@@ -630,11 +635,6 @@ static esp_err_t cmd_get_ap_scan_list_handler (EspHostedConfigPayload *req,
 	resp->resp_scan_ap_list = resp_payload;
 	resp_payload->has_count = 1;
 	resp_payload->count = credentials.count;
-	if (!credentials.count) {
-		ESP_LOGE(TAG,"No AP available");
-		free(ap_info);
-		return ESP_FAIL;
-	}
 	resp_payload->n_entries = credentials.count;
 	EspHostedScanResult **results = (EspHostedScanResult **) calloc(credentials.count,sizeof(EspHostedScanResult));
 	if (results == NULL) {

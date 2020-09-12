@@ -35,6 +35,8 @@ static const char TAG[] = "protocomm_pserial";
 #define PROTO_PSER_TLV_T_EPNAME       1
 #define PROTO_PSER_TLV_T_DATA         2
 
+#define TASK_PRIORITY                18
+
 struct pserial_config {
     pserial_xmit    xmit;
     pserial_recv    recv;
@@ -139,6 +141,7 @@ static esp_err_t protocomm_pserial_common_handler(protocomm_t *pc, uint8_t *in, 
                 break;
             default:
                 ESP_LOGE(TAG, "Invalid type found in the packet");
+                break;
         }
     }
 
@@ -240,7 +243,7 @@ esp_err_t protocomm_pserial_start(protocomm_t *pc, pserial_xmit xmit, pserial_re
 
     pc->priv = pserial_cfg;
     
-    xTaskCreate(pserial_task, "pserial_task", 4096, (void *) pc, 5, NULL);
+    xTaskCreate(pserial_task, "pserial_task", 4096, (void *) pc, TASK_PRIORITY, NULL);
 
     return ESP_OK;
 }
