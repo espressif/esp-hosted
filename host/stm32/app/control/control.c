@@ -54,6 +54,8 @@ static void (*control_path_evt_handler_fp) (uint8_t);
 
 /** Function Declarations **/
 static void control_path_task(void const *argument);
+static int get_application_mode(void);
+static void print_configuration_parameters(void);
 
 /** Exported functions **/
 
@@ -141,6 +143,7 @@ stm_ret_t get_arp_dst_ip_softap(uint32_t *soft_ip)
   */
 void control_path_init(void(*control_path_evt_handler)(uint8_t))
 {
+	print_configuration_parameters();
 	/* do not start control path until all tasks are in place */
 	mode = WIFI_MODE_NULL;
 
@@ -263,6 +266,43 @@ static stm_ret_t save_station_mac(const char *mac)
 	return convert_mac_to_bytes(self_station_mac, mac);
 }
 
+/** @brief  print user configuration parameters
+  * @param  None
+  * @retval None
+  */
+static void print_configuration_parameters(void)
+{
+	hard_delay(100);
+	printf("\n\r");
+	printf("+-----------------------------------+-------------------------------------------+\n\r");
+	printf("|           Parameters              |             Values                        |\n\r");
+	printf("+-----------------------------------+-------------------------------------------+\n\r");
+	printf("|      INPUT__OPERATING_MODE        |             %-30s|\n\r",INPUT__OPERATING_MODE);
+	printf("|      INPUT_GET_AP_SCAN_LIST       |             %-30s|\n\r",INPUT_GET_AP_SCAN_LIST);
+	printf("+-----------------------------------+-------------------------------------------+\n\r");
+	printf("|            SOFTAP                 |                                           |\n\r");
+	printf("+-----------------------------------+-------------------------------------------+\n\r");
+	printf("|        INPUT_SOFTAP__SSID         |             %-30s|\n\r",INPUT_SOFTAP__SSID);
+	printf("|       INPUT_SOFTAP_PASSWORD       |             %-30s|\n\r", INPUT_SOFTAP_PASSWORD);
+	printf("|      INPUT_SOFTAP_BANDWIDTH       |             %-30s|\n\r",INPUT_SOFTAP_BANDWIDTH);
+	printf("|       INPUT_SOFTAP_CHANNEL        |             %-30s|\n\r",INPUT_SOFTAP_CHANNEL);
+	printf("|      INPUT_SOFTAP_ENCRYPTION      |             %-30s|\n\r",INPUT_SOFTAP_ENCRYPTION);
+	printf("|      INPUT_SOFTAP_MAX_CONN        |             %-30s|\n\r",INPUT_SOFTAP_MAX_CONN);
+	printf("|     INPUT_SOFTAP_SSID_HIDDEN      |             %-30s|\n\r",INPUT_SOFTAP_SSID_HIDDEN);
+	printf("|       INPUT_SOFTAP_SRC_IP         |             %-30s|\n\r",INPUT_SOFTAP_SRC_IP);
+	printf("|      INPUT_SOFTAP_ARP_DEST_IP     |             %-30s|\n\r",INPUT_SOFTAP_ARP_DEST_IP);
+	printf("+-----------------------------------+-------------------------------------------+\n\r");
+	printf("|            STATION                |                                           |\n\r");
+	printf("+-----------------------------------+-------------------------------------------+\n\r");
+	printf("|        INPUT_STATION__SSID        |             %-30s|\n\r",INPUT_STATION__SSID);
+	printf("|       INPUT_STATION_BSSID         |             %-30s|\n\r",INPUT_STATION_BSSID);
+	printf("|   INPUT_STATION_IS_WPA3_SUPPORTED |             %-30s|\n\r",INPUT_STATION_IS_WPA3_SUPPORTED);
+	printf("|      INPUT_STATION_PASSWORD       |             %-30s|\n\r",INPUT_STATION_PASSWORD);
+	printf("|       INPUT_STATION_SRC_IP        |             %-30s|\n\r",INPUT_STATION_SRC_IP);
+	printf("|     INPUT_STATION_ARP_DEST_IP     |             %-30s|\n\r",INPUT_STATION_ARP_DEST_IP);
+	printf("+-----------------------------------+-------------------------------------------+\n\r");
+}
+
 /**
   * @brief  connect to wifi(ap) router
   * @param  None
@@ -372,16 +412,21 @@ static int get_ap_scan_list(void)
 		printf("Failed to get available AP scan list \n\r");
 		return STM_FAIL;
 	}
-	printf("Number of available APs is %d \n\r", count);
+	printf("Scanned Neighbouring AP list \n\r");
 	if (count) {
+        printf("+----------------------------------+----------------------+---------+---------+---------------+\n\r");
+        printf("|                 SSID             |         BSSID        |   rssi  | channel | Auth mode     |\n\r");
+        printf("+----------------------------------+----------------------+---------+---------+---------------+\n\r");
 		for (int i=0; i<count; i++) {
-			printf("%d th AP's ssid \"%s\" bssid \"%s\" rssi \"%d\" channel \"%d\" authentication mode \"%d\"\n\r"
-					,i, list[i].ssid, list[i].bssid,
+			printf("| %-32s | %-20s | %-7d | %-7d | %-11d   |\n\r"
+					,list[i].ssid, list[i].bssid,
 					list[i].rssi, list[i].channel,
 					list[i].encryption_mode);
+			hard_delay(50);
 		}
 		free(list);
 		list = NULL;
+        printf("+----------------------------------+----------------------+---------+---------+---------------+\n\r");
 	} else {
 		printf("No AP found \n\r");
 	}
