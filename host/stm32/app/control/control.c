@@ -15,22 +15,22 @@
 
 /** Includes **/
 #include "string.h"
+#include "util.h"
 #include "control.h"
 #include "trace.h"
 #include "commands.h"
 #include "platform_wrapper.h"
 
-/* Delay for get connected stations list */
-#define DELAY							 300000
-
 /* Maximum retry count*/
 #define RETRY_COUNT							5
 
 /* Constants / macro */
-#define CONTROL_PATH_TASK_STACK_SIZE      4096
+#define CONTROL_PATH_TASK_STACK_SIZE        4096
 
 /* data path opens after control path is set */
 static int mode = WIFI_MODE_NULL;
+static uint8_t self_station_mac[MAC_LEN] = { 0 };
+static uint8_t self_softap_mac[MAC_LEN]  = { 0 };
 
 /** Exported variables **/
 static osThreadId control_path_task_id = 0;
@@ -39,10 +39,85 @@ static void (*control_path_evt_handler_fp) (uint8_t);
 
 /** Function Declarations **/
 static void control_path_task(void const *argument);
-static void control_path_call_event(uint8_t event);
-static int get_application_mode(void);
 
 /** Exported functions **/
+
+/**
+  * @brief  Get self station ip from config param
+  * @param  self_ip - output ip address
+  * @retval STM_FAIL if fail, else STM_OK
+  */
+stm_ret_t get_self_ip_station(uint32_t *self_ip)
+{
+	if (STM_OK != get_ipaddr_from_str(INPUT_STATION_SRC_IP, self_ip)) {
+		printf("invalid src ip addr from INPUT_STATION_SRC_IP %s\n\r", INPUT_STATION_SRC_IP);
+		return STM_FAIL;
+	}
+	return STM_OK;
+}
+
+/**
+  * @brief  Get self softap ip from config param
+  * @param  self_ip - output ip address
+  * @retval STM_FAIL if fail, else STM_OK
+  */
+stm_ret_t get_self_ip_softap(uint32_t *self_ip)
+{
+	if (STM_OK != get_ipaddr_from_str(INPUT_SOFTAP_SRC_IP, self_ip)) {
+		printf("invalid src ip addr from INPUT_SOFTAP_SRC_IP %s\n\r", INPUT_SOFTAP_SRC_IP);
+		return STM_FAIL;
+	}
+	return STM_OK;
+}
+
+/**
+  * @brief  Get self mac for station
+  * @param None
+  * @retval NULL if fail, else mac
+  */
+uint8_t *get_self_mac_station()
+{
+	return self_station_mac;
+}
+
+/**
+  * @brief  Get self mac for softap
+  * @param  None
+  * @retval NULL if fail, else mac
+  */
+uint8_t *get_self_mac_softap()
+{
+	return self_softap_mac;
+}
+
+/**
+  * @brief  Get arp dest ip for station from config param
+  * @param  sta_ip - output ip address
+  * @retval STM_FAIL if fail, else STM_OK
+  */
+stm_ret_t get_arp_dst_ip_station(uint32_t *sta_ip)
+{
+	if (STM_OK != get_ipaddr_from_str(INPUT_STATION_ARP_DEST_IP, sta_ip)) {
+		printf("invalid src ip addr from INPUT_STATION_ARP_DEST_IP %s\n\r", INPUT_STATION_ARP_DEST_IP);
+		return STM_FAIL;
+	}
+	return STM_OK;
+}
+
+/**
+  * @brief  Get arp dest ip for softap from config param
+  * @param  soft_ip - output ip address
+  * @retval STM_FAIL if fail, else STM_OK
+  */
+stm_ret_t get_arp_dst_ip_softap(uint32_t *soft_ip)
+{
+	if (STM_OK != get_ipaddr_from_str(INPUT_SOFTAP_ARP_DEST_IP, soft_ip)) {
+		printf("invalid src ip addr from INPUT_SOFTAP_ARP_DEST_IP %s\n\r", INPUT_SOFTAP_ARP_DEST_IP);
+		return STM_FAIL;
+	}
+	return STM_OK;
+}
+
 
 /**
   * @brief  control path initialize
@@ -88,6 +163,26 @@ static void control_path_call_event(uint8_t event)
 }
 
 /**
+  * @brief  save softap mac in bytes
+  * @param  mac - mac in string
+  * @retval STM_OK/STM_FAIL
+  */
+static stm_ret_t save_softap_mac(const char *mac)
+{
+	return convert_mac_to_bytes(self_softap_mac, mac);
+}
+
+/**
+  * @brief  save station mac in bytes
+  * @param  mac - mac in string
+  * @retval STM_OK/STM_FAIL
+  */
+static stm_ret_t save_station_mac(const char *mac)
+{
+	return convert_mac_to_bytes(self_station_mac, mac);
+}
+
+/**
   * @brief  connect to wifi(ap) router
   * @param  None
   * @retval STM_OK/STM_FAIL
@@ -109,16 +204,16 @@ static int station_connect(void)
 
 	memset(mac, '\0', WIFI_MAX_STR_LEN);
 	ret = get_mac(wifi_mode, mac);
-	if (ret != STM_OK) {
+	if (ret) {
 		printf("Failed to get MAC address, retrying \n\r");
 		hard_delay(50000);
 		return STM_FAIL;
 	} else {
 		printf("Station's MAC address is %s \n\r", mac);
-		/* TODO: Save mac for station, will be handled by next patch */
+		save_station_mac(mac);
 	}
 	ret = wifi_set_ap_config(ap_config);
-	if (ret != STM_OK) {
+	if (ret) {
 		printf("Failed to connect with AP \n\r");
 		hard_delay(50000);
 		return STM_FAIL;
@@ -156,17 +251,17 @@ static int softap_start(void)
 	memset(mac, '\0', WIFI_MAX_STR_LEN);
 
 	ret = get_mac(wifi_mode, mac);
-	if (ret != STM_OK) {
+	if (ret) {
 		printf("Failed to get MAC address \n\r");
 		hard_delay(50000);
 		return STM_FAIL;
 	} else {
 		printf("SoftAP's MAC address is %s \n\r", mac);
-		/* TODO: Save mac for softap, will be handled by next patch */
+		save_softap_mac(mac);
 	}
 
 	ret = wifi_set_softap_config(softap_config);
-	if (ret != STM_OK) {
+	if (ret) {
 		printf("Failed to start softAP \n\r");
 		hard_delay(50000);
 		return STM_FAIL;
@@ -188,7 +283,7 @@ static int get_ap_scan_list(void)
 	int ret = 0, count = 0;
 	esp_hosted_wifi_scanlist_t* list = NULL;
 	ret = wifi_ap_scan_list(&list, &count);
-	if (ret != STM_OK) {
+	if (ret) {
 		printf("Failed to get available AP scan list \n\r");
 		return STM_FAIL;
 	}
@@ -204,40 +299,6 @@ static int get_ap_scan_list(void)
 		list = NULL;
 	} else {
 		printf("No AP found \n\r");
-	}
-	return STM_OK;
-}
-
-/**
-  * @brief  list of connected stations
-  * @param  mode - output mode
-  * @retval STM_OK/STM_FAIL
-  */
-static int get_connected_stations_list(void)
-{
-	int ret = 0, count = 0;
-    esp_hosted_wifi_connected_stations_list* stations_list = NULL;
-	if (INPUT_GET_CONNECTED_STATIONS_LIST && (mode & MODE_SOFTAP)) {
-		printf("softap connected stations list \n\r");
-		ret = wifi_connected_stations_list(&stations_list,&count);
-		if (ret == STM_OK) {
-			printf("number of connected stations is %d \n\r", count);
-			if (count) {
-				for (int i=0; i<count; i++) {
-					printf("%d th stations's bssid \"%s\" rssi \"%d\" \n\r",
-							i, stations_list[i].bssid,
-							stations_list[i].rssi);
-				}
-				free(stations_list);
-				stations_list = NULL;
-			} else {
-				printf("No station is connected \n\r");
-			}
-		} else {
-			printf("Failed to get connected stations list \n\r");
-			return STM_FAIL;
-		}
-		osDelay(DELAY);
 	}
 	return STM_OK;
 }
@@ -292,7 +353,7 @@ static void control_path_task(void const *argument)
 		if (!stop) {
 			if (INPUT_GET_AP_SCAN_LIST && !scap_ap_list) {
 				ret = get_ap_scan_list();
-				if (ret != STM_OK) {
+				if (ret) {
 					continue;
 				}
 				scap_ap_list = true;
@@ -302,7 +363,7 @@ static void control_path_task(void const *argument)
 				{
 					if (station_connect_retry < RETRY_COUNT) {
 						ret = station_connect();
-						if (ret != STM_OK) {
+						if (ret) {
 							mode &= ~MODE_STATION;
 							station_connect_retry++;
 							continue;
@@ -320,7 +381,7 @@ static void control_path_task(void const *argument)
 				{
 					if (softap_start_retry < RETRY_COUNT) {
 						ret = softap_start();
-						if (ret != STM_OK) {
+						if (ret) {
 							mode &= ~MODE_SOFTAP;
 							softap_start_retry++;
 							continue;
@@ -338,7 +399,7 @@ static void control_path_task(void const *argument)
 				{
 					if (!(mode & MODE_STATION) && station_connect_retry < RETRY_COUNT) {
 						ret = station_connect();
-						if (ret != STM_OK) {
+						if (ret) {
 							mode &= ~MODE_STATION;
 							station_connect_retry++;
 						} else {
@@ -350,7 +411,7 @@ static void control_path_task(void const *argument)
 					}
 					if (!(mode & MODE_SOFTAP) && softap_start_retry < RETRY_COUNT) {
 						ret = softap_start();
-						if (ret != STM_OK) {
+						if (ret) {
 							mode &= ~MODE_SOFTAP;
 							softap_start_retry++;
 						} else {
@@ -380,7 +441,6 @@ static void control_path_task(void const *argument)
 
 		} else {
 			osDelay(5000);
-			get_connected_stations_list();
 		}
 	}
 }

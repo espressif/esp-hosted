@@ -92,7 +92,10 @@ void* esp_hosted_calloc(size_t blk_no, size_t size)
 
 void esp_hosted_free(void* ptr)
 {
-	free(ptr);
+	if(ptr) {
+		free(ptr);
+		ptr=NULL;
+	}
 }
 
 struct esp_hosted_driver_handle_t* esp_hosted_driver_open(const char* transport)

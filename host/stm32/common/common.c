@@ -36,6 +36,46 @@
 char print_buff[2048*3];
 #endif
 
+uint16_t hton_short (uint16_t x)
+{
+#if BYTE_ORDER == BIG_ENDIAN
+  return x;
+#elif BYTE_ORDER == LITTLE_ENDIAN
+  uint16_t val = 0;
+
+  val = (x &0x00FF)<<8;
+  val |= (x &0xFF00)>>8;
+
+  return val;
+#else
+# error "not able to identify endianness"
+#endif
+}
+
+uint32_t hton_long (uint32_t x)
+{
+#if BYTE_ORDER == BIG_ENDIAN
+  return x;
+#elif BYTE_ORDER == LITTLE_ENDIAN
+	uint32_t val = (x&0xFF000000) >> 24;
+
+	val |= (x&0x00FF0000) >> 8;
+	val |= (x&0x0000FF00) << 8;
+	val |= (x&0x000000FF) << 24;
+
+	return val;
+#else
+# error "not able to identify endianness"
+#endif
+}
+
+/**
+  * @brief  dump hex for buffer
+  * @param  buff - buff to print
+  *         rx_len - size of buf
+  *         human_str - help string to prepend
+  * @retval None
+  */
 void print_hex_dump(uint8_t *buff, uint16_t rx_len, char *human_str)
 {
 #if DEBUG_HEX_STREAM_PRINT

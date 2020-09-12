@@ -22,6 +22,7 @@ extern "C" {
 
 /** Includes **/
 #include "common.h"
+#include "netdev_api.h"
 
 /** Exported macros **/
 
@@ -30,6 +31,8 @@ extern "C" {
 /** Inline functions **/
 
 /** Exported Functions **/
+extern stm_ret_t send_arp_req(struct network_handle *net_handle, uint8_t *src_mac,
+		uint32_t *src_ip, uint8_t *dst_mac, uint32_t *dst_ip);
 
 #ifdef __cplusplus
 }

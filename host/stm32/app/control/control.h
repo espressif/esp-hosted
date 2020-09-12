@@ -26,7 +26,7 @@ extern "C" {
 
 /** constants/macros **/
 typedef enum {
-    MODE_NULL    = 0x1,
+	MODE_NULL    = 0x1,
 	MODE_STATION = 0x2,
 	MODE_SOFTAP  = 0x4,
 	MODE_SOFTAP_STATION = (MODE_STATION|MODE_SOFTAP),
@@ -101,32 +101,28 @@ typedef enum control_path_events_s {
 #define INPUT_GET_AP_SCAN_LIST            1
 #endif
 
-#ifndef INPUT_STATION_ARP_DEST_MAC
-#define INPUT_STATION_ARP_DEST_MAC        "aa:bb:cc:dd:ee:ff"
+/* stm32 station self ip */
+#ifndef INPUT_STATION_SRC_IP
+#define INPUT_STATION_SRC_IP              "192.168.1.233"
 #endif
 
-#ifndef INPUT_GET_CONNECTED_STATIONS_LIST
-#define INPUT_GET_CONNECTED_STATIONS_LIST 1
+/* stm32 station self ip */
+#ifndef INPUT_SOFTAP_SRC_IP
+#define INPUT_SOFTAP_SRC_IP              "192.168.2.1"
 #endif
 
+/* station - ARP destination ip */
 #ifndef INPUT_STATION_ARP_DEST_IP
 #define INPUT_STATION_ARP_DEST_IP         "192.168.1.11"
 #endif
 
-#ifndef INPUT_SRC_IP
-#define INPUT_SRC_IP                      "192.168.1.233"
-#endif
-
+/* softap - ARP destination ip */
 #ifndef INPUT_SOFTAP_ARP_DEST_IP
 #define INPUT_SOFTAP_ARP_DEST_IP          "192.168.2.22"
 #endif
 
-#ifndef INPUT_SOFTAP_ARP_DEST_MAC
-#define INPUT_SOFTAP_ARP_DEST_MAC         "a1:b2:c3:d4:e5:f6"
-#endif
 
 #define WIFI_MAX_STR_LEN                  19
-
 
 /** Exported Structures **/
 
@@ -137,6 +133,12 @@ typedef enum control_path_events_s {
 
 /** Exported Functions **/
 void control_path_init(void(*control_path_evt_handler)(uint8_t));
+stm_ret_t get_self_ip_station(uint32_t *self_ip);
+stm_ret_t get_self_ip_softap(uint32_t *self_ip);
+uint8_t *get_self_mac_station();
+uint8_t *get_self_mac_softap();
+stm_ret_t get_arp_dst_ip_station(uint32_t *sta_ip);
+stm_ret_t get_arp_dst_ip_softap(uint32_t *soft_ip);
 
 #ifdef __cplusplus
 }
