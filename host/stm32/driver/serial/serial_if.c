@@ -47,7 +47,7 @@ static int       serial_close   (serial_handle_t * serial_hdl);
 
 
 /* define serial interface */
-static struct file_operations serial_fops = {
+static struct serial_operations serial_fops = {
 	.open    = serial_open,
 	.read    = serial_read,
 	.write   = serial_write,
