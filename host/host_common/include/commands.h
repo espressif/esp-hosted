@@ -25,6 +25,11 @@ typedef enum {
     WIFI_AUTH_MAX ,
 } wifi_auth_mode_t;
 
+typedef enum {
+	WIFI_BW_HT20 = 1,
+	WIFI_BW_HT40,
+} wifi_bandwidth_t;
+
 typedef struct {
     uint8_t ssid[SSID_LENGTH];
     uint8_t pwd[PASSWORD_LENGTH];
