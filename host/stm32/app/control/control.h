@@ -60,7 +60,7 @@ typedef enum control_path_events_s {
 #endif
 
 #ifndef INPUT_STATION_IS_WPA3_SUPPORTED
-#define INPUT_STATION_IS_WPA3_SUPPORTED   0
+#define INPUT_STATION_IS_WPA3_SUPPORTED   "no"
 #endif
 
 /* softap means, ESP will act as Access point */
@@ -74,31 +74,32 @@ typedef enum control_path_events_s {
 
 /* Channel to be used on soft ap */
 #ifndef INPUT_SOFTAP_CHANNEL
-#define INPUT_SOFTAP_CHANNEL              1
+#define INPUT_SOFTAP_CHANNEL              "1"
 #endif
 
 #ifndef INPUT_SOFTAP_ENCRYPTION
-#define INPUT_SOFTAP_ENCRYPTION           3
+#define INPUT_SOFTAP_ENCRYPTION           "WPA2_PSK"
 #endif
 
 /* Software limit of Max clients attached to softAP. Max value possible is 10 */
 #ifndef INPUT_SOFTAP_MAX_CONN
-#define INPUT_SOFTAP_MAX_CONN             4
+#define INPUT_SOFTAP_MAX_CONN             "4"
 #endif
 
 /* 0 -> visible */
 #ifndef INPUT_SOFTAP_SSID_HIDDEN
-#define INPUT_SOFTAP_SSID_HIDDEN          0
+#define INPUT_SOFTAP_SSID_HIDDEN          "no"
 #endif
 
+/* possible values, "HT20" "HT40" */
 #ifndef INPUT_SOFTAP_BANDWIDTH
-#define INPUT_SOFTAP_BANDWIDTH            2
+#define INPUT_SOFTAP_BANDWIDTH            "HT40"
 #endif
 
 
 /* periodically scan neighbouring APs */
 #ifndef INPUT_GET_AP_SCAN_LIST
-#define INPUT_GET_AP_SCAN_LIST            1
+#define INPUT_GET_AP_SCAN_LIST            "yes"
 #endif
 
 /* stm32 station self ip */

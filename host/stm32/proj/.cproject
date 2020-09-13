@@ -9,17 +9,17 @@
 					<stringMacro name="INPUT_STATION__SSID" type="VALUE_TEXT" value="&quot;MyWifi&quot;"/>
 					<stringMacro name="INPUT_STATION_PASSWORD" type="VALUE_TEXT" value="&quot;MyWifi@123&quot;"/>
 					<stringMacro name="INPUT_STATION_BSSID" type="VALUE_TEXT" value="&quot;0&quot;"/>
-					<stringMacro name="INPUT_STATION_IS_WPA3_SUPPORTED" type="VALUE_TEXT" value="0"/>
+					<stringMacro name="INPUT_STATION_IS_WPA3_SUPPORTED" type="VALUE_TEXT" value="&quot;no&quot;"/>
 					<stringMacro name="INPUT_STATION_SRC_IP" type="VALUE_TEXT" value="&quot;192.168.1.233&quot;"/>
 					<stringMacro name="INPUT_STATION_ARP_DEST_IP" type="VALUE_TEXT" value="&quot;192.168.1.203&quot;"/>
-					<stringMacro name="INPUT_GET_AP_SCAN_LIST" type="VALUE_TEXT" value="1"/>
+					<stringMacro name="INPUT_GET_AP_SCAN_LIST" type="VALUE_TEXT" value="&quot;yes&quot;"/>
 					<stringMacro name="INPUT_SOFTAP__SSID" type="VALUE_TEXT" value="&quot;ESPWifi&quot;"/>
 					<stringMacro name="INPUT_SOFTAP_PASSWORD" type="VALUE_TEXT" value="&quot;ESPWifi@123&quot;"/>
-					<stringMacro name="INPUT_SOFTAP_CHANNEL" type="VALUE_TEXT" value="1"/>
-					<stringMacro name="INPUT_SOFTAP_BANDWIDTH" type="VALUE_TEXT" value="2"/>
-					<stringMacro name="INPUT_SOFTAP_ENCRYPTION" type="VALUE_TEXT" value="3"/>
-					<stringMacro name="INPUT_SOFTAP_MAX_CONN" type="VALUE_TEXT" value="4"/>
-					<stringMacro name="INPUT_SOFTAP_SSID_HIDDEN" type="VALUE_TEXT" value="0"/>
+					<stringMacro name="INPUT_SOFTAP_CHANNEL" type="VALUE_TEXT" value="&quot;1&quot;"/>
+					<stringMacro name="INPUT_SOFTAP_BANDWIDTH" type="VALUE_TEXT" value="&quot;HT40&quot;"/>
+					<stringMacro name="INPUT_SOFTAP_ENCRYPTION" type="VALUE_TEXT" value="&quot;WPA2_PSK&quot;"/>
+					<stringMacro name="INPUT_SOFTAP_MAX_CONN" type="VALUE_TEXT" value="&quot;4&quot;"/>
+					<stringMacro name="INPUT_SOFTAP_SSID_HIDDEN" type="VALUE_TEXT" value="&quot;no&quot;"/>
 					<stringMacro name="INPUT_SOFTAP_SRC_IP" type="VALUE_TEXT" value="&quot;192.168.2.1&quot;"/>
 					<stringMacro name="INPUT_SOFTAP_ARP_DEST_IP" type="VALUE_TEXT" value="&quot;192.168.2.22&quot;"/>
 				</macros>

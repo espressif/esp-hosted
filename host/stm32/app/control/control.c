@@ -14,6 +14,7 @@
 //
 
 /** Includes **/
+#include "stdlib.h"
 #include "string.h"
 #include "util.h"
 #include "control.h"
@@ -26,6 +27,20 @@
 
 /* Constants / macro */
 #define CONTROL_PATH_TASK_STACK_SIZE        4096
+
+#define PARAM_STR_YES                       "yes"
+#define PARAM_STR_HT20                      "HT20"
+#define PARAM_STR_HT40                      "HT40"
+#define PARAM_STR_WPA_WPA2_PSK              "WPA_WPA2_PSK"
+#define PARAM_STR_WPA2_PSK                  "WPA2_PSK"
+#define PARAM_STR_WPA_PSK                   "WPA_PSK"
+#define PARAM_STR_OPEN                      "OPEN"
+#define PARAM_STR_WEP                       "WEP"
+
+#define PARAM_STR_SOFTAP_STATION            "SOFTAP+STATION"
+#define PARAM_STR_STATION_SOFTAP            "STATION+SOFTAP"
+#define PARAM_STR_SOFTAP                    "SOFTAP"
+#define PARAM_STR_STATION                   "STATION"
 
 /* data path opens after control path is set */
 static int mode = WIFI_MODE_NULL;
@@ -139,9 +154,13 @@ void control_path_init(void(*control_path_evt_handler)(uint8_t))
 	osThreadDef(SEM_Thread, control_path_task, osPriorityAboveNormal, 0, CONTROL_PATH_TASK_STACK_SIZE);
 	control_path_task_id = osThreadCreate(osThread(SEM_Thread), NULL);
 	assert(control_path_task_id);
-
 }
 
+/**
+  * @brief  control path de-initialize
+  * @param  None
+  * @retval None
+  */
 void control_path_deinit(void)
 {
 	/* Call control path library init */
@@ -149,6 +168,68 @@ void control_path_deinit(void)
 }
 
 /** Local functions **/
+
+/**
+  * @brief  get boolean usr param
+  * @param  param - user input string
+  * @retval 0 if "yes", else 0
+  */
+static uint8_t get_boolean_param(char *param)
+{
+	if (strncasecmp(param, PARAM_STR_YES, strlen(PARAM_STR_YES)) == 0) {
+		return 1;
+	}
+	return 0;
+}
+
+/**
+  * @brief  get usr param softap bw
+  * @param  None
+  * @retval value from wifi_bandwidth_t
+  */
+static uint8_t get_param_softap_bw(void)
+{
+	if (strncasecmp(INPUT_SOFTAP_BANDWIDTH, PARAM_STR_HT20,
+				strlen(PARAM_STR_HT20))==0) {
+		return WIFI_BW_HT20;
+	} else if (strncasecmp(INPUT_SOFTAP_BANDWIDTH, PARAM_STR_HT40,
+				strlen(PARAM_STR_HT40))==0) {
+		return WIFI_BW_HT40;
+	} else {
+		printf("%s not supported for INPUT_SOFTAP_BANDWIDTH, Default to HT40\n\r",
+				INPUT_SOFTAP_BANDWIDTH);
+		return WIFI_BW_HT40;
+	}
+}
+
+/**
+  * @brief  get usr param softap encryption
+  * @param  None
+  * @retval value from wifi_auth_mode_t
+  */
+static uint8_t get_param_softap_encryption(void)
+{
+	if (strncasecmp(INPUT_SOFTAP_ENCRYPTION, PARAM_STR_WPA_WPA2_PSK,
+				strlen(PARAM_STR_WPA_WPA2_PSK)) == 0) {
+		return WIFI_AUTH_WPA_WPA2_PSK;
+	} else if (strncasecmp(INPUT_SOFTAP_ENCRYPTION, PARAM_STR_WPA2_PSK,
+				strlen(PARAM_STR_WPA2_PSK)) == 0) {
+		return WIFI_AUTH_WPA2_PSK;
+	} else if (strncasecmp(INPUT_SOFTAP_ENCRYPTION, PARAM_STR_WPA_PSK,
+				strlen(PARAM_STR_WPA_PSK)) == 0) {
+		return WIFI_AUTH_WPA_PSK;
+	} else if (strncasecmp(INPUT_SOFTAP_ENCRYPTION, PARAM_STR_OPEN,
+				strlen(PARAM_STR_OPEN)) == 0) {
+		return WIFI_AUTH_OPEN;
+	} else if (strncasecmp(INPUT_SOFTAP_ENCRYPTION, PARAM_STR_WEP,
+				strlen(PARAM_STR_WEP)) == 0) {
+		return WIFI_AUTH_WEP;
+	}
+	printf("%s not supported for INPUT_SOFTAP_ENCRYPTION. Default to OPEN\n\r",
+			INPUT_SOFTAP_ENCRYPTION);
+
+	return WIFI_AUTH_OPEN;
+}
 
 /**
   * @brief  call up event handler registered
@@ -190,17 +271,19 @@ static stm_ret_t save_station_mac(const char *mac)
 static int station_connect(void)
 {
 	/* station mode */
-	printf("Station mode: ssid: %s passwd %s \n\r", INPUT_STATION__SSID, INPUT_STATION_PASSWORD);
-
 	int wifi_mode = WIFI_MODE_STA;
 	char mac[WIFI_MAX_STR_LEN];
 	int ret;
+
+	printf("Station mode: ssid: %s passwd %s \n\r",
+			INPUT_STATION__SSID, INPUT_STATION_PASSWORD);
 
 	esp_hosted_ap_config_t ap_config;
 	strcpy((char* )&ap_config.ssid,  INPUT_STATION__SSID);
 	strcpy((char* )&ap_config.pwd,   INPUT_STATION_PASSWORD);
 	strcpy((char* )&ap_config.bssid, INPUT_STATION_BSSID);
-	ap_config.is_wpa3_supported    = INPUT_STATION_IS_WPA3_SUPPORTED;
+	ap_config.is_wpa3_supported =
+		get_boolean_param(INPUT_STATION_IS_WPA3_SUPPORTED);
 
 	memset(mac, '\0', WIFI_MAX_STR_LEN);
 	ret = get_mac(wifi_mode, mac);
@@ -233,20 +316,22 @@ static int softap_start(void)
 {
 	/* softap mode */
 
-	printf("SoftAP mode: ssid: %s passwd %s \n\r", INPUT_SOFTAP__SSID, INPUT_SOFTAP_PASSWORD);
 	int wifi_mode = WIFI_MODE_AP;
 	char mac[WIFI_MAX_STR_LEN];
 	int ret;
+
+	printf("SoftAP mode: ssid: %s passwd %s \n\r",
+			INPUT_SOFTAP__SSID, INPUT_SOFTAP_PASSWORD);
 
 	esp_hosted_ap_config_t softap_config;
 	strcpy((char* )&softap_config.ssid, INPUT_SOFTAP__SSID);
 	strcpy((char* )&softap_config.pwd,  INPUT_SOFTAP_PASSWORD);
 
-	softap_config.channel           = INPUT_SOFTAP_CHANNEL;
-	softap_config.encryption_mode   = INPUT_SOFTAP_ENCRYPTION;
-	softap_config.max_connections   = INPUT_SOFTAP_MAX_CONN;
-	softap_config.ssid_hidden       = INPUT_SOFTAP_SSID_HIDDEN;
-	softap_config.bandwidth         = INPUT_SOFTAP_BANDWIDTH;
+	softap_config.channel           = atoi(INPUT_SOFTAP_CHANNEL);
+	softap_config.encryption_mode   = get_param_softap_encryption();
+	softap_config.max_connections   = atoi(INPUT_SOFTAP_MAX_CONN);
+	softap_config.ssid_hidden       = get_boolean_param(INPUT_SOFTAP_SSID_HIDDEN);
+	softap_config.bandwidth         = get_param_softap_bw();
 
 	memset(mac, '\0', WIFI_MAX_STR_LEN);
 
@@ -310,23 +395,23 @@ static int get_ap_scan_list(void)
   */
 static int get_application_mode(void)
 {
-	if (strncmp(INPUT__OPERATING_MODE, "SOFTAP+STATION",
-				strlen("SOFTAP+STATION"))==0) {
+	if (strncasecmp(INPUT__OPERATING_MODE, PARAM_STR_SOFTAP_STATION,
+				strlen(PARAM_STR_SOFTAP_STATION))==0) {
 
 		return MODE_SOFTAP_STATION;
 
-	} else if (strncmp(INPUT__OPERATING_MODE, "STATION+SOFTAP",
-				strlen("STATION+SOFTAP"))==0) {
+	} else if (strncasecmp(INPUT__OPERATING_MODE, PARAM_STR_STATION_SOFTAP,
+				strlen(PARAM_STR_STATION_SOFTAP))==0) {
 
 		return MODE_SOFTAP_STATION;
 
-	} else if (strncmp(INPUT__OPERATING_MODE, "SOFTAP",
-				strlen("SOFTAP"))==0) {
+	} else if (strncasecmp(INPUT__OPERATING_MODE, PARAM_STR_SOFTAP,
+				strlen(PARAM_STR_SOFTAP))==0) {
 
 		return MODE_SOFTAP;
 
-	} else if (strncmp(INPUT__OPERATING_MODE, "STATION",
-				strlen("STATION"))==0) {
+	} else if (strncasecmp(INPUT__OPERATING_MODE, PARAM_STR_STATION,
+				strlen(PARAM_STR_STATION))==0) {
 
 		return MODE_STATION;
 
@@ -351,7 +436,7 @@ static void control_path_task(void const *argument)
 	for (;;) {
 
 		if (!stop) {
-			if (INPUT_GET_AP_SCAN_LIST && !scap_ap_list) {
+			if (get_boolean_param(INPUT_GET_AP_SCAN_LIST) && !scap_ap_list) {
 				ret = get_ap_scan_list();
 				if (ret) {
 					continue;
