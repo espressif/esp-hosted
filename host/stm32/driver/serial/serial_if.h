@@ -24,20 +24,20 @@ extern "C" {
 #include "cmsis_os.h"
 #include "common.h"
 
-struct file_operations;
+struct serial_operations;
 
 /* serial interface handle */
 typedef struct serial_handle_s {
 	QueueHandle_t queue;
 	uint8_t if_type;
 	uint8_t if_num;
-	struct file_operations *fops;
+	struct serial_operations *fops;
 	uint8_t state;
 	void (*serial_rx_callback) (void);
 } serial_handle_t;
 
 /* serial interface */
-struct file_operations {
+struct serial_operations {
 	/**
 	 * @brief Open new Serial interface
 	 * @param  serial_hdl - handle of serial interface
