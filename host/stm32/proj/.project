@@ -50,7 +50,7 @@
 	<variableList>
 		<variable>
 			<name>CODE_BASE</name>
-			<value>file:/my/abs/git/repo/path/of/hosted</value>
+			<value>file:CODE_BASE_PLACE_HOLDER</value>
 		</variable>
 	</variableList>
 </projectDescription>

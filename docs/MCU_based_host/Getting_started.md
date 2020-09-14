@@ -34,12 +34,23 @@ We have tested project with STM32F469I-Discovery board. If other than STM32F469I
 
 1) Create a workspace_directory outside of `ESP-Hosted` git cloned directory.
 2) Browse and Open Workspace directory in STM32CubeIDE. It will take few seconds to open STM32CubeIDE.
-3) From `Information Center` tab select Start new project from existing STM32CubeMX configuration file, i.e. ioc file option. It will take few seconds to open dialog box. In STM32CubeMX .ioc file field, browse to `/path/to/esp_hosted/host/stm32/proj/stm_spi_host.ioc -> Open` and click on `finish` icon. New dialog box will open as Open Associated Perspective, click on `Yes`. It may take 2-3 minutes to open.
+3) From `Information Center` tab select Start new project from existing STM32CubeMX configuration file, i.e. ioc file option. It will take few seconds to open dialog box. In STM32CubeMX .ioc file field, browse to `</path/to/esp_hosted>/host/stm32/proj/stm_spi_host.ioc -> Open` and click on `finish` icon. New dialog box will open as Open Associated Perspective, click on `Yes`. It may take 2-3 minutes to open.
 4) Close `stm_spi_host.ioc` tab then close STM32CubeIDE and click on `exit`.
-5) Copy .project and.cproject from `</path/to/esp_hosted>/host/stm32/proj/`files to `</path/to/workspace_directory>/stm_spi_host/` directory forcefully. Please check hidden files for .project and .cproject for *nix based envirnments. 
+5) For Linux and Mac development hosts, In terminal, run
+```
+$ cd </path/to/esp_hosted>/host/stm32/proj
+$ bash ./prepare_project.sh </path/to/workspace_directory>
+```
+For Windows based systems, open "cmd.exe" or Windows Power Shell and run -
+```
+> cd <path\to\esp_hosted>\host\stm32\proj
+> prepare_project.bat <path\to\workspace_directory>
+```
+This will copy the project configuration files into workspace_directory
+
 6) Re-open STM32CubeIDE with workspace as workspace_directory.
 7) Ignore all warnings under `Problems` tab if any.
-8) Configure all build variables as mentioned in User configuration parameter section below. All parameters are mandatory to be filled. Please note that, every subsequent change in configuration parameter would need a clean build as mentioned ahead.
+8) Configure all build variables as mentioned in [User configuration parameter](#user-configuration-parameter) section below. Variable CODE_BASE should already be populated. All parameters are mandatory to be filled. Please note that, every subsequent change in configuration parameter would need a clean build as mentioned ahead.
 9) Uncheck `Build Automatically` from `menu -> Project` and Clean build the project as `Project menu -> Clean -> clean`.
 10) Run application on stm32 board, please connect STM32 board to your machine if not already connected. In STM32CubeIDE, go to `Project Explorer`, right click on `stm_spi_host` project. Then `menu -> Run -> Run as -> STM32 Cortex-M C/C++ Application `. This will open Edit Configuration box, Click `OK`.
 `Debug as` option can also be alternatively used if debugging is desired.
@@ -63,7 +74,7 @@ Shutting down...
 ```
 $ minicom -D /dev/ttyACM0
 ```
-Note: /dev/ttyACM0 is used for *nix based systems. For Windows please check used COM port. Baud rate used is 115200. Parity bits configuration is 8N1.
+Note: /dev/ttyACM0 is used for For Linux, /dev/cu.usbmodemXXXXXX for Mac and COM port for Windows development host. Baud rate used is 115200. Parity bits configuration is 8N1.
 
 Expected output log on tera term or minicom similar to below one:
 ```
@@ -145,7 +156,9 @@ Build Variables are as follows:
 #### Note:
 All string parameters are expected to be enclosed in double quotes.
 
-Also change `CODE_BASE` variable from `menu -> Project -> Properties -> Resource -> Linked Resources -> Path Variables -> CODE_BASE -> Edit -> <Path/to/esp_hosted> -> OK ->  Apply and Close`.
+Verify that `CODE_BASE` variable from `menu -> Project -> Properties -> Resource -> Linked Resources -> Path Variables -> CODE_BASE` points to git cloned directory. 
+
+In case there is a warning sign on folder icon, it means STM32CubeIDE has not correctly configured the variable. In that case, re-configure it using, `Edit -> Click On Folder -> <Path/to/esp_hosted> -> Open -> OK`. The warning sign now should disappear. Now click on `Apply and Close`.
 
 ## ARP Testing :
 
@@ -154,20 +167,19 @@ To install arping on ubuntu based system, please use
 ```
 $ sudo apt-get install arping
 ```
-More details of arping could be found on [this link](https://devconnected.com/arping-command-on-linux-explained/). arping can easily be installed on other architectures. Once the connection or a control path is setup between STM32 and ESP32, ARP can be tested for that interface.
+More details of arping could be found on [this link](https://devconnected.com/arping-command-on-linux-explained/). arping can easily be installed on other architectures. For Windows hosts, [check this link](https://elifulkerson.com/projects/arp-ping.php). Once the connection is setup between STM32 and ESP32, ARP can be tested for that interface.
 
 ### ARP Request orininated from STM32
 For station mode, `INPUT_STATION_SRC_IP` is used as STM32 IPv4 address and `INPUT_STATION_ARP_DEST_IP` is considered as destination IPv4 address. This could be configured as IPv4 address of your machine.
 For softap mode, `INPUT_SOFTAP_SRC_IP` will be used as STM32 IPv4 address and `INPUT_SOFTAP_ARP_DEST_IP` used as destination IPv4 address.
-Please note that, In case of softap mode, only static IPv4 addresses are supported currently. You can use your machine to connect to softap and assign static address as `INPUT_SOFTAP_ARP_DEST_IP`.
+
+Please note,
+1. In case of softap mode, only static IPv4 addresses are supported currently. You can use your machine to connect to softap and assign static address as `INPUT_SOFTAP_ARP_DEST_IP`.
+2. IP addresses configured are in same subnet for that interface.
 
 ARP request will be triggered around every one second for both softap and station network. ARP responses are displayed on receival. On minicom, typically should be printed like,
 ```
-ARP_RSP_RCVD: 42 bytes from 192.168.1.203 (58:a0:23:86:2a:c4)
-ARP_RSP_RCVD: 42 bytes from 192.168.1.203 (58:a0:23:86:2a:c4)
-ARP_RSP_RCVD: 42 bytes from 192.168.1.203 (58:a0:23:86:2a:c4)
-ARP_RSP_RCVD: 42 bytes from 192.168.1.203 (58:a0:23:86:2a:c4)
-ARP_RSP_RCVD: 42 bytes from 192.168.1.203 (58:a0:23:86:2a:c4)
+ARP_RSP_RCVD: XX bytes from 192.168.1.203 (58:a0:23:86:2a:c4)
 ```
 
 ### ARP Responses from STM32
@@ -181,11 +193,9 @@ sudo arping 192.168.2.1
 ```
 ARP request received in STM32 are displayed on minicom like,
 ```
-ARP_REQ_RCVD: 58 bytes from 192.168.1.205 (a0:88:b4:e5:d5:38)
+ARP_REQ_RCVD: XX bytes from 192.168.1.205 (a0:88:b4:e5:d5:38)
 ```
 ARP response is triggered for requests received. You should be able see ARP response on your machine as,
 ```
-58 bytes from 3c:71:bf:9a:bc:b8 (192.168.1.233): index=0 time=199.144 msec
+XX bytes from 3c:71:bf:9a:bc:b8 (192.168.1.233): index=0 time=199.144 msec
 ```
-
-
