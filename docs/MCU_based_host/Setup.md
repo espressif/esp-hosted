@@ -44,6 +44,14 @@ The control path between host and ESP32 is based on `protobuf`. For that `protoc
 ```
 $ git mv components/protocomm/src/common/protocomm_priv.h components/protocomm/include/common/
 ```
+For pre built hosted mode firmware is present in `release` tab. To flash it on ESP32 edit <serial_port> with ESP32's serial port and run following command.
+```sh
+esptool.py -p <serial_port> -b 960000 --before default_reset --after hard_reset write_flash --flash_mode dio --flash_freq 40m --flash_size detect 0x8000 partition-table_spi_v0.2.bin 0x1000 bootloader_spi_v0.2.bin 0x10000 esp_hosted_firmware_spi_v0.2.bin
+```
+For windows user, you can also program the binaries using ESP Flash Programming Tool.
+
+Or if you have source, follow below procedure.
+
 Currently ESP32 and STM32 communicates over SPI transport. To use `make` build system, run following command in `esp/esp_driver/network_adapter` directory and navigate to `Example Configuration ->  Transport layer -> SPI interface -> select` and exit from menuconfig.
 ```
 $ make menuconfig

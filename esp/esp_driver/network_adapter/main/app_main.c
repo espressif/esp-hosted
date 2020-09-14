@@ -99,6 +99,18 @@ static inline int min(int x, int y) {
     return (x < y) ? x : y;
 }
 
+static void print_firmware_version()
+{
+	ESP_LOGI(TAG, "*********************************************************************");
+	ESP_LOGI(TAG, "                ESP-Hosted Firmware version :: %.1f                        ", PROJECT_VER);
+#if CONFIG_ESP_SPI_HOST_INTERFACE
+	ESP_LOGI(TAG, "                Supported Transport :: SPI                           ");
+#else
+	ESP_LOGI(TAG, "                Supported Transport :: SDIO                          ");
+#endif
+	ESP_LOGI(TAG, "*********************************************************************");
+}
+
 static uint8_t get_capabilities()
 {
 	uint8_t cap = 0;
@@ -613,6 +625,7 @@ void app_main()
 {
 	esp_err_t ret;
 	uint8_t capa = 0;
+	print_firmware_version();
 
 	capa = get_capabilities();
 

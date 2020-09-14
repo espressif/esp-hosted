@@ -7,4 +7,7 @@ else(CONFIG_ESP_SPI_HOST_INTERFACE)
     list(APPEND COMPONENT_SRCS spi_slave_api.c)
 endif()
 
+
 register_component()
+set(PROJECT_VER "-DPROJECT_VER=0.2")
+target_compile_definitions(${COMPONENT_LIB} PRIVATE ${PROJECT_VER})
