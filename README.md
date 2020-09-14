@@ -4,10 +4,6 @@ ESP-Hosted project provides a way to use ESP32 as a communication processor for 
 
 Please note that this project doesn't provide a standard 802.11 interface to the host. For the control path between the host and ESP32, ESP-Hosted uses a custom implementation based on Protobufs.
 
-The below diagram shows hardware and software block diagram for a typical system built with ESP-Hosted.
-
-![ESP-Hosted Block Diagram](docs/esp-hosted-block-diagram.png)
-
 ## Connectivity Support
 
 ESP hosted solution provides following WLAN and BT/BLE features to host:
@@ -15,25 +11,36 @@ ESP hosted solution provides following WLAN and BT/BLE features to host:
 	- 802.11b/g/n
 	- WLAN Station
 	- WLAN Soft AP
-
 - BT/BLE Features:
 	- v4.2 BR/EDR and BLE
 
 ## Supported Hosts
 
-At present Linux based host is supported and Linux driver is available as a part of this project. We support Raspberry-Pi as a host for evaluation and development purpose. The MCU host support is planned in future releases.
+ESP-Hosted solution supports microprocessors running Linux as well as STM32 MCU (STM32F469I). It's possible to port this relatively easily on other MCUs too. We support Raspberry-Pi (3 Model B+, 4 Model B) and STM32 Discovery Board (STM32F469I-DISCO) out of the box.
 
 ## Supported Transports
 
-At present SDIO is supported as a transport where host acts as SDIO master and ESP32 acts as SDIO slave. Support for SPI transport is planned for future releases.
+ESP-Hosted uses SDIO and SPI as the transport interface for data and control path. The host acts as SDIO or SPI master whereas ESP32 acts as a corresponding slave. Currently Raspberry Pi supports both SDIO and SPI transport and STM32 supports SPI transport.
 
+For detailed explanation, please go through -
+1. [Using Raspberry-Pi as a Linux host](docs/Linux_based_host/Linux_based_readme.md)
+2. [Using STM32F469I-DISCO as a MCU host](docs/MCU_based_host/MCU_based_readme.md)
 
-# Getting Started 
+## Feature Matrix
+### Linux Host
+Below table explains which feature is supported on which transport interface for Linux based host.
 
-[Hardware Setup and Compilation](docs/Setup.md)
+| Transport Interface | WLAN support | Virtual serial interface | BT/BLE support |                                      
+|:-------:|:---------:|:--------:|:--------:|                                             
+| SDIO | Yes | Yes | Yes |
+| SPI | Yes | Yes | Yes |
+| UART | No | No | Yes |
 
-[Getting Started](docs/Getting_started.md)
+### MCU Host
+Below table explains which feature is supported on which transport interface for MCU based host.
 
-[Protocol Design](docs/Design.md)
-
-[Troubleshooting Guide](docs/Troubleshoot.md)
+| Transport Interface | WLAN support | Virtual serial interface | BT/BLE support |                                      
+|:-------:|:---------:|:--------:|:--------:|                                             
+| SDIO | No | No | No |
+| SPI | Yes | Yes | HCI interface can be implemented over virtual serial interface |
+| UART | No | No | No |
