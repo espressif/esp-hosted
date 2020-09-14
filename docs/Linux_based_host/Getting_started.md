@@ -2,7 +2,7 @@
 
 ## Wi-Fi Connectivity
 
-[`host_commands`](../host/linux/host_control/host_commands) python module in `host/linux/host_control` folder implements the communication protocol between the host and ESP32. It contains following functions:
+[`host_commands`](../../host/linux/host_control/host_commands) python module in `host/linux/host_control` directory implements the communication protocol between the host and ESP32. It contains following functions:
 ```
 get_mac(mode)
 get_wifi_mode()
@@ -16,12 +16,12 @@ wifi_ap_scan_list()
 wifi_connected_stations_list()
 ```
 
-These python functions can be used to control Wi-Fi functionality of the ESP32. Also see [host/linux/host_control/test.py](../host/linux/host_control/test.py) script for an example of using these functions. You can run the script as follows:
+These python functions can be used to control Wi-Fi functionality of the ESP32. Also see [host/linux/host_control/test.py](../../host/linux/host_control/test.py) script for an example of using these functions. You can run the script as follows:
 ```
 python test.py
 ```
 
-To compile and load the host driver on a Raspberry Pi, go to `host/linux/host_control/` folder and run `./rpi_init.sh`. This script also creates `/dev/esps0` device, which is used as a WLAN control interface.
+To compile and load the host driver on a Raspberry Pi, go to `host/linux/host_control/` folder and run `./rpi_init.sh <sdio/spi>`. This script also creates `/dev/esps0` device, which is used as a WLAN control interface.
 
 The other scripts in the same directory can be used to:
 
@@ -90,7 +90,7 @@ python ap_scan_list.py
 python connected_stations_list.py
 ```
 
-### Open air throughput test results for WLAN
+### Open air throughput test results for WLAN on SDIO Interface
 
 Following are the test results conducted in open air.
 
@@ -115,8 +115,13 @@ $ sudo hciattach -s 115200 /dev/serial0 any 115200 flow
 ```
 
 ### SDIO based setup
-Execute `./rpi_init.sh` to prepare Raspberry-Pi for SDIO+BT operation.
+Execute `./rpi_init.sh` or `./rpi_init.sh sdio` to prepare Raspberry-Pi for SDIO+BT operation.
 HCI interface (i.e hciX) will be available for use as soon as host driver detects ESP32 module over SDIO interface.
+You can use standard HCI utilities over this interface to make use of BT/BLE feature.
+
+### SPI based setup
+Execute `./rpi_init.sh spi` to prepare Raspberry-Pi for SPI+BT operation.
+HCI interface (i.e hciX) will be available for use as soon as host driver detects ESP32 module over SPI interface.
 You can use standard HCI utilities over this interface to make use of BT/BLE feature.
 
 ### Reset Pin Configuration
