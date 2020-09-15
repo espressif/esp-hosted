@@ -31,7 +31,14 @@ Please reboot Raspberry-Pi after changing this file.
 
 ### ESP32 Setup
 
-On ESP32 either use pre-provided hosted mode firmware binary or if you have source, compile the app against ESP-IDF 4.0 release. To use `make` build system, run following command in `esp/esp_driver/network_adapter` directory and navigate to `Example Configuration ->  Transport layer -> SDIO interface -> select` and exit from menuconfig.
+For pre built hosted mode firmware is present in `release` tab. To flash it on ESP32 edit <serial_port> with ESP32's serial port and run following command.
+```sh
+esptool.py -p <serial_port> -b 960000 --before default_reset --after hard_reset write_flash --flash_mode dio --flash_freq 40m --flash_size detect 0x8000 partition-table_sdio_v0.2.bin 0x1000 bootloader_sdio_v0.2.bin 0x10000 esp_hosted_firmware_sdio_v0.2.bin
+```
+
+For windows user, you can also program the binaries using ESP Flash Programming Tool.
+
+ Or if you have source, compile the app against ESP-IDF 4.0 release. To use `make` build system, run following command in `esp/esp_driver/network_adapter` directory and navigate to `Example Configuration ->  Transport layer -> SDIO interface -> select` and exit from menuconfig.
 ```
 $ make menuconfig
 ```
