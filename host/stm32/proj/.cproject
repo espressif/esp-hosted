@@ -4,7 +4,7 @@
 		<cconfiguration id="com.st.stm32cube.ide.mcu.gnu.managedbuild.config.exe.debug.661834455">
 			<storageModule buildSystemId="org.eclipse.cdt.managedbuilder.core.configurationDataProvider" id="com.st.stm32cube.ide.mcu.gnu.managedbuild.config.exe.debug.661834455" moduleId="org.eclipse.cdt.core.settings" name="Debug">
 				<macros>
-					<stringMacro name="CODE_BASE" type="VALUE_PATH_DIR" value="/my/abs/git/repo/path/of/hosted"/>
+					<stringMacro name="CODE_BASE" type="VALUE_PATH_DIR" value="CODE_BASE_PLACE_HOLDER"/>
 					<stringMacro name="INPUT__OPERATING_MODE" type="VALUE_TEXT" value="&quot;STATION+SOFTAP&quot;"/>
 					<stringMacro name="INPUT_STATION__SSID" type="VALUE_TEXT" value="&quot;MyWifi&quot;"/>
 					<stringMacro name="INPUT_STATION_PASSWORD" type="VALUE_TEXT" value="&quot;MyWifi@123&quot;"/>
