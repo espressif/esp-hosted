@@ -102,11 +102,11 @@ static inline int min(int x, int y) {
 static void print_firmware_version()
 {
 	ESP_LOGI(TAG, "*********************************************************************");
-	ESP_LOGI(TAG, "                ESP-Hosted Firmware version :: %.1f                        ", PROJECT_VER);
+	ESP_LOGI(TAG, "                ESP-Hosted Firmware version :: %.1f                        ", PROJECT_VERSION);
 #if CONFIG_ESP_SPI_HOST_INTERFACE
-	ESP_LOGI(TAG, "                Supported Transport :: SPI                           ");
+	ESP_LOGI(TAG, "                Transport used :: SPI                           ");
 #else
-	ESP_LOGI(TAG, "                Supported Transport :: SDIO                          ");
+	ESP_LOGI(TAG, "                Transport used :: SDIO                          ");
 #endif
 	ESP_LOGI(TAG, "*********************************************************************");
 }

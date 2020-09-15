@@ -52,7 +52,14 @@ This will copy the project configuration files into workspace_directory
 7) Ignore all warnings under `Problems` tab if any.
 8) Configure all build variables as mentioned in [User configuration parameter](#user-configuration-parameter) section below. Variable CODE_BASE should already be populated. All parameters are mandatory to be filled. Please note that, every subsequent change in configuration parameter would need a clean build as mentioned ahead.
 9) Uncheck `Build Automatically` from `menu -> Project` and Clean build the project as `Project menu -> Clean -> clean`.
-10) Run application on stm32 board, please connect STM32 board to your machine if not already connected. In STM32CubeIDE, go to `Project Explorer`, right click on `stm_spi_host` project. Then `menu -> Run -> Run as -> STM32 Cortex-M C/C++ Application `. This will open Edit Configuration box, Click `OK`.
+10) Connect STM32 board to your machine if not already connected.
+11) Before flashing the project, Open Tera Term or minicom to see STM32 debug logs once project flashed.
+```
+$ minicom -D /dev/ttyACM0
+```
+Note: /dev/ttyACM0 is used for For Linux, /dev/cu.usbmodemXXXXXX for Mac and COM port for Windows development host. Baud rate used is 115200. Parity bits configuration is 8N1.
+
+12) In STM32CubeIDE, go to `Project Explorer`, right click on `stm_spi_host` project. Then `menu -> Run -> Run as -> STM32 Cortex-M C/C++ Application `. This will open Edit Configuration box, Click `OK`.
 `Debug as` option can also be alternatively used if debugging is desired.
 
 Expected output on `Console` tab in STM32CubeIDE as follows:
@@ -70,13 +77,8 @@ Download verified successfully
 Debugger connection lost.
 Shutting down...
 ```
-11) Open Serial port communicaton program like tera term or minicom to see STM32 debug logs. For example.
-```
-$ minicom -D /dev/ttyACM0
-```
-Note: /dev/ttyACM0 is used for For Linux, /dev/cu.usbmodemXXXXXX for Mac and COM port for Windows development host. Baud rate used is 115200. Parity bits configuration is 8N1.
 
-Expected output log on tera term or minicom similar to below one:
+13) Expected output log on tera term or minicom will be similar to below:
 ```
 
 +-----------------------------------+-------------------------------------------+
@@ -163,13 +165,9 @@ In case there is a warning sign on folder icon, it means STM32CubeIDE has not co
 ## ARP Testing :
 
 With minimal network stub, arping is tested with this project.
-To install arping on ubuntu based system, please use 
-```
-$ sudo apt-get install arping
-```
-More details of arping could be found on [this link](https://devconnected.com/arping-command-on-linux-explained/). arping can easily be installed on other architectures. For Windows hosts, [check this link](https://elifulkerson.com/projects/arp-ping.php). Once the connection is setup between STM32 and ESP32, ARP can be tested for that interface.
+Once the connection is setup between STM32 and ESP32, ARP can be tested for that interface.
 
-### ARP Request orininated from STM32
+### ARP Request originated from STM32
 For station mode, `INPUT_STATION_SRC_IP` is used as STM32 IPv4 address and `INPUT_STATION_ARP_DEST_IP` is considered as destination IPv4 address. This could be configured as IPv4 address of your machine.
 For softap mode, `INPUT_SOFTAP_SRC_IP` will be used as STM32 IPv4 address and `INPUT_SOFTAP_ARP_DEST_IP` used as destination IPv4 address.
 
@@ -183,7 +181,7 @@ ARP_RSP_RCVD: XX bytes from 192.168.1.203 (58:a0:23:86:2a:c4)
 ```
 
 ### ARP Responses from STM32
-In case of station mode, ARP request could be triggered from station connected to `INPUT_STATION__SSID`. to start arping request, please use ARP destination as `INPUT_STATION_SRC_IP`. For example,
+In case of station mode, ARP request could be triggered from station connected to `INPUT_STATION__SSID`. To start arping request, please use ARP destination as `INPUT_STATION_SRC_IP`. For example,
 ```
 sudo arping 192.168.1.233
 ```

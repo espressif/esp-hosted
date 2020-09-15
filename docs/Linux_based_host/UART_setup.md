@@ -41,7 +41,7 @@ dwc_otg.lpm_enable=0 console=tty1 root=PARTUUID=5c2c80d1-02 rootfstype=ext4 elev
 
 ### ESP32 Setup
 
-For pre built hosted mode firmware is present in `release` tab. To flash it on ESP32 edit <serial_port> with ESP32's serial port and run following command.
+For pre built hosted mode firmware is present in `release` tab. Current binaries are made for UART baudrate of 921600. To flash it on ESP32 edit <serial_port> with ESP32's serial port and run following command.
 ```sh
 esptool.py -p <serial_port> -b 960000 --before default_reset --after hard_reset write_flash --flash_mode dio --flash_freq 40m --flash_size detect 0x8000 partition-table_sdio_uart_v0.2.bin 0x1000 bootloader_sdio_uart_v0.2.bin 0x10000 esp_hosted_firmware_sdio_uart_v0.2.bin
 ```
