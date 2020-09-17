@@ -11,12 +11,24 @@ We recommend STM32CubeIDE version 1.4 IDE from STMicroelectronics on host machin
 * Clone esp-hosted repository on machine, where STM32CubeIDE used to connect/flash to host.
 ```
 $ git clone --recurse-submodules <url_of_esp_hosted_repository>
+$ cd esp-hosted
 $ git submodule update --init --recursive
 ```
-For ARP testing user can install `arping` on *nix system.
+## Tools for testing
+### Arping
+Arping software is needed for testing the project. 
+Arping is a software tool which probes hosts on the network link by sending Link Layer frames using the ARP request to host identified by its MAC address. More details could be found on [this link](https://devconnected.com/arping-command-on-linux-explained/). 
+
+To install arping on ubuntu based system, please use 
 ```
-$ sudo apt install arping
+$ sudo apt-get install arping
 ```
+For installation on Windows hosts, [check this link](https://elifulkerson.com/projects/arp-ping.php)
+
+arping can easily be installed on other architectures.
+
+### Serial port communication program
+For Linux and Mac development hosts, minicom is needed. For Windows based hosts Tera Term is needed.
 
 ## Wi-Fi connectivity Setup over SPI
 ### Hardware Setup/Connections
@@ -60,7 +72,7 @@ compile the app against ESP-IDF 4.0 release, by running command as `make` in `es
 ```sh
 $ make flash
 ```
-Or to select SPI trasnport layer using `cmake`, run following command in `esp/esp_driver/network_adapter` directory navigate to `Example Configuration -> Transport layer -> SPI interface -> select` and exit from menuconfig. Read more about [idf.py](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/build-system.html#using-the-build-system) here.
+Or to select SPI transport layer using `cmake`, run following command in `esp/esp_driver/network_adapter` directory navigate to `Example Configuration -> Transport layer -> SPI interface -> select` and exit from menuconfig. Read more about [idf.py](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/build-system.html#using-the-build-system) here.
 ```
 $ idf.py menuconfig
 ```

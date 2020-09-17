@@ -3,13 +3,15 @@
 # project subdirectory.
 #
 
-PROJECT_VER := 0.2
+PROJECT_VERSION := 0.2
+ifndef MAKE_RESTARTS
 $(info *********************************************************************************)
-$(info *              Building ESP-Hosted firmware version :: $(PROJECT_VER)                )
+$(info *              Building ESP-Hosted firmware version :: $(PROJECT_VERSION)            )
 $(info *********************************************************************************)
+endif
 
-PROJECT_NAME := network_adapter_$(PROJECT_VER)
-CPPFLAGS += -DPROJECT_VER=$(PROJECT_VER)
+PROJECT_NAME := network_adapter_$(PROJECT_VERSION)
+CPPFLAGS += -DPROJECT_VERSION=$(PROJECT_VERSION)
 
 EXTRA_COMPONENT_DIRS := $(realpath ../../../common)
 include $(IDF_PATH)/make/project.mk

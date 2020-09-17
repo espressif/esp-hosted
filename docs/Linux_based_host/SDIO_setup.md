@@ -46,7 +46,7 @@ run `make` in `esp/esp_driver/network_adapter` directory. Program the WROVER-KIT
 ```sh
 $ make flash
 ```
-Or to select SDIO trasnport layer using `cmake`, run following command in `esp/esp_driver/network_adapter` directory navigate to `Example Configuration -> Transport layer -> SDIO interface -> select` and exit from menuconfig. Read more about [idf.py](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/build-system.html#using-the-build-system) here.
+Or to select SDIO transport layer using `cmake`, run following command in `esp/esp_driver/network_adapter` directory navigate to `Example Configuration -> Transport layer -> SDIO interface -> select` and exit from menuconfig. Read more about [idf.py](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/build-system.html#using-the-build-system) here.
 ```
 $ idf.py menuconfig
 ```

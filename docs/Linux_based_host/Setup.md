@@ -30,6 +30,7 @@ We have tested esp-hosted solution with python 2.7.
 * Clone esp-hosted repository on Raspberry Pi.
 ```
 $ git clone --recurse-submodules <url_of_esp_hosted_repository>
+$ cd esp-hosted
 $ git submodule update --init --recursive
 ```
 
