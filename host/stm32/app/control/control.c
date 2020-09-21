@@ -67,7 +67,8 @@ static void print_configuration_parameters(void);
 stm_ret_t get_self_ip_station(uint32_t *self_ip)
 {
 	if (STM_OK != get_ipaddr_from_str(INPUT_STATION_SRC_IP, self_ip)) {
-		printf("invalid src ip addr from INPUT_STATION_SRC_IP %s\n\r", INPUT_STATION_SRC_IP);
+		printf("invalid src ip addr from INPUT_STATION_SRC_IP %s\n\r",
+				INPUT_STATION_SRC_IP);
 		return STM_FAIL;
 	}
 	return STM_OK;
@@ -81,7 +82,8 @@ stm_ret_t get_self_ip_station(uint32_t *self_ip)
 stm_ret_t get_self_ip_softap(uint32_t *self_ip)
 {
 	if (STM_OK != get_ipaddr_from_str(INPUT_SOFTAP_SRC_IP, self_ip)) {
-		printf("invalid src ip addr from INPUT_SOFTAP_SRC_IP %s\n\r", INPUT_SOFTAP_SRC_IP);
+		printf("invalid src ip addr from INPUT_SOFTAP_SRC_IP %s\n\r",
+				INPUT_SOFTAP_SRC_IP);
 		return STM_FAIL;
 	}
 	return STM_OK;
@@ -115,7 +117,8 @@ uint8_t *get_self_mac_softap()
 stm_ret_t get_arp_dst_ip_station(uint32_t *sta_ip)
 {
 	if (STM_OK != get_ipaddr_from_str(INPUT_STATION_ARP_DEST_IP, sta_ip)) {
-		printf("invalid src ip addr from INPUT_STATION_ARP_DEST_IP %s\n\r", INPUT_STATION_ARP_DEST_IP);
+		printf("invalid src ip addr from INPUT_STATION_ARP_DEST_IP %s\n\r",
+				INPUT_STATION_ARP_DEST_IP);
 		return STM_FAIL;
 	}
 	return STM_OK;
@@ -129,7 +132,8 @@ stm_ret_t get_arp_dst_ip_station(uint32_t *sta_ip)
 stm_ret_t get_arp_dst_ip_softap(uint32_t *soft_ip)
 {
 	if (STM_OK != get_ipaddr_from_str(INPUT_SOFTAP_ARP_DEST_IP, soft_ip)) {
-		printf("invalid src ip addr from INPUT_SOFTAP_ARP_DEST_IP %s\n\r", INPUT_SOFTAP_ARP_DEST_IP);
+		printf("invalid src ip addr from INPUT_SOFTAP_ARP_DEST_IP %s\n\r",
+				INPUT_SOFTAP_ARP_DEST_IP);
 		return STM_FAIL;
 	}
 	return STM_OK;
@@ -138,7 +142,8 @@ stm_ret_t get_arp_dst_ip_softap(uint32_t *soft_ip)
 
 /**
   * @brief  control path initialize
-  * @param  control_path_evt_handler - event handler of type control_path_events_e
+  * @param  control_path_evt_handler - event handler of type
+  *         control_path_events_e
   * @retval None
   */
 void control_path_init(void(*control_path_evt_handler)(uint8_t))
@@ -154,7 +159,8 @@ void control_path_init(void(*control_path_evt_handler)(uint8_t))
 	control_path_platform_init();
 
 	/* Task - application task */
-	osThreadDef(SEM_Thread, control_path_task, osPriorityAboveNormal, 0, CONTROL_PATH_TASK_STACK_SIZE);
+	osThreadDef(SEM_Thread, control_path_task, osPriorityAboveNormal, 0,
+			CONTROL_PATH_TASK_STACK_SIZE);
 	control_path_task_id = osThreadCreate(osThread(SEM_Thread), NULL);
 	assert(control_path_task_id);
 }
@@ -314,14 +320,17 @@ static int station_connect(void)
 	int wifi_mode = WIFI_MODE_STA;
 	char mac[WIFI_MAX_STR_LEN];
 	int ret;
+	esp_hosted_ap_config_t ap_config = {0};
 
 	printf("Station mode: ssid: %s passwd %s \n\r",
 			INPUT_STATION__SSID, INPUT_STATION_PASSWORD);
 
-	esp_hosted_ap_config_t ap_config;
-	strcpy((char* )&ap_config.ssid,  INPUT_STATION__SSID);
-	strcpy((char* )&ap_config.pwd,   INPUT_STATION_PASSWORD);
-	strcpy((char* )&ap_config.bssid, INPUT_STATION_BSSID);
+	strncpy((char* )&ap_config.ssid,    INPUT_STATION__SSID,
+			min(SSID_LENGTH,     strlen(INPUT_STATION__SSID)+1));
+	strncpy((char* )&ap_config.pwd,     INPUT_STATION_PASSWORD,
+			min(PASSWORD_LENGTH, strlen(INPUT_STATION_PASSWORD)+1));
+	strncpy((char* )&ap_config.bssid,   INPUT_STATION_BSSID,
+			min(BSSID_LENGTH,    strlen(INPUT_STATION_BSSID)+1));
 	ap_config.is_wpa3_supported =
 		get_boolean_param(INPUT_STATION_IS_WPA3_SUPPORTED);
 
@@ -359,13 +368,15 @@ static int softap_start(void)
 	int wifi_mode = WIFI_MODE_AP;
 	char mac[WIFI_MAX_STR_LEN];
 	int ret;
+	esp_hosted_ap_config_t softap_config = {0};
 
 	printf("SoftAP mode: ssid: %s passwd %s \n\r",
 			INPUT_SOFTAP__SSID, INPUT_SOFTAP_PASSWORD);
 
-	esp_hosted_ap_config_t softap_config;
-	strcpy((char* )&softap_config.ssid, INPUT_SOFTAP__SSID);
-	strcpy((char* )&softap_config.pwd,  INPUT_SOFTAP_PASSWORD);
+	strncpy((char* )&softap_config.ssid, INPUT_SOFTAP__SSID,
+			min(SSID_LENGTH,      strlen(INPUT_SOFTAP__SSID)+1));
+	strncpy((char* )&softap_config.pwd,  INPUT_SOFTAP_PASSWORD,
+			min(PASSWORD_LENGTH,  strlen(INPUT_SOFTAP_PASSWORD)+1));
 
 	softap_config.channel           = atoi(INPUT_SOFTAP_CHANNEL);
 	softap_config.encryption_mode   = get_param_softap_encryption();

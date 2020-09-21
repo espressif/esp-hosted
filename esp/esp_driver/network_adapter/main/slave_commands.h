@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include <esp_err.h>
+#define min(X, Y) (((X) < (Y)) ? (X) : (Y))
 
 esp_err_t data_transfer_handler(uint32_t session_id,const uint8_t *inbuf, ssize_t inlen,uint8_t **outbuf, ssize_t *outlen, void *priv_data);
 

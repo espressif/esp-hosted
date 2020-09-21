@@ -8,6 +8,14 @@
 #include "platform_wrapper.h"
 #include "esp_hosted_config.pb-c.h"
 
+#ifdef STM32F469xx
+#include "common.h"
+#define command_log(...) printf(__VA_ARGS__ "\r");
+#else
+#define command_log(...) printf(__VA_ARGS__);
+#define min(X, Y) (((X) < (Y)) ? (X) : (Y))
+#endif
+
 #define SUCCESS         0
 #define FAILURE         -1
 
@@ -17,14 +25,10 @@
 
 #define TIMEOUT_PSERIAL_RESP 30
 
-#ifdef STM32F469xx
-#define command_log(...) printf(__VA_ARGS__ "\r");
-#else
-#define command_log(...) printf(__VA_ARGS__);
-#endif
-
-char* success = "success";
-char* failure = "failure";
+#define success_str     "success"
+#define success_str_len 8
+#define failure_str     "failure"
+#define failure_str_len 8
 
 int get_wifi_mode(int* mode)
 {
@@ -237,7 +241,8 @@ int get_mac(int mode, char* mac)
 		req_payload = NULL;
 		return FAILURE;
 	}
-	strncpy(mac, resp->resp_get_mac_address->resp, MAC_LENGTH);
+	strncpy(mac, resp->resp_get_mac_address->resp, min(MAC_LENGTH,
+				strlen(resp->resp_get_mac_address->resp)+1));
 
 	esp_hosted_free(tx_data);
 	tx_data = NULL;
@@ -319,7 +324,8 @@ int wifi_set_ap_config(esp_hosted_ap_config_t ap_config)
 		return FAILURE;
 	}
 
-	if (strcmp(resp->resp_set_ap_config->status, success) != 0) {
+	if (strncmp(resp->resp_set_ap_config->status, success_str,
+				success_str_len) != 0) {
 		//command_log("Failed to connect with AP \n");
 		esp_hosted_free(req_payload);
 		req_payload = NULL;
@@ -391,9 +397,14 @@ int wifi_get_ap_config (esp_hosted_ap_config_t* ap_config)
 	}
 
 	strncpy((char* )ap_config->ssid,
-		resp->resp_get_ap_config->ssid, SSID_LENGTH);
-	strncpy((char* )ap_config->bssid,
-		resp->resp_get_ap_config->bssid, MAC_LENGTH);
+		resp->resp_get_ap_config->ssid,
+		min(SSID_LENGTH, strlen((char *)resp->resp_get_ap_config->ssid)+1));
+
+	if (resp->resp_get_ap_config->bssid) {
+		strncpy((char* )ap_config->bssid,
+				resp->resp_get_ap_config->bssid, min(MAC_LENGTH,
+					strlen((char *)resp->resp_get_ap_config->bssid)+1));
+	}
 
 	ap_config->channel = resp->resp_get_ap_config->chnl;
 	ap_config->rssi = resp->resp_get_ap_config->rssi;
@@ -453,7 +464,8 @@ int wifi_disconnect_ap ()
 		return FAILURE;
 	}
 
-	if (strcmp(resp->resp_disconnect_ap->resp, success) != 0) {
+	if (strncmp(resp->resp_disconnect_ap->resp, success_str,
+				success_str_len) != 0) {
 		esp_hosted_free(tx_data);
 		tx_data = NULL;
 		esp_hosted_free(rx_data);
@@ -543,7 +555,11 @@ int wifi_set_softap_config (esp_hosted_ap_config_t softap_config)
 	}
 
 	resp = esp_hosted_config_payload__unpack(NULL, rx_len, rx_data);
-	if (strcmp(resp->resp_set_softap_config->status, success) != 0) {
+	if ((!resp) ||
+		(!resp->resp_set_softap_config) ||
+		(!resp->resp_set_softap_config->status) ||
+		(strncmp(resp->resp_set_softap_config->status, success_str,
+				 success_str_len) != 0)) {
 		esp_hosted_free(req_payload);
 		req_payload = NULL;
 		esp_hosted_free(tx_data);
@@ -614,16 +630,23 @@ int wifi_get_softap_config (esp_hosted_ap_config_t* softap_config)
 		return FAILURE;
 	}
 
-	strncpy((char* )softap_config->ssid,
-			resp->resp_get_softap_config->ssid, SSID_LENGTH);
-	strncpy((char* )softap_config->pwd,
-			resp->resp_get_softap_config->pwd, PWD_LENGTH);
+	if (resp->resp_get_softap_config->ssid) {
+		strncpy((char* )softap_config->ssid,
+				resp->resp_get_softap_config->ssid, min(SSID_LENGTH,
+					strlen((char *)resp->resp_get_softap_config->ssid)+1));
+	}
+	if (resp->resp_get_softap_config->pwd) {
+		strncpy((char* )softap_config->pwd,
+				resp->resp_get_softap_config->pwd, min(PWD_LENGTH,
+					strlen((char *)resp->resp_get_softap_config->pwd)+1));
+	}
 	softap_config->channel = resp->resp_get_softap_config->chnl;
 	softap_config->encryption_mode = resp->resp_get_softap_config->ecn;
 	softap_config->max_connections = resp->resp_get_softap_config->max_conn;
 	softap_config->ssid_hidden = resp->resp_get_softap_config->ssid_hidden;
 	softap_config->bandwidth = resp->resp_get_softap_config->bw;
-	if (strcmp(resp->resp_get_softap_config->status, success) != 0) {
+	if (strncmp(resp->resp_get_softap_config->status, success_str,
+				success_str_len) != 0) {
 		command_log("Failed to get softAP configuration \n");
 		esp_hosted_free(tx_data);
 		tx_data = NULL;

@@ -103,7 +103,8 @@ void softap_event_handler(void* arg, esp_event_base_t event_base,
         ESP_LOGI(TAG, "station "MACSTR" join, AID=%d",
                  MAC2STR(event->mac), event->aid);
     } else if (event_id == WIFI_EVENT_AP_STADISCONNECTED) {
-        wifi_event_ap_stadisconnected_t* event = (wifi_event_ap_stadisconnected_t*) event_data;
+        wifi_event_ap_stadisconnected_t* event =
+			(wifi_event_ap_stadisconnected_t*) event_data;
         ESP_LOGI(TAG, "station "MACSTR" leave, AID=%d",
                  MAC2STR(event->mac), event->aid);
 	} else if (event_id == WIFI_EVENT_AP_START) {
@@ -124,32 +125,42 @@ void ap_scan_list_event_handler(void* arg, esp_event_base_t event_base,
 
 static void ap_event_register(void)
 {
-	ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT, WIFI_EVENT_STA_CONNECTED, &ap_event_handler, NULL));
-	ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT, WIFI_EVENT_STA_DISCONNECTED, &ap_event_handler, NULL));
+	ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT,
+				WIFI_EVENT_STA_CONNECTED, &ap_event_handler, NULL));
+	ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT,
+				WIFI_EVENT_STA_DISCONNECTED, &ap_event_handler, NULL));
 }
 
 static void ap_event_unregister(void)
 {
-	ESP_ERROR_CHECK(esp_event_handler_unregister(WIFI_EVENT, WIFI_EVENT_STA_CONNECTED, &ap_event_handler));
-	ESP_ERROR_CHECK(esp_event_handler_unregister(WIFI_EVENT, WIFI_EVENT_STA_DISCONNECTED, &ap_event_handler));
+	ESP_ERROR_CHECK(esp_event_handler_unregister(WIFI_EVENT,
+				WIFI_EVENT_STA_CONNECTED, &ap_event_handler));
+	ESP_ERROR_CHECK(esp_event_handler_unregister(WIFI_EVENT,
+				WIFI_EVENT_STA_DISCONNECTED, &ap_event_handler));
 }
 
 static void softap_event_register(void)
 {
-	ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT, WIFI_EVENT_AP_START, &softap_event_handler, NULL));
-	ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT, WIFI_EVENT_AP_STOP, &softap_event_handler, NULL));
-	ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT, WIFI_EVENT_AP_STACONNECTED, &softap_event_handler, NULL));
-	ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT, WIFI_EVENT_AP_STADISCONNECTED, &softap_event_handler, NULL));
+	ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT,
+				WIFI_EVENT_AP_START, &softap_event_handler, NULL));
+	ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT,
+				WIFI_EVENT_AP_STOP, &softap_event_handler, NULL));
+	ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT,
+				WIFI_EVENT_AP_STACONNECTED, &softap_event_handler, NULL));
+	ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT,
+				WIFI_EVENT_AP_STADISCONNECTED, &softap_event_handler, NULL));
 }
 
 static void ap_scan_list_event_register(void)
 {
-	ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT, WIFI_EVENT_SCAN_DONE, &ap_scan_list_event_handler, NULL));
+	ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT,
+				WIFI_EVENT_SCAN_DONE, &ap_scan_list_event_handler, NULL));
 }
 
 static void ap_scan_list_event_unregister(void)
 {
-	ESP_ERROR_CHECK(esp_event_handler_unregister(WIFI_EVENT,WIFI_EVENT_SCAN_DONE, &ap_scan_list_event_handler));
+	ESP_ERROR_CHECK(esp_event_handler_unregister(WIFI_EVENT,
+				WIFI_EVENT_SCAN_DONE, &ap_scan_list_event_handler));
 }
 
 typedef struct esp_hosted_config_cmd {
@@ -192,7 +203,8 @@ static esp_err_t cmd_get_mac_address_handler(EspHostedConfigPayload *req,
 	}
 
 	sprintf(mac_str,MACSTR,MAC2STR(mac));
-	EspHostedRespGetStatus *resp_payload = (EspHostedRespGetStatus *)calloc(1,sizeof(EspHostedRespGetStatus));
+	EspHostedRespGetStatus *resp_payload =
+		(EspHostedRespGetStatus *)calloc(1,sizeof(EspHostedRespGetStatus));
 	if (resp_payload == NULL) {
 		ESP_LOGE(TAG,"Failed to allocate memory");
 		free(mac_str);
@@ -217,7 +229,8 @@ static esp_err_t cmd_get_wifi_mode_handler (EspHostedConfigPayload *req,
 		ESP_LOGE(TAG, "Failed to get wifi mode %d", ret);
 		return ESP_FAIL;
 	}
-	EspHostedRespGetStatus *resp_payload = (EspHostedRespGetStatus *)calloc(1,sizeof(EspHostedRespGetStatus));
+	EspHostedRespGetStatus *resp_payload =
+		(EspHostedRespGetStatus *)calloc(1,sizeof(EspHostedRespGetStatus));
 	if (resp_payload == NULL) {
 		ESP_LOGE(TAG,"Failed to allocate memory");
 		return ESP_ERR_NO_MEM;
@@ -242,7 +255,8 @@ static esp_err_t cmd_set_wifi_mode_handler (EspHostedConfigPayload *req,
 		ESP_LOGE(TAG,"Failed to set mode");
 		return ESP_FAIL;
 	}
-	EspHostedRespGetStatus *resp_payload = (EspHostedRespGetStatus *)calloc(1,sizeof(EspHostedRespGetStatus));
+	EspHostedRespGetStatus *resp_payload =
+		(EspHostedRespGetStatus *)calloc(1,sizeof(EspHostedRespGetStatus));
 	if (resp_payload == NULL) {
 		ESP_LOGE(TAG,"Failed to allocate memory");
 		return ESP_ERR_NO_MEM;
@@ -286,11 +300,22 @@ static esp_err_t cmd_set_ap_config_handler (EspHostedConfigPayload *req,
 		ESP_LOGE(TAG,"failed to allocate memory");
 		return ESP_ERR_NO_MEM;
 	}
-	memcpy(wifi_cfg->sta.ssid,req->cmd_set_ap_config->ssid,sizeof(wifi_cfg->sta.ssid));
-	memcpy(wifi_cfg->sta.password,req->cmd_set_ap_config->pwd,sizeof(wifi_cfg->sta.password));
-	if (strlen(req->cmd_set_ap_config->bssid) > 1) {
+	if (req->cmd_set_ap_config->ssid) {
+		strncpy((char*)wifi_cfg->sta.ssid,(char*)req->cmd_set_ap_config->ssid,
+				min(sizeof(wifi_cfg->sta.ssid),
+					strlen((char*)req->cmd_set_ap_config->ssid)+1));
+	}
+	if (req->cmd_set_ap_config->pwd) {
+		strncpy((char*)wifi_cfg->sta.password,(char*)req->cmd_set_ap_config->pwd,
+				min(sizeof(wifi_cfg->sta.password),
+					strlen((char *)req->cmd_set_ap_config->pwd)+1));
+	}
+	if (req->cmd_set_ap_config->bssid &&
+		strlen(req->cmd_set_ap_config->bssid) > 1) {
 		wifi_cfg->sta.bssid_set = true;
-		memcpy(wifi_cfg->sta.bssid,req->cmd_set_ap_config->bssid,sizeof(wifi_cfg->sta.bssid));
+		strncpy((char*)wifi_cfg->sta.bssid,(char*)req->cmd_set_ap_config->bssid,
+				min(sizeof(wifi_cfg->sta.bssid),
+					strlen((char*)req->cmd_set_ap_config->bssid)+1));
 	}
 	if (req->cmd_set_ap_config->is_wpa3_supported) {
 		wifi_cfg->sta.pmf_cfg.capable = true;
@@ -304,7 +329,9 @@ static esp_err_t cmd_set_ap_config_handler (EspHostedConfigPayload *req,
 	}
 	ret = esp_wifi_connect();
 	if (ret != ESP_OK) {
-		ESP_LOGE(TAG,"Failed to connect to wifi");
+		ESP_LOGI(TAG, "Failed to connect to SSID:'%s', password:'%s'",
+			req->cmd_set_ap_config->ssid? req->cmd_set_ap_config->ssid:"(null)",
+			req->cmd_set_ap_config->pwd? req->cmd_set_ap_config->pwd: "(null)");
 		return ESP_FAIL;
 	}
 	EventBits_t bits = xEventGroupWaitBits(s_wifi_event_group,
@@ -313,11 +340,15 @@ static esp_err_t cmd_set_ap_config_handler (EspHostedConfigPayload *req,
             pdFALSE,
             portMAX_DELAY);
 	if (bits & WIFI_CONNECTED_BIT) {
-		ESP_LOGI(TAG, "connected to ap SSID:%s password:%s", req->cmd_set_ap_config->ssid , req->cmd_set_ap_config->pwd );
-	hosted_flags.is_ap_connected = true;
+		ESP_LOGI(TAG, "connected to ap SSID:'%s', password:'%s'",
+			req->cmd_set_ap_config->ssid? req->cmd_set_ap_config->ssid:"(null)",
+			req->cmd_set_ap_config->pwd? req->cmd_set_ap_config->pwd:"(null)");
+		hosted_flags.is_ap_connected = true;
 	} else if (bits & WIFI_FAIL_BIT) {
-		ESP_LOGI(TAG, "Failed to connect to SSID:%s, password:%s", req->cmd_set_ap_config->ssid , req->cmd_set_ap_config->pwd );
-	hosted_flags.is_ap_connected = false;
+		ESP_LOGI(TAG, "Failed to connect to SSID:'%s', password:'%s'",
+			req->cmd_set_ap_config->ssid? req->cmd_set_ap_config->ssid:"(null)",
+			req->cmd_set_ap_config->pwd? req->cmd_set_ap_config->pwd: "(null)");
+		hosted_flags.is_ap_connected = false;
 	} else {
 		ESP_LOGE(TAG, "UNEXPECTED EVENT");
 		hosted_flags.is_ap_connected = false;
@@ -332,7 +363,8 @@ static esp_err_t cmd_set_ap_config_handler (EspHostedConfigPayload *req,
 	}
 	ESP_LOGI(TAG,"ssid %s", (char*)ap_info.ssid); */
 
-	EspHostedRespConfig *resp_payload = (EspHostedRespConfig *)calloc(1,sizeof(EspHostedRespConfig));
+	EspHostedRespConfig *resp_payload =
+		(EspHostedRespConfig *)calloc(1,sizeof(EspHostedRespConfig));
 	if (resp_payload == NULL) {
 		ESP_LOGE(TAG,"Failed to allocate memory");
 		ap_event_unregister();
@@ -379,13 +411,17 @@ static esp_err_t cmd_get_ap_config_handler (EspHostedConfigPayload *req,
 	}
 
 	sprintf((char *)credentials.bssid,MACSTR,MAC2STR(ap_info->bssid));
-	memcpy(credentials.ssid,ap_info->ssid,sizeof(credentials.ssid));
+	if (ap_info->ssid) {
+		strncpy((char*)credentials.ssid, (char*)ap_info->ssid,
+				min(sizeof(credentials.ssid), strlen((char*)ap_info->ssid)+1));
+	}
 	credentials.rssi = ap_info->rssi;
 	credentials.chnl = ap_info->primary;
 	credentials.ecn = ap_info->authmode;
 	//ESP_LOGI(TAG,"ssid %s bssid %s",credentials.ssid, credentials.bssid);
 	//ESP_LOGI(TAG,"rssi %d channel %d ", credentials.rssi, credentials.chnl);
-	EspHostedRespConfig *resp_payload = (EspHostedRespConfig *)calloc(1,sizeof(EspHostedRespConfig));
+	EspHostedRespConfig *resp_payload =
+		(EspHostedRespConfig *)calloc(1,sizeof(EspHostedRespConfig));
 	if (resp_payload == NULL) {
 		ESP_LOGE(TAG,"failed to allocate memory");
 		free(ap_info);
@@ -421,7 +457,8 @@ static esp_err_t cmd_disconnect_ap_handler (EspHostedConfigPayload *req,
 		ESP_LOGE(TAG,"Failed to disconnect");
 		return ESP_FAIL;
 	}
-	EspHostedRespGetStatus *resp_payload = (EspHostedRespGetStatus *)calloc(1,sizeof(EspHostedRespGetStatus));
+	EspHostedRespGetStatus *resp_payload =
+		(EspHostedRespGetStatus *)calloc(1,sizeof(EspHostedRespGetStatus));
 	if (resp_payload == NULL) {
 		ESP_LOGE(TAG,"failed to allocate memory");
 		return ESP_ERR_NO_MEM;
@@ -463,7 +500,8 @@ static esp_err_t cmd_get_softap_config_handler (EspHostedConfigPayload *req,
 		free(get_bw);
 		return ESP_FAIL;
 	}
-	EspHostedRespConfig *resp_payload = (EspHostedRespConfig *)calloc(1,sizeof(EspHostedRespConfig));
+	EspHostedRespConfig *resp_payload =
+		(EspHostedRespConfig *)calloc(1,sizeof(EspHostedRespConfig));
 	if (resp_payload == NULL) {
 		ESP_LOGE(TAG,"Failed to allocate memory");
 		free(get_conf);
@@ -471,15 +509,21 @@ static esp_err_t cmd_get_softap_config_handler (EspHostedConfigPayload *req,
 		return ESP_ERR_NO_MEM;
 	}
 	esp_hosted_resp_config__init (resp_payload);
-	memcpy(credentials.ssid,get_conf->ap.ssid,sizeof(credentials.ssid));
-	if (strlen((char*)get_conf->ap.password)) {
-		memcpy(credentials.pwd,get_conf->ap.password,sizeof(credentials.pwd));
+	if (get_conf->ap.ssid) {
+		strncpy((char*)credentials.ssid,(char*)get_conf->ap.ssid,
+			min(sizeof(credentials.ssid), strlen((char*)get_conf->ap.ssid)+1));
+	}
+	if (get_conf->ap.password) {
+		strncpy((char*)credentials.pwd,(char*)get_conf->ap.password,
+			min(sizeof(credentials.pwd), strlen((char*)get_conf->ap.password)+1));
 	}
 	credentials.chnl = get_conf->ap.channel;
 	credentials.max_conn = get_conf->ap.max_connection;
 	credentials.ecn = get_conf->ap.authmode;
 	credentials.ssid_hidden = get_conf->ap.ssid_hidden;
-	//ESP_LOGI(TAG,"ssid %s pwd %s chnl %d ecn %d max_conn %d ssid_hidden %d",credentials.ssid, credentials.pwd, credentials.chnl, credentials.ecn, credentials.max_conn, credentials.ssid_hidden );
+	//ESP_LOGI(TAG,"ssid %s pwd %s chnl %d ecn %d max_conn %d ssid_hidden %d",
+	//credentials.ssid, credentials.pwd, credentials.chnl, credentials.ecn,
+	//credentials.max_conn, credentials.ssid_hidden );
 	resp_payload->ssid = (char *)credentials.ssid;
 	resp_payload->pwd = (char *)credentials.pwd;
 	resp_payload->has_chnl = 1;
@@ -505,7 +549,7 @@ static esp_err_t cmd_get_softap_config_handler (EspHostedConfigPayload *req,
 
 // Function sets softAP's configuration
 static esp_err_t cmd_set_softap_config_handler (EspHostedConfigPayload *req,
-                                        EspHostedConfigPayload *resp, void *priv_data)
+		EspHostedConfigPayload *resp, void *priv_data)
 {
 	esp_err_t ret;
 	softap_event_register();
@@ -528,10 +572,20 @@ static esp_err_t cmd_set_softap_config_handler (EspHostedConfigPayload *req,
 	wifi_config->ap.authmode = req->cmd_set_softap_config->ecn;
 
 	if (wifi_config->ap.authmode != WIFI_AUTH_OPEN)	{
-		memcpy(wifi_config->ap.password,req->cmd_set_softap_config->pwd,sizeof(wifi_config->ap.password));
+		if (req->cmd_set_softap_config->pwd) {
+			strncpy((char*)wifi_config->ap.password,
+				(char*)req->cmd_set_softap_config->pwd,
+				min(sizeof(wifi_config->ap.password),
+					strlen((char*)req->cmd_set_softap_config->pwd)));
+		}
 	}
 
-	memcpy(wifi_config->ap.ssid,req->cmd_set_softap_config->ssid,sizeof(wifi_config->ap.ssid));
+	if (req->cmd_set_softap_config->ssid) {
+		strncpy((char*)wifi_config->ap.ssid,
+				(char*)req->cmd_set_softap_config->ssid,
+				min(sizeof(wifi_config->ap.ssid),
+					strlen((char*)req->cmd_set_softap_config->ssid)+1));
+	}
 	wifi_config->ap.ssid_len = strlen(req->cmd_set_softap_config->ssid);
 	wifi_config->ap.channel = req->cmd_set_softap_config->chnl;
 
@@ -557,9 +611,14 @@ static esp_err_t cmd_set_softap_config_handler (EspHostedConfigPayload *req,
 		free(wifi_config);
 		return ESP_FAIL;
 	}
-	ESP_LOGI(TAG,"ssid %s pwd %s authmode %d ssid_hidden %d max_conn %d channel %d", wifi_config->ap.ssid, wifi_config->ap.password, wifi_config->ap.authmode,wifi_config->ap.ssid_hidden,wifi_config->ap.max_connection,wifi_config->ap.channel);
+	ESP_LOGI(TAG,"ssid %s pwd %s authmode %d ssid_hidden %d max_conn %d channel %d",
+		wifi_config->ap.ssid, wifi_config->ap.password,
+		wifi_config->ap.authmode, wifi_config->ap.ssid_hidden,
+		wifi_config->ap.max_connection,wifi_config->ap.channel);
 
-	EspHostedRespConfig *resp_payload = (EspHostedRespConfig *)calloc(1,sizeof(EspHostedRespConfig));
+	EspHostedRespConfig *resp_payload =
+		(EspHostedRespConfig *)calloc(1,sizeof(EspHostedRespConfig));
+
 	if (resp_payload == NULL) {
 		ESP_LOGE(TAG,"Failed to allocate memory");
 		free(wifi_config);
@@ -578,7 +637,7 @@ static esp_err_t cmd_set_softap_config_handler (EspHostedConfigPayload *req,
 
 // Function sends available AP's list
 static esp_err_t cmd_get_ap_scan_list_handler (EspHostedConfigPayload *req,
-                                        EspHostedConfigPayload *resp, void *priv_data)
+		EspHostedConfigPayload *resp, void *priv_data)
 {
 	esp_err_t ret;
 	wifi_mode_t mode;
@@ -587,7 +646,8 @@ static esp_err_t cmd_get_ap_scan_list_handler (EspHostedConfigPayload *req,
 		ESP_LOGE(TAG,"Failed to get wifi mode");
 		return ESP_FAIL;
 	}
-	if (hosted_flags.is_softap_started && (mode != WIFI_MODE_STA && mode != WIFI_MODE_NULL)) {
+	if ((hosted_flags.is_softap_started) &&
+		(mode != WIFI_MODE_STA && mode != WIFI_MODE_NULL)) {
 		ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_APSTA));
 		ESP_LOGI(TAG,"APSTA mode set in scan handler");
 	} else {
@@ -611,7 +671,8 @@ static esp_err_t cmd_get_ap_scan_list_handler (EspHostedConfigPayload *req,
 		ESP_LOGE(TAG,"No AP available");
 		return ESP_FAIL;
 	}
-	wifi_ap_record_t *ap_info = (wifi_ap_record_t *)calloc(ap_count,sizeof(wifi_ap_record_t));
+	wifi_ap_record_t *ap_info =
+		(wifi_ap_record_t *)calloc(ap_count,sizeof(wifi_ap_record_t));
 	if (ap_info == NULL) {
 		ESP_LOGE(TAG,"Failed to allocate memory");
 		return ESP_ERR_NO_MEM;
@@ -624,7 +685,8 @@ static esp_err_t cmd_get_ap_scan_list_handler (EspHostedConfigPayload *req,
 	}
 	ESP_LOGI(TAG,"Total APs scanned = %u",ap_count);
 	credentials.count = ap_count;
-	EspHostedRespScanResult * resp_payload = (EspHostedRespScanResult *)calloc(1,sizeof(EspHostedRespScanResult));
+	EspHostedRespScanResult * resp_payload =
+		(EspHostedRespScanResult *)calloc(1,sizeof(EspHostedRespScanResult));
 	if (resp_payload == NULL) {
 		ESP_LOGE(TAG,"Failed To allocate memory");
 		free(ap_info);
@@ -636,7 +698,9 @@ static esp_err_t cmd_get_ap_scan_list_handler (EspHostedConfigPayload *req,
 	resp_payload->has_count = 1;
 	resp_payload->count = credentials.count;
 	resp_payload->n_entries = credentials.count;
-	EspHostedScanResult **results = (EspHostedScanResult **) calloc(credentials.count,sizeof(EspHostedScanResult));
+	EspHostedScanResult **results =
+		(EspHostedScanResult **) calloc(credentials.count,
+				sizeof(EspHostedScanResult));
 	if (results == NULL) {
 		ESP_LOGE(TAG,"Failed To allocate memory");
 		free(ap_info);
@@ -722,7 +786,8 @@ static esp_err_t get_connected_sta_list_handler (EspHostedConfigPayload *req,
 	if (!stas_info->num) {
 		ESP_LOGE(TAG,"No station is connected");
 	}
-	EspHostedRespConnectedSTA *resp_payload = (EspHostedRespConnectedSTA *)calloc(1,sizeof(EspHostedRespConnectedSTA));
+	EspHostedRespConnectedSTA *resp_payload =
+		(EspHostedRespConnectedSTA *)calloc(1,sizeof(EspHostedRespConnectedSTA));
 	if (resp_payload == NULL) {
 		ESP_LOGE(TAG,"failed to allocate memory resp payload");
 		free(stas_info);
@@ -735,7 +800,9 @@ static esp_err_t get_connected_sta_list_handler (EspHostedConfigPayload *req,
 	resp_payload->num = stas_info->num;
 	if (stas_info->num) {
 		resp_payload->n_stations = stas_info->num;
-		EspHostedConnectedSTAList **results = (EspHostedConnectedSTAList **) calloc(stas_info->num,sizeof(EspHostedConnectedSTAList));
+		EspHostedConnectedSTAList **results =
+			(EspHostedConnectedSTAList **) calloc(stas_info->num, \
+					sizeof(EspHostedConnectedSTAList));
 		if (results == NULL) {
 			ESP_LOGE(TAG,"Failed to allocate memory connected sta");
 			free(stas_info);
@@ -743,8 +810,10 @@ static esp_err_t get_connected_sta_list_handler (EspHostedConfigPayload *req,
 		}
 		resp_payload->stations = results;
 		for (int i = 0; i < stas_info->num ; i++) {
-			sprintf((char *)credentials.bssid,MACSTR,MAC2STR(stas_info->sta[i].mac));
-			results[i] = (EspHostedConnectedSTAList *)calloc(1,sizeof(EspHostedConnectedSTAList));
+			sprintf((char *)credentials.bssid,
+					MACSTR,MAC2STR(stas_info->sta[i].mac));
+			results[i] = (EspHostedConnectedSTAList *)calloc(1,\
+					sizeof(EspHostedConnectedSTAList));
 			if (results[i] == NULL) {
 				ESP_LOGE(TAG,"Failed to allocated memory");
 				free(stas_info);
@@ -753,7 +822,8 @@ static esp_err_t get_connected_sta_list_handler (EspHostedConfigPayload *req,
 			esp_hosted_connected_stalist__init(results[i]);
 			results[i]->has_mac = 1;
 			results[i]->mac.len = strnlen((char *)credentials.bssid,19);
-			results[i]->mac.data = (uint8_t *)strndup((char *)credentials.bssid,19);
+			results[i]->mac.data =
+				(uint8_t *)strndup((char *)credentials.bssid,19);
 			if (!results[i]->mac.data) {
 				ESP_LOGE(TAG,"Failed to allocate memory mac address");
 				free(stas_info);
@@ -822,7 +892,9 @@ static int lookup_cmd_handler(int cmd_id)
     return -1;
 }
 
-static esp_err_t esp_hosted_config_command_dispatcher(EspHostedConfigPayload *req, EspHostedConfigPayload *resp, void *priv_data)
+static esp_err_t esp_hosted_config_command_dispatcher(
+		EspHostedConfigPayload *req, EspHostedConfigPayload *resp,
+		void *priv_data)
 {
 	esp_err_t ret;
 	int cmd_index = lookup_cmd_handler(req->msg);
@@ -937,7 +1009,8 @@ static void esp_hosted_config_cleanup(EspHostedConfigPayload *resp)
 	return;
 }
 
-esp_err_t data_transfer_handler(uint32_t session_id,const uint8_t *inbuf, ssize_t inlen,uint8_t **outbuf, ssize_t *outlen, void *priv_data)
+esp_err_t data_transfer_handler(uint32_t session_id,const uint8_t *inbuf,
+		ssize_t inlen,uint8_t **outbuf, ssize_t *outlen, void *priv_data)
 {
 	EspHostedConfigPayload *req;
 	EspHostedConfigPayload resp;
