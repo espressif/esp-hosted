@@ -177,10 +177,10 @@ def wifi_set_softap_config(ssid, pwd, chnl, ecn, max_conn, ssid_hidden, bw):
     set_softap_config.cmd_set_softap_config.ssid = str(ssid)
     set_softap_config.cmd_set_softap_config.pwd = str(pwd)
     set_softap_config.cmd_set_softap_config.chnl = chnl
-    if ecn < esp_hosted_config_pb2.EncryptionMode.Type_WPA3_PSK:
+    if ecn < esp_hosted_config_pb2.EspHostedEncryptionMode.Type_WPA3_PSK:
         set_softap_config.cmd_set_softap_config.ecn = ecn
     else:
-        set_softap_config.cmd_set_softap_config.ecn = esp_hosted_config_pb2.EncryptionMode.Type_WPA2_PSK
+        set_softap_config.cmd_set_softap_config.ecn = esp_hosted_config_pb2.EspHostedEncryptionMode.Type_WPA2_PSK
         print("Asked Encryption method is not supported in SoftAP mode, Setting Encryption method as WPA2_PSK")
     set_softap_config.cmd_set_softap_config.max_conn = max_conn
     set_softap_config.cmd_set_softap_config.ssid_hidden = ssid_hidden
