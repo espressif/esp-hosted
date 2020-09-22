@@ -67,4 +67,7 @@ if (x == failure):
 else :
     for obj in x:
         print(obj.mac)
+
+x = commands.wifi_set_mac(2,"5a:11:11:11:11:11")
+print(x)
 '''

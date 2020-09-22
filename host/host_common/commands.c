@@ -845,3 +845,96 @@ int wifi_connected_stations_list(esp_hosted_wifi_connected_stations_list** list,
 	esp_hosted_free(rx_data);
 	return SUCCESS;
 }
+
+int wifi_set_mac(int mode, char* mac)
+{
+    EspHostedConfigPayload req;
+    EspHostedConfigPayload *resp;
+    uint32_t tx_len = 0, rx_len = 0;
+    uint8_t* tx_data = NULL;
+    uint8_t* rx_data = NULL;
+
+    if (!mac) {
+        command_log("Invalid parameter \n");
+        return FAILURE;
+    }
+
+    esp_hosted_config_payload__init (&req);
+    req.has_msg = 1;
+    req.msg = ESP_HOSTED_CONFIG_MSG_TYPE__TypeCmdSetMacAddress;
+    req.payload_case = ESP_HOSTED_CONFIG_PAYLOAD__PAYLOAD_CMD_SET_MAC_ADDRESS;
+
+    EspHostedCmdSetMacAddress *req_payload = (EspHostedCmdSetMacAddress* ) \
+                                             esp_hosted_calloc(1, sizeof(EspHostedCmdSetMacAddress));
+    if (!req_payload) {
+        command_log("Failed to allocate memory \n");
+        return FAILURE;
+    }
+
+    esp_hosted_cmd_set_mac_address__init(req_payload);
+    req_payload->has_mode = 1;
+    req_payload->mode = mode;
+    req_payload->has_mac = 1;
+    req_payload->mac.len = strlen(mac);
+    req_payload->mac.data = (uint8_t* )mac;
+    req.cmd_set_mac_address = req_payload;
+    tx_len = esp_hosted_config_payload__get_packed_size(&req);
+    if (!tx_len) {
+        command_log("Invalid tx length \n");
+        esp_hosted_free(req_payload);
+        req_payload = NULL;
+        return FAILURE;
+    }
+
+    tx_data = (uint8_t* )esp_hosted_calloc (1, tx_len);
+    if (!tx_data) {
+        command_log("Failed to allocate memory \n");
+        esp_hosted_free(req_payload);
+        req_payload = NULL;
+        return FAILURE;
+    }
+
+    esp_hosted_config_payload__pack(&req, tx_data);
+
+    rx_data = transport_pserial_data_handler(tx_data, tx_len,
+            TIMEOUT_PSERIAL_RESP, &rx_len);
+    if (!rx_data || !rx_len) {
+        command_log("Failed to process RX data \n");
+        esp_hosted_free(req_payload);
+        req_payload = NULL;
+        esp_hosted_free(tx_data);
+        tx_data = NULL;
+        return FAILURE;
+    }
+
+    resp = esp_hosted_config_payload__unpack(NULL, rx_len, rx_data);
+    if ((!resp) ||
+            (!resp->resp_set_mac_address) ||
+            (!resp->resp_set_mac_address->resp.data))
+    {
+        esp_hosted_free(tx_data);
+        tx_data = NULL;
+        esp_hosted_free(rx_data);
+        rx_data = NULL;
+        esp_hosted_free(req_payload);
+        req_payload = NULL;
+        return FAILURE;
+    }
+
+    if (strncmp((char* )resp->resp_set_mac_address->resp.data, success_str, success_str_len) != 0) {
+        esp_hosted_free(req_payload);
+        req_payload = NULL;
+        esp_hosted_free(tx_data);
+        tx_data = NULL;
+        esp_hosted_free(rx_data);
+        rx_data = NULL;
+        return FAILURE;
+    }
+    esp_hosted_free(tx_data);
+    tx_data = NULL;
+    esp_hosted_free(rx_data);
+    rx_data = NULL;
+    esp_hosted_free(req_payload);
+    req_payload = NULL;
+    return SUCCESS;
+}

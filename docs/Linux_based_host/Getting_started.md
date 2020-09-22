@@ -2,19 +2,21 @@
 
 ## Wi-Fi Connectivity
 
-[`host_commands`](../../host/linux/host_control/host_commands) python module in `host/linux/host_control` directory implements the communication protocol between the host and ESP32. It contains following functions:
-```
-wifi_get_mac(mode)
-wifi_get_mode()
-wifi_set_mode(mode)
-wifi_set_ap_config(ssid, pwd, bssid, is_wpa3_supported)
-wifi_get_ap_config()
-wifi_disconnect_ap()
-wifi_set_softap_config(ssid, pwd, chnl, ecn, max_conn, ssid_hidden, bw)
-wifi_get_softap_config()
-wifi_ap_scan_list()
-wifi_connected_stations_list()
-```
+[`host_commands`](../../host/linux/host_control/host_commands) python module in `host/linux/host_control` directory implements the communication protocol between the host and ESP32. It contains following functions which can be used to control Wi-Fi functionality of the ESP32 as follows:
+
+| Function | Functionality |
+|:--------|:-------------|
+| wifi_get_mac(mode) | get MAC address of station or softAP Interface |
+| wifi_get_mode() | get wifi mode |
+| wifi_set_mode(mode) | set wifi mode |
+| wifi_set_ap_config(ssid, pwd, bssid, is_wpa3_supported) | connect to AP as a station |
+| wifi_get_ap_config() | get AP configuration and status |
+| wifi_disconnect_ap() | disconnect from AP |
+| wifi_set_softap_config(ssid, pwd, chnl, ecn, max_conn, ssid_hidden, bw) | start softAP |
+| wifi_get_softap_config() | get softAP configuration |
+| wifi_ap_scan_list() | scan available APs |
+| wifi_connected_stations_list() | list stations connected to softAP |
+| wifi_set_mac(mode, mac) | sets custom mac address for station and softAP Interface |
 
 These python functions can be used to control Wi-Fi functionality of the ESP32. Also see [host/linux/host_control/test.py](../../host/linux/host_control/test.py) script for an example of using these functions. You can run the script as follows:
 ```

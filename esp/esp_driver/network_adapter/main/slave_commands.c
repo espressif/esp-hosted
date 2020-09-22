@@ -26,6 +26,8 @@
 #include "slave_commands.h"
 #include "esp_hosted_config.pb-c.h"
 
+#define MAC_LEN                  6
+#define MAC_STR_LEN       		 17
 #define MAC2STR(a) (a)[0], (a)[1], (a)[2], (a)[3], (a)[4], (a)[5]
 #define MACSTR "%02x:%02x:%02x:%02x:%02x:%02x"
 #define SUCCESS "success"
@@ -162,6 +164,39 @@ static void ap_scan_list_event_unregister(void)
 {
 	ESP_ERROR_CHECK(esp_event_handler_unregister(WIFI_EVENT,
 				WIFI_EVENT_SCAN_DONE, &ap_scan_list_event_handler));
+}
+
+/**
+  * @brief  Convert mac string to byte stream
+  * @param  out - output mac in bytes
+  *         s - input mac string
+  * @retval ESP_OK/ESP_FAIL
+  */
+static esp_err_t convert_mac_to_bytes(uint8_t *out, char *s)
+{
+	int mac[MAC_LEN] = {0};
+	int num_bytes = 0;
+	if (!s || (strlen(s) < MAC_STR_LEN))  {
+		return ESP_FAIL;
+	}
+	num_bytes =  sscanf(s, "%2x:%2x:%2x:%2x:%2x:%2x",
+			&mac[0],&mac[1], &mac[2], &mac[3], &mac[4], &mac[5]);
+	if ((num_bytes < MAC_LEN)  ||
+		(mac[0] > 0xFF) ||
+		(mac[1] > 0xFF) ||
+		(mac[2] > 0xFF) ||
+		(mac[3] > 0xFF) ||
+		(mac[4] > 0xFF) ||
+		(mac[5] > 0xFF)) {
+		return ESP_FAIL;
+	}
+	out[0] = mac[0]&0xff;
+	out[1] = mac[1]&0xff;
+	out[2] = mac[2]&0xff;
+	out[3] = mac[3]&0xff;
+	out[4] = mac[4]&0xff;
+	out[5] = mac[5]&0xff;
+	return ESP_OK;
 }
 
 typedef struct esp_hosted_config_cmd {
@@ -847,6 +882,62 @@ static esp_err_t get_connected_sta_list_handler (EspHostedConfigPayload *req,
 	return ESP_OK;
 }
 
+static esp_err_t cmd_set_mac_address_handler (EspHostedConfigPayload *req,
+                                        EspHostedConfigPayload *resp, void *priv_data)
+{
+	esp_err_t ret = ESP_OK;
+	uint8_t mac[MAC_LEN] = {0};
+	EspHostedRespSetMacAddress *resp_payload = (EspHostedRespSetMacAddress*)
+                        calloc(1,sizeof(EspHostedRespSetMacAddress));
+	if (resp_payload == NULL) {
+		ESP_LOGE(TAG,"failed to allocate memory");
+		return ESP_ERR_NO_MEM;
+	}
+	esp_hosted_resp_set_mac_address__init(resp_payload);
+	resp_payload->has_resp = 1;
+	resp->payload_case = ESP_HOSTED_CONFIG_PAYLOAD__PAYLOAD_RESP_SET_MAC_ADDRESS;
+	resp->resp_set_mac_address = resp_payload;
+	if (!req || !req->cmd_set_mac_address || !req->cmd_set_mac_address->mac.data) {
+		ESP_LOGE(TAG," Invalid command request");
+		goto err;
+	}
+	if (req->cmd_set_mac_address->mac.len > MAC_STR_LEN) {
+		ESP_LOGE(TAG, "MAC address should be in aa:bb:cc:dd:ee:ff format");
+		goto err;
+	}
+	ret = convert_mac_to_bytes(mac, (char* )req->cmd_set_mac_address->mac.data);
+	if (ret) {
+		ESP_LOGE(TAG, "Mac address not recognized from %s", (char* )req->cmd_set_mac_address->mac.data);
+		goto err;
+	}
+	if (req->cmd_set_mac_address->mode == WIFI_MODE_STA) {
+		ret = esp_wifi_set_mac(WIFI_IF_STA, mac);
+		if (ret == ESP_ERR_WIFI_MAC) {
+			ESP_LOGE(TAG, "Invalid MAC Address, The bit 0 of the first byte of ESP32 MAC address can not be 1, For example, the MAC address can set to be 1a:XX:XX:XX:XX:XX, but can not be 15:XX:XX:XX:XX:XX");
+			goto err;
+		} else if (ret != ESP_OK) {
+			ESP_LOGE(TAG, "Failed to set MAC address for station, error %d ", ret);
+			goto err;
+		}
+	} else if (req->cmd_set_mac_address->mode == WIFI_MODE_AP) {
+	    ret = esp_wifi_set_mac(WIFI_IF_AP, mac);
+	    if (ret != ESP_OK) {
+	        ESP_LOGE(TAG, "Failed to set MAC address for AP, error %d ", ret);
+	        goto err;
+	    }
+	} else {
+	    ESP_LOGE(TAG, "Invalid mode to set MAC address");
+	    goto err;
+	}
+	resp_payload->resp.len = strlen(SUCCESS);
+	resp_payload->resp.data = (uint8_t* )strdup(SUCCESS);
+	return ESP_OK;
+err:
+	resp_payload->resp.len = strlen(FAILURE);
+	resp_payload->resp.data = (uint8_t* )strdup(FAILURE);
+	return ESP_OK;
+}
+
 static esp_hosted_config_cmd_t cmd_table[] = {
 	{
 		.cmd_num = ESP_HOSTED_CONFIG_MSG_TYPE__TypeCmdGetMACAddress ,
@@ -887,6 +978,10 @@ static esp_hosted_config_cmd_t cmd_table[] = {
 	{
 		.cmd_num = ESP_HOSTED_CONFIG_MSG_TYPE__TypeCmdGetConnectedSTAList ,
 		.command_handler = get_connected_sta_list_handler
+	},
+	{
+		.cmd_num = ESP_HOSTED_CONFIG_MSG_TYPE__TypeCmdSetMacAddress,
+		.command_handler = cmd_set_mac_address_handler
 	},
 };
 
@@ -1008,6 +1103,15 @@ static void esp_hosted_config_cleanup(EspHostedConfigPayload *resp)
 				}
 				free(resp->resp_connected_stas_list);
 				memset(&credentials,0,sizeof(credentials_t));
+			}
+		}
+		break;
+		case (ESP_HOSTED_CONFIG_MSG_TYPE__TypeRespSetMacAddress) : {
+			if (resp->resp_set_mac_address) {
+				if (resp->resp_set_mac_address->resp.data) {
+					free(resp->resp_set_mac_address->resp.data);
+				}
+				free(resp->resp_set_mac_address);
 			}
 		}
 		break;

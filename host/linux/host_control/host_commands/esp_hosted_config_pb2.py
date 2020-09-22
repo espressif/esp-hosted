@@ -20,7 +20,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   syntax='proto3',
   serialized_options=None,
   create_key=_descriptor._internal_create_key,
-  serialized_pb=b'\n\x17\x65sp_hosted_config.proto\"2\n\x15\x45spHostedCmdGetStatus\x12\x0b\n\x03\x63md\x18\x01 \x01(\t\x12\x0c\n\x04mode\x18\x02 \x01(\x05\"4\n\x16\x45spHostedRespGetStatus\x12\x0c\n\x04resp\x18\x01 \x01(\t\x12\x0c\n\x04mode\x18\x02 \x01(\x05\"\xdf\x01\n\x12\x45spHostedCmdConfig\x12\x0c\n\x04ssid\x18\x01 \x01(\t\x12\x0b\n\x03pwd\x18\x02 \x01(\t\x12%\n\x03\x65\x63n\x18\x03 \x01(\x0e\x32\x18.EspHostedEncryptionMode\x12\x0c\n\x04\x63hnl\x18\x04 \x01(\x05\x12\x10\n\x08max_conn\x18\x05 \x01(\x05\x12\x13\n\x0bssid_hidden\x18\x06 \x01(\x08\x12\r\n\x05\x62ssid\x18\x07 \x01(\t\x12\x0c\n\x04rssi\x18\x08 \x01(\x05\x12\x0e\n\x06status\x18\t \x01(\t\x12\n\n\x02\x62w\x18\n \x01(\x05\x12\x19\n\x11is_wpa3_supported\x18\x0b \x01(\x08\"\xe0\x01\n\x13\x45spHostedRespConfig\x12\x0c\n\x04ssid\x18\x01 \x01(\t\x12\x0b\n\x03pwd\x18\x02 \x01(\t\x12%\n\x03\x65\x63n\x18\x03 \x01(\x0e\x32\x18.EspHostedEncryptionMode\x12\x0c\n\x04\x63hnl\x18\x04 \x01(\x05\x12\x10\n\x08max_conn\x18\x05 \x01(\x05\x12\x13\n\x0bssid_hidden\x18\x06 \x01(\x08\x12\r\n\x05\x62ssid\x18\x07 \x01(\t\x12\x0c\n\x04rssi\x18\x08 \x01(\x05\x12\x0e\n\x06status\x18\t \x01(\t\x12\n\n\x02\x62w\x18\n \x01(\x05\x12\x19\n\x11is_wpa3_supported\x18\x0b \x01(\x08\"u\n\x13\x45spHostedScanResult\x12\x0c\n\x04ssid\x18\x01 \x01(\x0c\x12\x0c\n\x04\x63hnl\x18\x02 \x01(\r\x12\x0c\n\x04rssi\x18\x03 \x01(\x05\x12\r\n\x05\x62ssid\x18\x04 \x01(\x0c\x12%\n\x03\x65\x63n\x18\x05 \x01(\x0e\x32\x18.EspHostedEncryptionMode\"\x18\n\x16\x45spHostedCmdScanResult\"O\n\x17\x45spHostedRespScanResult\x12\r\n\x05\x63ount\x18\x01 \x01(\r\x12%\n\x07\x65ntries\x18\x02 \x03(\x0b\x32\x14.EspHostedScanResult\"6\n\x19\x45spHostedConnectedSTAList\x12\x0b\n\x03mac\x18\x01 \x01(\x0c\x12\x0c\n\x04rssi\x18\x02 \x01(\x05\"\x1a\n\x18\x45spHostedCmdConnectedSTA\"V\n\x19\x45spHostedRespConnectedSTA\x12\x0b\n\x03num\x18\x01 \x01(\r\x12,\n\x08stations\x18\x02 \x03(\x0b\x32\x1a.EspHostedConnectedSTAList\"\x8f\t\n\x16\x45spHostedConfigPayload\x12$\n\x03msg\x18\x01 \x01(\x0e\x32\x17.EspHostedConfigMsgType\x12\x35\n\x13\x63md_get_mac_address\x18\n \x01(\x0b\x32\x16.EspHostedCmdGetStatusH\x00\x12\x37\n\x14resp_get_mac_address\x18\x0b \x01(\x0b\x32\x17.EspHostedRespGetStatusH\x00\x12\x33\n\x11\x63md_get_wifi_mode\x18\x0c \x01(\x0b\x32\x16.EspHostedCmdGetStatusH\x00\x12\x35\n\x12resp_get_wifi_mode\x18\r \x01(\x0b\x32\x17.EspHostedRespGetStatusH\x00\x12\x33\n\x11\x63md_set_wifi_mode\x18\x0e \x01(\x0b\x32\x16.EspHostedCmdGetStatusH\x00\x12\x35\n\x12resp_set_wifi_mode\x18\x0f \x01(\x0b\x32\x17.EspHostedRespGetStatusH\x00\x12\x30\n\x11\x63md_get_ap_config\x18\x10 \x01(\x0b\x32\x13.EspHostedCmdConfigH\x00\x12\x32\n\x12resp_get_ap_config\x18\x11 \x01(\x0b\x32\x14.EspHostedRespConfigH\x00\x12\x30\n\x11\x63md_set_ap_config\x18\x12 \x01(\x0b\x32\x13.EspHostedCmdConfigH\x00\x12\x32\n\x12resp_set_ap_config\x18\x13 \x01(\x0b\x32\x14.EspHostedRespConfigH\x00\x12\x34\n\x15\x63md_get_softap_config\x18\x14 \x01(\x0b\x32\x13.EspHostedCmdConfigH\x00\x12\x36\n\x16resp_get_softap_config\x18\x15 \x01(\x0b\x32\x14.EspHostedRespConfigH\x00\x12\x34\n\x15\x63md_set_softap_config\x18\x16 \x01(\x0b\x32\x13.EspHostedCmdConfigH\x00\x12\x36\n\x16resp_set_softap_config\x18\x17 \x01(\x0b\x32\x14.EspHostedRespConfigH\x00\x12\x33\n\x11\x63md_disconnect_ap\x18\x18 \x01(\x0b\x32\x16.EspHostedCmdGetStatusH\x00\x12\x35\n\x12resp_disconnect_ap\x18\x19 \x01(\x0b\x32\x17.EspHostedRespGetStatusH\x00\x12\x33\n\x10\x63md_scan_ap_list\x18\x1a \x01(\x0b\x32\x17.EspHostedCmdScanResultH\x00\x12\x35\n\x11resp_scan_ap_list\x18\x1b \x01(\x0b\x32\x18.EspHostedRespScanResultH\x00\x12<\n\x17\x63md_connected_stas_list\x18\x1c \x01(\x0b\x32\x19.EspHostedCmdConnectedSTAH\x00\x12>\n\x18resp_connected_stas_list\x18\x1d \x01(\x0b\x32\x1a.EspHostedRespConnectedSTAH\x00\x42\t\n\x07payload*\xb7\x01\n\x17\x45spHostedEncryptionMode\x12\r\n\tType_Open\x10\x00\x12\x0c\n\x08Type_WEP\x10\x01\x12\x10\n\x0cType_WPA_PSK\x10\x02\x12\x11\n\rType_WPA2_PSK\x10\x03\x12\x15\n\x11Type_WPA_WPA2_PSK\x10\x04\x12\x18\n\x14Type_WPA2_ENTERPRISE\x10\x05\x12\x11\n\rType_WPA3_PSK\x10\x06\x12\x16\n\x12Type_WPA2_WPA3_PSK\x10\x07*\xac\x04\n\x16\x45spHostedConfigMsgType\x12\x18\n\x14TypeCmdGetMACAddress\x10\x00\x12\x19\n\x15TypeRespGetMACAddress\x10\x01\x12\x16\n\x12TypeCmdGetWiFiMode\x10\x02\x12\x17\n\x13TypeRespGetWiFiMode\x10\x03\x12\x16\n\x12TypeCmdSetWiFiMode\x10\x04\x12\x17\n\x13TypeRespSetWiFiMode\x10\x05\x12\x16\n\x12TypeCmdGetAPConfig\x10\x06\x12\x17\n\x13TypeRespGetAPConfig\x10\x07\x12\x16\n\x12TypeCmdSetAPConfig\x10\x08\x12\x17\n\x13TypeRespSetAPConfig\x10\t\x12\x1a\n\x16TypeCmdGetSoftAPConfig\x10\n\x12\x1b\n\x17TypeRespGetSoftAPConfig\x10\x0b\x12\x1a\n\x16TypeCmdSetSoftAPConfig\x10\x0c\x12\x1b\n\x17TypeRespSetSoftAPConfig\x10\r\x12\x17\n\x13TypeCmdDisconnectAP\x10\x0e\x12\x18\n\x14TypeRespDisconnectAP\x10\x0f\x12\x18\n\x14TypeCmdGetAPScanList\x10\x10\x12\x19\n\x15TypeRespGetAPScanList\x10\x11\x12\x1e\n\x1aTypeCmdGetConnectedSTAList\x10\x12\x12\x1f\n\x1bTypeRespGetConnectedSTAList\x10\x13\x62\x06proto3'
+  serialized_pb=b'\n\x17\x65sp_hosted_config.proto\"2\n\x15\x45spHostedCmdGetStatus\x12\x0b\n\x03\x63md\x18\x01 \x01(\t\x12\x0c\n\x04mode\x18\x02 \x01(\x05\"4\n\x16\x45spHostedRespGetStatus\x12\x0c\n\x04resp\x18\x01 \x01(\t\x12\x0c\n\x04mode\x18\x02 \x01(\x05\"6\n\x19\x45spHostedCmdSetMacAddress\x12\x0b\n\x03mac\x18\x01 \x01(\x0c\x12\x0c\n\x04mode\x18\x02 \x01(\x05\"*\n\x1a\x45spHostedRespSetMacAddress\x12\x0c\n\x04resp\x18\x01 \x01(\x0c\"\xdf\x01\n\x12\x45spHostedCmdConfig\x12\x0c\n\x04ssid\x18\x01 \x01(\t\x12\x0b\n\x03pwd\x18\x02 \x01(\t\x12%\n\x03\x65\x63n\x18\x03 \x01(\x0e\x32\x18.EspHostedEncryptionMode\x12\x0c\n\x04\x63hnl\x18\x04 \x01(\x05\x12\x10\n\x08max_conn\x18\x05 \x01(\x05\x12\x13\n\x0bssid_hidden\x18\x06 \x01(\x08\x12\r\n\x05\x62ssid\x18\x07 \x01(\t\x12\x0c\n\x04rssi\x18\x08 \x01(\x05\x12\x0e\n\x06status\x18\t \x01(\t\x12\n\n\x02\x62w\x18\n \x01(\x05\x12\x19\n\x11is_wpa3_supported\x18\x0b \x01(\x08\"\xe0\x01\n\x13\x45spHostedRespConfig\x12\x0c\n\x04ssid\x18\x01 \x01(\t\x12\x0b\n\x03pwd\x18\x02 \x01(\t\x12%\n\x03\x65\x63n\x18\x03 \x01(\x0e\x32\x18.EspHostedEncryptionMode\x12\x0c\n\x04\x63hnl\x18\x04 \x01(\x05\x12\x10\n\x08max_conn\x18\x05 \x01(\x05\x12\x13\n\x0bssid_hidden\x18\x06 \x01(\x08\x12\r\n\x05\x62ssid\x18\x07 \x01(\t\x12\x0c\n\x04rssi\x18\x08 \x01(\x05\x12\x0e\n\x06status\x18\t \x01(\t\x12\n\n\x02\x62w\x18\n \x01(\x05\x12\x19\n\x11is_wpa3_supported\x18\x0b \x01(\x08\"u\n\x13\x45spHostedScanResult\x12\x0c\n\x04ssid\x18\x01 \x01(\x0c\x12\x0c\n\x04\x63hnl\x18\x02 \x01(\r\x12\x0c\n\x04rssi\x18\x03 \x01(\x05\x12\r\n\x05\x62ssid\x18\x04 \x01(\x0c\x12%\n\x03\x65\x63n\x18\x05 \x01(\x0e\x32\x18.EspHostedEncryptionMode\"\x18\n\x16\x45spHostedCmdScanResult\"O\n\x17\x45spHostedRespScanResult\x12\r\n\x05\x63ount\x18\x01 \x01(\r\x12%\n\x07\x65ntries\x18\x02 \x03(\x0b\x32\x14.EspHostedScanResult\"6\n\x19\x45spHostedConnectedSTAList\x12\x0b\n\x03mac\x18\x01 \x01(\x0c\x12\x0c\n\x04rssi\x18\x02 \x01(\x05\"\x1a\n\x18\x45spHostedCmdConnectedSTA\"V\n\x19\x45spHostedRespConnectedSTA\x12\x0b\n\x03num\x18\x01 \x01(\r\x12,\n\x08stations\x18\x02 \x03(\x0b\x32\x1a.EspHostedConnectedSTAList\"\x87\n\n\x16\x45spHostedConfigPayload\x12$\n\x03msg\x18\x01 \x01(\x0e\x32\x17.EspHostedConfigMsgType\x12\x35\n\x13\x63md_get_mac_address\x18\n \x01(\x0b\x32\x16.EspHostedCmdGetStatusH\x00\x12\x37\n\x14resp_get_mac_address\x18\x0b \x01(\x0b\x32\x17.EspHostedRespGetStatusH\x00\x12\x33\n\x11\x63md_get_wifi_mode\x18\x0c \x01(\x0b\x32\x16.EspHostedCmdGetStatusH\x00\x12\x35\n\x12resp_get_wifi_mode\x18\r \x01(\x0b\x32\x17.EspHostedRespGetStatusH\x00\x12\x33\n\x11\x63md_set_wifi_mode\x18\x0e \x01(\x0b\x32\x16.EspHostedCmdGetStatusH\x00\x12\x35\n\x12resp_set_wifi_mode\x18\x0f \x01(\x0b\x32\x17.EspHostedRespGetStatusH\x00\x12\x30\n\x11\x63md_get_ap_config\x18\x10 \x01(\x0b\x32\x13.EspHostedCmdConfigH\x00\x12\x32\n\x12resp_get_ap_config\x18\x11 \x01(\x0b\x32\x14.EspHostedRespConfigH\x00\x12\x30\n\x11\x63md_set_ap_config\x18\x12 \x01(\x0b\x32\x13.EspHostedCmdConfigH\x00\x12\x32\n\x12resp_set_ap_config\x18\x13 \x01(\x0b\x32\x14.EspHostedRespConfigH\x00\x12\x34\n\x15\x63md_get_softap_config\x18\x14 \x01(\x0b\x32\x13.EspHostedCmdConfigH\x00\x12\x36\n\x16resp_get_softap_config\x18\x15 \x01(\x0b\x32\x14.EspHostedRespConfigH\x00\x12\x34\n\x15\x63md_set_softap_config\x18\x16 \x01(\x0b\x32\x13.EspHostedCmdConfigH\x00\x12\x36\n\x16resp_set_softap_config\x18\x17 \x01(\x0b\x32\x14.EspHostedRespConfigH\x00\x12\x33\n\x11\x63md_disconnect_ap\x18\x18 \x01(\x0b\x32\x16.EspHostedCmdGetStatusH\x00\x12\x35\n\x12resp_disconnect_ap\x18\x19 \x01(\x0b\x32\x17.EspHostedRespGetStatusH\x00\x12\x33\n\x10\x63md_scan_ap_list\x18\x1a \x01(\x0b\x32\x17.EspHostedCmdScanResultH\x00\x12\x35\n\x11resp_scan_ap_list\x18\x1b \x01(\x0b\x32\x18.EspHostedRespScanResultH\x00\x12<\n\x17\x63md_connected_stas_list\x18\x1c \x01(\x0b\x32\x19.EspHostedCmdConnectedSTAH\x00\x12>\n\x18resp_connected_stas_list\x18\x1d \x01(\x0b\x32\x1a.EspHostedRespConnectedSTAH\x00\x12\x39\n\x13\x63md_set_mac_address\x18\x1e \x01(\x0b\x32\x1a.EspHostedCmdSetMacAddressH\x00\x12;\n\x14resp_set_mac_address\x18\x1f \x01(\x0b\x32\x1b.EspHostedRespSetMacAddressH\x00\x42\t\n\x07payload*\xb7\x01\n\x17\x45spHostedEncryptionMode\x12\r\n\tType_Open\x10\x00\x12\x0c\n\x08Type_WEP\x10\x01\x12\x10\n\x0cType_WPA_PSK\x10\x02\x12\x11\n\rType_WPA2_PSK\x10\x03\x12\x15\n\x11Type_WPA_WPA2_PSK\x10\x04\x12\x18\n\x14Type_WPA2_ENTERPRISE\x10\x05\x12\x11\n\rType_WPA3_PSK\x10\x06\x12\x16\n\x12Type_WPA2_WPA3_PSK\x10\x07*\xe1\x04\n\x16\x45spHostedConfigMsgType\x12\x18\n\x14TypeCmdGetMACAddress\x10\x00\x12\x19\n\x15TypeRespGetMACAddress\x10\x01\x12\x16\n\x12TypeCmdGetWiFiMode\x10\x02\x12\x17\n\x13TypeRespGetWiFiMode\x10\x03\x12\x16\n\x12TypeCmdSetWiFiMode\x10\x04\x12\x17\n\x13TypeRespSetWiFiMode\x10\x05\x12\x16\n\x12TypeCmdGetAPConfig\x10\x06\x12\x17\n\x13TypeRespGetAPConfig\x10\x07\x12\x16\n\x12TypeCmdSetAPConfig\x10\x08\x12\x17\n\x13TypeRespSetAPConfig\x10\t\x12\x1a\n\x16TypeCmdGetSoftAPConfig\x10\n\x12\x1b\n\x17TypeRespGetSoftAPConfig\x10\x0b\x12\x1a\n\x16TypeCmdSetSoftAPConfig\x10\x0c\x12\x1b\n\x17TypeRespSetSoftAPConfig\x10\r\x12\x17\n\x13TypeCmdDisconnectAP\x10\x0e\x12\x18\n\x14TypeRespDisconnectAP\x10\x0f\x12\x18\n\x14TypeCmdGetAPScanList\x10\x10\x12\x19\n\x15TypeRespGetAPScanList\x10\x11\x12\x1e\n\x1aTypeCmdGetConnectedSTAList\x10\x12\x12\x1f\n\x1bTypeRespGetConnectedSTAList\x10\x13\x12\x18\n\x14TypeCmdSetMacAddress\x10\x14\x12\x19\n\x15TypeRespSetMacAddress\x10\x15\x62\x06proto3'
 )
 
 _ESPHOSTEDENCRYPTIONMODE = _descriptor.EnumDescriptor(
@@ -73,8 +73,8 @@ _ESPHOSTEDENCRYPTIONMODE = _descriptor.EnumDescriptor(
   ],
   containing_type=None,
   serialized_options=None,
-  serialized_start=2155,
-  serialized_end=2338,
+  serialized_start=2375,
+  serialized_end=2558,
 )
 _sym_db.RegisterEnumDescriptor(_ESPHOSTEDENCRYPTIONMODE)
 
@@ -186,11 +186,21 @@ _ESPHOSTEDCONFIGMSGTYPE = _descriptor.EnumDescriptor(
       serialized_options=None,
       type=None,
       create_key=_descriptor._internal_create_key),
+    _descriptor.EnumValueDescriptor(
+      name='TypeCmdSetMacAddress', index=20, number=20,
+      serialized_options=None,
+      type=None,
+      create_key=_descriptor._internal_create_key),
+    _descriptor.EnumValueDescriptor(
+      name='TypeRespSetMacAddress', index=21, number=21,
+      serialized_options=None,
+      type=None,
+      create_key=_descriptor._internal_create_key),
   ],
   containing_type=None,
   serialized_options=None,
-  serialized_start=2341,
-  serialized_end=2897,
+  serialized_start=2561,
+  serialized_end=3170,
 )
 _sym_db.RegisterEnumDescriptor(_ESPHOSTEDCONFIGMSGTYPE)
 
@@ -223,6 +233,8 @@ TypeCmdGetAPScanList = 16
 TypeRespGetAPScanList = 17
 TypeCmdGetConnectedSTAList = 18
 TypeRespGetConnectedSTAList = 19
+TypeCmdSetMacAddress = 20
+TypeRespSetMacAddress = 21
 
 
 
@@ -301,6 +313,77 @@ _ESPHOSTEDRESPGETSTATUS = _descriptor.Descriptor(
   ],
   serialized_start=79,
   serialized_end=131,
+)
+
+
+_ESPHOSTEDCMDSETMACADDRESS = _descriptor.Descriptor(
+  name='EspHostedCmdSetMacAddress',
+  full_name='EspHostedCmdSetMacAddress',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  create_key=_descriptor._internal_create_key,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='mac', full_name='EspHostedCmdSetMacAddress.mac', index=0,
+      number=1, type=12, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"",
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='mode', full_name='EspHostedCmdSetMacAddress.mode', index=1,
+      number=2, type=5, cpp_type=1, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=133,
+  serialized_end=187,
+)
+
+
+_ESPHOSTEDRESPSETMACADDRESS = _descriptor.Descriptor(
+  name='EspHostedRespSetMacAddress',
+  full_name='EspHostedRespSetMacAddress',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  create_key=_descriptor._internal_create_key,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='resp', full_name='EspHostedRespSetMacAddress.resp', index=0,
+      number=1, type=12, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"",
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=189,
+  serialized_end=231,
 )
 
 
@@ -401,8 +484,8 @@ _ESPHOSTEDCMDCONFIG = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=134,
-  serialized_end=357,
+  serialized_start=234,
+  serialized_end=457,
 )
 
 
@@ -503,8 +586,8 @@ _ESPHOSTEDRESPCONFIG = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=360,
-  serialized_end=584,
+  serialized_start=460,
+  serialized_end=684,
 )
 
 
@@ -563,8 +646,8 @@ _ESPHOSTEDSCANRESULT = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=586,
-  serialized_end=703,
+  serialized_start=686,
+  serialized_end=803,
 )
 
 
@@ -588,8 +671,8 @@ _ESPHOSTEDCMDSCANRESULT = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=705,
-  serialized_end=729,
+  serialized_start=805,
+  serialized_end=829,
 )
 
 
@@ -627,8 +710,8 @@ _ESPHOSTEDRESPSCANRESULT = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=731,
-  serialized_end=810,
+  serialized_start=831,
+  serialized_end=910,
 )
 
 
@@ -666,8 +749,8 @@ _ESPHOSTEDCONNECTEDSTALIST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=812,
-  serialized_end=866,
+  serialized_start=912,
+  serialized_end=966,
 )
 
 
@@ -691,8 +774,8 @@ _ESPHOSTEDCMDCONNECTEDSTA = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=868,
-  serialized_end=894,
+  serialized_start=968,
+  serialized_end=994,
 )
 
 
@@ -730,8 +813,8 @@ _ESPHOSTEDRESPCONNECTEDSTA = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=896,
-  serialized_end=982,
+  serialized_start=996,
+  serialized_end=1082,
 )
 
 
@@ -890,6 +973,20 @@ _ESPHOSTEDCONFIGPAYLOAD = _descriptor.Descriptor(
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='cmd_set_mac_address', full_name='EspHostedConfigPayload.cmd_set_mac_address', index=21,
+      number=30, type=11, cpp_type=10, label=1,
+      has_default_value=False, default_value=None,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='resp_set_mac_address', full_name='EspHostedConfigPayload.resp_set_mac_address', index=22,
+      number=31, type=11, cpp_type=10, label=1,
+      has_default_value=False, default_value=None,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
   ],
   extensions=[
   ],
@@ -907,8 +1004,8 @@ _ESPHOSTEDCONFIGPAYLOAD = _descriptor.Descriptor(
       create_key=_descriptor._internal_create_key,
     fields=[]),
   ],
-  serialized_start=985,
-  serialized_end=2152,
+  serialized_start=1085,
+  serialized_end=2372,
 )
 
 _ESPHOSTEDCMDCONFIG.fields_by_name['ecn'].enum_type = _ESPHOSTEDENCRYPTIONMODE
@@ -937,6 +1034,8 @@ _ESPHOSTEDCONFIGPAYLOAD.fields_by_name['cmd_scan_ap_list'].message_type = _ESPHO
 _ESPHOSTEDCONFIGPAYLOAD.fields_by_name['resp_scan_ap_list'].message_type = _ESPHOSTEDRESPSCANRESULT
 _ESPHOSTEDCONFIGPAYLOAD.fields_by_name['cmd_connected_stas_list'].message_type = _ESPHOSTEDCMDCONNECTEDSTA
 _ESPHOSTEDCONFIGPAYLOAD.fields_by_name['resp_connected_stas_list'].message_type = _ESPHOSTEDRESPCONNECTEDSTA
+_ESPHOSTEDCONFIGPAYLOAD.fields_by_name['cmd_set_mac_address'].message_type = _ESPHOSTEDCMDSETMACADDRESS
+_ESPHOSTEDCONFIGPAYLOAD.fields_by_name['resp_set_mac_address'].message_type = _ESPHOSTEDRESPSETMACADDRESS
 _ESPHOSTEDCONFIGPAYLOAD.oneofs_by_name['payload'].fields.append(
   _ESPHOSTEDCONFIGPAYLOAD.fields_by_name['cmd_get_mac_address'])
 _ESPHOSTEDCONFIGPAYLOAD.fields_by_name['cmd_get_mac_address'].containing_oneof = _ESPHOSTEDCONFIGPAYLOAD.oneofs_by_name['payload']
@@ -997,8 +1096,16 @@ _ESPHOSTEDCONFIGPAYLOAD.fields_by_name['cmd_connected_stas_list'].containing_one
 _ESPHOSTEDCONFIGPAYLOAD.oneofs_by_name['payload'].fields.append(
   _ESPHOSTEDCONFIGPAYLOAD.fields_by_name['resp_connected_stas_list'])
 _ESPHOSTEDCONFIGPAYLOAD.fields_by_name['resp_connected_stas_list'].containing_oneof = _ESPHOSTEDCONFIGPAYLOAD.oneofs_by_name['payload']
+_ESPHOSTEDCONFIGPAYLOAD.oneofs_by_name['payload'].fields.append(
+  _ESPHOSTEDCONFIGPAYLOAD.fields_by_name['cmd_set_mac_address'])
+_ESPHOSTEDCONFIGPAYLOAD.fields_by_name['cmd_set_mac_address'].containing_oneof = _ESPHOSTEDCONFIGPAYLOAD.oneofs_by_name['payload']
+_ESPHOSTEDCONFIGPAYLOAD.oneofs_by_name['payload'].fields.append(
+  _ESPHOSTEDCONFIGPAYLOAD.fields_by_name['resp_set_mac_address'])
+_ESPHOSTEDCONFIGPAYLOAD.fields_by_name['resp_set_mac_address'].containing_oneof = _ESPHOSTEDCONFIGPAYLOAD.oneofs_by_name['payload']
 DESCRIPTOR.message_types_by_name['EspHostedCmdGetStatus'] = _ESPHOSTEDCMDGETSTATUS
 DESCRIPTOR.message_types_by_name['EspHostedRespGetStatus'] = _ESPHOSTEDRESPGETSTATUS
+DESCRIPTOR.message_types_by_name['EspHostedCmdSetMacAddress'] = _ESPHOSTEDCMDSETMACADDRESS
+DESCRIPTOR.message_types_by_name['EspHostedRespSetMacAddress'] = _ESPHOSTEDRESPSETMACADDRESS
 DESCRIPTOR.message_types_by_name['EspHostedCmdConfig'] = _ESPHOSTEDCMDCONFIG
 DESCRIPTOR.message_types_by_name['EspHostedRespConfig'] = _ESPHOSTEDRESPCONFIG
 DESCRIPTOR.message_types_by_name['EspHostedScanResult'] = _ESPHOSTEDSCANRESULT
@@ -1025,6 +1132,20 @@ EspHostedRespGetStatus = _reflection.GeneratedProtocolMessageType('EspHostedResp
   # @@protoc_insertion_point(class_scope:EspHostedRespGetStatus)
   })
 _sym_db.RegisterMessage(EspHostedRespGetStatus)
+
+EspHostedCmdSetMacAddress = _reflection.GeneratedProtocolMessageType('EspHostedCmdSetMacAddress', (_message.Message,), {
+  'DESCRIPTOR' : _ESPHOSTEDCMDSETMACADDRESS,
+  '__module__' : 'esp_hosted_config_pb2'
+  # @@protoc_insertion_point(class_scope:EspHostedCmdSetMacAddress)
+  })
+_sym_db.RegisterMessage(EspHostedCmdSetMacAddress)
+
+EspHostedRespSetMacAddress = _reflection.GeneratedProtocolMessageType('EspHostedRespSetMacAddress', (_message.Message,), {
+  'DESCRIPTOR' : _ESPHOSTEDRESPSETMACADDRESS,
+  '__module__' : 'esp_hosted_config_pb2'
+  # @@protoc_insertion_point(class_scope:EspHostedRespSetMacAddress)
+  })
+_sym_db.RegisterMessage(EspHostedRespSetMacAddress)
 
 EspHostedCmdConfig = _reflection.GeneratedProtocolMessageType('EspHostedCmdConfig', (_message.Message,), {
   'DESCRIPTOR' : _ESPHOSTEDCMDCONFIG,

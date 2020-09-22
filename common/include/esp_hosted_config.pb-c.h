@@ -17,6 +17,8 @@ PROTOBUF_C__BEGIN_DECLS
 
 typedef struct _EspHostedCmdGetStatus EspHostedCmdGetStatus;
 typedef struct _EspHostedRespGetStatus EspHostedRespGetStatus;
+typedef struct _EspHostedCmdSetMacAddress EspHostedCmdSetMacAddress;
+typedef struct _EspHostedRespSetMacAddress EspHostedRespSetMacAddress;
 typedef struct _EspHostedCmdConfig EspHostedCmdConfig;
 typedef struct _EspHostedRespConfig EspHostedRespConfig;
 typedef struct _EspHostedScanResult EspHostedScanResult;
@@ -61,7 +63,9 @@ typedef enum _EspHostedConfigMsgType {
   ESP_HOSTED_CONFIG_MSG_TYPE__TypeCmdGetAPScanList = 16,
   ESP_HOSTED_CONFIG_MSG_TYPE__TypeRespGetAPScanList = 17,
   ESP_HOSTED_CONFIG_MSG_TYPE__TypeCmdGetConnectedSTAList = 18,
-  ESP_HOSTED_CONFIG_MSG_TYPE__TypeRespGetConnectedSTAList = 19
+  ESP_HOSTED_CONFIG_MSG_TYPE__TypeRespGetConnectedSTAList = 19,
+  ESP_HOSTED_CONFIG_MSG_TYPE__TypeCmdSetMacAddress = 20,
+  ESP_HOSTED_CONFIG_MSG_TYPE__TypeRespSetMacAddress = 21
     PROTOBUF_C__FORCE_ENUM_TO_BE_INT_SIZE(ESP_HOSTED_CONFIG_MSG_TYPE)
 } EspHostedConfigMsgType;
 
@@ -89,6 +93,30 @@ struct  _EspHostedRespGetStatus
 #define ESP_HOSTED_RESP_GET_STATUS__INIT \
  { PROTOBUF_C_MESSAGE_INIT (&esp_hosted_resp_get_status__descriptor) \
     , NULL, 0,0 }
+
+
+struct  _EspHostedCmdSetMacAddress
+{
+  ProtobufCMessage base;
+  protobuf_c_boolean has_mac;
+  ProtobufCBinaryData mac;
+  protobuf_c_boolean has_mode;
+  int32_t mode;
+};
+#define ESP_HOSTED_CMD_SET_MAC_ADDRESS__INIT \
+ { PROTOBUF_C_MESSAGE_INIT (&esp_hosted_cmd_set_mac_address__descriptor) \
+    , 0,{0,NULL}, 0,0 }
+
+
+struct  _EspHostedRespSetMacAddress
+{
+  ProtobufCMessage base;
+  protobuf_c_boolean has_resp;
+  ProtobufCBinaryData resp;
+};
+#define ESP_HOSTED_RESP_SET_MAC_ADDRESS__INIT \
+ { PROTOBUF_C_MESSAGE_INIT (&esp_hosted_resp_set_mac_address__descriptor) \
+    , 0,{0,NULL} }
 
 
 struct  _EspHostedCmdConfig
@@ -243,6 +271,8 @@ typedef enum {
   ESP_HOSTED_CONFIG_PAYLOAD__PAYLOAD_RESP_SCAN_AP_LIST = 27,
   ESP_HOSTED_CONFIG_PAYLOAD__PAYLOAD_CMD_CONNECTED_STAS_LIST = 28,
   ESP_HOSTED_CONFIG_PAYLOAD__PAYLOAD_RESP_CONNECTED_STAS_LIST = 29,
+  ESP_HOSTED_CONFIG_PAYLOAD__PAYLOAD_CMD_SET_MAC_ADDRESS = 30,
+  ESP_HOSTED_CONFIG_PAYLOAD__PAYLOAD_RESP_SET_MAC_ADDRESS = 31,
 } EspHostedConfigPayload__PayloadCase;
 
 struct  _EspHostedConfigPayload
@@ -272,6 +302,8 @@ struct  _EspHostedConfigPayload
     EspHostedRespScanResult *resp_scan_ap_list;
     EspHostedCmdConnectedSTA *cmd_connected_stas_list;
     EspHostedRespConnectedSTA *resp_connected_stas_list;
+    EspHostedCmdSetMacAddress *cmd_set_mac_address;
+    EspHostedRespSetMacAddress *resp_set_mac_address;
   };
 };
 #define ESP_HOSTED_CONFIG_PAYLOAD__INIT \
@@ -316,6 +348,44 @@ EspHostedRespGetStatus *
                       const uint8_t       *data);
 void   esp_hosted_resp_get_status__free_unpacked
                      (EspHostedRespGetStatus *message,
+                      ProtobufCAllocator *allocator);
+/* EspHostedCmdSetMacAddress methods */
+void   esp_hosted_cmd_set_mac_address__init
+                     (EspHostedCmdSetMacAddress         *message);
+size_t esp_hosted_cmd_set_mac_address__get_packed_size
+                     (const EspHostedCmdSetMacAddress   *message);
+size_t esp_hosted_cmd_set_mac_address__pack
+                     (const EspHostedCmdSetMacAddress   *message,
+                      uint8_t             *out);
+size_t esp_hosted_cmd_set_mac_address__pack_to_buffer
+                     (const EspHostedCmdSetMacAddress   *message,
+                      ProtobufCBuffer     *buffer);
+EspHostedCmdSetMacAddress *
+       esp_hosted_cmd_set_mac_address__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data);
+void   esp_hosted_cmd_set_mac_address__free_unpacked
+                     (EspHostedCmdSetMacAddress *message,
+                      ProtobufCAllocator *allocator);
+/* EspHostedRespSetMacAddress methods */
+void   esp_hosted_resp_set_mac_address__init
+                     (EspHostedRespSetMacAddress         *message);
+size_t esp_hosted_resp_set_mac_address__get_packed_size
+                     (const EspHostedRespSetMacAddress   *message);
+size_t esp_hosted_resp_set_mac_address__pack
+                     (const EspHostedRespSetMacAddress   *message,
+                      uint8_t             *out);
+size_t esp_hosted_resp_set_mac_address__pack_to_buffer
+                     (const EspHostedRespSetMacAddress   *message,
+                      ProtobufCBuffer     *buffer);
+EspHostedRespSetMacAddress *
+       esp_hosted_resp_set_mac_address__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data);
+void   esp_hosted_resp_set_mac_address__free_unpacked
+                     (EspHostedRespSetMacAddress *message,
                       ProtobufCAllocator *allocator);
 /* EspHostedCmdConfig methods */
 void   esp_hosted_cmd_config__init
@@ -496,6 +566,12 @@ typedef void (*EspHostedCmdGetStatus_Closure)
 typedef void (*EspHostedRespGetStatus_Closure)
                  (const EspHostedRespGetStatus *message,
                   void *closure_data);
+typedef void (*EspHostedCmdSetMacAddress_Closure)
+                 (const EspHostedCmdSetMacAddress *message,
+                  void *closure_data);
+typedef void (*EspHostedRespSetMacAddress_Closure)
+                 (const EspHostedRespSetMacAddress *message,
+                  void *closure_data);
 typedef void (*EspHostedCmdConfig_Closure)
                  (const EspHostedCmdConfig *message,
                   void *closure_data);
@@ -533,6 +609,8 @@ extern const ProtobufCEnumDescriptor    esp_hosted_encryption_mode__descriptor;
 extern const ProtobufCEnumDescriptor    esp_hosted_config_msg_type__descriptor;
 extern const ProtobufCMessageDescriptor esp_hosted_cmd_get_status__descriptor;
 extern const ProtobufCMessageDescriptor esp_hosted_resp_get_status__descriptor;
+extern const ProtobufCMessageDescriptor esp_hosted_cmd_set_mac_address__descriptor;
+extern const ProtobufCMessageDescriptor esp_hosted_resp_set_mac_address__descriptor;
 extern const ProtobufCMessageDescriptor esp_hosted_cmd_config__descriptor;
 extern const ProtobufCMessageDescriptor esp_hosted_resp_config__descriptor;
 extern const ProtobufCMessageDescriptor esp_hosted_scan_result__descriptor;

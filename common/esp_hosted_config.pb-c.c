@@ -93,6 +93,92 @@ void   esp_hosted_resp_get_status__free_unpacked
   assert(message->base.descriptor == &esp_hosted_resp_get_status__descriptor);
   protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
 }
+void   esp_hosted_cmd_set_mac_address__init
+                     (EspHostedCmdSetMacAddress         *message)
+{
+  static EspHostedCmdSetMacAddress init_value = ESP_HOSTED_CMD_SET_MAC_ADDRESS__INIT;
+  *message = init_value;
+}
+size_t esp_hosted_cmd_set_mac_address__get_packed_size
+                     (const EspHostedCmdSetMacAddress *message)
+{
+  assert(message->base.descriptor == &esp_hosted_cmd_set_mac_address__descriptor);
+  return protobuf_c_message_get_packed_size ((const ProtobufCMessage*)(message));
+}
+size_t esp_hosted_cmd_set_mac_address__pack
+                     (const EspHostedCmdSetMacAddress *message,
+                      uint8_t       *out)
+{
+  assert(message->base.descriptor == &esp_hosted_cmd_set_mac_address__descriptor);
+  return protobuf_c_message_pack ((const ProtobufCMessage*)message, out);
+}
+size_t esp_hosted_cmd_set_mac_address__pack_to_buffer
+                     (const EspHostedCmdSetMacAddress *message,
+                      ProtobufCBuffer *buffer)
+{
+  assert(message->base.descriptor == &esp_hosted_cmd_set_mac_address__descriptor);
+  return protobuf_c_message_pack_to_buffer ((const ProtobufCMessage*)message, buffer);
+}
+EspHostedCmdSetMacAddress *
+       esp_hosted_cmd_set_mac_address__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data)
+{
+  return (EspHostedCmdSetMacAddress *)
+     protobuf_c_message_unpack (&esp_hosted_cmd_set_mac_address__descriptor,
+                                allocator, len, data);
+}
+void   esp_hosted_cmd_set_mac_address__free_unpacked
+                     (EspHostedCmdSetMacAddress *message,
+                      ProtobufCAllocator *allocator)
+{
+  assert(message->base.descriptor == &esp_hosted_cmd_set_mac_address__descriptor);
+  protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
+}
+void   esp_hosted_resp_set_mac_address__init
+                     (EspHostedRespSetMacAddress         *message)
+{
+  static EspHostedRespSetMacAddress init_value = ESP_HOSTED_RESP_SET_MAC_ADDRESS__INIT;
+  *message = init_value;
+}
+size_t esp_hosted_resp_set_mac_address__get_packed_size
+                     (const EspHostedRespSetMacAddress *message)
+{
+  assert(message->base.descriptor == &esp_hosted_resp_set_mac_address__descriptor);
+  return protobuf_c_message_get_packed_size ((const ProtobufCMessage*)(message));
+}
+size_t esp_hosted_resp_set_mac_address__pack
+                     (const EspHostedRespSetMacAddress *message,
+                      uint8_t       *out)
+{
+  assert(message->base.descriptor == &esp_hosted_resp_set_mac_address__descriptor);
+  return protobuf_c_message_pack ((const ProtobufCMessage*)message, out);
+}
+size_t esp_hosted_resp_set_mac_address__pack_to_buffer
+                     (const EspHostedRespSetMacAddress *message,
+                      ProtobufCBuffer *buffer)
+{
+  assert(message->base.descriptor == &esp_hosted_resp_set_mac_address__descriptor);
+  return protobuf_c_message_pack_to_buffer ((const ProtobufCMessage*)message, buffer);
+}
+EspHostedRespSetMacAddress *
+       esp_hosted_resp_set_mac_address__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data)
+{
+  return (EspHostedRespSetMacAddress *)
+     protobuf_c_message_unpack (&esp_hosted_resp_set_mac_address__descriptor,
+                                allocator, len, data);
+}
+void   esp_hosted_resp_set_mac_address__free_unpacked
+                     (EspHostedRespSetMacAddress *message,
+                      ProtobufCAllocator *allocator)
+{
+  assert(message->base.descriptor == &esp_hosted_resp_set_mac_address__descriptor);
+  protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
+}
 void   esp_hosted_cmd_config__init
                      (EspHostedCmdConfig         *message)
 {
@@ -580,6 +666,95 @@ const ProtobufCMessageDescriptor esp_hosted_resp_get_status__descriptor =
   esp_hosted_resp_get_status__field_indices_by_name,
   1,  esp_hosted_resp_get_status__number_ranges,
   (ProtobufCMessageInit) esp_hosted_resp_get_status__init,
+  NULL,NULL,NULL    /* reserved[123] */
+};
+static const ProtobufCFieldDescriptor esp_hosted_cmd_set_mac_address__field_descriptors[2] =
+{
+  {
+    "mac",
+    1,
+    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_TYPE_BYTES,
+    offsetof(EspHostedCmdSetMacAddress, has_mac),
+    offsetof(EspHostedCmdSetMacAddress, mac),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "mode",
+    2,
+    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_TYPE_INT32,
+    offsetof(EspHostedCmdSetMacAddress, has_mode),
+    offsetof(EspHostedCmdSetMacAddress, mode),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+};
+static const unsigned esp_hosted_cmd_set_mac_address__field_indices_by_name[] = {
+  0,   /* field[0] = mac */
+  1,   /* field[1] = mode */
+};
+static const ProtobufCIntRange esp_hosted_cmd_set_mac_address__number_ranges[1 + 1] =
+{
+  { 1, 0 },
+  { 0, 2 }
+};
+const ProtobufCMessageDescriptor esp_hosted_cmd_set_mac_address__descriptor =
+{
+  PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
+  "EspHostedCmdSetMacAddress",
+  "EspHostedCmdSetMacAddress",
+  "EspHostedCmdSetMacAddress",
+  "",
+  sizeof(EspHostedCmdSetMacAddress),
+  2,
+  esp_hosted_cmd_set_mac_address__field_descriptors,
+  esp_hosted_cmd_set_mac_address__field_indices_by_name,
+  1,  esp_hosted_cmd_set_mac_address__number_ranges,
+  (ProtobufCMessageInit) esp_hosted_cmd_set_mac_address__init,
+  NULL,NULL,NULL    /* reserved[123] */
+};
+static const ProtobufCFieldDescriptor esp_hosted_resp_set_mac_address__field_descriptors[1] =
+{
+  {
+    "resp",
+    1,
+    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_TYPE_BYTES,
+    offsetof(EspHostedRespSetMacAddress, has_resp),
+    offsetof(EspHostedRespSetMacAddress, resp),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+};
+static const unsigned esp_hosted_resp_set_mac_address__field_indices_by_name[] = {
+  0,   /* field[0] = resp */
+};
+static const ProtobufCIntRange esp_hosted_resp_set_mac_address__number_ranges[1 + 1] =
+{
+  { 1, 0 },
+  { 0, 1 }
+};
+const ProtobufCMessageDescriptor esp_hosted_resp_set_mac_address__descriptor =
+{
+  PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
+  "EspHostedRespSetMacAddress",
+  "EspHostedRespSetMacAddress",
+  "EspHostedRespSetMacAddress",
+  "",
+  sizeof(EspHostedRespSetMacAddress),
+  1,
+  esp_hosted_resp_set_mac_address__field_descriptors,
+  esp_hosted_resp_set_mac_address__field_indices_by_name,
+  1,  esp_hosted_resp_set_mac_address__number_ranges,
+  (ProtobufCMessageInit) esp_hosted_resp_set_mac_address__init,
   NULL,NULL,NULL    /* reserved[123] */
 };
 static const ProtobufCFieldDescriptor esp_hosted_cmd_config__field_descriptors[11] =
@@ -1197,7 +1372,7 @@ const ProtobufCMessageDescriptor esp_hosted_resp_connected_sta__descriptor =
   (ProtobufCMessageInit) esp_hosted_resp_connected_sta__init,
   NULL,NULL,NULL    /* reserved[123] */
 };
-static const ProtobufCFieldDescriptor esp_hosted_config_payload__field_descriptors[21] =
+static const ProtobufCFieldDescriptor esp_hosted_config_payload__field_descriptors[23] =
 {
   {
     "msg",
@@ -1451,6 +1626,30 @@ static const ProtobufCFieldDescriptor esp_hosted_config_payload__field_descripto
     0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
+  {
+    "cmd_set_mac_address",
+    30,
+    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_TYPE_MESSAGE,
+    offsetof(EspHostedConfigPayload, payload_case),
+    offsetof(EspHostedConfigPayload, cmd_set_mac_address),
+    &esp_hosted_cmd_set_mac_address__descriptor,
+    NULL,
+    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "resp_set_mac_address",
+    31,
+    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_TYPE_MESSAGE,
+    offsetof(EspHostedConfigPayload, payload_case),
+    offsetof(EspHostedConfigPayload, resp_set_mac_address),
+    &esp_hosted_resp_set_mac_address__descriptor,
+    NULL,
+    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
 };
 static const unsigned esp_hosted_config_payload__field_indices_by_name[] = {
   19,   /* field[19] = cmd_connected_stas_list */
@@ -1461,6 +1660,7 @@ static const unsigned esp_hosted_config_payload__field_indices_by_name[] = {
   3,   /* field[3] = cmd_get_wifi_mode */
   17,   /* field[17] = cmd_scan_ap_list */
   9,   /* field[9] = cmd_set_ap_config */
+  21,   /* field[21] = cmd_set_mac_address */
   13,   /* field[13] = cmd_set_softap_config */
   5,   /* field[5] = cmd_set_wifi_mode */
   0,   /* field[0] = msg */
@@ -1472,6 +1672,7 @@ static const unsigned esp_hosted_config_payload__field_indices_by_name[] = {
   4,   /* field[4] = resp_get_wifi_mode */
   18,   /* field[18] = resp_scan_ap_list */
   10,   /* field[10] = resp_set_ap_config */
+  22,   /* field[22] = resp_set_mac_address */
   14,   /* field[14] = resp_set_softap_config */
   6,   /* field[6] = resp_set_wifi_mode */
 };
@@ -1479,7 +1680,7 @@ static const ProtobufCIntRange esp_hosted_config_payload__number_ranges[2 + 1] =
 {
   { 1, 0 },
   { 10, 1 },
-  { 0, 21 }
+  { 0, 23 }
 };
 const ProtobufCMessageDescriptor esp_hosted_config_payload__descriptor =
 {
@@ -1489,7 +1690,7 @@ const ProtobufCMessageDescriptor esp_hosted_config_payload__descriptor =
   "EspHostedConfigPayload",
   "",
   sizeof(EspHostedConfigPayload),
-  21,
+  23,
   esp_hosted_config_payload__field_descriptors,
   esp_hosted_config_payload__field_indices_by_name,
   2,  esp_hosted_config_payload__number_ranges,
@@ -1536,7 +1737,7 @@ const ProtobufCEnumDescriptor esp_hosted_encryption_mode__descriptor =
   esp_hosted_encryption_mode__value_ranges,
   NULL,NULL,NULL,NULL   /* reserved[1234] */
 };
-static const ProtobufCEnumValue esp_hosted_config_msg_type__enum_values_by_number[20] =
+static const ProtobufCEnumValue esp_hosted_config_msg_type__enum_values_by_number[22] =
 {
   { "TypeCmdGetMACAddress", "ESP_HOSTED_CONFIG_MSG_TYPE__TypeCmdGetMACAddress", 0 },
   { "TypeRespGetMACAddress", "ESP_HOSTED_CONFIG_MSG_TYPE__TypeRespGetMACAddress", 1 },
@@ -1558,11 +1759,13 @@ static const ProtobufCEnumValue esp_hosted_config_msg_type__enum_values_by_numbe
   { "TypeRespGetAPScanList", "ESP_HOSTED_CONFIG_MSG_TYPE__TypeRespGetAPScanList", 17 },
   { "TypeCmdGetConnectedSTAList", "ESP_HOSTED_CONFIG_MSG_TYPE__TypeCmdGetConnectedSTAList", 18 },
   { "TypeRespGetConnectedSTAList", "ESP_HOSTED_CONFIG_MSG_TYPE__TypeRespGetConnectedSTAList", 19 },
+  { "TypeCmdSetMacAddress", "ESP_HOSTED_CONFIG_MSG_TYPE__TypeCmdSetMacAddress", 20 },
+  { "TypeRespSetMacAddress", "ESP_HOSTED_CONFIG_MSG_TYPE__TypeRespSetMacAddress", 21 },
 };
 static const ProtobufCIntRange esp_hosted_config_msg_type__value_ranges[] = {
-{0, 0},{0, 20}
+{0, 0},{0, 22}
 };
-static const ProtobufCEnumValueIndex esp_hosted_config_msg_type__enum_values_by_name[20] =
+static const ProtobufCEnumValueIndex esp_hosted_config_msg_type__enum_values_by_name[22] =
 {
   { "TypeCmdDisconnectAP", 14 },
   { "TypeCmdGetAPConfig", 6 },
@@ -1572,6 +1775,7 @@ static const ProtobufCEnumValueIndex esp_hosted_config_msg_type__enum_values_by_
   { "TypeCmdGetSoftAPConfig", 10 },
   { "TypeCmdGetWiFiMode", 2 },
   { "TypeCmdSetAPConfig", 8 },
+  { "TypeCmdSetMacAddress", 20 },
   { "TypeCmdSetSoftAPConfig", 12 },
   { "TypeCmdSetWiFiMode", 4 },
   { "TypeRespDisconnectAP", 15 },
@@ -1582,6 +1786,7 @@ static const ProtobufCEnumValueIndex esp_hosted_config_msg_type__enum_values_by_
   { "TypeRespGetSoftAPConfig", 11 },
   { "TypeRespGetWiFiMode", 3 },
   { "TypeRespSetAPConfig", 9 },
+  { "TypeRespSetMacAddress", 21 },
   { "TypeRespSetSoftAPConfig", 13 },
   { "TypeRespSetWiFiMode", 5 },
 };
@@ -1592,9 +1797,9 @@ const ProtobufCEnumDescriptor esp_hosted_config_msg_type__descriptor =
   "EspHostedConfigMsgType",
   "EspHostedConfigMsgType",
   "",
-  20,
+  22,
   esp_hosted_config_msg_type__enum_values_by_number,
-  20,
+  22,
   esp_hosted_config_msg_type__enum_values_by_name,
   1,
   esp_hosted_config_msg_type__value_ranges,

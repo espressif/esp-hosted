@@ -10,6 +10,15 @@ message EspHostedRespGetStatus {
     int32 mode = 2;
 }
 
+message EspHostedCmdSetMacAddress {
+    bytes mac = 1;
+    int32 mode = 2;
+}
+
+message EspHostedRespSetMacAddress {
+    bytes resp = 1;
+}
+
 enum EspHostedEncryptionMode {
     Type_Open = 0;
     Type_WEP = 1;
@@ -99,6 +108,8 @@ enum EspHostedConfigMsgType {
     TypeRespGetAPScanList = 17;
     TypeCmdGetConnectedSTAList = 18;
     TypeRespGetConnectedSTAList = 19;
+    TypeCmdSetMacAddress = 20;
+    TypeRespSetMacAddress = 21;
 }
 
 message EspHostedConfigPayload {
@@ -124,5 +135,7 @@ message EspHostedConfigPayload {
         EspHostedRespScanResult resp_scan_ap_list = 27;
         EspHostedCmdConnectedSTA cmd_connected_stas_list = 28;
         EspHostedRespConnectedSTA resp_connected_stas_list = 29;
+        EspHostedCmdSetMacAddress cmd_set_mac_address = 30;
+        EspHostedRespSetMacAddress resp_set_mac_address = 31;
     }
 }
