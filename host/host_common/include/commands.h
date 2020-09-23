@@ -31,6 +31,12 @@ typedef enum {
 	WIFI_BW_HT40,
 } wifi_bandwidth_t;
 
+typedef enum {
+    WIFI_PS_MIN_MODEM = 1,
+    WIFI_PS_MAX_MODEM,
+    WIFI_PS_INVALID,
+} wifi_ps_type_t;
+
 typedef struct {
     uint8_t ssid[SSID_LENGTH];
     uint8_t pwd[PASSWORD_LENGTH];
@@ -43,6 +49,7 @@ typedef struct {
     bool ssid_hidden;
     int bandwidth;
     char status[STATUS_LENGTH];
+    uint16_t listen_interval;
 } esp_hosted_ap_config_t;
 
 typedef struct {
@@ -96,6 +103,8 @@ int wifi_get_mac (int mode ,char* mac);
  *          pwd                  :   password of AP
  *          bssid                :   MAC address of AP
  *          is_wpa3_supported    :   status of WPA3 supplicant present on AP (False: Unsupported, True:  Supported)
+ *          listen_interval      :   Listen interval for ESP32 station to receive beacon when WIFI_PS_MAX_MODEM is set.
+ *                                   Units: AP beacon intervals. Defaults to 3 if set to 0.
  */
 int wifi_set_ap_config(esp_hosted_ap_config_t ap_config);
 
@@ -218,4 +227,30 @@ int wifi_connected_stations_list(esp_hosted_wifi_connected_stations_list** list,
  *
  */
 int wifi_set_mac(int mode, char* mac);
+
+/*
+ * wifi set power save mode function sets power save mode of ESP32, returns SUCCESS(0) or FAILURE(-1)
+ *  Input parameter:
+ *      power save mode : ESP32's power save mode
+ *                  (1  : WIFI_PS_MIN_MODEM,   Minimum modem power saving.
+ *                        In this mode, station wakes up to receive beacon every DTIM period
+ *                   2  : WIFI_PS_MAX_MODEM,   Maximum modem power saving.
+ *                        In this mode, interval to receive beacons is determined
+ *                        by the listen_interval parameter in wifi_set_ap_config function
+ *      Default :: power save mode is WIFI_PS_MIN_MODEM
+ */
+int wifi_set_power_save_mode(int power_save_mode);
+
+/*
+ * wifi get power save mode function gives power save mode of ESP32, returns SUCCESS(0) or FAILURE(-1)
+ *  Output parameter:
+ *      power save mode : ESP32's power save mode
+ *                  (1  : WIFI_PS_MIN_MODEM,   Minimum modem power saving.
+ *                        In this mode, station wakes up to receive beacon every DTIM period
+ *                   2  : WIFI_PS_MAX_MODEM,   Maximum modem power saving.
+ *                        In this mode, interval to receive beacons is determined
+ *                        by the listen_interval parameter in wifi_set_ap_config function
+ *                   3  : WIFI_PS_INVALID,     Invalid power save mode. In case of failure of command
+ */
+int wifi_get_power_save_mode(int* power_save_mode);
 #endif

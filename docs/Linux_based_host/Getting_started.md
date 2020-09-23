@@ -9,7 +9,7 @@
 | wifi_get_mac(mode) | get MAC address of station or softAP Interface |
 | wifi_get_mode() | get wifi mode |
 | wifi_set_mode(mode) | set wifi mode |
-| wifi_set_ap_config(ssid, pwd, bssid, is_wpa3_supported) | connect to AP as a station |
+| wifi_set_ap_config(ssid, pwd, bssid, is_wpa3_supported, listen_interval) | connect to AP as a station |
 | wifi_get_ap_config() | get AP configuration and status |
 | wifi_disconnect_ap() | disconnect from AP |
 | wifi_set_softap_config(ssid, pwd, chnl, ecn, max_conn, ssid_hidden, bw) | start softAP |
@@ -17,6 +17,8 @@
 | wifi_ap_scan_list() | scan available APs |
 | wifi_connected_stations_list() | list stations connected to softAP |
 | wifi_set_mac(mode, mac) | sets custom mac address for station and softAP Interface |
+| wifi_set_power_save_mode(power_save_mode) | set power save mode |
+| wifi_get_power_save_mode() | get power save mode |
 
 These python functions can be used to control Wi-Fi functionality of the ESP32. Also see [host/linux/host_control/test.py](../../host/linux/host_control/test.py) script for an example of using these functions. You can run the script as follows:
 ```
@@ -34,10 +36,10 @@ The other scripts in the same directory can be used to:
 - scan available APs
 - list stations connected to softAP
 
-1. `station_connect.py` is a python script which configures ESP32 in station mode, and connects to an external AP with user-provided credentials. Also it enables the station interface and runs DHCP client. The script accepts arguments such as SSID, password, optionally MAC address and wpa3 support. For example:
+1. `station_connect.py` is a python script which configures ESP32 in station mode, and connects to an external AP with user-provided credentials. Also it enables the station interface and runs DHCP client. The script accepts arguments such as SSID, password, optionally MAC address, wpa3 support and listen interval (AP beacon intervals). For example:
 
 ```
-python station_connect.py 'xyz' 'xyz123456' --bssid='e5:6c:67:3c:cf:65' --is_wpa3_supported=True
+python station_connect.py 'xyz' 'xyz123456' --bssid='e5:6c:67:3c:cf:65' --is_wpa3_supported=True --listen_interval=3
 ```
 
 You can check that `ethsta0` interface is up (enabled) using `ifconfig`. WPA3 option is only applicable if target AP supports WPA3.

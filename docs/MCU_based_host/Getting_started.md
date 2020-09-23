@@ -19,6 +19,8 @@ Host firmware provides wifi connectivity using control path and data path. Contr
 | wifi_ap_scan_list(esp_hosted_wifi_scanlist_t** list, int* count) | scan available APs |
 | wifi_connected_stations_list(esp_hosted_wifi_connected_stations_list** list, int* num) | list stations connected to softAP |
 | wifi_set_mac(int mode, char* mac) | sets custom mac address for station and softAP Interface |
+| wifi_set_power_save_mode(int power_save_mode) | set power save mode |
+| wifi_get_power_save_mode(int* power_save_mode) | get power save mode |
 
 Above function's parameters and description is present [here](../../host/host_common/include/commands.h).
 

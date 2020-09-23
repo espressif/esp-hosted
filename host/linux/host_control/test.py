@@ -34,7 +34,7 @@ print("wifi mode is "+str(x))
 x = commands.wifi_set_mode(2)
 print(x)
 
-x = commands.wifi_set_ap_config('xyz','xyz123456','0',False)
+x = commands.wifi_set_ap_config('xyz','xyz123456','0',False, 5)
 print(x)
 
 x = commands.wifi_get_ap_config()
@@ -70,4 +70,10 @@ else :
 
 x = commands.wifi_set_mac(2,"5a:11:11:11:11:11")
 print(x)
+
+x = commands.wifi_set_power_save_mode(2)
+print(x)
+
+x = commands.wifi_get_power_save_mode()
+print("Power save mode is "+str(x))
 '''

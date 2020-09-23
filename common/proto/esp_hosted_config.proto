@@ -42,6 +42,7 @@ message EspHostedCmdConfig {
     string status = 9;
     int32 bw = 10;
     bool is_wpa3_supported = 11;
+    int32 listen_interval = 12;
 }
 
 message EspHostedRespConfig {
@@ -56,6 +57,7 @@ message EspHostedRespConfig {
     string status = 9;
     int32 bw = 10;
     bool is_wpa3_supported = 11;
+    int32 listen_interval = 12;
 }
 
 message EspHostedScanResult {
@@ -87,6 +89,22 @@ message EspHostedRespConnectedSTA {
 	repeated EspHostedConnectedSTAList stations = 2;
 }
 
+message EspHostedCmdSetPowerSaveMode {
+    int32 power_save_mode = 1;
+}
+
+message EspHostedRespSetPowerSaveMode {
+    bytes resp = 1;
+}
+
+message EspHostedCmdGetPowerSaveMode {
+}
+
+message EspHostedRespGetPowerSaveMode {
+    int32 power_save_mode = 1;
+    bytes resp = 2;
+}
+
 enum EspHostedConfigMsgType {
     TypeCmdGetMACAddress = 0;
     TypeRespGetMACAddress = 1;
@@ -110,6 +128,10 @@ enum EspHostedConfigMsgType {
     TypeRespGetConnectedSTAList = 19;
     TypeCmdSetMacAddress = 20;
     TypeRespSetMacAddress = 21;
+    TypeCmdSetPowerSaveMode = 22;
+    TypeRespSetPowerSaveMode = 23;
+    TypeCmdGetPowerSaveMode = 24;
+    TypeRespGetPowerSaveMode = 25;
 }
 
 message EspHostedConfigPayload {
@@ -137,5 +159,9 @@ message EspHostedConfigPayload {
         EspHostedRespConnectedSTA resp_connected_stas_list = 29;
         EspHostedCmdSetMacAddress cmd_set_mac_address = 30;
         EspHostedRespSetMacAddress resp_set_mac_address = 31;
+        EspHostedCmdSetPowerSaveMode cmd_set_power_save_mode = 32;
+        EspHostedRespSetPowerSaveMode resp_set_power_save_mode = 33;
+        EspHostedCmdGetPowerSaveMode cmd_get_power_save_mode = 34;
+        EspHostedRespGetPowerSaveMode resp_get_power_save_mode = 35;
     }
 }

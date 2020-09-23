@@ -26,16 +26,17 @@
 #include "slave_commands.h"
 #include "esp_hosted_config.pb-c.h"
 
-#define MAC_LEN                  6
-#define MAC_STR_LEN       		 17
-#define MAC2STR(a) (a)[0], (a)[1], (a)[2], (a)[3], (a)[4], (a)[5]
-#define MACSTR "%02x:%02x:%02x:%02x:%02x:%02x"
-#define SUCCESS "success"
-#define FAILURE "failure"
-#define NOT_CONNECTED "not_connected"
-#define SSID_LENGTH     32
-
-#define PASSWORD_LENGTH     64
+#define MAC_LEN                 6
+#define MAC_STR_LEN       		17
+#define MAC2STR(a) 				(a)[0], (a)[1], (a)[2], (a)[3], (a)[4], (a)[5]
+#define MACSTR 					"%02x:%02x:%02x:%02x:%02x:%02x"
+#define SUCCESS 				"success"
+#define SUCCESS_STR_LEN			7
+#define FAILURE 				"failure"
+#define FAILURE_STR_LEN 		7
+#define NOT_CONNECTED 			"not_connected"
+#define SSID_LENGTH     		32
+#define PASSWORD_LENGTH     	64
 
 static const char* TAG = "slave_commands";
 
@@ -313,6 +314,11 @@ static esp_err_t cmd_set_ap_config_handler (EspHostedConfigPayload *req,
                                         EspHostedConfigPayload *resp, void *priv_data)
 {
 	esp_err_t ret;
+	wifi_config_t* wifi_cfg = NULL;
+	if (!req || !resp || !req->cmd_set_ap_config) {
+		ESP_LOGE(TAG, "Invalid parameters");
+		return ESP_FAIL;
+	}
 	if (hosted_flags.is_ap_connected) {
 		ESP_LOGI(TAG, "Disconnecting from previously connected AP");
 		ret = esp_wifi_disconnect();
@@ -334,7 +340,7 @@ static esp_err_t cmd_set_ap_config_handler (EspHostedConfigPayload *req,
 		ESP_LOGE(TAG,"failed to set mode");
 		return ESP_FAIL;
 	}
-	wifi_config_t* wifi_cfg = (wifi_config_t *)calloc(1,sizeof(wifi_config_t));
+	wifi_cfg = (wifi_config_t *)calloc(1,sizeof(wifi_config_t));
 	if (wifi_cfg == NULL) {
 		ESP_LOGE(TAG,"failed to allocate memory");
 		return ESP_ERR_NO_MEM;
@@ -359,6 +365,9 @@ static esp_err_t cmd_set_ap_config_handler (EspHostedConfigPayload *req,
 	if (req->cmd_set_ap_config->is_wpa3_supported) {
 		wifi_cfg->sta.pmf_cfg.capable = true;
 		wifi_cfg->sta.pmf_cfg.required = false;
+	}
+	if (req->cmd_set_ap_config->listen_interval >= 0) {
+		wifi_cfg->sta.listen_interval = req->cmd_set_ap_config->listen_interval;
 	}
  	ret = esp_wifi_set_config(ESP_IF_WIFI_STA, wifi_cfg);
 	if (ret != ESP_OK) {
@@ -949,6 +958,81 @@ err:
 	return ESP_OK;
 }
 
+static esp_err_t cmd_set_power_save_mode_handler (EspHostedConfigPayload *req,
+                                        EspHostedConfigPayload *resp, void *priv_data)
+{
+	esp_err_t ret = ESP_OK;
+	if (!req || !resp || !req->cmd_set_power_save_mode) {
+		ESP_LOGE(TAG, "Invalid parameters");
+		return ESP_FAIL;
+	}
+	EspHostedRespSetPowerSaveMode *resp_payload = (EspHostedRespSetPowerSaveMode*) \
+			calloc(1,sizeof(EspHostedRespSetPowerSaveMode));
+	if (resp_payload == NULL) {
+		ESP_LOGE(TAG,"failed to allocate memory");
+		return ESP_ERR_NO_MEM;
+	}
+	esp_hosted_resp_set_power_save_mode__init(resp_payload);
+	resp_payload->has_resp = 1;
+	resp->payload_case = ESP_HOSTED_CONFIG_PAYLOAD__PAYLOAD_RESP_SET_POWER_SAVE_MODE;
+	resp->resp_set_power_save_mode = resp_payload;
+
+	if ((req->cmd_set_power_save_mode->power_save_mode == WIFI_PS_MIN_MODEM) ||
+        (req->cmd_set_power_save_mode->power_save_mode == WIFI_PS_MAX_MODEM)) {
+		ret = esp_wifi_set_ps(req->cmd_set_power_save_mode->power_save_mode);
+		if (ret != ESP_OK) {
+			ESP_LOGE(TAG, "Failed to set power save mode");
+			goto err;
+		}
+	} else {
+		ESP_LOGE(TAG, "Invalid Power Save Mode");
+		goto err;
+	}
+	resp_payload->resp.len = SUCCESS_STR_LEN;
+	resp_payload->resp.data = (uint8_t* )strdup(SUCCESS);
+	return ESP_OK;
+err:
+	resp_payload->resp.len = FAILURE_STR_LEN;
+	resp_payload->resp.data = (uint8_t* )strdup(FAILURE);
+	return ESP_OK;
+}
+
+static esp_err_t cmd_get_power_save_mode_handler (EspHostedConfigPayload *req,
+                                        EspHostedConfigPayload *resp, void *priv_data)
+{
+	esp_err_t ret = ESP_OK;
+	wifi_ps_type_t ps_type;
+	if (!req || !resp) {
+		ESP_LOGE(TAG, "Invalid parameters");
+		return ESP_FAIL;
+	}
+	EspHostedRespGetPowerSaveMode *resp_payload = (EspHostedRespGetPowerSaveMode*) \
+			calloc(1,sizeof(EspHostedRespGetPowerSaveMode));
+	if (resp_payload == NULL) {
+		ESP_LOGE(TAG,"failed to allocate memory");
+		return ESP_ERR_NO_MEM;
+	}
+	esp_hosted_resp_get_power_save_mode__init(resp_payload);
+	resp_payload->has_resp = true;
+	resp->payload_case = ESP_HOSTED_CONFIG_PAYLOAD__PAYLOAD_RESP_GET_POWER_SAVE_MODE;
+	resp->resp_get_power_save_mode = resp_payload;
+	ret = esp_wifi_get_ps(&ps_type);
+	if (ret != ESP_OK) {
+		ESP_LOGE(TAG, "Failed to set power save mode");
+		goto err;
+	} else {
+		resp->resp_get_power_save_mode->has_power_save_mode = true;
+		resp->resp_get_power_save_mode->power_save_mode = ps_type;
+	}
+	resp_payload->resp.len = SUCCESS_STR_LEN;
+	resp_payload->resp.data = (uint8_t* )strdup(SUCCESS);
+	return ESP_OK;
+err:
+	resp_payload->resp.len = FAILURE_STR_LEN;
+	resp_payload->resp.data = (uint8_t* )strdup(FAILURE);
+	return ESP_OK;
+}
+
 static esp_hosted_config_cmd_t cmd_table[] = {
 	{
 		.cmd_num = ESP_HOSTED_CONFIG_MSG_TYPE__TypeCmdGetMACAddress ,
@@ -993,6 +1077,14 @@ static esp_hosted_config_cmd_t cmd_table[] = {
 	{
 		.cmd_num = ESP_HOSTED_CONFIG_MSG_TYPE__TypeCmdSetMacAddress,
 		.command_handler = cmd_set_mac_address_handler
+	},
+	{
+		.cmd_num = ESP_HOSTED_CONFIG_MSG_TYPE__TypeCmdSetPowerSaveMode,
+		.command_handler = cmd_set_power_save_mode_handler
+	},
+	{
+		.cmd_num = ESP_HOSTED_CONFIG_MSG_TYPE__TypeCmdGetPowerSaveMode,
+		.command_handler = cmd_get_power_save_mode_handler
 	},
 };
 
@@ -1123,6 +1215,28 @@ static void esp_hosted_config_cleanup(EspHostedConfigPayload *resp)
 					free(resp->resp_set_mac_address->resp.data);
 				}
 				free(resp->resp_set_mac_address);
+			}
+		}
+		break;
+		case (ESP_HOSTED_CONFIG_MSG_TYPE__TypeRespSetPowerSaveMode) : {
+			if (resp->resp_set_power_save_mode) {
+				if (resp->resp_set_power_save_mode->resp.data) {
+					free(resp->resp_set_power_save_mode->resp.data);
+					resp->resp_set_power_save_mode->resp.data = NULL;
+				}
+				free(resp->resp_set_power_save_mode);
+				resp->resp_set_power_save_mode = NULL;
+			}
+		}
+		break;
+		case (ESP_HOSTED_CONFIG_MSG_TYPE__TypeRespGetPowerSaveMode) : {
+			if (resp->resp_get_power_save_mode) {
+				if (resp->resp_get_power_save_mode->resp.data) {
+					free(resp->resp_get_power_save_mode->resp.data);
+					resp->resp_get_power_save_mode->resp.data = NULL;
+				}
+				free(resp->resp_get_power_save_mode);
+				resp->resp_get_power_save_mode = NULL;
 			}
 		}
 		break;

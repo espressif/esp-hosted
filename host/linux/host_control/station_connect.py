@@ -32,7 +32,7 @@ success = "success"
 flag = success
 station_status = 'Nothing set'
 
-parser = argparse.ArgumentParser(description='station_connect.py is a python script which connect ESPstation to AP. ex. python station_connect.py \'xyz\' \'xyz123456\' --bssid=\'e5:6c:67:3c:cf:65\' --is_wpa3_supported=True')
+parser = argparse.ArgumentParser(description='station_connect.py is a python script which connect ESPstation to AP. ex. python station_connect.py \'xyz\' \'xyz123456\' --bssid=\'e5:6c:67:3c:cf:65\' --is_wpa3_supported=True --listen_interval=3')
 
 parser.add_argument("ssid", type=str, default='0', help="ssid of AP")
 
@@ -41,6 +41,8 @@ parser.add_argument("password", type=str, default='0', help="password of AP")
 parser.add_argument("--bssid", type=str, default='0', help="bssid i.e MAC address of AP in case of multiple AP has same ssid (default: '0')")
 
 parser.add_argument("--is_wpa3_supported", type=bool, default=False, help="wpa3 support present on AP (False:Unsupported) (True: Supported)")
+
+parser.add_argument("--listen_interval", type=int, default=3, help="Listen interval for ESP32 station to receive beacon when WIFI_PS_MAX_MODEM is set. Units: AP beacon intervals. (Defaults to 3 if set to 0)")
 
 args = parser.parse_args()
 
@@ -52,7 +54,7 @@ else :
     print("station MAC address "+str(sta_mac))
 
 if (flag == success):
-    station_status = commands.wifi_set_ap_config(args.ssid,args.password,args.bssid,args.is_wpa3_supported)
+    station_status = commands.wifi_set_ap_config(args.ssid,args.password,args.bssid,args.is_wpa3_supported,args.listen_interval)
     if (station_status == failure):
         flag = failure
         print("Failed to set AP config")
