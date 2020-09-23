@@ -94,10 +94,6 @@ static struct rx_data {
     int len;
     uint8_t data[1024];
 } r;
-//#define min(x, y) ((x) < (y) ? (x) : (y))
-static inline int min(int x, int y) {
-    return (x < y) ? x : y;
-}
 
 static void print_firmware_version()
 {
