@@ -244,15 +244,17 @@ static esp_err_t sdio_reset(interface_handle_t *handle)
 		return ret;
 
 	while(1) {
-		sdio_slave_buf_handle_t handle;
+		sdio_slave_buf_handle_t handle = NULL;
 
 		/* Return buffers to driver */
 		ret = sdio_slave_send_get_finished(&handle, 0);
 		if (ret != ESP_OK)
 			break;
 
-		ret = sdio_slave_recv_load_buf(handle);
-		ESP_ERROR_CHECK(ret);
+		if (handle) {
+			ret = sdio_slave_recv_load_buf(handle);
+			ESP_ERROR_CHECK(ret);
+		}
 	}
 
 	return ESP_OK;
