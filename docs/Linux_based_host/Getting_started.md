@@ -40,6 +40,8 @@ python station_connect.py 'xyz' 'xyz123456' --bssid='e5:6c:67:3c:cf:65' --is_wpa
 
 You can check that `ethsta0` interface is up (enabled) using `ifconfig`. WPA3 option is only applicable if target AP supports WPA3.
 
+To know status of station, use wifi_get_ap_config() function. In case station is connected with AP, it returns ssid, bssid(MAC address), channel, rssi, encryption mode of AP. and In case of not connected with AP returns `failure` with `not_connected` print.
+
 2. `station_disconnect.py` is a python script to disconnect ESP32 station from AP.
 
 ```

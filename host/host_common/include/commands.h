@@ -12,6 +12,7 @@
 #define SSID_LENGTH             32
 #define PASSWORD_LENGTH         64
 #define BSSID_LENGTH            19
+#define STATUS_LENGTH           14
 
 typedef enum {
     WIFI_AUTH_OPEN = 0 ,
@@ -41,6 +42,7 @@ typedef struct {
     int max_connections;
     bool ssid_hidden;
     int bandwidth;
+    char status[STATUS_LENGTH];
 } esp_hosted_ap_config_t;
 
 typedef struct {
@@ -163,6 +165,8 @@ int wifi_set_softap_config (esp_hosted_ap_config_t softap_config);
  *          bandwidth          : bandwidth of ESP32 softAP
  *              ( 1 : WIFI_BW_HT20
  *                2 : WIFI_BW_HT40 )
+ *          status              :   success         (connected to AP)
+ *                                  not_connected   (not connected to AP)
  */
 int wifi_get_softap_config (esp_hosted_ap_config_t* softap_config);
 

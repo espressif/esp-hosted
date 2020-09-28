@@ -34,6 +34,8 @@ interface = "/dev/esps0"
 endpoint = "control"
 not_set = "0"
 failure = "failure"
+success = "success"
+not_connected = "not_connected"
 
 #get mac address
 # mode == 1 for station mac
@@ -103,6 +105,10 @@ def wifi_get_ap_config():
          return failure
      #print("response from slave "+str(response))
      get_ap_config.ParseFromString(response)
+     if str(get_ap_config.resp_get_ap_config.status) == not_connected:
+         return not_connected
+     elif str(get_ap_config.resp_get_ap_config.status) != success:
+         return failure
      ssid = str(get_ap_config.resp_get_ap_config.ssid)
      bssid = str(get_ap_config.resp_get_ap_config.bssid)
      channel = get_ap_config.resp_get_ap_config.chnl
