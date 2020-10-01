@@ -50,7 +50,7 @@ parser.add_argument("--bw", type=int, default=1, help="Bandwidth (1: WIFI_BW_HT2
 
 args = parser.parse_args()
 
-ap_mac = commands.get_mac(softap)
+ap_mac = commands.wifi_get_mac(softap)
 if (ap_mac == failure):
     print("Failed to get is SoftAP mac address")
     flag = failure

@@ -35,7 +35,6 @@
 #define PARAM_STR_WPA2_PSK                  "WPA2_PSK"
 #define PARAM_STR_WPA_PSK                   "WPA_PSK"
 #define PARAM_STR_OPEN                      "OPEN"
-#define PARAM_STR_WEP                       "WEP"
 
 #define PARAM_STR_SOFTAP_STATION            "SOFTAP+STATION"
 #define PARAM_STR_STATION_SOFTAP            "STATION+SOFTAP"
@@ -230,9 +229,6 @@ static uint8_t get_param_softap_encryption(void)
 	} else if (strncasecmp(INPUT_SOFTAP_ENCRYPTION, PARAM_STR_OPEN,
 				strlen(PARAM_STR_OPEN)) == 0) {
 		return WIFI_AUTH_OPEN;
-	} else if (strncasecmp(INPUT_SOFTAP_ENCRYPTION, PARAM_STR_WEP,
-				strlen(PARAM_STR_WEP)) == 0) {
-		return WIFI_AUTH_WEP;
 	}
 	printf("%s not supported for INPUT_SOFTAP_ENCRYPTION. Default to OPEN\n\r",
 			INPUT_SOFTAP_ENCRYPTION);
@@ -335,7 +331,7 @@ static int station_connect(void)
 		get_boolean_param(INPUT_STATION_IS_WPA3_SUPPORTED);
 
 	memset(mac, '\0', WIFI_MAX_STR_LEN);
-	ret = get_mac(wifi_mode, mac);
+	ret = wifi_get_mac(wifi_mode, mac);
 	if (ret) {
 		printf("Failed to get MAC address, retrying \n\r");
 		hard_delay(50000);
@@ -386,7 +382,7 @@ static int softap_start(void)
 
 	memset(mac, '\0', WIFI_MAX_STR_LEN);
 
-	ret = get_mac(wifi_mode, mac);
+	ret = wifi_get_mac(wifi_mode, mac);
 	if (ret) {
 		printf("Failed to get MAC address \n\r");
 		hard_delay(50000);

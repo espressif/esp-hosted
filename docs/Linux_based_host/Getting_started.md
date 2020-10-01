@@ -4,9 +4,9 @@
 
 [`host_commands`](../../host/linux/host_control/host_commands) python module in `host/linux/host_control` directory implements the communication protocol between the host and ESP32. It contains following functions:
 ```
-get_mac(mode)
-get_wifi_mode()
-set_wifi_mode(mode)
+wifi_get_mac(mode)
+wifi_get_mode()
+wifi_set_mode(mode)
 wifi_set_ap_config(ssid, pwd, bssid, is_wpa3_supported)
 wifi_get_ap_config()
 wifi_disconnect_ap()
@@ -68,7 +68,7 @@ python softap_config.py 'xyz' 'xyz123456' 1 3 --max_conn=4 --ssid_hidden=0 --bw=
 ```
 
 You can check that `ethap0` interface is up (enabled) using `ifconfig`.
-`Note: Currently WPA3 support is not present for ESP32 softAP mode.`
+`Note: Currently WEP, WPA2_ENTERPRISE, WPA3 support is not present for ESP32 softAP mode.`
 
 To start data connection, set up a DHCP server on the Raspberry Pi, or configure a static IP address for AP interface (`ethap0`).
 
