@@ -158,7 +158,7 @@ def wifi_get_ap_config():
      ecn = get_ap_config.resp_get_ap_config.ecn
      return ssid,bssid,channel,rssi,ecn
 
-# wifi disconnect ap 
+# wifi disconnect ap
 # Function disconnects ESP32 station from connected AP
 # returns "success" or "failure"
 def wifi_disconnect_ap():
@@ -197,7 +197,10 @@ def wifi_set_softap_config(ssid, pwd, chnl, ecn, max_conn, ssid_hidden, bw):
     set_softap_config = esp_hosted_config_pb2.EspHostedConfigPayload()
     set_softap_config.msg = esp_hosted_config_pb2.EspHostedConfigMsgType.TypeCmdSetSoftAPConfig
     if len(ssid) > max_ssid_len :
-        print("SSID length is more than 32 Bytes") 
+        print("SSID length is more than 32 Bytes")
+        return failure
+    if len(pwd) > max_password_len :
+        print("softAP password length is more than 64 bytes")
         return failure
     set_softap_config.cmd_set_softap_config.ssid = str(ssid)
     set_softap_config.cmd_set_softap_config.pwd = str(pwd)
@@ -259,7 +262,7 @@ def wifi_get_softap_config():
     bw = get_softap_config.resp_get_softap_config.bw
     return ssid,pwd,chnl,ecn,max_conn,ssid_hidden,status,bw
 
-# wifi ap scan list 
+# wifi ap scan list
 # Function gives scanned list of available APs
 # Output parameter
 #       output is list of Aplist class instances(ssid,chnl,rssi,bssid,ecn)

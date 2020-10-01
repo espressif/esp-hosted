@@ -35,6 +35,8 @@
 #define NOT_CONNECTED "not_connected"
 #define SSID_LENGTH     32
 
+#define PASSWORD_LENGTH     64
+
 static const char* TAG = "slave_commands";
 
 /* FreeRTOS event group to signal when we are connected*/
@@ -602,6 +604,10 @@ static esp_err_t cmd_set_softap_config_handler (EspHostedConfigPayload *req,
 		return ESP_FAIL;
 	}
 	softap_event_register();
+	if (strlen((char* )req->cmd_set_softap_config->pwd) > PASSWORD_LENGTH) {
+		ESP_LOGE(TAG, "PASSWORD Length is more than 64 Bytes");
+		return ESP_FAIL;
+	}
 	if (hosted_flags.is_ap_connected) {
 		ret = esp_wifi_set_mode(WIFI_MODE_APSTA);
 		ESP_LOGI(TAG,"APSTA mode set");
