@@ -49,8 +49,8 @@ int main()
     if (ret == SUCCESS) {
         printf("mac address %s \n", mac);
     }
-    strcpy((char* )&ap_config.ssid ,"Siddhesh");
-    strcpy((char* )&ap_config.pwd ,"sid123456");
+    strcpy((char* )&ap_config.ssid ,"xyz");
+    strcpy((char* )&ap_config.pwd ,"xyz123456");
     strcpy((char* )&ap_config.bssid, "0");
     ap_config.is_wpa3_supported = false;
     ret = wifi_set_ap_config(ap_config);
@@ -64,6 +64,8 @@ int main()
         printf("AP's channel number %d \n", ap_config.channel);
         printf("AP's rssi %d \n", ap_config.rssi);
         printf("AP's encryption mode %d \n", ap_config.encryption_mode);
+    } else {
+        printf("AP's status %s \n", ap_config.status);
     }
     ret = wifi_disconnect_ap();
     if (ret == SUCCESS) {

@@ -22,13 +22,16 @@
 #define MAC_LENGTH      17
 #define SSID_LENGTH     32
 #define PWD_LENGTH      64
+#define STATUS_LENGTH   14
 
 #define TIMEOUT_PSERIAL_RESP 30
 
-#define success_str     "success"
-#define success_str_len 8
-#define failure_str     "failure"
-#define failure_str_len 8
+#define success_str             "success"
+#define success_str_len         8
+#define failure_str             "failure"
+#define failure_str_len         8
+#define not_connected_str       "not_connected"
+#define not_connected_str_len   13
 
 int get_wifi_mode(int* mode)
 {
@@ -387,15 +390,32 @@ int wifi_get_ap_config (esp_hosted_ap_config_t* ap_config)
 
 	resp = esp_hosted_config_payload__unpack(NULL, rx_len, rx_data);
 	if ((!resp) ||
-	    (!resp->resp_get_ap_config) ||
-	    (!resp->resp_get_ap_config->ssid)) {
+	    (!resp->resp_get_ap_config)) {
 		esp_hosted_free(tx_data);
 		tx_data = NULL;
 		esp_hosted_free(rx_data);
 		rx_data = NULL;
 		return FAILURE;
 	}
-
+	strncpy(ap_config->status, resp->resp_get_ap_config->status,
+				min(STATUS_LENGTH, strlen(resp->resp_get_ap_config->status)+1));
+	if (strncmp(resp->resp_get_ap_config->status, not_connected_str,
+				min(strlen(resp->resp_get_ap_config->status), not_connected_str_len)) == 0) {
+		command_log("Station is not connected to AP \n");
+		esp_hosted_free(tx_data);
+		tx_data = NULL;
+		esp_hosted_free(rx_data);
+		rx_data = NULL;
+		return FAILURE;
+	}
+	if (strncmp(resp->resp_get_ap_config->status, failure_str, failure_str_len) == 0) {
+		command_log("Failed to get AP config \n");
+		esp_hosted_free(tx_data);
+		tx_data = NULL;
+		esp_hosted_free(rx_data);
+		rx_data = NULL;
+		return FAILURE;
+	}
 	strncpy((char* )ap_config->ssid,
 		resp->resp_get_ap_config->ssid,
 		min(SSID_LENGTH, strlen((char *)resp->resp_get_ap_config->ssid)+1));

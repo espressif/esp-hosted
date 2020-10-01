@@ -30,6 +30,7 @@
 #define MACSTR "%02x:%02x:%02x:%02x:%02x:%02x"
 #define SUCCESS "success"
 #define FAILURE "failure"
+#define NOT_CONNECTED "not_connected"
 
 static const char* TAG = "slave_commands";
 
@@ -392,20 +393,37 @@ static esp_err_t cmd_set_ap_config_handler (EspHostedConfigPayload *req,
 static esp_err_t cmd_get_ap_config_handler (EspHostedConfigPayload *req,
                                         EspHostedConfigPayload *resp, void *priv_data)
 {
-	if (!hosted_flags.is_ap_connected) {
-		ESP_LOGI(TAG,"ESP32 station is not connected with AP, can't get AP configuration");
-		return ESP_FAIL;
-	}
 	esp_err_t ret;
 	wifi_ap_record_t *ap_info = (wifi_ap_record_t *)calloc(1,sizeof(wifi_ap_record_t));
 	if (ap_info == NULL) {
 		ESP_LOGE(TAG,"Failed to allocate memory");
 		return ESP_ERR_NO_MEM;
 	}
-
+	EspHostedRespConfig *resp_payload =
+		(EspHostedRespConfig *)calloc(1,sizeof(EspHostedRespConfig));
+	if (resp_payload == NULL) {
+		ESP_LOGE(TAG,"failed to allocate memory");
+		free(ap_info);
+		return ESP_ERR_NO_MEM;
+	}
+	esp_hosted_resp_config__init (resp_payload);
+	resp->payload_case = ESP_HOSTED_CONFIG_PAYLOAD__PAYLOAD_RESP_GET_AP_CONFIG ;
+	resp->resp_get_ap_config = resp_payload;
+	if (!hosted_flags.is_ap_connected) {
+		ESP_LOGI(TAG,"ESP32 station is not connected with AP, can't get AP configuration");
+		resp_payload->status = NOT_CONNECTED;
+		free(ap_info);
+		return ESP_OK;
+	}
 	ret = esp_wifi_sta_get_ap_info(ap_info);
-	if (ret != ESP_OK) {
+	if (ret == ESP_ERR_WIFI_NOT_CONNECT) {
+		ESP_LOGI(TAG,"Disconnected from previously connected AP");
+		resp_payload->status = NOT_CONNECTED;
+		free(ap_info);
+		return ESP_OK;
+	} else if (ret != ESP_OK) {
 		ESP_LOGE(TAG,"Failed to get AP config %d \n", ret);
+		resp_payload->status = FAILURE;
 		free(ap_info);
 		return ESP_FAIL;
 	}
@@ -420,14 +438,7 @@ static esp_err_t cmd_get_ap_config_handler (EspHostedConfigPayload *req,
 	credentials.ecn = ap_info->authmode;
 	//ESP_LOGI(TAG,"ssid %s bssid %s",credentials.ssid, credentials.bssid);
 	//ESP_LOGI(TAG,"rssi %d channel %d ", credentials.rssi, credentials.chnl);
-	EspHostedRespConfig *resp_payload =
-		(EspHostedRespConfig *)calloc(1,sizeof(EspHostedRespConfig));
-	if (resp_payload == NULL) {
-		ESP_LOGE(TAG,"failed to allocate memory");
-		free(ap_info);
-		return ESP_ERR_NO_MEM;
-	}
-	esp_hosted_resp_config__init (resp_payload);
+
 	resp_payload->ssid = (char *)credentials.ssid;
 	resp_payload->bssid = (char *)credentials.bssid;
 	resp_payload->has_rssi = 1;
@@ -437,8 +448,6 @@ static esp_err_t cmd_get_ap_config_handler (EspHostedConfigPayload *req,
 	resp_payload->has_ecn = 1;
 	resp_payload->ecn = credentials.ecn;
 	resp_payload->status = SUCCESS;
-	resp->payload_case = ESP_HOSTED_CONFIG_PAYLOAD__PAYLOAD_RESP_GET_AP_CONFIG ;
-	resp->resp_get_ap_config = resp_payload;
 	free(ap_info);
 	return ESP_OK;
 }
