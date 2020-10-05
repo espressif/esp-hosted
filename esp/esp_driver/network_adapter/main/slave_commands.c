@@ -33,6 +33,7 @@
 #define SUCCESS "success"
 #define FAILURE "failure"
 #define NOT_CONNECTED "not_connected"
+#define SSID_LENGTH     32
 
 static const char* TAG = "slave_commands";
 
@@ -596,6 +597,10 @@ static esp_err_t cmd_set_softap_config_handler (EspHostedConfigPayload *req,
 		EspHostedConfigPayload *resp, void *priv_data)
 {
 	esp_err_t ret;
+	if (strlen(req->cmd_set_softap_config->ssid) > SSID_LENGTH) {
+		ESP_LOGE(TAG, "SoftAP SSID length is more than 32 Bytes");
+		return ESP_FAIL;
+	}
 	softap_event_register();
 	if (hosted_flags.is_ap_connected) {
 		ret = esp_wifi_set_mode(WIFI_MODE_APSTA);

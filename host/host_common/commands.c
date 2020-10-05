@@ -523,6 +523,10 @@ int wifi_set_softap_config (esp_hosted_ap_config_t softap_config)
 	}
 
 	esp_hosted_cmd_config__init(req_payload);
+	if (strlen((char* )&softap_config.ssid) > SSID_LENGTH) {
+		command_log("SSID length is more than 32 bytes \n");
+		return FAILURE;
+	}
 	req_payload->ssid = (char* )&softap_config.ssid;
 	req_payload->pwd = (char* )&softap_config.pwd;
 	req_payload->has_chnl = true;
