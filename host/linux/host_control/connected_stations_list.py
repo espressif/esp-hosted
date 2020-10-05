@@ -30,7 +30,7 @@ stations_list = "No station is connected"
 
 parser = argparse.ArgumentParser(description='connected_stations_list.py is a python script which gives list of mac addresses of stations connected to softAP. ex. python connected_stations_list.py')
 
-get_mode = commands.get_wifi_mode()
+get_mode = commands.wifi_get_mode()
 if (get_mode == softap or get_mode == station_softap):
     stations_list = commands.wifi_connected_stations_list()
     if (stations_list == failure):

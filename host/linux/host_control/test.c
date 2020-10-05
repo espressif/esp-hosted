@@ -36,16 +36,16 @@ int main()
     esp_hosted_wifi_scanlist_t* list = NULL;
     esp_hosted_wifi_connected_stations_list* stations_list = NULL;
     char mac[MAC_LENGTH];
-    int ret = get_wifi_mode(&mode);
+    int ret = wifi_get_mode(&mode);
     if (ret == SUCCESS) {
         printf("wifi mode is %d \n",mode);
     }
     mode = 1;
-    ret = set_wifi_mode(mode);
+    ret = wifi_set_mode(mode);
     if (ret == SUCCESS) {
         printf("newly set wifi mode %d \n", mode);
     }
-    ret = get_mac(mode,mac);
+    ret = wifi_get_mac(mode,mac);
     if (ret == SUCCESS) {
         printf("mac address %s \n", mac);
     }

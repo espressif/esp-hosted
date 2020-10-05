@@ -33,7 +33,7 @@
 #define not_connected_str       "not_connected"
 #define not_connected_str_len   13
 
-int get_wifi_mode(int* mode)
+int wifi_get_mode(int* mode)
 {
 	EspHostedConfigPayload req;
 	EspHostedConfigPayload *resp;
@@ -89,7 +89,7 @@ int get_wifi_mode(int* mode)
 	return SUCCESS;
 }
 
-int set_wifi_mode(int mode)
+int wifi_set_mode(int mode)
 {
 	EspHostedConfigPayload req;
 	EspHostedConfigPayload *resp;
@@ -173,7 +173,7 @@ int set_wifi_mode(int mode)
 	return SUCCESS;
 }
 
-int get_mac(int mode, char* mac)
+int wifi_get_mac(int mode, char* mac)
 {
 	EspHostedConfigPayload req;
 	EspHostedConfigPayload *resp;

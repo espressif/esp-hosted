@@ -7,9 +7,9 @@ Host firmware provides wifi connectivity using control path and data path. Contr
 ### Control Path Commands
 [commands.c](../../host/host_common/commands.c) is control path commands C library. It implements the communication protocol between the host and ESP32. It contains following functions:
 ```
-get_wifi_mode(int* mode)
-set_wifi_mode(int mode)
-get_mac(int mode, char* mac)
+wifi_get_mode(int* mode)
+wifi_set_mode(int mode)
+wifi_get_mac(int mode, char* mac)
 wifi_set_ap_config(esp_hosted_ap_config_t ap_config)
 wifi_get_ap_config (esp_hosted_ap_config_t* ap_config)
 wifi_disconnect_ap ()
@@ -142,8 +142,8 @@ Build Variables are as follows:
 |4| INPUT_SOFTAP__SSID | String | SSID of softAP. For example. "ESPWifi" |
 |5| INPUT_SOFTAP_PASSWORD | String | Password of softAP . Length of password should be 8~64 bytes ASCII. For example. "ESPWifi@123" |
 |6| INPUT_SOFTAP_BANDWIDTH | String | Set bandwidth of ESP32 softAP ( HT20 or HT40 ) |
-|7| INPUT_SOFTAP_CHANNEL | String | Channel ID (Range: 1 to 10)|
-|8| INPUT_SOFTAP_ENCRYPTION | String | Encryption mode. ( OPEN, WEP, WPA_PSK, WPA2_PSK, WPA_WPA2_PSK) |
+|7| INPUT_SOFTAP_CHANNEL | String | Channel ID (Range: 1 to 11)|
+|8| INPUT_SOFTAP_ENCRYPTION | String | Encryption mode. ( OPEN, WPA_PSK, WPA2_PSK, WPA_WPA2_PSK) |
 |9| INPUT_SOFTAP_MAX_CONN | String | Maximum number of stations can connect to ESP32 SoftAP (Range: 1 to 10) |
 |10| INPUT_SOFTAP_SSID_HIDDEN | String | SoftAP should broadcast its SSID or not ( "yes" : SSID is broadcast, "no" : SSID is not broadcast )
 |11| INPUT_SOFTAP_SRC_IP | String | Source IP (IPv4)address of host in softAP mode. |
@@ -158,7 +158,7 @@ Build Variables are as follows:
 #### Note:
 All string parameters are expected to be enclosed in double quotes.
 
-Verify that `CODE_BASE` variable from `menu -> Project -> Properties -> Resource -> Linked Resources -> Path Variables -> CODE_BASE` points to git cloned directory. 
+Verify that `CODE_BASE` variable from `menu -> Project -> Properties -> Resource -> Linked Resources -> Path Variables -> CODE_BASE` points to git cloned directory.
 
 In case there is a warning sign on folder icon, it means STM32CubeIDE has not correctly configured the variable. In that case, re-configure it using, `Edit -> Click On Folder -> <Path/to/esp_hosted> -> Open -> OK`. The warning sign now should disappear. Now click on `Apply and Close`.
 

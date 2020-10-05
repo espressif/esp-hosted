@@ -33,21 +33,21 @@ flag = success
 
 parser = argparse.ArgumentParser(description='softap_stop.py script will stop ESP32 softap ex. python softap_close.py')
 
-wifi_mode = commands.get_wifi_mode()
+wifi_mode = commands.wifi_get_mode()
 print("WiFi Mode: "+str(wifi_mode))
 
 if (wifi_mode == failure):
     print("Failed to get wifi mode")
     flag = failure 
 elif (wifi_mode == softap):
-    wifi_mode = commands.set_wifi_mode(none)
+    wifi_mode = commands.wifi_set_mode(none)
     if (wifi_mode == failure):
         print("Failed to stop softap")
         flag = failure
     else :
         print("SoftAP stopped")
 elif (wifi_mode == station_softap):
-    wifi_mode = commands.set_wifi_mode(station)
+    wifi_mode = commands.wifi_set_mode(station)
     if (wifi_mode == failure):
         print("failure in stopping softap")
         flag = failure

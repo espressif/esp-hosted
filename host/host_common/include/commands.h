@@ -57,18 +57,19 @@ typedef struct {
     uint8_t bssid[BSSID_LENGTH];
     int rssi;
 } esp_hosted_wifi_connected_stations_list;
-/* get wifi mode function returns status SUCCESS(0) or FAILURE(-1)
+
+/* wifi get mode function returns status SUCCESS(0) or FAILURE(-1)
  * Output parameter
- *      int* mode : returns current wifi mode of esp32
+ *      int* mode : returns current wifi mode of ESP32
  * wifi modes:
  * 0: null Mode, Wi-Fi mode not set
  * 1: station mode
  * 2: softAP mode
  * 3: softAP+station mode
  */
-int get_wifi_mode(int* mode);
+int wifi_get_mode(int* mode);
 
-/* set wifi mode function returns status SUCCESS(0) or FAILURE(-1)
+/* wifi set mode function returns status SUCCESS(0) or FAILURE(-1)
  * User should give input mode as follows:
  * wifi modes:
  * 0: null Mode, Wi-Fi mode not set
@@ -77,16 +78,16 @@ int get_wifi_mode(int* mode);
  * 3: softAP+station mode
  *
  */
-int set_wifi_mode(int mode);
+int wifi_set_mode(int mode);
 
-/* get mac function returns status SUCCESS(0) or FAILURE(-1)
+/* wifi get mac function returns status SUCCESS(0) or FAILURE(-1)
  * Input parameter
  *      mode == 1 for station mac
  *      mode == 2 for softAP mac
  * Output parameter
  *      char* mac, returns MAC address of respective mode
  */
-int get_mac (int mode ,char* mac);
+int wifi_get_mac (int mode ,char* mac);
 
 /* wifi set ap config function returns status of connect to AP request as SUCCESS(0) or FAILURE(-1)
  * Input parameter
@@ -118,20 +119,19 @@ int wifi_set_ap_config(esp_hosted_ap_config_t ap_config);
  */
 int wifi_get_ap_config (esp_hosted_ap_config_t* ap_config);
 
-/* wifi disconnect ap function disconnects esp32 station from connected AP, returns SUCCESS(0) or FAILURE(-1)
+/* wifi disconnect ap function disconnects ESP32 station from connected AP, returns SUCCESS(0) or FAILURE(-1)
  */
 int wifi_disconnect_ap();
 
-/* wifi set softap config function sets esp32 softAP configurations, returns SUCCESS(0) or FAILURE(-1)
+/* wifi set softap config function sets ESP32 softAP configurations, returns SUCCESS(0) or FAILURE(-1)
  * Input parameter
  *      esp_hosted_ap_config_t softap_config ::
  *          ssid            :   ssid of softAP
  *          pwd             :   password of softAP, length of password should be 8~64 bytes ASCII
- *          channel         :   channel ID, in range of 1 to 10
+ *          channel         :   channel ID, in range of 1 to 11
  *          encryption_mode :   encryption mode
  *          (encryption modes are
  *              0 :   OPEN
- *              1 :   WEP
  *              2 :   WPA_PSK
  *              3 :   WPA2_PSK
  *              4 :   WPA_WPA2_PSK
@@ -145,16 +145,15 @@ int wifi_disconnect_ap();
  */
 int wifi_set_softap_config (esp_hosted_ap_config_t softap_config);
 
-/* wifi get softap config function gives esp32 softAP credentials, returns SUCCESS(0) or FAILURE (-1)
+/* wifi get softap config function gives ESP32 softAP credentials, returns SUCCESS(0) or FAILURE (-1)
  * Output parameter
  *      esp_hosted_ap_config_t* softap_config ::
  *          ssid                :   ssid of softAP
  *          pwd                 :   password of softAP
- *          channel             :   channel ID, in range of 1 to 10
+ *          channel             :   channel ID, in range of 1 to 11
  *          encryption_mode     :   encryption mode
  *          (encryption modes are
  *              0 :   OPEN
- *              1 :   WEP
  *              2 :   WPA_PSK
  *              3 :   WPA2_PSK
  *              4 :   WPA_WPA2_PSK
@@ -193,7 +192,7 @@ int wifi_get_softap_config (esp_hosted_ap_config_t* softap_config);
  */
 int wifi_ap_scan_list(esp_hosted_wifi_scanlist_t** list, int* count);
 
-/* wifi connected stations list function gives list of connected stations to esp32 softAP, returns SUCCESS(0) or FAILURE(-1)
+/* wifi connected stations list function gives list of connected stations to ESP32 softAP, returns SUCCESS(0) or FAILURE(-1)
  * Output parameter
  *      int* num      : number of stations connected
  *      esp_hosted_wifi_connected_stations_list** list : double pointer to credentials of connected stations

@@ -19,8 +19,8 @@ failure = 'failure'
 # 1 : station
 # 2 : softAP
 '''
-x = commands.get_mac(2)
-print("sta mac "+str(x))
+x = commands.wifi_get_mac(2)
+print("mac "+str(x))
 
 # 0: null Mode, Wi-Fi mode not set
 # 1: station mode
@@ -28,11 +28,11 @@ print("sta mac "+str(x))
 # 3: softAP+station mode
 # or Failure
 
-x = commands.get_wifi_mode()
+x = commands.wifi_get_mode()
 print("wifi mode is "+str(x))
 
-x = commands.set_wifi_mode(2)
-print("connected mode is "+str(x))
+x = commands.wifi_set_mode(2)
+print(x)
 
 x = commands.wifi_set_ap_config('xyz','xyz123456','0',False)
 print(x)

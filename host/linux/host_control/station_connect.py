@@ -44,7 +44,7 @@ parser.add_argument("--is_wpa3_supported", type=bool, default=False, help="wpa3 
 
 args = parser.parse_args()
 
-sta_mac = commands.get_mac(station)
+sta_mac = commands.wifi_get_mac(station)
 if (sta_mac == failure):
     flag = failure
     print("Failed to get station MAC address")
