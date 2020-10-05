@@ -202,4 +202,20 @@ int wifi_ap_scan_list(esp_hosted_wifi_scanlist_t** list, int* count);
  *          rssi        :   rssi signal strength
  */
 int wifi_connected_stations_list(esp_hosted_wifi_connected_stations_list** list, int* num);
+
+/*
+ * wifi set mac function sets custom mac address to ESP32's station and softAP Interface, returns SUCCESS(0) or FAILURE(-1)
+ * Input parameter:
+ *      mode : ESP32 wifi mode
+ *          (1 : for station mac
+ *           2 : for softAP mac)
+ *      mac  : custom MAC Address for esp32 Interface
+ * @attention 1. First set wifi mode before setting MAC address for respective station and softAP Interface
+ * @attention 2. ESP32 station and softAP have different MAC addresses, do not set them to be the same.
+ * @attention 3. The bit 0 of the first byte of ESP32 MAC address can not be 1.
+ * For example, the MAC address can set to be "1a:XX:XX:XX:XX:XX", but can not be "15:XX:XX:XX:XX:XX".
+ * @attention 4. MAC address will get reset after esp restarts
+ *
+ */
+int wifi_set_mac(int mode, char* mac);
 #endif

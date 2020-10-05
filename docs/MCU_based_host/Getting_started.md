@@ -5,28 +5,22 @@
 Host firmware provides wifi connectivity using control path and data path. Control path commands uses `protocomm` layer of ESP-IDF to serialize structured control data and communicates using SPI transport interface between Host(MCU based Host) and Slave(ESP32). User can use control commands to build application.
 
 ### Control Path Commands
-[commands.c](../../host/host_common/commands.c) is control path commands C library. It implements the communication protocol between the host and ESP32. It contains following functions:
-```
-wifi_get_mode(int* mode)
-wifi_set_mode(int mode)
-wifi_get_mac(int mode, char* mac)
-wifi_set_ap_config(esp_hosted_ap_config_t ap_config)
-wifi_get_ap_config (esp_hosted_ap_config_t* ap_config)
-wifi_disconnect_ap ()
-wifi_set_softap_config (esp_hosted_ap_config_t softap_config)
-wifi_get_softap_config (esp_hosted_ap_config_t* softap_config)
-wifi_ap_scan_list(esp_hosted_wifi_scanlist_t** list, int* count)
-wifi_connected_stations_list(esp_hosted_wifi_connected_stations_list** list, int* num)
-```
-Above function's parameters and description is present [here](../../host/host_common/include/commands.h).
+[commands.c](../../host/host_common/commands.c) is control path commands C library. It implements the communication protocol between the host and ESP32. It contains following functions which can be used to control Wi-Fi functionality of the ESP32 as follows:
+| Function | Functionality |
+|:--------|:-------------|
+| wifi_get_mac(int mode, char* mac) | get MAC address of station or softAP Interface |
+| wifi_get_mode(int* mode) | get wifi mode |
+| wifi_set_mode(int mode) | set wifi mode |
+| wifi_set_ap_config(esp_hosted_ap_config_t ap_config) | connect to AP as a station |
+| wifi_get_ap_config (esp_hosted_ap_config_t* ap_config) | get AP configuration and status |
+| wifi_disconnect_ap () | disconnect from AP |
+| wifi_set_softap_config (esp_hosted_ap_config_t softap_config) | start softAP |
+| wifi_get_softap_config (esp_hosted_ap_config_t* softap_config) | get softAP configuration |
+| wifi_ap_scan_list(esp_hosted_wifi_scanlist_t** list, int* count) | scan available APs |
+| wifi_connected_stations_list(esp_hosted_wifi_connected_stations_list** list, int* num) | list stations connected to softAP |
+| wifi_set_mac(int mode, char* mac) | sets custom mac address for station and softAP Interface |
 
-These functions can be used to control Wi-Fi functionality of the ESP32 as follows.
-- connect to AP as a station
-- disconnect from AP
-- start softAP
-- stop softAP
-- scan available APs
-- list stations connected to softAP
+Above function's parameters and description is present [here](../../host/host_common/include/commands.h).
 
 ### Start Project with STM32
 

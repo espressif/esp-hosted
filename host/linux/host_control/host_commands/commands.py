@@ -321,3 +321,30 @@ def wifi_connected_stations_list():
             rssi = get_connected_stations_list.resp_connected_stas_list.stations[i].rssi
             stas_list.append(Stationlist(mac,rssi))
         return stas_list
+
+# wifi set mac
+# Function sets MAC address for Station and SoftAP interface
+# mode == 1 for station mac
+# mode == 2 for softAP mac
+# returns success or failure
+# @attention 1. First set wifi mode before setting MAC address for respective station and softAP Interface
+# @attention 2. ESP32 station and softAP have different MAC addresses, do not set them to be the same.
+# @attention 3. The bit 0 of the first byte of ESP32 MAC address can not be 1.
+# For example, the MAC address can set to be "1a:XX:XX:XX:XX:XX", but can not be "15:XX:XX:XX:XX:XX".
+# @attention 4. MAC address will get reset after esp restarts
+
+def wifi_set_mac(mode, mac):
+    set_mac = esp_hosted_config_pb2.EspHostedConfigPayload()
+    set_mac.msg = esp_hosted_config_pb2.EspHostedConfigMsgType.TypeCmdSetMacAddress
+    set_mac.cmd_set_mac_address.mode = mode
+    set_mac.cmd_set_mac_address.mac = mac
+    protodata = set_mac.SerializeToString()
+    #print("serialized data "+str(protodata))
+    tp = transport.Transport_pserial(interface)
+    response = tp.send_data(endpoint,protodata,1)
+    if response == failure:
+        return failure
+    #print("response from slave "+str(response))
+    set_mac.ParseFromString(response)
+    status = set_mac.resp_set_mac_address.resp
+    return status

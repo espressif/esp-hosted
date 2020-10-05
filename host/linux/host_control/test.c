@@ -29,6 +29,9 @@
 #define SUCCESS         0
 #define FAILURE         -1
 
+#define STATION_MODE    1
+#define SOFTAP_MODE     2
+
 int main()
 {
     int mode = 0, count = 0;
@@ -40,8 +43,8 @@ int main()
     if (ret == SUCCESS) {
         printf("wifi mode is %d \n",mode);
     }
-    mode = 1;
-    ret = wifi_set_mode(mode);
+    mode = STATION_MODE;
+    ret = set_wifi_mode(mode);
     if (ret == SUCCESS) {
         printf("newly set wifi mode %d \n", mode);
     }
@@ -126,6 +129,14 @@ int main()
     if (stations_list != NULL) {
         esp_hosted_free(stations_list);
         stations_list = NULL;
+    }
+    mode = STATION_MODE;
+    strcpy(mac, "1a:11:11:11:11:11");
+    ret = wifi_set_mac(mode, mac);
+    if (ret == SUCCESS) {
+        printf("MAC address is set \n");
+    } else {
+        printf("MAC address is not set \n");
     }
     return 0; 
 }
