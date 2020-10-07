@@ -27,6 +27,10 @@ typedef struct _EspHostedRespScanResult EspHostedRespScanResult;
 typedef struct _EspHostedConnectedSTAList EspHostedConnectedSTAList;
 typedef struct _EspHostedCmdConnectedSTA EspHostedCmdConnectedSTA;
 typedef struct _EspHostedRespConnectedSTA EspHostedRespConnectedSTA;
+typedef struct _EspHostedCmdSetPowerSaveMode EspHostedCmdSetPowerSaveMode;
+typedef struct _EspHostedRespSetPowerSaveMode EspHostedRespSetPowerSaveMode;
+typedef struct _EspHostedCmdGetPowerSaveMode EspHostedCmdGetPowerSaveMode;
+typedef struct _EspHostedRespGetPowerSaveMode EspHostedRespGetPowerSaveMode;
 typedef struct _EspHostedConfigPayload EspHostedConfigPayload;
 
 
@@ -65,7 +69,11 @@ typedef enum _EspHostedConfigMsgType {
   ESP_HOSTED_CONFIG_MSG_TYPE__TypeCmdGetConnectedSTAList = 18,
   ESP_HOSTED_CONFIG_MSG_TYPE__TypeRespGetConnectedSTAList = 19,
   ESP_HOSTED_CONFIG_MSG_TYPE__TypeCmdSetMacAddress = 20,
-  ESP_HOSTED_CONFIG_MSG_TYPE__TypeRespSetMacAddress = 21
+  ESP_HOSTED_CONFIG_MSG_TYPE__TypeRespSetMacAddress = 21,
+  ESP_HOSTED_CONFIG_MSG_TYPE__TypeCmdSetPowerSaveMode = 22,
+  ESP_HOSTED_CONFIG_MSG_TYPE__TypeRespSetPowerSaveMode = 23,
+  ESP_HOSTED_CONFIG_MSG_TYPE__TypeCmdGetPowerSaveMode = 24,
+  ESP_HOSTED_CONFIG_MSG_TYPE__TypeRespGetPowerSaveMode = 25
     PROTOBUF_C__FORCE_ENUM_TO_BE_INT_SIZE(ESP_HOSTED_CONFIG_MSG_TYPE)
 } EspHostedConfigMsgType;
 
@@ -140,10 +148,12 @@ struct  _EspHostedCmdConfig
   int32_t bw;
   protobuf_c_boolean has_is_wpa3_supported;
   protobuf_c_boolean is_wpa3_supported;
+  protobuf_c_boolean has_listen_interval;
+  int32_t listen_interval;
 };
 #define ESP_HOSTED_CMD_CONFIG__INIT \
  { PROTOBUF_C_MESSAGE_INIT (&esp_hosted_cmd_config__descriptor) \
-    , NULL, NULL, 0,0, 0,0, 0,0, 0,0, NULL, 0,0, NULL, 0,0, 0,0 }
+    , NULL, NULL, 0,0, 0,0, 0,0, 0,0, NULL, 0,0, NULL, 0,0, 0,0, 0,0 }
 
 
 struct  _EspHostedRespConfig
@@ -167,10 +177,12 @@ struct  _EspHostedRespConfig
   int32_t bw;
   protobuf_c_boolean has_is_wpa3_supported;
   protobuf_c_boolean is_wpa3_supported;
+  protobuf_c_boolean has_listen_interval;
+  int32_t listen_interval;
 };
 #define ESP_HOSTED_RESP_CONFIG__INIT \
  { PROTOBUF_C_MESSAGE_INIT (&esp_hosted_resp_config__descriptor) \
-    , NULL, NULL, 0,0, 0,0, 0,0, 0,0, NULL, 0,0, NULL, 0,0, 0,0 }
+    , NULL, NULL, 0,0, 0,0, 0,0, 0,0, NULL, 0,0, NULL, 0,0, 0,0, 0,0 }
 
 
 struct  _EspHostedScanResult
@@ -249,6 +261,50 @@ struct  _EspHostedRespConnectedSTA
     , 0,0, 0,NULL }
 
 
+struct  _EspHostedCmdSetPowerSaveMode
+{
+  ProtobufCMessage base;
+  protobuf_c_boolean has_power_save_mode;
+  int32_t power_save_mode;
+};
+#define ESP_HOSTED_CMD_SET_POWER_SAVE_MODE__INIT \
+ { PROTOBUF_C_MESSAGE_INIT (&esp_hosted_cmd_set_power_save_mode__descriptor) \
+    , 0,0 }
+
+
+struct  _EspHostedRespSetPowerSaveMode
+{
+  ProtobufCMessage base;
+  protobuf_c_boolean has_resp;
+  ProtobufCBinaryData resp;
+};
+#define ESP_HOSTED_RESP_SET_POWER_SAVE_MODE__INIT \
+ { PROTOBUF_C_MESSAGE_INIT (&esp_hosted_resp_set_power_save_mode__descriptor) \
+    , 0,{0,NULL} }
+
+
+struct  _EspHostedCmdGetPowerSaveMode
+{
+  ProtobufCMessage base;
+};
+#define ESP_HOSTED_CMD_GET_POWER_SAVE_MODE__INIT \
+ { PROTOBUF_C_MESSAGE_INIT (&esp_hosted_cmd_get_power_save_mode__descriptor) \
+     }
+
+
+struct  _EspHostedRespGetPowerSaveMode
+{
+  ProtobufCMessage base;
+  protobuf_c_boolean has_power_save_mode;
+  int32_t power_save_mode;
+  protobuf_c_boolean has_resp;
+  ProtobufCBinaryData resp;
+};
+#define ESP_HOSTED_RESP_GET_POWER_SAVE_MODE__INIT \
+ { PROTOBUF_C_MESSAGE_INIT (&esp_hosted_resp_get_power_save_mode__descriptor) \
+    , 0,0, 0,{0,NULL} }
+
+
 typedef enum {
   ESP_HOSTED_CONFIG_PAYLOAD__PAYLOAD__NOT_SET = 0,
   ESP_HOSTED_CONFIG_PAYLOAD__PAYLOAD_CMD_GET_MAC_ADDRESS = 10,
@@ -273,6 +329,10 @@ typedef enum {
   ESP_HOSTED_CONFIG_PAYLOAD__PAYLOAD_RESP_CONNECTED_STAS_LIST = 29,
   ESP_HOSTED_CONFIG_PAYLOAD__PAYLOAD_CMD_SET_MAC_ADDRESS = 30,
   ESP_HOSTED_CONFIG_PAYLOAD__PAYLOAD_RESP_SET_MAC_ADDRESS = 31,
+  ESP_HOSTED_CONFIG_PAYLOAD__PAYLOAD_CMD_SET_POWER_SAVE_MODE = 32,
+  ESP_HOSTED_CONFIG_PAYLOAD__PAYLOAD_RESP_SET_POWER_SAVE_MODE = 33,
+  ESP_HOSTED_CONFIG_PAYLOAD__PAYLOAD_CMD_GET_POWER_SAVE_MODE = 34,
+  ESP_HOSTED_CONFIG_PAYLOAD__PAYLOAD_RESP_GET_POWER_SAVE_MODE = 35,
 } EspHostedConfigPayload__PayloadCase;
 
 struct  _EspHostedConfigPayload
@@ -304,6 +364,10 @@ struct  _EspHostedConfigPayload
     EspHostedRespConnectedSTA *resp_connected_stas_list;
     EspHostedCmdSetMacAddress *cmd_set_mac_address;
     EspHostedRespSetMacAddress *resp_set_mac_address;
+    EspHostedCmdSetPowerSaveMode *cmd_set_power_save_mode;
+    EspHostedRespSetPowerSaveMode *resp_set_power_save_mode;
+    EspHostedCmdGetPowerSaveMode *cmd_get_power_save_mode;
+    EspHostedRespGetPowerSaveMode *resp_get_power_save_mode;
   };
 };
 #define ESP_HOSTED_CONFIG_PAYLOAD__INIT \
@@ -539,6 +603,82 @@ EspHostedRespConnectedSTA *
 void   esp_hosted_resp_connected_sta__free_unpacked
                      (EspHostedRespConnectedSTA *message,
                       ProtobufCAllocator *allocator);
+/* EspHostedCmdSetPowerSaveMode methods */
+void   esp_hosted_cmd_set_power_save_mode__init
+                     (EspHostedCmdSetPowerSaveMode         *message);
+size_t esp_hosted_cmd_set_power_save_mode__get_packed_size
+                     (const EspHostedCmdSetPowerSaveMode   *message);
+size_t esp_hosted_cmd_set_power_save_mode__pack
+                     (const EspHostedCmdSetPowerSaveMode   *message,
+                      uint8_t             *out);
+size_t esp_hosted_cmd_set_power_save_mode__pack_to_buffer
+                     (const EspHostedCmdSetPowerSaveMode   *message,
+                      ProtobufCBuffer     *buffer);
+EspHostedCmdSetPowerSaveMode *
+       esp_hosted_cmd_set_power_save_mode__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data);
+void   esp_hosted_cmd_set_power_save_mode__free_unpacked
+                     (EspHostedCmdSetPowerSaveMode *message,
+                      ProtobufCAllocator *allocator);
+/* EspHostedRespSetPowerSaveMode methods */
+void   esp_hosted_resp_set_power_save_mode__init
+                     (EspHostedRespSetPowerSaveMode         *message);
+size_t esp_hosted_resp_set_power_save_mode__get_packed_size
+                     (const EspHostedRespSetPowerSaveMode   *message);
+size_t esp_hosted_resp_set_power_save_mode__pack
+                     (const EspHostedRespSetPowerSaveMode   *message,
+                      uint8_t             *out);
+size_t esp_hosted_resp_set_power_save_mode__pack_to_buffer
+                     (const EspHostedRespSetPowerSaveMode   *message,
+                      ProtobufCBuffer     *buffer);
+EspHostedRespSetPowerSaveMode *
+       esp_hosted_resp_set_power_save_mode__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data);
+void   esp_hosted_resp_set_power_save_mode__free_unpacked
+                     (EspHostedRespSetPowerSaveMode *message,
+                      ProtobufCAllocator *allocator);
+/* EspHostedCmdGetPowerSaveMode methods */
+void   esp_hosted_cmd_get_power_save_mode__init
+                     (EspHostedCmdGetPowerSaveMode         *message);
+size_t esp_hosted_cmd_get_power_save_mode__get_packed_size
+                     (const EspHostedCmdGetPowerSaveMode   *message);
+size_t esp_hosted_cmd_get_power_save_mode__pack
+                     (const EspHostedCmdGetPowerSaveMode   *message,
+                      uint8_t             *out);
+size_t esp_hosted_cmd_get_power_save_mode__pack_to_buffer
+                     (const EspHostedCmdGetPowerSaveMode   *message,
+                      ProtobufCBuffer     *buffer);
+EspHostedCmdGetPowerSaveMode *
+       esp_hosted_cmd_get_power_save_mode__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data);
+void   esp_hosted_cmd_get_power_save_mode__free_unpacked
+                     (EspHostedCmdGetPowerSaveMode *message,
+                      ProtobufCAllocator *allocator);
+/* EspHostedRespGetPowerSaveMode methods */
+void   esp_hosted_resp_get_power_save_mode__init
+                     (EspHostedRespGetPowerSaveMode         *message);
+size_t esp_hosted_resp_get_power_save_mode__get_packed_size
+                     (const EspHostedRespGetPowerSaveMode   *message);
+size_t esp_hosted_resp_get_power_save_mode__pack
+                     (const EspHostedRespGetPowerSaveMode   *message,
+                      uint8_t             *out);
+size_t esp_hosted_resp_get_power_save_mode__pack_to_buffer
+                     (const EspHostedRespGetPowerSaveMode   *message,
+                      ProtobufCBuffer     *buffer);
+EspHostedRespGetPowerSaveMode *
+       esp_hosted_resp_get_power_save_mode__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data);
+void   esp_hosted_resp_get_power_save_mode__free_unpacked
+                     (EspHostedRespGetPowerSaveMode *message,
+                      ProtobufCAllocator *allocator);
 /* EspHostedConfigPayload methods */
 void   esp_hosted_config_payload__init
                      (EspHostedConfigPayload         *message);
@@ -596,6 +736,18 @@ typedef void (*EspHostedCmdConnectedSTA_Closure)
 typedef void (*EspHostedRespConnectedSTA_Closure)
                  (const EspHostedRespConnectedSTA *message,
                   void *closure_data);
+typedef void (*EspHostedCmdSetPowerSaveMode_Closure)
+                 (const EspHostedCmdSetPowerSaveMode *message,
+                  void *closure_data);
+typedef void (*EspHostedRespSetPowerSaveMode_Closure)
+                 (const EspHostedRespSetPowerSaveMode *message,
+                  void *closure_data);
+typedef void (*EspHostedCmdGetPowerSaveMode_Closure)
+                 (const EspHostedCmdGetPowerSaveMode *message,
+                  void *closure_data);
+typedef void (*EspHostedRespGetPowerSaveMode_Closure)
+                 (const EspHostedRespGetPowerSaveMode *message,
+                  void *closure_data);
 typedef void (*EspHostedConfigPayload_Closure)
                  (const EspHostedConfigPayload *message,
                   void *closure_data);
@@ -619,6 +771,10 @@ extern const ProtobufCMessageDescriptor esp_hosted_resp_scan_result__descriptor;
 extern const ProtobufCMessageDescriptor esp_hosted_connected_stalist__descriptor;
 extern const ProtobufCMessageDescriptor esp_hosted_cmd_connected_sta__descriptor;
 extern const ProtobufCMessageDescriptor esp_hosted_resp_connected_sta__descriptor;
+extern const ProtobufCMessageDescriptor esp_hosted_cmd_set_power_save_mode__descriptor;
+extern const ProtobufCMessageDescriptor esp_hosted_resp_set_power_save_mode__descriptor;
+extern const ProtobufCMessageDescriptor esp_hosted_cmd_get_power_save_mode__descriptor;
+extern const ProtobufCMessageDescriptor esp_hosted_resp_get_power_save_mode__descriptor;
 extern const ProtobufCMessageDescriptor esp_hosted_config_payload__descriptor;
 
 PROTOBUF_C__END_DECLS

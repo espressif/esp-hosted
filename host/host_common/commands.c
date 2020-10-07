@@ -20,8 +20,8 @@
 #define FAILURE         -1
 
 #define MAC_LENGTH      17
-#define SSID_LENGTH     32
-#define PWD_LENGTH      64
+#define MAX_SSID_LENGTH     32
+#define MAX_PWD_LENGTH      64
 #define STATUS_LENGTH   14
 
 #define TIMEOUT_PSERIAL_RESP 30
@@ -282,6 +282,8 @@ int wifi_set_ap_config(esp_hosted_ap_config_t ap_config)
 	req_payload->bssid = (char* )&ap_config.bssid;
 	req_payload->has_is_wpa3_supported = true;
 	req_payload->is_wpa3_supported = ap_config.is_wpa3_supported;
+	req_payload->has_listen_interval = true;
+	req_payload->listen_interval = ap_config.listen_interval;
 	req.cmd_set_ap_config = req_payload;
 
 	tx_len = esp_hosted_config_payload__get_packed_size(&req);
@@ -418,7 +420,7 @@ int wifi_get_ap_config (esp_hosted_ap_config_t* ap_config)
 	}
 	strncpy((char* )ap_config->ssid,
 		resp->resp_get_ap_config->ssid,
-		min(SSID_LENGTH, strlen((char *)resp->resp_get_ap_config->ssid)+1));
+		min(MAX_SSID_LENGTH, strlen((char *)resp->resp_get_ap_config->ssid)+1));
 
 	if (resp->resp_get_ap_config->bssid) {
 		strncpy((char* )ap_config->bssid,
@@ -523,11 +525,11 @@ int wifi_set_softap_config (esp_hosted_ap_config_t softap_config)
 	}
 
 	esp_hosted_cmd_config__init(req_payload);
-	if (strlen((char* )&softap_config.ssid) > SSID_LENGTH) {
+	if (strlen((char* )&softap_config.ssid) > MAX_SSID_LENGTH) {
 		command_log("SSID length is more than 32 bytes \n");
 		return FAILURE;
 	}
-	if (strlen((char* )&softap_config.pwd > PWD_LENGTH)) {
+	if (strlen((char* )&softap_config.pwd) > MAX_PWD_LENGTH) {
 		command_log("softAP password length is more than 64 bytes \n");
 		return FAILURE;
 	}
@@ -660,12 +662,12 @@ int wifi_get_softap_config (esp_hosted_ap_config_t* softap_config)
 
 	if (resp->resp_get_softap_config->ssid) {
 		strncpy((char* )softap_config->ssid,
-				resp->resp_get_softap_config->ssid, min(SSID_LENGTH,
+				resp->resp_get_softap_config->ssid, min(MAX_SSID_LENGTH,
 					strlen((char *)resp->resp_get_softap_config->ssid)+1));
 	}
 	if (resp->resp_get_softap_config->pwd) {
 		strncpy((char* )softap_config->pwd,
-				resp->resp_get_softap_config->pwd, min(PWD_LENGTH,
+				resp->resp_get_softap_config->pwd, min(MAX_PWD_LENGTH,
 					strlen((char *)resp->resp_get_softap_config->pwd)+1));
 	}
 	softap_config->channel = resp->resp_get_softap_config->chnl;
@@ -938,6 +940,183 @@ int wifi_set_mac(int mode, char* mac)
         rx_data = NULL;
         return FAILURE;
     }
+    esp_hosted_free(tx_data);
+    tx_data = NULL;
+    esp_hosted_free(rx_data);
+    rx_data = NULL;
+    esp_hosted_free(req_payload);
+    req_payload = NULL;
+    return SUCCESS;
+}
+
+int wifi_set_power_save_mode(int power_save_mode)
+{
+    EspHostedConfigPayload req;
+    EspHostedConfigPayload *resp;
+    uint32_t tx_len = 0, rx_len = 0;
+    uint8_t* tx_data = NULL;
+    uint8_t* rx_data = NULL;
+
+    esp_hosted_config_payload__init (&req);
+    req.has_msg = 1;
+    req.msg = ESP_HOSTED_CONFIG_MSG_TYPE__TypeCmdSetPowerSaveMode;
+    req.payload_case = ESP_HOSTED_CONFIG_PAYLOAD__PAYLOAD_CMD_SET_POWER_SAVE_MODE;
+
+    EspHostedCmdSetPowerSaveMode *req_payload = (EspHostedCmdSetPowerSaveMode* ) \
+                                             esp_hosted_calloc(1, sizeof(EspHostedCmdSetPowerSaveMode));
+    if (!req_payload) {
+        command_log("Failed to allocate memory \n");
+        return FAILURE;
+    }
+
+    esp_hosted_cmd_set_power_save_mode__init(req_payload);
+    req_payload->has_power_save_mode = true;
+    req_payload->power_save_mode = power_save_mode;
+    req.cmd_set_power_save_mode = req_payload;
+    tx_len = esp_hosted_config_payload__get_packed_size(&req);
+    if (!tx_len) {
+        command_log("Invalid tx length \n");
+        esp_hosted_free(req_payload);
+        req_payload = NULL;
+        return FAILURE;
+    }
+
+    tx_data = (uint8_t* )esp_hosted_calloc (1, tx_len);
+    if (!tx_data) {
+        command_log("Failed to allocate memory \n");
+        esp_hosted_free(req_payload);
+        req_payload = NULL;
+        return FAILURE;
+    }
+
+    esp_hosted_config_payload__pack(&req, tx_data);
+
+    rx_data = transport_pserial_data_handler(tx_data, tx_len,
+            TIMEOUT_PSERIAL_RESP, &rx_len);
+    if (!rx_data || !rx_len) {
+        command_log("Failed to process RX data \n");
+        esp_hosted_free(req_payload);
+        req_payload = NULL;
+        esp_hosted_free(tx_data);
+        tx_data = NULL;
+        return FAILURE;
+    }
+
+    resp = esp_hosted_config_payload__unpack(NULL, rx_len, rx_data);
+    if ((!resp) ||
+            (!resp->resp_set_power_save_mode) ||
+            (!resp->resp_set_power_save_mode->resp.data))
+    {
+        esp_hosted_free(tx_data);
+        tx_data = NULL;
+        esp_hosted_free(rx_data);
+        rx_data = NULL;
+        esp_hosted_free(req_payload);
+        req_payload = NULL;
+        return FAILURE;
+    }
+
+    if (strncmp((char* )resp->resp_set_power_save_mode->resp.data, success_str,
+            min(success_str_len, resp->resp_set_power_save_mode->resp.len+1)) != 0) {
+        esp_hosted_free(req_payload);
+        req_payload = NULL;
+        esp_hosted_free(tx_data);
+        tx_data = NULL;
+        esp_hosted_free(rx_data);
+        rx_data = NULL;
+        return FAILURE;
+    }
+    esp_hosted_free(tx_data);
+    tx_data = NULL;
+    esp_hosted_free(rx_data);
+    rx_data = NULL;
+    esp_hosted_free(req_payload);
+    req_payload = NULL;
+    return SUCCESS;
+}
+
+int wifi_get_power_save_mode(int* power_save_mode)
+{
+    EspHostedConfigPayload req;
+    EspHostedConfigPayload *resp;
+    uint32_t tx_len = 0, rx_len = 0;
+    uint8_t* tx_data = NULL;
+    uint8_t* rx_data = NULL;
+
+    if (!power_save_mode) {
+        command_log("Invalid parameter \n");
+        return FAILURE;
+    }
+
+    esp_hosted_config_payload__init (&req);
+    req.has_msg = 1;
+    req.msg = ESP_HOSTED_CONFIG_MSG_TYPE__TypeCmdGetPowerSaveMode;
+    req.payload_case = ESP_HOSTED_CONFIG_PAYLOAD__PAYLOAD_CMD_GET_POWER_SAVE_MODE;
+    *power_save_mode = WIFI_PS_INVALID;
+
+    EspHostedCmdGetPowerSaveMode *req_payload = (EspHostedCmdGetPowerSaveMode* ) \
+			esp_hosted_calloc(1, sizeof(EspHostedCmdGetPowerSaveMode));
+    if (!req_payload) {
+        command_log("Failed to allocate memory \n");
+        return FAILURE;
+    }
+
+    esp_hosted_cmd_get_power_save_mode__init(req_payload);
+    req.cmd_get_power_save_mode = req_payload;
+    tx_len = esp_hosted_config_payload__get_packed_size(&req);
+    if (!tx_len) {
+        command_log("Invalid tx length \n");
+        esp_hosted_free(req_payload);
+        req_payload = NULL;
+        return FAILURE;
+    }
+
+    tx_data = (uint8_t* )esp_hosted_calloc (1, tx_len);
+    if (!tx_data) {
+        command_log("Failed to allocate memory \n");
+        esp_hosted_free(req_payload);
+        req_payload = NULL;
+        return FAILURE;
+    }
+
+    esp_hosted_config_payload__pack(&req, tx_data);
+
+    rx_data = transport_pserial_data_handler(tx_data, tx_len,
+            TIMEOUT_PSERIAL_RESP, &rx_len);
+    if (!rx_data || !rx_len) {
+        command_log("Failed to process RX data \n");
+        esp_hosted_free(req_payload);
+        req_payload = NULL;
+        esp_hosted_free(tx_data);
+        tx_data = NULL;
+        return FAILURE;
+    }
+
+    resp = esp_hosted_config_payload__unpack(NULL, rx_len, rx_data);
+    if ((!resp) ||
+            (!resp->resp_get_power_save_mode) ||
+            (!resp->resp_get_power_save_mode->resp.data))
+    {
+        esp_hosted_free(tx_data);
+        tx_data = NULL;
+        esp_hosted_free(rx_data);
+        rx_data = NULL;
+        esp_hosted_free(req_payload);
+        req_payload = NULL;
+        return FAILURE;
+    }
+
+    if (strncmp((char* )resp->resp_get_power_save_mode->resp.data, success_str,
+            min(success_str_len, resp->resp_get_power_save_mode->resp.len+1)) != 0) {
+        esp_hosted_free(req_payload);
+        req_payload = NULL;
+        esp_hosted_free(tx_data);
+        tx_data = NULL;
+        esp_hosted_free(rx_data);
+        rx_data = NULL;
+        return FAILURE;
+    }
+    *power_save_mode = resp->resp_get_power_save_mode->power_save_mode;
     esp_hosted_free(tx_data);
     tx_data = NULL;
     esp_hosted_free(rx_data);

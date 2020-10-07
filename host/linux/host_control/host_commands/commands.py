@@ -103,14 +103,17 @@ def wifi_set_mode(mode):
 #       is_wpa3_supported : status of wpa3 supplicant present on AP
 #                  (False : Unsupported
 #                    True : Supported )
+#       listen_interval   : Listen interval for ESP32 station to receive beacon when WIFI_PS_MAX_MODEM is set.
+#                           Units: AP beacon intervals. Defaults to 3 if set to 0.
 
-def wifi_set_ap_config(ssid, pwd, bssid, is_wpa3_supported):
+def wifi_set_ap_config(ssid, pwd, bssid, is_wpa3_supported, listen_interval):
     set_ap_config = esp_hosted_config_pb2.EspHostedConfigPayload()
     set_ap_config.msg = esp_hosted_config_pb2.EspHostedConfigMsgType.TypeCmdSetAPConfig
     set_ap_config.cmd_set_ap_config.ssid = str(ssid)
     set_ap_config.cmd_set_ap_config.pwd = str(pwd)
     set_ap_config.cmd_set_ap_config.bssid = str(bssid)
     set_ap_config.cmd_set_ap_config.is_wpa3_supported = is_wpa3_supported
+    set_ap_config.cmd_set_ap_config.listen_interval = listen_interval
     protodata = set_ap_config.SerializeToString()
     tp = transport.Transport_pserial(interface)
     response = tp.send_data(endpoint,protodata,10)
@@ -357,3 +360,53 @@ def wifi_set_mac(mode, mac):
     set_mac.ParseFromString(response)
     status = set_mac.resp_set_mac_address.resp
     return status
+
+# wifi set power save mode
+# Function sets ESP32's power save mode, returns success or failure
+# power save mode == 1      WIFI_PS_MIN_MODEM,   /**< Minimum modem power saving.
+#                           In this mode, station wakes up to receive beacon every DTIM period */
+# power save mode == 2      WIFI_PS_MAX_MODEM,   /**< Maximum modem power saving.
+#                           In this mode, interval to receive beacons is determined by the
+#                           listen_interval parameter in wifi set ap config function*/
+# Default :: power save mode is WIFI_PS_MIN_MODEM
+
+def wifi_set_power_save_mode(power_save_mode):
+    set_power_save_mode = esp_hosted_config_pb2.EspHostedConfigPayload()
+    set_power_save_mode.msg = esp_hosted_config_pb2.EspHostedConfigMsgType.TypeCmdSetPowerSaveMode
+    set_power_save_mode.cmd_set_power_save_mode.power_save_mode = power_save_mode
+    protodata = set_power_save_mode.SerializeToString()
+    #print("serialized data "+str(protodata))
+    tp = transport.Transport_pserial(interface)
+    response = tp.send_data(endpoint,protodata,1)
+    if response == failure:
+        return failure
+    #print("response from slave "+str(response))
+    set_power_save_mode.ParseFromString(response)
+    status = set_power_save_mode.resp_set_power_save_mode.resp
+    return status
+
+# wifi get power save mode
+# Function returns power save mode of ESP32 or failure
+# power save mode == 1      WIFI_PS_MIN_MODEM,   /**< Minimum modem power saving.
+#                           In this mode, station wakes up to receive beacon every DTIM period */
+# power save mode == 2      WIFI_PS_MAX_MODEM,   /**< Maximum modem power saving.
+#                           In this mode, interval to receive beacons is determined by the
+#                           listen_interval parameter in wifi set ap config function*/
+# Default :: power save mode is WIFI_PS_MIN_MODEM
+
+def wifi_get_power_save_mode():
+    get_power_save_mode = esp_hosted_config_pb2.EspHostedConfigPayload()
+    get_power_save_mode.msg = esp_hosted_config_pb2.EspHostedConfigMsgType.TypeCmdGetPowerSaveMode
+    protodata = get_power_save_mode.SerializeToString()
+    #print("serialized data "+str(protodata))
+    tp = transport.Transport_pserial(interface)
+    response = tp.send_data(endpoint,protodata,1)
+    if response == failure:
+        return failure
+    #print("response from slave "+str(response))
+    get_power_save_mode.ParseFromString(response)
+    status = get_power_save_mode.resp_get_power_save_mode.resp
+    if status != success:
+        return failure
+    else:
+        return get_power_save_mode.resp_get_power_save_mode.power_save_mode

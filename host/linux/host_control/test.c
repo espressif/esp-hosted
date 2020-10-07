@@ -34,7 +34,7 @@
 
 int main()
 {
-    int mode = 0, count = 0;
+    int mode = 0, count = 0, power_save_mode = 0;
     esp_hosted_ap_config_t ap_config, softap_config;
     esp_hosted_wifi_scanlist_t* list = NULL;
     esp_hosted_wifi_connected_stations_list* stations_list = NULL;
@@ -56,6 +56,7 @@ int main()
     strcpy((char* )&ap_config.pwd ,"xyz123456");
     strcpy((char* )&ap_config.bssid, "0");
     ap_config.is_wpa3_supported = false;
+    ap_config.listen_interval = 5;
     ret = wifi_set_ap_config(ap_config);
     if (ret == SUCCESS) {
         printf("Connected to AP \n");
@@ -137,6 +138,19 @@ int main()
         printf("MAC address is set \n");
     } else {
         printf("MAC address is not set \n");
+    }
+    power_save_mode = WIFI_PS_MIN_MODEM;
+    ret = wifi_set_power_save_mode(power_save_mode);
+    if (ret == SUCCESS) {
+        printf("Power save mode set \n");
+    } else {
+        printf("Power save mode is not set \n");
+    }
+    ret = wifi_get_power_save_mode(&power_save_mode);
+    if (ret == SUCCESS) {
+        printf("Power save mode is %d \n", power_save_mode);
+    } else {
+        printf("Failed to get power save mode \n");
     }
     return 0; 
 }

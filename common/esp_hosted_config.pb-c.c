@@ -523,6 +523,178 @@ void   esp_hosted_resp_connected_sta__free_unpacked
   assert(message->base.descriptor == &esp_hosted_resp_connected_sta__descriptor);
   protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
 }
+void   esp_hosted_cmd_set_power_save_mode__init
+                     (EspHostedCmdSetPowerSaveMode         *message)
+{
+  static EspHostedCmdSetPowerSaveMode init_value = ESP_HOSTED_CMD_SET_POWER_SAVE_MODE__INIT;
+  *message = init_value;
+}
+size_t esp_hosted_cmd_set_power_save_mode__get_packed_size
+                     (const EspHostedCmdSetPowerSaveMode *message)
+{
+  assert(message->base.descriptor == &esp_hosted_cmd_set_power_save_mode__descriptor);
+  return protobuf_c_message_get_packed_size ((const ProtobufCMessage*)(message));
+}
+size_t esp_hosted_cmd_set_power_save_mode__pack
+                     (const EspHostedCmdSetPowerSaveMode *message,
+                      uint8_t       *out)
+{
+  assert(message->base.descriptor == &esp_hosted_cmd_set_power_save_mode__descriptor);
+  return protobuf_c_message_pack ((const ProtobufCMessage*)message, out);
+}
+size_t esp_hosted_cmd_set_power_save_mode__pack_to_buffer
+                     (const EspHostedCmdSetPowerSaveMode *message,
+                      ProtobufCBuffer *buffer)
+{
+  assert(message->base.descriptor == &esp_hosted_cmd_set_power_save_mode__descriptor);
+  return protobuf_c_message_pack_to_buffer ((const ProtobufCMessage*)message, buffer);
+}
+EspHostedCmdSetPowerSaveMode *
+       esp_hosted_cmd_set_power_save_mode__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data)
+{
+  return (EspHostedCmdSetPowerSaveMode *)
+     protobuf_c_message_unpack (&esp_hosted_cmd_set_power_save_mode__descriptor,
+                                allocator, len, data);
+}
+void   esp_hosted_cmd_set_power_save_mode__free_unpacked
+                     (EspHostedCmdSetPowerSaveMode *message,
+                      ProtobufCAllocator *allocator)
+{
+  assert(message->base.descriptor == &esp_hosted_cmd_set_power_save_mode__descriptor);
+  protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
+}
+void   esp_hosted_resp_set_power_save_mode__init
+                     (EspHostedRespSetPowerSaveMode         *message)
+{
+  static EspHostedRespSetPowerSaveMode init_value = ESP_HOSTED_RESP_SET_POWER_SAVE_MODE__INIT;
+  *message = init_value;
+}
+size_t esp_hosted_resp_set_power_save_mode__get_packed_size
+                     (const EspHostedRespSetPowerSaveMode *message)
+{
+  assert(message->base.descriptor == &esp_hosted_resp_set_power_save_mode__descriptor);
+  return protobuf_c_message_get_packed_size ((const ProtobufCMessage*)(message));
+}
+size_t esp_hosted_resp_set_power_save_mode__pack
+                     (const EspHostedRespSetPowerSaveMode *message,
+                      uint8_t       *out)
+{
+  assert(message->base.descriptor == &esp_hosted_resp_set_power_save_mode__descriptor);
+  return protobuf_c_message_pack ((const ProtobufCMessage*)message, out);
+}
+size_t esp_hosted_resp_set_power_save_mode__pack_to_buffer
+                     (const EspHostedRespSetPowerSaveMode *message,
+                      ProtobufCBuffer *buffer)
+{
+  assert(message->base.descriptor == &esp_hosted_resp_set_power_save_mode__descriptor);
+  return protobuf_c_message_pack_to_buffer ((const ProtobufCMessage*)message, buffer);
+}
+EspHostedRespSetPowerSaveMode *
+       esp_hosted_resp_set_power_save_mode__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data)
+{
+  return (EspHostedRespSetPowerSaveMode *)
+     protobuf_c_message_unpack (&esp_hosted_resp_set_power_save_mode__descriptor,
+                                allocator, len, data);
+}
+void   esp_hosted_resp_set_power_save_mode__free_unpacked
+                     (EspHostedRespSetPowerSaveMode *message,
+                      ProtobufCAllocator *allocator)
+{
+  assert(message->base.descriptor == &esp_hosted_resp_set_power_save_mode__descriptor);
+  protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
+}
+void   esp_hosted_cmd_get_power_save_mode__init
+                     (EspHostedCmdGetPowerSaveMode         *message)
+{
+  static EspHostedCmdGetPowerSaveMode init_value = ESP_HOSTED_CMD_GET_POWER_SAVE_MODE__INIT;
+  *message = init_value;
+}
+size_t esp_hosted_cmd_get_power_save_mode__get_packed_size
+                     (const EspHostedCmdGetPowerSaveMode *message)
+{
+  assert(message->base.descriptor == &esp_hosted_cmd_get_power_save_mode__descriptor);
+  return protobuf_c_message_get_packed_size ((const ProtobufCMessage*)(message));
+}
+size_t esp_hosted_cmd_get_power_save_mode__pack
+                     (const EspHostedCmdGetPowerSaveMode *message,
+                      uint8_t       *out)
+{
+  assert(message->base.descriptor == &esp_hosted_cmd_get_power_save_mode__descriptor);
+  return protobuf_c_message_pack ((const ProtobufCMessage*)message, out);
+}
+size_t esp_hosted_cmd_get_power_save_mode__pack_to_buffer
+                     (const EspHostedCmdGetPowerSaveMode *message,
+                      ProtobufCBuffer *buffer)
+{
+  assert(message->base.descriptor == &esp_hosted_cmd_get_power_save_mode__descriptor);
+  return protobuf_c_message_pack_to_buffer ((const ProtobufCMessage*)message, buffer);
+}
+EspHostedCmdGetPowerSaveMode *
+       esp_hosted_cmd_get_power_save_mode__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data)
+{
+  return (EspHostedCmdGetPowerSaveMode *)
+     protobuf_c_message_unpack (&esp_hosted_cmd_get_power_save_mode__descriptor,
+                                allocator, len, data);
+}
+void   esp_hosted_cmd_get_power_save_mode__free_unpacked
+                     (EspHostedCmdGetPowerSaveMode *message,
+                      ProtobufCAllocator *allocator)
+{
+  assert(message->base.descriptor == &esp_hosted_cmd_get_power_save_mode__descriptor);
+  protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
+}
+void   esp_hosted_resp_get_power_save_mode__init
+                     (EspHostedRespGetPowerSaveMode         *message)
+{
+  static EspHostedRespGetPowerSaveMode init_value = ESP_HOSTED_RESP_GET_POWER_SAVE_MODE__INIT;
+  *message = init_value;
+}
+size_t esp_hosted_resp_get_power_save_mode__get_packed_size
+                     (const EspHostedRespGetPowerSaveMode *message)
+{
+  assert(message->base.descriptor == &esp_hosted_resp_get_power_save_mode__descriptor);
+  return protobuf_c_message_get_packed_size ((const ProtobufCMessage*)(message));
+}
+size_t esp_hosted_resp_get_power_save_mode__pack
+                     (const EspHostedRespGetPowerSaveMode *message,
+                      uint8_t       *out)
+{
+  assert(message->base.descriptor == &esp_hosted_resp_get_power_save_mode__descriptor);
+  return protobuf_c_message_pack ((const ProtobufCMessage*)message, out);
+}
+size_t esp_hosted_resp_get_power_save_mode__pack_to_buffer
+                     (const EspHostedRespGetPowerSaveMode *message,
+                      ProtobufCBuffer *buffer)
+{
+  assert(message->base.descriptor == &esp_hosted_resp_get_power_save_mode__descriptor);
+  return protobuf_c_message_pack_to_buffer ((const ProtobufCMessage*)message, buffer);
+}
+EspHostedRespGetPowerSaveMode *
+       esp_hosted_resp_get_power_save_mode__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data)
+{
+  return (EspHostedRespGetPowerSaveMode *)
+     protobuf_c_message_unpack (&esp_hosted_resp_get_power_save_mode__descriptor,
+                                allocator, len, data);
+}
+void   esp_hosted_resp_get_power_save_mode__free_unpacked
+                     (EspHostedRespGetPowerSaveMode *message,
+                      ProtobufCAllocator *allocator)
+{
+  assert(message->base.descriptor == &esp_hosted_resp_get_power_save_mode__descriptor);
+  protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
+}
 void   esp_hosted_config_payload__init
                      (EspHostedConfigPayload         *message)
 {
@@ -757,7 +929,7 @@ const ProtobufCMessageDescriptor esp_hosted_resp_set_mac_address__descriptor =
   (ProtobufCMessageInit) esp_hosted_resp_set_mac_address__init,
   NULL,NULL,NULL    /* reserved[123] */
 };
-static const ProtobufCFieldDescriptor esp_hosted_cmd_config__field_descriptors[11] =
+static const ProtobufCFieldDescriptor esp_hosted_cmd_config__field_descriptors[12] =
 {
   {
     "ssid",
@@ -891,6 +1063,18 @@ static const ProtobufCFieldDescriptor esp_hosted_cmd_config__field_descriptors[1
     0,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
+  {
+    "listen_interval",
+    12,
+    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_TYPE_INT32,
+    offsetof(EspHostedCmdConfig, has_listen_interval),
+    offsetof(EspHostedCmdConfig, listen_interval),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
 };
 static const unsigned esp_hosted_cmd_config__field_indices_by_name[] = {
   6,   /* field[6] = bssid */
@@ -898,6 +1082,7 @@ static const unsigned esp_hosted_cmd_config__field_indices_by_name[] = {
   3,   /* field[3] = chnl */
   2,   /* field[2] = ecn */
   10,   /* field[10] = is_wpa3_supported */
+  11,   /* field[11] = listen_interval */
   4,   /* field[4] = max_conn */
   1,   /* field[1] = pwd */
   7,   /* field[7] = rssi */
@@ -908,7 +1093,7 @@ static const unsigned esp_hosted_cmd_config__field_indices_by_name[] = {
 static const ProtobufCIntRange esp_hosted_cmd_config__number_ranges[1 + 1] =
 {
   { 1, 0 },
-  { 0, 11 }
+  { 0, 12 }
 };
 const ProtobufCMessageDescriptor esp_hosted_cmd_config__descriptor =
 {
@@ -918,14 +1103,14 @@ const ProtobufCMessageDescriptor esp_hosted_cmd_config__descriptor =
   "EspHostedCmdConfig",
   "",
   sizeof(EspHostedCmdConfig),
-  11,
+  12,
   esp_hosted_cmd_config__field_descriptors,
   esp_hosted_cmd_config__field_indices_by_name,
   1,  esp_hosted_cmd_config__number_ranges,
   (ProtobufCMessageInit) esp_hosted_cmd_config__init,
   NULL,NULL,NULL    /* reserved[123] */
 };
-static const ProtobufCFieldDescriptor esp_hosted_resp_config__field_descriptors[11] =
+static const ProtobufCFieldDescriptor esp_hosted_resp_config__field_descriptors[12] =
 {
   {
     "ssid",
@@ -1059,6 +1244,18 @@ static const ProtobufCFieldDescriptor esp_hosted_resp_config__field_descriptors[
     0,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
+  {
+    "listen_interval",
+    12,
+    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_TYPE_INT32,
+    offsetof(EspHostedRespConfig, has_listen_interval),
+    offsetof(EspHostedRespConfig, listen_interval),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
 };
 static const unsigned esp_hosted_resp_config__field_indices_by_name[] = {
   6,   /* field[6] = bssid */
@@ -1066,6 +1263,7 @@ static const unsigned esp_hosted_resp_config__field_indices_by_name[] = {
   3,   /* field[3] = chnl */
   2,   /* field[2] = ecn */
   10,   /* field[10] = is_wpa3_supported */
+  11,   /* field[11] = listen_interval */
   4,   /* field[4] = max_conn */
   1,   /* field[1] = pwd */
   7,   /* field[7] = rssi */
@@ -1076,7 +1274,7 @@ static const unsigned esp_hosted_resp_config__field_indices_by_name[] = {
 static const ProtobufCIntRange esp_hosted_resp_config__number_ranges[1 + 1] =
 {
   { 1, 0 },
-  { 0, 11 }
+  { 0, 12 }
 };
 const ProtobufCMessageDescriptor esp_hosted_resp_config__descriptor =
 {
@@ -1086,7 +1284,7 @@ const ProtobufCMessageDescriptor esp_hosted_resp_config__descriptor =
   "EspHostedRespConfig",
   "",
   sizeof(EspHostedRespConfig),
-  11,
+  12,
   esp_hosted_resp_config__field_descriptors,
   esp_hosted_resp_config__field_indices_by_name,
   1,  esp_hosted_resp_config__number_ranges,
@@ -1372,7 +1570,152 @@ const ProtobufCMessageDescriptor esp_hosted_resp_connected_sta__descriptor =
   (ProtobufCMessageInit) esp_hosted_resp_connected_sta__init,
   NULL,NULL,NULL    /* reserved[123] */
 };
-static const ProtobufCFieldDescriptor esp_hosted_config_payload__field_descriptors[23] =
+static const ProtobufCFieldDescriptor esp_hosted_cmd_set_power_save_mode__field_descriptors[1] =
+{
+  {
+    "power_save_mode",
+    1,
+    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_TYPE_INT32,
+    offsetof(EspHostedCmdSetPowerSaveMode, has_power_save_mode),
+    offsetof(EspHostedCmdSetPowerSaveMode, power_save_mode),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+};
+static const unsigned esp_hosted_cmd_set_power_save_mode__field_indices_by_name[] = {
+  0,   /* field[0] = power_save_mode */
+};
+static const ProtobufCIntRange esp_hosted_cmd_set_power_save_mode__number_ranges[1 + 1] =
+{
+  { 1, 0 },
+  { 0, 1 }
+};
+const ProtobufCMessageDescriptor esp_hosted_cmd_set_power_save_mode__descriptor =
+{
+  PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
+  "EspHostedCmdSetPowerSaveMode",
+  "EspHostedCmdSetPowerSaveMode",
+  "EspHostedCmdSetPowerSaveMode",
+  "",
+  sizeof(EspHostedCmdSetPowerSaveMode),
+  1,
+  esp_hosted_cmd_set_power_save_mode__field_descriptors,
+  esp_hosted_cmd_set_power_save_mode__field_indices_by_name,
+  1,  esp_hosted_cmd_set_power_save_mode__number_ranges,
+  (ProtobufCMessageInit) esp_hosted_cmd_set_power_save_mode__init,
+  NULL,NULL,NULL    /* reserved[123] */
+};
+static const ProtobufCFieldDescriptor esp_hosted_resp_set_power_save_mode__field_descriptors[1] =
+{
+  {
+    "resp",
+    1,
+    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_TYPE_BYTES,
+    offsetof(EspHostedRespSetPowerSaveMode, has_resp),
+    offsetof(EspHostedRespSetPowerSaveMode, resp),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+};
+static const unsigned esp_hosted_resp_set_power_save_mode__field_indices_by_name[] = {
+  0,   /* field[0] = resp */
+};
+static const ProtobufCIntRange esp_hosted_resp_set_power_save_mode__number_ranges[1 + 1] =
+{
+  { 1, 0 },
+  { 0, 1 }
+};
+const ProtobufCMessageDescriptor esp_hosted_resp_set_power_save_mode__descriptor =
+{
+  PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
+  "EspHostedRespSetPowerSaveMode",
+  "EspHostedRespSetPowerSaveMode",
+  "EspHostedRespSetPowerSaveMode",
+  "",
+  sizeof(EspHostedRespSetPowerSaveMode),
+  1,
+  esp_hosted_resp_set_power_save_mode__field_descriptors,
+  esp_hosted_resp_set_power_save_mode__field_indices_by_name,
+  1,  esp_hosted_resp_set_power_save_mode__number_ranges,
+  (ProtobufCMessageInit) esp_hosted_resp_set_power_save_mode__init,
+  NULL,NULL,NULL    /* reserved[123] */
+};
+#define esp_hosted_cmd_get_power_save_mode__field_descriptors NULL
+#define esp_hosted_cmd_get_power_save_mode__field_indices_by_name NULL
+#define esp_hosted_cmd_get_power_save_mode__number_ranges NULL
+const ProtobufCMessageDescriptor esp_hosted_cmd_get_power_save_mode__descriptor =
+{
+  PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
+  "EspHostedCmdGetPowerSaveMode",
+  "EspHostedCmdGetPowerSaveMode",
+  "EspHostedCmdGetPowerSaveMode",
+  "",
+  sizeof(EspHostedCmdGetPowerSaveMode),
+  0,
+  esp_hosted_cmd_get_power_save_mode__field_descriptors,
+  esp_hosted_cmd_get_power_save_mode__field_indices_by_name,
+  0,  esp_hosted_cmd_get_power_save_mode__number_ranges,
+  (ProtobufCMessageInit) esp_hosted_cmd_get_power_save_mode__init,
+  NULL,NULL,NULL    /* reserved[123] */
+};
+static const ProtobufCFieldDescriptor esp_hosted_resp_get_power_save_mode__field_descriptors[2] =
+{
+  {
+    "power_save_mode",
+    1,
+    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_TYPE_INT32,
+    offsetof(EspHostedRespGetPowerSaveMode, has_power_save_mode),
+    offsetof(EspHostedRespGetPowerSaveMode, power_save_mode),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "resp",
+    2,
+    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_TYPE_BYTES,
+    offsetof(EspHostedRespGetPowerSaveMode, has_resp),
+    offsetof(EspHostedRespGetPowerSaveMode, resp),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+};
+static const unsigned esp_hosted_resp_get_power_save_mode__field_indices_by_name[] = {
+  0,   /* field[0] = power_save_mode */
+  1,   /* field[1] = resp */
+};
+static const ProtobufCIntRange esp_hosted_resp_get_power_save_mode__number_ranges[1 + 1] =
+{
+  { 1, 0 },
+  { 0, 2 }
+};
+const ProtobufCMessageDescriptor esp_hosted_resp_get_power_save_mode__descriptor =
+{
+  PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
+  "EspHostedRespGetPowerSaveMode",
+  "EspHostedRespGetPowerSaveMode",
+  "EspHostedRespGetPowerSaveMode",
+  "",
+  sizeof(EspHostedRespGetPowerSaveMode),
+  2,
+  esp_hosted_resp_get_power_save_mode__field_descriptors,
+  esp_hosted_resp_get_power_save_mode__field_indices_by_name,
+  1,  esp_hosted_resp_get_power_save_mode__number_ranges,
+  (ProtobufCMessageInit) esp_hosted_resp_get_power_save_mode__init,
+  NULL,NULL,NULL    /* reserved[123] */
+};
+static const ProtobufCFieldDescriptor esp_hosted_config_payload__field_descriptors[27] =
 {
   {
     "msg",
@@ -1650,17 +1993,67 @@ static const ProtobufCFieldDescriptor esp_hosted_config_payload__field_descripto
     0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
+  {
+    "cmd_set_power_save_mode",
+    32,
+    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_TYPE_MESSAGE,
+    offsetof(EspHostedConfigPayload, payload_case),
+    offsetof(EspHostedConfigPayload, cmd_set_power_save_mode),
+    &esp_hosted_cmd_set_power_save_mode__descriptor,
+    NULL,
+    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "resp_set_power_save_mode",
+    33,
+    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_TYPE_MESSAGE,
+    offsetof(EspHostedConfigPayload, payload_case),
+    offsetof(EspHostedConfigPayload, resp_set_power_save_mode),
+    &esp_hosted_resp_set_power_save_mode__descriptor,
+    NULL,
+    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "cmd_get_power_save_mode",
+    34,
+    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_TYPE_MESSAGE,
+    offsetof(EspHostedConfigPayload, payload_case),
+    offsetof(EspHostedConfigPayload, cmd_get_power_save_mode),
+    &esp_hosted_cmd_get_power_save_mode__descriptor,
+    NULL,
+    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "resp_get_power_save_mode",
+    35,
+    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_TYPE_MESSAGE,
+    offsetof(EspHostedConfigPayload, payload_case),
+    offsetof(EspHostedConfigPayload, resp_get_power_save_mode),
+    &esp_hosted_resp_get_power_save_mode__descriptor,
+    NULL,
+    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
 };
 static const unsigned esp_hosted_config_payload__field_indices_by_name[] = {
   19,   /* field[19] = cmd_connected_stas_list */
   15,   /* field[15] = cmd_disconnect_ap */
   7,   /* field[7] = cmd_get_ap_config */
   1,   /* field[1] = cmd_get_mac_address */
+  25,   /* field[25] = cmd_get_power_save_mode */
   11,   /* field[11] = cmd_get_softap_config */
   3,   /* field[3] = cmd_get_wifi_mode */
   17,   /* field[17] = cmd_scan_ap_list */
   9,   /* field[9] = cmd_set_ap_config */
   21,   /* field[21] = cmd_set_mac_address */
+  23,   /* field[23] = cmd_set_power_save_mode */
   13,   /* field[13] = cmd_set_softap_config */
   5,   /* field[5] = cmd_set_wifi_mode */
   0,   /* field[0] = msg */
@@ -1668,11 +2061,13 @@ static const unsigned esp_hosted_config_payload__field_indices_by_name[] = {
   16,   /* field[16] = resp_disconnect_ap */
   8,   /* field[8] = resp_get_ap_config */
   2,   /* field[2] = resp_get_mac_address */
+  26,   /* field[26] = resp_get_power_save_mode */
   12,   /* field[12] = resp_get_softap_config */
   4,   /* field[4] = resp_get_wifi_mode */
   18,   /* field[18] = resp_scan_ap_list */
   10,   /* field[10] = resp_set_ap_config */
   22,   /* field[22] = resp_set_mac_address */
+  24,   /* field[24] = resp_set_power_save_mode */
   14,   /* field[14] = resp_set_softap_config */
   6,   /* field[6] = resp_set_wifi_mode */
 };
@@ -1680,7 +2075,7 @@ static const ProtobufCIntRange esp_hosted_config_payload__number_ranges[2 + 1] =
 {
   { 1, 0 },
   { 10, 1 },
-  { 0, 23 }
+  { 0, 27 }
 };
 const ProtobufCMessageDescriptor esp_hosted_config_payload__descriptor =
 {
@@ -1690,7 +2085,7 @@ const ProtobufCMessageDescriptor esp_hosted_config_payload__descriptor =
   "EspHostedConfigPayload",
   "",
   sizeof(EspHostedConfigPayload),
-  23,
+  27,
   esp_hosted_config_payload__field_descriptors,
   esp_hosted_config_payload__field_indices_by_name,
   2,  esp_hosted_config_payload__number_ranges,
@@ -1737,7 +2132,7 @@ const ProtobufCEnumDescriptor esp_hosted_encryption_mode__descriptor =
   esp_hosted_encryption_mode__value_ranges,
   NULL,NULL,NULL,NULL   /* reserved[1234] */
 };
-static const ProtobufCEnumValue esp_hosted_config_msg_type__enum_values_by_number[22] =
+static const ProtobufCEnumValue esp_hosted_config_msg_type__enum_values_by_number[26] =
 {
   { "TypeCmdGetMACAddress", "ESP_HOSTED_CONFIG_MSG_TYPE__TypeCmdGetMACAddress", 0 },
   { "TypeRespGetMACAddress", "ESP_HOSTED_CONFIG_MSG_TYPE__TypeRespGetMACAddress", 1 },
@@ -1761,21 +2156,27 @@ static const ProtobufCEnumValue esp_hosted_config_msg_type__enum_values_by_numbe
   { "TypeRespGetConnectedSTAList", "ESP_HOSTED_CONFIG_MSG_TYPE__TypeRespGetConnectedSTAList", 19 },
   { "TypeCmdSetMacAddress", "ESP_HOSTED_CONFIG_MSG_TYPE__TypeCmdSetMacAddress", 20 },
   { "TypeRespSetMacAddress", "ESP_HOSTED_CONFIG_MSG_TYPE__TypeRespSetMacAddress", 21 },
+  { "TypeCmdSetPowerSaveMode", "ESP_HOSTED_CONFIG_MSG_TYPE__TypeCmdSetPowerSaveMode", 22 },
+  { "TypeRespSetPowerSaveMode", "ESP_HOSTED_CONFIG_MSG_TYPE__TypeRespSetPowerSaveMode", 23 },
+  { "TypeCmdGetPowerSaveMode", "ESP_HOSTED_CONFIG_MSG_TYPE__TypeCmdGetPowerSaveMode", 24 },
+  { "TypeRespGetPowerSaveMode", "ESP_HOSTED_CONFIG_MSG_TYPE__TypeRespGetPowerSaveMode", 25 },
 };
 static const ProtobufCIntRange esp_hosted_config_msg_type__value_ranges[] = {
-{0, 0},{0, 22}
+{0, 0},{0, 26}
 };
-static const ProtobufCEnumValueIndex esp_hosted_config_msg_type__enum_values_by_name[22] =
+static const ProtobufCEnumValueIndex esp_hosted_config_msg_type__enum_values_by_name[26] =
 {
   { "TypeCmdDisconnectAP", 14 },
   { "TypeCmdGetAPConfig", 6 },
   { "TypeCmdGetAPScanList", 16 },
   { "TypeCmdGetConnectedSTAList", 18 },
   { "TypeCmdGetMACAddress", 0 },
+  { "TypeCmdGetPowerSaveMode", 24 },
   { "TypeCmdGetSoftAPConfig", 10 },
   { "TypeCmdGetWiFiMode", 2 },
   { "TypeCmdSetAPConfig", 8 },
   { "TypeCmdSetMacAddress", 20 },
+  { "TypeCmdSetPowerSaveMode", 22 },
   { "TypeCmdSetSoftAPConfig", 12 },
   { "TypeCmdSetWiFiMode", 4 },
   { "TypeRespDisconnectAP", 15 },
@@ -1783,10 +2184,12 @@ static const ProtobufCEnumValueIndex esp_hosted_config_msg_type__enum_values_by_
   { "TypeRespGetAPScanList", 17 },
   { "TypeRespGetConnectedSTAList", 19 },
   { "TypeRespGetMACAddress", 1 },
+  { "TypeRespGetPowerSaveMode", 25 },
   { "TypeRespGetSoftAPConfig", 11 },
   { "TypeRespGetWiFiMode", 3 },
   { "TypeRespSetAPConfig", 9 },
   { "TypeRespSetMacAddress", 21 },
+  { "TypeRespSetPowerSaveMode", 23 },
   { "TypeRespSetSoftAPConfig", 13 },
   { "TypeRespSetWiFiMode", 5 },
 };
@@ -1797,9 +2200,9 @@ const ProtobufCEnumDescriptor esp_hosted_config_msg_type__descriptor =
   "EspHostedConfigMsgType",
   "EspHostedConfigMsgType",
   "",
-  22,
+  26,
   esp_hosted_config_msg_type__enum_values_by_number,
-  22,
+  26,
   esp_hosted_config_msg_type__enum_values_by_name,
   1,
   esp_hosted_config_msg_type__value_ranges,
