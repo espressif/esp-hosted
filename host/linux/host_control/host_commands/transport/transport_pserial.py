@@ -17,11 +17,19 @@ from .transport import Transport
 import binascii
 import time
 import utils
+import sys
 
 failure = "failure"
 
 PROTO_PSER_TLV_T_EPNAME = b'\x01'
 PROTO_PSER_TLV_T_DATA   = b'\x02'
+
+if sys.version_info >= (3, 0):
+    def gat_val(string):
+        return bytes([string])
+else:
+    def gat_val(string):
+        return str(string)
 
 class Transport_pserial(Transport):
     def __init__(self, devname):
@@ -29,11 +37,11 @@ class Transport_pserial(Transport):
         self.f2 = open(devname, "rb",buffering = 1024)
 
     def parse_tlv(self, ep_name, in_buf):
-        if in_buf[0] == PROTO_PSER_TLV_T_EPNAME:
+        if gat_val(in_buf[0]) == PROTO_PSER_TLV_T_EPNAME:
             if in_buf[1:3] == bytearray(pack('<H',len(ep_name))):
                 length = 3 + len(ep_name)
-                if in_buf[3:length] == ep_name:
-                    if in_buf[length] == PROTO_PSER_TLV_T_DATA:
+                if in_buf[3:length].decode('ASCII') == ep_name :
+                    if gat_val(in_buf[length]) == PROTO_PSER_TLV_T_DATA:
                         length = length + 3
                         in_buf = in_buf[length:]
                         return in_buf
@@ -48,12 +56,11 @@ class Transport_pserial(Transport):
         return failure
 
     def send_data(self, ep_name, data, wait):
-        buf = bytearray([PROTO_PSER_TLV_T_EPNAME])
+        buf = bytearray(PROTO_PSER_TLV_T_EPNAME)
         buf.extend(pack('<H', len(ep_name)))
         buf.extend(map(ord,ep_name))
-        buf.extend([PROTO_PSER_TLV_T_DATA])
+        buf.extend(PROTO_PSER_TLV_T_DATA)
         buf.extend(pack('<H', len(data)))
-        #print(bytearray(data))
         buf.extend(bytearray(data))
         s = self.f1.write(buf)
         self.f1.flush()

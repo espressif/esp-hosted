@@ -18,13 +18,19 @@ $ ls /lib/modules/$(uname -r)/build
 Python is required to run utility scripts. Please install it as:
 ```sh
 $ sudo apt-get install python
+or
+$ sudo apt-get install python3
 ```
 To start with control path on Raspberry-Pi, `protobuf` and `utils` python modules are needed. User can install these modules by running following commands.
 ```
 $ pip install utils
 $ pip install protobuf
+or
+$ pip3 install utils
+$ pip3 install protobuf
 ```
-We have tested esp-hosted solution with python 2.7.
+#### Note:
+We have tested esp-hosted solution with python 2.7.13 and 3.5.3 and Protobuf version 3.13.0.
 
 ### Source code repository:
 * Clone esp-hosted repository on Raspberry Pi.

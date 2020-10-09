@@ -13,4 +13,5 @@
 # limitations under the License.
 #
 
-from .transport_pserial import *      # noqa: F403, F401
+from .transport import Transport
+from .transport_pserial import Transport_pserial      # noqa: F403, F401

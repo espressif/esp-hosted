@@ -12,8 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import transport
-import esp_hosted_config_pb2
+from .transport import *
+from .esp_hosted_config_pb2 import *
 import binascii
 
 class Aplist:
@@ -45,11 +45,11 @@ max_password_len = 64
 # mode == 1 for station mac
 # mode == 2 for softAP mac
 def wifi_get_mac(mode):
-    get_mac = esp_hosted_config_pb2.EspHostedConfigPayload()
-    get_mac.msg = esp_hosted_config_pb2.EspHostedConfigMsgType.TypeCmdGetMACAddress
+    get_mac = EspHostedConfigPayload()
+    get_mac.msg = EspHostedConfigMsgType.TypeCmdGetMACAddress
     get_mac.cmd_get_mac_address.mode = mode
     protodata = get_mac.SerializeToString()
-    tp = transport.Transport_pserial(interface)
+    tp = Transport_pserial(interface)
     response = tp.send_data(endpoint,protodata,0.3)
     if response == failure :
         return failure
@@ -64,10 +64,10 @@ def wifi_get_mac(mode):
 # 3: softAP+station mode
 
 def wifi_get_mode():
-     get_mode = esp_hosted_config_pb2.EspHostedConfigPayload()
-     get_mode.msg = esp_hosted_config_pb2.EspHostedConfigMsgType.TypeCmdGetWiFiMode
+     get_mode = EspHostedConfigPayload()
+     get_mode.msg = EspHostedConfigMsgType.TypeCmdGetWiFiMode
      protodata = get_mode.SerializeToString()
-     tp = transport.Transport_pserial(interface)
+     tp = Transport_pserial(interface)
      response = tp.send_data(endpoint,protodata,0.3)
      if response == failure :
         return failure
@@ -83,11 +83,11 @@ def wifi_get_mode():
 #            2: softAP mode
 #            3: softAP+station mode)
 def wifi_set_mode(mode):
-     set_mode = esp_hosted_config_pb2.EspHostedConfigPayload()
-     set_mode.msg = esp_hosted_config_pb2.EspHostedConfigMsgType.TypeCmdSetWiFiMode
+     set_mode = EspHostedConfigPayload()
+     set_mode.msg = EspHostedConfigMsgType.TypeCmdSetWiFiMode
      set_mode.cmd_set_wifi_mode.mode = mode
      protodata = set_mode.SerializeToString()
-     tp = transport.Transport_pserial(interface)
+     tp = Transport_pserial(interface)
      response = tp.send_data(endpoint,protodata,0.3)
      if response == failure :
          return failure
@@ -107,15 +107,15 @@ def wifi_set_mode(mode):
 #                           Units: AP beacon intervals. Defaults to 3 if set to 0.
 
 def wifi_set_ap_config(ssid, pwd, bssid, is_wpa3_supported, listen_interval):
-    set_ap_config = esp_hosted_config_pb2.EspHostedConfigPayload()
-    set_ap_config.msg = esp_hosted_config_pb2.EspHostedConfigMsgType.TypeCmdSetAPConfig
+    set_ap_config = EspHostedConfigPayload()
+    set_ap_config.msg = EspHostedConfigMsgType.TypeCmdSetAPConfig
     set_ap_config.cmd_set_ap_config.ssid = str(ssid)
     set_ap_config.cmd_set_ap_config.pwd = str(pwd)
     set_ap_config.cmd_set_ap_config.bssid = str(bssid)
     set_ap_config.cmd_set_ap_config.is_wpa3_supported = is_wpa3_supported
     set_ap_config.cmd_set_ap_config.listen_interval = listen_interval
     protodata = set_ap_config.SerializeToString()
-    tp = transport.Transport_pserial(interface)
+    tp = Transport_pserial(interface)
     response = tp.send_data(endpoint,protodata,10)
     if response == failure :
         return failure
@@ -142,10 +142,10 @@ def wifi_set_ap_config(ssid, pwd, bssid, is_wpa3_supported, listen_interval):
 #             7 :   WPA2_WPA3_PSK   )
 # In case of not connected to AP, returns "not_connected"
 def wifi_get_ap_config():
-     get_ap_config = esp_hosted_config_pb2.EspHostedConfigPayload()
-     get_ap_config.msg = esp_hosted_config_pb2.EspHostedConfigMsgType.TypeCmdGetAPConfig
+     get_ap_config = EspHostedConfigPayload()
+     get_ap_config.msg = EspHostedConfigMsgType.TypeCmdGetAPConfig
      protodata = get_ap_config.SerializeToString()
-     tp = transport.Transport_pserial(interface)
+     tp = Transport_pserial(interface)
      response = tp.send_data(endpoint,protodata,1)
      if response == failure :
          return failure
@@ -165,10 +165,10 @@ def wifi_get_ap_config():
 # Function disconnects ESP32 station from connected AP
 # returns "success" or "failure"
 def wifi_disconnect_ap():
-     disconnect_ap = esp_hosted_config_pb2.EspHostedConfigPayload()
-     disconnect_ap.msg = esp_hosted_config_pb2.EspHostedConfigMsgType.TypeCmdDisconnectAP
+     disconnect_ap = EspHostedConfigPayload()
+     disconnect_ap.msg = EspHostedConfigMsgType.TypeCmdDisconnectAP
      protodata = disconnect_ap.SerializeToString()
-     tp = transport.Transport_pserial(interface)
+     tp = Transport_pserial(interface)
      response = tp.send_data(endpoint,protodata,0.3)
      if response == failure :
          return failure
@@ -197,8 +197,8 @@ def wifi_disconnect_ap():
 #                 2 : WIFI_BW_HT40 )
 
 def wifi_set_softap_config(ssid, pwd, chnl, ecn, max_conn, ssid_hidden, bw):
-    set_softap_config = esp_hosted_config_pb2.EspHostedConfigPayload()
-    set_softap_config.msg = esp_hosted_config_pb2.EspHostedConfigMsgType.TypeCmdSetSoftAPConfig
+    set_softap_config = EspHostedConfigPayload()
+    set_softap_config.msg = EspHostedConfigMsgType.TypeCmdSetSoftAPConfig
     if len(ssid) > max_ssid_len :
         print("SSID length is more than 32 Bytes")
         return failure
@@ -208,16 +208,16 @@ def wifi_set_softap_config(ssid, pwd, chnl, ecn, max_conn, ssid_hidden, bw):
     set_softap_config.cmd_set_softap_config.ssid = str(ssid)
     set_softap_config.cmd_set_softap_config.pwd = str(pwd)
     set_softap_config.cmd_set_softap_config.chnl = chnl
-    if ecn < esp_hosted_config_pb2.EspHostedEncryptionMode.Type_WPA3_PSK:
+    if ecn < EspHostedEncryptionMode.Type_WPA3_PSK:
         set_softap_config.cmd_set_softap_config.ecn = ecn
     else:
-        set_softap_config.cmd_set_softap_config.ecn = esp_hosted_config_pb2.EspHostedEncryptionMode.Type_WPA2_PSK
+        set_softap_config.cmd_set_softap_config.ecn = EspHostedEncryptionMode.Type_WPA2_PSK
         print("Asked Encryption method is not supported in SoftAP mode, Setting Encryption method as WPA2_PSK")
     set_softap_config.cmd_set_softap_config.max_conn = max_conn
     set_softap_config.cmd_set_softap_config.ssid_hidden = ssid_hidden
     set_softap_config.cmd_set_softap_config.bw = bw
     protodata = set_softap_config.SerializeToString()
-    tp = transport.Transport_pserial(interface)
+    tp = Transport_pserial(interface)
     response = tp.send_data(endpoint,protodata,3)
     if response == failure :
         return failure
@@ -247,10 +247,10 @@ def wifi_set_softap_config(ssid, pwd, chnl, ecn, max_conn, ssid_hidden, bw):
 #           2 : WIFI_BW_HT40 )
 
 def wifi_get_softap_config():
-    get_softap_config = esp_hosted_config_pb2.EspHostedConfigPayload()
-    get_softap_config.msg = esp_hosted_config_pb2.EspHostedConfigMsgType.TypeCmdGetSoftAPConfig
+    get_softap_config = EspHostedConfigPayload()
+    get_softap_config.msg = EspHostedConfigMsgType.TypeCmdGetSoftAPConfig
     protodata = get_softap_config.SerializeToString()
-    tp = transport.Transport_pserial(interface)
+    tp = Transport_pserial(interface)
     response = tp.send_data(endpoint,protodata,0.3)
     if response == failure :
         return failure
@@ -286,10 +286,10 @@ def wifi_get_softap_config():
 #             7 :   WPA2_WPA3_PSK   )
 #
 def wifi_ap_scan_list():
-    get_ap_scan_list = esp_hosted_config_pb2.EspHostedConfigPayload()
-    get_ap_scan_list.msg = esp_hosted_config_pb2.EspHostedConfigMsgType.TypeCmdGetAPScanList
+    get_ap_scan_list = EspHostedConfigPayload()
+    get_ap_scan_list.msg = EspHostedConfigMsgType.TypeCmdGetAPScanList
     protodata = get_ap_scan_list.SerializeToString()
-    tp = transport.Transport_pserial(interface)
+    tp = Transport_pserial(interface)
     response = tp.send_data(endpoint,protodata,10)
     if response == failure :
         return failure
@@ -314,10 +314,10 @@ def wifi_ap_scan_list():
 # If no station is connected, failure return from slave
 # output is list of Stationlist class instances
 def wifi_connected_stations_list():
-    get_connected_stations_list = esp_hosted_config_pb2.EspHostedConfigPayload()
-    get_connected_stations_list.msg = esp_hosted_config_pb2.EspHostedConfigMsgType.TypeCmdGetConnectedSTAList
+    get_connected_stations_list = EspHostedConfigPayload()
+    get_connected_stations_list.msg = EspHostedConfigMsgType.TypeCmdGetConnectedSTAList
     protodata = get_connected_stations_list.SerializeToString()
-    tp = transport.Transport_pserial(interface)
+    tp = Transport_pserial(interface)
     response = tp.send_data(endpoint,protodata,1)
     if response == failure :
         return failure
@@ -346,17 +346,15 @@ def wifi_connected_stations_list():
 # @attention 4. MAC address will get reset after esp restarts
 
 def wifi_set_mac(mode, mac):
-    set_mac = esp_hosted_config_pb2.EspHostedConfigPayload()
-    set_mac.msg = esp_hosted_config_pb2.EspHostedConfigMsgType.TypeCmdSetMacAddress
+    set_mac = EspHostedConfigPayload()
+    set_mac.msg = EspHostedConfigMsgType.TypeCmdSetMacAddress
     set_mac.cmd_set_mac_address.mode = mode
     set_mac.cmd_set_mac_address.mac = mac
     protodata = set_mac.SerializeToString()
-    #print("serialized data "+str(protodata))
-    tp = transport.Transport_pserial(interface)
+    tp = Transport_pserial(interface)
     response = tp.send_data(endpoint,protodata,1)
     if response == failure:
         return failure
-    #print("response from slave "+str(response))
     set_mac.ParseFromString(response)
     status = set_mac.resp_set_mac_address.resp
     return status
@@ -371,16 +369,14 @@ def wifi_set_mac(mode, mac):
 # Default :: power save mode is WIFI_PS_MIN_MODEM
 
 def wifi_set_power_save_mode(power_save_mode):
-    set_power_save_mode = esp_hosted_config_pb2.EspHostedConfigPayload()
-    set_power_save_mode.msg = esp_hosted_config_pb2.EspHostedConfigMsgType.TypeCmdSetPowerSaveMode
+    set_power_save_mode = EspHostedConfigPayload()
+    set_power_save_mode.msg = EspHostedConfigMsgType.TypeCmdSetPowerSaveMode
     set_power_save_mode.cmd_set_power_save_mode.power_save_mode = power_save_mode
     protodata = set_power_save_mode.SerializeToString()
-    #print("serialized data "+str(protodata))
-    tp = transport.Transport_pserial(interface)
+    tp = Transport_pserial(interface)
     response = tp.send_data(endpoint,protodata,1)
     if response == failure:
         return failure
-    #print("response from slave "+str(response))
     set_power_save_mode.ParseFromString(response)
     status = set_power_save_mode.resp_set_power_save_mode.resp
     return status
@@ -395,15 +391,13 @@ def wifi_set_power_save_mode(power_save_mode):
 # Default :: power save mode is WIFI_PS_MIN_MODEM
 
 def wifi_get_power_save_mode():
-    get_power_save_mode = esp_hosted_config_pb2.EspHostedConfigPayload()
-    get_power_save_mode.msg = esp_hosted_config_pb2.EspHostedConfigMsgType.TypeCmdGetPowerSaveMode
+    get_power_save_mode = EspHostedConfigPayload()
+    get_power_save_mode.msg = EspHostedConfigMsgType.TypeCmdGetPowerSaveMode
     protodata = get_power_save_mode.SerializeToString()
-    #print("serialized data "+str(protodata))
-    tp = transport.Transport_pserial(interface)
+    tp = Transport_pserial(interface)
     response = tp.send_data(endpoint,protodata,1)
     if response == failure:
         return failure
-    #print("response from slave "+str(response))
     get_power_save_mode.ParseFromString(response)
     status = get_power_save_mode.resp_get_power_save_mode.resp
     if status != success:
