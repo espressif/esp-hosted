@@ -23,10 +23,10 @@ import os
 # SoftAP                2
 # Station+SoftAP        3
 
-none = 0
-station = 1
-softap = 2
-station_softap = 3
+wifi_mode_none = 0
+wifi_mode_station = 1
+wifi_mode_softap = 2
+wifi_mode_station_softap = 3
 success = 'success'
 failure = 'failure'
 flag = success
@@ -44,13 +44,13 @@ parser.add_argument("encrp_mthd", type=int, default=0, help="encryption method (
 
 parser.add_argument("--max_conn", type=int, default=1, help="max connection count( number of Stations to which ESP32 SoftAP can be connected, within the range of [1, 10])")
 
-parser.add_argument("--ssid_hidden", type=int, default=0, help="ssid hidden/broadcast (it can set to 1 if softAP shouldnt broadcast its ssid else 0)")
+parser.add_argument("--ssid_hidden", type=int, default=False, help="ssid hidden/broadcast (It can set to True if softAP shouldnt broadcast its ssid else False)")
 
 parser.add_argument("--bw", type=int, default=1, help="Bandwidth (1: WIFI_BW_HT20(20MHZ)) , (2: WIFI_BW_HT40(40MHZ)) default is 20MHZ")
 
 args = parser.parse_args()
 
-ap_mac = wifi_get_mac(softap)
+ap_mac = wifi_get_mac(wifi_mode_softap)
 if (ap_mac == failure):
     print("Failed to get is SoftAP mac address")
     flag = failure
@@ -59,16 +59,15 @@ else :
 
 if (flag == success):
     softap_config = wifi_set_softap_config(args.ssid, args.password, args.channel_id, args.encrp_mthd, args.max_conn, args.ssid_hidden, args.bw)
-    if (softap_config == failure):
+    if (softap_config != success):
         print("setting softap config failed")
         flag = failure
     else:
         print("setting softap config success")
  
-if (flag == failure):
+if (flag != success):
     print("failure in setting SoftAP config")
-
-if (flag == success):
+else:
     command = 'sudo ifconfig ethap0 down'
     os.system(command)
     print(command)    

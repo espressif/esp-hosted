@@ -15,22 +15,30 @@ PROTOBUF_C__BEGIN_DECLS
 #endif
 
 
+typedef struct _EspHostedCmdGetMacAddress EspHostedCmdGetMacAddress;
+typedef struct _EspHostedRespGetMacAddress EspHostedRespGetMacAddress;
+typedef struct _EspHostedCmdGetMode EspHostedCmdGetMode;
+typedef struct _EspHostedRespGetMode EspHostedRespGetMode;
+typedef struct _EspHostedCmdSetMode EspHostedCmdSetMode;
+typedef struct _EspHostedRespSetMode EspHostedRespSetMode;
 typedef struct _EspHostedCmdGetStatus EspHostedCmdGetStatus;
 typedef struct _EspHostedRespGetStatus EspHostedRespGetStatus;
 typedef struct _EspHostedCmdSetMacAddress EspHostedCmdSetMacAddress;
 typedef struct _EspHostedRespSetMacAddress EspHostedRespSetMacAddress;
-typedef struct _EspHostedCmdConfig EspHostedCmdConfig;
-typedef struct _EspHostedRespConfig EspHostedRespConfig;
+typedef struct _EspHostedCmdGetAPConfig EspHostedCmdGetAPConfig;
+typedef struct _EspHostedRespGetAPConfig EspHostedRespGetAPConfig;
+typedef struct _EspHostedCmdSetAPConfig EspHostedCmdSetAPConfig;
+typedef struct _EspHostedRespSetAPConfig EspHostedRespSetAPConfig;
+typedef struct _EspHostedCmdGetSoftAPConfig EspHostedCmdGetSoftAPConfig;
+typedef struct _EspHostedRespGetSoftAPConfig EspHostedRespGetSoftAPConfig;
+typedef struct _EspHostedCmdSetSoftAPConfig EspHostedCmdSetSoftAPConfig;
+typedef struct _EspHostedRespSetSoftAPConfig EspHostedRespSetSoftAPConfig;
 typedef struct _EspHostedScanResult EspHostedScanResult;
 typedef struct _EspHostedCmdScanResult EspHostedCmdScanResult;
 typedef struct _EspHostedRespScanResult EspHostedRespScanResult;
 typedef struct _EspHostedConnectedSTAList EspHostedConnectedSTAList;
 typedef struct _EspHostedCmdConnectedSTA EspHostedCmdConnectedSTA;
 typedef struct _EspHostedRespConnectedSTA EspHostedRespConnectedSTA;
-typedef struct _EspHostedCmdSetPowerSaveMode EspHostedCmdSetPowerSaveMode;
-typedef struct _EspHostedRespSetPowerSaveMode EspHostedRespSetPowerSaveMode;
-typedef struct _EspHostedCmdGetPowerSaveMode EspHostedCmdGetPowerSaveMode;
-typedef struct _EspHostedRespGetPowerSaveMode EspHostedRespGetPowerSaveMode;
 typedef struct _EspHostedConfigPayload EspHostedConfigPayload;
 
 
@@ -64,43 +72,109 @@ typedef enum _EspHostedConfigMsgType {
   ESP_HOSTED_CONFIG_MSG_TYPE__TypeRespSetSoftAPConfig = 13,
   ESP_HOSTED_CONFIG_MSG_TYPE__TypeCmdDisconnectAP = 14,
   ESP_HOSTED_CONFIG_MSG_TYPE__TypeRespDisconnectAP = 15,
-  ESP_HOSTED_CONFIG_MSG_TYPE__TypeCmdGetAPScanList = 16,
-  ESP_HOSTED_CONFIG_MSG_TYPE__TypeRespGetAPScanList = 17,
-  ESP_HOSTED_CONFIG_MSG_TYPE__TypeCmdGetConnectedSTAList = 18,
-  ESP_HOSTED_CONFIG_MSG_TYPE__TypeRespGetConnectedSTAList = 19,
-  ESP_HOSTED_CONFIG_MSG_TYPE__TypeCmdSetMacAddress = 20,
-  ESP_HOSTED_CONFIG_MSG_TYPE__TypeRespSetMacAddress = 21,
-  ESP_HOSTED_CONFIG_MSG_TYPE__TypeCmdSetPowerSaveMode = 22,
-  ESP_HOSTED_CONFIG_MSG_TYPE__TypeRespSetPowerSaveMode = 23,
-  ESP_HOSTED_CONFIG_MSG_TYPE__TypeCmdGetPowerSaveMode = 24,
-  ESP_HOSTED_CONFIG_MSG_TYPE__TypeRespGetPowerSaveMode = 25
+  ESP_HOSTED_CONFIG_MSG_TYPE__TypeCmdStopSoftAP = 16,
+  ESP_HOSTED_CONFIG_MSG_TYPE__TypeRespStopSoftAP = 17,
+  ESP_HOSTED_CONFIG_MSG_TYPE__TypeCmdGetAPScanList = 18,
+  ESP_HOSTED_CONFIG_MSG_TYPE__TypeRespGetAPScanList = 19,
+  ESP_HOSTED_CONFIG_MSG_TYPE__TypeCmdGetConnectedSTAList = 20,
+  ESP_HOSTED_CONFIG_MSG_TYPE__TypeRespGetConnectedSTAList = 21,
+  ESP_HOSTED_CONFIG_MSG_TYPE__TypeCmdSetMacAddress = 22,
+  ESP_HOSTED_CONFIG_MSG_TYPE__TypeRespSetMacAddress = 23,
+  ESP_HOSTED_CONFIG_MSG_TYPE__TypeCmdSetPowerSaveMode = 24,
+  ESP_HOSTED_CONFIG_MSG_TYPE__TypeRespSetPowerSaveMode = 25,
+  ESP_HOSTED_CONFIG_MSG_TYPE__TypeCmdGetPowerSaveMode = 26,
+  ESP_HOSTED_CONFIG_MSG_TYPE__TypeRespGetPowerSaveMode = 27
     PROTOBUF_C__FORCE_ENUM_TO_BE_INT_SIZE(ESP_HOSTED_CONFIG_MSG_TYPE)
 } EspHostedConfigMsgType;
 
 /* --- messages --- */
 
-struct  _EspHostedCmdGetStatus
+struct  _EspHostedCmdGetMacAddress
 {
   ProtobufCMessage base;
-  char *cmd;
   protobuf_c_boolean has_mode;
   int32_t mode;
 };
+#define ESP_HOSTED_CMD_GET_MAC_ADDRESS__INIT \
+ { PROTOBUF_C_MESSAGE_INIT (&esp_hosted_cmd_get_mac_address__descriptor) \
+    , 0,0 }
+
+
+struct  _EspHostedRespGetMacAddress
+{
+  ProtobufCMessage base;
+  protobuf_c_boolean has_mac;
+  ProtobufCBinaryData mac;
+  protobuf_c_boolean has_resp;
+  int32_t resp;
+};
+#define ESP_HOSTED_RESP_GET_MAC_ADDRESS__INIT \
+ { PROTOBUF_C_MESSAGE_INIT (&esp_hosted_resp_get_mac_address__descriptor) \
+    , 0,{0,NULL}, 0,0 }
+
+
+struct  _EspHostedCmdGetMode
+{
+  ProtobufCMessage base;
+};
+#define ESP_HOSTED_CMD_GET_MODE__INIT \
+ { PROTOBUF_C_MESSAGE_INIT (&esp_hosted_cmd_get_mode__descriptor) \
+     }
+
+
+struct  _EspHostedRespGetMode
+{
+  ProtobufCMessage base;
+  protobuf_c_boolean has_mode;
+  int32_t mode;
+  protobuf_c_boolean has_resp;
+  int32_t resp;
+};
+#define ESP_HOSTED_RESP_GET_MODE__INIT \
+ { PROTOBUF_C_MESSAGE_INIT (&esp_hosted_resp_get_mode__descriptor) \
+    , 0,0, 0,0 }
+
+
+struct  _EspHostedCmdSetMode
+{
+  ProtobufCMessage base;
+  protobuf_c_boolean has_mode;
+  int32_t mode;
+};
+#define ESP_HOSTED_CMD_SET_MODE__INIT \
+ { PROTOBUF_C_MESSAGE_INIT (&esp_hosted_cmd_set_mode__descriptor) \
+    , 0,0 }
+
+
+struct  _EspHostedRespSetMode
+{
+  ProtobufCMessage base;
+  protobuf_c_boolean has_resp;
+  int32_t resp;
+};
+#define ESP_HOSTED_RESP_SET_MODE__INIT \
+ { PROTOBUF_C_MESSAGE_INIT (&esp_hosted_resp_set_mode__descriptor) \
+    , 0,0 }
+
+
+struct  _EspHostedCmdGetStatus
+{
+  ProtobufCMessage base;
+};
 #define ESP_HOSTED_CMD_GET_STATUS__INIT \
  { PROTOBUF_C_MESSAGE_INIT (&esp_hosted_cmd_get_status__descriptor) \
-    , NULL, 0,0 }
+     }
 
 
 struct  _EspHostedRespGetStatus
 {
   ProtobufCMessage base;
-  char *resp;
-  protobuf_c_boolean has_mode;
-  int32_t mode;
+  protobuf_c_boolean has_resp;
+  int32_t resp;
 };
 #define ESP_HOSTED_RESP_GET_STATUS__INIT \
  { PROTOBUF_C_MESSAGE_INIT (&esp_hosted_resp_get_status__descriptor) \
-    , NULL, 0,0 }
+    , 0,0 }
 
 
 struct  _EspHostedCmdSetMacAddress
@@ -120,69 +194,134 @@ struct  _EspHostedRespSetMacAddress
 {
   ProtobufCMessage base;
   protobuf_c_boolean has_resp;
-  ProtobufCBinaryData resp;
+  int32_t resp;
 };
 #define ESP_HOSTED_RESP_SET_MAC_ADDRESS__INIT \
  { PROTOBUF_C_MESSAGE_INIT (&esp_hosted_resp_set_mac_address__descriptor) \
-    , 0,{0,NULL} }
+    , 0,0 }
 
 
-struct  _EspHostedCmdConfig
+struct  _EspHostedCmdGetAPConfig
+{
+  ProtobufCMessage base;
+};
+#define ESP_HOSTED_CMD_GET_APCONFIG__INIT \
+ { PROTOBUF_C_MESSAGE_INIT (&esp_hosted_cmd_get_apconfig__descriptor) \
+     }
+
+
+struct  _EspHostedRespGetAPConfig
+{
+  ProtobufCMessage base;
+  protobuf_c_boolean has_ssid;
+  ProtobufCBinaryData ssid;
+  protobuf_c_boolean has_bssid;
+  ProtobufCBinaryData bssid;
+  protobuf_c_boolean has_rssi;
+  int32_t rssi;
+  protobuf_c_boolean has_chnl;
+  int32_t chnl;
+  protobuf_c_boolean has_ecn;
+  EspHostedEncryptionMode ecn;
+  protobuf_c_boolean has_resp;
+  int32_t resp;
+};
+#define ESP_HOSTED_RESP_GET_APCONFIG__INIT \
+ { PROTOBUF_C_MESSAGE_INIT (&esp_hosted_resp_get_apconfig__descriptor) \
+    , 0,{0,NULL}, 0,{0,NULL}, 0,0, 0,0, 0,0, 0,0 }
+
+
+struct  _EspHostedCmdSetAPConfig
 {
   ProtobufCMessage base;
   char *ssid;
   char *pwd;
-  protobuf_c_boolean has_ecn;
-  EspHostedEncryptionMode ecn;
-  protobuf_c_boolean has_chnl;
-  int32_t chnl;
-  protobuf_c_boolean has_max_conn;
-  int32_t max_conn;
-  protobuf_c_boolean has_ssid_hidden;
-  protobuf_c_boolean ssid_hidden;
   char *bssid;
-  protobuf_c_boolean has_rssi;
-  int32_t rssi;
-  char *status;
-  protobuf_c_boolean has_bw;
-  int32_t bw;
   protobuf_c_boolean has_is_wpa3_supported;
   protobuf_c_boolean is_wpa3_supported;
   protobuf_c_boolean has_listen_interval;
   int32_t listen_interval;
 };
-#define ESP_HOSTED_CMD_CONFIG__INIT \
- { PROTOBUF_C_MESSAGE_INIT (&esp_hosted_cmd_config__descriptor) \
-    , NULL, NULL, 0,0, 0,0, 0,0, 0,0, NULL, 0,0, NULL, 0,0, 0,0, 0,0 }
+#define ESP_HOSTED_CMD_SET_APCONFIG__INIT \
+ { PROTOBUF_C_MESSAGE_INIT (&esp_hosted_cmd_set_apconfig__descriptor) \
+    , NULL, NULL, NULL, 0,0, 0,0 }
 
 
-struct  _EspHostedRespConfig
+struct  _EspHostedRespSetAPConfig
 {
   ProtobufCMessage base;
-  char *ssid;
-  char *pwd;
-  protobuf_c_boolean has_ecn;
-  EspHostedEncryptionMode ecn;
+  protobuf_c_boolean has_resp;
+  int32_t resp;
+};
+#define ESP_HOSTED_RESP_SET_APCONFIG__INIT \
+ { PROTOBUF_C_MESSAGE_INIT (&esp_hosted_resp_set_apconfig__descriptor) \
+    , 0,0 }
+
+
+struct  _EspHostedCmdGetSoftAPConfig
+{
+  ProtobufCMessage base;
+};
+#define ESP_HOSTED_CMD_GET_SOFT_APCONFIG__INIT \
+ { PROTOBUF_C_MESSAGE_INIT (&esp_hosted_cmd_get_soft_apconfig__descriptor) \
+     }
+
+
+struct  _EspHostedRespGetSoftAPConfig
+{
+  ProtobufCMessage base;
+  protobuf_c_boolean has_ssid;
+  ProtobufCBinaryData ssid;
+  protobuf_c_boolean has_pwd;
+  ProtobufCBinaryData pwd;
   protobuf_c_boolean has_chnl;
   int32_t chnl;
+  protobuf_c_boolean has_ecn;
+  EspHostedEncryptionMode ecn;
   protobuf_c_boolean has_max_conn;
   int32_t max_conn;
   protobuf_c_boolean has_ssid_hidden;
   protobuf_c_boolean ssid_hidden;
-  char *bssid;
-  protobuf_c_boolean has_rssi;
-  int32_t rssi;
-  char *status;
   protobuf_c_boolean has_bw;
   int32_t bw;
-  protobuf_c_boolean has_is_wpa3_supported;
-  protobuf_c_boolean is_wpa3_supported;
-  protobuf_c_boolean has_listen_interval;
-  int32_t listen_interval;
+  protobuf_c_boolean has_resp;
+  int32_t resp;
 };
-#define ESP_HOSTED_RESP_CONFIG__INIT \
- { PROTOBUF_C_MESSAGE_INIT (&esp_hosted_resp_config__descriptor) \
-    , NULL, NULL, 0,0, 0,0, 0,0, 0,0, NULL, 0,0, NULL, 0,0, 0,0, 0,0 }
+#define ESP_HOSTED_RESP_GET_SOFT_APCONFIG__INIT \
+ { PROTOBUF_C_MESSAGE_INIT (&esp_hosted_resp_get_soft_apconfig__descriptor) \
+    , 0,{0,NULL}, 0,{0,NULL}, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0 }
+
+
+struct  _EspHostedCmdSetSoftAPConfig
+{
+  ProtobufCMessage base;
+  char *ssid;
+  char *pwd;
+  protobuf_c_boolean has_chnl;
+  int32_t chnl;
+  protobuf_c_boolean has_ecn;
+  EspHostedEncryptionMode ecn;
+  protobuf_c_boolean has_max_conn;
+  int32_t max_conn;
+  protobuf_c_boolean has_ssid_hidden;
+  protobuf_c_boolean ssid_hidden;
+  protobuf_c_boolean has_bw;
+  int32_t bw;
+};
+#define ESP_HOSTED_CMD_SET_SOFT_APCONFIG__INIT \
+ { PROTOBUF_C_MESSAGE_INIT (&esp_hosted_cmd_set_soft_apconfig__descriptor) \
+    , NULL, NULL, 0,0, 0,0, 0,0, 0,0, 0,0 }
+
+
+struct  _EspHostedRespSetSoftAPConfig
+{
+  ProtobufCMessage base;
+  protobuf_c_boolean has_resp;
+  int32_t resp;
+};
+#define ESP_HOSTED_RESP_SET_SOFT_APCONFIG__INIT \
+ { PROTOBUF_C_MESSAGE_INIT (&esp_hosted_resp_set_soft_apconfig__descriptor) \
+    , 0,0 }
 
 
 struct  _EspHostedScanResult
@@ -220,10 +359,12 @@ struct  _EspHostedRespScanResult
   uint32_t count;
   size_t n_entries;
   EspHostedScanResult **entries;
+  protobuf_c_boolean has_resp;
+  int32_t resp;
 };
 #define ESP_HOSTED_RESP_SCAN_RESULT__INIT \
  { PROTOBUF_C_MESSAGE_INIT (&esp_hosted_resp_scan_result__descriptor) \
-    , 0,0, 0,NULL }
+    , 0,0, 0,NULL, 0,0 }
 
 
 struct  _EspHostedConnectedSTAList
@@ -255,54 +396,12 @@ struct  _EspHostedRespConnectedSTA
   uint32_t num;
   size_t n_stations;
   EspHostedConnectedSTAList **stations;
+  protobuf_c_boolean has_resp;
+  int32_t resp;
 };
 #define ESP_HOSTED_RESP_CONNECTED_STA__INIT \
  { PROTOBUF_C_MESSAGE_INIT (&esp_hosted_resp_connected_sta__descriptor) \
-    , 0,0, 0,NULL }
-
-
-struct  _EspHostedCmdSetPowerSaveMode
-{
-  ProtobufCMessage base;
-  protobuf_c_boolean has_power_save_mode;
-  int32_t power_save_mode;
-};
-#define ESP_HOSTED_CMD_SET_POWER_SAVE_MODE__INIT \
- { PROTOBUF_C_MESSAGE_INIT (&esp_hosted_cmd_set_power_save_mode__descriptor) \
-    , 0,0 }
-
-
-struct  _EspHostedRespSetPowerSaveMode
-{
-  ProtobufCMessage base;
-  protobuf_c_boolean has_resp;
-  ProtobufCBinaryData resp;
-};
-#define ESP_HOSTED_RESP_SET_POWER_SAVE_MODE__INIT \
- { PROTOBUF_C_MESSAGE_INIT (&esp_hosted_resp_set_power_save_mode__descriptor) \
-    , 0,{0,NULL} }
-
-
-struct  _EspHostedCmdGetPowerSaveMode
-{
-  ProtobufCMessage base;
-};
-#define ESP_HOSTED_CMD_GET_POWER_SAVE_MODE__INIT \
- { PROTOBUF_C_MESSAGE_INIT (&esp_hosted_cmd_get_power_save_mode__descriptor) \
-     }
-
-
-struct  _EspHostedRespGetPowerSaveMode
-{
-  ProtobufCMessage base;
-  protobuf_c_boolean has_power_save_mode;
-  int32_t power_save_mode;
-  protobuf_c_boolean has_resp;
-  ProtobufCBinaryData resp;
-};
-#define ESP_HOSTED_RESP_GET_POWER_SAVE_MODE__INIT \
- { PROTOBUF_C_MESSAGE_INIT (&esp_hosted_resp_get_power_save_mode__descriptor) \
-    , 0,0, 0,{0,NULL} }
+    , 0,0, 0,NULL, 0,0 }
 
 
 typedef enum {
@@ -323,16 +422,18 @@ typedef enum {
   ESP_HOSTED_CONFIG_PAYLOAD__PAYLOAD_RESP_SET_SOFTAP_CONFIG = 23,
   ESP_HOSTED_CONFIG_PAYLOAD__PAYLOAD_CMD_DISCONNECT_AP = 24,
   ESP_HOSTED_CONFIG_PAYLOAD__PAYLOAD_RESP_DISCONNECT_AP = 25,
-  ESP_HOSTED_CONFIG_PAYLOAD__PAYLOAD_CMD_SCAN_AP_LIST = 26,
-  ESP_HOSTED_CONFIG_PAYLOAD__PAYLOAD_RESP_SCAN_AP_LIST = 27,
-  ESP_HOSTED_CONFIG_PAYLOAD__PAYLOAD_CMD_CONNECTED_STAS_LIST = 28,
-  ESP_HOSTED_CONFIG_PAYLOAD__PAYLOAD_RESP_CONNECTED_STAS_LIST = 29,
-  ESP_HOSTED_CONFIG_PAYLOAD__PAYLOAD_CMD_SET_MAC_ADDRESS = 30,
-  ESP_HOSTED_CONFIG_PAYLOAD__PAYLOAD_RESP_SET_MAC_ADDRESS = 31,
-  ESP_HOSTED_CONFIG_PAYLOAD__PAYLOAD_CMD_SET_POWER_SAVE_MODE = 32,
-  ESP_HOSTED_CONFIG_PAYLOAD__PAYLOAD_RESP_SET_POWER_SAVE_MODE = 33,
-  ESP_HOSTED_CONFIG_PAYLOAD__PAYLOAD_CMD_GET_POWER_SAVE_MODE = 34,
-  ESP_HOSTED_CONFIG_PAYLOAD__PAYLOAD_RESP_GET_POWER_SAVE_MODE = 35,
+  ESP_HOSTED_CONFIG_PAYLOAD__PAYLOAD_CMD_STOP_SOFTAP = 26,
+  ESP_HOSTED_CONFIG_PAYLOAD__PAYLOAD_RESP_STOP_SOFTAP = 27,
+  ESP_HOSTED_CONFIG_PAYLOAD__PAYLOAD_CMD_SCAN_AP_LIST = 28,
+  ESP_HOSTED_CONFIG_PAYLOAD__PAYLOAD_RESP_SCAN_AP_LIST = 29,
+  ESP_HOSTED_CONFIG_PAYLOAD__PAYLOAD_CMD_CONNECTED_STAS_LIST = 30,
+  ESP_HOSTED_CONFIG_PAYLOAD__PAYLOAD_RESP_CONNECTED_STAS_LIST = 31,
+  ESP_HOSTED_CONFIG_PAYLOAD__PAYLOAD_CMD_SET_MAC_ADDRESS = 32,
+  ESP_HOSTED_CONFIG_PAYLOAD__PAYLOAD_RESP_SET_MAC_ADDRESS = 33,
+  ESP_HOSTED_CONFIG_PAYLOAD__PAYLOAD_CMD_SET_POWER_SAVE_MODE = 34,
+  ESP_HOSTED_CONFIG_PAYLOAD__PAYLOAD_RESP_SET_POWER_SAVE_MODE = 35,
+  ESP_HOSTED_CONFIG_PAYLOAD__PAYLOAD_CMD_GET_POWER_SAVE_MODE = 36,
+  ESP_HOSTED_CONFIG_PAYLOAD__PAYLOAD_RESP_GET_POWER_SAVE_MODE = 37,
 } EspHostedConfigPayload__PayloadCase;
 
 struct  _EspHostedConfigPayload
@@ -342,32 +443,34 @@ struct  _EspHostedConfigPayload
   EspHostedConfigMsgType msg;
   EspHostedConfigPayload__PayloadCase payload_case;
   union {
-    EspHostedCmdGetStatus *cmd_get_mac_address;
-    EspHostedRespGetStatus *resp_get_mac_address;
-    EspHostedCmdGetStatus *cmd_get_wifi_mode;
-    EspHostedRespGetStatus *resp_get_wifi_mode;
-    EspHostedCmdGetStatus *cmd_set_wifi_mode;
-    EspHostedRespGetStatus *resp_set_wifi_mode;
-    EspHostedCmdConfig *cmd_get_ap_config;
-    EspHostedRespConfig *resp_get_ap_config;
-    EspHostedCmdConfig *cmd_set_ap_config;
-    EspHostedRespConfig *resp_set_ap_config;
-    EspHostedCmdConfig *cmd_get_softap_config;
-    EspHostedRespConfig *resp_get_softap_config;
-    EspHostedCmdConfig *cmd_set_softap_config;
-    EspHostedRespConfig *resp_set_softap_config;
+    EspHostedCmdGetMacAddress *cmd_get_mac_address;
+    EspHostedRespGetMacAddress *resp_get_mac_address;
+    EspHostedCmdGetMode *cmd_get_wifi_mode;
+    EspHostedRespGetMode *resp_get_wifi_mode;
+    EspHostedCmdSetMode *cmd_set_wifi_mode;
+    EspHostedRespSetMode *resp_set_wifi_mode;
+    EspHostedCmdGetAPConfig *cmd_get_ap_config;
+    EspHostedRespGetAPConfig *resp_get_ap_config;
+    EspHostedCmdSetAPConfig *cmd_set_ap_config;
+    EspHostedRespSetAPConfig *resp_set_ap_config;
+    EspHostedCmdGetSoftAPConfig *cmd_get_softap_config;
+    EspHostedRespGetSoftAPConfig *resp_get_softap_config;
+    EspHostedCmdSetSoftAPConfig *cmd_set_softap_config;
+    EspHostedRespSetSoftAPConfig *resp_set_softap_config;
     EspHostedCmdGetStatus *cmd_disconnect_ap;
     EspHostedRespGetStatus *resp_disconnect_ap;
+    EspHostedCmdGetStatus *cmd_stop_softap;
+    EspHostedRespGetStatus *resp_stop_softap;
     EspHostedCmdScanResult *cmd_scan_ap_list;
     EspHostedRespScanResult *resp_scan_ap_list;
     EspHostedCmdConnectedSTA *cmd_connected_stas_list;
     EspHostedRespConnectedSTA *resp_connected_stas_list;
     EspHostedCmdSetMacAddress *cmd_set_mac_address;
     EspHostedRespSetMacAddress *resp_set_mac_address;
-    EspHostedCmdSetPowerSaveMode *cmd_set_power_save_mode;
-    EspHostedRespSetPowerSaveMode *resp_set_power_save_mode;
-    EspHostedCmdGetPowerSaveMode *cmd_get_power_save_mode;
-    EspHostedRespGetPowerSaveMode *resp_get_power_save_mode;
+    EspHostedCmdSetMode *cmd_set_power_save_mode;
+    EspHostedRespSetMode *resp_set_power_save_mode;
+    EspHostedCmdGetMode *cmd_get_power_save_mode;
+    EspHostedRespGetMode *resp_get_power_save_mode;
   };
 };
 #define ESP_HOSTED_CONFIG_PAYLOAD__INIT \
@@ -375,6 +478,120 @@ struct  _EspHostedConfigPayload
     , 0,0, ESP_HOSTED_CONFIG_PAYLOAD__PAYLOAD__NOT_SET, {0} }
 
 
+/* EspHostedCmdGetMacAddress methods */
+void   esp_hosted_cmd_get_mac_address__init
+                     (EspHostedCmdGetMacAddress         *message);
+size_t esp_hosted_cmd_get_mac_address__get_packed_size
+                     (const EspHostedCmdGetMacAddress   *message);
+size_t esp_hosted_cmd_get_mac_address__pack
+                     (const EspHostedCmdGetMacAddress   *message,
+                      uint8_t             *out);
+size_t esp_hosted_cmd_get_mac_address__pack_to_buffer
+                     (const EspHostedCmdGetMacAddress   *message,
+                      ProtobufCBuffer     *buffer);
+EspHostedCmdGetMacAddress *
+       esp_hosted_cmd_get_mac_address__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data);
+void   esp_hosted_cmd_get_mac_address__free_unpacked
+                     (EspHostedCmdGetMacAddress *message,
+                      ProtobufCAllocator *allocator);
+/* EspHostedRespGetMacAddress methods */
+void   esp_hosted_resp_get_mac_address__init
+                     (EspHostedRespGetMacAddress         *message);
+size_t esp_hosted_resp_get_mac_address__get_packed_size
+                     (const EspHostedRespGetMacAddress   *message);
+size_t esp_hosted_resp_get_mac_address__pack
+                     (const EspHostedRespGetMacAddress   *message,
+                      uint8_t             *out);
+size_t esp_hosted_resp_get_mac_address__pack_to_buffer
+                     (const EspHostedRespGetMacAddress   *message,
+                      ProtobufCBuffer     *buffer);
+EspHostedRespGetMacAddress *
+       esp_hosted_resp_get_mac_address__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data);
+void   esp_hosted_resp_get_mac_address__free_unpacked
+                     (EspHostedRespGetMacAddress *message,
+                      ProtobufCAllocator *allocator);
+/* EspHostedCmdGetMode methods */
+void   esp_hosted_cmd_get_mode__init
+                     (EspHostedCmdGetMode         *message);
+size_t esp_hosted_cmd_get_mode__get_packed_size
+                     (const EspHostedCmdGetMode   *message);
+size_t esp_hosted_cmd_get_mode__pack
+                     (const EspHostedCmdGetMode   *message,
+                      uint8_t             *out);
+size_t esp_hosted_cmd_get_mode__pack_to_buffer
+                     (const EspHostedCmdGetMode   *message,
+                      ProtobufCBuffer     *buffer);
+EspHostedCmdGetMode *
+       esp_hosted_cmd_get_mode__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data);
+void   esp_hosted_cmd_get_mode__free_unpacked
+                     (EspHostedCmdGetMode *message,
+                      ProtobufCAllocator *allocator);
+/* EspHostedRespGetMode methods */
+void   esp_hosted_resp_get_mode__init
+                     (EspHostedRespGetMode         *message);
+size_t esp_hosted_resp_get_mode__get_packed_size
+                     (const EspHostedRespGetMode   *message);
+size_t esp_hosted_resp_get_mode__pack
+                     (const EspHostedRespGetMode   *message,
+                      uint8_t             *out);
+size_t esp_hosted_resp_get_mode__pack_to_buffer
+                     (const EspHostedRespGetMode   *message,
+                      ProtobufCBuffer     *buffer);
+EspHostedRespGetMode *
+       esp_hosted_resp_get_mode__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data);
+void   esp_hosted_resp_get_mode__free_unpacked
+                     (EspHostedRespGetMode *message,
+                      ProtobufCAllocator *allocator);
+/* EspHostedCmdSetMode methods */
+void   esp_hosted_cmd_set_mode__init
+                     (EspHostedCmdSetMode         *message);
+size_t esp_hosted_cmd_set_mode__get_packed_size
+                     (const EspHostedCmdSetMode   *message);
+size_t esp_hosted_cmd_set_mode__pack
+                     (const EspHostedCmdSetMode   *message,
+                      uint8_t             *out);
+size_t esp_hosted_cmd_set_mode__pack_to_buffer
+                     (const EspHostedCmdSetMode   *message,
+                      ProtobufCBuffer     *buffer);
+EspHostedCmdSetMode *
+       esp_hosted_cmd_set_mode__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data);
+void   esp_hosted_cmd_set_mode__free_unpacked
+                     (EspHostedCmdSetMode *message,
+                      ProtobufCAllocator *allocator);
+/* EspHostedRespSetMode methods */
+void   esp_hosted_resp_set_mode__init
+                     (EspHostedRespSetMode         *message);
+size_t esp_hosted_resp_set_mode__get_packed_size
+                     (const EspHostedRespSetMode   *message);
+size_t esp_hosted_resp_set_mode__pack
+                     (const EspHostedRespSetMode   *message,
+                      uint8_t             *out);
+size_t esp_hosted_resp_set_mode__pack_to_buffer
+                     (const EspHostedRespSetMode   *message,
+                      ProtobufCBuffer     *buffer);
+EspHostedRespSetMode *
+       esp_hosted_resp_set_mode__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data);
+void   esp_hosted_resp_set_mode__free_unpacked
+                     (EspHostedRespSetMode *message,
+                      ProtobufCAllocator *allocator);
 /* EspHostedCmdGetStatus methods */
 void   esp_hosted_cmd_get_status__init
                      (EspHostedCmdGetStatus         *message);
@@ -451,43 +668,157 @@ EspHostedRespSetMacAddress *
 void   esp_hosted_resp_set_mac_address__free_unpacked
                      (EspHostedRespSetMacAddress *message,
                       ProtobufCAllocator *allocator);
-/* EspHostedCmdConfig methods */
-void   esp_hosted_cmd_config__init
-                     (EspHostedCmdConfig         *message);
-size_t esp_hosted_cmd_config__get_packed_size
-                     (const EspHostedCmdConfig   *message);
-size_t esp_hosted_cmd_config__pack
-                     (const EspHostedCmdConfig   *message,
+/* EspHostedCmdGetAPConfig methods */
+void   esp_hosted_cmd_get_apconfig__init
+                     (EspHostedCmdGetAPConfig         *message);
+size_t esp_hosted_cmd_get_apconfig__get_packed_size
+                     (const EspHostedCmdGetAPConfig   *message);
+size_t esp_hosted_cmd_get_apconfig__pack
+                     (const EspHostedCmdGetAPConfig   *message,
                       uint8_t             *out);
-size_t esp_hosted_cmd_config__pack_to_buffer
-                     (const EspHostedCmdConfig   *message,
+size_t esp_hosted_cmd_get_apconfig__pack_to_buffer
+                     (const EspHostedCmdGetAPConfig   *message,
                       ProtobufCBuffer     *buffer);
-EspHostedCmdConfig *
-       esp_hosted_cmd_config__unpack
+EspHostedCmdGetAPConfig *
+       esp_hosted_cmd_get_apconfig__unpack
                      (ProtobufCAllocator  *allocator,
                       size_t               len,
                       const uint8_t       *data);
-void   esp_hosted_cmd_config__free_unpacked
-                     (EspHostedCmdConfig *message,
+void   esp_hosted_cmd_get_apconfig__free_unpacked
+                     (EspHostedCmdGetAPConfig *message,
                       ProtobufCAllocator *allocator);
-/* EspHostedRespConfig methods */
-void   esp_hosted_resp_config__init
-                     (EspHostedRespConfig         *message);
-size_t esp_hosted_resp_config__get_packed_size
-                     (const EspHostedRespConfig   *message);
-size_t esp_hosted_resp_config__pack
-                     (const EspHostedRespConfig   *message,
+/* EspHostedRespGetAPConfig methods */
+void   esp_hosted_resp_get_apconfig__init
+                     (EspHostedRespGetAPConfig         *message);
+size_t esp_hosted_resp_get_apconfig__get_packed_size
+                     (const EspHostedRespGetAPConfig   *message);
+size_t esp_hosted_resp_get_apconfig__pack
+                     (const EspHostedRespGetAPConfig   *message,
                       uint8_t             *out);
-size_t esp_hosted_resp_config__pack_to_buffer
-                     (const EspHostedRespConfig   *message,
+size_t esp_hosted_resp_get_apconfig__pack_to_buffer
+                     (const EspHostedRespGetAPConfig   *message,
                       ProtobufCBuffer     *buffer);
-EspHostedRespConfig *
-       esp_hosted_resp_config__unpack
+EspHostedRespGetAPConfig *
+       esp_hosted_resp_get_apconfig__unpack
                      (ProtobufCAllocator  *allocator,
                       size_t               len,
                       const uint8_t       *data);
-void   esp_hosted_resp_config__free_unpacked
-                     (EspHostedRespConfig *message,
+void   esp_hosted_resp_get_apconfig__free_unpacked
+                     (EspHostedRespGetAPConfig *message,
+                      ProtobufCAllocator *allocator);
+/* EspHostedCmdSetAPConfig methods */
+void   esp_hosted_cmd_set_apconfig__init
+                     (EspHostedCmdSetAPConfig         *message);
+size_t esp_hosted_cmd_set_apconfig__get_packed_size
+                     (const EspHostedCmdSetAPConfig   *message);
+size_t esp_hosted_cmd_set_apconfig__pack
+                     (const EspHostedCmdSetAPConfig   *message,
+                      uint8_t             *out);
+size_t esp_hosted_cmd_set_apconfig__pack_to_buffer
+                     (const EspHostedCmdSetAPConfig   *message,
+                      ProtobufCBuffer     *buffer);
+EspHostedCmdSetAPConfig *
+       esp_hosted_cmd_set_apconfig__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data);
+void   esp_hosted_cmd_set_apconfig__free_unpacked
+                     (EspHostedCmdSetAPConfig *message,
+                      ProtobufCAllocator *allocator);
+/* EspHostedRespSetAPConfig methods */
+void   esp_hosted_resp_set_apconfig__init
+                     (EspHostedRespSetAPConfig         *message);
+size_t esp_hosted_resp_set_apconfig__get_packed_size
+                     (const EspHostedRespSetAPConfig   *message);
+size_t esp_hosted_resp_set_apconfig__pack
+                     (const EspHostedRespSetAPConfig   *message,
+                      uint8_t             *out);
+size_t esp_hosted_resp_set_apconfig__pack_to_buffer
+                     (const EspHostedRespSetAPConfig   *message,
+                      ProtobufCBuffer     *buffer);
+EspHostedRespSetAPConfig *
+       esp_hosted_resp_set_apconfig__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data);
+void   esp_hosted_resp_set_apconfig__free_unpacked
+                     (EspHostedRespSetAPConfig *message,
+                      ProtobufCAllocator *allocator);
+/* EspHostedCmdGetSoftAPConfig methods */
+void   esp_hosted_cmd_get_soft_apconfig__init
+                     (EspHostedCmdGetSoftAPConfig         *message);
+size_t esp_hosted_cmd_get_soft_apconfig__get_packed_size
+                     (const EspHostedCmdGetSoftAPConfig   *message);
+size_t esp_hosted_cmd_get_soft_apconfig__pack
+                     (const EspHostedCmdGetSoftAPConfig   *message,
+                      uint8_t             *out);
+size_t esp_hosted_cmd_get_soft_apconfig__pack_to_buffer
+                     (const EspHostedCmdGetSoftAPConfig   *message,
+                      ProtobufCBuffer     *buffer);
+EspHostedCmdGetSoftAPConfig *
+       esp_hosted_cmd_get_soft_apconfig__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data);
+void   esp_hosted_cmd_get_soft_apconfig__free_unpacked
+                     (EspHostedCmdGetSoftAPConfig *message,
+                      ProtobufCAllocator *allocator);
+/* EspHostedRespGetSoftAPConfig methods */
+void   esp_hosted_resp_get_soft_apconfig__init
+                     (EspHostedRespGetSoftAPConfig         *message);
+size_t esp_hosted_resp_get_soft_apconfig__get_packed_size
+                     (const EspHostedRespGetSoftAPConfig   *message);
+size_t esp_hosted_resp_get_soft_apconfig__pack
+                     (const EspHostedRespGetSoftAPConfig   *message,
+                      uint8_t             *out);
+size_t esp_hosted_resp_get_soft_apconfig__pack_to_buffer
+                     (const EspHostedRespGetSoftAPConfig   *message,
+                      ProtobufCBuffer     *buffer);
+EspHostedRespGetSoftAPConfig *
+       esp_hosted_resp_get_soft_apconfig__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data);
+void   esp_hosted_resp_get_soft_apconfig__free_unpacked
+                     (EspHostedRespGetSoftAPConfig *message,
+                      ProtobufCAllocator *allocator);
+/* EspHostedCmdSetSoftAPConfig methods */
+void   esp_hosted_cmd_set_soft_apconfig__init
+                     (EspHostedCmdSetSoftAPConfig         *message);
+size_t esp_hosted_cmd_set_soft_apconfig__get_packed_size
+                     (const EspHostedCmdSetSoftAPConfig   *message);
+size_t esp_hosted_cmd_set_soft_apconfig__pack
+                     (const EspHostedCmdSetSoftAPConfig   *message,
+                      uint8_t             *out);
+size_t esp_hosted_cmd_set_soft_apconfig__pack_to_buffer
+                     (const EspHostedCmdSetSoftAPConfig   *message,
+                      ProtobufCBuffer     *buffer);
+EspHostedCmdSetSoftAPConfig *
+       esp_hosted_cmd_set_soft_apconfig__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data);
+void   esp_hosted_cmd_set_soft_apconfig__free_unpacked
+                     (EspHostedCmdSetSoftAPConfig *message,
+                      ProtobufCAllocator *allocator);
+/* EspHostedRespSetSoftAPConfig methods */
+void   esp_hosted_resp_set_soft_apconfig__init
+                     (EspHostedRespSetSoftAPConfig         *message);
+size_t esp_hosted_resp_set_soft_apconfig__get_packed_size
+                     (const EspHostedRespSetSoftAPConfig   *message);
+size_t esp_hosted_resp_set_soft_apconfig__pack
+                     (const EspHostedRespSetSoftAPConfig   *message,
+                      uint8_t             *out);
+size_t esp_hosted_resp_set_soft_apconfig__pack_to_buffer
+                     (const EspHostedRespSetSoftAPConfig   *message,
+                      ProtobufCBuffer     *buffer);
+EspHostedRespSetSoftAPConfig *
+       esp_hosted_resp_set_soft_apconfig__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data);
+void   esp_hosted_resp_set_soft_apconfig__free_unpacked
+                     (EspHostedRespSetSoftAPConfig *message,
                       ProtobufCAllocator *allocator);
 /* EspHostedScanResult methods */
 void   esp_hosted_scan_result__init
@@ -603,82 +934,6 @@ EspHostedRespConnectedSTA *
 void   esp_hosted_resp_connected_sta__free_unpacked
                      (EspHostedRespConnectedSTA *message,
                       ProtobufCAllocator *allocator);
-/* EspHostedCmdSetPowerSaveMode methods */
-void   esp_hosted_cmd_set_power_save_mode__init
-                     (EspHostedCmdSetPowerSaveMode         *message);
-size_t esp_hosted_cmd_set_power_save_mode__get_packed_size
-                     (const EspHostedCmdSetPowerSaveMode   *message);
-size_t esp_hosted_cmd_set_power_save_mode__pack
-                     (const EspHostedCmdSetPowerSaveMode   *message,
-                      uint8_t             *out);
-size_t esp_hosted_cmd_set_power_save_mode__pack_to_buffer
-                     (const EspHostedCmdSetPowerSaveMode   *message,
-                      ProtobufCBuffer     *buffer);
-EspHostedCmdSetPowerSaveMode *
-       esp_hosted_cmd_set_power_save_mode__unpack
-                     (ProtobufCAllocator  *allocator,
-                      size_t               len,
-                      const uint8_t       *data);
-void   esp_hosted_cmd_set_power_save_mode__free_unpacked
-                     (EspHostedCmdSetPowerSaveMode *message,
-                      ProtobufCAllocator *allocator);
-/* EspHostedRespSetPowerSaveMode methods */
-void   esp_hosted_resp_set_power_save_mode__init
-                     (EspHostedRespSetPowerSaveMode         *message);
-size_t esp_hosted_resp_set_power_save_mode__get_packed_size
-                     (const EspHostedRespSetPowerSaveMode   *message);
-size_t esp_hosted_resp_set_power_save_mode__pack
-                     (const EspHostedRespSetPowerSaveMode   *message,
-                      uint8_t             *out);
-size_t esp_hosted_resp_set_power_save_mode__pack_to_buffer
-                     (const EspHostedRespSetPowerSaveMode   *message,
-                      ProtobufCBuffer     *buffer);
-EspHostedRespSetPowerSaveMode *
-       esp_hosted_resp_set_power_save_mode__unpack
-                     (ProtobufCAllocator  *allocator,
-                      size_t               len,
-                      const uint8_t       *data);
-void   esp_hosted_resp_set_power_save_mode__free_unpacked
-                     (EspHostedRespSetPowerSaveMode *message,
-                      ProtobufCAllocator *allocator);
-/* EspHostedCmdGetPowerSaveMode methods */
-void   esp_hosted_cmd_get_power_save_mode__init
-                     (EspHostedCmdGetPowerSaveMode         *message);
-size_t esp_hosted_cmd_get_power_save_mode__get_packed_size
-                     (const EspHostedCmdGetPowerSaveMode   *message);
-size_t esp_hosted_cmd_get_power_save_mode__pack
-                     (const EspHostedCmdGetPowerSaveMode   *message,
-                      uint8_t             *out);
-size_t esp_hosted_cmd_get_power_save_mode__pack_to_buffer
-                     (const EspHostedCmdGetPowerSaveMode   *message,
-                      ProtobufCBuffer     *buffer);
-EspHostedCmdGetPowerSaveMode *
-       esp_hosted_cmd_get_power_save_mode__unpack
-                     (ProtobufCAllocator  *allocator,
-                      size_t               len,
-                      const uint8_t       *data);
-void   esp_hosted_cmd_get_power_save_mode__free_unpacked
-                     (EspHostedCmdGetPowerSaveMode *message,
-                      ProtobufCAllocator *allocator);
-/* EspHostedRespGetPowerSaveMode methods */
-void   esp_hosted_resp_get_power_save_mode__init
-                     (EspHostedRespGetPowerSaveMode         *message);
-size_t esp_hosted_resp_get_power_save_mode__get_packed_size
-                     (const EspHostedRespGetPowerSaveMode   *message);
-size_t esp_hosted_resp_get_power_save_mode__pack
-                     (const EspHostedRespGetPowerSaveMode   *message,
-                      uint8_t             *out);
-size_t esp_hosted_resp_get_power_save_mode__pack_to_buffer
-                     (const EspHostedRespGetPowerSaveMode   *message,
-                      ProtobufCBuffer     *buffer);
-EspHostedRespGetPowerSaveMode *
-       esp_hosted_resp_get_power_save_mode__unpack
-                     (ProtobufCAllocator  *allocator,
-                      size_t               len,
-                      const uint8_t       *data);
-void   esp_hosted_resp_get_power_save_mode__free_unpacked
-                     (EspHostedRespGetPowerSaveMode *message,
-                      ProtobufCAllocator *allocator);
 /* EspHostedConfigPayload methods */
 void   esp_hosted_config_payload__init
                      (EspHostedConfigPayload         *message);
@@ -700,6 +955,24 @@ void   esp_hosted_config_payload__free_unpacked
                       ProtobufCAllocator *allocator);
 /* --- per-message closures --- */
 
+typedef void (*EspHostedCmdGetMacAddress_Closure)
+                 (const EspHostedCmdGetMacAddress *message,
+                  void *closure_data);
+typedef void (*EspHostedRespGetMacAddress_Closure)
+                 (const EspHostedRespGetMacAddress *message,
+                  void *closure_data);
+typedef void (*EspHostedCmdGetMode_Closure)
+                 (const EspHostedCmdGetMode *message,
+                  void *closure_data);
+typedef void (*EspHostedRespGetMode_Closure)
+                 (const EspHostedRespGetMode *message,
+                  void *closure_data);
+typedef void (*EspHostedCmdSetMode_Closure)
+                 (const EspHostedCmdSetMode *message,
+                  void *closure_data);
+typedef void (*EspHostedRespSetMode_Closure)
+                 (const EspHostedRespSetMode *message,
+                  void *closure_data);
 typedef void (*EspHostedCmdGetStatus_Closure)
                  (const EspHostedCmdGetStatus *message,
                   void *closure_data);
@@ -712,11 +985,29 @@ typedef void (*EspHostedCmdSetMacAddress_Closure)
 typedef void (*EspHostedRespSetMacAddress_Closure)
                  (const EspHostedRespSetMacAddress *message,
                   void *closure_data);
-typedef void (*EspHostedCmdConfig_Closure)
-                 (const EspHostedCmdConfig *message,
+typedef void (*EspHostedCmdGetAPConfig_Closure)
+                 (const EspHostedCmdGetAPConfig *message,
                   void *closure_data);
-typedef void (*EspHostedRespConfig_Closure)
-                 (const EspHostedRespConfig *message,
+typedef void (*EspHostedRespGetAPConfig_Closure)
+                 (const EspHostedRespGetAPConfig *message,
+                  void *closure_data);
+typedef void (*EspHostedCmdSetAPConfig_Closure)
+                 (const EspHostedCmdSetAPConfig *message,
+                  void *closure_data);
+typedef void (*EspHostedRespSetAPConfig_Closure)
+                 (const EspHostedRespSetAPConfig *message,
+                  void *closure_data);
+typedef void (*EspHostedCmdGetSoftAPConfig_Closure)
+                 (const EspHostedCmdGetSoftAPConfig *message,
+                  void *closure_data);
+typedef void (*EspHostedRespGetSoftAPConfig_Closure)
+                 (const EspHostedRespGetSoftAPConfig *message,
+                  void *closure_data);
+typedef void (*EspHostedCmdSetSoftAPConfig_Closure)
+                 (const EspHostedCmdSetSoftAPConfig *message,
+                  void *closure_data);
+typedef void (*EspHostedRespSetSoftAPConfig_Closure)
+                 (const EspHostedRespSetSoftAPConfig *message,
                   void *closure_data);
 typedef void (*EspHostedScanResult_Closure)
                  (const EspHostedScanResult *message,
@@ -736,18 +1027,6 @@ typedef void (*EspHostedCmdConnectedSTA_Closure)
 typedef void (*EspHostedRespConnectedSTA_Closure)
                  (const EspHostedRespConnectedSTA *message,
                   void *closure_data);
-typedef void (*EspHostedCmdSetPowerSaveMode_Closure)
-                 (const EspHostedCmdSetPowerSaveMode *message,
-                  void *closure_data);
-typedef void (*EspHostedRespSetPowerSaveMode_Closure)
-                 (const EspHostedRespSetPowerSaveMode *message,
-                  void *closure_data);
-typedef void (*EspHostedCmdGetPowerSaveMode_Closure)
-                 (const EspHostedCmdGetPowerSaveMode *message,
-                  void *closure_data);
-typedef void (*EspHostedRespGetPowerSaveMode_Closure)
-                 (const EspHostedRespGetPowerSaveMode *message,
-                  void *closure_data);
 typedef void (*EspHostedConfigPayload_Closure)
                  (const EspHostedConfigPayload *message,
                   void *closure_data);
@@ -759,22 +1038,30 @@ typedef void (*EspHostedConfigPayload_Closure)
 
 extern const ProtobufCEnumDescriptor    esp_hosted_encryption_mode__descriptor;
 extern const ProtobufCEnumDescriptor    esp_hosted_config_msg_type__descriptor;
+extern const ProtobufCMessageDescriptor esp_hosted_cmd_get_mac_address__descriptor;
+extern const ProtobufCMessageDescriptor esp_hosted_resp_get_mac_address__descriptor;
+extern const ProtobufCMessageDescriptor esp_hosted_cmd_get_mode__descriptor;
+extern const ProtobufCMessageDescriptor esp_hosted_resp_get_mode__descriptor;
+extern const ProtobufCMessageDescriptor esp_hosted_cmd_set_mode__descriptor;
+extern const ProtobufCMessageDescriptor esp_hosted_resp_set_mode__descriptor;
 extern const ProtobufCMessageDescriptor esp_hosted_cmd_get_status__descriptor;
 extern const ProtobufCMessageDescriptor esp_hosted_resp_get_status__descriptor;
 extern const ProtobufCMessageDescriptor esp_hosted_cmd_set_mac_address__descriptor;
 extern const ProtobufCMessageDescriptor esp_hosted_resp_set_mac_address__descriptor;
-extern const ProtobufCMessageDescriptor esp_hosted_cmd_config__descriptor;
-extern const ProtobufCMessageDescriptor esp_hosted_resp_config__descriptor;
+extern const ProtobufCMessageDescriptor esp_hosted_cmd_get_apconfig__descriptor;
+extern const ProtobufCMessageDescriptor esp_hosted_resp_get_apconfig__descriptor;
+extern const ProtobufCMessageDescriptor esp_hosted_cmd_set_apconfig__descriptor;
+extern const ProtobufCMessageDescriptor esp_hosted_resp_set_apconfig__descriptor;
+extern const ProtobufCMessageDescriptor esp_hosted_cmd_get_soft_apconfig__descriptor;
+extern const ProtobufCMessageDescriptor esp_hosted_resp_get_soft_apconfig__descriptor;
+extern const ProtobufCMessageDescriptor esp_hosted_cmd_set_soft_apconfig__descriptor;
+extern const ProtobufCMessageDescriptor esp_hosted_resp_set_soft_apconfig__descriptor;
 extern const ProtobufCMessageDescriptor esp_hosted_scan_result__descriptor;
 extern const ProtobufCMessageDescriptor esp_hosted_cmd_scan_result__descriptor;
 extern const ProtobufCMessageDescriptor esp_hosted_resp_scan_result__descriptor;
 extern const ProtobufCMessageDescriptor esp_hosted_connected_stalist__descriptor;
 extern const ProtobufCMessageDescriptor esp_hosted_cmd_connected_sta__descriptor;
 extern const ProtobufCMessageDescriptor esp_hosted_resp_connected_sta__descriptor;
-extern const ProtobufCMessageDescriptor esp_hosted_cmd_set_power_save_mode__descriptor;
-extern const ProtobufCMessageDescriptor esp_hosted_resp_set_power_save_mode__descriptor;
-extern const ProtobufCMessageDescriptor esp_hosted_cmd_get_power_save_mode__descriptor;
-extern const ProtobufCMessageDescriptor esp_hosted_resp_get_power_save_mode__descriptor;
 extern const ProtobufCMessageDescriptor esp_hosted_config_payload__descriptor;
 
 PROTOBUF_C__END_DECLS

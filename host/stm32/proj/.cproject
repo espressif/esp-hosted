@@ -8,7 +8,7 @@
 					<stringMacro name="INPUT__OPERATING_MODE" type="VALUE_TEXT" value="&quot;STATION+SOFTAP&quot;"/>
 					<stringMacro name="INPUT_STATION__SSID" type="VALUE_TEXT" value="&quot;MyWifi&quot;"/>
 					<stringMacro name="INPUT_STATION_PASSWORD" type="VALUE_TEXT" value="&quot;MyWifi@123&quot;"/>
-					<stringMacro name="INPUT_STATION_BSSID" type="VALUE_TEXT" value="&quot;0&quot;"/>
+					<stringMacro name="INPUT_STATION_BSSID" type="VALUE_TEXT" value="&quot;&quot;"/>
 					<stringMacro name="INPUT_STATION_IS_WPA3_SUPPORTED" type="VALUE_TEXT" value="&quot;no&quot;"/>
 					<stringMacro name="INPUT_STATION_SRC_IP" type="VALUE_TEXT" value="&quot;192.168.1.233&quot;"/>
 					<stringMacro name="INPUT_STATION_ARP_DEST_IP" type="VALUE_TEXT" value="&quot;192.168.1.203&quot;"/>

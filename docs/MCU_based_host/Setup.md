@@ -16,10 +16,10 @@ $ git submodule update --init --recursive
 ```
 ## Tools for testing
 ### Arping
-Arping software is needed for testing the project. 
-Arping is a software tool which probes hosts on the network link by sending Link Layer frames using the ARP request to host identified by its MAC address. More details could be found on [this link](https://devconnected.com/arping-command-on-linux-explained/). 
+Arping software is needed for testing the project.
+Arping is a software tool which probes hosts on the network link by sending Link Layer frames using the ARP request to host identified by its MAC address. More details could be found on [this link](https://devconnected.com/arping-command-on-linux-explained/).
 
-To install arping on ubuntu based system, please use 
+To install arping on ubuntu based system, please use
 ```
 $ sudo apt-get install arping
 ```
@@ -63,7 +63,7 @@ Setup image is here.
 | GND  (pin2) | GND | GND |
 | PC6  (pin6) | IO2 | Handshake |
 | PC7  (pin8) | IO4 | Data ready from ESP |
-| PB13  (pin10) | EN | Reset ESP |
+| PB13  (pin10) | RST | Reset ESP |
 
 Setup image is here.
 

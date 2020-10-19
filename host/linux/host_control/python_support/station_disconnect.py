@@ -22,10 +22,10 @@ import os
 # SoftAP            2
 # Station + SoftAP  3
 
-none = 0
-station = 1
-softap = 2
-station_softap = 3
+wifi_mode_none = 0
+wifi_mode_station = 1
+wifi_mode_softap = 2
+wifi_mode_station_softap = 3
 failure = "failure"
 success = "success"
 flag = success
@@ -39,9 +39,9 @@ print("WiFi Mode: "+str(wifi_mode))
 if (wifi_mode == failure):
     print("Failed to get WiFi Mode")
     flag = failure
-elif (wifi_mode == station or wifi_mode == station_softap):
+elif ((wifi_mode == wifi_mode_station) or (wifi_mode == wifi_mode_station_softap)):
     disconnect = wifi_disconnect_ap()
-    if (disconnect == failure):
+    if (disconnect != success):
         print("Failed to Disconnected from AP")
         flag = failure
     else :

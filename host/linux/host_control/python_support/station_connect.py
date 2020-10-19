@@ -24,10 +24,10 @@ import subprocess
 # SoftAP            2
 # Station + SoftAP  3
 
-none = 0
-station = 1
-softap = 2
-station_softap = 3
+wifi_mode_none = 0
+wifi_mode_station = 1
+wifi_mode_softap = 2
+wifi_mode_station_softap = 3
 failure = "failure"
 success = "success"
 flag = success
@@ -35,11 +35,11 @@ station_status = 'Nothing set'
 
 parser = argparse.ArgumentParser(description='station_connect.py is a python script which connect ESP32 station to AP. ex. python station_connect.py \'xyz\' \'xyz123456\' --bssid=\'e5:6c:67:3c:cf:65\' --is_wpa3_supported=True --listen_interval=3')
 
-parser.add_argument("ssid", type=str, default='0', help="ssid of AP")
+parser.add_argument("ssid", type=str, default='', help="ssid of AP")
 
-parser.add_argument("password", type=str, default='0', help="password of AP")
+parser.add_argument("password", type=str, default='', help="password of AP")
 
-parser.add_argument("--bssid", type=str, default='0', help="bssid i.e MAC address of AP in case of multiple AP has same ssid (default: '0')")
+parser.add_argument("--bssid", type=str, default='', help="bssid i.e MAC address of AP in case of multiple AP has same ssid (default: '')")
 
 parser.add_argument("--is_wpa3_supported", type=bool, default=False, help="wpa3 support present on AP (False:Unsupported) (True: Supported)")
 
@@ -47,7 +47,7 @@ parser.add_argument("--listen_interval", type=int, default=3, help="Listen inter
 
 args = parser.parse_args()
 
-sta_mac = wifi_get_mac(station)
+sta_mac = wifi_get_mac(wifi_mode_station)
 if (sta_mac == failure):
     flag = failure
     print("Failed to get station MAC address")
@@ -56,16 +56,15 @@ else :
 
 if (flag == success):
     station_status = wifi_set_ap_config(args.ssid,args.password,args.bssid,args.is_wpa3_supported,args.listen_interval)
-    if (station_status == failure):
+    if (station_status != success):
         flag = failure
         print("Failed to set AP config")
-    elif (station_status == success):
+    elif (station_status != success):
         print("Connected to "+args.ssid)
 
-if (flag == failure):
+if (flag != success):
     print("Failed to connect with AP")
-
-if (flag == success):
+else:
     command = 'sudo ifconfig ethsta0 down'
     os.system(command)
     print(command)

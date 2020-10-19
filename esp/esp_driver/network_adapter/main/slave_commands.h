@@ -15,5 +15,23 @@
 #include <esp_err.h>
 #define min(X, Y) (((X) < (Y)) ? (X) : (Y))
 
+#define SSID_LENGTH             32
+#define PASSWORD_LENGTH         64
+#define BSSID_LENGTH            19
+#define TIMEOUT_IN_SEC          (1000 / portTICK_RATE_MS)
+
+typedef struct {
+    uint8_t ssid[SSID_LENGTH];
+    uint8_t pwd[PASSWORD_LENGTH];
+    uint8_t bssid[BSSID_LENGTH];
+    uint8_t chnl;
+    uint8_t max_conn;
+    int8_t rssi;
+    bool ssid_hidden;
+    wifi_auth_mode_t ecn;
+    uint8_t bw;
+    uint16_t count;
+} credentials_t;
+
 esp_err_t data_transfer_handler(uint32_t session_id,const uint8_t *inbuf, ssize_t inlen,uint8_t **outbuf, ssize_t *outlen, void *priv_data);
 

@@ -32,7 +32,7 @@ or
 $ pip3 install protobuf
 ```
 #### Note:
-We have tested esp-hosted solution with python 2.7.13 and 3.5.3 and Protobuf version 3.13.0.
+We have tested esp-hosted solution with python 2.7.13 and 3.5.3 and Protobuf version >= 3.13.0 .
 
 ### Source code repository:
 * Clone esp-hosted repository on Raspberry Pi.
@@ -76,4 +76,3 @@ ESP-Hosted solutions supports SDIO and SPI as transport for Wi-Fi and Bluetooth/
 * [Bluetooth/BLE connectivity Setup over UART](UART_setup.md)
 
 Once the setup is done, [Getting started](docs/Linux_based_host/Getting_started.md) section would help to establish Wi-Fi or Bluetooth connectivity.
-

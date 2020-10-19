@@ -18,7 +18,7 @@ failure = 'failure'
 
 # 1 : station
 # 2 : softAP
-'''
+
 x = wifi_get_mac(2)
 print("mac "+str(x))
 
@@ -34,7 +34,7 @@ print("wifi mode is "+str(x))
 x = wifi_set_mode(2)
 print(x)
 
-x = wifi_set_ap_config('xyz','xyz123456','0',False, 5)
+x = wifi_set_ap_config('xyz', 'xyz123456', '', False, 5)
 print(x)
 
 x = wifi_get_ap_config()
@@ -43,7 +43,7 @@ print(x)
 x = wifi_disconnect_ap()
 print(x)
 
-x = wifi_set_softap_config('ESP12','0',4,0,5,0,1)
+x = wifi_set_softap_config('ESP12', '', 4, 0, 5, False, 1)
 print(x)
 
 x = wifi_get_softap_config()
@@ -65,7 +65,7 @@ else :
     for obj in x:
         print(obj.mac)
 
-x = wifi_set_mac(2,"5a:11:11:11:11:11")
+x = wifi_set_mac(2, "5a:11:11:11:11:11")
 print(x)
 
 x = wifi_set_power_save_mode(2)
@@ -73,4 +73,6 @@ print(x)
 
 x = wifi_get_power_save_mode()
 print("Power save mode is "+str(x))
-'''
+
+x = wifi_stop_softap()
+print(x)

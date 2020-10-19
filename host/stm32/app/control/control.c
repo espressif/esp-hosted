@@ -41,6 +41,9 @@
 #define PARAM_STR_SOFTAP                    "SOFTAP"
 #define PARAM_STR_STATION                   "STATION"
 
+#define DEFAULT_SOFTAP_CHANNEL              1
+#define DEFAULT_SOFTAP_MAX_CONNECTIONS      4
+
 /* data path opens after control path is set */
 static int mode = WIFI_MODE_NONE;
 static uint8_t self_station_mac[MAC_LEN] = { 0 };
@@ -316,18 +319,20 @@ static int station_connect(void)
 	int wifi_mode = WIFI_MODE_STA;
 	char mac[WIFI_MAX_STR_LEN];
 	int ret;
-	esp_hosted_ap_config_t ap_config = {0};
+	esp_hosted_control_config_t ap_config = {0};
 
 	printf("Station mode: ssid: %s passwd %s \n\r",
 			INPUT_STATION__SSID, INPUT_STATION_PASSWORD);
 
-	strncpy((char* )&ap_config.ssid,    INPUT_STATION__SSID,
+	strncpy((char* )&ap_config.station.ssid,    INPUT_STATION__SSID,
 			min(SSID_LENGTH,     strlen(INPUT_STATION__SSID)+1));
-	strncpy((char* )&ap_config.pwd,     INPUT_STATION_PASSWORD,
+	strncpy((char* )&ap_config.station.pwd,     INPUT_STATION_PASSWORD,
 			min(PASSWORD_LENGTH, strlen(INPUT_STATION_PASSWORD)+1));
-	strncpy((char* )&ap_config.bssid,   INPUT_STATION_BSSID,
+	if (strlen(INPUT_STATION_BSSID)) {
+		strncpy((char* )&ap_config.station.bssid,   INPUT_STATION_BSSID,
 			min(BSSID_LENGTH,    strlen(INPUT_STATION_BSSID)+1));
-	ap_config.is_wpa3_supported =
+	}
+	ap_config.station.is_wpa3_supported =
 		get_boolean_param(INPUT_STATION_IS_WPA3_SUPPORTED);
 
 	memset(mac, '\0', WIFI_MAX_STR_LEN);
@@ -346,7 +351,7 @@ static int station_connect(void)
 		hard_delay(50000);
 		return STM_FAIL;
 	} else {
-		printf("Connected to %s \n\r", ap_config.ssid);
+		printf("Connected to %s \n\r", ap_config.station.ssid);
 		control_path_call_event(STATION_CONNECTED);
 	}
 	return STM_OK;
@@ -361,24 +366,39 @@ static int softap_start(void)
 {
 	/* softap mode */
 
-	int wifi_mode = WIFI_MODE_AP;
+	int wifi_mode = WIFI_MODE_AP, ret = 0, channel = 0, max_connections = 0;
 	char mac[WIFI_MAX_STR_LEN];
-	int ret;
-	esp_hosted_ap_config_t softap_config = {0};
+	esp_hosted_control_config_t softap_config = {0};
 
 	printf("SoftAP mode: ssid: %s passwd %s \n\r",
 			INPUT_SOFTAP__SSID, INPUT_SOFTAP_PASSWORD);
 
-	strncpy((char* )&softap_config.ssid, INPUT_SOFTAP__SSID,
+	strncpy((char* )&softap_config.softap.ssid, INPUT_SOFTAP__SSID,
 			min(SSID_LENGTH,      strlen(INPUT_SOFTAP__SSID)+1));
-	strncpy((char* )&softap_config.pwd,  INPUT_SOFTAP_PASSWORD,
+	strncpy((char* )&softap_config.softap.pwd,  INPUT_SOFTAP_PASSWORD,
 			min(PASSWORD_LENGTH,  strlen(INPUT_SOFTAP_PASSWORD)+1));
 
-	softap_config.channel           = atoi(INPUT_SOFTAP_CHANNEL);
-	softap_config.encryption_mode   = get_param_softap_encryption();
-	softap_config.max_connections   = atoi(INPUT_SOFTAP_MAX_CONN);
-	softap_config.ssid_hidden       = get_boolean_param(INPUT_SOFTAP_SSID_HIDDEN);
-	softap_config.bandwidth         = get_param_softap_bw();
+	ret = get_num_from_string(&channel, INPUT_SOFTAP_CHANNEL);
+	if (ret != STM_FAIL) {
+		softap_config.softap.channel = channel;
+	} else {
+		printf("Wrong input entered for softap channel\n");
+		printf("Setting softap channel to default value 1\n");
+		softap_config.softap.channel = DEFAULT_SOFTAP_CHANNEL;
+	}
+
+	ret = get_num_from_string(&max_connections, INPUT_SOFTAP_MAX_CONN);
+	if (ret != STM_FAIL) {
+		softap_config.softap.max_connections = max_connections;
+	} else {
+		printf("Wrong input entered for softap maximum connections\n");
+		printf("Setting softap maximum connections to default value 4\n");
+		softap_config.softap.max_connections = DEFAULT_SOFTAP_MAX_CONNECTIONS;
+	}
+
+	softap_config.softap.encryption_mode   = get_param_softap_encryption();
+	softap_config.softap.ssid_hidden       = get_boolean_param(INPUT_SOFTAP_SSID_HIDDEN);
+	softap_config.softap.bandwidth         = get_param_softap_bw();
 
 	memset(mac, '\0', WIFI_MAX_STR_LEN);
 
@@ -398,7 +418,7 @@ static int softap_start(void)
 		hard_delay(50000);
 		return STM_FAIL;
 	} else {
-		printf("started %s softAP\n\r", softap_config.ssid);
+		printf("started %s softAP\n\r", softap_config.softap.ssid);
 		mode |= MODE_SOFTAP;
 		control_path_call_event(SOFTAP_STARTED);
 	}
@@ -412,32 +432,32 @@ static int softap_start(void)
   */
 static int get_ap_scan_list(void)
 {
-	int ret = 0, count = 0;
-	esp_hosted_wifi_scanlist_t* list = NULL;
-	ret = wifi_ap_scan_list(&list, &count);
-	if (ret) {
-		printf("Failed to get available AP scan list \n\r");
-		return STM_FAIL;
-	}
-	printf("Scanned Neighbouring AP list \n\r");
-	if (count) {
+    int count = 0;
+    esp_hosted_wifi_scanlist_t* list = NULL;
+    list = wifi_ap_scan_list(&count);
+    if (!count) {
+        printf("No AP found \n");
+    } else if (!list) {
+        printf("Failed to get scanned AP list \n");
+    } else {
+        printf("Scanned Neighbouring AP list \n\r");
         printf("+----------------------------------+----------------------+---------+---------+---------------+\n\r");
         printf("|                 SSID             |         BSSID        |   rssi  | channel | Auth mode     |\n\r");
         printf("+----------------------------------+----------------------+---------+---------+---------------+\n\r");
-		for (int i=0; i<count; i++) {
-			printf("| %-32s | %-20s | %-7d | %-7d | %-11d   |\n\r"
-					,list[i].ssid, list[i].bssid,
-					list[i].rssi, list[i].channel,
-					list[i].encryption_mode);
-			hard_delay(50);
-		}
-		free(list);
-		list = NULL;
+        for (int i=0; i<count; i++) {
+            printf("| %-32s | %-20s | %-7d | %-7d | %-11d   |\n\r"
+                    ,list[i].ssid, list[i].bssid,
+                    list[i].rssi, list[i].channel,
+                    list[i].encryption_mode);
+            hard_delay(50);
+        }
         printf("+----------------------------------+----------------------+---------+---------+---------------+\n\r");
-	} else {
-		printf("No AP found \n\r");
-	}
-	return STM_OK;
+    }
+    if (list) {
+        free(list);
+        list = NULL;
+    }
+    return STM_OK;
 }
 
 /**

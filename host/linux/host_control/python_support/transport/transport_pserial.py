@@ -18,8 +18,8 @@ import sys
 import os
 import select
 
-failure = "failure"
-success = "success"
+failure = -1
+success = 0
 
 PROTO_PSER_TLV_T_EPNAME = b'\x01'
 PROTO_PSER_TLV_T_DATA   = b'\x02'
