@@ -412,6 +412,7 @@ void recv_task(void* pvParameters)
 		if (if_context && if_context->if_ops && if_context->if_ops->read) {
 			buf_handle = if_context->if_ops->read(if_handle);
 			if (!buf_handle) {
+				usleep(10*1000);
 				continue;
 			}
 		}
