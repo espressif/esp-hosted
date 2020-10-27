@@ -64,22 +64,47 @@ Each of these are explained in following sub sections.
 This section explains communication protocol between a host and ESP module. It also explains serial interface and network interface APIs provided by ESP-Hosted Host software.
 
 ## Communication Protocol over SPI Interface
+#### Basic concepts
+##### Additional pin setup
+Apart from basic 4 pin SPI configuration, following are additional pins used in ESP-Hosted solution.
+
+###### Handshake pin
+This is a output pin. ESP peripheral makes use of this pin to convey its readiness for execution of SPI transaction. The host is not supposed to initiate SPI transaction if ESP peripheral has not indicated its readiness. This pin stays high till the end of SPI transaction.
+
+###### Data ready pin
+This is a output pin. This pin is used to indicate host that the ESP peripheral wants to send a data packet to it. This pin stays high till the host reads this data packet.
+
+###### Reset/EN pin
+This is a input pin. This pin resets ESP peripheral and is mandatory in SPI based ESP-Hosted solution.
+
 ### Initialization of slave device
-* Connection of 'EN' pin to host is mandatory in case of SPI communication. Once driver is loaded on host, it resets SPI slave through this pin.
-* SPI slave then initializes itself and preapres itself for communication. Once it is ready for communication, it generates INIT event packet for host.
+* Connection of 'EN'/Reset pin to host is mandatory in case of SPI communication. Once driver is loaded on host, it resets ESP peripheral through this pin.
+* Firmware on ESP peripheral then initializes itself and preapres itself for communication over SPI interface. Once it is ready for communication, it generates INIT event for host.
 * Host driver, on receiving this event, opens up data path for higher layers.
 
-### Data transfer between Host and slave
+#### Data transfer between Host and slave
 * This solution makes use of SPI full duplex commmunication mode. i.e. read and write operations are performed at the same time in same SPI transaction.
-* As a protocol, host is not supposed to start a transaction before ESP SPI slave device is ready for receiving data. Therefore, a seaparate GPIO pin is used for a handshake signal through which ESP slave indicates host when it is ready for data reception.
-* When ESP SPI slave is ready for SPI transaction,
-	* It initiates SPI transaction by setting tx and rx buffers of size 2048 bytes. This is a maximum buffer size. i.e at a time host can send and receive at max 2048 bytes of data.
-	* It is mandatory for ESP SPI slave to set both tx and rx buffers in each and every SPI transaction. Thus, in absence of valid tx buffer, a dummy tx buffer of size 2048 bytes is set in SPI transaction. Packet length field in payload header of dummy packet it set to 0.
-	* Once a transaction is queued, ESP SPI slave uses handshake pin to indicate host that it is ready for the SPI transaction.
-	* This generates an interrupt for host driver. On this interrupt, SPI host driver executes SPI transaction.
+* As a protocol, host is not supposed to start a transaction before ESP SPI slave device is ready for receiving data. Therefore, through Handshake pin, ESP peripheral indicates host when it is ready for SPI transaction.
+* To allow seamless data traffic between host and ESP peripheral, ESP peripheral needs to be ready for data reception from host all the time. For that, after completion of every SPI transaction, ESP peripheral immediately queues next SPI transaction.
+* The data transfer protocol works as below:
+	* Each SPI transaction has a tx buffer and a rx buffer.
+		* Tx buffer contains data which ESP peripheral wants to send to host.
+		* Rx buffer is an empty buffer space, which on the completion of SPI transaction will hold data received from host.
+	* ESP peripheral initiates SPI transaction by setting tx and rx buffers of size 1600 bytes. This is a maximum buffer size. i.e at a time host can send and receive at max 1600 bytes of data.
+	* There are two cases with respect to tx buffer here:
+		* In case if ESP peripheral has no data to transfer to host, a dummy tx buffer of size 1600 bytes is allocated and is set in SPI transaction. Packet length field in payload header of such buffer is set to 0.
+		* If ESP peripheral has a valid data buffer to be sent to host, then tx buffer will point to that buffer.
+	* SPI transaction length is set to 1600 bytes [irrespective of size of tx buffer]
+	* Once this SPI transaction is submitted to SPI driver on ESP peripheral, Handshake pin is pulled high to indicate host that slave is ready for transaction.
+	* In case if tx buffer has valid data, Data ready pin is also pulled high.
+	* Host receives an interrupt through Handshake pin. On this interrupt, host needs to decide whether or not to perform SPI transaction.
+		* If Data ready pin is high, host performs SPI transaction
+		* Or if host has data to transfer, then host performs SPI transaction
+		* If both the above conditions are false, then host does not perform SPI transaction. This transaction is then performed later when host has data to be sent or interrupt is received on Data ready pin.
 	* During this SPI transaction, tx and rx buffers are exchanged on SPI data lines.
 	* Based on payload header in received buffer, both ESP SPI slave and host processes the buffer.
-	* The host driver, before executing next SPI transaction, waits for an interrupt on handshake line.
+	* On completion of transaction, ESP peripheral pulls Handshake pin low. If completed transaction had a valid tx buffer, then it also pulls Data ready pin low.
+
 
 ### Payload format for data transfer
 * Host and slave makes use of 8 byte payload header which preceeds every data packet.

@@ -10,6 +10,7 @@ In this setup, ESP32 board acts as a SPI peripheral and provides Wi-FI capabilit
 | 19 | IO23 | MOSI |
 | 25 | GND | Ground |
 | 11 | IO2 | Handshake |
+| 13 | IO4 | Data Ready |
 | 31 | EN  | ESP32 Reset |
 
 Setup image is here.

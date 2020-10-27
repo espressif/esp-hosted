@@ -41,4 +41,11 @@ menu "Example Configuration"
         default 2
         help
             GPIO to use for handshake with other spi controller
+
+    config ESP_SPI_GPIO_DATA_READY
+        int "GPIO pin for data ready interrupt"
+        default 4
+        help
+            GPIO pin for indicating host that SPI slave has data to be read by host
+
 endmenu

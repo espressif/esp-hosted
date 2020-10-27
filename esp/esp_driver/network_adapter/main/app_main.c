@@ -84,8 +84,14 @@ interface_handle_t *if_handle = NULL;
 
 QueueHandle_t to_host_queue = NULL;
 QueueHandle_t from_host_queue = NULL;
-#define TO_HOST_QUEUE_SIZE	100
-#define FROM_HOST_QUEUE_SIZE	100
+
+#if CONFIG_ESP_SPI_HOST_INTERFACE
+#define TO_HOST_QUEUE_SIZE      10
+#define FROM_HOST_QUEUE_SIZE    10
+#else
+#define TO_HOST_QUEUE_SIZE      100
+#define FROM_HOST_QUEUE_SIZE    100
+#endif
 
 static protocomm_t *pc_pserial;
 
@@ -680,14 +686,13 @@ void app_main()
 
 	ESP_ERROR_CHECK(ret);
 
-	xTaskCreate(recv_task , "recv_task" , 4096 , NULL , 18 , NULL);
-	xTaskCreate(send_task , "send_task" , 4096 , NULL , 18 , NULL);
-	xTaskCreate(process_rx_task , "process_rx_task" , 4096 , NULL , 18 , NULL);
+	xTaskCreate(recv_task , "recv_task" , 4096 , NULL , 16 , NULL);
+	xTaskCreate(send_task , "send_task" , 4096 , NULL , 16 , NULL);
+	xTaskCreate(process_rx_task , "process_rx_task" , 4096 , NULL , 16 , NULL);
 
 	tcpip_adapter_init();
 
 	ESP_ERROR_CHECK(initialise_wifi());
 
 	ESP_LOGI(TAG,"Initial set up done");
-
 }

@@ -50,7 +50,6 @@ static int esp_serial_read(struct file *file, char __user *user_buffer, size_t s
 	struct esp_serial_devs *dev;
        	dev = (struct esp_serial_devs *) file->private_data;
 	size = esp_rb_read_by_user(&dev->rb, user_buffer, size, file->f_flags & O_NONBLOCK);
-/*	print_hex_dump_bytes("Rx:", DUMP_PREFIX_NONE, user_buffer, size);*/
 	if (size == 0) {
 		return -EAGAIN;
 	}

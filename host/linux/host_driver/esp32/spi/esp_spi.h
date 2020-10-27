@@ -19,17 +19,19 @@
 
 #include "esp.h"
 
-#define HANDSHAKE_PIN		17
-#define SPI_IRQ			gpio_to_irq(HANDSHAKE_PIN)
-#define SPI_BUF_SIZE		2048
+#define HANDSHAKE_PIN           17
+#define SPI_IRQ                 gpio_to_irq(HANDSHAKE_PIN)
+#define SPI_DATA_READY_PIN      27
+#define SPI_DATA_READY_IRQ      gpio_to_irq(SPI_DATA_READY_PIN)
+#define SPI_BUF_SIZE            1600
 
 struct esp_spi_context {
-	struct esp_adapter 	*adapter;
-	struct spi_device 	*esp_spi_dev;
-	struct sk_buff_head 	tx_q;
-	struct sk_buff_head 	rx_q;
-	struct workqueue_struct 	*spi_workqueue;
-	struct work_struct		spi_work;
+	struct esp_adapter          *adapter;
+	struct spi_device           *esp_spi_dev;
+	struct sk_buff_head         tx_q;
+	struct sk_buff_head         rx_q;
+	struct workqueue_struct     *spi_workqueue;
+	struct work_struct          spi_work;
 };
 
 enum {

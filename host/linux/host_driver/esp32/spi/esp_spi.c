@@ -17,6 +17,8 @@
 #include <linux/device.h>
 #include <linux/spi/spi.h>
 #include <linux/gpio.h>
+#include <linux/mutex.h>
+#include <linux/delay.h>
 #include "esp_spi.h"
 #include "esp_if.h"
 #include "esp_api.h"
@@ -37,6 +39,7 @@ static struct esp_if_ops if_ops = {
 	.write		= write_packet,
 };
 
+static DEFINE_MUTEX(spi_lock);
 
 static void open_data_path(void)
 {
@@ -50,9 +53,18 @@ static void close_data_path(void)
 	msleep(200);
 }
 
+static irqreturn_t spi_data_ready_interrupt_handler(int irq, void * dev)
+{
+	/* ESP peripheral has queued buffer for transmission */
+ 	if (spi_context.spi_workqueue)
+ 		queue_work(spi_context.spi_workqueue, &spi_context.spi_work);
+
+ 	return IRQ_HANDLED;
+ }
+
 static irqreturn_t spi_interrupt_handler(int irq, void * dev)
 {
-	/* ESP32 is ready for next transaction */
+	/* ESP peripheral is ready for next SPI transaction */
 	if (spi_context.spi_workqueue)
 		queue_work(spi_context.spi_workqueue, &spi_context.spi_work);
 
@@ -123,12 +135,15 @@ static int write_packet(struct esp_adapter *adapter, u8 *buf, u32 size)
 	/* Enqueue SKB in tx_q */
 	skb_queue_tail(&spi_context.tx_q, skb);
 
+	if (spi_context.spi_workqueue)
+		queue_work(spi_context.spi_workqueue, &spi_context.spi_work);
+
 	return 0;
 }
 
 static void process_capabilities(u8 cap)
 {
-	printk (KERN_INFO "ESP32 capabilities: 0x%x", cap);
+	printk (KERN_INFO "ESP32 capabilities: 0x%x\n", cap);
 
 	/* Reset BT */
 	esp_deinit_bt(spi_context.adapter);
@@ -203,26 +218,37 @@ static int process_rx_buf(struct sk_buff *skb)
 	struct esp_payload_header *header;
 	u16 len = 0;
 	u16 offset = 0;
+	u8 *pos;
 
 	if (!skb)
 		return -EINVAL;
 
 	header = (struct esp_payload_header *) skb->data;
 
+	if (header->if_type >= ESP_MAX_IF) {
+		return -EINVAL;
+	}
+
 	offset = le16_to_cpu(header->offset);
 
 	/* Validate received SKB. Check len and offset fields */
-	if (offset != sizeof(struct esp_payload_header))
+	if (offset != sizeof(struct esp_payload_header)) {
 		return -EINVAL;
+	}
 
 	len = le16_to_cpu(header->len);
-	if (!len)
+	if (!len) {
 		return -EINVAL;
+	}
 
 	len += sizeof(struct esp_payload_header);
 
-	if (len > SPI_BUF_SIZE)
+	if (len > SPI_BUF_SIZE) {
 		return -EINVAL;
+	}
+
+	pos = skb->data;
+	pos += offset;
 
 	/* Trim SKB to actual size */
 	skb_trim(skb, len);
@@ -247,52 +273,71 @@ static int process_rx_buf(struct sk_buff *skb)
 static void esp_spi_work(struct work_struct *work)
 {
 	struct spi_transfer trans;
-	struct sk_buff *tx_skb, *rx_skb;
+	struct sk_buff *tx_skb = NULL, *rx_skb = NULL;
 	u8 *rx_buf;
 	int ret = 0;
+	int trans_ready, rx_pending;
 
-	memset(&trans, 0, sizeof(trans));
-	tx_skb = NULL;
+	mutex_lock(&spi_lock);
 
-	/* Setup and execute SPI transaction
-	 * 	Tx_buf: Check if tx_q has valid buffer for transmission,
-	 * 		else keep it blank
-	 *
-	 * 	Rx_buf: Allocate memory for incoming data. This will be freed
-	 *		immediately if received buffer is invalid.
-	 *		If it is a valid buffer, upper layer will free it.
-	 * */
+	trans_ready = gpio_get_value(HANDSHAKE_PIN);
+	rx_pending = gpio_get_value(SPI_DATA_READY_PIN);
 
-	/* Configure TX buffer if available */
-	if (data_path)
-		tx_skb = skb_dequeue(&spi_context.tx_q);
 
-	if (tx_skb) {
-		trans.tx_buf = tx_skb->data;
+	if (trans_ready) {
+		if (data_path)
+			tx_skb = skb_dequeue(&spi_context.tx_q);
+
+		if (rx_pending || tx_skb) {
+			memset(&trans, 0, sizeof(trans));
+
+			/* Setup and execute SPI transaction
+			 * 	Tx_buf: Check if tx_q has valid buffer for transmission,
+			 * 		else keep it blank
+			 *
+			 * 	Rx_buf: Allocate memory for incoming data. This will be freed
+			 *		immediately if received buffer is invalid.
+			 *		If it is a valid buffer, upper layer will free it.
+			 * */
+
+			/* Configure TX buffer if available */
+
+			if (tx_skb) {
+				trans.tx_buf = tx_skb->data;
+			} else {
+				tx_skb = esp_alloc_skb(SPI_BUF_SIZE);
+				trans.tx_buf = skb_put(tx_skb, SPI_BUF_SIZE);
+			}
+
+			/* Configure RX buffer */
+			rx_skb = esp_alloc_skb(SPI_BUF_SIZE);
+			rx_buf = skb_put(rx_skb, SPI_BUF_SIZE);
+
+			memset(rx_buf, 0, SPI_BUF_SIZE);
+
+			trans.rx_buf = rx_buf;
+			trans.len = SPI_BUF_SIZE;
+
+			ret = spi_sync_transfer(spi_context.esp_spi_dev, &trans, 1);
+
+			if (ret) {
+				printk(KERN_ERR "SPI Transaction failed: %d", ret);
+				dev_kfree_skb(rx_skb);
+				dev_kfree_skb(tx_skb);
+			} else {
+
+				/* Free rx_skb if received data is not valid */
+				if (process_rx_buf(rx_skb)) {
+					dev_kfree_skb(rx_skb);
+				}
+
+				if (tx_skb)
+					dev_kfree_skb(tx_skb);
+			}
+		}
 	}
 
-	/* Configure RX buffer */
-	rx_skb = esp_alloc_skb(SPI_BUF_SIZE);
-	rx_buf = skb_put(rx_skb, SPI_BUF_SIZE);
-
-	memset(rx_buf, 0, SPI_BUF_SIZE);
-
-	trans.rx_buf = rx_buf;
-	trans.len = SPI_BUF_SIZE;
-
-	ret = spi_sync_transfer(spi_context.esp_spi_dev, &trans, 1);
-
-	if (ret) {
-		printk(KERN_ERR "SPI Transaction failed: %d", ret);
-	}
-
-	/* Free rx_skb if received data is not valid */
-	if (process_rx_buf(rx_skb)) {
-		dev_kfree_skb(rx_skb);
-	}
-
-	if (tx_skb)
-		dev_kfree_skb(tx_skb);
+	mutex_unlock(&spi_lock);
 }
 
 static int spi_init(void)
@@ -302,9 +347,9 @@ static int spi_init(void)
 	struct spi_master *master = NULL;
 
 	strlcpy(esp_board.modalias, "esp_spi", sizeof(esp_board.modalias));
-	esp_board.mode = SPI_MODE_3;
+	esp_board.mode = SPI_MODE_2;
 	/* 10MHz */
-	esp_board.max_speed_hz = 8000000;
+	esp_board.max_speed_hz = 10000000;
 	esp_board.bus_num = 0;
 	esp_board.chip_select = 0;
 
@@ -373,6 +418,29 @@ static int spi_init(void)
 		return status;
 	}
 
+	status = gpio_request(SPI_DATA_READY_PIN, "SPI_DATA_READY_PIN");
+	if (status) {
+		printk (KERN_ERR "Failed to obtain GPIO");
+		spi_exit();
+		return status;
+	}
+
+	status = gpio_direction_input(SPI_DATA_READY_PIN);
+	if (status) {
+		printk (KERN_ERR "Failed to set GPIO direction");
+		spi_exit();
+		return status;
+	}
+
+	status = request_irq(SPI_DATA_READY_IRQ, spi_data_ready_interrupt_handler,
+			IRQF_SHARED | IRQF_TRIGGER_RISING,
+			"ESP_SPI_DATA_READY", spi_context.esp_spi_dev);
+	if (status) {
+		printk (KERN_ERR "Failed to request IRQ");
+		spi_exit();
+		return status;
+	}
+
 	open_data_path();
 
 #ifdef CONFIG_SUPPORT_ESP_SERIAL
@@ -399,6 +467,7 @@ static int spi_init(void)
 static void spi_exit(void)
 {
 	disable_irq(SPI_IRQ);
+	disable_irq(SPI_DATA_READY_IRQ);
 	close_data_path();
 	msleep(200);
 
@@ -417,8 +486,10 @@ static void spi_exit(void)
 		esp_deinit_bt(spi_context.adapter);
 
 	free_irq(SPI_IRQ, spi_context.esp_spi_dev);
+	free_irq(SPI_DATA_READY_IRQ, spi_context.esp_spi_dev);
 
 	gpio_free(HANDSHAKE_PIN);
+	gpio_free(SPI_DATA_READY_PIN);
 
 	if (spi_context.esp_spi_dev)
 		spi_unregister_device(spi_context.esp_spi_dev);
