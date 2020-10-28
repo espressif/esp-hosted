@@ -97,8 +97,8 @@ int wifi_set_mode(int mode)
 	uint8_t* tx_data = NULL;
 	uint8_t* rx_data = NULL;
 
-	if (!mode) {
-		command_log("Invalid parameter \n");
+	if (mode < 0 || mode >= WIFI_MODE_MAX) {
+		command_log("Invalid wifi mode \n");
 		return FAILURE;
 	}
 

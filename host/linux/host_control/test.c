@@ -44,7 +44,7 @@ int main()
         printf("wifi mode is %d \n",mode);
     }
     mode = STATION_MODE;
-    ret = set_wifi_mode(mode);
+    ret = wifi_set_mode(mode);
     if (ret == SUCCESS) {
         printf("newly set wifi mode %d \n", mode);
     }
