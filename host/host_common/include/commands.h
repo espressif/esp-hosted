@@ -15,6 +15,14 @@
 #define STATUS_LENGTH           14
 
 typedef enum {
+    WIFI_MODE_NONE = 0,  /**< null mode */
+    WIFI_MODE_STA,       /**< WiFi station mode */
+    WIFI_MODE_AP,        /**< WiFi soft-AP mode */
+    WIFI_MODE_APSTA,     /**< WiFi station + soft-AP mode */
+    WIFI_MODE_MAX
+} wifi_mode_t;
+
+typedef enum {
     WIFI_AUTH_OPEN = 0 ,
     WIFI_AUTH_WEP,
     WIFI_AUTH_WPA_PSK ,
@@ -69,28 +77,28 @@ typedef struct {
  * Output parameter
  *      int* mode : returns current wifi mode of ESP32
  * wifi modes:
- * 0: null Mode, Wi-Fi mode not set
- * 1: station mode
- * 2: softAP mode
- * 3: softAP+station mode
+ * WIFI_MODE_NONE   : null Mode, Wi-Fi mode not set
+ * WIFI_MODE_STA    : station mode
+ * WIFI_MODE_AP     : softAP mode
+ * WIFI_MODE_APSTA  : softAP+station mode
  */
 int wifi_get_mode(int* mode);
 
 /* wifi set mode function returns status SUCCESS(0) or FAILURE(-1)
  * User should give input mode as follows:
  * wifi modes:
- * 0: null Mode, Wi-Fi mode not set
- * 1: station mode
- * 2: softAP mode
- * 3: softAP+station mode
+ * WIFI_MODE_NONE   : null Mode, Wi-Fi mode not set
+ * WIFI_MODE_STA    : station mode
+ * WIFI_MODE_AP     : softAP mode
+ * WIFI_MODE_APSTA  : softAP+station mode
  *
  */
 int wifi_set_mode(int mode);
 
 /* wifi get mac function returns status SUCCESS(0) or FAILURE(-1)
  * Input parameter
- *      mode == 1 for station mac
- *      mode == 2 for softAP mac
+ *      mode == WIFI_MODE_STA for station mac
+ *      mode == WIFI_MODE_AP for softAP mac
  * Output parameter
  *      char* mac, returns MAC address of respective mode
  */
@@ -216,8 +224,8 @@ int wifi_connected_stations_list(esp_hosted_wifi_connected_stations_list** list,
  * wifi set mac function sets custom mac address to ESP32's station and softAP Interface, returns SUCCESS(0) or FAILURE(-1)
  * Input parameter:
  *      mode : ESP32 wifi mode
- *          (1 : for station mac
- *           2 : for softAP mac)
+ *          (WIFI_MODE_STA  : for station mac
+ *           WIFI_MODE_AP   : for softAP mac)
  *      mac  : custom MAC Address for esp32 Interface
  * @attention 1. First set wifi mode before setting MAC address for respective station and softAP Interface
  * @attention 2. ESP32 station and softAP have different MAC addresses, do not set them to be the same.

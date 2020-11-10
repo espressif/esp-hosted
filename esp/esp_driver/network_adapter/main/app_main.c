@@ -594,12 +594,12 @@ static esp_err_t initialise_wifi(void)
 	}
 	result = esp_wifi_set_mode(WIFI_MODE_NULL);
 	if (result != ESP_OK) {
-		ESP_LOGI(TAG,"Failed to set wifi mode to NULL");
+		ESP_LOGE(TAG,"Failed to reset wifi mode");
 		return result;
 	}
 	result = esp_wifi_start();
 	if (result != ESP_OK) {
-		ESP_LOGI(TAG,"Failed to start WiFi");
+		ESP_LOGE(TAG,"Failed to start WiFi");
 		return result;
 	}
 
