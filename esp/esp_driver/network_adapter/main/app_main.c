@@ -640,6 +640,10 @@ void app_main()
 		ret = nvs_flash_init();
 	}
 
+#ifdef CONFIG_BT_ENABLED
+	initialise_bluetooth();
+#endif
+
 	pc_pserial = protocomm_new();
 	if (pc_pserial == NULL) {
 		ESP_LOGE(TAG,"Failed to allocate memory for new instance of protocomm ");
@@ -684,9 +688,6 @@ void app_main()
 
 	ESP_ERROR_CHECK(initialise_wifi());
 
-#ifdef CONFIG_BT_ENABLED
-	initialise_bluetooth();
-#endif
 	ESP_LOGI(TAG,"Initial set up done");
 
 }
