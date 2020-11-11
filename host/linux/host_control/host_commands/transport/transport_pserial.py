@@ -14,9 +14,7 @@
 
 from struct import *
 from .transport import Transport
-import binascii
 import time
-import utils
 import sys
 
 failure = "failure"
@@ -25,10 +23,10 @@ PROTO_PSER_TLV_T_EPNAME = b'\x01'
 PROTO_PSER_TLV_T_DATA   = b'\x02'
 
 if sys.version_info >= (3, 0):
-    def gat_val(string):
+    def get_val(string):
         return bytes([string])
 else:
-    def gat_val(string):
+    def get_val(string):
         return str(string)
 
 class Transport_pserial(Transport):
@@ -37,11 +35,11 @@ class Transport_pserial(Transport):
         self.f2 = open(devname, "rb",buffering = 1024)
 
     def parse_tlv(self, ep_name, in_buf):
-        if gat_val(in_buf[0]) == PROTO_PSER_TLV_T_EPNAME:
+        if get_val(in_buf[0]) == PROTO_PSER_TLV_T_EPNAME:
             if in_buf[1:3] == bytearray(pack('<H',len(ep_name))):
                 length = 3 + len(ep_name)
                 if in_buf[3:length].decode('ASCII') == ep_name :
-                    if gat_val(in_buf[length]) == PROTO_PSER_TLV_T_DATA:
+                    if get_val(in_buf[length]) == PROTO_PSER_TLV_T_DATA:
                         length = length + 3
                         in_buf = in_buf[length:]
                         return in_buf
@@ -67,6 +65,8 @@ class Transport_pserial(Transport):
         time.sleep(wait)
         try:
             s = self.f2.read()
+            if not s:
+                return failure
         except IOError:
             return failure
         self.f2.flush()

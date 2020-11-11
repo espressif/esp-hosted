@@ -14,7 +14,6 @@
 
 from .transport import *
 from .esp_hosted_config_pb2 import *
-import binascii
 
 class Aplist:
     def __init__(self,ssid,chnl,rssi,bssid,ecn):
