@@ -22,15 +22,12 @@
 #include "commands.h"
 #include "platform_wrapper.h"
 
-#define MAC_LENGTH      17
+#define MAC_LENGTH      18
 #define SSID_LENGTH     32
 #define PWD_LENGTH      64
 
 #define SUCCESS         0
 #define FAILURE         -1
-
-#define STATION_MODE    1
-#define SOFTAP_MODE     2
 
 int main()
 {
@@ -43,7 +40,7 @@ int main()
     if (ret == SUCCESS) {
         printf("wifi mode is %d \n",mode);
     }
-    mode = STATION_MODE;
+    mode = WIFI_MODE_STA;
     ret = wifi_set_mode(mode);
     if (ret == SUCCESS) {
         printf("newly set wifi mode %d \n", mode);
@@ -131,8 +128,8 @@ int main()
         esp_hosted_free(stations_list);
         stations_list = NULL;
     }
-    mode = STATION_MODE;
-    strcpy(mac, "1a:11:11:11:11:11");
+    mode = WIFI_MODE_STA;
+    strncpy(mac, "1a:11:11:11:11:11", sizeof(mac));
     ret = wifi_set_mac(mode, mac);
     if (ret == SUCCESS) {
         printf("MAC address is set \n");
