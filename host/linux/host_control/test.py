@@ -51,17 +51,14 @@ print(x)
 
 # output is list of Aplist class instances
 x = commands.wifi_ap_scan_list()
-print(x)
 if (x == failure):
     print(failure)
 else:
     for obj in x:
         print(obj.ssid,obj.chnl,obj.rssi,obj.bssid,obj.ecn)
 
-
 # output is list of Stationlist class instances
 x = commands.wifi_connected_stations_list()
-print(x)
 if (x == failure):
     print(failure)
 else :

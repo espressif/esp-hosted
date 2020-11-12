@@ -14,6 +14,7 @@
 
 from .transport import *
 from .esp_hosted_config_pb2 import *
+import sys
 
 class Aplist:
     def __init__(self,ssid,chnl,rssi,bssid,ecn):
@@ -38,6 +39,13 @@ not_connected = "not_connected"
 
 max_ssid_len = 32
 max_password_len = 64
+
+if sys.version_info >= (3, 0):
+    def get_str(string):
+        return string.decode('utf-8')
+else:
+    def get_str(string):
+        return string
 
 # wifi get mac
 # Function returns mac address of ESP32's station or softAP mode
@@ -149,9 +157,9 @@ def wifi_get_ap_config():
      if response == failure :
          return failure
      get_ap_config.ParseFromString(response)
-     if str(get_ap_config.resp_get_ap_config.status) == not_connected:
+     if get_ap_config.resp_get_ap_config.status == not_connected:
          return not_connected
-     elif str(get_ap_config.resp_get_ap_config.status) != success:
+     elif get_ap_config.resp_get_ap_config.status != success:
          return failure
      ssid = str(get_ap_config.resp_get_ap_config.ssid)
      bssid = str(get_ap_config.resp_get_ap_config.bssid)
@@ -296,10 +304,10 @@ def wifi_ap_scan_list():
     count = get_ap_scan_list.resp_scan_ap_list.count
     ap_list = []
     for i in range(count) :
-        ssid = get_ap_scan_list.resp_scan_ap_list.entries[i].ssid
+        ssid = get_str(get_ap_scan_list.resp_scan_ap_list.entries[i].ssid)
         chnl = get_ap_scan_list.resp_scan_ap_list.entries[i].chnl
         rssi = get_ap_scan_list.resp_scan_ap_list.entries[i].rssi
-        bssid = get_ap_scan_list.resp_scan_ap_list.entries[i].bssid
+        bssid = get_str(get_ap_scan_list.resp_scan_ap_list.entries[i].bssid)
         ecn = get_ap_scan_list.resp_scan_ap_list.entries[i].ecn
         ap_list.append(Aplist(ssid,chnl,rssi,bssid,ecn))
     return ap_list
@@ -328,7 +336,7 @@ def wifi_connected_stations_list():
     else :
         stas_list = []
         for i in range(num) :
-            mac = get_connected_stations_list.resp_connected_stas_list.stations[i].mac
+            mac = get_str(get_connected_stations_list.resp_connected_stas_list.stations[i].mac)
             rssi = get_connected_stations_list.resp_connected_stas_list.stations[i].rssi
             stas_list.append(Stationlist(mac,rssi))
         return stas_list
@@ -348,6 +356,8 @@ def wifi_set_mac(mode, mac):
     set_mac = EspHostedConfigPayload()
     set_mac.msg = EspHostedConfigMsgType.TypeCmdSetMacAddress
     set_mac.cmd_set_mac_address.mode = mode
+    if sys.version_info >= (3, 0):
+        mac = bytes(mac,'utf-8')
     set_mac.cmd_set_mac_address.mac = mac
     protodata = set_mac.SerializeToString()
     tp = Transport_pserial(interface)
@@ -355,7 +365,7 @@ def wifi_set_mac(mode, mac):
     if response == failure:
         return failure
     set_mac.ParseFromString(response)
-    status = set_mac.resp_set_mac_address.resp
+    status = get_str(set_mac.resp_set_mac_address.resp)
     return status
 
 # wifi set power save mode
@@ -377,7 +387,7 @@ def wifi_set_power_save_mode(power_save_mode):
     if response == failure:
         return failure
     set_power_save_mode.ParseFromString(response)
-    status = set_power_save_mode.resp_set_power_save_mode.resp
+    status = get_str(set_power_save_mode.resp_set_power_save_mode.resp)
     return status
 
 # wifi get power save mode
@@ -398,7 +408,7 @@ def wifi_get_power_save_mode():
     if response == failure:
         return failure
     get_power_save_mode.ParseFromString(response)
-    status = get_power_save_mode.resp_get_power_save_mode.resp
+    status = get_str(get_power_save_mode.resp_get_power_save_mode.resp)
     if status != success:
         return failure
     else:
