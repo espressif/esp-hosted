@@ -597,13 +597,7 @@ static int esp_probe(struct sdio_func *func,
 	print_capabilities(cap);
 
 	if (esp_is_bt_supported_over_sdio(cap)) {
-		ret = esp_init_bt(context->adapter);
-		if (ret) {
-			esp_remove(func);
-			printk (KERN_ERR "Failed to init BT\n");
-			deinit_sdio_func(func);
-			return ret;
-		}
+		esp_init_bt(context->adapter);
 	}
 
 	context->state = ESP_CONTEXT_READY;
