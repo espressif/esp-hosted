@@ -19,6 +19,8 @@
 #include "esp_bt_api.h"
 #include "esp_api.h"
 
+#define INVALID_HDEV_BUS (0xff)
+
 void esp_hci_update_tx_counter(struct hci_dev *hdev, u8 pkt_type, size_t len)
 {
 	if (hdev) {
@@ -171,10 +173,30 @@ int esp_init_bt(struct esp_adapter *adapter)
 	adapter->hcidev = hdev;
 	hci_set_drvdata(hdev, adapter);
 
+	hdev->bus = INVALID_HDEV_BUS;
+
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 19))
 	if (adapter->if_type == ESP_IF_TYPE_SDIO)
 		hdev->bus   = HCI_SDIO;
+  #if (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 7, 0))
 	else if (adapter->if_type == ESP_IF_TYPE_SPI)
 		hdev->bus   = HCI_SPI;
+  #endif
+#endif
+
+	if (hdev->bus == INVALID_HDEV_BUS) {
+
+		if (adapter->if_type == ESP_IF_TYPE_SDIO) {
+			printk(KERN_ERR "%s: Kernel version does not support HCI over SDIO BUS\n",__func__);
+		} else if (adapter->if_type == ESP_IF_TYPE_SPI) {
+			printk(KERN_ERR "%s: Kernel version does not support HCI over SPI BUS\n",__func__);
+		} else {
+			printk(KERN_ERR "%s: HCI over expected BUS[%u] is not supported\n",__func__, adapter->if_type);
+		}
+		hci_free_dev(hdev);
+		adapter->hcidev = NULL;
+		return -EINVAL;
+	}
 
 	hdev->open  = esp_bt_open;
 	hdev->close = esp_bt_close;
