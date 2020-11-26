@@ -686,9 +686,9 @@ void app_main()
 
 	ESP_ERROR_CHECK(ret);
 
-	xTaskCreate(recv_task , "recv_task" , 4096 , NULL , 16 , NULL);
-	xTaskCreate(send_task , "send_task" , 4096 , NULL , 16 , NULL);
-	xTaskCreate(process_rx_task , "process_rx_task" , 4096 , NULL , 16 , NULL);
+	assert(xTaskCreate(recv_task , "recv_task" , 4096 , NULL , 16 , NULL) == pdTRUE);
+	assert(xTaskCreate(send_task , "send_task" , 4096 , NULL , 16 , NULL) == pdTRUE);
+	assert(xTaskCreate(process_rx_task , "process_rx_task" , 4096 , NULL , 16 , NULL) == pdTRUE);
 
 	tcpip_adapter_init();
 

@@ -218,7 +218,6 @@ static int process_rx_buf(struct sk_buff *skb)
 	struct esp_payload_header *header;
 	u16 len = 0;
 	u16 offset = 0;
-	u8 *pos;
 
 	if (!skb)
 		return -EINVAL;
@@ -246,9 +245,6 @@ static int process_rx_buf(struct sk_buff *skb)
 	if (len > SPI_BUF_SIZE) {
 		return -EINVAL;
 	}
-
-	pos = skb->data;
-	pos += offset;
 
 	/* Trim SKB to actual size */
 	skb_trim(skb, len);

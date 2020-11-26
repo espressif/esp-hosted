@@ -78,7 +78,7 @@ static QueueHandle_t spi_tx_queue = NULL;
 
 static uint8_t dummy_queued = pdFALSE;
 
-xSemaphoreHandle spi_sema;
+static xSemaphoreHandle spi_sema;
 
 if_ops_t if_ops = {
 	.init = esp_spi_init,
@@ -281,6 +281,10 @@ static void spi_transaction_tx_task(void* pvParameters)
 
 			if (ret != pdTRUE) {
 				ESP_LOGE(TAG, "Failed to obtain semaphore\n");
+				free(spi_trans->rx_buffer);
+				free(spi_trans->tx_buffer);
+				free(spi_trans);
+
 				continue;
 			}
 
@@ -512,7 +516,6 @@ static interface_handle_t * esp_spi_init(uint8_t capabilities)
 	 * so that no rogue pulses when no master is connected
 	 */
 	gpio_set_pull_mode(GPIO_MOSI, GPIO_PULLUP_ONLY);
-	gpio_set_pull_mode(GPIO_MISO, GPIO_PULLUP_ONLY);
 	gpio_set_pull_mode(GPIO_SCLK, GPIO_PULLUP_ONLY);
 	gpio_set_pull_mode(GPIO_CS, GPIO_PULLUP_ONLY);
 
@@ -534,14 +537,14 @@ static interface_handle_t * esp_spi_init(uint8_t capabilities)
 
 	xSemaphoreGive(spi_sema);
 
+	assert(xTaskCreate(spi_transaction_tx_task , "spi_tx_task" , 4096 , NULL ,
+				20 , NULL) == pdTRUE);
+	assert(xTaskCreate(spi_transaction_post_process_task , "spi_post_process_task" ,
+			4096 , NULL , 22 , NULL) == pdTRUE);
+
 	usleep(500);
+
 	generate_startup_event(capabilities);
-
-	usleep(500);
-
-	xTaskCreate(spi_transaction_tx_task , "spi_tx_task" , 4096 , NULL , 22 , NULL);
-	xTaskCreate(spi_transaction_post_process_task , "spi_post_process_task" ,
-			4096 , NULL , 22 , NULL);
 
 	return &if_handle_g;
 }

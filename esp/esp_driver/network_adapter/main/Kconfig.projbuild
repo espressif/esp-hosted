@@ -40,7 +40,7 @@ menu "Example Configuration"
         int "GPIO pin for handshake"
         default 2
         help
-            GPIO to use for handshake with other spi controller
+            GPIO pin to use for handshake with other spi controller
 
     config ESP_SPI_GPIO_DATA_READY
         int "GPIO pin for data ready interrupt"
