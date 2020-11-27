@@ -28,7 +28,10 @@
 static const char TAG[] = "SPI_DRIVER";
 #define DMA_CHAN    2
 #define SPI_BITS_PER_WORD          8
-#define SPI_MODE                   0
+#define SPI_MODE_0                 0
+#define SPI_MODE_1                 1
+#define SPI_MODE_2                 2
+#define SPI_MODE_3                 3
 
 #define SPI_DMA_ALIGNMENT_BYTES    4
 #define SPI_DMA_ALIGNMENT_MASK     (SPI_DMA_ALIGNMENT_BYTES-1)
@@ -52,14 +55,15 @@ static const char TAG[] = "SPI_DRIVER";
     #error "Please choose correct ESP SPI"
 #endif
 
-#define SPI_BUFFER_SIZE 	 2048
-#define SPI_QUEUE_SIZE 		 3
-#define SPI_RX_QUEUE_SIZE        50
-#define SPI_TX_QUEUE_SIZE        50
+#define SPI_BUFFER_SIZE          1600
+#define SPI_QUEUE_SIZE           3
+#define SPI_RX_QUEUE_SIZE        10
+#define SPI_TX_QUEUE_SIZE        10
 
 static interface_context_t context;
 static interface_handle_t if_handle_g;
-static uint8_t gpio_handshake=CONFIG_ESP_SPI_GPIO_HANDSHAKE;
+static uint8_t gpio_handshake = CONFIG_ESP_SPI_GPIO_HANDSHAKE;
+static uint8_t gpio_data_ready = CONFIG_ESP_SPI_GPIO_DATA_READY;
 
 static interface_handle_t * esp_spi_init(uint8_t capabilities);
 static int32_t esp_spi_write(interface_handle_t *handle,
@@ -71,6 +75,10 @@ static void esp_spi_read_done(void *handle);
 
 static QueueHandle_t spi_rx_queue = NULL;
 static QueueHandle_t spi_tx_queue = NULL;
+
+static uint8_t dummy_queued = pdFALSE;
+
+static xSemaphoreHandle spi_sema;
 
 if_ops_t if_ops = {
 	.init = esp_spi_init,
@@ -98,18 +106,54 @@ int interface_remove_driver()
 	return 0;
 }
 
-/* Invoked after transaction is queued and ready for pickup by master.
- * Use this to set the handshake line low */
-void IRAM_ATTR spi_post_setup_cb(spi_slave_transaction_t *trans)
+static int is_valid_trans_buffer(uint8_t *trans_buf)
 {
+	struct esp_payload_header *header;
+	uint16_t len, offset;
+
+	if (!trans_buf) {
+		return pdFALSE;
+	}
+
+	header = (struct esp_payload_header *) trans_buf;
+
+	len = le16toh(header->len);
+	offset = le16toh(header->offset);
+
+	if (!len || (len > SPI_BUFFER_SIZE) ||
+            (offset != sizeof(struct esp_payload_header))) {
+		return pdFALSE;
+	}
+
+	if ((header->if_type >= ESP_MAX_IF) || (header->if_num)) {
+		return pdFALSE;
+	}
+
+	return pdTRUE;
+}
+
+/* Invoked after transaction is queued and ready for pickup by master */
+static void IRAM_ATTR spi_post_setup_cb(spi_slave_transaction_t *trans)
+{
+	/* ESP peripheral ready for spi transaction. Set hadnshake line high. */
 	WRITE_PERI_REG(GPIO_OUT_W1TS_REG, (1 << gpio_handshake));
 }
 
 /* Invoked after transaction is sent/received.
  * Use this to set the handshake line low */
-void IRAM_ATTR spi_post_trans_cb(spi_slave_transaction_t *trans)
+static void IRAM_ATTR spi_post_trans_cb(spi_slave_transaction_t *trans)
 {
+	/* Clear handshake line */
 	WRITE_PERI_REG(GPIO_OUT_W1TC_REG, (1 << gpio_handshake));
+
+	if (trans && is_valid_trans_buffer((uint8_t *)trans->tx_buffer)) {
+		/* Host has consumed a valid TX buffer
+		 * Clear Data ready line and release semaphore */
+		WRITE_PERI_REG(GPIO_OUT_W1TC_REG, (1 << gpio_data_ready));
+
+		if (spi_sema)
+			xSemaphoreGive(spi_sema);
+	}
 }
 
 uint8_t * get_next_tx_buffer(uint32_t *len)
@@ -119,17 +163,33 @@ uint8_t * get_next_tx_buffer(uint32_t *len)
 	uint8_t *sendbuf = NULL;
 	struct esp_payload_header *header;
 
+	/* Get or create new tx_buffer
+	 *	1. Check if SPI TX queue has pending buffers. Return if valid buffer is obtained.
+	 *	2. Prepare dummy tx buffer as below:
+	 *		a. Return if dummy tx buffer is already configured
+	 *		b. Create a new empty tx buffer and return */
+
+	/* Get buffer from SPI Tx queue */
 	ret = xQueueReceive(spi_tx_queue, &buf_handle, 0);
 	if (ret == pdTRUE && buf_handle.payload) {
-		*len = buf_handle.payload_len;
+		if (len)
+			*len = buf_handle.payload_len;
 		return buf_handle.payload;
 	}
 
-	/* Nothing to send.. Create dummy tx buffer */
+	/* Dummy transaction is already queued. Return. */
+	if (dummy_queued) {
+		if (len)
+			*len = 0;
+		return NULL;
+	}
+
+	/* Create empty tx buffer */
 	sendbuf = heap_caps_malloc(SPI_BUFFER_SIZE, MALLOC_CAP_DMA);
 	if (!sendbuf) {
-		ESP_LOGE(TAG, "Memory allocation failed");
-		*len = 0;
+		ESP_LOGE(TAG, "Failed to allocate memory for dummy transaction");
+		if (len)
+			*len = 0;
 		return NULL;
 	}
 
@@ -143,7 +203,8 @@ uint8_t * get_next_tx_buffer(uint32_t *len)
 	header->if_num = 0xF;
 	header->len = 0;
 
-	*len = SPI_BUFFER_SIZE;
+	if (len)
+		*len = 0;
 
 	return sendbuf;
 }
@@ -184,54 +245,178 @@ static int process_spi_rx(interface_buffer_handle_t *buf_handle)
 	return 0;
 }
 
-void spi_transaction_task(void* pvParameters)
+static void spi_transaction_tx_task(void* pvParameters)
 {
-	interface_buffer_handle_t rx_buf_handle;
-	uint8_t *sendbuf;
-	uint32_t tx_len, rx_len;
-	spi_slave_transaction_t spi_trans;
-	int ret = 0;
+	spi_slave_transaction_t *spi_trans;
+	esp_err_t ret = 0;
+	interface_buffer_handle_t buf_handle;
 
 	for(;;) {
-		/* Init */
-		sendbuf = NULL;
-		tx_len = 0;
-		rx_len = SPI_BUFFER_SIZE;
-		memset(&spi_trans, 0, sizeof(spi_trans));
+		ret = xQueueReceive(spi_tx_queue, &buf_handle, portMAX_DELAY);
+
+		if (ret == pdTRUE && buf_handle.payload) {
+			spi_trans = malloc(sizeof(spi_slave_transaction_t));
+			assert(spi_trans != NULL);
+
+			memset(spi_trans, 0, sizeof(spi_slave_transaction_t));
+
+			/* Attach Rx Buffer */
+			spi_trans->rx_buffer = heap_caps_malloc(SPI_BUFFER_SIZE, MALLOC_CAP_DMA);
+			if (!spi_trans->rx_buffer) {
+				ESP_LOGE(TAG, "Memory allocation failed");
+				free(spi_trans);
+				free(buf_handle.payload);
+				continue;
+			}
+			memset(spi_trans->rx_buffer, 0, SPI_BUFFER_SIZE);
+
+			/* Attach Tx Buffer */
+			spi_trans->tx_buffer = buf_handle.payload;
+
+			/* Transaction len */
+			spi_trans->length = SPI_BUFFER_SIZE * SPI_BITS_PER_WORD;
+
+			/* Execute transaction */
+			ret = xSemaphoreTake(spi_sema, portMAX_DELAY);
+
+			if (ret != pdTRUE) {
+				ESP_LOGE(TAG, "Failed to obtain semaphore\n");
+				free(spi_trans->rx_buffer);
+				free(spi_trans->tx_buffer);
+				free(spi_trans);
+
+				continue;
+			}
+
+			ret = spi_slave_queue_trans(ESP_SPI_CONTROLLER, spi_trans,
+					portMAX_DELAY);
+			if (ret != ESP_OK) {
+				ESP_LOGE(TAG , "spi transmit error, ret : 0x%x\r\n", ret);
+				free(spi_trans->rx_buffer);
+				free((void *)spi_trans->tx_buffer);
+				free(spi_trans);
+
+				if (spi_sema)
+					xSemaphoreGive(spi_sema);
+
+				continue;
+			}
+
+			/* Set Data ready high */
+			WRITE_PERI_REG(GPIO_OUT_W1TS_REG, (1 << gpio_data_ready));
+		}
+	}
+}
+
+static void queue_dummy_transaction()
+{
+	spi_slave_transaction_t *spi_trans = NULL;
+	esp_err_t ret = ESP_OK;
+	uint32_t len = 0;
+
+	spi_trans = malloc(sizeof(spi_slave_transaction_t));
+	assert(spi_trans != NULL);
+
+	memset(spi_trans, 0, sizeof(spi_slave_transaction_t));
+
+	/* Attach Rx Buffer */
+	spi_trans->rx_buffer = heap_caps_malloc(SPI_BUFFER_SIZE, MALLOC_CAP_DMA);
+	if (!spi_trans->rx_buffer) {
+		ESP_LOGE(TAG, "Memory allocation failed");
+		free(spi_trans);
+		return;
+	}
+	memset(spi_trans->rx_buffer, 0, SPI_BUFFER_SIZE);
+
+	/* Attach Tx Buffer */
+	spi_trans->tx_buffer = get_next_tx_buffer(&len);
+
+	if (!spi_trans->tx_buffer) {
+		/* No need to queue dummy transaction */
+		free(spi_trans->rx_buffer);
+		free(spi_trans);
+		xSemaphoreGive(spi_sema);
+		return;
+	}
+
+	/* Transaction len */
+	spi_trans->length = SPI_BUFFER_SIZE * SPI_BITS_PER_WORD;
+
+	ret = spi_slave_queue_trans(ESP_SPI_CONTROLLER, spi_trans, 0);
+
+	if (ret != ESP_OK) {
+		free(spi_trans->rx_buffer);
+		free((void *)spi_trans->tx_buffer);
+		free(spi_trans);
+		xSemaphoreGive(spi_sema);
+		return;
+	}
+
+	if (!len) {
+		/* queued dummy transaction, release semaphore */
+		dummy_queued = pdTRUE;
+		xSemaphoreGive(spi_sema);
+	} else {
+		/* Queued transaction with valid TX Buffer. Set Data ready high. */
+		WRITE_PERI_REG(GPIO_OUT_W1TS_REG, (1 << gpio_data_ready));
+	}
+}
+
+static void spi_transaction_post_process_task(void* pvParameters)
+{
+	spi_slave_transaction_t *spi_trans;
+	esp_err_t ret = 0;
+	interface_buffer_handle_t rx_buf_handle;
+	struct esp_payload_header *header;
+
+	for (;;) {
 		memset(&rx_buf_handle, 0, sizeof(rx_buf_handle));
 
-		/* Set Rx Buffer */
-		rx_buf_handle.payload = heap_caps_malloc(rx_len, MALLOC_CAP_DMA);
-		if (!rx_buf_handle.payload) {
-			ESP_LOGE(TAG, "Memory allocation failed");
-			break;
-		}
-		memset(rx_buf_handle.payload, 0, rx_len);
-		spi_trans.rx_buffer = rx_buf_handle.payload;
-
-		/* Set Tx Buffer */
-		sendbuf = get_next_tx_buffer(&tx_len);
-		spi_trans.tx_buffer = sendbuf;
-
-		/* Transaction len */
-		spi_trans.length = SPI_BUFFER_SIZE * SPI_BITS_PER_WORD;
-
-		/* Execute transaction */
-		ret = spi_slave_transmit(ESP_SPI_CONTROLLER, &spi_trans,
+		ret = spi_slave_get_trans_result(ESP_SPI_CONTROLLER, &spi_trans,
 				portMAX_DELAY);
+
 		if (ret != ESP_OK) {
 			ESP_LOGE(TAG , "spi transmit error, ret : 0x%x\r\n", ret);
+			continue;
 		}
 
-		/* Post processing */
-		ret = process_spi_rx(&rx_buf_handle);
+		if (spi_trans->tx_buffer) {
+			header = (struct esp_payload_header *) spi_trans->tx_buffer;
 
-		if (ret) {
-			free(rx_buf_handle.payload);
+			if (header->if_type == 0xF && header->if_num == 0xF && header->offset == 0) {
+				/* Dummy Tx buffer consumed by host */
+				dummy_queued = pdFALSE;
+			}
+
+			free((void *)spi_trans->tx_buffer);
 		}
 
-		if (sendbuf)
-			free(sendbuf);
+		/* Check if dummy transaction is needed
+		 *
+		 * If failed to obtain spi_sema:
+		 *    - Transaction is already queued.
+		 *    - No need to queue dummy transaction
+		 *
+		 * If spi_sema is obtained: queue dummy transaction
+		 **/
+
+		ret = xSemaphoreTake(spi_sema, 0);
+
+		if (ret == pdTRUE)
+			queue_dummy_transaction();
+
+		if (spi_trans->rx_buffer) {
+			rx_buf_handle.payload = spi_trans->rx_buffer;
+
+			ret = process_spi_rx(&rx_buf_handle);
+
+			/* free rx_buffer if process_spi_rx returns an error
+			 * In success case it will be freed later */
+			if (ret != ESP_OK)
+				free((void *)spi_trans->rx_buffer);
+		}
+
+		free(spi_trans);
 	}
 }
 
@@ -295,12 +480,13 @@ static interface_handle_t * esp_spi_init(uint8_t capabilities)
 		.sclk_io_num=GPIO_SCLK,
 		.quadwp_io_num = -1,
 		.quadhd_io_num = -1,
+		.max_transfer_sz = SPI_BUFFER_SIZE,
 		.intr_flags=ESP_INTR_FLAG_IRAM
 	};
 
 	/* Configuration for the SPI slave interface */
 	spi_slave_interface_config_t slvcfg={
-		.mode=3,
+		.mode=SPI_MODE_2,
 		.spics_io_num=GPIO_CS,
 		.queue_size=SPI_QUEUE_SIZE,
 		.flags=0,
@@ -315,8 +501,16 @@ static interface_handle_t * esp_spi_init(uint8_t capabilities)
 		.pin_bit_mask=(1 << gpio_handshake)
 	};
 
-	/* Configure handshake line as output */
+	/* Configuration for data_ready line */
+	gpio_config_t io_data_ready_conf={
+		.intr_type=GPIO_INTR_DISABLE,
+		.mode=GPIO_MODE_OUTPUT,
+		.pin_bit_mask=(1 << gpio_data_ready)
+	};
+
+	/* Configure handshake and data_ready lines as output */
 	gpio_config(&io_conf);
+	gpio_config(&io_data_ready_conf);
 
 	/* Enable pull-ups on SPI lines
 	 * so that no rogue pulses when no master is connected
@@ -338,11 +532,20 @@ static interface_handle_t * esp_spi_init(uint8_t capabilities)
 	spi_tx_queue = xQueueCreate(SPI_TX_QUEUE_SIZE, sizeof(interface_buffer_handle_t));
 	assert(spi_tx_queue != NULL);
 
-	generate_startup_event(capabilities);
+	spi_sema = xSemaphoreCreateBinary();
+	assert(spi_sema != NULL);
+
+	xSemaphoreGive(spi_sema);
+
+	assert(xTaskCreate(spi_transaction_tx_task , "spi_tx_task" , 4096 , NULL ,
+				20 , NULL) == pdTRUE);
+	assert(xTaskCreate(spi_transaction_post_process_task , "spi_post_process_task" ,
+			4096 , NULL , 22 , NULL) == pdTRUE);
 
 	usleep(500);
 
-	xTaskCreate(spi_transaction_task , "spi_task" , 4096 , NULL , 18 , NULL);
+	generate_startup_event(capabilities);
+
 	return &if_handle_g;
 }
 
@@ -401,7 +604,6 @@ static int32_t esp_spi_write(interface_handle_t *handle, interface_buffer_handle
 
 	/* copy the data from caller */
 	memcpy(tx_buf_handle.payload + offset, buf_handle->payload, buf_handle->payload_len);
-
 	ret = xQueueSend(spi_tx_queue, &tx_buf_handle, portMAX_DELAY);
 
 	if (ret != pdTRUE)
@@ -455,6 +657,10 @@ static esp_err_t esp_spi_reset(interface_handle_t *handle)
 static void esp_spi_deinit(interface_handle_t *handle)
 {
 	esp_err_t ret;
+
+	if (spi_sema)
+		vSemaphoreDelete(spi_sema);
+
 	ret = spi_slave_free(ESP_SPI_CONTROLLER);
 	if (ESP_OK != ret) {
 		ESP_LOGE(TAG, "spi slave bus free failed\n");
