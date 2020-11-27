@@ -154,17 +154,19 @@ uint8_t * transport_pserial_data_handler(uint8_t* data, uint16_t data_length,
 		goto err;
 	}
 
-	ret = esp_hosted_driver_close(esp_hosted_driver_handle);
+	ret = esp_hosted_driver_close(&esp_hosted_driver_handle);
 	if (ret != SUCCESS) {
 		command_log("Failed to close driver interface \n");
 	}
 
 	return read_buf;
 err:
-	esp_hosted_free(write_buf);
-	write_buf = NULL;
+	if (write_buf) {
+		esp_hosted_free(write_buf);
+		write_buf = NULL;
+	}
 
-	ret = esp_hosted_driver_close(esp_hosted_driver_handle);
+	ret = esp_hosted_driver_close(&esp_hosted_driver_handle);
 	if (ret != SUCCESS) {
 		command_log("Failed to close driver interface \n");
 	}

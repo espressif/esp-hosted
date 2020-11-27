@@ -39,15 +39,21 @@ int main()
     int ret = wifi_get_mode(&mode);
     if (ret == SUCCESS) {
         printf("wifi mode is %d \n",mode);
+    } else {
+        printf("Failed to get wifi mode \n");
     }
     mode = WIFI_MODE_STA;
     ret = wifi_set_mode(mode);
     if (ret == SUCCESS) {
         printf("newly set wifi mode %d \n", mode);
+    } else {
+        printf("error in setting mode \n");
     }
     ret = wifi_get_mac(mode,mac);
     if (ret == SUCCESS) {
         printf("mac address %s \n", mac);
+    } else {
+        printf("Failed to get MAC address \n");
     }
     strcpy((char* )&ap_config.ssid ,"xyz");
     strcpy((char* )&ap_config.pwd ,"xyz123456");
@@ -57,6 +63,8 @@ int main()
     ret = wifi_set_ap_config(ap_config);
     if (ret == SUCCESS) {
         printf("Connected to AP \n");
+    } else {
+        printf("Failed to connect with AP \n");
     }
     ret = wifi_get_ap_config(&ap_config);
     if (ret == SUCCESS) {
@@ -71,6 +79,8 @@ int main()
     ret = wifi_disconnect_ap();
     if (ret == SUCCESS) {
         printf("Disconnected from AP \n");
+    } else {
+        printf("Failed to disconnect from AP \n");
     }
     strcpy((char* )&softap_config.ssid, "esp12");
     strcpy((char* )&softap_config.pwd, "esp123456");
@@ -82,6 +92,8 @@ int main()
     ret = wifi_set_softap_config(softap_config);
     if (ret == SUCCESS) {
         printf("esp32 softAP started \n");
+    } else {
+        printf("Failed to set softAP config \n");
     }
     ret = wifi_get_softap_config(&softap_config);
     if (ret == SUCCESS) {
@@ -92,6 +104,8 @@ int main()
         printf("softAP max connections %d \n", softap_config.max_connections);
         printf("softAP ssid broadcast status %d \n", softap_config.ssid_hidden);
         printf("softAP bandwidth mode %d \n", softap_config.bandwidth);
+    } else {
+        printf("Failed to get softAP config \n");
     }
     ret = wifi_ap_scan_list(&list, &count);
     if (ret == SUCCESS) {
@@ -104,7 +118,7 @@ int main()
             printf("No AP found \n");
         }
     } else {
-        printf("Failed to get scanned AP list");
+        printf("Failed to get scanned AP list \n");
     }
     if (list != NULL) {
         esp_hosted_free(list);

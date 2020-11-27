@@ -238,11 +238,11 @@ err:
 	return NULL;
 }
 
-int esp_hosted_driver_close(struct esp_hosted_driver_handle_t* esp_hosted_driver_handle)
+int esp_hosted_driver_close(struct esp_hosted_driver_handle_t** esp_hosted_driver_handle)
 {
-	if (!esp_hosted_driver_handle) {
+	if (!esp_hosted_driver_handle || !(*esp_hosted_driver_handle)) {
 		printf("Invalid parameter in close \n\r");
 	}
-	esp_hosted_free(esp_hosted_driver_handle);
+	esp_hosted_free(*esp_hosted_driver_handle);
 	return STM_OK;
 }

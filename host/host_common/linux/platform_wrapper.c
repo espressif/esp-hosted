@@ -16,7 +16,7 @@
  * ARE EXPRESSLY DISCLAIMED.  The License provides additional details about
  * this warranty disclaimer.
  */
-
+#include <stdbool.h>
 #include <stdlib.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -75,7 +75,7 @@ struct esp_hosted_driver_handle_t* esp_hosted_driver_open(const char* transport)
         printf("Failed to allocate memory \n");
         return NULL;
     }
-    esp_hosted_driver_handle->file_desc = open(transport, O_RDWR | O_NONBLOCK);
+    esp_hosted_driver_handle->file_desc = open(transport, O_RDWR);
     if (esp_hosted_driver_handle->file_desc == -1) {
         free(esp_hosted_driver_handle);
         perror("open: ");
@@ -102,7 +102,7 @@ int esp_hosted_driver_write (struct esp_hosted_driver_handle_t* esp_hosted_drive
 uint8_t* esp_hosted_driver_read (struct esp_hosted_driver_handle_t* esp_hosted_driver_handle,
     int read_len, uint8_t wait, uint32_t* buf_len)
 {
-    int ret = 0, count = 0;
+    int ret = 0, count = 0, check = false;
     struct timeval timeout;
     uint8_t* buf = NULL;
     if (!esp_hosted_driver_handle || esp_hosted_driver_handle->file_desc < 0
@@ -114,18 +114,18 @@ uint8_t* esp_hosted_driver_read (struct esp_hosted_driver_handle_t* esp_hosted_d
         printf("Failed to allocate memory \n");
         return NULL;
     }
-    fd_set set;
-    FD_ZERO(&set);
-    FD_SET(esp_hosted_driver_handle->file_desc, &set);
-    timeout.tv_sec = wait;
-    timeout.tv_usec = 0;
-    ret = select(esp_hosted_driver_handle->file_desc+1, &set, NULL, NULL, &timeout);
-    if (ret < 0) {
-        printf("select error \n");
-        perror("select: ");
-    } else if (ret == 0) {
-        printf("timeout \n");
-    } else {
+    do {
+        fd_set set;
+        FD_ZERO(&set);
+        FD_SET(esp_hosted_driver_handle->file_desc, &set);
+        timeout.tv_sec = wait;
+        timeout.tv_usec = 0;
+        ret = select(esp_hosted_driver_handle->file_desc+1, &set, NULL, NULL, &timeout);
+        if (ret < 0) {
+            perror("select: ");
+        } else if (ret == 0) {
+            printf("Unable to read data before %d seconds timeout \n", wait);
+        } else {
 /*
  * Read fixed length of received data in below format:
  * ----------------------------------------------------------------------------
@@ -137,53 +137,61 @@ uint8_t* esp_hosted_driver_read (struct esp_hosted_driver_handle_t* esp_hosted_d
  *      1         |       2         | Endpoint Length |     1     |     2     |
  *  ---------------------------------------------------------------------------
  */
-        count = read(esp_hosted_driver_handle->file_desc, buf, read_len);
-        if (count <= 0) {
-            perror("read: ");
-            goto err;
-        }
-        ret = parse_tlv(buf, buf_len);
-        if ((ret != SUCCESS) || !*buf_len) {
-           goto err;
-        }
-        esp_hosted_free(buf);
-        buf = NULL;
+            if (FD_ISSET(esp_hosted_driver_handle->file_desc, &set)) {
+                check = false;
+                count = read(esp_hosted_driver_handle->file_desc, buf, read_len);
+                if (count <= 0) {
+                    perror("read: ");
+                    goto err;
+                }
+                ret = parse_tlv(buf, buf_len);
+                if ((ret != SUCCESS) || !*buf_len) {
+                   goto err;
+                }
+                esp_hosted_free(buf);
+                buf = NULL;
 /*
  * Read variable length of received data. Variable length is obtained after
  * parsing of previously read data.
  */
-        buf = (uint8_t* )esp_hosted_calloc(1, *buf_len);
-        if (!buf) {
-            printf("Failed to allocate memory \n");
-            goto free_err;
+                buf = (uint8_t* )esp_hosted_calloc(1, *buf_len);
+                if (!buf) {
+                    printf("Failed to allocate memory \n");
+                    goto free_err;
+                }
+                count = read(esp_hosted_driver_handle->file_desc, buf, *buf_len);
+                if (!count) {
+                    perror("read: ");
+                    goto err;
+                }
+                return buf;
+            } else {
+                check = true;
+            }
         }
-        count = read(esp_hosted_driver_handle->file_desc, buf, *buf_len);
-        if (!count) {
-            perror("read: ");
-            goto err;
-        }
-        return buf;
-    }
+    } while (check);
 err:
-    esp_hosted_free(buf);
-    buf = NULL;
-free_err:
-    ret = esp_hosted_driver_close(esp_hosted_driver_handle);
-    if (ret != SUCCESS) {
-        perror("close:");
+    if (buf) {
+        esp_hosted_free(buf);
+        buf = NULL;
     }
+
+free_err:
     return NULL;
 }
 
-int esp_hosted_driver_close(struct esp_hosted_driver_handle_t* esp_hosted_driver_handle)
+int esp_hosted_driver_close(struct esp_hosted_driver_handle_t** esp_hosted_driver_handle)
 {
-    if (!esp_hosted_driver_handle || esp_hosted_driver_handle->file_desc < 0) {
+    if (!esp_hosted_driver_handle || !(*esp_hosted_driver_handle) || (*esp_hosted_driver_handle)->file_desc < 0) {
         return FAILURE;
     }
-    if(close(esp_hosted_driver_handle->file_desc) < 0) {
+    if(close((*esp_hosted_driver_handle)->file_desc) < 0) {
         perror("close:");
         return FAILURE;
     }
-    esp_hosted_free(esp_hosted_driver_handle);
+    if (*esp_hosted_driver_handle) {
+        esp_hosted_free(*esp_hosted_driver_handle);
+        *esp_hosted_driver_handle = NULL;
+    }
     return SUCCESS;
 }
