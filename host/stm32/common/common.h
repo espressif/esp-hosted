@@ -26,7 +26,7 @@ extern "C" {
 
 /** Constants/Macros **/
 #define UNUSED_VAR(x)                     (void)(x);
-#define MAX_SPI_BUFFER_SIZE               2048
+#define MAX_SPI_BUFFER_SIZE               1600
 #define malloc                            pvPortMalloc
 #define free                              vPortFree
 
@@ -43,14 +43,6 @@ typedef enum stm_ret_s {
 	STM_FAIL = -1,
 	STM_OK = 0
 }stm_ret_t;
-
-typedef enum {
-	WIFI_MODE_NULL = 0,  /**< null mode */
-	WIFI_MODE_STA,		 /**< WiFi station mode */
-	WIFI_MODE_AP,		 /**< WiFi soft-AP mode */
-	WIFI_MODE_APSTA,	 /**< WiFi station + soft-AP mode */
-	WIFI_MODE_MAX
-} wifi_mode_t;
 
 
 /** Exported Structures **/

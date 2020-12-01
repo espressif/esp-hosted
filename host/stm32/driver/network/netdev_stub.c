@@ -133,6 +133,7 @@ netdev_handle_t netdev_alloc(uint32_t sizeof_priv, char *name)
 		if (!ndev->priv) {
 			printf("Failed to allocate memory for priv\n");
 			free(ndev);
+			ndev = NULL;
 			return NULL;
 		}
 	} else {
@@ -153,13 +154,19 @@ void netdev_free(netdev_handle_t dev)
 	struct netdev *ndev = (struct netdev *) dev;
 
 	if (ndev) {
-		if (ndev->priv)
+		if (ndev->priv) {
 			free(ndev->priv);
+			ndev->priv = NULL;
+		}
 
-		if (ndev->net_handle)
+		if (ndev->net_handle) {
 			free(ndev->net_handle);
+			ndev->net_handle = NULL;
+		}
+
 
 		free(ndev);
+		ndev = NULL;
 	}
 }
 
@@ -254,6 +261,7 @@ int netdev_rx(netdev_handle_t dev, struct pbuf *net_buf)
 			net_handle->net_rx_callback(net_handle);
 
 		free(net_buf);
+		net_buf = NULL;
 
 	} else {
 		goto done;
@@ -265,8 +273,10 @@ done:
 	if (net_buf) {
 		if (net_buf->payload) {
 			free(net_buf->payload);
+			net_buf->payload = NULL;
 		}
 		free(net_buf);
+		net_buf = NULL;
 	}
 	return STM_FAIL;
 }

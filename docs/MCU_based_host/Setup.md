@@ -36,14 +36,15 @@ In this setup, ESP32 board acts as a SPI peripheral and provides Wi-Fi capabilit
 BT/BLE support will be added in upcoming release.
 
 | STM32 Pin | ESP32 Pin | Function |
-|:---------:|:---------:|:--------:|
-| PB4  (pin5) | IO19 | MISO |
-| PA5  (pin7) | IO18 | CLK |
-| PB5  (pin9) | IO23 | MOSI |
-| PA15 (pin11)| IO5 | CS |
-| GND  (pin2) | GND | GND |
-| PC6  (pin6) | IO2 | Handshake |
-| PC7  (pin8) | EN | ESP32 Reset |
+|:----------:|:---------:|:--------:|
+| PB4 (pin5) | IO19 | MISO |
+| PA5 (pin7) | IO18 | CLK  |
+| PB5 (pin9) | IO23 | MOSI |
+| PA15 (pin11) | IO5 | CS |
+| GND (pin2) | GND | GND |
+| PC6 (pin6) | IO2 | Handshake |
+| PC7 (pin8) | IO4 | Data Ready from ESP |
+| PB13 (pin10) | EN | Reset ESP |
 
 Setup image is here.
 

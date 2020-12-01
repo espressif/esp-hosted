@@ -63,20 +63,20 @@ static void reset_slave(void)
 	GPIO_InitTypeDef GPIO_InitStruct;
 
 	/* GPIO Ports Clock Enable */
-	__HAL_RCC_GPIOC_CLK_ENABLE();
+	__HAL_RCC_GPIOB_CLK_ENABLE();
 
 	/* TODO: make this pin configurable from project config */
-	GPIO_InitStruct.Pin = GPIO_PIN_7;
+	GPIO_InitStruct.Pin = GPIO_RESET_Pin;
 	GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
 	GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-	HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
+	HAL_GPIO_Init(GPIO_RESET_GPIO_Port, &GPIO_InitStruct);
 
-	HAL_GPIO_WritePin(GPIOC, GPIO_PIN_7, GPIO_PIN_RESET);
+	HAL_GPIO_WritePin(GPIO_RESET_GPIO_Port, GPIO_RESET_Pin, GPIO_PIN_RESET);
 	hard_delay(50);
 
 	/* revert to initial state */
 	GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-	HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
+	HAL_GPIO_Init(GPIO_RESET_GPIO_Port, &GPIO_InitStruct);
 
 	/* stop spi transactions short time to avoid slave sync issues */
 	hard_delay(50000);
@@ -156,7 +156,7 @@ void MX_FREERTOS_Init(void)
 	stm_spi_init(spi_driver_event_handler);
 
 	/* Create thread for arping */
-	osThreadDef(Arping_Thread, arping_task, osPriorityNormal, 0,
+	osThreadDef(Arping_Thread, arping_task, osPriorityAboveNormal, 0,
 			ARPING_PATH_TASK_STACK_SIZE);
 	arping_task_id = osThreadCreate(osThread(Arping_Thread), NULL);
 	assert(arping_task_id);
@@ -228,7 +228,9 @@ static void sta_rx_callback(struct network_handle *net_handle)
 		printf("Problem getting self station ip\n\r");
 		if(rx_buffer) {
 			free(rx_buffer->payload);
+			rx_buffer->payload = NULL;
 			free(rx_buffer);
+			rx_buffer = NULL;
 		}
 		return;
 	}
@@ -251,7 +253,9 @@ static void sta_rx_callback(struct network_handle *net_handle)
 		}
 
 		free(rx_buffer->payload);
+		rx_buffer->payload = NULL;
 		free(rx_buffer);
+		rx_buffer = NULL;
 	}
 }
 
@@ -275,7 +279,9 @@ static void ap_rx_callback(struct network_handle *net_handle)
 		printf("Problem getting self softap ip\n\r");
 		if(rx_buffer) {
 			free(rx_buffer->payload);
+			rx_buffer->payload = NULL;
 			free(rx_buffer);
+			rx_buffer = NULL;
 		}
 		return;
 	}
@@ -298,7 +304,9 @@ static void ap_rx_callback(struct network_handle *net_handle)
 		}
 
 		free(rx_buffer->payload);
+		rx_buffer->payload = NULL;
 		free(rx_buffer);
+		rx_buffer = NULL;
 	}
 }
 
