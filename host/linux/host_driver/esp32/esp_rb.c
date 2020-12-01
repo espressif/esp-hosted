@@ -70,7 +70,7 @@ ssize_t esp_rb_read_by_user(esp_rb_t *rb, const char __user *buf, size_t sz, int
 	return sz;
 }
 
-static size_t get_free_space(esp_rb_t *rb)
+size_t get_free_space(esp_rb_t *rb)
 {
 	if (rb->rp == rb->wp) {
 		return rb->size - 1;

@@ -43,18 +43,20 @@ static struct esp_serial_devs {
 	int dev_index;
 	esp_rb_t rb;
 	void *priv;
+	struct mutex lock;
 } devs[ESP_SERIAL_MINOR_MAX];
 
 static int esp_serial_read(struct file *file, char __user *user_buffer, size_t size, loff_t *offset)
 {
 	struct esp_serial_devs *dev;
-       	dev = (struct esp_serial_devs *) file->private_data;
-	size = esp_rb_read_by_user(&dev->rb, user_buffer, size, file->f_flags & O_NONBLOCK);
-	if (size == 0) {
+	size_t ret_size = 0;
+	dev = (struct esp_serial_devs *) file->private_data;
+	ret_size = esp_rb_read_by_user(&dev->rb, user_buffer, size, !(file->f_flags & O_NONBLOCK));
+	if (ret_size == 0) {
 		return -EAGAIN;
 	}
 
-	return size;
+	return ret_size;
 }
 
 static int esp_serial_write(struct file *file, const char __user *user_buffer, size_t size, loff_t * offset)
@@ -115,12 +117,32 @@ static int esp_serial_open(struct inode *inode, struct file *file)
 	return 0;
 }
 
+static unsigned int esp_serial_poll(struct file *file, poll_table *wait)
+{
+    struct esp_serial_devs *dev = (struct esp_serial_devs *)file->private_data;
+    unsigned int mask = 0;
+
+    mutex_lock(&dev->lock);
+    poll_wait(file, &dev->rb.wq,  wait);
+
+    if (dev->rb.rp != dev->rb.wp) {
+        mask |= (POLLIN | POLLRDNORM) ;   /* readable */
+    }
+    if (get_free_space(&dev->rb)) {
+        mask |= (POLLOUT | POLLWRNORM) ;  /* writable */
+    }
+
+    mutex_unlock(&dev->lock);
+    return mask;
+}
+
 const struct file_operations esp_serial_fops = {
 	.owner = THIS_MODULE,
 	.open = esp_serial_open,
 	.read = esp_serial_read,
 	.write = esp_serial_write,
-	.unlocked_ioctl = esp_serial_ioctl
+	.unlocked_ioctl = esp_serial_ioctl,
+	.poll = esp_serial_poll
 };
 
 int esp_serial_data_received(int dev_index, const char *data, size_t len)
@@ -174,6 +196,7 @@ int esp_serial_init(void *priv)
 		cdev_add(&devs[i].cdev, MKDEV(ESP_SERIAL_MAJOR, i), 1);
 		esp_rb_init(&devs[i].rb, ESP_RX_RB_SIZE);
 		devs[i].priv = priv;
+		mutex_init(&devs[i].lock);
 	}
 
 #ifdef ESP_SERIAL_TEST
@@ -188,6 +211,7 @@ void esp_serial_cleanup(void)
 	for (i = 0; i < ESP_SERIAL_MINOR_MAX; i++) {
 		cdev_del(&devs[i].cdev);
 		esp_rb_cleanup(&devs[i].rb);
+		mutex_destroy(&devs[i].lock);
 	}
 	unregister_chrdev_region(MKDEV(ESP_SERIAL_MAJOR, 0), ESP_SERIAL_MINOR_MAX);
 	return;

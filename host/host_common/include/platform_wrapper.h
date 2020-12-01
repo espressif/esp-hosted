@@ -111,5 +111,5 @@ uint8_t* esp_hosted_driver_read (struct esp_hosted_driver_handle_t* esp_hosted_d
  *      SUCCESS(0) or FAILURE(-1) of above operation
  */
 
-int esp_hosted_driver_close (struct esp_hosted_driver_handle_t* esp_hosted_driver_handle);
+int esp_hosted_driver_close (struct esp_hosted_driver_handle_t** esp_hosted_driver_handle);
 #endif
