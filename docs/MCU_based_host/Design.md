@@ -17,7 +17,7 @@ Each of these are explained in following sub sections.
 #### SPI Host Driver
 - ESP-Hosted solution provides Thin SPI master interface layer which transmits/receives data from SPI hardware driver and makes it available to serial or network interface
 - Asynchrounous in nature, higher layers have flexibility to transmit and/or receive data as needed
-- Currently, Maximum 2048 bytes of data can be trasmitted in single transmit or receive transaction
+- Currently, Maximum 1600 bytes of data can be trasmitted in single transmit or receive transaction
 
 #### Virtual serial interface driver
 - ESP-Hosted solution provides a generic virtual serial interface implementation.

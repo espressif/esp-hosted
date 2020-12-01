@@ -24,8 +24,8 @@
 #include "netdev_if.h"
 
 /** Constants/Macros **/
-#define TO_SLAVE_QUEUE_SIZE	              20
-#define FROM_SLAVE_QUEUE_SIZE	          20
+#define TO_SLAVE_QUEUE_SIZE               10
+#define FROM_SLAVE_QUEUE_SIZE             10
 
 #define TRANSACTION_TASK_STACK_SIZE       4096
 #define PROCESS_RX_TASK_STACK_SIZE        4096
@@ -47,6 +47,7 @@ static struct netdev_ops esp_net_ops = {
 /** Exported variables **/
 
 static osSemaphoreId osSemaphore;
+static osMutexId mutex_spi_trans;
 
 static osThreadId process_rx_task_id = 0;
 static osThreadId transaction_task_id = 0;
@@ -62,8 +63,9 @@ static void (*spi_drv_evt_handler_fp) (uint8_t);
 /** Exported functions **/
 static void transaction_task(void const* pvParameters);
 static void process_rx_task(void const* pvParameters);
-static uint8_t * get_tx_buffer(void);
+static uint8_t * get_tx_buffer(uint8_t *is_valid_tx_buf);
 static void deinit_netdev(void);
+static stm_ret_t spi_transaction(uint8_t * txbuff);
 
 /**
   * @brief  get private interface of expected type and number
@@ -212,6 +214,9 @@ void stm_spi_init(void(*spi_drv_evt_handler)(uint8_t))
 	osSemaphore = osSemaphoreCreate(osSemaphore(SEM) , 1);
 	assert(osSemaphore);
 
+	mutex_spi_trans = xSemaphoreCreateMutex();
+	assert(mutex_spi_trans);
+
 	/* Queue - tx */
 	to_slave_queue = xQueueCreate(TO_SLAVE_QUEUE_SIZE,
 			sizeof(interface_buffer_handle_t));
@@ -242,16 +247,56 @@ void stm_spi_init(void(*spi_drv_evt_handler)(uint8_t))
   */
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
-	if (GPIO_Pin == GPIO_PIN_6)
+	if ( (GPIO_Pin == GPIO_DATA_READY_Pin) ||
+	     (GPIO_Pin == GPIO_HANDSHAKE_Pin) )
 	{
-		if(__HAL_GPIO_EXTI_GET_IT(GPIO_Pin) != RESET)
-		{
-			__HAL_GPIO_EXTI_CLEAR_IT(GPIO_Pin);
-		}
-
 		/* Post semaphore to notify SPI slave is ready for next transaction */
 		if (osSemaphore != NULL) {
 			osSemaphoreRelease(osSemaphore);
+		}
+	}
+}
+
+/**
+  * @brief  Schedule SPI transaction if -
+  *         a. valid TX buffer is ready at SPI host (STM)
+  *         b. valid TX buffer is ready at SPI peripheral (ESP)
+  *         c. Dummy transaction is expected from SPI peripheral (ESP)
+  * @param  argument: Not used
+  * @retval None
+  */
+
+static void check_and_execute_spi_transaction(void)
+{
+	uint8_t * txbuff = NULL;
+	uint8_t is_valid_tx_buf = 0;
+	GPIO_PinState gpio_handshake = GPIO_PIN_RESET;
+	GPIO_PinState gpio_rx_data_ready = GPIO_PIN_RESET;
+
+
+	/* handshake line SET -> slave ready for next transaction */
+	gpio_handshake = HAL_GPIO_ReadPin(GPIO_HANDSHAKE_GPIO_Port,
+			GPIO_HANDSHAKE_Pin);
+
+	/* data ready line SET -> slave wants to send something */
+	gpio_rx_data_ready = HAL_GPIO_ReadPin(GPIO_DATA_READY_GPIO_Port,
+			GPIO_DATA_READY_Pin);
+
+	if (gpio_handshake == GPIO_PIN_SET) {
+
+		/* Get next tx buffer to be sent */
+		txbuff = get_tx_buffer(&is_valid_tx_buf);
+
+		if ( (gpio_rx_data_ready == GPIO_PIN_SET) ||
+		     (is_valid_tx_buf) ) {
+
+			/* Execute transaction only if EITHER holds true-
+			 * a. A valid tx buffer to be transmitted towards slave
+			 * b. Slave wants to send something (Rx for host)
+			 */
+			xSemaphoreTake(mutex_spi_trans, portMAX_DELAY);
+			spi_transaction(txbuff);
+			xSemaphoreGive(mutex_spi_trans);
 		}
 	}
 }
@@ -272,9 +317,12 @@ stm_ret_t send_to_slave(uint8_t iface_type, uint8_t iface_num,
 	if (!wbuffer || !wlen || (wlen > MAX_PAYLOAD_SIZE)) {
 		printf("write fail: buff(%p) 0? OR (0<len(%u)<=max_poss_len(%u))?\n\r",
 				wbuffer, wlen, MAX_PAYLOAD_SIZE);
+		if(wbuffer) {
+			free(wbuffer);
+			wbuffer = NULL;
+		}
 		return STM_FAIL;
 	}
-
 	memset(&buf_handle, 0, sizeof(buf_handle));
 
 	buf_handle.if_type = iface_type;
@@ -286,8 +334,15 @@ stm_ret_t send_to_slave(uint8_t iface_type, uint8_t iface_num,
 
 	if (pdTRUE != xQueueSend(to_slave_queue, &buf_handle, portMAX_DELAY)) {
 		printf("Failed to send buffer to_slave_queue\n\r");
+		if(wbuffer) {
+			free(wbuffer);
+			wbuffer = NULL;
+		}
 		return STM_FAIL;
 	}
+
+	check_and_execute_spi_transaction();
+
 	return STM_OK;
 }
 
@@ -315,14 +370,19 @@ static stm_ret_t spi_transaction(uint8_t * txbuff)
 	struct  esp_payload_header *payload_header;
 	uint16_t len, offset;
 
-	/* SPI transaction in STM can't handle NULL TX buffer */
-	assert(txbuff);
-
 	/* Allocate rx buffer */
 	rxbuff = (uint8_t *)malloc(MAX_SPI_BUFFER_SIZE);
 	assert(rxbuff);
-
 	memset(rxbuff, 0, MAX_SPI_BUFFER_SIZE);
+
+	if(!txbuff) {
+		/* Even though, there is nothing to send,
+		 * valid resetted txbuff is needed for SPI driver
+		 */
+		txbuff = (uint8_t *)malloc(MAX_SPI_BUFFER_SIZE);
+		assert(txbuff);
+		memset(txbuff, 0, MAX_SPI_BUFFER_SIZE);
+	}
 
 	/* SPI transaction */
 	switch(HAL_SPI_TransmitReceive(&hspi1, (uint8_t*)txbuff,
@@ -415,15 +475,12 @@ done:
   */
 static void transaction_task(void const* pvParameters)
 {
-	uint8_t * txbuff = NULL;
-
 	for (;;) {
 
 		if (osSemaphore != NULL) {
 			/* Wait till slave is ready for next transaction */
 			if (osSemaphoreWait(osSemaphore , osWaitForever) == osOK) {
-				txbuff = get_tx_buffer();
-				spi_transaction(txbuff);
+				check_and_execute_spi_transaction();
 			}
 		}
 	}
@@ -518,13 +575,15 @@ static void process_rx_task(void const* pvParameters)
   * @param  argument: Not used
   * @retval sendbuf - Tx buffer
   */
-static uint8_t * get_tx_buffer(void)
+static uint8_t * get_tx_buffer(uint8_t *is_valid_tx_buf)
 {
 	struct  esp_payload_header *payload_header;
 	uint8_t *sendbuf = NULL;
 	uint8_t *payload = NULL;
 	uint16_t len = 0;
 	interface_buffer_handle_t buf_handle = {0};
+
+	*is_valid_tx_buf = 0;
 
 	/* Check if higher layers have anything to transmit, non blocking.
 	 * If nothing is expected to send, queue receive will fail.
@@ -535,20 +594,17 @@ static uint8_t * get_tx_buffer(void)
 		len = buf_handle.payload_len;
 	}
 
-	/* SPI driver in STM needs non null, valid buffer
-	 * So, just allocating for sizeof(struct esp_payload_header) + len
-	 * is not sufficient */
-
-	/* allocate buffer for tx */
-	sendbuf = (uint8_t *) malloc(MAX_SPI_BUFFER_SIZE);
-	if (!sendbuf) {
-		printf("malloc failed\n\r");
-		goto done;
-	}
-
-	memset(sendbuf, 0, MAX_SPI_BUFFER_SIZE);
-
 	if (len) {
+
+		sendbuf = (uint8_t *) malloc(MAX_SPI_BUFFER_SIZE);
+		if (!sendbuf) {
+			printf("malloc failed\n\r");
+			goto done;
+		}
+
+		memset(sendbuf, 0, MAX_SPI_BUFFER_SIZE);
+
+		*is_valid_tx_buf = 1;
 
 		/* Form Tx header */
 		payload_header = (struct esp_payload_header *) sendbuf;

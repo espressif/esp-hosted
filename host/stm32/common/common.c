@@ -33,7 +33,7 @@
   * @retval None
   */
 #if DEBUG_HEX_STREAM_PRINT
-char print_buff[2048*3];
+char print_buff[MAX_SPI_BUFFER_SIZE*3];
 #endif
 
 uint16_t hton_short (uint16_t x)

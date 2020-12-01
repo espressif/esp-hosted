@@ -42,7 +42,7 @@
 #define PARAM_STR_STATION                   "STATION"
 
 /* data path opens after control path is set */
-static int mode = WIFI_MODE_NULL;
+static int mode = WIFI_MODE_NONE;
 static uint8_t self_station_mac[MAC_LEN] = { 0 };
 static uint8_t self_softap_mac[MAC_LEN]  = { 0 };
 
@@ -149,7 +149,7 @@ void control_path_init(void(*control_path_evt_handler)(uint8_t))
 {
 	print_configuration_parameters();
 	/* do not start control path until all tasks are in place */
-	mode = WIFI_MODE_NULL;
+	mode = WIFI_MODE_NONE;
 
 	/* register event handler */
 	control_path_evt_handler_fp = control_path_evt_handler;
