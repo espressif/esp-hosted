@@ -303,6 +303,7 @@ static void esp_spi_work(struct work_struct *work)
 			} else {
 				tx_skb = esp_alloc_skb(SPI_BUF_SIZE);
 				trans.tx_buf = skb_put(tx_skb, SPI_BUF_SIZE);
+				memset((void*)trans.tx_buf, 0, SPI_BUF_SIZE);
 			}
 
 			/* Configure RX buffer */

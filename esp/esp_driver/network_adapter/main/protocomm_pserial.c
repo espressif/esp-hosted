@@ -207,7 +207,6 @@ static void pserial_task(void *params)
     }
 
     while (xQueueReceive(pserial_cfg->req_queue, &len, portMAX_DELAY) == pdTRUE) {
-        //ESP_LOGI(TAG, "Read request for %d", len);
         buf = (uint8_t *) malloc(len);
         if (buf == NULL) {
             ESP_LOGE(TAG,"Failed to allocate memory");
@@ -216,6 +215,7 @@ static void pserial_task(void *params)
         pserial_cfg->recv(buf, len);
         protocomm_pserial_common_handler(pc, buf, len);
         free(buf);
+        buf = NULL;
     }
 
     ESP_LOGI(TAG, "Unexpected termination of pserial task");
