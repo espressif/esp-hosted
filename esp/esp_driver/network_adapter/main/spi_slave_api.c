@@ -47,10 +47,10 @@ static const char TAG[] = "SPI_DRIVER";
     #define GPIO_CS    5
 #elif (CONFIG_ESP_SPI_CONTROLLER == 2)
     #define ESP_SPI_CONTROLLER 1
-    #define GPIO_MOSI 12
-    #define GPIO_MISO 13
-    #define GPIO_SCLK 15
-    #define GPIO_CS   14
+    #define GPIO_MISO 12
+    #define GPIO_MOSI 13
+    #define GPIO_SCLK 14
+    #define GPIO_CS   15
 #else
     #error "Please choose correct ESP SPI"
 #endif
