@@ -433,6 +433,7 @@ void recv_task(void* pvParameters)
 		}
 
 		free(buf_handle);
+		buf_handle = NULL;
 	}
 }
 

@@ -389,6 +389,7 @@ static void spi_transaction_post_process_task(void* pvParameters)
 			}
 
 			free((void *)spi_trans->tx_buffer);
+			spi_trans->tx_buffer = NULL;
 		}
 
 		/* Check if dummy transaction is needed

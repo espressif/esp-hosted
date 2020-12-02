@@ -300,6 +300,7 @@ static void process_rx_packet(struct sk_buff *skb)
 
 	if (payload_header->if_type == ESP_SERIAL_IF) {
 #ifdef CONFIG_SUPPORT_ESP_SERIAL
+		/* print_hex_dump(KERN_INFO, "esp_serial_rx: ", DUMP_PREFIX_ADDRESS, 16, 1, skb->data + offset, len, 1  ); */
 		esp_serial_data_received(payload_header->if_num, skb->data + offset, len);
 #else
 		printk(KERN_ERR "Dropping unsupported serial frame\n");

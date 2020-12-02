@@ -92,6 +92,8 @@ static int esp_serial_write(struct file *file, const char __user *user_buffer, s
 		return -EFAULT;
 	}
 
+	/* print_hex_dump(KERN_INFO, "esp_serial_tx: ", DUMP_PREFIX_ADDRESS, 16, 1, buf, total_len, 1  ); */
+
 	ret = esp_send_packet(dev->priv, buf, total_len);
 	if (ret) {
 		printk (KERN_ERR "%s: Failed to transmit data\n", __func__);
