@@ -16,6 +16,7 @@ from host_commands import commands
 import argparse
 import time
 import os
+import subprocess
 
 # WiFi Mode
 # NULL              0
@@ -79,13 +80,28 @@ if (flag == success):
 
     time.sleep(1)
 
-    command = 'sudo dhclient ethsta0 -r'
-    os.system(command)
-    print(command)
+    for x in range (5):
+        command = 'sudo dhclient ethsta0 -r'
+        os.system(command)
+        print(command)
 
-    command = 'sudo dhclient ethsta0 -v'
-    os.system(command)
-    print(command)
+        command = 'sudo dhclient ethsta0 -v'
+        os.system(command)
+        print(command)
 
-    print("Success in setting AP config")
+        try:
+            get_ip = subprocess.check_output('ip addr show | grep "ethsta0" | grep -o "inet [0-9]*\.[0-9]*\.[0-9]*\.[0-9]*" | grep -o "[0-9]*\.[0-9]*\.[0-9]*\.[0-9]*"', shell = True)
+            if get_ip:
+                flag = success
+                break
+        except subprocess.CalledProcessError:
+            time.sleep(0.1)
+        flag = failure
+
+    if (flag == failure):
+        print("Failed to assign IP address to ethsta0 interface")
+    else:
+        print("Success in setting AP config")
+
+
 
