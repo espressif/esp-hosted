@@ -23,7 +23,7 @@ menu "Example Configuration"
         help
             Enable/disable debug prints in serial driver data path
 
-    config ESP_WLAN_DEUG
+    config ESP_WLAN_DEBUG
         bool "Debug Wlan driver data path"
         default 0
         help

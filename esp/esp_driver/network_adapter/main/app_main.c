@@ -304,7 +304,7 @@ void send_task(void* pvParameters)
 				d_total += buf_handle.payload_len;
 
 #if CONFIG_ESP_WLAN_DEBUG
-				ESP_LOG_BUFFER_HEXDUMP(TAG_TX, buf_handle.buf, 8, ESP_LOG_INFO);
+				ESP_LOG_BUFFER_HEXDUMP(TAG_TX, buf_handle.payload, buf_handle.payload_len, ESP_LOG_INFO);
 #endif
 				/* Post processing */
 				if (buf_handle.free_buf_handle)
