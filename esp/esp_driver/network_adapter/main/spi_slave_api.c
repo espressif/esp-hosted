@@ -282,7 +282,7 @@ static void spi_transaction_tx_task(void* pvParameters)
 			if (ret != pdTRUE) {
 				ESP_LOGE(TAG, "Failed to obtain semaphore\n");
 				free(spi_trans->rx_buffer);
-				free(spi_trans->tx_buffer);
+				free((void *)spi_trans->tx_buffer);
 				free(spi_trans);
 
 				continue;
