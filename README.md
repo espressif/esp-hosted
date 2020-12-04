@@ -1,8 +1,8 @@
 # ESP-Hosted solution
 
-ESP-Hosted project provides a way to use ESP32 as a communication processor for Wi-Fi and Bluetooth/BLE connectivity. On the host side, ESP-Hosted offers a standard network interface for receiving and transmitting 802.3 frames. On top of the network interface, the host can use its own TCP/IP and TLS stack. For BT connectivity, a standard HCI interface is exposed to the Bluetooth host stack.
+ESP-Hosted project provides a way to use ESP32 or ESP32-S2 (termed as ESP peripheral) as a communication processor for Wi-Fi and Bluetooth/BLE connectivity. On the host side, ESP-Hosted offers a standard network interface for receiving and transmitting 802.3 frames. On top of the network interface, the host can use its own TCP/IP and TLS stack. For BT connectivity, a standard HCI interface is exposed to the Bluetooth host stack.
 
-Please note that this project doesn't provide a standard 802.11 interface to the host. For the control path between the host and ESP32, ESP-Hosted uses a custom implementation based on Protobufs.
+Please note that this project doesn't provide a standard 802.11 interface to the host. For the control path between the host and ESP peripheral, ESP-Hosted uses a custom implementation based on [Protobuf](https://developers.google.com/protocol-buffers).
 
 ## Connectivity Support
 
@@ -20,7 +20,7 @@ ESP-Hosted solution supports microprocessors running Linux as well as STM32 MCU 
 
 ## Supported Transports
 
-ESP-Hosted uses SDIO and SPI as the transport interface for data and control path. The host acts as SDIO or SPI master whereas ESP32 acts as a corresponding slave. Currently Raspberry Pi supports both SDIO and SPI transport and STM32 supports SPI transport.
+ESP-Hosted uses SDIO or SPI interface as a transport interface for data and control path. The host acts as SDIO or SPI host whereas ESP32 or ESP32-S2 acts as a corresponding ESP peripheral. Currently Raspberry Pi supports both SDIO and SPI transport and STM32 supports SPI transport. As a peripheral device, ESP32 supports both SDIO and SPI transport interfaces and ESP32-S2 supports SPI transport interface.
 
 For detailed explanation, please go through -
 1. [Using Raspberry-Pi as a Linux host](docs/Linux_based_host/Linux_based_readme.md)
@@ -30,17 +30,23 @@ For detailed explanation, please go through -
 ### Linux Host
 Below table explains which feature is supported on which transport interface for Linux based host.
 
-| Transport Interface | WLAN support | Virtual serial interface | BT/BLE support |                                      
-|:-------:|:---------:|:--------:|:--------:|                                             
-| SDIO | Yes | Yes | Yes |
-| SPI | Yes | Yes | Yes |
-| UART | No | No | Yes |
+| ESP device | Transport Interface | WLAN support | Virtual serial interface | BT/BLE support |
+|:---------:|:-------:|:---------:|:--------:|:--------:|
+| ESP32 | SDIO | Yes | Yes | Yes |
+| ESP32 | SPI | Yes | Yes | Yes |
+| ESP32 | UART | No | No | Yes |
+| ESP32-S2 | SDIO | NA | NA | NA |
+| ESP32-S2 | SPI | Yes | Yes | NA |
+| ESP32-S2 | UART | No | No | NA |
 
 ### MCU Host
 Below table explains which feature is supported on which transport interface for MCU based host.
 
-| Transport Interface | WLAN support | Virtual serial interface | BT/BLE support |                                      
-|:-------:|:---------:|:--------:|:--------:|                                             
-| SDIO | No | No | No |
-| SPI | Yes | Yes | HCI interface can be implemented over virtual serial interface |
-| UART | No | No | No |
+| ESP device | Transport Interface | WLAN support | Virtual serial interface | BT/BLE support |
+|:---------:|:-------:|:---------:|:--------:|:--------:|
+| ESP32 | SDIO | No | No | No |
+| ESP32 | SPI | Yes | Yes | HCI interface can be implemented over virtual serial interface |
+| ESP32 | UART | No | No | No |
+| ESP32-S2 | SDIO | NA | NA | NA |
+| ESP32-S2 | SPI | Yes | Yes | NA |
+| ESP32-S2 | UART | No | No | NA |

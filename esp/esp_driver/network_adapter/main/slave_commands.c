@@ -78,6 +78,7 @@ extern esp_err_t wlan_sta_rx_callback(void *buffer, uint16_t len, void *eb);
 extern esp_err_t wlan_ap_rx_callback(void *buffer, uint16_t len, void *eb);
 
 extern volatile uint8_t sta_connected;
+extern volatile uint8_t ap_started;
 
 void ap_event_handler(void* arg, esp_event_base_t event_base,
                                 int32_t event_id, void* event_data)
@@ -116,9 +117,11 @@ void softap_event_handler(void* arg, esp_event_base_t event_base,
                  MAC2STR(event->mac), event->aid);
 	} else if (event_id == WIFI_EVENT_AP_START) {
 		esp_wifi_internal_reg_rxcb(ESP_IF_WIFI_AP, (wifi_rxcb_t) wlan_ap_rx_callback);
+		ap_started = 1;
 	} else if (event_id == WIFI_EVENT_AP_STOP) {
 		ESP_LOGI(TAG,"AP Stop handler stop");
 		esp_wifi_internal_reg_rxcb(ESP_IF_WIFI_AP,NULL);
+		ap_started = 0;
 	}
 }
 
@@ -258,7 +261,7 @@ static esp_err_t cmd_get_mac_address_handler(EspHostedConfigPayload *req,
 	return ESP_OK;
 }
 
-// Function returns wifi mode of esp32
+// Function returns wifi mode of ESP32
 static esp_err_t cmd_get_wifi_mode_handler (EspHostedConfigPayload *req,
                                         EspHostedConfigPayload *resp, void *priv_data)
 {
@@ -283,7 +286,7 @@ static esp_err_t cmd_get_wifi_mode_handler (EspHostedConfigPayload *req,
 	return ESP_OK;
 }
 
-// Function sets wifi mode for esp32
+// Function sets wifi mode for ESP32
 static esp_err_t cmd_set_wifi_mode_handler (EspHostedConfigPayload *req,
                                         EspHostedConfigPayload *resp, void *priv_data)
 {

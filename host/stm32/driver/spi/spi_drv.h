@@ -28,6 +28,16 @@ extern "C" {
 #define STA_INTERFACE           "ESP_STATION"
 #define SOFTAP_INTERFACE        "ESP_SOFTAP"
 
+/* NSS or CS0 configuration (Pin 11) */
+/* In case of different board than STM32F469I,
+ * User need to update SPI NSS pin as per hardware*/
+#ifndef USR_SPI_CS_GPIO_Port
+#define USR_SPI_CS_GPIO_Port    GPIOA
+#endif
+#ifndef USR_SPI_CS_Pin
+#define USR_SPI_CS_Pin          GPIO_PIN_15
+#endif
+
 typedef enum spi_drv_events_s {
 	SPI_DRIVER_ACTIVE
 } spi_drv_events_e;

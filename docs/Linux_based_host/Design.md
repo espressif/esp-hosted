@@ -42,26 +42,27 @@ This includes ESP-Hosted application and existing peripheral drivers from ESP-ID
 - Following components of ESP-IDF repository are used in this project:
 	- Wi-Fi driver
 	- HCI controller driver
-	- SDIO Slave driver
-	- SPI Slave driver
+	- SDIO peripheral driver
+	- SPI peripheral driver
 
 # Protocol Definition
 This section explains the communication protocol between a host and ESP module. As mentioned earlier, the basic transport layer is implemented over SDIO and SPI. BT/BLE is also supported over UART which follows standard UART protocol. Below section explains SDIO and SPI transport protocol.
 
 ### SDIO transport layer
-ESP32 module advertises 2 SDIO functions. ESP-Hosted solution is implemented on function 1. Though function 2 is advertised, it is not in use.
+**This section is only applicable for ESP32. ESP32-S2 does not support SDIO interface**
+ESP peripheral advertises 2 SDIO functions. ESP-Hosted solution is implemented on function 1. Though function 2 is advertised, it is not in use.
 
 Following are few important SDIO registers provided by ESP Module:
-* 0x3FF5508C: Interrupt vector used by host to interrupt slave
+* 0x3FF5508C: Interrupt vector used by host to interrupt ESP peripheral
 ```
-bit 0: Open data path on slave device
-bit 1: Close data path on slave device
-bit 2: Reset SDIO queues on slave device
+bit 0: Open data path on ESP peripheral device
+bit 1: Close data path on ESP peripheral device
+bit 2: Reset SDIO queues on ESP peripheral device
 ```
-* 0x3FF55058: Interrupt status register used by slave to interrupt host
-* 0x3FF55060: Accumulated value of data length sent by slave
-* 0x3FF55044: Accumulated number of buffers for receiving packets at slave
-* 0x3FF5506C: Device capabilities. Indicates features supported by ESP32 device.
+* 0x3FF55058: Interrupt status register used by ESP peripheral to interrupt host
+* 0x3FF55060: Accumulated value of data length sent by ESP peripheral
+* 0x3FF55044: Accumulated number of buffers for receiving packets at ESP peripheral
+* 0x3FF5506C: Device capabilities. Indicates features supported by ESP32 peripheral
 ```
 bit 0: WLAN support
 bit 1: BT supported over UART
@@ -70,37 +71,37 @@ bit 3: BT mode - BLE only mode
 bit 4: BT mode - BR/EDR only mode
 ```
 
-#### Initialization of slave device
-1. Soft reset SDIO slave
-	1. Host resets SDIO part of slave by setting bit 2 of register at 0x3FF5508C
-	2. This generates an interrupt for slave device, on which firmware on slave resets its SDIO related data structures.
-2. Host reads accumulated length and buffer count at slave.
+#### Initialization of ESP peripheral device
+1. Soft reset SDIO interface of ESP peripheral
+	1. Host resets SDIO part of ESP peripheral by setting bit 2 of register at 0x3FF5508C
+	2. This generates an interrupt for ESP peripheral, on which firmware on ESP peripheral resets its SDIO related data structures.
+2. Host reads accumulated length and buffer count at ESP peripheral.
 	1. Host reads and processes 0x3FF55060 and 0x3FF55044 registers and stores the values in it's data structure
 	2. These counters are required while performing read and write operation on SDIO interface
-3. Open data path on slave
+3. Open data path on ESP peripheral
 	1. Host sets 0th bit of 0x3FF5508C interrupt register
-	2. This indicates slave that host is ready for data transmission
+	2. This indicates ESP peripheral that host is ready for data transmission
 
-#### Data transfer from Host to slave
+#### Data transfer from Host to ESP peripheral
 1. Get Buffer count
-	1. Host reads the current buffer count from slave [0x3FF55044]
-	2. Based on that value, host calculates the number of available buffers at slave
-	3. The host transfers the packet only when slave has required number of free buffers.
-	4. Size of a buffer at slave is 2048 bytes
+	1. Host reads the current buffer count from ESP peripheral [0x3FF55044]
+	2. Based on that value, host calculates the number of available buffers at ESP peripheral
+	3. The host transfers the packet only when ESP peripheral has required number of free buffers.
+	4. Size of a buffer at ESP peripheral is 2048 bytes
 2. The host transfers data in multiples of 512 bytes and max data length per write operation is limited to buffer size [2048 bytes]
 3. Host then updates it's own counter that keeps track of number of buffers it has transmitted.
 
-#### Data transfer from slave to host
-1. Whenever slave has data to transfer, it updates the length in 0x3FF55060 registers and generates an interrupt for host.
-2. On interruption, host reads interrupt status register [0x3FF55058]. Bit 23 of this register tells host that slave desires to send data.
-3. Host then gets the length set by slave by reading register mentioned in step 1. Based on previous received byte count and this length, host understands the actual length of data packet.
-4. Host performs read operation to get data from slave
-5. Once it receives the data, it updates it's counter that stores byte count received from slave.
+#### Data transfer from ESP peripheral to host
+1. Whenever ESP peripheral has data to transfer, it updates the length in 0x3FF55060 registers and generates an interrupt for host.
+2. On interruption, host reads interrupt status register [0x3FF55058]. Bit 23 of this register tells host that ESP peripheral desires to send data.
+3. Host then gets the length set by ESP peripheral by reading register mentioned in step 1. Based on previous received byte count and this length, host understands the actual length of data packet.
+4. Host performs read operation to get data from ESP peripheral
+5. Once it receives the data, it updates it's counter that stores byte count received from ESP peripheral.
 
-`Note: Slave stays in blocked state during steps 1 to 4 [ i.e till host reads the data packet]`
+`Note: ESP peripheral stays in blocked state during steps 1 to 4 [ i.e till host reads the data packet]`
 
-#### Deinit slave device
-Host sets bit 1 of 0x3FF5508C interrupt register. This tells slave device to stop the data path.
+#### Deinit peripheral device
+Host sets bit 1 of 0x3FF5508C interrupt register. This tells ESP peripheral to stop the data path.
 
 
 ### SPI transport layer
@@ -118,14 +119,14 @@ This is a output pin for ESP peripheral. This pin is used to indicate host that 
 This is a input pin for ESP peripheral. This pin resets ESP peripheral and is mandatory in SPI based ESP-Hosted solution.
 
 
-#### Initialization of slave device
+#### Initialization of peripheral device
 * Connection of 'EN'/Reset pin to host is mandatory in case of SPI communication. Once driver is loaded on host, it resets ESP peripheral through this pin.
 * Firmware on ESP peripheral then initializes itself and preapres itself for communication over SPI interface. Once it is ready for communication, it generates INIT event for host.
 * Host driver, on receiving this event, opens up data path for higher layers.
 
-#### Data transfer between Host and slave
+#### Data transfer between Host and ESP peripheral
 * This solution makes use of SPI full duplex commmunication mode. i.e. read and write operations are performed at the same time in same SPI transaction.
-* As a protocol, host is not supposed to start a transaction before ESP SPI slave device is ready for receiving data. Therefore, through Handshake pin, ESP peripheral indicates host when it is ready for SPI transaction.
+* As a protocol, host is not supposed to start a transaction before ESP SPI peripheral device is ready for receiving data. Therefore, through Handshake pin, ESP peripheral indicates host when it is ready for SPI transaction.
 * To allow seamless data traffic between host and ESP peripheral, ESP peripheral needs to be ready for data reception from host all the time. For that, after completion of every SPI transaction, ESP peripheral immediately queues next SPI transaction.
 * The data transfer protocol works as below:
 	* Each SPI transaction has a TX buffer and a RX buffer.
@@ -136,20 +137,20 @@ This is a input pin for ESP peripheral. This pin resets ESP peripheral and is ma
 		* In case if ESP peripheral has no data to transfer to host, a dummy TX buffer of size 1600 bytes is allocated and is set in SPI transaction. Packet length field in payload header of such buffer is set to 0.
 		* If ESP peripheral has a valid data buffer to be sent to host, then TX buffer will point to that buffer.
 	* SPI transaction length is set to 1600 bytes [irrespective of size of TX buffer]
-	* Once this SPI transaction is submitted to SPI driver on ESP peripheral, Handshake pin is pulled high to indicate host that slave is ready for transaction.
+	* Once this SPI transaction is submitted to SPI driver on ESP peripheral, Handshake pin is pulled high to indicate host that ESP peripheral is ready for transaction.
 	* In case if TX buffer has valid data, Data ready pin is also pulled high by ESP peripheral.
 	* Host receives an interrupt through Handshake pin. On this interrupt, host needs to decide whether or not to perform SPI transaction.
 		* If Data ready pin is high, host performs SPI transaction
 		* Or if host has data to transfer, then host performs SPI transaction
 		* If both the above conditions are false, then host does not perform SPI transaction. This transaction is then performed later when host has data to be sent or interrupt is received on Data ready pin.
 	* During this SPI transaction, TX and RX buffers are exchanged on SPI data lines.
-	* Based on payload header in received buffer, both ESP SPI slave and host processes the buffer.
+	* Based on payload header in received buffer, both ESP peripheral and host processes the buffer.
 	* On completion of transaction, ESP peripheral pulls Handshake pin low. If completed transaction had a valid TX buffer, then it also pulls Data ready pin low.
 
 
 ### Payload format for data transfer
-* Host and slave makes use of 8 byte payload header which preceeds every data packet.
-* This payload header provides additional information about the data packet. Based on this header, host/slave consumes transmitted data packet.
+* Host and ESP peripheral makes use of 8 byte payload header which preceeds every data packet.
+* This payload header provides additional information about the data packet. Based on this header, host/ESP peripheral consumes transmitted data packet.
 * This is applicable for both SDIO and SPI transport layers.
 * Payload format is as below
 

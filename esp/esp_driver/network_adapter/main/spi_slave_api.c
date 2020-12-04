@@ -26,18 +26,21 @@
 #include "freertos/task.h"
 
 static const char TAG[] = "SPI_DRIVER";
-#define DMA_CHAN    2
 #define SPI_BITS_PER_WORD          8
 #define SPI_MODE_0                 0
 #define SPI_MODE_1                 1
 #define SPI_MODE_2                 2
 #define SPI_MODE_3                 3
+#define SPI_CLK_MHZ_ESP32          10
+#define SPI_CLK_MHZ_ESP32_S2       30
 
 #define SPI_DMA_ALIGNMENT_BYTES    4
 #define SPI_DMA_ALIGNMENT_MASK     (SPI_DMA_ALIGNMENT_BYTES-1)
 #define IS_SPI_DMA_ALIGNED(VAL)    (!((VAL)& SPI_DMA_ALIGNMENT_MASK))
 #define MAKE_SPI_DMA_ALIGNED(VAL)  (VAL += SPI_DMA_ALIGNMENT_BYTES - \
 				((VAL)& SPI_DMA_ALIGNMENT_MASK))
+
+#ifdef CONFIG_IDF_TARGET_ESP32
 
 #if (CONFIG_ESP_SPI_CONTROLLER == 3)
     #define ESP_SPI_CONTROLLER 2
@@ -52,13 +55,30 @@ static const char TAG[] = "SPI_DRIVER";
     #define GPIO_SCLK 14
     #define GPIO_CS   15
 #else
-    #error "Please choose correct ESP SPI"
+    #error "Please choose correct SPI controller"
 #endif
+
+#elif defined CONFIG_IDF_TARGET_ESP32S2
+
+    #define ESP_SPI_CONTROLLER 1
+    #define GPIO_MOSI 11
+    #define GPIO_MISO 13
+    #define GPIO_SCLK 12
+    #define GPIO_CS   10
+
+#endif
+
+#define DMA_CHAN                 ESP_SPI_CONTROLLER
 
 #define SPI_BUFFER_SIZE          1600
 #define SPI_QUEUE_SIZE           3
+#ifdef CONFIG_IDF_TARGET_ESP32S2
+#define SPI_RX_QUEUE_SIZE        5
+#define SPI_TX_QUEUE_SIZE        5
+#else
 #define SPI_RX_QUEUE_SIZE        10
 #define SPI_TX_QUEUE_SIZE        10
+#endif
 
 static interface_context_t context;
 static interface_handle_t if_handle_g;
@@ -77,6 +97,7 @@ static QueueHandle_t spi_rx_queue = NULL;
 static QueueHandle_t spi_tx_queue = NULL;
 
 static uint8_t dummy_queued = pdFALSE;
+static uint32_t mem_fail_count = 0;
 
 static xSemaphoreHandle spi_sema;
 
@@ -96,6 +117,8 @@ interface_context_t *interface_insert_driver(int (*event_handler)(uint8_t val))
 	context.type = SPI;
 	context.if_ops = &if_ops;
 	context.event_handler = event_handler;
+
+	mem_fail_count = 0;
 
 	return &context;
 }
@@ -156,7 +179,7 @@ static void IRAM_ATTR spi_post_trans_cb(spi_slave_transaction_t *trans)
 	}
 }
 
-uint8_t * get_next_tx_buffer(uint32_t *len)
+static uint8_t * get_next_tx_buffer(uint32_t *len)
 {
 	interface_buffer_handle_t buf_handle = {0};
 	esp_err_t ret = ESP_OK;
@@ -263,7 +286,7 @@ static void spi_transaction_tx_task(void* pvParameters)
 			/* Attach Rx Buffer */
 			spi_trans->rx_buffer = heap_caps_malloc(SPI_BUFFER_SIZE, MALLOC_CAP_DMA);
 			if (!spi_trans->rx_buffer) {
-				ESP_LOGE(TAG, "Memory allocation failed");
+				mem_fail_count++;
 				free(spi_trans);
 				free(buf_handle.payload);
 				continue;
@@ -313,6 +336,14 @@ static void queue_dummy_transaction()
 	spi_slave_transaction_t *spi_trans = NULL;
 	esp_err_t ret = ESP_OK;
 	uint32_t len = 0;
+	uint8_t *tx_buffer = NULL;
+
+	tx_buffer = get_next_tx_buffer(&len);
+	if (!tx_buffer) {
+		/* No need to queue dummy transaction */
+		xSemaphoreGive(spi_sema);
+		return;
+	}
 
 	spi_trans = malloc(sizeof(spi_slave_transaction_t));
 	assert(spi_trans != NULL);
@@ -322,22 +353,15 @@ static void queue_dummy_transaction()
 	/* Attach Rx Buffer */
 	spi_trans->rx_buffer = heap_caps_malloc(SPI_BUFFER_SIZE, MALLOC_CAP_DMA);
 	if (!spi_trans->rx_buffer) {
-		ESP_LOGE(TAG, "Memory allocation failed");
+		xSemaphoreGive(spi_sema);
+		mem_fail_count++;
 		free(spi_trans);
 		return;
 	}
 	memset(spi_trans->rx_buffer, 0, SPI_BUFFER_SIZE);
 
 	/* Attach Tx Buffer */
-	spi_trans->tx_buffer = get_next_tx_buffer(&len);
-
-	if (!spi_trans->tx_buffer) {
-		/* No need to queue dummy transaction */
-		free(spi_trans->rx_buffer);
-		free(spi_trans);
-		xSemaphoreGive(spi_sema);
-		return;
-	}
+	spi_trans->tx_buffer = tx_buffer;
 
 	/* Transaction len */
 	spi_trans->length = SPI_BUFFER_SIZE * SPI_BITS_PER_WORD;
@@ -447,6 +471,25 @@ static void generate_startup_event(uint8_t cap)
 
 	/* Populate TLVs for event */
 	pos = event->event_data;
+
+	/* TLV - peripheral clock in MHz */
+	*pos = ESP_PRIV_SPI_CLK_MHZ;
+	pos++;len++;
+
+	/* Length of value field [1 byte] */
+	*pos = 1;
+	pos++;len++;
+
+	/* Value */
+#ifdef CONFIG_IDF_TARGET_ESP32
+	*pos = SPI_CLK_MHZ_ESP32;
+#elif defined CONFIG_IDF_TARGET_ESP32S2
+	*pos = SPI_CLK_MHZ_ESP32_S2;
+#endif
+	pos++;len++;
+
+
+	/* TLV - capability */
 	/* Tag [1 byte] */
 	*pos = ESP_PRIV_CAPABILITY;
 	pos++;len++;
@@ -541,7 +584,7 @@ static interface_handle_t * esp_spi_init(uint8_t capabilities)
 	assert(xTaskCreate(spi_transaction_tx_task , "spi_tx_task" , 4096 , NULL ,
 				20 , NULL) == pdTRUE);
 	assert(xTaskCreate(spi_transaction_post_process_task , "spi_post_process_task" ,
-			4096 , NULL , 22 , NULL) == pdTRUE);
+			4096 , NULL , 18 , NULL) == pdTRUE);
 
 	usleep(500);
 
@@ -613,10 +656,11 @@ static int32_t esp_spi_write(interface_handle_t *handle, interface_buffer_handle
 	return buf_handle->payload_len;
 }
 
-static void esp_spi_read_done(void *handle)
+static void IRAM_ATTR esp_spi_read_done(void *handle)
 {
 	if (handle) {
 		free(handle);
+		handle = NULL;
 	}
 }
 
@@ -640,6 +684,7 @@ static interface_buffer_handle_t * esp_spi_read(interface_handle_t *if_handle)
 
 	if (ret != pdTRUE) {
 		free(buf_handle);
+		buf_handle = NULL;
 		return NULL;
 	}
 	return buf_handle;

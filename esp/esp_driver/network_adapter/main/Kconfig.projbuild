@@ -2,12 +2,14 @@ menu "Example Configuration"
 
     choice ESP_HOST_INTERFACE
         bool "Transport layer"
-        default ESP_SDIO_HOST_INTERFACE
+        default ESP_SDIO_HOST_INTERFACE if IDF_TARGET_ESP32
+        default ESP_SPI_HOST_INTERFACE if IDF_TARGET_ESP32S2
         help
 	    Bus interface to be used for communication with the host
 
         config ESP_SDIO_HOST_INTERFACE
             bool "SDIO interface"
+            depends on IDF_TARGET_ESP32
             help
                 Enable/Disable SDIO host interface
 
@@ -17,20 +19,12 @@ menu "Example Configuration"
                 Enable/Disable SPI host interface
     endchoice
 
-    config ESP_SERIAL_DEBUG
-        bool "Debug Serial driver data path"
-        default 0
-        help
-            Enable/disable debug prints in serial driver data path
-
-    config ESP_WLAN_DEBUG
-        bool "Debug Wlan driver data path"
-        default 0
-        help
-            Enable/disable debug prints in wlan driver data path
+    menu "SPI Configuration"
+        depends on ESP_SPI_HOST_INTERFACE
 
     config ESP_SPI_CONTROLLER
         int "SPI controller to use"
+        depends on IDF_TARGET_ESP32 && ESP_SPI_HOST_INTERFACE
         default 3
 	range 2 3
         help
@@ -47,5 +41,18 @@ menu "Example Configuration"
         default 4
         help
             GPIO pin for indicating host that SPI slave has data to be read by host
+	endmenu
+
+    config ESP_SERIAL_DEBUG
+        bool "Debug Serial driver data path"
+        default 0
+        help
+            Enable/disable debug prints in serial driver data path
+
+    config ESP_WLAN_DEBUG
+        bool "Debug Wlan driver data path"
+        default 0
+        help
+            Enable/disable debug prints in wlan driver data path
 
 endmenu

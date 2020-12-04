@@ -2,10 +2,10 @@
 
 ## Wi-Fi Connectivity
 
-Host firmware provides wifi connectivity using control path and data path. Control path commands uses `protocomm` layer of ESP-IDF to serialize structured control data and communicates using SPI transport interface between Host(MCU based Host) and Slave(ESP32). User can use control commands to build application.
+Host firmware provides wifi connectivity using control path and data path. Control path commands uses `protocomm` layer of ESP-IDF to serialize structured control data and communicates using SPI transport interface between Host(MCU based Host) and ESP peripheral (ESP32/ESP32-S2). User can use control commands to build application.
 
 ### Control Path Commands
-[commands.c](../../host/host_common/commands.c) is control path commands C library. It implements the communication protocol between the host and ESP32. It contains following functions which can be used to control Wi-Fi functionality of the ESP32 as follows:
+[commands.c](../../host/host_common/commands.c) is control path commands C library. It implements the communication protocol between the host and ESP peripheral. It contains following functions which can be used to control Wi-Fi functionality of the ESP peripheral as follows:
 | Function | Functionality |
 |:--------|:-------------|
 | wifi_get_mac(int mode, char* mac) | get MAC address of station or softAP Interface |
@@ -30,8 +30,8 @@ We have tested project with STM32F469I-Discovery board. If other than STM32F469I
 
 1) Create a workspace_directory outside of `ESP-Hosted` git cloned directory.
 2) Browse and Open Workspace directory in STM32CubeIDE. It will take few seconds to open STM32CubeIDE.
-3) From `Information Center` tab select Start new project from existing STM32CubeMX configuration file, i.e. ioc file option. It will take few seconds to open dialog box. In STM32CubeMX .ioc file field, browse to `</path/to/esp_hosted>/host/stm32/proj/stm_spi_host.ioc -> Open` and click on `finish` icon. New dialog box will open as Open Associated Perspective, click on `Yes`. It may take 2-3 minutes to open.
-4) Close `stm_spi_host.ioc` tab then close STM32CubeIDE and click on `exit`.
+3) From `Information Center` tab select Start new project from existing STM32CubeMX configuration file, i.e. ioc file option. It will take few seconds to open dialog box. In STM32CubeMX .ioc file field, browse to `</path/to/esp_hosted>/host/stm32/proj/stm_spi_host_<ESP_peripheral_hardware>.ioc -> Open` and click on `finish` icon. New dialog box will open as Open Associated Perspective, click on `Yes`. It may take 2-3 minutes to open. ESP_peripheral_hardware currently supported as either ESP32 or ESP32-S2.
+4) Close `stm_spi_host_<ESP_peripheral_hardware>.ioc` tab then close STM32CubeIDE and click on `exit`.
 5) For Linux and Mac development hosts, In terminal, run
 ```
 $ cd </path/to/esp_hosted>/host/stm32/proj
@@ -137,10 +137,10 @@ Build Variables are as follows:
 |3| INPUT_GET_AP_SCAN_LIST | String | Get list of available APs. ("yes" or "no") |
 |4| INPUT_SOFTAP__SSID | String | SSID of softAP. For example. "ESPWifi" |
 |5| INPUT_SOFTAP_PASSWORD | String | Password of softAP . Length of password should be 8~64 bytes ASCII. For example. "ESPWifi@123" |
-|6| INPUT_SOFTAP_BANDWIDTH | String | Set bandwidth of ESP32 softAP ( HT20 or HT40 ) |
+|6| INPUT_SOFTAP_BANDWIDTH | String | Set bandwidth of ESP softAP ( HT20 or HT40 ) |
 |7| INPUT_SOFTAP_CHANNEL | String | Channel ID (Range: 1 to 11)|
 |8| INPUT_SOFTAP_ENCRYPTION | String | Encryption mode. ( OPEN, WPA_PSK, WPA2_PSK, WPA_WPA2_PSK) |
-|9| INPUT_SOFTAP_MAX_CONN | String | Maximum number of stations can connect to ESP32 SoftAP (Range: 1 to 10) |
+|9| INPUT_SOFTAP_MAX_CONN | String | Maximum number of stations can connect to ESP SoftAP (Range: 1 to 10) |
 |10| INPUT_SOFTAP_SSID_HIDDEN | String | SoftAP should broadcast its SSID or not ( "yes" : SSID is broadcast, "no" : SSID is not broadcast )
 |11| INPUT_SOFTAP_SRC_IP | String | Source IP (IPv4)address of host in softAP mode. |
 |12| INPUT_SOFTAP_ARP_DEST_IP | String | Destination IP (IPv4)address of station connected to host. |
@@ -161,7 +161,7 @@ In case there is a warning sign on folder icon, it means STM32CubeIDE has not co
 ## ARP Testing :
 
 With minimal network stub, arping is tested with this project.
-Once the connection is setup between STM32 and ESP32, ARP can be tested for that interface.
+Once the connection is setup between STM32 and ESP peripheral, ARP can be tested for that interface.
 
 ### ARP Request originated from STM32
 For station mode, `INPUT_STATION_SRC_IP` is used as STM32 IPv4 address and `INPUT_STATION_ARP_DEST_IP` is considered as destination IPv4 address. This could be configured as IPv4 address of your machine.
@@ -181,7 +181,7 @@ In case of station mode, ARP request could be triggered from station connected t
 ```
 sudo arping 192.168.1.233
 ```
-Similarly for softap mode, you would need to connect to Wifi from ESP32, `INPUT_SOFTAP__SSID`. Trigger command,
+Similarly for softap mode, you would need to connect to Wifi from ESP, `INPUT_SOFTAP__SSID`. Trigger command,
 ```
 sudo arping 192.168.2.1
 ```

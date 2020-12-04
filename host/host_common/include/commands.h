@@ -226,7 +226,7 @@ int wifi_connected_stations_list(esp_hosted_wifi_connected_stations_list** list,
  *      mode : ESP32 wifi mode
  *          (WIFI_MODE_STA  : for station mac
  *           WIFI_MODE_AP   : for softAP mac)
- *      mac  : custom MAC Address for esp32 Interface
+ *      mac  : custom MAC Address for ESP32 Interface
  * @attention 1. First set wifi mode before setting MAC address for respective station and softAP Interface
  * @attention 2. ESP32 station and softAP have different MAC addresses, do not set them to be the same.
  * @attention 3. The bit 0 of the first byte of ESP32 MAC address can not be 1.

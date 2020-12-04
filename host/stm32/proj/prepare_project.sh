@@ -38,14 +38,14 @@ fi
 
 
 if [ ! -d $WORKSPACE ]; then
-	echo "Err: $WORKSPACE directory not found. Please follow documentation to import STM project from stm_spi_host.ioc first"
+	echo "Err: $WORKSPACE directory not found. Please follow documentation to import STM project from stm_spi_host_<ESP_slave_board_type>.ioc first"
 	usage
 	exit 1;
 fi
 
 if [ ! -d $WORKSPACE/$PROJ_NAME ]; then
 	echo "Err: Either incorrect Workspace directory or ioc project not imported."
-	echo "Please follow documentation to import STM project from stm_spi_host.ioc if not already done"
+	echo "Please follow documentation to import STM project from stm_spi_host_<ESP_slave_board_type>.ioc if not already done"
 	usage
 	exit 1;
 fi

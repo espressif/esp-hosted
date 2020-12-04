@@ -20,7 +20,6 @@
 #include "esp32/rom/lldesc.h"
 #include "sys/queue.h"
 #include "soc/soc.h"
-#include "esp_event_loop.h"
 #include "nvs_flash.h"
 #include "sdkconfig.h"
 #include <unistd.h>
@@ -74,10 +73,13 @@ static esp_err_t initialise_bluetooth(void);
 volatile uint8_t action = 0;
 volatile uint8_t datapath = 0;
 volatile uint8_t sta_connected = 0;
+volatile uint8_t ap_started = 0;
 
+#ifdef ESP_DEBUG_STATS
 uint32_t from_wlan_count = 0;
 uint32_t to_host_count = 0;
 uint32_t to_host_sent_count = 0;
+#endif
 
 interface_context_t *if_context = NULL;
 interface_handle_t *if_handle = NULL;
@@ -86,8 +88,13 @@ QueueHandle_t to_host_queue = NULL;
 QueueHandle_t from_host_queue = NULL;
 
 #if CONFIG_ESP_SPI_HOST_INTERFACE
+#ifdef CONFIG_IDF_TARGET_ESP32S2
+#define TO_HOST_QUEUE_SIZE      5
+#define FROM_HOST_QUEUE_SIZE    5
+#else
 #define TO_HOST_QUEUE_SIZE      10
 #define FROM_HOST_QUEUE_SIZE    10
+#endif
 #else
 #define TO_HOST_QUEUE_SIZE      100
 #define FROM_HOST_QUEUE_SIZE    100
@@ -249,7 +256,9 @@ esp_err_t wlan_sta_rx_callback(void *buffer, uint16_t len, void *eb)
 		return ESP_OK;
 	}
 
+#ifdef ESP_DEBUG_STATS
 	from_wlan_count++;
+#endif
 
 	/* Prepare buffer descriptor */
 	memset(&buf_handle, 0, sizeof(buf_handle));
@@ -279,8 +288,10 @@ DONE:
 void send_task(void* pvParameters)
 {
 	esp_err_t ret = ESP_OK;
+#ifdef ESP_DEBUG_STATS
 	int t1, t2, t_total = 0;
 	int d_total = 0;
+#endif
 	interface_buffer_handle_t buf_handle = {0};
 
 
@@ -290,31 +301,39 @@ void send_task(void* pvParameters)
 
 		if (datapath) {
 			if (ret == pdTRUE) {
+#ifdef ESP_DEBUG_STATS
 				to_host_count++;
 
 				/* Send data */
 				t1 = XTHAL_GET_CCOUNT();
+#endif
 
 				if (if_context && if_context->if_ops && if_context->if_ops->write) {
 					if_context->if_ops->write(if_handle, &buf_handle);
 				}
 
+#ifdef ESP_DEBUG_STATS
 				t2 = XTHAL_GET_CCOUNT();
 				t_total += t2 - t1;
 				d_total += buf_handle.payload_len;
+#endif
 
 #if CONFIG_ESP_WLAN_DEBUG
 				ESP_LOG_BUFFER_HEXDUMP(TAG_TX, buf_handle.payload, buf_handle.payload_len, ESP_LOG_INFO);
 #endif
 				/* Post processing */
-				if (buf_handle.free_buf_handle)
+				if (buf_handle.free_buf_handle) {
 					buf_handle.free_buf_handle(buf_handle.priv_buffer_handle);
+					buf_handle.priv_buffer_handle = NULL;
+				}
 
+#ifdef ESP_DEBUG_STATS
 				to_host_sent_count++;
 			}
 			if (t_total) {
-/*				printf("TX complete. Total time spent in tx = %d for %d bytes\n", t_total, d_total);*/
+				ESP_LOGI("TX complete. Total time spent in tx = %d for %d bytes\n", t_total, d_total);
 				t_total = 0;
+#endif
 			}
 
 		} else {
@@ -359,7 +378,7 @@ void process_rx_task(void* pvParameters)
 		if ((buf_handle.if_type == ESP_STA_IF) && sta_connected) {
 			/* Forward data to wlan driver */
 			esp_wifi_internal_tx(ESP_IF_WIFI_STA, payload, payload_len);
-		} else if (buf_handle.if_type == ESP_AP_IF) {
+		} else if (buf_handle.if_type == ESP_AP_IF && ap_started) {
 			/* Forward data to wlan driver */
 			esp_wifi_internal_tx(ESP_IF_WIFI_AP, payload, payload_len);
 		} else if (buf_handle.if_type == ESP_SERIAL_IF) {
@@ -687,7 +706,7 @@ void app_main()
 
 	ESP_ERROR_CHECK(ret);
 
-	assert(xTaskCreate(recv_task , "recv_task" , 4096 , NULL , 16 , NULL) == pdTRUE);
+	assert(xTaskCreate(recv_task , "recv_task" , 4096 , NULL , 14 , NULL) == pdTRUE);
 	assert(xTaskCreate(send_task , "send_task" , 4096 , NULL , 16 , NULL) == pdTRUE);
 	assert(xTaskCreate(process_rx_task , "process_rx_task" , 4096 , NULL , 16 , NULL) == pdTRUE);
 

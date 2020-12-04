@@ -54,6 +54,7 @@ typedef enum {
 
 typedef enum {
 	ESP_PRIV_CAPABILITY,
+	ESP_PRIV_SPI_CLK_MHZ,
 } ESP_PRIV_TAG_TYPE;
 
 struct esp_priv_event {

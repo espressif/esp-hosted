@@ -32,11 +32,27 @@
 
 #define MAX_PAYLOAD_SIZE (MAX_SPI_BUFFER_SIZE-sizeof(struct esp_payload_header))
 
+typedef enum hardware_type_e {
+	HARDWARE_TYPE_ESP32,
+	HARDWARE_TYPE_ESP32S2,
+	HARDWARE_TYPE_INVALID,
+}hardware_type_t;
+
+static stm_ret_t spi_transaction_esp32(uint8_t * txbuff);
+static stm_ret_t spi_transaction_esp32s2(uint8_t * txbuff);
+
+/* spi transaction functions for different hardware types */
+static stm_ret_t (*spi_trans_func[])(uint8_t * txbuff) = {
+		spi_transaction_esp32,
+		spi_transaction_esp32s2
+};
+
 static int esp_netdev_open(netdev_handle_t netdev);
 static int esp_netdev_close(netdev_handle_t netdev);
 static int esp_netdev_xmit(netdev_handle_t netdev, struct pbuf *net_buf);
 
 static struct esp_private *esp_priv[MAX_NETWORK_INTERFACES];
+static uint8_t hardware_type = HARDWARE_TYPE_INVALID;
 
 static struct netdev_ops esp_net_ops = {
 	.netdev_open = esp_netdev_open,
@@ -65,7 +81,6 @@ static void transaction_task(void const* pvParameters);
 static void process_rx_task(void const* pvParameters);
 static uint8_t * get_tx_buffer(uint8_t *is_valid_tx_buf);
 static void deinit_netdev(void);
-static stm_ret_t spi_transaction(uint8_t * txbuff);
 
 /**
   * @brief  get private interface of expected type and number
@@ -194,6 +209,57 @@ static void deinit_netdev(void)
 		}
 	}
 }
+/**
+  * @brief  check if alternate function of a GPIO set or not
+  * @param  GPIOx - GPIO Instance like A,B,..
+  * @retval 1 if alternate function set else 0
+  */
+static int is_gpio_alternate_function_set(GPIO_TypeDef  *GPIOx, uint32_t pin)
+{
+#define GPIO_NUMBER 16U
+	uint32_t position;
+	uint32_t ioposition = 0x00U;
+	uint32_t iocurrent = 0x00U;
+
+	/* Check the parameters */
+	assert_param(IS_GPIO_ALL_INSTANCE(GPIOx));
+	assert_param(IS_GPIO_PIN(pin));
+
+	/* Configure the port pins */
+	for(position = 0U; position < GPIO_NUMBER; position++)
+	{
+		/* Get the IO position */
+		ioposition = 0x01U << position;
+		/* Get the current IO position */
+		iocurrent = (uint32_t)(pin) & ioposition;
+
+		if(iocurrent == ioposition)
+		{
+			if (GPIOx->AFR[position >> 3U]) {
+				return 1;
+			}
+		}
+	}
+	return 0;
+}
+
+/**
+  * @brief  Set hardware type to ESP32 or ESP32S2 depending upon
+  *         Alternate Function (AF) set for NSS pin (Pin11 i.e. A15)
+  *         In case of ESP32, NSS is used by SPI driver, using AF
+  *         For ESP32S2, NSS is manually used as GPIO to toggle NSS
+  *         NSS (as AF) was not working for ESP32S2, this is workaround for that.
+  * @param  None
+  * @retval None
+  */
+static void set_hardware_type(void)
+{
+	if (is_gpio_alternate_function_set(USR_SPI_CS_GPIO_Port,USR_SPI_CS_Pin)) {
+		hardware_type = HARDWARE_TYPE_ESP32;
+	} else {
+		hardware_type = HARDWARE_TYPE_ESP32S2;
+	}
+}
 
 /** function definition **/
 
@@ -205,11 +271,20 @@ static void deinit_netdev(void)
   */
 void stm_spi_init(void(*spi_drv_evt_handler)(uint8_t))
 {
+	stm_ret_t retval = STM_OK;
+	/* Check if supported board */
+	set_hardware_type();
+
 	/* register callback */
 	spi_drv_evt_handler_fp = spi_drv_evt_handler;
 	osSemaphoreDef(SEM);
 
-	init_netdev();
+	retval = init_netdev();
+	if (retval) {
+		printf("netdev failed to init\n\r");
+		assert(retval==STM_OK);
+	}
+
 	/* spi handshake semaphore */
 	osSemaphore = osSemaphoreCreate(osSemaphore(SEM) , 1);
 	assert(osSemaphore);
@@ -295,7 +370,7 @@ static void check_and_execute_spi_transaction(void)
 			 * b. Slave wants to send something (Rx for host)
 			 */
 			xSemaphoreTake(mutex_spi_trans, portMAX_DELAY);
-			spi_transaction(txbuff);
+			spi_trans_func[hardware_type](txbuff);
 			xSemaphoreGive(mutex_spi_trans);
 		}
 	}
@@ -359,16 +434,17 @@ static void stop_spi_transactions_for_msec(int x)
 }
 
 /**
-  * @brief  Full duplex transaction SPI transaction
+  * @brief  Full duplex transaction SPI transaction for ESP32 hardware
   * @param  txbuff: TX SPI buffer
   * @retval STM_OK / STM_FAIL
   */
-static stm_ret_t spi_transaction(uint8_t * txbuff)
+static stm_ret_t spi_transaction_esp32(uint8_t * txbuff)
 {
 	uint8_t *rxbuff = NULL;
 	interface_buffer_handle_t buf_handle = {0};
 	struct  esp_payload_header *payload_header;
 	uint16_t len, offset;
+	HAL_StatusTypeDef retval = HAL_ERROR;
 
 	/* Allocate rx buffer */
 	rxbuff = (uint8_t *)malloc(MAX_SPI_BUFFER_SIZE);
@@ -385,8 +461,10 @@ static stm_ret_t spi_transaction(uint8_t * txbuff)
 	}
 
 	/* SPI transaction */
-	switch(HAL_SPI_TransmitReceive(&hspi1, (uint8_t*)txbuff,
-				(uint8_t *)rxbuff, MAX_SPI_BUFFER_SIZE, HAL_MAX_DELAY))
+	retval = HAL_SPI_TransmitReceive(&hspi1, (uint8_t*)txbuff,
+			(uint8_t *)rxbuff, MAX_SPI_BUFFER_SIZE, HAL_MAX_DELAY);
+
+	switch(retval)
 	{
 		case HAL_OK:
 
@@ -413,6 +491,126 @@ static stm_ret_t spi_transaction(uint8_t * txbuff)
 					free(rxbuff);
 					rxbuff = NULL;
 				}
+				/* Give chance to other tasks */
+				osDelay(0);
+
+			} else {
+
+				buf_handle.priv_buffer_handle = rxbuff;
+				buf_handle.free_buf_handle = free;
+				buf_handle.payload_len = len;
+				buf_handle.if_type     = payload_header->if_type;
+				buf_handle.if_num      = payload_header->if_num;
+				buf_handle.payload     = rxbuff + offset;
+
+				if (pdTRUE != xQueueSend(from_slave_queue,
+							&buf_handle, portMAX_DELAY)) {
+					printf("Failed to send buffer\n\r");
+					goto done;
+				}
+			}
+
+			/* Free input TX buffer */
+			if (txbuff) {
+				free(txbuff);
+				txbuff = NULL;
+			}
+			break;
+
+		case HAL_TIMEOUT:
+			printf("timeout in SPI transaction\n\r");
+			goto done;
+			break;
+
+		case HAL_ERROR:
+			printf("Error in SPI transaction\n\r");
+			goto done;
+			break;
+		default:
+			printf("default handler: Error in SPI transaction\n\r");
+			goto done;
+			break;
+	}
+
+	return STM_OK;
+
+done:
+	/* error cases, abort */
+	if (txbuff) {
+		free(txbuff);
+		txbuff = NULL;
+	}
+
+	if (rxbuff) {
+		free(rxbuff);
+		rxbuff = NULL;
+	}
+	return STM_FAIL;
+}
+
+/**
+  * @brief  Full duplex transaction SPI transaction for ESP32S2 hardware
+  * @param  txbuff: TX SPI buffer
+  * @retval STM_OK / STM_FAIL
+  */
+static stm_ret_t spi_transaction_esp32s2(uint8_t * txbuff)
+{
+	uint8_t *rxbuff = NULL;
+	interface_buffer_handle_t buf_handle = {0};
+	struct  esp_payload_header *payload_header;
+	uint16_t len, offset;
+	HAL_StatusTypeDef retval = HAL_ERROR;
+
+	/* Allocate rx buffer */
+	rxbuff = (uint8_t *)malloc(MAX_SPI_BUFFER_SIZE);
+	assert(rxbuff);
+	memset(rxbuff, 0, MAX_SPI_BUFFER_SIZE);
+
+	if(!txbuff) {
+		/* Even though, there is nothing to send,
+		 * valid resetted txbuff is needed for SPI driver
+		 */
+		txbuff = (uint8_t *)malloc(MAX_SPI_BUFFER_SIZE);
+		assert(txbuff);
+		memset(txbuff, 0, MAX_SPI_BUFFER_SIZE);
+	}
+
+	/* SPI transaction */
+	HAL_GPIO_WritePin(USR_SPI_CS_GPIO_Port, USR_SPI_CS_Pin, GPIO_PIN_RESET);
+	retval = HAL_SPI_TransmitReceive(&hspi1, (uint8_t*)txbuff,
+			(uint8_t *)rxbuff, MAX_SPI_BUFFER_SIZE, HAL_MAX_DELAY);
+	while( hspi1.State == HAL_SPI_STATE_BUSY );
+	HAL_GPIO_WritePin(USR_SPI_CS_GPIO_Port, USR_SPI_CS_Pin, GPIO_PIN_SET);
+
+	switch(retval)
+	{
+		case HAL_OK:
+
+			/* Transaction successful */
+
+			/* create buffer rx handle, used for processing */
+			payload_header = (struct esp_payload_header *) rxbuff;
+
+			/* Fetch length and offset from payload header */
+			len = le16toh(payload_header->len);
+			offset = le16toh(payload_header->offset);
+
+			if ((!len) ||
+				(len > MAX_PAYLOAD_SIZE) ||
+				(offset != sizeof(struct esp_payload_header))) {
+
+				/* Free up buffer, as one of following -
+				 * 1. no payload to process
+				 * 2. input packet size > driver capacity
+				 * 3. payload header size mismatch,
+				 * wrong header/bit packing?
+				 * */
+				if (rxbuff) {
+					free(rxbuff);
+					rxbuff = NULL;
+				}
+				/* Give chance to other tasks */
+				osDelay(0);
 
 			} else {
 
@@ -475,6 +673,15 @@ done:
   */
 static void transaction_task(void const* pvParameters)
 {
+	if (hardware_type == HARDWARE_TYPE_ESP32) {
+		printf("\n\rESP-Hosted for ESP32\n\r");
+	} else if (hardware_type == HARDWARE_TYPE_ESP32S2) {
+		printf("\n\rESP-Hosted for ESP32S2\n\r");
+	} else {
+		printf("Unsupported slave hardware\n\r");
+		assert(hardware_type != HARDWARE_TYPE_INVALID);
+	}
+
 	for (;;) {
 
 		if (osSemaphore != NULL) {
