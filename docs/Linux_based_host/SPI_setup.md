@@ -1,6 +1,6 @@
 ## Wi-Fi and BT/BLE connectivity Setup over SPI
 ### Hardware Setup/Connections
-In this setup, ESP module acts as a SPI peripheral and provides Wi-FI capabilities to host. Please connect ESP module to Raspberry-Pi with jumper cables as mentioned below. It may be good to use small length cables to ensure signal integrity. Power ESP32 and Raspberry Pi separately with a power supply that provide sufficient power. ESP32 can be powered through PC using micro-USB cable.
+In this setup, ESP board acts as a SPI peripheral and provides Wi-FI capabilities to host. Please connect ESP peripheral to Raspberry-Pi with jumper cables as mentioned below. It may be good to use small length cables to ensure signal integrity. Power ESP32 and Raspberry Pi separately with a power supply that provide sufficient power. ESP32 can be powered through PC using micro-USB cable.
 
 #### ESP32 setup
 | Raspberry-Pi Pin | ESP32 Pin | Function |
@@ -45,7 +45,7 @@ Please reboot Raspberry-Pi after changing this file.
 
 ### ESP peripheral setup
 #### ESP-IDF requirement
-Following table explains ESP-IDF version required to make ESP-Hosted solution work on corresponding ESP peripheral module.
+Following table explains ESP-IDF version required to make ESP-Hosted solution work on corresponding ESP peripheral.
 
 | ESP peripheral | ESP-IDF release |
 |:----:|:----:|
@@ -75,12 +75,10 @@ Navigate to `esp/esp_driver/network_adapter` directory
 
 ##### Using make
 
+:warning: *make* build system is only supported till ESP32. Please refer cmake section below for ESP32-S2.
+
 ```
 $ make clean
-```
-:warning: Skip this step for ESP32. Run for ESP32-S2 only.
-```
-$ export IDF_TARGET=esp32s2
 ```
 
 Run following command and navigate to `Example Configuration ->  Transport layer -> SPI interface -> select` and exit from menuconfig.

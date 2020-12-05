@@ -6,6 +6,7 @@ Host firmware provides wifi connectivity using control path and data path. Contr
 
 ### Control Path Commands
 [commands.c](../../host/host_common/commands.c) is control path commands C library. It implements the communication protocol between the host and ESP peripheral. It contains following functions which can be used to control Wi-Fi functionality of the ESP peripheral as follows:
+
 | Function | Functionality |
 |:--------|:-------------|
 | wifi_get_mac(int mode, char* mac) | get MAC address of station or softAP Interface |
@@ -30,8 +31,13 @@ We have tested project with STM32F469I-Discovery board. If other than STM32F469I
 
 1) Create a workspace_directory outside of `ESP-Hosted` git cloned directory.
 2) Browse and Open Workspace directory in STM32CubeIDE. It will take few seconds to open STM32CubeIDE.
-3) From `Information Center` tab select Start new project from existing STM32CubeMX configuration file, i.e. ioc file option. It will take few seconds to open dialog box. In STM32CubeMX .ioc file field, browse to `</path/to/esp_hosted>/host/stm32/proj/stm_spi_host_<ESP_peripheral_hardware>.ioc -> Open` and click on `finish` icon. New dialog box will open as Open Associated Perspective, click on `Yes`. It may take 2-3 minutes to open. ESP_peripheral_hardware currently supported as either ESP32 or ESP32-S2.
-4) Close `stm_spi_host_<ESP_peripheral_hardware>.ioc` tab then close STM32CubeIDE and click on `exit`.
+3) From `Information Center` tab select `Start new project` from existing STM32CubeMX configuration file, i.e. ioc file option. It will take few seconds to open dialog box. In STM32CubeMX .ioc file field, choose appropriate .ioc file from `</path/to/esp_hosted>/host/stm32/proj/` directory.
+```
+For ESP32 peripheral: Select stm_spi_host_esp32.ioc file
+For ESP32-S2 peripheral: Select stm_spi_host_esp32s2.ioc file
+```
+4) Once file is selected, click `Open` and `Finish`. New dialog box will open as Open Associated Perspective, click on `Yes`. It may take 2-3 minutes to open. ESP_peripheral_hardware currently supported as either ESP32 or ESP32-S2.
+4) Close ioc tab then close STM32CubeIDE and click on `exit`.
 5) For Linux and Mac development hosts, In terminal, run
 ```
 $ cd </path/to/esp_hosted>/host/stm32/proj

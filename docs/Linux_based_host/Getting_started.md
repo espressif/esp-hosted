@@ -119,7 +119,9 @@ Similar to `test.py`, [test.c](../../host/linux/host_control/test.c) provides sa
 
 Above function's parameters and description is present [here](../../host/host_common/include/commands.h).
 
-### Open air throughput test results for WLAN on SDIO Interface
+### Open air throughput test results for WLAN
+
+#### ESP32 on SDIO interface
 
 Following are the test results conducted in open air.
 

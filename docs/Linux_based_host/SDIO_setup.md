@@ -1,6 +1,6 @@
 ## Wi-Fi and BT/BLE connectivity Setup over SDIO
 ### Hardware Setup/Connections
-In this setup, ESP peripheral acts as a SDIO peripheral and provides Wi-FI capabilities to host. Please connect ESP peripheral board to Raspberry-Pi with jumper cables as mentioned below. It may be good to use small length cables to ensure signal integrity.
+In this setup, ESP board acts as a SDIO peripheral and provides Wi-FI capabilities to host. Please connect ESP peripheral to Raspberry-Pi with jumper cables as mentioned below. It may be good to use small length cables to ensure signal integrity.
 
 | Raspberry-Pi Pin | ESP Pin | Function |
 |:-------:|:---------:|:--------:|
@@ -19,7 +19,7 @@ Setup image is here.
 
 ![alt text](rpi_esp_sdio_setup.jpeg "setup of Raspberry-Pi as host and ESP32 as peripheral")
 
-Power ESP module and Raspberry Pi separately with a power supply that provide sufficient power. ESP module can be powered through PC using micro-USB cable.
+Power ESP peripheral and Raspberry Pi separately with a power supply that provide sufficient power. ESP peripheral can be powered through PC using micro-USB cable.
 
 ### Software setup
 By default, the SDIO pins of Raspberry-pi are not configured and are internally used for built-in Wi-Fi interface. Please enable SDIO pins by appending following line to _/boot/config.txt_ file

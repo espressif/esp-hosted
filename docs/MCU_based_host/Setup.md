@@ -32,7 +32,7 @@ For Linux and Mac development hosts, minicom is needed. For Windows based hosts 
 
 ## Wi-Fi connectivity Setup over SPI
 ### Hardware Setup/Connections
-In this setup, ESP module acts as a SPI peripheral and provides Wi-Fi capabilities to host. Please connect ESP peripheral to STM32F469I board's CN12 Extension connecter with jumper cables as mentioned below. It may be good to use small length cables to ensure signal integrity.
+In this setup, ESP board acts as a SPI peripheral and provides Wi-Fi capabilities to host. Please connect ESP peripheral to STM32F469I board's CN12 Extension connecter with jumper cables as mentioned below. It may be good to use small length cables to ensure signal integrity.
 BT/BLE support will be added in upcoming release.
 Power ESP peripheral and STM32F469I separately with a power supply that provide sufficient power. ESP peripheral can be powered through PC using micro-USB cable. STM32 can be powered with mini-B cable. It is also used as USART connection for debug logs from host. Serial port communicaton program like tera term or minicom used to print the logs.
 
@@ -73,6 +73,7 @@ Setup image is here.
 ## ESP peripheral setup
 ### ESP-IDF requirement
 ESP-IDF release branch to be used for ESP peripherals are. Please clone appropriate ESP-IDF version.
+
 | ESP peripheral | ESP-IDF release |
 |:----:|:----:|
 | ESP32 | release v4.0 |
@@ -106,12 +107,10 @@ $ git mv components/protocomm/src/common/protocomm_priv.h components/protocomm/i
 Navigate to `esp/esp_driver/network_adapter` directory
 ##### Using make
 
+:warning: *make* build system is only supported till ESP32. Please refer cmake section below for ESP32-S2.
+
 ```
 $ make clean
-```
-:warning: Skip this step for ESP32. Run for ESP32-S2 only.
-```
-$ export IDF_TARGET=esp32s2
 ```
 
 Run following command and navigate to `Example Configuration ->  Transport layer -> SPI interface -> select` and exit from menuconfig.

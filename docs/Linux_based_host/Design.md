@@ -9,34 +9,34 @@ The host software consists of the host driver and a control path implementation.
 ### The Host Driver
 The host driver consists of following:
 1. 802.3 Network Interface
-	- The driver registers a network interface with linux kernel and implements a data path to allow exchange of 802.3 frames with ESP module.
+	- The driver registers a network interface with linux kernel and implements a data path to allow exchange of 802.3 frames with ESP peripheral.
 	- It provides 2 network interfaces to host: ethsta0 and ethap0.
 	- Through ethsta0 interface, the host can interact with external Access point and other wi-fi stations.
-	- Through ethap0 interface, the host can interact with wi-fi clients connected to soft AP created on ESP module.
+	- Through ethap0 interface, the host can interact with wi-fi clients connected to soft AP created on ESP peripheral.
 2. BT HCI Interface
 	- BT/BLE is supported over SDIO, SPI and UART. This section is applicable only when BT/BLE is supported over SDIO and SPI.
 	- The host driver registers a hci interface with linux kernel.
-	- The host can access BT/BLE functionality of ESP module over this interface.
+	- The host can access BT/BLE functionality of ESP peripheral over this interface.
 3. Virtual Serial Interface
 	- This registers a serial interface with linux kernel.
-	- This is used as a control interface to configure wi-fi functionality of ESP module
+	- This is used as a control interface to configure wi-fi functionality of ESP peripheral
 4. Transport Driver
 	- SDIO Driver
 		- This implements data path over SDIO interface
 	- SPI Driver
 		- This implements data path over SPI interface
-	- This data path is used by above components in order to interact with ESP module
+	- This data path is used by above components in order to interact with ESP peripheral
 	- The communication protocol is explained in further sections of this document
 
 ### Control Path
 - This consists of custom commands which are based on protobufs.
-- These commands are used to control and configure wi-fi functionality on ESP module
+- These commands are used to control and configure wi-fi functionality on ESP peripheral
 - It makes use of serial interface created by host driver
 
 ## ESP Firmware
 This includes ESP-Hosted application and existing peripheral drivers from ESP-IDF repo. ESP-Hosted application performs following activities:
 - It implements SDIO and SPI transport drivers. Only one driver of these driver can be active at a time and that can be selected during project compilation.
-- Selected transport driver establishes communication path between a host (e.g. Raspberry-Pi) and various functional blocks on ESP module (such as Wi-Fi, BT/BLE etc)
+- Selected transport driver establishes communication path between a host (e.g. Raspberry-Pi) and various functional blocks on ESP peripheral (such as Wi-Fi, BT/BLE etc)
 - ESP firmware also implements control interface commands which are used to control and configure Wi-Fi.
 - It sets up UART transport layer to support BT/BLE over UART
 - Following components of ESP-IDF repository are used in this project:
@@ -46,13 +46,13 @@ This includes ESP-Hosted application and existing peripheral drivers from ESP-ID
 	- SPI peripheral driver
 
 # Protocol Definition
-This section explains the communication protocol between a host and ESP module. As mentioned earlier, the basic transport layer is implemented over SDIO and SPI. BT/BLE is also supported over UART which follows standard UART protocol. Below section explains SDIO and SPI transport protocol.
+This section explains the communication protocol between a host and ESP peripheral. As mentioned earlier, the basic transport layer is implemented over SDIO and SPI. BT/BLE is also supported over UART which follows standard UART protocol. Below section explains SDIO and SPI transport protocol.
 
 ### SDIO transport layer
 **This section is only applicable for ESP32. ESP32-S2 does not support SDIO interface**
 ESP peripheral advertises 2 SDIO functions. ESP-Hosted solution is implemented on function 1. Though function 2 is advertised, it is not in use.
 
-Following are few important SDIO registers provided by ESP Module:
+Following are few important SDIO registers provided by ESP peripheral:
 * 0x3FF5508C: Interrupt vector used by host to interrupt ESP peripheral
 ```
 bit 0: Open data path on ESP peripheral device

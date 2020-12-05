@@ -21,12 +21,10 @@ $ sudo apt-get install python
 or
 $ sudo apt-get install python3
 ```
-To start with control path on Raspberry-Pi, `protobuf` and `utils` python modules are needed. User can install these modules by running following commands.
+To start with control path on Raspberry-Pi, `protobuf` python modules is needed. User can install it by running following commands.
 ```
-$ pip install utils
 $ pip install protobuf
 or
-$ pip3 install utils
 $ pip3 install protobuf
 ```
 #### Note:
@@ -52,6 +50,7 @@ $ sudo apt-get install raspi-gpio
 
 ## ESP peripheral setup
 ESP-IDF release branch to be used for ESP peripherals are
+
 | ESP peripheral | ESP-IDF release |
 |:----:|:----:|
 | ESP32 | release v4.0 |

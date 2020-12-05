@@ -1,8 +1,8 @@
 ## Bluetooth/BLE connectivity Setup over UART
-This section is only applicable to ESP32 modules. ESP32-S2 does not support Bluetooth/BLE.
+This section is only applicable to ESP32 boards. ESP32-S2 does not support Bluetooth/BLE.
 
 ### Hardware Setup/Connections
-In this setup, ESP32 module provides Bluetooth/BLE capabilities to host over UART interface. Please connect ESP32 module to Raspberry-Pi with jumper cables as below. To ensure signal integrity, use short jumper wires ( < 10 cm)
+In this setup, ESP32 board provides Bluetooth/BLE capabilities to host over UART interface. Please connect ESP32 board to Raspberry-Pi with jumper cables as below. To ensure signal integrity, use short jumper wires ( < 10 cm)
 
 | Raspberry-Pi Pin Function | Raspberry-Pi Pin | ESP32 Pin | ESP32 Pin Function |
 |:-------:|:--------:|:---------:|:--------:|
@@ -12,7 +12,7 @@ In this setup, ESP32 module provides Bluetooth/BLE capabilities to host over UAR
 | RTS | 11 | IO23 | CTS |
 | Ground | 39 | GND | Ground |
 
-Power ESP32 module and Raspberry Pi separately with a power supply that provide sufficient power. ESP32 module can be powered through PC using micro-USB cable.
+Power ESP32 board and Raspberry Pi separately with a power supply that provide sufficient power. ESP32 board can be powered through PC using micro-USB cable.
 
 ### Software setup
 By default, the UART pins on Raspberry-Pi are in disabled state. In order to enable UART and setup it for bluetooth connection, follow below steps.

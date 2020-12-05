@@ -27,8 +27,8 @@ Each of these are explained in following sub sections.
 
 #### Control/Command Interface
 - As mentioned above, this interface is implemented over virtual serial interface.
-- This interface is used for sending control commands to control and configure Wi-Fi functionality of attached ESP device.
-- This is an optional interface and in case virtual serial interface is not used, the control path or BT functionality can be used on physical UART interface connected to ESP device.
+- This interface is used for sending control commands to control and configure Wi-Fi functionality of attached ESP peripheral.
+- This is an optional interface and in case virtual serial interface is not used, the control path or BT functionality can be used on physical UART interface connected to ESP peripheral.
 
 #### Network interface layer [netif]
 - This is an abstraction layer between SPI host driver and a network stack.
@@ -41,8 +41,8 @@ Each of these are explained in following sub sections.
 
 #### Demo application
 - This application demonstrates capabilities of ESP-Hosted solution.
-- It makes use of control interface to control and configure Wi-Fi interface of attached ESP device.
-- It makes use of network interface to send and receive data over Wi-Fi interface of attached ESP device.
+- It makes use of control interface to control and configure Wi-Fi interface of attached ESP peripheral.
+- It makes use of network interface to send and receive data over Wi-Fi interface of attached ESP peripheral.
 - As demonstration of working data path, 
 	- This application sends ARP request to other network devices connected over same network
 	- This application also processes and responds to received ARP request packets from other network devices
@@ -52,7 +52,7 @@ Each of these are explained in following sub sections.
 - ESP firmware consistes of ESP-Hosted application and existing peripheral drivers from ESP-IDF repository.
 - ESP-Hosted application performs following activities:
 	- It implements SPI transport drivers.
-	- SPI trnasport driver establishes communication path between host and various functional blocks on ESP module (such as Wi-Fi, BT/BLE etc)
+	- SPI trnasport driver establishes communication path between host and various functional blocks on ESP peripheral (such as Wi-Fi, BT/BLE etc)
 	- ESP firmware also implements control interface commands which are used to control and configure Wi-Fi.
 	- Following components of ESP-IDF repository are used in this project:
 		- Wi-Fi driver
@@ -61,7 +61,7 @@ Each of these are explained in following sub sections.
 
 
 # Protocol Definition
-This section explains communication protocol between a host and ESP module. It also explains serial interface and network interface APIs provided by ESP-Hosted Host software.
+This section explains communication protocol between a host and ESP peripheral. It also explains serial interface and network interface APIs provided by ESP-Hosted Host software.
 
 ## Communication Protocol over SPI Interface
 #### Basic concepts
@@ -77,14 +77,14 @@ This is a output pin for ESP peripheral. This pin is used to indicate host that 
 ###### Reset/EN pin
 This is a input pin for ESP peripheral. This pin resets ESP peripheral and is mandatory in SPI based ESP-Hosted solution.
 
-### Initialization of ESP peripheral device
+### Initialization of ESP peripheral
 * Connection of 'EN'/Reset pin to host is mandatory in case of SPI communication. Once driver is loaded on host, it resets ESP peripheral through this pin.
 * Firmware on ESP peripheral then initializes itself and preapres itself for communication over SPI interface. Once it is ready for communication, it generates INIT event for host.
 * Host driver, on receiving this event, opens up data path for higher layers.
 
 #### Data transfer between Host and peripheral
 * This solution makes use of SPI full duplex commmunication mode. i.e. read and write operations are performed at the same time in same SPI transaction.
-* As a protocol, host is not supposed to start a transaction before ESP SPI peripheral device is ready for receiving data. Therefore, through Handshake pin, ESP peripheral indicates host when it is ready for SPI transaction.
+* As a protocol, host is not supposed to start a transaction before ESP SPI peripheral is ready for receiving data. Therefore, through Handshake pin, ESP peripheral indicates host when it is ready for SPI transaction.
 * To allow seamless data traffic between host and ESP peripheral, ESP peripheral needs to be ready for data reception from host all the time. For that, after completion of every SPI transaction, ESP peripheral immediately queues next SPI transaction.
 * The data transfer protocol works as below:
 	* Each SPI transaction has a TX buffer and a RX buffer.
