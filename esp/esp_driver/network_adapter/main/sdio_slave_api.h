@@ -16,4 +16,9 @@
 #ifndef __SDIO_SLAVE_API_H
 #define __SDIO_SLAVE_API_H
 
+#ifdef CONFIG_IDF_TARGET_ESP32
+#elif defined CONFIG_IDF_TARGET_ESP32S2
+    #error "SDIO is not supported for ESP32S2. Please use SPI"
+#endif
+
 #endif

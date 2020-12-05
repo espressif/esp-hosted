@@ -38,7 +38,7 @@ MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Amey Inamdar <amey.inamdar@espressif.com>");
 MODULE_AUTHOR("Mangesh Malusare <mangesh.malusare@espressif.com>");
 MODULE_AUTHOR("Yogesh Mantri <yogesh.mantri@espressif.com>");
-MODULE_DESCRIPTION("Host driver for ESP32 Hosted solution");
+MODULE_DESCRIPTION("Host driver for ESP-Hosted solution");
 MODULE_VERSION("0.01");
 
 struct esp_adapter adapter;
@@ -52,7 +52,7 @@ volatile u8 stop_data = 0;
 static int resetpin = HOST_GPIO_PIN_INVALID;
 
 module_param(resetpin, int, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
-MODULE_PARM_DESC(resetpin, "Host's GPIO pin number which is connected to ESP32's EN to reset ESP32");
+MODULE_PARM_DESC(resetpin, "Host's GPIO pin number which is connected to ESP32's EN to reset ESP32 device");
 
 static int esp_open(struct net_device *ndev);
 static int esp_stop(struct net_device *ndev);
@@ -597,11 +597,11 @@ static void esp_reset(void)
 	if (resetpin != HOST_GPIO_PIN_INVALID) {
 		/* Check valid GPIO or not */
 		if (!gpio_is_valid(resetpin)) {
-			printk(KERN_WARNING "esp32: host resetpin (%d) configured is invalid GPIO\n", resetpin);
+			printk(KERN_WARNING "ESP32: host resetpin (%d) configured is invalid GPIO\n", resetpin);
 			resetpin = HOST_GPIO_PIN_INVALID;
 		}
 		else {
-			printk(KERN_DEBUG "esp32: Resetpin of Host is %d\n", resetpin);
+			printk(KERN_DEBUG "ESP32: Resetpin of Host is %d\n", resetpin);
 			gpio_request(resetpin, "sysfs");
 
 			/* HOST's resetpin set to OUTPUT, HIGH */
@@ -614,7 +614,7 @@ static void esp_reset(void)
 			/* HOST's resetpin set to INPUT */
 			gpio_direction_input(resetpin);
 
-			printk(KERN_DEBUG "esp32: Triggering ESP reset.\n");
+			printk(KERN_DEBUG "ESP32: Triggering ESP reset.\n");
 		}
 	}
 }

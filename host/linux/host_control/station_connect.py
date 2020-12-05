@@ -33,7 +33,7 @@ success = "success"
 flag = success
 station_status = 'Nothing set'
 
-parser = argparse.ArgumentParser(description='station_connect.py is a python script which connect ESPstation to AP. ex. python station_connect.py \'xyz\' \'xyz123456\' --bssid=\'e5:6c:67:3c:cf:65\' --is_wpa3_supported=True --listen_interval=3')
+parser = argparse.ArgumentParser(description='station_connect.py is a python script which connect ESP32 station to AP. ex. python station_connect.py \'xyz\' \'xyz123456\' --bssid=\'e5:6c:67:3c:cf:65\' --is_wpa3_supported=True --listen_interval=3')
 
 parser.add_argument("ssid", type=str, default='0', help="ssid of AP")
 

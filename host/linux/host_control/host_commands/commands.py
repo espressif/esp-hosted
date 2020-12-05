@@ -131,7 +131,7 @@ def wifi_set_ap_config(ssid, pwd, bssid, is_wpa3_supported, listen_interval):
     return status
 
 # wifi get ap config
-# Function returns AP config to which ESP station is connected
+# Function returns AP config to which ESP32 station is connected
 # Output parameter
 #       ssid                :   ssid of connected AP
 #       bssid               :   MAC address of connected AP

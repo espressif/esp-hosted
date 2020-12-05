@@ -1,5 +1,5 @@
 # Setup
-Currently we support ESP32 WROVER-Kit with Raspberry-Pi (3 Model B+, 4 Model B) for evaluation with Raspbian operating system.
+Currently we support ESP32 WROVER and ESP32-S2 as a ESP peripheral. We have tested ESP peripheral with Raspberry-Pi (3 Model B+, 4 Model B) for evaluation with Raspbian operating system.
 
 ## Raspberry-Pi Software Setup
 
@@ -21,12 +21,10 @@ $ sudo apt-get install python
 or
 $ sudo apt-get install python3
 ```
-To start with control path on Raspberry-Pi, `protobuf` and `utils` python modules are needed. User can install these modules by running following commands.
+To start with control path on Raspberry-Pi, `protobuf` python modules is needed. User can install it by running following commands.
 ```
-$ pip install utils
 $ pip install protobuf
 or
-$ pip3 install utils
 $ pip3 install protobuf
 ```
 #### Note:
@@ -50,8 +48,15 @@ $ sudo apt-get install raspi-gpio
 ```
 * make sure Raspberry-Pi should have `bluetoothctl`, `bluetoothd`, `hcitool`, `hciconfig` utilities.
 
-## ESP32 Setup
-The control path between Raspberry-Pi and ESP32 is based on `protobuf`. For that `protocomm` layer from ESP-IDF is used. Make sure ESP-IDF on branch `release/v4.0`. Run following command on ESP32 to make `protocomm_priv.h` available for control path.
+## ESP peripheral setup
+ESP-IDF release branch to be used for ESP peripherals are
+
+| ESP peripheral | ESP-IDF release |
+|:----:|:----:|
+| ESP32 | release v4.0 |
+| ESP32-S2 | release v4.2 |
+
+Clone appropriate ESP-IDF version as per your ESP peripheral. The control path between Raspberry-Pi and ESP peripheral is based on `protobuf`. For that `protocomm` layer from ESP-IDF is used. Run following command in ESP-IDF directory to make `protocomm_priv.h` available for control path.
 ```
 git mv components/protocomm/src/common/protocomm_priv.h components/protocomm/include/common/
 ```

@@ -29,7 +29,7 @@ static const char* ep_name = "control";
 // IMP: free buffer after reading protobuf data
 /*
  * The data written on serial driver i.e `/dev/esps0`
- * In TLV i.e. Type Length Value format, to transfer data between host and esp32
+ * In TLV i.e. Type Length Value format, to transfer data between host and ESP32
  *  | type | length | value |
  * Types are 0x01 : for endpoint name
  *           0x02 : for data

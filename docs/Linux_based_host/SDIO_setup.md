@@ -1,15 +1,15 @@
 ## Wi-Fi and BT/BLE connectivity Setup over SDIO
 ### Hardware Setup/Connections
-In this setup, ESP32 board acts as a SDIO peripheral and provides Wi-FI capabilities to host. Please connect ESP32 board to Raspberry-Pi with jumper cables as mentioned below. It may be good to use small length cables to ensure signal integrity.
+In this setup, ESP board acts as a SDIO peripheral and provides Wi-FI capabilities to host. Please connect ESP peripheral to Raspberry-Pi with jumper cables as mentioned below. It may be good to use small length cables to ensure signal integrity.
 
-| Raspberry-Pi Pin | ESP32 Pin | Function |
+| Raspberry-Pi Pin | ESP Pin | Function |
 |:-------:|:---------:|:--------:|
 | 13 | IO13 | DAT3 |
 | 15 | IO14 | CLK |
 | 16 | IO15 | CMD |
 | 18 | IO2 | DAT0 |
 | 22 | IO4 | DAT1 |
-| 31 | EN  | ESP32 Reset |
+| 31 | EN  | ESP Reset |
 | 37 | IO12 | DAT2 |
 | 39 | GND | GND |
 
@@ -17,9 +17,9 @@ Raspberry-Pi pinout can be found [here!](https://pinout.xyz/pinout/sdio)
 
 Setup image is here.
 
-![alt text](rpi_esp_sdio_setup.jpeg "setup of Raspberry-Pi as host and ESP32 as slave")
+![alt text](rpi_esp_sdio_setup.jpeg "setup of Raspberry-Pi as host and ESP32 as peripheral")
 
-Power ESP32 and Raspberry Pi separately with a power supply that provide sufficient power. ESP32 can be powered through PC using micro-USB cable.
+Power ESP peripheral and Raspberry Pi separately with a power supply that provide sufficient power. ESP peripheral can be powered through PC using micro-USB cable.
 
 ### Software setup
 By default, the SDIO pins of Raspberry-pi are not configured and are internally used for built-in Wi-Fi interface. Please enable SDIO pins by appending following line to _/boot/config.txt_ file
@@ -29,11 +29,11 @@ dtoverlay=disable-bt
 ```
 Please reboot Raspberry-Pi after changing this file.
 
-### ESP32 Setup
+### ESP peripheral Setup
 
-For pre built hosted mode firmware is present in `release` tab. To flash it on ESP32 edit <serial_port> with ESP32's serial port and run following command.
+For pre built hosted mode firmware is present in `release` tab. To flash it on ESP peripheral edit <serial_port> with ESP peripheral's serial port and run following command.
 ```sh
-esptool.py -p <serial_port> -b 960000 --before default_reset --after hard_reset write_flash --flash_mode dio --flash_freq 40m --flash_size detect 0x8000 partition-table_sdio_v0.2.bin 0x1000 bootloader_sdio_v0.2.bin 0x10000 esp_hosted_firmware_sdio_v0.2.bin
+esptool.py -p <serial_port> -b 960000 --before default_reset --after hard_reset write_flash --flash_mode dio --flash_freq 40m --flash_size detect 0x8000 partition-table_sdio_v0.3.bin 0x1000 bootloader_sdio_v0.3.bin 0x10000 esp_hosted_firmware_sdio_v0.3.bin
 ```
 
 For windows user, you can also program the binaries using ESP Flash Programming Tool.
@@ -42,7 +42,7 @@ For windows user, you can also program the binaries using ESP Flash Programming 
 ```
 $ make menuconfig
 ```
-run `make` in `esp/esp_driver/network_adapter` directory. Program the WROVER-KIT using standard flash programming procedure with `make`
+run `make` in `esp/esp_driver/network_adapter` directory. Program ESP peripheral using standard flash programming procedure with `make`
 ```sh
 $ make flash
 ```
@@ -50,14 +50,14 @@ Or to select SDIO transport layer using `cmake`, run following command in `esp/e
 ```
 $ idf.py menuconfig
 ```
-compile and flash the app on WROVER-KIT against ESP-IDF 4.0 release, by running following command in `esp/esp_driver/network_adapter` directory.
+compile and flash the app on ESP32 against ESP-IDF 4.0 release, by running following command in `esp/esp_driver/network_adapter` directory.
 
 ```sh
 $ idf.py -p <serial_port> build flash
 ```
 
 ## Checking the Setup for SDIO
-Once ESP32 has a valid firmware and booted successfully, you should be able to see successful enumeration on Raspberry Pi side as:
+Once ESP peripheral has a valid firmware and booted successfully, you should be able to see successful enumeration on Raspberry Pi side as:
 ```sh
 $ dmesg
 [   14.309956] Bluetooth: Core ver 2.22

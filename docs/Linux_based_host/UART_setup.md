@@ -1,6 +1,8 @@
 ## Bluetooth/BLE connectivity Setup over UART
+This section is only applicable to ESP32 boards. ESP32-S2 does not support Bluetooth/BLE.
+
 ### Hardware Setup/Connections
-In this setup, ESP32 board provides Bluetooth/BLE capabilities to host over UART interface. Please connect ESP32 board to Raspberry-Pi with jumper cables as below. As mentioned above, use small length cables.
+In this setup, ESP32 board provides Bluetooth/BLE capabilities to host over UART interface. Please connect ESP32 board to Raspberry-Pi with jumper cables as below. To ensure signal integrity, use short jumper wires ( < 10 cm)
 
 | Raspberry-Pi Pin Function | Raspberry-Pi Pin | ESP32 Pin | ESP32 Pin Function |
 |:-------:|:--------:|:---------:|:--------:|
@@ -10,7 +12,7 @@ In this setup, ESP32 board provides Bluetooth/BLE capabilities to host over UART
 | RTS | 11 | IO23 | CTS |
 | Ground | 39 | GND | Ground |
 
-Power ESP32 and Raspberry Pi separately with a power supply that provide sufficient power. ESP32 can be powered through PC using micro-USB cable.
+Power ESP32 board and Raspberry Pi separately with a power supply that provide sufficient power. ESP32 board can be powered through PC using micro-USB cable.
 
 ### Software setup
 By default, the UART pins on Raspberry-Pi are in disabled state. In order to enable UART and setup it for bluetooth connection, follow below steps.
@@ -43,7 +45,7 @@ dwc_otg.lpm_enable=0 console=tty1 root=PARTUUID=5c2c80d1-02 rootfstype=ext4 elev
 
 For pre built hosted mode firmware is present in `release` tab. Current binaries are made for UART baudrate of 921600. To flash it on ESP32 edit <serial_port> with ESP32's serial port and run following command.
 ```sh
-esptool.py -p <serial_port> -b 960000 --before default_reset --after hard_reset write_flash --flash_mode dio --flash_freq 40m --flash_size detect 0x8000 partition-table_sdio_uart_v0.2.bin 0x1000 bootloader_sdio_uart_v0.2.bin 0x10000 esp_hosted_firmware_sdio_uart_v0.2.bin
+esptool.py -p <serial_port> -b 960000 --before default_reset --after hard_reset write_flash --flash_mode dio --flash_freq 40m --flash_size detect 0x8000 partition-table_sdio_uart_v0.3.bin 0x1000 bootloader_sdio_uart_v0.2.bin 0x10000 esp_hosted_firmware_sdio_uart_v0.3.bin
 ```
 For windows user, you can also program the binaries using ESP Flash Programming Tool.
 
@@ -51,7 +53,7 @@ Or if you have source, compile the app against ESP-IDF 4.0 release. To use `make
 ```
 $ make menuconfig
 ```
-run `make` in `esp/esp_driver/network_adapter` directory. Program the WROVER-KIT using standard flash programming procedure with `make`
+run `make` in `esp/esp_driver/network_adapter` directory. Program the ESP32 using standard flash programming procedure with `make`
 ```sh
 $ make flash
 ```
@@ -59,7 +61,7 @@ Or to use `cmake` build system, run following command in `esp/esp_driver/network
 ```
 $ idf.py menuconfig
 ```
-compile and flash the app on WROVER-KIT against ESP-IDF 4.0 release, by running following command in `esp/esp_driver/network_adapter` directory.
+compile and flash the app on ESP32 against ESP-IDF 4.0 release, by running following command in `esp/esp_driver/network_adapter` directory.
 
 ```sh
 $ idf.py -p <serial_port> build flash

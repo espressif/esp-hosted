@@ -204,7 +204,6 @@ int netdev_register(netdev_handle_t dev, struct netdev_ops *ops)
 	}
 
 	ndev->net_ops = ops;
-	ndev->state = NETDEV_STATE_UP;
 	ndev_db[ndev_index % MAX_INTERFACE] = ndev;
 
 	ndev_index++;
@@ -246,6 +245,7 @@ int netdev_rx(netdev_handle_t dev, struct pbuf *net_buf)
 
 	if (!ndev || !net_buf) {
 		printf ("Invalid arguments\n");
+		osDelay(50);
 		return STM_FAIL;
 	}
 
@@ -278,5 +278,6 @@ done:
 		free(net_buf);
 		net_buf = NULL;
 	}
+	osDelay(50);
 	return STM_FAIL;
 }

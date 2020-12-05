@@ -4,7 +4,7 @@
 
 ### Using Python
 
-[`host_commands`](../../host/linux/host_control/host_commands) python module in `host/linux/host_control` directory implements the communication protocol between the host and ESP32. It contains following functions which can be used to control Wi-Fi functionality of the ESP32 as follows:
+[`host_commands`](../../host/linux/host_control/host_commands) python module in `host/linux/host_control` directory implements the communication protocol between the host and ESP peripheral. It contains following functions which can be used to control Wi-Fi functionality of the ESP peripheral as follows:
 
 | Function | Functionality |
 |:--------|:-------------|
@@ -22,7 +22,7 @@
 | wifi_set_power_save_mode(power_save_mode) | set power save mode |
 | wifi_get_power_save_mode() | get power save mode |
 
-These python functions can be used to control Wi-Fi functionality of the ESP32. Also see [host/linux/host_control/test.py](../../host/linux/host_control/test.py) script for an example of using these functions. You can run the script as follows:
+These python functions can be used to control Wi-Fi functionality of the ESP peripheral. Also see [host/linux/host_control/test.py](../../host/linux/host_control/test.py) script for an example of using these functions. You can run the script as follows:
 ```
 python test.py
 ```
@@ -38,7 +38,7 @@ The other scripts in the same directory can be used to:
 - scan available APs
 - list stations connected to softAP
 
-1. `station_connect.py` is a python script which configures ESP32 in station mode, and connects to an external AP with user-provided credentials. Also it enables the station interface and runs DHCP client. The script accepts arguments such as SSID, password, optionally MAC address, wpa3 support and listen interval (AP beacon intervals). For example:
+1. `station_connect.py` is a python script which configures ESP peripheral in station mode, and connects to an external AP with user-provided credentials. Also it enables the station interface and runs DHCP client. The script accepts arguments such as SSID, password, optionally MAC address, wpa3 support and listen interval (AP beacon intervals). For example:
 
 ```
 python station_connect.py 'xyz' 'xyz123456' --bssid='e5:6c:67:3c:cf:65' --is_wpa3_supported=True --listen_interval=3
@@ -48,7 +48,7 @@ You can check that `ethsta0` interface is up (enabled) using `ifconfig`. WPA3 op
 
 To know status of station, use wifi_get_ap_config() function. In case station is connected with AP, it returns ssid, bssid(MAC address), channel, rssi, encryption mode of AP. and In case of not connected with AP returns `failure` with `not_connected` print.
 
-2. `station_disconnect.py` is a python script to disconnect ESP32 station from AP.
+2. `station_disconnect.py` is a python script to disconnect ESP peripheral station from AP.
 
 ```
 python station_disconnect.py
@@ -56,7 +56,7 @@ python station_disconnect.py
 
 You can check that `ethsta0` interface is down (disabled) using `ifconfig`.
 
-3. `softap_config.py` is a python script for configuring ESP32 to work in softAP mode. The following parameters should be provided:
+3. `softap_config.py` is a python script for configuring ESP peripheral to work in softAP mode. The following parameters should be provided:
 
 - SSID
 - password, should be 8 ~ 64 bytes ASCII
@@ -74,11 +74,11 @@ python softap_config.py 'xyz' 'xyz123456' 1 3 --max_conn=4 --ssid_hidden=0 --bw=
 ```
 
 You can check that `ethap0` interface is up (enabled) using `ifconfig`.
-`Note: Currently WEP, WPA2_ENTERPRISE, WPA3 support is not present for ESP32 softAP mode.`
+`Note: Currently WEP, WPA2_ENTERPRISE, WPA3 support is not present for softAP mode.`
 
 To start data connection, set up a DHCP server on the Raspberry Pi, or configure a static IP address for AP interface (`ethap0`).
 
-4. `softap_stop.py` is a python script to disable ESP32 softAP mode. This script will change wifi mode to `null` if only softAP is running, or to `station` mode if softAP and station both are on.
+4. `softap_stop.py` python script disables wifi softAP mode on ESP peripheral. This script will change wifi mode to `null` if only softAP is running, or to `station` mode if softAP and station both are on.
 
 ```
 python softap_stop.py
@@ -100,7 +100,7 @@ python connected_stations_list.py
 
 ### Using C
 
-Similar to `test.py`, [test.c](../../host/linux/host_control/test.c) provides same functionality. User should make appropriate changes in `test.c` and run `make` command in `host/linux/host_control/` directory before use. The functions used in `test.c` are defined in [commands.c](../../host/host_common/commands.c) which is control path commands C library. It implements the communication protocol between the host and ESP32. It contains following functions which can be used to control Wi-Fi functionality of the ESP32 as follows:
+Similar to `test.py`, [test.c](../../host/linux/host_control/test.c) provides same functionality. User should make appropriate changes in `test.c` and run `make` command in `host/linux/host_control/` directory before use. The functions used in `test.c` are defined in [commands.c](../../host/host_common/commands.c) which is control path commands C library. It implements the communication protocol between the host and ESP peripheral. It contains following functions which can be used to control Wi-Fi functionality of the ESP peripheral as follows:
 | Function | Functionality |
 |:--------|:-------------|
 | wifi_get_mac(int mode, char* mac) | get MAC address of station or softAP Interface |
@@ -119,7 +119,9 @@ Similar to `test.py`, [test.c](../../host/linux/host_control/test.c) provides sa
 
 Above function's parameters and description is present [here](../../host/host_common/include/commands.h).
 
-### Open air throughput test results for WLAN on SDIO Interface
+### Open air throughput test results for WLAN
+
+#### ESP32 on SDIO interface
 
 Following are the test results conducted in open air.
 
@@ -145,16 +147,16 @@ $ sudo hciattach -s 115200 /dev/serial0 any 115200 flow
 
 ### SDIO based setup
 Execute `./rpi_init.sh` or `./rpi_init.sh sdio` to prepare Raspberry-Pi for SDIO+BT operation.
-HCI interface (i.e hciX) will be available for use as soon as host driver detects ESP32 module over SDIO interface.
+HCI interface (i.e hciX) will be available for use as soon as host driver detects ESP peripheral over SDIO interface.
 You can use standard HCI utilities over this interface to make use of BT/BLE feature.
 
 ### SPI based setup
 Execute `./rpi_init.sh spi` to prepare Raspberry-Pi for SPI+BT operation.
-HCI interface (i.e hciX) will be available for use as soon as host driver detects ESP32 module over SPI interface.
+HCI interface (i.e hciX) will be available for use as soon as host driver detects ESP peripheral module over SPI interface.
 You can use standard HCI utilities over this interface to make use of BT/BLE feature.
 
 ### Reset Pin Configuration
-This is optional configuration to change the host GPIO pin used to reset ESP32.
+This is optional configuration to change the host GPIO pin used to reset ESP peripheral.
 As mentioned in hardware Setup, host uses BCM 6 (Pin31) which is default value. User can change the GPIO in BCM format.
 Execute `./rpi_init.sh resetpin=5` to use BCM 5 (pin 29)
 
@@ -173,9 +175,9 @@ hci0:	Type: Primary  Bus: SDIO
 
 3. Now start advertising. Run `sudo hciconfig hci0 leadv`.
 
-4. Now ESP32's mac address should be listed in scan list of mobile app.
+4. Now ESP peripheral's mac address should be listed in scan list of mobile app.
 
-5. Connect to ESP32's mac address with mobile as GATT client.
+5. Connect to ESP peripheral's mac address with mobile as GATT client.
 
 6. Check read/write characteristics fields in `Heart Rate` service.
 

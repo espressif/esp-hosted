@@ -155,7 +155,7 @@ void MX_FREERTOS_Init(void)
 	/* init spi driver */
 	stm_spi_init(spi_driver_event_handler);
 
-	/* Create thread for arping */
+	/* This thread's priority shouls be >= spi driver's transaction task priority */
 	osThreadDef(Arping_Thread, arping_task, osPriorityAboveNormal, 0,
 			ARPING_PATH_TASK_STACK_SIZE);
 	arping_task_id = osThreadCreate(osThread(Arping_Thread), NULL);
