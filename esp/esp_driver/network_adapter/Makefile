@@ -3,7 +3,7 @@
 # project subdirectory.
 #
 
-PROJECT_VERSION := 0.2
+PROJECT_VERSION := 0.3
 ifndef MAKE_RESTARTS
 $(info *********************************************************************************)
 $(info *              Building ESP-Hosted firmware version :: $(PROJECT_VERSION)            )

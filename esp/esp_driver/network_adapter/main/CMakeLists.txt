@@ -9,5 +9,5 @@ endif()
 
 
 register_component()
-set(PROJECT_VERSION "-DPROJECT_VERSION=0.2")
+set(PROJECT_VERSION "-DPROJECT_VERSION=0.3")
 target_compile_definitions(${COMPONENT_LIB} PRIVATE ${PROJECT_VERSION})
