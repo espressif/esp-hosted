@@ -33,7 +33,7 @@ Host firmware provides wifi connectivity using control path and data path. Contr
 | wifi_set_power_save_mode(int power_save_mode) | set power save mode |
 | wifi_get_power_save_mode(int* power_save_mode) | get power save mode |
 
-Above functions' API definitions are present at [commands.h](../../host/host_common/include/commands.h). User can also take reference of [test.c](../../host/linux/host_control/test.c) code to get idea about how to call above function.
+Above functions' API definitions are present at [commands.h](../../host/host_common/include/commands.h). User can also take reference of [test.c](../../host/linux/host_control/c_support/test.c) code to get idea about how to call above function.
 
 ### Start Project with STM32
 
