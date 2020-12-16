@@ -80,6 +80,8 @@ static const char TAG[] = "SPI_DRIVER";
 #define SPI_TX_QUEUE_SIZE        10
 #endif
 
+#define LENGTH_1_BYTE            1
+
 static interface_context_t context;
 static interface_handle_t if_handle_g;
 static uint8_t gpio_handshake = CONFIG_ESP_SPI_GPIO_HANDSHAKE;
@@ -472,35 +474,28 @@ static void generate_startup_event(uint8_t cap)
 	/* Populate TLVs for event */
 	pos = event->event_data;
 
-	/* TLV - peripheral clock in MHz */
-	*pos = ESP_PRIV_SPI_CLK_MHZ;
-	pos++;len++;
+	/* TLVs start */
 
-	/* Length of value field [1 byte] */
-	*pos = 1;
-	pos++;len++;
+	/* TLV - Board type */
+	*pos = ESP_PRIV_FIRMWARE_CHIP_ID;   pos++;len++;
+	*pos = LENGTH_1_BYTE;               pos++;len++;
+	*pos = CONFIG_IDF_FIRMWARE_CHIP_ID; pos++;len++;
 
-	/* Value */
+	/* TLV - Peripheral clock in MHz */
+	*pos = ESP_PRIV_SPI_CLK_MHZ;        pos++;len++;
+	*pos = LENGTH_1_BYTE;               pos++;len++;
 #ifdef CONFIG_IDF_TARGET_ESP32
-	*pos = SPI_CLK_MHZ_ESP32;
+	*pos = SPI_CLK_MHZ_ESP32;           pos++;len++;
 #elif defined CONFIG_IDF_TARGET_ESP32S2
-	*pos = SPI_CLK_MHZ_ESP32_S2;
+	*pos = SPI_CLK_MHZ_ESP32_S2;        pos++;len++;
 #endif
-	pos++;len++;
 
+	/* TLV - Capability */
+	*pos = ESP_PRIV_CAPABILITY;         pos++;len++;
+	*pos = LENGTH_1_BYTE;               pos++;len++;
+	*pos = cap;                         pos++;len++;
 
-	/* TLV - capability */
-	/* Tag [1 byte] */
-	*pos = ESP_PRIV_CAPABILITY;
-	pos++;len++;
-
-	/* Length of value field [1 byte] */
-	*pos = 1;
-	pos++;len++;
-
-	/* Value */
-	*pos = cap;
-	pos++;len++;
+	/* TLVs end */
 
 	event->event_len = len;
 

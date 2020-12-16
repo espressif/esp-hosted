@@ -30,6 +30,12 @@
 #define SPI_INITIAL_CLK_MHZ     10
 #define NUMBER_1M               1000000
 
+/* ESP in sdkconfig has CONFIG_IDF_FIRMWARE_CHIP_ID entry.
+ * supported values of CONFIG_IDF_FIRMWARE_CHIP_ID are - */
+#define ESP_PRIV_FIRMWARE_CHIP_UNRECOGNIZED (0xff)
+#define ESP_PRIV_FIRMWARE_CHIP_ESP32        (0x0)
+#define ESP_PRIV_FIRMWARE_CHIP_ESP32S2      (0x2)
+
 static struct sk_buff * read_packet(struct esp_adapter *adapter);
 static int write_packet(struct esp_adapter *adapter, u8 *buf, u32 size);
 static void spi_exit(void);
@@ -37,6 +43,7 @@ static void adjust_spi_clock(u8 spi_clk_mhz);
 
 volatile u8 data_path = 0;
 static struct esp_spi_context spi_context;
+static char hardware_type = 0;
 
 static struct esp_if_ops if_ops = {
 	.read		= read_packet,
@@ -175,11 +182,18 @@ static void process_init_event(u8 *evt_buf, u8 len)
 			process_capabilities(*(pos + 2));
 		} else if (*pos == ESP_PRIV_SPI_CLK_MHZ){
 			adjust_spi_clock(*(pos + 2));
+		} else if (*pos == ESP_PRIV_FIRMWARE_CHIP_ID){
+			hardware_type = *(pos+2);
 		} else {
 			printk (KERN_WARNING "Unsupported tag in event");
 		}
 		pos += (tag_len+2);
 		len_left -= (tag_len+2);
+	}
+	if ((hardware_type != ESP_PRIV_FIRMWARE_CHIP_ESP32) &&
+	    (hardware_type != ESP_PRIV_FIRMWARE_CHIP_ESP32S2)) {
+		printk(KERN_INFO "ESP board type is not mentioned, ignoring\n");
+		hardware_type = ESP_PRIV_FIRMWARE_CHIP_UNRECOGNIZED;
 	}
 }
 
@@ -323,8 +337,13 @@ static void esp_spi_work(struct work_struct *work)
 			trans.rx_buf = rx_buf;
 			trans.len = SPI_BUF_SIZE;
 
-			ret = spi_sync_transfer(spi_context.esp_spi_dev, &trans, 1);
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 15, 0))
+			if (hardware_type == ESP_PRIV_FIRMWARE_CHIP_ESP32) {
+				trans.cs_change = 1;
+			}
+#endif
 
+			ret = spi_sync_transfer(spi_context.esp_spi_dev, &trans, 1);
 			if (ret) {
 				printk(KERN_ERR "SPI Transaction failed: %d", ret);
 				dev_kfree_skb(rx_skb);

@@ -394,7 +394,6 @@ void process_rx_task(void* pvParameters)
 		} else if (buf_handle.if_type == ESP_HCI_IF) {
 			/* VHCI needs one extra byte at the start of payload */
 			/* that is accomodated in esp_payload_header */
-/*			ESP_LOG_BUFFER_HEXDUMP("BT TX", payload, payload_len, ESP_LOG_INFO);*/
 			payload--;
 			payload_len++;
 
@@ -511,7 +510,6 @@ static int host_rcv_pkt(uint8_t *data, uint16_t len)
 	memcpy(buf, data, len);
 
 	memset(&buf_handle, 0, sizeof(buf_handle));
-/*	ESP_LOG_BUFFER_HEXDUMP("BT RX", buf, len, ESP_LOG_INFO);*/
 
 	buf_handle.if_type = ESP_HCI_IF;
 	buf_handle.if_num = 0;
@@ -707,7 +705,7 @@ void app_main()
 	ESP_ERROR_CHECK(ret);
 
 	assert(xTaskCreate(recv_task , "recv_task" , 4096 , NULL , 14 , NULL) == pdTRUE);
-	assert(xTaskCreate(send_task , "send_task" , 4096 , NULL , 16 , NULL) == pdTRUE);
+	assert(xTaskCreate(send_task , "send_task" , 4096 , NULL , 14 , NULL) == pdTRUE);
 	assert(xTaskCreate(process_rx_task , "process_rx_task" , 4096 , NULL , 16 , NULL) == pdTRUE);
 
 	tcpip_adapter_init();

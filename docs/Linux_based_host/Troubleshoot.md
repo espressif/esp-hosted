@@ -44,7 +44,24 @@ $ sudo rfkill list
     Hard blocked: no
 ```
 2. Execute `hciconfig` command to ensure that device is detected and initialized properly
-3. In case issue persists, collect and send following logs to Espressif support.
+3. User permissions
+```sh
+$ sudo usermod -G bluetooth -a pi
+```
+
+4. Reinstall bluetooth software
+```sh
+$ sudo apt remove bluez bluez-firmware pi-bluetooth
+$ sudo apt install bluez bluez-firmware pi-bluetooth
+```
+
+5. Restart bluetooth service
+```sh
+$ sudo systemctl restart bluetooth
+$ sudo systemctl status bluetooth
+```
+
+6. In case issue persists, collect and send following logs to Espressif support.
 * dmesg log on host
 * Output of above mentioned commands
 * ESP console log
