@@ -13,11 +13,13 @@ Wi-Fi can be configured as either as `STATION` mode or `SOFTAP` mode or `SOFTAP-
 * **SOFTAP+STATION Mode**
     - This is combination of both the modes. In this mode, rpi behaves as station and connects to external AP. At the same time, rpi with help of ESP device, can create the Wi-Fi network.
 
-To setup Wi-Fi connectivity, `host command` APIs are provided. Using these APIs, all above modes can be easily configured. These APIs are available in python and C implementation.
+To setup Wi-Fi connectivity, `control command` APIs are provided. Using these APIs, all above modes can be easily configured. These APIs are available in python and C implementation.
+
+A brief overview of directory structure is [here](directory_structure.md).
 
 ### Using Python
 
-[`python_support/host_commands`](../../host/linux/host_control/python_support/host_commands) python module in `host/linux/host_control` directory implements the communication protocol between the host and ESP peripheral. It contains following functions which can be used to control Wi-Fi functionality of the ESP peripheral as follows:
+[`python_support`](../../host/linux/host_control/python_support/) python module in `host/linux/host_control` directory implements the communication protocol between the host and ESP peripheral. It contains following functions which can be used to control Wi-Fi functionality of the ESP peripheral as follows:
 
 | Function | Functionality |
 |:--------|:-------------|
@@ -113,7 +115,8 @@ python connected_stations_list.py
 
 ### Using C
 
-Similar to `test.py`, [test.c](../../host/linux/host_control/c_support/test.c) provides same functionality. User should make appropriate changes in `test.c` and run `make` command in `host/linux/host_control/c_support` directory before use. The functions used in `test.c` are defined in [commands.c](../../host/host_common/commands.c) which is control path commands C library. It implements the communication protocol between the host and ESP peripheral. It contains following functions which can be used to control Wi-Fi functionality of the ESP peripheral as follows:
+Similar to `test.py`, [test.c](../../host/linux/host_control/c_support/test.c) provides same functionality. User should make appropriate changes in `test.c` like Station SSID, Password etc. and run `make` command in `host/linux/host_control/c_support` directory before use. The functions used in `test.c` are defined in [commands.c](../../host/host_common/commands.c) which is control path commands C library. It implements the communication protocol between the host and ESP peripheral. It contains following functions which can be used to control Wi-Fi functionality of the ESP peripheral as follows:
+
 | Function | Functionality |
 |:--------|:-------------|
 | wifi_get_mac(int mode, char* mac) | get MAC address of station or softAP Interface |

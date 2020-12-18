@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from host_commands import commands
+from commands import *
 import argparse
 import os
 
@@ -33,14 +33,14 @@ disconnect = "Not set"
 
 parser = argparse.ArgumentParser(description='station_disconnect.py script will disconnect ESPStation from AP ex. python station_disconnect.py')
 
-wifi_mode = commands.wifi_get_mode()
+wifi_mode = wifi_get_mode()
 print("WiFi Mode: "+str(wifi_mode))
 
 if (wifi_mode == failure):
     print("Failed to get WiFi Mode")
     flag = failure
 elif (wifi_mode == station or wifi_mode == station_softap):
-    disconnect = commands.wifi_disconnect_ap()
+    disconnect = wifi_disconnect_ap()
     if (disconnect == failure):
         print("Failed to Disconnected from AP")
         flag = failure

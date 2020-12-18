@@ -6,7 +6,8 @@
 │   │   │                                    and data path modules)
 │   │   ├── control                     (Contains files for control path)
 │   │   └── data                        (Contains files for ARP server testing)
-│   ├── common                          (Contains basic utilities such as hex_dump, delay, convert │   │                                        mac address into bytes etc.)
+│   ├── common                          (Contains basic utilities such as hex_dump, delay, convert
+│   │                                        mac address into bytes etc.)
 │   ├── driver                          (Contains modules of networking and transport)
 │   │   ├── netif                       (Header file for network interface)
 │   │   ├── network                     (Contains file of Network Interface)
