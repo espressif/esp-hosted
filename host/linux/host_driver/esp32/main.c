@@ -335,7 +335,6 @@ static void process_rx_packet(struct sk_buff *skb)
 			/* chop off the header from skb */
 			skb_pull(skb, offset);
 
-/*			print_hex_dump_bytes("Rx:", DUMP_PREFIX_NONE, skb->data, skb->len);*/
 			type = skb->data;
 			hci_skb_pkt_type(skb) = *type;
 			skb_pull(skb, 1);

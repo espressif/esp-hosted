@@ -109,7 +109,6 @@ static int esp_bt_send_frame(struct hci_dev *hdev, struct sk_buff *skb)
 	hdr->offset = cpu_to_le16(sizeof(struct esp_payload_header));
 	hdr->hci_pkt_type = hci_skb_pkt_type(skb);
 
-/*	print_hex_dump_bytes("Tx:", DUMP_PREFIX_NONE, skb->data, skb->len);*/
 	ret = esp_send_packet(adapter, skb->data, skb->len);
 
 	if (ret) {

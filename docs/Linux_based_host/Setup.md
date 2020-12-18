@@ -13,6 +13,10 @@ Verify that kernel headers are installed properly by running following command. 
 ```sh
 $ ls /lib/modules/$(uname -r)/build
 ```
+### Dependencies:
+```sh
+$ sudo apt-get install git
+```
 
 ### Python setup:
 Python is required to run utility scripts. Please install it as:
