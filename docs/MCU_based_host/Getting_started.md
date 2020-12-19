@@ -14,8 +14,6 @@ Wi-Fi can be configured as either as `STATION` mode or `SOFTAP` mode or `SOFTAP-
 
 Host firmware provides wifi connectivity using control path and data path. Control path commands uses `protocomm` layer of ESP-IDF to serialize structured control data and communicates using SPI transport interface between Host(MCU based Host) and ESP peripheral (ESP32/ESP32-S2). User can use control commands to build application.
 
-A brief overview of directory structure is [here](directory_structure.md).
-
 ### Control Path Commands
 [commands.c](../../host/host_common/commands.c) is control path commands C library. It implements the communication protocol between the host and ESP peripheral. It contains following functions which can be used to control Wi-Fi functionality of the ESP peripheral as follows:
 

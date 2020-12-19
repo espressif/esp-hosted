@@ -1,6 +1,6 @@
 CC = gcc
 CFLAGS = -C -Wall -I$(PWD)/../../../host_common/include/ -I$(PWD)/../../../../common/protobuf-c/ -I$(PWD)/../../../../common/include/
-TARGET = test
+TARGET = test.out
 
 PWD := $(shell pwd)
 
