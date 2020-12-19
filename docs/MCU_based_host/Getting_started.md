@@ -1,6 +1,16 @@
 # Getting started with STM32F469I(MCU based Host)
 
+This section elaborates about setting up the Wi-Fi connectivity. Before proceeding, ensure pre-requisites [Hardware Setup and Compilation](docs/MCU_based_host/Setup.md) are done.
+
 ## Wi-Fi Connectivity
+
+Wi-Fi can be configured as either as `STATION` mode or `SOFTAP` mode or `SOFTAP-STATION` mode.
+* **STATION Mode**
+    - This mode is used for connecting to external AP i.e. Wi-Fi router. Consider example of smartphone connecting to Wi-Fi router. Like smartphone, host behaves as station and gets authenticated and connected to external AP i.e. Wi-Fi router.
+* **SOFTAP Mode**
+    - This mode is exactly opposite, wherein host with help of ESP-Hosted solution, instructs ESP peripheral to create Wi-Fi network. Stations like smartphones can authenticate and connect to it.
+* **SOFTAP+STATION Mode**
+    - This is combination of both the modes. In this mode, host behaves as station and connects to external AP. At the same time, host with help of ESP device, can create the Wi-Fi network.
 
 Host firmware provides wifi connectivity using control path and data path. Control path commands uses `protocomm` layer of ESP-IDF to serialize structured control data and communicates using SPI transport interface between Host(MCU based Host) and ESP peripheral (ESP32/ESP32-S2). User can use control commands to build application.
 

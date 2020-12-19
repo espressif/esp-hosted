@@ -144,3 +144,5 @@ To build and flash the app on ESP peripheral, run
 ```sh
 $ idf.py -p <serial_port> build flash
 ```
+
+This concludes the setup. [Getting started](docs/Linux_based_host/Getting_started.md) section would help to establish Wi-Fi connectivity.

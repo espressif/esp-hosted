@@ -1,6 +1,19 @@
 # Getting started with Raspberry-Pi (rpi)
 
+This section elaborates about setting up the connectivity for Wi-Fi and Bluetooth.
+Before proceeding, ensure pre-requisites [Hardware Setup and Compilation](docs/Linux_based_host/Setup.md) are done.
+
 ## Wi-Fi Connectivity
+
+Wi-Fi can be configured as either as `STATION` mode or `SOFTAP` mode or `SOFTAP-STATION` mode.
+* **STATION Mode**
+    - This mode is used for connecting to external AP i.e. Wi-Fi router. Consider example of smartphone connecting to Wi-Fi router. Like smartphone, rpi behaves as station and gets authenticated and connected to external AP i.e. Wi-Fi router.
+* **SOFTAP Mode**
+    - This mode is exactly opposite, wherein rpi with help of ESP-Hosted solution, instructs ESP peripheral to create Wi-Fi network. Stations like smartphones can authenticate and connect to it.
+* **SOFTAP+STATION Mode**
+    - This is combination of both the modes. In this mode, rpi behaves as station and connects to external AP. At the same time, rpi with help of ESP device, can create the Wi-Fi network.
+
+To setup Wi-Fi connectivity, `host command` APIs are provided. Using these APIs, all above modes can be easily configured. These APIs are available in python and C implementation.
 
 ### Using Python
 

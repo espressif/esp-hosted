@@ -74,3 +74,6 @@ ESP-Hosted solutions supports SDIO and SPI as transport for Wi-Fi and Bluetooth/
 * [Wi-Fi and BT/BLE connectivity Setup over SPI](SPI_setup.md)
 
 * [Bluetooth/BLE connectivity Setup over UART](UART_setup.md)
+
+Once the setup is done, [Getting started](docs/Linux_based_host/Getting_started.md) section would help to establish Wi-Fi or Bluetooth connectivity.
+
