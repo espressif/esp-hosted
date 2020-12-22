@@ -35,7 +35,7 @@ To setup Wi-Fi connectivity, `control command` APIs are provided. Using these AP
 | wifi_set_power_save_mode(power_save_mode) | set power save mode |
 | wifi_get_power_save_mode() | get power save mode |
 
-A utility script `test.py` is provided [host/linux/host_control/python_support/test.py](../../host/linux/host_control/python_support/test.py). This script can be used as an example of using these functions. You can run the script as follows:
+A utility script `test.py` is provided [host/linux/host_control/python_support/test.py](../../host/linux/host_control/python_support/test.py). This script can be used as an example for using above functions. You can run the script as follows:
 ```
 python test.py
 ```
@@ -44,17 +44,17 @@ python test.py
 To compile and load the host driver on a Raspberry Pi, go to `host/linux/host_control/` folder and run `./rpi_init.sh <sdio/spi>`. This script also creates `/dev/esps0` device, which is used as a WLAN control interface.
 
 #### Convenience Scripts
-Following are few ready to use convenience script provided in the repository. These scripts make use of control functions mentioned in above section.
+Following are few ready to use convenience script provided in the repository. These scripts make use of control commands mentioned in above section.
 
 ##### Scan external access points
-`ap_scan_list.py` is a python script which gives a scanned list of available APs. The list contains SSID, channel number, RSSI, MAC address, and authentication mode of AP.
+`ap_scan_list.py` is a python script which gives a scanned list of available APs. The list contains SSID, channel number, RSSI, MAC address and authentication mode of AP.
 
 ```
 python ap_scan_list.py
 ```
 
 ##### Connect to external access point
-`station_connect.py` is a python script which configures ESP peripheral in station mode, and connects to an external AP with user-provided credentials. Also it enables the station interface and runs DHCP client. The script accepts arguments such as SSID, password, optionally MAC address, wpa3 support and listen interval (AP beacon intervals). For example:
+`station_connect.py` is a python script which configures ESP peripheral in station mode and connects to an external AP with user-provided credentials. Also it enables the station interface and runs DHCP client. The script accepts arguments such as SSID, password, optionally MAC address, wpa3 support and listen interval (AP beacon intervals). For example:
 
 ```
 python station_connect.py 'xyz' 'xyz123456' --bssid='e5:6c:67:3c:cf:65' --is_wpa3_supported=True --listen_interval=3

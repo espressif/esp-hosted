@@ -2,9 +2,9 @@
 
 ```
 ├── linux
-│   ├── host_control            (Contains necessary files for installation of control path)
-│   │   ├── c_support           (Contains files test basic control path commands)
-│   │   ├── python_support      (Contains python scripts for Wi-Fi functionality,
+│   ├── host_control            (Contain necessary files for installation of control path)
+│   │   ├── c_support           (Contain files to test basic control path commands)
+│   │   ├── python_support      (Contain python scripts for Wi-Fi functionality,
 │   │   │   │                       `test.py` to test basic control path commands, also
 │   │   │   │                       `commands.py` control path commands implementation using
 │   │   │   │                       python protobuf generated files)
@@ -12,10 +12,10 @@
 │   │   │                           ESP-Hosted character driver)
 │   │   ├── rpi_init.sh         (Installation sequence for ESP-Hosted driver)
 │   │   └── spidev_disabler.dts (dts file for SPI transport)
-│   └── host_driver             (Contains ESP-Hosted kernel module files)
+│   └── host_driver             (Contain ESP-Hosted kernel module files)
 │       └── esp32               (ESP-hosted kernel module files )
-│           ├── sdio            (Contains SDIO transport files used by kernel module to communicate
-│           │                       with slave)
-│           └── spi             (Contains SPI transport files used by kernel module to communicate
-│                                   with slave)
+│           ├── sdio            (Contain SDIO transport files used by kernel module to communicate
+│           │                       with ESP peripheral)
+│           └── spi             (Contain SPI transport files used by kernel module to communicate
+│                                   with ESP peripheral)
 ```

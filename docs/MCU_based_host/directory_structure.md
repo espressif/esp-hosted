@@ -2,17 +2,18 @@
 
 ```
 ├── stm32
-│   ├── app                             (Contains Initialization sequence of firmware, control
-│   │   │                                    and data path modules)
-│   │   ├── control                     (Contains files for control path)
-│   │   └── data                        (Contains files for ARP server testing)
-│   ├── common                          (Contains basic utilities such as hex_dump, delay, convert
-│   │                                        mac address into bytes etc.)
-│   ├── driver                          (Contains modules of networking and transport)
-│   │   ├── netif                       (Header file for network interface)
-│   │   ├── network                     (Contains file of Network Interface)
-│   │   ├── serial                      (Contains Virtual Serial Interface files)
-│   │   └── spi                         (Contains file for SPI transport)
-│   └── proj                            (Contains `bat and sh` scripts for project setup,also
-│                                           `.ioc` file for project installation in STM32CubeIDE)
+│   ├── app                             (Contain Initialization sequence of STM32 firmware, control
+│   │   │                                   and data path modules)
+│   │   ├── control                     (Contain files for control path, used for Wi-Fi connectivity)
+│   │   └── data                        (Contain files for demo APP, ARP server. The application
+│   │                                       would need to be hooked here.)
+│   ├── common                          (Contain common constructs used across app, driver)
+│   ├── driver                          (Contain modules of networking, serial interface and SPI transport)
+│   │   ├── netif                       (API for network device operation (netdev))
+│   │   ├── network                     (Contain netdev API implementation and network stub. Network stub 
+│   │   │                                   should be replace by actual network stub like lwip by user)
+│   │   ├── serial                      (Contain Virtual Serial Interface implemented over SPI transport)
+│   │   └── spi                         (Contain driver for SPI transport)
+│   └── proj                            (Contain windows 'batch'(.bat) file and sh scripts for project setup. Also contain
+│                                           `.ioc` file which is HAL layer for STM32, used in project installation in STM32CubeIDE)
 ```
