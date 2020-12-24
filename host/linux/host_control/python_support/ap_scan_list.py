@@ -11,7 +11,18 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-#
 
-from .commands import *
-from .esp_hosted_config_pb2 import *
+from commands import *
+import argparse
+
+failure = "failure"
+ap_list = 'No APs Available'
+
+parser = argparse.ArgumentParser(description='ap_scan_list.py is a python script which gives scanned list of available APs. list contains ssid, channel number, rssi, mac address and authentication mode of AP. ex. python ap_scan_list.py')
+
+ap_list = wifi_ap_scan_list()
+if (ap_list == failure):
+    print("Failed to get AP scan list")
+else:
+    for obj in ap_list:
+        print(obj.ssid,obj.chnl,obj.rssi,obj.bssid,obj.ecn)

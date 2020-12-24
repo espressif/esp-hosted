@@ -12,14 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from host_commands import commands
+from commands import *
 failure = 'failure'
 # get mac address
 
 # 1 : station
 # 2 : softAP
 '''
-x = commands.wifi_get_mac(2)
+x = wifi_get_mac(2)
 print("mac "+str(x))
 
 # 0: null Mode, Wi-Fi mode not set
@@ -28,29 +28,29 @@ print("mac "+str(x))
 # 3: softAP+station mode
 # or Failure
 
-x = commands.wifi_get_mode()
+x = wifi_get_mode()
 print("wifi mode is "+str(x))
 
-x = commands.wifi_set_mode(2)
+x = wifi_set_mode(2)
 print(x)
 
-x = commands.wifi_set_ap_config('xyz','xyz123456','0',False, 5)
+x = wifi_set_ap_config('xyz','xyz123456','0',False, 5)
 print(x)
 
-x = commands.wifi_get_ap_config()
+x = wifi_get_ap_config()
 print(x)
 
-x = commands.wifi_disconnect_ap()
+x = wifi_disconnect_ap()
 print(x)
 
-x = commands.wifi_set_softap_config('ESP12','0',4,0,5,0,1)
+x = wifi_set_softap_config('ESP12','0',4,0,5,0,1)
 print(x)
 
-x = commands.wifi_get_softap_config()
+x = wifi_get_softap_config()
 print(x)
 
 # output is list of Aplist class instances
-x = commands.wifi_ap_scan_list()
+x = wifi_ap_scan_list()
 if (x == failure):
     print(failure)
 else:
@@ -58,19 +58,19 @@ else:
         print(obj.ssid,obj.chnl,obj.rssi,obj.bssid,obj.ecn)
 
 # output is list of Stationlist class instances
-x = commands.wifi_connected_stations_list()
+x = wifi_connected_stations_list()
 if (x == failure):
     print(failure)
 else :
     for obj in x:
         print(obj.mac)
 
-x = commands.wifi_set_mac(2,"5a:11:11:11:11:11")
+x = wifi_set_mac(2,"5a:11:11:11:11:11")
 print(x)
 
-x = commands.wifi_set_power_save_mode(2)
+x = wifi_set_power_save_mode(2)
 print(x)
 
-x = commands.wifi_get_power_save_mode()
+x = wifi_get_power_save_mode()
 print("Power save mode is "+str(x))
 '''

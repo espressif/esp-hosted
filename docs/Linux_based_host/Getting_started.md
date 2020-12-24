@@ -13,11 +13,11 @@ Wi-Fi can be configured as either as `STATION` mode or `SOFTAP` mode or `SOFTAP-
 * **SOFTAP+STATION Mode**
     - This is combination of both the modes. In this mode, rpi behaves as station and connects to external AP. At the same time, rpi with help of ESP device, can create the Wi-Fi network.
 
-To setup Wi-Fi connectivity, `host command` APIs are provided. Using these APIs, all above modes can be easily configured. These APIs are available in python and C implementation.
+To setup Wi-Fi connectivity, `control command` APIs are provided. Using these APIs, all above modes can be easily configured. These APIs are available in python and C implementation.
 
-### Using Python
-
-[`host_commands`](../../host/linux/host_control/host_commands) python module in `host/linux/host_control` directory implements the communication protocol between the host and ESP peripheral. It contains following functions which can be used to control Wi-Fi functionality of the ESP peripheral as follows:
+### Using Python Implementation
+#### Wi-Fi Control Interface
+[`python_support`](../../host/linux/host_control/python_support/) in `host/linux/host_control` directory implements Wi-Fi control interface between the host and ESP peripheral. It contains following functions which can be used to control Wi-Fi functionality of the ESP peripheral:
 
 | Function | Functionality |
 |:--------|:-------------|
@@ -35,23 +35,26 @@ To setup Wi-Fi connectivity, `host command` APIs are provided. Using these APIs,
 | wifi_set_power_save_mode(power_save_mode) | set power save mode |
 | wifi_get_power_save_mode() | get power save mode |
 
-These python functions can be used to control Wi-Fi functionality of the ESP peripheral. Also see [host/linux/host_control/test.py](../../host/linux/host_control/test.py) script for an example of using these functions. You can run the script as follows:
+A utility script `test.py` is provided [host/linux/host_control/python_support/test.py](../../host/linux/host_control/python_support/test.py). This script can be used as an example for using above functions. You can run the script as follows:
 ```
 python test.py
 ```
 
+#### Host Driver Setup
 To compile and load the host driver on a Raspberry Pi, go to `host/linux/host_control/` folder and run `./rpi_init.sh <sdio/spi>`. This script also creates `/dev/esps0` device, which is used as a WLAN control interface.
 
-The other scripts in the same directory can be used to:
+#### Convenience Scripts
+Following are few ready to use convenience script provided in the repository. These scripts make use of control commands mentioned in above section.
 
-- connect to AP as a station
-- disconnect from AP
-- start softAP
-- stop softAP
-- scan available APs
-- list stations connected to softAP
+##### Scan external access points
+`ap_scan_list.py` is a python script which gives a scanned list of available APs. The list contains SSID, channel number, RSSI, MAC address and authentication mode of AP.
 
-1. `station_connect.py` is a python script which configures ESP peripheral in station mode, and connects to an external AP with user-provided credentials. Also it enables the station interface and runs DHCP client. The script accepts arguments such as SSID, password, optionally MAC address, wpa3 support and listen interval (AP beacon intervals). For example:
+```
+python ap_scan_list.py
+```
+
+##### Connect to external access point
+`station_connect.py` is a python script which configures ESP peripheral in station mode and connects to an external AP with user-provided credentials. Also it enables the station interface and runs DHCP client. The script accepts arguments such as SSID, password, optionally MAC address, wpa3 support and listen interval (AP beacon intervals). For example:
 
 ```
 python station_connect.py 'xyz' 'xyz123456' --bssid='e5:6c:67:3c:cf:65' --is_wpa3_supported=True --listen_interval=3
@@ -61,7 +64,8 @@ You can check that `ethsta0` interface is up (enabled) using `ifconfig`. WPA3 op
 
 To know status of station, use wifi_get_ap_config() function. In case station is connected with AP, it returns ssid, bssid(MAC address), channel, rssi, encryption mode of AP. and In case of not connected with AP returns `failure` with `not_connected` print.
 
-2. `station_disconnect.py` is a python script to disconnect ESP peripheral station from AP.
+##### Disconnect from external access point
+`station_disconnect.py` is a python script to disconnect ESP peripheral station from AP.
 
 ```
 python station_disconnect.py
@@ -69,7 +73,8 @@ python station_disconnect.py
 
 You can check that `ethsta0` interface is down (disabled) using `ifconfig`.
 
-3. `softap_config.py` is a python script for configuring ESP peripheral to work in softAP mode. The following parameters should be provided:
+##### Setup and start SoftAP
+`softap_config.py` is a python script for configuring ESP peripheral to work in softAP mode. The following parameters should be provided:
 
 - SSID
 - password, should be 8 ~ 64 bytes ASCII
@@ -91,7 +96,8 @@ You can check that `ethap0` interface is up (enabled) using `ifconfig`.
 
 To start data connection, set up a DHCP server on the Raspberry Pi, or configure a static IP address for AP interface (`ethap0`).
 
-4. `softap_stop.py` python script disables wifi softAP mode on ESP peripheral. This script will change wifi mode to `null` if only softAP is running, or to `station` mode if softAP and station both are on.
+##### Stop SoftAP
+`softap_stop.py` python script disables wifi softAP mode on ESP peripheral. This script will change wifi mode to `null` if only softAP is running, or to `station` mode if softAP and station both are on.
 
 ```
 python softap_stop.py
@@ -99,21 +105,16 @@ python softap_stop.py
 
 You can check that `ethap0` interface is down (disabled) using `ifconfig`.
 
-5. `ap_scan_list.py` is a python script which gives a scanned list of available APs. The list contains SSID, channel number, RSSI, MAC address, and authentication mode of AP.
-
-```
-python ap_scan_list.py
-```
-
-6. `connected_stations_list.py` is a python script that returns a list of MAC addresses of stations connected to softAP.
+##### List external stations connected to SoftAP
+`connected_stations_list.py` is a python script that returns a list of MAC addresses of stations connected to softAP.
 
 ```
 python connected_stations_list.py
 ```
 
-### Using C
+### Using C Implementation
+As an alternative to python implementation of Wi-Fi control interface, a `C language` based implementation is provided. Following API's are provided as a part of this.
 
-Similar to `test.py`, [test.c](../../host/linux/host_control/test.c) provides same functionality. User should make appropriate changes in `test.c` and run `make` command in `host/linux/host_control/` directory before use. The functions used in `test.c` are defined in [commands.c](../../host/host_common/commands.c) which is control path commands C library. It implements the communication protocol between the host and ESP peripheral. It contains following functions which can be used to control Wi-Fi functionality of the ESP peripheral as follows:
 | Function | Functionality |
 |:--------|:-------------|
 | wifi_get_mac(int mode, char* mac) | get MAC address of station or softAP Interface |
@@ -132,46 +133,95 @@ Similar to `test.py`, [test.c](../../host/linux/host_control/test.c) provides sa
 
 Above function's parameters and description is present [here](../../host/host_common/include/commands.h).
 
-### Open air throughput test results for WLAN
+Similar to `test.py`, a utility test application, [test.c](../../host/linux/host_control/c_support/test.c) is provided that demonstrates usage of these functions. To use this:
+* One should make appropriate changes to configuration parameters in `test.c` like Station SSID, Password etc.
+* To compile this, run `make` command in `host/linux/host_control/c_support` directory. This will compile and create `test.out` file.
+* To execute, run `test.out`.
 
-#### ESP32 on SDIO interface
+### Wi-Fi Performance in shielded environment
 
-Following are the test results conducted in open air.
+#### Over SDIO interface
+##### ESP32
+###### Station mode
 
-```
-UDP Tx: 16.4 Mbps
-UDP Rx: 16.8 Mbps
-TCP Tx: 14 Mbps
-TCP Rx: 12 Mbps
-```
+| Traffic | 11n 20MHz | 11n 40 MHz |
+|:--------|:----------|:-----------|
+| TCP Tx | 30.6 Mbps | 24.3 Mbps |
+| TCP Rx | 16.0 Mbps | 18.8 Mbps |
+| UDP Tx | 41.0 Mbps | 46.4 Mbps |
+| UDP Rx | 27.0 Mbps | 26.1 Mbps |
 
-## For Bluetooth/BLE functionality
+###### SoftAP mode
+
+| Traffic | 11n 20MHz | 11n 40 MHz |
+|:--------|:----------|:-----------|
+| TCP Tx | 22.9 Mbps | 19.7 Mbps |
+| TCP Rx | 17.8 Mbps | 16.6 Mbps |
+| UDP Tx | 39.5 Mbps | 46.3 Mbps |
+| UDP Rx | 28.7 Mbps | 26.8 Mbps |
+
+#### Over SPI interface
+##### ESP32
+###### Station mode
+
+| Traffic | 11n 20MHz | 11n 40 MHz |
+|:--------|:----------|:-----------|
+| TCP Tx | 5.64 Mbps | 5.20 Mbps |
+| TCP Rx | 5.33 Mbps | 5.29 Mbps |
+| UDP Tx | 5.35 Mbps | 5.37 Mbps |
+| UDP Rx | 4.70 Mbps | 5.29 Mbps |
+
+###### SoftAP mode
+
+| Traffic | 11n 20MHz | 11n 40 MHz |
+|:--------|:----------|:-----------|
+| TCP Tx | 5.12 Mbps | 5.21 Mbps |
+| TCP Rx | 5.26 Mbps | 5.26 Mbps |
+| UDP Tx | 5.29 Mbps | 5.30 Mbps |
+| UDP Rx | 5.39 Mbps | 5.40 Mbps |
+
+##### ESP32S2
+###### Station mode
+
+| Traffic | 11n 20MHz | 11n 40 MHz |
+|:--------|:----------|:-----------|
+| TCP Tx | 11.9 Mbps | 11.0 Mbps |
+| TCP Rx | 17.2 Mbps | 16.8 Mbps |
+| UDP Tx | 16.8 Mbps | 17.0 Mbps |
+| UDP Rx | 18.5 Mbps | 17.7 Mbps |
+
+###### SoftAP mode
+
+| Traffic | 11n 20MHz | 11n 40 MHz |
+|:--------|:----------|:-----------|
+| TCP Tx | 11.2 Mbps | 11.6 Mbps |
+| TCP Rx | 17.1 Mbps | 17.2 Mbps |
+| UDP Tx | 17.7 Mbps | 17.4 Mbps |
+| UDP Rx | 20.3 Mbps | 20.2 Mbps |
+
+
+## Bluetooth/BLE Connectivity
 
 - Ensure that bluez is installed on Raspberry Pi and it is downloaded in source format as well. Please refer to [Setup](Setup.md) instructions for more details.
 - In following test, Android device was used as a BT/BLE test device. For BLE testing, [nRF connect for mobile APP](https://play.google.com/store/apps/details?id=no.nordicsemi.android.mcp&hl=en_IN) was used.
 - Go to `host/linux/host_control/` folder to run following script.
 
 ### UART based setup
-1. Execute `./rpi_init.sh btuart` to prepare Raspberry Pi for Bluetooth operation
-2. Execute `hciattach` command as below to add HCI interface (i.e. hciX)
+- Execute `./rpi_init.sh btuart` to prepare Raspberry Pi for Bluetooth operation
+- Execute `hciattach` command as below to add HCI interface (i.e. hciX)
 ```
 $ sudo hciattach -s 115200 /dev/serial0 any 115200 flow
 ```
 
 ### SDIO based setup
-Execute `./rpi_init.sh` or `./rpi_init.sh sdio` to prepare Raspberry-Pi for SDIO+BT operation.
-HCI interface (i.e hciX) will be available for use as soon as host driver detects ESP peripheral over SDIO interface.
-You can use standard HCI utilities over this interface to make use of BT/BLE feature.
+- Execute `./rpi_init.sh` or `./rpi_init.sh sdio` to prepare Raspberry-Pi for SDIO+BT operation.
+- HCI interface (i.e hciX) will be available for use as soon as host driver detects ESP peripheral over SDIO interface.
+- One can use standard HCI utilities over this interface to make use of BT/BLE feature.
 
 ### SPI based setup
-Execute `./rpi_init.sh spi` to prepare Raspberry-Pi for SPI+BT operation.
-HCI interface (i.e hciX) will be available for use as soon as host driver detects ESP peripheral module over SPI interface.
-You can use standard HCI utilities over this interface to make use of BT/BLE feature.
-
-### Reset Pin Configuration
-This is optional configuration to change the host GPIO pin used to reset ESP peripheral.
-As mentioned in hardware Setup, host uses BCM 6 (Pin31) which is default value. User can change the GPIO in BCM format.
-Execute `./rpi_init.sh resetpin=5` to use BCM 5 (pin 29)
+- Execute `./rpi_init.sh spi` to prepare Raspberry-Pi for SPI+BT operation.
+- HCI interface (i.e hciX) will be available for use as soon as host driver detects ESP peripheral module over SPI interface.
+- One can use standard HCI utilities over this interface to make use of BT/BLE feature.
 
 ### BT/BLE Test procedure
 #### GATT server

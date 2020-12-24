@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from host_commands import commands
+from commands import *
 import argparse
 import time
 import os
@@ -47,7 +47,7 @@ parser.add_argument("--listen_interval", type=int, default=3, help="Listen inter
 
 args = parser.parse_args()
 
-sta_mac = commands.wifi_get_mac(station)
+sta_mac = wifi_get_mac(station)
 if (sta_mac == failure):
     flag = failure
     print("Failed to get station MAC address")
@@ -55,7 +55,7 @@ else :
     print("station MAC address "+str(sta_mac))
 
 if (flag == success):
-    station_status = commands.wifi_set_ap_config(args.ssid,args.password,args.bssid,args.is_wpa3_supported,args.listen_interval)
+    station_status = wifi_set_ap_config(args.ssid,args.password,args.bssid,args.is_wpa3_supported,args.listen_interval)
     if (station_status == failure):
         flag = failure
         print("Failed to set AP config")

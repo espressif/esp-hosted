@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from host_commands import commands
+from commands import *
 import argparse
 import time
 import os
@@ -50,7 +50,7 @@ parser.add_argument("--bw", type=int, default=1, help="Bandwidth (1: WIFI_BW_HT2
 
 args = parser.parse_args()
 
-ap_mac = commands.wifi_get_mac(softap)
+ap_mac = wifi_get_mac(softap)
 if (ap_mac == failure):
     print("Failed to get is SoftAP mac address")
     flag = failure
@@ -58,7 +58,7 @@ else :
     print("SoftAP MAC Address "+str(ap_mac))
 
 if (flag == success):
-    softap_config = commands.wifi_set_softap_config(args.ssid, args.password, args.channel_id, args.encrp_mthd, args.max_conn, args.ssid_hidden, args.bw)
+    softap_config = wifi_set_softap_config(args.ssid, args.password, args.channel_id, args.encrp_mthd, args.max_conn, args.ssid_hidden, args.bw)
     if (softap_config == failure):
         print("setting softap config failed")
         flag = failure

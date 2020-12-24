@@ -12,8 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from .transport import *
-from .esp_hosted_config_pb2 import *
+from transport import *
+from esp_hosted_config_pb2 import *
 import sys
 
 class Aplist:
