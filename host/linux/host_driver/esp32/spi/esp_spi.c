@@ -29,6 +29,8 @@
 
 #define SPI_INITIAL_CLK_MHZ     10
 #define NUMBER_1M               1000000
+#define TX_MAX_PENDING_COUNT    500
+#define TX_RESUME_THRESHOLD     (TX_MAX_PENDING_COUNT - (TX_MAX_PENDING_COUNT/5))
 
 /* ESP in sdkconfig has CONFIG_IDF_FIRMWARE_CHIP_ID entry.
  * supported values of CONFIG_IDF_FIRMWARE_CHIP_ID are - */
@@ -44,6 +46,7 @@ static void adjust_spi_clock(u8 spi_clk_mhz);
 volatile u8 data_path = 0;
 static struct esp_spi_context spi_context;
 static char hardware_type = 0;
+static u32 tx_pending = 0;
 
 static struct esp_if_ops if_ops = {
 	.read		= read_packet,
@@ -54,6 +57,7 @@ static DEFINE_MUTEX(spi_lock);
 
 static void open_data_path(void)
 {
+	tx_pending = 0;
 	msleep(200);
 	data_path = OPEN_DATAPATH;
 }
@@ -123,6 +127,11 @@ static int write_packet(struct esp_adapter *adapter, u8 *buf, u32 size)
 		return -EPERM;
 	}
 
+	if (tx_pending >= TX_MAX_PENDING_COUNT) {
+		esp_tx_pause();
+		return -EBUSY;
+	}
+
 	/* Adjust length to make it multiple of 4 bytes  */
 	size += 4 - (size & 3);
 
@@ -145,6 +154,8 @@ static int write_packet(struct esp_adapter *adapter, u8 *buf, u32 size)
 
 	/* Enqueue SKB in tx_q */
 	skb_queue_tail(&spi_context.tx_q, skb);
+
+	tx_pending++;
 
 	if (spi_context.spi_workqueue)
 		queue_work(spi_context.spi_workqueue, &spi_context.spi_work);
@@ -321,6 +332,11 @@ static void esp_spi_work(struct work_struct *work)
 			/* Configure TX buffer if available */
 
 			if (tx_skb) {
+				tx_pending--;
+
+				if (tx_pending < TX_RESUME_THRESHOLD)
+					esp_tx_resume();
+
 				trans.tx_buf = tx_skb->data;
 			} else {
 				tx_skb = esp_alloc_skb(SPI_BUF_SIZE);
