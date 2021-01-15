@@ -348,6 +348,36 @@ static void process_rx_packet(struct sk_buff *skb)
 	}
 }
 
+void esp_tx_pause(void)
+{
+	if (adapter.priv[0]->ndev &&
+			!netif_queue_stopped((const struct net_device *)
+				adapter.priv[0]->ndev)) {
+		netif_stop_queue(adapter.priv[0]->ndev);
+	}
+
+	if (adapter.priv[1]->ndev &&
+			!netif_queue_stopped((const struct net_device *)
+				adapter.priv[1]->ndev)) {
+		netif_stop_queue(adapter.priv[1]->ndev);
+	}
+}
+
+void esp_tx_resume(void)
+{
+	if (adapter.priv[0]->ndev &&
+			netif_queue_stopped((const struct net_device *)
+				adapter.priv[0]->ndev)) {
+		netif_wake_queue(adapter.priv[0]->ndev);
+	}
+
+	if (adapter.priv[1]->ndev &&
+			netif_queue_stopped((const struct net_device *)
+				adapter.priv[1]->ndev)) {
+		netif_wake_queue(adapter.priv[1]->ndev);
+	}
+}
+
 struct sk_buff * esp_alloc_skb(u32 len)
 {
 	struct sk_buff *skb;
