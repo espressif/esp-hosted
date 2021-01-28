@@ -17,21 +17,34 @@ Host firmware provides wifi connectivity using control path and data path. Contr
 ### Control Path Commands
 [commands.c](../../host/host_common/commands.c) is control path commands C library. It implements the communication protocol between the host and ESP peripheral. It contains following functions which can be used to control Wi-Fi functionality of the ESP peripheral as follows:
 
-| Function | Functionality |
+Common functions as follow:
+
+| Functions | Functionality |
 |:--------|:-------------|
-| wifi_get_mac(int mode, char* mac) | get MAC address of station or softAP Interface |
-| wifi_get_mode(int* mode) | get wifi mode |
+| wifi_get_mac(int mode, char *mac) | get MAC address of station or softAP Interface |
+| wifi_set_mac(int mode, char *mac) | sets custom mac address for station and softAP Interface |
+| wifi_get_mode(int *mode) | get wifi mode |
 | wifi_set_mode(int mode) | set wifi mode |
-| wifi_set_ap_config(esp_hosted_ap_config_t ap_config) | connect to AP as a station |
-| wifi_get_ap_config (esp_hosted_ap_config_t* ap_config) | get AP configuration and status |
-| wifi_disconnect_ap () | disconnect from AP |
-| wifi_set_softap_config (esp_hosted_ap_config_t softap_config) | start softAP |
-| wifi_get_softap_config (esp_hosted_ap_config_t* softap_config) | get softAP configuration |
-| wifi_ap_scan_list(esp_hosted_wifi_scanlist_t** list, int* count) | scan available APs |
-| wifi_connected_stations_list(esp_hosted_wifi_connected_stations_list** list, int* num) | list stations connected to softAP |
-| wifi_set_mac(int mode, char* mac) | sets custom mac address for station and softAP Interface |
 | wifi_set_power_save_mode(int power_save_mode) | set power save mode |
-| wifi_get_power_save_mode(int* power_save_mode) | get power save mode |
+| wifi_get_power_save_mode(int *power_save_mode) | get power save mode |
+
+Functions related to station mode as follow:
+
+| Functions | Functionality |
+|:---------|:--------------|
+| wifi_set_ap_config(esp_hosted_control_config_t ap_config) | connect to AP as a station |
+| wifi_get_ap_config(esp_hosted_control_config_t* ap_config) | get AP configuration and status |
+| wifi_disconnect_ap() | disconnect from AP |
+| wifi_ap_scan_list (int *count) | scan available APs |
+
+Functions related to softap mode as follow:
+
+| Functions | Functionality |
+|:---------|:--------------|
+| wifi_set_softap_config(esp_hosted_control_config_t softap_config) | start softAP |
+| wifi_get_softap_config(esp_hosted_control_config_t *softap_config) | get softAP configuration |
+| wifi_stop_softap() | stops ESP32 softAP |
+| wifi_connected_stations_list(int *num) | list of stations connected to softAP |
 
 Above functions' API definitions are present at [commands.h](../../host/host_common/include/commands.h). User can also take reference of [test.c](../../host/linux/host_control/c_support/test.c) code to get idea about how to call above function.
 
@@ -114,7 +127,7 @@ Shutting down...
 |            STATION                |                                           |
 +-----------------------------------+-------------------------------------------+
 |        INPUT_STATION__SSID        |             MyWifi                        |
-|       INPUT_STATION_BSSID         |             0                             |
+|       INPUT_STATION_BSSID         |                                           |
 |   INPUT_STATION_IS_WPA3_SUPPORTED |             no                            |
 |      INPUT_STATION_PASSWORD       |             MyWifiPass@123                |
 |       INPUT_STATION_SRC_IP        |             192.168.1.233                 |
@@ -161,7 +174,7 @@ Build Variables are as follows:
 |11| INPUT_SOFTAP_SRC_IP | String | Source IP (IPv4)address of host in softAP mode. |
 |12| INPUT_SOFTAP_ARP_DEST_IP | String | Destination IP (IPv4)address of station connected to host. |
 |13| INPUT_STATION__SSID | String | SSID of station. ex. "MyWifi" |
-|14| INPUT_STATION_BSSID | String | MAC address of AP, To differentiate between APs, In case multiple AP has same SSID. User can put "0" in case MAC address unknown. |
+|14| INPUT_STATION_BSSID | String | MAC address of AP, To differentiate between APs, In case multiple AP has same SSID. User can put "" i.e empty string in case MAC address unknown. |
 |15| INPUT_STATION_IS_WPA3_SUPPORTED | String | Status of wpa3 supplicant present on AP. ( "yes"  : supported, "no"  : not supported) |
 |16| INPUT_STATION_PASSWORD | String | Password of AP. Length of password should be 8~64 bytes ASCII. ex. "MyWifi@123" |
 |17| INPUT_STATION_SRC_IP | String | Source IP (IPv4)address of host in station mode.|

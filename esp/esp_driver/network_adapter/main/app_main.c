@@ -72,8 +72,8 @@ static esp_err_t initialise_bluetooth(void);
 
 volatile uint8_t action = 0;
 volatile uint8_t datapath = 0;
-volatile uint8_t sta_connected = 0;
-volatile uint8_t ap_started = 0;
+volatile uint8_t station_connected = 0;
+volatile uint8_t softap_started = 0;
 
 #ifdef ESP_DEBUG_STATS
 uint32_t from_wlan_count = 0;
@@ -375,10 +375,10 @@ void process_rx_task(void* pvParameters)
 		ESP_LOG_BUFFER_HEXDUMP(TAG_RX, payload, 8, ESP_LOG_INFO);
 #endif
 
-		if ((buf_handle.if_type == ESP_STA_IF) && sta_connected) {
+		if ((buf_handle.if_type == ESP_STA_IF) && station_connected) {
 			/* Forward data to wlan driver */
 			esp_wifi_internal_tx(ESP_IF_WIFI_STA, payload, payload_len);
-		} else if (buf_handle.if_type == ESP_AP_IF && ap_started) {
+		} else if (buf_handle.if_type == ESP_AP_IF && softap_started) {
 			/* Forward data to wlan driver */
 			esp_wifi_internal_tx(ESP_IF_WIFI_AP, payload, payload_len);
 		} else if (buf_handle.if_type == ESP_SERIAL_IF) {
@@ -626,7 +626,6 @@ static esp_err_t initialise_wifi(void)
 		ESP_LOGE(TAG,"Failed to start WiFi");
 		return result;
 	}
-
 	return result;
 }
 

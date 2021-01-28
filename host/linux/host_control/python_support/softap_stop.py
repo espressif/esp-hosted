@@ -22,10 +22,10 @@ import os
 # SoftAP            2
 # Station + SoftAP  3
 
-none = 0
-station = 1
-softap = 2
-station_softap = 3
+wifi_mode_none = 0
+wifi_mode_station = 1
+wifi_mode_softap = 2
+wifi_mode_station_softap = 3
 failure = "failure"
 success = "success"
 stop = "Not set"
@@ -39,19 +39,12 @@ print("WiFi Mode: "+str(wifi_mode))
 if (wifi_mode == failure):
     print("Failed to get wifi mode")
     flag = failure 
-elif (wifi_mode == softap):
-    wifi_mode = wifi_set_mode(none)
-    if (wifi_mode == failure):
+else:
+    stop_softap = wifi_stop_softap()
+    if (stop_softap != success):
         print("Failed to stop softap")
         flag = failure
-    else :
-        print("SoftAP stopped")
-elif (wifi_mode == station_softap):
-    wifi_mode = wifi_set_mode(station)
-    if (wifi_mode == failure):
-        print("failure in stopping softap")
-        flag = failure
-    else :
+    else:
         print("SoftAP stopped")
 
 if (flag == success):

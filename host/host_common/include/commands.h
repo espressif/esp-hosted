@@ -11,7 +11,7 @@
 
 #define SSID_LENGTH             32
 #define PASSWORD_LENGTH         64
-#define BSSID_LENGTH            19
+#define BSSID_LENGTH            17
 #define STATUS_LENGTH           14
 
 typedef enum {
@@ -48,17 +48,29 @@ typedef enum {
 typedef struct {
     uint8_t ssid[SSID_LENGTH];
     uint8_t pwd[PASSWORD_LENGTH];
-    uint8_t bssid[BSSID_LENGTH];
-    bool is_wpa3_supported;
     int channel;
-    int rssi;
     int encryption_mode;
     int max_connections;
     bool ssid_hidden;
-    int bandwidth;
-    char status[STATUS_LENGTH];
+    wifi_bandwidth_t bandwidth;
+} esp_hosted_softap_config_t;
+
+typedef struct {
+    uint8_t ssid[SSID_LENGTH];
+    uint8_t pwd[PASSWORD_LENGTH];
+    uint8_t bssid[BSSID_LENGTH];
+    bool is_wpa3_supported;
+    int rssi;
+    int channel;
+    int encryption_mode;
     uint16_t listen_interval;
-} esp_hosted_ap_config_t;
+    char status[STATUS_LENGTH];
+} esp_hosted_sta_config_t;
+
+typedef union{
+    esp_hosted_sta_config_t station;
+    esp_hosted_softap_config_t softap;
+}esp_hosted_control_config_t;
 
 typedef struct {
     uint8_t ssid[SSID_LENGTH];
@@ -73,6 +85,33 @@ typedef struct {
     int rssi;
 } esp_hosted_wifi_connected_stations_list;
 
+
+/* wifi get mac function returns status SUCCESS(0) or FAILURE(-1)
+ * Input parameter
+ *      mode : ESP32 wifi mode
+ *          (WIFI_MODE_STA  : for station mac
+ *           WIFI_MODE_AP   : for softAP mac)
+ * Output parameter
+ *      char* mac, returns MAC address of respective mode
+ */
+int wifi_get_mac(int mode, char *mac);
+
+/*
+ * wifi set mac function sets custom mac address to ESP32's station and softAP Interface, returns SUCCESS(0) or FAILURE(-1)
+ * Input parameter:
+ *      mode : ESP32 wifi mode
+ *          (WIFI_MODE_STA  : for station mac
+ *           WIFI_MODE_AP   : for softAP mac)
+ *      mac  : custom MAC Address for ESP32 Interface
+ * @attention 1. First set wifi mode before setting MAC address for respective station and softAP Interface
+ * @attention 2. ESP32 station and softAP have different MAC addresses, do not set them to be the same.
+ * @attention 3. The bit 0 of the first byte of ESP32 MAC address can not be 1.
+ * For example, the MAC address can set to be "1a:XX:XX:XX:XX:XX", but can not be "15:XX:XX:XX:XX:XX".
+ * @attention 4. MAC address will get reset after esp restarts
+ *
+ */
+int wifi_set_mac(int mode, char *mac);
+
 /* wifi get mode function returns status SUCCESS(0) or FAILURE(-1)
  * Output parameter
  *      int* mode : returns current wifi mode of ESP32
@@ -82,7 +121,7 @@ typedef struct {
  * WIFI_MODE_AP     : softAP mode
  * WIFI_MODE_APSTA  : softAP+station mode
  */
-int wifi_get_mode(int* mode);
+int wifi_get_mode(int *mode);
 
 /* wifi set mode function returns status SUCCESS(0) or FAILURE(-1)
  * User should give input mode as follows:
@@ -95,18 +134,9 @@ int wifi_get_mode(int* mode);
  */
 int wifi_set_mode(int mode);
 
-/* wifi get mac function returns status SUCCESS(0) or FAILURE(-1)
- * Input parameter
- *      mode == WIFI_MODE_STA for station mac
- *      mode == WIFI_MODE_AP for softAP mac
- * Output parameter
- *      char* mac, returns MAC address of respective mode
- */
-int wifi_get_mac (int mode ,char* mac);
-
 /* wifi set ap config function returns status of connect to AP request as SUCCESS(0) or FAILURE(-1)
  * Input parameter
- *      esp_hosted_ap_config_t ap_config ::
+ *      esp_hosted_control_config_t ap_config ::
  *          ssid                 :   ssid of AP
  *          pwd                  :   password of AP
  *          bssid                :   MAC address of AP
@@ -114,11 +144,11 @@ int wifi_get_mac (int mode ,char* mac);
  *          listen_interval      :   Listen interval for ESP32 station to receive beacon when WIFI_PS_MAX_MODEM is set.
  *                                   Units: AP beacon intervals. Defaults to 3 if set to 0.
  */
-int wifi_set_ap_config(esp_hosted_ap_config_t ap_config);
+int wifi_set_ap_config(esp_hosted_control_config_t ap_config);
 
 /* wifi get ap config function gives ssid, bssid, channel ID, rssi and encryption mode of connected AP, returns SUCCESS(0) OR FAILURE(-1)
  * Output parameter
- *      esp_hosted_ap_config_t* ap_config ::
+ *      esp_hosted_control_config_t* ap_config ::
  *          ssid                :   ssid of connected AP
  *          bssid               :   MAC address of connected AP
  *          channel             :   channel ID, 1 ~ 10
@@ -134,7 +164,7 @@ int wifi_set_ap_config(esp_hosted_ap_config_t ap_config);
  *              6 :   WPA3_PSK
  *              7 :   WPA2_WPA3_PSK   )
  */
-int wifi_get_ap_config (esp_hosted_ap_config_t* ap_config);
+int wifi_get_ap_config(esp_hosted_control_config_t* ap_config);
 
 /* wifi disconnect ap function disconnects ESP32 station from connected AP, returns SUCCESS(0) or FAILURE(-1)
  */
@@ -142,7 +172,7 @@ int wifi_disconnect_ap();
 
 /* wifi set softap config function sets ESP32 softAP configurations, returns SUCCESS(0) or FAILURE(-1)
  * Input parameter
- *      esp_hosted_ap_config_t softap_config ::
+ *      esp_hosted_control_config_t softap_config ::
  *          ssid            :   ssid of softAP
  *          pwd             :   password of softAP, length of password should be 8~64 bytes ASCII
  *          channel         :   channel ID, in range of 1 to 11
@@ -160,11 +190,11 @@ int wifi_disconnect_ap();
  *              ( 1 : WIFI_BW_HT20
  *                2 : WIFI_BW_HT40 )
  */
-int wifi_set_softap_config (esp_hosted_ap_config_t softap_config);
+int wifi_set_softap_config(esp_hosted_control_config_t softap_config);
 
 /* wifi get softap config function gives ESP32 softAP credentials, returns SUCCESS(0) or FAILURE (-1)
  * Output parameter
- *      esp_hosted_ap_config_t* softap_config ::
+ *      esp_hosted_control_config_t* softap_config ::
  *          ssid                :   ssid of softAP
  *          pwd                 :   password of softAP
  *          channel             :   channel ID, in range of 1 to 11
@@ -184,57 +214,23 @@ int wifi_set_softap_config (esp_hosted_ap_config_t softap_config);
  *          status              :   success         (connected to AP)
  *                                  not_connected   (not connected to AP)
  */
-int wifi_get_softap_config (esp_hosted_ap_config_t* softap_config);
+int wifi_get_softap_config(esp_hosted_control_config_t *softap_config);
 
-/* wifi ap scan list function gives scanned list of available APs, returns SUCCESS(0) or FAILURE(-1)
+/* wifi stop softap function stops ESP32 softAP, returns SUCCESS(0) or FAILURE(-1)
+ */
+int wifi_stop_softap();
+
+/* wifi ap scan list function gives scanned list of available APs, returns structure pointer of esp_hosted_wifi_scanlist_t.
  * Output parameter
  *      int* count      : number of available APs
- *      esp_hosted_wifi_scanlist_t** list : double pointer to credentials of scanned APs
- *
- *      AP credentials::
- *          ssid                :   ssid of AP
- *          channel             :   channel ID, in range of 1 to 10
- *          bssid               :   MAC address of AP
- *          rssi                :   rssi signal strength
- *          encryption_mode     :   encryption mode
- *          (encryption modes are
- *              0 :   OPEN
- *              1 :   WEP
- *              2 :   WPA_PSK
- *              3 :   WPA2_PSK
- *              4 :   WPA_WPA2_PSK
- *              5 :   WPA2_ENTERPRISE
- *              6 :   WPA3_PSK
- *              7 :   WPA2_WPA3_PSK   )
  */
-int wifi_ap_scan_list(esp_hosted_wifi_scanlist_t** list, int* count);
+esp_hosted_wifi_scanlist_t* wifi_ap_scan_list(int *count);
 
-/* wifi connected stations list function gives list of connected stations to ESP32 softAP, returns SUCCESS(0) or FAILURE(-1)
+/* wifi connected stations list function gives list of connected stations to ESP32 softAP, returns structure pointer of esp_hosted_wifi_connected_stations_list
  * Output parameter
  *      int* num      : number of stations connected
- *      esp_hosted_wifi_connected_stations_list** list : double pointer to credentials of connected stations
- *
- *      Stations credentials::
- *          mac         :   MAC address of station
- *          rssi        :   rssi signal strength
  */
-int wifi_connected_stations_list(esp_hosted_wifi_connected_stations_list** list, int* num);
-
-/*
- * wifi set mac function sets custom mac address to ESP32's station and softAP Interface, returns SUCCESS(0) or FAILURE(-1)
- * Input parameter:
- *      mode : ESP32 wifi mode
- *          (WIFI_MODE_STA  : for station mac
- *           WIFI_MODE_AP   : for softAP mac)
- *      mac  : custom MAC Address for ESP32 Interface
- * @attention 1. First set wifi mode before setting MAC address for respective station and softAP Interface
- * @attention 2. ESP32 station and softAP have different MAC addresses, do not set them to be the same.
- * @attention 3. The bit 0 of the first byte of ESP32 MAC address can not be 1.
- * For example, the MAC address can set to be "1a:XX:XX:XX:XX:XX", but can not be "15:XX:XX:XX:XX:XX".
- * @attention 4. MAC address will get reset after esp restarts
- *
- */
-int wifi_set_mac(int mode, char* mac);
+esp_hosted_wifi_connected_stations_list*  wifi_connected_stations_list(int *num);
 
 /*
  * wifi set power save mode function sets power save mode of ESP32, returns SUCCESS(0) or FAILURE(-1)
@@ -260,5 +256,5 @@ int wifi_set_power_save_mode(int power_save_mode);
  *                        by the listen_interval parameter in wifi_set_ap_config function
  *                   3  : WIFI_PS_INVALID,     Invalid power save mode. In case of failure of command
  */
-int wifi_get_power_save_mode(int* power_save_mode);
+int wifi_get_power_save_mode(int *power_save_mode);
 #endif

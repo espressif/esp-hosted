@@ -73,6 +73,7 @@ typedef unsigned long   u_long;
 
 void hard_delay(int x);
 int min(int x, int y);
+int get_num_from_string(int *val, char *arg);
 
 #ifdef __cplusplus
 }

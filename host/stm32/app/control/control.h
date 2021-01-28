@@ -56,7 +56,7 @@ typedef enum control_path_events_s {
 #endif
 
 #ifndef INPUT_STATION_BSSID
-#define INPUT_STATION_BSSID               "0"
+#define INPUT_STATION_BSSID               ""
 #endif
 
 #ifndef INPUT_STATION_IS_WPA3_SUPPORTED

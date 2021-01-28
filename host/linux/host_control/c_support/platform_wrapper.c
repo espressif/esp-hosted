@@ -58,14 +58,14 @@ void* esp_hosted_calloc(size_t blk_no, size_t size)
     return calloc(blk_no, size);
 }
 
-void esp_hosted_free(void* ptr)
+void esp_hosted_free(void *ptr)
 {
     free(ptr);
 }
 
-struct esp_hosted_driver_handle_t* esp_hosted_driver_open(const char* transport)
+struct esp_hosted_driver_handle_t* esp_hosted_driver_open(const char *transport)
 {
-    struct esp_hosted_driver_handle_t* esp_hosted_driver_handle = NULL;
+    struct esp_hosted_driver_handle_t *esp_hosted_driver_handle = NULL;
     if (!transport) {
         return NULL;
     }
@@ -84,10 +84,10 @@ struct esp_hosted_driver_handle_t* esp_hosted_driver_open(const char* transport)
     return esp_hosted_driver_handle;
 }
 
-int esp_hosted_driver_write (struct esp_hosted_driver_handle_t* esp_hosted_driver_handle,
-    uint8_t* buf, int in_count, int* out_count)
+int esp_hosted_driver_write (struct esp_hosted_driver_handle_t *esp_hosted_driver_handle,
+    uint8_t *buf, int in_count, int *out_count)
 {
-    if (!esp_hosted_driver_handle || esp_hosted_driver_handle->file_desc < 0 || 
+    if (!esp_hosted_driver_handle || esp_hosted_driver_handle->file_desc < 0 ||
         !buf || !in_count || !out_count) {
         return FAILURE;
     }
@@ -99,17 +99,17 @@ int esp_hosted_driver_write (struct esp_hosted_driver_handle_t* esp_hosted_drive
     return SUCCESS;
 }
 
-uint8_t* esp_hosted_driver_read (struct esp_hosted_driver_handle_t* esp_hosted_driver_handle,
-    int read_len, uint8_t wait, uint32_t* buf_len)
+uint8_t* esp_hosted_driver_read (struct esp_hosted_driver_handle_t *esp_hosted_driver_handle,
+    int read_len, uint8_t wait, uint32_t *buf_len)
 {
     int ret = 0, count = 0, check = false;
     struct timeval timeout;
-    uint8_t* buf = NULL;
+    uint8_t *buf = NULL;
     if (!esp_hosted_driver_handle || esp_hosted_driver_handle->file_desc < 0
         || !read_len || !buf_len || !wait) {
         return NULL;
     }
-    buf = (uint8_t* )esp_hosted_calloc(1, read_len);
+    buf = (uint8_t *)esp_hosted_calloc(1, read_len);
     if (!buf) {
         printf("Failed to allocate memory \n");
         return NULL;
@@ -154,7 +154,7 @@ uint8_t* esp_hosted_driver_read (struct esp_hosted_driver_handle_t* esp_hosted_d
  * Read variable length of received data. Variable length is obtained after
  * parsing of previously read data.
  */
-                buf = (uint8_t* )esp_hosted_calloc(1, *buf_len);
+                buf = (uint8_t *)esp_hosted_calloc(1, *buf_len);
                 if (!buf) {
                     printf("Failed to allocate memory \n");
                     goto free_err;
@@ -180,7 +180,7 @@ free_err:
     return NULL;
 }
 
-int esp_hosted_driver_close(struct esp_hosted_driver_handle_t** esp_hosted_driver_handle)
+int esp_hosted_driver_close(struct esp_hosted_driver_handle_t **esp_hosted_driver_handle)
 {
     if (!esp_hosted_driver_handle || !(*esp_hosted_driver_handle) || (*esp_hosted_driver_handle)->file_desc < 0) {
         return FAILURE;

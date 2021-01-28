@@ -19,21 +19,34 @@ To setup Wi-Fi connectivity, `control command` APIs are provided. Using these AP
 #### Wi-Fi Control Interface
 [`python_support`](../../host/linux/host_control/python_support/) in `host/linux/host_control` directory implements Wi-Fi control interface between the host and ESP peripheral. It contains following functions which can be used to control Wi-Fi functionality of the ESP peripheral:
 
-| Function | Functionality |
+Common functions as follow:
+
+| Functions | Functionality |
 |:--------|:-------------|
 | wifi_get_mac(mode) | get MAC address of station or softAP Interface |
 | wifi_get_mode() | get wifi mode |
 | wifi_set_mode(mode) | set wifi mode |
-| wifi_set_ap_config(ssid, pwd, bssid, is_wpa3_supported, listen_interval) | connect to AP as a station |
-| wifi_get_ap_config() | get AP configuration and status |
-| wifi_disconnect_ap() | disconnect from AP |
-| wifi_set_softap_config(ssid, pwd, chnl, ecn, max_conn, ssid_hidden, bw) | start softAP |
-| wifi_get_softap_config() | get softAP configuration |
-| wifi_ap_scan_list() | scan available APs |
-| wifi_connected_stations_list() | list stations connected to softAP |
 | wifi_set_mac(mode, mac) | sets custom mac address for station and softAP Interface |
 | wifi_set_power_save_mode(power_save_mode) | set power save mode |
 | wifi_get_power_save_mode() | get power save mode |
+
+Functions related to station mode as follow:
+
+| Functions | Functionality |
+|:---------|:--------------|
+| wifi_set_ap_config(ssid, pwd, bssid, is_wpa3_supported, listen_interval) | connect to AP as a station |
+| wifi_get_ap_config() | get AP configuration and status |
+| wifi_disconnect_ap() | disconnect from AP |
+| wifi_ap_scan_list() | scan available APs |
+
+Functions related to softap mode as follow:
+
+| Functions | Functionality |
+|:---------|:--------------|
+| wifi_set_softap_config(ssid, pwd, chnl, ecn, max_conn, ssid_hidden, bw) | start softAP |
+| wifi_get_softap_config() | get softAP configuration |
+| wifi_stop_softap() | stops ESP32 softAP |
+| wifi_connected_stations_list() | list stations connected to softAP |
 
 A utility script `test.py` is provided [host/linux/host_control/python_support/test.py](../../host/linux/host_control/python_support/test.py). This script can be used as an example for using above functions. You can run the script as follows:
 ```
@@ -81,14 +94,14 @@ You can check that `ethsta0` interface is down (disabled) using `ifconfig`.
 - channel ID, 1 ~ 11
 - encryption method (0: `OPEN`, 2: `WPA_PSK`, 3: `WPA2_PSK`, 4: `WPA_WPA2_PSK`)
 - maximum number of stations, in range of 1 ~ 10.
-- whether SSID is hidden (1 if the softAP shouldn't broadcast its SSID, else 0)
+- whether SSID is hidden (True if the softAP shouldn't broadcast its SSID, else False)
 - bandwidth (1: `WIFI_BW_HT20` (20MHZ), 2: `WIFI_BW_HT40` (40MHZ))
 
 The maximum number of connections, "SSID hidden", and bandwidth parameters are optional.
 
 For example:
 ```
-python softap_config.py 'xyz' 'xyz123456' 1 3 --max_conn=4 --ssid_hidden=0 --bw=1
+python softap_config.py 'xyz' 'xyz123456' 1 3 --max_conn=4 --ssid_hidden=False --bw=1
 ```
 
 You can check that `ethap0` interface is up (enabled) using `ifconfig`.
@@ -115,21 +128,34 @@ python connected_stations_list.py
 ### Using C Implementation
 As an alternative to python implementation of Wi-Fi control interface, a `C language` based implementation is provided. Following API's are provided as a part of this.
 
-| Function | Functionality |
+Common functions as follow:
+
+| Functions | Functionality |
 |:--------|:-------------|
-| wifi_get_mac(int mode, char* mac) | get MAC address of station or softAP Interface |
-| wifi_get_mode(int* mode) | get wifi mode |
+| wifi_get_mac(int mode, char *mac) | get MAC address of station or softAP Interface |
+| wifi_set_mac(int mode, char *mac) | sets custom mac address for station and softAP Interface |
+| wifi_get_mode(int *mode) | get wifi mode |
 | wifi_set_mode(int mode) | set wifi mode |
-| wifi_set_ap_config(esp_hosted_ap_config_t ap_config) | connect to AP as a station |
-| wifi_get_ap_config (esp_hosted_ap_config_t* ap_config) | get AP configuration and status |
-| wifi_disconnect_ap () | disconnect from AP |
-| wifi_set_softap_config (esp_hosted_ap_config_t softap_config) | start softAP |
-| wifi_get_softap_config (esp_hosted_ap_config_t* softap_config) | get softAP configuration |
-| wifi_ap_scan_list(esp_hosted_wifi_scanlist_t** list, int* count) | scan available APs |
-| wifi_connected_stations_list(esp_hosted_wifi_connected_stations_list** list, int* num) | list stations connected to softAP |
-| wifi_set_mac(int mode, char* mac) | sets custom mac address for station and softAP Interface |
 | wifi_set_power_save_mode(int power_save_mode) | set power save mode |
-| wifi_get_power_save_mode(int* power_save_mode) | get power save mode |
+| wifi_get_power_save_mode(int *power_save_mode) | get power save mode |
+
+Functions related to station mode as follow:
+
+| Functions | Functionality |
+|:---------|:--------------|
+| wifi_set_ap_config(esp_hosted_control_config_t ap_config) | connect to AP as a station |
+| wifi_get_ap_config(esp_hosted_control_config_t* ap_config) | get AP configuration and status |
+| wifi_disconnect_ap() | disconnect from AP |
+| wifi_ap_scan_list (int *count) | scan available APs |
+
+Functions related to softap mode as follow:
+
+| Functions | Functionality |
+|:---------|:--------------|
+| wifi_set_softap_config(esp_hosted_control_config_t softap_config) | start softAP |
+| wifi_get_softap_config(esp_hosted_control_config_t *softap_config) | get softAP configuration |
+| wifi_stop_softap() | stops ESP32 softAP |
+| wifi_connected_stations_list(int *num) | list of stations connected to softAP |
 
 Above function's parameters and description is present [here](../../host/host_common/include/commands.h).
 
