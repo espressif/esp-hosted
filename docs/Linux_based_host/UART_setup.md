@@ -1,8 +1,9 @@
-## Bluetooth/BLE connectivity Setup over UART
+# Bluetooth/BLE connectivity Setup over UART
 This section is only applicable to ESP32 boards. ESP32-S2 does not support Bluetooth/BLE.
 
-### Hardware Setup/Connections
-In this setup, ESP32 board provides Bluetooth/BLE capabilities to host over UART interface. Please connect ESP32 board to Raspberry-Pi with jumper cables as below. To ensure signal integrity, use short jumper wires ( < 10 cm)
+## Setup
+### Hardware Setup
+In this setup, ESP32 board provides Bluetooth/BLE capabilities to host over UART interface. Please connect ESP peripheral to Raspberry-Pi with jumper cables as mentioned below. It may be good to use small length cables to ensure signal integrity. Power ESP32 and Raspberry Pi separately with a power supply that provide sufficient power. ESP32 can be powered through PC using micro-USB cable.
 
 | Raspberry-Pi Pin Function | Raspberry-Pi Pin | ESP32 Pin | ESP32 Pin Function |
 |:-------:|:--------:|:---------:|:--------:|
@@ -12,9 +13,9 @@ In this setup, ESP32 board provides Bluetooth/BLE capabilities to host over UART
 | RTS | 11 | IO23 | CTS |
 | Ground | 39 | GND | Ground |
 
-Power ESP32 board and Raspberry Pi separately with a power supply that provide sufficient power. ESP32 board can be powered through PC using micro-USB cable.
+Raspberry-Pi pinout can be found [here!](https://pinout.xyz/pinout/uart)
 
-### Software setup
+### Raspberry-Pi Software Setup
 By default, the UART pins on Raspberry-Pi are in disabled state. In order to enable UART and setup it for bluetooth connection, follow below steps.
 1. Enable UART pins and disable in built bluetooth on Raspberry-Pi by appending following lines to _/boot/config.txt_ file
 ```
@@ -37,32 +38,69 @@ dwc_otg.lpm_enable=0 console=tty1 root=PARTUUID=5c2c80d1-02 rootfstype=ext4 elev
 ```
 3. Disable hciuart on Raspberry-Pi
 ```
-# systemctl disable hciuart
+# sudo systemctl disable hciuart
 ```
 4. Reboot Raspberry-Pi
 
-### ESP32 Setup
+## Load ESP-Hosted Solution
+### Host Software
+* Execute following commands in root directory of cloned ESP-Hosted repository on Raspberry-Pi
+```sh
+$ cd host/linux/host_control/
+$ ./rpi_init.sh btuart
+```
 
-For pre built hosted mode firmware is present in `release` tab. Current binaries are made for UART baudrate of 921600. To flash it on ESP32 edit <serial_port> with ESP32's serial port and run following command.
+### ESP Peripheral Firmware
+One can load pre-built release binaries on ESP peripheral or compile those from source. Below subsection explains both these methods.
+
+#### ESP-IDF requirement
+Please check [ESP-IDF Setup](Linux_based_readme.md#esp-idf-setup) and use appropriate ESP-IDF version
+
+#### Load Pre-built Release Binaries
+* Download pre-built firmware binaries from [releases](https://github.com/espressif/esp-hosted/releases)
+* Please note that this binary is made for UART baudrate of 921600.
+* Linux users can run below command to flash these binaries. Edit <serial_port> with ESP peripheral's serial port.
 ```sh
 esptool.py -p <serial_port> -b 960000 --before default_reset --after hard_reset write_flash --flash_mode dio --flash_freq 40m --flash_size detect 0x8000 partition-table_sdio_uart_v0.3.bin 0x1000 bootloader_sdio_uart_v0.2.bin 0x10000 esp_hosted_firmware_sdio_uart_v0.3.bin
 ```
-For windows user, you can also program the binaries using ESP Flash Programming Tool.
+* Windows user can use ESP Flash Programming Tool to flash the pre-built binary.
 
-Or if you have source, compile the app against ESP-IDF 4.0 release. To use `make` build system, run following command in `esp/esp_driver/network_adapter` directory navigate to `Component config ->  Bluetooth -> Bluetooth controller -> HCI mode -> UART(H4) -> select` also to set baud rate, `Component config ->  Bluetooth -> Bluetooth controller ->  HCI UART(H4) Options -> UART Baudrate for HCI -> <set baudrate> -> Ok` and exit from menuconfig.
-```
-$ make menuconfig
-```
-run `make` in `esp/esp_driver/network_adapter` directory. Program the ESP32 using standard flash programming procedure with `make`
+#### Source Compilation
+* In root directory of ESP-Hosted repository, execute below command
+
 ```sh
-$ make flash
+$ cd esp/esp_driver/network_adapter
 ```
-Or to use `cmake` build system, run following command in `esp/esp_driver/network_adapter` directory navigate to `Component config ->  Bluetooth -> Bluetooth controller -> HCI mode -> UART(H4) -> select`  also to set baud rate, `Component config ->  Bluetooth -> Bluetooth controller ->  HCI UART(H4) Options -> UART Baudrate for HCI -> <set baudrate> -> Ok` and exit from menuconfig. Read more about [idf.py](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/build-system.html#using-the-build-system) here.
+
+##### Using cmake
+* Set target if the ESP32S2 is being used. Skip if ESP32 is being used.
 ```
+$ idf.py set-target esp32s2
+```
+* Execute following command to configure the project
+```sh
 $ idf.py menuconfig
 ```
-compile and flash the app on ESP32 against ESP-IDF 4.0 release, by running following command in `esp/esp_driver/network_adapter` directory.
-
+* This will open project configuration window.
+	* Navigate to `Component config ->  Bluetooth -> Bluetooth controller -> HCI mode -> UART(H4) -> select`
+	* Also to set baud rate by navigating to, `Component config ->  Bluetooth -> Bluetooth controller ->  HCI UART(H4) Options -> UART Baudrate for HCI -> <set baudrate> -> Ok`
+	* exit from menuconfig.
+* Use below command to compile and flash the project. Replace <serial_port> with ESP peripheral's serial port.
 ```sh
 $ idf.py -p <serial_port> build flash
+```
+
+##### Using make
+:warning: *make* build system is only supported till ESP32. Please refer cmake section above for ESP32-S2.
+* Execute following command to configure the project
+```sh
+$ make menuconfig
+```
+* This will open project configuration window.
+	* Navigate to `Component config ->  Bluetooth -> Bluetooth controller -> HCI mode -> UART(H4) -> select`
+	* Also to set baud rate by navigating to, `Component config ->  Bluetooth -> Bluetooth controller ->  HCI UART(H4) Options -> UART Baudrate for HCI -> <set baudrate> -> Ok`
+	* exit from menuconfig.
+* Use below command to compile and flash the project
+```sh
+$ make flash
 ```

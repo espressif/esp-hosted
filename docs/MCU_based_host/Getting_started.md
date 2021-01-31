@@ -14,39 +14,6 @@ Wi-Fi can be configured as either as `STATION` mode or `SOFTAP` mode or `SOFTAP-
 
 Host firmware provides wifi connectivity using control path and data path. Control path commands uses `protocomm` layer of ESP-IDF to serialize structured control data and communicates using SPI transport interface between Host(MCU based Host) and ESP peripheral (ESP32/ESP32-S2). User can use control commands to build application.
 
-### Control Path Commands
-[commands.c](../../host/host_common/commands.c) is control path commands C library. It implements the communication protocol between the host and ESP peripheral. It contains following functions which can be used to control Wi-Fi functionality of the ESP peripheral as follows:
-
-Common functions as follow:
-
-| Functions | Functionality |
-|:--------|:-------------|
-| wifi_get_mac(int mode, char *mac) | get MAC address of station or softAP Interface |
-| wifi_set_mac(int mode, char *mac) | sets custom mac address for station and softAP Interface |
-| wifi_get_mode(int *mode) | get wifi mode |
-| wifi_set_mode(int mode) | set wifi mode |
-| wifi_set_power_save_mode(int power_save_mode) | set power save mode |
-| wifi_get_power_save_mode(int *power_save_mode) | get power save mode |
-
-Functions related to station mode as follow:
-
-| Functions | Functionality |
-|:---------|:--------------|
-| wifi_set_ap_config(esp_hosted_control_config_t ap_config) | connect to AP as a station |
-| wifi_get_ap_config(esp_hosted_control_config_t* ap_config) | get AP configuration and status |
-| wifi_disconnect_ap() | disconnect from AP |
-| wifi_ap_scan_list (int *count) | scan available APs |
-
-Functions related to softap mode as follow:
-
-| Functions | Functionality |
-|:---------|:--------------|
-| wifi_set_softap_config(esp_hosted_control_config_t softap_config) | start softAP |
-| wifi_get_softap_config(esp_hosted_control_config_t *softap_config) | get softAP configuration |
-| wifi_stop_softap() | stops ESP32 softAP |
-| wifi_connected_stations_list(int *num) | list of stations connected to softAP |
-
-Above functions' API definitions are present at [commands.h](../../host/host_common/include/commands.h). User can also take reference of [test.c](../../host/linux/host_control/c_support/test.c) code to get idea about how to call above function.
 
 ### Start Project with STM32
 

@@ -1,6 +1,9 @@
-## Wi-Fi and BT/BLE connectivity Setup over SPI
-### Hardware Setup/Connections
-In this setup, ESP board acts as a SPI peripheral and provides Wi-FI capabilities to host. Please connect ESP peripheral to Raspberry-Pi with jumper cables as mentioned below. It may be good to use small length cables to ensure signal integrity. Power ESP32 and Raspberry Pi separately with a power supply that provide sufficient power. ESP32 can be powered through PC using micro-USB cable.
+# Wi-Fi and BT/BLE connectivity Setup over SPI
+## Setup
+### Hardware Setup
+In this setup, ESP board acts as a SPI peripheral and provides Wi-Fi capabilities to host. Please connect ESP peripheral to Raspberry-Pi with jumper cables as mentioned below. It may be good to use small length cables to ensure signal integrity. Power ESP32 and Raspberry Pi separately with a power supply that provide sufficient power. ESP32 can be powered through PC using micro-USB cable.
+
+Raspberry-Pi pinout can be found [here!](https://pinout.xyz/pinout/spi)
 
 #### ESP32 setup
 | Raspberry-Pi Pin | ESP32 Pin | Function |
@@ -34,8 +37,8 @@ Setup image is here.
 
 ![alt text](rpi_esp32_s2_setup.jpg "setup of Raspberry-Pi as host and ESP32-S2 as ESP peripheral")
 
-### Software setup
-The SPI master driver is disabled by default on Raspberry Pi OS. To enable it add following commands in  _/boot/config.txt_ file
+### Raspberry-Pi Software Setup
+The SPI master driver is disabled by default on Raspberry-Pi OS. To enable it add following commands in  _/boot/config.txt_ file
 ```
 dtparam=spi=on
 dtoverlay=disable-bt
@@ -43,17 +46,24 @@ dtoverlay=disable-bt
 Please reboot Raspberry-Pi after changing this file.
 
 
-### ESP peripheral setup
+## Load ESP-Hosted Solution
+### Host Software
+* Execute following commands in root directory of cloned ESP-Hosted repository on Raspberry-Pi
+```sh
+$ cd host/linux/host_control/
+$ ./rpi_init.sh spi
+```
+* This script compiles and loads host driver on Raspberry-Pi. It also creates virtual serial interface `/dev/esps0` which is used as a control interface for Wi-Fi on ESP peripheral
+
+### ESP Peripheral Firmware
+One can load pre-built release binaries on ESP peripheral or compile those from source. Below subsection explains both these methods.
+
 #### ESP-IDF requirement
-Following table explains ESP-IDF version required to make ESP-Hosted solution work on corresponding ESP peripheral.
+Please check [ESP-IDF Setup](Linux_based_readme.md#esp-idf-setup) and use appropriate ESP-IDF version
 
-| ESP peripheral | ESP-IDF release |
-|:----:|:----:|
-| ESP32 | release v4.0 |
-| ESP32-S2 | release v4.2 |
-
-#### Using pre-built binary
-For pre built hosted mode firmware is present in `release` tab. To flash it on ESP peripheral, edit <serial_port> with ESP peripheral's serial port and run following command.
+#### Load Pre-built Release Binaries
+* Download pre-built firmware binaries from [releases](https://github.com/espressif/esp-hosted/releases)
+* Linux users can run below command to flash these binaries. Edit <serial_port> with ESP peripheral's serial port.
 ##### ESP32
 ```sh
 esptool.py -p <serial_port> -b 960000 --before default_reset --after hard_reset write_flash --flash_mode dio --flash_freq 40m --flash_size detect 0x8000 partition-table_spi_v0.3.bin 0x1000 bootloader_spi_v0.3.bin 0x10000 esp_hosted_firmware_spi_v0.3.bin
@@ -62,60 +72,45 @@ esptool.py -p <serial_port> -b 960000 --before default_reset --after hard_reset 
 ```sh
 esptool.py -p <serial_port> -b 960000 --before default_reset --after hard_reset --chip esp32s2  write_flash --flash_mode dio --flash_size detect --flash_freq 80m 0x1000 bootloader_spi_v0.3.bin 0x8000 build/partition_table/partition-table_spi_v0.3.bin 0x10000 esp_hosted_firmware_spi_v0.3.bin
 ```
-For windows user, you can also program the binaries using ESP Flash Programming Tool.
+* Windows user can use ESP Flash Programming Tool to flash the pre-built binary.
 
-#### Compilation using source
-Please use above mentioned ESP-IDF repository release branch for your ESP peripheral.
-The control path between host and ESP peripheral is based on `protobuf`. For that `protocomm` layer from ESP-IDF is used. Run following command to make `protocomm_priv.h` available for control path.
-```
-$ git mv components/protocomm/src/common/protocomm_priv.h components/protocomm/include/common/
-```
-
-Navigate to `esp/esp_driver/network_adapter` directory
-
-##### Using make
-
-:warning: *make* build system is only supported till ESP32. Please refer cmake section below for ESP32-S2.
-
-```
-$ make clean
-```
-
-Run following command and navigate to `Example Configuration ->  Transport layer -> SPI interface -> select` and exit from menuconfig.
-```
-$ make menuconfig
-```
-
-To build and flash the app on ESP peripheral, run
+#### Source Compilation
+* In root directory of ESP-Hosted repository, execute below command
 
 ```sh
-$ make
-$ make flash
+$ cd esp/esp_driver/network_adapter
 ```
 ##### Using cmake
-
-```
-$ idf.py fullclean
-```
-:warning: Skip this step for ESP32. Run for ESP32-S2 only.
+* Set target if the ESP32S2 is being used. Skip if ESP32 is being used.
 ```
 $ idf.py set-target esp32s2
 ```
-
-Run following command and navigate to `Example Configuration -> Transport layer -> SPI interface -> select` and exit from menuconfig. Read more about [idf.py](https://docs.espressif.com/projects/esp-idf/en/latest/esp32s2/api-guides/build-system.html#using-the-build-system) here.
-```
+* Execute following command to configure project
+```sh
 $ idf.py menuconfig
 ```
-
-To build and flash the app on ESP peripheral, run
-
+* This will open project configuration window. To select SPI transport interface, navigate to `Example Configuration ->  Transport layer -> SPI interface -> select` and exit from menuconfig.
+* Use below command to compile and flash the project. Replace <serial_port> with ESP peripheral's serial port.
 ```sh
 $ idf.py -p <serial_port> build flash
 ```
 
+##### Using make
+:warning: *make* build system is only supported till ESP32. Please refer cmake section above for ESP32-S2.
+* Execute following command to configure project
+```sh
+$ make menuconfig
+```
+* This will open project configuration window. To select SPI transport interface, navigate to `Example Configuration ->  Transport layer -> SPI interface -> select` and exit from menuconfig.
+* Use below command to compile and flash the project
+```sh
+$ make
+$ make flash
+```
+
 ## Checking the Setup for SPI
 Once ESP peripheral has a valid firmware and booted successfully, you should be able to see successful enumeration on Raspberry Pi side as:
-```sh
+```
 $ dmesg
 [   47.150740] OF: overlay: WARNING: memory leak will occur if overlay removed, property: /soc/spi@7e204000/spidev@0/status
 [   47.346754] Bluetooth: Core ver 2.22
