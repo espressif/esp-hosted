@@ -17,6 +17,7 @@ import argparse
 import time
 import os
 import subprocess
+from distutils.util import strtobool
 
 # WiFi Mode
 # NULL              0
@@ -41,7 +42,7 @@ parser.add_argument("password", type=str, default='', help="password of AP")
 
 parser.add_argument("--bssid", type=str, default='', help="bssid i.e MAC address of AP in case of multiple AP has same ssid (default: '')")
 
-parser.add_argument("--is_wpa3_supported", type=bool, default=False, help="wpa3 support present on AP (False:Unsupported) (True: Supported)")
+parser.add_argument('--is_wpa3_supported', type=lambda x: bool(strtobool(x)), default=False, help="wpa3 support present on AP (False:Unsupported) (True: Supported)")
 
 parser.add_argument("--listen_interval", type=int, default=3, help="Listen interval for ESP32 station to receive beacon when WIFI_PS_MAX_MODEM is set. Units: AP beacon intervals. (Defaults to 3 if set to 0)")
 

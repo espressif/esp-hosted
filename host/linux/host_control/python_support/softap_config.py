@@ -16,6 +16,7 @@ from commands import *
 import argparse
 import time
 import os
+from distutils.util import strtobool
 
 # WiFi Mode
 # NULL                  0
@@ -44,7 +45,7 @@ parser.add_argument("encrp_mthd", type=int, default=0, help="encryption method (
 
 parser.add_argument("--max_conn", type=int, default=1, help="max connection count( number of Stations to which ESP32 SoftAP can be connected, within the range of [1, 10])")
 
-parser.add_argument("--ssid_hidden", type=int, default=False, help="ssid hidden/broadcast (It can set to True if softAP shouldnt broadcast its ssid else False)")
+parser.add_argument('--ssid_hidden', type=lambda x: bool(strtobool(x)), default=False, help="ssid hidden/broadcast (It can set to True if softAP shouldnt broadcast its ssid else False)")
 
 parser.add_argument("--bw", type=int, default=1, help="Bandwidth (1: WIFI_BW_HT20(20MHZ)) , (2: WIFI_BW_HT40(40MHZ)) default is 20MHZ")
 
