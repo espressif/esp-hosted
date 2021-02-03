@@ -34,7 +34,6 @@ disconnect = "Not set"
 parser = argparse.ArgumentParser(description='station_disconnect.py script will disconnect ESPStation from AP ex. python station_disconnect.py')
 
 wifi_mode = wifi_get_mode()
-print("WiFi Mode: "+str(wifi_mode))
 
 if (wifi_mode == failure):
     print("Failed to get WiFi Mode")
@@ -42,7 +41,7 @@ if (wifi_mode == failure):
 elif ((wifi_mode == wifi_mode_station) or (wifi_mode == wifi_mode_station_softap)):
     disconnect = wifi_disconnect_ap()
     if (disconnect != success):
-        print("Failed to Disconnected from AP")
+        print("Failed to Disconnect from AP")
         flag = failure
     else :
         print("Success in Disconnecting from AP")
