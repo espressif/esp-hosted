@@ -211,8 +211,6 @@ int wifi_set_softap_config(esp_hosted_control_config_t softap_config);
  *          bandwidth          : bandwidth of ESP32 softAP
  *              ( 1 : WIFI_BW_HT20
  *                2 : WIFI_BW_HT40 )
- *          status              :   success         (connected to AP)
- *                                  not_connected   (not connected to AP)
  */
 int wifi_get_softap_config(esp_hosted_control_config_t *softap_config);
 
