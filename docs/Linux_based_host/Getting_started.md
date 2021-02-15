@@ -1,7 +1,6 @@
-# Getting started with Raspberry-Pi (rpi)
+# User Guide for ESP-Hosted with Linux Host (Raspberry-Pi)
 
-This section elaborates about setting up the connectivity for Wi-Fi and Bluetooth.
-Before proceeding, ensure pre-requisites [Hardware Setup and Compilation](docs/Linux_based_host/Setup.md) are done.
+This section elaborates about setting up  Wi-Fi and Bluetooth/BLE connectivity on Linux host using ESP-Hosted solution.
 
 ## Wi-Fi Connectivity
 
@@ -95,7 +94,7 @@ You can check that `ethsta0` interface is down (disabled) using `ifconfig`.
 - encryption method (0: `OPEN`, 2: `WPA_PSK`, 3: `WPA2_PSK`, 4: `WPA_WPA2_PSK`)
 - maximum number of stations, in range of 1 ~ 10.
 - whether SSID is hidden (True if the softAP shouldn't broadcast its SSID, else False)
-- bandwidth (1: `WIFI_BW_HT20` (20MHZ), 2: `WIFI_BW_HT40` (40MHZ))
+- bandwidth (1: `WIFI_BW_HT20` (20MHz), 2: `WIFI_BW_HT40` (40MHz))
 
 The maximum number of connections, "SSID hidden", and bandwidth parameters are optional.
 
@@ -283,3 +282,9 @@ Run `hcitool scan` for BT device scanning.
 #### BLE scan
 
 Run `hcitool lescan` for BLE device scanning.
+
+## Troubleshoot Instructions
+
+Please refer following for troubleshoot instructions if something goes wrong.
+
+* [Troubleshooting Guide](./Troubleshoot.md)

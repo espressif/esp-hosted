@@ -1,6 +1,7 @@
-## Wi-Fi and BT/BLE connectivity Setup over SDIO
-### Hardware Setup/Connections
-In this setup, ESP board acts as a SDIO peripheral and provides Wi-FI capabilities to host. Please connect ESP peripheral to Raspberry-Pi with jumper cables as mentioned below. It may be good to use small length cables to ensure signal integrity.
+# Wi-Fi and BT/BLE connectivity Setup over SDIO
+## Setup
+### Hardware Setup
+In this setup, ESP board acts as a SDIO peripheral and provides Wi-Fi capabilities to host. Please connect ESP peripheral to Raspberry-Pi with jumper cables as mentioned below. It may be good to use small length cables to ensure signal integrity. Power ESP32 and Raspberry Pi separately with a power supply that provide sufficient power. ESP32 can be powered through PC using micro-USB cable.
 
 | Raspberry-Pi Pin | ESP Pin | Function |
 |:-------:|:---------:|:--------:|
@@ -19,9 +20,7 @@ Setup image is here.
 
 ![alt text](rpi_esp_sdio_setup.jpeg "setup of Raspberry-Pi as host and ESP32 as peripheral")
 
-Power ESP peripheral and Raspberry Pi separately with a power supply that provide sufficient power. ESP peripheral can be powered through PC using micro-USB cable.
-
-### Software setup
+### Raspberry-Pi Software Setup
 By default, the SDIO pins of Raspberry-pi are not configured and are internally used for built-in Wi-Fi interface. Please enable SDIO pins by appending following line to _/boot/config.txt_ file
 ```
 dtoverlay=sdio,poll_once=off
@@ -29,31 +28,57 @@ dtoverlay=disable-bt
 ```
 Please reboot Raspberry-Pi after changing this file.
 
-### ESP peripheral Setup
+## Load ESP-Hosted Solution
+### Host Software
+* Execute following commands in root directory of cloned ESP-Hosted repository on Raspberry-Pi
+```sh
+$ cd host/linux/host_control/
+$ ./rpi_init.sh sdio
+```
+* This script compiles and loads host driver on Raspberry-Pi. It also creates virtual serial interface `/dev/esps0` which is used as a control interface for Wi-Fi on ESP peripheral
 
-For pre built hosted mode firmware is present in `release` tab. To flash it on ESP peripheral edit <serial_port> with ESP peripheral's serial port and run following command.
+### ESP Peripheral Firmware
+One can load pre-built release binaries on ESP peripheral or compile those from source. Below subsection explains both these methods.
+
+#### ESP-IDF requirement
+Please check [ESP-IDF Setup](Linux_based_readme.md#esp-idf-setup) and use appropriate ESP-IDF version
+
+#### Load Pre-built Release Binaries
+* Download pre-built firmware binaries from [releases](https://github.com/espressif/esp-hosted/releases)
+* Linux users can run below command to flash these binaries. Edit <serial_port> with ESP peripheral's serial port.
 ```sh
 esptool.py -p <serial_port> -b 960000 --before default_reset --after hard_reset write_flash --flash_mode dio --flash_freq 40m --flash_size detect 0x8000 partition-table_sdio_v0.3.bin 0x1000 bootloader_sdio_v0.3.bin 0x10000 esp_hosted_firmware_sdio_v0.3.bin
 ```
+* Windows user can use ESP Flash Programming Tool to flash the pre-built binary.
 
-For windows user, you can also program the binaries using ESP Flash Programming Tool.
 
- Or if you have source, compile the app against ESP-IDF 4.0 release. To use `make` build system, run following command in `esp/esp_driver/network_adapter` directory and navigate to `Example Configuration ->  Transport layer -> SDIO interface -> select` and exit from menuconfig.
-```
-$ make menuconfig
-```
-run `make` in `esp/esp_driver/network_adapter` directory. Program ESP peripheral using standard flash programming procedure with `make`
+#### Source Compilation
+* In root directory of ESP-Hosted repository, execute below command
+
 ```sh
-$ make flash
+$ cd esp/esp_driver/network_adapter
 ```
-Or to select SDIO transport layer using `cmake`, run following command in `esp/esp_driver/network_adapter` directory navigate to `Example Configuration -> Transport layer -> SDIO interface -> select` and exit from menuconfig. Read more about [idf.py](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/build-system.html#using-the-build-system) here.
-```
+
+##### Using cmake
+* Execute following command to configure the project
+```sh
 $ idf.py menuconfig
 ```
-compile and flash the app on ESP32 against ESP-IDF 4.0 release, by running following command in `esp/esp_driver/network_adapter` directory.
-
+* This will open project configuration window. To select SDIO transport interface, navigate to `Example Configuration ->  Transport layer -> SDIO interface -> select` and exit from menuconfig.
+* Use below command to compile and flash the project. Replace <serial_port> with ESP peripheral's serial port.
 ```sh
 $ idf.py -p <serial_port> build flash
+```
+
+##### Using make
+* Execute following command to configure the project
+```sh
+$ make menuconfig
+```
+* This will open project configuration window. To select SDIO transport interface, navigate to `Example Configuration ->  Transport layer -> SDIO interface -> select` and exit from menuconfig.
+* Use below command to compile and flash the project
+```sh
+$ make flash
 ```
 
 ## Checking the Setup for SDIO
