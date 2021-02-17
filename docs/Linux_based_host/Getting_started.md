@@ -235,8 +235,10 @@ Similar to `test.py`, a utility test application, [test.c](../../host/linux/host
 - Execute `./rpi_init.sh btuart` to prepare Raspberry Pi for Bluetooth operation
 - Execute `hciattach` command as below to add HCI interface (i.e. hciX)
 ```
-$ sudo hciattach -s 115200 /dev/serial0 any 115200 flow
+$ sudo hciattach -s <baud_rate> /dev/serial0 any <baud_rate> flow
 ```
+  - baud rate should match to UART baud rate of ESP32.
+  - check `CONFIG_BT_HCI_UART_BAUDRATE` parameter in *esp/esp_driver/network_adapter/sdkconfig*. Alternatively baud rate could be located in menuconfig at, `Component config ->  Bluetooth -> Bluetooth controller ->  HCI UART(H4) Options -> UART Baudrate for HCI`
 
 ### SDIO based setup
 - Execute `./rpi_init.sh` or `./rpi_init.sh sdio` to prepare Raspberry-Pi for SDIO+BT operation.

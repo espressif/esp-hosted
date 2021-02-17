@@ -165,7 +165,3 @@ This section describes control interface API's provided by ESP-Hosted Solution F
 ### API's for MCU Based ESP-Hosted Solution
 Below document explains the API's provided for MCU based ESP-Hosted solution
 * [API's for MCU based host](docs/MCU_based_host/mcu_api.md)
-
-
-## Open Issues
-* BT/BLE over UART interface works intermittently
