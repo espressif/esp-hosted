@@ -50,8 +50,10 @@ wlan_init()
 
 bt_init()
 {
+	sudo raspi-gpio set 15 a0 pu
+	sudo raspi-gpio set 14 a0 pu
 	sudo raspi-gpio set 16 a3 pu
-	sudo raspi-gpio set 17 a3 pn
+	sudo raspi-gpio set 17 a3 pu
 }
 
 usage()

@@ -33,7 +33,7 @@
 #include "freertos/queue.h"
 #ifdef CONFIG_BT_ENABLED
 #include "esp_bt.h"
-#ifdef CONFIG_BT_HCI_UART
+#ifdef CONFIG_BT_HCI_UART_NO
 #include "driver/uart.h"
 #endif
 #endif
@@ -56,7 +56,7 @@ static const char TAG_RX_S[] = "CONTROL H -> S";
 static const char TAG_TX_S[] = "CONTROL S -> H";
 #endif
 
-#ifdef CONFIG_BT_HCI_UART
+#ifdef CONFIG_BT_HCI_UART_NO
 #define BT_TX_PIN	5
 #define BT_RX_PIN	18
 #define BT_RTS_PIN	19
@@ -142,9 +142,11 @@ static uint8_t get_capabilities()
 	ESP_LOGI(TAG, "   - HCI Over SDIO");
 	cap |= ESP_BT_SDIO_SUPPORT;
 #endif
-#elif CONFIG_BT_HCI_UART
+#else
+#ifdef CONFIG_BT_HCI_UART_NO
 	ESP_LOGI(TAG, "   - HCI Over UART");
 	cap |= ESP_BT_UART_SUPPORT;
+#endif
 #endif
 #if CONFIG_BTDM_CTRL_MODE_BLE_ONLY
 	ESP_LOGI(TAG, "   - BLE only");
@@ -538,9 +540,8 @@ static esp_vhci_host_callback_t vhci_host_cb = {
 static esp_err_t initialise_bluetooth(void)
 {
 	esp_bt_controller_config_t bt_cfg = BT_CONTROLLER_INIT_CONFIG_DEFAULT();
-	esp_err_t ret = ESP_OK;
 
-#ifdef CONFIG_BT_HCI_UART
+#ifdef CONFIG_BT_HCI_UART_NO
 #if CONFIG_BT_HCI_UART_NO == 1
 	periph_module_enable(PERIPH_UART1_MODULE);
 #elif CONFIG_BT_HCI_UART_NO == 2
@@ -561,6 +562,7 @@ static esp_err_t initialise_bluetooth(void)
 #endif
 
 #ifdef CONFIG_BTDM_CONTROLLER_HCI_MODE_VHCI
+	esp_err_t ret = ESP_OK;
 	ret = esp_vhci_host_register_callback(&vhci_host_cb);
 
 	if (ret != ESP_OK) {
@@ -662,6 +664,7 @@ void app_main()
 		ESP_ERROR_CHECK(nvs_flash_erase());
 		ret = nvs_flash_init();
 	}
+	ESP_ERROR_CHECK( ret );
 
 #ifdef CONFIG_BT_ENABLED
 	initialise_bluetooth();
