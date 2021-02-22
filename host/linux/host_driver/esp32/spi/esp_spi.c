@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2020 Espressif Systems (Shanghai) PTE LTD
+ * Copyright (C) 2015-2021 Espressif Systems (Shanghai) PTE LTD
  *
  * This software file (the "File") is distributed by Espressif Systems (Shanghai)
  * PTE LTD under the terms of the GNU General Public License Version 2, June 1991
