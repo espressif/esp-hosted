@@ -3,22 +3,22 @@ Below diagram shows hardware and software block diagram for a typical MCU based 
 
 ![ESP-Hosted Block Diagram](./MCU_based_design.png)
 
-# Development Environment Setup
+# 1. Development Environment Setup
 
-## Preconditions
+## 1.1 Preconditions
 
-### STM32CubeIDE installation
+### 1.1.1 STM32CubeIDE installation
 
 We recommend STM32CubeIDE version 1.4 IDE from STMicroelectronics on host machine(Laptop, Desktop etc.). User can download IDE from [Here](https://www.st.com/en/development-tools/stm32cubeide.html#get-software).
 
-### Tools for testing
+### 1.1.2 Tools for testing
 * **Arping**  
 	Arping software is needed for testing the project.
 	Arping is a software tool which probes hosts on the network link by sending Link Layer frames using the ARP request to host identified by its MAC address. More details could be found on [this link](https://devconnected.com/arping-command-on-linux-explained/).
 
 	To install arping on ubuntu based system, please use
 	```
-	$ sudo apt-get install arping
+	$ sudo apt install arping
 	```
 	For installation on Windows hosts, [check this link](https://elifulkerson.com/projects/arp-ping.php)
 
@@ -27,7 +27,7 @@ We recommend STM32CubeIDE version 1.4 IDE from STMicroelectronics on host machin
 * **Serial port communication program**
 	For Linux and Mac development hosts, minicom is needed. For Windows based hosts Tera Term is needed.
 
-### ESP-Hosted Code Repository
+### 1.1.3 ESP-Hosted Code Repository
 Clone ESP-Hosted repository on machine, where STM32CubeIDE used to connect/flash to host.
 ```
 $ git clone --recurse-submodules <url_of_esp_hosted_repository>
@@ -35,8 +35,8 @@ $ cd esp-hosted
 $ git submodule update --init --recursive
 ```
 
-## Wi-Fi connectivity Setup over SPI
-### Hardware Setup/Connections
+# 2. Wi-Fi connectivity Setup over SPI
+## 2.1 Hardware Setup/Connections
 In this setup, ESP board acts as a SPI peripheral and provides Wi-Fi capabilities to host. Please connect ESP peripheral to STM32F469I board's CN12 Extension connecter with jumper cables as mentioned below. It may be good to use small length cables to ensure signal integrity.
 BT/BLE support will be added in upcoming release.
 Power ESP peripheral and STM32F469I separately with a power supply that provide sufficient power. ESP peripheral can be powered through PC using micro-USB cable. STM32 can be powered with mini-B cable. It is also used as USART connection for debug logs from host. Serial port communicaton program like tera term or minicom used to print the logs.
@@ -74,29 +74,49 @@ Setup image is here.
 
 ![alt text](stm_esp32_s2_setup.jpg "Setup of STM32F469I as host and ESP32-S2 as peripheral")
 
-## ESP peripheral setup
-### ESP-IDF requirement
+# 2. ESP peripheral setup
+## 2.1 ESP-IDF requirement
 MCU based ESP-Hosted solution is compatible with ESP-IDF version 4.0 and above.
 
-### Setup
+### 2.2 Setup
 The control path between host and ESP peripheral is based on `protobuf`. For that, corresponding stack layer, `protocomm` from ESP-IDF is used. Run following command on ESP32 to make `protocomm_priv.h` available for control path.
 ```
 $ git mv components/protocomm/src/common/protocomm_priv.h components/protocomm/include/common/
 ```
 
-#### Using pre-built binary
-For pre built hosted mode firmware is present in `release` tab. To flash it on ESP peripheral, edit <serial_port> with ESP peripheral's serial port and run following command.
+#### 2.2.1 Using pre-built binary
+For pre built hosted mode firmware is present in `release` tab. Execute below command to flash it on ESP peripheral.
 ##### ESP32
 ```sh
-esptool.py -p <serial_port> -b 960000 --before default_reset --after hard_reset write_flash --flash_mode dio --flash_freq 40m --flash_size detect 0x8000 partition-table_spi_v0.3.bin 0x1000 bootloader_spi_v0.3.bin 0x10000 esp_hosted_firmware_spi_v0.3.bin
+$ esptool.py -p <serial_port> -b 960000 --before default_reset --after hard_reset \
+write_flash --flash_mode dio --flash_freq 40m --flash_size detect 0x8000 \
+esp_hosted_partition-table_<esp_peripheral>_<interface_type>_v<release_version>.bin 0x1000 \
+esp_hosted_bootloader_<esp_peripheral>_<interface_type>_v<release_version>.bin 0x10000 \
+esp_hosted_firmware_<esp_peripheral>_<interface_type>_v<release_version>.bin
+
+Where,
+	<serial_port>    : ESP peripheral's serial port
+	<esp_peripheral> : esp32/esp32s2
+	<interface_type> : sdio/spi/sdio_uart
+	<release_version>: 0.1,0.2 etc
 ```
 ##### ESP32-S2
 ```sh
-esptool.py -p <serial_port> -b 960000 --before default_reset --after hard_reset --chip esp32s2  write_flash --flash_mode dio --flash_size detect --flash_freq 80m 0x1000 bootloader_spi_v0.3.bin 0x8000 build/partition_table/partition-table_spi_v0.3.bin 0x10000 esp_hosted_firmware_spi_v0.3.bin
+$ esptool.py -p <serial_port> -b 960000 --before default_reset --after hard_reset \
+--chip esp32s2  write_flash --flash_mode dio --flash_size detect --flash_freq 80m 0x1000 \
+esp_hosted_bootloader_<esp_peripheral>_<interface_type>_v<release_version>.bin 0x8000 \
+build/partition_table/esp_hosted_partition-table_<esp_peripheral>_<interface_type>_v<release_version>.bin 0x10000 \
+esp_hosted_firmware_<esp_peripheral>_<interface_type>_v<release_version>.bin
+
+Where,
+	<serial_port>    : ESP peripheral's serial port
+	<esp_peripheral> : esp32/esp32s2
+	<interface_type> : sdio/spi/sdio_uart
+	<release_version>: 0.1,0.2 etc
 ```
 For windows user, you can also program the binaries using ESP Flash Programming Tool.
 
-#### Compilation using source
+#### 2.2.2 Compilation using source
 Please use above mentioned ESP-IDF repository release branch for your ESP peripheral.
 The control path between host and ESP peripheral is based on `protobuf`. For that `protocomm` layer from ESP-IDF is used. Run following command to make `protocomm_priv.h` available for control path.
 ```
@@ -144,6 +164,6 @@ To build and flash the app on ESP peripheral, run
 $ idf.py -p <serial_port> build flash
 ```
 
-## ESP-Hosted Usage Guide
+# 3. ESP-Hosted Usage Guide
 Following guide explains how to use ESP-Hosted soultion with MCU based platform.
 * [User Guide for MCU based Host](./Getting_started.md)

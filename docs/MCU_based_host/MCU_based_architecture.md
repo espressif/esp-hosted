@@ -4,10 +4,10 @@ Following diagram depicts building blocks of MCU based ESP-Hosted solution.
 ![ESP-Hosted MCU based design](./MCU_based_design.png).
 
 
-## ESP Host Software
+## 1. ESP Host Software
 The host software mainly consists of following building blocks.
 
-### **SPI Host Driver**  
+### 1.1 SPI Host Driver  
 
 * ESP-Hosted solution provides thin SPI host interface layer which transmits/receives data from SPI hardware driver and makes it available to serial or network interface
 * Asynchrounous in nature, higher layers have flexibility to transmit and/or receive data as needed
@@ -15,7 +15,7 @@ The host software mainly consists of following building blocks.
   
 ---
 
-### **Virtual serial interface driver**  
+### 1.2 Virtual serial interface driver  
 
 * ESP-Hosted solution provides a generic virtual serial interface implementation.
 * Control interface component of ESP-Hosted solution is built on top of this interface.
@@ -24,7 +24,7 @@ The host software mainly consists of following building blocks.
   
 ---
 
-### **Control/Command Interface**  
+### 1.3 Control/Command Interface  
 
 * As mentioned above, this interface is implemented over virtual serial interface.
 * This interface is used for sending control commands to control and configure Wi-Fi functionality of attached ESP peripheral.
@@ -32,7 +32,7 @@ The host software mainly consists of following building blocks.
   
 ---
 
-### **Network interface layer [netif]**  
+### 1.4 Network interface layer [netif]  
 
 * This is an abstraction layer between SPI host driver and a network stack.
 * This gives flexibility of using any network stack with ESP-Hosted solution.
@@ -40,14 +40,14 @@ The host software mainly consists of following building blocks.
   
 ---
 
-### **Network stack stub**  
+### 1.5 Network stack stub  
 
 * This is a simple network stack stub which demonstrates how a network stack can implement network interface layer and work with SPI host driver.
 * This does not represent actual network stack. This should be used as a reference for developing network interface layer [netif] provided by ESP-Hosted solution
   
 ---
 
-### **Demo application**  
+### 1.6 Demo application  
 
 * This application demonstrates capabilities of ESP-Hosted solution.
 * It makes use of control interface to control and configure Wi-Fi interface of attached ESP peripheral.

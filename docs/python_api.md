@@ -2,7 +2,7 @@
 
 This document describes python API's provided for control interface. Please refer [test.py](../host/linux/host_control/python_support/test.py) to get an idea how to use these API's.
 
-## `wifi_get_mac`
+## 1. `wifi_get_mac`
 This is used to retrieve the MAC address of ESP's station or softAP interface
 
 ### Parameters
@@ -16,7 +16,7 @@ String in form of "XX:XX:XX:XX:XX:XX" with MAC address of ESP interface mapping 
 
 ---
 
-## `wifi_get_mode`
+## 2. `wifi_get_mode`
 This is used to retrieve the ESP32's Wi-Fi mode
 
 ### Return
@@ -28,7 +28,7 @@ This is used to retrieve the ESP32's Wi-Fi mode
 
 ---
 
-## `wifi_set_mode`
+## 3. `wifi_set_mode`
 This is used to set the ESP32's Wi-Fi mode
 
 ### Parameters
@@ -43,7 +43,7 @@ This is used to set the ESP32's Wi-Fi mode
 
 ---
 
-## `wifi_set_mac`
+## 4. `wifi_set_mac`
 This is used to set MAC address for ESP's station or softap interface
 
 ### Parameters
@@ -65,7 +65,7 @@ For example, the MAC address can set to be "1a:XX:XX:XX:XX:XX", but can not be "
 
 ---
 
-## `wifi_set_power_save_mode`
+## 5. `wifi_set_power_save_mode`
 Set ESP32's power save mode
 
 ### Parameters
@@ -83,7 +83,7 @@ Maximum modem power saving. In this mode, interval to receive beacons is determi
 
 ---
 
-## `wifi_get_power_save_mode`
+## 6. `wifi_get_power_save_mode`
 Get the power save mode of ESP32
 
 ### Return
@@ -97,7 +97,7 @@ ESP32 on boot is configured in WIFI_PS_MIN_MODEM
 
 ---
 
-## `wifi_set_ap_config`
+## 7. `wifi_set_ap_config`
 Set the AP config to which ESP32 station should connect
 
 ### Parameters
@@ -119,7 +119,7 @@ Listen interval for ESP32 station to receive beacon when WIFI_PS_MAX_MODEM is se
 
 ---
 
-## `wifi_get_ap_config`
+## 8. `wifi_get_ap_config`
 Get the AP config to which ESP32 station is connected
 
 ### Return
@@ -150,7 +150,7 @@ In case of transport failure
 
 ---
 
-## `wifi_disconnect_ap`
+## 9. `wifi_disconnect_ap`
 Disconnect the AP to which ESP32 station is connected
 
 ### Return
@@ -158,7 +158,7 @@ Disconnect the AP to which ESP32 station is connected
 
 ---
 
-## `wifi_ap_scan_list`
+## 10. `wifi_ap_scan_list`
 Set the AP config to which ESP32 station should connect
 
 ### Return
@@ -187,7 +187,7 @@ RSSI signal strength
 
 ---
 
-## `wifi_set_softap_config`
+## 11. `wifi_set_softap_config`
 Set the ESP32's softap config
 
 ### Parameters
@@ -218,7 +218,7 @@ SoftAP should broadcast its SSID or not
 
 ---
 
-## `wifi_get_softap_config`
+## 12. `wifi_get_softap_config`
 Get the ESP32's softap config
 
 ### Return
@@ -246,7 +246,7 @@ Maximum number of stations can connect to ESP32 SoftAP (will be in range of 1 to
 
 ---
 
-## `wifi_stop_softap`
+## 13. `wifi_stop_softap`
 Stop the ESP32's softap
 
 ### Return
@@ -254,7 +254,7 @@ Stop the ESP32's softap
 
 ---
 
-## `wifi_connected_stations_list`
+## 14. `wifi_connected_stations_list`
 Get the list of connected station to the ESP32 softap.
 
 ### Return

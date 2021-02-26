@@ -1,11 +1,11 @@
 # Wi-Fi and BT/BLE connectivity Setup over SPI
-## Setup
-### Hardware Setup
+## 1. Setup
+### 1.1 Hardware Setup
 In this setup, ESP board acts as a SPI peripheral and provides Wi-Fi capabilities to host. Please connect ESP peripheral to Raspberry-Pi with jumper cables as mentioned below. It may be good to use small length cables to ensure signal integrity. Power ESP32 and Raspberry Pi separately with a power supply that provide sufficient power. ESP32 can be powered through PC using micro-USB cable.
 
 Raspberry-Pi pinout can be found [here!](https://pinout.xyz/pinout/spi)
 
-#### ESP32 setup
+#### 1.1.1 ESP32 setup
 | Raspberry-Pi Pin | ESP32 Pin | Function |
 |:-------:|:---------:|:--------:|
 | 24 | IO5 | CS0 |
@@ -21,7 +21,7 @@ Setup image is here.
 
 ![alt text](rpi_esp_spi_setup.jpg "setup of Raspberry-Pi as host and ESP32 as slave")
 
-#### ESP32-S2 setup
+#### 1.1.2 ESP32-S2 setup
 | Raspberry-Pi Pin | ESP32-S2 Pin | Function |
 |:----------------:|:------------:|:--------:|
 | 24 | IO10 | CS0 |
@@ -37,7 +37,7 @@ Setup image is here.
 
 ![alt text](rpi_esp32_s2_setup.jpg "setup of Raspberry-Pi as host and ESP32-S2 as ESP peripheral")
 
-### Raspberry-Pi Software Setup
+### 1.2 Raspberry-Pi Software Setup
 The SPI master driver is disabled by default on Raspberry-Pi OS. To enable it add following commands in  _/boot/config.txt_ file
 ```
 dtparam=spi=on
@@ -46,8 +46,8 @@ dtoverlay=disable-bt
 Please reboot Raspberry-Pi after changing this file.
 
 
-## Load ESP-Hosted Solution
-### Host Software
+## 2. Load ESP-Hosted Solution
+### 2.1 Host Software
 * Execute following commands in root directory of cloned ESP-Hosted repository on Raspberry-Pi
 ```sh
 $ cd host/linux/host_control/
@@ -55,26 +55,45 @@ $ ./rpi_init.sh spi
 ```
 * This script compiles and loads host driver on Raspberry-Pi. It also creates virtual serial interface `/dev/esps0` which is used as a control interface for Wi-Fi on ESP peripheral
 
-### ESP Peripheral Firmware
+### 2.2 ESP Peripheral Firmware
 One can load pre-built release binaries on ESP peripheral or compile those from source. Below subsection explains both these methods.
 
-#### ESP-IDF requirement
-Please check [ESP-IDF Setup](Linux_based_readme.md#esp-idf-setup) and use appropriate ESP-IDF version
-
-#### Load Pre-built Release Binaries
+#### 2.2.1 Load Pre-built Release Binaries
 * Download pre-built firmware binaries from [releases](https://github.com/espressif/esp-hosted/releases)
-* Linux users can run below command to flash these binaries. Edit <serial_port> with ESP peripheral's serial port.
+* Linux users can run below command to flash these binaries.
 ##### ESP32
 ```sh
-esptool.py -p <serial_port> -b 960000 --before default_reset --after hard_reset write_flash --flash_mode dio --flash_freq 40m --flash_size detect 0x8000 partition-table_spi_v0.3.bin 0x1000 bootloader_spi_v0.3.bin 0x10000 esp_hosted_firmware_spi_v0.3.bin
+$ esptool.py -p <serial_port> -b 960000 --before default_reset --after hard_reset \
+write_flash --flash_mode dio --flash_freq 40m --flash_size detect 0x8000 \
+esp_hosted_partition-table_<esp_peripheral>_<interface_type>_v<release_version>.bin 0x1000 \
+esp_hosted_bootloader_<esp_peripheral>_<interface_type>_v<release_version>.bin 0x10000 \
+esp_hosted_firmware_<esp_peripheral>_<interface_type>_v<release_version>.bin
+
+Where,
+	<serial_port>    : serial port of ESP peripheral
+	<esp_peripheral> : esp32/esp32s2
+	<interface_type> : sdio/spi/sdio_uart
+	<release_version>: 0.1,0.2 etc
 ```
 ##### ESP32-S2
 ```sh
-esptool.py -p <serial_port> -b 960000 --before default_reset --after hard_reset --chip esp32s2  write_flash --flash_mode dio --flash_size detect --flash_freq 80m 0x1000 bootloader_spi_v0.3.bin 0x8000 build/partition_table/partition-table_spi_v0.3.bin 0x10000 esp_hosted_firmware_spi_v0.3.bin
+$ esptool.py -p <serial_port> -b 960000 --before default_reset --after hard_reset \
+--chip esp32s2  write_flash --flash_mode dio --flash_size detect --flash_freq 80m 0x1000 \
+esp_hosted_bootloader_<esp_peripheral>_<interface_type>_v<release_version>.bin 0x8000 \
+build/partition_table/esp_hosted_partition-table_<esp_peripheral>_<interface_type>_v<release_version>.bin 0x10000 \
+esp_hosted_firmware_<esp_peripheral>_<interface_type>_v<release_version>.bin
+
+Where,
+	<serial_port>    : serial port of ESP peripheral
+	<esp_peripheral> : esp32/esp32s2
+	<interface_type> : sdio/spi/sdio_uart
+	<release_version>: 0.1,0.2 etc
 ```
 * Windows user can use ESP Flash Programming Tool to flash the pre-built binary.
 
-#### Source Compilation
+#### 2.2.2 Source Compilation
+:warning:`Note: Please check [ESP-IDF Setup](Linux_based_readme.md#22-esp-idf-setup) and use appropriate ESP-IDF version`
+
 * In root directory of ESP-Hosted repository, execute below command
 
 ```sh
@@ -108,7 +127,7 @@ $ make
 $ make flash
 ```
 
-## Checking the Setup for SPI
+## 3. Checking the Setup for SPI
 Once ESP peripheral has a valid firmware and booted successfully, you should be able to see successful enumeration on Raspberry Pi side as:
 ```
 $ dmesg

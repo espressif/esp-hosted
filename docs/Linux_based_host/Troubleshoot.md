@@ -1,6 +1,6 @@
-# Troubleshoot instructions
-## Host fails to detect SDIO ESP peripheral
-1. Make sure to use ESP32 wrover kit. If you are using a different ESP32 module, please check pull up requirements (https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/peripherals/sd_pullup_requirements.html)
+# Troubleshoot Instructions
+## 1. Host fails to detect SDIO ESP peripheral
+1. Make sure to use ESP32 wrover kit. If you are using a different ESP32 module, please check [SDIO pull up requirements](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/peripherals/sd_pullup_requirements.html)
 2. Recheck jumper cable connections. Try to use cables that are smaller in length(less than 10 cm should work).
 3. Make sure that driver module is loaded.
 ```
@@ -19,14 +19,14 @@ MODALIAS=sdio:c00v6666d2222
 * Output of above mentioned commands
 * ESP console log
 
-## Network interfaces are not seen on host
+## 2. Network interfaces are not seen on host
 Network interfaces are by default in down state. Execute `ifconfig -a` to see those.
 In case issue persists, collect and send following logs to Espressif support.
 * dmesg log on host
 * Output of above mentioned commands
 * ESP console log
 
-## WLAN datapath does not work
+## 3. WLAN datapath does not work
 1. Check ESP console log for wlan disconnect event. For reconnection, execute provided python script.
 2. Execute `route -n` command on host and verify that appropriate routes are configured.
 3. In case issue persists, collect and send following logs to Espressif support.
@@ -35,7 +35,7 @@ In case issue persists, collect and send following logs to Espressif support.
 * ESP console log
 * WLAN air capture log
 
-## Bluetooth does not work
+## 4. Bluetooth does not work
 1. Make sure that bluetooth is not blocked on host
 ```
 $ sudo rfkill list
