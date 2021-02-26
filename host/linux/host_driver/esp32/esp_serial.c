@@ -62,21 +62,24 @@ static int esp_serial_read(struct file *file, char __user *user_buffer, size_t s
 static int esp_serial_write(struct file *file, const char __user *user_buffer, size_t size, loff_t * offset)
 {
 	struct esp_payload_header *hdr;
-	char *buf;
+	u8 *tx_buf;
 	struct esp_serial_devs *dev;
+	struct sk_buff * tx_skb;
 	int ret;
 	size_t total_len;
 
 	dev = (struct esp_serial_devs *) file->private_data;
 	total_len = size + sizeof(struct esp_payload_header);
 
-	buf = kmalloc(total_len, GFP_KERNEL);
-	if (!buf) {
-		printk(KERN_ERR "Error allocating buffer to send serial data\n");
+	tx_skb = esp_alloc_skb(total_len);
+	if (!tx_skb) {
+		printk (KERN_ERR "%s: SKB alloc failed\n", __func__);
 		return -ENOMEM;
 	}
 
-	hdr = (struct esp_payload_header *) buf;
+	tx_buf = skb_put(tx_skb, total_len);
+
+	hdr = (struct esp_payload_header *) tx_buf;
 
 	memset (hdr, 0, sizeof(struct esp_payload_header));
 
@@ -85,21 +88,18 @@ static int esp_serial_write(struct file *file, const char __user *user_buffer, s
 	hdr->len = cpu_to_le16(size);
 	hdr->offset = cpu_to_le16(sizeof(struct esp_payload_header));
 
-	ret = copy_from_user(buf + hdr->offset, user_buffer, size);
-	if (ret != 0) {
-		kfree(buf);
+	ret = copy_from_user(tx_buf + hdr->offset, user_buffer, size);
+	if (ret) {
+		dev_kfree_skb(tx_skb);
 		printk(KERN_ERR "Error copying buffer to send serial data\n");
 		return -EFAULT;
 	}
 
-	/* print_hex_dump(KERN_INFO, "esp_serial_tx: ", DUMP_PREFIX_ADDRESS, 16, 1, buf, total_len, 1  ); */
-
-	ret = esp_send_packet(dev->priv, buf, total_len);
+	ret = esp_send_packet(dev->priv, tx_skb);
 	if (ret) {
 		printk (KERN_ERR "%s: Failed to transmit data\n", __func__);
 	}
 
-	kfree(buf);
 	return size;
 }
 

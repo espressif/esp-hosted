@@ -61,7 +61,8 @@ static int esp_set_mac_address(struct net_device *ndev, void *addr);
 static void esp_tx_timeout(struct net_device *ndev);
 static struct net_device_stats* esp_get_stats(struct net_device *ndev);
 static void esp_set_rx_mode(struct net_device *ndev);
-int esp_send_packet(struct esp_adapter *adapter, u8 *buf, u32 size);
+static int process_tx_packet (struct sk_buff *skb);
+int esp_send_packet(struct esp_adapter *adapter, struct sk_buff *skb);
 
 static const struct net_device_ops esp_netdev_ops = {
 	.ndo_open = esp_open,
@@ -162,11 +163,7 @@ static int esp_hard_start_xmit(struct sk_buff *skb, struct net_device *ndev)
 
 /*	print_hex_dump_bytes("Tx:", DUMP_PREFIX_NONE, skb->data, 8);*/
 
-	skb_queue_tail(&adapter.tx_q, skb);
-	atomic_inc(&adapter.tx_pending);
-	queue_work(adapter.tx_workqueue, &adapter.tx_work);
-
-	return 0;
+	return process_tx_packet(skb);
 }
 
 u8 esp_is_bt_supported_over_sdio(u32 cap)
@@ -203,9 +200,8 @@ void esp_process_new_packet_intr(struct esp_adapter *adapter)
 		queue_work(adapter->if_rx_workqueue, &adapter->if_rx_work);
 }
 
-static void process_tx_packet (void)
+static int process_tx_packet (struct sk_buff *skb)
 {
-	struct sk_buff *skb;
 	struct esp_private *priv;
 	struct esp_skb_cb *cb;
 	struct esp_payload_header *payload_header;
@@ -215,70 +211,66 @@ static void process_tx_packet (void)
 	u16 len = 0;
 	static u32 c = 0;
 
-	while ((skb = skb_dequeue(&adapter.tx_q))) {
-		c++;
-		/* Get the priv */
-		cb = (struct esp_skb_cb *) skb->cb;
-		priv = cb->priv;
+	c++;
+	/* Get the priv */
+	cb = (struct esp_skb_cb *) skb->cb;
+	priv = cb->priv;
 
-		if (!priv) {
-			dev_kfree_skb_any(skb);
-			atomic_dec(&adapter.tx_pending);
-			continue;
-		}
-
-		len = skb->len;
-
-		/* Create space for payload header */
-		pad_len = sizeof(struct esp_payload_header);
-
-		if (skb_headroom(skb) < pad_len) {
-			/* insufficent headroom to add payload header */
-			new_skb = skb_realloc_headroom(skb, pad_len);
-
-			if(!new_skb) {
-				printk(KERN_ERR "%s: Failed to allocate SKB", __func__);
-				dev_kfree_skb(skb);
-				atomic_dec(&adapter.tx_pending);
-				continue;
-			}
-
-			dev_kfree_skb(skb);
-
-			skb = new_skb;
-		}
-
-		skb_push(skb, pad_len);
-
-		/* Set payload header */
-		payload_header = (struct esp_payload_header *) skb->data;
-		memset(payload_header, 0, pad_len);
-
-		payload_header->if_type = priv->if_type;
-		payload_header->if_num = priv->if_num;
-		payload_header->len = cpu_to_le16(skb->len - pad_len);
-		payload_header->offset = cpu_to_le16(pad_len);
-		payload_header->reserved1 = c % 255;
-
-/*		printk (KERN_ERR "H -> S: %d %d %d %d", len, payload_header->offset,*/
-/*				payload_header->len, payload_header->reserved1);*/
-
-		if (!stop_data) {
-			ret = esp_send_packet(priv->adapter, skb->data, skb->len);
-
-			if (ret) {
-				priv->stats.tx_errors++;
-			} else {
-				priv->stats.tx_packets++;
-				priv->stats.tx_bytes += skb->len;
-			}
-		} else {
-			priv->stats.tx_dropped++;
-		}
-
-		dev_kfree_skb_any(skb);
-		atomic_dec(&adapter.tx_pending);
+	if (!priv) {
+		dev_kfree_skb(skb);
+		return -EINVAL;
 	}
+
+	len = skb->len;
+
+	/* Create space for payload header */
+	pad_len = sizeof(struct esp_payload_header);
+
+	if (skb_headroom(skb) < pad_len) {
+		/* insufficent headroom to add payload header */
+		new_skb = skb_realloc_headroom(skb, pad_len);
+
+		if(!new_skb) {
+			printk(KERN_ERR "%s: Failed to allocate SKB", __func__);
+			dev_kfree_skb(skb);
+			return -ENOMEM;
+		}
+
+		dev_kfree_skb(skb);
+
+		skb = new_skb;
+	}
+
+	skb_push(skb, pad_len);
+
+	/* Set payload header */
+	payload_header = (struct esp_payload_header *) skb->data;
+	memset(payload_header, 0, pad_len);
+
+	payload_header->if_type = priv->if_type;
+	payload_header->if_num = priv->if_num;
+	payload_header->len = cpu_to_le16(skb->len - pad_len);
+	payload_header->offset = cpu_to_le16(pad_len);
+	payload_header->reserved1 = c % 255;
+
+	/* printk (KERN_ERR "H -> S: %d %d %d %d", len, payload_header->offset,*/
+	/* payload_header->len, payload_header->reserved1);*/
+
+	if (!stop_data) {
+		ret = esp_send_packet(priv->adapter, skb);
+
+		if (ret) {
+			priv->stats.tx_errors++;
+		} else {
+			priv->stats.tx_packets++;
+			priv->stats.tx_bytes += skb->len;
+		}
+	} else {
+		dev_kfree_skb_any(skb);
+		priv->stats.tx_dropped++;
+	}
+
+	return 0;
 }
 
 static void process_rx_packet(struct sk_buff *skb)
@@ -323,7 +315,7 @@ static void process_rx_packet(struct sk_buff *skb)
 		skb->dev = priv->ndev;
 		skb->protocol = eth_type_trans(skb, priv->ndev);
 		skb->ip_summed = CHECKSUM_NONE;
-		/*		print_hex_dump_bytes("Rx:", DUMP_PREFIX_NONE, skb->data, 8);*/
+		/* print_hex_dump_bytes("Rx:", DUMP_PREFIX_NONE, skb->data, 8); */
 
 		/* Forward skb to kernel */
 		netif_rx(skb);
@@ -404,12 +396,12 @@ static int esp_get_packets(struct esp_adapter *adapter)
 	return 0;
 }
 
-int esp_send_packet(struct esp_adapter *adapter, u8 *buf, u32 size)
+int esp_send_packet(struct esp_adapter *adapter, struct sk_buff *skb)
 {
 	if (!adapter || !adapter->if_ops || !adapter->if_ops->write)
 		return -EINVAL;
 
-	return adapter->if_ops->write(adapter, buf, size);
+	return adapter->if_ops->write(adapter, skb);
 }
 
 static int insert_priv_to_adapter(struct esp_private *priv)
@@ -512,25 +504,6 @@ error_exit:
 	return ret;
 }
 
-static void flush_ring_buffers(struct esp_adapter *adapter)
-{
-	struct sk_buff *skb;
-
-	printk (KERN_INFO "%s: Flush Pending SKBs: %d %d\n", __func__,
-			atomic_read(&adapter->tx_pending),
-			atomic_read(&adapter->rx_pending));
-
-	while ((skb = skb_dequeue(&adapter->tx_q))) {
-		dev_kfree_skb_any(skb);
-		atomic_dec(&adapter->tx_pending);
-	}
-
-	while ((skb = skb_dequeue(&adapter->rx_q))) {
-		dev_kfree_skb_any(skb);
-		atomic_dec(&adapter->rx_pending);
-	}
-}
-
 static void esp_remove_network_interfaces(struct esp_adapter *adapter)
 {
 	if (adapter->priv[0]->ndev) {
@@ -589,21 +562,10 @@ int esp_remove_card(struct esp_adapter *adapter)
 
 	esp_remove_network_interfaces(adapter);
 
-	flush_ring_buffers(adapter);
-
 	adapter->priv[0] = NULL;
 	adapter->priv[1] = NULL;
 
-	atomic_set(&adapter->tx_pending, 0);
-	atomic_set(&adapter->rx_pending, 0);
-
 	return 0;
-}
-
-
-static void esp_tx_work (struct work_struct *work)
-{
-	process_tx_packet();
 }
 
 static void esp_if_rx_work (struct work_struct *work)
@@ -669,15 +631,6 @@ static struct esp_adapter * init_adapter(void)
 		deinit_adapter();
 		return NULL;
 	}
-
-	INIT_WORK(&adapter.tx_work, esp_tx_work);
-
-	/* Prepare TX work */
-	skb_queue_head_init(&adapter.tx_q);
-	skb_queue_head_init(&adapter.rx_q);
-
-	atomic_set(&adapter.tx_pending, 0);
-	atomic_set(&adapter.rx_pending, 0);
 
 	return &adapter;
 }

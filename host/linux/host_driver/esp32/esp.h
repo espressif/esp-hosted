@@ -27,66 +27,56 @@
 #include <net/bluetooth/hci_core.h>
 #include "adapter.h"
 
-#define ESP_IF_TYPE_SDIO		1
-#define ESP_IF_TYPE_SPI		2
+#define ESP_IF_TYPE_SDIO        1
+#define ESP_IF_TYPE_SPI         2
 
 /* Network link status */
-#define ESP_LINK_DOWN			0
-#define ESP_LINK_UP			1
+#define ESP_LINK_DOWN           0
+#define ESP_LINK_UP             1
 
-#define ESP_MAX_INTERFACE		2
+#define ESP_MAX_INTERFACE       2
 
-#define ESP_PAYLOAD_HEADER		8
+#define ESP_PAYLOAD_HEADER      8
 struct esp_private;
 struct esp_adapter;
 
-#define ACQUIRE_LOCK			1
-#define LOCK_ALREADY_ACQUIRED		0
+#define ACQUIRE_LOCK            1
+#define LOCK_ALREADY_ACQUIRED   0
 
 struct esp_adapter {
-	u8				if_type;
-	u32				capabilities;
+	u8                      if_type;
+	u32                     capabilities;
 
 	/* Possible types:
-	 * 	struct esp_sdio_context */
-	void				*if_context;
+	 * struct esp_sdio_context */
+	void                    *if_context;
 
-	struct esp_if_ops		*if_ops;
+	struct esp_if_ops       *if_ops;
 
 	/* Private for each interface */
-	struct esp_private		*priv[ESP_MAX_INTERFACE];
-	struct hci_dev 			*hcidev;
+	struct esp_private      *priv[ESP_MAX_INTERFACE];
+	struct hci_dev          *hcidev;
 
-	struct workqueue_struct 	*if_rx_workqueue;
-	struct work_struct		if_rx_work;
+	struct workqueue_struct *if_rx_workqueue;
+	struct work_struct       if_rx_work;
 
 	/* Process TX work */
-	struct workqueue_struct 	*tx_workqueue;
-	struct work_struct		tx_work;
-
-	/* TX queue */
-	struct sk_buff_head 		tx_q;
-
-	/* RX Queue */
-	struct sk_buff_head 		rx_q;
-
-	/* Counters */
-	atomic_t			tx_pending;
-	atomic_t			rx_pending;
+	struct workqueue_struct *tx_workqueue;
+	struct work_struct      tx_work;
 };
 
 
 struct esp_private {
-	struct esp_adapter		*adapter;
-	struct net_device		*ndev;
-	struct net_device_stats 	stats;
-	u8				link_state;
-	u8				mac_address[6];
-	u8 				if_type;
-	u8			 	if_num;
+	struct esp_adapter      *adapter;
+	struct net_device       *ndev;
+	struct net_device_stats stats;
+	u8                      link_state;
+	u8                      mac_address[6];
+	u8                      if_type;
+	u8                      if_num;
 };
 
 struct esp_skb_cb {
-	struct esp_private		*priv;
+	struct esp_private      *priv;
 };
 #endif

@@ -32,20 +32,26 @@
 #endif
 #include <linux/kthread.h>
 
+#define TX_MAX_PENDING_COUNT    700
+#define TX_RESUME_THRESHOLD     (TX_MAX_PENDING_COUNT - (TX_MAX_PENDING_COUNT/5))
+
 #define CHECK_SDIO_RW_ERROR(ret) do {			\
 	if (ret)						\
 	printk(KERN_ERR "%s: CMD53 read/write error at %d\n", __func__, __LINE__);	\
 } while (0);
 
 struct esp_sdio_context sdio_context;
+static atomic_t tx_pending;
+static atomic_t queue_items;
 
 #ifdef CONFIG_ENABLE_MONITOR_PROCESS
 struct task_struct *monitor_thread;
 #endif
+struct task_struct *tx_thread;
 
 static int init_context(struct esp_sdio_context *context);
 static struct sk_buff * read_packet(struct esp_adapter *adapter);
-static int write_packet(struct esp_adapter *adapter, u8 *buf, u32 size);
+static int write_packet(struct esp_adapter *adapter, struct sk_buff *skb);
 /*int deinit_context(struct esp_adapter *adapter);*/
 
 static const struct sdio_device_id esp_devices[] = {
@@ -220,6 +226,9 @@ static void esp_remove(struct sdio_func *func)
 		kthread_stop(monitor_thread);
 #endif
 
+	if (tx_thread)
+		kthread_stop(tx_thread);
+
 	if (context) {
 		generate_slave_intr(context, BIT(ESP_CLOSE_DATA_PATH));
 		msleep(100);
@@ -234,6 +243,7 @@ static void esp_remove(struct sdio_func *func)
 			}
 
 		}
+		skb_queue_purge(&(sdio_context.tx_q));
 
 		memset(context, 0, sizeof(struct esp_sdio_context));
 	}
@@ -290,8 +300,11 @@ static int init_context(struct esp_sdio_context *context)
 
 	context->adapter = esp_get_adapter();
 
-	if (!context->adapter)
+	if (unlikely(!context->adapter))
 		printk (KERN_ERR "%s: Failed to get adapter\n", __func__);
+
+	skb_queue_head_init(&(sdio_context.tx_q));
+	atomic_set(&queue_items, 0);
 
 	context->adapter->if_type = ESP_IF_TYPE_SDIO;
 
@@ -387,67 +400,142 @@ static struct sk_buff * read_packet(struct esp_adapter *adapter)
 	return skb;
 }
 
-static int write_packet(struct esp_adapter *adapter, u8 *buf, u32 size)
+static int write_packet(struct esp_adapter *adapter, struct sk_buff *skb)
 {
-	u32 block_cnt = 0, buf_needed = 0;
-	u32 buf_available = 0;
-	int ret = 0;
-	u8 *pos = NULL;
-	u32 data_left, len_to_send, pad;
-	struct esp_sdio_context *context;
+	u32 max_pkt_size = ESP_RX_BUFFER_SIZE - sizeof(struct esp_payload_header);
 
-	if (!adapter || !adapter->if_context || !buf || !size) {
-		printk (KERN_ERR "%s: Invalid args\n", __func__);
+	if (!adapter || !adapter->if_context || !skb || !skb->data || !skb->len) {
+		printk(KERN_ERR "%s: Invalid args\n", __func__);
+		if(skb)
+			dev_kfree_skb(skb);
+
 		return -EINVAL;
 	}
 
-	context = adapter->if_context;
-
-	sdio_claim_host(context->func);
-
-	buf_needed = (size + ESP_RX_BUFFER_SIZE - 1) / ESP_RX_BUFFER_SIZE;
-
-	ret = esp_slave_get_tx_buffer_num(context, &buf_available, LOCK_ALREADY_ACQUIRED);
-
-/*	printk(KERN_ERR "%s: TX -> Available [%d], needed [%d]\n", __func__, buf_available, buf_needed);*/
-
-	if (buf_available < buf_needed) {
-		printk(KERN_DEBUG "%s: Not enough buffers available: availabale [%d], needed [%d]\n", __func__,
-				buf_available, buf_needed);
-		sdio_release_host(context->func);
-		return -ENOMEM;
+	if (skb->len > max_pkt_size) {
+		printk(KERN_ERR "%s: Drop pkt of len[%u] > max SDIO transport len[%u]\n",
+				__func__, skb->len, max_pkt_size);
+		dev_kfree_skb(skb);
+		return -EPERM;
 	}
 
-	pos = buf;
-	data_left = len_to_send = 0;
+	if (atomic_read(&tx_pending) >= TX_MAX_PENDING_COUNT) {
+		esp_tx_pause();
+		dev_kfree_skb(skb);
+		return -EBUSY;
+	}
 
-	data_left = size;
-	pad = ESP_BLOCK_SIZE - (data_left % ESP_BLOCK_SIZE);
-	data_left += pad;
+
+	/* Notify to process queue */
+	atomic_inc(&queue_items);
+
+	/* Enqueue SKB in tx_q */
+	atomic_inc(&tx_pending);
+
+	skb_queue_tail(&(sdio_context.tx_q), skb);
+
+	return 0;
+}
+
+static int tx_process(void *data)
+{
+	int ret = 0;
+	u32 block_cnt = 0;
+	u32 buf_needed = 0, buf_available = 0;
+	u8 *pos = NULL;
+	u32 data_left, len_to_send, pad;
+	struct sk_buff *tx_skb = NULL;
+	struct esp_adapter *adapter = (struct esp_adapter *) data;
+	struct esp_sdio_context *context = NULL;
+
+	context = adapter->if_context;
+
+	while (!kthread_should_stop()) {
+
+		if (context->state != ESP_CONTEXT_READY) {
+			msleep(10);
+			continue;
+		}
+
+		if (atomic_read(&queue_items) <= 0) {
+			msleep(10);
+			continue;
+		}
+
+		tx_skb = skb_dequeue(&(context->tx_q));
+		if (!tx_skb) {
+			continue;
+		}
+
+		atomic_dec(&queue_items);
+		atomic_dec(&tx_pending);
+
+		/* resume network tx queue if bearable load */
+		if (atomic_read(&tx_pending) < TX_RESUME_THRESHOLD) {
+			esp_tx_resume();
+		}
+
+		sdio_claim_host(context->func);
+
+		buf_needed = (tx_skb->len + ESP_RX_BUFFER_SIZE - 1) / ESP_RX_BUFFER_SIZE;
+
+		ret = esp_slave_get_tx_buffer_num(context, &buf_available, LOCK_ALREADY_ACQUIRED);
+
+		///if (unlikely(ret))
+		///     dev_kfree_skb(tx_skb);
+		///	continue;
 
 
-	do {
-		block_cnt = data_left / ESP_BLOCK_SIZE;
-		len_to_send = data_left;
-		ret = esp_write_block(context, ESP_SLAVE_CMD53_END_ADDR - len_to_send,
-				pos, (len_to_send + 3) & (~3), LOCK_ALREADY_ACQUIRED);
+		if (buf_available < buf_needed) {
+			printk(KERN_DEBUG "%s: Drop pkt: available bufs[%d] < needed bufs[%d]\n",
+				__func__, buf_available, buf_needed);
+			sdio_release_host(context->func);
+
+			/* drop the packet */
+			dev_kfree_skb(tx_skb);
+			continue;
+		}
+
+		pos = tx_skb->data;
+		data_left = len_to_send = 0;
+
+		data_left = tx_skb->len;
+		pad = ESP_BLOCK_SIZE - (data_left % ESP_BLOCK_SIZE);
+		data_left += pad;
+
+
+		do {
+			block_cnt = data_left / ESP_BLOCK_SIZE;
+			len_to_send = data_left;
+			ret = esp_write_block(context, ESP_SLAVE_CMD53_END_ADDR - len_to_send,
+					pos, (len_to_send + 3) & (~3), LOCK_ALREADY_ACQUIRED);
+
+			if (ret) {
+				printk (KERN_ERR "%s: Failed to send data\n", __func__);
+				sdio_release_host(context->func);
+				break;
+			}
+
+			/* printk (KERN_ERR "--> %d %d %d\n", block_cnt, data_left, len_to_send); */
+
+			data_left -= len_to_send;
+			pos += len_to_send;
+		} while (data_left);
 
 		if (ret) {
-			printk (KERN_ERR "%s: Failed to send data\n", __func__);
-			sdio_release_host(context->func);
-			return ret;
+			/* drop the packet */
+			dev_kfree_skb(tx_skb);
+			continue;
 		}
-/*		printk (KERN_ERR "--> %d %d %d\n", block_cnt, data_left, len_to_send);*/
 
-		data_left -= len_to_send;
-		pos += len_to_send;
-	} while (data_left);
+		context->tx_buffer_count += buf_needed;
+		context->tx_buffer_count = context->tx_buffer_count % ESP_TX_BUFFER_MAX;
 
-	context->tx_buffer_count += buf_needed;
-	context->tx_buffer_count = context->tx_buffer_count % ESP_TX_BUFFER_MAX;
+		sdio_release_host(context->func);
+		dev_kfree_skb(tx_skb);
+	}
 
-	sdio_release_host(context->func);
-
+	do_exit(0);
 	return 0;
 }
 
@@ -565,11 +653,17 @@ static int esp_probe(struct sdio_func *func,
 
 	msleep(200);
 
+	atomic_set(&tx_pending, 0);
 	ret = init_context(context);
 	if (ret) {
 		deinit_sdio_func(func);
 		return ret;
 	}
+
+	tx_thread = kthread_run(tx_process, context->adapter, "esp32_TX");
+
+	if (!tx_thread)
+		printk (KERN_ERR "Failed to create esp32_sdio TX thread\n");
 
 #ifdef CONFIG_SUPPORT_ESP_SERIAL
 	ret = esp_serial_init((void *) context->adapter);
@@ -608,7 +702,6 @@ static int esp_probe(struct sdio_func *func,
 	if (!monitor_thread)
 		printk (KERN_ERR "Failed to create monitor thread\n");
 #endif
-
 
 	msleep(200);
 	generate_slave_intr(context, BIT(ESP_OPEN_DATA_PATH));

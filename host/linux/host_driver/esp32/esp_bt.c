@@ -109,15 +109,13 @@ static int esp_bt_send_frame(struct hci_dev *hdev, struct sk_buff *skb)
 	hdr->offset = cpu_to_le16(sizeof(struct esp_payload_header));
 	hdr->hci_pkt_type = hci_skb_pkt_type(skb);
 
-	ret = esp_send_packet(adapter, skb->data, skb->len);
+	ret = esp_send_packet(adapter, skb);
 
 	if (ret) {
 		hdev->stat.err_tx++;
 	} else {
 		esp_hci_update_tx_counter(hdev, hdr->hci_pkt_type, skb->len);
 	}
-
-	dev_kfree_skb(skb);
 
 	return 0;
 }
