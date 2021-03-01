@@ -27,7 +27,7 @@ int esp_remove_card(struct esp_adapter *adapter);
 void esp_process_new_packet_intr(struct esp_adapter *adapter);
 struct esp_adapter * esp_get_adapter(void);
 struct sk_buff * esp_alloc_skb(u32 len);
-int esp_send_packet(struct esp_adapter *adapter, u8 *buf, u32 size);
+int esp_send_packet(struct esp_adapter *adapter, struct sk_buff *skb);
 u8 esp_is_bt_supported_over_sdio(u32 cap);
 void esp_tx_pause(void);
 void esp_tx_resume(void);

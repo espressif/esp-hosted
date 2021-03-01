@@ -39,7 +39,7 @@
 #define ESP_PRIV_FIRMWARE_CHIP_ESP32S2      (0x2)
 
 static struct sk_buff * read_packet(struct esp_adapter *adapter);
-static int write_packet(struct esp_adapter *adapter, u8 *buf, u32 size);
+static int write_packet(struct esp_adapter *adapter, struct sk_buff *skb);
 static void spi_exit(void);
 static void adjust_spi_clock(u8 spi_clk_mhz);
 
@@ -112,45 +112,33 @@ static struct sk_buff * read_packet(struct esp_adapter *adapter)
 	return skb;
 }
 
-static int write_packet(struct esp_adapter *adapter, u8 *buf, u32 size)
+static int write_packet(struct esp_adapter *adapter, struct sk_buff *skb)
 {
-	struct esp_spi_context *context;
-	struct sk_buff *skb;
-	u8 *tx_buf = NULL;
+	u32 max_pkt_size = SPI_BUF_SIZE - sizeof(struct esp_payload_header);
 
-	if (!adapter || !adapter->if_context || !buf || !size || (size > SPI_BUF_SIZE)) {
+	if (!adapter || !adapter->if_context || !skb || !skb->data || !skb->len) {
 		printk (KERN_ERR "%s: Invalid args\n", __func__);
+		dev_kfree_skb(skb);
 		return -EINVAL;
 	}
 
+	if (skb->len > max_pkt_size) {
+		printk (KERN_ERR "%s: Drop pkt of len[%u] > max spi transport len[%u]\n",
+				__func__, skb->len, max_pkt_size);
+		dev_kfree_skb(skb);
+		return -EPERM;
+	}
+
 	if (!data_path) {
+		dev_kfree_skb(skb);
 		return -EPERM;
 	}
 
 	if (tx_pending >= TX_MAX_PENDING_COUNT) {
 		esp_tx_pause();
+		dev_kfree_skb(skb);
 		return -EBUSY;
 	}
-
-	/* Adjust length to make it multiple of 4 bytes  */
-	size += 4 - (size & 3);
-
-	context = adapter->if_context;
-
-	skb = esp_alloc_skb(size);
-
-	if (!skb)
-		return -ENOMEM;
-
-	tx_buf = skb_put(skb, size);
-
-	if (!tx_buf) {
-		dev_kfree_skb(skb);
-		return -ENOMEM;
-	}
-
-	/* TODO: This memecpy can be avoided if this function receives SKB as an argument */
-	memcpy(tx_buf, buf, size);
 
 	/* Enqueue SKB in tx_q */
 	skb_queue_tail(&spi_context.tx_q, skb);
