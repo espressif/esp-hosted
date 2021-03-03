@@ -382,7 +382,7 @@ static struct sk_buff * read_packet(struct esp_adapter *adapter)
 		}
 
 		if (ret) {
-			printk (KERN_ERR "%s: Failed to read data\n", __func__);
+			printk (KERN_ERR "%s: Failed to read data - %d [%u]\n", __func__, ret, num_blocks);
 			dev_kfree_skb(skb);
 			sdio_release_host(context->func);
 			return NULL;
