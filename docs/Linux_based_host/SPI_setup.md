@@ -63,36 +63,36 @@ One can load pre-built release binaries on ESP peripheral or compile those from 
 * Linux users can run below command to flash these binaries.
 ##### ESP32
 ```sh
-$ esptool.py -p <serial_port> -b 960000 --before default_reset --after hard_reset \
-write_flash --flash_mode dio --flash_freq 40m --flash_size detect 0x8000 \
-esp_hosted_partition-table_<esp_peripheral>_<interface_type>_v<release_version>.bin 0x1000 \
-esp_hosted_bootloader_<esp_peripheral>_<interface_type>_v<release_version>.bin 0x10000 \
-esp_hosted_firmware_<esp_peripheral>_<interface_type>_v<release_version>.bin
+$ python esptool.py --chip esp32 --port <serial_port> --baud 960000 --before default_reset \
+--after hard_reset write_flash -z --flash_mode dio --flash_freq 40m --flash_size detect \
+0x1000 esp_hosted_bootloader_esp32_spi_v<release_version>.bin \
+0x10000 esp_hosted_firmware_esp32_spi_v<release_version>.bin \
+0x8000 esp_hosted_partition-table_esp32_spi_v<release_version>.bin
 
 Where,
 	<serial_port>    : serial port of ESP peripheral
-	<esp_peripheral> : esp32/esp32s2
-	<interface_type> : sdio/spi/sdio_uart
-	<release_version>: 0.1,0.2 etc
+	<release_version>: 0.1,0.2 etc. Latest from [release page](https://github.com/espressif/esp-hosted/releases)
 ```
+* This command will flash `SPI` interface binaries on `esp32` chip.
+
 ##### ESP32-S2
 ```sh
-$ esptool.py -p <serial_port> -b 960000 --before default_reset --after hard_reset \
---chip esp32s2  write_flash --flash_mode dio --flash_size detect --flash_freq 80m 0x1000 \
-esp_hosted_bootloader_<esp_peripheral>_<interface_type>_v<release_version>.bin 0x8000 \
-build/partition_table/esp_hosted_partition-table_<esp_peripheral>_<interface_type>_v<release_version>.bin 0x10000 \
-esp_hosted_firmware_<esp_peripheral>_<interface_type>_v<release_version>.bin
+$ python esptool.py --port <serial_port> --baud 960000 --before default_reset --after hard_reset \
+--chip esp32s2  write_flash --flash_mode dio --flash_size detect --flash_freq 80m \
+0x1000 esp_hosted_bootloader_esp32s2_spi_v<release_version>.bin \
+0x8000 esp_hosted_partition-table_esp32s2_spi_v<release_version>.bin \
+0x10000 esp_hosted_firmware_esp32s2_spi_v<release_version>.bin
 
 Where,
 	<serial_port>    : serial port of ESP peripheral
-	<esp_peripheral> : esp32/esp32s2
-	<interface_type> : sdio/spi/sdio_uart
-	<release_version>: 0.1,0.2 etc
+	<release_version>: 0.1,0.2 etc. Latest from [release page](https://github.com/espressif/esp-hosted/releases)
 ```
+* This command will flash `SPI` interface binaries on `esp32s2` chip.
+
 * Windows user can use ESP Flash Programming Tool to flash the pre-built binary.
 
 #### 2.2.2 Source Compilation
-:warning:`Note: Please check [ESP-IDF Setup](Linux_based_readme.md#22-esp-idf-setup) and use appropriate ESP-IDF version`
+:warning:<code>Note: Please check [ESP-IDF Setup](Linux_based_readme.md#22-esp-idf-setup) and use appropriate ESP-IDF version</code>
 
 * In root directory of ESP-Hosted repository, execute below command
 
