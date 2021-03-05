@@ -1,8 +1,8 @@
 # Bluetooth/BLE connectivity Setup over UART
 This section is only applicable to ESP32 boards. ESP32-S2 does not support Bluetooth/BLE.
 
-## Setup
-### Hardware Setup
+## 1. Setup
+### 1.1 Hardware Setup
 In this setup, ESP32 board provides Bluetooth/BLE capabilities to host over UART interface. Please connect ESP peripheral to Raspberry-Pi with jumper cables as mentioned below. It may be good to use small length cables to ensure signal integrity. Power ESP32 and Raspberry Pi separately with a power supply that provide sufficient power. ESP32 can be powered through PC using micro-USB cable.
 
 | Raspberry-Pi Pin Function | Raspberry-Pi Pin | ESP32 Pin | ESP32 Pin Function |
@@ -15,7 +15,7 @@ In this setup, ESP32 board provides Bluetooth/BLE capabilities to host over UART
 
 Raspberry-Pi pinout can be found [here!](https://pinout.xyz/pinout/uart)
 
-### Raspberry-Pi Software Setup
+### 1.2 Raspberry-Pi Software Setup
 By default, the UART pins on Raspberry-Pi are in disabled state. In order to enable UART and setup it for bluetooth connection, follow below steps.
 1. Enable UART pins and disable in built bluetooth on Raspberry-Pi by appending following lines to _/boot/config.txt_ file
 ```
@@ -28,44 +28,52 @@ console=serial0,115200
 ```
 e.g. If _/boot/cmdline.txt_ is as below:
 ```
-# cat /boot/cmdline.txt
+$ cat /boot/cmdline.txt
 dwc_otg.lpm_enable=0 console=tty1 console=serial0,115200 root=PARTUUID=5c2c80d1-02 rootfstype=ext4 elevator=deadline fsck.repair=yes rootwait quiet splash plymouth.ignore-serial-consoles spidev.bufsiz=32768
 ````
 Then after removal of above mentioned arguments, it should look as below:
 ```
-# cat /boot/cmdline.txt
+$ cat /boot/cmdline.txt
 dwc_otg.lpm_enable=0 console=tty1 root=PARTUUID=5c2c80d1-02 rootfstype=ext4 elevator=deadline fsck.repair=yes rootwait quiet splash plymouth.ignore-serial-consoles spidev.bufsiz=32768
 ```
 3. Disable hciuart on Raspberry-Pi
 ```
-# sudo systemctl disable hciuart
+$ sudo systemctl disable hciuart
 ```
 4. Reboot Raspberry-Pi
 
-## Load ESP-Hosted Solution
-### Host Software
+## 2. Load ESP-Hosted Solution
+### 2.1 Host Software
 * Execute following commands in root directory of cloned ESP-Hosted repository on Raspberry-Pi
 ```sh
 $ cd host/linux/host_control/
 $ ./rpi_init.sh btuart
 ```
 
-### ESP Peripheral Firmware
+### 2.2 ESP Peripheral Firmware
 One can load pre-built release binaries on ESP peripheral or compile those from source. Below subsection explains both these methods.
 
-#### ESP-IDF requirement
-Please check [ESP-IDF Setup](Linux_based_readme.md#esp-idf-setup) and use appropriate ESP-IDF version
-
-#### Load Pre-built Release Binaries
+#### 2.2.1 Load Pre-built Release Binaries
 * Download pre-built firmware binaries from [releases](https://github.com/espressif/esp-hosted/releases)
 * Please note that this binary is made for UART baudrate of 921600.
 * Linux users can run below command to flash these binaries. Edit <serial_port> with ESP peripheral's serial port.
 ```sh
-esptool.py -p <serial_port> -b 960000 --before default_reset --after hard_reset write_flash --flash_mode dio --flash_freq 40m --flash_size detect 0x8000 partition-table_sdio_uart_v0.3.bin 0x1000 bootloader_sdio_uart_v0.2.bin 0x10000 esp_hosted_firmware_sdio_uart_v0.3.bin
+$ esptool.py -p <serial_port> -b 960000 --before default_reset --after hard_reset \
+write_flash --flash_mode dio --flash_freq 40m --flash_size detect 0x8000 \
+esp_hosted_partition-table_<esp_peripheral>_<interface_type>_v<release_version>.bin 0x1000 \
+esp_hosted_bootloader_<esp_peripheral>_<interface_type>_v<release_version>.bin 0x10000 \
+esp_hosted_firmware_<esp_peripheral>_<interface_type>_v<release_version>.bin
+
+Where,
+	<serial_port>    : serial port of ESP peripheral
+	<esp_peripheral> : esp32/esp32s2
+	<interface_type> : sdio/spi/sdio_uart
+	<release_version>: 0.1,0.2 etc
 ```
 * Windows user can use ESP Flash Programming Tool to flash the pre-built binary.
 
-#### Source Compilation
+#### 2.2.2 Source Compilation
+:warning:`Note: Please check [ESP-IDF Setup](Linux_based_readme.md#22-esp-idf-setup) and use appropriate ESP-IDF version`
 * In root directory of ESP-Hosted repository, execute below command
 
 ```sh
@@ -104,3 +112,15 @@ $ make menuconfig
 ```sh
 $ make flash
 ```
+
+## 3. Post Setup
+* After setting up host and loading ESP firmware, execute below command to create `hci0` interface
+	```sh
+	$ sudo hciattach -s <baud rate> /dev/serial0 any <baud rate> flow
+	```
+* <baud rate> should match UART baud rate of ESP peripheral
+* Check `CONFIG_BT_HCI_UART_BAUDRATE` parameter in *esp/esp_driver/network_adapter/sdkconfig*
+* Alternatively baud rate could be located in menuconfig at, `Component config ->  Bluetooth -> Bluetooth controller ->  HCI UART(H4) Options -> UART Baudrate for HCI`
+
+
+

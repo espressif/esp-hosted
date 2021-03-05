@@ -4,7 +4,7 @@ Below diagram depicts building blocks of Linux based ESP-Hosted solution.
 ![ESP-Hosted linux based design](./linux_hosted_design.png)
 
 
-## ESP Host Software
+## 1. ESP Host Software
 
 This implements ESP-Hosted solution part that runs on Linux host. It mainly consists of following.
 * ESP Host Driver
@@ -13,7 +13,7 @@ This implements ESP-Hosted solution part that runs on Linux host. It mainly cons
   
 ---
 
-### **ESP Host Driver**
+### 1.1 ESP Host Driver
 
 ESP Host driver implements following.  
 
@@ -35,7 +35,7 @@ This registers HCI interface with Linux kernel. This interface is implemented ov
   
 ---
 
-### **Control/Command Interface**
+### 1.2 Control/Command Interface
 
 * This implements custom control commands that are based on protobuf.
 * These commands are used to control and configure Wi-Fi on ESP peripheral.
@@ -47,7 +47,7 @@ This registers HCI interface with Linux kernel. This interface is implemented ov
   
 ---
 
-### **Python Convenience Scripts**
+### 1.3 Python Convenience Scripts
 Following are few ready to use convenience script provided in the repository. These scripts make use of 'python implementation' of control commands interface as mentioned in above section.
 
 * **Scan external access points**  

@@ -2,9 +2,9 @@
 
 This document describes C API's provided for control interface. Please refer [test.c](../host/linux/host_control/c_support/test.c) to get an idea how to use these API's.
 
-## Data Structures
+## 1. Data Structures
 
-### _struct_ `esp_hosted_sta_config_t`
+### 1.1 _struct_ `esp_hosted_sta_config_t`
 
 This is ESP32 station mode config. It has fields for AP credentials to connect to and current status if ESP32 is connected to AP.
 
@@ -43,7 +43,7 @@ Status of ESP32 station.
 Only in connected or successful case, AP configurations will be valid.
 
 ---
-### _struct_ `esp_hosted_softap_config_t`:
+### 1.2 _struct_ `esp_hosted_softap_config_t`:
 
 This is ESP32 softap mode configuration. It has fields to set and get ESP32 softap configuration.
 
@@ -74,7 +74,7 @@ Bandwidth in 2.4 GHz microwave band.
 
 ---
 
-### _struct_ `esp_hosted_wifi_scanlist_t` :
+### 1.3 _struct_ `esp_hosted_wifi_scanlist_t` :
 
 This is structure gives information of external neighbouring AP of ESP32
 
@@ -111,9 +111,9 @@ BSSID or MAC address of station of length 17. ex. "XX:XX:XX:XX:XX:XX".
 RSSI signal strength of station.
 
 ---
-## Functions
+## 2. Functions
 
-### `int wifi_get_mac (int mode, char *mac)`
+### 2.1 `int wifi_get_mac (int mode, char *mac)`
 
 This is used to get the MAC address of station or softap interface of ESP32
 
@@ -133,7 +133,7 @@ It should be large enough to store string in form "XX:XX:XX:XX:XX:XX"
 
 ---
 
-### `int wifi_set_mac (int mode, char *mac)`
+### 2.2 `int wifi_set_mac (int mode, char *mac)`
 
 This is used to set MAC address of ESP32 interface for given mode.
 
@@ -160,7 +160,7 @@ Custom MAC Address for ESP32 Interface. String in form of "XX:XX:XX:XX:XX:XX".
 
 ---
 
-### `int wifi_get_mode (int *mode)`
+### 2.3 `int wifi_get_mode (int *mode)`
 
 This is used to get Wi-Fi mode of ESP32
 
@@ -179,7 +179,7 @@ This is used to get Wi-Fi mode of ESP32
 
 ---
 
-### `int wifi_set_mode (int mode)`
+### 2.4 `int wifi_set_mode (int mode)`
 
 This is used to set the Wi-Fi mode of ESP32
 
@@ -198,7 +198,7 @@ This is used to set the Wi-Fi mode of ESP32
 
 ---
 
-### `int wifi_set_power_save_mode (int power_save_mode)`
+### 2.5 `int wifi_set_power_save_mode (int power_save_mode)`
 
 This is used to set Wi-Fi power save mode of ESP32.
 
@@ -211,9 +211,8 @@ Minimum modem power saving. In this mode, station wakes up to receive beacon eve
 Maximum modem power saving. In this mode, interval to receive beacons is determined by the listen_interval parameter in wifi set ap config function.
 
 #### **Note**
-
-- Power save mode is set to `WIFI_PS_MIN_MODEM` in sdkconfig (boot config)
-- In WiFi+BT/BLE mode in ESP-Hosted Firmware, `WIFI_PS_NONE` i.e No power save mode is not supported.
+- Power save mode is set to 'WIFI_PS_MIN_MODEM' in sdkconfig (boot config)
+- In WiFi+BT/BLE mode in ESP-Hosted Firmware, 'WIFI_PS_NONE' i.e No power save mode is not supported.
 
 #### Return
 
@@ -222,7 +221,7 @@ Maximum modem power saving. In this mode, interval to receive beacons is determi
 
 ---
 
-### `int wifi_get_power_save_mode (int *power_save_mode)`
+### 2.6 `int wifi_get_power_save_mode (int *power_save_mode)`
 
 This is used to get the Wi-Fi power save mode of ESP32.
 
@@ -243,7 +242,7 @@ Invalid power save mode. In case of failure of command.
 
 ---
 
-### `int wifi_set_ap_config (esp_hosted_control_config_t ap_config)`
+### 2.7 `int wifi_set_ap_config (esp_hosted_control_config_t ap_config)`
 
 This is used to set the AP config to which ESP32 station should connect to.
 
@@ -272,7 +271,7 @@ This will be expressed in AP beacon intervals. This parameter will be in effect 
 
 ---
 
-### `int  wifi_get_ap_config(esp_hosted_control_config_t*  ap_config)`
+### 2.8 `int  wifi_get_ap_config(esp_hosted_control_config_t*  ap_config)`
 
 This is used to get the AP config to which ESP32 station is connected. If ESP32
 station is not connected to AP, returns FAILURE with error print 'station is not connected to AP'.
@@ -298,7 +297,7 @@ encryption/authentication mode of AP, a value from enum `wifi_auth_mode_t`
 
 ---
 
-### `int wifi_disconnect_ap()`
+### 2.9 `int wifi_disconnect_ap()`
 
 This is used to disconnect ESP32 station from AP.
 
@@ -309,7 +308,7 @@ This is used to disconnect ESP32 station from AP.
 
 ---
 
-### `int wifi_set_softap_config(esp_hosted_control_config_t softap_config)`
+### 2.10 `int wifi_set_softap_config(esp_hosted_control_config_t softap_config)`
 
 This is used to set configuration of ESP32 softap .
 
@@ -347,7 +346,7 @@ If softap should broadcast its SSID or not
 
 ---
 
-### `int wifi_get_softap_config(esp_hosted_control_config_t *softap_config)`
+### 2.11 `int wifi_get_softap_config(esp_hosted_control_config_t *softap_config)`
 
 This is used to get configuration of ESP32 softap .
 
@@ -377,7 +376,7 @@ Get configuration of ESP32 softap
 
 ---
 
-### `int wifi_stop_softap()`
+### 2.12 `int wifi_stop_softap()`
 
 This is used to stop ESP32 softap.
 
@@ -387,7 +386,7 @@ This is used to stop ESP32 softap.
 
 ---
 
-### `esp_hosted_wifi_scanlist_t* wifi_ap_scan_list(int *count)`
+### 2.13 `esp_hosted_wifi_scanlist_t* wifi_ap_scan_list(int *count)`
 This is used to get list of available neighboring APs of ESP32.
 
 #### Parameters
@@ -403,7 +402,7 @@ User should free `esp_hosted_wifi_scanlist_t` handler after use.
 
 ---
 
-### `esp_hosted_wifi_connected_stations_list*  wifi_connected_stations_list(int *num)`
+### 2.14 `esp_hosted_wifi_connected_stations_list*  wifi_connected_stations_list(int *num)`
 This is used to get list of connected stations to ESP32 softap.
 
 #### Parameters
@@ -419,9 +418,9 @@ User should free `esp_hosted_wifi_connected_stations_list` handler after use.
 
 ---
 
-## Enumerations
+## 3. Enumerations
 
-### _enum_ `wifi_mode_t`
+### 3.1 _enum_ `wifi_mode_t`
 _Values:_
 - `WIFI_MODE_NULL` = 0 :
 Wi-Fi null or uininitialized mode
@@ -435,7 +434,7 @@ WiFi station + softap mode
 
 ---
 
-### _enum_ `wifi_auth_mode_t` :
+### 3.2 _enum_ `wifi_auth_mode_t` :
 
 Supported authentication or encryption mode in station, softap mode.
 _Values_:
@@ -450,7 +449,7 @@ _Values_:
 
 ---
 
-### _enum_ ` wifi_bandwidth_t` :
+### 3.3 _enum_ ` wifi_bandwidth_t` :
 
 Bandwidth in 2.4 GHz band.
 _Values_ :
@@ -459,7 +458,7 @@ _Values_ :
 
 ---
 
-### _enum_ `wifi_ps_type_t` :
+### 3.4 _enum_ `wifi_ps_type_t` :
 
 Power save mode for ESP32
 _Values_ :
@@ -472,9 +471,9 @@ Invalid power save mode
 
 ---
 
-## Unions
+## 4. Unions
 
-### _union_ `esp_hosted_control_config_t` :
+### 4.1 _union_ `esp_hosted_control_config_t` :
 
 This is ESP32 control configuration union. Its used for providing configurations to ESP32 station or softap mode.
 

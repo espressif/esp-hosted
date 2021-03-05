@@ -1,6 +1,6 @@
 # Wi-Fi and BT/BLE connectivity Setup over SDIO
-## Setup
-### Hardware Setup
+## 1. Setup
+### 1.1 Hardware Setup
 In this setup, ESP board acts as a SDIO peripheral and provides Wi-Fi capabilities to host. Please connect ESP peripheral to Raspberry-Pi with jumper cables as mentioned below. It may be good to use small length cables to ensure signal integrity. Power ESP32 and Raspberry Pi separately with a power supply that provide sufficient power. ESP32 can be powered through PC using micro-USB cable.
 
 | Raspberry-Pi Pin | ESP Pin | Function |
@@ -20,7 +20,7 @@ Setup image is here.
 
 ![alt text](rpi_esp_sdio_setup.jpeg "setup of Raspberry-Pi as host and ESP32 as peripheral")
 
-### Raspberry-Pi Software Setup
+### 1.2 Raspberry-Pi Software Setup
 By default, the SDIO pins of Raspberry-pi are not configured and are internally used for built-in Wi-Fi interface. Please enable SDIO pins by appending following line to _/boot/config.txt_ file
 ```
 dtoverlay=sdio,poll_once=off
@@ -28,8 +28,8 @@ dtoverlay=disable-bt
 ```
 Please reboot Raspberry-Pi after changing this file.
 
-## Load ESP-Hosted Solution
-### Host Software
+## 2. Load ESP-Hosted Solution
+### 2.1 Host Software
 * Execute following commands in root directory of cloned ESP-Hosted repository on Raspberry-Pi
 ```sh
 $ cd host/linux/host_control/
@@ -37,22 +37,30 @@ $ ./rpi_init.sh sdio
 ```
 * This script compiles and loads host driver on Raspberry-Pi. It also creates virtual serial interface `/dev/esps0` which is used as a control interface for Wi-Fi on ESP peripheral
 
-### ESP Peripheral Firmware
+### 2.2 ESP Peripheral Firmware
 One can load pre-built release binaries on ESP peripheral or compile those from source. Below subsection explains both these methods.
 
-#### ESP-IDF requirement
-Please check [ESP-IDF Setup](Linux_based_readme.md#esp-idf-setup) and use appropriate ESP-IDF version
-
-#### Load Pre-built Release Binaries
+#### 2.2.1 Load Pre-built Release Binaries
 * Download pre-built firmware binaries from [releases](https://github.com/espressif/esp-hosted/releases)
 * Linux users can run below command to flash these binaries. Edit <serial_port> with ESP peripheral's serial port.
 ```sh
-esptool.py -p <serial_port> -b 960000 --before default_reset --after hard_reset write_flash --flash_mode dio --flash_freq 40m --flash_size detect 0x8000 partition-table_sdio_v0.3.bin 0x1000 bootloader_sdio_v0.3.bin 0x10000 esp_hosted_firmware_sdio_v0.3.bin
+$ esptool.py -p <serial_port> -b 960000 --before default_reset --after hard_reset \
+write_flash --flash_mode dio --flash_freq 40m --flash_size detect 0x8000 \
+esp_hosted_partition-table_<esp_peripheral>_<interface_type>_v<release_version>.bin 0x1000 \
+esp_hosted_bootloader_<esp_peripheral>_<interface_type>_v<release_version>.bin 0x10000 \
+esp_hosted_firmware_<esp_peripheral>_<interface_type>_v<release_version>.bin
+
+Where,
+	<serial_port>    : serial port of ESP peripheral
+	<esp_peripheral> : esp32/esp32s2
+	<interface_type> : sdio/spi/sdio_uart
+	<release_version>: 0.1,0.2 etc
 ```
 * Windows user can use ESP Flash Programming Tool to flash the pre-built binary.
 
 
-#### Source Compilation
+#### 2.2.2 Source Compilation
+:warning:`Note:Please check [ESP-IDF Setup](Linux_based_readme.md#22-esp-idf-setup) and use appropriate ESP-IDF version`
 * In root directory of ESP-Hosted repository, execute below command
 
 ```sh
@@ -81,7 +89,7 @@ $ make menuconfig
 $ make flash
 ```
 
-## Checking the Setup for SDIO
+## 3. Checking the Setup for SDIO
 Once ESP peripheral has a valid firmware and booted successfully, you should be able to see successful enumeration on Raspberry Pi side as:
 ```sh
 $ dmesg

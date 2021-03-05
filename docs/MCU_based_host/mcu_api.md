@@ -1,9 +1,9 @@
 # APIs for MCU based Host
 
-# Serial interface layer
+# 1. Serial interface layer
 This section explains serial interface APIs and data structures provided by MCU based ESP Host software.
 
-## Data Structures
+## 1.1 Data Structures
 
 ### _struct_ `serial_handle_s`
 This structure holds instance of a virtual serial interface. It contains following fields:
@@ -73,7 +73,7 @@ Non null handle for virtual serial interface
 ---
 
 
-## Functions
+## 1.2 Functions
 
 ### `serial_handle_t * serial_init(void(*rx_data_ind)(void))`
 This API can be used by higher layer to setup a serial interface. A serial interface handle is returned in response. This handle can be used to perform further operations on specified serial interface.
@@ -88,10 +88,10 @@ Call back function in higher layer. This is used to indicate availibility of Rx 
 
 ---
 
-# Network interface layer
+# 2. Network interface layer
 This section explains network interface APIs and data structures provided by ESP Host software.
 
-## Data structures
+## 2.1 Data structures
 
 ### _struct_ `netdev`
 - This is a opaque structure which network stack should define.
@@ -146,7 +146,7 @@ Non null buffer pointer. This will be freed by SPI host driver.
 
 ---
 
-### Functions
+## 2.2 Functions
 Below are the APIs that are to be implemented by network stack.
 
 ### `struct netdev * netdev_alloc(uint32_t sizeof_priv, char *name)`

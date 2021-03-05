@@ -1,8 +1,8 @@
 # Getting started with STM32F469I(MCU based Host)
 
-This section elaborates about setting up the Wi-Fi connectivity. Before proceeding, ensure pre-requisites [Hardware Setup and Compilation](docs/MCU_based_host/Setup.md) are done.
+This section elaborates about setting up the Wi-Fi connectivity. Before proceeding, ensure pre-requisites [Hardware Setup and Compilation](MCU_based_readme.md#2-wi-fi-connectivity-setup-over-spi) are done.
 
-## Wi-Fi Connectivity
+## 1. Wi-Fi Connectivity
 
 Wi-Fi can be configured as either as `STATION` mode or `SOFTAP` mode or `SOFTAP-STATION` mode.
 * **STATION Mode**
@@ -15,9 +15,9 @@ Wi-Fi can be configured as either as `STATION` mode or `SOFTAP` mode or `SOFTAP-
 Host firmware provides wifi connectivity using control path and data path. Control path commands uses `protocomm` layer of ESP-IDF to serialize structured control data and communicates using SPI transport interface between Host(MCU based Host) and ESP peripheral (ESP32/ESP32-S2). User can use control commands to build application.
 
 
-### Start Project with STM32
+### 1.1 Start Project with STM32
 
-We have tested project with STM32F469I-Discovery board. If other than STM32F469I-Discovery board is used, peripheral like SPI, USART need to change as per board needs. As mentioned in [Setup.md](Setup.md), STM32CubeIDE would be needed to follow next steps.
+We have tested project with STM32F469I-Discovery board. If other than STM32F469I-Discovery board is used, peripheral like SPI, USART need to change as per board needs. STM32CubeIDE would be needed to follow next steps.
 
 1) Create a workspace_directory outside of `ESP-Hosted` git cloned directory.
 2) Browse and Open Workspace directory in STM32CubeIDE. It will take few seconds to open STM32CubeIDE.
@@ -42,7 +42,7 @@ This will copy the project configuration files into workspace_directory
 
 6) Re-open STM32CubeIDE with workspace as workspace_directory.
 7) Ignore all warnings under `Problems` tab if any.
-8) Configure all build variables as mentioned in [User configuration parameter](#user-configuration-parameter) section below. Variable CODE_BASE should already be populated. All parameters are mandatory to be filled. Please note that, every subsequent change in configuration parameter would need a clean build as mentioned ahead.
+8) Configure all build variables as mentioned in [User configuration parameter](#12-user-configuration-parameter) section below. Variable CODE_BASE should already be populated. All parameters are mandatory to be filled. Please note that, every subsequent change in configuration parameter would need a clean build as mentioned ahead.
 9) Uncheck `Build Automatically` from `menu -> Project` and Clean build the project as `Project menu -> Clean -> clean`.
 10) Connect STM32 board to your machine if not already connected.
 11) Before flashing the project, Open Tera Term or minicom to see STM32 debug logs once project flashed.
@@ -120,7 +120,7 @@ SoftAP's MAC address is 3c:71:bf:9a:c2:45
 started ESPWifi softAP
 ```
 
-### User configuration parameter
+### 1.2 User configuration parameter
 
 Host firmware has basic user configuration parameters. User needs to manually configure these values. Click on `stm_spi_host` under `Project Explorer` tab. Then `menu -> Project -> Properties -> C/C++ Build -> Build Variables -> < select variable> -> Edit -> OK -> Apply`.
 
@@ -154,12 +154,12 @@ Verify that `CODE_BASE` variable from `menu -> Project -> Properties -> Resource
 
 In case there is a warning sign on folder icon, it means STM32CubeIDE has not correctly configured the variable. In that case, re-configure it using, `Edit -> Click On Folder -> <Path/to/esp_hosted> -> Open -> OK`. The warning sign now should disappear. Now click on `Apply and Close`.
 
-## ARP Testing :
+## 1.3 ARP Testing :
 
 With minimal network stub, arping is tested with this project.
 Once the connection is setup between STM32 and ESP peripheral, ARP can be tested for that interface.
 
-### ARP Request originated from STM32
+### 1.3.1 ARP Request originated from STM32
 For station mode, `INPUT_STATION_SRC_IP` is used as STM32 IPv4 address and `INPUT_STATION_ARP_DEST_IP` is considered as destination IPv4 address. This could be configured as IPv4 address of your machine.
 For softap mode, `INPUT_SOFTAP_SRC_IP` will be used as STM32 IPv4 address and `INPUT_SOFTAP_ARP_DEST_IP` used as destination IPv4 address.
 
@@ -172,7 +172,7 @@ ARP request will be triggered around every one second for both softap and statio
 ARP_RSP_RCVD: XX bytes from 192.168.1.203 (58:a0:23:86:2a:c4)
 ```
 
-### ARP Responses from STM32
+### 1.3.2 ARP Responses from STM32
 In case of station mode, ARP request could be triggered from station connected to `INPUT_STATION__SSID`. To start arping request, please use ARP destination as `INPUT_STATION_SRC_IP`. For example,
 ```
 sudo arping 192.168.1.233

@@ -1,9 +1,9 @@
 # SDIO Communication Protocol
 
-## Protocol Definition
+## 1. Protocol Definition
 This section explains the SDIO communication protocol between a host and ESP peripheral.
 
-### SDIO transport layer
+### 1.1 SDIO transport layer
 **This section is only applicable for ESP32. ESP32-S2 does not support SDIO interface**  
 
 ESP peripheral advertises 2 SDIO functions. ESP-Hosted solution is implemented on function 1. Though function 2 is advertised, it is not in use.
@@ -27,7 +27,7 @@ bit 3: BT mode - BLE only mode
 bit 4: BT mode - BR/EDR only mode
 ```
 
-#### Initialization of ESP peripheral device
+#### 1.1.1 Initialization of ESP peripheral device
 1. Soft reset SDIO interface of ESP peripheral
 	* Host resets SDIO part of ESP peripheral by setting bit 2 of register at 0x3FF5508C
 	* This generates an interrupt for ESP peripheral, on which firmware on ESP peripheral resets its SDIO related data structures.
@@ -38,7 +38,7 @@ bit 4: BT mode - BR/EDR only mode
 	* Host sets 0th bit of 0x3FF5508C interrupt register
 	* This indicates ESP peripheral that host is ready for data transmission
 
-#### Data transfer from Host to ESP peripheral
+#### 1.1.2 Data transfer from Host to ESP peripheral
 1. Get Buffer count
 	* Host reads the current buffer count from ESP peripheral [0x3FF55044]
 	* Based on that value, host calculates the number of available buffers at ESP peripheral
@@ -47,7 +47,7 @@ bit 4: BT mode - BR/EDR only mode
 2. The host transfers data in multiples of 512 bytes and max data length per write operation is limited to buffer size [2048 bytes]
 3. Host then updates it's own counter that keeps track of number of buffers it has transmitted.
 
-#### Data transfer from ESP peripheral to host
+#### 1.1.3 Data transfer from ESP peripheral to host
 1. Whenever ESP peripheral has data to transfer, it updates the length in 0x3FF55060 registers and generates an interrupt for host.
 2. On interruption, host reads interrupt status register [0x3FF55058]. Bit 23 of this register tells host that ESP peripheral desires to send data.
 3. Host then gets the length set by ESP peripheral by reading register mentioned in step 1. Based on previous received byte count and this length, host understands the actual length of data packet.
@@ -56,6 +56,6 @@ bit 4: BT mode - BR/EDR only mode
 
 `Note: ESP peripheral stays in blocked state during steps 1 to 4 [ i.e till host reads the data packet]`
 
-#### Deinit peripheral device
+#### 1.1.4 Deinit peripheral device
 Host sets bit 1 of 0x3FF5508C interrupt register. This tells ESP peripheral to stop the data path.
 
