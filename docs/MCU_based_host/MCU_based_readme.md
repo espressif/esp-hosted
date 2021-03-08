@@ -12,7 +12,7 @@ Below diagram shows hardware and software block diagram for a typical MCU based 
 We recommend STM32CubeIDE version 1.4 IDE from STMicroelectronics on host machine(Laptop, Desktop etc.). User can download IDE from [Here](https://www.st.com/en/development-tools/stm32cubeide.html#get-software).
 
 ### 1.1.2 Tools for testing
-* **Arping**  
+* **Arping**
 	Arping software is needed for testing the project.
 	Arping is a software tool which probes hosts on the network link by sending Link Layer frames using the ARP request to host identified by its MAC address. More details could be found on [this link](https://devconnected.com/arping-command-on-linux-explained/).
 
@@ -88,32 +88,32 @@ $ git mv components/protocomm/src/common/protocomm_priv.h components/protocomm/i
 For pre built hosted mode firmware is present in `release` tab. Execute below command to flash it on ESP peripheral.
 ##### ESP32
 ```sh
-$ esptool.py -p <serial_port> -b 960000 --before default_reset --after hard_reset \
-write_flash --flash_mode dio --flash_freq 40m --flash_size detect 0x8000 \
-esp_hosted_partition-table_<esp_peripheral>_<interface_type>_v<release_version>.bin 0x1000 \
-esp_hosted_bootloader_<esp_peripheral>_<interface_type>_v<release_version>.bin 0x10000 \
-esp_hosted_firmware_<esp_peripheral>_<interface_type>_v<release_version>.bin
+$ python esptool.py --chip esp32 --port <serial_port> --baud 960000 --before default_reset \
+--after hard_reset write_flash -z --flash_mode dio --flash_freq 40m --flash_size detect \
+0x1000 esp_hosted_bootloader_esp32_spi_v<release_version>.bin \
+0x10000 esp_hosted_firmware_esp32_spi_v<release_version>.bin \
+0x8000 esp_hosted_partition-table_esp32_spi_v<release_version>.bin
 
 Where,
-	<serial_port>    : ESP peripheral's serial port
-	<esp_peripheral> : esp32/esp32s2
-	<interface_type> : sdio/spi/sdio_uart
-	<release_version>: 0.1,0.2 etc
+	<serial_port>    : serial port of ESP peripheral
+	<release_version>: 0.1,0.2 etc. Latest from [release page](https://github.com/espressif/esp-hosted/releases)
 ```
+* This command will flash `SPI` interface binaries on `esp32` chip.
+
 ##### ESP32-S2
 ```sh
-$ esptool.py -p <serial_port> -b 960000 --before default_reset --after hard_reset \
---chip esp32s2  write_flash --flash_mode dio --flash_size detect --flash_freq 80m 0x1000 \
-esp_hosted_bootloader_<esp_peripheral>_<interface_type>_v<release_version>.bin 0x8000 \
-build/partition_table/esp_hosted_partition-table_<esp_peripheral>_<interface_type>_v<release_version>.bin 0x10000 \
-esp_hosted_firmware_<esp_peripheral>_<interface_type>_v<release_version>.bin
+$ python esptool.py --port <serial_port> --baud 960000 --before default_reset --after hard_reset \
+--chip esp32s2  write_flash --flash_mode dio --flash_size detect --flash_freq 80m \
+0x1000 esp_hosted_bootloader_esp32s2_spi_v<release_version>.bin \
+0x8000 esp_hosted_partition-table_esp32s2_spi_v<release_version>.bin \
+0x10000 esp_hosted_firmware_esp32s2_spi_v<release_version>.bin
 
 Where,
-	<serial_port>    : ESP peripheral's serial port
-	<esp_peripheral> : esp32/esp32s2
-	<interface_type> : sdio/spi/sdio_uart
-	<release_version>: 0.1,0.2 etc
+	<serial_port>    : serial port of ESP peripheral
+	<release_version>: 0.1,0.2 etc. Latest from [release page](https://github.com/espressif/esp-hosted/releases)
 ```
+* This command will flash `SPI` interface binaries on `esp32s2` chip.
+
 For windows user, you can also program the binaries using ESP Flash Programming Tool.
 
 #### 2.2.2 Compilation using source
