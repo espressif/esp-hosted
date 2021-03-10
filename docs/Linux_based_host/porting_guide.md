@@ -32,11 +32,21 @@ Driver underlies heavily over underlying kernel. ESP-Hosted is tested over Linux
 	* `rapi-gpio` are simple utilities used to configure GPIO pins for their levels, alternate functions and pull up values.
 	* As per raspberry Pi documentation, these UART pins are configured.
 	* These pins and any other peripheral pins which are not already taken care in their drivers, need to be configured.
-
+* spidev_disabler
+	* This is applicable for SPI peripheral configuration and explained in next section.
 
 ##### 1.2.3 Peripheral configurations
 
 * SPI
+	* Disable default SPI driver
+		- Linux kernel has a default SPI controller driver which needs to be disabled in order to make esp32_spi module work. Please see following code snippet from rpi_init.sh script
+
+		```
+		# Disable default spidev driver                                                              
+		dtc spidev_disabler.dts -O dtb > spidev_disabler.dtbo
+		sudo dtoverlay -d . spidev_disabler
+		```
+		While porting, equivalent commands or steps need to be run to disable default SPI driver.
 	* Additional GPIOs
 		- Apart from regular MOSI, MISO, CLK and Chip select, there are two additional GPIO pins used for SPI implementation.
 		- These pins should be selected such that they would not interfere other any peripheral work.
