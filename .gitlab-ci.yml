@@ -33,7 +33,7 @@ deploy_test_github:
       - git remote remove github &>/dev/null || true
       - git remote add github git@github.com:espressif/esp-hosted.git
       # Using test branch
-      - git branch ${TEST_BRANCH}
+      - git branch ${TEST_BRANCH} 2>&1 || echo "Branch exists" && git branch -D ${TEST_BRANCH} 2>&1 || echo "Branch deleted" && git branch ${TEST_BRANCH} 2>&1 && echo "Branch created"
       - git push github "${CI_COMMIT_SHA}:refs/heads/${TEST_BRANCH}"
 
 .deploy_master_github:
@@ -57,3 +57,4 @@ deploy_test_github:
       - git remote add github git@github.com:espressif/esp-hosted.git
       # Using master branch
       #- git push github "${CI_COMMIT_SHA}:refs/heads/${MASTER_BRANCH}"
+
