@@ -6,7 +6,7 @@ Below diagram shows hardware and software block diagram for a typical linux base
 
 This document explains ESP-Hosted setup and usage. The document is divided in two parts:
 * [Quick Start Guide](#1-quick-start-guide)  
-	This section briefly explains ESP-Hosted setup. One can refer this guide to quickly prepare and test ESP-Hosted solution,
+	This section briefly explains ESP-Hosted setup. One can refer this guide to quickly prepare and test ESP-Hosted solution.
 
 * [ESP-Hosted Comprehensive Guide](#2-esp-hosted-comprehensive-guide)  
 	This section provides in depth information about ESP-Hosted setup, available customization options etc.
@@ -107,10 +107,10 @@ Prepare connections based on interface requirements and setup host as below.
 * Flash pre-built binaries as below.
 ```sh
 $ esptool.py -p <serial_port> -b 960000 --before default_reset --after hard_reset \
-write_flash --flash_mode dio --flash_freq 40m --flash_size detect 0x8000 \
-esp_hosted_partition-table_<esp_peripheral>_<interface_type>_v<release_version>.bin 0x1000 \
-esp_hosted_bootloader_<esp_peripheral>_<interface_type>_v<release_version>.bin 0x10000 \
-esp_hosted_firmware_<esp_peripheral>_<interface_type>_v<release_version>.bin
+write_flash --flash_mode dio --flash_freq 40m --flash_size detect \
+0x8000 esp_hosted_partition-table_<esp_peripheral>_<interface_type>_v<release_version>.bin \
+0x1000 esp_hosted_bootloader_<esp_peripheral>_<interface_type>_v<release_version>.bin \
+0x10000 esp_hosted_firmware_<esp_peripheral>_<interface_type>_v<release_version>.bin
 
 Where,
 	<serial_port>    : serial port of ESP peripheral
@@ -120,7 +120,7 @@ Where,
 ```
 
 #### 1.3.2 Setup Validation
-Once everything is setup and and host software and ESP firmware are loaded
+Once everything is setup and host software and ESP firmware are loaded
 * Verify that `ethsta0` and `ethap0` interfaces are seen on host using following command.
 	```sh
 	$ ifconfig -a

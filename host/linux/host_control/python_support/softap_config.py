@@ -22,7 +22,7 @@ from distutils.util import strtobool
 # NULL                  0
 # Station               1
 # SoftAP                2
-# Station+SoftAP        3
+# Station+softAP        3
 
 wifi_mode_none = 0
 wifi_mode_station = 1
@@ -43,7 +43,7 @@ parser.add_argument("channel_id", type=int, default=1, help="channel ID (It can 
 
 parser.add_argument("encrp_mthd", type=int, default=0, help="encryption method (0 : OPEN, 2: WPA_PSK, 3:WPA2_PSK, 4: WPA_WPA2_PSK)")
 
-parser.add_argument("--max_conn", type=int, default=1, help="max connection count( number of Stations to which ESP32 SoftAP can be connected, within the range of [1, 10])")
+parser.add_argument("--max_conn", type=int, default=1, help="max connection count( number of Stations to which ESP32 softAP can be connected, within the range of [1, 10])")
 
 parser.add_argument('--ssid_hidden', type=lambda x: bool(strtobool(x)), default=False, help="ssid hidden/broadcast (It can set to True if softAP shouldnt broadcast its ssid else False)")
 
@@ -53,7 +53,7 @@ args = parser.parse_args()
 
 ap_mac = wifi_get_mac(wifi_mode_softap)
 if (ap_mac == failure):
-    print("Failed to get is SoftAP mac address")
+    print("Failed to get softAP mac address")
     flag = failure
 else :
     print("SoftAP MAC Address "+str(ap_mac))
@@ -61,13 +61,13 @@ else :
 if (flag == success):
     softap_config = wifi_set_softap_config(args.ssid, args.password, args.channel_id, args.encrp_mthd, args.max_conn, args.ssid_hidden, args.bw)
     if (softap_config != success):
-        print("setting softap config failed")
+        print("Failure in setting softAP config")
         flag = failure
     else:
-        print("setting softap config success")
- 
+        print("Success in setting softAP config")
+
 if (flag != success):
-    print("failure in setting SoftAP config")
+    print("Failure in setting softAP config")
 else:
     command = 'sudo ifconfig ethap0 down'
     os.system(command)
@@ -83,4 +83,4 @@ else:
     
     time.sleep(1)
  
-    print("softAP config successfully set")
+    print("SoftAP config successfully set")

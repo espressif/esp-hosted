@@ -45,23 +45,23 @@ Only in connected or successful case, AP configurations will be valid.
 ---
 ### 1.2 _struct_ `esp_hosted_softap_config_t`:
 
-This is ESP32 softap mode configuration. It has fields to set and get ESP32 softap configuration.
+This is ESP32 softAP mode configuration. It has fields to set and get ESP32 softAP configuration.
 
 *Public Members*
 - `uint8_t ssid[SSID_LENGTH]` :
-SSID is of ESP32 softap. It should be string of length 0 to 32.
+SSID is of ESP32 softAP. It should be string of length 0 to 32.
 - `uint8_t pwd[PASSWORD_LENGTH]` :
 Password or passphrase. It should be string of length 8 to 63.
 - `int channel` :
-WLAN Channel ID of softap. Supported channels for softap are from 1 to 11.
+WLAN Channel ID of softAP. Supported channels for softAP are from 1 to 11.
 - `int encryption_mode` :
-Encryption or authentication mode of softap. Currently ESP32 support only these encryption mode.
+Encryption or authentication mode of softAP. Currently ESP32 support only these encryption mode.
   - 0 : OPEN
   - 2 : WPA_PSK
   - 3 : WPA2_PSK
   - 4 : WPA_WPA2_PSK
 - `int max_connections` :
-Software limit of maximum number of stations which can connect to ESP32 softap.
+Software limit of maximum number of stations which can connect to ESP32 softAP.
 This can have value from 1 to 10.
 Driver/Hardware current limit is 10.
 - `bool ssid_hidden` :
@@ -102,7 +102,7 @@ Encryption mode of AP.
 
 _struct_ `esp_hosted_wifi_connected_stations_list`:
 
-This contains list of station(s) connected to ESP32 softap.
+This contains list of station(s) connected to ESP32 softAP.
 
 *Public Members*
 - `uint8_t bssid[BSSID_LENGTH]` :
@@ -115,15 +115,15 @@ RSSI signal strength of station.
 
 ### 2.1 `int wifi_get_mac (int mode, char *mac)`
 
-This is used to get the MAC address of station or softap interface of ESP32
+This is used to get the MAC address of station or softAP interface of ESP32
 
 #### Parameters
 
 - `mode` :
-        -`WIFI_MODE_STA` : station
-        -`WIFI_MODE_AP` : softap
-- `mac` :
-String in form of "XX:XX:XX:XX:XX:XX" in success case
+  - `WIFI_MODE_STA` : station
+  - `WIFI_MODE_AP` : softAP
+- `mac` : 
+String in form of "XX:XX:XX:XX:XX:XX" in success case.
 It should be large enough to store string in form "XX:XX:XX:XX:XX:XX"
 
 #### Return
@@ -139,8 +139,8 @@ This is used to set MAC address of ESP32 interface for given mode.
 
 #### **Note**
 
-- First set wifi mode before setting MAC address for respective station and softap Interface.
-- ESP32 station and softap have different MAC addresses, do not set them to be the same.
+- First set wifi mode before setting MAC address for respective station and softAP Interface.
+- ESP32 station and softAP have different MAC addresses, do not set them to be the same.
 - The bit 0 of the first byte of ESP32 MAC address can not be 1.
         - For example, the MAC address can set to be "1a:XX:XX:XX:XX:XX", but can not be "15:XX:XX:XX:XX:XX".
 - MAC address will get reset after esp restarts
@@ -149,7 +149,7 @@ This is used to set MAC address of ESP32 interface for given mode.
 
 - `mode` :
   - `WIFI_MODE_STA` : station
-  - `WIFI_MODE_AP` : softap
+  - `WIFI_MODE_AP` : softAP
 - `mac` :
 Custom MAC Address for ESP32 Interface. String in form of "XX:XX:XX:XX:XX:XX".
 
@@ -169,8 +169,8 @@ This is used to get Wi-Fi mode of ESP32
 - `mode` :
   - `WIFI_MODE_NONE` : null Mode, Wi-Fi mode not set
   - `WIFI_MODE_STA` : station mode
-  - `WIFI_MODE_AP` : softap mode
-  - `WIFI_MODE_APSTA` : softap+station mode
+  - `WIFI_MODE_AP` : softAP mode
+  - `WIFI_MODE_APSTA` : station+softAP mode
 
 #### Return
 
@@ -188,8 +188,8 @@ This is used to set the Wi-Fi mode of ESP32
 - `mode` :
   - `WIFI_MODE_NONE` : null Mode, Wi-Fi mode not set
   - `WIFI_MODE_STA` : station mode
-  - `WIFI_MODE_AP` : softap mode
-  - `WIFI_MODE_APSTA` : softap+station mode
+  - `WIFI_MODE_AP` : softAP mode
+  - `WIFI_MODE_APSTA` : station+softAP mode
 
 #### Return
 
@@ -310,32 +310,32 @@ This is used to disconnect ESP32 station from AP.
 
 ### 2.10 `int wifi_set_softap_config(esp_hosted_control_config_t softap_config)`
 
-This is used to set configuration of ESP32 softap .
+This is used to set configuration of ESP32 softAP .
 
 #### Parameters
 - `softap_config` :
-Set configuration of ESP32 softap
+Set configuration of ESP32 softAP
 - `ssid` :
 SSID i.e. Name of AP. This should be a string upto 32 characters.
 - `pwd` :
 Password or passphrase. This should be string of 8 to 63 characters.
 - `channel` :
-WLAN channel ID. Supported channels for softap are from 1 to 11.
+WLAN channel ID. Supported channels for softAP are from 1 to 11.
 - `encryption_mode` :
-Supported encryption *i.e.* authentication modes for softap are:
+Supported encryption *i.e.* authentication modes for softAP are:
   - 0 : OPEN
   - 2 : WPA_PSK
   - 3 : WPA2_PSK
   - 4 : WPA_WPA2_PSK
 - `max_connections` :
-Software limit of maximum number of stations which can connect to ESP32 softap.
+Software limit of maximum number of stations which can connect to ESP32 softAP.
 This can have value from 1 to 10.
 Driver/Hardware current limit is 10.
 - `ssid_hidden` :
-If softap should broadcast its SSID or not
+If softAP should broadcast its SSID or not
   - 0 : SSID should be broadcasted
   - 1 : SSID should not be broadcasted
-- `bandwidth` : set bandwidth of ESP32 softap
+- `bandwidth` : set bandwidth of ESP32 softAP
   - `WIFI_BW_HT20` : 20MHz Bandwidth
   - `WIFI_BW_HT40` : 40MHz Bandwidth
 
@@ -348,25 +348,25 @@ If softap should broadcast its SSID or not
 
 ### 2.11 `int wifi_get_softap_config(esp_hosted_control_config_t *softap_config)`
 
-This is used to get configuration of ESP32 softap .
+This is used to get configuration of ESP32 softAP .
 
 #### Parameters
 
 - `softap_config` :
-Get configuration of ESP32 softap
-- `ssid` : SSID or name of softap
-- `pwd` : password of softap
-- `channel` : channel ID of softap
-- `encryption_mode` : encryption mode or authentication mode softap is using
+Get configuration of ESP32 softAP
+- `ssid` : SSID or name of softAP
+- `pwd` : password of softAP
+- `channel` : channel ID of softAP
+- `encryption_mode` : encryption mode or authentication mode softAP is using
   - 0 : OPEN
   - 2 : WPA_PSK
   - 3 : WPA2_PSK
   - 4 : WPA_WPA2_PSK
-- `max_connections` : software value of maximum number of stations can connect to softap currently
-- `ssid_hidden` : softap is broadcasting its SSID or not
+- `max_connections` : software value of maximum number of stations can connect to softAP currently
+- `ssid_hidden` : softAP is broadcasting its SSID or not
   - 0 : SSID is broadcasted
   - 1 : SSID is not broadcasted
-- `bandwidth` : current bandwidth of softap
+- `bandwidth` : current bandwidth of softAP
   - `WIFI_BW_HT20` : 20MHz Bandwidth
   - `WIFI_BW_HT40` : 40MHz Bandwidth
 
@@ -378,7 +378,7 @@ Get configuration of ESP32 softap
 
 ### 2.12 `int wifi_stop_softap()`
 
-This is used to stop ESP32 softap.
+This is used to stop ESP32 softAP.
 
 #### Return
 - 0 : SUCCESS
@@ -403,7 +403,7 @@ User should free `esp_hosted_wifi_scanlist_t` handler after use.
 ---
 
 ### 2.14 `esp_hosted_wifi_connected_stations_list*  wifi_connected_stations_list(int *num)`
-This is used to get list of connected stations to ESP32 softap.
+This is used to get list of connected stations to ESP32 softAP.
 
 #### Parameters
 - `num` :
@@ -411,7 +411,7 @@ number of stations connected
 
 #### Return
 `esp_hosted_wifi_connected_stations_list` handler :
-Handler is pointer to list of connected stations to ESP32 softap.
+Handler is pointer to list of connected stations to ESP32 softAP.
 
 #### **Note**
 User should free `esp_hosted_wifi_connected_stations_list` handler after use.
@@ -427,16 +427,16 @@ Wi-Fi null or uininitialized mode
 - `WIFI_MODE_STA` :
 WiFi station mode
 - `WIFI_MODE_AP` :
-WiFi softap mode
+WiFi softAP mode
 - `WIFI_MODE_APSTA` :
-WiFi station + softap mode
+WiFi station + softAP mode
 - `WIFI_MODE_MAX`
 
 ---
 
 ### 3.2 _enum_ `wifi_auth_mode_t` :
 
-Supported authentication or encryption mode in station, softap mode.
+Supported authentication or encryption mode in station, softAP mode.
 _Values_:
 - `WIFI_AUTH_OPEN` = 0 : Open mode
 - `WIFI_AUTH_WEP` : WEP mode
@@ -475,12 +475,12 @@ Invalid power save mode
 
 ### 4.1 _union_ `esp_hosted_control_config_t` :
 
-This is ESP32 control configuration union. Its used for providing configurations to ESP32 station or softap mode.
+This is ESP32 control configuration union. Its used for providing configurations to ESP32 station or softAP mode.
 
 *Public Members*
 - _struct_ `esp_hosted_sta_config_t` :
 ESP32 station mode config
 - _struct_ `esp_hosted_softap_config_t` :
-ESP32 softap mode config
+ESP32 softAP mode config
 
 ---

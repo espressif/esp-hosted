@@ -20,7 +20,7 @@ import os
 # NULL              0
 # Station           1
 # SoftAP            2
-# Station + SoftAP  3
+# Station + softAP  3
 
 wifi_mode_none = 0
 wifi_mode_station = 1

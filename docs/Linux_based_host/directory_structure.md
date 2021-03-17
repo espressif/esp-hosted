@@ -13,7 +13,7 @@
 │   │   ├── rpi_init.sh         (Installation sequence for ESP-Hosted driver)
 │   │   └── spidev_disabler.dts (dts file for SPI transport)
 │   └── host_driver             (Contain ESP-Hosted kernel module files)
-│       └── esp32               (ESP-hosted kernel module files )
+│       └── esp32               (ESP-hosted kernel module files)
 │           ├── sdio            (Contain SDIO transport files used by kernel module to communicate
 │           │                       with ESP peripheral)
 │           └── spi             (Contain SPI transport files used by kernel module to communicate

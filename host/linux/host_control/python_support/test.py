@@ -25,7 +25,7 @@ print("mac "+str(x))
 # 0: null Mode, Wi-Fi mode not set
 # 1: station mode
 # 2: softAP mode
-# 3: softAP+station mode
+# 3: station+softAP mode
 # or Failure
 
 x = wifi_get_mode()

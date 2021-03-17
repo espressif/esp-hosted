@@ -83,7 +83,7 @@ Following are few ready to use convenience script provided in the repository. Th
 	You can check that `ethsta0` interface is down (disabled) using `ifconfig`.
 
 
-* **Setup and start SoftAP**  
+* **Setup and start softAP**
 
 	`softap_config.py` is a python script for configuring ESP peripheral to work in softAP mode. Following parameters should be provided:
 
@@ -108,7 +108,7 @@ Following are few ready to use convenience script provided in the repository. Th
 	To start data connection, set up a DHCP server on the Raspberry Pi, or configure a static IP address for AP interface (`ethap0`).
 
 
-* **Stop SoftAP**  
+* **Stop softAP**
 
 	`softap_stop.py` python script disables wifi softAP mode on ESP peripheral. This script will change wifi mode to `null` if only softAP is running, or to `station` mode if softAP and station both are on.
 
@@ -119,7 +119,7 @@ Following are few ready to use convenience script provided in the repository. Th
 	You can check that `ethap0` interface is down (disabled) using `ifconfig`.
 
 
-* **List external stations connected to SoftAP**  
+* **List external stations connected to softAP**
 
 	`connected_stations_list.py` is a python script that returns a list of MAC addresses of stations connected to softAP.
 

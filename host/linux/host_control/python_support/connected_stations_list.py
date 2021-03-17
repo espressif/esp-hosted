@@ -18,8 +18,8 @@ import argparse
 # WiFi Mode
 # NULL              0
 # Station           1
-# SoftAP            2
-# Station + SoftAP  3
+# softAP            2
+# Station + softAP  3
 
 wifi_mode_none = 0
 wifi_mode_station = 1
@@ -41,4 +41,4 @@ if ((get_mode == wifi_mode_softap) or (get_mode == wifi_mode_station_softap)):
 elif (get_mode == failure):
     print("failure in getting wifi mode")
 else :
-    print("current mode is not station/station+softap")
+    print("current mode is not softAP or station+softAP")

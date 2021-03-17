@@ -4,12 +4,12 @@ This section elaborates about setting up the Wi-Fi connectivity. Before proceedi
 
 ## 1. Wi-Fi Connectivity
 
-Wi-Fi can be configured as either as `STATION` mode or `SOFTAP` mode or `SOFTAP-STATION` mode.
+Wi-Fi can be configured as either as `STATION` mode or `SOFTAP` mode or `STATION+SOFTAP` mode.
 * **STATION Mode**
     - This mode is used for connecting to external AP i.e. Wi-Fi router. Consider example of smartphone connecting to Wi-Fi router. Like smartphone, host behaves as station and gets authenticated and connected to external AP i.e. Wi-Fi router.
 * **SOFTAP Mode**
     - This mode is exactly opposite, wherein host with help of ESP-Hosted solution, instructs ESP peripheral to create Wi-Fi network. Stations like smartphones can authenticate and connect to it.
-* **SOFTAP+STATION Mode**
+* **STATION+SOFTAP Mode**
     - This is combination of both the modes. In this mode, host behaves as station and connects to external AP. At the same time, host with help of ESP device, can create the Wi-Fi network.
 
 Host firmware provides wifi connectivity using control path and data path. Control path commands uses `protocomm` layer of ESP-IDF to serialize structured control data and communicates using SPI transport interface between Host(MCU based Host) and ESP peripheral (ESP32/ESP32-S2). User can use control commands to build application.
@@ -42,7 +42,7 @@ This will copy the project configuration files into workspace_directory
 
 6) Re-open STM32CubeIDE with workspace as workspace_directory.
 7) Ignore all warnings under `Problems` tab if any.
-8) Configure all build variables as mentioned in [User configuration parameter](#12-user-configuration-parameter) section below. Variable CODE_BASE should already be populated. All parameters are mandatory to be filled. Please note that, every subsequent change in configuration parameter would need a clean build as mentioned ahead.
+8) Configure all build variables as mentioned in [User configuration parameter](#12-user-configuration-parameter) section below. Variable `CODE_BASE` should already be populated. All parameters are mandatory to be filled. Please note that, every subsequent change in configuration parameter would need a clean build as mentioned ahead.
 9) Uncheck `Build Automatically` from `menu -> Project` and Clean build the project as `Project menu -> Clean -> clean`.
 10) Connect STM32 board to your machine if not already connected.
 11) Before flashing the project, Open Tera Term or minicom to see STM32 debug logs once project flashed.
@@ -136,7 +136,7 @@ Build Variables are as follows:
 |6| INPUT_SOFTAP_BANDWIDTH | String | Set bandwidth of ESP softAP ( HT20 or HT40 ) |
 |7| INPUT_SOFTAP_CHANNEL | String | Channel ID (Range: 1 to 11)|
 |8| INPUT_SOFTAP_ENCRYPTION | String | Encryption mode. ( OPEN, WPA_PSK, WPA2_PSK, WPA_WPA2_PSK) |
-|9| INPUT_SOFTAP_MAX_CONN | String | Maximum number of stations can connect to ESP SoftAP (Range: 1 to 10) |
+|9| INPUT_SOFTAP_MAX_CONN | String | Maximum number of stations can connect to ESP softAP (Range: 1 to 10) |
 |10| INPUT_SOFTAP_SSID_HIDDEN | String | SoftAP should broadcast its SSID or not ( "yes" : SSID is broadcast, "no" : SSID is not broadcast )
 |11| INPUT_SOFTAP_SRC_IP | String | Source IP (IPv4)address of host in softAP mode. |
 |12| INPUT_SOFTAP_ARP_DEST_IP | String | Destination IP (IPv4)address of station connected to host. |
@@ -161,13 +161,13 @@ Once the connection is setup between STM32 and ESP peripheral, ARP can be tested
 
 ### 1.3.1 ARP Request originated from STM32
 For station mode, `INPUT_STATION_SRC_IP` is used as STM32 IPv4 address and `INPUT_STATION_ARP_DEST_IP` is considered as destination IPv4 address. This could be configured as IPv4 address of your machine.
-For softap mode, `INPUT_SOFTAP_SRC_IP` will be used as STM32 IPv4 address and `INPUT_SOFTAP_ARP_DEST_IP` used as destination IPv4 address.
+For softAP mode, `INPUT_SOFTAP_SRC_IP` will be used as STM32 IPv4 address and `INPUT_SOFTAP_ARP_DEST_IP` used as destination IPv4 address.
 
 Please note,
-1. In case of softap mode, only static IPv4 addresses are supported currently. You can use your machine to connect to softap and assign static address as `INPUT_SOFTAP_ARP_DEST_IP`.
+1. In case of softAP mode, only static IPv4 addresses are supported currently. You can use your machine to connect to softAP and assign static address as `INPUT_SOFTAP_ARP_DEST_IP`.
 2. IP addresses configured are in same subnet for that interface.
 
-ARP request will be triggered around every one second for both softap and station network. ARP responses are displayed on receival. On minicom, typically should be printed like,
+ARP request will be triggered around every one second for both softAP and station network. ARP responses are displayed on receival. On minicom, typically should be printed like,
 ```
 ARP_RSP_RCVD: XX bytes from 192.168.1.203 (58:a0:23:86:2a:c4)
 ```
@@ -177,7 +177,7 @@ In case of station mode, ARP request could be triggered from station connected t
 ```
 sudo arping 192.168.1.233
 ```
-Similarly for softap mode, you would need to connect to Wifi from ESP, `INPUT_SOFTAP__SSID`. Trigger command,
+Similarly for softAP mode, you would need to connect to Wifi from ESP, `INPUT_SOFTAP__SSID`. Trigger command,
 ```
 sudo arping 192.168.2.1
 ```
