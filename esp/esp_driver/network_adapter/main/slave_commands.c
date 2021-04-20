@@ -865,7 +865,7 @@ static esp_err_t cmd_get_ap_scan_list_handler (EspHostedConfigPayload *req,
 {
     esp_err_t ret;
     wifi_mode_t mode;
-    uint16_t ap_count = 0;
+    uint16_t ap_count = 0, valid_ap_count = 0, last_idx = 0;
     credentials_t credentials = {0};
     wifi_ap_record_t *ap_info = NULL;
     EspHostedScanResult **results = NULL;
@@ -936,11 +936,24 @@ static esp_err_t cmd_get_ap_scan_list_handler (EspHostedConfigPayload *req,
         goto err;
     }
 
-    ESP_LOGI(TAG,"Total APs scanned = %u",ap_count);
-    credentials.count = ap_count;
+    // check if any hidden AP is present, If yes, discard it
+    last_idx = ap_count - 1;
+    for (int i=0; i<=last_idx; i++) {
+        if (!strnlen((char *)ap_info[i].ssid, SSID_LENGTH)) {
+            for (int j=last_idx; j>i; j--) {
+                if (strnlen((char *)ap_info[j].ssid, SSID_LENGTH)) {
+                    ap_info[i] = ap_info[j];
+                    last_idx = j-1;
+                    valid_ap_count++;
+                    break;
+                }
+            }
+        } else {
+            valid_ap_count++;
+        }
+    }
+    credentials.count = valid_ap_count;
     resp_payload->has_count = true;
-    resp_payload->count = credentials.count;
-    resp_payload->n_entries = credentials.count;
 
     results = (EspHostedScanResult **)
         calloc(credentials.count, sizeof(EspHostedScanResult));
@@ -950,6 +963,7 @@ static esp_err_t cmd_get_ap_scan_list_handler (EspHostedConfigPayload *req,
     }
 
     resp_payload->entries = results;
+    ESP_LOGI(TAG,"Total APs scanned = %u",valid_ap_count);
     for (int i = 0; i < credentials.count; i++ ) {
         results[i] = (EspHostedScanResult *)calloc(1,sizeof(EspHostedScanResult));
         if (!results[i]) {
@@ -957,17 +971,20 @@ static esp_err_t cmd_get_ap_scan_list_handler (EspHostedConfigPayload *req,
             goto err;
         }
         esp_hosted_scan_result__init(results[i]);
+
         ESP_LOGI(TAG,"Details of AP no %d",i);
 
         results[i]->ssid.len = strnlen((char *)ap_info[i].ssid, SSID_LENGTH);
         if (!results[i]->ssid.len) {
             ESP_LOGE(TAG, "Invalid SSID length");
+            mem_free(results[i]);
             goto err;
         }
         results[i]->ssid.data = (uint8_t *)strndup((char *)ap_info[i].ssid,
             SSID_LENGTH);
         if (!results[i]->ssid.data) {
             ESP_LOGE(TAG,"Failed to allocate memory for scan result entry SSID");
+            mem_free(results[i]);
             goto err;
         }
 
@@ -983,12 +1000,14 @@ static esp_err_t cmd_get_ap_scan_list_handler (EspHostedConfigPayload *req,
         results[i]->bssid.len = strnlen((char *)credentials.bssid, BSSID_LENGTH);
         if (!results[i]->bssid.len) {
             ESP_LOGE(TAG, "Invalid BSSID length");
+            mem_free(results[i]);
             goto err;
         }
         results[i]->bssid.data = (uint8_t *)strndup((char *)credentials.bssid,
             BSSID_LENGTH);
         if (!results[i]->bssid.data) {
             ESP_LOGE(TAG, "Failed to allocate memory for scan result entry BSSID");
+            mem_free(results[i]);
             goto err;
         }
 
@@ -996,11 +1015,13 @@ static esp_err_t cmd_get_ap_scan_list_handler (EspHostedConfigPayload *req,
         results[i]->has_ecn = true;
         credentials.ecn = ap_info[i].authmode;
         results[i]->ecn = credentials.ecn;
-        ESP_LOGI(TAG,"SSID \t\t%s", results[i]->ssid.data);
-        ESP_LOGI(TAG,"RSSI \t\t%d", results[i]->rssi);
-        ESP_LOGI(TAG,"Channel \t\t%d", results[i]->chnl);
-        ESP_LOGI(TAG,"BSSID \t\t%s", results[i]->bssid.data);
+        ESP_LOGI(TAG,"SSID      \t\t%s", results[i]->ssid.data);
+        ESP_LOGI(TAG,"RSSI      \t\t%d", results[i]->rssi);
+        ESP_LOGI(TAG,"Channel   \t\t%d", results[i]->chnl);
+        ESP_LOGI(TAG,"BSSID     \t\t%s", results[i]->bssid.data);
         ESP_LOGI(TAG,"Auth mode \t\t%d\n", results[i]->ecn);
+        resp_payload->n_entries++;
+        resp_payload->count++;
     }
 
     resp_payload->resp = SUCCESS;
