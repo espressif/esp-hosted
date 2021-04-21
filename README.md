@@ -85,7 +85,7 @@ Below table explains which feature is supported on which transport interface for
 | ESP32 | SPI | Yes | Yes | HCI interface can be implemented over virtual serial interface |
 | ESP32 | UART | No | No | No |
 | ESP32-S2 | SDIO | NA | NA | NA |
-| ESP32-S2 | SPI | Yes | Yes | HCI interface can be implemented over virtual serial interface |
+| ESP32-S2 | SPI | Yes | Yes | NA |
 | ESP32-S2 | UART | No | No | NA |
 
 ---

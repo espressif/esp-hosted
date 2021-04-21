@@ -4,12 +4,12 @@ This section elaborates about setting up  Wi-Fi and Bluetooth/BLE connectivity o
 
 ## 1. Wi-Fi Connectivity
 
-Wi-Fi can be configured as either as `STATION` mode or `SOFTAP` mode or `SOFTAP-STATION` mode.
+Wi-Fi can be configured as either as `STATION` mode or `SOFTAP` mode or `STATION+SOFTAP` mode.
 * **STATION Mode**
     - This mode is used for connecting to external AP i.e. Wi-Fi router. Consider example of smartphone connecting to Wi-Fi router. Like smartphone, rpi behaves as station and gets authenticated and connected to external AP i.e. Wi-Fi router.
 * **SOFTAP Mode**
     - This mode is exactly opposite, wherein rpi with help of ESP-Hosted solution, instructs ESP peripheral to create Wi-Fi network. Stations like smartphones can authenticate and connect to it.
-* **SOFTAP+STATION Mode**
+* **STATION+SOFTAP Mode**
     - This is combination of both the modes. In this mode, rpi behaves as station and connects to external AP. At the same time, rpi with help of ESP device, can create the Wi-Fi network.
 
 To setup Wi-Fi connectivity, `control command` APIs are provided. Using these APIs, all above modes can be easily configured. These APIs are available in python and C implementation.
@@ -52,9 +52,9 @@ $ cd host/linux/host_control/python_support/
 		* `ethsta0` interface will be in down state and it won't have IP address
 		* Network data path will be in closed state, hence there won't be any data communication on this interface
 
-#### 1.1.2 Wi-Fi SoftAP Mode Operations
+#### 1.1.2 Wi-Fi softAP Mode Operations
 
-* **Setup and start SoftAP**
+* **Setup and start softAP**
 	* `softap_config.py` script configures ESP peripheral to work in softAP mode. The following parameters should be provided:
 		- SSID
 		- password, should be 8 ~ 64 bytes ASCII
@@ -73,7 +73,7 @@ $ cd host/linux/host_control/python_support/
 		* `ethap0` interface will be in `up` state
 	* To start data connection, set up a DHCP server on the Raspberry Pi, or configure a static IP address for AP interface (`ethap0`).
 ---
-* **Stop SoftAP**
+* **Stop softAP**
 	* `softap_stop.py` script disables wifi softAP mode on ESP peripheral.
 		```
 		$ python softap_stop.py
@@ -82,7 +82,7 @@ $ cd host/linux/host_control/python_support/
 		* SoftAP on ESP peripheral will no more send beacons
 		* `ethap0` interface will be in down state
 ---
-* **List external stations connected to SoftAP**
+* **List external stations connected to softAP**
 	* `connected_stations_list.py` script displays list of MAC addresses of stations connected to softAP.
 		```
 		$ python connected_stations_list.py

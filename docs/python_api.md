@@ -9,7 +9,7 @@ This is used to retrieve the MAC address of ESP's station or softAP interface
 
 - `mode` :
   - 1: station
-  - 2: softap
+  - 2: softAP
 
 ### Return
 String in form of "XX:XX:XX:XX:XX:XX" with MAC address of ESP interface mapping to mode or "failure" string if failed.
@@ -23,7 +23,7 @@ This is used to retrieve the ESP32's Wi-Fi mode
 - 0: null Mode, Wi-Fi mode not set
 - 1: station mode
 - 2: softAP mode
-- 3: softAP+station mode
+- 3: station+softAP mode
 - "failure" string: if failed.
 
 ---
@@ -36,7 +36,7 @@ This is used to set the ESP32's Wi-Fi mode
   - 0: null Mode, Wi-Fi mode not set
   - 1: station mode
   - 2: softAP mode
-  - 3: softAP+station mode
+  - 3: station+softAP mode
 
 ### Return
 "success" or "failure" string
@@ -44,7 +44,7 @@ This is used to set the ESP32's Wi-Fi mode
 ---
 
 ## 4. `wifi_set_mac`
-This is used to set MAC address for ESP's station or softap interface
+This is used to set MAC address for ESP's station or softAP interface
 
 ### Parameters
 - `mode` :
@@ -188,11 +188,11 @@ RSSI signal strength
 ---
 
 ## 11. `wifi_set_softap_config`
-Set the ESP32's softap config
+Set the ESP32's softAP config
 
 ### Parameters
 - `ssid` :
-String parameter, ssid of SoftAP
+String parameter, ssid of softAP
 - `pwd` :
 String parameter, length of password should be 8~64 bytes ASCII
 - `chnl` :
@@ -204,9 +204,9 @@ Encryption method
   - 3 : WPA2_PSK
   - 4 : WPA_WPA2_PSK
 - `max_conn` :
-Maximum number of stations can connect to ESP32 SoftAP (should be in range of 1 to 10)
+Maximum number of stations can connect to ESP32 softAP (should be in range of 1 to 10)
 - `ssid_hidden` :
-SoftAP should broadcast its SSID or not
+softAP should broadcast its SSID or not
   - 0 : SSID should broadcast
   - 1 : SSID should not broadcast
 - `bw` : set bandwidth of ESP32 softAP
@@ -219,12 +219,12 @@ SoftAP should broadcast its SSID or not
 ---
 
 ## 12. `wifi_get_softap_config`
-Get the ESP32's softap config
+Get the ESP32's softAP config
 
 ### Return
 *Success case* :
 returns (ssid,pwd,chnl,ecn,max_conn,ssid_hidden,bw)
-- `ssid` : string parameter, ssid of SoftAP
+- `ssid` : string parameter, ssid of softAP
 - `pwd` : string parameter, length of password should be 8~64 bytes ASCII
 - `chnl` : channel ID, In range of 1 to 11
 - `ecn` : Encryption method
@@ -233,7 +233,7 @@ returns (ssid,pwd,chnl,ecn,max_conn,ssid_hidden,bw)
   - 3 : WPA2_PSK
   - 4 : WPA_WPA2_PSK
 - `max_conn` :
-Maximum number of stations can connect to ESP32 SoftAP (will be in range of 1 to 10)
+Maximum number of stations can connect to ESP32 softAP (will be in range of 1 to 10)
 - `ssid_hidden` : softAP should broadcast its SSID or not
   - 0 : SSID is broadcasted
   - 1 : SSID is not broadcasted
@@ -247,7 +247,7 @@ Maximum number of stations can connect to ESP32 SoftAP (will be in range of 1 to
 ---
 
 ## 13. `wifi_stop_softap`
-Stop the ESP32's softap
+Stop the ESP32's softAP
 
 ### Return
 "success" or "failure" string
@@ -255,7 +255,7 @@ Stop the ESP32's softap
 ---
 
 ## 14. `wifi_connected_stations_list`
-Get the list of connected station to the ESP32 softap.
+Get the list of connected station to the ESP32 softAP.
 
 ### Return
 

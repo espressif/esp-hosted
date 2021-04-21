@@ -12,7 +12,7 @@ Below diagram shows hardware and software block diagram for a typical MCU based 
 We recommend STM32CubeIDE version 1.4 IDE from STMicroelectronics on host machine(Laptop, Desktop etc.). User can download IDE from [Here](https://www.st.com/en/development-tools/stm32cubeide.html#get-software).
 
 ### 1.1.2 Tools for testing
-* **Arping**
+* **Arping**:
 	Arping software is needed for testing the project.
 	Arping is a software tool which probes hosts on the network link by sending Link Layer frames using the ARP request to host identified by its MAC address. More details could be found on [this link](https://devconnected.com/arping-command-on-linux-explained/).
 
@@ -24,7 +24,7 @@ We recommend STM32CubeIDE version 1.4 IDE from STMicroelectronics on host machin
 
 	arping can easily be installed on other architectures.
 
-* **Serial port communication program**
+* **Serial port communication program**:
 	For Linux and Mac development hosts, minicom is needed. For Windows based hosts Tera Term is needed.
 
 ### 1.1.3 ESP-Hosted Code Repository

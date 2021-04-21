@@ -18,12 +18,12 @@ When you are opting microprocessor with Linux other than Raspberry, hardware per
 ##### 1.2.1 Kernel version
 Driver underlies heavily over underlying kernel. ESP-Hosted is tested over Linux kernel version 4.19.X, although it should work on lower versions as well.
 * HCI
-	* HCI had compiled, but not tested for kernel version 3.18.16. Please refer [esp_bt_api.h](host/linux/host_driver/esp32/esp_bt_api.h) for details.
-	* In Linux kernel, BT over SPI *i.e.* symbol *HCI_SPI* is supported over kernel version 4.7.0. Please refer [esp_bt.c](host/linux/host_driver/esp32/esp_bt.c). Ideally there should be no change required here.
+	* HCI had compiled, but not tested for kernel version 3.18.16. Please refer [esp_bt_api.h](../../host/linux/host_driver/esp32/esp_bt_api.h) for details.
+	* In Linux kernel, BT over SPI *i.e.* symbol *HCI_SPI* is supported over kernel version 4.7.0. Please refer [esp_bt.c](../../host/linux/host_driver/esp32/esp_bt.c). Ideally there should be no change required here.
 
 
 ##### 1.2.2 rpi_init.sh
-* [rpi_init.sh](host/linux/host_control/rpi_init.sh) is utility script to load the ESP kernel module
+* [rpi_init.sh](../../host/linux/host_control/rpi_init.sh) is utility script to load the ESP kernel module
 * Reset Pin
 	* Reset pin could be chosen over unused GPIO.
 	* Input parameter to script, `resetpin=X` to be changed accordingly. This is used to reset ESP32 on loading ESP32 kernel module.
@@ -50,8 +50,8 @@ Driver underlies heavily over underlying kernel. ESP-Hosted is tested over Linux
 	* Additional GPIOs
 		- Apart from regular MOSI, MISO, CLK and Chip select, there are two additional GPIO pins used for SPI implementation.
 		- These pins should be selected such that they would not interfere other any peripheral work.
-		- Alter `HANDSHAKE_PIN` and `SPI_DATA_READY_PIN` in [esp_spi.h](host/linux/host_driver/esp32/spi/esp_spi.h).
-		- Functionality of these additional pins could be read [here](../spi_protocol.md#111-additional-pin-setup).
+		- Alter `HANDSHAKE_PIN` and `SPI_DATA_READY_PIN` in [esp_spi.h](../../host/linux/host_driver/esp32/spi/esp_spi.h).
+		- Additional pins functionality details mentioned in [1.1.1 additional pin setup](../spi_protocol.md#111-additional-pin-setup) of [spi protocol documentation](../spi_protocol.md).
 	* cs_change
 		- Reason why this setting was enabled is, SPI transfer was loosing first byte in transfer. Although this issue is only observed while testing with Raspberry Pi. Enabling cs_change=1 makes CS always de-assert after each transfer request. While porting, you may want to remove line, `trans.cs_change = 1;`.
 	* SPI clock

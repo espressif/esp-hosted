@@ -94,7 +94,7 @@ def wifi_get_mac(mode):
 # 0: null Mode, Wi-Fi mode not set
 # 1: station mode
 # 2: softAP mode
-# 3: softAP+station mode
+# 3: station+softAP mode
 # or "failure"
 
 def wifi_get_mode():
@@ -117,7 +117,7 @@ def wifi_get_mode():
 #           (0: null Mode, Wi-Fi mode not set
 #            1: station mode
 #            2: softAP mode
-#            3: softAP+station mode)
+#            3: station+softAP mode)
 # Returns "success" or "failure"
 
 def wifi_set_mode(mode):
@@ -238,11 +238,11 @@ def wifi_disconnect_ap():
     else:
         return success_str
 
-# wifi set softap config
+# wifi set softAP config
 # Function sets ESP32 softAP configurations
 # returns "success" or "failure"
 # Input parameter
-#       ssid        : string parameter, ssid of SoftAP
+#       ssid        : string parameter, ssid of softAP
 #       pwd         : string parameter, length of password should be 8~64 bytes ASCII
 #       chnl        : channel ID, In range of 1 to 11
 #       ecn         : Encryption method
@@ -250,7 +250,7 @@ def wifi_disconnect_ap():
 #                 2 : WPA_PSK,
 #                 3 : WPA2_PSK,
 #                 4 : WPA_WPA2_PSK)
-#       max_conn    : maximum number of stations can connect to ESP32 SoftAP (should be in range of 1 to 10)
+#       max_conn    : maximum number of stations can connect to ESP32 softAP (should be in range of 1 to 10)
 #       ssid_hidden : softAP should broadcast its SSID or not
 #               ( 0 : SSID is broadcast
 #                 1 : SSID is not broadcast )
@@ -271,7 +271,7 @@ def wifi_set_softap_config(ssid, pwd, chnl, ecn, max_conn, ssid_hidden, bw):
         return failure_str
     if ((ecn < EspHostedEncryptionMode.Type_Open) or (ecn == EspHostedEncryptionMode.Type_WEP)
             or (ecn > EspHostedEncryptionMode.Type_WPA_WPA2_PSK)):
-        print("Asked Encryption method is not supported in SoftAP mode")
+        print("Asked Encryption method is not supported in softAP mode")
         return failure_str
     if (max_conn < min_allowed_stations or max_conn > max_allowed_stations):
         print("Invalid maximum connection number")
@@ -302,11 +302,11 @@ def wifi_set_softap_config(ssid, pwd, chnl, ecn, max_conn, ssid_hidden, bw):
     else:
         return success_str
 
-# wifi get softap config
+# wifi get softAP config
 # Funtion gets ESP32 softAP configuration
 # Output parameter
 # It returns ssid,pwd,chnl,ecn,max_conn,ssid_hidden,bw in case of "success"
-#       ssid : string parameter, ssid of SoftAP
+#       ssid : string parameter, ssid of softAP
 #       pwd  : string parameter, length of password should be 8~64 bytes ASCII
 #       chnl : channel ID, In range of 1 to 11
 #       ecn  : Encryption method
@@ -314,7 +314,7 @@ def wifi_set_softap_config(ssid, pwd, chnl, ecn, max_conn, ssid_hidden, bw):
 #           2 : WPA_PSK,
 #           3 : WPA2_PSK,
 #           4 : WPA_WPA2_PSK)
-#       max_conn : maximum number of stations can connect to ESP32 SoftAP (will be in range of 1 to 10)
+#       max_conn : maximum number of stations can connect to ESP32 softAP (will be in range of 1 to 10)
 #       ssid_hidden : softAP should broadcast its SSID or not
 #         ( 0 : SSID is broadcast
 #           1 : SSID is not broadcast )
@@ -343,7 +343,7 @@ def wifi_get_softap_config():
     bw = get_softap_config.resp_get_softap_config.bw
     return ssid,pwd,chnl,ecn,max_conn,ssid_hidden,bw
 
-# wifi stop softap
+# wifi stop softAP
 # Function stops ESP32 softAP
 # returns "success" or "failure"
 
@@ -439,7 +439,7 @@ def wifi_connected_stations_list():
         return stas_list
 
 # wifi set mac
-# Function sets MAC address for Station and SoftAP interface
+# Function sets MAC address for Station and softAP interface
 # mode == 1 for station mac
 # mode == 2 for softAP mac
 # returns "success" or "failure"
