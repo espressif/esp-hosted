@@ -1,4 +1,4 @@
-// Copyright 2015-2020 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2015-2021 Espressif Systems (Shanghai) PTE LTD
 /* SPDX-License-Identifier: GPL-2.0 OR Apache-2.0 */
 
 #ifndef __ESP_NETWORK_ADAPTER__H
