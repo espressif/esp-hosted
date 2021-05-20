@@ -55,6 +55,13 @@ typedef enum _EspHostedEncryptionMode {
   ESP_HOSTED_ENCRYPTION_MODE__Type_WPA2_WPA3_PSK = 7
     PROTOBUF_C__FORCE_ENUM_TO_BE_INT_SIZE(ESP_HOSTED_ENCRYPTION_MODE)
 } EspHostedEncryptionMode;
+typedef enum _EspHostedStatus {
+  ESP_HOSTED_STATUS__TYPE_CONNECTED = 0,
+  ESP_HOSTED_STATUS__TYPE_NOT_CONNECTED = 1,
+  ESP_HOSTED_STATUS__TYPE_NO_AP_FOUND = 2,
+  ESP_HOSTED_STATUS__TYPE_CONNECTION_FAIL = 3
+    PROTOBUF_C__FORCE_ENUM_TO_BE_INT_SIZE(ESP_HOSTED_STATUS)
+} EspHostedStatus;
 typedef enum _EspHostedConfigMsgType {
   ESP_HOSTED_CONFIG_MSG_TYPE__TypeCmdGetMACAddress = 0,
   ESP_HOSTED_CONFIG_MSG_TYPE__TypeRespGetMACAddress = 1,
@@ -1037,6 +1044,7 @@ typedef void (*EspHostedConfigPayload_Closure)
 /* --- descriptors --- */
 
 extern const ProtobufCEnumDescriptor    esp_hosted_encryption_mode__descriptor;
+extern const ProtobufCEnumDescriptor    esp_hosted_status__descriptor;
 extern const ProtobufCEnumDescriptor    esp_hosted_config_msg_type__descriptor;
 extern const ProtobufCMessageDescriptor esp_hosted_cmd_get_mac_address__descriptor;
 extern const ProtobufCMessageDescriptor esp_hosted_resp_get_mac_address__descriptor;

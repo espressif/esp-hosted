@@ -26,9 +26,6 @@
 #define SSID_LENGTH                         32
 #define PWD_LENGTH                          64
 
-#define SUCCESS                             0
-#define FAILURE                             -1
-
 /* station mode */
 #define STATION_MODE_MAC_ADDRESS            "1a:11:11:11:11:11"
 #define STATION_MODE_SSID                   "MyWifi"
@@ -178,6 +175,10 @@ static int test_station_mode_connect()
     printf("==== %s =>\n",__func__);
     if (ret == SUCCESS) {
         printf("Connected to AP \n");
+    } else if (ret == NO_AP_FOUND){
+        printf("SSID: %s not found \n",(char *)&config.station.ssid);
+    } else if (ret == INVALID_PASSWORD){
+        printf("Invalid password %s for SSID %s\n", (char *)&config.station.pwd ,(char *)&config.station.ssid);
     } else {
         printf("Failed to connect with AP \n");
     }

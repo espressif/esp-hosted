@@ -64,6 +64,13 @@ message EspHostedRespGetAPConfig {
     int32 resp = 6;
 }
 
+enum EspHostedStatus {
+    TYPE_CONNECTED = 0;
+    TYPE_NOT_CONNECTED = 1;
+    TYPE_NO_AP_FOUND = 2;
+    TYPE_CONNECTION_FAIL = 3;
+}
+
 message EspHostedCmdSetAPConfig {
     string ssid = 1;
     string pwd = 2;

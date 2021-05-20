@@ -2759,6 +2759,38 @@ const ProtobufCEnumDescriptor esp_hosted_encryption_mode__descriptor =
   esp_hosted_encryption_mode__value_ranges,
   NULL,NULL,NULL,NULL   /* reserved[1234] */
 };
+static const ProtobufCEnumValue esp_hosted_status__enum_values_by_number[4] =
+{
+  { "TYPE_CONNECTED", "ESP_HOSTED_STATUS__TYPE_CONNECTED", 0 },
+  { "TYPE_NOT_CONNECTED", "ESP_HOSTED_STATUS__TYPE_NOT_CONNECTED", 1 },
+  { "TYPE_NO_AP_FOUND", "ESP_HOSTED_STATUS__TYPE_NO_AP_FOUND", 2 },
+  { "TYPE_CONNECTION_FAIL", "ESP_HOSTED_STATUS__TYPE_CONNECTION_FAIL", 3 },
+};
+static const ProtobufCIntRange esp_hosted_status__value_ranges[] = {
+{0, 0},{0, 4}
+};
+static const ProtobufCEnumValueIndex esp_hosted_status__enum_values_by_name[4] =
+{
+  { "TYPE_CONNECTED", 0 },
+  { "TYPE_CONNECTION_FAIL", 3 },
+  { "TYPE_NOT_CONNECTED", 1 },
+  { "TYPE_NO_AP_FOUND", 2 },
+};
+const ProtobufCEnumDescriptor esp_hosted_status__descriptor =
+{
+  PROTOBUF_C__ENUM_DESCRIPTOR_MAGIC,
+  "EspHostedStatus",
+  "EspHostedStatus",
+  "EspHostedStatus",
+  "",
+  4,
+  esp_hosted_status__enum_values_by_number,
+  4,
+  esp_hosted_status__enum_values_by_name,
+  1,
+  esp_hosted_status__value_ranges,
+  NULL,NULL,NULL,NULL   /* reserved[1234] */
+};
 static const ProtobufCEnumValue esp_hosted_config_msg_type__enum_values_by_number[28] =
 {
   { "TypeCmdGetMACAddress", "ESP_HOSTED_CONFIG_MSG_TYPE__TypeCmdGetMACAddress", 0 },

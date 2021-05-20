@@ -36,7 +36,6 @@
 #define failure                 -1
 #define failure_str             "failure"
 #define failure_str_len         8
-#define not_connected           1
 #define not_connected_str       "not_connected"
 #define not_connected_str_len   13
 #define mem_free(x)                \
@@ -413,7 +412,19 @@ int wifi_set_ap_config (esp_hosted_control_config_t ap_config)
         goto err1;
     }
 
-    if (resp->resp_set_ap_config->resp) {
+    if (resp->resp_set_ap_config->resp == INVALID_PASSWORD) {
+        command_log("Invalid password %s for SSID %s\n", (char *)&ap_config.station.pwd, (char *)&ap_config.station.ssid);
+        mem_free(tx_data);
+        mem_free(rx_data);
+        mem_free(req_payload);
+        return INVALID_PASSWORD;
+    } else if (resp->resp_set_ap_config->resp == NO_AP_FOUND) {
+        command_log("SSID: %s not found\n", (char *)&ap_config.station.ssid);
+        mem_free(tx_data);
+        mem_free(rx_data);
+        mem_free(req_payload);
+        return NO_AP_FOUND;
+    } else if (resp->resp_set_ap_config->resp) {
         command_log("Failed to connect with AP \n");
         goto err1;
     }
@@ -474,7 +485,7 @@ int wifi_get_ap_config (esp_hosted_control_config_t *ap_config)
         goto err1;
     }
 
-    if (resp->resp_get_ap_config->resp == not_connected) {
+    if (resp->resp_get_ap_config->resp == NOT_CONNECTED) {
         strncpy(ap_config->station.status, not_connected_str,
                 min(STATUS_LENGTH, not_connected_str_len+1));
         command_log("Station is not connected to AP \n");

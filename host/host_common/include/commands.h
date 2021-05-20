@@ -9,10 +9,15 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+#define SUCCESS                 0
+#define FAILURE                 -1
 #define SSID_LENGTH             32
 #define PASSWORD_LENGTH         64
 #define BSSID_LENGTH            17
 #define STATUS_LENGTH           14
+#define NOT_CONNECTED           1
+#define NO_AP_FOUND             2
+#define INVALID_PASSWORD        3
 
 typedef enum {
     WIFI_MODE_NONE = 0,  /**< null mode */
@@ -134,7 +139,7 @@ int wifi_get_mode(int *mode);
  */
 int wifi_set_mode(int mode);
 
-/* wifi set ap config function returns status of connect to AP request as SUCCESS(0) or FAILURE(-1)
+/* wifi set ap config function returns status of connect to AP request
  * Input parameter
  *      esp_hosted_control_config_t ap_config ::
  *          ssid                 :   ssid of AP
@@ -143,6 +148,11 @@ int wifi_set_mode(int mode);
  *          is_wpa3_supported    :   status of WPA3 supplicant present on AP (False: Unsupported, True:  Supported)
  *          listen_interval      :   Listen interval for ESP32 station to receive beacon when WIFI_PS_MAX_MODEM is set.
  *                                   Units: AP beacon intervals. Defaults to 3 if set to 0.
+ *  Output:
+ *      - SUCCESS(0)            : succeed
+ *      - FAILURE(-1)           : failed
+ *      - NO_AP_FOUND(2)        : Given AP not found
+ *      - INVALID_PASSWORD(3)   : Invalid password for AP 
  */
 int wifi_set_ap_config(esp_hosted_control_config_t ap_config);
 
