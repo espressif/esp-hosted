@@ -135,9 +135,9 @@ static void esp_set_rx_mode(struct net_device *ndev)
 
 static int esp_hard_start_xmit(struct sk_buff *skb, struct net_device *ndev)
 {
-	struct sk_buff *new_skb;
+	struct sk_buff *new_skb = NULL;
 	struct esp_private *priv = netdev_priv(ndev);
-	struct esp_skb_cb *cb;
+	struct esp_skb_cb *cb = NULL;
 
 	if (!priv) {
 		dev_kfree_skb(skb);
@@ -183,8 +183,8 @@ u8 esp_is_bt_supported_over_sdio(u32 cap)
 
 static struct esp_private * get_priv_from_payload_header(struct esp_payload_header *header)
 {
-	struct esp_private *priv;
-	u8 i;
+	struct esp_private *priv = NULL;
+	u8 i = 0;
 
 	if (!header)
 		return NULL;
@@ -212,10 +212,10 @@ void esp_process_new_packet_intr(struct esp_adapter *adapter)
 
 static int process_tx_packet (struct sk_buff *skb)
 {
-	struct esp_private *priv;
-	struct esp_skb_cb *cb;
-	struct esp_payload_header *payload_header;
-	struct sk_buff *new_skb;
+	struct esp_private *priv = NULL;
+	struct esp_skb_cb *cb = NULL;
+	struct esp_payload_header *payload_header = NULL;
+	struct sk_buff *new_skb = NULL;
 	int ret = 0;
 	u8 pad_len = 0;
 	u16 len = 0;
@@ -285,11 +285,12 @@ static int process_tx_packet (struct sk_buff *skb)
 
 static void process_rx_packet(struct sk_buff *skb)
 {
-	struct esp_private *priv;
-	struct esp_payload_header *payload_header;
-	u16 len, offset;
+	struct esp_private *priv = NULL;
+	struct esp_payload_header *payload_header = NULL;
+	u16 len = 0, offset = 0;
 	struct hci_dev *hdev = adapter.hcidev;
-	u8 *type;
+	u8 *type = NULL;
+	int ret = 0, ret_len = 0;
 
 	if (!skb)
 		return;
@@ -303,9 +304,13 @@ static void process_rx_packet(struct sk_buff *skb)
 	if (payload_header->if_type == ESP_SERIAL_IF) {
 #ifdef CONFIG_SUPPORT_ESP_SERIAL
 		/* print_hex_dump(KERN_INFO, "esp_serial_rx: ", DUMP_PREFIX_ADDRESS, 16, 1, skb->data + offset, len, 1  ); */
-		esp_serial_data_received(payload_header->if_num, skb->data + offset, len);
+		do {
+			ret = esp_serial_data_received(payload_header->if_num,
+					(skb->data + offset + ret_len), (len - ret_len));
+			ret_len += ret;
+		} while (ret_len < len);
 #else
-		printk(KERN_ERR "Dropping unsupported serial frame\n");
+		printk(KERN_ERR "%s, Dropping unsupported serial frame\n", __func__);
 #endif
 		dev_kfree_skb_any(skb);
 	} else if (payload_header->if_type == ESP_STA_IF || payload_header->if_type == ESP_AP_IF) {
@@ -382,7 +387,7 @@ void esp_tx_resume(void)
 
 struct sk_buff * esp_alloc_skb(u32 len)
 {
-	struct sk_buff *skb;
+	struct sk_buff *skb = NULL;
 
 	skb = netdev_alloc_skb(NULL, len);
 	return skb;
@@ -391,7 +396,7 @@ struct sk_buff * esp_alloc_skb(u32 len)
 
 static int esp_get_packets(struct esp_adapter *adapter)
 {
-	struct sk_buff *skb;
+	struct sk_buff *skb = NULL;
 
 	if (!adapter || !adapter->if_ops || !adapter->if_ops->read)
 		return -EINVAL;
@@ -598,11 +603,11 @@ static void esp_reset(void)
 	if (resetpin != HOST_GPIO_PIN_INVALID) {
 		/* Check valid GPIO or not */
 		if (!gpio_is_valid(resetpin)) {
-			printk(KERN_WARNING "ESP32: host resetpin (%d) configured is invalid GPIO\n", resetpin);
+			printk(KERN_WARNING "%s, ESP32: host resetpin (%d) configured is invalid GPIO\n", __func__, resetpin);
 			resetpin = HOST_GPIO_PIN_INVALID;
 		}
 		else {
-			printk(KERN_DEBUG "ESP32: Resetpin of Host is %d\n", resetpin);
+			printk(KERN_DEBUG "%s, ESP32: Resetpin of Host is %d\n", __func__, resetpin);
 			gpio_request(resetpin, "sysfs");
 
 			/* HOST's resetpin set to OUTPUT, HIGH */
@@ -615,7 +620,7 @@ static void esp_reset(void)
 			/* HOST's resetpin set to INPUT */
 			gpio_direction_input(resetpin);
 
-			printk(KERN_DEBUG "ESP32: Triggering ESP reset.\n");
+			printk(KERN_DEBUG "%s, ESP32: Triggering ESP reset.\n", __func__);
 		}
 	}
 }
@@ -649,7 +654,7 @@ static struct esp_adapter * init_adapter(void)
 static int __init esp_init(void)
 {
 	int ret = 0;
-	struct esp_adapter	*adapter;
+	struct esp_adapter	*adapter = NULL;
 
 	/* Reset ESP, Clean start ESP */
 	esp_reset();

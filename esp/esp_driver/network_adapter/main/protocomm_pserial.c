@@ -46,7 +46,7 @@ struct pserial_config {
 static esp_err_t parse_tlv(uint8_t **buf, size_t *total_len, int *type, size_t *len, uint8_t **ptr)
 {
     uint8_t *b = *buf;
-    uint16_t *out_len;
+    uint16_t *out_len = NULL;
     
     if (*total_len == 0) {
         return ESP_FAIL;
@@ -109,20 +109,19 @@ static esp_err_t compose_tlv(uint8_t **out, size_t *outlen)
 static esp_err_t protocomm_pserial_common_handler(protocomm_t *pc, uint8_t *in, size_t inlen)
 {
     uint8_t *buf = in;
-    size_t total_len, len;
-    int type, ret;
-    uint8_t *ptr;
+    size_t total_len = 0, len = 0;
+    int type = 0, ret = 0;
+    uint8_t *ptr = NULL;
 
-    char epname[EPNAME_MAX];
+    char epname[EPNAME_MAX] = {0};
     uint8_t *data = NULL;
     size_t data_len = 0;
 
     uint8_t *out = NULL;
     size_t outlen = 0;
-    struct pserial_config *pserial_cfg;
+    struct pserial_config *pserial_cfg = NULL;
 
     total_len = inlen;
-    memset(epname, 0, EPNAME_MAX);
 
     while (parse_tlv(&buf, &total_len, &type, &len, &ptr) == 0) {
         //ESP_LOGI(TAG, "Parsed type %d len %d", type, len);
@@ -141,7 +140,7 @@ static esp_err_t protocomm_pserial_common_handler(protocomm_t *pc, uint8_t *in, 
                 break;
             default:
                 ESP_LOGE(TAG, "Invalid type found in the packet");
-                break;
+                return ESP_FAIL;
         }
     }
 
@@ -166,7 +165,7 @@ static esp_err_t protocomm_pserial_common_handler(protocomm_t *pc, uint8_t *in, 
 esp_err_t protocomm_pserial_data_ready(protocomm_t *pc, int len)
 {
 	printf("data ready \n");
-    struct pserial_config *pserial_cfg;
+    struct pserial_config *pserial_cfg = NULL;
     pserial_cfg = (struct pserial_config *) pc->priv;
     if (!pserial_cfg) {
         ESP_LOGE(TAG, "Unexpected. No pserial_cfg found");
@@ -196,9 +195,9 @@ static esp_err_t protocomm_pserial_remove_ep(const char *ep_name)
 static void pserial_task(void *params)
 {
     protocomm_t *pc = (protocomm_t *) params;
-    struct pserial_config *pserial_cfg;
-    int len;
-    uint8_t *buf;
+    struct pserial_config *pserial_cfg = NULL;
+    int len = 0;
+    uint8_t *buf = NULL;
 
     pserial_cfg = (struct pserial_config *) pc->priv;
     if (!pserial_cfg) {
@@ -212,10 +211,12 @@ static void pserial_task(void *params)
             ESP_LOGE(TAG,"Failed to allocate memory");
             return;
         }
-        pserial_cfg->recv(buf, len);
-        protocomm_pserial_common_handler(pc, buf, len);
-        free(buf);
-        buf = NULL;
+        len = pserial_cfg->recv(buf, len);
+        if (len) {
+            protocomm_pserial_common_handler(pc, buf, len);
+            free(buf);
+            buf = NULL;
+        }
     }
 
     ESP_LOGI(TAG, "Unexpected termination of pserial task");
@@ -223,7 +224,7 @@ static void pserial_task(void *params)
 
 esp_err_t protocomm_pserial_start(protocomm_t *pc, pserial_xmit xmit, pserial_recv recv)
 {
-    struct pserial_config *pserial_cfg;
+    struct pserial_config *pserial_cfg = NULL;
 
     if (pc == NULL) {
         return ESP_ERR_INVALID_ARG;
@@ -250,7 +251,7 @@ esp_err_t protocomm_pserial_start(protocomm_t *pc, pserial_xmit xmit, pserial_re
 
 esp_err_t protocomm_pserial_stop(protocomm_t *pc)
 {
-    struct pserial_config *pserial_cfg;
+    struct pserial_config *pserial_cfg = NULL;
     if (pc->priv) {
         pserial_cfg = (struct pserial_config *) pc->priv;
         vQueueDelete(pserial_cfg->req_queue);

@@ -48,25 +48,24 @@ static struct esp_serial_devs {
 
 static int esp_serial_read(struct file *file, char __user *user_buffer, size_t size, loff_t *offset)
 {
-	struct esp_serial_devs *dev;
+	struct esp_serial_devs *dev = NULL;
 	size_t ret_size = 0;
 	dev = (struct esp_serial_devs *) file->private_data;
 	ret_size = esp_rb_read_by_user(&dev->rb, user_buffer, size, !(file->f_flags & O_NONBLOCK));
 	if (ret_size == 0) {
 		return -EAGAIN;
 	}
-
 	return ret_size;
 }
 
 static int esp_serial_write(struct file *file, const char __user *user_buffer, size_t size, loff_t * offset)
 {
-	struct esp_payload_header *hdr;
-	u8 *tx_buf;
-	struct esp_serial_devs *dev;
-	struct sk_buff * tx_skb;
-	int ret;
-	size_t total_len;
+	struct esp_payload_header *hdr = NULL;
+	u8 *tx_buf = NULL;
+	struct esp_serial_devs *dev = NULL;
+	struct sk_buff * tx_skb = NULL;
+	int ret = 0;
+	size_t total_len = 0;
 
 	dev = (struct esp_serial_devs *) file->private_data;
 	total_len = size + sizeof(struct esp_payload_header);
@@ -91,7 +90,7 @@ static int esp_serial_write(struct file *file, const char __user *user_buffer, s
 	ret = copy_from_user(tx_buf + hdr->offset, user_buffer, size);
 	if (ret) {
 		dev_kfree_skb(tx_skb);
-		printk(KERN_ERR "Error copying buffer to send serial data\n");
+		printk(KERN_ERR "%s, Error copying buffer to send serial data\n", __func__);
 		return -EFAULT;
 	}
 
@@ -111,7 +110,7 @@ static long esp_serial_ioctl (struct file *file, unsigned int cmd, unsigned long
 
 static int esp_serial_open(struct inode *inode, struct file *file)
 {
-	struct esp_serial_devs *devs;
+	struct esp_serial_devs *devs = NULL;
 
 	devs = container_of(inode->i_cdev, struct esp_serial_devs, cdev);
 	file->private_data = devs;
@@ -149,18 +148,19 @@ const struct file_operations esp_serial_fops = {
 
 int esp_serial_data_received(int dev_index, const char *data, size_t len)
 {
-	int ret;
+	int ret = 0;
 	size_t ret_len = 0;
 
 	while (ret_len != len) {
-		ret = esp_rb_write_by_kernel(&devs[dev_index].rb, data, len);
-		ret_len += ret;
-		if (ret == 0) {
+		ret = esp_rb_write_by_kernel(&devs[dev_index].rb,
+				data+ret_len, (len-ret_len));
+		if (ret <= 0) {
 			break;
 		}
+		ret_len += ret;
 	}
 	if (ret_len != len) {
-		printk(KERN_ERR "RB full, no space to receive. Dropping packet");
+		printk(KERN_ERR "%s, RB full, no space to receive. Dropping packet",__func__);
 	}
 
 	return ret_len;
@@ -175,7 +175,7 @@ static int thread_fn(void *unused)
 		esp_rb_write_by_kernel(&devs[0].rb, "alphabetagamma", 14);
 		ssleep(1);
 	}
-	printk(KERN_INFO "Thread stopping\n");
+	printk(KERN_INFO "%s, Thread stopping\n", __func__);
 	do_exit(0);
 	return 0;
 }
@@ -183,12 +183,11 @@ static int thread_fn(void *unused)
 
 int esp_serial_init(void *priv)
 {
-	int err;
-	int i;
+	int err = 0, i = 0;
 
 	err = register_chrdev_region(MKDEV(ESP_SERIAL_MAJOR, 0), ESP_SERIAL_MINOR_MAX, "esp_serial_driver");
 	if (err) {
-		printk(KERN_ERR "Error registering chrdev region %d\n", err);
+		printk(KERN_ERR "%s, Error registering chrdev region %d\n", __func__, err);
 		return -1;
 	}
 
@@ -209,7 +208,7 @@ int esp_serial_init(void *priv)
 
 void esp_serial_cleanup(void)
 {
-	int i;
+	int i = 0;
 	for (i = 0; i < ESP_SERIAL_MINOR_MAX; i++) {
 		cdev_del(&devs[i].cdev);
 		esp_rb_cleanup(&devs[i].rb);

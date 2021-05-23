@@ -217,7 +217,8 @@ static void test_get_available_wifi()
     list = wifi_ap_scan_list(&count);
     if (!count) {
         printf("No AP found \n");
-    } else if (!list) {
+    }
+    if (!list) {
         printf("Failed to get scanned AP list \n");
     } else {
         printf("Number of available APs is %d \n", count);

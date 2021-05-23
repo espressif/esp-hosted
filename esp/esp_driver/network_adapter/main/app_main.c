@@ -465,7 +465,7 @@ static int32_t serial_read_data(uint8_t *data, int32_t len)
 		r.valid = 0;
 		r.len = 0;
 	} else {
-		printf("No data to be read\n");
+		printf("No data to be read, len %d \n", len);
 	}
 	return len;
 }

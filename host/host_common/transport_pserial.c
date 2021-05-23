@@ -19,7 +19,7 @@
 #ifdef STM32F469xx
 #define command_log(format, ...) printf(format "\r", ##__VA_ARGS__);
 #else
-#define command_log(...) printf(__VA_ARGS__);
+#define command_log(...) printf("%s:%u ",__func__,__LINE__); printf(__VA_ARGS__);
 #endif
 
 /** Exported variables **/
@@ -69,9 +69,10 @@ uint8_t parse_tlv(uint8_t* data, uint32_t* pro_len)
 		val_len = data[len];
 		len++;
 		val_len = (data[len] << 8) + val_len;
+		len++;
 		if (val_len == strlen(ep_name)) {
-			if (strncmp((char* )&data[len],ep_name,strlen(ep_name))) {
-				len = len + strlen(ep_name) + 1;
+			if (strncmp((char* )&data[len],ep_name,strlen(ep_name)) == 0) {
+				len = len + strlen(ep_name);
 				if (data[len] == PROTO_PSER_TLV_T_DATA) {
 					len++;
 					val_len = data[len];
@@ -138,25 +139,25 @@ uint8_t * transport_pserial_data_handler(uint8_t* data, uint16_t data_length,
 
 	count = compose_tlv(write_buf, data, data_length);
 	if (!count) {
-		command_log("Failed to compose TX data \n");
+		command_log("Failed to compose TX data\n");
 		goto err;
 	}
 
 	ret = esp_hosted_driver_write(esp_hosted_driver_handle, write_buf, count, &count);
 	if (ret != SUCCESS) {
-		command_log("write error \n");
+		command_log("Failed to write TX data\n");
 		goto err;
 	}
 
 	read_buf = esp_hosted_driver_read(esp_hosted_driver_handle, read_len, wait, pro_len);
 	if (! read_buf) {
-		command_log("Failed to read RX data \n");
+		command_log("Failed to read RX data\n");
 		goto err;
 	}
 
 	ret = esp_hosted_driver_close(&esp_hosted_driver_handle);
 	if (ret != SUCCESS) {
-		command_log("Failed to close driver interface \n");
+		command_log("Failed to close driver interface\n");
 	}
 
 	return read_buf;
@@ -168,7 +169,7 @@ err:
 
 	ret = esp_hosted_driver_close(&esp_hosted_driver_handle);
 	if (ret != SUCCESS) {
-		command_log("Failed to close driver interface \n");
+		command_log("Failed to close driver interface\n");
 	}
 	return NULL;
 }
