@@ -20,24 +20,25 @@
 #include "slave_commands.h"
 #include "esp_hosted_config.pb-c.h"
 
-#define MAC_LEN                 6
-#define MAC_STR_LEN             17
-#define MAC2STR(a)              (a)[0], (a)[1], (a)[2], (a)[3], (a)[4], (a)[5]
-#define MACSTR                  "%02x:%02x:%02x:%02x:%02x:%02x"
-#define SUCCESS                 0
-#define FAILURE                 -1
-#define NOT_CONNECTED           1
-#define SSID_LENGTH             32
-#define PASSWORD_LENGTH         64
-#define BSSID_LENGTH            19
+#define MAC_LEN                     6
+#define MAC_STR_LEN                 17
+#define MAC2STR(a)                  (a)[0], (a)[1], (a)[2], (a)[3], (a)[4], (a)[5]
+#define MACSTR                      "%02x:%02x:%02x:%02x:%02x:%02x"
+#define SUCCESS                     0
+#define FAILURE                     -1
+#define SSID_LENGTH                 32
+#define PASSWORD_LENGTH             64
+#define BSSID_LENGTH                19
 
 /* Bits for wifi connect event */
-#define WIFI_CONNECTED_BIT      BIT0
-#define WIFI_FAIL_BIT           BIT1
-#define MAX_RETRY               5
+#define WIFI_CONNECTED_BIT          BIT0
+#define WIFI_FAIL_BIT               BIT1
+#define WIFI_NO_AP_FOUND_BIT        BIT2
+#define WIFI_WRONG_PASSWORD_BIT     BIT3
+#define MAX_RETRY                   5
 
-#define TIMEOUT_IN_MIN          (60*TIMEOUT_IN_SEC)
-#define TIMEOUT                 (2*TIMEOUT_IN_MIN)
+#define TIMEOUT_IN_MIN              (60*TIMEOUT_IN_SEC)
+#define TIMEOUT                     (2*TIMEOUT_IN_MIN)
 
 #define mem_free(x)                 \
         {                           \
@@ -85,8 +86,16 @@ static void station_event_handler(void *arg, esp_event_base_t event_base,
             retry++;
             ESP_LOGI(TAG, "Retry to connect to the AP");
         } else {
-            xEventGroupSetBits(wifi_event_group, WIFI_FAIL_BIT);
-            ESP_LOGI(TAG,"station disconnected, set group bit");
+            wifi_event_sta_disconnected_t * disconnected_event = \
+                        (wifi_event_sta_disconnected_t *) event_data;
+            if (disconnected_event->reason == WIFI_REASON_NO_AP_FOUND) {
+                xEventGroupSetBits(wifi_event_group, WIFI_NO_AP_FOUND_BIT);
+            } else if ((disconnected_event->reason == WIFI_REASON_CONNECTION_FAIL) ||
+                (disconnected_event->reason == WIFI_REASON_NOT_AUTHED)) {
+                xEventGroupSetBits(wifi_event_group, WIFI_WRONG_PASSWORD_BIT);
+            } else {
+                xEventGroupSetBits(wifi_event_group, WIFI_FAIL_BIT);
+            }
             esp_wifi_internal_reg_rxcb(ESP_IF_WIFI_STA,NULL);
         }
     } else if ((event_base == WIFI_EVENT) && (event_id == WIFI_EVENT_STA_CONNECTED)) {
@@ -446,8 +455,11 @@ static esp_err_t cmd_set_ap_config_handler (EspHostedConfigPayload *req,
     }
 
     ret = esp_wifi_set_config(ESP_IF_WIFI_STA, wifi_cfg);
-    if (ret) {
-        ESP_LOGE(TAG,"Failed to set AP config");
+    if (ret == ESP_ERR_WIFI_PASSWORD) {
+        ESP_LOGE(TAG,"Invalid password");
+        goto err;
+    } else if (ret){
+        ESP_LOGE(TAG, "Failed to set AP config");
         goto err;
     }
 
@@ -464,7 +476,8 @@ static esp_err_t cmd_set_ap_config_handler (EspHostedConfigPayload *req,
     }
 
     EventBits_t bits = xEventGroupWaitBits(wifi_event_group,
-            WIFI_CONNECTED_BIT | WIFI_FAIL_BIT,
+            (WIFI_CONNECTED_BIT | WIFI_FAIL_BIT | 
+            WIFI_NO_AP_FOUND_BIT | WIFI_WRONG_PASSWORD_BIT),
             pdFALSE,
             pdFALSE,
             TIMEOUT);
@@ -473,6 +486,17 @@ static esp_err_t cmd_set_ap_config_handler (EspHostedConfigPayload *req,
             req->cmd_set_ap_config->ssid ? req->cmd_set_ap_config->ssid :"(null)",
             req->cmd_set_ap_config->pwd ? req->cmd_set_ap_config->pwd :"(null)");
             station_connected = true;
+    } else if (bits & WIFI_NO_AP_FOUND_BIT) {
+        ESP_LOGI(TAG, "No AP available as SSID:'%s'",
+            req->cmd_set_ap_config->ssid ? req->cmd_set_ap_config->ssid : "(null)");
+            resp_payload->resp = ESP_HOSTED_STATUS__TYPE_NO_AP_FOUND;
+        goto err1;
+    } else if (bits & WIFI_WRONG_PASSWORD_BIT) {
+        ESP_LOGI(TAG, "Password incorrect for SSID:'%s', password:'%s'",
+            req->cmd_set_ap_config->ssid ? req->cmd_set_ap_config->ssid : "(null)",
+            req->cmd_set_ap_config->pwd ? req->cmd_set_ap_config->pwd :"(null)");
+        resp_payload->resp = ESP_HOSTED_STATUS__TYPE_CONNECTION_FAIL;
+        goto err1;
     } else if (bits & WIFI_FAIL_BIT) {
         ESP_LOGI(TAG, "Failed to connect to SSID:'%s', password:'%s'",
             req->cmd_set_ap_config->ssid ? req->cmd_set_ap_config->ssid : "(null)",
@@ -482,13 +506,13 @@ static esp_err_t cmd_set_ap_config_handler (EspHostedConfigPayload *req,
     }
 
 err:
-    resp_payload->has_resp = true;
     if (station_connected) {
         resp_payload->resp = SUCCESS;
     } else {
         resp_payload->resp = FAILURE;
     }
-
+err1:
+    resp_payload->has_resp = true;
     if (event_registered) {
         station_event_unregister();
         vEventGroupDelete(wifi_event_group);
@@ -531,14 +555,14 @@ static esp_err_t cmd_get_ap_config_handler (EspHostedConfigPayload *req,
 
     if (!station_connected) {
         ESP_LOGI(TAG,"ESP32 station is not connected with AP, can't get AP configuration");
-        resp_payload->resp = NOT_CONNECTED;
+        resp_payload->resp = ESP_HOSTED_STATUS__TYPE_NOT_CONNECTED;
         goto err;
     }
 
     ret = esp_wifi_sta_get_ap_info(ap_info);
     if (ret == ESP_ERR_WIFI_NOT_CONNECT) {
         ESP_LOGI(TAG,"Disconnected from previously connected AP");
-        resp_payload->resp = NOT_CONNECTED;
+        resp_payload->resp = ESP_HOSTED_STATUS__TYPE_NOT_CONNECTED;
         goto err;
     } else if (ret) {
         ESP_LOGE(TAG,"Failed to get AP config %d \n", ret);

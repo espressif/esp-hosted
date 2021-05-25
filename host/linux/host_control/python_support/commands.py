@@ -34,10 +34,11 @@ interface = "/dev/esps0"
 endpoint = "control"
 failure = -1
 success = 0
-not_connected = 1
 success_str = "success"
 failure_str = "failure"
 not_connected_str = "not_connected"
+no_ap_found_str = "no_ap_found"
+invalid_password_str = "invalid_password_str"
 
 max_ssid_len = 32
 max_password_len = 64
@@ -149,6 +150,11 @@ def wifi_set_mode(mode):
 #                    True : Supported )
 #       listen_interval   : Listen interval for ESP32 station to receive beacon when WIFI_PS_MAX_MODEM is set.
 #                           Units: AP beacon intervals. Defaults to 3 if set to 0.
+# Output:
+#       'success'           : successfully connected to AP
+#       'failure'           : Failed to connect to AP
+#       'no_ap_found'       : AP not found
+#       'invalid_password'  : Invalid password
 
 def wifi_set_ap_config(ssid, pwd, bssid, is_wpa3_supported, listen_interval):
     if (len(str(ssid)) > max_ssid_len):
@@ -176,7 +182,13 @@ def wifi_set_ap_config(ssid, pwd, bssid, is_wpa3_supported, listen_interval):
     if response[0] != success :
         return failure_str
     set_ap_config.ParseFromString(response[1])
-    if set_ap_config.resp_set_ap_config.resp != success:
+    if set_ap_config.resp_set_ap_config.resp == EspHostedStatus.TYPE_CONNECTION_FAIL:
+        print("Invalid password entered")
+        return invalid_password_str
+    elif set_ap_config.resp_set_ap_config.resp == EspHostedStatus.TYPE_NO_AP_FOUND:
+        print("No AP found")
+        return no_ap_found_str
+    elif set_ap_config.resp_set_ap_config.resp != success:
         return failure_str
     else:
         return success_str
@@ -209,8 +221,8 @@ def wifi_get_ap_config():
     if response[0] != success :
         return failure_str
     get_ap_config.ParseFromString(response[1])
-    if get_ap_config.resp_get_ap_config.resp == not_connected:
-        return not_connected
+    if get_ap_config.resp_get_ap_config.resp == EspHostedStatus.TYPE_NOT_CONNECTED:
+        return not_connected_str
     elif get_ap_config.resp_get_ap_config.resp != success:
         return failure_str
     ssid = get_str(get_ap_config.resp_get_ap_config.ssid)

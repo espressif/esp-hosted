@@ -59,8 +59,12 @@ if (flag == success):
     station_status = wifi_set_ap_config(args.ssid,args.password,args.bssid,args.is_wpa3_supported,args.listen_interval)
     if (station_status != success):
         flag = failure
+        if (station_status == no_ap_found_str):
+            print("SSID: "+args.ssid+" not found")
+        elif (station_status == invalid_password_str):
+            print("Incorrect Password: "+args.password)
         print("Failed to set AP config")
-    elif (station_status != success):
+    elif (station_status == success):
         print("Connected to "+args.ssid)
 
 if (flag != success):
