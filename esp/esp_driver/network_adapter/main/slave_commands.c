@@ -889,11 +889,14 @@ static esp_err_t cmd_get_ap_scan_list_handler (EspHostedConfigPayload *req,
 {
     esp_err_t ret;
     wifi_mode_t mode;
-    uint16_t ap_count = 0, valid_ap_count = 0, last_idx = 0;
+    uint16_t ap_count = 0;
     credentials_t credentials = {0};
     wifi_ap_record_t *ap_info = NULL;
     EspHostedScanResult **results = NULL;
     EspHostedRespScanResult *resp_payload = NULL;
+    wifi_scan_config_t scanConf = {
+        .show_hidden = true
+    };
 
     if (!req || !resp) {
         ESP_LOGE(TAG, "Invalid parameters");
@@ -928,7 +931,7 @@ static esp_err_t cmd_get_ap_scan_list_handler (EspHostedConfigPayload *req,
         ESP_LOGI(TAG,"Station mode set in scan handler");
     }
 
-    ret = esp_wifi_scan_start(NULL, true);
+    ret = esp_wifi_scan_start(&scanConf, true);
     if (ret) {
         ESP_LOGE(TAG,"Failed to start scan start command");
         goto err;
@@ -960,23 +963,7 @@ static esp_err_t cmd_get_ap_scan_list_handler (EspHostedConfigPayload *req,
         goto err;
     }
 
-    // check if any hidden AP is present, If yes, discard it
-    last_idx = ap_count - 1;
-    for (int i=0; i<=last_idx; i++) {
-        if (!strnlen((char *)ap_info[i].ssid, SSID_LENGTH)) {
-            for (int j=last_idx; j>i; j--) {
-                if (strnlen((char *)ap_info[j].ssid, SSID_LENGTH)) {
-                    ap_info[i] = ap_info[j];
-                    last_idx = j-1;
-                    valid_ap_count++;
-                    break;
-                }
-            }
-        } else {
-            valid_ap_count++;
-        }
-    }
-    credentials.count = valid_ap_count;
+    credentials.count = ap_count;
     resp_payload->has_count = true;
 
     results = (EspHostedScanResult **)
@@ -987,7 +974,7 @@ static esp_err_t cmd_get_ap_scan_list_handler (EspHostedConfigPayload *req,
     }
 
     resp_payload->entries = results;
-    ESP_LOGI(TAG,"Total APs scanned = %u",valid_ap_count);
+    ESP_LOGI(TAG,"Total APs scanned = %u",ap_count);
     for (int i = 0; i < credentials.count; i++ ) {
         results[i] = (EspHostedScanResult *)calloc(1,sizeof(EspHostedScanResult));
         if (!results[i]) {
@@ -999,11 +986,8 @@ static esp_err_t cmd_get_ap_scan_list_handler (EspHostedConfigPayload *req,
         ESP_LOGI(TAG,"Details of AP no %d",i);
 
         results[i]->ssid.len = strnlen((char *)ap_info[i].ssid, SSID_LENGTH);
-        if (!results[i]->ssid.len) {
-            ESP_LOGE(TAG, "Invalid SSID length");
-            mem_free(results[i]);
-            goto err;
-        }
+
+
         results[i]->ssid.data = (uint8_t *)strndup((char *)ap_info[i].ssid,
             SSID_LENGTH);
         if (!results[i]->ssid.data) {
