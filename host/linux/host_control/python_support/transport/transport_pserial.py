@@ -44,6 +44,9 @@ class Transport_pserial(Transport):
     def __init__(self, devname):
         self.f = os.open(devname, mode, flags)
 
+    def __del__(self):
+        os.close(self.f)
+
     def get_len(self, ep_name, in_buf):
         if get_val(in_buf[0]) == PROTO_PSER_TLV_T_EPNAME:
             if in_buf[1:3] == bytearray(pack('<H',len(ep_name))):

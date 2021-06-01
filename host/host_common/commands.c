@@ -10,7 +10,7 @@
 
 #ifdef STM32F469xx
 #include "common.h"
-#define command_log(...) printf(__VA_ARGS__ "\r");
+#define command_log(...) printf(__VA_ARGS__); printf("\r");
 #else
 #define command_log(...) printf("%s:%u ",__func__,__LINE__); printf(__VA_ARGS__);
 #define min(X, Y) (((X) < (Y)) ? (X) : (Y))

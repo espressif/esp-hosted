@@ -46,10 +46,10 @@ static struct esp_serial_devs {
 	struct mutex lock;
 } devs[ESP_SERIAL_MINOR_MAX];
 
-static int esp_serial_read(struct file *file, char __user *user_buffer, size_t size, loff_t *offset)
+static ssize_t esp_serial_read(struct file *file, char __user *user_buffer, size_t size, loff_t *offset)
 {
 	struct esp_serial_devs *dev = NULL;
-	size_t ret_size = 0;
+	ssize_t ret_size = 0;
 	dev = (struct esp_serial_devs *) file->private_data;
 	ret_size = esp_rb_read_by_user(&dev->rb, user_buffer, size, !(file->f_flags & O_NONBLOCK));
 	if (ret_size == 0) {
@@ -58,7 +58,7 @@ static int esp_serial_read(struct file *file, char __user *user_buffer, size_t s
 	return ret_size;
 }
 
-static int esp_serial_write(struct file *file, const char __user *user_buffer, size_t size, loff_t * offset)
+static ssize_t esp_serial_write(struct file *file, const char __user *user_buffer, size_t size, loff_t * offset)
 {
 	struct esp_payload_header *hdr = NULL;
 	u8 *tx_buf = NULL;
@@ -150,6 +150,9 @@ int esp_serial_data_received(int dev_index, const char *data, size_t len)
 {
 	int ret = 0;
 	size_t ret_len = 0;
+	if (dev_index >= ESP_SERIAL_MINOR_MAX) {
+		return -EINVAL;
+	}
 
 	while (ret_len != len) {
 		ret = esp_rb_write_by_kernel(&devs[dev_index].rb,

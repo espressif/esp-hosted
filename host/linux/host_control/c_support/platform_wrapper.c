@@ -27,19 +27,67 @@
 #include "transport_pserial.h"
 #include "platform_wrapper.h"
 
-#define SUCCESS         0
-#define FAILURE        -1
+#define SUCCESS                 0
+#define FAILURE                 -1
+#define DUMMY_READ_BUF_LEN      64
+#define EAGAIN                  11
 
+extern const char* transport;
 struct esp_hosted_driver_handle_t {
     int file_desc;
 };
 
 extern int errno;
 
-/* TODO :: Add functionality */
 int control_path_platform_init(void)
 {
-    return SUCCESS;
+	int ret = 0, count = 0;
+	uint8_t *buf = NULL;
+	struct esp_hosted_driver_handle_t esp_hosted_driver_handle = {0};
+
+	esp_hosted_driver_handle.file_desc = open(transport,O_NONBLOCK|O_RDWR);
+	if (esp_hosted_driver_handle.file_desc == -1) {
+		printf("Failed to open driver interface \n");
+		return FAILURE;
+	}
+
+	buf = (uint8_t *)esp_hosted_calloc(1, DUMMY_READ_BUF_LEN);
+	if (!buf) {
+		printf("%s, Failed to allocate memory \n", __func__);
+		goto close1;
+	}
+
+	do {
+		count = read(esp_hosted_driver_handle.file_desc,
+				(buf), (DUMMY_READ_BUF_LEN));
+		if (count < 0) {
+			if (-errno != -EAGAIN) {
+				perror("Failed to read ringbuffer:\n");
+				goto close;
+			}
+			break;
+		}
+	} while (count>0);
+
+	esp_hosted_free(buf);
+	buf = NULL;
+	ret = close(esp_hosted_driver_handle.file_desc);
+	if (ret < 0) {
+		perror("close:");
+		return FAILURE;
+	}
+	return SUCCESS;
+
+close:
+	esp_hosted_free(buf);
+	buf = NULL;
+close1:
+	ret = close(esp_hosted_driver_handle.file_desc);
+	if (ret < 0) {
+		perror("close: Failed to close interface for control path platform init:");
+	}
+	return FAILURE;
+
 }
 
 /* TODO :: Add functionality */
@@ -144,11 +192,16 @@ uint8_t* esp_hosted_driver_read (struct esp_hosted_driver_handle_t *esp_hosted_d
                     count = read(esp_hosted_driver_handle->file_desc,
                             (buf+total_read_len), (read_len-total_read_len));
                     if (count <= 0) {
-                        perror("read: Failed to read serial data");
+                        perror("read: Failed to read fixed length serial data");
                         goto err;
                     }
                     total_read_len += count;
                 } while (total_read_len < read_len);
+
+                if (total_read_len != read_len) {
+                    printf("%s, Expected fixed data %d vs received %d\n",__func__, read_len, total_read_len);
+                    goto err;
+                }
                 ret = parse_tlv(buf, buf_len);
                 if ((ret != SUCCESS) || !*buf_len) {
                    goto err;
@@ -169,11 +222,16 @@ uint8_t* esp_hosted_driver_read (struct esp_hosted_driver_handle_t *esp_hosted_d
                     count = read(esp_hosted_driver_handle->file_desc,
                             (buf+total_read_len), (*buf_len-total_read_len));
                     if (count <= 0) {
-                        perror("read: ");
-                        goto err;
+                        perror("read: Failed to read variable length serial data");
+                        break;
                     }
                     total_read_len += count;
-               } while (total_read_len < *buf_len);
+                } while (total_read_len < *buf_len);
+
+                if (total_read_len != *buf_len) {
+                    printf("%s, Expected variable data %d vs received %d\n",__func__, *buf_len, total_read_len);
+                    goto err;
+                }
                 return buf;
             } else {
                 check = true;
