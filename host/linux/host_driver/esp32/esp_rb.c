@@ -21,7 +21,7 @@ int esp_rb_init(esp_rb_t *rb, size_t sz)
 
 	rb->buf = kmalloc(sz, GFP_KERNEL);
 	if (!rb->buf) {
-		printk(KERN_ERR "Failed to allocate memory for rb\n");
+		printk(KERN_ERR "%s, Failed to allocate memory for rb\n", __func__);
 		return -ENOMEM;
 	}
 
@@ -35,11 +35,13 @@ int esp_rb_init(esp_rb_t *rb, size_t sz)
 
 ssize_t esp_rb_read_by_user(esp_rb_t *rb, const char __user *buf, size_t sz, int block)
 {
+	size_t read_len = 0, temp_len = 0;
+
 	if (down_interruptible(&rb->sem)) {
 		return -ERESTARTSYS; /* Signal interruption */
 	}
 
-	while(rb->rp == rb->wp) {
+	while (rb->rp == rb->wp) {
 		up(&rb->sem);
 		if (block == 0) {
 			return -EAGAIN;
@@ -53,21 +55,37 @@ ssize_t esp_rb_read_by_user(esp_rb_t *rb, const char __user *buf, size_t sz, int
 	}
 
 	if (rb->wp > rb->rp) {
-		sz = min(sz, (size_t)(rb->wp - rb->rp));
+		read_len = min(sz, (size_t)(rb->wp - rb->rp));
 	} else {
-		sz = min(sz, (size_t)(rb->end - rb->rp));
+		read_len = min(sz, (size_t)(rb->end - rb->rp));
 	}
-	if (copy_to_user((void *)buf, rb->rp, sz)) {
+
+	if (copy_to_user((void *)buf, rb->rp, read_len)) {
 		up(&rb->sem);
+		printk(KERN_WARNING "%s, Incomplete/Failed read\n", __func__);
 		return -EFAULT;
 	}
-	rb->rp += sz;
+
+	rb->rp += read_len;
 	if (rb->rp == rb->end) {
 		rb->rp = rb->buf;
 	}
+
+	if (read_len < sz) {
+		temp_len = min(sz-read_len,(size_t)(rb->wp - rb->rp));
+		if (copy_to_user((void *)buf+read_len, rb->rp, temp_len)) {
+			up(&rb->sem);
+			printk(KERN_WARNING "%s, Incomplete/Failed read\n", __func__);
+			return -EFAULT;
+		}
+	}
+
+	rb->rp += temp_len;
+	read_len += temp_len;
+
 	up(&rb->sem);
 
-	return sz;
+	return read_len;
 }
 
 size_t get_free_space(esp_rb_t *rb)
@@ -81,33 +99,44 @@ size_t get_free_space(esp_rb_t *rb)
 
 ssize_t esp_rb_write_by_kernel(esp_rb_t *rb, const char *buf, size_t sz)
 {
+	size_t write_len = 0, temp_len = 0;
+
 	if (down_interruptible(&rb->sem)) {
 		return -ERESTARTSYS;
 	}
 
 	if (get_free_space(rb) == 0) {
 		up(&rb->sem);
-		printk(KERN_ERR "Ringbuffer full, no space to write\n");
+		printk(KERN_ERR "%s, Ringbuffer full, no space to write\n", __func__);
 		return 0;
 	}
 
 	sz = min(sz, get_free_space(rb));
 	if (rb->wp >= rb->rp) {
-		sz = min(sz, (size_t)(rb->end - rb->wp));
+		write_len = min(sz, (size_t)(rb->end - rb->wp));
 	} else {
-		sz = min(sz, (size_t)(rb->rp - rb->wp - 1));
+		write_len = min(sz, (size_t)(rb->rp - rb->wp - 1));
 	}
 
-	memcpy(rb->wp, buf, sz);
-	rb->wp += sz;
+	memcpy(rb->wp, buf, write_len);
+	rb->wp += write_len;
 	if (rb->wp == rb->end) {
 		rb->wp = rb->buf;
 	}
+
+	if (write_len < sz) {
+		temp_len = (size_t)min(sz-write_len,(size_t)(rb->rp - rb->wp - 1));
+		memcpy(rb->wp, buf+write_len, temp_len);
+	}
+
+	rb->wp += temp_len;
+	write_len += temp_len;
+
 	up(&rb->sem);
 
 	wake_up_interruptible(&rb->wq);
 
-	return sz;
+	return write_len;
 }
 
 void esp_rb_cleanup(esp_rb_t *rb)

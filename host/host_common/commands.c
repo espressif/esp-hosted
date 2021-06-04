@@ -10,9 +10,9 @@
 
 #ifdef STM32F469xx
 #include "common.h"
-#define command_log(...) printf(__VA_ARGS__ "\r");
+#define command_log(...) printf(__VA_ARGS__); printf("\r");
 #else
-#define command_log(...) printf(__VA_ARGS__);
+#define command_log(...) printf("%s:%u ",__func__,__LINE__); printf(__VA_ARGS__);
 #define min(X, Y) (((X) < (Y)) ? (X) : (Y))
 #endif
 
@@ -54,7 +54,7 @@ int wifi_get_mac (int mode, char *mac)
     uint8_t *tx_data = NULL, *rx_data = NULL;
 
     if (!mac || (mode <= WIFI_MODE_NONE) || (mode >= WIFI_MODE_APSTA)) {
-        command_log("Invalid parameter \n");
+        command_log("Invalid parameter\n");
         return FAILURE;
     }
 
@@ -66,7 +66,7 @@ int wifi_get_mac (int mode, char *mac)
     EspHostedCmdGetMacAddress *req_payload = (EspHostedCmdGetMacAddress *) \
         esp_hosted_calloc(1, sizeof(EspHostedCmdGetMacAddress));
     if (!req_payload) {
-        command_log("Failed to allocate memory \n");
+        command_log("Failed to allocate memory for req_payload\n");
         return FAILURE;
     }
 
@@ -76,13 +76,13 @@ int wifi_get_mac (int mode, char *mac)
     req.cmd_get_mac_address = req_payload;
     tx_len = esp_hosted_config_payload__get_packed_size(&req);
     if (!tx_len) {
-        command_log("Invalid tx length \n");
+        command_log("Invalid tx length\n");
         goto err3;
     }
 
     tx_data = (uint8_t *)esp_hosted_calloc(1, tx_len);
     if (!tx_data) {
-        command_log("Failed to allocate memory \n");
+        command_log("Failed to allocate memory for tx_data\n");
         goto err3;
     }
 
@@ -91,23 +91,23 @@ int wifi_get_mac (int mode, char *mac)
     rx_data = transport_pserial_data_handler(tx_data, tx_len,
             TIMEOUT_PSERIAL_RESP, &rx_len);
     if (!rx_data || !rx_len) {
-        command_log("Failed to process RX data \n");
+        command_log("Failed to process rx data\n");
         goto err2;
     }
 
     resp = esp_hosted_config_payload__unpack(NULL, rx_len, rx_data);
     if ((!resp) || (!resp->resp_get_mac_address) ||
             (!resp->resp_get_mac_address->mac.data)) {
-        command_log("Failed to allocate memory \n");
+        command_log("Failed to unpack rx_data\n");
         goto err1;
     }
 
     if (resp->resp_get_mac_address->resp) {
-        command_log("Failed to get MAC address \n");
+        command_log("Failed to get MAC address\n");
         goto err1;
     }
-    strncpy(mac, (char *)resp->resp_get_mac_address->mac.data, min(MAC_LENGTH,
-                resp->resp_get_mac_address->mac.len+1));
+    strncpy(mac, (char *)resp->resp_get_mac_address->mac.data, MAC_LENGTH);
+    mac[MAC_LENGTH-1] = '\0';
 
     mem_free(tx_data);
     mem_free(rx_data);
@@ -131,12 +131,12 @@ int wifi_set_mac (int mode, char *mac)
     uint8_t *tx_data = NULL, *rx_data = NULL;
 
     if (!mac || (mode <= WIFI_MODE_NONE) || (mode >= WIFI_MODE_APSTA)) {
-        command_log("Invalid parameter \n");
+        command_log("Invalid parameter\n");
         return FAILURE;
     }
 
     if (!strlen(mac) || (strlen(mac) > MAX_BSSID_LENGTH)) {
-        command_log("Invalid MAC address \n");
+        command_log("Invalid MAC address\n");
         return FAILURE;
     }
 
@@ -148,7 +148,7 @@ int wifi_set_mac (int mode, char *mac)
     EspHostedCmdSetMacAddress *req_payload = (EspHostedCmdSetMacAddress *) \
         esp_hosted_calloc(1, sizeof(EspHostedCmdSetMacAddress));
     if (!req_payload) {
-        command_log("Failed to allocate memory \n");
+        command_log("Failed to allocate memory for req_payload\n");
         return FAILURE;
     }
 
@@ -161,13 +161,13 @@ int wifi_set_mac (int mode, char *mac)
     req.cmd_set_mac_address = req_payload;
     tx_len = esp_hosted_config_payload__get_packed_size(&req);
     if (!tx_len) {
-        command_log("Invalid tx length \n");
+        command_log("Invalid tx length\n");
         goto err3;
     }
 
     tx_data = (uint8_t *)esp_hosted_calloc(1, tx_len);
     if (!tx_data) {
-        command_log("Failed to allocate memory \n");
+        command_log("Failed to allocate memory for tx_data\n");
         goto err3;
     }
 
@@ -176,13 +176,13 @@ int wifi_set_mac (int mode, char *mac)
     rx_data = transport_pserial_data_handler(tx_data, tx_len,
             TIMEOUT_PSERIAL_RESP, &rx_len);
     if (!rx_data || !rx_len) {
-        command_log("Failed to process RX data \n");
+        command_log("Failed to process rx_data\n");
         goto err2;
     }
 
     resp = esp_hosted_config_payload__unpack(NULL, rx_len, rx_data);
     if ((!resp) || (!resp->resp_set_mac_address)) {
-        command_log("Failed to allocate memory \n");
+        command_log("Failed to unpack rx_data\n");
         goto err1;
     }
 
@@ -213,7 +213,7 @@ int wifi_get_mode (int *mode)
     uint8_t *tx_data = NULL, *rx_data = NULL;
 
     if (!mode) {
-        command_log("Invalid parameter \n");
+        command_log("Invalid parameter\n");
         return FAILURE;
     }
 
@@ -223,13 +223,13 @@ int wifi_get_mode (int *mode)
 
     tx_len = esp_hosted_config_payload__get_packed_size(&req);
     if (!tx_len) {
-        command_log("Invalid tx length \n");
+        command_log("Invalid tx length\n");
         return FAILURE;
     }
 
     tx_data = (uint8_t *)esp_hosted_calloc(1, tx_len);
     if (!tx_data) {
-        command_log("Failed to allocate memory \n");
+        command_log("Failed to allocate memory for tx_data\n");
         return FAILURE;
     }
 
@@ -237,18 +237,18 @@ int wifi_get_mode (int *mode)
     rx_data = transport_pserial_data_handler(tx_data, tx_len,
             TIMEOUT_PSERIAL_RESP, &rx_len);
     if (!rx_data || !rx_len) {
-        command_log("Failed to process RX data \n");
+        command_log("Failed to process rx data\n");
         goto err2;
     }
 
     resp = esp_hosted_config_payload__unpack(NULL, rx_len, rx_data);
     if (!resp || !resp->resp_get_wifi_mode) {
-        command_log("Failed to allocate memory \n");
+        command_log("Failed to unpack rx_data\n");
         goto err1;
     }
 
     if (resp->resp_get_wifi_mode->resp) {
-        command_log("Failed to get wifi mode \n");
+        command_log("Failed to get wifi mode\n");
         goto err1;
     }
 
@@ -272,7 +272,7 @@ int wifi_set_mode (int mode)
     uint8_t *tx_data = NULL, *rx_data = NULL;
 
     if ((mode < WIFI_MODE_NONE) || (mode >= WIFI_MODE_MAX)) {
-        command_log("Invalid wifi mode \n");
+        command_log("Invalid wifi mode\n");
 	return FAILURE;
     }
 
@@ -284,7 +284,7 @@ int wifi_set_mode (int mode)
     EspHostedCmdSetMode *req_payload = (EspHostedCmdSetMode *) \
         esp_hosted_calloc( 1, sizeof(EspHostedCmdSetMode));
     if (!req_payload) {
-        command_log("Failed to allocate memory \n");
+        command_log("Failed to allocate memory for req_payload\n");
         return FAILURE;
     }
 
@@ -295,13 +295,13 @@ int wifi_set_mode (int mode)
 
     tx_len = esp_hosted_config_payload__get_packed_size(&req);
     if (!tx_len) {
-        command_log("Invalid tx length \n");
+        command_log("Invalid tx length\n");
         goto err3;
     }
 
     tx_data = (uint8_t *)esp_hosted_calloc(1, tx_len);
     if (!tx_data) {
-        command_log("Failed to allocate memory \n");
+        command_log("Failed to allocate memory for tx_data\n");
         goto err3;
     }
 
@@ -310,18 +310,18 @@ int wifi_set_mode (int mode)
     rx_data = transport_pserial_data_handler(tx_data, tx_len,
             TIMEOUT_PSERIAL_RESP, &rx_len);
     if (!rx_data || !rx_len) {
-        command_log("Failed to process RX data \n");
+        command_log("Failed to process rx data\n");
         goto err2;
     }
 
     resp = esp_hosted_config_payload__unpack(NULL, rx_len, rx_data);
     if ((!resp) || (!resp->resp_set_wifi_mode)) {
-        command_log("Failed to allocate memory \n");
+        command_log("Failed to unpack rx_data\n");
         goto err1;
     }
 
     if (resp->resp_set_wifi_mode->resp) {
-        command_log("Failed to set wifi mode \n");
+        command_log("Failed to set wifi mode\n");
         goto err1;
     }
 
@@ -349,17 +349,17 @@ int wifi_set_ap_config (esp_hosted_control_config_t ap_config)
 
     if ((strlen((char *)&ap_config.station.ssid) > MAX_SSID_LENGTH) ||
         (!strlen((char *)&ap_config.station.ssid))) {
-        command_log("Invalid SSID length \n");
+        command_log("Invalid SSID length\n");
         return FAILURE;
     }
 
     if (strlen((char *)&ap_config.station.pwd) > MAX_PWD_LENGTH) {
-        command_log("Invalid password length \n");
+        command_log("Invalid password length\n");
         return FAILURE;
     }
 
     if (strlen((char *)&ap_config.station.bssid) > MAX_BSSID_LENGTH) {
-        command_log("Invalid BSSID length \n");
+        command_log("Invalid BSSID length\n");
         return FAILURE;
     }
 
@@ -371,7 +371,7 @@ int wifi_set_ap_config (esp_hosted_control_config_t ap_config)
     EspHostedCmdSetAPConfig *req_payload = (EspHostedCmdSetAPConfig *) \
         esp_hosted_calloc(1, sizeof(EspHostedCmdSetAPConfig));
     if (!req_payload) {
-        command_log("Failed to allocate memory \n");
+        command_log("Failed to allocate memory for req_payload\n");
         return FAILURE;
     }
 
@@ -387,13 +387,13 @@ int wifi_set_ap_config (esp_hosted_control_config_t ap_config)
 
     tx_len = esp_hosted_config_payload__get_packed_size(&req);
     if (!tx_len) {
-        command_log("Invalid tx length \n");
+        command_log("Invalid tx length\n");
         goto err3;
     }
 
     tx_data = (uint8_t *)esp_hosted_calloc(1, tx_len);
     if (!tx_data) {
-        command_log("Failed to allocate memory \n");
+        command_log("Failed to allocate memory for tx_data\n");
         goto err3;
     }
 
@@ -402,18 +402,19 @@ int wifi_set_ap_config (esp_hosted_control_config_t ap_config)
     rx_data = transport_pserial_data_handler(tx_data, tx_len,
             TIMEOUT_PSERIAL_RESP, &rx_len);
     if (!rx_data || !rx_len) {
-        command_log("Failed to process RX data \n");
+        command_log("Failed to process rx data\n");
         goto err2;
     }
 
     resp = esp_hosted_config_payload__unpack(NULL, rx_len, rx_data);
     if ((!resp) || (!resp->resp_set_ap_config)) {
-        command_log("Failed to allocate memory \n");
+        command_log("Failed to unpack rx_data\n");
         goto err1;
     }
 
     if (resp->resp_set_ap_config->resp == INVALID_PASSWORD) {
-        command_log("Invalid password %s for SSID %s\n", (char *)&ap_config.station.pwd, (char *)&ap_config.station.ssid);
+        command_log("Invalid password %s for SSID %s\n",\
+		        (char *)&ap_config.station.pwd, (char *)&ap_config.station.ssid);
         mem_free(tx_data);
         mem_free(rx_data);
         mem_free(req_payload);
@@ -425,7 +426,7 @@ int wifi_set_ap_config (esp_hosted_control_config_t ap_config)
         mem_free(req_payload);
         return NO_AP_FOUND;
     } else if (resp->resp_set_ap_config->resp) {
-        command_log("Failed to connect with AP \n");
+        command_log("Failed to connect with AP\n");
         goto err1;
     }
 
@@ -451,7 +452,7 @@ int wifi_get_ap_config (esp_hosted_control_config_t *ap_config)
     uint8_t *tx_data = NULL, *rx_data = NULL;
 
     if (!ap_config) {
-        command_log("Invalid parameter \n");
+        command_log("Invalid parameter\n");
         return FAILURE;
     }
 
@@ -462,13 +463,13 @@ int wifi_get_ap_config (esp_hosted_control_config_t *ap_config)
 
     tx_len = esp_hosted_config_payload__get_packed_size(&req);
     if (!tx_len) {
-        command_log("Invalid tx length \n");
+        command_log("Invalid tx length\n");
         return FAILURE;
     }
 
     tx_data = (uint8_t *)esp_hosted_calloc(1, tx_len);
     if (!tx_data) {
-        command_log("Failed to allocate memory \n");
+        command_log("Failed to allocate memory for tx_data\n");
         return FAILURE;
     }
 
@@ -476,41 +477,43 @@ int wifi_get_ap_config (esp_hosted_control_config_t *ap_config)
     rx_data = transport_pserial_data_handler(tx_data, tx_len,
             TIMEOUT_PSERIAL_RESP, &rx_len);
     if (!rx_data || !rx_len) {
-        command_log("Failed to process RX data \n");
+        command_log("Failed to process rx data\n");
         goto err2;
     }
 
     resp = esp_hosted_config_payload__unpack(NULL, rx_len, rx_data);
     if ((!resp) || (!resp->resp_get_ap_config)) {
+        command_log("Failed to unpack rx_data\n");
         goto err1;
     }
 
     if (resp->resp_get_ap_config->resp == NOT_CONNECTED) {
-        strncpy(ap_config->station.status, not_connected_str,
-                min(STATUS_LENGTH, not_connected_str_len+1));
+        strncpy(ap_config->station.status, not_connected_str, STATUS_LENGTH);
+        ap_config->station.status[STATUS_LENGTH-1] = '\0';
         command_log("Station is not connected to AP \n");
         goto err1;
     }
 
     if (resp->resp_get_ap_config->resp == failure) {
-        strncpy(ap_config->station.status, failure_str,
-                min(STATUS_LENGTH, failure_str_len+1));
+        strncpy(ap_config->station.status, failure_str, STATUS_LENGTH);
+        ap_config->station.status[STATUS_LENGTH-1] = '\0';
         command_log("Failed to get AP config \n");
         goto err1;
     }
 
     if (resp->resp_get_ap_config->resp == success) {
-        strncpy(ap_config->station.status, success_str,
-                min(STATUS_LENGTH, success_str_len+1));
+        strncpy(ap_config->station.status, success_str, STATUS_LENGTH);
+        ap_config->station.status[STATUS_LENGTH-1] = '\0';
         if (resp->resp_get_ap_config->ssid.data) {
             strncpy((char *)ap_config->station.ssid,
                     (char *)resp->resp_get_ap_config->ssid.data,
-                    min(MAX_SSID_LENGTH, resp->resp_get_ap_config->ssid.len+1));
+                    MAX_SSID_LENGTH);
+            ap_config->station.ssid[MAX_SSID_LENGTH-1] ='\0';
         }
         if (resp->resp_get_ap_config->bssid.data) {
             strncpy((char *)ap_config->station.bssid,
-                    (char *)resp->resp_get_ap_config->bssid.data, min(MAC_LENGTH,
-                    resp->resp_get_ap_config->bssid.len+1));
+                    (char *)resp->resp_get_ap_config->bssid.data, MAC_LENGTH);
+            ap_config->station.bssid[MAC_LENGTH-1] = '\0';
         }
 
         ap_config->station.channel = resp->resp_get_ap_config->chnl;
@@ -542,13 +545,13 @@ int wifi_disconnect_ap ()
 
     tx_len = esp_hosted_config_payload__get_packed_size(&req);
     if (!tx_len) {
-        command_log("Invalid tx length \n");
+        command_log("Invalid tx length\n");
         return FAILURE;
     }
 
     tx_data = (uint8_t *)esp_hosted_calloc(1, tx_len);
     if (!tx_data) {
-        command_log("Failed to allocate memory \n");
+        command_log("Failed to allocate memory for tx_data\n");
         return FAILURE;
     }
 
@@ -557,18 +560,18 @@ int wifi_disconnect_ap ()
     rx_data = transport_pserial_data_handler(tx_data, tx_len,
             TIMEOUT_PSERIAL_RESP, &rx_len);
     if (!rx_data || !rx_len) {
-        command_log("Failed to process RX data \n");
+        command_log("Failed to process rx data\n");
         goto err2;
     }
 
     resp = esp_hosted_config_payload__unpack(NULL, rx_len, rx_data);
     if ((!resp) || (!resp->resp_disconnect_ap)) {
-        command_log("Failed to allocate memory \n");
+        command_log("Failed to unpack rx_data\n");
         goto err1;
     }
 
     if (resp->resp_disconnect_ap->resp) {
-        command_log("Failed to disconnect from AP \n");
+        command_log("Failed to disconnect from AP\n");
         goto err1;
     }
 
@@ -593,20 +596,20 @@ int wifi_set_softap_config (esp_hosted_control_config_t softap_config)
 
     if ((strlen((char *)&softap_config.softap.ssid) > MAX_SSID_LENGTH) ||
         (!strlen((char *)&softap_config.softap.ssid))) {
-        command_log("Invalid SSID length \n");
+        command_log("Invalid SSID length\n");
         return FAILURE;
     }
 
     if ((strlen((char *)&softap_config.softap.pwd) > MAX_PWD_LENGTH) ||
         ((softap_config.softap.encryption_mode != ESP_HOSTED_ENCRYPTION_MODE__Type_Open)
             && (strlen((char *)&softap_config.softap.pwd) < MIN_PWD_LENGTH))) {
-        command_log("Invalid password length \n");
+        command_log("Invalid password length\n");
         return FAILURE;
     }
 
     if ((softap_config.softap.channel < MIN_CHNL_NO) ||
             (softap_config.softap.channel > MAX_CHNL_NO)) {
-        command_log("Invalid softap channel \n");
+        command_log("Invalid softap channel\n");
         return FAILURE;
     }
 
@@ -614,19 +617,19 @@ int wifi_set_softap_config (esp_hosted_control_config_t softap_config)
         (softap_config.softap.encryption_mode == ESP_HOSTED_ENCRYPTION_MODE__Type_WEP) ||
         (softap_config.softap.encryption_mode > ESP_HOSTED_ENCRYPTION_MODE__Type_WPA_WPA2_PSK)) {
 
-        command_log("Asked Encryption mode not supported \n");
+        command_log("Asked Encryption mode not supported\n");
         return FAILURE;
     }
 
     if ((softap_config.softap.max_connections < MIN_CONN_NO) ||
             (softap_config.softap.max_connections > MAX_CONN_NO)) {
-        command_log("Invalid maximum connection number \n");
+        command_log("Invalid maximum connection number\n");
         return FAILURE;
     }
 
     if ((softap_config.softap.bandwidth < WIFI_BW_HT20) ||
             (softap_config.softap.bandwidth > WIFI_BW_HT40)) {
-        command_log("Invalid bandwidth \n");
+        command_log("Invalid bandwidth\n");
         return FAILURE;
     }
 
@@ -638,7 +641,7 @@ int wifi_set_softap_config (esp_hosted_control_config_t softap_config)
     EspHostedCmdSetSoftAPConfig *req_payload = (EspHostedCmdSetSoftAPConfig *) \
         esp_hosted_calloc(1, sizeof(EspHostedCmdSetSoftAPConfig));
     if (!req_payload) {
-        command_log("Failed to allocate memory \n");
+        command_log("Failed to allocate memory for req_payload\n");
         return FAILURE;
     }
 
@@ -659,13 +662,13 @@ int wifi_set_softap_config (esp_hosted_control_config_t softap_config)
 
     tx_len = esp_hosted_config_payload__get_packed_size(&req);
     if (!tx_len) {
-        command_log("Invalid tx length \n");
+        command_log("Invalid tx length\n");
         goto err3;
     }
 
     tx_data = (uint8_t *)esp_hosted_calloc(1, tx_len);
     if (ret != SUCCESS) {
-        command_log("Failed to allocate memory \n");
+        command_log("Failed to allocate memory for tx_data\n");
         goto err3;
     }
 
@@ -674,18 +677,18 @@ int wifi_set_softap_config (esp_hosted_control_config_t softap_config)
     rx_data = transport_pserial_data_handler(tx_data, tx_len,
             TIMEOUT_PSERIAL_RESP, &rx_len);
     if (!rx_data || !rx_len) {
-        command_log("Failed to process RX data \n");
+        command_log("Failed to process rx data\n");
         goto err2;
     }
 
     resp = esp_hosted_config_payload__unpack(NULL, rx_len, rx_data);
     if ((!resp) || (!resp->resp_set_softap_config)) {
-        command_log("Failed to allocate memory \n");
+        command_log("Failed to unpack rx_data\n");
         goto err1;
     }
 
     if (resp->resp_set_softap_config->resp) {
-        command_log("Failed to set softap configuration \n");
+        command_log("Failed to set softap configuration\n");
         goto err1;
     }
 
@@ -711,7 +714,7 @@ int wifi_get_softap_config (esp_hosted_control_config_t *softap_config)
     uint8_t *tx_data = NULL, *rx_data = NULL;
 
     if (!softap_config) {
-        command_log("Invalid parameter \n");
+        command_log("Invalid parameter\n");
         return FAILURE;
     }
 
@@ -720,13 +723,13 @@ int wifi_get_softap_config (esp_hosted_control_config_t *softap_config)
     req.msg = ESP_HOSTED_CONFIG_MSG_TYPE__TypeCmdGetSoftAPConfig;
     tx_len = esp_hosted_config_payload__get_packed_size(&req);
     if (!tx_len) {
-        command_log("Invalid tx length \n");
+        command_log("Invalid tx length\n");
         return FAILURE;
     }
 
     tx_data = (uint8_t *)esp_hosted_calloc(1, tx_len);
     if (!tx_data) {
-        command_log("Failed to allocate memory \n");
+        command_log("Failed to allocate memory for tx_data\n");
         return FAILURE;
     }
 
@@ -735,30 +738,30 @@ int wifi_get_softap_config (esp_hosted_control_config_t *softap_config)
     rx_data = transport_pserial_data_handler(tx_data, tx_len,
             TIMEOUT_PSERIAL_RESP, &rx_len);
     if (!rx_data || !rx_len) {
-        command_log("Failed to process RX data \n");
+        command_log("Failed to process rx data\n");
         goto err2;
     }
 
     resp = esp_hosted_config_payload__unpack(NULL, rx_len, rx_data);
     if ((!resp) || (!resp->resp_get_softap_config)) {
-        command_log("Failed to allocate memory \n");
+        command_log("Failed to unpack rx_data\n");
         goto err1;
     }
 
     if (resp->resp_get_softap_config->resp) {
-        command_log("Failed to get softap configuration \n");
+        command_log("Failed to get softap configuration\n");
         goto err1;
     }
 
     if (resp->resp_get_softap_config->ssid.data) {
         strncpy((char *)softap_config->softap.ssid,
-                (char *)resp->resp_get_softap_config->ssid.data, min(MAX_SSID_LENGTH,
-                    resp->resp_get_softap_config->ssid.len+1));
+                (char *)resp->resp_get_softap_config->ssid.data, MAX_SSID_LENGTH);
+        softap_config->softap.ssid[MAX_SSID_LENGTH-1] = '\0';
     }
     if (resp->resp_get_softap_config->pwd.data) {
         strncpy((char *)softap_config->softap.pwd,
-                (char *)resp->resp_get_softap_config->pwd.data, min(MAX_PWD_LENGTH,
-                    resp->resp_get_softap_config->pwd.len+1));
+                (char *)resp->resp_get_softap_config->pwd.data, MAX_PWD_LENGTH);
+        softap_config->softap.pwd[MAX_PWD_LENGTH-1] = '\0';
     }
     softap_config->softap.channel = resp->resp_get_softap_config->chnl;
     softap_config->softap.encryption_mode = resp->resp_get_softap_config->ecn;
@@ -790,13 +793,13 @@ int wifi_stop_softap ()
 
     tx_len = esp_hosted_config_payload__get_packed_size(&req);
     if (!tx_len) {
-        command_log("Invalid tx length \n");
+        command_log("Invalid tx length\n");
         return FAILURE;
     }
 
     tx_data = (uint8_t *)esp_hosted_calloc(1, tx_len);
     if (!tx_data) {
-        command_log("Failed to allocate memory \n");
+        command_log("Failed to allocate memory for tx_data\n");
         return FAILURE;
     }
 
@@ -805,18 +808,18 @@ int wifi_stop_softap ()
     rx_data = transport_pserial_data_handler(tx_data, tx_len,
             TIMEOUT_PSERIAL_RESP, &rx_len);
     if (!rx_data || !rx_len) {
-        command_log("Failed to process RX data \n");
+        command_log("Failed to process rx data\n");
         goto err2;
     }
 
     resp = esp_hosted_config_payload__unpack(NULL, rx_len, rx_data);
     if ((!resp) || (!resp->resp_stop_softap)) {
-        command_log("Failed to allocate memory \n");
+        command_log("Failed to unpack rx_data\n");
         goto err1;
     }
 
     if (resp->resp_stop_softap->resp) {
-        command_log("Failed to stop softap \n");
+        command_log("Failed to stop softap\n");
         goto err1;
     }
 
@@ -841,7 +844,7 @@ esp_hosted_wifi_scanlist_t* wifi_ap_scan_list (int *count)
     esp_hosted_wifi_scanlist_t *list = NULL;
 
     if (!count) {
-        command_log("Invalid parameter \n");
+        command_log("Invalid parameter\n");
         return NULL;
     }
 
@@ -850,13 +853,13 @@ esp_hosted_wifi_scanlist_t* wifi_ap_scan_list (int *count)
     req.msg = ESP_HOSTED_CONFIG_MSG_TYPE__TypeCmdGetAPScanList;
     tx_len = esp_hosted_config_payload__get_packed_size(&req);
     if (!tx_len) {
-        command_log("Invalid tx length \n");
+        command_log("Invalid tx length\n");
         return NULL;
     }
 
     tx_data = (uint8_t *)esp_hosted_calloc(1, tx_len);
     if (!tx_data) {
-        command_log("Failed to allocate memory \n");
+        command_log("Failed to allocate memory for tx data\n");
         return NULL;
     }
 
@@ -864,29 +867,33 @@ esp_hosted_wifi_scanlist_t* wifi_ap_scan_list (int *count)
     rx_data = transport_pserial_data_handler(tx_data, tx_len,
             TIMEOUT_PSERIAL_RESP, &rx_len);
     if (!rx_data || !rx_len) {
-        command_log("Failed to process RX data \n");
+        command_log("Failed to process rx data\n");
         goto err2;
     }
 
     resp = esp_hosted_config_payload__unpack(NULL, rx_len, rx_data);
     if (!resp || (!resp->resp_scan_ap_list)) {
-        command_log("Failed to allocate memory \n");
+        command_log("Failed to unpack rx_data\n");
         goto err1;
     }
 
     if (resp->resp_scan_ap_list->resp) {
-        command_log("Failed to get scan AP List \n");
+        command_log("Failed to get scan AP List\n");
         goto err1;
     }
 
     if (resp->resp_scan_ap_list->count) {
         *count = resp->resp_scan_ap_list->count;
+        if (!*count) {
+            command_log("No APs available\n");
+            goto err1;
+        }
         list = (esp_hosted_wifi_scanlist_t *)esp_hosted_calloc \
                 (resp->resp_scan_ap_list->count,
                  sizeof(esp_hosted_wifi_scanlist_t));
 
         if (!list) {
-            command_log("Failed to allocate memory \n");
+            command_log("Failed to allocate memory for scan list\n");
             goto err1;
         }
     }
@@ -924,7 +931,7 @@ esp_hosted_wifi_connected_stations_list* wifi_connected_stations_list(int *num)
     esp_hosted_wifi_connected_stations_list *list = NULL;
 
     if (!num) {
-        command_log("Invalid parameter \n");
+        command_log("Invalid parameter\n");
         return NULL;
     }
 
@@ -934,13 +941,13 @@ esp_hosted_wifi_connected_stations_list* wifi_connected_stations_list(int *num)
 
     tx_len = esp_hosted_config_payload__get_packed_size(&req);
     if (!tx_len) {
-        command_log("Invalid tx length \n");
+        command_log("Invalid tx length\n");
         return NULL;
     }
 
     tx_data = (uint8_t *)esp_hosted_calloc(1, tx_len);
     if (!tx_data) {
-        command_log("Failed to allocate memory \n");
+        command_log("Failed to allocate memory for tx_data\n");
         return NULL;
     }
 
@@ -948,18 +955,18 @@ esp_hosted_wifi_connected_stations_list* wifi_connected_stations_list(int *num)
     rx_data = transport_pserial_data_handler(tx_data, tx_len,
             TIMEOUT_PSERIAL_RESP, &rx_len);
     if (!rx_data || !rx_len) {
-        command_log("Failed to process RX data \n");
+        command_log("Failed to process rx_data\n");
         goto err2;
     }
 
     resp = esp_hosted_config_payload__unpack(NULL, rx_len, rx_data);
     if (!resp || (!resp->resp_connected_stas_list)) {
-        command_log("Failed to allocate memory \n");
+        command_log("Failed to unpack rx_data\n");
         goto err1;
     }
 
     if (resp->resp_connected_stas_list->resp) {
-        command_log("Failed to get connected stations list \n");
+        command_log("Failed to get connected stations list\n");
         goto err1;
     }
 
@@ -969,7 +976,7 @@ esp_hosted_wifi_connected_stations_list* wifi_connected_stations_list(int *num)
                 esp_hosted_calloc(resp->resp_connected_stas_list->num,
                 sizeof(esp_hosted_wifi_connected_stations_list));
         if (!list) {
-            command_log("Failed to allocate memory \n");
+            command_log("Failed to allocate memory for stations_list\n");
             goto err1;
         }
     }
@@ -1000,7 +1007,7 @@ int wifi_set_power_save_mode (int power_save_mode)
 
     if ((power_save_mode < WIFI_PS_MIN_MODEM) ||
             (power_save_mode >= WIFI_PS_INVALID)) {
-        command_log("Invalid power save mode \n");
+        command_log("Invalid power save mode\n");
         return FAILURE;
     }
 
@@ -1012,7 +1019,7 @@ int wifi_set_power_save_mode (int power_save_mode)
     EspHostedCmdSetMode *req_payload = (EspHostedCmdSetMode *) \
         esp_hosted_calloc(1, sizeof(EspHostedCmdSetMode));
     if (!req_payload) {
-        command_log("Failed to allocate memory \n");
+        command_log("Failed to allocate memory for req_payload\n");
         return FAILURE;
     }
 
@@ -1022,13 +1029,13 @@ int wifi_set_power_save_mode (int power_save_mode)
     req.cmd_set_power_save_mode = req_payload;
     tx_len = esp_hosted_config_payload__get_packed_size(&req);
     if (!tx_len) {
-        command_log("Invalid tx length \n");
+        command_log("Invalid tx length\n");
         goto err3;
     }
 
     tx_data = (uint8_t *)esp_hosted_calloc(1, tx_len);
     if (!tx_data) {
-        command_log("Failed to allocate memory \n");
+        command_log("Failed to allocate memory for tx_data\n");
         goto err3;
     }
 
@@ -1037,18 +1044,18 @@ int wifi_set_power_save_mode (int power_save_mode)
     rx_data = transport_pserial_data_handler(tx_data, tx_len,
             TIMEOUT_PSERIAL_RESP, &rx_len);
     if (!rx_data || !rx_len) {
-        command_log("Failed to process RX data \n");
+        command_log("Failed to process rx_data\n");
         goto err2;
     }
 
     resp = esp_hosted_config_payload__unpack(NULL, rx_len, rx_data);
     if ((!resp) || (!resp->resp_set_power_save_mode)) {
-        command_log("Failed to allocate memory \n");
+        command_log("Failed to unpack rx_data\n");
         goto err1;
     }
 
     if (resp->resp_set_power_save_mode->resp) {
-        command_log("Failed to set power save mode \n");
+        command_log("Failed to set power save mode\n");
         goto err1;
     }
 
@@ -1074,7 +1081,7 @@ int wifi_get_power_save_mode (int *power_save_mode)
     uint8_t *tx_data = NULL, *rx_data = NULL;
 
     if (!power_save_mode) {
-        command_log("Invalid parameter \n");
+        command_log("Invalid parameter\n");
         return FAILURE;
     }
 
@@ -1085,13 +1092,13 @@ int wifi_get_power_save_mode (int *power_save_mode)
     *power_save_mode = WIFI_PS_INVALID;
     tx_len = esp_hosted_config_payload__get_packed_size(&req);
     if (!tx_len) {
-        command_log("Invalid tx length \n");
+        command_log("Invalid tx length\n");
         return FAILURE;
     }
 
     tx_data = (uint8_t *)esp_hosted_calloc(1, tx_len);
     if (!tx_data) {
-        command_log("Failed to allocate memory \n");
+        command_log("Failed to allocate memory for tx_data\n");
         return FAILURE;
     }
 
@@ -1100,18 +1107,18 @@ int wifi_get_power_save_mode (int *power_save_mode)
     rx_data = transport_pserial_data_handler(tx_data, tx_len,
             TIMEOUT_PSERIAL_RESP, &rx_len);
     if (!rx_data || !rx_len) {
-        command_log("Failed to process RX data \n");
+        command_log("Failed to process rx_data\n");
         goto err2;
     }
 
     resp = esp_hosted_config_payload__unpack(NULL, rx_len, rx_data);
     if ((!resp) || (!resp->resp_get_power_save_mode)) {
-        command_log("Failed to allocate memory \n");
+        command_log("Failed to unpack rx_data\n");
         goto err1;
     }
 
     if (resp->resp_get_power_save_mode->resp) {
-        command_log("Failed to get power save mode \n");
+        command_log("Failed to get power save mode\n");
         goto err1;
     }
 

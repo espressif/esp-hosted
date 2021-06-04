@@ -12,67 +12,44 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from commands import *
-failure = 'failure'
-# get mac address
+from test_api import *
+# Test APIs
 
-# 1 : station
-# 2 : softAP
+# Below APIs could be used by demo application
 
-x = wifi_get_mac(2)
-print("mac "+str(x))
+test_set_wifi_mode_none()
+test_get_wifi_mode()
+test_get_available_wifi()
 
-# 0: null Mode, Wi-Fi mode not set
-# 1: station mode
-# 2: softAP mode
-# 3: station+softAP mode
-# or Failure
+# station mode
+test_set_wifi_mode_station()
+test_station_mode_set_mac_addr_of_esp()
+test_station_mode_get_mac_addr()
+test_station_mode_connect()
+test_station_mode_get_info()
+test_station_mode_disconnect()
 
-x = wifi_get_mode()
-print("wifi mode is "+str(x))
+# softAP mode
 
-x = wifi_set_mode(2)
-print(x)
+test_set_wifi_mode_softap()
+test_softap_mode_set_mac_addr_of_esp()
+test_softap_mode_get_mac_addr()
+test_softap_mode_start()
+test_softap_mode_get_info()
+test_softap_mode_connected_clients_info()
+test_softap_mode_stop()
 
-x = wifi_set_ap_config('xyz', 'xyz123456', '', False, 5)
-print(x)
+# station + softAP mode
 
-x = wifi_get_ap_config()
-print(x)
+test_set_wifi_mode_station_softap()
+test_station_mode_connect()
+test_softap_mode_start()
+test_station_mode_get_info()
+test_softap_mode_get_info()
+test_station_mode_disconnect()
+test_softap_mode_stop()
 
-x = wifi_disconnect_ap()
-print(x)
+# power save mode
 
-x = wifi_set_softap_config('ESP12', '', 4, 0, 5, False, 1)
-print(x)
-
-x = wifi_get_softap_config()
-print(x)
-
-# output is list of Aplist class instances
-x = wifi_ap_scan_list()
-if (x == failure):
-    print(failure)
-else:
-    for obj in x:
-        print(obj.ssid,obj.chnl,obj.rssi,obj.bssid,obj.ecn)
-
-# output is list of Stationlist class instances
-x = wifi_connected_stations_list()
-if (x == failure):
-    print(failure)
-else :
-    for obj in x:
-        print(obj.mac)
-
-x = wifi_set_mac(2, "5a:11:11:11:11:11")
-print(x)
-
-x = wifi_set_power_save_mode(2)
-print(x)
-
-x = wifi_get_power_save_mode()
-print("Power save mode is "+str(x))
-
-x = wifi_stop_softap()
-print(x)
+test_set_wifi_power_save_mode()
+test_get_wifi_power_save_mode()

@@ -82,9 +82,10 @@ def wifi_get_mac(mode):
     protodata = get_mac.SerializeToString()
     tp = Transport_pserial(interface)
     response = tp.send_data(endpoint,protodata)
+    get_mac.ParseFromString(response[1])
+    del tp
     if response[0] != success:
         return failure_str
-    get_mac.ParseFromString(response[1])
     if get_mac.resp_get_mac_address.resp != success:
         return failure_str
     else:
@@ -104,9 +105,10 @@ def wifi_get_mode():
     protodata = get_mode.SerializeToString()
     tp = Transport_pserial(interface)
     response = tp.send_data(endpoint,protodata)
-    if response[0] != success :
-       return failure_str
     get_mode.ParseFromString(response[1])
+    del tp
+    if response[0] != success :
+        return failure_str
     if get_mode.resp_get_wifi_mode.resp != success:
        return failure_str
     return get_mode.resp_get_wifi_mode.mode
@@ -131,9 +133,10 @@ def wifi_set_mode(mode):
     protodata = set_mode.SerializeToString()
     tp = Transport_pserial(interface)
     response = tp.send_data(endpoint,protodata)
+    set_mode.ParseFromString(response[1])
+    del tp
     if response[0] != success :
         return failure_str
-    set_mode.ParseFromString(response[1])
     if set_mode.resp_set_wifi_mode.resp != success:
         return failure_str
     else:
@@ -179,9 +182,10 @@ def wifi_set_ap_config(ssid, pwd, bssid, is_wpa3_supported, listen_interval):
     protodata = set_ap_config.SerializeToString()
     tp = Transport_pserial(interface)
     response = tp.send_data(endpoint,protodata)
+    set_ap_config.ParseFromString(response[1])
+    del tp
     if response[0] != success :
         return failure_str
-    set_ap_config.ParseFromString(response[1])
     if set_ap_config.resp_set_ap_config.resp == EspHostedStatus.TYPE_CONNECTION_FAIL:
         print("Invalid password entered")
         return invalid_password_str
@@ -218,9 +222,10 @@ def wifi_get_ap_config():
     protodata = get_ap_config.SerializeToString()
     tp = Transport_pserial(interface)
     response = tp.send_data(endpoint,protodata)
+    get_ap_config.ParseFromString(response[1])
+    del tp
     if response[0] != success :
         return failure_str
-    get_ap_config.ParseFromString(response[1])
     if get_ap_config.resp_get_ap_config.resp == EspHostedStatus.TYPE_NOT_CONNECTED:
         return not_connected_str
     elif get_ap_config.resp_get_ap_config.resp != success:
@@ -242,9 +247,10 @@ def wifi_disconnect_ap():
     protodata = disconnect_ap.SerializeToString()
     tp = Transport_pserial(interface)
     response = tp.send_data(endpoint,protodata)
+    disconnect_ap.ParseFromString(response[1])
+    del tp
     if response[0] != success:
         return failure_str
-    disconnect_ap.ParseFromString(response[1])
     if disconnect_ap.resp_disconnect_ap.resp != success:
        return failure_str
     else:
@@ -306,9 +312,10 @@ def wifi_set_softap_config(ssid, pwd, chnl, ecn, max_conn, ssid_hidden, bw):
     protodata = set_softap_config.SerializeToString()
     tp = Transport_pserial(interface)
     response = tp.send_data(endpoint,protodata)
+    set_softap_config.ParseFromString(response[1])
+    del tp
     if response[0] != success :
         return failure_str
-    set_softap_config.ParseFromString(response[1])
     if set_softap_config.resp_set_softap_config.resp != success:
         return failure_str
     else:
@@ -341,11 +348,12 @@ def wifi_get_softap_config():
     protodata = get_softap_config.SerializeToString()
     tp = Transport_pserial(interface)
     response = tp.send_data(endpoint,protodata)
+    get_softap_config.ParseFromString(response[1])
+    del tp
     if response[0] != success :
         return failure_str
     if get_softap_config.resp_get_softap_config.resp != success:
         return failure_str
-    get_softap_config.ParseFromString(response[1])
     ssid = get_str(get_softap_config.resp_get_softap_config.ssid)
     pwd = get_str(get_softap_config.resp_get_softap_config.pwd)
     ecn = get_softap_config.resp_get_softap_config.ecn
@@ -365,9 +373,10 @@ def wifi_stop_softap():
     protodata = stop_softap.SerializeToString()
     tp = Transport_pserial(interface)
     response = tp.send_data(endpoint,protodata)
+    del tp
+    stop_softap.ParseFromString(response[1])
     if response[0] != success:
         return failure_str
-    stop_softap.ParseFromString(response[1])
     if stop_softap.resp_stop_softap.resp != success:
        return failure_str
     else:
@@ -400,9 +409,10 @@ def wifi_ap_scan_list():
     protodata = get_ap_scan_list.SerializeToString()
     tp = Transport_pserial(interface)
     response = tp.send_data(endpoint,protodata)
+    get_ap_scan_list.ParseFromString(response[1])
+    del tp
     if response[0] != success :
         return failure_str
-    get_ap_scan_list.ParseFromString(response[1])
     if get_ap_scan_list.resp_scan_ap_list.resp != success:
         return failure_str
     count = get_ap_scan_list.resp_scan_ap_list.count
@@ -433,9 +443,10 @@ def wifi_connected_stations_list():
     protodata = get_connected_stations_list.SerializeToString()
     tp = Transport_pserial(interface)
     response = tp.send_data(endpoint,protodata)
+    get_connected_stations_list.ParseFromString(response[1])
+    del tp
     if response[0] != success :
         return failure_str
-    get_connected_stations_list.ParseFromString(response[1])
     if get_connected_stations_list.resp_connected_stas_list.resp != success:
         return failure_str
     num = get_connected_stations_list.resp_connected_stas_list.num
@@ -477,9 +488,10 @@ def wifi_set_mac(mode, mac):
     protodata = set_mac.SerializeToString()
     tp = Transport_pserial(interface)
     response = tp.send_data(endpoint,protodata)
+    set_mac.ParseFromString(response[1])
+    del tp
     if response[0] != success:
         return failure_str
-    set_mac.ParseFromString(response[1])
     if set_mac.resp_set_mac_address.resp != success:
         return failure_str
     else:
@@ -504,9 +516,10 @@ def wifi_set_power_save_mode(power_save_mode):
     protodata = set_power_save_mode.SerializeToString()
     tp = Transport_pserial(interface)
     response = tp.send_data(endpoint,protodata)
+    set_power_save_mode.ParseFromString(response[1])
+    del tp
     if response[0] != success:
         return failure_str
-    set_power_save_mode.ParseFromString(response[1])
     if set_power_save_mode.resp_set_power_save_mode.resp != success:
         return failure_str
     else:
@@ -527,9 +540,10 @@ def wifi_get_power_save_mode():
     protodata = get_power_save_mode.SerializeToString()
     tp = Transport_pserial(interface)
     response = tp.send_data(endpoint,protodata)
+    get_power_save_mode.ParseFromString(response[1])
+    del tp
     if response[0] != success:
         return failure_str
-    get_power_save_mode.ParseFromString(response[1])
     if get_power_save_mode.resp_get_power_save_mode.resp != success:
         return failure_str
     else:

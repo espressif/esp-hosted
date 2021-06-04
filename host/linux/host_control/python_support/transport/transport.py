@@ -17,7 +17,6 @@
 
 import abc
 
-
 class Transport():
 
     @abc.abstractmethod
