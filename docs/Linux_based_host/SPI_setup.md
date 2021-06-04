@@ -37,6 +37,22 @@ Setup image is here.
 
 ![alt text](rpi_esp32_s2_setup.jpg "setup of Raspberry-Pi as host and ESP32-S2 as ESP peripheral")
 
+#### 1.1.3 ESP32-C3 setup
+| Raspberry-Pi Pin | ESP32-C3 Pin | Function |
+|:----------------:|:------------:|:--------:|
+| 24 | IO10 | CS0 |
+| 23 | IO06 | SCLK |
+| 21 | IO02 | MISO |
+| 19 | IO07 | MOSI |
+| 25 | GND | Ground |
+| 11 | IO03 | Handshake |
+| 13 | IO04 | Data ready |
+| 31 | RST | ESP32 Reset |
+
+Setup image is here.
+
+![alt text](rpi_esp32_c3_setup.jpg "setup of Raspberry-Pi as host and ESP32-C3 as ESP peripheral")
+
 ### 1.2 Raspberry-Pi Software Setup
 The SPI master driver is disabled by default on Raspberry-Pi OS. To enable it add following commands in  _/boot/config.txt_ file
 ```

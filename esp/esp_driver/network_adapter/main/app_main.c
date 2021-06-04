@@ -23,7 +23,9 @@
 #include "nvs_flash.h"
 #include "sdkconfig.h"
 #include <unistd.h>
+#ifndef CONFIG_IDF_TARGET_ARCH_RISCV
 #include "xtensa/core-macros.h"
+#endif
 #include "esp_private/wifi.h"
 #include "interface.h"
 #include "esp_wpa.h"
@@ -324,7 +326,7 @@ void send_task(void* pvParameters)
 				ESP_LOG_BUFFER_HEXDUMP(TAG_TX, buf_handle.payload, buf_handle.payload_len, ESP_LOG_INFO);
 #endif
 				/* Post processing */
-				if (buf_handle.free_buf_handle) {
+				if (buf_handle.free_buf_handle && buf_handle.priv_buffer_handle) {
 					buf_handle.free_buf_handle(buf_handle.priv_buffer_handle);
 					buf_handle.priv_buffer_handle = NULL;
 				}
@@ -345,8 +347,10 @@ void send_task(void* pvParameters)
 #endif
 
 				/* Post processing */
-				if (buf_handle.free_buf_handle)
+				if (buf_handle.free_buf_handle && buf_handle.priv_buffer_handle) {
 					buf_handle.free_buf_handle(buf_handle.priv_buffer_handle);
+					buf_handle.priv_buffer_handle = NULL;
+				}
 			}
 
 			sleep(1);
@@ -414,8 +418,9 @@ void process_rx_task(void* pvParameters)
 		}
 
 		/* Free buffer handle */
-		if (buf_handle.free_buf_handle) {
+		if (buf_handle.free_buf_handle && buf_handle.priv_buffer_handle) {
 			buf_handle.free_buf_handle(buf_handle.priv_buffer_handle);
+			buf_handle.priv_buffer_handle = NULL;
 		}
 	}
 }
@@ -447,7 +452,7 @@ void recv_task(void* pvParameters)
 
 		if (ret != pdTRUE) {
 			ESP_LOGE(TAG, "Host -> Slave: Failed to send buffer\n");
-			if (buf_handle->free_buf_handle) {
+			if (buf_handle->free_buf_handle && buf_handle->priv_buffer_handle) {
 				buf_handle->free_buf_handle(buf_handle->priv_buffer_handle);
 			}
 		}

@@ -74,6 +74,22 @@ Setup image is here.
 
 ![alt text](stm_esp32_s2_setup.jpg "Setup of STM32F469I as host and ESP32-S2 as peripheral")
 
+#### Hardware connections for ESP32-C3
+| STM32 Pin | ESP32-C3 Pin | Function |
+|:---------:|:-----------:|:--------:|
+| PB4  (pin5) | IO02 | MISO |
+| PA5  (pin7) | IO06 | CLK |
+| PB5  (pin9) | IO07 | MOSI |
+| PA15 (pin11)| IO10 | CS |
+| GND  (pin2) | GND | GND |
+| PC6  (pin6) | IO03 | Handshake |
+| PC7  (pin8) | IO04 | Data ready from ESP |
+| PB13  (pin10) | RST | Reset ESP |
+
+Setup image is here.
+
+![alt text](stm_esp32_c3_setup.jpg "Setup of STM32F469I as host and ESP32-C3 as peripheral")
+
 # 2. ESP peripheral setup
 ## 2.1 ESP-IDF requirement
 MCU based ESP-Hosted solution is compatible with ESP-IDF version 4.0 and above.
@@ -86,33 +102,20 @@ $ git mv components/protocomm/src/common/protocomm_priv.h components/protocomm/i
 
 #### 2.2.1 Using pre-built binary
 For pre built hosted mode firmware is present in `release` tab. Execute below command to flash it on ESP peripheral.
-##### ESP32
+
 ```sh
-$ python esptool.py --chip esp32 --port <serial_port> --baud 960000 --before default_reset \
+$ python esptool.py --chip <chipset> --port <serial_port> --baud 960000 --before default_reset \
 --after hard_reset write_flash -z --flash_mode dio --flash_freq 40m --flash_size detect \
-0x1000 esp_hosted_bootloader_esp32_spi_v<release_version>.bin \
-0x10000 esp_hosted_firmware_esp32_spi_v<release_version>.bin \
-0x8000 esp_hosted_partition-table_esp32_spi_v<release_version>.bin
+0x1000 esp_hosted_bootloader_<chipset>_spi_v<release_version>.bin \
+0x10000 esp_hosted_firmware_<chipset>_spi_v<release_version>.bin \
+0x8000 esp_hosted_partition-table_<chipset>_spi_v<release_version>.bin
 
 Where,
+	<chipset>        : esp32/esp32s2/esp32c3
 	<serial_port>    : serial port of ESP peripheral
 	<release_version>: 0.1,0.2 etc. Latest from [release page](https://github.com/espressif/esp-hosted/releases)
 ```
-* This command will flash `SPI` interface binaries on `esp32` chip.
-
-##### ESP32-S2
-```sh
-$ python esptool.py --port <serial_port> --baud 960000 --before default_reset --after hard_reset \
---chip esp32s2  write_flash --flash_mode dio --flash_size detect --flash_freq 80m \
-0x1000 esp_hosted_bootloader_esp32s2_spi_v<release_version>.bin \
-0x8000 esp_hosted_partition-table_esp32s2_spi_v<release_version>.bin \
-0x10000 esp_hosted_firmware_esp32s2_spi_v<release_version>.bin
-
-Where,
-	<serial_port>    : serial port of ESP peripheral
-	<release_version>: 0.1,0.2 etc. Latest from [release page](https://github.com/espressif/esp-hosted/releases)
-```
-* This command will flash `SPI` interface binaries on `esp32s2` chip.
+* This command will flash `SPI` interface binaries on ESP module
 
 For windows user, you can also program the binaries using ESP Flash Programming Tool.
 
@@ -126,7 +129,7 @@ $ git mv components/protocomm/src/common/protocomm_priv.h components/protocomm/i
 Navigate to `esp/esp_driver/network_adapter` directory
 ##### Using make
 
-:warning: *make* build system is only supported till ESP32. Please refer cmake section below for ESP32-S2.
+:warning: *make* build system is only supported till ESP32. Please refer cmake section below for other ESP modules.
 
 ```
 $ make clean
@@ -148,9 +151,13 @@ $ make flash
 ```
 $ idf.py fullclean
 ```
-:warning: Skip this step for ESP32. Run for ESP32-S2 only.
+:warning: Skip this step for ESP32. Run for ESP32-S2 or ESP32-C3 only.
 ```
 $ idf.py set-target esp32s2
+```
+or
+```
+$ idf.py set-target esp32c3
 ```
 
 Run following command and navigate to `Example Configuration -> Transport layer -> SPI interface -> select` and exit from menuconfig. Read more about [idf.py](https://docs.espressif.com/projects/esp-idf/en/latest/esp32s2/api-guides/build-system.html#using-the-build-system) here.

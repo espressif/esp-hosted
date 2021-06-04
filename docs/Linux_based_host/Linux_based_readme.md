@@ -19,7 +19,7 @@ This document explains ESP-Hosted setup and usage. The document is divided in tw
 ### 1.1 Hardware Requirements
 * Raspberry-Pi model 3 Model B/B+ or Raspberry-Pi 4 model B
 * ESP32 board
-* 8-12 jumper wires of 10cm length
+* 8-12 jumper wires of length < 10cm
 
 ### 1.2 Host Setup
 Make sure that Raspberry-Pi is equipped with following:
@@ -44,13 +44,19 @@ Make sure that Raspberry-Pi is equipped with following:
 	* Python 2.x or 3.x
 		```sh
 		$ sudo apt install python
+		$ sudo apt install python-pip
+		```
 		 or
+		```sh
 		$ sudo apt install python3
+		$ sudo apt install python3-pip
 		```
 	* Protobuf
 		```sh
 		$ pip install protobuf
+		```
 		 or
+		```sh
 		$ pip3 install protobuf
 		```
 * Clone ESP-Hosted code repository
@@ -114,7 +120,7 @@ write_flash --flash_mode dio --flash_freq 40m --flash_size detect \
 
 Where,
 	<serial_port>    : serial port of ESP peripheral
-	<esp_peripheral> : esp32/esp32s2
+	<esp_peripheral> : esp32/esp32s2/esp32c3
 	<interface_type> : sdio/spi/sdio_uart
 	<release_version>: 0.1,0.2 etc
 ```
@@ -150,7 +156,7 @@ This section identifies Raspberry-Pi specific setup requirements.
 	$ sudo apt update
 	$ sudo apt install raspberrypi-kernel-headers
 	```
-	* Verify that kernel headers are installed properly by running following command. Failure of this command indicates that kernel headers are not installed correctly. In such case, follow https://github.com/notro/rpi-source/wiki and run rpi-source to get current kernel headers. Alternatively upgrade/downgrade kernel and reinstall kernel headers.
+	* Verify that kernel headers are installed properly by running following command. Failure of this command indicates that kernel headers are not installed correctly. In such case, follow https://github.com/notro/rpi-source/wiki and run `rpi-source` to get current kernel headers. Alternatively upgrade/downgrade kernel and reinstall kernel headers.
 	```sh
 	$ ls /lib/modules/$(uname -r)/build
 	```
@@ -185,7 +191,7 @@ This section identifies Raspberry-Pi specific setup requirements.
 		$ pip3 install protobuf
 		```
 	* Bluetooth Stack and utilities:  
-	  :warning:`Note: We have tested ESP-Hosted solution with bluez 5.43 and 5.45`
+	  :warning:`Note: We have tested ESP-Hosted solution with bluez 5.43+`
 		* bluetooth
 		* bluez
 		* bluez-tools
@@ -201,6 +207,7 @@ ESP-IDF release version to be used for ESP peripherals are
 |:----:|:----:|
 | ESP32 | release v4.0 |
 | ESP32-S2 | release v4.2 |
+| ESP32-C3 | release v4.3 |
 
 Clone appropriate ESP-IDF version as per your ESP peripheral. The control path between Linux host and ESP peripheral is based on `protobuf`. For that, corresponding stack layer, `protocomm` from ESP-IDF is used. Run following command in ESP-IDF directory to make `protocomm_priv.h` available for control path.
 ```

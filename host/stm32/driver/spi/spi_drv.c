@@ -34,7 +34,7 @@
 
 typedef enum hardware_type_e {
 	HARDWARE_TYPE_ESP32,
-	HARDWARE_TYPE_ESP32S2,
+	HARDWARE_TYPE_ESP32S2_ESP32C3,
 	HARDWARE_TYPE_INVALID,
 }hardware_type_t;
 
@@ -257,7 +257,7 @@ static void set_hardware_type(void)
 	if (is_gpio_alternate_function_set(USR_SPI_CS_GPIO_Port,USR_SPI_CS_Pin)) {
 		hardware_type = HARDWARE_TYPE_ESP32;
 	} else {
-		hardware_type = HARDWARE_TYPE_ESP32S2;
+		hardware_type = HARDWARE_TYPE_ESP32S2_ESP32C3;
 	}
 }
 
@@ -675,8 +675,8 @@ static void transaction_task(void const* pvParameters)
 {
 	if (hardware_type == HARDWARE_TYPE_ESP32) {
 		printf("\n\rESP-Hosted for ESP32\n\r");
-	} else if (hardware_type == HARDWARE_TYPE_ESP32S2) {
-		printf("\n\rESP-Hosted for ESP32S2\n\r");
+	} else if (hardware_type == HARDWARE_TYPE_ESP32S2_ESP32C3) {
+		printf("\n\rESP-Hosted for ESP32S2 or ESP32C3\n\r");
 	} else {
 		printf("Unsupported slave hardware\n\r");
 		assert(hardware_type != HARDWARE_TYPE_INVALID);
