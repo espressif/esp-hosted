@@ -512,8 +512,8 @@ int wifi_get_ap_config (esp_hosted_control_config_t *ap_config)
         }
         if (resp->resp_get_ap_config->bssid.data) {
             strncpy((char *)ap_config->station.bssid,
-                    (char *)resp->resp_get_ap_config->bssid.data, MAC_LENGTH);
-            ap_config->station.bssid[MAC_LENGTH-1] = '\0';
+                    (char *)resp->resp_get_ap_config->bssid.data, BSSID_LENGTH);
+            ap_config->station.bssid[BSSID_LENGTH-1] = '\0';
         }
 
         ap_config->station.channel = resp->resp_get_ap_config->chnl;
