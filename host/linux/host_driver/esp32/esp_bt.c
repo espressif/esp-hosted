@@ -21,6 +21,16 @@
 
 #define INVALID_HDEV_BUS (0xff)
 
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 13, 0))
+    #define ESP_BT_SEND_FRAME_PROTOTYPE() \
+        static int esp_bt_send_frame(struct hci_dev* hdev, struct sk_buff *skb)
+#else
+    #define ESP_BT_SEND_FRAME_PROTOTYPE() \
+        static int esp_bt_send_frame(struct sk_buff *skb)
+#endif
+
+ESP_BT_SEND_FRAME_PROTOTYPE();
+
 void esp_hci_update_tx_counter(struct hci_dev *hdev, u8 pkt_type, size_t len)
 {
 	if (hdev) {
@@ -66,11 +76,14 @@ static int esp_bt_flush(struct hci_dev *hdev)
 	return 0;
 }
 
-static int esp_bt_send_frame(struct hci_dev *hdev, struct sk_buff *skb)
+ESP_BT_SEND_FRAME_PROTOTYPE()
 {
 	struct esp_payload_header *hdr;
 	size_t total_len, len = skb->len;
 	int ret = 0;
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(3, 13, 0))
+    struct hci_dev * hdev = (struct hci_dev *)(skb->dev);
+#endif
 	struct esp_adapter *adapter = hci_get_drvdata(hdev);
 	struct sk_buff *new_skb;
 
@@ -120,15 +133,19 @@ static int esp_bt_send_frame(struct hci_dev *hdev, struct sk_buff *skb)
 	return 0;
 }
 
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 10, 0))
 static int esp_bt_setup(struct hci_dev *hdev)
 {
 	return 0;
 }
+#endif
 
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 17, 0))
 static int esp_bt_set_bdaddr(struct hci_dev *hdev, const bdaddr_t *bdaddr)
 {
 	return 0;
 }
+#endif
 
 int esp_deinit_bt(struct esp_adapter *adapter)
 {
@@ -172,14 +189,12 @@ int esp_init_bt(struct esp_adapter *adapter)
 
 	hdev->bus = INVALID_HDEV_BUS;
 
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 19))
 	if (adapter->if_type == ESP_IF_TYPE_SDIO)
 		hdev->bus   = HCI_SDIO;
-  #if (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 7, 0))
+    #if (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 7, 0))
 	else if (adapter->if_type == ESP_IF_TYPE_SPI)
 		hdev->bus   = HCI_SPI;
-  #endif
-#endif
+    #endif
 
 	if (hdev->bus == INVALID_HDEV_BUS) {
 
@@ -199,8 +214,14 @@ int esp_init_bt(struct esp_adapter *adapter)
 	hdev->close = esp_bt_close;
 	hdev->flush = esp_bt_flush;
 	hdev->send  = esp_bt_send_frame;
+
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 10, 0))
 	hdev->setup = esp_bt_setup;
+#endif
+
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 17, 0))
 	hdev->set_bdaddr = esp_bt_set_bdaddr;
+#endif
 
 	hdev->dev_type = HCI_PRIMARY;
 
