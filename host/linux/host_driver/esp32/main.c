@@ -22,7 +22,6 @@
 #include <linux/kernel.h>
 #include <linux/delay.h>
 #include <linux/slab.h>
-#include <linux/timekeeping.h>
 #include <linux/etherdevice.h>
 #include <linux/netdevice.h>
 #include <linux/gpio.h>
@@ -63,6 +62,30 @@ static int resetpin = HOST_GPIO_PIN_INVALID;
 
 module_param(resetpin, int, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
 MODULE_PARM_DESC(resetpin, "Host's GPIO pin number which is connected to ESP32's EN to reset ESP32 device");
+
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(3, 14, 0))
+/**
+ * ether_addr_copy - Copy an Ethernet address
+ * @dst: Pointer to a six-byte array Ethernet address destination
+ * @src: Pointer to a six-byte array Ethernet address source
+ *
+ * Please note: dst & src must both be aligned to u16.
+ */
+static inline void ether_addr_copy(u8 *dst, const u8 *src)
+{
+#if defined(CONFIG_HAVE_EFFICIENT_UNALIGNED_ACCESS)
+	*(u32 *)dst = *(const u32 *)src;
+	*(u16 *)(dst + 4) = *(const u16 *)(src + 4);
+#else
+	u16 *a = (u16 *)dst;
+	const u16 *b = (const u16 *)src;
+
+	a[0] = b[0];
+	a[1] = b[1];
+	a[2] = b[2];
+#endif
+}
+#endif
 
 static int esp_open(struct net_device *ndev);
 static int esp_stop(struct net_device *ndev);
@@ -350,7 +373,11 @@ static void process_rx_packet(struct sk_buff *skb)
 			hci_skb_pkt_type(skb) = *type;
 			skb_pull(skb, 1);
 
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 13, 0))
 			if (hci_recv_frame(hdev, skb)) {
+#else
+			if (hci_recv_frame(skb)) {
+#endif
 				hdev->stat.err_rx++;
 			} else {
 				esp_hci_update_rx_counter(hdev, *type, skb->len);
@@ -493,8 +520,13 @@ static int esp_add_interface(struct esp_adapter *adapter, u8 if_type, u8 if_num,
 	struct esp_private *priv = NULL;
 	int ret = 0;
 
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 17, 0))
 	ndev = alloc_netdev_mqs(sizeof(struct esp_private), name,
 			NET_NAME_ENUM, ether_setup, 1, 1);
+#else
+	ndev = alloc_netdev_mqs(sizeof(struct esp_private), name,
+			ether_setup, 1, 1);
+#endif
 
 	if (!ndev) {
 		printk(KERN_ERR "%s: alloc failed\n", __func__);

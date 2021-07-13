@@ -66,3 +66,25 @@ $ sudo systemctl status bluetooth
 * Output of above mentioned commands
 * ESP console log
 * hcidump log (`hcidump -X -t`)
+
+## 5. Unknown symbol error while executing rpi_init.sh
+If user gets below dmesg log
+```
+[11827.359298] esp32_sdio: Unknown symbol sdio_release_host (err 0)
+[11827.359308] esp32_sdio: Unknown symbol sdio_disable_func (err 0)
+[11827.359322] esp32_sdio: Unknown symbol sdio_claim_host (err 0)
+[11827.359326] esp32_sdio: Unknown symbol sdio_memcpy_fromio (err 0)
+[11827.359337] esp32_sdio: Unknown symbol sdio_register_driver (err 0)
+[11827.359357] esp32_sdio: Unknown symbol sdio_memcpy_toio (err 0)
+[11827.359368] esp32_sdio: Unknown symbol sdio_release_irq (err 0)
+[11827.359373] esp32_sdio: Unknown symbol sdio_unregister_driver (err 0)
+[11827.359402] esp32_sdio: Unknown symbol sdio_claim_irq (err 0)
+[11827.359406] esp32_sdio: Unknown symbol sdio_enable_func (err 0)
+[11827.359417] esp32_sdio: Unknown symbol sdio_readb (err 0)
+[11827.359421] esp32_sdio: Unknown symbol sdio_writeb (err 0)
+```
+It indicates sdhci is not compiled as a part of kernel.
+Run below command before execution of rpi_init.sh
+```
+sudo modprobe sdhci
+```

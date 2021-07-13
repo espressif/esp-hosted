@@ -25,10 +25,10 @@
 
 
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(4, 5, 0))
-	#if (LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 14))
+	#if (LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 34))
 		#define hci_skb_pkt_type(skb) bt_cb((skb))->pkt_type
 	#else
-		#error "No symbol bt_cb((skb))->pkt_type in kernel < 2.6.14"
+        #error "ESP-Hosted solution doesn't supported below kernel version < 2.6.34"
 	#endif
 #endif
 
@@ -36,7 +36,7 @@
 	#if (LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 34)) 
 		#define HCI_PRIMARY HCI_BREDR
 	#else
-		#error "No symbol HCI_BREDR found in kernel < 2.6.34"
+        #error "ESP-Hosted solution doesn't supported below kernel version < 2.6.34"
 	#endif
 #endif
 
