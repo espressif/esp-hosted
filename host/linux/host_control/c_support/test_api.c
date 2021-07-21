@@ -151,7 +151,7 @@ int test_station_mode_connect()
         printf("SSID: %s not found \n",(char *)&config.station.ssid);
     } else if (ret == INVALID_PASSWORD){
         printf("Invalid password %s for SSID %s\n", (char *)&config.station.pwd ,\
-				(char *)&config.station.ssid);
+                (char *)&config.station.ssid);
     } else {
         printf("Failed to connect with AP \n");
     }
@@ -185,6 +185,7 @@ void test_get_available_wifi()
 {
     int count = 0;
     esp_hosted_wifi_scanlist_t *list = NULL;
+    int i = 0;
 
     printf("==== %s =>\n",__func__);
     list = wifi_ap_scan_list(&count);
@@ -195,7 +196,7 @@ void test_get_available_wifi()
         printf("Failed to get scanned AP list \n");
     } else {
         printf("Number of available APs is %d \n", count);
-        for (int i=0; i<count; i++) {
+        for (i=0; i<count; i++) {
             printf("%d th AP's ssid \"%s\" bssid \"%s\" rssi \"%d\" channel \"%d\" authentication mode \"%d\" \n",\
                     i, list[i].ssid, list[i].bssid, list[i].rssi, list[i].channel,\
                     list[i].encryption_mode);
@@ -275,6 +276,7 @@ void test_softap_mode_connected_clients_info()
 {
     int count = 0;
     esp_hosted_wifi_connected_stations_list *stations_list = NULL;
+    int i = 0;
 
     printf("==== %s =>\n",__func__);
     stations_list = wifi_connected_stations_list(&count);
@@ -283,7 +285,7 @@ void test_softap_mode_connected_clients_info()
     } else if (!stations_list) {
         printf("Failed to get connected stations list \n");
     } else if (count) {
-        for (int i=0; i<count; i++) {
+        for (i=0; i<count; i++) {
             printf("%d th stations's bssid \"%s\" rssi \"%d\" \n",i, \
                     stations_list[i].bssid, stations_list[i].rssi);
         }

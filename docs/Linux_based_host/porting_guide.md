@@ -35,7 +35,36 @@ Driver underlies heavily over underlying kernel. ESP-Hosted is tested over Linux
 * spidev_disabler
 	* This is applicable for SPI peripheral configuration and explained in next section.
 
-##### 1.2.3 Peripheral configurations
+##### 1.2.3 cross compilation
+
+* Kernel Module  
+Within [rpi_init.sh](../../host/linux/host_control/rpi_init.sh), make command used is Raspberry Pi specific. Following tags in `make` command should be changed as per platform
+	- CROSS_COMPILE - This to be point to toolchain path. For arm example, it should point till `<Toolchain-Path>/bin/arm-linux-gnueabihf-`
+	- KERNEL - Place where kernel is checked out and built
+	- ARCH - Expected architecture
+
+For example, For architecture `arm64`, toolchain checked out at `/home/user1/arm64_toolchain/` and kernel source built at `/home/user1/arm64_kernel/`, cross compilation commands should look like,
+
+```sh
+make target=$IF_TYPE \
+ARCH=arm64 \
+CROSS_COMPILE=/home/user1/arm64_toolchain/bin/aarch64-linux-gnu- \
+KERNEL=/home/user1/arm64_kernel
+```
+
+* C control path test application  
+Test application is located at `host/linux/host_control/c_support`.
+If application built within target, there is no need for cross compilation and simple `make` is sufficient.
+To cross-copile from host, below additional option to be used
+	- CROSS_COMPILE - This point to toolchain path
+
+For example, For if toolchain checked out at `/home/user1/arm64_toolchain/`, make command should look like,
+
+```sh
+make CROSS_COMPILE=/home/user1/arm64_toolchain/bin/aarch64-linux-gnu-
+```
+
+##### 1.2.4 Peripheral configurations
 
 * SPI
 	* Disable default SPI driver
@@ -59,8 +88,11 @@ Driver underlies heavily over underlying kernel. ESP-Hosted is tested over Linux
 		- Whereas ESP32S2 supports 40MHz SPI clock.
 		- Raspberry Pi is tested with 10MHz clock with ESP32 and 30MHz with ESP32S2.
 		- Raspberry Pi had issues while going to higher frequency than 30MHz.
-		- While porting, the SPI clock frequency from low to high could be tested to optimize. Maximum SPI peripheral clock supported at ESP (slave) side is 40MHz.
-
+		- While porting, the SPI clock frequency from low to high could be tested to optimize.
+		- SPI clock frequency could be changed from macro `SPI_CLK_MHZ_XXX` in `esp/esp_driver/network_adapter/main/spi_slave_api.c`
+	* SPI Bus instance and Chip select number
+		- Default value for both is 0, _i.e._ SPI0 and chip select 0.
+		- It could be changed using variables, `esp_board.bus_num` and `esp_board.chip_select` in function `spi_dev_init()` from file `host/linux/host_driver/esp32/spi/esp_spi.c`
 ### 1.3 Additional information
 This is list of bug where developers have given their inputs. These are not tested/endorsed but are for informational purpose only.
 - [Issue#23](https://github.com/espressif/esp-hosted/issues/23)
