@@ -31,7 +31,12 @@ wlan_init()
 		fi
 	fi
 
-	make -j8 target=$IF_TYPE
+	# For Linux other than Raspberry Pi, Please point
+	# CROSS_COMPILE -> <Toolchain-Path>/bin/arm-linux-gnueabihf-
+	# KERNEL        -> Place where kernel is checked out and built
+	# ARCH          -> Architecture
+	make -j8 target=$IF_TYPE CROSS_COMPILE=/usr/bin/arm-linux-gnueabihf- KERNEL="/lib/modules/$(uname -r)/build" ARCH=arm 
+
 	if [ "$RESETPIN" = "" ] ; then
 		#By Default, BCM6 is GPIO on host. use resetpin=6
 		sudo insmod $MODULE_NAME resetpin=6

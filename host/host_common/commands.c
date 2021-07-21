@@ -273,7 +273,7 @@ int wifi_set_mode (int mode)
 
     if ((mode < WIFI_MODE_NONE) || (mode >= WIFI_MODE_MAX)) {
         command_log("Invalid wifi mode\n");
-	return FAILURE;
+        return FAILURE;
     }
 
     esp_hosted_config_payload__init (&req);
@@ -414,7 +414,7 @@ int wifi_set_ap_config (esp_hosted_control_config_t ap_config)
 
     if (resp->resp_set_ap_config->resp == INVALID_PASSWORD) {
         command_log("Invalid password %s for SSID %s\n",\
-		        (char *)&ap_config.station.pwd, (char *)&ap_config.station.ssid);
+                (char *)&ap_config.station.pwd, (char *)&ap_config.station.ssid);
         mem_free(tx_data);
         mem_free(rx_data);
         mem_free(req_payload);
@@ -842,6 +842,7 @@ esp_hosted_wifi_scanlist_t* wifi_ap_scan_list (int *count)
     uint32_t tx_len = 0, rx_len = 0;
     uint8_t *tx_data = NULL, *rx_data = NULL;
     esp_hosted_wifi_scanlist_t *list = NULL;
+    int i = 0;
 
     if (!count) {
         command_log("Invalid parameter\n");
@@ -898,7 +899,7 @@ esp_hosted_wifi_scanlist_t* wifi_ap_scan_list (int *count)
         }
     }
 
-    for (int i=0; i<resp->resp_scan_ap_list->count; i++) {
+    for (i=0; i<resp->resp_scan_ap_list->count; i++) {
         memcpy(list[i].ssid,
                 (char *)resp->resp_scan_ap_list->entries[i]->ssid.data,
                 resp->resp_scan_ap_list->entries[i]->ssid.len);
@@ -929,6 +930,7 @@ esp_hosted_wifi_connected_stations_list* wifi_connected_stations_list(int *num)
     uint32_t tx_len = 0, rx_len = 0;
     uint8_t *tx_data = NULL, *rx_data = NULL;
     esp_hosted_wifi_connected_stations_list *list = NULL;
+    int i = 0;
 
     if (!num) {
         command_log("Invalid parameter\n");
@@ -980,7 +982,7 @@ esp_hosted_wifi_connected_stations_list* wifi_connected_stations_list(int *num)
             goto err1;
         }
     }
-    for (int i=0; i<resp->resp_connected_stas_list->num; i++) {
+    for (i=0; i<resp->resp_connected_stas_list->num; i++) {
         memcpy(list[i].bssid,
                 (char *)resp->resp_connected_stas_list->stations[i]->mac.data,
                 resp->resp_connected_stas_list->stations[i]->mac.len);

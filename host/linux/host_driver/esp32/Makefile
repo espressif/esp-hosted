@@ -1,6 +1,13 @@
 CONFIG_SUPPORT_ESP_SERIAL = y
 CONFIG_ENABLE_MONITOR_PROCESS = n
 
+# Toolchain Path
+CROSS_COMPILE := /usr/bin/arm-linux-gnueabihf-
+# Linux Kernel header
+KERNEL := /lib/modules/$(shell uname -r)/build
+# Architecture
+ARCH := arm
+
 #Default interface is sdio
 MODULE_NAME=esp32_sdio
 
@@ -33,7 +40,6 @@ ifeq ($(MODULE_NAME), esp32_spi)
 	module_objects += spi/esp_spi.o
 endif
 
-CR_C := arm-linux-gnueabihf-
 PWD := $(shell pwd)
 
 obj-m := $(MODULE_NAME).o
@@ -44,8 +50,8 @@ ifeq ($(CONFIG_SUPPORT_ESP_SERIAL), y)
 endif
 
 all: clean
-	make ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- -C /lib/modules/$(shell uname -r)/build M=$(PWD) modules
+	make ARCH=$(ARCH) CROSS_COMPILE=$(CROSS_COMPILE) -C $(KERNEL) M=$(PWD) modules
 
 clean:
 	rm -rf *.o sdio/*.o spi/*.o *.ko
-	make ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- -C /lib/modules/$(shell uname -r)/build M=$(PWD) clean
+	make ARCH=$(ARCH) CROSS_COMPILE=$(CROSS_COMPILE) -C $(KERNEL) M=$(PWD) clean
