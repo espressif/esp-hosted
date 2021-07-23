@@ -43,6 +43,9 @@ struct esp_adapter;
 #define ACQUIRE_LOCK            1
 #define LOCK_ALREADY_ACQUIRED   0
 
+#define SKB_DATA_ADDR_ALIGNMENT 4
+#define INTERFACE_HEADER_PADDING (SKB_DATA_ADDR_ALIGNMENT*3)
+
 struct esp_adapter {
 	u8                      if_type;
 	u32                     capabilities;

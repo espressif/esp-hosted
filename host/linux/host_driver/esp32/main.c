@@ -96,6 +96,7 @@ static struct net_device_stats* esp_get_stats(struct net_device *ndev);
 static void esp_set_rx_mode(struct net_device *ndev);
 static int process_tx_packet (struct sk_buff *skb);
 int esp_send_packet(struct esp_adapter *adapter, struct sk_buff *skb);
+struct sk_buff * esp_alloc_skb(u32 len);
 
 static const struct net_device_ops esp_netdev_ops = {
 	.ndo_open = esp_open,
@@ -158,7 +159,6 @@ static void esp_set_rx_mode(struct net_device *ndev)
 
 static int esp_hard_start_xmit(struct sk_buff *skb, struct net_device *ndev)
 {
-	struct sk_buff *new_skb = NULL;
 	struct esp_private *priv = netdev_priv(ndev);
 	struct esp_skb_cb *cb = NULL;
 
@@ -174,27 +174,8 @@ static int esp_hard_start_xmit(struct sk_buff *skb, struct net_device *ndev)
 		return -EINVAL;
 	}
 
-	if (skb_headroom(skb) < ESP_PAYLOAD_HEADER) {
-		/* Insufficient space. Realloc skb. */
-		new_skb = skb_realloc_headroom(skb, ESP_PAYLOAD_HEADER);
-
-		if (unlikely(!new_skb)) {
-			printk (KERN_ERR "%s: Failed to allocate SKB\n", __func__);
-			priv->stats.tx_dropped++;
-			dev_kfree_skb(skb);
-			return -ENOMEM;
-		}
-
-		/* Free old SKB */
-		dev_kfree_skb(skb);
-
-		skb = new_skb;
-	}
-
 	cb = (struct esp_skb_cb *) skb->cb;
 	cb->priv = priv;
-
-/*	print_hex_dump_bytes("Tx:", DUMP_PREFIX_NONE, skb->data, 8);*/
 
 	return process_tx_packet(skb);
 }
@@ -240,9 +221,11 @@ static int process_tx_packet (struct sk_buff *skb)
 	struct esp_payload_header *payload_header = NULL;
 	struct sk_buff *new_skb = NULL;
 	int ret = 0;
-	u8 pad_len = 0;
+	u8 pad_len = 0, realloc_skb = 0;
 	u16 len = 0;
-	static u32 c = 0;
+	u16 total_len = 0;
+	static u8 c = 0;
+	u8 *pos = NULL;
 
 	c++;
 	/* Get the priv */
@@ -251,7 +234,7 @@ static int process_tx_packet (struct sk_buff *skb)
 
 	if (!priv) {
 		dev_kfree_skb(skb);
-		return -EINVAL;
+		return NETDEV_TX_OK;
 	}
 
 	len = skb->len;
@@ -259,22 +242,47 @@ static int process_tx_packet (struct sk_buff *skb)
 	/* Create space for payload header */
 	pad_len = sizeof(struct esp_payload_header);
 
+	total_len = len + pad_len;
+
+	/* Align buffer length */
+	pad_len += SKB_DATA_ADDR_ALIGNMENT - (total_len % SKB_DATA_ADDR_ALIGNMENT);
+
 	if (skb_headroom(skb) < pad_len) {
-		/* insufficent headroom to add payload header */
-		new_skb = skb_realloc_headroom(skb, pad_len);
-
-		if(!new_skb) {
-			printk(KERN_ERR "%s: Failed to allocate SKB", __func__);
-			dev_kfree_skb(skb);
-			return -ENOMEM;
-		}
-
-		dev_kfree_skb(skb);
-
-		skb = new_skb;
+		/* Headroom is not sufficient */
+		realloc_skb = 1;
 	}
 
-	skb_push(skb, pad_len);
+	if (realloc_skb || !IS_ALIGNED((unsigned long) skb->data, SKB_DATA_ADDR_ALIGNMENT)) {
+		/* Realloc SKB */
+		if (skb_linearize(skb)) {
+			priv->stats.tx_errors++;
+			dev_kfree_skb(skb);
+			return NETDEV_TX_OK;
+		}
+
+		new_skb = esp_alloc_skb(skb->len + pad_len);
+
+		if (!new_skb) {
+			printk(KERN_ERR "%s: Failed to allocate SKB", __func__);
+			priv->stats.tx_errors++;
+			dev_kfree_skb(skb);
+			return NETDEV_TX_OK;
+		}
+
+		pos = new_skb->data;
+		pos += pad_len;
+
+		/* Populate new SKB */
+		skb_copy_from_linear_data(skb, pos, skb->len);
+		skb_put(new_skb, skb->len);
+
+		/* Replace old SKB */
+		dev_kfree_skb_any(skb);
+		skb = new_skb;
+	} else {
+		/* Realloc is not needed, Make space for interface header */
+		skb_push(skb, pad_len);
+	}
 
 	/* Set payload header */
 	payload_header = (struct esp_payload_header *) skb->data;
@@ -282,12 +290,9 @@ static int process_tx_packet (struct sk_buff *skb)
 
 	payload_header->if_type = priv->if_type;
 	payload_header->if_num = priv->if_num;
-	payload_header->len = cpu_to_le16(skb->len - pad_len);
+	payload_header->len = cpu_to_le16(len);
 	payload_header->offset = cpu_to_le16(pad_len);
 	payload_header->reserved1 = c % 255;
-
-	/* printk (KERN_ERR "H -> S: %d %d %d %d", len, payload_header->offset,*/
-	/* payload_header->len, payload_header->reserved1);*/
 
 	if (!stop_data) {
 		ret = esp_send_packet(priv->adapter, skb);
@@ -357,7 +362,6 @@ static void process_rx_packet(struct sk_buff *skb)
 		skb->dev = priv->ndev;
 		skb->protocol = eth_type_trans(skb, priv->ndev);
 		skb->ip_summed = CHECKSUM_NONE;
-		/* print_hex_dump_bytes("Rx:", DUMP_PREFIX_NONE, skb->data, 8); */
 
 		/* Forward skb to kernel */
 		netif_rx(skb);
@@ -420,7 +424,18 @@ struct sk_buff * esp_alloc_skb(u32 len)
 {
 	struct sk_buff *skb = NULL;
 
-	skb = netdev_alloc_skb(NULL, len);
+	u8 offset;
+
+	skb = netdev_alloc_skb(NULL, len + INTERFACE_HEADER_PADDING);
+
+	if (skb) {
+		/* Align SKB data pointer */
+		offset = ((unsigned long)skb->data) & (SKB_DATA_ADDR_ALIGNMENT - 1);
+
+		if (offset)
+			skb_reserve(skb, INTERFACE_HEADER_PADDING - offset);
+	}
+
 	return skb;
 }
 
