@@ -145,8 +145,7 @@ static int is_valid_trans_buffer(uint8_t *trans_buf)
 	len = le16toh(header->len);
 	offset = le16toh(header->offset);
 
-	if (!len || (len > SPI_BUFFER_SIZE) ||
-            (offset != sizeof(struct esp_payload_header))) {
+	if (!len || (len > SPI_BUFFER_SIZE)) {
 		return pdFALSE;
 	}
 
@@ -251,7 +250,7 @@ static int process_spi_rx(interface_buffer_handle_t *buf_handle)
 	len = le16toh(header->len);
 	offset = le16toh(header->offset);
 
-	if (!len || (len > SPI_BUFFER_SIZE) || (offset != sizeof(struct esp_payload_header))) {
+	if (!len || (len > SPI_BUFFER_SIZE)) {
 		return -1;
 	}
 
@@ -259,7 +258,7 @@ static int process_spi_rx(interface_buffer_handle_t *buf_handle)
 	buf_handle->if_type = header->if_type;
 	buf_handle->if_num = header->if_num;
 	buf_handle->free_buf_handle = esp_spi_read_done;
-	buf_handle->payload_len = le16toh(header->len) + sizeof(struct esp_payload_header);
+	buf_handle->payload_len = le16toh(header->len) + offset;
 	buf_handle->priv_buffer_handle = buf_handle->payload;
 
 	ret = xQueueSend(spi_rx_queue, buf_handle, portMAX_DELAY);

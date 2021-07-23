@@ -31,6 +31,7 @@
 #include "esp_serial.h"
 #endif
 #include <linux/kthread.h>
+#include <linux/printk.h>
 
 #define TX_MAX_PENDING_COUNT    700
 #define TX_RESUME_THRESHOLD     (TX_MAX_PENDING_COUNT - (TX_MAX_PENDING_COUNT/5))
@@ -95,7 +96,7 @@ static void esp_process_interrupt(struct esp_sdio_context *context, u32 int_stat
 static void esp_handle_isr(struct sdio_func *func)
 {
 	struct esp_sdio_context *context = NULL;
-	u32 int_status = 0;
+	u32 *int_status;
 	int ret;
 
 	if (!func) {
@@ -108,26 +109,49 @@ static void esp_handle_isr(struct sdio_func *func)
 		return;
 	}
 
+	int_status = kmalloc(sizeof(u32), GFP_ATOMIC);
+
+	if (!int_status) {
+		return;
+	}
+
 	/* Read interrupt status register */
 	ret = esp_read_reg(context, ESP_SLAVE_INT_ST_REG,
-			(u8 *) &int_status, sizeof(int_status), ACQUIRE_LOCK);
+			(u8 *) int_status, sizeof(* int_status), ACQUIRE_LOCK);
 	CHECK_SDIO_RW_ERROR(ret);
 
-	esp_process_interrupt(context, int_status);
+	esp_process_interrupt(context, *int_status);
 
 	/* Clear interrupt status */
 	ret = esp_write_reg(context, ESP_SLAVE_INT_CLR_REG,
-			(u8 *) &int_status, sizeof(int_status), ACQUIRE_LOCK);
+			(u8 *) int_status, sizeof(* int_status), ACQUIRE_LOCK);
 	CHECK_SDIO_RW_ERROR(ret);
+
+	kfree(int_status);
 }
 
 int generate_slave_intr(struct esp_sdio_context *context, u8 data)
 {
+	u8 *val;
+	int ret = 0;
+
 	if (!context)
 		return -EINVAL;
 
-	return esp_write_reg(context, ESP_SLAVE_SCRATCH_REG_7, &data,
-			sizeof(data), ACQUIRE_LOCK);
+	val = kmalloc(sizeof(u8), GFP_KERNEL);
+
+	if (!val) {
+		return -ENOMEM;
+	}
+
+	*val = data;
+
+	ret = esp_write_reg(context, ESP_SLAVE_SCRATCH_REG_7, val,
+			sizeof(*val), ACQUIRE_LOCK);
+
+	kfree(val);
+
+	return ret;
 }
 
 static void deinit_sdio_func(struct sdio_func *func)
@@ -143,50 +167,69 @@ static void deinit_sdio_func(struct sdio_func *func)
 
 static int esp_slave_get_tx_buffer_num(struct esp_sdio_context *context, u32 *tx_num, u8 is_lock_needed)
 {
-    u32 len;
-    int ret = 0;
+	u32 *len = NULL;
+	int ret = 0;
 
-    ret = esp_read_reg(context, ESP_SLAVE_TOKEN_RDATA, (uint8_t*)&len, 4, is_lock_needed);
+	len = kmalloc(sizeof(u32), GFP_KERNEL);
 
-    if (ret)
-	    return ret;
+	if (!len) {
+		return -ENOMEM;
+	}
 
-    len = (len >> 16) & ESP_TX_BUFFER_MASK;
-    len = (len + ESP_TX_BUFFER_MAX - context->tx_buffer_count) % ESP_TX_BUFFER_MAX;
+	ret = esp_read_reg(context, ESP_SLAVE_TOKEN_RDATA, (u8*) len, sizeof(*len), is_lock_needed);
 
-    *tx_num = len;
+	if (ret) {
+		kfree(len);
+		return ret;
+	}
 
-    return ret;
+	*len = (*len >> 16) & ESP_TX_BUFFER_MASK;
+	*len = (*len + ESP_TX_BUFFER_MAX - context->tx_buffer_count) % ESP_TX_BUFFER_MAX;
+
+	*tx_num = *len;
+
+	kfree(len);
+	return ret;
 }
 
 static int esp_get_len_from_slave(struct esp_sdio_context *context, u32 *rx_size, u8 is_lock_needed)
 {
-    u32 len, temp;
-    int ret = 0;
+	u32 *len;
+	u32 temp;
+	int ret = 0;
 
-    ret = esp_read_reg(context, ESP_SLAVE_PACKET_LEN_REG,
-		    (u8 *) &len, sizeof(len), is_lock_needed);
+	len = kmalloc(sizeof(u32), GFP_KERNEL);
 
-    if (ret)
-	    return ret;
+	if (!len) {
+		return -ENOMEM;
+	}
 
-    len &= ESP_SLAVE_LEN_MASK;
+	ret = esp_read_reg(context, ESP_SLAVE_PACKET_LEN_REG,
+			(u8 *) len, sizeof(*len), is_lock_needed);
 
-    if (len >= context->rx_byte_count)
-	    len = (len + ESP_RX_BYTE_MAX - context->rx_byte_count) % ESP_RX_BYTE_MAX;
-    else {
-	    /* Handle a case of roll over */
-	    temp = ESP_RX_BYTE_MAX - context->rx_byte_count;
-	    len = temp + len;
+	if (ret) {
+		kfree (len);
+		return ret;
+	}
 
-	    if (len > ESP_RX_BUFFER_SIZE) {
-		    printk(KERN_INFO "%s: Len from slave[%d] exceeds max [%d]\n",
-				    __func__, len, ESP_RX_BUFFER_SIZE);
-	    }
-    }
-    *rx_size = len;
+	*len &= ESP_SLAVE_LEN_MASK;
 
-    return 0;
+	if (*len >= context->rx_byte_count)
+		*len = (*len + ESP_RX_BYTE_MAX - context->rx_byte_count) % ESP_RX_BYTE_MAX;
+	else {
+		/* Handle a case of roll over */
+		temp = ESP_RX_BYTE_MAX - context->rx_byte_count;
+		*len = temp + *len;
+
+		if (*len > ESP_RX_BUFFER_SIZE) {
+			printk(KERN_INFO "%s: Len from slave[%d] exceeds max [%d]\n",
+					__func__, *len, ESP_RX_BUFFER_SIZE);
+		}
+	}
+	*rx_size = *len;
+
+	kfree (len);
+	return 0;
 }
 
 
@@ -263,40 +306,43 @@ static struct esp_if_ops if_ops = {
 static int init_context(struct esp_sdio_context *context)
 {
 	int ret = 0;
-	u32 val = 0;
+	u32 *val;
 
 	if (!context) {
 		return -EINVAL;
 	}
 
+	val = kmalloc(sizeof(u32), GFP_KERNEL);
+
+	if (!val) {
+		return -ENOMEM;
+	}
+
 	/* Initialize rx_byte_count */
 	ret = esp_read_reg(context, ESP_SLAVE_PACKET_LEN_REG,
-			(u8 *) &val, sizeof(val), ACQUIRE_LOCK);
-	if (ret)
+			(u8 *) val, sizeof(* val), ACQUIRE_LOCK);
+	if (ret) {
+		kfree(val);
 		return ret;
+	}
 
-/*	printk(KERN_DEBUG "%s: LEN %d\n", __func__, (val & ESP_SLAVE_LEN_MASK));*/
-
-	context->rx_byte_count = val & ESP_SLAVE_LEN_MASK;
+	context->rx_byte_count = *val & ESP_SLAVE_LEN_MASK;
 
 	/* Initialize tx_buffer_count */
-	ret = esp_read_reg(context, ESP_SLAVE_TOKEN_RDATA, (u8 *) &val,
-			sizeof(val), ACQUIRE_LOCK);
+	ret = esp_read_reg(context, ESP_SLAVE_TOKEN_RDATA, (u8 *) val,
+			sizeof(* val), ACQUIRE_LOCK);
 
-	if (ret)
+	if (ret) {
+		kfree(val);
 		return ret;
+	}
 
-	val = ((val >> 16) & ESP_TX_BUFFER_MASK);
+	*val = ((*val >> 16) & ESP_TX_BUFFER_MASK);
 
-/*	printk(KERN_DEBUG "%s: BUF_CNT %d\n", __func__, val);*/
-
-	if (val >= ESP_MAX_BUF_CNT)
-		context->tx_buffer_count = val - ESP_MAX_BUF_CNT;
+	if (*val >= ESP_MAX_BUF_CNT)
+		context->tx_buffer_count = (*val) - ESP_MAX_BUF_CNT;
 	else
 		context->tx_buffer_count = 0;
-
-/*	printk(KERN_DEBUG "%s: Context init %d - %d\n", __func__, context->rx_byte_count,*/
-/*			context->tx_buffer_count);*/
 
 	context->adapter = esp_get_adapter();
 
@@ -308,6 +354,7 @@ static int init_context(struct esp_sdio_context *context)
 
 	context->adapter->if_type = ESP_IF_TYPE_SDIO;
 
+	kfree(val);
 	return ret;
 }
 
@@ -332,8 +379,6 @@ static struct sk_buff * read_packet(struct esp_adapter *adapter)
 
 	/* Read length */
 	ret = esp_get_len_from_slave(context, &len_from_slave, LOCK_ALREADY_ACQUIRED);
-
-/*	printk (KERN_DEBUG "LEN FROM SLAVE: %d\n", len_from_slave);*/
 
 	if (ret || !len_from_slave) {
 		sdio_release_host(context->func);
@@ -382,7 +427,7 @@ static struct sk_buff * read_packet(struct esp_adapter *adapter)
 		}
 
 		if (ret) {
-			printk (KERN_ERR "%s: Failed to read data - %d [%u]\n", __func__, ret, num_blocks);
+			printk (KERN_ERR "%s: Failed to read data - %d [%u - %d]\n", __func__, ret, num_blocks, len_to_read);
 			dev_kfree_skb(skb);
 			sdio_release_host(context->func);
 			return NULL;
@@ -424,7 +469,6 @@ static int write_packet(struct esp_adapter *adapter, struct sk_buff *skb)
 		dev_kfree_skb(skb);
 		return -EBUSY;
 	}
-
 
 	/* Notify to process queue */
 	atomic_inc(&queue_items);
@@ -481,11 +525,6 @@ static int tx_process(void *data)
 
 		ret = esp_slave_get_tx_buffer_num(context, &buf_available, LOCK_ALREADY_ACQUIRED);
 
-		///if (unlikely(ret))
-		///     dev_kfree_skb(tx_skb);
-		///	continue;
-
-
 		if (buf_available < buf_needed) {
 			printk(KERN_DEBUG "%s: Drop pkt: available bufs[%d] < needed bufs[%d]\n",
 				__func__, buf_available, buf_needed);
@@ -511,12 +550,10 @@ static int tx_process(void *data)
 					pos, (len_to_send + 3) & (~3), LOCK_ALREADY_ACQUIRED);
 
 			if (ret) {
-				printk (KERN_ERR "%s: Failed to send data\n", __func__);
+				printk (KERN_ERR "%s: Failed to send data: %d %d %d\n", __func__, ret, len_to_send, data_left);
 				sdio_release_host(context->func);
 				break;
 			}
-
-			/* printk (KERN_ERR "--> %d %d %d\n", block_cnt, data_left, len_to_send); */
 
 			data_left -= len_to_send;
 			pos += len_to_send;
@@ -635,7 +672,7 @@ static int esp_probe(struct sdio_func *func,
 {
 	struct esp_sdio_context *context = NULL;
 	int ret = 0;
-	uint32_t cap = 0;
+	uint32_t *cap;
 
 	if (func->num != 1) {
 		return -EINVAL;
@@ -682,17 +719,36 @@ static int esp_probe(struct sdio_func *func,
 		return ret;
 	}
 
+	cap = kmalloc(sizeof(u32), GFP_KERNEL);
+
+	if (!cap) {
+		esp_remove(func);
+		printk (KERN_ERR "Failed to allocate memory\n");
+		deinit_sdio_func(func);
+		return -ENOMEM;
+	}
+
 	/* Read slave capabilities */
-	esp_read_reg(context, ESP_SLAVE_SCRATCH_REG_0,
-			(u8 *) &cap, sizeof(cap), ACQUIRE_LOCK);
+	ret = esp_read_reg(context, ESP_SLAVE_SCRATCH_REG_0,
+			(u8 *) cap, sizeof(* cap), ACQUIRE_LOCK);
 
-	context->adapter->capabilities = cap;
+	if (ret) {
+		kfree(cap);
+		esp_remove(func);
+		printk (KERN_ERR "Failed to read capability\n");
+		deinit_sdio_func(func);
+		return ret;
+	}
 
-	print_capabilities(cap);
+	context->adapter->capabilities = * cap;
 
-	if (esp_is_bt_supported_over_sdio(cap)) {
+	print_capabilities(*cap);
+
+	if (esp_is_bt_supported_over_sdio(*cap)) {
 		esp_init_bt(context->adapter);
 	}
+
+	kfree(cap);
 
 	context->state = ESP_CONTEXT_READY;
 

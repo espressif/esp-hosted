@@ -86,31 +86,59 @@ ESP_BT_SEND_FRAME_PROTOTYPE()
 #endif
 	struct esp_adapter *adapter = hci_get_drvdata(hdev);
 	struct sk_buff *new_skb;
+	u8 pad_len = 0, realloc_skb = 0;
+	u8 *pos = NULL;
+	u8 pkt_type;
 
 	if (!adapter) {
 		printk(KERN_ERR "%s: invalid args", __func__);
 		return -EINVAL;
 	}
 
+	/* Create space for payload header */
+	pad_len = sizeof(struct esp_payload_header);
 	total_len = len + sizeof(struct esp_payload_header);
 
-	if (skb_headroom(skb) < sizeof(struct esp_payload_header)) {
-		/* insufficent headroom to add payload header */
-		new_skb = skb_realloc_headroom(skb, sizeof(struct esp_payload_header));
+	/* Align buffer len */
+	pad_len += SKB_DATA_ADDR_ALIGNMENT - (total_len % SKB_DATA_ADDR_ALIGNMENT);
 
-		if(!new_skb) {
+	pkt_type = hci_skb_pkt_type(skb);
+
+	if (skb_headroom(skb) < pad_len) {
+		/* Headroom is not sufficient */
+		realloc_skb = 1;
+	}
+
+	if (realloc_skb || !IS_ALIGNED((unsigned long) skb->data, SKB_DATA_ADDR_ALIGNMENT)) {
+		/* Realloc SKB */
+		if (skb_linearize(skb)) {
+			hdev->stat.err_tx++;
+			return -EINVAL;
+		}
+
+		new_skb = esp_alloc_skb(skb->len + pad_len);
+
+		if (!new_skb) {
 			printk(KERN_ERR "%s: Failed to allocate SKB", __func__);
-			dev_kfree_skb(skb);
 			hdev->stat.err_tx++;
 			return -ENOMEM;
 		}
 
-		dev_kfree_skb(skb);
+		pos = new_skb->data;
 
+		pos += pad_len;
+
+		/* Populate new SKB */
+		skb_copy_from_linear_data(skb, pos, skb->len);
+		skb_put(new_skb, skb->len);
+
+		/* Replace old SKB */
+		dev_kfree_skb_any(skb);
 		skb = new_skb;
+	} else {
+		/* Realloc is not needed, Make space for interface header */
+		skb_push(skb, pad_len);
 	}
-
-	skb_push(skb, sizeof(struct esp_payload_header));
 
 	hdr = (struct esp_payload_header *) skb->data;
 
@@ -119,13 +147,17 @@ ESP_BT_SEND_FRAME_PROTOTYPE()
 	hdr->if_type = ESP_HCI_IF;
 	hdr->if_num = 0;
 	hdr->len = cpu_to_le16(len);
-	hdr->offset = cpu_to_le16(sizeof(struct esp_payload_header));
-	hdr->hci_pkt_type = hci_skb_pkt_type(skb);
+	hdr->offset = cpu_to_le16(pad_len);
+	pos = skb->data;
+
+	/* set HCI packet type */
+	*(pos + pad_len - 1) = pkt_type;
 
 	ret = esp_send_packet(adapter, skb);
 
 	if (ret) {
 		hdev->stat.err_tx++;
+		return ret;
 	} else {
 		esp_hci_update_tx_counter(hdev, hdr->hci_pkt_type, skb->len);
 	}
