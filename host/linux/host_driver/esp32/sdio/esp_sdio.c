@@ -33,6 +33,7 @@
 #include <linux/kthread.h>
 #include <linux/printk.h>
 
+#define MAX_WRITE_RETRIES       2
 #define TX_MAX_PENDING_COUNT    700
 #define TX_RESUME_THRESHOLD     (TX_MAX_PENDING_COUNT - (TX_MAX_PENDING_COUNT/5))
 
@@ -491,6 +492,7 @@ static int tx_process(void *data)
 	struct sk_buff *tx_skb = NULL;
 	struct esp_adapter *adapter = (struct esp_adapter *) data;
 	struct esp_sdio_context *context = NULL;
+	u8 retry;
 
 	context = adapter->if_context;
 
@@ -513,24 +515,34 @@ static int tx_process(void *data)
 
 		atomic_dec(&queue_items);
 		atomic_dec(&tx_pending);
+		retry = MAX_WRITE_RETRIES;
 
 		/* resume network tx queue if bearable load */
 		if (atomic_read(&tx_pending) < TX_RESUME_THRESHOLD) {
 			esp_tx_resume();
 		}
 
-		sdio_claim_host(context->func);
-
 		buf_needed = (tx_skb->len + ESP_RX_BUFFER_SIZE - 1) / ESP_RX_BUFFER_SIZE;
 
-		ret = esp_slave_get_tx_buffer_num(context, &buf_available, LOCK_ALREADY_ACQUIRED);
+		while (retry) {
+			sdio_claim_host(context->func);
 
-		if (buf_available < buf_needed) {
-			printk(KERN_DEBUG "%s: Drop pkt: available bufs[%d] < needed bufs[%d]\n",
-				__func__, buf_available, buf_needed);
-			sdio_release_host(context->func);
+			ret = esp_slave_get_tx_buffer_num(context, &buf_available, LOCK_ALREADY_ACQUIRED);
 
-			/* drop the packet */
+			if (buf_available < buf_needed) {
+				sdio_release_host(context->func);
+
+				/* Release SDIO and retry after delay*/
+				retry--;
+				usleep_range(10,50);
+				continue;
+			}
+
+			break;
+		}
+
+		if (!retry) {
+			/* No buffer available at slave */
 			dev_kfree_skb(tx_skb);
 			continue;
 		}
