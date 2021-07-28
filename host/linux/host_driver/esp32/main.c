@@ -164,14 +164,14 @@ static int esp_hard_start_xmit(struct sk_buff *skb, struct net_device *ndev)
 
 	if (!priv) {
 		dev_kfree_skb(skb);
-		return -EINVAL;
+		return NETDEV_TX_OK;
 	}
 
 	if (!skb->len || (skb->len > ETH_FRAME_LEN)) {
 		printk (KERN_ERR "%s: Bad len %d\n", __func__, skb->len);
 		priv->stats.tx_dropped++;
 		dev_kfree_skb(skb);
-		return -EINVAL;
+		return NETDEV_TX_OK;
 	}
 
 	cb = (struct esp_skb_cb *) skb->cb;
@@ -235,6 +235,11 @@ static int process_tx_packet (struct sk_buff *skb)
 	if (!priv) {
 		dev_kfree_skb(skb);
 		return NETDEV_TX_OK;
+	}
+
+	if (netif_queue_stopped((const struct net_device *) adapter.priv[0]->ndev) ||
+			netif_queue_stopped((const struct net_device *) adapter.priv[1]->ndev)) {
+		return NETDEV_TX_BUSY;
 	}
 
 	len = skb->len;
