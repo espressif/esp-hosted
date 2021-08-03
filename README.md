@@ -47,6 +47,7 @@ ESP-Hosted solution provides following WLAN and BT/BLE features to host:
 ESP-Hosted solution is supported on following ESP boards:
 - ESP32
 - ESP32S2
+- ESP32C3
 
 ### 1.3 Supported Hosts
 
@@ -75,18 +76,24 @@ Below table explains which feature is supported on which transport interface for
 | ESP32-S2 | SDIO | NA | NA | NA |
 | ESP32-S2 | SPI | Yes | Yes | NA |
 | ESP32-S2 | UART | No | No | NA |
+| ESP32-C3 | SDIO | NA | NA | NA |
+| ESP32-C3 | SPI | Yes | Yes | No |
+| ESP32-C3 | UART | No | No | No |
 
 ##### 1.5.2 MCU Host
 Below table explains which feature is supported on which transport interface for MCU based host.
 
 | ESP device | Transport Interface | WLAN support | Virtual serial interface | BT/BLE support |
-|:---------:|:-------:|:---------:|:--------:|:--------:|
+|:------------:|:-------:|:---------:|:--------:|:--------:|
 | ESP32 | SDIO | No | No | No |
 | ESP32 | SPI | Yes | Yes | HCI interface can be implemented over virtual serial interface |
 | ESP32 | UART | No | No | No |
 | ESP32-S2 | SDIO | NA | NA | NA |
 | ESP32-S2 | SPI | Yes | Yes | NA |
 | ESP32-S2 | UART | No | No | NA |
+| ESP32-C3 | SDIO | NA | NA | NA |
+| ESP32-C3 | SPI | Yes | Yes | No |
+| ESP32-C3 | UART | No | No | No |
 
 ---
 

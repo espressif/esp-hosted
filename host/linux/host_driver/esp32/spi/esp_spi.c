@@ -37,6 +37,7 @@
 #define ESP_PRIV_FIRMWARE_CHIP_UNRECOGNIZED (0xff)
 #define ESP_PRIV_FIRMWARE_CHIP_ESP32        (0x0)
 #define ESP_PRIV_FIRMWARE_CHIP_ESP32S2      (0x2)
+#define ESP_PRIV_FIRMWARE_CHIP_ESP32C3      (0x5)
 
 static struct sk_buff * read_packet(struct esp_adapter *adapter);
 static int write_packet(struct esp_adapter *adapter, struct sk_buff *skb);
@@ -190,8 +191,9 @@ static void process_init_event(u8 *evt_buf, u8 len)
 		len_left -= (tag_len+2);
 	}
 	if ((hardware_type != ESP_PRIV_FIRMWARE_CHIP_ESP32) &&
-	    (hardware_type != ESP_PRIV_FIRMWARE_CHIP_ESP32S2)) {
-		printk(KERN_INFO "ESP board type is not mentioned, ignoring\n");
+	    (hardware_type != ESP_PRIV_FIRMWARE_CHIP_ESP32S2) &&
+	    (hardware_type != ESP_PRIV_FIRMWARE_CHIP_ESP32C3)) {
+		printk(KERN_INFO "ESP board type is not mentioned, ignoring [%d]\n", hardware_type);
 		hardware_type = ESP_PRIV_FIRMWARE_CHIP_UNRECOGNIZED;
 	}
 }
@@ -401,20 +403,20 @@ static int spi_dev_init(int spi_clk_mhz)
 	}
 
 	printk (KERN_INFO "ESP32 peripheral is registered to SPI bus [%d]"
-			",chip select [%d]\n", esp_board.bus_num,
-			esp_board.chip_select);
+			",chip select [%d], SPI Clock [%d]\n", esp_board.bus_num,
+			esp_board.chip_select, spi_clk_mhz);
 
 	status = gpio_request(HANDSHAKE_PIN, "SPI_HANDSHAKE_PIN");
 
 	if (status) {
-		printk (KERN_ERR "Failed to obtain GPIO for Handshake pin\n");
+		printk (KERN_ERR "Failed to obtain GPIO for Handshake pin, err:%d\n",status);
 		return status;
 	}
 
 	status = gpio_direction_input(HANDSHAKE_PIN);
 
 	if (status) {
-		printk (KERN_ERR "Failed to set GPIO direction of Handshake pin\n");
+		printk (KERN_ERR "Failed to set GPIO direction of Handshake pin, err: %d\n",status);
 		return status;
 	}
 
@@ -422,13 +424,13 @@ static int spi_dev_init(int spi_clk_mhz)
 			IRQF_SHARED | IRQF_TRIGGER_RISING,
 			"ESP_SPI", spi_context.esp_spi_dev);
 	if (status) {
-		printk (KERN_ERR "Failed to request IRQ for Handshake pin\n");
+		printk (KERN_ERR "Failed to request IRQ for Handshake pin, err:%d\n",status);
 		return status;
 	}
 
 	status = gpio_request(SPI_DATA_READY_PIN, "SPI_DATA_READY_PIN");
 	if (status) {
-		printk (KERN_ERR "Failed to obtain GPIO for Data ready pin\n");
+		printk (KERN_ERR "Failed to obtain GPIO for Data ready pin, err:%d\n",status);
 		return status;
 	}
 
@@ -442,7 +444,7 @@ static int spi_dev_init(int spi_clk_mhz)
 			IRQF_SHARED | IRQF_TRIGGER_RISING,
 			"ESP_SPI_DATA_READY", spi_context.esp_spi_dev);
 	if (status) {
-		printk (KERN_ERR "Failed to request IRQ for Data ready pin\n");
+		printk (KERN_ERR "Failed to request IRQ for Data ready pin, err:%d\n",status);
 		return status;
 	}
 

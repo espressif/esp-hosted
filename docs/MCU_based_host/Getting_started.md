@@ -12,23 +12,23 @@ Wi-Fi can be configured as either as `STATION` mode or `SOFTAP` mode or `STATION
 * **STATION+SOFTAP Mode**
     - This is combination of both the modes. In this mode, host behaves as station and connects to external AP. At the same time, host with help of ESP device, can create the Wi-Fi network.
 
-Host firmware provides wifi connectivity using control path and data path. Control path commands uses `protocomm` layer of ESP-IDF to serialize structured control data and communicates using SPI transport interface between Host(MCU based Host) and ESP peripheral (ESP32/ESP32-S2). User can use control commands to build application.
+Host firmware provides wifi connectivity using control path and data path. Control path commands uses `protocomm` layer of ESP-IDF to serialize structured control data and communicates using SPI transport interface between Host(MCU based Host) and ESP peripheral (ESP32/ESP32-S2/ESP32-C3). User can use control commands to build application.
 
 
 ### 1.1 Start Project with STM32
 
 We have tested project with STM32F469I-Discovery board. If other than STM32F469I-Discovery board is used, peripheral like SPI, USART need to change as per board needs. STM32CubeIDE would be needed to follow next steps.
 
-1) Create a workspace_directory outside of `ESP-Hosted` git cloned directory.
-2) Browse and Open Workspace directory in STM32CubeIDE. It will take few seconds to open STM32CubeIDE.
-3) From `Information Center` tab select `Start new project` from existing STM32CubeMX configuration file, i.e. ioc file option. It will take few seconds to open dialog box. In STM32CubeMX .ioc file field, choose appropriate .ioc file from `</path/to/esp_hosted>/host/stm32/proj/` directory.
+* Create a workspace_directory outside of `ESP-Hosted` git cloned directory.
+* Browse and Open Workspace directory in STM32CubeIDE. It will take few seconds to open STM32CubeIDE.
+* From `Information Center` tab select `Start new project` from existing STM32CubeMX configuration file, i.e. ioc file option. It will take few seconds to open dialog box. In STM32CubeMX .ioc file field, choose appropriate .ioc file from `</path/to/esp_hosted>/host/stm32/proj/` directory.
 ```
 For ESP32 peripheral: Select stm_spi_host_esp32.ioc file
-For ESP32-S2 peripheral: Select stm_spi_host_esp32s2.ioc file
+For ESP32-S2/ESP32-C3 peripheral: Select stm_spi_host_esp32s2_esp32c3.ioc file
 ```
-4) Once file is selected, click `Open` and `Finish`. New dialog box will open as Open Associated Perspective, click on `Yes`. It may take 2-3 minutes to open. ESP_peripheral_hardware currently supported as either ESP32 or ESP32-S2.
-4) Close ioc tab then close STM32CubeIDE and click on `exit`.
-5) For Linux and Mac development hosts, In terminal, run
+* Once file is selected, click `Open` and `Finish`. New dialog box will open as Open Associated Perspective, click on `Yes`. It may take 2-3 minutes to open. ESP_peripheral_hardware currently supported are ESP32, ESP32-S2 and ESP32-C3.
+* Close ioc tab then close STM32CubeIDE and click on `exit`.
+* For Linux and Mac development hosts, In terminal, run
 ```
 $ cd </path/to/esp_hosted>/host/stm32/proj
 $ bash ./prepare_project.sh </path/to/workspace_directory>
@@ -40,18 +40,18 @@ For Windows based systems, open "cmd.exe" or Windows Power Shell and run -
 ```
 This will copy the project configuration files into workspace_directory
 
-6) Re-open STM32CubeIDE with workspace as workspace_directory.
-7) Ignore all warnings under `Problems` tab if any.
-8) Configure all build variables as mentioned in [User configuration parameter](#12-user-configuration-parameter) section below. Variable `CODE_BASE` should already be populated. All parameters are mandatory to be filled. Please note that, every subsequent change in configuration parameter would need a clean build as mentioned ahead.
-9) Uncheck `Build Automatically` from `menu -> Project` and Clean build the project as `Project menu -> Clean -> clean`.
-10) Connect STM32 board to your machine if not already connected.
-11) Before flashing the project, Open Tera Term or minicom to see STM32 debug logs once project flashed.
+* Re-open STM32CubeIDE with workspace as workspace_directory.
+* Ignore all warnings under `Problems` tab if any.
+* Configure all build variables as mentioned in [User configuration parameter](#12-user-configuration-parameter) section below. Variable `CODE_BASE` should already be populated. All parameters are mandatory to be filled. Please note that, every subsequent change in configuration parameter would need a clean build as mentioned ahead.
+* Uncheck `Build Automatically` from `menu -> Project` and Clean build the project as `Project menu -> Clean -> clean`.
+* Connect STM32 board to your machine if not already connected.
+* Before flashing the project, Open Tera Term or minicom to see STM32 debug logs once project flashed.
 ```
 $ minicom -D /dev/ttyACM0
 ```
 Note: /dev/ttyACM0 is used for For Linux, /dev/cu.usbmodemXXXXXX for Mac and COM port for Windows development host. Baud rate used is 115200. Parity bits configuration is 8N1.
 
-12) In STM32CubeIDE, go to `Project Explorer`, right click on `stm_spi_host` project. Then `menu -> Run -> Run as -> STM32 Cortex-M C/C++ Application `. This will open Edit Configuration box, Click `OK`.
+* In STM32CubeIDE, go to `Project Explorer`, right click on `stm_spi_host` project. Then `menu -> Run -> Run as -> STM32 Cortex-M C/C++ Application `. This will open Edit Configuration box, Click `OK`.
 `Debug as` option can also be alternatively used if debugging is desired.
 
 Expected output on `Console` tab in STM32CubeIDE as follows:
@@ -163,7 +163,7 @@ Once the connection is setup between STM32 and ESP peripheral, ARP can be tested
 For station mode, `INPUT_STATION_SRC_IP` is used as STM32 IPv4 address and `INPUT_STATION_ARP_DEST_IP` is considered as destination IPv4 address. This could be configured as IPv4 address of your machine.
 For softAP mode, `INPUT_SOFTAP_SRC_IP` will be used as STM32 IPv4 address and `INPUT_SOFTAP_ARP_DEST_IP` used as destination IPv4 address.
 
-Please note,
+**Please note**,
 1. In case of softAP mode, only static IPv4 addresses are supported currently. You can use your machine to connect to softAP and assign static address as `INPUT_SOFTAP_ARP_DEST_IP`.
 2. IP addresses configured are in same subnet for that interface.
 
