@@ -151,8 +151,8 @@ int interface_remove_driver()
 
 static int is_valid_trans_buffer(uint8_t *trans_buf)
 {
-	struct esp_payload_header *header;
-	uint16_t len, offset;
+	struct esp_payload_header *header = NULL;
+	uint16_t len = 0, offset = 0;
 
 	if (!trans_buf) {
 		return pdFALSE;
@@ -203,7 +203,7 @@ static uint8_t * get_next_tx_buffer(uint32_t *len)
 	interface_buffer_handle_t buf_handle = {0};
 	esp_err_t ret = ESP_OK;
 	uint8_t *sendbuf = NULL;
-	struct esp_payload_header *header;
+	struct esp_payload_header *header = NULL;
 
 	/* Get or create new tx_buffer
 	 *	1. Check if SPI TX queue has pending buffers. Return if valid buffer is obtained.
@@ -254,8 +254,8 @@ static uint8_t * get_next_tx_buffer(uint32_t *len)
 static int process_spi_rx(interface_buffer_handle_t *buf_handle)
 {
 	int ret = 0;
-	struct esp_payload_header *header;
-	uint16_t len, offset;
+	struct esp_payload_header *header = NULL;
+	uint16_t len = 0, offset = 0;
 
 	/* Validate received buffer. Drop invalid buffer. */
 
@@ -289,9 +289,9 @@ static int process_spi_rx(interface_buffer_handle_t *buf_handle)
 
 static void spi_transaction_tx_task(void* pvParameters)
 {
-	spi_slave_transaction_t *spi_trans;
-	esp_err_t ret = 0;
-	interface_buffer_handle_t buf_handle;
+	spi_slave_transaction_t *spi_trans = NULL;
+	esp_err_t ret = ESP_OK;
+	interface_buffer_handle_t buf_handle = {0};
 
 	for(;;) {
 		ret = xQueueReceive(spi_tx_queue, &buf_handle, portMAX_DELAY);
@@ -411,9 +411,9 @@ static void queue_dummy_transaction()
 static void spi_transaction_post_process_task(void* pvParameters)
 {
 	spi_slave_transaction_t *spi_trans = NULL;
-	esp_err_t ret = 0;
-	interface_buffer_handle_t rx_buf_handle;
-	struct esp_payload_header *header;
+	esp_err_t ret = ESP_OK;
+	interface_buffer_handle_t rx_buf_handle = {0};
+	struct esp_payload_header *header = NULL;
 
 	for (;;) {
 		memset(&rx_buf_handle, 0, sizeof(rx_buf_handle));
@@ -477,10 +477,10 @@ static void spi_transaction_post_process_task(void* pvParameters)
 
 static void generate_startup_event(uint8_t cap)
 {
-	struct esp_payload_header *header;
-	interface_buffer_handle_t buf_handle;
-	struct esp_priv_event *event;
-	uint8_t *pos;
+	struct esp_payload_header *header = NULL;
+	interface_buffer_handle_t buf_handle = {0};
+	struct esp_priv_event *event = NULL;
+	uint8_t *pos = NULL;
 	uint16_t len = 0;
 
 	memset(&buf_handle, 0, sizeof(buf_handle));
@@ -624,10 +624,10 @@ static interface_handle_t * esp_spi_init(uint8_t capabilities)
 static int32_t esp_spi_write(interface_handle_t *handle, interface_buffer_handle_t *buf_handle)
 {
 	esp_err_t ret = ESP_OK;
-	int32_t total_len;
+	int32_t total_len = 0;
 	uint16_t offset = 0;
-	struct esp_payload_header *header;
-	interface_buffer_handle_t tx_buf_handle;
+	struct esp_payload_header *header = NULL;
+	interface_buffer_handle_t tx_buf_handle = {0};
 
 	if (!handle || !buf_handle) {
 		ESP_LOGE(TAG , "Invalid arguments\n");
@@ -714,7 +714,7 @@ static interface_buffer_handle_t * esp_spi_read(interface_handle_t *if_handle)
 
 static esp_err_t esp_spi_reset(interface_handle_t *handle)
 {
-	esp_err_t ret;
+	esp_err_t ret = ESP_OK;
 	ret = spi_slave_free(ESP_SPI_CONTROLLER);
 	if (ESP_OK != ret) {
 		ESP_LOGE(TAG, "spi slave bus free failed\n");
@@ -724,7 +724,7 @@ static esp_err_t esp_spi_reset(interface_handle_t *handle)
 
 static void esp_spi_deinit(interface_handle_t *handle)
 {
-	esp_err_t ret;
+	esp_err_t ret = ESP_OK;
 
 	if (spi_sema)
 		vSemaphoreDelete(spi_sema);

@@ -85,7 +85,7 @@ static void sdio_read_done(void *handle)
 
 static interface_handle_t * sdio_init(uint8_t capabilities)
 {
-	esp_err_t ret = 0;
+	esp_err_t ret = ESP_OK;
 	sdio_slave_config_t config = {
 		.sending_mode       = SDIO_SLAVE_SEND_STREAM,
 		.send_queue_size    = SDIO_SLAVE_QUEUE_SIZE,
@@ -145,10 +145,10 @@ static interface_handle_t * sdio_init(uint8_t capabilities)
 static int32_t sdio_write(interface_handle_t *handle, interface_buffer_handle_t *buf_handle)
 {
 	esp_err_t ret = ESP_OK;
-	int32_t total_len;
+	int32_t total_len = 0;
 	uint8_t* sendbuf = NULL;
 	uint16_t offset = 0;
-	struct esp_payload_header *header;
+	struct esp_payload_header *header = NULL;
 
 	if (!handle || !buf_handle) {
 		ESP_LOGE(TAG , "Invalid arguments");
@@ -158,7 +158,6 @@ static int32_t sdio_write(interface_handle_t *handle, interface_buffer_handle_t 
 	if (handle->state != ACTIVE) {
 		return ESP_FAIL;
 	}
-
 
 	if (!buf_handle->payload_len || !buf_handle->payload) {
 		ESP_LOGE(TAG , "Invalid arguments, len:%d", buf_handle->payload_len);
@@ -200,7 +199,7 @@ static int32_t sdio_write(interface_handle_t *handle, interface_buffer_handle_t 
 interface_buffer_handle_t * sdio_read(interface_handle_t *if_handle)
 {
 	interface_buffer_handle_t *buf_handle = NULL;
-	struct esp_payload_header *header;
+	struct esp_payload_header *header = NULL;
 
 	if (!if_handle) {
 		ESP_LOGE(TAG, "Invalid arguments to sdio_read");
@@ -231,7 +230,7 @@ interface_buffer_handle_t * sdio_read(interface_handle_t *if_handle)
 
 static esp_err_t sdio_reset(interface_handle_t *handle)
 {
-	esp_err_t ret;
+	esp_err_t ret = ESP_OK;
 
 	sdio_slave_stop();
 

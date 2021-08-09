@@ -156,10 +156,18 @@ static esp_err_t protocomm_pserial_common_handler(protocomm_t *pc, uint8_t *in, 
 
     pserial_cfg = pc->priv;
     ret = compose_tlv(&out, &outlen);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to compose tlv");
+        return ESP_FAIL;
+    }
+
     ret = (pserial_cfg->xmit)(out, (ssize_t) outlen);
 
-    free(out);
-    return ret;
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to transmit data");
+        return ESP_FAIL;
+    }
+    return ESP_OK;
 }
 
 esp_err_t protocomm_pserial_data_ready(protocomm_t *pc, int len)
@@ -196,7 +204,7 @@ static void pserial_task(void *params)
 {
     protocomm_t *pc = (protocomm_t *) params;
     struct pserial_config *pserial_cfg = NULL;
-    int len = 0;
+    int len = 0, ret = 0;
     uint8_t *buf = NULL;
 
     pserial_cfg = (struct pserial_config *) pc->priv;
@@ -213,9 +221,14 @@ static void pserial_task(void *params)
         }
         len = pserial_cfg->recv(buf, len);
         if (len) {
-            protocomm_pserial_common_handler(pc, buf, len);
-            free(buf);
-            buf = NULL;
+            ret = protocomm_pserial_common_handler(pc, buf, len);
+            if (buf) {
+                free(buf);
+                buf = NULL;
+            }
+            if (ret != ESP_OK) {
+                return;
+            }
         }
     }
 
