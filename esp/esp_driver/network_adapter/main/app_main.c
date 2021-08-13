@@ -45,6 +45,7 @@
 #include "protocomm_pserial.h"
 #include "slave_commands.h"
 #include "driver/periph_ctrl.h"
+#include "slave_bt.c"
 
 #define EV_STR(s) "================ "s" ================"
 static const char TAG[] = "NETWORK_ADAPTER";
@@ -59,23 +60,9 @@ static const char TAG_RX_S[] = "CONTROL H -> S";
 static const char TAG_TX_S[] = "CONTROL S -> H";
 #endif
 
-#ifdef CONFIG_BT_HCI_UART_NO
-#define BT_TX_PIN	5
-#define BT_RX_PIN	18
-#define BT_RTS_PIN	19
-#define BT_CTS_PIN	23
-#endif
-
 #ifdef CONFIG_FREERTOS_GENERATE_RUN_TIME_STATS
 #define STATS_TICKS         pdMS_TO_TICKS(1000*2)
 #define ARRAY_SIZE_OFFSET   5
-#endif
-
-#ifdef CONFIG_BTDM_CONTROLLER_HCI_MODE_VHCI
-#define VHCI_MAX_TIMEOUT_MS 	2000
-static SemaphoreHandle_t vhci_send_sem;
-static void deinitialize_bluetooth(void);
-static esp_err_t initialise_bluetooth(void);
 #endif
 
 volatile uint8_t action = 0;
@@ -141,31 +128,7 @@ static uint8_t get_capabilities()
 	cap |= ESP_WLAN_SDIO_SUPPORT;
 #endif
 #ifdef CONFIG_BT_ENABLED
-	ESP_LOGI(TAG, "- BT/BLE");
-#if CONFIG_BTDM_CONTROLLER_HCI_MODE_VHCI
-#if CONFIG_ESP_SPI_HOST_INTERFACE
-	ESP_LOGI(TAG, "   - HCI Over SPI");
-	cap |= ESP_BT_SPI_SUPPORT;
-#else
-	ESP_LOGI(TAG, "   - HCI Over SDIO");
-	cap |= ESP_BT_SDIO_SUPPORT;
-#endif
-#else
-#ifdef CONFIG_BT_HCI_UART_NO
-	ESP_LOGI(TAG, "   - HCI Over UART");
-	cap |= ESP_BT_UART_SUPPORT;
-#endif
-#endif
-#if CONFIG_BTDM_CTRL_MODE_BLE_ONLY
-	ESP_LOGI(TAG, "   - BLE only");
-	cap |= ESP_BLE_ONLY_SUPPORT;
-#elif CONFIG_BTDM_CTRL_MODE_BR_EDR_ONLY
-	ESP_LOGI(TAG, "   - BR_EDR only");
-	cap |= ESP_BR_EDR_ONLY_SUPPORT;
-#elif CONFIG_BTDM_CTRL_MODE_BTDM
-	ESP_LOGI(TAG, "   - BT/BLE dual mode");
-	cap |= ESP_BLE_ONLY_SUPPORT | ESP_BR_EDR_ONLY_SUPPORT;
-#endif
+	cap |= get_bluetooth_capabilities();
 #endif
 
 	return cap;
@@ -416,29 +379,12 @@ void process_rx_pkt(interface_buffer_handle_t **buf_handle_p)
 #if CONFIG_ESP_SERIAL_DEBUG
 		ESP_LOG_BUFFER_HEXDUMP(TAG_RX_S, r.data, r.len, ESP_LOG_INFO);
 #endif
-#ifdef CONFIG_BTDM_CONTROLLER_HCI_MODE_VHCI
-	} else if (buf_handle->if_type == ESP_HCI_IF) {
-		/* VHCI needs one extra byte at the start of payload */
-		/* that is accomodated in esp_payload_header */
-#if CONFIG_ESP_BT_DEBUG
-		ESP_LOG_BUFFER_HEXDUMP("bt_rx", payload, payload_len, ESP_LOG_INFO);
+    }
+#if defined(CONFIG_BT_ENABLED) && BLUETOOTH_HCI
+    else if (buf_handle->if_type == ESP_HCI_IF) {
+        process_hci_rx_pkt(payload, payload_len);
+    }
 #endif
-		payload--;
-		payload_len++;
-
-		if (!esp_vhci_host_check_send_available()) {
-			ESP_LOGD(TAG, "VHCI not available");
-		}
-
-		if (vhci_send_sem) {
-			if (xSemaphoreTake(vhci_send_sem, VHCI_MAX_TIMEOUT_MS) == pdTRUE) {
-				esp_vhci_host_send_packet(payload, payload_len);
-			} else {
-				ESP_LOGI(TAG, "VHCI sem timeout");
-			}
-		}
-#endif
-	}
 
 	/* Free buffer handle */
 	if (buf_handle->free_buf_handle && buf_handle->priv_buffer_handle) {
@@ -541,123 +487,6 @@ static int32_t serial_write_data(uint8_t* data, int32_t len)
 
 	return ESP_OK;
 }
-
-#ifdef CONFIG_BT_ENABLED
-
-#ifdef CONFIG_BTDM_CONTROLLER_HCI_MODE_VHCI
-static void controller_rcv_pkt_ready(void)
-{
-	if (vhci_send_sem)
-		xSemaphoreGive(vhci_send_sem);
-}
-
-static int host_rcv_pkt(uint8_t *data, uint16_t len)
-{
-	esp_err_t ret = ESP_OK;
-	interface_buffer_handle_t buf_handle = {0};
-	uint8_t *buf = NULL;
-
-	buf = (uint8_t *) malloc(len);
-
-	if (!buf) {
-		ESP_LOGE(TAG, "HCI Send packet: memory allocation failed");
-		return ESP_FAIL;
-	}
-
-	memcpy(buf, data, len);
-
-	buf_handle.if_type = ESP_HCI_IF;
-	buf_handle.if_num = 0;
-	buf_handle.payload_len = len;
-	buf_handle.payload = buf;
-	buf_handle.wlan_buf_handle = buf;
-	buf_handle.free_buf_handle = free;
-
-#if CONFIG_ESP_BT_DEBUG
-	ESP_LOG_BUFFER_HEXDUMP("bt_tx", data, len, ESP_LOG_INFO);
-#endif
-
-	ret = xQueueSend(to_host_queue[PRIO_Q_BT], &buf_handle, portMAX_DELAY);
-
-	if (ret != pdTRUE) {
-		ESP_LOGE(TAG, "HCI send packet: Failed to send buffer\n");
-		free(buf);
-		return ESP_FAIL;
-	}
-
-	return 0;
-}
-
-static esp_vhci_host_callback_t vhci_host_cb = {
-	controller_rcv_pkt_ready,
-	host_rcv_pkt
-};
-#endif
-
-static esp_err_t initialise_bluetooth(void)
-{
-	esp_bt_controller_config_t bt_cfg = BT_CONTROLLER_INIT_CONFIG_DEFAULT();
-
-#ifdef CONFIG_BT_HCI_UART_NO
-#if CONFIG_ESP_BT_DEBUG
-	ESP_LOGI(TAG, "UART Pins: TX:%u Rx:%u RTS:%u CTS:%u\n",
-		BT_TX_PIN, BT_RX_PIN, BT_RTS_PIN, BT_CTS_PIN);
-#endif
-#if CONFIG_BT_HCI_UART_NO == 1
-	periph_module_enable(PERIPH_UART1_MODULE);
-#elif CONFIG_BT_HCI_UART_NO == 2
-	periph_module_enable(PERIPH_UART2_MODULE);
-#endif
-
-	periph_module_enable(PERIPH_UHCI0_MODULE);
-	ESP_ERROR_CHECK( uart_set_pin(CONFIG_BT_HCI_UART_NO, BT_TX_PIN,
-				BT_RX_PIN, BT_RTS_PIN, BT_CTS_PIN) );
-#endif
-	ESP_ERROR_CHECK( esp_bt_controller_init(&bt_cfg) );
-#ifdef CONFIG_BTDM_CONTROLLER_MODE_BLE_ONLY
-	ESP_ERROR_CHECK( esp_bt_controller_enable(ESP_BT_MODE_BLE) );
-#elif CONFIG_BTDM_CONTROLLER_MODE_BR_EDR_ONLY
-	ESP_ERROR_CHECK( esp_bt_controller_enable(ESP_BT_MODE_CLASSIC_BT) );
-#elif CONFIG_BTDM_CONTROLLER_MODE_BTDM
-	ESP_ERROR_CHECK( esp_bt_controller_enable(ESP_BT_MODE_BTDM) );
-#endif
-
-#ifdef CONFIG_BTDM_CONTROLLER_HCI_MODE_VHCI
-	esp_err_t ret = ESP_OK;
-	ret = esp_vhci_host_register_callback(&vhci_host_cb);
-
-	if (ret != ESP_OK) {
-		ESP_LOGE(TAG, "Failed to register VHCI callback");
-		return ret;
-	}
-
-	vhci_send_sem = xSemaphoreCreateBinary();
-	if (vhci_send_sem == NULL) {
-		ESP_LOGE(TAG, "Failed to create VHCI send sem");
-		return ESP_ERR_NO_MEM;
-	}
-
-	xSemaphoreGive(vhci_send_sem);
-#endif
-
-	return ESP_OK;
-}
-
-static void deinitialize_bluetooth(void)
-{
-#ifdef CONFIG_BTDM_CONTROLLER_HCI_MODE_VHCI
-	if (vhci_send_sem) {
-		/* Dummy take and give sema before deleting it */
-		xSemaphoreTake(vhci_send_sem, portMAX_DELAY);
-		xSemaphoreGive(vhci_send_sem);
-		vSemaphoreDelete(vhci_send_sem);
-		vhci_send_sem = NULL;
-	}
-	esp_bt_controller_disable();
-	esp_bt_controller_deinit();
-#endif
-}
-#endif
 
 static esp_err_t initialise_wifi(void)
 {

@@ -105,6 +105,20 @@ Where,
 ```
 * This command will flash `SPI` interface binaries on `esp32s2` chip.
 
+##### ESP32-C3
+```sh
+$ python esptool.py --port <serial_port> --baud 960000 --before default_reset --after hard_reset \
+--chip esp32c3 write_flash --flash_mode dio --flash_size detect --flash_freq 80m \
+0x0 esp_hosted_bootloader_esp32c3_spi_v<release_version>.bin \
+0x8000 esp_hosted_partition-table_esp32c3_spi_v<release_version>.bin \
+0x10000 esp_hosted_firmware_esp32c3_spi_v<release_version>.bin
+
+Where,
+	<serial_port>    : serial port of ESP peripheral
+	<release_version>: 0.1,0.2 etc. Latest from [release page](https://github.com/espressif/esp-hosted/releases)
+```
+* This command will flash `SPI` interface binaries on `esp32c3` chip.
+
 * Windows user can use ESP Flash Programming Tool to flash the pre-built binary.
 
 #### 2.2.2 Source Compilation
@@ -115,23 +129,33 @@ Where,
 ```sh
 $ cd esp/esp_driver/network_adapter
 ```
+
 ##### Using cmake
-* Set target if the ESP32S2 is being used. Skip if ESP32 is being used.
+
+* :warning: `Set target if the ESP32S2 or ESP32C3 is being used. Skip if ESP32 is being used.`
 ```
 $ idf.py set-target esp32s2
 ```
+or
+```
+$ idf.py set-target esp32c3
+```
+
 * Execute following command to configure project
 ```sh
 $ idf.py menuconfig
 ```
 * This will open project configuration window. To select SPI transport interface, navigate to `Example Configuration ->  Transport layer -> SPI interface -> select` and exit from menuconfig.
+
+* For ESP32C3, select chip revision in addition. Navigate to `Component config → ESP32C3-Specific → Minimum Supported ESP32-C3 Revision` and select chip version of ESP32C3.
+
 * Use below command to compile and flash the project. Replace <serial_port> with ESP peripheral's serial port.
 ```sh
 $ idf.py -p <serial_port> build flash
 ```
 
 ##### Using make
-:warning: *make* build system is only supported till ESP32. Please refer cmake section above for ESP32-S2.
+:warning: *make* build system is only supported till ESP32. Please refer cmake section above for ESP32-S2 and ESP32-C3.
 * Execute following command to configure project
 ```sh
 $ make menuconfig
