@@ -34,8 +34,8 @@
 #include <linux/printk.h>
 
 #define MAX_WRITE_RETRIES       2
-#define TX_MAX_PENDING_COUNT    700
-#define TX_RESUME_THRESHOLD     (TX_MAX_PENDING_COUNT - (TX_MAX_PENDING_COUNT/5))
+#define TX_MAX_PENDING_COUNT    200
+#define TX_RESUME_THRESHOLD     (TX_MAX_PENDING_COUNT/5)
 
 #define CHECK_SDIO_RW_ERROR(ret) do {			\
 	if (ret)						\
@@ -513,8 +513,12 @@ static int tx_process(void *data)
 			continue;
 		}
 
-		atomic_dec(&queue_items);
-		atomic_dec(&tx_pending);
+		if (atomic_read(&queue_items))
+			atomic_dec(&queue_items);
+
+		if (atomic_read(&tx_pending))
+			atomic_dec(&tx_pending);
+
 		retry = MAX_WRITE_RETRIES;
 
 		/* resume network tx queue if bearable load */

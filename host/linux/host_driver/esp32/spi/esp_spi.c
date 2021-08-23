@@ -29,8 +29,8 @@
 
 #define SPI_INITIAL_CLK_MHZ     10
 #define NUMBER_1M               1000000
-#define TX_MAX_PENDING_COUNT    500
-#define TX_RESUME_THRESHOLD     (TX_MAX_PENDING_COUNT - (TX_MAX_PENDING_COUNT/5))
+#define TX_MAX_PENDING_COUNT    100
+#define TX_RESUME_THRESHOLD     (TX_MAX_PENDING_COUNT/5)
 
 /* ESP in sdkconfig has CONFIG_IDF_FIRMWARE_CHIP_ID entry.
  * supported values of CONFIG_IDF_FIRMWARE_CHIP_ID are - */
@@ -47,7 +47,7 @@ static void adjust_spi_clock(u8 spi_clk_mhz);
 volatile u8 data_path = 0;
 static struct esp_spi_context spi_context;
 static char hardware_type = 0;
-static u32 tx_pending = 0;
+static atomic_t tx_pending;
 
 static struct esp_if_ops if_ops = {
 	.read		= read_packet,
@@ -58,7 +58,7 @@ static DEFINE_MUTEX(spi_lock);
 
 static void open_data_path(void)
 {
-	tx_pending = 0;
+	atomic_set(&tx_pending, 0);
 	msleep(200);
 	data_path = OPEN_DATAPATH;
 }
@@ -135,16 +135,16 @@ static int write_packet(struct esp_adapter *adapter, struct sk_buff *skb)
 		return -EPERM;
 	}
 
-	if (tx_pending >= TX_MAX_PENDING_COUNT) {
+	if (atomic_read(&tx_pending) >= TX_MAX_PENDING_COUNT) {
 		esp_tx_pause();
 		dev_kfree_skb(skb);
+		queue_work(spi_context.spi_workqueue, &spi_context.spi_work);
 		return -EBUSY;
 	}
 
 	/* Enqueue SKB in tx_q */
 	skb_queue_tail(&spi_context.tx_q, skb);
-
-	tx_pending++;
+	atomic_inc(&tx_pending);
 
 	if (spi_context.spi_workqueue)
 		queue_work(spi_context.spi_workqueue, &spi_context.spi_work);
@@ -295,17 +295,25 @@ static void esp_spi_work(struct work_struct *work)
 	struct sk_buff *tx_skb = NULL, *rx_skb = NULL;
 	u8 *rx_buf;
 	int ret = 0;
-	int trans_ready, rx_pending;
+	volatile int trans_ready, rx_pending;
 
 	mutex_lock(&spi_lock);
 
 	trans_ready = gpio_get_value(HANDSHAKE_PIN);
 	rx_pending = gpio_get_value(SPI_DATA_READY_PIN);
 
-
 	if (trans_ready) {
-		if (data_path)
+		if (data_path) {
 			tx_skb = skb_dequeue(&spi_context.tx_q);
+			if (tx_skb) {
+				if (atomic_read(&tx_pending))
+					atomic_dec(&tx_pending);
+
+				if (atomic_read(&tx_pending) < TX_RESUME_THRESHOLD) {
+					esp_tx_resume();
+				}
+			}
+		}
 
 		if (rx_pending || tx_skb) {
 			memset(&trans, 0, sizeof(trans));
@@ -322,11 +330,6 @@ static void esp_spi_work(struct work_struct *work)
 			/* Configure TX buffer if available */
 
 			if (tx_skb) {
-				tx_pending--;
-
-				if (tx_pending < TX_RESUME_THRESHOLD)
-					esp_tx_resume();
-
 				trans.tx_buf = tx_skb->data;
 			} else {
 				tx_skb = esp_alloc_skb(SPI_BUF_SIZE);
