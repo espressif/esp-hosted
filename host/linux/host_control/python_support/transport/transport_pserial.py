@@ -96,7 +96,16 @@ class Transport_pserial(Transport):
         buf.extend(PROTO_PSER_TLV_T_DATA)
         buf.extend(pack('<H', len(data)))
         buf.extend(bytearray(data))
-        s = os.write(self.f, buf)
+        s = success
+        datalen = len(buf)
+        try:
+            s = os.write(self.f, buf)
+        except: 
+            print("exception raise while writing")
+            return failure, ""
+        if s != datalen:
+            print("incomplete write operation")
+            return failure, ""
         reads,_,_ = select.select([self.f], [], [], timeout)
         if reads:
             s = self.read_data(ep_name)
