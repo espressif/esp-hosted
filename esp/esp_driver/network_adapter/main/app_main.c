@@ -215,7 +215,7 @@ static void esp_wifi_set_debug_log()
 esp_err_t wlan_ap_rx_callback(void *buffer, uint16_t len, void *eb)
 {
 	esp_err_t ret = ESP_OK;
-	interface_buffer_handle_t buf_handle;
+	interface_buffer_handle_t buf_handle = {0};
 
 	if (!buffer || !eb || !datapath) {
 		if (eb) {
@@ -223,9 +223,6 @@ esp_err_t wlan_ap_rx_callback(void *buffer, uint16_t len, void *eb)
 		}
 		return ESP_OK;
 	}
-
-	/* Prepare buffer descriptor */
-	memset(&buf_handle, 0, sizeof(buf_handle));
 
 	buf_handle.if_type = ESP_AP_IF;
 	buf_handle.if_num = 0;
@@ -251,7 +248,7 @@ DONE:
 esp_err_t wlan_sta_rx_callback(void *buffer, uint16_t len, void *eb)
 {
 	esp_err_t ret = ESP_OK;
-	interface_buffer_handle_t buf_handle;
+	interface_buffer_handle_t buf_handle = {0};
 
 	if (!buffer || !eb || !datapath) {
 		if (eb) {
@@ -263,9 +260,6 @@ esp_err_t wlan_sta_rx_callback(void *buffer, uint16_t len, void *eb)
 #ifdef ESP_DEBUG_STATS
 	from_wlan_count++;
 #endif
-
-	/* Prepare buffer descriptor */
-	memset(&buf_handle, 0, sizeof(buf_handle));
 
 	buf_handle.if_type = ESP_STA_IF;
 	buf_handle.if_num = 0;
@@ -362,9 +356,9 @@ void process_rx_task(void* pvParameters)
 {
 	esp_err_t ret = ESP_OK;
 	interface_buffer_handle_t buf_handle = {0};
-	struct esp_payload_header *header;
-	uint8_t *payload;
-	uint16_t payload_len;
+	struct esp_payload_header *header = NULL;
+	uint8_t *payload = NULL;
+	uint16_t payload_len = 0;
 
 	while (1) {
 		ret = xQueueReceive(from_host_queue, &buf_handle, portMAX_DELAY);
@@ -429,7 +423,7 @@ void process_rx_task(void* pvParameters)
 void recv_task(void* pvParameters)
 {
 	interface_buffer_handle_t *buf_handle = NULL;
-	esp_err_t ret;
+	esp_err_t ret = ESP_OK;
 
 	for (;;) {
 
@@ -454,6 +448,7 @@ void recv_task(void* pvParameters)
 			ESP_LOGE(TAG, "Host -> Slave: Failed to send buffer\n");
 			if (buf_handle->free_buf_handle && buf_handle->priv_buffer_handle) {
 				buf_handle->free_buf_handle(buf_handle->priv_buffer_handle);
+				buf_handle->priv_buffer_handle = NULL;
 			}
 		}
 
@@ -478,18 +473,29 @@ static int32_t serial_read_data(uint8_t *data, int32_t len)
 static int32_t serial_write_data(uint8_t* data, int32_t len)
 {
 	interface_buffer_handle_t buf_handle = {0};
+	esp_err_t ret = ESP_OK;
 
 	buf_handle.if_type = ESP_SERIAL_IF;
 	buf_handle.if_num = 0;
 	buf_handle.payload = data;
 	buf_handle.payload_len = len;
+	buf_handle.priv_buffer_handle = data;
+	buf_handle.free_buf_handle = free;
 
-	if (datapath && if_context && if_context->if_ops && if_context->if_ops->write)
-		if_context->if_ops->write(if_handle, &buf_handle);
+	ret = xQueueSend(to_host_queue, &buf_handle, portMAX_DELAY);
+
+	if (ret != pdTRUE) {
+		ESP_LOGE(TAG, "Control packet: Failed to send buffer\n");
+		if (data) {
+			free(data);
+			data = NULL;
+		}
+		return ESP_FAIL;
+	}
 #if CONFIG_ESP_SERIAL_DEBUG
 	ESP_LOG_BUFFER_HEXDUMP(TAG_TX_S, data, len, ESP_LOG_INFO);
 #endif
-	return len;
+	return ESP_OK;
 }
 
 #ifdef CONFIG_BT_ENABLED
@@ -504,7 +510,7 @@ static void controller_rcv_pkt_ready(void)
 static int host_rcv_pkt(uint8_t *data, uint16_t len)
 {
 	esp_err_t ret = ESP_OK;
-	interface_buffer_handle_t buf_handle;
+	interface_buffer_handle_t buf_handle = {0};
 	uint8_t *buf = NULL;
 
 	buf = (uint8_t *) malloc(len);
@@ -515,8 +521,6 @@ static int host_rcv_pkt(uint8_t *data, uint16_t len)
 	}
 
 	memcpy(buf, data, len);
-
-	memset(&buf_handle, 0, sizeof(buf_handle));
 
 	buf_handle.if_type = ESP_HCI_IF;
 	buf_handle.if_num = 0;

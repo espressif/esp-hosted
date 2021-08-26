@@ -232,9 +232,9 @@ typedef struct esp_hosted_config_cmd {
 static esp_err_t cmd_get_mac_address_handler(EspHostedConfigPayload *req,
                                 EspHostedConfigPayload *resp, void *priv_data)
 {
-    esp_err_t ret;
-    uint8_t mac[MAC_LEN];
-    char mac_str[BSSID_LENGTH];
+    esp_err_t ret = ESP_OK;
+    uint8_t mac[MAC_LEN] = {0};
+    char mac_str[BSSID_LENGTH] = "";
     EspHostedRespGetMacAddress *resp_payload = NULL;
 
     if (!req || !resp || !req->cmd_get_mac_address) {
@@ -298,8 +298,8 @@ err:
 static esp_err_t cmd_get_wifi_mode_handler (EspHostedConfigPayload *req,
                                 EspHostedConfigPayload *resp, void *priv_data)
 {
-    esp_err_t ret;
-    wifi_mode_t mode;
+    esp_err_t ret = ESP_OK;
+    wifi_mode_t mode = 0;
     EspHostedRespGetMode *resp_payload = NULL;
 
     if (!req || !resp) {
@@ -336,8 +336,8 @@ err:
 static esp_err_t cmd_set_wifi_mode_handler (EspHostedConfigPayload *req,
                                 EspHostedConfigPayload *resp, void *priv_data)
 {
-    esp_err_t ret;
-    wifi_mode_t num;
+    esp_err_t ret = ESP_OK;
+    wifi_mode_t num = 0;
     EspHostedRespSetMode *resp_payload = NULL;
 
     if (!req || !resp || !req->cmd_set_wifi_mode) {
@@ -379,7 +379,7 @@ err:
 static esp_err_t cmd_set_ap_config_handler (EspHostedConfigPayload *req,
                                 EspHostedConfigPayload *resp, void *priv_data)
 {
-    esp_err_t ret;
+    esp_err_t ret = ESP_OK;
     bool event_registered = false;
     wifi_config_t *wifi_cfg = NULL;
     EspHostedRespSetAPConfig *resp_payload = NULL;
@@ -526,7 +526,7 @@ err1:
 static esp_err_t cmd_get_ap_config_handler (EspHostedConfigPayload *req,
                                 EspHostedConfigPayload *resp, void *priv_data)
 {
-    esp_err_t ret;
+    esp_err_t ret = ESP_OK;
     credentials_t credentials = {0};
     wifi_ap_record_t *ap_info = NULL;
     EspHostedRespGetAPConfig *resp_payload = NULL;
@@ -621,7 +621,7 @@ err:
 static esp_err_t cmd_disconnect_ap_handler (EspHostedConfigPayload *req,
                                 EspHostedConfigPayload *resp, void *priv_data)
 {
-    esp_err_t ret;
+    esp_err_t ret = ESP_OK;
     EspHostedRespGetStatus *resp_payload = NULL;
     if (!req || !resp) {
         ESP_LOGE(TAG, "Invalid parameters");
@@ -664,8 +664,8 @@ err:
 static esp_err_t cmd_get_softap_config_handler (EspHostedConfigPayload *req,
                                 EspHostedConfigPayload *resp, void *priv_data)
 {
-    esp_err_t ret;
-    wifi_bandwidth_t get_bw;
+    esp_err_t ret = ESP_OK;
+    wifi_bandwidth_t get_bw = 0;
     credentials_t credentials = {0};
     wifi_config_t get_conf = {0};
     EspHostedRespGetSoftAPConfig *resp_payload = NULL;
@@ -765,8 +765,8 @@ err:
 static esp_err_t cmd_set_softap_config_handler (EspHostedConfigPayload *req,
                                 EspHostedConfigPayload *resp, void *priv_data)
 {
-    esp_err_t ret;
-    uint8_t mac[MAC_LEN];
+    esp_err_t ret = ESP_OK;
+    uint8_t mac[MAC_LEN] = {0};
     wifi_config_t *wifi_config = NULL;
     EspHostedRespSetSoftAPConfig *resp_payload = NULL;
 
@@ -887,8 +887,8 @@ err:
 static esp_err_t cmd_get_ap_scan_list_handler (EspHostedConfigPayload *req,
                                 EspHostedConfigPayload *resp, void *priv_data)
 {
-    esp_err_t ret;
-    wifi_mode_t mode;
+    esp_err_t ret = ESP_OK;
+    wifi_mode_t mode = 0;
     uint16_t ap_count = 0;
     credentials_t credentials = {0};
     wifi_ap_record_t *ap_info = NULL;
@@ -1048,8 +1048,8 @@ err:
 static esp_err_t cmd_stop_softap_handler (EspHostedConfigPayload *req,
                                 EspHostedConfigPayload *resp, void *priv_data)
 {
-    esp_err_t ret;
-    wifi_mode_t mode;
+    esp_err_t ret = ESP_OK;
+    wifi_mode_t mode = 0;
     EspHostedRespGetStatus *resp_payload = NULL;
 
     if (!req || !resp) {
@@ -1104,8 +1104,8 @@ err:
 static esp_err_t get_connected_sta_list_handler (EspHostedConfigPayload *req,
                                 EspHostedConfigPayload *resp, void *priv_data)
 {
-    esp_err_t ret;
-    wifi_mode_t mode;
+    esp_err_t ret = ESP_OK;
+    wifi_mode_t mode = 0;
     credentials_t credentials = {0};
     EspHostedRespConnectedSTA *resp_payload = NULL;
     EspHostedConnectedSTAList **results = NULL;
@@ -1329,7 +1329,7 @@ static esp_err_t cmd_get_power_save_mode_handler (EspHostedConfigPayload *req,
                                 EspHostedConfigPayload *resp, void *priv_data)
 {
     esp_err_t ret = ESP_OK;
-    wifi_ps_type_t ps_type;
+    wifi_ps_type_t ps_type = 0;
     EspHostedRespGetMode *resp_payload = NULL;
 
     if (!req || !resp) {
@@ -1434,7 +1434,7 @@ static esp_err_t esp_hosted_config_command_dispatcher(
 		EspHostedConfigPayload *req, EspHostedConfigPayload *resp,
 		void *priv_data)
 {
-    esp_err_t ret;
+    esp_err_t ret = ESP_OK;
     int cmd_index = 0;
 
     if (!req || !resp) {
@@ -1563,7 +1563,7 @@ static void esp_hosted_config_cleanup(EspHostedConfigPayload *resp)
 esp_err_t data_transfer_handler(uint32_t session_id,const uint8_t *inbuf,
 		ssize_t inlen, uint8_t **outbuf, ssize_t *outlen, void *priv_data)
 {
-    EspHostedConfigPayload *req, resp;
+    EspHostedConfigPayload *req = NULL, resp = {0};
     esp_err_t ret = ESP_OK;
 
     if (!inbuf || !outbuf || !outlen) {
