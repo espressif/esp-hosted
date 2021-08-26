@@ -27,7 +27,7 @@
 #include "platform_wrapper.h"
 #include "test_config.h"
 
-void test_get_wifi_mode();
+int test_get_wifi_mode();
 
 int test_set_wifi_mode(int mode);
 
@@ -43,15 +43,15 @@ int test_station_mode_set_mac_addr_of_esp();
 
 int test_softap_mode_set_mac_addr_of_esp();
 
-void test_station_mode_get_mac_addr();
+int test_station_mode_get_mac_addr();
 
-void test_softap_mode_get_mac_addr();
+int test_softap_mode_get_mac_addr();
 
 int test_station_mode_connect();
 
 int test_station_mode_get_info();
 
-void test_get_available_wifi();
+int test_get_available_wifi();
 
 int test_station_mode_disconnect();
 
@@ -59,7 +59,7 @@ int test_softap_mode_start();
 
 int test_softap_mode_get_info();
 
-void test_softap_mode_connected_clients_info();
+int test_softap_mode_connected_clients_info();
 
 int test_softap_mode_stop();
 

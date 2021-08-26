@@ -13,6 +13,9 @@
 # limitations under the License.
 
 from test_api import *
+#***** Please Read *****
+#* Before use test.py : User must enter user configuration parameter in "test_config.py" file *
+
 # Test APIs
 
 # Below APIs could be used by demo application

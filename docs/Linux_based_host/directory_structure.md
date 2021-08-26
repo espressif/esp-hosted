@@ -3,9 +3,9 @@
 ```
 ├── linux
 │   ├── host_control            (Contain necessary files for installation of control path)
-│   │   ├── c_support           (Contain files to test basic control path commands)
+│   │   ├── c_support           (Contain files to test basic control path commands and stress.c for stress testing)
 │   │   ├── python_support      (Contain python scripts for Wi-Fi functionality,
-│   │   │   │                       `test.py` to test basic control path commands, also
+│   │   │   │                       `test.py` to test basic control path commands, stress.py for stress testing, also
 │   │   │   │                       `commands.py` control path commands implementation using
 │   │   │   │                       python protobuf generated files)
 │   │   │   └── transport       (Handles read/write operation of control path commands on

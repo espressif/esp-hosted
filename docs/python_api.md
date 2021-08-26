@@ -1,6 +1,8 @@
 # Control Interface API's: Python Implementation
 
-This document describes python API's provided for control interface. Please refer [test.py](../host/linux/host_control/python_support/test.py) to get an idea how to use these API's.
+This document describes python API's provided for control interface.
+[python_demo.md](python_demo.md) gives overview of how to test control path interface in application also how to perform stress testing of control path interface.
+
 
 ## 1. `wifi_get_mac`
 This is used to retrieve the MAC address of ESP's station or softAP interface

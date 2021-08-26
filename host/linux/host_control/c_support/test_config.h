@@ -21,6 +21,13 @@
 #ifndef __TEST_CONFIG_H
 #define __TEST_CONFIG_H
 
+#define STA_CONNECT                        "sta_connect"
+#define STA_DISCONNECT                     "sta_disconnect"
+#define AP_START                           "ap_start"
+#define AP_STOP                            "ap_stop"
+#define SCAN                               "scan"
+#define STA_LIST                           "sta_list"
+
 #define MAC_LENGTH                          18
 #define SSID_LENGTH                         32
 #define PWD_LENGTH                          64

@@ -28,7 +28,8 @@ TEST_POWER_SAVE=(1 << 7)
 
 STRESS_TEST=(TEST_MODE_NONE | TEST_SCAN_WIFI | TEST_STATION_MAC | TEST_STATION_CONNECT_DISCONNECT | TEST_SOFTAP_MAC | TEST_SOFTAP_START_STOP | TEST_STATION_SOFTAP_MODE | TEST_POWER_SAVE)
 
-# Test APIs
+#***** Please Read *****
+#* Before use stress.py : User must enter user configuration parameter in "test_config.py" file *
 
 # Below APIs could be used by demo application
 

@@ -14,6 +14,63 @@
 
 from commands import *
 from test_config import *
+from socket import * 
+from struct import *
+from fcntl import *
+
+sta_interface = 'ethsta0'
+ap_interface = 'ethap0'
+
+# From linux/socket.h
+AF_UNIX      = 1
+
+# From linux/if.h
+IFF_UP       = 0x1
+
+# From linux/sockios.h
+SIOCGIFFLAGS = 0x8913
+SIOCSIFFLAGS = 0x8914
+SIOCSIFHWADDR = 0x8924
+
+# Macros for packing data in 16 bytes short character bytes 
+PACK_FORMAT = '16sh'
+
+def get_bytes(string):
+    if sys.version_info >= (3, 0):
+        return bytes(string, 'utf-8')
+    else:
+        return string
+
+def interface_down(sockfd, iface):
+    ifreq = pack(PACK_FORMAT, get_bytes(iface), 0)
+    flags = unpack(PACK_FORMAT, ioctl(sockfd, SIOCGIFFLAGS, ifreq))[1]
+    flags = flags & ~IFF_UP
+    ifreq = pack(PACK_FORMAT, get_bytes(iface), flags)
+    ret = ioctl(sockfd, SIOCSIFFLAGS, ifreq)
+    if (not ret):
+        return failure
+    else:
+        return success
+
+def interface_up(sockfd, iface):
+    ifreq = pack(PACK_FORMAT, get_bytes(iface), 0)
+    flags = unpack(PACK_FORMAT, ioctl(sockfd, SIOCGIFFLAGS, ifreq))[1]
+    flags = flags | IFF_UP
+    ifreq = pack(PACK_FORMAT, get_bytes(iface), flags)
+    ret = ioctl(sockfd, SIOCSIFFLAGS, ifreq)
+    if (not ret):
+        return failure
+    else:
+        return success
+
+def setHWaddr(sockfd, iface, mac):
+    macbytes = [int(i, 16) for i in mac.split(':')]
+    ifreq = pack('16sH6B8x', get_bytes(sta_interface), AF_UNIX, *macbytes)
+    ret = ioctl(sockfd, SIOCSIFHWADDR, ifreq)
+    if (not ret):
+        return failure
+    else:
+        return success
 
 def test_get_wifi_mode():
     mode = wifi_get_mode()
@@ -79,13 +136,48 @@ def test_softap_mode_set_mac_addr_of_esp():
         print("SoftAP MAC address is not set")
     return
 
+
 def test_station_mode_connect():
     ret = wifi_set_ap_config(STATION_MODE_SSID, STATION_MODE_PWD, STATION_MODE_BSSID,\
             STATION_MODE_IS_WPA3_SUPPORTED, STATION_MODE_LISTEN_INTERVAL)
-    if (ret == failure):
-        print("Failed to connect to AP")
+    if (ret != failure):
+        print("Connected to "+STATION_MODE_SSID)
     else:
-        print(ret)
+        print("Failed to connect to AP")
+        return
+
+    sockfd = socket(AF_INET, SOCK_DGRAM, IPPROTO_IP)
+    if (not sockfd):
+        print("Failed to open socket")
+        return
+
+    ret = interface_down(sockfd, sta_interface)
+    if (ret != failure):
+        print(sta_interface+" interface down")
+    else:
+        print("Unable to down "+sta_interface+" interface")
+        return
+
+    mac = wifi_get_mac(WIFI_MODE_STATION)
+    if (mac != failure):
+        print("Station mode: mac address "+str(mac))
+    else:
+        print("Failed to get MAC address")
+        return
+
+    ret = setHWaddr(sockfd, sta_interface, mac)
+    if (ret != failure):
+        print("MAC address "+mac+" set to "+sta_interface+" interface")
+    else: 
+        print("Unable to set MAC address to "+sta_interface)
+        return
+
+    ret = interface_up(sockfd, sta_interface)
+    if (ret != failure):
+        print(sta_interface+" interface up")
+    else:
+        print("Unable to up "+sta_interface+" interface")
+    return
 
 def test_station_mode_get_info():
     ret = wifi_get_ap_config()
@@ -116,6 +208,18 @@ def test_station_mode_disconnect():
         print("Disconnected from AP")
     else:
         print("Failed to disconnect from AP")
+        return
+
+    sockfd = socket(AF_INET, SOCK_DGRAM, IPPROTO_IP)
+    if (not sockfd):
+        print("Failed to open socket")
+        return
+
+    ret = interface_down(sockfd, sta_interface)
+    if (ret != failure):
+        print(sta_interface+" interface down")
+    else:
+        print("Unable to down "+sta_interface+" interface")
     return
 
 def test_softap_mode_start():
@@ -126,6 +230,39 @@ def test_softap_mode_start():
         print("ESP32 softAP started")
     else:
         print("Failed to set softAP config")
+        return
+
+    sockfd = socket(AF_INET, SOCK_DGRAM, IPPROTO_IP)
+    if (not sockfd):
+        print("Failed to open socket")
+        return
+
+    ret = interface_down(sockfd, ap_interface)
+    if (ret != failure):
+        print(ap_interface+" interface down")
+    else:
+        print("Unable to down "+ap_interface+" interface")
+        return
+        
+    mac = wifi_get_mac(WIFI_MODE_SOFTAP)
+    if (mac != failure):
+        print("SoftAP mode: mac address "+str(mac))
+    else:
+        print("Failed to get MAC address of softAP interface")
+        return
+
+    ret = setHWaddr(sockfd, ap_interface, mac)
+    if (ret != failure):
+        print("MAC address "+mac+" set to "+ap_interface+" interface")
+    else:
+        print("Unable to set MAC address to "+ap_interface)
+        return
+
+    ret = interface_up(sockfd, ap_interface)
+    if (ret != failure):
+        print(ap_interface+" interface up")
+    else:
+        print("Unable to up "+ap_interface+" interface")
     return
 
 def test_softap_mode_get_info():
@@ -159,6 +296,18 @@ def test_softap_mode_stop():
         print("ESP32 softAP stopped")
     else:
         print("Failed to stop ESP32 softAP")
+        return
+
+    sockfd = socket(AF_INET, SOCK_DGRAM, IPPROTO_IP)
+    if (not sockfd):
+        print("Failed to open socket")
+        return
+
+    ret = interface_down(sockfd, ap_interface)
+    if (ret != failure):
+        print(ap_interface+" interface down")
+    else:
+        print("Unable to down "+ap_interface+" interface")
     return
 
 def test_set_wifi_power_save_mode():
@@ -175,4 +324,5 @@ def test_get_wifi_power_save_mode():
         print("Power save mode is "+str(power_save_mode))
     else:
         print("Failed to set power save mode")
+    return
 
