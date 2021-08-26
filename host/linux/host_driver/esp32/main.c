@@ -379,6 +379,7 @@ static void process_rx_packet(struct sk_buff *skb)
 			skb_pull(skb, offset);
 
 			type = skb->data;
+			//print_hex_dump(KERN_INFO, "bt_rx: ", DUMP_PREFIX_ADDRESS, 16, 1, skb->data, len, 1);
 			hci_skb_pkt_type(skb) = *type;
 			skb_pull(skb, 1);
 

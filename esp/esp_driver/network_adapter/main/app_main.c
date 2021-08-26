@@ -347,7 +347,7 @@ void send_task(void* pvParameters)
 				}
 			}
 
-			sleep(1);
+			usleep(100*1000);
 		}
 	}
 }
@@ -394,6 +394,9 @@ void process_rx_task(void* pvParameters)
 		} else if (buf_handle.if_type == ESP_HCI_IF) {
 			/* VHCI needs one extra byte at the start of payload */
 			/* that is accomodated in esp_payload_header */
+#if CONFIG_ESP_BT_DEBUG
+			ESP_LOG_BUFFER_HEXDUMP("bt_rx", payload, payload_len, ESP_LOG_INFO);
+#endif
 			payload--;
 			payload_len++;
 
@@ -429,7 +432,7 @@ void recv_task(void* pvParameters)
 
 		if (!datapath) {
 			/* Datapath is not enabled by host yet*/
-			sleep(1);
+			usleep(100*1000);
 			continue;
 		}
 
@@ -529,6 +532,10 @@ static int host_rcv_pkt(uint8_t *data, uint16_t len)
 	buf_handle.wlan_buf_handle = buf;
 	buf_handle.free_buf_handle = free;
 
+#if CONFIG_ESP_BT_DEBUG
+	ESP_LOG_BUFFER_HEXDUMP("bt_tx", data, len, ESP_LOG_INFO);
+#endif
+
 	ret = xQueueSend(to_host_queue, &buf_handle, portMAX_DELAY);
 
 	if (ret != pdTRUE) {
@@ -551,6 +558,10 @@ static esp_err_t initialise_bluetooth(void)
 	esp_bt_controller_config_t bt_cfg = BT_CONTROLLER_INIT_CONFIG_DEFAULT();
 
 #ifdef CONFIG_BT_HCI_UART_NO
+#if CONFIG_ESP_BT_DEBUG
+	ESP_LOGI(TAG, "UART Pins: TX:%u Rx:%u RTS:%u CTS:%u\n",
+		BT_TX_PIN, BT_RX_PIN, BT_RTS_PIN, BT_CTS_PIN);
+#endif
 #if CONFIG_BT_HCI_UART_NO == 1
 	periph_module_enable(PERIPH_UART1_MODULE);
 #elif CONFIG_BT_HCI_UART_NO == 2

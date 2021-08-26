@@ -8,12 +8,12 @@ Raspberry-Pi pinout can be found [here!](https://pinout.xyz/pinout/spi)
 #### 1.1.1 ESP32 setup
 | Raspberry-Pi Pin | ESP32 Pin | Function |
 |:-------:|:---------:|:--------:|
-| 24 | IO5 | CS0 |
-| 23 | IO18 | SCLK |
-| 21 | IO19 | MISO |
-| 19 | IO23 | MOSI |
+| 24 | IO15 | CS0 |
+| 23 | IO14 | SCLK |
+| 21 | IO12 | MISO |
+| 19 | IO13 | MOSI |
 | 25 | GND | Ground |
-| 11 | IO2 | Handshake |
+| 15 | IO2 | Handshake |
 | 13 | IO4 | Data Ready |
 | 31 | EN  | ESP32 Reset |
 
@@ -29,7 +29,7 @@ Setup image is here.
 | 21 | IO13 | MISO |
 | 19 | IO11 | MOSI |
 | 25 | GND | Ground |
-| 11 | IO2 | Handshake |
+| 15 | IO2 | Handshake |
 | 13 | IO4 | Data ready |
 | 31 | RST | ESP32 Reset |
 
@@ -45,7 +45,7 @@ Setup image is here.
 | 21 | IO02 | MISO |
 | 19 | IO07 | MOSI |
 | 25 | GND | Ground |
-| 11 | IO03 | Handshake |
+| 15 | IO03 | Handshake |
 | 13 | IO04 | Data ready |
 | 31 | RST | ESP32 Reset |
 

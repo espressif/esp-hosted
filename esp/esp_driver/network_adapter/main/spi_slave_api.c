@@ -152,7 +152,7 @@ int interface_remove_driver()
 static int is_valid_trans_buffer(uint8_t *trans_buf)
 {
 	struct esp_payload_header *header = NULL;
-	uint16_t len = 0, offset = 0;
+	uint16_t len = 0;
 
 	if (!trans_buf) {
 		return pdFALSE;
@@ -161,7 +161,6 @@ static int is_valid_trans_buffer(uint8_t *trans_buf)
 	header = (struct esp_payload_header *) trans_buf;
 
 	len = le16toh(header->len);
-	offset = le16toh(header->offset);
 
 	if (!len || (len > SPI_BUFFER_SIZE)) {
 		return pdFALSE;
