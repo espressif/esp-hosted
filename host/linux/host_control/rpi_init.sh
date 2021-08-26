@@ -19,19 +19,29 @@ BT_INIT_SET="0"
 IF_TYPE="sdio"
 MODULE_NAME="esp32_${IF_TYPE}.ko"
 
+build_python_commands_lib()
+{
+    cd python_support/
+    make clean
+    make -j8
+    cd ..
+}
+
 wlan_init()
 {
-	cd ../host_driver/esp32/
-	if [ `lsmod | grep esp32 | wc -l` != "0" ]; then
-		sudo rm /dev/esps0
-		if [ `lsmod | grep esp32_sdio | wc -l` != "0" ]; then
-			sudo rmmod esp32_sdio &> /dev/null
-		else
-			sudo rmmod esp32_spi &> /dev/null
-		fi
-	fi
+    build_python_commands_lib
 
-	# For Linux other than Raspberry Pi, Please point
+    cd ../host_driver/esp32/
+    if [ `lsmod | grep esp32 | wc -l` != "0" ]; then
+        sudo rm /dev/esps0
+        if [ `lsmod | grep esp32_sdio | wc -l` != "0" ]; then
+            sudo rmmod esp32_sdio &> /dev/null
+            else
+            sudo rmmod esp32_spi &> /dev/null
+        fi
+    fi
+
+    # For Linux other than Raspberry Pi, Please point
 	# CROSS_COMPILE -> <Toolchain-Path>/bin/arm-linux-gnueabihf-
 	# KERNEL        -> Place where kernel is checked out and built
 	# ARCH          -> Architecture
@@ -55,93 +65,93 @@ wlan_init()
 
 bt_init()
 {
-	sudo raspi-gpio set 15 a0 pu
-	sudo raspi-gpio set 14 a0 pu
-	sudo raspi-gpio set 16 a3 pu
-	sudo raspi-gpio set 17 a3 pu
+    sudo raspi-gpio set 15 a0 pu
+    sudo raspi-gpio set 14 a0 pu
+    sudo raspi-gpio set 16 a3 pu
+    sudo raspi-gpio set 17 a3 pu
 }
 
 usage()
 {
-	echo "This script prepares RPI for wlan and bt/ble operation over esp32 device"
-	echo "\nUsage: ./rpi_init.sh [arguments]"
-	echo "\nArguments are optional and are as below"
-	echo "  spi:    sets ESP32<->RPi communication over SPI"
-	echo "  sdio:   sets ESP32<->RPi communication over SDIO"
-	echo "	btuart:	Set GPIO pins on RPi for HCI UART operations"
-	echo "	resetpin=6:	Set GPIO pins on RPi connected to EN pin of ESP32, used to reset ESP32 (default:6 for BCM6)"
-	echo "\nExample:"
-	echo "  - Prepare RPi for WLAN operation on SDIO. sdio is default if no interface mentioned"
-	echo "	 # ./rpi_init.sh or ./rpi_init.sh sdio"
-	echo "\n  - Use spi for host<->ESP32 communication. sdio is default if no interface mentioned"
-	echo "	 # ./rpi_init.sh spi"
-	echo "\n  - Prepare RPi for bt/ble operation over UART and WLAN over SDIO/SPI"
-	echo "	 # ./rpi_init.sh sdio btuart or ./rpi_init.sh spi btuart"
-	echo "\n  - use GPIO pin BCM5 (GPIO29) for reset"
-	echo "	 # ./rpi_init.sh resetpin=5"
-	echo "\n  - do btuart, use GPIO pin BCM5 (GPIO29) for reset over SDIO/SPI"
-	echo "	 # ./rpi_init.sh sdio btuart resetpin=5 or ./rpi_init.sh spi btuart resetpin=5"
+    echo "This script prepares RPI for wlan and bt/ble operation over esp32 device"
+    echo "\nUsage: ./rpi_init.sh [arguments]"
+    echo "\nArguments are optional and are as below"
+    echo "  spi:    sets ESP32<->RPi communication over SPI"
+    echo "  sdio:   sets ESP32<->RPi communication over SDIO"
+    echo "  btuart: Set GPIO pins on RPi for HCI UART operations"
+    echo "  resetpin=6:     Set GPIO pins on RPi connected to EN pin of ESP32, used to reset ESP32 (default:6 for BCM6)"
+    echo "\nExample:"
+    echo "  - Prepare RPi for WLAN operation on SDIO. sdio is default if no interface mentioned"
+    echo "   # ./rpi_init.sh or ./rpi_init.sh sdio"
+    echo "\n  - Use spi for host<->ESP32 communication. sdio is default if no interface mentioned"
+    echo "   # ./rpi_init.sh spi"
+    echo "\n  - Prepare RPi for bt/ble operation over UART and WLAN over SDIO/SPI"
+    echo "   # ./rpi_init.sh sdio btuart or ./rpi_init.sh spi btuart"
+    echo "\n  - use GPIO pin BCM5 (GPIO29) for reset"
+    echo "   # ./rpi_init.sh resetpin=5"
+    echo "\n  - do btuart, use GPIO pin BCM5 (GPIO29) for reset over SDIO/SPI"
+    echo "   # ./rpi_init.sh sdio btuart resetpin=5 or ./rpi_init.sh spi btuart resetpin=5"
 }
 
 parse_arguments()
 {
-	while [ "$1" != "" ] ; do
-		case $1 in
-			--help | -h )
-				usage
-				exit 0
-				;;
-			sdio)
-				IF_TYPE=$1
-				;;
-			spi)
-				IF_TYPE=$1
-				;;
-			resetpin=*)
-				echo "Recvd Option: $1"
-				RESETPIN=$1
-				;;
-			btuart)
-				echo "Recvd Option: $1"
-				BT_INIT_SET="1"
-				;;
-			*)
-				echo "$1 : unknown option"
-				usage
-				exit 1
-				;;
-		esac
-		shift
-	done
+    while [ "$1" != "" ] ; do
+        case $1 in
+            --help | -h )
+                usage
+                exit 0
+                ;;
+            sdio)
+                IF_TYPE=$1
+                ;;
+            spi)
+                IF_TYPE=$1
+                ;;
+            resetpin=*)
+                echo "Recvd Option: $1"
+                RESETPIN=$1
+                ;;
+            btuart)
+                echo "Recvd Option: $1"
+                BT_INIT_SET="1"
+                ;;
+            *)
+                echo "$1 : unknown option"
+                usage
+                exit 1
+                ;;
+                esac
+        shift
+    done
 }
 
 
 parse_arguments $*
 if [ "$IF_TYPE" = "" ] ; then
-	echo "Error: No protocol selected"
-	usage
-	exit 1
+    echo "Error: No protocol selected"
+    usage
+    exit 1
 else
-	echo "Building for $IF_TYPE protocol"
-	MODULE_NAME=esp32_${IF_TYPE}.ko
+    echo "Building for $IF_TYPE protocol"
+    MODULE_NAME=esp32_${IF_TYPE}.ko
 fi
 
 if [ "$IF_TYPE" = "spi" ] ; then
-	rm spidev_disabler.dtbo
-	# Disable default spidev driver
-	dtc spidev_disabler.dts -O dtb > spidev_disabler.dtbo
-	sudo dtoverlay -d . spidev_disabler
+    rm spidev_disabler.dtbo
+    # Disable default spidev driver
+    dtc spidev_disabler.dts -O dtb > spidev_disabler.dtbo
+    sudo dtoverlay -d . spidev_disabler
 fi
 
 if [ `lsmod | grep bluetooth | wc -l` = "0" ]; then
-	echo "bluetooth module inserted"
-	sudo modprobe bluetooth
+    echo "bluetooth module inserted"
+    sudo modprobe bluetooth
 fi
 
 if [ `lsmod | grep bluetooth | wc -l` != "0" ]; then
-	wlan_init
+    wlan_init
 fi
 
 if [ "$BT_INIT_SET" = "1" ] ; then
-	bt_init
+    bt_init
 fi

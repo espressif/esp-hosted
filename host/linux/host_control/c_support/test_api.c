@@ -69,7 +69,7 @@ static int interface_up(int sockfd, char* iface)
         memcpy(req.ifr_name,iface,if_name_len);
         req.ifr_name[if_name_len]='\0';
     } else {
-        printf("Failed: Max interface length allowed is %ld \n", sizeof(req.ifr_name));
+        printf("Failed: Max interface length allowed is %u \n", sizeof(req.ifr_name));
         return FAILURE;
     }
     req.ifr_flags |= IFF_UP;
@@ -90,7 +90,7 @@ static int interface_down(int sockfd, char* iface)
         memcpy(req.ifr_name,iface,if_name_len);
         req.ifr_name[if_name_len]='\0';
     } else {
-        printf("Failed: Max interface length allowed is %ld \n", sizeof(req.ifr_name));
+        printf("Failed: Max interface length allowed is %u \n", sizeof(req.ifr_name));
         return FAILURE;
     }
     req.ifr_flags &= ~IFF_UP;
@@ -112,7 +112,7 @@ static int setHWaddr(int sockfd, char* iface, char* mac)
         memcpy(req.ifr_name,iface,if_name_len);
         req.ifr_name[if_name_len]='\0';
     } else {
-        printf("Failed: Max interface length allowed is %ld \n", sizeof(req.ifr_name));
+        printf("Failed: Max interface length allowed is %u \n", sizeof(req.ifr_name));
         return FAILURE;
     }
     memset(mac_bytes, '\0', MAC_LEN);
@@ -496,7 +496,9 @@ int test_softap_mode_connected_clients_info()
     stations_list = wifi_connected_stations_list(&count);
     if (!count) {
         printf("No station found \n");
-    } else if (!stations_list) {
+    }
+
+    if (!stations_list) {
         printf("Failed to get connected stations list \n");
     } else if (count) {
         for (i=0; i<count; i++) {

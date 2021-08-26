@@ -4,6 +4,8 @@ This document describes python API's provided for control interface.
 [python_demo.md](python_demo.md) gives overview of how to test control path interface in application also how to perform stress testing of control path interface.
 
 
+A [stress.py](../host/linux/host_control/python_support/stress.py) can use for stress testing of control path commands. In which, `STRESS_TEST_COUNT` variable represents number of iterations and `STRESS_TEST` variable defines which test should get executed.
+
 ## 1. `wifi_get_mac`
 This is used to retrieve the MAC address of ESP's station or softAP interface
 
@@ -261,9 +263,9 @@ Get the list of connected station to the ESP32 softAP.
 
 ### Return
 
-*success case* : list of Stationlist tuple(mac,rssi)
+*success case* : list of Stationlist tuple(bssid,rssi)
 Stations credentials::
-- `mac` :
+- `bssid` :
 MAC address of station
 - `rssi` :
 RSSI signal strength

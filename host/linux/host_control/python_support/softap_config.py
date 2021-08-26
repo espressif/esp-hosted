@@ -12,24 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from commands import *
+from commands_lib import *
 import argparse
 import time
 import os
 from distutils.util import strtobool
 
-# WiFi Mode
-# NULL                  0
-# Station               1
-# SoftAP                2
-# Station+softAP        3
-
-wifi_mode_none = 0
-wifi_mode_station = 1
-wifi_mode_softap = 2
-wifi_mode_station_softap = 3
-success = 'success'
-failure = 'failure'
 flag = success
 ap_mac = 'not_set'
 softap_config = 'not_set'
@@ -52,7 +40,7 @@ parser.add_argument("--bw", type=int, default=1, help="Bandwidth (1: WIFI_BW_HT2
 
 args = parser.parse_args()
 
-ap_mac = wifi_get_mac(wifi_mode_softap)
+ap_mac = wifi_get_mac(WIFI_MODE_SOFTAP)
 if (ap_mac == failure):
     print("Failed to get softAP mac address")
     flag = failure

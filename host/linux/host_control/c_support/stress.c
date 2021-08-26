@@ -35,35 +35,24 @@ int main(int argc, char *argv[])
     }
 
     stress_test_count = atoi(num);
-    printf("stoi %d\n", stress_test_count);
     for (int i=2; i<argc; i++) {
-        if (0 == strncasecmp(STA_CONNECT, argv[i], sizeof(STA_CONNECT))) {
-            for (int j=0; j<stress_test_count; j++) {
+        for (int j=0; j<stress_test_count; j++) {
+            if (0 == strncasecmp(STA_CONNECT, argv[i], sizeof(STA_CONNECT))) {
                 test_station_mode_connect();
             }
-        }
-        if (0 == strncasecmp(STA_DISCONNECT, argv[i], sizeof(STA_DISCONNECT))) {
-            for (int j=0; j<stress_test_count; j++) {
+            if (0 == strncasecmp(STA_DISCONNECT, argv[i], sizeof(STA_DISCONNECT))) {
                 test_station_mode_disconnect();
             }
-        }
-        if (0 == strncasecmp(AP_START, argv[i], sizeof(AP_START))) {
-            for (int j=0; j<stress_test_count; j++) {
+            if (0 == strncasecmp(AP_START, argv[i], sizeof(AP_START))) {
                 test_softap_mode_start();
             }
-        }
-        if (0 == strncasecmp(AP_STOP, argv[i], sizeof(AP_STOP))) {
-            for (int j=0; j<stress_test_count; j++) {
+            if (0 == strncasecmp(AP_STOP, argv[i], sizeof(AP_STOP))) {
                 test_softap_mode_stop();
             }
-        }
-        if (0 == strncasecmp(SCAN, argv[i], sizeof(SCAN))) {
-            for (int j=0; j<stress_test_count; j++) {
+            if (0 == strncasecmp(SCAN, argv[i], sizeof(SCAN))) {
                 test_get_available_wifi();
             }
-        }
-        if (0 == strncasecmp(STA_LIST, argv[i], sizeof(STA_LIST))) {
-            for (int j=0; j<stress_test_count; j++) {
+            if (0 == strncasecmp(STA_LIST, argv[i], sizeof(STA_LIST))) {
                 test_softap_mode_connected_clients_info();
             }
         }

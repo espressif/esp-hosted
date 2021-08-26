@@ -44,20 +44,10 @@ Make sure that Raspberry-Pi is equipped with following:
 	* Python 2.x or 3.x
 		```sh
 		$ sudo apt install python
-		$ sudo apt install python-pip
 		```
 		 or
 		```sh
 		$ sudo apt install python3
-		$ sudo apt install python3-pip
-		```
-	* Protobuf
-		```sh
-		$ pip install protobuf
-		```
-		 or
-		```sh
-		$ pip3 install protobuf
 		```
 * Clone ESP-Hosted code repository
 	```
@@ -200,14 +190,7 @@ This section identifies Raspberry-Pi specific setup requirements.
 * Install following tools on Linux Host machine.
 	* Git
 	* Python 2.x or 3.x: We have tested ESP-Hosted solution with python 2.7.13 and 3.5.3
-	* Protobuf:  
-	  :warning:`Note: We have tested ESP-Hosted solution with Protobuf version >= 3.13.0`
-		```
-		$ pip install protobuf
-		or
-		$ pip3 install protobuf
-		```
-	* Bluetooth Stack and utilities:  
+	* Bluetooth Stack and utilities:
 	  :warning:`Note: We have tested ESP-Hosted solution with bluez 5.43+`
 		* bluetooth
 		* bluez

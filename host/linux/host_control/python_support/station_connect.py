@@ -12,25 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from commands import *
+from commands_lib import *
 import argparse
 import time
 import os
 import subprocess
 from distutils.util import strtobool
 
-# WiFi Mode
-# NULL              0
-# Station           1
-# SoftAP            2
-# Station + softAP  3
-
-wifi_mode_none = 0
-wifi_mode_station = 1
-wifi_mode_softap = 2
-wifi_mode_station_softap = 3
-failure = "failure"
-success = "success"
 flag = success
 sta_mac = 'not_set'
 station_status = 'not_set'
@@ -49,7 +37,7 @@ parser.add_argument("--listen_interval", type=int, default=3, help="Listen inter
 
 args = parser.parse_args()
 
-sta_mac = wifi_get_mac(wifi_mode_station)
+sta_mac = wifi_get_mac(WIFI_MODE_STATION)
 if (sta_mac == failure):
     flag = failure
     print("Failed to get station MAC address")

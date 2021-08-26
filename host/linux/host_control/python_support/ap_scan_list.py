@@ -12,10 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from commands import *
+from commands_lib import *
 import argparse
 
-failure = "failure"
 ap_list = 'No APs Available'
 
 parser = argparse.ArgumentParser(description='ap_scan_list.py is a python script which gives scanned list of available APs. list contains ssid, channel number, rssi, mac address and authentication mode of AP. ex. python ap_scan_list.py')

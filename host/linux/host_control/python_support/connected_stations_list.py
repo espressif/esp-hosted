@@ -12,33 +12,22 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from commands import *
+from commands_lib import *
 import argparse
 
-# WiFi Mode
-# NULL              0
-# Station           1
-# softAP            2
-# Station + softAP  3
-
-wifi_mode_none = 0
-wifi_mode_station = 1
-wifi_mode_softap = 2
-wifi_mode_station_softap = 3
-failure = "failure"
 get_mode = 'not_set'
-stations_list = "No station is connected"
+stations_list = "No_station_is_connected"
 
 parser = argparse.ArgumentParser(description='connected_stations_list.py is a python script which gives list of mac addresses of stations connected to softAP. ex. python connected_stations_list.py')
 
 get_mode = wifi_get_mode()
-if ((get_mode == wifi_mode_softap) or (get_mode == wifi_mode_station_softap)):
+if ((get_mode == WIFI_MODE_SOFTAP) or (get_mode == WIFI_MODE_SOFTAP_STATION)):
     stations_list = wifi_connected_stations_list()
     if (stations_list == failure):
         print("failure in getting connected stations list")
     else:
         for obj in stations_list:
-            print(obj.mac)
+            print(obj.bssid)
 elif (get_mode == failure):
     print("failure in getting wifi mode")
 else :

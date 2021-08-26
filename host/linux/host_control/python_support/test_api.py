@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from commands import *
+from commands_lib import *
 from test_config import *
 from socket import * 
 from struct import *
@@ -285,7 +285,7 @@ def test_softap_mode_connected_clients_info():
     stations_list = wifi_connected_stations_list()
     if (stations_list != failure):
         for obj in stations_list:
-            print("station's bssid: "+obj.mac+" rssi: "+str(obj.rssi))
+            print("station's bssid: "+obj.bssid+" rssi: "+str(obj.rssi))
     else:
         print("Failed to get connected stations list")
     return

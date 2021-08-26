@@ -2,6 +2,8 @@
 
 This document describes C API's provided for control path interface. Please refer [commands.c](../host/host_common/commands.c) for API's defination. [c_demo.md](c_demo.md) gives overview of how to test control path interface in application also how to perform stress testing of control path interface.
 
+A [stress.c](../host/linux/host_control/c_support/stress.c) can use for stress testing of control path commands. In which, `STRESS_TEST_COUNT` variable represents number of iterations and `STRESS_TEST` variable defines which test should get executed.
+
 ## 1. Data Structures
 
 ### 1.1 _struct_ `esp_hosted_sta_config_t`
