@@ -31,7 +31,8 @@ wifi_mode_station_softap = 3
 success = 'success'
 failure = 'failure'
 flag = success
-softap_config = 'Not set'
+ap_mac = 'not_set'
+softap_config = 'not_set'
 
 parser = argparse.ArgumentParser(description='softap_config.py script to configure ESP32 softAP mode. ex. python softap_config.py \'xyz\' \'xyz123456\' 1 3 --max_conn=4 --ssid_hidden=0 --bw=1')
 
@@ -81,6 +82,4 @@ else:
     os.system(command)
     print(command)
     
-    time.sleep(1)
- 
     print("SoftAP config successfully set")

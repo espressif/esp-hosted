@@ -22,7 +22,7 @@
 /***** Please Read *****/
 /* Before use test.c : User must enter user configuration parameter in "test_config.h" file */
 
-int main()
+int main(int argc, char *argv[])
 {
     /* Below APIs could be used by demo application */
 	int ret = control_path_platform_init();
@@ -31,63 +31,20 @@ int main()
 		exit(0);
 	}
 
-    test_set_wifi_mode_none();
-
-    test_get_wifi_mode();
-
-    test_get_available_wifi();
-
-    /* station mode */
-
-    test_set_wifi_mode_station();
-
-    test_station_mode_set_mac_addr_of_esp();
-
-    test_station_mode_get_mac_addr();
-
-    test_station_mode_connect();
-
-    test_station_mode_get_info();
-
-    test_station_mode_disconnect();
-
-    /* softap mode */
-
-    test_set_wifi_mode_softap();
-
-    test_softap_mode_set_mac_addr_of_esp();
-
-    test_softap_mode_get_mac_addr();
-
-    test_softap_mode_start();
-
-    test_softap_mode_get_info();
-
-    test_softap_mode_connected_clients_info();
-
-    test_softap_mode_stop();
-
-    /* station + softap mode*/
-
-    test_set_wifi_mode_station_softap();
-
-    test_station_mode_connect();
-
-    test_softap_mode_start();
-
-    test_station_mode_get_info();
-
-    test_softap_mode_get_info();
-
-    test_station_mode_disconnect();
-
-    test_softap_mode_stop();
-
-    /* power save mode */
-
-    test_set_wifi_power_save_mode();
-
-    test_get_wifi_power_save_mode();
+    for (int i=1; i<argc; i++) {
+        if (0 == strncasecmp(STA_CONNECT, argv[i], sizeof(STA_CONNECT)))
+            test_station_mode_connect();
+        if (0 == strncasecmp(STA_DISCONNECT, argv[i], sizeof(STA_DISCONNECT)))
+            test_station_mode_disconnect();
+        if (0 == strncasecmp(AP_START, argv[i], sizeof(AP_START)))
+            test_softap_mode_start();
+        if (0 == strncasecmp(AP_STOP, argv[i], sizeof(AP_STOP)))
+            test_softap_mode_stop();
+        if (0 == strncasecmp(SCAN, argv[i], sizeof(SCAN)))
+            test_get_available_wifi();
+        if (0 == strncasecmp(STA_LIST, argv[i], sizeof(STA_LIST)))
+            test_softap_mode_connected_clients_info();
+    }
 
     return 0;
 }

@@ -32,7 +32,8 @@ wifi_mode_station_softap = 3
 failure = "failure"
 success = "success"
 flag = success
-station_status = 'Nothing set'
+sta_mac = 'not_set'
+station_status = 'not_set'
 
 parser = argparse.ArgumentParser(description='station_connect.py is a python script which connect ESP32 station to AP. ex. python station_connect.py \'xyz\' \'xyz123456\' --bssid=\'e5:6c:67:3c:cf:65\' --is_wpa3_supported=True --listen_interval=3')
 
@@ -63,8 +64,8 @@ if (flag == success):
             print("SSID: "+args.ssid+" not found")
         elif (station_status == invalid_password_str):
             print("Incorrect Password: "+args.password)
-        print("Failed to set AP config")
-    elif (station_status == success):
+        print("Failed to connect with AP")
+    else:
         print("Connected to "+args.ssid)
 
 if (flag != success):
@@ -82,30 +83,4 @@ else:
     os.system(command)
     print(command)
 
-    time.sleep(1)
-
-    for x in range (5):
-        command = 'sudo dhclient ethsta0 -r'
-        os.system(command)
-        print(command)
-
-        command = 'sudo dhclient ethsta0 -v'
-        os.system(command)
-        print(command)
-
-        try:
-            get_ip = subprocess.check_output('ip addr show | grep "ethsta0" | grep -o "inet [0-9]*\.[0-9]*\.[0-9]*\.[0-9]*" | grep -o "[0-9]*\.[0-9]*\.[0-9]*\.[0-9]*"', shell = True)
-            if get_ip:
-                flag = success
-                break
-        except subprocess.CalledProcessError:
-            time.sleep(0.1)
-        flag = failure
-
-    if (flag == failure):
-        print("Failed to assign IP address to ethsta0 interface")
-    else:
-        print("Success in setting AP config")
-
-
-
+    print("Interface ethsta0 is up with MAC address "+str(sta_mac))

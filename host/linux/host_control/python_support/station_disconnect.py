@@ -28,8 +28,9 @@ wifi_mode_softap = 2
 wifi_mode_station_softap = 3
 failure = "failure"
 success = "success"
+wifi_mode = 'not_set'
+disconnect = "not_set"
 flag = success
-disconnect = "Not set"
 
 parser = argparse.ArgumentParser(description='station_disconnect.py script will disconnect ESPStation from AP ex. python station_disconnect.py')
 
@@ -50,11 +51,6 @@ else :
     flag = failure
 
 if (flag == success):
-    command = 'sudo dhclient ethsta0 -r'
-    print('$ '+command)
-    os.system(command)
-    
     command = 'sudo ifconfig ethsta0 down'
     print('$ '+command)
     os.system(command)
-

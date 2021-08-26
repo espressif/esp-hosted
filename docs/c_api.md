@@ -1,6 +1,6 @@
 # Control Interface: C API's
 
-This document describes C API's provided for control interface. Please refer [test.c](../host/linux/host_control/c_support/test.c) to get an idea how to use these API's.
+This document describes C API's provided for control path interface. Please refer [commands.c](../host/host_common/commands.c) for API's defination. [c_demo.md](c_demo.md) gives overview of how to test control path interface in application also how to perform stress testing of control path interface.
 
 ## 1. Data Structures
 

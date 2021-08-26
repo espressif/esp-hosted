@@ -32,7 +32,6 @@ $ cd host/linux/host_control/python_support/
 ---
 * **Connect to external access point**
 	* `station_connect.py` script configures ESP peripheral in WiFi station mode and connects to an external AP with user-provided credentials.
-	* This script also runs DHCP client that obtains IP address from an external AP.
 	* The script accepts arguments such as SSID, password, optionally BSSID of an external AP, wpa3 support and listen interval (AP beacon intervals). For example:
 		```
 		$ python station_connect.py 'xyz' 'xyz123456' --bssid='e5:6c:67:3c:cf:65' --is_wpa3_supported=True --listen_interval=3
@@ -40,8 +39,16 @@ $ cd host/linux/host_control/python_support/
 		:warning:`Note: WPA3 option is only applicable if target AP supports WPA3.`
 	* As an end result of this script:
 		* Wi-Fi station interface of ESP peripheral will be connected to an external AP
-		* `ethsta0` interface will be up and it will also have an IP address
-		* Network data path will be open for higher applications to use this interface for data communication
+		* `ethsta0` interface will be up and ESP32's MAC address will be assigned to it.
+
+Note:
+* User needs to run DHCP client to obtain IP address from an external AP. After that network data path will be open for higher applications to use this interface for data communication. For an example as below.
+
+```
+sudo dhclient ethsta0 -r
+
+sudo dhclient ethsta0 -v
+```
 ---
 * **Disconnect from external access point**
 	* `station_disconnect.py` script disconnects ESP peripheral station from an external AP.
@@ -49,7 +56,7 @@ $ cd host/linux/host_control/python_support/
 		$ python station_disconnect.py
 		```
 	* As an end result of this script:
-		* `ethsta0` interface will be in down state and it won't have IP address
+		* `ethsta0` interface will be in down state
 		* Network data path will be in closed state, hence there won't be any data communication on this interface
 
 #### 1.1.2 Wi-Fi softAP Mode Operations
@@ -71,7 +78,13 @@ $ cd host/linux/host_control/python_support/
 	* As an end result of this script:
 		* SoftAP interface will be up and running on ESP peripheral
 		* `ethap0` interface will be in `up` state
-	* To start data connection, set up a DHCP server on the Raspberry Pi, or configure a static IP address for AP interface (`ethap0`).
+	* To start data connection, set up a DHCP server on the Raspberry Pi, or configure a static IP address for AP interface (`ethap0`). For an example as below:
+
+```
+sudo dnsmasq --no-daemon --no-resolv --no-poll --dhcp-script=/system/bin/dhcp_announce --dhcp-range=192.168.4.1,192.168.4.20,1h
+
+sudo ifconfig ethap0 192.168.4.5
+```
 ---
 * **Stop softAP**
 	* `softap_stop.py` script disables wifi softAP mode on ESP peripheral.
