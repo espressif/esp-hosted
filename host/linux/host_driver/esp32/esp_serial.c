@@ -37,7 +37,6 @@
 
 //#define ESP_SERIAL_TEST
 
-
 static struct esp_serial_devs {
 	struct cdev cdev;
 	int dev_index;
@@ -96,7 +95,8 @@ static ssize_t esp_serial_write(struct file *file, const char __user *user_buffe
 
 	ret = esp_send_packet(dev->priv, tx_skb);
 	if (ret) {
-		printk (KERN_ERR "%s: Failed to transmit data\n", __func__);
+		printk (KERN_ERR "%s: Failed to transmit data, error %d\n", __func__, ret);
+		return ret;
 	}
 
 	return size;
