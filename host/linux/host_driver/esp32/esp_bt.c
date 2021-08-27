@@ -94,6 +94,7 @@ ESP_BT_SEND_FRAME_PROTOTYPE()
 		printk(KERN_ERR "%s: invalid args", __func__);
 		return -EINVAL;
 	}
+	//print_hex_dump(KERN_INFO, "bt_tx: ", DUMP_PREFIX_ADDRESS, 16, 1, skb->data, len, 1  );
 
 	/* Create space for payload header */
 	pad_len = sizeof(struct esp_payload_header);

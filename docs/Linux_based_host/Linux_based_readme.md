@@ -107,6 +107,23 @@ Prepare connections based on interface requirements and setup host as below.
 		* After loading ESP firmware, execute below command to create `hci0` interface
 			```sh
 			$ sudo hciattach -s 921600 /dev/serial0 any 921600 flow
+
+* **Wifi over SPI and Bluetooth over UART**
+	* Connection Setup
+		* Prepare connections as per section [1.1 Hardware Setup](SPI_setup.md#11-hardware-setup) of [SPI Setup document](SPI_setup.md)
+		* Prepare UART connections as per section [1.1 Hardware Setup](UART_setup.md#11-hardware-setup) of [UART setup document](UART_setup.md)
+	* Host Software
+		* Prepare Raspberry-Pi as per [1.2 Raspberry-Pi Software Setup](SPI_setup.md#12-raspberry-pi-software-setup) of [SPI Setup document](SPI_setup.md)
+		* Prepare Raspberry-Pi for UART operations as per section [1.2 Raspberry-Pi Software Setup](UART_setup.md#12-raspberry-pi-software-setup) of [UART setup document](UART_setup.md)
+		* Compile and load host driver as below:
+			```sh
+			$ cd host/linux/host_control/
+			$ ./rpi_init.sh spi btuart
+			```
+		* After loading ESP firmware, execute below command to create `hci0` interface
+			```sh
+			$ sudo hciattach -s 921600 /dev/serial0 any 921600 flow
+			```
 			```
 
 #### 1.3.1 ESP Firmware Setup

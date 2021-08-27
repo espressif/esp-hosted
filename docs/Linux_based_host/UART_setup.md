@@ -60,15 +60,16 @@ One can load pre-built release binaries on ESP peripheral or compile those from 
 ```sh
 $ python esptool.py --chip esp32 --port <serial_port> --baud 960000 --before default_reset \
 --after hard_reset write_flash -z --flash_mode dio --flash_freq 40m --flash_size detect \
-0x1000 esp_hosted_bootloader_esp32_sdio_uart_v<release_version>.bin \
-0x10000 esp_hosted_firmware_esp32_sdio_uart_v<release_version>.bin \
-0x8000 esp_hosted_partition-table_esp32_sdio_uart_v<release_version>.bin
+0x1000 esp_hosted_bootloader_esp32_<transport>_uart_v<release_version>.bin \
+0x10000 esp_hosted_firmware_esp32_<transport>_uart_v<release_version>.bin \
+0x8000 esp_hosted_partition-table_esp32_<transport>_uart_v<release_version>.bin
 
 Where,
 	<serial_port>    : serial port of ESP peripheral
 	<release_version>: 0.1,0.2 etc. Latest from [release page](https://github.com/espressif/esp-hosted/releases)
+	<transport>      : sdio or spi
 ```
-* This command will flash `SDIO+UART` interface binaries on `esp32` chip.
+* This command will flash `SDIO+UART` or `SPI+UART` interface binaries on `esp32` chip.
 
 * Windows user can use ESP Flash Programming Tool to flash the pre-built binary.
 
