@@ -299,6 +299,8 @@ static int process_tx_packet (struct sk_buff *skb)
 	payload_header->offset = cpu_to_le16(pad_len);
 	payload_header->reserved1 = c % 255;
 
+	payload_header->checksum = cpu_to_le16(compute_checksum(skb->data, (len + pad_len)));
+
 	if (!stop_data) {
 		ret = esp_send_packet(priv->adapter, skb);
 
@@ -321,6 +323,7 @@ static void process_rx_packet(struct sk_buff *skb)
 	struct esp_private *priv = NULL;
 	struct esp_payload_header *payload_header = NULL;
 	u16 len = 0, offset = 0;
+	u16 rx_checksum = 0, checksum = 0;
 	struct hci_dev *hdev = adapter.hcidev;
 	u8 *type = NULL;
 	int ret = 0, ret_len = 0;
@@ -333,6 +336,16 @@ static void process_rx_packet(struct sk_buff *skb)
 
 	len = le16_to_cpu(payload_header->len);
 	offset = le16_to_cpu(payload_header->offset);
+	rx_checksum = le16_to_cpu(payload_header->checksum);
+
+	payload_header->checksum = 0;
+
+	checksum = compute_checksum(skb->data, (len + offset));
+
+	if (checksum != rx_checksum) {
+		dev_kfree_skb_any(skb);
+		return;
+	}
 
 	if (payload_header->if_type == ESP_SERIAL_IF) {
 #ifdef CONFIG_SUPPORT_ESP_SERIAL
