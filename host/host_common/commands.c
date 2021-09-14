@@ -18,7 +18,7 @@
 
 #define SUCCESS                 0
 #define FAILURE                 -1
-#define MAC_LENGTH              19
+#define MAC_LENGTH              18
 #define MAX_SSID_LENGTH         32
 #define MIN_PWD_LENGTH          8
 #define MAX_PWD_LENGTH          64
