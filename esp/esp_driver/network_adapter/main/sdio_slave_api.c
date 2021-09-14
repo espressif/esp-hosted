@@ -184,6 +184,10 @@ static int32_t sdio_write(interface_handle_t *handle, interface_buffer_handle_t 
 	header->offset = htole16(offset);
 
 	memcpy(sendbuf + offset, buf_handle->payload, buf_handle->payload_len);
+
+	header->checksum = htole16(compute_checksum(sendbuf,
+				offset+buf_handle->payload_len));
+
 	ret = sdio_slave_transmit(sendbuf, total_len);
 	if (ret != ESP_OK) {
 		ESP_LOGE(TAG , "sdio slave transmit error, ret : 0x%x\r\n", ret);
@@ -200,6 +204,7 @@ interface_buffer_handle_t * sdio_read(interface_handle_t *if_handle)
 {
 	interface_buffer_handle_t *buf_handle = NULL;
 	struct esp_payload_header *header = NULL;
+	uint16_t rx_checksum = 0, checksum = 0, len;
 
 	if (!if_handle) {
 		ESP_LOGE(TAG, "Invalid arguments to sdio_read");
@@ -220,6 +225,18 @@ interface_buffer_handle_t * sdio_read(interface_handle_t *if_handle)
 			&(buf_handle->payload_len), portMAX_DELAY);
 
 	header = (struct esp_payload_header *) buf_handle->payload;
+
+	rx_checksum = le16toh(header->checksum);
+
+	header->checksum = 0;
+	len = le16toh(header->len) + le16toh(header->offset);
+
+	checksum = compute_checksum(buf_handle->payload, len);
+
+	if (checksum != rx_checksum) {
+		sdio_read_done(buf_handle->sdio_buf_handle);
+		return NULL;
+	}
 
 	buf_handle->if_type = header->if_type;
 	buf_handle->if_num = header->if_num;

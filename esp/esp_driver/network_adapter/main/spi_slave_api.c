@@ -255,6 +255,7 @@ static int process_spi_rx(interface_buffer_handle_t *buf_handle)
 	int ret = 0;
 	struct esp_payload_header *header = NULL;
 	uint16_t len = 0, offset = 0;
+	uint16_t rx_checksum = 0, checksum = 0;
 
 	/* Validate received buffer. Drop invalid buffer. */
 
@@ -266,6 +267,15 @@ static int process_spi_rx(interface_buffer_handle_t *buf_handle)
 	header = (struct esp_payload_header *) buf_handle->payload;
 	len = le16toh(header->len);
 	offset = le16toh(header->offset);
+
+	rx_checksum = le16toh(header->checksum);
+	header->checksum = 0;
+
+	checksum = compute_checksum(buf_handle->payload, len+offset);
+
+	if (checksum != rx_checksum) {
+		return -1;
+	}
 
 	if (!len || (len > SPI_BUFFER_SIZE)) {
 		return -1;
@@ -672,6 +682,10 @@ static int32_t esp_spi_write(interface_handle_t *handle, interface_buffer_handle
 
 	/* copy the data from caller */
 	memcpy(tx_buf_handle.payload + offset, buf_handle->payload, buf_handle->payload_len);
+
+	header->checksum = htole16(compute_checksum(tx_buf_handle.payload,
+				offset+buf_handle->payload_len));
+
 	ret = xQueueSend(spi_tx_queue, &tx_buf_handle, portMAX_DELAY);
 
 	if (ret != pdTRUE)

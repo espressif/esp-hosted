@@ -154,6 +154,8 @@ ESP_BT_SEND_FRAME_PROTOTYPE()
 	/* set HCI packet type */
 	*(pos + pad_len - 1) = pkt_type;
 
+	hdr->checksum = cpu_to_le16(compute_checksum(skb->data, (len + pad_len)));
+
 	ret = esp_send_packet(adapter, skb);
 
 	if (ret) {
