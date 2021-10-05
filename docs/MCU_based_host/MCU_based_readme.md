@@ -139,6 +139,10 @@ Run following command and navigate to `Example Configuration ->  Transport layer
 ```
 $ make menuconfig
 ```
+:warning: Skip below step for ESP32-S2 or ESP32-C3. Run for  ESP32 only.
+
+Change SPI controller to VSPI. Please navigate to `Example Configuration → SPI Configuration` and change value of `SPI controller to use` to `3`
+
 
 To build and flash the app on ESP peripheral, run
 
@@ -164,6 +168,10 @@ Run following command and navigate to `Example Configuration -> Transport layer 
 ```
 $ idf.py menuconfig
 ```
+
+:warning: Skip below step for ESP32-S2 or ESP32-C3. Run for  ESP32 only.
+
+Change SPI controller to VSPI. Please navigate to `Example Configuration → SPI Configuration` and change value of `SPI controller to use` to `3`
 
 To build and flash the app on ESP peripheral, run
 

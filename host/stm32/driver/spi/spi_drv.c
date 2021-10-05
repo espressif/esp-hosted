@@ -445,6 +445,7 @@ static stm_ret_t spi_transaction_esp32(uint8_t * txbuff)
 	struct  esp_payload_header *payload_header;
 	uint16_t len, offset;
 	HAL_StatusTypeDef retval = HAL_ERROR;
+	uint16_t rx_checksum = 0, checksum = 0;
 
 	/* Allocate rx buffer */
 	rxbuff = (uint8_t *)malloc(MAX_SPI_BUFFER_SIZE);
@@ -495,18 +496,27 @@ static stm_ret_t spi_transaction_esp32(uint8_t * txbuff)
 				osDelay(0);
 
 			} else {
+				rx_checksum = le16toh(payload_header->checksum);
+				payload_header->checksum = 0;
+				checksum = compute_checksum(rxbuff, len+offset);
+				if (checksum == rx_checksum) {
+					buf_handle.priv_buffer_handle = rxbuff;
+					buf_handle.free_buf_handle = free;
+					buf_handle.payload_len = len;
+					buf_handle.if_type     = payload_header->if_type;
+					buf_handle.if_num      = payload_header->if_num;
+					buf_handle.payload     = rxbuff + offset;
 
-				buf_handle.priv_buffer_handle = rxbuff;
-				buf_handle.free_buf_handle = free;
-				buf_handle.payload_len = len;
-				buf_handle.if_type     = payload_header->if_type;
-				buf_handle.if_num      = payload_header->if_num;
-				buf_handle.payload     = rxbuff + offset;
-
-				if (pdTRUE != xQueueSend(from_slave_queue,
-							&buf_handle, portMAX_DELAY)) {
-					printf("Failed to send buffer\n\r");
-					goto done;
+					if (pdTRUE != xQueueSend(from_slave_queue,
+								&buf_handle, portMAX_DELAY)) {
+						printf("Failed to send buffer\n\r");
+						goto done;
+					}
+				} else {
+					if (rxbuff) {
+						free(rxbuff);
+						rxbuff = NULL;
+					}
 				}
 			}
 
@@ -560,6 +570,7 @@ static stm_ret_t spi_transaction_esp32s2(uint8_t * txbuff)
 	struct  esp_payload_header *payload_header;
 	uint16_t len, offset;
 	HAL_StatusTypeDef retval = HAL_ERROR;
+	uint16_t rx_checksum = 0, checksum = 0;
 
 	/* Allocate rx buffer */
 	rxbuff = (uint8_t *)malloc(MAX_SPI_BUFFER_SIZE);
@@ -568,7 +579,7 @@ static stm_ret_t spi_transaction_esp32s2(uint8_t * txbuff)
 
 	if(!txbuff) {
 		/* Even though, there is nothing to send,
-		 * valid resetted txbuff is needed for SPI driver
+		 * valid reseted txbuff is needed for SPI driver
 		 */
 		txbuff = (uint8_t *)malloc(MAX_SPI_BUFFER_SIZE);
 		assert(txbuff);
@@ -613,18 +624,29 @@ static stm_ret_t spi_transaction_esp32s2(uint8_t * txbuff)
 				osDelay(0);
 
 			} else {
+				rx_checksum = le16toh(payload_header->checksum);
+				payload_header->checksum = 0;
 
-				buf_handle.priv_buffer_handle = rxbuff;
-				buf_handle.free_buf_handle = free;
-				buf_handle.payload_len = len;
-				buf_handle.if_type     = payload_header->if_type;
-				buf_handle.if_num      = payload_header->if_num;
-				buf_handle.payload     = rxbuff + offset;
+				checksum = compute_checksum(rxbuff, len+offset);
 
-				if (pdTRUE != xQueueSend(from_slave_queue,
-							&buf_handle, portMAX_DELAY)) {
-					printf("Failed to send buffer\n\r");
-					goto done;
+				if (checksum == rx_checksum) {
+					buf_handle.priv_buffer_handle = rxbuff;
+					buf_handle.free_buf_handle = free;
+					buf_handle.payload_len = len;
+					buf_handle.if_type     = payload_header->if_type;
+					buf_handle.if_num      = payload_header->if_num;
+					buf_handle.payload     = rxbuff + offset;
+
+					if (pdTRUE != xQueueSend(from_slave_queue,
+								&buf_handle, portMAX_DELAY)) {
+						printf("Failed to send buffer\n\r");
+						goto done;
+					}
+				} else {
+					if (rxbuff) {
+						free(rxbuff);
+						rxbuff = NULL;
+					}
 				}
 			}
 
@@ -820,9 +842,9 @@ static uint8_t * get_tx_buffer(uint8_t *is_valid_tx_buf)
 		payload_header->offset  = htole16(sizeof(struct esp_payload_header));
 		payload_header->if_type = buf_handle.if_type;
 		payload_header->if_num  = buf_handle.if_num;
-		payload_header->reserved1 = 0;
-
 		memcpy(payload, buf_handle.payload, min(len, MAX_PAYLOAD_SIZE));
+		payload_header->checksum = htole16(compute_checksum(sendbuf,
+				sizeof(struct esp_payload_header)+len));;
 	}
 
 done:
