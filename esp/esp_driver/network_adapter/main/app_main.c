@@ -44,6 +44,7 @@
 #include <protocomm.h>
 #include "protocomm_pserial.h"
 #include "slave_commands.h"
+#include "driver/periph_ctrl.h"
 
 #define EV_STR(s) "================ "s" ================"
 static const char TAG[] = "NETWORK_ADAPTER";
