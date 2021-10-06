@@ -496,6 +496,7 @@ static void generate_startup_event(uint8_t cap)
 
 	buf_handle.payload = heap_caps_malloc(SPI_BUFFER_SIZE, MALLOC_CAP_DMA);
 	assert(buf_handle.payload);
+	memset(buf_handle.payload, 0, SPI_BUFFER_SIZE);
 
 	header = (struct esp_payload_header *) buf_handle.payload;
 
@@ -544,6 +545,7 @@ static void generate_startup_event(uint8_t cap)
 	header->len = htole16(len);
 
 	buf_handle.payload_len = len + sizeof(struct esp_payload_header);
+	header->checksum = htole16(compute_checksum(buf_handle.payload, buf_handle.payload_len));
 
 	xQueueSend(spi_tx_queue, &buf_handle, portMAX_DELAY);
 }
