@@ -110,7 +110,6 @@ static uint8_t gpio_handshake = CONFIG_ESP_SPI_GPIO_HANDSHAKE;
 static uint8_t gpio_data_ready = CONFIG_ESP_SPI_GPIO_DATA_READY;
 static QueueHandle_t spi_rx_queue = NULL;
 static QueueHandle_t spi_tx_queue = NULL;
-static uint8_t dummy_queued = pdFALSE;
 
 static interface_handle_t * esp_spi_init(uint8_t capabilities);
 static int32_t esp_spi_write(interface_handle_t *handle,
@@ -121,7 +120,6 @@ static void esp_spi_deinit(interface_handle_t *handle);
 static void esp_spi_read_done(void *handle);
 
 
-static xSemaphoreHandle spi_sema;
 
 if_ops_t if_ops = {
 	.init = esp_spi_init,
@@ -149,29 +147,6 @@ int interface_remove_driver()
 	return 0;
 }
 
-static int is_valid_trans_buffer(uint8_t *trans_buf)
-{
-	struct esp_payload_header *header = NULL;
-	uint16_t len = 0;
-
-	if (!trans_buf) {
-		return pdFALSE;
-	}
-
-	header = (struct esp_payload_header *) trans_buf;
-
-	len = le16toh(header->len);
-
-	if (!len || (len > SPI_BUFFER_SIZE)) {
-		return pdFALSE;
-	}
-
-	if ((header->if_type >= ESP_MAX_IF) || (header->if_num)) {
-		return pdFALSE;
-	}
-
-	return pdTRUE;
-}
 
 /* Invoked after transaction is queued and ready for pickup by master */
 static void IRAM_ATTR spi_post_setup_cb(spi_slave_transaction_t *trans)
@@ -186,15 +161,6 @@ static void IRAM_ATTR spi_post_trans_cb(spi_slave_transaction_t *trans)
 {
 	/* Clear handshake line */
 	WRITE_PERI_REG(GPIO_OUT_W1TC_REG, (1 << gpio_handshake));
-
-	if (trans && is_valid_trans_buffer((uint8_t *)trans->tx_buffer)) {
-		/* Host has consumed a valid TX buffer
-		 * Clear Data ready line */
-		WRITE_PERI_REG(GPIO_OUT_W1TC_REG, (1 << gpio_data_ready));
-	}
-
-	if (spi_sema)
-		xSemaphoreGiveFromISR(spi_sema, NULL);
 }
 
 static uint8_t * get_next_tx_buffer(uint32_t *len)
@@ -206,26 +172,21 @@ static uint8_t * get_next_tx_buffer(uint32_t *len)
 
 	/* Get or create new tx_buffer
 	 *	1. Check if SPI TX queue has pending buffers. Return if valid buffer is obtained.
-	 *	2. Prepare dummy tx buffer as below:
-	 *		a. Return if dummy tx buffer is already configured
-	 *		b. Create a new empty tx buffer and return */
+	 *	2. Create a new empty tx buffer and return */
 
 	/* Get buffer from SPI Tx queue */
 	ret = xQueueReceive(spi_tx_queue, &buf_handle, 0);
 	if (ret == pdTRUE && buf_handle.payload) {
 		if (len)
 			*len = buf_handle.payload_len;
+		/* Return real data buffer from queue */
 		return buf_handle.payload;
 	}
 
-	/* Dummy transaction is already queued. Return. */
-	if (dummy_queued) {
-		if (len)
-			*len = 0;
-		return NULL;
-	}
+	/* No real data pending, clear ready line and indicate host an idle state */
+	WRITE_PERI_REG(GPIO_OUT_W1TC_REG, (1 << gpio_data_ready));
 
-	/* Create empty tx buffer */
+	/* Create empty dummy buffer */
 	sendbuf = heap_caps_malloc(SPI_BUFFER_SIZE, MALLOC_CAP_DMA);
 	if (!sendbuf) {
 		ESP_LOGE(TAG, "Failed to allocate memory for dummy transaction");
@@ -296,77 +257,7 @@ static int process_spi_rx(interface_buffer_handle_t *buf_handle)
 	return 0;
 }
 
-static void spi_transaction_tx_task(void* pvParameters)
-{
-	spi_slave_transaction_t *spi_trans = NULL;
-	esp_err_t ret = ESP_OK;
-	interface_buffer_handle_t buf_handle = {0};
-
-	for(;;) {
-		ret = xQueueReceive(spi_tx_queue, &buf_handle, portMAX_DELAY);
-
-		if (ret == pdTRUE && buf_handle.payload) {
-			spi_trans = malloc(sizeof(spi_slave_transaction_t));
-			assert(spi_trans);
-
-			memset(spi_trans, 0, sizeof(spi_slave_transaction_t));
-
-			/* Attach Rx Buffer */
-			spi_trans->rx_buffer = heap_caps_malloc(SPI_BUFFER_SIZE, MALLOC_CAP_DMA);
-			assert(spi_trans->rx_buffer);
-
-			memset(spi_trans->rx_buffer, 0, SPI_BUFFER_SIZE);
-
-			/* Attach Tx Buffer */
-			spi_trans->tx_buffer = buf_handle.payload;
-
-			/* Transaction len */
-			spi_trans->length = SPI_BUFFER_SIZE * SPI_BITS_PER_WORD;
-
-			/* Set Data ready high */
-			WRITE_PERI_REG(GPIO_OUT_W1TS_REG, (1 << gpio_data_ready));
-
-			/* Execute transaction */
-			ret = xSemaphoreTake(spi_sema, portMAX_DELAY);
-
-			if (ret != pdTRUE) {
-				ESP_LOGE(TAG, "Failed to obtain semaphore\n");
-
-				free(spi_trans->rx_buffer);
-				spi_trans->rx_buffer = NULL;
-				free((void *)spi_trans->tx_buffer);
-				spi_trans->tx_buffer = NULL;
-				free(spi_trans);
-				spi_trans = NULL;
-
-				WRITE_PERI_REG(GPIO_OUT_W1TS_REG, (0 << gpio_data_ready));
-				continue;
-			}
-
-			ret = spi_slave_queue_trans(ESP_SPI_CONTROLLER, spi_trans,
-					portMAX_DELAY);
-			if (ret != ESP_OK) {
-				ESP_LOGE(TAG , "spi transmit error, ret : 0x%x\r\n", ret);
-
-				free(spi_trans->rx_buffer);
-				spi_trans->rx_buffer = NULL;
-				free((void *)spi_trans->tx_buffer);
-				spi_trans->tx_buffer = NULL;
-				free(spi_trans);
-				spi_trans = NULL;
-
-				if (spi_sema)
-					xSemaphoreGive(spi_sema);
-
-				WRITE_PERI_REG(GPIO_OUT_W1TS_REG, (0 << gpio_data_ready));
-
-				continue;
-			}
-		}
-	}
-}
-
-static void queue_dummy_transaction()
+static void queue_next_transaction(void)
 {
 	spi_slave_transaction_t *spi_trans = NULL;
 	esp_err_t ret = ESP_OK;
@@ -375,7 +266,8 @@ static void queue_dummy_transaction()
 
 	tx_buffer = get_next_tx_buffer(&len);
 	if (!tx_buffer) {
-		/* No need to queue dummy transaction */
+		/* Queue next transaction failed */
+		ESP_LOGE(TAG , "Failed to queue new transaction\r\n");
 		return;
 	}
 
@@ -404,16 +296,7 @@ static void queue_dummy_transaction()
 		spi_trans->tx_buffer = NULL;
 		free(spi_trans);
 		spi_trans = NULL;
-		xSemaphoreGive(spi_sema);
 		return;
-	}
-
-	if (!len) {
-		/* queued dummy transaction, release semaphore */
-		dummy_queued = pdTRUE;
-	} else {
-		/* Queued transaction with valid TX Buffer. Set Data ready high. */
-		WRITE_PERI_REG(GPIO_OUT_W1TS_REG, (1 << gpio_data_ready));
 	}
 }
 
@@ -427,8 +310,14 @@ static void spi_transaction_post_process_task(void* pvParameters)
 	for (;;) {
 		memset(&rx_buf_handle, 0, sizeof(rx_buf_handle));
 
+		/* await transmission result, after any kind of transmission a new packet
+		 * (dummy or real) must be placed in SPI slave
+		 */
 		ret = spi_slave_get_trans_result(ESP_SPI_CONTROLLER, &spi_trans,
 				portMAX_DELAY);
+
+		/* Queue new transaction to get ready as soon as possible */
+		queue_next_transaction();
 
 		if (ret != ESP_OK) {
 			ESP_LOGE(TAG , "spi transmit error, ret : 0x%x\r\n", ret);
@@ -440,32 +329,13 @@ static void spi_transaction_post_process_task(void* pvParameters)
 			continue;
 		}
 
+		/* Free any tx buffer, data is not relevant anymore */
 		if (spi_trans->tx_buffer) {
-			header = (struct esp_payload_header *) spi_trans->tx_buffer;
-
-			if (header->if_type == 0xF && header->if_num == 0xF && header->offset == 0) {
-				/* Dummy Tx buffer consumed by host */
-				dummy_queued = pdFALSE;
-			}
-
 			free((void *)spi_trans->tx_buffer);
 			spi_trans->tx_buffer = NULL;
 		}
 
-		/* Check if dummy transaction is needed
-		 *
-		 * If failed to obtain spi_sema:
-		 *    - Transaction is already queued.
-		 *    - No need to queue dummy transaction
-		 *
-		 * If spi_sema is obtained: queue dummy transaction
-		 **/
-
-		ret = xSemaphoreTake(spi_sema, 0);
-
-		if (ret == pdTRUE)
-			queue_dummy_transaction();
-
+		/* Process received data */
 		if (spi_trans->rx_buffer) {
 			rx_buf_handle.payload = spi_trans->rx_buffer;
 
@@ -479,6 +349,7 @@ static void spi_transaction_post_process_task(void* pvParameters)
 			}
 		}
 
+		/* free transaction structure */
 		free(spi_trans);
 		spi_trans = NULL;
 	}
@@ -548,6 +419,11 @@ static void generate_startup_event(uint8_t cap)
 	header->checksum = htole16(compute_checksum(buf_handle.payload, buf_handle.payload_len));
 
 	xQueueSend(spi_tx_queue, &buf_handle, portMAX_DELAY);
+
+	/* indicate waiting data on ready pin */
+	WRITE_PERI_REG(GPIO_OUT_W1TS_REG, (1 << gpio_data_ready));
+	/* process first data packet here to start transactions */
+	queue_next_transaction();
 }
 
 static interface_handle_t * esp_spi_init(uint8_t capabilities)
@@ -615,13 +491,6 @@ static interface_handle_t * esp_spi_init(uint8_t capabilities)
 	spi_tx_queue = xQueueCreate(SPI_TX_QUEUE_SIZE, sizeof(interface_buffer_handle_t));
 	assert(spi_tx_queue != NULL);
 
-	spi_sema = xSemaphoreCreateBinary();
-	assert(spi_sema != NULL);
-
-	xSemaphoreGive(spi_sema);
-
-	assert(xTaskCreate(spi_transaction_tx_task , "spi_tx_task" , 4096 , NULL ,
-				20 , NULL) == pdTRUE);
 	assert(xTaskCreate(spi_transaction_post_process_task , "spi_post_process_task" ,
 			4096 , NULL , 18 , NULL) == pdTRUE);
 
@@ -693,6 +562,9 @@ static int32_t esp_spi_write(interface_handle_t *handle, interface_buffer_handle
 	if (ret != pdTRUE)
 		return ESP_FAIL;
 
+	/* indicate waiting data on ready pin */
+	WRITE_PERI_REG(GPIO_OUT_W1TS_REG, (1 << gpio_data_ready));
+
 	return buf_handle->payload_len;
 }
 
@@ -740,9 +612,6 @@ static esp_err_t esp_spi_reset(interface_handle_t *handle)
 static void esp_spi_deinit(interface_handle_t *handle)
 {
 	esp_err_t ret = ESP_OK;
-
-	if (spi_sema)
-		vSemaphoreDelete(spi_sema);
 
 	ret = spi_slave_free(ESP_SPI_CONTROLLER);
 	if (ESP_OK != ret) {
