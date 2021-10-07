@@ -286,7 +286,7 @@ int test_station_mode_connect()
         printf("%s interface down\n", STA_INTERFACE);
     } else {
         printf("Unable to down %s interface\n", STA_INTERFACE);
-        return FAILURE; 
+        return FAILURE;
     }
 
     ret = wifi_get_mac(WIFI_MODE_STA, mac);
@@ -392,7 +392,7 @@ int test_station_mode_disconnect()
         printf("%s interface down\n", STA_INTERFACE);
     } else {
         printf("Unable to down %s interface\n", STA_INTERFACE);
-        return FAILURE; 
+        return FAILURE;
     }
     printf("====\n\n");
 
@@ -433,7 +433,7 @@ int test_softap_mode_start()
         printf("%s interface down\n", AP_INTERFACE);
     } else {
         printf("Unable to down %s interface\n", AP_INTERFACE);
-        return FAILURE; 
+        return FAILURE;
     }
 
     ret = wifi_get_mac(WIFI_MODE_AP, mac);
@@ -533,7 +533,7 @@ int test_softap_mode_stop()
         printf("%s interface down\n", AP_INTERFACE);
     } else {
         printf("Unable to down %s interface\n", AP_INTERFACE);
-        return FAILURE; 
+        return FAILURE;
     }
 
     printf("====\n\n");
@@ -574,5 +574,92 @@ int test_get_wifi_power_save_mode()
     printf("====\n\n");
 #endif
 
+    return SUCCESS;
+}
+
+int test_ota_begin()
+{
+    int ret = esp_ota_begin();
+
+#ifdef TEST_DEBUG_PRINTS
+    printf("==== %s =>\n",__func__);
+    if (ret == SUCCESS) {
+        printf("OTA begin success \n");
+    } else {
+        printf("Failed start OTA begin\n");
+    }
+    printf("====\n\n");
+#endif
+
+    return ret;
+}
+
+int test_ota_write(uint8_t* ota_data, uint32_t ota_data_len)
+{
+    int ret = esp_ota_write(ota_data, ota_data_len);
+
+#ifdef TEST_DEBUG_PRINTS
+    printf("==== %s =>\n",__func__);
+    if (ret == SUCCESS) {
+        printf("OTA write success \n");
+
+    } else {
+        printf("Failed OTA write\n");
+    }
+    printf("====\n\n");
+#endif
+
+    return ret;
+}
+
+int test_ota_end()
+{
+    int ret = esp_ota_end();
+
+#ifdef TEST_DEBUG_PRINTS
+    printf("==== %s =>\n",__func__);
+    if (ret == SUCCESS) {
+        printf("OTA end success \n");
+    } else {
+        printf("Failed OTA end\n");
+    }
+    printf("====\n\n");
+#endif
+
+    return ret;
+}
+
+int test_ota(char* image_path)
+{
+    FILE* f = NULL;
+    char ota_chunk[CHUNK_SIZE] = {0};
+    int ret = test_ota_begin();
+#ifdef TEST_DEBUG_PRINTS
+    printf("==== %s =>\n",__func__);
+    if (ret == SUCCESS) {
+        f = fopen(image_path,"rb");
+        if (f == NULL) {
+            printf("Failed to open file %s \n", image_path);
+            return FAILURE;
+        } else {
+            printf("Success in opening %s file \n", image_path);
+        }
+        while (!feof(f)) {
+            fread(&ota_chunk, CHUNK_SIZE, 1, f);
+            ret = test_ota_write((uint8_t* )&ota_chunk, CHUNK_SIZE);
+            if (ret) {
+                break;
+            }
+        }
+        ret = test_ota_end();
+        if (ret) {
+            return FAILURE;
+        }
+    } else {
+        return FAILURE;
+    }
+    printf("ESP32 will restart after 5 sec\n");
+    printf("====\n\n");
+#endif
     return SUCCESS;
 }

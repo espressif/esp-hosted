@@ -67,4 +67,11 @@ int test_set_wifi_power_save_mode();
 
 int test_get_wifi_power_save_mode();
 
+int test_ota_begin();
+
+int test_ota_write();
+
+int test_ota_end();
+
+int test_ota(char* image_path);
 #endif

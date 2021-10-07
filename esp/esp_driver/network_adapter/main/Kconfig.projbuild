@@ -44,6 +44,12 @@ menu "Example Configuration"
             GPIO pin for indicating host that SPI slave has data to be read by host
 	endmenu
 
+    config ESP_OTA_WORKAROUND
+        bool "OTA workaround - Add sleeps while OTA write"
+        default y
+        help
+            Enable/disable sleeps while OTA operations
+
     config ESP_SERIAL_DEBUG
         bool "Debug Serial driver data path"
         default 0

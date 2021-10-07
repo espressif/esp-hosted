@@ -27,10 +27,12 @@
 #define AP_STOP                            "ap_stop"
 #define SCAN                               "scan"
 #define STA_LIST                           "sta_list"
+#define OTA                                "ota"
 
 #define MAC_LENGTH                          18
 #define SSID_LENGTH                         32
 #define PWD_LENGTH                          64
+#define CHUNK_SIZE                          4000
 
 /* station mode */
 #define STATION_MODE_MAC_ADDRESS            "1a:11:11:11:11:11"

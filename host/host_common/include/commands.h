@@ -152,7 +152,7 @@ int wifi_set_mode(int mode);
  *      - SUCCESS(0)            : succeed
  *      - FAILURE(-1)           : failed
  *      - NO_AP_FOUND(2)        : Given AP not found
- *      - INVALID_PASSWORD(3)   : Invalid password for AP 
+ *      - INVALID_PASSWORD(3)   : Invalid password for AP
  */
 int wifi_set_ap_config(esp_hosted_control_config_t ap_config);
 
@@ -265,4 +265,30 @@ int wifi_set_power_save_mode(int power_save_mode);
  *                   3  : WIFI_PS_INVALID,     Invalid power save mode. In case of failure of command
  */
 int wifi_get_power_save_mode(int *power_save_mode);
+
+/*
+ * esp ota begin function performs an OTA begin operation for ESP32
+ * which sets partition for OTA write and erase it.
+ * returns SUCCESS(0) or FAILURE(-1)
+ */
+int esp_ota_begin();
+
+/*
+ * esp ota write function performs an OTA write operation for ESP32,
+ * It writes ota_data buffer to OTA partition in flash
+ * returns SUCCESS(0) or FAILURE(-1)
+ *  Input parameter:
+ *      ota_data        : OTA data buffer
+ *      ota_data_len    : length of OTA data buffer
+ */
+int esp_ota_write(uint8_t* ota_data, uint32_t ota_data_len);
+
+/*
+ * esp ota end function performs an OTA end operation for ESP32,
+ * It validates written OTA image, set OTA partition as boot partition for next boot,
+ * Creates timer which reset ESP32 after 5 sec,
+ * returns SUCCESS(0) or FAILURE(-1)
+ */
+int esp_ota_end();
+
 #endif

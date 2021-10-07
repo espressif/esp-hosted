@@ -63,7 +63,7 @@ int wifi_get_mac (int mode, char *mac)
     req.msg = ESP_HOSTED_CONFIG_MSG_TYPE__TypeCmdGetMACAddress;
     req.payload_case = ESP_HOSTED_CONFIG_PAYLOAD__PAYLOAD_CMD_GET_MAC_ADDRESS ;
 
-    EspHostedCmdGetMacAddress *req_payload = (EspHostedCmdGetMacAddress *) \
+    EspHostedCmdGetMacAddress *req_payload = (EspHostedCmdGetMacAddress *)
         esp_hosted_calloc(1, sizeof(EspHostedCmdGetMacAddress));
     if (!req_payload) {
         command_log("Failed to allocate memory for req_payload\n");
@@ -145,7 +145,7 @@ int wifi_set_mac (int mode, char *mac)
     req.msg = ESP_HOSTED_CONFIG_MSG_TYPE__TypeCmdSetMacAddress;
     req.payload_case = ESP_HOSTED_CONFIG_PAYLOAD__PAYLOAD_CMD_SET_MAC_ADDRESS;
 
-    EspHostedCmdSetMacAddress *req_payload = (EspHostedCmdSetMacAddress *) \
+    EspHostedCmdSetMacAddress *req_payload = (EspHostedCmdSetMacAddress *)
         esp_hosted_calloc(1, sizeof(EspHostedCmdSetMacAddress));
     if (!req_payload) {
         command_log("Failed to allocate memory for req_payload\n");
@@ -281,7 +281,7 @@ int wifi_set_mode (int mode)
     req.msg = ESP_HOSTED_CONFIG_MSG_TYPE__TypeCmdSetWiFiMode;
     req.payload_case = ESP_HOSTED_CONFIG_PAYLOAD__PAYLOAD_CMD_SET_WIFI_MODE;
 
-    EspHostedCmdSetMode *req_payload = (EspHostedCmdSetMode *) \
+    EspHostedCmdSetMode *req_payload = (EspHostedCmdSetMode *)
         esp_hosted_calloc( 1, sizeof(EspHostedCmdSetMode));
     if (!req_payload) {
         command_log("Failed to allocate memory for req_payload\n");
@@ -368,7 +368,7 @@ int wifi_set_ap_config (esp_hosted_control_config_t ap_config)
     req.msg = ESP_HOSTED_CONFIG_MSG_TYPE__TypeCmdSetAPConfig ;
     req.payload_case = ESP_HOSTED_CONFIG_PAYLOAD__PAYLOAD_CMD_SET_AP_CONFIG;
 
-    EspHostedCmdSetAPConfig *req_payload = (EspHostedCmdSetAPConfig *) \
+    EspHostedCmdSetAPConfig *req_payload = (EspHostedCmdSetAPConfig *)
         esp_hosted_calloc(1, sizeof(EspHostedCmdSetAPConfig));
     if (!req_payload) {
         command_log("Failed to allocate memory for req_payload\n");
@@ -413,7 +413,7 @@ int wifi_set_ap_config (esp_hosted_control_config_t ap_config)
     }
 
     if (resp->resp_set_ap_config->resp == INVALID_PASSWORD) {
-        command_log("Invalid password %s for SSID %s\n",\
+        command_log("Invalid password %s for SSID %s\n",
                 (char *)&ap_config.station.pwd, (char *)&ap_config.station.ssid);
         mem_free(tx_data);
         mem_free(rx_data);
@@ -638,7 +638,7 @@ int wifi_set_softap_config (esp_hosted_control_config_t softap_config)
     req.msg = ESP_HOSTED_CONFIG_MSG_TYPE__TypeCmdSetSoftAPConfig;
     req.payload_case = ESP_HOSTED_CONFIG_PAYLOAD__PAYLOAD_CMD_SET_SOFTAP_CONFIG;
 
-    EspHostedCmdSetSoftAPConfig *req_payload = (EspHostedCmdSetSoftAPConfig *) \
+    EspHostedCmdSetSoftAPConfig *req_payload = (EspHostedCmdSetSoftAPConfig *)
         esp_hosted_calloc(1, sizeof(EspHostedCmdSetSoftAPConfig));
     if (!req_payload) {
         command_log("Failed to allocate memory for req_payload\n");
@@ -974,7 +974,7 @@ esp_hosted_wifi_connected_stations_list* wifi_connected_stations_list(int *num)
 
     *num = resp->resp_connected_stas_list->num;
     if (resp->resp_connected_stas_list->num) {
-        list = (esp_hosted_wifi_connected_stations_list *) \
+        list = (esp_hosted_wifi_connected_stations_list *)
                 esp_hosted_calloc(resp->resp_connected_stas_list->num,
                 sizeof(esp_hosted_wifi_connected_stations_list));
         if (!list) {
@@ -1018,7 +1018,7 @@ int wifi_set_power_save_mode (int power_save_mode)
     req.msg = ESP_HOSTED_CONFIG_MSG_TYPE__TypeCmdSetPowerSaveMode;
     req.payload_case = ESP_HOSTED_CONFIG_PAYLOAD__PAYLOAD_CMD_SET_POWER_SAVE_MODE;
 
-    EspHostedCmdSetMode *req_payload = (EspHostedCmdSetMode *) \
+    EspHostedCmdSetMode *req_payload = (EspHostedCmdSetMode *)
         esp_hosted_calloc(1, sizeof(EspHostedCmdSetMode));
     if (!req_payload) {
         command_log("Failed to allocate memory for req_payload\n");
@@ -1125,6 +1125,189 @@ int wifi_get_power_save_mode (int *power_save_mode)
     }
 
     *power_save_mode = resp->resp_get_power_save_mode->mode;
+    mem_free(tx_data);
+    mem_free(rx_data);
+    return SUCCESS;
+
+err1:
+    mem_free(rx_data);
+err2:
+    mem_free(tx_data);
+    return FAILURE;
+}
+
+// Function performs an OTA begin for ESP32
+int esp_ota_begin()
+{
+    EspHostedConfigPayload req, *resp = NULL;
+    uint32_t tx_len = 0, rx_len = 0;
+    uint8_t *tx_data = NULL, *rx_data = NULL;
+
+    esp_hosted_config_payload__init (&req);
+    req.has_msg = true;
+    req.msg = ESP_HOSTED_CONFIG_MSG_TYPE__TypeCmdOTABegin;
+    req.payload_case = ESP_HOSTED_CONFIG_PAYLOAD__PAYLOAD_CMD_OTA_BEGIN;
+    tx_len = esp_hosted_config_payload__get_packed_size(&req);
+    if (!tx_len) {
+        command_log("Invalid tx length\n");
+        return FAILURE;
+    }
+
+    tx_data = (uint8_t *)esp_hosted_calloc(1, tx_len);
+    if (!tx_data) {
+        command_log("Failed to allocate memory for tx_data\n");
+        return FAILURE;
+    }
+
+    esp_hosted_config_payload__pack(&req, tx_data);
+
+    rx_data = transport_pserial_data_handler(tx_data, tx_len,
+            TIMEOUT_PSERIAL_RESP, &rx_len);
+    if (!rx_data || !rx_len) {
+        command_log("Failed to process rx_data\n");
+        goto err2;
+    }
+
+    resp = esp_hosted_config_payload__unpack(NULL, rx_len, rx_data);
+    if ((!resp) || (!resp->resp_ota_begin)) {
+        command_log("Failed to unpack rx_data\n");
+        goto err1;
+    }
+
+    if (resp->resp_ota_begin->resp) {
+        command_log("Failed to start OTA begin\n");
+        goto err1;
+    }
+
+    mem_free(tx_data);
+    mem_free(rx_data);
+    return SUCCESS;
+
+err1:
+    mem_free(rx_data);
+err2:
+    mem_free(tx_data);
+    return FAILURE;
+}
+
+// Function performs an OTA write for ESP32
+int esp_ota_write(uint8_t* ota_data, uint32_t ota_data_len)
+{
+    EspHostedConfigPayload req, *resp = NULL;
+    uint32_t tx_len = 0, rx_len = 0;
+    uint8_t *tx_data = NULL, *rx_data = NULL;
+
+    if (!ota_data || (ota_data_len == 0)) {
+        command_log("Invalid parameter\n");
+        return FAILURE;
+    }
+
+    esp_hosted_config_payload__init (&req);
+    req.has_msg = true;
+    req.msg = ESP_HOSTED_CONFIG_MSG_TYPE__TypeCmdOTAWrite;
+
+    req.payload_case = ESP_HOSTED_CONFIG_PAYLOAD__PAYLOAD_CMD_OTA_WRITE;
+
+    EspHostedCmdOTAWrite *req_payload = (EspHostedCmdOTAWrite *)
+        esp_hosted_calloc(1, sizeof(EspHostedCmdOTAWrite));
+    if (!req_payload) {
+        command_log("Failed to allocate memory for req_payload\n");
+        return FAILURE;
+    }
+    esp_hosted_cmd_otawrite__init(req_payload);
+    req_payload->has_ota_data = true;
+    req_payload->ota_data.data = ota_data;
+    req_payload->ota_data.len = ota_data_len;
+    req.cmd_ota_write = req_payload;
+    tx_len = esp_hosted_config_payload__get_packed_size(&req);
+    if (!tx_len) {
+        command_log("Invalid tx length\n");
+        goto err3;
+    }
+
+    tx_data = (uint8_t *)esp_hosted_calloc(1, tx_len);
+    if (!tx_data) {
+        command_log("Failed to allocate memory for tx_data\n");
+        goto err3;
+    }
+
+    esp_hosted_config_payload__pack(&req, tx_data);
+
+    rx_data = transport_pserial_data_handler(tx_data, tx_len,
+            TIMEOUT_PSERIAL_RESP, &rx_len);
+    if (!rx_data || !rx_len) {
+        command_log("Failed to process rx_data\n");
+        goto err2;
+    }
+
+    resp = esp_hosted_config_payload__unpack(NULL, rx_len, rx_data);
+    if ((!resp) || (!resp->resp_ota_write)) {
+        command_log("Failed to unpack rx_data\n");
+        goto err1;
+    }
+
+    if (resp->resp_ota_write->resp) {
+        command_log("Failed to give OTA update\n");
+        goto err1;
+    }
+
+    mem_free(tx_data);
+    mem_free(rx_data);
+    mem_free(req_payload);
+    return SUCCESS;
+
+err1:
+    mem_free(rx_data);
+err2:
+    mem_free(tx_data);
+err3:
+    mem_free(req_payload);
+    return FAILURE;
+}
+
+// Function performs an OTA end for ESP32
+int esp_ota_end()
+{
+    EspHostedConfigPayload req, *resp = NULL;
+    uint32_t tx_len = 0, rx_len = 0;
+    uint8_t *tx_data = NULL, *rx_data = NULL;
+
+    esp_hosted_config_payload__init (&req);
+    req.has_msg = true;
+    req.msg = ESP_HOSTED_CONFIG_MSG_TYPE__TypeCmdOTAEnd;
+    req.payload_case = ESP_HOSTED_CONFIG_PAYLOAD__PAYLOAD_CMD_OTA_END;
+    tx_len = esp_hosted_config_payload__get_packed_size(&req);
+    if (!tx_len) {
+        command_log("Invalid tx length\n");
+        return FAILURE;
+    }
+
+    tx_data = (uint8_t *)esp_hosted_calloc(1, tx_len);
+    if (!tx_data) {
+        command_log("Failed to allocate memory for tx_data\n");
+        return FAILURE;
+    }
+
+    esp_hosted_config_payload__pack(&req, tx_data);
+
+    rx_data = transport_pserial_data_handler(tx_data, tx_len,
+            TIMEOUT_PSERIAL_RESP, &rx_len);
+    if (!rx_data || !rx_len) {
+        command_log("Failed to process rx_data\n");
+        goto err2;
+    }
+
+    resp = esp_hosted_config_payload__unpack(NULL, rx_len, rx_data);
+    if ((!resp) || (!resp->resp_ota_end)) {
+        command_log("Failed to unpack rx_data\n");
+        goto err1;
+    }
+
+    if (resp->resp_ota_end->resp) {
+        command_log("Failed to OTA end\n");
+        goto err1;
+    }
+
     mem_free(tx_data);
     mem_free(rx_data);
     return SUCCESS;

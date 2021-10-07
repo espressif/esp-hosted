@@ -82,6 +82,7 @@ volatile uint8_t action = 0;
 volatile uint8_t datapath = 0;
 volatile uint8_t station_connected = 0;
 volatile uint8_t softap_started = 0;
+volatile uint8_t ota_ongoing = 0;
 
 #ifdef ESP_DEBUG_STATS
 uint32_t from_wlan_count = 0;
@@ -222,7 +223,7 @@ esp_err_t wlan_ap_rx_callback(void *buffer, uint16_t len, void *eb)
 	esp_err_t ret = ESP_OK;
 	interface_buffer_handle_t buf_handle = {0};
 
-	if (!buffer || !eb || !datapath) {
+	if (!buffer || !eb || !datapath || ota_ongoing) {
 		if (eb) {
 			esp_wifi_internal_free_rx_buffer(eb);
 		}
@@ -255,7 +256,7 @@ esp_err_t wlan_sta_rx_callback(void *buffer, uint16_t len, void *eb)
 	esp_err_t ret = ESP_OK;
 	interface_buffer_handle_t buf_handle = {0};
 
-	if (!buffer || !eb || !datapath) {
+	if (!buffer || !eb || !datapath || ota_ongoing) {
 		if (eb) {
 			esp_wifi_internal_free_rx_buffer(eb);
 		}
@@ -792,8 +793,10 @@ static esp_err_t print_real_time_stats(TickType_t xTicksToWait)
     ret = ESP_OK;
 
 exit:    //Common return path
-    free(start_array);
-    free(end_array);
+	if (start_array)
+		free(start_array);
+	if (end_array)
+		free(end_array);
     return ret;
 }
 

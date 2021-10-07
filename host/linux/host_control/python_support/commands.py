@@ -83,7 +83,9 @@ def wifi_get_mac(mode):
     tp = Transport_pserial(interface)
     response = tp.send_data(endpoint,protodata)
     del tp
-    if response[0] != success and response[0] != None:
+    if response[0] != None and response[0] != success:
+        return failure_str
+    if response[1] == None or response[1] == "":
         return failure_str
     get_mac.ParseFromString(response[1])
     if get_mac.resp_get_mac_address.resp != success:
@@ -106,7 +108,9 @@ def wifi_get_mode():
     tp = Transport_pserial(interface)
     response = tp.send_data(endpoint,protodata)
     del tp
-    if response[0] != success and response[0] != None:
+    if response[0] != None and response[0] != success:
+        return failure_str
+    if response[1] == None or response[1] == "":
         return failure_str
     get_mode.ParseFromString(response[1])
     if get_mode.resp_get_wifi_mode.resp != success:
@@ -134,7 +138,9 @@ def wifi_set_mode(mode):
     tp = Transport_pserial(interface)
     response = tp.send_data(endpoint,protodata)
     del tp
-    if response[0] != success and response[0] != None:
+    if response[0] != None and response[0] != success:
+        return failure_str
+    if response[1] == None or response[1] == "":
         return failure_str
     set_mode.ParseFromString(response[1])
     if set_mode.resp_set_wifi_mode.resp != success:
@@ -183,7 +189,9 @@ def wifi_set_ap_config(ssid, pwd, bssid, is_wpa3_supported, listen_interval):
     tp = Transport_pserial(interface)
     response = tp.send_data(endpoint,protodata)
     del tp
-    if response[0] != success and response[0] != None:
+    if response[0] != None and response[0] != success:
+        return failure_str
+    if response[1] == None or response[1] == "":
         return failure_str
     set_ap_config.ParseFromString(response[1])
     if set_ap_config.resp_set_ap_config.resp == EspHostedStatus.TYPE_CONNECTION_FAIL:
@@ -223,7 +231,9 @@ def wifi_get_ap_config():
     tp = Transport_pserial(interface)
     response = tp.send_data(endpoint,protodata)
     del tp
-    if response[0] != success and response[0] != None:
+    if response[0] != None and response[0] != success:
+        return failure_str
+    if response[1] == None or response[1] == "":
         return failure_str
     get_ap_config.ParseFromString(response[1])
     if get_ap_config.resp_get_ap_config.resp == EspHostedStatus.TYPE_NOT_CONNECTED:
@@ -248,7 +258,9 @@ def wifi_disconnect_ap():
     tp = Transport_pserial(interface)
     response = tp.send_data(endpoint,protodata)
     del tp
-    if response[0] != success and response[0] != None:
+    if response[0] != None and response[0] != success:
+        return failure_str
+    if response[1] == None or response[1] == "":
         return failure_str
     disconnect_ap.ParseFromString(response[1])
     if disconnect_ap.resp_disconnect_ap.resp != success:
@@ -313,7 +325,9 @@ def wifi_set_softap_config(ssid, pwd, chnl, ecn, max_conn, ssid_hidden, bw):
     tp = Transport_pserial(interface)
     response = tp.send_data(endpoint,protodata)
     del tp
-    if response[0] != success and response[0] != None:
+    if response[0] != None and response[0] != success:
+        return failure_str
+    if response[1] == None or response[1] == "":
         return failure_str
     set_softap_config.ParseFromString(response[1])
     if set_softap_config.resp_set_softap_config.resp != success:
@@ -349,7 +363,9 @@ def wifi_get_softap_config():
     tp = Transport_pserial(interface)
     response = tp.send_data(endpoint,protodata)
     del tp
-    if response[0] != success and response[0] != None:
+    if response[0] != None and response[0] != success:
+        return failure_str
+    if response[1] == None or response[1] == "":
         return failure_str
     get_softap_config.ParseFromString(response[1])
     if get_softap_config.resp_get_softap_config.resp != success:
@@ -374,7 +390,9 @@ def wifi_stop_softap():
     tp = Transport_pserial(interface)
     response = tp.send_data(endpoint,protodata)
     del tp
-    if response[0] != success and response[0] != None:
+    if response[0] != None and response[0] != success:
+        return failure_str
+    if response[1] == None or response[1] == "":
         return failure_str
     stop_softap.ParseFromString(response[1])
     if stop_softap.resp_stop_softap.resp != success:
@@ -410,7 +428,9 @@ def wifi_ap_scan_list():
     tp = Transport_pserial(interface)
     response = tp.send_data(endpoint,protodata)
     del tp
-    if response[0] != success and response[0] != None:
+    if response[0] != None and response[0] != success:
+        return failure_str
+    if response[1] == None or response[1] == "":
         return failure_str
     get_ap_scan_list.ParseFromString(response[1])
     if get_ap_scan_list.resp_scan_ap_list.resp != success:
@@ -444,7 +464,9 @@ def wifi_connected_stations_list():
     tp = Transport_pserial(interface)
     response = tp.send_data(endpoint,protodata)
     del tp
-    if response[0] != success and response[0] != None:
+    if response[0] != None and response[0] != success:
+        return failure_str
+    if response[1] == None or response[1] == "":
         return failure_str
     get_connected_stations_list.ParseFromString(response[1])
     if get_connected_stations_list.resp_connected_stas_list.resp != success:
@@ -489,7 +511,9 @@ def wifi_set_mac(mode, mac):
     tp = Transport_pserial(interface)
     response = tp.send_data(endpoint,protodata)
     del tp
-    if response[0] != success and response[0] != None:
+    if response[0] != None and response[0] != success:
+        return failure_str
+    if response[1] == None or response[1] == "":
         return failure_str
     set_mac.ParseFromString(response[1])
     if set_mac.resp_set_mac_address.resp != success:
@@ -517,7 +541,9 @@ def wifi_set_power_save_mode(power_save_mode):
     tp = Transport_pserial(interface)
     response = tp.send_data(endpoint,protodata)
     del tp
-    if response[0] != success and response[0] != None:
+    if response[0] != None and response[0] != success:
+        return failure_str
+    if response[1] == None or response[1] == "":
         return failure_str
     set_power_save_mode.ParseFromString(response[1])
     if set_power_save_mode.resp_set_power_save_mode.resp != success:
@@ -540,11 +566,67 @@ def wifi_get_power_save_mode():
     protodata = get_power_save_mode.SerializeToString()
     tp = Transport_pserial(interface)
     response = tp.send_data(endpoint,protodata)
-    get_power_save_mode.ParseFromString(response[1])
     del tp
-    if response[0] != success and response[0] != None:
+    if response[0] != None and response[0] != success:
         return failure_str
+    if response[1] == None or response[1] == "":
+        return failure_str
+    get_power_save_mode.ParseFromString(response[1])
     if get_power_save_mode.resp_get_power_save_mode.resp != success:
         return failure_str
     else:
         return get_power_save_mode.resp_get_power_save_mode.mode
+
+# wifi ota
+
+def esp_ota_begin():
+    ota_begin = EspHostedConfigPayload()
+    ota_begin.msg = EspHostedConfigMsgType.TypeCmdOTABegin
+    protodata = ota_begin.SerializeToString()
+    tp = Transport_pserial(interface)
+    response = tp.send_data(endpoint,protodata)
+    del tp
+    if response[0] != None and response[0] != success:
+        return failure_str
+    if response[1] == None or response[1] == "":
+        return failure_str
+    ota_begin.ParseFromString(response[1])
+    if ota_begin.resp_ota_begin.resp != success:
+        return failure_str
+    else:
+        return ota_begin.resp_ota_begin.resp
+
+def esp_ota_write(ota_data):
+    ota_write = EspHostedConfigPayload()
+    ota_write.msg = EspHostedConfigMsgType.TypeCmdOTAWrite
+    ota_write.cmd_ota_write.ota_data = ota_data
+    protodata = ota_write.SerializeToString()
+    tp = Transport_pserial(interface)
+    response = tp.send_data(endpoint,protodata)
+    del tp
+    if response[0] != None and response[0] != success:
+        return failure_str
+    if response[1] == None or response[1] == "":
+        return failure_str
+    ota_write.ParseFromString(response[1])
+    if ota_write.resp_ota_write.resp != success:
+        return failure_str
+    else:
+        return ota_write.resp_ota_write.resp
+
+def esp_ota_end():
+    ota_end = EspHostedConfigPayload()
+    ota_end.msg = EspHostedConfigMsgType.TypeCmdOTAEnd
+    protodata = ota_end.SerializeToString()
+    tp = Transport_pserial(interface)
+    response = tp.send_data(endpoint,protodata)
+    del tp
+    if response[0] != None and response[0] != success:
+        return failure_str
+    if response[1] == None or response[1] == "":
+        return failure_str
+    ota_end.ParseFromString(response[1])
+    if ota_end.resp_ota_end.resp != success:
+        return failure_str
+    else:
+        return ota_end.resp_ota_end.resp

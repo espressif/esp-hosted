@@ -25,25 +25,41 @@
 int main(int argc, char *argv[])
 {
     /* Below APIs could be used by demo application */
-	int ret = control_path_platform_init();
-	if (ret != SUCCESS) {
-		printf("EXIT!!!!\n");
-		exit(0);
-	}
+
+    int ret = control_path_platform_init();
+    if (ret != SUCCESS) {
+        printf("EXIT!!!!\n");
+        exit(0);
+    }
+
+    if (!argc) {
+        printf("Usage: %s [%s] [%s] [%s] [%s] [%s] [%s]\n", argv[0],
+        STA_CONNECT, STA_DISCONNECT, AP_START, AP_STOP,
+        SCAN, STA_LIST);
+		return -1;
+    }
 
     for (int i=1; i<argc; i++) {
         if (0 == strncasecmp(STA_CONNECT, argv[i], sizeof(STA_CONNECT)))
             test_station_mode_connect();
-        if (0 == strncasecmp(STA_DISCONNECT, argv[i], sizeof(STA_DISCONNECT)))
+        else if (0 == strncasecmp(STA_DISCONNECT, argv[i], sizeof(STA_DISCONNECT)))
             test_station_mode_disconnect();
-        if (0 == strncasecmp(AP_START, argv[i], sizeof(AP_START)))
+        else if (0 == strncasecmp(AP_START, argv[i], sizeof(AP_START)))
             test_softap_mode_start();
-        if (0 == strncasecmp(AP_STOP, argv[i], sizeof(AP_STOP)))
+        else if (0 == strncasecmp(AP_STOP, argv[i], sizeof(AP_STOP)))
             test_softap_mode_stop();
-        if (0 == strncasecmp(SCAN, argv[i], sizeof(SCAN)))
+        else if (0 == strncasecmp(SCAN, argv[i], sizeof(SCAN)))
             test_get_available_wifi();
-        if (0 == strncasecmp(STA_LIST, argv[i], sizeof(STA_LIST)))
+        else if (0 == strncasecmp(STA_LIST, argv[i], sizeof(STA_LIST)))
             test_softap_mode_connected_clients_info();
+        else if (0 == strncasecmp(OTA, argv[i], sizeof(OTA)))
+            test_ota(argv[i+1]);
+        else if ((0 == strncasecmp("--help", argv[i], sizeof("--help"))) ||
+                 (0 == strncasecmp("-h", argv[i], sizeof("-h")))) {
+            printf("Usage: %s [%s] [%s] [%s] [%s] [%s] [%s]\n", argv[0],
+                STA_CONNECT, STA_DISCONNECT, AP_START, AP_STOP, SCAN, STA_LIST);
+			return(0);
+		}
     }
 
     return 0;

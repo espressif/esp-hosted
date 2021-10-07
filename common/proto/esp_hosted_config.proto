@@ -142,6 +142,28 @@ message EspHostedRespConnectedSTA {
     int32 resp = 3;
 }
 
+message EspHostedCmdOTABegin {
+}
+
+message EspHostedRespOTABegin {
+    int32 resp = 1;
+}
+
+message EspHostedCmdOTAWrite {
+    bytes ota_data = 1;
+}
+
+message EspHostedRespOTAWrite {
+    int32 resp = 1;
+}
+
+message EspHostedCmdOTAEnd {
+}
+
+message EspHostedRespOTAEnd {
+    int32 resp = 1;
+}
+
 enum EspHostedConfigMsgType {
     TypeCmdGetMACAddress = 0;
     TypeRespGetMACAddress = 1;
@@ -171,6 +193,12 @@ enum EspHostedConfigMsgType {
     TypeRespSetPowerSaveMode = 25;
     TypeCmdGetPowerSaveMode = 26;
     TypeRespGetPowerSaveMode = 27;
+    TypeCmdOTABegin = 28;
+    TypeRespOTABegin = 29;
+    TypeCmdOTAWrite = 30;
+    TypeRespOTAWrite = 31;
+    TypeCmdOTAEnd = 32;
+    TypeRespOTAEnd = 33;
 }
 
 message EspHostedConfigPayload {
@@ -204,5 +232,11 @@ message EspHostedConfigPayload {
         EspHostedRespSetMode resp_set_power_save_mode = 35;
         EspHostedCmdGetMode cmd_get_power_save_mode = 36;
         EspHostedRespGetMode resp_get_power_save_mode = 37;
+        EspHostedCmdOTABegin cmd_ota_begin = 38;
+        EspHostedRespOTABegin resp_ota_begin = 39;
+        EspHostedCmdOTAWrite cmd_ota_write = 40;
+        EspHostedRespOTAWrite resp_ota_write = 41;
+        EspHostedCmdOTAEnd cmd_ota_end = 42;
+        EspHostedRespOTAEnd resp_ota_end = 43;
     }
 }

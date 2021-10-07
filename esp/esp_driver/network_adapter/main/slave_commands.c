@@ -19,6 +19,7 @@
 #include "esp_private/wifi.h"
 #include "slave_commands.h"
 #include "esp_hosted_config.pb-c.h"
+#include "esp_ota_ops.h"
 
 #define MAC_LEN                     6
 #define MAC_STR_LEN                 17
@@ -39,6 +40,11 @@
 
 #define TIMEOUT_IN_MIN              (60*TIMEOUT_IN_SEC)
 #define TIMEOUT                     (2*TIMEOUT_IN_MIN)
+#define RESTART_TIMEOUT             (5*TIMEOUT_IN_SEC)
+
+#if CONFIG_ESP_OTA_WORKAROUND
+#define OTA_SLEEP_TIME_MS           (40)
+#endif
 
 #define mem_free(x)                 \
         {                           \
@@ -49,12 +55,16 @@
         }
 
 static const char* TAG = "slave_commands";
+extern volatile uint8_t ota_ongoing;
 
 /* FreeRTOS event group to signal when we are connected*/
 static EventGroupHandle_t wifi_event_group;
 
 static int retry = 0;
 static bool scan_done = false;
+static esp_ota_handle_t handle;
+const esp_partition_t* update_partition = NULL;
+static int ota_msg = 0;
 
 static void station_event_handler(void* arg, esp_event_base_t event_base,
                                 int32_t event_id, void* event_data);
@@ -76,6 +86,13 @@ extern esp_err_t wlan_ap_rx_callback(void *buffer, uint16_t len, void *eb);
 extern volatile uint8_t station_connected;
 extern volatile uint8_t softap_started;
 
+// OTA end timer callback
+void vTimerCallback( TimerHandle_t xTimer )
+{
+    xTimerDelete(xTimer, 0);
+    esp_restart();
+}
+
 // event handler for station connect/disconnect to/from AP
 static void station_event_handler(void *arg, esp_event_base_t event_base,
                                 int32_t event_id, void *event_data)
@@ -86,7 +103,7 @@ static void station_event_handler(void *arg, esp_event_base_t event_base,
             retry++;
             ESP_LOGI(TAG, "Retry to connect to the AP");
         } else {
-            wifi_event_sta_disconnected_t * disconnected_event = \
+            wifi_event_sta_disconnected_t * disconnected_event =
                         (wifi_event_sta_disconnected_t *) event_data;
             if (disconnected_event->reason == WIFI_REASON_NO_AP_FOUND) {
                 xEventGroupSetBits(wifi_event_group, WIFI_NO_AP_FOUND_BIT);
@@ -476,7 +493,7 @@ static esp_err_t cmd_set_ap_config_handler (EspHostedConfigPayload *req,
     }
 
     EventBits_t bits = xEventGroupWaitBits(wifi_event_group,
-            (WIFI_CONNECTED_BIT | WIFI_FAIL_BIT | 
+            (WIFI_CONNECTED_BIT | WIFI_FAIL_BIT |
             WIFI_NO_AP_FOUND_BIT | WIFI_WRONG_PASSWORD_BIT),
             pdFALSE,
             pdFALSE,
@@ -1163,7 +1180,7 @@ static esp_err_t get_connected_sta_list_handler (EspHostedConfigPayload *req,
     resp_payload->num = stas_info->num;
     if (stas_info->num) {
         resp_payload->n_stations = stas_info->num;
-        results = (EspHostedConnectedSTAList **)calloc(stas_info->num, \
+        results = (EspHostedConnectedSTAList **)calloc(stas_info->num,
                 sizeof(EspHostedConnectedSTAList));
         if (!results) {
             ESP_LOGE(TAG,"Failed to allocate memory for connected stations");
@@ -1173,7 +1190,7 @@ static esp_err_t get_connected_sta_list_handler (EspHostedConfigPayload *req,
         for (int i = 0; i < stas_info->num ; i++) {
             snprintf((char *)credentials.bssid,BSSID_LENGTH,
                 MACSTR,MAC2STR(stas_info->sta[i].mac));
-            results[i] = (EspHostedConnectedSTAList *)calloc(1,\
+            results[i] = (EspHostedConnectedSTAList *)calloc(1,
                 sizeof(EspHostedConnectedSTAList));
             if (!results[i]) {
                 ESP_LOGE(TAG,"Failed to allocated memory");
@@ -1360,6 +1377,170 @@ static esp_err_t cmd_get_power_save_mode_handler (EspHostedConfigPayload *req,
     return ESP_OK;
 }
 
+// Function OTA begin
+static esp_err_t cmd_ota_begin_handler (EspHostedConfigPayload *req,
+        EspHostedConfigPayload *resp, void *priv_data)
+{
+    esp_err_t ret = ESP_OK;
+    EspHostedRespOTABegin *resp_payload = NULL;
+
+    if (!req || !resp) {
+        ESP_LOGE(TAG, "Invalid parameters");
+        return ESP_FAIL;
+    }
+
+    ESP_LOGI(TAG, "OTA update started");
+
+    resp_payload = (EspHostedRespOTABegin *)
+	       calloc(1,sizeof(EspHostedRespOTABegin));
+    if (!resp_payload) {
+        ESP_LOGE(TAG,"Failed to allocate memory");
+        return ESP_ERR_NO_MEM;
+    }
+    esp_hosted_resp_otabegin__init(resp_payload);
+    resp->payload_case = ESP_HOSTED_CONFIG_PAYLOAD__PAYLOAD_RESP_OTA_BEGIN;
+    resp->resp_ota_begin = resp_payload;
+    resp_payload->has_resp = true;
+
+    // Identify next OTA partition
+    update_partition = esp_ota_get_next_update_partition(NULL);
+    if (update_partition == NULL) {
+        ESP_LOGE(TAG, "Failed to get next update partition");
+        goto err;
+    }
+
+    ESP_LOGI(TAG, "Prepare partition for OTA\n");
+    ota_ongoing=1;
+#if CONFIG_ESP_OTA_WORKAROUND
+    vTaskDelay(OTA_SLEEP_TIME_MS/portTICK_PERIOD_MS);
+#endif
+    ret = esp_ota_begin(update_partition, OTA_SIZE_UNKNOWN, &handle);
+    ota_ongoing=0;
+    if (ret) {
+        ESP_LOGE(TAG, "OTA update failed in OTA begin");
+        goto err;
+    }
+
+    ota_msg = 1;
+
+    resp_payload->resp = SUCCESS;
+    return ESP_OK;
+err:
+    resp_payload->resp = FAILURE;
+    return ESP_OK;
+
+}
+
+// Function OTA write
+static esp_err_t cmd_ota_write_handler (EspHostedConfigPayload *req,
+        EspHostedConfigPayload *resp, void *priv_data)
+{
+    esp_err_t ret = ESP_OK;
+    EspHostedRespOTAWrite *resp_payload = NULL;
+
+    if (!req || !resp) {
+        ESP_LOGE(TAG, "Invalid parameters");
+        return ESP_FAIL;
+    }
+
+    resp_payload = (EspHostedRespOTAWrite *)calloc(1,sizeof(EspHostedRespOTAWrite));
+    if (!resp_payload) {
+        ESP_LOGE(TAG,"Failed to allocate memory");
+        return ESP_ERR_NO_MEM;
+    }
+
+    if (ota_msg) {
+        ESP_LOGI(TAG, "Flashing image\n");
+        ota_msg = 0;
+    }
+    esp_hosted_resp_otawrite__init(resp_payload);
+    resp->payload_case = ESP_HOSTED_CONFIG_PAYLOAD__PAYLOAD_RESP_OTA_WRITE;
+    resp->resp_ota_write = resp_payload;
+    resp_payload->has_resp = true;
+
+    ota_ongoing=1;
+#if CONFIG_ESP_OTA_WORKAROUND
+	/* Delay added is to give chance to transfer pending data at transport
+	 * Care to be taken, when OTA ongoing, no other processing should happen
+	 * So big sleep is added before any flash operations start
+	 * */
+    vTaskDelay(OTA_SLEEP_TIME_MS/portTICK_PERIOD_MS);
+#endif
+    printf(".");
+    fflush(stdout);
+    ret = esp_ota_write( handle, (const void *)req->cmd_ota_write->ota_data.data, req->cmd_ota_write->ota_data.len);
+    ota_ongoing=0;
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "OTA write failed with return code 0x%x",ret);
+        resp_payload->resp = FAILURE;
+        return ESP_OK;
+    }
+    resp_payload->resp = SUCCESS;
+    return ESP_OK;
+}
+
+// Function OTA end
+static esp_err_t cmd_ota_end_handler (EspHostedConfigPayload *req,
+        EspHostedConfigPayload *resp, void *priv_data)
+{
+    esp_err_t ret = ESP_OK;
+    EspHostedRespOTAEnd *resp_payload = NULL;
+    TimerHandle_t xTimer = NULL;
+
+    if (!req || !resp) {
+        ESP_LOGE(TAG, "Invalid parameters");
+        return ESP_FAIL;
+    }
+
+    resp_payload = (EspHostedRespOTAEnd *)calloc(1,sizeof(EspHostedRespOTAEnd));
+    if (!resp_payload) {
+        ESP_LOGE(TAG,"Failed to allocate memory");
+        return ESP_ERR_NO_MEM;
+    }
+    esp_hosted_resp_otaend__init(resp_payload);
+    resp->payload_case = ESP_HOSTED_CONFIG_PAYLOAD__PAYLOAD_RESP_OTA_END;
+    resp->resp_ota_end = resp_payload;
+    resp_payload->has_resp = true;
+
+    ota_ongoing=1;
+#if CONFIG_ESP_OTA_WORKAROUND
+    vTaskDelay(OTA_SLEEP_TIME_MS/portTICK_PERIOD_MS);
+#endif
+    ret = esp_ota_end(handle);
+    ota_ongoing=0;
+    if (ret != ESP_OK) {
+        if (ret == ESP_ERR_OTA_VALIDATE_FAILED) {
+	ESP_LOGE(TAG, "Image validation failed, image is corrupted");
+        } else {
+	ESP_LOGE(TAG, "OTA update failed in end (%s)!", esp_err_to_name(ret));
+        }
+        goto err;
+    }
+
+    // set OTA partition for next boot
+    ret = esp_ota_set_boot_partition(update_partition);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "esp_ota_set_boot_partition failed (%s)!", esp_err_to_name(ret));
+        goto err;
+    }
+    xTimer = xTimerCreate("Timer", RESTART_TIMEOUT , pdFALSE, 0, vTimerCallback);
+    if (xTimer == NULL) {
+        ESP_LOGE(TAG, "Failed to create timer to restart system");
+        goto err;
+    }
+    ret = xTimerStart(xTimer, 0);
+    if (ret != pdPASS) {
+        ESP_LOGE(TAG, "Failed to start timer to restart system");
+        goto err;
+    }
+    ESP_LOGE(TAG, "**** OTA updated successfully, ESP32 will be rebooted in 5 sec ****");
+    resp_payload->resp = SUCCESS;
+    return ESP_OK;
+err:
+    resp_payload->resp = FAILURE;
+    return ESP_OK;
+}
+
 static esp_hosted_config_cmd_t cmd_table[] = {
     {
         .cmd_num = ESP_HOSTED_CONFIG_MSG_TYPE__TypeCmdGetMACAddress ,
@@ -1416,6 +1597,18 @@ static esp_hosted_config_cmd_t cmd_table[] = {
     {
         .cmd_num = ESP_HOSTED_CONFIG_MSG_TYPE__TypeCmdGetPowerSaveMode,
         .command_handler = cmd_get_power_save_mode_handler
+    },
+    {
+        .cmd_num = ESP_HOSTED_CONFIG_MSG_TYPE__TypeCmdOTABegin,
+        .command_handler = cmd_ota_begin_handler
+    },
+    {
+        .cmd_num = ESP_HOSTED_CONFIG_MSG_TYPE__TypeCmdOTAWrite,
+        .command_handler = cmd_ota_write_handler
+    },
+    {
+        .cmd_num = ESP_HOSTED_CONFIG_MSG_TYPE__TypeCmdOTAEnd,
+        .command_handler = cmd_ota_end_handler
     },
 };
 
@@ -1552,6 +1745,18 @@ static void esp_hosted_config_cleanup(EspHostedConfigPayload *resp)
         }
         case (ESP_HOSTED_CONFIG_MSG_TYPE__TypeRespGetPowerSaveMode) : {
             mem_free(resp->resp_get_power_save_mode);
+            break;
+        }
+        case (ESP_HOSTED_CONFIG_MSG_TYPE__TypeRespOTABegin) : {
+            mem_free(resp->resp_ota_begin);
+            break;
+        }
+        case (ESP_HOSTED_CONFIG_MSG_TYPE__TypeRespOTAWrite) : {
+            mem_free(resp->resp_ota_write);
+            break;
+        }
+        case (ESP_HOSTED_CONFIG_MSG_TYPE__TypeRespOTAEnd) : {
+            mem_free(resp->resp_ota_end);
             break;
         }
         default:
