@@ -104,7 +104,11 @@ static struct sk_buff * read_packet(struct esp_adapter *adapter)
 	context = adapter->if_context;
 
 	if (context->esp_spi_dev) {
-		skb = skb_dequeue(&(context->rx_q));
+		skb = skb_dequeue(&(context->rx_q[PRIO_Q_SERIAL]));
+		if (!skb)
+			skb = skb_dequeue(&(context->rx_q[PRIO_Q_BT]));
+		if (!skb)
+			skb = skb_dequeue(&(context->rx_q[PRIO_Q_OTHERS]));
 	} else {
 		printk (KERN_ERR "%s: Invalid args\n", __func__);
 		return NULL;
@@ -116,6 +120,7 @@ static struct sk_buff * read_packet(struct esp_adapter *adapter)
 static int write_packet(struct esp_adapter *adapter, struct sk_buff *skb)
 {
 	u32 max_pkt_size = SPI_BUF_SIZE - sizeof(struct esp_payload_header);
+	struct esp_payload_header *payload_header = (struct esp_payload_header *) skb->data;
 
 	if (!adapter || !adapter->if_context || !skb || !skb->data || !skb->len) {
 		printk (KERN_ERR "%s: Invalid args\n", __func__);
@@ -135,16 +140,23 @@ static int write_packet(struct esp_adapter *adapter, struct sk_buff *skb)
 		return -EPERM;
 	}
 
-	if (atomic_read(&tx_pending) >= TX_MAX_PENDING_COUNT) {
-		esp_tx_pause();
-		dev_kfree_skb(skb);
-		queue_work(spi_context.spi_workqueue, &spi_context.spi_work);
-		return -EBUSY;
-	}
 
 	/* Enqueue SKB in tx_q */
-	skb_queue_tail(&spi_context.tx_q, skb);
-	atomic_inc(&tx_pending);
+	if (payload_header->if_type == ESP_SERIAL_IF) {
+		skb_queue_tail(&spi_context.tx_q[PRIO_Q_SERIAL], skb);
+	} else if (payload_header->if_type == ESP_HCI_IF) {
+		skb_queue_tail(&spi_context.tx_q[PRIO_Q_BT], skb);
+	} else {
+		if (atomic_read(&tx_pending) >= TX_MAX_PENDING_COUNT) {
+			esp_tx_pause();
+			dev_kfree_skb(skb);
+			if (spi_context.spi_workqueue)
+				queue_work(spi_context.spi_workqueue, &spi_context.spi_work);
+			return -EBUSY;
+		}
+		skb_queue_tail(&spi_context.tx_q[PRIO_Q_OTHERS], skb);
+		atomic_inc(&tx_pending);
+	}
 
 	if (spi_context.spi_workqueue)
 		queue_work(spi_context.spi_workqueue, &spi_context.spi_work);
@@ -281,7 +293,12 @@ static int process_rx_buf(struct sk_buff *skb)
 		return -EPERM;
 
 	/* enqueue skb for read_packet to pick it */
-	skb_queue_tail(&spi_context.rx_q, skb);
+	if (header->if_type == ESP_SERIAL_IF)
+		skb_queue_tail(&spi_context.rx_q[PRIO_Q_SERIAL], skb);
+	else if (header->if_type == ESP_HCI_IF)
+		skb_queue_tail(&spi_context.rx_q[PRIO_Q_BT], skb);
+	else
+		skb_queue_tail(&spi_context.rx_q[PRIO_Q_OTHERS], skb);
 
 	/* indicate reception of new packet */
 	esp_process_new_packet_intr(spi_context.adapter);
@@ -304,7 +321,11 @@ static void esp_spi_work(struct work_struct *work)
 
 	if (trans_ready) {
 		if (data_path) {
-			tx_skb = skb_dequeue(&spi_context.tx_q);
+			tx_skb = skb_dequeue(&spi_context.tx_q[PRIO_Q_SERIAL]);
+			if (!tx_skb)
+				tx_skb = skb_dequeue(&spi_context.tx_q[PRIO_Q_BT]);
+			if (!tx_skb)
+				tx_skb = skb_dequeue(&spi_context.tx_q[PRIO_Q_OTHERS]);
 			if (tx_skb) {
 				if (atomic_read(&tx_pending))
 					atomic_dec(&tx_pending);
@@ -475,6 +496,7 @@ static int spi_reinit_spidev(int spi_clk_mhz)
 static int spi_init(void)
 {
 	int status = 0;
+	uint8_t prio_q_idx = 0;
 
 	spi_context.spi_workqueue = create_workqueue("ESP_SPI_WORK_QUEUE");
 
@@ -486,8 +508,11 @@ static int spi_init(void)
 
 	INIT_WORK(&spi_context.spi_work, esp_spi_work);
 
-	skb_queue_head_init(&spi_context.tx_q);
-	skb_queue_head_init(&spi_context.rx_q);
+	for (prio_q_idx=0; prio_q_idx<MAX_PRIORITY_QUEUES; prio_q_idx++) {
+		skb_queue_head_init(&spi_context.tx_q[prio_q_idx]);
+		skb_queue_head_init(&spi_context.rx_q[prio_q_idx]);
+	}
+
 
 	status = spi_dev_init(SPI_INITIAL_CLK_MHZ);
 	if (status) {
@@ -519,13 +544,17 @@ static int spi_init(void)
 
 static void spi_exit(void)
 {
+	uint8_t prio_q_idx = 0;
+
 	disable_irq(SPI_IRQ);
 	disable_irq(SPI_DATA_READY_IRQ);
 	close_data_path();
 	msleep(200);
 
-	skb_queue_purge(&spi_context.tx_q);
-	skb_queue_purge(&spi_context.rx_q);
+	for (prio_q_idx=0; prio_q_idx<MAX_PRIORITY_QUEUES; prio_q_idx++) {
+		skb_queue_purge(&spi_context.tx_q[prio_q_idx]);
+		skb_queue_purge(&spi_context.rx_q[prio_q_idx]);
+	}
 
 	if (spi_context.spi_workqueue) {
 		flush_scheduled_work();

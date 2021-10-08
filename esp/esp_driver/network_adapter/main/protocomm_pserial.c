@@ -27,7 +27,7 @@
 static const char TAG[] = "protocomm_pserial";
 
 #define EPNAME_MAX                   16
-#define REQ_Q_MAX                     4
+#define REQ_Q_MAX                    10
 
 #define SIZE_OF_TYPE                  1
 #define SIZE_OF_LENGTH                2
@@ -35,7 +35,7 @@ static const char TAG[] = "protocomm_pserial";
 #define PROTO_PSER_TLV_T_EPNAME       1
 #define PROTO_PSER_TLV_T_DATA         2
 
-#define TASK_PRIORITY                18
+#define CONTROL_PATH_TASK_PRIORITY    22
 
 struct pserial_config {
     pserial_xmit    xmit;
@@ -47,7 +47,7 @@ static esp_err_t parse_tlv(uint8_t **buf, size_t *total_len, int *type, size_t *
 {
     uint8_t *b = *buf;
     uint16_t *out_len = NULL;
-    
+
     if (*total_len == 0) {
         return ESP_FAIL;
     }
@@ -77,11 +77,11 @@ static esp_err_t compose_tlv(uint8_t **out, size_t *outlen)
      * --------------------------------------------------------------------------------------------
      *       1        |        2        | Endpoint length |     1     |      2      | Data length |
      * --------------------------------------------------------------------------------------------
-     */  
-    uint32_t buf_len = SIZE_OF_TYPE + SIZE_OF_LENGTH + ep_len + SIZE_OF_TYPE + SIZE_OF_LENGTH + *outlen; 
+     */
+    uint32_t buf_len = SIZE_OF_TYPE + SIZE_OF_LENGTH + ep_len + SIZE_OF_TYPE + SIZE_OF_LENGTH + *outlen;
     uint8_t *buf = (uint8_t *)calloc(1, buf_len);
     if (buf == NULL) {
-        ESP_LOGE(TAG,"Failed to allocate memory");
+        ESP_LOGE(TAG,"%s Failed to allocate memory", __func__);
         return ESP_FAIL;
     }
     buf[len] = PROTO_PSER_TLV_T_EPNAME;
@@ -161,6 +161,7 @@ static esp_err_t protocomm_pserial_common_handler(protocomm_t *pc, uint8_t *in, 
         return ESP_FAIL;
     }
 
+    //ESP_LOG_BUFFER_HEXDUMP("serial_tx", out, /*outlen*/ outlen<16?outlen:16, ESP_LOG_INFO);
     ret = (pserial_cfg->xmit)(out, (ssize_t) outlen);
 
     if (ret != ESP_OK) {
@@ -172,7 +173,6 @@ static esp_err_t protocomm_pserial_common_handler(protocomm_t *pc, uint8_t *in, 
 
 esp_err_t protocomm_pserial_data_ready(protocomm_t *pc, int len)
 {
-	printf("data ready \n");
     struct pserial_config *pserial_cfg = NULL;
     pserial_cfg = (struct pserial_config *) pc->priv;
     if (!pserial_cfg) {
@@ -216,12 +216,15 @@ static void pserial_task(void *params)
     while (xQueueReceive(pserial_cfg->req_queue, &len, portMAX_DELAY) == pdTRUE) {
         buf = (uint8_t *) malloc(len);
         if (buf == NULL) {
-            ESP_LOGE(TAG,"Failed to allocate memory");
+            ESP_LOGE(TAG,"%s Failed to allocate memory", __func__);
             return;
         }
         len = pserial_cfg->recv(buf, len);
         if (len) {
+            //ESP_LOG_BUFFER_HEXDUMP("serial_rx", buf, /*len*/len<16?len:16, ESP_LOG_INFO);
             ret = protocomm_pserial_common_handler(pc, buf, len);
+            if (ret)
+                ESP_LOGI(TAG, "protocomm_pserial_common_handler failed %d\n", ret);
             if (buf) {
                 free(buf);
                 buf = NULL;
@@ -248,7 +251,7 @@ esp_err_t protocomm_pserial_start(protocomm_t *pc, pserial_xmit xmit, pserial_re
 
     pserial_cfg = (struct pserial_config *) malloc(sizeof(struct pserial_config));
     if (pserial_cfg == NULL) {
-        ESP_LOGE(TAG,"Failed to allocate memory");
+        ESP_LOGE(TAG,"%s Failed to allocate memory", __func__);
         return ESP_ERR_NO_MEM;
     }
     pserial_cfg->xmit = xmit;
@@ -256,8 +259,8 @@ esp_err_t protocomm_pserial_start(protocomm_t *pc, pserial_xmit xmit, pserial_re
     pserial_cfg->req_queue = xQueueCreate(REQ_Q_MAX, sizeof(ssize_t));
 
     pc->priv = pserial_cfg;
-    
-    xTaskCreate(pserial_task, "pserial_task", 4096, (void *) pc, TASK_PRIORITY, NULL);
+
+    xTaskCreate(pserial_task, "pserial_task", 4096, (void *) pc, CONTROL_PATH_TASK_PRIORITY, NULL);
 
     return ESP_OK;
 }

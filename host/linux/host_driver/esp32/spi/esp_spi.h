@@ -28,8 +28,8 @@
 struct esp_spi_context {
 	struct esp_adapter          *adapter;
 	struct spi_device           *esp_spi_dev;
-	struct sk_buff_head         tx_q;
-	struct sk_buff_head         rx_q;
+	struct sk_buff_head         tx_q[MAX_PRIORITY_QUEUES];
+	struct sk_buff_head         rx_q[MAX_PRIORITY_QUEUES];
 	struct workqueue_struct     *spi_workqueue;
 	struct work_struct          spi_work;
 };

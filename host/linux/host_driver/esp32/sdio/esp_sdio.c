@@ -44,7 +44,7 @@
 
 struct esp_sdio_context sdio_context;
 static atomic_t tx_pending;
-static atomic_t queue_items;
+static atomic_t queue_items[MAX_PRIORITY_QUEUES];
 
 #ifdef CONFIG_ENABLE_MONITOR_PROCESS
 struct task_struct *monitor_thread;
@@ -257,6 +257,7 @@ static void flush_sdio(struct esp_sdio_context *context)
 static void esp_remove(struct sdio_func *func)
 {
 	struct esp_sdio_context *context;
+	uint8_t prio_q_idx = 0;
 	context = sdio_get_drvdata(func);
 
 	printk(KERN_INFO "%s -> Remove card", __func__);
@@ -287,7 +288,9 @@ static void esp_remove(struct sdio_func *func)
 			}
 
 		}
-		skb_queue_purge(&(sdio_context.tx_q));
+		for (prio_q_idx=0; prio_q_idx<MAX_PRIORITY_QUEUES; prio_q_idx++) {
+			skb_queue_purge(&(sdio_context.tx_q[prio_q_idx]));
+		}
 
 		memset(context, 0, sizeof(struct esp_sdio_context));
 	}
@@ -308,6 +311,7 @@ static int init_context(struct esp_sdio_context *context)
 {
 	int ret = 0;
 	u32 *val;
+	uint8_t prio_q_idx = 0;
 
 	if (!context) {
 		return -EINVAL;
@@ -350,8 +354,10 @@ static int init_context(struct esp_sdio_context *context)
 	if (unlikely(!context->adapter))
 		printk (KERN_ERR "%s: Failed to get adapter\n", __func__);
 
-	skb_queue_head_init(&(sdio_context.tx_q));
-	atomic_set(&queue_items, 0);
+	for (prio_q_idx=0; prio_q_idx<MAX_PRIORITY_QUEUES; prio_q_idx++) {
+		skb_queue_head_init(&(sdio_context.tx_q[prio_q_idx]));
+		atomic_set(&queue_items[prio_q_idx], 0);
+	}
 
 	context->adapter->if_type = ESP_IF_TYPE_SDIO;
 
@@ -449,6 +455,7 @@ static struct sk_buff * read_packet(struct esp_adapter *adapter)
 static int write_packet(struct esp_adapter *adapter, struct sk_buff *skb)
 {
 	u32 max_pkt_size = ESP_RX_BUFFER_SIZE - sizeof(struct esp_payload_header);
+	struct esp_payload_header *payload_header = (struct esp_payload_header *) skb->data;
 
 	if (!adapter || !adapter->if_context || !skb || !skb->data || !skb->len) {
 		printk(KERN_ERR "%s: Invalid args\n", __func__);
@@ -471,13 +478,20 @@ static int write_packet(struct esp_adapter *adapter, struct sk_buff *skb)
 		return -EBUSY;
 	}
 
-	/* Notify to process queue */
-	atomic_inc(&queue_items);
-
 	/* Enqueue SKB in tx_q */
 	atomic_inc(&tx_pending);
 
-	skb_queue_tail(&(sdio_context.tx_q), skb);
+	/* Notify to process queue */
+	if (payload_header->if_type == ESP_SERIAL_IF) {
+		atomic_inc(&queue_items[PRIO_Q_SERIAL]);
+		skb_queue_tail(&(sdio_context.tx_q[PRIO_Q_SERIAL]), skb);
+	} else if (payload_header->if_type == ESP_HCI_IF) {
+		atomic_inc(&queue_items[PRIO_Q_BT]);
+		skb_queue_tail(&(sdio_context.tx_q[PRIO_Q_BT]), skb);
+	} else {
+		atomic_inc(&queue_items[PRIO_Q_OTHERS]);
+		skb_queue_tail(&(sdio_context.tx_q[PRIO_Q_OTHERS]), skb);
+	}
 
 	return 0;
 }
@@ -503,18 +517,28 @@ static int tx_process(void *data)
 			continue;
 		}
 
-		if (atomic_read(&queue_items) <= 0) {
-			msleep(10);
+		if (atomic_read(&queue_items[PRIO_Q_SERIAL]) > 0) {
+			tx_skb = skb_dequeue(&(context->tx_q[PRIO_Q_SERIAL]));
+			if (!tx_skb) {
+				continue;
+			}
+			atomic_dec(&queue_items[PRIO_Q_SERIAL]);
+		}else if (atomic_read(&queue_items[PRIO_Q_BT]) > 0) {
+			tx_skb = skb_dequeue(&(context->tx_q[PRIO_Q_BT]));
+			if (!tx_skb) {
+				continue;
+			}
+			atomic_dec(&queue_items[PRIO_Q_BT]);
+		} else if (atomic_read(&queue_items[PRIO_Q_OTHERS]) > 0) {
+			tx_skb = skb_dequeue(&(context->tx_q[PRIO_Q_OTHERS]));
+			if (!tx_skb) {
+				continue;
+			}
+			atomic_dec(&queue_items[PRIO_Q_OTHERS]);
+		} else {
+			msleep(1);
 			continue;
 		}
-
-		tx_skb = skb_dequeue(&(context->tx_q));
-		if (!tx_skb) {
-			continue;
-		}
-
-		if (atomic_read(&queue_items))
-			atomic_dec(&queue_items);
 
 		if (atomic_read(&tx_pending))
 			atomic_dec(&tx_pending);

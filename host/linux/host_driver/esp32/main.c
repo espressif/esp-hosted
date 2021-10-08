@@ -297,7 +297,6 @@ static int process_tx_packet (struct sk_buff *skb)
 	payload_header->if_num = priv->if_num;
 	payload_header->len = cpu_to_le16(len);
 	payload_header->offset = cpu_to_le16(pad_len);
-	payload_header->reserved1 = c % 255;
 
 	payload_header->checksum = cpu_to_le16(compute_checksum(skb->data, (len + pad_len)));
 

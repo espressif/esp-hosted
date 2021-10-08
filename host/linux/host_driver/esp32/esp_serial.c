@@ -34,6 +34,7 @@
 #define ESP_SERIAL_MAJOR	221
 #define ESP_SERIAL_MINOR_MAX	2
 #define ESP_RX_RB_SIZE	4096
+#define ESP_SERIAL_MAX_TX	4096
 
 //#define ESP_SERIAL_TEST
 
@@ -65,40 +66,72 @@ static ssize_t esp_serial_write(struct file *file, const char __user *user_buffe
 	struct sk_buff * tx_skb = NULL;
 	int ret = 0;
 	size_t total_len = 0;
+	size_t frag_len = 0;
+	u32 left_len = size;
+	static u16 seq_num = 0;
+	u8 flag = 0;
+	u8 *pos;
 
+	if (size > ESP_SERIAL_MAX_TX) {
+		printk(KERN_ERR "%s: Exceed max tx buffer size [%d]\n", __func__, size);
+		return 0;
+	}
+
+	seq_num++;
 	dev = (struct esp_serial_devs *) file->private_data;
-	total_len = size + sizeof(struct esp_payload_header);
+	pos = (u8 *) user_buffer;
 
-	tx_skb = esp_alloc_skb(total_len);
-	if (!tx_skb) {
-		printk (KERN_ERR "%s: SKB alloc failed\n", __func__);
-		return -ENOMEM;
-	}
+	do {
+		/* Fragmentation support
+		 *  - Fragment large packets into multiple 1500 byte packets
+		 *  - MORE_FRAGMENT bit in flag tells if there are more fragments expected
+		 **/
+		if (left_len > ETH_DATA_LEN) {
+			frag_len = ETH_DATA_LEN;
+			flag = MORE_FRAGMENT;
+		} else {
+			frag_len = left_len;
+			flag = 0;
+		}
 
-	tx_buf = skb_put(tx_skb, total_len);
+		total_len = frag_len + sizeof(struct esp_payload_header);
 
-	hdr = (struct esp_payload_header *) tx_buf;
+		tx_skb = esp_alloc_skb(total_len);
+		if (!tx_skb) {
+			printk (KERN_ERR "%s: SKB alloc failed\n", __func__);
+			return (size - left_len);
+		}
 
-	memset (hdr, 0, sizeof(struct esp_payload_header));
+		tx_buf = skb_put(tx_skb, total_len);
 
-	hdr->if_type = ESP_SERIAL_IF;
-	hdr->if_num = dev->dev_index;
-	hdr->len = cpu_to_le16(size);
-	hdr->offset = cpu_to_le16(sizeof(struct esp_payload_header));
+		hdr = (struct esp_payload_header *) tx_buf;
 
-	ret = copy_from_user(tx_buf + hdr->offset, user_buffer, size);
-	if (ret) {
-		dev_kfree_skb(tx_skb);
-		printk(KERN_ERR "%s, Error copying buffer to send serial data\n", __func__);
-		return -EFAULT;
-	}
-	hdr->checksum = cpu_to_le16(compute_checksum(tx_skb->data, (size + sizeof(struct esp_payload_header))));
+		memset (hdr, 0, sizeof(struct esp_payload_header));
 
-	ret = esp_send_packet(dev->priv, tx_skb);
-	if (ret) {
-		printk (KERN_ERR "%s: Failed to transmit data, error %d\n", __func__, ret);
-		return ret;
-	}
+		hdr->if_type = ESP_SERIAL_IF;
+		hdr->if_num = dev->dev_index;
+		hdr->len = cpu_to_le16(frag_len);
+		hdr->seq_num = cpu_to_le16(seq_num);
+		hdr->offset = cpu_to_le16(sizeof(struct esp_payload_header));
+		hdr->flags |= flag;
+
+		ret = copy_from_user(tx_buf + hdr->offset, pos, frag_len);
+		if (ret) {
+			dev_kfree_skb(tx_skb);
+			printk(KERN_ERR "%s, Error copying buffer to send serial data\n", __func__);
+			return (size - left_len);
+		}
+		hdr->checksum = cpu_to_le16(compute_checksum(tx_skb->data, (frag_len + sizeof(struct esp_payload_header))));
+
+		ret = esp_send_packet(dev->priv, tx_skb);
+		if (ret) {
+			printk (KERN_ERR "%s: Failed to transmit data, error %d\n", __func__, ret);
+			return (size - left_len);
+		}
+
+		left_len -= frag_len;
+		pos += frag_len;
+	} while(left_len);
 
 	return size;
 }
