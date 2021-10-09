@@ -21,6 +21,7 @@
 #include <sys/ioctl.h>
 #include <netdb.h>
 #include <linux/if.h>
+#include <linux/if_arp.h>
 #include "test_api.h"
 
 #define MAC_LEN              6
@@ -119,9 +120,8 @@ static int setHWaddr(int sockfd, char* iface, char* mac)
         printf("Failed to convert mac address \n");
         return FAILURE;
     }
-    req.ifr_hwaddr.sa_family = true;
+    req.ifr_hwaddr.sa_family = ARPHRD_ETHER;
     strncpy(req.ifr_hwaddr.sa_data, mac_bytes, MAC_LEN);
-    req.ifr_hwaddr.sa_data[MAC_LEN-1] = '\0';
     ret = ioctl(sockfd, SIOCSIFHWADDR, &req);
     if (ret < 0) {
         return FAILURE;
