@@ -382,7 +382,7 @@ static void process_rx_packet(struct sk_buff *skb)
 		skb->ip_summed = CHECKSUM_NONE;
 
 		/* Forward skb to kernel */
-		netif_rx(skb);
+		netif_rx_ni(skb);
 
 		priv->stats.rx_bytes += skb->len;
 		priv->stats.rx_packets++;
