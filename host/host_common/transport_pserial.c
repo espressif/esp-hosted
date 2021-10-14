@@ -153,6 +153,8 @@ uint8_t * transport_pserial_data_handler(uint8_t* data, uint16_t data_length,
 	if (! read_buf) {
 		command_log("Failed to read RX data\n");
 		goto err;
+	} else if (!pro_len) {
+		command_log("Zero protobuf data length received \n");
 	}
 
 	ret = esp_hosted_driver_close(&esp_hosted_driver_handle);

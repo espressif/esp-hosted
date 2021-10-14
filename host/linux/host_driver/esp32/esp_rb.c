@@ -33,9 +33,9 @@ int esp_rb_init(esp_rb_t *rb, size_t sz)
 	return 0;
 }
 
-ssize_t esp_rb_read_by_user(esp_rb_t *rb, const char __user *buf, size_t sz, int block)
+int esp_rb_read_by_user(esp_rb_t *rb, const char __user *buf, size_t sz, int block)
 {
-	size_t read_len = 0, temp_len = 0;
+	int read_len = 0, temp_len = 0;
 
 	if (down_interruptible(&rb->sem)) {
 		return -ERESTARTSYS; /* Signal interruption */
@@ -62,7 +62,7 @@ ssize_t esp_rb_read_by_user(esp_rb_t *rb, const char __user *buf, size_t sz, int
 
 	if (copy_to_user((void *)buf, rb->rp, read_len)) {
 		up(&rb->sem);
-		printk(KERN_WARNING "%s, Incomplete/Failed read\n", __func__);
+		printk(KERN_WARNING "%s, %d: Incomplete/Failed read\n", __func__, __LINE__);
 		return -EFAULT;
 	}
 
@@ -75,7 +75,7 @@ ssize_t esp_rb_read_by_user(esp_rb_t *rb, const char __user *buf, size_t sz, int
 		temp_len = min(sz-read_len,(size_t)(rb->wp - rb->rp));
 		if (copy_to_user((void *)buf+read_len, rb->rp, temp_len)) {
 			up(&rb->sem);
-			printk(KERN_WARNING "%s, Incomplete/Failed read\n", __func__);
+			printk(KERN_WARNING "%s, %d: Incomplete/Failed read\n", __func__, __LINE__);
 			return -EFAULT;
 		}
 	}
@@ -88,8 +88,11 @@ ssize_t esp_rb_read_by_user(esp_rb_t *rb, const char __user *buf, size_t sz, int
 	return read_len;
 }
 
-size_t get_free_space(esp_rb_t *rb)
+int get_free_space(esp_rb_t *rb)
 {
+	if (!rb || !rb->rp || !rb->wp) {
+		return -EFAULT;
+	}
 	if (rb->rp == rb->wp) {
 		return rb->size - 1;
 	} else {
@@ -97,21 +100,26 @@ size_t get_free_space(esp_rb_t *rb)
 	}
 }
 
-ssize_t esp_rb_write_by_kernel(esp_rb_t *rb, const char *buf, size_t sz)
+int esp_rb_write_by_kernel(esp_rb_t *rb, const char *buf, size_t sz)
 {
-	size_t write_len = 0, temp_len = 0;
+	int write_len = 0, temp_len = 0;
+
+	if (!rb || !rb->wp || !rb->rp) {
+		printk(KERN_INFO "%s:%u rb uninitialized\n", __func__, __LINE__);
+		return -EFAULT;
+	}
 
 	if (down_interruptible(&rb->sem)) {
 		return -ERESTARTSYS;
 	}
 
-	if (get_free_space(rb) == 0) {
+	if (get_free_space(rb) <= 0) {
 		up(&rb->sem);
-		printk(KERN_ERR "%s, Ringbuffer full, no space to write\n", __func__);
+		printk(KERN_ERR "%s, %d, Ringbuffer full or inaccessible\n", __func__, __LINE__);
 		return 0;
 	}
 
-	sz = min(sz, get_free_space(rb));
+	sz = min(sz, (size_t)get_free_space(rb));
 	if (rb->wp >= rb->rp) {
 		write_len = min(sz, (size_t)(rb->end - rb->wp));
 	} else {
@@ -131,6 +139,10 @@ ssize_t esp_rb_write_by_kernel(esp_rb_t *rb, const char *buf, size_t sz)
 
 	rb->wp += temp_len;
 	write_len += temp_len;
+
+	if (rb->wp == rb->end) {
+		rb->wp = rb->buf;
+	}
 
 	up(&rb->sem);
 

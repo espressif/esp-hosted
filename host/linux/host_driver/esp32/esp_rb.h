@@ -18,8 +18,8 @@ typedef struct esp_rb {
 
 int esp_rb_init(esp_rb_t *rb, size_t sz);
 void esp_rb_cleanup(esp_rb_t *rb);
-ssize_t esp_rb_read_by_user(esp_rb_t *rb, const char __user *buf, size_t sz, int block);
-ssize_t esp_rb_write_by_kernel(esp_rb_t *rb, const char *buf, size_t sz);
-size_t get_free_space(esp_rb_t *rb);
+int esp_rb_read_by_user(esp_rb_t *rb, const char __user *buf, size_t sz, int block);
+int esp_rb_write_by_kernel(esp_rb_t *rb, const char *buf, size_t sz);
+int get_free_space(esp_rb_t *rb);
 
 #endif

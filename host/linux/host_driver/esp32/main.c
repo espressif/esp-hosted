@@ -352,7 +352,7 @@ static void process_rx_packet(struct sk_buff *skb)
 		do {
 			ret = esp_serial_data_received(payload_header->if_num,
 					(skb->data + offset + ret_len), (len - ret_len));
-			if (ret == -EINVAL) {
+			if (ret < 0) {
 				printk(KERN_ERR "%s, Failed to process data for iface type %d\n", __func__, payload_header->if_num);
 				break;
 			}
