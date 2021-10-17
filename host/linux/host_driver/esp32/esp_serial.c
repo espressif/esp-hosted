@@ -39,6 +39,7 @@
 //#define ESP_SERIAL_TEST
 
 static struct esp_serial_devs {
+	struct device* dev;
 	struct cdev cdev;
 	int dev_index;
 	esp_rb_t rb;
@@ -220,20 +221,30 @@ static int thread_fn(void *unused)
 }
 #endif
 
-int esp_serial_init(void *priv)
-{
-	int err = 0, i = 0;
+static dev_t dev_first;
+static struct class *cl;
 
-	err = register_chrdev_region(MKDEV(ESP_SERIAL_MAJOR, 0), ESP_SERIAL_MINOR_MAX, "esp_serial_driver");
+int esp_serial_init(void* priv) {
+	int err, i;
+
+	err = alloc_chrdev_region(&dev_first, 0, ESP_SERIAL_MINOR_MAX, "esp_serial_driver");
 	if (err) {
 		printk(KERN_ERR "%s, Error registering chrdev region %d\n", __func__, err);
-		return -1;
+		goto err;
+	}
+
+	cl = class_create(THIS_MODULE, "esp_serial_chardrv");
+	if (IS_ERR(cl)) {
+		err = PTR_ERR(cl);
+		goto err_class_create;
 	}
 
 	for (i = 0; i < ESP_SERIAL_MINOR_MAX; i++) {
-		cdev_init(&devs[i].cdev, &esp_serial_fops);
+		dev_t dev_num = dev_first + i;
 		devs[i].dev_index = i;
-		cdev_add(&devs[i].cdev, MKDEV(ESP_SERIAL_MAJOR, i), 1);
+		devs[i].dev = device_create(cl, NULL, dev_num, NULL, "esps%d", i);
+		cdev_init(&devs[i].cdev, &esp_serial_fops);
+		cdev_add(&devs[i].cdev, dev_num, 1);
 		esp_rb_init(&devs[i].rb, ESP_RX_RB_SIZE);
 		devs[i].priv = priv;
 		mutex_init(&devs[i].lock);
@@ -243,16 +254,23 @@ int esp_serial_init(void *priv)
 	kthread_run(thread_fn, NULL, "esptest-thread");
 #endif
 	return 0;
+err_class_create:
+    unregister_chrdev_region(dev_first, ESP_SERIAL_MINOR_MAX);
+
+err:
+	return err;
 }
 
-void esp_serial_cleanup(void)
-{
-	int i = 0;
+void esp_serial_cleanup(void) {
+	int i;
+
 	for (i = 0; i < ESP_SERIAL_MINOR_MAX; i++) {
+		dev_t dev_num = dev_first + i;
+		device_destroy(cl, dev_num);
 		cdev_del(&devs[i].cdev);
 		esp_rb_cleanup(&devs[i].rb);
 		mutex_destroy(&devs[i].lock);
 	}
-	unregister_chrdev_region(MKDEV(ESP_SERIAL_MAJOR, 0), ESP_SERIAL_MINOR_MAX);
-	return;
+	class_destroy(cl);
+	unregister_chrdev_region(dev_first, ESP_SERIAL_MINOR_MAX);
 }
