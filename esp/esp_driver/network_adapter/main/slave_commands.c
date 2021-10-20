@@ -21,7 +21,6 @@
 #include "esp_hosted_config.pb-c.h"
 #include "esp_ota_ops.h"
 
-#define MAC_LEN                     6
 #define MAC_STR_LEN                 17
 #define MAC2STR(a)                  (a)[0], (a)[1], (a)[2], (a)[3], (a)[4], (a)[5]
 #define MACSTR                      "%02x:%02x:%02x:%02x:%02x:%02x"
@@ -82,6 +81,7 @@ static esp_err_t convert_mac_to_bytes(uint8_t *out, char *s);
 
 extern esp_err_t wlan_sta_rx_callback(void *buffer, uint16_t len, void *eb);
 extern esp_err_t wlan_ap_rx_callback(void *buffer, uint16_t len, void *eb);
+void esp_update_ap_mac(void);
 
 extern volatile uint8_t station_connected;
 extern volatile uint8_t softap_started;
@@ -138,6 +138,7 @@ static void softap_event_handler(void *arg, esp_event_base_t event_base,
             MAC2STR(event->mac), event->aid);
     } else if (event_id == WIFI_EVENT_AP_START) {
         esp_wifi_internal_reg_rxcb(ESP_IF_WIFI_AP, (wifi_rxcb_t) wlan_ap_rx_callback);
+        esp_update_ap_mac();
     } else if (event_id == WIFI_EVENT_AP_STOP) {
         ESP_LOGI(TAG,"softap stop handler stop");
         esp_wifi_internal_reg_rxcb(ESP_IF_WIFI_AP,NULL);

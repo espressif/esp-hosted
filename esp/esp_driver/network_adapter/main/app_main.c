@@ -103,6 +103,8 @@ static struct rx_data {
     uint8_t data[4096];
 } r;
 
+uint8_t ap_mac[MAC_LEN] = {0};
+
 static void print_firmware_version()
 {
 	ESP_LOGI(TAG, "*********************************************************************");
@@ -181,16 +183,39 @@ static void esp_wifi_set_debug_log()
 
 }
 
+void esp_update_ap_mac(void)
+{
+    esp_err_t ret = ESP_OK;
+    char mac_str[BSSID_LENGTH] = "";
+
+	ret = esp_wifi_get_mac(ESP_IF_WIFI_AP, ap_mac);
+	ESP_LOGI(TAG,"Get softap mac address");
+	if (ret) {
+		ESP_LOGE(TAG,"Error in getting MAC of ESP softap %d", ret);
+	} else {
+		snprintf(mac_str,BSSID_LENGTH,MACSTR,MAC2STR(ap_mac));
+		ESP_LOGI(TAG,"AP mac [%s] ", mac_str);
+	}
+}
+
 esp_err_t wlan_ap_rx_callback(void *buffer, uint16_t len, void *eb)
 {
 	esp_err_t ret = ESP_OK;
 	interface_buffer_handle_t buf_handle = {0};
+	uint8_t * ap_buf = buffer;
 
 	if (!buffer || !eb || !datapath || ota_ongoing) {
 		if (eb) {
 			esp_wifi_internal_free_rx_buffer(eb);
 		}
 		return ESP_OK;
+	}
+
+	/* Check destination address against self address */
+	if (memcmp(ap_buf, ap_mac, MAC_LEN)) {
+		/* Check for multicast or broadcast address */
+		if (!(ap_buf[0] & 1))
+			goto DONE;
 	}
 
 	buf_handle.if_type = ESP_AP_IF;
