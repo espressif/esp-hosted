@@ -86,14 +86,31 @@ Below table explains which feature is supported on which transport interface for
 | ESP device | Transport Interface | WLAN support | Virtual serial interface | BT/BLE support |
 |:------------:|:-------:|:---------:|:--------:|:--------:|
 | ESP32 | SDIO | No | No | No |
-| ESP32 | SPI | Yes | Yes | HCI interface can be implemented over virtual serial interface |
-| ESP32 | UART | No | No | No |
+| ESP32 | SPI | Yes | Yes | Yes\* |
+| ESP32 | UART | No | No | Yes\*\* |
 | ESP32-S2 | SDIO | NA | NA | NA |
 | ESP32-S2 | SPI | Yes | Yes | NA |
 | ESP32-S2 | UART | No | No | NA |
 | ESP32-C3 | SDIO | NA | NA | NA |
 | ESP32-C3 | SPI | Yes | Yes | No |
 | ESP32-C3 | UART | No | No | No |
+
+\* BT/BLE over SPI
+> BT/BLE support over SPI is not readily available. In order to implement it, one needs to:
+> 
+> Port BT/BLE stack to MCU, \
+> Add a new virtual serial interface using the serial interface API's provided in host driver of ESP-Hosted solution.
+> HCI implementation in Linux Driver `host/linux/host_driver/esp32` could be used as reference. Search keyword: `ESP_HCI_IF`
+> Register this serial interface with BT/BLE stack as a HCI interface.
+
+\*\* BT/BLE over UART
+> BT/BLE support over UART is not readily available. In order to implement this, one needs to:
+>
+> Port BT/BLE stack to MCU, \
+> Register the UART serial interface as a HCI interface with BT/BLE stack
+> With the help of this UART interface, BT/BLE stack can directly interact with BT controller present on ESP32 bypassing host driver and firmware
+> ESP Hosted host driver and a firmware plays no role in this communication
+
 
 ---
 
