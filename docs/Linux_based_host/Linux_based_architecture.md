@@ -41,8 +41,8 @@ This registers HCI interface with Linux kernel. This interface is implemented ov
 * These commands are used to control and configure Wi-Fi on ESP peripheral.
 * Control interface makes use of virtual serial interface provided by ESP Host driver.
 * There are 2 flavors of control interface implementation:
-	* Python based implementation
 	* C based implementation
+	* Python based implementation - It uses C based implementation using `ctypes` package.
 * API's are described in subsequent section
   
 ---

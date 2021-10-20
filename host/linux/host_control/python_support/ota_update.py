@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from commands import *
+from commands_lib import *
 import argparse
 import requests
 import os
@@ -56,7 +56,7 @@ if (chunk_size>4000):
 
 for chunk in response.iter_content(chunk_size):
     print("|", end="", flush=True)
-    ota_status = esp_ota_write(chunk)
+    ota_status = esp_ota_write(chunk, chunk_size)
     print(".", end="", flush=True)
     if (ota_status == "failure"):
         print("Failed to write OTA update")

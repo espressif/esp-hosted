@@ -12,22 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from commands import *
+from commands_lib import *
 import argparse
 import os
 
-# WiFi Mode
-# NULL              0
-# Station           1
-# softAP            2
-# Station + softAP  3
-
-wifi_mode_none = 0
-wifi_mode_station = 1
-wifi_mode_softap = 2
-wifi_mode_station_softap = 3
-failure = "failure"
-success = "success"
 wifi_mode = 'not_set'
 stop_softap = 'not_set'
 flag = success
