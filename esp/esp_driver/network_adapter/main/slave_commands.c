@@ -1368,6 +1368,7 @@ static esp_err_t cmd_get_power_save_mode_handler (EspHostedConfigPayload *req,
     if (ret) {
         ESP_LOGE(TAG, "Failed to set power save mode");
         resp_payload->resp = FAILURE;
+        return ESP_OK;
     } else {
         resp->resp_get_power_save_mode->has_mode = true;
         resp->resp_get_power_save_mode->mode = ps_type;
