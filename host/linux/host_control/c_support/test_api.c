@@ -21,9 +21,10 @@
 #include <sys/ioctl.h>
 #include <netdb.h>
 #include <linux/if.h>
+#include <linux/if_arp.h>
 #include "test_api.h"
 
-#define MAC_LEN              6
+#define MAC_LEN              7
 #define MAC_STR_LEN          17
 
 #define STA_INTERFACE        "ethsta0"
@@ -40,7 +41,7 @@ static int convert_mac_to_bytes(uint8_t *out, size_t out_len, char *s)
     }
     num_bytes =  sscanf(s, "%2x:%2x:%2x:%2x:%2x:%2x",
         &mac[0],&mac[1], &mac[2], &mac[3], &mac[4], &mac[5]);
-    if ((num_bytes < MAC_LEN)  ||
+    if ((num_bytes < (MAC_LEN - 1))  ||
         (mac[0] > 0xFF) ||
         (mac[1] > 0xFF) ||
         (mac[2] > 0xFF) ||
@@ -114,14 +115,14 @@ static int setHWaddr(int sockfd, char* iface, char* mac)
         printf("Failed: Max interface length allowed is %ld \n", sizeof(req.ifr_name));
         return FAILURE;
     }
+    memset(mac_bytes, '\0', MAC_LEN);
     ret = convert_mac_to_bytes((uint8_t *)&mac_bytes, sizeof(mac_bytes), mac);
     if (ret) {
         printf("Failed to convert mac address \n");
         return FAILURE;
     }
-    req.ifr_hwaddr.sa_family = true;
+    req.ifr_hwaddr.sa_family = ARPHRD_ETHER;
     strncpy(req.ifr_hwaddr.sa_data, mac_bytes, MAC_LEN);
-    req.ifr_hwaddr.sa_data[MAC_LEN-1] = '\0';
     ret = ioctl(sockfd, SIOCSIFHWADDR, &req);
     if (ret < 0) {
         return FAILURE;
