@@ -142,6 +142,123 @@ Run `hcitool scan` for BT device scanning.
 
 Run `hcitool lescan` for BLE device scanning.
 
+### 2.2 BLE 5.0 testing
+
+Only ESP32C3 HCI controller supports BLE 5.0. Several new features are introduced in BLE 5.0. The major areas of improvement are:
+1. Slot Availability Mask (SAM)
+2. 2 Msym/s PHY for LE
+3. LE Long Range
+4. High Duty Cycle Non-Connectable Advertising
+5. LE Advertising Extensions
+6. LE Channel Selection Algorithm #2
+
+To test BLE 5.0 on RPi minimum `bluez` version `5.56` and above required. Check current `bluez` version by running following command on RPi:
+
+```
+bluetoothctl -v
+```
+:warning: `hcitool lescan` is deprecated. Please dont use it.
+
+If `bluez` version is less than 5.56 then follow [this](https://scribles.net/updating-bluez-on-raspberry-pi-from-5-43-to-5-50/) link to update bluez to 5.56. Replace `bluez` version `5.50` to `5.56` while following mentioned link.
+
+### 2.2.1 Basic scan, pair, connect
+
+Execute following steps on linux host.
+Steps:
+1. Run `sudo bluetoothctl`.
+2. To Turn on power, run `power on`.
+3. Make device discoverable, run `discoverable on`.
+4. Make device pairable on, run `pairable on`.
+5. Set current agent to default, run `default-agent`.
+6. Turn on bluetooth support, run `agent on`.
+7. Start btmon to collect log in separate terminal window, run `sudo btmon &`.
+8. Turn on mobile phone's bluetooth so that linux host can detect it.
+9. Start scanning, run `scan on` in bluetoothctl window.
+10. Once mobile phone's MAC address is listed in scan list, stop scanning, run `scan off`.
+11. To trust, run `trust <MAC address of your device>`.
+12. To pair, run `pair <MAC address of your device>`.
+13. To connect, run `connect <MAC address of your device>`.
+14. Once connected, please run `discoverable off`.
+
+#### 2.2.2 GATT Server
+
+BLE 5.0 has backword compability. It can connect with BLE4.2 devices.
+Below example demonstrate linux host as GATT server and mobile phone as GATT client. We are using `nRF connect` application for GATT client operartion.
+
+Execute following steps on linux host.
+Steps:
+1. Run `sudo bluetoothctl`.
+2. Run `list` to get MAC address of ESP32.
+3. To set device name, run `menu advertise`. Then `name <enter_any_name>`.
+4. To come back to main menu, run `back`.
+5. To start advertising, run `advertise on`.
+Perform below steps on Mobile Phone:
+6. Turn on mobile phone's bluetooth. Open nRF connect application, ESP32's MAC address will be displayed under `SCANNER` tab as a result of scan.
+7. Click on connect. Client tab will be open. Click on `Generic Attribute` option.
+8. Perform read/write on listed characteristics fields in `Generic Attribute` service.
+To disconnet:
+9. Run `disconnect <MAC_ADDRESS_of_gatt_client>` on linux host's `bluetoothctrl` OR click on `DISCONNECT` in nRF connect application's `GATT client` screen.
+
+#### 2.2.3 GATT client
+
+BLE 5.0 has backword compability. It can connect with BLE4.2 devices.
+Below example demonstrate linux host as GATT client and mobile phone as GATT server. We are using `nRF connect` application for GATT server operartion.
+
+Execute following steps on linux host.
+Steps:
+1. Run `sudo bluetoothctl`.
+2. To Turn on power, run `power on`.
+3. Make device discoverable, run `discoverable on`.
+4. Make device pairable, run `pairable on`.
+5. Set current agent to default, run `default-agent`.
+6. Turn on bluetooth support, run `agent on`.
+7. Turn on mobile phone's bluetooth so that linux host can detect it.
+8. Start scanning, run `scan on`.
+9. Once mobile phone's MAC address is listed in scan list, stop scanning, run `scan off`.
+10. Start btmon to collect log in separate terminal window, run `sudo btmon &`.
+11. To trust, run `trust <MAC address of mobile phone>`.
+12. To pair, run `pair <MAC address of mobile phone>`.
+13. To connect, run `connect <MAC address of mobile phone>`.
+14. Once connected, please run `discoverable off`.
+15. Go to gatt menu, run `menu gatt`.
+16. list available attributes, run `list-attributes`.
+17. select characteristic of service, run `select-attribute <characteristic_of_service>`.
+18. perform read/write operation on selected characteristic.
+19. To disconnect, run `disconnect <MAC_ADDRESS_of_gatt_server>`.
+
+#### 2.2.4 1M, 2M, CODED phy for LE
+
+BLE5.0 supports 1M, 2M and CODED phy. To use 2M and CODED phy for gatt read/write procedure as follow:
+
+Note: Default selected phy is 1M. To perform gatt read/write with BLE5.0 peripheral, both host and peripheral must have same phy configuration.
+
+#####  Using 1M phy:
+1M phy is default phy for BLE5.0. Follow above mentioned steps in section 2.2.1
+for connection. After connection follow gatt read/write from gatt menu in bluetoothctl.
+
+##### Using 2M phy:
+2M phy can not use for connection in BLE5.0 . So configure phy as 1M and 2M both, make connection with other BLE5.0 device and then set phy as 2M. On peripheral side make primary phy as 1M and secondary phy as 2M.
+
+Steps:
+1. To configure phy as 1M and 2M both, run `sudo hcitool cmd 08 31 03 03 03`.
+2. To check selected phy, Go to `bluez-5.56` directory. Run `sudo ./tools/btmgmt --index hci0` and run `phy`.
+3. Connect to BLE5.0 device using above mentioned steps in section 2.2.1.
+4. while executing connect command, there is `LE Enhanced Connection Complete` event in `btmon` log. Note down `handle` value.
+5. After connection, exit form bluetoothctl. Run `exit` in bluetoothctl.
+6. Now configure phy into 2M. Run `sudo hcitool cmd 08 32 <handle_value> 03 02 02 00`.
+7. Follow gatt read/write from gatt menu in bluetoothctl.
+
+##### Using CODED phy:
+Configure CODED phy on host and peripheral side.
+
+Steps:
+1. To configure phy as 1M and 2M both, run `sudo hcitool cmd 08 31 03 03 03`.
+2. To check selected phy, Go to `bluez-5.56` directory. Run `sudo ./tools/btmgmt --index hci0` and run `phy`.
+3. Connect to BLE5.0 device using above mentioned steps in section 2.2.1.
+4. while executing connect command, there is `LE Enhanced Connection Complete` event in `btmon` log. Note down `handle` value.
+5. After connection, exit form bluetoothctl. Run `exit` in bluetoothctl.
+6. Now configure phy into 2M. Run `sudo hcitool cmd 08 32 <handle_value> 03 02 02 00`.
+7. Follow gatt read/write from gatt menu in bluetoothctl.
 
 ## 3. Troubleshoot Instructions
 
