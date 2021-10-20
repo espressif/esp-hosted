@@ -39,7 +39,7 @@ MODULE_AUTHOR("Amey Inamdar <amey.inamdar@espressif.com>");
 MODULE_AUTHOR("Mangesh Malusare <mangesh.malusare@espressif.com>");
 MODULE_AUTHOR("Yogesh Mantri <yogesh.mantri@espressif.com>");
 MODULE_DESCRIPTION("Host driver for ESP-Hosted solution");
-MODULE_VERSION("0.3");
+MODULE_VERSION("0.4");
 
 struct esp_adapter adapter;
 volatile u8 stop_data = 0;

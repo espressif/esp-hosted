@@ -9,7 +9,7 @@ endif()
 
 
 register_component()
-set(PROJECT_VERSION "-DPROJECT_VERSION=0.3")
+set(PROJECT_VERSION "-DPROJECT_VERSION=0.4")
 target_compile_definitions(${COMPONENT_LIB} PRIVATE ${PROJECT_VERSION})
 
 # Add directory of protocomm_priv.h to include paths
