@@ -423,7 +423,7 @@ void recv_task(void* pvParameters)
 	}
 }
 
-static int32_t serial_read_data(uint8_t *data, int32_t len)
+static ssize_t serial_read_data(uint8_t *data, ssize_t len)
 {
 	len = min(len, r.len);
 	if (r.valid) {
@@ -437,7 +437,7 @@ static int32_t serial_read_data(uint8_t *data, int32_t len)
 	return len;
 }
 
-static int32_t serial_write_data(uint8_t* data, int32_t len)
+static esp_err_t serial_write_data(uint8_t* data, ssize_t len)
 {
 	esp_err_t ret = ESP_OK;
 	uint8_t *pos = data;
