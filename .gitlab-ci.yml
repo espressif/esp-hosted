@@ -31,3 +31,30 @@ deploy_master_github:
       - git remote remove github &>/dev/null || true
       - git remote add github git@github.com:espressif/esp-hosted.git
       - git push github "${CI_COMMIT_SHA}:refs/heads/${CI_COMMIT_REF_NAME}"
+
+sync_with_github:
+  stage: deploy
+  image: $CI_DOCKER_REGISTRY/esp32-ci-env
+  tags:
+    - deploy
+  when: manual
+  only:
+    - master
+  variables:
+    GITHUB_BRANCH_NAME: "master"
+  script:
+      # add ssh key
+      - mkdir -p ~/.ssh
+      - chmod 700 ~/.ssh
+      - echo -n $GH_KEY > ~/.ssh/id_rsa_base64
+      - base64 --decode --ignore-garbage ~/.ssh/id_rsa_base64 > ~/.ssh/id_rsa
+      - chmod 600 ~/.ssh/id_rsa
+      - echo -e "Host github.com\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config
+      # git add remote
+      - git remote remove github &>/dev/null || true
+      - git remote add github git@github.com:espressif/esp-hosted.git
+      # sync with github
+      - git config user.email "test-user@example.com"
+      - git config user.name "Test User"
+      - git pull github ${GITHUB_BRANCH_NAME} --rebase
+      - git push github "${CI_COMMIT_SHA}:refs/heads/${CI_COMMIT_REF_NAME}"
