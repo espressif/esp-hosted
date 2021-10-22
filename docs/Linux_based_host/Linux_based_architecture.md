@@ -127,3 +127,12 @@ Following are few ready to use convenience script provided in the repository. Th
 	python connected_stations_list.py
 	```
 
+* **OTA update**
+	`ota_update.py` script updates ESP32 firmware with provided URL of binary file. This script will perform following operation.
+		- Erase ota flash partition of ESP32
+		- Download chunk from URL and write that chunk into flash, one by one, till whole binary is written
+		- Validate the complete written binary in flash
+		- Sets newly written OTA partition as boot partition
+		- Reboot the ESP32 after 5 second
+
+	Please refer [ota](ota_update.md) for detailed documentation.

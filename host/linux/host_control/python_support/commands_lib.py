@@ -463,8 +463,8 @@ def esp_ota_begin():
 #      ota_data        : OTA data buffer
 #      ota_data_len    : length of OTA data buffer
 
-def esp_ota_write(ota_data, ota_image_len):
-    ret = commands_map_py_to_c.esp_ota_write(ota_data, ota_image_len)
+def esp_ota_write(ota_data, ota_data_len):
+    ret = commands_map_py_to_c.esp_ota_write(ota_data, ota_data_len)
     if not ret:
         return success
     else:
