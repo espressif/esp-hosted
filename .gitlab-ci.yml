@@ -32,7 +32,7 @@ deploy_master_github:
       - git remote add github git@github.com:espressif/esp-hosted.git
       - git push github "${CI_COMMIT_SHA}:refs/heads/${CI_COMMIT_REF_NAME}"
 
-deploy_force_master_github:
+.deploy_force_master_github:
   stage: deploy
   image: $CI_DOCKER_REGISTRY/esp32-ci-env
   tags:
