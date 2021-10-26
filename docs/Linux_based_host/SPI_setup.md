@@ -59,8 +59,12 @@ The SPI master driver is disabled by default on Raspberry-Pi OS. To enable it ad
 dtparam=spi=on
 dtoverlay=disable-bt
 ```
+In addition, below options are set as the SPI clock frequency in analyzer is observed to be smaller than expected clock. This is RaspberryPi specific [issue](https://github.com/raspberrypi/linux/issues/2286).
+```
+core_freq=250
+core_freq_min=250
+```
 Please reboot Raspberry-Pi after changing this file.
-
 
 ## 2. Load ESP-Hosted Solution
 ### 2.1 Host Software
