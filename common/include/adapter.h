@@ -19,13 +19,16 @@ struct esp_payload_header {
 	uint16_t         len;
 	uint16_t         offset;
 	uint16_t         checksum;
+	uint16_t		 seq_num;
 	uint8_t          reserved2;
+	/* Position of union field has to always be last,
+	 * this is required for hci_pkt_type */
 	union {
 		uint8_t      reserved3;
 		uint8_t      hci_pkt_type;		/* Packet type for HCI interface */
 		uint8_t      priv_pkt_type;		/* Packet type for priv interface */
 	};
-	uint16_t		 seq_num;
+	/* Do no add anything here */
 } __attribute__((packed));
 
 typedef enum {

@@ -189,18 +189,20 @@ This section describes the data communication protocol used at the transport lay
 ##### 3.2.1 Payload Format
 This section explains the payload format used for data transfer on SDIO and SPI interfaces.
 
-* Host and peripheral makes use of 8 byte payload header which preceeds every data packet.
+* Host and peripheral makes use of 12 byte payload header which preceeds every data packet.
 * This payload header provides additional information about the data packet. Based on this header, host/peripheral consumes transmitted data packet.
 * Payload format is as below
 
 | Field | Length | Description |
 |:-------:|:---------:|:--------|
 | Interface type | 4 bits | Possible values: STA(0), SoftAP(1), Serial interface(2), HCI (3), Priv interface(4). Rest all values are reserved |
-| Reserved | 4 bits | Not in use |
-| Reserved | 1 byte | Not in use |
+| Interface number | 4 bits | Unused |
+| Flags | 1 byte | Additional flags like `MORE_FRAGMENT` in fragmentation |
 | Packet length | 2 bytes | Actual length of data packet |
 | Offset to packet | 2 bytes | Offset of actual data packet |
-| Reserved | 1 byte  | Not in use |
+| Checksum | 2 bytes | checksum for complete packet (Includes header and payload) |
+| Reserved2 | 1 byte | Not in use |
+| seq_num | 2 bytes | Sequence number for serial inerface |
 | Packet type | 1 byte | reserved when interface type is 0,1 and 2. Applicable only for interface type 3 and 4 |
 
 ### 3.3 Integration Guide
