@@ -45,6 +45,8 @@ typedef struct _EspHostedCmdOTAWrite EspHostedCmdOTAWrite;
 typedef struct _EspHostedRespOTAWrite EspHostedRespOTAWrite;
 typedef struct _EspHostedCmdOTAEnd EspHostedCmdOTAEnd;
 typedef struct _EspHostedRespOTAEnd EspHostedRespOTAEnd;
+typedef struct _EspHostedCmdSetVendorSpecificIE EspHostedCmdSetVendorSpecificIE;
+typedef struct _EspHostedRespSetVendorSpecificIE EspHostedRespSetVendorSpecificIE;
 typedef struct _EspHostedConfigPayload EspHostedConfigPayload;
 
 
@@ -68,6 +70,19 @@ typedef enum _EspHostedStatus {
   ESP_HOSTED_STATUS__TYPE_CONNECTION_FAIL = 3
     PROTOBUF_C__FORCE_ENUM_TO_BE_INT_SIZE(ESP_HOSTED_STATUS)
 } EspHostedStatus;
+typedef enum _EspHostedVendorIEType {
+  ESP_HOSTED_VENDOR_IETYPE__VND_IE_TYPE_BEACON = 0,
+  ESP_HOSTED_VENDOR_IETYPE__VND_IE_TYPE_PROBE_REQ = 1,
+  ESP_HOSTED_VENDOR_IETYPE__VND_IE_TYPE_PROBE_RESP = 2,
+  ESP_HOSTED_VENDOR_IETYPE__VND_IE_TYPE_ASSOC_REQ = 3,
+  ESP_HOSTED_VENDOR_IETYPE__VND_IE_TYPE_ASSOC_RESP = 4
+    PROTOBUF_C__FORCE_ENUM_TO_BE_INT_SIZE(ESP_HOSTED_VENDOR_IETYPE)
+} EspHostedVendorIEType;
+typedef enum _EspHostedIEID {
+  ESP_HOSTED_IEID__VND_IE_ID_0 = 0,
+  ESP_HOSTED_IEID__VND_IE_ID_1 = 1
+    PROTOBUF_C__FORCE_ENUM_TO_BE_INT_SIZE(ESP_HOSTED_IEID)
+} EspHostedIEID;
 typedef enum _EspHostedConfigMsgType {
   ESP_HOSTED_CONFIG_MSG_TYPE__TypeCmdGetMACAddress = 0,
   ESP_HOSTED_CONFIG_MSG_TYPE__TypeRespGetMACAddress = 1,
@@ -102,7 +117,9 @@ typedef enum _EspHostedConfigMsgType {
   ESP_HOSTED_CONFIG_MSG_TYPE__TypeCmdOTAWrite = 30,
   ESP_HOSTED_CONFIG_MSG_TYPE__TypeRespOTAWrite = 31,
   ESP_HOSTED_CONFIG_MSG_TYPE__TypeCmdOTAEnd = 32,
-  ESP_HOSTED_CONFIG_MSG_TYPE__TypeRespOTAEnd = 33
+  ESP_HOSTED_CONFIG_MSG_TYPE__TypeRespOTAEnd = 33,
+  ESP_HOSTED_CONFIG_MSG_TYPE__TypeCmdSetVendorSpecificIE = 34,
+  ESP_HOSTED_CONFIG_MSG_TYPE__TypeRespSetVendorSpecificIE = 35
     PROTOBUF_C__FORCE_ENUM_TO_BE_INT_SIZE(ESP_HOSTED_CONFIG_MSG_TYPE)
 } EspHostedConfigMsgType;
 
@@ -485,6 +502,34 @@ struct  _EspHostedRespOTAEnd
     , 0,0 }
 
 
+struct  _EspHostedCmdSetVendorSpecificIE
+{
+  ProtobufCMessage base;
+  protobuf_c_boolean has_enable;
+  protobuf_c_boolean enable;
+  protobuf_c_boolean has_type;
+  EspHostedVendorIEType type;
+  protobuf_c_boolean has_idx;
+  EspHostedIEID idx;
+  protobuf_c_boolean has_vendor_ie_data;
+  ProtobufCBinaryData vendor_ie_data;
+};
+#define ESP_HOSTED_CMD_SET_VENDOR_SPECIFIC_IE__INIT \
+ { PROTOBUF_C_MESSAGE_INIT (&esp_hosted_cmd_set_vendor_specific_ie__descriptor) \
+    , 0,0, 0,0, 0,0, 0,{0,NULL} }
+
+
+struct  _EspHostedRespSetVendorSpecificIE
+{
+  ProtobufCMessage base;
+  protobuf_c_boolean has_resp;
+  int32_t resp;
+};
+#define ESP_HOSTED_RESP_SET_VENDOR_SPECIFIC_IE__INIT \
+ { PROTOBUF_C_MESSAGE_INIT (&esp_hosted_resp_set_vendor_specific_ie__descriptor) \
+    , 0,0 }
+
+
 typedef enum {
   ESP_HOSTED_CONFIG_PAYLOAD__PAYLOAD__NOT_SET = 0,
   ESP_HOSTED_CONFIG_PAYLOAD__PAYLOAD_CMD_GET_MAC_ADDRESS = 10,
@@ -521,6 +566,8 @@ typedef enum {
   ESP_HOSTED_CONFIG_PAYLOAD__PAYLOAD_RESP_OTA_WRITE = 41,
   ESP_HOSTED_CONFIG_PAYLOAD__PAYLOAD_CMD_OTA_END = 42,
   ESP_HOSTED_CONFIG_PAYLOAD__PAYLOAD_RESP_OTA_END = 43,
+  ESP_HOSTED_CONFIG_PAYLOAD__PAYLOAD_CMD_SET_VENDOR_SPECIFIC_IE = 44,
+  ESP_HOSTED_CONFIG_PAYLOAD__PAYLOAD_RESP_SET_VENDOR_SPECIFIC_IE = 45,
 } EspHostedConfigPayload__PayloadCase;
 
 struct  _EspHostedConfigPayload
@@ -564,6 +611,8 @@ struct  _EspHostedConfigPayload
     EspHostedRespOTAWrite *resp_ota_write;
     EspHostedCmdOTAEnd *cmd_ota_end;
     EspHostedRespOTAEnd *resp_ota_end;
+    EspHostedCmdSetVendorSpecificIE *cmd_set_vendor_specific_ie;
+    EspHostedRespSetVendorSpecificIE *resp_set_vendor_specific_ie;
   };
 };
 #define ESP_HOSTED_CONFIG_PAYLOAD__INIT \
@@ -1141,6 +1190,44 @@ EspHostedRespOTAEnd *
 void   esp_hosted_resp_otaend__free_unpacked
                      (EspHostedRespOTAEnd *message,
                       ProtobufCAllocator *allocator);
+/* EspHostedCmdSetVendorSpecificIE methods */
+void   esp_hosted_cmd_set_vendor_specific_ie__init
+                     (EspHostedCmdSetVendorSpecificIE         *message);
+size_t esp_hosted_cmd_set_vendor_specific_ie__get_packed_size
+                     (const EspHostedCmdSetVendorSpecificIE   *message);
+size_t esp_hosted_cmd_set_vendor_specific_ie__pack
+                     (const EspHostedCmdSetVendorSpecificIE   *message,
+                      uint8_t             *out);
+size_t esp_hosted_cmd_set_vendor_specific_ie__pack_to_buffer
+                     (const EspHostedCmdSetVendorSpecificIE   *message,
+                      ProtobufCBuffer     *buffer);
+EspHostedCmdSetVendorSpecificIE *
+       esp_hosted_cmd_set_vendor_specific_ie__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data);
+void   esp_hosted_cmd_set_vendor_specific_ie__free_unpacked
+                     (EspHostedCmdSetVendorSpecificIE *message,
+                      ProtobufCAllocator *allocator);
+/* EspHostedRespSetVendorSpecificIE methods */
+void   esp_hosted_resp_set_vendor_specific_ie__init
+                     (EspHostedRespSetVendorSpecificIE         *message);
+size_t esp_hosted_resp_set_vendor_specific_ie__get_packed_size
+                     (const EspHostedRespSetVendorSpecificIE   *message);
+size_t esp_hosted_resp_set_vendor_specific_ie__pack
+                     (const EspHostedRespSetVendorSpecificIE   *message,
+                      uint8_t             *out);
+size_t esp_hosted_resp_set_vendor_specific_ie__pack_to_buffer
+                     (const EspHostedRespSetVendorSpecificIE   *message,
+                      ProtobufCBuffer     *buffer);
+EspHostedRespSetVendorSpecificIE *
+       esp_hosted_resp_set_vendor_specific_ie__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data);
+void   esp_hosted_resp_set_vendor_specific_ie__free_unpacked
+                     (EspHostedRespSetVendorSpecificIE *message,
+                      ProtobufCAllocator *allocator);
 /* EspHostedConfigPayload methods */
 void   esp_hosted_config_payload__init
                      (EspHostedConfigPayload         *message);
@@ -1252,6 +1339,12 @@ typedef void (*EspHostedCmdOTAEnd_Closure)
 typedef void (*EspHostedRespOTAEnd_Closure)
                  (const EspHostedRespOTAEnd *message,
                   void *closure_data);
+typedef void (*EspHostedCmdSetVendorSpecificIE_Closure)
+                 (const EspHostedCmdSetVendorSpecificIE *message,
+                  void *closure_data);
+typedef void (*EspHostedRespSetVendorSpecificIE_Closure)
+                 (const EspHostedRespSetVendorSpecificIE *message,
+                  void *closure_data);
 typedef void (*EspHostedConfigPayload_Closure)
                  (const EspHostedConfigPayload *message,
                   void *closure_data);
@@ -1263,6 +1356,8 @@ typedef void (*EspHostedConfigPayload_Closure)
 
 extern const ProtobufCEnumDescriptor    esp_hosted_encryption_mode__descriptor;
 extern const ProtobufCEnumDescriptor    esp_hosted_status__descriptor;
+extern const ProtobufCEnumDescriptor    esp_hosted_vendor_ietype__descriptor;
+extern const ProtobufCEnumDescriptor    esp_hosted_ieid__descriptor;
 extern const ProtobufCEnumDescriptor    esp_hosted_config_msg_type__descriptor;
 extern const ProtobufCMessageDescriptor esp_hosted_cmd_get_mac_address__descriptor;
 extern const ProtobufCMessageDescriptor esp_hosted_resp_get_mac_address__descriptor;
@@ -1294,6 +1389,8 @@ extern const ProtobufCMessageDescriptor esp_hosted_cmd_otawrite__descriptor;
 extern const ProtobufCMessageDescriptor esp_hosted_resp_otawrite__descriptor;
 extern const ProtobufCMessageDescriptor esp_hosted_cmd_otaend__descriptor;
 extern const ProtobufCMessageDescriptor esp_hosted_resp_otaend__descriptor;
+extern const ProtobufCMessageDescriptor esp_hosted_cmd_set_vendor_specific_ie__descriptor;
+extern const ProtobufCMessageDescriptor esp_hosted_resp_set_vendor_specific_ie__descriptor;
 extern const ProtobufCMessageDescriptor esp_hosted_config_payload__descriptor;
 
 PROTOBUF_C__END_DECLS

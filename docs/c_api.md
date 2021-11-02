@@ -113,6 +113,24 @@ BSSID or MAC address of station of length 17. ex. "XX:XX:XX:XX:XX:XX".
 RSSI signal strength of station.
 
 ---
+
+_struct_ `vendor_ie_data_t`:
+
+This contains vendor information element to ESP32 softAP.
+
+*Public Members*
+- `uint8_t element_id` :
+Should be set to WIFI_VENDOR_IE_ELEMENT_ID (0xDD).
+- `uint8_t length` :
+Length of all bytes in the element data (payload) following this field. Minimum 4(offset for `vendor_oui` and `vendor_oui_type` field).
+- `uint8_t vendor_oui[3]` :
+Vendor identifier (OUI).
+- `uint8_t vendor_oui_type` :
+Vendor-specific OUI type.
+- `uint8_t payload[0]` :
+Payload. Length is equal to value in 'length' field, minus 4.
+
+---
 ## 2. Functions
 
 ### 2.1 `int wifi_get_mac (int mode, char *mac)`
@@ -124,7 +142,7 @@ This is used to get the MAC address of station or softAP interface of ESP32
 - `mode` :
   - `WIFI_MODE_STA` : station
   - `WIFI_MODE_AP` : softAP
-- `mac` : 
+- `mac` :
 String in form of "XX:XX:XX:XX:XX:XX" in success case.
 It should be large enough to store string in form "XX:XX:XX:XX:XX:XX"
 
@@ -420,6 +438,27 @@ User should free `esp_hosted_wifi_connected_stations_list` handler after use.
 
 ---
 
+### 2.15 `int wifi_set_vendor_specific_ie(bool enable, wifi_vendor_ie_type_t type, wifi_vendor_ie_id_t idx, void* vnd_ie, uint16_t vnd_ie_size)`
+Function set 802.11 Vendor-Specific Information Element. This function needs to get called before starting of ESP32 softAP.
+
+#### Parameters
+- `enable` :
+If true, specified IE is enabled. If false, specified IE is removed.
+- `type` :
+Information Element type. Determines the frame type to associate with the IE. Uses `wifi_vendor_ie_type_t` enum.
+- `idx` :
+Index to set or clear. Each IE type can be associated with up to two elements (indices 0 & 1). Uses `wifi_vendor_ie_id_t` enum.
+- `vnd_ie` :
+Pointer to vendor specific element data. First 6 bytes should be a header with fields matching vendor_ie_data_t. If enable is false, this argument is ignored and can be NULL.
+- `vnd_ie_size` :
+size of vnd_ie data
+
+#### Return
+- 0 : SUCCESS
+- -1 : FAILURE
+
+---
+
 ## 3. Enumerations
 
 ### 3.1 _enum_ `wifi_mode_t`
@@ -470,6 +509,27 @@ Minimum modem power saving. In this mode, station wakes up to receive beacon eve
 Maximum modem power saving. In this mode, interval to receive beacons is determined by the listen_interval parameter in wifi set ap config function.
 - `WIFI_PS_INVALID` :
 Invalid power save mode
+
+---
+
+### 3.5 _enum_ `wifi_vendor_ie_type_t` :
+
+Vendor information element type. Determines the frame type that the IE will be associated with.
+_Values_ :
+- `WIFI_VND_IE_TYPE_BEACON` = 0 : Type beacon
+- `WIFI_VND_IE_TYPE_PROBE_REQ` : Type probe request
+- `WIFI_VND_IE_TYPE_PROBE_RESP` : Type probe response
+- `WIFI_VND_IE_TYPE_ASSOC_REQ` : Type association request
+- `WIFI_VND_IE_TYPE_ASSOC_RESP` : Type association response
+
+---
+
+### 3.6 _enum_ `wifi_vendor_ie_id_t` :
+
+Vendor Information Element index. Each IE type can have up to two associated vendor ID elements.
+_Values_ :
+- `WIFI_VND_IE_ID_0` = 0 : ID 0
+- `WIFI_VND_IE_ID_1` : ID 1
 
 ---
 

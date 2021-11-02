@@ -1136,6 +1136,95 @@ err2:
     return FAILURE;
 }
 
+// Function set 802.11 Vendor-Specific Information Element
+int wifi_set_vendor_specific_ie(bool enable, wifi_vendor_ie_type_t type, 
+        wifi_vendor_ie_id_t idx, void* vnd_ie, uint16_t vnd_ie_size)
+{
+    EspHostedConfigPayload req, *resp = NULL;
+    uint32_t tx_len = 0, rx_len = 0;
+    uint8_t *tx_data = NULL, *rx_data = NULL;
+
+    if ((type > WIFI_VND_IE_TYPE_ASSOC_RESP) || (type < WIFI_VND_IE_TYPE_BEACON)) {
+        command_log("Invalid vendor ie type \n");
+        return FAILURE;
+    }
+
+    if ((idx > WIFI_VND_IE_ID_1) || (idx < WIFI_VND_IE_ID_0)) {
+        command_log("Invalid vendor ie ID index \n");
+        return FAILURE;
+    }
+    if (!vnd_ie) {
+        command_log("Invalid vendor IE buffer \n");
+        return FAILURE;
+    }
+
+    esp_hosted_config_payload__init (&req);
+    req.has_msg = true;
+    req.msg = ESP_HOSTED_CONFIG_MSG_TYPE__TypeCmdSetVendorSpecificIE;
+    req.payload_case = ESP_HOSTED_CONFIG_PAYLOAD__PAYLOAD_CMD_SET_VENDOR_SPECIFIC_IE;
+
+    EspHostedCmdSetVendorSpecificIE *req_payload = (EspHostedCmdSetVendorSpecificIE *)
+        esp_hosted_calloc(1, sizeof(EspHostedCmdSetVendorSpecificIE));
+    if (!req_payload) {
+        command_log("Failed to allocate memory for req_payload\n");
+        return FAILURE;
+    }
+    esp_hosted_cmd_set_vendor_specific_ie__init(req_payload);
+    req_payload->has_enable = true;
+    req_payload->enable = enable; 
+    req_payload->has_type = true;
+    req_payload->type = type;
+    req_payload->has_idx = true;
+    req_payload->idx = idx;
+    req_payload->has_vendor_ie_data = true;
+    req_payload->vendor_ie_data.len = vnd_ie_size;
+    req_payload->vendor_ie_data.data = vnd_ie;
+    req.cmd_set_vendor_specific_ie = req_payload;
+    tx_len = esp_hosted_config_payload__get_packed_size(&req);
+    if (!tx_len) {
+        command_log("Invalid tx length\n");
+        goto err3;
+    }
+
+    tx_data = (uint8_t *)esp_hosted_calloc(1, tx_len);
+    if (!tx_data) {
+        command_log("Failed to allocate memory for tx_data\n");
+        goto err3;
+    }
+
+    esp_hosted_config_payload__pack(&req, tx_data);
+
+    rx_data = transport_pserial_data_handler(tx_data, tx_len,
+            TIMEOUT_PSERIAL_RESP, &rx_len);
+    if (!rx_data || !rx_len) {
+        command_log("Failed to process rx_data\n");
+        goto err2;
+    }
+
+    resp = esp_hosted_config_payload__unpack(NULL, rx_len, rx_data);
+    if ((!resp) || (!resp->resp_set_vendor_specific_ie)) {
+        command_log("Failed to unpack rx_data\n");
+        goto err1;
+    }
+
+    if (resp->resp_set_vendor_specific_ie->resp) {
+        command_log("Failed to set vendor specific information element\n");
+        goto err1;
+    }
+
+    mem_free(tx_data);
+    mem_free(rx_data);
+    mem_free(req_payload);
+    return SUCCESS;
+err1:
+    mem_free(rx_data);
+err2:
+    mem_free(tx_data);
+err3:
+    mem_free(req_payload);
+    return FAILURE;
+}
+
 // Function performs an OTA begin for ESP32
 int esp_ota_begin()
 {
@@ -1318,3 +1407,4 @@ err2:
     mem_free(tx_data);
     return FAILURE;
 }
+

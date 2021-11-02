@@ -1297,6 +1297,92 @@ void   esp_hosted_resp_otaend__free_unpacked
   assert(message->base.descriptor == &esp_hosted_resp_otaend__descriptor);
   protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
 }
+void   esp_hosted_cmd_set_vendor_specific_ie__init
+                     (EspHostedCmdSetVendorSpecificIE         *message)
+{
+  static EspHostedCmdSetVendorSpecificIE init_value = ESP_HOSTED_CMD_SET_VENDOR_SPECIFIC_IE__INIT;
+  *message = init_value;
+}
+size_t esp_hosted_cmd_set_vendor_specific_ie__get_packed_size
+                     (const EspHostedCmdSetVendorSpecificIE *message)
+{
+  assert(message->base.descriptor == &esp_hosted_cmd_set_vendor_specific_ie__descriptor);
+  return protobuf_c_message_get_packed_size ((const ProtobufCMessage*)(message));
+}
+size_t esp_hosted_cmd_set_vendor_specific_ie__pack
+                     (const EspHostedCmdSetVendorSpecificIE *message,
+                      uint8_t       *out)
+{
+  assert(message->base.descriptor == &esp_hosted_cmd_set_vendor_specific_ie__descriptor);
+  return protobuf_c_message_pack ((const ProtobufCMessage*)message, out);
+}
+size_t esp_hosted_cmd_set_vendor_specific_ie__pack_to_buffer
+                     (const EspHostedCmdSetVendorSpecificIE *message,
+                      ProtobufCBuffer *buffer)
+{
+  assert(message->base.descriptor == &esp_hosted_cmd_set_vendor_specific_ie__descriptor);
+  return protobuf_c_message_pack_to_buffer ((const ProtobufCMessage*)message, buffer);
+}
+EspHostedCmdSetVendorSpecificIE *
+       esp_hosted_cmd_set_vendor_specific_ie__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data)
+{
+  return (EspHostedCmdSetVendorSpecificIE *)
+     protobuf_c_message_unpack (&esp_hosted_cmd_set_vendor_specific_ie__descriptor,
+                                allocator, len, data);
+}
+void   esp_hosted_cmd_set_vendor_specific_ie__free_unpacked
+                     (EspHostedCmdSetVendorSpecificIE *message,
+                      ProtobufCAllocator *allocator)
+{
+  assert(message->base.descriptor == &esp_hosted_cmd_set_vendor_specific_ie__descriptor);
+  protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
+}
+void   esp_hosted_resp_set_vendor_specific_ie__init
+                     (EspHostedRespSetVendorSpecificIE         *message)
+{
+  static EspHostedRespSetVendorSpecificIE init_value = ESP_HOSTED_RESP_SET_VENDOR_SPECIFIC_IE__INIT;
+  *message = init_value;
+}
+size_t esp_hosted_resp_set_vendor_specific_ie__get_packed_size
+                     (const EspHostedRespSetVendorSpecificIE *message)
+{
+  assert(message->base.descriptor == &esp_hosted_resp_set_vendor_specific_ie__descriptor);
+  return protobuf_c_message_get_packed_size ((const ProtobufCMessage*)(message));
+}
+size_t esp_hosted_resp_set_vendor_specific_ie__pack
+                     (const EspHostedRespSetVendorSpecificIE *message,
+                      uint8_t       *out)
+{
+  assert(message->base.descriptor == &esp_hosted_resp_set_vendor_specific_ie__descriptor);
+  return protobuf_c_message_pack ((const ProtobufCMessage*)message, out);
+}
+size_t esp_hosted_resp_set_vendor_specific_ie__pack_to_buffer
+                     (const EspHostedRespSetVendorSpecificIE *message,
+                      ProtobufCBuffer *buffer)
+{
+  assert(message->base.descriptor == &esp_hosted_resp_set_vendor_specific_ie__descriptor);
+  return protobuf_c_message_pack_to_buffer ((const ProtobufCMessage*)message, buffer);
+}
+EspHostedRespSetVendorSpecificIE *
+       esp_hosted_resp_set_vendor_specific_ie__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data)
+{
+  return (EspHostedRespSetVendorSpecificIE *)
+     protobuf_c_message_unpack (&esp_hosted_resp_set_vendor_specific_ie__descriptor,
+                                allocator, len, data);
+}
+void   esp_hosted_resp_set_vendor_specific_ie__free_unpacked
+                     (EspHostedRespSetVendorSpecificIE *message,
+                      ProtobufCAllocator *allocator)
+{
+  assert(message->base.descriptor == &esp_hosted_resp_set_vendor_specific_ie__descriptor);
+  protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
+}
 void   esp_hosted_config_payload__init
                      (EspHostedConfigPayload         *message)
 {
@@ -2762,7 +2848,122 @@ const ProtobufCMessageDescriptor esp_hosted_resp_otaend__descriptor =
   (ProtobufCMessageInit) esp_hosted_resp_otaend__init,
   NULL,NULL,NULL    /* reserved[123] */
 };
-static const ProtobufCFieldDescriptor esp_hosted_config_payload__field_descriptors[35] =
+static const ProtobufCFieldDescriptor esp_hosted_cmd_set_vendor_specific_ie__field_descriptors[4] =
+{
+  {
+    "enable",
+    1,
+    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_TYPE_BOOL,
+    offsetof(EspHostedCmdSetVendorSpecificIE, has_enable),
+    offsetof(EspHostedCmdSetVendorSpecificIE, enable),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "type",
+    2,
+    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_TYPE_ENUM,
+    offsetof(EspHostedCmdSetVendorSpecificIE, has_type),
+    offsetof(EspHostedCmdSetVendorSpecificIE, type),
+    &esp_hosted_vendor_ietype__descriptor,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "idx",
+    3,
+    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_TYPE_ENUM,
+    offsetof(EspHostedCmdSetVendorSpecificIE, has_idx),
+    offsetof(EspHostedCmdSetVendorSpecificIE, idx),
+    &esp_hosted_ieid__descriptor,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "vendor_ie_data",
+    4,
+    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_TYPE_BYTES,
+    offsetof(EspHostedCmdSetVendorSpecificIE, has_vendor_ie_data),
+    offsetof(EspHostedCmdSetVendorSpecificIE, vendor_ie_data),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+};
+static const unsigned esp_hosted_cmd_set_vendor_specific_ie__field_indices_by_name[] = {
+  0,   /* field[0] = enable */
+  2,   /* field[2] = idx */
+  1,   /* field[1] = type */
+  3,   /* field[3] = vendor_ie_data */
+};
+static const ProtobufCIntRange esp_hosted_cmd_set_vendor_specific_ie__number_ranges[1 + 1] =
+{
+  { 1, 0 },
+  { 0, 4 }
+};
+const ProtobufCMessageDescriptor esp_hosted_cmd_set_vendor_specific_ie__descriptor =
+{
+  PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
+  "EspHostedCmdSetVendorSpecificIE",
+  "EspHostedCmdSetVendorSpecificIE",
+  "EspHostedCmdSetVendorSpecificIE",
+  "",
+  sizeof(EspHostedCmdSetVendorSpecificIE),
+  4,
+  esp_hosted_cmd_set_vendor_specific_ie__field_descriptors,
+  esp_hosted_cmd_set_vendor_specific_ie__field_indices_by_name,
+  1,  esp_hosted_cmd_set_vendor_specific_ie__number_ranges,
+  (ProtobufCMessageInit) esp_hosted_cmd_set_vendor_specific_ie__init,
+  NULL,NULL,NULL    /* reserved[123] */
+};
+static const ProtobufCFieldDescriptor esp_hosted_resp_set_vendor_specific_ie__field_descriptors[1] =
+{
+  {
+    "resp",
+    1,
+    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_TYPE_INT32,
+    offsetof(EspHostedRespSetVendorSpecificIE, has_resp),
+    offsetof(EspHostedRespSetVendorSpecificIE, resp),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+};
+static const unsigned esp_hosted_resp_set_vendor_specific_ie__field_indices_by_name[] = {
+  0,   /* field[0] = resp */
+};
+static const ProtobufCIntRange esp_hosted_resp_set_vendor_specific_ie__number_ranges[1 + 1] =
+{
+  { 1, 0 },
+  { 0, 1 }
+};
+const ProtobufCMessageDescriptor esp_hosted_resp_set_vendor_specific_ie__descriptor =
+{
+  PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
+  "EspHostedRespSetVendorSpecificIE",
+  "EspHostedRespSetVendorSpecificIE",
+  "EspHostedRespSetVendorSpecificIE",
+  "",
+  sizeof(EspHostedRespSetVendorSpecificIE),
+  1,
+  esp_hosted_resp_set_vendor_specific_ie__field_descriptors,
+  esp_hosted_resp_set_vendor_specific_ie__field_indices_by_name,
+  1,  esp_hosted_resp_set_vendor_specific_ie__number_ranges,
+  (ProtobufCMessageInit) esp_hosted_resp_set_vendor_specific_ie__init,
+  NULL,NULL,NULL    /* reserved[123] */
+};
+static const ProtobufCFieldDescriptor esp_hosted_config_payload__field_descriptors[37] =
 {
   {
     "msg",
@@ -3184,6 +3385,30 @@ static const ProtobufCFieldDescriptor esp_hosted_config_payload__field_descripto
     0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
+  {
+    "cmd_set_vendor_specific_ie",
+    44,
+    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_TYPE_MESSAGE,
+    offsetof(EspHostedConfigPayload, payload_case),
+    offsetof(EspHostedConfigPayload, cmd_set_vendor_specific_ie),
+    &esp_hosted_cmd_set_vendor_specific_ie__descriptor,
+    NULL,
+    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "resp_set_vendor_specific_ie",
+    45,
+    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_TYPE_MESSAGE,
+    offsetof(EspHostedConfigPayload, payload_case),
+    offsetof(EspHostedConfigPayload, resp_set_vendor_specific_ie),
+    &esp_hosted_resp_set_vendor_specific_ie__descriptor,
+    NULL,
+    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
 };
 static const unsigned esp_hosted_config_payload__field_indices_by_name[] = {
   21,   /* field[21] = cmd_connected_stas_list */
@@ -3201,6 +3426,7 @@ static const unsigned esp_hosted_config_payload__field_indices_by_name[] = {
   23,   /* field[23] = cmd_set_mac_address */
   25,   /* field[25] = cmd_set_power_save_mode */
   13,   /* field[13] = cmd_set_softap_config */
+  35,   /* field[35] = cmd_set_vendor_specific_ie */
   5,   /* field[5] = cmd_set_wifi_mode */
   17,   /* field[17] = cmd_stop_softap */
   0,   /* field[0] = msg */
@@ -3219,6 +3445,7 @@ static const unsigned esp_hosted_config_payload__field_indices_by_name[] = {
   24,   /* field[24] = resp_set_mac_address */
   26,   /* field[26] = resp_set_power_save_mode */
   14,   /* field[14] = resp_set_softap_config */
+  36,   /* field[36] = resp_set_vendor_specific_ie */
   6,   /* field[6] = resp_set_wifi_mode */
   18,   /* field[18] = resp_stop_softap */
 };
@@ -3226,7 +3453,7 @@ static const ProtobufCIntRange esp_hosted_config_payload__number_ranges[2 + 1] =
 {
   { 1, 0 },
   { 10, 1 },
-  { 0, 35 }
+  { 0, 37 }
 };
 const ProtobufCMessageDescriptor esp_hosted_config_payload__descriptor =
 {
@@ -3236,7 +3463,7 @@ const ProtobufCMessageDescriptor esp_hosted_config_payload__descriptor =
   "EspHostedConfigPayload",
   "",
   sizeof(EspHostedConfigPayload),
-  35,
+  37,
   esp_hosted_config_payload__field_descriptors,
   esp_hosted_config_payload__field_indices_by_name,
   2,  esp_hosted_config_payload__number_ranges,
@@ -3315,7 +3542,69 @@ const ProtobufCEnumDescriptor esp_hosted_status__descriptor =
   esp_hosted_status__value_ranges,
   NULL,NULL,NULL,NULL   /* reserved[1234] */
 };
-static const ProtobufCEnumValue esp_hosted_config_msg_type__enum_values_by_number[34] =
+static const ProtobufCEnumValue esp_hosted_vendor_ietype__enum_values_by_number[5] =
+{
+  { "VND_IE_TYPE_BEACON", "ESP_HOSTED_VENDOR_IETYPE__VND_IE_TYPE_BEACON", 0 },
+  { "VND_IE_TYPE_PROBE_REQ", "ESP_HOSTED_VENDOR_IETYPE__VND_IE_TYPE_PROBE_REQ", 1 },
+  { "VND_IE_TYPE_PROBE_RESP", "ESP_HOSTED_VENDOR_IETYPE__VND_IE_TYPE_PROBE_RESP", 2 },
+  { "VND_IE_TYPE_ASSOC_REQ", "ESP_HOSTED_VENDOR_IETYPE__VND_IE_TYPE_ASSOC_REQ", 3 },
+  { "VND_IE_TYPE_ASSOC_RESP", "ESP_HOSTED_VENDOR_IETYPE__VND_IE_TYPE_ASSOC_RESP", 4 },
+};
+static const ProtobufCIntRange esp_hosted_vendor_ietype__value_ranges[] = {
+{0, 0},{0, 5}
+};
+static const ProtobufCEnumValueIndex esp_hosted_vendor_ietype__enum_values_by_name[5] =
+{
+  { "VND_IE_TYPE_ASSOC_REQ", 3 },
+  { "VND_IE_TYPE_ASSOC_RESP", 4 },
+  { "VND_IE_TYPE_BEACON", 0 },
+  { "VND_IE_TYPE_PROBE_REQ", 1 },
+  { "VND_IE_TYPE_PROBE_RESP", 2 },
+};
+const ProtobufCEnumDescriptor esp_hosted_vendor_ietype__descriptor =
+{
+  PROTOBUF_C__ENUM_DESCRIPTOR_MAGIC,
+  "EspHostedVendorIEType",
+  "EspHostedVendorIEType",
+  "EspHostedVendorIEType",
+  "",
+  5,
+  esp_hosted_vendor_ietype__enum_values_by_number,
+  5,
+  esp_hosted_vendor_ietype__enum_values_by_name,
+  1,
+  esp_hosted_vendor_ietype__value_ranges,
+  NULL,NULL,NULL,NULL   /* reserved[1234] */
+};
+static const ProtobufCEnumValue esp_hosted_ieid__enum_values_by_number[2] =
+{
+  { "VND_IE_ID_0", "ESP_HOSTED_IEID__VND_IE_ID_0", 0 },
+  { "VND_IE_ID_1", "ESP_HOSTED_IEID__VND_IE_ID_1", 1 },
+};
+static const ProtobufCIntRange esp_hosted_ieid__value_ranges[] = {
+{0, 0},{0, 2}
+};
+static const ProtobufCEnumValueIndex esp_hosted_ieid__enum_values_by_name[2] =
+{
+  { "VND_IE_ID_0", 0 },
+  { "VND_IE_ID_1", 1 },
+};
+const ProtobufCEnumDescriptor esp_hosted_ieid__descriptor =
+{
+  PROTOBUF_C__ENUM_DESCRIPTOR_MAGIC,
+  "EspHostedIEID",
+  "EspHostedIEID",
+  "EspHostedIEID",
+  "",
+  2,
+  esp_hosted_ieid__enum_values_by_number,
+  2,
+  esp_hosted_ieid__enum_values_by_name,
+  1,
+  esp_hosted_ieid__value_ranges,
+  NULL,NULL,NULL,NULL   /* reserved[1234] */
+};
+static const ProtobufCEnumValue esp_hosted_config_msg_type__enum_values_by_number[36] =
 {
   { "TypeCmdGetMACAddress", "ESP_HOSTED_CONFIG_MSG_TYPE__TypeCmdGetMACAddress", 0 },
   { "TypeRespGetMACAddress", "ESP_HOSTED_CONFIG_MSG_TYPE__TypeRespGetMACAddress", 1 },
@@ -3351,11 +3640,13 @@ static const ProtobufCEnumValue esp_hosted_config_msg_type__enum_values_by_numbe
   { "TypeRespOTAWrite", "ESP_HOSTED_CONFIG_MSG_TYPE__TypeRespOTAWrite", 31 },
   { "TypeCmdOTAEnd", "ESP_HOSTED_CONFIG_MSG_TYPE__TypeCmdOTAEnd", 32 },
   { "TypeRespOTAEnd", "ESP_HOSTED_CONFIG_MSG_TYPE__TypeRespOTAEnd", 33 },
+  { "TypeCmdSetVendorSpecificIE", "ESP_HOSTED_CONFIG_MSG_TYPE__TypeCmdSetVendorSpecificIE", 34 },
+  { "TypeRespSetVendorSpecificIE", "ESP_HOSTED_CONFIG_MSG_TYPE__TypeRespSetVendorSpecificIE", 35 },
 };
 static const ProtobufCIntRange esp_hosted_config_msg_type__value_ranges[] = {
-{0, 0},{0, 34}
+{0, 0},{0, 36}
 };
-static const ProtobufCEnumValueIndex esp_hosted_config_msg_type__enum_values_by_name[34] =
+static const ProtobufCEnumValueIndex esp_hosted_config_msg_type__enum_values_by_name[36] =
 {
   { "TypeCmdDisconnectAP", 14 },
   { "TypeCmdGetAPConfig", 6 },
@@ -3372,6 +3663,7 @@ static const ProtobufCEnumValueIndex esp_hosted_config_msg_type__enum_values_by_
   { "TypeCmdSetMacAddress", 22 },
   { "TypeCmdSetPowerSaveMode", 24 },
   { "TypeCmdSetSoftAPConfig", 12 },
+  { "TypeCmdSetVendorSpecificIE", 34 },
   { "TypeCmdSetWiFiMode", 4 },
   { "TypeCmdStopSoftAP", 16 },
   { "TypeRespDisconnectAP", 15 },
@@ -3389,6 +3681,7 @@ static const ProtobufCEnumValueIndex esp_hosted_config_msg_type__enum_values_by_
   { "TypeRespSetMacAddress", 23 },
   { "TypeRespSetPowerSaveMode", 25 },
   { "TypeRespSetSoftAPConfig", 13 },
+  { "TypeRespSetVendorSpecificIE", 35 },
   { "TypeRespSetWiFiMode", 5 },
   { "TypeRespStopSoftAP", 17 },
 };
@@ -3399,9 +3692,9 @@ const ProtobufCEnumDescriptor esp_hosted_config_msg_type__descriptor =
   "EspHostedConfigMsgType",
   "EspHostedConfigMsgType",
   "",
-  34,
+  36,
   esp_hosted_config_msg_type__enum_values_by_number,
-  34,
+  36,
   esp_hosted_config_msg_type__enum_values_by_name,
   1,
   esp_hosted_config_msg_type__value_ranges,

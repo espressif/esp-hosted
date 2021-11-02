@@ -28,6 +28,7 @@
 #define SCAN                               "scan"
 #define STA_LIST                           "sta_list"
 #define OTA                                "ota"
+#define AP_VENDOR_IE                       "ap_vendor_ie"
 
 #define MAC_LENGTH                          18
 #define SSID_LENGTH                         32

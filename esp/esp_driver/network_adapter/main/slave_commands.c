@@ -1543,6 +1543,43 @@ err:
     return ESP_OK;
 }
 
+// Function vendor specific ie
+static esp_err_t cmd_set_vender_specific_ie_handler (EspHostedConfigPayload *req,
+        EspHostedConfigPayload *resp, void *priv_data)
+{
+    esp_err_t ret = ESP_OK;
+    EspHostedRespSetVendorSpecificIE *resp_payload = NULL;
+
+    if (!req || !resp || !req->cmd_set_vendor_specific_ie || 
+        !req->cmd_set_vendor_specific_ie->vendor_ie_data.len ||
+        !req->cmd_set_vendor_specific_ie->vendor_ie_data.data) {
+        ESP_LOGE(TAG, "Invalid parameters");
+        return ESP_FAIL;
+    }
+
+    resp_payload = (EspHostedRespSetVendorSpecificIE *)
+	       calloc(1,sizeof(EspHostedRespSetVendorSpecificIE));
+    if (!resp_payload) {
+        ESP_LOGE(TAG,"Failed to allocate memory");
+        return ESP_ERR_NO_MEM;
+    }
+    esp_hosted_resp_set_vendor_specific_ie__init(resp_payload);
+    resp->payload_case = ESP_HOSTED_CONFIG_PAYLOAD__PAYLOAD_RESP_SET_VENDOR_SPECIFIC_IE;
+    resp->resp_set_vendor_specific_ie = resp_payload;
+    resp_payload->has_resp = true;
+
+    ret = esp_wifi_set_vendor_ie(req->cmd_set_vendor_specific_ie->enable,
+        req->cmd_set_vendor_specific_ie->type, req->cmd_set_vendor_specific_ie->idx,
+        req->cmd_set_vendor_specific_ie->vendor_ie_data.data);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to set vendor information element %d \n", ret);
+        resp_payload->resp = FAILURE;
+        return ESP_OK;
+    }
+    resp_payload->resp = SUCCESS;
+    return ESP_OK;
+}
+
 static esp_hosted_config_cmd_t cmd_table[] = {
     {
         .cmd_num = ESP_HOSTED_CONFIG_MSG_TYPE__TypeCmdGetMACAddress ,
@@ -1611,6 +1648,10 @@ static esp_hosted_config_cmd_t cmd_table[] = {
     {
         .cmd_num = ESP_HOSTED_CONFIG_MSG_TYPE__TypeCmdOTAEnd,
         .command_handler = cmd_ota_end_handler
+    },
+    {
+        .cmd_num = ESP_HOSTED_CONFIG_MSG_TYPE__TypeCmdSetVendorSpecificIE,
+        .command_handler = cmd_set_vender_specific_ie_handler
     },
 };
 
@@ -1759,6 +1800,10 @@ static void esp_hosted_config_cleanup(EspHostedConfigPayload *resp)
         }
         case (ESP_HOSTED_CONFIG_MSG_TYPE__TypeRespOTAEnd) : {
             mem_free(resp->resp_ota_end);
+            break;
+        }
+        case (ESP_HOSTED_CONFIG_MSG_TYPE__TypeRespSetVendorSpecificIE) : {
+            mem_free(resp->resp_set_vendor_specific_ie);
             break;
         }
         default:
