@@ -323,4 +323,38 @@ int esp_ota_write(uint8_t* ota_data, uint32_t ota_data_len);
  * returns SUCCESS(0) or FAILURE(-1)
  */
 int esp_ota_end();
-#endif
+
+#ifndef STM32F469xx
+/*
+ * interface_up function ups the given interface
+ * returns SUCCESS(0) or FAILURE(-1)
+ */
+int interface_up(int sockfd, char* iface);
+
+/*
+ * interface_down function downs the given interface
+ * returns SUCCESS(0) or FAILURE(-1)
+ */
+int interface_down(int sockfd, char* iface);
+
+/*
+ * Function sets mac address to the given interface
+ * returns SUCCESS(0) or FAILURE(-1)
+ */
+int set_hw_addr(int sockfd, char* iface, char* mac);
+
+/*
+ * function creates an endpoint for communication and returns a file descriptor (integer number) that refers to that endpoint 
+ * function returns the status SUCCESS(0) or FAILURE(-1)
+ * int *sock : User should get file descriptor for the new socket on success
+ */
+int create_socket(int domain, int type, int protocol, int *sock);
+
+/*
+ * function closes an endpoint of communication.
+ * function returns the status SUCCESS(0) or FAILURE(-1)
+ * int sock : file descrepter of the socket to be closed
+ */
+int close_socket(int sock);
+#endif /* STM32F469xx */
+#endif /* __COMMANDS_H */

@@ -8,12 +8,26 @@
 #include "platform_wrapper.h"
 #include "esp_hosted_config.pb-c.h"
 
+#ifndef STM32F469xx
+#include <linux/if.h>
+#include <netdb.h>
+#include <sys/ioctl.h>
+#include <linux/if_arp.h>
+#include <unistd.h>
+#endif
+
 #ifdef STM32F469xx
 #include "common.h"
 #define command_log(...) printf(__VA_ARGS__); printf("\r");
 #else
 #define command_log(...) printf("%s:%u ",__func__,__LINE__); printf(__VA_ARGS__);
 #define min(X, Y) (((X) < (Y)) ? (X) : (Y))
+#endif
+
+#ifndef STM32F469xx
+#define MAX_INTERFACE_LEN       IFNAMSIZ
+#define MAC_LEN                 7
+#define MAC_STR_LEN             17
 #endif
 
 #define SUCCESS                 0
@@ -45,6 +59,40 @@
                 x = NULL;            \
             }                        \
         }
+
+#ifndef STM32F469xx
+// Function converts mac string to byte stream
+static int convert_mac_to_bytes(uint8_t *out, size_t out_len, char *s)
+{
+	int mac[MAC_LEN] = {0};
+	int num_bytes = 0;
+    if (!s || (strlen(s) < MAC_STR_LEN) || (out_len < MAC_LEN))  {
+        return FAILURE;
+    }
+
+    num_bytes =  sscanf(s, "%2x:%2x:%2x:%2x:%2x:%2x",
+        &mac[0],&mac[1], &mac[2], &mac[3], &mac[4], &mac[5]);
+
+    if ((num_bytes < (MAC_LEN - 1))  ||
+        (mac[0] > 0xFF) ||
+        (mac[1] > 0xFF) ||
+        (mac[2] > 0xFF) ||
+        (mac[3] > 0xFF) ||
+        (mac[4] > 0xFF) ||
+        (mac[5] > 0xFF)) {
+        return FAILURE;
+    }
+
+    out[0] = mac[0]&0xff;
+    out[1] = mac[1]&0xff;
+    out[2] = mac[2]&0xff;
+    out[3] = mac[3]&0xff;
+    out[4] = mac[4]&0xff;
+    out[5] = mac[5]&0xff;
+    return SUCCESS;
+}
+#endif
+
 
 // Function returns MAC address of ESP32 station/softap
 int wifi_get_mac (int mode, char *mac)
@@ -1408,3 +1456,130 @@ err2:
     return FAILURE;
 }
 
+#ifndef STM32F469xx
+
+// Function ups in given interface
+int interface_up(int sockfd, char* iface)
+{
+    int ret = SUCCESS;
+    struct ifreq req = {0};
+    size_t if_name_len = strnlen(iface, MAX_INTERFACE_LEN-1);
+
+    if (!iface) {
+        command_log("Invalid parameter\n");
+        return FAILURE;
+    }
+
+    if (if_name_len < sizeof(req.ifr_name)) {
+        memcpy(req.ifr_name,iface,if_name_len);
+        req.ifr_name[if_name_len]='\0';
+    } else {
+        printf("Failed: Max interface length allowed is %u \n", sizeof(req.ifr_name)-1);
+        return FAILURE;
+    }
+
+    req.ifr_flags |= IFF_UP;
+    ret = ioctl(sockfd, SIOCSIFFLAGS, &req);
+    if (ret < 0) {
+        return FAILURE;
+    }
+    return SUCCESS;
+}
+
+// Function downs in given interface
+int interface_down(int sockfd, char* iface)
+{
+    int ret = SUCCESS;
+    struct ifreq req = {0};
+    size_t if_name_len = strnlen(iface, MAX_INTERFACE_LEN-1);
+
+    if (!iface) {
+        command_log("Invalid parameter\n");
+        return FAILURE;
+    }
+
+    if (if_name_len < sizeof(req.ifr_name)) {
+        memcpy(req.ifr_name,iface,if_name_len);
+        req.ifr_name[if_name_len]='\0';
+    } else {
+        printf("Failed: Max interface length allowed is %u \n", sizeof(req.ifr_name)-1);
+        return FAILURE;
+    }
+
+    req.ifr_flags &= ~IFF_UP;
+    ret = ioctl(sockfd, SIOCSIFFLAGS, &req);
+    if (ret < 0) {
+        return FAILURE;
+    }
+    return SUCCESS;
+}
+
+// Function sets mac address to given interface
+int set_hw_addr(int sockfd, char* iface, char* mac)
+{
+    int ret = SUCCESS;
+    struct ifreq req = {0};
+    char mac_bytes[MAC_LEN] = "";
+    size_t if_name_len = strnlen(iface, MAX_INTERFACE_LEN-1);
+
+    if (!iface || !mac) {
+        command_log("Invalid parameter\n");
+        return FAILURE;
+    }
+
+    if (if_name_len < sizeof(req.ifr_name)) {
+        memcpy(req.ifr_name,iface,if_name_len);
+        req.ifr_name[if_name_len]='\0';
+    } else {
+        printf("Failed: Max interface length allowed is %u \n", sizeof(req.ifr_name)-1);
+        return FAILURE;
+    }
+
+    memset(mac_bytes, '\0', MAC_LEN);
+    ret = convert_mac_to_bytes((uint8_t *)&mac_bytes, sizeof(mac_bytes), mac);
+
+    if (ret) {
+        printf("Failed to convert mac address \n");
+        return FAILURE;
+    }
+
+    req.ifr_hwaddr.sa_family = ARPHRD_ETHER;
+    memcpy(req.ifr_hwaddr.sa_data, mac_bytes, MAC_LEN);
+    ret = ioctl(sockfd, SIOCSIFHWADDR, &req);
+
+    if (ret < 0) {
+        return FAILURE;
+    }
+    return SUCCESS;
+}
+
+// Function creates an endpoint for communication and returns a file descriptor (integer number) that refers to that endpoint
+int create_socket(int domain, int type, int protocol, int *sock)
+{
+    if (!sock) {
+        command_log("Invalid parameter\n");
+        return FAILURE;
+    }
+
+    *sock = socket(domain, type, protocol);
+    if (*sock < 0)
+    {
+        printf("Failure to open socket\n");
+        return FAILURE;
+    }
+    return SUCCESS;
+}
+
+// Function closes an endpoint for communication
+int close_socket(int sock)
+{
+    int ret;
+    ret = close(sock);
+    if (ret < 0) {
+        printf("Failure to close socket\n");
+        return FAILURE;
+    }
+    return SUCCESS;
+}
+
+#endif

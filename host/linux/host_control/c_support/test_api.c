@@ -24,12 +24,8 @@
 #include <linux/if_arp.h>
 #include "test_api.h"
 
-#define MAC_LEN                     7
-#define MAC_STR_LEN                 17
-
 #define STA_INTERFACE               "ethsta0"
 #define AP_INTERFACE                "ethap0"
-#define MAX_INTERFACE_LEN           10
 
 #define WIFI_VENDOR_IE_ELEMENT_ID   0xDD
 #define OFFSET                      4
@@ -37,105 +33,6 @@
 #define VENDOR_OUI_1                2
 #define VENDOR_OUI_2                3
 #define VENDOR_OUI_TYPE             22
-
-// Function converts mac string to byte stream
-static int convert_mac_to_bytes(uint8_t *out, size_t out_len, char *s)
-{
-    int mac[MAC_LEN] = {0};
-    int num_bytes = 0;
-    if (!s || (strlen(s) < MAC_STR_LEN) || (out_len < MAC_LEN))  {
-        return FAILURE;
-    }
-    num_bytes =  sscanf(s, "%2x:%2x:%2x:%2x:%2x:%2x",
-        &mac[0],&mac[1], &mac[2], &mac[3], &mac[4], &mac[5]);
-    if ((num_bytes < (MAC_LEN - 1))  ||
-        (mac[0] > 0xFF) ||
-        (mac[1] > 0xFF) ||
-        (mac[2] > 0xFF) ||
-        (mac[3] > 0xFF) ||
-        (mac[4] > 0xFF) ||
-        (mac[5] > 0xFF)) {
-        return FAILURE;
-    }
-    out[0] = mac[0]&0xff;
-    out[1] = mac[1]&0xff;
-    out[2] = mac[2]&0xff;
-    out[3] = mac[3]&0xff;
-    out[4] = mac[4]&0xff;
-    out[5] = mac[5]&0xff;
-    return SUCCESS;
-}
-
-// Function ups in given interface
-static int interface_up(int sockfd, char* iface)
-{
-    int ret = SUCCESS;
-    struct ifreq req = {0};
-    size_t if_name_len = strnlen(iface, MAX_INTERFACE_LEN);
-    if (if_name_len < sizeof(req.ifr_name)) {
-        memcpy(req.ifr_name,iface,if_name_len);
-        req.ifr_name[if_name_len]='\0';
-    } else {
-        printf("Failed: Max interface length allowed is %u \n", sizeof(req.ifr_name));
-        return FAILURE;
-    }
-    req.ifr_flags |= IFF_UP;
-    ret = ioctl(sockfd, SIOCSIFFLAGS, &req);
-    if (ret < 0) {
-        return FAILURE;
-    }
-    return SUCCESS;
-}
-
-// Function downs in given interface
-static int interface_down(int sockfd, char* iface)
-{
-    int ret = SUCCESS;
-    struct ifreq req = {0};
-    size_t if_name_len = strnlen(iface, MAX_INTERFACE_LEN);
-    if (if_name_len < sizeof(req.ifr_name)) {
-        memcpy(req.ifr_name,iface,if_name_len);
-        req.ifr_name[if_name_len]='\0';
-    } else {
-        printf("Failed: Max interface length allowed is %u \n", sizeof(req.ifr_name));
-        return FAILURE;
-    }
-    req.ifr_flags &= ~IFF_UP;
-    ret = ioctl(sockfd, SIOCSIFFLAGS, &req);
-    if (ret < 0) {
-        return FAILURE;
-    }
-    return SUCCESS;
-}
-
-// Function sets mac address to given interface
-static int setHWaddr(int sockfd, char* iface, char* mac)
-{
-    int ret = SUCCESS;
-    struct ifreq req = {0};
-    char mac_bytes[MAC_LEN] = "";
-    size_t if_name_len = strnlen(iface, MAX_INTERFACE_LEN);
-    if (if_name_len < sizeof(req.ifr_name)) {
-        memcpy(req.ifr_name,iface,if_name_len);
-        req.ifr_name[if_name_len]='\0';
-    } else {
-        printf("Failed: Max interface length allowed is %u \n", sizeof(req.ifr_name));
-        return FAILURE;
-    }
-    memset(mac_bytes, '\0', MAC_LEN);
-    ret = convert_mac_to_bytes((uint8_t *)&mac_bytes, sizeof(mac_bytes), mac);
-    if (ret) {
-        printf("Failed to convert mac address \n");
-        return FAILURE;
-    }
-    req.ifr_hwaddr.sa_family = ARPHRD_ETHER;
-    strncpy(req.ifr_hwaddr.sa_data, mac_bytes, MAC_LEN);
-    ret = ioctl(sockfd, SIOCSIFHWADDR, &req);
-    if (ret < 0) {
-        return FAILURE;
-    }
-    return SUCCESS;
-}
 
 int test_get_wifi_mode()
 {
@@ -283,8 +180,8 @@ int test_station_mode_connect()
         printf("Failed to connect with AP \n");
     }
 
-    sockfd = socket(AF_INET, SOCK_DGRAM, IPPROTO_IP);
-    if (sockfd < 0) {
+    ret = create_socket(AF_INET, SOCK_DGRAM, IPPROTO_IP, &sockfd);
+    if (ret < 0) {
         printf("Failure to open socket\n");
         return FAILURE;
     }
@@ -294,7 +191,7 @@ int test_station_mode_connect()
         printf("%s interface down\n", STA_INTERFACE);
     } else {
         printf("Unable to down %s interface\n", STA_INTERFACE);
-        return FAILURE;
+        goto close_sock;
     }
 
     ret = wifi_get_mac(WIFI_MODE_STA, mac);
@@ -302,15 +199,15 @@ int test_station_mode_connect()
         printf("Station mode: mac address %s \n", mac);
     } else {
         printf("Failed to get station mode MAC address \n");
-        return FAILURE;
+        goto close_sock;
     }
 
-    ret = setHWaddr(sockfd, STA_INTERFACE, mac);
+    ret = set_hw_addr(sockfd, STA_INTERFACE, mac);
     if (ret == SUCCESS) {
         printf("MAC address %s set to %s interface\n", mac, STA_INTERFACE);
     } else {
         printf("Unable to set MAC address to %s interface\n", STA_INTERFACE);
-        return FAILURE;
+        goto close_sock;
     }
 
     ret = interface_up(sockfd, STA_INTERFACE);
@@ -318,11 +215,23 @@ int test_station_mode_connect()
         printf("%s interface up\n", STA_INTERFACE);
     } else {
         printf("Unable to up %s interface\n", STA_INTERFACE);
-        return FAILURE;
+        goto close_sock;
     }
 
+    ret = close_socket(sockfd);
+    if (ret < 0) {
+        printf("Failure to close socket\n");
+        return FAILURE;
+    }
     printf("====\n\n");
     return SUCCESS;
+
+close_sock:
+    ret = close_socket(sockfd);
+    if (ret < 0) {
+        printf("Failure to close socket\n");
+    }
+    return FAILURE;
 }
 
 int test_station_mode_get_info()
@@ -389,8 +298,8 @@ int test_station_mode_disconnect()
         return FAILURE;
     }
 
-    sockfd = socket(AF_INET, SOCK_DGRAM, IPPROTO_IP);
-    if (sockfd < 0) {
+    ret = create_socket(AF_INET, SOCK_DGRAM, IPPROTO_IP, &sockfd);
+    if (ret < 0) {
         printf("Failure to open socket\n");
         return sockfd;
     }
@@ -400,11 +309,24 @@ int test_station_mode_disconnect()
         printf("%s interface down\n", STA_INTERFACE);
     } else {
         printf("Unable to down %s interface\n", STA_INTERFACE);
+        goto close_sock;
+    }
+
+    ret = close_socket(sockfd);
+    if (ret < 0) {
+        printf("Failure to close socket\n");
         return FAILURE;
     }
-    printf("====\n\n");
 
+    printf("====\n\n");
     return SUCCESS;
+
+close_sock:
+    ret = close_socket(sockfd);
+    if (ret < 0) {
+        printf("Failure to close socket\n");
+    }
+    return FAILURE;
 }
 
 int test_softap_mode_start()
@@ -430,8 +352,8 @@ int test_softap_mode_start()
         return FAILURE;
     }
 
-    sockfd = socket(AF_INET, SOCK_DGRAM, IPPROTO_IP);
-    if (sockfd < 0) {
+    ret = create_socket(AF_INET, SOCK_DGRAM, IPPROTO_IP, &sockfd);
+    if (ret < 0) {
         printf("Failure to open socket\n");
         return FAILURE;
     }
@@ -441,7 +363,7 @@ int test_softap_mode_start()
         printf("%s interface down\n", AP_INTERFACE);
     } else {
         printf("Unable to down %s interface\n", AP_INTERFACE);
-        return FAILURE;
+        goto close_sock;
     }
 
     ret = wifi_get_mac(WIFI_MODE_AP, mac);
@@ -449,15 +371,15 @@ int test_softap_mode_start()
         printf("softAP mode: mac address %s \n", mac);
     } else {
         printf("Failed to get softAP mode MAC address \n");
-        return FAILURE;
+        goto close_sock;
     }
 
-    ret = setHWaddr(sockfd, AP_INTERFACE, mac);
+    ret = set_hw_addr(sockfd, AP_INTERFACE, mac);
     if (ret == SUCCESS) {
         printf("MAC address %s set to %s interface\n", mac, AP_INTERFACE);
     } else {
         printf("Unable to set MAC address to %s interface\n", AP_INTERFACE);
-        return FAILURE;
+        goto close_sock;
     }
 
     ret = interface_up(sockfd, AP_INTERFACE);
@@ -465,11 +387,24 @@ int test_softap_mode_start()
         printf("%s interface up\n", AP_INTERFACE);
     } else {
         printf("Unable to up %s interface\n", AP_INTERFACE);
+        goto close_sock;
+    }
+
+    ret = close_socket(sockfd);
+    if (ret < 0) {
+        printf("Failure to close socket\n");
         return FAILURE;
     }
 
     printf("====\n\n");
     return SUCCESS;
+
+close_sock:
+    ret = close_socket(sockfd);
+    if (ret < 0) {
+        printf("Failure to close socket\n");
+    }
+    return FAILURE;
 }
 
 int test_softap_mode_get_info()
@@ -532,8 +467,8 @@ int test_softap_mode_stop()
         printf("Failed to stop ESP32 softAP \n");
         return FAILURE;
     }
-    sockfd = socket(AF_INET, SOCK_DGRAM, IPPROTO_IP);
-    if (sockfd < 0) {
+    ret = create_socket(AF_INET, SOCK_DGRAM, IPPROTO_IP, &sockfd);
+    if (ret < 0) {
         printf("Failure to open socket\n");
         return sockfd;
     }
@@ -543,13 +478,25 @@ int test_softap_mode_stop()
         printf("%s interface down\n", AP_INTERFACE);
     } else {
         printf("Unable to down %s interface\n", AP_INTERFACE);
+        goto close_sock;
+    }
+
+    ret = close_socket(sockfd);
+    if (ret < 0) {
+        printf("Failure to close socket\n");
         return FAILURE;
     }
 
     printf("====\n\n");
     return SUCCESS;
-}
 
+close_sock:
+    ret = close_socket(sockfd);
+    if (ret < 0) {
+        printf("Failure to close socket\n");
+    }
+    return FAILURE;
+}
 
 int test_set_wifi_power_save_mode()
 {
@@ -675,7 +622,7 @@ int test_ota(char* image_path)
 }
 
 int test_set_vendor_specific_ie()
-{ 
+{
     char *data = "Example vendor IE data";
     int vnd_ie_size = sizeof(vendor_ie_data_t)+strlen(data)+1;
     vendor_ie_data_t *vnd_ie = (vendor_ie_data_t *)malloc(vnd_ie_size);
@@ -686,11 +633,12 @@ int test_set_vendor_specific_ie()
 
     vnd_ie->element_id = WIFI_VENDOR_IE_ELEMENT_ID;
     vnd_ie->length = strlen(data) + OFFSET;
-    if (vnd_ie->length < OFFSET) {                                                  
-        printf("Length should not be less than %d bytes \n", OFFSET);                        
+    if (vnd_ie->length < OFFSET) {
+        printf("Length should not be less than %d bytes \n", OFFSET);
         free(vnd_ie);
-        return FAILURE;                                                         
-    } 
+        return FAILURE;
+    }
+
     vnd_ie->vendor_oui[0] = VENDOR_OUI_0;
     vnd_ie->vendor_oui[1] = VENDOR_OUI_1;
     vnd_ie->vendor_oui[2] = VENDOR_OUI_2;
