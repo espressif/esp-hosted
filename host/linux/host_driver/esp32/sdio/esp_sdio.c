@@ -712,7 +712,6 @@ static int esp_probe(struct sdio_func *func,
 {
 	struct esp_sdio_context *context = NULL;
 	int ret = 0;
-	uint32_t *cap;
 
 	if (func->num != 1) {
 		return -EINVAL;
@@ -725,10 +724,6 @@ static int esp_probe(struct sdio_func *func,
 	if (!context) {
 		return -ENOMEM;
 	}
-
-	generate_slave_intr(context, BIT(ESP_RESET));
-
-	msleep(200);
 
 	atomic_set(&tx_pending, 0);
 	ret = init_context(context);
@@ -759,36 +754,7 @@ static int esp_probe(struct sdio_func *func,
 		return ret;
 	}
 
-	cap = kmalloc(sizeof(u32), GFP_KERNEL);
 
-	if (!cap) {
-		esp_remove(func);
-		printk (KERN_ERR "Failed to allocate memory\n");
-		deinit_sdio_func(func);
-		return -ENOMEM;
-	}
-
-	/* Read slave capabilities */
-	ret = esp_read_reg(context, ESP_SLAVE_SCRATCH_REG_0,
-			(u8 *) cap, sizeof(* cap), ACQUIRE_LOCK);
-
-	if (ret) {
-		kfree(cap);
-		esp_remove(func);
-		printk (KERN_ERR "Failed to read capability\n");
-		deinit_sdio_func(func);
-		return ret;
-	}
-
-	context->adapter->capabilities = * cap;
-
-	print_capabilities(*cap);
-
-	if (esp_is_bt_supported_over_sdio(*cap)) {
-		esp_init_bt(context->adapter);
-	}
-
-	kfree(cap);
 
 	context->state = ESP_CONTEXT_READY;
 
@@ -799,7 +765,6 @@ static int esp_probe(struct sdio_func *func,
 		printk (KERN_ERR "Failed to create monitor thread\n");
 #endif
 
-	msleep(200);
 	generate_slave_intr(context, BIT(ESP_OPEN_DATA_PATH));
 	return ret;
 }
@@ -822,6 +787,30 @@ int esp_init_interface_layer(struct esp_adapter *adapter)
 	sdio_context.adapter = adapter;
 
 	return sdio_register_driver(&esp_sdio_driver);
+}
+
+void process_init_event(u8 *evt_buf, u8 len)
+{
+	u8 len_left = len, tag_len;
+	u8 *pos;
+
+	if (!evt_buf)
+		return;
+
+	pos = evt_buf;
+
+	while (len_left) {
+		tag_len = *(pos + 1);
+		printk(KERN_INFO "EVENT: %d\n", *pos);
+		if (*pos == ESP_PRIV_CAPABILITY) {
+			process_capabilities(*(pos + 2));
+			print_capabilities(*(pos + 2));
+		} else {
+			printk (KERN_WARNING "Unsupported tag in event");
+		}
+		pos += (tag_len+2);
+		len_left -= (tag_len+2);
+	}
 }
 
 void esp_deinit_interface_layer(void)

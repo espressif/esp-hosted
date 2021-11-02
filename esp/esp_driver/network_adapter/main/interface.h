@@ -27,6 +27,13 @@
 
 #endif
 
+typedef enum {
+	LENGTH_1_BYTE  = 1,
+	LENGTH_2_BYTE  = 2,
+	LENGTH_3_BYTE  = 3,
+	LENGTH_4_BYTE  = 4,
+} byte_length;
+
 typedef void *wlan_buf_handle_t;
 
 typedef enum {
@@ -70,7 +77,7 @@ typedef struct {
 }interface_handle_t;
 
 typedef struct {
-	interface_handle_t * (*init)(uint8_t capabilities);
+	interface_handle_t * (*init)(void);
 	int32_t (*write)(interface_handle_t *handle, interface_buffer_handle_t *buf_handle);
 	interface_buffer_handle_t * (*read)(interface_handle_t *handle);
 	esp_err_t (*reset)(interface_handle_t *handle);
@@ -86,4 +93,5 @@ typedef struct {
 
 interface_context_t * interface_insert_driver(int (*callback)(uint8_t val));
 int interface_remove_driver();
+void generate_startup_event(uint8_t cap);
 #endif
