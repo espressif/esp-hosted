@@ -74,4 +74,6 @@ int test_ota_write();
 int test_ota_end();
 
 int test_ota(char* image_path);
+
+int test_set_vendor_specific_ie();
 #endif

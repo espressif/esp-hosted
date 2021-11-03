@@ -32,10 +32,10 @@ int main(int argc, char *argv[])
         exit(0);
     }
 
-    if (!argc) {
-        printf("Usage: %s [%s] [%s] [%s] [%s] [%s] [%s]\n", argv[0],
+    if (argc == 1) {
+        printf("Usage: %s [%s] [%s] [%s] [%s] [%s] [%s] [%s] [%s]\n", argv[0],
         STA_CONNECT, STA_DISCONNECT, AP_START, AP_STOP,
-        SCAN, STA_LIST);
+        SCAN, STA_LIST, OTA, AP_VENDOR_IE);
 		return -1;
     }
 
@@ -54,12 +54,15 @@ int main(int argc, char *argv[])
             test_softap_mode_connected_clients_info();
         else if (0 == strncasecmp(OTA, argv[i], sizeof(OTA)))
             test_ota(argv[i+1]);
+        else if (0 == strncasecmp(AP_VENDOR_IE, argv[i], sizeof(AP_VENDOR_IE)))
+            test_set_vendor_specific_ie();
         else if ((0 == strncasecmp("--help", argv[i], sizeof("--help"))) ||
                  (0 == strncasecmp("-h", argv[i], sizeof("-h")))) {
-            printf("Usage: %s [%s] [%s] [%s] [%s] [%s] [%s]\n", argv[0],
-                STA_CONNECT, STA_DISCONNECT, AP_START, AP_STOP, SCAN, STA_LIST);
+            printf("Usage: %s [%s] [%s] [%s] [%s] [%s] [%s] [%s] [%s]\n", argv[0],
+                STA_CONNECT, STA_DISCONNECT, AP_START, AP_STOP, SCAN, STA_LIST,
+                OTA, AP_VENDOR_IE);
 			return(0);
-		}
+        }
     }
 
     return 0;

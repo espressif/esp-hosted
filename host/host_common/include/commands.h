@@ -50,6 +50,19 @@ typedef enum {
     WIFI_PS_INVALID,
 } wifi_ps_type_t;
 
+typedef enum {
+    WIFI_VND_IE_TYPE_BEACON = 0,
+    WIFI_VND_IE_TYPE_PROBE_REQ,
+    WIFI_VND_IE_TYPE_PROBE_RESP,
+    WIFI_VND_IE_TYPE_ASSOC_REQ,
+    WIFI_VND_IE_TYPE_ASSOC_RESP,
+} wifi_vendor_ie_type_t;
+
+typedef enum {
+    WIFI_VND_IE_ID_0,
+    WIFI_VND_IE_ID_1,
+} wifi_vendor_ie_id_t;
+
 typedef struct {
     uint8_t ssid[SSID_LENGTH];
     uint8_t pwd[PASSWORD_LENGTH];
@@ -90,6 +103,13 @@ typedef struct {
     int rssi;
 } esp_hosted_wifi_connected_stations_list;
 
+typedef struct {
+    uint8_t element_id;      /**< Should be set to WIFI_VENDOR_IE_ELEMENT_ID (0xDD) */
+    uint8_t length;          /**< Length of all bytes in the element data following this field. Minimum 4. */
+    uint8_t vendor_oui[3];   /**< Vendor identifier (OUI). */ 
+    uint8_t vendor_oui_type; /**< Vendor-specific OUI type. */ 
+    uint8_t payload[0];      /**< Payload. Length is equal to value in 'length' field, minus 4. */
+} vendor_ie_data_t;
 
 /* wifi get mac function returns status SUCCESS(0) or FAILURE(-1)
  * Input parameter
@@ -267,6 +287,19 @@ int wifi_set_power_save_mode(int power_save_mode);
 int wifi_get_power_save_mode(int *power_save_mode);
 
 /*
+ * wifi set vendor specific ie function set 802.11 Vendor-Specific Information Element
+ * returns SUCCESS(0) or FAILURE(-1)
+ *  Input parameter:
+ *      enable      : If true, specified IE is enabled. If false, specified IE is removed.
+ *      type        : Information Element type. Determines the frame type to associate with the IE.
+ *      idx         : Index to set or clear. Each IE type can be associated with up to two elements (indices 0 & 1).
+ *      vnd_ie      : Pointer to vendor specific element data. First 6 bytes should be a header with fields matching vendor_ie_data_t. If enable is false, this argument is ignored and can be NULL.
+ *      vnd_ie_size : size of vnd_ie data
+ */
+int wifi_set_vendor_specific_ie(bool enable, wifi_vendor_ie_type_t type,
+        wifi_vendor_ie_id_t idx, void* vnd_ie, uint16_t vnd_ie_size);
+
+/*
  * esp ota begin function performs an OTA begin operation for ESP32
  * which sets partition for OTA write and erase it.
  * returns SUCCESS(0) or FAILURE(-1)
@@ -290,5 +323,4 @@ int esp_ota_write(uint8_t* ota_data, uint32_t ota_data_len);
  * returns SUCCESS(0) or FAILURE(-1)
  */
 int esp_ota_end();
-
 #endif

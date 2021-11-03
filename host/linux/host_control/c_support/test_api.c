@@ -24,12 +24,19 @@
 #include <linux/if_arp.h>
 #include "test_api.h"
 
-#define MAC_LEN              7
-#define MAC_STR_LEN          17
+#define MAC_LEN                     7
+#define MAC_STR_LEN                 17
 
-#define STA_INTERFACE        "ethsta0"
-#define AP_INTERFACE         "ethap0"
-#define MAX_INTERFACE_LEN     10
+#define STA_INTERFACE               "ethsta0"
+#define AP_INTERFACE                "ethap0"
+#define MAX_INTERFACE_LEN           10
+
+#define WIFI_VENDOR_IE_ELEMENT_ID   0xDD
+#define OFFSET                      4
+#define VENDOR_OUI_0                1
+#define VENDOR_OUI_1                2
+#define VENDOR_OUI_2                3
+#define VENDOR_OUI_TYPE             22
 
 // Function converts mac string to byte stream
 static int convert_mac_to_bytes(uint8_t *out, size_t out_len, char *s)
@@ -665,4 +672,44 @@ int test_ota(char* image_path)
     printf("====\n\n");
 #endif
     return SUCCESS;
+}
+
+int test_set_vendor_specific_ie()
+{ 
+    char *data = "Example vendor IE data";
+    int vnd_ie_size = sizeof(vendor_ie_data_t)+strlen(data)+1;
+    vendor_ie_data_t *vnd_ie = (vendor_ie_data_t *)malloc(vnd_ie_size);
+    if (!vnd_ie) {
+        printf("Failed to allocate memory for vnd_ie\n");
+        return FAILURE;
+    }
+
+    vnd_ie->element_id = WIFI_VENDOR_IE_ELEMENT_ID;
+    vnd_ie->length = strlen(data) + OFFSET;
+    if (vnd_ie->length < OFFSET) {                                                  
+        printf("Length should not be less than %d bytes \n", OFFSET);                        
+        free(vnd_ie);
+        return FAILURE;                                                         
+    } 
+    vnd_ie->vendor_oui[0] = VENDOR_OUI_0;
+    vnd_ie->vendor_oui[1] = VENDOR_OUI_1;
+    vnd_ie->vendor_oui[2] = VENDOR_OUI_2;
+    vnd_ie->vendor_oui_type = VENDOR_OUI_TYPE;
+    memcpy(vnd_ie->payload, data, strlen(data));
+
+    int ret = wifi_set_vendor_specific_ie(true, WIFI_VND_IE_TYPE_BEACON,
+            WIFI_VND_IE_ID_0, vnd_ie, vnd_ie_size);
+
+#ifdef TEST_DEBUG_PRINTS
+    printf("==== %s =>\n",__func__);
+    if (ret == SUCCESS) {
+        printf("Success in set vendor specific ie\n");
+    } else {
+        printf("Failed to set vendor specific ie\n");
+    }
+    printf("====\n\n");
+#endif
+
+    free(vnd_ie);
+    return ret;
 }

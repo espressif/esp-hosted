@@ -164,6 +164,30 @@ message EspHostedRespOTAEnd {
     int32 resp = 1;
 }
 
+enum EspHostedVendorIEType {
+    VND_IE_TYPE_BEACON = 0;
+    VND_IE_TYPE_PROBE_REQ = 1;
+    VND_IE_TYPE_PROBE_RESP = 2;
+    VND_IE_TYPE_ASSOC_REQ = 3;
+    VND_IE_TYPE_ASSOC_RESP = 4;
+}
+
+enum EspHostedIEID {
+    VND_IE_ID_0 = 0;
+    VND_IE_ID_1 = 1;
+}
+
+message EspHostedCmdSetVendorSpecificIE {
+    bool enable = 1;
+    EspHostedVendorIEType type = 2;
+    EspHostedIEID idx = 3;
+    bytes vendor_ie_data = 4;
+}
+
+message EspHostedRespSetVendorSpecificIE {
+    int32 resp = 1;
+}
+
 enum EspHostedConfigMsgType {
     TypeCmdGetMACAddress = 0;
     TypeRespGetMACAddress = 1;
@@ -199,6 +223,8 @@ enum EspHostedConfigMsgType {
     TypeRespOTAWrite = 31;
     TypeCmdOTAEnd = 32;
     TypeRespOTAEnd = 33;
+    TypeCmdSetVendorSpecificIE = 34;
+    TypeRespSetVendorSpecificIE = 35;
 }
 
 message EspHostedConfigPayload {
@@ -238,5 +264,7 @@ message EspHostedConfigPayload {
         EspHostedRespOTAWrite resp_ota_write = 41;
         EspHostedCmdOTAEnd cmd_ota_end = 42;
         EspHostedRespOTAEnd resp_ota_end = 43;
+        EspHostedCmdSetVendorSpecificIE cmd_set_vendor_specific_ie = 44;
+        EspHostedRespSetVendorSpecificIE resp_set_vendor_specific_ie = 45;
     }
 }

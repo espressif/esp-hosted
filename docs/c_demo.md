@@ -10,6 +10,7 @@
 | ap_stop | Stop ESP32 softAP stop and down `ethap0` interface |
 | scan | Scan external access points |
 | sta_list | List external stations connected to softAP |
+| ap_vendor_ie | Set vendor information element for ESP32 softAP |
 
 It uses APIs present in [test_api.c](../host/linux/host_control/c_support/test_api.c). User should first modify configuration parameters in [test_config.h](../host/linux/host_control/c_support/test_config.h). Then run `make` in [c_support](../host/linux/host_control/c_support) to compile `test.c`.
 
@@ -18,7 +19,7 @@ Please execute `test.out` as below.
 
 ```
 ex.
-sudo ./test.out sta_connect sta_disconnect ap_start ap_stop scan sta_list
+sudo ./test.out sta_connect sta_disconnect ap_vendor_ie ap_start ap_stop scan sta_list
 ```
 Note:
 * After `sta_connect`, User needs to run DHCP client to obtain IP address from an external AP. Then network data path will be open for higher applications to use `ethsta0` interface for data communication. For an example as below.
@@ -28,6 +29,11 @@ sudo dhclient ethsta0 -r
 
 sudo dhclient ethsta0 -v
 ```
+
+* `ap_vendor_ie` needs to get called before starting of ESP32 softAP, please edit function `test_set_vendor_specific_ie` in `test_api.c`.
+`ap_vendor_ie` should get configured only once till ESP32 reboot. To remove
+previous configuration set `enable` flag to `false` in `wifi_set_vendor_specific_ie` API.
+After that re-configuration possible of Vendor IE.
 
 * After `ap_start` to start data connection, set up a DHCP server on the Raspberry Pi, or configure a static IP address for AP interface (`ethap0`). For an example as below:
 
@@ -50,6 +56,7 @@ sudo ifconfig ethap0 192.168.4.5
 | ap_stop | Stop ESP32 softAP stop and down `ethap0` interface |
 | scan | Scan external access points |
 | sta_list | List external stations connected to softAP |
+| ap_vendor_ie | Set vendor information element for ESP32 softAP |
 
  Run `make stress` in [c_support](../host/linux/host_control/c_support) directory to compile `stress.c`.
 
@@ -58,5 +65,5 @@ Please execute `stress.out` as below.
 
 ```
 ex.
-sudo ./stress.out 1 sta_connect sta_disconnect ap_start ap_stop scan sta_list
+sudo ./stress.out 1 sta_connect sta_disconnect ap_vendor_ie ap_start ap_stop scan sta_list
 ```
