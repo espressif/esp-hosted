@@ -31,5 +31,7 @@ int esp_send_packet(struct esp_adapter *adapter, struct sk_buff *skb);
 u8 esp_is_bt_supported_over_sdio(u32 cap);
 void esp_tx_pause(void);
 void esp_tx_resume(void);
+void process_init_event(u8 *evt_buf, u8 len);
+void process_capabilities(u8 cap);
 
 #endif

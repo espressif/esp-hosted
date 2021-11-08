@@ -32,6 +32,7 @@
 #include "esp_serial.h"
 #endif
 #include "esp_bt_api.h"
+#include "esp_api.h"
 
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Amey Inamdar <amey.inamdar@espressif.com>");
@@ -317,6 +318,60 @@ static int process_tx_packet (struct sk_buff *skb)
 	return 0;
 }
 
+void process_capabilities(u8 cap)
+{
+	struct esp_adapter *adapter = esp_get_adapter();
+	printk (KERN_INFO "ESP peripheral capabilities: 0x%x\n", cap);
+	adapter->capabilities = cap;
+
+	/* Reset BT */
+	esp_deinit_bt(esp_get_adapter());
+
+	if ((cap & ESP_BT_SPI_SUPPORT) || (cap & ESP_BT_SDIO_SUPPORT)) {
+		msleep(200);
+		esp_init_bt(esp_get_adapter());
+	}
+}
+
+
+static void process_event(u8 *evt_buf, u16 len)
+{
+	struct esp_priv_event *event;
+
+	if (!evt_buf || !len)
+		return;
+
+	event = (struct esp_priv_event *) evt_buf;
+
+	if (event->event_type == ESP_PRIV_EVENT_INIT) {
+		printk (KERN_INFO "\nReceived INIT event from ESP32 peripheral");
+		process_init_event(event->event_data, event->event_len);
+	} else {
+		printk (KERN_WARNING "Drop unknown event");
+	}
+}
+
+static void process_priv_communication(struct sk_buff *skb)
+{
+	struct esp_payload_header *header;
+	u8 *payload;
+	u16 len;
+
+	if (!skb || !skb->data)
+		return;
+
+	header = (struct esp_payload_header *) skb->data;
+
+	payload = skb->data + le16_to_cpu(header->offset);
+	len = le16_to_cpu(header->len);
+
+	if (header->priv_pkt_type == ESP_PACKET_TYPE_EVENT) {
+		process_event(payload, len);
+	}
+
+	dev_kfree_skb(skb);
+}
+
 static void process_rx_packet(struct sk_buff *skb)
 {
 	struct esp_private *priv = NULL;
@@ -405,6 +460,8 @@ static void process_rx_packet(struct sk_buff *skb)
 				esp_hci_update_rx_counter(hdev, *type, skb->len);
 			}
 		}
+	} else if (payload_header->if_type == ESP_PRIV_IF) {
+		process_priv_communication(skb);
 	}
 }
 

@@ -550,15 +550,23 @@ int event_handler(uint8_t val)
 {
 	switch(val) {
 		case ESP_OPEN_DATA_PATH:
-			ESP_EARLY_LOGI(TAG, "Start Data Path");
 			datapath = 1;
-			if_handle->state = ACTIVE;
+			if (if_handle) {
+				if_handle->state = ACTIVE;
+				ESP_EARLY_LOGI(TAG, "Start Data Path");
+			} else {
+				ESP_EARLY_LOGI(TAG, "Failed to Start Data Path");
+			}
 			break;
 
 		case ESP_CLOSE_DATA_PATH:
-			ESP_EARLY_LOGI(TAG, "Stop Data Path");
 			datapath = 0;
-			if_handle->state = DEACTIVE;
+			if (if_handle) {
+				ESP_EARLY_LOGI(TAG, "Stop Data Path");
+				if_handle->state = DEACTIVE;
+			} else {
+				ESP_EARLY_LOGI(TAG, "Failed to Stop Data Path");
+			}
 			break;
 	}
 	return 0;
@@ -711,12 +719,17 @@ void app_main()
 		return;
 	}
 
-	if_handle = if_context->if_ops->init(capa);
+	if_handle = if_context->if_ops->init();
 
 	if (!if_handle) {
 		ESP_LOGE(TAG, "Failed to initialize driver\n");
 		return;
 	}
+
+	sleep(1);
+
+	/* send capabilities to host */
+	generate_startup_event(capa);
 
 	for (prio_q_idx=0; prio_q_idx<MAX_PRIORITY_QUEUES; prio_q_idx++) {
 		to_host_queue[prio_q_idx] = xQueueCreate(TO_HOST_QUEUE_SIZE, sizeof(interface_buffer_handle_t));

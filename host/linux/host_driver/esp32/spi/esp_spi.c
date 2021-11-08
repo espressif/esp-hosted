@@ -164,20 +164,8 @@ static int write_packet(struct esp_adapter *adapter, struct sk_buff *skb)
 	return 0;
 }
 
-static void process_capabilities(u8 cap)
-{
-	printk (KERN_INFO "ESP peripheral capabilities: 0x%x\n", cap);
 
-	/* Reset BT */
-	esp_deinit_bt(spi_context.adapter);
-
-	if ((cap & ESP_BT_SPI_SUPPORT) || (cap & ESP_BT_SDIO_SUPPORT)) {
-		msleep(200);
-		esp_init_bt(spi_context.adapter);
-	}
-}
-
-static void process_init_event(u8 *evt_buf, u8 len)
+void process_init_event(u8 *evt_buf, u8 len)
 {
 	u8 len_left = len, tag_len;
 	u8 *pos;
@@ -210,43 +198,6 @@ static void process_init_event(u8 *evt_buf, u8 len)
 	}
 }
 
-static void process_event(u8 *evt_buf, u16 len)
-{
-	struct esp_priv_event *event;
-
-	if (!evt_buf || !len)
-		return;
-
-	event = (struct esp_priv_event *) evt_buf;
-
-	if (event->event_type == ESP_PRIV_EVENT_INIT) {
-		printk (KERN_INFO "Received INIT event from ESP32 peripheral");
-		process_init_event(event->event_data, event->event_len);
-	} else {
-		printk (KERN_WARNING "Drop unknown event");
-	}
-}
-
-static void process_priv_communication(struct sk_buff *skb)
-{
-	struct esp_payload_header *header;
-	u8 *payload;
-	u16 len;
-
-	if (!skb || !skb->data)
-		return;
-
-	header = (struct esp_payload_header *) skb->data;
-
-	payload = skb->data + le16_to_cpu(header->offset);
-	len = le16_to_cpu(header->len);
-
-	if (header->priv_pkt_type == ESP_PACKET_TYPE_EVENT) {
-		process_event(payload, len);
-	}
-
-	dev_kfree_skb(skb);
-}
 
 static int process_rx_buf(struct sk_buff *skb)
 {
@@ -284,10 +235,6 @@ static int process_rx_buf(struct sk_buff *skb)
 	/* Trim SKB to actual size */
 	skb_trim(skb, len);
 
-	if (header->if_type == ESP_PRIV_IF) {
-		process_priv_communication(skb);
-		return 0;
-	}
 
 	if (!data_path)
 		return -EPERM;
