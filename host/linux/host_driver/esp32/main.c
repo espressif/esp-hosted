@@ -280,7 +280,7 @@ static int process_tx_packet (struct sk_buff *skb)
 
 		/* Populate new SKB */
 		skb_copy_from_linear_data(skb, pos, skb->len);
-		skb_put(new_skb, skb->len);
+		skb_put(new_skb, skb->len + pad_len);
 
 		/* Replace old SKB */
 		dev_kfree_skb_any(skb);
