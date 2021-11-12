@@ -29,6 +29,7 @@
 #define STA_LIST                           "sta_list"
 #define OTA                                "ota"
 #define AP_VENDOR_IE                       "ap_vendor_ie"
+#define WIFI_TX_POWER                      "wifi_tx_power"
 
 #define MAC_LENGTH                          18
 #define SSID_LENGTH                         32
@@ -52,6 +53,8 @@
 #define SOFTAP_MODE_MAX_ALLOWED_CLIENTS     4
 #define SOFTAP_MODE_SSID_HIDDEN             false
 #define SOFTAP_MODE_BANDWIDTH               2
+
+#define INPUT_WIFI_TX_POWER                 8
 
 #define TEST_DEBUG_PRINTS                   1
 

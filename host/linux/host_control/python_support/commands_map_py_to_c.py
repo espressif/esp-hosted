@@ -67,6 +67,12 @@ wifi_get_power_save_mode.restype = c_int
 wifi_stop_softap = commands_lib.wifi_stop_softap
 wifi_stop_softap.restype = c_int
 
+wifi_set_max_tx_power = commands_lib.wifi_set_max_tx_power
+wifi_set_max_tx_power.restype = c_int
+
+wifi_get_curr_tx_power = commands_lib.wifi_get_curr_tx_power
+wifi_get_curr_tx_power.restype = c_int
+
 esp_hosted_free = commands_lib.esp_hosted_free
 esp_hosted_free.restype = None
 

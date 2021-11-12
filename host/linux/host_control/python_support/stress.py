@@ -25,8 +25,9 @@ TEST_SOFTAP_MAC=(1 << 4)
 TEST_SOFTAP_START_STOP=(1 << 5)
 TEST_STATION_SOFTAP_MODE=(1 << 6)
 TEST_POWER_SAVE=(1 << 7)
+TEST_WIFI_TX_POWER=(1 << 8)
 
-STRESS_TEST=(TEST_MODE_NONE | TEST_SCAN_WIFI | TEST_STATION_MAC | TEST_STATION_CONNECT_DISCONNECT | TEST_SOFTAP_MAC | TEST_SOFTAP_START_STOP | TEST_STATION_SOFTAP_MODE | TEST_POWER_SAVE)
+STRESS_TEST=(TEST_MODE_NONE | TEST_SCAN_WIFI | TEST_STATION_MAC | TEST_STATION_CONNECT_DISCONNECT | TEST_SOFTAP_MAC | TEST_SOFTAP_START_STOP | TEST_STATION_SOFTAP_MODE | TEST_POWER_SAVE | TEST_WIFI_TX_POWER)
 
 #***** Please Read *****
 #* Before use stress.py : User must enter user configuration parameter in "test_config.py" file *
@@ -130,3 +131,14 @@ if (STRESS_TEST & TEST_POWER_SAVE):
         test_set_wifi_power_save_mode()
 
         test_get_wifi_power_save_mode()
+
+# maximum transmitting power
+
+# set and get maximum transmitting power
+if (STRESS_TEST & TEST_WIFI_TX_POWER):
+    for i in (range(STRESS_TEST_COUNT)):
+        print("*************** "+str(i)+" ****************")
+        test_wifi_set_max_tx_power()
+
+        test_wifi_get_curr_tx_power()
+

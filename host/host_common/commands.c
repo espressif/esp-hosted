@@ -1307,6 +1307,147 @@ err3:
     return FAILURE;
 }
 
+// Function sets maximum transmitting power
+int wifi_set_max_tx_power(int8_t wifi_max_tx_power)
+{
+    EspHostedConfigPayload req, *resp = NULL;
+    uint32_t tx_len = 0, rx_len = 0;
+    uint8_t *tx_data = NULL, *rx_data = NULL;
+
+    esp_hosted_config_payload__init (&req);
+    req.has_msg = true;
+    req.msg = ESP_HOSTED_CONFIG_MSG_TYPE__TypeCmdSetWiFiMAXTXPower;
+    req.payload_case = ESP_HOSTED_CONFIG_PAYLOAD__PAYLOAD_CMD_SET_WIFI_MAX_TX_POWER;
+
+    EspHostedCmdSetWiFiMAXTXPower *req_payload = (EspHostedCmdSetWiFiMAXTXPower *)
+        esp_hosted_calloc( 1, sizeof(EspHostedCmdSetWiFiMAXTXPower));
+    if (!req_payload) {
+        command_log("Failed to allocate memory for req_payload\n");
+        return FAILURE;
+    }
+
+    esp_hosted_cmd_set_wi_fi_maxtxpower__init(req_payload);
+    req_payload->has_wifi_max_tx_power = true;
+    req_payload->wifi_max_tx_power = wifi_max_tx_power;
+    req.cmd_set_wifi_max_tx_power = req_payload;
+
+    tx_len = esp_hosted_config_payload__get_packed_size(&req);
+    if (!tx_len) {
+        command_log("Invalid tx length\n");
+        goto err3;
+    }
+
+    tx_data = (uint8_t *)esp_hosted_calloc(1, tx_len);
+    if (!tx_data) {
+        command_log("Failed to allocate memory for tx_data\n");
+        goto err3;
+    }
+
+    esp_hosted_config_payload__pack(&req, tx_data);
+
+    rx_data = transport_pserial_data_handler(tx_data, tx_len,
+            TIMEOUT_PSERIAL_RESP, &rx_len);
+    if (!rx_data || !rx_len) {
+        command_log("Failed to process rx_data\n");
+        goto err2;
+    }
+
+    resp = esp_hosted_config_payload__unpack(NULL, rx_len, rx_data);
+    if ((!resp) || (!resp->resp_set_wifi_max_tx_power)) {
+        command_log("Failed to unpack rx_data\n");
+        goto err1;
+    }
+
+    if (resp->resp_set_wifi_max_tx_power->resp == ESP_HOSTED_STATUS__TYPE_OUT_OF_RANGE) {
+        command_log("Out of range maximum transmitting power argument \n");
+        command_log("Must lie between [8,84] \n");
+        command_log("Please refer `wifi_set_max_tx_power` API documentation \n");
+        mem_free(tx_data);
+        mem_free(rx_data);
+        mem_free(req_payload);
+        esp_hosted_config_payload__free_unpacked(resp, NULL);
+        return OUT_OF_RANGE;
+    } else if (resp->resp_set_wifi_max_tx_power->resp) {
+        command_log("Failed to set WiFi maximum TX power\n");
+        goto err1;
+    }
+
+    mem_free(tx_data);
+    mem_free(rx_data);
+    mem_free(req_payload);
+    esp_hosted_config_payload__free_unpacked(resp, NULL);
+    return SUCCESS;
+err1:
+    mem_free(rx_data);
+    esp_hosted_config_payload__free_unpacked(resp, NULL);
+err2:
+    mem_free(tx_data);
+err3:
+    mem_free(req_payload);
+    return FAILURE;
+}
+
+// Function gets wifi current transmiting power
+int wifi_get_curr_tx_power(int8_t *wifi_curr_tx_power)
+{
+    EspHostedConfigPayload req, *resp = NULL;
+    uint32_t tx_len = 0, rx_len = 0;
+    uint8_t *tx_data = NULL, *rx_data = NULL;
+
+    if (!wifi_curr_tx_power) {
+        printf("Invalid argument \n");
+        return FAILURE;
+    }
+
+    esp_hosted_config_payload__init (&req);
+    req.has_msg = true;
+    req.msg = ESP_HOSTED_CONFIG_MSG_TYPE__TypeCmdGetWiFiCurrTXPower;
+    req.payload_case = ESP_HOSTED_CONFIG_PAYLOAD__PAYLOAD_CMD_GET_WIFI_CURR_TX_POWER;
+    tx_len = esp_hosted_config_payload__get_packed_size(&req);
+    if (!tx_len) {
+        command_log("Invalid tx length\n");
+        return FAILURE;
+    }
+
+    tx_data = (uint8_t *)esp_hosted_calloc(1, tx_len);
+    if (!tx_data) {
+        command_log("Failed to allocate memory for tx_data\n");
+        return FAILURE;
+    }
+
+    esp_hosted_config_payload__pack(&req, tx_data);
+
+    rx_data = transport_pserial_data_handler(tx_data, tx_len,
+            TIMEOUT_PSERIAL_RESP, &rx_len);
+    if (!rx_data || !rx_len) {
+        command_log("Failed to process rx_data\n");
+        goto err2;
+    }
+
+    resp = esp_hosted_config_payload__unpack(NULL, rx_len, rx_data);
+    if ((!resp) || (!resp->resp_get_wifi_curr_tx_power)) {
+        command_log("Failed to unpack rx_data\n");
+        goto err1;
+    }
+
+    if (resp->resp_get_wifi_curr_tx_power->resp) {
+        command_log("Failed to get WiFi current TX power\n");
+        goto err1;
+    }
+    *wifi_curr_tx_power = resp->resp_get_wifi_curr_tx_power->wifi_curr_tx_power; 
+    mem_free(tx_data);
+    mem_free(rx_data);
+    esp_hosted_config_payload__free_unpacked(resp, NULL);
+    return SUCCESS;
+
+err1:
+    mem_free(rx_data);
+err2:
+    mem_free(tx_data);
+    esp_hosted_config_payload__free_unpacked(resp, NULL);
+    return FAILURE;
+}
+
 // Function performs an OTA begin for ESP32
 int esp_ota_begin()
 {

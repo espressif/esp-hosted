@@ -1383,6 +1383,178 @@ void   esp_hosted_resp_set_vendor_specific_ie__free_unpacked
   assert(message->base.descriptor == &esp_hosted_resp_set_vendor_specific_ie__descriptor);
   protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
 }
+void   esp_hosted_cmd_set_wi_fi_maxtxpower__init
+                     (EspHostedCmdSetWiFiMAXTXPower         *message)
+{
+  static EspHostedCmdSetWiFiMAXTXPower init_value = ESP_HOSTED_CMD_SET_WI_FI_MAXTXPOWER__INIT;
+  *message = init_value;
+}
+size_t esp_hosted_cmd_set_wi_fi_maxtxpower__get_packed_size
+                     (const EspHostedCmdSetWiFiMAXTXPower *message)
+{
+  assert(message->base.descriptor == &esp_hosted_cmd_set_wi_fi_maxtxpower__descriptor);
+  return protobuf_c_message_get_packed_size ((const ProtobufCMessage*)(message));
+}
+size_t esp_hosted_cmd_set_wi_fi_maxtxpower__pack
+                     (const EspHostedCmdSetWiFiMAXTXPower *message,
+                      uint8_t       *out)
+{
+  assert(message->base.descriptor == &esp_hosted_cmd_set_wi_fi_maxtxpower__descriptor);
+  return protobuf_c_message_pack ((const ProtobufCMessage*)message, out);
+}
+size_t esp_hosted_cmd_set_wi_fi_maxtxpower__pack_to_buffer
+                     (const EspHostedCmdSetWiFiMAXTXPower *message,
+                      ProtobufCBuffer *buffer)
+{
+  assert(message->base.descriptor == &esp_hosted_cmd_set_wi_fi_maxtxpower__descriptor);
+  return protobuf_c_message_pack_to_buffer ((const ProtobufCMessage*)message, buffer);
+}
+EspHostedCmdSetWiFiMAXTXPower *
+       esp_hosted_cmd_set_wi_fi_maxtxpower__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data)
+{
+  return (EspHostedCmdSetWiFiMAXTXPower *)
+     protobuf_c_message_unpack (&esp_hosted_cmd_set_wi_fi_maxtxpower__descriptor,
+                                allocator, len, data);
+}
+void   esp_hosted_cmd_set_wi_fi_maxtxpower__free_unpacked
+                     (EspHostedCmdSetWiFiMAXTXPower *message,
+                      ProtobufCAllocator *allocator)
+{
+  assert(message->base.descriptor == &esp_hosted_cmd_set_wi_fi_maxtxpower__descriptor);
+  protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
+}
+void   esp_hosted_resp_set_wi_fi_maxtxpower__init
+                     (EspHostedRespSetWiFiMAXTXPower         *message)
+{
+  static EspHostedRespSetWiFiMAXTXPower init_value = ESP_HOSTED_RESP_SET_WI_FI_MAXTXPOWER__INIT;
+  *message = init_value;
+}
+size_t esp_hosted_resp_set_wi_fi_maxtxpower__get_packed_size
+                     (const EspHostedRespSetWiFiMAXTXPower *message)
+{
+  assert(message->base.descriptor == &esp_hosted_resp_set_wi_fi_maxtxpower__descriptor);
+  return protobuf_c_message_get_packed_size ((const ProtobufCMessage*)(message));
+}
+size_t esp_hosted_resp_set_wi_fi_maxtxpower__pack
+                     (const EspHostedRespSetWiFiMAXTXPower *message,
+                      uint8_t       *out)
+{
+  assert(message->base.descriptor == &esp_hosted_resp_set_wi_fi_maxtxpower__descriptor);
+  return protobuf_c_message_pack ((const ProtobufCMessage*)message, out);
+}
+size_t esp_hosted_resp_set_wi_fi_maxtxpower__pack_to_buffer
+                     (const EspHostedRespSetWiFiMAXTXPower *message,
+                      ProtobufCBuffer *buffer)
+{
+  assert(message->base.descriptor == &esp_hosted_resp_set_wi_fi_maxtxpower__descriptor);
+  return protobuf_c_message_pack_to_buffer ((const ProtobufCMessage*)message, buffer);
+}
+EspHostedRespSetWiFiMAXTXPower *
+       esp_hosted_resp_set_wi_fi_maxtxpower__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data)
+{
+  return (EspHostedRespSetWiFiMAXTXPower *)
+     protobuf_c_message_unpack (&esp_hosted_resp_set_wi_fi_maxtxpower__descriptor,
+                                allocator, len, data);
+}
+void   esp_hosted_resp_set_wi_fi_maxtxpower__free_unpacked
+                     (EspHostedRespSetWiFiMAXTXPower *message,
+                      ProtobufCAllocator *allocator)
+{
+  assert(message->base.descriptor == &esp_hosted_resp_set_wi_fi_maxtxpower__descriptor);
+  protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
+}
+void   esp_hosted_cmd_get_wi_fi_curr_txpower__init
+                     (EspHostedCmdGetWiFiCurrTXPower         *message)
+{
+  static EspHostedCmdGetWiFiCurrTXPower init_value = ESP_HOSTED_CMD_GET_WI_FI_CURR_TXPOWER__INIT;
+  *message = init_value;
+}
+size_t esp_hosted_cmd_get_wi_fi_curr_txpower__get_packed_size
+                     (const EspHostedCmdGetWiFiCurrTXPower *message)
+{
+  assert(message->base.descriptor == &esp_hosted_cmd_get_wi_fi_curr_txpower__descriptor);
+  return protobuf_c_message_get_packed_size ((const ProtobufCMessage*)(message));
+}
+size_t esp_hosted_cmd_get_wi_fi_curr_txpower__pack
+                     (const EspHostedCmdGetWiFiCurrTXPower *message,
+                      uint8_t       *out)
+{
+  assert(message->base.descriptor == &esp_hosted_cmd_get_wi_fi_curr_txpower__descriptor);
+  return protobuf_c_message_pack ((const ProtobufCMessage*)message, out);
+}
+size_t esp_hosted_cmd_get_wi_fi_curr_txpower__pack_to_buffer
+                     (const EspHostedCmdGetWiFiCurrTXPower *message,
+                      ProtobufCBuffer *buffer)
+{
+  assert(message->base.descriptor == &esp_hosted_cmd_get_wi_fi_curr_txpower__descriptor);
+  return protobuf_c_message_pack_to_buffer ((const ProtobufCMessage*)message, buffer);
+}
+EspHostedCmdGetWiFiCurrTXPower *
+       esp_hosted_cmd_get_wi_fi_curr_txpower__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data)
+{
+  return (EspHostedCmdGetWiFiCurrTXPower *)
+     protobuf_c_message_unpack (&esp_hosted_cmd_get_wi_fi_curr_txpower__descriptor,
+                                allocator, len, data);
+}
+void   esp_hosted_cmd_get_wi_fi_curr_txpower__free_unpacked
+                     (EspHostedCmdGetWiFiCurrTXPower *message,
+                      ProtobufCAllocator *allocator)
+{
+  assert(message->base.descriptor == &esp_hosted_cmd_get_wi_fi_curr_txpower__descriptor);
+  protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
+}
+void   esp_hosted_resp_get_wi_fi_curr_txpower__init
+                     (EspHostedRespGetWiFiCurrTXPower         *message)
+{
+  static EspHostedRespGetWiFiCurrTXPower init_value = ESP_HOSTED_RESP_GET_WI_FI_CURR_TXPOWER__INIT;
+  *message = init_value;
+}
+size_t esp_hosted_resp_get_wi_fi_curr_txpower__get_packed_size
+                     (const EspHostedRespGetWiFiCurrTXPower *message)
+{
+  assert(message->base.descriptor == &esp_hosted_resp_get_wi_fi_curr_txpower__descriptor);
+  return protobuf_c_message_get_packed_size ((const ProtobufCMessage*)(message));
+}
+size_t esp_hosted_resp_get_wi_fi_curr_txpower__pack
+                     (const EspHostedRespGetWiFiCurrTXPower *message,
+                      uint8_t       *out)
+{
+  assert(message->base.descriptor == &esp_hosted_resp_get_wi_fi_curr_txpower__descriptor);
+  return protobuf_c_message_pack ((const ProtobufCMessage*)message, out);
+}
+size_t esp_hosted_resp_get_wi_fi_curr_txpower__pack_to_buffer
+                     (const EspHostedRespGetWiFiCurrTXPower *message,
+                      ProtobufCBuffer *buffer)
+{
+  assert(message->base.descriptor == &esp_hosted_resp_get_wi_fi_curr_txpower__descriptor);
+  return protobuf_c_message_pack_to_buffer ((const ProtobufCMessage*)message, buffer);
+}
+EspHostedRespGetWiFiCurrTXPower *
+       esp_hosted_resp_get_wi_fi_curr_txpower__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data)
+{
+  return (EspHostedRespGetWiFiCurrTXPower *)
+     protobuf_c_message_unpack (&esp_hosted_resp_get_wi_fi_curr_txpower__descriptor,
+                                allocator, len, data);
+}
+void   esp_hosted_resp_get_wi_fi_curr_txpower__free_unpacked
+                     (EspHostedRespGetWiFiCurrTXPower *message,
+                      ProtobufCAllocator *allocator)
+{
+  assert(message->base.descriptor == &esp_hosted_resp_get_wi_fi_curr_txpower__descriptor);
+  protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
+}
 void   esp_hosted_config_payload__init
                      (EspHostedConfigPayload         *message)
 {
@@ -2963,7 +3135,152 @@ const ProtobufCMessageDescriptor esp_hosted_resp_set_vendor_specific_ie__descrip
   (ProtobufCMessageInit) esp_hosted_resp_set_vendor_specific_ie__init,
   NULL,NULL,NULL    /* reserved[123] */
 };
-static const ProtobufCFieldDescriptor esp_hosted_config_payload__field_descriptors[37] =
+static const ProtobufCFieldDescriptor esp_hosted_cmd_set_wi_fi_maxtxpower__field_descriptors[1] =
+{
+  {
+    "wifi_max_tx_power",
+    1,
+    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_TYPE_INT32,
+    offsetof(EspHostedCmdSetWiFiMAXTXPower, has_wifi_max_tx_power),
+    offsetof(EspHostedCmdSetWiFiMAXTXPower, wifi_max_tx_power),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+};
+static const unsigned esp_hosted_cmd_set_wi_fi_maxtxpower__field_indices_by_name[] = {
+  0,   /* field[0] = wifi_max_tx_power */
+};
+static const ProtobufCIntRange esp_hosted_cmd_set_wi_fi_maxtxpower__number_ranges[1 + 1] =
+{
+  { 1, 0 },
+  { 0, 1 }
+};
+const ProtobufCMessageDescriptor esp_hosted_cmd_set_wi_fi_maxtxpower__descriptor =
+{
+  PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
+  "EspHostedCmdSetWiFiMAXTXPower",
+  "EspHostedCmdSetWiFiMAXTXPower",
+  "EspHostedCmdSetWiFiMAXTXPower",
+  "",
+  sizeof(EspHostedCmdSetWiFiMAXTXPower),
+  1,
+  esp_hosted_cmd_set_wi_fi_maxtxpower__field_descriptors,
+  esp_hosted_cmd_set_wi_fi_maxtxpower__field_indices_by_name,
+  1,  esp_hosted_cmd_set_wi_fi_maxtxpower__number_ranges,
+  (ProtobufCMessageInit) esp_hosted_cmd_set_wi_fi_maxtxpower__init,
+  NULL,NULL,NULL    /* reserved[123] */
+};
+static const ProtobufCFieldDescriptor esp_hosted_resp_set_wi_fi_maxtxpower__field_descriptors[1] =
+{
+  {
+    "resp",
+    1,
+    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_TYPE_INT32,
+    offsetof(EspHostedRespSetWiFiMAXTXPower, has_resp),
+    offsetof(EspHostedRespSetWiFiMAXTXPower, resp),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+};
+static const unsigned esp_hosted_resp_set_wi_fi_maxtxpower__field_indices_by_name[] = {
+  0,   /* field[0] = resp */
+};
+static const ProtobufCIntRange esp_hosted_resp_set_wi_fi_maxtxpower__number_ranges[1 + 1] =
+{
+  { 1, 0 },
+  { 0, 1 }
+};
+const ProtobufCMessageDescriptor esp_hosted_resp_set_wi_fi_maxtxpower__descriptor =
+{
+  PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
+  "EspHostedRespSetWiFiMAXTXPower",
+  "EspHostedRespSetWiFiMAXTXPower",
+  "EspHostedRespSetWiFiMAXTXPower",
+  "",
+  sizeof(EspHostedRespSetWiFiMAXTXPower),
+  1,
+  esp_hosted_resp_set_wi_fi_maxtxpower__field_descriptors,
+  esp_hosted_resp_set_wi_fi_maxtxpower__field_indices_by_name,
+  1,  esp_hosted_resp_set_wi_fi_maxtxpower__number_ranges,
+  (ProtobufCMessageInit) esp_hosted_resp_set_wi_fi_maxtxpower__init,
+  NULL,NULL,NULL    /* reserved[123] */
+};
+#define esp_hosted_cmd_get_wi_fi_curr_txpower__field_descriptors NULL
+#define esp_hosted_cmd_get_wi_fi_curr_txpower__field_indices_by_name NULL
+#define esp_hosted_cmd_get_wi_fi_curr_txpower__number_ranges NULL
+const ProtobufCMessageDescriptor esp_hosted_cmd_get_wi_fi_curr_txpower__descriptor =
+{
+  PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
+  "EspHostedCmdGetWiFiCurrTXPower",
+  "EspHostedCmdGetWiFiCurrTXPower",
+  "EspHostedCmdGetWiFiCurrTXPower",
+  "",
+  sizeof(EspHostedCmdGetWiFiCurrTXPower),
+  0,
+  esp_hosted_cmd_get_wi_fi_curr_txpower__field_descriptors,
+  esp_hosted_cmd_get_wi_fi_curr_txpower__field_indices_by_name,
+  0,  esp_hosted_cmd_get_wi_fi_curr_txpower__number_ranges,
+  (ProtobufCMessageInit) esp_hosted_cmd_get_wi_fi_curr_txpower__init,
+  NULL,NULL,NULL    /* reserved[123] */
+};
+static const ProtobufCFieldDescriptor esp_hosted_resp_get_wi_fi_curr_txpower__field_descriptors[2] =
+{
+  {
+    "wifi_curr_tx_power",
+    1,
+    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_TYPE_INT32,
+    offsetof(EspHostedRespGetWiFiCurrTXPower, has_wifi_curr_tx_power),
+    offsetof(EspHostedRespGetWiFiCurrTXPower, wifi_curr_tx_power),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "resp",
+    2,
+    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_TYPE_INT32,
+    offsetof(EspHostedRespGetWiFiCurrTXPower, has_resp),
+    offsetof(EspHostedRespGetWiFiCurrTXPower, resp),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+};
+static const unsigned esp_hosted_resp_get_wi_fi_curr_txpower__field_indices_by_name[] = {
+  1,   /* field[1] = resp */
+  0,   /* field[0] = wifi_curr_tx_power */
+};
+static const ProtobufCIntRange esp_hosted_resp_get_wi_fi_curr_txpower__number_ranges[1 + 1] =
+{
+  { 1, 0 },
+  { 0, 2 }
+};
+const ProtobufCMessageDescriptor esp_hosted_resp_get_wi_fi_curr_txpower__descriptor =
+{
+  PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
+  "EspHostedRespGetWiFiCurrTXPower",
+  "EspHostedRespGetWiFiCurrTXPower",
+  "EspHostedRespGetWiFiCurrTXPower",
+  "",
+  sizeof(EspHostedRespGetWiFiCurrTXPower),
+  2,
+  esp_hosted_resp_get_wi_fi_curr_txpower__field_descriptors,
+  esp_hosted_resp_get_wi_fi_curr_txpower__field_indices_by_name,
+  1,  esp_hosted_resp_get_wi_fi_curr_txpower__number_ranges,
+  (ProtobufCMessageInit) esp_hosted_resp_get_wi_fi_curr_txpower__init,
+  NULL,NULL,NULL    /* reserved[123] */
+};
+static const ProtobufCFieldDescriptor esp_hosted_config_payload__field_descriptors[41] =
 {
   {
     "msg",
@@ -3409,6 +3726,54 @@ static const ProtobufCFieldDescriptor esp_hosted_config_payload__field_descripto
     0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
+  {
+    "cmd_set_wifi_max_tx_power",
+    46,
+    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_TYPE_MESSAGE,
+    offsetof(EspHostedConfigPayload, payload_case),
+    offsetof(EspHostedConfigPayload, cmd_set_wifi_max_tx_power),
+    &esp_hosted_cmd_set_wi_fi_maxtxpower__descriptor,
+    NULL,
+    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "resp_set_wifi_max_tx_power",
+    47,
+    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_TYPE_MESSAGE,
+    offsetof(EspHostedConfigPayload, payload_case),
+    offsetof(EspHostedConfigPayload, resp_set_wifi_max_tx_power),
+    &esp_hosted_resp_set_wi_fi_maxtxpower__descriptor,
+    NULL,
+    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "cmd_get_wifi_curr_tx_power",
+    48,
+    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_TYPE_MESSAGE,
+    offsetof(EspHostedConfigPayload, payload_case),
+    offsetof(EspHostedConfigPayload, cmd_get_wifi_curr_tx_power),
+    &esp_hosted_cmd_get_wi_fi_curr_txpower__descriptor,
+    NULL,
+    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "resp_get_wifi_curr_tx_power",
+    49,
+    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_TYPE_MESSAGE,
+    offsetof(EspHostedConfigPayload, payload_case),
+    offsetof(EspHostedConfigPayload, resp_get_wifi_curr_tx_power),
+    &esp_hosted_resp_get_wi_fi_curr_txpower__descriptor,
+    NULL,
+    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
 };
 static const unsigned esp_hosted_config_payload__field_indices_by_name[] = {
   21,   /* field[21] = cmd_connected_stas_list */
@@ -3417,6 +3782,7 @@ static const unsigned esp_hosted_config_payload__field_indices_by_name[] = {
   1,   /* field[1] = cmd_get_mac_address */
   27,   /* field[27] = cmd_get_power_save_mode */
   11,   /* field[11] = cmd_get_softap_config */
+  39,   /* field[39] = cmd_get_wifi_curr_tx_power */
   3,   /* field[3] = cmd_get_wifi_mode */
   29,   /* field[29] = cmd_ota_begin */
   33,   /* field[33] = cmd_ota_end */
@@ -3427,6 +3793,7 @@ static const unsigned esp_hosted_config_payload__field_indices_by_name[] = {
   25,   /* field[25] = cmd_set_power_save_mode */
   13,   /* field[13] = cmd_set_softap_config */
   35,   /* field[35] = cmd_set_vendor_specific_ie */
+  37,   /* field[37] = cmd_set_wifi_max_tx_power */
   5,   /* field[5] = cmd_set_wifi_mode */
   17,   /* field[17] = cmd_stop_softap */
   0,   /* field[0] = msg */
@@ -3436,6 +3803,7 @@ static const unsigned esp_hosted_config_payload__field_indices_by_name[] = {
   2,   /* field[2] = resp_get_mac_address */
   28,   /* field[28] = resp_get_power_save_mode */
   12,   /* field[12] = resp_get_softap_config */
+  40,   /* field[40] = resp_get_wifi_curr_tx_power */
   4,   /* field[4] = resp_get_wifi_mode */
   30,   /* field[30] = resp_ota_begin */
   34,   /* field[34] = resp_ota_end */
@@ -3446,6 +3814,7 @@ static const unsigned esp_hosted_config_payload__field_indices_by_name[] = {
   26,   /* field[26] = resp_set_power_save_mode */
   14,   /* field[14] = resp_set_softap_config */
   36,   /* field[36] = resp_set_vendor_specific_ie */
+  38,   /* field[38] = resp_set_wifi_max_tx_power */
   6,   /* field[6] = resp_set_wifi_mode */
   18,   /* field[18] = resp_stop_softap */
 };
@@ -3453,7 +3822,7 @@ static const ProtobufCIntRange esp_hosted_config_payload__number_ranges[2 + 1] =
 {
   { 1, 0 },
   { 10, 1 },
-  { 0, 37 }
+  { 0, 41 }
 };
 const ProtobufCMessageDescriptor esp_hosted_config_payload__descriptor =
 {
@@ -3463,7 +3832,7 @@ const ProtobufCMessageDescriptor esp_hosted_config_payload__descriptor =
   "EspHostedConfigPayload",
   "",
   sizeof(EspHostedConfigPayload),
-  37,
+  41,
   esp_hosted_config_payload__field_descriptors,
   esp_hosted_config_payload__field_indices_by_name,
   2,  esp_hosted_config_payload__number_ranges,
@@ -3510,22 +3879,26 @@ const ProtobufCEnumDescriptor esp_hosted_encryption_mode__descriptor =
   esp_hosted_encryption_mode__value_ranges,
   NULL,NULL,NULL,NULL   /* reserved[1234] */
 };
-static const ProtobufCEnumValue esp_hosted_status__enum_values_by_number[4] =
+static const ProtobufCEnumValue esp_hosted_status__enum_values_by_number[6] =
 {
   { "TYPE_CONNECTED", "ESP_HOSTED_STATUS__TYPE_CONNECTED", 0 },
   { "TYPE_NOT_CONNECTED", "ESP_HOSTED_STATUS__TYPE_NOT_CONNECTED", 1 },
   { "TYPE_NO_AP_FOUND", "ESP_HOSTED_STATUS__TYPE_NO_AP_FOUND", 2 },
   { "TYPE_CONNECTION_FAIL", "ESP_HOSTED_STATUS__TYPE_CONNECTION_FAIL", 3 },
+  { "TYPE_INVALID_ARGUMET", "ESP_HOSTED_STATUS__TYPE_INVALID_ARGUMET", 4 },
+  { "TYPE_OUT_OF_RANGE", "ESP_HOSTED_STATUS__TYPE_OUT_OF_RANGE", 5 },
 };
 static const ProtobufCIntRange esp_hosted_status__value_ranges[] = {
-{0, 0},{0, 4}
+{0, 0},{0, 6}
 };
-static const ProtobufCEnumValueIndex esp_hosted_status__enum_values_by_name[4] =
+static const ProtobufCEnumValueIndex esp_hosted_status__enum_values_by_name[6] =
 {
   { "TYPE_CONNECTED", 0 },
   { "TYPE_CONNECTION_FAIL", 3 },
+  { "TYPE_INVALID_ARGUMET", 4 },
   { "TYPE_NOT_CONNECTED", 1 },
   { "TYPE_NO_AP_FOUND", 2 },
+  { "TYPE_OUT_OF_RANGE", 5 },
 };
 const ProtobufCEnumDescriptor esp_hosted_status__descriptor =
 {
@@ -3534,9 +3907,9 @@ const ProtobufCEnumDescriptor esp_hosted_status__descriptor =
   "EspHostedStatus",
   "EspHostedStatus",
   "",
-  4,
+  6,
   esp_hosted_status__enum_values_by_number,
-  4,
+  6,
   esp_hosted_status__enum_values_by_name,
   1,
   esp_hosted_status__value_ranges,
@@ -3604,7 +3977,7 @@ const ProtobufCEnumDescriptor esp_hosted_ieid__descriptor =
   esp_hosted_ieid__value_ranges,
   NULL,NULL,NULL,NULL   /* reserved[1234] */
 };
-static const ProtobufCEnumValue esp_hosted_config_msg_type__enum_values_by_number[36] =
+static const ProtobufCEnumValue esp_hosted_config_msg_type__enum_values_by_number[40] =
 {
   { "TypeCmdGetMACAddress", "ESP_HOSTED_CONFIG_MSG_TYPE__TypeCmdGetMACAddress", 0 },
   { "TypeRespGetMACAddress", "ESP_HOSTED_CONFIG_MSG_TYPE__TypeRespGetMACAddress", 1 },
@@ -3642,11 +4015,15 @@ static const ProtobufCEnumValue esp_hosted_config_msg_type__enum_values_by_numbe
   { "TypeRespOTAEnd", "ESP_HOSTED_CONFIG_MSG_TYPE__TypeRespOTAEnd", 33 },
   { "TypeCmdSetVendorSpecificIE", "ESP_HOSTED_CONFIG_MSG_TYPE__TypeCmdSetVendorSpecificIE", 34 },
   { "TypeRespSetVendorSpecificIE", "ESP_HOSTED_CONFIG_MSG_TYPE__TypeRespSetVendorSpecificIE", 35 },
+  { "TypeCmdSetWiFiMAXTXPower", "ESP_HOSTED_CONFIG_MSG_TYPE__TypeCmdSetWiFiMAXTXPower", 36 },
+  { "TypeRespSetWiFiMAXTXPower", "ESP_HOSTED_CONFIG_MSG_TYPE__TypeRespSetWiFiMAXTXPower", 37 },
+  { "TypeCmdGetWiFiCurrTXPower", "ESP_HOSTED_CONFIG_MSG_TYPE__TypeCmdGetWiFiCurrTXPower", 38 },
+  { "TypeRespGetWiFiCurrTXPower", "ESP_HOSTED_CONFIG_MSG_TYPE__TypeRespGetWiFiCurrTXPower", 39 },
 };
 static const ProtobufCIntRange esp_hosted_config_msg_type__value_ranges[] = {
-{0, 0},{0, 36}
+{0, 0},{0, 40}
 };
-static const ProtobufCEnumValueIndex esp_hosted_config_msg_type__enum_values_by_name[36] =
+static const ProtobufCEnumValueIndex esp_hosted_config_msg_type__enum_values_by_name[40] =
 {
   { "TypeCmdDisconnectAP", 14 },
   { "TypeCmdGetAPConfig", 6 },
@@ -3655,6 +4032,7 @@ static const ProtobufCEnumValueIndex esp_hosted_config_msg_type__enum_values_by_
   { "TypeCmdGetMACAddress", 0 },
   { "TypeCmdGetPowerSaveMode", 26 },
   { "TypeCmdGetSoftAPConfig", 10 },
+  { "TypeCmdGetWiFiCurrTXPower", 38 },
   { "TypeCmdGetWiFiMode", 2 },
   { "TypeCmdOTABegin", 28 },
   { "TypeCmdOTAEnd", 32 },
@@ -3664,6 +4042,7 @@ static const ProtobufCEnumValueIndex esp_hosted_config_msg_type__enum_values_by_
   { "TypeCmdSetPowerSaveMode", 24 },
   { "TypeCmdSetSoftAPConfig", 12 },
   { "TypeCmdSetVendorSpecificIE", 34 },
+  { "TypeCmdSetWiFiMAXTXPower", 36 },
   { "TypeCmdSetWiFiMode", 4 },
   { "TypeCmdStopSoftAP", 16 },
   { "TypeRespDisconnectAP", 15 },
@@ -3673,6 +4052,7 @@ static const ProtobufCEnumValueIndex esp_hosted_config_msg_type__enum_values_by_
   { "TypeRespGetMACAddress", 1 },
   { "TypeRespGetPowerSaveMode", 27 },
   { "TypeRespGetSoftAPConfig", 11 },
+  { "TypeRespGetWiFiCurrTXPower", 39 },
   { "TypeRespGetWiFiMode", 3 },
   { "TypeRespOTABegin", 29 },
   { "TypeRespOTAEnd", 33 },
@@ -3682,6 +4062,7 @@ static const ProtobufCEnumValueIndex esp_hosted_config_msg_type__enum_values_by_
   { "TypeRespSetPowerSaveMode", 25 },
   { "TypeRespSetSoftAPConfig", 13 },
   { "TypeRespSetVendorSpecificIE", 35 },
+  { "TypeRespSetWiFiMAXTXPower", 37 },
   { "TypeRespSetWiFiMode", 5 },
   { "TypeRespStopSoftAP", 17 },
 };
@@ -3692,9 +4073,9 @@ const ProtobufCEnumDescriptor esp_hosted_config_msg_type__descriptor =
   "EspHostedConfigMsgType",
   "EspHostedConfigMsgType",
   "",
-  36,
+  40,
   esp_hosted_config_msg_type__enum_values_by_number,
-  36,
+  40,
   esp_hosted_config_msg_type__enum_values_by_name,
   1,
   esp_hosted_config_msg_type__value_ranges,

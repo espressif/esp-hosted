@@ -47,6 +47,10 @@ typedef struct _EspHostedCmdOTAEnd EspHostedCmdOTAEnd;
 typedef struct _EspHostedRespOTAEnd EspHostedRespOTAEnd;
 typedef struct _EspHostedCmdSetVendorSpecificIE EspHostedCmdSetVendorSpecificIE;
 typedef struct _EspHostedRespSetVendorSpecificIE EspHostedRespSetVendorSpecificIE;
+typedef struct _EspHostedCmdSetWiFiMAXTXPower EspHostedCmdSetWiFiMAXTXPower;
+typedef struct _EspHostedRespSetWiFiMAXTXPower EspHostedRespSetWiFiMAXTXPower;
+typedef struct _EspHostedCmdGetWiFiCurrTXPower EspHostedCmdGetWiFiCurrTXPower;
+typedef struct _EspHostedRespGetWiFiCurrTXPower EspHostedRespGetWiFiCurrTXPower;
 typedef struct _EspHostedConfigPayload EspHostedConfigPayload;
 
 
@@ -67,7 +71,9 @@ typedef enum _EspHostedStatus {
   ESP_HOSTED_STATUS__TYPE_CONNECTED = 0,
   ESP_HOSTED_STATUS__TYPE_NOT_CONNECTED = 1,
   ESP_HOSTED_STATUS__TYPE_NO_AP_FOUND = 2,
-  ESP_HOSTED_STATUS__TYPE_CONNECTION_FAIL = 3
+  ESP_HOSTED_STATUS__TYPE_CONNECTION_FAIL = 3,
+  ESP_HOSTED_STATUS__TYPE_INVALID_ARGUMET = 4,
+  ESP_HOSTED_STATUS__TYPE_OUT_OF_RANGE = 5
     PROTOBUF_C__FORCE_ENUM_TO_BE_INT_SIZE(ESP_HOSTED_STATUS)
 } EspHostedStatus;
 typedef enum _EspHostedVendorIEType {
@@ -119,7 +125,11 @@ typedef enum _EspHostedConfigMsgType {
   ESP_HOSTED_CONFIG_MSG_TYPE__TypeCmdOTAEnd = 32,
   ESP_HOSTED_CONFIG_MSG_TYPE__TypeRespOTAEnd = 33,
   ESP_HOSTED_CONFIG_MSG_TYPE__TypeCmdSetVendorSpecificIE = 34,
-  ESP_HOSTED_CONFIG_MSG_TYPE__TypeRespSetVendorSpecificIE = 35
+  ESP_HOSTED_CONFIG_MSG_TYPE__TypeRespSetVendorSpecificIE = 35,
+  ESP_HOSTED_CONFIG_MSG_TYPE__TypeCmdSetWiFiMAXTXPower = 36,
+  ESP_HOSTED_CONFIG_MSG_TYPE__TypeRespSetWiFiMAXTXPower = 37,
+  ESP_HOSTED_CONFIG_MSG_TYPE__TypeCmdGetWiFiCurrTXPower = 38,
+  ESP_HOSTED_CONFIG_MSG_TYPE__TypeRespGetWiFiCurrTXPower = 39
     PROTOBUF_C__FORCE_ENUM_TO_BE_INT_SIZE(ESP_HOSTED_CONFIG_MSG_TYPE)
 } EspHostedConfigMsgType;
 
@@ -530,6 +540,50 @@ struct  _EspHostedRespSetVendorSpecificIE
     , 0,0 }
 
 
+struct  _EspHostedCmdSetWiFiMAXTXPower
+{
+  ProtobufCMessage base;
+  protobuf_c_boolean has_wifi_max_tx_power;
+  int32_t wifi_max_tx_power;
+};
+#define ESP_HOSTED_CMD_SET_WI_FI_MAXTXPOWER__INIT \
+ { PROTOBUF_C_MESSAGE_INIT (&esp_hosted_cmd_set_wi_fi_maxtxpower__descriptor) \
+    , 0,0 }
+
+
+struct  _EspHostedRespSetWiFiMAXTXPower
+{
+  ProtobufCMessage base;
+  protobuf_c_boolean has_resp;
+  int32_t resp;
+};
+#define ESP_HOSTED_RESP_SET_WI_FI_MAXTXPOWER__INIT \
+ { PROTOBUF_C_MESSAGE_INIT (&esp_hosted_resp_set_wi_fi_maxtxpower__descriptor) \
+    , 0,0 }
+
+
+struct  _EspHostedCmdGetWiFiCurrTXPower
+{
+  ProtobufCMessage base;
+};
+#define ESP_HOSTED_CMD_GET_WI_FI_CURR_TXPOWER__INIT \
+ { PROTOBUF_C_MESSAGE_INIT (&esp_hosted_cmd_get_wi_fi_curr_txpower__descriptor) \
+     }
+
+
+struct  _EspHostedRespGetWiFiCurrTXPower
+{
+  ProtobufCMessage base;
+  protobuf_c_boolean has_wifi_curr_tx_power;
+  int32_t wifi_curr_tx_power;
+  protobuf_c_boolean has_resp;
+  int32_t resp;
+};
+#define ESP_HOSTED_RESP_GET_WI_FI_CURR_TXPOWER__INIT \
+ { PROTOBUF_C_MESSAGE_INIT (&esp_hosted_resp_get_wi_fi_curr_txpower__descriptor) \
+    , 0,0, 0,0 }
+
+
 typedef enum {
   ESP_HOSTED_CONFIG_PAYLOAD__PAYLOAD__NOT_SET = 0,
   ESP_HOSTED_CONFIG_PAYLOAD__PAYLOAD_CMD_GET_MAC_ADDRESS = 10,
@@ -568,6 +622,10 @@ typedef enum {
   ESP_HOSTED_CONFIG_PAYLOAD__PAYLOAD_RESP_OTA_END = 43,
   ESP_HOSTED_CONFIG_PAYLOAD__PAYLOAD_CMD_SET_VENDOR_SPECIFIC_IE = 44,
   ESP_HOSTED_CONFIG_PAYLOAD__PAYLOAD_RESP_SET_VENDOR_SPECIFIC_IE = 45,
+  ESP_HOSTED_CONFIG_PAYLOAD__PAYLOAD_CMD_SET_WIFI_MAX_TX_POWER = 46,
+  ESP_HOSTED_CONFIG_PAYLOAD__PAYLOAD_RESP_SET_WIFI_MAX_TX_POWER = 47,
+  ESP_HOSTED_CONFIG_PAYLOAD__PAYLOAD_CMD_GET_WIFI_CURR_TX_POWER = 48,
+  ESP_HOSTED_CONFIG_PAYLOAD__PAYLOAD_RESP_GET_WIFI_CURR_TX_POWER = 49,
 } EspHostedConfigPayload__PayloadCase;
 
 struct  _EspHostedConfigPayload
@@ -613,6 +671,10 @@ struct  _EspHostedConfigPayload
     EspHostedRespOTAEnd *resp_ota_end;
     EspHostedCmdSetVendorSpecificIE *cmd_set_vendor_specific_ie;
     EspHostedRespSetVendorSpecificIE *resp_set_vendor_specific_ie;
+    EspHostedCmdSetWiFiMAXTXPower *cmd_set_wifi_max_tx_power;
+    EspHostedRespSetWiFiMAXTXPower *resp_set_wifi_max_tx_power;
+    EspHostedCmdGetWiFiCurrTXPower *cmd_get_wifi_curr_tx_power;
+    EspHostedRespGetWiFiCurrTXPower *resp_get_wifi_curr_tx_power;
   };
 };
 #define ESP_HOSTED_CONFIG_PAYLOAD__INIT \
@@ -1228,6 +1290,82 @@ EspHostedRespSetVendorSpecificIE *
 void   esp_hosted_resp_set_vendor_specific_ie__free_unpacked
                      (EspHostedRespSetVendorSpecificIE *message,
                       ProtobufCAllocator *allocator);
+/* EspHostedCmdSetWiFiMAXTXPower methods */
+void   esp_hosted_cmd_set_wi_fi_maxtxpower__init
+                     (EspHostedCmdSetWiFiMAXTXPower         *message);
+size_t esp_hosted_cmd_set_wi_fi_maxtxpower__get_packed_size
+                     (const EspHostedCmdSetWiFiMAXTXPower   *message);
+size_t esp_hosted_cmd_set_wi_fi_maxtxpower__pack
+                     (const EspHostedCmdSetWiFiMAXTXPower   *message,
+                      uint8_t             *out);
+size_t esp_hosted_cmd_set_wi_fi_maxtxpower__pack_to_buffer
+                     (const EspHostedCmdSetWiFiMAXTXPower   *message,
+                      ProtobufCBuffer     *buffer);
+EspHostedCmdSetWiFiMAXTXPower *
+       esp_hosted_cmd_set_wi_fi_maxtxpower__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data);
+void   esp_hosted_cmd_set_wi_fi_maxtxpower__free_unpacked
+                     (EspHostedCmdSetWiFiMAXTXPower *message,
+                      ProtobufCAllocator *allocator);
+/* EspHostedRespSetWiFiMAXTXPower methods */
+void   esp_hosted_resp_set_wi_fi_maxtxpower__init
+                     (EspHostedRespSetWiFiMAXTXPower         *message);
+size_t esp_hosted_resp_set_wi_fi_maxtxpower__get_packed_size
+                     (const EspHostedRespSetWiFiMAXTXPower   *message);
+size_t esp_hosted_resp_set_wi_fi_maxtxpower__pack
+                     (const EspHostedRespSetWiFiMAXTXPower   *message,
+                      uint8_t             *out);
+size_t esp_hosted_resp_set_wi_fi_maxtxpower__pack_to_buffer
+                     (const EspHostedRespSetWiFiMAXTXPower   *message,
+                      ProtobufCBuffer     *buffer);
+EspHostedRespSetWiFiMAXTXPower *
+       esp_hosted_resp_set_wi_fi_maxtxpower__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data);
+void   esp_hosted_resp_set_wi_fi_maxtxpower__free_unpacked
+                     (EspHostedRespSetWiFiMAXTXPower *message,
+                      ProtobufCAllocator *allocator);
+/* EspHostedCmdGetWiFiCurrTXPower methods */
+void   esp_hosted_cmd_get_wi_fi_curr_txpower__init
+                     (EspHostedCmdGetWiFiCurrTXPower         *message);
+size_t esp_hosted_cmd_get_wi_fi_curr_txpower__get_packed_size
+                     (const EspHostedCmdGetWiFiCurrTXPower   *message);
+size_t esp_hosted_cmd_get_wi_fi_curr_txpower__pack
+                     (const EspHostedCmdGetWiFiCurrTXPower   *message,
+                      uint8_t             *out);
+size_t esp_hosted_cmd_get_wi_fi_curr_txpower__pack_to_buffer
+                     (const EspHostedCmdGetWiFiCurrTXPower   *message,
+                      ProtobufCBuffer     *buffer);
+EspHostedCmdGetWiFiCurrTXPower *
+       esp_hosted_cmd_get_wi_fi_curr_txpower__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data);
+void   esp_hosted_cmd_get_wi_fi_curr_txpower__free_unpacked
+                     (EspHostedCmdGetWiFiCurrTXPower *message,
+                      ProtobufCAllocator *allocator);
+/* EspHostedRespGetWiFiCurrTXPower methods */
+void   esp_hosted_resp_get_wi_fi_curr_txpower__init
+                     (EspHostedRespGetWiFiCurrTXPower         *message);
+size_t esp_hosted_resp_get_wi_fi_curr_txpower__get_packed_size
+                     (const EspHostedRespGetWiFiCurrTXPower   *message);
+size_t esp_hosted_resp_get_wi_fi_curr_txpower__pack
+                     (const EspHostedRespGetWiFiCurrTXPower   *message,
+                      uint8_t             *out);
+size_t esp_hosted_resp_get_wi_fi_curr_txpower__pack_to_buffer
+                     (const EspHostedRespGetWiFiCurrTXPower   *message,
+                      ProtobufCBuffer     *buffer);
+EspHostedRespGetWiFiCurrTXPower *
+       esp_hosted_resp_get_wi_fi_curr_txpower__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data);
+void   esp_hosted_resp_get_wi_fi_curr_txpower__free_unpacked
+                     (EspHostedRespGetWiFiCurrTXPower *message,
+                      ProtobufCAllocator *allocator);
 /* EspHostedConfigPayload methods */
 void   esp_hosted_config_payload__init
                      (EspHostedConfigPayload         *message);
@@ -1345,6 +1483,18 @@ typedef void (*EspHostedCmdSetVendorSpecificIE_Closure)
 typedef void (*EspHostedRespSetVendorSpecificIE_Closure)
                  (const EspHostedRespSetVendorSpecificIE *message,
                   void *closure_data);
+typedef void (*EspHostedCmdSetWiFiMAXTXPower_Closure)
+                 (const EspHostedCmdSetWiFiMAXTXPower *message,
+                  void *closure_data);
+typedef void (*EspHostedRespSetWiFiMAXTXPower_Closure)
+                 (const EspHostedRespSetWiFiMAXTXPower *message,
+                  void *closure_data);
+typedef void (*EspHostedCmdGetWiFiCurrTXPower_Closure)
+                 (const EspHostedCmdGetWiFiCurrTXPower *message,
+                  void *closure_data);
+typedef void (*EspHostedRespGetWiFiCurrTXPower_Closure)
+                 (const EspHostedRespGetWiFiCurrTXPower *message,
+                  void *closure_data);
 typedef void (*EspHostedConfigPayload_Closure)
                  (const EspHostedConfigPayload *message,
                   void *closure_data);
@@ -1391,6 +1541,10 @@ extern const ProtobufCMessageDescriptor esp_hosted_cmd_otaend__descriptor;
 extern const ProtobufCMessageDescriptor esp_hosted_resp_otaend__descriptor;
 extern const ProtobufCMessageDescriptor esp_hosted_cmd_set_vendor_specific_ie__descriptor;
 extern const ProtobufCMessageDescriptor esp_hosted_resp_set_vendor_specific_ie__descriptor;
+extern const ProtobufCMessageDescriptor esp_hosted_cmd_set_wi_fi_maxtxpower__descriptor;
+extern const ProtobufCMessageDescriptor esp_hosted_resp_set_wi_fi_maxtxpower__descriptor;
+extern const ProtobufCMessageDescriptor esp_hosted_cmd_get_wi_fi_curr_txpower__descriptor;
+extern const ProtobufCMessageDescriptor esp_hosted_resp_get_wi_fi_curr_txpower__descriptor;
 extern const ProtobufCMessageDescriptor esp_hosted_config_payload__descriptor;
 
 PROTOBUF_C__END_DECLS

@@ -109,7 +109,7 @@ def test_softap_mode_set_mac_addr_of_esp():
 def test_station_mode_connect():
     ret = wifi_set_ap_config(STATION_MODE_SSID, STATION_MODE_PWD, STATION_MODE_BSSID,\
             STATION_MODE_IS_WPA3_SUPPORTED, STATION_MODE_LISTEN_INTERVAL)
-    if (ret != failure):
+    if (ret == success):
         print("Connected to "+STATION_MODE_SSID)
     else:
         print("Failed to connect to AP")
@@ -313,3 +313,20 @@ def test_get_wifi_power_save_mode():
         print("Failed to set power save mode")
     return
 
+def test_wifi_set_max_tx_power():
+    ret = wifi_set_max_tx_power(INPUT_WIFI_TX_POWER)
+    if (ret == out_of_range_str):
+        print("Out of range")
+    elif (ret == success):
+        print("Success in setting WiFi maximum TX power")
+    else:
+        print("Failure in setting WiFi maximum TX power")
+    return
+
+def test_wifi_get_curr_tx_power():
+    power = wifi_get_curr_tx_power()
+    if (power != failure):
+        print("Maximum TX power is "+str(power))
+    else:
+        print("Failure in getting WiFi current TX power")
+    return
