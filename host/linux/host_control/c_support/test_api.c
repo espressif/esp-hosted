@@ -311,7 +311,7 @@ int test_station_mode_disconnect()
     ret = create_socket(AF_INET, SOCK_DGRAM, IPPROTO_IP, &sockfd);
     if (ret < 0) {
         printf("Failure to open socket\n");
-        return sockfd;
+        return FAILURE;
     }
 
     ret = interface_down(sockfd, STA_INTERFACE);
@@ -482,7 +482,7 @@ int test_softap_mode_stop()
     ret = create_socket(AF_INET, SOCK_DGRAM, IPPROTO_IP, &sockfd);
     if (ret < 0) {
         printf("Failure to open socket\n");
-        return sockfd;
+        return FAILURE;
     }
 
     ret = interface_down(sockfd, AP_INTERFACE);

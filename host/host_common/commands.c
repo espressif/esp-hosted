@@ -9,6 +9,8 @@
 #include "esp_hosted_config.pb-c.h"
 
 #ifndef STM32F469xx
+#include <sys/socket.h>
+#include <sys/types.h>
 #include <linux/if.h>
 #include <netdb.h>
 #include <sys/ioctl.h>
