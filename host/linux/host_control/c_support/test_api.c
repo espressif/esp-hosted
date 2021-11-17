@@ -44,6 +44,7 @@ int test_get_wifi_mode()
         printf("wifi mode is %d \n",mode);
     } else {
         printf("Failed to get wifi mode \n");
+        return FAILURE;
     }
     printf("====\n\n");
 #endif
@@ -60,6 +61,7 @@ int test_set_wifi_mode(int mode)
         printf("wifi mode is %d \n", mode);
     } else {
         printf("error in setting mode \n");
+        return FAILURE;
     }
     printf("====\n\n");
 #endif
@@ -97,6 +99,7 @@ int test_station_mode_get_mac_addr()
         printf("Station mode: mac address %s \n", mac);
     } else {
         printf("Failed to get station mode MAC address \n");
+        return FAILURE;
     }
     printf("====\n\n");
 #endif
@@ -114,6 +117,7 @@ int test_station_mode_set_mac_addr_of_esp()
         printf("MAC address is set \n");
     } else {
         printf("MAC address is not set \n");
+        return FAILURE;
     }
     printf("====\n\n");
 #endif
@@ -132,6 +136,7 @@ int test_softap_mode_set_mac_addr_of_esp()
         printf("MAC address is set \n");
     } else {
         printf("MAC address is not set \n");
+        return FAILURE;
     }
     printf("====\n\n");
 #endif
@@ -148,6 +153,7 @@ int test_softap_mode_get_mac_addr()
         printf("Softap mode: mac address %s \n", mac);
     } else {
         printf("Failed to get softap mode MAC address \n");
+        return FAILURE;
     }
     printf("====\n\n");
 #endif
@@ -173,11 +179,14 @@ int test_station_mode_connect()
         printf("Connected to AP: '%s'\n",STATION_MODE_SSID);
     } else if (ret == NO_AP_FOUND){
         printf("SSID: %s not found \n",(char *)&config.station.ssid);
+        return FAILURE;
     } else if (ret == INVALID_PASSWORD){
         printf("Invalid password %s for SSID %s\n", (char *)&config.station.pwd ,\
                 (char *)&config.station.ssid);
+        return FAILURE;
     } else {
         printf("Failed to connect with AP \n");
+        return FAILURE;
     }
 
     ret = create_socket(AF_INET, SOCK_DGRAM, IPPROTO_IP, &sockfd);
@@ -249,6 +258,7 @@ int test_station_mode_get_info()
         printf("AP's encryption mode %d \n", config.station.encryption_mode);
     } else {
         printf("AP's status %s \n", config.station.status);
+        return FAILURE;
     }
     printf("====\n\n");
 
@@ -422,6 +432,7 @@ int test_softap_mode_get_info()
         printf("softAP bandwidth mode %d \n", config.softap.bandwidth);
     } else {
         printf("Failed to get softAP config \n");
+        return FAILURE;
     }
     printf("====\n\n");
 
@@ -438,6 +449,7 @@ int test_softap_mode_connected_clients_info()
     stations_list = wifi_connected_stations_list(&count);
     if (!count) {
         printf("No station found \n");
+        return FAILURE;
     }
 
     if (!stations_list) {
@@ -453,7 +465,7 @@ int test_softap_mode_connected_clients_info()
         stations_list = NULL;
     }
     printf("====\n\n");
-    return 0;
+    return SUCCESS;
 }
 
 int test_softap_mode_stop()
@@ -509,6 +521,7 @@ int test_set_wifi_power_save_mode()
         printf("Power save mode set \n");
     } else {
         printf("Power save mode is not set \n");
+        return FAILURE;
     }
     printf("====\n\n");
 #endif
@@ -527,6 +540,7 @@ int test_get_wifi_power_save_mode()
         printf("Power save mode is %d \n", power_save_mode);
     } else {
         printf("Failed to get power save mode \n");
+        return FAILURE;
     }
     printf("====\n\n");
 #endif
@@ -544,6 +558,7 @@ int test_ota_begin()
         printf("OTA begin success \n");
     } else {
         printf("Failed start OTA begin\n");
+        return FAILURE;
     }
     printf("====\n\n");
 #endif
@@ -562,6 +577,7 @@ int test_ota_write(uint8_t* ota_data, uint32_t ota_data_len)
 
     } else {
         printf("Failed OTA write\n");
+        return FAILURE;
     }
     printf("====\n\n");
 #endif
@@ -579,6 +595,7 @@ int test_ota_end()
         printf("OTA end success \n");
     } else {
         printf("Failed OTA end\n");
+        return FAILURE;
     }
     printf("====\n\n");
 #endif
@@ -654,6 +671,7 @@ int test_set_vendor_specific_ie()
         printf("Success in set vendor specific ie\n");
     } else {
         printf("Failed to set vendor specific ie\n");
+        return FAILURE;
     }
     printf("====\n\n");
 #endif
