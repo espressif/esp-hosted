@@ -474,12 +474,14 @@ int wifi_set_ap_config (esp_hosted_control_config_t ap_config)
         mem_free(tx_data);
         mem_free(rx_data);
         mem_free(req_payload);
+        esp_hosted_config_payload__free_unpacked(resp, NULL);
         return INVALID_PASSWORD;
     } else if (resp->resp_set_ap_config->resp == NO_AP_FOUND) {
         command_log("SSID: %s not found\n", (char *)&ap_config.station.ssid);
         mem_free(tx_data);
         mem_free(rx_data);
         mem_free(req_payload);
+        esp_hosted_config_payload__free_unpacked(resp, NULL);
         return NO_AP_FOUND;
     } else if (resp->resp_set_ap_config->resp) {
         command_log("Failed to connect with AP\n");
