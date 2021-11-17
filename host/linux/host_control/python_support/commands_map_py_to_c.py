@@ -81,3 +81,18 @@ esp_ota_write.restype = c_int
 
 esp_ota_end = commands_lib.esp_ota_end
 esp_ota_end.restype = c_int
+
+interface_up = commands_lib.interface_up
+interface_up.restype = c_int
+
+interface_down = commands_lib.interface_down
+interface_down.restype = c_int
+
+set_hw_addr = commands_lib.set_hw_addr
+set_hw_addr.restype = c_int
+
+create_socket = commands_lib.create_socket
+create_socket.restype = c_int
+
+close_socket = commands_lib.close_socket
+close_socket.restype = c_int

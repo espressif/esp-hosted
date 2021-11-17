@@ -404,7 +404,7 @@ def wifi_get_power_save_mode():
 # OTA begin
 # function returns "success" or "failure"
 # esp ota begin function performs an OTA begin operation for ESP32
-# which sets partition for OTA write and erase it. 
+# which sets partition for OTA write and erase it.
 
 def esp_ota_begin():
     ret = commands_map_py_to_c.esp_ota_begin()
@@ -437,6 +437,68 @@ def esp_ota_write(ota_data, ota_image_len):
 
 def esp_ota_end():
     ret = commands_map_py_to_c.esp_ota_end()
+    if not ret:
+        return success
+    else:
+        return failure
+
+# Interface down
+# This function downs the given interface iface
+# function returns "success" or "failure"
+
+def interface_down(sockfd, iface):
+    ret = commands_map_py_to_c.interface_down(sockfd, iface)
+    if not ret:
+        return success
+    else:
+        return failure
+
+# Interface up
+# This function ups the given interface iface
+# function returns "success" or "failure"
+
+def interface_up(sockfd, iface):
+    ret = commands_map_py_to_c.interface_up(sockfd, iface)
+    if not ret:
+        return success
+    else:
+        return failure
+
+# Set HW address
+# This function sets mac address to the given interface iface
+# function returns "success" or "failure"
+
+def set_hw_addr(sockfd, iface, mac):
+    ret = commands_map_py_to_c.set_hw_addr(sockfd, iface, mac)
+    if not ret:
+        return success
+    else:
+        return failure
+
+# Create socket
+# This function creates an endpoint for communication
+# Function returns "file descriptor (integer number) that refers to that endpoint/socket" or "failure"
+#  Input parameter:
+#        domain: specifies a communication domain
+#        types: specifies the communication semantics
+#        protocol: specifies a particular protocol to be used with the socket
+
+def create_socket(domain, types, protocol):
+    sock = c_int()
+    ret = commands_map_py_to_c.create_socket(domain, types, protocol, byref(sock))
+    if not ret:
+        return int(sock.value)
+    else:
+        return failure
+
+# Close socket
+# This function closes an endpoint for communication
+# function returns "success" or "failure"
+# Input parameter:
+#       sock: file descriptor (integer number) that refers to the endpoint/socket
+
+def close_socket(sock):
+    ret = commands_map_py_to_c.close_socket(sock)
     if not ret:
         return success
     else:

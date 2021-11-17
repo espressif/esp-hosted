@@ -454,10 +454,50 @@ Pointer to vendor specific element data. First 6 bytes should be a header with f
 size of vnd_ie data
 
 #### Return
+
 - 0 : SUCCESS
 - -1 : FAILURE
 
 ---
+
+### 2.16 `int create_socket(int domain, int type, int protocol, int *sock)`
+
+This is used to create an endpoint for communication
+
+#### Parameters
+
+- `domain` :
+The domain argument specifies a communication domain (like AF_INET, AF_INET6), this selects the protocol family which will be used for communication. These families are defined in <sys/socket.h>.
+- `type` :
+This specifies the communication semantics (like SOCK_DGRAM, SOCK_STREAM).
+- `protocol` :
+This specifies a particular protocol to be used with the socket. Generally protocol value should be 0, please refer man socket for more details.
+- `sock` :
+This will return file descriptor (integer number) that refers to that endpoint for the new socket on success or -1 on failure.
+
+#### Return
+
+- 0 : SUCCESS
+- -1 : FAILURE
+
+---
+
+### 2.17 `int close_socket(int sock)`
+
+This is used to close an endpoint of the communication
+
+#### Parameters
+
+- `sock` :
+This specifies the file descriptor of the endpoint/socket to be closed
+
+#### Return
+
+- 0 : SUCCESS
+- -1 : FAILURE
+
+---
+
 
 ## 3. Enumerations
 

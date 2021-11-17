@@ -274,3 +274,32 @@ RSSI signal strength
 - "failure" string
 
 ---
+
+## 15. `create_socket`
+This function creates an endpoint for communication
+
+### Parameters
+- `domain` :
+This specifies a communication domain (like AF_INET, AF_INET6).
+- `types` :
+This specifies the communication semantics (like SOCK_DGRAM, SOCK_STREAM).
+- `protocol` :
+This specifies a particular protocol to be used with the socket. Generally protocol value should be 0, please refer socket documentation for more details.
+
+### Return
+- File descriptor (integer number) that refers to that endpoint/socket
+- "failure" string: if failed.
+
+---
+
+## 16. `close_socket`
+This function closes endpoint of the communication
+
+### Parameters
+- `sock` :
+This specifies the file descriptor of the endpoint/socket to be closed
+
+### Return
+- "success" or "failure" string
+
+---
