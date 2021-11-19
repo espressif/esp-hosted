@@ -56,3 +56,7 @@ test_softap_mode_stop()
 
 test_set_wifi_power_save_mode()
 test_get_wifi_power_save_mode()
+
+# maximum transmitting power
+test_wifi_set_max_tx_power()
+test_wifi_get_curr_tx_power()

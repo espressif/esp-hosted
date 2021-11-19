@@ -33,9 +33,9 @@ int main(int argc, char *argv[])
     }
 
     if (argc == 1) {
-        printf("Usage: %s [%s] [%s] [%s] [%s] [%s] [%s] [%s] [%s]\n", argv[0],
+        printf("Usage: %s [%s] [%s] [%s] [%s] [%s] [%s] [%s] [%s] [%s] \n", argv[0],
         STA_CONNECT, STA_DISCONNECT, AP_START, AP_STOP,
-        SCAN, STA_LIST, OTA, AP_VENDOR_IE);
+        SCAN, STA_LIST, OTA, AP_VENDOR_IE, WIFI_TX_POWER);
 		return -1;
     }
 
@@ -54,13 +54,17 @@ int main(int argc, char *argv[])
             test_softap_mode_connected_clients_info();
         else if (0 == strncasecmp(OTA, argv[i], sizeof(OTA)))
             test_ota(argv[i+1]);
+        else if (0 == strncasecmp(WIFI_TX_POWER, argv[i], sizeof(WIFI_TX_POWER))) {
+            test_wifi_set_max_tx_power();
+            test_wifi_get_curr_tx_power();
+        }
         else if (0 == strncasecmp(AP_VENDOR_IE, argv[i], sizeof(AP_VENDOR_IE)))
             test_set_vendor_specific_ie();
         else if ((0 == strncasecmp("--help", argv[i], sizeof("--help"))) ||
                  (0 == strncasecmp("-h", argv[i], sizeof("-h")))) {
-            printf("Usage: %s [%s] [%s] [%s] [%s] [%s] [%s] [%s] [%s]\n", argv[0],
+            printf("Usage: %s [%s] [%s] [%s] [%s] [%s] [%s] [%s] [%s] [%s] \n", argv[0],
                 STA_CONNECT, STA_DISCONNECT, AP_START, AP_STOP, SCAN, STA_LIST,
-                OTA, AP_VENDOR_IE);
+                OTA, AP_VENDOR_IE, WIFI_TX_POWER);
 			return(0);
         }
     }

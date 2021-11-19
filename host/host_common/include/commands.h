@@ -18,6 +18,8 @@
 #define NOT_CONNECTED           1
 #define NO_AP_FOUND             2
 #define INVALID_PASSWORD        3
+#define INVALID_ARGUMENT        4
+#define OUT_OF_RANGE            5
 
 typedef enum {
     WIFI_MODE_NONE = 0,  /**< null mode */
@@ -106,8 +108,8 @@ typedef struct {
 typedef struct {
     uint8_t element_id;      /**< Should be set to WIFI_VENDOR_IE_ELEMENT_ID (0xDD) */
     uint8_t length;          /**< Length of all bytes in the element data following this field. Minimum 4. */
-    uint8_t vendor_oui[3];   /**< Vendor identifier (OUI). */ 
-    uint8_t vendor_oui_type; /**< Vendor-specific OUI type. */ 
+    uint8_t vendor_oui[3];   /**< Vendor identifier (OUI). */
+    uint8_t vendor_oui_type; /**< Vendor-specific OUI type. */
     uint8_t payload[0];      /**< Payload. Length is equal to value in 'length' field, minus 4. */
 } vendor_ie_data_t;
 
@@ -300,6 +302,32 @@ int wifi_set_vendor_specific_ie(bool enable, wifi_vendor_ie_type_t type,
         wifi_vendor_ie_id_t idx, void* vnd_ie, uint16_t vnd_ie_size);
 
 /*
+ * wifi_set_max_tx_power function set maximum transmitting power.
+ * returns SUCCESS(0) or FAILURE(-1)
+ *
+ * @attention 1. The value set by this API will be mapped to the max_tx_power of the structure wifi_country_t variable in wifi driver.
+ * @attention 2. Mapping Table {wifi_max_tx_power, max_tx_power} = {{8,   2}, {20,  5}, {28,  7}, {34,  8}, {44, 11},
+ *                                                      {52, 13}, {56, 14}, {60, 15}, {66, 16}, {72, 18}, {80, 20}}.
+ * @attention 4. Param power unit is 0.25dBm, range is [8, 84] corresponding to 2dBm to 20dBm.
+ * @attention 5. Relationship between set value and actual value. As follows: {set value range, actual value} = {{[8,  19],8}, {[20, 27],20}, {[28, 33],28}, {[34, 43],34}, {[44, 51],44}, {[52, 55],52}, {[56, 59],56}, {[60, 65],60}, {[66, 71],66}, {[72, 79],72}, {[80, 84],80}}.
+ *
+ *  Input parameter:
+ *      wifi_max_tx_power   : Maximum WiFi transmitting power.
+ *
+ * returns OUT_OF_RANGE(5), If `wifi_max_tx_power` range is not in [8, 84] corresponding to `2dBm to 20dBm` tx power.
+ */
+int wifi_set_max_tx_power(int8_t wifi_max_tx_power);
+
+/*
+ * wifi_get_curr_tx_power function gets WiFi current transmiting power
+ * returns SUCCESS(0) or FAILURE(-1)
+ *
+ *  Output parameter:
+ *      wifi_curr_tx_power   :  WiFi current transmitting power, unit is 0.25dBm.
+ */
+int wifi_get_curr_tx_power(int8_t *wifi_curr_tx_power);
+
+/*
  * esp ota begin function performs an OTA begin operation for ESP32
  * which sets partition for OTA write and erase it.
  * returns SUCCESS(0) or FAILURE(-1)
@@ -344,7 +372,7 @@ int interface_down(int sockfd, char* iface);
 int set_hw_addr(int sockfd, char* iface, char* mac);
 
 /*
- * function creates an endpoint for communication and returns a file descriptor (integer number) that refers to that endpoint 
+ * function creates an endpoint for communication and returns a file descriptor (integer number) that refers to that endpoint
  * function returns the status SUCCESS(0) or FAILURE(-1)
  * int *sock : User should get file descriptor for the new socket on success
  */

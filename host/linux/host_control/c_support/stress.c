@@ -55,6 +55,10 @@ int main(int argc, char *argv[])
             if (0 == strncasecmp(STA_LIST, argv[i], sizeof(STA_LIST))) {
                 test_softap_mode_connected_clients_info();
             }
+            if (0 == strncasecmp(WIFI_TX_POWER, argv[i], sizeof(WIFI_TX_POWER))) {
+                test_wifi_set_max_tx_power();
+                test_wifi_get_curr_tx_power();
+            }
         }
     }
 

@@ -76,4 +76,8 @@ int test_ota_end();
 int test_ota(char* image_path);
 
 int test_set_vendor_specific_ie();
+
+int test_wifi_set_max_tx_power();
+
+int test_wifi_get_curr_tx_power();
 #endif

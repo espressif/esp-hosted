@@ -29,6 +29,8 @@
 #define SSID_LENGTH                 32
 #define PASSWORD_LENGTH             64
 #define BSSID_LENGTH                19
+#define MIN_TX_POWER                8
+#define MAX_TX_POWER                84
 
 /* Bits for wifi connect event */
 #define WIFI_CONNECTED_BIT          BIT0
@@ -1580,6 +1582,89 @@ static esp_err_t cmd_set_vender_specific_ie_handler (EspHostedConfigPayload *req
     return ESP_OK;
 }
 
+// Function set wifi maximum TX power
+static esp_err_t cmd_set_wifi_max_tx_power_handler (EspHostedConfigPayload *req,
+        EspHostedConfigPayload *resp, void *priv_data)
+{
+    esp_err_t ret = ESP_OK;
+    EspHostedRespSetWiFiMAXTXPower *resp_payload = NULL;
+
+    if (!req || !resp ) {
+        ESP_LOGE(TAG, "Invalid parameters");
+        return ESP_FAIL;
+    }
+
+    resp_payload = (EspHostedRespSetWiFiMAXTXPower *)
+	       calloc(1,sizeof(EspHostedRespSetWiFiMAXTXPower));
+    if (!resp_payload) {
+        ESP_LOGE(TAG,"Failed to allocate memory");
+        return ESP_ERR_NO_MEM;
+    }
+    esp_hosted_resp_set_wi_fi_maxtxpower__init(resp_payload);
+    resp->payload_case = ESP_HOSTED_CONFIG_PAYLOAD__PAYLOAD_RESP_SET_WIFI_MAX_TX_POWER;
+    resp->resp_set_wifi_max_tx_power = resp_payload;
+    resp_payload->has_resp = true;
+
+    if ((req->cmd_set_wifi_max_tx_power->wifi_max_tx_power > MAX_TX_POWER)
+        || (req->cmd_set_wifi_max_tx_power->wifi_max_tx_power < MIN_TX_POWER)) {
+        ESP_LOGE(TAG, "Invalid maximum transmitting power value");
+        ESP_LOGE(TAG, "Value lies between [8,84]");
+        ESP_LOGE(TAG, "Please refer `wifi_set_max_tx_power` API documentation \n");
+        resp_payload->resp = ESP_HOSTED_STATUS__TYPE_OUT_OF_RANGE;
+        return ESP_OK;
+    }
+
+    ret = esp_wifi_set_max_tx_power(req->cmd_set_wifi_max_tx_power->wifi_max_tx_power);
+    if (ret != SUCCESS) {
+        ESP_LOGE(TAG, "Failed to set TX power");
+        goto err;
+    }
+    resp_payload->resp = SUCCESS;
+    return ESP_OK;
+err:
+    resp_payload->resp = FAILURE;
+    return ESP_OK;
+}
+
+// Function get wifi TX current power
+static esp_err_t cmd_get_wifi_curr_tx_power_handler (EspHostedConfigPayload *req,
+        EspHostedConfigPayload *resp, void *priv_data)
+{
+    esp_err_t ret = ESP_OK;
+    int8_t power = 0;
+    EspHostedRespGetWiFiCurrTXPower *resp_payload = NULL;
+
+    if (!req || !resp) {
+        ESP_LOGE(TAG, "Invalid parameters");
+        return ESP_FAIL;
+    }
+
+    resp_payload = (EspHostedRespGetWiFiCurrTXPower *)
+	       calloc(1,sizeof(EspHostedRespGetWiFiCurrTXPower));
+    if (!resp_payload) {
+        ESP_LOGE(TAG,"Failed to allocate memory");
+        return ESP_ERR_NO_MEM;
+    }
+
+    esp_hosted_resp_get_wi_fi_curr_txpower__init(resp_payload);
+    resp->payload_case = ESP_HOSTED_CONFIG_PAYLOAD__PAYLOAD_RESP_GET_WIFI_CURR_TX_POWER;
+    resp->resp_get_wifi_curr_tx_power = resp_payload;
+    resp_payload->has_resp = true;
+
+    ret = esp_wifi_get_max_tx_power(&power);
+    if (ret != SUCCESS) {
+        ESP_LOGE(TAG, "Failed to get TX power");
+        goto err;
+    }
+    resp_payload->has_wifi_curr_tx_power = true;
+    resp_payload->wifi_curr_tx_power = power;
+    resp_payload->resp = SUCCESS;
+    return ESP_OK;
+err:
+    resp_payload->resp = FAILURE;
+    return ESP_OK;
+}
+
 static esp_hosted_config_cmd_t cmd_table[] = {
     {
         .cmd_num = ESP_HOSTED_CONFIG_MSG_TYPE__TypeCmdGetMACAddress ,
@@ -1652,6 +1737,14 @@ static esp_hosted_config_cmd_t cmd_table[] = {
     {
         .cmd_num = ESP_HOSTED_CONFIG_MSG_TYPE__TypeCmdSetVendorSpecificIE,
         .command_handler = cmd_set_vender_specific_ie_handler
+    },
+    {
+        .cmd_num = ESP_HOSTED_CONFIG_MSG_TYPE__TypeCmdSetWiFiMAXTXPower,
+        .command_handler = cmd_set_wifi_max_tx_power_handler
+    },
+    {
+        .cmd_num = ESP_HOSTED_CONFIG_MSG_TYPE__TypeCmdGetWiFiCurrTXPower,
+        .command_handler = cmd_get_wifi_curr_tx_power_handler
     },
 };
 
@@ -1804,6 +1897,14 @@ static void esp_hosted_config_cleanup(EspHostedConfigPayload *resp)
         }
         case (ESP_HOSTED_CONFIG_MSG_TYPE__TypeRespSetVendorSpecificIE) : {
             mem_free(resp->resp_set_vendor_specific_ie);
+            break;
+        }
+        case (ESP_HOSTED_CONFIG_MSG_TYPE__TypeRespSetWiFiMAXTXPower) : {
+            mem_free(resp->resp_set_wifi_max_tx_power);
+            break;
+        }
+        case (ESP_HOSTED_CONFIG_MSG_TYPE__TypeRespGetWiFiCurrTXPower) : {
+            mem_free(resp->resp_get_wifi_curr_tx_power);
             break;
         }
         default:

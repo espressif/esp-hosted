@@ -303,3 +303,42 @@ This specifies the file descriptor of the endpoint/socket to be closed
 - "success" or "failure" string
 
 ---
+
+## 17. `wifi_set_max_tx_power`
+
+Function sets maximum WiFi transmitting power at ESP32.
+
+#### **Note**
+- The value set by this API will be mapped to the max_tx_power of the structure wifi_country_t variable in wifi driver.
+- Mapping Table {wifi_max_tx_power, max_tx_power} = {{8,   2}, {20,  5}, {28,  7}, {34,  8}, {44, 11}, {52, 13}, {56, 14}, {60, 15}, {66, 16}, {72, 18}, {80, 20}}.
+- Input parameter `wifi_max_tx_power` unit is 0.25dBm, range is [8, 84] corresponding to `2dBm to 20dBm`.
+- Relationship between set value and actual value. As follows: {set value range, actual value} = {{[8,  19],8}, {[20, 27],20}, {[28, 33],28}, {[34, 43],34}, {[44, 51],44}, {[52, 55],52}, {[56, 59],56}, {[60, 65],60}, {[66, 71],66}, {[72, 79],72}, {[80, 84],80}}.
+
+### Parameters
+- `wifi_max_tx_power` :
+Maximum WiFi transmitting power.
+
+### Return
+*Success case* :
+"success" string
+
+*Failure case* :
+"failure" string
+
+*Out of range case*:
+"out_of_range" string. `wifi_max_tx_power` is not in range of [8, 84] corresponding to `2dBm to 20dBm` tx power.
+
+---
+
+### 18. `wifi_get_curr_tx_power`
+
+Function gets current WiFi transmiting power at ESP32.
+
+### Return
+*Success case* :
+returns Current WiFi transmitting power, unit is 0.25dBm. It is possible that the current wifi transmit power is lesser than that of the requested max transmit power as part of `wifi_set_max_tx_power` API.
+
+*Failure case* :
+- "failure" string
+
+---

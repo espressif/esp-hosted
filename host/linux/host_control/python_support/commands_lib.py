@@ -133,7 +133,11 @@ def wifi_set_ap_config(ssid, pwd, bssid, is_wpa3_supported, listen_interval):
     ap_config.station.is_wpa3_supported = is_wpa3_supported
     ap_config.station.listen_interval = listen_interval
     ret = commands_map_py_to_c.wifi_set_ap_config(ap_config)
-    if not ret:
+    if (ret == NO_AP_FOUND):
+        return no_ap_found_str
+    elif (ret == INVALID_PASSWORD):
+        return invalid_password_str
+    elif not ret:
         return success
     else:
         return failure
@@ -398,6 +402,43 @@ def wifi_get_power_save_mode():
     ret = commands_map_py_to_c.wifi_get_power_save_mode(byref(mode))
     if not ret:
         return mode.value
+    else:
+        return failure
+
+# wifi_set_max_tx_power function set maximum transmitting power, returns "success" or "failure"
+# 
+# @attention 1. The value set by this API will be mapped to the max_tx_power of the structure wifi_country_t variable in wifi driver.
+# @attention 2. Mapping Table {wifi_max_tx_power, max_tx_power} = {{8,   2}, {20,  5}, {28,  7}, {34,  8}, {44, 11},
+#                                                      {52, 13}, {56, 14}, {60, 15}, {66, 16}, {72, 18}, {80, 20}}.
+# @attention 4. Param power unit is 0.25dBm, range is [8, 84] corresponding to 2dBm to 20dBm.
+# @attention 5. Relationship between set value and actual value. As follows: {set value range, actual value} = {{[8,  19],8}, {[20, 27],20}, {[28, 33],28}, {[34, 43],34}, {[44, 51],44}, {[52, 55],52}, {[56, 59],56}, {[60, 65],60}, {[66, 71],66}, {[72, 79],72}, {[80, 84],80}}.
+# 
+#  Input parameter:
+#      wifi_max_tx_power    : Maximum WiFi transmitting power.
+# 
+# Returns "out_of_range" string. If `wifi_max_tx_power` range is not in [8, 84] corresponding to `2dBm to 20dBm` tx power.
+
+def wifi_set_max_tx_power(wifi_max_tx_power):
+    set_power = c_int()
+    set_power.value = wifi_max_tx_power
+    ret = commands_map_py_to_c.wifi_set_max_tx_power(set_power)
+    if (ret == OUT_OF_RANGE):
+        return out_of_range_str
+    elif not ret:
+        return success
+    else:
+        return failure
+
+# wifi_get_curr_tx_power function gets current transmiting power, or returns "failure"
+# 
+#  Output parameter:
+#      wifi_curr_tx_power    : Current WiFi transmitting power, unit is 0.25dBm.
+
+def wifi_get_curr_tx_power():
+    wifi_curr_tx_power = c_int()
+    ret = commands_map_py_to_c.wifi_get_curr_tx_power(byref(wifi_curr_tx_power))
+    if not ret:
+        return wifi_curr_tx_power.value
     else:
         return failure
 

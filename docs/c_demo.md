@@ -11,6 +11,7 @@
 | scan | Scan external access points |
 | sta_list | List external stations connected to softAP |
 | ap_vendor_ie | Set vendor information element for ESP32 softAP |
+| wifi_tx_power | sets WiFi maximum transmitting power and get WiFi current transmitting power |
 
 It uses APIs present in [test_api.c](../host/linux/host_control/c_support/test_api.c). User should first modify configuration parameters in [test_config.h](../host/linux/host_control/c_support/test_config.h). Then run `make` in [c_support](../host/linux/host_control/c_support) to compile `test.c`.
 
@@ -57,6 +58,7 @@ sudo ifconfig ethap0 192.168.4.5
 | scan | Scan external access points |
 | sta_list | List external stations connected to softAP |
 | ap_vendor_ie | Set vendor information element for ESP32 softAP |
+| wifi_tx_power | sets WiFi maximum transmitting power and get WiFi current transmitting power |
 
  Run `make stress` in [c_support](../host/linux/host_control/c_support) directory to compile `stress.c`.
 

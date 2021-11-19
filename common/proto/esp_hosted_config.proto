@@ -69,6 +69,8 @@ enum EspHostedStatus {
     TYPE_NOT_CONNECTED = 1;
     TYPE_NO_AP_FOUND = 2;
     TYPE_CONNECTION_FAIL = 3;
+    TYPE_INVALID_ARGUMET = 4;
+    TYPE_OUT_OF_RANGE = 5;
 }
 
 message EspHostedCmdSetAPConfig {
@@ -188,6 +190,22 @@ message EspHostedRespSetVendorSpecificIE {
     int32 resp = 1;
 }
 
+message EspHostedCmdSetWiFiMAXTXPower {
+    int32 wifi_max_tx_power = 1;
+}
+
+message EspHostedRespSetWiFiMAXTXPower {
+    int32 resp = 1;
+}
+
+message EspHostedCmdGetWiFiCurrTXPower {
+}
+
+message EspHostedRespGetWiFiCurrTXPower {
+    int32 wifi_curr_tx_power = 1;
+    int32 resp = 2;
+}
+
 enum EspHostedConfigMsgType {
     TypeCmdGetMACAddress = 0;
     TypeRespGetMACAddress = 1;
@@ -225,6 +243,10 @@ enum EspHostedConfigMsgType {
     TypeRespOTAEnd = 33;
     TypeCmdSetVendorSpecificIE = 34;
     TypeRespSetVendorSpecificIE = 35;
+    TypeCmdSetWiFiMAXTXPower = 36;
+    TypeRespSetWiFiMAXTXPower = 37;
+    TypeCmdGetWiFiCurrTXPower = 38;
+    TypeRespGetWiFiCurrTXPower = 39;
 }
 
 message EspHostedConfigPayload {
@@ -266,5 +288,9 @@ message EspHostedConfigPayload {
         EspHostedRespOTAEnd resp_ota_end = 43;
         EspHostedCmdSetVendorSpecificIE cmd_set_vendor_specific_ie = 44;
         EspHostedRespSetVendorSpecificIE resp_set_vendor_specific_ie = 45;
+        EspHostedCmdSetWiFiMAXTXPower cmd_set_wifi_max_tx_power = 46;
+        EspHostedRespSetWiFiMAXTXPower resp_set_wifi_max_tx_power = 47;
+        EspHostedCmdGetWiFiCurrTXPower cmd_get_wifi_curr_tx_power = 48;
+        EspHostedRespGetWiFiCurrTXPower resp_get_wifi_curr_tx_power = 49;
     }
 }

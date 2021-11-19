@@ -34,6 +34,7 @@
 #define VENDOR_OUI_2                3
 #define VENDOR_OUI_TYPE             22
 
+
 int test_get_wifi_mode()
 {
     int mode = 0;
@@ -677,5 +678,42 @@ int test_set_vendor_specific_ie()
 #endif
 
     free(vnd_ie);
+    return ret;
+}
+
+int test_wifi_set_max_tx_power()
+{
+    int ret = wifi_set_max_tx_power(INPUT_WIFI_TX_POWER);
+
+#ifdef TEST_DEBUG_PRINTS
+    printf("==== %s =>\n",__func__);
+    if (ret == SUCCESS) {
+        printf("Success in setting max tx power\n");
+    } else if (ret == OUT_OF_RANGE) {
+        printf("Out of range TX value \n");
+    } else {
+        printf("Failure in setting max tx power\n");
+    }
+    printf("====\n\n");
+#endif
+
+    return ret;
+}
+
+int test_wifi_get_curr_tx_power()
+{
+    int8_t curr_tx_power = 0;
+    int ret = wifi_get_curr_tx_power(&curr_tx_power);
+
+#ifdef TEST_DEBUG_PRINTS
+    printf("==== %s =>\n",__func__);
+    if (ret == SUCCESS) {
+        printf("current TX power is %d \n", curr_tx_power);
+    } else {
+        printf("Failure in getting current tx power\n");
+    }
+    printf("====\n\n");
+#endif
+
     return ret;
 }
