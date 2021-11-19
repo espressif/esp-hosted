@@ -1,6 +1,9 @@
 ## ESP-Hosted OTA feature
 
-Currently, new OTA image supported size is upto 1MB.
+Please note, Maximum size of New OTA image binary depends upon -
+1. Total flash size available
+2. OTA partition size in partition table
+As per current limits, upto 1MB binary size is supported which is configurable from above options. Please refer [partion tables](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/partition-tables.html) for more info.
 
 There are basic three control path commands for OTA are provided in C and python, as follows:
 * esp_ota_begin() -- Sets available OTA partition in flash for OTA write operation and erase it.
