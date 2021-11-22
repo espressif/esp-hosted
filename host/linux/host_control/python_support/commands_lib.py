@@ -54,7 +54,7 @@ def wifi_set_mac(mode, mac):
     if (mode <= WIFI_MODE_NONE or mode >= WIFI_MODE_SOFTAP_STATION):
         print("Invalid mode")
         return failure
-    if (not(len(mac)) or (len(mac) > MAX_BSSID_LEN)) :
+    if (not(len(mac)) or (len(mac) > MAX_MAC_STR_LEN)) :
         print("Invalid MAC address")
         return failure
     ret = commands_map_py_to_c.wifi_set_mac(mode, set_str(mac))
@@ -120,7 +120,7 @@ def wifi_set_ap_config(ssid, pwd, bssid, is_wpa3_supported, listen_interval):
     if (len(str(pwd)) > (MAX_PASSWORD_LEN - 1)) :
         print("Invalid Password length")
         return failure
-    if (len(str(bssid)) > MAX_BSSID_LEN) :
+    if (len(str(bssid)) > MAX_MAC_STR_LEN) :
         print("Invalid BSSID length")
         return failure
     if (is_wpa3_supported < 0 or listen_interval < 0) :

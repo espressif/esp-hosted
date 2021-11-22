@@ -44,6 +44,7 @@ This registers HCI interface with Linux kernel. This interface is implemented ov
 	* C based implementation
 	* Python based implementation - It uses C based implementation using `ctypes` package.
 * API's are described in subsequent section
+* Control path design and implemetation details explained in [Control Path](../common/contrl_path.md) documentation
   
 ---
 
@@ -128,6 +129,7 @@ Following are few ready to use convenience script provided in the repository. Th
 	```
 
 * **OTA update**
+
 	`ota_update.py` script updates ESP32 firmware with provided URL of binary file. This script will perform following operation.
 		- Erase ota flash partition of ESP32
 		- Download chunk from URL and write that chunk into flash, one by one, till whole binary is written

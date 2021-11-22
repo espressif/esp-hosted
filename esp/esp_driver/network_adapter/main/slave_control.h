@@ -12,8 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#ifndef __SLAVE_CONTROL__H__
+#define __SLAVE_CONTROL__H__
 #include <esp_err.h>
-#define min(X, Y) (((X) < (Y)) ? (X) : (Y))
+#define min(X, Y)               (((X) < (Y)) ? (X) : (Y))
 
 #define SSID_LENGTH             32
 #define PASSWORD_LENGTH         64
@@ -22,17 +24,23 @@
 #define MAC_LEN                 6
 
 typedef struct {
-    uint8_t ssid[SSID_LENGTH];
-    uint8_t pwd[PASSWORD_LENGTH];
-    uint8_t bssid[BSSID_LENGTH];
-    uint8_t chnl;
-    uint8_t max_conn;
-    int8_t rssi;
-    bool ssid_hidden;
-    wifi_auth_mode_t ecn;
-    uint8_t bw;
-    uint16_t count;
+	uint8_t ssid[SSID_LENGTH];
+	uint8_t pwd[PASSWORD_LENGTH];
+	uint8_t bssid[BSSID_LENGTH];
+	uint8_t chnl;
+	uint8_t max_conn;
+	int8_t rssi;
+	bool ssid_hidden;
+	wifi_auth_mode_t ecn;
+	uint8_t bw;
+	uint16_t count;
 } credentials_t;
 
-esp_err_t data_transfer_handler(uint32_t session_id,const uint8_t *inbuf, ssize_t inlen,uint8_t **outbuf, ssize_t *outlen, void *priv_data);
+esp_err_t data_transfer_handler(uint32_t session_id,const uint8_t *inbuf,
+		ssize_t inlen,uint8_t **outbuf, ssize_t *outlen, void *priv_data);
+esp_err_t ctrl_notify_handler(uint32_t session_id,const uint8_t *inbuf,
+		ssize_t inlen, uint8_t **outbuf, ssize_t *outlen, void *priv_data);
+void send_event_to_host(int event_id);
+void send_event_data_to_host(int event_id, uint8_t *data, int size);
 
+#endif /*__SLAVE_CONTROL__H__*/

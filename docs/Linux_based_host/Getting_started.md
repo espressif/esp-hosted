@@ -1,8 +1,19 @@
 # User Guide for ESP-Hosted with Linux Host (Raspberry-Pi)
 
-This section elaborates about setting up  Wi-Fi and Bluetooth/BLE connectivity on Linux host using ESP-Hosted solution.
+This section elaborates about setting up control path, Wi-Fi and Bluetooth/BLE connectivity on Linux host using ESP-Hosted solution.
 
-## 1. Wi-Fi Connectivity
+## 1. Control Path
+
+* Control path is intended to setup all configurations at ESP32 side. These configurations could be related to services like
+  - Connect host with external AP (Wi-Fi router)
+  - Get configurations of external AP which host is connected
+  - Set maximum wifi transmit power of ESP32
+  - Find out current wifi power of ESP32
+* Control path command could be considered as first step before you can establish data path
+* It is way to verify if ESP-Hosted transport like SPI,SDIO is setup correctly
+* Overall [control path design](../common/contrl_path.md#2-design) and easy setup of control path using [demo application](../common/contrl_path.md#5-kickstart-using-control-path) is explained in [Control Path documentation](../common/contrl_path.md)
+
+## 2. Wi-Fi Connectivity
 
 Wi-Fi can be configured as either as `STATION` mode or `SOFTAP` mode or `STATION+SOFTAP` mode.
 * **STATION Mode**
@@ -14,7 +25,7 @@ Wi-Fi can be configured as either as `STATION` mode or `SOFTAP` mode or `STATION
 
 To setup Wi-Fi connectivity, `control command` APIs are provided. Using these APIs, all above modes can be easily configured. These APIs are available in python and C implementation.
 
-### 1.1 Control/Configure Wi-Fi Interface
+### 2.1 Control/Configure Wi-Fi Interface
 This section explains how one can configure and control Wi-Fi interface using provided python scripts. These scripts makes use of control interface API's implemented in python.  
 
 These convenience scripts are placed in `host/linux/host_control/python_support/` directory. Use below command to navigate to this directory.
@@ -22,7 +33,7 @@ These convenience scripts are placed in `host/linux/host_control/python_support/
 $ cd host/linux/host_control/python_support/
 ```
 
-#### 1.1.1 Wi-Fi Station Mode Operations
+#### 2.1.1 Wi-Fi Station Mode Operations
 
 * **Scan external access points**
 	* `ap_scan_list.py` script initiates Wi-Fi scan and displays list of available APs in the vicinity. The output contains SSID, channel number, RSSI, MAC address and authentication mode of AP.
@@ -59,7 +70,7 @@ sudo dhclient ethsta0 -v
 		* `ethsta0` interface will be in down state
 		* Network data path will be in closed state, hence there won't be any data communication on this interface
 
-#### 1.1.2 Wi-Fi softAP Mode Operations
+#### 2.1.2 Wi-Fi softAP Mode Operations
 
 * **Setup and start softAP**
 	* `softap_config.py` script configures ESP peripheral to work in softAP mode. The following parameters should be provided:
@@ -101,7 +112,7 @@ sudo ifconfig ethap0 192.168.4.5
 		$ python connected_stations_list.py
 		```
 
-## 2. Bluetooth/BLE Connectivity
+## 3. Bluetooth/BLE Connectivity
 
 * Ensure that bluez is installed on Raspberry Pi and it is downloaded in source format as well.
 * In following test, Android device was used as a BT/BLE test device. For BLE testing, [nRF connect for mobile APP](https://play.google.com/store/apps/details?id=no.nordicsemi.android.mcp&hl=en_IN) was used.
@@ -115,14 +126,14 @@ hci0:	Type: Primary  Bus: SDIO
 ```
 * This interface supports all standard HCI commands. Use standard hci tools to control and configure this interface.
 
-### 2.1 BT/BLE Test procedure
+### 3.1 BT/BLE Test procedure
 
 * ESP-Hosted related BR/EDR 4.2 and BLE 4.2 functionalities are tested with `bluez` 5.50+.
 Whereas BLE 5.0 functionalities are tested with `bluez` 5.45+.
 * We suggest latest stable `bluez` version to be used. Any other bluetooth stack instead of `bluez` also could be used.
 * To upgrade `bluez` for particular version, follow this [link](https://scribles.net/updating-bluez-on-raspberry-pi-from-5-43-to-5-50/). Replace bluez `older version` to `expected version` while following mentioned link.
 
-#### 2.1.1 GATT server
+#### 3.1.1 GATT server
 Steps:
 1. Run `sudo bluetoothctl`.
 2. Run `list` to get MAC address of ESP32.
@@ -136,7 +147,7 @@ Perform below steps on Mobile Phone:
 To disconnet:
 9. Run `disconnect <MAC_ADDRESS_of_gatt_client>` on linux host's `bluetoothctrl` OR click on `DISCONNECT` in nRF connect application's `GATT client` screen.
 
-#### 2.1.2 GATT Client
+#### 3.1.2 GATT Client
 
 1. Run `sudo bluetoothctl`.
 2. To Turn on power, run `power on`.
@@ -158,15 +169,15 @@ To disconnet:
 18. perform read/write operation on selected characteristic.
 19. To disconnect, run `disconnect <MAC_ADDRESS_of_gatt_server>`.
 
-#### 2.1.3 BT scan
+#### 3.1.3 BT scan
 
 Run `hcitool scan` for BT device scanning.
 
-#### 2.1.4 BLE scan
+#### 3.1.4 BLE scan
 
 Run `hcitool lescan` for BLE device scanning.
 
-### 2.2 BLE 5.0 testing
+### 3.2 BLE 5.0 testing
 
 Only ESP32C3 HCI controller supports BLE 5.0. Several new features are introduced in BLE 5.0. The major areas of improvement are:
 1. Slot Availability Mask (SAM)
@@ -185,7 +196,7 @@ bluetoothctl -v
 ```
 :warning: `hcitool lescan` is deprecated. Please dont use it.
 
-### 2.2.1 Basic scan, pair, connect
+### 3.2.1 Basic scan, pair, connect
 
 Execute following steps on linux host.
 Steps:
@@ -204,21 +215,21 @@ Steps:
 13. To connect, run `connect <MAC address of your device>`.
 14. Once connected, please run `discoverable off`.
 
-#### 2.2.2 GATT Server
+#### 3.2.2 GATT Server
 
 BLE 5.0 has backword compability. It can connect with BLE4.2 devices.
 Below example demonstrate linux host as GATT server and mobile phone as GATT client. We are using `nRF connect` application for GATT client operartion.
 
 Follow section [2.1.1](#211-gatt-server) for GATT server connections.
 
-#### 2.2.3 GATT client
+#### 3.2.3 GATT client
 
 BLE 5.0 has backword compability. It can connect with BLE4.2 devices.
 Below example demonstrate linux host as GATT client and mobile phone as GATT server. We are using `nRF connect` application for GATT server operartion.
 
 Follow section [2.1.2](#212-gatt-client) for GATT client connections.
 
-#### 2.2.4 1M, 2M, CODED phy for LE
+#### 3.2.4 1M, 2M, CODED phy for LE
 
 BLE5.0 supports 1M, 2M and CODED phy. To use 2M and CODED phy for gatt read/write procedure as follow:
 
@@ -255,7 +266,7 @@ Steps:
 3. Connect to BLE5.0 device using above mentioned steps in section 2.2.1.
 4. Follow gatt read/write from `menu gatt` in bluetoothctl.
 
-## 3. OTA operation
+## 4. OTA operation
 
 OTA (Over The Air) update performs following operations.
 * Erase ota flash partition of ESP32
@@ -266,7 +277,7 @@ OTA (Over The Air) update performs following operations.
 
 Please follow [OTA update documentation](ota_update.md) for further details.
 
-## 4. Troubleshoot Instructions
+## 5. Troubleshoot Instructions
 
 Please refer following for troubleshoot instructions if something goes wrong.
 

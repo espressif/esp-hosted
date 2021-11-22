@@ -18,20 +18,34 @@
  */
 
 /** prevent recursive inclusion **/
-#ifndef __TEST_CONFIG_H
-#define __TEST_CONFIG_H
+#ifndef __CTRL_CONFIG_H
+#define __CTRL_CONFIG_H
 
+#define GET_STA_MAC_ADDR                   "get_sta_mac_addr"
+#define GET_SOFTAP_MAC_ADDR                "get_softap_mac_addr"
+#define SET_STA_MAC_ADDR                   "set_sta_mac_addr"
+#define SET_SOFTAP_MAC_ADDR                "set_softap_mac_addr"
+
+#define GET_WIFI_MODE                      "get_wifi_mode"
+
+#define GET_AP_SCAN_LIST                   "get_ap_scan_list"
+#define GET_STA_CONFIG                     "get_sta_config"
 #define STA_CONNECT                        "sta_connect"
 #define STA_DISCONNECT                     "sta_disconnect"
-#define AP_START                           "ap_start"
-#define AP_STOP                            "ap_stop"
-#define SCAN                               "scan"
-#define STA_LIST                           "sta_list"
-#define OTA                                "ota"
-#define AP_VENDOR_IE                       "ap_vendor_ie"
-#define WIFI_TX_POWER                      "wifi_tx_power"
 
-#define MAC_LENGTH                          18
+#define GET_SOFTAP_CONFIG                  "get_softap_config"
+#define SET_SOFTAP_VENDOR_IE               "set_softap_vendor_ie"
+#define SOFTAP_START                       "softap_start"
+#define SOFTAP_CONNECTED_STA_LIST          "softap_connected_sta_list"
+#define SOFTAP_STOP                        "softap_stop"
+
+#define GET_WIFI_POWERSAVE_MODE            "get_wifi_powersave_mode"
+#define SET_WIFI_POWERSAVE_MODE            "set_wifi_powersave_mode"
+#define OTA                                "ota"
+
+#define SET_WIFI_MAX_TX_POWER              "set_wifi_max_tx_power"
+#define GET_WIFI_CURR_TX_POWER             "get_wifi_curr_tx_power"
+
 #define SSID_LENGTH                         32
 #define PWD_LENGTH                          64
 #define CHUNK_SIZE                          4000
@@ -54,7 +68,10 @@
 #define SOFTAP_MODE_SSID_HIDDEN             false
 #define SOFTAP_MODE_BANDWIDTH               2
 
-#define INPUT_WIFI_TX_POWER                 8
+#define INPUT_WIFI_TX_POWER                 20
+
+#define HEARTBEAT_ENABLE                    1
+#define HEARTBEAT_DURATION_SEC              20
 
 #define TEST_DEBUG_PRINTS                   1
 

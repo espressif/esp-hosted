@@ -141,7 +141,7 @@ Please refer [Getting Started](docs/MCU_based_host/MCU_based_readme.md) guide fo
 This section describes the overall design of ESP-Hosted solution. There are 3 aspects to it:
 * System Architecture
 * Transport layer communication protocol
-* API Reference
+* Integration Guide
 
 ### 3.1 System Architecture
 
@@ -219,13 +219,16 @@ This section explains the payload format used for data transfer on SDIO and SPI 
 
 ### 3.3 Integration Guide
 
-##### 3.3.1 Control Interface API's
-This section describes control interface API's provided by ESP-Hosted Solution For higher layer applications. One can easily integrate ESP-Hosted solution with other projects using these API's. There are two flavors of these API's:
+##### 3.3.1 Control Path
+When [section 2. Get Started](#2-get-started) above is followed, ESP-Hosted transport would be setup. Getting control path working is the first step to verify if the transport is setup correctly. When any sample control request is complete, i.e. control response is received, we can focus on getting Wi-Fi and Bluetooth working as you follow subsequent documentation there. Design details of control path could be found [here](docs/common/contrl_path.md)
+
+##### 3.3.2 Control Interface APIs
+This section describes control interface API's provided by ESP-Hosted Solution For higher layer applications. These are common for **MPU** and **MCU** based solution. One can easily integrate ESP-Hosted solution with other projects using these API's. There are two flavors of these API's:
 
 * [Python API's](docs/python_api.md)
 * [C API's](docs/c_api.md)
 
-##### 3.3.2 API's for MCU Based ESP-Hosted Solution
+##### 3.3.3 API's for MCU Based ESP-Hosted Solution
 Below document explains the API's provided for MCU based ESP-Hosted solution
 * [API's for MCU based host](docs/MCU_based_host/mcu_api.md)
 

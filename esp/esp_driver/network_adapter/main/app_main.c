@@ -43,7 +43,7 @@
 
 #include <protocomm.h>
 #include "protocomm_pserial.h"
-#include "slave_commands.h"
+#include "slave_control.h"
 #include "driver/periph_ctrl.h"
 #include "slave_bt.c"
 
@@ -61,9 +61,23 @@ static const char TAG_TX_S[] = "CONTROL S -> H";
 #endif
 
 #ifdef CONFIG_FREERTOS_GENERATE_RUN_TIME_STATS
-#define STATS_TICKS         pdMS_TO_TICKS(1000*2)
-#define ARRAY_SIZE_OFFSET   5
+#define STATS_TICKS                      pdMS_TO_TICKS(1000*2)
+#define ARRAY_SIZE_OFFSET                5
 #endif
+
+#define UNKNOWN_CTRL_MSG_ID              0
+
+#if CONFIG_ESP_SPI_HOST_INTERFACE
+#ifdef CONFIG_IDF_TARGET_ESP32S2
+#define TO_HOST_QUEUE_SIZE               5
+#else
+#define TO_HOST_QUEUE_SIZE               20
+#endif
+#else
+#define TO_HOST_QUEUE_SIZE               100
+#endif
+
+#define ETH_DATA_LEN                     1500
 
 volatile uint8_t action = 0;
 volatile uint8_t datapath = 0;
@@ -82,25 +96,14 @@ interface_handle_t *if_handle = NULL;
 
 QueueHandle_t to_host_queue[MAX_PRIORITY_QUEUES] = {NULL};
 
-#if CONFIG_ESP_SPI_HOST_INTERFACE
-#ifdef CONFIG_IDF_TARGET_ESP32S2
-#define TO_HOST_QUEUE_SIZE      5
-#else
-#define TO_HOST_QUEUE_SIZE      20
-#endif
-#else
-#define TO_HOST_QUEUE_SIZE      100
-#endif
-
-#define ETH_DATA_LEN			1500
 
 static protocomm_t *pc_pserial;
 
 static struct rx_data {
-    uint8_t valid;
+	uint8_t valid;
 	uint16_t cur_seq_no;
-    int len;
-    uint8_t data[4096];
+	int len;
+	uint8_t data[4096];
 } r;
 
 uint8_t ap_mac[MAC_LEN] = {0};
@@ -138,46 +141,46 @@ static uint8_t get_capabilities()
 
 static void esp_wifi_set_debug_log()
 {
-    /* set WiFi log level and module */
+	/* set WiFi log level and module */
 #if CONFIG_ESP32_WIFI_DEBUG_LOG_ENABLE
-    uint32_t g_wifi_log_level = WIFI_LOG_INFO;
-    uint32_t g_wifi_log_module = 0;
-    uint32_t g_wifi_log_submodule = 0;
+	uint32_t g_wifi_log_level = WIFI_LOG_INFO;
+	uint32_t g_wifi_log_module = 0;
+	uint32_t g_wifi_log_submodule = 0;
 #if CONFIG_ESP32_WIFI_DEBUG_LOG_DEBUG
-    g_wifi_log_level = WIFI_LOG_DEBUG;
+	g_wifi_log_level = WIFI_LOG_DEBUG;
 #endif
 #if CONFIG_ESP32_WIFI_DEBUG_LOG_VERBOSE
-    g_wifi_log_level = WIFI_LOG_VERBOSE;
+	g_wifi_log_level = WIFI_LOG_VERBOSE;
 #endif
 #if CONFIG_ESP32_WIFI_DEBUG_LOG_MODULE_ALL
-    g_wifi_log_module = WIFI_LOG_MODULE_ALL;
+	g_wifi_log_module = WIFI_LOG_MODULE_ALL;
 #endif
 #if CONFIG_ESP32_WIFI_DEBUG_LOG_MODULE_WIFI
-    g_wifi_log_module = WIFI_LOG_MODULE_WIFI;
+	g_wifi_log_module = WIFI_LOG_MODULE_WIFI;
 #endif
 #if CONFIG_ESP32_WIFI_DEBUG_LOG_MODULE_COEX
-    g_wifi_log_module = WIFI_LOG_MODULE_COEX;
+	g_wifi_log_module = WIFI_LOG_MODULE_COEX;
 #endif
 #if CONFIG_ESP32_WIFI_DEBUG_LOG_MODULE_MESH
-    g_wifi_log_module = WIFI_LOG_MODULE_MESH;
+	g_wifi_log_module = WIFI_LOG_MODULE_MESH;
 #endif
 #if CONFIG_ESP32_WIFI_DEBUG_LOG_SUBMODULE_ALL
-    g_wifi_log_submodule |= WIFI_LOG_SUBMODULE_ALL;
+	g_wifi_log_submodule |= WIFI_LOG_SUBMODULE_ALL;
 #endif
 #if CONFIG_ESP32_WIFI_DEBUG_LOG_SUBMODULE_INIT
-    g_wifi_log_submodule |= WIFI_LOG_SUBMODULE_INIT;
+	g_wifi_log_submodule |= WIFI_LOG_SUBMODULE_INIT;
 #endif
 #if CONFIG_ESP32_WIFI_DEBUG_LOG_SUBMODULE_IOCTL
-    g_wifi_log_submodule |= WIFI_LOG_SUBMODULE_IOCTL;
+	g_wifi_log_submodule |= WIFI_LOG_SUBMODULE_IOCTL;
 #endif
 #if CONFIG_ESP32_WIFI_DEBUG_LOG_SUBMODULE_CONN
-    g_wifi_log_submodule |= WIFI_LOG_SUBMODULE_CONN;
+	g_wifi_log_submodule |= WIFI_LOG_SUBMODULE_CONN;
 #endif
 #if CONFIG_ESP32_WIFI_DEBUG_LOG_SUBMODULE_SCAN
-    g_wifi_log_submodule |= WIFI_LOG_SUBMODULE_SCAN;
+	g_wifi_log_submodule |= WIFI_LOG_SUBMODULE_SCAN;
 #endif
-    esp_wifi_internal_set_log_level(g_wifi_log_level);
-    esp_wifi_internal_set_log_mod(g_wifi_log_module, g_wifi_log_submodule, true);
+	esp_wifi_internal_set_log_level(g_wifi_log_level);
+	esp_wifi_internal_set_log_mod(g_wifi_log_module, g_wifi_log_submodule, true);
 
 #endif /* CONFIG_ESP32_WIFI_DEBUG_LOG_ENABLE*/
 
@@ -185,8 +188,8 @@ static void esp_wifi_set_debug_log()
 
 void esp_update_ap_mac(void)
 {
-    esp_err_t ret = ESP_OK;
-    char mac_str[BSSID_LENGTH] = "";
+	esp_err_t ret = ESP_OK;
+	char mac_str[BSSID_LENGTH] = "";
 
 	ret = esp_wifi_get_mac(ESP_IF_WIFI_AP, ap_mac);
 	ESP_LOGI(TAG,"Get softap mac address");
@@ -320,7 +323,8 @@ void send_task(void* pvParameters)
 
 		if (serial_pkts_waiting) {
 			while (serial_pkts_waiting) {
-				if (xQueueReceive(to_host_queue[PRIO_Q_SERIAL], &buf_handle, portMAX_DELAY))
+				if (xQueueReceive(to_host_queue[PRIO_Q_SERIAL],
+							&buf_handle, portMAX_DELAY))
 					process_tx_pkt(&buf_handle);
 				serial_pkts_waiting--;
 			}
@@ -334,6 +338,22 @@ void send_task(void* pvParameters)
 			vTaskDelay(1);
 		}
 	}
+}
+
+void parse_protobuf_req(void)
+{
+	protocomm_pserial_data_ready(pc_pserial, r.data,
+		r.len, UNKNOWN_CTRL_MSG_ID);
+}
+
+void send_event_to_host(int event_id)
+{
+	protocomm_pserial_data_ready(pc_pserial, NULL, 0, event_id);
+}
+
+void send_event_data_to_host(int event_id, uint8_t *data, int size)
+{
+	protocomm_pserial_data_ready(pc_pserial, data, size, event_id);
 }
 
 void process_serial_rx_pkt(uint8_t *buf)
@@ -354,8 +374,8 @@ void process_serial_rx_pkt(uint8_t *buf)
 
 	while (r.valid)
 	{
-		ESP_LOGI(TAG,"curr seq: %u header seq: %u\n",
-				r.cur_seq_no, header->seq_num);
+		ESP_LOGI(TAG,"More segment: %u curr seq: %u header seq: %u\n",
+			header->flags & MORE_FRAGMENT, r.cur_seq_no, header->seq_num);
 		vTaskDelay(10);
 	}
 
@@ -367,17 +387,17 @@ void process_serial_rx_pkt(uint8_t *buf)
 	if (header->seq_num != r.cur_seq_no) {
 		/* Sequence number mismatch */
 		r.valid = 1;
-		protocomm_pserial_data_ready(pc_pserial, r.len);
+		parse_protobuf_req();
 		return;
 	}
 
 	memcpy((r.data + r.len), payload, min(payload_len, rem_buff_size));
-	r.len += payload_len;
+	r.len += min(payload_len, rem_buff_size);
 
 	if (!(header->flags & MORE_FRAGMENT)) {
 		/* Received complete buffer */
 		r.valid = 1;
-		protocomm_pserial_data_ready(pc_pserial, r.len);
+		parse_protobuf_req();
 	}
 }
 
@@ -398,17 +418,17 @@ void process_rx_pkt(interface_buffer_handle_t *buf_handle)
 	if ((buf_handle->if_type == ESP_STA_IF) && station_connected) {
 		/* Forward data to wlan driver */
 		esp_wifi_internal_tx(ESP_IF_WIFI_STA, payload, payload_len);
-		//ESP_LOG_BUFFER_HEXDUMP("spi_sta_rx", payload, payload_len, ESP_LOG_INFO);
+		/*ESP_LOG_BUFFER_HEXDUMP("spi_sta_rx", payload, payload_len, ESP_LOG_INFO);*/
 	} else if (buf_handle->if_type == ESP_AP_IF && softap_started) {
 		/* Forward data to wlan driver */
 		esp_wifi_internal_tx(ESP_IF_WIFI_AP, payload, payload_len);
 	} else if (buf_handle->if_type == ESP_SERIAL_IF) {
 		process_serial_rx_pkt(buf_handle->payload);
-    }
+	}
 #if defined(CONFIG_BT_ENABLED) && BLUETOOTH_HCI
-    else if (buf_handle->if_type == ESP_HCI_IF) {
-        process_hci_rx_pkt(payload, payload_len);
-    }
+	else if (buf_handle->if_type == ESP_HCI_IF) {
+		process_hci_rx_pkt(payload, payload_len);
+	}
 #endif
 
 	/* Free buffer handle */
@@ -431,7 +451,7 @@ void recv_task(void* pvParameters)
 			continue;
 		}
 
-		// receive data from transport layer
+		/* receive data from transport layer */
 		if (if_context && if_context->if_ops && if_context->if_ops->read) {
 			int len = if_context->if_ops->read(if_handle, &buf_handle);
 			if (len <= 0) {
@@ -574,101 +594,105 @@ int event_handler(uint8_t val)
  */
 static esp_err_t print_real_time_stats(TickType_t xTicksToWait)
 {
-    TaskStatus_t *start_array = NULL, *end_array = NULL;
-    UBaseType_t start_array_size, end_array_size;
-    uint32_t start_run_time, end_run_time;
-    esp_err_t ret;
+	TaskStatus_t *start_array = NULL, *end_array = NULL;
+	UBaseType_t start_array_size, end_array_size;
+	uint32_t start_run_time, end_run_time;
+	esp_err_t ret;
 
-    //Allocate array to store current task states
-    start_array_size = uxTaskGetNumberOfTasks() + ARRAY_SIZE_OFFSET;
-    start_array = malloc(sizeof(TaskStatus_t) * start_array_size);
-    if (start_array == NULL) {
-        ret = ESP_ERR_NO_MEM;
-        goto exit;
-    }
-    //Get current task states
-    start_array_size = uxTaskGetSystemState(start_array, start_array_size, &start_run_time);
-    if (start_array_size == 0) {
-        ret = ESP_ERR_INVALID_SIZE;
-        goto exit;
-    }
+	/* Allocate array to store current task states */
+	start_array_size = uxTaskGetNumberOfTasks() + ARRAY_SIZE_OFFSET;
+	start_array = malloc(sizeof(TaskStatus_t) * start_array_size);
+	if (start_array == NULL) {
+		ret = ESP_ERR_NO_MEM;
+		goto exit;
+	}
+	/* Get current task states */
+	start_array_size = uxTaskGetSystemState(start_array,
+			start_array_size, &start_run_time);
+	if (start_array_size == 0) {
+		ret = ESP_ERR_INVALID_SIZE;
+		goto exit;
+	}
 
-    vTaskDelay(xTicksToWait);
+	vTaskDelay(xTicksToWait);
 
-    //Allocate array to store tasks states post delay
-    end_array_size = uxTaskGetNumberOfTasks() + ARRAY_SIZE_OFFSET;
-    end_array = malloc(sizeof(TaskStatus_t) * end_array_size);
-    if (end_array == NULL) {
-        ret = ESP_ERR_NO_MEM;
-        goto exit;
-    }
-    //Get post delay task states
-    end_array_size = uxTaskGetSystemState(end_array, end_array_size, &end_run_time);
-    if (end_array_size == 0) {
-        ret = ESP_ERR_INVALID_SIZE;
-        goto exit;
-    }
+	/* Allocate array to store tasks states post delay */
+	end_array_size = uxTaskGetNumberOfTasks() + ARRAY_SIZE_OFFSET;
+	end_array = malloc(sizeof(TaskStatus_t) * end_array_size);
+	if (end_array == NULL) {
+		ret = ESP_ERR_NO_MEM;
+		goto exit;
+	}
+	/* Get post delay task states */
+	end_array_size = uxTaskGetSystemState(end_array, end_array_size, &end_run_time);
+	if (end_array_size == 0) {
+		ret = ESP_ERR_INVALID_SIZE;
+		goto exit;
+	}
 
-    //Calculate total_elapsed_time in units of run time stats clock period.
-    uint32_t total_elapsed_time = (end_run_time - start_run_time);
-    if (total_elapsed_time == 0) {
-        ret = ESP_ERR_INVALID_STATE;
-        goto exit;
-    }
+	/* Calculate total_elapsed_time in units of run time stats clock period */
+	uint32_t total_elapsed_time = (end_run_time - start_run_time);
+	if (total_elapsed_time == 0) {
+		ret = ESP_ERR_INVALID_STATE;
+		goto exit;
+	}
 
-    printf("| Task | Run Time | Percentage\n");
-    //Match each task in start_array to those in the end_array
-    for (int i = 0; i < start_array_size; i++) {
-        int k = -1;
-        for (int j = 0; j < end_array_size; j++) {
-            if (start_array[i].xHandle == end_array[j].xHandle) {
-                k = j;
-                //Mark that task have been matched by overwriting their handles
-                start_array[i].xHandle = NULL;
-                end_array[j].xHandle = NULL;
-                break;
-            }
-        }
-        //Check if matching task found
-        if (k >= 0) {
-            uint32_t task_elapsed_time = end_array[k].ulRunTimeCounter - start_array[i].ulRunTimeCounter;
-            uint32_t percentage_time = (task_elapsed_time * 100UL) / (total_elapsed_time * portNUM_PROCESSORS);
-            printf("| %s | %d | %d%%\n", start_array[i].pcTaskName, task_elapsed_time, percentage_time);
-        }
-    }
+	printf("| Task | Run Time | Percentage\n");
+	/* Match each task in start_array to those in the end_array */
+	for (int i = 0; i < start_array_size; i++) {
+		int k = -1;
+		for (int j = 0; j < end_array_size; j++) {
+			if (start_array[i].xHandle == end_array[j].xHandle) {
+				k = j;
+				/* Mark that task have been matched by overwriting their handles */
+				start_array[i].xHandle = NULL;
+				end_array[j].xHandle = NULL;
+				break;
+			}
+		}
+		/* Check if matching task found */
+		if (k >= 0) {
+			uint32_t task_elapsed_time = end_array[k].ulRunTimeCounter -
+				start_array[i].ulRunTimeCounter;
+			uint32_t percentage_time = (task_elapsed_time * 100UL) /
+				(total_elapsed_time * portNUM_PROCESSORS);
+			printf("| %s | %d | %d%%\n", start_array[i].pcTaskName,
+					task_elapsed_time, percentage_time);
+		}
+	}
 
-    //Print unmatched tasks
-    for (int i = 0; i < start_array_size; i++) {
-        if (start_array[i].xHandle != NULL) {
-            printf("| %s | Deleted\n", start_array[i].pcTaskName);
-        }
-    }
-    for (int i = 0; i < end_array_size; i++) {
-        if (end_array[i].xHandle != NULL) {
-            printf("| %s | Created\n", end_array[i].pcTaskName);
-        }
-    }
-    ret = ESP_OK;
+	/* Print unmatched tasks */
+	for (int i = 0; i < start_array_size; i++) {
+		if (start_array[i].xHandle != NULL) {
+			printf("| %s | Deleted\n", start_array[i].pcTaskName);
+		}
+	}
+	for (int i = 0; i < end_array_size; i++) {
+		if (end_array[i].xHandle != NULL) {
+			printf("| %s | Created\n", end_array[i].pcTaskName);
+		}
+	}
+	ret = ESP_OK;
 
-exit:    //Common return path
+exit:    /* Common return path */
 	if (start_array)
 		free(start_array);
 	if (end_array)
 		free(end_array);
-    return ret;
+	return ret;
 }
 
 void task_runtime_stats_task(void* pvParameters)
 {
-    while (1) {
-        printf("\n\nGetting real time stats over %d ticks\n", STATS_TICKS);
-        if (print_real_time_stats(STATS_TICKS) == ESP_OK) {
-            printf("Real time stats obtained\n");
-        } else {
-            printf("Error getting real time stats\n");
-        }
-        vTaskDelay(pdMS_TO_TICKS(1000*2));
-    }
+	while (1) {
+		printf("\n\nGetting real time stats over %d ticks\n", STATS_TICKS);
+		if (print_real_time_stats(STATS_TICKS) == ESP_OK) {
+			printf("Real time stats obtained\n");
+		} else {
+			printf("Error getting real time stats\n");
+		}
+		vTaskDelay(pdMS_TO_TICKS(1000*2));
+	}
 }
 #endif
 
@@ -682,10 +706,11 @@ void app_main()
 
 	capa = get_capabilities();
 
-	//Initialize NVS
+	/* Initialize NVS */
 	ret = nvs_flash_init();
 
-	if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
+	if (ret == ESP_ERR_NVS_NO_FREE_PAGES ||
+	    ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
 		ESP_ERROR_CHECK(nvs_flash_erase());
 		ret = nvs_flash_init();
 	}
@@ -709,7 +734,16 @@ void app_main()
 		return;
 	}
 
-	if (protocomm_add_endpoint(pc_pserial, "control", data_transfer_handler, NULL) != ESP_OK) {
+	/* Endpoint for control command responses */
+	if (protocomm_add_endpoint(pc_pserial, CTRL_EP_NAME_RESP,
+				data_transfer_handler, NULL) != ESP_OK) {
+		ESP_LOGE(TAG, "Failed to add enpoint");
+		return;
+	}
+
+	/* Endpoint for control notifications for events subscribed by user */
+	if (protocomm_add_endpoint(pc_pserial, CTRL_EP_NAME_EVENT,
+				ctrl_notify_handler, NULL) != ESP_OK) {
 		ESP_LOGE(TAG, "Failed to add enpoint");
 		return;
 	}
@@ -737,7 +771,8 @@ void app_main()
 	generate_startup_event(capa);
 
 	for (prio_q_idx=0; prio_q_idx<MAX_PRIORITY_QUEUES; prio_q_idx++) {
-		to_host_queue[prio_q_idx] = xQueueCreate(TO_HOST_QUEUE_SIZE, sizeof(interface_buffer_handle_t));
+		to_host_queue[prio_q_idx] = xQueueCreate(TO_HOST_QUEUE_SIZE,
+				sizeof(interface_buffer_handle_t));
 		assert(to_host_queue[prio_q_idx] != NULL);
 	}
 
@@ -754,4 +789,6 @@ void app_main()
 	ESP_ERROR_CHECK(initialise_wifi());
 
 	ESP_LOGI(TAG,"Initial set up done");
+
+	send_event_to_host(CTRL_MSG_ID__Event_ESPInit);
 }

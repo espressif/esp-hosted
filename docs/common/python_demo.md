@@ -1,8 +1,8 @@
 # Demo Application
 
-[test.py](../host/linux/host_control/python_support/test.py) is a demo application to test control path interface:
+[test.py](../../host/linux/host_control/python_support/test.py) is a demo application to test control path interface:
 
-It uses APIs present in [test_api.py](../host/linux/host_control/python_support/test_api.py). User should first modify configuration parameters in [test_config.py](../host/linux/host_control/python_support/test_config.py).
+It uses APIs present in [test_api.py](../../host/linux/host_control/python_support/test_api.py). User should first modify configuration parameters in [test_config.py](../../host/linux/host_control/python_support/test_config.py).
 
 Note:-
 Please execute `test.py` as below.
@@ -29,7 +29,7 @@ sudo ifconfig ethap0 192.168.4.5
 
 # Stress Application
 
-[stress.py](../host/linux/host_control/python_support/stress.py) use for stress testing of control path APIs. User should first modify configuration parameters in [test_config.py](../host/linux/host_control/python_support/test_config.py). `STRESS_TEST_COUNT` variable is defined in `stress.py` for number of iterations for stress testing.
+[stress.py](../../host/linux/host_control/python_support/stress.py) use for stress testing of control path APIs. User should first modify configuration parameters in [test_config.py](../../host/linux/host_control/python_support/test_config.py). `STRESS_TEST_COUNT` variable is defined in `stress.py` for number of iterations for stress testing.
 
 Note:-
 Please execute `stress.py` as below.
@@ -47,7 +47,7 @@ $ cd host/linux/host_control/python_support/
 
 * This script assumes station is connected to AP, IP is assigned to `ethsta0` and HTTP URL is accessible.
 
-* [ota_update.py](../host/linux/host_control/python_support/ota_update.py) python script is used to do OTA update on ESP32. It downloads **chunk** of OTA image data using HTTP client over `ethsta0` interface and writes on ESP32. After successful completion it restarts ESP32 after 5 sec.
+* [ota_update.py](../../host/linux/host_control/python_support/ota_update.py) python script is used to do OTA update on ESP32. It downloads **chunk** of OTA image data using HTTP client over `ethsta0` interface and writes on ESP32. After successful completion it restarts ESP32 after 5 sec.
 
 Usage:
 1. Start HTTP server on a remote machine which contains OTA image.

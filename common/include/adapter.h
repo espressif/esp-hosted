@@ -4,13 +4,21 @@
 #ifndef __ESP_NETWORK_ADAPTER__H
 #define __ESP_NETWORK_ADAPTER__H
 
-#define PRIO_Q_SERIAL           0
-#define PRIO_Q_BT               1
-#define PRIO_Q_OTHERS           2
-#define MAX_PRIORITY_QUEUES     3
+#define PRIO_Q_SERIAL                             0
+#define PRIO_Q_BT                                 1
+#define PRIO_Q_OTHERS                             2
+#define MAX_PRIORITY_QUEUES                       3
 
 /* ESP Payload Header Flags */
-#define MORE_FRAGMENT			(1 << 0)
+#define MORE_FRAGMENT                             (1 << 0)
+
+/* Serial interface */
+#define SERIAL_IF_FILE                            "/dev/esps0"
+
+/* Protobuf related info */
+/* Endpoints registered must have same string length */
+#define CTRL_EP_NAME_RESP                         "ctrlResp"
+#define CTRL_EP_NAME_EVENT                        "ctrlEvnt"
 
 struct esp_payload_header {
 	uint8_t          if_type:4;

@@ -31,8 +31,8 @@ User can skip step 1, if station is connected to AP and IP is assigned to `ethst
 1. Perform station connect using [wifi station mode operations](Getting_started.md#111-wi-fi-station-mode-operations)
 -> Connect to external access point.
 
-2. For further details follow this [Link](../python_demo.md#ota-update).
+2. For further details follow this [Link](../common/python_demo.md#ota-update).
 
 ### C Implementation
 
-For Further details follow this [Link](../c_demo.md#c-demo-application).
+For Further details follow this [Link](../common/c_demo.md#c-demo-application).

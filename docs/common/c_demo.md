@@ -1,6 +1,6 @@
 # C Demo Application
 
-[test.c](../host/linux/host_control/c_support/test.c) is a demo application to provide basic command line arguments as follows:
+[test.c](../../host/linux/host_control/c_support/test.c) is a demo application to provide basic command line arguments as follows:
 
 | Command line argument | Operation |
 |:----|:----|
@@ -14,7 +14,7 @@
 | wifi_tx_power | sets WiFi maximum transmitting power and get WiFi current transmitting power |
 | ota </path/to/ota_image.bin> | performs OTA operation using local OTA binary file |
 
-It uses APIs present in [test_api.c](../host/linux/host_control/c_support/test_api.c). User should first modify configuration parameters in [test_config.h](../host/linux/host_control/c_support/test_config.h). Then run `make` in [c_support](../host/linux/host_control/c_support) to compile `test.c`.
+It uses APIs present in [ctrl_api.h](../../host/control_lib/include/ctrl_api.h). User should first modify configuration parameters in [ctrl_config.h](../../host/linux/host_control/c_support/ctrl_config.h). Then run `make` in [c_support](../../host/linux/host_control/c_support) to compile `test.c`.
 
 Note:-
 Please execute `test.out` as below.
@@ -36,7 +36,7 @@ sudo dhclient ethsta0 -r
 sudo dhclient ethsta0 -v
 ```
 
-* `ap_vendor_ie` needs to get called before starting of ESP32 softAP, please edit function `test_set_vendor_specific_ie` in `test_api.c`.
+* `ap_vendor_ie` needs to get called before starting of ESP32 softAP, please edit function `test_set_vendor_specific_ie` in `ctrl_api.c`.
 `ap_vendor_ie` should get configured only once till ESP32 reboot. To remove
 previous configuration set `enable` flag to `false` in `wifi_set_vendor_specific_ie` API.
 After that re-configuration possible of Vendor IE.
@@ -60,7 +60,7 @@ ex.
 
 # C stress Application
 
-[stress.c](../host/linux/host_control/c_support/stress.c) use for stress testing of control path APIs. It provides basic command line arguments as follows:
+[stress.c](../../host/linux/host_control/c_support/stress.c) use for stress testing of control path APIs. It provides basic command line arguments as follows:
 
 | Command line argument | Operation |
 |:----|:----|
@@ -74,7 +74,7 @@ ex.
 | ap_vendor_ie | Set vendor information element for ESP32 softAP |
 | wifi_tx_power | sets WiFi maximum transmitting power and get WiFi current transmitting power |
 
-Run `make stress` in [c_support](../host/linux/host_control/c_support) directory to compile `stress.c`.
+Run `make stress` in [c_support](../../host/linux/host_control/c_support) directory to compile `stress.c`.
 
 Note:-
 Please execute `stress.out` as below.
