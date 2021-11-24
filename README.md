@@ -77,7 +77,7 @@ Below table explains which feature is supported on which transport interface for
 | ESP32-S2 | SPI | Yes | Yes | NA |
 | ESP32-S2 | UART | No | No | NA |
 | ESP32-C3 | SDIO | NA | NA | NA |
-| ESP32-C3 | SPI | Yes | Yes | No |
+| ESP32-C3 | SPI | Yes | Yes | Yes |
 | ESP32-C3 | UART | No | No | No |
 
 ##### 1.5.2 MCU Host
@@ -92,7 +92,7 @@ Below table explains which feature is supported on which transport interface for
 | ESP32-S2 | SPI | Yes | Yes | NA |
 | ESP32-S2 | UART | No | No | NA |
 | ESP32-C3 | SDIO | NA | NA | NA |
-| ESP32-C3 | SPI | Yes | Yes | No |
+| ESP32-C3 | SPI | Yes | Yes | Yes\* |
 | ESP32-C3 | UART | No | No | No |
 
 \* BT/BLE over SPI
