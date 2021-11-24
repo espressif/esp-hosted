@@ -114,7 +114,6 @@ Prepare connections based on interface requirements and setup host as below.
 			```sh
 			$ sudo hciattach -s 921600 /dev/serial0 any 921600 flow
 			```
-			```
 
 #### 1.3.1 ESP Firmware Setup
 * Flash pre-built binaries as below.
