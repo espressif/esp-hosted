@@ -509,7 +509,9 @@ static void spi_exit(void)
 		spi_context.spi_workqueue = NULL;
 	}
 
+#ifdef CONFIG_SUPPORT_ESP_SERIAL
 	esp_serial_cleanup();
+#endif
 	esp_remove_card(spi_context.adapter);
 
 	if (spi_context.adapter->hcidev)
