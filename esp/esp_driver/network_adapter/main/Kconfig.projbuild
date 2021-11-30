@@ -68,4 +68,12 @@ menu "Example Configuration"
         help
             Enable/disable debug prints in Bluetooth driver data path
 
+    config EXAMPLE_ESP32C3_HCI_UART_BAUDRATE
+        int "UART Baudrate for HCI"
+        range 115200 921600
+        depends on IDF_TARGET_ESP32C3
+        default 921600
+        help
+            UART Baudrate for HCI over ESP32C3. Please use standard baudrate.
+
 endmenu
