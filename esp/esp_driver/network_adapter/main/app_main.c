@@ -381,12 +381,11 @@ void process_serial_rx_pkt(uint8_t *buf)
 	}
 }
 
-void process_rx_pkt(interface_buffer_handle_t **buf_handle_p)
+void process_rx_pkt(interface_buffer_handle_t *buf_handle)
 {
 	struct esp_payload_header *header = NULL;
 	uint8_t *payload = NULL;
 	uint16_t payload_len = 0;
-	interface_buffer_handle_t *buf_handle = *buf_handle_p;
 
 	header = (struct esp_payload_header *) buf_handle->payload;
 	payload = buf_handle->payload + le16toh(header->offset);
@@ -422,7 +421,7 @@ void process_rx_pkt(interface_buffer_handle_t **buf_handle_p)
 /* Get data from host */
 void recv_task(void* pvParameters)
 {
-	interface_buffer_handle_t *buf_handle = NULL;
+	interface_buffer_handle_t buf_handle;
 
 	for (;;) {
 
@@ -434,18 +433,14 @@ void recv_task(void* pvParameters)
 
 		// receive data from transport layer
 		if (if_context && if_context->if_ops && if_context->if_ops->read) {
-			buf_handle = if_context->if_ops->read(if_handle);
-			if (!buf_handle) {
+			int len = if_context->if_ops->read(if_handle, &buf_handle);
+			if (len <= 0) {
 				usleep(10*1000);
 				continue;
 			}
 		}
 
 		process_rx_pkt(&buf_handle);
-
-
-		free(buf_handle);
-		buf_handle = NULL;
 	}
 }
 

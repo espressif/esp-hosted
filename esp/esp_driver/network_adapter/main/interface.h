@@ -79,7 +79,7 @@ typedef struct {
 typedef struct {
 	interface_handle_t * (*init)(void);
 	int32_t (*write)(interface_handle_t *handle, interface_buffer_handle_t *buf_handle);
-	interface_buffer_handle_t * (*read)(interface_handle_t *handle);
+	int (*read)(interface_handle_t *handle, interface_buffer_handle_t *buf_handle);
 	esp_err_t (*reset)(interface_handle_t *handle);
 	void (*deinit)(interface_handle_t *handle);
 } if_ops_t;

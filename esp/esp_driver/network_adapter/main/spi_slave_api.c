@@ -112,7 +112,7 @@ static QueueHandle_t spi_tx_queue[MAX_PRIORITY_QUEUES] = {NULL};
 static interface_handle_t * esp_spi_init(void);
 static int32_t esp_spi_write(interface_handle_t *handle,
 				interface_buffer_handle_t *buf_handle);
-static interface_buffer_handle_t * esp_spi_read(interface_handle_t *if_handle);
+static int esp_spi_read(interface_handle_t *if_handle, interface_buffer_handle_t * buf_handle);
 static esp_err_t esp_spi_reset(interface_handle_t *handle);
 static void esp_spi_deinit(interface_handle_t *handle);
 static void esp_spi_read_done(void *handle);
@@ -603,18 +603,14 @@ static void IRAM_ATTR esp_spi_read_done(void *handle)
 	}
 }
 
-static interface_buffer_handle_t * esp_spi_read(interface_handle_t *if_handle)
+static int esp_spi_read(interface_handle_t *if_handle, interface_buffer_handle_t *buf_handle)
 {
-	interface_buffer_handle_t *buf_handle = NULL;
 	esp_err_t ret = ESP_OK;
 
 	if (!if_handle) {
 		ESP_LOGE(TAG, "Invalid arguments to esp_spi_read\n");
-		return NULL;
+		return 0;
 	}
-
-	buf_handle = malloc(sizeof(interface_buffer_handle_t));
-	assert(buf_handle);
 
 	while (1) {
 		if(uxQueueMessagesWaiting(spi_rx_queue[PRIO_Q_SERIAL])) {
@@ -632,11 +628,9 @@ static interface_buffer_handle_t * esp_spi_read(interface_handle_t *if_handle)
 	}
 
 	if (ret != pdTRUE) {
-		free(buf_handle);
-		buf_handle = NULL;
-		return NULL;
+		return 0;
 	}
-	return buf_handle;
+	return 1; // buf_handle->; // TODO a real length
 }
 
 static esp_err_t esp_spi_reset(interface_handle_t *handle)
