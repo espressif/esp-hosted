@@ -69,32 +69,36 @@ ESP-Hosted uses SDIO or SPI bus for interfacing ESP boards and host platform. No
 ##### 1.5.1 Linux Host
 Below table explains which feature is supported on which transport interface for Linux based host.
 
-| ESP device | Transport Interface | WLAN support | Virtual serial interface | BT/BLE support | BLE 5.0 support |
-|:---------:|:-------:|:---------:|:--------:|:--------:|:--------:|
-| ESP32 | SDIO | Yes | Yes | Yes | NA |
-| ESP32 | SPI | Yes | Yes | Yes | NA |
-| ESP32 | UART | No | No | Yes | NA |
-| ESP32-S2 | SDIO | NA | NA | NA | NA |
-| ESP32-S2 | SPI | Yes | Yes | NA | NA |
-| ESP32-S2 | UART | No | No | NA | NA |
-| ESP32-C3 | SDIO | NA | NA | NA | NA |
-| ESP32-C3 | SPI | Yes | Yes | Yes | Yes |
-| ESP32-C3 | UART | No | No | Yes | Yes |
-
-##### 1.5.2 MCU Host
-Below table explains which feature is supported on which transport interface for MCU based host.
-
-| ESP device | Transport Interface | WLAN support | Virtual serial interface | BT/BLE support |
-|:------------:|:-------:|:---------:|:--------:|:--------:|
-| ESP32 | SDIO | No | No | No |
-| ESP32 | SPI | Yes | Yes | Yes\* |
-| ESP32 | UART | No | No | Yes\*\* |
+| ESP device | Transport Interface | WLAN support | Virtual serial interface | Bluetooth support |
+|:---------:|:-------:|:---------:|:--------:|:--------:|
+| ESP32 | SDIO | Yes | Yes | BT/BLE 4.2 |
+| ESP32 | SPI | Yes | Yes | BT/BLE 4.2 |
+| ESP32 | UART | No | No | BT/BLE 4.2 |
 | ESP32-S2 | SDIO | NA | NA | NA |
 | ESP32-S2 | SPI | Yes | Yes | NA |
 | ESP32-S2 | UART | No | No | NA |
 | ESP32-C3 | SDIO | NA | NA | NA |
-| ESP32-C3 | SPI | Yes | Yes | Yes\* |
-| ESP32-C3 | UART | No | No | Yes\* |
+| ESP32-C3 | SPI | Yes | Yes | BLE 5.0 |
+| ESP32-C3 | UART | No | No | BLE 5.0 |
+
+Note: BT stands for Bluetooth BR/EDR and BLE stands for Bluetooth Low Energy specifications.
+
+##### 1.5.2 MCU Host
+Below table explains which feature is supported on which transport interface for MCU based host.
+
+| ESP device | Transport Interface | WLAN support | Virtual serial interface | Bluetooth support |
+|:------------:|:-------:|:---------:|:--------:|:--------:|
+| ESP32 | SDIO | No | No | No |
+| ESP32 | SPI | Yes | Yes | BT/BLE 4.2\* |
+| ESP32 | UART | No | No | BT/BLE 4.2\*\* |
+| ESP32-S2 | SDIO | NA | NA | NA |
+| ESP32-S2 | SPI | Yes | Yes | NA |
+| ESP32-S2 | UART | No | No | NA |
+| ESP32-C3 | SDIO | NA | NA | NA |
+| ESP32-C3 | SPI | Yes | Yes | BLE 5.0\* |
+| ESP32-C3 | UART | No | No | BLE 5.0\*\* |
+
+Note: BT stands for Bluetooth BR/EDR and BLE stands for Bluetooth Low Energy specifications.
 
 \* BT/BLE over SPI
 > BT/BLE support over SPI is not readily available. In order to implement it, one needs to:
