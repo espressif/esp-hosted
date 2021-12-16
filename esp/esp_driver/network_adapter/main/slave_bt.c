@@ -25,7 +25,9 @@
 
 #ifdef CONFIG_IDF_TARGET_ESP32C3
 #include "esp_private/gdma.h"
+#if BLUETOOTH_UART
 #include "hal/uhci_ll.h"
+#endif
 #endif
 
 static const char BT_TAG[] = "ESP_BT";
