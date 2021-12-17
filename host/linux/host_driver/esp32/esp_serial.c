@@ -123,6 +123,8 @@ static int esp_serial_write(struct file *file, const char __user *user_buffer, s
 		}
 		hdr->checksum = cpu_to_le16(compute_checksum(tx_skb->data, (frag_len + sizeof(struct esp_payload_header))));
 
+		/* print_hex_dump(KERN_INFO, "esp_serial_tx: ", DUMP_PREFIX_ADDRESS, 16, 1, pos, frag_len, 1 ); */
+
 		ret = esp_send_packet(dev->priv, tx_skb);
 		if (ret) {
 			printk (KERN_ERR "%s: Failed to transmit data, error %d\n", __func__, ret);

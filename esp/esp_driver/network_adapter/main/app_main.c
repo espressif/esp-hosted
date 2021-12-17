@@ -348,6 +348,10 @@ void process_serial_rx_pkt(uint8_t *buf)
 	payload = buf + le16toh(header->offset);
 	rem_buff_size = sizeof(r.data) - r.len;
 
+#if CONFIG_ESP_SERIAL_DEBUG
+	ESP_LOG_BUFFER_HEXDUMP(TAG_RX_S, payload, payload_len, ESP_LOG_INFO);
+#endif
+
 	while (r.valid)
 	{
 		ESP_LOGI(TAG,"curr seq: %u header seq: %u\n",
@@ -401,9 +405,6 @@ void process_rx_pkt(interface_buffer_handle_t **buf_handle_p)
 		esp_wifi_internal_tx(ESP_IF_WIFI_AP, payload, payload_len);
 	} else if (buf_handle->if_type == ESP_SERIAL_IF) {
 		process_serial_rx_pkt(buf_handle->payload);
-#if CONFIG_ESP_SERIAL_DEBUG
-		ESP_LOG_BUFFER_HEXDUMP(TAG_RX_S, r.data, r.len, ESP_LOG_INFO);
-#endif
     }
 #if defined(CONFIG_BT_ENABLED) && BLUETOOTH_HCI
     else if (buf_handle->if_type == ESP_HCI_IF) {
