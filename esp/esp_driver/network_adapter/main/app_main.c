@@ -682,6 +682,7 @@ void app_main()
 	esp_err_t ret;
 	uint8_t capa = 0;
 	uint8_t prio_q_idx = 0;
+	uint8_t mac[MAC_LEN] = {0};
 	print_firmware_version();
 
 	capa = get_capabilities();
@@ -697,6 +698,14 @@ void app_main()
 
 #ifdef CONFIG_BT_ENABLED
 	initialise_bluetooth();
+
+	ret = esp_read_mac(mac, ESP_MAC_BT);
+	if (ret) {
+		ESP_LOGE(TAG,"Failed to read BT Mac addr\n");
+	} else {
+		ESP_LOGI(TAG, "ESP Bluetooth MAC addr: %2x-%2x-%2x-%2x-%2x-%2x\n",
+				mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+	}
 #endif
 
 	pc_pserial = protocomm_new();
