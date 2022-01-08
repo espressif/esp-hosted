@@ -209,10 +209,7 @@ ESP-IDF release version to be used for ESP peripherals are
 | ESP32-C3 | release v4.3 |
 | ESP32-C3 (HCI over UART)| release v4.4 (beta)|
 
-Clone appropriate ESP-IDF version as per your ESP peripheral. The control path between Linux host and ESP peripheral is based on `protobuf`. For that, corresponding stack layer, `protocomm` from ESP-IDF is used. Run following command in ESP-IDF directory to make `protocomm_priv.h` available for control path.
-```
-$ git mv components/protocomm/src/common/protocomm_priv.h components/protocomm/include/common/
-```
+Clone appropriate ESP-IDF version as per your ESP peripheral. The control path between Linux host and ESP peripheral is based on `protobuf`. For that, corresponding stack layer, `protocomm` from ESP-IDF is used.
 
 ### 2.3 ESP-Hosted Code Repository
 Clone esp-hosted repository on Linux host.

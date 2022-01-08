@@ -121,10 +121,7 @@ For windows user, you can also program the binaries using ESP Flash Programming 
 
 #### 2.2.2 Compilation using source
 Please use above mentioned ESP-IDF repository release branch for your ESP peripheral.
-The control path between host and ESP peripheral is based on `protobuf`. For that `protocomm` layer from ESP-IDF is used. Run following command to make `protocomm_priv.h` available for control path.
-```
-$ git mv components/protocomm/src/common/protocomm_priv.h components/protocomm/include/common/
-```
+The control path between host and ESP peripheral is based on `protobuf`. For that `protocomm` layer from ESP-IDF is used. 
 
 Navigate to `esp/esp_driver/network_adapter` directory
 ##### Using make
