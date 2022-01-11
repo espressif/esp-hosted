@@ -12,6 +12,7 @@
 | sta_list | List external stations connected to softAP |
 | ap_vendor_ie | Set vendor information element for ESP32 softAP |
 | wifi_tx_power | sets WiFi maximum transmitting power and get WiFi current transmitting power |
+| ota </path/to/ota_image.bin> | performs OTA operation using local OTA binary file |
 
 It uses APIs present in [test_api.c](../host/linux/host_control/c_support/test_api.c). User should first modify configuration parameters in [test_config.h](../host/linux/host_control/c_support/test_config.h). Then run `make` in [c_support](../host/linux/host_control/c_support) to compile `test.c`.
 
@@ -42,6 +43,15 @@ After that re-configuration possible of Vendor IE.
 sudo dnsmasq --no-daemon --no-resolv --no-poll --dhcp-script=/system/bin/dhcp_announce --dhcp-range=192.168.4.1,192.168.4.20,1h
 
 sudo ifconfig ethap0 192.168.4.5
+```
+
+* OTA -
+The OTA update using C currently assumes the complete binary is downloaded locally.
+OTA update using HTTP URL is only supported in [python](python_demo.md#ota-update). In case HTTP based OTA update is desired, user can do the same using third party HTTP client library.
+
+```
+ex.
+./test.out ota </path/to/ota_image.bin>
 ```
 
 # C stress Application

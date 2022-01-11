@@ -17,6 +17,9 @@ import sys
 
 success = "success"
 failure = "failure"
+no_ap_found_str = "no_ap_found"
+invalid_password_str = "invalid_password_str"
+out_of_range_str = "out_of_range"
 
 SSID_LENGTH = 32
 PASSWORD_LENGTH = 64
@@ -39,12 +42,6 @@ NO_AP_FOUND = 2
 INVALID_PASSWORD = 3 
 INVALID_ARGUMENT = 4
 OUT_OF_RANGE = 5
-
-not_connected_str = "not_connected"
-no_ap_found_str = "no_ap_found"
-invalid_password_str = "invalid_password"
-invalid_argument_str = "invalid_argument"
-out_of_range_str = "out_of_range"
 
 (WIFI_MODE_NONE, WIFI_MODE_STATION,
         WIFI_MODE_SOFTAP, WIFI_MODE_SOFTAP_STATION,
