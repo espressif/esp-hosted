@@ -27,9 +27,6 @@
 #include "esp_sdio_api.h"
 #include "esp_api.h"
 #include "esp_bt_api.h"
-#ifdef CONFIG_SUPPORT_ESP_SERIAL
-#include "esp_serial.h"
-#endif
 #include <linux/kthread.h>
 #include <linux/printk.h>
 
@@ -260,10 +257,6 @@ static void esp_remove(struct sdio_func *func)
 	context = sdio_get_drvdata(func);
 
 	printk(KERN_INFO "%s -> Remove card", __func__);
-
-#ifdef CONFIG_SUPPORT_ESP_SERIAL
-	esp_serial_cleanup();
-#endif
 
 #ifdef CONFIG_ENABLE_MONITOR_PROCESS
 	if (monitor_thread)
@@ -713,15 +706,6 @@ static int esp_probe(struct sdio_func *func,
 
 	if (!tx_thread)
 		printk (KERN_ERR "Failed to create esp32_sdio TX thread\n");
-
-#ifdef CONFIG_SUPPORT_ESP_SERIAL
-	ret = esp_serial_init((void *) context->adapter);
-	if (ret != 0) {
-		esp_remove(func);
-		printk(KERN_ERR "Error initialising serial interface\n");
-		return ret;
-	}
-#endif
 
 	ret = esp_add_card(context->adapter);
 	if (ret) {

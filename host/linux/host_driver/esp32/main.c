@@ -728,11 +728,24 @@ static int __init esp_init(void)
 		deinit_adapter();
 	}
 
+#ifdef CONFIG_SUPPORT_ESP_SERIAL
+	/* Create the char devices */
+	ret = esp_serial_init((void *)adapter);
+	if (ret != 0) {
+		printk(KERN_ERR "Error initialising serial char devices!\n");
+		return ret;
+	}
+#endif
+
 	return ret;
 }
 
 static void __exit esp_exit(void)
 {
+#ifdef CONFIG_SUPPORT_ESP_SERIAL
+	/* Remove the char devices */
+	esp_serial_cleanup();
+#endif
 	esp_deinit_interface_layer();
 	deinit_adapter();
 	if (resetpin != HOST_GPIO_PIN_INVALID) {
