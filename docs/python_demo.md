@@ -47,7 +47,7 @@ $ cd host/linux/host_control/python_support/
 
 * This script assumes station is connected to AP, IP is assigned to `ethsta0` and HTTP URL is accessible.
 
-* [ota_update.py](host/linux/host_control/python_support/ota_update.py) python script is used to do OTA update on ESP32. It downloads **chunk** of OTA image data using HTTP client over `ethsta0` interface and writes on ESP32. After successful completion it restarts ESP32 after 5 sec.
+* [ota_update.py](../host/linux/host_control/python_support/ota_update.py) python script is used to do OTA update on ESP32. It downloads **chunk** of OTA image data using HTTP client over `ethsta0` interface and writes on ESP32. After successful completion it restarts ESP32 after 5 sec.
 
 Usage:
 1. Start HTTP server on a remote machine which contains OTA image.

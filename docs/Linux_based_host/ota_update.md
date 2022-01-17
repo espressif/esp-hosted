@@ -10,7 +10,7 @@ There are basic three control path commands for OTA are provided in C and python
 * esp_ota_write() -- Write chunk of OTA image data on OTA partition in flash.
 * esp_ota_end()   -- Validate written OTA image, set OTA partition for next boot and reboot ESP32 after 5 sec.
 
-Definition of these commands are present in [commands.c](host/host_common/commands.c) and [commands_lib.py](host/linux/host_control/python_support/commands_lib.py) files.
+Definition of these commands are present in [commands.c](../../host/host_common/commands.c) and [commands_lib.py](../../host/linux/host_control/python_support/commands_lib.py) files.
 
 ## **How to use**
 
