@@ -35,7 +35,7 @@ static const char TAG[] = "SDIO_SLAVE";
 
 static interface_handle_t * sdio_init(void);
 static int32_t sdio_write(interface_handle_t *handle, interface_buffer_handle_t *buf_handle);
-interface_buffer_handle_t * sdio_read(interface_handle_t *if_handle);
+static int sdio_read(interface_handle_t *if_handle, interface_buffer_handle_t *buf_handle);
 static esp_err_t sdio_reset(interface_handle_t *handle);
 static void sdio_deinit(interface_handle_t *handle);
 
@@ -254,29 +254,25 @@ static int32_t sdio_write(interface_handle_t *handle, interface_buffer_handle_t 
 	return buf_handle->payload_len;
 }
 
-interface_buffer_handle_t * sdio_read(interface_handle_t *if_handle)
+static int sdio_read(interface_handle_t *if_handle, interface_buffer_handle_t *buf_handle)
 {
-	interface_buffer_handle_t *buf_handle = NULL;
 	struct esp_payload_header *header = NULL;
-	uint16_t rx_checksum = 0, checksum = 0, len;
+	uint16_t rx_checksum = 0, checksum = 0, len = 0;
+	size_t sdio_read_len = 0;
+
 
 	if (!if_handle) {
 		ESP_LOGE(TAG, "Invalid arguments to sdio_read");
-		return NULL;
+		return ESP_FAIL;
 	}
 
 	if (if_handle->state != ACTIVE) {
-		return NULL;
-	}
-
-	buf_handle = malloc(sizeof(interface_buffer_handle_t));
-	if (!buf_handle) {
-		ESP_LOGE(TAG, "Failed to allocate memory");
-		return NULL;
+		return ESP_FAIL;
 	}
 
 	sdio_slave_recv(&(buf_handle->sdio_buf_handle), &(buf_handle->payload),
-			&(buf_handle->payload_len), portMAX_DELAY);
+			&(sdio_read_len), portMAX_DELAY);
+	buf_handle->payload_len = sdio_read_len & 0xFFFF;
 
 	header = (struct esp_payload_header *) buf_handle->payload;
 
@@ -289,14 +285,14 @@ interface_buffer_handle_t * sdio_read(interface_handle_t *if_handle)
 
 	if (checksum != rx_checksum) {
 		sdio_read_done(buf_handle->sdio_buf_handle);
-		return NULL;
+		return ESP_FAIL;
 	}
 
 	buf_handle->if_type = header->if_type;
 	buf_handle->if_num = header->if_num;
 	buf_handle->free_buf_handle = sdio_read_done;
 
-	return buf_handle;
+	return len;
 }
 
 static esp_err_t sdio_reset(interface_handle_t *handle)
