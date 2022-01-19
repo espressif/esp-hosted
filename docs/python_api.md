@@ -6,7 +6,7 @@ This document describes python API's provided for control interface.
 
 A [stress.py](../host/linux/host_control/python_support/stress.py) can use for stress testing of control path commands. In which, `STRESS_TEST_COUNT` variable represents number of iterations and `STRESS_TEST` variable defines which test should get executed.
 
-## 1. `wifi_get_mac`
+## 1. `wifi_get_mac(mode)`
 This is used to retrieve the MAC address of ESP's station or softAP interface
 
 ### Parameters
@@ -20,7 +20,7 @@ String in form of "XX:XX:XX:XX:XX:XX" with MAC address of ESP interface mapping 
 
 ---
 
-## 2. `wifi_get_mode`
+## 2. `wifi_get_mode()`
 This is used to retrieve the ESP32's Wi-Fi mode
 
 ### Return
@@ -32,7 +32,7 @@ This is used to retrieve the ESP32's Wi-Fi mode
 
 ---
 
-## 3. `wifi_set_mode`
+## 3. `wifi_set_mode(mode)`
 This is used to set the ESP32's Wi-Fi mode
 
 ### Parameters
@@ -47,7 +47,7 @@ This is used to set the ESP32's Wi-Fi mode
 
 ---
 
-## 4. `wifi_set_mac`
+## 4. `wifi_set_mac(mode, mac)`
 This is used to set MAC address for ESP's station or softAP interface
 
 ### Parameters
@@ -69,7 +69,7 @@ For example, the MAC address can set to be "1a:XX:XX:XX:XX:XX", but can not be "
 
 ---
 
-## 5. `wifi_set_power_save_mode`
+## 5. `wifi_set_power_save_mode(power_save_mode)`
 Set ESP32's power save mode
 
 ### Parameters
@@ -87,7 +87,7 @@ Maximum modem power saving. In this mode, interval to receive beacons is determi
 
 ---
 
-## 6. `wifi_get_power_save_mode`
+## 6. `wifi_get_power_save_mode()`
 Get the power save mode of ESP32
 
 ### Return
@@ -101,7 +101,7 @@ ESP32 on boot is configured in WIFI_PS_MIN_MODEM
 
 ---
 
-## 7. `wifi_set_ap_config`
+## 7. `wifi_set_ap_config(ssid, pwd, bssid, is_wpa3_supported, listen_interval)`
 Set the AP config to which ESP32 station should connect
 
 ### Parameters
@@ -123,7 +123,7 @@ Listen interval for ESP32 station to receive beacon when WIFI_PS_MAX_MODEM is se
 
 ---
 
-## 8. `wifi_get_ap_config`
+## 8. `wifi_get_ap_config()`
 Get the AP config to which ESP32 station is connected
 
 ### Return
@@ -154,7 +154,7 @@ In case of transport failure
 
 ---
 
-## 9. `wifi_disconnect_ap`
+## 9. `wifi_disconnect_ap()`
 Disconnect the AP to which ESP32 station is connected
 
 ### Return
@@ -162,7 +162,7 @@ Disconnect the AP to which ESP32 station is connected
 
 ---
 
-## 10. `wifi_ap_scan_list`
+## 10. `wifi_ap_scan_list()`
 Set the AP config to which ESP32 station should connect
 
 ### Return
@@ -191,7 +191,7 @@ RSSI signal strength
 
 ---
 
-## 11. `wifi_set_softap_config`
+## 11. `wifi_set_softap_config(ssid, pwd, chnl, ecn, max_conn, ssid_hidden, bw)`
 Set the ESP32's softAP config
 
 ### Parameters
@@ -222,7 +222,7 @@ softAP should broadcast its SSID or not
 
 ---
 
-## 12. `wifi_get_softap_config`
+## 12. `wifi_get_softap_config()`
 Get the ESP32's softAP config
 
 ### Return
@@ -250,7 +250,7 @@ Maximum number of stations can connect to ESP32 softAP (will be in range of 1 to
 
 ---
 
-## 13. `wifi_stop_softap`
+## 13. `wifi_stop_softap()`
 Stop the ESP32's softAP
 
 ### Return
@@ -258,7 +258,7 @@ Stop the ESP32's softAP
 
 ---
 
-## 14. `wifi_connected_stations_list`
+## 14. `wifi_connected_stations_list()`
 Get the list of connected station to the ESP32 softAP.
 
 ### Return
@@ -275,7 +275,7 @@ RSSI signal strength
 
 ---
 
-## 15. `create_socket`
+## 15. `create_socket(domain, types, protocol)`
 This function creates an endpoint for communication
 
 ### Parameters
@@ -292,7 +292,7 @@ This specifies a particular protocol to be used with the socket. Generally proto
 
 ---
 
-## 16. `close_socket`
+## 16. `close_socket(sock)`
 This function closes endpoint of the communication
 
 ### Parameters
@@ -304,7 +304,7 @@ This specifies the file descriptor of the endpoint/socket to be closed
 
 ---
 
-## 17. `wifi_set_max_tx_power`
+## 17. `wifi_set_max_tx_power(wifi_max_tx_power)`
 
 Function sets maximum WiFi transmitting power at ESP32.
 
@@ -330,7 +330,7 @@ Maximum WiFi transmitting power.
 
 ---
 
-### 18. `wifi_get_curr_tx_power`
+### 18. `wifi_get_curr_tx_power()`
 
 Function gets current WiFi transmiting power at ESP32.
 
@@ -340,5 +340,36 @@ returns Current WiFi transmitting power, unit is 0.25dBm. It is possible that th
 
 *Failure case* :
 - "failure" string
+
+---
+
+## 19. `esp_ota_begin()`
+esp ota begin function performs an OTA begin operation for ESP32 which erases and prepares existing flash partition for new flash writing.
+
+### Return
+
+"success" or "failure" string
+
+---
+
+## 20. `esp_ota_write(ota_data, ota_data_len)`
+esp ota write function performs an OTA write operation for ESP32, It writes bytes from `ota_data` buffer with `ota_data_len` number of bytes to OTA partition in flash. Number of bytes can be small than size of complete binary to be flashed. In that case, this caller is expected to repeatedly call this function till total size written equals size of complete binary.
+### Parameters
+
+- `ota_data` : OTA data buffer
+- `ota_data_len` : length of OTA data buffer
+
+### Return
+
+"success" or "failure" string
+
+---
+
+## 21. `esp_ota_end()`
+esp ota end function performs an OTA end operation for ESP32, It validates written OTA image, sets newly written OTA partition as boot partition for next boot, Creates timer which reset ESP32 after 5 sec.
+
+### Return
+
+"success" or "failure" string
 
 ---

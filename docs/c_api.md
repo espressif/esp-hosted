@@ -1,6 +1,6 @@
 # Control Interface: C API's
 
-This document describes C API's provided for control path interface. Please refer [commands.c](../host/host_common/commands.c) for API's defination. [c_demo.md](c_demo.md) gives overview of how to test control path interface in application also how to perform stress testing of control path interface.
+This document describes C API's provided for control path interface. Please refer [commands.c](../host/host_common/commands.c) for API's definition. [c_demo.md](c_demo.md) gives overview of how to test control path interface in application also how to perform stress testing of control path interface.
 
 A [stress.c](../host/linux/host_control/c_support/stress.c) can use for stress testing of control path commands. In which, `STRESS_TEST_COUNT` variable represents number of iterations and `STRESS_TEST` variable defines which test should get executed.
 
@@ -530,6 +530,43 @@ Current WiFi transmitting power, unit is 0.25dBm.
 
 #### **Note**
 It is possible that the current wifi transmit power is lesser than that of the requested max transmit power as part of `wifi_set_max_tx_power` API.
+
+#### Return
+
+- 0 : SUCCESS
+- -1 : FAILURE
+
+---
+
+### 2.20 `int esp_ota_begin()`
+
+esp ota begin function performs an OTA begin operation for ESP32 which erases and prepares existing flash partition for new flash writing.
+
+#### Return
+- 0 : SUCCESS
+- -1 : FAILURE
+
+---
+
+### 2.21 `int esp_ota_write(uint8_t* ota_data, uint32_t ota_data_len)`
+
+esp ota write function performs an OTA write operation for ESP32, It writes bytes from `ota_data` buffer with `ota_data_len` number of bytes to OTA partition in flash. Number of bytes can be small than size of complete binary to be flashed. In that case, this caller is expected to repeatedly call this function till total size written equals size of complete binary.
+
+#### Parameters
+
+- `ota_data` : OTA data buffer
+- `ota_data_len` : length of OTA data buffer
+
+#### Return
+
+- 0 : SUCCESS
+- -1 : FAILURE
+
+---
+
+### 2.22 `int esp_ota_end()`
+
+esp ota end function performs an OTA end operation for ESP32, It validates written OTA image, sets newly written OTA partition as boot partition for next boot, Creates timer which reset ESP32 after 5 sec.
 
 #### Return
 - 0 : SUCCESS

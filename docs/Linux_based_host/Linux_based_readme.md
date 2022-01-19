@@ -190,12 +190,13 @@ This section identifies Raspberry-Pi specific setup requirements.
 	* Git
 	* Python 2.x or 3.x: We have tested ESP-Hosted solution with python 2.7.13 and 3.5.3
 	* Bluetooth Stack and utilities:
-	  :warning:`Note: We have tested ESP-Hosted solution with bluez 5.43+`
+	  :warning:`Note: ESP-Hosted related BR/EDR 4.2 and BLE 4.2 functionalities are tested with bluez 5.43+. Whereas BLE 5.0 functionalities are tested with bluez 5.45+.`
 		* bluetooth
 		* bluez
 		* bluez-tools
 		* rfkill
 		* bluez-firmware
+	* We suggest latest stable bluez version to be used. Any other bluetooth stack instead of bluez also could be used.
 
 ### 2.2 ESP-IDF Setup
 :warning:`Note: ESP-IDF is needed to compile ESP-Hosted firmware source. Skip this step if you are planning to use pre-built release binaries.`  

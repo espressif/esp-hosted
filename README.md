@@ -81,7 +81,12 @@ Below table explains which feature is supported on which transport interface for
 | ESP32-C3 | SPI | Yes | Yes | BLE 5.0 |
 | ESP32-C3 | UART | No | No | BLE 5.0 |
 
-Note: BT stands for Bluetooth BR/EDR and BLE stands for Bluetooth Low Energy specifications.
+Note:
+* BT stands for Bluetooth BR/EDR and BLE stands for Bluetooth Low Energy specifications.
+* ESP-Hosted related BR/EDR 4.2 and BLE 4.2 functionalities are tested with bluez 5.43+. Whereas BLE 5.0 functionalities are tested with bluez 5.45+.
+* We suggest latest stable bluez version to be used. Any other bluetooth stack instead of bluez also could be used.
+* bluez 5.45 on-wards BLE 5.0 HCI commands are supported.
+* BLE 5.0 has backward compability of BLE 4.2.
 
 ##### 1.5.2 MCU Host
 Below table explains which feature is supported on which transport interface for MCU based host.
@@ -116,6 +121,8 @@ Note: BT stands for Bluetooth BR/EDR and BLE stands for Bluetooth Low Energy spe
 > With the help of this UART interface, BT/BLE stack can directly interact with BT controller present on ESP32 bypassing host driver and firmware
 > ESP Hosted host driver and a firmware plays no role in this communication
 
+* Linux hosts support OTA update (Over The Air ESP32 firmware update) in C and python. MCU hosts can refer the same for their development. For detailed documentation please read
+[ota_update.md](docs/Linux_based_host/ota_update.md).
 
 ---
 
