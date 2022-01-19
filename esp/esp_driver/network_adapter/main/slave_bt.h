@@ -46,6 +46,8 @@
     #define BLUETOOTH_HCI    4
   #elif CONFIG_BT_HCI_UART_NO
     #define BLUETOOTH_UART   CONFIG_BT_HCI_UART_NO
+  #elif CONFIG_BTDM_CTRL_HCI_UART_NO
+    #define BLUETOOTH_UART   CONFIG_BTDM_CTRL_HCI_UART_NO
   #endif
 
 #endif

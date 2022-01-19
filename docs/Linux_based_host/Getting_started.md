@@ -116,6 +116,12 @@ hci0:	Type: Primary  Bus: SDIO
 * This interface supports all standard HCI commands. Use standard hci tools to control and configure this interface.
 
 ### 2.1 BT/BLE Test procedure
+
+* ESP-Hosted related BR/EDR 4.2 and BLE 4.2 functionalities are tested with `bluez` 5.43+.
+Whereas BLE 5.0 functionalities are tested with `bluez` 5.45+.
+* We suggest latest stable `bluez` version to be used. Any other bluetooth stack instead of `bluez` also could be used.
+* To upgrade `bluez` for particular version, follow this [link](https://scribles.net/updating-bluez-on-raspberry-pi-from-5-43-to-5-50/). Replace bluez `older version` to `expected version` while following mentioned link.
+
 #### 2.1.1 GATT server
 
 1. Go to `bluez-5.xx` folder. Run `./test/example-gatt-server`. This will start GATT server on Raspberry-Pi.
@@ -152,14 +158,14 @@ Only ESP32C3 HCI controller supports BLE 5.0. Several new features are introduce
 5. LE Advertising Extensions
 6. LE Channel Selection Algorithm #2
 
-To test BLE 5.0 on RPi minimum `bluez` version `5.56` and above required. Check current `bluez` version by running following command on RPi:
+To test BLE 5.0 on RPi minimum `bluez` version `5.45` and above required. If `bluez` version is less than 5.45 ,then upgrade `bluez` version.
+
+Check current `bluez` version by running following command on RPi:
 
 ```
 bluetoothctl -v
 ```
 :warning: `hcitool lescan` is deprecated. Please dont use it.
-
-If `bluez` version is less than 5.56 then follow [this](https://scribles.net/updating-bluez-on-raspberry-pi-from-5-43-to-5-50/) link to update bluez to 5.56. Replace `bluez` version `5.50` to `5.56` while following mentioned link.
 
 ### 2.2.1 Basic scan, pair, connect
 
@@ -230,7 +236,12 @@ Steps:
 
 BLE5.0 supports 1M, 2M and CODED phy. To use 2M and CODED phy for gatt read/write procedure as follow:
 
-Note: Default selected phy is 1M. To perform gatt read/write with BLE5.0 peripheral, both host and peripheral must have same phy configuration.
+Note:
+* Default selected phy is 1M. To perform gatt read/write with BLE5.0 peripheral, both host and peripheral must have same phy configuration.
+
+* 'PHY' feature in BLE 5.0 is verified with btmgmt tool from bluez version 5.56+.
+
+* If `bluez` version is less than 5.56 ,then upgrade `bluez` version.
 
 #####  Using 1M phy:
 1M phy is default phy for BLE5.0. Follow above mentioned steps in section 2.2.1
@@ -246,21 +257,29 @@ Steps:
 4. while executing connect command, there is `LE Enhanced Connection Complete` event in `btmon` log. Note down `handle` value.
 5. After connection, exit form bluetoothctl. Run `exit` in bluetoothctl.
 6. Now configure phy into 2M. Run `sudo hcitool cmd 08 32 <handle_value> 03 02 02 00`.
-7. Follow gatt read/write from gatt menu in bluetoothctl.
+7. Follow gatt read/write from `gatt menu` in bluetoothctl.
 
 ##### Using CODED phy:
 Configure CODED phy on host and peripheral side.
 
 Steps:
-1. To configure phy as 1M and 2M both, run `sudo hcitool cmd 08 31 03 03 03`.
+1. To configure phy as CODED phy, run `sudo hcitool cmd 08 31 03 04 04`.
 2. To check selected phy, Go to `bluez-5.56` directory. Run `sudo ./tools/btmgmt --index hci0` and run `phy`.
 3. Connect to BLE5.0 device using above mentioned steps in section 2.2.1.
-4. while executing connect command, there is `LE Enhanced Connection Complete` event in `btmon` log. Note down `handle` value.
-5. After connection, exit form bluetoothctl. Run `exit` in bluetoothctl.
-6. Now configure phy into 2M. Run `sudo hcitool cmd 08 32 <handle_value> 03 02 02 00`.
-7. Follow gatt read/write from gatt menu in bluetoothctl.
+4. Follow gatt read/write from gatt menu in bluetoothctl.
 
-## 3. Troubleshoot Instructions
+## 3. OTA operation
+
+OTA (Over The Air) update performs following operations.
+* Erase ota flash partition of ESP32
+* Download chunk from URL and write that chunk into flash, one by one, till whole binary is written
+* Validate the complete written binary in flash
+* Sets newly written OTA partition as boot partition
+* Reboot the ESP32 after 5 second
+
+Please follow [OTA update documentation](ota_update.md) for further details.
+
+## 4. Troubleshoot Instructions
 
 Please refer following for troubleshoot instructions if something goes wrong.
 
