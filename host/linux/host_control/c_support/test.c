@@ -26,6 +26,11 @@ int main(int argc, char *argv[])
 {
     /* Below APIs could be used by demo application */
 
+	if(getuid()) {
+		printf("Please re-run program with superuser access\n");
+		return FAILURE;
+	}
+
     int ret = control_path_platform_init();
     if (ret != SUCCESS) {
         printf("EXIT!!!!\n");
