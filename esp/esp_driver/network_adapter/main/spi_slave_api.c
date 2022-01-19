@@ -650,7 +650,7 @@ static int esp_spi_read(interface_handle_t *if_handle, interface_buffer_handle_t
 
 	if (!if_handle) {
 		ESP_LOGE(TAG, "Invalid arguments to esp_spi_read\n");
-		return ESP_FAIL;
+		return 0;
 	}
 
 	while (1) {
@@ -669,7 +669,7 @@ static int esp_spi_read(interface_handle_t *if_handle, interface_buffer_handle_t
 	}
 
 	if (ret != pdTRUE) {
-		return ESP_FAIL;
+		return 0;
 	}
 	return buf_handle->payload_len;
 }
