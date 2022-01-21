@@ -92,61 +92,45 @@ Setup image is here.
 
 # 2. ESP peripheral setup
 ## 2.1 ESP-IDF requirement
-MCU based ESP-Hosted solution is compatible with ESP-IDF version 4.0 and above.
+:warning:`Note: ESP-IDF is needed to compile ESP-Hosted firmware source. Skip this step if you are planning to use pre-built release binaries.`
+
+ESP-IDF release version to be used for ESP peripherals are
+
+| ESP peripheral | ESP-IDF release |
+|:----:|:----:|
+| ESP32 | release v4.0 |
+| ESP32-S2 | release v4.2 |
+| ESP32-C3 | release v4.3 |
+| ESP32-C3 (HCI over UART)| release v4.4 (beta)|
+
+Clone appropriate ESP-IDF version as per your ESP peripheral. The control path between MCU host and ESP peripheral is based on `protobuf`. For that, corresponding stack layer, `protocomm` from ESP-IDF is used.
 
 ### 2.2 Setup
-The control path between host and ESP peripheral is based on `protobuf`. For that, corresponding stack layer, `protocomm` from ESP-IDF is used. Run following command on ESP32 to make `protocomm_priv.h` available for control path.
-```
-$ git mv components/protocomm/src/common/protocomm_priv.h components/protocomm/include/common/
-```
-
 #### 2.2.1 Using pre-built binary
 For pre built hosted mode firmware is present in `release` tab. Execute below command to flash it on ESP peripheral.
 
 ```sh
-$ python esptool.py --chip <chipset> --port <serial_port> --baud 960000 --before default_reset \
---after hard_reset write_flash -z --flash_mode dio --flash_freq 40m --flash_size detect \
+$ python esptool.py --chip <chipset> --port <serial_port> --baud <flash_baud_rate> --before default_reset \
+--after hard_reset write_flash --flash_mode dio --flash_size detect --flash_freq 40m \
 0x1000 esp_hosted_bootloader_<chipset>_spi_v<release_version>.bin \
-0x10000 esp_hosted_firmware_<chipset>_spi_v<release_version>.bin \
-0x8000 esp_hosted_partition-table_<chipset>_spi_v<release_version>.bin
+0x8000 esp_hosted_partition-table_<chipset>_spi_v<release_version>.bin \
+0xd000 esp_hosted_ota_data_initial_<chipset>_spi_v<release_version>.bin \
+0x10000 esp_hosted_firmware_<chipset>_spi_v<release_version>.bin
 
 Where,
-	<chipset>        : esp32/esp32s2/esp32c3
-	<serial_port>    : serial port of ESP peripheral
-	<release_version>: 0.1,0.2 etc. Latest from [release page](https://github.com/espressif/esp-hosted/releases)
+	<chipset>         : esp32/esp32s2/esp32c3
+	<serial_port>     : serial port of ESP peripheral
+	<flash_baud_rate> : flash baud rate of ESP peripheral, ex.115200, 921600, 2Mbps
+	<release_version> : 0.1,0.2 etc. Latest from [release page](https://github.com/espressif/esp-hosted/releases)
 ```
-* This command will flash `SPI` interface binaries on ESP module
+* This command will flash `SPI` interface binaries on ESP module.
 
 For windows user, you can also program the binaries using ESP Flash Programming Tool.
 
 #### 2.2.2 Compilation using source
-Please use above mentioned ESP-IDF repository release branch for your ESP peripheral.
-The control path between host and ESP peripheral is based on `protobuf`. For that `protocomm` layer from ESP-IDF is used. 
 
-Navigate to `esp/esp_driver/network_adapter` directory
-##### Using make
+Navigate to `esp/esp_driver/network_adapter` directory.
 
-:warning: *make* build system is only supported till ESP32. Please refer cmake section below for other ESP modules.
-
-```
-$ make clean
-```
-
-Run following command and navigate to `Example Configuration ->  Transport layer -> SPI interface -> select` and exit from menuconfig.
-```
-$ make menuconfig
-```
-:warning: Skip below step for ESP32-S2 or ESP32-C3. Run for  ESP32 only.
-
-Change SPI controller to VSPI. Please navigate to `Example Configuration → SPI Configuration` and change value of `SPI controller to use` to `3`
-
-
-To build and flash the app on ESP peripheral, run
-
-```sh
-$ make
-$ make flash
-```
 ##### Using cmake
 
 ```
