@@ -79,7 +79,7 @@ One can load pre-built release binaries on ESP peripheral or compile those from 
 * Please note that this binary is made for UART baudrate of 921600.
 ```sh
 $ python esptool.py --chip esp32 --port <serial_port> --baud <flash_baud_rate> --before default_reset \
---after hard_reset write_flash -z --flash_mode dio --flash_freq 40m --flash_size detect \
+--after hard_reset write_flash --flash_mode dio --flash_freq 40m --flash_size detect \
 0x1000 esp_hosted_bootloader_esp32_<transport>_uart_v<release_version>.bin \
 0x8000 esp_hosted_partition-table_esp32_<transport>_uart_v<release_version>.bin \
 0xd000 esp_hosted_ota_data_initial_esp32_<transport>_uart_v<release_version>.bin \
@@ -99,10 +99,10 @@ Where,
 ```sh
 $ python esptool.py --chip esp32c3 --port <serial_port> --baud <flash_baud_rate> --before default_reset \
 --after hard_reset write_flash --flash_mode dio --flash_size detect --flash_freq 80m \
-0x0 esp_hosted_bootloader_esp32c3_spi_v<release_version>.bin \
-0x8000 esp_hosted_partition-table_esp32c3_spi_v<release_version>.bin \
-0xd000 esp_hosted_ota_data_initial_esp32c3_spi_v<release_version>.bin \
-0x10000 esp_hosted_firmware_esp32c3_spi_v<release_version>.bin
+0x0 esp_hosted_bootloader_esp32c3_spi_uart_v<release_version>.bin \
+0x8000 esp_hosted_partition-table_esp32c3_spi_uart_v<release_version>.bin \
+0xd000 esp_hosted_ota_data_initial_esp32c3_spi_uart_v<release_version>.bin \
+0x10000 esp_hosted_firmware_esp32c3_spi_uart_v<release_version>.bin
 
 Where,
 	<serial_port>     : serial port of ESP peripheral
