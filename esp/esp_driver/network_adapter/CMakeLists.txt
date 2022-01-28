@@ -2,7 +2,7 @@
 # in this exact order for cmake to work correctly
 cmake_minimum_required(VERSION 3.5)
 
-set(PROJECT_VERSION "0.3")
+set(PROJECT_VERSION "0.4")
 message(*************************************************************************************)
 message("                    Building ESP-Hosted Firmware version :: ${PROJECT_VERSION}             ")
 message(*************************************************************************************)

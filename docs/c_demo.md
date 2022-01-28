@@ -21,7 +21,11 @@ Please execute `test.out` as below.
 
 ```
 ex.
-sudo ./test.out sta_connect sta_disconnect ap_vendor_ie ap_start ap_stop scan sta_list
+
+Usage: sudo ./test.out [scan] [sta_connect] [sta_disconnect] [ap_start] [ap_vendor_ie] [sta_list] [ap_stop] [wifi_tx_power] [ota <Esp_binary_path>]
+
+For example: sudo ./test.out scan sta_connect sta_disconnect ap_start ap_vendor_ie sta_list ap_stop wifi_tx_power ota <Esp_binary_path>
+
 ```
 Note:
 * After `sta_connect`, User needs to run DHCP client to obtain IP address from an external AP. Then network data path will be open for higher applications to use `ethsta0` interface for data communication. For an example as below.
@@ -60,7 +64,7 @@ ex.
 
 | Command line argument | Operation |
 |:----|:----|
-| Any positive interger number | Number of iterations for stress test |
+| Number of test iterations | Number of iterations for stress test |
 | sta_connect | Connect ESP32 station to external AP, assign MAC address of ESP32 station to `ethsta0` and up `ethsta0` interface |
 | sta_disconnect | Disconnect ESP32 station from external AP and down `ethsta0` interface |
 | ap_start | Start ESP32 softAP, assign MAC address of ESP32 softAP to `ethap0` and up `ethap0` interface |
@@ -70,12 +74,15 @@ ex.
 | ap_vendor_ie | Set vendor information element for ESP32 softAP |
 | wifi_tx_power | sets WiFi maximum transmitting power and get WiFi current transmitting power |
 
- Run `make stress` in [c_support](../host/linux/host_control/c_support) directory to compile `stress.c`.
+Run `make stress` in [c_support](../host/linux/host_control/c_support) directory to compile `stress.c`.
 
 Note:-
 Please execute `stress.out` as below.
 
 ```
 ex.
-sudo ./stress.out 1 sta_connect sta_disconnect ap_vendor_ie ap_start ap_stop scan sta_list
+usage: sudo ./stress.out <Number of test iterations> [scan] [sta_connect] [sta_disconnect] [ap_start] [sta_list] [ap_stop] [wifi_tx_power]
+
+For example: sudo ./stress.out 100 scan sta_connect sta_disconnect ap_start sta_list ap_stop wifi_tx_power
+
 ```

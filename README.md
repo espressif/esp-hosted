@@ -232,5 +232,6 @@ Below document explains the API's provided for MCU based ESP-Hosted solution
 # 4. Performance And Validation
 ### 4.1 Wi-Fi Performance in shielded environment
 Following performance numbers are taken on Linux based ESP-Hosted solution.
+These numbers are tested with older release, [Release 0.3](releases/tag/release%2Fv0.3)
 
 ![alt text](esp_hosted_performance.png "ESP Hosted performance matrix")

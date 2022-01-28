@@ -9,5 +9,9 @@ endif()
 
 
 register_component()
-set(PROJECT_VERSION "-DPROJECT_VERSION=0.3")
+set(PROJECT_VERSION "-DPROJECT_VERSION=0.4")
 target_compile_definitions(${COMPONENT_LIB} PRIVATE ${PROJECT_VERSION})
+
+# Add directory of protocomm_priv.h to include paths
+idf_component_get_property(protocomm_dir protocomm COMPONENT_DIR)
+target_include_directories(${COMPONENT_LIB} PRIVATE "${protocomm_dir}/src/common")
