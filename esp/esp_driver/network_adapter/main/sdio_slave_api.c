@@ -23,11 +23,14 @@
 #include "driver/sdio_slave.h"
 #include "soc/sdio_slave_periph.h"
 #include "endian.h"
+#include "mempool.h"
 
 #define SDIO_SLAVE_QUEUE_SIZE 20
 #define BUFFER_SIZE     2048
 #define BUFFER_NUM      20
 static uint8_t sdio_slave_rx_buffer[BUFFER_NUM][BUFFER_SIZE];
+
+static struct mempool * buf_mp_g;
 
 interface_context_t context;
 interface_handle_t if_handle_g;
@@ -46,6 +49,26 @@ if_ops_t if_ops = {
 	.reset = sdio_reset,
 	.deinit = sdio_deinit,
 };
+
+static inline void sdio_mempool_create(void)
+{
+	buf_mp_g = mempool_create(BUFFER_SIZE);
+#ifdef CONFIG_ESP_CACHE_MALLOC
+	assert(buf_mp_g);
+#endif
+}
+static inline void sdio_mempool_destroy(void)
+{
+	mempool_destroy(buf_mp_g);
+}
+static inline void *sdio_buffer_alloc(uint need_memset)
+{
+	return mempool_alloc(buf_mp_g, BUFFER_SIZE, need_memset);
+}
+static inline void sdio_buffer_free(void *buf)
+{
+	mempool_free(buf_mp_g, buf);
+}
 
 interface_context_t *interface_insert_driver(int (*event_handler)(uint8_t val))
 {
@@ -88,9 +111,8 @@ void generate_startup_event(uint8_t cap)
 
 	memset(&buf_handle, 0, sizeof(buf_handle));
 
-	buf_handle.payload = heap_caps_malloc(BUFFER_SIZE, MALLOC_CAP_DMA);
+	buf_handle.payload = sdio_buffer_alloc(MEMSET_REQUIRED);
 	assert(buf_handle.payload);
-	memset(buf_handle.payload, 0, BUFFER_SIZE);
 
 	header = (struct esp_payload_header *) buf_handle.payload;
 
@@ -128,11 +150,11 @@ void generate_startup_event(uint8_t cap)
 	ret = sdio_slave_transmit(buf_handle.payload, buf_handle.payload_len);
 	if (ret != ESP_OK) {
 		ESP_LOGE(TAG , "sdio slave tx error, ret : 0x%x\r\n", ret);
-		free(buf_handle.payload);
+		sdio_buffer_free(buf_handle.payload);
 		return;
 	}
 
-	free(buf_handle.payload);
+	sdio_buffer_free(buf_handle.payload);
 }
 
 static void sdio_read_done(void *handle)
@@ -191,6 +213,8 @@ static interface_handle_t * sdio_init(void)
 	}
 
 	memset(&if_handle_g, 0, sizeof(if_handle_g));
+
+	sdio_mempool_create();
 	if_handle_g.state = INIT;
 
 	return &if_handle_g;
@@ -220,7 +244,7 @@ static int32_t sdio_write(interface_handle_t *handle, interface_buffer_handle_t 
 
 	total_len = buf_handle->payload_len + sizeof (struct esp_payload_header);
 
-	sendbuf = heap_caps_malloc(total_len, MALLOC_CAP_DMA);
+	sendbuf = sdio_buffer_alloc(MEMSET_REQUIRED);
 	if (sendbuf == NULL) {
 		ESP_LOGE(TAG , "Malloc send buffer fail!");
 		return ESP_FAIL;
@@ -245,11 +269,11 @@ static int32_t sdio_write(interface_handle_t *handle, interface_buffer_handle_t 
 	ret = sdio_slave_transmit(sendbuf, total_len);
 	if (ret != ESP_OK) {
 		ESP_LOGE(TAG , "sdio slave transmit error, ret : 0x%x\r\n", ret);
-		free(sendbuf);
+		sdio_buffer_free(sendbuf);
 		return ESP_FAIL;
 	}
 
-	free(sendbuf);
+	sdio_buffer_free(sendbuf);
 
 	return buf_handle->payload_len;
 }
@@ -328,6 +352,7 @@ static esp_err_t sdio_reset(interface_handle_t *handle)
 
 static void sdio_deinit(interface_handle_t *handle)
 {
+	sdio_mempool_destroy();
 	sdio_slave_stop();
 	sdio_slave_reset();
 }

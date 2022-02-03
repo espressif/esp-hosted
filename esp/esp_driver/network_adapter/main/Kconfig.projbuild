@@ -44,6 +44,12 @@ menu "Example Configuration"
             GPIO pin for indicating host that SPI slave has data to be read by host
 	endmenu
 
+	config ESP_CACHE_MALLOC
+        bool "Cache allocated memory like mempool - helps to reduce malloc calls"
+        default y
+        help
+            Cache allocated memory - reduces number of malloc calls
+
     config ESP_OTA_WORKAROUND
         bool "OTA workaround - Add sleeps while OTA write"
         default y
