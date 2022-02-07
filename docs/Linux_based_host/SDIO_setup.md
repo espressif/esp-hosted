@@ -35,7 +35,7 @@ Please reboot Raspberry-Pi after changing this file.
 $ cd host/linux/host_control/
 $ ./rpi_init.sh sdio
 ```
-* This script compiles and loads host driver on Raspberry-Pi. It also creates virtual serial interface `/dev/esps0` which is used as a control interface for Wi-Fi on ESP peripheral
+* This script compiles and loads host driver on Raspberry-Pi. The driver creates virtual serial interface `/dev/esps0` which is used as a control interface for Wi-Fi on ESP peripheral.
 
 ### 2.2 ESP Peripheral Firmware
 One can load pre-built release binaries on ESP peripheral or compile those from source. Below subsection explains both these methods.
