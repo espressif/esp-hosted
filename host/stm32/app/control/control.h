@@ -123,7 +123,7 @@ typedef enum control_path_events_s {
 #endif
 
 
-#define WIFI_MAX_STR_LEN                  19
+#define WIFI_MAX_STR_LEN                  18
 
 /** Exported Structures **/
 
