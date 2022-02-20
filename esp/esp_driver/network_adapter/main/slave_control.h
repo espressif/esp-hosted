@@ -20,7 +20,7 @@
 #define SSID_LENGTH             32
 #define PASSWORD_LENGTH         64
 #define BSSID_LENGTH            19
-#define TIMEOUT_IN_SEC          (1000 / portTICK_RATE_MS)
+#define TIMEOUT_IN_SEC          (1000 / portTICK_PERIOD_MS)
 #define MAC_LEN                 6
 #define VENDOR_OUI_BUF          3
 
