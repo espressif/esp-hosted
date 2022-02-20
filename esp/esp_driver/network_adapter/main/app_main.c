@@ -43,7 +43,6 @@
 #include <protocomm.h>
 #include "protocomm_pserial.h"
 #include "slave_control.h"
-#include "driver/periph_ctrl.h"
 #include "slave_bt.c"
 
 static const char TAG[] = "NETWORK_ADAPTER";
