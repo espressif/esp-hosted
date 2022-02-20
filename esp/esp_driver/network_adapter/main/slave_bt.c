@@ -15,7 +15,6 @@
 
 #ifdef CONFIG_BT_ENABLED
 #include <string.h>
-#include "driver/periph_ctrl.h"
 #include "driver/gpio.h"
 #include "driver/uart.h"
 #include "esp_bt.h"
