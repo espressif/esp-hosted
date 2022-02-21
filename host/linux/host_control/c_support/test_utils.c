@@ -849,35 +849,28 @@ int test_set_vendor_specific_ie(void)
 	ctrl_cmd_t req = CTRL_CMD_DEFAULT_REQ();
 	ctrl_cmd_t *resp = NULL;
 	char *data = "Example vendor IE data";
-	int vnd_ie_size = sizeof(vendor_ie_data_t)+strlen(data)+1;
-	vendor_ie_data_t *vnd_ie = (vendor_ie_data_t *)malloc(vnd_ie_size);
-	if (!vnd_ie) {
-		printf("Failed to allocate memory for vnd_ie\n");
+
+	char *v_data = (char*)calloc(1, strlen(data));
+	if (!v_data) {
+		printf("Failed to allocate memory \n");
 		return FAILURE;
 	}
-
-	vnd_ie->element_id = WIFI_VENDOR_IE_ELEMENT_ID;
-	vnd_ie->length = strlen(data) + OFFSET;
-	if (vnd_ie->length < OFFSET) {
-		printf("Length should not be less than %d bytes \n", OFFSET);
-		free(vnd_ie);
-		return FAILURE;
-	}
-
-	vnd_ie->vendor_oui[0] = VENDOR_OUI_0;
-	vnd_ie->vendor_oui[1] = VENDOR_OUI_1;
-	vnd_ie->vendor_oui[2] = VENDOR_OUI_2;
-	vnd_ie->vendor_oui_type = VENDOR_OUI_TYPE;
-	memcpy(vnd_ie->payload, data, strlen(data));
+	memcpy(v_data, data, strlen(data));
 
 	req.u.wifi_softap_vendor_ie.enable = true;
 	req.u.wifi_softap_vendor_ie.type   = WIFI_VND_IE_TYPE_BEACON;
 	req.u.wifi_softap_vendor_ie.idx    = WIFI_VND_IE_ID_0;
-	req.u.wifi_softap_vendor_ie.vnd_ie = vnd_ie;
-	req.u.wifi_softap_vendor_ie.vnd_ie_size = vnd_ie_size;
+	req.u.wifi_softap_vendor_ie.vnd_ie.element_id = WIFI_VENDOR_IE_ELEMENT_ID;
+	req.u.wifi_softap_vendor_ie.vnd_ie.length = strlen(data)+OFFSET;
+	req.u.wifi_softap_vendor_ie.vnd_ie.vendor_oui[0] = VENDOR_OUI_0;
+	req.u.wifi_softap_vendor_ie.vnd_ie.vendor_oui[1] = VENDOR_OUI_1;
+	req.u.wifi_softap_vendor_ie.vnd_ie.vendor_oui[2] = VENDOR_OUI_2;
+	req.u.wifi_softap_vendor_ie.vnd_ie.vendor_oui_type = VENDOR_OUI_TYPE;
+	req.u.wifi_softap_vendor_ie.vnd_ie.payload = (uint8_t *)v_data;
+	req.u.wifi_softap_vendor_ie.vnd_ie.payload_len = strlen(data);
 
 	req.free_buffer_func = free;
-	req.free_buffer_handle = vnd_ie;
+	req.free_buffer_handle = v_data;
 
 	resp = wifi_set_vendor_specific_ie(req);
 

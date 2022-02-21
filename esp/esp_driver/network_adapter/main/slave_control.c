@@ -1617,8 +1617,8 @@ static esp_err_t req_set_softap_vender_specific_ie_handler (CtrlMsg *req,
 	CtrlMsgRespSetSoftAPVendorSpecificIE *resp_payload = NULL;
 
 	if (!req || !resp || !req->req_set_softap_vendor_specific_ie ||
-	    !req->req_set_softap_vendor_specific_ie->vendor_ie_data.len ||
-	    !req->req_set_softap_vendor_specific_ie->vendor_ie_data.data) {
+        !req->req_set_softap_vendor_specific_ie->vendor_ie_data->payload.len ||
+        !req->req_set_softap_vendor_specific_ie->vendor_ie_data->payload.data) {
 		ESP_LOGE(TAG, "Invalid parameters");
 		return ESP_FAIL;
 	}
@@ -1633,10 +1633,17 @@ static esp_err_t req_set_softap_vender_specific_ie_handler (CtrlMsg *req,
 	resp->payload_case = CTRL_MSG__PAYLOAD_RESP_SET_SOFTAP_VENDOR_SPECIFIC_IE;
 	resp->resp_set_softap_vendor_specific_ie = resp_payload;
 
+	vendor_ie_data_t v_data;
+	v_data.element_id = req->req_set_softap_vendor_specific_ie->vendor_ie_data->element_id;
+	v_data.length = req->req_set_softap_vendor_specific_ie->vendor_ie_data->length;
+	v_data.vendor_oui_type = req->req_set_softap_vendor_specific_ie->vendor_ie_data->vendor_oui_type;
+	memcpy(v_data.vendor_oui, req->req_set_softap_vendor_specific_ie->vendor_ie_data->vendor_oui.data, VENDOR_OUI_BUF);
+	memcpy(v_data.payload, req->req_set_softap_vendor_specific_ie->vendor_ie_data->payload.data, req->req_set_softap_vendor_specific_ie->vendor_ie_data->payload.len);
+
 	ret = esp_wifi_set_vendor_ie(req->req_set_softap_vendor_specific_ie->enable,
 			req->req_set_softap_vendor_specific_ie->type,
 			req->req_set_softap_vendor_specific_ie->idx,
-			req->req_set_softap_vendor_specific_ie->vendor_ie_data.data);
+			(void *)&v_data);
 	if (ret != ESP_OK) {
 		ESP_LOGE(TAG, "Failed to set vendor information element %d \n", ret);
 		resp_payload->resp = FAILURE;

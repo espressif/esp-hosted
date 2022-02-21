@@ -22,6 +22,7 @@
 #define BSSID_LENGTH            19
 #define TIMEOUT_IN_SEC          (1000 / portTICK_RATE_MS)
 #define MAC_LEN                 6
+#define VENDOR_OUI_BUF          3
 
 typedef struct {
 	uint8_t ssid[SSID_LENGTH];

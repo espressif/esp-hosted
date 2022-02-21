@@ -12,16 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-(WIFI_MODE_NONE, WIFI_MODE_STATION,
-        WIFI_MODE_SOFTAP, WIFI_MODE_SOFTAP_STATION,
-        WIFI_MODE_MAX) = (0, 1, 2, 3, 4)
-(WIFI_PS_MIN_MODEM, WIFI_PS_MAX_MODEM,
-        WIFI_PS_INVALID) = (1, 2, 3)
-
-failure = "failure"
-success = "success"
-not_connected = "not_connected"
-
 # station mode
 STATION_MODE_MAC_ADDRESS="1a:11:11:11:11:11"
 STATION_MODE_SSID="MyWifi"

@@ -45,6 +45,7 @@ typedef struct CtrlMsgReqOTAWrite CtrlMsgReqOTAWrite;
 typedef struct CtrlMsgRespOTAWrite CtrlMsgRespOTAWrite;
 typedef struct CtrlMsgReqOTAEnd CtrlMsgReqOTAEnd;
 typedef struct CtrlMsgRespOTAEnd CtrlMsgRespOTAEnd;
+typedef struct CtrlMsgReqVendorIEData CtrlMsgReqVendorIEData;
 typedef struct CtrlMsgReqSetSoftAPVendorSpecificIE CtrlMsgReqSetSoftAPVendorSpecificIE;
 typedef struct CtrlMsgRespSetSoftAPVendorSpecificIE CtrlMsgRespSetSoftAPVendorSpecificIE;
 typedef struct CtrlMsgReqSetWifiMaxTxPower CtrlMsgReqSetWifiMaxTxPower;
@@ -544,17 +545,31 @@ struct  CtrlMsgRespOTAEnd
     , 0 }
 
 
+struct  CtrlMsgReqVendorIEData
+{
+  ProtobufCMessage base;
+  int32_t element_id;
+  int32_t length;
+  ProtobufCBinaryData vendor_oui;
+  int32_t vendor_oui_type;
+  ProtobufCBinaryData payload;
+};
+#define CTRL_MSG__REQ__VENDOR_IEDATA__INIT \
+ { PROTOBUF_C_MESSAGE_INIT (&ctrl_msg__req__vendor_iedata__descriptor) \
+    , 0, 0, {0,NULL}, 0, {0,NULL} }
+
+
 struct  CtrlMsgReqSetSoftAPVendorSpecificIE
 {
   ProtobufCMessage base;
   protobuf_c_boolean enable;
   CtrlVendorIEType type;
   CtrlVendorIEID idx;
-  ProtobufCBinaryData vendor_ie_data;
+  CtrlMsgReqVendorIEData *vendor_ie_data;
 };
 #define CTRL_MSG__REQ__SET_SOFT_APVENDOR_SPECIFIC_IE__INIT \
  { PROTOBUF_C_MESSAGE_INIT (&ctrl_msg__req__set_soft_apvendor_specific_ie__descriptor) \
-    , 0, CTRL__VENDOR_IETYPE__Beacon, CTRL__VENDOR_IEID__ID_0, {0,NULL} }
+    , 0, CTRL__VENDOR_IETYPE__Beacon, CTRL__VENDOR_IEID__ID_0, NULL }
 
 
 struct  CtrlMsgRespSetSoftAPVendorSpecificIE
@@ -1368,6 +1383,25 @@ CtrlMsgRespOTAEnd *
 void   ctrl_msg__resp__otaend__free_unpacked
                      (CtrlMsgRespOTAEnd *message,
                       ProtobufCAllocator *allocator);
+/* CtrlMsgReqVendorIEData methods */
+void   ctrl_msg__req__vendor_iedata__init
+                     (CtrlMsgReqVendorIEData         *message);
+size_t ctrl_msg__req__vendor_iedata__get_packed_size
+                     (const CtrlMsgReqVendorIEData   *message);
+size_t ctrl_msg__req__vendor_iedata__pack
+                     (const CtrlMsgReqVendorIEData   *message,
+                      uint8_t             *out);
+size_t ctrl_msg__req__vendor_iedata__pack_to_buffer
+                     (const CtrlMsgReqVendorIEData   *message,
+                      ProtobufCBuffer     *buffer);
+CtrlMsgReqVendorIEData *
+       ctrl_msg__req__vendor_iedata__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data);
+void   ctrl_msg__req__vendor_iedata__free_unpacked
+                     (CtrlMsgReqVendorIEData *message,
+                      ProtobufCAllocator *allocator);
 /* CtrlMsgReqSetSoftAPVendorSpecificIE methods */
 void   ctrl_msg__req__set_soft_apvendor_specific_ie__init
                      (CtrlMsgReqSetSoftAPVendorSpecificIE         *message);
@@ -1707,6 +1741,9 @@ typedef void (*CtrlMsgReqOTAEnd_Closure)
 typedef void (*CtrlMsgRespOTAEnd_Closure)
                  (const CtrlMsgRespOTAEnd *message,
                   void *closure_data);
+typedef void (*CtrlMsgReqVendorIEData_Closure)
+                 (const CtrlMsgReqVendorIEData *message,
+                  void *closure_data);
 typedef void (*CtrlMsgReqSetSoftAPVendorSpecificIE_Closure)
                  (const CtrlMsgReqSetSoftAPVendorSpecificIE *message,
                   void *closure_data);
@@ -1791,6 +1828,7 @@ extern const ProtobufCMessageDescriptor ctrl_msg__req__otawrite__descriptor;
 extern const ProtobufCMessageDescriptor ctrl_msg__resp__otawrite__descriptor;
 extern const ProtobufCMessageDescriptor ctrl_msg__req__otaend__descriptor;
 extern const ProtobufCMessageDescriptor ctrl_msg__resp__otaend__descriptor;
+extern const ProtobufCMessageDescriptor ctrl_msg__req__vendor_iedata__descriptor;
 extern const ProtobufCMessageDescriptor ctrl_msg__req__set_soft_apvendor_specific_ie__descriptor;
 extern const ProtobufCMessageDescriptor ctrl_msg__resp__set_soft_apvendor_specific_ie__descriptor;
 extern const ProtobufCMessageDescriptor ctrl_msg__req__set_wifi_max_tx_power__descriptor;

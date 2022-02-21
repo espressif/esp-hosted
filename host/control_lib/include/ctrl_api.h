@@ -32,7 +32,7 @@
 #define MAX_MAC_STR_LEN                      18
 #define PASSWORD_LENGTH                      64
 #define STATUS_LENGTH                        14
-
+#define VENDOR_OUI_BUF                       3
 
 #define CALLBACK_SET_SUCCESS                 0
 #define CALLBACK_AVAILABLE                   0
@@ -232,11 +232,14 @@ typedef struct {
 	 * following this field. Minimum 4 */
     uint8_t length;
 	/* Vendor identifier (OUI) */
-    uint8_t vendor_oui[3];
+    uint8_t vendor_oui[VENDOR_OUI_BUF];
 	/* Vendor-specific OUI type */
     uint8_t vendor_oui_type;
+    /*length of payload field*/
+    uint16_t payload_len;
 	/* Payload. Length is equal to value in 'length' field, minus 4 */
-    uint8_t payload[0];
+    uint8_t* payload;
+
 } vendor_ie_data_t;
 
 typedef struct {
@@ -305,8 +308,7 @@ typedef struct {
 	bool enable;
 	wifi_vendor_ie_type_e type;
 	wifi_vendor_ie_id_e idx;
-	vendor_ie_data_t *vnd_ie;
-	uint16_t vnd_ie_size;
+	vendor_ie_data_t vnd_ie;
 } wifi_softap_vendor_ie_t;
 
 typedef struct {

@@ -1275,7 +1275,7 @@ int ctrl_app_send_req(ctrl_cmd_t *app_req)
 				goto fail_req;
 			}
 
-			if (!p->vnd_ie) {
+			if (!p->vnd_ie.payload) {
 				command_log("Invalid vendor IE buffer \n");
 				failure_status = CTRL_ERR_INCORRECT_ARG;
 				goto fail_req;
@@ -1285,9 +1285,17 @@ int ctrl_app_send_req(ctrl_cmd_t *app_req)
 			req_payload->enable = p->enable;
 			req_payload->type = p->type;
 			req_payload->idx = p->idx;
-			req_payload->vendor_ie_data.len = p->vnd_ie_size;
 
-			req_payload->vendor_ie_data.data = (void*)p->vnd_ie;
+			req_payload->vendor_ie_data = (CtrlMsgReqVendorIEData *)malloc(sizeof(CtrlMsgReqVendorIEData));
+			ctrl_msg__req__vendor_iedata__init(req_payload->vendor_ie_data);
+
+			req_payload->vendor_ie_data->element_id = p->vnd_ie.element_id;
+			req_payload->vendor_ie_data->length = p->vnd_ie.length;
+			req_payload->vendor_ie_data->vendor_oui.data =p->vnd_ie.vendor_oui;
+			req_payload->vendor_ie_data->vendor_oui.len = VENDOR_OUI_BUF;
+
+			req_payload->vendor_ie_data->payload.data = p->vnd_ie.payload;
+			req_payload->vendor_ie_data->payload.len = p->vnd_ie.payload_len;
 			break;
 		} case CTRL_REQ_START_SOFTAP: {
 			softap_config_t *p = &app_req->u.wifi_softap_config;

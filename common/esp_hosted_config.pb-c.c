@@ -1357,6 +1357,51 @@ void   ctrl_msg__resp__otaend__free_unpacked
   assert(message->base.descriptor == &ctrl_msg__resp__otaend__descriptor);
   protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
 }
+void   ctrl_msg__req__vendor_iedata__init
+                     (CtrlMsgReqVendorIEData         *message)
+{
+  static const CtrlMsgReqVendorIEData init_value = CTRL_MSG__REQ__VENDOR_IEDATA__INIT;
+  *message = init_value;
+}
+size_t ctrl_msg__req__vendor_iedata__get_packed_size
+                     (const CtrlMsgReqVendorIEData *message)
+{
+  assert(message->base.descriptor == &ctrl_msg__req__vendor_iedata__descriptor);
+  return protobuf_c_message_get_packed_size ((const ProtobufCMessage*)(message));
+}
+size_t ctrl_msg__req__vendor_iedata__pack
+                     (const CtrlMsgReqVendorIEData *message,
+                      uint8_t       *out)
+{
+  assert(message->base.descriptor == &ctrl_msg__req__vendor_iedata__descriptor);
+  return protobuf_c_message_pack ((const ProtobufCMessage*)message, out);
+}
+size_t ctrl_msg__req__vendor_iedata__pack_to_buffer
+                     (const CtrlMsgReqVendorIEData *message,
+                      ProtobufCBuffer *buffer)
+{
+  assert(message->base.descriptor == &ctrl_msg__req__vendor_iedata__descriptor);
+  return protobuf_c_message_pack_to_buffer ((const ProtobufCMessage*)message, buffer);
+}
+CtrlMsgReqVendorIEData *
+       ctrl_msg__req__vendor_iedata__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data)
+{
+  return (CtrlMsgReqVendorIEData *)
+     protobuf_c_message_unpack (&ctrl_msg__req__vendor_iedata__descriptor,
+                                allocator, len, data);
+}
+void   ctrl_msg__req__vendor_iedata__free_unpacked
+                     (CtrlMsgReqVendorIEData *message,
+                      ProtobufCAllocator *allocator)
+{
+  if(!message)
+    return;
+  assert(message->base.descriptor == &ctrl_msg__req__vendor_iedata__descriptor);
+  protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
+}
 void   ctrl_msg__req__set_soft_apvendor_specific_ie__init
                      (CtrlMsgReqSetSoftAPVendorSpecificIE         *message)
 {
@@ -3390,6 +3435,96 @@ const ProtobufCMessageDescriptor ctrl_msg__resp__otaend__descriptor =
   (ProtobufCMessageInit) ctrl_msg__resp__otaend__init,
   NULL,NULL,NULL    /* reserved[123] */
 };
+static const ProtobufCFieldDescriptor ctrl_msg__req__vendor_iedata__field_descriptors[5] =
+{
+  {
+    "element_id",
+    1,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_INT32,
+    0,   /* quantifier_offset */
+    offsetof(CtrlMsgReqVendorIEData, element_id),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "length",
+    2,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_INT32,
+    0,   /* quantifier_offset */
+    offsetof(CtrlMsgReqVendorIEData, length),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "vendor_oui",
+    3,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_BYTES,
+    0,   /* quantifier_offset */
+    offsetof(CtrlMsgReqVendorIEData, vendor_oui),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "vendor_oui_type",
+    4,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_INT32,
+    0,   /* quantifier_offset */
+    offsetof(CtrlMsgReqVendorIEData, vendor_oui_type),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "payload",
+    5,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_BYTES,
+    0,   /* quantifier_offset */
+    offsetof(CtrlMsgReqVendorIEData, payload),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+};
+static const unsigned ctrl_msg__req__vendor_iedata__field_indices_by_name[] = {
+  0,   /* field[0] = element_id */
+  1,   /* field[1] = length */
+  4,   /* field[4] = payload */
+  2,   /* field[2] = vendor_oui */
+  3,   /* field[3] = vendor_oui_type */
+};
+static const ProtobufCIntRange ctrl_msg__req__vendor_iedata__number_ranges[1 + 1] =
+{
+  { 1, 0 },
+  { 0, 5 }
+};
+const ProtobufCMessageDescriptor ctrl_msg__req__vendor_iedata__descriptor =
+{
+  PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
+  "CtrlMsg_Req_VendorIEData",
+  "CtrlMsgReqVendorIEData",
+  "CtrlMsgReqVendorIEData",
+  "",
+  sizeof(CtrlMsgReqVendorIEData),
+  5,
+  ctrl_msg__req__vendor_iedata__field_descriptors,
+  ctrl_msg__req__vendor_iedata__field_indices_by_name,
+  1,  ctrl_msg__req__vendor_iedata__number_ranges,
+  (ProtobufCMessageInit) ctrl_msg__req__vendor_iedata__init,
+  NULL,NULL,NULL    /* reserved[123] */
+};
 static const ProtobufCFieldDescriptor ctrl_msg__req__set_soft_apvendor_specific_ie__field_descriptors[4] =
 {
   {
@@ -3432,10 +3567,10 @@ static const ProtobufCFieldDescriptor ctrl_msg__req__set_soft_apvendor_specific_
     "vendor_ie_data",
     4,
     PROTOBUF_C_LABEL_NONE,
-    PROTOBUF_C_TYPE_BYTES,
+    PROTOBUF_C_TYPE_MESSAGE,
     0,   /* quantifier_offset */
     offsetof(CtrlMsgReqSetSoftAPVendorSpecificIE, vendor_ie_data),
-    NULL,
+    &ctrl_msg__req__vendor_iedata__descriptor,
     NULL,
     0,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */

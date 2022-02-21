@@ -297,12 +297,19 @@ message CtrlMsg_Resp_OTAEnd {
     int32 resp = 1;
 }
 
+message CtrlMsg_Req_VendorIEData {
+    int32 element_id = 1;
+    int32 length = 2;
+    bytes vendor_oui = 3;
+    int32 vendor_oui_type = 4;
+    bytes payload = 5; 
+}
 
 message CtrlMsg_Req_SetSoftAPVendorSpecificIE {
     bool enable = 1;
     Ctrl_VendorIEType type = 2;
     Ctrl_VendorIEID idx = 3;
-    bytes vendor_ie_data = 4;
+    CtrlMsg_Req_VendorIEData vendor_ie_data = 4;
 }
 
 message CtrlMsg_Resp_SetSoftAPVendorSpecificIE {
