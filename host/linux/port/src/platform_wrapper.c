@@ -20,7 +20,6 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <stdio.h>
-#include <unistd.h>
 #include <fcntl.h>
 #include <errno.h>
 #include <sys/select.h>
@@ -114,6 +113,7 @@ int control_path_platform_deinit(void)
 	return SUCCESS;
 }
 
+/* -------- Memory ---------- */
 void* hosted_malloc(size_t size)
 {
 	return malloc(size);
@@ -128,6 +128,87 @@ void hosted_free(void *ptr)
 {
 	free(ptr);
 }
+
+/* -------- Threads ---------- */
+int hosted_thread_create(thread_handle_t *thread_hdl, void *(*start_routine)(void *), void *arg)
+{
+	return pthread_create(thread_hdl,
+			NULL, start_routine, arg);
+}
+
+int hosted_thread_cancel(thread_handle_t thread_hdl)
+{
+	int s = pthread_cancel(thread_hdl);
+	if (s != 0) {
+		printf("Prob in pthread_cancel\n");
+		return FAILURE;
+	}
+
+	s = pthread_join(thread_hdl, NULL);
+	if (s != 0) {
+		printf("prob in pthread_join\n");
+		return FAILURE;
+	}
+	return SUCCESS;
+}
+
+/* -------- Semaphores ---------- */
+int hosted_create_semaphore(semaphore_handle_t *sem_id, int init_value)
+{
+	if (sem_init(sem_id, 0, init_value)) {
+		printf("read sem init failed\n");
+		return FAILURE;
+	}
+	return SUCCESS;
+}
+
+static int wait_for_timeout(sem_t *sem_id, int timeout_sec)
+{
+	int ret = 0;
+	struct timespec ts;
+
+	/* current time stamp, (used later for timeout calculation) */
+	if (clock_gettime(CLOCK_REALTIME, &ts) == -1)
+	{
+		/* handle error */
+		printf("Failed to get current timestamp\n");
+		return FAILURE;
+	}
+
+	/* Wait for timeout duration or till someone post this sem */
+	ts.tv_sec += timeout_sec;
+	while ((ret = sem_timedwait(sem_id, &ts)) == -1 && errno == EINTR)
+		continue;       /* Restart if interrupted by handler */
+
+	if (ret<0)
+		return FAILURE;
+	return SUCCESS;
+}
+
+int hosted_get_semaphore(semaphore_handle_t *sem_id, int timeout)
+{
+	if (!timeout) {
+		/* non blocking */
+		return sem_trywait(sem_id);
+	} else if (timeout<0) {
+		/* Blocking */
+		return sem_wait(sem_id);
+	} else {
+		return wait_for_timeout(sem_id, timeout);
+	}
+}
+
+int hosted_post_semaphore(semaphore_handle_t *sem_id)
+{
+	return sem_post(sem_id);
+}
+
+int hosted_destroy_semaphore(semaphore_handle_t *sem_id)
+{
+	return sem_destroy(sem_id);
+}
+
+/* -------- Timers  ---------- */
 
 int hosted_timer_stop(void *timer_handle)
 {
@@ -200,6 +281,7 @@ void *hosted_timer_start(int duration, int type, void (*timeout_handler)(union s
 }
 
 
+/* -------- Serial Drv ---------- */
 struct serial_drv_handle_t* serial_drv_open(const char *transport)
 {
 	if (!transport) {

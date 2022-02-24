@@ -27,16 +27,17 @@
 #define SET_SOFTAP_MAC_ADDR                "set_softap_mac_addr"
 
 #define GET_WIFI_MODE                      "get_wifi_mode"
+#define SET_WIFI_MODE                      "set_wifi_mode"
 
 #define GET_AP_SCAN_LIST                   "get_ap_scan_list"
-#define GET_STA_CONFIG                     "get_sta_config"
 #define STA_CONNECT                        "sta_connect"
+#define GET_STA_CONFIG                     "get_sta_config"
 #define STA_DISCONNECT                     "sta_disconnect"
 
-#define GET_SOFTAP_CONFIG                  "get_softap_config"
 #define SET_SOFTAP_VENDOR_IE               "set_softap_vendor_ie"
 #define RESET_SOFTAP_VENDOR_IE             "reset_softap_vendor_ie"
 #define SOFTAP_START                       "softap_start"
+#define GET_SOFTAP_CONFIG                  "get_softap_config"
 #define SOFTAP_CONNECTED_STA_LIST          "softap_connected_sta_list"
 #define SOFTAP_STOP                        "softap_stop"
 

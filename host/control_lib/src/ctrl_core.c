@@ -7,19 +7,8 @@
 #include "ctrl_core.h"
 #include "serial_if.h"
 #include "platform_wrapper.h"
-
-#ifndef STM32F469xx
-#include <sys/socket.h>
-#include <sys/types.h>
-#include <linux/if.h>
-#include <netdb.h>
-#include <sys/ioctl.h>
-#include <linux/if_arp.h>
-#include <unistd.h>
-#include <pthread.h>
-#include <semaphore.h>
 #include "esp_queue.h"
-#endif
+
 
 #ifdef STM32F469xx
 #include "common.h"
@@ -48,14 +37,6 @@
 #define MIN_CONN_NO                  1
 #define MAX_CONN_NO                  10
 
-#define success                      0
-#define success_str                  "success"
-#define success_str_len              8
-#define failure                      -1
-#define failure_str                  "failure"
-#define failure_str_len              8
-#define not_connected_str            "not_connected"
-#define not_connected_str_len        13
 
 #define CLEANUP_APP_MSG(app_msg) do {                            \
   if (app_msg) {                                                 \
@@ -80,12 +61,12 @@ struct ctrl_lib_context {
 typedef void (*ctrl_rx_ind_t)(void);
 
 esp_queue_t* ctrl_msg_Q = NULL;
-static sem_t read_sem;
-static sem_t ctrl_req_sem;
+static semaphore_handle_t read_sem;
+static semaphore_handle_t ctrl_req_sem;
 static void *async_timer_handle;
 static struct ctrl_lib_context ctrl_lib_ctxt;
 
-static pthread_t ctrl_rx_thread_handle;
+static thread_handle_t ctrl_rx_thread_handle;
 static int call_event_callback(ctrl_cmd_t *app_event);
 static int is_async_resp_callback_registered_by_resp_msg_id(int resp_msg_id);
 static int call_async_resp_callback(ctrl_cmd_t *app_resp);
@@ -362,14 +343,14 @@ static int ctrl_app_parse_resp(CtrlMsg *ctrl_msg, ctrl_cmd_t *app_resp)
 			switch (ctrl_msg->resp_get_ap_config->resp) {
 
 				case CTRL_ERR_NOT_CONNECTED:
-					strncpy(p->status, not_connected_str, STATUS_LENGTH);
+					strncpy(p->status, NOT_CONNECTED_STR, STATUS_LENGTH);
 					p->status[STATUS_LENGTH-1] = '\0';
 					command_log("Station is not connected to AP \n");
 					goto fail_parse_ctrl_msg2;
 					break;
 
 				case SUCCESS:
-					strncpy(p->status, success_str, STATUS_LENGTH);
+					strncpy(p->status, SUCCESS_STR, STATUS_LENGTH);
 					p->status[STATUS_LENGTH-1] = '\0';
 					if (ctrl_msg->resp_get_ap_config->ssid.data) {
 						strncpy((char *)p->ssid,
@@ -392,7 +373,7 @@ static int ctrl_app_parse_resp(CtrlMsg *ctrl_msg, ctrl_cmd_t *app_resp)
 				case FAILURE:
 				default:
 					/* intentional fall-through */
-					strncpy(p->status, failure_str, STATUS_LENGTH);
+					strncpy(p->status, FAILURE_STR, STATUS_LENGTH);
 					p->status[STATUS_LENGTH-1] = '\0';
 					command_log("Failed to get AP config \n");
 					goto fail_parse_ctrl_msg2;
@@ -526,8 +507,6 @@ static int ctrl_app_parse_resp(CtrlMsg *ctrl_msg, ctrl_cmd_t *app_resp)
 			if (ctrl_msg->resp_ota_begin->resp) {
 				command_log("OTA Begin Failed\n");
 				goto fail_parse_ctrl_msg;
-			} else {
-				command_log("OTA Begin successful\n");
 			}
 			break;
 		} case CTRL_RESP_OTA_WRITE : {
@@ -604,7 +583,7 @@ fail_parse_ctrl_msg2:
 /* Control path RX indication */
 static void ctrl_rx_ind(void)
 {
-	sem_post(&read_sem);
+	hosted_post_semaphore(&read_sem);
 }
 
 /* Returns CALLBACK_AVAILABLE if a non NULL control event
@@ -744,7 +723,7 @@ static int process_ctrl_rx_msg(CtrlMsg * proto_msg, ctrl_rx_ind_t ctrl_rx_func)
 			if (ctrl_rx_func)
 				ctrl_rx_func();
 		}
-		sem_post(&ctrl_req_sem);
+		hosted_post_semaphore(&ctrl_req_sem);
 
 	} else {
 		/* 4. some unsupported msg, drop it */
@@ -839,8 +818,8 @@ static int spawn_ctrl_rx_thread(void)
 {
 	int ret = SUCCESS;
 
-	ret = pthread_create(&(ctrl_rx_thread_handle),
-			NULL, &ctrl_rx_thread, ctrl_rx_ind);
+	ret = hosted_thread_create(&(ctrl_rx_thread_handle),
+			&ctrl_rx_thread, ctrl_rx_ind);
 	if (ret) {
 		printf("Thread creation failed for ctrl_rx_thread\n");
 	}
@@ -850,44 +829,15 @@ static int spawn_ctrl_rx_thread(void)
 /* cancel thread for control RX path handling */
 static int cancel_ctrl_rx_thread(void)
 {
-	int ret = SUCCESS;
-	int s = pthread_cancel(ctrl_rx_thread_handle);
+	int s = hosted_thread_cancel(ctrl_rx_thread_handle);
 	if (s != 0) {
 		printf("pthread_cancel failed\n");
-		ret = FAILURE;
-	}
-
-	s = pthread_join(ctrl_rx_thread_handle, NULL);
-	if (s != 0) {
-		printf("pthread_join failed\n");
-		ret = FAILURE;
-	}
-
-	return ret;
-}
-
-static int wait_for_timeout(sem_t *sem_id, int timeout_sec)
-{
-	int ret = 0;
-	struct timespec ts;
-
-	/* current time stamp, (used later for timeout calculation) */
-	if (clock_gettime(CLOCK_REALTIME, &ts) == -1)
-	{
-		/* handle error */
-		printf("Failed to get current timestamp\n");
 		return FAILURE;
 	}
 
-	/* Wait for timeout duration or till someone post this sem */
-	ts.tv_sec += timeout_sec;
-	while ((ret = sem_timedwait(sem_id, &ts)) == -1 && errno == EINTR)
-		continue;       /* Restart if interrupted by handler */
-
-	if (ret<0)
-		return FAILURE;
 	return SUCCESS;
 }
+
 
 
 /* This function will be only invoked in synchrounous control response path,
@@ -913,14 +863,14 @@ static ctrl_cmd_t * get_response(int *read_len, int timeout_sec)
 		timeout_sec = DEFAULT_CTRL_RESP_TIMEOUT;
 
 	/* 3. Wait for response */
-	ret = wait_for_timeout(&read_sem, timeout_sec);
+	ret = hosted_get_semaphore(&read_sem, timeout_sec);
 	if (ret) {
 		if (errno == ETIMEDOUT)
 			printf("Control response timed out after %u sec\n", timeout_sec);
 		else
 			perror("sem_timedwait");
 		/* Unlock semaphore in negative case */
-		sem_post(&ctrl_req_sem);
+		hosted_post_semaphore(&ctrl_req_sem);
 		return NULL;
 	}
 
@@ -1090,7 +1040,7 @@ ctrl_cmd_t * ctrl_wait_and_parse_sync_resp(ctrl_cmd_t *app_req)
 
 /* This function is called for async procedure
  * Timer started when async control req is received
- * But there was no response in due time, this function will 
+ * But there was no response in due time, this function will
  * be called to send error to application
  * */
 static void ctrl_async_timeout_handler(union sigval timer_data)
@@ -1113,7 +1063,7 @@ static void ctrl_async_timeout_handler(union sigval timer_data)
 		func(app_resp);
 
 		/* Unlock semaphore in negative case */
-		sem_post(&ctrl_req_sem);
+		hosted_post_semaphore(&ctrl_req_sem);
 	}
 }
 
@@ -1151,7 +1101,7 @@ int ctrl_app_send_req(ctrl_cmd_t *app_req)
 
 	/* 1. Check if any ongoing request present
 	 * Send failure in that case */
-	ret = wait_for_timeout(&ctrl_req_sem, WAIT_TIME_B2B_CTRL_REQ);
+	ret = hosted_get_semaphore(&ctrl_req_sem, WAIT_TIME_B2B_CTRL_REQ);
 	if (ret) {
 		failure_status = CTRL_ERR_REQ_IN_PROG;
 		goto fail_req;
@@ -1394,6 +1344,13 @@ int ctrl_app_send_req(ctrl_cmd_t *app_req)
 			ctrl_msg__req__config_heartbeat__init(req_payload);
 			req_payload->enable = app_req->u.e_heartbeat.enable;
 			req_payload->duration = app_req->u.e_heartbeat.duration;
+			if (req_payload->enable) {
+				printf("Enable heartbeat with duration %u\n", req_payload->duration);
+				if (CALLBACK_AVAILABLE != is_event_callback_registered(CTRL_EVENT_HEARTBEAT))
+					printf("Note: ** Subscribe heartbeat event to get notification **\n");
+			} else {
+				printf("Disable Heartbeat\n");
+			}
 			break;
 		} default: {
 			failure_status = CTRL_ERR_UNSUPPORTED_MSG;
@@ -1432,7 +1389,7 @@ int ctrl_app_send_req(ctrl_cmd_t *app_req)
 	}
 
 	/* 7. Start timeout for response for async only
-	 * For sync procedures, sem_timedwait takes care to
+	 * For sync procedures, hosted_get_semaphore takes care to
 	 * handle timeout situations */
 	if (app_req->ctrl_resp_cb) {
 		async_timer_handle = hosted_timer_start(app_req->cmd_timeout_sec, CTRL__TIMER_ONESHOT,
@@ -1522,14 +1479,14 @@ int init_hosted_control_lib_internal(void)
 		return FAILURE;
 	}
 
-	if (sem_init(&read_sem, 0, 1)) {
+	if (hosted_create_semaphore(&read_sem, 1)) {
 		printf("read sem init failed, exiting\n");
 		return FAILURE;
 	}
 	/* Get semaphore for first time */
-	sem_wait(&read_sem);
+	hosted_get_semaphore(&read_sem, HOSTED_SEM_BLOCKING);
 
-	if (sem_init(&ctrl_req_sem, 0, 1)) {
+	if (hosted_create_semaphore(&ctrl_req_sem, 1)) {
 		printf("read sem init failed, exiting\n");
 		return FAILURE;
 	}
@@ -1547,18 +1504,21 @@ int deinit_hosted_control_lib_internal(void)
 {
 	int ret = SUCCESS;
 
+	if (is_ctrl_lib_state(CTRL_LIB_STATE_INACTIVE))
+		return ret;
+
 	set_ctrl_lib_state(CTRL_LIB_STATE_INACTIVE);
 
 	if (ctrl_msg_Q) {
 		esp_queue_destroy(&ctrl_msg_Q);
 	}
 
-	if (sem_destroy(&ctrl_req_sem)) {
+	if (hosted_destroy_semaphore(&ctrl_req_sem)) {
 		ret = FAILURE;
 		printf("ctrl req sem deinit failed\n");
 	}
 
-	if (sem_destroy(&read_sem)) {
+	if (hosted_destroy_semaphore(&read_sem)) {
 		ret = FAILURE;
 		printf("read sem deinit failed\n");
 	}

@@ -26,18 +26,18 @@
 
 static void inline usage(char *argv[])
 {
-	printf("sudo %s <num_of_iterations> [%s] [%s] [%s] [%s] [%s] [%s] [%s] [%s] [%s] [%s] [%s] [%s] [%s] [%s] [%s] [%s] [%s]\n",
-		argv[0], SET_STA_MAC_ADDR, GET_STA_MAC_ADDR, SET_SOFTAP_MAC_ADDR, GET_SOFTAP_MAC_ADDR,
-		GET_AP_SCAN_LIST, STA_CONNECT, GET_STA_CONFIG, STA_DISCONNECT,
-		GET_WIFI_MODE, SOFTAP_START, GET_SOFTAP_CONFIG, SOFTAP_CONNECTED_STA_LIST,
-		SOFTAP_STOP, SET_WIFI_POWERSAVE_MODE, GET_WIFI_POWERSAVE_MODE,
-		SET_WIFI_MAX_TX_POWER, GET_WIFI_CURR_TX_POWER);
-	printf("\n\nFor example, \nsudo %s 5 %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s\n",
-		argv[0], SET_STA_MAC_ADDR, GET_STA_MAC_ADDR, SET_SOFTAP_MAC_ADDR, GET_SOFTAP_MAC_ADDR,
-		GET_AP_SCAN_LIST, STA_CONNECT, GET_STA_CONFIG, STA_DISCONNECT,
-		GET_WIFI_MODE, SOFTAP_START, GET_SOFTAP_CONFIG, SOFTAP_CONNECTED_STA_LIST,
-		SOFTAP_STOP, SET_WIFI_POWERSAVE_MODE, GET_WIFI_POWERSAVE_MODE,
-		SET_WIFI_MAX_TX_POWER, GET_WIFI_CURR_TX_POWER);
+	printf("sudo %s <num_of_iterations> [%s] [%s] [%s] [%s] [%s] [%s] [%s] [%s] [%s] [%s] [%s] [%s] [%s] [%s] [%s] [%s] [%s] [%s] [%s] [%s] [%s <ESP 'network_adaptor.bin' path>]\n",
+		argv[0], SET_STA_MAC_ADDR, GET_STA_MAC_ADDR, SET_SOFTAP_MAC_ADDR, GET_SOFTAP_MAC_ADDR, GET_AP_SCAN_LIST,
+		STA_CONNECT, GET_STA_CONFIG, STA_DISCONNECT, SET_WIFI_MODE, GET_WIFI_MODE,
+		RESET_SOFTAP_VENDOR_IE, SET_SOFTAP_VENDOR_IE, SOFTAP_START, GET_SOFTAP_CONFIG, SOFTAP_CONNECTED_STA_LIST,
+		SOFTAP_STOP, SET_WIFI_POWERSAVE_MODE, GET_WIFI_POWERSAVE_MODE, SET_WIFI_MAX_TX_POWER, GET_WIFI_CURR_TX_POWER,
+		OTA);
+	printf("\n\nFor example, \nsudo %s 5 %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s <ESP 'network_adaptor.bin' path>\n",
+		argv[0], SET_STA_MAC_ADDR, GET_STA_MAC_ADDR, SET_SOFTAP_MAC_ADDR, GET_SOFTAP_MAC_ADDR, GET_AP_SCAN_LIST,
+		STA_CONNECT, GET_STA_CONFIG, STA_DISCONNECT, SET_WIFI_MODE, GET_WIFI_MODE,
+		RESET_SOFTAP_VENDOR_IE, SET_SOFTAP_VENDOR_IE, SOFTAP_START, GET_SOFTAP_CONFIG, SOFTAP_CONNECTED_STA_LIST,
+		SOFTAP_STOP, SET_WIFI_POWERSAVE_MODE, GET_WIFI_POWERSAVE_MODE, SET_WIFI_MAX_TX_POWER, GET_WIFI_CURR_TX_POWER,
+		OTA);
 }
 
 int main(int argc, char *argv[])
@@ -87,38 +87,49 @@ int main(int argc, char *argv[])
 	}
 
 	for (int test_count=0; test_count<stress_test_count; test_count++) {
-		printf("\nIteration %u:\n",test_count+1);
+		printf("\n\nIteration %u:\n",test_count+1);
 		for (int i=str_args_start; i<argc; i++) {
-			printf(">> %s\n",argv[i]);
+			printf("\n>> %s\n",argv[i]);
 
-			if (0 == strncasecmp(GET_STA_MAC_ADDR, argv[i],
-						sizeof(GET_STA_MAC_ADDR))) {
-				test_station_mode_get_mac_addr();
-			} else if (0 == strncasecmp(GET_SOFTAP_MAC_ADDR, argv[i],
-						sizeof(GET_SOFTAP_MAC_ADDR))) {
-				test_softap_mode_get_mac_addr();
-			} else if (0 == strncasecmp(SET_STA_MAC_ADDR, argv[i],
+			if (0 == strncasecmp(SET_STA_MAC_ADDR, argv[i],
 						sizeof(SET_STA_MAC_ADDR))) {
 				test_station_mode_set_mac_addr_of_esp();
+			} else if (0 == strncasecmp(GET_STA_MAC_ADDR, argv[i],
+						sizeof(GET_STA_MAC_ADDR))) {
+				test_station_mode_get_mac_addr();
 			} else if (0 == strncasecmp(SET_SOFTAP_MAC_ADDR, argv[i],
 						sizeof(SET_SOFTAP_MAC_ADDR))) {
 				test_softap_mode_set_mac_addr_of_esp();
+			} else if (0 == strncasecmp(GET_SOFTAP_MAC_ADDR, argv[i],
+						sizeof(GET_SOFTAP_MAC_ADDR))) {
+				test_softap_mode_get_mac_addr();
 
 			} else if (0 == strncasecmp(GET_AP_SCAN_LIST, argv[i],
 						sizeof(GET_AP_SCAN_LIST))) {
 				test_get_available_wifi();
-			} else if (0 == strncasecmp(GET_STA_CONFIG, argv[i],
-						sizeof(GET_STA_CONFIG))) {
-				test_station_mode_get_info();
 			} else if (0 == strncasecmp(STA_CONNECT, argv[i],
 						sizeof(STA_CONNECT))) {
 				test_station_mode_connect();
+			} else if (0 == strncasecmp(GET_STA_CONFIG, argv[i],
+						sizeof(GET_STA_CONFIG))) {
+				test_station_mode_get_info();
 			} else if (0 == strncasecmp(STA_DISCONNECT, argv[i],
 						sizeof(STA_DISCONNECT))) {
 				test_station_mode_disconnect();
+
+			} else if (0 == strncasecmp(SET_WIFI_MODE, argv[i],
+						sizeof(SET_WIFI_MODE))) {
+				test_set_wifi_mode_station();
 			} else if (0 == strncasecmp(GET_WIFI_MODE, argv[i],
 						sizeof(GET_WIFI_MODE))) {
 				test_get_wifi_mode();
+
+			} else if (0 == strncasecmp(RESET_SOFTAP_VENDOR_IE, argv[i],
+				sizeof(RESET_SOFTAP_VENDOR_IE))) {
+				test_reset_vendor_specific_ie();
+			} else if (0 == strncasecmp(SET_SOFTAP_VENDOR_IE, argv[i],
+				sizeof(SET_SOFTAP_VENDOR_IE))) {
+				test_set_vendor_specific_ie();
 
 			} else if (0 == strncasecmp(SOFTAP_START, argv[i],
 						sizeof(SOFTAP_START))) {
@@ -132,18 +143,24 @@ int main(int argc, char *argv[])
 			} else if (0 == strncasecmp(SOFTAP_STOP, argv[i],
 						sizeof(SOFTAP_STOP))) {
 				test_softap_mode_stop();
+
 			} else if (0 == strncasecmp(SET_WIFI_POWERSAVE_MODE, argv[i],
 						sizeof(SET_WIFI_POWERSAVE_MODE))) {
 				test_set_wifi_power_save_mode_max();
 			} else if (0 == strncasecmp(GET_WIFI_POWERSAVE_MODE, argv[i],
 						sizeof(GET_WIFI_POWERSAVE_MODE))) {
 				test_get_wifi_power_save_mode();
+
 			} else if (0 == strncasecmp(SET_WIFI_MAX_TX_POWER, argv[i],
 						sizeof(SET_WIFI_MAX_TX_POWER))) {
 				test_wifi_set_max_tx_power(INPUT_WIFI_TX_POWER);
 			} else if (0 == strncasecmp(GET_WIFI_CURR_TX_POWER, argv[i],
 						sizeof(GET_WIFI_CURR_TX_POWER))) {
 				test_wifi_get_curr_tx_power();
+			} else if (0 == strncasecmp(OTA, argv[i], sizeof(OTA))) {
+				/* OTA ESP flashing */
+				printf("OTA binary path:%s\n",argv[i+1]);
+				test_ota(argv[i+1]);
 			}
 		}
 	}

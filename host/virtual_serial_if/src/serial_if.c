@@ -4,7 +4,6 @@
 /** Includes **/
 #include <string.h>
 #include "serial_if.h"
-#include "platform_wrapper.h"
 
 /** Constants/Macros **/
 #define SUCCESS                           0

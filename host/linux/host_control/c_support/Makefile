@@ -2,7 +2,7 @@ CC = gcc
 
 CROSS_COMPILE :=
 
-CFLAGS = -C -Wall 
+CFLAGS = -C -Wall
 
 LINKER = -lpthread -lrt
 

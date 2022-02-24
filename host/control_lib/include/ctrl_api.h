@@ -39,15 +39,6 @@
 #define CALLBACK_NOT_REGISTERED              -1
 #define MSG_ID_OUT_OF_ORDER                  -2
 
-#define success                              0
-#define success_str                          "success"
-#define success_str_len                      8
-#define failure                              -1
-#define failure_str                          "failure"
-#define failure_str_len                      8
-#define not_connected_str                    "not_connected"
-#define not_connected_str_len                13
-
 /* If request is already being served and
  * another request is pending, time period for
  * which new request will wait in seconds
@@ -55,6 +46,11 @@
 #define WAIT_TIME_B2B_CTRL_REQ               5
 #define DEFAULT_CTRL_RESP_TIMEOUT            30
 #define DEFAULT_CTRL_RESP_AP_SCAN_TIMEOUT    (60*3)
+
+
+#define SUCCESS_STR                          "success"
+#define FAILURE_STR                          "failure"
+#define NOT_CONNECTED_STR                    "not_connected"
 
 /*---- Control structures ----*/
 
@@ -94,33 +90,33 @@ typedef enum {
    ** Request Msgs *
    */
   CTRL_REQ_BASE                      = CTRL_MSG_ID__Req_Base,
-  CTRL_REQ_GET_MAC_ADDR              = CTRL_MSG_ID__Req_GetMACAddress,
-  CTRL_REQ_SET_MAC_ADDR              = CTRL_MSG_ID__Req_SetMacAddress,
-  CTRL_REQ_GET_WIFI_MODE             = CTRL_MSG_ID__Req_GetWifiMode,
-  CTRL_REQ_SET_WIFI_MODE             = CTRL_MSG_ID__Req_SetWifiMode,
+  CTRL_REQ_GET_MAC_ADDR              = CTRL_MSG_ID__Req_GetMACAddress, //0x65
+  CTRL_REQ_SET_MAC_ADDR              = CTRL_MSG_ID__Req_SetMacAddress, //0x66
+  CTRL_REQ_GET_WIFI_MODE             = CTRL_MSG_ID__Req_GetWifiMode,   //0x67
+  CTRL_REQ_SET_WIFI_MODE             = CTRL_MSG_ID__Req_SetWifiMode,   //0x68
 
-  CTRL_REQ_GET_AP_SCAN_LIST          = CTRL_MSG_ID__Req_GetAPScanList,
-  CTRL_REQ_GET_AP_CONFIG             = CTRL_MSG_ID__Req_GetAPConfig,
-  CTRL_REQ_CONNECT_AP                = CTRL_MSG_ID__Req_ConnectAP,
-  CTRL_REQ_DISCONNECT_AP             = CTRL_MSG_ID__Req_DisconnectAP,
+  CTRL_REQ_GET_AP_SCAN_LIST          = CTRL_MSG_ID__Req_GetAPScanList, //0x69
+  CTRL_REQ_GET_AP_CONFIG             = CTRL_MSG_ID__Req_GetAPConfig,   //0x6a
+  CTRL_REQ_CONNECT_AP                = CTRL_MSG_ID__Req_ConnectAP,     //0x6b
+  CTRL_REQ_DISCONNECT_AP             = CTRL_MSG_ID__Req_DisconnectAP,  //0x6c
 
-  CTRL_REQ_GET_SOFTAP_CONFIG         = CTRL_MSG_ID__Req_GetSoftAPConfig,
-  CTRL_REQ_SET_SOFTAP_VND_IE         = CTRL_MSG_ID__Req_SetSoftAPVendorSpecificIE,
-  CTRL_REQ_START_SOFTAP              = CTRL_MSG_ID__Req_StartSoftAP,
-  CTRL_REQ_GET_SOFTAP_CONN_STA_LIST  = CTRL_MSG_ID__Req_GetSoftAPConnectedSTAList,
-  CTRL_REQ_STOP_SOFTAP               = CTRL_MSG_ID__Req_StopSoftAP,
+  CTRL_REQ_GET_SOFTAP_CONFIG         = CTRL_MSG_ID__Req_GetSoftAPConfig,            //0x6d
+  CTRL_REQ_SET_SOFTAP_VND_IE         = CTRL_MSG_ID__Req_SetSoftAPVendorSpecificIE,  //0x6e
+  CTRL_REQ_START_SOFTAP              = CTRL_MSG_ID__Req_StartSoftAP,                //0x6f
+  CTRL_REQ_GET_SOFTAP_CONN_STA_LIST  = CTRL_MSG_ID__Req_GetSoftAPConnectedSTAList,  //0x70
+  CTRL_REQ_STOP_SOFTAP               = CTRL_MSG_ID__Req_StopSoftAP,                 //0x71
 
-  CTRL_REQ_SET_PS_MODE               = CTRL_MSG_ID__Req_SetPowerSaveMode,
-  CTRL_REQ_GET_PS_MODE               = CTRL_MSG_ID__Req_GetPowerSaveMode,
+  CTRL_REQ_SET_PS_MODE               = CTRL_MSG_ID__Req_SetPowerSaveMode,   //0x72
+  CTRL_REQ_GET_PS_MODE               = CTRL_MSG_ID__Req_GetPowerSaveMode,   //0x73
 
-  CTRL_REQ_OTA_BEGIN                 = CTRL_MSG_ID__Req_OTABegin,
-  CTRL_REQ_OTA_WRITE                 = CTRL_MSG_ID__Req_OTAWrite,
-  CTRL_REQ_OTA_END                   = CTRL_MSG_ID__Req_OTAEnd,
+  CTRL_REQ_OTA_BEGIN                 = CTRL_MSG_ID__Req_OTABegin,           //0x74
+  CTRL_REQ_OTA_WRITE                 = CTRL_MSG_ID__Req_OTAWrite,           //0x75
+  CTRL_REQ_OTA_END                   = CTRL_MSG_ID__Req_OTAEnd,             //0x76
 
-  CTRL_REQ_SET_WIFI_MAX_TX_POWER     = CTRL_MSG_ID__Req_SetWifiMaxTxPower,
-  CTRL_REQ_GET_WIFI_CURR_TX_POWER    = CTRL_MSG_ID__Req_GetWifiCurrTxPower,
+  CTRL_REQ_SET_WIFI_MAX_TX_POWER     = CTRL_MSG_ID__Req_SetWifiMaxTxPower,  //0x77
+  CTRL_REQ_GET_WIFI_CURR_TX_POWER    = CTRL_MSG_ID__Req_GetWifiCurrTxPower, //0x78
 
-  CTRL_REQ_CONFIG_HEARTBEAT          = CTRL_MSG_ID__Req_ConfigHeartbeat,
+  CTRL_REQ_CONFIG_HEARTBEAT          = CTRL_MSG_ID__Req_ConfigHeartbeat,    //0x79
   /*
    * Add new control path command response before Req_Max
    * and update Req_Max
@@ -130,33 +126,33 @@ typedef enum {
    ** Response Msgs *
    */
   CTRL_RESP_BASE                     = CTRL_MSG_ID__Resp_Base,
-  CTRL_RESP_GET_MAC_ADDR             = CTRL_MSG_ID__Resp_GetMACAddress,
-  CTRL_RESP_SET_MAC_ADDRESS          = CTRL_MSG_ID__Resp_SetMacAddress,
-  CTRL_RESP_GET_WIFI_MODE            = CTRL_MSG_ID__Resp_GetWifiMode,
-  CTRL_RESP_SET_WIFI_MODE            = CTRL_MSG_ID__Resp_SetWifiMode,
+  CTRL_RESP_GET_MAC_ADDR             = CTRL_MSG_ID__Resp_GetMACAddress,  //0x65 -> 0xc9
+  CTRL_RESP_SET_MAC_ADDRESS          = CTRL_MSG_ID__Resp_SetMacAddress,  //0x66 -> 0xca
+  CTRL_RESP_GET_WIFI_MODE            = CTRL_MSG_ID__Resp_GetWifiMode,    //0x67 -> 0xcb
+  CTRL_RESP_SET_WIFI_MODE            = CTRL_MSG_ID__Resp_SetWifiMode,    //0x68 -> 0xcc
 
-  CTRL_RESP_GET_AP_SCAN_LIST         = CTRL_MSG_ID__Resp_GetAPScanList,
-  CTRL_RESP_GET_AP_CONFIG            = CTRL_MSG_ID__Resp_GetAPConfig,
-  CTRL_RESP_CONNECT_AP               = CTRL_MSG_ID__Resp_ConnectAP,
-  CTRL_RESP_DISCONNECT_AP            = CTRL_MSG_ID__Resp_DisconnectAP,
+  CTRL_RESP_GET_AP_SCAN_LIST         = CTRL_MSG_ID__Resp_GetAPScanList,  //0x69 -> 0xcd
+  CTRL_RESP_GET_AP_CONFIG            = CTRL_MSG_ID__Resp_GetAPConfig,    //0x6a -> 0xce
+  CTRL_RESP_CONNECT_AP               = CTRL_MSG_ID__Resp_ConnectAP,      //0x6b -> 0xdf
+  CTRL_RESP_DISCONNECT_AP            = CTRL_MSG_ID__Resp_DisconnectAP,   //0x6c -> 0xd0
 
-  CTRL_RESP_GET_SOFTAP_CONFIG        = CTRL_MSG_ID__Resp_GetSoftAPConfig,
-  CTRL_RESP_SET_SOFTAP_VND_IE        = CTRL_MSG_ID__Resp_SetSoftAPVendorSpecificIE,
-  CTRL_RESP_START_SOFTAP             = CTRL_MSG_ID__Resp_StartSoftAP,
-  CTRL_RESP_GET_SOFTAP_CONN_STA_LIST = CTRL_MSG_ID__Resp_GetSoftAPConnectedSTAList,
-  CTRL_RESP_STOP_SOFTAP              = CTRL_MSG_ID__Resp_StopSoftAP,
+  CTRL_RESP_GET_SOFTAP_CONFIG        = CTRL_MSG_ID__Resp_GetSoftAPConfig,           //0x6d -> 0xd1
+  CTRL_RESP_SET_SOFTAP_VND_IE        = CTRL_MSG_ID__Resp_SetSoftAPVendorSpecificIE, //0x6e -> 0xd2
+  CTRL_RESP_START_SOFTAP             = CTRL_MSG_ID__Resp_StartSoftAP,               //0x6f -> 0xd3
+  CTRL_RESP_GET_SOFTAP_CONN_STA_LIST = CTRL_MSG_ID__Resp_GetSoftAPConnectedSTAList, //0x70 -> 0xd4
+  CTRL_RESP_STOP_SOFTAP              = CTRL_MSG_ID__Resp_StopSoftAP,                //0x71 -> 0xd5
 
-  CTRL_RESP_SET_PS_MODE              = CTRL_MSG_ID__Resp_SetPowerSaveMode,
-  CTRL_RESP_GET_PS_MODE              = CTRL_MSG_ID__Resp_GetPowerSaveMode,
+  CTRL_RESP_SET_PS_MODE              = CTRL_MSG_ID__Resp_SetPowerSaveMode, //0x72 -> 0xd6
+  CTRL_RESP_GET_PS_MODE              = CTRL_MSG_ID__Resp_GetPowerSaveMode, //0x73 -> 0xd7
 
-  CTRL_RESP_OTA_BEGIN                = CTRL_MSG_ID__Resp_OTABegin,
-  CTRL_RESP_OTA_WRITE                = CTRL_MSG_ID__Resp_OTAWrite,
-  CTRL_RESP_OTA_END                  = CTRL_MSG_ID__Resp_OTAEnd,
+  CTRL_RESP_OTA_BEGIN                = CTRL_MSG_ID__Resp_OTABegin,         //0x74 -> 0xd8
+  CTRL_RESP_OTA_WRITE                = CTRL_MSG_ID__Resp_OTAWrite,         //0x75 -> 0xd9
+  CTRL_RESP_OTA_END                  = CTRL_MSG_ID__Resp_OTAEnd,           //0x76 -> 0xda
 
-  CTRL_RESP_SET_WIFI_MAX_TX_POWER     = CTRL_MSG_ID__Resp_SetWifiMaxTxPower,
-  CTRL_RESP_GET_WIFI_CURR_TX_POWER    = CTRL_MSG_ID__Resp_GetWifiCurrTxPower,
+  CTRL_RESP_SET_WIFI_MAX_TX_POWER     = CTRL_MSG_ID__Resp_SetWifiMaxTxPower,  //0x77 -> 0xdb
+  CTRL_RESP_GET_WIFI_CURR_TX_POWER    = CTRL_MSG_ID__Resp_GetWifiCurrTxPower, //0x78 -> 0xdc
 
-  CTRL_RESP_CONFIG_HEARTBEAT          = CTRL_MSG_ID__Resp_ConfigHeartbeat,
+  CTRL_RESP_CONFIG_HEARTBEAT          = CTRL_MSG_ID__Resp_ConfigHeartbeat,    //0x79 -> 0xdd
   /*
    * Add new control path comm       and response before Resp_Max
    * and update Resp_Max
@@ -402,7 +398,7 @@ typedef int (*ctrl_event_cb_t) (ctrl_cmd_t * event);
 /*---- Control API Function ----*/
 
 /* This file contains hosted control library exposed APIs.
- * For detailed documentation, Please refer `../../../docs/common/c_api.md`
+ * For detailed documentation, Please refer `../../../docs/common/ctrl_apis.md`
  *
  * As important note, application using these APIs, should clean
  *   1. allocated buffer within library are saved in `app_resp->free_buffer_handle`
@@ -429,7 +425,7 @@ typedef int (*ctrl_event_cb_t) (ctrl_cmd_t * event);
 int set_event_callback(int event, ctrl_resp_cb_t event_cb);
 
 /* Reset control event callback
- * 
+ *
  * when user sets event callback, user provided function pointer
  * will be registered with user function
  * If user does not register event callback,
@@ -446,10 +442,10 @@ int reset_event_callback(int event);
 
 
 /* Initialize hosted control library
- * 
+ *
  * This is first step for application while using control path
  * This will allocate and instantiate hosted control library
- * 
+ *
  * Returns:
  * > SUCCESS - 0
  * > FAILURE - -1
@@ -457,10 +453,10 @@ int reset_event_callback(int event);
 int init_hosted_control_lib(void);
 
 /* De-initialize hosted control library
- * 
+ *
  * This is last step for application while using control path
  * This will deallocate and cleanup hosted control library
- * 
+ *
  * Returns:
  * > SUCCESS - 0
  * > FAILURE - -1

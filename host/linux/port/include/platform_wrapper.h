@@ -8,15 +8,27 @@
 #define CTRL__TIMER_ONESHOT                    0
 #define CTRL__TIMER_PERIODIC                   1
 
-#ifndef STM32F469xx
 #include <signal.h>
-#endif
+#include <pthread.h>
+#include <semaphore.h>
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <linux/if.h>
+#include <sys/ioctl.h>
+#include <linux/if_arp.h>
 
 /* Driver Handle */
 struct serial_drv_handle_t;
 
 /* Timer handle */
 struct timer_handle_t;
+
+#define thread_handle_t pthread_t
+#define semaphore_handle_t sem_t
+
+#define HOSTED_SEM_BLOCKING     -1
+#define HOSTED_SEM_NON_BLOCKING 0
 
 /*
  * control_path_platform_init function initializes the control
@@ -65,6 +77,65 @@ void* hosted_calloc(size_t blk_no, size_t size);
 
 void hosted_free(void* ptr);
 
+/* hosted_thread_create creates a thread
+ * Input parameter
+ *      thread_hdl    : thread handle returned
+ *      start_routine : thread start routine
+ *      arg           : argument passed
+ * Returns
+ *     0 on success or !=0 on Failure
+ */
+int hosted_thread_create(thread_handle_t *thread_hdl,
+		void *(*start_routine)(void *), void *arg);
+
+/* hosted_thread_cancel stops and clears thread
+ * Input parameter
+ *       thread_hdl   : valid thread handle
+ * Returns
+ *     0 on success or !=0 on Failure
+*/     
+int hosted_thread_cancel(thread_handle_t thread_hdl);
+
+/* hosted_create_semaphore creates semaphore
+ * Input parameter
+ *        sem_id     : pointer to semaphore handle created
+ *        init_value : Initial value of semaphore
+ * Returns
+ *     0 on success or !=0 on Failure
+ */
+int hosted_create_semaphore(semaphore_handle_t *sem_id, int init_value);
+
+/* hosted_get_semaphore to aquire semaphore
+ * Input parameter
+ *        sem_id     : pointer to valid semaphore handle
+ *        timeout    : 0  -> non_blocking
+ *                     -1 -> blocking
+ *                     >0 -> Timeout to wait in seconds
+ * Returns
+ *     0 on sempahore aquired or !=0 on Failure
+ */
+int hosted_get_semaphore(semaphore_handle_t *sem_id, int timeout);
+
+/* hosted_post_semaphore to valid signal handle
+ * This is blocking procedure
+ * Input parameter
+ *        sem_id     : pointer to valid semaphore handle
+ *        timeout    : 0  -> non_blocking
+ *                     -1 -> blocking
+ *                     >0 -> Timeout to wait in seconds
+ * Returns
+ *     0 on sempahore aquired or !=0 on Failure
+ */
+int hosted_post_semaphore(semaphore_handle_t *sem_id);
+
+/* hosted_destroy_semaphore destroys valid semaphore handle
+ * Input parameter
+ *        sem_id     : pointer to valid semaphore handle
+ * Returns
+ *     0 on sempahore aquired or !=0 on Failure
+ */
+int hosted_destroy_semaphore(semaphore_handle_t *sem_id);
+
 /* hosted_timer_start is to start timer
  * Input parameters
  *      duration : timeout value in seconds
@@ -76,7 +147,6 @@ void hosted_free(void* ptr);
  *      timer_handle : Timer id created newly
  *      NULL : on error
  */
-
 void *hosted_timer_start(int duration, int type,
 		void (*timeout_handler)(union sigval), void * arg);
 

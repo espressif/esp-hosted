@@ -45,7 +45,7 @@ wlan_init()
 	# CROSS_COMPILE -> <Toolchain-Path>/bin/arm-linux-gnueabihf-
 	# KERNEL        -> Place where kernel is checked out and built
 	# ARCH          -> Architecture
-	make -j8 target=$IF_TYPE CROSS_COMPILE=/usr/bin/arm-linux-gnueabihf- KERNEL="/lib/modules/$(uname -r)/build" ARCH=arm 
+	make -j8 target=$IF_TYPE CROSS_COMPILE=/usr/bin/arm-linux-gnueabihf- KERNEL="/lib/modules/$(uname -r)/build" ARCH=arm
 
 	if [ "$RESETPIN" = "" ] ; then
 		#By Default, BCM6 is GPIO on host. use resetpin=6

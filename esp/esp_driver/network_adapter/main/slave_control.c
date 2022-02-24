@@ -657,7 +657,7 @@ static esp_err_t req_get_ap_config_handler (CtrlMsg *req,
 	credentials.rssi = ap_info->rssi;
 	credentials.chnl = ap_info->primary;
 	credentials.ecn = ap_info->authmode;
-	resp_payload->ssid.len = strnlen((char *)credentials.ssid,
+	resp_payload->ssid.len = min(strlen((char *)credentials.ssid)+1,
 			sizeof(credentials.ssid));
 	if (!resp_payload->ssid.len) {
 		ESP_LOGE(TAG, "Invalid SSID length");
@@ -1814,7 +1814,7 @@ static esp_err_t configure_heartbeat(bool enable, int hb_duration)
 	int duration = hb_duration ;
 
 	if (!enable) {
-		printf("Stop Heatbeat\n");
+		ESP_LOGI(TAG, "Stop Heatbeat");
 		stop_heartbeat();
 
 	} else {
@@ -1958,7 +1958,6 @@ static int lookup_req_handler(int req_id)
 {
 	for (int i = 0; i < sizeof(req_table)/sizeof(esp_ctrl_msg_req_t); i++) {
 		if (req_table[i].req_num == req_id) {
-			printf("%s:%u %u\n",__func__,__LINE__, i);
 			return i;
 		}
 	}
@@ -1984,19 +1983,15 @@ static esp_err_t esp_ctrl_msg_command_dispatcher(
 
 	req_index = lookup_req_handler(req->msg_id);
 	if (req_index < 0) {
-		printf("%s:%u\n",__func__,__LINE__);
 		ESP_LOGE(TAG, "Invalid command handler lookup");
 		return ESP_FAIL;
 	}
 
-	printf("%s:%u\n",__func__,__LINE__);
 	ret = req_table[req_index].command_handler(req, resp, priv_data);
 	if (ret) {
-	printf("%s:%u\n",__func__,__LINE__);
 		ESP_LOGE(TAG, "Error executing command handler");
 		return ESP_FAIL;
 	}
-	printf("%s:%u\n",__func__,__LINE__);
 
 	return ESP_OK;
 }

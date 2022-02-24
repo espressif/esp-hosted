@@ -9,6 +9,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include "adapter.h"
+#include "platform_wrapper.h"
 
 #define SIZE_OF_TYPE                1
 #define SIZE_OF_LENGTH              2
@@ -44,23 +45,4 @@ int transport_pserial_send(uint8_t* data, uint16_t data_length);
 /* Read and return number of bytes and buffer from serial interface
  **/
 uint8_t * transport_pserial_read(uint32_t *out_nbyte);
-/*
- * control_path_platform_init function initializes the control
- * path data structures
- * Input parameter
- *      None
- * Returns
- *      SUCCESS(0) or FAILURE(-1) of above operation
- */
-int control_path_platform_init(void);
-
-/*
- * control_path_platform_deinit function cleans up the control
- * path library data structure
- * Input parameter
- *      None
- * Returns
- *      SUCCESS(0) or FAILURE(-1) of above operation
- */
-int control_path_platform_deinit(void);
 #endif

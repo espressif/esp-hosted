@@ -1,4 +1,4 @@
-# Copyright 2015-2021 Espressif Systems (Shanghai) PTE LTD
+# Copyright 2015-2022 Espressif Systems (Shanghai) PTE LTD
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
 # limitations under the License.
 
 from ctypes import *
-from hosted_config import *
+from hosted_py_header import *
 import os.path
 import subprocess
 import sys

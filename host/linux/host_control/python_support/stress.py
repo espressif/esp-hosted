@@ -1,4 +1,5 @@
-# Copyright 2015-2021 Espressif Systems (Shanghai) PTE LTD
+#!/usr/bin/env python3
+# Copyright 2015-2022 Espressif Systems (Shanghai) PTE LTD
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,133 +13,217 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from test_api import *
+import sys
+
+if sys.version_info[0] < 3:
+    print("please re-run using python3")
+    raise SystemExit('Exit')
+
 from time import *
+from py_parse.cmds import ctrl_cmd
+from py_parse.process import process_init_control_lib, process_deinit_control_lib, process_heartbeat
+from hosted_py_header import *
+import traceback
 
 STRESS_TEST_COUNT=50
+sta_mode = 'station'
+sta_mac = 'aa:bb:cc:dd:ee:ff'
+sta_ssid = 'SaveEarth'
+sta_pwd = 'PlantMoreTrees123'
 
-TEST_MODE_NONE=(1 << 0)
-TEST_SCAN_WIFI=(1 << 1)
-TEST_STATION_MAC=(1 << 2)
-TEST_STATION_CONNECT_DISCONNECT=(1 << 3)
-TEST_SOFTAP_MAC=(1 << 4)
-TEST_SOFTAP_START_STOP=(1 << 5)
-TEST_STATION_SOFTAP_MODE=(1 << 6)
-TEST_POWER_SAVE=(1 << 7)
-TEST_WIFI_TX_POWER=(1 << 8)
+softap_mode = 'station'
+softap_mac = 'cc:bb:aa:ee:ff:dd'
+softap_ssid = 'ESPWiFi'
+softap_pwd = 'ESPWiFi@123'
 
-STRESS_TEST=(TEST_MODE_NONE | TEST_SCAN_WIFI | TEST_STATION_MAC | TEST_STATION_CONNECT_DISCONNECT | TEST_SOFTAP_MAC | TEST_SOFTAP_START_STOP | TEST_STATION_SOFTAP_MODE | TEST_POWER_SAVE | TEST_WIFI_TX_POWER)
+sta_softap_mode = 'station+softap'
+max_tx_pwr_input = 22
 
-#***** Please Read *****
-#* Before use stress.py : User must enter user configuration parameter in "test_config.py" file *
+event1 = 'esp_init'
+event2 = 'heartbeat'
+event3 = 'sta_disconnect_from_ap'
+event4 = 'sta_disconnect_from_softap'
 
-# Below APIs could be used by demo application
+bit = 0
 
-# set wifi mode to none
-if (STRESS_TEST & TEST_MODE_NONE):
-    for i in (range(STRESS_TEST_COUNT)):
-        print("*************** "+str(i)+" ****************")
-        test_set_wifi_mode_none()
+TEST_EVENTS=(1 << bit)
+bit += 1
 
-        test_get_wifi_mode()
+TEST_MODE_STA=(1 << bit)
+bit += 1
 
-# get available wifi
-if (STRESS_TEST & TEST_SCAN_WIFI):
-    for i in (range(STRESS_TEST_COUNT)):
-        print("*************** "+str(i)+" ****************")
-        test_get_available_wifi()
+TEST_SCAN_WIFI=(1 << bit)
+bit += 1
 
-# station mode
+TEST_STATION_MAC=(1 << bit)
+bit += 1
 
-# set MAC addeess for station mode
-if (STRESS_TEST & TEST_STATION_MAC):
-    for i in (range(STRESS_TEST_COUNT)):
-        print("*************** "+str(i)+" ****************")
-        test_set_wifi_mode_station()
+TEST_STATION_CONNECT_DISCONNECT=(1 << bit)
+bit += 1
 
-        test_station_mode_set_mac_addr_of_esp()
+TEST_MODE_SOFTAP=(1 << bit)
+bit += 1
 
-        test_station_mode_get_mac_addr()
+TEST_SOFTAP_MAC=(1 << bit)
+bit += 1
 
-# station connect and disconnect
-if (STRESS_TEST & TEST_STATION_CONNECT_DISCONNECT):
-    for i in (range(STRESS_TEST_COUNT)):
-        print("*************** "+str(i)+" ****************")
-        test_station_mode_connect()
+TEST_SOFTAP_VENDOR_IE=(1 << bit)
+bit += 1
 
-        test_station_mode_get_info()
+TEST_SOFTAP_START_STOP=(1 << bit)
+bit += 1
 
-        test_station_mode_disconnect()
+TEST_STATION_SOFTAP_MODE=(1 << bit)
+bit += 1
 
-# softAP mode
+TEST_HEARTBEAT=(1 << bit)
+bit += 1
 
-# set MAC address for softap mode
-if (STRESS_TEST & TEST_SOFTAP_MAC):
-    for i in (range(STRESS_TEST_COUNT)):
-        print("*************** "+str(i)+" ****************")
-        test_set_wifi_mode_softap()
+TEST_POWER_SAVE=(1 << bit)
+bit += 1
 
-        test_softap_mode_set_mac_addr_of_esp()
+TEST_WIFI_TX_POWER=(1 << bit)
 
-        test_softap_mode_get_mac_addr()
+STRESS_TEST=(TEST_EVENTS | TEST_MODE_STA | TEST_SCAN_WIFI |
+        TEST_STATION_MAC | TEST_STATION_CONNECT_DISCONNECT |
+        TEST_MODE_SOFTAP | TEST_SOFTAP_MAC | TEST_SOFTAP_VENDOR_IE |
+        TEST_SOFTAP_START_STOP |  TEST_STATION_SOFTAP_MODE |
+        TEST_HEARTBEAT | TEST_POWER_SAVE | TEST_WIFI_TX_POWER)
 
-# softAP start, connect station and stop
-if (STRESS_TEST & TEST_SOFTAP_START_STOP):
-    for i in (range(STRESS_TEST_COUNT)):
-        print("*************** "+str(i)+" ****************")
-        test_softap_mode_start()
 
-        test_softap_mode_get_info()
-
-        print("***********************")
-        print("Connect station to softAP :"+str(SOFTAP_MODE_SSID)+" within 15 seconds")
-
-        sleep(15)
-        print("***********************")
-
-        test_softap_mode_connected_clients_info()
-
-        test_softap_mode_stop()
-
-# station + softAP mode
-
-# test station+softap mode
-if (STRESS_TEST & TEST_STATION_SOFTAP_MODE):
-    for i in (range(STRESS_TEST_COUNT)):
-        print("*************** "+str(i)+" ****************")
-        test_set_wifi_mode_station_softap()
-
-        test_get_available_wifi()
-
-        test_station_mode_connect()
-
-        test_softap_mode_start()
-
-        test_station_mode_get_info()
-
-        test_softap_mode_get_info()
-
-        test_station_mode_disconnect()
-
-        test_softap_mode_stop()
-
-# power save mode
-
-# set and get power save mode
-if (STRESS_TEST & TEST_POWER_SAVE):
-    for i in (range(STRESS_TEST_COUNT)):
-        print("*************** "+str(i)+" ****************")
-        test_set_wifi_power_save_mode()
-
-        test_get_wifi_power_save_mode()
-
-# maximum transmitting power
-
-# set and get maximum transmitting power
-if (STRESS_TEST & TEST_WIFI_TX_POWER):
-    for i in (range(STRESS_TEST_COUNT)):
-        print("*************** "+str(i)+" ****************")
-        test_wifi_set_max_tx_power()
-
-        test_wifi_get_curr_tx_power()
-
+try:
+    process_init_control_lib()
+    cmd = ctrl_cmd()
+    
+    # Config heartbeat
+    if (STRESS_TEST & TEST_EVENTS):
+        for i in (range(STRESS_TEST_COUNT)):
+            print("*************** "+str(i)+" ****************")
+            cmd.unsubscribe_event(event1)
+            cmd.subscribe_event(event1)
+            cmd.unsubscribe_event(event2)
+            cmd.subscribe_event(event2)
+            cmd.unsubscribe_event(event3)
+            cmd.subscribe_event(event3)
+            cmd.unsubscribe_event(event4)
+            cmd.subscribe_event(event4)
+    
+    if (STRESS_TEST & TEST_HEARTBEAT):
+        for i in (range(STRESS_TEST_COUNT)):
+            print("*************** "+str(i)+" ****************")
+            cmd.heartbeat(False)
+            cmd.heartbeat(True, 10)
+    
+    
+    # set wifi mode to station
+    if (STRESS_TEST & TEST_MODE_STA):
+        for i in (range(STRESS_TEST_COUNT)):
+            print("*************** "+str(i)+" ****************")
+            cmd.wifi_set_mode(sta_mode)
+            cmd.wifi_get_mode()
+    
+    # get available wifi
+    if (STRESS_TEST & TEST_SCAN_WIFI):
+        for i in (range(STRESS_TEST_COUNT)):
+            print("*************** "+str(i)+" ****************")
+            cmd.get_available_ap()
+    
+    # station mode
+    
+    # set MAC addeess for station mode
+    if (STRESS_TEST & TEST_STATION_MAC):
+        for i in (range(STRESS_TEST_COUNT)):
+            print("*************** "+str(i)+" ****************")
+            cmd.wifi_set_mac(sta_mode, sta_mac)
+            cmd.wifi_get_mac(sta_mode)
+    
+    # station connect and disconnect
+    if (STRESS_TEST & TEST_STATION_CONNECT_DISCONNECT):
+        for i in (range(STRESS_TEST_COUNT)):
+            print("*************** "+str(i)+" ****************")
+            cmd.connect_ap(sta_ssid, sta_pwd)
+            cmd.get_connected_ap_info()
+            cmd.disconnect_ap()
+    
+    # softAP mode
+    
+    # set wifi mode to softap
+    if (STRESS_TEST & TEST_MODE_SOFTAP):
+        for i in (range(STRESS_TEST_COUNT)):
+            print("*************** "+str(i)+" ****************")
+            cmd.wifi_set_mode(softap_mode)
+            cmd.wifi_get_mode()
+    
+    if (STRESS_TEST & TEST_SOFTAP_MAC):
+        for i in (range(STRESS_TEST_COUNT)):
+            print("*************** "+str(i)+" ****************")
+            cmd.wifi_set_mac(softap_mode, softap_mac)
+            cmd.wifi_get_mac(softap_mode)
+    
+    
+    # set MAC address for softap mode
+    if (STRESS_TEST & TEST_SOFTAP_VENDOR_IE):
+        for i in (range(STRESS_TEST_COUNT)):
+            print("*************** "+str(i)+" ****************")
+            print("Reset softap vendor IE")
+            cmd.softap_vendor_ie(False)
+            cmd.softap_vendor_ie(True, "Test Vendor IE")
+            print("Set softap vendor IE")
+    
+    # softAP start, connect station and stop
+    if (STRESS_TEST & TEST_SOFTAP_START_STOP):
+        for i in (range(STRESS_TEST_COUNT)):
+            print("*************** "+str(i)+" ****************")
+            cmd.start_softap(softap_ssid, softap_pwd)
+            cmd.get_softap_info()
+    
+            print("***********************")
+            print("Connect station to softAP :"+str(softap_ssid)+" within 15 seconds")
+    
+            sleep(15)
+            print("***********************")
+    
+            cmd.softap_connected_clients_info()
+            cmd.stop_softap()
+    
+    # station + softAP mode
+    
+    # test station+softap mode
+    if (STRESS_TEST & TEST_STATION_SOFTAP_MODE):
+        for i in (range(STRESS_TEST_COUNT)):
+            print("*************** "+str(i)+" ****************")
+            cmd.wifi_set_mode(sta_softap_mode)
+            cmd.wifi_get_mode()
+    
+            cmd.get_available_ap()
+    
+            cmd.connect_ap(sta_ssid, sta_pwd)
+            cmd.start_softap(softap_ssid, softap_pwd)
+    
+            cmd.get_connected_ap_info()
+            cmd.get_softap_info()
+    
+            cmd.disconnect_ap()
+            cmd.stop_softap()
+    
+    # power save mode
+    
+    # set and get power save mode
+    if (STRESS_TEST & TEST_POWER_SAVE):
+        for i in (range(STRESS_TEST_COUNT)):
+            print("*************** "+str(i)+" ****************")
+            cmd.set_wifi_power_save("max")
+            cmd.get_wifi_power_save()
+    
+    # maximum transmitting power
+    
+    # set and get maximum transmitting power
+    if (STRESS_TEST & TEST_WIFI_TX_POWER):
+        for i in (range(STRESS_TEST_COUNT)):
+            print("*************** "+str(i)+" ****************")
+            cmd.set_wifi_max_tx_power(max_tx_pwr_input)
+            cmd.get_wifi_curr_tx_power()
+    
+    process_deinit_control_lib(True)
+except:
+    traceback.print_exc()

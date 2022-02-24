@@ -490,7 +490,7 @@ int ctrl_app_resp_callback(ctrl_cmd_t * app_resp)
 			break;
 		} case CTRL_RESP_GET_AP_CONFIG : {
 			wifi_ap_config_t *p = &app_resp->u.wifi_ap_config;
-			if (0 == strncmp(success_str, p->status, strlen(success_str))) {
+			if (0 == strncmp(SUCCESS_STR, p->status, strlen(SUCCESS_STR))) {
 				printf("AP's ssid '%s'\n", p->ssid);
 				printf("AP's bssid i.e. MAC address %s\n", p->bssid);
 				printf("AP's channel number %d\n", p->channel);
@@ -618,8 +618,6 @@ int test_get_wifi_mode(void)
 
 	return SUCCESS;
 }
-
-
 
 
 int test_set_wifi_mode(int mode)

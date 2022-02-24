@@ -790,5 +790,6 @@ void app_main()
 
 	ESP_LOGI(TAG,"Initial set up done");
 
+	sleep(1);
 	send_event_to_host(CTRL_MSG_ID__Event_ESPInit);
 }
