@@ -35,6 +35,7 @@
 
 #define GET_SOFTAP_CONFIG                  "get_softap_config"
 #define SET_SOFTAP_VENDOR_IE               "set_softap_vendor_ie"
+#define RESET_SOFTAP_VENDOR_IE             "reset_softap_vendor_ie"
 #define SOFTAP_START                       "softap_start"
 #define SOFTAP_CONNECTED_STA_LIST          "softap_connected_sta_list"
 #define SOFTAP_STOP                        "softap_stop"

@@ -1615,35 +1615,71 @@ static esp_err_t req_set_softap_vender_specific_ie_handler (CtrlMsg *req,
 {
 	esp_err_t ret = ESP_OK;
 	CtrlMsgRespSetSoftAPVendorSpecificIE *resp_payload = NULL;
+	CtrlMsgReqSetSoftAPVendorSpecificIE *p_vsi = req->req_set_softap_vendor_specific_ie;
+	CtrlMsgReqVendorIEData *p_vid = NULL;
+	vendor_ie_data_t *v_data = NULL;
 
-	if (!req || !resp || !req->req_set_softap_vendor_specific_ie ||
-        !req->req_set_softap_vendor_specific_ie->vendor_ie_data->payload.len ||
-        !req->req_set_softap_vendor_specific_ie->vendor_ie_data->payload.data) {
+	if (!req || !resp || !p_vsi) {
 		ESP_LOGE(TAG, "Invalid parameters");
 		return ESP_FAIL;
 	}
+	p_vid = p_vsi->vendor_ie_data;
+
+	if (!p_vsi->enable) {
+
+		ESP_LOGI(TAG,"Disable softap vendor IE\n");
+
+	} else {
+
+		ESP_LOGI(TAG,"Enable softap vendor IE\n");
+
+		if (!p_vid ||
+		    !p_vid->payload.len ||
+		    !p_vid->payload.data) {
+			ESP_LOGE(TAG, "Invalid parameters");
+			return ESP_FAIL;
+		}
+
+		v_data = (vendor_ie_data_t*)calloc(1,sizeof(vendor_ie_data_t)+p_vid->payload.len);
+		if (!v_data) {
+			ESP_LOGE(TAG, "Malloc failed at %s:%u\n", __func__, __LINE__);
+			return ESP_FAIL;
+		}
+
+		v_data->length = p_vid->length;
+		v_data->element_id = p_vid->element_id;
+		v_data->vendor_oui_type = p_vid->vendor_oui_type;
+
+		memcpy(v_data->vendor_oui, p_vid->vendor_oui.data, VENDOR_OUI_BUF);
+
+		if (p_vid->payload.len && p_vid->payload.data) {
+			memcpy(v_data->payload, p_vid->payload.data, p_vid->payload.len);
+		}
+	}
+
 
 	resp_payload = (CtrlMsgRespSetSoftAPVendorSpecificIE *)
 		calloc(1,sizeof(CtrlMsgRespSetSoftAPVendorSpecificIE));
 	if (!resp_payload) {
 		ESP_LOGE(TAG,"Failed to allocate memory");
+		if (v_data)
+			mem_free(v_data);
 		return ESP_ERR_NO_MEM;
 	}
+
 	ctrl_msg__resp__set_soft_apvendor_specific_ie__init(resp_payload);
 	resp->payload_case = CTRL_MSG__PAYLOAD_RESP_SET_SOFTAP_VENDOR_SPECIFIC_IE;
 	resp->resp_set_softap_vendor_specific_ie = resp_payload;
 
-	vendor_ie_data_t v_data;
-	v_data.element_id = req->req_set_softap_vendor_specific_ie->vendor_ie_data->element_id;
-	v_data.length = req->req_set_softap_vendor_specific_ie->vendor_ie_data->length;
-	v_data.vendor_oui_type = req->req_set_softap_vendor_specific_ie->vendor_ie_data->vendor_oui_type;
-	memcpy(v_data.vendor_oui, req->req_set_softap_vendor_specific_ie->vendor_ie_data->vendor_oui.data, VENDOR_OUI_BUF);
-	memcpy(v_data.payload, req->req_set_softap_vendor_specific_ie->vendor_ie_data->payload.data, req->req_set_softap_vendor_specific_ie->vendor_ie_data->payload.len);
 
-	ret = esp_wifi_set_vendor_ie(req->req_set_softap_vendor_specific_ie->enable,
-			req->req_set_softap_vendor_specific_ie->type,
-			req->req_set_softap_vendor_specific_ie->idx,
-			(void *)&v_data);
+	ret = esp_wifi_set_vendor_ie(p_vsi->enable,
+			p_vsi->type,
+			p_vsi->idx,
+			v_data);
+
+	if (v_data)
+		mem_free(v_data);
+
 	if (ret != ESP_OK) {
 		ESP_LOGE(TAG, "Failed to set vendor information element %d \n", ret);
 		resp_payload->resp = FAILURE;
@@ -1922,6 +1958,7 @@ static int lookup_req_handler(int req_id)
 {
 	for (int i = 0; i < sizeof(req_table)/sizeof(esp_ctrl_msg_req_t); i++) {
 		if (req_table[i].req_num == req_id) {
+			printf("%s:%u %u\n",__func__,__LINE__, i);
 			return i;
 		}
 	}
@@ -1947,15 +1984,19 @@ static esp_err_t esp_ctrl_msg_command_dispatcher(
 
 	req_index = lookup_req_handler(req->msg_id);
 	if (req_index < 0) {
+		printf("%s:%u\n",__func__,__LINE__);
 		ESP_LOGE(TAG, "Invalid command handler lookup");
 		return ESP_FAIL;
 	}
 
+	printf("%s:%u\n",__func__,__LINE__);
 	ret = req_table[req_index].command_handler(req, resp, priv_data);
 	if (ret) {
+	printf("%s:%u\n",__func__,__LINE__);
 		ESP_LOGE(TAG, "Error executing command handler");
 		return ESP_FAIL;
 	}
+	printf("%s:%u\n",__func__,__LINE__);
 
 	return ESP_OK;
 }
@@ -2140,6 +2181,7 @@ static esp_err_t ctrl_ntfy_ESPInit(CtrlMsg *ntfy)
 {
 	CtrlMsgEventESPInit *ntfy_payload = NULL;
 
+	ESP_LOGI(TAG,"event ESPInit");
 	ntfy_payload = (CtrlMsgEventESPInit *)
 		calloc(1,sizeof(CtrlMsgEventESPInit));
 	if (!ntfy_payload) {

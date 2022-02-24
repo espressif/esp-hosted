@@ -843,6 +843,40 @@ int test_get_wifi_power_save_mode(void)
 	return ctrl_app_resp_callback(resp);
 }
 
+int test_reset_vendor_specific_ie(void)
+{
+	/* implemented synchronous */
+	ctrl_cmd_t req = CTRL_CMD_DEFAULT_REQ();
+	ctrl_cmd_t *resp = NULL;
+	char *data = "Example vendor IE data";
+
+	char *v_data = (char*)calloc(1, strlen(data));
+	if (!v_data) {
+		printf("Failed to allocate memory \n");
+		return FAILURE;
+	}
+	memcpy(v_data, data, strlen(data));
+
+	req.u.wifi_softap_vendor_ie.enable = false;
+	req.u.wifi_softap_vendor_ie.type   = WIFI_VND_IE_TYPE_BEACON;
+	req.u.wifi_softap_vendor_ie.idx    = WIFI_VND_IE_ID_0;
+	req.u.wifi_softap_vendor_ie.vnd_ie.element_id = WIFI_VENDOR_IE_ELEMENT_ID;
+	req.u.wifi_softap_vendor_ie.vnd_ie.length = strlen(data)+OFFSET;
+	req.u.wifi_softap_vendor_ie.vnd_ie.vendor_oui[0] = VENDOR_OUI_0;
+	req.u.wifi_softap_vendor_ie.vnd_ie.vendor_oui[1] = VENDOR_OUI_1;
+	req.u.wifi_softap_vendor_ie.vnd_ie.vendor_oui[2] = VENDOR_OUI_2;
+	req.u.wifi_softap_vendor_ie.vnd_ie.vendor_oui_type = VENDOR_OUI_TYPE;
+	req.u.wifi_softap_vendor_ie.vnd_ie.payload = (uint8_t *)v_data;
+	req.u.wifi_softap_vendor_ie.vnd_ie.payload_len = strlen(data);
+
+	req.free_buffer_func = free;
+	req.free_buffer_handle = v_data;
+
+	resp = wifi_set_vendor_specific_ie(req);
+
+	return ctrl_app_resp_callback(resp);
+}
+
 int test_set_vendor_specific_ie(void)
 {
 	/* implemented synchronous */

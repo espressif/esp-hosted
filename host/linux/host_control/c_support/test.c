@@ -67,6 +67,8 @@ static int parse_cli_cmd(char *in_cmd, char *args[])
 	/* Softap mode APIs */
 	else if (0 == strncasecmp(SET_SOFTAP_VENDOR_IE, in_cmd, sizeof(SET_SOFTAP_VENDOR_IE)))
 		test_set_vendor_specific_ie();
+	else if (0 == strncasecmp(RESET_SOFTAP_VENDOR_IE, in_cmd, sizeof(RESET_SOFTAP_VENDOR_IE)))
+		test_reset_vendor_specific_ie();
 	else if (0 == strncasecmp(SOFTAP_START, in_cmd, sizeof(SOFTAP_START)))
 		test_softap_mode_start();
 	else if (0 == strncasecmp(GET_SOFTAP_CONFIG, in_cmd, sizeof(GET_SOFTAP_CONFIG)))

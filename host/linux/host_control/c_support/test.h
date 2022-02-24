@@ -59,6 +59,7 @@ int test_set_wifi_power_save_mode_max(void);
 int test_set_wifi_power_save_mode_min(void);
 int test_get_wifi_power_save_mode(void);
 int test_set_vendor_specific_ie(void);
+int test_reset_vendor_specific_ie(void);
 int test_ota(char* image_path);
 int test_wifi_set_max_tx_power(int in_power);
 int test_wifi_get_curr_tx_power();
