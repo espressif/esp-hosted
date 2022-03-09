@@ -16,7 +16,7 @@
 /** Includes **/
 #include "string.h"
 #include "serial_drv.h"
-#include "serial_if.h"
+#include "serial_ll_if.h"
 #include "adapter.h"
 #include "spi_drv.h"
 #include "trace.h"
@@ -29,29 +29,28 @@ typedef enum {
 	INIT,
 	ACTIVE,
 	DESTROY
-} serial_state_e;
+} serial_ll_state_e;
 
 /* data structures needed for serial driver */
-static QueueHandle_t to_serial_intf_queue[MAX_SERIAL_INTF];
-static serial_handle_t * interface_handle_g[MAX_SERIAL_INTF] = {NULL};
+static QueueHandle_t to_serial_ll_intf_queue[MAX_SERIAL_INTF];
+static serial_ll_handle_t * interface_handle_g[MAX_SERIAL_INTF] = {NULL};
 static uint8_t conn_num = 0;
 
 /** Function Declarations **/
-static int       serial_open    (serial_handle_t *serial_hdl);
-static uint8_t * serial_read    (const serial_handle_t * serial_hdl,
+static int       serial_ll_open    (serial_ll_handle_t *serial_ll_hdl);
+static uint8_t * serial_ll_read    (const serial_ll_handle_t * serial_ll_hdl,
 		uint16_t * rlen);
-static int       serial_write   (const serial_handle_t * serial_hdl,
+static int       serial_ll_write   (const serial_ll_handle_t * serial_ll_hdl,
 		uint8_t * wbuffer, const uint16_t wlen);
-static void      serial_cleanup (serial_handle_t * serial_hdl);
-static int       serial_close   (serial_handle_t * serial_hdl);
+static int       serial_ll_close   (serial_ll_handle_t * serial_ll_hdl);
 
 
 /* define serial interface */
-static struct serial_operations serial_fops = {
-	.open    = serial_open,
-	.read    = serial_read,
-	.write   = serial_write,
-	.close   = serial_close,
+static struct serial_ll_operations serial_ll_fops = {
+	.open    = serial_ll_open,
+	.read    = serial_ll_read,
+	.write   = serial_ll_write,
+	.close   = serial_ll_close,
 };
 
 /** function definition **/
@@ -60,40 +59,40 @@ static struct serial_operations serial_fops = {
 
 /**
   * @brief Open new Serial interface
-  * @param  serial_hdl - handle of serial interface
+  * @param  serial_ll_hdl - handle of serial interface
   * @retval 0 if success, -1 on failure
   */
-static int serial_open(serial_handle_t *serial_hdl)
+static int serial_ll_open(serial_ll_handle_t *serial_ll_hdl)
 {
-	if (! serial_hdl) {
+	if (! serial_ll_hdl) {
 		printf("serial invalid hdr\n\r");
 		return STM_FAIL;
 	}
 
-	if (serial_hdl->queue) {
+	if (serial_ll_hdl->queue) {
 		/* clean up earlier queue */
-		vQueueDelete(serial_hdl->queue);
+		vQueueDelete(serial_ll_hdl->queue);
 	}
 
 	/* Queue - serial rx */
-	serial_hdl->queue = xQueueCreate(TO_SERIAL_INFT_QUEUE_SIZE,
+	serial_ll_hdl->queue = xQueueCreate(TO_SERIAL_INFT_QUEUE_SIZE,
 		sizeof(interface_buffer_handle_t));
 
-	if (! serial_hdl->queue) {
-		serial_cleanup(serial_hdl);
+	if (! serial_ll_hdl->queue) {
+		serial_ll_close(serial_ll_hdl);
 		return STM_FAIL;
 	}
 
-	serial_hdl->state  = ACTIVE;
+	serial_ll_hdl->state  = ACTIVE;
 	return STM_OK;
 }
 
 /**
   * @brief Get serial handle for iface_num
   * @param  iface_num - serial connection number
-  * @retval serial_hdl - output handle of serial interface
+  * @retval serial_ll_hdl - output handle of serial interface
   */
-static serial_handle_t * get_serial_handle(const uint8_t iface_num)
+static serial_ll_handle_t * get_serial_ll_handle(const uint8_t iface_num)
 {
 	if ((iface_num < MAX_SERIAL_INTF) &&
 		(interface_handle_g[iface_num]) &&
@@ -106,14 +105,16 @@ static serial_handle_t * get_serial_handle(const uint8_t iface_num)
 
 /**
   * @brief Close serial interface
-  * @param  serial_hdl - handle
+  * @param  serial_ll_hdl - handle
   * @retval rbuffer - ready buffer read on serial inerface
   */
-static int serial_close(serial_handle_t * serial_hdl)
+static int serial_ll_close(serial_ll_handle_t * serial_ll_hdl)
 {
-	if (serial_hdl->queue) {
-		vQueueDelete(serial_hdl->queue);
-		serial_hdl->queue = NULL;
+	serial_ll_hdl->state = DESTROY;
+
+	if (serial_ll_hdl->queue) {
+		vQueueDelete(serial_ll_hdl->queue);
+		serial_ll_hdl->queue = NULL;
 	}
 
 	/* reset connection */
@@ -121,9 +122,9 @@ static int serial_close(serial_handle_t * serial_hdl)
 		interface_handle_g[--conn_num] = NULL;
 	}
 
-	if (serial_hdl) {
-		free(serial_hdl);
-		serial_hdl = NULL;
+	if (serial_ll_hdl) {
+		free(serial_ll_hdl);
+		serial_ll_hdl = NULL;
 	}
 	return STM_OK;
 }
@@ -131,11 +132,11 @@ static int serial_close(serial_handle_t * serial_hdl)
 
 /**
   * @brief  Serial interface read non blocking
-  * @param  serial_hdl - handle
+  * @param  serial_ll_hdl - handle
   *         rlen - output param, number of bytes read
   * @retval rbuffer - ready buffer read on serial inerface
   */
-static uint8_t * serial_read(const serial_handle_t * serial_hdl,
+static uint8_t * serial_ll_read(const serial_ll_handle_t * serial_ll_hdl,
 							 uint16_t * rlen)
 {
 	/* This is a non-blocking call */
@@ -145,7 +146,7 @@ static uint8_t * serial_read(const serial_handle_t * serial_hdl,
 	*rlen = 0 ;
 
 	/* check if serial interface valid */
-	if ((! serial_hdl) || (serial_hdl->state != ACTIVE)) {
+	if ((! serial_ll_hdl) || (serial_ll_hdl->state != ACTIVE)) {
 		printf("serial invalid interface\n\r");
 		return NULL;
 	}
@@ -154,10 +155,10 @@ static uint8_t * serial_read(const serial_handle_t * serial_hdl,
 	 *
 	 * In case higher layer using serial
 	 * interface needs to make blocking read, it should register
-	 * serial_rx_callback through serial_init.
+	 * serial_rx_callback through serial_ll_init.
 	 * serial_rx_callback is notification mechanism to implementer of serial
 	 * interface. Higher layer will understand there is data is ready
-	 * through this notification. Then it will call serial_read API
+	 * through this notification. Then it will call serial_ll_read API
 	 * to receive actual data.
 	 *
 	 * As an another design option, serial_rx_callback can also be
@@ -167,13 +168,14 @@ static uint8_t * serial_read(const serial_handle_t * serial_hdl,
 	 *
 	 * In our example, first approach of blocking read is used.
 	 */
-	if (pdTRUE != xQueueReceive(serial_hdl->queue, &buf_handle, 0)) {
+	//TODO: Need Blocking?
+	if (pdTRUE != xQueueReceive(serial_ll_hdl->queue, &buf_handle, portMAX_DELAY)) {
 		printf("serial queue recv failed \n\r");
 		return NULL;
 	}
 
 	/* proceed only if payload and length are sane */
-	if (! buf_handle.payload || ! buf_handle.payload_len) {
+	if (!buf_handle.payload || !buf_handle.payload_len) {
 		return NULL;
 	}
 
@@ -184,22 +186,22 @@ static uint8_t * serial_read(const serial_handle_t * serial_hdl,
 
 /**
   * @brief Serial interface write
-  * @param  serial_hdl - handle
+  * @param  serial_ll_hdl - handle
   *         wlen - number of bytes to write
   *         wbuffer - buffer to send
   * @retval STM_FAIL/STM_OK
   */
-static int serial_write(const serial_handle_t * serial_hdl,
+static int serial_ll_write(const serial_ll_handle_t * serial_ll_hdl,
 	uint8_t * wbuffer, const uint16_t wlen)
 {
 
-	if ((! serial_hdl) || (serial_hdl->state != ACTIVE)) {
+	if ((! serial_ll_hdl) || (serial_ll_hdl->state != ACTIVE)) {
 		printf("serial invalid interface for write\n\r");
 		return STM_FAIL;
 	}
 
-	return send_to_slave(serial_hdl->if_type,
-		serial_hdl->if_num, wbuffer, wlen);
+	return send_to_slave(serial_ll_hdl->if_type,
+		serial_ll_hdl->if_num, wbuffer, wlen);
 }
 
 /**
@@ -211,14 +213,14 @@ static int serial_write(const serial_handle_t * serial_hdl,
   *         rx_len - size of rxbuff
   * @retval None
   */
-stm_ret_t serial_rx_handler(uint8_t if_num, uint8_t *rxbuff, uint16_t rx_len)
+stm_ret_t serial_ll_rx_handler(uint8_t if_num, uint8_t *rxbuff, uint16_t rx_len)
 {
 	interface_buffer_handle_t buf_handle = {0};
-	serial_handle_t * serial_hdl = NULL;
+	serial_ll_handle_t * serial_ll_hdl = NULL;
 
-	serial_hdl = get_serial_handle(if_num);
+	serial_ll_hdl = get_serial_ll_handle(if_num);
 
-	if ((! serial_hdl) || (serial_hdl->state != ACTIVE)) {
+	if ((! serial_ll_hdl) || (serial_ll_hdl->state != ACTIVE)) {
 		printf("Serial interface not registered yet\n\r");
 		return STM_FAIL ;
 	}
@@ -230,29 +232,18 @@ stm_ret_t serial_rx_handler(uint8_t if_num, uint8_t *rxbuff, uint16_t rx_len)
 	buf_handle.free_buf_handle = free;
 
 	/* send to serial queue */
-	if (pdTRUE != xQueueSend(serial_hdl->queue,
+	if (pdTRUE != xQueueSend(serial_ll_hdl->queue,
 		    &buf_handle, portMAX_DELAY)) {
 		printf("Failed send serialif queue[%u]\n\r", if_num);
 		return STM_FAIL;
 	}
 
 	/* Indicate higher layer about data ready for consumption */
-	if (serial_hdl->serial_rx_callback) {
-		(*serial_hdl->serial_rx_callback) ();
+	if (serial_ll_hdl->serial_rx_callback) {
+		(*serial_ll_hdl->serial_rx_callback) ();
 	}
 
 	return STM_OK;
-}
-
-/**
-  * @brief Serial cleanup
-  * @param  buf_handle - handle
-  * @retval None
-  */
-static void serial_cleanup(serial_handle_t * serial_hdl)
-{
-	serial_close(serial_hdl);
-	serial_hdl->state = DESTROY;
 }
 
 /** Exported Functions **/
@@ -260,28 +251,28 @@ static void serial_cleanup(serial_handle_t * serial_hdl)
 /**
   * @brief create and return new serial interface
   * @param  serial_rx_callback - callback to be invoked on rx data
-  * @retval serial_hdl - output handle of serial interface
+  * @retval serial_ll_hdl - output handle of serial interface
   */
-serial_handle_t * serial_init(void(*serial_rx_callback)(void))
+serial_ll_handle_t * serial_ll_init(void(*serial_rx_callback)(void))
 {
-	serial_handle_t  * serial_hdl = NULL;
+	serial_ll_handle_t  * serial_ll_hdl = NULL;
 
 	/* Check if more serial interfaces be created */
 	if ((conn_num+1) < MAX_SERIAL_INTF) {
 
-		serial_hdl = (serial_handle_t *)malloc(sizeof(serial_handle_t));
-		if (! serial_hdl) {
+		serial_ll_hdl = (serial_ll_handle_t *)malloc(sizeof(serial_ll_handle_t));
+		if (! serial_ll_hdl) {
 			printf("Serial interface - malloc failed\n\r");
 			return NULL;
 		}
 
-		serial_hdl->if_type = ESP_SERIAL_IF;
-		serial_hdl->if_num  = conn_num;
-		serial_hdl->queue   = to_serial_intf_queue[conn_num];
-		serial_hdl->state   = INIT;
-		serial_hdl->fops    = &serial_fops;
-		serial_hdl->serial_rx_callback   = serial_rx_callback;
-		interface_handle_g[conn_num] = serial_hdl;
+		serial_ll_hdl->if_type = ESP_SERIAL_IF;
+		serial_ll_hdl->if_num  = conn_num;
+		serial_ll_hdl->queue   = to_serial_ll_intf_queue[conn_num];
+		serial_ll_hdl->state   = INIT;
+		serial_ll_hdl->fops    = &serial_ll_fops;
+		serial_ll_hdl->serial_rx_callback   = serial_rx_callback;
+		interface_handle_g[conn_num] = serial_ll_hdl;
 		conn_num++;
 
 	} else {
@@ -289,5 +280,5 @@ serial_handle_t * serial_init(void(*serial_rx_callback)(void))
 		return NULL;
 	}
 
-	return serial_hdl;
+	return serial_ll_hdl;
 }

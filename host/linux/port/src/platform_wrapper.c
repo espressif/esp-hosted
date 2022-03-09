@@ -37,6 +37,17 @@
 #define DUMMY_READ_BUF_LEN      64
 #define EAGAIN                  11
 
+#define HOSTED_CALLOC(buff,nbytes) do {                           \
+    buff = (uint8_t *)hosted_calloc(1, nbytes);                   \
+    if (!buff) {                                                  \
+        printf("%s, Failed to allocate memory \n", __func__);     \
+        goto free_bufs;                                           \
+    }                                                             \
+} while(0);
+
+#define thread_handle_t pthread_t
+#define semaphore_handle_t sem_t
+
 
 struct serial_drv_handle_t {
 	int file_desc;
@@ -130,36 +141,67 @@ void hosted_free(void *ptr)
 }
 
 /* -------- Threads ---------- */
-int hosted_thread_create(thread_handle_t *thread_hdl, void *(*start_routine)(void *), void *arg)
+void *hosted_thread_create(void *(*start_routine)(void *), void *arg)
 {
-	return pthread_create(thread_hdl,
-			NULL, start_routine, arg);
+	thread_handle_t *thread_handle = (thread_handle_t *)hosted_malloc(
+			sizeof(thread_handle_t));
+	if (!thread_handle) {
+		printf("Falied to allocate thread handle\n");
+		return NULL;
+	}
+
+	if (pthread_create(thread_handle,
+			NULL, start_routine, arg)) {
+		printf("Failed in pthread_create\n");
+		mem_free(thread_handle);
+		return NULL;
+	}
+	return thread_handle;
 }
 
-int hosted_thread_cancel(thread_handle_t thread_hdl)
+int hosted_thread_cancel(void *thread_handle)
 {
-	int s = pthread_cancel(thread_hdl);
+	thread_handle_t *thread_hdl = NULL;
+
+	if (!thread_handle)
+		return FAILURE;
+	thread_hdl = (thread_handle_t *)thread_handle;
+
+	int s = pthread_cancel(*thread_hdl);
 	if (s != 0) {
+		mem_free(thread_handle);
 		printf("Prob in pthread_cancel\n");
 		return FAILURE;
 	}
 
-	s = pthread_join(thread_hdl, NULL);
+	s = pthread_join(*thread_hdl, NULL);
 	if (s != 0) {
+		mem_free(thread_handle);
 		printf("prob in pthread_join\n");
 		return FAILURE;
 	}
+	mem_free(thread_handle);
 	return SUCCESS;
 }
 
 /* -------- Semaphores ---------- */
-int hosted_create_semaphore(semaphore_handle_t *sem_id, int init_value)
+void * hosted_create_semaphore(int init_value)
 {
+	semaphore_handle_t *sem_id = NULL;
+
+	sem_id = (semaphore_handle_t*)hosted_malloc(
+			sizeof(semaphore_handle_t));
+
+	if (!sem_id)
+		return NULL;
+
 	if (sem_init(sem_id, 0, init_value)) {
 		printf("read sem init failed\n");
-		return FAILURE;
+		mem_free(sem_id);
+		return NULL;
 	}
-	return SUCCESS;
+
+	return sem_id;
 }
 
 static int wait_for_timeout(sem_t *sem_id, int timeout_sec)
@@ -185,8 +227,17 @@ static int wait_for_timeout(sem_t *sem_id, int timeout_sec)
 	return SUCCESS;
 }
 
-int hosted_get_semaphore(semaphore_handle_t *sem_id, int timeout)
+int hosted_get_semaphore(void * semaphore_handle, int timeout)
 {
+	semaphore_handle_t *sem_id = NULL;
+
+	if (!semaphore_handle) {
+		printf("uninitialised sem id\n");
+		return FAILURE;
+	}
+
+	sem_id = (semaphore_handle_t *)semaphore_handle;
+
 	if (!timeout) {
 		/* non blocking */
 		return sem_trywait(sem_id);
@@ -198,14 +249,38 @@ int hosted_get_semaphore(semaphore_handle_t *sem_id, int timeout)
 	}
 }
 
-int hosted_post_semaphore(semaphore_handle_t *sem_id)
+int hosted_post_semaphore(void * semaphore_handle)
 {
+	semaphore_handle_t *sem_id = NULL;
+
+	if (!semaphore_handle) {
+		printf("uninitialised sem id\n");
+		return FAILURE;
+	}
+
+	sem_id = (semaphore_handle_t *)semaphore_handle;
 	return sem_post(sem_id);
 }
 
-int hosted_destroy_semaphore(semaphore_handle_t *sem_id)
+int hosted_destroy_semaphore(void * semaphore_handle)
 {
-	return sem_destroy(sem_id);
+	int ret = SUCCESS;
+	semaphore_handle_t *sem_id = NULL;
+
+	if (!semaphore_handle) {
+		printf("uninitialised sem id\n");
+		return FAILURE;
+	}
+
+	sem_id = (semaphore_handle_t *)semaphore_handle;
+
+	ret = sem_destroy(sem_id);
+	if(ret)
+		printf("Failed to destroy sem\n");
+
+	mem_free(semaphore_handle);
+
+	return ret;
 }
 
 /* -------- Timers  ---------- */
@@ -216,6 +291,8 @@ int hosted_timer_stop(void *timer_handle)
 		int ret = timer_delete(((struct timer_handle_t *)timer_handle)->timer_id);
 		if (ret < 0)
 			printf("Failed to stop timer\n");
+
+		mem_free(timer_handle);
 		return ret;
 	}
 	return FAILURE;
@@ -229,7 +306,24 @@ int hosted_timer_stop(void *timer_handle)
  * }
  **/
 
-void *hosted_timer_start(int duration, int type, void (*timeout_handler)(union sigval), void * arg)
+typedef void (*hosted_timer_cb_t) (void* resp);
+
+struct timer_arg {
+	hosted_timer_cb_t timer_cb;
+	void * arg;
+};
+
+static void timer_ll_callback(union sigval timer_data)
+{
+	struct timer_arg *timer_arg = timer_data.sival_ptr;
+
+	if (timer_arg->timer_cb)
+		timer_arg->timer_cb(timer_arg->arg);
+	else
+		printf("NULL func, failed to call callback\n");
+}
+
+void *hosted_timer_start(int duration, int type, void (*timeout_handler)(void *), void * arg)
 {
 	struct timer_handle_t *timer_handle = NULL;
 
@@ -245,20 +339,25 @@ void *hosted_timer_start(int duration, int type, void (*timeout_handler)(union s
     /* specify start delay and interval
      * it_value and it_interval must not be zero */
 
+	struct timer_arg timer_arg;
+	
     struct itimerspec its = {   .it_value.tv_sec  = duration,
                                 .it_value.tv_nsec = 0,
                                 .it_interval.tv_sec  = 0,
                                 .it_interval.tv_nsec = 0
                             };
 
+	timer_arg.timer_cb = timeout_handler;
+	timer_arg.arg = arg;
+
 	if (type == CTRL__TIMER_PERIODIC) {
 		its.it_interval.tv_sec = duration;
 	}
 
     sev.sigev_notify = SIGEV_THREAD;
-    sev.sigev_notify_function = timeout_handler;
+    sev.sigev_notify_function = timer_ll_callback;
 	sev.sigev_signo = SIGRTMAX-1;
-    sev.sigev_value.sival_ptr = arg;
+    sev.sigev_value.sival_ptr = &timer_arg;
 
 
     /* create timer */
@@ -266,6 +365,7 @@ void *hosted_timer_start(int duration, int type, void (*timeout_handler)(union s
 
     if (res != 0){
         fprintf(stderr, "Error timer_create: %s\n", strerror(errno));
+		mem_free(timer_handle);
 		return NULL;
     }
 
@@ -274,6 +374,7 @@ void *hosted_timer_start(int duration, int type, void (*timeout_handler)(union s
 
     if (res != 0){
         fprintf(stderr, "Error timer_settime: %s\n", strerror(errno));
+		mem_free(timer_handle);
 		return NULL;
     }
 
@@ -334,6 +435,7 @@ int serial_drv_close(struct serial_drv_handle_t **serial_drv_handle)
 	}
 	if(close((*serial_drv_handle)->file_desc) < 0) {
 		perror("close:");
+		mem_free(*serial_drv_handle);
 		return FAILURE;
 	}
 	if (*serial_drv_handle) {
@@ -342,18 +444,104 @@ int serial_drv_close(struct serial_drv_handle_t **serial_drv_handle)
 	return SUCCESS;
 }
 
-int serial_drv_read (struct serial_drv_handle_t *serial_drv_handle,
-		void *buf, int nbyte)
+/* This whole processing of two step parsing TLV is common for MPU and MCU
+ * and ideally this processing should have been done in serial_if.c.
+ * But the problem is there is difference in reading in MPU and MCU.
+ * For MPU, it is straight forward, read on character driver file and
+ * partial reads are supported.
+ * But For MCU, the problem is it doesn't have that capability and gets complete
+ * serial buffer on transport.
+ * To keep it simple, two step parsing TLV buffer is kept in platform specific code
+ */
+uint8_t * serial_drv_read(struct serial_drv_handle_t *serial_drv_handle,
+		uint32_t *out_nbyte)
 {
+	uint16_t init_read_len = 0;
+	int ret = 0, count = 0, total_read_len = 0;
+	uint8_t *buf = NULL;
+	uint32_t buf_len = 0;
+	/* Any of `CTRL_EP_NAME_EVENT` and `CTRL_EP_NAME_RESP` could be used,
+	 * as both have same strlen in adapter.h */
+	const char* ep_name = CTRL_EP_NAME_RESP;
+
+/*
+ * Read fixed length of received data in below format:
+ * ----------------------------------------------------------------------------
+ *  Endpoint Type | Endpoint Length | Endpoint Value  | Data Type | Data Length
+ * ----------------------------------------------------------------------------
+ *
+ *  Bytes used per field as follows:
+ *  ---------------------------------------------------------------------------
+ *      1         |       2         | Endpoint Length |     1     |     2     |
+ *  ---------------------------------------------------------------------------
+ */
+
 	if (!serial_drv_handle ||
 	    serial_drv_handle->file_desc < 0 ||
-	    !buf) {
-		return FAILURE;
+	    !out_nbyte) {
+		printf("%s:%u Invalid parameter\n",__func__,__LINE__);
+		return NULL;
 	}
 
-	if (!nbyte) {
-		return 0;
+	init_read_len = SIZE_OF_TYPE + SIZE_OF_LENGTH + strlen(ep_name) +
+		SIZE_OF_TYPE + SIZE_OF_LENGTH;
+
+	HOSTED_CALLOC(buf,init_read_len);
+
+	total_read_len = 0;
+	do {
+		count = read(serial_drv_handle->file_desc,
+				(buf+total_read_len), (init_read_len-total_read_len));
+		if (count <= 0) {
+			perror("read fail:");
+			printf("Exp read of %u bytes: ret[%d]\n",
+					(init_read_len-total_read_len), count);
+			goto free_bufs;
+		}
+		total_read_len += count;
+	} while (total_read_len < init_read_len);
+
+	if (total_read_len != init_read_len) {
+		printf("%s, read_bytes exp[%d] vs recvd[%d]\n"
+				,__func__, init_read_len, total_read_len);
+		goto free_bufs;
 	}
 
-	return read(serial_drv_handle->file_desc, buf, nbyte);
+	ret = parse_tlv(buf, &buf_len);
+	if ((ret != SUCCESS) || !buf_len) {
+		goto free_bufs;
+	}
+	mem_free(buf);
+
+	/*
+	 * Read variable length of received data.
+	 * Variable length is obtained after
+	 * parsing of previously read data.
+	 */
+	HOSTED_CALLOC(buf,buf_len);
+
+	total_read_len = 0;
+	do {
+		count = read(serial_drv_handle->file_desc,
+				(buf+total_read_len), (buf_len-total_read_len));
+		if (count <= 0) {
+			perror("Fail to read serial data");
+			break;
+		}
+		total_read_len += count;
+	} while (total_read_len < buf_len);
+
+	if (total_read_len != buf_len) {
+		printf("%s, Exp num_bytes[%d] != recvd[%d]\n",
+				__func__, buf_len, total_read_len);
+		goto free_bufs;
+	}
+
+	*out_nbyte = buf_len;
+	return buf;
+
+free_bufs:
+	mem_free(buf);
+	*out_nbyte = 0;
+	return NULL;
 }

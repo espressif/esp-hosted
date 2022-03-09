@@ -8,6 +8,7 @@
 #include "serial_if.h"
 #include "platform_wrapper.h"
 #include "esp_queue.h"
+#include <unistd.h>
 
 
 #ifdef STM32F469xx
@@ -61,12 +62,12 @@ struct ctrl_lib_context {
 typedef void (*ctrl_rx_ind_t)(void);
 
 esp_queue_t* ctrl_msg_Q = NULL;
-static semaphore_handle_t read_sem;
-static semaphore_handle_t ctrl_req_sem;
-static void *async_timer_handle;
+static void * ctrl_rx_thread_handle;
+static void * read_sem;
+static void * ctrl_req_sem;
+static void * async_timer_handle;
 static struct ctrl_lib_context ctrl_lib_ctxt;
 
-static thread_handle_t ctrl_rx_thread_handle;
 static int call_event_callback(ctrl_cmd_t *app_event);
 static int is_async_resp_callback_registered_by_resp_msg_id(int resp_msg_id);
 static int call_async_resp_callback(ctrl_cmd_t *app_resp);
@@ -583,7 +584,7 @@ fail_parse_ctrl_msg2:
 /* Control path RX indication */
 static void ctrl_rx_ind(void)
 {
-	hosted_post_semaphore(&read_sem);
+	hosted_post_semaphore(read_sem);
 }
 
 /* Returns CALLBACK_AVAILABLE if a non NULL control event
@@ -672,8 +673,9 @@ static int process_ctrl_rx_msg(CtrlMsg * proto_msg, ctrl_rx_ind_t ctrl_rx_func)
 		 * been running for response.
 		 * As response received, stop timer */
 		if (async_timer_handle) {
+			/* async_timer_handle will be cleaned in hosted_timer_stop */
 			hosted_timer_stop(async_timer_handle);
-			mem_free(async_timer_handle);
+			async_timer_handle = NULL;
 		}
 
 		/* Decode protobuf buffer of response and
@@ -723,7 +725,7 @@ static int process_ctrl_rx_msg(CtrlMsg * proto_msg, ctrl_rx_ind_t ctrl_rx_func)
 			if (ctrl_rx_func)
 				ctrl_rx_func();
 		}
-		hosted_post_semaphore(&ctrl_req_sem);
+		hosted_post_semaphore(ctrl_req_sem);
 
 	} else {
 		/* 4. some unsupported msg, drop it */
@@ -745,10 +747,9 @@ free_buffers:
 
 /* Control path rx thread
  * This is entry point for control path messages received from ESP32 */
-static void * ctrl_rx_thread(void *arg)
+static void ctrl_rx_thread(void const *arg)
 {
 	uint32_t buf_len = 0;
-	int	thread_exit_status = FAILURE;
 
 	ctrl_rx_ind_t ctrl_rx_func;
 	ctrl_rx_func = (ctrl_rx_ind_t) arg;
@@ -757,20 +758,20 @@ static void * ctrl_rx_thread(void *arg)
 	 * for semaphore post */
 	if (!ctrl_rx_func) {
 		printf("ERROR: NULL rx async cb for esp_queue,sem\n");
-		pthread_exit(&thread_exit_status);
+		return;
 	}
 
 	/* 2. If serial interface is not available, exit */
 	if (!serial_drv_open(SERIAL_IF_FILE)) {
 		printf("Exiting thread, handle invalid\n");
-		pthread_exit(&thread_exit_status);
+		return;
 	}
 
 	/* 3. This queue should already be created
 	 * if NULL, exit here */
 	if (!ctrl_msg_Q) {
 		printf("Ctrl msg Q is not created\n");
-		pthread_exit(&thread_exit_status);
+		return;
 	}
 
 	/* 4. Infinite loop to process incoming msg on serial interface */
@@ -816,14 +817,12 @@ free_bufs:
 /* create new thread for control RX path handling */
 static int spawn_ctrl_rx_thread(void)
 {
-	int ret = SUCCESS;
-
-	ret = hosted_thread_create(&(ctrl_rx_thread_handle),
-			&ctrl_rx_thread, ctrl_rx_ind);
-	if (ret) {
+	ctrl_rx_thread_handle = hosted_thread_create(ctrl_rx_thread, ctrl_rx_ind);
+	if (!ctrl_rx_thread_handle) {
 		printf("Thread creation failed for ctrl_rx_thread\n");
+		return FAILURE;
 	}
-	return ret;
+	return SUCCESS;
 }
 
 /* cancel thread for control RX path handling */
@@ -863,14 +862,14 @@ static ctrl_cmd_t * get_response(int *read_len, int timeout_sec)
 		timeout_sec = DEFAULT_CTRL_RESP_TIMEOUT;
 
 	/* 3. Wait for response */
-	ret = hosted_get_semaphore(&read_sem, timeout_sec);
+	ret = hosted_get_semaphore(read_sem, timeout_sec);
 	if (ret) {
 		if (errno == ETIMEDOUT)
 			printf("Control response timed out after %u sec\n", timeout_sec);
 		else
 			perror("sem_timedwait");
 		/* Unlock semaphore in negative case */
-		hosted_post_semaphore(&ctrl_req_sem);
+		hosted_post_semaphore(ctrl_req_sem);
 		return NULL;
 	}
 
@@ -1043,9 +1042,9 @@ ctrl_cmd_t * ctrl_wait_and_parse_sync_resp(ctrl_cmd_t *app_req)
  * But there was no response in due time, this function will
  * be called to send error to application
  * */
-static void ctrl_async_timeout_handler(union sigval timer_data)
+static void ctrl_async_timeout_handler(void const *arg)
 {
-	ctrl_resp_cb_t func = timer_data.sival_ptr;
+	ctrl_resp_cb_t func = arg;
 	if (!func) {
 		printf("NULL func, failed to call callback\n");
 	}
@@ -1063,7 +1062,7 @@ static void ctrl_async_timeout_handler(union sigval timer_data)
 		func(app_resp);
 
 		/* Unlock semaphore in negative case */
-		hosted_post_semaphore(&ctrl_req_sem);
+		hosted_post_semaphore(ctrl_req_sem);
 	}
 }
 
@@ -1101,7 +1100,7 @@ int ctrl_app_send_req(ctrl_cmd_t *app_req)
 
 	/* 1. Check if any ongoing request present
 	 * Send failure in that case */
-	ret = hosted_get_semaphore(&ctrl_req_sem, WAIT_TIME_B2B_CTRL_REQ);
+	ret = hosted_get_semaphore(ctrl_req_sem, WAIT_TIME_B2B_CTRL_REQ);
 	if (ret) {
 		failure_status = CTRL_ERR_REQ_IN_PROG;
 		goto fail_req;
@@ -1345,7 +1344,7 @@ int ctrl_app_send_req(ctrl_cmd_t *app_req)
 			req_payload->enable = app_req->u.e_heartbeat.enable;
 			req_payload->duration = app_req->u.e_heartbeat.duration;
 			if (req_payload->enable) {
-				printf("Enable heartbeat with duration %u\n", req_payload->duration);
+				printf("Enable heartbeat with duration %lu\n", req_payload->duration);
 				if (CALLBACK_AVAILABLE != is_event_callback_registered(CTRL_EVENT_HEARTBEAT))
 					printf("Note: ** Subscribe heartbeat event to get notification **\n");
 			} else {
@@ -1458,47 +1457,6 @@ fail_req2:
 	return FAILURE;
 }
 
-/* Init hosted control lib */
-int init_hosted_control_lib_internal(void)
-{
-	int ret = SUCCESS;
-#ifndef STM32F469xx
-	if(getuid()) {
-		printf("Please re-run program with superuser access\n");
-		return FAILURE;
-	}
-#endif
-
-	if (serial_init()) {
-		return FAILURE;
-	}
-
-	ctrl_msg_Q = create_esp_queue();
-	if (!ctrl_msg_Q) {
-		printf("Failed to create app ctrl msg Q\n");
-		return FAILURE;
-	}
-
-	if (hosted_create_semaphore(&read_sem, 1)) {
-		printf("read sem init failed, exiting\n");
-		return FAILURE;
-	}
-	/* Get semaphore for first time */
-	hosted_get_semaphore(&read_sem, HOSTED_SEM_BLOCKING);
-
-	if (hosted_create_semaphore(&ctrl_req_sem, 1)) {
-		printf("read sem init failed, exiting\n");
-		return FAILURE;
-	}
-
-	ret = spawn_ctrl_rx_thread();
-
-	set_ctrl_lib_state(CTRL_LIB_STATE_READY);
-
-	return ret;
-
-}
-
 /* De-init hosted control lib */
 int deinit_hosted_control_lib_internal(void)
 {
@@ -1513,14 +1471,20 @@ int deinit_hosted_control_lib_internal(void)
 		esp_queue_destroy(&ctrl_msg_Q);
 	}
 
-	if (hosted_destroy_semaphore(&ctrl_req_sem)) {
+	if (ctrl_req_sem && hosted_destroy_semaphore(ctrl_req_sem)) {
 		ret = FAILURE;
 		printf("ctrl req sem deinit failed\n");
 	}
 
-	if (hosted_destroy_semaphore(&read_sem)) {
+	if (read_sem && hosted_destroy_semaphore(read_sem)) {
 		ret = FAILURE;
 		printf("read sem deinit failed\n");
+	}
+
+	if (async_timer_handle) {
+		/* async_timer_handle will be cleaned in hosted_timer_stop */
+		hosted_timer_stop(async_timer_handle);
+		async_timer_handle = NULL;
 	}
 
 	if (serial_deinit()) {
@@ -1528,13 +1492,64 @@ int deinit_hosted_control_lib_internal(void)
 		printf("Serial de-init failed\n");
 	}
 
-	if (cancel_ctrl_rx_thread()) {
+	if (ctrl_rx_thread_handle && cancel_ctrl_rx_thread()) {
 		ret = FAILURE;
 		printf("cancel ctrl rx thread failed\n");
 	}
 
 	return ret;
 }
+
+/* Init hosted control lib */
+int init_hosted_control_lib_internal(void)
+{
+	int ret = SUCCESS;
+#ifndef STM32F469xx
+	if(getuid()) {
+		printf("Please re-run program with superuser access\n");
+		return FAILURE;
+	}
+#endif
+
+	/* semaphore init */
+	read_sem = hosted_create_semaphore(1);
+	ctrl_req_sem = hosted_create_semaphore(1);
+	if (!read_sem || !ctrl_req_sem) {
+		printf("sem init failed, exiting\n");
+		goto free_bufs;
+	}
+
+	/* serial init */
+	if (serial_init()) {
+		printf("Failed to serial_init\n");
+		goto free_bufs;
+	}
+
+	/* queue init */
+	ctrl_msg_Q = create_esp_queue();
+	if (!ctrl_msg_Q) {
+		printf("Failed to create app ctrl msg Q\n");
+		goto free_bufs;
+	}
+
+	/* Get read semaphore for first time */
+	hosted_get_semaphore(read_sem, HOSTED_SEM_BLOCKING);
+
+	/* thread init */
+	if (spawn_ctrl_rx_thread())
+		goto free_bufs;
+
+	/* state init */
+	set_ctrl_lib_state(CTRL_LIB_STATE_READY);
+
+	return ret;
+
+free_bufs:
+	deinit_hosted_control_lib_internal();
+	return FAILURE;
+
+}
+
 
 
 #ifndef STM32F469xx

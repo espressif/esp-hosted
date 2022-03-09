@@ -138,23 +138,23 @@ def process_resp_connect_ap(app_msg) :
 def process_failed_responses(app_msg):
     request_failed_flag = True
     if (app_msg.contents.resp_event_status == CTRL_ERR.CTRL_ERR_REQ_IN_PROG.value):
-        print("Error reported: Command In progress, Please wait")
+        print("Err: Command In progress, Please wait")
     elif (app_msg.contents.resp_event_status == CTRL_ERR.CTRL_ERR_REQUEST_TIMEOUT.value):
-        print("Error reported: Response Timeout")
+        print("Err: Response Timeout")
     elif (app_msg.contents.resp_event_status == CTRL_ERR.CTRL_ERR_MEMORY_FAILURE.value):
-        print("Error reported: Memory allocation failed")
+        print("Err: Memory allocation failed")
     elif (app_msg.contents.resp_event_status == CTRL_ERR.CTRL_ERR_UNSUPPORTED_MSG.value):
-        print("Error reported: Unsupported control msg")
+        print("Err: Unsupported control msg")
     elif (app_msg.contents.resp_event_status == CTRL_ERR.CTRL_ERR_INCORRECT_ARG.value):
-        print("Error reported: Invalid or out of range parameter values")
+        print("Err: Invalid or out of range parameter values")
     elif (app_msg.contents.resp_event_status == CTRL_ERR.CTRL_ERR_PROTOBUF_ENCODE.value):
-        print("Error reported: Protobuf encode failed")
+        print("Err: Protobuf encode failed")
     elif (app_msg.contents.resp_event_status == CTRL_ERR.CTRL_ERR_PROTOBUF_DECODE.value):
-        print("Error reported: Protobuf decode failed")
+        print("Err: Protobuf decode failed")
     elif (app_msg.contents.resp_event_status == CTRL_ERR.CTRL_ERR_SET_ASYNC_CB.value):
-        print("Error reported: Failed to set aync callback")
+        print("Err: Failed to set aync callback")
     elif (app_msg.contents.resp_event_status == CTRL_ERR.CTRL_ERR_TRANSPORT_SEND.value):
-        print("Error reported: Problem while sending data on serial driver")
+        print("Err: Problem while serial driver write")
     else:
         request_failed_flag = False
 
@@ -163,11 +163,11 @@ def process_failed_responses(app_msg):
         return
 
     if (app_msg.contents.msg_id == CTRL_MSGID.CTRL_RESP_OTA_BEGIN.value):
-        print("OTA procedure failed")
+        print("OTA failed in OTA begin")
     elif (app_msg.contents.msg_id == CTRL_MSGID.CTRL_RESP_OTA_WRITE.value):
-        print("OTA procedure failed")
+        print("OTA failed in OTA write")
     elif (app_msg.contents.msg_id == CTRL_MSGID.CTRL_RESP_OTA_END.value):
-        print("OTA procedure failed")
+        print("OTA failed in OTA end")
     elif (app_msg.contents.msg_id == CTRL_MSGID.CTRL_RESP_CONNECT_AP.value):
         if (app_msg.contents.resp_event_status == CTRL_ERR.CTRL_ERR_NO_AP_FOUND.value):
             print("SSID : not found/connectable")

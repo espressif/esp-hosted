@@ -4,14 +4,19 @@ This section elaborates about setting up the control path, Wi-Fi connectivity an
 
 ## 1. Control Path
 
-* Control path is intended to setup all configurations at ESP32 side. These configurations could be related to services like
+- Control path is intended to setup all configurations at ESP32 side. These configurations could be related to services like
   - Connect host with external AP (Wi-Fi router)
   - Get configurations of external AP which host is connected
   - Set maximum wifi transmit power of ESP32
   - Find out current wifi power of ESP32
-* Control path command could be considered as first step before you can establish data path
-* It is way to verify if ESP-Hosted transport like SPI,SDIO is setup correctly
-* Overall [control path design](../common/contrl_path.md#2-design) and easy setup of control path using [demo application](../common/contrl_path.md#5-kickstart-using-control-path) is explained in [Control Path documentation](../common/contrl_path.md)
+  - Configuring ESP chipset heartbeat
+- Control path command could be considered as first step before you can establish data path
+- It is way to verify if ESP-Hosted transport like SPI,SDIO is setup correctly
+- Overall design is explained in [control path design](../common/contrl_path.md#3-design)
+- Underlying [Hosted control path library](../common/contrl_path.md#3-design) is agnostic of platform and common for MPU or MCU based solution.
+  - This empowers user to implement/mimic all control path APIs just similar to [Linux demo application in C](../common/c_demo.md)
+  - Few sample [control path APIs](../common/ctrl_apis.md) like connecting to station, starting softap are demonstrated as part of [host/stm32/app/control/control.c](../../host/stm32/app/control/control.c)
+  - Rest APIs could be implemeted just similar to ones implemented in Linux demo application 
 
 ## 2. Wi-Fi Connectivity
 
@@ -53,7 +58,7 @@ This will copy the project configuration files into workspace_directory
 
 * Re-open STM32CubeIDE with workspace as workspace_directory.
 * Ignore all warnings under `Problems` tab if any.
-* Configure all build variables as mentioned in [User configuration parameter](#12-user-configuration-parameter) section below. Variable `CODE_BASE` should already be populated. All parameters are mandatory to be filled. Please note that, every subsequent change in configuration parameter would need a clean build as mentioned ahead.
+* Configure all build variables as mentioned in [User configuration parameter](#22-user-configuration-parameter) section below. Variable `CODE_BASE` should already be populated. All parameters are mandatory to be filled. Please note that, every subsequent change in configuration parameter would need a clean build as mentioned ahead.
 * Uncheck `Build Automatically` from `menu -> Project` and Clean build the project as `Project menu -> Clean -> clean`.
 * Connect STM32 board to your machine if not already connected.
 * Before flashing the project, Open Tera Term or minicom to see STM32 debug logs once project flashed.
@@ -81,9 +86,9 @@ Debugger connection lost.
 Shutting down...
 ```
 
-13) Expected output log on tera term or minicom will be similar to below:
-```
+* Expected output log on tera term or minicom will be similar to below:
 
+```
 +-----------------------------------+-------------------------------------------+
 |           Parameters              |             Values                        |
 +-----------------------------------+-------------------------------------------+
@@ -202,7 +207,7 @@ XX bytes from 3c:71:bf:9a:bc:b8 (192.168.1.233): index=0 time=199.144 msec
 ```
 
 ## 3. BT/BLE connectivity
-Bluetooth and BLE handling could be easily ported. Porting details could be found at [ 1.5.2 MCU Host](README.md#152-mcu-host) on [README.md](README.md)
+Bluetooth and BLE handling could be easily ported. Porting details could be found at [ 1.5.2 MCU Host](../../README.md#152-mcu-host) on [README.md](../../README.md)
 
 ## 4. OTA operation
 
@@ -214,4 +219,12 @@ OTA (Over The Air) update performs following operations.
 * Reboot the ESP32 after 5 second
 
 OTA also could be ported similar to demo application provided for Linux. This is available in C and python.
-Please follow [OTA update documentation](../Linux_based_host/ota_update.md) for further details.
+Please follow [Linux based OTA update documentation](../Linux_based_host/ota_update.md) for further details.
+
+## 5. Limitations of control path APIs in MCU
+- Asynchronous APIs are not tested in MCU, as it is hard implement in constrained MCU's environment
+- OTA update is not directly supported just similar to Linux based demo application because,
+  - ESP binary is stored in Linux using directory structure path, such is not available in MCU
+  - Space constraints - MCU are generally low space devices
+  - However, chunked HTTP based OTA update is showcased in [Python based Linux app](../Linux_based_host/ota_update.md#python-implementation) \
+Users can use similar HTTP client library and chunked file transfer to do OTA update.

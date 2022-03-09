@@ -33,7 +33,7 @@ Following features are provided as a part of this solution:
 
 ESP-Hosted solution makes use of existing host's `TCP/IP and/or Bluetooth/BLE software stack` and `hardware peripheral like SPI/SDIO/UART` to conect to ESP firmware with very thin layer of software.
 
-Although the project doesn't provide a standard 802.11 interface to the host, it provides a easy way, *i.e.* [control path](docs/common/contrl_path.md), to configure WiFi. For control path between the host and ESP board, ESP-Hosted makes use of [Protobuf](https://developers.google.com/protocol-buffers) which is language independent data serialization mechnism.
+Although the project doesn't provide a standard 802.11 interface to the host, it provides a easy way, *i.e.* [control path](docs/common/contrl_path.md), to configure WiFi. For control path between the host and ESP board, ESP-Hosted makes use of [Protobuf](https://developers.google.com/protocol-buffers) which is language independent data serialization mechanism.
 
 ### 1.1 Connectivity Features
 

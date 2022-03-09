@@ -22,9 +22,13 @@ extern "C" {
 
 /** includes **/
 #include "common.h"
+#include "serial_ll_if.h"
 
 /** Exported Functions **/
-stm_ret_t serial_rx_handler(uint8_t if_num, uint8_t *rxbuff, uint16_t rx_len);
+static inline stm_ret_t serial_rx_handler(uint8_t if_num, uint8_t *rxbuff, uint16_t rx_len)
+{
+	return serial_ll_rx_handler(if_num, rxbuff, rx_len);
+}
 
 #ifdef __cplusplus
 }

@@ -4,19 +4,21 @@
 #ifndef __PLATFORM_WRAPPER_H
 #define __PLATFORM_WRAPPER_H
 
+#include <signal.h>
+#include "cmsis_os.h"
+#include <unistd.h>
+#include <sys/types.h>
+
 #define TIMEOUT_PSERIAL_RESP                   30
+
 #define CTRL__TIMER_ONESHOT                    0
 #define CTRL__TIMER_PERIODIC                   1
 
-#include <signal.h>
-#include <pthread.h>
-#include <semaphore.h>
-#include <unistd.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <linux/if.h>
-#include <sys/ioctl.h>
-#include <linux/if_arp.h>
+#define HOSTED_SEM_BLOCKING                    -1
+#define HOSTED_SEM_NON_BLOCKING                0
+
+#define CTRL_PATH_TASK_STACK_SIZE              4096
+#define CTRL_PATH_TASK_PRIO                    osPriorityAboveNormal
 
 /* Driver Handle */
 struct serial_drv_handle_t;
@@ -24,9 +26,8 @@ struct serial_drv_handle_t;
 /* Timer handle */
 struct timer_handle_t;
 
-
-#define HOSTED_SEM_BLOCKING     -1
-#define HOSTED_SEM_NON_BLOCKING 0
+#define thread_handle_t osThreadId
+#define semaphore_handle_t osSemaphoreId
 
 /*
  * control_path_platform_init function initializes the control
@@ -58,10 +59,10 @@ void* hosted_malloc(size_t size);
 
 /*
  * hosted_calloc function allocates memory for an array
- * of nmemb elements of size bytes each.
+ * of blk_no elements of size bytes each.
  * Input parameter
- *      size    :   Number of Bytes
- *      nmemb   :   Number of blocks of size bytes
+ *      blk_no  :   Number of Bytes
+ *      size    :   Number of blocks of size bytes
  * Returns
  *     pointer to allocated memory
  */
@@ -82,7 +83,7 @@ void hosted_free(void* ptr);
  * Returns
  *      if successful, thread handle else NULL
  */
-void *hosted_thread_create(void *(*start_routine)(void *), void *arg);
+void *hosted_thread_create(void (*start_routine)(void const *), void *arg);
 
 /* hosted_thread_cancel stops and clears thread
  * Input parameter
@@ -101,14 +102,14 @@ int hosted_thread_cancel(void *thread_handle);
 void * hosted_create_semaphore(int init_value);
 
 
-/* hosted_get_semaphore to aquire semaphore
+/* hosted_get_semaphore to acquire semaphore
  * Input parameter
  *        sem_handle : valid semaphore handle
  *        timeout    : 0  -> non_blocking
  *                     -1 -> blocking
  *                     >0 -> Timeout to wait in seconds
  * Returns
- *     0 on sempahore aquired or !=0 on Failure
+ *     0 on semaphore acquired or !=0 on Failure
  */
 int hosted_get_semaphore(void * semaphore_handle, int timeout);
 
@@ -120,7 +121,7 @@ int hosted_get_semaphore(void * semaphore_handle, int timeout);
  *                     -1 -> blocking
  *                     >0 -> Timeout to wait in seconds
  * Returns
- *     0 on sempahore aquired or !=0 on Failure
+ *     0 on semaphore acquired or !=0 on Failure
  */
 int hosted_post_semaphore(void * semaphore_handle);
 
@@ -128,7 +129,7 @@ int hosted_post_semaphore(void * semaphore_handle);
  * Input parameter
  *        sem_handle : valid semaphore handle
  * Returns
- *     0 on sempahore aquired or !=0 on Failure
+ *     0 on semaphore acquired or !=0 on Failure
  */
 int hosted_destroy_semaphore(void * semaphore_handle);
 
@@ -144,7 +145,7 @@ int hosted_destroy_semaphore(void * semaphore_handle);
  *      NULL : on error
  */
 void *hosted_timer_start(int duration, int type,
-		void (*timeout_handler)(void *), void * arg);
+		void (*timeout_handler)(void const *), void *arg);
 
 /* hosted_timer_stop is to stop timer
  * Input parameters

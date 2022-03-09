@@ -65,7 +65,7 @@ Send buffer with length as argument on transport as serial interface type
 ---
 
 ### 1.4 `uint8_t * transport_pserial_read(uint32_t *out_nbyte)`
-Read and return number of bytes and buffer from serial interface
+Read using serial driver and return protobuf encoded buffer
 
 #### Parameters
 - `uint32_t *out_nbyte`
@@ -83,7 +83,7 @@ Read and return number of bytes and buffer from serial interface
 
 #### Parameters
 - `uint8_t* data`
-  - Data buffer read in `transport_pserial_read` operation
+  - Data buffer read in `serial_drv_read()` operation
 
 #### Output Parameters
 - `uint32_t* pro_len`
@@ -152,21 +152,22 @@ Write to the serial driver. On write, it invokes write method provided by ESP-Ho
 
 ---
 
-### 2.4  `int serial_drv_read (struct serial_drv_handle_t *serial_drv_handle, void *buf, int nbyte)`
-Read `nbyte` bytes from serial driver and place into `buf` buffer
+### 2.4  `uint8_t * serial_drv_read(struct serial_drv_handle_t *serial_drv_handle, int *out_nbyte)`
+- Read serial message on serial driver and do two step parsing of TLV
+- TLV parsed buffer is returned
+- `parse_tlv()` is used to parse TLV (Type, Length, Value)
+- Output buffer is still protobuf encoded, caller should do protobuf decoding
 
 #### Parameters
 - `struct serial_drv_handle_t* serial_drv_handle`
   - Serial driver instance
-- `int nbyte`
-  - Number of bytes to read from serial driver
 
 #### Output Parameters
-- `void *buf`
-  - Buffer with read bytes
+- `out_nbyte`
+  - Size of returned buffer in bytes
 
 #### Returns
-- Number of bytes read
+- Output buffer read free from TLV format
 
 ---
 

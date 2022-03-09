@@ -1,15 +1,16 @@
 # Getting Started with Linux based host
 
-Below diagram shows hardware and software block diagram for a typical linux based system built with ESP-Hosted.
+- Directory structure for Linux based host is explained [here](directory_structure.md)
+- Below diagram shows hardware and software block diagram for a typical linux based system built with ESP-Hosted.
 
 ![ESP-Hosted linux based design](./linux_hosted_design.png)
 
-This document explains ESP-Hosted setup and usage. The document is divided in two parts:
-* [Quick Start Guide](#1-quick-start-guide)  
-	This section briefly explains ESP-Hosted setup. One can refer this guide to quickly prepare and test ESP-Hosted solution.
+- This document explains ESP-Hosted setup and usage. The document is divided in two parts:
+  - [1. Quick Start Guide](#1-quick-start-guide)  
+    - This section briefly explains ESP-Hosted setup. One can refer this guide to quickly prepare and test ESP-Hosted solution.
 
-* [ESP-Hosted Comprehensive Guide](#2-esp-hosted-comprehensive-guide)  
-	This section provides in depth information about ESP-Hosted setup, available customization options etc.
+  - [2. ESP-Hosted Comprehensive Guide](#2-esp-hosted-comprehensive-guide)  
+    - This section provides in depth information about ESP-Hosted setup, available customization options etc.
 
 # 1. Quick Start Guide
 * With the help of this guide, one can easily setup and start using ESP-Hosted solution with Raspberry-Pi as a host.
@@ -117,6 +118,7 @@ Prepare connections based on interface requirements and setup host as below.
 
 #### 1.3.1 ESP Firmware Setup
 * Flash pre-built binaries as below.
+
 ```sh
 $ esptool.py -p <serial_port> -b 960000 --before default_reset --after hard_reset \
 write_flash --flash_mode dio --flash_freq 40m --flash_size detect \

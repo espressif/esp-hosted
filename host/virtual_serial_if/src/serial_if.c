@@ -4,6 +4,7 @@
 /** Includes **/
 #include <string.h>
 #include "serial_if.h"
+#include "platform_wrapper.h"
 
 /** Constants/Macros **/
 #define SUCCESS                           0
@@ -199,82 +200,6 @@ free_bufs:
 
 uint8_t * transport_pserial_read(uint32_t *out_nbyte)
 {
-	uint16_t init_read_len = 0;
-	int ret = 0, count = 0, total_read_len = 0;
-	uint8_t *buf = NULL;
-	uint32_t buf_len = 0;
-	const char* ep_name = CTRL_EP_NAME_RESP;
-/*
- * Read fixed length of received data in below format:
- * ----------------------------------------------------------------------------
- *  Endpoint Type | Endpoint Length | Endpoint Value  | Data Type | Data Length
- * ----------------------------------------------------------------------------
- *
- *  Bytes used per field as follows:
- *  ---------------------------------------------------------------------------
- *      1         |       2         | Endpoint Length |     1     |     2     |
- *  ---------------------------------------------------------------------------
- */
-
-	init_read_len = SIZE_OF_TYPE + SIZE_OF_LENGTH + strlen(ep_name) +
-		SIZE_OF_TYPE + SIZE_OF_LENGTH;
-
-	HOSTED_CALLOC(buf,init_read_len);
-
-	total_read_len = 0;
-	do {
-		count = serial_drv_read(serial_handle,
-				(buf+total_read_len), (init_read_len-total_read_len));
-		if (count <= 0) {
-			perror("read fail:");
-			printf("Exp read of %u bytes: ret[%d]\n",
-					(init_read_len-total_read_len), count);
-			goto free_bufs;
-		}
-		total_read_len += count;
-	} while (total_read_len < init_read_len);
-
-	if (total_read_len != init_read_len) {
-		printf("%s, read_bytes exp[%d] vs recvd[%d]\n"
-				,__func__, init_read_len, total_read_len);
-		goto free_bufs;
-	}
-
-	ret = parse_tlv(buf, &buf_len);
-	if ((ret != SUCCESS) || !buf_len) {
-		goto free_bufs;
-	}
-	mem_free(buf);
-
-	/*
-	 * Read variable length of received data.
-	 * Variable length is obtained after
-	 * parsing of previously read data.
-	 */
-	HOSTED_CALLOC(buf,buf_len);
-
-	total_read_len = 0;
-	do {
-		count = serial_drv_read(serial_handle,
-				(buf+total_read_len), (buf_len-total_read_len));
-		if (count <= 0) {
-			perror("Fail to read serial data");
-			break;
-		}
-		total_read_len += count;
-	} while (total_read_len < buf_len);
-
-	if (total_read_len != buf_len) {
-		printf("%s, Exp num_bytes[%d] != recvd[%d]\n",
-				__func__, buf_len, total_read_len);
-		goto free_bufs;
-	}
-
-	*out_nbyte = buf_len;
-	return buf;
-
-free_bufs:
-	mem_free(buf);
-	*out_nbyte = 0;
-	return NULL;
+	/* Two step parsing TLV is moved in serial_drv_read */
+	return serial_drv_read(serial_handle, out_nbyte);
 }

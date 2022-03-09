@@ -11,7 +11,7 @@ This section elaborates about setting up control path, Wi-Fi and Bluetooth/BLE c
   - Find out current wifi power of ESP32
 * Control path command could be considered as first step before you can establish data path
 * It is way to verify if ESP-Hosted transport like SPI,SDIO is setup correctly
-* Overall [control path design](../common/contrl_path.md#2-design) and easy setup of control path using [demo application](../common/contrl_path.md#5-kickstart-using-control-path) is explained in [Control Path documentation](../common/contrl_path.md)
+* Overall [control path design](../common/contrl_path.md#3-design) and easy setup of control path using [demo application](../common/contrl_path.md#5-kickstart-using-control-path) is explained in [Control Path documentation](../common/contrl_path.md)
 
 ## 2. Wi-Fi Connectivity
 
