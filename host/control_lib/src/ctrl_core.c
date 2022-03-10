@@ -867,7 +867,7 @@ static ctrl_cmd_t * get_response(int *read_len, int timeout_sec)
 		if (errno == ETIMEDOUT)
 			printf("Control response timed out after %u sec\n", timeout_sec);
 		else
-			perror("sem_timedwait");
+			printf("ctrl lib error[%u] in sem of timeout[%u]\n", errno, timeout_sec);
 		/* Unlock semaphore in negative case */
 		hosted_post_semaphore(ctrl_req_sem);
 		return NULL;

@@ -506,6 +506,8 @@ static stm_ret_t spi_transaction_esp32(uint8_t * txbuff)
 					buf_handle.if_type     = payload_header->if_type;
 					buf_handle.if_num      = payload_header->if_num;
 					buf_handle.payload     = rxbuff + offset;
+					buf_handle.seq_num     = le16toh(payload_header->seq_num);
+					buf_handle.flag        = payload_header->flags;
 
 					if (pdTRUE != xQueueSend(from_slave_queue,
 								&buf_handle, portMAX_DELAY)) {
@@ -636,6 +638,8 @@ static stm_ret_t spi_transaction_esp32s2(uint8_t * txbuff)
 					buf_handle.if_type     = payload_header->if_type;
 					buf_handle.if_num      = payload_header->if_num;
 					buf_handle.payload     = rxbuff + offset;
+					buf_handle.seq_num     = le16toh(payload_header->seq_num);
+					buf_handle.flag        = payload_header->flags;
 
 					if (pdTRUE != xQueueSend(from_slave_queue,
 								&buf_handle, portMAX_DELAY)) {
@@ -728,7 +732,6 @@ static void process_rx_task(void const* pvParameters)
 	struct pbuf *buffer = NULL;
 	struct esp_priv_event *event = NULL;
 	struct esp_private *priv = NULL;
-	uint8_t *serial_buf = NULL;
 
 	while (1) {
 		ret = xQueueReceive(from_slave_queue, &buf_handle, portMAX_DELAY);
@@ -743,14 +746,8 @@ static void process_rx_task(void const* pvParameters)
 		/* process received buffer for all possible interface types */
 		if (buf_handle.if_type == ESP_SERIAL_IF) {
 
-			serial_buf = (uint8_t *)malloc(buf_handle.payload_len);
-			assert(serial_buf);
-
-			memcpy(serial_buf, payload, buf_handle.payload_len);
-
 			/* serial interface path */
-			serial_rx_handler(buf_handle.if_num, serial_buf,
-					buf_handle.payload_len);
+			serial_rx_handler(&buf_handle);
 
 		} else if((buf_handle.if_type == ESP_STA_IF) ||
 				(buf_handle.if_type == ESP_AP_IF)) {

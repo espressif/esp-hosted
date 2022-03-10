@@ -428,7 +428,6 @@ static int softap_start(void)
 	memset(mac, '\0', WIFI_MAX_STR_LEN);
 	if ((mode & wifi_mode) != wifi_mode) {
 		wifi_mode |= mode;
-		printf("wifi mode %u\n\r", wifi_mode);
 	}
 
 	if (test_set_wifi_mode(wifi_mode)) {
@@ -507,9 +506,11 @@ static int get_application_mode(void)
 static void control_path_task(void const *argument)
 {
 	int ret = 0, app_mode = 0, station_connect_retry = 0, softap_start_retry = 0;
-	bool scan_ap_list = true, stop = false;
+	bool scan_ap_list = false, stop = false;
 
 	app_mode = get_application_mode();
+	sleep(1);
+
 	for (;;) {
 
 		if (!stop) {
@@ -520,6 +521,7 @@ static void control_path_task(void const *argument)
 					scan_ap_list = true;
 					continue;
 				}
+				scan_ap_list = true;
 			}
 			switch (app_mode) {
 				case MODE_STATION:

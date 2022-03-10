@@ -106,6 +106,26 @@ void hosted_free(void* ptr)
 	}
 }
 
+void *hosted_realloc(void *mem, size_t newsize)
+{
+    void *p = NULL;
+
+    if (newsize == 0) {
+        hosted_free(mem);
+        return NULL;
+    }
+
+    p = hosted_malloc(newsize);
+    if (p) {
+        /* zero the memory */
+        if (mem != NULL) {
+            memcpy(p, mem, newsize);
+            hosted_free(mem);
+        }
+    }
+    return p;
+}
+
 /* -------- Threads ---------- */
 void *hosted_thread_create(void (*start_routine)(void const *), void *arg)
 {
@@ -185,6 +205,11 @@ void * hosted_create_semaphore(int init_value)
 
 unsigned int sleep(unsigned int seconds) {
    osDelay(seconds * 1000);
+   return 0;
+}
+
+unsigned int msleep(unsigned int mseconds) {
+   osDelay(mseconds);
    return 0;
 }
 

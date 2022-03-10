@@ -1118,11 +1118,11 @@ static esp_err_t req_get_ap_scan_list_handler (CtrlMsg *req,
 
 		credentials.ecn = ap_info[i].authmode;
 		results[i]->sec_prot = credentials.ecn;
-		ESP_LOGI(TAG,"SSID      \t\t%s", results[i]->ssid.data);
-		ESP_LOGI(TAG,"RSSI      \t\t%d", results[i]->rssi);
-		ESP_LOGI(TAG,"Channel   \t\t%d", results[i]->chnl);
-		ESP_LOGI(TAG,"BSSID     \t\t%s", results[i]->bssid.data);
-		ESP_LOGI(TAG,"Auth mode \t\t%d\n", results[i]->sec_prot);
+		ESP_LOGI(TAG,"\nSSID      \t\t%s\nRSSI      \t\t%d\nChannel   \t\t%d\nBSSID     \t\t%s\nAuth mode \t\t%d\n",
+				results[i]->ssid.data, results[i]->rssi, results[i]->chnl,
+				results[i]->bssid.data, results[i]->sec_prot);
+		vTaskDelay(1);
+
 		resp_payload->n_entries++;
 		resp_payload->count++;
 	}

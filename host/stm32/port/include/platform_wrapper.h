@@ -69,6 +69,16 @@ void* hosted_malloc(size_t size);
 void* hosted_calloc(size_t blk_no, size_t size);
 
 /*
+ * hosted_realloc function (re-)allocates memory of size newsize bytes
+ * Input parameter
+ *      mem     :   existing allocated memory pointer
+ *      newsize :   New Number of size bytes
+ * Returns
+ *     pointer to allocated memory
+ */
+void *hosted_realloc(void *mem, size_t newsize);
+
+/*
  * hosted_free function frees the memory space pointed to by ptr.
  * Input parameter
  *      ptr     :   Address of pointer to allocated memory
@@ -154,8 +164,26 @@ void *hosted_timer_start(int duration, int type,
  *      0 : success
  *      <0 : failure
  */
-
 int hosted_timer_stop(void *timer_handle);
+
+/* msleep is sleep in milliseconds
+ * Input parameters
+ *      mseconds : milliseconds
+ * Returns
+ *      0 : success
+ *      <0 : failure
+ */
+unsigned int msleep(unsigned int mseconds);
+
+/* sleep is sleep in seconds
+ * Input parameters
+ *      mseconds : seconds
+ * Returns
+ *      0 : success
+ *      <0 : failure
+ */
+unsigned int sleep(unsigned int seconds);
+
 /*
  * serial_drv_open function opens driver interface.
  *

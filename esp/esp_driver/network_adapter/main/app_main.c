@@ -473,7 +473,7 @@ static ssize_t serial_read_data(uint8_t *data, ssize_t len)
 		r.len = 0;
 		r.cur_seq_no = 0;
 	} else {
-		printf("No data to be read, len %d \n", len);
+		ESP_LOGI(TAG,"No data to be read, len %d", len);
 	}
 	return len;
 }
@@ -637,7 +637,7 @@ static esp_err_t print_real_time_stats(TickType_t xTicksToWait)
 		goto exit;
 	}
 
-	printf("| Task | Run Time | Percentage\n");
+	ESP_LOGI(TAG,"| Task | Run Time | Percentage");
 	/* Match each task in start_array to those in the end_array */
 	for (int i = 0; i < start_array_size; i++) {
 		int k = -1;
@@ -656,7 +656,7 @@ static esp_err_t print_real_time_stats(TickType_t xTicksToWait)
 				start_array[i].ulRunTimeCounter;
 			uint32_t percentage_time = (task_elapsed_time * 100UL) /
 				(total_elapsed_time * portNUM_PROCESSORS);
-			printf("| %s | %d | %d%%\n", start_array[i].pcTaskName,
+			ESP_LOGI(TAG,"| %s | %d | %d%%", start_array[i].pcTaskName,
 					task_elapsed_time, percentage_time);
 		}
 	}
@@ -664,12 +664,12 @@ static esp_err_t print_real_time_stats(TickType_t xTicksToWait)
 	/* Print unmatched tasks */
 	for (int i = 0; i < start_array_size; i++) {
 		if (start_array[i].xHandle != NULL) {
-			printf("| %s | Deleted\n", start_array[i].pcTaskName);
+			ESP_LOGI(TAG,"| %s | Deleted", start_array[i].pcTaskName);
 		}
 	}
 	for (int i = 0; i < end_array_size; i++) {
 		if (end_array[i].xHandle != NULL) {
-			printf("| %s | Created\n", end_array[i].pcTaskName);
+			ESP_LOGI(TAG,"| %s | Created", end_array[i].pcTaskName);
 		}
 	}
 	ret = ESP_OK;
@@ -685,11 +685,11 @@ exit:    /* Common return path */
 void task_runtime_stats_task(void* pvParameters)
 {
 	while (1) {
-		printf("\n\nGetting real time stats over %d ticks\n", STATS_TICKS);
+		ESP_LOGI(TAG,"\n\nGetting real time stats over %d ticks", STATS_TICKS);
 		if (print_real_time_stats(STATS_TICKS) == ESP_OK) {
-			printf("Real time stats obtained\n");
+			ESP_LOGI(TAG,"Real time stats obtained");
 		} else {
-			printf("Error getting real time stats\n");
+			ESP_LOGI(TAG,"Error getting real time stats");
 		}
 		vTaskDelay(pdMS_TO_TICKS(1000*2));
 	}
@@ -701,7 +701,9 @@ void app_main()
 	esp_err_t ret;
 	uint8_t capa = 0;
 	uint8_t prio_q_idx = 0;
+#ifdef CONFIG_BT_ENABLED
 	uint8_t mac[MAC_LEN] = {0};
+#endif
 	print_firmware_version();
 
 	capa = get_capabilities();
@@ -723,7 +725,7 @@ void app_main()
 	if (ret) {
 		ESP_LOGE(TAG,"Failed to read BT Mac addr\n");
 	} else {
-		ESP_LOGI(TAG, "ESP Bluetooth MAC addr: %2x-%2x-%2x-%2x-%2x-%2x\n",
+		ESP_LOGI(TAG, "ESP Bluetooth MAC addr: %2x:%2x:%2x:%2x:%2x:%2x",
 				mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
 	}
 #endif

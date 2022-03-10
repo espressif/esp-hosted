@@ -20,6 +20,7 @@
 #include "adapter.h"
 #include "spi_drv.h"
 #include "trace.h"
+#include "platform_wrapper.h"
 
 /** Macros / Constants **/
 #define MAX_SERIAL_INTF                   2
@@ -30,6 +31,11 @@ typedef enum {
 	ACTIVE,
 	DESTROY
 } serial_ll_state_e;
+
+static struct rx_data {
+	int len;
+	uint8_t *data;
+} r;
 
 /* data structures needed for serial driver */
 static QueueHandle_t to_serial_ll_intf_queue[MAX_SERIAL_INTF];
@@ -207,43 +213,103 @@ static int serial_ll_write(const serial_ll_handle_t * serial_ll_hdl,
 /**
   * @brief Serial rx handler is called by spi driver when there
   *        is incoming data with interface type is Serial.
-  * @param  buf_handle - handle
-  *         wlen - number of bytes to write
+  * @param  if_num - interface instance 
   *         rxbuff - buffer from spi driver
   *         rx_len - size of rxbuff
-  * @retval None
+  *         seq_num - serial sequence number
+  *         flag_more_frags - Flags for fragmentation
+  * @retval 0 on success, else failure
   */
-stm_ret_t serial_ll_rx_handler(uint8_t if_num, uint8_t *rxbuff, uint16_t rx_len)
+stm_ret_t serial_ll_rx_handler(interface_buffer_handle_t * buf_handle)
 {
-	interface_buffer_handle_t buf_handle = {0};
+
+#define SERIAL_ALLOC_REALLOC_RDATA() \
+	do { \
+		if(!r.data) { \
+			r.data = (uint8_t *)hosted_malloc(buf_handle->payload_len); \
+		} else { \
+			r.data = (uint8_t *)hosted_realloc(r.data, r.len + buf_handle->payload_len); \
+		} \
+		if (!r.data) { \
+			printf("Failed to allocate serial data\n\r"); \
+			goto serial_buff_cleanup; \
+		} \
+	} while(0);
+
 	serial_ll_handle_t * serial_ll_hdl = NULL;
+	uint8_t *serial_buf = NULL;
+	interface_buffer_handle_t new_buf_handle = {0};
 
-	serial_ll_hdl = get_serial_ll_handle(if_num);
+	/* Check valid handle and length */
+	if (!buf_handle || !buf_handle->payload_len) {
+		printf("%s:%u Invalid parameters\n\r", __func__, __LINE__);
+		goto serial_buff_cleanup;
+	}
 
+	serial_ll_hdl = get_serial_ll_handle(buf_handle->if_num);
+
+	/* Is serial interface up */
 	if ((! serial_ll_hdl) || (serial_ll_hdl->state != ACTIVE)) {
 		printf("Serial interface not registered yet\n\r");
-		return STM_FAIL ;
+		goto serial_buff_cleanup;
 	}
-	buf_handle.if_type = ESP_SERIAL_IF;
-	buf_handle.if_num = if_num;
-	buf_handle.payload_len = rx_len;
-	buf_handle.payload = rxbuff;
-	buf_handle.priv_buffer_handle = rxbuff;
-	buf_handle.free_buf_handle = free;
+
+
+	/* Accumulate fragments */
+	if (buf_handle->flag & MORE_FRAGMENT) {
+
+		SERIAL_ALLOC_REALLOC_RDATA();
+
+		memcpy((r.data + r.len), buf_handle->payload, buf_handle->payload_len);
+		r.len += buf_handle->payload_len;
+		return STM_OK;
+	}
+
+	SERIAL_ALLOC_REALLOC_RDATA();
+
+	/* No or last fragment */
+	memcpy((r.data + r.len), buf_handle->payload, buf_handle->payload_len);
+	r.len += buf_handle->payload_len;
+
+	serial_buf = (uint8_t *)malloc(r.len);
+	if(!serial_buf) {
+		printf("Malloc failed, drop pkt\n\r");
+		goto serial_buff_cleanup;
+	}
+	memcpy(serial_buf, r.data, r.len);
+
+	/* form new buf handle for processing of serial msg */
+	new_buf_handle.if_type = ESP_SERIAL_IF;
+	new_buf_handle.if_num = buf_handle->if_num;
+	new_buf_handle.payload_len = r.len;
+	new_buf_handle.payload = serial_buf;
+	new_buf_handle.priv_buffer_handle = serial_buf;
+	new_buf_handle.free_buf_handle = free;
+
+	r.len = 0;
+	hosted_free(r.data);
+	r.data = NULL;
 
 	/* send to serial queue */
 	if (pdTRUE != xQueueSend(serial_ll_hdl->queue,
-		    &buf_handle, portMAX_DELAY)) {
-		printf("Failed send serialif queue[%u]\n\r", if_num);
-		return STM_FAIL;
+		    &new_buf_handle, portMAX_DELAY)) {
+		printf("Failed send serialif queue[%u]\n\r", new_buf_handle.if_num);
+		goto serial_buff_cleanup;
 	}
 
 	/* Indicate higher layer about data ready for consumption */
 	if (serial_ll_hdl->serial_rx_callback) {
 		(*serial_ll_hdl->serial_rx_callback) ();
+	} else {
+		goto serial_buff_cleanup;
 	}
 
 	return STM_OK;
+
+serial_buff_cleanup:
+	r.len = 0;
+	hosted_free(r.data);
+	return STM_FAIL;
 }
 
 /** Exported Functions **/

@@ -98,7 +98,7 @@ struct serial_ll_operations {
   */
 serial_ll_handle_t * serial_ll_init(void(*rx_data_ind)(void));
 
-stm_ret_t serial_ll_rx_handler(uint8_t if_num, uint8_t *rxbuff, uint16_t rx_len);
+stm_ret_t serial_ll_rx_handler(interface_buffer_handle_t * buf_handle);
 #ifdef __cplusplus
 }
 #endif

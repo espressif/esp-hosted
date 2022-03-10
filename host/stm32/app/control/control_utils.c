@@ -26,6 +26,7 @@
 #include "string.h"
 #include "cmsis_os.h"
 #include "serial_drv.h"
+#include "platform_wrapper.h"
 
 
 /***** Please Read *****/
@@ -307,6 +308,7 @@ int ctrl_app_resp_callback(ctrl_cmd_t * app_resp)
 							i, list[i].ssid, list[i].bssid, list[i].rssi,
 							list[i].channel, list[i].encryption_mode);
 				}
+				msleep(1);
 			}
 			break;
 		} case CTRL_RESP_GET_AP_CONFIG : {
@@ -440,7 +442,6 @@ int test_set_wifi_mode(int mode)
 	ctrl_cmd_t req = CTRL_CMD_DEFAULT_REQ();
 	ctrl_cmd_t *resp = NULL;
 
-	printf("Mode: %u\n",mode);
 	req.u.wifi_mode.mode = mode;
 	resp = wifi_set_mode(req);
 
@@ -580,6 +581,8 @@ int test_get_available_wifi(void)
 {
 	/* implemented synchronous */
 	ctrl_cmd_t req = CTRL_CMD_DEFAULT_REQ();
+	req.cmd_timeout_sec = 300;
+
 	ctrl_cmd_t *resp = NULL;
 
 	resp = wifi_ap_scan_list(req);
