@@ -4,31 +4,31 @@ This section elaborates about setting up control path, Wi-Fi and Bluetooth/BLE c
 
 ## 1. Control Path
 
-* Control path is intended to setup all configurations at ESP32 side. These configurations could be related to services like
+* Control path is intended to setup all configurations at ESP side. These configurations could be related to services like
   - Connect host with external AP (Wi-Fi router)
   - Get configurations of external AP which host is connected
-  - Set maximum wifi transmit power of ESP32
-  - Find out current wifi power of ESP32
+  - Set maximum Wi-Fi transmit power of ESP
+  - Find out current Wi-Fi power of ESP
 * Control path command could be considered as first step before you can establish data path
 * It is way to verify if ESP-Hosted transport like SPI,SDIO is setup correctly
-* Overall [control path design](../common/contrl_path.md#3-design) and easy setup of control path using [demo application](../common/contrl_path.md#5-kickstart-using-control-path) is explained in [Control Path documentation](../common/contrl_path.md)
+* Overall [control path design](../common/contrl_path.md#3-design) and easy setup of control path using [demo application](../common/contrl_path.md#5-kick-start-using-control-path) is explained in [Control Path documentation](../common/contrl_path.md)
 
 ## 2. Wi-Fi Connectivity
 
 Wi-Fi can be configured as either as `STATION` mode or `SOFTAP` mode or `STATION+SOFTAP` mode.
 - **STATION Mode**
-  - This mode is used for connecting to external AP i.e. Wi-Fi router. Consider example of smartphone connecting to Wi-Fi router. Like smartphone, rpi behaves as station and gets authenticated and connected to external AP i.e. Wi-Fi router.
+  - This mode is used for connecting to external AP i.e. Wi-Fi router. Consider example of smartphone connecting to Wi-Fi router. Like smartphone, Raspberry Pi, *i.e.* host, behaves as station and gets authenticated and connected to external AP i.e. Wi-Fi router.
 - **SOFTAP Mode**
-  - This mode is exactly opposite, wherein rpi with help of ESP-Hosted solution, instructs ESP peripheral to create Wi-Fi network. Stations like smartphones can authenticate and connect to it.
+  - This mode is exactly opposite, wherein Raspberry Pi with help of ESP-Hosted solution, instructs ESP peripheral to create Wi-Fi network. Stations like smartphones can authenticate and connect to it.
 - **STATION+SOFTAP Mode**
-  - This is combination of both the modes. In this mode, rpi behaves as station and connects to external AP. At the same time, rpi with help of ESP device, can create the Wi-Fi network.
+  - This is combination of both the modes. In this mode, Raspberry Pi behaves as station and connects to external AP. At the same time, Raspberry Pi with help of ESP device, can create the Wi-Fi network.
 - To setup Wi-Fi connectivity, Wi-Fi related [control path APIs](../common/ctrl_apis.md) should be a reference point.
 - Using these APIs, all above modes can be easily configured.
 - [C based demo app](../common/c_demo.md) and [Python based demo app](../common/python_demo.md) implement these APIs. User can use this application or event develop own application referring those.
 
 ### 2.1 Control/Configure Wi-Fi Interface
 - This section explains how one can configure and control Wi-Fi interface using provided [python demo app](../common/python_demo.md)
-- Python demo app can be used in two modes, shell mode *i.e.* command line mode and CLI mode. In following sections, only shell mode is detailed, just to enough to kickstart
+- Python demo app can be used in two modes, shell mode *i.e.* command line mode and CLI mode. In following sections, only shell mode is detailed, just to enough to kick-start
 - User can make use of easy and intuitive mode by referring [here](../common/python_demo.md#modes-supported)
 - C based solution also could be used from [C based demo app](../common/c_demo.md). For simplicity, 
 
@@ -47,7 +47,7 @@ $ cd host/linux/host_control/python_support/
 		```
 ---
 - **Connect to external access point**
-	- `connect_ap` command configures ESP peripheral in WiFi station mode and connects to an external AP with user-provided credentials.
+	- `connect_ap` command configures ESP peripheral in Wi-Fi station mode and connects to an external AP with user-provided credentials.
 	- The command accepts arguments such as SSID, password, optionally BSSID of an external AP, wpa3 support and listen interval (AP beacon intervals). For example:
 		```
 		$ sudo python3 test.py connect_ap --ssid SaveEarth PlantMoreTrees123
@@ -59,7 +59,7 @@ $ cd host/linux/host_control/python_support/
 		```
 	- As an end result of this command:
 		- Wi-Fi station interface of ESP peripheral will be connected to an external AP
-		- `ethsta0` interface will be up and ESP32's MAC address will be assigned to it
+		- `ethsta0` interface will be up and ESP's MAC address will be assigned to it
 		- DHCP lease will be set up.
 
 ##### Note:
@@ -106,7 +106,7 @@ $ cd host/linux/host_control/python_support/
 	```
 ---
 - **Stop softAP**
-	- `stop_softap` command disables wifi softAP mode on ESP peripheral.
+	- `stop_softap` command disables Wi-Fi softAP mode on ESP peripheral.
 		```
 		$ sudo python3 ./test.py stop_softap
 		```
@@ -148,12 +148,12 @@ Whereas BLE 5.0 functionalities are tested with `bluez` 5.45+.
 #### 3.1.1 GATT server
 Steps:
 1. Run `sudo bluetoothctl`.
-2. Run `list` to get MAC address of ESP32.
+2. Run `list` to get MAC address of ESP.
 3. To set device name, run `menu advertise`. Then `name <enter_any_name>`.
 4. To come back to main menu, run `back`.
 5. To start advertising, run `advertise on`.
 Perform below steps on Mobile Phone:
-6. Turn on mobile phone's bluetooth. Open nRF connect application, ESP32's MAC address will be displayed under `SCANNER` tab as a result of scan.
+6. Turn on mobile phone's bluetooth. Open nRF connect application, ESP's MAC address will be displayed under `SCANNER` tab as a result of scan.
 7. Click on connect. Client tab will be open. Click on `Generic Attribute` option.
 8. Perform read/write on listed characteristics fields in `Generic Attribute` service.
 To disconnet:
@@ -191,7 +191,7 @@ Run `hcitool lescan` for BLE device scanning.
 
 ### 3.2 BLE 5.0 testing
 
-Only ESP32C3 HCI controller supports BLE 5.0. Several new features are introduced in BLE 5.0. The major areas of improvement are:
+Only ESP32-C3 HCI controller supports BLE 5.0. Several new features are introduced in BLE 5.0. The major areas of improvement are:
 1. Slot Availability Mask (SAM)
 2. 2 Msym/s PHY for LE
 3. LE Long Range
@@ -199,9 +199,9 @@ Only ESP32C3 HCI controller supports BLE 5.0. Several new features are introduce
 5. LE Advertising Extensions
 6. LE Channel Selection Algorithm #2
 
-To test BLE 5.0 on RPi minimum `bluez` version `5.45` and above required. If `bluez` version is less than 5.45 ,then upgrade `bluez` version.
+To test BLE 5.0 on Raspberry Pi, minimum `bluez` version `5.45` and above required. If `bluez` version is less than 5.45 ,then upgrade `bluez` version.
 
-Check current `bluez` version by running following command on RPi:
+Check current `bluez` version by running following command on Raspberry Pi:
 
 ```
 $ bluetoothctl -v
@@ -281,11 +281,11 @@ Steps:
 ## 4. OTA operation
 
 OTA (Over The Air) update performs following operations.
-* Erase ota flash partition of ESP32
+* Erase ota flash partition of ESP
 * Download chunk from URL and write that chunk into flash, one by one, till whole binary is written
 * Validate the complete written binary in flash
 * Sets newly written OTA partition as boot partition
-* Reboot the ESP32 after 5 second
+* Reboot the ESP after 5 second
 
 Please follow [OTA update documentation](ota_update.md) for further details.
 

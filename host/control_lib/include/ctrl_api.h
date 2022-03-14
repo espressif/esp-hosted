@@ -1,7 +1,7 @@
 /*
  * Espressif Systems Wireless LAN device driver
  *
- * Copyright (C) 2015-2021 Espressif Systems (Shanghai) PTE LTD
+ * Copyright (C) 2015-2022 Espressif Systems (Shanghai) PTE LTD
  *
  * This software file (the "File") is distributed by Espressif Systems (Shanghai)
  * PTE LTD under the terms of the GNU General Public License Version 2, June 1991
@@ -28,8 +28,8 @@
 #define FAILURE                              -1
 
 #define SSID_LENGTH                          32
-#define BSSID_LENGTH                         17
 #define MAX_MAC_STR_LEN                      18
+#define BSSID_LENGTH                         MAX_MAC_STR_LEN
 #define PASSWORD_LENGTH                      64
 #define STATUS_LENGTH                        14
 #define VENDOR_OUI_BUF                       3
@@ -75,124 +75,124 @@ enum {
 
 typedef enum {
 
-  CTRL_MSGTYPE_INVALID = CTRL_MSG_TYPE__MsgType_Invalid,
-  CTRL_REQ = CTRL_MSG_TYPE__Req,
-  CTRL_RESP = CTRL_MSG_TYPE__Resp,
-  CTRL_EVENT = CTRL_MSG_TYPE__Event,
-  CTRL_MSGTYPE_MAX = CTRL_MSG_TYPE__MsgType_Max,
+	CTRL_MSGTYPE_INVALID = CTRL_MSG_TYPE__MsgType_Invalid,
+	CTRL_REQ = CTRL_MSG_TYPE__Req,
+	CTRL_RESP = CTRL_MSG_TYPE__Resp,
+	CTRL_EVENT = CTRL_MSG_TYPE__Event,
+	CTRL_MSGTYPE_MAX = CTRL_MSG_TYPE__MsgType_Max,
 
 } AppMsgType_e;
 
 typedef enum {
 
-  CTRL_MSGID_INVALID = CTRL_MSG_ID__MsgId_Invalid,
-  /*
-   ** Request Msgs *
-   */
-  CTRL_REQ_BASE                      = CTRL_MSG_ID__Req_Base,
-  CTRL_REQ_GET_MAC_ADDR              = CTRL_MSG_ID__Req_GetMACAddress, //0x65
-  CTRL_REQ_SET_MAC_ADDR              = CTRL_MSG_ID__Req_SetMacAddress, //0x66
-  CTRL_REQ_GET_WIFI_MODE             = CTRL_MSG_ID__Req_GetWifiMode,   //0x67
-  CTRL_REQ_SET_WIFI_MODE             = CTRL_MSG_ID__Req_SetWifiMode,   //0x68
+	CTRL_MSGID_INVALID = CTRL_MSG_ID__MsgId_Invalid,
+	/*
+	 ** Request Msgs *
+	 */
+	CTRL_REQ_BASE                      = CTRL_MSG_ID__Req_Base,
+	CTRL_REQ_GET_MAC_ADDR              = CTRL_MSG_ID__Req_GetMACAddress, //0x65
+	CTRL_REQ_SET_MAC_ADDR              = CTRL_MSG_ID__Req_SetMacAddress, //0x66
+	CTRL_REQ_GET_WIFI_MODE             = CTRL_MSG_ID__Req_GetWifiMode,   //0x67
+	CTRL_REQ_SET_WIFI_MODE             = CTRL_MSG_ID__Req_SetWifiMode,   //0x68
 
-  CTRL_REQ_GET_AP_SCAN_LIST          = CTRL_MSG_ID__Req_GetAPScanList, //0x69
-  CTRL_REQ_GET_AP_CONFIG             = CTRL_MSG_ID__Req_GetAPConfig,   //0x6a
-  CTRL_REQ_CONNECT_AP                = CTRL_MSG_ID__Req_ConnectAP,     //0x6b
-  CTRL_REQ_DISCONNECT_AP             = CTRL_MSG_ID__Req_DisconnectAP,  //0x6c
+	CTRL_REQ_GET_AP_SCAN_LIST          = CTRL_MSG_ID__Req_GetAPScanList, //0x69
+	CTRL_REQ_GET_AP_CONFIG             = CTRL_MSG_ID__Req_GetAPConfig,   //0x6a
+	CTRL_REQ_CONNECT_AP                = CTRL_MSG_ID__Req_ConnectAP,     //0x6b
+	CTRL_REQ_DISCONNECT_AP             = CTRL_MSG_ID__Req_DisconnectAP,  //0x6c
 
-  CTRL_REQ_GET_SOFTAP_CONFIG         = CTRL_MSG_ID__Req_GetSoftAPConfig,            //0x6d
-  CTRL_REQ_SET_SOFTAP_VND_IE         = CTRL_MSG_ID__Req_SetSoftAPVendorSpecificIE,  //0x6e
-  CTRL_REQ_START_SOFTAP              = CTRL_MSG_ID__Req_StartSoftAP,                //0x6f
-  CTRL_REQ_GET_SOFTAP_CONN_STA_LIST  = CTRL_MSG_ID__Req_GetSoftAPConnectedSTAList,  //0x70
-  CTRL_REQ_STOP_SOFTAP               = CTRL_MSG_ID__Req_StopSoftAP,                 //0x71
+	CTRL_REQ_GET_SOFTAP_CONFIG         = CTRL_MSG_ID__Req_GetSoftAPConfig,            //0x6d
+	CTRL_REQ_SET_SOFTAP_VND_IE         = CTRL_MSG_ID__Req_SetSoftAPVendorSpecificIE,  //0x6e
+	CTRL_REQ_START_SOFTAP              = CTRL_MSG_ID__Req_StartSoftAP,                //0x6f
+	CTRL_REQ_GET_SOFTAP_CONN_STA_LIST  = CTRL_MSG_ID__Req_GetSoftAPConnectedSTAList,  //0x70
+	CTRL_REQ_STOP_SOFTAP               = CTRL_MSG_ID__Req_StopSoftAP,                 //0x71
 
-  CTRL_REQ_SET_PS_MODE               = CTRL_MSG_ID__Req_SetPowerSaveMode,   //0x72
-  CTRL_REQ_GET_PS_MODE               = CTRL_MSG_ID__Req_GetPowerSaveMode,   //0x73
+	CTRL_REQ_SET_PS_MODE               = CTRL_MSG_ID__Req_SetPowerSaveMode,   //0x72
+	CTRL_REQ_GET_PS_MODE               = CTRL_MSG_ID__Req_GetPowerSaveMode,   //0x73
 
-  CTRL_REQ_OTA_BEGIN                 = CTRL_MSG_ID__Req_OTABegin,           //0x74
-  CTRL_REQ_OTA_WRITE                 = CTRL_MSG_ID__Req_OTAWrite,           //0x75
-  CTRL_REQ_OTA_END                   = CTRL_MSG_ID__Req_OTAEnd,             //0x76
+	CTRL_REQ_OTA_BEGIN                 = CTRL_MSG_ID__Req_OTABegin,           //0x74
+	CTRL_REQ_OTA_WRITE                 = CTRL_MSG_ID__Req_OTAWrite,           //0x75
+	CTRL_REQ_OTA_END                   = CTRL_MSG_ID__Req_OTAEnd,             //0x76
 
-  CTRL_REQ_SET_WIFI_MAX_TX_POWER     = CTRL_MSG_ID__Req_SetWifiMaxTxPower,  //0x77
-  CTRL_REQ_GET_WIFI_CURR_TX_POWER    = CTRL_MSG_ID__Req_GetWifiCurrTxPower, //0x78
+	CTRL_REQ_SET_WIFI_MAX_TX_POWER     = CTRL_MSG_ID__Req_SetWifiMaxTxPower,  //0x77
+	CTRL_REQ_GET_WIFI_CURR_TX_POWER    = CTRL_MSG_ID__Req_GetWifiCurrTxPower, //0x78
 
-  CTRL_REQ_CONFIG_HEARTBEAT          = CTRL_MSG_ID__Req_ConfigHeartbeat,    //0x79
-  /*
-   * Add new control path command response before Req_Max
-   * and update Req_Max
-   */
-  CTRL_REQ_MAX = CTRL_MSG_ID__Req_Max,
-  /*
-   ** Response Msgs *
-   */
-  CTRL_RESP_BASE                     = CTRL_MSG_ID__Resp_Base,
-  CTRL_RESP_GET_MAC_ADDR             = CTRL_MSG_ID__Resp_GetMACAddress,  //0x65 -> 0xc9
-  CTRL_RESP_SET_MAC_ADDRESS          = CTRL_MSG_ID__Resp_SetMacAddress,  //0x66 -> 0xca
-  CTRL_RESP_GET_WIFI_MODE            = CTRL_MSG_ID__Resp_GetWifiMode,    //0x67 -> 0xcb
-  CTRL_RESP_SET_WIFI_MODE            = CTRL_MSG_ID__Resp_SetWifiMode,    //0x68 -> 0xcc
+	CTRL_REQ_CONFIG_HEARTBEAT          = CTRL_MSG_ID__Req_ConfigHeartbeat,    //0x79
+	/*
+	 * Add new control path command response before Req_Max
+	 * and update Req_Max
+	 */
+	CTRL_REQ_MAX = CTRL_MSG_ID__Req_Max,
+	/*
+	 ** Response Msgs *
+	 */
+	CTRL_RESP_BASE                     = CTRL_MSG_ID__Resp_Base,
+	CTRL_RESP_GET_MAC_ADDR             = CTRL_MSG_ID__Resp_GetMACAddress,  //0x65 -> 0xc9
+	CTRL_RESP_SET_MAC_ADDRESS          = CTRL_MSG_ID__Resp_SetMacAddress,  //0x66 -> 0xca
+	CTRL_RESP_GET_WIFI_MODE            = CTRL_MSG_ID__Resp_GetWifiMode,    //0x67 -> 0xcb
+	CTRL_RESP_SET_WIFI_MODE            = CTRL_MSG_ID__Resp_SetWifiMode,    //0x68 -> 0xcc
 
-  CTRL_RESP_GET_AP_SCAN_LIST         = CTRL_MSG_ID__Resp_GetAPScanList,  //0x69 -> 0xcd
-  CTRL_RESP_GET_AP_CONFIG            = CTRL_MSG_ID__Resp_GetAPConfig,    //0x6a -> 0xce
-  CTRL_RESP_CONNECT_AP               = CTRL_MSG_ID__Resp_ConnectAP,      //0x6b -> 0xdf
-  CTRL_RESP_DISCONNECT_AP            = CTRL_MSG_ID__Resp_DisconnectAP,   //0x6c -> 0xd0
+	CTRL_RESP_GET_AP_SCAN_LIST         = CTRL_MSG_ID__Resp_GetAPScanList,  //0x69 -> 0xcd
+	CTRL_RESP_GET_AP_CONFIG            = CTRL_MSG_ID__Resp_GetAPConfig,    //0x6a -> 0xce
+	CTRL_RESP_CONNECT_AP               = CTRL_MSG_ID__Resp_ConnectAP,      //0x6b -> 0xdf
+	CTRL_RESP_DISCONNECT_AP            = CTRL_MSG_ID__Resp_DisconnectAP,   //0x6c -> 0xd0
 
-  CTRL_RESP_GET_SOFTAP_CONFIG        = CTRL_MSG_ID__Resp_GetSoftAPConfig,           //0x6d -> 0xd1
-  CTRL_RESP_SET_SOFTAP_VND_IE        = CTRL_MSG_ID__Resp_SetSoftAPVendorSpecificIE, //0x6e -> 0xd2
-  CTRL_RESP_START_SOFTAP             = CTRL_MSG_ID__Resp_StartSoftAP,               //0x6f -> 0xd3
-  CTRL_RESP_GET_SOFTAP_CONN_STA_LIST = CTRL_MSG_ID__Resp_GetSoftAPConnectedSTAList, //0x70 -> 0xd4
-  CTRL_RESP_STOP_SOFTAP              = CTRL_MSG_ID__Resp_StopSoftAP,                //0x71 -> 0xd5
+	CTRL_RESP_GET_SOFTAP_CONFIG        = CTRL_MSG_ID__Resp_GetSoftAPConfig,           //0x6d -> 0xd1
+	CTRL_RESP_SET_SOFTAP_VND_IE        = CTRL_MSG_ID__Resp_SetSoftAPVendorSpecificIE, //0x6e -> 0xd2
+	CTRL_RESP_START_SOFTAP             = CTRL_MSG_ID__Resp_StartSoftAP,               //0x6f -> 0xd3
+	CTRL_RESP_GET_SOFTAP_CONN_STA_LIST = CTRL_MSG_ID__Resp_GetSoftAPConnectedSTAList, //0x70 -> 0xd4
+	CTRL_RESP_STOP_SOFTAP              = CTRL_MSG_ID__Resp_StopSoftAP,                //0x71 -> 0xd5
 
-  CTRL_RESP_SET_PS_MODE              = CTRL_MSG_ID__Resp_SetPowerSaveMode, //0x72 -> 0xd6
-  CTRL_RESP_GET_PS_MODE              = CTRL_MSG_ID__Resp_GetPowerSaveMode, //0x73 -> 0xd7
+	CTRL_RESP_SET_PS_MODE              = CTRL_MSG_ID__Resp_SetPowerSaveMode, //0x72 -> 0xd6
+	CTRL_RESP_GET_PS_MODE              = CTRL_MSG_ID__Resp_GetPowerSaveMode, //0x73 -> 0xd7
 
-  CTRL_RESP_OTA_BEGIN                = CTRL_MSG_ID__Resp_OTABegin,         //0x74 -> 0xd8
-  CTRL_RESP_OTA_WRITE                = CTRL_MSG_ID__Resp_OTAWrite,         //0x75 -> 0xd9
-  CTRL_RESP_OTA_END                  = CTRL_MSG_ID__Resp_OTAEnd,           //0x76 -> 0xda
+	CTRL_RESP_OTA_BEGIN                = CTRL_MSG_ID__Resp_OTABegin,         //0x74 -> 0xd8
+	CTRL_RESP_OTA_WRITE                = CTRL_MSG_ID__Resp_OTAWrite,         //0x75 -> 0xd9
+	CTRL_RESP_OTA_END                  = CTRL_MSG_ID__Resp_OTAEnd,           //0x76 -> 0xda
 
-  CTRL_RESP_SET_WIFI_MAX_TX_POWER     = CTRL_MSG_ID__Resp_SetWifiMaxTxPower,  //0x77 -> 0xdb
-  CTRL_RESP_GET_WIFI_CURR_TX_POWER    = CTRL_MSG_ID__Resp_GetWifiCurrTxPower, //0x78 -> 0xdc
+	CTRL_RESP_SET_WIFI_MAX_TX_POWER     = CTRL_MSG_ID__Resp_SetWifiMaxTxPower,  //0x77 -> 0xdb
+	CTRL_RESP_GET_WIFI_CURR_TX_POWER    = CTRL_MSG_ID__Resp_GetWifiCurrTxPower, //0x78 -> 0xdc
 
-  CTRL_RESP_CONFIG_HEARTBEAT          = CTRL_MSG_ID__Resp_ConfigHeartbeat,    //0x79 -> 0xdd
-  /*
-   * Add new control path comm       and response before Resp_Max
-   * and update Resp_Max
-   */
-  CTRL_RESP_MAX = CTRL_MSG_ID__Resp_Max,
-  /*
-   ** Events
-   */
-  CTRL_EVENT_BASE            = CTRL_MSG_ID__Event_Base,
-  CTRL_EVENT_ESP_INIT        = CTRL_MSG_ID__Event_ESPInit,
-  CTRL_EVENT_HEARTBEAT       = CTRL_MSG_ID__Event_Heartbeat,
-  CTRL_EVENT_STATION_DISCONNECT_FROM_AP =
-	  CTRL_MSG_ID__Event_StationDisconnectFromAP,
-  CTRL_EVENT_STATION_DISCONNECT_FROM_ESP_SOFTAP =
-	  CTRL_MSG_ID__Event_StationDisconnectFromESPSoftAP,
-  /*
-   * Add new control path command notification before Event_Max
-   * and update Event_Max
-   */
-  CTRL_EVENT_MAX = CTRL_MSG_ID__Event_Max,
+	CTRL_RESP_CONFIG_HEARTBEAT          = CTRL_MSG_ID__Resp_ConfigHeartbeat,    //0x79 -> 0xdd
+	/*
+	 * Add new control path comm       and response before Resp_Max
+	 * and update Resp_Max
+	 */
+	CTRL_RESP_MAX = CTRL_MSG_ID__Resp_Max,
+	/*
+	 ** Events
+	 */
+	CTRL_EVENT_BASE            = CTRL_MSG_ID__Event_Base,
+	CTRL_EVENT_ESP_INIT        = CTRL_MSG_ID__Event_ESPInit,
+	CTRL_EVENT_HEARTBEAT       = CTRL_MSG_ID__Event_Heartbeat,
+	CTRL_EVENT_STATION_DISCONNECT_FROM_AP =
+		CTRL_MSG_ID__Event_StationDisconnectFromAP,
+	CTRL_EVENT_STATION_DISCONNECT_FROM_ESP_SOFTAP =
+		CTRL_MSG_ID__Event_StationDisconnectFromESPSoftAP,
+	/*
+	 * Add new control path command notification before Event_Max
+	 * and update Event_Max
+	 */
+	CTRL_EVENT_MAX = CTRL_MSG_ID__Event_Max,
 } AppMsgId_e;
 
 typedef enum {
-    WIFI_MODE_NONE = CTRL__WIFI_MODE__NONE,
-    WIFI_MODE_STA = CTRL__WIFI_MODE__STA,
-    WIFI_MODE_AP = CTRL__WIFI_MODE__AP,
-    WIFI_MODE_APSTA = CTRL__WIFI_MODE__APSTA,
-    WIFI_MODE_MAX
+	WIFI_MODE_NONE = CTRL__WIFI_MODE__NONE,
+	WIFI_MODE_STA = CTRL__WIFI_MODE__STA,
+	WIFI_MODE_AP = CTRL__WIFI_MODE__AP,
+	WIFI_MODE_APSTA = CTRL__WIFI_MODE__APSTA,
+	WIFI_MODE_MAX
 } wifi_mode_e;
 
 typedef enum {
-    WIFI_AUTH_OPEN = CTRL__WIFI_SEC_PROT__Open,
-    WIFI_AUTH_WEP = CTRL__WIFI_SEC_PROT__WEP,
-    WIFI_AUTH_WPA_PSK = CTRL__WIFI_SEC_PROT__WPA_PSK,
-    WIFI_AUTH_WPA2_PSK = CTRL__WIFI_SEC_PROT__WPA2_PSK,
-    WIFI_AUTH_WPA_WPA2_PSK = CTRL__WIFI_SEC_PROT__WPA_WPA2_PSK,
-    WIFI_AUTH_WPA2_ENTERPRISE = CTRL__WIFI_SEC_PROT__WPA2_ENTERPRISE,
-    WIFI_AUTH_WPA3_PSK = CTRL__WIFI_SEC_PROT__WPA3_PSK,
-    WIFI_AUTH_WPA2_WPA3_PSK = CTRL__WIFI_SEC_PROT__WPA2_WPA3_PSK,
-    WIFI_AUTH_MAX,
+	WIFI_AUTH_OPEN = CTRL__WIFI_SEC_PROT__Open,
+	WIFI_AUTH_WEP = CTRL__WIFI_SEC_PROT__WEP,
+	WIFI_AUTH_WPA_PSK = CTRL__WIFI_SEC_PROT__WPA_PSK,
+	WIFI_AUTH_WPA2_PSK = CTRL__WIFI_SEC_PROT__WPA2_PSK,
+	WIFI_AUTH_WPA_WPA2_PSK = CTRL__WIFI_SEC_PROT__WPA_WPA2_PSK,
+	WIFI_AUTH_WPA2_ENTERPRISE = CTRL__WIFI_SEC_PROT__WPA2_ENTERPRISE,
+	WIFI_AUTH_WPA3_PSK = CTRL__WIFI_SEC_PROT__WPA3_PSK,
+	WIFI_AUTH_WPA2_WPA3_PSK = CTRL__WIFI_SEC_PROT__WPA2_WPA3_PSK,
+	WIFI_AUTH_MAX,
 } wifi_auth_mode_e;
 
 typedef enum {
@@ -201,54 +201,54 @@ typedef enum {
 } wifi_bandwidth_e;
 
 typedef enum {
-    WIFI_PS_MIN_MODEM = CTRL__WIFI_POWER_SAVE__MIN_MODEM,
-    WIFI_PS_MAX_MODEM = CTRL__WIFI_POWER_SAVE__MAX_MODEM,
-    WIFI_PS_INVALID,
+	WIFI_PS_MIN_MODEM = CTRL__WIFI_POWER_SAVE__MIN_MODEM,
+	WIFI_PS_MAX_MODEM = CTRL__WIFI_POWER_SAVE__MAX_MODEM,
+	WIFI_PS_INVALID,
 } wifi_ps_type_e;
 
 typedef enum {
-    WIFI_VND_IE_TYPE_BEACON      = CTRL__VENDOR_IETYPE__Beacon,
-    WIFI_VND_IE_TYPE_PROBE_REQ   = CTRL__VENDOR_IETYPE__Probe_req,
-    WIFI_VND_IE_TYPE_PROBE_RESP  = CTRL__VENDOR_IETYPE__Probe_resp,
-    WIFI_VND_IE_TYPE_ASSOC_REQ   = CTRL__VENDOR_IETYPE__Assoc_req,
-    WIFI_VND_IE_TYPE_ASSOC_RESP  = CTRL__VENDOR_IETYPE__Assoc_resp,
+	WIFI_VND_IE_TYPE_BEACON      = CTRL__VENDOR_IETYPE__Beacon,
+	WIFI_VND_IE_TYPE_PROBE_REQ   = CTRL__VENDOR_IETYPE__Probe_req,
+	WIFI_VND_IE_TYPE_PROBE_RESP  = CTRL__VENDOR_IETYPE__Probe_resp,
+	WIFI_VND_IE_TYPE_ASSOC_REQ   = CTRL__VENDOR_IETYPE__Assoc_req,
+	WIFI_VND_IE_TYPE_ASSOC_RESP  = CTRL__VENDOR_IETYPE__Assoc_resp,
 } wifi_vendor_ie_type_e;
 
 typedef enum {
-    WIFI_VND_IE_ID_0 = CTRL__VENDOR_IEID__ID_0,
-    WIFI_VND_IE_ID_1 = CTRL__VENDOR_IEID__ID_1,
+	WIFI_VND_IE_ID_0 = CTRL__VENDOR_IEID__ID_0,
+	WIFI_VND_IE_ID_1 = CTRL__VENDOR_IEID__ID_1,
 } wifi_vendor_ie_id_e;
 
 
 
 typedef struct {
-    /* Should be set to WIFI_VENDOR_IE_ELEMENT_ID (0xDD) */
-    uint8_t element_id;
+	/* Should be set to WIFI_VENDOR_IE_ELEMENT_ID (0xDD) */
+	uint8_t element_id;
 	/* Len of all bytes in the element data
 	 * following this field. Minimum 4 */
-    uint8_t length;
+	uint8_t length;
 	/* Vendor identifier (OUI) */
-    uint8_t vendor_oui[VENDOR_OUI_BUF];
+	uint8_t vendor_oui[VENDOR_OUI_BUF];
 	/* Vendor-specific OUI type */
-    uint8_t vendor_oui_type;
-    /*length of payload field*/
-    uint16_t payload_len;
+	uint8_t vendor_oui_type;
+	/*length of payload field*/
+	uint16_t payload_len;
 	/* Payload. Length is equal to value in 'length' field, minus 4 */
-    uint8_t* payload;
+	uint8_t* payload;
 
 } vendor_ie_data_t;
 
 typedef struct {
-    uint8_t ssid[SSID_LENGTH];
-    uint8_t bssid[BSSID_LENGTH];
-    int rssi;
-    int channel;
-    int encryption_mode;
+	uint8_t ssid[SSID_LENGTH];
+	uint8_t bssid[BSSID_LENGTH];
+	int rssi;
+	int channel;
+	int encryption_mode;
 } wifi_scanlist_t;
 
 typedef struct {
-    uint8_t bssid[BSSID_LENGTH];
-    int rssi;
+	uint8_t bssid[BSSID_LENGTH];
+	int rssi;
 } wifi_connected_stations_list_t;
 
 typedef struct {
@@ -261,27 +261,27 @@ typedef struct {
 } wifi_mode_t;
 
 typedef struct {
-    uint8_t ssid[SSID_LENGTH];
-    uint8_t pwd[PASSWORD_LENGTH];
-    uint8_t bssid[BSSID_LENGTH];
-    bool is_wpa3_supported;
-    int rssi;
-    int channel;
-    int encryption_mode;
-    uint16_t listen_interval;
-    char status[STATUS_LENGTH];
-    char out_mac[MAX_MAC_STR_LEN];
+	uint8_t ssid[SSID_LENGTH];
+	uint8_t pwd[PASSWORD_LENGTH];
+	uint8_t bssid[BSSID_LENGTH];
+	bool is_wpa3_supported;
+	int rssi;
+	int channel;
+	int encryption_mode;
+	uint16_t listen_interval;
+	char status[STATUS_LENGTH];
+	char out_mac[MAX_MAC_STR_LEN];
 } wifi_ap_config_t;
 
 typedef struct {
-    uint8_t ssid[SSID_LENGTH];
-    uint8_t pwd[PASSWORD_LENGTH];
-    int channel;
-    int encryption_mode;
-    int max_connections;
-    bool ssid_hidden;
-    wifi_bandwidth_e bandwidth;
-    char out_mac[MAX_MAC_STR_LEN];
+	uint8_t ssid[SSID_LENGTH];
+	uint8_t pwd[PASSWORD_LENGTH];
+	int channel;
+	int encryption_mode;
+	int max_connections;
+	bool ssid_hidden;
+	wifi_bandwidth_e bandwidth;
+	char out_mac[MAX_MAC_STR_LEN];
 } softap_config_t;
 
 typedef struct {

@@ -69,7 +69,7 @@ typedef enum control_path_events_s {
 
 /* softap means, ESP will act as Access point */
 #ifndef INPUT_SOFTAP__SSID
-#define INPUT_SOFTAP__SSID                "MySoftApName"
+#define INPUT_SOFTAP__SSID                "MySoftAPName"
 #endif
 
 #ifndef INPUT_SOFTAP_PASSWORD

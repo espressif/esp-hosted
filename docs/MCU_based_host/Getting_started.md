@@ -4,11 +4,11 @@ This section elaborates about setting up the control path, Wi-Fi connectivity an
 
 ## 1. Control Path
 
-- Control path is intended to setup all configurations at ESP32 side. These configurations could be related to services like
+- Control path is intended to setup all configurations at ESP side. These configurations could be related to services like
   - Connect host with external AP (Wi-Fi router)
   - Get configurations of external AP which host is connected
-  - Set maximum wifi transmit power of ESP32
-  - Find out current wifi power of ESP32
+  - Set maximum Wi-Fi transmit power of ESP
+  - Find out current Wi-Fi power of ESP
   - Configuring ESP chipset heartbeat
 - Control path command could be considered as first step before you can establish data path
 - It is way to verify if ESP-Hosted transport like SPI,SDIO is setup correctly
@@ -28,7 +28,7 @@ Wi-Fi can be configured as either as `STATION` mode or `SOFTAP` mode or `STATION
 * **STATION+SOFTAP Mode**
     - This is combination of both the modes. In this mode, host behaves as station and connects to external AP. At the same time, host with help of ESP device, can create the Wi-Fi network.
 
-Host firmware provides wifi connectivity using control path and data path. Control path commands uses `protocomm` layer of ESP-IDF to serialize structured control data and communicates using SPI transport interface between Host(MCU based Host) and ESP peripheral (ESP32/ESP32-S2/ESP32-C3). User can use control commands to build application.
+Host firmware provides Wi-Fi connectivity using control path and data path. Control path commands uses `protocomm` layer of ESP-IDF to serialize structured control data and communicates using SPI transport interface between Host(MCU based Host) and ESP peripheral (ESP32/ESP32-S2/ESP32-C3). User can use control commands to build application.
 
 
 ### 2.1 Start Project with STM32
@@ -193,7 +193,7 @@ In case of station mode, ARP request could be triggered from station connected t
 ```
 sudo arping 192.168.1.233
 ```
-Similarly for softAP mode, you would need to connect to Wifi from ESP, `INPUT_SOFTAP__SSID`. Trigger command,
+Similarly for softAP mode, you would need to connect to Wi-Fi from ESP, `INPUT_SOFTAP__SSID`. Trigger command,
 ```
 sudo arping 192.168.2.1
 ```
@@ -212,11 +212,11 @@ Bluetooth and BLE handling could be easily ported. Porting details could be foun
 ## 4. OTA operation
 
 OTA (Over The Air) update performs following operations.
-* Erase ota flash partition of ESP32
+* Erase ota flash partition of ESP
 * Download chunk from URL and write that chunk into flash, one by one, till whole binary is written
 * Validate the complete written binary in flash
 * Sets newly written OTA partition as boot partition
-* Reboot the ESP32 after 5 second
+* Reboot the ESP after 5 second
 
 OTA also could be ported similar to demo application provided for Linux. This is available in C and python.
 Please follow [Linux based OTA update documentation](../Linux_based_host/ota_update.md) for further details.

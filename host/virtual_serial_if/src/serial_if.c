@@ -174,8 +174,8 @@ int transport_pserial_send(uint8_t* data, uint16_t data_length)
 	HOSTED_CALLOC(write_buf,buf_len);
 
 	if (!serial_handle) {
-		mem_free(write_buf);
-		return FAILURE;
+		command_log("Invalid args\n");
+		goto free_bufs;
 	}
 
 	count = compose_tlv(write_buf, data, data_length);

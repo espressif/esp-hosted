@@ -53,7 +53,7 @@
 #define CHUNK_SIZE                          4000
 
 /* station mode */
-#define STATION_MODE_MAC_ADDRESS            "1a:11:11:11:11:11"
+#define STATION_MODE_MAC_ADDRESS            "aa:bb:cc:dd:ee:ff"
 #define STATION_MODE_SSID                   "MyWifi"
 #define STATION_MODE_PWD                    "MyWifiPass@123"
 #define STATION_MODE_BSSID                  ""
@@ -61,7 +61,7 @@
 #define STATION_MODE_LISTEN_INTERVAL        5
 
 /* softap mode */
-#define SOFTAP_MODE_MAC_ADDRESS             "1a:22:22:22:22:22"
+#define SOFTAP_MODE_MAC_ADDRESS             "cc:bb:aa:ee:ff:dd"
 #define SOFTAP_MODE_SSID                    "ESPWifi"
 #define SOFTAP_MODE_PWD                     "ESPWifi@123"
 #define SOFTAP_MODE_CHANNEL                 1

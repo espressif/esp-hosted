@@ -86,6 +86,9 @@ int main(int argc, char *argv[])
 		return FAILURE;
 	}
 
+	register_event_callbacks();
+	test_config_heartbeat();
+
 	for (int test_count=0; test_count<stress_test_count; test_count++) {
 		printf("\n\nIteration %u:\n",test_count+1);
 		for (int i=str_args_start; i<argc; i++) {
@@ -161,11 +164,18 @@ int main(int argc, char *argv[])
 				/* OTA ESP flashing */
 				printf("OTA binary path:%s\n",argv[i+1]);
 				test_ota(argv[i+1]);
+				printf("Sleeping for 10 sec after OTA\n");
+				sleep(10);
 			}
 		}
 	}
+	test_disable_heartbeat();
+	unregister_event_callbacks();
+
+	control_path_platform_deinit();
 	deinit_hosted_control_lib();
-	printf("Exiting..");
+	sleep(1);
+	printf("Exiting..\n\n");
 
 	return 0;
 }

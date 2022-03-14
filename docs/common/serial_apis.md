@@ -1,10 +1,10 @@
 # Serial APIs
 - Serial APIs are split into `virtual serial interface APIs` and `serial driver APIs`
-- Demo app of control path makes use of [Virtual Serial Interface](../host/virtual_serial_if/include/serial_if.h)
+- Demo app of control path makes use of **Virtual Serial Interface**, [host/virtual_serial_if/include/serial_if.h](../../host/virtual_serial_if/include/serial_if.h)
 - Virtual serial interface makes use of serial driver
 - Serial driver is platform specific port which actually implements serial driver specific to that platform \
   For example, Linux uses `/dev/esps0` as serial driver file
-- Serial driver for MPU *.i.e.* Linux based host is at [Serial Driver for Linux](host/linux/port/include/platform_wrapper.h)
+- Serial driver for MPU *.i.e.* Linux based host is at **Serial Driver for Linux**, [host/linux/port/include/platform_wrapper.h](../../host/linux/port/include/platform_wrapper.h)
 
 # 1. Virtual Serial Interface APIs
 
@@ -18,8 +18,8 @@ Open the virtual serial interface
 ---
 
 ### 1.2 `uint16_t compose_tlv(uint8_t* buf, uint8_t* data, uint16_t data_length)`
-- The data is expected to be written over virtual serial interface, need to be encoded first in form of Type, Length and Value touple
-- In TLV i.e. Type Length Value format, to transfer data between host and ESP32
+- The data is expected to be written over virtual serial interface, need to be encoded first in form of Type, Length and Value tuple
+- In TLV i.e. Type Length Value format, to transfer data between host and ESP
 
 ```
 | type | length | value |
@@ -49,7 +49,7 @@ Open the virtual serial interface
 
 ---
 
-### 1.3 `int transport_pserial_send(uint8_t* data, uint16_t data_length)
+### 1.3 `int transport_pserial_send(uint8_t* data, uint16_t data_length)`
 Send buffer with length as argument on transport as serial interface type
 
 #### Parameters

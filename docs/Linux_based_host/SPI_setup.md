@@ -1,7 +1,7 @@
 # Wi-Fi and BT/BLE connectivity Setup over SPI
 ## 1. Setup
 ### 1.1 Hardware Setup
-In this setup, ESP board acts as a SPI peripheral and provides Wi-Fi capabilities to host. Please connect ESP peripheral to Raspberry-Pi with jumper cables as mentioned below. It may be good to use small length cables to ensure signal integrity. Power ESP32 and Raspberry Pi separately with a power supply that provide sufficient power. ESP32 can be powered through PC using micro-USB cable.
+In this setup, ESP board acts as a SPI peripheral and provides Wi-Fi capabilities to host. Please connect ESP peripheral to Raspberry-Pi with jumper cables as mentioned below. It may be good to use small length cables to ensure signal integrity. Power ESP and Raspberry Pi separately with a power supply that provide sufficient power. ESP can be powered through PC using micro-USB cable.
 
 Raspberry-Pi pinout can be found [here!](https://pinout.xyz/pinout/spi)
 
@@ -142,7 +142,7 @@ $ cd esp/esp_driver/network_adapter
 
 ##### Using cmake
 
-* :warning: `Set target if the ESP32S2 or ESP32C3 is being used. Skip if ESP32 is being used.`
+* :warning: `Set target if the ESP32-S2 or ESP32-C3 is being used. Skip if ESP32 is being used.`
 ```
 $ idf.py set-target esp32s2
 ```
@@ -157,7 +157,7 @@ $ idf.py menuconfig
 ```
 * This will open project configuration window. To select SPI transport interface, navigate to `Example Configuration ->  Transport layer -> SPI interface -> select` and exit from menuconfig.
 
-* For ESP32C3, select chip revision in addition. Navigate to `Component config → ESP32C3-Specific → Minimum Supported ESP32-C3 Revision` and select chip version of ESP32C3.
+* For ESP32-C3, select chip revision in addition. Navigate to `Component config → ESP32C3-Specific → Minimum Supported ESP32-C3 Revision` and select chip version of ESP32-C3.
 
 * Use below command to compile and flash the project. Replace <serial_port> with ESP peripheral's serial port.
 ```sh

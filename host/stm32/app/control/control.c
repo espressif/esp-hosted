@@ -327,7 +327,7 @@ static int station_connect(void)
 	int ret;
 	char ssid[SSID_LENGTH]= {0};
 	char pwd[PASSWORD_LENGTH] = {0};
-	char bssid[SSID_LENGTH]= {0};
+	char bssid[BSSID_LENGTH]= {0};
 	int is_wpa3_supported = 0;
 	int listen_interval = 0;
 
@@ -381,7 +381,7 @@ static int station_connect(void)
 }
 
 /**
-  * @brief  broadcast ESP as AP(wifi))
+  * @brief  broadcast ESP as AP(Wi-Fi))
   * @param  None
   * @retval STM_OK/STM_FAIL
   */

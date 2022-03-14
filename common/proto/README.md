@@ -1,6 +1,6 @@
 # About Proto Files
 
-The `esp_hosted_config.proto` file is protobuf file which has messages for command and response to communicate between Host and ESP32. Using `esp_hosted_config.proto` file, protobuf generated C files are [esp_hosted_config.pb-c.c](../esp_hosted_config.pb-c.c) and (esp_hosted_config.pb-c.h)[../include/esp_hosted_config.pb-c.h].
+The `esp_hosted_config.proto` file is protobuf file which has messages for command and response to communicate between Host and ESP. Using `esp_hosted_config.proto` file, protobuf generated C files are [esp_hosted_config.pb-c.c](../esp_hosted_config.pb-c.c) and (esp_hosted_config.pb-c.h)[../include/esp_hosted_config.pb-c.h].
 
 User can add his own message field in `.proto` file and generate respective C files.
 

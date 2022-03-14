@@ -19,7 +19,7 @@
 
 ### 1.1 Hardware Requirements
 * Raspberry-Pi model 3 Model B/B+ or Raspberry-Pi 4 model B
-* ESP32 board
+* ESP32/ESP32-S2/ESP32-C3 board
 * 8-12 jumper wires of length < 10cm
 
 ### 1.2 Host Setup
@@ -63,7 +63,7 @@ Make sure that Raspberry-Pi is equipped with following:
 
 Prepare connections based on interface requirements and setup host as below.
 
-* **Wifi and Bluetooth over SDIO**
+* **Wi-Fi and Bluetooth over SDIO**
 	* Connection Setup
 		* Prepare connections as per section [1.1 Hardware Setup](SDIO_setup.md#11-hardware-setup) of [SDIO setup document](SDIO_setup.md)
 	* Host Software
@@ -73,7 +73,7 @@ Prepare connections based on interface requirements and setup host as below.
 			$ cd host/linux/host_control/
 			$ ./rpi_init.sh sdio
 			```
-* **Wifi and Bluetooth over SPI**
+* **Wi-Fi and Bluetooth over SPI**
 	* Connection Setup
 		* Prepare connections as per section [1.1 Hardware Setup](SPI_setup.md#11-hardware-setup) of [SPI Setup document](SPI_setup.md)
 	* Host Software
@@ -83,7 +83,7 @@ Prepare connections based on interface requirements and setup host as below.
 			$ cd host/linux/host_control/
 			$ ./rpi_init.sh spi
 			```
-* **Wifi over SDIO and Bluetooth over UART**
+* **Wi-Fi over SDIO and Bluetooth over UART**
 	* Connection Setup
 		* Prepare SDIO connections as per section [1.1 Hardware Setup](SDIO_setup.md#11-hardware-setup) of [SDIO setup document](SDIO_setup.md)
 		* Prepare UART connections as per section [1.1 Hardware Setup](UART_setup.md#11-hardware-setup) of [UART setup document](UART_setup.md)
@@ -99,7 +99,7 @@ Prepare connections based on interface requirements and setup host as below.
 			```sh
 			$ sudo hciattach -s 921600 /dev/serial0 any 921600 flow
 
-* **Wifi over SPI and Bluetooth over UART**
+* **Wi-Fi over SPI and Bluetooth over UART**
 	* Connection Setup
 		* Prepare connections as per section [1.1 Hardware Setup](SPI_setup.md#11-hardware-setup) of [SPI Setup document](SPI_setup.md)
 		* Prepare UART connections as per section [1.1 Hardware Setup](UART_setup.md#11-hardware-setup) of [UART setup document](UART_setup.md)

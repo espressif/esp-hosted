@@ -874,6 +874,14 @@ int test_reset_vendor_specific_ie(void)
 
 	return ctrl_app_resp_callback(resp);
 }
+void free_hook(void *ptr)
+{
+	if (ptr) {
+		printf("Freeing 0x%p\n",ptr);
+		free(ptr);
+		ptr = NULL;
+	}
+}
 
 int test_set_vendor_specific_ie(void)
 {
@@ -901,7 +909,7 @@ int test_set_vendor_specific_ie(void)
 	req.u.wifi_softap_vendor_ie.vnd_ie.payload = (uint8_t *)v_data;
 	req.u.wifi_softap_vendor_ie.vnd_ie.payload_len = strlen(data);
 
-	req.free_buffer_func = free;
+	req.free_buffer_func = free_hook;
 	req.free_buffer_handle = v_data;
 
 	resp = wifi_set_vendor_specific_ie(req);
@@ -963,7 +971,6 @@ int test_ota(char* image_path)
 			ret = test_ota_write((uint8_t* )&ota_chunk, CHUNK_SIZE);
 			if (ret) {
 				printf("OTA procedure failed!!\n");
-				/* TODO: Do we need to do OTA end irrespective of success/failure? */
 				test_ota_end();
 				return FAILURE;
 			}

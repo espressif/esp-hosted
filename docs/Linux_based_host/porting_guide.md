@@ -26,7 +26,7 @@ Driver underlies heavily over underlying kernel. ESP-Hosted is tested over Linux
 * [rpi_init.sh](../../host/linux/host_control/rpi_init.sh) is utility script to load the ESP kernel module
 * Reset Pin
 	* Reset pin could be chosen over unused GPIO.
-	* Input parameter to script, `resetpin=X` to be changed accordingly. This is used to reset ESP32 on loading ESP32 kernel module.
+	* Input parameter to script, `resetpin=X` to be changed accordingly. This is used to reset ESP on loading the kernel module.
 * UART configuration
 	* `bt_init()` lists `raspi-gpio` commands.
 	* `rapi-gpio` are simple utilities used to configure GPIO pins for their levels, alternate functions and pull up values.
@@ -85,9 +85,10 @@ make CROSS_COMPILE=/home/user1/arm64_toolchain/bin/aarch64-linux-gnu-
 		- Reason why this setting was enabled is, SPI transfer was loosing first byte in transfer. Although this issue is only observed while testing with Raspberry Pi. Enabling cs_change=1 makes CS always de-assert after each transfer request. While porting, you may want to remove line, `trans.cs_change = 1;`.
 	* SPI clock
 		- ESP32 (WROVER and WROOM) supports 10MHz SPI clock.
-		- Whereas ESP32S2 supports 40MHz SPI clock.
-		- Raspberry Pi is tested with 10MHz clock with ESP32 and 30MHz with ESP32S2.
+		- Whereas ESP32-S2 supports 40MHz SPI clock.
+		- Raspberry Pi is tested with 10MHz clock with ESP32 and 30MHz with ESP32-S2.
 		- Raspberry Pi had issues while going to higher frequency than 30MHz.
+		- Above frequencies are capped for Raspberry Pi use. **Please note,** Maximum SPI frequency will be limited by ESP SPI slave max supported frequency, from respective datasheet
 		- While porting, the SPI clock frequency from low to high could be tested to optimize.
 		- SPI clock frequency could be changed from macro `SPI_CLK_MHZ_XXX` in `esp/esp_driver/network_adapter/main/spi_slave_api.c`
 	* SPI Bus instance and Chip select number

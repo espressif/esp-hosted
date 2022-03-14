@@ -4,9 +4,6 @@
 #ifndef __PLATFORM_WRAPPER_H
 #define __PLATFORM_WRAPPER_H
 
-#define TIMEOUT_PSERIAL_RESP                   30
-#define CTRL__TIMER_ONESHOT                    0
-#define CTRL__TIMER_PERIODIC                   1
 
 #include <signal.h>
 #include <pthread.h>
@@ -18,15 +15,29 @@
 #include <sys/ioctl.h>
 #include <linux/if_arp.h>
 
+
+#define TIMEOUT_PSERIAL_RESP                   30
+
+#define CTRL__TIMER_ONESHOT                    0
+#define CTRL__TIMER_PERIODIC                   1
+
+#define HOSTED_SEM_BLOCKING                    -1
+#define HOSTED_SEM_NON_BLOCKING                0
+
+#define mem_free(x)                            \
+{                                              \
+    if (x) {                                   \
+        hosted_free(x);                        \
+        x = NULL;                              \
+    }                                          \
+}
+
 /* Driver Handle */
 struct serial_drv_handle_t;
 
 /* Timer handle */
 struct timer_handle_t;
 
-
-#define HOSTED_SEM_BLOCKING     -1
-#define HOSTED_SEM_NON_BLOCKING 0
 
 /*
  * control_path_platform_init function initializes the control
@@ -82,14 +93,14 @@ void hosted_free(void* ptr);
  * Returns
  *      if successful, thread handle else NULL
  */
-void *hosted_thread_create(void *(*start_routine)(void *), void *arg);
+void *hosted_thread_create(void (*start_routine)(void const *), void *arg);
 
 /* hosted_thread_cancel stops and clears thread
  * Input parameter
  *       thread_handle : valid thread handle
  * Returns
  *     0 on success or !=0 on Failure
-*/     
+*/
 int hosted_thread_cancel(void *thread_handle);
 
 /* hosted_create_semaphore creates semaphore
@@ -144,7 +155,7 @@ int hosted_destroy_semaphore(void * semaphore_handle);
  *      NULL : on error
  */
 void *hosted_timer_start(int duration, int type,
-		void (*timeout_handler)(void *), void * arg);
+		void (*timeout_handler)(void const *), void * arg);
 
 /* hosted_timer_stop is to stop timer
  * Input parameters
@@ -210,12 +221,5 @@ uint8_t * serial_drv_read(struct serial_drv_handle_t *serial_drv_handle,
 
 int serial_drv_close (struct serial_drv_handle_t** serial_drv_handle);
 
-#define mem_free(x)                  \
-        {                            \
-            if (x) {                 \
-                hosted_free(x);      \
-                x = NULL;            \
-            }                        \
-        }
 
 #endif /*__PLATFORM_WRAPPER_H*/

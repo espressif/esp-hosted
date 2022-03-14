@@ -20,8 +20,8 @@ import sys
 
 lib = os.path.isfile("commands.so")
 if not lib:
-    print("commands.so file is missing, please run ./rpi_init.sh script.")
-    sys.exit()
+	print("commands.so file is missing, please run ./rpi_init.sh script.")
+	sys.exit()
 
 commands_lib = cdll.LoadLibrary(os.path.abspath("commands.so"))
 

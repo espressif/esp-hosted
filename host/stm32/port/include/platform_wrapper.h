@@ -20,14 +20,24 @@
 #define CTRL_PATH_TASK_STACK_SIZE              4096
 #define CTRL_PATH_TASK_PRIO                    osPriorityAboveNormal
 
+#define thread_handle_t                        osThreadId
+#define semaphore_handle_t                     osSemaphoreId
+
+#define mem_free(x)                            \
+{                                              \
+    if (x) {                                   \
+        hosted_free(x);                        \
+        x = NULL;                              \
+    }                                          \
+}
+
+
 /* Driver Handle */
 struct serial_drv_handle_t;
 
 /* Timer handle */
 struct timer_handle_t;
 
-#define thread_handle_t osThreadId
-#define semaphore_handle_t osSemaphoreId
 
 /*
  * control_path_platform_init function initializes the control
@@ -100,7 +110,7 @@ void *hosted_thread_create(void (*start_routine)(void const *), void *arg);
  *       thread_handle : valid thread handle
  * Returns
  *     0 on success or !=0 on Failure
-*/     
+*/
 int hosted_thread_cancel(void *thread_handle);
 
 /* hosted_create_semaphore creates semaphore
@@ -239,12 +249,5 @@ uint8_t * serial_drv_read(struct serial_drv_handle_t *serial_drv_handle,
 
 int serial_drv_close (struct serial_drv_handle_t** serial_drv_handle);
 
-#define mem_free(x)                  \
-        {                            \
-            if (x) {                 \
-                hosted_free(x);      \
-                x = NULL;            \
-            }                        \
-        }
 
 #endif /*__PLATFORM_WRAPPER_H*/

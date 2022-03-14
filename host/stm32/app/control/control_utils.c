@@ -62,10 +62,10 @@
   }                                                       \
 } while(0);
 
-#define YES 1
-#define NO  0
-#define MIN_TIMESTAMP_STR_SIZE 30
-#define HEARTBEAT_DURATION_SEC 20
+#define YES                                               1
+#define NO                                                0
+#define MIN_TIMESTAMP_STR_SIZE                            30
+#define HEARTBEAT_DURATION_SEC                            20
 
 
 typedef struct {
@@ -282,7 +282,7 @@ int ctrl_app_resp_callback(ctrl_cmd_t * app_resp)
 				case WIFI_MODE_STA:     printf("station\n\r");        break;
 				case WIFI_MODE_AP:      printf("softap\n\r");         break;
 				case WIFI_MODE_APSTA:   printf("station+softap\n\r"); break;
-				case WIFI_MODE_NONE:    printf("none\n\r");             break;
+				case WIFI_MODE_NONE:    printf("none\n\r");           break;
 				default:                printf("unknown\n\r");        break;
 			}
 			break;
@@ -490,7 +490,7 @@ int test_get_wifi_mac_addr(int mode, char *out_mac)
 		return FAILURE;
 	} else {
 		if(!resp->u.wifi_mac.mac) {
-			printf("null MAC returned\n\r");
+			printf("NULL MAC returned\n\r");
 			return FAILURE;
 		}
 		strncpy(out_mac, resp->u.wifi_mac.mac, MAX_MAC_STR_LEN);

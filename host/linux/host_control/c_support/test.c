@@ -155,6 +155,7 @@ int main(int argc, char *argv[])
 	test_disable_heartbeat();
 	unregister_event_callbacks();
 
+	control_path_platform_deinit();
 	deinit_hosted_control_lib();
 	printf("Exiting..");
 }

@@ -2,7 +2,9 @@ CC = gcc
 
 CROSS_COMPILE :=
 
-CFLAGS = -C -Wall
+CFLAGS = -Wall
+
+CFLAGS_SANITIZE = -fsanitize=undefined  -fsanitize-address-use-after-scope -fsanitize-undefined-trap-on-error  -fstack-protector-all -fstack-check -fsanitize=address -fsanitize=pointer-compare -fno-omit-frame-pointer -static-libasan
 
 LINKER = -lpthread -lrt
 
@@ -40,7 +42,7 @@ test:
 	$(CROSS_COMPILE)$(CC) $(CFLAGS) $(INCLUDE) $(SRC) $(LINKER) $(@).c -o $(@).out
 
 stress:
-	$(CROSS_COMPILE)$(CC) $(CFLAGS) $(INCLUDE) $(SRC) $(LINKER) $(@).c -o $(@).out
+	$(CROSS_COMPILE)$(CC) $(CFLAGS) $(CFLAGS_SANITIZE) $(INCLUDE) $(SRC) $(LINKER) $(@).c -o $(@).out -ggdb3 -g
 
 clean:
 	rm -f *.out *.o

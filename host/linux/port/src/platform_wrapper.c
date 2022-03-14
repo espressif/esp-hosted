@@ -141,17 +141,47 @@ void hosted_free(void *ptr)
 }
 
 /* -------- Threads ---------- */
-void *hosted_thread_create(void *(*start_routine)(void *), void *arg)
+
+typedef void (*hosted_thread_cb_t) (void const* arg);
+
+struct thread_arg_t {
+	hosted_thread_cb_t thread_cb;
+	void * arg;
+};
+
+static void *thread_routine(void *arg)
 {
+	struct thread_arg_t *thread_arg = arg;
+	struct thread_arg_t new_thread_arg = {0};
+
+	new_thread_arg.thread_cb = thread_arg->thread_cb;
+	new_thread_arg.arg = thread_arg->arg;
+
+	mem_free(thread_arg);
+
+	if (new_thread_arg.thread_cb)
+		new_thread_arg.thread_cb(new_thread_arg.arg);
+	else
+		printf("NULL func, failed to call callback\n");
+	return NULL;
+}
+
+void *hosted_thread_create(void (*start_routine)(void const *), void *arg)
+{
+	struct thread_arg_t *thread_arg = (struct thread_arg_t *)hosted_malloc(sizeof(struct thread_arg_t));
 	thread_handle_t *thread_handle = (thread_handle_t *)hosted_malloc(
 			sizeof(thread_handle_t));
-	if (!thread_handle) {
+
+	if (!thread_arg || !thread_handle) {
 		printf("Falied to allocate thread handle\n");
 		return NULL;
 	}
 
+	thread_arg->thread_cb = start_routine;
+	thread_arg->arg = arg;
+
 	if (pthread_create(thread_handle,
-			NULL, start_routine, arg)) {
+			NULL, thread_routine, thread_arg)) {
 		printf("Failed in pthread_create\n");
 		mem_free(thread_handle);
 		return NULL;
@@ -306,16 +336,16 @@ int hosted_timer_stop(void *timer_handle)
  * }
  **/
 
-typedef void (*hosted_timer_cb_t) (void* resp);
+typedef void (*hosted_timer_cb_t) (void const* resp);
 
-struct timer_arg {
+struct timer_arg_t {
 	hosted_timer_cb_t timer_cb;
 	void * arg;
 };
 
 static void timer_ll_callback(union sigval timer_data)
 {
-	struct timer_arg *timer_arg = timer_data.sival_ptr;
+	struct timer_arg_t *timer_arg = timer_data.sival_ptr;
 
 	if (timer_arg->timer_cb)
 		timer_arg->timer_cb(timer_arg->arg);
@@ -323,29 +353,32 @@ static void timer_ll_callback(union sigval timer_data)
 		printf("NULL func, failed to call callback\n");
 }
 
-void *hosted_timer_start(int duration, int type, void (*timeout_handler)(void *), void * arg)
+void *hosted_timer_start(int duration, int type,
+		void (*timeout_handler)(void const *), void * arg)
 {
-	struct timer_handle_t *timer_handle = NULL;
+	int res = 0;
+	struct timer_arg_t timer_arg;
+	struct timer_handle_t *timer_handle = (struct timer_handle_t *)hosted_malloc(
+			sizeof(struct timer_handle_t));
 
-    int res = 0;
-
-	timer_handle = (struct timer_handle_t *)hosted_malloc(sizeof(struct timer_handle_t));
-	if (!timer_handle)
+	if (!timer_handle) {
+		printf("Mem Alloc for Timer failed\n");
+		mem_free(timer_handle);
 		return NULL;
+	}
 
-    /*  sigevent specifies behaviour on expiration  */
-    struct sigevent sev = { 0 };
+	/*  sigevent specifies behaviour on expiration  */
+	struct sigevent sev = { 0 };
 
-    /* specify start delay and interval
-     * it_value and it_interval must not be zero */
+	/* specify start delay and interval
+	 * it_value and it_interval must not be zero */
 
-	struct timer_arg timer_arg;
-	
-    struct itimerspec its = {   .it_value.tv_sec  = duration,
-                                .it_value.tv_nsec = 0,
-                                .it_interval.tv_sec  = 0,
-                                .it_interval.tv_nsec = 0
-                            };
+
+	struct itimerspec its = {   .it_value.tv_sec  = duration,
+		.it_value.tv_nsec = 0,
+		.it_interval.tv_sec  = 0,
+		.it_interval.tv_nsec = 0
+	};
 
 	timer_arg.timer_cb = timeout_handler;
 	timer_arg.arg = arg;
@@ -354,31 +387,31 @@ void *hosted_timer_start(int duration, int type, void (*timeout_handler)(void *)
 		its.it_interval.tv_sec = duration;
 	}
 
-    sev.sigev_notify = SIGEV_THREAD;
-    sev.sigev_notify_function = timer_ll_callback;
+	sev.sigev_notify = SIGEV_THREAD;
+	sev.sigev_notify_function = timer_ll_callback;
 	sev.sigev_signo = SIGRTMAX-1;
-    sev.sigev_value.sival_ptr = &timer_arg;
+	sev.sigev_value.sival_ptr = &timer_arg;
 
 
-    /* create timer */
-    res = timer_create(CLOCK_REALTIME, &sev, &(timer_handle->timer_id));
+	/* create timer */
+	res = timer_create(CLOCK_REALTIME, &sev, &(timer_handle->timer_id));
 
-    if (res != 0){
-        fprintf(stderr, "Error timer_create: %s\n", strerror(errno));
+	if (res != 0){
+		fprintf(stderr, "Error timer_create: %s\n", strerror(errno));
 		mem_free(timer_handle);
 		return NULL;
-    }
+	}
 
-    /* start timer */
-    res = timer_settime(timer_handle->timer_id, 0, &its, NULL);
+	/* start timer */
+	res = timer_settime(timer_handle->timer_id, 0, &its, NULL);
 
-    if (res != 0){
-        fprintf(stderr, "Error timer_settime: %s\n", strerror(errno));
+	if (res != 0){
+		fprintf(stderr, "Error timer_settime: %s\n", strerror(errno));
 		mem_free(timer_handle);
 		return NULL;
-    }
+	}
 
-    return timer_handle;
+	return timer_handle;
 }
 
 
@@ -416,14 +449,21 @@ int serial_drv_write (struct serial_drv_handle_t *serial_drv_handle,
 	if (!serial_drv_handle ||
 	    serial_drv_handle->file_desc < 0 ||
 	    !buf || !in_count || !out_count) {
-		return FAILURE;
+		printf("%s:%u Invalid arguments\n", __func__, __LINE__);
+		goto free_bufs;
 	}
+
 	*out_count = write(serial_drv_handle->file_desc, buf, in_count);
 	if (*out_count <= 0) {
 		perror("write: ");
-		return FAILURE;
+		goto free_bufs;
 	}
+	mem_free(buf);
 	return SUCCESS;
+
+free_bufs:
+	mem_free(buf);
+	return FAILURE;
 }
 
 int serial_drv_close(struct serial_drv_handle_t **serial_drv_handle)
@@ -456,13 +496,15 @@ int serial_drv_close(struct serial_drv_handle_t **serial_drv_handle)
 uint8_t * serial_drv_read(struct serial_drv_handle_t *serial_drv_handle,
 		uint32_t *out_nbyte)
 {
-	uint16_t init_read_len = 0;
 	int ret = 0, count = 0, total_read_len = 0;
+	const char* ep_name = CTRL_EP_NAME_RESP;
+	uint16_t init_read_len = SIZE_OF_TYPE + SIZE_OF_LENGTH + strlen(ep_name) +
+		SIZE_OF_TYPE + SIZE_OF_LENGTH;
+	uint8_t init_read_buf[init_read_len];
 	uint8_t *buf = NULL;
 	uint32_t buf_len = 0;
 	/* Any of `CTRL_EP_NAME_EVENT` and `CTRL_EP_NAME_RESP` could be used,
 	 * as both have same strlen in adapter.h */
-	const char* ep_name = CTRL_EP_NAME_RESP;
 
 /*
  * Read fixed length of received data in below format:
@@ -483,15 +525,12 @@ uint8_t * serial_drv_read(struct serial_drv_handle_t *serial_drv_handle,
 		return NULL;
 	}
 
-	init_read_len = SIZE_OF_TYPE + SIZE_OF_LENGTH + strlen(ep_name) +
-		SIZE_OF_TYPE + SIZE_OF_LENGTH;
-
-	HOSTED_CALLOC(buf,init_read_len);
+	memset(init_read_buf, 0, sizeof(init_read_buf));
 
 	total_read_len = 0;
 	do {
 		count = read(serial_drv_handle->file_desc,
-				(buf+total_read_len), (init_read_len-total_read_len));
+				(init_read_buf+total_read_len), (init_read_len-total_read_len));
 		if (count <= 0) {
 			perror("read fail:");
 			printf("Exp read of %u bytes: ret[%d]\n",
@@ -507,11 +546,10 @@ uint8_t * serial_drv_read(struct serial_drv_handle_t *serial_drv_handle,
 		goto free_bufs;
 	}
 
-	ret = parse_tlv(buf, &buf_len);
+	ret = parse_tlv(init_read_buf, &buf_len);
 	if ((ret != SUCCESS) || !buf_len) {
 		goto free_bufs;
 	}
-	mem_free(buf);
 
 	/*
 	 * Read variable length of received data.

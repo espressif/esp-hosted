@@ -157,24 +157,19 @@ static uint8_t * serial_ll_read(const serial_ll_handle_t * serial_ll_hdl,
 		return NULL;
 	}
 
-	/* This is non blocking receive.
+	/* This is **blocking** receive.
 	 *
-	 * In case higher layer using serial
-	 * interface needs to make blocking read, it should register
-	 * serial_rx_callback through serial_ll_init.
-	 * serial_rx_callback is notification mechanism to implementer of serial
-	 * interface. Higher layer will understand there is data is ready
-	 * through this notification. Then it will call serial_ll_read API
-	 * to receive actual data.
+	 * Although not needed in normal circumstances,
+	 * User can convert it to non blocking using below steps:
 	 *
-	 * As an another design option, serial_rx_callback can also be
-	 * thought of incoming data indication, i.e. asynchronous rx
-	 * indication, which can be used by higher layer in seperate
-	 * dedicated rx task to receive and process rx data.
+	 * To make it non blocking:
+	 *   As an another design option, serial_rx_callback can also be
+	 *   thought of incoming data indication, i.e. asynchronous rx
+	 *   indication, which can be used by higher layer in seperate
+	 *   dedicated rx task to receive and process rx data.
 	 *
 	 * In our example, first approach of blocking read is used.
 	 */
-	//TODO: Need Blocking?
 	if (pdTRUE != xQueueReceive(serial_ll_hdl->queue, &buf_handle, portMAX_DELAY)) {
 		printf("serial queue recv failed \n\r");
 		return NULL;
@@ -213,7 +208,7 @@ static int serial_ll_write(const serial_ll_handle_t * serial_ll_hdl,
 /**
   * @brief Serial rx handler is called by spi driver when there
   *        is incoming data with interface type is Serial.
-  * @param  if_num - interface instance 
+  * @param  if_num - interface instance
   *         rxbuff - buffer from spi driver
   *         rx_len - size of rxbuff
   *         seq_num - serial sequence number
@@ -308,6 +303,7 @@ stm_ret_t serial_ll_rx_handler(interface_buffer_handle_t * buf_handle)
 
 serial_buff_cleanup:
 	r.len = 0;
+	hosted_free(serial_buf);
 	hosted_free(r.data);
 	return STM_FAIL;
 }

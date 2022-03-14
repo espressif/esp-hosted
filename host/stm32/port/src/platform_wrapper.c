@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//#include "unistd.h"
 #include "string.h"
 #include "trace.h"
 #include "serial_if.h"
@@ -23,6 +22,14 @@
 #define TICKS_PER_SEC (1000 / portTICK_PERIOD_MS);
 #define SEC_TO_MILLISEC(x) (1000*(x))
 
+#define HOSTED_CALLOC(buff,nbytes) do {                           \
+    buff = (uint8_t *)hosted_calloc(1, nbytes);                   \
+    if (!buff) {                                                  \
+        printf("%s, Failed to allocate memory \n", __func__);     \
+        goto free_bufs;                                           \
+    }                                                             \
+} while(0);
+
 
 static osSemaphoreId readSemaphore;
 static serial_ll_handle_t * serial_ll_if_g;
@@ -30,7 +37,7 @@ static serial_ll_handle_t * serial_ll_if_g;
 static void control_path_rx_indication(void);
 
 struct serial_drv_handle_t {
-    int handle; /* dummy variable */
+	int handle; /* dummy variable */
 };
 
 struct timer_handle_t {
@@ -47,15 +54,15 @@ int control_path_platform_init(void)
 
 	/* grab the semaphore, so that task will be mandated to wait on semaphore */
 	if (osSemaphoreWait(readSemaphore , portMAX_DELAY) != osOK) {
-	    printf("could not obtain readSemaphore\n\r");
-	    return STM_FAIL;
+		printf("could not obtain readSemaphore\n\r");
+		return STM_FAIL;
 	}
 
 	serial_ll_if_g = serial_ll_init(control_path_rx_indication);
 	if (!serial_ll_if_g) {
-	    printf("Serial interface creation failed\n\r");
-	    assert(serial_ll_if_g);
-	    return STM_FAIL;
+		printf("Serial interface creation failed\n\r");
+		assert(serial_ll_if_g);
+		return STM_FAIL;
 	}
 	if (STM_OK != serial_ll_if_g->fops->open(serial_ll_if_g)) {
 		printf("Serial interface open failed\n\r");
@@ -108,22 +115,22 @@ void hosted_free(void* ptr)
 
 void *hosted_realloc(void *mem, size_t newsize)
 {
-    void *p = NULL;
+	void *p = NULL;
 
-    if (newsize == 0) {
-        hosted_free(mem);
-        return NULL;
-    }
+	if (newsize == 0) {
+		mem_free(mem);
+		return NULL;
+	}
 
-    p = hosted_malloc(newsize);
-    if (p) {
-        /* zero the memory */
-        if (mem != NULL) {
-            memcpy(p, mem, newsize);
-            hosted_free(mem);
-        }
-    }
-    return p;
+	p = hosted_malloc(newsize);
+	if (p) {
+		/* zero the memory */
+		if (mem != NULL) {
+			memcpy(p, mem, newsize);
+			mem_free(mem);
+		}
+	}
+	return p;
 }
 
 /* -------- Threads ---------- */
@@ -171,11 +178,11 @@ int hosted_thread_cancel(void *thread_handle)
 	ret = osThreadTerminate(*thread_hdl);
 	if (ret) {
 		printf("Prob in pthread_cancel, destroy handle anyway\n");
-		hosted_free(thread_handle);
+		mem_free(thread_handle);
 		return STM_FAIL;
 	}
 
-	hosted_free(thread_handle);
+	mem_free(thread_handle);
 	return STM_OK;
 }
 
@@ -269,7 +276,7 @@ int hosted_destroy_semaphore(void * semaphore_handle)
 	if(ret)
 		printf("Failed to destroy sem\n");
 
-	hosted_free(semaphore_handle);
+	mem_free(semaphore_handle);
 
 	return ret;
 }
@@ -287,7 +294,7 @@ int hosted_timer_stop(void *timer_handle)
 		if (ret < 0)
 			printf("Failed to delete timer\n");
 
-		hosted_free(timer_handle);
+		mem_free(timer_handle);
 		return ret;
 	}
 	return STM_FAIL;
@@ -325,7 +332,7 @@ void *hosted_timer_start(int duration, int type,
 		timer_type = osTimerOnce;
 	} else {
 		printf("Unsupported timer type. supported: one_shot, periodic\n");
-		hosted_free(timer_handle);
+		mem_free(timer_handle);
 		return NULL;
 	}
 
@@ -337,7 +344,7 @@ void *hosted_timer_start(int duration, int type,
 
 	if (!timer_handle->timer_id) {
 		printf("Failed to create timer\n");
-		hosted_free(timer_handle);
+		mem_free(timer_handle);
 		return NULL;
 	}
 
@@ -350,11 +357,11 @@ void *hosted_timer_start(int duration, int type,
 		if (ret)
 			printf("Failed to delete timer\n");
 
-		hosted_free(timer_handle);
+		mem_free(timer_handle);
 		return NULL;
 	}
 
-    return timer_handle;
+	return timer_handle;
 }
 
 /* -------- Serial Drv ---------- */
@@ -365,16 +372,19 @@ struct serial_drv_handle_t* serial_drv_open(const char *transport)
 		printf("Invalid parameter in open \n\r");
 		return NULL;
 	}
+
 	if(serial_drv_handle) {
-        printf("return orig hndl\n");
-        return serial_drv_handle;
-    }
+		printf("return orig hndl\n");
+		return serial_drv_handle;
+	}
+
 	serial_drv_handle = (struct serial_drv_handle_t*) hosted_calloc
 		(1,sizeof(struct serial_drv_handle_t));
 	if (!serial_drv_handle) {
 		printf("Failed to allocate memory \n");
 		return NULL;
 	}
+
 	return serial_drv_handle;
 }
 
@@ -405,13 +415,6 @@ int serial_drv_write (struct serial_drv_handle_t* serial_drv_handle,
 	return STM_OK;
 }
 
-#define HOSTED_CALLOC(buff,nbytes) do {                           \
-    buff = (uint8_t *)hosted_calloc(1, nbytes);                   \
-    if (!buff) {                                                  \
-        printf("%s, Failed to allocate memory \n", __func__);     \
-        goto free_bufs;                                           \
-    }                                                             \
-} while(0);
 
 uint8_t * serial_drv_read(struct serial_drv_handle_t *serial_drv_handle,
 		uint32_t *out_nbyte)
@@ -482,7 +485,7 @@ uint8_t * serial_drv_read(struct serial_drv_handle_t *serial_drv_handle,
 		SIZE_OF_TYPE + SIZE_OF_LENGTH;
 
 	if(rx_buf_len < init_read_len) {
-		hosted_free(read_buf);
+		mem_free(read_buf);
 		printf("Incomplete serial buff, return\n");
 		return NULL;
 	}
@@ -496,21 +499,18 @@ uint8_t * serial_drv_read(struct serial_drv_handle_t *serial_drv_handle,
 	 **/
 	ret = parse_tlv(buf, &buf_len);
 	if (ret || !buf_len) {
-		hosted_free(buf);
+		mem_free(buf);
 		printf("Failed to parse RX data \n\r");
 		goto free_bufs;
 	}
 
 	if (rx_buf_len < (init_read_len + buf_len)) {
 		printf("Buf read on serial iface is smaller than expected len\n");
-		hosted_free(buf);
-		buf = NULL;
+		mem_free(buf);
 		goto free_bufs;
 	}
 
-	hosted_free(buf);
-
-	buf = NULL;
+	mem_free(buf);
 /*
  * (2) Read variable length of RX data:
  */
@@ -518,16 +518,14 @@ uint8_t * serial_drv_read(struct serial_drv_handle_t *serial_drv_handle,
 
 	memcpy((buf), read_buf+init_read_len, buf_len);
 
-	hosted_free(read_buf);
+	mem_free(read_buf);
 
 	*out_nbyte = buf_len;
 	return buf;
 
 free_bufs:
-	hosted_free(read_buf);
-	hosted_free(buf);
-	read_buf = NULL;
-	buf = NULL;
+	mem_free(read_buf);
+	mem_free(buf);
 	return NULL;
 }
 
@@ -536,9 +534,9 @@ int serial_drv_close(struct serial_drv_handle_t** serial_drv_handle)
 	if (!serial_drv_handle || !(*serial_drv_handle)) {
 		printf("Invalid parameter in close \n\r");
 		if (serial_drv_handle)
-			hosted_free(serial_drv_handle);
+			mem_free(serial_drv_handle);
 		return STM_FAIL;
 	}
-	hosted_free(*serial_drv_handle);
+	mem_free(*serial_drv_handle);
 	return STM_OK;
 }

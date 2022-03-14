@@ -39,21 +39,51 @@
 #define MAX_CONN_NO                  10
 
 
-#define CLEANUP_APP_MSG(app_msg) do {                            \
-  if (app_msg) {                                                 \
-    if (app_msg->free_buffer_handle) {                           \
-      if (app_msg->free_buffer_func) {                           \
-        app_msg->free_buffer_func(app_msg->free_buffer_handle);  \
-        app_msg->free_buffer_handle = NULL;                      \
-      }                                                          \
-    }                                                            \
-    mem_free(app_msg);                                           \
-  }                                                              \
-} while(0);
-
 #define CTRL_LIB_STATE_INACTIVE      0
 #define CTRL_LIB_STATE_INIT          1
 #define CTRL_LIB_STATE_READY         2
+
+#define CLEANUP_APP_MSG(app_msg) do {                                         \
+  if (app_msg) {                                                              \
+    if (app_msg->free_buffer_handle) {                                        \
+      if (app_msg->free_buffer_func) {                                        \
+        app_msg->free_buffer_func(app_msg->free_buffer_handle);               \
+        app_msg->free_buffer_handle = NULL;                                   \
+      }                                                                       \
+    }                                                                         \
+    mem_free(app_msg);                                                        \
+  }                                                                           \
+} while(0);
+
+
+#define CHECK_CTRL_MSG_NON_NULL_VAL(msGparaM, prinTmsG)                       \
+    if (!msGparaM) {                                                          \
+        command_log(prinTmsG"\n");                                            \
+        goto fail_parse_ctrl_msg;                                             \
+    }
+
+#define CHECK_CTRL_MSG_NON_NULL(msGparaM)                                     \
+    if (!ctrl_msg->msGparaM) {                                                \
+        command_log("Failed to process rx data\n");                           \
+        goto fail_parse_ctrl_msg;                                             \
+    }
+
+#define CHECK_CTRL_MSG_FAILED(msGparaM)                                       \
+    if (ctrl_msg->msGparaM->resp) {                                           \
+        command_log("Failure resp/event: possibly precondition not met\n");   \
+        goto fail_parse_ctrl_msg;                                             \
+    }
+
+#define CTRL_ALLOC_ASSIGN(TyPe,MsG_StRuCt)                                    \
+    TyPe *req_payload = (TyPe *)                                              \
+        hosted_calloc(1, sizeof(TyPe));                                       \
+    if (!req_payload) {                                                       \
+        command_log("Failed to allocate memory for req.%s\n",#MsG_StRuCt);    \
+		failure_status = CTRL_ERR_MEMORY_FAILURE;                             \
+        goto fail_req;                                                        \
+    }                                                                         \
+    req.MsG_StRuCt = req_payload;                                             \
+	buff_to_free1 = (uint8_t*)req_payload;
 
 struct ctrl_lib_context {
 	int state;
@@ -175,23 +205,6 @@ static int convert_mac_to_bytes(uint8_t *out, size_t out_size, char *s)
 }
 #endif
 
-#define CHECK_CTRL_MSG_NON_NULL_VAL(msGparaM, prinTmsG)                         \
-    if (!msGparaM) {                                                            \
-        command_log(prinTmsG"\n");                                              \
-        goto fail_parse_ctrl_msg;                                               \
-    }
-
-#define CHECK_CTRL_MSG_NON_NULL(msGparaM)                                       \
-    if (!ctrl_msg->msGparaM) {                                                  \
-        command_log("Failed to process rx data\n");                             \
-        goto fail_parse_ctrl_msg;                                               \
-    }
-
-#define CHECK_CTRL_MSG_FAILED(msGparaM)                                         \
-    if (ctrl_msg->msGparaM->resp) {                                             \
-        command_log("Failure resp/event: possibly precondition not met\n");     \
-        goto fail_parse_ctrl_msg;                                               \
-    }
 
 
 /* This will copy control event from `CtrlMsg` into
@@ -281,13 +294,15 @@ static int ctrl_app_parse_resp(CtrlMsg *ctrl_msg, ctrl_cmd_t *app_resp)
 	/* 3. parse CtrlMsg into ctrl_cmd_t */
 	switch (ctrl_msg->msg_id) {
 		case CTRL_RESP_GET_MAC_ADDR : {
+			uint8_t len_l = min(ctrl_msg->resp_get_mac_address->mac.len, MAX_MAC_STR_LEN-1);
+
 			CHECK_CTRL_MSG_NON_NULL(resp_get_mac_address);
 			CHECK_CTRL_MSG_NON_NULL(resp_get_mac_address->mac.data);
 			CHECK_CTRL_MSG_FAILED(resp_get_mac_address);
 
 			strncpy(app_resp->u.wifi_mac.mac,
-				(char *)ctrl_msg->resp_get_mac_address->mac.data, MAX_MAC_STR_LEN);
-			app_resp->u.wifi_mac.mac[MAX_MAC_STR_LEN-1] = '\0';
+				(char *)ctrl_msg->resp_get_mac_address->mac.data, len_l);
+			app_resp->u.wifi_mac.mac[len_l] = '\0';
 			break;
 		} case CTRL_RESP_SET_MAC_ADDRESS : {
 			CHECK_CTRL_MSG_NON_NULL(resp_set_mac_address);
@@ -332,7 +347,7 @@ static int ctrl_app_parse_resp(CtrlMsg *ctrl_msg, ctrl_cmd_t *app_resp)
 
 			ap->out_list = list;
 			/* Note allocation, to be freed later by app */
-			app_resp->free_buffer_func = free;
+			app_resp->free_buffer_func = hosted_free;
 			app_resp->free_buffer_handle = list;
 			break;
 		} case CTRL_RESP_GET_AP_CONFIG : {
@@ -360,10 +375,14 @@ static int ctrl_app_parse_resp(CtrlMsg *ctrl_msg, ctrl_cmd_t *app_resp)
 						p->ssid[MAX_SSID_LENGTH-1] ='\0';
 					}
 					if (ctrl_msg->resp_get_ap_config->bssid.data) {
+						uint8_t len_l = 0;
+
+						len_l = min(ctrl_msg->resp_get_ap_config->bssid.len,
+								MAX_MAC_STR_LEN-1);
 						strncpy((char *)p->bssid,
 								(char *)ctrl_msg->resp_get_ap_config->bssid.data,
-								MAX_MAC_STR_LEN);
-						p->bssid[MAX_MAC_STR_LEN-1] = '\0';
+								len_l);
+						p->bssid[len_l] = '\0';
 					}
 
 					p->channel = ctrl_msg->resp_get_ap_config->chnl;
@@ -382,6 +401,7 @@ static int ctrl_app_parse_resp(CtrlMsg *ctrl_msg, ctrl_cmd_t *app_resp)
 			}
 			break;
 		} case CTRL_RESP_CONNECT_AP : {
+			uint8_t len_l = 0;
 			CHECK_CTRL_MSG_NON_NULL(resp_connect_ap);
 
 			app_resp->resp_event_status = ctrl_msg->resp_connect_ap->resp;
@@ -405,9 +425,10 @@ static int ctrl_app_parse_resp(CtrlMsg *ctrl_msg, ctrl_cmd_t *app_resp)
 					goto fail_parse_ctrl_msg2;
 					break;
 			}
+			len_l = min(ctrl_msg->resp_connect_ap->mac.len, MAX_MAC_STR_LEN-1);
 			strncpy(app_resp->u.wifi_ap_config.out_mac,
-					(char *)ctrl_msg->resp_connect_ap->mac.data, MAX_MAC_STR_LEN);
-			app_resp->u.wifi_ap_config.out_mac[MAX_MAC_STR_LEN-1] = '\0';
+					(char *)ctrl_msg->resp_connect_ap->mac.data, len_l);
+			app_resp->u.wifi_ap_config.out_mac[len_l] = '\0';
 			break;
 		} case CTRL_RESP_DISCONNECT_AP : {
 			CHECK_CTRL_MSG_NON_NULL(resp_disconnect_ap);
@@ -453,12 +474,15 @@ static int ctrl_app_parse_resp(CtrlMsg *ctrl_msg, ctrl_cmd_t *app_resp)
 			CHECK_CTRL_MSG_FAILED(resp_set_softap_vendor_specific_ie);
 			break;
 		} case CTRL_RESP_START_SOFTAP : {
+			uint8_t len_l = 0;
 			CHECK_CTRL_MSG_NON_NULL(resp_start_softap);
 			CHECK_CTRL_MSG_FAILED(resp_start_softap);
 			CHECK_CTRL_MSG_NON_NULL(resp_start_softap->mac.data);
+
+			len_l = min(ctrl_msg->resp_connect_ap->mac.len, MAX_MAC_STR_LEN-1);
 			strncpy(app_resp->u.wifi_softap_config.out_mac,
-					(char *)ctrl_msg->resp_connect_ap->mac.data, MAX_MAC_STR_LEN);
-			app_resp->u.wifi_softap_config.out_mac[MAX_MAC_STR_LEN-1] = '\0';
+					(char *)ctrl_msg->resp_connect_ap->mac.data, len_l);
+			app_resp->u.wifi_softap_config.out_mac[len_l] = '\0';
 			break;
 		} case CTRL_RESP_GET_SOFTAP_CONN_STA_LIST : {
 			wifi_softap_conn_sta_list_t *ap = &app_resp->u.wifi_softap_con_sta;
@@ -485,7 +509,7 @@ static int ctrl_app_parse_resp(CtrlMsg *ctrl_msg, ctrl_cmd_t *app_resp)
 			app_resp->u.wifi_softap_con_sta.out_list = list;
 
 			/* Note allocation, to be freed later by app */
-			app_resp->free_buffer_func = free;
+			app_resp->free_buffer_func = hosted_free;
 			app_resp->free_buffer_handle = list;
 
 			break;
@@ -635,7 +659,7 @@ static int process_ctrl_rx_msg(CtrlMsg * proto_msg, ctrl_rx_ind_t ctrl_rx_func)
 			 **/
 
 			/* Allocate app struct for event */
-			app_event = (ctrl_cmd_t *)malloc(sizeof(ctrl_cmd_t));
+			app_event = (ctrl_cmd_t *)hosted_malloc(sizeof(ctrl_cmd_t));
 			if (!app_event) {
 				printf("Failed to allocate app_event\n");
 				goto free_buffers;
@@ -662,7 +686,7 @@ static int process_ctrl_rx_msg(CtrlMsg * proto_msg, ctrl_rx_ind_t ctrl_rx_func)
 		 * asynchronpusly */
 
 		/* Allocate app struct for response */
-		app_resp = (ctrl_cmd_t *)malloc(sizeof(ctrl_cmd_t));
+		app_resp = (ctrl_cmd_t *)hosted_malloc(sizeof(ctrl_cmd_t));
 		if (!app_resp) {
 			printf("Failed to allocate app_resp\n");
 			goto free_buffers;
@@ -704,7 +728,7 @@ static int process_ctrl_rx_msg(CtrlMsg * proto_msg, ctrl_rx_ind_t ctrl_rx_func)
 			 * using 'esp_queue' and help of semaphore
 			 **/
 
-			elem = (esp_queue_elem_t*)malloc(sizeof(esp_queue_elem_t));
+			elem = (esp_queue_elem_t*)hosted_malloc(sizeof(esp_queue_elem_t));
 			if (!elem) {
 				printf("%s %u: Malloc failed\n",__func__,__LINE__);
 				goto free_buffers;
@@ -1050,7 +1074,7 @@ static void ctrl_async_timeout_handler(void const *arg)
 	}
 	else {
 		ctrl_cmd_t *app_resp = NULL;
-		app_resp = (ctrl_cmd_t *)malloc(sizeof(ctrl_cmd_t));
+		app_resp = (ctrl_cmd_t *)hosted_malloc(sizeof(ctrl_cmd_t));
 		if (!app_resp) {
 			printf("Failed to allocate app_resp\n");
 			return;
@@ -1073,24 +1097,15 @@ static void ctrl_async_timeout_handler(void const *arg)
  **/
 int ctrl_app_send_req(ctrl_cmd_t *app_req)
 {
-	int ret = SUCCESS;
-	CtrlMsg req = {0};
-	uint32_t tx_len = 0;
-	uint8_t *tx_data = NULL;
-	uint8_t *buff_to_free = NULL;
-	uint8_t failure_status = 0;
+	int       ret = SUCCESS;
+	CtrlMsg   req = {0};
+	uint32_t  tx_len = 0;
+	uint8_t  *tx_data = NULL;
+	uint8_t  *buff_to_free1 = NULL;
+	void     *buff_to_free2 = NULL;
+	uint8_t   failure_status = 0;
 
 
-#define CTRL_ALLOC_ASSIGN(TyPe,MsG_StRuCt)                                    \
-    TyPe *req_payload = (TyPe *)                                              \
-        hosted_calloc(1, sizeof(TyPe));                                       \
-    if (!req_payload) {                                                       \
-        command_log("Failed to allocate memory for req.%s\n",#MsG_StRuCt);    \
-		failure_status = CTRL_ERR_MEMORY_FAILURE;                             \
-        goto fail_req;                                                        \
-    }                                                                         \
-    req.MsG_StRuCt = req_payload;                                             \
-	buff_to_free = (uint8_t*)req_payload;
 
 	if (!app_req) {
 		failure_status = CTRL_ERR_INCORRECT_ARG;
@@ -1111,7 +1126,9 @@ int ctrl_app_send_req(ctrl_cmd_t *app_req)
 	/* 2. Protobuf msg init */
 	ctrl_msg__init(&req);
 
-	req.msg_id = req.payload_case = app_req->msg_id;
+	req.msg_id = app_req->msg_id;
+	/* payload case is exact match to msg id in esp_hosted_config.pb-c.h */
+	req.payload_case = (CtrlMsg__PayloadCase) app_req->msg_id;
 
 	/* 3. identify request and compose CtrlMsg */
 	switch(req.msg_id) {
@@ -1148,11 +1165,10 @@ int ctrl_app_send_req(ctrl_cmd_t *app_req)
 			wifi_mac_t * p = &app_req->u.wifi_mac;
 			CTRL_ALLOC_ASSIGN(CtrlMsgReqSetMacAddress, req_set_mac_address);
 
-			if (!p->mac ||
-			   (p->mode <= WIFI_MODE_NONE) ||
-			   (p->mode >= WIFI_MODE_APSTA)||
-			   (!strlen(p->mac)) ||
-			   (strlen(p->mac) > MAX_MAC_STR_LEN)) {
+			if ((p->mode <= WIFI_MODE_NONE) ||
+			    (p->mode >= WIFI_MODE_APSTA)||
+			    (!strlen(p->mac)) ||
+			    (strlen(p->mac) > MAX_MAC_STR_LEN)) {
 				command_log("Invalid parameter\n");
 				failure_status = CTRL_ERR_INCORRECT_ARG;
 				goto fail_req;
@@ -1232,10 +1248,17 @@ int ctrl_app_send_req(ctrl_cmd_t *app_req)
 			ctrl_msg__req__set_soft_apvendor_specific_ie__init(req_payload);
 
 			req_payload->enable = p->enable;
-			req_payload->type = p->type;
-			req_payload->idx = p->idx;
+			req_payload->type = (CtrlVendorIEType) p->type;
+			req_payload->idx = (CtrlVendorIEID) p->idx;
 
-			req_payload->vendor_ie_data = (CtrlMsgReqVendorIEData *)malloc(sizeof(CtrlMsgReqVendorIEData));
+			req_payload->vendor_ie_data = (CtrlMsgReqVendorIEData *)hosted_malloc(sizeof(CtrlMsgReqVendorIEData));
+
+			if (!req_payload->vendor_ie_data) {
+				command_log("Mem alloc fail\n");
+				goto fail_req;
+			}
+			buff_to_free2 = req_payload->vendor_ie_data;
+
 			ctrl_msg__req__vendor_iedata__init(req_payload->vendor_ie_data);
 
 			req_payload->vendor_ie_data->element_id = p->vnd_ie.element_id;
@@ -1344,7 +1367,7 @@ int ctrl_app_send_req(ctrl_cmd_t *app_req)
 			req_payload->enable = app_req->u.e_heartbeat.enable;
 			req_payload->duration = app_req->u.e_heartbeat.duration;
 			if (req_payload->enable) {
-				printf("Enable heartbeat with duration %lu\n", req_payload->duration);
+				printf("Enable heartbeat with duration %ld\n", (long int)req_payload->duration);
 				if (CALLBACK_AVAILABLE != is_event_callback_registered(CTRL_EVENT_HEARTBEAT))
 					printf("Note: ** Subscribe heartbeat event to get notification **\n");
 			} else {
@@ -1418,7 +1441,8 @@ int ctrl_app_send_req(ctrl_cmd_t *app_req)
 
 	/* 10. Cleanup */
 	mem_free(tx_data);
-	mem_free(buff_to_free);
+	mem_free(buff_to_free2);
+	mem_free(buff_to_free1);
 	return SUCCESS;
 
 fail_req:
@@ -1429,7 +1453,7 @@ fail_req:
 		 * Let application know of failure using callback itself
 		 **/
 		ctrl_cmd_t *app_resp = NULL;
-		app_resp = (ctrl_cmd_t *)malloc(sizeof(ctrl_cmd_t));
+		app_resp = (ctrl_cmd_t *)hosted_malloc(sizeof(ctrl_cmd_t));
 		if (!app_resp) {
 			printf("Failed to allocate app_resp\n");
 			goto fail_req2;
@@ -1453,7 +1477,8 @@ fail_req2:
 	}
 
 	mem_free(tx_data);
-	mem_free(buff_to_free);
+	mem_free(buff_to_free2);
+	mem_free(buff_to_free1);
 	return FAILURE;
 }
 

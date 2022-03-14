@@ -45,11 +45,14 @@ esp_queue_t* create_esp_queue(void)
 /* Put element in app queue */
 int esp_queue_put(esp_queue_t* q, void *data)
 {
+	q_node_t* new_node = NULL;
+
 	if (!q) {
 		printf("q undefined\n");
 		return ESP_QUEUE_ERR_UNINITALISED;
 	}
-	q_node_t* new_node = new_q_node(data);
+
+	new_node = new_q_node(data);
 	if (!new_node) {
 		printf("malloc failed in qpp_q_put\n");
 		return ESP_QUEUE_ERR_MEMORY;
@@ -69,32 +72,42 @@ int esp_queue_put(esp_queue_t* q, void *data)
 /* Get element in app queue */
 void *esp_queue_get(esp_queue_t* q)
 {
+	void * data = NULL;
+	q_node_t* temp = NULL;
+
 	if (!q || q->front == NULL)
 		return NULL;
 
 	/* move front one node ahead */
-	q_node_t* temp = q->front;
+	temp = q->front;
 
 	if (!temp)
 		return NULL;
 
 	q->front = q->front->next;
 
+	data = temp->data;
+
+	free(temp);
+	temp = NULL;
+
 	/* If front is NULL, change rear also as NULL */
 	if (q->front == NULL)
 		q->rear = NULL;
 
-	return temp->data;
+	return data;
 }
 
 void esp_queue_destroy(esp_queue_t** q)
 {
+	q_node_t* temp = NULL;
+
 	if (!q || !*q)
 		return;
 
 	while ((*q)->front) {
 
-		q_node_t* temp = (*q)->front;
+		temp = (*q)->front;
 		(*q)->front = (*q)->front->next;
 
 		free(temp);

@@ -2,7 +2,7 @@
 
 ### Introduction
 - This demo application showcases a way to configure control path.
-- App is avaliable under directory [c_support/](../../host/linux/host_control/c_support)
+- App is available under directory [c_support/](../../host/linux/host_control/c_support)
 - App interacts with `Hosted Control Library` using [control path APIs](./ctrl_apis.md). APIs header could be found at [ctrl_api.h](../../host/control_lib/include/ctrl_api.h)
 
 ### Source files
@@ -15,31 +15,31 @@
 
 | Command line argument | Operation |
 |:----|:----|
-| get_sta_mac_addr | Get Mac address of WiFi in station mode |
-| get_softap_mac_addr | Get Mac address of WiFi in softap mode |
-| set_sta_mac_addr | Set Mac address of WiFi in station mode |
-| set_softap_mac_addr | Set Mac address of WiFi in softap mode |
+| get_sta_mac_addr | Get Mac address of Wi-Fi in station mode |
+| get_softap_mac_addr | Get Mac address of Wi-Fi in softAP mode |
+| set_sta_mac_addr | Set Mac address of Wi-Fi in station mode |
+| set_softap_mac_addr | Set Mac address of Wi-Fi in softAP mode |
 |||
-| get_wifi_mode | Get current WiFi mode |
-| set_wifi_mode | Set WiFi mode |
+| get_wifi_mode | Get current Wi-Fi mode |
+| set_wifi_mode | Set Wi-Fi mode |
 |||
-| get_ap_scan_list | Get neighboring AP (WiFi routers or Hotspot) list |
-| sta_connect | Connect ESP32 station to external AP(WiFi router or hotspot), assign MAC address of ESP32 station to `ethsta0` and up `ethsta0` interface |
+| get_ap_scan_list | Get neighboring AP (Wi-Fi routers or Hotspot) list |
+| sta_connect | Connect ESP station to external AP(Wi-Fi router or hotspot), assign MAC address of ESP station to `ethsta0` and up `ethsta0` interface |
 | get_sta_config | Get details of connected AP in station mode |
-| sta_disconnect | Disconnect ESP32 station from external AP and down `ethsta0` interface |
+| sta_disconnect | Disconnect ESP station from external AP and down `ethsta0` interface |
 |||
-| set_softap_vendor_ie | Set vendor information element for ESP32 softAP |
-| reset_softap_vendor_ie | Reset vendor information element for ESP32 softAP |
-| softap_start | Start ESP32 softAP, assign MAC address of ESP32 softAP to `ethap0` and up `ethap0` interface |
+| set_softap_vendor_ie | Set vendor information element for ESP softAP |
+| reset_softap_vendor_ie | Reset vendor information element for ESP softAP |
+| softap_start | Start ESP softAP, assign MAC address of ESP softAP to `ethap0` and up `ethap0` interface |
 | get_softap_config | Get softAP configuration |
-| softap_connected_sta_list | Get connected station info of softap |
-| softap_stop | Stop ESP32 softAP stop and down `ethap0` interface |
+| softap_connected_sta_list | Get connected station info of softAP |
+| softap_stop | Stop ESP softAP stop and down `ethap0` interface |
 |||
-| set_wifi_powersave_mode | Set WiFi Power save mode |
-| get_wifi_powersave_mode | Get WiFi Power save mode |
+| set_wifi_powersave_mode | Set Wi-Fi Power save mode |
+| get_wifi_powersave_mode | Get Wi-Fi Power save mode |
 |||
-| set_wifi_max_tx_power | Sets WiFi maximum transmitting power |
-| get_wifi_curr_tx_power | Get WiFi current transmitting power |
+| set_wifi_max_tx_power | Sets Wi-Fi maximum transmitting power |
+| get_wifi_curr_tx_power | Get Wi-Fi current transmitting power |
 |||
 | ota </path/to/ota_image.bin> | performs OTA operation using local OTA binary file |
 
@@ -69,7 +69,7 @@ $ sudo ./test.out get_wifi_mode
 
 ### Some points to note
 - Connect to AP in station mode
-  - After `sta_connect`, User needs to run DHCP client to obtain IP address from an external AP. Then network data path will be open for higher applications to use `ethsta0` interface for data communication. For an example as below.
+  - After `sta_connect`, User needs to run the DHCP client to obtain an IP address from an external AP. Then network data path will be open for higher applications to use `ethsta0` interface for data communication. For an example as below.
 
   ```sh
   $ sudo dhclient ethsta0 -r
@@ -85,8 +85,8 @@ $ sudo ./test.out get_wifi_mode
   ```
 
 - For softAP vendor specific IE
-  - `set_softap_vendor_ie` will be in effect only if it is done before starting of ESP32 softAP
-  - Once vendor IE set, consecutive `set_softap_vendor_ie` will fail unless vendor IE is reset using `reset_softap_vendor_ie` or ESP32 reboot
+  - `set_softap_vendor_ie` will be in effect only if it is done before starting of ESP softAP
+  - Once vendor IE set, consecutive `set_softap_vendor_ie` will fail unless vendor IE is reset using `reset_softap_vendor_ie` or ESP reboot
 - SoftAP start
   - After `softap_start` to start data connection, set up a DHCP server on the Raspberry Pi, or configure a static IP address for AP interface (`ethap0`). For an example as below:
 
@@ -97,19 +97,24 @@ $ sudo ./test.out get_wifi_mode
   ```
 
 - SoftAP stop
-  - After stoppong softAP, dnsmasq could be down/killed as per user expectation
+  - After stopping softAP, dnsmasq could be down/killed as per user expectation
+
 - OTA
-The OTA update using C currently assumes the complete binary is downloaded locally.
-OTA update using HTTP URL is only supported in [python](python_demo.md#ota-update). In case HTTP based OTA update is desired, user can do the same using third party HTTP client library.
+  - The OTA update using C currently assumes the complete binary is downloaded locally
+  - OTA update using HTTP URL is only supported in [python demo app](python_demo.md#ota-update)
+  - In case HTTP based OTA update is desired, user can do the same using third party HTTP client library
 
   ```sh
   ex.
   ./test.out ota </path/to/ota_image.bin>
   ```
 
+- Set Wi-Fi max transmit power
+  - This is just a request to Wi-Fi driver. The actual power set may slightly differ from exact requested power.
+
 # C stress Application
 
-[stress.c](../../host/linux/host_control/c_support/stress.c) use for stress testing of control path APIs. It is very similar to demo app, just additionally allows multiple iteration testing
+[stress.c](../../host/linux/host_control/c_support/stress.c) use for stress testing of control path APIs. It is very similar to demo app, just additionally allows multiple iteration testing.
 
 ### Source files
 - Source files are [stress.c](../../host/linux/host_control/c_support/stress.c) and [test_utils.c](../../host/linux/host_control/c_support/test_utils.c)
