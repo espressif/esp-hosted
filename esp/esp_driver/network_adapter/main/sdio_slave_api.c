@@ -25,8 +25,8 @@
 #include "endian.h"
 
 #define SDIO_SLAVE_QUEUE_SIZE 20
-#define BUFFER_SIZE     2048
-#define BUFFER_NUM      20
+#define BUFFER_SIZE     1536 /* 512*3 */
+#define BUFFER_NUM      10
 static uint8_t sdio_slave_rx_buffer[BUFFER_NUM][BUFFER_SIZE];
 
 interface_context_t context;

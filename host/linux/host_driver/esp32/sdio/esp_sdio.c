@@ -454,7 +454,7 @@ static struct sk_buff * read_packet(struct esp_adapter *adapter)
 
 static int write_packet(struct esp_adapter *adapter, struct sk_buff *skb)
 {
-	u32 max_pkt_size = ESP_RX_BUFFER_SIZE - sizeof(struct esp_payload_header);
+	u32 max_pkt_size = ESP_RX_BUFFER_SIZE;
 	struct esp_payload_header *payload_header = (struct esp_payload_header *) skb->data;
 
 	if (!adapter || !adapter->if_context || !skb || !skb->data || !skb->len) {

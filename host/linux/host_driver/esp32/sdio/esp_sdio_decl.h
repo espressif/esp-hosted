@@ -40,7 +40,7 @@
 #define ESP_SLAVE_LEN_MASK             0xFFFFF
 #define ESP_BLOCK_SIZE                 512
 #define ESP_RX_BYTE_MAX                0x100000
-#define ESP_RX_BUFFER_SIZE             2048
+#define ESP_RX_BUFFER_SIZE             1536
 
 #define ESP_TX_BUFFER_MASK             0xFFF
 #define ESP_TX_BUFFER_MAX              0x1000
