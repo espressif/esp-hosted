@@ -7,2015 +7,2007 @@
 #endif
 
 #include "esp_hosted_config.pb-c.h"
-void   esp_hosted_cmd_get_mac_address__init
-                     (EspHostedCmdGetMacAddress         *message)
+void   scan_result__init
+                     (ScanResult         *message)
 {
-  static EspHostedCmdGetMacAddress init_value = ESP_HOSTED_CMD_GET_MAC_ADDRESS__INIT;
+  static const ScanResult init_value = SCAN_RESULT__INIT;
   *message = init_value;
 }
-size_t esp_hosted_cmd_get_mac_address__get_packed_size
-                     (const EspHostedCmdGetMacAddress *message)
+size_t scan_result__get_packed_size
+                     (const ScanResult *message)
 {
-  assert(message->base.descriptor == &esp_hosted_cmd_get_mac_address__descriptor);
+  assert(message->base.descriptor == &scan_result__descriptor);
   return protobuf_c_message_get_packed_size ((const ProtobufCMessage*)(message));
 }
-size_t esp_hosted_cmd_get_mac_address__pack
-                     (const EspHostedCmdGetMacAddress *message,
+size_t scan_result__pack
+                     (const ScanResult *message,
                       uint8_t       *out)
 {
-  assert(message->base.descriptor == &esp_hosted_cmd_get_mac_address__descriptor);
+  assert(message->base.descriptor == &scan_result__descriptor);
   return protobuf_c_message_pack ((const ProtobufCMessage*)message, out);
 }
-size_t esp_hosted_cmd_get_mac_address__pack_to_buffer
-                     (const EspHostedCmdGetMacAddress *message,
+size_t scan_result__pack_to_buffer
+                     (const ScanResult *message,
                       ProtobufCBuffer *buffer)
 {
-  assert(message->base.descriptor == &esp_hosted_cmd_get_mac_address__descriptor);
+  assert(message->base.descriptor == &scan_result__descriptor);
   return protobuf_c_message_pack_to_buffer ((const ProtobufCMessage*)message, buffer);
 }
-EspHostedCmdGetMacAddress *
-       esp_hosted_cmd_get_mac_address__unpack
+ScanResult *
+       scan_result__unpack
                      (ProtobufCAllocator  *allocator,
                       size_t               len,
                       const uint8_t       *data)
 {
-  return (EspHostedCmdGetMacAddress *)
-     protobuf_c_message_unpack (&esp_hosted_cmd_get_mac_address__descriptor,
+  return (ScanResult *)
+     protobuf_c_message_unpack (&scan_result__descriptor,
                                 allocator, len, data);
 }
-void   esp_hosted_cmd_get_mac_address__free_unpacked
-                     (EspHostedCmdGetMacAddress *message,
+void   scan_result__free_unpacked
+                     (ScanResult *message,
                       ProtobufCAllocator *allocator)
 {
-  assert(message->base.descriptor == &esp_hosted_cmd_get_mac_address__descriptor);
+  if(!message)
+    return;
+  assert(message->base.descriptor == &scan_result__descriptor);
   protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
 }
-void   esp_hosted_resp_get_mac_address__init
-                     (EspHostedRespGetMacAddress         *message)
+void   connected_stalist__init
+                     (ConnectedSTAList         *message)
 {
-  static EspHostedRespGetMacAddress init_value = ESP_HOSTED_RESP_GET_MAC_ADDRESS__INIT;
+  static const ConnectedSTAList init_value = CONNECTED_STALIST__INIT;
   *message = init_value;
 }
-size_t esp_hosted_resp_get_mac_address__get_packed_size
-                     (const EspHostedRespGetMacAddress *message)
+size_t connected_stalist__get_packed_size
+                     (const ConnectedSTAList *message)
 {
-  assert(message->base.descriptor == &esp_hosted_resp_get_mac_address__descriptor);
+  assert(message->base.descriptor == &connected_stalist__descriptor);
   return protobuf_c_message_get_packed_size ((const ProtobufCMessage*)(message));
 }
-size_t esp_hosted_resp_get_mac_address__pack
-                     (const EspHostedRespGetMacAddress *message,
+size_t connected_stalist__pack
+                     (const ConnectedSTAList *message,
                       uint8_t       *out)
 {
-  assert(message->base.descriptor == &esp_hosted_resp_get_mac_address__descriptor);
+  assert(message->base.descriptor == &connected_stalist__descriptor);
   return protobuf_c_message_pack ((const ProtobufCMessage*)message, out);
 }
-size_t esp_hosted_resp_get_mac_address__pack_to_buffer
-                     (const EspHostedRespGetMacAddress *message,
+size_t connected_stalist__pack_to_buffer
+                     (const ConnectedSTAList *message,
                       ProtobufCBuffer *buffer)
 {
-  assert(message->base.descriptor == &esp_hosted_resp_get_mac_address__descriptor);
+  assert(message->base.descriptor == &connected_stalist__descriptor);
   return protobuf_c_message_pack_to_buffer ((const ProtobufCMessage*)message, buffer);
 }
-EspHostedRespGetMacAddress *
-       esp_hosted_resp_get_mac_address__unpack
+ConnectedSTAList *
+       connected_stalist__unpack
                      (ProtobufCAllocator  *allocator,
                       size_t               len,
                       const uint8_t       *data)
 {
-  return (EspHostedRespGetMacAddress *)
-     protobuf_c_message_unpack (&esp_hosted_resp_get_mac_address__descriptor,
+  return (ConnectedSTAList *)
+     protobuf_c_message_unpack (&connected_stalist__descriptor,
                                 allocator, len, data);
 }
-void   esp_hosted_resp_get_mac_address__free_unpacked
-                     (EspHostedRespGetMacAddress *message,
+void   connected_stalist__free_unpacked
+                     (ConnectedSTAList *message,
                       ProtobufCAllocator *allocator)
 {
-  assert(message->base.descriptor == &esp_hosted_resp_get_mac_address__descriptor);
+  if(!message)
+    return;
+  assert(message->base.descriptor == &connected_stalist__descriptor);
   protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
 }
-void   esp_hosted_cmd_get_mode__init
-                     (EspHostedCmdGetMode         *message)
+void   ctrl_msg__req__get_mac_address__init
+                     (CtrlMsgReqGetMacAddress         *message)
 {
-  static EspHostedCmdGetMode init_value = ESP_HOSTED_CMD_GET_MODE__INIT;
+  static const CtrlMsgReqGetMacAddress init_value = CTRL_MSG__REQ__GET_MAC_ADDRESS__INIT;
   *message = init_value;
 }
-size_t esp_hosted_cmd_get_mode__get_packed_size
-                     (const EspHostedCmdGetMode *message)
+size_t ctrl_msg__req__get_mac_address__get_packed_size
+                     (const CtrlMsgReqGetMacAddress *message)
 {
-  assert(message->base.descriptor == &esp_hosted_cmd_get_mode__descriptor);
+  assert(message->base.descriptor == &ctrl_msg__req__get_mac_address__descriptor);
   return protobuf_c_message_get_packed_size ((const ProtobufCMessage*)(message));
 }
-size_t esp_hosted_cmd_get_mode__pack
-                     (const EspHostedCmdGetMode *message,
+size_t ctrl_msg__req__get_mac_address__pack
+                     (const CtrlMsgReqGetMacAddress *message,
                       uint8_t       *out)
 {
-  assert(message->base.descriptor == &esp_hosted_cmd_get_mode__descriptor);
+  assert(message->base.descriptor == &ctrl_msg__req__get_mac_address__descriptor);
   return protobuf_c_message_pack ((const ProtobufCMessage*)message, out);
 }
-size_t esp_hosted_cmd_get_mode__pack_to_buffer
-                     (const EspHostedCmdGetMode *message,
+size_t ctrl_msg__req__get_mac_address__pack_to_buffer
+                     (const CtrlMsgReqGetMacAddress *message,
                       ProtobufCBuffer *buffer)
 {
-  assert(message->base.descriptor == &esp_hosted_cmd_get_mode__descriptor);
+  assert(message->base.descriptor == &ctrl_msg__req__get_mac_address__descriptor);
   return protobuf_c_message_pack_to_buffer ((const ProtobufCMessage*)message, buffer);
 }
-EspHostedCmdGetMode *
-       esp_hosted_cmd_get_mode__unpack
+CtrlMsgReqGetMacAddress *
+       ctrl_msg__req__get_mac_address__unpack
                      (ProtobufCAllocator  *allocator,
                       size_t               len,
                       const uint8_t       *data)
 {
-  return (EspHostedCmdGetMode *)
-     protobuf_c_message_unpack (&esp_hosted_cmd_get_mode__descriptor,
+  return (CtrlMsgReqGetMacAddress *)
+     protobuf_c_message_unpack (&ctrl_msg__req__get_mac_address__descriptor,
                                 allocator, len, data);
 }
-void   esp_hosted_cmd_get_mode__free_unpacked
-                     (EspHostedCmdGetMode *message,
+void   ctrl_msg__req__get_mac_address__free_unpacked
+                     (CtrlMsgReqGetMacAddress *message,
                       ProtobufCAllocator *allocator)
 {
-  assert(message->base.descriptor == &esp_hosted_cmd_get_mode__descriptor);
+  if(!message)
+    return;
+  assert(message->base.descriptor == &ctrl_msg__req__get_mac_address__descriptor);
   protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
 }
-void   esp_hosted_resp_get_mode__init
-                     (EspHostedRespGetMode         *message)
+void   ctrl_msg__resp__get_mac_address__init
+                     (CtrlMsgRespGetMacAddress         *message)
 {
-  static EspHostedRespGetMode init_value = ESP_HOSTED_RESP_GET_MODE__INIT;
+  static const CtrlMsgRespGetMacAddress init_value = CTRL_MSG__RESP__GET_MAC_ADDRESS__INIT;
   *message = init_value;
 }
-size_t esp_hosted_resp_get_mode__get_packed_size
-                     (const EspHostedRespGetMode *message)
+size_t ctrl_msg__resp__get_mac_address__get_packed_size
+                     (const CtrlMsgRespGetMacAddress *message)
 {
-  assert(message->base.descriptor == &esp_hosted_resp_get_mode__descriptor);
+  assert(message->base.descriptor == &ctrl_msg__resp__get_mac_address__descriptor);
   return protobuf_c_message_get_packed_size ((const ProtobufCMessage*)(message));
 }
-size_t esp_hosted_resp_get_mode__pack
-                     (const EspHostedRespGetMode *message,
+size_t ctrl_msg__resp__get_mac_address__pack
+                     (const CtrlMsgRespGetMacAddress *message,
                       uint8_t       *out)
 {
-  assert(message->base.descriptor == &esp_hosted_resp_get_mode__descriptor);
+  assert(message->base.descriptor == &ctrl_msg__resp__get_mac_address__descriptor);
   return protobuf_c_message_pack ((const ProtobufCMessage*)message, out);
 }
-size_t esp_hosted_resp_get_mode__pack_to_buffer
-                     (const EspHostedRespGetMode *message,
+size_t ctrl_msg__resp__get_mac_address__pack_to_buffer
+                     (const CtrlMsgRespGetMacAddress *message,
                       ProtobufCBuffer *buffer)
 {
-  assert(message->base.descriptor == &esp_hosted_resp_get_mode__descriptor);
+  assert(message->base.descriptor == &ctrl_msg__resp__get_mac_address__descriptor);
   return protobuf_c_message_pack_to_buffer ((const ProtobufCMessage*)message, buffer);
 }
-EspHostedRespGetMode *
-       esp_hosted_resp_get_mode__unpack
+CtrlMsgRespGetMacAddress *
+       ctrl_msg__resp__get_mac_address__unpack
                      (ProtobufCAllocator  *allocator,
                       size_t               len,
                       const uint8_t       *data)
 {
-  return (EspHostedRespGetMode *)
-     protobuf_c_message_unpack (&esp_hosted_resp_get_mode__descriptor,
+  return (CtrlMsgRespGetMacAddress *)
+     protobuf_c_message_unpack (&ctrl_msg__resp__get_mac_address__descriptor,
                                 allocator, len, data);
 }
-void   esp_hosted_resp_get_mode__free_unpacked
-                     (EspHostedRespGetMode *message,
+void   ctrl_msg__resp__get_mac_address__free_unpacked
+                     (CtrlMsgRespGetMacAddress *message,
                       ProtobufCAllocator *allocator)
 {
-  assert(message->base.descriptor == &esp_hosted_resp_get_mode__descriptor);
+  if(!message)
+    return;
+  assert(message->base.descriptor == &ctrl_msg__resp__get_mac_address__descriptor);
   protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
 }
-void   esp_hosted_cmd_set_mode__init
-                     (EspHostedCmdSetMode         *message)
+void   ctrl_msg__req__get_mode__init
+                     (CtrlMsgReqGetMode         *message)
 {
-  static EspHostedCmdSetMode init_value = ESP_HOSTED_CMD_SET_MODE__INIT;
+  static const CtrlMsgReqGetMode init_value = CTRL_MSG__REQ__GET_MODE__INIT;
   *message = init_value;
 }
-size_t esp_hosted_cmd_set_mode__get_packed_size
-                     (const EspHostedCmdSetMode *message)
+size_t ctrl_msg__req__get_mode__get_packed_size
+                     (const CtrlMsgReqGetMode *message)
 {
-  assert(message->base.descriptor == &esp_hosted_cmd_set_mode__descriptor);
+  assert(message->base.descriptor == &ctrl_msg__req__get_mode__descriptor);
   return protobuf_c_message_get_packed_size ((const ProtobufCMessage*)(message));
 }
-size_t esp_hosted_cmd_set_mode__pack
-                     (const EspHostedCmdSetMode *message,
+size_t ctrl_msg__req__get_mode__pack
+                     (const CtrlMsgReqGetMode *message,
                       uint8_t       *out)
 {
-  assert(message->base.descriptor == &esp_hosted_cmd_set_mode__descriptor);
+  assert(message->base.descriptor == &ctrl_msg__req__get_mode__descriptor);
   return protobuf_c_message_pack ((const ProtobufCMessage*)message, out);
 }
-size_t esp_hosted_cmd_set_mode__pack_to_buffer
-                     (const EspHostedCmdSetMode *message,
+size_t ctrl_msg__req__get_mode__pack_to_buffer
+                     (const CtrlMsgReqGetMode *message,
                       ProtobufCBuffer *buffer)
 {
-  assert(message->base.descriptor == &esp_hosted_cmd_set_mode__descriptor);
+  assert(message->base.descriptor == &ctrl_msg__req__get_mode__descriptor);
   return protobuf_c_message_pack_to_buffer ((const ProtobufCMessage*)message, buffer);
 }
-EspHostedCmdSetMode *
-       esp_hosted_cmd_set_mode__unpack
+CtrlMsgReqGetMode *
+       ctrl_msg__req__get_mode__unpack
                      (ProtobufCAllocator  *allocator,
                       size_t               len,
                       const uint8_t       *data)
 {
-  return (EspHostedCmdSetMode *)
-     protobuf_c_message_unpack (&esp_hosted_cmd_set_mode__descriptor,
+  return (CtrlMsgReqGetMode *)
+     protobuf_c_message_unpack (&ctrl_msg__req__get_mode__descriptor,
                                 allocator, len, data);
 }
-void   esp_hosted_cmd_set_mode__free_unpacked
-                     (EspHostedCmdSetMode *message,
+void   ctrl_msg__req__get_mode__free_unpacked
+                     (CtrlMsgReqGetMode *message,
                       ProtobufCAllocator *allocator)
 {
-  assert(message->base.descriptor == &esp_hosted_cmd_set_mode__descriptor);
+  if(!message)
+    return;
+  assert(message->base.descriptor == &ctrl_msg__req__get_mode__descriptor);
   protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
 }
-void   esp_hosted_resp_set_mode__init
-                     (EspHostedRespSetMode         *message)
+void   ctrl_msg__resp__get_mode__init
+                     (CtrlMsgRespGetMode         *message)
 {
-  static EspHostedRespSetMode init_value = ESP_HOSTED_RESP_SET_MODE__INIT;
+  static const CtrlMsgRespGetMode init_value = CTRL_MSG__RESP__GET_MODE__INIT;
   *message = init_value;
 }
-size_t esp_hosted_resp_set_mode__get_packed_size
-                     (const EspHostedRespSetMode *message)
+size_t ctrl_msg__resp__get_mode__get_packed_size
+                     (const CtrlMsgRespGetMode *message)
 {
-  assert(message->base.descriptor == &esp_hosted_resp_set_mode__descriptor);
+  assert(message->base.descriptor == &ctrl_msg__resp__get_mode__descriptor);
   return protobuf_c_message_get_packed_size ((const ProtobufCMessage*)(message));
 }
-size_t esp_hosted_resp_set_mode__pack
-                     (const EspHostedRespSetMode *message,
+size_t ctrl_msg__resp__get_mode__pack
+                     (const CtrlMsgRespGetMode *message,
                       uint8_t       *out)
 {
-  assert(message->base.descriptor == &esp_hosted_resp_set_mode__descriptor);
+  assert(message->base.descriptor == &ctrl_msg__resp__get_mode__descriptor);
   return protobuf_c_message_pack ((const ProtobufCMessage*)message, out);
 }
-size_t esp_hosted_resp_set_mode__pack_to_buffer
-                     (const EspHostedRespSetMode *message,
+size_t ctrl_msg__resp__get_mode__pack_to_buffer
+                     (const CtrlMsgRespGetMode *message,
                       ProtobufCBuffer *buffer)
 {
-  assert(message->base.descriptor == &esp_hosted_resp_set_mode__descriptor);
+  assert(message->base.descriptor == &ctrl_msg__resp__get_mode__descriptor);
   return protobuf_c_message_pack_to_buffer ((const ProtobufCMessage*)message, buffer);
 }
-EspHostedRespSetMode *
-       esp_hosted_resp_set_mode__unpack
+CtrlMsgRespGetMode *
+       ctrl_msg__resp__get_mode__unpack
                      (ProtobufCAllocator  *allocator,
                       size_t               len,
                       const uint8_t       *data)
 {
-  return (EspHostedRespSetMode *)
-     protobuf_c_message_unpack (&esp_hosted_resp_set_mode__descriptor,
+  return (CtrlMsgRespGetMode *)
+     protobuf_c_message_unpack (&ctrl_msg__resp__get_mode__descriptor,
                                 allocator, len, data);
 }
-void   esp_hosted_resp_set_mode__free_unpacked
-                     (EspHostedRespSetMode *message,
+void   ctrl_msg__resp__get_mode__free_unpacked
+                     (CtrlMsgRespGetMode *message,
                       ProtobufCAllocator *allocator)
 {
-  assert(message->base.descriptor == &esp_hosted_resp_set_mode__descriptor);
+  if(!message)
+    return;
+  assert(message->base.descriptor == &ctrl_msg__resp__get_mode__descriptor);
   protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
 }
-void   esp_hosted_cmd_get_status__init
-                     (EspHostedCmdGetStatus         *message)
+void   ctrl_msg__req__set_mode__init
+                     (CtrlMsgReqSetMode         *message)
 {
-  static EspHostedCmdGetStatus init_value = ESP_HOSTED_CMD_GET_STATUS__INIT;
+  static const CtrlMsgReqSetMode init_value = CTRL_MSG__REQ__SET_MODE__INIT;
   *message = init_value;
 }
-size_t esp_hosted_cmd_get_status__get_packed_size
-                     (const EspHostedCmdGetStatus *message)
+size_t ctrl_msg__req__set_mode__get_packed_size
+                     (const CtrlMsgReqSetMode *message)
 {
-  assert(message->base.descriptor == &esp_hosted_cmd_get_status__descriptor);
+  assert(message->base.descriptor == &ctrl_msg__req__set_mode__descriptor);
   return protobuf_c_message_get_packed_size ((const ProtobufCMessage*)(message));
 }
-size_t esp_hosted_cmd_get_status__pack
-                     (const EspHostedCmdGetStatus *message,
+size_t ctrl_msg__req__set_mode__pack
+                     (const CtrlMsgReqSetMode *message,
                       uint8_t       *out)
 {
-  assert(message->base.descriptor == &esp_hosted_cmd_get_status__descriptor);
+  assert(message->base.descriptor == &ctrl_msg__req__set_mode__descriptor);
   return protobuf_c_message_pack ((const ProtobufCMessage*)message, out);
 }
-size_t esp_hosted_cmd_get_status__pack_to_buffer
-                     (const EspHostedCmdGetStatus *message,
+size_t ctrl_msg__req__set_mode__pack_to_buffer
+                     (const CtrlMsgReqSetMode *message,
                       ProtobufCBuffer *buffer)
 {
-  assert(message->base.descriptor == &esp_hosted_cmd_get_status__descriptor);
+  assert(message->base.descriptor == &ctrl_msg__req__set_mode__descriptor);
   return protobuf_c_message_pack_to_buffer ((const ProtobufCMessage*)message, buffer);
 }
-EspHostedCmdGetStatus *
-       esp_hosted_cmd_get_status__unpack
+CtrlMsgReqSetMode *
+       ctrl_msg__req__set_mode__unpack
                      (ProtobufCAllocator  *allocator,
                       size_t               len,
                       const uint8_t       *data)
 {
-  return (EspHostedCmdGetStatus *)
-     protobuf_c_message_unpack (&esp_hosted_cmd_get_status__descriptor,
+  return (CtrlMsgReqSetMode *)
+     protobuf_c_message_unpack (&ctrl_msg__req__set_mode__descriptor,
                                 allocator, len, data);
 }
-void   esp_hosted_cmd_get_status__free_unpacked
-                     (EspHostedCmdGetStatus *message,
+void   ctrl_msg__req__set_mode__free_unpacked
+                     (CtrlMsgReqSetMode *message,
                       ProtobufCAllocator *allocator)
 {
-  assert(message->base.descriptor == &esp_hosted_cmd_get_status__descriptor);
+  if(!message)
+    return;
+  assert(message->base.descriptor == &ctrl_msg__req__set_mode__descriptor);
   protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
 }
-void   esp_hosted_resp_get_status__init
-                     (EspHostedRespGetStatus         *message)
+void   ctrl_msg__resp__set_mode__init
+                     (CtrlMsgRespSetMode         *message)
 {
-  static EspHostedRespGetStatus init_value = ESP_HOSTED_RESP_GET_STATUS__INIT;
+  static const CtrlMsgRespSetMode init_value = CTRL_MSG__RESP__SET_MODE__INIT;
   *message = init_value;
 }
-size_t esp_hosted_resp_get_status__get_packed_size
-                     (const EspHostedRespGetStatus *message)
+size_t ctrl_msg__resp__set_mode__get_packed_size
+                     (const CtrlMsgRespSetMode *message)
 {
-  assert(message->base.descriptor == &esp_hosted_resp_get_status__descriptor);
+  assert(message->base.descriptor == &ctrl_msg__resp__set_mode__descriptor);
   return protobuf_c_message_get_packed_size ((const ProtobufCMessage*)(message));
 }
-size_t esp_hosted_resp_get_status__pack
-                     (const EspHostedRespGetStatus *message,
+size_t ctrl_msg__resp__set_mode__pack
+                     (const CtrlMsgRespSetMode *message,
                       uint8_t       *out)
 {
-  assert(message->base.descriptor == &esp_hosted_resp_get_status__descriptor);
+  assert(message->base.descriptor == &ctrl_msg__resp__set_mode__descriptor);
   return protobuf_c_message_pack ((const ProtobufCMessage*)message, out);
 }
-size_t esp_hosted_resp_get_status__pack_to_buffer
-                     (const EspHostedRespGetStatus *message,
+size_t ctrl_msg__resp__set_mode__pack_to_buffer
+                     (const CtrlMsgRespSetMode *message,
                       ProtobufCBuffer *buffer)
 {
-  assert(message->base.descriptor == &esp_hosted_resp_get_status__descriptor);
+  assert(message->base.descriptor == &ctrl_msg__resp__set_mode__descriptor);
   return protobuf_c_message_pack_to_buffer ((const ProtobufCMessage*)message, buffer);
 }
-EspHostedRespGetStatus *
-       esp_hosted_resp_get_status__unpack
+CtrlMsgRespSetMode *
+       ctrl_msg__resp__set_mode__unpack
                      (ProtobufCAllocator  *allocator,
                       size_t               len,
                       const uint8_t       *data)
 {
-  return (EspHostedRespGetStatus *)
-     protobuf_c_message_unpack (&esp_hosted_resp_get_status__descriptor,
+  return (CtrlMsgRespSetMode *)
+     protobuf_c_message_unpack (&ctrl_msg__resp__set_mode__descriptor,
                                 allocator, len, data);
 }
-void   esp_hosted_resp_get_status__free_unpacked
-                     (EspHostedRespGetStatus *message,
+void   ctrl_msg__resp__set_mode__free_unpacked
+                     (CtrlMsgRespSetMode *message,
                       ProtobufCAllocator *allocator)
 {
-  assert(message->base.descriptor == &esp_hosted_resp_get_status__descriptor);
+  if(!message)
+    return;
+  assert(message->base.descriptor == &ctrl_msg__resp__set_mode__descriptor);
   protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
 }
-void   esp_hosted_cmd_set_mac_address__init
-                     (EspHostedCmdSetMacAddress         *message)
+void   ctrl_msg__req__get_status__init
+                     (CtrlMsgReqGetStatus         *message)
 {
-  static EspHostedCmdSetMacAddress init_value = ESP_HOSTED_CMD_SET_MAC_ADDRESS__INIT;
+  static const CtrlMsgReqGetStatus init_value = CTRL_MSG__REQ__GET_STATUS__INIT;
   *message = init_value;
 }
-size_t esp_hosted_cmd_set_mac_address__get_packed_size
-                     (const EspHostedCmdSetMacAddress *message)
+size_t ctrl_msg__req__get_status__get_packed_size
+                     (const CtrlMsgReqGetStatus *message)
 {
-  assert(message->base.descriptor == &esp_hosted_cmd_set_mac_address__descriptor);
+  assert(message->base.descriptor == &ctrl_msg__req__get_status__descriptor);
   return protobuf_c_message_get_packed_size ((const ProtobufCMessage*)(message));
 }
-size_t esp_hosted_cmd_set_mac_address__pack
-                     (const EspHostedCmdSetMacAddress *message,
+size_t ctrl_msg__req__get_status__pack
+                     (const CtrlMsgReqGetStatus *message,
                       uint8_t       *out)
 {
-  assert(message->base.descriptor == &esp_hosted_cmd_set_mac_address__descriptor);
+  assert(message->base.descriptor == &ctrl_msg__req__get_status__descriptor);
   return protobuf_c_message_pack ((const ProtobufCMessage*)message, out);
 }
-size_t esp_hosted_cmd_set_mac_address__pack_to_buffer
-                     (const EspHostedCmdSetMacAddress *message,
+size_t ctrl_msg__req__get_status__pack_to_buffer
+                     (const CtrlMsgReqGetStatus *message,
                       ProtobufCBuffer *buffer)
 {
-  assert(message->base.descriptor == &esp_hosted_cmd_set_mac_address__descriptor);
+  assert(message->base.descriptor == &ctrl_msg__req__get_status__descriptor);
   return protobuf_c_message_pack_to_buffer ((const ProtobufCMessage*)message, buffer);
 }
-EspHostedCmdSetMacAddress *
-       esp_hosted_cmd_set_mac_address__unpack
+CtrlMsgReqGetStatus *
+       ctrl_msg__req__get_status__unpack
                      (ProtobufCAllocator  *allocator,
                       size_t               len,
                       const uint8_t       *data)
 {
-  return (EspHostedCmdSetMacAddress *)
-     protobuf_c_message_unpack (&esp_hosted_cmd_set_mac_address__descriptor,
+  return (CtrlMsgReqGetStatus *)
+     protobuf_c_message_unpack (&ctrl_msg__req__get_status__descriptor,
                                 allocator, len, data);
 }
-void   esp_hosted_cmd_set_mac_address__free_unpacked
-                     (EspHostedCmdSetMacAddress *message,
+void   ctrl_msg__req__get_status__free_unpacked
+                     (CtrlMsgReqGetStatus *message,
                       ProtobufCAllocator *allocator)
 {
-  assert(message->base.descriptor == &esp_hosted_cmd_set_mac_address__descriptor);
+  if(!message)
+    return;
+  assert(message->base.descriptor == &ctrl_msg__req__get_status__descriptor);
   protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
 }
-void   esp_hosted_resp_set_mac_address__init
-                     (EspHostedRespSetMacAddress         *message)
+void   ctrl_msg__resp__get_status__init
+                     (CtrlMsgRespGetStatus         *message)
 {
-  static EspHostedRespSetMacAddress init_value = ESP_HOSTED_RESP_SET_MAC_ADDRESS__INIT;
+  static const CtrlMsgRespGetStatus init_value = CTRL_MSG__RESP__GET_STATUS__INIT;
   *message = init_value;
 }
-size_t esp_hosted_resp_set_mac_address__get_packed_size
-                     (const EspHostedRespSetMacAddress *message)
+size_t ctrl_msg__resp__get_status__get_packed_size
+                     (const CtrlMsgRespGetStatus *message)
 {
-  assert(message->base.descriptor == &esp_hosted_resp_set_mac_address__descriptor);
+  assert(message->base.descriptor == &ctrl_msg__resp__get_status__descriptor);
   return protobuf_c_message_get_packed_size ((const ProtobufCMessage*)(message));
 }
-size_t esp_hosted_resp_set_mac_address__pack
-                     (const EspHostedRespSetMacAddress *message,
+size_t ctrl_msg__resp__get_status__pack
+                     (const CtrlMsgRespGetStatus *message,
                       uint8_t       *out)
 {
-  assert(message->base.descriptor == &esp_hosted_resp_set_mac_address__descriptor);
+  assert(message->base.descriptor == &ctrl_msg__resp__get_status__descriptor);
   return protobuf_c_message_pack ((const ProtobufCMessage*)message, out);
 }
-size_t esp_hosted_resp_set_mac_address__pack_to_buffer
-                     (const EspHostedRespSetMacAddress *message,
+size_t ctrl_msg__resp__get_status__pack_to_buffer
+                     (const CtrlMsgRespGetStatus *message,
                       ProtobufCBuffer *buffer)
 {
-  assert(message->base.descriptor == &esp_hosted_resp_set_mac_address__descriptor);
+  assert(message->base.descriptor == &ctrl_msg__resp__get_status__descriptor);
   return protobuf_c_message_pack_to_buffer ((const ProtobufCMessage*)message, buffer);
 }
-EspHostedRespSetMacAddress *
-       esp_hosted_resp_set_mac_address__unpack
+CtrlMsgRespGetStatus *
+       ctrl_msg__resp__get_status__unpack
                      (ProtobufCAllocator  *allocator,
                       size_t               len,
                       const uint8_t       *data)
 {
-  return (EspHostedRespSetMacAddress *)
-     protobuf_c_message_unpack (&esp_hosted_resp_set_mac_address__descriptor,
+  return (CtrlMsgRespGetStatus *)
+     protobuf_c_message_unpack (&ctrl_msg__resp__get_status__descriptor,
                                 allocator, len, data);
 }
-void   esp_hosted_resp_set_mac_address__free_unpacked
-                     (EspHostedRespSetMacAddress *message,
+void   ctrl_msg__resp__get_status__free_unpacked
+                     (CtrlMsgRespGetStatus *message,
                       ProtobufCAllocator *allocator)
 {
-  assert(message->base.descriptor == &esp_hosted_resp_set_mac_address__descriptor);
+  if(!message)
+    return;
+  assert(message->base.descriptor == &ctrl_msg__resp__get_status__descriptor);
   protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
 }
-void   esp_hosted_cmd_get_apconfig__init
-                     (EspHostedCmdGetAPConfig         *message)
+void   ctrl_msg__req__set_mac_address__init
+                     (CtrlMsgReqSetMacAddress         *message)
 {
-  static EspHostedCmdGetAPConfig init_value = ESP_HOSTED_CMD_GET_APCONFIG__INIT;
+  static const CtrlMsgReqSetMacAddress init_value = CTRL_MSG__REQ__SET_MAC_ADDRESS__INIT;
   *message = init_value;
 }
-size_t esp_hosted_cmd_get_apconfig__get_packed_size
-                     (const EspHostedCmdGetAPConfig *message)
+size_t ctrl_msg__req__set_mac_address__get_packed_size
+                     (const CtrlMsgReqSetMacAddress *message)
 {
-  assert(message->base.descriptor == &esp_hosted_cmd_get_apconfig__descriptor);
+  assert(message->base.descriptor == &ctrl_msg__req__set_mac_address__descriptor);
   return protobuf_c_message_get_packed_size ((const ProtobufCMessage*)(message));
 }
-size_t esp_hosted_cmd_get_apconfig__pack
-                     (const EspHostedCmdGetAPConfig *message,
+size_t ctrl_msg__req__set_mac_address__pack
+                     (const CtrlMsgReqSetMacAddress *message,
                       uint8_t       *out)
 {
-  assert(message->base.descriptor == &esp_hosted_cmd_get_apconfig__descriptor);
+  assert(message->base.descriptor == &ctrl_msg__req__set_mac_address__descriptor);
   return protobuf_c_message_pack ((const ProtobufCMessage*)message, out);
 }
-size_t esp_hosted_cmd_get_apconfig__pack_to_buffer
-                     (const EspHostedCmdGetAPConfig *message,
+size_t ctrl_msg__req__set_mac_address__pack_to_buffer
+                     (const CtrlMsgReqSetMacAddress *message,
                       ProtobufCBuffer *buffer)
 {
-  assert(message->base.descriptor == &esp_hosted_cmd_get_apconfig__descriptor);
+  assert(message->base.descriptor == &ctrl_msg__req__set_mac_address__descriptor);
   return protobuf_c_message_pack_to_buffer ((const ProtobufCMessage*)message, buffer);
 }
-EspHostedCmdGetAPConfig *
-       esp_hosted_cmd_get_apconfig__unpack
+CtrlMsgReqSetMacAddress *
+       ctrl_msg__req__set_mac_address__unpack
                      (ProtobufCAllocator  *allocator,
                       size_t               len,
                       const uint8_t       *data)
 {
-  return (EspHostedCmdGetAPConfig *)
-     protobuf_c_message_unpack (&esp_hosted_cmd_get_apconfig__descriptor,
+  return (CtrlMsgReqSetMacAddress *)
+     protobuf_c_message_unpack (&ctrl_msg__req__set_mac_address__descriptor,
                                 allocator, len, data);
 }
-void   esp_hosted_cmd_get_apconfig__free_unpacked
-                     (EspHostedCmdGetAPConfig *message,
+void   ctrl_msg__req__set_mac_address__free_unpacked
+                     (CtrlMsgReqSetMacAddress *message,
                       ProtobufCAllocator *allocator)
 {
-  assert(message->base.descriptor == &esp_hosted_cmd_get_apconfig__descriptor);
+  if(!message)
+    return;
+  assert(message->base.descriptor == &ctrl_msg__req__set_mac_address__descriptor);
   protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
 }
-void   esp_hosted_resp_get_apconfig__init
-                     (EspHostedRespGetAPConfig         *message)
+void   ctrl_msg__resp__set_mac_address__init
+                     (CtrlMsgRespSetMacAddress         *message)
 {
-  static EspHostedRespGetAPConfig init_value = ESP_HOSTED_RESP_GET_APCONFIG__INIT;
+  static const CtrlMsgRespSetMacAddress init_value = CTRL_MSG__RESP__SET_MAC_ADDRESS__INIT;
   *message = init_value;
 }
-size_t esp_hosted_resp_get_apconfig__get_packed_size
-                     (const EspHostedRespGetAPConfig *message)
+size_t ctrl_msg__resp__set_mac_address__get_packed_size
+                     (const CtrlMsgRespSetMacAddress *message)
 {
-  assert(message->base.descriptor == &esp_hosted_resp_get_apconfig__descriptor);
+  assert(message->base.descriptor == &ctrl_msg__resp__set_mac_address__descriptor);
   return protobuf_c_message_get_packed_size ((const ProtobufCMessage*)(message));
 }
-size_t esp_hosted_resp_get_apconfig__pack
-                     (const EspHostedRespGetAPConfig *message,
+size_t ctrl_msg__resp__set_mac_address__pack
+                     (const CtrlMsgRespSetMacAddress *message,
                       uint8_t       *out)
 {
-  assert(message->base.descriptor == &esp_hosted_resp_get_apconfig__descriptor);
+  assert(message->base.descriptor == &ctrl_msg__resp__set_mac_address__descriptor);
   return protobuf_c_message_pack ((const ProtobufCMessage*)message, out);
 }
-size_t esp_hosted_resp_get_apconfig__pack_to_buffer
-                     (const EspHostedRespGetAPConfig *message,
+size_t ctrl_msg__resp__set_mac_address__pack_to_buffer
+                     (const CtrlMsgRespSetMacAddress *message,
                       ProtobufCBuffer *buffer)
 {
-  assert(message->base.descriptor == &esp_hosted_resp_get_apconfig__descriptor);
+  assert(message->base.descriptor == &ctrl_msg__resp__set_mac_address__descriptor);
   return protobuf_c_message_pack_to_buffer ((const ProtobufCMessage*)message, buffer);
 }
-EspHostedRespGetAPConfig *
-       esp_hosted_resp_get_apconfig__unpack
+CtrlMsgRespSetMacAddress *
+       ctrl_msg__resp__set_mac_address__unpack
                      (ProtobufCAllocator  *allocator,
                       size_t               len,
                       const uint8_t       *data)
 {
-  return (EspHostedRespGetAPConfig *)
-     protobuf_c_message_unpack (&esp_hosted_resp_get_apconfig__descriptor,
+  return (CtrlMsgRespSetMacAddress *)
+     protobuf_c_message_unpack (&ctrl_msg__resp__set_mac_address__descriptor,
                                 allocator, len, data);
 }
-void   esp_hosted_resp_get_apconfig__free_unpacked
-                     (EspHostedRespGetAPConfig *message,
+void   ctrl_msg__resp__set_mac_address__free_unpacked
+                     (CtrlMsgRespSetMacAddress *message,
                       ProtobufCAllocator *allocator)
 {
-  assert(message->base.descriptor == &esp_hosted_resp_get_apconfig__descriptor);
+  if(!message)
+    return;
+  assert(message->base.descriptor == &ctrl_msg__resp__set_mac_address__descriptor);
   protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
 }
-void   esp_hosted_cmd_set_apconfig__init
-                     (EspHostedCmdSetAPConfig         *message)
+void   ctrl_msg__req__get_apconfig__init
+                     (CtrlMsgReqGetAPConfig         *message)
 {
-  static EspHostedCmdSetAPConfig init_value = ESP_HOSTED_CMD_SET_APCONFIG__INIT;
+  static const CtrlMsgReqGetAPConfig init_value = CTRL_MSG__REQ__GET_APCONFIG__INIT;
   *message = init_value;
 }
-size_t esp_hosted_cmd_set_apconfig__get_packed_size
-                     (const EspHostedCmdSetAPConfig *message)
+size_t ctrl_msg__req__get_apconfig__get_packed_size
+                     (const CtrlMsgReqGetAPConfig *message)
 {
-  assert(message->base.descriptor == &esp_hosted_cmd_set_apconfig__descriptor);
+  assert(message->base.descriptor == &ctrl_msg__req__get_apconfig__descriptor);
   return protobuf_c_message_get_packed_size ((const ProtobufCMessage*)(message));
 }
-size_t esp_hosted_cmd_set_apconfig__pack
-                     (const EspHostedCmdSetAPConfig *message,
+size_t ctrl_msg__req__get_apconfig__pack
+                     (const CtrlMsgReqGetAPConfig *message,
                       uint8_t       *out)
 {
-  assert(message->base.descriptor == &esp_hosted_cmd_set_apconfig__descriptor);
+  assert(message->base.descriptor == &ctrl_msg__req__get_apconfig__descriptor);
   return protobuf_c_message_pack ((const ProtobufCMessage*)message, out);
 }
-size_t esp_hosted_cmd_set_apconfig__pack_to_buffer
-                     (const EspHostedCmdSetAPConfig *message,
+size_t ctrl_msg__req__get_apconfig__pack_to_buffer
+                     (const CtrlMsgReqGetAPConfig *message,
                       ProtobufCBuffer *buffer)
 {
-  assert(message->base.descriptor == &esp_hosted_cmd_set_apconfig__descriptor);
+  assert(message->base.descriptor == &ctrl_msg__req__get_apconfig__descriptor);
   return protobuf_c_message_pack_to_buffer ((const ProtobufCMessage*)message, buffer);
 }
-EspHostedCmdSetAPConfig *
-       esp_hosted_cmd_set_apconfig__unpack
+CtrlMsgReqGetAPConfig *
+       ctrl_msg__req__get_apconfig__unpack
                      (ProtobufCAllocator  *allocator,
                       size_t               len,
                       const uint8_t       *data)
 {
-  return (EspHostedCmdSetAPConfig *)
-     protobuf_c_message_unpack (&esp_hosted_cmd_set_apconfig__descriptor,
+  return (CtrlMsgReqGetAPConfig *)
+     protobuf_c_message_unpack (&ctrl_msg__req__get_apconfig__descriptor,
                                 allocator, len, data);
 }
-void   esp_hosted_cmd_set_apconfig__free_unpacked
-                     (EspHostedCmdSetAPConfig *message,
+void   ctrl_msg__req__get_apconfig__free_unpacked
+                     (CtrlMsgReqGetAPConfig *message,
                       ProtobufCAllocator *allocator)
 {
-  assert(message->base.descriptor == &esp_hosted_cmd_set_apconfig__descriptor);
+  if(!message)
+    return;
+  assert(message->base.descriptor == &ctrl_msg__req__get_apconfig__descriptor);
   protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
 }
-void   esp_hosted_resp_set_apconfig__init
-                     (EspHostedRespSetAPConfig         *message)
+void   ctrl_msg__resp__get_apconfig__init
+                     (CtrlMsgRespGetAPConfig         *message)
 {
-  static EspHostedRespSetAPConfig init_value = ESP_HOSTED_RESP_SET_APCONFIG__INIT;
+  static const CtrlMsgRespGetAPConfig init_value = CTRL_MSG__RESP__GET_APCONFIG__INIT;
   *message = init_value;
 }
-size_t esp_hosted_resp_set_apconfig__get_packed_size
-                     (const EspHostedRespSetAPConfig *message)
+size_t ctrl_msg__resp__get_apconfig__get_packed_size
+                     (const CtrlMsgRespGetAPConfig *message)
 {
-  assert(message->base.descriptor == &esp_hosted_resp_set_apconfig__descriptor);
+  assert(message->base.descriptor == &ctrl_msg__resp__get_apconfig__descriptor);
   return protobuf_c_message_get_packed_size ((const ProtobufCMessage*)(message));
 }
-size_t esp_hosted_resp_set_apconfig__pack
-                     (const EspHostedRespSetAPConfig *message,
+size_t ctrl_msg__resp__get_apconfig__pack
+                     (const CtrlMsgRespGetAPConfig *message,
                       uint8_t       *out)
 {
-  assert(message->base.descriptor == &esp_hosted_resp_set_apconfig__descriptor);
+  assert(message->base.descriptor == &ctrl_msg__resp__get_apconfig__descriptor);
   return protobuf_c_message_pack ((const ProtobufCMessage*)message, out);
 }
-size_t esp_hosted_resp_set_apconfig__pack_to_buffer
-                     (const EspHostedRespSetAPConfig *message,
+size_t ctrl_msg__resp__get_apconfig__pack_to_buffer
+                     (const CtrlMsgRespGetAPConfig *message,
                       ProtobufCBuffer *buffer)
 {
-  assert(message->base.descriptor == &esp_hosted_resp_set_apconfig__descriptor);
+  assert(message->base.descriptor == &ctrl_msg__resp__get_apconfig__descriptor);
   return protobuf_c_message_pack_to_buffer ((const ProtobufCMessage*)message, buffer);
 }
-EspHostedRespSetAPConfig *
-       esp_hosted_resp_set_apconfig__unpack
+CtrlMsgRespGetAPConfig *
+       ctrl_msg__resp__get_apconfig__unpack
                      (ProtobufCAllocator  *allocator,
                       size_t               len,
                       const uint8_t       *data)
 {
-  return (EspHostedRespSetAPConfig *)
-     protobuf_c_message_unpack (&esp_hosted_resp_set_apconfig__descriptor,
+  return (CtrlMsgRespGetAPConfig *)
+     protobuf_c_message_unpack (&ctrl_msg__resp__get_apconfig__descriptor,
                                 allocator, len, data);
 }
-void   esp_hosted_resp_set_apconfig__free_unpacked
-                     (EspHostedRespSetAPConfig *message,
+void   ctrl_msg__resp__get_apconfig__free_unpacked
+                     (CtrlMsgRespGetAPConfig *message,
                       ProtobufCAllocator *allocator)
 {
-  assert(message->base.descriptor == &esp_hosted_resp_set_apconfig__descriptor);
+  if(!message)
+    return;
+  assert(message->base.descriptor == &ctrl_msg__resp__get_apconfig__descriptor);
   protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
 }
-void   esp_hosted_cmd_get_soft_apconfig__init
-                     (EspHostedCmdGetSoftAPConfig         *message)
+void   ctrl_msg__req__connect_ap__init
+                     (CtrlMsgReqConnectAP         *message)
 {
-  static EspHostedCmdGetSoftAPConfig init_value = ESP_HOSTED_CMD_GET_SOFT_APCONFIG__INIT;
+  static const CtrlMsgReqConnectAP init_value = CTRL_MSG__REQ__CONNECT_AP__INIT;
   *message = init_value;
 }
-size_t esp_hosted_cmd_get_soft_apconfig__get_packed_size
-                     (const EspHostedCmdGetSoftAPConfig *message)
+size_t ctrl_msg__req__connect_ap__get_packed_size
+                     (const CtrlMsgReqConnectAP *message)
 {
-  assert(message->base.descriptor == &esp_hosted_cmd_get_soft_apconfig__descriptor);
+  assert(message->base.descriptor == &ctrl_msg__req__connect_ap__descriptor);
   return protobuf_c_message_get_packed_size ((const ProtobufCMessage*)(message));
 }
-size_t esp_hosted_cmd_get_soft_apconfig__pack
-                     (const EspHostedCmdGetSoftAPConfig *message,
+size_t ctrl_msg__req__connect_ap__pack
+                     (const CtrlMsgReqConnectAP *message,
                       uint8_t       *out)
 {
-  assert(message->base.descriptor == &esp_hosted_cmd_get_soft_apconfig__descriptor);
+  assert(message->base.descriptor == &ctrl_msg__req__connect_ap__descriptor);
   return protobuf_c_message_pack ((const ProtobufCMessage*)message, out);
 }
-size_t esp_hosted_cmd_get_soft_apconfig__pack_to_buffer
-                     (const EspHostedCmdGetSoftAPConfig *message,
+size_t ctrl_msg__req__connect_ap__pack_to_buffer
+                     (const CtrlMsgReqConnectAP *message,
                       ProtobufCBuffer *buffer)
 {
-  assert(message->base.descriptor == &esp_hosted_cmd_get_soft_apconfig__descriptor);
+  assert(message->base.descriptor == &ctrl_msg__req__connect_ap__descriptor);
   return protobuf_c_message_pack_to_buffer ((const ProtobufCMessage*)message, buffer);
 }
-EspHostedCmdGetSoftAPConfig *
-       esp_hosted_cmd_get_soft_apconfig__unpack
+CtrlMsgReqConnectAP *
+       ctrl_msg__req__connect_ap__unpack
                      (ProtobufCAllocator  *allocator,
                       size_t               len,
                       const uint8_t       *data)
 {
-  return (EspHostedCmdGetSoftAPConfig *)
-     protobuf_c_message_unpack (&esp_hosted_cmd_get_soft_apconfig__descriptor,
+  return (CtrlMsgReqConnectAP *)
+     protobuf_c_message_unpack (&ctrl_msg__req__connect_ap__descriptor,
                                 allocator, len, data);
 }
-void   esp_hosted_cmd_get_soft_apconfig__free_unpacked
-                     (EspHostedCmdGetSoftAPConfig *message,
+void   ctrl_msg__req__connect_ap__free_unpacked
+                     (CtrlMsgReqConnectAP *message,
                       ProtobufCAllocator *allocator)
 {
-  assert(message->base.descriptor == &esp_hosted_cmd_get_soft_apconfig__descriptor);
+  if(!message)
+    return;
+  assert(message->base.descriptor == &ctrl_msg__req__connect_ap__descriptor);
   protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
 }
-void   esp_hosted_resp_get_soft_apconfig__init
-                     (EspHostedRespGetSoftAPConfig         *message)
+void   ctrl_msg__resp__connect_ap__init
+                     (CtrlMsgRespConnectAP         *message)
 {
-  static EspHostedRespGetSoftAPConfig init_value = ESP_HOSTED_RESP_GET_SOFT_APCONFIG__INIT;
+  static const CtrlMsgRespConnectAP init_value = CTRL_MSG__RESP__CONNECT_AP__INIT;
   *message = init_value;
 }
-size_t esp_hosted_resp_get_soft_apconfig__get_packed_size
-                     (const EspHostedRespGetSoftAPConfig *message)
+size_t ctrl_msg__resp__connect_ap__get_packed_size
+                     (const CtrlMsgRespConnectAP *message)
 {
-  assert(message->base.descriptor == &esp_hosted_resp_get_soft_apconfig__descriptor);
+  assert(message->base.descriptor == &ctrl_msg__resp__connect_ap__descriptor);
   return protobuf_c_message_get_packed_size ((const ProtobufCMessage*)(message));
 }
-size_t esp_hosted_resp_get_soft_apconfig__pack
-                     (const EspHostedRespGetSoftAPConfig *message,
+size_t ctrl_msg__resp__connect_ap__pack
+                     (const CtrlMsgRespConnectAP *message,
                       uint8_t       *out)
 {
-  assert(message->base.descriptor == &esp_hosted_resp_get_soft_apconfig__descriptor);
+  assert(message->base.descriptor == &ctrl_msg__resp__connect_ap__descriptor);
   return protobuf_c_message_pack ((const ProtobufCMessage*)message, out);
 }
-size_t esp_hosted_resp_get_soft_apconfig__pack_to_buffer
-                     (const EspHostedRespGetSoftAPConfig *message,
+size_t ctrl_msg__resp__connect_ap__pack_to_buffer
+                     (const CtrlMsgRespConnectAP *message,
                       ProtobufCBuffer *buffer)
 {
-  assert(message->base.descriptor == &esp_hosted_resp_get_soft_apconfig__descriptor);
+  assert(message->base.descriptor == &ctrl_msg__resp__connect_ap__descriptor);
   return protobuf_c_message_pack_to_buffer ((const ProtobufCMessage*)message, buffer);
 }
-EspHostedRespGetSoftAPConfig *
-       esp_hosted_resp_get_soft_apconfig__unpack
+CtrlMsgRespConnectAP *
+       ctrl_msg__resp__connect_ap__unpack
                      (ProtobufCAllocator  *allocator,
                       size_t               len,
                       const uint8_t       *data)
 {
-  return (EspHostedRespGetSoftAPConfig *)
-     protobuf_c_message_unpack (&esp_hosted_resp_get_soft_apconfig__descriptor,
+  return (CtrlMsgRespConnectAP *)
+     protobuf_c_message_unpack (&ctrl_msg__resp__connect_ap__descriptor,
                                 allocator, len, data);
 }
-void   esp_hosted_resp_get_soft_apconfig__free_unpacked
-                     (EspHostedRespGetSoftAPConfig *message,
+void   ctrl_msg__resp__connect_ap__free_unpacked
+                     (CtrlMsgRespConnectAP *message,
                       ProtobufCAllocator *allocator)
 {
-  assert(message->base.descriptor == &esp_hosted_resp_get_soft_apconfig__descriptor);
+  if(!message)
+    return;
+  assert(message->base.descriptor == &ctrl_msg__resp__connect_ap__descriptor);
   protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
 }
-void   esp_hosted_cmd_set_soft_apconfig__init
-                     (EspHostedCmdSetSoftAPConfig         *message)
+void   ctrl_msg__req__get_soft_apconfig__init
+                     (CtrlMsgReqGetSoftAPConfig         *message)
 {
-  static EspHostedCmdSetSoftAPConfig init_value = ESP_HOSTED_CMD_SET_SOFT_APCONFIG__INIT;
+  static const CtrlMsgReqGetSoftAPConfig init_value = CTRL_MSG__REQ__GET_SOFT_APCONFIG__INIT;
   *message = init_value;
 }
-size_t esp_hosted_cmd_set_soft_apconfig__get_packed_size
-                     (const EspHostedCmdSetSoftAPConfig *message)
+size_t ctrl_msg__req__get_soft_apconfig__get_packed_size
+                     (const CtrlMsgReqGetSoftAPConfig *message)
 {
-  assert(message->base.descriptor == &esp_hosted_cmd_set_soft_apconfig__descriptor);
+  assert(message->base.descriptor == &ctrl_msg__req__get_soft_apconfig__descriptor);
   return protobuf_c_message_get_packed_size ((const ProtobufCMessage*)(message));
 }
-size_t esp_hosted_cmd_set_soft_apconfig__pack
-                     (const EspHostedCmdSetSoftAPConfig *message,
+size_t ctrl_msg__req__get_soft_apconfig__pack
+                     (const CtrlMsgReqGetSoftAPConfig *message,
                       uint8_t       *out)
 {
-  assert(message->base.descriptor == &esp_hosted_cmd_set_soft_apconfig__descriptor);
+  assert(message->base.descriptor == &ctrl_msg__req__get_soft_apconfig__descriptor);
   return protobuf_c_message_pack ((const ProtobufCMessage*)message, out);
 }
-size_t esp_hosted_cmd_set_soft_apconfig__pack_to_buffer
-                     (const EspHostedCmdSetSoftAPConfig *message,
+size_t ctrl_msg__req__get_soft_apconfig__pack_to_buffer
+                     (const CtrlMsgReqGetSoftAPConfig *message,
                       ProtobufCBuffer *buffer)
 {
-  assert(message->base.descriptor == &esp_hosted_cmd_set_soft_apconfig__descriptor);
+  assert(message->base.descriptor == &ctrl_msg__req__get_soft_apconfig__descriptor);
   return protobuf_c_message_pack_to_buffer ((const ProtobufCMessage*)message, buffer);
 }
-EspHostedCmdSetSoftAPConfig *
-       esp_hosted_cmd_set_soft_apconfig__unpack
+CtrlMsgReqGetSoftAPConfig *
+       ctrl_msg__req__get_soft_apconfig__unpack
                      (ProtobufCAllocator  *allocator,
                       size_t               len,
                       const uint8_t       *data)
 {
-  return (EspHostedCmdSetSoftAPConfig *)
-     protobuf_c_message_unpack (&esp_hosted_cmd_set_soft_apconfig__descriptor,
+  return (CtrlMsgReqGetSoftAPConfig *)
+     protobuf_c_message_unpack (&ctrl_msg__req__get_soft_apconfig__descriptor,
                                 allocator, len, data);
 }
-void   esp_hosted_cmd_set_soft_apconfig__free_unpacked
-                     (EspHostedCmdSetSoftAPConfig *message,
+void   ctrl_msg__req__get_soft_apconfig__free_unpacked
+                     (CtrlMsgReqGetSoftAPConfig *message,
                       ProtobufCAllocator *allocator)
 {
-  assert(message->base.descriptor == &esp_hosted_cmd_set_soft_apconfig__descriptor);
+  if(!message)
+    return;
+  assert(message->base.descriptor == &ctrl_msg__req__get_soft_apconfig__descriptor);
   protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
 }
-void   esp_hosted_resp_set_soft_apconfig__init
-                     (EspHostedRespSetSoftAPConfig         *message)
+void   ctrl_msg__resp__get_soft_apconfig__init
+                     (CtrlMsgRespGetSoftAPConfig         *message)
 {
-  static EspHostedRespSetSoftAPConfig init_value = ESP_HOSTED_RESP_SET_SOFT_APCONFIG__INIT;
+  static const CtrlMsgRespGetSoftAPConfig init_value = CTRL_MSG__RESP__GET_SOFT_APCONFIG__INIT;
   *message = init_value;
 }
-size_t esp_hosted_resp_set_soft_apconfig__get_packed_size
-                     (const EspHostedRespSetSoftAPConfig *message)
+size_t ctrl_msg__resp__get_soft_apconfig__get_packed_size
+                     (const CtrlMsgRespGetSoftAPConfig *message)
 {
-  assert(message->base.descriptor == &esp_hosted_resp_set_soft_apconfig__descriptor);
+  assert(message->base.descriptor == &ctrl_msg__resp__get_soft_apconfig__descriptor);
   return protobuf_c_message_get_packed_size ((const ProtobufCMessage*)(message));
 }
-size_t esp_hosted_resp_set_soft_apconfig__pack
-                     (const EspHostedRespSetSoftAPConfig *message,
+size_t ctrl_msg__resp__get_soft_apconfig__pack
+                     (const CtrlMsgRespGetSoftAPConfig *message,
                       uint8_t       *out)
 {
-  assert(message->base.descriptor == &esp_hosted_resp_set_soft_apconfig__descriptor);
+  assert(message->base.descriptor == &ctrl_msg__resp__get_soft_apconfig__descriptor);
   return protobuf_c_message_pack ((const ProtobufCMessage*)message, out);
 }
-size_t esp_hosted_resp_set_soft_apconfig__pack_to_buffer
-                     (const EspHostedRespSetSoftAPConfig *message,
+size_t ctrl_msg__resp__get_soft_apconfig__pack_to_buffer
+                     (const CtrlMsgRespGetSoftAPConfig *message,
                       ProtobufCBuffer *buffer)
 {
-  assert(message->base.descriptor == &esp_hosted_resp_set_soft_apconfig__descriptor);
+  assert(message->base.descriptor == &ctrl_msg__resp__get_soft_apconfig__descriptor);
   return protobuf_c_message_pack_to_buffer ((const ProtobufCMessage*)message, buffer);
 }
-EspHostedRespSetSoftAPConfig *
-       esp_hosted_resp_set_soft_apconfig__unpack
+CtrlMsgRespGetSoftAPConfig *
+       ctrl_msg__resp__get_soft_apconfig__unpack
                      (ProtobufCAllocator  *allocator,
                       size_t               len,
                       const uint8_t       *data)
 {
-  return (EspHostedRespSetSoftAPConfig *)
-     protobuf_c_message_unpack (&esp_hosted_resp_set_soft_apconfig__descriptor,
+  return (CtrlMsgRespGetSoftAPConfig *)
+     protobuf_c_message_unpack (&ctrl_msg__resp__get_soft_apconfig__descriptor,
                                 allocator, len, data);
 }
-void   esp_hosted_resp_set_soft_apconfig__free_unpacked
-                     (EspHostedRespSetSoftAPConfig *message,
+void   ctrl_msg__resp__get_soft_apconfig__free_unpacked
+                     (CtrlMsgRespGetSoftAPConfig *message,
                       ProtobufCAllocator *allocator)
 {
-  assert(message->base.descriptor == &esp_hosted_resp_set_soft_apconfig__descriptor);
+  if(!message)
+    return;
+  assert(message->base.descriptor == &ctrl_msg__resp__get_soft_apconfig__descriptor);
   protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
 }
-void   esp_hosted_scan_result__init
-                     (EspHostedScanResult         *message)
+void   ctrl_msg__req__start_soft_ap__init
+                     (CtrlMsgReqStartSoftAP         *message)
 {
-  static EspHostedScanResult init_value = ESP_HOSTED_SCAN_RESULT__INIT;
+  static const CtrlMsgReqStartSoftAP init_value = CTRL_MSG__REQ__START_SOFT_AP__INIT;
   *message = init_value;
 }
-size_t esp_hosted_scan_result__get_packed_size
-                     (const EspHostedScanResult *message)
+size_t ctrl_msg__req__start_soft_ap__get_packed_size
+                     (const CtrlMsgReqStartSoftAP *message)
 {
-  assert(message->base.descriptor == &esp_hosted_scan_result__descriptor);
+  assert(message->base.descriptor == &ctrl_msg__req__start_soft_ap__descriptor);
   return protobuf_c_message_get_packed_size ((const ProtobufCMessage*)(message));
 }
-size_t esp_hosted_scan_result__pack
-                     (const EspHostedScanResult *message,
+size_t ctrl_msg__req__start_soft_ap__pack
+                     (const CtrlMsgReqStartSoftAP *message,
                       uint8_t       *out)
 {
-  assert(message->base.descriptor == &esp_hosted_scan_result__descriptor);
+  assert(message->base.descriptor == &ctrl_msg__req__start_soft_ap__descriptor);
   return protobuf_c_message_pack ((const ProtobufCMessage*)message, out);
 }
-size_t esp_hosted_scan_result__pack_to_buffer
-                     (const EspHostedScanResult *message,
+size_t ctrl_msg__req__start_soft_ap__pack_to_buffer
+                     (const CtrlMsgReqStartSoftAP *message,
                       ProtobufCBuffer *buffer)
 {
-  assert(message->base.descriptor == &esp_hosted_scan_result__descriptor);
+  assert(message->base.descriptor == &ctrl_msg__req__start_soft_ap__descriptor);
   return protobuf_c_message_pack_to_buffer ((const ProtobufCMessage*)message, buffer);
 }
-EspHostedScanResult *
-       esp_hosted_scan_result__unpack
+CtrlMsgReqStartSoftAP *
+       ctrl_msg__req__start_soft_ap__unpack
                      (ProtobufCAllocator  *allocator,
                       size_t               len,
                       const uint8_t       *data)
 {
-  return (EspHostedScanResult *)
-     protobuf_c_message_unpack (&esp_hosted_scan_result__descriptor,
+  return (CtrlMsgReqStartSoftAP *)
+     protobuf_c_message_unpack (&ctrl_msg__req__start_soft_ap__descriptor,
                                 allocator, len, data);
 }
-void   esp_hosted_scan_result__free_unpacked
-                     (EspHostedScanResult *message,
+void   ctrl_msg__req__start_soft_ap__free_unpacked
+                     (CtrlMsgReqStartSoftAP *message,
                       ProtobufCAllocator *allocator)
 {
-  assert(message->base.descriptor == &esp_hosted_scan_result__descriptor);
+  if(!message)
+    return;
+  assert(message->base.descriptor == &ctrl_msg__req__start_soft_ap__descriptor);
   protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
 }
-void   esp_hosted_cmd_scan_result__init
-                     (EspHostedCmdScanResult         *message)
+void   ctrl_msg__resp__start_soft_ap__init
+                     (CtrlMsgRespStartSoftAP         *message)
 {
-  static EspHostedCmdScanResult init_value = ESP_HOSTED_CMD_SCAN_RESULT__INIT;
+  static const CtrlMsgRespStartSoftAP init_value = CTRL_MSG__RESP__START_SOFT_AP__INIT;
   *message = init_value;
 }
-size_t esp_hosted_cmd_scan_result__get_packed_size
-                     (const EspHostedCmdScanResult *message)
+size_t ctrl_msg__resp__start_soft_ap__get_packed_size
+                     (const CtrlMsgRespStartSoftAP *message)
 {
-  assert(message->base.descriptor == &esp_hosted_cmd_scan_result__descriptor);
+  assert(message->base.descriptor == &ctrl_msg__resp__start_soft_ap__descriptor);
   return protobuf_c_message_get_packed_size ((const ProtobufCMessage*)(message));
 }
-size_t esp_hosted_cmd_scan_result__pack
-                     (const EspHostedCmdScanResult *message,
+size_t ctrl_msg__resp__start_soft_ap__pack
+                     (const CtrlMsgRespStartSoftAP *message,
                       uint8_t       *out)
 {
-  assert(message->base.descriptor == &esp_hosted_cmd_scan_result__descriptor);
+  assert(message->base.descriptor == &ctrl_msg__resp__start_soft_ap__descriptor);
   return protobuf_c_message_pack ((const ProtobufCMessage*)message, out);
 }
-size_t esp_hosted_cmd_scan_result__pack_to_buffer
-                     (const EspHostedCmdScanResult *message,
+size_t ctrl_msg__resp__start_soft_ap__pack_to_buffer
+                     (const CtrlMsgRespStartSoftAP *message,
                       ProtobufCBuffer *buffer)
 {
-  assert(message->base.descriptor == &esp_hosted_cmd_scan_result__descriptor);
+  assert(message->base.descriptor == &ctrl_msg__resp__start_soft_ap__descriptor);
   return protobuf_c_message_pack_to_buffer ((const ProtobufCMessage*)message, buffer);
 }
-EspHostedCmdScanResult *
-       esp_hosted_cmd_scan_result__unpack
+CtrlMsgRespStartSoftAP *
+       ctrl_msg__resp__start_soft_ap__unpack
                      (ProtobufCAllocator  *allocator,
                       size_t               len,
                       const uint8_t       *data)
 {
-  return (EspHostedCmdScanResult *)
-     protobuf_c_message_unpack (&esp_hosted_cmd_scan_result__descriptor,
+  return (CtrlMsgRespStartSoftAP *)
+     protobuf_c_message_unpack (&ctrl_msg__resp__start_soft_ap__descriptor,
                                 allocator, len, data);
 }
-void   esp_hosted_cmd_scan_result__free_unpacked
-                     (EspHostedCmdScanResult *message,
+void   ctrl_msg__resp__start_soft_ap__free_unpacked
+                     (CtrlMsgRespStartSoftAP *message,
                       ProtobufCAllocator *allocator)
 {
-  assert(message->base.descriptor == &esp_hosted_cmd_scan_result__descriptor);
+  if(!message)
+    return;
+  assert(message->base.descriptor == &ctrl_msg__resp__start_soft_ap__descriptor);
   protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
 }
-void   esp_hosted_resp_scan_result__init
-                     (EspHostedRespScanResult         *message)
+void   ctrl_msg__req__scan_result__init
+                     (CtrlMsgReqScanResult         *message)
 {
-  static EspHostedRespScanResult init_value = ESP_HOSTED_RESP_SCAN_RESULT__INIT;
+  static const CtrlMsgReqScanResult init_value = CTRL_MSG__REQ__SCAN_RESULT__INIT;
   *message = init_value;
 }
-size_t esp_hosted_resp_scan_result__get_packed_size
-                     (const EspHostedRespScanResult *message)
+size_t ctrl_msg__req__scan_result__get_packed_size
+                     (const CtrlMsgReqScanResult *message)
 {
-  assert(message->base.descriptor == &esp_hosted_resp_scan_result__descriptor);
+  assert(message->base.descriptor == &ctrl_msg__req__scan_result__descriptor);
   return protobuf_c_message_get_packed_size ((const ProtobufCMessage*)(message));
 }
-size_t esp_hosted_resp_scan_result__pack
-                     (const EspHostedRespScanResult *message,
+size_t ctrl_msg__req__scan_result__pack
+                     (const CtrlMsgReqScanResult *message,
                       uint8_t       *out)
 {
-  assert(message->base.descriptor == &esp_hosted_resp_scan_result__descriptor);
+  assert(message->base.descriptor == &ctrl_msg__req__scan_result__descriptor);
   return protobuf_c_message_pack ((const ProtobufCMessage*)message, out);
 }
-size_t esp_hosted_resp_scan_result__pack_to_buffer
-                     (const EspHostedRespScanResult *message,
+size_t ctrl_msg__req__scan_result__pack_to_buffer
+                     (const CtrlMsgReqScanResult *message,
                       ProtobufCBuffer *buffer)
 {
-  assert(message->base.descriptor == &esp_hosted_resp_scan_result__descriptor);
+  assert(message->base.descriptor == &ctrl_msg__req__scan_result__descriptor);
   return protobuf_c_message_pack_to_buffer ((const ProtobufCMessage*)message, buffer);
 }
-EspHostedRespScanResult *
-       esp_hosted_resp_scan_result__unpack
+CtrlMsgReqScanResult *
+       ctrl_msg__req__scan_result__unpack
                      (ProtobufCAllocator  *allocator,
                       size_t               len,
                       const uint8_t       *data)
 {
-  return (EspHostedRespScanResult *)
-     protobuf_c_message_unpack (&esp_hosted_resp_scan_result__descriptor,
+  return (CtrlMsgReqScanResult *)
+     protobuf_c_message_unpack (&ctrl_msg__req__scan_result__descriptor,
                                 allocator, len, data);
 }
-void   esp_hosted_resp_scan_result__free_unpacked
-                     (EspHostedRespScanResult *message,
+void   ctrl_msg__req__scan_result__free_unpacked
+                     (CtrlMsgReqScanResult *message,
                       ProtobufCAllocator *allocator)
 {
-  assert(message->base.descriptor == &esp_hosted_resp_scan_result__descriptor);
+  if(!message)
+    return;
+  assert(message->base.descriptor == &ctrl_msg__req__scan_result__descriptor);
   protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
 }
-void   esp_hosted_connected_stalist__init
-                     (EspHostedConnectedSTAList         *message)
+void   ctrl_msg__resp__scan_result__init
+                     (CtrlMsgRespScanResult         *message)
 {
-  static EspHostedConnectedSTAList init_value = ESP_HOSTED_CONNECTED_STALIST__INIT;
+  static const CtrlMsgRespScanResult init_value = CTRL_MSG__RESP__SCAN_RESULT__INIT;
   *message = init_value;
 }
-size_t esp_hosted_connected_stalist__get_packed_size
-                     (const EspHostedConnectedSTAList *message)
+size_t ctrl_msg__resp__scan_result__get_packed_size
+                     (const CtrlMsgRespScanResult *message)
 {
-  assert(message->base.descriptor == &esp_hosted_connected_stalist__descriptor);
+  assert(message->base.descriptor == &ctrl_msg__resp__scan_result__descriptor);
   return protobuf_c_message_get_packed_size ((const ProtobufCMessage*)(message));
 }
-size_t esp_hosted_connected_stalist__pack
-                     (const EspHostedConnectedSTAList *message,
+size_t ctrl_msg__resp__scan_result__pack
+                     (const CtrlMsgRespScanResult *message,
                       uint8_t       *out)
 {
-  assert(message->base.descriptor == &esp_hosted_connected_stalist__descriptor);
+  assert(message->base.descriptor == &ctrl_msg__resp__scan_result__descriptor);
   return protobuf_c_message_pack ((const ProtobufCMessage*)message, out);
 }
-size_t esp_hosted_connected_stalist__pack_to_buffer
-                     (const EspHostedConnectedSTAList *message,
+size_t ctrl_msg__resp__scan_result__pack_to_buffer
+                     (const CtrlMsgRespScanResult *message,
                       ProtobufCBuffer *buffer)
 {
-  assert(message->base.descriptor == &esp_hosted_connected_stalist__descriptor);
+  assert(message->base.descriptor == &ctrl_msg__resp__scan_result__descriptor);
   return protobuf_c_message_pack_to_buffer ((const ProtobufCMessage*)message, buffer);
 }
-EspHostedConnectedSTAList *
-       esp_hosted_connected_stalist__unpack
+CtrlMsgRespScanResult *
+       ctrl_msg__resp__scan_result__unpack
                      (ProtobufCAllocator  *allocator,
                       size_t               len,
                       const uint8_t       *data)
 {
-  return (EspHostedConnectedSTAList *)
-     protobuf_c_message_unpack (&esp_hosted_connected_stalist__descriptor,
+  return (CtrlMsgRespScanResult *)
+     protobuf_c_message_unpack (&ctrl_msg__resp__scan_result__descriptor,
                                 allocator, len, data);
 }
-void   esp_hosted_connected_stalist__free_unpacked
-                     (EspHostedConnectedSTAList *message,
+void   ctrl_msg__resp__scan_result__free_unpacked
+                     (CtrlMsgRespScanResult *message,
                       ProtobufCAllocator *allocator)
 {
-  assert(message->base.descriptor == &esp_hosted_connected_stalist__descriptor);
+  if(!message)
+    return;
+  assert(message->base.descriptor == &ctrl_msg__resp__scan_result__descriptor);
   protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
 }
-void   esp_hosted_cmd_connected_sta__init
-                     (EspHostedCmdConnectedSTA         *message)
+void   ctrl_msg__req__soft_apconnected_sta__init
+                     (CtrlMsgReqSoftAPConnectedSTA         *message)
 {
-  static EspHostedCmdConnectedSTA init_value = ESP_HOSTED_CMD_CONNECTED_STA__INIT;
+  static const CtrlMsgReqSoftAPConnectedSTA init_value = CTRL_MSG__REQ__SOFT_APCONNECTED_STA__INIT;
   *message = init_value;
 }
-size_t esp_hosted_cmd_connected_sta__get_packed_size
-                     (const EspHostedCmdConnectedSTA *message)
+size_t ctrl_msg__req__soft_apconnected_sta__get_packed_size
+                     (const CtrlMsgReqSoftAPConnectedSTA *message)
 {
-  assert(message->base.descriptor == &esp_hosted_cmd_connected_sta__descriptor);
+  assert(message->base.descriptor == &ctrl_msg__req__soft_apconnected_sta__descriptor);
   return protobuf_c_message_get_packed_size ((const ProtobufCMessage*)(message));
 }
-size_t esp_hosted_cmd_connected_sta__pack
-                     (const EspHostedCmdConnectedSTA *message,
+size_t ctrl_msg__req__soft_apconnected_sta__pack
+                     (const CtrlMsgReqSoftAPConnectedSTA *message,
                       uint8_t       *out)
 {
-  assert(message->base.descriptor == &esp_hosted_cmd_connected_sta__descriptor);
+  assert(message->base.descriptor == &ctrl_msg__req__soft_apconnected_sta__descriptor);
   return protobuf_c_message_pack ((const ProtobufCMessage*)message, out);
 }
-size_t esp_hosted_cmd_connected_sta__pack_to_buffer
-                     (const EspHostedCmdConnectedSTA *message,
+size_t ctrl_msg__req__soft_apconnected_sta__pack_to_buffer
+                     (const CtrlMsgReqSoftAPConnectedSTA *message,
                       ProtobufCBuffer *buffer)
 {
-  assert(message->base.descriptor == &esp_hosted_cmd_connected_sta__descriptor);
+  assert(message->base.descriptor == &ctrl_msg__req__soft_apconnected_sta__descriptor);
   return protobuf_c_message_pack_to_buffer ((const ProtobufCMessage*)message, buffer);
 }
-EspHostedCmdConnectedSTA *
-       esp_hosted_cmd_connected_sta__unpack
+CtrlMsgReqSoftAPConnectedSTA *
+       ctrl_msg__req__soft_apconnected_sta__unpack
                      (ProtobufCAllocator  *allocator,
                       size_t               len,
                       const uint8_t       *data)
 {
-  return (EspHostedCmdConnectedSTA *)
-     protobuf_c_message_unpack (&esp_hosted_cmd_connected_sta__descriptor,
+  return (CtrlMsgReqSoftAPConnectedSTA *)
+     protobuf_c_message_unpack (&ctrl_msg__req__soft_apconnected_sta__descriptor,
                                 allocator, len, data);
 }
-void   esp_hosted_cmd_connected_sta__free_unpacked
-                     (EspHostedCmdConnectedSTA *message,
+void   ctrl_msg__req__soft_apconnected_sta__free_unpacked
+                     (CtrlMsgReqSoftAPConnectedSTA *message,
                       ProtobufCAllocator *allocator)
 {
-  assert(message->base.descriptor == &esp_hosted_cmd_connected_sta__descriptor);
+  if(!message)
+    return;
+  assert(message->base.descriptor == &ctrl_msg__req__soft_apconnected_sta__descriptor);
   protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
 }
-void   esp_hosted_resp_connected_sta__init
-                     (EspHostedRespConnectedSTA         *message)
+void   ctrl_msg__resp__soft_apconnected_sta__init
+                     (CtrlMsgRespSoftAPConnectedSTA         *message)
 {
-  static EspHostedRespConnectedSTA init_value = ESP_HOSTED_RESP_CONNECTED_STA__INIT;
+  static const CtrlMsgRespSoftAPConnectedSTA init_value = CTRL_MSG__RESP__SOFT_APCONNECTED_STA__INIT;
   *message = init_value;
 }
-size_t esp_hosted_resp_connected_sta__get_packed_size
-                     (const EspHostedRespConnectedSTA *message)
+size_t ctrl_msg__resp__soft_apconnected_sta__get_packed_size
+                     (const CtrlMsgRespSoftAPConnectedSTA *message)
 {
-  assert(message->base.descriptor == &esp_hosted_resp_connected_sta__descriptor);
+  assert(message->base.descriptor == &ctrl_msg__resp__soft_apconnected_sta__descriptor);
   return protobuf_c_message_get_packed_size ((const ProtobufCMessage*)(message));
 }
-size_t esp_hosted_resp_connected_sta__pack
-                     (const EspHostedRespConnectedSTA *message,
+size_t ctrl_msg__resp__soft_apconnected_sta__pack
+                     (const CtrlMsgRespSoftAPConnectedSTA *message,
                       uint8_t       *out)
 {
-  assert(message->base.descriptor == &esp_hosted_resp_connected_sta__descriptor);
+  assert(message->base.descriptor == &ctrl_msg__resp__soft_apconnected_sta__descriptor);
   return protobuf_c_message_pack ((const ProtobufCMessage*)message, out);
 }
-size_t esp_hosted_resp_connected_sta__pack_to_buffer
-                     (const EspHostedRespConnectedSTA *message,
+size_t ctrl_msg__resp__soft_apconnected_sta__pack_to_buffer
+                     (const CtrlMsgRespSoftAPConnectedSTA *message,
                       ProtobufCBuffer *buffer)
 {
-  assert(message->base.descriptor == &esp_hosted_resp_connected_sta__descriptor);
+  assert(message->base.descriptor == &ctrl_msg__resp__soft_apconnected_sta__descriptor);
   return protobuf_c_message_pack_to_buffer ((const ProtobufCMessage*)message, buffer);
 }
-EspHostedRespConnectedSTA *
-       esp_hosted_resp_connected_sta__unpack
+CtrlMsgRespSoftAPConnectedSTA *
+       ctrl_msg__resp__soft_apconnected_sta__unpack
                      (ProtobufCAllocator  *allocator,
                       size_t               len,
                       const uint8_t       *data)
 {
-  return (EspHostedRespConnectedSTA *)
-     protobuf_c_message_unpack (&esp_hosted_resp_connected_sta__descriptor,
+  return (CtrlMsgRespSoftAPConnectedSTA *)
+     protobuf_c_message_unpack (&ctrl_msg__resp__soft_apconnected_sta__descriptor,
                                 allocator, len, data);
 }
-void   esp_hosted_resp_connected_sta__free_unpacked
-                     (EspHostedRespConnectedSTA *message,
+void   ctrl_msg__resp__soft_apconnected_sta__free_unpacked
+                     (CtrlMsgRespSoftAPConnectedSTA *message,
                       ProtobufCAllocator *allocator)
 {
-  assert(message->base.descriptor == &esp_hosted_resp_connected_sta__descriptor);
+  if(!message)
+    return;
+  assert(message->base.descriptor == &ctrl_msg__resp__soft_apconnected_sta__descriptor);
   protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
 }
-void   esp_hosted_cmd_otabegin__init
-                     (EspHostedCmdOTABegin         *message)
+void   ctrl_msg__req__otabegin__init
+                     (CtrlMsgReqOTABegin         *message)
 {
-  static EspHostedCmdOTABegin init_value = ESP_HOSTED_CMD_OTABEGIN__INIT;
+  static const CtrlMsgReqOTABegin init_value = CTRL_MSG__REQ__OTABEGIN__INIT;
   *message = init_value;
 }
-size_t esp_hosted_cmd_otabegin__get_packed_size
-                     (const EspHostedCmdOTABegin *message)
+size_t ctrl_msg__req__otabegin__get_packed_size
+                     (const CtrlMsgReqOTABegin *message)
 {
-  assert(message->base.descriptor == &esp_hosted_cmd_otabegin__descriptor);
+  assert(message->base.descriptor == &ctrl_msg__req__otabegin__descriptor);
   return protobuf_c_message_get_packed_size ((const ProtobufCMessage*)(message));
 }
-size_t esp_hosted_cmd_otabegin__pack
-                     (const EspHostedCmdOTABegin *message,
+size_t ctrl_msg__req__otabegin__pack
+                     (const CtrlMsgReqOTABegin *message,
                       uint8_t       *out)
 {
-  assert(message->base.descriptor == &esp_hosted_cmd_otabegin__descriptor);
+  assert(message->base.descriptor == &ctrl_msg__req__otabegin__descriptor);
   return protobuf_c_message_pack ((const ProtobufCMessage*)message, out);
 }
-size_t esp_hosted_cmd_otabegin__pack_to_buffer
-                     (const EspHostedCmdOTABegin *message,
+size_t ctrl_msg__req__otabegin__pack_to_buffer
+                     (const CtrlMsgReqOTABegin *message,
                       ProtobufCBuffer *buffer)
 {
-  assert(message->base.descriptor == &esp_hosted_cmd_otabegin__descriptor);
+  assert(message->base.descriptor == &ctrl_msg__req__otabegin__descriptor);
   return protobuf_c_message_pack_to_buffer ((const ProtobufCMessage*)message, buffer);
 }
-EspHostedCmdOTABegin *
-       esp_hosted_cmd_otabegin__unpack
+CtrlMsgReqOTABegin *
+       ctrl_msg__req__otabegin__unpack
                      (ProtobufCAllocator  *allocator,
                       size_t               len,
                       const uint8_t       *data)
 {
-  return (EspHostedCmdOTABegin *)
-     protobuf_c_message_unpack (&esp_hosted_cmd_otabegin__descriptor,
+  return (CtrlMsgReqOTABegin *)
+     protobuf_c_message_unpack (&ctrl_msg__req__otabegin__descriptor,
                                 allocator, len, data);
 }
-void   esp_hosted_cmd_otabegin__free_unpacked
-                     (EspHostedCmdOTABegin *message,
+void   ctrl_msg__req__otabegin__free_unpacked
+                     (CtrlMsgReqOTABegin *message,
                       ProtobufCAllocator *allocator)
 {
-  assert(message->base.descriptor == &esp_hosted_cmd_otabegin__descriptor);
+  if(!message)
+    return;
+  assert(message->base.descriptor == &ctrl_msg__req__otabegin__descriptor);
   protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
 }
-void   esp_hosted_resp_otabegin__init
-                     (EspHostedRespOTABegin         *message)
+void   ctrl_msg__resp__otabegin__init
+                     (CtrlMsgRespOTABegin         *message)
 {
-  static EspHostedRespOTABegin init_value = ESP_HOSTED_RESP_OTABEGIN__INIT;
+  static const CtrlMsgRespOTABegin init_value = CTRL_MSG__RESP__OTABEGIN__INIT;
   *message = init_value;
 }
-size_t esp_hosted_resp_otabegin__get_packed_size
-                     (const EspHostedRespOTABegin *message)
+size_t ctrl_msg__resp__otabegin__get_packed_size
+                     (const CtrlMsgRespOTABegin *message)
 {
-  assert(message->base.descriptor == &esp_hosted_resp_otabegin__descriptor);
+  assert(message->base.descriptor == &ctrl_msg__resp__otabegin__descriptor);
   return protobuf_c_message_get_packed_size ((const ProtobufCMessage*)(message));
 }
-size_t esp_hosted_resp_otabegin__pack
-                     (const EspHostedRespOTABegin *message,
+size_t ctrl_msg__resp__otabegin__pack
+                     (const CtrlMsgRespOTABegin *message,
                       uint8_t       *out)
 {
-  assert(message->base.descriptor == &esp_hosted_resp_otabegin__descriptor);
+  assert(message->base.descriptor == &ctrl_msg__resp__otabegin__descriptor);
   return protobuf_c_message_pack ((const ProtobufCMessage*)message, out);
 }
-size_t esp_hosted_resp_otabegin__pack_to_buffer
-                     (const EspHostedRespOTABegin *message,
+size_t ctrl_msg__resp__otabegin__pack_to_buffer
+                     (const CtrlMsgRespOTABegin *message,
                       ProtobufCBuffer *buffer)
 {
-  assert(message->base.descriptor == &esp_hosted_resp_otabegin__descriptor);
+  assert(message->base.descriptor == &ctrl_msg__resp__otabegin__descriptor);
   return protobuf_c_message_pack_to_buffer ((const ProtobufCMessage*)message, buffer);
 }
-EspHostedRespOTABegin *
-       esp_hosted_resp_otabegin__unpack
+CtrlMsgRespOTABegin *
+       ctrl_msg__resp__otabegin__unpack
                      (ProtobufCAllocator  *allocator,
                       size_t               len,
                       const uint8_t       *data)
 {
-  return (EspHostedRespOTABegin *)
-     protobuf_c_message_unpack (&esp_hosted_resp_otabegin__descriptor,
+  return (CtrlMsgRespOTABegin *)
+     protobuf_c_message_unpack (&ctrl_msg__resp__otabegin__descriptor,
                                 allocator, len, data);
 }
-void   esp_hosted_resp_otabegin__free_unpacked
-                     (EspHostedRespOTABegin *message,
+void   ctrl_msg__resp__otabegin__free_unpacked
+                     (CtrlMsgRespOTABegin *message,
                       ProtobufCAllocator *allocator)
 {
-  assert(message->base.descriptor == &esp_hosted_resp_otabegin__descriptor);
+  if(!message)
+    return;
+  assert(message->base.descriptor == &ctrl_msg__resp__otabegin__descriptor);
   protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
 }
-void   esp_hosted_cmd_otawrite__init
-                     (EspHostedCmdOTAWrite         *message)
+void   ctrl_msg__req__otawrite__init
+                     (CtrlMsgReqOTAWrite         *message)
 {
-  static EspHostedCmdOTAWrite init_value = ESP_HOSTED_CMD_OTAWRITE__INIT;
+  static const CtrlMsgReqOTAWrite init_value = CTRL_MSG__REQ__OTAWRITE__INIT;
   *message = init_value;
 }
-size_t esp_hosted_cmd_otawrite__get_packed_size
-                     (const EspHostedCmdOTAWrite *message)
+size_t ctrl_msg__req__otawrite__get_packed_size
+                     (const CtrlMsgReqOTAWrite *message)
 {
-  assert(message->base.descriptor == &esp_hosted_cmd_otawrite__descriptor);
+  assert(message->base.descriptor == &ctrl_msg__req__otawrite__descriptor);
   return protobuf_c_message_get_packed_size ((const ProtobufCMessage*)(message));
 }
-size_t esp_hosted_cmd_otawrite__pack
-                     (const EspHostedCmdOTAWrite *message,
+size_t ctrl_msg__req__otawrite__pack
+                     (const CtrlMsgReqOTAWrite *message,
                       uint8_t       *out)
 {
-  assert(message->base.descriptor == &esp_hosted_cmd_otawrite__descriptor);
+  assert(message->base.descriptor == &ctrl_msg__req__otawrite__descriptor);
   return protobuf_c_message_pack ((const ProtobufCMessage*)message, out);
 }
-size_t esp_hosted_cmd_otawrite__pack_to_buffer
-                     (const EspHostedCmdOTAWrite *message,
+size_t ctrl_msg__req__otawrite__pack_to_buffer
+                     (const CtrlMsgReqOTAWrite *message,
                       ProtobufCBuffer *buffer)
 {
-  assert(message->base.descriptor == &esp_hosted_cmd_otawrite__descriptor);
+  assert(message->base.descriptor == &ctrl_msg__req__otawrite__descriptor);
   return protobuf_c_message_pack_to_buffer ((const ProtobufCMessage*)message, buffer);
 }
-EspHostedCmdOTAWrite *
-       esp_hosted_cmd_otawrite__unpack
+CtrlMsgReqOTAWrite *
+       ctrl_msg__req__otawrite__unpack
                      (ProtobufCAllocator  *allocator,
                       size_t               len,
                       const uint8_t       *data)
 {
-  return (EspHostedCmdOTAWrite *)
-     protobuf_c_message_unpack (&esp_hosted_cmd_otawrite__descriptor,
+  return (CtrlMsgReqOTAWrite *)
+     protobuf_c_message_unpack (&ctrl_msg__req__otawrite__descriptor,
                                 allocator, len, data);
 }
-void   esp_hosted_cmd_otawrite__free_unpacked
-                     (EspHostedCmdOTAWrite *message,
+void   ctrl_msg__req__otawrite__free_unpacked
+                     (CtrlMsgReqOTAWrite *message,
                       ProtobufCAllocator *allocator)
 {
-  assert(message->base.descriptor == &esp_hosted_cmd_otawrite__descriptor);
+  if(!message)
+    return;
+  assert(message->base.descriptor == &ctrl_msg__req__otawrite__descriptor);
   protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
 }
-void   esp_hosted_resp_otawrite__init
-                     (EspHostedRespOTAWrite         *message)
+void   ctrl_msg__resp__otawrite__init
+                     (CtrlMsgRespOTAWrite         *message)
 {
-  static EspHostedRespOTAWrite init_value = ESP_HOSTED_RESP_OTAWRITE__INIT;
+  static const CtrlMsgRespOTAWrite init_value = CTRL_MSG__RESP__OTAWRITE__INIT;
   *message = init_value;
 }
-size_t esp_hosted_resp_otawrite__get_packed_size
-                     (const EspHostedRespOTAWrite *message)
+size_t ctrl_msg__resp__otawrite__get_packed_size
+                     (const CtrlMsgRespOTAWrite *message)
 {
-  assert(message->base.descriptor == &esp_hosted_resp_otawrite__descriptor);
+  assert(message->base.descriptor == &ctrl_msg__resp__otawrite__descriptor);
   return protobuf_c_message_get_packed_size ((const ProtobufCMessage*)(message));
 }
-size_t esp_hosted_resp_otawrite__pack
-                     (const EspHostedRespOTAWrite *message,
+size_t ctrl_msg__resp__otawrite__pack
+                     (const CtrlMsgRespOTAWrite *message,
                       uint8_t       *out)
 {
-  assert(message->base.descriptor == &esp_hosted_resp_otawrite__descriptor);
+  assert(message->base.descriptor == &ctrl_msg__resp__otawrite__descriptor);
   return protobuf_c_message_pack ((const ProtobufCMessage*)message, out);
 }
-size_t esp_hosted_resp_otawrite__pack_to_buffer
-                     (const EspHostedRespOTAWrite *message,
+size_t ctrl_msg__resp__otawrite__pack_to_buffer
+                     (const CtrlMsgRespOTAWrite *message,
                       ProtobufCBuffer *buffer)
 {
-  assert(message->base.descriptor == &esp_hosted_resp_otawrite__descriptor);
+  assert(message->base.descriptor == &ctrl_msg__resp__otawrite__descriptor);
   return protobuf_c_message_pack_to_buffer ((const ProtobufCMessage*)message, buffer);
 }
-EspHostedRespOTAWrite *
-       esp_hosted_resp_otawrite__unpack
+CtrlMsgRespOTAWrite *
+       ctrl_msg__resp__otawrite__unpack
                      (ProtobufCAllocator  *allocator,
                       size_t               len,
                       const uint8_t       *data)
 {
-  return (EspHostedRespOTAWrite *)
-     protobuf_c_message_unpack (&esp_hosted_resp_otawrite__descriptor,
+  return (CtrlMsgRespOTAWrite *)
+     protobuf_c_message_unpack (&ctrl_msg__resp__otawrite__descriptor,
                                 allocator, len, data);
 }
-void   esp_hosted_resp_otawrite__free_unpacked
-                     (EspHostedRespOTAWrite *message,
+void   ctrl_msg__resp__otawrite__free_unpacked
+                     (CtrlMsgRespOTAWrite *message,
                       ProtobufCAllocator *allocator)
 {
-  assert(message->base.descriptor == &esp_hosted_resp_otawrite__descriptor);
+  if(!message)
+    return;
+  assert(message->base.descriptor == &ctrl_msg__resp__otawrite__descriptor);
   protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
 }
-void   esp_hosted_cmd_otaend__init
-                     (EspHostedCmdOTAEnd         *message)
+void   ctrl_msg__req__otaend__init
+                     (CtrlMsgReqOTAEnd         *message)
 {
-  static EspHostedCmdOTAEnd init_value = ESP_HOSTED_CMD_OTAEND__INIT;
+  static const CtrlMsgReqOTAEnd init_value = CTRL_MSG__REQ__OTAEND__INIT;
   *message = init_value;
 }
-size_t esp_hosted_cmd_otaend__get_packed_size
-                     (const EspHostedCmdOTAEnd *message)
+size_t ctrl_msg__req__otaend__get_packed_size
+                     (const CtrlMsgReqOTAEnd *message)
 {
-  assert(message->base.descriptor == &esp_hosted_cmd_otaend__descriptor);
+  assert(message->base.descriptor == &ctrl_msg__req__otaend__descriptor);
   return protobuf_c_message_get_packed_size ((const ProtobufCMessage*)(message));
 }
-size_t esp_hosted_cmd_otaend__pack
-                     (const EspHostedCmdOTAEnd *message,
+size_t ctrl_msg__req__otaend__pack
+                     (const CtrlMsgReqOTAEnd *message,
                       uint8_t       *out)
 {
-  assert(message->base.descriptor == &esp_hosted_cmd_otaend__descriptor);
+  assert(message->base.descriptor == &ctrl_msg__req__otaend__descriptor);
   return protobuf_c_message_pack ((const ProtobufCMessage*)message, out);
 }
-size_t esp_hosted_cmd_otaend__pack_to_buffer
-                     (const EspHostedCmdOTAEnd *message,
+size_t ctrl_msg__req__otaend__pack_to_buffer
+                     (const CtrlMsgReqOTAEnd *message,
                       ProtobufCBuffer *buffer)
 {
-  assert(message->base.descriptor == &esp_hosted_cmd_otaend__descriptor);
+  assert(message->base.descriptor == &ctrl_msg__req__otaend__descriptor);
   return protobuf_c_message_pack_to_buffer ((const ProtobufCMessage*)message, buffer);
 }
-EspHostedCmdOTAEnd *
-       esp_hosted_cmd_otaend__unpack
+CtrlMsgReqOTAEnd *
+       ctrl_msg__req__otaend__unpack
                      (ProtobufCAllocator  *allocator,
                       size_t               len,
                       const uint8_t       *data)
 {
-  return (EspHostedCmdOTAEnd *)
-     protobuf_c_message_unpack (&esp_hosted_cmd_otaend__descriptor,
+  return (CtrlMsgReqOTAEnd *)
+     protobuf_c_message_unpack (&ctrl_msg__req__otaend__descriptor,
                                 allocator, len, data);
 }
-void   esp_hosted_cmd_otaend__free_unpacked
-                     (EspHostedCmdOTAEnd *message,
+void   ctrl_msg__req__otaend__free_unpacked
+                     (CtrlMsgReqOTAEnd *message,
                       ProtobufCAllocator *allocator)
 {
-  assert(message->base.descriptor == &esp_hosted_cmd_otaend__descriptor);
+  if(!message)
+    return;
+  assert(message->base.descriptor == &ctrl_msg__req__otaend__descriptor);
   protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
 }
-void   esp_hosted_resp_otaend__init
-                     (EspHostedRespOTAEnd         *message)
+void   ctrl_msg__resp__otaend__init
+                     (CtrlMsgRespOTAEnd         *message)
 {
-  static EspHostedRespOTAEnd init_value = ESP_HOSTED_RESP_OTAEND__INIT;
+  static const CtrlMsgRespOTAEnd init_value = CTRL_MSG__RESP__OTAEND__INIT;
   *message = init_value;
 }
-size_t esp_hosted_resp_otaend__get_packed_size
-                     (const EspHostedRespOTAEnd *message)
+size_t ctrl_msg__resp__otaend__get_packed_size
+                     (const CtrlMsgRespOTAEnd *message)
 {
-  assert(message->base.descriptor == &esp_hosted_resp_otaend__descriptor);
+  assert(message->base.descriptor == &ctrl_msg__resp__otaend__descriptor);
   return protobuf_c_message_get_packed_size ((const ProtobufCMessage*)(message));
 }
-size_t esp_hosted_resp_otaend__pack
-                     (const EspHostedRespOTAEnd *message,
+size_t ctrl_msg__resp__otaend__pack
+                     (const CtrlMsgRespOTAEnd *message,
                       uint8_t       *out)
 {
-  assert(message->base.descriptor == &esp_hosted_resp_otaend__descriptor);
+  assert(message->base.descriptor == &ctrl_msg__resp__otaend__descriptor);
   return protobuf_c_message_pack ((const ProtobufCMessage*)message, out);
 }
-size_t esp_hosted_resp_otaend__pack_to_buffer
-                     (const EspHostedRespOTAEnd *message,
+size_t ctrl_msg__resp__otaend__pack_to_buffer
+                     (const CtrlMsgRespOTAEnd *message,
                       ProtobufCBuffer *buffer)
 {
-  assert(message->base.descriptor == &esp_hosted_resp_otaend__descriptor);
+  assert(message->base.descriptor == &ctrl_msg__resp__otaend__descriptor);
   return protobuf_c_message_pack_to_buffer ((const ProtobufCMessage*)message, buffer);
 }
-EspHostedRespOTAEnd *
-       esp_hosted_resp_otaend__unpack
+CtrlMsgRespOTAEnd *
+       ctrl_msg__resp__otaend__unpack
                      (ProtobufCAllocator  *allocator,
                       size_t               len,
                       const uint8_t       *data)
 {
-  return (EspHostedRespOTAEnd *)
-     protobuf_c_message_unpack (&esp_hosted_resp_otaend__descriptor,
+  return (CtrlMsgRespOTAEnd *)
+     protobuf_c_message_unpack (&ctrl_msg__resp__otaend__descriptor,
                                 allocator, len, data);
 }
-void   esp_hosted_resp_otaend__free_unpacked
-                     (EspHostedRespOTAEnd *message,
+void   ctrl_msg__resp__otaend__free_unpacked
+                     (CtrlMsgRespOTAEnd *message,
                       ProtobufCAllocator *allocator)
 {
-  assert(message->base.descriptor == &esp_hosted_resp_otaend__descriptor);
+  if(!message)
+    return;
+  assert(message->base.descriptor == &ctrl_msg__resp__otaend__descriptor);
   protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
 }
-void   esp_hosted_cmd_set_vendor_specific_ie__init
-                     (EspHostedCmdSetVendorSpecificIE         *message)
+void   ctrl_msg__req__vendor_iedata__init
+                     (CtrlMsgReqVendorIEData         *message)
 {
-  static EspHostedCmdSetVendorSpecificIE init_value = ESP_HOSTED_CMD_SET_VENDOR_SPECIFIC_IE__INIT;
+  static const CtrlMsgReqVendorIEData init_value = CTRL_MSG__REQ__VENDOR_IEDATA__INIT;
   *message = init_value;
 }
-size_t esp_hosted_cmd_set_vendor_specific_ie__get_packed_size
-                     (const EspHostedCmdSetVendorSpecificIE *message)
+size_t ctrl_msg__req__vendor_iedata__get_packed_size
+                     (const CtrlMsgReqVendorIEData *message)
 {
-  assert(message->base.descriptor == &esp_hosted_cmd_set_vendor_specific_ie__descriptor);
+  assert(message->base.descriptor == &ctrl_msg__req__vendor_iedata__descriptor);
   return protobuf_c_message_get_packed_size ((const ProtobufCMessage*)(message));
 }
-size_t esp_hosted_cmd_set_vendor_specific_ie__pack
-                     (const EspHostedCmdSetVendorSpecificIE *message,
+size_t ctrl_msg__req__vendor_iedata__pack
+                     (const CtrlMsgReqVendorIEData *message,
                       uint8_t       *out)
 {
-  assert(message->base.descriptor == &esp_hosted_cmd_set_vendor_specific_ie__descriptor);
+  assert(message->base.descriptor == &ctrl_msg__req__vendor_iedata__descriptor);
   return protobuf_c_message_pack ((const ProtobufCMessage*)message, out);
 }
-size_t esp_hosted_cmd_set_vendor_specific_ie__pack_to_buffer
-                     (const EspHostedCmdSetVendorSpecificIE *message,
+size_t ctrl_msg__req__vendor_iedata__pack_to_buffer
+                     (const CtrlMsgReqVendorIEData *message,
                       ProtobufCBuffer *buffer)
 {
-  assert(message->base.descriptor == &esp_hosted_cmd_set_vendor_specific_ie__descriptor);
+  assert(message->base.descriptor == &ctrl_msg__req__vendor_iedata__descriptor);
   return protobuf_c_message_pack_to_buffer ((const ProtobufCMessage*)message, buffer);
 }
-EspHostedCmdSetVendorSpecificIE *
-       esp_hosted_cmd_set_vendor_specific_ie__unpack
+CtrlMsgReqVendorIEData *
+       ctrl_msg__req__vendor_iedata__unpack
                      (ProtobufCAllocator  *allocator,
                       size_t               len,
                       const uint8_t       *data)
 {
-  return (EspHostedCmdSetVendorSpecificIE *)
-     protobuf_c_message_unpack (&esp_hosted_cmd_set_vendor_specific_ie__descriptor,
+  return (CtrlMsgReqVendorIEData *)
+     protobuf_c_message_unpack (&ctrl_msg__req__vendor_iedata__descriptor,
                                 allocator, len, data);
 }
-void   esp_hosted_cmd_set_vendor_specific_ie__free_unpacked
-                     (EspHostedCmdSetVendorSpecificIE *message,
+void   ctrl_msg__req__vendor_iedata__free_unpacked
+                     (CtrlMsgReqVendorIEData *message,
                       ProtobufCAllocator *allocator)
 {
-  assert(message->base.descriptor == &esp_hosted_cmd_set_vendor_specific_ie__descriptor);
+  if(!message)
+    return;
+  assert(message->base.descriptor == &ctrl_msg__req__vendor_iedata__descriptor);
   protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
 }
-void   esp_hosted_resp_set_vendor_specific_ie__init
-                     (EspHostedRespSetVendorSpecificIE         *message)
+void   ctrl_msg__req__set_soft_apvendor_specific_ie__init
+                     (CtrlMsgReqSetSoftAPVendorSpecificIE         *message)
 {
-  static EspHostedRespSetVendorSpecificIE init_value = ESP_HOSTED_RESP_SET_VENDOR_SPECIFIC_IE__INIT;
+  static const CtrlMsgReqSetSoftAPVendorSpecificIE init_value = CTRL_MSG__REQ__SET_SOFT_APVENDOR_SPECIFIC_IE__INIT;
   *message = init_value;
 }
-size_t esp_hosted_resp_set_vendor_specific_ie__get_packed_size
-                     (const EspHostedRespSetVendorSpecificIE *message)
+size_t ctrl_msg__req__set_soft_apvendor_specific_ie__get_packed_size
+                     (const CtrlMsgReqSetSoftAPVendorSpecificIE *message)
 {
-  assert(message->base.descriptor == &esp_hosted_resp_set_vendor_specific_ie__descriptor);
+  assert(message->base.descriptor == &ctrl_msg__req__set_soft_apvendor_specific_ie__descriptor);
   return protobuf_c_message_get_packed_size ((const ProtobufCMessage*)(message));
 }
-size_t esp_hosted_resp_set_vendor_specific_ie__pack
-                     (const EspHostedRespSetVendorSpecificIE *message,
+size_t ctrl_msg__req__set_soft_apvendor_specific_ie__pack
+                     (const CtrlMsgReqSetSoftAPVendorSpecificIE *message,
                       uint8_t       *out)
 {
-  assert(message->base.descriptor == &esp_hosted_resp_set_vendor_specific_ie__descriptor);
+  assert(message->base.descriptor == &ctrl_msg__req__set_soft_apvendor_specific_ie__descriptor);
   return protobuf_c_message_pack ((const ProtobufCMessage*)message, out);
 }
-size_t esp_hosted_resp_set_vendor_specific_ie__pack_to_buffer
-                     (const EspHostedRespSetVendorSpecificIE *message,
+size_t ctrl_msg__req__set_soft_apvendor_specific_ie__pack_to_buffer
+                     (const CtrlMsgReqSetSoftAPVendorSpecificIE *message,
                       ProtobufCBuffer *buffer)
 {
-  assert(message->base.descriptor == &esp_hosted_resp_set_vendor_specific_ie__descriptor);
+  assert(message->base.descriptor == &ctrl_msg__req__set_soft_apvendor_specific_ie__descriptor);
   return protobuf_c_message_pack_to_buffer ((const ProtobufCMessage*)message, buffer);
 }
-EspHostedRespSetVendorSpecificIE *
-       esp_hosted_resp_set_vendor_specific_ie__unpack
+CtrlMsgReqSetSoftAPVendorSpecificIE *
+       ctrl_msg__req__set_soft_apvendor_specific_ie__unpack
                      (ProtobufCAllocator  *allocator,
                       size_t               len,
                       const uint8_t       *data)
 {
-  return (EspHostedRespSetVendorSpecificIE *)
-     protobuf_c_message_unpack (&esp_hosted_resp_set_vendor_specific_ie__descriptor,
+  return (CtrlMsgReqSetSoftAPVendorSpecificIE *)
+     protobuf_c_message_unpack (&ctrl_msg__req__set_soft_apvendor_specific_ie__descriptor,
                                 allocator, len, data);
 }
-void   esp_hosted_resp_set_vendor_specific_ie__free_unpacked
-                     (EspHostedRespSetVendorSpecificIE *message,
+void   ctrl_msg__req__set_soft_apvendor_specific_ie__free_unpacked
+                     (CtrlMsgReqSetSoftAPVendorSpecificIE *message,
                       ProtobufCAllocator *allocator)
 {
-  assert(message->base.descriptor == &esp_hosted_resp_set_vendor_specific_ie__descriptor);
+  if(!message)
+    return;
+  assert(message->base.descriptor == &ctrl_msg__req__set_soft_apvendor_specific_ie__descriptor);
   protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
 }
-void   esp_hosted_cmd_set_wi_fi_maxtxpower__init
-                     (EspHostedCmdSetWiFiMAXTXPower         *message)
+void   ctrl_msg__resp__set_soft_apvendor_specific_ie__init
+                     (CtrlMsgRespSetSoftAPVendorSpecificIE         *message)
 {
-  static EspHostedCmdSetWiFiMAXTXPower init_value = ESP_HOSTED_CMD_SET_WI_FI_MAXTXPOWER__INIT;
+  static const CtrlMsgRespSetSoftAPVendorSpecificIE init_value = CTRL_MSG__RESP__SET_SOFT_APVENDOR_SPECIFIC_IE__INIT;
   *message = init_value;
 }
-size_t esp_hosted_cmd_set_wi_fi_maxtxpower__get_packed_size
-                     (const EspHostedCmdSetWiFiMAXTXPower *message)
+size_t ctrl_msg__resp__set_soft_apvendor_specific_ie__get_packed_size
+                     (const CtrlMsgRespSetSoftAPVendorSpecificIE *message)
 {
-  assert(message->base.descriptor == &esp_hosted_cmd_set_wi_fi_maxtxpower__descriptor);
+  assert(message->base.descriptor == &ctrl_msg__resp__set_soft_apvendor_specific_ie__descriptor);
   return protobuf_c_message_get_packed_size ((const ProtobufCMessage*)(message));
 }
-size_t esp_hosted_cmd_set_wi_fi_maxtxpower__pack
-                     (const EspHostedCmdSetWiFiMAXTXPower *message,
+size_t ctrl_msg__resp__set_soft_apvendor_specific_ie__pack
+                     (const CtrlMsgRespSetSoftAPVendorSpecificIE *message,
                       uint8_t       *out)
 {
-  assert(message->base.descriptor == &esp_hosted_cmd_set_wi_fi_maxtxpower__descriptor);
+  assert(message->base.descriptor == &ctrl_msg__resp__set_soft_apvendor_specific_ie__descriptor);
   return protobuf_c_message_pack ((const ProtobufCMessage*)message, out);
 }
-size_t esp_hosted_cmd_set_wi_fi_maxtxpower__pack_to_buffer
-                     (const EspHostedCmdSetWiFiMAXTXPower *message,
+size_t ctrl_msg__resp__set_soft_apvendor_specific_ie__pack_to_buffer
+                     (const CtrlMsgRespSetSoftAPVendorSpecificIE *message,
                       ProtobufCBuffer *buffer)
 {
-  assert(message->base.descriptor == &esp_hosted_cmd_set_wi_fi_maxtxpower__descriptor);
+  assert(message->base.descriptor == &ctrl_msg__resp__set_soft_apvendor_specific_ie__descriptor);
   return protobuf_c_message_pack_to_buffer ((const ProtobufCMessage*)message, buffer);
 }
-EspHostedCmdSetWiFiMAXTXPower *
-       esp_hosted_cmd_set_wi_fi_maxtxpower__unpack
+CtrlMsgRespSetSoftAPVendorSpecificIE *
+       ctrl_msg__resp__set_soft_apvendor_specific_ie__unpack
                      (ProtobufCAllocator  *allocator,
                       size_t               len,
                       const uint8_t       *data)
 {
-  return (EspHostedCmdSetWiFiMAXTXPower *)
-     protobuf_c_message_unpack (&esp_hosted_cmd_set_wi_fi_maxtxpower__descriptor,
+  return (CtrlMsgRespSetSoftAPVendorSpecificIE *)
+     protobuf_c_message_unpack (&ctrl_msg__resp__set_soft_apvendor_specific_ie__descriptor,
                                 allocator, len, data);
 }
-void   esp_hosted_cmd_set_wi_fi_maxtxpower__free_unpacked
-                     (EspHostedCmdSetWiFiMAXTXPower *message,
+void   ctrl_msg__resp__set_soft_apvendor_specific_ie__free_unpacked
+                     (CtrlMsgRespSetSoftAPVendorSpecificIE *message,
                       ProtobufCAllocator *allocator)
 {
-  assert(message->base.descriptor == &esp_hosted_cmd_set_wi_fi_maxtxpower__descriptor);
+  if(!message)
+    return;
+  assert(message->base.descriptor == &ctrl_msg__resp__set_soft_apvendor_specific_ie__descriptor);
   protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
 }
-void   esp_hosted_resp_set_wi_fi_maxtxpower__init
-                     (EspHostedRespSetWiFiMAXTXPower         *message)
+void   ctrl_msg__req__set_wifi_max_tx_power__init
+                     (CtrlMsgReqSetWifiMaxTxPower         *message)
 {
-  static EspHostedRespSetWiFiMAXTXPower init_value = ESP_HOSTED_RESP_SET_WI_FI_MAXTXPOWER__INIT;
+  static const CtrlMsgReqSetWifiMaxTxPower init_value = CTRL_MSG__REQ__SET_WIFI_MAX_TX_POWER__INIT;
   *message = init_value;
 }
-size_t esp_hosted_resp_set_wi_fi_maxtxpower__get_packed_size
-                     (const EspHostedRespSetWiFiMAXTXPower *message)
+size_t ctrl_msg__req__set_wifi_max_tx_power__get_packed_size
+                     (const CtrlMsgReqSetWifiMaxTxPower *message)
 {
-  assert(message->base.descriptor == &esp_hosted_resp_set_wi_fi_maxtxpower__descriptor);
+  assert(message->base.descriptor == &ctrl_msg__req__set_wifi_max_tx_power__descriptor);
   return protobuf_c_message_get_packed_size ((const ProtobufCMessage*)(message));
 }
-size_t esp_hosted_resp_set_wi_fi_maxtxpower__pack
-                     (const EspHostedRespSetWiFiMAXTXPower *message,
+size_t ctrl_msg__req__set_wifi_max_tx_power__pack
+                     (const CtrlMsgReqSetWifiMaxTxPower *message,
                       uint8_t       *out)
 {
-  assert(message->base.descriptor == &esp_hosted_resp_set_wi_fi_maxtxpower__descriptor);
+  assert(message->base.descriptor == &ctrl_msg__req__set_wifi_max_tx_power__descriptor);
   return protobuf_c_message_pack ((const ProtobufCMessage*)message, out);
 }
-size_t esp_hosted_resp_set_wi_fi_maxtxpower__pack_to_buffer
-                     (const EspHostedRespSetWiFiMAXTXPower *message,
+size_t ctrl_msg__req__set_wifi_max_tx_power__pack_to_buffer
+                     (const CtrlMsgReqSetWifiMaxTxPower *message,
                       ProtobufCBuffer *buffer)
 {
-  assert(message->base.descriptor == &esp_hosted_resp_set_wi_fi_maxtxpower__descriptor);
+  assert(message->base.descriptor == &ctrl_msg__req__set_wifi_max_tx_power__descriptor);
   return protobuf_c_message_pack_to_buffer ((const ProtobufCMessage*)message, buffer);
 }
-EspHostedRespSetWiFiMAXTXPower *
-       esp_hosted_resp_set_wi_fi_maxtxpower__unpack
+CtrlMsgReqSetWifiMaxTxPower *
+       ctrl_msg__req__set_wifi_max_tx_power__unpack
                      (ProtobufCAllocator  *allocator,
                       size_t               len,
                       const uint8_t       *data)
 {
-  return (EspHostedRespSetWiFiMAXTXPower *)
-     protobuf_c_message_unpack (&esp_hosted_resp_set_wi_fi_maxtxpower__descriptor,
+  return (CtrlMsgReqSetWifiMaxTxPower *)
+     protobuf_c_message_unpack (&ctrl_msg__req__set_wifi_max_tx_power__descriptor,
                                 allocator, len, data);
 }
-void   esp_hosted_resp_set_wi_fi_maxtxpower__free_unpacked
-                     (EspHostedRespSetWiFiMAXTXPower *message,
+void   ctrl_msg__req__set_wifi_max_tx_power__free_unpacked
+                     (CtrlMsgReqSetWifiMaxTxPower *message,
                       ProtobufCAllocator *allocator)
 {
-  assert(message->base.descriptor == &esp_hosted_resp_set_wi_fi_maxtxpower__descriptor);
+  if(!message)
+    return;
+  assert(message->base.descriptor == &ctrl_msg__req__set_wifi_max_tx_power__descriptor);
   protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
 }
-void   esp_hosted_cmd_get_wi_fi_curr_txpower__init
-                     (EspHostedCmdGetWiFiCurrTXPower         *message)
+void   ctrl_msg__resp__set_wifi_max_tx_power__init
+                     (CtrlMsgRespSetWifiMaxTxPower         *message)
 {
-  static EspHostedCmdGetWiFiCurrTXPower init_value = ESP_HOSTED_CMD_GET_WI_FI_CURR_TXPOWER__INIT;
+  static const CtrlMsgRespSetWifiMaxTxPower init_value = CTRL_MSG__RESP__SET_WIFI_MAX_TX_POWER__INIT;
   *message = init_value;
 }
-size_t esp_hosted_cmd_get_wi_fi_curr_txpower__get_packed_size
-                     (const EspHostedCmdGetWiFiCurrTXPower *message)
+size_t ctrl_msg__resp__set_wifi_max_tx_power__get_packed_size
+                     (const CtrlMsgRespSetWifiMaxTxPower *message)
 {
-  assert(message->base.descriptor == &esp_hosted_cmd_get_wi_fi_curr_txpower__descriptor);
+  assert(message->base.descriptor == &ctrl_msg__resp__set_wifi_max_tx_power__descriptor);
   return protobuf_c_message_get_packed_size ((const ProtobufCMessage*)(message));
 }
-size_t esp_hosted_cmd_get_wi_fi_curr_txpower__pack
-                     (const EspHostedCmdGetWiFiCurrTXPower *message,
+size_t ctrl_msg__resp__set_wifi_max_tx_power__pack
+                     (const CtrlMsgRespSetWifiMaxTxPower *message,
                       uint8_t       *out)
 {
-  assert(message->base.descriptor == &esp_hosted_cmd_get_wi_fi_curr_txpower__descriptor);
+  assert(message->base.descriptor == &ctrl_msg__resp__set_wifi_max_tx_power__descriptor);
   return protobuf_c_message_pack ((const ProtobufCMessage*)message, out);
 }
-size_t esp_hosted_cmd_get_wi_fi_curr_txpower__pack_to_buffer
-                     (const EspHostedCmdGetWiFiCurrTXPower *message,
+size_t ctrl_msg__resp__set_wifi_max_tx_power__pack_to_buffer
+                     (const CtrlMsgRespSetWifiMaxTxPower *message,
                       ProtobufCBuffer *buffer)
 {
-  assert(message->base.descriptor == &esp_hosted_cmd_get_wi_fi_curr_txpower__descriptor);
+  assert(message->base.descriptor == &ctrl_msg__resp__set_wifi_max_tx_power__descriptor);
   return protobuf_c_message_pack_to_buffer ((const ProtobufCMessage*)message, buffer);
 }
-EspHostedCmdGetWiFiCurrTXPower *
-       esp_hosted_cmd_get_wi_fi_curr_txpower__unpack
+CtrlMsgRespSetWifiMaxTxPower *
+       ctrl_msg__resp__set_wifi_max_tx_power__unpack
                      (ProtobufCAllocator  *allocator,
                       size_t               len,
                       const uint8_t       *data)
 {
-  return (EspHostedCmdGetWiFiCurrTXPower *)
-     protobuf_c_message_unpack (&esp_hosted_cmd_get_wi_fi_curr_txpower__descriptor,
+  return (CtrlMsgRespSetWifiMaxTxPower *)
+     protobuf_c_message_unpack (&ctrl_msg__resp__set_wifi_max_tx_power__descriptor,
                                 allocator, len, data);
 }
-void   esp_hosted_cmd_get_wi_fi_curr_txpower__free_unpacked
-                     (EspHostedCmdGetWiFiCurrTXPower *message,
+void   ctrl_msg__resp__set_wifi_max_tx_power__free_unpacked
+                     (CtrlMsgRespSetWifiMaxTxPower *message,
                       ProtobufCAllocator *allocator)
 {
-  assert(message->base.descriptor == &esp_hosted_cmd_get_wi_fi_curr_txpower__descriptor);
+  if(!message)
+    return;
+  assert(message->base.descriptor == &ctrl_msg__resp__set_wifi_max_tx_power__descriptor);
   protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
 }
-void   esp_hosted_resp_get_wi_fi_curr_txpower__init
-                     (EspHostedRespGetWiFiCurrTXPower         *message)
+void   ctrl_msg__req__get_wifi_curr_tx_power__init
+                     (CtrlMsgReqGetWifiCurrTxPower         *message)
 {
-  static EspHostedRespGetWiFiCurrTXPower init_value = ESP_HOSTED_RESP_GET_WI_FI_CURR_TXPOWER__INIT;
+  static const CtrlMsgReqGetWifiCurrTxPower init_value = CTRL_MSG__REQ__GET_WIFI_CURR_TX_POWER__INIT;
   *message = init_value;
 }
-size_t esp_hosted_resp_get_wi_fi_curr_txpower__get_packed_size
-                     (const EspHostedRespGetWiFiCurrTXPower *message)
+size_t ctrl_msg__req__get_wifi_curr_tx_power__get_packed_size
+                     (const CtrlMsgReqGetWifiCurrTxPower *message)
 {
-  assert(message->base.descriptor == &esp_hosted_resp_get_wi_fi_curr_txpower__descriptor);
+  assert(message->base.descriptor == &ctrl_msg__req__get_wifi_curr_tx_power__descriptor);
   return protobuf_c_message_get_packed_size ((const ProtobufCMessage*)(message));
 }
-size_t esp_hosted_resp_get_wi_fi_curr_txpower__pack
-                     (const EspHostedRespGetWiFiCurrTXPower *message,
+size_t ctrl_msg__req__get_wifi_curr_tx_power__pack
+                     (const CtrlMsgReqGetWifiCurrTxPower *message,
                       uint8_t       *out)
 {
-  assert(message->base.descriptor == &esp_hosted_resp_get_wi_fi_curr_txpower__descriptor);
+  assert(message->base.descriptor == &ctrl_msg__req__get_wifi_curr_tx_power__descriptor);
   return protobuf_c_message_pack ((const ProtobufCMessage*)message, out);
 }
-size_t esp_hosted_resp_get_wi_fi_curr_txpower__pack_to_buffer
-                     (const EspHostedRespGetWiFiCurrTXPower *message,
+size_t ctrl_msg__req__get_wifi_curr_tx_power__pack_to_buffer
+                     (const CtrlMsgReqGetWifiCurrTxPower *message,
                       ProtobufCBuffer *buffer)
 {
-  assert(message->base.descriptor == &esp_hosted_resp_get_wi_fi_curr_txpower__descriptor);
+  assert(message->base.descriptor == &ctrl_msg__req__get_wifi_curr_tx_power__descriptor);
   return protobuf_c_message_pack_to_buffer ((const ProtobufCMessage*)message, buffer);
 }
-EspHostedRespGetWiFiCurrTXPower *
-       esp_hosted_resp_get_wi_fi_curr_txpower__unpack
+CtrlMsgReqGetWifiCurrTxPower *
+       ctrl_msg__req__get_wifi_curr_tx_power__unpack
                      (ProtobufCAllocator  *allocator,
                       size_t               len,
                       const uint8_t       *data)
 {
-  return (EspHostedRespGetWiFiCurrTXPower *)
-     protobuf_c_message_unpack (&esp_hosted_resp_get_wi_fi_curr_txpower__descriptor,
+  return (CtrlMsgReqGetWifiCurrTxPower *)
+     protobuf_c_message_unpack (&ctrl_msg__req__get_wifi_curr_tx_power__descriptor,
                                 allocator, len, data);
 }
-void   esp_hosted_resp_get_wi_fi_curr_txpower__free_unpacked
-                     (EspHostedRespGetWiFiCurrTXPower *message,
+void   ctrl_msg__req__get_wifi_curr_tx_power__free_unpacked
+                     (CtrlMsgReqGetWifiCurrTxPower *message,
                       ProtobufCAllocator *allocator)
 {
-  assert(message->base.descriptor == &esp_hosted_resp_get_wi_fi_curr_txpower__descriptor);
+  if(!message)
+    return;
+  assert(message->base.descriptor == &ctrl_msg__req__get_wifi_curr_tx_power__descriptor);
   protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
 }
-void   esp_hosted_config_payload__init
-                     (EspHostedConfigPayload         *message)
+void   ctrl_msg__resp__get_wifi_curr_tx_power__init
+                     (CtrlMsgRespGetWifiCurrTxPower         *message)
 {
-  static EspHostedConfigPayload init_value = ESP_HOSTED_CONFIG_PAYLOAD__INIT;
+  static const CtrlMsgRespGetWifiCurrTxPower init_value = CTRL_MSG__RESP__GET_WIFI_CURR_TX_POWER__INIT;
   *message = init_value;
 }
-size_t esp_hosted_config_payload__get_packed_size
-                     (const EspHostedConfigPayload *message)
+size_t ctrl_msg__resp__get_wifi_curr_tx_power__get_packed_size
+                     (const CtrlMsgRespGetWifiCurrTxPower *message)
 {
-  assert(message->base.descriptor == &esp_hosted_config_payload__descriptor);
+  assert(message->base.descriptor == &ctrl_msg__resp__get_wifi_curr_tx_power__descriptor);
   return protobuf_c_message_get_packed_size ((const ProtobufCMessage*)(message));
 }
-size_t esp_hosted_config_payload__pack
-                     (const EspHostedConfigPayload *message,
+size_t ctrl_msg__resp__get_wifi_curr_tx_power__pack
+                     (const CtrlMsgRespGetWifiCurrTxPower *message,
                       uint8_t       *out)
 {
-  assert(message->base.descriptor == &esp_hosted_config_payload__descriptor);
+  assert(message->base.descriptor == &ctrl_msg__resp__get_wifi_curr_tx_power__descriptor);
   return protobuf_c_message_pack ((const ProtobufCMessage*)message, out);
 }
-size_t esp_hosted_config_payload__pack_to_buffer
-                     (const EspHostedConfigPayload *message,
+size_t ctrl_msg__resp__get_wifi_curr_tx_power__pack_to_buffer
+                     (const CtrlMsgRespGetWifiCurrTxPower *message,
                       ProtobufCBuffer *buffer)
 {
-  assert(message->base.descriptor == &esp_hosted_config_payload__descriptor);
+  assert(message->base.descriptor == &ctrl_msg__resp__get_wifi_curr_tx_power__descriptor);
   return protobuf_c_message_pack_to_buffer ((const ProtobufCMessage*)message, buffer);
 }
-EspHostedConfigPayload *
-       esp_hosted_config_payload__unpack
+CtrlMsgRespGetWifiCurrTxPower *
+       ctrl_msg__resp__get_wifi_curr_tx_power__unpack
                      (ProtobufCAllocator  *allocator,
                       size_t               len,
                       const uint8_t       *data)
 {
-  return (EspHostedConfigPayload *)
-     protobuf_c_message_unpack (&esp_hosted_config_payload__descriptor,
+  return (CtrlMsgRespGetWifiCurrTxPower *)
+     protobuf_c_message_unpack (&ctrl_msg__resp__get_wifi_curr_tx_power__descriptor,
                                 allocator, len, data);
 }
-void   esp_hosted_config_payload__free_unpacked
-                     (EspHostedConfigPayload *message,
+void   ctrl_msg__resp__get_wifi_curr_tx_power__free_unpacked
+                     (CtrlMsgRespGetWifiCurrTxPower *message,
                       ProtobufCAllocator *allocator)
 {
-  assert(message->base.descriptor == &esp_hosted_config_payload__descriptor);
+  if(!message)
+    return;
+  assert(message->base.descriptor == &ctrl_msg__resp__get_wifi_curr_tx_power__descriptor);
   protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
 }
-static const ProtobufCFieldDescriptor esp_hosted_cmd_get_mac_address__field_descriptors[1] =
+void   ctrl_msg__req__config_heartbeat__init
+                     (CtrlMsgReqConfigHeartbeat         *message)
 {
-  {
-    "mode",
-    1,
-    PROTOBUF_C_LABEL_OPTIONAL,
-    PROTOBUF_C_TYPE_INT32,
-    offsetof(EspHostedCmdGetMacAddress, has_mode),
-    offsetof(EspHostedCmdGetMacAddress, mode),
-    NULL,
-    NULL,
-    0,             /* flags */
-    0,NULL,NULL    /* reserved1,reserved2, etc */
-  },
-};
-static const unsigned esp_hosted_cmd_get_mac_address__field_indices_by_name[] = {
-  0,   /* field[0] = mode */
-};
-static const ProtobufCIntRange esp_hosted_cmd_get_mac_address__number_ranges[1 + 1] =
+  static const CtrlMsgReqConfigHeartbeat init_value = CTRL_MSG__REQ__CONFIG_HEARTBEAT__INIT;
+  *message = init_value;
+}
+size_t ctrl_msg__req__config_heartbeat__get_packed_size
+                     (const CtrlMsgReqConfigHeartbeat *message)
 {
-  { 1, 0 },
-  { 0, 1 }
-};
-const ProtobufCMessageDescriptor esp_hosted_cmd_get_mac_address__descriptor =
+  assert(message->base.descriptor == &ctrl_msg__req__config_heartbeat__descriptor);
+  return protobuf_c_message_get_packed_size ((const ProtobufCMessage*)(message));
+}
+size_t ctrl_msg__req__config_heartbeat__pack
+                     (const CtrlMsgReqConfigHeartbeat *message,
+                      uint8_t       *out)
 {
-  PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
-  "EspHostedCmdGetMacAddress",
-  "EspHostedCmdGetMacAddress",
-  "EspHostedCmdGetMacAddress",
-  "",
-  sizeof(EspHostedCmdGetMacAddress),
-  1,
-  esp_hosted_cmd_get_mac_address__field_descriptors,
-  esp_hosted_cmd_get_mac_address__field_indices_by_name,
-  1,  esp_hosted_cmd_get_mac_address__number_ranges,
-  (ProtobufCMessageInit) esp_hosted_cmd_get_mac_address__init,
-  NULL,NULL,NULL    /* reserved[123] */
-};
-static const ProtobufCFieldDescriptor esp_hosted_resp_get_mac_address__field_descriptors[2] =
+  assert(message->base.descriptor == &ctrl_msg__req__config_heartbeat__descriptor);
+  return protobuf_c_message_pack ((const ProtobufCMessage*)message, out);
+}
+size_t ctrl_msg__req__config_heartbeat__pack_to_buffer
+                     (const CtrlMsgReqConfigHeartbeat *message,
+                      ProtobufCBuffer *buffer)
 {
-  {
-    "mac",
-    1,
-    PROTOBUF_C_LABEL_OPTIONAL,
-    PROTOBUF_C_TYPE_BYTES,
-    offsetof(EspHostedRespGetMacAddress, has_mac),
-    offsetof(EspHostedRespGetMacAddress, mac),
-    NULL,
-    NULL,
-    0,             /* flags */
-    0,NULL,NULL    /* reserved1,reserved2, etc */
-  },
-  {
-    "resp",
-    2,
-    PROTOBUF_C_LABEL_OPTIONAL,
-    PROTOBUF_C_TYPE_INT32,
-    offsetof(EspHostedRespGetMacAddress, has_resp),
-    offsetof(EspHostedRespGetMacAddress, resp),
-    NULL,
-    NULL,
-    0,             /* flags */
-    0,NULL,NULL    /* reserved1,reserved2, etc */
-  },
-};
-static const unsigned esp_hosted_resp_get_mac_address__field_indices_by_name[] = {
-  0,   /* field[0] = mac */
-  1,   /* field[1] = resp */
-};
-static const ProtobufCIntRange esp_hosted_resp_get_mac_address__number_ranges[1 + 1] =
+  assert(message->base.descriptor == &ctrl_msg__req__config_heartbeat__descriptor);
+  return protobuf_c_message_pack_to_buffer ((const ProtobufCMessage*)message, buffer);
+}
+CtrlMsgReqConfigHeartbeat *
+       ctrl_msg__req__config_heartbeat__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data)
 {
-  { 1, 0 },
-  { 0, 2 }
-};
-const ProtobufCMessageDescriptor esp_hosted_resp_get_mac_address__descriptor =
+  return (CtrlMsgReqConfigHeartbeat *)
+     protobuf_c_message_unpack (&ctrl_msg__req__config_heartbeat__descriptor,
+                                allocator, len, data);
+}
+void   ctrl_msg__req__config_heartbeat__free_unpacked
+                     (CtrlMsgReqConfigHeartbeat *message,
+                      ProtobufCAllocator *allocator)
 {
-  PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
-  "EspHostedRespGetMacAddress",
-  "EspHostedRespGetMacAddress",
-  "EspHostedRespGetMacAddress",
-  "",
-  sizeof(EspHostedRespGetMacAddress),
-  2,
-  esp_hosted_resp_get_mac_address__field_descriptors,
-  esp_hosted_resp_get_mac_address__field_indices_by_name,
-  1,  esp_hosted_resp_get_mac_address__number_ranges,
-  (ProtobufCMessageInit) esp_hosted_resp_get_mac_address__init,
-  NULL,NULL,NULL    /* reserved[123] */
-};
-#define esp_hosted_cmd_get_mode__field_descriptors NULL
-#define esp_hosted_cmd_get_mode__field_indices_by_name NULL
-#define esp_hosted_cmd_get_mode__number_ranges NULL
-const ProtobufCMessageDescriptor esp_hosted_cmd_get_mode__descriptor =
+  if(!message)
+    return;
+  assert(message->base.descriptor == &ctrl_msg__req__config_heartbeat__descriptor);
+  protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
+}
+void   ctrl_msg__resp__config_heartbeat__init
+                     (CtrlMsgRespConfigHeartbeat         *message)
 {
-  PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
-  "EspHostedCmdGetMode",
-  "EspHostedCmdGetMode",
-  "EspHostedCmdGetMode",
-  "",
-  sizeof(EspHostedCmdGetMode),
-  0,
-  esp_hosted_cmd_get_mode__field_descriptors,
-  esp_hosted_cmd_get_mode__field_indices_by_name,
-  0,  esp_hosted_cmd_get_mode__number_ranges,
-  (ProtobufCMessageInit) esp_hosted_cmd_get_mode__init,
-  NULL,NULL,NULL    /* reserved[123] */
-};
-static const ProtobufCFieldDescriptor esp_hosted_resp_get_mode__field_descriptors[2] =
+  static const CtrlMsgRespConfigHeartbeat init_value = CTRL_MSG__RESP__CONFIG_HEARTBEAT__INIT;
+  *message = init_value;
+}
+size_t ctrl_msg__resp__config_heartbeat__get_packed_size
+                     (const CtrlMsgRespConfigHeartbeat *message)
 {
-  {
-    "mode",
-    1,
-    PROTOBUF_C_LABEL_OPTIONAL,
-    PROTOBUF_C_TYPE_INT32,
-    offsetof(EspHostedRespGetMode, has_mode),
-    offsetof(EspHostedRespGetMode, mode),
-    NULL,
-    NULL,
-    0,             /* flags */
-    0,NULL,NULL    /* reserved1,reserved2, etc */
-  },
-  {
-    "resp",
-    2,
-    PROTOBUF_C_LABEL_OPTIONAL,
-    PROTOBUF_C_TYPE_INT32,
-    offsetof(EspHostedRespGetMode, has_resp),
-    offsetof(EspHostedRespGetMode, resp),
-    NULL,
-    NULL,
-    0,             /* flags */
-    0,NULL,NULL    /* reserved1,reserved2, etc */
-  },
-};
-static const unsigned esp_hosted_resp_get_mode__field_indices_by_name[] = {
-  0,   /* field[0] = mode */
-  1,   /* field[1] = resp */
-};
-static const ProtobufCIntRange esp_hosted_resp_get_mode__number_ranges[1 + 1] =
+  assert(message->base.descriptor == &ctrl_msg__resp__config_heartbeat__descriptor);
+  return protobuf_c_message_get_packed_size ((const ProtobufCMessage*)(message));
+}
+size_t ctrl_msg__resp__config_heartbeat__pack
+                     (const CtrlMsgRespConfigHeartbeat *message,
+                      uint8_t       *out)
 {
-  { 1, 0 },
-  { 0, 2 }
-};
-const ProtobufCMessageDescriptor esp_hosted_resp_get_mode__descriptor =
+  assert(message->base.descriptor == &ctrl_msg__resp__config_heartbeat__descriptor);
+  return protobuf_c_message_pack ((const ProtobufCMessage*)message, out);
+}
+size_t ctrl_msg__resp__config_heartbeat__pack_to_buffer
+                     (const CtrlMsgRespConfigHeartbeat *message,
+                      ProtobufCBuffer *buffer)
 {
-  PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
-  "EspHostedRespGetMode",
-  "EspHostedRespGetMode",
-  "EspHostedRespGetMode",
-  "",
-  sizeof(EspHostedRespGetMode),
-  2,
-  esp_hosted_resp_get_mode__field_descriptors,
-  esp_hosted_resp_get_mode__field_indices_by_name,
-  1,  esp_hosted_resp_get_mode__number_ranges,
-  (ProtobufCMessageInit) esp_hosted_resp_get_mode__init,
-  NULL,NULL,NULL    /* reserved[123] */
-};
-static const ProtobufCFieldDescriptor esp_hosted_cmd_set_mode__field_descriptors[1] =
+  assert(message->base.descriptor == &ctrl_msg__resp__config_heartbeat__descriptor);
+  return protobuf_c_message_pack_to_buffer ((const ProtobufCMessage*)message, buffer);
+}
+CtrlMsgRespConfigHeartbeat *
+       ctrl_msg__resp__config_heartbeat__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data)
 {
-  {
-    "mode",
-    1,
-    PROTOBUF_C_LABEL_OPTIONAL,
-    PROTOBUF_C_TYPE_INT32,
-    offsetof(EspHostedCmdSetMode, has_mode),
-    offsetof(EspHostedCmdSetMode, mode),
-    NULL,
-    NULL,
-    0,             /* flags */
-    0,NULL,NULL    /* reserved1,reserved2, etc */
-  },
-};
-static const unsigned esp_hosted_cmd_set_mode__field_indices_by_name[] = {
-  0,   /* field[0] = mode */
-};
-static const ProtobufCIntRange esp_hosted_cmd_set_mode__number_ranges[1 + 1] =
+  return (CtrlMsgRespConfigHeartbeat *)
+     protobuf_c_message_unpack (&ctrl_msg__resp__config_heartbeat__descriptor,
+                                allocator, len, data);
+}
+void   ctrl_msg__resp__config_heartbeat__free_unpacked
+                     (CtrlMsgRespConfigHeartbeat *message,
+                      ProtobufCAllocator *allocator)
 {
-  { 1, 0 },
-  { 0, 1 }
-};
-const ProtobufCMessageDescriptor esp_hosted_cmd_set_mode__descriptor =
+  if(!message)
+    return;
+  assert(message->base.descriptor == &ctrl_msg__resp__config_heartbeat__descriptor);
+  protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
+}
+void   ctrl_msg__event__espinit__init
+                     (CtrlMsgEventESPInit         *message)
 {
-  PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
-  "EspHostedCmdSetMode",
-  "EspHostedCmdSetMode",
-  "EspHostedCmdSetMode",
-  "",
-  sizeof(EspHostedCmdSetMode),
-  1,
-  esp_hosted_cmd_set_mode__field_descriptors,
-  esp_hosted_cmd_set_mode__field_indices_by_name,
-  1,  esp_hosted_cmd_set_mode__number_ranges,
-  (ProtobufCMessageInit) esp_hosted_cmd_set_mode__init,
-  NULL,NULL,NULL    /* reserved[123] */
-};
-static const ProtobufCFieldDescriptor esp_hosted_resp_set_mode__field_descriptors[1] =
+  static const CtrlMsgEventESPInit init_value = CTRL_MSG__EVENT__ESPINIT__INIT;
+  *message = init_value;
+}
+size_t ctrl_msg__event__espinit__get_packed_size
+                     (const CtrlMsgEventESPInit *message)
 {
-  {
-    "resp",
-    1,
-    PROTOBUF_C_LABEL_OPTIONAL,
-    PROTOBUF_C_TYPE_INT32,
-    offsetof(EspHostedRespSetMode, has_resp),
-    offsetof(EspHostedRespSetMode, resp),
-    NULL,
-    NULL,
-    0,             /* flags */
-    0,NULL,NULL    /* reserved1,reserved2, etc */
-  },
-};
-static const unsigned esp_hosted_resp_set_mode__field_indices_by_name[] = {
-  0,   /* field[0] = resp */
-};
-static const ProtobufCIntRange esp_hosted_resp_set_mode__number_ranges[1 + 1] =
+  assert(message->base.descriptor == &ctrl_msg__event__espinit__descriptor);
+  return protobuf_c_message_get_packed_size ((const ProtobufCMessage*)(message));
+}
+size_t ctrl_msg__event__espinit__pack
+                     (const CtrlMsgEventESPInit *message,
+                      uint8_t       *out)
 {
-  { 1, 0 },
-  { 0, 1 }
-};
-const ProtobufCMessageDescriptor esp_hosted_resp_set_mode__descriptor =
+  assert(message->base.descriptor == &ctrl_msg__event__espinit__descriptor);
+  return protobuf_c_message_pack ((const ProtobufCMessage*)message, out);
+}
+size_t ctrl_msg__event__espinit__pack_to_buffer
+                     (const CtrlMsgEventESPInit *message,
+                      ProtobufCBuffer *buffer)
 {
-  PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
-  "EspHostedRespSetMode",
-  "EspHostedRespSetMode",
-  "EspHostedRespSetMode",
-  "",
-  sizeof(EspHostedRespSetMode),
-  1,
-  esp_hosted_resp_set_mode__field_descriptors,
-  esp_hosted_resp_set_mode__field_indices_by_name,
-  1,  esp_hosted_resp_set_mode__number_ranges,
-  (ProtobufCMessageInit) esp_hosted_resp_set_mode__init,
-  NULL,NULL,NULL    /* reserved[123] */
-};
-#define esp_hosted_cmd_get_status__field_descriptors NULL
-#define esp_hosted_cmd_get_status__field_indices_by_name NULL
-#define esp_hosted_cmd_get_status__number_ranges NULL
-const ProtobufCMessageDescriptor esp_hosted_cmd_get_status__descriptor =
+  assert(message->base.descriptor == &ctrl_msg__event__espinit__descriptor);
+  return protobuf_c_message_pack_to_buffer ((const ProtobufCMessage*)message, buffer);
+}
+CtrlMsgEventESPInit *
+       ctrl_msg__event__espinit__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data)
 {
-  PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
-  "EspHostedCmdGetStatus",
-  "EspHostedCmdGetStatus",
-  "EspHostedCmdGetStatus",
-  "",
-  sizeof(EspHostedCmdGetStatus),
-  0,
-  esp_hosted_cmd_get_status__field_descriptors,
-  esp_hosted_cmd_get_status__field_indices_by_name,
-  0,  esp_hosted_cmd_get_status__number_ranges,
-  (ProtobufCMessageInit) esp_hosted_cmd_get_status__init,
-  NULL,NULL,NULL    /* reserved[123] */
-};
-static const ProtobufCFieldDescriptor esp_hosted_resp_get_status__field_descriptors[1] =
+  return (CtrlMsgEventESPInit *)
+     protobuf_c_message_unpack (&ctrl_msg__event__espinit__descriptor,
+                                allocator, len, data);
+}
+void   ctrl_msg__event__espinit__free_unpacked
+                     (CtrlMsgEventESPInit *message,
+                      ProtobufCAllocator *allocator)
 {
-  {
-    "resp",
-    1,
-    PROTOBUF_C_LABEL_OPTIONAL,
-    PROTOBUF_C_TYPE_INT32,
-    offsetof(EspHostedRespGetStatus, has_resp),
-    offsetof(EspHostedRespGetStatus, resp),
-    NULL,
-    NULL,
-    0,             /* flags */
-    0,NULL,NULL    /* reserved1,reserved2, etc */
-  },
-};
-static const unsigned esp_hosted_resp_get_status__field_indices_by_name[] = {
-  0,   /* field[0] = resp */
-};
-static const ProtobufCIntRange esp_hosted_resp_get_status__number_ranges[1 + 1] =
+  if(!message)
+    return;
+  assert(message->base.descriptor == &ctrl_msg__event__espinit__descriptor);
+  protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
+}
+void   ctrl_msg__event__heartbeat__init
+                     (CtrlMsgEventHeartbeat         *message)
 {
-  { 1, 0 },
-  { 0, 1 }
-};
-const ProtobufCMessageDescriptor esp_hosted_resp_get_status__descriptor =
+  static const CtrlMsgEventHeartbeat init_value = CTRL_MSG__EVENT__HEARTBEAT__INIT;
+  *message = init_value;
+}
+size_t ctrl_msg__event__heartbeat__get_packed_size
+                     (const CtrlMsgEventHeartbeat *message)
 {
-  PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
-  "EspHostedRespGetStatus",
-  "EspHostedRespGetStatus",
-  "EspHostedRespGetStatus",
-  "",
-  sizeof(EspHostedRespGetStatus),
-  1,
-  esp_hosted_resp_get_status__field_descriptors,
-  esp_hosted_resp_get_status__field_indices_by_name,
-  1,  esp_hosted_resp_get_status__number_ranges,
-  (ProtobufCMessageInit) esp_hosted_resp_get_status__init,
-  NULL,NULL,NULL    /* reserved[123] */
-};
-static const ProtobufCFieldDescriptor esp_hosted_cmd_set_mac_address__field_descriptors[2] =
+  assert(message->base.descriptor == &ctrl_msg__event__heartbeat__descriptor);
+  return protobuf_c_message_get_packed_size ((const ProtobufCMessage*)(message));
+}
+size_t ctrl_msg__event__heartbeat__pack
+                     (const CtrlMsgEventHeartbeat *message,
+                      uint8_t       *out)
 {
-  {
-    "mac",
-    1,
-    PROTOBUF_C_LABEL_OPTIONAL,
-    PROTOBUF_C_TYPE_BYTES,
-    offsetof(EspHostedCmdSetMacAddress, has_mac),
-    offsetof(EspHostedCmdSetMacAddress, mac),
-    NULL,
-    NULL,
-    0,             /* flags */
-    0,NULL,NULL    /* reserved1,reserved2, etc */
-  },
-  {
-    "mode",
-    2,
-    PROTOBUF_C_LABEL_OPTIONAL,
-    PROTOBUF_C_TYPE_INT32,
-    offsetof(EspHostedCmdSetMacAddress, has_mode),
-    offsetof(EspHostedCmdSetMacAddress, mode),
-    NULL,
-    NULL,
-    0,             /* flags */
-    0,NULL,NULL    /* reserved1,reserved2, etc */
-  },
-};
-static const unsigned esp_hosted_cmd_set_mac_address__field_indices_by_name[] = {
-  0,   /* field[0] = mac */
-  1,   /* field[1] = mode */
-};
-static const ProtobufCIntRange esp_hosted_cmd_set_mac_address__number_ranges[1 + 1] =
+  assert(message->base.descriptor == &ctrl_msg__event__heartbeat__descriptor);
+  return protobuf_c_message_pack ((const ProtobufCMessage*)message, out);
+}
+size_t ctrl_msg__event__heartbeat__pack_to_buffer
+                     (const CtrlMsgEventHeartbeat *message,
+                      ProtobufCBuffer *buffer)
 {
-  { 1, 0 },
-  { 0, 2 }
-};
-const ProtobufCMessageDescriptor esp_hosted_cmd_set_mac_address__descriptor =
+  assert(message->base.descriptor == &ctrl_msg__event__heartbeat__descriptor);
+  return protobuf_c_message_pack_to_buffer ((const ProtobufCMessage*)message, buffer);
+}
+CtrlMsgEventHeartbeat *
+       ctrl_msg__event__heartbeat__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data)
 {
-  PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
-  "EspHostedCmdSetMacAddress",
-  "EspHostedCmdSetMacAddress",
-  "EspHostedCmdSetMacAddress",
-  "",
-  sizeof(EspHostedCmdSetMacAddress),
-  2,
-  esp_hosted_cmd_set_mac_address__field_descriptors,
-  esp_hosted_cmd_set_mac_address__field_indices_by_name,
-  1,  esp_hosted_cmd_set_mac_address__number_ranges,
-  (ProtobufCMessageInit) esp_hosted_cmd_set_mac_address__init,
-  NULL,NULL,NULL    /* reserved[123] */
-};
-static const ProtobufCFieldDescriptor esp_hosted_resp_set_mac_address__field_descriptors[1] =
+  return (CtrlMsgEventHeartbeat *)
+     protobuf_c_message_unpack (&ctrl_msg__event__heartbeat__descriptor,
+                                allocator, len, data);
+}
+void   ctrl_msg__event__heartbeat__free_unpacked
+                     (CtrlMsgEventHeartbeat *message,
+                      ProtobufCAllocator *allocator)
 {
-  {
-    "resp",
-    1,
-    PROTOBUF_C_LABEL_OPTIONAL,
-    PROTOBUF_C_TYPE_INT32,
-    offsetof(EspHostedRespSetMacAddress, has_resp),
-    offsetof(EspHostedRespSetMacAddress, resp),
-    NULL,
-    NULL,
-    0,             /* flags */
-    0,NULL,NULL    /* reserved1,reserved2, etc */
-  },
-};
-static const unsigned esp_hosted_resp_set_mac_address__field_indices_by_name[] = {
-  0,   /* field[0] = resp */
-};
-static const ProtobufCIntRange esp_hosted_resp_set_mac_address__number_ranges[1 + 1] =
+  if(!message)
+    return;
+  assert(message->base.descriptor == &ctrl_msg__event__heartbeat__descriptor);
+  protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
+}
+void   ctrl_msg__event__station_disconnect_from_ap__init
+                     (CtrlMsgEventStationDisconnectFromAP         *message)
 {
-  { 1, 0 },
-  { 0, 1 }
-};
-const ProtobufCMessageDescriptor esp_hosted_resp_set_mac_address__descriptor =
+  static const CtrlMsgEventStationDisconnectFromAP init_value = CTRL_MSG__EVENT__STATION_DISCONNECT_FROM_AP__INIT;
+  *message = init_value;
+}
+size_t ctrl_msg__event__station_disconnect_from_ap__get_packed_size
+                     (const CtrlMsgEventStationDisconnectFromAP *message)
 {
-  PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
-  "EspHostedRespSetMacAddress",
-  "EspHostedRespSetMacAddress",
-  "EspHostedRespSetMacAddress",
-  "",
-  sizeof(EspHostedRespSetMacAddress),
-  1,
-  esp_hosted_resp_set_mac_address__field_descriptors,
-  esp_hosted_resp_set_mac_address__field_indices_by_name,
-  1,  esp_hosted_resp_set_mac_address__number_ranges,
-  (ProtobufCMessageInit) esp_hosted_resp_set_mac_address__init,
-  NULL,NULL,NULL    /* reserved[123] */
-};
-#define esp_hosted_cmd_get_apconfig__field_descriptors NULL
-#define esp_hosted_cmd_get_apconfig__field_indices_by_name NULL
-#define esp_hosted_cmd_get_apconfig__number_ranges NULL
-const ProtobufCMessageDescriptor esp_hosted_cmd_get_apconfig__descriptor =
+  assert(message->base.descriptor == &ctrl_msg__event__station_disconnect_from_ap__descriptor);
+  return protobuf_c_message_get_packed_size ((const ProtobufCMessage*)(message));
+}
+size_t ctrl_msg__event__station_disconnect_from_ap__pack
+                     (const CtrlMsgEventStationDisconnectFromAP *message,
+                      uint8_t       *out)
 {
-  PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
-  "EspHostedCmdGetAPConfig",
-  "EspHostedCmdGetAPConfig",
-  "EspHostedCmdGetAPConfig",
-  "",
-  sizeof(EspHostedCmdGetAPConfig),
-  0,
-  esp_hosted_cmd_get_apconfig__field_descriptors,
-  esp_hosted_cmd_get_apconfig__field_indices_by_name,
-  0,  esp_hosted_cmd_get_apconfig__number_ranges,
-  (ProtobufCMessageInit) esp_hosted_cmd_get_apconfig__init,
-  NULL,NULL,NULL    /* reserved[123] */
-};
-static const ProtobufCFieldDescriptor esp_hosted_resp_get_apconfig__field_descriptors[6] =
+  assert(message->base.descriptor == &ctrl_msg__event__station_disconnect_from_ap__descriptor);
+  return protobuf_c_message_pack ((const ProtobufCMessage*)message, out);
+}
+size_t ctrl_msg__event__station_disconnect_from_ap__pack_to_buffer
+                     (const CtrlMsgEventStationDisconnectFromAP *message,
+                      ProtobufCBuffer *buffer)
+{
+  assert(message->base.descriptor == &ctrl_msg__event__station_disconnect_from_ap__descriptor);
+  return protobuf_c_message_pack_to_buffer ((const ProtobufCMessage*)message, buffer);
+}
+CtrlMsgEventStationDisconnectFromAP *
+       ctrl_msg__event__station_disconnect_from_ap__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data)
+{
+  return (CtrlMsgEventStationDisconnectFromAP *)
+     protobuf_c_message_unpack (&ctrl_msg__event__station_disconnect_from_ap__descriptor,
+                                allocator, len, data);
+}
+void   ctrl_msg__event__station_disconnect_from_ap__free_unpacked
+                     (CtrlMsgEventStationDisconnectFromAP *message,
+                      ProtobufCAllocator *allocator)
+{
+  if(!message)
+    return;
+  assert(message->base.descriptor == &ctrl_msg__event__station_disconnect_from_ap__descriptor);
+  protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
+}
+void   ctrl_msg__event__station_disconnect_from_espsoft_ap__init
+                     (CtrlMsgEventStationDisconnectFromESPSoftAP         *message)
+{
+  static const CtrlMsgEventStationDisconnectFromESPSoftAP init_value = CTRL_MSG__EVENT__STATION_DISCONNECT_FROM_ESPSOFT_AP__INIT;
+  *message = init_value;
+}
+size_t ctrl_msg__event__station_disconnect_from_espsoft_ap__get_packed_size
+                     (const CtrlMsgEventStationDisconnectFromESPSoftAP *message)
+{
+  assert(message->base.descriptor == &ctrl_msg__event__station_disconnect_from_espsoft_ap__descriptor);
+  return protobuf_c_message_get_packed_size ((const ProtobufCMessage*)(message));
+}
+size_t ctrl_msg__event__station_disconnect_from_espsoft_ap__pack
+                     (const CtrlMsgEventStationDisconnectFromESPSoftAP *message,
+                      uint8_t       *out)
+{
+  assert(message->base.descriptor == &ctrl_msg__event__station_disconnect_from_espsoft_ap__descriptor);
+  return protobuf_c_message_pack ((const ProtobufCMessage*)message, out);
+}
+size_t ctrl_msg__event__station_disconnect_from_espsoft_ap__pack_to_buffer
+                     (const CtrlMsgEventStationDisconnectFromESPSoftAP *message,
+                      ProtobufCBuffer *buffer)
+{
+  assert(message->base.descriptor == &ctrl_msg__event__station_disconnect_from_espsoft_ap__descriptor);
+  return protobuf_c_message_pack_to_buffer ((const ProtobufCMessage*)message, buffer);
+}
+CtrlMsgEventStationDisconnectFromESPSoftAP *
+       ctrl_msg__event__station_disconnect_from_espsoft_ap__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data)
+{
+  return (CtrlMsgEventStationDisconnectFromESPSoftAP *)
+     protobuf_c_message_unpack (&ctrl_msg__event__station_disconnect_from_espsoft_ap__descriptor,
+                                allocator, len, data);
+}
+void   ctrl_msg__event__station_disconnect_from_espsoft_ap__free_unpacked
+                     (CtrlMsgEventStationDisconnectFromESPSoftAP *message,
+                      ProtobufCAllocator *allocator)
+{
+  if(!message)
+    return;
+  assert(message->base.descriptor == &ctrl_msg__event__station_disconnect_from_espsoft_ap__descriptor);
+  protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
+}
+void   ctrl_msg__init
+                     (CtrlMsg         *message)
+{
+  static const CtrlMsg init_value = CTRL_MSG__INIT;
+  *message = init_value;
+}
+size_t ctrl_msg__get_packed_size
+                     (const CtrlMsg *message)
+{
+  assert(message->base.descriptor == &ctrl_msg__descriptor);
+  return protobuf_c_message_get_packed_size ((const ProtobufCMessage*)(message));
+}
+size_t ctrl_msg__pack
+                     (const CtrlMsg *message,
+                      uint8_t       *out)
+{
+  assert(message->base.descriptor == &ctrl_msg__descriptor);
+  return protobuf_c_message_pack ((const ProtobufCMessage*)message, out);
+}
+size_t ctrl_msg__pack_to_buffer
+                     (const CtrlMsg *message,
+                      ProtobufCBuffer *buffer)
+{
+  assert(message->base.descriptor == &ctrl_msg__descriptor);
+  return protobuf_c_message_pack_to_buffer ((const ProtobufCMessage*)message, buffer);
+}
+CtrlMsg *
+       ctrl_msg__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data)
+{
+  return (CtrlMsg *)
+     protobuf_c_message_unpack (&ctrl_msg__descriptor,
+                                allocator, len, data);
+}
+void   ctrl_msg__free_unpacked
+                     (CtrlMsg *message,
+                      ProtobufCAllocator *allocator)
+{
+  if(!message)
+    return;
+  assert(message->base.descriptor == &ctrl_msg__descriptor);
+  protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
+}
+static const ProtobufCFieldDescriptor scan_result__field_descriptors[5] =
 {
   {
     "ssid",
     1,
-    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_LABEL_NONE,
     PROTOBUF_C_TYPE_BYTES,
-    offsetof(EspHostedRespGetAPConfig, has_ssid),
-    offsetof(EspHostedRespGetAPConfig, ssid),
+    0,   /* quantifier_offset */
+    offsetof(ScanResult, ssid),
     NULL,
     NULL,
     0,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
   {
-    "bssid",
+    "chnl",
     2,
-    PROTOBUF_C_LABEL_OPTIONAL,
-    PROTOBUF_C_TYPE_BYTES,
-    offsetof(EspHostedRespGetAPConfig, has_bssid),
-    offsetof(EspHostedRespGetAPConfig, bssid),
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_UINT32,
+    0,   /* quantifier_offset */
+    offsetof(ScanResult, chnl),
     NULL,
     NULL,
     0,             /* flags */
@@ -2024,10 +2016,548 @@ static const ProtobufCFieldDescriptor esp_hosted_resp_get_apconfig__field_descri
   {
     "rssi",
     3,
-    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_LABEL_NONE,
     PROTOBUF_C_TYPE_INT32,
-    offsetof(EspHostedRespGetAPConfig, has_rssi),
-    offsetof(EspHostedRespGetAPConfig, rssi),
+    0,   /* quantifier_offset */
+    offsetof(ScanResult, rssi),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "bssid",
+    4,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_BYTES,
+    0,   /* quantifier_offset */
+    offsetof(ScanResult, bssid),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "sec_prot",
+    5,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_ENUM,
+    0,   /* quantifier_offset */
+    offsetof(ScanResult, sec_prot),
+    &ctrl__wifi_sec_prot__descriptor,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+};
+static const unsigned scan_result__field_indices_by_name[] = {
+  3,   /* field[3] = bssid */
+  1,   /* field[1] = chnl */
+  2,   /* field[2] = rssi */
+  4,   /* field[4] = sec_prot */
+  0,   /* field[0] = ssid */
+};
+static const ProtobufCIntRange scan_result__number_ranges[1 + 1] =
+{
+  { 1, 0 },
+  { 0, 5 }
+};
+const ProtobufCMessageDescriptor scan_result__descriptor =
+{
+  PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
+  "ScanResult",
+  "ScanResult",
+  "ScanResult",
+  "",
+  sizeof(ScanResult),
+  5,
+  scan_result__field_descriptors,
+  scan_result__field_indices_by_name,
+  1,  scan_result__number_ranges,
+  (ProtobufCMessageInit) scan_result__init,
+  NULL,NULL,NULL    /* reserved[123] */
+};
+static const ProtobufCFieldDescriptor connected_stalist__field_descriptors[2] =
+{
+  {
+    "mac",
+    1,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_BYTES,
+    0,   /* quantifier_offset */
+    offsetof(ConnectedSTAList, mac),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "rssi",
+    2,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_INT32,
+    0,   /* quantifier_offset */
+    offsetof(ConnectedSTAList, rssi),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+};
+static const unsigned connected_stalist__field_indices_by_name[] = {
+  0,   /* field[0] = mac */
+  1,   /* field[1] = rssi */
+};
+static const ProtobufCIntRange connected_stalist__number_ranges[1 + 1] =
+{
+  { 1, 0 },
+  { 0, 2 }
+};
+const ProtobufCMessageDescriptor connected_stalist__descriptor =
+{
+  PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
+  "ConnectedSTAList",
+  "ConnectedSTAList",
+  "ConnectedSTAList",
+  "",
+  sizeof(ConnectedSTAList),
+  2,
+  connected_stalist__field_descriptors,
+  connected_stalist__field_indices_by_name,
+  1,  connected_stalist__number_ranges,
+  (ProtobufCMessageInit) connected_stalist__init,
+  NULL,NULL,NULL    /* reserved[123] */
+};
+static const ProtobufCFieldDescriptor ctrl_msg__req__get_mac_address__field_descriptors[1] =
+{
+  {
+    "mode",
+    1,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_INT32,
+    0,   /* quantifier_offset */
+    offsetof(CtrlMsgReqGetMacAddress, mode),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+};
+static const unsigned ctrl_msg__req__get_mac_address__field_indices_by_name[] = {
+  0,   /* field[0] = mode */
+};
+static const ProtobufCIntRange ctrl_msg__req__get_mac_address__number_ranges[1 + 1] =
+{
+  { 1, 0 },
+  { 0, 1 }
+};
+const ProtobufCMessageDescriptor ctrl_msg__req__get_mac_address__descriptor =
+{
+  PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
+  "CtrlMsg_Req_GetMacAddress",
+  "CtrlMsgReqGetMacAddress",
+  "CtrlMsgReqGetMacAddress",
+  "",
+  sizeof(CtrlMsgReqGetMacAddress),
+  1,
+  ctrl_msg__req__get_mac_address__field_descriptors,
+  ctrl_msg__req__get_mac_address__field_indices_by_name,
+  1,  ctrl_msg__req__get_mac_address__number_ranges,
+  (ProtobufCMessageInit) ctrl_msg__req__get_mac_address__init,
+  NULL,NULL,NULL    /* reserved[123] */
+};
+static const ProtobufCFieldDescriptor ctrl_msg__resp__get_mac_address__field_descriptors[2] =
+{
+  {
+    "mac",
+    1,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_BYTES,
+    0,   /* quantifier_offset */
+    offsetof(CtrlMsgRespGetMacAddress, mac),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "resp",
+    2,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_INT32,
+    0,   /* quantifier_offset */
+    offsetof(CtrlMsgRespGetMacAddress, resp),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+};
+static const unsigned ctrl_msg__resp__get_mac_address__field_indices_by_name[] = {
+  0,   /* field[0] = mac */
+  1,   /* field[1] = resp */
+};
+static const ProtobufCIntRange ctrl_msg__resp__get_mac_address__number_ranges[1 + 1] =
+{
+  { 1, 0 },
+  { 0, 2 }
+};
+const ProtobufCMessageDescriptor ctrl_msg__resp__get_mac_address__descriptor =
+{
+  PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
+  "CtrlMsg_Resp_GetMacAddress",
+  "CtrlMsgRespGetMacAddress",
+  "CtrlMsgRespGetMacAddress",
+  "",
+  sizeof(CtrlMsgRespGetMacAddress),
+  2,
+  ctrl_msg__resp__get_mac_address__field_descriptors,
+  ctrl_msg__resp__get_mac_address__field_indices_by_name,
+  1,  ctrl_msg__resp__get_mac_address__number_ranges,
+  (ProtobufCMessageInit) ctrl_msg__resp__get_mac_address__init,
+  NULL,NULL,NULL    /* reserved[123] */
+};
+#define ctrl_msg__req__get_mode__field_descriptors NULL
+#define ctrl_msg__req__get_mode__field_indices_by_name NULL
+#define ctrl_msg__req__get_mode__number_ranges NULL
+const ProtobufCMessageDescriptor ctrl_msg__req__get_mode__descriptor =
+{
+  PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
+  "CtrlMsg_Req_GetMode",
+  "CtrlMsgReqGetMode",
+  "CtrlMsgReqGetMode",
+  "",
+  sizeof(CtrlMsgReqGetMode),
+  0,
+  ctrl_msg__req__get_mode__field_descriptors,
+  ctrl_msg__req__get_mode__field_indices_by_name,
+  0,  ctrl_msg__req__get_mode__number_ranges,
+  (ProtobufCMessageInit) ctrl_msg__req__get_mode__init,
+  NULL,NULL,NULL    /* reserved[123] */
+};
+static const ProtobufCFieldDescriptor ctrl_msg__resp__get_mode__field_descriptors[2] =
+{
+  {
+    "mode",
+    1,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_INT32,
+    0,   /* quantifier_offset */
+    offsetof(CtrlMsgRespGetMode, mode),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "resp",
+    2,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_INT32,
+    0,   /* quantifier_offset */
+    offsetof(CtrlMsgRespGetMode, resp),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+};
+static const unsigned ctrl_msg__resp__get_mode__field_indices_by_name[] = {
+  0,   /* field[0] = mode */
+  1,   /* field[1] = resp */
+};
+static const ProtobufCIntRange ctrl_msg__resp__get_mode__number_ranges[1 + 1] =
+{
+  { 1, 0 },
+  { 0, 2 }
+};
+const ProtobufCMessageDescriptor ctrl_msg__resp__get_mode__descriptor =
+{
+  PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
+  "CtrlMsg_Resp_GetMode",
+  "CtrlMsgRespGetMode",
+  "CtrlMsgRespGetMode",
+  "",
+  sizeof(CtrlMsgRespGetMode),
+  2,
+  ctrl_msg__resp__get_mode__field_descriptors,
+  ctrl_msg__resp__get_mode__field_indices_by_name,
+  1,  ctrl_msg__resp__get_mode__number_ranges,
+  (ProtobufCMessageInit) ctrl_msg__resp__get_mode__init,
+  NULL,NULL,NULL    /* reserved[123] */
+};
+static const ProtobufCFieldDescriptor ctrl_msg__req__set_mode__field_descriptors[1] =
+{
+  {
+    "mode",
+    1,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_INT32,
+    0,   /* quantifier_offset */
+    offsetof(CtrlMsgReqSetMode, mode),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+};
+static const unsigned ctrl_msg__req__set_mode__field_indices_by_name[] = {
+  0,   /* field[0] = mode */
+};
+static const ProtobufCIntRange ctrl_msg__req__set_mode__number_ranges[1 + 1] =
+{
+  { 1, 0 },
+  { 0, 1 }
+};
+const ProtobufCMessageDescriptor ctrl_msg__req__set_mode__descriptor =
+{
+  PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
+  "CtrlMsg_Req_SetMode",
+  "CtrlMsgReqSetMode",
+  "CtrlMsgReqSetMode",
+  "",
+  sizeof(CtrlMsgReqSetMode),
+  1,
+  ctrl_msg__req__set_mode__field_descriptors,
+  ctrl_msg__req__set_mode__field_indices_by_name,
+  1,  ctrl_msg__req__set_mode__number_ranges,
+  (ProtobufCMessageInit) ctrl_msg__req__set_mode__init,
+  NULL,NULL,NULL    /* reserved[123] */
+};
+static const ProtobufCFieldDescriptor ctrl_msg__resp__set_mode__field_descriptors[1] =
+{
+  {
+    "resp",
+    1,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_INT32,
+    0,   /* quantifier_offset */
+    offsetof(CtrlMsgRespSetMode, resp),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+};
+static const unsigned ctrl_msg__resp__set_mode__field_indices_by_name[] = {
+  0,   /* field[0] = resp */
+};
+static const ProtobufCIntRange ctrl_msg__resp__set_mode__number_ranges[1 + 1] =
+{
+  { 1, 0 },
+  { 0, 1 }
+};
+const ProtobufCMessageDescriptor ctrl_msg__resp__set_mode__descriptor =
+{
+  PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
+  "CtrlMsg_Resp_SetMode",
+  "CtrlMsgRespSetMode",
+  "CtrlMsgRespSetMode",
+  "",
+  sizeof(CtrlMsgRespSetMode),
+  1,
+  ctrl_msg__resp__set_mode__field_descriptors,
+  ctrl_msg__resp__set_mode__field_indices_by_name,
+  1,  ctrl_msg__resp__set_mode__number_ranges,
+  (ProtobufCMessageInit) ctrl_msg__resp__set_mode__init,
+  NULL,NULL,NULL    /* reserved[123] */
+};
+#define ctrl_msg__req__get_status__field_descriptors NULL
+#define ctrl_msg__req__get_status__field_indices_by_name NULL
+#define ctrl_msg__req__get_status__number_ranges NULL
+const ProtobufCMessageDescriptor ctrl_msg__req__get_status__descriptor =
+{
+  PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
+  "CtrlMsg_Req_GetStatus",
+  "CtrlMsgReqGetStatus",
+  "CtrlMsgReqGetStatus",
+  "",
+  sizeof(CtrlMsgReqGetStatus),
+  0,
+  ctrl_msg__req__get_status__field_descriptors,
+  ctrl_msg__req__get_status__field_indices_by_name,
+  0,  ctrl_msg__req__get_status__number_ranges,
+  (ProtobufCMessageInit) ctrl_msg__req__get_status__init,
+  NULL,NULL,NULL    /* reserved[123] */
+};
+static const ProtobufCFieldDescriptor ctrl_msg__resp__get_status__field_descriptors[1] =
+{
+  {
+    "resp",
+    1,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_INT32,
+    0,   /* quantifier_offset */
+    offsetof(CtrlMsgRespGetStatus, resp),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+};
+static const unsigned ctrl_msg__resp__get_status__field_indices_by_name[] = {
+  0,   /* field[0] = resp */
+};
+static const ProtobufCIntRange ctrl_msg__resp__get_status__number_ranges[1 + 1] =
+{
+  { 1, 0 },
+  { 0, 1 }
+};
+const ProtobufCMessageDescriptor ctrl_msg__resp__get_status__descriptor =
+{
+  PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
+  "CtrlMsg_Resp_GetStatus",
+  "CtrlMsgRespGetStatus",
+  "CtrlMsgRespGetStatus",
+  "",
+  sizeof(CtrlMsgRespGetStatus),
+  1,
+  ctrl_msg__resp__get_status__field_descriptors,
+  ctrl_msg__resp__get_status__field_indices_by_name,
+  1,  ctrl_msg__resp__get_status__number_ranges,
+  (ProtobufCMessageInit) ctrl_msg__resp__get_status__init,
+  NULL,NULL,NULL    /* reserved[123] */
+};
+static const ProtobufCFieldDescriptor ctrl_msg__req__set_mac_address__field_descriptors[2] =
+{
+  {
+    "mac",
+    1,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_BYTES,
+    0,   /* quantifier_offset */
+    offsetof(CtrlMsgReqSetMacAddress, mac),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "mode",
+    2,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_INT32,
+    0,   /* quantifier_offset */
+    offsetof(CtrlMsgReqSetMacAddress, mode),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+};
+static const unsigned ctrl_msg__req__set_mac_address__field_indices_by_name[] = {
+  0,   /* field[0] = mac */
+  1,   /* field[1] = mode */
+};
+static const ProtobufCIntRange ctrl_msg__req__set_mac_address__number_ranges[1 + 1] =
+{
+  { 1, 0 },
+  { 0, 2 }
+};
+const ProtobufCMessageDescriptor ctrl_msg__req__set_mac_address__descriptor =
+{
+  PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
+  "CtrlMsg_Req_SetMacAddress",
+  "CtrlMsgReqSetMacAddress",
+  "CtrlMsgReqSetMacAddress",
+  "",
+  sizeof(CtrlMsgReqSetMacAddress),
+  2,
+  ctrl_msg__req__set_mac_address__field_descriptors,
+  ctrl_msg__req__set_mac_address__field_indices_by_name,
+  1,  ctrl_msg__req__set_mac_address__number_ranges,
+  (ProtobufCMessageInit) ctrl_msg__req__set_mac_address__init,
+  NULL,NULL,NULL    /* reserved[123] */
+};
+static const ProtobufCFieldDescriptor ctrl_msg__resp__set_mac_address__field_descriptors[1] =
+{
+  {
+    "resp",
+    1,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_INT32,
+    0,   /* quantifier_offset */
+    offsetof(CtrlMsgRespSetMacAddress, resp),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+};
+static const unsigned ctrl_msg__resp__set_mac_address__field_indices_by_name[] = {
+  0,   /* field[0] = resp */
+};
+static const ProtobufCIntRange ctrl_msg__resp__set_mac_address__number_ranges[1 + 1] =
+{
+  { 1, 0 },
+  { 0, 1 }
+};
+const ProtobufCMessageDescriptor ctrl_msg__resp__set_mac_address__descriptor =
+{
+  PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
+  "CtrlMsg_Resp_SetMacAddress",
+  "CtrlMsgRespSetMacAddress",
+  "CtrlMsgRespSetMacAddress",
+  "",
+  sizeof(CtrlMsgRespSetMacAddress),
+  1,
+  ctrl_msg__resp__set_mac_address__field_descriptors,
+  ctrl_msg__resp__set_mac_address__field_indices_by_name,
+  1,  ctrl_msg__resp__set_mac_address__number_ranges,
+  (ProtobufCMessageInit) ctrl_msg__resp__set_mac_address__init,
+  NULL,NULL,NULL    /* reserved[123] */
+};
+#define ctrl_msg__req__get_apconfig__field_descriptors NULL
+#define ctrl_msg__req__get_apconfig__field_indices_by_name NULL
+#define ctrl_msg__req__get_apconfig__number_ranges NULL
+const ProtobufCMessageDescriptor ctrl_msg__req__get_apconfig__descriptor =
+{
+  PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
+  "CtrlMsg_Req_GetAPConfig",
+  "CtrlMsgReqGetAPConfig",
+  "CtrlMsgReqGetAPConfig",
+  "",
+  sizeof(CtrlMsgReqGetAPConfig),
+  0,
+  ctrl_msg__req__get_apconfig__field_descriptors,
+  ctrl_msg__req__get_apconfig__field_indices_by_name,
+  0,  ctrl_msg__req__get_apconfig__number_ranges,
+  (ProtobufCMessageInit) ctrl_msg__req__get_apconfig__init,
+  NULL,NULL,NULL    /* reserved[123] */
+};
+static const ProtobufCFieldDescriptor ctrl_msg__resp__get_apconfig__field_descriptors[6] =
+{
+  {
+    "ssid",
+    1,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_BYTES,
+    0,   /* quantifier_offset */
+    offsetof(CtrlMsgRespGetAPConfig, ssid),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "bssid",
+    2,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_BYTES,
+    0,   /* quantifier_offset */
+    offsetof(CtrlMsgRespGetAPConfig, bssid),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "rssi",
+    3,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_INT32,
+    0,   /* quantifier_offset */
+    offsetof(CtrlMsgRespGetAPConfig, rssi),
     NULL,
     NULL,
     0,             /* flags */
@@ -2036,23 +2566,23 @@ static const ProtobufCFieldDescriptor esp_hosted_resp_get_apconfig__field_descri
   {
     "chnl",
     4,
-    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_LABEL_NONE,
     PROTOBUF_C_TYPE_INT32,
-    offsetof(EspHostedRespGetAPConfig, has_chnl),
-    offsetof(EspHostedRespGetAPConfig, chnl),
+    0,   /* quantifier_offset */
+    offsetof(CtrlMsgRespGetAPConfig, chnl),
     NULL,
     NULL,
     0,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
   {
-    "ecn",
+    "sec_prot",
     5,
-    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_LABEL_NONE,
     PROTOBUF_C_TYPE_ENUM,
-    offsetof(EspHostedRespGetAPConfig, has_ecn),
-    offsetof(EspHostedRespGetAPConfig, ecn),
-    &esp_hosted_encryption_mode__descriptor,
+    0,   /* quantifier_offset */
+    offsetof(CtrlMsgRespGetAPConfig, sec_prot),
+    &ctrl__wifi_sec_prot__descriptor,
     NULL,
     0,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
@@ -2060,89 +2590,89 @@ static const ProtobufCFieldDescriptor esp_hosted_resp_get_apconfig__field_descri
   {
     "resp",
     6,
-    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_LABEL_NONE,
     PROTOBUF_C_TYPE_INT32,
-    offsetof(EspHostedRespGetAPConfig, has_resp),
-    offsetof(EspHostedRespGetAPConfig, resp),
+    0,   /* quantifier_offset */
+    offsetof(CtrlMsgRespGetAPConfig, resp),
     NULL,
     NULL,
     0,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
 };
-static const unsigned esp_hosted_resp_get_apconfig__field_indices_by_name[] = {
+static const unsigned ctrl_msg__resp__get_apconfig__field_indices_by_name[] = {
   1,   /* field[1] = bssid */
   3,   /* field[3] = chnl */
-  4,   /* field[4] = ecn */
   5,   /* field[5] = resp */
   2,   /* field[2] = rssi */
+  4,   /* field[4] = sec_prot */
   0,   /* field[0] = ssid */
 };
-static const ProtobufCIntRange esp_hosted_resp_get_apconfig__number_ranges[1 + 1] =
+static const ProtobufCIntRange ctrl_msg__resp__get_apconfig__number_ranges[1 + 1] =
 {
   { 1, 0 },
   { 0, 6 }
 };
-const ProtobufCMessageDescriptor esp_hosted_resp_get_apconfig__descriptor =
+const ProtobufCMessageDescriptor ctrl_msg__resp__get_apconfig__descriptor =
 {
   PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
-  "EspHostedRespGetAPConfig",
-  "EspHostedRespGetAPConfig",
-  "EspHostedRespGetAPConfig",
+  "CtrlMsg_Resp_GetAPConfig",
+  "CtrlMsgRespGetAPConfig",
+  "CtrlMsgRespGetAPConfig",
   "",
-  sizeof(EspHostedRespGetAPConfig),
+  sizeof(CtrlMsgRespGetAPConfig),
   6,
-  esp_hosted_resp_get_apconfig__field_descriptors,
-  esp_hosted_resp_get_apconfig__field_indices_by_name,
-  1,  esp_hosted_resp_get_apconfig__number_ranges,
-  (ProtobufCMessageInit) esp_hosted_resp_get_apconfig__init,
+  ctrl_msg__resp__get_apconfig__field_descriptors,
+  ctrl_msg__resp__get_apconfig__field_indices_by_name,
+  1,  ctrl_msg__resp__get_apconfig__number_ranges,
+  (ProtobufCMessageInit) ctrl_msg__resp__get_apconfig__init,
   NULL,NULL,NULL    /* reserved[123] */
 };
-static const ProtobufCFieldDescriptor esp_hosted_cmd_set_apconfig__field_descriptors[5] =
+static const ProtobufCFieldDescriptor ctrl_msg__req__connect_ap__field_descriptors[5] =
 {
   {
     "ssid",
     1,
-    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_LABEL_NONE,
     PROTOBUF_C_TYPE_STRING,
     0,   /* quantifier_offset */
-    offsetof(EspHostedCmdSetAPConfig, ssid),
+    offsetof(CtrlMsgReqConnectAP, ssid),
     NULL,
-    NULL,
+    &protobuf_c_empty_string,
     0,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
   {
     "pwd",
     2,
-    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_LABEL_NONE,
     PROTOBUF_C_TYPE_STRING,
     0,   /* quantifier_offset */
-    offsetof(EspHostedCmdSetAPConfig, pwd),
+    offsetof(CtrlMsgReqConnectAP, pwd),
     NULL,
-    NULL,
+    &protobuf_c_empty_string,
     0,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
   {
     "bssid",
     3,
-    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_LABEL_NONE,
     PROTOBUF_C_TYPE_STRING,
     0,   /* quantifier_offset */
-    offsetof(EspHostedCmdSetAPConfig, bssid),
+    offsetof(CtrlMsgReqConnectAP, bssid),
     NULL,
-    NULL,
+    &protobuf_c_empty_string,
     0,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
   {
     "is_wpa3_supported",
     4,
-    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_LABEL_NONE,
     PROTOBUF_C_TYPE_BOOL,
-    offsetof(EspHostedCmdSetAPConfig, has_is_wpa3_supported),
-    offsetof(EspHostedCmdSetAPConfig, is_wpa3_supported),
+    0,   /* quantifier_offset */
+    offsetof(CtrlMsgReqConnectAP, is_wpa3_supported),
     NULL,
     NULL,
     0,             /* flags */
@@ -2151,108 +2681,121 @@ static const ProtobufCFieldDescriptor esp_hosted_cmd_set_apconfig__field_descrip
   {
     "listen_interval",
     5,
-    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_LABEL_NONE,
     PROTOBUF_C_TYPE_INT32,
-    offsetof(EspHostedCmdSetAPConfig, has_listen_interval),
-    offsetof(EspHostedCmdSetAPConfig, listen_interval),
+    0,   /* quantifier_offset */
+    offsetof(CtrlMsgReqConnectAP, listen_interval),
     NULL,
     NULL,
     0,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
 };
-static const unsigned esp_hosted_cmd_set_apconfig__field_indices_by_name[] = {
+static const unsigned ctrl_msg__req__connect_ap__field_indices_by_name[] = {
   2,   /* field[2] = bssid */
   3,   /* field[3] = is_wpa3_supported */
   4,   /* field[4] = listen_interval */
   1,   /* field[1] = pwd */
   0,   /* field[0] = ssid */
 };
-static const ProtobufCIntRange esp_hosted_cmd_set_apconfig__number_ranges[1 + 1] =
+static const ProtobufCIntRange ctrl_msg__req__connect_ap__number_ranges[1 + 1] =
 {
   { 1, 0 },
   { 0, 5 }
 };
-const ProtobufCMessageDescriptor esp_hosted_cmd_set_apconfig__descriptor =
+const ProtobufCMessageDescriptor ctrl_msg__req__connect_ap__descriptor =
 {
   PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
-  "EspHostedCmdSetAPConfig",
-  "EspHostedCmdSetAPConfig",
-  "EspHostedCmdSetAPConfig",
+  "CtrlMsg_Req_ConnectAP",
+  "CtrlMsgReqConnectAP",
+  "CtrlMsgReqConnectAP",
   "",
-  sizeof(EspHostedCmdSetAPConfig),
+  sizeof(CtrlMsgReqConnectAP),
   5,
-  esp_hosted_cmd_set_apconfig__field_descriptors,
-  esp_hosted_cmd_set_apconfig__field_indices_by_name,
-  1,  esp_hosted_cmd_set_apconfig__number_ranges,
-  (ProtobufCMessageInit) esp_hosted_cmd_set_apconfig__init,
+  ctrl_msg__req__connect_ap__field_descriptors,
+  ctrl_msg__req__connect_ap__field_indices_by_name,
+  1,  ctrl_msg__req__connect_ap__number_ranges,
+  (ProtobufCMessageInit) ctrl_msg__req__connect_ap__init,
   NULL,NULL,NULL    /* reserved[123] */
 };
-static const ProtobufCFieldDescriptor esp_hosted_resp_set_apconfig__field_descriptors[1] =
+static const ProtobufCFieldDescriptor ctrl_msg__resp__connect_ap__field_descriptors[2] =
 {
   {
     "resp",
     1,
-    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_LABEL_NONE,
     PROTOBUF_C_TYPE_INT32,
-    offsetof(EspHostedRespSetAPConfig, has_resp),
-    offsetof(EspHostedRespSetAPConfig, resp),
+    0,   /* quantifier_offset */
+    offsetof(CtrlMsgRespConnectAP, resp),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "mac",
+    2,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_BYTES,
+    0,   /* quantifier_offset */
+    offsetof(CtrlMsgRespConnectAP, mac),
     NULL,
     NULL,
     0,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
 };
-static const unsigned esp_hosted_resp_set_apconfig__field_indices_by_name[] = {
+static const unsigned ctrl_msg__resp__connect_ap__field_indices_by_name[] = {
+  1,   /* field[1] = mac */
   0,   /* field[0] = resp */
 };
-static const ProtobufCIntRange esp_hosted_resp_set_apconfig__number_ranges[1 + 1] =
+static const ProtobufCIntRange ctrl_msg__resp__connect_ap__number_ranges[1 + 1] =
 {
   { 1, 0 },
-  { 0, 1 }
+  { 0, 2 }
 };
-const ProtobufCMessageDescriptor esp_hosted_resp_set_apconfig__descriptor =
+const ProtobufCMessageDescriptor ctrl_msg__resp__connect_ap__descriptor =
 {
   PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
-  "EspHostedRespSetAPConfig",
-  "EspHostedRespSetAPConfig",
-  "EspHostedRespSetAPConfig",
+  "CtrlMsg_Resp_ConnectAP",
+  "CtrlMsgRespConnectAP",
+  "CtrlMsgRespConnectAP",
   "",
-  sizeof(EspHostedRespSetAPConfig),
-  1,
-  esp_hosted_resp_set_apconfig__field_descriptors,
-  esp_hosted_resp_set_apconfig__field_indices_by_name,
-  1,  esp_hosted_resp_set_apconfig__number_ranges,
-  (ProtobufCMessageInit) esp_hosted_resp_set_apconfig__init,
+  sizeof(CtrlMsgRespConnectAP),
+  2,
+  ctrl_msg__resp__connect_ap__field_descriptors,
+  ctrl_msg__resp__connect_ap__field_indices_by_name,
+  1,  ctrl_msg__resp__connect_ap__number_ranges,
+  (ProtobufCMessageInit) ctrl_msg__resp__connect_ap__init,
   NULL,NULL,NULL    /* reserved[123] */
 };
-#define esp_hosted_cmd_get_soft_apconfig__field_descriptors NULL
-#define esp_hosted_cmd_get_soft_apconfig__field_indices_by_name NULL
-#define esp_hosted_cmd_get_soft_apconfig__number_ranges NULL
-const ProtobufCMessageDescriptor esp_hosted_cmd_get_soft_apconfig__descriptor =
+#define ctrl_msg__req__get_soft_apconfig__field_descriptors NULL
+#define ctrl_msg__req__get_soft_apconfig__field_indices_by_name NULL
+#define ctrl_msg__req__get_soft_apconfig__number_ranges NULL
+const ProtobufCMessageDescriptor ctrl_msg__req__get_soft_apconfig__descriptor =
 {
   PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
-  "EspHostedCmdGetSoftAPConfig",
-  "EspHostedCmdGetSoftAPConfig",
-  "EspHostedCmdGetSoftAPConfig",
+  "CtrlMsg_Req_GetSoftAPConfig",
+  "CtrlMsgReqGetSoftAPConfig",
+  "CtrlMsgReqGetSoftAPConfig",
   "",
-  sizeof(EspHostedCmdGetSoftAPConfig),
+  sizeof(CtrlMsgReqGetSoftAPConfig),
   0,
-  esp_hosted_cmd_get_soft_apconfig__field_descriptors,
-  esp_hosted_cmd_get_soft_apconfig__field_indices_by_name,
-  0,  esp_hosted_cmd_get_soft_apconfig__number_ranges,
-  (ProtobufCMessageInit) esp_hosted_cmd_get_soft_apconfig__init,
+  ctrl_msg__req__get_soft_apconfig__field_descriptors,
+  ctrl_msg__req__get_soft_apconfig__field_indices_by_name,
+  0,  ctrl_msg__req__get_soft_apconfig__number_ranges,
+  (ProtobufCMessageInit) ctrl_msg__req__get_soft_apconfig__init,
   NULL,NULL,NULL    /* reserved[123] */
 };
-static const ProtobufCFieldDescriptor esp_hosted_resp_get_soft_apconfig__field_descriptors[8] =
+static const ProtobufCFieldDescriptor ctrl_msg__resp__get_soft_apconfig__field_descriptors[8] =
 {
   {
     "ssid",
     1,
-    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_LABEL_NONE,
     PROTOBUF_C_TYPE_BYTES,
-    offsetof(EspHostedRespGetSoftAPConfig, has_ssid),
-    offsetof(EspHostedRespGetSoftAPConfig, ssid),
+    0,   /* quantifier_offset */
+    offsetof(CtrlMsgRespGetSoftAPConfig, ssid),
     NULL,
     NULL,
     0,             /* flags */
@@ -2261,10 +2804,10 @@ static const ProtobufCFieldDescriptor esp_hosted_resp_get_soft_apconfig__field_d
   {
     "pwd",
     2,
-    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_LABEL_NONE,
     PROTOBUF_C_TYPE_BYTES,
-    offsetof(EspHostedRespGetSoftAPConfig, has_pwd),
-    offsetof(EspHostedRespGetSoftAPConfig, pwd),
+    0,   /* quantifier_offset */
+    offsetof(CtrlMsgRespGetSoftAPConfig, pwd),
     NULL,
     NULL,
     0,             /* flags */
@@ -2273,23 +2816,23 @@ static const ProtobufCFieldDescriptor esp_hosted_resp_get_soft_apconfig__field_d
   {
     "chnl",
     3,
-    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_LABEL_NONE,
     PROTOBUF_C_TYPE_INT32,
-    offsetof(EspHostedRespGetSoftAPConfig, has_chnl),
-    offsetof(EspHostedRespGetSoftAPConfig, chnl),
+    0,   /* quantifier_offset */
+    offsetof(CtrlMsgRespGetSoftAPConfig, chnl),
     NULL,
     NULL,
     0,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
   {
-    "ecn",
+    "sec_prot",
     4,
-    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_LABEL_NONE,
     PROTOBUF_C_TYPE_ENUM,
-    offsetof(EspHostedRespGetSoftAPConfig, has_ecn),
-    offsetof(EspHostedRespGetSoftAPConfig, ecn),
-    &esp_hosted_encryption_mode__descriptor,
+    0,   /* quantifier_offset */
+    offsetof(CtrlMsgRespGetSoftAPConfig, sec_prot),
+    &ctrl__wifi_sec_prot__descriptor,
     NULL,
     0,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
@@ -2297,10 +2840,10 @@ static const ProtobufCFieldDescriptor esp_hosted_resp_get_soft_apconfig__field_d
   {
     "max_conn",
     5,
-    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_LABEL_NONE,
     PROTOBUF_C_TYPE_INT32,
-    offsetof(EspHostedRespGetSoftAPConfig, has_max_conn),
-    offsetof(EspHostedRespGetSoftAPConfig, max_conn),
+    0,   /* quantifier_offset */
+    offsetof(CtrlMsgRespGetSoftAPConfig, max_conn),
     NULL,
     NULL,
     0,             /* flags */
@@ -2309,10 +2852,10 @@ static const ProtobufCFieldDescriptor esp_hosted_resp_get_soft_apconfig__field_d
   {
     "ssid_hidden",
     6,
-    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_LABEL_NONE,
     PROTOBUF_C_TYPE_BOOL,
-    offsetof(EspHostedRespGetSoftAPConfig, has_ssid_hidden),
-    offsetof(EspHostedRespGetSoftAPConfig, ssid_hidden),
+    0,   /* quantifier_offset */
+    offsetof(CtrlMsgRespGetSoftAPConfig, ssid_hidden),
     NULL,
     NULL,
     0,             /* flags */
@@ -2321,10 +2864,10 @@ static const ProtobufCFieldDescriptor esp_hosted_resp_get_soft_apconfig__field_d
   {
     "bw",
     7,
-    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_LABEL_NONE,
     PROTOBUF_C_TYPE_INT32,
-    offsetof(EspHostedRespGetSoftAPConfig, has_bw),
-    offsetof(EspHostedRespGetSoftAPConfig, bw),
+    0,   /* quantifier_offset */
+    offsetof(CtrlMsgRespGetSoftAPConfig, bw),
     NULL,
     NULL,
     0,             /* flags */
@@ -2333,92 +2876,92 @@ static const ProtobufCFieldDescriptor esp_hosted_resp_get_soft_apconfig__field_d
   {
     "resp",
     8,
-    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_LABEL_NONE,
     PROTOBUF_C_TYPE_INT32,
-    offsetof(EspHostedRespGetSoftAPConfig, has_resp),
-    offsetof(EspHostedRespGetSoftAPConfig, resp),
+    0,   /* quantifier_offset */
+    offsetof(CtrlMsgRespGetSoftAPConfig, resp),
     NULL,
     NULL,
     0,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
 };
-static const unsigned esp_hosted_resp_get_soft_apconfig__field_indices_by_name[] = {
+static const unsigned ctrl_msg__resp__get_soft_apconfig__field_indices_by_name[] = {
   6,   /* field[6] = bw */
   2,   /* field[2] = chnl */
-  3,   /* field[3] = ecn */
   4,   /* field[4] = max_conn */
   1,   /* field[1] = pwd */
   7,   /* field[7] = resp */
+  3,   /* field[3] = sec_prot */
   0,   /* field[0] = ssid */
   5,   /* field[5] = ssid_hidden */
 };
-static const ProtobufCIntRange esp_hosted_resp_get_soft_apconfig__number_ranges[1 + 1] =
+static const ProtobufCIntRange ctrl_msg__resp__get_soft_apconfig__number_ranges[1 + 1] =
 {
   { 1, 0 },
   { 0, 8 }
 };
-const ProtobufCMessageDescriptor esp_hosted_resp_get_soft_apconfig__descriptor =
+const ProtobufCMessageDescriptor ctrl_msg__resp__get_soft_apconfig__descriptor =
 {
   PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
-  "EspHostedRespGetSoftAPConfig",
-  "EspHostedRespGetSoftAPConfig",
-  "EspHostedRespGetSoftAPConfig",
+  "CtrlMsg_Resp_GetSoftAPConfig",
+  "CtrlMsgRespGetSoftAPConfig",
+  "CtrlMsgRespGetSoftAPConfig",
   "",
-  sizeof(EspHostedRespGetSoftAPConfig),
+  sizeof(CtrlMsgRespGetSoftAPConfig),
   8,
-  esp_hosted_resp_get_soft_apconfig__field_descriptors,
-  esp_hosted_resp_get_soft_apconfig__field_indices_by_name,
-  1,  esp_hosted_resp_get_soft_apconfig__number_ranges,
-  (ProtobufCMessageInit) esp_hosted_resp_get_soft_apconfig__init,
+  ctrl_msg__resp__get_soft_apconfig__field_descriptors,
+  ctrl_msg__resp__get_soft_apconfig__field_indices_by_name,
+  1,  ctrl_msg__resp__get_soft_apconfig__number_ranges,
+  (ProtobufCMessageInit) ctrl_msg__resp__get_soft_apconfig__init,
   NULL,NULL,NULL    /* reserved[123] */
 };
-static const ProtobufCFieldDescriptor esp_hosted_cmd_set_soft_apconfig__field_descriptors[7] =
+static const ProtobufCFieldDescriptor ctrl_msg__req__start_soft_ap__field_descriptors[7] =
 {
   {
     "ssid",
     1,
-    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_LABEL_NONE,
     PROTOBUF_C_TYPE_STRING,
     0,   /* quantifier_offset */
-    offsetof(EspHostedCmdSetSoftAPConfig, ssid),
+    offsetof(CtrlMsgReqStartSoftAP, ssid),
     NULL,
-    NULL,
+    &protobuf_c_empty_string,
     0,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
   {
     "pwd",
     2,
-    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_LABEL_NONE,
     PROTOBUF_C_TYPE_STRING,
     0,   /* quantifier_offset */
-    offsetof(EspHostedCmdSetSoftAPConfig, pwd),
+    offsetof(CtrlMsgReqStartSoftAP, pwd),
     NULL,
-    NULL,
+    &protobuf_c_empty_string,
     0,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
   {
     "chnl",
     3,
-    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_LABEL_NONE,
     PROTOBUF_C_TYPE_INT32,
-    offsetof(EspHostedCmdSetSoftAPConfig, has_chnl),
-    offsetof(EspHostedCmdSetSoftAPConfig, chnl),
+    0,   /* quantifier_offset */
+    offsetof(CtrlMsgReqStartSoftAP, chnl),
     NULL,
     NULL,
     0,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
   {
-    "ecn",
+    "sec_prot",
     4,
-    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_LABEL_NONE,
     PROTOBUF_C_TYPE_ENUM,
-    offsetof(EspHostedCmdSetSoftAPConfig, has_ecn),
-    offsetof(EspHostedCmdSetSoftAPConfig, ecn),
-    &esp_hosted_encryption_mode__descriptor,
+    0,   /* quantifier_offset */
+    offsetof(CtrlMsgReqStartSoftAP, sec_prot),
+    &ctrl__wifi_sec_prot__descriptor,
     NULL,
     0,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
@@ -2426,10 +2969,10 @@ static const ProtobufCFieldDescriptor esp_hosted_cmd_set_soft_apconfig__field_de
   {
     "max_conn",
     5,
-    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_LABEL_NONE,
     PROTOBUF_C_TYPE_INT32,
-    offsetof(EspHostedCmdSetSoftAPConfig, has_max_conn),
-    offsetof(EspHostedCmdSetSoftAPConfig, max_conn),
+    0,   /* quantifier_offset */
+    offsetof(CtrlMsgReqStartSoftAP, max_conn),
     NULL,
     NULL,
     0,             /* flags */
@@ -2438,10 +2981,10 @@ static const ProtobufCFieldDescriptor esp_hosted_cmd_set_soft_apconfig__field_de
   {
     "ssid_hidden",
     6,
-    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_LABEL_NONE,
     PROTOBUF_C_TYPE_BOOL,
-    offsetof(EspHostedCmdSetSoftAPConfig, has_ssid_hidden),
-    offsetof(EspHostedCmdSetSoftAPConfig, ssid_hidden),
+    0,   /* quantifier_offset */
+    offsetof(CtrlMsgReqStartSoftAP, ssid_hidden),
     NULL,
     NULL,
     0,             /* flags */
@@ -2450,200 +2993,123 @@ static const ProtobufCFieldDescriptor esp_hosted_cmd_set_soft_apconfig__field_de
   {
     "bw",
     7,
-    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_LABEL_NONE,
     PROTOBUF_C_TYPE_INT32,
-    offsetof(EspHostedCmdSetSoftAPConfig, has_bw),
-    offsetof(EspHostedCmdSetSoftAPConfig, bw),
+    0,   /* quantifier_offset */
+    offsetof(CtrlMsgReqStartSoftAP, bw),
     NULL,
     NULL,
     0,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
 };
-static const unsigned esp_hosted_cmd_set_soft_apconfig__field_indices_by_name[] = {
+static const unsigned ctrl_msg__req__start_soft_ap__field_indices_by_name[] = {
   6,   /* field[6] = bw */
   2,   /* field[2] = chnl */
-  3,   /* field[3] = ecn */
   4,   /* field[4] = max_conn */
   1,   /* field[1] = pwd */
+  3,   /* field[3] = sec_prot */
   0,   /* field[0] = ssid */
   5,   /* field[5] = ssid_hidden */
 };
-static const ProtobufCIntRange esp_hosted_cmd_set_soft_apconfig__number_ranges[1 + 1] =
+static const ProtobufCIntRange ctrl_msg__req__start_soft_ap__number_ranges[1 + 1] =
 {
   { 1, 0 },
   { 0, 7 }
 };
-const ProtobufCMessageDescriptor esp_hosted_cmd_set_soft_apconfig__descriptor =
+const ProtobufCMessageDescriptor ctrl_msg__req__start_soft_ap__descriptor =
 {
   PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
-  "EspHostedCmdSetSoftAPConfig",
-  "EspHostedCmdSetSoftAPConfig",
-  "EspHostedCmdSetSoftAPConfig",
+  "CtrlMsg_Req_StartSoftAP",
+  "CtrlMsgReqStartSoftAP",
+  "CtrlMsgReqStartSoftAP",
   "",
-  sizeof(EspHostedCmdSetSoftAPConfig),
+  sizeof(CtrlMsgReqStartSoftAP),
   7,
-  esp_hosted_cmd_set_soft_apconfig__field_descriptors,
-  esp_hosted_cmd_set_soft_apconfig__field_indices_by_name,
-  1,  esp_hosted_cmd_set_soft_apconfig__number_ranges,
-  (ProtobufCMessageInit) esp_hosted_cmd_set_soft_apconfig__init,
+  ctrl_msg__req__start_soft_ap__field_descriptors,
+  ctrl_msg__req__start_soft_ap__field_indices_by_name,
+  1,  ctrl_msg__req__start_soft_ap__number_ranges,
+  (ProtobufCMessageInit) ctrl_msg__req__start_soft_ap__init,
   NULL,NULL,NULL    /* reserved[123] */
 };
-static const ProtobufCFieldDescriptor esp_hosted_resp_set_soft_apconfig__field_descriptors[1] =
+static const ProtobufCFieldDescriptor ctrl_msg__resp__start_soft_ap__field_descriptors[2] =
 {
   {
     "resp",
     1,
-    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_LABEL_NONE,
     PROTOBUF_C_TYPE_INT32,
-    offsetof(EspHostedRespSetSoftAPConfig, has_resp),
-    offsetof(EspHostedRespSetSoftAPConfig, resp),
+    0,   /* quantifier_offset */
+    offsetof(CtrlMsgRespStartSoftAP, resp),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "mac",
+    2,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_BYTES,
+    0,   /* quantifier_offset */
+    offsetof(CtrlMsgRespStartSoftAP, mac),
     NULL,
     NULL,
     0,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
 };
-static const unsigned esp_hosted_resp_set_soft_apconfig__field_indices_by_name[] = {
+static const unsigned ctrl_msg__resp__start_soft_ap__field_indices_by_name[] = {
+  1,   /* field[1] = mac */
   0,   /* field[0] = resp */
 };
-static const ProtobufCIntRange esp_hosted_resp_set_soft_apconfig__number_ranges[1 + 1] =
+static const ProtobufCIntRange ctrl_msg__resp__start_soft_ap__number_ranges[1 + 1] =
 {
   { 1, 0 },
-  { 0, 1 }
+  { 0, 2 }
 };
-const ProtobufCMessageDescriptor esp_hosted_resp_set_soft_apconfig__descriptor =
+const ProtobufCMessageDescriptor ctrl_msg__resp__start_soft_ap__descriptor =
 {
   PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
-  "EspHostedRespSetSoftAPConfig",
-  "EspHostedRespSetSoftAPConfig",
-  "EspHostedRespSetSoftAPConfig",
+  "CtrlMsg_Resp_StartSoftAP",
+  "CtrlMsgRespStartSoftAP",
+  "CtrlMsgRespStartSoftAP",
   "",
-  sizeof(EspHostedRespSetSoftAPConfig),
-  1,
-  esp_hosted_resp_set_soft_apconfig__field_descriptors,
-  esp_hosted_resp_set_soft_apconfig__field_indices_by_name,
-  1,  esp_hosted_resp_set_soft_apconfig__number_ranges,
-  (ProtobufCMessageInit) esp_hosted_resp_set_soft_apconfig__init,
+  sizeof(CtrlMsgRespStartSoftAP),
+  2,
+  ctrl_msg__resp__start_soft_ap__field_descriptors,
+  ctrl_msg__resp__start_soft_ap__field_indices_by_name,
+  1,  ctrl_msg__resp__start_soft_ap__number_ranges,
+  (ProtobufCMessageInit) ctrl_msg__resp__start_soft_ap__init,
   NULL,NULL,NULL    /* reserved[123] */
 };
-static const ProtobufCFieldDescriptor esp_hosted_scan_result__field_descriptors[5] =
-{
-  {
-    "ssid",
-    1,
-    PROTOBUF_C_LABEL_OPTIONAL,
-    PROTOBUF_C_TYPE_BYTES,
-    offsetof(EspHostedScanResult, has_ssid),
-    offsetof(EspHostedScanResult, ssid),
-    NULL,
-    NULL,
-    0,             /* flags */
-    0,NULL,NULL    /* reserved1,reserved2, etc */
-  },
-  {
-    "chnl",
-    2,
-    PROTOBUF_C_LABEL_OPTIONAL,
-    PROTOBUF_C_TYPE_UINT32,
-    offsetof(EspHostedScanResult, has_chnl),
-    offsetof(EspHostedScanResult, chnl),
-    NULL,
-    NULL,
-    0,             /* flags */
-    0,NULL,NULL    /* reserved1,reserved2, etc */
-  },
-  {
-    "rssi",
-    3,
-    PROTOBUF_C_LABEL_OPTIONAL,
-    PROTOBUF_C_TYPE_INT32,
-    offsetof(EspHostedScanResult, has_rssi),
-    offsetof(EspHostedScanResult, rssi),
-    NULL,
-    NULL,
-    0,             /* flags */
-    0,NULL,NULL    /* reserved1,reserved2, etc */
-  },
-  {
-    "bssid",
-    4,
-    PROTOBUF_C_LABEL_OPTIONAL,
-    PROTOBUF_C_TYPE_BYTES,
-    offsetof(EspHostedScanResult, has_bssid),
-    offsetof(EspHostedScanResult, bssid),
-    NULL,
-    NULL,
-    0,             /* flags */
-    0,NULL,NULL    /* reserved1,reserved2, etc */
-  },
-  {
-    "ecn",
-    5,
-    PROTOBUF_C_LABEL_OPTIONAL,
-    PROTOBUF_C_TYPE_ENUM,
-    offsetof(EspHostedScanResult, has_ecn),
-    offsetof(EspHostedScanResult, ecn),
-    &esp_hosted_encryption_mode__descriptor,
-    NULL,
-    0,             /* flags */
-    0,NULL,NULL    /* reserved1,reserved2, etc */
-  },
-};
-static const unsigned esp_hosted_scan_result__field_indices_by_name[] = {
-  3,   /* field[3] = bssid */
-  1,   /* field[1] = chnl */
-  4,   /* field[4] = ecn */
-  2,   /* field[2] = rssi */
-  0,   /* field[0] = ssid */
-};
-static const ProtobufCIntRange esp_hosted_scan_result__number_ranges[1 + 1] =
-{
-  { 1, 0 },
-  { 0, 5 }
-};
-const ProtobufCMessageDescriptor esp_hosted_scan_result__descriptor =
+#define ctrl_msg__req__scan_result__field_descriptors NULL
+#define ctrl_msg__req__scan_result__field_indices_by_name NULL
+#define ctrl_msg__req__scan_result__number_ranges NULL
+const ProtobufCMessageDescriptor ctrl_msg__req__scan_result__descriptor =
 {
   PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
-  "EspHostedScanResult",
-  "EspHostedScanResult",
-  "EspHostedScanResult",
+  "CtrlMsg_Req_ScanResult",
+  "CtrlMsgReqScanResult",
+  "CtrlMsgReqScanResult",
   "",
-  sizeof(EspHostedScanResult),
-  5,
-  esp_hosted_scan_result__field_descriptors,
-  esp_hosted_scan_result__field_indices_by_name,
-  1,  esp_hosted_scan_result__number_ranges,
-  (ProtobufCMessageInit) esp_hosted_scan_result__init,
-  NULL,NULL,NULL    /* reserved[123] */
-};
-#define esp_hosted_cmd_scan_result__field_descriptors NULL
-#define esp_hosted_cmd_scan_result__field_indices_by_name NULL
-#define esp_hosted_cmd_scan_result__number_ranges NULL
-const ProtobufCMessageDescriptor esp_hosted_cmd_scan_result__descriptor =
-{
-  PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
-  "EspHostedCmdScanResult",
-  "EspHostedCmdScanResult",
-  "EspHostedCmdScanResult",
-  "",
-  sizeof(EspHostedCmdScanResult),
+  sizeof(CtrlMsgReqScanResult),
   0,
-  esp_hosted_cmd_scan_result__field_descriptors,
-  esp_hosted_cmd_scan_result__field_indices_by_name,
-  0,  esp_hosted_cmd_scan_result__number_ranges,
-  (ProtobufCMessageInit) esp_hosted_cmd_scan_result__init,
+  ctrl_msg__req__scan_result__field_descriptors,
+  ctrl_msg__req__scan_result__field_indices_by_name,
+  0,  ctrl_msg__req__scan_result__number_ranges,
+  (ProtobufCMessageInit) ctrl_msg__req__scan_result__init,
   NULL,NULL,NULL    /* reserved[123] */
 };
-static const ProtobufCFieldDescriptor esp_hosted_resp_scan_result__field_descriptors[3] =
+static const ProtobufCFieldDescriptor ctrl_msg__resp__scan_result__field_descriptors[3] =
 {
   {
     "count",
     1,
-    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_LABEL_NONE,
     PROTOBUF_C_TYPE_UINT32,
-    offsetof(EspHostedRespScanResult, has_count),
-    offsetof(EspHostedRespScanResult, count),
+    0,   /* quantifier_offset */
+    offsetof(CtrlMsgRespScanResult, count),
     NULL,
     NULL,
     0,             /* flags */
@@ -2654,9 +3120,9 @@ static const ProtobufCFieldDescriptor esp_hosted_resp_scan_result__field_descrip
     2,
     PROTOBUF_C_LABEL_REPEATED,
     PROTOBUF_C_TYPE_MESSAGE,
-    offsetof(EspHostedRespScanResult, n_entries),
-    offsetof(EspHostedRespScanResult, entries),
-    &esp_hosted_scan_result__descriptor,
+    offsetof(CtrlMsgRespScanResult, n_entries),
+    offsetof(CtrlMsgRespScanResult, entries),
+    &scan_result__descriptor,
     NULL,
     0,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
@@ -2664,119 +3130,68 @@ static const ProtobufCFieldDescriptor esp_hosted_resp_scan_result__field_descrip
   {
     "resp",
     3,
-    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_LABEL_NONE,
     PROTOBUF_C_TYPE_INT32,
-    offsetof(EspHostedRespScanResult, has_resp),
-    offsetof(EspHostedRespScanResult, resp),
+    0,   /* quantifier_offset */
+    offsetof(CtrlMsgRespScanResult, resp),
     NULL,
     NULL,
     0,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
 };
-static const unsigned esp_hosted_resp_scan_result__field_indices_by_name[] = {
+static const unsigned ctrl_msg__resp__scan_result__field_indices_by_name[] = {
   0,   /* field[0] = count */
   1,   /* field[1] = entries */
   2,   /* field[2] = resp */
 };
-static const ProtobufCIntRange esp_hosted_resp_scan_result__number_ranges[1 + 1] =
+static const ProtobufCIntRange ctrl_msg__resp__scan_result__number_ranges[1 + 1] =
 {
   { 1, 0 },
   { 0, 3 }
 };
-const ProtobufCMessageDescriptor esp_hosted_resp_scan_result__descriptor =
+const ProtobufCMessageDescriptor ctrl_msg__resp__scan_result__descriptor =
 {
   PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
-  "EspHostedRespScanResult",
-  "EspHostedRespScanResult",
-  "EspHostedRespScanResult",
+  "CtrlMsg_Resp_ScanResult",
+  "CtrlMsgRespScanResult",
+  "CtrlMsgRespScanResult",
   "",
-  sizeof(EspHostedRespScanResult),
+  sizeof(CtrlMsgRespScanResult),
   3,
-  esp_hosted_resp_scan_result__field_descriptors,
-  esp_hosted_resp_scan_result__field_indices_by_name,
-  1,  esp_hosted_resp_scan_result__number_ranges,
-  (ProtobufCMessageInit) esp_hosted_resp_scan_result__init,
+  ctrl_msg__resp__scan_result__field_descriptors,
+  ctrl_msg__resp__scan_result__field_indices_by_name,
+  1,  ctrl_msg__resp__scan_result__number_ranges,
+  (ProtobufCMessageInit) ctrl_msg__resp__scan_result__init,
   NULL,NULL,NULL    /* reserved[123] */
 };
-static const ProtobufCFieldDescriptor esp_hosted_connected_stalist__field_descriptors[2] =
-{
-  {
-    "mac",
-    1,
-    PROTOBUF_C_LABEL_OPTIONAL,
-    PROTOBUF_C_TYPE_BYTES,
-    offsetof(EspHostedConnectedSTAList, has_mac),
-    offsetof(EspHostedConnectedSTAList, mac),
-    NULL,
-    NULL,
-    0,             /* flags */
-    0,NULL,NULL    /* reserved1,reserved2, etc */
-  },
-  {
-    "rssi",
-    2,
-    PROTOBUF_C_LABEL_OPTIONAL,
-    PROTOBUF_C_TYPE_INT32,
-    offsetof(EspHostedConnectedSTAList, has_rssi),
-    offsetof(EspHostedConnectedSTAList, rssi),
-    NULL,
-    NULL,
-    0,             /* flags */
-    0,NULL,NULL    /* reserved1,reserved2, etc */
-  },
-};
-static const unsigned esp_hosted_connected_stalist__field_indices_by_name[] = {
-  0,   /* field[0] = mac */
-  1,   /* field[1] = rssi */
-};
-static const ProtobufCIntRange esp_hosted_connected_stalist__number_ranges[1 + 1] =
-{
-  { 1, 0 },
-  { 0, 2 }
-};
-const ProtobufCMessageDescriptor esp_hosted_connected_stalist__descriptor =
+#define ctrl_msg__req__soft_apconnected_sta__field_descriptors NULL
+#define ctrl_msg__req__soft_apconnected_sta__field_indices_by_name NULL
+#define ctrl_msg__req__soft_apconnected_sta__number_ranges NULL
+const ProtobufCMessageDescriptor ctrl_msg__req__soft_apconnected_sta__descriptor =
 {
   PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
-  "EspHostedConnectedSTAList",
-  "EspHostedConnectedSTAList",
-  "EspHostedConnectedSTAList",
+  "CtrlMsg_Req_SoftAPConnectedSTA",
+  "CtrlMsgReqSoftAPConnectedSTA",
+  "CtrlMsgReqSoftAPConnectedSTA",
   "",
-  sizeof(EspHostedConnectedSTAList),
-  2,
-  esp_hosted_connected_stalist__field_descriptors,
-  esp_hosted_connected_stalist__field_indices_by_name,
-  1,  esp_hosted_connected_stalist__number_ranges,
-  (ProtobufCMessageInit) esp_hosted_connected_stalist__init,
-  NULL,NULL,NULL    /* reserved[123] */
-};
-#define esp_hosted_cmd_connected_sta__field_descriptors NULL
-#define esp_hosted_cmd_connected_sta__field_indices_by_name NULL
-#define esp_hosted_cmd_connected_sta__number_ranges NULL
-const ProtobufCMessageDescriptor esp_hosted_cmd_connected_sta__descriptor =
-{
-  PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
-  "EspHostedCmdConnectedSTA",
-  "EspHostedCmdConnectedSTA",
-  "EspHostedCmdConnectedSTA",
-  "",
-  sizeof(EspHostedCmdConnectedSTA),
+  sizeof(CtrlMsgReqSoftAPConnectedSTA),
   0,
-  esp_hosted_cmd_connected_sta__field_descriptors,
-  esp_hosted_cmd_connected_sta__field_indices_by_name,
-  0,  esp_hosted_cmd_connected_sta__number_ranges,
-  (ProtobufCMessageInit) esp_hosted_cmd_connected_sta__init,
+  ctrl_msg__req__soft_apconnected_sta__field_descriptors,
+  ctrl_msg__req__soft_apconnected_sta__field_indices_by_name,
+  0,  ctrl_msg__req__soft_apconnected_sta__number_ranges,
+  (ProtobufCMessageInit) ctrl_msg__req__soft_apconnected_sta__init,
   NULL,NULL,NULL    /* reserved[123] */
 };
-static const ProtobufCFieldDescriptor esp_hosted_resp_connected_sta__field_descriptors[3] =
+static const ProtobufCFieldDescriptor ctrl_msg__resp__soft_apconnected_sta__field_descriptors[3] =
 {
   {
     "num",
     1,
-    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_LABEL_NONE,
     PROTOBUF_C_TYPE_UINT32,
-    offsetof(EspHostedRespConnectedSTA, has_num),
-    offsetof(EspHostedRespConnectedSTA, num),
+    0,   /* quantifier_offset */
+    offsetof(CtrlMsgRespSoftAPConnectedSTA, num),
     NULL,
     NULL,
     0,             /* flags */
@@ -2787,9 +3202,9 @@ static const ProtobufCFieldDescriptor esp_hosted_resp_connected_sta__field_descr
     2,
     PROTOBUF_C_LABEL_REPEATED,
     PROTOBUF_C_TYPE_MESSAGE,
-    offsetof(EspHostedRespConnectedSTA, n_stations),
-    offsetof(EspHostedRespConnectedSTA, stations),
-    &esp_hosted_connected_stalist__descriptor,
+    offsetof(CtrlMsgRespSoftAPConnectedSTA, n_stations),
+    offsetof(CtrlMsgRespSoftAPConnectedSTA, stations),
+    &connected_stalist__descriptor,
     NULL,
     0,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
@@ -2797,238 +3212,328 @@ static const ProtobufCFieldDescriptor esp_hosted_resp_connected_sta__field_descr
   {
     "resp",
     3,
-    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_LABEL_NONE,
     PROTOBUF_C_TYPE_INT32,
-    offsetof(EspHostedRespConnectedSTA, has_resp),
-    offsetof(EspHostedRespConnectedSTA, resp),
+    0,   /* quantifier_offset */
+    offsetof(CtrlMsgRespSoftAPConnectedSTA, resp),
     NULL,
     NULL,
     0,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
 };
-static const unsigned esp_hosted_resp_connected_sta__field_indices_by_name[] = {
+static const unsigned ctrl_msg__resp__soft_apconnected_sta__field_indices_by_name[] = {
   0,   /* field[0] = num */
   2,   /* field[2] = resp */
   1,   /* field[1] = stations */
 };
-static const ProtobufCIntRange esp_hosted_resp_connected_sta__number_ranges[1 + 1] =
+static const ProtobufCIntRange ctrl_msg__resp__soft_apconnected_sta__number_ranges[1 + 1] =
 {
   { 1, 0 },
   { 0, 3 }
 };
-const ProtobufCMessageDescriptor esp_hosted_resp_connected_sta__descriptor =
+const ProtobufCMessageDescriptor ctrl_msg__resp__soft_apconnected_sta__descriptor =
 {
   PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
-  "EspHostedRespConnectedSTA",
-  "EspHostedRespConnectedSTA",
-  "EspHostedRespConnectedSTA",
+  "CtrlMsg_Resp_SoftAPConnectedSTA",
+  "CtrlMsgRespSoftAPConnectedSTA",
+  "CtrlMsgRespSoftAPConnectedSTA",
   "",
-  sizeof(EspHostedRespConnectedSTA),
+  sizeof(CtrlMsgRespSoftAPConnectedSTA),
   3,
-  esp_hosted_resp_connected_sta__field_descriptors,
-  esp_hosted_resp_connected_sta__field_indices_by_name,
-  1,  esp_hosted_resp_connected_sta__number_ranges,
-  (ProtobufCMessageInit) esp_hosted_resp_connected_sta__init,
+  ctrl_msg__resp__soft_apconnected_sta__field_descriptors,
+  ctrl_msg__resp__soft_apconnected_sta__field_indices_by_name,
+  1,  ctrl_msg__resp__soft_apconnected_sta__number_ranges,
+  (ProtobufCMessageInit) ctrl_msg__resp__soft_apconnected_sta__init,
   NULL,NULL,NULL    /* reserved[123] */
 };
-#define esp_hosted_cmd_otabegin__field_descriptors NULL
-#define esp_hosted_cmd_otabegin__field_indices_by_name NULL
-#define esp_hosted_cmd_otabegin__number_ranges NULL
-const ProtobufCMessageDescriptor esp_hosted_cmd_otabegin__descriptor =
+#define ctrl_msg__req__otabegin__field_descriptors NULL
+#define ctrl_msg__req__otabegin__field_indices_by_name NULL
+#define ctrl_msg__req__otabegin__number_ranges NULL
+const ProtobufCMessageDescriptor ctrl_msg__req__otabegin__descriptor =
 {
   PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
-  "EspHostedCmdOTABegin",
-  "EspHostedCmdOTABegin",
-  "EspHostedCmdOTABegin",
+  "CtrlMsg_Req_OTABegin",
+  "CtrlMsgReqOTABegin",
+  "CtrlMsgReqOTABegin",
   "",
-  sizeof(EspHostedCmdOTABegin),
+  sizeof(CtrlMsgReqOTABegin),
   0,
-  esp_hosted_cmd_otabegin__field_descriptors,
-  esp_hosted_cmd_otabegin__field_indices_by_name,
-  0,  esp_hosted_cmd_otabegin__number_ranges,
-  (ProtobufCMessageInit) esp_hosted_cmd_otabegin__init,
+  ctrl_msg__req__otabegin__field_descriptors,
+  ctrl_msg__req__otabegin__field_indices_by_name,
+  0,  ctrl_msg__req__otabegin__number_ranges,
+  (ProtobufCMessageInit) ctrl_msg__req__otabegin__init,
   NULL,NULL,NULL    /* reserved[123] */
 };
-static const ProtobufCFieldDescriptor esp_hosted_resp_otabegin__field_descriptors[1] =
+static const ProtobufCFieldDescriptor ctrl_msg__resp__otabegin__field_descriptors[1] =
 {
   {
     "resp",
     1,
-    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_LABEL_NONE,
     PROTOBUF_C_TYPE_INT32,
-    offsetof(EspHostedRespOTABegin, has_resp),
-    offsetof(EspHostedRespOTABegin, resp),
+    0,   /* quantifier_offset */
+    offsetof(CtrlMsgRespOTABegin, resp),
     NULL,
     NULL,
     0,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
 };
-static const unsigned esp_hosted_resp_otabegin__field_indices_by_name[] = {
+static const unsigned ctrl_msg__resp__otabegin__field_indices_by_name[] = {
   0,   /* field[0] = resp */
 };
-static const ProtobufCIntRange esp_hosted_resp_otabegin__number_ranges[1 + 1] =
+static const ProtobufCIntRange ctrl_msg__resp__otabegin__number_ranges[1 + 1] =
 {
   { 1, 0 },
   { 0, 1 }
 };
-const ProtobufCMessageDescriptor esp_hosted_resp_otabegin__descriptor =
+const ProtobufCMessageDescriptor ctrl_msg__resp__otabegin__descriptor =
 {
   PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
-  "EspHostedRespOTABegin",
-  "EspHostedRespOTABegin",
-  "EspHostedRespOTABegin",
+  "CtrlMsg_Resp_OTABegin",
+  "CtrlMsgRespOTABegin",
+  "CtrlMsgRespOTABegin",
   "",
-  sizeof(EspHostedRespOTABegin),
+  sizeof(CtrlMsgRespOTABegin),
   1,
-  esp_hosted_resp_otabegin__field_descriptors,
-  esp_hosted_resp_otabegin__field_indices_by_name,
-  1,  esp_hosted_resp_otabegin__number_ranges,
-  (ProtobufCMessageInit) esp_hosted_resp_otabegin__init,
+  ctrl_msg__resp__otabegin__field_descriptors,
+  ctrl_msg__resp__otabegin__field_indices_by_name,
+  1,  ctrl_msg__resp__otabegin__number_ranges,
+  (ProtobufCMessageInit) ctrl_msg__resp__otabegin__init,
   NULL,NULL,NULL    /* reserved[123] */
 };
-static const ProtobufCFieldDescriptor esp_hosted_cmd_otawrite__field_descriptors[1] =
+static const ProtobufCFieldDescriptor ctrl_msg__req__otawrite__field_descriptors[1] =
 {
   {
     "ota_data",
     1,
-    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_LABEL_NONE,
     PROTOBUF_C_TYPE_BYTES,
-    offsetof(EspHostedCmdOTAWrite, has_ota_data),
-    offsetof(EspHostedCmdOTAWrite, ota_data),
+    0,   /* quantifier_offset */
+    offsetof(CtrlMsgReqOTAWrite, ota_data),
     NULL,
     NULL,
     0,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
 };
-static const unsigned esp_hosted_cmd_otawrite__field_indices_by_name[] = {
+static const unsigned ctrl_msg__req__otawrite__field_indices_by_name[] = {
   0,   /* field[0] = ota_data */
 };
-static const ProtobufCIntRange esp_hosted_cmd_otawrite__number_ranges[1 + 1] =
+static const ProtobufCIntRange ctrl_msg__req__otawrite__number_ranges[1 + 1] =
 {
   { 1, 0 },
   { 0, 1 }
 };
-const ProtobufCMessageDescriptor esp_hosted_cmd_otawrite__descriptor =
+const ProtobufCMessageDescriptor ctrl_msg__req__otawrite__descriptor =
 {
   PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
-  "EspHostedCmdOTAWrite",
-  "EspHostedCmdOTAWrite",
-  "EspHostedCmdOTAWrite",
+  "CtrlMsg_Req_OTAWrite",
+  "CtrlMsgReqOTAWrite",
+  "CtrlMsgReqOTAWrite",
   "",
-  sizeof(EspHostedCmdOTAWrite),
+  sizeof(CtrlMsgReqOTAWrite),
   1,
-  esp_hosted_cmd_otawrite__field_descriptors,
-  esp_hosted_cmd_otawrite__field_indices_by_name,
-  1,  esp_hosted_cmd_otawrite__number_ranges,
-  (ProtobufCMessageInit) esp_hosted_cmd_otawrite__init,
+  ctrl_msg__req__otawrite__field_descriptors,
+  ctrl_msg__req__otawrite__field_indices_by_name,
+  1,  ctrl_msg__req__otawrite__number_ranges,
+  (ProtobufCMessageInit) ctrl_msg__req__otawrite__init,
   NULL,NULL,NULL    /* reserved[123] */
 };
-static const ProtobufCFieldDescriptor esp_hosted_resp_otawrite__field_descriptors[1] =
+static const ProtobufCFieldDescriptor ctrl_msg__resp__otawrite__field_descriptors[1] =
 {
   {
     "resp",
     1,
-    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_LABEL_NONE,
     PROTOBUF_C_TYPE_INT32,
-    offsetof(EspHostedRespOTAWrite, has_resp),
-    offsetof(EspHostedRespOTAWrite, resp),
+    0,   /* quantifier_offset */
+    offsetof(CtrlMsgRespOTAWrite, resp),
     NULL,
     NULL,
     0,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
 };
-static const unsigned esp_hosted_resp_otawrite__field_indices_by_name[] = {
+static const unsigned ctrl_msg__resp__otawrite__field_indices_by_name[] = {
   0,   /* field[0] = resp */
 };
-static const ProtobufCIntRange esp_hosted_resp_otawrite__number_ranges[1 + 1] =
+static const ProtobufCIntRange ctrl_msg__resp__otawrite__number_ranges[1 + 1] =
 {
   { 1, 0 },
   { 0, 1 }
 };
-const ProtobufCMessageDescriptor esp_hosted_resp_otawrite__descriptor =
+const ProtobufCMessageDescriptor ctrl_msg__resp__otawrite__descriptor =
 {
   PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
-  "EspHostedRespOTAWrite",
-  "EspHostedRespOTAWrite",
-  "EspHostedRespOTAWrite",
+  "CtrlMsg_Resp_OTAWrite",
+  "CtrlMsgRespOTAWrite",
+  "CtrlMsgRespOTAWrite",
   "",
-  sizeof(EspHostedRespOTAWrite),
+  sizeof(CtrlMsgRespOTAWrite),
   1,
-  esp_hosted_resp_otawrite__field_descriptors,
-  esp_hosted_resp_otawrite__field_indices_by_name,
-  1,  esp_hosted_resp_otawrite__number_ranges,
-  (ProtobufCMessageInit) esp_hosted_resp_otawrite__init,
+  ctrl_msg__resp__otawrite__field_descriptors,
+  ctrl_msg__resp__otawrite__field_indices_by_name,
+  1,  ctrl_msg__resp__otawrite__number_ranges,
+  (ProtobufCMessageInit) ctrl_msg__resp__otawrite__init,
   NULL,NULL,NULL    /* reserved[123] */
 };
-#define esp_hosted_cmd_otaend__field_descriptors NULL
-#define esp_hosted_cmd_otaend__field_indices_by_name NULL
-#define esp_hosted_cmd_otaend__number_ranges NULL
-const ProtobufCMessageDescriptor esp_hosted_cmd_otaend__descriptor =
+#define ctrl_msg__req__otaend__field_descriptors NULL
+#define ctrl_msg__req__otaend__field_indices_by_name NULL
+#define ctrl_msg__req__otaend__number_ranges NULL
+const ProtobufCMessageDescriptor ctrl_msg__req__otaend__descriptor =
 {
   PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
-  "EspHostedCmdOTAEnd",
-  "EspHostedCmdOTAEnd",
-  "EspHostedCmdOTAEnd",
+  "CtrlMsg_Req_OTAEnd",
+  "CtrlMsgReqOTAEnd",
+  "CtrlMsgReqOTAEnd",
   "",
-  sizeof(EspHostedCmdOTAEnd),
+  sizeof(CtrlMsgReqOTAEnd),
   0,
-  esp_hosted_cmd_otaend__field_descriptors,
-  esp_hosted_cmd_otaend__field_indices_by_name,
-  0,  esp_hosted_cmd_otaend__number_ranges,
-  (ProtobufCMessageInit) esp_hosted_cmd_otaend__init,
+  ctrl_msg__req__otaend__field_descriptors,
+  ctrl_msg__req__otaend__field_indices_by_name,
+  0,  ctrl_msg__req__otaend__number_ranges,
+  (ProtobufCMessageInit) ctrl_msg__req__otaend__init,
   NULL,NULL,NULL    /* reserved[123] */
 };
-static const ProtobufCFieldDescriptor esp_hosted_resp_otaend__field_descriptors[1] =
+static const ProtobufCFieldDescriptor ctrl_msg__resp__otaend__field_descriptors[1] =
 {
   {
     "resp",
     1,
-    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_LABEL_NONE,
     PROTOBUF_C_TYPE_INT32,
-    offsetof(EspHostedRespOTAEnd, has_resp),
-    offsetof(EspHostedRespOTAEnd, resp),
+    0,   /* quantifier_offset */
+    offsetof(CtrlMsgRespOTAEnd, resp),
     NULL,
     NULL,
     0,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
 };
-static const unsigned esp_hosted_resp_otaend__field_indices_by_name[] = {
+static const unsigned ctrl_msg__resp__otaend__field_indices_by_name[] = {
   0,   /* field[0] = resp */
 };
-static const ProtobufCIntRange esp_hosted_resp_otaend__number_ranges[1 + 1] =
+static const ProtobufCIntRange ctrl_msg__resp__otaend__number_ranges[1 + 1] =
 {
   { 1, 0 },
   { 0, 1 }
 };
-const ProtobufCMessageDescriptor esp_hosted_resp_otaend__descriptor =
+const ProtobufCMessageDescriptor ctrl_msg__resp__otaend__descriptor =
 {
   PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
-  "EspHostedRespOTAEnd",
-  "EspHostedRespOTAEnd",
-  "EspHostedRespOTAEnd",
+  "CtrlMsg_Resp_OTAEnd",
+  "CtrlMsgRespOTAEnd",
+  "CtrlMsgRespOTAEnd",
   "",
-  sizeof(EspHostedRespOTAEnd),
+  sizeof(CtrlMsgRespOTAEnd),
   1,
-  esp_hosted_resp_otaend__field_descriptors,
-  esp_hosted_resp_otaend__field_indices_by_name,
-  1,  esp_hosted_resp_otaend__number_ranges,
-  (ProtobufCMessageInit) esp_hosted_resp_otaend__init,
+  ctrl_msg__resp__otaend__field_descriptors,
+  ctrl_msg__resp__otaend__field_indices_by_name,
+  1,  ctrl_msg__resp__otaend__number_ranges,
+  (ProtobufCMessageInit) ctrl_msg__resp__otaend__init,
   NULL,NULL,NULL    /* reserved[123] */
 };
-static const ProtobufCFieldDescriptor esp_hosted_cmd_set_vendor_specific_ie__field_descriptors[4] =
+static const ProtobufCFieldDescriptor ctrl_msg__req__vendor_iedata__field_descriptors[5] =
+{
+  {
+    "element_id",
+    1,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_INT32,
+    0,   /* quantifier_offset */
+    offsetof(CtrlMsgReqVendorIEData, element_id),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "length",
+    2,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_INT32,
+    0,   /* quantifier_offset */
+    offsetof(CtrlMsgReqVendorIEData, length),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "vendor_oui",
+    3,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_BYTES,
+    0,   /* quantifier_offset */
+    offsetof(CtrlMsgReqVendorIEData, vendor_oui),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "vendor_oui_type",
+    4,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_INT32,
+    0,   /* quantifier_offset */
+    offsetof(CtrlMsgReqVendorIEData, vendor_oui_type),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "payload",
+    5,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_BYTES,
+    0,   /* quantifier_offset */
+    offsetof(CtrlMsgReqVendorIEData, payload),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+};
+static const unsigned ctrl_msg__req__vendor_iedata__field_indices_by_name[] = {
+  0,   /* field[0] = element_id */
+  1,   /* field[1] = length */
+  4,   /* field[4] = payload */
+  2,   /* field[2] = vendor_oui */
+  3,   /* field[3] = vendor_oui_type */
+};
+static const ProtobufCIntRange ctrl_msg__req__vendor_iedata__number_ranges[1 + 1] =
+{
+  { 1, 0 },
+  { 0, 5 }
+};
+const ProtobufCMessageDescriptor ctrl_msg__req__vendor_iedata__descriptor =
+{
+  PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
+  "CtrlMsg_Req_VendorIEData",
+  "CtrlMsgReqVendorIEData",
+  "CtrlMsgReqVendorIEData",
+  "",
+  sizeof(CtrlMsgReqVendorIEData),
+  5,
+  ctrl_msg__req__vendor_iedata__field_descriptors,
+  ctrl_msg__req__vendor_iedata__field_indices_by_name,
+  1,  ctrl_msg__req__vendor_iedata__number_ranges,
+  (ProtobufCMessageInit) ctrl_msg__req__vendor_iedata__init,
+  NULL,NULL,NULL    /* reserved[123] */
+};
+static const ProtobufCFieldDescriptor ctrl_msg__req__set_soft_apvendor_specific_ie__field_descriptors[4] =
 {
   {
     "enable",
     1,
-    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_LABEL_NONE,
     PROTOBUF_C_TYPE_BOOL,
-    offsetof(EspHostedCmdSetVendorSpecificIE, has_enable),
-    offsetof(EspHostedCmdSetVendorSpecificIE, enable),
+    0,   /* quantifier_offset */
+    offsetof(CtrlMsgReqSetSoftAPVendorSpecificIE, enable),
     NULL,
     NULL,
     0,             /* flags */
@@ -3037,11 +3542,11 @@ static const ProtobufCFieldDescriptor esp_hosted_cmd_set_vendor_specific_ie__fie
   {
     "type",
     2,
-    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_LABEL_NONE,
     PROTOBUF_C_TYPE_ENUM,
-    offsetof(EspHostedCmdSetVendorSpecificIE, has_type),
-    offsetof(EspHostedCmdSetVendorSpecificIE, type),
-    &esp_hosted_vendor_ietype__descriptor,
+    0,   /* quantifier_offset */
+    offsetof(CtrlMsgReqSetSoftAPVendorSpecificIE, type),
+    &ctrl__vendor_ietype__descriptor,
     NULL,
     0,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
@@ -3049,11 +3554,11 @@ static const ProtobufCFieldDescriptor esp_hosted_cmd_set_vendor_specific_ie__fie
   {
     "idx",
     3,
-    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_LABEL_NONE,
     PROTOBUF_C_TYPE_ENUM,
-    offsetof(EspHostedCmdSetVendorSpecificIE, has_idx),
-    offsetof(EspHostedCmdSetVendorSpecificIE, idx),
-    &esp_hosted_ieid__descriptor,
+    0,   /* quantifier_offset */
+    offsetof(CtrlMsgReqSetSoftAPVendorSpecificIE, idx),
+    &ctrl__vendor_ieid__descriptor,
     NULL,
     0,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
@@ -3061,183 +3566,183 @@ static const ProtobufCFieldDescriptor esp_hosted_cmd_set_vendor_specific_ie__fie
   {
     "vendor_ie_data",
     4,
-    PROTOBUF_C_LABEL_OPTIONAL,
-    PROTOBUF_C_TYPE_BYTES,
-    offsetof(EspHostedCmdSetVendorSpecificIE, has_vendor_ie_data),
-    offsetof(EspHostedCmdSetVendorSpecificIE, vendor_ie_data),
-    NULL,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_MESSAGE,
+    0,   /* quantifier_offset */
+    offsetof(CtrlMsgReqSetSoftAPVendorSpecificIE, vendor_ie_data),
+    &ctrl_msg__req__vendor_iedata__descriptor,
     NULL,
     0,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
 };
-static const unsigned esp_hosted_cmd_set_vendor_specific_ie__field_indices_by_name[] = {
+static const unsigned ctrl_msg__req__set_soft_apvendor_specific_ie__field_indices_by_name[] = {
   0,   /* field[0] = enable */
   2,   /* field[2] = idx */
   1,   /* field[1] = type */
   3,   /* field[3] = vendor_ie_data */
 };
-static const ProtobufCIntRange esp_hosted_cmd_set_vendor_specific_ie__number_ranges[1 + 1] =
+static const ProtobufCIntRange ctrl_msg__req__set_soft_apvendor_specific_ie__number_ranges[1 + 1] =
 {
   { 1, 0 },
   { 0, 4 }
 };
-const ProtobufCMessageDescriptor esp_hosted_cmd_set_vendor_specific_ie__descriptor =
+const ProtobufCMessageDescriptor ctrl_msg__req__set_soft_apvendor_specific_ie__descriptor =
 {
   PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
-  "EspHostedCmdSetVendorSpecificIE",
-  "EspHostedCmdSetVendorSpecificIE",
-  "EspHostedCmdSetVendorSpecificIE",
+  "CtrlMsg_Req_SetSoftAPVendorSpecificIE",
+  "CtrlMsgReqSetSoftAPVendorSpecificIE",
+  "CtrlMsgReqSetSoftAPVendorSpecificIE",
   "",
-  sizeof(EspHostedCmdSetVendorSpecificIE),
+  sizeof(CtrlMsgReqSetSoftAPVendorSpecificIE),
   4,
-  esp_hosted_cmd_set_vendor_specific_ie__field_descriptors,
-  esp_hosted_cmd_set_vendor_specific_ie__field_indices_by_name,
-  1,  esp_hosted_cmd_set_vendor_specific_ie__number_ranges,
-  (ProtobufCMessageInit) esp_hosted_cmd_set_vendor_specific_ie__init,
+  ctrl_msg__req__set_soft_apvendor_specific_ie__field_descriptors,
+  ctrl_msg__req__set_soft_apvendor_specific_ie__field_indices_by_name,
+  1,  ctrl_msg__req__set_soft_apvendor_specific_ie__number_ranges,
+  (ProtobufCMessageInit) ctrl_msg__req__set_soft_apvendor_specific_ie__init,
   NULL,NULL,NULL    /* reserved[123] */
 };
-static const ProtobufCFieldDescriptor esp_hosted_resp_set_vendor_specific_ie__field_descriptors[1] =
+static const ProtobufCFieldDescriptor ctrl_msg__resp__set_soft_apvendor_specific_ie__field_descriptors[1] =
 {
   {
     "resp",
     1,
-    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_LABEL_NONE,
     PROTOBUF_C_TYPE_INT32,
-    offsetof(EspHostedRespSetVendorSpecificIE, has_resp),
-    offsetof(EspHostedRespSetVendorSpecificIE, resp),
+    0,   /* quantifier_offset */
+    offsetof(CtrlMsgRespSetSoftAPVendorSpecificIE, resp),
     NULL,
     NULL,
     0,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
 };
-static const unsigned esp_hosted_resp_set_vendor_specific_ie__field_indices_by_name[] = {
+static const unsigned ctrl_msg__resp__set_soft_apvendor_specific_ie__field_indices_by_name[] = {
   0,   /* field[0] = resp */
 };
-static const ProtobufCIntRange esp_hosted_resp_set_vendor_specific_ie__number_ranges[1 + 1] =
+static const ProtobufCIntRange ctrl_msg__resp__set_soft_apvendor_specific_ie__number_ranges[1 + 1] =
 {
   { 1, 0 },
   { 0, 1 }
 };
-const ProtobufCMessageDescriptor esp_hosted_resp_set_vendor_specific_ie__descriptor =
+const ProtobufCMessageDescriptor ctrl_msg__resp__set_soft_apvendor_specific_ie__descriptor =
 {
   PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
-  "EspHostedRespSetVendorSpecificIE",
-  "EspHostedRespSetVendorSpecificIE",
-  "EspHostedRespSetVendorSpecificIE",
+  "CtrlMsg_Resp_SetSoftAPVendorSpecificIE",
+  "CtrlMsgRespSetSoftAPVendorSpecificIE",
+  "CtrlMsgRespSetSoftAPVendorSpecificIE",
   "",
-  sizeof(EspHostedRespSetVendorSpecificIE),
+  sizeof(CtrlMsgRespSetSoftAPVendorSpecificIE),
   1,
-  esp_hosted_resp_set_vendor_specific_ie__field_descriptors,
-  esp_hosted_resp_set_vendor_specific_ie__field_indices_by_name,
-  1,  esp_hosted_resp_set_vendor_specific_ie__number_ranges,
-  (ProtobufCMessageInit) esp_hosted_resp_set_vendor_specific_ie__init,
+  ctrl_msg__resp__set_soft_apvendor_specific_ie__field_descriptors,
+  ctrl_msg__resp__set_soft_apvendor_specific_ie__field_indices_by_name,
+  1,  ctrl_msg__resp__set_soft_apvendor_specific_ie__number_ranges,
+  (ProtobufCMessageInit) ctrl_msg__resp__set_soft_apvendor_specific_ie__init,
   NULL,NULL,NULL    /* reserved[123] */
 };
-static const ProtobufCFieldDescriptor esp_hosted_cmd_set_wi_fi_maxtxpower__field_descriptors[1] =
+static const ProtobufCFieldDescriptor ctrl_msg__req__set_wifi_max_tx_power__field_descriptors[1] =
 {
   {
     "wifi_max_tx_power",
     1,
-    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_LABEL_NONE,
     PROTOBUF_C_TYPE_INT32,
-    offsetof(EspHostedCmdSetWiFiMAXTXPower, has_wifi_max_tx_power),
-    offsetof(EspHostedCmdSetWiFiMAXTXPower, wifi_max_tx_power),
+    0,   /* quantifier_offset */
+    offsetof(CtrlMsgReqSetWifiMaxTxPower, wifi_max_tx_power),
     NULL,
     NULL,
     0,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
 };
-static const unsigned esp_hosted_cmd_set_wi_fi_maxtxpower__field_indices_by_name[] = {
+static const unsigned ctrl_msg__req__set_wifi_max_tx_power__field_indices_by_name[] = {
   0,   /* field[0] = wifi_max_tx_power */
 };
-static const ProtobufCIntRange esp_hosted_cmd_set_wi_fi_maxtxpower__number_ranges[1 + 1] =
+static const ProtobufCIntRange ctrl_msg__req__set_wifi_max_tx_power__number_ranges[1 + 1] =
 {
   { 1, 0 },
   { 0, 1 }
 };
-const ProtobufCMessageDescriptor esp_hosted_cmd_set_wi_fi_maxtxpower__descriptor =
+const ProtobufCMessageDescriptor ctrl_msg__req__set_wifi_max_tx_power__descriptor =
 {
   PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
-  "EspHostedCmdSetWiFiMAXTXPower",
-  "EspHostedCmdSetWiFiMAXTXPower",
-  "EspHostedCmdSetWiFiMAXTXPower",
+  "CtrlMsg_Req_SetWifiMaxTxPower",
+  "CtrlMsgReqSetWifiMaxTxPower",
+  "CtrlMsgReqSetWifiMaxTxPower",
   "",
-  sizeof(EspHostedCmdSetWiFiMAXTXPower),
+  sizeof(CtrlMsgReqSetWifiMaxTxPower),
   1,
-  esp_hosted_cmd_set_wi_fi_maxtxpower__field_descriptors,
-  esp_hosted_cmd_set_wi_fi_maxtxpower__field_indices_by_name,
-  1,  esp_hosted_cmd_set_wi_fi_maxtxpower__number_ranges,
-  (ProtobufCMessageInit) esp_hosted_cmd_set_wi_fi_maxtxpower__init,
+  ctrl_msg__req__set_wifi_max_tx_power__field_descriptors,
+  ctrl_msg__req__set_wifi_max_tx_power__field_indices_by_name,
+  1,  ctrl_msg__req__set_wifi_max_tx_power__number_ranges,
+  (ProtobufCMessageInit) ctrl_msg__req__set_wifi_max_tx_power__init,
   NULL,NULL,NULL    /* reserved[123] */
 };
-static const ProtobufCFieldDescriptor esp_hosted_resp_set_wi_fi_maxtxpower__field_descriptors[1] =
+static const ProtobufCFieldDescriptor ctrl_msg__resp__set_wifi_max_tx_power__field_descriptors[1] =
 {
   {
     "resp",
     1,
-    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_LABEL_NONE,
     PROTOBUF_C_TYPE_INT32,
-    offsetof(EspHostedRespSetWiFiMAXTXPower, has_resp),
-    offsetof(EspHostedRespSetWiFiMAXTXPower, resp),
+    0,   /* quantifier_offset */
+    offsetof(CtrlMsgRespSetWifiMaxTxPower, resp),
     NULL,
     NULL,
     0,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
 };
-static const unsigned esp_hosted_resp_set_wi_fi_maxtxpower__field_indices_by_name[] = {
+static const unsigned ctrl_msg__resp__set_wifi_max_tx_power__field_indices_by_name[] = {
   0,   /* field[0] = resp */
 };
-static const ProtobufCIntRange esp_hosted_resp_set_wi_fi_maxtxpower__number_ranges[1 + 1] =
+static const ProtobufCIntRange ctrl_msg__resp__set_wifi_max_tx_power__number_ranges[1 + 1] =
 {
   { 1, 0 },
   { 0, 1 }
 };
-const ProtobufCMessageDescriptor esp_hosted_resp_set_wi_fi_maxtxpower__descriptor =
+const ProtobufCMessageDescriptor ctrl_msg__resp__set_wifi_max_tx_power__descriptor =
 {
   PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
-  "EspHostedRespSetWiFiMAXTXPower",
-  "EspHostedRespSetWiFiMAXTXPower",
-  "EspHostedRespSetWiFiMAXTXPower",
+  "CtrlMsg_Resp_SetWifiMaxTxPower",
+  "CtrlMsgRespSetWifiMaxTxPower",
+  "CtrlMsgRespSetWifiMaxTxPower",
   "",
-  sizeof(EspHostedRespSetWiFiMAXTXPower),
+  sizeof(CtrlMsgRespSetWifiMaxTxPower),
   1,
-  esp_hosted_resp_set_wi_fi_maxtxpower__field_descriptors,
-  esp_hosted_resp_set_wi_fi_maxtxpower__field_indices_by_name,
-  1,  esp_hosted_resp_set_wi_fi_maxtxpower__number_ranges,
-  (ProtobufCMessageInit) esp_hosted_resp_set_wi_fi_maxtxpower__init,
+  ctrl_msg__resp__set_wifi_max_tx_power__field_descriptors,
+  ctrl_msg__resp__set_wifi_max_tx_power__field_indices_by_name,
+  1,  ctrl_msg__resp__set_wifi_max_tx_power__number_ranges,
+  (ProtobufCMessageInit) ctrl_msg__resp__set_wifi_max_tx_power__init,
   NULL,NULL,NULL    /* reserved[123] */
 };
-#define esp_hosted_cmd_get_wi_fi_curr_txpower__field_descriptors NULL
-#define esp_hosted_cmd_get_wi_fi_curr_txpower__field_indices_by_name NULL
-#define esp_hosted_cmd_get_wi_fi_curr_txpower__number_ranges NULL
-const ProtobufCMessageDescriptor esp_hosted_cmd_get_wi_fi_curr_txpower__descriptor =
+#define ctrl_msg__req__get_wifi_curr_tx_power__field_descriptors NULL
+#define ctrl_msg__req__get_wifi_curr_tx_power__field_indices_by_name NULL
+#define ctrl_msg__req__get_wifi_curr_tx_power__number_ranges NULL
+const ProtobufCMessageDescriptor ctrl_msg__req__get_wifi_curr_tx_power__descriptor =
 {
   PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
-  "EspHostedCmdGetWiFiCurrTXPower",
-  "EspHostedCmdGetWiFiCurrTXPower",
-  "EspHostedCmdGetWiFiCurrTXPower",
+  "CtrlMsg_Req_GetWifiCurrTxPower",
+  "CtrlMsgReqGetWifiCurrTxPower",
+  "CtrlMsgReqGetWifiCurrTxPower",
   "",
-  sizeof(EspHostedCmdGetWiFiCurrTXPower),
+  sizeof(CtrlMsgReqGetWifiCurrTxPower),
   0,
-  esp_hosted_cmd_get_wi_fi_curr_txpower__field_descriptors,
-  esp_hosted_cmd_get_wi_fi_curr_txpower__field_indices_by_name,
-  0,  esp_hosted_cmd_get_wi_fi_curr_txpower__number_ranges,
-  (ProtobufCMessageInit) esp_hosted_cmd_get_wi_fi_curr_txpower__init,
+  ctrl_msg__req__get_wifi_curr_tx_power__field_descriptors,
+  ctrl_msg__req__get_wifi_curr_tx_power__field_indices_by_name,
+  0,  ctrl_msg__req__get_wifi_curr_tx_power__number_ranges,
+  (ProtobufCMessageInit) ctrl_msg__req__get_wifi_curr_tx_power__init,
   NULL,NULL,NULL    /* reserved[123] */
 };
-static const ProtobufCFieldDescriptor esp_hosted_resp_get_wi_fi_curr_txpower__field_descriptors[2] =
+static const ProtobufCFieldDescriptor ctrl_msg__resp__get_wifi_curr_tx_power__field_descriptors[2] =
 {
   {
     "wifi_curr_tx_power",
     1,
-    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_LABEL_NONE,
     PROTOBUF_C_TYPE_INT32,
-    offsetof(EspHostedRespGetWiFiCurrTXPower, has_wifi_curr_tx_power),
-    offsetof(EspHostedRespGetWiFiCurrTXPower, wifi_curr_tx_power),
+    0,   /* quantifier_offset */
+    offsetof(CtrlMsgRespGetWifiCurrTxPower, wifi_curr_tx_power),
     NULL,
     NULL,
     0,             /* flags */
@@ -3246,838 +3751,1337 @@ static const ProtobufCFieldDescriptor esp_hosted_resp_get_wi_fi_curr_txpower__fi
   {
     "resp",
     2,
-    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_LABEL_NONE,
     PROTOBUF_C_TYPE_INT32,
-    offsetof(EspHostedRespGetWiFiCurrTXPower, has_resp),
-    offsetof(EspHostedRespGetWiFiCurrTXPower, resp),
+    0,   /* quantifier_offset */
+    offsetof(CtrlMsgRespGetWifiCurrTxPower, resp),
     NULL,
     NULL,
     0,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
 };
-static const unsigned esp_hosted_resp_get_wi_fi_curr_txpower__field_indices_by_name[] = {
+static const unsigned ctrl_msg__resp__get_wifi_curr_tx_power__field_indices_by_name[] = {
   1,   /* field[1] = resp */
   0,   /* field[0] = wifi_curr_tx_power */
 };
-static const ProtobufCIntRange esp_hosted_resp_get_wi_fi_curr_txpower__number_ranges[1 + 1] =
+static const ProtobufCIntRange ctrl_msg__resp__get_wifi_curr_tx_power__number_ranges[1 + 1] =
 {
   { 1, 0 },
   { 0, 2 }
 };
-const ProtobufCMessageDescriptor esp_hosted_resp_get_wi_fi_curr_txpower__descriptor =
+const ProtobufCMessageDescriptor ctrl_msg__resp__get_wifi_curr_tx_power__descriptor =
 {
   PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
-  "EspHostedRespGetWiFiCurrTXPower",
-  "EspHostedRespGetWiFiCurrTXPower",
-  "EspHostedRespGetWiFiCurrTXPower",
+  "CtrlMsg_Resp_GetWifiCurrTxPower",
+  "CtrlMsgRespGetWifiCurrTxPower",
+  "CtrlMsgRespGetWifiCurrTxPower",
   "",
-  sizeof(EspHostedRespGetWiFiCurrTXPower),
+  sizeof(CtrlMsgRespGetWifiCurrTxPower),
   2,
-  esp_hosted_resp_get_wi_fi_curr_txpower__field_descriptors,
-  esp_hosted_resp_get_wi_fi_curr_txpower__field_indices_by_name,
-  1,  esp_hosted_resp_get_wi_fi_curr_txpower__number_ranges,
-  (ProtobufCMessageInit) esp_hosted_resp_get_wi_fi_curr_txpower__init,
+  ctrl_msg__resp__get_wifi_curr_tx_power__field_descriptors,
+  ctrl_msg__resp__get_wifi_curr_tx_power__field_indices_by_name,
+  1,  ctrl_msg__resp__get_wifi_curr_tx_power__number_ranges,
+  (ProtobufCMessageInit) ctrl_msg__resp__get_wifi_curr_tx_power__init,
   NULL,NULL,NULL    /* reserved[123] */
 };
-static const ProtobufCFieldDescriptor esp_hosted_config_payload__field_descriptors[41] =
+static const ProtobufCFieldDescriptor ctrl_msg__req__config_heartbeat__field_descriptors[2] =
 {
   {
-    "msg",
+    "enable",
     1,
-    PROTOBUF_C_LABEL_OPTIONAL,
-    PROTOBUF_C_TYPE_ENUM,
-    offsetof(EspHostedConfigPayload, has_msg),
-    offsetof(EspHostedConfigPayload, msg),
-    &esp_hosted_config_msg_type__descriptor,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_BOOL,
+    0,   /* quantifier_offset */
+    offsetof(CtrlMsgReqConfigHeartbeat, enable),
+    NULL,
     NULL,
     0,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
   {
-    "cmd_get_mac_address",
-    10,
-    PROTOBUF_C_LABEL_OPTIONAL,
+    "duration",
+    2,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_INT32,
+    0,   /* quantifier_offset */
+    offsetof(CtrlMsgReqConfigHeartbeat, duration),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+};
+static const unsigned ctrl_msg__req__config_heartbeat__field_indices_by_name[] = {
+  1,   /* field[1] = duration */
+  0,   /* field[0] = enable */
+};
+static const ProtobufCIntRange ctrl_msg__req__config_heartbeat__number_ranges[1 + 1] =
+{
+  { 1, 0 },
+  { 0, 2 }
+};
+const ProtobufCMessageDescriptor ctrl_msg__req__config_heartbeat__descriptor =
+{
+  PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
+  "CtrlMsg_Req_ConfigHeartbeat",
+  "CtrlMsgReqConfigHeartbeat",
+  "CtrlMsgReqConfigHeartbeat",
+  "",
+  sizeof(CtrlMsgReqConfigHeartbeat),
+  2,
+  ctrl_msg__req__config_heartbeat__field_descriptors,
+  ctrl_msg__req__config_heartbeat__field_indices_by_name,
+  1,  ctrl_msg__req__config_heartbeat__number_ranges,
+  (ProtobufCMessageInit) ctrl_msg__req__config_heartbeat__init,
+  NULL,NULL,NULL    /* reserved[123] */
+};
+static const ProtobufCFieldDescriptor ctrl_msg__resp__config_heartbeat__field_descriptors[1] =
+{
+  {
+    "resp",
+    1,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_INT32,
+    0,   /* quantifier_offset */
+    offsetof(CtrlMsgRespConfigHeartbeat, resp),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+};
+static const unsigned ctrl_msg__resp__config_heartbeat__field_indices_by_name[] = {
+  0,   /* field[0] = resp */
+};
+static const ProtobufCIntRange ctrl_msg__resp__config_heartbeat__number_ranges[1 + 1] =
+{
+  { 1, 0 },
+  { 0, 1 }
+};
+const ProtobufCMessageDescriptor ctrl_msg__resp__config_heartbeat__descriptor =
+{
+  PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
+  "CtrlMsg_Resp_ConfigHeartbeat",
+  "CtrlMsgRespConfigHeartbeat",
+  "CtrlMsgRespConfigHeartbeat",
+  "",
+  sizeof(CtrlMsgRespConfigHeartbeat),
+  1,
+  ctrl_msg__resp__config_heartbeat__field_descriptors,
+  ctrl_msg__resp__config_heartbeat__field_indices_by_name,
+  1,  ctrl_msg__resp__config_heartbeat__number_ranges,
+  (ProtobufCMessageInit) ctrl_msg__resp__config_heartbeat__init,
+  NULL,NULL,NULL    /* reserved[123] */
+};
+static const ProtobufCFieldDescriptor ctrl_msg__event__espinit__field_descriptors[1] =
+{
+  {
+    "init_data",
+    1,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_BYTES,
+    0,   /* quantifier_offset */
+    offsetof(CtrlMsgEventESPInit, init_data),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+};
+static const unsigned ctrl_msg__event__espinit__field_indices_by_name[] = {
+  0,   /* field[0] = init_data */
+};
+static const ProtobufCIntRange ctrl_msg__event__espinit__number_ranges[1 + 1] =
+{
+  { 1, 0 },
+  { 0, 1 }
+};
+const ProtobufCMessageDescriptor ctrl_msg__event__espinit__descriptor =
+{
+  PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
+  "CtrlMsg_Event_ESPInit",
+  "CtrlMsgEventESPInit",
+  "CtrlMsgEventESPInit",
+  "",
+  sizeof(CtrlMsgEventESPInit),
+  1,
+  ctrl_msg__event__espinit__field_descriptors,
+  ctrl_msg__event__espinit__field_indices_by_name,
+  1,  ctrl_msg__event__espinit__number_ranges,
+  (ProtobufCMessageInit) ctrl_msg__event__espinit__init,
+  NULL,NULL,NULL    /* reserved[123] */
+};
+static const ProtobufCFieldDescriptor ctrl_msg__event__heartbeat__field_descriptors[1] =
+{
+  {
+    "hb_num",
+    1,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_INT32,
+    0,   /* quantifier_offset */
+    offsetof(CtrlMsgEventHeartbeat, hb_num),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+};
+static const unsigned ctrl_msg__event__heartbeat__field_indices_by_name[] = {
+  0,   /* field[0] = hb_num */
+};
+static const ProtobufCIntRange ctrl_msg__event__heartbeat__number_ranges[1 + 1] =
+{
+  { 1, 0 },
+  { 0, 1 }
+};
+const ProtobufCMessageDescriptor ctrl_msg__event__heartbeat__descriptor =
+{
+  PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
+  "CtrlMsg_Event_Heartbeat",
+  "CtrlMsgEventHeartbeat",
+  "CtrlMsgEventHeartbeat",
+  "",
+  sizeof(CtrlMsgEventHeartbeat),
+  1,
+  ctrl_msg__event__heartbeat__field_descriptors,
+  ctrl_msg__event__heartbeat__field_indices_by_name,
+  1,  ctrl_msg__event__heartbeat__number_ranges,
+  (ProtobufCMessageInit) ctrl_msg__event__heartbeat__init,
+  NULL,NULL,NULL    /* reserved[123] */
+};
+static const ProtobufCFieldDescriptor ctrl_msg__event__station_disconnect_from_ap__field_descriptors[1] =
+{
+  {
+    "resp",
+    1,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_INT32,
+    0,   /* quantifier_offset */
+    offsetof(CtrlMsgEventStationDisconnectFromAP, resp),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+};
+static const unsigned ctrl_msg__event__station_disconnect_from_ap__field_indices_by_name[] = {
+  0,   /* field[0] = resp */
+};
+static const ProtobufCIntRange ctrl_msg__event__station_disconnect_from_ap__number_ranges[1 + 1] =
+{
+  { 1, 0 },
+  { 0, 1 }
+};
+const ProtobufCMessageDescriptor ctrl_msg__event__station_disconnect_from_ap__descriptor =
+{
+  PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
+  "CtrlMsg_Event_StationDisconnectFromAP",
+  "CtrlMsgEventStationDisconnectFromAP",
+  "CtrlMsgEventStationDisconnectFromAP",
+  "",
+  sizeof(CtrlMsgEventStationDisconnectFromAP),
+  1,
+  ctrl_msg__event__station_disconnect_from_ap__field_descriptors,
+  ctrl_msg__event__station_disconnect_from_ap__field_indices_by_name,
+  1,  ctrl_msg__event__station_disconnect_from_ap__number_ranges,
+  (ProtobufCMessageInit) ctrl_msg__event__station_disconnect_from_ap__init,
+  NULL,NULL,NULL    /* reserved[123] */
+};
+static const ProtobufCFieldDescriptor ctrl_msg__event__station_disconnect_from_espsoft_ap__field_descriptors[2] =
+{
+  {
+    "resp",
+    1,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_INT32,
+    0,   /* quantifier_offset */
+    offsetof(CtrlMsgEventStationDisconnectFromESPSoftAP, resp),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "mac",
+    2,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_BYTES,
+    0,   /* quantifier_offset */
+    offsetof(CtrlMsgEventStationDisconnectFromESPSoftAP, mac),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+};
+static const unsigned ctrl_msg__event__station_disconnect_from_espsoft_ap__field_indices_by_name[] = {
+  1,   /* field[1] = mac */
+  0,   /* field[0] = resp */
+};
+static const ProtobufCIntRange ctrl_msg__event__station_disconnect_from_espsoft_ap__number_ranges[1 + 1] =
+{
+  { 1, 0 },
+  { 0, 2 }
+};
+const ProtobufCMessageDescriptor ctrl_msg__event__station_disconnect_from_espsoft_ap__descriptor =
+{
+  PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
+  "CtrlMsg_Event_StationDisconnectFromESPSoftAP",
+  "CtrlMsgEventStationDisconnectFromESPSoftAP",
+  "CtrlMsgEventStationDisconnectFromESPSoftAP",
+  "",
+  sizeof(CtrlMsgEventStationDisconnectFromESPSoftAP),
+  2,
+  ctrl_msg__event__station_disconnect_from_espsoft_ap__field_descriptors,
+  ctrl_msg__event__station_disconnect_from_espsoft_ap__field_indices_by_name,
+  1,  ctrl_msg__event__station_disconnect_from_espsoft_ap__number_ranges,
+  (ProtobufCMessageInit) ctrl_msg__event__station_disconnect_from_espsoft_ap__init,
+  NULL,NULL,NULL    /* reserved[123] */
+};
+static const ProtobufCFieldDescriptor ctrl_msg__field_descriptors[48] =
+{
+  {
+    "msg_type",
+    1,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_ENUM,
+    0,   /* quantifier_offset */
+    offsetof(CtrlMsg, msg_type),
+    &ctrl_msg_type__descriptor,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "msg_id",
+    2,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_ENUM,
+    0,   /* quantifier_offset */
+    offsetof(CtrlMsg, msg_id),
+    &ctrl_msg_id__descriptor,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "req_get_mac_address",
+    101,
+    PROTOBUF_C_LABEL_NONE,
     PROTOBUF_C_TYPE_MESSAGE,
-    offsetof(EspHostedConfigPayload, payload_case),
-    offsetof(EspHostedConfigPayload, cmd_get_mac_address),
-    &esp_hosted_cmd_get_mac_address__descriptor,
+    offsetof(CtrlMsg, payload_case),
+    offsetof(CtrlMsg, req_get_mac_address),
+    &ctrl_msg__req__get_mac_address__descriptor,
+    NULL,
+    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "req_set_mac_address",
+    102,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_MESSAGE,
+    offsetof(CtrlMsg, payload_case),
+    offsetof(CtrlMsg, req_set_mac_address),
+    &ctrl_msg__req__set_mac_address__descriptor,
+    NULL,
+    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "req_get_wifi_mode",
+    103,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_MESSAGE,
+    offsetof(CtrlMsg, payload_case),
+    offsetof(CtrlMsg, req_get_wifi_mode),
+    &ctrl_msg__req__get_mode__descriptor,
+    NULL,
+    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "req_set_wifi_mode",
+    104,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_MESSAGE,
+    offsetof(CtrlMsg, payload_case),
+    offsetof(CtrlMsg, req_set_wifi_mode),
+    &ctrl_msg__req__set_mode__descriptor,
+    NULL,
+    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "req_scan_ap_list",
+    105,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_MESSAGE,
+    offsetof(CtrlMsg, payload_case),
+    offsetof(CtrlMsg, req_scan_ap_list),
+    &ctrl_msg__req__scan_result__descriptor,
+    NULL,
+    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "req_get_ap_config",
+    106,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_MESSAGE,
+    offsetof(CtrlMsg, payload_case),
+    offsetof(CtrlMsg, req_get_ap_config),
+    &ctrl_msg__req__get_apconfig__descriptor,
+    NULL,
+    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "req_connect_ap",
+    107,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_MESSAGE,
+    offsetof(CtrlMsg, payload_case),
+    offsetof(CtrlMsg, req_connect_ap),
+    &ctrl_msg__req__connect_ap__descriptor,
+    NULL,
+    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "req_disconnect_ap",
+    108,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_MESSAGE,
+    offsetof(CtrlMsg, payload_case),
+    offsetof(CtrlMsg, req_disconnect_ap),
+    &ctrl_msg__req__get_status__descriptor,
+    NULL,
+    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "req_get_softap_config",
+    109,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_MESSAGE,
+    offsetof(CtrlMsg, payload_case),
+    offsetof(CtrlMsg, req_get_softap_config),
+    &ctrl_msg__req__get_soft_apconfig__descriptor,
+    NULL,
+    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "req_set_softap_vendor_specific_ie",
+    110,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_MESSAGE,
+    offsetof(CtrlMsg, payload_case),
+    offsetof(CtrlMsg, req_set_softap_vendor_specific_ie),
+    &ctrl_msg__req__set_soft_apvendor_specific_ie__descriptor,
+    NULL,
+    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "req_start_softap",
+    111,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_MESSAGE,
+    offsetof(CtrlMsg, payload_case),
+    offsetof(CtrlMsg, req_start_softap),
+    &ctrl_msg__req__start_soft_ap__descriptor,
+    NULL,
+    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "req_softap_connected_stas_list",
+    112,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_MESSAGE,
+    offsetof(CtrlMsg, payload_case),
+    offsetof(CtrlMsg, req_softap_connected_stas_list),
+    &ctrl_msg__req__soft_apconnected_sta__descriptor,
+    NULL,
+    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "req_stop_softap",
+    113,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_MESSAGE,
+    offsetof(CtrlMsg, payload_case),
+    offsetof(CtrlMsg, req_stop_softap),
+    &ctrl_msg__req__get_status__descriptor,
+    NULL,
+    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "req_set_power_save_mode",
+    114,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_MESSAGE,
+    offsetof(CtrlMsg, payload_case),
+    offsetof(CtrlMsg, req_set_power_save_mode),
+    &ctrl_msg__req__set_mode__descriptor,
+    NULL,
+    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "req_get_power_save_mode",
+    115,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_MESSAGE,
+    offsetof(CtrlMsg, payload_case),
+    offsetof(CtrlMsg, req_get_power_save_mode),
+    &ctrl_msg__req__get_mode__descriptor,
+    NULL,
+    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "req_ota_begin",
+    116,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_MESSAGE,
+    offsetof(CtrlMsg, payload_case),
+    offsetof(CtrlMsg, req_ota_begin),
+    &ctrl_msg__req__otabegin__descriptor,
+    NULL,
+    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "req_ota_write",
+    117,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_MESSAGE,
+    offsetof(CtrlMsg, payload_case),
+    offsetof(CtrlMsg, req_ota_write),
+    &ctrl_msg__req__otawrite__descriptor,
+    NULL,
+    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "req_ota_end",
+    118,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_MESSAGE,
+    offsetof(CtrlMsg, payload_case),
+    offsetof(CtrlMsg, req_ota_end),
+    &ctrl_msg__req__otaend__descriptor,
+    NULL,
+    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "req_set_wifi_max_tx_power",
+    119,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_MESSAGE,
+    offsetof(CtrlMsg, payload_case),
+    offsetof(CtrlMsg, req_set_wifi_max_tx_power),
+    &ctrl_msg__req__set_wifi_max_tx_power__descriptor,
+    NULL,
+    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "req_get_wifi_curr_tx_power",
+    120,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_MESSAGE,
+    offsetof(CtrlMsg, payload_case),
+    offsetof(CtrlMsg, req_get_wifi_curr_tx_power),
+    &ctrl_msg__req__get_wifi_curr_tx_power__descriptor,
+    NULL,
+    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "req_config_heartbeat",
+    121,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_MESSAGE,
+    offsetof(CtrlMsg, payload_case),
+    offsetof(CtrlMsg, req_config_heartbeat),
+    &ctrl_msg__req__config_heartbeat__descriptor,
     NULL,
     0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
   {
     "resp_get_mac_address",
-    11,
-    PROTOBUF_C_LABEL_OPTIONAL,
+    201,
+    PROTOBUF_C_LABEL_NONE,
     PROTOBUF_C_TYPE_MESSAGE,
-    offsetof(EspHostedConfigPayload, payload_case),
-    offsetof(EspHostedConfigPayload, resp_get_mac_address),
-    &esp_hosted_resp_get_mac_address__descriptor,
-    NULL,
-    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
-    0,NULL,NULL    /* reserved1,reserved2, etc */
-  },
-  {
-    "cmd_get_wifi_mode",
-    12,
-    PROTOBUF_C_LABEL_OPTIONAL,
-    PROTOBUF_C_TYPE_MESSAGE,
-    offsetof(EspHostedConfigPayload, payload_case),
-    offsetof(EspHostedConfigPayload, cmd_get_wifi_mode),
-    &esp_hosted_cmd_get_mode__descriptor,
-    NULL,
-    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
-    0,NULL,NULL    /* reserved1,reserved2, etc */
-  },
-  {
-    "resp_get_wifi_mode",
-    13,
-    PROTOBUF_C_LABEL_OPTIONAL,
-    PROTOBUF_C_TYPE_MESSAGE,
-    offsetof(EspHostedConfigPayload, payload_case),
-    offsetof(EspHostedConfigPayload, resp_get_wifi_mode),
-    &esp_hosted_resp_get_mode__descriptor,
-    NULL,
-    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
-    0,NULL,NULL    /* reserved1,reserved2, etc */
-  },
-  {
-    "cmd_set_wifi_mode",
-    14,
-    PROTOBUF_C_LABEL_OPTIONAL,
-    PROTOBUF_C_TYPE_MESSAGE,
-    offsetof(EspHostedConfigPayload, payload_case),
-    offsetof(EspHostedConfigPayload, cmd_set_wifi_mode),
-    &esp_hosted_cmd_set_mode__descriptor,
-    NULL,
-    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
-    0,NULL,NULL    /* reserved1,reserved2, etc */
-  },
-  {
-    "resp_set_wifi_mode",
-    15,
-    PROTOBUF_C_LABEL_OPTIONAL,
-    PROTOBUF_C_TYPE_MESSAGE,
-    offsetof(EspHostedConfigPayload, payload_case),
-    offsetof(EspHostedConfigPayload, resp_set_wifi_mode),
-    &esp_hosted_resp_set_mode__descriptor,
-    NULL,
-    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
-    0,NULL,NULL    /* reserved1,reserved2, etc */
-  },
-  {
-    "cmd_get_ap_config",
-    16,
-    PROTOBUF_C_LABEL_OPTIONAL,
-    PROTOBUF_C_TYPE_MESSAGE,
-    offsetof(EspHostedConfigPayload, payload_case),
-    offsetof(EspHostedConfigPayload, cmd_get_ap_config),
-    &esp_hosted_cmd_get_apconfig__descriptor,
-    NULL,
-    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
-    0,NULL,NULL    /* reserved1,reserved2, etc */
-  },
-  {
-    "resp_get_ap_config",
-    17,
-    PROTOBUF_C_LABEL_OPTIONAL,
-    PROTOBUF_C_TYPE_MESSAGE,
-    offsetof(EspHostedConfigPayload, payload_case),
-    offsetof(EspHostedConfigPayload, resp_get_ap_config),
-    &esp_hosted_resp_get_apconfig__descriptor,
-    NULL,
-    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
-    0,NULL,NULL    /* reserved1,reserved2, etc */
-  },
-  {
-    "cmd_set_ap_config",
-    18,
-    PROTOBUF_C_LABEL_OPTIONAL,
-    PROTOBUF_C_TYPE_MESSAGE,
-    offsetof(EspHostedConfigPayload, payload_case),
-    offsetof(EspHostedConfigPayload, cmd_set_ap_config),
-    &esp_hosted_cmd_set_apconfig__descriptor,
-    NULL,
-    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
-    0,NULL,NULL    /* reserved1,reserved2, etc */
-  },
-  {
-    "resp_set_ap_config",
-    19,
-    PROTOBUF_C_LABEL_OPTIONAL,
-    PROTOBUF_C_TYPE_MESSAGE,
-    offsetof(EspHostedConfigPayload, payload_case),
-    offsetof(EspHostedConfigPayload, resp_set_ap_config),
-    &esp_hosted_resp_set_apconfig__descriptor,
-    NULL,
-    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
-    0,NULL,NULL    /* reserved1,reserved2, etc */
-  },
-  {
-    "cmd_get_softap_config",
-    20,
-    PROTOBUF_C_LABEL_OPTIONAL,
-    PROTOBUF_C_TYPE_MESSAGE,
-    offsetof(EspHostedConfigPayload, payload_case),
-    offsetof(EspHostedConfigPayload, cmd_get_softap_config),
-    &esp_hosted_cmd_get_soft_apconfig__descriptor,
-    NULL,
-    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
-    0,NULL,NULL    /* reserved1,reserved2, etc */
-  },
-  {
-    "resp_get_softap_config",
-    21,
-    PROTOBUF_C_LABEL_OPTIONAL,
-    PROTOBUF_C_TYPE_MESSAGE,
-    offsetof(EspHostedConfigPayload, payload_case),
-    offsetof(EspHostedConfigPayload, resp_get_softap_config),
-    &esp_hosted_resp_get_soft_apconfig__descriptor,
-    NULL,
-    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
-    0,NULL,NULL    /* reserved1,reserved2, etc */
-  },
-  {
-    "cmd_set_softap_config",
-    22,
-    PROTOBUF_C_LABEL_OPTIONAL,
-    PROTOBUF_C_TYPE_MESSAGE,
-    offsetof(EspHostedConfigPayload, payload_case),
-    offsetof(EspHostedConfigPayload, cmd_set_softap_config),
-    &esp_hosted_cmd_set_soft_apconfig__descriptor,
-    NULL,
-    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
-    0,NULL,NULL    /* reserved1,reserved2, etc */
-  },
-  {
-    "resp_set_softap_config",
-    23,
-    PROTOBUF_C_LABEL_OPTIONAL,
-    PROTOBUF_C_TYPE_MESSAGE,
-    offsetof(EspHostedConfigPayload, payload_case),
-    offsetof(EspHostedConfigPayload, resp_set_softap_config),
-    &esp_hosted_resp_set_soft_apconfig__descriptor,
-    NULL,
-    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
-    0,NULL,NULL    /* reserved1,reserved2, etc */
-  },
-  {
-    "cmd_disconnect_ap",
-    24,
-    PROTOBUF_C_LABEL_OPTIONAL,
-    PROTOBUF_C_TYPE_MESSAGE,
-    offsetof(EspHostedConfigPayload, payload_case),
-    offsetof(EspHostedConfigPayload, cmd_disconnect_ap),
-    &esp_hosted_cmd_get_status__descriptor,
-    NULL,
-    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
-    0,NULL,NULL    /* reserved1,reserved2, etc */
-  },
-  {
-    "resp_disconnect_ap",
-    25,
-    PROTOBUF_C_LABEL_OPTIONAL,
-    PROTOBUF_C_TYPE_MESSAGE,
-    offsetof(EspHostedConfigPayload, payload_case),
-    offsetof(EspHostedConfigPayload, resp_disconnect_ap),
-    &esp_hosted_resp_get_status__descriptor,
-    NULL,
-    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
-    0,NULL,NULL    /* reserved1,reserved2, etc */
-  },
-  {
-    "cmd_stop_softap",
-    26,
-    PROTOBUF_C_LABEL_OPTIONAL,
-    PROTOBUF_C_TYPE_MESSAGE,
-    offsetof(EspHostedConfigPayload, payload_case),
-    offsetof(EspHostedConfigPayload, cmd_stop_softap),
-    &esp_hosted_cmd_get_status__descriptor,
-    NULL,
-    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
-    0,NULL,NULL    /* reserved1,reserved2, etc */
-  },
-  {
-    "resp_stop_softap",
-    27,
-    PROTOBUF_C_LABEL_OPTIONAL,
-    PROTOBUF_C_TYPE_MESSAGE,
-    offsetof(EspHostedConfigPayload, payload_case),
-    offsetof(EspHostedConfigPayload, resp_stop_softap),
-    &esp_hosted_resp_get_status__descriptor,
-    NULL,
-    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
-    0,NULL,NULL    /* reserved1,reserved2, etc */
-  },
-  {
-    "cmd_scan_ap_list",
-    28,
-    PROTOBUF_C_LABEL_OPTIONAL,
-    PROTOBUF_C_TYPE_MESSAGE,
-    offsetof(EspHostedConfigPayload, payload_case),
-    offsetof(EspHostedConfigPayload, cmd_scan_ap_list),
-    &esp_hosted_cmd_scan_result__descriptor,
-    NULL,
-    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
-    0,NULL,NULL    /* reserved1,reserved2, etc */
-  },
-  {
-    "resp_scan_ap_list",
-    29,
-    PROTOBUF_C_LABEL_OPTIONAL,
-    PROTOBUF_C_TYPE_MESSAGE,
-    offsetof(EspHostedConfigPayload, payload_case),
-    offsetof(EspHostedConfigPayload, resp_scan_ap_list),
-    &esp_hosted_resp_scan_result__descriptor,
-    NULL,
-    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
-    0,NULL,NULL    /* reserved1,reserved2, etc */
-  },
-  {
-    "cmd_connected_stas_list",
-    30,
-    PROTOBUF_C_LABEL_OPTIONAL,
-    PROTOBUF_C_TYPE_MESSAGE,
-    offsetof(EspHostedConfigPayload, payload_case),
-    offsetof(EspHostedConfigPayload, cmd_connected_stas_list),
-    &esp_hosted_cmd_connected_sta__descriptor,
-    NULL,
-    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
-    0,NULL,NULL    /* reserved1,reserved2, etc */
-  },
-  {
-    "resp_connected_stas_list",
-    31,
-    PROTOBUF_C_LABEL_OPTIONAL,
-    PROTOBUF_C_TYPE_MESSAGE,
-    offsetof(EspHostedConfigPayload, payload_case),
-    offsetof(EspHostedConfigPayload, resp_connected_stas_list),
-    &esp_hosted_resp_connected_sta__descriptor,
-    NULL,
-    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
-    0,NULL,NULL    /* reserved1,reserved2, etc */
-  },
-  {
-    "cmd_set_mac_address",
-    32,
-    PROTOBUF_C_LABEL_OPTIONAL,
-    PROTOBUF_C_TYPE_MESSAGE,
-    offsetof(EspHostedConfigPayload, payload_case),
-    offsetof(EspHostedConfigPayload, cmd_set_mac_address),
-    &esp_hosted_cmd_set_mac_address__descriptor,
+    offsetof(CtrlMsg, payload_case),
+    offsetof(CtrlMsg, resp_get_mac_address),
+    &ctrl_msg__resp__get_mac_address__descriptor,
     NULL,
     0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
   {
     "resp_set_mac_address",
-    33,
-    PROTOBUF_C_LABEL_OPTIONAL,
+    202,
+    PROTOBUF_C_LABEL_NONE,
     PROTOBUF_C_TYPE_MESSAGE,
-    offsetof(EspHostedConfigPayload, payload_case),
-    offsetof(EspHostedConfigPayload, resp_set_mac_address),
-    &esp_hosted_resp_set_mac_address__descriptor,
+    offsetof(CtrlMsg, payload_case),
+    offsetof(CtrlMsg, resp_set_mac_address),
+    &ctrl_msg__resp__set_mac_address__descriptor,
     NULL,
     0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
   {
-    "cmd_set_power_save_mode",
-    34,
-    PROTOBUF_C_LABEL_OPTIONAL,
+    "resp_get_wifi_mode",
+    203,
+    PROTOBUF_C_LABEL_NONE,
     PROTOBUF_C_TYPE_MESSAGE,
-    offsetof(EspHostedConfigPayload, payload_case),
-    offsetof(EspHostedConfigPayload, cmd_set_power_save_mode),
-    &esp_hosted_cmd_set_mode__descriptor,
+    offsetof(CtrlMsg, payload_case),
+    offsetof(CtrlMsg, resp_get_wifi_mode),
+    &ctrl_msg__resp__get_mode__descriptor,
+    NULL,
+    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "resp_set_wifi_mode",
+    204,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_MESSAGE,
+    offsetof(CtrlMsg, payload_case),
+    offsetof(CtrlMsg, resp_set_wifi_mode),
+    &ctrl_msg__resp__set_mode__descriptor,
+    NULL,
+    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "resp_scan_ap_list",
+    205,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_MESSAGE,
+    offsetof(CtrlMsg, payload_case),
+    offsetof(CtrlMsg, resp_scan_ap_list),
+    &ctrl_msg__resp__scan_result__descriptor,
+    NULL,
+    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "resp_get_ap_config",
+    206,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_MESSAGE,
+    offsetof(CtrlMsg, payload_case),
+    offsetof(CtrlMsg, resp_get_ap_config),
+    &ctrl_msg__resp__get_apconfig__descriptor,
+    NULL,
+    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "resp_connect_ap",
+    207,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_MESSAGE,
+    offsetof(CtrlMsg, payload_case),
+    offsetof(CtrlMsg, resp_connect_ap),
+    &ctrl_msg__resp__connect_ap__descriptor,
+    NULL,
+    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "resp_disconnect_ap",
+    208,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_MESSAGE,
+    offsetof(CtrlMsg, payload_case),
+    offsetof(CtrlMsg, resp_disconnect_ap),
+    &ctrl_msg__resp__get_status__descriptor,
+    NULL,
+    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "resp_get_softap_config",
+    209,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_MESSAGE,
+    offsetof(CtrlMsg, payload_case),
+    offsetof(CtrlMsg, resp_get_softap_config),
+    &ctrl_msg__resp__get_soft_apconfig__descriptor,
+    NULL,
+    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "resp_set_softap_vendor_specific_ie",
+    210,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_MESSAGE,
+    offsetof(CtrlMsg, payload_case),
+    offsetof(CtrlMsg, resp_set_softap_vendor_specific_ie),
+    &ctrl_msg__resp__set_soft_apvendor_specific_ie__descriptor,
+    NULL,
+    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "resp_start_softap",
+    211,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_MESSAGE,
+    offsetof(CtrlMsg, payload_case),
+    offsetof(CtrlMsg, resp_start_softap),
+    &ctrl_msg__resp__start_soft_ap__descriptor,
+    NULL,
+    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "resp_softap_connected_stas_list",
+    212,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_MESSAGE,
+    offsetof(CtrlMsg, payload_case),
+    offsetof(CtrlMsg, resp_softap_connected_stas_list),
+    &ctrl_msg__resp__soft_apconnected_sta__descriptor,
+    NULL,
+    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "resp_stop_softap",
+    213,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_MESSAGE,
+    offsetof(CtrlMsg, payload_case),
+    offsetof(CtrlMsg, resp_stop_softap),
+    &ctrl_msg__resp__get_status__descriptor,
     NULL,
     0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
   {
     "resp_set_power_save_mode",
-    35,
-    PROTOBUF_C_LABEL_OPTIONAL,
+    214,
+    PROTOBUF_C_LABEL_NONE,
     PROTOBUF_C_TYPE_MESSAGE,
-    offsetof(EspHostedConfigPayload, payload_case),
-    offsetof(EspHostedConfigPayload, resp_set_power_save_mode),
-    &esp_hosted_resp_set_mode__descriptor,
-    NULL,
-    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
-    0,NULL,NULL    /* reserved1,reserved2, etc */
-  },
-  {
-    "cmd_get_power_save_mode",
-    36,
-    PROTOBUF_C_LABEL_OPTIONAL,
-    PROTOBUF_C_TYPE_MESSAGE,
-    offsetof(EspHostedConfigPayload, payload_case),
-    offsetof(EspHostedConfigPayload, cmd_get_power_save_mode),
-    &esp_hosted_cmd_get_mode__descriptor,
+    offsetof(CtrlMsg, payload_case),
+    offsetof(CtrlMsg, resp_set_power_save_mode),
+    &ctrl_msg__resp__set_mode__descriptor,
     NULL,
     0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
   {
     "resp_get_power_save_mode",
-    37,
-    PROTOBUF_C_LABEL_OPTIONAL,
+    215,
+    PROTOBUF_C_LABEL_NONE,
     PROTOBUF_C_TYPE_MESSAGE,
-    offsetof(EspHostedConfigPayload, payload_case),
-    offsetof(EspHostedConfigPayload, resp_get_power_save_mode),
-    &esp_hosted_resp_get_mode__descriptor,
-    NULL,
-    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
-    0,NULL,NULL    /* reserved1,reserved2, etc */
-  },
-  {
-    "cmd_ota_begin",
-    38,
-    PROTOBUF_C_LABEL_OPTIONAL,
-    PROTOBUF_C_TYPE_MESSAGE,
-    offsetof(EspHostedConfigPayload, payload_case),
-    offsetof(EspHostedConfigPayload, cmd_ota_begin),
-    &esp_hosted_cmd_otabegin__descriptor,
+    offsetof(CtrlMsg, payload_case),
+    offsetof(CtrlMsg, resp_get_power_save_mode),
+    &ctrl_msg__resp__get_mode__descriptor,
     NULL,
     0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
   {
     "resp_ota_begin",
-    39,
-    PROTOBUF_C_LABEL_OPTIONAL,
+    216,
+    PROTOBUF_C_LABEL_NONE,
     PROTOBUF_C_TYPE_MESSAGE,
-    offsetof(EspHostedConfigPayload, payload_case),
-    offsetof(EspHostedConfigPayload, resp_ota_begin),
-    &esp_hosted_resp_otabegin__descriptor,
-    NULL,
-    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
-    0,NULL,NULL    /* reserved1,reserved2, etc */
-  },
-  {
-    "cmd_ota_write",
-    40,
-    PROTOBUF_C_LABEL_OPTIONAL,
-    PROTOBUF_C_TYPE_MESSAGE,
-    offsetof(EspHostedConfigPayload, payload_case),
-    offsetof(EspHostedConfigPayload, cmd_ota_write),
-    &esp_hosted_cmd_otawrite__descriptor,
+    offsetof(CtrlMsg, payload_case),
+    offsetof(CtrlMsg, resp_ota_begin),
+    &ctrl_msg__resp__otabegin__descriptor,
     NULL,
     0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
   {
     "resp_ota_write",
-    41,
-    PROTOBUF_C_LABEL_OPTIONAL,
+    217,
+    PROTOBUF_C_LABEL_NONE,
     PROTOBUF_C_TYPE_MESSAGE,
-    offsetof(EspHostedConfigPayload, payload_case),
-    offsetof(EspHostedConfigPayload, resp_ota_write),
-    &esp_hosted_resp_otawrite__descriptor,
-    NULL,
-    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
-    0,NULL,NULL    /* reserved1,reserved2, etc */
-  },
-  {
-    "cmd_ota_end",
-    42,
-    PROTOBUF_C_LABEL_OPTIONAL,
-    PROTOBUF_C_TYPE_MESSAGE,
-    offsetof(EspHostedConfigPayload, payload_case),
-    offsetof(EspHostedConfigPayload, cmd_ota_end),
-    &esp_hosted_cmd_otaend__descriptor,
+    offsetof(CtrlMsg, payload_case),
+    offsetof(CtrlMsg, resp_ota_write),
+    &ctrl_msg__resp__otawrite__descriptor,
     NULL,
     0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
   {
     "resp_ota_end",
-    43,
-    PROTOBUF_C_LABEL_OPTIONAL,
+    218,
+    PROTOBUF_C_LABEL_NONE,
     PROTOBUF_C_TYPE_MESSAGE,
-    offsetof(EspHostedConfigPayload, payload_case),
-    offsetof(EspHostedConfigPayload, resp_ota_end),
-    &esp_hosted_resp_otaend__descriptor,
-    NULL,
-    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
-    0,NULL,NULL    /* reserved1,reserved2, etc */
-  },
-  {
-    "cmd_set_vendor_specific_ie",
-    44,
-    PROTOBUF_C_LABEL_OPTIONAL,
-    PROTOBUF_C_TYPE_MESSAGE,
-    offsetof(EspHostedConfigPayload, payload_case),
-    offsetof(EspHostedConfigPayload, cmd_set_vendor_specific_ie),
-    &esp_hosted_cmd_set_vendor_specific_ie__descriptor,
-    NULL,
-    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
-    0,NULL,NULL    /* reserved1,reserved2, etc */
-  },
-  {
-    "resp_set_vendor_specific_ie",
-    45,
-    PROTOBUF_C_LABEL_OPTIONAL,
-    PROTOBUF_C_TYPE_MESSAGE,
-    offsetof(EspHostedConfigPayload, payload_case),
-    offsetof(EspHostedConfigPayload, resp_set_vendor_specific_ie),
-    &esp_hosted_resp_set_vendor_specific_ie__descriptor,
-    NULL,
-    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
-    0,NULL,NULL    /* reserved1,reserved2, etc */
-  },
-  {
-    "cmd_set_wifi_max_tx_power",
-    46,
-    PROTOBUF_C_LABEL_OPTIONAL,
-    PROTOBUF_C_TYPE_MESSAGE,
-    offsetof(EspHostedConfigPayload, payload_case),
-    offsetof(EspHostedConfigPayload, cmd_set_wifi_max_tx_power),
-    &esp_hosted_cmd_set_wi_fi_maxtxpower__descriptor,
+    offsetof(CtrlMsg, payload_case),
+    offsetof(CtrlMsg, resp_ota_end),
+    &ctrl_msg__resp__otaend__descriptor,
     NULL,
     0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
   {
     "resp_set_wifi_max_tx_power",
-    47,
-    PROTOBUF_C_LABEL_OPTIONAL,
+    219,
+    PROTOBUF_C_LABEL_NONE,
     PROTOBUF_C_TYPE_MESSAGE,
-    offsetof(EspHostedConfigPayload, payload_case),
-    offsetof(EspHostedConfigPayload, resp_set_wifi_max_tx_power),
-    &esp_hosted_resp_set_wi_fi_maxtxpower__descriptor,
-    NULL,
-    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
-    0,NULL,NULL    /* reserved1,reserved2, etc */
-  },
-  {
-    "cmd_get_wifi_curr_tx_power",
-    48,
-    PROTOBUF_C_LABEL_OPTIONAL,
-    PROTOBUF_C_TYPE_MESSAGE,
-    offsetof(EspHostedConfigPayload, payload_case),
-    offsetof(EspHostedConfigPayload, cmd_get_wifi_curr_tx_power),
-    &esp_hosted_cmd_get_wi_fi_curr_txpower__descriptor,
+    offsetof(CtrlMsg, payload_case),
+    offsetof(CtrlMsg, resp_set_wifi_max_tx_power),
+    &ctrl_msg__resp__set_wifi_max_tx_power__descriptor,
     NULL,
     0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
   {
     "resp_get_wifi_curr_tx_power",
-    49,
-    PROTOBUF_C_LABEL_OPTIONAL,
+    220,
+    PROTOBUF_C_LABEL_NONE,
     PROTOBUF_C_TYPE_MESSAGE,
-    offsetof(EspHostedConfigPayload, payload_case),
-    offsetof(EspHostedConfigPayload, resp_get_wifi_curr_tx_power),
-    &esp_hosted_resp_get_wi_fi_curr_txpower__descriptor,
+    offsetof(CtrlMsg, payload_case),
+    offsetof(CtrlMsg, resp_get_wifi_curr_tx_power),
+    &ctrl_msg__resp__get_wifi_curr_tx_power__descriptor,
+    NULL,
+    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "resp_config_heartbeat",
+    221,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_MESSAGE,
+    offsetof(CtrlMsg, payload_case),
+    offsetof(CtrlMsg, resp_config_heartbeat),
+    &ctrl_msg__resp__config_heartbeat__descriptor,
+    NULL,
+    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "event_esp_init",
+    301,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_MESSAGE,
+    offsetof(CtrlMsg, payload_case),
+    offsetof(CtrlMsg, event_esp_init),
+    &ctrl_msg__event__espinit__descriptor,
+    NULL,
+    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "event_heartbeat",
+    302,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_MESSAGE,
+    offsetof(CtrlMsg, payload_case),
+    offsetof(CtrlMsg, event_heartbeat),
+    &ctrl_msg__event__heartbeat__descriptor,
+    NULL,
+    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "event_station_disconnect_from_AP",
+    303,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_MESSAGE,
+    offsetof(CtrlMsg, payload_case),
+    offsetof(CtrlMsg, event_station_disconnect_from_ap),
+    &ctrl_msg__event__station_disconnect_from_ap__descriptor,
+    NULL,
+    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "event_station_disconnect_from_ESP_SoftAP",
+    304,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_MESSAGE,
+    offsetof(CtrlMsg, payload_case),
+    offsetof(CtrlMsg, event_station_disconnect_from_esp_softap),
+    &ctrl_msg__event__station_disconnect_from_espsoft_ap__descriptor,
     NULL,
     0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
 };
-static const unsigned esp_hosted_config_payload__field_indices_by_name[] = {
-  21,   /* field[21] = cmd_connected_stas_list */
-  15,   /* field[15] = cmd_disconnect_ap */
-  7,   /* field[7] = cmd_get_ap_config */
-  1,   /* field[1] = cmd_get_mac_address */
-  27,   /* field[27] = cmd_get_power_save_mode */
-  11,   /* field[11] = cmd_get_softap_config */
-  39,   /* field[39] = cmd_get_wifi_curr_tx_power */
-  3,   /* field[3] = cmd_get_wifi_mode */
-  29,   /* field[29] = cmd_ota_begin */
-  33,   /* field[33] = cmd_ota_end */
-  31,   /* field[31] = cmd_ota_write */
-  19,   /* field[19] = cmd_scan_ap_list */
-  9,   /* field[9] = cmd_set_ap_config */
-  23,   /* field[23] = cmd_set_mac_address */
-  25,   /* field[25] = cmd_set_power_save_mode */
-  13,   /* field[13] = cmd_set_softap_config */
-  35,   /* field[35] = cmd_set_vendor_specific_ie */
-  37,   /* field[37] = cmd_set_wifi_max_tx_power */
-  5,   /* field[5] = cmd_set_wifi_mode */
-  17,   /* field[17] = cmd_stop_softap */
-  0,   /* field[0] = msg */
-  22,   /* field[22] = resp_connected_stas_list */
-  16,   /* field[16] = resp_disconnect_ap */
-  8,   /* field[8] = resp_get_ap_config */
-  2,   /* field[2] = resp_get_mac_address */
-  28,   /* field[28] = resp_get_power_save_mode */
-  12,   /* field[12] = resp_get_softap_config */
-  40,   /* field[40] = resp_get_wifi_curr_tx_power */
-  4,   /* field[4] = resp_get_wifi_mode */
-  30,   /* field[30] = resp_ota_begin */
-  34,   /* field[34] = resp_ota_end */
-  32,   /* field[32] = resp_ota_write */
-  20,   /* field[20] = resp_scan_ap_list */
-  10,   /* field[10] = resp_set_ap_config */
+static const unsigned ctrl_msg__field_indices_by_name[] = {
+  44,   /* field[44] = event_esp_init */
+  45,   /* field[45] = event_heartbeat */
+  46,   /* field[46] = event_station_disconnect_from_AP */
+  47,   /* field[47] = event_station_disconnect_from_ESP_SoftAP */
+  1,   /* field[1] = msg_id */
+  0,   /* field[0] = msg_type */
+  22,   /* field[22] = req_config_heartbeat */
+  8,   /* field[8] = req_connect_ap */
+  9,   /* field[9] = req_disconnect_ap */
+  7,   /* field[7] = req_get_ap_config */
+  2,   /* field[2] = req_get_mac_address */
+  16,   /* field[16] = req_get_power_save_mode */
+  10,   /* field[10] = req_get_softap_config */
+  21,   /* field[21] = req_get_wifi_curr_tx_power */
+  4,   /* field[4] = req_get_wifi_mode */
+  17,   /* field[17] = req_ota_begin */
+  19,   /* field[19] = req_ota_end */
+  18,   /* field[18] = req_ota_write */
+  6,   /* field[6] = req_scan_ap_list */
+  3,   /* field[3] = req_set_mac_address */
+  15,   /* field[15] = req_set_power_save_mode */
+  11,   /* field[11] = req_set_softap_vendor_specific_ie */
+  20,   /* field[20] = req_set_wifi_max_tx_power */
+  5,   /* field[5] = req_set_wifi_mode */
+  13,   /* field[13] = req_softap_connected_stas_list */
+  12,   /* field[12] = req_start_softap */
+  14,   /* field[14] = req_stop_softap */
+  43,   /* field[43] = resp_config_heartbeat */
+  29,   /* field[29] = resp_connect_ap */
+  30,   /* field[30] = resp_disconnect_ap */
+  28,   /* field[28] = resp_get_ap_config */
+  23,   /* field[23] = resp_get_mac_address */
+  37,   /* field[37] = resp_get_power_save_mode */
+  31,   /* field[31] = resp_get_softap_config */
+  42,   /* field[42] = resp_get_wifi_curr_tx_power */
+  25,   /* field[25] = resp_get_wifi_mode */
+  38,   /* field[38] = resp_ota_begin */
+  40,   /* field[40] = resp_ota_end */
+  39,   /* field[39] = resp_ota_write */
+  27,   /* field[27] = resp_scan_ap_list */
   24,   /* field[24] = resp_set_mac_address */
-  26,   /* field[26] = resp_set_power_save_mode */
-  14,   /* field[14] = resp_set_softap_config */
-  36,   /* field[36] = resp_set_vendor_specific_ie */
-  38,   /* field[38] = resp_set_wifi_max_tx_power */
-  6,   /* field[6] = resp_set_wifi_mode */
-  18,   /* field[18] = resp_stop_softap */
+  36,   /* field[36] = resp_set_power_save_mode */
+  32,   /* field[32] = resp_set_softap_vendor_specific_ie */
+  41,   /* field[41] = resp_set_wifi_max_tx_power */
+  26,   /* field[26] = resp_set_wifi_mode */
+  34,   /* field[34] = resp_softap_connected_stas_list */
+  33,   /* field[33] = resp_start_softap */
+  35,   /* field[35] = resp_stop_softap */
 };
-static const ProtobufCIntRange esp_hosted_config_payload__number_ranges[2 + 1] =
+static const ProtobufCIntRange ctrl_msg__number_ranges[4 + 1] =
 {
   { 1, 0 },
-  { 10, 1 },
-  { 0, 41 }
+  { 101, 2 },
+  { 201, 23 },
+  { 301, 44 },
+  { 0, 48 }
 };
-const ProtobufCMessageDescriptor esp_hosted_config_payload__descriptor =
+const ProtobufCMessageDescriptor ctrl_msg__descriptor =
 {
   PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
-  "EspHostedConfigPayload",
-  "EspHostedConfigPayload",
-  "EspHostedConfigPayload",
+  "CtrlMsg",
+  "CtrlMsg",
+  "CtrlMsg",
   "",
-  sizeof(EspHostedConfigPayload),
-  41,
-  esp_hosted_config_payload__field_descriptors,
-  esp_hosted_config_payload__field_indices_by_name,
-  2,  esp_hosted_config_payload__number_ranges,
-  (ProtobufCMessageInit) esp_hosted_config_payload__init,
+  sizeof(CtrlMsg),
+  48,
+  ctrl_msg__field_descriptors,
+  ctrl_msg__field_indices_by_name,
+  4,  ctrl_msg__number_ranges,
+  (ProtobufCMessageInit) ctrl_msg__init,
   NULL,NULL,NULL    /* reserved[123] */
 };
-static const ProtobufCEnumValue esp_hosted_encryption_mode__enum_values_by_number[8] =
+static const ProtobufCEnumValue ctrl__vendor_ietype__enum_values_by_number[5] =
 {
-  { "Type_Open", "ESP_HOSTED_ENCRYPTION_MODE__Type_Open", 0 },
-  { "Type_WEP", "ESP_HOSTED_ENCRYPTION_MODE__Type_WEP", 1 },
-  { "Type_WPA_PSK", "ESP_HOSTED_ENCRYPTION_MODE__Type_WPA_PSK", 2 },
-  { "Type_WPA2_PSK", "ESP_HOSTED_ENCRYPTION_MODE__Type_WPA2_PSK", 3 },
-  { "Type_WPA_WPA2_PSK", "ESP_HOSTED_ENCRYPTION_MODE__Type_WPA_WPA2_PSK", 4 },
-  { "Type_WPA2_ENTERPRISE", "ESP_HOSTED_ENCRYPTION_MODE__Type_WPA2_ENTERPRISE", 5 },
-  { "Type_WPA3_PSK", "ESP_HOSTED_ENCRYPTION_MODE__Type_WPA3_PSK", 6 },
-  { "Type_WPA2_WPA3_PSK", "ESP_HOSTED_ENCRYPTION_MODE__Type_WPA2_WPA3_PSK", 7 },
+  { "Beacon", "CTRL__VENDOR_IETYPE__Beacon", 0 },
+  { "Probe_req", "CTRL__VENDOR_IETYPE__Probe_req", 1 },
+  { "Probe_resp", "CTRL__VENDOR_IETYPE__Probe_resp", 2 },
+  { "Assoc_req", "CTRL__VENDOR_IETYPE__Assoc_req", 3 },
+  { "Assoc_resp", "CTRL__VENDOR_IETYPE__Assoc_resp", 4 },
 };
-static const ProtobufCIntRange esp_hosted_encryption_mode__value_ranges[] = {
-{0, 0},{0, 8}
-};
-static const ProtobufCEnumValueIndex esp_hosted_encryption_mode__enum_values_by_name[8] =
-{
-  { "Type_Open", 0 },
-  { "Type_WEP", 1 },
-  { "Type_WPA2_ENTERPRISE", 5 },
-  { "Type_WPA2_PSK", 3 },
-  { "Type_WPA2_WPA3_PSK", 7 },
-  { "Type_WPA3_PSK", 6 },
-  { "Type_WPA_PSK", 2 },
-  { "Type_WPA_WPA2_PSK", 4 },
-};
-const ProtobufCEnumDescriptor esp_hosted_encryption_mode__descriptor =
-{
-  PROTOBUF_C__ENUM_DESCRIPTOR_MAGIC,
-  "EspHostedEncryptionMode",
-  "EspHostedEncryptionMode",
-  "EspHostedEncryptionMode",
-  "",
-  8,
-  esp_hosted_encryption_mode__enum_values_by_number,
-  8,
-  esp_hosted_encryption_mode__enum_values_by_name,
-  1,
-  esp_hosted_encryption_mode__value_ranges,
-  NULL,NULL,NULL,NULL   /* reserved[1234] */
-};
-static const ProtobufCEnumValue esp_hosted_status__enum_values_by_number[6] =
-{
-  { "TYPE_CONNECTED", "ESP_HOSTED_STATUS__TYPE_CONNECTED", 0 },
-  { "TYPE_NOT_CONNECTED", "ESP_HOSTED_STATUS__TYPE_NOT_CONNECTED", 1 },
-  { "TYPE_NO_AP_FOUND", "ESP_HOSTED_STATUS__TYPE_NO_AP_FOUND", 2 },
-  { "TYPE_CONNECTION_FAIL", "ESP_HOSTED_STATUS__TYPE_CONNECTION_FAIL", 3 },
-  { "TYPE_INVALID_ARGUMET", "ESP_HOSTED_STATUS__TYPE_INVALID_ARGUMET", 4 },
-  { "TYPE_OUT_OF_RANGE", "ESP_HOSTED_STATUS__TYPE_OUT_OF_RANGE", 5 },
-};
-static const ProtobufCIntRange esp_hosted_status__value_ranges[] = {
-{0, 0},{0, 6}
-};
-static const ProtobufCEnumValueIndex esp_hosted_status__enum_values_by_name[6] =
-{
-  { "TYPE_CONNECTED", 0 },
-  { "TYPE_CONNECTION_FAIL", 3 },
-  { "TYPE_INVALID_ARGUMET", 4 },
-  { "TYPE_NOT_CONNECTED", 1 },
-  { "TYPE_NO_AP_FOUND", 2 },
-  { "TYPE_OUT_OF_RANGE", 5 },
-};
-const ProtobufCEnumDescriptor esp_hosted_status__descriptor =
-{
-  PROTOBUF_C__ENUM_DESCRIPTOR_MAGIC,
-  "EspHostedStatus",
-  "EspHostedStatus",
-  "EspHostedStatus",
-  "",
-  6,
-  esp_hosted_status__enum_values_by_number,
-  6,
-  esp_hosted_status__enum_values_by_name,
-  1,
-  esp_hosted_status__value_ranges,
-  NULL,NULL,NULL,NULL   /* reserved[1234] */
-};
-static const ProtobufCEnumValue esp_hosted_vendor_ietype__enum_values_by_number[5] =
-{
-  { "VND_IE_TYPE_BEACON", "ESP_HOSTED_VENDOR_IETYPE__VND_IE_TYPE_BEACON", 0 },
-  { "VND_IE_TYPE_PROBE_REQ", "ESP_HOSTED_VENDOR_IETYPE__VND_IE_TYPE_PROBE_REQ", 1 },
-  { "VND_IE_TYPE_PROBE_RESP", "ESP_HOSTED_VENDOR_IETYPE__VND_IE_TYPE_PROBE_RESP", 2 },
-  { "VND_IE_TYPE_ASSOC_REQ", "ESP_HOSTED_VENDOR_IETYPE__VND_IE_TYPE_ASSOC_REQ", 3 },
-  { "VND_IE_TYPE_ASSOC_RESP", "ESP_HOSTED_VENDOR_IETYPE__VND_IE_TYPE_ASSOC_RESP", 4 },
-};
-static const ProtobufCIntRange esp_hosted_vendor_ietype__value_ranges[] = {
+static const ProtobufCIntRange ctrl__vendor_ietype__value_ranges[] = {
 {0, 0},{0, 5}
 };
-static const ProtobufCEnumValueIndex esp_hosted_vendor_ietype__enum_values_by_name[5] =
+static const ProtobufCEnumValueIndex ctrl__vendor_ietype__enum_values_by_name[5] =
 {
-  { "VND_IE_TYPE_ASSOC_REQ", 3 },
-  { "VND_IE_TYPE_ASSOC_RESP", 4 },
-  { "VND_IE_TYPE_BEACON", 0 },
-  { "VND_IE_TYPE_PROBE_REQ", 1 },
-  { "VND_IE_TYPE_PROBE_RESP", 2 },
+  { "Assoc_req", 3 },
+  { "Assoc_resp", 4 },
+  { "Beacon", 0 },
+  { "Probe_req", 1 },
+  { "Probe_resp", 2 },
 };
-const ProtobufCEnumDescriptor esp_hosted_vendor_ietype__descriptor =
+const ProtobufCEnumDescriptor ctrl__vendor_ietype__descriptor =
 {
   PROTOBUF_C__ENUM_DESCRIPTOR_MAGIC,
-  "EspHostedVendorIEType",
-  "EspHostedVendorIEType",
-  "EspHostedVendorIEType",
+  "Ctrl_VendorIEType",
+  "Ctrl_VendorIEType",
+  "CtrlVendorIEType",
   "",
   5,
-  esp_hosted_vendor_ietype__enum_values_by_number,
+  ctrl__vendor_ietype__enum_values_by_number,
   5,
-  esp_hosted_vendor_ietype__enum_values_by_name,
+  ctrl__vendor_ietype__enum_values_by_name,
   1,
-  esp_hosted_vendor_ietype__value_ranges,
+  ctrl__vendor_ietype__value_ranges,
   NULL,NULL,NULL,NULL   /* reserved[1234] */
 };
-static const ProtobufCEnumValue esp_hosted_ieid__enum_values_by_number[2] =
+static const ProtobufCEnumValue ctrl__vendor_ieid__enum_values_by_number[2] =
 {
-  { "VND_IE_ID_0", "ESP_HOSTED_IEID__VND_IE_ID_0", 0 },
-  { "VND_IE_ID_1", "ESP_HOSTED_IEID__VND_IE_ID_1", 1 },
+  { "ID_0", "CTRL__VENDOR_IEID__ID_0", 0 },
+  { "ID_1", "CTRL__VENDOR_IEID__ID_1", 1 },
 };
-static const ProtobufCIntRange esp_hosted_ieid__value_ranges[] = {
+static const ProtobufCIntRange ctrl__vendor_ieid__value_ranges[] = {
 {0, 0},{0, 2}
 };
-static const ProtobufCEnumValueIndex esp_hosted_ieid__enum_values_by_name[2] =
+static const ProtobufCEnumValueIndex ctrl__vendor_ieid__enum_values_by_name[2] =
 {
-  { "VND_IE_ID_0", 0 },
-  { "VND_IE_ID_1", 1 },
+  { "ID_0", 0 },
+  { "ID_1", 1 },
 };
-const ProtobufCEnumDescriptor esp_hosted_ieid__descriptor =
+const ProtobufCEnumDescriptor ctrl__vendor_ieid__descriptor =
 {
   PROTOBUF_C__ENUM_DESCRIPTOR_MAGIC,
-  "EspHostedIEID",
-  "EspHostedIEID",
-  "EspHostedIEID",
+  "Ctrl_VendorIEID",
+  "Ctrl_VendorIEID",
+  "CtrlVendorIEID",
   "",
   2,
-  esp_hosted_ieid__enum_values_by_number,
+  ctrl__vendor_ieid__enum_values_by_number,
   2,
-  esp_hosted_ieid__enum_values_by_name,
+  ctrl__vendor_ieid__enum_values_by_name,
   1,
-  esp_hosted_ieid__value_ranges,
+  ctrl__vendor_ieid__value_ranges,
   NULL,NULL,NULL,NULL   /* reserved[1234] */
 };
-static const ProtobufCEnumValue esp_hosted_config_msg_type__enum_values_by_number[40] =
+static const ProtobufCEnumValue ctrl__wifi_mode__enum_values_by_number[4] =
 {
-  { "TypeCmdGetMACAddress", "ESP_HOSTED_CONFIG_MSG_TYPE__TypeCmdGetMACAddress", 0 },
-  { "TypeRespGetMACAddress", "ESP_HOSTED_CONFIG_MSG_TYPE__TypeRespGetMACAddress", 1 },
-  { "TypeCmdGetWiFiMode", "ESP_HOSTED_CONFIG_MSG_TYPE__TypeCmdGetWiFiMode", 2 },
-  { "TypeRespGetWiFiMode", "ESP_HOSTED_CONFIG_MSG_TYPE__TypeRespGetWiFiMode", 3 },
-  { "TypeCmdSetWiFiMode", "ESP_HOSTED_CONFIG_MSG_TYPE__TypeCmdSetWiFiMode", 4 },
-  { "TypeRespSetWiFiMode", "ESP_HOSTED_CONFIG_MSG_TYPE__TypeRespSetWiFiMode", 5 },
-  { "TypeCmdGetAPConfig", "ESP_HOSTED_CONFIG_MSG_TYPE__TypeCmdGetAPConfig", 6 },
-  { "TypeRespGetAPConfig", "ESP_HOSTED_CONFIG_MSG_TYPE__TypeRespGetAPConfig", 7 },
-  { "TypeCmdSetAPConfig", "ESP_HOSTED_CONFIG_MSG_TYPE__TypeCmdSetAPConfig", 8 },
-  { "TypeRespSetAPConfig", "ESP_HOSTED_CONFIG_MSG_TYPE__TypeRespSetAPConfig", 9 },
-  { "TypeCmdGetSoftAPConfig", "ESP_HOSTED_CONFIG_MSG_TYPE__TypeCmdGetSoftAPConfig", 10 },
-  { "TypeRespGetSoftAPConfig", "ESP_HOSTED_CONFIG_MSG_TYPE__TypeRespGetSoftAPConfig", 11 },
-  { "TypeCmdSetSoftAPConfig", "ESP_HOSTED_CONFIG_MSG_TYPE__TypeCmdSetSoftAPConfig", 12 },
-  { "TypeRespSetSoftAPConfig", "ESP_HOSTED_CONFIG_MSG_TYPE__TypeRespSetSoftAPConfig", 13 },
-  { "TypeCmdDisconnectAP", "ESP_HOSTED_CONFIG_MSG_TYPE__TypeCmdDisconnectAP", 14 },
-  { "TypeRespDisconnectAP", "ESP_HOSTED_CONFIG_MSG_TYPE__TypeRespDisconnectAP", 15 },
-  { "TypeCmdStopSoftAP", "ESP_HOSTED_CONFIG_MSG_TYPE__TypeCmdStopSoftAP", 16 },
-  { "TypeRespStopSoftAP", "ESP_HOSTED_CONFIG_MSG_TYPE__TypeRespStopSoftAP", 17 },
-  { "TypeCmdGetAPScanList", "ESP_HOSTED_CONFIG_MSG_TYPE__TypeCmdGetAPScanList", 18 },
-  { "TypeRespGetAPScanList", "ESP_HOSTED_CONFIG_MSG_TYPE__TypeRespGetAPScanList", 19 },
-  { "TypeCmdGetConnectedSTAList", "ESP_HOSTED_CONFIG_MSG_TYPE__TypeCmdGetConnectedSTAList", 20 },
-  { "TypeRespGetConnectedSTAList", "ESP_HOSTED_CONFIG_MSG_TYPE__TypeRespGetConnectedSTAList", 21 },
-  { "TypeCmdSetMacAddress", "ESP_HOSTED_CONFIG_MSG_TYPE__TypeCmdSetMacAddress", 22 },
-  { "TypeRespSetMacAddress", "ESP_HOSTED_CONFIG_MSG_TYPE__TypeRespSetMacAddress", 23 },
-  { "TypeCmdSetPowerSaveMode", "ESP_HOSTED_CONFIG_MSG_TYPE__TypeCmdSetPowerSaveMode", 24 },
-  { "TypeRespSetPowerSaveMode", "ESP_HOSTED_CONFIG_MSG_TYPE__TypeRespSetPowerSaveMode", 25 },
-  { "TypeCmdGetPowerSaveMode", "ESP_HOSTED_CONFIG_MSG_TYPE__TypeCmdGetPowerSaveMode", 26 },
-  { "TypeRespGetPowerSaveMode", "ESP_HOSTED_CONFIG_MSG_TYPE__TypeRespGetPowerSaveMode", 27 },
-  { "TypeCmdOTABegin", "ESP_HOSTED_CONFIG_MSG_TYPE__TypeCmdOTABegin", 28 },
-  { "TypeRespOTABegin", "ESP_HOSTED_CONFIG_MSG_TYPE__TypeRespOTABegin", 29 },
-  { "TypeCmdOTAWrite", "ESP_HOSTED_CONFIG_MSG_TYPE__TypeCmdOTAWrite", 30 },
-  { "TypeRespOTAWrite", "ESP_HOSTED_CONFIG_MSG_TYPE__TypeRespOTAWrite", 31 },
-  { "TypeCmdOTAEnd", "ESP_HOSTED_CONFIG_MSG_TYPE__TypeCmdOTAEnd", 32 },
-  { "TypeRespOTAEnd", "ESP_HOSTED_CONFIG_MSG_TYPE__TypeRespOTAEnd", 33 },
-  { "TypeCmdSetVendorSpecificIE", "ESP_HOSTED_CONFIG_MSG_TYPE__TypeCmdSetVendorSpecificIE", 34 },
-  { "TypeRespSetVendorSpecificIE", "ESP_HOSTED_CONFIG_MSG_TYPE__TypeRespSetVendorSpecificIE", 35 },
-  { "TypeCmdSetWiFiMAXTXPower", "ESP_HOSTED_CONFIG_MSG_TYPE__TypeCmdSetWiFiMAXTXPower", 36 },
-  { "TypeRespSetWiFiMAXTXPower", "ESP_HOSTED_CONFIG_MSG_TYPE__TypeRespSetWiFiMAXTXPower", 37 },
-  { "TypeCmdGetWiFiCurrTXPower", "ESP_HOSTED_CONFIG_MSG_TYPE__TypeCmdGetWiFiCurrTXPower", 38 },
-  { "TypeRespGetWiFiCurrTXPower", "ESP_HOSTED_CONFIG_MSG_TYPE__TypeRespGetWiFiCurrTXPower", 39 },
+  { "NONE", "CTRL__WIFI_MODE__NONE", 0 },
+  { "STA", "CTRL__WIFI_MODE__STA", 1 },
+  { "AP", "CTRL__WIFI_MODE__AP", 2 },
+  { "APSTA", "CTRL__WIFI_MODE__APSTA", 3 },
 };
-static const ProtobufCIntRange esp_hosted_config_msg_type__value_ranges[] = {
-{0, 0},{0, 40}
+static const ProtobufCIntRange ctrl__wifi_mode__value_ranges[] = {
+{0, 0},{0, 4}
 };
-static const ProtobufCEnumValueIndex esp_hosted_config_msg_type__enum_values_by_name[40] =
+static const ProtobufCEnumValueIndex ctrl__wifi_mode__enum_values_by_name[4] =
 {
-  { "TypeCmdDisconnectAP", 14 },
-  { "TypeCmdGetAPConfig", 6 },
-  { "TypeCmdGetAPScanList", 18 },
-  { "TypeCmdGetConnectedSTAList", 20 },
-  { "TypeCmdGetMACAddress", 0 },
-  { "TypeCmdGetPowerSaveMode", 26 },
-  { "TypeCmdGetSoftAPConfig", 10 },
-  { "TypeCmdGetWiFiCurrTXPower", 38 },
-  { "TypeCmdGetWiFiMode", 2 },
-  { "TypeCmdOTABegin", 28 },
-  { "TypeCmdOTAEnd", 32 },
-  { "TypeCmdOTAWrite", 30 },
-  { "TypeCmdSetAPConfig", 8 },
-  { "TypeCmdSetMacAddress", 22 },
-  { "TypeCmdSetPowerSaveMode", 24 },
-  { "TypeCmdSetSoftAPConfig", 12 },
-  { "TypeCmdSetVendorSpecificIE", 34 },
-  { "TypeCmdSetWiFiMAXTXPower", 36 },
-  { "TypeCmdSetWiFiMode", 4 },
-  { "TypeCmdStopSoftAP", 16 },
-  { "TypeRespDisconnectAP", 15 },
-  { "TypeRespGetAPConfig", 7 },
-  { "TypeRespGetAPScanList", 19 },
-  { "TypeRespGetConnectedSTAList", 21 },
-  { "TypeRespGetMACAddress", 1 },
-  { "TypeRespGetPowerSaveMode", 27 },
-  { "TypeRespGetSoftAPConfig", 11 },
-  { "TypeRespGetWiFiCurrTXPower", 39 },
-  { "TypeRespGetWiFiMode", 3 },
-  { "TypeRespOTABegin", 29 },
-  { "TypeRespOTAEnd", 33 },
-  { "TypeRespOTAWrite", 31 },
-  { "TypeRespSetAPConfig", 9 },
-  { "TypeRespSetMacAddress", 23 },
-  { "TypeRespSetPowerSaveMode", 25 },
-  { "TypeRespSetSoftAPConfig", 13 },
-  { "TypeRespSetVendorSpecificIE", 35 },
-  { "TypeRespSetWiFiMAXTXPower", 37 },
-  { "TypeRespSetWiFiMode", 5 },
-  { "TypeRespStopSoftAP", 17 },
+  { "AP", 2 },
+  { "APSTA", 3 },
+  { "NONE", 0 },
+  { "STA", 1 },
 };
-const ProtobufCEnumDescriptor esp_hosted_config_msg_type__descriptor =
+const ProtobufCEnumDescriptor ctrl__wifi_mode__descriptor =
 {
   PROTOBUF_C__ENUM_DESCRIPTOR_MAGIC,
-  "EspHostedConfigMsgType",
-  "EspHostedConfigMsgType",
-  "EspHostedConfigMsgType",
+  "Ctrl_WifiMode",
+  "Ctrl_WifiMode",
+  "CtrlWifiMode",
   "",
-  40,
-  esp_hosted_config_msg_type__enum_values_by_number,
-  40,
-  esp_hosted_config_msg_type__enum_values_by_name,
+  4,
+  ctrl__wifi_mode__enum_values_by_number,
+  4,
+  ctrl__wifi_mode__enum_values_by_name,
   1,
-  esp_hosted_config_msg_type__value_ranges,
+  ctrl__wifi_mode__value_ranges,
+  NULL,NULL,NULL,NULL   /* reserved[1234] */
+};
+static const ProtobufCEnumValue ctrl__wifi_bw__enum_values_by_number[3] =
+{
+  { "BW_Invalid", "CTRL__WIFI_BW__BW_Invalid", 0 },
+  { "HT20", "CTRL__WIFI_BW__HT20", 1 },
+  { "HT40", "CTRL__WIFI_BW__HT40", 2 },
+};
+static const ProtobufCIntRange ctrl__wifi_bw__value_ranges[] = {
+{0, 0},{0, 3}
+};
+static const ProtobufCEnumValueIndex ctrl__wifi_bw__enum_values_by_name[3] =
+{
+  { "BW_Invalid", 0 },
+  { "HT20", 1 },
+  { "HT40", 2 },
+};
+const ProtobufCEnumDescriptor ctrl__wifi_bw__descriptor =
+{
+  PROTOBUF_C__ENUM_DESCRIPTOR_MAGIC,
+  "Ctrl_WifiBw",
+  "Ctrl_WifiBw",
+  "CtrlWifiBw",
+  "",
+  3,
+  ctrl__wifi_bw__enum_values_by_number,
+  3,
+  ctrl__wifi_bw__enum_values_by_name,
+  1,
+  ctrl__wifi_bw__value_ranges,
+  NULL,NULL,NULL,NULL   /* reserved[1234] */
+};
+static const ProtobufCEnumValue ctrl__wifi_power_save__enum_values_by_number[3] =
+{
+  { "PS_Invalid", "CTRL__WIFI_POWER_SAVE__PS_Invalid", 0 },
+  { "MIN_MODEM", "CTRL__WIFI_POWER_SAVE__MIN_MODEM", 1 },
+  { "MAX_MODEM", "CTRL__WIFI_POWER_SAVE__MAX_MODEM", 2 },
+};
+static const ProtobufCIntRange ctrl__wifi_power_save__value_ranges[] = {
+{0, 0},{0, 3}
+};
+static const ProtobufCEnumValueIndex ctrl__wifi_power_save__enum_values_by_name[3] =
+{
+  { "MAX_MODEM", 2 },
+  { "MIN_MODEM", 1 },
+  { "PS_Invalid", 0 },
+};
+const ProtobufCEnumDescriptor ctrl__wifi_power_save__descriptor =
+{
+  PROTOBUF_C__ENUM_DESCRIPTOR_MAGIC,
+  "Ctrl_WifiPowerSave",
+  "Ctrl_WifiPowerSave",
+  "CtrlWifiPowerSave",
+  "",
+  3,
+  ctrl__wifi_power_save__enum_values_by_number,
+  3,
+  ctrl__wifi_power_save__enum_values_by_name,
+  1,
+  ctrl__wifi_power_save__value_ranges,
+  NULL,NULL,NULL,NULL   /* reserved[1234] */
+};
+static const ProtobufCEnumValue ctrl__wifi_sec_prot__enum_values_by_number[8] =
+{
+  { "Open", "CTRL__WIFI_SEC_PROT__Open", 0 },
+  { "WEP", "CTRL__WIFI_SEC_PROT__WEP", 1 },
+  { "WPA_PSK", "CTRL__WIFI_SEC_PROT__WPA_PSK", 2 },
+  { "WPA2_PSK", "CTRL__WIFI_SEC_PROT__WPA2_PSK", 3 },
+  { "WPA_WPA2_PSK", "CTRL__WIFI_SEC_PROT__WPA_WPA2_PSK", 4 },
+  { "WPA2_ENTERPRISE", "CTRL__WIFI_SEC_PROT__WPA2_ENTERPRISE", 5 },
+  { "WPA3_PSK", "CTRL__WIFI_SEC_PROT__WPA3_PSK", 6 },
+  { "WPA2_WPA3_PSK", "CTRL__WIFI_SEC_PROT__WPA2_WPA3_PSK", 7 },
+};
+static const ProtobufCIntRange ctrl__wifi_sec_prot__value_ranges[] = {
+{0, 0},{0, 8}
+};
+static const ProtobufCEnumValueIndex ctrl__wifi_sec_prot__enum_values_by_name[8] =
+{
+  { "Open", 0 },
+  { "WEP", 1 },
+  { "WPA2_ENTERPRISE", 5 },
+  { "WPA2_PSK", 3 },
+  { "WPA2_WPA3_PSK", 7 },
+  { "WPA3_PSK", 6 },
+  { "WPA_PSK", 2 },
+  { "WPA_WPA2_PSK", 4 },
+};
+const ProtobufCEnumDescriptor ctrl__wifi_sec_prot__descriptor =
+{
+  PROTOBUF_C__ENUM_DESCRIPTOR_MAGIC,
+  "Ctrl_WifiSecProt",
+  "Ctrl_WifiSecProt",
+  "CtrlWifiSecProt",
+  "",
+  8,
+  ctrl__wifi_sec_prot__enum_values_by_number,
+  8,
+  ctrl__wifi_sec_prot__enum_values_by_name,
+  1,
+  ctrl__wifi_sec_prot__value_ranges,
+  NULL,NULL,NULL,NULL   /* reserved[1234] */
+};
+static const ProtobufCEnumValue ctrl__status__enum_values_by_number[6] =
+{
+  { "Connected", "CTRL__STATUS__Connected", 0 },
+  { "Not_Connected", "CTRL__STATUS__Not_Connected", 1 },
+  { "No_AP_Found", "CTRL__STATUS__No_AP_Found", 2 },
+  { "Connection_Fail", "CTRL__STATUS__Connection_Fail", 3 },
+  { "Invalid_Argument", "CTRL__STATUS__Invalid_Argument", 4 },
+  { "Out_Of_Range", "CTRL__STATUS__Out_Of_Range", 5 },
+};
+static const ProtobufCIntRange ctrl__status__value_ranges[] = {
+{0, 0},{0, 6}
+};
+static const ProtobufCEnumValueIndex ctrl__status__enum_values_by_name[6] =
+{
+  { "Connected", 0 },
+  { "Connection_Fail", 3 },
+  { "Invalid_Argument", 4 },
+  { "No_AP_Found", 2 },
+  { "Not_Connected", 1 },
+  { "Out_Of_Range", 5 },
+};
+const ProtobufCEnumDescriptor ctrl__status__descriptor =
+{
+  PROTOBUF_C__ENUM_DESCRIPTOR_MAGIC,
+  "Ctrl_Status",
+  "Ctrl_Status",
+  "CtrlStatus",
+  "",
+  6,
+  ctrl__status__enum_values_by_number,
+  6,
+  ctrl__status__enum_values_by_name,
+  1,
+  ctrl__status__value_ranges,
+  NULL,NULL,NULL,NULL   /* reserved[1234] */
+};
+static const ProtobufCEnumValue ctrl_msg_type__enum_values_by_number[5] =
+{
+  { "MsgType_Invalid", "CTRL_MSG_TYPE__MsgType_Invalid", 0 },
+  { "Req", "CTRL_MSG_TYPE__Req", 1 },
+  { "Resp", "CTRL_MSG_TYPE__Resp", 2 },
+  { "Event", "CTRL_MSG_TYPE__Event", 3 },
+  { "MsgType_Max", "CTRL_MSG_TYPE__MsgType_Max", 4 },
+};
+static const ProtobufCIntRange ctrl_msg_type__value_ranges[] = {
+{0, 0},{0, 5}
+};
+static const ProtobufCEnumValueIndex ctrl_msg_type__enum_values_by_name[5] =
+{
+  { "Event", 3 },
+  { "MsgType_Invalid", 0 },
+  { "MsgType_Max", 4 },
+  { "Req", 1 },
+  { "Resp", 2 },
+};
+const ProtobufCEnumDescriptor ctrl_msg_type__descriptor =
+{
+  PROTOBUF_C__ENUM_DESCRIPTOR_MAGIC,
+  "CtrlMsgType",
+  "CtrlMsgType",
+  "CtrlMsgType",
+  "",
+  5,
+  ctrl_msg_type__enum_values_by_number,
+  5,
+  ctrl_msg_type__enum_values_by_name,
+  1,
+  ctrl_msg_type__value_ranges,
+  NULL,NULL,NULL,NULL   /* reserved[1234] */
+};
+static const ProtobufCEnumValue ctrl_msg_id__enum_values_by_number[53] =
+{
+  { "MsgId_Invalid", "CTRL_MSG_ID__MsgId_Invalid", 0 },
+  { "Req_Base", "CTRL_MSG_ID__Req_Base", 100 },
+  { "Req_GetMACAddress", "CTRL_MSG_ID__Req_GetMACAddress", 101 },
+  { "Req_SetMacAddress", "CTRL_MSG_ID__Req_SetMacAddress", 102 },
+  { "Req_GetWifiMode", "CTRL_MSG_ID__Req_GetWifiMode", 103 },
+  { "Req_SetWifiMode", "CTRL_MSG_ID__Req_SetWifiMode", 104 },
+  { "Req_GetAPScanList", "CTRL_MSG_ID__Req_GetAPScanList", 105 },
+  { "Req_GetAPConfig", "CTRL_MSG_ID__Req_GetAPConfig", 106 },
+  { "Req_ConnectAP", "CTRL_MSG_ID__Req_ConnectAP", 107 },
+  { "Req_DisconnectAP", "CTRL_MSG_ID__Req_DisconnectAP", 108 },
+  { "Req_GetSoftAPConfig", "CTRL_MSG_ID__Req_GetSoftAPConfig", 109 },
+  { "Req_SetSoftAPVendorSpecificIE", "CTRL_MSG_ID__Req_SetSoftAPVendorSpecificIE", 110 },
+  { "Req_StartSoftAP", "CTRL_MSG_ID__Req_StartSoftAP", 111 },
+  { "Req_GetSoftAPConnectedSTAList", "CTRL_MSG_ID__Req_GetSoftAPConnectedSTAList", 112 },
+  { "Req_StopSoftAP", "CTRL_MSG_ID__Req_StopSoftAP", 113 },
+  { "Req_SetPowerSaveMode", "CTRL_MSG_ID__Req_SetPowerSaveMode", 114 },
+  { "Req_GetPowerSaveMode", "CTRL_MSG_ID__Req_GetPowerSaveMode", 115 },
+  { "Req_OTABegin", "CTRL_MSG_ID__Req_OTABegin", 116 },
+  { "Req_OTAWrite", "CTRL_MSG_ID__Req_OTAWrite", 117 },
+  { "Req_OTAEnd", "CTRL_MSG_ID__Req_OTAEnd", 118 },
+  { "Req_SetWifiMaxTxPower", "CTRL_MSG_ID__Req_SetWifiMaxTxPower", 119 },
+  { "Req_GetWifiCurrTxPower", "CTRL_MSG_ID__Req_GetWifiCurrTxPower", 120 },
+  { "Req_ConfigHeartbeat", "CTRL_MSG_ID__Req_ConfigHeartbeat", 121 },
+  { "Req_Max", "CTRL_MSG_ID__Req_Max", 122 },
+  { "Resp_Base", "CTRL_MSG_ID__Resp_Base", 200 },
+  { "Resp_GetMACAddress", "CTRL_MSG_ID__Resp_GetMACAddress", 201 },
+  { "Resp_SetMacAddress", "CTRL_MSG_ID__Resp_SetMacAddress", 202 },
+  { "Resp_GetWifiMode", "CTRL_MSG_ID__Resp_GetWifiMode", 203 },
+  { "Resp_SetWifiMode", "CTRL_MSG_ID__Resp_SetWifiMode", 204 },
+  { "Resp_GetAPScanList", "CTRL_MSG_ID__Resp_GetAPScanList", 205 },
+  { "Resp_GetAPConfig", "CTRL_MSG_ID__Resp_GetAPConfig", 206 },
+  { "Resp_ConnectAP", "CTRL_MSG_ID__Resp_ConnectAP", 207 },
+  { "Resp_DisconnectAP", "CTRL_MSG_ID__Resp_DisconnectAP", 208 },
+  { "Resp_GetSoftAPConfig", "CTRL_MSG_ID__Resp_GetSoftAPConfig", 209 },
+  { "Resp_SetSoftAPVendorSpecificIE", "CTRL_MSG_ID__Resp_SetSoftAPVendorSpecificIE", 210 },
+  { "Resp_StartSoftAP", "CTRL_MSG_ID__Resp_StartSoftAP", 211 },
+  { "Resp_GetSoftAPConnectedSTAList", "CTRL_MSG_ID__Resp_GetSoftAPConnectedSTAList", 212 },
+  { "Resp_StopSoftAP", "CTRL_MSG_ID__Resp_StopSoftAP", 213 },
+  { "Resp_SetPowerSaveMode", "CTRL_MSG_ID__Resp_SetPowerSaveMode", 214 },
+  { "Resp_GetPowerSaveMode", "CTRL_MSG_ID__Resp_GetPowerSaveMode", 215 },
+  { "Resp_OTABegin", "CTRL_MSG_ID__Resp_OTABegin", 216 },
+  { "Resp_OTAWrite", "CTRL_MSG_ID__Resp_OTAWrite", 217 },
+  { "Resp_OTAEnd", "CTRL_MSG_ID__Resp_OTAEnd", 218 },
+  { "Resp_SetWifiMaxTxPower", "CTRL_MSG_ID__Resp_SetWifiMaxTxPower", 219 },
+  { "Resp_GetWifiCurrTxPower", "CTRL_MSG_ID__Resp_GetWifiCurrTxPower", 220 },
+  { "Resp_ConfigHeartbeat", "CTRL_MSG_ID__Resp_ConfigHeartbeat", 221 },
+  { "Resp_Max", "CTRL_MSG_ID__Resp_Max", 222 },
+  { "Event_Base", "CTRL_MSG_ID__Event_Base", 300 },
+  { "Event_ESPInit", "CTRL_MSG_ID__Event_ESPInit", 301 },
+  { "Event_Heartbeat", "CTRL_MSG_ID__Event_Heartbeat", 302 },
+  { "Event_StationDisconnectFromAP", "CTRL_MSG_ID__Event_StationDisconnectFromAP", 303 },
+  { "Event_StationDisconnectFromESPSoftAP", "CTRL_MSG_ID__Event_StationDisconnectFromESPSoftAP", 304 },
+  { "Event_Max", "CTRL_MSG_ID__Event_Max", 305 },
+};
+static const ProtobufCIntRange ctrl_msg_id__value_ranges[] = {
+{0, 0},{100, 1},{200, 24},{300, 47},{0, 53}
+};
+static const ProtobufCEnumValueIndex ctrl_msg_id__enum_values_by_name[53] =
+{
+  { "Event_Base", 47 },
+  { "Event_ESPInit", 48 },
+  { "Event_Heartbeat", 49 },
+  { "Event_Max", 52 },
+  { "Event_StationDisconnectFromAP", 50 },
+  { "Event_StationDisconnectFromESPSoftAP", 51 },
+  { "MsgId_Invalid", 0 },
+  { "Req_Base", 1 },
+  { "Req_ConfigHeartbeat", 22 },
+  { "Req_ConnectAP", 8 },
+  { "Req_DisconnectAP", 9 },
+  { "Req_GetAPConfig", 7 },
+  { "Req_GetAPScanList", 6 },
+  { "Req_GetMACAddress", 2 },
+  { "Req_GetPowerSaveMode", 16 },
+  { "Req_GetSoftAPConfig", 10 },
+  { "Req_GetSoftAPConnectedSTAList", 13 },
+  { "Req_GetWifiCurrTxPower", 21 },
+  { "Req_GetWifiMode", 4 },
+  { "Req_Max", 23 },
+  { "Req_OTABegin", 17 },
+  { "Req_OTAEnd", 19 },
+  { "Req_OTAWrite", 18 },
+  { "Req_SetMacAddress", 3 },
+  { "Req_SetPowerSaveMode", 15 },
+  { "Req_SetSoftAPVendorSpecificIE", 11 },
+  { "Req_SetWifiMaxTxPower", 20 },
+  { "Req_SetWifiMode", 5 },
+  { "Req_StartSoftAP", 12 },
+  { "Req_StopSoftAP", 14 },
+  { "Resp_Base", 24 },
+  { "Resp_ConfigHeartbeat", 45 },
+  { "Resp_ConnectAP", 31 },
+  { "Resp_DisconnectAP", 32 },
+  { "Resp_GetAPConfig", 30 },
+  { "Resp_GetAPScanList", 29 },
+  { "Resp_GetMACAddress", 25 },
+  { "Resp_GetPowerSaveMode", 39 },
+  { "Resp_GetSoftAPConfig", 33 },
+  { "Resp_GetSoftAPConnectedSTAList", 36 },
+  { "Resp_GetWifiCurrTxPower", 44 },
+  { "Resp_GetWifiMode", 27 },
+  { "Resp_Max", 46 },
+  { "Resp_OTABegin", 40 },
+  { "Resp_OTAEnd", 42 },
+  { "Resp_OTAWrite", 41 },
+  { "Resp_SetMacAddress", 26 },
+  { "Resp_SetPowerSaveMode", 38 },
+  { "Resp_SetSoftAPVendorSpecificIE", 34 },
+  { "Resp_SetWifiMaxTxPower", 43 },
+  { "Resp_SetWifiMode", 28 },
+  { "Resp_StartSoftAP", 35 },
+  { "Resp_StopSoftAP", 37 },
+};
+const ProtobufCEnumDescriptor ctrl_msg_id__descriptor =
+{
+  PROTOBUF_C__ENUM_DESCRIPTOR_MAGIC,
+  "CtrlMsgId",
+  "CtrlMsgId",
+  "CtrlMsgId",
+  "",
+  53,
+  ctrl_msg_id__enum_values_by_number,
+  53,
+  ctrl_msg_id__enum_values_by_name,
+  4,
+  ctrl_msg_id__value_ranges,
   NULL,NULL,NULL,NULL   /* reserved[1234] */
 };

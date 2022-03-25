@@ -26,11 +26,11 @@ extern "C" {
 
 /** constants/macros **/
 typedef enum {
-	MODE_NULL    = 0x1,
-	MODE_STATION = 0x2,
-	MODE_SOFTAP  = 0x4,
+	MODE_NULL    = 0x0,
+	MODE_STATION = 0x1,
+	MODE_SOFTAP  = 0x2,
 	MODE_SOFTAP_STATION = (MODE_STATION|MODE_SOFTAP),
-	MODE_MAX     = (MODE_SOFTAP_STATION|MODE_NULL)
+	MODE_MAX
 } operating_mode;
 
 typedef enum control_path_events_s {
@@ -63,9 +63,13 @@ typedef enum control_path_events_s {
 #define INPUT_STATION_IS_WPA3_SUPPORTED   "no"
 #endif
 
+#ifndef INPUT_STATION_LISTEN_INTERVAL
+#define INPUT_STATION_LISTEN_INTERVAL     "3"
+#endif
+
 /* softap means, ESP will act as Access point */
 #ifndef INPUT_SOFTAP__SSID
-#define INPUT_SOFTAP__SSID                "MySoftApName"
+#define INPUT_SOFTAP__SSID                "MySoftAPName"
 #endif
 
 #ifndef INPUT_SOFTAP_PASSWORD
@@ -93,7 +97,7 @@ typedef enum control_path_events_s {
 
 /* possible values, "HT20" "HT40" */
 #ifndef INPUT_SOFTAP_BANDWIDTH
-#define INPUT_SOFTAP_BANDWIDTH            "HT40"
+#define INPUT_SOFTAP_BANDWIDTH            "40"
 #endif
 
 
@@ -140,6 +144,18 @@ uint8_t *get_self_mac_station();
 uint8_t *get_self_mac_softap();
 stm_ret_t get_arp_dst_ip_station(uint32_t *sta_ip);
 stm_ret_t get_arp_dst_ip_softap(uint32_t *soft_ip);
+
+int test_set_wifi_mode(int mode);
+int test_get_available_wifi(void);
+int test_station_mode_get_mac_addr(char *mac);
+int test_station_mode_connect(char *ssid, char *pwd, char *bssid,
+	int is_wpa3_supported, int listen_interval);
+int test_softap_mode_get_mac_addr(char *mac);
+int test_softap_mode_start(char *ssid, char *pwd, int channel,
+	int encryption_mode, int max_conn, int ssid_hidden, int bw);
+int unregister_event_callbacks(void);
+int register_event_callbacks(void);
+
 
 #ifdef __cplusplus
 }

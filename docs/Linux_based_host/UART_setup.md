@@ -1,5 +1,5 @@
 # Bluetooth/BLE connectivity Setup over UART
-This section is only applicable to ESP32 and ESP32C3 boards. ESP32-S2 does not support Bluetooth/BLE.
+This section is only applicable to ESP32 and ESP32-C3 boards. ESP32-S2 does not support Bluetooth/BLE.
 
 ## 1. Setup
 ### 1.1 Hardware Setup
@@ -21,7 +21,7 @@ Setup image is here.
 ![alt text](rpi_esp32_uart_setup.jpg "setup of Raspberry-Pi as host and ESP32 as slave with UART transport")
 
 #### 1.1.2 ESP32-C3 setup
-| Raspberry-Pi Pin Function | Raspberry-Pi Pin | ESP32C3 Pin | ESP32C3 Pin Function |
+| Raspberry-Pi Pin Function | Raspberry-Pi Pin | ESP32-C3 Pin | ESP32-C3 Pin Function |
 |:-------:|:--------:|:---------:|:--------:|
 | RX | 10 | IO5 | TX |
 | TX | 8 | IO18 | RX |
@@ -31,7 +31,7 @@ Setup image is here.
 
 Setup image is here.
 
-![alt text](rpi_esp32c3_uart_setup.jpg "setup of Raspberry-Pi as host and ESP32C3 as slave with UART transport")
+![alt text](rpi_esp32c3_uart_setup.jpg "setup of Raspberry-Pi as host and ESP32-C3 as slave with UART transport")
 
 ### 1.2 Raspberry-Pi Software Setup
 By default, the UART pins on Raspberry-Pi are in disabled state. In order to enable UART and setup it for bluetooth connection, follow below steps.
@@ -123,7 +123,7 @@ $ cd esp/esp_driver/network_adapter
 
 ##### Using cmake
 
-* :warning: `Set target if the ESP32C3 is being used. Skip if ESP32 is being used.`
+* :warning: `Set target if the ESP32-C3 is being used. Skip if ESP32 is being used.`
 ```
 $ idf.py set-target esp32c3
 ```
@@ -136,7 +136,7 @@ $ idf.py menuconfig
 
 * Change UART Baudrate for HCI as `Component config -> Example Configuration -> UART Baudrate for HCI`. Default is 921600.
 
-* For ESP32C3, select chip revision in addition. Navigate to `Component config → ESP32C3-Specific → Minimum Supported ESP32-C3 Revision` and select chip version of ESP32C3.
+* For ESP32-C3, select chip revision in addition. Navigate to `Component config → ESP32C3-Specific → Minimum Supported ESP32-C3 Revision` and select chip version of ESP32-C3.
 
 * Use below command to compile and flash the project. Replace <serial_port> with ESP peripheral's serial port.
 ```sh

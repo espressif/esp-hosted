@@ -1,8 +1,24 @@
 # Getting started with STM32F469I(MCU based Host)
 
-This section elaborates about setting up the Wi-Fi connectivity. Before proceeding, ensure pre-requisites [Hardware Setup and Compilation](MCU_based_readme.md#2-wi-fi-connectivity-setup-over-spi) are done.
+This section elaborates about setting up the control path, Wi-Fi connectivity and Bluetooth/BLE connectivity. Before proceeding, ensure pre-requisites [Hardware Setup and Compilation](MCU_based_readme.md#2-wi-fi-connectivity-setup-over-spi) are done.
 
-## 1. Wi-Fi Connectivity
+## 1. Control Path
+
+- Control path is intended to setup all configurations at ESP side. These configurations could be related to services like
+  - Connect host with external AP (Wi-Fi router)
+  - Get configurations of external AP which host is connected
+  - Set maximum Wi-Fi transmit power of ESP
+  - Find out current Wi-Fi power of ESP
+  - Configuring ESP chipset heartbeat
+- Control path command could be considered as first step before you can establish data path
+- It is way to verify if ESP-Hosted transport like SPI,SDIO is setup correctly
+- Overall design is explained in [control path design](../common/contrl_path.md#3-design)
+- Underlying [Hosted control path library](../common/contrl_path.md#3-design) is agnostic of platform and common for MPU or MCU based solution.
+  - This empowers user to implement/mimic all control path APIs just similar to [Linux demo application in C](../common/c_demo.md)
+  - Few sample [control path APIs](../common/ctrl_apis.md) like connecting to station, starting softap are demonstrated as part of [host/stm32/app/control/control.c](../../host/stm32/app/control/control.c)
+  - Rest APIs could be implemeted just similar to ones implemented in Linux demo application 
+
+## 2. Wi-Fi Connectivity
 
 Wi-Fi can be configured as either as `STATION` mode or `SOFTAP` mode or `STATION+SOFTAP` mode.
 * **STATION Mode**
@@ -12,10 +28,10 @@ Wi-Fi can be configured as either as `STATION` mode or `SOFTAP` mode or `STATION
 * **STATION+SOFTAP Mode**
     - This is combination of both the modes. In this mode, host behaves as station and connects to external AP. At the same time, host with help of ESP device, can create the Wi-Fi network.
 
-Host firmware provides wifi connectivity using control path and data path. Control path commands uses `protocomm` layer of ESP-IDF to serialize structured control data and communicates using SPI transport interface between Host(MCU based Host) and ESP peripheral (ESP32/ESP32-S2/ESP32-C3). User can use control commands to build application.
+Host firmware provides Wi-Fi connectivity using control path and data path. Control path commands uses `protocomm` layer of ESP-IDF to serialize structured control data and communicates using SPI transport interface between Host(MCU based Host) and ESP peripheral (ESP32/ESP32-S2/ESP32-C3). User can use control commands to build application.
 
 
-### 1.1 Start Project with STM32
+### 2.1 Start Project with STM32
 
 We have tested project with STM32F469I-Discovery board. If other than STM32F469I-Discovery board is used, peripheral like SPI, USART need to change as per board needs. STM32CubeIDE would be needed to follow next steps.
 
@@ -42,7 +58,7 @@ This will copy the project configuration files into workspace_directory
 
 * Re-open STM32CubeIDE with workspace as workspace_directory.
 * Ignore all warnings under `Problems` tab if any.
-* Configure all build variables as mentioned in [User configuration parameter](#12-user-configuration-parameter) section below. Variable `CODE_BASE` should already be populated. All parameters are mandatory to be filled. Please note that, every subsequent change in configuration parameter would need a clean build as mentioned ahead.
+* Configure all build variables as mentioned in [User configuration parameter](#22-user-configuration-parameter) section below. Variable `CODE_BASE` should already be populated. All parameters are mandatory to be filled. Please note that, every subsequent change in configuration parameter would need a clean build as mentioned ahead.
 * Uncheck `Build Automatically` from `menu -> Project` and Clean build the project as `Project menu -> Clean -> clean`.
 * Connect STM32 board to your machine if not already connected.
 * Before flashing the project, Open Tera Term or minicom to see STM32 debug logs once project flashed.
@@ -70,9 +86,9 @@ Debugger connection lost.
 Shutting down...
 ```
 
-13) Expected output log on tera term or minicom will be similar to below:
-```
+* Expected output log on tera term or minicom will be similar to below:
 
+```
 +-----------------------------------+-------------------------------------------+
 |           Parameters              |             Values                        |
 +-----------------------------------+-------------------------------------------+
@@ -120,7 +136,7 @@ SoftAP's MAC address is 3c:71:bf:9a:c2:45
 started ESPWifi softAP
 ```
 
-### 1.2 User configuration parameter
+### 2.2 User configuration parameter
 
 Host firmware has basic user configuration parameters. User needs to manually configure these values. Click on `stm_spi_host` under `Project Explorer` tab. Then `menu -> Project -> Properties -> C/C++ Build -> Build Variables -> < select variable> -> Edit -> OK -> Apply`.
 
@@ -154,12 +170,12 @@ Verify that `CODE_BASE` variable from `menu -> Project -> Properties -> Resource
 
 In case there is a warning sign on folder icon, it means STM32CubeIDE has not correctly configured the variable. In that case, re-configure it using, `Edit -> Click On Folder -> <Path/to/esp_hosted> -> Open -> OK`. The warning sign now should disappear. Now click on `Apply and Close`.
 
-## 1.3 ARP Testing :
+## 2.3 ARP Testing :
 
 With minimal network stub, arping is tested with this project.
 Once the connection is setup between STM32 and ESP peripheral, ARP can be tested for that interface.
 
-### 1.3.1 ARP Request originated from STM32
+### 2.3.1 ARP Request originated from STM32
 For station mode, `INPUT_STATION_SRC_IP` is used as STM32 IPv4 address and `INPUT_STATION_ARP_DEST_IP` is considered as destination IPv4 address. This could be configured as IPv4 address of your machine.
 For softAP mode, `INPUT_SOFTAP_SRC_IP` will be used as STM32 IPv4 address and `INPUT_SOFTAP_ARP_DEST_IP` used as destination IPv4 address.
 
@@ -172,12 +188,12 @@ ARP request will be triggered around every one second for both softAP and statio
 ARP_RSP_RCVD: XX bytes from 192.168.1.203 (58:a0:23:86:2a:c4)
 ```
 
-### 1.3.2 ARP Responses from STM32
+### 2.3.2 ARP Responses from STM32
 In case of station mode, ARP request could be triggered from station connected to `INPUT_STATION__SSID`. To start arping request, please use ARP destination as `INPUT_STATION_SRC_IP`. For example,
 ```
 sudo arping 192.168.1.233
 ```
-Similarly for softAP mode, you would need to connect to Wifi from ESP, `INPUT_SOFTAP__SSID`. Trigger command,
+Similarly for softAP mode, you would need to connect to Wi-Fi from ESP, `INPUT_SOFTAP__SSID`. Trigger command,
 ```
 sudo arping 192.168.2.1
 ```
@@ -189,3 +205,26 @@ ARP response is triggered for requests received. You should be able see ARP resp
 ```
 XX bytes from 3c:71:bf:9a:bc:b8 (192.168.1.233): index=0 time=199.144 msec
 ```
+
+## 3. BT/BLE connectivity
+Bluetooth and BLE handling could be easily ported. Porting details could be found at [ 1.5.2 MCU Host](../../README.md#152-mcu-host) on [README.md](../../README.md)
+
+## 4. OTA operation
+
+OTA (Over The Air) update performs following operations.
+* Erase ota flash partition of ESP
+* Download chunk from URL and write that chunk into flash, one by one, till whole binary is written
+* Validate the complete written binary in flash
+* Sets newly written OTA partition as boot partition
+* Reboot the ESP after 5 second
+
+OTA also could be ported similar to demo application provided for Linux. This is available in C and python.
+Please follow [Linux based OTA update documentation](../Linux_based_host/ota_update.md) for further details.
+
+## 5. Limitations of control path APIs in MCU
+- Asynchronous APIs are not tested in MCU, as it is hard implement in constrained MCU's environment
+- OTA update is not directly supported just similar to Linux based demo application because,
+  - ESP binary is stored in Linux using directory structure path, such is not available in MCU
+  - Space constraints - MCU are generally low space devices
+  - However, chunked HTTP based OTA update is showcased in [Python based Linux app](../Linux_based_host/ota_update.md#python-implementation) \
+Users can use similar HTTP client library and chunked file transfer to do OTA update.

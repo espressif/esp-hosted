@@ -29,6 +29,7 @@ The host software mainly consists of following building blocks.
 * As mentioned above, this interface is implemented over virtual serial interface.
 * This interface is used for sending control commands to control and configure Wi-Fi functionality of attached ESP peripheral.
 * This is an optional interface and in case virtual serial interface is not used, the control path or BT functionality can be used on physical UART interface connected to ESP peripheral.
+* Control path design and implemetation details explained in [Control Path](../common/contrl_path.md) documentation
   
 ---
 

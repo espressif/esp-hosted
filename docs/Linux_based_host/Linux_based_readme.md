@@ -1,15 +1,16 @@
 # Getting Started with Linux based host
 
-Below diagram shows hardware and software block diagram for a typical linux based system built with ESP-Hosted.
+- Directory structure for Linux based host is explained [here](directory_structure.md)
+- Below diagram shows hardware and software block diagram for a typical linux based system built with ESP-Hosted.
 
 ![ESP-Hosted linux based design](./linux_hosted_design.png)
 
-This document explains ESP-Hosted setup and usage. The document is divided in two parts:
-* [Quick Start Guide](#1-quick-start-guide)  
-	This section briefly explains ESP-Hosted setup. One can refer this guide to quickly prepare and test ESP-Hosted solution.
+- This document explains ESP-Hosted setup and usage. The document is divided in two parts:
+  - [1. Quick Start Guide](#1-quick-start-guide)  
+    - This section briefly explains ESP-Hosted setup. One can refer this guide to quickly prepare and test ESP-Hosted solution.
 
-* [ESP-Hosted Comprehensive Guide](#2-esp-hosted-comprehensive-guide)  
-	This section provides in depth information about ESP-Hosted setup, available customization options etc.
+  - [2. ESP-Hosted Comprehensive Guide](#2-esp-hosted-comprehensive-guide)  
+    - This section provides in depth information about ESP-Hosted setup, available customization options etc.
 
 # 1. Quick Start Guide
 * With the help of this guide, one can easily setup and start using ESP-Hosted solution with Raspberry-Pi as a host.
@@ -18,7 +19,7 @@ This document explains ESP-Hosted setup and usage. The document is divided in tw
 
 ### 1.1 Hardware Requirements
 * Raspberry-Pi model 3 Model B/B+ or Raspberry-Pi 4 model B
-* ESP32 board
+* ESP32/ESP32-S2/ESP32-C3 board
 * 8-12 jumper wires of length < 10cm
 
 ### 1.2 Host Setup
@@ -62,7 +63,7 @@ Make sure that Raspberry-Pi is equipped with following:
 
 Prepare connections based on interface requirements and setup host as below.
 
-* **Wifi and Bluetooth over SDIO**
+* **Wi-Fi and Bluetooth over SDIO**
 	* Connection Setup
 		* Prepare connections as per section [1.1 Hardware Setup](SDIO_setup.md#11-hardware-setup) of [SDIO setup document](SDIO_setup.md)
 	* Host Software
@@ -72,7 +73,7 @@ Prepare connections based on interface requirements and setup host as below.
 			$ cd host/linux/host_control/
 			$ ./rpi_init.sh sdio
 			```
-* **Wifi and Bluetooth over SPI**
+* **Wi-Fi and Bluetooth over SPI**
 	* Connection Setup
 		* Prepare connections as per section [1.1 Hardware Setup](SPI_setup.md#11-hardware-setup) of [SPI Setup document](SPI_setup.md)
 	* Host Software
@@ -82,7 +83,7 @@ Prepare connections based on interface requirements and setup host as below.
 			$ cd host/linux/host_control/
 			$ ./rpi_init.sh spi
 			```
-* **Wifi over SDIO and Bluetooth over UART**
+* **Wi-Fi over SDIO and Bluetooth over UART**
 	* Connection Setup
 		* Prepare SDIO connections as per section [1.1 Hardware Setup](SDIO_setup.md#11-hardware-setup) of [SDIO setup document](SDIO_setup.md)
 		* Prepare UART connections as per section [1.1 Hardware Setup](UART_setup.md#11-hardware-setup) of [UART setup document](UART_setup.md)
@@ -98,7 +99,7 @@ Prepare connections based on interface requirements and setup host as below.
 			```sh
 			$ sudo hciattach -s 921600 /dev/serial0 any 921600 flow
 
-* **Wifi over SPI and Bluetooth over UART**
+* **Wi-Fi over SPI and Bluetooth over UART**
 	* Connection Setup
 		* Prepare connections as per section [1.1 Hardware Setup](SPI_setup.md#11-hardware-setup) of [SPI Setup document](SPI_setup.md)
 		* Prepare UART connections as per section [1.1 Hardware Setup](UART_setup.md#11-hardware-setup) of [UART setup document](UART_setup.md)
@@ -117,6 +118,7 @@ Prepare connections based on interface requirements and setup host as below.
 
 #### 1.3.1 ESP Firmware Setup
 * Flash pre-built binaries as below.
+
 ```sh
 $ esptool.py -p <serial_port> -b 960000 --before default_reset --after hard_reset \
 write_flash --flash_mode dio --flash_freq 40m --flash_size detect \

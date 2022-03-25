@@ -1,4 +1,4 @@
-# Copyright 2015-2021 Espressif Systems (Shanghai) PTE LTD
+# Copyright 2015-2022 Espressif Systems (Shanghai) PTE LTD
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,535 +12,1004 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from hosted_config import *
+from hosted_py_header import *
 import commands_map_py_to_c
+from time import *
+import requests
 
-# Control path platform init
-# On success, It clears stale data from ringbuffer
-# On failure, It exits currently running python script
-def control_path_platform_init():
-    ret = commands_map_py_to_c.control_path_platform_init()
-    if ret:
-        print("Control path init failed")
-        exit()
-    return
+WIFI_VENDOR_IE_ELEMENT_ID = 0xDD
+OFFSET = 4
+VENDOR_OUI_0 = 1
+VENDOR_OUI_1 = 2
+VENDOR_OUI_2 = 3
+VENDOR_OUI_TYPE = 22
 
-# wifi get mac
-# On success, function returns mac address of ESP32's station or softap mode else "failure"
-# mode == 1 for station mac
-# mode == 2 for softap mac
-def wifi_get_mac(mode):
-    if ((mode <= WIFI_MODE_NONE ) or (mode >= WIFI_MODE_SOFTAP_STATION)):
-        print("Invalid mode")
-        return failure
-    mac = create_string_buffer(b"",BSSID_LENGTH)
-    ret = commands_map_py_to_c.wifi_get_mac(mode, mac)
-    if not ret :
-        return get_str(mac.value)
-    else :
-        return failure
+def get_timestamp():
+	tm = gmtime()
+	tm_data = "{}-{}-{} {}:{}:{} > ".format(tm.tm_year,
+			tm.tm_mon, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec)
+	return tm_data
 
-# wifi set mac
-# Function sets MAC address for Station and SoftAP interface
-# mode == 1 for station mac
-# mode == 2 for softap mac
-# returns "success" or "failure"
-# @attention 1. First set wifi mode before setting MAC address for respective station and softap Interface
-# @attention 2. ESP32 station and softap have different MAC addresses, do not set them to be the same.
-# @attention 3. The bit 0 of the first byte of ESP32 MAC address can not be 1.
-# For example, the MAC address can set to be "1a:XX:XX:XX:XX:XX", but can not be "15:XX:XX:XX:XX:XX".
-# @attention 4. MAC address will get reset after esp restarts
-def wifi_set_mac(mode, mac):
-    if (mode <= WIFI_MODE_NONE or mode >= WIFI_MODE_SOFTAP_STATION):
-        print("Invalid mode")
-        return failure
-    if (not(len(mac)) or (len(mac) > MAX_BSSID_LEN)) :
-        print("Invalid MAC address")
-        return failure
-    ret = commands_map_py_to_c.wifi_set_mac(mode, set_str(mac))
-    if not ret:
-        return success
-    else:
-        return failure
 
-# wifi get mode
-# Function returns ESP32's wifi mode as follows
-# 0: null Mode, Wi-Fi mode not set
-# 1: station mode
-# 2: softap mode
-# 3: softap+station mode
-# or "failure"
 
-def wifi_get_mode():
-    mode = c_uint()
-    ret = commands_map_py_to_c.wifi_get_mode(byref(mode))
-    if not ret :
-        return int(mode.value)
-    else :
-        return failure
+def mem_free(mem):
+	if (mem) :
+		commands_map_py_to_c.hosted_free(mem)
+		mem = None
 
-# wifi set mode
-# Function sets ESP32's wifi mode
-# Input parameter
-#   mode : WiFi mode
-#           (0: null Mode, Wi-Fi mode not set
-#            1: station mode
-#            2: softAP mode
-#            3: softAP+station mode)
-# Returns "success" or "failure"
 
-def wifi_set_mode(mode):
-    if (mode < WIFI_MODE_NONE or mode > WIFI_MODE_SOFTAP_STATION):
-        print("Invalid mode")
-        return failure
-    wifi_mode = c_uint()
-    wifi_mode.value = mode
-    ret = commands_map_py_to_c.wifi_set_mode(wifi_mode)
-    if not ret:
-        return success
-    else:
-        return failure
 
-# wifi set ap config
-# Function sets AP config to which ESP32 station should connect
-# Input parameter
-#       ssid              : string parameter, ssid of AP, max 32 bytes
-#       pwd               : string parameter, length of password should be 8~63 bytes ASCII
-#       bssid             : MAC address of AP, To differentiate between APs, In case multiple AP has same ssid
-#       is_wpa3_supported : status of wpa3 supplicant present on AP
-#                  (False : Unsupported
-#                    True : Supported )
-#       listen_interval   : Listen interval for ESP32 station to receive beacon when WIFI_PS_MAX_MODEM is set.
-#                           Units: AP beacon intervals. Defaults to 3 if set to 0.
+def close_sock(sockfd):
+	ret = commands_map_py_to_c.close_socket(sockfd)
+	if (ret < 0):
+		print("Failure to close socket")
 
-def wifi_set_ap_config(ssid, pwd, bssid, is_wpa3_supported, listen_interval):
-    if (len(str(ssid)) > MAX_SSID_LEN):
-        print("Invalid SSID length")
-        return failure
-    if (len(str(pwd)) > (MAX_PASSWORD_LEN - 1)) :
-        print("Invalid Password length")
-        return failure
-    if (len(str(bssid)) > MAX_BSSID_LEN) :
-        print("Invalid BSSID length")
-        return failure
-    if (is_wpa3_supported < 0 or listen_interval < 0) :
-        print("Invalid Input")
-        return failure
-    ap_config = CONTROL_CONFIG()
-    ap_config.station.ssid = set_str(ssid)
-    ap_config.station.pwd = set_str(pwd)
-    ap_config.station.bssid = set_str(bssid)
-    ap_config.station.is_wpa3_supported = is_wpa3_supported
-    ap_config.station.listen_interval = listen_interval
-    ret = commands_map_py_to_c.wifi_set_ap_config(ap_config)
-    if (ret == NO_AP_FOUND):
-        return no_ap_found_str
-    elif (ret == INVALID_PASSWORD):
-        return invalid_password_str
-    elif not ret:
-        return success
-    else:
-        return failure
 
-# wifi get ap config
-# Function returns AP config to which ESP32 station is connected
-# Output parameter
-#       ssid                :   ssid of connected AP
-#       bssid               :   MAC address of connected AP
-#       channel             :   channel ID, 1 ~ 10
-#       rssi                :   rssi signal strength
-#       encryption_mode     :   encryption mode
-#       (encryption modes are
-#             0 :   OPEN
-#             1 :   WEP
-#             2 :   WPA_PSK
-#             3 :   WPA2_PSK
-#             4 :   WPA_WPA2_PSK
-#             5 :   WPA2_ENTERPRISE
-#             6 :   WPA3_PSK
-#             7 :   WPA2_WPA3_PSK   )
-# In case of not connected to AP, returns "not_connected"
 
-def wifi_get_ap_config():
-    ap_config = CONTROL_CONFIG()
-    ret = commands_map_py_to_c.wifi_get_ap_config(byref(ap_config.station))
-    if not ret:
-        ssid = get_str(ap_config.station.ssid)
-        bssid = get_str(ap_config.station.bssid)
-        channel = int(ap_config.station.channel)
-        rssi = int(ap_config.station.rssi)
-        ecn = int(ap_config.station.encryption_mode)
-        return ssid,bssid,channel,rssi,ecn
-    else:
-        print("status "+get_str(ap_config.station.status))
-        return failure
+def bytes_to_int(b):
+	return int.from_bytes(b, "big")
 
-# wifi disconnect ap
-# Function disconnects ESP32 station from connected AP
-# returns "success" or "failure"
 
-def wifi_disconnect_ap():
-    ret = commands_map_py_to_c.wifi_disconnect_ap()
-    if not ret:
-        return success
-    else:
-       return failure
 
-# wifi set softap config
-# Function sets ESP32 softap configurations
-# returns "success" or "failure"
-# Input parameter
-#       ssid        : string parameter, ssid of SoftAP
-#       pwd         : string parameter, length of password should be 8~64 bytes ASCII
-#       chnl        : channel ID, In range of 1 to 11
-#       ecn         : Encryption method
-#               ( 0 : OPEN,
-#                 2 : WPA_PSK,
-#                 3 : WPA2_PSK,
-#                 4 : WPA_WPA2_PSK)
-#       max_conn    : maximum number of stations can connect to ESP32 SoftAP (should be in range of 1 to 10)
-#       ssid_hidden : softap should broadcast its SSID or not
-#               ( 0 : SSID is broadcast
-#                 1 : SSID is not broadcast )
-#       bw          : set bandwidth of ESP32 softap
-#               ( 1 : WIFI_BW_HT20
-#                 2 : WIFI_BW_HT40 )
+def cleanup_ctrl_msg(app_resp):
+	if (app_resp):
+		if (app_resp.contents.free_buffer_handle):
+			if (app_resp.contents.free_buffer_func):
+				app_resp.contents.free_buffer_func(app_resp.contents.free_buffer_handle)
+				app_resp.contents.free_buffer_handle = None
+		mem_free(app_resp)
+		app_resp = None
 
-def wifi_set_softap_config(ssid, pwd, chnl, ecn, max_conn, ssid_hidden, bw):
-    if (len(ssid) > MAX_SSID_LEN) :
-        print("Invalid SSID length softap")
-        return failure
-    if ((len(pwd) > MAX_PASSWORD_LEN) or (ecn == WIFI_AUTH_OPEN and (len(pwd)))
-            or (ecn != WIFI_AUTH_OPEN and (len(pwd) < MIN_PASSWORD_LEN))):
-        print("Invalid softap password length")
-        return failure
-    if ((chnl < MIN_CHANNEL_NO) or (chnl > MAX_CHANNEL_NO)):
-        print("Invalid channel number")
-        return failure
-    if ((ecn < WIFI_AUTH_OPEN) or (ecn == WIFI_AUTH_WEP)
-            or (ecn > WIFI_AUTH_WPA_WPA2_PSK)):
-        print("Asked Encryption method is not supported in SoftAP mode")
-        return failure
-    if (max_conn < MIN_ALLOWED_STATIONS or max_conn > MAX_ALLOWED_STATIONS):
-        print("Invalid maximum connection number")
-        return failure
-    if (ssid_hidden < SSID_BROADCAST or ssid_hidden > SSID_NOT_BROADCAST):
-        print("Invalid ssid hidden status")
-        return failure
-    if (bw < WIFI_BW_HT20 or bw > WIFI_BW_HT40):
-        print("Invalid BW")
-        return failure
 
-    softap_config = CONTROL_CONFIG()
-    softap_config.softap.ssid = set_str(ssid)
-    softap_config.softap.pwd = set_str(pwd)
-    softap_config.softap.channel = chnl
-    softap_config.softap.encryption_mode = ecn
-    softap_config.softap.max_connections = max_conn
-    softap_config.softap.ssid_hidden = ssid_hidden
-    softap_config.softap.bandwidth = bw
 
-    ret = commands_map_py_to_c.wifi_set_softap_config(softap_config)
-    if not ret:
-        return success
-    else:
-        return failure
+def ctrl_app_event_callback(app_event):
+	ts = create_string_buffer(b"", MIN_TIMESTAMP_STR_SIZE)
+	if (not app_event or
+		not app_event.contents or
+			bytes_to_int(app_event.contents.msg_type) != CTRL_MSGTYPE.CTRL_EVENT.value):
+		if (app_event):
+			print("Msg type is not event "+str(app_event.contents.msg_type))
+		cleanup_ctrl_msg(app_event)
+		return FAILURE
 
-# wifi get softap config
-# Funtion gets ESP32 softAP configuration
-# Output parameter
-# It returns ssid,pwd,chnl,ecn,max_conn,ssid_hidden,bw in case of "success"
-#       ssid : string parameter, ssid of SoftAP
-#       pwd  : string parameter, length of password should be 8~64 bytes ASCII
-#       chnl : channel ID, In range of 1 to 11
-#       ecn  : Encryption method
-#         ( 0 : OPEN,
-#           2 : WPA_PSK,
-#           3 : WPA2_PSK,
-#           4 : WPA_WPA2_PSK)
-#       max_conn : maximum number of stations can connect to ESP32 SoftAP (will be in range of 1 to 10)
-#       ssid_hidden : softAP should broadcast its SSID or not
-#         ( 0 : SSID is broadcast
-#           1 : SSID is not broadcast )
-#       bw : bandwidth of ESP32 softAP
-#         ( 1 : WIFI_BW_HT20
-#           2 : WIFI_BW_HT40 )
-# else returns "failure"
+	if ((app_event.contents.msg_id <= CTRL_MSGID.CTRL_EVENT_BASE.value) or
+		(app_event.contents.msg_id >= CTRL_MSGID.CTRL_EVENT_MAX.value)):
+		print("Event Msg ID "+str(app_event.contents.msg_id)+" is not correct")
+		cleanup_ctrl_msg(app_event)
+		return FAILURE
 
-def wifi_get_softap_config():
-    softap_config = CONTROL_CONFIG()
-    ret = commands_map_py_to_c.wifi_get_softap_config(byref(softap_config))
-    if not ret:
-        ssid = get_str(softap_config.softap.ssid)
-        pwd = get_str(softap_config.softap.pwd)
-        ecn = int(softap_config.softap.encryption_mode)
-        chnl = int(softap_config.softap.channel)
-        max_conn = int(softap_config.softap.max_connections)
-        ssid_hidden = int(softap_config.softap.ssid_hidden)
-        bw = int(softap_config.softap.bandwidth)
-        return ssid,pwd,chnl,ecn,max_conn,ssid_hidden,bw
-    else:
-        return failure
+	s = get_timestamp()
+	if app_event.contents.msg_id == CTRL_MSGID.CTRL_EVENT_ESP_INIT.value:
+		print(s +" APP EVENT: ESP INIT")
 
-# wifi stop softap
-# Function stops ESP32 softAP
-# returns "success" or "failure"
+	elif app_event.contents.msg_id == CTRL_MSGID.CTRL_EVENT_HEARTBEAT.value:
+		print(s +" APP EVENT: Heartbeat event "+
+				str(app_event.contents.control_data.e_heartbeat.hb_num))
 
-def wifi_stop_softap():
-    ret = commands_map_py_to_c.wifi_stop_softap()
-    if not ret:
-        return success
-    else:
-        return failure
+	elif app_event.contents.msg_id == CTRL_MSGID.CTRL_EVENT_STATION_DISCONNECT_FROM_AP.value:
+		print(s +" APP EVENT: Station mode: Disconnect Reason "+
+				str(int.from_bytes(app_event.contents.resp_event_status, 'big')))
 
-# wifi ap scan list
-# Function gives scanned list of available APs
-# Output parameter
-#       output is list of Aplist class instances(ssid,chnl,rssi,bssid,ecn) in case of "success"
-#       AP credentials::
-#         ssid                :   ssid of AP
-#         channel             :   channel ID, in range of 1 to 10
-#         bssid               :   MAC address of AP
-#         rssi                :   rssi signal strength
-#         encryption_mode     :   encryption mode
-#         (encryption modes are
-#             0 :   OPEN
-#             1 :   WEP
-#             2 :   WPA_PSK
-#             3 :   WPA2_PSK
-#             4 :   WPA_WPA2_PSK
-#             5 :   WPA2_ENTERPRISE
-#             6 :   WPA3_PSK
-#             7 :   WPA2_WPA3_PSK   )
-# else returns "failure"
+	elif app_event.contents.msg_id == CTRL_MSGID.CTRL_EVENT_STATION_DISCONNECT_FROM_ESP_SOFTAP.value:
+		p = app_event.contents.control_data.e_sta_disconnected.mac
+		if p and len(p):
+			print(s +" APP EVENT: SoftAP mode: Disconnect MAC ["+get_str(p)+"]")
+	else:
+		print(s+" Invalid event ["+str(app_event.contents.msg_id)+"] to parse")
 
-def wifi_ap_scan_list():
-    count = c_uint()
-    ap_scan_list_ptr = commands_map_py_to_c.wifi_ap_scan_list(byref(count))
-    if ap_scan_list_ptr is None:
-        return failure
-    list_type = WIFI_SCAN_LIST * count.value
-    ap_scan_list = cast(ap_scan_list_ptr, POINTER(list_type))
-    ap_list = []
-    if count.value:
-        for i in range(count.value):
-            ssid = get_str(ap_scan_list.contents[i].ssid)
-            chnl = int(ap_scan_list.contents[i].channel)
-            rssi = int(ap_scan_list.contents[i].rssi)
-            bssid = get_str(ap_scan_list.contents[i].bssid)
-            ecn = int(ap_scan_list.contents[i].encryption_mode)
-            ap_list.append(Aplist(ssid,chnl,rssi,bssid,ecn))
-    commands_map_py_to_c.esp_hosted_free(ap_scan_list_ptr)
-    ap_scan_list_ptr = None
-    return ap_list
+	cleanup_ctrl_msg(app_event)
+	return SUCCESS
 
-# wifi connected stations list
-# Function gives list of connected stations(maximum 10) to ESP32 softAP
-# In case of "success"
-# Output parameter
-#      Stations credentials::
-#          mac         :   MAC address of station
-#          rssi        :   rssi signal strength
-# If no station is connected, failure return from slave
-# output is list of Stationlist class instances
-# else returns "failure"
 
-def wifi_connected_stations_list():
-    count = c_uint()
-    stations_list_ptr = commands_map_py_to_c.wifi_connected_stations_list(byref(count))
-    if stations_list_ptr is None:
-        return failure
-    list_type = WIFI_STATIONS_LIST * count.value
-    stations_list = cast(stations_list_ptr, POINTER(list_type))
-    if count.value:
-        stas_list = []
-        for i in range(count.value):
-            bssid = get_str(stations_list.contents[i].bssid)
-            rssi = int(stations_list.contents[i].rssi)
-            stas_list.append(Stationlist(bssid,rssi))
-        commands_map_py_to_c.esp_hosted_free(stations_list_ptr)
-        stations_list_ptr = None
-        return stas_list
-    else:
-        commands_map_py_to_c.esp_hosted_free(stations_list_ptr)
-        stations_list_ptr = None
-        print("No station is connected")
-        return failure
 
-# wifi set power save mode
-# Function sets ESP32's power save mode, returns "success" or "failure"
-# power save mode == 1      WIFI_PS_MIN_MODEM,   /**< Minimum modem power saving.
-#                           In this mode, station wakes up to receive beacon every DTIM period */
-# power save mode == 2      WIFI_PS_MAX_MODEM,   /**< Maximum modem power saving.
-#                           In this mode, interval to receive beacons is determined by the
-#                           listen_interval parameter in wifi set ap config function*/
-# Default :: power save mode is WIFI_PS_MIN_MODEM
+def process_resp_connect_ap(app_msg) :
+	ret = SUCCESS
+	sockfd = c_int()
+	sockfd.value = 0
+	AF_INET = c_int()
+	AF_INET.value = 2
+	SOCK_DGRAM = c_int()
+	SOCK_DGRAM.value = 2
+	IPPROTO_IP = c_int()
+	IPPROTO_IP.value = 0
 
-def wifi_set_power_save_mode(power_save_mode):
-    if ((power_save_mode < WIFI_PS_MIN_MODEM) or (power_save_mode > WIFI_PS_MAX_MODEM)):
-        print("Unsupported power save mode")
-        return failure
-    mode = c_uint()
-    mode.value = power_save_mode
-    ret = commands_map_py_to_c.wifi_set_power_save_mode(mode)
-    if not ret:
-        return success
-    else:
-        return failure
+	sta_interface = create_string_buffer(b"ethsta0", len(STA_INTERFACE))
+	if (not len(app_msg.contents.control_data.wifi_ap_config.out_mac)):
+		print("Failure: station mac is empty")
+		return FAILURE
 
-# wifi get power save mode
-# Function returns power save mode of ESP32 or "failure"
-# power save mode == 1      WIFI_PS_MIN_MODEM,   /**< Minimum modem power saving.
-#                           In this mode, station wakes up to receive beacon every DTIM period */
-# power save mode == 2      WIFI_PS_MAX_MODEM,   /**< Maximum modem power saving.
-#                           In this mode, interval to receive beacons is determined by the
-#                           listen_interval parameter in wifi set ap config function*/
-# Default :: power save mode is WIFI_PS_MIN_MODEM
+	ret = commands_map_py_to_c.create_socket(AF_INET, SOCK_DGRAM, IPPROTO_IP, byref(sockfd))
+	if (ret < 0):
+		print("Failure to open socket")
+		return FAILURE
 
-def wifi_get_power_save_mode():
-    mode = c_uint()
-    ret = commands_map_py_to_c.wifi_get_power_save_mode(byref(mode))
-    if not ret:
-        return mode.value
-    else:
-        return failure
+	ret = commands_map_py_to_c.interface_down(sockfd, sta_interface)
+	if (ret == SUCCESS) :
+		print(STA_INTERFACE+" interface down")
+	else:
+		print("Unable to down "+STA_INTERFACE+" interface")
+		close_sock(sockfd)
+		return FAILURE
 
-# wifi_set_max_tx_power function set maximum transmitting power, returns "success" or "failure"
-# 
-# @attention 1. The value set by this API will be mapped to the max_tx_power of the structure wifi_country_t variable in wifi driver.
-# @attention 2. Mapping Table {wifi_max_tx_power, max_tx_power} = {{8,   2}, {20,  5}, {28,  7}, {34,  8}, {44, 11},
-#                                                      {52, 13}, {56, 14}, {60, 15}, {66, 16}, {72, 18}, {80, 20}}.
-# @attention 4. Param power unit is 0.25dBm, range is [8, 84] corresponding to 2dBm to 20dBm.
-# @attention 5. Relationship between set value and actual value. As follows: {set value range, actual value} = {{[8,  19],8}, {[20, 27],20}, {[28, 33],28}, {[34, 43],34}, {[44, 51],44}, {[52, 55],52}, {[56, 59],56}, {[60, 65],60}, {[66, 71],66}, {[72, 79],72}, {[80, 84],80}}.
-# 
-#  Input parameter:
-#      wifi_max_tx_power    : Maximum WiFi transmitting power.
-# 
-# Returns "out_of_range" string. If `wifi_max_tx_power` range is not in [8, 84] corresponding to `2dBm to 20dBm` tx power.
+	ret = commands_map_py_to_c.set_hw_addr(sockfd, sta_interface,
+			app_msg.contents.control_data.wifi_ap_config.out_mac)
+	if (ret == SUCCESS):
+		mac_l = get_str(app_msg.contents.control_data.wifi_ap_config.out_mac)
+		print("MAC address \""+ mac_l +"\" set to "+STA_INTERFACE+" interface")
+	else:
+		print("Unable to set MAC address to "+STA_INTERFACE+" interface")
+		close_sock(sockfd)
+		return FAILURE
 
-def wifi_set_max_tx_power(wifi_max_tx_power):
-    set_power = c_int()
-    set_power.value = wifi_max_tx_power
-    ret = commands_map_py_to_c.wifi_set_max_tx_power(set_power)
-    if (ret == OUT_OF_RANGE):
-        return out_of_range_str
-    elif not ret:
-        return success
-    else:
-        return failure
+	ret = commands_map_py_to_c.interface_up(sockfd, sta_interface)
+	if (ret == SUCCESS) :
+		print(STA_INTERFACE+" interface up")
+	else:
+		print("Unable to up "+STA_INTERFACE+" interface")
+		close_sock(sockfd)
+		return FAILURE
 
-# wifi_get_curr_tx_power function gets current transmiting power, or returns "failure"
-# 
-#  Output parameter:
-#      wifi_curr_tx_power    : Current WiFi transmitting power, unit is 0.25dBm.
+	ret = commands_map_py_to_c.close_socket(sockfd)
+	if (ret < 0):
+		print("Failure to close socket")
+		return FAILURE
 
-def wifi_get_curr_tx_power():
-    wifi_curr_tx_power = c_int()
-    ret = commands_map_py_to_c.wifi_get_curr_tx_power(byref(wifi_curr_tx_power))
-    if not ret:
-        return wifi_curr_tx_power.value
-    else:
-        return failure
+	return SUCCESS
 
-# OTA begin
-# function returns "success" or "failure"
-# esp ota begin function performs an OTA begin operation for ESP32
-# which sets partition for OTA write and erase it.
 
-def esp_ota_begin():
-    ret = commands_map_py_to_c.esp_ota_begin()
-    if not ret:
-        return success
-    else:
-        return failure
 
-# OTA write
-# esp ota write function performs an OTA write operation for ESP32,
-# function returns "success" or "failure"
-# It writes ota_data buffer to OTA partition in flash
-#
-#  Input parameter:
-#      ota_data        : OTA data buffer
-#      ota_data_len    : length of OTA data buffer
+def process_failed_responses(app_msg):
+	request_failed_flag = True
+	if (app_msg.contents.resp_event_status == CTRL_ERR.CTRL_ERR_REQ_IN_PROG.value):
+		print("Err: Command In progress, Please wait")
+	elif (app_msg.contents.resp_event_status == CTRL_ERR.CTRL_ERR_REQUEST_TIMEOUT.value):
+		print("Err: Response Timeout")
+	elif (app_msg.contents.resp_event_status == CTRL_ERR.CTRL_ERR_MEMORY_FAILURE.value):
+		print("Err: Memory allocation failed")
+	elif (app_msg.contents.resp_event_status == CTRL_ERR.CTRL_ERR_UNSUPPORTED_MSG.value):
+		print("Err: Unsupported control msg")
+	elif (app_msg.contents.resp_event_status == CTRL_ERR.CTRL_ERR_INCORRECT_ARG.value):
+		print("Err: Invalid or out of range parameter values")
+	elif (app_msg.contents.resp_event_status == CTRL_ERR.CTRL_ERR_PROTOBUF_ENCODE.value):
+		print("Err: Protobuf encode failed")
+	elif (app_msg.contents.resp_event_status == CTRL_ERR.CTRL_ERR_PROTOBUF_DECODE.value):
+		print("Err: Protobuf decode failed")
+	elif (app_msg.contents.resp_event_status == CTRL_ERR.CTRL_ERR_SET_ASYNC_CB.value):
+		print("Err: Failed to set aync callback")
+	elif (app_msg.contents.resp_event_status == CTRL_ERR.CTRL_ERR_TRANSPORT_SEND.value):
+		print("Err: Problem while serial driver write")
+	else:
+		request_failed_flag = False
 
-def esp_ota_write(ota_data, ota_data_len):
-    ret = commands_map_py_to_c.esp_ota_write(ota_data, ota_data_len)
-    if not ret:
-        return success
-    else:
-        return failure
+	# if control request failed, no need to proceed for response checking
+	if (request_failed_flag):
+		return
 
-# OTA end
-# esp ota end function performs an OTA end operation for ESP32,
-# function returns "success" or "failure"
-# It validates written OTA image, set OTA partition as boot partition for next boot,
-# Creates timer which reset ESP32 after 5 sec,
+	if (app_msg.contents.msg_id == CTRL_MSGID.CTRL_RESP_OTA_BEGIN.value):
+		print("OTA failed in OTA begin")
+	elif (app_msg.contents.msg_id == CTRL_MSGID.CTRL_RESP_OTA_WRITE.value):
+		print("OTA failed in OTA write")
+	elif (app_msg.contents.msg_id == CTRL_MSGID.CTRL_RESP_OTA_END.value):
+		print("OTA failed in OTA end")
+	elif (app_msg.contents.msg_id == CTRL_MSGID.CTRL_RESP_CONNECT_AP.value):
+		if (app_msg.contents.resp_event_status == CTRL_ERR.CTRL_ERR_NO_AP_FOUND.value):
+			print("SSID : not found/connectable")
+		elif (app_msg.contents.resp_event_status == CTRL_ERR.CTRL_ERR_INVALID_PASSWORD.value):
+			print("Invalid password for SSID")
+		else:
+			print("Failed to connect with AP")
+	elif (app_msg.contents.msg_id == CTRL_MSGID.CTRL_RESP_START_SOFTAP.value):
+		print("Failed to start SoftAP")
+	elif (app_msg.contents.msg_id == CTRL_MSGID.CTRL_RESP_STOP_SOFTAP.value):
+		print("Possibly softap is not running/started")
+	elif (app_msg.contents.msg_id == CTRL_MSGID.CTRL_RESP_GET_SOFTAP_CONFIG.value):
+		print("Possibly softap is not running/started")
+	else:
+		print("Failed Control Response")
 
-def esp_ota_end():
-    ret = commands_map_py_to_c.esp_ota_end()
-    if not ret:
-        return success
-    else:
-        return failure
 
-# Interface down
-# This function downs the given interface iface
-# function returns "success" or "failure"
 
-def interface_down(sockfd, iface):
-    ret = commands_map_py_to_c.interface_down(sockfd, iface)
-    if not ret:
-        return success
-    else:
-        return failure
+def process_resp_disconnect_ap(app_resp):
+	ret = 0
+	sockfd = c_int()
+	sockfd.value = 0
+	AF_INET = c_int()
+	AF_INET.value = 2
+	SOCK_DGRAM = c_int()
+	SOCK_DGRAM.value = 2
+	IPPROTO_IP = c_int()
+	IPPROTO_IP.value = 0
 
-# Interface up
-# This function ups the given interface iface
-# function returns "success" or "failure"
+	sta_interface = create_string_buffer(b"ethsta0", len(STA_INTERFACE))
+	ret = commands_map_py_to_c.create_socket(AF_INET,
+			SOCK_DGRAM, IPPROTO_IP, byref(sockfd))
+	if (ret < 0):
+		print("Failure to open socket")
+		return FAILURE
 
-def interface_up(sockfd, iface):
-    ret = commands_map_py_to_c.interface_up(sockfd, iface)
-    if not ret:
-        return success
-    else:
-        return failure
+	ret = commands_map_py_to_c.interface_down(sockfd, sta_interface)
+	if (ret == SUCCESS):
+		print(STA_INTERFACE + " interface down")
+	else:
+		print("Unable to down " + STA_INTERFACE + "inteface")
+		close_sock(sockfd)
+		return FAILURE
 
-# Set HW address
-# This function sets mac address to the given interface iface
-# function returns "success" or "failure"
+	ret = commands_map_py_to_c.close_socket(sockfd)
+	if (ret < 0):
+		print("Failure to close socket")
+		return FAILURE
 
-def set_hw_addr(sockfd, iface, mac):
-    ret = commands_map_py_to_c.set_hw_addr(sockfd, iface, mac)
-    if not ret:
-        return success
-    else:
-        return failure
+	return SUCCESS
 
-# Create socket
-# This function creates an endpoint for communication
-# Function returns "file descriptor (integer number) that refers to that endpoint/socket" or "failure"
-#  Input parameter:
-#        domain: specifies a communication domain
-#        types: specifies the communication semantics
-#        protocol: specifies a particular protocol to be used with the socket
 
-def create_socket(domain, types, protocol):
-    sock = c_int()
-    ret = commands_map_py_to_c.create_socket(domain, types, protocol, byref(sock))
-    if not ret:
-        return int(sock.value)
-    else:
-        return failure
 
-# Close socket
-# This function closes an endpoint for communication
-# function returns "success" or "failure"
-# Input parameter:
-#       sock: file descriptor (integer number) that refers to the endpoint/socket
+def process_resp_start_softap(app_resp):
+	ret = SUCCESS
+	sockfd = c_int()
+	sockfd.value = 0
+	AF_INET = c_int()
+	AF_INET.value = 2
+	SOCK_DGRAM = c_int()
+	SOCK_DGRAM.value = 2
+	IPPROTO_IP = c_int()
+	IPPROTO_IP.value = 0
 
-def close_socket(sock):
-    ret = commands_map_py_to_c.close_socket(sock)
-    if not ret:
-        return success
-    else:
-        return failure
+	ap_interface = create_string_buffer(b"ethap0",len(AP_INTERFACE))
+	if (not len(app_resp.contents.control_data.wifi_softap_config.out_mac)):
+		print("Failure: softap mac is empty")
+		return FAILURE
+
+	ret = commands_map_py_to_c.create_socket(AF_INET,
+			SOCK_DGRAM, IPPROTO_IP, byref(sockfd))
+	if (ret < 0):
+		print("Failure to open socket")
+		return FAILURE
+
+	ret = commands_map_py_to_c.interface_down(sockfd, ap_interface)
+	if (ret == SUCCESS) :
+		print(AP_INTERFACE+" interface down")
+	else:
+		print("Unable to down "+AP_INTERFACE+" interface")
+		close_sock(sockfd)
+		return FAILURE
+
+	ret = commands_map_py_to_c.set_hw_addr(sockfd, ap_interface,
+			app_resp.contents.control_data.wifi_softap_config.out_mac)
+	if (ret == SUCCESS):
+		mac_l = get_str(app_resp.contents.control_data.wifi_softap_config.out_mac)
+		print("MAC address "+ mac_l +" set to "+AP_INTERFACE+" interface")
+	else:
+		print("Unable to set MAC address to "+AP_INTERFACE+" interface")
+		close_sock(sockfd)
+		return FAILURE
+
+	ret = commands_map_py_to_c.interface_up(sockfd, ap_interface)
+	if (ret == SUCCESS) :
+		print(AP_INTERFACE+" interface up")
+	else:
+		print("Unable to up "+AP_INTERFACE+" interface")
+		close_sock(sockfd)
+		return FAILURE
+
+	ret = commands_map_py_to_c.close_socket(sockfd)
+	if (ret < 0):
+		print("Failure to close socket")
+		return FAILURE
+
+	return SUCCESS
+
+
+
+def process_resp_stop_softap(app_resp):
+	ret = 0
+	sockfd = c_int()
+	sockfd.value = 0
+	AF_INET = c_int()
+	AF_INET.value = 2
+	SOCK_DGRAM = c_int()
+	SOCK_DGRAM.value = 2
+	IPPROTO_IP = c_int()
+	IPPROTO_IP.value = 0
+
+	ap_interface = create_string_buffer(b"ethap0",len(AP_INTERFACE))
+	ret = commands_map_py_to_c.create_socket(AF_INET,
+			SOCK_DGRAM, IPPROTO_IP, byref(sockfd))
+	if (ret < 0):
+		print("Failure to open socket")
+		return FAILURE
+
+	ret = commands_map_py_to_c.interface_down(sockfd, ap_interface)
+	if (ret == SUCCESS):
+		print(AP_INTERFACE + " interface down")
+	else:
+		print("Unable to down " + AP_INTERFACE + "inteface")
+		close_sock(sockfd)
+		return FAILURE
+
+	ret = commands_map_py_to_c.close_socket(sockfd)
+	if (ret < 0):
+		print("Failure to close socket")
+		return FAILURE
+	return SUCCESS
+
+
+
+def unregister_event_callbacks():
+	ret = SUCCESS
+	for event in range(CTRL_MSGID.CTRL_EVENT_BASE.value+1, CTRL_MSGID.CTRL_EVENT_MAX.value):
+		if (CALLBACK_SET_SUCCESS != commands_map_py_to_c.reset_event_callback(event)):
+			print("reset event callback failed for event "+str(event))
+			ret = FAILURE
+	return ret
+
+
+
+def CTRL_CMD_DEFAULT_REQ(req):
+	req.msg_type = CTRL_MSGTYPE.CTRL_REQ.value
+	req.cmd_timeout_sec = CTRL_RESP_TIMEOUT_SEC
+
+
+
+def fail_resp(app_resp) :
+	cleanup_ctrl_msg(app_resp)
+	return FAILURE
+
+
+
+def finish_resp(app_resp) :
+	cleanup_ctrl_msg(app_resp)
+	return SUCCESS
+
+
+
+def ctrl_app_resp_callback(app_resp):
+
+	if ((not app_resp) or (not app_resp.contents) or
+		(bytes_to_int(app_resp.contents.msg_type) != CTRL_MSGTYPE.CTRL_RESP.value)):
+		if (app_resp):
+			if (app_resp.contents):
+				print("Msg type is not response "+str(app_resp.contents.msg_type))
+			fail_resp(app_resp)
+		return FAILURE
+
+	if ((app_resp.contents.msg_id <= CTRL_MSGID.CTRL_RESP_BASE.value) or
+			(app_resp.contents.msg_id >= CTRL_MSGID.CTRL_RESP_MAX.value)):
+		print("Msg ID "+str(app_resp.contents.msg_id)+" is not correct" )
+		fail_resp(app_resp)
+		return FAILURE
+
+	if (bytes_to_int(app_resp.contents.resp_event_status) != SUCCESS):
+		process_failed_responses(app_resp)
+		fail_resp(app_resp)
+		return FAILURE
+
+
+	if (app_resp.contents.msg_id == CTRL_MSGID.CTRL_RESP_GET_MAC_ADDR.value) :
+		print("mac address is "+ get_str(app_resp.contents.control_data.wifi_mac.mac))
+
+	elif (app_resp.contents.msg_id == CTRL_MSGID.CTRL_RESP_SET_MAC_ADDRESS.value) :
+		print("MAC address is set")
+
+	elif (app_resp.contents.msg_id == CTRL_MSGID.CTRL_RESP_GET_WIFI_MODE.value) :
+		if (app_resp.contents.control_data.wifi_mode.mode == WIFI_MODE_E.WIFI_MODE_STA.value) :
+			print("wifi mode is : station")
+		elif (app_resp.contents.control_data.wifi_mode.mode == WIFI_MODE_E.WIFI_MODE_AP.value) :
+			print("wifi mode is : softap")
+		elif (app_resp.contents.control_data.wifi_mode.mode == WIFI_MODE_E.WIFI_MODE_APSTA.value) :
+			print("wifi mode is : station+softap")
+		elif (app_resp.contents.control_data.wifi_mode.mode == WIFI_MODE_E.WIFI_MODE_NONE.value) :
+			print("wifi mode is : none")
+		else:
+			print("wifi mode is : unknown")
+
+	elif (app_resp.contents.msg_id == CTRL_MSGID.CTRL_RESP_SET_WIFI_MODE.value) :
+		print("wifi mode is set")
+
+	elif (app_resp.contents.msg_id == CTRL_MSGID.CTRL_RESP_GET_AP_SCAN_LIST.value) :
+		w_scan_p = POINTER(WIFI_AP_SCAN_LIST)
+		w_scan_p = pointer(app_resp.contents.control_data.wifi_ap_scan)
+		list = POINTER(WIFI_SCAN_LIST)
+		list = w_scan_p.contents.out_list
+
+		if (not w_scan_p.contents.count) :
+			print("No AP found")
+			finish_resp()
+			return FAILURE
+		else:
+			print("Current AP count is "+str(w_scan_p.contents.count))
+
+		if (not list) :
+			print("Failed to get scanned AP list")
+			finish_resp()
+			return FAILURE
+		else:
+			print("Number of available APs is "+str(w_scan_p.contents.count))
+			for i in range (0, w_scan_p.contents.count) :
+				print(str(i)+") ssid \""+get_str(list[i].ssid)+"\""+
+						" bssid \""+get_str(list[i].bssid)+"\""+
+						" rssi \""+str(list[i].rssi)+"\""+
+						" channel \""+str(list[i].channel)+"\""+
+						" auth mode \""+str(list[i].encryption_mode)+"\"")
+
+	elif (app_resp.contents.msg_id == CTRL_MSGID.CTRL_RESP_CONNECT_AP.value) :
+		if (process_resp_connect_ap(app_resp)):
+			fail_resp(app_resp)
+			print("Returning failure")
+			return FAILURE
+
+	elif (app_resp.contents.msg_id == CTRL_MSGID.CTRL_RESP_GET_AP_CONFIG.value) :
+		ap_config_p = POINTER(STA_CONFIG)
+		ap_config_p = pointer(app_resp.contents.control_data.wifi_ap_config)
+
+		if (get_str(ap_config_p.contents.status) == SUCCESS_STR) :
+			print("AP's ssid \""+get_str(ap_config_p.contents.ssid)+"\"")
+			print("AP's bssid \""+get_str(ap_config_p.contents.bssid)+"\"")
+			print("AP's channel number \""+str(ap_config_p.contents.channel)+"\"")
+			print("AP's rssi \""+str(ap_config_p.contents.rssi)+"\"")
+			print("AP's encryption mode \""+str(ap_config_p.contents.encryption_mode)+"\"")
+		else:
+			print("Station mode status: "+get_str(ap_config_p.contents.status))
+
+	elif (app_resp.contents.msg_id == CTRL_MSGID.CTRL_RESP_DISCONNECT_AP.value) :
+		print("Disconnected from AP")
+		if (process_resp_disconnect_ap(app_resp)):
+			fail_resp(app_resp)
+			return FAILURE
+
+	elif (app_resp.contents.msg_id == CTRL_MSGID.CTRL_RESP_START_SOFTAP.value) :
+		print("esp32 softAP started")
+		if (process_resp_start_softap(app_resp)):
+			fail_resp(app_resp)
+			return FAILURE
+
+	elif (app_resp.contents.msg_id == CTRL_MSGID.CTRL_RESP_GET_SOFTAP_CONFIG.value) :
+		softap_config_p = POINTER(SOFTAP_CONFIG)
+		softap_config_p = pointer(app_resp.contents.control_data.wifi_softap_config)
+		print("softAP ssid \""+get_str(softap_config_p.contents.ssid)+"\"")
+		print("softAP pwd \""+get_str(softap_config_p.contents.pwd)+"\"")
+		print("softAP channel \""+str(softap_config_p.contents.channel)+"\"")
+		print("softAP auth mode \""+str(softap_config_p.contents.encryption_mode)+"\"")
+		print("softAP max connections \""+str(softap_config_p.contents.max_connections)+"\"")
+		print("softAP hide ssid \""+str(softap_config_p.contents.ssid_hidden)+"\"")
+		print("softAP bandwidth \""+str(softap_config_p.contents.bandwidth)+"\"")
+
+	elif (app_resp.contents.msg_id == CTRL_MSGID.CTRL_RESP_GET_SOFTAP_CONN_STA_LIST.value) :
+		count = app_resp.contents.control_data.wifi_softap_con_sta.count
+		stations_list = POINTER(WIFI_CONNECTED_STATIONS_LIST)
+		stations_list = pointer(app_resp.contents.control_data.wifi_softap_con_sta.out_list)
+
+		print("sta list count: "+str(count))
+		if (not count):
+			print("No station found")
+			fail_resp(app_resp)
+			return FAILURE
+
+		if (not stations_list):
+			print("Failed to get connected stations list")
+		elif (count):
+			for i in range(0,count):
+				print(str(i)+"th station's bssid \""+get_str(stations_list[i].contents.bssid)+
+						"\" rssi \""+str(stations_list[i].contents.rssi))
+
+	elif (app_resp.contents.msg_id == CTRL_MSGID.CTRL_RESP_STOP_SOFTAP.value) :
+		print("ESP32 softAP stopped")
+		if (process_resp_stop_softap(app_resp)):
+			fail_resp(app_resp)
+			return FAILURE
+
+	elif (app_resp.contents.msg_id == CTRL_MSGID.CTRL_RESP_SET_SOFTAP_VND_IE.value) :
+		print("Success in set vendor specific ie")
+
+	elif (app_resp.contents.msg_id == CTRL_MSGID.CTRL_RESP_SET_PS_MODE.value) :
+		print("Wifi power save mode set")
+
+	elif (app_resp.contents.msg_id == CTRL_MSGID.CTRL_RESP_GET_PS_MODE.value) :
+		if (app_resp.contents.control_data.wifi_ps.ps_mode == WIFI_PS_MODE.WIFI_PS_MIN_MODEM.value):
+			print("Wifi power save mode is: min")
+		elif (app_resp.contents.control_data.wifi_ps.ps_mode == WIFI_PS_MODE.WIFI_PS_MAX_MODEM.value):
+			print("Wifi power save mode is: max")
+		else:
+			print("Wifi power save mode is: Invalid")
+
+	elif (app_resp.contents.msg_id == CTRL_MSGID.CTRL_RESP_OTA_BEGIN.value) :
+		pass
+
+	elif (app_resp.contents.msg_id == CTRL_MSGID.CTRL_RESP_OTA_WRITE.value) :
+		pass
+
+	elif (app_resp.contents.msg_id == CTRL_MSGID.CTRL_RESP_OTA_END.value) :
+		pass
+
+	elif (app_resp.contents.msg_id == CTRL_MSGID.CTRL_RESP_SET_WIFI_MAX_TX_POWER.value) :
+		print("Set wifi max tx power success")
+
+	elif (app_resp.contents.msg_id == CTRL_MSGID.CTRL_RESP_GET_WIFI_CURR_TX_POWER.value) :
+		print("wifi curr tx power : "+str(app_resp.contents.control_data.wifi_tx_power.power))
+
+	elif (app_resp.contents.msg_id == CTRL_MSGID.CTRL_RESP_CONFIG_HEARTBEAT.value) :
+		print("Heartbeat operation successful")
+
+	else :
+		print("Invalid Response "+ str(app_resp.contents.msg_id) +" to parse")
+
+	return SUCCESS
+
+
+
+ctrl_app_event_cb = CTRL_CB(ctrl_app_event_callback)
+ctrl_app_resp_cb = CTRL_CB(ctrl_app_resp_callback)
+
+
+def subscribe_event_esp_init():
+	if (CALLBACK_SET_SUCCESS != commands_map_py_to_c.set_event_callback(
+		CTRL_MSGID.CTRL_EVENT_ESP_INIT.value, ctrl_app_event_cb)):
+		print("event not subscribed for esp_init")
+	print("notifications enabled for esp_init")
+
+
+
+def subscribe_event_heartbeat():
+	if (CALLBACK_SET_SUCCESS != commands_map_py_to_c.set_event_callback(
+		CTRL_MSGID.CTRL_EVENT_HEARTBEAT.value, ctrl_app_event_cb)):
+		print("event not subscribed for heartbeat")
+	print("notifications enabled for heartbeat")
+
+
+
+def subscribe_event_sta_disconnect_from_ap():
+	if (CALLBACK_SET_SUCCESS != commands_map_py_to_c.set_event_callback(
+		CTRL_MSGID.CTRL_EVENT_STATION_DISCONNECT_FROM_AP.value, ctrl_app_event_cb)):
+		print("event not subscribed for station disconnection from AP")
+	print("notifications enabled for station disconnection from AP")
+
+
+
+def subscribe_event_sta_disconnect_from_softap():
+	if (CALLBACK_SET_SUCCESS != commands_map_py_to_c.set_event_callback(
+		CTRL_MSGID.CTRL_EVENT_STATION_DISCONNECT_FROM_ESP_SOFTAP.value, ctrl_app_event_cb)):
+		print("event not subscribed for station disconnection from ESP softAP")
+	print("notifications enabled for station disconnection from ESP softAP")
+
+
+
+def unsubscribe_event_esp_init():
+	if (CALLBACK_SET_SUCCESS != commands_map_py_to_c.reset_event_callback(
+		CTRL_MSGID.CTRL_EVENT_ESP_INIT.value)):
+		print("stop subscription failed for esp_init")
+	print("notifications disabled for esp_init")
+
+
+
+def unsubscribe_event_heartbeat():
+	if (CALLBACK_SET_SUCCESS != commands_map_py_to_c.reset_event_callback(
+		CTRL_MSGID.CTRL_EVENT_HEARTBEAT.value)):
+		print("stop subscription failed for heartbeat")
+	print("notifications disabled for heartbeat")
+
+
+
+def unsubscribe_event_sta_disconnect_from_ap():
+	if (CALLBACK_SET_SUCCESS != commands_map_py_to_c.reset_event_callback(
+		CTRL_MSGID.CTRL_EVENT_STATION_DISCONNECT_FROM_AP.value)):
+		print("stop subscription failed for station disconnection from AP")
+	print("notifications disabled for station disconnection from AP")
+
+
+
+def unsubscribe_event_sta_disconnect_from_softap():
+	if (CALLBACK_SET_SUCCESS != commands_map_py_to_c.reset_event_callback(
+		CTRL_MSGID.CTRL_EVENT_STATION_DISCONNECT_FROM_ESP_SOFTAP.value)):
+		print("stop subscription failed for station disconnection from ESP softAP")
+	print("notifications disabled for station disconnection from ESP softAP")
+
+
+
+def register_event_callbacks():
+	ret = SUCCESS
+	evt = 0
+	events = []
+
+	ESP_INIT = c_int()
+	ESP_INIT.value = CTRL_MSGID.CTRL_EVENT_ESP_INIT.value
+
+	HEARTBEAT = c_int()
+	HEARTBEAT.value = CTRL_MSGID.CTRL_EVENT_HEARTBEAT.value
+
+	STATION_DISCONNECT_FROM_AP = c_int()
+	STATION_DISCONNECT_FROM_AP.value = \
+                CTRL_MSGID.CTRL_EVENT_STATION_DISCONNECT_FROM_AP.value
+
+	STATION_DISCONNECT_FROM_ESP_SOFTAP = c_int()
+	STATION_DISCONNECT_FROM_ESP_SOFTAP.value = \
+                CTRL_MSGID.CTRL_EVENT_STATION_DISCONNECT_FROM_ESP_SOFTAP.value
+
+	events.append(EVENT_CALLBACK_TABLE_T(ESP_INIT, ctrl_app_event_cb))
+	events.append(EVENT_CALLBACK_TABLE_T(HEARTBEAT, ctrl_app_event_cb))
+	events.append(EVENT_CALLBACK_TABLE_T(STATION_DISCONNECT_FROM_AP, ctrl_app_event_cb))
+	events.append(EVENT_CALLBACK_TABLE_T(STATION_DISCONNECT_FROM_ESP_SOFTAP, ctrl_app_event_cb))
+
+	for i in range(0, len(events)):
+		if (CALLBACK_SET_SUCCESS != commands_map_py_to_c.set_event_callback(events[i].event,
+				events[i].fun)):
+			print("event callback register failed for event "+str(events[i].event))
+			ret = FAILURE
+			break
+	return ret
+
+
+
+def init_hosted_control_lib():
+	ret = c_int()
+	ret = commands_map_py_to_c.init_hosted_control_lib()
+	return ret
+
+
+
+def test_sync_set_wifi_mode(mode) :
+	req = CONTROL_COMMAND()
+	CTRL_CMD_DEFAULT_REQ(req)
+	resp = POINTER(CONTROL_COMMAND)
+	resp = None
+	req.control_data.wifi_mode.mode = mode
+	resp = commands_map_py_to_c.wifi_set_mode(req)
+	return ctrl_app_resp_callback(resp)
+
+
+
+def test_sync_set_wifi_mode_none() :
+	return test_sync_set_wifi_mode(WIFI_MODE_E.WIFI_MODE_NONE.value)
+
+
+
+def test_sync_set_wifi_mode_station() :
+	return test_sync_set_wifi_mode(WIFI_MODE_E.WIFI_MODE_STA.value)
+
+
+
+def test_sync_set_wifi_mode_softap() :
+	return test_sync_set_wifi_mode(WIFI_MODE_E.WIFI_MODE_AP.value)
+
+
+
+def test_sync_set_wifi_mode_station_softap() :
+	return test_sync_set_wifi_mode(WIFI_MODE_E.WIFI_MODE_APSTA.value)
+
+
+
+def test_async_get_wifi_mode() :
+	req = CONTROL_COMMAND()
+	CTRL_CMD_DEFAULT_REQ(req)
+	req.ctrl_resp_cb = ctrl_app_resp_cb
+
+	commands_map_py_to_c.wifi_get_mode(req)
+	return SUCCESS
+
+
+
+def test_sync_get_wifi_mode() :
+	req = CONTROL_COMMAND()
+	CTRL_CMD_DEFAULT_REQ(req)
+
+	resp = POINTER(CONTROL_COMMAND)
+	resp = None
+	resp = commands_map_py_to_c.wifi_get_mode(req)
+	return ctrl_app_resp_callback(resp)
+
+
+
+def test_sync_get_wifi_mac_addr(mode) :
+	req = CONTROL_COMMAND()
+	CTRL_CMD_DEFAULT_REQ(req)
+	resp = POINTER(CONTROL_COMMAND)
+	resp = None
+	req.control_data.wifi_mac.mode = mode
+	resp = commands_map_py_to_c.wifi_get_mac(req)
+	return ctrl_app_resp_callback(resp)
+
+
+
+def test_sync_station_mode_get_mac_addr() :
+	return test_sync_get_wifi_mac_addr(WIFI_MODE_E.WIFI_MODE_STA.value)
+
+
+
+def test_sync_softap_mode_get_mac_addr() :
+	return test_sync_get_wifi_mac_addr(WIFI_MODE_E.WIFI_MODE_AP.value)
+
+
+
+def test_sync_set_mac_addr(mode, mac) :
+	req = CONTROL_COMMAND()
+	CTRL_CMD_DEFAULT_REQ(req)
+	resp = POINTER(CONTROL_COMMAND)
+	resp = None
+	req.control_data.wifi_mac.mode = mode
+	req.control_data.wifi_mac.mac = bytes(mac, 'utf-8')
+	resp = commands_map_py_to_c.wifi_set_mac(req)
+	return ctrl_app_resp_callback(resp)
+
+
+
+def test_sync_station_mode_set_mac_addr_of_esp(mac) :
+	if test_sync_set_wifi_mode_station():
+		print("Failed to set station wifi mode")
+	return test_sync_set_mac_addr(WIFI_MODE_E.WIFI_MODE_STA.value, mac)
+
+
+
+def test_sync_softap_mode_set_mac_addr_of_esp(mac) :
+	if test_sync_set_wifi_mode_softap():
+		print("Failed to set station wifi mode")
+	return test_sync_set_mac_addr(WIFI_MODE_E.WIFI_MODE_AP.value, mac)
+
+
+
+def test_sync_get_available_wifi():
+	req = CONTROL_COMMAND()
+	CTRL_CMD_DEFAULT_REQ(req)
+	resp = POINTER(CONTROL_COMMAND)
+	resp = None
+	resp = commands_map_py_to_c.wifi_ap_scan_list(req)
+	return ctrl_app_resp_callback(resp)
+
+
+
+def test_async_station_mode_connect(ssid,pwd,bssid,use_wpa3,listen_interval):
+	req = CONTROL_COMMAND()
+	CTRL_CMD_DEFAULT_REQ(req)
+
+	req.control_data.wifi_ap_config.ssid = set_str(ssid)
+	req.control_data.wifi_ap_config.pwd = set_str(pwd)
+	req.control_data.wifi_ap_config.bssid = set_str(bssid)
+	req.control_data.wifi_ap_config.is_wpa3_supported =  use_wpa3
+	req.control_data.wifi_ap_config.listen_interval = listen_interval
+	req.ctrl_resp_cb = ctrl_app_resp_cb
+
+	commands_map_py_to_c.wifi_connect_ap(req)
+	return SUCCESS
+
+
+
+def test_sync_station_mode_connect(ssid,pwd,bssid,use_wpa3,listen_interval):
+	req = CONTROL_COMMAND()
+	CTRL_CMD_DEFAULT_REQ(req)
+	req.control_data.wifi_ap_config.ssid = set_str(str(ssid))
+	req.control_data.wifi_ap_config.pwd = set_str(str(pwd))
+	req.control_data.wifi_ap_config.bssid = set_str(bssid)
+	req.control_data.wifi_ap_config.is_wpa3_supported =  use_wpa3
+	req.control_data.wifi_ap_config.listen_interval = listen_interval
+
+	resp = POINTER(CONTROL_COMMAND)
+	resp = None
+	resp = commands_map_py_to_c.wifi_connect_ap(req)
+
+	return ctrl_app_resp_callback(resp)
+
+
+
+def test_sync_station_mode_get_info():
+	req = CONTROL_COMMAND()
+	CTRL_CMD_DEFAULT_REQ(req)
+	resp = POINTER(CONTROL_COMMAND)
+	resp = None
+	resp = commands_map_py_to_c.wifi_get_ap_config(req)
+	return ctrl_app_resp_callback(resp)
+
+
+
+def test_sync_station_mode_disconnect():
+	req = CONTROL_COMMAND()
+	CTRL_CMD_DEFAULT_REQ(req)
+	resp = POINTER(CONTROL_COMMAND)
+	resp = None
+	resp = commands_map_py_to_c.wifi_disconnect_ap(req)
+	return ctrl_app_resp_callback(resp)
+
+
+
+def test_sync_softap_mode_start(ssid, pwd, channel, sec_prot, max_conn, hide_ssid, bw):
+	req = CONTROL_COMMAND()
+	CTRL_CMD_DEFAULT_REQ(req)
+	resp = POINTER(CONTROL_COMMAND)
+	resp = None
+	req.control_data.wifi_softap_config.ssid = set_str(ssid)
+	req.control_data.wifi_softap_config.pwd = set_str(pwd)
+	req.control_data.wifi_softap_config.channel = channel
+	req.control_data.wifi_softap_config.encryption_mode = sec_prot
+	req.control_data.wifi_softap_config.max_connections = max_conn
+	req.control_data.wifi_softap_config.ssid_hidden = hide_ssid
+	req.control_data.wifi_softap_config.bandwidth = bw
+	resp = commands_map_py_to_c.wifi_start_softap(req)
+	return ctrl_app_resp_callback(resp)
+
+
+
+def test_sync_softap_mode_get_info():
+	req = CONTROL_COMMAND()
+	CTRL_CMD_DEFAULT_REQ(req)
+	resp = POINTER(CONTROL_COMMAND)
+	resp = None
+	resp = commands_map_py_to_c.wifi_get_softap_config(req)
+	return ctrl_app_resp_callback(resp)
+
+
+
+def test_sync_set_vendor_specific_ie(enable,data):
+	req = CONTROL_COMMAND()
+	CTRL_CMD_DEFAULT_REQ(req)
+	resp = POINTER(CONTROL_COMMAND)
+	resp = None
+
+	vendor_oui = bytearray()
+	vendor_oui.append(VENDOR_OUI_0)
+	vendor_oui.append(VENDOR_OUI_1)
+	vendor_oui.append(VENDOR_OUI_2)
+	vnd_ie_t = create_string_buffer(b"", len(data) + 1)
+	vnd_ie_t.value = set_str(data)
+	print("Enable: " + str(enable) + " data: " + data)
+
+	req.control_data.wifi_softap_vendor_ie.enable = enable
+	req.control_data.wifi_softap_vendor_ie.type = WIFI_VND_IE_TYPE.WIFI_VND_IE_TYPE_BEACON.value
+	req.control_data.wifi_softap_vendor_ie.idx = WIFI_VND_IE_ID.WIFI_VND_IE_ID_0.value
+	req.control_data.wifi_softap_vendor_ie.vnd_ie.element_id = WIFI_VENDOR_IE_ELEMENT_ID
+	req.control_data.wifi_softap_vendor_ie.vnd_ie.length = len(data) + 1 + OFFSET
+	req.control_data.wifi_softap_vendor_ie.vnd_ie.vendor_oui = b'\x01\x02\x03'
+	req.control_data.wifi_softap_vendor_ie.vnd_ie.vendor_oui_type = VENDOR_OUI_TYPE
+	req.control_data.wifi_softap_vendor_ie.vnd_ie.payload = cast(vnd_ie_t, c_wchar_p)
+
+	req.control_data.wifi_softap_vendor_ie.vnd_ie.payload_len = len(data)
+
+	resp = commands_map_py_to_c.wifi_set_vendor_specific_ie(req)
+	return ctrl_app_resp_callback(resp)
+
+
+
+def test_sync_softap_mode_connected_clients_info():
+	req = CONTROL_COMMAND()
+	CTRL_CMD_DEFAULT_REQ(req)
+	resp = POINTER(CONTROL_COMMAND)
+	resp = None
+	resp = commands_map_py_to_c.wifi_get_softap_connected_station_list(req)
+	return ctrl_app_resp_callback(resp)
+
+
+
+def test_sync_softap_mode_stop():
+	req = CONTROL_COMMAND()
+	CTRL_CMD_DEFAULT_REQ(req)
+	resp = POINTER(CONTROL_COMMAND)
+	resp = None
+	resp = commands_map_py_to_c.wifi_stop_softap(req)
+	return ctrl_app_resp_callback(resp)
+
+
+
+def test_sync_set_wifi_power_save_mode(psmode):
+	req = CONTROL_COMMAND()
+	CTRL_CMD_DEFAULT_REQ(req)
+	resp = POINTER(CONTROL_COMMAND)
+	resp = None
+	req.control_data.wifi_ps.ps_mode = psmode
+	resp = commands_map_py_to_c.wifi_set_power_save_mode(req)
+	return ctrl_app_resp_callback(resp)
+
+
+
+def test_sync_set_wifi_power_save_mode_max():
+	return test_sync_set_wifi_power_save_mode(WIFI_PS_MODE.WIFI_PS_MAX_MODEM.value)
+
+
+
+def test_sync_set_wifi_power_save_mode_min():
+	return test_sync_set_wifi_power_save_mode(WIFI_PS_MODE.WIFI_PS_MIN_MODEM.value)
+
+
+
+def test_sync_get_wifi_power_save_mode():
+	req = CONTROL_COMMAND()
+	CTRL_CMD_DEFAULT_REQ(req)
+	resp = POINTER(CONTROL_COMMAND)
+	resp = None
+	resp = commands_map_py_to_c.wifi_get_power_save_mode(req)
+	return ctrl_app_resp_callback(resp)
+
+
+
+def test_sync_wifi_set_max_tx_power(in_power):
+	req = CONTROL_COMMAND()
+	CTRL_CMD_DEFAULT_REQ(req)
+	resp = POINTER(CONTROL_COMMAND)
+	resp = None
+	req.control_data.wifi_tx_power.power = in_power
+	resp = commands_map_py_to_c.wifi_set_max_tx_power(req)
+	return ctrl_app_resp_callback(resp)
+
+
+
+def test_sync_wifi_get_curr_tx_power():
+	req = CONTROL_COMMAND()
+	CTRL_CMD_DEFAULT_REQ(req)
+	resp = POINTER(CONTROL_COMMAND)
+	resp = None
+	resp = commands_map_py_to_c.wifi_get_curr_tx_power(req)
+	return ctrl_app_resp_callback(resp)
+
+
+
+def test_sync_ota_begin():
+	req = CONTROL_COMMAND()
+	CTRL_CMD_DEFAULT_REQ(req)
+	resp = POINTER(CONTROL_COMMAND)
+	resp = None
+	resp = commands_map_py_to_c.ota_begin(req)
+	return ctrl_app_resp_callback(resp)
+
+
+
+def test_sync_ota_write(ota_data, ota_data_len):
+	req = CONTROL_COMMAND()
+	CTRL_CMD_DEFAULT_REQ(req)
+	resp = POINTER(CONTROL_COMMAND)
+	resp = None
+	req.control_data.ota_write.ota_data = ota_data
+	req.control_data.ota_write.ota_data_len = ota_data_len
+	resp = commands_map_py_to_c.ota_write(req)
+	return ctrl_app_resp_callback(resp)
+
+
+
+def test_sync_ota_end():
+	req = CONTROL_COMMAND()
+	CTRL_CMD_DEFAULT_REQ(req)
+	resp = POINTER(CONTROL_COMMAND)
+	resp = None
+	resp = commands_map_py_to_c.ota_end(req)
+	return ctrl_app_resp_callback(resp)
+
+
+
+def test_sync_ota(image_URL):
+	try:
+		response = requests.get(image_URL, stream = True)
+	except:
+		return "Error while fetching URL"
+
+	print("Starting OTA")
+
+	ota_status = test_sync_ota_begin()
+	if (ota_status == FAILURE):
+		return "Failure in OTA begin"
+
+	chunk_size = 4000
+	if (chunk_size>4000):
+		chunk_size = 4000
+
+	for chunk in response.iter_content(chunk_size):
+		print("|", end="", flush=True)
+		ota_status = test_sync_ota_write(chunk, chunk_size)
+		if (ota_status == FAILURE):
+			ota_status = test_sync_ota_end()
+			if (ota_status == FAILURE):
+				return "Failure in OTA write->end"
+			return "Failed to OTA write"
+		print(".", end="", flush=True)
+
+	ota_status = test_sync_ota_end()
+	if (ota_status == FAILURE):
+		return "Failure in OTA end"
+
+	print("\n\nOTA Successful, ESP32 will restart in 5 sec")
+	return ""
+
+
+
+def test_sync_config_heartbeat(enable, duration):
+	req = CONTROL_COMMAND()
+	CTRL_CMD_DEFAULT_REQ(req)
+	resp = POINTER(CONTROL_COMMAND)
+	resp = None
+	req.control_data.e_heartbeat.enable = enable
+	req.control_data.e_heartbeat.duration = duration
+	resp = commands_map_py_to_c.config_heartbeat(req)
+	return ctrl_app_resp_callback(resp)

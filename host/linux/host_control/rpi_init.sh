@@ -19,7 +19,16 @@ BT_INIT_SET="0"
 IF_TYPE="sdio"
 MODULE_NAME="esp32_${IF_TYPE}.ko"
 
-build_python_commands_lib()
+build_c_demo_app()
+{
+    cd c_support/
+    make clean
+    make -j8
+    make -j8 stress
+    cd ..
+}
+
+build_python_demo_app()
 {
     cd python_support/
     make clean
@@ -29,7 +38,8 @@ build_python_commands_lib()
 
 wlan_init()
 {
-    build_python_commands_lib
+    build_c_demo_app
+    build_python_demo_app
 
     cd ../host_driver/esp32/
     if [ `lsmod | grep esp32 | wc -l` != "0" ]; then
@@ -42,25 +52,25 @@ wlan_init()
     fi
 
     # For Linux other than Raspberry Pi, Please point
-	# CROSS_COMPILE -> <Toolchain-Path>/bin/arm-linux-gnueabihf-
-	# KERNEL        -> Place where kernel is checked out and built
-	# ARCH          -> Architecture
-	make -j8 target=$IF_TYPE CROSS_COMPILE=/usr/bin/arm-linux-gnueabihf- KERNEL="/lib/modules/$(uname -r)/build" ARCH=arm 
+    # CROSS_COMPILE -> <Toolchain-Path>/bin/arm-linux-gnueabihf-
+    # KERNEL        -> Place where kernel is checked out and built
+    # ARCH          -> Architecture
+    make -j8 target=$IF_TYPE CROSS_COMPILE=/usr/bin/arm-linux-gnueabihf- KERNEL="/lib/modules/$(uname -r)/build" ARCH=arm
 
-	if [ "$RESETPIN" = "" ] ; then
-		#By Default, BCM6 is GPIO on host. use resetpin=6
-		sudo insmod $MODULE_NAME resetpin=6
-	else
-		#Use resetpin value from argument
-		sudo insmod $MODULE_NAME $RESETPIN
-	fi
-	if [ `lsmod | grep esp32 | wc -l` != "0" ]; then
-		echo "esp32 module inserted "
-		sudo mknod /dev/esps0 c 221 0
-		sudo chmod 666 /dev/esps0
-		echo "/dev/esps0 device created"
-		echo "RPi init successfully completed"
-	fi
+    if [ "$RESETPIN" = "" ] ; then
+        #By Default, BCM6 is GPIO on host. use resetpin=6
+        sudo insmod $MODULE_NAME resetpin=6
+    else
+        #Use resetpin value from argument
+        sudo insmod $MODULE_NAME $RESETPIN
+    fi
+    if [ `lsmod | grep esp32 | wc -l` != "0" ]; then
+        echo "esp32 module inserted "
+        sudo mknod /dev/esps0 c 221 0
+        sudo chmod 666 /dev/esps0
+        echo "/dev/esps0 device created"
+        echo "RPi init successfully completed"
+    fi
 }
 
 bt_init()
