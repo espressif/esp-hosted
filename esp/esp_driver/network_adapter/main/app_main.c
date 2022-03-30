@@ -85,16 +85,11 @@ volatile uint8_t station_connected = 0;
 volatile uint8_t softap_started = 0;
 volatile uint8_t ota_ongoing = 0;
 
-#ifdef ESP_DEBUG_STATS
-uint32_t from_wlan_count = 0;
-uint32_t to_host_count = 0;
-uint32_t to_host_sent_count = 0;
-#endif
-
 interface_context_t *if_context = NULL;
 interface_handle_t *if_handle = NULL;
 
-QueueHandle_t to_host_queue[MAX_PRIORITY_QUEUES] = {NULL};
+static QueueHandle_t meta_to_host_queue = NULL;
+static QueueHandle_t to_host_queue[MAX_PRIORITY_QUEUES] = {NULL};
 
 
 static protocomm_t *pc_pserial;
@@ -203,7 +198,6 @@ void esp_update_ap_mac(void)
 
 esp_err_t wlan_ap_rx_callback(void *buffer, uint16_t len, void *eb)
 {
-	esp_err_t ret = ESP_OK;
 	interface_buffer_handle_t buf_handle = {0};
 	uint8_t * ap_buf = buffer;
 
@@ -228,12 +222,8 @@ esp_err_t wlan_ap_rx_callback(void *buffer, uint16_t len, void *eb)
 	buf_handle.wlan_buf_handle = eb;
 	buf_handle.free_buf_handle = esp_wifi_internal_free_rx_buffer;
 
-	ret = xQueueSend(to_host_queue[PRIO_Q_OTHERS], &buf_handle, portMAX_DELAY);
-
-	if (ret != pdTRUE) {
-		ESP_LOGE(TAG, "Slave -> Host: Failed to send buffer\n");
+	if (send_to_host_queue(&buf_handle, PRIO_Q_OTHERS))
 		goto DONE;
-	}
 
 	return ESP_OK;
 
@@ -244,7 +234,6 @@ DONE:
 
 esp_err_t wlan_sta_rx_callback(void *buffer, uint16_t len, void *eb)
 {
-	esp_err_t ret = ESP_OK;
 	interface_buffer_handle_t buf_handle = {0};
 
 	if (!buffer || !eb || !datapath || ota_ongoing) {
@@ -254,10 +243,6 @@ esp_err_t wlan_sta_rx_callback(void *buffer, uint16_t len, void *eb)
 		return ESP_OK;
 	}
 
-#ifdef ESP_DEBUG_STATS
-	from_wlan_count++;
-#endif
-
 	buf_handle.if_type = ESP_STA_IF;
 	buf_handle.if_num = 0;
 	buf_handle.payload_len = len;
@@ -265,12 +250,8 @@ esp_err_t wlan_sta_rx_callback(void *buffer, uint16_t len, void *eb)
 	buf_handle.wlan_buf_handle = eb;
 	buf_handle.free_buf_handle = esp_wifi_internal_free_rx_buffer;
 
-	ret = xQueueSend(to_host_queue[PRIO_Q_OTHERS], &buf_handle, portMAX_DELAY);
-
-	if (ret != pdTRUE) {
-		ESP_LOGE(TAG, "Slave -> Host: Failed to send buffer\n");
+	if (send_to_host_queue(&buf_handle, PRIO_Q_OTHERS))
 		goto DONE;
-	}
 
 	return ESP_OK;
 
@@ -307,36 +288,19 @@ void process_tx_pkt(interface_buffer_handle_t *buf_handle)
 /* Send data to host */
 void send_task(void* pvParameters)
 {
-#ifdef ESP_DEBUG_STATS
-	int t1, t2, t_total = 0;
-	int d_total = 0;
-#endif
+	uint8_t queue_type = 0;
 	interface_buffer_handle_t buf_handle = {0};
-	uint16_t serial_pkts_waiting = 0;
-	uint16_t bt_pkts_waiting = 0;
-	uint16_t other_pkts_waiting = 0;
 
 	while (1) {
-		serial_pkts_waiting = uxQueueMessagesWaiting(to_host_queue[PRIO_Q_SERIAL]);
-		bt_pkts_waiting = uxQueueMessagesWaiting(to_host_queue[PRIO_Q_BT]);
-		other_pkts_waiting = uxQueueMessagesWaiting(to_host_queue[PRIO_Q_OTHERS]);
 
-		if (serial_pkts_waiting) {
-			while (serial_pkts_waiting) {
-				if (xQueueReceive(to_host_queue[PRIO_Q_SERIAL],
-							&buf_handle, portMAX_DELAY))
-					process_tx_pkt(&buf_handle);
-				serial_pkts_waiting--;
-			}
-		} else if (bt_pkts_waiting) {
-			if (xQueueReceive(to_host_queue[PRIO_Q_BT], &buf_handle, portMAX_DELAY))
-				process_tx_pkt(&buf_handle);
-		} else if (other_pkts_waiting) {
-			if (xQueueReceive(to_host_queue[PRIO_Q_OTHERS], &buf_handle, portMAX_DELAY))
-				process_tx_pkt(&buf_handle);
-		} else {
-			vTaskDelay(1);
+		if (!datapath) {
+			usleep(100*1000);
+			continue;
 		}
+
+		if (xQueueReceive(meta_to_host_queue, &queue_type, portMAX_DELAY))
+			if (xQueueReceive(to_host_queue[queue_type], &buf_handle, portMAX_DELAY))
+				process_tx_pkt(&buf_handle);
 	}
 }
 
@@ -478,9 +442,28 @@ static ssize_t serial_read_data(uint8_t *data, ssize_t len)
 	return len;
 }
 
+int send_to_host_queue(interface_buffer_handle_t *buf_handle, uint8_t queue_type)
+{
+	int ret = xQueueSend(to_host_queue[queue_type], buf_handle, portMAX_DELAY);
+	if (ret != pdTRUE) {
+		ESP_LOGE(TAG, "Failed to send buffer into queue[%u]\n",queue_type);
+		return ESP_FAIL;
+	}
+	if (queue_type == PRIO_Q_SERIAL)
+		ret = xQueueSendToFront(meta_to_host_queue, &queue_type, portMAX_DELAY);
+	else
+		ret = xQueueSend(meta_to_host_queue, &queue_type, portMAX_DELAY);
+
+	if (ret != pdTRUE) {
+		ESP_LOGE(TAG, "Failed to send buffer into meta queue[%u]\n",queue_type);
+		return ESP_FAIL;
+	}
+
+	return ESP_OK;
+}
+
 static esp_err_t serial_write_data(uint8_t* data, ssize_t len)
 {
-	esp_err_t ret = ESP_OK;
 	uint8_t *pos = data;
 	int32_t left_len = len;
 	int32_t frag_len = 0;
@@ -508,16 +491,14 @@ static esp_err_t serial_write_data(uint8_t* data, ssize_t len)
 		buf_handle.payload = pos;
 		buf_handle.payload_len = frag_len;
 
-		ret = xQueueSend(to_host_queue[PRIO_Q_SERIAL], &buf_handle, portMAX_DELAY);
-
-		if (ret != pdTRUE) {
-			ESP_LOGE(TAG, "Control packet: Failed to send buffer\n");
+		if (send_to_host_queue(&buf_handle, PRIO_Q_SERIAL)) {
 			if (data) {
 				free(data);
 				data = NULL;
 			}
 			return ESP_FAIL;
 		}
+
 #if CONFIG_ESP_SERIAL_DEBUG
 		ESP_LOG_BUFFER_HEXDUMP(TAG_TX_S, data, frag_len, ESP_LOG_INFO);
 #endif
@@ -772,10 +753,12 @@ void app_main()
 	/* send capabilities to host */
 	generate_startup_event(capa);
 
+	meta_to_host_queue = xQueueCreate(TO_HOST_QUEUE_SIZE*3, sizeof(uint8_t));
+	assert(meta_to_host_queue);
 	for (prio_q_idx=0; prio_q_idx<MAX_PRIORITY_QUEUES; prio_q_idx++) {
 		to_host_queue[prio_q_idx] = xQueueCreate(TO_HOST_QUEUE_SIZE,
 				sizeof(interface_buffer_handle_t));
-		assert(to_host_queue[prio_q_idx] != NULL);
+		assert(to_host_queue[prio_q_idx]);
 	}
 
 	assert(xTaskCreate(recv_task , "recv_task" , 4096 , NULL , 22 , NULL) == pdTRUE);

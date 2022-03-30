@@ -31,7 +31,6 @@
 #endif
 
 static const char BT_TAG[] = "ESP_BT";
-extern QueueHandle_t to_host_queue[MAX_PRIORITY_QUEUES];
 
 #if BLUETOOTH_HCI
 /* ***** HCI specific part ***** */
@@ -47,7 +46,6 @@ static void controller_rcv_pkt_ready(void)
 
 static int host_rcv_pkt(uint8_t *data, uint16_t len)
 {
-	esp_err_t ret = ESP_OK;
 	interface_buffer_handle_t buf_handle;
 	uint8_t *buf = NULL;
 
@@ -72,10 +70,8 @@ static int host_rcv_pkt(uint8_t *data, uint16_t len)
 #if CONFIG_ESP_BT_DEBUG
 	ESP_LOG_BUFFER_HEXDUMP("bt_tx", data, len, ESP_LOG_INFO);
 #endif
-	ret = xQueueSend(to_host_queue[PRIO_Q_BT], &buf_handle, portMAX_DELAY);
 
-	if (ret != pdTRUE) {
-		ESP_LOGE(BT_TAG, "HCI send packet: Failed to send buffer\n");
+	if (send_to_host_queue(&buf_handle, PRIO_Q_BT)) {
 		free(buf);
 		return ESP_FAIL;
 	}
