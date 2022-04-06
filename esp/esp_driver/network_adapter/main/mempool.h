@@ -19,7 +19,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <sys/queue.h>
-#include <freertos/freeRTOS.h>
+#include <freertos/FreeRTOS.h>
 #include <freertos/portmacro.h>
 
 #define MEMPOOL_OK                       0
