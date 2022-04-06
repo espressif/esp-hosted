@@ -34,7 +34,11 @@ struct mempool * mempool_create(uint32_t block_size)
 	if (!new)
 		return NULL;
 
+#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(4, 4, 0) 
 	portMUX_INITIALIZE(&(new->mutex));
+#else
+	vPortCPUInitializeMutex(&(new->mutex));
+#endif
 	new->block_size = MEMPOOL_ALIGNED(block_size);
 	SLIST_INIT(&(new->head));
 
