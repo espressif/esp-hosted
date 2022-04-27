@@ -37,14 +37,9 @@
 			<locationURI>CODE_BASE/common</locationURI>
 		</link>
 		<link>
-			<name>host_common</name>
+			<name>host</name>
 			<type>2</type>
-			<locationURI>CODE_BASE/host/host_common</locationURI>
-		</link>
-		<link>
-			<name>stm32</name>
-			<type>2</type>
-			<locationURI>CODE_BASE/host/stm32</locationURI>
+			<locationURI>CODE_BASE/host</locationURI>
 		</link>
 	</linkedResources>
 	<variableList>
