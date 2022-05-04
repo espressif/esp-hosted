@@ -336,10 +336,15 @@ static int ctrl_app_parse_resp(CtrlMsg *ctrl_msg, ctrl_cmd_t *app_resp)
 			}
 
 			for (i=0; i<rp->count; i++) {
-				memcpy(list[i].ssid, (char *)rp->entries[i]->ssid.data,
+
+				if (rp->entries[i]->ssid.len)
+					memcpy(list[i].ssid, (char *)rp->entries[i]->ssid.data,
 						rp->entries[i]->ssid.len);
-				memcpy(list[i].bssid, (char *)rp->entries[i]->bssid.data,
+
+				if (rp->entries[i]->bssid.len)
+					memcpy(list[i].bssid, (char *)rp->entries[i]->bssid.data,
 						rp->entries[i]->bssid.len);
+
 				list[i].channel = rp->entries[i]->chnl;
 				list[i].rssi = rp->entries[i]->rssi;
 				list[i].encryption_mode = rp->entries[i]->sec_prot;
