@@ -94,4 +94,5 @@ typedef struct {
 interface_context_t * interface_insert_driver(int (*callback)(uint8_t val));
 int interface_remove_driver();
 void generate_startup_event(uint8_t cap);
+int send_to_host_queue(interface_buffer_handle_t *buf_handle, uint8_t queue_type);
 #endif

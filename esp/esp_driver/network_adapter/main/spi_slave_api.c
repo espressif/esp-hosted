@@ -99,7 +99,7 @@ static const char TAG[] = "SPI_DRIVER";
     #define SPI_RX_QUEUE_SIZE      10
     #define SPI_TX_QUEUE_SIZE      10
 #else
-    #define SPI_RX_QUEUE_SIZE      5
+    #define SPI_RX_QUEUE_SIZE      20
     #define SPI_TX_QUEUE_SIZE      5
 #endif
 
