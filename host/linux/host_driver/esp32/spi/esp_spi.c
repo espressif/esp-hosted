@@ -346,7 +346,6 @@ static int spi_dev_init(int spi_clk_mhz)
 	int status = 0;
 	struct spi_board_info esp_board = {{0}};
 	struct spi_master *master = NULL;
-
 	strlcpy(esp_board.modalias, "esp_spi", sizeof(esp_board.modalias));
 	esp_board.mode = SPI_MODE_2;
 	esp_board.max_speed_hz = spi_clk_mhz * NUMBER_1M;
@@ -508,8 +507,10 @@ static void spi_exit(void)
 		destroy_workqueue(spi_context.spi_workqueue);
 		spi_context.spi_workqueue = NULL;
 	}
-
+#ifdef CONFIG_SUPPORT_ESP_SERIAL
 	esp_serial_cleanup();
+#endif
+
 	esp_remove_card(spi_context.adapter);
 
 	if (spi_context.adapter->hcidev)
