@@ -84,7 +84,7 @@ load_overlay()
 
 	echo "updating /boot/uEnv.txt for active overlay. default I'll update overlay entry 0\n"
 
-	sudo sed -i 's/#uboot_overlay_addr0.*/uboot_overlay_addr0=\/lib\/firmware\/BB-SPI0-01-00A0.dtbo/g' /boot/uEnv.txt 
+	sudo sed -Ei 's/#?uboot_overlay_addr0.*/uboot_overlay_addr0=\/lib\/firmware\/BB-SPI0-01-00A0.dtbo/g' /boot/uEnv.txt
 }
 
 
