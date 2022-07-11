@@ -17,6 +17,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
+#include "soc/gpio_reg.h"
 #include "esp_log.h"
 #include "interface.h"
 #include "adapter.h"
