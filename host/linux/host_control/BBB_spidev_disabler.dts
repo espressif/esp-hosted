@@ -1,0 +1,50 @@
+/dts-v1/;
+/plugin/;
+
+/ {
+    compatible = "ti,beaglebone", "ti,beaglebone-black";
+    part-number = "spi0pinmux";
+
+    fragment@0 {
+        // spi_SCLK
+        target = <&P9_22_default_pin>;
+        __overlay__ {
+                pinctrl-single,pins = <0x150 0x30>;
+            };
+    };
+
+    fragment@1 {
+	// spi_D0 MISO
+        target = <&P9_21_default_pin>;
+        __overlay__ {
+                pinctrl-single,pins = <0x154 0x30>;
+            };
+    };
+    fragment@3 {
+        // spi_CS0
+        target = <&P9_17_default_pin>;
+        __overlay__ {
+                pinctrl-single,pins = <0x15c 0x10>;
+            };
+    };
+    fragment@4 {
+	// spi_D1 MOSI
+        target = <&P9_18_default_pin>;
+        __overlay__ {
+                pinctrl-single,pins = <0x158 0x10>;
+            };
+    };
+
+    fragment@5 {
+        target = <&spi0>;
+        __overlay__ {
+                status = "okay";
+                channel@0 {
+                    status = "disabled";
+                };
+                channel@1 {
+                    status = "disabled";
+                };
+        };
+    };
+};

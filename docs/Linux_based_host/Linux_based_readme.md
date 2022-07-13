@@ -78,11 +78,13 @@ Prepare connections based on interface requirements and setup host as below.
 		* Prepare connections as per section [1.1 Hardware Setup](SPI_setup.md#11-hardware-setup) of [SPI Setup document](SPI_setup.md)
 	* Host Software
 		* Prepare Raspberry-Pi as per [1.2 Raspberry-Pi Software Setup](SPI_setup.md#12-raspberry-pi-software-setup) of [SPI Setup document](SPI_setup.md)
-		* Compile and load host driver as below:
+			* Compile and load host driver as below:
 			```sh
 			$ cd host/linux/host_control/
 			$ ./rpi_init.sh spi
 			```
+		* Prepare Beaglebone Black [SPI Setup document for BBB](SPI_setup_for_BBB.md)
+		
 * **Wi-Fi over SDIO and Bluetooth over UART**
 	* Connection Setup
 		* Prepare SDIO connections as per section [1.1 Hardware Setup](SDIO_setup.md#11-hardware-setup) of [SDIO setup document](SDIO_setup.md)
@@ -228,7 +230,8 @@ ESP-Hosted solutions supports SDIO and SPI as transport for Wi-Fi and Bluetooth/
 
 * [Wi-Fi and BT/BLE connectivity Setup over SDIO](SDIO_setup.md)
 
-* [Wi-Fi and BT/BLE connectivity Setup over SPI](SPI_setup.md)
+* [Wi-Fi and BT/BLE connectivity Setup over SPI for RPi](SPI_setup.md)
+* [Wi-Fi and BT/BLE connectivity Setup over SPI for BBB](SPI_setup_for_BBB.md)
 
 * [Bluetooth/BLE connectivity Setup over UART](UART_setup.md)
 
