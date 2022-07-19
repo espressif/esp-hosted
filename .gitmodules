@@ -1,4 +1,0 @@
-[submodule "common/protobuf-c"]
-	path = common/protobuf-c
-	url = https://github.com/protobuf-c/protobuf-c.git
-	branch = master

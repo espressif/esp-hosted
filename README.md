@@ -1,261 +1,107 @@
 # ESP-Hosted
 
-# Index
-* [**1. Introduction**](#1-introduction)  
-	* [Connectivity Feature](#11-connectivity-features)  
-	* [Supported ESP boards](#12-supported-esp-boards)  
-	* [Supported Hosts](#13-supported-hosts)  
-	* [Supported Transports](#14-supported-transports)  
-	* [Feature Matrix](#15-feature-matrix)  
-* [**2. Hardware and Software setup**](#2-hardware-and-software-setup)  
-	* [Setup With Linux Host](#21-setup-with-linux-host)  
-	* [Setup With MCU host](#22-setup-with-mcu-host)  
-* [**3. Control Path**](#3-control-path)
-	* [Control Path APIs](#31-control-path-apis)
-	* [Demo Apps](#32-demo-apps)
-* [**4. Design**](#4-design)  
-	* [System Architecture](#41-system-architecture)  
-	* [Transport layer communication protocol](#42-transport-layer-communication-protocol)  
-	* [Integration Guide](#43-integration-guide)  
-* [**5. Throughput performance**](#5-throughput-performance)
-
----
+Espressif launched this solution in 2020 and since then it helped many IoT enthusiast, developers, OEMs to offload their host's connectivity burden to ESP chipsets. Applications developed using this solution includes but not limited to Bluetooth headphones, Bluetooth speakers, smart door locks, smart vacuum cleaners, video streaming applications and many more.
 
 
-# 1. Introduction
 
-ESP-Hosted solution provides a way to use ESP board as a communication processor *i.e.* host for Wi-Fi and Bluetooth/BLE connectivity. It basically adds a network interface and a HCI interface to the host, allowing it to communicate with other devices. It leverages Wi-Fi and Bluetooth capabilities of ESP chipset to the host, helping it to be a smart device.
+## Introduction
 
-The following features are provided as a part of this solution:
-* A standard 802.3 network interface is provided to the host for transmitting and receiving 802.3 frames
-* A standard HCI interface is provided to the host, over which Bluetooth/BLE is supported
-* A control interface to configure and control Wi-Fi on ESP board
+ESP-Hosted is an open source solution that provides a way to use ESP board as a communication co-processor. This solution provides wireless connectivity (network and BT/BLE) to the host, allowing it to communicate with other devices.
 
-ESP-Hosted solution makes use of existing host's `TCP/IP and/or Bluetooth/BLE software stack` and `hardware peripheral like SPI/SDIO/UART` to connect to ESP firmware with very thin layer of software.
+It leverages Wi-Fi and Bluetooth capabilities of ESP board to the host, helping it to be a smart device.
 
-Although the project doesn't provide a standard 802.11 interface to the host, it provides a easy way, *i.e.* [control path](docs/common/contrl_path.md), to configure Wi-Fi. For the control path between the host and ESP board, ESP-Hosted makes use of [Protobuf](https://developers.google.com/protocol-buffers), which is a language independent data serialization mechanism.
 
-### 1.1 Connectivity Features
 
-ESP-Hosted solution provides following WLAN and BT/BLE features to the host:
-- WLAN Features:
-	- 802.11b/g/n
-	- WLAN Station
-	- WLAN Soft AP
-- BT/BLE Features:
-	- ESP32 supports BR/EDR and BLE with v4.2
-	- ESP32-C3 supports BLE v4.2 and v5.0
+## Overview
 
-### 1.2 Supported ESP boards
+Following is the broader level block diagram that depicts where ESP-Hosted fits in the entire system. Detailed block diagram is available in subsequent sections. 
 
-ESP-Hosted solution is supported on following ESP boards:
-- ESP32
-- ESP32-S2
-- ESP32-C3
+* As it can be seen in the diagram, host needs to be equipped with TCP/IP stack and Bluetooth/BLE stack. 
+* The host driver of ESP-Hosted, registers a network and HCI interface in host operating system. 
+* The host driver is responsible for transferring of network and HCI packets to and from host operating system
+* ESP firmware application runs on ESP board and it facilitates communication between host software and ESP wifi and Bluetooth/BLE controller
 
-### 1.3 Supported Hosts
 
-* ESP-Hosted solution showcase examples for following Linux based and MCU based hosts out of the box.
-	* Linux Based Hosts
-		* Raspberry-Pi 3 Model B
-		* Raspberry-Pi 3 Model B+
-		* Raspberry-Pi 4 Model B
-	* MCU Based Hosts
-		* STM32 Discovery Board (STM32F469I-DISCO)
-* It is relatively easy to port this solution to other Linux and MCU platforms.
 
-### 1.4 Supported Transports
+![alt text](basic_block_diagram.jpg "Basic Block Diagram")
 
-ESP-Hosted uses SDIO or SPI bus for interfacing ESP boards and host platform. Not all host platforms support both these interfaces. Further section depicts supported host platforms and corresponding transport interface, ESP boards and feature set.
 
-### 1.5 Feature Matrix
-##### 1.5.1 Linux Host
-The below table explains which feature is supported on which transport interface for Linux based host.
 
-| ESP device | Transport Interface | WLAN support | Virtual serial interface | Bluetooth support |
-|:---------:|:-------:|:---------:|:--------:|:--------:|
-| ESP32 | SDIO | Yes | Yes | BT/BLE 4.2 |
-| ESP32 | SPI | Yes | Yes | BT/BLE 4.2 |
-| ESP32 | UART | No | No | BT/BLE 4.2 |
-| ESP32-S2 | SDIO | NA | NA | NA |
-| ESP32-S2 | SPI | Yes | Yes | NA |
-| ESP32-S2 | UART | No | No | NA |
-| ESP32-C3 | SDIO | NA | NA | NA |
-| ESP32-C3 | SPI | Yes | Yes | BLE 5.0 |
-| ESP32-C3 | UART | No | No | BLE 5.0 |
+## Variants
 
-Note:
-* BT stands for Bluetooth BR/EDR and BLE stands for Bluetooth Low Energy specifications.
-* ESP-Hosted related BR/EDR 4.2 and BLE 4.2 functionalities are tested with bluez 5.43+. Whereas, BLE 5.0 functionalities are tested with bluez 5.45+.
-* We suggest the latest stable bluez version to be used. Any other Bluetooth stack instead of bluez also could be used.
-* bluez 5.45 on-wards BLE 5.0 HCI commands are supported.
-* BLE 5.0 has backward compatibility of BLE 4.2.
+The ESP-Hosted presents two variants of the solution as below. The differentiation factor here is the type of network interface presented to host and the way Wi-Fi on ESP board is configured/controlled. Both the variants have their respective host and firmware software. 
 
-##### 1.5.2 MCU Host
-The below table explains which feature is supported on which transport interface for MCU based host.
 
-| ESP device | Transport Interface | WLAN support | Virtual serial interface | Bluetooth support |
-|:------------:|:-------:|:---------:|:--------:|:--------:|
-| ESP32 | SDIO | No | No | No |
-| ESP32 | SPI | Yes | Yes | BT/BLE 4.2\* |
-| ESP32 | UART | No | No | BT/BLE 4.2\*\* |
-| ESP32-S2 | SDIO | NA | NA | NA |
-| ESP32-S2 | SPI | Yes | Yes | NA |
-| ESP32-S2 | UART | No | No | NA |
-| ESP32-C3 | SDIO | NA | NA | NA |
-| ESP32-C3 | SPI | Yes | Yes | BLE 5.0\* |
-| ESP32-C3 | UART | No | No | BLE 5.0\*\* |
 
-Note: BT stands for Bluetooth BR/EDR and BLE stands for Bluetooth Low Energy specifications.
+#### ESP-Hosted-NG
 
-\* BT/BLE over SPI
-> BT/BLE support over SPI is not readily available. In order to implement it, one needs to:
-> 
-> Port BT/BLE stack to MCU, \
-> Add a new virtual serial interface using the serial interface API's provided in host driver of ESP-Hosted solution.
-> HCI implementation in Linux Driver `host/linux/host_driver/esp32` could be used as reference. Search keyword: `ESP_HCI_IF`
-> Register this serial interface with BT/BLE stack as a HCI interface.
+This is a Next-Generation ESP-Hosted specifically designed for a sophisticated hosts that run Linux operating system. This variant of the solution takes more standard approach while providing a network interface to the host. This allows usage of standard Wi-Fi applications such as wpa_supplicant to be used with ESP chipsets.
 
-\*\* BT/BLE over UART
-> BT/BLE support over UART is not readily available. In order to implement this, one needs to:
+This solution offers following:
+
+* 802.11 network interface which is a standard Wi-Fi interface on Linux host
+* Configuration of Wi-Fi is supported through standard cfg80211 interface of Linux
+* A standard HCI interface
+
+This variant is available in <a href="https://github.com/espressif/esp-hosted/tree/ESP-Hosted_MCU_Host" target="_blank" rel="noopener">master</a> branch on <a href="https://github.com/espressif/esp-hosted" target="_blank" rel="noopener">github repository</a>.
+
+Please proceed with the [detailed documentation](docs/README.md) for setup and usage instructions.
+
+
+
+> ####  ESP-Hosted
 >
-> Port BT/BLE stack to MCU, \
-> Register the UART serial interface as a HCI interface with BT/BLE stack
-> With the help of this UART interface, BT/BLE stack can directly interact with BT controller present on ESP bypassing host driver and firmware
-> ESP Hosted host driver and a firmware plays no role in this communication
+> :warning: Your current branch doesn't have this variant
 
-* Linux hosts support OTA update (Over The Air ESP firmware update) in C and python. MCU hosts can refer to the same for their development. For detailed documentation, please read
-[ota_update.md](docs/Linux_based_host/ota_update.md).
+> This is a first generation ESP-Hosted solution. This is a variant provides a simple 802.3 (Ethernet) network interface to the host. Thought process behind this solution is to keep the host software simple while providing suite of connectivity features. 
+> In order to achieve this, the host is presented with following:
+>
+> * A simple 802.3 network interface which essentially is an Ethernet interface
+> * A light weight control interface to configure Wi-Fi on ESP board
+> * A standard HCI interface
 
----
-
-# 2. Hardware and Software setup
-This section describes how to set up and use ESP-Hosted solution. Since ESP-Hosted solution supports two distinct platforms, the procedure to use it vastly differs.
-
-### 2.1 Setup With Linux Host
-Please refer to the [Setup Guide](docs/Linux_based_host/Linux_based_readme.md) for Linux host.
-
-### 2.2 Setup With MCU Host
-Please refer to the [Setup Guide](docs/MCU_based_host/MCU_based_readme.md) for MCU host.
-In addition to [Control path APIs](#31-control-path-apis) listed below, APIs for MCU specific solution are explained [here](docs/MCU_based_host/mcu_api.md)
+> Although this variant supports Linux host, the simple nature of this solution makes it ideal to be used with MCU hosts which do not have complex communication interfaces such as Ethernet, Wi-Fi, BT/BLE etc.
+> This variant is available in <a href="https://github.com/espressif/esp-hosted/tree/ESP-Hosted_MCU_Host" target="_blank" rel="noopener">ESP-Hosted_MCU_Host</a> branch on <a href="https://github.com/espressif/esp-hosted" target="_blank" rel="noopener">github repository</a>.
 
 ---
 
-# 3. Control Path
-- Once ESP-Hosted transport is set up, getting control path working is the first step to verify if the transport is set up correctly
-- Control path works over ESP-Hosted transport *i.e.* SPI or SDIO and leverages a way to control and manage ESP from host
-- The detailed design and procedure to get control path working is explained [here](docs/common/contrl_path.md)
-- Impatient to evaluate? Please follow our beautiful and intuitive [Python based CLI](docs/common/python_demo.md#modes-supported) to easily set up the control path
-
-### 3.1 Control Path APIs
-- As [control path design](docs/common/contrl_path.md#3-design) details, demo application works over control path library using control path APIs.
-- These APIs are exhaustive list. User can use specific APIs which are of interest.
-- Each API is explained in a detailed way to kickstart its use.
-- These Control APIs are common for **MPU** and **MCU** based solution.
-- User can easily integrate ESP-Hosted solution with own project using these APIs and demo application, which implements these APIs.
-- Control APIs are detailed below.
-  - [Control path APIs](docs/common/ctrl_apis.md)
-
-### 3.2 Demo apps
-Demo applications are provided in python and C. Python app makes use of [ctypes](https://docs.python.org/3/library/ctypes.html) to implement control APIs.
-
-* [C demo app](docs/common/c_demo.md)
-* [Python demo app](docs/common/python_demo.md)
-
----
-
-# 4. Design
-This section describes the overall design of ESP-Hosted solution. There are 3 aspects to it:
-* System Architecture
-* Transport layer communication protocol
-* Integration Guide
-
-### 4.1 System Architecture
-
-This section discusses building blocks of the ESP-Hosted solution for the supported host platforms.
-
-These building blocks can be broadly classified as:
-* ESP Host Software  
-This includes ESP Host driver and control interface implementation.
-
-* ESP Firmware  
-This includes ESP peripheral driver and implementation of control commands.
-
-* Third party components  
-This includes components that are essential for end to end working of the entire system but are not maintained or implemented as a part of this project.
 
 
-##### 4.1.1 ESP Host Software
+## ESP-Hosted vs ESP-Hosted-NG
 
-The components of ESP host software are dependent on host platform that is being used. Please refer to the following documents:
+Now that we offer two variants of this solution, it could cause a little confusion. This section will try to explains similarities and differences in both the variants and help you make a choice.
 
-1. [System Architecture: Linux based host](docs/Linux_based_host/Linux_based_architecture.md)
-2. [System Architecture: MCU based host](docs/MCU_based_host/MCU_based_architecture.md)
+#### Similarities
 
+- Both versions share the same aim, to conveniently use ESP's Wi-Fi and Bluetooth/BLE capabilities from host
 
-##### 4.1.2 ESP Firmware
-This implements ESP-Hosted solution part that runs on ESP boards. ESP firmware is agnostic of the host platform. It consists of the following.
+- Both versions aim to support same set of ESP chipsets and same set of transports like SPI/SDIO/UART for connectivity needs
 
-* ESP Application  
-This implements:
-	* SDIO transport layer
-	* SPI transport layer
-	* Virtual serial interface driver
-	* Control interface command implementation
-	* Bridges data path between Wi-Fi, HCI controller driver of ESP and Host platform
-* ESP-IDF Components  
-ESP firmware mainly uses following components from ESP-IDF. Please check [ESP-IDF documentation](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/get-started/index.html) for more details.
-	* SDIO Slave driver
-	* SPI Slave driver
-	* Wi-Fi driver
-	* HCI controller driver
-	* Protocomm Layer
+#### Key Differences
+
+- ESP-Hosted supports both Linux and MCU hosts. ESP-Hosted-NG supports only Linux host.
+- ESP-Hosted exposes 802.3 network interface (Ethernet) to the host. Where as, ESP-Hosted-NG exposes 802.11 interface (Wi-Fi).
+- ESP-Hosted uses custom control path to configure Wi-Fi as opposed to ESP-Hosted-NG which uses standard nl80211/cfg80211 configuration.
+
+#### Our Recommendation
+
+* If you are using MCU host, you do not have choice but to use ESP-Hosted
+* If you are using Linux host, we recommend ESP-Hosted-NG since it takes a standard approach which makes it compatible with widely used user space applications/services such as wpa_supplicant, Network Manager etc.
 
 
-##### 4.1.3 Third Party Components
-Third components such as following are essential for end to end working of ESP-Hosted Solution. Implementation or porting of these third party component is not in scope of this project.
-* TCP/IP and TLS stack
-* BT/BLE stack
-* UART driver
-* Protobuf
+
+Following table summarizes this entire discussion.
+
+| Category                                 | ESP-Hosted               | ESP-Hosted-NG             |
+| :--------------------------------------- | :----------------------- | :------------------------ |
+| Features Supported                       | 802.11 b/g/n, BT/BLE     | 802.11 b/g/n, BT/BLE      |
+| Network Interface Type (exposed to host) | 802.3 Ethernet Interface | 802.11 Wi-Fi interface    |
+| Wi-Fi Configuration mechanism            | Custom control interface | nl80211/cfg80211          |
+| Station Interface                        | Supported (ethsta0)      | Supported (espsta0)       |
+| SoftAP interface                         | Supported (ethap0)       | To be supported in future |
+| HCI Interface                            | Supported                | Supported                 |
+| Transport Layer                          | SDIO, SPI, UART          | SDIO, SPI, UART           |
+| Recommended Host Type                    | MCU Host                 | Linux Host                |
 
 
-### 4.2 Transport layer communication protocol
-This section describes the data communication protocol used at the transport layer. This protocol is agnostic of host platforms that is being used. Please refer to the following links to get more information on communication protocol per transport interface type.
-* [SDIO Communication Protocol](docs/sdio_protocol.md)
-* [SPI Communication Protocol](docs/spi_protocol.md)
 
-##### 4.2.1 Payload Format
-This section explains the payload format used for data transfer on SDIO and SPI interfaces.
-
-* Host and peripheral makes use of 12 byte payload header which precedes every data packet.
-* This payload header provides additional information about the data packet. Based on this header, host/peripheral consumes the transmitted data packet.
-* Payload format is as below
-
-| Field | Length | Description |
-|:-------:|:---------:|:--------|
-| Interface type | 4 bits | Possible values: STA(0), SoftAP(1), Serial interface(2), HCI (3), Priv interface(4). Rest all values are reserved |
-| Interface number | 4 bits | Unused |
-| Flags | 1 byte | Additional flags like `MORE_FRAGMENT` in fragmentation |
-| Packet length | 2 bytes | Actual length of data packet |
-| Offset to packet | 2 bytes | Offset of actual data packet |
-| Checksum | 2 bytes | checksum for complete packet (Includes header and payload) |
-| Reserved2 | 1 byte | Not in use |
-| seq_num | 2 bytes | Sequence number for serial interface |
-| Packet type | 1 byte | reserved when interface type is 0, 1 and 2. Applicable only for interface type 3 and 4 |
-
-### 4.3 Integration Guide
-
-##### 4.3.1 Porting
-Porting for MPU *i.e.* Linux based hosts is explained [here](docs/Linux_based_host/porting_guide.md)
-
-##### 4.3.3 APIs for MCU Based ESP-Hosted Solution
-Below document explains the APIs provided for MCU based ESP-Hosted solution
-* [API's for MCU based host](docs/MCU_based_host/mcu_api.md)
-
-# 5. Throughput performance
-* Wi-Fi Performance in shielded environment
-Following performance numbers are taken on Linux based ESP-Hosted solution.
-These numbers are tested with older release, [Release 0.3](https://github.com/espressif/esp-hosted/releases/tag/release%2Fv0.3)
-
-![alt text](esp_hosted_performance.png "ESP Hosted performance matrix")

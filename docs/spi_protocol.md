@@ -22,13 +22,13 @@ This is a input pin for ESP peripheral. This pin resets ESP peripheral and is ma
 
 ## 1.2 Initialization of peripheral device
 * Connection of 'EN'/Reset pin to host is mandatory in case of SPI communication. Once driver is loaded on host, it resets ESP peripheral through this pin.
-* Firmware on ESP peripheral then initializes itself and prepares itself for communication over SPI interface. Once it is ready for communication, it generates INIT event for host.
+* Firmware on ESP peripheral then initializes itself and prepares itself for communication over SPI interface. Once it is ready for communication, it generates BOOTUP event for host.
 * Host driver, on receiving this event, opens up data path for higher layers.
 
 ---
 
 ## 1.3 Data transfer between Host and ESP peripheral
-* This solution makes use of SPI full duplex commmunication mode. i.e. read and write operations are performed at the same time in same SPI transaction.
+* This solution makes use of SPI **full duplex** communication mode. i.e. read and write operations are performed at the same time in same SPI transaction.
 * As a protocol, host is not supposed to start a transaction before ESP SPI peripheral device is ready for receiving data. Therefore, through Handshake pin, ESP peripheral indicates host when it is ready for SPI transaction.
 * To allow seamless data traffic between host and ESP peripheral, ESP peripheral needs to be ready for data reception from host all the time. For that, after completion of every SPI transaction, ESP peripheral immediately queues next SPI transaction.
 * The data transfer protocol works as below:

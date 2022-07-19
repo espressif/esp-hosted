@@ -4,7 +4,7 @@
 This section explains the SDIO communication protocol between a host and ESP peripheral.
 
 ### 1.1 SDIO transport layer
-**This section is only applicable for ESP32. ESP32-S2/ESP32-C3 does not support SDIO interface**  
+**This section is only applicable for ESP32. ESP32-S2/ESP32-C3 does not support SDIO interface**
 
 ESP peripheral advertises 2 SDIO functions. ESP-Hosted solution is implemented on function 1. Though function 2 is advertised, it is not in use.
 
@@ -21,13 +21,14 @@ bit 2: Reset SDIO queues on ESP peripheral device
 * 0x3FF5506C: Device capabilities. Indicates features supported by ESP peripheral
 ```
 bit 0: WLAN support
-bit 1: BT supported over UART
-bit 2: BT supported over SDIO
-bit 3: BT mode - BLE only mode
-bit 4: BT mode - BR/EDR only mode
+bit 1: Reserved
+bit 2: Reserved
+bit 3: Reserved
+bit 4: Reserved
 ```
 
 #### 1.1.1 Initialization of ESP peripheral device
+
 1. Soft reset SDIO interface of ESP peripheral
 	* Host resets SDIO part of ESP peripheral by setting bit 2 of register at 0x3FF5508C
 	* This generates an interrupt for ESP peripheral, on which firmware on ESP peripheral resets its SDIO related data structures.
@@ -39,6 +40,7 @@ bit 4: BT mode - BR/EDR only mode
 	* This indicates ESP peripheral that host is ready for data transmission
 
 #### 1.1.2 Data transfer from Host to ESP peripheral
+
 1. Get Buffer count
 	* Host reads the current buffer count from ESP peripheral [0x3FF55044]
 	* Based on that value, host calculates the number of available buffers at ESP peripheral
