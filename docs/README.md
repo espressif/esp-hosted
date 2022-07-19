@@ -110,7 +110,7 @@ The below table explains which feature is supported on which transport interface
 
 This section explains building blocks of the solution. Following is the detailed system architecture diagram:
 
-![ESP-Hosted-cfg80211 design](./cfg80211_design.png)
+![ESP-Hosted-cfg80211 design](./cfg80211_design.jpeg)
 
 Following are the key building blocks of the system:
 
@@ -124,42 +124,37 @@ Following are the key building blocks of the system:
 
 ### 2.1.1 ESP Host Software
 
-ESP Host driver implements following.  
+ESP Host driver implements following.
 
-- **Transport driver**  
-  This implements transport layer over SDIO/SPI interface. Communication protocol is explained in further section.
-
-- **ESP Hosted Network Interface**  
-  - This registers Wi-Fi interface `espsta0`  with Linux kernel. This allows exchange of network data packets between Linux kernel and ESP firmware.
-  - This also integrates cfg80211 and ESP Host driver by implementing needed API's for seemless working with user space applications such as wpa_supplicant, iw etc
-  - Optionally it implements HCI interface and registers it with Linux kernel to allow exchange of HCI packets between Bluetooth/BLE stack running on host and ESP firmware
+- **Transport driver**
+  - Implements transport layer over SDIO/SPI interface. \
+  Communication protocol is explained in further section.
+- **ESP Hosted Network Interface**
+  - Registers Wi-Fi interface `espsta0` with Linux kernel.
+    - This allows exchange of network data packets between Linux kernel and ESP firmware.
+  - Integrates cfg80211 and ESP Host driver by implementing needed API's
+    - This allows seemless user experience with tools such as wpa_supplicant, iw etc
+  - Optionally it implements HCI interface and registers it with Linux kernel
+    - This allows exchange of HCI packets between Bluetooth/BLE stack running on host and ESP firmware.
 - **ESP Hosted HCI Interface**
-  - This is applicable only when SDIO/SPI interface is being used for Bluetooth/BLE support
-  - This registers HCI interface with the Bluetooth/BLE stack running on Linux host and facilitates exchange of HCI packets between Linux kernel and ESP firmware
-
-
-
+  - Applicable only when SDIO/SPI interface is being used for Bluetooth/BLE support
+  - Registers HCI interface with the Bluetooth stack running on Linux host
+    - This facilitates exchange of HCI packets between Linux kernel and ESP firmware
 
 ### 2.1.2 ESP Firmware
 
 This implements ESP application that runs on ESP boards. It consists of the following.
 
-- **ESP Application**
-
-  This implements following:
-
+- **ESP Application** \
+This implements following:
   - SDIO/SPI transport layer
   - Custom command/response implementation for configuration of Wi-Fi interface
   - Bridges data path between Wi-Fi driver of ESP and Host platform
-
-- **ESP-IDF Components**  
+- **ESP-IDF Components** \
   ESP firmware mainly uses following components from ESP-IDF. Please check [ESP-IDF documentation](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/get-started/index.html) for more details.
-
   - SDIO/SPI/UART slave driver
   - Wi-Fi driver
   - HCI controller driver
-
-  
 
 ### 2.1.3 Third Party Components
 
@@ -169,7 +164,7 @@ Third components such as following are essential for end to end working of this 
 - Bluetooth/BLE stack
 - nl80211/cfg80211 kernel module
 - User space applications
-
+- Linux UART driver
 
 
 ### 2.2 Transport Layer Protocol
@@ -313,8 +308,6 @@ $ sudo killall wpa_supplicant
   ```sh
   $ iwconfig espsta0
   ```
-
-  
 
 ### 3.2.2 Bluetooth/BLE
 
