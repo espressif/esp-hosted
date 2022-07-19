@@ -187,6 +187,7 @@ void process_event_esp_bootup(struct esp_adapter *adapter, u8 *evt_buf, u8 len)
 	u8 len_left = len, tag_len;
 	u8 *pos;
 	uint8_t iface_idx = 0;
+	uint8_t prio_q_idx = 0;
 
 	if (!adapter)
 		return;
@@ -270,6 +271,9 @@ void process_event_esp_bootup(struct esp_adapter *adapter, u8 *evt_buf, u8 len)
 		 *   there is no need to re-init them
 		 */
 
+		for (prio_q_idx=0; prio_q_idx<MAX_PRIORITY_QUEUES; prio_q_idx++) {
+			skb_queue_purge(&spi_context.tx_q[prio_q_idx]);
+		}
 
 		for (iface_idx=0; iface_idx < ESP_MAX_INTERFACE; iface_idx++) {
 
@@ -293,13 +297,16 @@ void process_event_esp_bootup(struct esp_adapter *adapter, u8 *evt_buf, u8 len)
 			if (priv->ndev &&
 			    priv->wdev.current_bss) {
 
-				esp_port_close(priv);
 				cfg80211_disconnected(priv->ndev,
 						0, NULL, 0, false, GFP_KERNEL);
 			}
 		}
 
 		esp_remove_card(adapter);
+
+		for (prio_q_idx=0; prio_q_idx<MAX_PRIORITY_QUEUES; prio_q_idx++) {
+			skb_queue_head_init(&spi_context.tx_q[prio_q_idx]);
+		}
 	}
 
 	if (esp_add_card(adapter)) {
