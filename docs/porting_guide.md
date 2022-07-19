@@ -8,7 +8,7 @@ As mentioned in earlier sections, ESP-Hosted solution works out of box with Rasp
 
 ##### 1.1 Peripherals and GPIOs
 
-- When you are opting Linux other than Raspberry, hardware peripherals and GPIO functions would need changes. GPIO pins for [SDIO/SPI](setup.md#11-hardware-setup) and [resetpin](setup.md#223-load-the-kernel-module) would differ. 
+- When you are opting Linux other than Raspberry, hardware peripherals and GPIO functions would need changes. GPIO pins for [SDIO](setup.md#21-sdio-hardware-setup), [SPI](setup.md#31-spi-hardware-setup) and resetpin would differ.
 
 - ResetPin GPIO
 	- You can choose any unused GPIO for reseting ESP

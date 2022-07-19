@@ -43,7 +43,7 @@ This solution offers following:
 * Configuration of Wi-Fi is supported through standard cfg80211 interface of Linux
 * A standard HCI interface
 
-This variant is available in <a href="https://github.com/espressif/esp-hosted/tree/ESP-Hosted_MCU_Host" target="_blank" rel="noopener">master</a> branch on <a href="https://github.com/espressif/esp-hosted" target="_blank" rel="noopener">github repository</a>.
+This variant is available in <a href="https://github.com/espressif/esp-hosted" target="_blank" rel="noopener">master</a> branch on <a href="https://github.com/espressif/esp-hosted" target="_blank" rel="noopener">github repository</a>.
 
 Please proceed with the [detailed documentation](docs/README.md) for setup and usage instructions.
 
@@ -51,7 +51,8 @@ Please proceed with the [detailed documentation](docs/README.md) for setup and u
 
 > ####  ESP-Hosted
 >
-> :warning: Your current branch doesn't have this variant
+> :warning: Your current branch doesn't have this variant \
+> This variant is available in <a href="https://github.com/espressif/esp-hosted/tree/ESP-Hosted_MCU_Host" target="_blank" rel="noopener">ESP-Hosted_MCU_Host</a> branch on <a href="https://github.com/espressif/esp-hosted" target="_blank" rel="noopener">github repository</a>.
 
 > This is a first generation ESP-Hosted solution. This is a variant provides a simple 802.3 (Ethernet) network interface to the host. Thought process behind this solution is to keep the host software simple while providing suite of connectivity features. 
 > In order to achieve this, the host is presented with following:
@@ -61,7 +62,7 @@ Please proceed with the [detailed documentation](docs/README.md) for setup and u
 > * A standard HCI interface
 
 > Although this variant supports Linux host, the simple nature of this solution makes it ideal to be used with MCU hosts which do not have complex communication interfaces such as Ethernet, Wi-Fi, BT/BLE etc.
-> This variant is available in <a href="https://github.com/espressif/esp-hosted/tree/ESP-Hosted_MCU_Host" target="_blank" rel="noopener">ESP-Hosted_MCU_Host</a> branch on <a href="https://github.com/espressif/esp-hosted" target="_blank" rel="noopener">github repository</a>.
+
 
 ---
 

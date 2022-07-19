@@ -97,7 +97,8 @@ Where, \
 - Windows user can use ESP Flash Programming Tool to flash the pre-built binary.
 
 #### 2.5 Sample log
-- Host side dmesg log
+Host side dmesg log for
+- Wi-Fi over SDIO + Bluetooth i.e. HCI over SDIO
 ```
 [ 1705.486673] mmc1: queuing unknown CIS tuple 0x01 (3 bytes)
 [ 1705.494623] mmc1: queuing unknown CIS tuple 0x1a (5 bytes)
