@@ -189,6 +189,14 @@ static int wait_and_decode_cmd_resp(struct esp_wifi_device *priv,
 			ret = decode_common_resp(cmd_node);
 
 		if (ret) {
+
+			struct cfg80211_scan_info info = {
+				.aborted = false,
+			};
+
+			if (priv->request)
+				cfg80211_scan_done(priv->request, &info);
+
 			priv->scan_in_progress = false;
 			priv->request = NULL;
 		}
@@ -986,7 +994,7 @@ int internal_scan_request(struct esp_wifi_device *priv, char* ssid,
 
 	if (test_bit(ESP_CLEANUP_IN_PROGRESS, &priv->adapter->state_flags)) {
 		printk(KERN_ERR "%s:%u cleanup in progress, return", __func__, __LINE__);
-		return 0;
+		return -EBUSY;
 	}
 
 	cmd_len = sizeof(struct scan_request);
@@ -1040,7 +1048,7 @@ int cmd_scan_request(struct esp_wifi_device *priv, struct cfg80211_scan_request 
 
 	if (test_bit(ESP_CLEANUP_IN_PROGRESS, &priv->adapter->state_flags)) {
 		printk(KERN_ERR "%s:%u cleanup in progress, return", __func__, __LINE__);
-		return 0;
+		return -EBUSY;
 	}
 
 
