@@ -114,42 +114,39 @@ This section explains building blocks of the solution. Following is the detailed
 
 Following are the key building blocks of the system:
 
-- ESP Host Software
+- ESP-Hosted-NG Driver
 
-- ESP Firmware
+- ESP-Hosted-NG Firmware
 
 - Third party components
 
 
 
-### 2.1.1 ESP Host Software
+### 2.1.1 ESP-Hosted-NG Driver
 
-ESP Host driver implements following.
+This runs on host platform and it implements following.
 
 - **Transport driver**
   - Implements transport layer over SDIO/SPI interface. \
   Communication protocol is explained in further section.
-- **ESP Hosted Network Interface**
+- **Network Interface**
   - Registers Wi-Fi interface `espsta0` with Linux kernel.
     - This allows exchange of network data packets between Linux kernel and ESP firmware.
-  - Integrates cfg80211 and ESP Host driver by implementing needed API's
-    - This allows seemless user experience with tools such as wpa_supplicant, iw etc
-  - Optionally it implements HCI interface and registers it with Linux kernel
-    - This allows exchange of HCI packets between Bluetooth/BLE stack running on host and ESP firmware.
-- **ESP Hosted HCI Interface**
+  - Implements needed cfg80211_ops to support configuration through wpa_supplicant or iw utility
+- **HCI Interface**
   - Applicable only when SDIO/SPI interface is being used for Bluetooth/BLE support
   - Registers HCI interface with the Bluetooth stack running on Linux host
     - This facilitates exchange of HCI packets between Linux kernel and ESP firmware
 
-### 2.1.2 ESP Firmware
+### 2.1.2 ESP-Hosted-NG Firmware
 
 This implements ESP application that runs on ESP boards. It consists of the following.
 
-- **ESP Application** \
-This implements following:
+- **ESP-Hosted-NG Application** \
+  This implements following:
   - SDIO/SPI transport layer
   - Custom command/response implementation for configuration of Wi-Fi interface
-  - Bridges data path between Wi-Fi driver of ESP and Host platform
+  - Data path between Wi-Fi driver of ESP and Host platform
 - **ESP-IDF Components** \
   ESP firmware mainly uses following components from ESP-IDF. Please check [ESP-IDF documentation](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/get-started/index.html) for more details.
   - SDIO/SPI/UART slave driver
@@ -160,12 +157,11 @@ This implements following:
 
 Third components such as following are essential for end to end working of this solution. Implementation or porting of these third party component is not in scope of this project.
 
-- TCP/IP and TLS stack
+- TCP/IP stack
 - Bluetooth/BLE stack
 - nl80211/cfg80211 kernel module
 - User space applications
 - Linux UART driver
-
 
 ### 2.2 Transport Layer Protocol
 
