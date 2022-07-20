@@ -16,7 +16,7 @@
 					<stringMacro name="INPUT_SOFTAP__SSID" type="VALUE_TEXT" value="&quot;ESPWifi&quot;"/>
 					<stringMacro name="INPUT_SOFTAP_PASSWORD" type="VALUE_TEXT" value="&quot;ESPWifi@123&quot;"/>
 					<stringMacro name="INPUT_SOFTAP_CHANNEL" type="VALUE_TEXT" value="&quot;1&quot;"/>
-					<stringMacro name="INPUT_SOFTAP_BANDWIDTH" type="VALUE_TEXT" value="&quot;HT40&quot;"/>
+					<stringMacro name="INPUT_SOFTAP_BANDWIDTH" type="VALUE_TEXT" value="&quot;20&quot;"/>
 					<stringMacro name="INPUT_SOFTAP_ENCRYPTION" type="VALUE_TEXT" value="&quot;WPA2_PSK&quot;"/>
 					<stringMacro name="INPUT_SOFTAP_MAX_CONN" type="VALUE_TEXT" value="&quot;4&quot;"/>
 					<stringMacro name="INPUT_SOFTAP_SSID_HIDDEN" type="VALUE_TEXT" value="&quot;no&quot;"/>

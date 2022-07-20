@@ -19,7 +19,7 @@
 
 ### 1.1 Hardware Requirements
 * Raspberry-Pi model 3 Model B/B+ or Raspberry-Pi 4 model B
-* ESP32/ESP32-S2/ESP32-C3 board
+* ESP32/ESP32-S2/ESP32-C3/ESP32-S3 board
 * 8-12 jumper wires of length < 10cm
 
 ### 1.2 Host Setup
@@ -128,7 +128,7 @@ write_flash --flash_mode dio --flash_freq 40m --flash_size detect \
 
 Where,
 	<serial_port>    : serial port of ESP peripheral
-	<esp_peripheral> : esp32/esp32s2/esp32c3
+	<esp_peripheral> : esp32/esp32s2/esp32c3/esp32s3
 	<interface_type> : sdio/spi/sdio_uart
 	<release_version>: 0.1,0.2 etc
 ```
@@ -211,6 +211,7 @@ ESP-IDF release version to be used for ESP peripherals are
 | ESP32-S2 | release v4.2 |
 | ESP32-C3 | release v4.3 |
 | ESP32-C3 (HCI over UART)| release v4.4 (beta)|
+| ESP32-S3 | release v4.4 |
 
 Clone appropriate ESP-IDF version as per your ESP peripheral. The control path between Linux host and ESP peripheral is based on `protobuf`. For that, corresponding stack layer, `protocomm` from ESP-IDF is used.
 

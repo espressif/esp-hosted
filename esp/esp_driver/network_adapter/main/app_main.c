@@ -17,7 +17,6 @@
 #include <stdio.h>
 #include <string.h>
 #include "esp_log.h"
-#include "esp32/rom/lldesc.h"
 #include "sys/queue.h"
 #include "soc/soc.h"
 #include "nvs_flash.h"
@@ -47,7 +46,6 @@
 #include "driver/periph_ctrl.h"
 #include "slave_bt.c"
 
-#define EV_STR(s) "================ "s" ================"
 static const char TAG[] = "NETWORK_ADAPTER";
 
 #if CONFIG_ESP_WLAN_DEBUG
@@ -130,6 +128,7 @@ static uint8_t get_capabilities()
 #ifdef CONFIG_BT_ENABLED
 	cap |= get_bluetooth_capabilities();
 #endif
+	ESP_LOGI(TAG, "capabilities: 0x%x", cap);
 
 	return cap;
 }

@@ -73,7 +73,7 @@ static ssize_t esp_serial_write(struct file *file, const char __user *user_buffe
 	u8 *pos;
 
 	if (size > ESP_SERIAL_MAX_TX) {
-		printk(KERN_ERR "%s: Exceed max tx buffer size [%d]\n", __func__, size);
+		printk(KERN_ERR "%s: Exceed max tx buffer size [%zu]\n", __func__, size);
 		return 0;
 	}
 

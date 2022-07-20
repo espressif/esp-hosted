@@ -171,11 +171,11 @@ static int convert_mac_to_bytes(uint8_t *out, size_t out_size, char *s)
 			command_log("empty input mac str\n");
 		}
 		else if (strlen(s)<MIN_MAC_STR_LEN) {
-			command_log("strlen of in str [%u]<MIN_MAC_STR_LEN[%u]\n",
+			command_log("strlen of in str [%zu]<MIN_MAC_STR_LEN[%u]\n",
 					strlen(s), MIN_MAC_STR_LEN);
 		}
 		else {
-			command_log("out_size[%u]<MAC_SIZE_BYTES[%u]\n",
+			command_log("out_size[%zu]<MAC_SIZE_BYTES[%u]\n",
 					out_size, MAC_SIZE_BYTES);
 		}
 		return FAILURE;
@@ -1600,7 +1600,7 @@ int interface_up(int sockfd, char* iface)
 		memcpy(req.ifr_name,iface,if_name_len);
 		req.ifr_name[if_name_len]='\0';
 	} else {
-		printf("Failed: Max interface len allowed: %u \n", sizeof(req.ifr_name)-1);
+		printf("Failed: Max interface len allowed: %zu \n", sizeof(req.ifr_name)-1);
 		return FAILURE;
 	}
 
@@ -1628,7 +1628,7 @@ int interface_down(int sockfd, char* iface)
 		memcpy(req.ifr_name,iface,if_name_len);
 		req.ifr_name[if_name_len]='\0';
 	} else {
-		printf("Failed: Max interface len allowed- %u \n", sizeof(req.ifr_name)-1);
+		printf("Failed: Max interface len allowed- %zu \n", sizeof(req.ifr_name)-1);
 		return FAILURE;
 	}
 
@@ -1658,7 +1658,7 @@ int set_hw_addr(int sockfd, char* iface, char* mac)
 		memcpy(req.ifr_name,iface,if_name_len);
 		req.ifr_name[if_name_len]='\0';
 	} else {
-		printf("Failed: Max interface len allowed: %u \n", sizeof(req.ifr_name)-1);
+		printf("Failed: Max interface len allowed: %zu \n", sizeof(req.ifr_name)-1);
 		return FAILURE;
 	}
 

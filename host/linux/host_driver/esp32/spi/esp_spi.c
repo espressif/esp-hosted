@@ -38,6 +38,7 @@
 #define ESP_PRIV_FIRMWARE_CHIP_ESP32        (0x0)
 #define ESP_PRIV_FIRMWARE_CHIP_ESP32S2      (0x2)
 #define ESP_PRIV_FIRMWARE_CHIP_ESP32C3      (0x5)
+#define ESP_PRIV_FIRMWARE_CHIP_ESP32S3      (0x9)
 
 static struct sk_buff * read_packet(struct esp_adapter *adapter);
 static int write_packet(struct esp_adapter *adapter, struct sk_buff *skb);
@@ -192,7 +193,8 @@ void process_init_event(u8 *evt_buf, u8 len)
 	}
 	if ((hardware_type != ESP_PRIV_FIRMWARE_CHIP_ESP32) &&
 	    (hardware_type != ESP_PRIV_FIRMWARE_CHIP_ESP32S2) &&
-	    (hardware_type != ESP_PRIV_FIRMWARE_CHIP_ESP32C3)) {
+	    (hardware_type != ESP_PRIV_FIRMWARE_CHIP_ESP32C3) &&
+	    (hardware_type != ESP_PRIV_FIRMWARE_CHIP_ESP32S3)) {
 		printk(KERN_INFO "ESP board type is not mentioned, ignoring [%d]\n", hardware_type);
 		hardware_type = ESP_PRIV_FIRMWARE_CHIP_UNRECOGNIZED;
 	}
