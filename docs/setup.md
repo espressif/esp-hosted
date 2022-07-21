@@ -86,13 +86,14 @@
 > >   ```
 > > - Please browse to ESP chipset directory
 > >	  ```sh
-> >   $ tar xvf release-1.x.y.tgz
-> >   $ cd release-1.x.y
+> >   $ tar xvf ESP-Hosted-NG-release_1.x.y.tgz
+> >   $ cd ESP-Hosted-NG-release_1.x.y/
 > >   $ cd <esp_chipset>
 > >   $ cd sdio
 > >   ```
 > >	  where,
 > >	  - <esp_chipset>: 'esp32'
+> >	  - x and y are major and minor versions
 > > - Run the flashing command from _flashing_cmd.txt_ file.
 > > - Source code for the firmware is not available at the moment due to some technical issues. \
 > >   But should soon be available in upcoming releases.
@@ -254,13 +255,14 @@
 > >   ```
 > > - Please browse to ESP chipset directory
 > >	  ```sh
-> >   $ tar xvf release-1.x.y.tgz
-> >   $ cd release-1.x.y
+> >   $ tar xvf ESP-Hosted-NG-release_1.x.y.tgz
+> >   $ cd ESP-Hosted-NG-release_1.x.y/
 > >   $ cd <esp_chipset>
 > >   $ cd spi
 > >   ```
 > >	  where,
 > >	  - <esp_chipset>: 'esp32'
+> >	  - x and y are major and minor versions
 > > - Run the flashing command from _flashing_cmd.txt_ file.
 > > - Source code for the firmware is not available at the moment due to some technical issues. \
 > >   But should soon be available in upcoming releases.
@@ -439,13 +441,14 @@
 > >   ```
 > > - Please browse to ESP chipset directory
 > >	  ```sh
-> >   $ tar xvf release-1.x.y.tgz
-> >   $ cd release-1.x.y
+> >   $ tar xvf ESP-Hosted-NG-release_1.x.y.tgz
+> >   $ cd ESP-Hosted-NG-release_1.x.y/
 > >   $ cd <esp_chipset>
 > >   $ cd sdio+uart
 > >   ```
-> > where,
+> >	  where,
 > >	  - <esp_chipset>: 'esp32'
+> >	  - x and y are major and minor versions
 > > - Run the flashing command from _flashing_cmd.txt_ file.
 > > - Source code for the firmware is not available at the moment due to some technical issues. \
 > >   But should soon be available in upcoming releases.
@@ -655,13 +658,14 @@
 > >   ```
 > > - Please browse to ESP chipset directory
 > >	  ```sh
-> >   $ tar xvf release-1.x.y.tgz
-> >   $ cd release-1.x.y
+> >   $ tar xvf ESP-Hosted-NG-release_1.x.y.tgz
+> >   $ cd ESP-Hosted-NG-release_1.x.y/
 > >   $ cd <esp_chipset>
 > >   $ cd spi+uart
 > >   ```
 > >	  where,
 > >	  - <esp_chipset>: 'esp32'
+> >	  - x and y are major and minor versions
 > > - Run the flashing command from _flashing_cmd.txt_ file.
 > > - Source code for the firmware is not available at the moment due to some technical issues. \
 > >   But should soon be available in upcoming releases.
