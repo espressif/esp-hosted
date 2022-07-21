@@ -891,8 +891,6 @@ int cmd_add_key(struct esp_wifi_device *priv, u8 key_index, bool pairwise,
 	if (params->seq && key->seq_len)
 		memcpy(key->seq, params->seq, key->seq_len);
 
-	key->set_tx = params->mode & NL80211_KEY_SET_TX;
-
 	key->algo = wpa_cipher_to_alg(params->cipher);
 #if 0
 	if (key->algo == WIFI_WPA_ALG_NONE) {
@@ -902,8 +900,8 @@ int cmd_add_key(struct esp_wifi_device *priv, u8 key_index, bool pairwise,
 #endif
 
 #if 0
-	printk(KERN_ERR "%s:%u algo: %u idx: %u set_tx: %u seq_len: %u len:%u \n", __func__, __LINE__,
-			key->algo, key->index, key->set_tx, key->seq_len, key->len);
+	printk(KERN_ERR "%s:%u algo: %u idx: %u seq_len: %u len:%u \n", __func__, __LINE__,
+			key->algo, key->index, key->seq_len, key->len);
 	PRINT_HEXDUMP("mac", key->mac_addr, 6, ESP_LOG_INFO);
 	PRINT_HEXDUMP("seq", key->seq, key->seq_len, ESP_LOG_INFO);
 	PRINT_HEXDUMP("key_data", key->data, key->len, ESP_LOG_INFO);

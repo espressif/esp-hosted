@@ -153,10 +153,9 @@ struct wifi_sec_key {
 	uint8_t mac_addr[MAC_ADDR_LEN];
 	uint8_t seq[MAX_SEQ_LEN];
 	uint32_t seq_len;
-	uint32_t set_tx;
 	uint8_t del;
 	uint8_t set_cur;
-	uint8_t pad1[3];
+	uint8_t pad1[2];
 }__attribute__((packed));
 
 struct cmd_key_operation {
