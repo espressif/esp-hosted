@@ -1,27 +1,11 @@
 # ESP-Hosted
 
-Espressif launched this solution in 2020 and since then it helped many IoT enthusiast, developers, OEMs to offload their host's connectivity burden to ESP chipsets. Applications developed using this solution includes but not limited to Bluetooth headphones, Bluetooth speakers, smart door locks, smart vacuum cleaners, video streaming applications and many more.
+```diff
+- You are currently viewing ESP-Hosted variant
+```
+ESP-Hosted is an open source solution that provides a way to use Espressif SoCs and modules as a communication co-processor. This solution provides wireless connectivity (Wi-Fi and BT/BLE) to the host microprocessor or microcontroller, allowing it to communicate with other devices.
 
-
-
-## Introduction
-
-ESP-Hosted is an open source solution that provides a way to use ESP board as a communication co-processor. This solution provides wireless connectivity (network and BT/BLE) to the host, allowing it to communicate with other devices.
-
-It leverages Wi-Fi and Bluetooth capabilities of ESP board to the host, helping it to be a smart device.
-
-
-
-## Overview
-
-Following is the broader level block diagram that depicts where ESP-Hosted fits in the entire system. Detailed block diagram is available in subsequent sections. 
-
-* As it can be seen in the diagram, host needs to be equipped with TCP/IP stack and Bluetooth/BLE stack. 
-* The host driver of ESP-Hosted, registers a network and HCI interface in host operating system. 
-* The host driver is responsible for transferring of network and HCI packets to and from host operating system
-* ESP firmware application runs on ESP board and it facilitates communication between host software and ESP wifi and Bluetooth/BLE controller
-
-
+Following is the high level block diagram for ESP-Hosted. Detailed block diagram is available in subsequent sections. 
 
 ![alt text](basic_block_diagram.jpg "Basic Block Diagram")
 
@@ -29,40 +13,36 @@ Following is the broader level block diagram that depicts where ESP-Hosted fits 
 
 ## Variants
 
-The ESP-Hosted presents two variants of the solution as below. The differentiation factor here is the type of network interface presented to host and the way Wi-Fi on ESP board is configured/controlled. Both the variants have their respective host and firmware software. 
+The ESP-Hosted solution is available in two variants as mentioned below. The differentiation factor here is the type of network interface presented to host and the way Wi-Fi on ESP SoC/module is configured/controlled. Both the variants have their respective host and firmware software. 
 
-####  ESP-Hosted
+###  ESP-Hosted
 
-This is a first generation ESP-Hosted solution. This is a variant provides a simple 802.3 (Ethernet) network interface to the host. Thought process behind this solution is to keep the host software simple while providing suite of connectivity features. 
-
+This is a first generation ESP-Hosted solution. This is a variant provides a standard 802.3 (Ethernet) network interface to the host. Thought process behind this solution is to keep the host software simple while providing suite of connectivity features. 
 In order to achieve this, the host is presented with following:
 
 * A simple 802.3 network interface which essentially is an Ethernet interface
 * A light weight control interface to configure Wi-Fi on ESP board
 * A standard HCI interface
 
-Although this variant supports Linux host, the simple nature of this solution makes it ideal to be used with MCU hosts which do not have complex communication interfaces such as Ethernet, Wi-Fi, BT/BLE etc.
+Although this variant supports Linux host, the nature of this solution makes it ideal to be used with MCU hosts which do not have complex communication interfaces such as Ethernet, Wi-Fi, BT/BLE etc.
 
 This variant is available in <a href="https://github.com/espressif/esp-hosted/tree/ESP-Hosted_MCU_Host" target="_blank" rel="noopener">ESP-Hosted_MCU_Host</a> branch on <a href="https://github.com/espressif/esp-hosted" target="_blank" rel="noopener">github repository</a>.
 
-Please proceed with the [detailed documentation](docs/README.md) for setup and usage instructions.
+Please proceed with the [detailed documentation](docs/README.md) for setup and usage instructions. 
 
 
 
->  #### ESP-Hosted-NG
->
-> :warning: Your current branch doesn't have this variant
+### ESP-Hosted-NG
 
-> This is a Next-Generation ESP-Hosted specifically designed for a sophisticated hosts that run Linux operating system. This variant of the solution takes more standard approach while providing a network interface to the host. This allows usage of standard Wi-Fi applications such as wpa_supplicant to be used with ESP chipsets.
->
+:bulb: Your current branch doesn't have this variant. This variant is available in <a href="https://github.com/espressif/esp-hosted" target="_blank" rel="noopener">master</a> branch on <a href="https://github.com/espressif/esp-hosted" target="_blank" rel="noopener">github repository</a>
+
+> This is the Next-Generation ESP-Hosted solution specifically designed for hosts that run Linux operating system. This variant of the solution takes a standard approach while providing a network interface to the host. This allows usage of standard Wi-Fi applications such as wpa_supplicant to be used with ESP SoCs/modules.
+> 
 > This solution offers following:
-
+> 
 > * 802.11 network interface which is a standard Wi-Fi interface on Linux host
 > * Configuration of Wi-Fi is supported through standard cfg80211 interface of Linux
 > * A standard HCI interface
-
-> This variant is available in <a href="https://github.com/espressif/esp-hosted/tree/ESP-Hosted_MCU_Host" target="_blank" rel="noopener">master</a> branch on <a href="https://github.com/espressif/esp-hosted" target="_blank" rel="noopener">github repository</a>.
-
 ---
 
 
