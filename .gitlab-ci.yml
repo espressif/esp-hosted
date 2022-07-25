@@ -1,6 +1,5 @@
 stages:
   - deploy
-  - test
 
 variables:
   GIT_SUBMODULE_STRATEGY: recursive
@@ -34,10 +33,10 @@ deploy_master_github:
       - git push github "${CI_COMMIT_SHA}:refs/heads/${CI_COMMIT_REF_NAME}"
 
 deploy_esp_host_v1_github:
-  stage: test
+  stage: deploy
   image: $CI_DOCKER_REGISTRY/esp32-ci-env
   tags:
-    - test
+    - deploy
   when: manual
   only:
     - ESP-Hosted_MCU_Host
