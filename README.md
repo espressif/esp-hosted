@@ -39,7 +39,7 @@ Please proceed with the [detailed documentation](docs/README.md) for setup and u
 > This is a first generation ESP-Hosted solution. This is a variant provides a standard 802.3 (Ethernet) network interface to the host. Thought process behind this solution is to keep the host software simple while providing suite of connectivity features. 
 > In order to achieve this, the host is presented with following:
 >
-> * A simple 802.3 network interface which essentially is an Ethernet interface
+> * A standard 802.3 network interface which essentially is an Ethernet interface
 > * A light weight control interface to configure Wi-Fi on ESP board
 > * A standard HCI interface
 >
