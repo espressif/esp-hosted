@@ -54,8 +54,7 @@ Now that we offer two variants of this solution, it could cause a little confusi
 #### Similarities
 
 - Both versions share the same aim, to conveniently use ESP's Wi-Fi and Bluetooth/BLE capabilities from host
-
-- Both versions aim to support same set of ESP chipsets and same set of transports like SPI/SDIO/UART for connectivity needs
+- Both versions aim to support same set of ESP Socs/modules and same set of transports like SPI/SDIO/UART for connectivity needs
 
 #### Key Differences
 
