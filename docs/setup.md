@@ -142,6 +142,12 @@
 >
 > > ## Build and load kernel module
 > >
+> > Services in running on host operating system, such as <b>NetworkManager</b> can interfere in testing. Execute following commands to prevent this.
+> > ```sh
+> > $ sudo systemctl disable NetworkManager
+> > $ sudo killall wpa_supplicant
+> > ```
+> > Execute following command to load/reload driver
 > > ```sh
 > > $ bash rpi_init.sh sdio
 > > ```
@@ -313,6 +319,12 @@
 >
 > > ## Build and load kernel module
 > >
+> > Services in running on host operating system, such as <b>NetworkManager</b> can interfere in testing. Execute following commands to prevent this.
+> > ```sh
+> > $ sudo systemctl disable NetworkManager
+> > $ sudo killall wpa_supplicant
+> > ```
+> > Execute following command to load/reload driver
 > > ```sh
 > > $ bash rpi_init.sh spi
 > > ```
@@ -524,6 +536,12 @@
 >
 > > ## Build and load kernel module
 > >
+> > Services in running on host operating system, such as <b>NetworkManager</b> can interfere in testing. Execute following commands to prevent this.
+> > ```sh
+> > $ sudo systemctl disable NetworkManager
+> > $ sudo killall wpa_supplicant
+> > ```
+> > Execute following command to load/reload driver
 > > ```sh
 > > $ bash rpi_init.sh sdio btuart
 > > ```
@@ -748,6 +766,12 @@
 >
 > > ## Build and load kernel module
 > >
+> > Services in running on host operating system, such as <b>NetworkManager</b> can interfere in testing. Execute following commands to prevent this.
+> > ```sh
+> > $ sudo systemctl disable NetworkManager
+> > $ sudo killall wpa_supplicant
+> > ```
+> > Execute following command to load/reload driver
 > > ```sh
 > > $ bash rpi_init.sh spi btuart
 > > ```

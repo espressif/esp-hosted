@@ -13,8 +13,9 @@
       - [**Connect to AP**](#connect-to-ap)
       - [**Disconnect from AP**](#disconnect-from-ap)
     + [3.2.2 Bluetooth/BLE](#322-bluetooth-ble)
-- [4. Coming soon](#4-coming-soon)
-- [5. Want to support?](#5-want-to-support-)
+- [4. Throughput Performance ](#4-throughput-performance)
+- [5. Coming soon](#5-coming-soon)
+- [6. Want to support?](#6-want-to-support-)
 
 ---
 
@@ -324,7 +325,34 @@ $ sudo killall wpa_supplicant
 Refer [Bluetooth/BLE Guide](./bluetooth.md) which explains how one can setup and use Bluetooth/BLE.
 
 
-# 4. Coming soon
+# 4. Throughput Performance
+
+<table style="width:100%" align="center">
+<thead>
+<tr>
+<th align="center">ESP device</th><th align="center">Transport Interface</th><th align="center">TCP Tx</th><th align="center">TCP Rx</th><th align="center">UDP Tx</th><th align="center">UDP Rx</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td rowspan=2 align="center">ESP32</td>
+<td rowspan=1 align="center">SDIO</td>
+<td align="center">22.9 Mbps</td>
+<td align="center">15.6 Mbps</td>
+<td align="center">45.6 Mbps</td>
+<td align="center">20.4 Mbps</td>
+</tr>
+<tr>
+<td align="center">SPI</td>
+<td align="center">7.47 Mbps</td>
+<td align="center">7.30 Mbps</td>
+<td align="center">7.39 Mbps</td>
+<td align="center">7.32 Mbps</td>
+</tr>
+</tbody>
+</table>
+
+# 5. Coming soon
 
 Tremendous work to be done ahead! Below is glimpse of upcoming release:
 
@@ -336,5 +364,5 @@ Tremendous work to be done ahead! Below is glimpse of upcoming release:
 
 
 
-# 5. Want to support?
+# 6. Want to support?
 That's right. Being open source, we really appreciate the pull requests. Already raised pull request? Please be patient. We will review and merge your commit into the master.
