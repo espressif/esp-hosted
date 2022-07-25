@@ -13,7 +13,7 @@ before_script:
   - chmod 600 ~/.ssh/id_rsa
   - echo -e "Host gitlab.espressif.cn\n\tStrictHostKeyChecking no\n" > ~/.ssh/config
 
-deploy_master_github:
+.deploy_master_github:
   stage: deploy
   image: $CI_DOCKER_REGISTRY/esp32-ci-env
   tags:
