@@ -5,11 +5,15 @@ As mentioned in earlier sections, Linux based ESP-Hosted solution supports Raspb
 
 ### 1.1 Hardware Connections
 
-##### 1.1.1 Peripherals and GPIOs
+##### 1.1.1 SoC Power
+- Please make sure to use exact power adapter and correct power cable which is expected by your platform
+- If the power is not enough, the peripherals might not work or underperform
+
+##### 1.1.2 Peripherals and GPIOs
 
 When you are opting microprocessor with Linux other than Raspberry, hardware peripherals and GPIO functions would need changes. GPIO pins for [UART](UART_setup.md#11-hardware-setup), [SPI](SPI_setup.md#11-hardware-setup) and [SDIO](SDIO_setup.md#11-hardware-setup) would differ. 
 
-##### 1.1.2 DT overlay
+##### 1.1.3 DT overlay
 
 [Device Tree (DT)](https://www.raspberrypi.org/documentation/configuration/device-tree.md) and dtoverlay are way to express hardware and hardware configurations of them. While porting, Need to focus how configurations for [UART](UART_setup.md#12-raspberry-pi-software-setup), [SPI](SPI_setup.md#12-raspberry-pi-software-setup) and [SDIO](SDIO_setup.md#12-raspberry-pi-software-setup) are translated for your device. A care should be taken that only one or some of these configurations could be loaded at a time. This depends upon the board/chipset/SoC.
 
@@ -83,14 +87,26 @@ make CROSS_COMPILE=/home/user1/arm64_toolchain/bin/aarch64-linux-gnu-
 		- Additional pins functionality details mentioned in [1.1.1 additional pin setup](../spi_protocol.md#111-additional-pin-setup) of [spi protocol documentation](../spi_protocol.md).
 	* cs_change
 		- Reason why this setting was enabled is, SPI transfer was loosing first byte in transfer. Although this issue is only observed while testing with Raspberry Pi. Enabling cs_change=1 makes CS always de-assert after each transfer request. While porting, you may want to remove line, `trans.cs_change = 1;`.
-	* SPI clock
-		- ESP32 (WROVER and WROOM) supports 10MHz SPI clock.
-		- Whereas ESP32-S2 supports 40MHz SPI clock.
-		- Raspberry Pi is tested with 10MHz clock with ESP32 and 30MHz with ESP32-S2.
-		- Raspberry Pi had issues while going to higher frequency than 30MHz.
-		- Above frequencies are capped for Raspberry Pi use. **Please note,** Maximum SPI frequency will be limited by ESP SPI slave max supported frequency, from respective datasheet
-		- While porting, the SPI clock frequency from low to high could be tested to optimize.
-		- SPI clock frequency could be changed from macro `SPI_CLK_MHZ_XXX` in `esp/esp_driver/network_adapter/main/spi_slave_api.c`
+	* Tune the SPI slave clock
+		- Maximum SPI slave clock supported by ESP chipsets are:
+			- ESP32 : 10MHZ
+			- ESP32-S2: 40MHz
+			- ESP32-C3: 60MHz
+			- ESP32-S3: 60MHz
+		- Above frequencies cannot be used while using Raspberry Pi as SPI master because of its limitation. \
+		  However, you can increase the SPI clock stepwise to see what maximum frequency works for your SoC.
+		- Higher the frequency set, better the throughput would be.
+		- SPI clock frequency could be changed from macro `SPI_CLK_MHZ` in `esp/esp_driver/network_adapter/main/spi_slave_api.c`
+	* Identify peripheral limitations
+		- For Raspberry Pi, Please use
+		  ```
+		  core_freq=250
+		  core_freq_min=250
+		  ```
+		  as mentioned in [SPI setup](SPI_setup.md#12-raspberry-pi-software-setup)
+		- Raspberry Pi could not perform reliably when the SPI clock was set higher frequency than 30MHz
+		- Any such limitation for your Soc should be checked. Also power saving modes and peripheral clocks for your platform should be known.
+
 	* SPI Bus instance and Chip select number
 		- Default value for both is 0, _i.e._ SPI0 and chip select 0.
 		- It could be changed using variables, `esp_board.bus_num` and `esp_board.chip_select` in function `spi_dev_init()` from file `host/linux/host_driver/esp32/spi/esp_spi.c`

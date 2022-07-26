@@ -191,7 +191,7 @@ Run `hcitool lescan` for BLE device scanning.
 
 ### 3.2 BLE 5.0 testing
 
-Only ESP32-C3 HCI controller supports BLE 5.0. Several new features are introduced in BLE 5.0. The major areas of improvement are:
+ESP32-C3 and ESP32-S3 HCI controller supports BLE 5.0. Several new features are introduced in BLE 5.0. The major areas of improvement are:
 1. Slot Availability Mask (SAM)
 2. 2 Msym/s PHY for LE
 3. LE Long Range

@@ -91,6 +91,22 @@ Setup image is here.
 
 ![alt text](stm_esp32_c3_setup.jpg "Setup of STM32F469I as host and ESP32-C3 as peripheral")
 
+#### Hardware connections for ESP32-S3
+| STM32 Pin | ESP32-S3 Pin | Function |
+|:---------:|:-----------:|:--------:|
+| PB4  (pin5) | IO13 | MISO |
+| PA5  (pin7) | IO12 | CLK |
+| PB5  (pin9) | IO11 | MOSI |
+| PA15 (pin11)| IO10 | CS |
+| GND  (pin2) | GND | GND |
+| PC6  (pin6) | IO02 | Handshake |
+| PC7  (pin8) | IO04 | Data ready from ESP |
+| PB13  (pin10) | RST | Reset ESP |
+
+Setup image is here.
+
+![alt text](stm_esp32_s3_setup.jpg "Setup of STM32F469I as host and ESP32-S3 as peripheral")
+
 # 2. ESP peripheral setup
 ## 2.1 ESP-IDF requirement
 :warning:`Note: ESP-IDF is needed to compile ESP-Hosted firmware source. Skip this step if you are planning to use pre-built release binaries.`
@@ -103,6 +119,7 @@ ESP-IDF release version to be used for ESP peripherals are
 | ESP32-S2 | release v4.2 |
 | ESP32-C3 | release v4.3 |
 | ESP32-C3 (HCI over UART)| release v4.4 (beta)|
+| ESP32-S3 | release v4.4 |
 
 Clone appropriate ESP-IDF version as per your ESP peripheral. The control path between MCU host and ESP peripheral is based on `protobuf`. For that, corresponding stack layer, `protocomm` from ESP-IDF is used.
 

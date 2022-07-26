@@ -34,17 +34,23 @@
 
 typedef enum hardware_type_e {
 	HARDWARE_TYPE_ESP32,
-	HARDWARE_TYPE_ESP32S2_ESP32C3,
+	HARDWARE_TYPE_OTHER_ESP_CHIPSETS,
 	HARDWARE_TYPE_INVALID,
 }hardware_type_t;
 
-static stm_ret_t spi_transaction_esp32(uint8_t * txbuff);
-static stm_ret_t spi_transaction_esp32s2(uint8_t * txbuff);
+static stm_ret_t spi_transaction_v1(uint8_t * txbuff);
+static stm_ret_t spi_transaction_v2(uint8_t * txbuff);
 
 /* spi transaction functions for different hardware types */
 static stm_ret_t (*spi_trans_func[])(uint8_t * txbuff) = {
-		spi_transaction_esp32,
-		spi_transaction_esp32s2
+	/* spi_transaction_v1
+	 *   It is supported for esp32 only.
+	 *
+	 * spi_transaction_v2
+	 *   It is supported for other esp chipsets
+	 *   like ESP32-C3, ESP32-S2 and ESP32-S3 */
+		spi_transaction_v1,
+		spi_transaction_v2
 };
 
 static int esp_netdev_open(netdev_handle_t netdev);
@@ -257,7 +263,7 @@ static void set_hardware_type(void)
 	if (is_gpio_alternate_function_set(USR_SPI_CS_GPIO_Port,USR_SPI_CS_Pin)) {
 		hardware_type = HARDWARE_TYPE_ESP32;
 	} else {
-		hardware_type = HARDWARE_TYPE_ESP32S2_ESP32C3;
+		hardware_type = HARDWARE_TYPE_OTHER_ESP_CHIPSETS;
 	}
 }
 
@@ -438,7 +444,7 @@ static void stop_spi_transactions_for_msec(int x)
   * @param  txbuff: TX SPI buffer
   * @retval STM_OK / STM_FAIL
   */
-static stm_ret_t spi_transaction_esp32(uint8_t * txbuff)
+static stm_ret_t spi_transaction_v1(uint8_t * txbuff)
 {
 	uint8_t *rxbuff = NULL;
 	interface_buffer_handle_t buf_handle = {0};
@@ -565,7 +571,7 @@ done:
   * @param  txbuff: TX SPI buffer
   * @retval STM_OK / STM_FAIL
   */
-static stm_ret_t spi_transaction_esp32s2(uint8_t * txbuff)
+static stm_ret_t spi_transaction_v2(uint8_t * txbuff)
 {
 	uint8_t *rxbuff = NULL;
 	interface_buffer_handle_t buf_handle = {0};
@@ -701,8 +707,8 @@ static void transaction_task(void const* pvParameters)
 {
 	if (hardware_type == HARDWARE_TYPE_ESP32) {
 		printf("\n\rESP-Hosted for ESP32\n\r");
-	} else if (hardware_type == HARDWARE_TYPE_ESP32S2_ESP32C3) {
-		printf("\n\rESP-Hosted for ESP32S2 or ESP32C3\n\r");
+	} else if (hardware_type == HARDWARE_TYPE_OTHER_ESP_CHIPSETS) {
+		printf("\n\rESP-Hosted for ESP32-C3/S2/S3\n\r");
 	} else {
 		printf("Unsupported slave hardware\n\r");
 		assert(hardware_type != HARDWARE_TYPE_INVALID);

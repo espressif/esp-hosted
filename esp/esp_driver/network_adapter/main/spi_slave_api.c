@@ -28,31 +28,21 @@
 #include "mempool.h"
 
 static const char TAG[] = "SPI_DRIVER";
+/* SPI settings */
 #define SPI_BITS_PER_WORD          8
 #define SPI_MODE_0                 0
 #define SPI_MODE_1                 1
 #define SPI_MODE_2                 2
 #define SPI_MODE_3                 3
-#define SPI_CLK_MHZ_ESP32          10
 
-/* ESP32-S2 - Max supported SPI slave Clock = **40MHz**
- * Below value could be fine tuned to achieve highest
- * data rate in accordance with SPI Master
- * */
-#define SPI_CLK_MHZ_ESP32_S2       30
-
-/* ESP32-C3 - Max supported SPI slave Clock = **60MHz**
- * Below value could be fine tuned to achieve highest
- * data rate in accordance with SPI Master
- * */
-#define SPI_CLK_MHZ_ESP32_C3       30
-
+/* SPI-DMA settings */
 #define SPI_DMA_ALIGNMENT_BYTES    4
 #define SPI_DMA_ALIGNMENT_MASK     (SPI_DMA_ALIGNMENT_BYTES-1)
 #define IS_SPI_DMA_ALIGNED(VAL)    (!((VAL)& SPI_DMA_ALIGNMENT_MASK))
 #define MAKE_SPI_DMA_ALIGNED(VAL)  (VAL += SPI_DMA_ALIGNMENT_BYTES - \
 				((VAL)& SPI_DMA_ALIGNMENT_MASK))
 
+/* Chipset specific configurations */
 #ifdef CONFIG_IDF_TARGET_ESP32
 
     #if (CONFIG_ESP_SPI_CONTROLLER == 3)
@@ -73,6 +63,8 @@ static const char TAG[] = "SPI_DRIVER";
 
     #define DMA_CHAN               ESP_SPI_CONTROLLER
 
+    #define SPI_CLK_MHZ            10
+
 #elif defined CONFIG_IDF_TARGET_ESP32S2
 
     #define ESP_SPI_CONTROLLER     1
@@ -81,6 +73,12 @@ static const char TAG[] = "SPI_DRIVER";
     #define GPIO_SCLK              12
     #define GPIO_CS                10
     #define DMA_CHAN               ESP_SPI_CONTROLLER
+
+    /* Max supported SPI slave Clock for ESP32-S2 = **40MHz**
+     * Below value could be fine tuned to achieve highest
+     * data rate in accordance with SPI Master
+     * */
+    #define SPI_CLK_MHZ            30
 
 #elif defined CONFIG_IDF_TARGET_ESP32C3
 
@@ -91,9 +89,31 @@ static const char TAG[] = "SPI_DRIVER";
     #define GPIO_CS                10
     #define DMA_CHAN               SPI_DMA_CH_AUTO
 
+    /* Max supported SPI slave Clock for ESP32-C3 = **60MHz**
+     * Below value could be fine tuned to achieve highest
+     * data rate in accordance with SPI Master
+     * */
+    #define SPI_CLK_MHZ            30
+
+#elif defined CONFIG_IDF_TARGET_ESP32S3
+
+    #define ESP_SPI_CONTROLLER     1
+    #define GPIO_MOSI              11
+    #define GPIO_MISO              13
+    #define GPIO_SCLK              12
+    #define GPIO_CS                10
+    #define DMA_CHAN               SPI_DMA_CH_AUTO
+
+    /* Max supported SPI slave Clock for ESP32-S3 = **60MHz**
+     * Below value could be fine tuned to achieve highest
+     * data rate in accordance with SPI Master
+     * */
+    #define SPI_CLK_MHZ            30
+
 #endif
 
 
+/* SPI internal configs */
 #define SPI_BUFFER_SIZE            1600
 #define SPI_QUEUE_SIZE             3
 #ifdef CONFIG_IDF_TARGET_ESP32
@@ -101,7 +121,7 @@ static const char TAG[] = "SPI_DRIVER";
     #define SPI_TX_QUEUE_SIZE      10
 #else
     #define SPI_RX_QUEUE_SIZE      20
-    #define SPI_TX_QUEUE_SIZE      5
+    #define SPI_TX_QUEUE_SIZE      20
 #endif
 
 static interface_context_t context;
@@ -221,13 +241,7 @@ void generate_startup_event(uint8_t cap)
 	/* TLV - Peripheral clock in MHz */
 	*pos = ESP_PRIV_SPI_CLK_MHZ;        pos++;len++;
 	*pos = LENGTH_1_BYTE;               pos++;len++;
-#ifdef CONFIG_IDF_TARGET_ESP32
-	*pos = SPI_CLK_MHZ_ESP32;           pos++;len++;
-#elif defined CONFIG_IDF_TARGET_ESP32S2
-	*pos = SPI_CLK_MHZ_ESP32_S2;        pos++;len++;
-#elif defined CONFIG_IDF_TARGET_ESP32C3
-	*pos = SPI_CLK_MHZ_ESP32_C3;        pos++;len++;
-#endif
+	*pos = SPI_CLK_MHZ;                 pos++;len++;
 
 	/* TLV - Capability */
 	*pos = ESP_PRIV_CAPABILITY;         pos++;len++;

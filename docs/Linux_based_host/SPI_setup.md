@@ -53,6 +53,24 @@ Setup image is here.
 
 ![alt text](rpi_esp32_c3_setup.jpg "setup of Raspberry-Pi as host and ESP32-C3 as ESP peripheral")
 
+#### 1.1.4 ESP32-S3 setup
+- For ESP32-S3, microUSB power is expected to insert in [UART port](https://docs.espressif.com/projects/esp-idf/en/latest/esp32s3/hw-reference/esp32s3/user-guide-devkitc-1.html#description-of-components)
+
+| Raspberry-Pi Pin | ESP32-S3 Pin | Function |
+|:----------------:|:------------:|:--------:|
+| 24 | IO10 | CS0 |
+| 23 | IO12 | SCLK |
+| 21 | IO13 | MISO |
+| 19 | IO11 | MOSI |
+| 25 | GND | Ground |
+| 15 | IO2 | Handshake |
+| 13 | IO4 | Data ready |
+| 31 | RST | ESP32 Reset |
+
+Setup image is here.
+
+![alt text](rpi_esp32_s3_spi_setup.jpg "setup of Raspberry-Pi as host and ESP32-S3 as ESP peripheral")
+
 ### 1.2 Raspberry-Pi Software Setup
 The SPI master driver is disabled by default on Raspberry-Pi OS. To enable it add following commands in  _/boot/config.txt_ file
 ```
@@ -131,6 +149,24 @@ Where,
 
 * Windows user can use ESP Flash Programming Tool to flash the pre-built binary.
 
+##### ESP32-S3
+```sh
+$ python esptool.py --chip esp32s3 --port <serial_port> --baud <flash_baud_rate> --before default_reset \
+--after hard_reset write_flash --flash_mode dio --flash_size detect --flash_freq 80m \
+0x0 esp_hosted_bootloader_esp32s3_spi_v<release_version>.bin \
+0x8000 esp_hosted_partition-table_esp32s3_spi_v<release_version>.bin \
+0xd000 esp_hosted_ota_data_initial_esp32s3_spi_v<release_version>.bin \
+0x10000 esp_hosted_firmware_esp32s3_spi_v<release_version>.bin
+
+Where,
+	<serial_port>     : serial port of ESP peripheral
+	<flash_baud_rate> : flash baud rate of ESP peripheral, ex.115200, 921600, 2Mbps
+	<release_version> : 0.1,0.2 etc. Latest from [release page](https://github.com/espressif/esp-hosted/releases)
+```
+* This command will flash `SPI` interface binaries on `esp32s3` chip.
+
+* Windows user can use ESP Flash Programming Tool to flash the pre-built binary.
+
 #### 2.2.2 Source Compilation
 :warning:<code>Note: Please check [ESP-IDF Setup](Linux_based_readme.md#22-esp-idf-setup) and use appropriate ESP-IDF version</code>
 
@@ -142,13 +178,17 @@ $ cd esp/esp_driver/network_adapter
 
 ##### Using cmake
 
-* :warning: `Set target if the ESP32-S2 or ESP32-C3 is being used. Skip if ESP32 is being used.`
+* :warning: `Set target if the ESP32-S2/ESP32-C3/ESP32-S3 is being used. Skip if ESP32 is being used.`
 ```
 $ idf.py set-target esp32s2
 ```
 or
 ```
 $ idf.py set-target esp32c3
+```
+or
+```
+$ idf.py set-target esp32s3
 ```
 
 * Execute following command to configure project

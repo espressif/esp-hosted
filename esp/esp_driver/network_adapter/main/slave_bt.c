@@ -18,16 +18,19 @@
 #include "driver/periph_ctrl.h"
 #include "driver/gpio.h"
 #include "driver/uart.h"
-#include "soc/lldesc.h"
 #include "esp_bt.h"
 #include "esp_log.h"
 #include "slave_bt.h"
+#include "rom/lldesc.h"
 
-#ifdef CONFIG_IDF_TARGET_ESP32C3
-#include "esp_private/gdma.h"
-#if BLUETOOTH_UART
-#include "hal/uhci_ll.h"
-#endif
+#if defined(CONFIG_IDF_TARGET_ESP32C3) || defined(CONFIG_IDF_TARGET_ESP32S3)
+
+  #include "esp_private/gdma.h"
+
+  #if BLUETOOTH_UART
+    #include "hal/uhci_ll.h"
+  #endif
+
 #endif
 
 static const char BT_TAG[] = "ESP_BT";
@@ -109,7 +112,7 @@ void process_hci_rx_pkt(uint8_t *payload, uint16_t payload_len) {
 #elif BLUETOOTH_UART
 /* ***** UART specific part ***** */
 
-#ifdef CONFIG_IDF_TARGET_ESP32C3
+#if defined(CONFIG_IDF_TARGET_ESP32C3) || defined(CONFIG_IDF_TARGET_ESP32S3)
 // Operation functions for HCI UART Transport Layer
 static bool hci_uart_tl_init(void);
 static void hci_uart_tl_deinit(void);
@@ -263,7 +266,7 @@ static void init_uart(void)
 	periph_module_enable(PERIPH_UHCI0_MODULE);
     periph_module_reset(PERIPH_UHCI0_MODULE);
 
-#ifdef CONFIG_IDF_TARGET_ESP32C3
+#if defined(CONFIG_IDF_TARGET_ESP32C3) || defined(CONFIG_IDF_TARGET_ESP32S3)
     gpio_config_t io_output_conf = {
         .intr_type = GPIO_PIN_INTR_DISABLE,    //disable interrupt
         .mode = GPIO_MODE_OUTPUT,    // output mode
@@ -286,13 +289,13 @@ static void init_uart(void)
 	ESP_ERROR_CHECK( uart_set_pin(BLUETOOTH_UART, BT_TX_PIN,
 				BT_RX_PIN, BT_RTS_PIN, BT_CTS_PIN) );
 
-#ifdef CONFIG_IDF_TARGET_ESP32C3
+#if defined(CONFIG_IDF_TARGET_ESP32C3) || defined(CONFIG_IDF_TARGET_ESP32S3)
     // configure UART1
     ESP_LOGI(BT_TAG, "baud rate for HCI uart :: %d \n", 
-                                    CONFIG_EXAMPLE_ESP32C3_HCI_UART_BAUDRATE);
+			CONFIG_EXAMPLE_HCI_UART_BAUDRATE);
 
     uart_config_t uart_config = {
-        .baud_rate = CONFIG_EXAMPLE_ESP32C3_HCI_UART_BAUDRATE,
+        .baud_rate = CONFIG_EXAMPLE_HCI_UART_BAUDRATE,
 
         .data_bits = UART_DATA_8_BITS,
         .parity = UART_PARITY_DISABLE,
@@ -352,7 +355,7 @@ esp_err_t initialise_bluetooth(void)
 
 
 #ifdef BLUETOOTH_UART
-  #ifdef CONFIG_IDF_TARGET_ESP32C3
+  #if defined(CONFIG_IDF_TARGET_ESP32C3) || defined(CONFIG_IDF_TARGET_ESP32S3)
     bt_cfg.hci_tl_funcs = &s_hci_uart_tl_funcs;
   #endif
 
