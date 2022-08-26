@@ -24,7 +24,7 @@ RPI_RESETPIN=6
 bringup_network_interface()
 {
 	if [ "$1" != "" ] ; then
-		if [ `ifconfig | grep $1 | wc -l` != "0" ]; then
+		if [ `ifconfig -a | grep $1 | wc -l` != "0" ]; then
 			sudo ifconfig $1 up
 		fi
 	fi

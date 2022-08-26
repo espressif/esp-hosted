@@ -132,6 +132,11 @@
 > >	  ```sh
 > >   $ sudo sync; sudo reboot
 > >   ```
+> > 
+> > ##### Checkout ESP-Hosted repo
+> > ```sh
+> > $ git clone git@github.com:espressif/esp-hosted.git
+> > ```
 > >
 > > ---
 > </p></details>
@@ -142,13 +147,13 @@
 >
 > > ## Build and load kernel module
 > >
-> > Services in running on host operating system, such as <b>NetworkManager</b> can interfere in testing. Execute following commands to prevent this.
+> > `wpa_supplicant` already running on host operating system can interfere in testing. Execute following commands to prevent this.
 > > ```sh
-> > $ sudo systemctl disable NetworkManager
 > > $ sudo killall wpa_supplicant
 > > ```
 > > Execute following command to load/reload driver
 > > ```sh
+> > $ cd esp-hosted/host/
 > > $ bash rpi_init.sh sdio
 > > ```
 > > This script should:
@@ -309,6 +314,11 @@
 > >   core_freq_min=250
 > >   ```
 > > - Please reboot Raspberry-Pi after changing this file.
+> > 
+> > ##### Checkout ESP-Hosted repo
+> > ```sh
+> > $ git clone git@github.com:espressif/esp-hosted.git
+> > ```
 > >
 > > ---
 > </p></details>
@@ -319,13 +329,13 @@
 >
 > > ## Build and load kernel module
 > >
-> > Services in running on host operating system, such as <b>NetworkManager</b> can interfere in testing. Execute following commands to prevent this.
+> > `wpa_supplicant` already running on host operating system can interfere in testing. Execute following commands to prevent this.
 > > ```sh
-> > $ sudo systemctl disable NetworkManager
 > > $ sudo killall wpa_supplicant
 > > ```
 > > Execute following command to load/reload driver
 > > ```sh
+> > $ cd esp-hosted/host/
 > > $ bash rpi_init.sh spi
 > > ```
 > > This script should:
@@ -526,6 +536,11 @@
 > >	  ```sh
 > >   $ sudo sync; sudo reboot
 > >   ```
+> > 
+> > ##### Checkout ESP-Hosted repo
+> > ```sh
+> > $ git clone git@github.com:espressif/esp-hosted.git
+> > ```
 > >
 > > ---
 > </p></details>
@@ -536,13 +551,13 @@
 >
 > > ## Build and load kernel module
 > >
-> > Services in running on host operating system, such as <b>NetworkManager</b> can interfere in testing. Execute following commands to prevent this.
+> > `wpa_supplicant` already running on host operating system can interfere in testing. Execute following commands to prevent this.
 > > ```sh
-> > $ sudo systemctl disable NetworkManager
 > > $ sudo killall wpa_supplicant
 > > ```
 > > Execute following command to load/reload driver
 > > ```sh
+> > $ cd esp-hosted/host/
 > > $ bash rpi_init.sh sdio btuart
 > > ```
 > > This script should:
@@ -756,6 +771,11 @@
 > >	  ```sh
 > >   $ sudo sync; sudo reboot
 > >   ```
+> > 
+> > ##### Checkout ESP-Hosted repo
+> > ```sh
+> > $ git clone git@github.com:espressif/esp-hosted.git
+> > ```
 > >
 > > ---
 > </p></details>
@@ -766,13 +786,13 @@
 >
 > > ## Build and load kernel module
 > >
-> > Services in running on host operating system, such as <b>NetworkManager</b> can interfere in testing. Execute following commands to prevent this.
+> > `wpa_supplicant` already running on host operating system can interfere in testing. Execute following commands to prevent this.
 > > ```sh
-> > $ sudo systemctl disable NetworkManager
 > > $ sudo killall wpa_supplicant
 > > ```
 > > Execute following command to load/reload driver
 > > ```sh
+> > $ cd esp-hosted/host/
 > > $ bash rpi_init.sh spi btuart
 > > ```
 > > This script should:
