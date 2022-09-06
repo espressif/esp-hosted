@@ -20,6 +20,8 @@
 #include "esp_cmd.h"
 #include "esp_api.h"
 #include "esp_wpa_utils.h"
+#include "esp.h"
+#include "esp_cfg80211.h"
 
 #define PRINT_HEXDUMP(STR,ARG, ARG_LEN,level) \
 	print_hex_dump(KERN_INFO, STR, DUMP_PREFIX_ADDRESS, 16, 1, ARG, ARG_LEN, 1);
@@ -35,7 +37,6 @@ struct beacon_probe_fixed_params {
 	__le16 beacon_interval;
 	__le16 cap_info;
 } __packed;
-
 
 static struct command_node * get_free_cmd_node(struct esp_adapter *adapter)
 {
@@ -61,14 +62,16 @@ static struct command_node * get_free_cmd_node(struct esp_adapter *adapter)
 	return cmd_node;
 }
 
-static inline void reset_cmd_node(struct command_node * cmd_node)
+static inline void reset_cmd_node(struct esp_adapter *adapter, struct command_node * cmd_node)
 {
 	cmd_node->cmd_code = 0;
 
+	spin_lock_bh(&adapter->cmd_lock);
 	if (cmd_node->resp_skb) {
 		dev_kfree_skb_any(cmd_node->resp_skb);
 		cmd_node->resp_skb = NULL;
 	}
+	spin_unlock_bh(&adapter->cmd_lock);
 }
 
 static void queue_cmd_node(struct esp_adapter *adapter,
@@ -77,9 +80,9 @@ static void queue_cmd_node(struct esp_adapter *adapter,
 	spin_lock_bh(&adapter->cmd_pending_queue_lock);
 
 	if (flag_high_prio)
-		list_add(&cmd_node->list, &adapter->cmd_pending_queue);
+		list_add_rcu(&cmd_node->list, &adapter->cmd_pending_queue);
 	else
-		list_add_tail(&cmd_node->list, &adapter->cmd_pending_queue);
+		list_add_tail_rcu(&cmd_node->list, &adapter->cmd_pending_queue);
 
 	spin_unlock_bh(&adapter->cmd_pending_queue_lock);
 }
@@ -120,7 +123,13 @@ static int decode_common_resp(struct command_node *cmd_node)
 
 
 	if (!cmd_node || !cmd_node->resp_skb || !cmd_node->resp_skb->data) {
-		printk(KERN_INFO "%s: invalid arg\n", __func__);
+
+		printk(KERN_INFO "esp32: %s Failed. cmd_node:%p \n", __func__, cmd_node);
+
+		if (cmd_node)
+			printk(KERN_INFO "esp32: %s: code: %u resp_skb:%p \n",
+				__func__, cmd_node->cmd_code, cmd_node->resp_skb);
+
 		return -1;
 	}
 
@@ -140,7 +149,7 @@ static void recycle_cmd_node(struct esp_adapter *adapter,
 	if (!adapter || !cmd_node)
 		return;
 
-	reset_cmd_node(cmd_node);
+	reset_cmd_node(adapter, cmd_node);
 
 	spin_lock_bh(&adapter->cmd_free_queue_lock);
 	list_add_tail(&cmd_node->list, &adapter->cmd_free_queue);
@@ -168,12 +177,16 @@ static int wait_and_decode_cmd_resp(struct esp_wifi_device *priv,
 
 	/* wait for command response */
 	ret = wait_event_interruptible_timeout(adapter->wait_for_cmd_resp,
-			adapter->cmd_resp != 0, COMMAND_RESPONSE_TIMEOUT);
+			adapter->cmd_resp == cmd_node->cmd_code, COMMAND_RESPONSE_TIMEOUT);
+
+	if (!test_bit(ESP_DRIVER_ACTIVE, &adapter->state_flags))
+		return 0;
 
 	if (ret == 0) {
-		printk(KERN_ERR "esp32: Command[%u] timed out\n",cmd_node->cmd_code);
+		printk(KERN_ERR "esp32: Command[%u] timed out\n", cmd_node->cmd_code);
 		ret = -EINVAL;
 	} else {
+		/*printk(KERN_DEBUG "Resp for command [%u]\n", cmd_node->cmd_code);*/
 		ret = 0;
 	}
 
@@ -188,18 +201,9 @@ static int wait_and_decode_cmd_resp(struct esp_wifi_device *priv,
 		if (ret == 0)
 			ret = decode_common_resp(cmd_node);
 
-		if (ret) {
+		if (ret)
+			esp_mark_scan_done(priv);
 
-			struct cfg80211_scan_info info = {
-				.aborted = false,
-			};
-
-			if (priv->request)
-				cfg80211_scan_done(priv->request, &info);
-
-			priv->scan_in_progress = false;
-			priv->request = NULL;
-		}
 		break;
 
 	case CMD_INIT_INTERFACE:
@@ -242,10 +246,12 @@ static void free_esp_cmd_pool(struct esp_adapter *adapter)
 
 	for (i=0; i<ESP_NUM_OF_CMD_NODES; i++) {
 
+		spin_lock_bh(&adapter->cmd_lock);
 		if (cmd_pool[i].resp_skb) {
 			dev_kfree_skb_any(cmd_pool[i].resp_skb);
 			cmd_pool[i].resp_skb = NULL;
 		}
+		spin_unlock_bh(&adapter->cmd_lock);
 	}
 
 	kfree(adapter->cmd_pool);
@@ -274,19 +280,6 @@ static int alloc_esp_cmd_pool(struct esp_adapter *adapter)
 	return 0;
 }
 
-#if 0
-static int is_command_pending(struct esp_adapter *adapter)
-{
-	int is_cmd_pend_q_empty;
-
-	spin_lock_bh(&adapter->cmd_pending_queue_lock);
-	is_cmd_pend_q_empty = list_empty(&adapter->cmd_pending_queue);
-	spin_unlock_bh(&adapter->cmd_pending_queue_lock);
-
-	return !is_cmd_pend_q_empty;
-}
-#endif
-
 static void esp_cmd_work(struct work_struct *work)
 {
 	int ret;
@@ -298,51 +291,72 @@ static void esp_cmd_work(struct work_struct *work)
 	if (!adapter)
 		return;
 
+	if (!test_bit(ESP_DRIVER_ACTIVE, &adapter->state_flags))
+		return;
+
+	synchronize_rcu();
+	spin_lock_bh(&adapter->cmd_lock);
 	if (adapter->cur_cmd) {
-		//TODO: there should be failure reported to
-		//cmd in progress. it should fail and not time out.
-		// applicable other neg cases also
+		/* Busy in another command */
+		/*printk(KERN_DEBUG "esp32: Busy in another cmd execution\n");*/
+		spin_unlock_bh(&adapter->cmd_lock);
 		return;
 	}
 
 	spin_lock_bh(&adapter->cmd_pending_queue_lock);
 
 	if (list_empty(&adapter->cmd_pending_queue)) {
+		/* No command to process */
+		/*printk(KERN_DEBUG "esp32: No more command in queue.\n");*/
 		spin_unlock_bh(&adapter->cmd_pending_queue_lock);
+		spin_unlock_bh(&adapter->cmd_lock);
 		return;
 	}
 
 	cmd_node = list_first_entry(&adapter->cmd_pending_queue,
 				    struct command_node, list);
 	if (! cmd_node) {
+		printk(KERN_DEBUG "esp32: cmd node NULL\n");
 		spin_unlock_bh(&adapter->cmd_pending_queue_lock);
+		spin_unlock_bh(&adapter->cmd_lock);
 		return;
 	}
+	/*printk(KERN_DEBUG "esp32: Processing Command [0x%X]\n", cmd_node->cmd_code);*/
+
 	list_del(&cmd_node->list);
 
 	if (! cmd_node->cmd_skb) {
-		printk (KERN_ERR "cmd_node->cmd_skb NULL \n");
+		printk (KERN_DEBUG "cmd_node->cmd_skb NULL \n");
 		spin_unlock_bh(&adapter->cmd_pending_queue_lock);
+		spin_unlock_bh(&adapter->cmd_lock);
 		return;
 	}
 
-	spin_lock_bh(&adapter->cmd_lock);
+	/* Set as current cmd */
 	adapter->cur_cmd = cmd_node;
-	adapter->cmd_resp = 0;
-	spin_unlock_bh(&adapter->cmd_lock);
 
-	spin_unlock_bh(&adapter->cmd_pending_queue_lock);
+	adapter->cmd_resp = 0;
+
 
 	ret = esp_send_packet(adapter, cmd_node->cmd_skb);
+	spin_unlock_bh(&adapter->cmd_lock);
 
 	if (ret) {
-		printk (KERN_ERR "Failed to send command\n");
-		spin_lock_bh(&adapter->cmd_lock);
+		printk (KERN_ERR "esp32: %s: Failed to send command [0x%X] \n",
+			__func__, cmd_node->cmd_code);
 		adapter->cur_cmd = NULL;
-		spin_unlock_bh(&adapter->cmd_lock);
+		spin_unlock_bh(&adapter->cmd_pending_queue_lock);
 		recycle_cmd_node(adapter, cmd_node);
 		return;
 	}
+
+	if (!list_empty(&adapter->cmd_pending_queue)) {
+		/*printk(KERN_DEBUG "Ym2: Pending cmds, queue work again\n");*/
+		spin_unlock_bh(&adapter->cmd_pending_queue_lock);
+		queue_work(adapter->cmd_wq, &adapter->cmd_work);
+		return;
+	}
+	spin_unlock_bh(&adapter->cmd_pending_queue_lock);
 }
 
 static int create_cmd_wq(struct esp_adapter *adapter)
@@ -408,7 +422,7 @@ struct command_node * prepare_command_request(struct esp_adapter *adapter, u8 cm
 	return node;
 }
 
-int process_command_response(struct esp_adapter *adapter, struct sk_buff *skb)
+int process_cmd_resp(struct esp_adapter *adapter, struct sk_buff *skb)
 {
 	if (!skb || !adapter) {
 		printk (KERN_ERR "esp32: CMD resp: invalid!\n");
@@ -427,9 +441,9 @@ int process_command_response(struct esp_adapter *adapter, struct sk_buff *skb)
 
 	spin_lock_bh(&adapter->cmd_lock);
 	adapter->cur_cmd->resp_skb = skb;
+	adapter->cmd_resp = adapter->cur_cmd->cmd_code;
 	spin_unlock_bh(&adapter->cmd_lock);
 
-	adapter->cmd_resp = 1;
 
 	wake_up_interruptible(&adapter->wait_for_cmd_resp);
 	queue_work(adapter->cmd_wq, &adapter->cmd_work);
@@ -440,34 +454,29 @@ int process_command_response(struct esp_adapter *adapter, struct sk_buff *skb)
 static void process_scan_result_event(struct esp_wifi_device *priv,
 		struct scan_event *scan_evt)
 {
-	struct cfg80211_bss *bss;
-	struct beacon_probe_fixed_params *fixed_params;
+	struct cfg80211_bss *bss = NULL;
+	struct beacon_probe_fixed_params *fixed_params = NULL;
+	struct ieee80211_channel *chan = NULL;
+	u8 *ie_buf = NULL;
 	u64 timestamp;
 	u16 beacon_interval;
 	u16 cap_info;
-	u8 *ie_buf;
 	u32 ie_len;
 	int freq;
-	struct ieee80211_channel *chan;
 
 	if (!priv || !scan_evt) {
 		printk(KERN_ERR "%s: Invalid arguments\n", __func__);
 		return;
 	}
 
+	/*if (!priv->scan_in_progress) {
+		return;
+	}*/
+
 	/* End of scan; notify cfg80211 */
 	if (scan_evt->header.status == 0) {
-		struct cfg80211_scan_info info = {
-			.aborted = false,
-		};
 
-		if (priv->request) {
-			/* scan completion */
-			cfg80211_scan_done(priv->request, &info);
-			priv->request = NULL;
-		}
-
-		priv->scan_in_progress = false;
+		esp_mark_scan_done(priv);
 
 		if (priv->waiting_for_scan_done) {
 			priv->waiting_for_scan_done = false;
@@ -512,13 +521,10 @@ static void process_disconnect_event(struct esp_wifi_device *priv,
 		return;
 	}
 
-	printk(KERN_INFO "Disconnect event for ssid %s [%d]\n", event->ssid,
-			event->reason);
+	printk(KERN_INFO "Disconnect event for ssid %s [reason:%d]\n",
+			event->ssid, event->reason);
 
-	esp_port_close(priv);
-	if (priv->ndev)
-		cfg80211_disconnected(priv->ndev, event->reason, NULL, 0, true,
-			GFP_KERNEL);
+	esp_mark_disconnect(priv, 0, true);
 }
 
 static void process_connect_status_event(struct esp_wifi_device *priv,
@@ -545,16 +551,12 @@ static void process_connect_status_event(struct esp_wifi_device *priv,
 	esp_port_open(priv);
 }
 
-int process_event(struct esp_wifi_device *priv, struct sk_buff *skb)
+int process_cmd_event(struct esp_wifi_device *priv, struct sk_buff *skb)
 {
 	struct event_header *header;
 
 	if (!skb || !priv) {
 		printk (KERN_ERR "esp32: CMD resp: invalid!\n");
-
-		if (skb)
-			dev_kfree_skb_any(skb);
-
 		return -1;
 	}
 
@@ -629,7 +631,6 @@ int cmd_connect_request(struct esp_wifi_device *priv,
 	struct ieee80211_channel *chan;
 	struct cfg80211_bss *bss;
 	struct esp_adapter *adapter = NULL;
-
 	u8 retry = 2;
 
 	if (!priv || !params || !priv->adapter) {
@@ -732,7 +733,6 @@ int cmd_set_default_key(struct esp_wifi_device *priv, u8 key_index)
 		return 0;
 	}
 
-
 	cmd_len = sizeof(struct cmd_key_operation);
 
 	/* get new cmd node */
@@ -785,8 +785,6 @@ int cmd_del_key(struct esp_wifi_device *priv, u8 key_index, bool pairwise,
 #endif
 
 	mac = pairwise ? mac_addr : bc_mac;
-	print_hex_dump(KERN_INFO, "mac_addr: ", DUMP_PREFIX_ADDRESS, 16, 1,
-			mac, MAC_ADDR_LEN, 1);
 
 	cmd_len = sizeof(struct cmd_key_operation);
 
@@ -1049,7 +1047,6 @@ int cmd_scan_request(struct esp_wifi_device *priv, struct cfg80211_scan_request 
 		return -EBUSY;
 	}
 
-
 	if (priv->scan_in_progress || priv->request) {
 		printk(KERN_ERR "Scan in progress.. return\n");
 		return -EBUSY;
@@ -1122,10 +1119,11 @@ int cmd_get_mac(struct esp_wifi_device *priv)
 }
 
 
-int deinit_esp_dev(struct esp_adapter *adapter)
+int esp_commands_teardown(struct esp_adapter *adapter)
 {
 #define MAX_DEINIT_RETRY 5
 	uint8_t iface_idx = 0;
+	struct esp_wifi_device *priv = NULL;
 
     if (!adapter) {
         return -EINVAL;
@@ -1136,25 +1134,18 @@ int deinit_esp_dev(struct esp_adapter *adapter)
 	if (!test_bit(ESP_CMD_INIT_DONE, &adapter->state_flags))
 		return 0;
 
-	wake_up_interruptible(&adapter->wait_for_cmd_resp);
-	spin_lock_bh(&adapter->cmd_pending_queue_lock);
 
 	for (iface_idx=0; iface_idx<ESP_MAX_INTERFACE; iface_idx++) {
-		if (adapter->priv[iface_idx] &&
-		    adapter->priv[iface_idx]->ndev &&
-		    adapter->priv[iface_idx]->wdev.current_bss)
-			cfg80211_disconnected(adapter->priv[iface_idx]->ndev, 0, NULL, 0, false,
-					GFP_KERNEL);
 
-		esp_port_close(adapter->priv[iface_idx]);
+		priv = adapter->priv[iface_idx];
+
+		if (!priv)
+			continue;
+
+		esp_mark_scan_done_and_disconnect(priv, false);
+
+		esp_port_close(priv);
 	}
-
-	list_del(&adapter->cmd_pending_queue);
-	spin_unlock_bh(&adapter->cmd_pending_queue_lock);
-
-	spin_lock_bh(&adapter->cmd_free_queue_lock);
-	list_del(&adapter->cmd_free_queue);
-	spin_unlock_bh(&adapter->cmd_free_queue_lock);
 
     destroy_cmd_wq(adapter);
     free_esp_cmd_pool(adapter);
@@ -1162,7 +1153,7 @@ int deinit_esp_dev(struct esp_adapter *adapter)
     return 0;
 }
 
-int init_esp_dev(struct esp_adapter *adapter)
+int esp_commands_setup(struct esp_adapter *adapter)
 {
 	if (!adapter) {
 		printk(KERN_ERR "esp32: %s failed\n", __func__);

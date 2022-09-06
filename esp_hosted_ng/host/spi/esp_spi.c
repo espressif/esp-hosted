@@ -132,7 +132,7 @@ static int write_packet(struct esp_adapter *adapter, struct sk_buff *skb)
 	}
 
 	if (!data_path) {
-		/*printk(KERN_INFO "%s:%u datapath closed\n",__func__,__LINE__);*/
+		printk(KERN_INFO "esp32: %s:%u datapath closed\n",__func__,__LINE__);
 		dev_kfree_skb(skb);
 		return -EPERM;
 	}
@@ -142,7 +142,7 @@ static int write_packet(struct esp_adapter *adapter, struct sk_buff *skb)
 		esp_tx_pause(cb->priv);
 		dev_kfree_skb(skb);
 		skb = NULL;
-		/* printk(KERN_ERR "%s: TX Pause busy", __func__);*/
+		/*printk(KERN_ERR "esp32: %s: TX Pause busy", __func__);*/
 		if (spi_context.spi_workqueue)
 			queue_work(spi_context.spi_workqueue, &spi_context.spi_work);
 		return -EBUSY;
@@ -162,19 +162,6 @@ static int write_packet(struct esp_adapter *adapter, struct sk_buff *skb)
 		queue_work(spi_context.spi_workqueue, &spi_context.spi_work);
 
 	return 0;
-}
-
-static void network_cmd_reinit(struct work_struct *work)
-{
-	struct esp_adapter * adapter = esp_get_adapter();
-
-	if (!adapter) {
-		printk(KERN_INFO "adapter not yet init\n");
-		return;
-	}
-
-	esp_remove_card(adapter);
-	esp_add_card(adapter);
 }
 
 void process_event_esp_bootup(struct esp_adapter *adapter, u8 *evt_buf, u8 len)

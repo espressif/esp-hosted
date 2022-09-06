@@ -143,6 +143,7 @@ struct wireless_dev *esp_cfg80211_add_iface(struct wiphy *wiphy,
 	if (!ndev)
 		return ERR_PTR(-ENOMEM);
 
+	set_bit(ESP_DRIVER_ACTIVE, &esp_dev->adapter->state_flags);
 	esp_wdev = netdev_priv(ndev);
 
 	ndev->ieee80211_ptr = &esp_wdev->wdev;
@@ -178,9 +179,12 @@ struct wireless_dev *esp_cfg80211_add_iface(struct wiphy *wiphy,
 
 
 	set_bit(ESP_NETWORK_UP, &esp_wdev->priv_flags);
+	clear_bit(ESP_CLEANUP_IN_PROGRESS, &esp_dev->adapter->state_flags);
+
 	return &esp_wdev->wdev;
 
 free_and_return:
+	clear_bit(ESP_DRIVER_ACTIVE, &esp_wdev->adapter->state_flags);
 	dev_net_set(ndev, NULL);
 	free_netdev(ndev);
 	esp_wdev->ndev = NULL;
@@ -351,3 +355,59 @@ int esp_cfg80211_register(struct esp_adapter *adapter)
 	return ret;
 }
 
+int esp_mark_scan_done(struct esp_wifi_device *priv)
+{
+	struct cfg80211_scan_info info = {
+		.aborted = false,
+	};
+
+	if (!priv)
+		return -EINVAL;
+
+	if (priv->request)
+		cfg80211_scan_done(priv->request, &info);
+
+	priv->scan_in_progress = false;
+	priv->request = NULL;
+
+	return 0;
+}
+
+int esp_mark_disconnect(struct esp_wifi_device *priv, uint16_t reason,
+		uint8_t locally_disconnect)
+{
+	if (priv && priv->ndev)
+		cfg80211_disconnected(priv->ndev, reason, NULL, 0, locally_disconnect,
+			GFP_KERNEL);
+	return 0;
+}
+
+int esp_mark_scan_done_and_disconnect(struct esp_wifi_device *priv,
+		uint8_t locally_disconnect)
+{
+	struct net_device *ndev = NULL;
+	struct cfg80211_scan_info info = {
+		.aborted = false,
+	};
+
+	if (!priv)
+		return -EINVAL;
+
+	if (priv->request)
+		cfg80211_scan_done(priv->request, &info);
+
+	ESP_CANCEL_SCHED_SCAN();
+
+	priv->scan_in_progress = false;
+	priv->request = NULL;
+
+	/* clear cfg80211 states */
+	ndev = priv->ndev;
+	if (ndev) {
+		if (ndev->reg_state == NETREG_REGISTERED) {
+			cfg80211_disconnected(ndev, 0, NULL, 0, locally_disconnect,
+					GFP_KERNEL);
+		}
+	}
+	return 0;
+}

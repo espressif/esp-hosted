@@ -26,7 +26,7 @@
 	do {                                                 \
 		int ret = (x);                                   \
         if (!!(ret)) {                                   \
-            printk(KERN_ERR "esp32: %s failure, ret: 0x%x\n", #x, ret);  \
+            printk(KERN_ERR "esp32: %s failure, ret: %d\n", #x, ret);  \
             return ret;                                  \
         }                                                \
 	} while(0);                                          \
