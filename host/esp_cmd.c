@@ -1085,8 +1085,10 @@ int cmd_scan_request(struct esp_wifi_device *priv, struct cfg80211_scan_request 
 	}
 #endif
 
+#if KERNEL_VERSION(4, 13, 0) <= LINUX_VERSION_CODE
 	scan_req->duration = request->duration;
 	memcpy(scan_req->bssid, request->bssid, MAC_ADDR_LEN);
+#endif
 
 	priv->scan_in_progress = true;
 	priv->request = request;
