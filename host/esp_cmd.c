@@ -395,7 +395,7 @@ struct command_node * prepare_command_request(struct esp_adapter *adapter, u8 cm
 
 	len += sizeof(struct esp_payload_header);
 
-	payload_header = skb_put(node->cmd_skb, len);
+	payload_header = (struct esp_payload_header *) skb_put(node->cmd_skb, len);
 	memset(payload_header, 0, len);
 
 	payload_header->if_type = ESP_STA_IF;
