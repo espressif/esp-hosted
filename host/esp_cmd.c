@@ -189,13 +189,16 @@ static int wait_and_decode_cmd_resp(struct esp_wifi_device *priv,
 			ret = decode_common_resp(cmd_node);
 
 		if (ret) {
+			if (priv->request) {
+#if KERNEL_VERSION(4, 8, 0) <= LINUX_VERSION_CODE
+				struct cfg80211_scan_info info;
 
-			struct cfg80211_scan_info info = {
-				.aborted = false,
-			};
-
-			if (priv->request)
+				info.aborted = aborted;
 				cfg80211_scan_done(priv->request, &info);
+#else
+				cfg80211_scan_done(priv->request, false);
+#endif
+			}
 
 			priv->scan_in_progress = false;
 			priv->request = NULL;
@@ -392,7 +395,7 @@ struct command_node * prepare_command_request(struct esp_adapter *adapter, u8 cm
 
 	len += sizeof(struct esp_payload_header);
 
-	payload_header = skb_put(node->cmd_skb, len);
+	payload_header = (struct esp_payload_header *) skb_put(node->cmd_skb, len);
 	memset(payload_header, 0, len);
 
 	payload_header->if_type = ESP_STA_IF;
@@ -457,13 +460,16 @@ static void process_scan_result_event(struct esp_wifi_device *priv,
 
 	/* End of scan; notify cfg80211 */
 	if (scan_evt->header.status == 0) {
-		struct cfg80211_scan_info info = {
-			.aborted = false,
-		};
-
 		if (priv->request) {
 			/* scan completion */
+#if KERNEL_VERSION(4, 8, 0) <= LINUX_VERSION_CODE
+			struct cfg80211_scan_info info;
+
+			info.aborted = aborted;
 			cfg80211_scan_done(priv->request, &info);
+#else
+			cfg80211_scan_done(priv->request, false);
+#endif
 			priv->request = NULL;
 		}
 
@@ -1079,8 +1085,10 @@ int cmd_scan_request(struct esp_wifi_device *priv, struct cfg80211_scan_request 
 	}
 #endif
 
+#if KERNEL_VERSION(4, 13, 0) <= LINUX_VERSION_CODE
 	scan_req->duration = request->duration;
 	memcpy(scan_req->bssid, request->bssid, MAC_ADDR_LEN);
+#endif
 
 	priv->scan_in_progress = true;
 	priv->request = request;

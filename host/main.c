@@ -653,7 +653,7 @@ static void process_rx_packet(struct esp_adapter *adapter, struct sk_buff *skb)
 				printk(KERN_INFO "%s:%u eap skb unaligned\n",__func__, __LINE__);
 			}
 
-			eth = skb_put(eap_skb, ETH_HLEN);
+			eth = (struct ethhdr *)skb_put(eap_skb, ETH_HLEN);
 			ether_addr_copy(eth->h_dest, /*skb->data*/priv->ndev->dev_addr);
 			ether_addr_copy(eth->h_source, /*skb->data+6*/ ap_bssid);
 			eth->h_proto = cpu_to_be16(ETH_P_PAE);
