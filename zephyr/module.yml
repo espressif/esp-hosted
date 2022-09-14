@@ -1,0 +1,4 @@
+name: esp-hosted
+build:
+  cmake-ext: True
+  kconfig-ext: True

@@ -123,7 +123,8 @@ static void station_event_handler(void *arg, esp_event_base_t event_base,
 		if (disconnected_event->reason == WIFI_REASON_NO_AP_FOUND)
 			xEventGroupSetBits(wifi_event_group, WIFI_NO_AP_FOUND_BIT);
 		else if ((disconnected_event->reason == WIFI_REASON_CONNECTION_FAIL) ||
-				(disconnected_event->reason == WIFI_REASON_NOT_AUTHED))
+				(disconnected_event->reason == WIFI_REASON_NOT_AUTHED) ||
+				(disconnected_event->reason == WIFI_REASON_4WAY_HANDSHAKE_TIMEOUT))
 			xEventGroupSetBits(wifi_event_group, WIFI_WRONG_PASSWORD_BIT);
 		else
 			xEventGroupSetBits(wifi_event_group, WIFI_FAIL_BIT);
@@ -158,6 +159,8 @@ static void softap_event_handler(void *arg, esp_event_base_t event_base,
 		wifi_event_ap_staconnected_t *event = (wifi_event_ap_staconnected_t *) event_data;
 		ESP_LOGI(TAG, "station "MACSTR" join, AID=%d",
 				MAC2STR(event->mac), event->aid);
+        send_event_data_to_host(CTRL_MSG_ID__Event_StationConnectFromESPSoftAP,
+                                event->mac, MAC_LEN);
 	} else if (event_id == WIFI_EVENT_AP_STADISCONNECTED) {
 		wifi_event_ap_stadisconnected_t *event =
 			(wifi_event_ap_stadisconnected_t *) event_data;
@@ -591,7 +594,6 @@ err:
 	} else {
 		mem_free(resp_payload->mac.data);
 		resp_payload->mac.len = 0;
-		resp_payload->resp = FAILURE;
 	}
 	mem_free(wifi_cfg);
 
@@ -2114,6 +2116,9 @@ static void esp_ctrl_msg_cleanup(CtrlMsg *resp)
 		} case (CTRL_MSG_ID__Event_StationDisconnectFromESPSoftAP) : {
 			mem_free(resp->event_station_disconnect_from_esp_softap);
 			break;
+		} case (CTRL_MSG_ID__Event_StationConnectFromESPSoftAP) : {
+			mem_free(resp->event_station_connect_from_esp_softap);
+			break;
 		} default: {
 			ESP_LOGE(TAG, "Unsupported CtrlMsg type[%u]",resp->msg_id);
 			break;
@@ -2234,6 +2239,40 @@ static esp_err_t ctrl_ntfy_StationDisconnectFromAP(CtrlMsg *ntfy,
 
 }
 
+static esp_err_t ctrl_ntfy_StationConnectFromESPSoftAP(CtrlMsg *ntfy,
+                                                          const uint8_t *data, ssize_t len)
+{
+    char mac_str[BSSID_LENGTH] = "";
+    CtrlMsgEventStationConnectFromESPSoftAP *ntfy_payload = NULL;
+
+    ntfy_payload = (CtrlMsgEventStationConnectFromESPSoftAP*)
+        calloc(1,sizeof(CtrlMsgEventStationConnectFromESPSoftAP));
+    if (!ntfy_payload) {
+        ESP_LOGE(TAG,"Failed to allocate memory");
+        return ESP_ERR_NO_MEM;
+    }
+    ctrl_msg__event__station_connect_from_espsoft_ap__init(ntfy_payload);
+
+    ntfy->payload_case = CTRL_MSG__PAYLOAD_EVENT_STATION_CONNECT_FROM__ESP__SOFT_AP;
+    ntfy->event_station_connect_from_esp_softap = ntfy_payload;
+
+    snprintf(mac_str, BSSID_LENGTH, MACSTR, MAC2STR(data));
+    ntfy_payload->mac.len = strnlen(mac_str, BSSID_LENGTH);
+    ESP_LOGI(TAG,"mac [%s]\n", mac_str);
+
+    ntfy_payload->mac.data = (uint8_t *)strndup(mac_str, ntfy_payload->mac.len);
+    if (!ntfy_payload->mac.data) {
+        ESP_LOGE(TAG, "Failed to allocate sta connect from softap");
+        goto err;
+    }
+
+    ntfy_payload->resp = SUCCESS;
+    return ESP_OK;
+err:
+    ntfy_payload->resp = FAILURE;
+    return ESP_OK;
+}
+
 static esp_err_t ctrl_ntfy_StationDisconnectFromESPSoftAP(CtrlMsg *ntfy,
 		const uint8_t *data, ssize_t len)
 {
@@ -2295,6 +2334,9 @@ esp_err_t ctrl_notify_handler(uint32_t session_id,const uint8_t *inbuf,
 			break;
 		} case CTRL_MSG_ID__Event_StationDisconnectFromESPSoftAP: {
 			ret = ctrl_ntfy_StationDisconnectFromESPSoftAP(&ntfy, inbuf, inlen);
+			break;
+		} case CTRL_MSG_ID__Event_StationConnectFromESPSoftAP: {
+			ret = ctrl_ntfy_StationConnectFromESPSoftAP(&ntfy, inbuf, inlen);
 			break;
 		} default: {
 			ESP_LOGE(TAG, "Incorrect/unsupported Ctrl Notification[%u]\n",ntfy.msg_id);

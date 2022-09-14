@@ -1,0 +1,10 @@
+# vscode config files
+.vscode/
+
+# Clion config & build files
+.idea/
+cmake-build-*/
+
+sdkconfig
+sdkconfig.old
+build/

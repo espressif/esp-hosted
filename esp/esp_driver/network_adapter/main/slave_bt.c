@@ -93,8 +93,6 @@ void process_hci_rx_pkt(uint8_t *payload, uint16_t payload_len) {
 #if CONFIG_ESP_BT_DEBUG
     ESP_LOG_BUFFER_HEXDUMP("bt_rx", payload, payload_len, ESP_LOG_INFO);
 #endif
-	payload--;
-	payload_len++;
 
 	if (!esp_vhci_host_check_send_available()) {
 		ESP_LOGD(BT_TAG, "VHCI not available");

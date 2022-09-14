@@ -10,6 +10,7 @@
 #include "esp_queue.h"
 #include <unistd.h>
 
+#define STM32F469xx
 
 #ifdef STM32F469xx
 #include "common.h"
@@ -70,7 +71,7 @@
 
 #define CHECK_CTRL_MSG_FAILED(msGparaM)                                       \
     if (ctrl_msg->msGparaM->resp) {                                           \
-        command_log("Failure resp/event: possibly precondition not met\n");   \
+        command_log("Failure resp/event: possibly precondition not met, %d\n", __LINE__);   \
         goto fail_parse_ctrl_msg;                                             \
     }
 
@@ -255,6 +256,22 @@ static int ctrl_app_parse_event(CtrlMsg *ctrl_msg, ctrl_cmd_t *app_ntfy)
 					app_ntfy->u.e_sta_disconnected.mac);*/
 			}
 			break;
+		} case CTRL_EVENT_STATION_CONNECT_FROM_ESP_SOFTAP: {
+			CHECK_CTRL_MSG_NON_NULL(event_station_connect_from_esp_softap);
+			app_ntfy->resp_event_status =
+				ctrl_msg->event_station_connect_from_esp_softap->resp;
+
+			if(SUCCESS==app_ntfy->resp_event_status) {
+				CHECK_CTRL_MSG_NON_NULL_VAL(
+					ctrl_msg->event_station_connect_from_esp_softap->mac.data,
+					"NULL mac");
+				strncpy(app_ntfy->u.e_sta_disconnected.mac,
+					(char *)ctrl_msg->event_station_connect_from_esp_softap->mac.data,
+					ctrl_msg->event_station_connect_from_esp_softap->mac.len);
+				/*printf("EVENT: SoftAP mode: Disconnect MAC[%s]\n",
+					app_ntfy->u.e_sta_disconnected.mac);*/
+			}
+			break;
 		} default: {
 			printf("Invalid/unsupported event[%u] received\n",ctrl_msg->msg_id);
 			goto fail_parse_ctrl_msg;
@@ -425,6 +442,7 @@ static int ctrl_app_parse_resp(CtrlMsg *ctrl_msg, ctrl_cmd_t *app_resp)
 					CHECK_CTRL_MSG_FAILED(resp_connect_ap);
 					break;
 				default:
+					printk("----------------------------failed :%d\n", ctrl_msg->resp_connect_ap->resp);
 					CHECK_CTRL_MSG_FAILED(resp_connect_ap);
 					command_log("Connect AP failed\n");
 					goto fail_parse_ctrl_msg2;

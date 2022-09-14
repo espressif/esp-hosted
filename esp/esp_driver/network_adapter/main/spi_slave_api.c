@@ -501,7 +501,7 @@ static interface_handle_t * esp_spi_init(void)
 		.mode=SPI_MODE_2,
 		.spics_io_num=GPIO_CS,
 		.queue_size=SPI_QUEUE_SIZE,
-		.flags=0,
+		.flags=SPI_SLAVE_BIT_LSBFIRST,
 		.post_setup_cb=spi_post_setup_cb,
 		.post_trans_cb=spi_post_trans_cb
 	};
@@ -532,6 +532,7 @@ static interface_handle_t * esp_spi_init(void)
 	 * so that no rogue pulses when no master is connected
 	 */
 	gpio_set_pull_mode(GPIO_MOSI, GPIO_PULLUP_ONLY);
+	gpio_set_pull_mode(GPIO_MISO, GPIO_PULLUP_ONLY);
 	gpio_set_pull_mode(GPIO_SCLK, GPIO_PULLUP_ONLY);
 	gpio_set_pull_mode(GPIO_CS, GPIO_PULLUP_ONLY);
 
