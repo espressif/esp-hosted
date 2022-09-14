@@ -17,8 +17,11 @@
  * this warranty disclaimer.
  */
 #include <stdio.h>
-#include <stdlib.h>
 #include "esp_queue.h"
+#include "platform_wrapper.h"
+
+#define malloc	hosted_malloc
+#define free	hosted_free
 
 /* create new node */
 static q_node_t * new_q_node(void *data)

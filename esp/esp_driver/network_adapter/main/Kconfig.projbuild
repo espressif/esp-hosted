@@ -33,7 +33,7 @@ menu "Example Configuration"
 
     config ESP_SPI_GPIO_HANDSHAKE
         int "GPIO pin for handshake"
-        default 3 if IDF_TARGET_ESP32C3
+        default 5 if IDF_TARGET_ESP32C3
         default 2
         help
             GPIO pin to use for handshake with other spi controller

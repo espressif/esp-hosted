@@ -140,9 +140,10 @@ enum CtrlMsgId {
     Event_Heartbeat = 302;
     Event_StationDisconnectFromAP = 303;
     Event_StationDisconnectFromESPSoftAP = 304;
+    Event_StationConnectFromESPSoftAP = 305;
     /* Add new control path command notification before Event_Max
      * and update Event_Max */
-    Event_Max = 305;
+    Event_Max = 306;
 }
 
 /* internal supporting structures for CtrlMsg */
@@ -354,6 +355,11 @@ message CtrlMsg_Event_StationDisconnectFromAP {
     int32 resp = 1;
 }
 
+message CtrlMsg_Event_StationConnectFromESPSoftAP {
+    int32 resp = 1;
+    bytes mac = 2;
+}
+
 message CtrlMsg_Event_StationDisconnectFromESPSoftAP {
     int32 resp = 1;
     bytes mac = 2;
@@ -428,5 +434,6 @@ message CtrlMsg {
         CtrlMsg_Event_Heartbeat event_heartbeat = 302;
         CtrlMsg_Event_StationDisconnectFromAP event_station_disconnect_from_AP = 303;
         CtrlMsg_Event_StationDisconnectFromESPSoftAP event_station_disconnect_from_ESP_SoftAP = 304;
+        CtrlMsg_Event_StationConnectFromESPSoftAP event_station_connect_from_ESP_SoftAP = 305;
     }
 }
