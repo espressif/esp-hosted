@@ -22,6 +22,12 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/portmacro.h>
 
+#define MEM_DUMP(s) \
+    printf("%s free:%lu min-free:%lu lfb-def:%u lfb-8bit:%u\n\n", s, \
+                  esp_get_free_heap_size(), esp_get_minimum_free_heap_size(), \
+                  heap_caps_get_largest_free_block(MALLOC_CAP_DEFAULT),\
+                  heap_caps_get_largest_free_block(MALLOC_CAP_8BIT))
+
 #define MEMPOOL_OK                       0
 #define MEMPOOL_FAIL                     -1
 
@@ -46,6 +52,12 @@
 
 #define MEMSET_REQUIRED                  1
 #define MEMSET_NOT_REQUIRED              0
+
+#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(4, 4, 0) 
+  #define ESP_MUTEX_INIT(mUtEx) portMUX_INITIALIZE(&(mUtEx));
+#else
+  #define ESP_MUTEX_INIT(mUtEx) vPortCPUInitializeMutex(&(mUtEx));
+#endif
 
 
 #ifdef CONFIG_ESP_CACHE_MALLOC

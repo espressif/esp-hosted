@@ -91,6 +91,7 @@ make CROSS_COMPILE=/home/user1/arm64_toolchain/bin/aarch64-linux-gnu-
 		- Maximum SPI slave clock supported by ESP chipsets are:
 			- ESP32 : 10MHZ
 			- ESP32-S2: 40MHz
+			- ESP32-C2: 60MHz
 			- ESP32-C3: 60MHz
 			- ESP32-S3: 60MHz
 		- Above frequencies cannot be used while using Raspberry Pi as SPI master because of its limitation. \

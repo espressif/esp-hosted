@@ -17,10 +17,16 @@
 #include <esp_err.h>
 #define min(X, Y)               (((X) < (Y)) ? (X) : (Y))
 
+#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 0, 0) 
+  #define TIMEOUT_IN_SEC          (1000 / portTICK_PERIOD_MS)
+#else
+  #define TIMEOUT_IN_SEC          (1000 / portTICK_RATE_MS)
+#endif
+
+
 #define SSID_LENGTH             32
 #define PASSWORD_LENGTH         64
 #define BSSID_LENGTH            19
-#define TIMEOUT_IN_SEC          (1000 / portTICK_RATE_MS)
 #define MAC_LEN                 6
 #define VENDOR_OUI_BUF          3
 

@@ -75,6 +75,22 @@ Setup image is here.
 
 ![alt text](stm_esp32_s2_setup.jpg "Setup of STM32F469I as host and ESP32-S2 as peripheral")
 
+#### Hardware connections for ESP32-C2
+| STM32 Pin | ESP32-C2 Pin | Function |
+|:---------:|:-----------:|:--------:|
+| PB4  (pin5) | IO02 | MISO |
+| PA5  (pin7) | IO06 | CLK |
+| PB5  (pin9) | IO07 | MOSI |
+| PA15 (pin11)| IO10 | CS |
+| GND  (pin2) | GND | GND |
+| PC6  (pin6) | IO03 | Handshake |
+| PC7  (pin8) | IO04 | Data ready from ESP |
+| PB13  (pin10) | RST | Reset ESP |
+
+Setup image is here.
+
+![alt text](stm_esp32_c2_setup.png "Setup of STM32F469I as host and ESP32-C2 as peripheral")
+
 #### Hardware connections for ESP32-C3
 | STM32 Pin | ESP32-C3 Pin | Function |
 |:---------:|:-----------:|:--------:|
@@ -115,11 +131,11 @@ ESP-IDF release version to be used for ESP peripherals are
 
 | ESP peripheral | ESP-IDF release |
 |:----:|:----:|
-| ESP32 | release v4.0 |
-| ESP32-S2 | release v4.2 |
-| ESP32-C3 | release v4.3 |
-| ESP32-C3 (HCI over UART)| release v4.4 (beta)|
-| ESP32-S3 | release v4.4 |
+| ESP32 | [release v4.0](https://github.com/espressif/esp-idf/tree/release/v4.0) |
+| ESP32-S2 | [release v4.2](https://github.com/espressif/esp-idf/tree/release/v4.2) |
+| ESP32-C2 | [release v5.0](https://github.com/espressif/esp-idf/tree/release/v5.0) |
+| ESP32-C3 | [release v4.4](https://github.com/espressif/esp-idf/tree/release/v4.4) |
+| ESP32-S3 | [release v4.4](https://github.com/espressif/esp-idf/tree/release/v4.4) |
 
 Clone appropriate ESP-IDF version as per your ESP peripheral. The control path between MCU host and ESP peripheral is based on `protobuf`. For that, corresponding stack layer, `protocomm` from ESP-IDF is used.
 
@@ -136,7 +152,7 @@ $ python esptool.py --chip <chipset> --port <serial_port> --baud <flash_baud_rat
 0x10000 esp_hosted_firmware_<chipset>_spi_v<release_version>.bin
 
 Where,
-	<chipset>         : esp32/esp32s2/esp32c3
+	<chipset>         : esp32/esp32s2/esp32c2/esp32c3
 	<serial_port>     : serial port of ESP peripheral
 	<flash_baud_rate> : flash baud rate of ESP peripheral, ex.115200, 921600, 2Mbps
 	<release_version> : 0.1,0.2 etc. Latest from [release page](https://github.com/espressif/esp-hosted/releases)
@@ -154,9 +170,13 @@ Navigate to `esp/esp_driver/network_adapter` directory.
 ```
 $ idf.py fullclean
 ```
-:warning: Skip this step for ESP32. Run for ESP32-S2 or ESP32-C3 only.
+:warning: Skip this step for ESP32. Run for ESP32-S2 / ESP32-C2 / ESP32-C3
 ```
 $ idf.py set-target esp32s2
+```
+or
+```
+$ idf.py set-target esp32c2
 ```
 or
 ```
@@ -168,7 +188,7 @@ Run following command and navigate to `Example Configuration -> Transport layer 
 $ idf.py menuconfig
 ```
 
-:warning: Skip below step for ESP32-S2 or ESP32-C3. Run for  ESP32 only.
+:warning: Skip below step for ESP32-S2 / ESP32-C2 / ESP32-C3. Run for  ESP32 only.
 
 Change SPI controller to VSPI. Please navigate to `Example Configuration → SPI Configuration` and change value of `SPI controller to use` to `3`
 

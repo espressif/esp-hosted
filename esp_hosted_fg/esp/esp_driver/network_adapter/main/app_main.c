@@ -43,7 +43,6 @@
 #include <protocomm.h>
 #include "protocomm_pserial.h"
 #include "slave_control.h"
-#include "driver/periph_ctrl.h"
 #include "slave_bt.c"
 
 static const char TAG[] = "NETWORK_ADAPTER";
@@ -66,13 +65,13 @@ static const char TAG_TX_S[] = "CONTROL S -> H";
 #define UNKNOWN_CTRL_MSG_ID              0
 
 #if CONFIG_ESP_SPI_HOST_INTERFACE
-#ifdef CONFIG_IDF_TARGET_ESP32S2
-#define TO_HOST_QUEUE_SIZE               5
+  #ifdef CONFIG_IDF_TARGET_ESP32S2
+    #define TO_HOST_QUEUE_SIZE           5
+  #else
+    #define TO_HOST_QUEUE_SIZE           20
+  #endif
 #else
-#define TO_HOST_QUEUE_SIZE               20
-#endif
-#else
-#define TO_HOST_QUEUE_SIZE               100
+  #define TO_HOST_QUEUE_SIZE             100
 #endif
 
 #define ETH_DATA_LEN                     1500
@@ -512,34 +511,20 @@ static esp_err_t serial_write_data(uint8_t* data, ssize_t len)
 static esp_err_t initialise_wifi(void)
 {
 	wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
+
 	ESP_ERROR_CHECK(esp_event_loop_create_default());
-	esp_err_t result = esp_wifi_init_internal(&cfg);
-	if (result != ESP_OK) {
-		ESP_LOGE(TAG,"Init internal failed");
-		return result;
-	}
+
+	ESP_ERROR_CHECK(esp_wifi_init(&cfg));
+
 	esp_wifi_set_debug_log();
-	result = esp_supplicant_init();
-	if (result != ESP_OK) {
-		ESP_LOGE(TAG, "Failed to init supplicant (0x%x)", result);
-		esp_err_t deinit_ret = esp_wifi_deinit_internal();
-		if (deinit_ret != ESP_OK) {
-			ESP_LOGE(TAG, "Failed to deinit Wi-Fi internal (0x%x)", deinit_ret);
-			return deinit_ret;
-		}
-		return result;
-	}
-	result = esp_wifi_set_mode(WIFI_MODE_NULL);
-	if (result != ESP_OK) {
-		ESP_LOGE(TAG,"Failed to reset wifi mode");
-		return result;
-	}
-	result = esp_wifi_start();
-	if (result != ESP_OK) {
-		ESP_LOGE(TAG,"Failed to start WiFi");
-		return result;
-	}
-	return result;
+
+	ESP_ERROR_CHECK(esp_wifi_set_storage(WIFI_STORAGE_RAM) );
+
+	ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_NULL) );
+
+	ESP_ERROR_CHECK(esp_wifi_start());
+
+	return 0;
 }
 
 int event_handler(uint8_t val)
@@ -767,8 +752,6 @@ void app_main()
 				4096, NULL, 1, NULL) == pdTRUE);
 #endif
 
-
-	tcpip_adapter_init();
 
 	ESP_ERROR_CHECK(initialise_wifi());
 

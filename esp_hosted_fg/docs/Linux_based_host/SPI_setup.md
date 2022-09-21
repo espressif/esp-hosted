@@ -37,6 +37,23 @@ Setup image is here.
 
 ![alt text](rpi_esp32_s2_setup.jpg "setup of Raspberry-Pi as host and ESP32-S2 as ESP peripheral")
 
+#### 1.1.3 ESP32-C2 setup
+| Raspberry-Pi Pin | ESP32-C2 Pin | Function |
+|:----------------:|:------------:|:--------:|
+| 24 | IO10 | CS0 |
+| 23 | IO06 | SCLK |
+| 21 | IO02 | MISO |
+| 19 | IO07 | MOSI |
+| 25 | GND | Ground |
+| 15 | IO03 | Handshake |
+| 13 | IO04 | Data ready |
+| 31 | RST | ESP32 Reset |
+
+Setup image is here.
+
+![alt text](rpi_esp32_c2_setup.jpeg "setup of Raspberry-Pi as host and ESP32-C2 as ESP peripheral")
+
+
 #### 1.1.3 ESP32-C3 setup
 | Raspberry-Pi Pin | ESP32-C3 Pin | Function |
 |:----------------:|:------------:|:--------:|
@@ -131,6 +148,24 @@ Where,
 ```
 * This command will flash `SPI` interface binaries on `esp32s2` chip.
 
+##### ESP32-C2
+```sh
+$ python esptool.py --chip esp32c2 --port <serial_port> --baud <flash_baud_rate> --before default_reset \
+--after hard_reset write_flash --flash_mode dio --flash_size detect --flash_freq 80m \
+0x0 esp_hosted_bootloader_esp32c2_spi_v<release_version>.bin \
+0x8000 esp_hosted_partition-table_esp32c2_spi_v<release_version>.bin \
+0xd000 esp_hosted_ota_data_initial_esp32c2_spi_v<release_version>.bin \
+0x10000 esp_hosted_firmware_esp32c2_spi_v<release_version>.bin
+
+Where,
+	<serial_port>     : serial port of ESP peripheral
+	<flash_baud_rate> : flash baud rate of ESP peripheral, ex.115200, 921600, 2Mbps
+	<release_version> : 0.1,0.2 etc. Latest from [release page](https://github.com/espressif/esp-hosted/releases)
+```
+* This command will flash `SPI` interface binaries on `esp32c2` chip.
+
+* Windows user can use ESP Flash Programming Tool to flash the pre-built binary.
+
 ##### ESP32-C3
 ```sh
 $ python esptool.py --chip esp32c3 --port <serial_port> --baud <flash_baud_rate> --before default_reset \
@@ -178,9 +213,13 @@ $ cd esp/esp_driver/network_adapter
 
 ##### Using cmake
 
-* :warning: `Set target if the ESP32-S2/ESP32-C3/ESP32-S3 is being used. Skip if ESP32 is being used.`
+* :warning: `Set target if the ESP32-S2/ESP32-C2/ESP32-C3/ESP32-S3 is being used. Skip if ESP32 is being used.`
 ```
 $ idf.py set-target esp32s2
+```
+or
+```
+$ idf.py set-target esp32c2
 ```
 or
 ```
