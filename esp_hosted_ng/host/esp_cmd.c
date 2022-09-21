@@ -22,6 +22,7 @@
 #include "esp_wpa_utils.h"
 #include "esp.h"
 #include "esp_cfg80211.h"
+#include "esp_kernel_port.h"
 
 #define PRINT_HEXDUMP(STR,ARG, ARG_LEN,level) \
 	print_hex_dump(KERN_INFO, STR, DUMP_PREFIX_ADDRESS, 16, 1, ARG, ARG_LEN, 1);
@@ -202,8 +203,7 @@ static int wait_and_decode_cmd_resp(struct esp_wifi_device *priv,
 			ret = decode_common_resp(cmd_node);
 
 		if (ret)
-			esp_mark_scan_done(priv);
-
+			ESP_MARK_SCAN_DONE(priv);
 		break;
 
 	case CMD_INIT_INTERFACE:
@@ -406,7 +406,7 @@ struct command_node * prepare_command_request(struct esp_adapter *adapter, u8 cm
 
 	len += sizeof(struct esp_payload_header);
 
-	payload_header = skb_put(node->cmd_skb, len);
+	payload_header = (struct esp_payload_header *)skb_put(node->cmd_skb, len);
 	memset(payload_header, 0, len);
 
 	payload_header->if_type = ESP_STA_IF;
@@ -476,8 +476,7 @@ static void process_scan_result_event(struct esp_wifi_device *priv,
 	/* End of scan; notify cfg80211 */
 	if (scan_evt->header.status == 0) {
 
-		esp_mark_scan_done(priv);
-
+		ESP_MARK_SCAN_DONE(priv);
 		if (priv->waiting_for_scan_done) {
 			priv->waiting_for_scan_done = false;
 			wake_up_interruptible(&priv->wait_for_scan_completion);
@@ -501,8 +500,8 @@ static void process_scan_result_event(struct esp_wifi_device *priv,
 	ie_len -= sizeof(struct beacon_probe_fixed_params);
 
 	if (chan && !(chan->flags & IEEE80211_CHAN_DISABLED)) {
-		bss = cfg80211_inform_bss(priv->adapter->wiphy, chan,
-				CFG80211_BSS_FTYPE_UNKNOWN, scan_evt->bssid, timestamp,
+		bss = CFG80211_INFORM_BSS(priv->adapter->wiphy, chan,
+				scan_evt->bssid, timestamp,
 				cap_info, beacon_interval, ie_buf, ie_len,
 				le32_to_cpu(scan_evt->rssi), GFP_ATOMIC);
 
@@ -524,7 +523,7 @@ static void process_disconnect_event(struct esp_wifi_device *priv,
 	printk(KERN_INFO "Disconnect event for ssid %s [reason:%d]\n",
 			event->ssid, event->reason);
 
-	esp_mark_disconnect(priv, 0, true);
+	esp_mark_disconnect(priv, event->reason, true);
 }
 
 static void process_connect_status_event(struct esp_wifi_device *priv,
@@ -1076,8 +1075,12 @@ int cmd_scan_request(struct esp_wifi_device *priv, struct cfg80211_scan_request 
 	}
 #endif
 
+#if LINUX_VERSION_CODE > KERNEL_VERSION(4, 8, 0)
 	scan_req->duration = request->duration;
+#endif
+#if LINUX_VERSION_CODE > KERNEL_VERSION(4, 7, 0)
 	memcpy(scan_req->bssid, request->bssid, MAC_ADDR_LEN);
+#endif
 
 	priv->scan_in_progress = true;
 	priv->request = request;

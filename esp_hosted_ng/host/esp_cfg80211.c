@@ -21,6 +21,7 @@
 #include "esp_api.h"
 #include "esp_cfg80211.h"
 #include "esp_cmd.h"
+#include "esp_kernel_port.h"
 
 /**
   * @brief WiFi PHY rate encodings
@@ -137,7 +138,7 @@ struct wireless_dev *esp_cfg80211_add_iface(struct wiphy *wiphy,
 		return NULL;
 	}
 
-	ndev = alloc_netdev(sizeof(struct esp_wifi_device), name, name_assign_type,
+	ndev = ALLOC_NETDEV(sizeof(struct esp_wifi_device), name, name_assign_type,
 			ether_setup);
 
 	if (!ndev)
@@ -236,8 +237,7 @@ static int esp_cfg80211_connect(struct wiphy *wiphy, struct net_device *dev,
 	return cmd_connect_request(priv, sme);
 }
 
-static int esp_cfg80211_mgmt_tx(struct wiphy *wiphy, struct wireless_dev *dev,
-		struct cfg80211_mgmt_tx_params *params, u64 *cookie)
+static ESP_MGMT_TX_PROTOTYPE()
 {
 	return 0;
 }
@@ -355,59 +355,28 @@ int esp_cfg80211_register(struct esp_adapter *adapter)
 	return ret;
 }
 
-int esp_mark_scan_done(struct esp_wifi_device *priv)
-{
-	struct cfg80211_scan_info info = {
-		.aborted = false,
-	};
-
-	if (!priv)
-		return -EINVAL;
-
-	if (priv->request)
-		cfg80211_scan_done(priv->request, &info);
-
-	priv->scan_in_progress = false;
-	priv->request = NULL;
-
-	return 0;
-}
-
 int esp_mark_disconnect(struct esp_wifi_device *priv, uint16_t reason,
 		uint8_t locally_disconnect)
 {
 	if (priv && priv->ndev)
-		cfg80211_disconnected(priv->ndev, reason, NULL, 0, locally_disconnect,
-			GFP_KERNEL);
+		if (priv->ndev->reg_state == NETREG_REGISTERED)
+			CFG80211_DISCONNECTED(priv->ndev, reason, NULL, 0, locally_disconnect,
+					GFP_KERNEL);
 	return 0;
 }
 
 int esp_mark_scan_done_and_disconnect(struct esp_wifi_device *priv,
 		uint8_t locally_disconnect)
 {
-	struct net_device *ndev = NULL;
-	struct cfg80211_scan_info info = {
-		.aborted = false,
-	};
 
 	if (!priv)
 		return -EINVAL;
 
-	if (priv->request)
-		cfg80211_scan_done(priv->request, &info);
+	ESP_MARK_SCAN_DONE(priv);
 
 	ESP_CANCEL_SCHED_SCAN();
 
-	priv->scan_in_progress = false;
-	priv->request = NULL;
+	esp_mark_disconnect(priv, 0, locally_disconnect);
 
-	/* clear cfg80211 states */
-	ndev = priv->ndev;
-	if (ndev) {
-		if (ndev->reg_state == NETREG_REGISTERED) {
-			cfg80211_disconnected(ndev, 0, NULL, 0, locally_disconnect,
-					GFP_KERNEL);
-		}
-	}
 	return 0;
 }
