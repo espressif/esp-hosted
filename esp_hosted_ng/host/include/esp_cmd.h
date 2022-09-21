@@ -28,15 +28,15 @@
 #define ESP_CMD_HIGH_PRIO    1
 #define ESP_CMD_DFLT_PRIO    0
 
-int init_esp_dev(struct esp_adapter *adapter);
-int deinit_esp_dev(struct esp_adapter *adapter);
+int esp_commands_setup(struct esp_adapter *adapter);
+int esp_commands_teardown(struct esp_adapter *adapter);
 int cmd_init_interface(struct esp_wifi_device *priv);
 int cmd_deinit_interface(struct esp_wifi_device *priv);
-int process_command_response(struct esp_adapter *adapter, struct sk_buff *skb);
+int process_cmd_resp(struct esp_adapter *adapter, struct sk_buff *skb);
 int cmd_scan_request(struct esp_wifi_device *priv,
 		struct cfg80211_scan_request *request);
 int cmd_get_mac(struct esp_wifi_device *priv);
-int process_event(struct esp_wifi_device *priv, struct sk_buff *skb);
+int process_cmd_event(struct esp_wifi_device *priv, struct sk_buff *skb);
 int cmd_connect_request(struct esp_wifi_device *priv,
 		struct cfg80211_connect_params *params);
 int cmd_disconnect_request(struct esp_wifi_device *priv, u16 reason_code);

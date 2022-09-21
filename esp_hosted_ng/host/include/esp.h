@@ -64,8 +64,9 @@ struct esp_adapter;
 #define INTERFACE_HEADER_PADDING (SKB_DATA_ADDR_ALIGNMENT*3)
 
 enum adapter_flags_e {
-	ESP_CLEANUP_IN_PROGRESS,
-	ESP_CMD_INIT_DONE,
+	ESP_CLEANUP_IN_PROGRESS,    /* Driver unloading or ESP reseted */
+	ESP_CMD_INIT_DONE,          /* Cmd component is initialized with esp_commands_setup() */
+	ESP_DRIVER_ACTIVE,          /* kernel module __exit is not yet invoked */
 };
 
 enum priv_flags_e {

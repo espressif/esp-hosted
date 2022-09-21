@@ -277,13 +277,13 @@ int process_fw_data(struct fw_data *fw_p)
 
 static int esp_open(struct net_device *ndev)
 {
-/*	netif_start_queue(ndev);*/
 	return 0;
 }
 
 static int esp_stop(struct net_device *ndev)
 {
-/*	netif_stop_queue(ndev);*/
+	struct esp_wifi_device *priv = netdev_priv(ndev);
+	esp_mark_scan_done(priv);
 	return 0;
 }
 
@@ -309,7 +309,6 @@ static int esp_set_mac_address(struct net_device *ndev, void *data)
 	/* TODO Handle in correct way */
 	ether_addr_copy(ndev->dev_addr, priv->mac_address/*mac_addr->sa_data*/);
 
-	clear_bit(ESP_CLEANUP_IN_PROGRESS, &priv->adapter->state_flags);
 	return 0;
 }
 
@@ -374,58 +373,11 @@ void esp_init_priv(struct net_device *ndev)
 			INTERFACE_HEADER_PADDING, 4);
 }
 
-#if 0
-void start_scan(struct esp_wifi_device *priv, char *ssid, u8 ssid_len)
-{
-	struct cmd_scan_config *scan_cmd;
-	struct sk_buff *skb;
-	struct esp_payload_header *payload_header;
-	u16 total_len;
-
-	if (!priv->adapter) {
-		printk(KERN_ERR "%s: empty adapter\n", __func__);
-		return 0;
-	}
-
-	total_len = sizeof(struct esp_payload_header) +
-		sizeof(struct cmd_scan_config);
-
-	if (ssid_len) {
-		total_len += ssid_len + 1;
-	}
-
-	skb = esp_alloc_skb(total_len);
-
-	if (!skb) {
-		printk(KERN_ERR "%s: Failed to allocate command buffer\n", __func__);
-		return;
-	}
-
-	payload_header = skb_put(skb, total_len);
-	memset(payload_header, 0, total_len);
-
-	payload_header->if_type = ESP_PRIV_IF;
-	payload_header->len = total_len - sizeof(struct esp_payload_header);
-	payload_header->offset = sizeof(struct esp_payload_header);
-
-	scan_cmd = (struct cmd_scan_config *) (skb->data + payload_header->offset);
-	scan_cmd->header.cmd_code = CONFIG_SCAN_CMD;
-	scan_cmd->header.if_type = ESP_STA_IF;
-	scan_cmd->header.action = 1;
-
-	if (ssid_len) {
-		scan_cmd->header.len = ssid_len + 1;
-		memcpy(scan_cmd->ssid, ssid, ssid_len);
-	}
-
-	esp_send_packet(priv->adapter, skb);
-}
-#endif
-
 static int add_network_iface(void)
 {
 	int ret = 0;
 	struct esp_adapter * adapter = esp_get_adapter();
+	struct wireless_dev * wdev = NULL;
 
 	if (!adapter) {
 		printk(KERN_INFO "%s: adapter not yet init\n", __func__);
@@ -439,25 +391,23 @@ static int add_network_iface(void)
 	}
 
 	rtnl_lock();
-	esp_cfg80211_add_iface(adapter->wiphy, "espsta%d", 1, NL80211_IFTYPE_STATION, NULL);
+	wdev = esp_cfg80211_add_iface(adapter->wiphy, "espsta%d", 1, NL80211_IFTYPE_STATION, NULL);
 	rtnl_unlock();
 
-	return 0;
+	/* Return success if network added successfully */
+	if (wdev)
+		return 0;
+
+	return -1;
 }
 
 int esp_add_card(struct esp_adapter *adapter)
 {
-	int ret = 0;
+	RET_ON_FAIL(esp_commands_setup(adapter));
 
-	ret = init_esp_dev(adapter);
-	if (ret) {
-		printk(KERN_ERR "Failed to init ESP device (err code 0x%x)\n", ret);
-		return ret;
-	}
+	RET_ON_FAIL(add_network_iface());
 
-	ret = add_network_iface();
-
-	return ret;
+	return 0;
 }
 
 void esp_remove_network_interfaces(struct esp_adapter *adapter)
@@ -511,18 +461,9 @@ int esp_remove_card(struct esp_adapter *adapter)
 		return 0;
 	}
 
-#if 0
-	/* For SDIO, card gets removed from thread that remove hardware
-	 * i.e. which does rmmod or kernel which  calls esp_remove.
-	 *
-	 * For SPI, there is possibility that if_rx_workqueue
-	 * itself call this function. to avoid deadlock, do not flush for SPI */
-	if (adapter->capabilities & ESP_WLAN_SDIO_SUPPORT)
-		if (adapter->if_rx_workqueue)
-			flush_workqueue(adapter->if_rx_workqueue);
-#endif
+	esp_deinit_bt(adapter);
 
-	deinit_esp_dev(adapter);
+	esp_commands_teardown(adapter);
 
 	esp_remove_network_interfaces(adapter);
 
@@ -675,9 +616,9 @@ static void process_rx_packet(struct esp_adapter *adapter, struct sk_buff *skb)
 
 			priv->stats.rx_packets++;
 		} else if (payload_header->packet_type == PACKET_TYPE_COMMAND_RESPONSE) {
-			process_command_response(priv->adapter, skb);
+			process_cmd_resp(priv->adapter, skb);
 		} else if (payload_header->packet_type == PACKET_TYPE_EVENT) {
-			process_event(priv, skb);
+			process_cmd_event(priv, skb);
 			dev_kfree_skb_any(skb);
 		}
 
@@ -772,8 +713,10 @@ static int esp_get_packets(struct esp_adapter *adapter)
 
 int esp_send_packet(struct esp_adapter *adapter, struct sk_buff *skb)
 {
-	if (!adapter || !adapter->if_ops || !adapter->if_ops->write)
+	if (!adapter || !adapter->if_ops || !adapter->if_ops->write) {
+		printk(KERN_ERR "esp32: %s:%u adapter: %p\n", __func__, __LINE__, adapter);
 		return -EINVAL;
+	}
 
 	return adapter->if_ops->write(adapter, skb);
 }
@@ -892,6 +835,7 @@ static void __exit esp_exit(void)
 	for (iface_idx=0; iface_idx<ESP_MAX_INTERFACE; iface_idx++) {
 		cmd_deinit_interface(adapter.priv[iface_idx]);
 	}
+	clear_bit(ESP_DRIVER_ACTIVE, &adapter.state_flags);
 
 	esp_deinit_interface_layer();
 	deinit_adapter();
