@@ -27,18 +27,9 @@
 #include "esp_bt_api.h"
 #include "esp_api.h"
 #include "esp_cmd.h"
+#include "esp_kernel_port.h"
 
 #include "esp_cfg80211.h"
-
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 6, 0))
-    #define NDO_TX_TIMEOUT_PROTOTYPE() \
-        static void esp_tx_timeout(struct net_device *ndev, unsigned int txqueue)
-#elif (LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 29))
-    #define NDO_TX_TIMEOUT_PROTOTYPE() \
-        static void esp_tx_timeout(struct net_device *ndev)
-#else
-    #error "No symbol **ndo_tx_timeout** found in kernel < 2.6.29"
-#endif
 
 #define HOST_GPIO_PIN_INVALID -1
 static int resetpin = HOST_GPIO_PIN_INVALID;
@@ -283,7 +274,7 @@ static int esp_open(struct net_device *ndev)
 static int esp_stop(struct net_device *ndev)
 {
 	struct esp_wifi_device *priv = netdev_priv(ndev);
-	esp_mark_scan_done(priv);
+	ESP_MARK_SCAN_DONE(priv);
 	return 0;
 }
 
@@ -594,7 +585,7 @@ static void process_rx_packet(struct esp_adapter *adapter, struct sk_buff *skb)
 				printk(KERN_INFO "%s:%u eap skb unaligned\n",__func__, __LINE__);
 			}
 
-			eth = skb_put(eap_skb, ETH_HLEN);
+			eth = (struct ethhdr *) skb_put(eap_skb, ETH_HLEN);
 			ether_addr_copy(eth->h_dest, /*skb->data*/priv->ndev->dev_addr);
 			ether_addr_copy(eth->h_source, /*skb->data+6*/ ap_bssid);
 			eth->h_proto = cpu_to_be16(ETH_P_PAE);

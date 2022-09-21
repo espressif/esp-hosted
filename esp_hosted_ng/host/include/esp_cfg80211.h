@@ -29,16 +29,9 @@ struct wireless_dev *esp_cfg80211_add_iface(struct wiphy *wiphy,
                               struct vif_params *params);
 int esp_cfg80211_register(struct esp_adapter *adapter);
 
-int esp_mark_scan_done(struct esp_wifi_device *priv);
 int esp_mark_disconnect(struct esp_wifi_device *priv, uint16_t reason,
 		uint8_t locally_disconnect);
 int esp_mark_scan_done_and_disconnect(struct esp_wifi_device *priv,
 		uint8_t locally_disconnect);
-
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 12, 0))
-    #define ESP_CANCEL_SCHED_SCAN() cfg80211_sched_scan_stopped(priv->wdev.wiphy, 0);
-#else
-    #define ESP_CANCEL_SCHED_SCAN() cfg80211_sched_scan_stopped(priv->wdev.wiphy);
-#endif
 
 #endif

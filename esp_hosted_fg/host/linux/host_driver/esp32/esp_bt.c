@@ -18,18 +18,12 @@
  */
 #include "esp_bt_api.h"
 #include "esp_api.h"
+#include "esp_kernel_port.h"
 
 #define INVALID_HDEV_BUS (0xff)
 
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 13, 0))
-    #define ESP_BT_SEND_FRAME_PROTOTYPE() \
-        static int esp_bt_send_frame(struct hci_dev* hdev, struct sk_buff *skb)
-#else
-    #define ESP_BT_SEND_FRAME_PROTOTYPE() \
-        static int esp_bt_send_frame(struct sk_buff *skb)
-#endif
 
-ESP_BT_SEND_FRAME_PROTOTYPE();
+static ESP_BT_SEND_FRAME_PROTOTYPE();
 
 void esp_hci_update_tx_counter(struct hci_dev *hdev, u8 pkt_type, size_t len)
 {
@@ -76,7 +70,7 @@ static int esp_bt_flush(struct hci_dev *hdev)
 	return 0;
 }
 
-ESP_BT_SEND_FRAME_PROTOTYPE()
+static ESP_BT_SEND_FRAME_PROTOTYPE()
 {
 	struct esp_payload_header *hdr;
 	size_t total_len, len = skb->len;

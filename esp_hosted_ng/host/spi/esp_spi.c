@@ -23,6 +23,7 @@
 #include "esp_if.h"
 #include "esp_api.h"
 #include "esp_bt_api.h"
+#include "esp_kernel_port.h"
 
 #define SPI_INITIAL_CLK_MHZ     10
 #define NUMBER_1M               1000000
@@ -269,22 +270,13 @@ void process_event_esp_bootup(struct esp_adapter *adapter, u8 *evt_buf, u8 len)
 			if (!priv)
 				continue;
 
-			if (priv->scan_in_progress) {
-				if (priv->request) {
-					struct cfg80211_scan_info info = {
-						.aborted = false,
-					};
-					/* scan completion */
-					cfg80211_scan_done(priv->request, &info);
-					priv->request = NULL;
-				}
-				priv->scan_in_progress = false;
-			}
+			if (priv->scan_in_progress)
+				ESP_MARK_SCAN_DONE(priv);
 
 			if (priv->ndev &&
 			    priv->wdev.current_bss) {
 
-				cfg80211_disconnected(priv->ndev,
+				CFG80211_DISCONNECTED(priv->ndev,
 						0, NULL, 0, false, GFP_KERNEL);
 			}
 		}
