@@ -41,7 +41,7 @@ static const char TAG[] = "protocomm_pserial";
 struct pserial_config {
 	pserial_xmit    xmit;
 	pserial_recv    recv;
-	xQueueHandle    req_queue;
+	QUEUE_HANDLE    req_queue;
 };
 
 typedef struct {

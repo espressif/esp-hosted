@@ -51,6 +51,7 @@ ESP-Hosted-FG solution is supported on following ESP boards:
 - ESP32-S2
 - ESP32-C3
 - ESP32-S3
+- ESP32-C2
 
 ### 1.3 Supported Hosts
 
@@ -87,6 +88,9 @@ The below table explains which feature is supported on which transport interface
 | ESP32-S3 | SDIO | NA | NA | NA |
 | ESP32-S3 | SPI | Yes | Yes | BLE 5.0 |
 | ESP32-S3 | UART | No | No | BLE 5.0 |
+| ESP32-C2 | SDIO | NA | NA | NA |
+| ESP32-C2 | SPI | Yes | Yes | ComingSoon |
+| ESP32-C2 | UART | No | No | BLE 5.0 |
 
 Note:
 * BT stands for Bluetooth BR/EDR and BLE stands for Bluetooth Low Energy specifications.
@@ -112,6 +116,9 @@ The below table explains which feature is supported on which transport interface
 | ESP32-S3 | SDIO | NA | NA | NA |
 | ESP32-S3 | SPI | Yes | Yes | BLE 5.0\* |
 | ESP32-S3 | UART | No | No | BLE 5.0\*\* |
+| ESP32-C2 | SDIO | NA | NA | NA |
+| ESP32-C2 | SPI | Yes | Yes | ComingSoon |
+| ESP32-C2 | UART | No | No | BLE 5.0\*\* |
 
 Note: BT stands for Bluetooth BR/EDR and BLE stands for Bluetooth Low Energy specifications.
 

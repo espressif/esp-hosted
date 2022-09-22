@@ -19,6 +19,18 @@ Setup image is here.
 
 ![alt text](rpi_esp32_uart_setup.jpg "setup of Raspberry-Pi as host and ESP32 as slave with UART transport")
 
+#### 1.1.2 ESP32-C2 setup
+| Raspberry-Pi Pin Function | Raspberry-Pi Pin | ESP32-C2 Pin | ESP32-C2 Pin Function |
+|:-------:|:--------:|:---------:|:--------:|
+| RX | 10 | IO5 | TX |
+| TX | 8 | IO18 | RX |
+| CTS | 36 | IO9 | RTS |
+| RTS | 11 | IO8 | CTS |
+
+Setup image is here.
+
+![alt text](rpi_esp32c2_uart_setup.jpg "setup of Raspberry-Pi as host and ESP32-C2 as slave with UART transport")
+
 #### 1.1.2 ESP32-C3 setup
 | Raspberry-Pi Pin Function | Raspberry-Pi Pin | ESP32-C3 Pin | ESP32-C3 Pin Function |
 |:-------:|:--------:|:---------:|:--------:|
@@ -108,6 +120,26 @@ Where,
 ```
 * This command will flash `SDIO+UART` or `SPI+UART` interface binaries on `esp32` chip.
 
+##### ESP32-C2
+* Please note that this binary is made for UART baudrate of 921600.
+
+```sh
+$ python esptool.py --chip esp32c2 --port <serial_port> --baud <flash_baud_rate> --before default_reset \
+--after hard_reset write_flash --flash_mode dio --flash_size detect --flash_freq 80m \
+0x0 esp_hosted_bootloader_esp32c2_spi_uart_v<release_version>.bin \
+0x8000 esp_hosted_partition-table_esp32c2_spi_uart_v<release_version>.bin \
+0xd000 esp_hosted_ota_data_initial_esp32c2_spi_uart_v<release_version>.bin \
+0x10000 esp_hosted_firmware_esp32c2_spi_uart_v<release_version>.bin
+
+Where,
+	<serial_port>     : serial port of ESP peripheral
+	<flash_baud_rate> : flash baud rate of ESP peripheral, ex.115200, 921600, 2Mbps
+	<release_version> : 0.1,0.2 etc. Latest from [release page](https://github.com/espressif/esp-hosted/releases)
+```
+* This command will flash `SPI+UART` interface binaries on `esp32c2` chip.
+
+* Windows user can use ESP Flash Programming Tool to flash the pre-built binary.
+
 ##### ESP32-C3
 * Please note that this binary is made for UART baudrate of 921600.
 
@@ -160,6 +192,10 @@ $ cd esp/esp_driver/network_adapter
 ##### Using cmake
 
 - Set target
+	- ESP32-C2
+	```
+	$ idf.py set-target esp32c2
+	```
 	- ESP32-C3
 	```
 	$ idf.py set-target esp32c3
@@ -181,18 +217,25 @@ $ idf.py menuconfig
 	- ESP32
 		- Select transport either SDIO or SPI
 		- Navigate to `Example Configuration -> Transport layer` select `SDIO interface` or `SPI interface`, whichever expected
-	- ESP32-C3 or ESP32-S3
+	- ESP32-C2 / ESP32-C3 / ESP32-S3
 		- SPI is automatically selected. Nothing to be done, skip to next step
 
 - Set Bluetooth over UART
-	- navigate to `Component config -> Bluetooth -> Bluetooth controller -> HCI mode`, select `UART(H4)`
+	- ESP32 / ESP32-C3 / ESP32-S3
+		- navigate to `Component config -> Bluetooth -> Bluetooth controller -> HCI mode`, select `UART(H4)`
+	- ESP32-C2
+		- Navigate to `Component config -> Bluetooth -> Bluetooth -> Controller`, select `Enabled`
+		- Navigate to `Component config -> Bluetooth -> Controller Options -> HCI Config -> Select HCI interface`, select `uart`
+		- Navigate to `Component config > Bluetooth > Controller Options > HCI Config` and enable `HCI uart Hardware Flow ctrl`
 
 - Set UART baud rate
 	Default HCI over baud rate is 921600. In case need to change,
 	- ESP32
 		- Navigate and change using `Component config -> Bluetooth -> Bluetooth controller -> HCI UART(H4) Options -> UART Baudrate for HCI`
-	- ESP32-C3 or ESP32-S3
+	- ESP32-C3 / ESP32-S3
 		- Navigate and change using `Component config -> Example Configuration -> UART Baudrate for HCI`
+	- ESP32-C2
+		- Navigate and change using `Component config -> Bluetooth -> Controller Options -> HCI Config`
 
 - Additional settings
 	- ESP32-C3

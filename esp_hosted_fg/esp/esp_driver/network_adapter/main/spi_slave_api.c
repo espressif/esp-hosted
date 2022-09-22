@@ -80,6 +80,21 @@ static const char TAG[] = "SPI_DRIVER";
      * */
     #define SPI_CLK_MHZ            30
 
+#elif defined CONFIG_IDF_TARGET_ESP32C2
+
+    #define ESP_SPI_CONTROLLER     1
+    #define GPIO_MOSI              7
+    #define GPIO_MISO              2
+    #define GPIO_SCLK              6
+    #define GPIO_CS                10
+    #define DMA_CHAN               SPI_DMA_CH_AUTO
+
+    /* Max supported SPI slave Clock for ESP32-C2 = **60MHz**
+     * Below value could be fine tuned to achieve highest
+     * data rate in accordance with SPI Master
+     * */
+    #define SPI_CLK_MHZ            20
+
 #elif defined CONFIG_IDF_TARGET_ESP32C3
 
     #define ESP_SPI_CONTROLLER     1
@@ -112,6 +127,9 @@ static const char TAG[] = "SPI_DRIVER";
 
 #endif
 
+#define GPIO_MASK_DATA_READY (1 << CONFIG_ESP_SPI_GPIO_DATA_READY)
+#define GPIO_MASK_HANDSHAKE (1 << CONFIG_ESP_SPI_GPIO_HANDSHAKE)
+
 
 /* SPI internal configs */
 #define SPI_BUFFER_SIZE            1600
@@ -126,8 +144,6 @@ static const char TAG[] = "SPI_DRIVER";
 
 static interface_context_t context;
 static interface_handle_t if_handle_g;
-static uint8_t gpio_handshake = CONFIG_ESP_SPI_GPIO_HANDSHAKE;
-static uint8_t gpio_data_ready = CONFIG_ESP_SPI_GPIO_DATA_READY;
 static QueueHandle_t spi_rx_queue[MAX_PRIORITY_QUEUES] = {NULL};
 static QueueHandle_t spi_tx_queue[MAX_PRIORITY_QUEUES] = {NULL};
 
@@ -187,6 +203,25 @@ static inline void spi_trans_free(spi_slave_transaction_t *trans)
 	mempool_free(trans_mp_g, trans);
 }
 
+static inline void set_handshake_gpio(void)
+{
+	WRITE_PERI_REG(GPIO_OUT_W1TS_REG, GPIO_MASK_HANDSHAKE);
+}
+
+static inline void reset_handshake_gpio(void)
+{
+	WRITE_PERI_REG(GPIO_OUT_W1TC_REG, GPIO_MASK_HANDSHAKE);
+}
+
+static inline void set_dataready_gpio(void)
+{
+	WRITE_PERI_REG(GPIO_OUT_W1TS_REG, GPIO_MASK_DATA_READY);
+}
+
+static inline void reset_dataready_gpio(void)
+{
+	WRITE_PERI_REG(GPIO_OUT_W1TC_REG, GPIO_MASK_DATA_READY);
+}
 
 interface_context_t *interface_insert_driver(int (*event_handler)(uint8_t val))
 {
@@ -262,7 +297,7 @@ void generate_startup_event(uint8_t cap)
 	xQueueSend(spi_tx_queue[PRIO_Q_OTHERS], &buf_handle, portMAX_DELAY);
 
 	/* indicate waiting data on ready pin */
-	WRITE_PERI_REG(GPIO_OUT_W1TS_REG, (1 << gpio_data_ready));
+	set_dataready_gpio();
 	/* process first data packet here to start transactions */
 	queue_next_transaction();
 }
@@ -272,7 +307,7 @@ void generate_startup_event(uint8_t cap)
 static void IRAM_ATTR spi_post_setup_cb(spi_slave_transaction_t *trans)
 {
 	/* ESP peripheral ready for spi transaction. Set hadnshake line high. */
-	WRITE_PERI_REG(GPIO_OUT_W1TS_REG, (1 << gpio_handshake));
+	set_handshake_gpio();
 }
 
 /* Invoked after transaction is sent/received.
@@ -280,7 +315,7 @@ static void IRAM_ATTR spi_post_setup_cb(spi_slave_transaction_t *trans)
 static void IRAM_ATTR spi_post_trans_cb(spi_slave_transaction_t *trans)
 {
 	/* Clear handshake line */
-	WRITE_PERI_REG(GPIO_OUT_W1TC_REG, (1 << gpio_handshake));
+	reset_handshake_gpio();
 }
 
 static uint8_t * get_next_tx_buffer(uint32_t *len)
@@ -312,7 +347,7 @@ static uint8_t * get_next_tx_buffer(uint32_t *len)
 	}
 
 	/* No real data pending, clear ready line and indicate host an idle state */
-	WRITE_PERI_REG(GPIO_OUT_W1TC_REG, (1 << gpio_data_ready));
+	reset_dataready_gpio();
 
 	/* Create empty dummy buffer */
 	sendbuf = spi_buffer_alloc(MEMSET_REQUIRED);
@@ -498,7 +533,7 @@ static interface_handle_t * esp_spi_init(void)
 
 	/* Configuration for the SPI slave interface */
 	spi_slave_interface_config_t slvcfg={
-		.mode=SPI_MODE_2,
+		.mode=SPI_MODE_3,
 		.spics_io_num=GPIO_CS,
 		.queue_size=SPI_QUEUE_SIZE,
 		.flags=0,
@@ -510,14 +545,14 @@ static interface_handle_t * esp_spi_init(void)
 	gpio_config_t io_conf={
 		.intr_type=GPIO_INTR_DISABLE,
 		.mode=GPIO_MODE_OUTPUT,
-		.pin_bit_mask=(1 << gpio_handshake)
+		.pin_bit_mask=GPIO_MASK_HANDSHAKE
 	};
 
 	/* Configuration for data_ready line */
 	gpio_config_t io_data_ready_conf={
 		.intr_type=GPIO_INTR_DISABLE,
 		.mode=GPIO_MODE_OUTPUT,
-		.pin_bit_mask=(1 << gpio_data_ready)
+		.pin_bit_mask=GPIO_MASK_DATA_READY
 	};
 
 	spi_mempool_create();
@@ -525,8 +560,8 @@ static interface_handle_t * esp_spi_init(void)
 	/* Configure handshake and data_ready lines as output */
 	gpio_config(&io_conf);
 	gpio_config(&io_data_ready_conf);
-	WRITE_PERI_REG(GPIO_OUT_W1TC_REG, (1 << gpio_handshake));
-	WRITE_PERI_REG(GPIO_OUT_W1TC_REG, (1 << gpio_data_ready));
+	reset_handshake_gpio();
+	reset_dataready_gpio();
 
 	/* Enable pull-ups on SPI lines
 	 * so that no rogue pulses when no master is connected
@@ -535,6 +570,10 @@ static interface_handle_t * esp_spi_init(void)
 	gpio_set_pull_mode(GPIO_SCLK, GPIO_PULLUP_ONLY);
 	gpio_set_pull_mode(GPIO_CS, GPIO_PULLUP_ONLY);
 
+	ESP_LOGI(TAG, "SPI Ctrl:%u mode: %u, InitFreq: 10MHz, ReqFreq: %uMHz\nGPIOs: MOSI: %u, MISO: %u, CS: %u, CLK: %u HS: %u DR: %u\n",
+			ESP_SPI_CONTROLLER, slvcfg.mode, SPI_CLK_MHZ,
+			GPIO_MOSI, GPIO_MISO, GPIO_CS, GPIO_SCLK,
+			CONFIG_ESP_SPI_GPIO_HANDSHAKE, CONFIG_ESP_SPI_GPIO_DATA_READY);
 	/* Initialize SPI slave interface */
 	ret=spi_slave_initialize(ESP_SPI_CONTROLLER, &buscfg, &slvcfg, DMA_CHAN);
 	assert(ret==ESP_OK);
@@ -584,7 +623,11 @@ static int32_t esp_spi_write(interface_handle_t *handle, interface_buffer_handle
 	}
 
 	if (total_len > SPI_BUFFER_SIZE) {
+#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 0, 0) 
+		ESP_LOGE(TAG, "Max frame length exceeded %ld.. drop it\n", total_len);
+#else
 		ESP_LOGE(TAG, "Max frame length exceeded %d.. drop it\n", total_len);
+#endif
 		return ESP_FAIL;
 	}
 
@@ -624,7 +667,7 @@ static int32_t esp_spi_write(interface_handle_t *handle, interface_buffer_handle
 		return ESP_FAIL;
 
 	/* indicate waiting data on ready pin */
-	WRITE_PERI_REG(GPIO_OUT_W1TS_REG, (1 << gpio_data_ready));
+	set_dataready_gpio();
 
 	return buf_handle->payload_len;
 }

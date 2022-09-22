@@ -28,7 +28,7 @@ Wi-Fi can be configured as either as `STATION` mode or `SOFTAP` mode or `STATION
 * **STATION+SOFTAP Mode**
     - This is combination of both the modes. In this mode, host behaves as station and connects to external AP. At the same time, host with help of ESP device, can create the Wi-Fi network.
 
-Host firmware provides Wi-Fi connectivity using control path and data path. Control path commands uses `protocomm` layer of ESP-IDF to serialize structured control data and communicates using SPI transport interface between Host(MCU based Host) and ESP peripheral (ESP32/ESP32-C3/ESP32-S2/ESP32-S3). User can use control commands to build application.
+Host firmware provides Wi-Fi connectivity using control path and data path. Control path commands uses `protocomm` layer of ESP-IDF to serialize structured control data and communicates using SPI transport interface between Host(MCU based Host) and ESP peripheral (ESP32/ESP32-C2/ESP32-C3/ESP32-S2/ESP32-S3). User can use control commands to build application.
 
 
 ### 2.1 Start Project with STM32
@@ -40,7 +40,7 @@ We have tested project with STM32F469I-Discovery board. If other than STM32F469I
 * From `Information Center` tab select `Start new project` from existing STM32CubeMX configuration file, i.e. ioc file option. It will take few seconds to open dialog box. In STM32CubeMX .ioc file field, choose appropriate .ioc file from `</path/to/esp_hosted>/host/stm32/proj/` directory.
 ```
 For ESP32 peripheral: Select stm_spi_host_v1.ioc file
-For ESP32-C3/ESP32-S2/ESP32-S3 peripheral: Select stm_spi_host_v2.ioc file
+For ESP32-C2/ESP32-C3/ESP32-S2/ESP32-S3 peripheral: Select stm_spi_host_v2.ioc file
 ```
 * Once file is selected, click `Open` and `Finish`. New dialog box will open as Open Associated Perspective, click on `Yes`. It may take 2-3 minutes to open.
 * Close ioc tab then close STM32CubeIDE and click on `exit`.

@@ -26,6 +26,12 @@ esp_err_t protocomm_pserial_start(protocomm_t *pc, pserial_xmit xmit, pserial_re
 esp_err_t protocomm_pserial_data_ready(protocomm_t *pc, uint8_t * in, int len, int msg_id);
 
 
+#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 0, 0) 
+  #define QUEUE_HANDLE QueueHandle_t
+#else
+  #define QUEUE_HANDLE xQueueHandle
+#endif
+
 #ifdef __cplusplus
 }
 #endif

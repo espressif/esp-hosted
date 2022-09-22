@@ -1118,7 +1118,11 @@ static esp_err_t req_get_ap_scan_list_handler (CtrlMsg *req,
 
 		credentials.ecn = ap_info[i].authmode;
 		results[i]->sec_prot = credentials.ecn;
+#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 0, 0) 
+		ESP_LOGI(TAG, "SSID      \t\t%s\nRSSI      \t\t%ld\nChannel   \t\t%lu\nBSSID     \t\t%s\nAuth mode \t\t%d\n",
+#else
 		ESP_LOGI(TAG,"\nSSID      \t\t%s\nRSSI      \t\t%d\nChannel   \t\t%d\nBSSID     \t\t%s\nAuth mode \t\t%d\n",
+#endif
 				results[i]->ssid.data, results[i]->rssi, results[i]->chnl,
 				results[i]->bssid.data, results[i]->sec_prot);
 		vTaskDelay(1);

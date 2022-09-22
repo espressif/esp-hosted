@@ -15,15 +15,15 @@
 
 #ifdef CONFIG_BT_ENABLED
 #include <string.h>
-#include "driver/periph_ctrl.h"
 #include "driver/gpio.h"
 #include "driver/uart.h"
 #include "esp_bt.h"
 #include "esp_log.h"
 #include "slave_bt.h"
-#include "rom/lldesc.h"
+#include "soc/lldesc.h"
 
-#if defined(CONFIG_IDF_TARGET_ESP32C3) || defined(CONFIG_IDF_TARGET_ESP32S3)
+
+#if BT_OVER_C3_S3
 
   #include "esp_private/gdma.h"
 
@@ -112,7 +112,7 @@ void process_hci_rx_pkt(uint8_t *payload, uint16_t payload_len) {
 #elif BLUETOOTH_UART
 /* ***** UART specific part ***** */
 
-#if defined(CONFIG_IDF_TARGET_ESP32C3) || defined(CONFIG_IDF_TARGET_ESP32S3)
+#if BT_OVER_C3_S3
 // Operation functions for HCI UART Transport Layer
 static bool hci_uart_tl_init(void);
 static void hci_uart_tl_deinit(void);
@@ -253,8 +253,10 @@ static IRAM_ATTR bool hci_uart_tl_tx_eof_callback(gdma_channel_handle_t dma_chan
 }
 #endif
 
-static void init_uart(void)
+#if BT_OVER_C3_S3
+static void init_uart_c3_s3(void)
 {
+	ESP_LOGD(BT_TAG, "Set-up BLE for ESP32-C3/ESP32-S3");
 #if BLUETOOTH_UART == 1
 	periph_module_enable(PERIPH_UART1_MODULE);
     periph_module_reset(PERIPH_UART1_MODULE);
@@ -266,7 +268,6 @@ static void init_uart(void)
 	periph_module_enable(PERIPH_UHCI0_MODULE);
     periph_module_reset(PERIPH_UHCI0_MODULE);
 
-#if defined(CONFIG_IDF_TARGET_ESP32C3) || defined(CONFIG_IDF_TARGET_ESP32S3)
     gpio_config_t io_output_conf = {
         .intr_type = GPIO_PIN_INTR_DISABLE,    //disable interrupt
         .mode = GPIO_MODE_OUTPUT,    // output mode
@@ -284,12 +285,10 @@ static void init_uart(void)
         .pull_up_en = 0,    // disable pull-down mode
     };
     gpio_config(&io_input_conf);
-#endif
 
 	ESP_ERROR_CHECK( uart_set_pin(BLUETOOTH_UART, BT_TX_PIN,
 				BT_RX_PIN, BT_RTS_PIN, BT_CTS_PIN) );
 
-#if defined(CONFIG_IDF_TARGET_ESP32C3) || defined(CONFIG_IDF_TARGET_ESP32S3)
     // configure UART1
     ESP_LOGI(BT_TAG, "baud rate for HCI uart :: %d \n", 
 			CONFIG_EXAMPLE_HCI_UART_BAUDRATE);
@@ -344,9 +343,48 @@ static void init_uart(void)
     // disable software flow control
     s_uhci_hw->escape_conf.val = 0;
     uhci_ll_attach_uart_port(s_uhci_hw, 1);
+}
+#endif
+
+#if CONFIG_IDF_TARGET_ESP32
+static void init_uart_esp32(void)
+{
+	ESP_LOGD(BT_TAG, "Set-up BLE for ESP32");
+#if BLUETOOTH_UART == 1
+	periph_module_enable(PERIPH_UART1_MODULE);
+	periph_module_reset(PERIPH_UART1_MODULE);
+#elif BLUETOOTH_UART == 2
+	periph_module_enable(PERIPH_UART2_MODULE);
+	periph_module_reset(PERIPH_UART2_MODULE);
+#endif
+
+	periph_module_enable(PERIPH_UHCI0_MODULE);
+	periph_module_reset(PERIPH_UHCI0_MODULE);
+
+
+	ESP_ERROR_CHECK( uart_set_pin(BLUETOOTH_UART, BT_TX_PIN,
+		BT_RX_PIN, BT_RTS_PIN, BT_CTS_PIN) );
+
+}
+#endif
+
+#if CONFIG_IDF_TARGET_ESP32C2
+static void init_uart_c2(void)
+{
+	ESP_LOGD(BT_TAG, "Set-up BLE for ESP32-C2");
+}
+#endif
+
+void init_uart(void)
+{
+#if CONFIG_IDF_TARGET_ESP32
+	init_uart_esp32();
+#elif CONFIG_IDF_TARGET_ESP32C2
+	init_uart_c2();
+#elif BT_OVER_C3_S3
+	init_uart_c3_s3();
 #endif
 }
-
 #endif
 
 esp_err_t initialise_bluetooth(void)
@@ -355,8 +393,8 @@ esp_err_t initialise_bluetooth(void)
 
 
 #ifdef BLUETOOTH_UART
-  #if defined(CONFIG_IDF_TARGET_ESP32C3) || defined(CONFIG_IDF_TARGET_ESP32S3)
-    bt_cfg.hci_tl_funcs = &s_hci_uart_tl_funcs;
+  #if BT_OVER_C3_S3
+	bt_cfg.hci_tl_funcs = &s_hci_uart_tl_funcs;
   #endif
 
 	init_uart();
