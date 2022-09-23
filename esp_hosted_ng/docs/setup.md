@@ -153,7 +153,7 @@
 > > ```
 > > Execute following command to load/reload driver
 > > ```sh
-> > $ cd esp-hosted/host/
+> > $ cd esp-hosted/esp_hosted_ng/host/
 > > $ bash rpi_init.sh sdio
 > > ```
 > > This script should:
@@ -335,7 +335,7 @@
 > > ```
 > > Execute following command to load/reload driver
 > > ```sh
-> > $ cd esp-hosted/host/
+> > $ cd esp-hosted/esp_hosted_ng/host/
 > > $ bash rpi_init.sh spi
 > > ```
 > > This script should:
@@ -557,7 +557,7 @@
 > > ```
 > > Execute following command to load/reload driver
 > > ```sh
-> > $ cd esp-hosted/host/
+> > $ cd esp-hosted/esp_hosted_ng/host/
 > > $ bash rpi_init.sh sdio btuart
 > > ```
 > > This script should:
@@ -792,7 +792,7 @@
 > > ```
 > > Execute following command to load/reload driver
 > > ```sh
-> > $ cd esp-hosted/host/
+> > $ cd esp-hosted/esp_hosted_ng/host/
 > > $ bash rpi_init.sh spi btuart
 > > ```
 > > This script should:

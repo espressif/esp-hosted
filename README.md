@@ -8,12 +8,12 @@ Following is the high level block diagram for ESP-Hosted. Detailed block diagram
 
 
 
-## ESP-Hosted Flavours
+## 1. ESP-Hosted Flavours
 
 The ESP-Hosted solution is available in two flavours as mentioned below. The differentiation factor here is the type of network interface presented to host and the way Wi-Fi on ESP SoC/module is configured/controlled. Both the flavours have their respective host and firmware software.
 
 
-### ESP-Hosted-NG
+### 1.1 ESP-Hosted-NG
 
 This is the Next-Generation ESP-Hosted solution specifically designed for hosts that run Linux operating system. This flavour of the solution takes a standard approach while providing a network interface to the host. This allows usage of standard Wi-Fi applications such as wpa_supplicant to be used with ESP SoCs/modules.
 
@@ -29,7 +29,7 @@ Please proceed with the [detailed documentation](esp_hosted_ng/README.md) for se
 
 
 
-###  ESP-Hosted-FG
+### 1.2 ESP-Hosted-FG
 
 This is a first generation ESP-Hosted solution. This is a flavour, which provides a standard 802.3 (Ethernet) network interface to the host. Thought process behind this solution is to keep the host software simple while providing suite of connectivity features.
 
@@ -46,26 +46,20 @@ This flavour is available in [esp_hosted_fg](esp_hosted_fg)
 Please proceed with the [detailed documentation](esp_hosted_fg/README.md) for setup and usage instructions.
 
 
-## ESP-Hosted-FG vs ESP-Hosted-NG
+## 2. ESP-Hosted-FG vs ESP-Hosted-NG
 
 Now that we offer two flavours of this solution, it could cause a little confusion. This section will try to explains similarities and differences in both the flavours and help you make a choice.
 
-#### Similarities
+### 2.1 Similarities
 
 - Both the flavours share the same aim, to conveniently use ESP's Wi-Fi and Bluetooth/BLE capabilities from host
 - Both the flavours aim to support same set of ESP SoCs/modules and same set of transports like SPI/SDIO/UART for connectivity needs
 
-#### Key Differences
+### 2.2 Key Differences
 
 - ESP-Hosted-FG supports both Linux and MCU hosts. ESP-Hosted-NG supports only Linux host.
 - ESP-Hosted-FG exposes 802.3 network interface (Ethernet) to the host. Where as, ESP-Hosted-NG exposes 802.11 interface (Wi-Fi).
 - ESP-Hosted-FG uses custom control path to configure Wi-Fi as opposed to ESP-Hosted-NG which uses standard nl80211/cfg80211 configuration.
-
-#### Our Recommendation
-
-* If you are using MCU host, you do not have choice but to use ESP-Hosted-FG
-* If you are using Linux host, we recommend ESP-Hosted-NG since it takes a standard approach which makes it compatible with widely used user space applications/services such as wpa_supplicant, Network Manager etc.
-
 
 
 Following table summarizes this entire discussion.
@@ -105,6 +99,10 @@ Following table summarizes this entire discussion.
     <td colspan="2"  style="text-align:center">SDIO, SPI, UART</td>
   </tr>
   <tr>
+    <td>Usable transport combinations</td>
+    <td colspan="2"  style="text-align:center">SPI only, SPI+UART, SDIO only, SDIO+UART</td>
+  </tr>
+  <tr>
     <td>Wi-Fi Mode</td>
     <td>Station, <span style="font-weight:bold">SoftAP</span></td>
     <td>Station</td>
@@ -129,3 +127,10 @@ Following table summarizes this entire discussion.
     <td colspan="2" style="text-align:center">25Mbps+ in RX/TX</td>
   </tr>
 </table>
+
+
+## 3. Our Recommendation
+
+* If you are using MCU host, you do not have choice but to use ESP-Hosted-FG
+* If you are using Linux host, we recommend ESP-Hosted-NG since it takes a standard approach which makes it compatible with widely used user space applications/services such as wpa_supplicant, Network Manager etc.
+
