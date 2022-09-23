@@ -303,7 +303,7 @@ static int esp_set_mac_address(struct net_device *ndev, void *data)
 	return 0;
 }
 
-NDO_TX_TIMEOUT_PROTOTYPE()
+static NDO_TX_TIMEOUT_PROTOTYPE()
 {
 }
 
