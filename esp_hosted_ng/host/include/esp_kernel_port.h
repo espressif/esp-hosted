@@ -174,10 +174,10 @@ static inline void *skb_put_data(struct sk_buff *skb, const void *data,
 
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 6, 0))
     #define NDO_TX_TIMEOUT_PROTOTYPE() \
-        static void esp_tx_timeout(struct net_device *ndev)
+        void esp_tx_timeout(struct net_device *ndev)
 #else
     #define NDO_TX_TIMEOUT_PROTOTYPE() \
-        static void esp_tx_timeout(struct net_device *ndev, unsigned int txqueue)
+        void esp_tx_timeout(struct net_device *ndev, unsigned int txqueue)
 #endif
 
 

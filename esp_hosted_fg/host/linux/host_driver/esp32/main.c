@@ -33,6 +33,7 @@
 #endif
 #include "esp_bt_api.h"
 #include "esp_api.h"
+#include "esp_kernel_port.h"
 
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Amey Inamdar <amey.inamdar@espressif.com>");
@@ -43,16 +44,6 @@ MODULE_VERSION("0.4");
 
 struct esp_adapter adapter;
 volatile u8 stop_data = 0;
-
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 6, 0))
-    #define NDO_TX_TIMEOUT_PROTOTYPE() \
-        static void esp_tx_timeout(struct net_device *ndev, unsigned int txqueue)
-#elif (LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 29))
-    #define NDO_TX_TIMEOUT_PROTOTYPE() \
-        static void esp_tx_timeout(struct net_device *ndev)
-#else
-    #error "No symbol **ndo_tx_timeout** found in kernel < 2.6.29"
-#endif
 
 #define ACTION_DROP 1
 /* Unless specified as part of argument, resetpin,
@@ -92,10 +83,10 @@ static int esp_open(struct net_device *ndev);
 static int esp_stop(struct net_device *ndev);
 static int esp_hard_start_xmit(struct sk_buff *skb, struct net_device *ndev);
 static int esp_set_mac_address(struct net_device *ndev, void *addr);
-NDO_TX_TIMEOUT_PROTOTYPE();
 static struct net_device_stats* esp_get_stats(struct net_device *ndev);
 static void esp_set_rx_mode(struct net_device *ndev);
 static int process_tx_packet (struct sk_buff *skb);
+static NDO_TX_TIMEOUT_PROTOTYPE();
 int esp_send_packet(struct esp_adapter *adapter, struct sk_buff *skb);
 struct sk_buff * esp_alloc_skb(u32 len);
 
@@ -150,7 +141,7 @@ static int esp_set_mac_address(struct net_device *ndev, void *data)
 	return 0;
 }
 
-NDO_TX_TIMEOUT_PROTOTYPE()
+static NDO_TX_TIMEOUT_PROTOTYPE()
 {
 }
 
