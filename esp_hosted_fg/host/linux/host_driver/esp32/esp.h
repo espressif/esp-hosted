@@ -82,4 +82,9 @@ struct esp_private {
 struct esp_skb_cb {
 	struct esp_private      *priv;
 };
+
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 17, 0))
+#define do_exit(code)	kthread_complete_and_exit(NULL, code)
+#endif
+
 #endif

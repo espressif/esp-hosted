@@ -62,6 +62,10 @@ static const struct sdio_device_id esp_devices[] = {
 	{}
 };
 
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 17, 0))
+#define do_exit(code)	kthread_complete_and_exit(NULL, code)
+#endif
+
 static void esp_process_interrupt(struct esp_sdio_context *context, u32 int_status)
 {
 	if (!context) {
