@@ -20,6 +20,9 @@
 
 #if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 0, 0) 
   #include "esp_mac.h"
+  #define ESP_TCPIP_INIT() esp_netif_init();
+#else
+  #define ESP_TCPIP_INIT() tcpip_adapter_init()
 #endif
 
 typedef struct {
