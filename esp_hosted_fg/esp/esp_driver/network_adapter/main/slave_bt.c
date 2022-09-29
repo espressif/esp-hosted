@@ -269,20 +269,20 @@ static void init_uart_c3_s3(void)
     periph_module_reset(PERIPH_UHCI0_MODULE);
 
     gpio_config_t io_output_conf = {
-        .intr_type = GPIO_PIN_INTR_DISABLE,    //disable interrupt
-        .mode = GPIO_MODE_OUTPUT,    // output mode
-        .pin_bit_mask = GPIO_OUTPUT_PIN_SEL,    // bit mask of the output pins
-        .pull_down_en = 0,    // disable pull-down mode
-        .pull_up_en = 0,    // disable pull-up mode
+        .intr_type = DISABLE_INTR_ON_GPIO,    /* Disable interrupt */
+        .mode = GPIO_MODE_OUTPUT,             /* Output mode */
+        .pin_bit_mask = GPIO_OUTPUT_PIN_SEL,  /* Bit mask of the output pins */
+        .pull_down_en = 0,                    /* Disable pull-down mode */
+        .pull_up_en = 0,                      /* Disable pull-up mode */
     };
     gpio_config(&io_output_conf);
 
     gpio_config_t io_input_conf = {
-        .intr_type = GPIO_PIN_INTR_DISABLE,    //disable interrupt
-        .mode = GPIO_MODE_INPUT,    // input mode
-        .pin_bit_mask = GPIO_INPUT_PIN_SEL,  // bit mask of the input pins
-        .pull_down_en = 0,    // disable pull-down mode
-        .pull_up_en = 0,    // disable pull-down mode
+        .intr_type = DISABLE_INTR_ON_GPIO,    /* Disable interrupt */
+        .mode = GPIO_MODE_INPUT,              /* Input mode */
+        .pin_bit_mask = GPIO_INPUT_PIN_SEL,   /* Bit mask of the input pins */
+        .pull_down_en = 0,                    /* Disable pull-down mode */
+        .pull_up_en = 0,                      /* Disable pull-down mode */
     };
     gpio_config(&io_input_conf);
 
