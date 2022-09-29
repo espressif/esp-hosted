@@ -20,6 +20,10 @@
 
 #if ESP_IDF_VERSION < ESP_IDF_VERSION_VAL(5, 0, 0) 
   #include "driver/periph_ctrl.h"
+  #define DISABLE_INTR_ON_GPIO GPIO_PIN_INTR_DISABLE
+#else
+  #include "esp_private/periph_ctrl.h"
+  #define DISABLE_INTR_ON_GPIO GPIO_INTR_DISABLE
 #endif
 
 #if (defined(CONFIG_IDF_TARGET_ESP32C3) || \
