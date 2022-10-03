@@ -43,6 +43,11 @@ $ sudo rfkill list
     Soft blocked: no
     Hard blocked: no
 ```
+In case soft blocked,
+```sh
+$ sudo rfkill unblock bluetooth
+$ sudo rfkill list # should be not blocked now
+```
 2. Execute `hciconfig` command to ensure that device is detected and initialized properly
 3. User permissions
 ```sh
@@ -67,7 +72,25 @@ $ sudo systemctl status bluetooth
 * ESP console log
 * hcidump log (`hcidump -X -t`)
 
-## 5. Unknown symbol error while executing rpi_init.sh
+## 5. In case of Bluetooth over UART getting timeouts for tx
+If prints like
+```sh
+I (17761) hci_uart: uart rx break
+I (17761) hci_uart: uart rx break
+I (17761) hci_uart: uart rx break
+I (17761) hci_uart: uart rx break
+I (17771) hci_uart: uart rx break
+I (17771) hci_uart: uart rx break
+I (17771) hci_uart: uart rx break
+I (23761) hci_uart: uart rx break
+```
+coming continuously, Please restart hciattach.
+```sh
+$ sudo killall hciattach
+$ sudo hciattach -s <baud_rate> /dev/serial0 any <baud_rate> flow
+```
+
+## 6. Unknown symbol error while executing rpi_init.sh
 If user gets below dmesg log
 ```
 [11827.359298] esp32_sdio: Unknown symbol sdio_release_host (err 0)

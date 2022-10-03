@@ -24,8 +24,6 @@ Setup image is here.
 |:-------:|:--------:|:---------:|:--------:|
 | RX | 10 | IO5 | TX |
 | TX | 8 | IO18 | RX |
-| CTS | 36 | IO9 | RTS |
-| RTS | 11 | IO8 | CTS |
 
 Setup image is here.
 
@@ -90,10 +88,14 @@ $ sudo systemctl disable hciuart
 - Build and load kernel module
 ```sh
 $ cd host/linux/host_control/
-$ ./rpi_init.sh <transport> btuart
+$ ./rpi_init.sh <transport> <bt_over_uart>
 ```
 	- <transport> can take value `sdio` or `spi`. Defaults to `sdio`
-	- btuart is expected to setup HCI over UART
+	- <bt_over_uart> can take value `btuart` or `btuart_2pins`.
+	  - This option will setup HCI over UART
+	  - :warning: Note:
+	    - For ESP32-C2, 2 pin UART (TX & RX only) is supported. So `btuart_2pins` should be used for ESP32-C2.
+		- For other chipsets, `btuart` should be used, where 4 pin UART (TX, RX, CTS, RTS) is only supported.
 
 ### 2.2 ESP Peripheral Firmware
 One can load pre-built release binaries on ESP peripheral or compile those from source. Below subsection explains both these methods.
