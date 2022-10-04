@@ -629,6 +629,8 @@ int cmd_disconnect_request(struct esp_wifi_device *priv, u16 reason_code)
 	struct command_node *cmd_node = NULL;
 	struct cmd_sta_disconnect *cmd_disconnect;
 
+	printk(KERN_INFO "%s %d\n", __func__, __LINE__);
+
 	if (!priv || !priv->adapter) {
 		printk(KERN_ERR "%s: Invalid argument\n", __func__);
 		return -EINVAL;
@@ -670,6 +672,7 @@ int cmd_connect_request(struct esp_wifi_device *priv,
 	struct esp_adapter *adapter = NULL;
 	u8 retry = 2;
 
+	printk(KERN_INFO "%s %d\n", __func__, __LINE__);
 	if (!priv || !params || !priv->adapter) {
 		printk(KERN_ERR "%s: Invalid argument\n", __func__);
 		return -EINVAL;
@@ -886,6 +889,7 @@ int cmd_set_default_key(struct esp_wifi_device *priv, u8 key_index)
 	struct cmd_key_operation *cmd;
 	struct wifi_sec_key * key = NULL;
 
+	printk(KERN_INFO "%s %d\n", __func__, __LINE__);
 	if (!priv || !priv->adapter) {
 		printk(KERN_ERR "%s: Invalid argument\n", __func__);
 		return -EINVAL;
@@ -938,6 +942,7 @@ int cmd_del_key(struct esp_wifi_device *priv, u8 key_index, bool pairwise,
 	const u8 *mac = NULL;
 	const u8 bc_mac[] = {0xff, 0xff, 0xff, 0xff, 0xff, 0xff};
 
+	printk(KERN_INFO "%s %d\n", __func__, __LINE__);
 	if (!priv || !priv->adapter) {
 		printk(KERN_ERR "%s: Invalid argument\n", __func__);
 		return -EINVAL;
@@ -994,6 +999,7 @@ int cmd_add_key(struct esp_wifi_device *priv, u8 key_index, bool pairwise,
 	const u8 bc_mac[] = {0xff, 0xff, 0xff, 0xff, 0xff, 0xff};
 	const u8 *mac = NULL;
 
+	printk(KERN_INFO "%s %d\n", __func__, __LINE__);
 #if 0
 	printk(KERN_INFO "%s:%u key_idx: %u pairwise: %u params->key_len: %u \nparams->seq_len:%u params->mode: 0x%x \nparams->cipher: 0x%x\n",
       __func__, __LINE__,
@@ -1088,6 +1094,7 @@ int cmd_init_interface(struct esp_wifi_device *priv)
 	u16 cmd_len;
 	struct command_node *cmd_node = NULL;
 
+	printk(KERN_INFO "%s %d\n", __func__, __LINE__);
 	if (!priv || !priv->adapter) {
 		printk(KERN_ERR "%s: Invalid argument\n", __func__);
 		return -EINVAL;
@@ -1115,6 +1122,7 @@ int cmd_deinit_interface(struct esp_wifi_device *priv)
 	u16 cmd_len;
 	struct command_node *cmd_node = NULL;
 
+	printk(KERN_INFO "%s %d\n", __func__, __LINE__);
 	if (!priv || !priv->adapter)
 		return -EINVAL;
 
@@ -1207,6 +1215,7 @@ int cmd_scan_request(struct esp_wifi_device *priv, struct cfg80211_scan_request 
 	struct command_node *cmd_node = NULL;
 	struct scan_request *scan_req;
 
+	printk(KERN_INFO "%s %d\n", __func__, __LINE__);
 	if (!priv || !priv->adapter || !request) {
 		printk(KERN_ERR "%s: Invalid argument\n", __func__);
 		return -EINVAL;
@@ -1270,6 +1279,7 @@ int cmd_get_mac(struct esp_wifi_device *priv)
 	u16 cmd_len;
 	struct command_node *cmd_node = NULL;
 
+	printk(KERN_INFO "%s %d\n", __func__, __LINE__);
 	if (!priv || !priv->adapter) {
 		printk(KERN_ERR "%s: Invalid argument\n", __func__);
 		return -EINVAL;

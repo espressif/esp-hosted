@@ -116,6 +116,14 @@ static const u32 esp_cipher_suites[] = {
     WLAN_CIPHER_SUITE_AES_CMAC,
 };
 
+static const struct wiphy_wowlan_support esp_wowlan_support = {
+    .flags = WIPHY_WOWLAN_ANY | WIPHY_WOWLAN_MAGIC_PKT,
+    .n_patterns = 0,
+    .pattern_max_len = 0,
+    .pattern_min_len = 0,
+    .max_pkt_offset = 0,
+};
+
 struct wireless_dev *esp_cfg80211_add_iface(struct wiphy *wiphy,
                               const char *name,
                               unsigned char name_assign_type,
@@ -348,7 +356,6 @@ static int esp_cfg80211_disconnect(struct wiphy *wiphy,
 	return cmd_disconnect_request(priv, reason_code);
 }
 
-
 static int esp_cfg80211_authenticate(struct wiphy *wiphy, struct net_device *dev,
 		struct cfg80211_auth_request *req)
 {
@@ -436,6 +443,25 @@ static int esp_cfg80211_disassoc(struct wiphy *wiphy, struct net_device *dev,
 	return cmd_disconnect_request(priv, req->reason_code);
 }
 
+static int esp_cfg80211_suspend(struct wiphy *wiphy,
+                    struct cfg80211_wowlan *wowlan)
+{
+	printk(KERN_INFO "%s\n", __func__);
+	return 0;
+}
+
+static int esp_cfg80211_resume(struct wiphy *wiphy)
+{
+	printk(KERN_INFO "%s\n", __func__);
+	return 0;
+}
+
+static void esp_cfg80211_set_wakeup(struct wiphy *wiphy,
+                       bool enabled)
+{
+	printk(KERN_INFO "%s\n", __func__);
+}
+
 static struct cfg80211_ops esp_cfg80211_ops = {
 #if 0
 	.add_virtual_intf = esp_cfg80211_add_iface,
@@ -453,6 +479,9 @@ static struct cfg80211_ops esp_cfg80211_ops = {
 	.deauth = esp_cfg80211_deauth,
 	.disassoc = esp_cfg80211_disassoc,
 	.assoc = esp_cfg80211_associate,
+	.suspend = esp_cfg80211_suspend,
+	.resume = esp_cfg80211_resume,
+	.set_wakeup = esp_cfg80211_set_wakeup,
 };
 
 int esp_cfg80211_register(struct esp_adapter *adapter)
@@ -491,6 +520,7 @@ int esp_cfg80211_register(struct esp_adapter *adapter)
 	wiphy->max_scan_ie_len = 1000;
 	wiphy->max_sched_scan_ssids = 10;
 	wiphy->signal_type = CFG80211_SIGNAL_TYPE_MBM;
+	wiphy->wowlan = &esp_wowlan_support;
 
 	/* Advertise SAE support */
 	wiphy->features |= NL80211_FEATURE_SAE;

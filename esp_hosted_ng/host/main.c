@@ -34,6 +34,7 @@
 #define HOST_GPIO_PIN_INVALID -1
 static int resetpin = HOST_GPIO_PIN_INVALID;
 extern u8 ap_bssid[MAC_ADDR_LEN];
+extern volatile u8 host_sleep;
 
 module_param(resetpin, int, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
 MODULE_PARM_DESC(resetpin, "Host's GPIO pin number which is connected to ESP32's EN to reset ESP32 device");
@@ -81,6 +82,10 @@ static int process_tx_packet (struct sk_buff *skb)
 
 	if (netif_queue_stopped((const struct net_device *) priv->ndev)) {
 		printk(KERN_INFO "%s: Netif queue stopped\n", __func__);
+		return NETDEV_TX_BUSY;
+	}
+
+	if (host_sleep) {
 		return NETDEV_TX_BUSY;
 	}
 
@@ -556,6 +561,9 @@ static void process_rx_packet(struct esp_adapter *adapter, struct sk_buff *skb)
 	/*print_hex_dump(KERN_ERR , "rx: ", DUMP_PREFIX_ADDRESS, 16, 1, skb->data, len, 1);*/
 
 	payload_header->checksum = 0;
+	if (payload_header->reserved2 == 0xFF) {
+		print_hex_dump(KERN_INFO, "Wake up packet: ", DUMP_PREFIX_ADDRESS, 16, 1, skb->data, len+offset, 1);
+	}
 
 	/* chop off the header from skb */
 	skb_pull(skb, offset);
