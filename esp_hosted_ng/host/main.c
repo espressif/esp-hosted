@@ -319,12 +319,13 @@ static void esp_set_rx_mode(struct net_device *ndev)
 	struct esp_wifi_device *priv = netdev_priv(ndev);
 	struct netdev_hw_addr *mac_addr;
 	u32 count = 0;
+#if 0
 	struct in_device *in_dev = in_dev_get(ndev);
 	struct ip_mc_list *ip_list = in_dev->mc_list;
-
+#endif
 	netdev_for_each_mc_addr(mac_addr, ndev) {
 		if (count < MAX_MULTICAST_ADDR_COUNT) {
-/*			printk(KERN_INFO "%d: %pM\n", count+1, mac_addr->addr);*/
+			/*printk(KERN_INFO "%d: %pM\n", count+1, mac_addr->addr);*/
 			memcpy(&mcast_list.mcast_addr[count++], mac_addr->addr, ETH_ALEN);
 		}
 	}
@@ -333,12 +334,12 @@ static void esp_set_rx_mode(struct net_device *ndev)
 	mcast_list.addr_count = count;
 
 	if (priv->port_open) {
-		printk (KERN_INFO "Set Multicast list\n");
+		/*printk (KERN_INFO "Set Multicast list\n");*/
 		if (adapter.mac_filter_wq)
 			queue_work(adapter.mac_filter_wq, &adapter.mac_flter_work);
 	}
 #if 0
-    cmd_set_mcast_mac_list(priv, &mcast_list);
+	cmd_set_mcast_mac_list(priv, &mcast_list);
 	while(ip_list) {
 		printk(KERN_DEBUG " IP MC Address: 0x%x\n", ip_list->multiaddr);
 		ip_list = ip_list->next;
@@ -761,7 +762,7 @@ static void esp_if_rx_work(struct work_struct *work)
 
 static void update_mac_filter(struct work_struct *work)
 {
-    cmd_set_mcast_mac_list(mcast_list.priv, &mcast_list);
+	cmd_set_mcast_mac_list(mcast_list.priv, &mcast_list);
 }
 
 static void esp_events_work(struct work_struct *work)
@@ -821,6 +822,9 @@ static void deinit_adapter(void)
 
 	if (adapter.if_rx_workqueue)
 		destroy_workqueue(adapter.if_rx_workqueue);
+
+	if (adapter.mac_filter_wq)
+		destroy_workqueue(adapter.mac_filter_wq);
 }
 
 static void esp_reset(void)

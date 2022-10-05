@@ -783,8 +783,15 @@ static int esp_probe(struct sdio_func *func,
 
 static int esp_suspend(struct device *dev)
 {
-	struct sdio_func *func = dev_to_sdio_func(dev);
+	struct sdio_func *func = NULL;
 	struct esp_sdio_context *context = NULL;
+
+	if (!dev) {
+		printk(KERN_INFO "Failed to inform ESP that host is suspending\n");
+		return -1;
+	}
+
+	func = dev_to_sdio_func(dev);
 
 	printk(KERN_INFO "----> Host Suspend\n");
 	msleep(1000);
@@ -792,6 +799,7 @@ static int esp_suspend(struct device *dev)
 	context = sdio_get_drvdata(func);
 
 	if (!context) {
+		printk(KERN_INFO "Failed to inform ESP that host is suspending\n");
 		return -1;
 	}
 
@@ -811,8 +819,15 @@ static int esp_suspend(struct device *dev)
 
 static int esp_resume(struct device *dev)
 {
-	struct sdio_func *func = dev_to_sdio_func(dev);
+	struct sdio_func *func = NULL;
 	struct esp_sdio_context *context = NULL;
+
+	if (!dev) {
+		printk(KERN_INFO "Failed to inform ESP that host is awake\n");
+		return -1;
+	}
+
+	func = dev_to_sdio_func(dev);
 
 	printk(KERN_INFO "-----> Host Awake\n");
 #if 0
@@ -825,6 +840,7 @@ static int esp_resume(struct device *dev)
 	context = sdio_get_drvdata(func);
 
 	if (!context) {
+		printk(KERN_INFO "Failed to inform ESP that host is awake\n");
 		return -1;
 	}
 
@@ -837,8 +853,8 @@ static int esp_resume(struct device *dev)
 }
 
 static const struct dev_pm_ops esp_pm_ops = {
-    .suspend = esp_suspend,
-    .resume = esp_resume,
+	.suspend = esp_suspend,
+	.resume = esp_resume,
 };
 
 /* SDIO driver structure to be registered with kernel */
@@ -893,7 +909,7 @@ void process_event_esp_bootup(struct esp_adapter *adapter, u8 *evt_buf, u8 len)
 
 		} else if (*pos == ESP_BOOTUP_FIRMWARE_CHIP_ID){
 
-			printk(KERN_INFO "ESP chipset detected [%s]\n", 
+			printk(KERN_INFO "ESP chipset detected [%s]\n",
 				*(pos+2)==ESP_FIRMWARE_CHIP_ESP32 ? "esp32":
 				*(pos+2)==ESP_FIRMWARE_CHIP_ESP32S2 ? "esp32-s2" :
 				*(pos+2)==ESP_FIRMWARE_CHIP_ESP32C3 ? "esp32-c3" :

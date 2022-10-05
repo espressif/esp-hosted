@@ -31,8 +31,8 @@
 struct multicast_list
 {
 	struct esp_wifi_device *priv;
-    u8 addr_count;
-    u8 mcast_addr[MAX_MULTICAST_ADDR_COUNT][MAC_ADDR_LEN];
+	u8 addr_count;
+	u8 mcast_addr[MAX_MULTICAST_ADDR_COUNT][MAC_ADDR_LEN];
 };
 
 

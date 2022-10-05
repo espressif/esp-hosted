@@ -4,20 +4,20 @@
 #ifndef __ESP_NETWORK_ADAPTER__H
 #define __ESP_NETWORK_ADAPTER__H
 
-#define PRIO_Q_HIGH             0
-#define PRIO_Q_MID              1
-#define PRIO_Q_LOW              2
-#define MAX_PRIORITY_QUEUES     3
-#define MAC_ADDR_LEN            6
-#define MAX_KEY_LEN             32
-#define MAX_SEQ_LEN             10
-#define ESP_MAX_KEY_INDEX       0
+#define PRIO_Q_HIGH                     0
+#define PRIO_Q_MID                      1
+#define PRIO_Q_LOW                      2
+#define MAX_PRIORITY_QUEUES             3
+#define MAC_ADDR_LEN                    6
+#define MAX_KEY_LEN                     32
+#define MAX_SEQ_LEN                     10
+#define ESP_MAX_KEY_INDEX               0
 
 /* ESP Payload Header Flags */
-#define MORE_FRAGMENT           (1 << 0)
-#define MAX_SSID_LEN            32
+#define MORE_FRAGMENT                   (1 << 0)
+#define MAX_SSID_LEN                    32
 
-#define	MAX_MULTICAST_ADDR_COUNT 8
+#define MAX_MULTICAST_ADDR_COUNT        8
 
 struct esp_payload_header {
 	uint8_t          if_type:4;
