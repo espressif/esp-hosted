@@ -333,7 +333,6 @@ static int get_firmware_data(struct esp_sdio_context *context)
 static int init_context(struct esp_sdio_context *context)
 {
 	int ret = 0;
-	u32 *val;
 	uint8_t prio_q_idx = 0;
 
 	if (!context) {

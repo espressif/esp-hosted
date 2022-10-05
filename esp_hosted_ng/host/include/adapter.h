@@ -17,6 +17,8 @@
 #define MORE_FRAGMENT           (1 << 0)
 #define MAX_SSID_LEN            32
 
+#define	MAX_MULTICAST_ADDR_COUNT 8
+
 struct esp_payload_header {
 	uint8_t          if_type:4;
 	uint8_t          if_num:4;
@@ -104,6 +106,8 @@ enum COMMAND_CODE {
 	CMD_SET_DEFAULT_KEY,
 	CMD_STA_AUTH,
 	CMD_STA_ASSOC,
+	CMD_SET_IP_ADDR,
+	CMD_SET_MCAST_MAC_ADDR,
 	CMD_MAX,
 };
 
@@ -181,6 +185,17 @@ struct cmd_sta_disconnect {
 	struct     command_header header;
 	uint16_t   reason_code;
 	uint8_t    pad[2];
+}__attribute__((packed));
+
+struct cmd_set_ip_addr {
+	struct command_header header;
+	uint32_t ip;
+}__attribute__((packed));
+
+struct cmd_set_mcast_mac_addr {
+	struct command_header header;
+	uint8_t count;
+	uint8_t mcast_addr[MAX_MULTICAST_ADDR_COUNT][MAC_ADDR_LEN];
 }__attribute__((packed));
 
 struct wifi_sec_key {

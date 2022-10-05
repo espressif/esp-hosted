@@ -124,6 +124,38 @@ static const struct wiphy_wowlan_support esp_wowlan_support = {
     .max_pkt_offset = 0,
 };
 
+static int esp_inetaddr_event(struct notifier_block *nb,
+    unsigned long event, void *data)
+{
+    struct in_ifaddr *ifa = data;
+    struct net_device *netdev = ifa->ifa_dev ? ifa->ifa_dev->dev : NULL;
+	struct esp_wifi_device *priv = netdev_priv(netdev);
+
+/*  printk(KERN_INFO "------- IP event -------: %d\n", priv->if_type);*/
+
+    if (!strstr(netdev->name, "espsta")) {
+        return 0;
+    }
+
+    switch (event) {
+        case NETDEV_UP:
+            if (priv && (priv->if_type == ESP_STA_IF)) {
+                cmd_set_ip_address(priv, ifa->ifa_local);
+                printk(KERN_INFO "%s: NETDEV_UP interface %s ip changed to  %pi4 \n",
+                        __func__, netdev->name, &ifa->ifa_local);
+            }
+            break;
+
+        case NETDEV_DOWN:
+			printk(KERN_INFO "Interface Down: %d\n", priv->if_type);
+            if (priv && (priv->if_type == ESP_STA_IF))
+                cmd_set_ip_address(priv, 0);
+            break;
+    }
+
+    return 0;
+}
+
 struct wireless_dev *esp_cfg80211_add_iface(struct wiphy *wiphy,
                               const char *name,
                               unsigned char name_assign_type,
@@ -201,6 +233,9 @@ struct wireless_dev *esp_cfg80211_add_iface(struct wiphy *wiphy,
 
 	set_bit(ESP_NETWORK_UP, &esp_wdev->priv_flags);
 	clear_bit(ESP_CLEANUP_IN_PROGRESS, &esp_dev->adapter->state_flags);
+
+	esp_wdev->nb.notifier_call = esp_inetaddr_event;
+	register_inetaddr_notifier(&esp_wdev->nb);
 
 	return &esp_wdev->wdev;
 

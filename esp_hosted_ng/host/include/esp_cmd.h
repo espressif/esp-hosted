@@ -28,6 +28,14 @@
 #define ESP_CMD_HIGH_PRIO    1
 #define ESP_CMD_DFLT_PRIO    0
 
+struct multicast_list
+{
+	struct esp_wifi_device *priv;
+    u8 addr_count;
+    u8 mcast_addr[MAX_MULTICAST_ADDR_COUNT][MAC_ADDR_LEN];
+};
+
+
 int esp_commands_setup(struct esp_adapter *adapter);
 int esp_commands_teardown(struct esp_adapter *adapter);
 int cmd_init_interface(struct esp_wifi_device *priv);
@@ -49,4 +57,6 @@ int cmd_add_key(struct esp_wifi_device *priv, u8 key_index, bool pairwise,
 int cmd_del_key(struct esp_wifi_device *priv, u8 key_index, bool pairwise,
 		const u8 *mac_addr);
 int cmd_set_default_key(struct esp_wifi_device *priv, u8 key_index);
+int cmd_set_ip_address(struct esp_wifi_device *priv, u32 ip);
+int cmd_set_mcast_mac_list(struct esp_wifi_device *priv, struct multicast_list *list);
 #endif

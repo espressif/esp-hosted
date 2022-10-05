@@ -24,6 +24,7 @@
 #include <linux/wait.h>
 #include <linux/interrupt.h>
 #include <linux/netdevice.h>
+#include <linux/inetdevice.h>
 #include <linux/etherdevice.h>
 #include <linux/spinlock.h>
 #include <net/cfg80211.h>
@@ -113,6 +114,9 @@ struct esp_adapter {
 	struct command_node     *cur_cmd;
 	spinlock_t              cmd_lock;
 
+	struct workqueue_struct *mac_filter_wq;
+	struct work_struct      mac_flter_work;
+
 	struct workqueue_struct *cmd_wq;
 	struct work_struct      cmd_work;
 
@@ -160,6 +164,7 @@ struct esp_wifi_device {
 	uint8_t                 pad[3];
 	wait_queue_head_t       wait_for_scan_completion;
 	unsigned long           priv_flags;
+	struct notifier_block   nb;
 };
 
 
