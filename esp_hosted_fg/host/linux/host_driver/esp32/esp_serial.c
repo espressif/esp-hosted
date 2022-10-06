@@ -46,6 +46,8 @@ static struct esp_serial_devs {
 	struct mutex lock;
 } devs[ESP_SERIAL_MINOR_MAX];
 
+static uint8_t serial_init_done;
+
 static ssize_t esp_serial_read(struct file *file, char __user *user_buffer, size_t size, loff_t *offset)
 {
 	struct esp_serial_devs *dev = NULL;
@@ -226,6 +228,11 @@ int esp_serial_init(void *priv)
 {
 	int err = 0, i = 0;
 
+	if (!priv) {
+		printk(KERN_ERR "esp: %s: failed. NULL adapter\n", __func__);
+		return -1;
+	}
+
 	err = register_chrdev_region(MKDEV(ESP_SERIAL_MAJOR, 0), ESP_SERIAL_MINOR_MAX, "esp_serial_driver");
 	if (err) {
 		printk(KERN_ERR "%s, Error registering chrdev region %d\n", __func__, err);
@@ -244,17 +251,30 @@ int esp_serial_init(void *priv)
 #ifdef ESP_SERIAL_TEST
 	kthread_run(thread_fn, NULL, "esptest-thread");
 #endif
+	serial_init_done = 1;
 	return 0;
 }
 
 void esp_serial_cleanup(void)
 {
 	int i = 0;
+
 	for (i = 0; i < ESP_SERIAL_MINOR_MAX; i++) {
 		cdev_del(&devs[i].cdev);
 		esp_rb_cleanup(&devs[i].rb);
 		mutex_destroy(&devs[i].lock);
 	}
+
 	unregister_chrdev_region(MKDEV(ESP_SERIAL_MAJOR, 0), ESP_SERIAL_MINOR_MAX);
+
+	serial_init_done = 0;
 	return;
+}
+
+int esp_serial_reinit(void *priv)
+{
+	if (serial_init_done)
+		esp_serial_cleanup();
+
+	return esp_serial_init(priv);
 }

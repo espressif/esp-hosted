@@ -168,13 +168,13 @@ static int write_packet(struct esp_adapter *adapter, struct sk_buff *skb)
 }
 
 
-void process_init_event(u8 *evt_buf, u8 len)
+int process_init_event(u8 *evt_buf, u8 len)
 {
 	u8 len_left = len, tag_len;
 	u8 *pos;
 
 	if (!evt_buf)
-		return;
+		return -1;
 
 	pos = evt_buf;
 
@@ -200,7 +200,10 @@ void process_init_event(u8 *evt_buf, u8 len)
 	    (hardware_type != ESP_PRIV_FIRMWARE_CHIP_ESP32S3)) {
 		printk(KERN_INFO "ESP board type is not mentioned, ignoring [%d]\n", hardware_type);
 		hardware_type = ESP_PRIV_FIRMWARE_CHIP_UNRECOGNIZED;
+		return -1;
 	}
+
+	return 0;
 }
 
 
