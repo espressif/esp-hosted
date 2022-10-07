@@ -737,15 +737,6 @@ static int esp_probe(struct sdio_func *func,
 	if (!tx_thread)
 		printk (KERN_ERR "Failed to create esp32_sdio TX thread\n");
 
-#ifdef CONFIG_SUPPORT_ESP_SERIAL
-	ret = esp_serial_init((void *) context->adapter);
-	if (ret != 0) {
-		esp_remove(func);
-		printk(KERN_ERR "Error initialising serial interface\n");
-		return ret;
-	}
-#endif
-
 	ret = esp_add_card(context->adapter);
 	if (ret) {
 		esp_remove(func);
@@ -753,7 +744,6 @@ static int esp_probe(struct sdio_func *func,
 		deinit_sdio_func(func);
 		return ret;
 	}
-
 
 
 	context->state = ESP_CONTEXT_READY;
@@ -789,13 +779,13 @@ int esp_init_interface_layer(struct esp_adapter *adapter)
 	return sdio_register_driver(&esp_sdio_driver);
 }
 
-void process_init_event(u8 *evt_buf, u8 len)
+int process_init_event(u8 *evt_buf, u8 len)
 {
 	u8 len_left = len, tag_len;
 	u8 *pos;
 
 	if (!evt_buf)
-		return;
+		return -1;
 
 	pos = evt_buf;
 
@@ -811,6 +801,7 @@ void process_init_event(u8 *evt_buf, u8 len)
 		pos += (tag_len+2);
 		len_left -= (tag_len+2);
 	}
+	return 0;
 }
 
 void esp_deinit_interface_layer(void)

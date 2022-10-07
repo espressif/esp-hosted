@@ -327,6 +327,7 @@ void process_capabilities(u8 cap)
 
 static void process_event(u8 *evt_buf, u16 len)
 {
+	int ret = 0;
 	struct esp_priv_event *event;
 
 	if (!evt_buf || !len)
@@ -335,8 +336,16 @@ static void process_event(u8 *evt_buf, u16 len)
 	event = (struct esp_priv_event *) evt_buf;
 
 	if (event->event_type == ESP_PRIV_EVENT_INIT) {
+
 		printk (KERN_INFO "\nReceived INIT event from ESP32 peripheral");
-		process_init_event(event->event_data, event->event_len);
+
+		ret = process_init_event(event->event_data, event->event_len);
+
+#ifdef CONFIG_SUPPORT_ESP_SERIAL
+		if (!ret)
+			esp_serial_reinit(esp_get_adapter());
+#endif
+
 	} else {
 		printk (KERN_WARNING "Drop unknown event");
 	}
