@@ -19,6 +19,7 @@
 #include <linux/gpio.h>
 #include <linux/mutex.h>
 #include <linux/delay.h>
+#include <linux/timer.h>
 #include "esp_spi.h"
 #include "esp_if.h"
 #include "esp_api.h"
@@ -27,6 +28,7 @@
 #include "esp_serial.h"
 #endif
 #include "esp_kernel_port.h"
+#include "esp_stats.h"
 
 #define SPI_INITIAL_CLK_MHZ     10
 #define NUMBER_1M               1000000
@@ -187,6 +189,8 @@ int process_init_event(u8 *evt_buf, u8 len)
 			adjust_spi_clock(*(pos + 2));
 		} else if (*pos == ESP_PRIV_FIRMWARE_CHIP_ID){
 			hardware_type = *(pos+2);
+		} else if (*pos == ESP_PRIV_TEST_RAW_TP) {
+			process_test_capabilities(*(pos + 2));
 		} else {
 			printk (KERN_WARNING "Unsupported tag in event");
 		}
@@ -287,6 +291,9 @@ static void esp_spi_work(struct work_struct *work)
 
 				if (atomic_read(&tx_pending) < TX_RESUME_THRESHOLD) {
 					esp_tx_resume();
+					#if TEST_RAW_TP
+						esp_raw_tp_queue_resume();
+					#endif
 				}
 			}
 		}

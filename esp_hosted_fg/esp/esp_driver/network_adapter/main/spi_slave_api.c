@@ -26,6 +26,7 @@
 #include "endian.h"
 #include "freertos/task.h"
 #include "mempool.h"
+#include "stats.h"
 
 static const char TAG[] = "SPI_DRIVER";
 /* SPI settings */
@@ -248,8 +249,12 @@ void generate_startup_event(uint8_t cap)
 	struct esp_priv_event *event = NULL;
 	uint8_t *pos = NULL;
 	uint16_t len = 0;
+	uint8_t raw_tp_cap = 0;
 
 	buf_handle.payload = spi_buffer_alloc(MEMSET_REQUIRED);
+
+	raw_tp_cap = debug_get_raw_tp_conf();
+
 	assert(buf_handle.payload);
 	header = (struct esp_payload_header *) buf_handle.payload;
 
@@ -283,6 +288,10 @@ void generate_startup_event(uint8_t cap)
 	*pos = LENGTH_1_BYTE;               pos++;len++;
 	*pos = cap;                         pos++;len++;
 
+	*pos = ESP_PRIV_TEST_RAW_TP;        pos++;len++;
+	*pos = LENGTH_1_BYTE;               pos++;len++;
+	*pos = raw_tp_cap;                  pos++;len++;
+
 	/* TLVs end */
 
 	event->event_len = len;
@@ -292,7 +301,10 @@ void generate_startup_event(uint8_t cap)
 	header->len = htole16(len);
 
 	buf_handle.payload_len = len + sizeof(struct esp_payload_header);
+
+#if CONFIG_ESP_SPI_CHECKSUM
 	header->checksum = htole16(compute_checksum(buf_handle.payload, buf_handle.payload_len));
+#endif
 
 	xQueueSend(spi_tx_queue[PRIO_Q_OTHERS], &buf_handle, portMAX_DELAY);
 
@@ -377,7 +389,9 @@ static int process_spi_rx(interface_buffer_handle_t *buf_handle)
 	int ret = 0;
 	struct esp_payload_header *header = NULL;
 	uint16_t len = 0, offset = 0;
+#if CONFIG_ESP_SPI_CHECKSUM
 	uint16_t rx_checksum = 0, checksum = 0;
+#endif
 
 	/* Validate received buffer. Drop invalid buffer. */
 
@@ -394,6 +408,7 @@ static int process_spi_rx(interface_buffer_handle_t *buf_handle)
 		return -1;
 	}
 
+#if CONFIG_ESP_SPI_CHECKSUM
 	rx_checksum = le16toh(header->checksum);
 	header->checksum = 0;
 
@@ -402,6 +417,7 @@ static int process_spi_rx(interface_buffer_handle_t *buf_handle)
 	if (checksum != rx_checksum) {
 		return -1;
 	}
+#endif
 
 	/* Buffer is valid */
 	buf_handle->if_type = header->if_type;
@@ -653,8 +669,11 @@ static int32_t esp_spi_write(interface_handle_t *handle, interface_buffer_handle
 	/* copy the data from caller */
 	memcpy(tx_buf_handle.payload + offset, buf_handle->payload, buf_handle->payload_len);
 
+
+#if CONFIG_ESP_SPI_CHECKSUM
 	header->checksum = htole16(compute_checksum(tx_buf_handle.payload,
 				offset+buf_handle->payload_len));
+#endif
 
 	if (header->if_type == ESP_SERIAL_IF)
 		ret = xQueueSend(spi_tx_queue[PRIO_Q_SERIAL], &tx_buf_handle, portMAX_DELAY);

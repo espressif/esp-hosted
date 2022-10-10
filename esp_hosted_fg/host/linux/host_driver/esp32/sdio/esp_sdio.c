@@ -23,6 +23,7 @@
 #include <linux/mmc/sdio_ids.h>
 #include <linux/mmc/card.h>
 #include <linux/mmc/host.h>
+#include <linux/timer.h>
 #include "esp_if.h"
 #include "esp_sdio_api.h"
 #include "esp_api.h"
@@ -32,6 +33,7 @@
 #endif
 #include <linux/kthread.h>
 #include <linux/printk.h>
+#include "esp_stats.h"
 
 #define MAX_WRITE_RETRIES       2
 #define TX_MAX_PENDING_COUNT    200
@@ -496,19 +498,54 @@ static int write_packet(struct esp_adapter *adapter, struct sk_buff *skb)
 	return 0;
 }
 
+static int is_sdio_write_buffer_available(u32 buf_needed)
+{
+#define BUFFER_AVAILABLE        1
+#define BUFFER_UNAVAILABLE      0
+
+	int ret = 0;
+	static u32 buf_available = 0;
+	struct esp_sdio_context *context = &sdio_context;
+	u8 retry = MAX_WRITE_RETRIES;
+
+	/*If buffer needed are less than buffer available
+	  then only read for available buffer number from slave*/
+	if (buf_available < buf_needed) {
+		while (retry) {
+			ret = esp_slave_get_tx_buffer_num(context, &buf_available, ACQUIRE_LOCK);
+
+			if (buf_available < buf_needed) {
+
+				/* Release SDIO and retry after delay*/
+				retry--;
+				usleep_range(10,50);
+				continue;
+			}
+
+			break;
+		}
+	}
+
+	if (buf_available >= buf_needed)
+		buf_available -= buf_needed;
+
+	if (!retry) {
+		/* No buffer available at slave */
+		return BUFFER_UNAVAILABLE;
+	}
+
+	return BUFFER_AVAILABLE;
+}
+
 static int tx_process(void *data)
 {
 	int ret = 0;
 	u32 block_cnt = 0;
-	u32 buf_needed = 0, buf_available = 0;
+	u32 buf_needed = 0;
 	u8 *pos = NULL;
 	u32 data_left, len_to_send, pad;
 	struct sk_buff *tx_skb = NULL;
-	struct esp_adapter *adapter = (struct esp_adapter *) data;
-	struct esp_sdio_context *context = NULL;
-	u8 retry;
-
-	context = adapter->if_context;
+	struct esp_sdio_context *context = &sdio_context;
 
 	while (!kthread_should_stop()) {
 
@@ -543,34 +580,20 @@ static int tx_process(void *data)
 		if (atomic_read(&tx_pending))
 			atomic_dec(&tx_pending);
 
-		retry = MAX_WRITE_RETRIES;
-
 		/* resume network tx queue if bearable load */
 		if (atomic_read(&tx_pending) < TX_RESUME_THRESHOLD) {
 			esp_tx_resume();
+			#if TEST_RAW_TP
+				esp_raw_tp_queue_resume();
+			#endif
 		}
 
 		buf_needed = (tx_skb->len + ESP_RX_BUFFER_SIZE - 1) / ESP_RX_BUFFER_SIZE;
 
-		while (retry) {
-			sdio_claim_host(context->func);
-
-			ret = esp_slave_get_tx_buffer_num(context, &buf_available, LOCK_ALREADY_ACQUIRED);
-
-			if (buf_available < buf_needed) {
-				sdio_release_host(context->func);
-
-				/* Release SDIO and retry after delay*/
-				retry--;
-				usleep_range(10,50);
-				continue;
-			}
-
-			break;
-		}
-
-		if (!retry) {
-			/* No buffer available at slave */
+		/*If SDIO slave buffer is available to write then only write data
+		else wait till buffer is available*/
+		ret = is_sdio_write_buffer_available(buf_needed);
+		if(!ret) {
 			dev_kfree_skb(tx_skb);
 			continue;
 		}
@@ -587,11 +610,10 @@ static int tx_process(void *data)
 			block_cnt = data_left / ESP_BLOCK_SIZE;
 			len_to_send = data_left;
 			ret = esp_write_block(context, ESP_SLAVE_CMD53_END_ADDR - len_to_send,
-					pos, (len_to_send + 3) & (~3), LOCK_ALREADY_ACQUIRED);
+					pos, (len_to_send + 3) & (~3), ACQUIRE_LOCK);
 
 			if (ret) {
 				printk (KERN_ERR "%s: Failed to send data: %d %d %d\n", __func__, ret, len_to_send, data_left);
-				sdio_release_host(context->func);
 				break;
 			}
 
@@ -608,7 +630,6 @@ static int tx_process(void *data)
 		context->tx_buffer_count += buf_needed;
 		context->tx_buffer_count = context->tx_buffer_count % ESP_TX_BUFFER_MAX;
 
-		sdio_release_host(context->func);
 		dev_kfree_skb(tx_skb);
 	}
 
@@ -795,6 +816,8 @@ int process_init_event(u8 *evt_buf, u8 len)
 		if (*pos == ESP_PRIV_CAPABILITY) {
 			process_capabilities(*(pos + 2));
 			print_capabilities(*(pos + 2));
+		} else if (*pos == ESP_PRIV_TEST_RAW_TP) {
+			process_test_capabilities(*(pos + 2));
 		} else {
 			printk (KERN_WARNING "Unsupported tag in event");
 		}

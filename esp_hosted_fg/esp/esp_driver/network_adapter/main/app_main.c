@@ -44,6 +44,7 @@
 #include "protocomm_pserial.h"
 #include "slave_control.h"
 #include "slave_bt.c"
+#include "stats.h"
 
 static const char TAG[] = "NETWORK_ADAPTER";
 
@@ -124,6 +125,11 @@ static uint8_t get_capabilities()
 	ESP_LOGI(TAG, "- WLAN over SDIO");
 	cap |= ESP_WLAN_SDIO_SUPPORT;
 #endif
+
+#if CONFIG_ESP_SPI_CHECKSUM || CONFIG_ESP_SDIO_CHECKSUM
+	cap |= ESP_CHECKSUM_ENABLED;
+#endif
+
 #ifdef CONFIG_BT_ENABLED
 	cap |= get_bluetooth_capabilities();
 #endif
@@ -390,6 +396,11 @@ void process_rx_pkt(interface_buffer_handle_t *buf_handle)
 #if defined(CONFIG_BT_ENABLED) && BLUETOOTH_HCI
 	else if (buf_handle->if_type == ESP_HCI_IF) {
 		process_hci_rx_pkt(payload, payload_len);
+	}
+#endif
+#if TEST_RAW_TP && TEST_RAW_TP__HOST_TO_ESP
+	else if (buf_handle->if_type == ESP_TEST_IF) {
+		debug_update_raw_tp_rx_count(payload_len);
 	}
 #endif
 
@@ -747,10 +758,7 @@ void app_main()
 
 	assert(xTaskCreate(recv_task , "recv_task" , 4096 , NULL , 22 , NULL) == pdTRUE);
 	assert(xTaskCreate(send_task , "send_task" , 4096 , NULL , 22 , NULL) == pdTRUE);
-#ifdef CONFIG_FREERTOS_GENERATE_RUN_TIME_STATS
-	assert(xTaskCreate(task_runtime_stats_task, "task_runtime_stats_task",
-				4096, NULL, 1, NULL) == pdTRUE);
-#endif
+	create_debugging_tasks();
 
 
 	ESP_ERROR_CHECK(initialise_wifi());

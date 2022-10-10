@@ -2,7 +2,7 @@ CC = gcc
 
 CROSS_COMPILE :=
 
-CFLAGS = -Wall
+CFLAGS = -C -Wall --sysroot=$(SDKTARGETSYSROOT)
 
 CFLAGS_SANITIZE = -fsanitize=undefined  -fsanitize-address-use-after-scope -fsanitize-undefined-trap-on-error  -fstack-protector-all -fstack-check -fsanitize=address -fsanitize=pointer-compare -fno-omit-frame-pointer -static-libasan
 
