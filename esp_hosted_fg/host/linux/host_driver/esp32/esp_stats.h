@@ -17,23 +17,28 @@
  * this warranty disclaimer.
  */
 
-#ifndef _esp_api__h_
-#define _esp_api__h_
+#ifndef __ESP_STAT__H__
+#define __ESP_STAT__H__
 
 #include "esp.h"
 
-int esp_add_card(struct esp_adapter *adapter);
-int esp_remove_card(struct esp_adapter *adapter);
-void esp_process_new_packet_intr(struct esp_adapter *adapter);
-struct esp_adapter * esp_get_adapter(void);
-struct sk_buff * esp_alloc_skb(u32 len);
-int esp_send_packet(struct esp_adapter *adapter, struct sk_buff *skb);
-u8 esp_is_bt_supported_over_sdio(u32 cap);
-int esp_is_tx_queue_paused(void);
-void esp_tx_pause(void);
-void esp_tx_resume(void);
-int process_init_event(u8 *evt_buf, u8 len);
-void process_capabilities(u8 cap);
-void process_test_capabilities(u8 cap);
+#ifdef CONFIG_TEST_RAW_TP
+#define TEST_RAW_TP 1
+#else
+#define TEST_RAW_TP 0
+#endif
+
+#if TEST_RAW_TP
+
+#define TEST_RAW_TP__BUF_SIZE    1460
+
+#define ESP_TEST_RAW_TP__RX      0
+#define ESP_TEST_RAW_TP__TX      1
+
+void esp_raw_tp_queue_resume(void);
+#endif
+
+void test_raw_tp_cleanup(void);
+void update_test_raw_tp_rx_stats(u16 len);
 
 #endif

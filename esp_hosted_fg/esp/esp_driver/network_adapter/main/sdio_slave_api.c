@@ -24,6 +24,7 @@
 #include "soc/sdio_slave_periph.h"
 #include "endian.h"
 #include "mempool.h"
+#include "stats.h"
 
 #define SDIO_SLAVE_QUEUE_SIZE 20
 #define BUFFER_SIZE     1536 /* 512*3 */
@@ -107,7 +108,10 @@ void generate_startup_event(uint8_t cap)
 	struct esp_priv_event *event = NULL;
 	uint8_t *pos = NULL;
 	uint16_t len = 0;
+	uint8_t raw_tp_cap = 0;
 	esp_err_t ret = ESP_OK;
+
+	raw_tp_cap = debug_get_raw_tp_conf();
 
 	memset(&buf_handle, 0, sizeof(buf_handle));
 
@@ -136,6 +140,9 @@ void generate_startup_event(uint8_t cap)
 	*pos = LENGTH_1_BYTE;               pos++;len++;
 	*pos = cap;                         pos++;len++;
 
+	*pos = ESP_PRIV_TEST_RAW_TP;        pos++;len++;
+	*pos = LENGTH_1_BYTE;               pos++;len++;
+	*pos = raw_tp_cap;                  pos++;len++;
 	/* TLVs end */
 
 	event->event_len = len;
@@ -145,7 +152,9 @@ void generate_startup_event(uint8_t cap)
 	header->len = htole16(len);
 
 	buf_handle.payload_len = len + sizeof(struct esp_payload_header);
+#if CONFIG_ESP_SDIO_CHECKSUM
 	header->checksum = htole16(compute_checksum(buf_handle.payload, buf_handle.payload_len));
+#endif
 
 	ret = sdio_slave_transmit(buf_handle.payload, buf_handle.payload_len);
 	if (ret != ESP_OK) {
@@ -185,7 +194,7 @@ static interface_handle_t * sdio_init(void)
 		return NULL;
 	}
 
-	for(int i = 0; i < BUFFER_NUM; i++) {
+	for (int i = 0; i < BUFFER_NUM; i++) {
 		handle = sdio_slave_recv_register_buf(sdio_slave_rx_buffer[i]);
 		assert(handle != NULL);
 
@@ -263,8 +272,10 @@ static int32_t sdio_write(interface_handle_t *handle, interface_buffer_handle_t 
 
 	memcpy(sendbuf + offset, buf_handle->payload, buf_handle->payload_len);
 
+#if CONFIG_ESP_SDIO_CHECKSUM
 	header->checksum = htole16(compute_checksum(sendbuf,
 				offset+buf_handle->payload_len));
+#endif
 
 	ret = sdio_slave_transmit(sendbuf, total_len);
 	if (ret != ESP_OK) {
@@ -281,7 +292,10 @@ static int32_t sdio_write(interface_handle_t *handle, interface_buffer_handle_t 
 static int sdio_read(interface_handle_t *if_handle, interface_buffer_handle_t *buf_handle)
 {
 	struct esp_payload_header *header = NULL;
-	uint16_t rx_checksum = 0, checksum = 0, len = 0;
+#if CONFIG_ESP_SDIO_CHECKSUM
+	uint16_t rx_checksum = 0, checksum = 0;
+#endif
+	uint16_t len = 0;
 	size_t sdio_read_len = 0;
 
 
@@ -300,10 +314,11 @@ static int sdio_read(interface_handle_t *if_handle, interface_buffer_handle_t *b
 
 	header = (struct esp_payload_header *) buf_handle->payload;
 
-	rx_checksum = le16toh(header->checksum);
-
-	header->checksum = 0;
 	len = le16toh(header->len) + le16toh(header->offset);
+
+#if CONFIG_ESP_SDIO_CHECKSUM
+	rx_checksum = le16toh(header->checksum);
+	header->checksum = 0;
 
 	checksum = compute_checksum(buf_handle->payload, len);
 
@@ -311,6 +326,7 @@ static int sdio_read(interface_handle_t *if_handle, interface_buffer_handle_t *b
 		sdio_read_done(buf_handle->sdio_buf_handle);
 		return ESP_FAIL;
 	}
+#endif
 
 	buf_handle->if_type = header->if_type;
 	buf_handle->if_num = header->if_num;
@@ -333,7 +349,7 @@ static esp_err_t sdio_reset(interface_handle_t *handle)
 	if (ret != ESP_OK)
 		return ret;
 
-	while(1) {
+	while (1) {
 		sdio_slave_buf_handle_t handle = NULL;
 
 		/* Return buffers to driver */

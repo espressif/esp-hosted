@@ -44,7 +44,23 @@ menu "Example Configuration"
         default 4
         help
             GPIO pin for indicating host that SPI slave has data to be read by host
-	endmenu
+
+    config ESP_SPI_CHECKSUM
+        bool "SPI checksum ENABLE/DISABLE"
+        default y
+        help
+            ENABLE/DISABLE software SPI checksum
+    endmenu
+
+    menu "SDIO Configuration"
+        depends on ESP_SDIO_HOST_INTERFACE
+
+    config ESP_SDIO_CHECKSUM
+        bool "SDIO checksum ENABLE/DISABLE"
+        help
+            ENABLE/DISABLE software SDIO checksum
+
+    endmenu
 
 	config ESP_CACHE_MALLOC
         bool "Cache allocated memory like mempool - helps to reduce malloc calls"

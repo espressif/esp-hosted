@@ -45,6 +45,7 @@ typedef enum {
 	ESP_SERIAL_IF,
 	ESP_HCI_IF,
 	ESP_PRIV_IF,
+	ESP_TEST_IF,
 	ESP_MAX_IF,
 } ESP_INTERFACE_TYPE;
 
@@ -63,7 +64,13 @@ typedef enum {
 	ESP_BR_EDR_ONLY_SUPPORT = (1 << 4),
 	ESP_WLAN_SPI_SUPPORT = (1 << 5),
 	ESP_BT_SPI_SUPPORT = (1 << 6),
+	ESP_CHECKSUM_ENABLED = (1 << 7),
 } ESP_CAPABILITIES;
+
+typedef enum {
+	ESP_TEST_RAW_TP = (1 << 0),
+	ESP_TEST_RAW_TP__ESP_TO_HOST = (1 << 1)
+} ESP_RAW_TP_MEASUREMENT;
 
 typedef enum {
 	ESP_PACKET_TYPE_EVENT,
@@ -77,6 +84,7 @@ typedef enum {
 	ESP_PRIV_CAPABILITY,
 	ESP_PRIV_SPI_CLK_MHZ,
 	ESP_PRIV_FIRMWARE_CHIP_ID,
+	ESP_PRIV_TEST_RAW_TP
 } ESP_PRIV_TAG_TYPE;
 
 struct esp_priv_event {

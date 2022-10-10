@@ -1,4 +1,5 @@
 CONFIG_SUPPORT_ESP_SERIAL = y
+CONFIG_TEST_RAW_TP := n
 CONFIG_ENABLE_MONITOR_PROCESS = n
 
 # Toolchain Path
@@ -24,6 +25,10 @@ ifeq ($(CONFIG_SUPPORT_ESP_SERIAL), y)
 	EXTRA_CFLAGS += -DCONFIG_SUPPORT_ESP_SERIAL
 endif
 
+ifeq ($(CONFIG_TEST_RAW_TP), y)
+	EXTRA_CFLAGS += -DCONFIG_TEST_RAW_TP
+endif
+
 ifeq ($(CONFIG_ENABLE_MONITOR_PROCESS), y)
 	EXTRA_CFLAGS += -DCONFIG_ENABLE_MONITOR_PROCESS
 endif
@@ -43,7 +48,7 @@ endif
 PWD := $(shell pwd)
 
 obj-m := $(MODULE_NAME).o
-$(MODULE_NAME)-y := esp_bt.o main.o $(module_objects)
+$(MODULE_NAME)-y := esp_bt.o main.o esp_stats.o $(module_objects)
 
 ifeq ($(CONFIG_SUPPORT_ESP_SERIAL), y)
 	$(MODULE_NAME)-y += esp_serial.o esp_rb.o
