@@ -6,7 +6,7 @@ menu "Example Configuration"
         default ESP_SPI_HOST_INTERFACE if IDF_TARGET_ESP32S2
         default ESP_SPI_HOST_INTERFACE if IDF_TARGET_ESP32S3
         help
-	    Bus interface to be used for communication with the host
+            Bus interface to be used for communication with the host
 
         config ESP_SDIO_HOST_INTERFACE
             bool "SDIO interface"
@@ -27,7 +27,7 @@ menu "Example Configuration"
         int "SPI controller to use"
         depends on IDF_TARGET_ESP32 && ESP_SPI_HOST_INTERFACE
         default 2
-	range 2 3
+        range 2 3
         help
             SPI controller to be used. HSPI->2, VSPI->3
 
@@ -44,6 +44,18 @@ menu "Example Configuration"
         default 4
         help
             GPIO pin for indicating host that SPI slave has data to be read by host
+
+    config ESP_SPI_TX_Q_SIZE
+        int "ESP to Host SPI queue size"
+        default 10
+        help
+            Very small tx queue will lower ESP -- SPI --> Host data rate (Only ESP32-C2)
+
+    config ESP_SPI_RX_Q_SIZE
+        int "Host to ESP SPI queue size"
+        default 10
+        help
+            Very small RX queue will lower ESP <-- SPI -- Host data rate (Only ESP32-C2)
 
     config ESP_SPI_CHECKSUM
         bool "SPI checksum ENABLE/DISABLE"
@@ -62,7 +74,28 @@ menu "Example Configuration"
 
     endmenu
 
-	config ESP_CACHE_MALLOC
+    config EXAMPLE_HCI_UART_BAUDRATE
+        int "UART Baudrate for HCI: Only applicable for ESP32-C3/ESP32-S3"
+        range 115200 921600
+        depends on IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S3
+        depends on BT_CTRL_HCI_MODE_UART_H4
+        default 921600
+        help
+            UART Baudrate for HCI over ESP32C3/ESP32S3. Please use standard baudrate.
+
+    config ESP_DEFAULT_TASK_STACK_SIZE
+        int "ESP-Hosted task stack size"
+        default 4096
+        help
+            Default task size of ESP-Hosted tasks
+
+    config ESP_DEFAULT_TASK_PRIO
+        int "ESP-Hosted task priority"
+        default 22
+        help
+            Default task priority of ESP-Hosted tasks
+
+    config ESP_CACHE_MALLOC
         bool "Cache allocated memory like mempool - helps to reduce malloc calls"
         default y
         help
@@ -73,6 +106,8 @@ menu "Example Configuration"
         default y
         help
             Enable/disable sleeps while OTA operations
+
+    menu "Enable Debug logs"
 
     config ESP_SERIAL_DEBUG
         bool "Debug Serial driver data path"
@@ -92,13 +127,6 @@ menu "Example Configuration"
         help
             Enable/disable debug prints in Bluetooth driver data path
 
-    config EXAMPLE_HCI_UART_BAUDRATE
-        int "UART Baudrate for HCI: Only applicable for ESP32-C3/ESP32-S3"
-        range 115200 921600
-        depends on IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S3
-		depends on BT_CTRL_HCI_MODE_UART_H4
-        default 921600
-        help
-            UART Baudrate for HCI over ESP32C3/ESP32S3. Please use standard baudrate.
+    endmenu
 
 endmenu

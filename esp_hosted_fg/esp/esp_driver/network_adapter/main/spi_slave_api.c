@@ -138,6 +138,10 @@ static const char TAG[] = "SPI_DRIVER";
 #ifdef CONFIG_IDF_TARGET_ESP32
     #define SPI_RX_QUEUE_SIZE      10
     #define SPI_TX_QUEUE_SIZE      10
+#elif CONFIG_IDF_TARGET_ESP32C2
+    /* TODO: Use this for all the chipsets */
+    #define SPI_RX_QUEUE_SIZE      CONFIG_ESP_SPI_RX_Q_SIZE
+    #define SPI_TX_QUEUE_SIZE      CONFIG_ESP_SPI_TX_Q_SIZE
 #else
     #define SPI_RX_QUEUE_SIZE      20
     #define SPI_TX_QUEUE_SIZE      20
@@ -606,7 +610,8 @@ static interface_handle_t * esp_spi_init(void)
 	}
 
 	assert(xTaskCreate(spi_transaction_post_process_task , "spi_post_process_task" ,
-			4096 , NULL , 22 , NULL) == pdTRUE);
+			CONFIG_ESP_DEFAULT_TASK_STACK_SIZE, NULL,
+			CONFIG_ESP_DEFAULT_TASK_PRIO, NULL) == pdTRUE);
 
 	usleep(500);
 

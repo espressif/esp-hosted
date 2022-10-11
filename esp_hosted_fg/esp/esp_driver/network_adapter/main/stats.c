@@ -200,14 +200,16 @@ void create_debugging_tasks(void)
 {
 #ifdef CONFIG_FREERTOS_GENERATE_RUN_TIME_STATS
 	assert(xTaskCreate(log_runtime_stats_task, "log_runtime_stats_task",
-				4096, NULL, 22, NULL) == pdTRUE);
+				CONFIG_ESP_DEFAULT_TASK_STACK_SIZE, NULL,
+				CONFIG_ESP_DEFAULT_TASK_PRIO, NULL) == pdTRUE);
 #endif
 
 #if TEST_RAW_TP
 	start_timer_to_display_raw_tp();
   #if TEST_RAW_TP__ESP_TO_HOST
 	assert(xTaskCreate(raw_tp_tx_task , "raw_tp_tx_task",
-				4096 , NULL , 22 , NULL) == pdTRUE);
+				CONFIG_ESP_DEFAULT_TASK_STACK_SIZE, NULL ,
+				CONFIG_ESP_DEFAULT_TASK_PRIO, NULL) == pdTRUE);
   #endif
 #endif
 }
