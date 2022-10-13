@@ -372,7 +372,7 @@ int esp_mark_scan_done_and_disconnect(struct esp_wifi_device *priv,
 	if (!priv)
 		return -EINVAL;
 
-	ESP_MARK_SCAN_DONE(priv);
+	ESP_MARK_SCAN_DONE(priv, true);
 
 	ESP_CANCEL_SCHED_SCAN();
 

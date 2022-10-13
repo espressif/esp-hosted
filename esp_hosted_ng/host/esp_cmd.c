@@ -203,7 +203,7 @@ static int wait_and_decode_cmd_resp(struct esp_wifi_device *priv,
 			ret = decode_common_resp(cmd_node);
 
 		if (ret)
-			ESP_MARK_SCAN_DONE(priv);
+			ESP_MARK_SCAN_DONE(priv, false);
 		break;
 
 	case CMD_INIT_INTERFACE:
@@ -476,7 +476,7 @@ static void process_scan_result_event(struct esp_wifi_device *priv,
 	/* End of scan; notify cfg80211 */
 	if (scan_evt->header.status == 0) {
 
-		ESP_MARK_SCAN_DONE(priv);
+		ESP_MARK_SCAN_DONE(priv, false);
 		if (priv->waiting_for_scan_done) {
 			priv->waiting_for_scan_done = false;
 			wake_up_interruptible(&priv->wait_for_scan_completion);

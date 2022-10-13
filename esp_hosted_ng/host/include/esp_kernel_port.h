@@ -124,10 +124,10 @@ enum ieee80211_privacy {
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(4, 8, 0)
 
-    #define ESP_MARK_SCAN_DONE(PrIv) do {                                      \
+    #define ESP_MARK_SCAN_DONE(PrIv, abort) do {                               \
                                                                                \
         if (PrIv->request) {                                                   \
-            cfg80211_scan_done(PrIv->request, true);                           \
+            cfg80211_scan_done(PrIv->request, abort);                          \
             PrIv->request = NULL;                                              \
         }                                                                      \
                                                                                \
@@ -137,10 +137,10 @@ enum ieee80211_privacy {
 
 #else
 
-    #define ESP_MARK_SCAN_DONE(PrIv) do {                                      \
+    #define ESP_MARK_SCAN_DONE(PrIv, abort) do {                               \
                                                                                \
         struct cfg80211_scan_info info = {                                     \
-            .aborted = true,                                                   \
+            .aborted = abort,                                                  \
         };                                                                     \
                                                                                \
         if (PrIv->request) {                                                   \

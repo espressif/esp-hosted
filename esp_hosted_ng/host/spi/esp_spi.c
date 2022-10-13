@@ -271,7 +271,7 @@ void process_event_esp_bootup(struct esp_adapter *adapter, u8 *evt_buf, u8 len)
 				continue;
 
 			if (priv->scan_in_progress)
-				ESP_MARK_SCAN_DONE(priv);
+				ESP_MARK_SCAN_DONE(priv, true);
 
 			if (priv->ndev &&
 			    priv->wdev.current_bss) {
