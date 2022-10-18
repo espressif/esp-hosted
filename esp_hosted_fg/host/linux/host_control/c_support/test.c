@@ -20,6 +20,7 @@
 
 #include "test.h"
 #include "serial_if.h"
+#include <signal.h>
 
 #define DEMO_SLEEP_DURATION_SEC 50
 
@@ -104,6 +105,41 @@ static int parse_cli_cmd(char *in_cmd, char *args[])
 	return SUCCESS;
 }
 
+static int init_app(void)
+{
+	if (init_hosted_control_lib()) {
+		printf("init hosted control lib failed\n");
+		return FAILURE;
+	}
+
+	if (control_path_platform_init()) {
+		printf("Failed to read serial driver file\n");
+		deinit_hosted_control_lib();
+		return FAILURE;
+	}
+
+	register_event_callbacks();
+
+	test_config_heartbeat();
+
+	return 0;
+}
+
+static void cleanup_app(void)
+{
+	test_disable_heartbeat();
+	unregister_event_callbacks();
+
+	control_path_platform_deinit();
+	deinit_hosted_control_lib();
+	exit(1);
+}
+
+static void sig_handler(int signum)
+{
+	printf("\nClean-up and exit\n");
+	cleanup_app();
+}
 
 int main(int argc, char *argv[])
 {
@@ -129,20 +165,13 @@ int main(int argc, char *argv[])
 		return SUCCESS;
 	}
 
-	if (init_hosted_control_lib()) {
-		printf("init hosted control lib failed\n");
-		return FAILURE;
+	/* Register Sig handler */
+	signal(SIGINT,sig_handler);
+
+	if (init_app()) {
+		printf("Err Exit\n");
+		return -1;
 	}
-
-	if (control_path_platform_init()) {
-		printf("Failed to read serial driver file\n");
-		deinit_hosted_control_lib();
-		return FAILURE;
-	}
-
-	register_event_callbacks();
-
-	test_config_heartbeat();
 
 	cli_cmd = argv[1];
 	parse_cli_cmd(cli_cmd, &argv[2]);
@@ -152,10 +181,7 @@ int main(int argc, char *argv[])
 	printf("Sleeping for some time just to showcase heartbeat\n");
 	sleep(DEMO_SLEEP_DURATION_SEC);
 
-	test_disable_heartbeat();
-	unregister_event_callbacks();
-
-	control_path_platform_deinit();
-	deinit_hosted_control_lib();
+	cleanup_app();
 	printf("Exiting..");
+	return 0;
 }
