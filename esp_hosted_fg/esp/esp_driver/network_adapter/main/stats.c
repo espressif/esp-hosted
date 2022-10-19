@@ -17,7 +17,9 @@
 #include <unistd.h>
 #include "esp_log.h"
 
+#if TEST_RAW_TP
 static const char TAG[] = "stats";
+#endif
 
 #ifdef CONFIG_FREERTOS_GENERATE_RUN_TIME_STATS
 /* These functions are only for debugging purpose
@@ -273,16 +275,4 @@ void debug_set_wifi_logging(void) {
 
 #endif /* CONFIG_ESP32_WIFI_DEBUG_LOG_ENABLE*/
 
-}
-
-void debug_log_firmware_version(void)
-{
-	ESP_LOGI(TAG, "*********************************************************************");
-	ESP_LOGI(TAG, "                ESP-Hosted Firmware version :: %.1f                        ", PROJECT_VERSION);
-#if CONFIG_ESP_SPI_HOST_INTERFACE
-	ESP_LOGI(TAG, "                Transport used :: SPI                           ");
-#else
-	ESP_LOGI(TAG, "                Transport used :: SDIO                          ");
-#endif
-	ESP_LOGI(TAG, "*********************************************************************");
 }

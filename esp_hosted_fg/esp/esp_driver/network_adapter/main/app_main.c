@@ -104,11 +104,20 @@ uint8_t ap_mac[MAC_LEN] = {0};
 static void print_firmware_version()
 {
 	ESP_LOGI(TAG, "*********************************************************************");
-	ESP_LOGI(TAG, "                ESP-Hosted Firmware version :: %.1f                        ", PROJECT_VERSION);
+	ESP_LOGI(TAG, "                ESP-Hosted-FG Firmware version :: %d.%d.%d                        ",
+			PROJECT_VERSION_MAJOR_1, PROJECT_VERSION_MAJOR_2, PROJECT_VERSION_MINOR);
 #if CONFIG_ESP_SPI_HOST_INTERFACE
-	ESP_LOGI(TAG, "                Transport used :: SPI                           ");
+  #if BLUETOOTH_UART
+	ESP_LOGI(TAG, "                Transport used :: SPI + UART                    ");
+  #else
+	ESP_LOGI(TAG, "                Transport used :: SPI only                      ");
+  #endif
 #else
-	ESP_LOGI(TAG, "                Transport used :: SDIO                          ");
+  #if BLUETOOTH_UART
+	ESP_LOGI(TAG, "                Transport used :: SDIO + UART                   ");
+  #else
+	ESP_LOGI(TAG, "                Transport used :: SDIO only                     ");
+  #endif
 #endif
 	ESP_LOGI(TAG, "*********************************************************************");
 }

@@ -89,7 +89,6 @@ void debug_update_raw_tp_rx_count(uint16_t len);
 #endif
 
 
-void debug_log_firmware_version(void);
 void create_debugging_tasks(void);
 uint8_t debug_get_raw_tp_conf(void);
 void debug_set_wifi_logging(void);

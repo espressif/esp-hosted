@@ -126,7 +126,8 @@ $ cd host/linux/host_control/python_support/
 
 ## 3. Bluetooth/BLE Connectivity
 
-* Ensure that bluez is installed on Raspberry Pi and it is downloaded in source format as well.
+* Ensure that BlueZ and related dependency softwares (mentioned [earlier](Linux_based_readme.md#12-host-setup)) are installed on the host
+* BlueZ is example Bluetooth stack used, as it is generally available in Linux. Any other Bluetooth stack can also be used.
 * In following test, Android device was used as a BT/BLE test device. For BLE testing, [nRF connect for mobile APP](https://play.google.com/store/apps/details?id=no.nordicsemi.android.mcp&hl=en_IN) was used.
 * Ensure that `hci0` interface is visible. To check that, run `hciconfig`.
 ```

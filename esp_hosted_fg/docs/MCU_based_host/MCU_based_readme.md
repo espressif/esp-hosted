@@ -127,17 +127,8 @@ Setup image is here.
 ## 2.1 ESP-IDF requirement
 :warning:`Note: ESP-IDF is needed to compile ESP-Hosted firmware source. Skip this step if you are planning to use pre-built release binaries.`
 
-ESP-IDF release version to be used for ESP peripherals are
-
-| ESP peripheral | ESP-IDF release |
-|:----:|:----:|
-| ESP32 | [release v4.0](https://github.com/espressif/esp-idf/tree/release/v4.0) |
-| ESP32-S2 | [release v4.2](https://github.com/espressif/esp-idf/tree/release/v4.2) |
-| ESP32-C2 | [release v5.0](https://github.com/espressif/esp-idf/tree/release/v5.0) |
-| ESP32-C3 | [release v4.4](https://github.com/espressif/esp-idf/tree/release/v4.4) |
-| ESP32-S3 | [release v4.4](https://github.com/espressif/esp-idf/tree/release/v4.4) |
-
-Clone appropriate ESP-IDF version as per your ESP peripheral. The control path between MCU host and ESP peripheral is based on `protobuf`. For that, corresponding stack layer, `protocomm` from ESP-IDF is used.
+- Clone the ESP-IDF [release/v5.0](https://github.com/espressif/esp-idf/tree/release/v5.0)  and checkout to `release/v5.0` branch.
+- The control path between MCU host and ESP peripheral is based on `protobuf`. For that, corresponding stack layer, `protocomm` from ESP-IDF is used. It will be already present in ESP-IDF, no extra setup required for that.
 
 ### 2.2 Setup
 #### 2.2.1 Using pre-built binary
