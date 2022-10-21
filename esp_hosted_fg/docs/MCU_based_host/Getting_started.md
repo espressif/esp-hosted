@@ -15,7 +15,7 @@ This section elaborates about setting up the control path, Wi-Fi connectivity an
 - Overall design is explained in [control path design](../common/contrl_path.md#3-design)
 - Underlying [Hosted control path library](../common/contrl_path.md#3-design) is agnostic of platform and common for MPU or MCU based solution.
   - This empowers user to implement/mimic all control path APIs just similar to [Linux demo application in C](../common/c_demo.md)
-  - Few sample [control path APIs](../common/ctrl_apis.md) like connecting to station, starting softap are demonstrated as part of [host/stm32/app/control/control.c](../../host/stm32/app/control/control.c)
+  - Few sample [control path APIs](../common/ctrl_apis.md) like connecting to station, starting softap are demonstrated as part of [esp_hosted_fg/host/stm32/app/control/control.c](../../host/stm32/app/control/control.c)
   - Rest APIs could be implemeted just similar to ones implemented in Linux demo application 
 
 ## 2. Wi-Fi Connectivity
@@ -37,7 +37,7 @@ We have tested project with STM32F469I-Discovery board. If other than STM32F469I
 
 * Create a workspace_directory outside of `ESP-Hosted` git cloned directory.
 * Browse and Open Workspace directory in STM32CubeIDE. It will take few seconds to open STM32CubeIDE.
-* From `Information Center` tab select `Start new project` from existing STM32CubeMX configuration file, i.e. ioc file option. It will take few seconds to open dialog box. In STM32CubeMX .ioc file field, choose appropriate .ioc file from `</path/to/esp_hosted>/host/stm32/proj/` directory.
+* From `Information Center` tab select `Start new project` from existing STM32CubeMX configuration file, i.e. ioc file option. It will take few seconds to open dialog box. In STM32CubeMX .ioc file field, choose appropriate .ioc file from `</path/to/esp_hosted>/esp_hosted_fg/host/stm32/proj/` directory.
 ```
 For ESP32 peripheral: Select stm_spi_host_v1.ioc file
 For ESP32-C2/ESP32-C3/ESP32-S2/ESP32-S3 peripheral: Select stm_spi_host_v2.ioc file
@@ -46,12 +46,12 @@ For ESP32-C2/ESP32-C3/ESP32-S2/ESP32-S3 peripheral: Select stm_spi_host_v2.ioc f
 * Close ioc tab then close STM32CubeIDE and click on `exit`.
 * For Linux and Mac development hosts, In terminal, run
 ```
-$ cd </path/to/esp_hosted>/host/stm32/proj
+$ cd </path/to/esp_hosted>/esp_hosted_fg/host/stm32/proj
 $ bash ./prepare_project.sh </path/to/workspace_directory>
 ```
 For Windows based systems, open "cmd.exe" or Windows Power Shell and run -
 ```
-> cd <path\to\esp_hosted>\host\stm32\proj
+> cd <path\to\esp_hosted>\esp_hosted_fg\host\stm32\proj
 > prepare_project.bat <path\to\workspace_directory>
 ```
 This will copy the project configuration files into workspace_directory

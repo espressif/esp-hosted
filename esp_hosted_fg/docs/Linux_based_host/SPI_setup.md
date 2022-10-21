@@ -105,7 +105,7 @@ Please reboot Raspberry-Pi after changing this file.
 ### 2.1 Host Software
 * Execute following commands in root directory of cloned ESP-Hosted repository on Raspberry-Pi
 ```sh
-$ cd host/linux/host_control/
+$ cd esp_hosted_fg/host/linux/host_control/
 $ ./rpi_init.sh spi
 ```
 * This script compiles and loads host driver on Raspberry-Pi. It also creates virtual serial interface `/dev/esps0` which is used as a control interface for Wi-Fi on ESP peripheral
@@ -115,100 +115,18 @@ One can load pre-built release binaries on ESP peripheral or compile those from 
 
 #### 2.2.1 Load Pre-built Release Binaries
 * Download pre-built firmware binaries from [releases](https://github.com/espressif/esp-hosted/releases)
-* Linux users can run below command to flash these binaries.
-##### ESP32
-```sh
-$ python esptool.py --chip esp32 --port <serial_port> --baud <flash_baud_rate> --before default_reset \
---after hard_reset write_flash --flash_mode dio --flash_size detect --flash_freq 40m \
-0x1000 esp_hosted_bootloader_esp32_spi_v<release_version>.bin \
-0x8000 esp_hosted_partition-table_esp32_spi_v<release_version>.bin \
-0xd000 esp_hosted_ota_data_initial_esp32_spi_v<release_version>.bin \
-0x10000 esp_hosted_firmware_esp32_spi_v<release_version>.bin
-
-Where,
-	<serial_port>     : serial port of ESP peripheral
-	<flash_baud_rate> : flash baud rate of ESP peripheral, ex.115200, 921600, 2Mbps
-	<release_version> : 0.1,0.2 etc. Latest from [release page](https://github.com/espressif/esp-hosted/releases)
-```
-* This command will flash `SPI` interface binaries on `esp32` chip.
-
-##### ESP32-S2
-```sh
-$ python esptool.py --chip esp32s2 --port <serial_port> --baud <flash_baud_rate> --before default_reset \
---after hard_reset write_flash --flash_mode dio --flash_size detect --flash_freq 80m \
-0x1000 esp_hosted_bootloader_esp32s2_spi_v<release_version>.bin \
-0x8000 esp_hosted_partition-table_esp32s2_spi_v<release_version>.bin \
-0xd000 esp_hosted_ota_data_initial_esp32s2_spi_v<release_version>.bin \
-0x10000 esp_hosted_firmware_esp32s2_spi_v<release_version>.bin
-
-Where,
-	<serial_port>     : serial port of ESP peripheral
-	<flash_baud_rate> : flash baud rate of ESP peripheral, ex.115200, 921600, 2Mbps
-	<release_version> : 0.1,0.2 etc. Latest from [release page](https://github.com/espressif/esp-hosted/releases)
-```
-* This command will flash `SPI` interface binaries on `esp32s2` chip.
-
-##### ESP32-C2
-```sh
-$ python esptool.py --chip esp32c2 --port <serial_port> --baud <flash_baud_rate> --before default_reset \
---after hard_reset write_flash --flash_mode dio --flash_size detect --flash_freq 80m \
-0x0 esp_hosted_bootloader_esp32c2_spi_v<release_version>.bin \
-0x8000 esp_hosted_partition-table_esp32c2_spi_v<release_version>.bin \
-0xd000 esp_hosted_ota_data_initial_esp32c2_spi_v<release_version>.bin \
-0x10000 esp_hosted_firmware_esp32c2_spi_v<release_version>.bin
-
-Where,
-	<serial_port>     : serial port of ESP peripheral
-	<flash_baud_rate> : flash baud rate of ESP peripheral, ex.115200, 921600, 2Mbps
-	<release_version> : 0.1,0.2 etc. Latest from [release page](https://github.com/espressif/esp-hosted/releases)
-```
-* This command will flash `SPI` interface binaries on `esp32c2` chip.
-
-* Windows user can use ESP Flash Programming Tool to flash the pre-built binary.
-
-##### ESP32-C3
-```sh
-$ python esptool.py --chip esp32c3 --port <serial_port> --baud <flash_baud_rate> --before default_reset \
---after hard_reset write_flash --flash_mode dio --flash_size detect --flash_freq 80m \
-0x0 esp_hosted_bootloader_esp32c3_spi_v<release_version>.bin \
-0x8000 esp_hosted_partition-table_esp32c3_spi_v<release_version>.bin \
-0xd000 esp_hosted_ota_data_initial_esp32c3_spi_v<release_version>.bin \
-0x10000 esp_hosted_firmware_esp32c3_spi_v<release_version>.bin
-
-Where,
-	<serial_port>     : serial port of ESP peripheral
-	<flash_baud_rate> : flash baud rate of ESP peripheral, ex.115200, 921600, 2Mbps
-	<release_version> : 0.1,0.2 etc. Latest from [release page](https://github.com/espressif/esp-hosted/releases)
-```
-* This command will flash `SPI` interface binaries on `esp32c3` chip.
-
-* Windows user can use ESP Flash Programming Tool to flash the pre-built binary.
-
-##### ESP32-S3
-```sh
-$ python esptool.py --chip esp32s3 --port <serial_port> --baud <flash_baud_rate> --before default_reset \
---after hard_reset write_flash --flash_mode dio --flash_size detect --flash_freq 80m \
-0x0 esp_hosted_bootloader_esp32s3_spi_v<release_version>.bin \
-0x8000 esp_hosted_partition-table_esp32s3_spi_v<release_version>.bin \
-0xd000 esp_hosted_ota_data_initial_esp32s3_spi_v<release_version>.bin \
-0x10000 esp_hosted_firmware_esp32s3_spi_v<release_version>.bin
-
-Where,
-	<serial_port>     : serial port of ESP peripheral
-	<flash_baud_rate> : flash baud rate of ESP peripheral, ex.115200, 921600, 2Mbps
-	<release_version> : 0.1,0.2 etc. Latest from [release page](https://github.com/espressif/esp-hosted/releases)
-```
-* This command will flash `SPI` interface binaries on `esp32s3` chip.
-
+* Follow `readme.txt` from release tarball to flash the ESP binary
+* :warning: Make sure that you use `Source code (zip)` in `Assets` fold with associated release for host building.
 * Windows user can use ESP Flash Programming Tool to flash the pre-built binary.
 
 #### 2.2.2 Source Compilation
-:warning:<code>Note: Please check [ESP-IDF Setup](Linux_based_readme.md#22-esp-idf-setup) and use appropriate ESP-IDF version</code>
-
-* In root directory of ESP-Hosted repository, execute below command
+- Note: Please use the same git commit both at ESP and Host
+- Clone the ESP-IDF [release/v5.0](https://github.com/espressif/esp-idf/tree/release/v5.0) and git checkout to `release/v5.0` branch.
+- [Set-up the ESP-IDF](https://docs.espressif.com/projects/esp-idf/en/release-v5.0/esp32/get-started/index.html)
+- In root directory of ESP-Hosted repository, execute below command
 
 ```sh
-$ cd esp/esp_driver/network_adapter
+$ cd esp_hosted_fg/esp/esp_driver/network_adapter
 ```
 
 ##### Using cmake

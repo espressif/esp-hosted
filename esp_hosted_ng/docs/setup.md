@@ -135,6 +135,8 @@
 > > 
 > > ##### Checkout ESP-Hosted repo
 > > ```sh
+> > $ git clone https://github.com/espressif/esp-hosted.git
+> >                OR
 > > $ git clone git@github.com:espressif/esp-hosted.git
 > > ```
 > >
@@ -317,6 +319,8 @@
 > > 
 > > ##### Checkout ESP-Hosted repo
 > > ```sh
+> > $ git clone https://github.com/espressif/esp-hosted.git
+> >                OR
 > > $ git clone git@github.com:espressif/esp-hosted.git
 > > ```
 > >
@@ -539,6 +543,8 @@
 > > 
 > > ##### Checkout ESP-Hosted repo
 > > ```sh
+> > $ git clone https://github.com/espressif/esp-hosted.git
+> >                OR
 > > $ git clone git@github.com:espressif/esp-hosted.git
 > > ```
 > >
@@ -774,6 +780,8 @@
 > > 
 > > ##### Checkout ESP-Hosted repo
 > > ```sh
+> > $ git clone https://github.com/espressif/esp-hosted.git
+> >                OR
 > > $ git clone git@github.com:espressif/esp-hosted.git
 > > ```
 > >
