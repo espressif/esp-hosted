@@ -148,7 +148,7 @@ $ sudo python3 stress.py
 - As explained above, OTA is run as
 
 ```sh
-$ cd host/linux/host_control/python_support/
+$ cd esp_hosted_fg/host/linux/host_control/python_support/
 $ sudo python3 ota_update <URL of ESP firmware binary>
 ```
 

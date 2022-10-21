@@ -33,9 +33,9 @@ Wi-Fi can be configured as either as `STATION` mode or `SOFTAP` mode or `STATION
 - C based solution also could be used from [C based demo app](../common/c_demo.md). For simplicity, 
 
 
-Python App is placed in [host/linux/host_control/python_support/](../../host/linux/host_control/python_support/) directory. Use below command to navigate to this directory.
+Python App is placed in [esp_hosted_fg/host/linux/host_control/python_support/](../../host/linux/host_control/python_support/) directory. Use below command to navigate to this directory.
 ```sh
-$ cd host/linux/host_control/python_support/
+$ cd esp_hosted_fg/host/linux/host_control/python_support/
 ```
 
 #### 2.1.1 Wi-Fi Station Mode Operations

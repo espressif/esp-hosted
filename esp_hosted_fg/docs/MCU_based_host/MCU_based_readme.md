@@ -132,29 +132,17 @@ Setup image is here.
 
 ### 2.2 Setup
 #### 2.2.1 Using pre-built binary
-For pre built hosted mode firmware is present in `release` tab. Execute below command to flash it on ESP peripheral.
-
-```sh
-$ python esptool.py --chip <chipset> --port <serial_port> --baud <flash_baud_rate> --before default_reset \
---after hard_reset write_flash --flash_mode dio --flash_size detect --flash_freq 40m \
-0x1000 esp_hosted_bootloader_<chipset>_spi_v<release_version>.bin \
-0x8000 esp_hosted_partition-table_<chipset>_spi_v<release_version>.bin \
-0xd000 esp_hosted_ota_data_initial_<chipset>_spi_v<release_version>.bin \
-0x10000 esp_hosted_firmware_<chipset>_spi_v<release_version>.bin
-
-Where,
-	<chipset>         : esp32/esp32s2/esp32c2/esp32c3
-	<serial_port>     : serial port of ESP peripheral
-	<flash_baud_rate> : flash baud rate of ESP peripheral, ex.115200, 921600, 2Mbps
-	<release_version> : 0.1,0.2 etc. Latest from [release page](https://github.com/espressif/esp-hosted/releases)
-```
-* This command will flash `SPI` interface binaries on ESP module.
-
-For windows user, you can also program the binaries using ESP Flash Programming Tool.
+* Download pre-built firmware binaries from [releases](https://github.com/espressif/esp-hosted/releases)
+* Follow `readme.txt` from release tarball to flash the ESP binary
+* :warning: Make sure that you use `Source code (zip)` in `Assets` fold with associated release for host building.
+* Windows user can use ESP Flash Programming Tool to flash the pre-built binary.
 
 #### 2.2.2 Compilation using source
 
-Navigate to `esp/esp_driver/network_adapter` directory.
+- Note: Please use the same git commit both at ESP and Host
+- Clone the ESP-IDF [release/v5.0](https://github.com/espressif/esp-idf/tree/release/v5.0) and git checkout to `release/v5.0` branch.
+- [Set-up the ESP-IDF](https://docs.espressif.com/projects/esp-idf/en/release-v5.0/esp32/get-started/index.html)
+- Navigate to `esp_hosted_fg/esp/esp_driver/network_adapter` directory.
 
 ##### Using cmake
 

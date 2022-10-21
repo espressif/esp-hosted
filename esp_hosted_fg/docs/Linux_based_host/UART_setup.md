@@ -87,7 +87,7 @@ $ sudo systemctl disable hciuart
 - Clone ESP-Hosted repository on Raspberry-Pi
 - Build and load kernel module
 ```sh
-$ cd host/linux/host_control/
+$ cd esp_hosted_fg/host/linux/host_control/
 $ ./rpi_init.sh <transport> <bt_over_uart>
 ```
 	- <transport> can take value `sdio` or `spi`. Defaults to `sdio`
@@ -102,93 +102,18 @@ One can load pre-built release binaries on ESP peripheral or compile those from 
 
 #### 2.2.1 Load Pre-built Release Binaries
 * Download pre-built firmware binaries from [releases](https://github.com/espressif/esp-hosted/releases)
-* Linux users can run below command to flash these binaries. Edit <serial_port> with ESP peripheral's serial port.
-
-##### ESP32
-* Please note that this binary is made for UART baudrate of 921600.
-```sh
-$ python esptool.py --chip esp32 --port <serial_port> --baud <flash_baud_rate> --before default_reset \
---after hard_reset write_flash --flash_mode dio --flash_freq 40m --flash_size detect \
-0x1000 esp_hosted_bootloader_esp32_<transport>_uart_v<release_version>.bin \
-0x8000 esp_hosted_partition-table_esp32_<transport>_uart_v<release_version>.bin \
-0xd000 esp_hosted_ota_data_initial_esp32_<transport>_uart_v<release_version>.bin \
-0x10000 esp_hosted_firmware_esp32_<transport>_uart_v<release_version>.bin
-
-Where,
-	<serial_port>     : serial port of ESP peripheral
-	<flash_baud_rate> : flash baud rate of ESP peripheral, ex.115200, 921600, 2Mbps
-	<release_version> : 0.1,0.2 etc. Latest from [release page](https://github.com/espressif/esp-hosted/releases)
-	<transport>       : sdio or spi
-```
-* This command will flash `SDIO+UART` or `SPI+UART` interface binaries on `esp32` chip.
-
-##### ESP32-C2
-* Please note that this binary is made for UART baudrate of 921600.
-
-```sh
-$ python esptool.py --chip esp32c2 --port <serial_port> --baud <flash_baud_rate> --before default_reset \
---after hard_reset write_flash --flash_mode dio --flash_size detect --flash_freq 80m \
-0x0 esp_hosted_bootloader_esp32c2_spi_uart_v<release_version>.bin \
-0x8000 esp_hosted_partition-table_esp32c2_spi_uart_v<release_version>.bin \
-0xd000 esp_hosted_ota_data_initial_esp32c2_spi_uart_v<release_version>.bin \
-0x10000 esp_hosted_firmware_esp32c2_spi_uart_v<release_version>.bin
-
-Where,
-	<serial_port>     : serial port of ESP peripheral
-	<flash_baud_rate> : flash baud rate of ESP peripheral, ex.115200, 921600, 2Mbps
-	<release_version> : 0.1,0.2 etc. Latest from [release page](https://github.com/espressif/esp-hosted/releases)
-```
-* This command will flash `SPI+UART` interface binaries on `esp32c2` chip.
-
-* Windows user can use ESP Flash Programming Tool to flash the pre-built binary.
-
-##### ESP32-C3
-* Please note that this binary is made for UART baudrate of 921600.
-
-```sh
-$ python esptool.py --chip esp32c3 --port <serial_port> --baud <flash_baud_rate> --before default_reset \
---after hard_reset write_flash --flash_mode dio --flash_size detect --flash_freq 80m \
-0x0 esp_hosted_bootloader_esp32c3_spi_uart_v<release_version>.bin \
-0x8000 esp_hosted_partition-table_esp32c3_spi_uart_v<release_version>.bin \
-0xd000 esp_hosted_ota_data_initial_esp32c3_spi_uart_v<release_version>.bin \
-0x10000 esp_hosted_firmware_esp32c3_spi_uart_v<release_version>.bin
-
-Where,
-	<serial_port>     : serial port of ESP peripheral
-	<flash_baud_rate> : flash baud rate of ESP peripheral, ex.115200, 921600, 2Mbps
-	<release_version> : 0.1,0.2 etc. Latest from [release page](https://github.com/espressif/esp-hosted/releases)
-```
-* This command will flash `SPI+UART` interface binaries on `esp32c3` chip.
-
-* Windows user can use ESP Flash Programming Tool to flash the pre-built binary.
-
-##### ESP32-S3
-
-* Please note that this binary is made for UART baudrate of 921600.
-
-```sh
-$ python esptool.py --chip esp32s3 --port <serial_port> --baud <flash_baud_rate> --before default_reset \
---after hard_reset write_flash --flash_mode dio --flash_size detect --flash_freq 80m \
-0x0 esp_hosted_bootloader_esp32s3_spi_uart_v<release_version>.bin \
-0x8000 esp_hosted_partition-table_esp32s3_spi_uart_v<release_version>.bin \
-0xd000 esp_hosted_ota_data_initial_esp32s3_spi_uart_v<release_version>.bin \
-0x10000 esp_hosted_firmware_esp32s3_spi_uart_v<release_version>.bin
-
-Where,
-	<serial_port>     : serial port of ESP peripheral
-	<flash_baud_rate> : flash baud rate of ESP peripheral, ex.115200, 921600, 2Mbps
-	<release_version> : 0.1,0.2 etc. Latest from [release page](https://github.com/espressif/esp-hosted/releases)
-```
-* This command will flash `SPI+UART` interface binaries on `esp32s3` chip.
-
+* Follow `readme.txt` from release tarball to flash the ESP binary
+* :warning: Make sure that you use `Source code (zip)` for host building.
 * Windows user can use ESP Flash Programming Tool to flash the pre-built binary.
 
 #### 2.2.2 Source Compilation
-:warning:<code>Note: Please check [ESP-IDF Setup](Linux_based_readme.md#22-esp-idf-setup) and use appropriate ESP-IDF version</code>
-* In root directory of ESP-Hosted repository, execute below command
+- Note: Please use the same git commit both at ESP and Host
+- Clone the ESP-IDF [release/v5.0](https://github.com/espressif/esp-idf/tree/release/v5.0) and git checkout to `release/v5.0` branch.
+- [Set-up the ESP-IDF](https://docs.espressif.com/projects/esp-idf/en/release-v5.0/esp32/get-started/index.html)
+- In root directory of ESP-Hosted repository, execute below command
 
 ```sh
-$ cd esp/esp_driver/network_adapter
+$ cd esp_hosted_fg/esp/esp_driver/network_adapter
 ```
 
 ##### Using cmake
@@ -258,11 +183,11 @@ $ idf.py -p <serial_port> build flash
 - <baud_rate> should match UART baud rate while flashing ESP peripheral
 
 ### For ESP32
-- Check `CONFIG_BT_HCI_UART_BAUDRATE` parameter in *esp/esp_driver/network_adapter/sdkconfig*
+- Check `CONFIG_BT_HCI_UART_BAUDRATE` parameter in *esp_hosted_fg/esp/esp_driver/network_adapter/sdkconfig*
 - Alternatively baud rate could be located in menuconfig at, * Alternatively baud rate could be located in menuconfig at, `Component config ->  Bluetooth -> Bluetooth controller ->  HCI UART(H4) Options -> UART Baudrate for HCI`
 
 ### For ESP32-C3 or ESP32-S3
-- Check `CONFIG_EXAMPLE_HCI_UART_BAUDRATE` parameter in *esp/esp_driver/network_adapter/sdkconfig*
+- Check `CONFIG_EXAMPLE_HCI_UART_BAUDRATE` parameter in *esp_hosted_fg/esp/esp_driver/network_adapter/sdkconfig*
 - Alternatively baud rate could be located in menuconfig at, `Component config -> Example Configuration -> UART Baudrate for HCI`
 
 ## 4. Points to note

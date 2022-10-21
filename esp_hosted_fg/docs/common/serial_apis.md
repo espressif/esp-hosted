@@ -1,10 +1,10 @@
 # Serial APIs
 - Serial APIs are split into `virtual serial interface APIs` and `serial driver APIs`
-- Demo app of control path makes use of **Virtual Serial Interface**, [host/virtual_serial_if/include/serial_if.h](../../host/virtual_serial_if/include/serial_if.h)
+- Demo app of control path makes use of **Virtual Serial Interface**, [esp_hosted_fg/host/virtual_serial_if/include/serial_if.h](../../host/virtual_serial_if/include/serial_if.h)
 - Virtual serial interface makes use of serial driver
 - Serial driver is platform specific port which actually implements serial driver specific to that platform \
   For example, Linux uses `/dev/esps0` as serial driver file
-- Serial driver for MPU *.i.e.* Linux based host is at **Serial Driver for Linux**, [host/linux/port/include/platform_wrapper.h](../../host/linux/port/include/platform_wrapper.h)
+- Serial driver for MPU *.i.e.* Linux based host is at **Serial Driver for Linux**, [esp_hosted_fg/host/linux/port/include/platform_wrapper.h](../../host/linux/port/include/platform_wrapper.h)
 
 # 1. Virtual Serial Interface APIs
 

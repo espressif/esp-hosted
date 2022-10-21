@@ -50,14 +50,17 @@ Make sure that Raspberry-Pi is equipped with following:
 		```sh
 		$ sudo apt install python3
 		```
-* Clone ESP-Hosted code repository
+* Using released codebase
+	* Download pre-built ESP-Hosted firmware release binaries from [releases](https://github.com/espressif/esp-hosted/releases)
+	* :warning: Make sure that you use `Source code (zip)` in `Assets` fold with associated release for host building.
+* Using latest master
+	* Clone ESP-Hosted code repository
 	```
 	$ git clone --recurse-submodules <url_of_esp_hosted_repository>
 	$ cd esp-hosted
 	$ git submodule update --init --recursive
 	```
-* Download pre-built ESP-Hosted firmware release binaries from [releases](https://github.com/espressif/esp-hosted/releases)
-
+	* Please use the exact same git commit for ESP flashing using source code.
 
 ### 1.3 Setup
 
@@ -70,7 +73,7 @@ Prepare connections based on interface requirements and setup host as below.
 		* Prepare Raspberry-Pi as per section [1.2 Raspberry-Pi Software Setup](SDIO_setup.md#12-raspberry-pi-software-setup) of [SDIO setup document](SDIO_setup.md)
 		* Compile and load host driver as below:
 			```sh
-			$ cd host/linux/host_control/
+			$ cd esp_hosted_fg/host/linux/host_control/
 			$ ./rpi_init.sh sdio
 			```
 * **Wi-Fi and Bluetooth over SPI**
@@ -80,7 +83,7 @@ Prepare connections based on interface requirements and setup host as below.
 		* Prepare Raspberry-Pi as per [1.2 Raspberry-Pi Software Setup](SPI_setup.md#12-raspberry-pi-software-setup) of [SPI Setup document](SPI_setup.md)
 		* Compile and load host driver as below:
 			```sh
-			$ cd host/linux/host_control/
+			$ cd esp_hosted_fg/host/linux/host_control/
 			$ ./rpi_init.sh spi
 			```
 * **Wi-Fi over SDIO and Bluetooth over UART**
@@ -92,7 +95,7 @@ Prepare connections based on interface requirements and setup host as below.
 		* Prepare Raspberry-Pi for UART operations as per section [1.2 Raspberry-Pi Software Setup](UART_setup.md#12-raspberry-pi-software-setup) of [UART setup document](UART_setup.md)
 		* Compile and load host driver as below:
 			```sh
-			$ cd host/linux/host_control/
+			$ cd esp_hosted_fg/host/linux/host_control/
 			$ ./rpi_init.sh sdio btuart
 			```
 		* After loading ESP firmware, execute below command to create `hci0` interface
@@ -108,7 +111,7 @@ Prepare connections based on interface requirements and setup host as below.
 		* Prepare Raspberry-Pi for UART operations as per section [1.2 Raspberry-Pi Software Setup](UART_setup.md#12-raspberry-pi-software-setup) of [UART setup document](UART_setup.md)
 		* Compile and load host driver as below:
 			```sh
-			$ cd host/linux/host_control/
+			$ cd esp_hosted_fg/host/linux/host_control/
 			$ ./rpi_init.sh spi btuart
 			```
 		* After loading ESP firmware, execute below command to create `hci0` interface
@@ -117,21 +120,9 @@ Prepare connections based on interface requirements and setup host as below.
 			```
 
 #### 1.3.1 ESP Firmware Setup
-* Flash pre-built binaries as below.
-
-```sh
-$ esptool.py -p <serial_port> -b 960000 --before default_reset --after hard_reset \
-write_flash --flash_mode dio --flash_freq 40m --flash_size detect \
-0x8000 esp_hosted_partition-table_<esp_peripheral>_<interface_type>_v<release_version>.bin \
-0x1000 esp_hosted_bootloader_<esp_peripheral>_<interface_type>_v<release_version>.bin \
-0x10000 esp_hosted_firmware_<esp_peripheral>_<interface_type>_v<release_version>.bin
-
-Where,
-	<serial_port>    : serial port of ESP peripheral
-	<esp_peripheral> : esp32/esp32s2/esp32c2/esp32c3/esp32s3
-	<interface_type> : sdio/spi/sdio_uart
-	<release_version>: 0.1,0.2 etc
-```
+* Download pre-built firmware binaries from [releases](https://github.com/espressif/esp-hosted/releases)
+* Follow `readme.txt` from release tarball to flash the ESP binary
+* :warning: Make sure that you use `Source code (zip)` in `Assets` fold with associated release for host building.
 
 #### 1.3.2 Setup Validation
 Once everything is setup and host software and ESP firmware are loaded
@@ -204,6 +195,7 @@ This section identifies Raspberry-Pi specific setup requirements.
 :warning:`Note: ESP-IDF is needed to compile ESP-Hosted firmware source. Skip this step if you are planning to use pre-built release binaries.`  
 
 - Clone the ESP-IDF [release/v5.0](https://github.com/espressif/esp-idf/tree/release/v5.0) and git checkout to `release/v5.0` branch.
+- [Set-up the ESP-IDF](https://docs.espressif.com/projects/esp-idf/en/release-v5.0/esp32/get-started/index.html)
 - The control path between MCU host and ESP peripheral is based on `protobuf`. For that, corresponding stack layer, `protocomm` from ESP-IDF is used. It will be already present in ESP-IDF, no extra setup required for that.
 
 ### 2.3 ESP-Hosted Code Repository
@@ -213,6 +205,7 @@ $ git clone --recurse-submodules <url_of_esp_hosted_repository>
 $ cd esp-hosted
 $ git submodule update --init --recursive
 ```
+Please make sure that ESP and host checkeout to **same git commit**.
 
 ### 2.4 ESP-Hosted Setup and Load Project
 
