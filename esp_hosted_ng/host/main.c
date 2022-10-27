@@ -572,9 +572,10 @@ static void process_rx_packet(struct esp_adapter *adapter, struct sk_buff *skb)
 		}
 
 		if (payload_header->packet_type == PACKET_TYPE_EAPOL) {
+			printk(KERN_ERR "%s: Rx PACKET_TYPE_EAPOL!!!!\n", __func__);
 			esp_port_open(priv);
 
-			eap_skb = alloc_skb(skb->len, GFP_KERNEL);
+			eap_skb = alloc_skb(skb->len + ETH_HLEN, GFP_KERNEL);
 			if(!eap_skb) {
 				printk(KERN_INFO "%s:%u memory alloc failed\n",__func__, __LINE__);
 				return;

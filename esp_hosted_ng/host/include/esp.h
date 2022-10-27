@@ -149,6 +149,9 @@ struct esp_wifi_device {
 
 	/* This is needed to notify scan completion*/
 	struct cfg80211_scan_request *request;
+	struct cfg80211_bss		*bss;
+	uint8_t					*assoc_req_ie;
+	size_t					assoc_req_ie_len;
 
 	uint8_t                 scan_in_progress;
 	uint8_t                 waiting_for_scan_done;

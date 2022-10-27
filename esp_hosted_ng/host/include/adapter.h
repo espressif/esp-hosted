@@ -37,6 +37,15 @@ struct esp_payload_header {
 	/* Do no add anything here */
 } __attribute__((packed));
 
+struct ieee_mgmt_header {
+	uint16_t frame_control;
+	uint16_t dur;
+	uint8_t da[MAC_ADDR_LEN];
+	uint8_t sa[MAC_ADDR_LEN];
+	uint8_t bssid[MAC_ADDR_LEN];
+	uint16_t seq_ctrl;
+}__attribute__((packed));
+
 enum ESP_INTERFACE_TYPE{
 	ESP_STA_IF,
 	ESP_AP_IF,
@@ -91,6 +100,8 @@ enum COMMAND_CODE {
 	CMD_ADD_KEY,
 	CMD_DEL_KEY,
 	CMD_SET_DEFAULT_KEY,
+	CMD_STA_AUTH,
+	CMD_STA_ASSOC,
 	CMD_MAX,
 };
 
@@ -98,6 +109,7 @@ enum EVENT_CODE {
 	EVENT_SCAN_RESULT = 1,
 	EVENT_STA_CONNECT,
 	EVENT_STA_DISCONNECT,
+	EVENT_AUTH_RX,
 };
 
 enum COMMAND_RESPONSE_TYPE {
@@ -127,6 +139,22 @@ struct scan_request {
 struct cmd_config_mac_address {
 	struct command_header header;
 	uint8_t mac_addr[MAC_ADDR_LEN];
+}__attribute__((packed));
+
+struct cmd_sta_auth {
+	struct command_header header;
+	char ssid[MAX_SSID_LEN+1];
+	uint8_t bssid[MAC_ADDR_LEN];
+	uint8_t channel;
+	uint8_t auth_type;
+	uint8_t auth_data_len;
+	uint8_t auth_data[];
+}__attribute__((packed));
+
+struct cmd_sta_assoc {
+	struct command_header header;
+	uint8_t assoc_ie_len;
+	uint8_t assoc_ie[];
 }__attribute__((packed));
 
 struct cmd_sta_connect {
@@ -180,11 +208,27 @@ struct scan_event {
 	uint8_t frame[0];
 }__attribute__((packed));
 
+struct auth_event {
+	struct event_header header;
+	uint8_t frame_type;
+	uint8_t bssid[MAC_ADDR_LEN];
+	uint8_t channel;
+	uint32_t rssi;
+	uint64_t tsf;
+	uint16_t frame_len;
+	uint8_t frame[0];
+}__attribute__((packed));
+
 struct connect_event {
 	struct event_header header;
 	char ssid[MAX_SSID_LEN+1];
 	uint8_t bssid[MAC_ADDR_LEN];
+	uint8_t frame_type;
 	uint8_t channel;
+	uint32_t rssi;
+	uint64_t tsf;
+	uint16_t frame_len;
+	uint8_t frame[0];
 }__attribute__((packed));
 
 struct disconnect_event {

@@ -216,6 +216,7 @@ static int esp_cfg80211_scan(struct wiphy *wiphy,
 	struct net_device *ndev = request->wdev->netdev;
 	struct esp_wifi_device *priv = netdev_priv(ndev);
 
+	printk(KERN_INFO "%s\n", __func__);
 	if (!priv) {
 		printk(KERN_ERR "%s: empty priv\n", __func__);
 		return -EINVAL;
@@ -229,6 +230,7 @@ static int esp_cfg80211_connect(struct wiphy *wiphy, struct net_device *dev,
 {
 	struct esp_wifi_device *priv = netdev_priv(dev);
 
+	printk(KERN_ERR "Enter %s\n", __func__);
 	if (!priv) {
 		printk(KERN_ERR "%s: empty priv\n", __func__);
 		return -EINVAL;
@@ -298,6 +300,65 @@ static int esp_cfg80211_disconnect(struct wiphy *wiphy,
 	return cmd_disconnect_request(priv, reason_code);
 }
 
+
+static int esp_cfg80211_authenticate(struct wiphy *wiphy, struct net_device *dev,
+		struct cfg80211_auth_request *req)
+{
+	struct esp_wifi_device *priv = netdev_priv(dev);
+	printk(KERN_INFO "%s\n", __func__);
+
+	if (!priv) {
+		printk(KERN_ERR "%s: empty priv\n", __func__);
+		return 0;
+	}
+
+	return cmd_auth_request(priv, req);
+}
+
+
+static int esp_cfg80211_associate(struct wiphy *wiphy, struct net_device *dev,
+		struct cfg80211_assoc_request *req)
+{
+	struct esp_wifi_device *priv = netdev_priv(dev);
+
+	printk(KERN_INFO "%s\n", __func__);
+	if (!priv) {
+		printk(KERN_ERR "%s: empty priv\n", __func__);
+		return 0;
+	}
+
+	return cmd_assoc_request(priv, req);
+}
+
+static int esp_cfg80211_deauth(struct wiphy *wiphy, struct net_device *dev,
+		struct cfg80211_deauth_request *req)
+{
+	struct esp_wifi_device *priv = netdev_priv(dev);
+
+	printk(KERN_INFO "%s\n", __func__);
+
+	if (!priv) {
+		printk(KERN_ERR "%s: empty priv\n", __func__);
+		return 0;
+	}
+
+	return cmd_disconnect_request(priv, req->reason_code);
+}
+
+static int esp_cfg80211_disassoc(struct wiphy *wiphy, struct net_device *dev,
+		struct cfg80211_disassoc_request *req)
+{
+	struct esp_wifi_device *priv = netdev_priv(dev);
+
+	printk(KERN_INFO "%s\n", __func__);
+
+	if (!priv) {
+		printk(KERN_ERR "%s: empty priv\n", __func__);
+		return 0;
+	}
+	return cmd_disconnect_request(priv, req->reason_code);
+}
+
 static struct cfg80211_ops esp_cfg80211_ops = {
 #if 0
 	.add_virtual_intf = esp_cfg80211_add_iface,
@@ -311,6 +372,12 @@ static struct cfg80211_ops esp_cfg80211_ops = {
 	.del_key = esp_cfg80211_del_key,
 	.set_default_key = esp_cfg80211_set_default_key,
 	.mgmt_tx = esp_cfg80211_mgmt_tx,
+#if 1
+	.auth = esp_cfg80211_authenticate,
+	.deauth = esp_cfg80211_deauth,
+	.disassoc = esp_cfg80211_disassoc,
+	.assoc = esp_cfg80211_associate,
+#endif
 };
 
 int esp_cfg80211_register(struct esp_adapter *adapter)
@@ -349,6 +416,9 @@ int esp_cfg80211_register(struct esp_adapter *adapter)
 	wiphy->max_scan_ie_len = 1000;
 	wiphy->max_sched_scan_ssids = 10;
 	wiphy->signal_type = CFG80211_SIGNAL_TYPE_MBM;
+
+	/* Advertise SAE support */
+	wiphy->features |= NL80211_FEATURE_SAE;
 
 	ret = wiphy_register(wiphy);
 
