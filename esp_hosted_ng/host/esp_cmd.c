@@ -328,7 +328,7 @@ static void esp_cmd_work(struct work_struct *work)
 	list_del(&cmd_node->list);
 
 	if (! cmd_node->cmd_skb) {
-		printk (KERN_DEBUG "cmd_node->cmd_skb NULL \n");
+		printk(KERN_DEBUG "cmd_node->cmd_skb NULL \n");
 		spin_unlock_bh(&adapter->cmd_pending_queue_lock);
 		spin_unlock_bh(&adapter->cmd_lock);
 		return;
@@ -344,7 +344,7 @@ static void esp_cmd_work(struct work_struct *work)
 	spin_unlock_bh(&adapter->cmd_lock);
 
 	if (ret) {
-		printk (KERN_ERR "esp32: %s: Failed to send command [0x%X] \n",
+		printk(KERN_ERR "esp32: %s: Failed to send command [0x%X] \n",
 			__func__, cmd_node->cmd_code);
 		adapter->cur_cmd = NULL;
 		spin_unlock_bh(&adapter->cmd_pending_queue_lock);
@@ -393,14 +393,14 @@ struct command_node * prepare_command_request(struct esp_adapter *adapter, u8 cm
 	}
 
 	if (!cmd_code || cmd_code >= CMD_MAX) {
-		printk (KERN_ERR "esp32: %s: unsupported command code\n", __func__);
+		printk(KERN_ERR "esp32: %s: unsupported command code\n", __func__);
 		return NULL;
 	}
 
 	node = get_free_cmd_node(adapter);
 
 	if (!node || !node->cmd_skb) {
-		printk (KERN_ERR "esp32: %s: Failed to get new free cmd node\n", __func__);
+		printk(KERN_ERR "esp32: %s: Failed to get new free cmd node\n", __func__);
 		return NULL;
 	}
 
@@ -427,7 +427,7 @@ struct command_node * prepare_command_request(struct esp_adapter *adapter, u8 cm
 int process_cmd_resp(struct esp_adapter *adapter, struct sk_buff *skb)
 {
 	if (!skb || !adapter) {
-		printk (KERN_ERR "esp32: CMD resp: invalid!\n");
+		printk(KERN_ERR "esp32: CMD resp: invalid!\n");
 
 		if (skb)
 			dev_kfree_skb_any(skb);
@@ -436,7 +436,7 @@ int process_cmd_resp(struct esp_adapter *adapter, struct sk_buff *skb)
 	}
 
 	if (!adapter->cur_cmd) {
-		printk (KERN_ERR "esp32: Command response not expected\n");
+		printk(KERN_ERR "esp32: Command response not expected\n");
 		dev_kfree_skb_any(skb);
 		return -1;
 	}
@@ -510,7 +510,7 @@ static void process_scan_result_event(struct esp_wifi_device *priv,
 		if (bss)
 			cfg80211_put_bss(priv->adapter->wiphy, bss);
 	} else {
-		printk (KERN_INFO "Scan report: Skip invalid or disabled channel\n");
+		printk(KERN_INFO "Scan report: Skip invalid or disabled channel\n");
 	}
 }
 
@@ -545,8 +545,8 @@ static void process_disconnect_event(struct esp_wifi_device *priv,
 	esp_mark_disconnect(priv, event->reason, true);
 }
 
-static void process_connect_status_event(struct esp_wifi_device *priv,
-		struct connect_event *event)
+static void process_assoc_event(struct esp_wifi_device *priv,
+		struct assoc_event *event)
 {
 	u8 mac[6];
 
@@ -584,7 +584,7 @@ int process_cmd_event(struct esp_wifi_device *priv, struct sk_buff *skb)
 	struct event_header *header;
 
 	if (!skb || !priv) {
-		printk (KERN_ERR "esp32: CMD resp: invalid!\n");
+		printk(KERN_ERR "esp32: CMD evnt: invalid!\n");
 		return -1;
 	}
 
@@ -597,9 +597,9 @@ int process_cmd_event(struct esp_wifi_device *priv, struct sk_buff *skb)
 				(struct scan_event *)(skb->data));
 		break;
 
-	case EVENT_STA_CONNECT:
-		process_connect_status_event(priv,
-				(struct connect_event *)(skb->data));
+	case EVENT_ASSOC_RX:
+		process_assoc_event(priv,
+				(struct assoc_event *)(skb->data));
 		break;
 
 	case EVENT_STA_DISCONNECT:
@@ -654,6 +654,7 @@ int cmd_disconnect_request(struct esp_wifi_device *priv, u16 reason_code)
 	return 0;
 }
 
+#if 0
 int cmd_connect_request(struct esp_wifi_device *priv,
 		struct cfg80211_connect_params *params)
 {
@@ -711,7 +712,7 @@ int cmd_connect_request(struct esp_wifi_device *priv,
 	else
 		cmd->is_auth_open = 1;
 
-	printk (KERN_INFO "Connection request: %s %pM %d\n",
+	printk(KERN_INFO "Connection request: %s %pM %d\n",
 			cmd->ssid, params->bssid, cmd->channel);
 
 	do {
@@ -721,7 +722,7 @@ int cmd_connect_request(struct esp_wifi_device *priv,
 		if (bss) {
 			break;
 		} else {
-			printk (KERN_INFO "No BSS in the list.. scanning..\n");
+			printk(KERN_INFO "No BSS in the list.. scanning..\n");
 			internal_scan_request(priv, cmd->ssid, cmd->channel, true);
 		}
 
@@ -740,6 +741,7 @@ int cmd_connect_request(struct esp_wifi_device *priv,
 
 	return 0;
 }
+#endif
 
 
 int cmd_assoc_request(struct esp_wifi_device *priv,
@@ -779,8 +781,10 @@ int cmd_assoc_request(struct esp_wifi_device *priv,
 	memcpy(cmd->assoc_ie, req->ie, req->ie_len);
 
 	/* Make a copy of assoc req IEs */
-	if (priv->assoc_req_ie)
+	if (priv->assoc_req_ie) {
 		kfree(priv->assoc_req_ie);
+		priv->assoc_req_ie = NULL;
+	}
 
 	priv->assoc_req_ie = kmemdup(req->ie, req->ie_len, GFP_ATOMIC);
 
@@ -791,7 +795,7 @@ int cmd_assoc_request(struct esp_wifi_device *priv,
 
 	priv->assoc_req_ie_len = req->ie_len;
 
-	printk (KERN_INFO "Association request: %pM %d %d\n",
+	printk(KERN_INFO "Association request: %pM %d %d\n",
 			bss->bssid, bss->channel->hw_value, cmd->assoc_ie_len);
 
 	queue_cmd_node(adapter, cmd_node, ESP_CMD_DFLT_PRIO);
@@ -807,10 +811,11 @@ int cmd_auth_request(struct esp_wifi_device *priv,
 {
 	struct command_node *cmd_node = NULL;
 	struct cmd_sta_auth *cmd;
-	struct cfg80211_bss *bss, *bss1;
+	struct cfg80211_bss *bss;
+	/*struct cfg80211_bss *bss1;*/
 	struct esp_adapter *adapter = NULL;
 	u16 cmd_len;
-/*	u8 retry = 2;*/
+	/* u8 retry = 2; */
 
 	if (!priv || !req || !req->bss || !priv->adapter) {
 		printk(KERN_ERR "%s: Invalid argument\n", __func__);
@@ -844,7 +849,7 @@ int cmd_auth_request(struct esp_wifi_device *priv,
 	cmd->auth_data_len = req->auth_data_len;
 	memcpy(cmd->auth_data, req->auth_data, req->auth_data_len);
 
-	printk (KERN_INFO "Authentication request: %pM %d %d %d %d\n",
+	printk(KERN_INFO "Authentication request: %pM %d %d %d %d\n",
 			cmd->bssid, cmd->channel, cmd->auth_type, cmd->auth_data_len,
 			(u32) req->ie_len);
 #if 0
@@ -855,7 +860,7 @@ int cmd_auth_request(struct esp_wifi_device *priv,
 		if (bss1) {
 			break;
 		} else {
-			printk (KERN_INFO "No BSS in the list.. scanning..\n");
+			printk(KERN_INFO "No BSS in the list.. scanning..\n");
 			internal_scan_request(priv, cmd->ssid, cmd->channel, true);
 		}
 
