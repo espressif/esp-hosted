@@ -82,7 +82,7 @@ int ipv4_addr_aton(const char *cp, uint32_t *ip_uint32)
 	/*
 	 * Check for trailing characters.
 	 */
-	if (*cp && (!isascii(*cp) || !isspace(*cp)))
+	if (*cp && (!isascii((uint8_t)*cp) || !isspace((uint8_t)*cp)))
 		return (0);
 	/*
 	 * Concoct the address according to

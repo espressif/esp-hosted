@@ -16,7 +16,7 @@
 /** Includes **/
 #include "usart.h"
 #include "cmsis_os.h"
-#include "spi_drv.h"
+#include "sdio_drv.h"
 #include "control.h"
 #include "trace.h"
 #include "app_main.h"
@@ -118,17 +118,21 @@ static void control_path_event_handler(uint8_t event)
 }
 
 /**
-  * @brief  SPI driver event handler callback
+  * @brief  transport driver event handler callback
+// TO DO
   * @param  event - spi_drv_events_e event to be handled
   * @retval None
   */
-static void spi_driver_event_handler(uint8_t event)
+static void transport_driver_event_handler(uint8_t event)
 {
 	switch(event)
 	{
-		case SPI_DRIVER_ACTIVE:
+		case TRANSPORT_ACTIVE:
 		{
 			/* Initiate control path now */
+#if DEBUG_TRANSPORT
+			printf("Transport is activated\n\r");
+#endif
 			control_path_init(control_path_event_handler);
 			break;
 		}
@@ -153,7 +157,7 @@ void MX_FREERTOS_Init(void)
 	network_init();
 
 	/* init spi driver */
-	stm_spi_init(spi_driver_event_handler);
+	transport_init(transport_driver_event_handler);
 
 	/* This thread's priority shouls be >= spi driver's transaction task priority */
 	osThreadDef(Arping_Thread, arping_task, osPriorityAboveNormal, 0,

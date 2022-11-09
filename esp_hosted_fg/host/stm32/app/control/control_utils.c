@@ -32,9 +32,6 @@
 /***** Please Read *****/
 /* Before use : User must enter user configuration parameter in "ctrl_config.h" file */
 
-#define STA_INTERFACE                                     "ethsta0"
-#define AP_INTERFACE                                      "ethap0"
-
 #define WIFI_VENDOR_IE_ELEMENT_ID                         0xDD
 #define OFFSET                                            4
 #define VENDOR_OUI_0                                      1

@@ -271,18 +271,18 @@ static void set_hardware_type(void)
 
 /** Exported Functions **/
 /**
-  * @brief  spi driver initialize
-  * @param  spi_drv_evt_handler - event handler of type spi_drv_events_e
+  * @brief  transport initializes
+  * @param  transport_evt_handler - event handler of type spi_drv_events_e
   * @retval None
   */
-void stm_spi_init(void(*spi_drv_evt_handler)(uint8_t))
+void transport_init(void(*transport_evt_handler)(uint8_t))
 {
 	stm_ret_t retval = STM_OK;
 	/* Check if supported board */
 	set_hardware_type();
 
 	/* register callback */
-	spi_drv_evt_handler_fp = spi_drv_evt_handler;
+	spi_drv_evt_handler_fp = transport_evt_handler;
 	osSemaphoreDef(SEM);
 
 	retval = init_netdev();
@@ -783,7 +783,7 @@ static void process_rx_task(void const* pvParameters)
 				 * time to slave before spi trans start */
 				stop_spi_transactions_for_msec(50000);
 				if (spi_drv_evt_handler_fp) {
-					spi_drv_evt_handler_fp(SPI_DRIVER_ACTIVE);
+					spi_drv_evt_handler_fp(TRANSPORT_ACTIVE);
 				}
 			} else {
 				/* User can re-use this type of transaction */

@@ -29,6 +29,7 @@
 #define SDIO_SLAVE_QUEUE_SIZE 20
 #define BUFFER_SIZE     1536 /* 512*3 */
 #define BUFFER_NUM      10
+#define SDIO_BLOCK_SIZE 512
 static uint8_t sdio_slave_rx_buffer[BUFFER_NUM][BUFFER_SIZE];
 
 static struct mempool * buf_mp_g;
@@ -260,12 +261,14 @@ static int32_t sdio_write(interface_handle_t *handle, interface_buffer_handle_t 
 
 	total_len = buf_handle->payload_len + sizeof (struct esp_payload_header);
 
+	total_len = (total_len+(SDIO_BLOCK_SIZE-1)) & (~(SDIO_BLOCK_SIZE-1));
 	sendbuf = sdio_buffer_alloc(MEMSET_REQUIRED);
 	if (sendbuf == NULL) {
 		ESP_LOGE(TAG , "Malloc send buffer fail!");
 		return ESP_FAIL;
 	}
 
+	memset(sendbuf, 0, total_len);
 	header = (struct esp_payload_header *) sendbuf;
 
 	memset (header, 0, sizeof(struct esp_payload_header));
@@ -298,6 +301,7 @@ static int32_t sdio_write(interface_handle_t *handle, interface_buffer_handle_t 
 
 static int sdio_read(interface_handle_t *if_handle, interface_buffer_handle_t *buf_handle)
 {
+	esp_err_t ret = ESP_OK;
 	struct esp_payload_header *header = NULL;
 #if CONFIG_ESP_SDIO_CHECKSUM
 	uint16_t rx_checksum = 0, checksum = 0;
@@ -315,8 +319,14 @@ static int sdio_read(interface_handle_t *if_handle, interface_buffer_handle_t *b
 		return ESP_FAIL;
 	}
 
-	sdio_slave_recv(&(buf_handle->sdio_buf_handle), &(buf_handle->payload),
+	ret = sdio_slave_recv(&(buf_handle->sdio_buf_handle), &(buf_handle->payload),
 			&(sdio_read_len), portMAX_DELAY);
+	if(ret) {
+		free(buf_handle);
+		buf_handle = NULL;
+		return NULL;
+	}
+
 	buf_handle->payload_len = sdio_read_len & 0xFFFF;
 
 	header = (struct esp_payload_header *) buf_handle->payload;
@@ -366,7 +376,7 @@ static esp_err_t sdio_reset(interface_handle_t *handle)
 
 		if (handle) {
 			ret = sdio_slave_recv_load_buf(handle);
-			ESP_ERROR_CHECK(ret);
+			ESP_ERROR_CHECK_WITHOUT_ABORT(ret);
 		}
 	}
 

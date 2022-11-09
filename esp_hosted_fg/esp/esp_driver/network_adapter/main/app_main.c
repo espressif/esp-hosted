@@ -754,9 +754,6 @@ void app_main()
 
 	sleep(1);
 
-	/* send capabilities to host */
-	generate_startup_event(capa);
-
 	meta_to_host_queue = xQueueCreate(TO_HOST_QUEUE_SIZE*3, sizeof(uint8_t));
 	assert(meta_to_host_queue);
 	for (prio_q_idx=0; prio_q_idx<MAX_PRIORITY_QUEUES; prio_q_idx++) {
@@ -780,6 +777,12 @@ void app_main()
 
 	ESP_LOGI(TAG,"Initial set up done");
 
-	sleep(1);
+	while(datapath==0) {
+		vTaskDelay(10);
+	}
+
+	/* send capabilities to host */
+	generate_startup_event(capa);
+
 	send_event_to_host(CTRL_MSG_ID__Event_ESPInit);
 }
