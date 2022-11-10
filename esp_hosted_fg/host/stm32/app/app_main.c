@@ -16,7 +16,7 @@
 /** Includes **/
 #include "usart.h"
 #include "cmsis_os.h"
-#include "sdio_drv.h"
+#include "transport_drv.h"
 #include "control.h"
 #include "trace.h"
 #include "app_main.h"
@@ -159,7 +159,7 @@ void MX_FREERTOS_Init(void)
 	/* init spi driver */
 	transport_init(transport_driver_event_handler);
 
-	/* This thread's priority shouls be >= spi driver's transaction task priority */
+	/* This thread's priority shouls be >= transport driver's transaction task priority */
 	osThreadDef(Arping_Thread, arping_task, osPriorityAboveNormal, 0,
 			ARPING_PATH_TASK_STACK_SIZE);
 	arping_task_id = osThreadCreate(osThread(Arping_Thread), NULL);

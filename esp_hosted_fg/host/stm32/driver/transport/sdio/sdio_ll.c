@@ -791,7 +791,7 @@ int STM32ReadData(uint8_t func, uint32_t addr, void *data,
 	block_num = GetBlockNum(func, &size, 0, &sdio_data);
 #if DEBUG_TRANSPORT
 	if (size > 4) {
-		printf("size after getblocknum: %lu\n\r",size);
+	//	printf("size after getblocknum: %lu\n\r",size);
 	}
 #endif
 

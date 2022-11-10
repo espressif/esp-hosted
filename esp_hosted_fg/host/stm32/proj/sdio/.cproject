@@ -103,7 +103,6 @@
 									<listOptionValue builtIn="false" value="&quot;${CODE_BASE}/host/virtual_serial_if/include&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${CODE_BASE}/host/stm32/port/include&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${CODE_BASE}/host/stm32/common&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${CODE_BASE}/host/stm32/driver/sdio&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${CODE_BASE}/host/stm32/driver/serial/&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${CODE_BASE}/host/stm32/driver/network&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${CODE_BASE}/host/stm32/driver/netif&quot;"/>
@@ -111,6 +110,8 @@
 									<listOptionValue builtIn="false" value="&quot;${CODE_BASE}/host/stm32/app/data&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${CODE_BASE}/host/stm32/app&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${CODE_BASE}/host/components/include&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${CODE_BASE}/host/stm32/driver/transport/sdio&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${CODE_BASE}/host/stm32/driver/transport/&quot;"/>
 								</option>
 								<inputType id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.input.c.1627871139" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.input.c"/>
 							</tool>
@@ -139,7 +140,7 @@
 						</toolChain>
 					</folderInfo>
 					<sourceEntries>
-						<entry excluding="stm32/driver/spi|linux|LICENSES" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="host"/>
+						<entry excluding="stm32/driver/transport/spi|linux|LICENSES" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="host"/>
 						<entry excluding="Src/sdio.c|Src/freertos.c" flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="Core"/>
 						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="Middlewares"/>
 						<entry excluding="protobuf-c/t/" flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="common"/>

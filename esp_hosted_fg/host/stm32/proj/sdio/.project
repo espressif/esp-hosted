@@ -45,7 +45,7 @@
 	<variableList>
 		<variable>
 			<name>CODE_BASE</name>
-			<value>file:/home/ajita/esp/work/master/esp_hosted/esp_hosted_fg</value>
+			<value>file:CODE_BASE_PLACE_HOLDER</value>
 		</variable>
 	</variableList>
 </projectDescription>

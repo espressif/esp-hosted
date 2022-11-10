@@ -18,7 +18,6 @@
 #include "serial_drv.h"
 #include "serial_ll_if.h"
 #include "adapter.h"
-#include "spi_drv.h"
 #include "trace.h"
 #include "platform_wrapper.h"
 

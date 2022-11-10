@@ -18,7 +18,7 @@
 #include "sdio.h"
 #include "gpio.h"
 #include "trace.h"
-
+#include "transport_drv.h"
 #include "sdio_drv.h"
 #include "sdio_reg.h"
 #include "sdio_host.h"
@@ -73,7 +73,6 @@ static void tx_task(void const* pvParameters);
 static void process_rx_task(void const* pvParameters);
 
 static void set_hardware_type(void);
-static void process_capabilities(void);
 
 /* SDIO transaction functions for different hardware types */
 static stm_ret_t (*sdio_trans_func[])(void) = {
@@ -263,24 +262,6 @@ static stm_ret_t generate_slave_intr(uint8_t intr_no)
 }
 
 /**
- * @brief  Slave capabilities are parsed
- *         Currently no added functionality to that
- * @param  None
- * @retval None
- */
-static void process_capabilities(void)
-{
-	uint8_t cap = 0;
-	cap = STM32ReadReg(SDIO_FUNC_1, SDIO_REG(ESP_SLAVE_SCRATCH_REG_0) );
-#if DEBUG_TRANSPORT
-	printf("capabilities: 0x%x\n\r",cap);
-#else
-	/* warning suppress */
-	if(cap);
-#endif
-}
-
-/**
  * @brief  I/O initialization command sequence
  * @param  None
  * @retval
@@ -297,10 +278,6 @@ static stm_ret_t io_init_seq(void)
 		printf("sdio init error,ret:%d\n\r", retval);
 		return STM_FAIL;
 	}
-
-	/* Process slave peripheral capabilities */
-	process_capabilities();
-
 	/* notify slave application that host driver is ready */
 	generate_slave_intr(ESP_OPEN_DATA_PATH);
 
@@ -625,6 +602,18 @@ static void process_rx_task(void const* pvParameters)
 			}
 
 		} else if (buf_handle.if_type == ESP_PRIV_IF) {
+			buffer = (struct pbuf *)malloc(sizeof(struct pbuf));
+			assert(buffer);
+
+			buffer->len = buf_handle.payload_len;
+			buffer->payload = malloc(buf_handle.payload_len);
+			assert(buffer->payload);
+
+			memcpy(buffer->payload, buf_handle.payload,
+					buf_handle.payload_len);
+
+
+			process_priv_communication(buffer);
 			/* priv transaction received */
 			printf("Received INIT event\n\r");
 			event = (struct esp_priv_event *) (payload);

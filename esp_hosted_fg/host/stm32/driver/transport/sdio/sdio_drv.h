@@ -20,9 +20,7 @@
 #include "common.h"
 
 /** Constants/Macros **/
-#define MAX_NETWORK_INTERFACES  2
-#define STA_INTERFACE           "ESP_STATION"
-#define SOFTAP_INTERFACE        "ESP_SOFTAP"
+
 
 
 /** Exported Structures **/

@@ -215,7 +215,7 @@ stm_ret_t sdio_host_get_packet(void* out_data, size_t size,
 
 		if (err == STM_OK && len > 0) {
 #if DEBUG_TRANSPORT
-			printf("Expected length to be read %lu\n\n",len);
+		//	printf("Expected length to be read %lu\n\n",len);
 #endif
 			break;
 		}
@@ -247,7 +247,7 @@ stm_ret_t sdio_host_get_packet(void* out_data, size_t size,
 		if (block_n != 0) {
 			len_to_send = ESP_BLOCK_SIZE;
 #if DEBUG_TRANSPORT
-			printf("block_n %u, len-to_send %lu\n\r",block_n,len_to_send);
+		//	printf("block_n %u, len-to_send %lu\n\r",block_n,len_to_send);
 #endif
 
 			err = sdio_driver_read_blocks(SDIO_FUNC_1,
@@ -334,7 +334,7 @@ stm_ret_t sdio_host_get_intr(uint32_t* intr_st)
 static uint32_t esp_sdio_host_get_buffer_size(void)
 {
 	stm_ret_t ret = STM_OK;
-	uint32_t len = 0, len1 = 0;
+	uint32_t len = 0;
 
 	ret = sdio_driver_read_bytes(SDIO_FUNC_1,
 			SDIO_REG(ESP_SLAVE_TOKEN_RDATA), &len, 4, 0);
@@ -343,12 +343,10 @@ static uint32_t esp_sdio_host_get_buffer_size(void)
 		return 0;
 	}
 
-	//printf("%s len %lu \n\r", __func__, len);
-	len1 = len;
 	len = (len >> ESP_SDIO_SEND_OFFSET) & ESP_TX_BUFFER_MASK;
 	len = (len + ESP_TX_BUFFER_MAX - tx_sent_buffers) % ESP_TX_BUFFER_MAX;
 #if DEBUG_TRANSPORT
-	//printf("Read ESP32 len: %lu len1 : %lu \n\r", len, len1);
+	//printf("Read ESP32 len: %lu\n\r", len);
 #endif
 	return len;
 }

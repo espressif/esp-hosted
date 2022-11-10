@@ -22,11 +22,9 @@ extern "C" {
 
 /** Includes **/
 #include "common.h"
+#include "transport_drv.h"
 
 /** constants/macros **/
-#define MAX_NETWORK_INTERFACES  2
-#define STA_INTERFACE           "ESP_STATION"
-#define SOFTAP_INTERFACE        "ESP_SOFTAP"
 
 /* NSS or CS0 configuration (Pin 11) */
 /* In case of different board than STM32F469I,
@@ -45,9 +43,6 @@ extern "C" {
 /** Inline functions **/
 
 /** Exported Functions **/
-void transport_init(void(*transport_evt_handler)(uint8_t));
-stm_ret_t send_to_slave(uint8_t iface_type, uint8_t iface_num,
-		uint8_t * wbuffer, uint16_t wlen);
 
 struct esp_private {
 	uint8_t     if_type;

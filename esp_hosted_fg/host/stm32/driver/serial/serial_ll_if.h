@@ -22,6 +22,7 @@ extern "C" {
 
 /** includes **/
 #include "cmsis_os.h"
+#include "transport_drv.h"
 #include "common.h"
 
 struct serial_ll_operations;
