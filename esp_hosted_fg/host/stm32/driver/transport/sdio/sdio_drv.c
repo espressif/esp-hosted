@@ -18,6 +18,7 @@
 #include "sdio.h"
 #include "gpio.h"
 #include "trace.h"
+#include "stats.h"
 #include "transport_drv.h"
 #include "sdio_drv.h"
 #include "sdio_reg.h"
@@ -625,6 +626,10 @@ static void process_rx_task(void const* pvParameters)
 			} else {
 				/* User can re-use this type of transaction */
 			}
+		} else if (buf_handle.if_type == ESP_TEST_IF) {
+#if TEST_RAW_TP
+			update_test_raw_tp_rx_len(buf_handle.payload_len);
+#endif
 		} else {
 			printf("unkown type %d \n\r", buf_handle.if_type);
 		}

@@ -24,7 +24,7 @@ extern "C" {
 #include "stdio.h"
 
 /** constants/macros **/
-#define DEBUG_TRANSPORT                   0
+#define DEBUG_TRANSPORT                   1
 #define DEBUG_HEX_STREAM_PRINT            0
 #ifndef assert
 #define assert(x) do { if (!(x)) { \

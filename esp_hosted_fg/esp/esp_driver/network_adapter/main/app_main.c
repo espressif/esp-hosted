@@ -87,7 +87,7 @@ interface_context_t *if_context = NULL;
 interface_handle_t *if_handle = NULL;
 
 static QueueHandle_t meta_to_host_queue = NULL;
-static QueueHandle_t to_host_queue[MAX_PRIORITY_QUEUES] = {NULL};
+QueueHandle_t to_host_queue[MAX_PRIORITY_QUEUES] = {NULL};
 
 
 static protocomm_t *pc_pserial;
@@ -738,7 +738,7 @@ void app_main()
 	protocomm_pserial_start(pc_pserial, serial_write_data, serial_read_data);
 
 	if_context = interface_insert_driver(event_handler);
-	datapath = 1;
+	datapath = 0;
 
 	if (!if_context || !if_context->if_ops) {
 		ESP_LOGE(TAG, "Failed to insert driver\n");

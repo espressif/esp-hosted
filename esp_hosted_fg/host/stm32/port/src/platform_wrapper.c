@@ -314,7 +314,7 @@ void *hosted_timer_start(int duration, int type,
 	struct timer_handle_t *timer_handle = NULL;
 	int ret = STM_OK;
 	os_timer_type timer_type = osTimerOnce;
-	osTimerDef (timerNew, timeout_handler);
+	osTimerDef (timerNew, *timeout_handler);
 
 	/* alloc */
 	timer_handle = (struct timer_handle_t *)hosted_malloc(

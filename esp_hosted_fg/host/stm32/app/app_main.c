@@ -22,6 +22,7 @@
 #include "app_main.h"
 #include "netdev_api.h"
 #include "arp_server_stub.h"
+#include "stats.h"
 
 /** Constants/Macros **/
 #define ARPING_PATH_TASK_STACK_SIZE     4096
@@ -41,6 +42,11 @@ static void init_sta(void);
 static void init_ap(void);
 static void reset_slave(void);
 static void arping_task(void const *arg);
+
+/* Needed for timer task */
+void vApplicationGetTimerTaskMemory( StaticTask_t **ppxTimerTaskTCBBuffer,
+	StackType_t **ppxTimerTaskStackBuffer, uint32_t *pulTimerTaskStackSize );
+
 
 /* GetIdleTaskMemory prototype (linked to static allocation support) */
 void vApplicationGetIdleTaskMemory( StaticTask_t **ppxIdleTaskTCBBuffer,
@@ -211,6 +217,26 @@ void vApplicationGetIdleTaskMemory( StaticTask_t **ppxIdleTaskTCBBuffer,
 	configMINIMAL_STACK_SIZE is specified in words, not bytes. */
 	*pulIdleTaskStackSize = configMINIMAL_STACK_SIZE;
 }
+
+/**
+  * @brief FreeRTOS hook function for timer task stack
+  * @param  None
+  * @retval None
+  */
+void vApplicationGetTimerTaskMemory( StaticTask_t **ppxTimerTaskTCBBuffer,
+	StackType_t **ppxTimerTaskStackBuffer, uint32_t *pulTimerTaskStackSize )
+{
+	/* USER CODE BEGIN GET_TIMER_TASK_MEMORY */
+	static StaticTask_t xTimerTaskTCBBuffer;
+	static StackType_t xTimerStack[configTIMER_TASK_STACK_DEPTH];
+
+
+  *ppxTimerTaskTCBBuffer = &xTimerTaskTCBBuffer;
+  *ppxTimerTaskStackBuffer = &xTimerStack[0];
+  *pulTimerTaskStackSize = configTIMER_TASK_STACK_DEPTH;
+  /* place for user code */
+}
+
 
 /**
   * @brief Station mode rx callback

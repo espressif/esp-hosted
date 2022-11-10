@@ -20,6 +20,8 @@
 extern "C" {
 #endif
 
+#include "stdint.h"
+
 /**
  * @brief Network data buffer
  */

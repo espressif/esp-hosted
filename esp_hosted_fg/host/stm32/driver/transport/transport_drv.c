@@ -1,4 +1,5 @@
 #include "transport_drv.h"
+#include "stats.h"
 /**
  * @brief  Slave capabilities are parsed
  *         Currently no added functionality to that
