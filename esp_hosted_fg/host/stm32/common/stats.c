@@ -14,16 +14,10 @@
 //
 
 /** Includes **/
-/*
-#include "util.h"
-#include "ctype.h"
-#include "string.h"
-#include "trace.h" */
 
 #include "stats.h"
-#include "platform_wrapper.h"
 #if TEST_RAW_TP
-
+#include "platform_wrapper.h"
 #include "transport_drv.h"
 #endif
 /** Constants/Macros **/
@@ -62,13 +56,13 @@ void test_raw_tp_cleanup(void)
 	}
 }
 
-static void raw_tp_timer_func(void* arg)
+void raw_tp_timer_func(void const * arg)
 {
 	double actual_bandwidth = 0;
-	int32_t div = 1024*1024;
+	int32_t div = 1024;
 
 	actual_bandwidth = (test_raw_tp_len*8);
-	printf("%lu-%lu sec %.5f Mbits/sec\n\r", raw_tp_timer_count, raw_tp_timer_count + 1, actual_bandwidth/div);
+	printf("%lu-%lu sec %.5f Kbits/sec\n\r", raw_tp_timer_count, raw_tp_timer_count + 1, actual_bandwidth/div);
 	raw_tp_timer_count++;
 	test_raw_tp_len = 0;
 }
@@ -78,6 +72,7 @@ static void raw_tp_tx_task(void const* pvParameters)
 	int ret;
 	static uint16_t seq_num = 0;
 	uint8_t *raw_tp_tx_buf = NULL;
+	sleep(5);
 	while (1) {
 
 		raw_tp_tx_buf = (uint8_t*)hosted_calloc(1, TEST_RAW_TP__BUF_SIZE);
@@ -96,7 +91,7 @@ static void process_raw_tp_flags(void)
 	test_raw_tp_cleanup();
 
 	if (test_raw_tp) {
-		hosted_timer_handler = hosted_timer_start(TEST_RAW_TP__TIMEOUT, CTRL__TIMER_PERIODIC, (void *)&raw_tp_timer_func, NULL);
+		hosted_timer_handler = hosted_timer_start(TEST_RAW_TP__TIMEOUT, CTRL__TIMER_PERIODIC, raw_tp_timer_func, NULL);
 		if (!hosted_timer_handler) {
 			printf("Failed to create timer\n\r");
 			return;

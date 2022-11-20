@@ -15,12 +15,10 @@
 
 /** Includes **/
 #include "usart.h"
-#include "cmsis_os.h"
 #include "transport_drv.h"
 #include "control.h"
 #include "trace.h"
 #include "app_main.h"
-#include "netdev_api.h"
 #include "arp_server_stub.h"
 #include "stats.h"
 
@@ -125,7 +123,6 @@ static void control_path_event_handler(uint8_t event)
 
 /**
   * @brief  transport driver event handler callback
-// TO DO
   * @param  event - spi_drv_events_e event to be handled
   * @retval None
   */
@@ -137,7 +134,7 @@ static void transport_driver_event_handler(uint8_t event)
 		{
 			/* Initiate control path now */
 #if DEBUG_TRANSPORT
-			printf("Transport is activated\n\r");
+			printf("Base transport is set-up\n\r");
 #endif
 			control_path_init(control_path_event_handler);
 			break;
@@ -164,12 +161,13 @@ void MX_FREERTOS_Init(void)
 
 	/* init spi driver */
 	transport_init(transport_driver_event_handler);
-
+#if !TEST_RAW_TP
 	/* This thread's priority shouls be >= transport driver's transaction task priority */
 	osThreadDef(Arping_Thread, arping_task, osPriorityAboveNormal, 0,
 			ARPING_PATH_TASK_STACK_SIZE);
 	arping_task_id = osThreadCreate(osThread(Arping_Thread), NULL);
 	assert(arping_task_id);
+#endif
 }
 
 /**
@@ -231,9 +229,9 @@ void vApplicationGetTimerTaskMemory( StaticTask_t **ppxTimerTaskTCBBuffer,
 	static StackType_t xTimerStack[configTIMER_TASK_STACK_DEPTH];
 
 
-  *ppxTimerTaskTCBBuffer = &xTimerTaskTCBBuffer;
-  *ppxTimerTaskStackBuffer = &xTimerStack[0];
-  *pulTimerTaskStackSize = configTIMER_TASK_STACK_DEPTH;
+	*ppxTimerTaskTCBBuffer = &xTimerTaskTCBBuffer;
+	*ppxTimerTaskStackBuffer = &xTimerStack[0];
+	*pulTimerTaskStackSize = configTIMER_TASK_STACK_DEPTH;
   /* place for user code */
 }
 
@@ -387,7 +385,6 @@ static void arping_task(void const *arg)
 
 		if(ap_handle)
 			send_arp_req(ap_handle, get_self_mac_softap(), &softap_ip, dst_mac_bytes, &softap_dest_ip);
-
 		osDelay(1000);
 	}
 }

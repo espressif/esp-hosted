@@ -22,16 +22,21 @@ extern "C" {
 
 /** Includes **/
 #include "stdint.h"
-#include "stddef.h"
+#include "stdio.h"
 
 /** Constants/Macros **/
-#define MAX_NETWORK_INTERFACES  2
-#define STA_INTERFACE           "ESP_STATION"
-#define SOFTAP_INTERFACE        "ESP_SOFTAP"
+#define MAX_NETWORK_INTERFACES            2
+#define STA_INTERFACE                     "ESP_STATION"
+#define SOFTAP_INTERFACE                  "ESP_SOFTAP"
 
 #define UNUSED_VAR(x)                     (void)(x);
+
 #define MAX_SPI_BUFFER_SIZE               1600
-#define MAX_SDIO_BUFFER_SIZE              2048
+/* TODO: SDIO buffers to be set same at both, ESP and host side */
+#define MAX_SDIO_BUFFER_SIZE              1536
+
+#define MAX_SUPPORTED_SDIO_CLOCK_MHZ      40
+
 #define malloc                            pvPortMalloc
 #define free                              vPortFree
 
@@ -45,6 +50,8 @@ extern "C" {
 #ifndef BIT
 #define BIT(x)                            (1UL << (x))
 #endif
+
+#define FREQ_IN_MHZ(x)                    ((x)*1000000)
 
 typedef enum stm_ret_s {
 	STM_OK                =  0,

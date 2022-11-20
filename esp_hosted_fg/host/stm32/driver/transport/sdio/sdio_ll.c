@@ -23,15 +23,10 @@
 /** Includes **/
 #include "sdio_reg.h"
 #include "sdio_ll.h"
-#include "common.h"
 #include "trace.h"
 #include "FreeRTOS.h"
-#include "task.h"
 #include "semphr.h"
-#include "trace.h"
 #include "gpio.h"
-#include "stm32f4xx_ll_sdmmc.h"
-#include "stm32f4xx_hal_sd.h"
 
 #if WIFI_USEDMA
 #include "stm32f4xx_ll_dma.h"
@@ -57,6 +52,8 @@
 #define SDIO_IO_RESET_FUNC              (6)
 #define SDIO_IO_RESET_VAL               (0x8)
 #define SDIO_CMD_SEND_RETRY             (3)
+
+#define SDIO_CLK_DIV			(238)
 
 /** Macros/Constants **/
 #define CHECK_SDIO_PRINT_ERR(ErR) {\
@@ -369,8 +366,7 @@ static stm_ret_t SdioDriverInit(SD_InitTypeDef init_para)
 
 	/* Default SDIO peripheral config for SD card initialization */
 	/* Keep clock lower (<400k) for initial command sequence */
-	Init.ClockDiv = 238;
-//	Init.ClockDiv = SDIO_INIT_CLK_DIV;
+	Init.ClockDiv = SDIO_CLK_DIV;
 
 	Init.BusWide = init_para.BusWide;
 

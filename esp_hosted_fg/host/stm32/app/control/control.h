@@ -126,7 +126,6 @@ typedef enum control_path_events_s {
 #define INPUT_SOFTAP_ARP_DEST_IP          "192.168.2.22"
 #endif
 
-
 #define WIFI_MAX_STR_LEN                  19
 
 /** Exported Structures **/

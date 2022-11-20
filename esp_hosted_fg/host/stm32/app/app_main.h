@@ -21,7 +21,6 @@ extern "C" {
 #endif
 
 /** Includes **/
-#include "common.h"
 #include "netdev_api.h"
 
 /** Exported macros **/

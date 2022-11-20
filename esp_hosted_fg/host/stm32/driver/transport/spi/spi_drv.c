@@ -22,6 +22,7 @@
 #include "adapter.h"
 #include "serial_drv.h"
 #include "netdev_if.h"
+#include "stats.h"
 
 /** Constants/Macros **/
 #define TO_SLAVE_QUEUE_SIZE               10
@@ -32,11 +33,12 @@
 
 #define MAX_PAYLOAD_SIZE (MAX_SPI_BUFFER_SIZE-sizeof(struct esp_payload_header))
 
-typedef enum hardware_type_e {
+/** Enumeration **/
+enum hardware_type_e {
 	HARDWARE_TYPE_ESP32,
 	HARDWARE_TYPE_OTHER_ESP_CHIPSETS,
 	HARDWARE_TYPE_INVALID,
-}hardware_type_t;
+};
 
 static stm_ret_t spi_transaction_v1(uint8_t * txbuff);
 static stm_ret_t spi_transaction_v2(uint8_t * txbuff);
@@ -52,10 +54,6 @@ static stm_ret_t (*spi_trans_func[])(uint8_t * txbuff) = {
 		spi_transaction_v1,
 		spi_transaction_v2
 };
-
-static int esp_netdev_open(netdev_handle_t netdev);
-static int esp_netdev_close(netdev_handle_t netdev);
-static int esp_netdev_xmit(netdev_handle_t netdev, struct pbuf *net_buf);
 
 static struct esp_private *esp_priv[MAX_NETWORK_INTERFACES];
 static uint8_t hardware_type = HARDWARE_TYPE_INVALID;
@@ -88,6 +86,7 @@ static void process_rx_task(void const* pvParameters);
 static uint8_t * get_tx_buffer(uint8_t *is_valid_tx_buf);
 static void deinit_netdev(void);
 
+/** Local Functions **/
 /**
   * @brief  get private interface of expected type and number
   * @param  if_type - interface type
@@ -106,51 +105,6 @@ static struct esp_private * get_priv(uint8_t if_type, uint8_t if_num)
 	}
 
 	return NULL;
-}
-
-/**
-  * @brief  open virtual network device
-  * @param  netdev - network device
-  * @retval 0 on success
-  */
-static int esp_netdev_open(netdev_handle_t netdev)
-{
-	return STM_OK;
-}
-
-/**
-  * @brief  close virtual network device
-  * @param  netdev - network device
-  * @retval 0 on success
-  */
-static int esp_netdev_close(netdev_handle_t netdev)
-{
-	return STM_OK;
-}
-
-/**
-  * @brief  transmit on virtual network device
-  * @param  netdev - network device
-  *         net_buf - buffer to transmit
-  * @retval None
-  */
-static int esp_netdev_xmit(netdev_handle_t netdev, struct pbuf *net_buf)
-{
-	struct esp_private *priv;
-	int ret;
-
-	if (!netdev || !net_buf)
-		return STM_FAIL;
-	priv = (struct esp_private *) netdev_get_priv(netdev);
-
-	if (!priv)
-		return STM_FAIL;
-
-	ret = send_to_slave(priv->if_type, priv->if_num,
-			net_buf->payload, net_buf->len);
-	free(net_buf);
-
-	return ret;
 }
 
 /**
@@ -272,17 +226,17 @@ static void set_hardware_type(void)
 /** Exported Functions **/
 /**
   * @brief  transport initializes
-  * @param  transport_evt_handler - event handler of type spi_drv_events_e
+  * @param  transport_evt_handler_fp - event handler
   * @retval None
   */
-void transport_init(void(*transport_evt_handler)(uint8_t))
+void transport_init(void(*transport_evt_handler_fp)(uint8_t))
 {
 	stm_ret_t retval = STM_OK;
 	/* Check if supported board */
 	set_hardware_type();
 
 	/* register callback */
-	spi_drv_evt_handler_fp = transport_evt_handler;
+	spi_drv_evt_handler_fp = transport_evt_handler_fp;
 	osSemaphoreDef(SEM);
 
 	retval = init_netdev();
@@ -774,7 +728,19 @@ static void process_rx_task(void const* pvParameters)
 			}
 
 		} else if (buf_handle.if_type == ESP_PRIV_IF) {
+			buffer = (struct pbuf *)malloc(sizeof(struct pbuf));
+			assert(buffer);
+
+			buffer->len = buf_handle.payload_len;
+			buffer->payload = malloc(buf_handle.payload_len);
+			assert(buffer->payload);
+
+			memcpy(buffer->payload, buf_handle.payload,
+					buf_handle.payload_len);
+
+			process_priv_communication(buffer);
 			/* priv transaction received */
+			printf("Received INIT event\n\r");
 
 			event = (struct esp_priv_event *) (payload);
 			if (event->event_type == ESP_PRIV_EVENT_INIT) {
@@ -788,6 +754,12 @@ static void process_rx_task(void const* pvParameters)
 			} else {
 				/* User can re-use this type of transaction */
 			}
+		} else if (buf_handle.if_type == ESP_TEST_IF) {
+#if TEST_RAW_TP
+			update_test_raw_tp_rx_len(buf_handle.payload_len);
+#endif
+		} else {
+			printf("unknown type %d \n\r", buf_handle.if_type);
 		}
 
 		/* Free buffer handle */

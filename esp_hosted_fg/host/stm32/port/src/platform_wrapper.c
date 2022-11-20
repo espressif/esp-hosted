@@ -314,7 +314,8 @@ void *hosted_timer_start(int duration, int type,
 	struct timer_handle_t *timer_handle = NULL;
 	int ret = STM_OK;
 	os_timer_type timer_type = osTimerOnce;
-	osTimerDef (timerNew, *timeout_handler);
+	osTimerDef (timerNew, timeout_handler);
+
 
 	/* alloc */
 	timer_handle = (struct timer_handle_t *)hosted_malloc(
@@ -462,7 +463,7 @@ uint8_t * serial_drv_read(struct serial_drv_handle_t *serial_drv_handle,
 	print_hex_dump(read_buf, rx_buf_len, "Serial read data");
 
 /*
- * Read Operation happens in two steps because total read length is unkown
+ * Read Operation happens in two steps because total read length is unknown
  * at first read.
  *      1) Read fixed length of RX data
  *      2) Read variable length of RX data

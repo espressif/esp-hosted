@@ -20,11 +20,7 @@
 extern "C" {
 #endif
 
-#include "cmsis_os.h"
-#include <stdio.h>
-#include <stdint.h>
 #include "common.h"
-#include "adapter.h"
 
 /* Stats CONFIG:
  *
@@ -67,8 +63,9 @@ extern "C" {
 #define TEST_RAW_TP__TIMEOUT         1
 
 void update_test_raw_tp_rx_len(uint16_t len);
+void process_test_capabilities(uint8_t cap);
 
-#define TEST_RAW_TP__BUF_SIZE    500
+#define TEST_RAW_TP__BUF_SIZE    1460
 
 #define ESP_TEST_RAW_TP__RX      0
 #define ESP_TEST_RAW_TP__TX      1

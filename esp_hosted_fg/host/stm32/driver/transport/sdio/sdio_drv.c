@@ -13,21 +13,15 @@
 // limitations under the License.
 
 /** Includes **/
-#include "cmsis_os.h"
 #include "string.h"
 #include "sdio.h"
-#include "gpio.h"
-#include "trace.h"
-#include "stats.h"
-#include "transport_drv.h"
+
 #include "sdio_drv.h"
 #include "sdio_reg.h"
 #include "sdio_host.h"
 #include "sdio_ll.h"
-#include "adapter.h"
 #include "serial_drv.h"
-#include "netdev_if.h"
-#include "platform_wrapper.h"
+#include "stats.h"
 
 /** Constants/Macros **/
 #define TO_SLAVE_QUEUE_SIZE               10
@@ -41,10 +35,10 @@
 #define MAX_PAYLOAD_SIZE (MAX_SDIO_BUFFER_SIZE-sizeof(struct esp_payload_header))
 
 /** Enumeration **/
-typedef enum hardware_type_e {
+enum hardware_type_e {
 	HARDWARE_TYPE_ESP32,
 	HARDWARE_TYPE_INVALID,
-}hardware_type_t;
+};
 
 /** Function declaration **/
 
@@ -55,10 +49,6 @@ static stm_ret_t generate_slave_intr(uint8_t intr_no);
 
 static struct esp_private * esp_priv[MAX_NETWORK_INTERFACES];
 static struct esp_private * get_priv(uint8_t if_type, uint8_t if_num);
-
-static int esp_netdev_open(netdev_handle_t netdev);
-static int esp_netdev_close(netdev_handle_t netdev);
-static int esp_netdev_xmit(netdev_handle_t netdev, struct pbuf *net_buf);
 
 static struct netdev_ops esp_net_ops = {
 	.netdev_open = esp_netdev_open,
@@ -119,50 +109,6 @@ static struct esp_private * get_priv(uint8_t if_type, uint8_t if_num)
 	return NULL;
 }
 
-/**
- * @brief  open virtual network device
- * @param  netdev - network device
- * @retval 0 on success
- */
-static int esp_netdev_open(netdev_handle_t netdev)
-{
-	return STM_OK;
-}
-
-/**
- * @brief  close virtual network device
- * @param  netdev - network device
- * @retval 0 on success
- */
-static int esp_netdev_close(netdev_handle_t netdev)
-{
-	return STM_OK;
-}
-
-/**
- * @brief  transmit on virtual network device
- * @param  netdev - network device
- *         net_buf - buffer to transmit
- * @retval STM_OK for success or failure from enum stm_ret_t
- */
-static int esp_netdev_xmit(netdev_handle_t netdev, struct pbuf *net_buf)
-{
-	struct esp_private *priv = NULL;
-	int ret = 0;
-
-	if (!netdev || !net_buf)
-		return STM_FAIL;
-	priv = (struct esp_private *) netdev_get_priv(netdev);
-
-	if (!priv)
-		return STM_FAIL;
-
-	ret = send_to_slave(priv->if_type, priv->if_num,
-			net_buf->payload, net_buf->len);
-	free(net_buf);
-
-	return ret;
-}
 
 /**
  * @brief  create virtual network device
@@ -174,12 +120,12 @@ static int init_netdev(void)
 {
 	void *ndev = NULL;
 	struct esp_private *priv = NULL;
-	char *if_name = STA_INTERFACE;
-	uint8_t if_type = ESP_STA_IF;
+	char *if_name[MAX_NETWORK_INTERFACES] = {STA_INTERFACE, SOFTAP_INTERFACE, };
+	uint8_t if_type[MAX_NETWORK_INTERFACES] = {ESP_STA_IF, ESP_AP_IF, };
 
 	for (int i = 0; i < MAX_NETWORK_INTERFACES; i++) {
 		/* Alloc and init netdev */
-		ndev = netdev_alloc(sizeof(struct esp_private), if_name);
+		ndev = netdev_alloc(sizeof(struct esp_private), if_name[i]);
 		if (!ndev) {
 			deinit_netdev();
 			return STM_FAIL;
@@ -192,16 +138,13 @@ static int init_netdev(void)
 		}
 
 		priv->netdev = ndev;
-		priv->if_type = if_type;
+		priv->if_type = if_type[i];
 		priv->if_num = 0;
 
 		if (netdev_register(ndev, &esp_net_ops)) {
 			deinit_netdev();
 			return STM_FAIL;
 		}
-
-		if_name = SOFTAP_INTERFACE;
-		if_type = ESP_AP_IF;
 
 		esp_priv[i] = priv;
 	}
@@ -285,149 +228,7 @@ static stm_ret_t io_init_seq(void)
 	return STM_OK;
 }
 
-/** Exported Function **/
-/**
- * @brief  sdio driver initialize
- * @param  transport_evt_handler - event handler of type sdio_drv_events_e
- * @retval None
- */
-void transport_init(void(*transport_evt_handler)(uint8_t))
-{
-	stm_ret_t retval = STM_OK;
 
-	/* Check if supported board */
-	set_hardware_type();
-
-	/* register callback */
-	sdio_drv_evt_handler_fp = transport_evt_handler;
-
-	retval = init_netdev();
-	if (retval) {
-		printf("netdev failed to init\n\r");
-		assert(retval==STM_OK);
-	}
-
-	transmit_mux = xSemaphoreCreateMutex();
-	assert(transmit_mux);
-
-	sdio_recv_SemHandle = xSemaphoreCreateBinary();
-	assert(sdio_recv_SemHandle);
-
-	/* Queue - tx */
-	to_slave_queue = xQueueCreate(TO_SLAVE_QUEUE_SIZE,
-			sizeof(interface_buffer_handle_t));
-	assert(to_slave_queue);
-
-	/* Queue - rx */
-	from_slave_queue = xQueueCreate(FROM_SLAVE_QUEUE_SIZE,
-			sizeof(interface_buffer_handle_t));
-	assert(from_slave_queue);
-
-	/* IO initialization towards slave */
-	io_init_seq();
-
-	/* Task - sdio rx task */
-	osThreadDef(rx_thread, rx_task,
-			osPriorityAboveNormal, 0, RX_TASK_STACK_SIZE);
-	rx_task_id = osThreadCreate(osThread(rx_thread), NULL);
-	assert(rx_task_id);
-
-	/* Task - RX processing */
-	osThreadDef(process_rx_thread, process_rx_task,
-			osPriorityAboveNormal, 0, PROCESS_RX_TASK_STACK_SIZE);
-	process_rx_task_id = osThreadCreate(osThread(process_rx_thread), NULL);
-	assert(process_rx_task_id);
-
-	/* Task - sdio tx task */
-	osThreadDef(tx_thread, tx_task,
-			osPriorityAboveNormal, 0, TX_TASK_STACK_SIZE);
-	tx_task_id = osThreadCreate(osThread(tx_thread), NULL);
-	assert(tx_task_id);
-}
-
-/**
- * @brief  Schedule sdio transaction if -
- *         a. valid TX buffer is ready at sdio host (STM)
- *         b. valid TX buffer is ready at sdio peripheral (ESP)
- *         c. Dummy transaction is expected from sdio peripheral (ESP)
- * @param  argument: Not used
- * @retval None
- */
-
-static void sdio_recv(void)
-{
-	uint32_t intr_st = 0;
-	stm_ret_t ret = STM_OK;
-
-	/* Get interrupt value */
-	ret = sdio_host_get_intr(&intr_st);
-	if(ret || !intr_st) {
-		//vTaskDelay(30);
-		hard_delay(30);
-		return;
-	}
-
-	/* Clear interrupt */
-	xSemaphoreTake(transmit_mux, portMAX_DELAY);
-	/* Clear interrupt */
-	ret = sdio_host_clear_intr(intr_st);
-	if (ret) {
-		//printf("clear intr %lx ret %x\n\r", intr_st, ret);
-		__SDIO_CLEAR_FLAG(SDIO, SDIO_STATIC_DATA_FLAGS);
-	}
-	xSemaphoreGive(transmit_mux);
-
-	/* Fetch interrupt to check if new RX packet pending */
-	if ((intr_st & HOST_SLC0_RX_NEW_PACKET_INT_ST)) {
-
-		/* receive the packet */
-		sdio_trans_func[hardware_type]();
-	}
-}
-
-/** Exported Function **/
-/**
- * @brief  Send to slave via sdio
- * @param  iface_type - type of interface
- *         iface_num - interface number
- *         wbuffer - tx buffer
- *         wlen - size of wbuffer
- * @retval STM_OK for success or failure from enum stm_ret_t
- */
-stm_ret_t send_to_slave(uint8_t iface_type, uint8_t iface_num,
-		uint8_t * wbuffer, uint16_t wlen)
-{
-	interface_buffer_handle_t buf_handle = {0};
-
-	if (!wbuffer || !wlen || (wlen > MAX_PAYLOAD_SIZE)) {
-		printf("write fail: buff(%p) 0? OR (0<len(%u)<=max_poss_len(%u))?\n\r",
-				wbuffer, wlen, MAX_PAYLOAD_SIZE);
-		if(wbuffer) {
-			free(wbuffer);
-			wbuffer = NULL;
-		}
-		return STM_FAIL;
-	}
-	memset(&buf_handle, 0, sizeof(buf_handle));
-
-	buf_handle.if_type = iface_type;
-	buf_handle.if_num = iface_num;
-	buf_handle.payload_len = wlen;
-	buf_handle.payload = wbuffer;
-	buf_handle.priv_buffer_handle = wbuffer;
-	buf_handle.free_buf_handle = free;
-
-	if (pdTRUE != xQueueSend(to_slave_queue, &buf_handle, portMAX_DELAY)) {
-		printf("Failed to send buffer to_slave_queue\n\r");
-		if(wbuffer) {
-			free(wbuffer);
-			wbuffer = NULL;
-		}
-		return STM_FAIL;
-	}
-
-	return STM_OK;
-}
 
 /** Local functions **/
 
@@ -517,6 +318,8 @@ static stm_ret_t sdio_rx_esp32(void)
 				goto done;
 			}
 		}
+	} else {
+		goto done;
 	}
 
 	return STM_OK;
@@ -530,6 +333,44 @@ done:
 	return STM_FAIL;
 }
 
+/**
+ * @brief  Schedule sdio transaction if -
+ *         a. valid TX buffer is ready at sdio host (STM)
+ *         b. valid TX buffer is ready at sdio peripheral (ESP)
+ *         c. Dummy transaction is expected from sdio peripheral (ESP)
+ * @param  argument: Not used
+ * @retval None
+ */
+
+static void sdio_recv(void)
+{
+	uint32_t intr_st = 0;
+	stm_ret_t ret = STM_OK;
+
+	/* Get interrupt value */
+	ret = sdio_host_get_intr(&intr_st);
+	if (ret || !intr_st) {
+		hard_delay(30);
+		return;
+	}
+
+	/* Clear interrupt */
+	xSemaphoreTake(transmit_mux, portMAX_DELAY);
+	/* Clear interrupt */
+	ret = sdio_host_clear_intr(intr_st);
+	if (ret) {
+		//printf("clear intr %lx ret %x\n\r", intr_st, ret);
+		__SDIO_CLEAR_FLAG(SDIO, SDIO_STATIC_DATA_FLAGS);
+	}
+	xSemaphoreGive(transmit_mux);
+
+	/* Fetch interrupt to check if new RX packet pending */
+	if ((intr_st & HOST_SLC0_RX_NEW_PACKET_INT_ST)) {
+
+		/* receive the packet */
+		sdio_trans_func[hardware_type]();
+	}
+}
 
 /**
  * @brief  Task for SDIO RX
@@ -584,7 +425,7 @@ static void process_rx_task(void const* pvParameters)
 			/* serial interface path */
 			serial_rx_handler(&buf_handle);
 
-		} else if((buf_handle.if_type == ESP_STA_IF) ||
+		} else if ((buf_handle.if_type == ESP_STA_IF) ||
 			      (buf_handle.if_type == ESP_AP_IF)) {
 			priv = get_priv(buf_handle.if_type, buf_handle.if_num);
 
@@ -631,7 +472,7 @@ static void process_rx_task(void const* pvParameters)
 			update_test_raw_tp_rx_len(buf_handle.payload_len);
 #endif
 		} else {
-			printf("unkown type %d \n\r", buf_handle.if_type);
+			printf("unknown type %d \n\r", buf_handle.if_type);
 		}
 		/* Free buffer handle */
 		/* When buffer offloaded to other module, that module is
@@ -680,11 +521,8 @@ static void tx_task(void const* pvParameters)
 
 			total_len = buf_handle.payload_len + sizeof(struct esp_payload_header);
 
-			/* Buffer sent on SDIO has to be aligned with ESP_BLOCK_SIZE */
-			total_len = (total_len + (ESP_BLOCK_SIZE-1)) & (~(ESP_BLOCK_SIZE-1));
-
 			/* Allocate tx buffer */
-			sendbuf = (uint8_t *) malloc(total_len);
+			sendbuf = (uint8_t *)malloc(total_len);
 
 			if (!sendbuf) {
 				printf("malloc failed\n\r");
@@ -701,10 +539,6 @@ static void tx_task(void const* pvParameters)
 			payload_header->if_num = buf_handle.if_num;
 			payload_header->reserved2 = 0;
 
-		//	if (adapter.capabilities & ESP_CHECKSUM_ENABLED)
-		//		payload_header->checksum = cpu_to_le16(compute_checksum(skb->data, (len + pad_len)));
-
-
 			/* Copy payload */
 			memcpy(payload, buf_handle.payload, buf_handle.payload_len);
 			/* Send packet */
@@ -714,22 +548,120 @@ static void tx_task(void const* pvParameters)
 
 			if (ret == STM_FAIL_TIMEOUT) {
 				printf("send timeout, maybe SDIO slave restart, reinit SDIO slave\n\r");
-				free(sendbuf);
-				sendbuf = NULL;
-				goto done;
+			} else if (ret != STM_OK) {
+				printf("sdio send err 0x%x\n\r", ret);
 			}
 			/* De-allocate tx buffer */
 			free(sendbuf);
 			sendbuf = NULL;
-
-			if (ret != STM_OK) {
-				printf("sdio send err 0x%x\n\r", ret);
-			}
-
 done:
 			/* free allocated buffer */
 			if (buf_handle.free_buf_handle)
 				buf_handle.free_buf_handle(buf_handle.priv_buffer_handle);
 		}
 	}
+}
+
+/** Exported Function **/
+
+/**
+  * @brief  transport initializes
+  * @param  transport_evt_handler_fp - event handler
+  * @retval None
+ */
+void transport_init(void(*transport_evt_handler_fp)(uint8_t))
+{
+	stm_ret_t retval = STM_OK;
+
+	/* Check if supported board */
+	set_hardware_type();
+
+	/* register callback */
+	sdio_drv_evt_handler_fp = transport_evt_handler_fp;
+
+	retval = init_netdev();
+	if (retval) {
+		printf("netdev failed to init\n\r");
+		assert(retval==STM_OK);
+	}
+
+	transmit_mux = xSemaphoreCreateMutex();
+	assert(transmit_mux);
+
+	sdio_recv_SemHandle = xSemaphoreCreateBinary();
+	assert(sdio_recv_SemHandle);
+
+	/* Queue - tx */
+	to_slave_queue = xQueueCreate(TO_SLAVE_QUEUE_SIZE,
+			sizeof(interface_buffer_handle_t));
+	assert(to_slave_queue);
+
+	/* Queue - rx */
+	from_slave_queue = xQueueCreate(FROM_SLAVE_QUEUE_SIZE,
+			sizeof(interface_buffer_handle_t));
+	assert(from_slave_queue);
+
+	/* Task - sdio rx task */
+	osThreadDef(rx_thread, rx_task,
+			osPriorityAboveNormal, 0, RX_TASK_STACK_SIZE);
+	rx_task_id = osThreadCreate(osThread(rx_thread), NULL);
+	assert(rx_task_id);
+
+	/* Task - RX processing */
+	osThreadDef(process_rx_thread, process_rx_task,
+			osPriorityAboveNormal, 0, PROCESS_RX_TASK_STACK_SIZE);
+	process_rx_task_id = osThreadCreate(osThread(process_rx_thread), NULL);
+	assert(process_rx_task_id);
+
+	/* Task - sdio tx task */
+	osThreadDef(tx_thread, tx_task,
+			osPriorityAboveNormal, 0, TX_TASK_STACK_SIZE);
+	tx_task_id = osThreadCreate(osThread(tx_thread), NULL);
+	assert(tx_task_id);
+
+	/* IO initialization towards slave */
+	io_init_seq();
+
+}
+
+/**
+ * @brief  Send to slave via sdio
+ * @param  iface_type - type of interface
+ *         iface_num - interface number
+ *         wbuffer - tx buffer
+ *         wlen - size of wbuffer
+ * @retval STM_OK for success or failure from enum stm_ret_t
+ */
+stm_ret_t send_to_slave(uint8_t iface_type, uint8_t iface_num,
+		uint8_t * wbuffer, uint16_t wlen)
+{
+	interface_buffer_handle_t buf_handle = {0};
+
+	if (!wbuffer || !wlen || (wlen > MAX_PAYLOAD_SIZE)) {
+		printf("write fail: buff(%p) 0? OR (0<len(%u)<=max_poss_len(%u))?\n\r",
+				wbuffer, wlen, MAX_PAYLOAD_SIZE);
+		if (wbuffer) {
+			free(wbuffer);
+			wbuffer = NULL;
+		}
+		return STM_FAIL;
+	}
+
+	buf_handle.if_type = iface_type;
+	buf_handle.if_num = iface_num;
+	buf_handle.payload_len = wlen;
+	buf_handle.payload = wbuffer;
+	buf_handle.priv_buffer_handle = wbuffer;
+	buf_handle.free_buf_handle = free;
+
+	if (pdTRUE != xQueueSend(to_slave_queue, &buf_handle, portMAX_DELAY)) {
+		printf("Failed to send buffer to_slave_queue\n\r");
+		if (wbuffer) {
+			free(wbuffer);
+			wbuffer = NULL;
+		}
+		return STM_FAIL;
+	}
+
+	return STM_OK;
 }

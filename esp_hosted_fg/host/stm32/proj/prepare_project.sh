@@ -49,6 +49,10 @@ fi
 
 if [ ! -d $WORKSPACE ]; then
 	echo "Err: $WORKSPACE directory not found. Please follow documentation to import STM project from stm_<transport>_host_<ESP_slave_board_type>.ioc first"
+	echo "<ESP_slave_board_type> is applicable only for SPI transport"
+	echo "SPI : for ESP32 wroom/wrover use stm_spi_host_v1.ioc "
+	echo "	  : for other ESP modules use stm_spi_host_v2.ioc"
+	echo "SDIO: for ESP32 use stm_sdio_host.ioc"
 	usage
 	exit 1;
 fi

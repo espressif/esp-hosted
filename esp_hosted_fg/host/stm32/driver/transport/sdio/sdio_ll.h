@@ -21,7 +21,6 @@
 #define __SDIO_LL_H
 
 /** Includes **/
-#include <stdint.h>
 
 /** Constants/Macros **/
 typedef enum {

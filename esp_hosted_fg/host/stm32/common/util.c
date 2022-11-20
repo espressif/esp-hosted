@@ -17,7 +17,6 @@
 #include "util.h"
 #include "ctype.h"
 #include "string.h"
-#include "trace.h"
 
 /** Constants/Macros **/
 

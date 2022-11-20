@@ -44,12 +44,6 @@ extern "C" {
 
 /** Exported Functions **/
 
-struct esp_private {
-	uint8_t     if_type;
-	uint8_t     if_num;
-	void        *netdev;
-};
-
 #ifdef __cplusplus
 }
 #endif

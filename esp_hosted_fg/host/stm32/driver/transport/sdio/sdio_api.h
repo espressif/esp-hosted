@@ -17,7 +17,6 @@
 #define __SDIO_API_H
 
 /** Includes **/
-#include "common.h"
 
 /** constants/macros **/
 

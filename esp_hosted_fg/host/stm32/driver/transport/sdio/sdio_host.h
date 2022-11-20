@@ -17,9 +17,9 @@
 #define __SDIO_HOST_H
 
 /** Includes **/
-#include "common.h"
 
 /** constants/macros **/
+#define MAX_SDIO_SCRATCH_REG_SUPPORTED  8
 
 /** Exported Structures **/
 

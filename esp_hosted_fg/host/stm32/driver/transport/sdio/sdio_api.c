@@ -13,18 +13,14 @@
 // limitations under the License.
 
 /** Includes **/
-#include <stdio.h>
-#include <stdint.h>
-#include <string.h>
-#include "FreeRTOS.h"
-#include "semphr.h"
 #include "common.h"
 #include "sdio_ll.h"
-#include "gpio.h"
 
 /** Constants/Macros **/
-#define SDIO_CLOCK                      4000000
-#define MAX_SUPPORTED_SDIO_CLOCK        4000000
+
+#define CLK_IN_MHZ                      1000000
+#define SDIO_CLOCK                      10*CLK_IN_MHZ
+#define MAX_SUPPORTED_SDIO_CLOCK        10*CLK_IN_MHZ
 
 /**
  * @brief  Probe and initialize SDIO slave using given host
@@ -63,7 +59,7 @@ stm_ret_t sdio_driver_read_bytes(uint32_t function, uint32_t addr, void* buffer,
 {
 	int ret = 0;
 	ret = STM32ReadData(function, addr, buffer, len, multi_blocks);
-	if(ret){
+	if (ret) {
 		printf("%s %d CMD53 error\r\n",__func__, __LINE__);
 		return STM_FAIL;
 	}
@@ -83,7 +79,7 @@ stm_ret_t sdio_driver_write_bytes(uint32_t function, uint32_t addr,
 		void* buffer, uint32_t len)
 {
 	int ret = STM32WriteData(function, addr, buffer, len);
-	if(ret < 0){
+	if (ret < 0) {
 		printf("%s CMD53 write error\r\n",__func__);
 		return STM_FAIL;
 	}
@@ -118,7 +114,7 @@ stm_ret_t sdio_driver_read_blocks(uint32_t function, uint32_t addr,
 	stm_ret_t ret = STM_OK;
 
 	ret = sdio_driver_read_bytes(function, addr, buffer, len, multi_blocks);
-	if(ret){
+	if (ret) {
 		printf("%s %d CMD53 error\r\n",__func__, __LINE__);
 		return STM_FAIL;
 	}

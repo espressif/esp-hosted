@@ -232,7 +232,7 @@
 									<listOptionValue builtIn="false" value="&quot;${CODE_BASE}/host/stm32/driver/network&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${CODE_BASE}/host/stm32/driver/netif&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${CODE_BASE}/host/stm32/driver/serial&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${CODE_BASE}/host/stm32/driver/sdio&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${CODE_BASE}/host/stm32/driver/transport/sdio&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${CODE_BASE}/host/stm32/app/control&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${CODE_BASE}/host/stm32/app/data&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${CODE_BASE}/host/stm32/app&quot;"/>
@@ -265,7 +265,7 @@
 						</toolChain>
 					</folderInfo>
 					<sourceEntries>
-						<entry excluding="stm32/driver/spi|linux|LICENSES" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="host"/>
+						<entry excluding="stm32/driver/transport/spi|linux|LICENSES" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="host"/>
 						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="Core"/>
 						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="Middlewares"/>
 						<entry excluding="protobuf-c/t/" flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="common"/>

@@ -13,15 +13,11 @@
 // limitations under the License.
 
 /** Includes **/
-#include <stdio.h>
-#include <stdint.h>
-#include <string.h>
 #include "sdio_reg.h"
 #include "sdio_api.h"
 #include "sdio_host.h"
 #include "sdio_ll.h"
 #include "FreeRTOS.h"
-#include "task.h"
 #include "trace.h"
 
 /** Macros/Constants **/
@@ -34,10 +30,10 @@
 
 /** Global Variable **/
 /* Counter to hold the amount of buffers already sent to sdio slave */
-static uint32_t tx_sent_buffers = 0;
+static uint32_t sdio_esp_tx_bytes = 0;
 
 /* Counter to hold the amount of bytes already received from sdio slave */
-static uint32_t rx_got_bytes   = 0;
+static uint32_t sdio_esp_rx_bytes   = 0;
 
 /** Functions Declaration **/
 
@@ -158,31 +154,28 @@ static stm_ret_t esp_sdio_slave_get_rx_data_size(uint32_t* rx_size)
 	stm_ret_t err = sdio_driver_read_bytes(SDIO_FUNC_1,
 			SDIO_REG(ESP_SLAVE_PACKET_LEN_REG), &len, 4, 0);
 	if (err) {
+		printf("Err while reading ESP_SLAVE_PACKET_LEN_REG\n\r");
 		return err;
 	}
 	len &= ESP_SLAVE_LEN_MASK;
-	//len = (len + ESP_SLAVE_LEN_MASK - rx_got_bytes)%ESP_SLAVE_LEN_MASK;
-	if(len >= rx_got_bytes) {
-		len = (len + ESP_RX_BYTE_MAX - rx_got_bytes)%ESP_RX_BYTE_MAX;
+	if (len >= sdio_esp_rx_bytes) {
+		len = (len + ESP_RX_BYTE_MAX - sdio_esp_rx_bytes)%ESP_RX_BYTE_MAX;
 	} else {
-		temp = ESP_RX_BYTE_MAX - rx_got_bytes;
+		temp = ESP_RX_BYTE_MAX - sdio_esp_rx_bytes;
 		len = temp + len;
-
+		if (len > MAX_SDIO_BUFFER_SIZE) {
+			printf("%s: Len from slave[%lu] exceeds max [%d]\n",
+					__func__, len, MAX_SDIO_BUFFER_SIZE);
+		}
 	}
-
 #if 0
-	//TODO: unsure ym2
-	/* length is expected to be in multiple of ESP_BLOCK_SIZE */
-	if(len&(ESP_BLOCK_SIZE-1))
-		return STM_FAIL;
+       /* length is expected to be in multiple of ESP_BLOCK_SIZE */
+       if(len&(ESP_BLOCK_SIZE-1))
+               return STM_FAIL;
 #endif
 
-	if (len > MAX_SDIO_BUFFER_SIZE) {
-		printf("%s: Len from slave[%lu] exceeds max [%d]\n",
-				__func__, len, MAX_SDIO_BUFFER_SIZE);
-	}
-
-	*rx_size = len;
+	if (rx_size)
+		*rx_size = len;
 	return STM_OK;
 }
 
@@ -227,7 +220,6 @@ stm_ret_t sdio_host_get_packet(void* out_data, size_t size,
 			return STM_FAIL_TIMEOUT;
 		}
 
-		//vTaskDelay(1);
 		hard_delay(1);
 	}
 
@@ -277,9 +269,9 @@ stm_ret_t sdio_host_get_packet(void* out_data, size_t size,
 	} while (len_remain != 0);
 
 	*out_length = len;
-	rx_got_bytes += len;
-	if (rx_got_bytes >= ESP_RX_BYTE_MAX) {
-		rx_got_bytes -= ESP_RX_BYTE_MAX;
+	sdio_esp_rx_bytes += len;
+	if (sdio_esp_rx_bytes >= ESP_RX_BYTE_MAX) {
+		sdio_esp_rx_bytes -= ESP_RX_BYTE_MAX;
 	}
 
 	return STM_OK;
@@ -344,9 +336,9 @@ static uint32_t esp_sdio_host_get_buffer_size(void)
 	}
 
 	len = (len >> ESP_SDIO_SEND_OFFSET) & ESP_TX_BUFFER_MASK;
-	len = (len + ESP_TX_BUFFER_MAX - tx_sent_buffers) % ESP_TX_BUFFER_MAX;
+	len = (len + ESP_TX_BUFFER_MAX - sdio_esp_tx_bytes) % ESP_TX_BUFFER_MAX;
 #if DEBUG_TRANSPORT
-	//printf("Read ESP32 len: %lu\n\r", len);
+	/*printf("%s len %lu \n\r", __func__, len);*/
 #endif
 	return len;
 }
@@ -359,7 +351,7 @@ static uint32_t esp_sdio_host_get_buffer_size(void)
 stm_ret_t sdio_host_send_intr(uint8_t intr_no)
 {
 	uint32_t intr_mask = 0;
-	if (intr_no >= 8) {
+	if (intr_no >= MAX_SDIO_SCRATCH_REG_SUPPORTED) {
 		printf(" Error interrupt number\n\r");
 		return STM_FAIL_INVALID_ARG;
 	}
@@ -387,7 +379,7 @@ stm_ret_t sdio_host_send_packet(const void* start, uint32_t length)
 
 	buffer_used = (length + ESP_BLOCK_SIZE - 1) / ESP_BLOCK_SIZE;
 
-#if 1
+#if 0
 	while (1) {
 		num = esp_sdio_host_get_buffer_size();
 #if DEBUG_TRANSPORT
@@ -402,12 +394,12 @@ stm_ret_t sdio_host_send_packet(const void* start, uint32_t length)
 				printf("buff not enough: curr[%lu], exp[%d], retry..\n\r", num, buffer_used);
 			}
 
-			//vTaskDelay(1);
 			hard_delay(1);
 		}  else {
 			break;
 		}
 	}
+
 #endif
 	do {
 		/* Though the driver supports to split packet of unaligned size into
@@ -437,10 +429,10 @@ stm_ret_t sdio_host_send_packet(const void* start, uint32_t length)
 		len_remain -= len_to_send;
 	} while (len_remain);
 
-	if (tx_sent_buffers >= ESP_TX_BUFFER_MAX) {
-		tx_sent_buffers -= ESP_TX_BUFFER_MAX;
+	if (sdio_esp_tx_bytes >= ESP_TX_BUFFER_MAX) {
+		sdio_esp_tx_bytes -= ESP_TX_BUFFER_MAX;
 	}
 
-	tx_sent_buffers += buffer_used;
+	sdio_esp_tx_bytes += buffer_used;
 	return STM_OK;
 }

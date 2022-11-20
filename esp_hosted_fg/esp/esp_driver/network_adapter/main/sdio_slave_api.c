@@ -26,10 +26,10 @@
 #include "mempool.h"
 #include "stats.h"
 
-#define SDIO_SLAVE_QUEUE_SIZE 20
-#define BUFFER_SIZE     1536 /* 512*3 */
-#define BUFFER_NUM      10
-#define SDIO_BLOCK_SIZE 512
+#define SDIO_SLAVE_QUEUE_SIZE   20
+#define BUFFER_SIZE     	1536 /* 512*3 */
+#define BUFFER_NUM      	10
+#define SDIO_BLOCK_SIZE 	512
 static uint8_t sdio_slave_rx_buffer[BUFFER_NUM][BUFFER_SIZE];
 
 static struct mempool * buf_mp_g;
@@ -135,6 +135,11 @@ void generate_startup_event(uint8_t cap)
 	pos = event->event_data;
 
 	/* TLVs start */
+
+	/* TLV - Board type */
+	*pos = ESP_PRIV_FIRMWARE_CHIP_ID;   pos++;len++;
+	*pos = LENGTH_1_BYTE;               pos++;len++;
+	*pos = CONFIG_IDF_FIRMWARE_CHIP_ID; pos++;len++;
 
 	/* TLV - Capability */
 	*pos = ESP_PRIV_CAPABILITY;         pos++;len++;
@@ -261,14 +266,12 @@ static int32_t sdio_write(interface_handle_t *handle, interface_buffer_handle_t 
 
 	total_len = buf_handle->payload_len + sizeof (struct esp_payload_header);
 
-	total_len = (total_len+(SDIO_BLOCK_SIZE-1)) & (~(SDIO_BLOCK_SIZE-1));
 	sendbuf = sdio_buffer_alloc(MEMSET_REQUIRED);
 	if (sendbuf == NULL) {
 		ESP_LOGE(TAG , "Malloc send buffer fail!");
 		return ESP_FAIL;
 	}
 
-	memset(sendbuf, 0, total_len);
 	header = (struct esp_payload_header *) sendbuf;
 
 	memset (header, 0, sizeof(struct esp_payload_header));
@@ -310,22 +313,18 @@ static int sdio_read(interface_handle_t *if_handle, interface_buffer_handle_t *b
 	size_t sdio_read_len = 0;
 
 
-	if (!if_handle) {
+	if (!if_handle || !buf_handle) {
 		ESP_LOGE(TAG, "Invalid arguments to sdio_read");
 		return ESP_FAIL;
 	}
 
-	if (if_handle->state != ACTIVE) {
+	if (if_handle->state != ACTIVE)
 		return ESP_FAIL;
-	}
 
 	ret = sdio_slave_recv(&(buf_handle->sdio_buf_handle), &(buf_handle->payload),
 			&(sdio_read_len), portMAX_DELAY);
-	if(ret) {
-		free(buf_handle);
-		buf_handle = NULL;
-		return NULL;
-	}
+	if (ret)
+		return ESP_FAIL;
 
 	buf_handle->payload_len = sdio_read_len & 0xFFFF;
 
@@ -348,7 +347,6 @@ static int sdio_read(interface_handle_t *if_handle, interface_buffer_handle_t *b
 	buf_handle->if_type = header->if_type;
 	buf_handle->if_num = header->if_num;
 	buf_handle->free_buf_handle = sdio_read_done;
-
 	return len;
 }
 

@@ -21,26 +21,13 @@
 
 /** Constants/Macros **/
 
-
-
 /** Exported Structures **/
-struct esp_private {
-	uint8_t     if_type;
-	uint8_t     if_num;
-	void        *netdev;
-};
 
 /** Exported variables **/
 
 /** Inline functions **/
 
 /** Exported Functions **/
-/**
- * @brief  sdio driver initialize
- * @param  transport_evt_handler - event handler of type sdio_drv_events_e
- * @retval None
- */
-void transport_init(void(*sdio_drv_evt_handler)(uint8_t));
 
 /**
  * Send to slave via sdio
