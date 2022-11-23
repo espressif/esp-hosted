@@ -82,10 +82,10 @@ struct command_node {
 
 struct esp_adapter {
 	struct device           *dev;
-	struct wiphy			*wiphy;
+	struct wiphy            *wiphy;
 
-	u8                      if_type;
-	u32                     capabilities;
+	uint8_t                 if_type;
+	uint32_t                capabilities;
 
 	/* Possible types:
 	 * struct esp_sdio_context */
@@ -98,10 +98,10 @@ struct esp_adapter {
 	struct hci_dev          *hcidev;
 
 	struct workqueue_struct *if_rx_workqueue;
-	struct work_struct       if_rx_work;
+	struct work_struct      if_rx_work;
 
-	wait_queue_head_t		wait_for_cmd_resp;
-	u8						cmd_resp;
+	wait_queue_head_t       wait_for_cmd_resp;
+	uint8_t                 cmd_resp;
 
 	/* wpa supplicant commands structures */
 	struct command_node     *cmd_pool;
@@ -110,8 +110,8 @@ struct esp_adapter {
 	struct list_head        cmd_pending_queue;
 	spinlock_t              cmd_pending_queue_lock;
 
-	struct command_node		*cur_cmd;
-	spinlock_t				cmd_lock;
+	struct command_node     *cur_cmd;
+	spinlock_t              cmd_lock;
 
 	struct workqueue_struct *cmd_wq;
 	struct work_struct      cmd_work;
@@ -124,53 +124,46 @@ struct esp_adapter {
 };
 
 struct esp_device {
-	struct device			*dev;
-	struct wiphy			*wiphy;
-	struct esp_adapter		*adapter;
+	struct device           *dev;
+	struct wiphy            *wiphy;
+	struct esp_adapter      *adapter;
 };
 
 struct esp_wifi_device {
-	struct wireless_dev		wdev;
-	struct net_device		*ndev;
-	struct esp_device		*esp_dev;
+	struct wireless_dev     wdev;
+	struct net_device       *ndev;
+	struct esp_device       *esp_dev;
 	struct esp_adapter      *adapter;
 
 	struct net_device_stats stats;
-	u8                      link_state;
-	u8                      mac_address[MAC_ADDR_LEN];
-	u8                      if_type;
-	u8                      if_num;
+	uint8_t                 mac_address[MAC_ADDR_LEN];
+	uint8_t                 if_type;
+	uint8_t                 if_num;
 
-	int                     ssid_len;
-	u8                      ssid[32];
-
-	volatile u8             stop_data;
-	volatile u8             port_open;
+	uint32_t                ssid_len;
+	uint8_t                 ssid[32];
 
 	/* This is needed to notify scan completion*/
 	struct cfg80211_scan_request *request;
+	struct cfg80211_bss     *bss;
+	uint8_t                 *assoc_req_ie;
+	size_t                  assoc_req_ie_len;
 
 	uint8_t                 scan_in_progress;
 	uint8_t                 waiting_for_scan_done;
+
+	uint8_t                 link_state;
+
+	volatile uint8_t        stop_data;
+	volatile uint8_t        port_open;
+
+	uint8_t                 pad[3];
 	wait_queue_head_t       wait_for_scan_completion;
 	unsigned long           priv_flags;
 };
 
 
-#if 0
-struct esp_private {
-	struct esp_adapter      *adapter;
-	struct net_device       *ndev;
-	struct net_device_stats stats;
-	u8                      link_state;
-	u8                      mac_address[6];
-	u8                      if_type;
-	u8                      if_num;
-};
-#endif
-
 struct esp_skb_cb {
-/*	struct esp_private      *priv;*/
 	struct esp_wifi_device      *priv;
 };
 #endif

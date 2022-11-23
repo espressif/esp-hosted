@@ -122,11 +122,23 @@ struct wireless_dev *esp_cfg80211_add_iface(struct wiphy *wiphy,
                               enum nl80211_iftype type,
                               struct vif_params *params)
 {
-	struct esp_device *esp_dev = wiphy_priv(wiphy);
+	struct esp_device *esp_dev = NULL;
 /*	struct wireless_dev *wdev = NULL;*/
 	struct net_device *ndev;
 	struct esp_wifi_device *esp_wdev;
 	uint8_t esp_nw_if_num = 0;
+
+	if (!wiphy || !name) {
+		printk(KERN_INFO "%s:%u invalid input\n", __func__, __LINE__);
+		return NULL;
+	}
+
+	esp_dev = wiphy_priv(wiphy);
+
+	if (!esp_dev || !esp_dev->adapter) {
+		printk(KERN_INFO "%s:%u invalid input\n", __func__, __LINE__);
+		return NULL;
+	}
 
 	if (NL80211_IFTYPE_STATION == type) {
 		esp_nw_if_num = ESP_STA_NW_IF;
@@ -211,11 +223,21 @@ static int esp_cfg80211_change_iface(struct wiphy *wiphy,
 #endif
 
 static int esp_cfg80211_scan(struct wiphy *wiphy,
-					  		  struct cfg80211_scan_request *request)
+		struct cfg80211_scan_request *request)
 {
-	struct net_device *ndev = request->wdev->netdev;
-	struct esp_wifi_device *priv = netdev_priv(ndev);
 
+	struct net_device *ndev = NULL;
+	struct esp_wifi_device *priv = NULL;
+
+	if (!wiphy || !request || !request->wdev || !request->wdev->netdev) {
+		printk(KERN_INFO "%s:%u invalid input\n", __func__, __LINE__);
+		return -EINVAL;
+	}
+
+	ndev = request->wdev->netdev;
+	priv = netdev_priv(ndev);
+
+	printk(KERN_INFO "%s\n", __func__);
 	if (!priv) {
 		printk(KERN_ERR "%s: empty priv\n", __func__);
 		return -EINVAL;
@@ -224,11 +246,13 @@ static int esp_cfg80211_scan(struct wiphy *wiphy,
 	return cmd_scan_request(priv, request);
 }
 
+#if 0
 static int esp_cfg80211_connect(struct wiphy *wiphy, struct net_device *dev,
 							  struct cfg80211_connect_params *sme)
 {
 	struct esp_wifi_device *priv = netdev_priv(dev);
 
+	printk(KERN_INFO "%s\n", __func__);
 	if (!priv) {
 		printk(KERN_ERR "%s: empty priv\n", __func__);
 		return -EINVAL;
@@ -236,6 +260,7 @@ static int esp_cfg80211_connect(struct wiphy *wiphy, struct net_device *dev,
 
 	return cmd_connect_request(priv, sme);
 }
+#endif
 
 static ESP_MGMT_TX_PROTOTYPE()
 {
@@ -245,8 +270,14 @@ static ESP_MGMT_TX_PROTOTYPE()
 static int esp_cfg80211_set_default_key(struct wiphy *wiphy,
 		struct net_device *dev, u8 key_index, bool unicast, bool multicast)
 {
-	struct esp_wifi_device *priv = netdev_priv(dev);
+	struct esp_wifi_device *priv = NULL;
 
+	if (!wiphy || !dev) {
+		printk(KERN_ERR "%s:%u invalid params\n", __func__, __LINE__);
+		return -EINVAL;
+	}
+
+	priv = netdev_priv(dev);
 	if (!priv) {
 		printk(KERN_ERR "%s: empty priv\n", __func__);
 		return -EINVAL;
@@ -258,8 +289,14 @@ static int esp_cfg80211_set_default_key(struct wiphy *wiphy,
 static int esp_cfg80211_del_key(struct wiphy *wiphy, struct net_device *dev,
              u8 key_index, bool pairwise, const u8 *mac_addr)
 {
-	struct esp_wifi_device *priv = netdev_priv(dev);
+	struct esp_wifi_device *priv = NULL;
 
+	if (!wiphy || !dev) {
+		printk(KERN_ERR "%s:%u invalid params\n", __func__, __LINE__);
+		return -EINVAL;
+	}
+
+	priv = netdev_priv(dev);
 	if (!priv) {
 		printk(KERN_ERR "%s: empty priv\n", __func__);
 		return -EINVAL;
@@ -272,8 +309,14 @@ static int esp_cfg80211_add_key(struct wiphy *wiphy, struct net_device *dev,
 		 u8 key_index, bool pairwise, const u8 *mac_addr,
 		 struct key_params *params)
 {
-	struct esp_wifi_device *priv = netdev_priv(dev);
+	struct esp_wifi_device *priv = NULL;
 
+	if (!wiphy || !dev || !params) {
+		printk(KERN_ERR "%s:%u invalid params\n", __func__, __LINE__);
+		return -EINVAL;
+	}
+
+	priv = netdev_priv(dev);
 	if (!priv) {
 		printk(KERN_ERR "%s: empty priv\n", __func__);
 		return -EINVAL;
@@ -288,7 +331,14 @@ static int esp_cfg80211_add_key(struct wiphy *wiphy, struct net_device *dev,
 static int esp_cfg80211_disconnect(struct wiphy *wiphy,
 		struct net_device *dev, u16 reason_code)
 {
-	struct esp_wifi_device *priv = netdev_priv(dev);
+	struct esp_wifi_device *priv = NULL;
+
+	if (!wiphy || !dev) {
+		printk(KERN_INFO "%s:%u invalid input\n", __func__, __LINE__);
+		return -EINVAL;
+	}
+
+	priv = netdev_priv(dev);
 
 	if (!priv) {
 		printk(KERN_ERR "%s: empty priv\n", __func__);
@@ -298,6 +348,94 @@ static int esp_cfg80211_disconnect(struct wiphy *wiphy,
 	return cmd_disconnect_request(priv, reason_code);
 }
 
+
+static int esp_cfg80211_authenticate(struct wiphy *wiphy, struct net_device *dev,
+		struct cfg80211_auth_request *req)
+{
+	struct esp_wifi_device *priv = NULL;
+
+	if (!wiphy || !dev || !req) {
+		printk(KERN_INFO "%s:%u invalid input\n", __func__, __LINE__);
+		return -EINVAL;
+	}
+
+	printk(KERN_INFO "%s\n", __func__);
+
+	priv = netdev_priv(dev);
+
+	if (!priv) {
+		printk(KERN_ERR "%s: empty priv\n", __func__);
+		return 0;
+	}
+
+	return cmd_auth_request(priv, req);
+}
+
+
+static int esp_cfg80211_associate(struct wiphy *wiphy, struct net_device *dev,
+		struct cfg80211_assoc_request *req)
+{
+	struct esp_wifi_device *priv = NULL;
+
+	if (!wiphy || !dev || !req) {
+		printk(KERN_INFO "%s:%u invalid input\n", __func__, __LINE__);
+		return -EINVAL;
+	}
+
+	priv = netdev_priv(dev);
+
+	printk(KERN_INFO "%s\n", __func__);
+
+	if (!priv) {
+		printk(KERN_ERR "%s: empty priv\n", __func__);
+		return 0;
+	}
+
+	return cmd_assoc_request(priv, req);
+}
+
+static int esp_cfg80211_deauth(struct wiphy *wiphy, struct net_device *dev,
+		struct cfg80211_deauth_request *req)
+{
+	struct esp_wifi_device *priv = NULL;
+
+	if (!wiphy || !dev || !req) {
+		printk(KERN_INFO "%s:%u invalid input\n", __func__, __LINE__);
+		return -EINVAL;
+	}
+
+	printk(KERN_INFO "%s\n", __func__);
+	priv = netdev_priv(dev);
+
+	if (!priv) {
+		printk(KERN_ERR "%s: empty priv\n", __func__);
+		return 0;
+	}
+
+	return cmd_disconnect_request(priv, req->reason_code);
+}
+
+static int esp_cfg80211_disassoc(struct wiphy *wiphy, struct net_device *dev,
+		struct cfg80211_disassoc_request *req)
+{
+	struct esp_wifi_device *priv = NULL;
+
+	if (!wiphy || !dev || !req) {
+		printk(KERN_INFO "%s:%u invalid input\n", __func__, __LINE__);
+		return -EINVAL;
+	}
+
+	printk(KERN_INFO "%s\n", __func__);
+	priv = netdev_priv(dev);
+
+	if (!priv) {
+		printk(KERN_ERR "%s: empty priv\n", __func__);
+		return 0;
+	}
+
+	return cmd_disconnect_request(priv, req->reason_code);
+}
+
 static struct cfg80211_ops esp_cfg80211_ops = {
 #if 0
 	.add_virtual_intf = esp_cfg80211_add_iface,
@@ -305,12 +443,16 @@ static struct cfg80211_ops esp_cfg80211_ops = {
 	.change_virtual_intf = esp_cfg80211_change_iface,
 #endif
 	.scan = esp_cfg80211_scan,
-	.connect = esp_cfg80211_connect,
+	/*.connect = esp_cfg80211_connect,*/
 	.disconnect = esp_cfg80211_disconnect,
 	.add_key = esp_cfg80211_add_key,
 	.del_key = esp_cfg80211_del_key,
 	.set_default_key = esp_cfg80211_set_default_key,
 	.mgmt_tx = esp_cfg80211_mgmt_tx,
+	.auth = esp_cfg80211_authenticate,
+	.deauth = esp_cfg80211_deauth,
+	.disassoc = esp_cfg80211_disassoc,
+	.assoc = esp_cfg80211_associate,
 };
 
 int esp_cfg80211_register(struct esp_adapter *adapter)
@@ -349,6 +491,9 @@ int esp_cfg80211_register(struct esp_adapter *adapter)
 	wiphy->max_scan_ie_len = 1000;
 	wiphy->max_sched_scan_ssids = 10;
 	wiphy->signal_type = CFG80211_SIGNAL_TYPE_MBM;
+
+	/* Advertise SAE support */
+	wiphy->features |= NL80211_FEATURE_SAE;
 
 	ret = wiphy_register(wiphy);
 

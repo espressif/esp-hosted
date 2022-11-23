@@ -39,6 +39,10 @@ int cmd_get_mac(struct esp_wifi_device *priv);
 int process_cmd_event(struct esp_wifi_device *priv, struct sk_buff *skb);
 int cmd_connect_request(struct esp_wifi_device *priv,
 		struct cfg80211_connect_params *params);
+int cmd_auth_request(struct esp_wifi_device *priv,
+		struct cfg80211_auth_request *req);
+int cmd_assoc_request(struct esp_wifi_device *priv,
+		struct cfg80211_assoc_request *req);
 int cmd_disconnect_request(struct esp_wifi_device *priv, u16 reason_code);
 int cmd_add_key(struct esp_wifi_device *priv, u8 key_index, bool pairwise,
 		const u8 *mac_addr, struct key_params *params);
