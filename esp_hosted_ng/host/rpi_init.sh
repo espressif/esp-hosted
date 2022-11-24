@@ -17,6 +17,7 @@
 
 RESETPIN=""
 BT_UART_INIT="0"
+TEST_RAW_TP="0"
 IF_TYPE="sdio"
 MODULE_NAME="esp32_${IF_TYPE}.ko"
 RPI_RESETPIN=6
@@ -40,11 +41,18 @@ wlan_init()
         fi
     fi
 
+    if [ "$TEST_RAW_TP" = "0" ] ; then
+        VAL_CONFIG_TEST_RAW_TP=n
+    else
+        VAL_CONFIG_TEST_RAW_TP=y
+    fi
+
     # For Linux other than Raspberry Pi, Please point
     # CROSS_COMPILE -> <Toolchain-Path>/bin/arm-linux-gnueabihf-
     # KERNEL        -> Place where kernel is checked out and built
     # ARCH          -> Architecture
-    make -j8 target=$IF_TYPE CROSS_COMPILE=/usr/bin/arm-linux-gnueabihf- KERNEL="/lib/modules/$(uname -r)/build" ARCH=arm
+    make -j8 target=$IF_TYPE CROSS_COMPILE=/usr/bin/arm-linux-gnueabihf- KERNEL="/lib/modules/$(uname -r)/build" \
+    CONFIG_TEST_RAW_TP="$VAL_CONFIG_TEST_RAW_TP" ARCH=arm
 
     if [ "$RESETPIN" = "" ] ; then
         #By Default, BCM6 is GPIO on host. use resetpin=6
@@ -114,6 +122,10 @@ parse_arguments()
             btuart)
                 echo "Recvd Option: $1"
                 BT_UART_INIT="1"
+                ;;
+            rawtp)
+                echo "Test RAW TP"
+                TEST_RAW_TP="1"
                 ;;
             *)
                 echo "$1 : unknown option"

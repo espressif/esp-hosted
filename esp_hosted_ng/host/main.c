@@ -31,6 +31,7 @@
 #include "esp_kernel_port.h"
 
 #include "esp_cfg80211.h"
+#include "esp_stats.h"
 
 #define HOST_GPIO_PIN_INVALID -1
 static int resetpin = HOST_GPIO_PIN_INVALID;
@@ -149,7 +150,8 @@ static int process_tx_packet (struct sk_buff *skb)
 	payload_header->offset = cpu_to_le16(pad_len);
 	payload_header->packet_type = PACKET_TYPE_DATA;
 
-	payload_header->checksum = cpu_to_le16(compute_checksum(skb->data, (len + pad_len)));
+	if (adapter.capabilities & ESP_CHECKSUM_ENABLED)
+		payload_header->checksum = cpu_to_le16(compute_checksum(skb->data, (len + pad_len)));
 
 	if (!priv->stop_data) {
 		ret = esp_send_packet(priv->adapter, skb);
@@ -193,8 +195,8 @@ void print_capabilities(u32 cap)
 		printk(KERN_INFO "\t * WLAN on SPI\n");
 
 	if ((cap & ESP_BT_UART_SUPPORT) ||
-	    (cap & ESP_BT_SDIO_SUPPORT) ||
-	    (cap & ESP_BT_SPI_SUPPORT)) {
+		    (cap & ESP_BT_SDIO_SUPPORT) ||
+		    (cap & ESP_BT_SPI_SUPPORT)) {
 		printk(KERN_INFO "\t * BT/BLE\n");
 		if (cap & ESP_BT_UART_SUPPORT)
 			printk(KERN_INFO "\t   - HCI over UART\n");
@@ -577,6 +579,7 @@ static void process_rx_packet(struct esp_adapter *adapter, struct sk_buff *skb)
 	struct esp_wifi_device *priv = NULL;
 	struct esp_payload_header *payload_header = NULL;
 	u16 len = 0, offset = 0;
+	u16 rx_checksum = 0, checksum = 0;
 	struct hci_dev *hdev = adapter->hcidev;
 	u8 *type = NULL;
 	struct sk_buff * eap_skb = NULL;
@@ -591,11 +594,20 @@ static void process_rx_packet(struct esp_adapter *adapter, struct sk_buff *skb)
 	len = le16_to_cpu(payload_header->len);
 	offset = le16_to_cpu(payload_header->offset);
 
-	/*print_hex_dump(KERN_ERR , "rx: ", DUMP_PREFIX_ADDRESS, 16, 1, skb->data, len, 1);*/
-
-	payload_header->checksum = 0;
 	if (payload_header->reserved2 == 0xFF) {
 		print_hex_dump(KERN_INFO, "Wake up packet: ", DUMP_PREFIX_ADDRESS, 16, 1, skb->data, len+offset, 1);
+	}
+
+	if (adapter->capabilities & ESP_CHECKSUM_ENABLED) {
+		rx_checksum = le16_to_cpu(payload_header->checksum);
+		payload_header->checksum = 0;
+
+		checksum = compute_checksum(skb->data, (len + offset));
+
+		if (checksum != rx_checksum) {
+			dev_kfree_skb_any(skb);
+			return;
+		}
 	}
 
 	/* chop off the header from skb */
@@ -682,9 +694,25 @@ static void process_rx_packet(struct esp_adapter *adapter, struct sk_buff *skb)
 		else
 			dev_kfree_skb_any(skb);
 
+	} else if (payload_header->if_type == ESP_TEST_IF) {
+		#if TEST_RAW_TP
+			update_test_raw_tp_rx_stats(len);
+		#endif
+		dev_kfree_skb_any(skb);
 	} else {
 		dev_kfree_skb_any(skb);
 	}
+}
+
+int esp_is_tx_queue_paused(struct esp_wifi_device *priv)
+{
+	if (!priv || !priv->ndev)
+		return 0;
+
+	if ((priv->ndev &&
+		    !netif_queue_stopped((const struct net_device *)priv->ndev)))
+		return 1;
+    return 0;
 }
 
 void esp_tx_pause(struct esp_wifi_device *priv)
@@ -880,7 +908,9 @@ static int __init esp_init(void)
 static void __exit esp_exit(void)
 {
 	uint8_t iface_idx = 0;
-
+#if TEST_RAW_TP
+	test_raw_tp_cleanup();
+#endif
 	for (iface_idx=0; iface_idx<ESP_MAX_INTERFACE; iface_idx++) {
 		cmd_deinit_interface(adapter.priv[iface_idx]);
 	}
