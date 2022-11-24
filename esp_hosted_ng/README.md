@@ -43,6 +43,7 @@ This solution provides following WLAN and BT/BLE features to the host:
 - BT/BLE
   - Classic Bluetooth
   - BLE 4.2
+  - BLE 5.0
 
 
 
@@ -50,6 +51,7 @@ This solution provides following WLAN and BT/BLE features to the host:
 
 ESP-Hosted-NG solution is supported on following ESP boards:
 - ESP32
+- ESP32-C3
 
 Looking for other chipset? Please do check [Coming Soon](#5-coming-soon) section.
 
@@ -103,6 +105,24 @@ The below table explains which feature is supported on which transport interface
 <tr>
 <td align="center">SDIO(WiFi) + UART(BT)</td>
 <td align="center">&#10003;</td>
+<td align="center">&#10003;</td>
+</tr>
+<tr>
+<td align="center">SPI(WiFi) + UART(BT)</td>
+<td align="center">&#10003;</td>
+<td align="center">&#10003;</td>
+</tr>
+<tr>
+<td rowspan=5 align="center">ESP32-C3</td>
+</tr>
+<tr>
+<td align="center">SPI</td>
+<td align="center">&#10003;</td>
+<td align="center">&#10003;</td>
+</tr>
+<tr>
+<td align="center">UART</td>
+<td align="center">&#10005;</td>
 <td align="center">&#10003;</td>
 </tr>
 <tr>
@@ -513,6 +533,14 @@ Refer [Bluetooth/BLE Guide](docs/bluetooth.md) which explains how one can setup 
 <td align="center">7.39 Mbps</td>
 <td align="center">7.32 Mbps</td>
 </tr>
+<tr>
+<td rowspan=2 align="center">ESP32-C3</td>
+<td rowspan=1 align="center">SPI</td>
+<td align="center">15.8 Mbps</td>
+<td align="center">15.2 Mbps</td>
+<td align="center">17.1 Mbps</td>
+<td align="center">14.9 Mbps</td>
+</tr>
 </tbody>
 </table>
 
@@ -522,9 +550,8 @@ Tremendous work to be done ahead! Below is glimpse of upcoming release:
 
 - Functionality
 	- cfg802.11 support for ESP as SoftAP
-	- Bluetooth (BT/BLE) connectivity
 - Chipsets
-	- ESP32-S3, ESP32-C3 support
+	- ESP32-S3 support
 
 
 

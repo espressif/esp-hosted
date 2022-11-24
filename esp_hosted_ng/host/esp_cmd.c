@@ -287,6 +287,7 @@ static void esp_cmd_work(struct work_struct *work)
 	int ret;
 	struct command_node *cmd_node = NULL;
 	struct esp_adapter * adapter = NULL;
+	struct esp_payload_header *payload_header = NULL;
 
 	adapter = esp_get_adapter();
 
@@ -339,6 +340,9 @@ static void esp_cmd_work(struct work_struct *work)
 
 	adapter->cmd_resp = 0;
 
+	payload_header = (struct esp_payload_header *)cmd_node->cmd_skb->data;
+	payload_header->checksum = cpu_to_le16(compute_checksum(cmd_node->cmd_skb->data,
+				payload_header->len+payload_header->offset));
 
 	ret = esp_send_packet(adapter, cmd_node->cmd_skb);
 	spin_unlock_bh(&adapter->cmd_lock);
