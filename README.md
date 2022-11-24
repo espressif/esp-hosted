@@ -114,20 +114,18 @@ Following table summarizes this entire discussion.
   </tr>
   <tr>
     <td>Bluetooth features</td>
-    <td>Classic BT,</br>BLE 4.2, <span style="font-weight:bold">5.0</span></td>
-    <td>Classic BT,</br>BLE 4.2</td>
+    <td colspan="2"  style="text-align:center">BLE 4.2, BLE 5.0</td>
   </tr>
   <tr>
     <td>Chipsets supported</td>
-    <td>ESP32, <span style="font-weight:bold">ESP32-C3/S2/S3</span></td>
-    <td>ESP32</td>
-  </tr>
-  <tr>
-    <td>Iperf Throughput</td>
-    <td colspan="2" style="text-align:center">25Mbps+ in RX/TX</td>
+    <td>ESP32, <span>ESP32-C2/C3/S2/S3</span></td>
+    <td>ESP32, <span>ESP32-C3</span></td>
   </tr>
 </table>
 
+- **Iperf Throughput**
+  - [ESP-Hosted-FG](esp_hosted_fg/README.md#5-throughput-performance)
+  - [ESP-Hosted-NG](esp_hosted_ng/README.md#4-throughput-performance)
 
 ## 3. Our Recommendation
 

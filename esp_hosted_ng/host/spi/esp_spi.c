@@ -38,7 +38,7 @@ static void adjust_spi_clock(u8 spi_clk_mhz);
 
 volatile u8 data_path = 0;
 static struct esp_spi_context spi_context;
-static char hardware_type = 0;
+static char hardware_type = ESP_FIRMWARE_CHIP_UNRECOGNIZED;
 static atomic_t tx_pending;
 static uint8_t esp_reset_after_module_load;
 
@@ -212,6 +212,7 @@ void process_event_esp_bootup(struct esp_adapter *adapter, u8 *evt_buf, u8 len)
 		} else if (*pos == ESP_BOOTUP_SPI_CLK_MHZ){
 
 			adjust_spi_clock(*(pos + 2));
+			adapter->dev = &spi_context.esp_spi_dev->dev;
 
 		} else if (*pos == ESP_BOOTUP_FIRMWARE_CHIP_ID){
 
@@ -233,10 +234,10 @@ void process_event_esp_bootup(struct esp_adapter *adapter, u8 *evt_buf, u8 len)
 		hardware_type = ESP_FIRMWARE_CHIP_UNRECOGNIZED;
 	} else {
 		printk(KERN_INFO "ESP chipset detected [%s]\n", 
-				*(pos+2)==ESP_FIRMWARE_CHIP_ESP32 ? "esp32":
-				*(pos+2)==ESP_FIRMWARE_CHIP_ESP32S2 ? "esp32-s2" :
-				*(pos+2)==ESP_FIRMWARE_CHIP_ESP32C3 ? "esp32-c3" :
-				*(pos+2)==ESP_FIRMWARE_CHIP_ESP32S3 ? "esp32-s3" :
+				hardware_type==ESP_FIRMWARE_CHIP_ESP32 ? "esp32":
+				hardware_type==ESP_FIRMWARE_CHIP_ESP32S2 ? "esp32-s2" :
+				hardware_type==ESP_FIRMWARE_CHIP_ESP32C3 ? "esp32-c3" :
+				hardware_type==ESP_FIRMWARE_CHIP_ESP32S3 ? "esp32-s3" :
 				"unknown");
 	}
 
@@ -391,6 +392,7 @@ static void esp_spi_work(struct work_struct *work)
 
 		if (rx_pending || tx_skb) {
 			memset(&trans, 0, sizeof(trans));
+			trans.speed_hz = spi_context.spi_clk_mhz * NUMBER_1M;
 
 			/* Setup and execute SPI transaction
 			 * 	Tx_buf: Check if tx_q has valid buffer for transmission,
@@ -626,6 +628,7 @@ static void adjust_spi_clock(u8 spi_clk_mhz)
 	if ((spi_clk_mhz) && (spi_clk_mhz != spi_context.spi_clk_mhz)) {
 		printk(KERN_INFO "ESP Reconfigure SPI CLK to %u MHz\n",spi_clk_mhz);
 		spi_context.spi_clk_mhz = spi_clk_mhz;
+		spi_context.esp_spi_dev->max_speed_hz = spi_clk_mhz * NUMBER_1M;
 	}
 }
 
