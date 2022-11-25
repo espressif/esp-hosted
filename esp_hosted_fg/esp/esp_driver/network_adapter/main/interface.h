@@ -19,10 +19,10 @@
 
 #ifdef CONFIG_ESP_SDIO_HOST_INTERFACE
 
-#ifdef CONFIG_IDF_TARGET_ESP32
+#if defined(CONFIG_IDF_TARGET_ESP32)||defined(CONFIG_IDF_TARGET_ESP32C6)
 	#include "driver/sdio_slave.h"
-#elif defined CONFIG_IDF_TARGET_ESP32S2
-	#error "SDIO is not supported ESP32S2"
+#else
+	#error "SDIO is not supported for this chipset"
 #endif
 
 #endif
@@ -51,9 +51,7 @@ typedef enum {
 typedef struct {
 	union {
 #ifdef CONFIG_ESP_SDIO_HOST_INTERFACE
-#ifdef CONFIG_IDF_TARGET_ESP32
 		sdio_slave_buf_handle_t sdio_buf_handle;
-#endif
 #endif
 		wlan_buf_handle_t	wlan_buf_handle;
 		void *priv_buffer_handle;
