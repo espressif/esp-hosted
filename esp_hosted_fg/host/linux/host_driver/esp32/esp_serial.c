@@ -44,7 +44,7 @@ static struct esp_serial_devs {
 	esp_rb_t rb;
 	void *priv;
 	struct mutex lock;
-} devs[ESP_SERIAL_MINOR_MAX];
+} devs[ESP_SERIAL_MINOR_MAX] = {{ 0 }};
 
 static uint8_t serial_init_done;
 
@@ -260,6 +260,10 @@ void esp_serial_cleanup(void)
 	int i = 0;
 
 	for (i = 0; i < ESP_SERIAL_MINOR_MAX; i++) {
+		if (!devs[i].cdev.ops) {
+			printk(KERN_INFO "%s: cdev[%d] is not initialized\n", __func__, i);
+			continue;
+		}
 		cdev_del(&devs[i].cdev);
 		esp_rb_cleanup(&devs[i].rb);
 		mutex_destroy(&devs[i].lock);
