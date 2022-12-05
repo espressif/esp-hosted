@@ -117,7 +117,7 @@ static void esp_handle_isr(struct sdio_func *func)
 	kfree(int_status);
 }
 
-int generate_slave_intr(struct esp_sdio_context *context, u8 data)
+static int generate_slave_intr(struct esp_sdio_context *context, u8 data)
 {
 	u8 *val;
 	int ret = 0;
