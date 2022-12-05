@@ -24,11 +24,15 @@
 
 #define HOST_GPIO_PIN_INVALID -1
 static int resetpin = HOST_GPIO_PIN_INVALID;
+static u32 clockspeed = 0;
 extern u8 ap_bssid[MAC_ADDR_LEN];
 extern volatile u8 host_sleep;
 
 module_param(resetpin, int, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
 MODULE_PARM_DESC(resetpin, "Host's GPIO pin number which is connected to ESP32's EN to reset ESP32 device");
+
+module_param(clockspeed, uint, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
+MODULE_PARM_DESC(clockspeed, "Hosts clock speed in MHz");
 
 static void deinit_adapter(void);
 
@@ -884,7 +888,7 @@ static int __init esp_init(void)
 		return -EFAULT;
 
 	/* Init transport layer */
-	ret = esp_init_interface_layer(adapter);
+	ret = esp_init_interface_layer(adapter, clockspeed);
 
 	if (ret != 0) {
 		deinit_adapter();
