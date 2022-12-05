@@ -223,8 +223,11 @@ struct wireless_dev *esp_cfg80211_add_iface(struct wiphy *wiphy,
 	if (cmd_get_mac(esp_wdev))
 		goto free_and_return;
 
-/*	memcpy(ndev->dev_addr, esp_wdev->mac_address, ETH_ALEN);*/
-	ether_addr_copy(ndev->dev_addr, esp_wdev->mac_address);
+	#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 15, 0))
+		eth_hw_addr_set(ndev, esp_wdev->mac_address);
+	#else
+		ether_addr_copy(ndev->dev_addr, esp_wdev->mac_address);
+	#endif
 
 	esp_init_priv(ndev);
 
