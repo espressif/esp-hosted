@@ -570,10 +570,6 @@ static void process_assoc_event(struct esp_wifi_device *priv,
 
 	printk(KERN_INFO "Connection status: %d\n", event->header.status);
 
-	if (!event->bssid) {
-		printk(KERN_INFO "bssid input as NULL. Ignoring the connect statuc event\n");
-		return;
-	}
 	memcpy(mac, event->bssid, MAC_ADDR_LEN);
 
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 0, 0))
@@ -1326,7 +1322,7 @@ int cmd_scan_request(struct esp_wifi_device *priv, struct cfg80211_scan_request 
 			sizeof(struct esp_payload_header));
 
 	/* TODO: Handle case of multiple SSIDs or channels */
-	if(request->ssids[0].ssid_len) {
+	if(request->ssids && request->ssids[0].ssid_len) {
 		memcpy(scan_req->ssid, request->ssids[0].ssid, MAX_SSID_LEN);
 	}
 
