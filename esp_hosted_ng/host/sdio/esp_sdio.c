@@ -728,6 +728,18 @@ static int esp_probe(struct sdio_func *func,
 		return -ENOMEM;
 	}
 
+	if (sdio_context.sdio_clk_mhz){
+		struct mmc_host *host = func->card->host;
+		u32 hz = sdio_context.sdio_clk_mhz * 1000000;
+		/* Expansion of mmc_set_clock that isn't exported */
+		if (hz < host->f_min)
+			hz = host->f_min;
+		if (hz > host->f_max)
+			hz = host->f_max;
+		host->ios.clock = hz;
+		host->ops->set_ios(host, &host->ios);
+	}
+
 	context->state = ESP_CONTEXT_READY;
 	atomic_set(&tx_pending, 0);
 	ret = init_context(context);
@@ -763,7 +775,7 @@ static struct sdio_driver esp_sdio_driver = {
 	.remove		= esp_remove,
 };
 
-int esp_init_interface_layer(struct esp_adapter *adapter)
+int esp_init_interface_layer(struct esp_adapter *adapter, u32 speed)
 {
 	if (!adapter)
 		return -EINVAL;
@@ -771,6 +783,7 @@ int esp_init_interface_layer(struct esp_adapter *adapter)
 	adapter->if_context = &sdio_context;
 	adapter->if_ops = &if_ops;
 	sdio_context.adapter = adapter;
+	sdio_context.sdio_clk_mhz = speed;
 
 	return sdio_register_driver(&esp_sdio_driver);
 }
