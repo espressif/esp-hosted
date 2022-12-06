@@ -167,7 +167,7 @@ static int write_packet(struct esp_adapter *adapter, struct sk_buff *skb)
 	return 0;
 }
 
-void process_event_esp_bootup(struct esp_adapter *adapter, u8 *evt_buf, u8 len)
+void process_event_esp_bootup_spi(struct esp_adapter *adapter, u8 *evt_buf, u8 len)
 {
 	/* Bootup event will be received whenever ESP is booted.
 	 * It is termed 'First bootup' when this event is received
@@ -641,7 +641,7 @@ static void adjust_spi_clock(u8 spi_clk_mhz)
 	}
 }
 
-int esp_init_interface_layer(struct esp_adapter *adapter, const struct esp_if_params *params)
+int esp_init_interface_layer_spi(struct esp_adapter *adapter, const struct esp_if_params *params)
 {
 	if (!adapter)
 		return -EINVAL;
@@ -662,7 +662,7 @@ int esp_init_interface_layer(struct esp_adapter *adapter, const struct esp_if_pa
 	return spi_init();
 }
 
-void esp_deinit_interface_layer(void)
+void esp_deinit_interface_layer_spi(void)
 {
 	spi_exit();
 }

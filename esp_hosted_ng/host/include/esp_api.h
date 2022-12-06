@@ -41,7 +41,6 @@ int esp_send_packet(struct esp_adapter *adapter, struct sk_buff *skb);
 u8 esp_is_bt_supported_over_sdio(u32 cap);
 void esp_tx_pause(struct esp_wifi_device *priv);
 void esp_tx_resume(struct esp_wifi_device *priv);
-void process_event_esp_bootup(struct esp_adapter *adapter, u8 *evt_buf, u8 len);
 int process_fw_data(struct fw_data *fw_p);
 void esp_init_priv(struct net_device *ndev);
 void esp_port_open(struct esp_wifi_device * priv);

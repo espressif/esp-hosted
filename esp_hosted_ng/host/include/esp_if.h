@@ -36,7 +36,11 @@ struct esp_if_params {
 	uint32_t data_ready_pin;
 };
 
-int esp_init_interface_layer(struct esp_adapter *adapter, const struct esp_if_params *speed);
-void esp_deinit_interface_layer(void);
+int esp_init_interface_layer_spi(struct esp_adapter *adapter, const struct esp_if_params *params);
+int esp_init_interface_layer_sdio(struct esp_adapter *adapter, const struct esp_if_params *params);
+void esp_deinit_interface_layer_sdio(void);
+void esp_deinit_interface_layer_spi(void);
+void process_event_esp_bootup_spi(struct esp_adapter *adapter, u8 *evt_buf, u8 len);
+void process_event_esp_bootup_sdio(struct esp_adapter *adapter, u8 *evt_buf, u8 len);
 
 #endif
