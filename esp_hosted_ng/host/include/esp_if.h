@@ -29,7 +29,14 @@ struct esp_if_ops {
 	int (*deinit)(struct esp_adapter *adapter);
 };
 
-int esp_init_interface_layer(struct esp_adapter *adapter, u32 speed);
+struct esp_if_params {
+	uint8_t speed;
+	uint32_t handshake_pin;
+	uint32_t chip_select;
+	uint32_t data_ready_pin;
+};
+
+int esp_init_interface_layer(struct esp_adapter *adapter, const struct esp_if_params *speed);
 void esp_deinit_interface_layer(void);
 
 #endif

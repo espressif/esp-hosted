@@ -19,10 +19,6 @@
 
 #include "esp.h"
 
-#define HANDSHAKE_PIN           22
-#define SPI_IRQ                 gpio_to_irq(HANDSHAKE_PIN)
-#define SPI_DATA_READY_PIN      27
-#define SPI_DATA_READY_IRQ      gpio_to_irq(SPI_DATA_READY_PIN)
 #define SPI_BUF_SIZE            1600
 
 struct esp_spi_context {
@@ -36,7 +32,8 @@ struct esp_spi_context {
 	struct work_struct          nw_cmd_reinit_work;
 	uint8_t                     spi_clk_mhz;
 	uint8_t                     spi_gpio_enabled;
-	uint8_t                     reserved[2];
+	uint32_t		    handshake_pin;
+	uint32_t		    data_ready_pin;
 };
 
 enum {

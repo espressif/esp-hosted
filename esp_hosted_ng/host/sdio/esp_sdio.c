@@ -905,7 +905,7 @@ static struct sdio_driver esp_sdio_driver = {
 
 };
 
-int esp_init_interface_layer(struct esp_adapter *adapter, u32 speed)
+int esp_init_interface_layer(struct esp_adapter *adapter, const struct esp_if_params *params)
 {
 	if (!adapter)
 		return -EINVAL;
@@ -913,7 +913,7 @@ int esp_init_interface_layer(struct esp_adapter *adapter, u32 speed)
 	adapter->if_context = &sdio_context;
 	adapter->if_ops = &if_ops;
 	sdio_context.adapter = adapter;
-	sdio_context.sdio_clk_mhz = speed;
+	sdio_context.sdio_clk_mhz = params->speed;
 
 	return sdio_register_driver(&esp_sdio_driver);
 }
