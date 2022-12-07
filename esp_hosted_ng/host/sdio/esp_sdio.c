@@ -878,6 +878,12 @@ static const struct dev_pm_ops esp_pm_ops = {
 	.resume = esp_resume,
 };
 
+static const struct of_device_id esp_sdio_of_match[] = {
+	{ .compatible = "espressif,esp_sdio", },
+	{ /* sentinel */ }
+};
+MODULE_DEVICE_TABLE(of, esp_sdio_of_match);
+
 /* SDIO driver structure to be registered with kernel */
 static struct sdio_driver esp_sdio_driver = {
 	.name		= "esp_sdio",
@@ -885,10 +891,11 @@ static struct sdio_driver esp_sdio_driver = {
 	.probe		= esp_probe,
 	.remove		= esp_remove,
 	.drv = {
+		.name = "esp_sdio",
 		.owner = THIS_MODULE,
 		.pm = &esp_pm_ops,
-	}
-
+		.of_match_table = esp_sdio_of_match,
+	},
 };
 
 int esp_init_interface_layer(struct esp_adapter *adapter, u32 speed)
