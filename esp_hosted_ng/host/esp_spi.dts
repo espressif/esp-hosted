@@ -1,0 +1,32 @@
+/dts-v1/;
+/plugin/;
+
+/ {
+	compatible = "brcm,bcm2708";
+	fragment@0 {
+		target = <&spidev0>;
+		__overlay__ {
+			status = "disabled";
+		};
+	};
+	fragment@1 {
+		target = <&spi0>;
+		__overlay__ {
+			status = "okay";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			esp32: esp32_spi@0 {
+				reg = <0>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "okay";
+				compatible = "espressif,esp32_spi";
+				handshakepin = <22>;
+				readypin = <27>;
+				resetpin = <6>;
+				clock-rate = <1000000>;
+				spi-max-frequency = <1000000>;
+			};
+		};
+	};
+};
