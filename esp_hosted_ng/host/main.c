@@ -873,26 +873,30 @@ static void deinit_adapter(void)
 
 static void esp_reset(void)
 {
-	if (resetpin != HOST_GPIO_PIN_INVALID) {
-		/* Check valid GPIO or not */
-		if (!gpio_is_valid(resetpin)) {
-			printk(KERN_WARNING "%s, ESP32: host resetpin (%d) configured is invalid GPIO\n", __func__, resetpin);
-			resetpin = HOST_GPIO_PIN_INVALID;
-		} else {
-			gpio_request(resetpin, "sysfs");
+	/* Check valid GPIO or not */
+	if (!gpio_is_valid(resetpin)) {
+		printk(KERN_WARNING "%s, ESP32: host resetpin (%d) configured an is invalid GPIO defaulting to 6.\n", __func__, resetpin);
+		resetpin = 6;
+	}
 
-			/* HOST's resetpin set to OUTPUT, HIGH */
-			gpio_direction_output(resetpin, true);
+	/* Check valid GPIO or not */
+	if (!gpio_is_valid(resetpin)) {
+		printk(KERN_WARNING "%s, ESP32: default host resetpin (%d) is an invalid GPIO.\n", __func__, resetpin);
+		resetpin = HOST_GPIO_PIN_INVALID;
+	} else {
+		gpio_request(resetpin, "sysfs");
 
-			/* HOST's resetpin set to LOW */
-			gpio_set_value(resetpin, 0);
-			udelay(200);
+		/* HOST's resetpin set to OUTPUT, HIGH */
+		gpio_direction_output(resetpin, true);
 
-			/* HOST's resetpin set to INPUT */
-			gpio_direction_input(resetpin);
+		/* HOST's resetpin set to LOW */
+		gpio_set_value(resetpin, 0);
+		udelay(200);
 
-			printk(KERN_DEBUG "%s, ESP32: Triggering ESP reset.\n", __func__);
-		}
+		/* HOST's resetpin set to INPUT */
+		gpio_direction_input(resetpin);
+
+		printk(KERN_DEBUG "%s, ESP32: Triggering ESP reset.\n", __func__);
 	}
 }
 

@@ -493,62 +493,64 @@ static int spi_dev_init(int spi_clk_mhz)
 			",chip select [%d], SPI Clock [%d]\n", esp_board.bus_num,
 			esp_board.chip_select, spi_clk_mhz);
 
-	status = gpio_request(spi_context.handshake_pin, "spi_context.handshake_pin");
+	if (!gpio_is_valid(spi_context.handshake_pin) ||
+	    !gpio_is_valid(spi_context.data_ready_pin)) {
+		printk(KERN_ERR "Invalid GPIO pins for dataready or handshake\n");
+		return -EFAULT;
+	}
 
+	status = gpio_request(spi_context.handshake_pin, "spi_context.handshake_pin");
 	if (status) {
 		printk (KERN_ERR "Failed to obtain GPIO for Handshake pin, err:%d\n",status);
 		return status;
 	}
 
-	status = gpio_direction_input(spi_context.handshake_pin);
-
+	status = gpio_request(spi_context.data_ready_pin, "spi_context.data_ready_pin");
 	if (status) {
-		gpio_free(spi_context.handshake_pin);
-		printk (KERN_ERR "Failed to set GPIO direction of Handshake pin, err: %d\n",status);
-		return status;
+		printk (KERN_ERR "Failed to obtain GPIO for Data ready pin, err:%d\n",status);
+		goto freehake;
 	}
+
+	status = gpio_direction_input(spi_context.handshake_pin);
+	if (status) {
+		printk (KERN_ERR "Failed to set GPIO direction of Handshake pin, err: %d\n",status);
+		goto freehake;
+	}
+
+	status = gpio_direction_input(spi_context.data_ready_pin);
+	if (status) {
+		printk (KERN_ERR "Failed to set GPIO direction of Data ready pin\n");
+		goto freeboth;
+	}
+
 
 	status = request_irq(gpio_to_irq(spi_context.handshake_pin), spi_interrupt_handler,
 			IRQF_SHARED | IRQF_TRIGGER_RISING,
 			"ESP_SPI", spi_context.esp_spi_dev);
 	if (status) {
-		gpio_free(spi_context.handshake_pin);
 		printk (KERN_ERR "Failed to request IRQ for Handshake pin, err:%d\n",status);
-		return status;
-	}
-
-	status = gpio_request(spi_context.data_ready_pin, "spi_context.data_ready_pin");
-	if (status) {
-		gpio_free(spi_context.handshake_pin);
-		free_irq(gpio_to_irq(spi_context.handshake_pin), spi_context.esp_spi_dev);
-		printk (KERN_ERR "Failed to obtain GPIO for Data ready pin, err:%d\n",status);
-		return status;
-	}
-
-	status = gpio_direction_input(spi_context.data_ready_pin);
-	if (status) {
-		gpio_free(spi_context.handshake_pin);
-		free_irq(gpio_to_irq(spi_context.handshake_pin), spi_context.esp_spi_dev);
-		gpio_free(spi_context.data_ready_pin);
-		printk (KERN_ERR "Failed to set GPIO direction of Data ready pin\n");
-		return status;
+		goto freeboth;
 	}
 
 	status = request_irq(gpio_to_irq(spi_context.data_ready_pin), spi_data_ready_interrupt_handler,
 			IRQF_SHARED | IRQF_TRIGGER_RISING,
 			"ESP_SPI_DATA_READY", spi_context.esp_spi_dev);
 	if (status) {
-		gpio_free(spi_context.handshake_pin);
-		free_irq(gpio_to_irq(spi_context.handshake_pin), spi_context.esp_spi_dev);
-		gpio_free(spi_context.data_ready_pin);
 		printk (KERN_ERR "Failed to request IRQ for Data ready pin, err:%d\n",status);
-		return status;
+		goto freeirq;
 	}
 	spi_context.spi_gpio_enabled = 1;
 
 	open_data_path();
 
 	return 0;
+	freeirq:
+	free_irq(gpio_to_irq(spi_context.handshake_pin), spi_context.esp_spi_dev);
+	freeboth:
+	gpio_free(spi_context.handshake_pin);
+	freehake:
+	gpio_free(spi_context.handshake_pin);
+	return status;
 }
 
 static int spi_init(void)
