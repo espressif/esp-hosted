@@ -914,11 +914,23 @@ static int __init esp_init(void)
 	int ret = 0;
 	struct esp_adapter *adapter = NULL;
 	struct esp_if_params if_params;
+	struct device_node *resetpin_node = NULL;
 
 	if(strncmp(mode, "spi", 4) == 0)
 		if_tp = ESP_IF_TYPE_SPI;
 	else if(strncmp(mode, "sdio", 5) != 0)
 		printk(KERN_WARNING "%s, ESP32: Invalid protocall %s, defaulting to sdio.\n", __func__, mode);
+
+	resetpin_node = of_find_compatible_node(NULL, NULL, "espressif,esp32_sdio");
+	if (!resetpin_node)
+		resetpin_node = of_find_compatible_node(NULL, NULL, "espressif,esp32_spi");
+	if (!resetpin_node){
+		printk(KERN_WARNING "%s, ESP32: Unable to find esp compatible node.\n", __func__);
+	} else {
+		of_property_read_u32(resetpin_node, "resetpin", &resetpin);
+		if (resetpin == HOST_GPIO_PIN_INVALID)
+			printk(KERN_WARNING "%s, ESP32: Unable to find resetpin in device tree.\n", __func__);
+	}
 
 	/* Reset ESP, Clean start ESP */
 	esp_reset();
