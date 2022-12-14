@@ -134,6 +134,9 @@ The below table explains which feature is supported on which transport interface
 </table>
 
 
+Apart from these features, following features are supported.
+- Host sleep
+  - We have tested this feature with imx8mm-lpddr4-evk. Please refer [host_sleep](docs/host_sleep.md) documentation.
 
 ---
 

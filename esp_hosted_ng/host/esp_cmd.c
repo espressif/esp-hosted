@@ -215,6 +215,8 @@ static int wait_and_decode_cmd_resp(struct esp_wifi_device *priv,
 	case CMD_ADD_KEY:
 	case CMD_DEL_KEY:
 	case CMD_SET_DEFAULT_KEY:
+	case CMD_SET_IP_ADDR:
+	case CMD_SET_MCAST_MAC_ADDR:
 		/* intentional fallthrough */
 		if (ret == 0)
 			ret = decode_common_resp(cmd_node);
@@ -620,6 +622,75 @@ int process_cmd_event(struct esp_wifi_device *priv, struct sk_buff *skb)
 				__func__, __LINE__, header->event_code);
 		break;
 	}
+
+	return 0;
+}
+
+int cmd_set_mcast_mac_list(struct esp_wifi_device *priv, struct multicast_list *list)
+{
+	struct command_node *cmd_node = NULL;
+	struct cmd_set_mcast_mac_addr *cmd_mcast_mac_list;
+
+	if (!priv || !priv->adapter) {
+		printk(KERN_ERR "%s: Invalid argument\n", __func__);
+		return -EINVAL;
+	}
+
+	if (test_bit(ESP_CLEANUP_IN_PROGRESS, &priv->adapter->state_flags))
+		return 0;
+
+	cmd_node = prepare_command_request(priv->adapter, CMD_SET_MCAST_MAC_ADDR,
+			sizeof(struct cmd_set_mcast_mac_addr));
+
+	if (!cmd_node) {
+		printk(KERN_ERR "Failed to get command node\n");
+		return -ENOMEM;
+	}
+
+	cmd_mcast_mac_list = (struct cmd_set_mcast_mac_addr *)
+		(cmd_node->cmd_skb->data + sizeof(struct esp_payload_header));
+
+	cmd_mcast_mac_list->count = list->addr_count;
+	memcpy(cmd_mcast_mac_list->mcast_addr, list->mcast_addr,
+			sizeof(cmd_mcast_mac_list->mcast_addr));
+
+	queue_cmd_node(priv->adapter, cmd_node, ESP_CMD_DFLT_PRIO);
+	queue_work(priv->adapter->cmd_wq, &priv->adapter->cmd_work);
+
+	RET_ON_FAIL(wait_and_decode_cmd_resp(priv, cmd_node));
+	return 0;
+}
+
+int cmd_set_ip_address(struct esp_wifi_device *priv, u32 ip)
+{
+	struct command_node *cmd_node = NULL;
+	struct cmd_set_ip_addr *cmd_set_ip;
+
+	if (!priv || !priv->adapter) {
+		printk(KERN_ERR "%s: Invalid argument\n", __func__);
+		return -EINVAL;
+	}
+
+	if (test_bit(ESP_CLEANUP_IN_PROGRESS, &priv->adapter->state_flags))
+		return 0;
+
+	cmd_node = prepare_command_request(priv->adapter, CMD_SET_IP_ADDR,
+			sizeof(struct cmd_set_ip_addr));
+
+	if (!cmd_node) {
+		printk(KERN_ERR "Failed to get command node\n");
+		return -ENOMEM;
+	}
+
+	cmd_set_ip = (struct cmd_set_ip_addr *)
+		(cmd_node->cmd_skb->data + sizeof(struct esp_payload_header));
+
+	cmd_set_ip->ip = cpu_to_le32(ip);
+
+	queue_cmd_node(priv->adapter, cmd_node, ESP_CMD_DFLT_PRIO);
+	queue_work(priv->adapter->cmd_wq, &priv->adapter->cmd_work);
+
+	RET_ON_FAIL(wait_and_decode_cmd_resp(priv, cmd_node));
 
 	return 0;
 }
@@ -1030,8 +1101,10 @@ int cmd_add_key(struct esp_wifi_device *priv, u8 key_index, bool pairwise,
 
 	mac = pairwise ? mac_addr : bc_mac;
 	if (mac) {
+#if 0
 		print_hex_dump(KERN_INFO, "mac: ", DUMP_PREFIX_ADDRESS, 16, 1,
 				mac, MAC_ADDR_LEN, 1);
+#endif
 	}
 
 	cmd_len = sizeof(struct cmd_key_operation);

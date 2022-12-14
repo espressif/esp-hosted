@@ -4,18 +4,20 @@
 #ifndef __ESP_NETWORK_ADAPTER__H
 #define __ESP_NETWORK_ADAPTER__H
 
-#define PRIO_Q_HIGH             0
-#define PRIO_Q_MID              1
-#define PRIO_Q_LOW              2
-#define MAX_PRIORITY_QUEUES     3
-#define MAC_ADDR_LEN            6
-#define MAX_KEY_LEN             32
-#define MAX_SEQ_LEN             10
-#define ESP_MAX_KEY_INDEX       0
+#define PRIO_Q_HIGH                     0
+#define PRIO_Q_MID                      1
+#define PRIO_Q_LOW                      2
+#define MAX_PRIORITY_QUEUES             3
+#define MAC_ADDR_LEN                    6
+#define MAX_KEY_LEN                     32
+#define MAX_SEQ_LEN                     10
+#define ESP_MAX_KEY_INDEX               0
 
 /* ESP Payload Header Flags */
-#define MORE_FRAGMENT           (1 << 0)
-#define MAX_SSID_LEN            32
+#define MORE_FRAGMENT                   (1 << 0)
+#define MAX_SSID_LEN                    32
+
+#define MAX_MULTICAST_ADDR_COUNT        8
 
 struct esp_payload_header {
 	uint8_t          if_type:4;
@@ -66,6 +68,8 @@ enum ESP_HOST_INTERRUPT {
 	ESP_OPEN_DATA_PATH,
 	ESP_CLOSE_DATA_PATH,
 	ESP_RESET,
+	ESP_POWER_SAVE_ON,
+	ESP_POWER_SAVE_OFF,
 };
 
 enum ESP_CAPABILITIES {
@@ -102,6 +106,8 @@ enum COMMAND_CODE {
 	CMD_SET_DEFAULT_KEY,
 	CMD_STA_AUTH,
 	CMD_STA_ASSOC,
+	CMD_SET_IP_ADDR,
+	CMD_SET_MCAST_MAC_ADDR,
 	CMD_MAX,
 };
 
@@ -179,6 +185,17 @@ struct cmd_sta_disconnect {
 	struct     command_header header;
 	uint16_t   reason_code;
 	uint8_t    pad[2];
+}__attribute__((packed));
+
+struct cmd_set_ip_addr {
+	struct command_header header;
+	uint32_t ip;
+}__attribute__((packed));
+
+struct cmd_set_mcast_mac_addr {
+	struct command_header header;
+	uint8_t count;
+	uint8_t mcast_addr[MAX_MULTICAST_ADDR_COUNT][MAC_ADDR_LEN];
 }__attribute__((packed));
 
 struct wifi_sec_key {

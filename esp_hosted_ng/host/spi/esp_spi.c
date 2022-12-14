@@ -169,7 +169,7 @@ void process_event_esp_bootup(struct esp_adapter *adapter, u8 *evt_buf, u8 len)
 {
 	/* Bootup event will be received whenever ESP is booted.
 	 * It is termed 'First bootup' when this event is received
-	 * the first time module loaded. It is termed 'Second & onward bootup' when 
+	 * the first time module loaded. It is termed 'Second & onward bootup' when
 	 * there is ESP reset (reason may be manual reset of ESP or any crash at ESP)
 	 */
 	u8 len_left = len, tag_len;
@@ -233,7 +233,7 @@ void process_event_esp_bootup(struct esp_adapter *adapter, u8 *evt_buf, u8 len)
 		printk(KERN_INFO "ESP chipset not recognized, ignoring [%d]\n", hardware_type);
 		hardware_type = ESP_FIRMWARE_CHIP_UNRECOGNIZED;
 	} else {
-		printk(KERN_INFO "ESP chipset detected [%s]\n", 
+		printk(KERN_INFO "ESP chipset detected [%s]\n",
 				hardware_type==ESP_FIRMWARE_CHIP_ESP32 ? "esp32":
 				hardware_type==ESP_FIRMWARE_CHIP_ESP32S2 ? "esp32-s2" :
 				hardware_type==ESP_FIRMWARE_CHIP_ESP32C3 ? "esp32-c3" :
@@ -246,14 +246,14 @@ void process_event_esp_bootup(struct esp_adapter *adapter, u8 *evt_buf, u8 len)
 		/* Second & onward bootup:
 		 *
 		 * SPI is software and not a hardware based module.
-		 * When bootup event is received, we should discard all prior commands, 
+		 * When bootup event is received, we should discard all prior commands,
 		 * old messages pending at network and re-initialize everything.
 		 *
 		 * Such handling is not required
 		 * 1. for SDIO
 		 *   as Removal of SDIO triggers complete Deinit and on SDIO insertion/
 		 *   detection, i.e., after probing, initialization is triggered
-		 * 
+		 *
 		 * 2. On first bootup (if counterpart of this else)
 		 *   First bootup event is received immediately after module insertion.
 		 *   As all network or cmds are init and clean for the first time,

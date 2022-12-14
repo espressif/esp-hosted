@@ -21,6 +21,7 @@
 #include <linux/module.h>
 #include <linux/kernel.h>
 #include <linux/gpio.h>
+#include <linux/igmp.h>
 
 #include "esp.h"
 #include "esp_if.h"
@@ -34,6 +35,7 @@
 #define HOST_GPIO_PIN_INVALID -1
 static int resetpin = HOST_GPIO_PIN_INVALID;
 extern u8 ap_bssid[MAC_ADDR_LEN];
+extern volatile u8 host_sleep;
 
 module_param(resetpin, int, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
 MODULE_PARM_DESC(resetpin, "Host's GPIO pin number which is connected to ESP32's EN to reset ESP32 device");
@@ -41,6 +43,7 @@ MODULE_PARM_DESC(resetpin, "Host's GPIO pin number which is connected to ESP32's
 static void deinit_adapter(void);
 
 
+struct multicast_list mcast_list = {0};
 struct esp_adapter adapter;
 /*struct esp_device esp_dev;*/
 
@@ -81,6 +84,10 @@ static int process_tx_packet (struct sk_buff *skb)
 
 	if (netif_queue_stopped((const struct net_device *) priv->ndev)) {
 		printk(KERN_INFO "%s: Netif queue stopped\n", __func__);
+		return NETDEV_TX_BUSY;
+	}
+
+	if (host_sleep) {
 		return NETDEV_TX_BUSY;
 	}
 
@@ -309,6 +316,36 @@ static NDO_TX_TIMEOUT_PROTOTYPE()
 
 static void esp_set_rx_mode(struct net_device *ndev)
 {
+	struct esp_wifi_device *priv = netdev_priv(ndev);
+	struct netdev_hw_addr *mac_addr;
+	u32 count = 0;
+#if 0
+	struct in_device *in_dev = in_dev_get(ndev);
+	struct ip_mc_list *ip_list = in_dev->mc_list;
+#endif
+	netdev_for_each_mc_addr(mac_addr, ndev) {
+		if (count < MAX_MULTICAST_ADDR_COUNT) {
+			/*printk(KERN_INFO "%d: %pM\n", count+1, mac_addr->addr);*/
+			memcpy(&mcast_list.mcast_addr[count++], mac_addr->addr, ETH_ALEN);
+		}
+	}
+
+	mcast_list.priv = priv;
+	mcast_list.addr_count = count;
+
+	if (priv->port_open) {
+		/*printk (KERN_INFO "Set Multicast list\n");*/
+		if (adapter.mac_filter_wq)
+			queue_work(adapter.mac_filter_wq, &adapter.mac_flter_work);
+	}
+#if 0
+	cmd_set_mcast_mac_list(priv, &mcast_list);
+	while(ip_list) {
+		printk(KERN_DEBUG " IP MC Address: 0x%x\n", ip_list->multiaddr);
+		ip_list = ip_list->next;
+	}
+#endif
+
 }
 
 static int esp_hard_start_xmit(struct sk_buff *skb, struct net_device *ndev)
@@ -428,6 +465,7 @@ void esp_remove_network_interfaces(struct esp_adapter *adapter)
 			netif_device_detach(ndev);
 
 			if (ndev->reg_state == NETREG_REGISTERED) {
+				unregister_inetaddr_notifier(&(adapter->priv[0]->nb));
 				unregister_netdev(ndev);
 				free_netdev(ndev);
 				ndev = NULL;
@@ -556,6 +594,9 @@ static void process_rx_packet(struct esp_adapter *adapter, struct sk_buff *skb)
 	/*print_hex_dump(KERN_ERR , "rx: ", DUMP_PREFIX_ADDRESS, 16, 1, skb->data, len, 1);*/
 
 	payload_header->checksum = 0;
+	if (payload_header->reserved2 == 0xFF) {
+		print_hex_dump(KERN_INFO, "Wake up packet: ", DUMP_PREFIX_ADDRESS, 16, 1, skb->data, len+offset, 1);
+	}
 
 	/* chop off the header from skb */
 	skb_pull(skb, offset);
@@ -719,6 +760,11 @@ static void esp_if_rx_work(struct work_struct *work)
 	esp_get_packets(&adapter);
 }
 
+static void update_mac_filter(struct work_struct *work)
+{
+	cmd_set_mcast_mac_list(mcast_list.priv, &mcast_list);
+}
+
 static void esp_events_work(struct work_struct *work)
 {
 	struct sk_buff *skb = NULL;
@@ -756,6 +802,14 @@ static struct esp_adapter * init_adapter(void)
 
 	INIT_WORK(&adapter.events_work, esp_events_work);
 
+	adapter.mac_filter_wq = alloc_workqueue("MAC_FILTER", 0, 0);
+	if (!adapter.mac_filter_wq) {
+		deinit_adapter();
+		return NULL;
+	}
+
+	INIT_WORK(&adapter.mac_flter_work, update_mac_filter);
+
 	return &adapter;
 }
 
@@ -768,6 +822,9 @@ static void deinit_adapter(void)
 
 	if (adapter.if_rx_workqueue)
 		destroy_workqueue(adapter.if_rx_workqueue);
+
+	if (adapter.mac_filter_wq)
+		destroy_workqueue(adapter.mac_filter_wq);
 }
 
 static void esp_reset(void)

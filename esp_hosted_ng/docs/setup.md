@@ -127,6 +127,13 @@
 > >   $ sudo apt install git raspi-gpio bluetooth bluez bluez-tools rfkill bluez-firmware pi-bluetooth pulseaudio-module-bluetooth
 > >   ```
 > >
+> > ##### Checkout ESP-Hosted repo
+> > ```sh
+> > $ git clone https://github.com/espressif/esp-hosted.git
+> >                OR
+> > $ git clone git@github.com:espressif/esp-hosted.git
+> > ```
+> >
 > > ##### Peripheral config
 > > - By default, the SDIO pins of Raspberry-pi are not configured and are internally used for built-in Wi-Fi interface. Please enable SDIO pins by appending following line to _/boot/config.txt_ file
 > >	  ```
@@ -137,13 +144,6 @@
 > >	  ```sh
 > >   $ sudo sync; sudo reboot
 > >   ```
-> > 
-> > ##### Checkout ESP-Hosted repo
-> > ```sh
-> > $ git clone https://github.com/espressif/esp-hosted.git
-> >                OR
-> > $ git clone git@github.com:espressif/esp-hosted.git
-> > ```
 > >
 > > ---
 > </p></details>
@@ -334,6 +334,13 @@
 > >   $ sudo apt install git raspi-gpio bluetooth bluez bluez-tools rfkill bluez-firmware pi-bluetooth pulseaudio-module-bluetooth
 > >   ```
 > >
+> > ##### Checkout ESP-Hosted repo
+> > ```sh
+> > $ git clone https://github.com/espressif/esp-hosted.git
+> >                OR
+> > $ git clone git@github.com:espressif/esp-hosted.git
+> > ```
+> >
 > > ##### Peripheral config
 > > - The SPI master driver is disabled by default on Raspberry-Pi OS. To enable it add following commands in  _/boot/config.txt_ file
 > >	  ```
@@ -346,13 +353,6 @@
 > >   core_freq_min=250
 > >   ```
 > > - Please reboot Raspberry-Pi after changing this file.
-> > 
-> > ##### Checkout ESP-Hosted repo
-> > ```sh
-> > $ git clone https://github.com/espressif/esp-hosted.git
-> >                OR
-> > $ git clone git@github.com:espressif/esp-hosted.git
-> > ```
 > >
 > > ---
 > </p></details>
@@ -536,6 +536,13 @@
 > >   $ sudo apt install git raspi-gpio bluetooth bluez bluez-tools rfkill bluez-firmware pi-bluetooth pulseaudio-module-bluetooth
 > >   ```
 > >
+> > ##### Checkout ESP-Hosted repo
+> > ```sh
+> > $ git clone https://github.com/espressif/esp-hosted.git
+> >                OR
+> > $ git clone git@github.com:espressif/esp-hosted.git
+> > ```
+> >
 > > ##### Peripheral config
 > > - SDIO
 > >	  - By default, the SDIO pins of Raspberry-pi are not configured and are internally used for built-in Wi-Fi interface. Please enable SDIO pins by appending following line to _/boot/config.txt_ file
@@ -573,13 +580,6 @@
 > >	  ```sh
 > >   $ sudo sync; sudo reboot
 > >   ```
-> > 
-> > ##### Checkout ESP-Hosted repo
-> > ```sh
-> > $ git clone https://github.com/espressif/esp-hosted.git
-> >                OR
-> > $ git clone git@github.com:espressif/esp-hosted.git
-> > ```
 > >
 > > ---
 > </p></details>
@@ -805,6 +805,13 @@
 > >   $ sudo apt install git raspi-gpio bluetooth bluez bluez-tools rfkill bluez-firmware pi-bluetooth pulseaudio-module-bluetooth
 > >   ```
 > >
+> > ##### Checkout ESP-Hosted repo
+> > ```sh
+> > $ git clone https://github.com/espressif/esp-hosted.git
+> >                OR
+> > $ git clone git@github.com:espressif/esp-hosted.git
+> > ```
+> >
 > > ##### Peripheral config
 > > - SPI
 > >	  - The SPI master driver is disabled by default on Raspberry-Pi OS. To enable it add following commands in  _/boot/config.txt_ file
@@ -848,13 +855,6 @@
 > >	  ```sh
 > >   $ sudo sync; sudo reboot
 > >   ```
-> > 
-> > ##### Checkout ESP-Hosted repo
-> > ```sh
-> > $ git clone https://github.com/espressif/esp-hosted.git
-> >                OR
-> > $ git clone git@github.com:espressif/esp-hosted.git
-> > ```
 > >
 > > ---
 > </p></details>
@@ -931,7 +931,7 @@
 >
 </p>
 </details>
-	
+
 </td>
   </tr>
 

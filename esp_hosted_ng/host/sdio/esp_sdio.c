@@ -48,6 +48,8 @@ struct task_struct *monitor_thread;
 #endif
 struct task_struct *tx_thread;
 
+volatile u8 host_sleep = 0;
+
 static int init_context(struct esp_sdio_context *context);
 static struct sk_buff * read_packet(struct esp_adapter *adapter);
 static int write_packet(struct esp_adapter *adapter, struct sk_buff *skb);
@@ -79,6 +81,9 @@ static void esp_handle_isr(struct sdio_func *func)
 	if (!func) {
 		return;
 	}
+
+	if (host_sleep)
+		return;
 
 	context = sdio_get_drvdata(func);
 
@@ -280,15 +285,10 @@ static struct esp_if_ops if_ops = {
 	.write		= write_packet,
 };
 
-static int init_context(struct esp_sdio_context *context)
+static int get_firmware_data(struct esp_sdio_context *context)
 {
-	int ret = 0;
 	u32 *val;
-	uint8_t prio_q_idx = 0;
-
-	if (!context) {
-		return -EINVAL;
-	}
+	int ret = 0;
 
 	val = kmalloc(sizeof(u32), GFP_KERNEL);
 
@@ -304,7 +304,9 @@ static int init_context(struct esp_sdio_context *context)
 		return ret;
 	}
 
+	printk(KERN_INFO "Rx Pre ====== %d\n", context->rx_byte_count);
 	context->rx_byte_count = *val & ESP_SLAVE_LEN_MASK;
+	printk(KERN_INFO "Rx Pos ======  %d\n", context->rx_byte_count);
 
 	/* Initialize tx_buffer_count */
 	ret = esp_read_reg(context, ESP_SLAVE_TOKEN_RDATA, (u8 *) val,
@@ -316,11 +318,30 @@ static int init_context(struct esp_sdio_context *context)
 	}
 
 	*val = ((*val >> 16) & ESP_TX_BUFFER_MASK);
+	printk(KERN_INFO "Tx Pre ======  %d\n", context->tx_buffer_count);
 
 	if (*val >= ESP_MAX_BUF_CNT)
 		context->tx_buffer_count = (*val) - ESP_MAX_BUF_CNT;
 	else
 		context->tx_buffer_count = 0;
+	printk(KERN_INFO "Tx Pos ======  %d\n", context->tx_buffer_count);
+
+	kfree(val);
+	return ret;
+}
+
+static int init_context(struct esp_sdio_context *context)
+{
+	int ret = 0;
+	uint8_t prio_q_idx = 0;
+
+	if (!context) {
+		return -EINVAL;
+	}
+
+	ret = get_firmware_data(context);
+	if(ret)
+		return ret;
 
 	context->adapter = esp_get_adapter();
 
@@ -334,7 +355,6 @@ static int init_context(struct esp_sdio_context *context)
 
 	context->adapter->if_type = ESP_IF_TYPE_SDIO;
 
-	kfree(val);
 	return ret;
 }
 
@@ -502,6 +522,12 @@ static int tx_process(void *data)
 		if (context->state != ESP_CONTEXT_READY) {
 			msleep(10);
 			printk(KERN_ERR "%s: not ready", __func__);
+			continue;
+		}
+
+		if (host_sleep) {
+			/* TODO: Use wait_event_interruptible_timeout */
+			msleep(100);
 			continue;
 		}
 
@@ -755,12 +781,93 @@ static int esp_probe(struct sdio_func *func,
 	return ret;
 }
 
+static int esp_suspend(struct device *dev)
+{
+	struct sdio_func *func = NULL;
+	struct esp_sdio_context *context = NULL;
+
+	if (!dev) {
+		printk(KERN_INFO "Failed to inform ESP that host is suspending\n");
+		return -1;
+	}
+
+	func = dev_to_sdio_func(dev);
+
+	printk(KERN_INFO "----> Host Suspend\n");
+	msleep(1000);
+
+	context = sdio_get_drvdata(func);
+
+	if (!context) {
+		printk(KERN_INFO "Failed to inform ESP that host is suspending\n");
+		return -1;
+	}
+
+	host_sleep = 1;
+
+	generate_slave_intr(context, BIT(ESP_POWER_SAVE_ON));
+	msleep(10);
+
+	sdio_set_host_pm_flags(func, MMC_PM_KEEP_POWER);
+#if 0
+	/* Enale OOB IRQ and host wake up */
+	enable_irq(SDIO_OOB_IRQ);
+	enable_irq_wake(SDIO_OOB_IRQ);
+#endif
+	return 0;
+}
+
+static int esp_resume(struct device *dev)
+{
+	struct sdio_func *func = NULL;
+	struct esp_sdio_context *context = NULL;
+
+	if (!dev) {
+		printk(KERN_INFO "Failed to inform ESP that host is awake\n");
+		return -1;
+	}
+
+	func = dev_to_sdio_func(dev);
+
+	printk(KERN_INFO "-----> Host Awake\n");
+#if 0
+	/* Host woke up.. Disable OOB IRQ */
+	disable_irq_wake(SDIO_OOB_IRQ);
+	disable_irq(SDIO_OOB_IRQ);
+#endif
+
+
+	context = sdio_get_drvdata(func);
+
+	if (!context) {
+		printk(KERN_INFO "Failed to inform ESP that host is awake\n");
+		return -1;
+	}
+
+	/*     generate_slave_intr(context, BIT(ESP_RESET));*/
+	get_firmware_data(context);
+	msleep(100);
+	generate_slave_intr(context, BIT(ESP_POWER_SAVE_OFF));
+	host_sleep = 0;
+	return 0;
+}
+
+static const struct dev_pm_ops esp_pm_ops = {
+	.suspend = esp_suspend,
+	.resume = esp_resume,
+};
+
 /* SDIO driver structure to be registered with kernel */
 static struct sdio_driver esp_sdio_driver = {
 	.name		= "esp_sdio",
 	.id_table	= esp_devices,
 	.probe		= esp_probe,
 	.remove		= esp_remove,
+	.drv = {
+		.owner = THIS_MODULE,
+		.pm = &esp_pm_ops,
+	}
+
 };
 
 int esp_init_interface_layer(struct esp_adapter *adapter)
@@ -802,7 +909,7 @@ void process_event_esp_bootup(struct esp_adapter *adapter, u8 *evt_buf, u8 len)
 
 		} else if (*pos == ESP_BOOTUP_FIRMWARE_CHIP_ID){
 
-			printk(KERN_INFO "ESP chipset detected [%s]\n", 
+			printk(KERN_INFO "ESP chipset detected [%s]\n",
 				*(pos+2)==ESP_FIRMWARE_CHIP_ESP32 ? "esp32":
 				*(pos+2)==ESP_FIRMWARE_CHIP_ESP32S2 ? "esp32-s2" :
 				*(pos+2)==ESP_FIRMWARE_CHIP_ESP32C3 ? "esp32-c3" :

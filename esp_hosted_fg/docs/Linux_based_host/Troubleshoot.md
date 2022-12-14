@@ -14,15 +14,17 @@ SDIO_CLASS=00
 SDIO_ID=6666:2222
 MODALIAS=sdio:c00v6666d2222
 ```
-5. In case issue persists, collect and send following logs to Espressif support.
-* dmesg log on host
+5. Possible that SDIO timing can be wrong, because of which you might face some error messages in `/var/log/kern.log`
+Add [.timing = SDIO_SLAVE_TIMING_NSEND_PSAMPLE](https://github.com/espressif/esp-idf/blob/454aeb3a48ac2b92cfa9d8b6a01d1b53179ec50a/components/hal/include/hal/sdio_slave_types.h#L26-L38) of sdio_slave_config_t in `esp/esp_driver/network_adapter/main/sdio_slave_api.c`
+6. In case issue persists, collect and send following logs to Espressif support.
+* dmesg or /var/log/kern.log log on host
 * Output of above mentioned commands
 * ESP console log
 
 ## 2. Network interfaces are not seen on host
 Network interfaces are by default in down state. Execute `ifconfig -a` to see those.
 In case issue persists, collect and send following logs to Espressif support.
-* dmesg log on host
+* dmesg or /var/log/kern.log log on host
 * Output of above mentioned commands
 * ESP console log
 
@@ -30,7 +32,7 @@ In case issue persists, collect and send following logs to Espressif support.
 1. Check ESP console log for wlan disconnect event. For reconnection, execute provided python script.
 2. Execute `route -n` command on host and verify that appropriate routes are configured.
 3. In case issue persists, collect and send following logs to Espressif support.
-* dmesg log on host
+* dmesg or /var/log/kern.log log on host
 * Output of above mentioned commands
 * ESP console log
 * WLAN air capture log
@@ -67,7 +69,7 @@ $ sudo systemctl status bluetooth
 ```
 
 6. In case issue persists, collect and send following logs to Espressif support.
-* dmesg log on host
+* dmesg or /var/log/kern.log log on host
 * Output of above mentioned commands
 * ESP console log
 * hcidump log (`hcidump -X -t`)
@@ -91,7 +93,7 @@ $ sudo hciattach -s <baud_rate> /dev/serial0 any <baud_rate> flow
 ```
 
 ## 6. Unknown symbol error while executing rpi_init.sh
-If user gets below dmesg log
+If user gets below dmesg or /var/log/kern.log log
 ```
 [11827.359298] esp32_sdio: Unknown symbol sdio_release_host (err 0)
 [11827.359308] esp32_sdio: Unknown symbol sdio_disable_func (err 0)

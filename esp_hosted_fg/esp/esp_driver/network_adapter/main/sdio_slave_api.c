@@ -187,6 +187,12 @@ static interface_handle_t * sdio_init(void)
 		   */
 		//.flags              = SDIO_SLAVE_FLAG_INTERNAL_PULLUP,
 		.flags              = SDIO_SLAVE_FLAG_DEFAULT_SPEED,
+		/* Note: Sometimes the SDIO card is detected but gets problem in
+		 * Read/Write or handling ISR because of SDIO timing issues.
+		 * In these cases, Please tune timing below using value from
+		 * https://github.com/espressif/esp-idf/blob/release/v5.0/components/hal/include/hal/sdio_slave_types.h#L26-L38
+		 * */
+		/* .timing             = SDIO_SLAVE_TIMING_NSEND_PSAMPLE,*/
 	};
 	sdio_slave_buf_handle_t handle;
 
