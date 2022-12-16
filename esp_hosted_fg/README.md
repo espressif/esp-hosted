@@ -88,9 +88,9 @@ The below table explains which feature is supported on which transport interface
 | ESP32-S3 | SDIO | NA | NA | NA |
 | ESP32-S3 | SPI | Yes | Yes | BLE 5.0 |
 | ESP32-S3 | UART | No | No | BLE 5.0 |
-| ESP32-C2\* | SDIO | NA | NA | NA |
-| ESP32-C2\* | SPI | Yes | Yes | ComingSoon |
-| ESP32-C2\* | UART | No | No | BLE 5.0 |
+| ESP32-C2 | SDIO | NA | NA | NA |
+| ESP32-C2 | SPI | Yes | Yes | BLE 5.0 |
+| ESP32-C2 | UART | No | No | BLE 5.0 |
 
 Note:
 - BT stands for Bluetooth BR/EDR and BLE stands for Bluetooth Low Energy specifications.
@@ -98,9 +98,6 @@ Note:
 - We suggest the latest stable bluez version to be used. Any other Bluetooth stack instead of bluez also could be used.
 - bluez 5.45 on-wards BLE 5.0 HCI commands are supported.
 - BLE 5.0 has backward compatibility of BLE 4.2.
-- \* ESP32-C2 is added as beta stage (only for ESP32-C2)
-	- You may experience low throughput & intermittent SPI detection issue on ESP32-C2. It would evolve and get stable with time.
-
 
 ##### 1.5.2 MCU Host
 The below table explains which feature is supported on which transport interface for MCU based host.
@@ -119,9 +116,9 @@ The below table explains which feature is supported on which transport interface
 | ESP32-S3 | SDIO | NA | NA | NA |
 | ESP32-S3 | SPI | Yes | Yes | BLE 5.0\* |
 | ESP32-S3 | UART | No | No | BLE 5.0\*\* |
-| ESP32-C2\*\*\* | SDIO | NA | NA | NA |
-| ESP32-C2\*\*\* | SPI | Yes | Yes | ComingSoon |
-| ESP32-C2\*\*\* | UART | No | No | BLE 5.0\*\* |
+| ESP32-C2 | SDIO | NA | NA | NA |
+| ESP32-C2 | SPI | Yes | Yes | BLE 5.0\* |
+| ESP32-C2 | UART | No | No | BLE 5.0\*\* |
 
 Note: BT stands for Bluetooth BR/EDR and BLE stands for Bluetooth Low Energy specifications.
 
@@ -140,9 +137,6 @@ Note: BT stands for Bluetooth BR/EDR and BLE stands for Bluetooth Low Energy spe
 > Register the UART serial interface as a HCI interface with BT/BLE stack
 > With the help of this UART interface, BT/BLE stack can directly interact with BT controller present on ESP bypassing host driver and firmware
 > ESP Hosted host driver and a firmware plays no role in this communication
-
-\*\*\* ESP32-C2 is added as beta stage (only for ESP32-C2)
-> You may experience low throughput & intermittent SPI detection issue on ESP32-C2. It would evolve and get stable with time.
 
 * Linux hosts support OTA update (Over The Air ESP firmware update) in C and python. MCU hosts can refer to the same for their development. For detailed documentation, please read
 [ota_update.md](docs/Linux_based_host/ota_update.md).

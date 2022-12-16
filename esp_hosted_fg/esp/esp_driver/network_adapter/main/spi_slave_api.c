@@ -94,7 +94,7 @@ static const char TAG[] = "SPI_DRIVER";
      * Below value could be fine tuned to achieve highest
      * data rate in accordance with SPI Master
      * */
-    #define SPI_CLK_MHZ            20
+    #define SPI_CLK_MHZ            30
 
 #elif defined CONFIG_IDF_TARGET_ESP32C3
 
@@ -594,6 +594,9 @@ static interface_handle_t * esp_spi_init(void)
 			ESP_SPI_CONTROLLER, slvcfg.mode, SPI_CLK_MHZ,
 			GPIO_MOSI, GPIO_MISO, GPIO_CS, GPIO_SCLK,
 			CONFIG_ESP_SPI_GPIO_HANDSHAKE, CONFIG_ESP_SPI_GPIO_DATA_READY);
+
+	ESP_LOGI(TAG, "Hosted SPI queue size: Tx:%u Rx:%u", SPI_TX_QUEUE_SIZE, SPI_RX_QUEUE_SIZE);
+
 	/* Initialize SPI slave interface */
 	ret=spi_slave_initialize(ESP_SPI_CONTROLLER, &buscfg, &slvcfg, DMA_CHAN);
 	assert(ret==ESP_OK);
