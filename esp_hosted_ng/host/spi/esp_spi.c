@@ -24,6 +24,7 @@
 #include "esp_api.h"
 #include "esp_bt_api.h"
 #include "esp_kernel_port.h"
+#include "esp_stats.h"
 
 #define SPI_INITIAL_CLK_MHZ     10
 #define NUMBER_1M               1000000
@@ -218,6 +219,8 @@ void process_event_esp_bootup(struct esp_adapter *adapter, u8 *evt_buf, u8 len)
 
 			hardware_type = *(pos+2);
 
+		} else if(*pos == ESP_BOOTUP_TEST_RAW_TP) {
+			process_test_capabilities(*(pos + 2));
 		} else {
 			printk (KERN_WARNING "Unsupported tag in event");
 		}
@@ -386,6 +389,9 @@ static void esp_spi_work(struct work_struct *work)
 				cb = (struct esp_skb_cb *)tx_skb->cb;
 				if (cb && cb->priv && atomic_read(&tx_pending) < TX_RESUME_THRESHOLD) {
 					esp_tx_resume(cb->priv);
+					#if TEST_RAW_TP
+						esp_raw_tp_queue_resume();
+					#endif
 				}
 			}
 		}
