@@ -1,6 +1,6 @@
-# Getting started with STM32F469I(MCU based Host)
+# Getting started with MCU based Host
 
-This section elaborates about setting up the control path, Wi-Fi connectivity and Bluetooth/BLE connectivity. Before proceeding, ensure pre-requisites [Hardware Setup and Compilation](MCU_based_readme.md#2-wi-fi-connectivity-setup-over-spi) are done.
+This section elaborates about setting up the control path, Wi-Fi connectivity and Bluetooth/BLE connectivity. Before proceeding, ensure pre-requisites [Hardware Setup and Compilation](MCU_based_readme.md#2-setup) are done.
 
 ## 1. Control Path
 
@@ -33,26 +33,41 @@ Host firmware provides Wi-Fi connectivity using control path and data path. Cont
 
 ### 2.1 Start Project with STM32
 
-We have tested project with STM32F469I-Discovery board. If other than STM32F469I-Discovery board is used, peripheral like SPI, USART need to change as per board needs. STM32CubeIDE would be needed to follow next steps.
+#### 2.1.1 Supported Hardware
+We have tested project for `SPI` transport with STM32F469I-Discovery board and `SDIO` transport with STM32F412ZGT6-Nucleo 144 board. If other than STM32F469I-Discovery board and STM32F412ZGT6-Nucleo 144 board are used, peripheral like SDIO, SPI, USART need to change as per board needs.
+
+| ESP32 Board | STM32 Board  | Transport  |
+|:---------:|:------:|:----------:|
+| ESP32 | STM32F412ZGT6-Nucleo 144  | SDIO |
+| ESP32/S2/S3/C2/C3 | STM32F469I-Discovery  | SPI |
+
+:warning: <code>**Note1:** For SDIO, please check [pull up requirements](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/peripherals/sd_pullup_requirements.html) while choosing ESP module</code>
+
+#### 2.1.2 STM32CubeIDE would be needed to follow next steps.
 
 * Create a workspace_directory outside of `ESP-Hosted` git cloned directory.
 * Browse and Open Workspace directory in STM32CubeIDE. It will take few seconds to open STM32CubeIDE.
-* From `Information Center` tab select `Start new project` from existing STM32CubeMX configuration file, i.e. ioc file option. It will take few seconds to open dialog box. In STM32CubeMX .ioc file field, choose appropriate .ioc file from `</path/to/esp_hosted>/esp_hosted_fg/host/stm32/proj/` directory.
+* From `Information Center` tab select `Start new project` from existing STM32CubeMX configuration file, i.e. ioc file option. It will take few seconds to open dialog box. In STM32CubeMX .ioc file field, choose appropriate .ioc file from `</path/to/esp_hosted>/esp_hosted_fg/host/stm32/proj/<transport>` directory.
+* For SPI transport:
 ```
 For ESP32 peripheral: Select stm_spi_host_v1.ioc file
 For ESP32-C2/ESP32-C3/ESP32-S2/ESP32-S3 peripheral: Select stm_spi_host_v2.ioc file
+```
+* For SDIO transport:
+```
+For ESP32 peripheral: Select stm_sdio_host.ioc file
 ```
 * Once file is selected, click `Open` and `Finish`. New dialog box will open as Open Associated Perspective, click on `Yes`. It may take 2-3 minutes to open.
 * Close ioc tab then close STM32CubeIDE and click on `exit`.
 * For Linux and Mac development hosts, In terminal, run
 ```
 $ cd </path/to/esp_hosted>/esp_hosted_fg/host/stm32/proj
-$ bash ./prepare_project.sh </path/to/workspace_directory>
+$ bash ./prepare_project.sh <transport> </path/to/workspace_directory>
 ```
 For Windows based systems, open "cmd.exe" or Windows Power Shell and run -
 ```
 > cd <path\to\esp_hosted>\esp_hosted_fg\host\stm32\proj
-> prepare_project.bat <path\to\workspace_directory>
+> prepare_project.bat <transport> <path\to\workspace_directory>
 ```
 This will copy the project configuration files into workspace_directory
 
@@ -67,7 +82,7 @@ $ minicom -D /dev/ttyACM0
 ```
 Note: /dev/ttyACM0 is used for For Linux, /dev/cu.usbmodemXXXXXX for Mac and COM port for Windows development host. Baud rate used is 115200. Parity bits configuration is 8N1.
 
-* In STM32CubeIDE, go to `Project Explorer`, right click on `stm_spi_host` project. Then `menu -> Run -> Run as -> STM32 Cortex-M C/C++ Application `. This will open Edit Configuration box, Click `OK`.
+* In STM32CubeIDE, go to `Project Explorer`, right click on `stm_<transport>_host` project. Then `menu -> Run -> Run as -> STM32 Cortex-M C/C++ Application `. This will open Edit Configuration box, Click `OK`.
 `Debug as` option can also be alternatively used if debugging is desired.
 
 Expected output on `Console` tab in STM32CubeIDE as follows:
@@ -138,7 +153,7 @@ started ESPWifi softAP
 
 ### 2.2 User configuration parameter
 
-Host firmware has basic user configuration parameters. User needs to manually configure these values. Click on `stm_spi_host` under `Project Explorer` tab. Then `menu -> Project -> Properties -> C/C++ Build -> Build Variables -> < select variable> -> Edit -> OK -> Apply`.
+Host firmware has basic user configuration parameters. User needs to manually configure these values. Click on `stm_<transport>_host` under `Project Explorer` tab. Then `menu -> Project -> Properties -> C/C++ Build -> Build Variables -> < select variable> -> Edit -> OK -> Apply`.
 
 Build Variables are as follows:
 
@@ -205,6 +220,10 @@ ARP response is triggered for requests received. You should be able see ARP resp
 ```
 XX bytes from 3c:71:bf:9a:bc:b8 (192.168.1.233): index=0 time=199.144 msec
 ```
+
+## 2.4 RAW throughput Testing :
+
+For raw throughput please check [Raw_TP_Testing.md](./Raw_TP_Testing.md)
 
 ## 3. BT/BLE connectivity
 Bluetooth and BLE handling could be easily ported. Porting details could be found at [ 1.5.2 MCU Host](../../README.md#152-mcu-host) on [README.md](../../README.md)
