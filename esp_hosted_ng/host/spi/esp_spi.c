@@ -38,6 +38,7 @@ static int spi_init(void);
 static void adjust_spi_clock(u8 spi_clk_mhz);
 
 volatile u8 data_path = 0;
+volatile u8 host_sleep = 0;
 static struct esp_spi_context spi_context;
 static char hardware_type = ESP_FIRMWARE_CHIP_UNRECOGNIZED;
 static atomic_t tx_pending;
