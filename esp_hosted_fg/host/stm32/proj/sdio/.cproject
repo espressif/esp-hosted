@@ -53,7 +53,7 @@
 								<option id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.assembler.option.debuglevel.1106515012" name="Debug level" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.assembler.option.debuglevel" value="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.assembler.option.debuglevel.value.g3" valueType="enumerated"/>
 								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.assembler.option.definedsymbols.2015462317" name="Define symbols (-D)" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.assembler.option.definedsymbols" valueType="definedSymbols">
 									<listOptionValue builtIn="false" value="DEBUG"/>
-									<listOptionValue builtIn="false" value="MCU=1"/>
+									<listOptionValue builtIn="false" value="MCU_SYS=1"/>
 									<listOptionValue builtIn="false" value="STM32F412Zx"/>
 								</option>
 								<inputType id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.assembler.input.702662585" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.assembler.input"/>
@@ -84,7 +84,7 @@
 									<listOptionValue builtIn="false" value="&quot;INPUT_STATION__SSID=${INPUT_STATION__SSID}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;INPUT_SOFTAP_BANDWIDTH=${INPUT_SOFTAP_BANDWIDTH}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;INPUT__OPERATING_MODE=${INPUT__OPERATING_MODE}&quot;"/>
-									<listOptionValue builtIn="false" value="MCU=1"/>
+									<listOptionValue builtIn="false" value="MCU_SYS=1"/>
 									<listOptionValue builtIn="false" value="STM32F412Zx"/>
 								</option>
 								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.option.includepaths.1792374213" name="Include paths (-I)" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.option.includepaths" useByScannerDiscovery="false" valueType="includePath">
@@ -180,7 +180,7 @@
 							<tool id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.assembler.1113754967" name="MCU GCC Assembler" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.assembler">
 								<option id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.assembler.option.debuglevel.1321057505" name="Debug level" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.assembler.option.debuglevel" value="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.assembler.option.debuglevel.value.g0" valueType="enumerated"/>
 								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.assembler.option.definedsymbols.860137312" name="Define symbols (-D)" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.assembler.option.definedsymbols" valueType="definedSymbols">
-									<listOptionValue builtIn="false" value="MCU=1"/>
+									<listOptionValue builtIn="false" value="MCU_SYS=1"/>
 									<listOptionValue builtIn="false" value="STM32F412Zx"/>
 								</option>
 								<inputType id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.assembler.input.345452079" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.assembler.input"/>
@@ -210,7 +210,7 @@
 									<listOptionValue builtIn="false" value="&quot;INPUT_STATION__SSID=${INPUT_STATION__SSID}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;INPUT_SOFTAP_BANDWIDTH=${INPUT_SOFTAP_BANDWIDTH}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;INPUT__OPERATING_MODE=${INPUT__OPERATING_MODE}&quot;"/>
-									<listOptionValue builtIn="false" value="MCU=1"/>
+									<listOptionValue builtIn="false" value="MCU_SYS=1"/>
 									<listOptionValue builtIn="false" value="STM32F407xx"/>
 								</option>
 								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.option.includepaths.1446818680" name="Include paths (-I)" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.option.includepaths" useByScannerDiscovery="false" valueType="includePath">

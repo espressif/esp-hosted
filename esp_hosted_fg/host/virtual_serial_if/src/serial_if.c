@@ -14,7 +14,7 @@
 #define PROTO_PSER_TLV_T_EPNAME           0x01
 #define PROTO_PSER_TLV_T_DATA             0x02
 
-#ifdef MCU
+#ifdef MCU_SYS
 #define command_log(format, ...)          printf(format "\r", ##__VA_ARGS__);
 #else
 #define command_log(...)                  printf("%s:%u ",__func__,__LINE__); \

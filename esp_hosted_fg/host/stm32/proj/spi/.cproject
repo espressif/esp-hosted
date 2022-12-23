@@ -114,7 +114,7 @@
 									<listOptionValue builtIn="false" value="&quot;INPUT_SOFTAP_BANDWIDTH=${INPUT_SOFTAP_BANDWIDTH}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;INPUT__OPERATING_MODE=${INPUT__OPERATING_MODE}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;INPUT_GET_AP_SCAN_LIST=${INPUT_GET_AP_SCAN_LIST}&quot;"/>
-									<listOptionValue builtIn="false" value="MCU=1"/>
+									<listOptionValue builtIn="false" value="MCU_SYS=1"/>
 								</option>
 								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.option.includepaths.438442903" name="Include paths (-I)" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.option.includepaths" useByScannerDiscovery="false" valueType="includePath">
 									<listOptionValue builtIn="false" value="../Core/Inc"/>
