@@ -20,6 +20,9 @@ Setup image is here.
 ![alt text](rpi_esp32_uart_setup.jpg "setup of Raspberry-Pi as host and ESP32 as slave with UART transport")
 
 #### 1.1.2 ESP32-C2 setup
+
+Although, `HCI with UART` is supported on `ESP32-C2`, `Wi-Fi + Bluetooth` (together) when used with `SPI+UART` setup, Bluetooth on UART works fine but Wi-Fi on SPI faces low throughput problem. By the time this is rectified, please use 'SPI only' i.e. `HCI over SPI` and `Wi-Fi over SPI` transport combination. In `SPI only` setup, there is no such limitation.
+
 | Raspberry-Pi Pin Function | Raspberry-Pi Pin | ESP32-C2 Pin | ESP32-C2 Pin Function |
 |:-------:|:--------:|:---------:|:--------:|
 | RX | 10 | IO5 | TX |
@@ -151,18 +154,21 @@ $ idf.py menuconfig
 	- ESP32 / ESP32-C3 / ESP32-S3
 		- navigate to `Component config -> Bluetooth -> Bluetooth controller -> HCI mode`, select `UART(H4)`
 	- ESP32-C2
-		- Navigate to `Component config -> Bluetooth -> Bluetooth -> Controller`, select `Enabled`
+		- Navigate to `Component config -> Bluetooth -> Bluetooth -> Controller`, select `Enabled` (Should be enabled by default)
 		- Navigate to `Component config -> Bluetooth -> Controller Options -> HCI Config -> Select HCI interface`, select `uart`
-		- Navigate to `Component config > Bluetooth > Controller Options > HCI Config` and enable `HCI uart Hardware Flow ctrl`
+		- Navigate to `Component config > Bluetooth > Controller Options > HCI Config`
+          - DISABLE `HCI uart Hardware Flow ctrl` (Should be disabled by default)
+          - Change `HCI uart Tx gpio` to `5`
+          - Change `HCI uart Rx gpio` to `18`
 
 - Set UART baud rate
-	Default HCI over baud rate is 921600. In case need to change,
+	Default HCI over baud rate is `921600`. In case need to change,
 	- ESP32
 		- Navigate and change using `Component config -> Bluetooth -> Bluetooth controller -> HCI UART(H4) Options -> UART Baudrate for HCI`
 	- ESP32-C3 / ESP32-S3
 		- Navigate and change using `Component config -> Example Configuration -> UART Baudrate for HCI`
 	- ESP32-C2
-		- Navigate and change using `Component config -> Bluetooth -> Controller Options -> HCI Config`
+		- Navigate and change using `Component config -> Bluetooth -> Controller Options -> HCI Config` -> `HCI uart baudrate`
 
 - Additional settings
 	- ESP32-C3
