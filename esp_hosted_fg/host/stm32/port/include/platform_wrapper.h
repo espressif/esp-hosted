@@ -9,6 +9,8 @@
 #include <unistd.h>
 #include <sys/types.h>
 
+#define MCU_SYS                                1
+
 #define TIMEOUT_PSERIAL_RESP                   30
 
 #define CTRL__TIMER_ONESHOT                    0
