@@ -104,7 +104,7 @@ The below table explains which feature is supported on which transport interface
 
 | ESP device | Transport Interface | WLAN support | Virtual serial interface | Bluetooth support |
 |:------------:|:-------:|:---------:|:--------:|:--------:|
-| ESP32 | SDIO | No | No | No |
+| ESP32 | SDIO | Yes | Yes | BT/BLE 4.2\* |
 | ESP32 | SPI | Yes | Yes | BT/BLE 4.2\* |
 | ESP32 | UART | No | No | BT/BLE 4.2\*\* |
 | ESP32-S2 | SDIO | NA | NA | NA |

@@ -271,16 +271,17 @@ static void display_arp(uint8_t *pkt, uint16_t pkt_len, uint8_t arp_msg)
 	char mac_s[30];
 	uint8_t *mac = NULL;
 	char str_req[2][20] = {"ARP_REQ_RCVD", "ARP_RSP_RCVD"};
+	static uint32_t count = 0;
 
 	if (arp_msg < MAX_MSG_TYPE_ARPING) {
 		ipv4_addr_ntoa(arping_get_ipaddr(pkt, IP_ADDR_TYPE_SRC), ip_addr_s, 20);
 		mac = arping_get_mac(pkt, MAC_ADDR_TYPE_SRC);
 
-		snprintf(mac_s, 30, "%2x:%2x:%2x:%2x:%2x:%2x",
+		snprintf(mac_s, 30, "%02x:%02x:%02x:%02x:%02x:%02x",
 				mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
 
-		printf("%s: %u bytes from %s (%s)\n\r",
-				str_req[arp_msg-1], pkt_len,  ip_addr_s, mac_s);
+		printf("0x%05lX %s: %u bytes from %s (%s)\n\r",
+				++count, str_req[arp_msg-1], pkt_len,  ip_addr_s, mac_s);
 	}
 }
 

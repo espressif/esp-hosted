@@ -22,28 +22,52 @@ extern "C" {
 
 /** Includes **/
 #include "stdint.h"
-#include "stddef.h"
+#include "stdio.h"
 
 /** Constants/Macros **/
+#define MAX_NETWORK_INTERFACES            2
+#define STA_INTERFACE                     "ESP_STATION"
+#define SOFTAP_INTERFACE                  "ESP_SOFTAP"
+
 #define UNUSED_VAR(x)                     (void)(x);
+
 #define MAX_SPI_BUFFER_SIZE               1600
+/* TODO: SDIO buffers to be set same at both, ESP and host side */
+#define MAX_SDIO_BUFFER_SIZE              1536
+
+#define MAX_SUPPORTED_SDIO_CLOCK_MHZ      40
+
 #define malloc                            pvPortMalloc
 #define free                              vPortFree
 
 #define htole16(x)                        ((uint16_t)(x))
 #define le16toh(x)                        ((uint16_t)(x))
 
-#define IP_ADDR_LEN				          4
+#define IP_ADDR_LEN                       4
 #define MAC_LEN                           6
 #define MIN_MAC_STRING_LEN                17
 
+#ifndef BIT
+#define BIT(x)                            (1UL << (x))
+#endif
 
+#define FREQ_IN_MHZ(x)                    ((x)*1000000)
 
 typedef enum stm_ret_s {
-	STM_FAIL = -1,
-	STM_OK = 0
+	STM_OK                =  0,
+	STM_FAIL              = -1,
+	STM_FAIL_TIMEOUT      = -2,
+	STM_FAIL_INVALID_ARG  = -3,
+	STM_FAIL_NO_MEMORY    = -4,
+	STM_FAIL_NOT_FOUND    = -5,
+	STM_FAIL_NOT_FINISHED = -6,
+	STM_FAIL_ALIGNMENT    = -7
 }stm_ret_t;
 
+typedef enum {
+	TRANSPORT_INACTIVE,
+	TRANSPORT_ACTIVE
+} transport_drv_events_e;
 
 /** Exported Structures **/
 /* interface header */

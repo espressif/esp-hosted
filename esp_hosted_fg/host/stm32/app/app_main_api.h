@@ -20,7 +20,6 @@ extern "C" {
 #endif
 
 /** Includes **/
-#include "common.h"
 
 /** Exported Structures **/
 

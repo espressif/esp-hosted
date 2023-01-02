@@ -21,7 +21,9 @@
 │   │   │   │   ├── network           (Contain netdev API implementation and network stub. Network stub
 │   │   │   │   │                         should be replace by actual network stub like lwip by user)
 │   │   │   │   ├── serial            (Contain Virtual Serial Interface implemented over SPI transport)
-│   │   │   │   └── spi               (Contain driver for SPI transport)
+│   │   │   │   └── transport
+│   │   │   │       ├── SDIO          (Contain driver for SDIO transport)
+│   │   │   │       └── SPI           (Contain driver for SPI transport)
 │   │   │   ├── proj                  (Contain windows 'batch'(.bat) file and sh scripts for project setup. Also contain
 │   │   │   │                             `.ioc` file which is HAL layer for STM32, used in project installation in STM32CubeIDE)
 │   │   │   └── port                  (Porting files for OS abstraction, contains wrappers

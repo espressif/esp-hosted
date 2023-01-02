@@ -7,11 +7,13 @@ Following diagram depicts building blocks of MCU based ESP-Hosted solution.
 ## 1. ESP Host Software
 The host software mainly consists of following building blocks.
 
-### 1.1 SPI Host Driver  
+### 1.1 SPI/SDIO Host Driver
 
-* ESP-Hosted solution provides thin SPI host interface layer which transmits/receives data from SPI hardware driver and makes it available to serial or network interface
+* ESP-Hosted solution provides thin SPI/SDIO host interface layer which transmits/receives data from SPI/SDIO hardware driver and makes it available to serial or network interface
 * Asynchrounous in nature, higher layers have flexibility to transmit and/or receive data as needed
-* Currently, Maximum 1600 bytes of data can be trasmitted in single transmit or receive transaction
+* Currently, Maximum bytes of data trasmitted in single transmit or receive transaction is as follows:
+	* SPI - 1600 bytes
+	* SDIO - 4096 bytes
   
 ---
 
@@ -35,15 +37,15 @@ The host software mainly consists of following building blocks.
 
 ### 1.4 Network interface layer [netif]  
 
-* This is an abstraction layer between SPI host driver and a network stack.
+* This is an abstraction layer between SDIO/SPI host driver and a network stack.
 * This gives flexibility of using any network stack with ESP-Hosted solution.
-* This interface layer defines set of APIs and data structure that network stack must implement in order to make it work with SPI host driver.
+* This interface layer defines set of APIs and data structure that network stack must implement in order to make it work with SDIO/SPI host driver.
   
 ---
 
 ### 1.5 Network stack stub  
 
-* This is a simple network stack stub which demonstrates how a network stack can implement network interface layer and work with SPI host driver.
+* This is a simple network stack stub which demonstrates how a network stack can implement network interface layer and work with SDIO/SPI host driver.
 * This does not represent actual network stack. This should be used as a reference for developing network interface layer [netif] provided by ESP-Hosted solution
   
 ---

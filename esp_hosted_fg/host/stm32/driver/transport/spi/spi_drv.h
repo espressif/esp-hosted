@@ -12,22 +12,37 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-/*prevent recursive inclusion */
-#ifndef __SERIAL_DRV_H
-#define __SERIAL_DRV_H
+/** prevent recursive inclusion **/
+#ifndef __SPI_DRV_H
+#define __SPI_DRV_H
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-/** includes **/
-#include "serial_ll_if.h"
+/** Includes **/
+#include "common.h"
+#include "transport_drv.h"
+
+/** constants/macros **/
+
+/* NSS or CS0 configuration (Pin 11) */
+/* In case of different board than STM32F469I,
+ * User need to update SPI NSS pin as per hardware*/
+#ifndef USR_SPI_CS_GPIO_Port
+#define USR_SPI_CS_GPIO_Port    GPIOA
+#endif
+#ifndef USR_SPI_CS_Pin
+#define USR_SPI_CS_Pin          GPIO_PIN_15
+#endif
+
+/** Exported Structures **/
+
+/** Exported variables **/
+
+/** Inline functions **/
 
 /** Exported Functions **/
-static inline stm_ret_t serial_rx_handler(interface_buffer_handle_t * buf_handle)
-{
-	return serial_ll_rx_handler(buf_handle);
-}
 
 #ifdef __cplusplus
 }

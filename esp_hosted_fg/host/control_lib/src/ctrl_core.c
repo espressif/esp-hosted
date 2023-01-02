@@ -11,7 +11,7 @@
 #include <unistd.h>
 
 
-#ifdef STM32F469xx
+#ifdef MCU
 #include "common.h"
 #define command_log(...)             printf(__VA_ARGS__); printf("\r");
 #else
@@ -20,7 +20,7 @@
 #define min(X, Y)                    (((X) < (Y)) ? (X) : (Y))
 #endif
 
-#ifndef STM32F469xx
+#ifndef MCU
 #define MAX_INTERFACE_LEN            IFNAMSIZ
 #define MAC_SIZE_BYTES               6
 #define MIN_MAC_STR_LEN              17
@@ -160,7 +160,7 @@ static inline int is_ctrl_lib_state(int state)
 }
 
 
-#ifndef STM32F469xx
+#ifndef MCU
  /* Function converts mac string to byte stream */
 static int convert_mac_to_bytes(uint8_t *out, size_t out_size, char *s)
 {
@@ -1534,7 +1534,7 @@ int deinit_hosted_control_lib_internal(void)
 int init_hosted_control_lib_internal(void)
 {
 	int ret = SUCCESS;
-#ifndef STM32F469xx
+#ifndef MCU
 	if(getuid()) {
 		printf("Please re-run program with superuser access\n");
 		return FAILURE;
@@ -1582,7 +1582,7 @@ free_bufs:
 
 
 
-#ifndef STM32F469xx
+#ifndef MCU
 
  /* Function ups in given interface */
 int interface_up(int sockfd, char* iface)
