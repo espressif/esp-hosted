@@ -21,6 +21,7 @@
 #include <linux/module.h>
 #include <linux/kernel.h>
 #include <linux/gpio.h>
+#include <linux/igmp.h>
 
 #include "esp.h"
 #include "esp_if.h"
@@ -30,10 +31,12 @@
 #include "esp_kernel_port.h"
 
 #include "esp_cfg80211.h"
+#include "esp_stats.h"
 
 #define HOST_GPIO_PIN_INVALID -1
 static int resetpin = HOST_GPIO_PIN_INVALID;
 extern u8 ap_bssid[MAC_ADDR_LEN];
+extern volatile u8 host_sleep;
 
 module_param(resetpin, int, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
 MODULE_PARM_DESC(resetpin, "Host's GPIO pin number which is connected to ESP32's EN to reset ESP32 device");
@@ -41,6 +44,7 @@ MODULE_PARM_DESC(resetpin, "Host's GPIO pin number which is connected to ESP32's
 static void deinit_adapter(void);
 
 
+struct multicast_list mcast_list = {0};
 struct esp_adapter adapter;
 /*struct esp_device esp_dev;*/
 
@@ -81,6 +85,10 @@ static int process_tx_packet (struct sk_buff *skb)
 
 	if (netif_queue_stopped((const struct net_device *) priv->ndev)) {
 		printk(KERN_INFO "%s: Netif queue stopped\n", __func__);
+		return NETDEV_TX_BUSY;
+	}
+
+	if (host_sleep) {
 		return NETDEV_TX_BUSY;
 	}
 
@@ -142,7 +150,8 @@ static int process_tx_packet (struct sk_buff *skb)
 	payload_header->offset = cpu_to_le16(pad_len);
 	payload_header->packet_type = PACKET_TYPE_DATA;
 
-	payload_header->checksum = cpu_to_le16(compute_checksum(skb->data, (len + pad_len)));
+	if (adapter.capabilities & ESP_CHECKSUM_ENABLED)
+		payload_header->checksum = cpu_to_le16(compute_checksum(skb->data, (len + pad_len)));
 
 	if (!priv->stop_data) {
 		ret = esp_send_packet(priv->adapter, skb);
@@ -186,8 +195,8 @@ void print_capabilities(u32 cap)
 		printk(KERN_INFO "\t * WLAN on SPI\n");
 
 	if ((cap & ESP_BT_UART_SUPPORT) ||
-	    (cap & ESP_BT_SDIO_SUPPORT) ||
-	    (cap & ESP_BT_SPI_SUPPORT)) {
+		    (cap & ESP_BT_SDIO_SUPPORT) ||
+		    (cap & ESP_BT_SPI_SUPPORT)) {
 		printk(KERN_INFO "\t * BT/BLE\n");
 		if (cap & ESP_BT_UART_SUPPORT)
 			printk(KERN_INFO "\t   - HCI over UART\n");
@@ -309,6 +318,36 @@ static NDO_TX_TIMEOUT_PROTOTYPE()
 
 static void esp_set_rx_mode(struct net_device *ndev)
 {
+	struct esp_wifi_device *priv = netdev_priv(ndev);
+	struct netdev_hw_addr *mac_addr;
+	u32 count = 0;
+#if 0
+	struct in_device *in_dev = in_dev_get(ndev);
+	struct ip_mc_list *ip_list = in_dev->mc_list;
+#endif
+	netdev_for_each_mc_addr(mac_addr, ndev) {
+		if (count < MAX_MULTICAST_ADDR_COUNT) {
+			/*printk(KERN_INFO "%d: %pM\n", count+1, mac_addr->addr);*/
+			memcpy(&mcast_list.mcast_addr[count++], mac_addr->addr, ETH_ALEN);
+		}
+	}
+
+	mcast_list.priv = priv;
+	mcast_list.addr_count = count;
+
+	if (priv->port_open) {
+		/*printk (KERN_INFO "Set Multicast list\n");*/
+		if (adapter.mac_filter_wq)
+			queue_work(adapter.mac_filter_wq, &adapter.mac_flter_work);
+	}
+#if 0
+	cmd_set_mcast_mac_list(priv, &mcast_list);
+	while(ip_list) {
+		printk(KERN_DEBUG " IP MC Address: 0x%x\n", ip_list->multiaddr);
+		ip_list = ip_list->next;
+	}
+#endif
+
 }
 
 static int esp_hard_start_xmit(struct sk_buff *skb, struct net_device *ndev)
@@ -428,6 +467,7 @@ void esp_remove_network_interfaces(struct esp_adapter *adapter)
 			netif_device_detach(ndev);
 
 			if (ndev->reg_state == NETREG_REGISTERED) {
+				unregister_inetaddr_notifier(&(adapter->priv[0]->nb));
 				unregister_netdev(ndev);
 				free_netdev(ndev);
 				ndev = NULL;
@@ -539,6 +579,7 @@ static void process_rx_packet(struct esp_adapter *adapter, struct sk_buff *skb)
 	struct esp_wifi_device *priv = NULL;
 	struct esp_payload_header *payload_header = NULL;
 	u16 len = 0, offset = 0;
+	u16 rx_checksum = 0, checksum = 0;
 	struct hci_dev *hdev = adapter->hcidev;
 	u8 *type = NULL;
 	struct sk_buff * eap_skb = NULL;
@@ -553,9 +594,21 @@ static void process_rx_packet(struct esp_adapter *adapter, struct sk_buff *skb)
 	len = le16_to_cpu(payload_header->len);
 	offset = le16_to_cpu(payload_header->offset);
 
-	/*print_hex_dump(KERN_ERR , "rx: ", DUMP_PREFIX_ADDRESS, 16, 1, skb->data, len, 1);*/
+	if (payload_header->reserved2 == 0xFF) {
+		print_hex_dump(KERN_INFO, "Wake up packet: ", DUMP_PREFIX_ADDRESS, 16, 1, skb->data, len+offset, 1);
+	}
 
-	payload_header->checksum = 0;
+	if (adapter->capabilities & ESP_CHECKSUM_ENABLED) {
+		rx_checksum = le16_to_cpu(payload_header->checksum);
+		payload_header->checksum = 0;
+
+		checksum = compute_checksum(skb->data, (len + offset));
+
+		if (checksum != rx_checksum) {
+			dev_kfree_skb_any(skb);
+			return;
+		}
+	}
 
 	/* chop off the header from skb */
 	skb_pull(skb, offset);
@@ -572,9 +625,10 @@ static void process_rx_packet(struct esp_adapter *adapter, struct sk_buff *skb)
 		}
 
 		if (payload_header->packet_type == PACKET_TYPE_EAPOL) {
+			printk(KERN_INFO "%s: Rx PACKET_TYPE_EAPOL!!!!\n", __func__);
 			esp_port_open(priv);
 
-			eap_skb = alloc_skb(skb->len, GFP_KERNEL);
+			eap_skb = alloc_skb(skb->len + ETH_HLEN, GFP_KERNEL);
 			if(!eap_skb) {
 				printk(KERN_INFO "%s:%u memory alloc failed\n",__func__, __LINE__);
 				return;
@@ -640,9 +694,25 @@ static void process_rx_packet(struct esp_adapter *adapter, struct sk_buff *skb)
 		else
 			dev_kfree_skb_any(skb);
 
+	} else if (payload_header->if_type == ESP_TEST_IF) {
+		#if TEST_RAW_TP
+			update_test_raw_tp_rx_stats(len);
+		#endif
+		dev_kfree_skb_any(skb);
 	} else {
 		dev_kfree_skb_any(skb);
 	}
+}
+
+int esp_is_tx_queue_paused(struct esp_wifi_device *priv)
+{
+	if (!priv || !priv->ndev)
+		return 0;
+
+	if ((priv->ndev &&
+		    !netif_queue_stopped((const struct net_device *)priv->ndev)))
+		return 1;
+    return 0;
 }
 
 void esp_tx_pause(struct esp_wifi_device *priv)
@@ -718,6 +788,11 @@ static void esp_if_rx_work(struct work_struct *work)
 	esp_get_packets(&adapter);
 }
 
+static void update_mac_filter(struct work_struct *work)
+{
+	cmd_set_mcast_mac_list(mcast_list.priv, &mcast_list);
+}
+
 static void esp_events_work(struct work_struct *work)
 {
 	struct sk_buff *skb = NULL;
@@ -755,6 +830,14 @@ static struct esp_adapter * init_adapter(void)
 
 	INIT_WORK(&adapter.events_work, esp_events_work);
 
+	adapter.mac_filter_wq = alloc_workqueue("MAC_FILTER", 0, 0);
+	if (!adapter.mac_filter_wq) {
+		deinit_adapter();
+		return NULL;
+	}
+
+	INIT_WORK(&adapter.mac_flter_work, update_mac_filter);
+
 	return &adapter;
 }
 
@@ -767,6 +850,9 @@ static void deinit_adapter(void)
 
 	if (adapter.if_rx_workqueue)
 		destroy_workqueue(adapter.if_rx_workqueue);
+
+	if (adapter.mac_filter_wq)
+		destroy_workqueue(adapter.mac_filter_wq);
 }
 
 static void esp_reset(void)
@@ -822,7 +908,9 @@ static int __init esp_init(void)
 static void __exit esp_exit(void)
 {
 	uint8_t iface_idx = 0;
-
+#if TEST_RAW_TP
+	test_raw_tp_cleanup();
+#endif
 	for (iface_idx=0; iface_idx<ESP_MAX_INTERFACE; iface_idx++) {
 		cmd_deinit_interface(adapter.priv[iface_idx]);
 	}

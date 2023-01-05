@@ -34,8 +34,11 @@ int wpa_cipher_to_alg(int cipher)
         return WIFI_WPA_ALG_TKIP;
     case WLAN_CIPHER_SUITE_WEP104:
         return WIFI_WPA_ALG_WEP104;
-    case WLAN_CIPHER_SUITE_WEP40:
-        return WIFI_WPA_ALG_WEP40;
+	case WLAN_CIPHER_SUITE_WEP40:
+		return WIFI_WPA_ALG_WEP40;
+	case WLAN_CIPHER_SUITE_AES_CMAC:
+		return WIFI_WPA_ALG_IGTK;
+
     }
     return WIFI_WPA_ALG_NONE;
 }

@@ -37,37 +37,42 @@
 > <details><summary>Hardware setup</summary>
 > <p>
 >
-> > ## Hardware setup
-> > - Raspberry-Pi pinout for SDIO can be found [here!](https://pinout.xyz/pinout/sdio)
-> > - Sample setup image is shown below.
-> > ![alt text](rpi_esp32_sdio_setup.jpeg "setup of Raspberry-Pi as host and ESP32 as peripheral")
+> > <details><summary>ESP32</summary>
+> > <p>
 > >
-> > ### Pin connections
-> >
-> > | Raspberry-Pi Pin | ESP Pin | Function |
-> > |:-------:|:---------:|:--------:|
-> > | 13 | IO13 | DAT3 |
-> > | 15 | IO14 | CLK |
-> > | 16 | IO15 | CMD |
-> > | 18 | IO2 | DAT0 |
-> > | 22 | IO4 | DAT1 |
-> > | 31 | EN  | ESP Reset |
-> > | 37 | IO12 | DAT2 |
-> > | 39 | GND | GND |
-> >
-> > ---
-> >
-> > ### Additional Pull-ups
-> > - In general, For Most of ESP32 boards, additional pull-up of 10 kOhm resistor will be required for pins CMD and DATA(DAT0-DAT3) lines.
-> > - Additional Pull-ups may be required depending on exact ESP chipset you use. Please find details [here](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/peripherals/sd_pullup_requirements.html)
-> >
-> > ---
-> >
-> > ### Length of jumper cables
-> >
-> > - SDIO is very sensitive protocol. We suggest breadboard or PCB like connections for SDIO signal integrity. If you are going to use jumper wires for testing purpose, please make sure length of wires be minimal(< 6cm) and all to be equal length.
-> >
-> > ---
+> > > ## Hardware setup
+> > > - Raspberry-Pi pinout for SDIO can be found [here!](https://pinout.xyz/pinout/sdio)
+> > > - Sample setup image is shown below.
+> > > ![alt text](rpi_esp32_sdio_setup.jpeg "setup of Raspberry-Pi as host and ESP32 as peripheral")
+> > >
+> > > ### Pin connections
+> > >
+> > > | Raspberry-Pi Pin | ESP Pin | Function |
+> > > |:-------:|:---------:|:--------:|
+> > > | 13 | IO13 | DAT3 |
+> > > | 15 | IO14 | CLK |
+> > > | 16 | IO15 | CMD |
+> > > | 18 | IO2 | DAT0 |
+> > > | 22 | IO4 | DAT1 |
+> > > | 31 | EN  | ESP Reset |
+> > > | 37 | IO12 | DAT2 |
+> > > | 39 | GND | GND |
+> > >
+> > > ---
+> > >
+> > > ### Additional Pull-ups
+> > > - In general, For Most of ESP32 boards, additional pull-up of 10 kOhm resistor will be required for pins CMD and DATA(DAT0-DAT3) lines.
+> > > - Additional Pull-ups may be required depending on exact ESP chipset you use. Please find details [here](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/peripherals/sd_pullup_requirements.html)
+> > >
+> > > ---
+> > >
+> > > ### Length of jumper cables
+> > >
+> > > - SDIO is very sensitive protocol. We suggest breadboard or PCB like connections for SDIO signal integrity. If you are going to use jumper wires for testing purpose, please make sure length of wires be minimal(< 6cm) and all to be equal length.
+> > >
+> > > ---
+> > >
+> > </p></details>
 > >
 > </p></details>
 >
@@ -122,6 +127,13 @@
 > >   $ sudo apt install git raspi-gpio bluetooth bluez bluez-tools rfkill bluez-firmware pi-bluetooth pulseaudio-module-bluetooth
 > >   ```
 > >
+> > ##### Checkout ESP-Hosted repo
+> > ```sh
+> > $ git clone https://github.com/espressif/esp-hosted.git
+> >                OR
+> > $ git clone git@github.com:espressif/esp-hosted.git
+> > ```
+> >
 > > ##### Peripheral config
 > > - By default, the SDIO pins of Raspberry-pi are not configured and are internally used for built-in Wi-Fi interface. Please enable SDIO pins by appending following line to _/boot/config.txt_ file
 > >	  ```
@@ -132,13 +144,6 @@
 > >	  ```sh
 > >   $ sudo sync; sudo reboot
 > >   ```
-> > 
-> > ##### Checkout ESP-Hosted repo
-> > ```sh
-> > $ git clone https://github.com/espressif/esp-hosted.git
-> >                OR
-> > $ git clone git@github.com:espressif/esp-hosted.git
-> > ```
 > >
 > > ---
 > </p></details>
@@ -226,32 +231,57 @@
 > <details><summary>Hardware setup</summary>
 > <p>
 >
-> > ## Hardware setup
-> > - Raspberry-Pi pinout for SPI can be found [here!](https://pinout.xyz/pinout/spi)
-> > - Sample setup image is shown below.
-> > ![alt text](rpi_esp32_spi_setup.jpg "setup of Raspberry-Pi as host and ESP32 as peripheral")
+> ><details><summary>ESP32</summary>
+> > <p>
 > >
-> > ### Pin connections
-> > | Raspberry-Pi Pin | ESP32 Pin | Function |
-> > |:-------:|:---------:|:--------:|
-> > | 24 | IO15 | CS0 |
-> > | 23 | IO14 | SCLK |
-> > | 21 | IO12 | MISO |
-> > | 19 | IO13 | MOSI |
-> > | 25 | GND | Ground |
-> > | 15 | IO2 | Handshake |
-> > | 13 | IO4 | Data Ready |
-> > | 31 | EN  | ESP32 Reset |
+> > > ## Hardware setup
+> > > - Raspberry-Pi pinout for SPI can be found [here!](https://pinout.xyz/pinout/spi)
+> > > - Sample setup image is shown below.
+> > > ![alt text](rpi_esp32_spi_setup.jpg "setup of Raspberry-Pi as host and ESP32 as peripheral")
+> > >
+> > > ### Pin connections
+> > > | Raspberry-Pi Pin | ESP32 Pin | Function |
+> > > |:-------:|:---------:|:--------:|
+> > > | 24 | IO15 | CS0 |
+> > > | 23 | IO14 | SCLK |
+> > > | 21 | IO12 | MISO |
+> > > | 19 | IO13 | MOSI |
+> > > | 25 | GND | Ground |
+> > > | 15 | IO2 | Handshake |
+> > > | 13 | IO4 | Data Ready |
+> > > | 31 | EN  | ESP32 Reset |
+> > >
+> > > ### Length of jumper cables
+> > > - We suggest breadboard or PCB like connections for better signal integrity. If you are going to use jumper wires for testing purpose, please make sure length of wires be minimal(<= 10cm) and all to be equal length.
+> > > ---
+> > </p></details>
 > >
-> > ---
+> ><details><summary>ESP32-C3</summary>
+> > <p>
 > >
-> > ### Length of jumper cables
+> > > ## Hardware setup
+> > > - Raspberry-Pi pinout for SPI can be found [here!](https://pinout.xyz/pinout/spi)
+> > > - Sample setup image is shown below.
+> > > ![alt text](rpi_esp32_c3_setup.jpg "setup of Raspberry-Pi as host and ESP32-C3 as ESP peripheral")
+> > >
+> > > ### Pin connections
+> > > | Raspberry-Pi Pin | ESP32-C3 Pin | Function |
+> > > |:----------------:|:------------:|:--------:|
+> > > | 24 | IO10 | CS0 |
+> > > | 23 | IO06 | SCLK |
+> > > | 21 | IO02 | MISO |
+> > > | 19 | IO07 | MOSI |
+> > > | 25 | GND | Ground |
+> > > | 15 | IO03 | Handshake |
+> > > | 13 | IO04 | Data ready |
+> > > | 31 | RST | ESP32 Reset |
+> > >
+> > > ### Length of jumper cables
+> > > - We suggest breadboard or PCB like connections for better signal integrity. If you are going to use jumper wires for testing purpose, please make sure length of wires be minimal(<= 10cm) and all to be equal length.
+> > > ---
+> > </p></details>
 > >
-> > - We suggest breadboard or PCB like connections for better signal integrity. If you are going to use jumper wires for testing purpose, please make sure length of wires be minimal(<= 10cm) and all to be equal length.
-> >
-> > ---
-> >
-> </p></details>
+> ></p></details>
 >
 > <details><summary>Software setup</summary>
 > <p>
@@ -304,6 +334,13 @@
 > >   $ sudo apt install git raspi-gpio bluetooth bluez bluez-tools rfkill bluez-firmware pi-bluetooth pulseaudio-module-bluetooth
 > >   ```
 > >
+> > ##### Checkout ESP-Hosted repo
+> > ```sh
+> > $ git clone https://github.com/espressif/esp-hosted.git
+> >                OR
+> > $ git clone git@github.com:espressif/esp-hosted.git
+> > ```
+> >
 > > ##### Peripheral config
 > > - The SPI master driver is disabled by default on Raspberry-Pi OS. To enable it add following commands in  _/boot/config.txt_ file
 > >	  ```
@@ -316,13 +353,6 @@
 > >   core_freq_min=250
 > >   ```
 > > - Please reboot Raspberry-Pi after changing this file.
-> > 
-> > ##### Checkout ESP-Hosted repo
-> > ```sh
-> > $ git clone https://github.com/espressif/esp-hosted.git
-> >                OR
-> > $ git clone git@github.com:espressif/esp-hosted.git
-> > ```
 > >
 > > ---
 > </p></details>
@@ -404,51 +434,54 @@
 > <details><summary>Hardware setup</summary>
 > <p>
 >
-> > ## Hardware setup
-> > - Raspberry-Pi pinout for SDIO can be found [here!](https://pinout.xyz/pinout/sdio) and pinout for UART can be found [here!](https://pinout.xyz/pinout/uart)
-> > - Sample setup image is shown below.
-> > <!--- TODO
-> > ![alt text](rpi_esp32_sdio_uart_setup.jpeg "setup of Raspberry-Pi as host and ESP32 as peripheral")
-> > -->
-> > ### Pin connections
+> > <details><summary>ESP32</summary>
+> > <p>
 > >
-> > ##### SDIO
-> > | Raspberry-Pi Pin | ESP Pin | Function |
-> > |:-------:|:---------:|:--------:|
-> > | 13 | IO13 | DAT3 |
-> > | 15 | IO14 | CLK |
-> > | 16 | IO15 | CMD |
-> > | 18 | IO2 | DAT0 |
-> > | 22 | IO4 | DAT1 |
-> > | 31 | EN  | ESP Reset |
-> > | 37 | IO12 | DAT2 |
-> > | 39 | GND | GND |
-> >
-> > ##### UART
-> > | Raspberry-Pi Pin Function | Raspberry-Pi Pin | ESP32 Pin | ESP32 Pin Function |
-> > |:-------:|:--------:|:---------:|:--------:|
-> > | RX | 10 | IO5 | TX |
-> > | TX | 8 | IO18 | RX |
-> > | CTS | 36 | IO19 | RTS |
-> > | RTS | 11 | IO23 | CTS |
-> > | Ground | 39 | GND | Ground |
-> >
-> > ---
-> >
-> > ### Additional Pull-ups
-> > ##### SDIO
-> > - In general, For Most of ESP32 boards, additional pull-up of 10 kOhm resistor will be required for pins CMD and DATA(DAT0-DAT3) lines.
-> > - Additional Pull-ups may be required depending on exact ESP chipset you use. Please find details [here](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/peripherals/sd_pullup_requirements.html)
-> > ##### UART
-> >	- No additional pull-ups required
-> >
-> > ---
-> >
-> > ### Length of jumper cables
-> >
-> > - SDIO is very sensitive protocol. We suggest breadboard or PCB like connections for signal integrity. If you are going to use jumper wires for testing purpose, please make sure length of wires be minimal(< 6cm) and all to be equal length.
-> >
-> > ---
+> > > ## Hardware setup
+> > > - Raspberry-Pi pinout for SDIO can be found [here!](https://pinout.xyz/pinout/sdio) and pinout for UART can be found [here!](https://pinout.xyz/pinout/uart)
+> > > - Sample setup image is shown below.
+> > > <!--- TODO
+> > > ![alt text](rpi_esp32_sdio_uart_setup.jpeg "setup of Raspberry-Pi as host and ESP32 as peripheral")
+> > > -->
+> > > ### Pin connections
+> > >
+> > > #### SDIO
+> > > | Raspberry-Pi Pin | ESP Pin | Function |
+> > > |:-------:|:---------:|:--------:|
+> > > | 13 | IO13 | DAT3 |
+> > > | 15 | IO14 | CLK |
+> > > | 16 | IO15 | CMD |
+> > > | 18 | IO2 | DAT0 |
+> > > | 22 | IO4 | DAT1 |
+> > > | 31 | EN  | ESP Reset |
+> > > | 37 | IO12 | DAT2 |
+> > > | 39 | GND | GND |
+> > >
+> > > #### UART
+> > > | Raspberry-Pi Pin Function | Raspberry-Pi Pin | ESP32 Pin | ESP32 Pin Function |
+> > > |:-------:|:--------:|:---------:|:--------:|
+> > > | RX | 10 | IO5 | TX |
+> > > | TX | 8 | IO18 | RX |
+> > > | CTS | 36 | IO19 | RTS |
+> > > | RTS | 11 | IO23 | CTS |
+> > >
+> > > ---
+> > >
+> > > ### Additional Pull-ups
+> > > #### SDIO
+> > > - In general, For Most of ESP32 boards, additional pull-up of 10 kOhm resistor will be required for pins CMD and DATA(DAT0-DAT3) lines.
+> > > - Additional Pull-ups may be required depending on exact ESP chipset you use. Please find details [here](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/peripherals/sd_pullup_requirements.html)
+> > > #### UART
+> >	> - No additional pull-ups required
+> > >
+> > > ---
+> > >
+> > > ### Length of jumper cables
+> > >
+> > > - SDIO is very sensitive protocol. We suggest breadboard or PCB like connections for signal integrity. If you are going to use jumper wires for testing purpose, please make sure length of wires be minimal(< 6cm) and all to be equal length.
+> > >
+> > > ---
+> > </p></details>
 > >
 > </p></details>
 >
@@ -503,6 +536,13 @@
 > >   $ sudo apt install git raspi-gpio bluetooth bluez bluez-tools rfkill bluez-firmware pi-bluetooth pulseaudio-module-bluetooth
 > >   ```
 > >
+> > ##### Checkout ESP-Hosted repo
+> > ```sh
+> > $ git clone https://github.com/espressif/esp-hosted.git
+> >                OR
+> > $ git clone git@github.com:espressif/esp-hosted.git
+> > ```
+> >
 > > ##### Peripheral config
 > > - SDIO
 > >	  - By default, the SDIO pins of Raspberry-pi are not configured and are internally used for built-in Wi-Fi interface. Please enable SDIO pins by appending following line to _/boot/config.txt_ file
@@ -540,13 +580,6 @@
 > >	  ```sh
 > >   $ sudo sync; sudo reboot
 > >   ```
-> > 
-> > ##### Checkout ESP-Hosted repo
-> > ```sh
-> > $ git clone https://github.com/espressif/esp-hosted.git
-> >                OR
-> > $ git clone git@github.com:espressif/esp-hosted.git
-> > ```
 > >
 > > ---
 > </p></details>
@@ -644,41 +677,79 @@
 > <details><summary>Hardware setup</summary>
 > <p>
 >
-> > ## Hardware setup
-> > - Raspberry-Pi pinout for SPI can be found [here!](https://pinout.xyz/pinout/spi) and pinout for UART can be found [here!](https://pinout.xyz/pinout/uart)
-> > - Sample setup image is shown below.
-> > ![alt text](rpi_esp32_uart_setup.jpeg "setup of Raspberry-Pi as host and ESP32 as peripheral")
+> > <details><summary>ESP32</summary>
+> > <p>
 > >
-> > ### Pin connections
+> > > ## Hardware setup
+> > > - Raspberry-Pi pinout for SPI can be found [here!](https://pinout.xyz/pinout/spi) and pinout for UART can be found [here!](https://pinout.xyz/pinout/uart)
+> > > - Sample setup image is shown below.
+> > > ![alt text](rpi_esp32_uart_setup.jpeg "setup of Raspberry-Pi as host and ESP32 as peripheral")
+> > >
+> > > ### Pin connections
+> > >
+> > > #### SPI
+> > > | Raspberry-Pi Pin | ESP32 Pin | Function |
+> > > |:-------:|:---------:|:--------:|
+> > > | 24 | IO15 | CS0 |
+> > > | 23 | IO14 | SCLK |
+> > > | 21 | IO12 | MISO |
+> > > | 19 | IO13 | MOSI |
+> > > | 25 | GND | Ground |
+> > > | 15 | IO2 | Handshake |
+> > > | 13 | IO4 | Data Ready |
+> > > | 31 | EN  | ESP32 Reset |
+> > >
+> > > #### UART
+> > > | Raspberry-Pi Pin Function | Raspberry-Pi Pin | ESP32 Pin | ESP32 Pin Function |
+> > > |:-------:|:--------:|:---------:|:--------:|
+> > > | RX | 10 | IO5 | TX |
+> > > | TX | 8 | IO18 | RX |
+> > > | CTS | 36 | IO19 | RTS |
+> > > | RTS | 11 | IO23 | CTS |
+> > >
+> > > ### Length of jumper cables
+> > >
+> > > - We suggest breadboard or PCB like connections for better signal integrity. If you are going to use jumper wires for testing purpose, please make sure length of wires be minimal(<= 10cm) and all to be equal length.
+> > >
+> > > ---
+> > </p></details>
 > >
-> > ##### SPI
-> > | Raspberry-Pi Pin | ESP32 Pin | Function |
-> > |:-------:|:---------:|:--------:|
-> > | 24 | IO15 | CS0 |
-> > | 23 | IO14 | SCLK |
-> > | 21 | IO12 | MISO |
-> > | 19 | IO13 | MOSI |
-> > | 25 | GND | Ground |
-> > | 15 | IO2 | Handshake |
-> > | 13 | IO4 | Data Ready |
-> > | 31 | EN  | ESP32 Reset |
+> > <details><summary>ESP32-C3</summary>
+> > <p>
 > >
-> > ##### UART
-> > | Raspberry-Pi Pin Function | Raspberry-Pi Pin | ESP32 Pin | ESP32 Pin Function |
-> > |:-------:|:--------:|:---------:|:--------:|
-> > | RX | 10 | IO5 | TX |
-> > | TX | 8 | IO18 | RX |
-> > | CTS | 36 | IO19 | RTS |
-> > | RTS | 11 | IO23 | CTS |
-> > | Ground | 39 | GND | Ground |
-> >
-> > ---
-> >
-> > ### Length of jumper cables
-> >
-> > - We suggest breadboard or PCB like connections for better signal integrity. If you are going to use jumper wires for testing purpose, please make sure length of wires be minimal(<= 10cm) and all to be equal length.
-> >
-> > ---
+> > > ## Hardware setup
+> > > - Raspberry-Pi pinout for SPI can be found [here!](https://pinout.xyz/pinout/spi) and pinout for UART can be found [here!](https://pinout.xyz/pinout/uart)
+> > > - Sample setup image is shown below.
+> > > ![alt text](rpi_esp32c3_uart_setup.jpg "setup of Raspberry-Pi as host and ESP32-C3 as slave with UART transport")
+> > >
+> > > ### Pin connections
+> > >
+> > > #### SPI
+> > > | Raspberry-Pi Pin | ESP32-C3 Pin | Function |
+> > > |:----------------:|:------------:|:--------:|
+> > > | 24 | IO10 | CS0 |
+> > > | 23 | IO06 | SCLK |
+> > > | 21 | IO02 | MISO |
+> > > | 19 | IO07 | MOSI |
+> > > | 25 | GND | Ground |
+> > > | 15 | IO03 | Handshake |
+> > > | 13 | IO04 | Data ready |
+> > > | 31 | RST | ESP32 Reset |
+> > >
+> > > #### UART
+> > > | Raspberry-Pi Pin Function | Raspberry-Pi Pin | ESP32-C3 Pin | ESP32-C3 Pin Function |
+> > > |:-------:|:--------:|:---------:|:--------:|
+> > > | RX | 10 | IO5 | TX |
+> > > | TX | 8 | IO18 | RX |
+> > > | CTS | 36 | IO19 | RTS |
+> > > | RTS | 11 | IO8 | CTS |
+> > >
+> > > ### Length of jumper cables
+> > >
+> > > - We suggest breadboard or PCB like connections for better signal integrity. If you are going to use jumper wires for testing purpose, please make sure length of wires be minimal(<= 10cm) and all to be equal length.
+> > >
+> > > ---
+> > </p></details>
 > >
 > </p></details>
 >
@@ -734,6 +805,13 @@
 > >   $ sudo apt install git raspi-gpio bluetooth bluez bluez-tools rfkill bluez-firmware pi-bluetooth pulseaudio-module-bluetooth
 > >   ```
 > >
+> > ##### Checkout ESP-Hosted repo
+> > ```sh
+> > $ git clone https://github.com/espressif/esp-hosted.git
+> >                OR
+> > $ git clone git@github.com:espressif/esp-hosted.git
+> > ```
+> >
 > > ##### Peripheral config
 > > - SPI
 > >	  - The SPI master driver is disabled by default on Raspberry-Pi OS. To enable it add following commands in  _/boot/config.txt_ file
@@ -777,13 +855,6 @@
 > >	  ```sh
 > >   $ sudo sync; sudo reboot
 > >   ```
-> > 
-> > ##### Checkout ESP-Hosted repo
-> > ```sh
-> > $ git clone https://github.com/espressif/esp-hosted.git
-> >                OR
-> > $ git clone git@github.com:espressif/esp-hosted.git
-> > ```
 > >
 > > ---
 > </p></details>
@@ -860,7 +931,7 @@
 >
 </p>
 </details>
-	
+
 </td>
   </tr>
 

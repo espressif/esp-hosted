@@ -21,7 +21,6 @@ extern "C" {
 #endif
 
 /** includes **/
-#include "common.h"
 #include "serial_ll_if.h"
 
 /** Exported Functions **/

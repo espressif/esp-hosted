@@ -15,13 +15,12 @@
 
 /** Includes **/
 #include "usart.h"
-#include "cmsis_os.h"
-#include "spi_drv.h"
+#include "transport_drv.h"
 #include "control.h"
 #include "trace.h"
 #include "app_main.h"
-#include "netdev_api.h"
 #include "arp_server_stub.h"
+#include "stats.h"
 
 /** Constants/Macros **/
 #define ARPING_PATH_TASK_STACK_SIZE     4096
@@ -41,6 +40,11 @@ static void init_sta(void);
 static void init_ap(void);
 static void reset_slave(void);
 static void arping_task(void const *arg);
+
+/* Needed for timer task */
+void vApplicationGetTimerTaskMemory( StaticTask_t **ppxTimerTaskTCBBuffer,
+	StackType_t **ppxTimerTaskStackBuffer, uint32_t *pulTimerTaskStackSize );
+
 
 /* GetIdleTaskMemory prototype (linked to static allocation support) */
 void vApplicationGetIdleTaskMemory( StaticTask_t **ppxIdleTaskTCBBuffer,
@@ -118,17 +122,20 @@ static void control_path_event_handler(uint8_t event)
 }
 
 /**
-  * @brief  SPI driver event handler callback
+  * @brief  transport driver event handler callback
   * @param  event - spi_drv_events_e event to be handled
   * @retval None
   */
-static void spi_driver_event_handler(uint8_t event)
+static void transport_driver_event_handler(uint8_t event)
 {
 	switch(event)
 	{
-		case SPI_DRIVER_ACTIVE:
+		case TRANSPORT_ACTIVE:
 		{
 			/* Initiate control path now */
+#if DEBUG_TRANSPORT
+			printf("Base transport is set-up\n\r");
+#endif
 			control_path_init(control_path_event_handler);
 			break;
 		}
@@ -153,13 +160,14 @@ void MX_FREERTOS_Init(void)
 	network_init();
 
 	/* init spi driver */
-	stm_spi_init(spi_driver_event_handler);
-
-	/* This thread's priority shouls be >= spi driver's transaction task priority */
+	transport_init(transport_driver_event_handler);
+#if !TEST_RAW_TP
+	/* This thread's priority shouls be >= transport driver's transaction task priority */
 	osThreadDef(Arping_Thread, arping_task, osPriorityAboveNormal, 0,
 			ARPING_PATH_TASK_STACK_SIZE);
 	arping_task_id = osThreadCreate(osThread(Arping_Thread), NULL);
 	assert(arping_task_id);
+#endif
 }
 
 /**
@@ -207,6 +215,26 @@ void vApplicationGetIdleTaskMemory( StaticTask_t **ppxIdleTaskTCBBuffer,
 	configMINIMAL_STACK_SIZE is specified in words, not bytes. */
 	*pulIdleTaskStackSize = configMINIMAL_STACK_SIZE;
 }
+
+/**
+  * @brief FreeRTOS hook function for timer task stack
+  * @param  None
+  * @retval None
+  */
+void vApplicationGetTimerTaskMemory( StaticTask_t **ppxTimerTaskTCBBuffer,
+	StackType_t **ppxTimerTaskStackBuffer, uint32_t *pulTimerTaskStackSize )
+{
+	/* USER CODE BEGIN GET_TIMER_TASK_MEMORY */
+	static StaticTask_t xTimerTaskTCBBuffer;
+	static StackType_t xTimerStack[configTIMER_TASK_STACK_DEPTH];
+
+
+	*ppxTimerTaskTCBBuffer = &xTimerTaskTCBBuffer;
+	*ppxTimerTaskStackBuffer = &xTimerStack[0];
+	*pulTimerTaskStackSize = configTIMER_TASK_STACK_DEPTH;
+  /* place for user code */
+}
+
 
 /**
   * @brief Station mode rx callback
@@ -357,7 +385,6 @@ static void arping_task(void const *arg)
 
 		if(ap_handle)
 			send_arp_req(ap_handle, get_self_mac_softap(), &softap_ip, dst_mac_bytes, &softap_dest_ip);
-
 		osDelay(1000);
 	}
 }

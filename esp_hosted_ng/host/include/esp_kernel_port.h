@@ -114,7 +114,7 @@ enum ieee80211_privacy {
 #endif
 
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(4, 8, 0))
-    #if (LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 34)) 
+    #if (LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 34))
         #define HCI_PRIMARY HCI_BREDR
     #else
         #error "ESP-Hosted solution doesn't supported below kernel version < 2.6.34"

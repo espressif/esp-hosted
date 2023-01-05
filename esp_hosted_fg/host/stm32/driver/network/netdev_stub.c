@@ -13,10 +13,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "trace.h"
 #include "string.h"
 #include "cmsis_os.h"
-#include "netdev_if.h"
 #include "app_main.h"
 
 struct netdev *ndev_db[MAX_INTERFACE];

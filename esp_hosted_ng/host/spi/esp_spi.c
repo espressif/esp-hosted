@@ -24,6 +24,7 @@
 #include "esp_api.h"
 #include "esp_bt_api.h"
 #include "esp_kernel_port.h"
+#include "esp_stats.h"
 
 #define SPI_INITIAL_CLK_MHZ     10
 #define NUMBER_1M               1000000
@@ -37,8 +38,9 @@ static int spi_init(void);
 static void adjust_spi_clock(u8 spi_clk_mhz);
 
 volatile u8 data_path = 0;
+volatile u8 host_sleep = 0;
 static struct esp_spi_context spi_context;
-static char hardware_type = 0;
+static char hardware_type = ESP_FIRMWARE_CHIP_UNRECOGNIZED;
 static atomic_t tx_pending;
 static uint8_t esp_reset_after_module_load;
 
@@ -169,7 +171,7 @@ void process_event_esp_bootup(struct esp_adapter *adapter, u8 *evt_buf, u8 len)
 {
 	/* Bootup event will be received whenever ESP is booted.
 	 * It is termed 'First bootup' when this event is received
-	 * the first time module loaded. It is termed 'Second & onward bootup' when 
+	 * the first time module loaded. It is termed 'Second & onward bootup' when
 	 * there is ESP reset (reason may be manual reset of ESP or any crash at ESP)
 	 */
 	u8 len_left = len, tag_len;
@@ -212,11 +214,14 @@ void process_event_esp_bootup(struct esp_adapter *adapter, u8 *evt_buf, u8 len)
 		} else if (*pos == ESP_BOOTUP_SPI_CLK_MHZ){
 
 			adjust_spi_clock(*(pos + 2));
+			adapter->dev = &spi_context.esp_spi_dev->dev;
 
 		} else if (*pos == ESP_BOOTUP_FIRMWARE_CHIP_ID){
 
 			hardware_type = *(pos+2);
 
+		} else if(*pos == ESP_BOOTUP_TEST_RAW_TP) {
+			process_test_capabilities(*(pos + 2));
 		} else {
 			printk (KERN_WARNING "Unsupported tag in event");
 		}
@@ -232,11 +237,11 @@ void process_event_esp_bootup(struct esp_adapter *adapter, u8 *evt_buf, u8 len)
 		printk(KERN_INFO "ESP chipset not recognized, ignoring [%d]\n", hardware_type);
 		hardware_type = ESP_FIRMWARE_CHIP_UNRECOGNIZED;
 	} else {
-		printk(KERN_INFO "ESP chipset detected [%s]\n", 
-				*(pos+2)==ESP_FIRMWARE_CHIP_ESP32 ? "esp32":
-				*(pos+2)==ESP_FIRMWARE_CHIP_ESP32S2 ? "esp32-s2" :
-				*(pos+2)==ESP_FIRMWARE_CHIP_ESP32C3 ? "esp32-c3" :
-				*(pos+2)==ESP_FIRMWARE_CHIP_ESP32S3 ? "esp32-s3" :
+		printk(KERN_INFO "ESP chipset detected [%s]\n",
+				hardware_type==ESP_FIRMWARE_CHIP_ESP32 ? "esp32":
+				hardware_type==ESP_FIRMWARE_CHIP_ESP32S2 ? "esp32-s2" :
+				hardware_type==ESP_FIRMWARE_CHIP_ESP32C3 ? "esp32-c3" :
+				hardware_type==ESP_FIRMWARE_CHIP_ESP32S3 ? "esp32-s3" :
 				"unknown");
 	}
 
@@ -245,14 +250,14 @@ void process_event_esp_bootup(struct esp_adapter *adapter, u8 *evt_buf, u8 len)
 		/* Second & onward bootup:
 		 *
 		 * SPI is software and not a hardware based module.
-		 * When bootup event is received, we should discard all prior commands, 
+		 * When bootup event is received, we should discard all prior commands,
 		 * old messages pending at network and re-initialize everything.
 		 *
 		 * Such handling is not required
 		 * 1. for SDIO
 		 *   as Removal of SDIO triggers complete Deinit and on SDIO insertion/
 		 *   detection, i.e., after probing, initialization is triggered
-		 * 
+		 *
 		 * 2. On first bootup (if counterpart of this else)
 		 *   First bootup event is received immediately after module insertion.
 		 *   As all network or cmds are init and clean for the first time,
@@ -385,12 +390,16 @@ static void esp_spi_work(struct work_struct *work)
 				cb = (struct esp_skb_cb *)tx_skb->cb;
 				if (cb && cb->priv && atomic_read(&tx_pending) < TX_RESUME_THRESHOLD) {
 					esp_tx_resume(cb->priv);
+					#if TEST_RAW_TP
+						esp_raw_tp_queue_resume();
+					#endif
 				}
 			}
 		}
 
 		if (rx_pending || tx_skb) {
 			memset(&trans, 0, sizeof(trans));
+			trans.speed_hz = spi_context.spi_clk_mhz * NUMBER_1M;
 
 			/* Setup and execute SPI transaction
 			 * 	Tx_buf: Check if tx_q has valid buffer for transmission,
@@ -626,6 +635,7 @@ static void adjust_spi_clock(u8 spi_clk_mhz)
 	if ((spi_clk_mhz) && (spi_clk_mhz != spi_context.spi_clk_mhz)) {
 		printk(KERN_INFO "ESP Reconfigure SPI CLK to %u MHz\n",spi_clk_mhz);
 		spi_context.spi_clk_mhz = spi_clk_mhz;
+		spi_context.esp_spi_dev->max_speed_hz = spi_clk_mhz * NUMBER_1M;
 	}
 }
 

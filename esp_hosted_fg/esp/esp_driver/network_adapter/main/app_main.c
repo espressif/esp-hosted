@@ -77,7 +77,6 @@ static const char TAG_TX_S[] = "CONTROL S -> H";
 
 #define ETH_DATA_LEN                     1500
 
-volatile uint8_t action = 0;
 volatile uint8_t datapath = 0;
 volatile uint8_t station_connected = 0;
 volatile uint8_t softap_started = 0;
@@ -423,7 +422,7 @@ void process_rx_pkt(interface_buffer_handle_t *buf_handle)
 /* Get data from host */
 void recv_task(void* pvParameters)
 {
-	interface_buffer_handle_t buf_handle;
+	interface_buffer_handle_t buf_handle = {0};
 
 	for (;;) {
 
@@ -738,7 +737,9 @@ void app_main()
 	protocomm_pserial_start(pc_pserial, serial_write_data, serial_read_data);
 
 	if_context = interface_insert_driver(event_handler);
+#if CONFIG_ESP_SPI_HOST_INTERFACE
 	datapath = 1;
+#endif
 
 	if (!if_context || !if_context->if_ops) {
 		ESP_LOGE(TAG, "Failed to insert driver\n");
@@ -752,10 +753,10 @@ void app_main()
 		return;
 	}
 
-	sleep(1);
-
+#if CONFIG_ESP_SPI_HOST_INTERFACE
 	/* send capabilities to host */
 	generate_startup_event(capa);
+#endif
 
 	meta_to_host_queue = xQueueCreate(TO_HOST_QUEUE_SIZE*3, sizeof(uint8_t));
 	assert(meta_to_host_queue);
@@ -780,6 +781,13 @@ void app_main()
 
 	ESP_LOGI(TAG,"Initial set up done");
 
-	sleep(1);
+	while(!datapath) {
+		vTaskDelay(10);
+	}
+
+#if CONFIG_ESP_SDIO_HOST_INTERFACE
+	/* send capabilities to host */
+	generate_startup_event(capa);
+#endif
 	send_event_to_host(CTRL_MSG_ID__Event_ESPInit);
 }

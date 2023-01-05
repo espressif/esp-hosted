@@ -43,6 +43,7 @@ This solution provides following WLAN and BT/BLE features to the host:
 - BT/BLE
   - Classic Bluetooth
   - BLE 4.2
+  - BLE 5.0
 
 
 
@@ -50,6 +51,7 @@ This solution provides following WLAN and BT/BLE features to the host:
 
 ESP-Hosted-NG solution is supported on following ESP boards:
 - ESP32
+- ESP32-C3
 
 Looking for other chipset? Please do check [Coming Soon](#5-coming-soon) section.
 
@@ -110,10 +112,31 @@ The below table explains which feature is supported on which transport interface
 <td align="center">&#10003;</td>
 <td align="center">&#10003;</td>
 </tr>
+<tr>
+<td rowspan=5 align="center">ESP32-C3</td>
+</tr>
+<tr>
+<td align="center">SPI</td>
+<td align="center">&#10003;</td>
+<td align="center">&#10003;</td>
+</tr>
+<tr>
+<td align="center">UART</td>
+<td align="center">&#10005;</td>
+<td align="center">&#10003;</td>
+</tr>
+<tr>
+<td align="center">SPI(WiFi) + UART(BT)</td>
+<td align="center">&#10003;</td>
+<td align="center">&#10003;</td>
+</tr>
 </tbody>
 </table>
 
 
+Apart from these features, following features are supported.
+- Host sleep
+  - We have tested this feature with imx8mm-lpddr4-evk. Please refer [host_sleep](docs/host_sleep.md) documentation.
 
 ---
 
@@ -248,73 +271,238 @@ Following operations supported as of now:
   ```
 
 #### Connect to AP
+  Open below fold to connect from three possible ways
 
-* Two types of security modes are supported
+<details><summary>Open</summary>
+<p>
 
-  * Connect to AP in `open` mode
+> 
+> ## Open mode connect
+> Please configure AP in open mode and note the SSID
+> ### Create config & Trigger connection
+> * `wpa_supplicant` already running on host operating system can interfere in testing. Execute following commands to prevent this.
+> ```sh
+> $ sudo killall wpa_supplicant
+> ```
+>
+> * Create wpa supplicant config using template below
+> ```sh
+> $ cat ~/open.conf
+> network={
+>     ssid="MY_OPEN_SSID"
+>     key_mgmt=NONE
+> }
+> ```
+> 
+> :warning: Do not copy paste this config. Please replace `MY_OPEN_SSID` with AP's SSID
+> 
+> * Start the wpa supplicant for connection
+> ```sh
+> $ sudo wpa_supplicant -D nl80211 -i espsta0 -c ~/open.conf
+> ```
+>
+> ---
+> ### Verify connection
+> * Verify the connection status using following command and verify `ESSID:<ssid>` in output
+> 
+> ```sh
+> $ iwconfig espsta0
+> espsta0   IEEE 802.11  ESSID:"MY_OPEN_SSID"
+>           Mode:Managed  Frequency:2.437 GHz  Access Point: 00:0A:F5:14:33:5C
+>           Retry short limit:7   RTS thr:off   Fragment thr:off
+>           Power Management:on
+> ```
+> 
+> ---
+> ### Assign IP address
+> * Use dhclient command to get IP. Please note, `dhclient` command may not be available on all Linux. Use DHCP client command supported on your Linux.
+> 
+> ```sh
+> $ sudo dhclient -v espsta0
+> Internet Systems Consortium DHCP Client 4.4.1
+> Copyright 2004-2018 Internet Systems Consortium.
+> All rights reserved.
+> For info, please visit https://www.isc.org/software/dhcp/
+> Listening on LPF/espsta0/24:6f:28:80:2c:34
+> Sending on   LPF/espsta0/24:6f:28:80:2c:34
+> Sending on   Socket/fallback
+> .
+> DHCPDISCOVER on espsta0 to 255.255.255.255 port 67 interval 7
+> DHCPOFFER of 192.168.43.32 from 192.168.43.1
+> DHCPREQUEST for 192.168.43.32 on espsta0 to 255.255.255.255 port 67
+> DHCPACK of 192.168.43.32 from 192.168.43.1
+> bound to 192.168.43.32 -- renewal in 1482 seconds.
+>   
+> ```
+>
+> ---
+>
+> ### Ping
+> 
+> ```sh
+> $ ping <ip address of AP>
+> ```
+</p></details>
+<details><summary>WPA/WPA2</summary>
+<p>
 
-    ```sh
-    $ sudo iw dev espsta0 connect <ssid>
-    ```
+> 
+> ## WPA/WPA2 mode connect
+> Configure and start the AP in WPA or WPA2 or WPA/WPA2 mode. WPA2 is preferred among these. Note the SSID & Password to connect.
+> ### Create config & Trigger connection
+> * `wpa_supplicant` already running on host operating system can interfere in testing. Execute following commands to prevent this.
+> ```sh
+> $ sudo killall wpa_supplicant
+> ```
+> 
+> * Generate wpa_supplicant config
+> ```sh
+> $ wpa_passphrase <ssid> <password>  > ~/wpa2.conf
+> ```
+> 
+> * Example config for WPA2
+> ```sh
+> $ wpa_passphrase "MY_WPA2_SSID" "Passphrase"  > ~/wpa2.conf
+> $ cat ~/wpa2.conf
+> network={
+> 	ssid="MY_WPA2_SSID"
+> 	#psk="Passphrase"
+> 	psk=59e0d07fa4c7741797a4e394f38a5c321e3bed51d54ad5fcbd3f84bc7415d73d
+> }
+> ```
+> :warning: Do not copy paste this config
+> 
+> * Start the wpa supplicant for connection
+> ```sh
+> $ sudo wpa_supplicant -D nl80211 -i espsta0 -c ~/wpa2.conf
+> ```
+>
+> ---
+> ### Verify connection
+> * Verify the connection status using following command and verify `ESSID:<ssid>` in output
+> ```sh
+> $ iwconfig espsta0
+> espsta0    IEEE 802.11  ESSID:"MY_OPEN_SSID"
+>           Mode:Managed  Frequency:2.412 GHz  Access Point: XX:XX:XX:XX:XX:XX   
+>           Bit Rate=XXX Mb/s   Tx-Power=XX dBm   
+>           Retry short limit:X   RTS thr:off   Fragment thr:off
+>           Power Management:on
+>           Link Quality=70/70  Signal level=-20 dBm  
+>           Rx invalid nwid:0  Rx invalid crypt:0  Rx invalid frag:0
+>           Tx excessive retries:0  Invalid misc:25   Missed beacon:0
+> ```
+> 
+> ---
+> ### Assign IP address
+> * Use dhclient command to get IP. Please note, `dhclient` command may not be available on all Linux. Use DHCP client command supported on your Linux.
+>
+> ```sh
+> $ sudo dhclient -v espsta0
+> Internet Systems Consortium DHCP Client 4.4.1
+> Copyright 2004-2018 Internet Systems Consortium.
+> All rights reserved.
+> For info, please visit https://www.isc.org/software/dhcp/
+> Listening on LPF/espsta0/24:6f:28:80:2c:34
+> Sending on   LPF/espsta0/24:6f:28:80:2c:34
+> Sending on   Socket/fallback
+> .
+> DHCPDISCOVER on espsta0 to 255.255.255.255 port 67 interval 7
+> DHCPOFFER of 192.168.43.32 from 192.168.43.1
+> DHCPREQUEST for 192.168.43.32 on espsta0 to 255.255.255.255 port 67
+> DHCPACK of 192.168.43.32 from 192.168.43.1
+> bound to 192.168.43.32 -- renewal in 1482 seconds.
+> 
+> ```
+>
+> ---
+>
+> ### Ping
+>
+> ```sh
+> $ ping <ip address of AP>
+> ```
+</p></details>
+<details><summary>WPA3</summary>
+<p>
 
-  * Connect to AP in `WPA/WPA2 security mode`
-    * `wpa_supplicant` already running on host operating system can interfere in testing. Execute following commands to prevent this.
-    ```sh
-    $ sudo killall wpa_supplicant
-    ```
+> 
+> ## WPA3 mode connect
+> Configure and start the AP in WPA3 mode. Note the SSID & Password to connect.
+> ### Create config & Trigger connection
+> * `wpa_supplicant` already running on host operating system can interfere in testing. Execute following commands to prevent this.
+> ```sh
+> $ sudo killall wpa_supplicant
+> ```
+> 
+> * Generate wpa_supplicant config using below template
+> ```sh
+> $ cat ~/wpa3.conf
+> update_config=1
+> network={
+>     ssid="MY_WPA3_SSID"
+>     sae_password="MY_WPA3_Passphrase"
+>     key_mgmt=SAE
+>     ieee80211w=2
+> }
+> ```
+> * Change `MY_WPA3_SSID` to AP's SSID and `MY_WPA3_Passphrase` to Passphrase to connect
+> 
+> * Start the wpa supplicant for connection
+> ```sh
+> $ sudo wpa_supplicant -D nl80211 -i espsta0 -c ~/wpa3.conf
+> ```
+>
+> ---
+> ### Verify connection
+> * Verify the connection status using following command and verify `ESSID:<ssid>` in output
+> ```sh
+> $ iwconfig espsta0
+>   espsta0   IEEE 802.11  ESSID:"MY_WPA3_SSID"
+>             Mode:Managed  Frequency:2.412 GHz  Access Point: C4:41:1E:BE:F0:B2
+>             Retry short limit:7   RTS thr:off   Fragment thr:off
+>             Power Management:on
+> ```
+> 
+> ---
+> ### Assign IP address
+> * Use dhclient command to get IP. Please note, `dhclient` command may not be available on all Linux. Use DHCP client command supported on your Linux.
+>
+> ```sh
+> $ sudo dhclient -v espsta0
+> Internet Systems Consortium DHCP Client 4.4.1
+> Copyright 2004-2018 Internet Systems Consortium.
+> All rights reserved.
+> For info, please visit https://www.isc.org/software/dhcp/
+> Listening on LPF/espsta0/24:6f:28:80:2c:34
+> Sending on   LPF/espsta0/24:6f:28:80:2c:34
+> Sending on   Socket/fallback
+> .
+> DHCPDISCOVER on espsta0 to 255.255.255.255 port 67 interval 7
+> DHCPOFFER of 192.168.43.32 from 192.168.43.1
+> DHCPREQUEST for 192.168.43.32 on espsta0 to 255.255.255.255 port 67
+> DHCPACK of 192.168.43.32 from 192.168.43.1
+> bound to 192.168.43.32 -- renewal in 1482 seconds.
+> 
+> ```
+>
+> ---
+>
+> ### Ping
+>
+> ```sh
+> $ ping <ip address of AP>
+> ```
+</p></details>
 
-    * Start supplicant with expected config
-
-    ```sh
-    $ wpa_passphrase <ssid> <password>  > ~/my_wpa_config.conf          # This creates config file with security settings
-    $ sudo wpa_supplicant -D nl80211 -i espsta0 -c ~/my_wpa_config.conf # connect to specified AP
-    ```
-
-* Verify the connection status using following command and verify `ESSID:<ssid>` in output
-
-  ```sh
-  $ iwconfig espsta0
-  espsta0    IEEE 802.11  ESSID:<ssid>
-            Mode:Managed  Frequency:2.412 GHz  Access Point: XX:XX:XX:XX:XX:XX   
-            Bit Rate=XXX Mb/s   Tx-Power=XX dBm   
-            Retry short limit:X   RTS thr:off   Fragment thr:off
-            Power Management:on
-            Link Quality=70/70  Signal level=-20 dBm  
-            Rx invalid nwid:0  Rx invalid crypt:0  Rx invalid frag:0
-            Tx excessive retries:0  Invalid misc:25   Missed beacon:0
-  ```
-
-* Use dhclient command to get IP and verify data path using ping command
-
-  ```sh
-  $ sudo dhclient -v espsta0
-  Internet Systems Consortium DHCP Client 4.4.1
-  Copyright 2004-2018 Internet Systems Consortium.
-  All rights reserved.
-  For info, please visit https://www.isc.org/software/dhcp/
-  Listening on LPF/espsta0/24:6f:28:80:2c:34
-  Sending on   LPF/espsta0/24:6f:28:80:2c:34
-  Sending on   Socket/fallback
-  .
-  DHCPDISCOVER on espsta0 to 255.255.255.255 port 67 interval 7
-  DHCPOFFER of 192.168.43.32 from 192.168.43.1
-  DHCPREQUEST for 192.168.43.32 on espsta0 to 255.255.255.255 port 67
-  DHCPACK of 192.168.43.32 from 192.168.43.1
-  bound to 192.168.43.32 -- renewal in 1482 seconds.
-  
-  $ ping <ip address of AP>
-  ```
 
 #### Disconnect from AP
 
 * Execute following command to disconnect from AP
-
   ```sh
   $ sudo iw dev espsta0 disconnect
   ```
 
 * Verify status using
-
   ```sh
   $ iwconfig espsta0
   ```
@@ -348,6 +536,14 @@ Refer [Bluetooth/BLE Guide](docs/bluetooth.md) which explains how one can setup 
 <td align="center">7.39 Mbps</td>
 <td align="center">7.32 Mbps</td>
 </tr>
+<tr>
+<td rowspan=2 align="center">ESP32-C3</td>
+<td rowspan=1 align="center">SPI</td>
+<td align="center">15.8 Mbps</td>
+<td align="center">15.2 Mbps</td>
+<td align="center">17.1 Mbps</td>
+<td align="center">14.9 Mbps</td>
+</tr>
 </tbody>
 </table>
 
@@ -357,9 +553,8 @@ Tremendous work to be done ahead! Below is glimpse of upcoming release:
 
 - Functionality
 	- cfg802.11 support for ESP as SoftAP
-	- Bluetooth (BT/BLE) connectivity
 - Chipsets
-	- ESP32-S3, ESP32-C3 support
+	- ESP32-S3 support
 
 
 

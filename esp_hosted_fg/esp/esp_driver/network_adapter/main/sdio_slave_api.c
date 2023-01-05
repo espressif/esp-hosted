@@ -26,9 +26,10 @@
 #include "mempool.h"
 #include "stats.h"
 
-#define SDIO_SLAVE_QUEUE_SIZE 20
-#define BUFFER_SIZE     1536 /* 512*3 */
-#define BUFFER_NUM      10
+#define SDIO_SLAVE_QUEUE_SIZE   20
+#define BUFFER_SIZE     	1536 /* 512*3 */
+#define BUFFER_NUM      	10
+#define SDIO_BLOCK_SIZE 	512
 static uint8_t sdio_slave_rx_buffer[BUFFER_NUM][BUFFER_SIZE];
 
 static struct mempool * buf_mp_g;
@@ -135,6 +136,11 @@ void generate_startup_event(uint8_t cap)
 
 	/* TLVs start */
 
+	/* TLV - Board type */
+	*pos = ESP_PRIV_FIRMWARE_CHIP_ID;   pos++;len++;
+	*pos = LENGTH_1_BYTE;               pos++;len++;
+	*pos = CONFIG_IDF_FIRMWARE_CHIP_ID; pos++;len++;
+
 	/* TLV - Capability */
 	*pos = ESP_PRIV_CAPABILITY;         pos++;len++;
 	*pos = LENGTH_1_BYTE;               pos++;len++;
@@ -187,6 +193,12 @@ static interface_handle_t * sdio_init(void)
 		   */
 		//.flags              = SDIO_SLAVE_FLAG_INTERNAL_PULLUP,
 		.flags              = SDIO_SLAVE_FLAG_DEFAULT_SPEED,
+		/* Note: Sometimes the SDIO card is detected but gets problem in
+		 * Read/Write or handling ISR because of SDIO timing issues.
+		 * In these cases, Please tune timing below using value from
+		 * https://github.com/espressif/esp-idf/blob/release/v5.0/components/hal/include/hal/sdio_slave_types.h#L26-L38
+		 * */
+		/* .timing             = SDIO_SLAVE_TIMING_NSEND_PSAMPLE,*/
 	};
 	sdio_slave_buf_handle_t handle;
 
@@ -292,6 +304,7 @@ static int32_t sdio_write(interface_handle_t *handle, interface_buffer_handle_t 
 
 static int sdio_read(interface_handle_t *if_handle, interface_buffer_handle_t *buf_handle)
 {
+	esp_err_t ret = ESP_OK;
 	struct esp_payload_header *header = NULL;
 #if CONFIG_ESP_SDIO_CHECKSUM
 	uint16_t rx_checksum = 0, checksum = 0;
@@ -300,17 +313,19 @@ static int sdio_read(interface_handle_t *if_handle, interface_buffer_handle_t *b
 	size_t sdio_read_len = 0;
 
 
-	if (!if_handle) {
+	if (!if_handle || !buf_handle) {
 		ESP_LOGE(TAG, "Invalid arguments to sdio_read");
 		return ESP_FAIL;
 	}
 
-	if (if_handle->state != ACTIVE) {
+	if (if_handle->state != ACTIVE)
 		return ESP_FAIL;
-	}
 
-	sdio_slave_recv(&(buf_handle->sdio_buf_handle), &(buf_handle->payload),
+	ret = sdio_slave_recv(&(buf_handle->sdio_buf_handle), &(buf_handle->payload),
 			&(sdio_read_len), portMAX_DELAY);
+	if (ret)
+		return ESP_FAIL;
+
 	buf_handle->payload_len = sdio_read_len & 0xFFFF;
 
 	header = (struct esp_payload_header *) buf_handle->payload;
@@ -332,7 +347,6 @@ static int sdio_read(interface_handle_t *if_handle, interface_buffer_handle_t *b
 	buf_handle->if_type = header->if_type;
 	buf_handle->if_num = header->if_num;
 	buf_handle->free_buf_handle = sdio_read_done;
-
 	return len;
 }
 
@@ -360,7 +374,7 @@ static esp_err_t sdio_reset(interface_handle_t *handle)
 
 		if (handle) {
 			ret = sdio_slave_recv_load_buf(handle);
-			ESP_ERROR_CHECK(ret);
+			ESP_ERROR_CHECK_WITHOUT_ABORT(ret);
 		}
 	}
 

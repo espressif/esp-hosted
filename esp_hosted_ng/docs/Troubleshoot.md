@@ -14,8 +14,10 @@ SDIO_CLASS=00
 SDIO_ID=6666:2222
 MODALIAS=sdio:c00v6666d2222
 ```
-5. In case issue persists, collect and send following logs to Espressif support.
-* dmesg log on host
+5. Possible that SDIO timing can be wrong, because of which you might face some error messages in `/var/log/kern.log`
+Add [.timing = SDIO_SLAVE_TIMING_NSEND_PSAMPLE](https://github.com/espressif/esp-idf/blob/454aeb3a48ac2b92cfa9d8b6a01d1b53179ec50a/components/hal/include/hal/sdio_slave_types.h#L26-L38) of sdio_slave_config_t in `esp/esp_driver/network_adapter/main/sdio_slave_api.c`
+6. In case issue persists, collect and send following logs to Espressif support.
+* dmesg or /var/log/kern.log log on host
 * Output of above mentioned commands
 * ESP console log
 
