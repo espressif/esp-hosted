@@ -657,7 +657,11 @@ static void process_rx_packet(struct esp_adapter *adapter, struct sk_buff *skb)
 
 			priv->stats.rx_bytes += skb->len;
 			/* Forward skb to kernel */
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 18, 0))
+			netif_rx(skb);	
+#else
 			netif_rx_ni(skb);
+#endif
 
 			priv->stats.rx_packets++;
 		} else if (payload_header->packet_type == PACKET_TYPE_COMMAND_RESPONSE) {

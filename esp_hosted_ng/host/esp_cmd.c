@@ -569,9 +569,21 @@ static void process_assoc_event(struct esp_wifi_device *priv,
 		return;
 	}
 	memcpy(mac, event->bssid, MAC_ADDR_LEN);
-
-	cfg80211_rx_assoc_resp(priv->ndev, priv->bss, event->frame, event->frame_len,
-			0, priv->assoc_req_ie, priv->assoc_req_ie_len);
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 0, 0))
+	struct cfg80211_rx_assoc_resp tmp={
+			.buf=event->frame,
+			.len=event->frame_len,
+			.req_ies=priv->assoc_req_ie,
+			.req_ies_len = priv->assoc_req_ie_len,
+			.uapsd_queues =0};
+	cfg80211_rx_assoc_resp(priv->ndev,
+		& tmp);
+#elif (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 1, 0))
+		cfg80211_rx_assoc_resp(priv->ndev, priv->bss, event->frame, event->frame_len,
+		0, priv->assoc_req_ie, priv->assoc_req_ie_len);
+#else	
+		cfg80211_drx_assoc_resp(priv->ndev, priv->bss, event->frame, event->frame_len,0);
+#endif
 
 #if 0
 	if (priv->bss) {

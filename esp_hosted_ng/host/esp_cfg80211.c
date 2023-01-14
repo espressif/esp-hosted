@@ -311,8 +311,11 @@ static ESP_MGMT_TX_PROTOTYPE()
 	return 0;
 }
 
-static int esp_cfg80211_set_default_key(struct wiphy *wiphy,
-		struct net_device *dev, u8 key_index, bool unicast, bool multicast)
+static int esp_cfg80211_set_default_key(struct wiphy *wiphy,struct net_device *dev,
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 1, 0))
+			 int link_id,
+#endif
+ 			u8 key_index, bool unicast, bool multicast)
 {
 	struct esp_wifi_device *priv = NULL;
 
@@ -329,8 +332,10 @@ static int esp_cfg80211_set_default_key(struct wiphy *wiphy,
 
 	return cmd_set_default_key(priv, key_index);
 }
-
 static int esp_cfg80211_del_key(struct wiphy *wiphy, struct net_device *dev,
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 1, 0))
+			 int link_id,
+#endif
 			u8 key_index, bool pairwise, const u8 *mac_addr)
 {
 	struct esp_wifi_device *priv = NULL;
@@ -349,8 +354,10 @@ static int esp_cfg80211_del_key(struct wiphy *wiphy, struct net_device *dev,
 
 	return cmd_del_key(priv, key_index, pairwise, mac_addr);
 }
-
 static int esp_cfg80211_add_key(struct wiphy *wiphy, struct net_device *dev,
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 1, 0))
+			 int link_id,
+#endif
 		 u8 key_index, bool pairwise, const u8 *mac_addr,
 		 struct key_params *params)
 {
@@ -369,7 +376,11 @@ static int esp_cfg80211_add_key(struct wiphy *wiphy, struct net_device *dev,
 	printk(KERN_INFO "%s\n", __func__);
 
 	if (params->key_len == 0)
+	#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 1, 0))
+		return esp_cfg80211_del_key(wiphy, dev,-1, key_index, pairwise, mac_addr);
+	#else
 		return esp_cfg80211_del_key(wiphy, dev, key_index, pairwise, mac_addr);
+	#endif
 
 	return cmd_add_key(priv, key_index, pairwise, mac_addr, params);
 }
