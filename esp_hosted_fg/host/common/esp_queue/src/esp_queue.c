@@ -8,6 +8,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "esp_queue.h"
+#include "os_wrapper.h"
 
 /* create new node */
 static q_node_t * new_q_node(void *data)

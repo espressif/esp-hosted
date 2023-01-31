@@ -391,7 +391,7 @@ static int ctrl_app_parse_resp(CtrlMsg *ctrl_msg, ctrl_cmd_t *app_resp)
 	/* 2. update basic fields */
 	app_resp->msg_type = CTRL_MSG_TYPE__Resp;
 	app_resp->msg_id = ctrl_msg->msg_id;
-	hosted_log("========>> Recvd Resp [0x%x] (for RPC_Req [0x%x])\n",
+	hosted_log("-------->> Recvd Resp [0x%x] (for RPC_Req [0x%x])\n",
 			app_resp->msg_id, (app_resp->msg_id - CTRL_MSG_ID__Resp_Base + CTRL_MSG_ID__Req_Base));
 
 	/* 3. parse CtrlMsg into ctrl_cmd_t */
@@ -1044,7 +1044,7 @@ static int process_ctrl_tx_msg(ctrl_cmd_t *app_req)
 	ctrl_msg__init(&req);
 
 	req.msg_id = app_req->msg_id;
-	hosted_log("<<======== Sending RPC_Req[0x%x], expect Rsp[0x%x]\n",
+	hosted_log("<<-------- Sending RPC_Req[0x%x], expect Rsp[0x%x]\n",
 			app_req->msg_id, (app_req->msg_id - CTRL_MSG_ID__Req_Base + CTRL_MSG_ID__Resp_Base));
 	/* payload case is exact match to msg id in esp_hosted_config.pb-c.h */
 	req.payload_case = (CtrlMsg__PayloadCase) app_req->msg_id;
