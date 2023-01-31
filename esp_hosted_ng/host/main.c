@@ -598,6 +598,8 @@ static void process_rx_packet(struct esp_adapter *adapter, struct sk_buff *skb)
 			return;
 		}
 	}
+	/*printk(KERN_INFO "next rx pkt->\n");
+	print_hex_dump(KERN_ERR, "spi_rx: ", DUMP_PREFIX_ADDRESS, 16, 1, skb->data, skb->len, 1);*/
 
 	/* chop off the header from skb */
 	skb_pull(skb, offset);

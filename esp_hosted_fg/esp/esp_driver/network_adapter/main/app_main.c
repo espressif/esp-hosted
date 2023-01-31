@@ -484,6 +484,7 @@ static esp_err_t serial_write_data(uint8_t* data, ssize_t len)
 	int32_t frag_len = 0;
 	static uint16_t seq_num = 0;
 
+	printf("%s:%u\n",__func__,__LINE__);
 	do {
 		interface_buffer_handle_t buf_handle = {0};
 
@@ -514,13 +515,15 @@ static esp_err_t serial_write_data(uint8_t* data, ssize_t len)
 			return ESP_FAIL;
 		}
 
-#if CONFIG_ESP_SERIAL_DEBUG
-		ESP_LOG_BUFFER_HEXDUMP(TAG_TX_S, data, frag_len, ESP_LOG_INFO);
+	printf("%s:%u\n",__func__,__LINE__);
+#if 1//CONFIG_ESP_SERIAL_DEBUG
+		ESP_LOG_BUFFER_HEXDUMP("s srl_tx", data, frag_len, ESP_LOG_INFO);
 #endif
 
 		left_len -= frag_len;
 		pos += frag_len;
 	} while(left_len);
+	printf("%s:%u\n",__func__,__LINE__);
 
 	return ESP_OK;
 }

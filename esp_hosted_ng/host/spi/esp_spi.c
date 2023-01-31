@@ -402,7 +402,8 @@ static void esp_spi_work(struct work_struct *work)
 
 			if (tx_skb) {
 				trans.tx_buf = tx_skb->data;
-				/*print_hex_dump(KERN_ERR, "tx: ", DUMP_PREFIX_ADDRESS, 16, 1, trans.tx_buf, 32, 1);*/
+				/*printk(KERN_INFO "Next TX pkt\n");
+				print_hex_dump(KERN_ERR, "spi_tx: ", DUMP_PREFIX_ADDRESS, 16, 1, trans.tx_buf, tx_skb->len, 1);*/
 			} else {
 				tx_skb = esp_alloc_skb(SPI_BUF_SIZE);
 				trans.tx_buf = skb_put(tx_skb, SPI_BUF_SIZE);
