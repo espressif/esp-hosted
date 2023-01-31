@@ -29,7 +29,7 @@ This solution offers following:
 
 * 802.11 network interface which is a standard Wi-Fi interface on Linux host
 * Configuration of Wi-Fi is supported through standard cfg80211 interface of Linux
-* A standard HCI interface 
+* A standard HCI interface
 
 
 

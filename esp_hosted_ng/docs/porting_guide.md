@@ -22,7 +22,7 @@ As mentioned in earlier sections, Linux based ESP-Hosted solution supports Raspb
 		- You may need to change connections from ESP to mapping pins for `SDIO_CLK`, `SDIO_CMD`, `SDIO_DAT0`, `SDIO_DAT1`, `SDIO_DAT2` and `SDIO_DAT3` from your SoC's Device Tree Pin Control.
 	- SPI GPIOs
 		- You may need to change connections from ESP to mapping pins for `SPI_ChipSelect`, `SPI_CLK`, `SPI_MISO`, `SPI_MOSI` from your SoC's Device Tree Pin Control.
-		- Additionally you need another two unused GPIOs for `SPI_Handshake` and `SPI_DataReady` new pins to be defined in your DeviceTree
+		- Additionally you need another two **unused GPIOs** for `SPI_Handshake` and `SPI_DataReady` new pins to be defined in your DeviceTree
 
 ###### Slave side
 - Changing GPIOs
@@ -83,7 +83,7 @@ Driver underlies heavily over underlying kernel. ESP-Hosted is tested over Linux
 ## 2.3 Cross Compilation
 
 * Kernel Module
-	* Within [rpi_init.sh](../../host/linux/host_control/rpi_init.sh), make command used is Raspberry Pi specific. Following tags in `make` command should be changed as per platform
+	* Within [rpi_init.sh](../host/rpi_init.sh), make command used is Raspberry Pi specific. Following tags in `make` command should be changed as per platform
 	- CROSS_COMPILE - This to be point to toolchain path. For arm example, it should point till `<Toolchain-Path>/bin/arm-linux-gnueabihf-`
 	- KERNEL - Place where kernel is checked out and built
 	- ARCH - Expected architecture
@@ -218,7 +218,7 @@ you can suspect SPI timings mismatch. In such case, tuning might be required
 ### Important Notes
 - While porting host from Raspberry-Pi, There should be no changes ESP side. But, it is better to keep in mind the expected peripheral counterpart, their GPIOs used in ESP and their configurations.
 - Getting Linux platform up and running, Getting the peripherals working for your specific platform is out of scope for ESP-Hosted project. Why? The problem is that, every Linux platform has its own drivers and own way of device configurations.
-- Porting sometimes can take very less time and tireless but sometimes a time consuming process.
+- Porting sometimes may take very less time and tireless but sometimes a time consuming process.
 - Finally, We would be happy know how your board was ported. Please open an issue for this with starting string 'porting done: <your platform>'
 This would be tremendous help for someone who is using your platform.
 
