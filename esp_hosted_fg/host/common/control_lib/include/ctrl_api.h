@@ -208,6 +208,11 @@ typedef enum {
 } wifi_vendor_ie_id_e;
 
 
+typedef enum {
+    WIFI_IF_STA = ESP_IF_WIFI_STA,
+    WIFI_IF_AP  = ESP_IF_WIFI_AP,
+	WIFI_IF_MAX,
+} wifi_interface_t;
 
 typedef struct {
 	/* Should be set to WIFI_VENDOR_IE_ELEMENT_ID (0xDD) */
@@ -259,7 +264,7 @@ typedef struct {
 	uint16_t listen_interval;
 	char status[STATUS_LENGTH];
 	char out_mac[MAX_MAC_STR_LEN];
-} wifi_ap_config_t;
+} hosted_ap_config_t;
 
 typedef struct {
 	uint8_t ssid[SSID_LENGTH];
@@ -270,7 +275,135 @@ typedef struct {
 	bool ssid_hidden;
 	wifi_bandwidth_e bandwidth;
 	char out_mac[MAX_MAC_STR_LEN];
-} softap_config_t;
+} hosted_softap_config_t;
+
+
+#if 1
+//TODO: unify wifi_ap_config_t and hosted_ap_config_t & softap configs
+/* Strength of authmodes */
+/* OPEN < WEP < WPA_PSK < OWE < WPA2_PSK = WPA_WPA2_PSK < WAPI_PSK < WPA2_ENTERPRISE < WPA3_PSK = WPA2_WPA3_PSK */
+typedef enum {
+    WIFI_AUTH_OPEN = 0,         /**< authenticate mode : open */
+    WIFI_AUTH_WEP,              /**< authenticate mode : WEP */
+    WIFI_AUTH_WPA_PSK,          /**< authenticate mode : WPA_PSK */
+    WIFI_AUTH_WPA2_PSK,         /**< authenticate mode : WPA2_PSK */
+    WIFI_AUTH_WPA_WPA2_PSK,     /**< authenticate mode : WPA_WPA2_PSK */
+    WIFI_AUTH_WPA2_ENTERPRISE,  /**< authenticate mode : WPA2_ENTERPRISE */
+    WIFI_AUTH_WPA3_PSK,         /**< authenticate mode : WPA3_PSK */
+    WIFI_AUTH_WPA2_WPA3_PSK,    /**< authenticate mode : WPA2_WPA3_PSK */
+    WIFI_AUTH_WAPI_PSK,         /**< authenticate mode : WAPI_PSK */
+    WIFI_AUTH_OWE,              /**< authenticate mode : OWE */
+    WIFI_AUTH_MAX
+} wifi_auth_mode_t;
+
+typedef enum {
+    WIFI_CIPHER_TYPE_NONE = 0,   /**< the cipher type is none */
+    WIFI_CIPHER_TYPE_WEP40,      /**< the cipher type is WEP40 */
+    WIFI_CIPHER_TYPE_WEP104,     /**< the cipher type is WEP104 */
+    WIFI_CIPHER_TYPE_TKIP,       /**< the cipher type is TKIP */
+    WIFI_CIPHER_TYPE_CCMP,       /**< the cipher type is CCMP */
+    WIFI_CIPHER_TYPE_TKIP_CCMP,  /**< the cipher type is TKIP and CCMP */
+    WIFI_CIPHER_TYPE_AES_CMAC128,/**< the cipher type is AES-CMAC-128 */
+    WIFI_CIPHER_TYPE_SMS4,       /**< the cipher type is SMS4 */
+    WIFI_CIPHER_TYPE_GCMP,       /**< the cipher type is GCMP */
+    WIFI_CIPHER_TYPE_GCMP256,    /**< the cipher type is GCMP-256 */
+    WIFI_CIPHER_TYPE_AES_GMAC128,/**< the cipher type is AES-GMAC-128 */
+    WIFI_CIPHER_TYPE_AES_GMAC256,/**< the cipher type is AES-GMAC-256 */
+    WIFI_CIPHER_TYPE_UNKNOWN,    /**< the cipher type is unknown */
+} wifi_cipher_type_t;
+
+/** Configuration structure for Protected Management Frame */
+typedef struct {
+    bool capable;            /**< Deprecated variable. Device will always connect in PMF mode if other device also advertizes PMF capability. */
+    bool required;           /**< Advertizes that Protected Management Frame is required. Device will not associate to non-PMF capable devices. */
+} wifi_pmf_config_t;
+
+/** Configuration for SAE PWE derivation */
+typedef enum {
+    WPA3_SAE_PWE_UNSPECIFIED,
+    WPA3_SAE_PWE_HUNT_AND_PECK,
+    WPA3_SAE_PWE_HASH_TO_ELEMENT,
+    WPA3_SAE_PWE_BOTH,
+} wifi_sae_pwe_method_t;
+
+typedef enum {
+    WIFI_FAST_SCAN = 0,                   /**< Do fast scan, scan will end after find SSID match AP */
+    WIFI_ALL_CHANNEL_SCAN,                /**< All channel scan, scan will end after scan all the channel */
+}wifi_scan_method_t;
+
+/** @brief Structure describing parameters for a WiFi fast scan */
+typedef struct {
+    int8_t              rssi;             /**< The minimum rssi to accept in the fast scan mode */
+    wifi_auth_mode_t    authmode;         /**< The weakest authmode to accept in the fast scan mode
+                                               Note: Incase this value is not set and password is set as per WPA2 standards(password len >= 8), it will be defaulted to WPA2 and device won't connect to deprecated WEP/WPA networks. Please set authmode threshold as WIFI_AUTH_WEP/WIFI_AUTH_WPA_PSK to connect to WEP/WPA networks */
+}wifi_scan_threshold_t;
+
+typedef enum {
+    WIFI_CONNECT_AP_BY_SIGNAL = 0,        /**< Sort match AP in scan list by RSSI */
+    WIFI_CONNECT_AP_BY_SECURITY,          /**< Sort match AP in scan list by security mode */
+}wifi_sort_method_t;
+
+/** @brief Soft-AP configuration settings for the ESP32 */
+typedef struct {
+    uint8_t ssid[32];           /**< SSID of ESP32 soft-AP. If ssid_len field is 0, this must be a Null terminated string. Otherwise, length is set according to ssid_len. */
+    uint8_t password[64];       /**< Password of ESP32 soft-AP. */
+    uint8_t ssid_len;           /**< Optional length of SSID field. */
+    uint8_t channel;            /**< Channel of ESP32 soft-AP */
+    wifi_auth_mode_t authmode;  /**< Auth mode of ESP32 soft-AP. Do not support AUTH_WEP in soft-AP mode */
+    uint8_t ssid_hidden;        /**< Broadcast SSID or not, default 0, broadcast the SSID */
+    uint8_t max_connection;     /**< Max number of stations allowed to connect in */
+    uint16_t beacon_interval;   /**< Beacon interval which should be multiples of 100. Unit: TU(time unit, 1 TU = 1024 us). Range: 100 ~ 60000. Default value: 100 */
+    wifi_cipher_type_t pairwise_cipher;   /**< pairwise cipher of SoftAP, group cipher will be derived using this. cipher values are valid starting from WIFI_CIPHER_TYPE_TKIP, enum values before that will be considered as invalid and default cipher suites(TKIP+CCMP) will be used. Valid cipher suites in softAP mode are WIFI_CIPHER_TYPE_TKIP, WIFI_CIPHER_TYPE_CCMP and WIFI_CIPHER_TYPE_TKIP_CCMP. */
+    bool ftm_responder;         /**< Enable FTM Responder mode */
+    wifi_pmf_config_t pmf_cfg;  /**< Configuration for Protected Management Frame */
+} wifi_ap_config_t;
+
+/** @brief STA configuration settings for the ESP32 */
+typedef struct {
+    uint8_t ssid[32];      /**< SSID of target AP. */
+    uint8_t password[64];  /**< Password of target AP. */
+    wifi_scan_method_t scan_method;    /**< do all channel scan or fast scan */
+    bool bssid_set;        /**< whether set MAC address of target AP or not. Generally, station_config.bssid_set needs to be 0; and it needs to be 1 only when users need to check the MAC address of the AP.*/
+    uint8_t bssid[6];     /**< MAC address of target AP*/
+    uint8_t channel;       /**< channel of target AP. Set to 1~13 to scan starting from the specified channel before connecting to AP. If the channel of AP is unknown, set it to 0.*/
+    uint16_t listen_interval;   /**< Listen interval for ESP32 station to receive beacon when WIFI_PS_MAX_MODEM is set. Units: AP beacon intervals. Defaults to 3 if set to 0. */
+    wifi_sort_method_t sort_method;    /**< sort the connect AP in the list by rssi or security mode */
+    wifi_scan_threshold_t  threshold;     /**< When sort_method is set, only APs which have an auth mode that is more secure than the selected auth mode and a signal stronger than the minimum RSSI will be used. */
+    wifi_pmf_config_t pmf_cfg;    /**< Configuration for Protected Management Frame. Will be advertized in RSN Capabilities in RSN IE. */
+    uint32_t rm_enabled:1;        /**< Whether Radio Measurements are enabled for the connection */
+    uint32_t btm_enabled:1;       /**< Whether BSS Transition Management is enabled for the connection */
+    uint32_t mbo_enabled:1;       /**< Whether MBO is enabled for the connection */
+    uint32_t ft_enabled:1;        /**< Whether FT is enabled for the connection */
+    uint32_t owe_enabled:1;       /**< Whether OWE is enabled for the connection */
+    uint32_t transition_disable:1;      /**< Whether to enable transition disable feature */
+    uint32_t reserved:26;         /**< Reserved for future feature set */
+    wifi_sae_pwe_method_t sae_pwe_h2e;     /**< Whether SAE hash to element is enabled */
+    uint8_t failure_retry_cnt;    /**< Number of connection retries station will do before moving to next AP. scan_method should be set as WIFI_ALL_CHANNEL_SCAN to use this config. Note: Enabling this may cause connection time to increase incase best AP doesn't behave properly. */
+} wifi_sta_config_t;
+
+/** @brief Configuration data for ESP32 AP or STA.
+ *
+ * The usage of this union (for ap or sta configuration) is determined by the accompanying
+ * interface argument passed to esp_wifi_set_config() or esp_wifi_get_config()
+ *
+ */
+typedef union {
+    wifi_ap_config_t  ap;  /**< configuration of AP */
+    wifi_sta_config_t sta; /**< configuration of STA */
+} wifi_config_t;
+
+#endif
+
+
+
+
+
+
+
+
+
+
+
 
 typedef struct {
 	int count;

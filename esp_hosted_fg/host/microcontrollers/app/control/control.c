@@ -325,17 +325,51 @@ static void print_configuration_parameters(void)
 	printf("+-----------------------------------+-------------------------------------------+\n\r");
 }
 
+int station_connect(char *ssid, char *pwd, char *bssid,
+		int use_wpa3, int listen_interval)
+{
+	int ret;
+	char mac[WIFI_MAX_STR_LEN];
+	int wifi_mode = WIFI_MODE_STA;
+
+	g_h.funcs->_h_memset(mac, '\0', WIFI_MAX_STR_LEN);
+
+	if ((mode & wifi_mode) != wifi_mode) {
+		wifi_mode |= mode;
+	}
+
+	if (test_set_wifi_mode(wifi_mode)) {
+		printf("Failed to set wifi mode to %u\n\r", wifi_mode);
+		return STM_FAIL;
+	}
+
+	if (test_station_mode_get_mac_addr(mac)) {
+		printf("Failed to get wifi mac\n\r");
+		return STM_FAIL;
+	}
+
+	save_station_mac(mac);
+
+	ret = test_station_mode_connect(ssid, pwd, bssid,
+			use_wpa3, listen_interval);
+	if (ret) {
+		printf("Failed to connect with AP \n\r");
+		hard_delay(50000);
+		return STM_FAIL;
+	} else {
+		printf("Connected to %s \n\r", ssid);
+		control_path_call_event(STATION_CONNECTED);
+	}
+}
+
 /**
   * @brief  connect to wifi(ap) router
   * @param  None
   * @retval STM_OK/STM_FAIL
   */
-static int station_connect(void)
+static int station_connect_api(void)
 {
 	/* station mode */
-	int wifi_mode = WIFI_MODE_STA;
-	char mac[WIFI_MAX_STR_LEN];
-	int ret;
 	char ssid[SSID_LENGTH]= {0};
 	char pwd[PASSWORD_LENGTH] = {0};
 	char bssid[BSSID_LENGTH]= {0};
@@ -360,35 +394,7 @@ static int station_connect(void)
 		listen_interval = DEFAULT_LISTEN_INTERVAL;
 	}
 
-	g_h.funcs->_h_memset(mac, '\0', WIFI_MAX_STR_LEN);
-
-	if ((mode & wifi_mode) != wifi_mode) {
-		wifi_mode |= mode;
-	}
-
-	if (test_set_wifi_mode(wifi_mode)) {
-		printf("Failed to set wifi mode to %u\n\r", wifi_mode);
-		return STM_FAIL;
-	}
-
-	if (test_station_mode_get_mac_addr(mac)) {
-		printf("Failed to get wifi mac\n\r");
-		return STM_FAIL;
-	}
-
-	save_station_mac(mac);
-
-	ret = test_station_mode_connect(ssid, pwd, bssid,
-			is_wpa3_supported, listen_interval);
-	if (ret) {
-		printf("Failed to connect with AP \n\r");
-		hard_delay(50000);
-		return STM_FAIL;
-	} else {
-		printf("Connected to %s \n\r", ssid);
-		control_path_call_event(STATION_CONNECTED);
-	}
-	return STM_OK;
+	return station_connect(ssid, pwd, bssid, is_wpa3_supported, listen_interval);
 }
 
 /**
@@ -396,7 +402,7 @@ static int station_connect(void)
   * @param  None
   * @retval STM_OK/STM_FAIL
   */
-static int softap_start(void)
+static int softap_start_api(void)
 {
 	/* softap mode */
 
@@ -538,7 +544,7 @@ static void control_main_task(void const *argument)
 				case MODE_STATION:
 				{
 					if (station_connect_retry < RETRY_COUNT) {
-						ret = station_connect();
+						ret = station_connect_api();
 						if (ret) {
 							mode &= ~MODE_STATION;
 							station_connect_retry++;
@@ -556,7 +562,7 @@ static void control_main_task(void const *argument)
 				case MODE_SOFTAP:
 				{
 					if (softap_start_retry < RETRY_COUNT) {
-						ret = softap_start();
+						ret = softap_start_api();
 						if (ret) {
 							mode &= ~MODE_SOFTAP;
 							softap_start_retry++;
@@ -574,7 +580,7 @@ static void control_main_task(void const *argument)
 				case MODE_SOFTAP_STATION:
 				{
 					if (!(mode & MODE_STATION) && station_connect_retry < RETRY_COUNT) {
-						ret = station_connect();
+						ret = station_connect_api();
 						if (ret) {
 							mode &= ~MODE_STATION;
 							station_connect_retry++;
@@ -586,7 +592,7 @@ static void control_main_task(void const *argument)
 						printf("Maximum retry done to connect with AP\n\r");
 					}
 					if (!(mode & MODE_SOFTAP) && softap_start_retry < RETRY_COUNT) {
-						ret = softap_start();
+						ret = softap_start_api();
 						if (ret) {
 							mode &= ~MODE_SOFTAP;
 							softap_start_retry++;

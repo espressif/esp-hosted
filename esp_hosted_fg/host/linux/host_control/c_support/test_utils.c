@@ -490,7 +490,7 @@ int ctrl_app_resp_callback(ctrl_cmd_t * app_resp)
 			}
 			break;
 		} case CTRL_RESP_GET_AP_CONFIG : {
-			wifi_ap_config_t *p = &app_resp->u.wifi_ap_config;
+			hosted_ap_config_t *p = &app_resp->u.wifi_ap_config;
 			if (0 == strncmp(SUCCESS_STR, p->status, strlen(SUCCESS_STR))) {
 				printf("AP's ssid '%s'\n", p->ssid);
 				printf("AP's bssid i.e. MAC address %s\n", p->bssid);
@@ -511,7 +511,7 @@ int ctrl_app_resp_callback(ctrl_cmd_t * app_resp)
 				goto fail_resp;
 			break;
 		} case CTRL_RESP_GET_SOFTAP_CONFIG : {
-			softap_config_t * resp_p = &app_resp->u.wifi_softap_config;
+			hosted_softap_config_t * resp_p = &app_resp->u.wifi_softap_config;
 
 			printf("softAP ssid %s \n", resp_p->ssid);
 			printf("softAP pwd %s \n", resp_p->pwd);

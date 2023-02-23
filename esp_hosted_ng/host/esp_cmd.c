@@ -502,6 +502,15 @@ static void process_scan_result_event(struct esp_wifi_device *priv,
 		return;
 	}
 
+	/*
+	printk(KERN_ERR "%s: scan_type: %d chan: %d len: %u tsf:%u rssi: %u",
+			__func__, scan_evt->frame_type, scan_evt->channel, scan_evt->frame_len,
+			scan_evt->tsf, scan_evt->rssi);
+	print_hex_dump(KERN_ERR, "Frame:", DUMP_PREFIX_ADDRESS, 16, 1,
+			scan_evt->frame, scan_evt->frame_len, 1);
+	print_hex_dump(KERN_ERR, "BSSID:", DUMP_PREFIX_ADDRESS, 16, 1,
+			scan_evt->bssid, MAC_ADDR_LEN, 1);
+	*/
 	/*if (!priv->scan_in_progress) {
 		return;
 	}*/
