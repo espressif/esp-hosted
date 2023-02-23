@@ -358,7 +358,7 @@ static int ctrl_app_parse_resp(CtrlMsg *ctrl_msg, ctrl_cmd_t *app_resp)
 			break;
 		} case CTRL_RESP_GET_AP_CONFIG : {
 			CHECK_CTRL_MSG_NON_NULL(resp_get_ap_config);
-			wifi_ap_config_t *p = &app_resp->u.wifi_ap_config;
+			hosted_ap_config_t *p = &app_resp->u.wifi_ap_config;
 
 			app_resp->resp_event_status = ctrl_msg->resp_get_ap_config->resp;
 
@@ -1203,7 +1203,7 @@ int ctrl_app_send_req(ctrl_cmd_t *app_req)
 			req_payload->mode = p->mode;
 			break;
 		} case CTRL_REQ_CONNECT_AP: {
-			wifi_ap_config_t * p = &app_req->u.wifi_ap_config;
+			hosted_ap_config_t * p = &app_req->u.wifi_ap_config;
 			CTRL_ALLOC_ASSIGN(CtrlMsgReqConnectAP,req_connect_ap);
 
 			if ((strlen((char *)p->ssid) > MAX_SSID_LENGTH) ||
@@ -1280,7 +1280,7 @@ int ctrl_app_send_req(ctrl_cmd_t *app_req)
 			req_payload->vendor_ie_data->payload.len = p->vnd_ie.payload_len;
 			break;
 		} case CTRL_REQ_START_SOFTAP: {
-			softap_config_t *p = &app_req->u.wifi_softap_config;
+			hosted_softap_config_t *p = &app_req->u.wifi_softap_config;
 			CTRL_ALLOC_ASSIGN(CtrlMsgReqStartSoftAP, req_start_softap);
 
 			if ((strlen((char *)&p->ssid) > MAX_SSID_LENGTH) ||
