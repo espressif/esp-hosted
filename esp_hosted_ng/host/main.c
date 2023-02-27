@@ -41,7 +41,7 @@ static uint clockspeed = 0;
 static char* mode = "sdio";
 static int if_tp = ESP_IF_TYPE_SDIO;
 extern u8 ap_bssid[MAC_ADDR_LEN];
-extern volatile u8 host_sleep;
+volatile u8 host_sleep;
 
 module_param(resetpin, int, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
 MODULE_PARM_DESC(resetpin, "Host's GPIO pin number which is connected to ESP32's EN to reset ESP32 device");
@@ -205,6 +205,7 @@ void esp_port_close(struct esp_wifi_device * priv)
 
 void print_capabilities(u32 cap)
 {
+	#if 0
 	printk(KERN_INFO "Capabilities: 0x%x. Features supported are:\n", cap);
 	if (cap & ESP_WLAN_SDIO_SUPPORT)
 		printk(KERN_INFO "\t * WLAN on SDIO\n");
@@ -229,11 +230,12 @@ void print_capabilities(u32 cap)
 		else if (cap & ESP_BR_EDR_ONLY_SUPPORT)
 			printk(KERN_INFO "\t   - BR EDR only\n");
 	}
+	#endif
 }
 
 void process_capabilities(struct esp_adapter *adapter)
 {
-	printk(KERN_INFO "ESP peripheral capabilities: 0x%x\n", adapter->capabilities);
+	//printk(KERN_INFO "ESP peripheral capabilities: 0x%x\n", adapter->capabilities);
 
 	/* Reset BT */
 	esp_deinit_bt(adapter);
@@ -241,7 +243,7 @@ void process_capabilities(struct esp_adapter *adapter)
 	if ((adapter->capabilities & ESP_BT_SPI_SUPPORT) ||
 		(adapter->capabilities & ESP_BT_SDIO_SUPPORT)) {
 		msleep(200);
-		printk(KERN_INFO "ESP Bluetooth init\n");
+		//printk(KERN_INFO "ESP Bluetooth init\n");
 		esp_init_bt(adapter);
 	}
 }

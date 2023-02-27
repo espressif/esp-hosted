@@ -50,7 +50,7 @@ struct task_struct *monitor_thread;
 #endif
 struct task_struct *tx_thread;
 
-volatile u8 host_sleep = 0;
+extern volatile u8 host_sleep;
 
 static int init_context(struct esp_sdio_context *context);
 static struct sk_buff * read_packet(struct esp_adapter *adapter);
@@ -951,7 +951,7 @@ void process_event_esp_bootup_sdio(struct esp_adapter *adapter, u8 *evt_buf, u8 
 	while (len_left) {
 		tag_len = *(pos + 1);
 
-		printk(KERN_INFO "EVENT: %d\n", *pos);
+		//printk(KERN_INFO "EVENT: %d\n", *pos);
 
 		if (*pos == ESP_BOOTUP_CAPABILITY) {
 
