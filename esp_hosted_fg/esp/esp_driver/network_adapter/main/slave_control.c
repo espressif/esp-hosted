@@ -21,6 +21,7 @@
 #include "slave_control.h"
 #include "esp_hosted_config.pb-c.h"
 #include "esp_ota_ops.h"
+#include "adapter.h"
 
 #define MAC_STR_LEN                 17
 #define MAC2STR(a)                  (a)[0], (a)[1], (a)[2], (a)[3], (a)[4], (a)[5]
@@ -76,6 +77,7 @@ static bool event_registered = false;
 
 /* FreeRTOS event group to signal when we are connected*/
 static EventGroupHandle_t wifi_event_group;
+static esp_event_handler_instance_t instance_any_id;
 
 static bool scan_done = false;
 static esp_ota_handle_t handle;
@@ -1119,8 +1121,8 @@ static esp_err_t req_get_ap_scan_list_handler (CtrlMsg *req,
 
 		credentials.ecn = ap_info[i].authmode;
 		results[i]->sec_prot = credentials.ecn;
-#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 0, 0) 
-		ESP_LOGI(TAG, "SSID      \t\t%s\nRSSI      \t\t%ld\nChannel   \t\t%lu\nBSSID     \t\t%s\nAuth mode \t\t%d\n",
+#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 0, 0)
+		ESP_LOGI(TAG, "SSID      \t\t%s\nRSSI      \t\t%ld\nChannel   \t\t%lu\nBSSID     \t\t%s\nAuth mode \t\t%lu\n",
 #else
 		ESP_LOGI(TAG,"\nSSID      \t\t%s\nRSSI      \t\t%d\nChannel   \t\t%d\nBSSID     \t\t%s\nAuth mode \t\t%d\n",
 #endif
@@ -1835,41 +1837,402 @@ static esp_err_t configure_heartbeat(bool enable, int hb_duration)
 
 	return ret;
 }
+
+#define CTRL_TEMPLATE(RspTyPe, RspStRuCt, ReqType, ReqStruct, InIt_FuN)         \
+  RspTyPe *resp_payload = NULL;                                                 \
+  ReqType *req_payload = NULL;                                                  \
+  if (!req || !resp) {                                                          \
+    ESP_LOGE(TAG, "Invalid parameters");                                        \
+    return ESP_FAIL;                                                            \
+  }                                                                             \
+  req_payload = req->ReqStruct;                                                 \
+  resp_payload = (RspTyPe *)calloc(1, sizeof(RspTyPe));                         \
+  if (!resp_payload) {                                                          \
+      ESP_LOGE(TAG, "Failed to alloc mem for resp.%s\n",#RspStRuCt);            \
+      return ESP_ERR_NO_MEM;                                                    \
+  }                                                                             \
+  resp->RspStRuCt = resp_payload;                                               \
+  InIt_FuN(resp_payload);                                                       \
+  resp_payload->resp = SUCCESS;                                                 \
+
+
+/* Simple is same above just, we dod not need req_payload unused warning */
+#define CTRL_TEMPLATE_SIMPLE(RspTyPe, RspStRuCt, ReqType, ReqStruct, InIt_FuN)  \
+  RspTyPe *resp_payload = NULL;                                                 \
+  if (!req || !resp) {                                                          \
+    ESP_LOGE(TAG, "Invalid parameters");                                        \
+    return ESP_FAIL;                                                            \
+  }                                                                             \
+  resp_payload = (RspTyPe *)calloc(1, sizeof(RspTyPe));                         \
+  if (!resp_payload) {                                                          \
+      ESP_LOGE(TAG, "Failed to alloc mem for resp.%s\n",#RspStRuCt);            \
+      return ESP_ERR_NO_MEM;                                                    \
+  }                                                                             \
+  resp->RspStRuCt = resp_payload;                                               \
+  InIt_FuN(resp_payload);                                                       \
+  resp_payload->resp = SUCCESS;                                                 \
+
+#define CTRL_RESP_ASSIGN_FIELD(PaRaM)                                           \
+  resp_payload->PaRaM = PaRaM
+
+#define CTRL_RET_FAIL_IF(ConDiTiOn)                                             \
+  if (ConDiTiOn) {                                                              \
+    resp_payload->resp = FAILURE;                                               \
+    ESP_LOGE(TAG, "%s:%u failed [%s]", __func__,__LINE__,#ConDiTiOn);           \
+    return ESP_OK;                                                              \
+  }
+
+#define CTRL_ALLOC_ELEMENT(TypE, StrucTNamE)                                    \
+  StrucTNamE = (TypE *)calloc(1, sizeof(TypE));                                 \
+  if (!StrucTNamE) {                                                            \
+      ESP_LOGE(TAG, "Failed to alloc mem for resp.%s\n",#StrucTNamE);           \
+      return ESP_ERR_NO_MEM;                                                    \
+  }                                                                             \
+
+#if 0
+#define CTRL_REQ_COPY_STR(dest, src)                                            \
+  if (src.len && src.data)                                                      \
+    strncpy((char*)dest, (char*)src.data, min(sizeof(dest), src.len));
+#endif
+
+#define CTRL_REQ_COPY_BYTES(dest, src, num_bytes)                               \
+  if (src.len && src.data)                                                      \
+    memcpy((char*)dest, src.data, min(min(sizeof(dest), num_bytes), src.len));
+
+#define CTRL_REQ_COPY_STR CTRL_REQ_COPY_BYTES
+
+#if 0
+#define CTRL_REQ_COPY_BSSID(dest, src)                                          \
+  if (src && strlen(src))                                                       \
+    if (convert_mac_to_bytes((char*)dest, src)) {                               \
+      ESP_LOGE(TAG, "%s:%u Failed convert BSSID in bytes\n",__func__,__LINE__); \
+      memset(dest, 0, MAC_LEN);                                                 \
+    }
+#endif
+
+#define CTRL_RESP_COPY_STR(dest, src, max_len)                                  \
+  if (src) {                                                                    \
+    dest.data = (uint8_t*)strndup((char*)src, max_len);                         \
+    if (!dest.data) {                                                           \
+      ESP_LOGE(TAG, "%s:%u Failed to duplicate bytes\n",__func__,__LINE__);     \
+      resp_payload->resp = FAILURE;                                             \
+      return ESP_OK;                                                            \
+    }                                                                           \
+  }
+
+#define CTRL_RESP_COPY_BYTES(dest, src, num)                                    \
+  if (src) {                                                                    \
+	dest.data = (uint8_t *)calloc(1, num);                                      \
+    if (!dest.data) {                                                           \
+      ESP_LOGE(TAG, "%s:%u Failed to duplicate bytes\n",__func__,__LINE__);     \
+      resp_payload->resp = FAILURE;                                             \
+      return ESP_OK;                                                            \
+    }                                                                           \
+  }
+
 /* Function to config heartbeat */
 static esp_err_t req_config_heartbeat(CtrlMsg *req,
 		CtrlMsg *resp, void *priv_data)
 {
-	esp_err_t ret = ESP_OK;
-	CtrlMsgRespConfigHeartbeat *resp_payload = NULL;
+	CTRL_TEMPLATE(CtrlMsgRespConfigHeartbeat,
+			resp_config_heartbeat,
+			CtrlMsgReqConfigHeartbeat,
+			req_config_heartbeat,
+			ctrl_msg__resp__config_heartbeat__init);
 
-	if (!req || !resp) {
-		ESP_LOGE(TAG, "Invalid parameters");
-		return ESP_FAIL;
-	}
+	CTRL_RET_FAIL_IF(configure_heartbeat(req_payload->enable, req_payload->duration));
 
-	resp_payload = (CtrlMsgRespConfigHeartbeat*)
-		calloc(1,sizeof(CtrlMsgRespConfigHeartbeat));
-	if (!resp_payload) {
-		ESP_LOGE(TAG,"Failed to allocate memory");
-		return ESP_ERR_NO_MEM;
-	}
-
-	ctrl_msg__resp__config_heartbeat__init(resp_payload);
-	resp->payload_case = CTRL_MSG__PAYLOAD_RESP_CONFIG_HEARTBEAT;
-	resp->resp_config_heartbeat = resp_payload;
-
-	ret = configure_heartbeat(req->req_config_heartbeat->enable,
-			req->req_config_heartbeat->duration);
-	if (ret != SUCCESS) {
-		ESP_LOGE(TAG, "Failed to set heartbeat");
-		goto err;
-	}
-	resp_payload->resp = SUCCESS;
-	return ESP_OK;
-err:
-	resp_payload->resp = FAILURE;
 	return ESP_OK;
 }
+
+
+static void event_handler(void* arg, esp_event_base_t event_base,
+                                int32_t event_id, void* event_data)
+{
+	send_event_data_to_host(CTRL_MSG_ID__Event_WifiEventNoArgs,
+			(uint8_t*) event_id, 4);
+}
+
+static esp_err_t req_wifi_init(CtrlMsg *req, CtrlMsg *resp, void *priv_data)
+{
+    wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
+
+	wifi_event_group = xEventGroupCreate();
+	CTRL_TEMPLATE(CtrlMsgRespWifiInit, resp_wifi_init,
+			CtrlMsgReqWifiInit, req_wifi_init,
+			ctrl_msg__resp__wifi_init__init);
+
+	CTRL_RET_FAIL_IF(!req_payload->cfg);
+	cfg.static_rx_buf_num       = req_payload->cfg->static_rx_buf_num      ;
+	cfg.dynamic_rx_buf_num      = req_payload->cfg->dynamic_rx_buf_num     ;
+	cfg.tx_buf_type             = req_payload->cfg->tx_buf_type            ;
+	cfg.static_tx_buf_num       = req_payload->cfg->static_tx_buf_num      ;
+	cfg.dynamic_tx_buf_num      = req_payload->cfg->dynamic_tx_buf_num     ;
+	cfg.cache_tx_buf_num        = req_payload->cfg->cache_tx_buf_num       ;
+	cfg.csi_enable              = req_payload->cfg->csi_enable             ;
+	cfg.ampdu_rx_enable         = req_payload->cfg->ampdu_rx_enable        ;
+	cfg.ampdu_tx_enable         = req_payload->cfg->ampdu_tx_enable        ;
+	cfg.amsdu_tx_enable         = req_payload->cfg->amsdu_tx_enable        ;
+	cfg.nvs_enable              = req_payload->cfg->nvs_enable             ;
+	cfg.nano_enable             = req_payload->cfg->nano_enable            ;
+	cfg.rx_ba_win               = req_payload->cfg->rx_ba_win              ;
+	cfg.wifi_task_core_id       = req_payload->cfg->wifi_task_core_id      ;
+	cfg.beacon_max_len          = req_payload->cfg->beacon_max_len         ;
+	cfg.mgmt_sbuf_num           = req_payload->cfg->mgmt_sbuf_num          ;
+	cfg.feature_caps            = req_payload->cfg->feature_caps           ;
+	cfg.sta_disconnected_pm     = req_payload->cfg->sta_disconnected_pm    ;
+	cfg.espnow_max_encrypt_num  = req_payload->cfg->espnow_max_encrypt_num ;
+	cfg.magic                   = req_payload->cfg->magic                  ;
+
+    CTRL_RET_FAIL_IF(esp_wifi_init(&cfg));
+
+    ESP_ERROR_CHECK(esp_event_handler_instance_register(WIFI_EVENT,
+                                                        ESP_EVENT_ANY_ID,
+                                                        &event_handler,
+                                                        NULL,
+                                                        &instance_any_id));
+
+	return ESP_OK;
+}
+
+static esp_err_t req_wifi_deinit(CtrlMsg *req, CtrlMsg *resp, void *priv_data)
+{
+	CTRL_TEMPLATE_SIMPLE(CtrlMsgRespWifiDeinit, resp_wifi_deinit,
+			CtrlMsgReqWifiDeinit, req_wifi_deinit,
+			ctrl_msg__resp__wifi_deinit__init);
+
+    CTRL_RET_FAIL_IF(esp_wifi_deinit());
+
+	return ESP_OK;
+}
+
+
+static esp_err_t req_wifi_start(CtrlMsg *req, CtrlMsg *resp, void *priv_data)
+{
+	CTRL_TEMPLATE_SIMPLE(CtrlMsgRespWifiStart, resp_wifi_start,
+			CtrlMsgReqWifiStart, req_wifi_start,
+			ctrl_msg__resp__wifi_start__init);
+
+    CTRL_RET_FAIL_IF(esp_wifi_start());
+
+	station_event_register();
+	event_registered = true;
+	xEventGroupSetBits(wifi_event_group, WIFI_HOST_REQUEST_BIT);
+
+#if 0
+    EventBits_t bits = xEventGroupWaitBits(s_wifi_event_group,
+            WIFI_CONNECTED_BIT | WIFI_FAIL_BIT,
+            pdFALSE,
+            pdFALSE,
+            portMAX_DELAY);
+#endif
+
+	return ESP_OK;
+}
+
+static esp_err_t req_wifi_stop(CtrlMsg *req, CtrlMsg *resp, void *priv_data)
+{
+	CTRL_TEMPLATE_SIMPLE(CtrlMsgRespWifiStop, resp_wifi_stop,
+			CtrlMsgReqWifiStop, req_wifi_stop,
+			ctrl_msg__resp__wifi_stop__init);
+
+    CTRL_RET_FAIL_IF(esp_wifi_stop());
+
+	return ESP_OK;
+}
+
+static esp_err_t req_wifi_connect(CtrlMsg *req, CtrlMsg *resp, void *priv_data)
+{
+	CTRL_TEMPLATE_SIMPLE(CtrlMsgRespWifiConnect, resp_wifi_connect,
+			CtrlMsgReqWifiConnect, req_wifi_connect,
+			ctrl_msg__resp__wifi_connect__init);
+
+	printf("************ connect ****************\n");
+    CTRL_RET_FAIL_IF(esp_wifi_connect());
+
+	return ESP_OK;
+}
+
+static esp_err_t req_wifi_disconnect(CtrlMsg *req, CtrlMsg *resp, void *priv_data)
+{
+	CTRL_TEMPLATE_SIMPLE(CtrlMsgRespWifiDisconnect, resp_wifi_disconnect,
+			CtrlMsgReqWifiDisconnect, req_wifi_disconnect,
+			ctrl_msg__resp__wifi_disconnect__init);
+
+    CTRL_RET_FAIL_IF(esp_wifi_disconnect());
+
+	return ESP_OK;
+}
+
+
+static esp_err_t req_wifi_set_config(CtrlMsg *req, CtrlMsg *resp, void *priv_data)
+{
+	wifi_config_t cfg = {0};
+
+	CTRL_TEMPLATE(CtrlMsgRespWifiSetConfig, resp_wifi_set_config,
+			CtrlMsgReqWifiSetConfig, req_wifi_set_config,
+			ctrl_msg__resp__wifi_set_config__init);
+
+	CTRL_RET_FAIL_IF((req_payload->iface != WIFI_IF_STA) &&
+	                 (req_payload->iface != WIFI_IF_AP));
+
+	CTRL_RET_FAIL_IF(!req_payload->cfg);
+	if (req_payload->iface == WIFI_IF_STA) {
+		wifi_sta_config_t * p_a_sta = &(cfg.sta);
+		WifiStaConfig * p_c_sta = req_payload->cfg->sta;
+		CTRL_RET_FAIL_IF(!req_payload->cfg->sta);
+		CTRL_REQ_COPY_STR(p_a_sta->ssid, p_c_sta->ssid, SSID_LENGTH);
+		CTRL_REQ_COPY_STR(p_a_sta->password, p_c_sta->password, PASSWORD_LENGTH);
+		p_a_sta->scan_method = p_c_sta->scan_method;
+		p_a_sta->bssid_set = p_c_sta->bssid_set;
+
+		if (p_a_sta->bssid_set)
+			//CTRL_REQ_COPY_BSSID(p_a_sta->bssid, p_c_sta->bssid);
+			CTRL_REQ_COPY_BYTES(p_a_sta->bssid, p_c_sta->bssid, BSSID_LENGTH);
+
+		p_a_sta->channel = p_c_sta->channel;
+		p_a_sta->listen_interval = p_c_sta->listen_interval;
+		p_a_sta->sort_method = p_c_sta->sort_method;
+		p_a_sta->threshold.rssi = p_c_sta->threshold->rssi;
+		p_a_sta->threshold.authmode = p_c_sta->threshold->authmode;
+		//p_a_sta->ssid_hidden = p_c_sta->ssid_hidden;
+		//p_a_sta->max_connections = p_c_sta->max_connections;
+		p_a_sta->pmf_cfg.capable = p_c_sta->pmf_cfg->capable;
+		p_a_sta->pmf_cfg.required = p_c_sta->pmf_cfg->required;
+
+		p_a_sta->rm_enabled = GET_BIT(STA_RM_ENABLED_BIT, p_c_sta->bitmask);
+		p_a_sta->btm_enabled = GET_BIT(STA_BTM_ENABLED_BIT, p_c_sta->bitmask);
+		p_a_sta->mbo_enabled = GET_BIT(STA_MBO_ENABLED_BIT, p_c_sta->bitmask);
+		p_a_sta->ft_enabled = GET_BIT(STA_FT_ENABLED_BIT, p_c_sta->bitmask);
+		p_a_sta->owe_enabled = GET_BIT(STA_OWE_ENABLED_BIT, p_c_sta->bitmask);
+		p_a_sta->transition_disable = GET_BIT(STA_TRASITION_DISABLED_BIT, p_c_sta->bitmask);
+		p_a_sta->reserved = WIFI_CONFIG_STA_GET_RESERVED_VAL(p_c_sta->bitmask);
+
+		p_a_sta->sae_pwe_h2e = p_c_sta->sae_pwe_h2e;
+		p_a_sta->failure_retry_cnt = p_c_sta->failure_retry_cnt;
+	} else if (req_payload->iface == WIFI_IF_AP) {
+		wifi_ap_config_t * p_a_ap = &(cfg.ap);
+		WifiApConfig * p_c_ap = req_payload->cfg->ap;
+		CTRL_RET_FAIL_IF(!req_payload->cfg->ap);
+		p_a_ap->ssid_len = p_c_ap->ssid_len;
+		CTRL_REQ_COPY_STR(p_a_ap->password, p_c_ap->password, PASSWORD_LENGTH);
+		p_a_ap->channel = p_c_ap->channel;
+		p_a_ap->authmode = p_c_ap->authmode;
+		p_a_ap->ssid_hidden = p_c_ap->ssid_hidden;
+		p_a_ap->max_connection = p_c_ap->max_connection;
+		p_a_ap->beacon_interval = p_c_ap->beacon_interval;
+		p_a_ap->pairwise_cipher = p_c_ap->pairwise_cipher;
+		p_a_ap->ftm_responder = p_c_ap->ftm_responder;
+		p_a_ap->pmf_cfg.capable = p_c_ap->pmf_cfg->capable;
+		p_a_ap->pmf_cfg.required = p_c_ap->pmf_cfg->required;
+		if (p_a_ap->ssid_len)
+			CTRL_REQ_COPY_STR(p_a_ap->ssid, p_c_ap->ssid, SSID_LENGTH);
+	}
+
+    CTRL_RET_FAIL_IF(esp_wifi_set_config(req_payload->iface, &cfg));
+
+	return ESP_OK;
+}
+
+static esp_err_t req_wifi_get_config(CtrlMsg *req, CtrlMsg *resp, void *priv_data)
+{
+	wifi_interface_t iface;
+	wifi_config_t cfg = {0};
+
+	CTRL_TEMPLATE(CtrlMsgRespWifiGetConfig, resp_wifi_get_config,
+			CtrlMsgReqWifiGetConfig, req_wifi_get_config,
+			ctrl_msg__resp__wifi_get_config__init);
+
+	iface = req_payload->iface;
+	resp_payload->iface = iface;
+	CTRL_RET_FAIL_IF(iface > WIFI_IF_AP);
+
+    CTRL_RET_FAIL_IF(esp_wifi_get_config(iface, &cfg));
+
+	switch (iface) {
+
+	case WIFI_IF_STA: {
+		wifi_sta_config_t * p_a_sta = &(cfg.sta);
+		WifiStaConfig * p_c_sta = resp_payload->cfg->sta;
+		CTRL_RESP_COPY_STR(p_c_sta->ssid, p_a_sta->ssid, SSID_LENGTH);
+		CTRL_RESP_COPY_STR(p_c_sta->password, p_a_sta->password, PASSWORD_LENGTH);
+		p_c_sta->scan_method = p_a_sta->scan_method;
+		p_c_sta->bssid_set = p_a_sta->bssid_set;
+
+		//TODO: Expected to break python for bssid
+		if (p_c_sta->bssid_set)
+			CTRL_RESP_COPY_BYTES(p_c_sta->bssid, p_a_sta->bssid, BSSID_LENGTH);
+
+		p_c_sta->channel = p_a_sta->channel;
+		p_c_sta->listen_interval = p_a_sta->listen_interval;
+		p_c_sta->sort_method = p_a_sta->sort_method;
+		p_c_sta->threshold->rssi = p_a_sta->threshold.rssi;
+		p_c_sta->threshold->authmode = p_a_sta->threshold.authmode;
+		p_c_sta->pmf_cfg->capable = p_a_sta->pmf_cfg.capable;
+		p_c_sta->pmf_cfg->required = p_a_sta->pmf_cfg.required;
+
+		if (p_a_sta->rm_enabled)
+			SET_BIT(STA_RM_ENABLED_BIT, p_c_sta->bitmask);
+
+		if (p_a_sta->btm_enabled)
+			SET_BIT(STA_BTM_ENABLED_BIT, p_c_sta->bitmask);
+
+		if (p_a_sta->mbo_enabled)
+			SET_BIT(STA_MBO_ENABLED_BIT, p_c_sta->bitmask);
+
+		if (p_a_sta->ft_enabled)
+			SET_BIT(STA_FT_ENABLED_BIT, p_c_sta->bitmask);
+
+		if (p_a_sta->owe_enabled)
+			SET_BIT(STA_OWE_ENABLED_BIT, p_c_sta->bitmask);
+
+		if (p_a_sta->transition_disable)
+			SET_BIT(STA_TRASITION_DISABLED_BIT, p_c_sta->bitmask);
+
+		WIFI_CONFIG_STA_SET_RESERVED_VAL(p_a_sta->reserved, p_c_sta->bitmask);
+
+		p_c_sta->sae_pwe_h2e = p_a_sta->sae_pwe_h2e;
+		p_c_sta->failure_retry_cnt = p_a_sta->failure_retry_cnt;
+		break;
+	}
+	case WIFI_IF_AP: {
+		wifi_ap_config_t * p_a_ap = &(cfg.ap);
+		WifiApConfig * p_c_ap = resp_payload->cfg->ap;
+		CTRL_RESP_COPY_STR(p_c_ap->password, p_a_ap->password, PASSWORD_LENGTH);
+		p_c_ap->ssid_len = p_a_ap->ssid_len;
+		p_c_ap->channel = p_a_ap->channel;
+		p_c_ap->authmode = p_a_ap->authmode;
+		p_c_ap->ssid_hidden = p_a_ap->ssid_hidden;
+		p_c_ap->max_connection = p_a_ap->max_connection;
+		p_c_ap->beacon_interval = p_a_ap->beacon_interval;
+		p_c_ap->pairwise_cipher = p_a_ap->pairwise_cipher;
+		p_c_ap->ftm_responder = p_a_ap->ftm_responder;
+		p_c_ap->pmf_cfg->capable = p_a_ap->pmf_cfg.capable;
+		p_c_ap->pmf_cfg->required = p_a_ap->pmf_cfg.required;
+		if (p_c_ap->ssid_len)
+			CTRL_RESP_COPY_STR(p_c_ap->ssid, p_a_ap->ssid, SSID_LENGTH);
+		break;
+	}
+	default:
+        ESP_LOGE(TAG, "Unsupported WiFi interface[%u]\n", iface);
+	} //switch
+
+
+	return ESP_OK;
+}
+
+#if 0
+static esp_err_t req_wifi_(CtrlMsg *req, CtrlMsg *resp, void *priv_data)
+{
+	CTRL_TEMPLATE(CtrlMsgRespWifi, resp_wifi_,
+			CtrlMsgReqWifi, req_wifi_,
+			ctrl_msg__resp__wifi___init);
+
+    CTRL_RET_FAIL_IF(esp_wifi_(&cfg));
+
+	return ESP_OK;
+}
+#endif
 
 static esp_ctrl_msg_req_t req_table[] = {
 	{
@@ -1956,6 +2319,38 @@ static esp_ctrl_msg_req_t req_table[] = {
 		.req_num = CTRL_MSG_ID__Req_ConfigHeartbeat,
 		.command_handler = req_config_heartbeat
 	},
+	{
+		.req_num = CTRL_MSG_ID__Req_WifiInit,
+		.command_handler = req_wifi_init
+	},
+	{
+		.req_num = CTRL_MSG_ID__Req_WifiDeinit,
+		.command_handler = req_wifi_deinit
+	},
+	{
+		.req_num = CTRL_MSG_ID__Req_WifiStart,
+		.command_handler = req_wifi_start
+	},
+	{
+		.req_num = CTRL_MSG_ID__Req_WifiStop,
+		.command_handler = req_wifi_stop
+	},
+	{
+		.req_num = CTRL_MSG_ID__Req_WifiConnect,
+		.command_handler = req_wifi_connect
+	},
+	{
+		.req_num = CTRL_MSG_ID__Req_WifiDisconnect,
+		.command_handler = req_wifi_disconnect
+	},
+	{
+		.req_num = CTRL_MSG_ID__Req_WifiSetConfig,
+		.command_handler = req_wifi_set_config
+	},
+	{
+		.req_num = CTRL_MSG_ID__Req_WifiGetConfig,
+		.command_handler = req_wifi_get_config
+	},
 };
 
 
@@ -1986,6 +2381,8 @@ static esp_err_t esp_ctrl_msg_command_dispatcher(
 		ESP_LOGE(TAG, "Invalid command request lookup");
 	}
 
+	printf("Received Req [0x%x]\n", req->msg_id);
+
 	req_index = lookup_req_handler(req->msg_id);
 	if (req_index < 0) {
 		ESP_LOGE(TAG, "Invalid command handler lookup");
@@ -2001,6 +2398,7 @@ static esp_err_t esp_ctrl_msg_command_dispatcher(
 	return ESP_OK;
 }
 
+/* TODO: Is this really required? Can't just ctrl_msg__free_unpacked(resp, NULL); would do? */
 static void esp_ctrl_msg_cleanup(CtrlMsg *resp)
 {
 	if (!resp) {
@@ -2119,6 +2517,44 @@ static void esp_ctrl_msg_cleanup(CtrlMsg *resp)
 		} case (CTRL_MSG_ID__Event_StationDisconnectFromESPSoftAP) : {
 			mem_free(resp->event_station_disconnect_from_esp_softap);
 			break;
+		} case (CTRL_MSG_ID__Resp_WifiInit) : {
+			mem_free(resp->resp_wifi_init);
+			break;
+		} case (CTRL_MSG_ID__Resp_WifiDeinit) : {
+			mem_free(resp->resp_wifi_deinit);
+			break;
+		} case (CTRL_MSG_ID__Resp_WifiStart) : {
+			mem_free(resp->resp_wifi_start);
+			break;
+		} case (CTRL_MSG_ID__Resp_WifiStop) : {
+			mem_free(resp->resp_wifi_stop);
+			break;
+		} case (CTRL_MSG_ID__Resp_WifiConnect) : {
+			mem_free(resp->resp_wifi_connect);
+			break;
+		} case (CTRL_MSG_ID__Resp_WifiDisconnect) : {
+			mem_free(resp->resp_wifi_disconnect);
+			break;
+		} case (CTRL_MSG_ID__Resp_WifiSetConfig) : {
+			mem_free(resp->resp_wifi_set_config);
+			break;
+		} case (CTRL_MSG_ID__Resp_WifiGetConfig) : {
+			if (resp->resp_wifi_get_config->iface == WIFI_IF_STA) {
+				mem_free(resp->resp_wifi_get_config->cfg->sta->ssid.data);
+				mem_free(resp->resp_wifi_get_config->cfg->sta->password.data);
+				mem_free(resp->resp_wifi_get_config->cfg->sta->bssid.data);
+				mem_free(resp->resp_wifi_get_config->cfg->sta);
+			} else if (resp->resp_wifi_get_config->iface == WIFI_IF_AP) {
+				mem_free(resp->resp_wifi_get_config->cfg->ap->ssid.data);
+				mem_free(resp->resp_wifi_get_config->cfg->ap->password.data);
+				mem_free(resp->resp_wifi_get_config->cfg->ap);
+			}
+			mem_free(resp->resp_wifi_get_config->cfg);
+			mem_free(resp->resp_wifi_get_config);
+			break;
+		} case CTRL_MSG_ID__Event_WifiEventNoArgs: {
+			mem_free(resp->event_wifi_event_no_args);
+			break;
 		} default: {
 			ESP_LOGE(TAG, "Unsupported CtrlMsg type[%u]",resp->msg_id);
 			break;
@@ -2146,6 +2582,7 @@ esp_err_t data_transfer_handler(uint32_t session_id,const uint8_t *inbuf,
 	ctrl_msg__init (&resp);
 	resp.msg_type = CTRL_MSG_TYPE__Resp;
 	resp.msg_id = req->msg_id - CTRL_MSG_ID__Req_Base + CTRL_MSG_ID__Resp_Base;
+	resp.payload_case = resp.msg_id;
 	ret = esp_ctrl_msg_command_dispatcher(req,&resp,NULL);
 	if (ret) {
 		ESP_LOGE(TAG, "Command dispatching not happening");
@@ -2273,6 +2710,32 @@ err:
 	return ESP_OK;
 }
 
+static esp_err_t ctrl_ntfy_Event_WifiEventNoArgs(CtrlMsg *ntfy,
+		const uint8_t *data, ssize_t len)
+{
+	CtrlMsgEventWifiEventNoArgs *ntfy_payload = NULL;
+	int32_t event_id = 0;
+
+	ntfy_payload = (CtrlMsgEventWifiEventNoArgs*)
+		calloc(1,sizeof(CtrlMsgEventWifiEventNoArgs));
+	if (!ntfy_payload) {
+		ESP_LOGE(TAG,"Failed to allocate memory");
+		return ESP_ERR_NO_MEM;
+	}
+	ctrl_msg__event__wifi_event_no_args__init(ntfy_payload);
+
+	ntfy->payload_case = CTRL_MSG__PAYLOAD_EVENT_WIFI_EVENT_NO_ARGS;
+	ntfy->event_wifi_event_no_args = ntfy_payload;
+
+	event_id = (int)data;
+	ESP_LOGI(TAG, "Sending Wi-Fi event [%ld]", event_id);
+
+	ntfy_payload->event_id = event_id;
+
+	ntfy_payload->resp = SUCCESS;
+	return ESP_OK;
+}
+
 esp_err_t ctrl_notify_handler(uint32_t session_id,const uint8_t *inbuf,
 		ssize_t inlen, uint8_t **outbuf, ssize_t *outlen, void *priv_data)
 {
@@ -2300,6 +2763,9 @@ esp_err_t ctrl_notify_handler(uint32_t session_id,const uint8_t *inbuf,
 			break;
 		} case CTRL_MSG_ID__Event_StationDisconnectFromESPSoftAP: {
 			ret = ctrl_ntfy_StationDisconnectFromESPSoftAP(&ntfy, inbuf, inlen);
+			break;
+		} case CTRL_MSG_ID__Event_WifiEventNoArgs: {
+			ret = ctrl_ntfy_Event_WifiEventNoArgs(&ntfy, inbuf, inlen);
 			break;
 		} default: {
 			ESP_LOGE(TAG, "Incorrect/unsupported Ctrl Notification[%u]\n",ntfy.msg_id);

@@ -17,7 +17,7 @@
 #define command_log(...)             printf(__VA_ARGS__); printf("\r");
 #else
 #define command_log(...)             printf("%s:%u ",__func__,__LINE__);     \
-	                                 printf(__VA_ARGS__);
+                                     printf(__VA_ARGS__);
 #define min(X, Y)                    (((X) < (Y)) ? (X) : (Y))
 #endif
 
@@ -57,19 +57,19 @@
 } while(0);
 
 
-#define CHECK_CTRL_MSG_NON_NULL_VAL(msGparaM, prinTmsG)                       \
+#define CTRL_FAIL_ON_NULL_PRINT(msGparaM, prinTmsG)                           \
     if (!msGparaM) {                                                          \
         command_log(prinTmsG"\n");                                            \
         goto fail_parse_ctrl_msg;                                             \
     }
 
-#define CHECK_CTRL_MSG_NON_NULL(msGparaM)                                     \
+#define CTRL_FAIL_ON_NULL(msGparaM)                                           \
     if (!ctrl_msg->msGparaM) {                                                \
         command_log("Failed to process rx data\n");                           \
         goto fail_parse_ctrl_msg;                                             \
     }
 
-#define CHECK_CTRL_MSG_FAILED(msGparaM)                                       \
+#define CTRL_ERR_IN_RESP(msGparaM)                                            \
     if (ctrl_msg->msGparaM->resp) {                                           \
         command_log("Failure resp/event: possibly precondition not met\n");   \
         goto fail_parse_ctrl_msg;                                             \
@@ -77,14 +77,68 @@
 
 #define CTRL_ALLOC_ASSIGN(TyPe,MsG_StRuCt)                                    \
     TyPe *req_payload = (TyPe *)                                              \
-        g_h.funcs->_h_calloc(1, sizeof(TyPe));                                       \
+        g_h.funcs->_h_calloc(1, sizeof(TyPe));                                \
     if (!req_payload) {                                                       \
         command_log("Failed to allocate memory for req.%s\n",#MsG_StRuCt);    \
-		failure_status = CTRL_ERR_MEMORY_FAILURE;                             \
+        failure_status = CTRL_ERR_MEMORY_FAILURE;                             \
         goto fail_req;                                                        \
     }                                                                         \
     req.MsG_StRuCt = req_payload;                                             \
-	buff_to_free1 = (uint8_t*)req_payload;
+    buff_to_free[num_buff_to_free++] = (uint8_t*)req_payload;
+
+#define CTRL_ALLOC_ELEMENT(TyPe,MsG_StRuCt,InIt_FuN) {                        \
+    TyPe *NeW_AllocN = (TyPe *) g_h.funcs->_h_calloc(1, sizeof(TyPe));        \
+    if (!NeW_AllocN) {                                                        \
+        command_log("Failed to allocate memory for req.%s\n",#MsG_StRuCt);    \
+        failure_status = CTRL_ERR_MEMORY_FAILURE;                             \
+        goto fail_req;                                                        \
+    }                                                                         \
+    buff_to_free[num_buff_to_free++] = (uint8_t*)NeW_AllocN;                                     \
+    MsG_StRuCt = NeW_AllocN;                                                  \
+    InIt_FuN(MsG_StRuCt);                                                     \
+}
+
+#define CTRL_RESP_COPY_BYTES(dst,src) {                                       \
+    if (src.data && src.len) {                                                \
+        g_h.funcs->_h_memcpy(dst, src.data, src.len);                         \
+    }                                                                         \
+}
+
+#define CTRL_FREE_ALLOCATIONS() {                                             \
+  uint8_t idx = 0;                                                            \
+  for (idx=0;idx<num_buff_to_free; idx++)                                     \
+    mem_free(buff_to_free[idx]);                                              \
+}
+
+//g_h.funcs->_h_memcpy(DsT.data, SrC, len_to_cp);
+
+#if 0
+#define CTRL_REQ_COPY_BYTES(DsT,SrC,SizE) {                                   \
+  if (SizE && SrC) {                                                          \
+    DsT.data = (uint8_t *) g_h.funcs->_h_calloc(1, SizE);                     \
+    if (!DsT.data) {                                                          \
+      command_log("Failed to allocate memory for req.%s\n",#DsT);             \
+      failure_status = CTRL_ERR_MEMORY_FAILURE;                               \
+      goto fail_req;                                                          \
+    }                                                                         \
+    buff_to_free[num_buff_to_free++] = (uint8_t*)DsT.data;                    \
+    g_h.funcs->_h_memcpy(DsT.data, SrC, SizE);                                \
+    DsT.len = SizE;                                                           \
+  }                                                                           \
+}
+#endif
+#define CTRL_REQ_COPY_BYTES(DsT,SrC,SizE) {                                   \
+  if (SizE && SrC) {                                                          \
+	DsT.data = SrC;                                                           \
+	DsT.len = SizE;                                                           \
+  }                                                                           \
+}
+
+#define CTRL_REQ_COPY_STR(DsT,SrC,MaxSizE) {                                  \
+  if (SrC) {                                                                  \
+    CTRL_REQ_COPY_BYTES(DsT, SrC, min(strlen((char*)SrC)+1,MaxSizE));         \
+  }                                                                           \
+}
 
 struct ctrl_lib_context {
 	int state;
@@ -226,41 +280,52 @@ static int ctrl_app_parse_event(CtrlMsg *ctrl_msg, ctrl_cmd_t *app_ntfy)
 	app_ntfy->resp_event_status = SUCCESS;
 
 	switch (ctrl_msg->msg_id) {
-		case CTRL_EVENT_ESP_INIT: {
-			/*printf("EVENT: ESP INIT\n");*/
-			break;
-		} case CTRL_EVENT_HEARTBEAT: {
-			/*printf("EVENT: Heartbeat\n");*/
-			CHECK_CTRL_MSG_NON_NULL(event_heartbeat);
-			app_ntfy->u.e_heartbeat.hb_num = ctrl_msg->event_heartbeat->hb_num;
-			break;
-		} case CTRL_EVENT_STATION_DISCONNECT_FROM_AP: {
-			CHECK_CTRL_MSG_NON_NULL(event_station_disconnect_from_ap);
-			/*printf("EVENT: Station mode: Disconnect with reason [%u]\n",
-					ctrl_msg->event_station_disconnect_from_ap->resp);*/
-			app_ntfy->resp_event_status = ctrl_msg->event_station_disconnect_from_ap->resp;
-			break;
-		} case CTRL_EVENT_STATION_DISCONNECT_FROM_ESP_SOFTAP: {
-			CHECK_CTRL_MSG_NON_NULL(event_station_disconnect_from_esp_softap);
-			app_ntfy->resp_event_status =
-				ctrl_msg->event_station_disconnect_from_esp_softap->resp;
 
-			if(SUCCESS==app_ntfy->resp_event_status) {
-				CHECK_CTRL_MSG_NON_NULL_VAL(
-					ctrl_msg->event_station_disconnect_from_esp_softap->mac.data,
-					"NULL mac");
-				strncpy(app_ntfy->u.e_sta_disconnected.mac,
-					(char *)ctrl_msg->event_station_disconnect_from_esp_softap->mac.data,
-					ctrl_msg->event_station_disconnect_from_esp_softap->mac.len);
-				/*printf("EVENT: SoftAP mode: Disconnect MAC[%s]\n",
-					app_ntfy->u.e_sta_disconnected.mac);*/
-			}
-			break;
-		} default: {
-			printf("Invalid/unsupported event[%u] received\n",ctrl_msg->msg_id);
-			goto fail_parse_ctrl_msg;
-			break;
+	case CTRL_EVENT_ESP_INIT: {
+		/*printf("EVENT: ESP INIT\n");*/
+		break;
+	} case CTRL_EVENT_HEARTBEAT: {
+		/*printf("EVENT: Heartbeat\n");*/
+		CTRL_FAIL_ON_NULL(event_heartbeat);
+		app_ntfy->u.e_heartbeat.hb_num = ctrl_msg->event_heartbeat->hb_num;
+		break;
+	} case CTRL_EVENT_STATION_DISCONNECT_FROM_AP: {
+		CTRL_FAIL_ON_NULL(event_station_disconnect_from_ap);
+		/*printf("EVENT: Station mode: Disconnect with reason [%u]\n",
+				ctrl_msg->event_station_disconnect_from_ap->resp);*/
+		app_ntfy->resp_event_status = ctrl_msg->event_station_disconnect_from_ap->resp;
+		break;
+	} case CTRL_EVENT_STATION_DISCONNECT_FROM_ESP_SOFTAP: {
+		CTRL_FAIL_ON_NULL(event_station_disconnect_from_esp_softap);
+		app_ntfy->resp_event_status =
+			ctrl_msg->event_station_disconnect_from_esp_softap->resp;
+
+		if(SUCCESS==app_ntfy->resp_event_status) {
+			CTRL_FAIL_ON_NULL_PRINT(
+				ctrl_msg->event_station_disconnect_from_esp_softap->mac.data,
+				"NULL mac");
+			strncpy(app_ntfy->u.e_sta_disconnected.mac,
+				(char *)ctrl_msg->event_station_disconnect_from_esp_softap->mac.data,
+				ctrl_msg->event_station_disconnect_from_esp_softap->mac.len);
+			/*printf("EVENT: SoftAP mode: Disconnect MAC[%s]\n",
+				app_ntfy->u.e_sta_disconnected.mac);*/
 		}
+		break;
+    } case CTRL_EVENT_WIFI_EVENT_NO_ARGS: {
+		CTRL_FAIL_ON_NULL(event_wifi_event_no_args);
+		app_ntfy->resp_event_status = ctrl_msg->event_wifi_event_no_args->resp;
+        printf("Event [0x%lx] received\n", ctrl_msg->event_wifi_event_no_args->event_id);
+		//printf("EVENT: %lx\n",ctrl_msg->event_wifi_event_no_args->event_id);
+        //TODO: post event
+        //g_h.funcs->_h_event_wifi_post(ctrl_msg->event_wifi_event_no_args->event_id, 0, 0, HOSTED_BLOCK_MAX);
+		app_ntfy->u.e_wifi_simple.wifi_event_id = ctrl_msg->event_wifi_event_no_args->event_id;
+		break;
+	} default: {
+		printf("Invalid/unsupported event[%u] received\n",ctrl_msg->msg_id);
+		goto fail_parse_ctrl_msg;
+		break;
+	}
+
 	}
 
 	ctrl_msg__free_unpacked(ctrl_msg, NULL);
@@ -294,302 +359,397 @@ static int ctrl_app_parse_resp(CtrlMsg *ctrl_msg, ctrl_cmd_t *app_resp)
 
 	/* 3. parse CtrlMsg into ctrl_cmd_t */
 	switch (ctrl_msg->msg_id) {
-		case CTRL_RESP_GET_MAC_ADDR : {
-			uint8_t len_l = min(ctrl_msg->resp_get_mac_address->mac.len, MAX_MAC_STR_LEN-1);
 
-			CHECK_CTRL_MSG_NON_NULL(resp_get_mac_address);
-			CHECK_CTRL_MSG_NON_NULL(resp_get_mac_address->mac.data);
-			CHECK_CTRL_MSG_FAILED(resp_get_mac_address);
+	case CTRL_RESP_GET_MAC_ADDR : {
+		uint8_t len_l = min(ctrl_msg->resp_get_mac_address->mac.len, MAX_MAC_STR_LEN-1);
 
-			strncpy(app_resp->u.wifi_mac.mac,
-				(char *)ctrl_msg->resp_get_mac_address->mac.data, len_l);
-			app_resp->u.wifi_mac.mac[len_l] = '\0';
-			break;
-		} case CTRL_RESP_SET_MAC_ADDRESS : {
-			CHECK_CTRL_MSG_NON_NULL(resp_set_mac_address);
-			CHECK_CTRL_MSG_FAILED(resp_set_mac_address);
-			break;
-		} case CTRL_RESP_GET_WIFI_MODE : {
-			CHECK_CTRL_MSG_NON_NULL(resp_get_wifi_mode);
-			CHECK_CTRL_MSG_FAILED(resp_get_wifi_mode);
+		CTRL_FAIL_ON_NULL(resp_get_mac_address);
+		CTRL_FAIL_ON_NULL(resp_get_mac_address->mac.data);
+		CTRL_ERR_IN_RESP(resp_get_mac_address);
 
-			app_resp->u.wifi_mode.mode = ctrl_msg->resp_get_wifi_mode->mode;
-			break;
-		} case CTRL_RESP_SET_WIFI_MODE : {
-			CHECK_CTRL_MSG_NON_NULL(resp_set_wifi_mode);
-			CHECK_CTRL_MSG_FAILED(resp_set_wifi_mode);
-			break;
-		} case CTRL_RESP_GET_AP_SCAN_LIST : {
-			CtrlMsgRespScanResult *rp = ctrl_msg->resp_scan_ap_list;
-			wifi_ap_scan_list_t *ap = &app_resp->u.wifi_ap_scan;
-			wifi_scanlist_t *list = NULL;
+		strncpy(app_resp->u.wifi_mac.mac,
+			(char *)ctrl_msg->resp_get_mac_address->mac.data, len_l);
+		app_resp->u.wifi_mac.mac[len_l] = '\0';
+		break;
+	} case CTRL_RESP_SET_MAC_ADDRESS : {
+		CTRL_FAIL_ON_NULL(resp_set_mac_address);
+		CTRL_ERR_IN_RESP(resp_set_mac_address);
+		break;
+	} case CTRL_RESP_GET_WIFI_MODE : {
+		CTRL_FAIL_ON_NULL(resp_get_wifi_mode);
+		CTRL_ERR_IN_RESP(resp_get_wifi_mode);
 
-			CHECK_CTRL_MSG_NON_NULL(resp_scan_ap_list);
-			CHECK_CTRL_MSG_FAILED(resp_scan_ap_list);
+		app_resp->u.wifi_mode.mode = ctrl_msg->resp_get_wifi_mode->mode;
+		break;
+	} case CTRL_RESP_SET_WIFI_MODE : {
+		CTRL_FAIL_ON_NULL(resp_set_wifi_mode);
+		CTRL_ERR_IN_RESP(resp_set_wifi_mode);
+		break;
+	} case CTRL_RESP_GET_AP_SCAN_LIST : {
+		CtrlMsgRespScanResult *rp = ctrl_msg->resp_scan_ap_list;
+		wifi_ap_scan_list_t *ap = &app_resp->u.wifi_ap_scan;
+		wifi_scanlist_t *list = NULL;
 
-			ap->count = rp->count;
-			if (rp->count) {
+		CTRL_FAIL_ON_NULL(resp_scan_ap_list);
+		CTRL_ERR_IN_RESP(resp_scan_ap_list);
 
-				CHECK_CTRL_MSG_NON_NULL_VAL(ap->count,"No APs available");
-				list = (wifi_scanlist_t *)g_h.funcs->_h_calloc(ap->count,
-						sizeof(wifi_scanlist_t));
-				CHECK_CTRL_MSG_NON_NULL_VAL(list, "Malloc Failed");
-			}
+		ap->count = rp->count;
+		if (rp->count) {
 
-			for (i=0; i<rp->count; i++) {
+			CTRL_FAIL_ON_NULL_PRINT(ap->count,"No APs available");
+			list = (wifi_scanlist_t *)g_h.funcs->_h_calloc(ap->count,
+					sizeof(wifi_scanlist_t));
+			CTRL_FAIL_ON_NULL_PRINT(list, "Malloc Failed");
+		}
 
-				if (rp->entries[i]->ssid.len)
-					g_h.funcs->_h_memcpy(list[i].ssid, (char *)rp->entries[i]->ssid.data,
-						rp->entries[i]->ssid.len);
+		for (i=0; i<rp->count; i++) {
 
-				if (rp->entries[i]->bssid.len)
-					g_h.funcs->_h_memcpy(list[i].bssid, (char *)rp->entries[i]->bssid.data,
-						rp->entries[i]->bssid.len);
+			if (rp->entries[i]->ssid.len)
+				g_h.funcs->_h_memcpy(list[i].ssid, (char *)rp->entries[i]->ssid.data,
+					rp->entries[i]->ssid.len);
 
-				list[i].channel = rp->entries[i]->chnl;
-				list[i].rssi = rp->entries[i]->rssi;
-				list[i].encryption_mode = rp->entries[i]->sec_prot;
-			}
+			if (rp->entries[i]->bssid.len)
+				g_h.funcs->_h_memcpy(list[i].bssid, (char *)rp->entries[i]->bssid.data,
+					rp->entries[i]->bssid.len);
 
-			ap->out_list = list;
-			/* Note allocation, to be freed later by app */
-			app_resp->free_buffer_func = g_h.funcs->_h_free;
-			app_resp->free_buffer_handle = list;
-			break;
-		} case CTRL_RESP_GET_AP_CONFIG : {
-			CHECK_CTRL_MSG_NON_NULL(resp_get_ap_config);
-			hosted_ap_config_t *p = &app_resp->u.wifi_ap_config;
+			list[i].channel = rp->entries[i]->chnl;
+			list[i].rssi = rp->entries[i]->rssi;
+			list[i].encryption_mode = rp->entries[i]->sec_prot;
+		}
 
-			app_resp->resp_event_status = ctrl_msg->resp_get_ap_config->resp;
+		ap->out_list = list;
+		/* Note allocation, to be freed later by app */
+		app_resp->free_buffer_func = g_h.funcs->_h_free;
+		app_resp->free_buffer_handle = list;
+		break;
+	} case CTRL_RESP_GET_AP_CONFIG : {
+		CTRL_FAIL_ON_NULL(resp_get_ap_config);
+		hosted_ap_config_t *p = &app_resp->u.hosted_ap_config;
 
-			switch (ctrl_msg->resp_get_ap_config->resp) {
+		app_resp->resp_event_status = ctrl_msg->resp_get_ap_config->resp;
 
-				case CTRL_ERR_NOT_CONNECTED:
-					strncpy(p->status, NOT_CONNECTED_STR, STATUS_LENGTH);
-					p->status[STATUS_LENGTH-1] = '\0';
-					command_log("Station is not connected to AP \n");
-					goto fail_parse_ctrl_msg2;
-					break;
+		switch (ctrl_msg->resp_get_ap_config->resp) {
 
-				case SUCCESS:
-					strncpy(p->status, SUCCESS_STR, STATUS_LENGTH);
-					p->status[STATUS_LENGTH-1] = '\0';
-					if (ctrl_msg->resp_get_ap_config->ssid.data) {
-						strncpy((char *)p->ssid,
-								(char *)ctrl_msg->resp_get_ap_config->ssid.data,
-								MAX_SSID_LENGTH-1);
-						p->ssid[MAX_SSID_LENGTH-1] ='\0';
-					}
-					if (ctrl_msg->resp_get_ap_config->bssid.data) {
-						uint8_t len_l = 0;
+			case CTRL_ERR_NOT_CONNECTED:
+				strncpy(p->status, NOT_CONNECTED_STR, STATUS_LENGTH);
+				p->status[STATUS_LENGTH-1] = '\0';
+				command_log("Station is not connected to AP \n");
+				goto fail_parse_ctrl_msg2;
+				break;
 
-						len_l = min(ctrl_msg->resp_get_ap_config->bssid.len,
-								MAX_MAC_STR_LEN-1);
-						strncpy((char *)p->bssid,
-								(char *)ctrl_msg->resp_get_ap_config->bssid.data,
-								len_l);
-						p->bssid[len_l] = '\0';
-					}
+			case SUCCESS:
+				strncpy(p->status, SUCCESS_STR, STATUS_LENGTH);
+				p->status[STATUS_LENGTH-1] = '\0';
+				if (ctrl_msg->resp_get_ap_config->ssid.data) {
+					strncpy((char *)p->ssid,
+							(char *)ctrl_msg->resp_get_ap_config->ssid.data,
+							MAX_SSID_LENGTH-1);
+					p->ssid[MAX_SSID_LENGTH-1] ='\0';
+				}
+				if (ctrl_msg->resp_get_ap_config->bssid.data) {
+					uint8_t len_l = 0;
 
-					p->channel = ctrl_msg->resp_get_ap_config->chnl;
-					p->rssi = ctrl_msg->resp_get_ap_config->rssi;
-					p->encryption_mode = ctrl_msg->resp_get_ap_config->sec_prot;
-					break;
+					len_l = min(ctrl_msg->resp_get_ap_config->bssid.len,
+							MAX_MAC_STR_LEN-1);
+					strncpy((char *)p->bssid,
+							(char *)ctrl_msg->resp_get_ap_config->bssid.data,
+							len_l);
+					p->bssid[len_l] = '\0';
+				}
 
-				case FAILURE:
-				default:
-					/* intentional fall-through */
-					strncpy(p->status, FAILURE_STR, STATUS_LENGTH);
-					p->status[STATUS_LENGTH-1] = '\0';
-					command_log("Failed to get AP config \n");
-					goto fail_parse_ctrl_msg2;
-					break;
-			}
-			break;
-		} case CTRL_RESP_CONNECT_AP : {
-			uint8_t len_l = 0;
-			CHECK_CTRL_MSG_NON_NULL(resp_connect_ap);
+				p->channel = ctrl_msg->resp_get_ap_config->chnl;
+				p->rssi = ctrl_msg->resp_get_ap_config->rssi;
+				p->encryption_mode = ctrl_msg->resp_get_ap_config->sec_prot;
+				break;
 
-			app_resp->resp_event_status = ctrl_msg->resp_connect_ap->resp;
+			case FAILURE:
+			default:
+				/* intentional fall-through */
+				strncpy(p->status, FAILURE_STR, STATUS_LENGTH);
+				p->status[STATUS_LENGTH-1] = '\0';
+				command_log("Failed to get AP config \n");
+				goto fail_parse_ctrl_msg2;
+				break;
+		}
+		break;
+	} case CTRL_RESP_CONNECT_AP : {
+		uint8_t len_l = 0;
+		CTRL_FAIL_ON_NULL(resp_connect_ap);
 
-			switch(ctrl_msg->resp_connect_ap->resp) {
-				case CTRL_ERR_INVALID_PASSWORD:
-					command_log("Invalid password for SSID\n");
-					goto fail_parse_ctrl_msg2;
-					break;
-				case CTRL_ERR_NO_AP_FOUND:
-					command_log("SSID: not found/connectable\n");
-					goto fail_parse_ctrl_msg2;
-					break;
-				case SUCCESS:
-					CHECK_CTRL_MSG_NON_NULL(resp_connect_ap->mac.data);
-					CHECK_CTRL_MSG_FAILED(resp_connect_ap);
-					break;
-				default:
-					CHECK_CTRL_MSG_FAILED(resp_connect_ap);
-					command_log("Connect AP failed\n");
-					goto fail_parse_ctrl_msg2;
-					break;
-			}
-			len_l = min(ctrl_msg->resp_connect_ap->mac.len, MAX_MAC_STR_LEN-1);
-			strncpy(app_resp->u.wifi_ap_config.out_mac,
-					(char *)ctrl_msg->resp_connect_ap->mac.data, len_l);
-			app_resp->u.wifi_ap_config.out_mac[len_l] = '\0';
-			break;
-		} case CTRL_RESP_DISCONNECT_AP : {
-			CHECK_CTRL_MSG_NON_NULL(resp_disconnect_ap);
-			CHECK_CTRL_MSG_FAILED(resp_disconnect_ap);
-			break;
-		} case CTRL_RESP_GET_SOFTAP_CONFIG : {
-			CHECK_CTRL_MSG_NON_NULL(resp_get_softap_config);
-			CHECK_CTRL_MSG_FAILED(resp_get_softap_config);
+		app_resp->resp_event_status = ctrl_msg->resp_connect_ap->resp;
 
-			if (ctrl_msg->resp_get_softap_config->ssid.data) {
-				uint16_t len = ctrl_msg->resp_get_softap_config->ssid.len;
-				uint8_t *data = ctrl_msg->resp_get_softap_config->ssid.data;
-				uint8_t *app_str = app_resp->u.wifi_softap_config.ssid;
+		switch(ctrl_msg->resp_connect_ap->resp) {
+			case CTRL_ERR_INVALID_PASSWORD:
+				command_log("Invalid password for SSID\n");
+				goto fail_parse_ctrl_msg2;
+				break;
+			case CTRL_ERR_NO_AP_FOUND:
+				command_log("SSID: not found/connectable\n");
+				goto fail_parse_ctrl_msg2;
+				break;
+			case SUCCESS:
+				CTRL_FAIL_ON_NULL(resp_connect_ap->mac.data);
+				CTRL_ERR_IN_RESP(resp_connect_ap);
+				break;
+			default:
+				CTRL_ERR_IN_RESP(resp_connect_ap);
+				command_log("Connect AP failed\n");
+				goto fail_parse_ctrl_msg2;
+				break;
+		}
+		len_l = min(ctrl_msg->resp_connect_ap->mac.len, MAX_MAC_STR_LEN-1);
+		strncpy(app_resp->u.hosted_ap_config.out_mac,
+				(char *)ctrl_msg->resp_connect_ap->mac.data, len_l);
+		app_resp->u.hosted_ap_config.out_mac[len_l] = '\0';
+		break;
+	} case CTRL_RESP_DISCONNECT_AP : {
+		CTRL_FAIL_ON_NULL(resp_disconnect_ap);
+		CTRL_ERR_IN_RESP(resp_disconnect_ap);
+		break;
+	} case CTRL_RESP_GET_SOFTAP_CONFIG : {
+		CTRL_FAIL_ON_NULL(resp_get_softap_config);
+		CTRL_ERR_IN_RESP(resp_get_softap_config);
 
-				g_h.funcs->_h_memcpy(app_str, data, len);
-				if (len<MAX_SSID_LENGTH)
-					app_str[len] = '\0';
-				else
-					app_str[MAX_SSID_LENGTH-1] = '\0';
-			}
+		if (ctrl_msg->resp_get_softap_config->ssid.data) {
+			uint16_t len = ctrl_msg->resp_get_softap_config->ssid.len;
+			uint8_t *data = ctrl_msg->resp_get_softap_config->ssid.data;
+			uint8_t *app_str = app_resp->u.wifi_softap_config.ssid;
 
-			if (ctrl_msg->resp_get_softap_config->pwd.data) {
-				g_h.funcs->_h_memcpy(app_resp->u.wifi_softap_config.pwd,
-						ctrl_msg->resp_get_softap_config->pwd.data,
-						ctrl_msg->resp_get_softap_config->pwd.len);
-				app_resp->u.wifi_softap_config.pwd[MAX_PWD_LENGTH-1] = '\0';
-			}
+			g_h.funcs->_h_memcpy(app_str, data, len);
+			if (len<MAX_SSID_LENGTH)
+				app_str[len] = '\0';
+			else
+				app_str[MAX_SSID_LENGTH-1] = '\0';
+		}
 
-			app_resp->u.wifi_softap_config.channel =
-				ctrl_msg->resp_get_softap_config->chnl;
-			app_resp->u.wifi_softap_config.encryption_mode =
-				ctrl_msg->resp_get_softap_config->sec_prot;
-			app_resp->u.wifi_softap_config.max_connections =
-				ctrl_msg->resp_get_softap_config->max_conn;
-			app_resp->u.wifi_softap_config.ssid_hidden =
-				ctrl_msg->resp_get_softap_config->ssid_hidden;
-			app_resp->u.wifi_softap_config.bandwidth =
-				ctrl_msg->resp_get_softap_config->bw;
+		if (ctrl_msg->resp_get_softap_config->pwd.data) {
+			g_h.funcs->_h_memcpy(app_resp->u.wifi_softap_config.pwd,
+					ctrl_msg->resp_get_softap_config->pwd.data,
+					ctrl_msg->resp_get_softap_config->pwd.len);
+			app_resp->u.wifi_softap_config.pwd[MAX_PWD_LENGTH-1] = '\0';
+		}
 
-			break;
-		} case CTRL_RESP_SET_SOFTAP_VND_IE : {
-			CHECK_CTRL_MSG_NON_NULL(resp_set_softap_vendor_specific_ie);
-			CHECK_CTRL_MSG_FAILED(resp_set_softap_vendor_specific_ie);
-			break;
-		} case CTRL_RESP_START_SOFTAP : {
-			uint8_t len_l = 0;
-			CHECK_CTRL_MSG_NON_NULL(resp_start_softap);
-			CHECK_CTRL_MSG_FAILED(resp_start_softap);
-			CHECK_CTRL_MSG_NON_NULL(resp_start_softap->mac.data);
+		app_resp->u.wifi_softap_config.channel =
+			ctrl_msg->resp_get_softap_config->chnl;
+		app_resp->u.wifi_softap_config.encryption_mode =
+			ctrl_msg->resp_get_softap_config->sec_prot;
+		app_resp->u.wifi_softap_config.max_connections =
+			ctrl_msg->resp_get_softap_config->max_conn;
+		app_resp->u.wifi_softap_config.ssid_hidden =
+			ctrl_msg->resp_get_softap_config->ssid_hidden;
+		app_resp->u.wifi_softap_config.bandwidth =
+			ctrl_msg->resp_get_softap_config->bw;
 
-			len_l = min(ctrl_msg->resp_connect_ap->mac.len, MAX_MAC_STR_LEN-1);
-			strncpy(app_resp->u.wifi_softap_config.out_mac,
-					(char *)ctrl_msg->resp_connect_ap->mac.data, len_l);
-			app_resp->u.wifi_softap_config.out_mac[len_l] = '\0';
-			break;
-		} case CTRL_RESP_GET_SOFTAP_CONN_STA_LIST : {
-			wifi_softap_conn_sta_list_t *ap = &app_resp->u.wifi_softap_con_sta;
-			wifi_connected_stations_list_t *list = ap->out_list;
-			CtrlMsgRespSoftAPConnectedSTA *rp =
-				ctrl_msg->resp_softap_connected_stas_list;
+		break;
+	} case CTRL_RESP_SET_SOFTAP_VND_IE : {
+		CTRL_FAIL_ON_NULL(resp_set_softap_vendor_specific_ie);
+		CTRL_ERR_IN_RESP(resp_set_softap_vendor_specific_ie);
+		break;
+	} case CTRL_RESP_START_SOFTAP : {
+		uint8_t len_l = 0;
+		CTRL_FAIL_ON_NULL(resp_start_softap);
+		CTRL_ERR_IN_RESP(resp_start_softap);
+		CTRL_FAIL_ON_NULL(resp_start_softap->mac.data);
 
-			CHECK_CTRL_MSG_FAILED(resp_softap_connected_stas_list);
+		len_l = min(ctrl_msg->resp_connect_ap->mac.len, MAX_MAC_STR_LEN-1);
+		strncpy(app_resp->u.wifi_softap_config.out_mac,
+				(char *)ctrl_msg->resp_connect_ap->mac.data, len_l);
+		app_resp->u.wifi_softap_config.out_mac[len_l] = '\0';
+		break;
+	} case CTRL_RESP_GET_SOFTAP_CONN_STA_LIST : {
+		wifi_softap_conn_sta_list_t *ap = &app_resp->u.wifi_softap_con_sta;
+		wifi_connected_stations_list_t *list = ap->out_list;
+		CtrlMsgRespSoftAPConnectedSTA *rp =
+			ctrl_msg->resp_softap_connected_stas_list;
 
-			ap->count = rp->num;
-			CHECK_CTRL_MSG_NON_NULL_VAL(ap->count,"No Stations connected");
-			if(ap->count) {
-				CHECK_CTRL_MSG_NON_NULL(resp_softap_connected_stas_list);
-				list = (wifi_connected_stations_list_t *)g_h.funcs->_h_calloc(
-						ap->count, sizeof(wifi_connected_stations_list_t));
-				CHECK_CTRL_MSG_NON_NULL_VAL(list, "Malloc Failed");
-			}
+		CTRL_ERR_IN_RESP(resp_softap_connected_stas_list);
 
-			for (i=0; i<ap->count; i++) {
-				g_h.funcs->_h_memcpy(list[i].bssid, (char *)rp->stations[i]->mac.data,
-						rp->stations[i]->mac.len);
-				list[i].rssi = rp->stations[i]->rssi;
-			}
-			app_resp->u.wifi_softap_con_sta.out_list = list;
+		ap->count = rp->num;
+		CTRL_FAIL_ON_NULL_PRINT(ap->count,"No Stations connected");
+		if(ap->count) {
+			CTRL_FAIL_ON_NULL(resp_softap_connected_stas_list);
+			list = (wifi_connected_stations_list_t *)g_h.funcs->_h_calloc(
+					ap->count, sizeof(wifi_connected_stations_list_t));
+			CTRL_FAIL_ON_NULL_PRINT(list, "Malloc Failed");
+		}
 
-			/* Note allocation, to be freed later by app */
-			app_resp->free_buffer_func = g_h.funcs->_h_free;
-			app_resp->free_buffer_handle = list;
+		for (i=0; i<ap->count; i++) {
+			g_h.funcs->_h_memcpy(list[i].bssid, (char *)rp->stations[i]->mac.data,
+					rp->stations[i]->mac.len);
+			list[i].rssi = rp->stations[i]->rssi;
+		}
+		app_resp->u.wifi_softap_con_sta.out_list = list;
 
-			break;
-		} case CTRL_RESP_STOP_SOFTAP : {
-			CHECK_CTRL_MSG_NON_NULL(resp_stop_softap);
-			CHECK_CTRL_MSG_FAILED(resp_stop_softap);
-			break;
-		} case CTRL_RESP_SET_PS_MODE : {
-			CHECK_CTRL_MSG_NON_NULL(resp_set_power_save_mode);
-			CHECK_CTRL_MSG_FAILED(resp_set_power_save_mode);
-			break;
-		} case CTRL_RESP_GET_PS_MODE : {
-			CHECK_CTRL_MSG_NON_NULL(resp_get_power_save_mode);
-			CHECK_CTRL_MSG_FAILED(resp_get_power_save_mode);
-			app_resp->u.wifi_ps.ps_mode = ctrl_msg->resp_get_power_save_mode->mode;
-			break;
-		} case CTRL_RESP_OTA_BEGIN : {
-			CHECK_CTRL_MSG_NON_NULL(resp_ota_begin);
-			CHECK_CTRL_MSG_FAILED(resp_ota_begin);
-			if (ctrl_msg->resp_ota_begin->resp) {
-				command_log("OTA Begin Failed\n");
-				goto fail_parse_ctrl_msg;
-			}
-			break;
-		} case CTRL_RESP_OTA_WRITE : {
-			CHECK_CTRL_MSG_NON_NULL(resp_ota_write);
-			CHECK_CTRL_MSG_FAILED(resp_ota_write);
-			if (ctrl_msg->resp_ota_write->resp) {
-				command_log("OTA write failed\n");
-				goto fail_parse_ctrl_msg;
-			}
-			break;
-		} case CTRL_RESP_OTA_END : {
-			CHECK_CTRL_MSG_NON_NULL(resp_ota_end);
-			if (ctrl_msg->resp_ota_end->resp) {
-				command_log("OTA write failed\n");
-				goto fail_parse_ctrl_msg;
-			}
-			break;
-		} case CTRL_RESP_SET_WIFI_MAX_TX_POWER: {
-			CHECK_CTRL_MSG_NON_NULL(req_set_wifi_max_tx_power);
-			switch (ctrl_msg->resp_set_wifi_max_tx_power->resp)
-			{
-				case FAILURE:
-					command_log("Failed to set max tx power\n");
-					goto fail_parse_ctrl_msg;
-					break;
-				case SUCCESS:
-					break;
-				case CTRL_ERR_OUT_OF_RANGE:
-					command_log("Power is OutOfRange. Check api doc for reference\n");
-					goto fail_parse_ctrl_msg;
-					break;
-				default:
-					command_log("unexpected response\n");
-					goto fail_parse_ctrl_msg;
-					break;
-			}
-			break;
-		} case CTRL_RESP_GET_WIFI_CURR_TX_POWER: {
-			CHECK_CTRL_MSG_NON_NULL(resp_get_wifi_curr_tx_power);
-			CHECK_CTRL_MSG_FAILED(resp_get_wifi_curr_tx_power);
-			app_resp->u.wifi_tx_power.power =
-				ctrl_msg->resp_get_wifi_curr_tx_power->wifi_curr_tx_power;
-			break;
-		} case CTRL_RESP_CONFIG_HEARTBEAT: {
-			CHECK_CTRL_MSG_NON_NULL(resp_config_heartbeat);
-			CHECK_CTRL_MSG_FAILED(resp_config_heartbeat);
-			break;
-		} default: {
-			command_log("Unsupported Control Resp[%u]\n", ctrl_msg->msg_id);
+		/* Note allocation, to be freed later by app */
+		app_resp->free_buffer_func = g_h.funcs->_h_free;
+		app_resp->free_buffer_handle = list;
+
+		break;
+	} case CTRL_RESP_STOP_SOFTAP : {
+		CTRL_FAIL_ON_NULL(resp_stop_softap);
+		CTRL_ERR_IN_RESP(resp_stop_softap);
+		break;
+	} case CTRL_RESP_SET_PS_MODE : {
+		CTRL_FAIL_ON_NULL(resp_set_power_save_mode);
+		CTRL_ERR_IN_RESP(resp_set_power_save_mode);
+		break;
+	} case CTRL_RESP_GET_PS_MODE : {
+		CTRL_FAIL_ON_NULL(resp_get_power_save_mode);
+		CTRL_ERR_IN_RESP(resp_get_power_save_mode);
+		app_resp->u.wifi_ps.ps_mode = ctrl_msg->resp_get_power_save_mode->mode;
+		break;
+	} case CTRL_RESP_OTA_BEGIN : {
+		CTRL_FAIL_ON_NULL(resp_ota_begin);
+		CTRL_ERR_IN_RESP(resp_ota_begin);
+		if (ctrl_msg->resp_ota_begin->resp) {
+			command_log("OTA Begin Failed\n");
 			goto fail_parse_ctrl_msg;
+		}
+		break;
+	} case CTRL_RESP_OTA_WRITE : {
+		CTRL_FAIL_ON_NULL(resp_ota_write);
+		CTRL_ERR_IN_RESP(resp_ota_write);
+		if (ctrl_msg->resp_ota_write->resp) {
+			command_log("OTA write failed\n");
+			goto fail_parse_ctrl_msg;
+		}
+		break;
+	} case CTRL_RESP_OTA_END : {
+		CTRL_FAIL_ON_NULL(resp_ota_end);
+		if (ctrl_msg->resp_ota_end->resp) {
+			command_log("OTA write failed\n");
+			goto fail_parse_ctrl_msg;
+		}
+		break;
+	} case CTRL_RESP_SET_WIFI_MAX_TX_POWER: {
+		CTRL_FAIL_ON_NULL(req_set_wifi_max_tx_power);
+		switch (ctrl_msg->resp_set_wifi_max_tx_power->resp)
+		{
+			case FAILURE:
+				command_log("Failed to set max tx power\n");
+				goto fail_parse_ctrl_msg;
+				break;
+			case SUCCESS:
+				break;
+			case CTRL_ERR_OUT_OF_RANGE:
+				command_log("Power is OutOfRange. Check api doc for reference\n");
+				goto fail_parse_ctrl_msg;
+				break;
+			default:
+				command_log("unexpected response\n");
+				goto fail_parse_ctrl_msg;
+				break;
+		}
+		break;
+	} case CTRL_RESP_GET_WIFI_CURR_TX_POWER: {
+		CTRL_FAIL_ON_NULL(resp_get_wifi_curr_tx_power);
+		CTRL_ERR_IN_RESP(resp_get_wifi_curr_tx_power);
+		app_resp->u.wifi_tx_power.power =
+			ctrl_msg->resp_get_wifi_curr_tx_power->wifi_curr_tx_power;
+		break;
+	} case CTRL_RESP_CONFIG_HEARTBEAT: {
+		CTRL_FAIL_ON_NULL(resp_config_heartbeat);
+		CTRL_ERR_IN_RESP(resp_config_heartbeat);
+		break;
+	} case CTRL_RESP_WIFI_INIT: {
+		CTRL_FAIL_ON_NULL(resp_wifi_init);
+		CTRL_ERR_IN_RESP(resp_wifi_init);
+		break;
+	} case CTRL_RESP_WIFI_DEINIT: {
+		CTRL_FAIL_ON_NULL(resp_wifi_deinit);
+		CTRL_ERR_IN_RESP(resp_wifi_deinit);
+		break;
+	} case CTRL_RESP_WIFI_START: {
+		CTRL_FAIL_ON_NULL(resp_wifi_start);
+		CTRL_ERR_IN_RESP(resp_wifi_start);
+		break;
+	} case CTRL_RESP_WIFI_STOP: {
+		CTRL_FAIL_ON_NULL(resp_wifi_stop);
+		CTRL_ERR_IN_RESP(resp_wifi_stop);
+		break;
+	} case CTRL_RESP_WIFI_CONNECT: {
+		CTRL_FAIL_ON_NULL(resp_wifi_connect);
+		CTRL_ERR_IN_RESP(resp_wifi_connect);
+		break;
+	} case CTRL_RESP_WIFI_DISCONNECT: {
+		CTRL_FAIL_ON_NULL(resp_wifi_disconnect);
+		CTRL_ERR_IN_RESP(resp_wifi_disconnect);
+		break;
+    } case CTRL_RESP_WIFI_SET_CONFIG: {
+		CTRL_FAIL_ON_NULL(resp_wifi_set_config);
+		CTRL_ERR_IN_RESP(resp_wifi_set_config);
+		break;
+    } case CTRL_RESP_WIFI_GET_CONFIG: {
+		CTRL_FAIL_ON_NULL(resp_wifi_set_config);
+		CTRL_ERR_IN_RESP(resp_wifi_set_config);
+
+		app_resp->u.wifi_config.iface = ctrl_msg->resp_wifi_get_config->iface;
+
+		switch (app_resp->u.wifi_config.iface) {
+
+		case WIFI_IF_STA: {
+			wifi_sta_config_t * p_a_sta = &(app_resp->u.wifi_config.sta);
+			WifiStaConfig * p_c_sta = ctrl_msg->resp_wifi_get_config->cfg->sta;
+			CTRL_RESP_COPY_BYTES(p_a_sta->ssid, p_c_sta->ssid);
+			CTRL_RESP_COPY_BYTES(p_a_sta->password, p_c_sta->password);
+			p_a_sta->scan_method = p_c_sta->scan_method;
+			p_a_sta->bssid_set = p_c_sta->bssid_set;
+
+			if (p_a_sta->bssid_set)
+				CTRL_RESP_COPY_BYTES(p_a_sta->bssid, p_c_sta->bssid);
+
+			p_a_sta->channel = p_c_sta->channel;
+			p_a_sta->listen_interval = p_c_sta->listen_interval;
+			p_a_sta->sort_method = p_c_sta->sort_method;
+			p_a_sta->threshold.rssi = p_c_sta->threshold->rssi;
+			p_a_sta->threshold.authmode = p_c_sta->threshold->authmode;
+			//p_a_sta->ssid_hidden = p_c_sta->ssid_hidden;
+			//p_a_sta->max_connections = p_c_sta->max_connections;
+			p_a_sta->pmf_cfg.capable = p_c_sta->pmf_cfg->capable;
+			p_a_sta->pmf_cfg.required = p_c_sta->pmf_cfg->required;
+
+			p_a_sta->rm_enabled = GET_BIT(STA_RM_ENABLED_BIT, p_c_sta->bitmask);
+			p_a_sta->btm_enabled = GET_BIT(STA_BTM_ENABLED_BIT, p_c_sta->bitmask);
+			p_a_sta->mbo_enabled = GET_BIT(STA_MBO_ENABLED_BIT, p_c_sta->bitmask);
+			p_a_sta->ft_enabled = GET_BIT(STA_FT_ENABLED_BIT, p_c_sta->bitmask);
+			p_a_sta->owe_enabled = GET_BIT(STA_OWE_ENABLED_BIT, p_c_sta->bitmask);
+			p_a_sta->transition_disable = GET_BIT(STA_TRASITION_DISABLED_BIT, p_c_sta->bitmask);
+			p_a_sta->reserved = WIFI_CONFIG_STA_GET_RESERVED_VAL(p_c_sta->bitmask);
+
+			p_a_sta->sae_pwe_h2e = p_c_sta->sae_pwe_h2e;
+			p_a_sta->failure_retry_cnt = p_c_sta->failure_retry_cnt;
 			break;
 		}
+		case WIFI_IF_AP: {
+			wifi_ap_config_t * p_a_ap = &(app_resp->u.wifi_config.ap);
+			WifiApConfig * p_c_ap = ctrl_msg->resp_wifi_get_config->cfg->ap;
+
+			CTRL_RESP_COPY_BYTES(p_a_ap->ssid, p_c_ap->ssid);
+			CTRL_RESP_COPY_BYTES(p_a_ap->password, p_c_ap->password);
+			p_a_ap->ssid_len = p_c_ap->ssid_len;
+			p_a_ap->channel = p_c_ap->channel;
+			p_a_ap->authmode = p_c_ap->authmode;
+			p_a_ap->ssid_hidden = p_c_ap->ssid_hidden;
+			p_a_ap->max_connection = p_c_ap->max_connection;
+			p_a_ap->beacon_interval = p_c_ap->beacon_interval;
+			p_a_ap->pairwise_cipher = p_c_ap->pairwise_cipher;
+			p_a_ap->ftm_responder = p_c_ap->ftm_responder;
+			p_a_ap->pmf_cfg.capable = p_c_ap->pmf_cfg->capable;
+			p_a_ap->pmf_cfg.required = p_c_ap->pmf_cfg->required;
+			break;
+		}
+		default:
+            command_log("Unsupported WiFi interface[%u]\n", app_resp->u.wifi_config.iface);
+		} //switch
+
+		break;
+
+	} default: {
+		command_log("Unsupported Control Resp[%u]\n", ctrl_msg->msg_id);
+		goto fail_parse_ctrl_msg;
+		break;
+	}
+
 	}
 
 	/* 4. Free up buffers */
@@ -655,6 +815,7 @@ static int process_ctrl_rx_msg(CtrlMsg * proto_msg, ctrl_rx_ind_t ctrl_rx_func)
 	if (proto_msg->msg_type == CTRL_MSG_TYPE__Event) {
 		/* Events are handled only asynchronously */
 
+		printf("Received Event [0x%x]\n", proto_msg->msg_id);
 		/* check if callback is available.
 		 * if not, silently drop the msg */
 		if (CALLBACK_AVAILABLE ==
@@ -688,6 +849,7 @@ static int process_ctrl_rx_msg(CtrlMsg * proto_msg, ctrl_rx_ind_t ctrl_rx_func)
 	/* 3. Check if it is response msg */
 	} else if (proto_msg->msg_type == CTRL_MSG_TYPE__Resp) {
 
+		printf("Received Resp [0x%x]\n", proto_msg->msg_id);
 		/* Ctrl responses are handled asynchronously and
 		 * asynchronpusly */
 
@@ -1109,11 +1271,9 @@ int ctrl_app_send_req(ctrl_cmd_t *app_req)
 	CtrlMsg   req = {0};
 	uint32_t  tx_len = 0;
 	uint8_t  *tx_data = NULL;
-	uint8_t  *buff_to_free1 = NULL;
-	void     *buff_to_free2 = NULL;
 	uint8_t   failure_status = 0;
-
-
+	void     *buff_to_free[20] = {NULL};
+	uint8_t   num_buff_to_free = 0;
 
 	if (!app_req) {
 		failure_status = CTRL_ERR_INCORRECT_ARG;
@@ -1136,261 +1296,396 @@ int ctrl_app_send_req(ctrl_cmd_t *app_req)
 	ctrl_msg__init(&req);
 
 	req.msg_id = app_req->msg_id;
+	printf("Sending ctrl_req[0x%x]\n",app_req->msg_id);
 	/* payload case is exact match to msg id in esp_hosted_config.pb-c.h */
 	req.payload_case = (CtrlMsg__PayloadCase) app_req->msg_id;
 
-    /*printf("%s:%u msgId: %u\n",__func__,__LINE__,req.msg_id);*/
+	/*printf("%s:%u msgId: %u\n",__func__,__LINE__,req.msg_id);*/
 	/* 3. identify request and compose CtrlMsg */
 	switch(req.msg_id) {
-		case CTRL_REQ_GET_WIFI_MODE:
-		case CTRL_REQ_GET_AP_CONFIG:
-		case CTRL_REQ_DISCONNECT_AP:
-		case CTRL_REQ_GET_SOFTAP_CONFIG:
-		case CTRL_REQ_GET_SOFTAP_CONN_STA_LIST:
-		case CTRL_REQ_STOP_SOFTAP:
-		case CTRL_REQ_GET_PS_MODE:
-		case CTRL_REQ_OTA_BEGIN:
-		case CTRL_REQ_OTA_END:
-		case CTRL_REQ_GET_WIFI_CURR_TX_POWER: {
-			/* Intentional fallthrough & empty */
-			break;
-		} case CTRL_REQ_GET_AP_SCAN_LIST: {
-			if (app_req->cmd_timeout_sec < DEFAULT_CTRL_RESP_AP_SCAN_TIMEOUT)
-				app_req->cmd_timeout_sec = DEFAULT_CTRL_RESP_AP_SCAN_TIMEOUT;
-			break;
-		} case CTRL_REQ_GET_MAC_ADDR: {
-			CTRL_ALLOC_ASSIGN(CtrlMsgReqGetMacAddress, req_get_mac_address);
 
-			if ((app_req->u.wifi_mac.mode <= WIFI_MODE_NONE) ||
-			    (app_req->u.wifi_mac.mode >= WIFI_MODE_APSTA)) {
-				command_log("Invalid parameter\n");
-				failure_status = CTRL_ERR_INCORRECT_ARG;
-				goto fail_req;
-			}
-			ctrl_msg__req__get_mac_address__init(req_payload);
-			req_payload->mode = app_req->u.wifi_mac.mode;
+	case CTRL_REQ_GET_WIFI_MODE:
+	case CTRL_REQ_GET_AP_CONFIG:
+	case CTRL_REQ_DISCONNECT_AP:
+	case CTRL_REQ_GET_SOFTAP_CONFIG:
+	case CTRL_REQ_GET_SOFTAP_CONN_STA_LIST:
+	case CTRL_REQ_STOP_SOFTAP:
+	case CTRL_REQ_GET_PS_MODE:
+	case CTRL_REQ_OTA_BEGIN:
+	case CTRL_REQ_OTA_END:
+	case CTRL_REQ_WIFI_DEINIT:
+	case CTRL_REQ_WIFI_START:
+	case CTRL_REQ_WIFI_STOP:
+	case CTRL_REQ_WIFI_CONNECT:
+	case CTRL_REQ_WIFI_DISCONNECT:
+	case CTRL_REQ_GET_WIFI_CURR_TX_POWER: {
+		/* Intentional fallthrough & empty */
+		break;
+	} case CTRL_REQ_GET_AP_SCAN_LIST: {
+		if (app_req->cmd_timeout_sec < DEFAULT_CTRL_RESP_AP_SCAN_TIMEOUT)
+			app_req->cmd_timeout_sec = DEFAULT_CTRL_RESP_AP_SCAN_TIMEOUT;
+		break;
+	} case CTRL_REQ_GET_MAC_ADDR: {
+		CTRL_ALLOC_ASSIGN(CtrlMsgReqGetMacAddress, req_get_mac_address);
 
-			break;
-		} case CTRL_REQ_SET_MAC_ADDR: {
-			wifi_mac_t * p = &app_req->u.wifi_mac;
-			CTRL_ALLOC_ASSIGN(CtrlMsgReqSetMacAddress, req_set_mac_address);
-
-			if ((p->mode <= WIFI_MODE_NONE) ||
-			    (p->mode >= WIFI_MODE_APSTA)||
-			    (!strlen(p->mac)) ||
-			    (strlen(p->mac) > MAX_MAC_STR_LEN)) {
-				command_log("Invalid parameter\n");
-				failure_status = CTRL_ERR_INCORRECT_ARG;
-				goto fail_req;
-			}
-			ctrl_msg__req__set_mac_address__init(req_payload);
-
-			req_payload->mode = p->mode;
-			req_payload->mac.len = min(strlen(p->mac), MAX_MAC_STR_LEN);
-			req_payload->mac.data = (uint8_t *)p->mac;
-
-			break;
-		} case CTRL_REQ_SET_WIFI_MODE: {
-			wifi_mode_t * p = &app_req->u.wifi_mode;
-			CTRL_ALLOC_ASSIGN(CtrlMsgReqSetMode, req_set_wifi_mode);
-
-			if ((p->mode < WIFI_MODE_NONE) || (p->mode >= WIFI_MODE_MAX)) {
-				command_log("Invalid wifi mode\n");
-				failure_status = CTRL_ERR_INCORRECT_ARG;
-				goto fail_req;
-			}
-			ctrl_msg__req__set_mode__init(req_payload);
-			req_payload->mode = p->mode;
-			break;
-		} case CTRL_REQ_CONNECT_AP: {
-			hosted_ap_config_t * p = &app_req->u.wifi_ap_config;
-			CTRL_ALLOC_ASSIGN(CtrlMsgReqConnectAP,req_connect_ap);
-
-			if ((strlen((char *)p->ssid) > MAX_SSID_LENGTH) ||
-					(!strlen((char *)p->ssid))) {
-				command_log("Invalid SSID length\n");
-				failure_status = CTRL_ERR_INCORRECT_ARG;
-				goto fail_req;
-			}
-
-			if (strlen((char *)p->pwd) > MAX_PWD_LENGTH) {
-				command_log("Invalid password length\n");
-				failure_status = CTRL_ERR_INCORRECT_ARG;
-				goto fail_req;
-			}
-
-			if (strlen((char *)p->bssid) > MAX_MAC_STR_LEN) {
-				command_log("Invalid BSSID length\n");
-				failure_status = CTRL_ERR_INCORRECT_ARG;
-				goto fail_req;
-			}
-			ctrl_msg__req__connect_ap__init(req_payload);
-
-			req_payload->ssid  = (char *)&p->ssid;
-			req_payload->pwd   = (char *)&p->pwd;
-			req_payload->bssid = (char *)&p->bssid;
-			req_payload->is_wpa3_supported = p->is_wpa3_supported;
-			req_payload->listen_interval = p->listen_interval;
-			break;
-		} case CTRL_REQ_SET_SOFTAP_VND_IE: {
-			wifi_softap_vendor_ie_t *p = &app_req->u.wifi_softap_vendor_ie;
-			CTRL_ALLOC_ASSIGN(CtrlMsgReqSetSoftAPVendorSpecificIE,
-					req_set_softap_vendor_specific_ie);
-
-			if ((p->type > WIFI_VND_IE_TYPE_ASSOC_RESP) ||
-			    (p->type < WIFI_VND_IE_TYPE_BEACON)) {
-				command_log("Invalid vendor ie type \n");
-				failure_status = CTRL_ERR_INCORRECT_ARG;
-				goto fail_req;
-			}
-
-			if ((p->idx > WIFI_VND_IE_ID_1) || (p->idx < WIFI_VND_IE_ID_0)) {
-				command_log("Invalid vendor ie ID index \n");
-				failure_status = CTRL_ERR_INCORRECT_ARG;
-				goto fail_req;
-			}
-
-			if (!p->vnd_ie.payload) {
-				command_log("Invalid vendor IE buffer \n");
-				failure_status = CTRL_ERR_INCORRECT_ARG;
-				goto fail_req;
-			}
-			ctrl_msg__req__set_soft_apvendor_specific_ie__init(req_payload);
-
-			req_payload->enable = p->enable;
-			req_payload->type = (CtrlVendorIEType) p->type;
-			req_payload->idx = (CtrlVendorIEID) p->idx;
-
-			req_payload->vendor_ie_data = (CtrlMsgReqVendorIEData *)g_h.funcs->_h_malloc(sizeof(CtrlMsgReqVendorIEData));
-
-			if (!req_payload->vendor_ie_data) {
-				command_log("Mem alloc fail\n");
-				goto fail_req;
-			}
-			buff_to_free2 = req_payload->vendor_ie_data;
-
-			ctrl_msg__req__vendor_iedata__init(req_payload->vendor_ie_data);
-
-			req_payload->vendor_ie_data->element_id = p->vnd_ie.element_id;
-			req_payload->vendor_ie_data->length = p->vnd_ie.length;
-			req_payload->vendor_ie_data->vendor_oui.data =p->vnd_ie.vendor_oui;
-			req_payload->vendor_ie_data->vendor_oui.len = VENDOR_OUI_BUF;
-
-			req_payload->vendor_ie_data->payload.data = p->vnd_ie.payload;
-			req_payload->vendor_ie_data->payload.len = p->vnd_ie.payload_len;
-			break;
-		} case CTRL_REQ_START_SOFTAP: {
-			hosted_softap_config_t *p = &app_req->u.wifi_softap_config;
-			CTRL_ALLOC_ASSIGN(CtrlMsgReqStartSoftAP, req_start_softap);
-
-			if ((strlen((char *)&p->ssid) > MAX_SSID_LENGTH) ||
-			    (!strlen((char *)&p->ssid))) {
-				command_log("Invalid SSID length\n");
-				failure_status = CTRL_ERR_INCORRECT_ARG;
-				goto fail_req;
-			}
-
-			if ((strlen((char *)&p->pwd) > MAX_PWD_LENGTH) ||
-			    ((p->encryption_mode != WIFI_AUTH_OPEN) &&
-			     (strlen((char *)&p->pwd) < MIN_PWD_LENGTH))) {
-				command_log("Invalid password length\n");
-				failure_status = CTRL_ERR_INCORRECT_ARG;
-				goto fail_req;
-			}
-
-			if ((p->channel < MIN_CHNL_NO) ||
-			    (p->channel > MAX_CHNL_NO)) {
-				command_log("Invalid softap channel\n");
-				failure_status = CTRL_ERR_INCORRECT_ARG;
-				goto fail_req;
-			}
-
-			if ((p->encryption_mode < WIFI_AUTH_OPEN) ||
-			    (p->encryption_mode == WIFI_AUTH_WEP) ||
-			    (p->encryption_mode > WIFI_AUTH_WPA_WPA2_PSK)) {
-
-				command_log("Asked Encryption mode not supported\n");
-				failure_status = CTRL_ERR_INCORRECT_ARG;
-				goto fail_req;
-			}
-
-			if ((p->max_connections < MIN_CONN_NO) ||
-			    (p->max_connections > MAX_CONN_NO)) {
-				command_log("Invalid maximum connection number\n");
-				failure_status = CTRL_ERR_INCORRECT_ARG;
-				goto fail_req;
-			}
-
-			if ((p->bandwidth < WIFI_BW_HT20) ||
-			    (p->bandwidth > WIFI_BW_HT40)) {
-				command_log("Invalid bandwidth\n");
-				failure_status = CTRL_ERR_INCORRECT_ARG;
-				goto fail_req;
-			}
-			ctrl_msg__req__start_soft_ap__init(req_payload);
-
-			req_payload->ssid = (char *)&p->ssid;
-			req_payload->pwd = (char *)&p->pwd;
-			req_payload->chnl = p->channel;
-			req_payload->sec_prot = p->encryption_mode;
-			req_payload->max_conn = p->max_connections;
-			req_payload->ssid_hidden = p->ssid_hidden;
-			req_payload->bw = p->bandwidth;
-			break;
-		} case CTRL_REQ_SET_PS_MODE: {
-			wifi_power_save_t * p = &app_req->u.wifi_ps;
-			CTRL_ALLOC_ASSIGN(CtrlMsgReqSetMode, req_set_power_save_mode);
-
-			if ((p->ps_mode < WIFI_PS_MIN_MODEM) ||
-			    (p->ps_mode >= WIFI_PS_INVALID)) {
-				command_log("Invalid power save mode\n");
-				failure_status = CTRL_ERR_INCORRECT_ARG;
-				goto fail_req;
-			}
-			ctrl_msg__req__set_mode__init(req_payload);
-
-			req_payload->mode = p->ps_mode;
-			break;
-		} case CTRL_REQ_OTA_WRITE: {
-			ota_write_t *p = & app_req->u.ota_write;
-			CTRL_ALLOC_ASSIGN(CtrlMsgReqOTAWrite, req_ota_write);
-
-			if (!p->ota_data || (p->ota_data_len == 0)) {
-				command_log("Invalid parameter\n");
-				failure_status = CTRL_ERR_INCORRECT_ARG;
-				goto fail_req;
-			}
-
-			ctrl_msg__req__otawrite__init(req_payload);
-			req_payload->ota_data.data = p->ota_data;
-			req_payload->ota_data.len = p->ota_data_len;
-			break;
-		} case CTRL_REQ_SET_WIFI_MAX_TX_POWER: {
-			CTRL_ALLOC_ASSIGN(CtrlMsgReqSetWifiMaxTxPower,
-					req_set_wifi_max_tx_power);
-			ctrl_msg__req__set_wifi_max_tx_power__init(req_payload);
-			req_payload->wifi_max_tx_power = app_req->u.wifi_tx_power.power;
-			break;
-		} case CTRL_REQ_CONFIG_HEARTBEAT: {
-			CTRL_ALLOC_ASSIGN(CtrlMsgReqConfigHeartbeat, req_config_heartbeat);
-			ctrl_msg__req__config_heartbeat__init(req_payload);
-			req_payload->enable = app_req->u.e_heartbeat.enable;
-			req_payload->duration = app_req->u.e_heartbeat.duration;
-			if (req_payload->enable) {
-				printf("Enable heartbeat with duration %ld\n", (long int)req_payload->duration);
-				if (CALLBACK_AVAILABLE != is_event_callback_registered(CTRL_EVENT_HEARTBEAT))
-					printf("Note: ** Subscribe heartbeat event to get notification **\n");
-			} else {
-				printf("Disable Heartbeat\n");
-			}
-			break;
-		} default: {
-			failure_status = CTRL_ERR_UNSUPPORTED_MSG;
-			printf("Unsupported Control Req[%u]",req.msg_id);
+		if ((app_req->u.wifi_mac.mode <= WIFI_MODE_NONE) ||
+		    (app_req->u.wifi_mac.mode >= WIFI_MODE_APSTA)) {
+			command_log("Invalid parameter\n");
+			failure_status = CTRL_ERR_INCORRECT_ARG;
 			goto fail_req;
-			break;
 		}
+		ctrl_msg__req__get_mac_address__init(req_payload);
+		req_payload->mode = app_req->u.wifi_mac.mode;
+
+		break;
+	} case CTRL_REQ_SET_MAC_ADDR: {
+		wifi_mac_t * p = &app_req->u.wifi_mac;
+		CTRL_ALLOC_ASSIGN(CtrlMsgReqSetMacAddress, req_set_mac_address);
+
+		if ((p->mode <= WIFI_MODE_NONE) ||
+		    (p->mode >= WIFI_MODE_APSTA)||
+		    (!strlen(p->mac)) ||
+		    (strlen(p->mac) > MAX_MAC_STR_LEN)) {
+			command_log("Invalid parameter\n");
+			failure_status = CTRL_ERR_INCORRECT_ARG;
+			goto fail_req;
+		}
+		ctrl_msg__req__set_mac_address__init(req_payload);
+
+		req_payload->mode = p->mode;
+		req_payload->mac.len = min(strlen(p->mac), MAX_MAC_STR_LEN);
+		req_payload->mac.data = (uint8_t *)p->mac;
+
+		break;
+	} case CTRL_REQ_SET_WIFI_MODE: {
+		hosted_mode_t * p = &app_req->u.wifi_mode;
+		CTRL_ALLOC_ASSIGN(CtrlMsgReqSetMode, req_set_wifi_mode);
+
+		if ((p->mode < WIFI_MODE_NONE) || (p->mode >= WIFI_MODE_MAX)) {
+			command_log("Invalid wifi mode\n");
+			failure_status = CTRL_ERR_INCORRECT_ARG;
+			goto fail_req;
+		}
+		ctrl_msg__req__set_mode__init(req_payload);
+		req_payload->mode = p->mode;
+		break;
+	} case CTRL_REQ_CONNECT_AP: {
+		hosted_ap_config_t * p = &app_req->u.hosted_ap_config;
+		CTRL_ALLOC_ASSIGN(CtrlMsgReqConnectAP,req_connect_ap);
+
+		if ((strlen((char *)p->ssid) > MAX_SSID_LENGTH) ||
+				(!strlen((char *)p->ssid))) {
+			command_log("Invalid SSID length\n");
+			failure_status = CTRL_ERR_INCORRECT_ARG;
+			goto fail_req;
+		}
+
+		if (strlen((char *)p->pwd) > MAX_PWD_LENGTH) {
+			command_log("Invalid password length\n");
+			failure_status = CTRL_ERR_INCORRECT_ARG;
+			goto fail_req;
+		}
+
+		if (strlen((char *)p->bssid) > MAX_MAC_STR_LEN) {
+			command_log("Invalid BSSID length\n");
+			failure_status = CTRL_ERR_INCORRECT_ARG;
+			goto fail_req;
+		}
+		ctrl_msg__req__connect_ap__init(req_payload);
+
+		req_payload->ssid  = (char *)&p->ssid;
+		req_payload->pwd   = (char *)&p->pwd;
+		req_payload->bssid = (char *)&p->bssid;
+		req_payload->is_wpa3_supported = p->is_wpa3_supported;
+		req_payload->listen_interval = p->listen_interval;
+		break;
+	} case CTRL_REQ_SET_SOFTAP_VND_IE: {
+		wifi_softap_vendor_ie_t *p = &app_req->u.wifi_softap_vendor_ie;
+		CTRL_ALLOC_ASSIGN(CtrlMsgReqSetSoftAPVendorSpecificIE,
+				req_set_softap_vendor_specific_ie);
+
+		if ((p->type > WIFI_VND_IE_TYPE_ASSOC_RESP) ||
+		    (p->type < WIFI_VND_IE_TYPE_BEACON)) {
+			command_log("Invalid vendor ie type \n");
+			failure_status = CTRL_ERR_INCORRECT_ARG;
+			goto fail_req;
+		}
+
+		if ((p->idx > WIFI_VND_IE_ID_1) || (p->idx < WIFI_VND_IE_ID_0)) {
+			command_log("Invalid vendor ie ID index \n");
+			failure_status = CTRL_ERR_INCORRECT_ARG;
+			goto fail_req;
+		}
+
+		if (!p->vnd_ie.payload) {
+			command_log("Invalid vendor IE buffer \n");
+			failure_status = CTRL_ERR_INCORRECT_ARG;
+			goto fail_req;
+		}
+		ctrl_msg__req__set_soft_apvendor_specific_ie__init(req_payload);
+
+		req_payload->enable = p->enable;
+		req_payload->type = (CtrlVendorIEType) p->type;
+		req_payload->idx = (CtrlVendorIEID) p->idx;
+
+		req_payload->vendor_ie_data = (CtrlMsgReqVendorIEData *) \
+			g_h.funcs->_h_malloc(sizeof(CtrlMsgReqVendorIEData));
+
+		if (!req_payload->vendor_ie_data) {
+			command_log("Mem alloc fail\n");
+			goto fail_req;
+		}
+		buff_to_free[num_buff_to_free++] = req_payload->vendor_ie_data;
+
+		ctrl_msg__req__vendor_iedata__init(req_payload->vendor_ie_data);
+
+		req_payload->vendor_ie_data->element_id = p->vnd_ie.element_id;
+		req_payload->vendor_ie_data->length = p->vnd_ie.length;
+		req_payload->vendor_ie_data->vendor_oui.data =p->vnd_ie.vendor_oui;
+		req_payload->vendor_ie_data->vendor_oui.len = VENDOR_OUI_BUF;
+
+		req_payload->vendor_ie_data->payload.data = p->vnd_ie.payload;
+		req_payload->vendor_ie_data->payload.len = p->vnd_ie.payload_len;
+		break;
+	} case CTRL_REQ_START_SOFTAP: {
+		hosted_softap_config_t *p = &app_req->u.wifi_softap_config;
+		CTRL_ALLOC_ASSIGN(CtrlMsgReqStartSoftAP, req_start_softap);
+
+		if ((strlen((char *)&p->ssid) > MAX_SSID_LENGTH) ||
+		    (!strlen((char *)&p->ssid))) {
+			command_log("Invalid SSID length\n");
+			failure_status = CTRL_ERR_INCORRECT_ARG;
+			goto fail_req;
+		}
+
+		if ((strlen((char *)&p->pwd) > MAX_PWD_LENGTH) ||
+		    ((p->encryption_mode != WIFI_AUTH_OPEN) &&
+		     (strlen((char *)&p->pwd) < MIN_PWD_LENGTH))) {
+			command_log("Invalid password length\n");
+			failure_status = CTRL_ERR_INCORRECT_ARG;
+			goto fail_req;
+		}
+
+		if ((p->channel < MIN_CHNL_NO) ||
+		    (p->channel > MAX_CHNL_NO)) {
+			command_log("Invalid softap channel\n");
+			failure_status = CTRL_ERR_INCORRECT_ARG;
+			goto fail_req;
+		}
+
+		if ((p->encryption_mode < WIFI_AUTH_OPEN) ||
+		    (p->encryption_mode == WIFI_AUTH_WEP) ||
+		    (p->encryption_mode > WIFI_AUTH_WPA_WPA2_PSK)) {
+
+			command_log("Asked Encryption mode not supported\n");
+			failure_status = CTRL_ERR_INCORRECT_ARG;
+			goto fail_req;
+		}
+
+		if ((p->max_connections < MIN_CONN_NO) ||
+		    (p->max_connections > MAX_CONN_NO)) {
+			command_log("Invalid maximum connection number\n");
+			failure_status = CTRL_ERR_INCORRECT_ARG;
+			goto fail_req;
+		}
+
+		if ((p->bandwidth < WIFI_BW_HT20) ||
+		    (p->bandwidth > WIFI_BW_HT40)) {
+			command_log("Invalid bandwidth\n");
+			failure_status = CTRL_ERR_INCORRECT_ARG;
+			goto fail_req;
+		}
+		ctrl_msg__req__start_soft_ap__init(req_payload);
+
+		req_payload->ssid = (char *)&p->ssid;
+		req_payload->pwd = (char *)&p->pwd;
+		req_payload->chnl = p->channel;
+		req_payload->sec_prot = p->encryption_mode;
+		req_payload->max_conn = p->max_connections;
+		req_payload->ssid_hidden = p->ssid_hidden;
+		req_payload->bw = p->bandwidth;
+		break;
+	} case CTRL_REQ_SET_PS_MODE: {
+		wifi_power_save_t * p = &app_req->u.wifi_ps;
+		CTRL_ALLOC_ASSIGN(CtrlMsgReqSetMode, req_set_power_save_mode);
+
+		if ((p->ps_mode < WIFI_PS_MIN_MODEM) ||
+		    (p->ps_mode >= WIFI_PS_INVALID)) {
+			command_log("Invalid power save mode\n");
+			failure_status = CTRL_ERR_INCORRECT_ARG;
+			goto fail_req;
+		}
+		ctrl_msg__req__set_mode__init(req_payload);
+
+		req_payload->mode = p->ps_mode;
+		break;
+	} case CTRL_REQ_OTA_WRITE: {
+		ota_write_t *p = & app_req->u.ota_write;
+		CTRL_ALLOC_ASSIGN(CtrlMsgReqOTAWrite, req_ota_write);
+
+		if (!p->ota_data || (p->ota_data_len == 0)) {
+			command_log("Invalid parameter\n");
+			failure_status = CTRL_ERR_INCORRECT_ARG;
+			goto fail_req;
+		}
+
+		ctrl_msg__req__otawrite__init(req_payload);
+		req_payload->ota_data.data = p->ota_data;
+		req_payload->ota_data.len = p->ota_data_len;
+		break;
+	} case CTRL_REQ_SET_WIFI_MAX_TX_POWER: {
+		CTRL_ALLOC_ASSIGN(CtrlMsgReqSetWifiMaxTxPower,
+				req_set_wifi_max_tx_power);
+		ctrl_msg__req__set_wifi_max_tx_power__init(req_payload);
+		req_payload->wifi_max_tx_power = app_req->u.wifi_tx_power.power;
+		break;
+	} case CTRL_REQ_CONFIG_HEARTBEAT: {
+		CTRL_ALLOC_ASSIGN(CtrlMsgReqConfigHeartbeat, req_config_heartbeat);
+		ctrl_msg__req__config_heartbeat__init(req_payload);
+		req_payload->enable = app_req->u.e_heartbeat.enable;
+		req_payload->duration = app_req->u.e_heartbeat.duration;
+		if (req_payload->enable) {
+			printf("Enable heartbeat with duration %ld\n", (long int)req_payload->duration);
+			if (CALLBACK_AVAILABLE != is_event_callback_registered(CTRL_EVENT_HEARTBEAT))
+				printf("Note: ** Subscribe heartbeat event to get notification **\n");
+		} else {
+			printf("Disable Heartbeat\n");
+		}
+		break;
+	} case CTRL_REQ_WIFI_INIT: {
+		wifi_init_config_t * p_a = &app_req->u.wifi_init_config;
+		CTRL_ALLOC_ASSIGN(CtrlMsgReqWifiInit, req_wifi_init);
+		ctrl_msg__req__wifi_init__init(req_payload);
+		CTRL_ALLOC_ELEMENT(WifiInitConfig, req_payload->cfg, wifi_init_config__init);
+
+		req_payload->cfg->static_rx_buf_num      = p_a->static_rx_buf_num       ;
+		req_payload->cfg->dynamic_rx_buf_num     = p_a->dynamic_rx_buf_num      ;
+		req_payload->cfg->tx_buf_type            = p_a->tx_buf_type             ;
+		req_payload->cfg->static_tx_buf_num      = p_a->static_tx_buf_num       ;
+		req_payload->cfg->dynamic_tx_buf_num     = p_a->dynamic_tx_buf_num      ;
+		req_payload->cfg->cache_tx_buf_num       = p_a->cache_tx_buf_num        ;
+		req_payload->cfg->csi_enable             = p_a->csi_enable              ;
+		req_payload->cfg->ampdu_rx_enable        = p_a->ampdu_rx_enable         ;
+		req_payload->cfg->ampdu_tx_enable        = p_a->ampdu_tx_enable         ;
+		req_payload->cfg->amsdu_tx_enable        = p_a->amsdu_tx_enable         ;
+		req_payload->cfg->nvs_enable             = p_a->nvs_enable              ;
+		req_payload->cfg->nano_enable            = p_a->nano_enable             ;
+		req_payload->cfg->rx_ba_win              = p_a->rx_ba_win               ;
+		req_payload->cfg->wifi_task_core_id      = p_a->wifi_task_core_id       ;
+		req_payload->cfg->beacon_max_len         = p_a->beacon_max_len          ;
+		req_payload->cfg->mgmt_sbuf_num          = p_a->mgmt_sbuf_num           ;
+		req_payload->cfg->sta_disconnected_pm    = p_a->sta_disconnected_pm     ;
+		req_payload->cfg->espnow_max_encrypt_num = p_a->espnow_max_encrypt_num  ;
+		req_payload->cfg->magic                  = p_a->magic                   ;
+
+		/* uint64 - TODO: portable? */
+		req_payload->cfg->feature_caps = p_a->feature_caps                      ;
+		break;
+    } case CTRL_REQ_WIFI_GET_CONFIG: {
+		wifi_config_t * p_a = &app_req->u.wifi_config;
+		CTRL_ALLOC_ASSIGN(CtrlMsgReqWifiGetConfig, req_wifi_get_config);
+		ctrl_msg__req__wifi_get_config__init(req_payload);
+
+		req_payload->iface = p_a->iface;
+		break;
+    } case CTRL_REQ_WIFI_SET_CONFIG: {
+		wifi_config_t * p_a = &app_req->u.wifi_config;
+		CTRL_ALLOC_ASSIGN(CtrlMsgReqWifiSetConfig, req_wifi_set_config);
+		ctrl_msg__req__wifi_set_config__init(req_payload);
+
+		req_payload->iface = p_a->iface;
+
+		CTRL_ALLOC_ELEMENT(WifiConfig, req_payload->cfg, wifi_config__init);
+		printf("%s:%u req_payload->cfg: 0x%p req_payload->cfg->sta\n",__func__, __LINE__, req_payload->cfg);
+
+		switch(p_a->iface) {
+
+		case WIFI_IF_STA: {
+			req_payload->cfg->u_case = WIFI_CONFIG__U_STA;
+
+			wifi_sta_config_t *p_a_sta = &p_a->sta;
+			CTRL_ALLOC_ELEMENT(WifiStaConfig, req_payload->cfg->sta, wifi_sta_config__init);
+			WifiStaConfig *p_c_sta = req_payload->cfg->sta;
+			CTRL_REQ_COPY_STR(p_c_sta->ssid, p_a_sta->ssid, SSID_LENGTH);
+
+			CTRL_REQ_COPY_STR(p_c_sta->password, p_a_sta->password, PASSWORD_LENGTH);
+
+			p_c_sta->scan_method = p_a_sta->scan_method;
+			p_c_sta->bssid_set = p_a_sta->bssid_set;
+
+			if (p_a_sta->bssid_set)
+				CTRL_REQ_COPY_BYTES(p_c_sta->bssid, p_a_sta->bssid, BSSID_LENGTH);
+
+			p_c_sta->channel = p_a_sta->channel;
+			p_c_sta->listen_interval = p_a_sta->listen_interval;
+			p_c_sta->sort_method = p_a_sta->sort_method;
+			CTRL_ALLOC_ELEMENT(WifiScanThreshold, p_c_sta->threshold, wifi_scan_threshold__init);
+			p_c_sta->threshold->rssi = p_a_sta->threshold.rssi;
+			p_c_sta->threshold->authmode = p_a_sta->threshold.authmode;
+			CTRL_ALLOC_ELEMENT(WifiPmfConfig, p_c_sta->pmf_cfg, wifi_pmf_config__init);
+			p_c_sta->pmf_cfg->capable = p_a_sta->pmf_cfg.capable;
+			p_c_sta->pmf_cfg->required = p_a_sta->pmf_cfg.required;
+
+			if (p_a_sta->rm_enabled)
+				SET_BIT(STA_RM_ENABLED_BIT, p_c_sta->bitmask);
+
+			if (p_a_sta->btm_enabled)
+				SET_BIT(STA_BTM_ENABLED_BIT, p_c_sta->bitmask);
+
+			if (p_a_sta->mbo_enabled)
+				SET_BIT(STA_MBO_ENABLED_BIT, p_c_sta->bitmask);
+
+			if (p_a_sta->ft_enabled)
+				SET_BIT(STA_FT_ENABLED_BIT, p_c_sta->bitmask);
+
+			if (p_a_sta->owe_enabled)
+				SET_BIT(STA_OWE_ENABLED_BIT, p_c_sta->bitmask);
+
+			if (p_a_sta->transition_disable)
+				SET_BIT(STA_TRASITION_DISABLED_BIT, p_c_sta->bitmask);
+
+			WIFI_CONFIG_STA_SET_RESERVED_VAL(p_a_sta->reserved, p_c_sta->bitmask);
+
+			p_c_sta->sae_pwe_h2e = p_a_sta->sae_pwe_h2e;
+			p_c_sta->failure_retry_cnt = p_a_sta->failure_retry_cnt;
+
+			break;
+		} case WIFI_IF_AP: {
+			req_payload->cfg->u_case = WIFI_CONFIG__U_AP;
+
+			wifi_ap_config_t * p_a_ap = &p_a->ap;
+			CTRL_ALLOC_ELEMENT(WifiApConfig, req_payload->cfg->ap, wifi_ap_config__init);
+			WifiApConfig * p_c_ap = req_payload->cfg->ap;
+
+			CTRL_REQ_COPY_STR(p_c_ap->ssid, p_a_ap->ssid, SSID_LENGTH);
+			CTRL_REQ_COPY_STR(p_c_ap->password, p_a_ap->password, PASSWORD_LENGTH);
+			p_c_ap->ssid_len = p_a_ap->ssid_len;
+			p_c_ap->channel = p_a_ap->channel;
+			p_c_ap->authmode = p_a_ap->authmode;
+			p_c_ap->ssid_hidden = p_a_ap->ssid_hidden;
+			p_c_ap->max_connection = p_a_ap->max_connection;
+			p_c_ap->beacon_interval = p_a_ap->beacon_interval;
+			p_c_ap->pairwise_cipher = p_a_ap->pairwise_cipher;
+			p_c_ap->ftm_responder = p_a_ap->ftm_responder;
+			p_c_ap->pmf_cfg->capable = p_a_ap->pmf_cfg.capable;
+			p_c_ap->pmf_cfg->required = p_a_ap->pmf_cfg.required;
+			break;
+        } default: {
+            command_log("unexpected wifi iface [%u]\n", p_a->iface);
+			break;
+        }
+
+        } /* switch */
+		break;
+
+	} default: {
+		failure_status = CTRL_ERR_UNSUPPORTED_MSG;
+		printf("Unsupported Control Req[%u]",req.msg_id);
+		goto fail_req;
+		break;
 	}
+
+	} /* switch */
 
 	/* 4. Protobuf msg size */
 	tx_len = ctrl_msg__get_packed_size(&req);
@@ -1432,6 +1727,7 @@ int ctrl_app_send_req(ctrl_cmd_t *app_req)
 		}
 	}
 
+
 	/* 8. Pack in protobuf and send the request */
 	ctrl_msg__pack(&req, tx_data);
 	if (transport_pserial_send(tx_data, tx_len)) {
@@ -1439,6 +1735,8 @@ int ctrl_app_send_req(ctrl_cmd_t *app_req)
 		failure_status = CTRL_ERR_TRANSPORT_SEND;
 		goto fail_req;
 	}
+
+	command_log("Sent control req[%u]\n",req.msg_id);
 
 
 
@@ -1449,17 +1747,16 @@ int ctrl_app_send_req(ctrl_cmd_t *app_req)
 		}
 	}
 
-    /*printf("%s:%u success\n",__func__,__LINE__);*/
+	/*printf("%s:%u success\n",__func__,__LINE__);*/
 	/* 10. Cleanup */
 	mem_free(tx_data);
-	mem_free(buff_to_free2);
-	mem_free(buff_to_free1);
+	CTRL_FREE_ALLOCATIONS();
 	return SUCCESS;
 
 fail_req:
 
 
-    /*printf("%s:%u fail1\n",__func__,__LINE__);*/
+	/*printf("%s:%u fail1\n",__func__,__LINE__);*/
 	if (app_req->ctrl_resp_cb) {
 		/* 11. In case of async procedure,
 		 * Let application know of failure using callback itself
@@ -1481,7 +1778,7 @@ fail_req:
 	}
 
 fail_req2:
-    /*printf("%s:%u fail2\n",__func__,__LINE__);*/
+	/*printf("%s:%u fail2\n",__func__,__LINE__);*/
 	/* 13. Cleanup */
 	if (app_req->free_buffer_handle) {
 		if (app_req->free_buffer_func) {
@@ -1490,8 +1787,7 @@ fail_req2:
 	}
 
 	mem_free(tx_data);
-	mem_free(buff_to_free2);
-	mem_free(buff_to_free1);
+	CTRL_FREE_ALLOCATIONS();
 	return FAILURE;
 }
 

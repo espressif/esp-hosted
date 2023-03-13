@@ -60,8 +60,48 @@ enum {
 	OUT_OF_RANGE
 };
 
+enum wifi_event_e {
+    WIFI_EVENT_WIFI_READY = 0,           /**< ESP32 WiFi ready */
+    WIFI_EVENT_SCAN_DONE,                /**< ESP32 finish scanning AP */
+    WIFI_EVENT_STA_START,                /**< ESP32 station start */
+    WIFI_EVENT_STA_STOP,                 /**< ESP32 station stop */
+    WIFI_EVENT_STA_CONNECTED,            /**< ESP32 station connected to AP */
+    WIFI_EVENT_STA_DISCONNECTED,         /**< ESP32 station disconnected from AP */
+    WIFI_EVENT_STA_AUTHMODE_CHANGE,      /**< the auth mode of AP connected by ESP32 station changed */
 
-typedef enum {
+    WIFI_EVENT_STA_WPS_ER_SUCCESS,       /**< ESP32 station wps succeeds in enrollee mode */
+    WIFI_EVENT_STA_WPS_ER_FAILED,        /**< ESP32 station wps fails in enrollee mode */
+    WIFI_EVENT_STA_WPS_ER_TIMEOUT,       /**< ESP32 station wps timeout in enrollee mode */
+    WIFI_EVENT_STA_WPS_ER_PIN,           /**< ESP32 station wps pin code in enrollee mode */
+    WIFI_EVENT_STA_WPS_ER_PBC_OVERLAP,   /**< ESP32 station wps overlap in enrollee mode */
+
+    WIFI_EVENT_AP_START,                 /**< ESP32 soft-AP start */
+    WIFI_EVENT_AP_STOP,                  /**< ESP32 soft-AP stop */
+    WIFI_EVENT_AP_STACONNECTED,          /**< a station connected to ESP32 soft-AP */
+    WIFI_EVENT_AP_STADISCONNECTED,       /**< a station disconnected from ESP32 soft-AP */
+    WIFI_EVENT_AP_PROBEREQRECVED,        /**< Receive probe request packet in soft-AP interface */
+
+    WIFI_EVENT_FTM_REPORT,               /**< Receive report of FTM procedure */
+
+    /* Add next events after this only */
+    WIFI_EVENT_STA_BSS_RSSI_LOW,         /**< AP's RSSI crossed configured threshold */
+    WIFI_EVENT_ACTION_TX_STATUS,         /**< Status indication of Action Tx operation */
+    WIFI_EVENT_ROC_DONE,                 /**< Remain-on-Channel operation complete */
+
+    WIFI_EVENT_STA_BEACON_TIMEOUT,       /**< ESP32 station beacon timeout */
+
+    WIFI_EVENT_CONNECTIONLESS_MODULE_WAKE_INTERVAL_START,   /**< ESP32 connectionless module wake interval start */
+
+    WIFI_EVENT_AP_WPS_RG_SUCCESS,       /**< Soft-AP wps succeeds in registrar mode */
+    WIFI_EVENT_AP_WPS_RG_FAILED,        /**< Soft-AP wps fails in registrar mode */
+    WIFI_EVENT_AP_WPS_RG_TIMEOUT,       /**< Soft-AP wps timeout in registrar mode */
+    WIFI_EVENT_AP_WPS_RG_PIN,           /**< Soft-AP wps pin code in registrar mode */
+    WIFI_EVENT_AP_WPS_RG_PBC_OVERLAP,   /**< Soft-AP wps overlap in registrar mode */
+
+    WIFI_EVENT_MAX,                      /**< Invalid WiFi event ID */
+};
+
+enum AppMsgType_e {
 
 	CTRL_MSGTYPE_INVALID = CTRL_MSG_TYPE__MsgType_Invalid,
 	CTRL_REQ = CTRL_MSG_TYPE__Req,
@@ -69,9 +109,9 @@ typedef enum {
 	CTRL_EVENT = CTRL_MSG_TYPE__Event,
 	CTRL_MSGTYPE_MAX = CTRL_MSG_TYPE__MsgType_Max,
 
-} AppMsgType_e;
+};
 
-typedef enum {
+enum AppMsgId_e {
 
 	CTRL_MSGID_INVALID = CTRL_MSG_ID__MsgId_Invalid,
 	/*
@@ -105,6 +145,15 @@ typedef enum {
 	CTRL_REQ_GET_WIFI_CURR_TX_POWER    = CTRL_MSG_ID__Req_GetWifiCurrTxPower, //0x78
 
 	CTRL_REQ_CONFIG_HEARTBEAT          = CTRL_MSG_ID__Req_ConfigHeartbeat,    //0x79
+
+	CTRL_REQ_WIFI_INIT                 = CTRL_MSG_ID__Req_WifiInit,           //0x7a
+	CTRL_REQ_WIFI_DEINIT               = CTRL_MSG_ID__Req_WifiDeinit,         //0x7b
+	CTRL_REQ_WIFI_START                = CTRL_MSG_ID__Req_WifiStart,          //0x7c
+	CTRL_REQ_WIFI_STOP                 = CTRL_MSG_ID__Req_WifiStop,           //0x7d
+	CTRL_REQ_WIFI_CONNECT              = CTRL_MSG_ID__Req_WifiConnect,        //0x7e
+	CTRL_REQ_WIFI_DISCONNECT           = CTRL_MSG_ID__Req_WifiDisconnect,      //0x7f
+	CTRL_REQ_WIFI_SET_CONFIG           = CTRL_MSG_ID__Req_WifiSetConfig,      //0x80
+	CTRL_REQ_WIFI_GET_CONFIG           = CTRL_MSG_ID__Req_WifiGetConfig,      //0x81
 	/*
 	 * Add new control path command response before Req_Max
 	 * and update Req_Max
@@ -141,6 +190,15 @@ typedef enum {
 	CTRL_RESP_GET_WIFI_CURR_TX_POWER    = CTRL_MSG_ID__Resp_GetWifiCurrTxPower, //0x78 -> 0xdc
 
 	CTRL_RESP_CONFIG_HEARTBEAT          = CTRL_MSG_ID__Resp_ConfigHeartbeat,    //0x79 -> 0xdd
+
+	CTRL_RESP_WIFI_INIT                 = CTRL_MSG_ID__Resp_WifiInit,           //0x7a -> 0xde
+	CTRL_RESP_WIFI_DEINIT               = CTRL_MSG_ID__Resp_WifiDeinit,         //0x7b -> 0xdf
+	CTRL_RESP_WIFI_START                = CTRL_MSG_ID__Resp_WifiStart,          //0x7c -> 0xe0
+	CTRL_RESP_WIFI_STOP                 = CTRL_MSG_ID__Resp_WifiStop,           //0x7d -> 0xe1
+	CTRL_RESP_WIFI_CONNECT              = CTRL_MSG_ID__Resp_WifiConnect,        //0x7e -> 0xe2
+	CTRL_RESP_WIFI_DISCONNECT           = CTRL_MSG_ID__Resp_WifiDisconnect,     //0x7f -> 0xe3
+	CTRL_RESP_WIFI_SET_CONFIG           = CTRL_MSG_ID__Resp_WifiSetConfig,      //0x80 -> 0xe4
+	CTRL_RESP_WIFI_GET_CONFIG           = CTRL_MSG_ID__Resp_WifiGetConfig,      //0x81 -> 0xe5
 	/*
 	 * Add new control path comm       and response before Resp_Max
 	 * and update Resp_Max
@@ -152,65 +210,87 @@ typedef enum {
 	CTRL_EVENT_BASE            = CTRL_MSG_ID__Event_Base,
 	CTRL_EVENT_ESP_INIT        = CTRL_MSG_ID__Event_ESPInit,
 	CTRL_EVENT_HEARTBEAT       = CTRL_MSG_ID__Event_Heartbeat,
-	CTRL_EVENT_STATION_DISCONNECT_FROM_AP =
-		CTRL_MSG_ID__Event_StationDisconnectFromAP,
-	CTRL_EVENT_STATION_DISCONNECT_FROM_ESP_SOFTAP =
-		CTRL_MSG_ID__Event_StationDisconnectFromESPSoftAP,
+	CTRL_EVENT_STATION_DISCONNECT_FROM_AP = CTRL_MSG_ID__Event_StationDisconnectFromAP,
+	CTRL_EVENT_STATION_DISCONNECT_FROM_ESP_SOFTAP = CTRL_MSG_ID__Event_StationDisconnectFromESPSoftAP,
+	CTRL_EVENT_WIFI_EVENT_NO_ARGS =  CTRL_MSG_ID__Event_WifiEventNoArgs,
 	/*
 	 * Add new control path command notification before Event_Max
 	 * and update Event_Max
 	 */
 	CTRL_EVENT_MAX = CTRL_MSG_ID__Event_Max,
-} AppMsgId_e;
+};
 
 typedef enum {
-	WIFI_MODE_NONE = CTRL__WIFI_MODE__NONE,
-	WIFI_MODE_STA = CTRL__WIFI_MODE__STA,
-	WIFI_MODE_AP = CTRL__WIFI_MODE__AP,
-	WIFI_MODE_APSTA = CTRL__WIFI_MODE__APSTA,
+	WIFI_MODE_NONE = 0,
+	WIFI_MODE_STA,
+	WIFI_MODE_AP,
+	WIFI_MODE_APSTA,
 	WIFI_MODE_MAX
-} wifi_mode_e;
+} wifi_mode_t;
 
 typedef enum {
-	WIFI_AUTH_OPEN = CTRL__WIFI_SEC_PROT__Open,
-	WIFI_AUTH_WEP = CTRL__WIFI_SEC_PROT__WEP,
-	WIFI_AUTH_WPA_PSK = CTRL__WIFI_SEC_PROT__WPA_PSK,
-	WIFI_AUTH_WPA2_PSK = CTRL__WIFI_SEC_PROT__WPA2_PSK,
-	WIFI_AUTH_WPA_WPA2_PSK = CTRL__WIFI_SEC_PROT__WPA_WPA2_PSK,
-	WIFI_AUTH_WPA2_ENTERPRISE = CTRL__WIFI_SEC_PROT__WPA2_ENTERPRISE,
-	WIFI_AUTH_WPA3_PSK = CTRL__WIFI_SEC_PROT__WPA3_PSK,
-	WIFI_AUTH_WPA2_WPA3_PSK = CTRL__WIFI_SEC_PROT__WPA2_WPA3_PSK,
-	WIFI_AUTH_MAX,
-} wifi_auth_mode_e;
+	WIFI_CIPHER_TYPE_NONE = 0,   /**< the cipher type is none */
+	WIFI_CIPHER_TYPE_WEP40,      /**< the cipher type is WEP40 */
+	WIFI_CIPHER_TYPE_WEP104,     /**< the cipher type is WEP104 */
+	WIFI_CIPHER_TYPE_TKIP,       /**< the cipher type is TKIP */
+	WIFI_CIPHER_TYPE_CCMP,       /**< the cipher type is CCMP */
+	WIFI_CIPHER_TYPE_TKIP_CCMP,  /**< the cipher type is TKIP and CCMP */
+	WIFI_CIPHER_TYPE_AES_CMAC128,/**< the cipher type is AES-CMAC-128 */
+	WIFI_CIPHER_TYPE_SMS4,       /**< the cipher type is SMS4 */
+	WIFI_CIPHER_TYPE_GCMP,       /**< the cipher type is GCMP */
+	WIFI_CIPHER_TYPE_GCMP256,    /**< the cipher type is GCMP-256 */
+	WIFI_CIPHER_TYPE_AES_GMAC128,/**< the cipher type is AES-GMAC-128 */
+	WIFI_CIPHER_TYPE_AES_GMAC256,/**< the cipher type is AES-GMAC-256 */
+	WIFI_CIPHER_TYPE_UNKNOWN,    /**< the cipher type is unknown */
+} wifi_cipher_type_t;
+
+//TODO: unify wifi_ap_config_t and hosted_ap_config_t & softap configs
+/* Strength of authmodes */
+/* OPEN < WEP < WPA_PSK < OWE < WPA2_PSK = WPA_WPA2_PSK < WAPI_PSK < WPA2_ENTERPRISE < WPA3_PSK = WPA2_WPA3_PSK */
+typedef enum {
+    WIFI_AUTH_OPEN = 0,         /**< authenticate mode : open */
+    WIFI_AUTH_WEP,              /**< authenticate mode : WEP */
+    WIFI_AUTH_WPA_PSK,          /**< authenticate mode : WPA_PSK */
+    WIFI_AUTH_WPA2_PSK,         /**< authenticate mode : WPA2_PSK */
+    WIFI_AUTH_WPA_WPA2_PSK,     /**< authenticate mode : WPA_WPA2_PSK */
+    WIFI_AUTH_WPA2_ENTERPRISE,  /**< authenticate mode : WPA2_ENTERPRISE */
+    WIFI_AUTH_WPA3_PSK,         /**< authenticate mode : WPA3_PSK */
+    WIFI_AUTH_WPA2_WPA3_PSK,    /**< authenticate mode : WPA2_WPA3_PSK */
+    WIFI_AUTH_WAPI_PSK,         /**< authenticate mode : WAPI_PSK */
+    WIFI_AUTH_OWE,              /**< authenticate mode : OWE */
+    WIFI_AUTH_MAX
+} wifi_auth_mode_t;
 
 typedef enum {
-	WIFI_BW_HT20 = CTRL__WIFI_BW__HT20,
-	WIFI_BW_HT40 = CTRL__WIFI_BW__HT40,
-} wifi_bandwidth_e;
+	WIFI_BW_HT20 = 1,
+	WIFI_BW_HT40,
+} wifi_bandwidth_t;
 
 typedef enum {
-	WIFI_PS_MIN_MODEM = CTRL__WIFI_POWER_SAVE__MIN_MODEM,
-	WIFI_PS_MAX_MODEM = CTRL__WIFI_POWER_SAVE__MAX_MODEM,
+	WIFI_PS_NONE = 0,
+	WIFI_PS_MIN_MODEM,
+	WIFI_PS_MAX_MODEM,
 	WIFI_PS_INVALID,
-} wifi_ps_type_e;
+} wifi_ps_type_t;
 
 typedef enum {
-	WIFI_VND_IE_TYPE_BEACON      = CTRL__VENDOR_IETYPE__Beacon,
-	WIFI_VND_IE_TYPE_PROBE_REQ   = CTRL__VENDOR_IETYPE__Probe_req,
-	WIFI_VND_IE_TYPE_PROBE_RESP  = CTRL__VENDOR_IETYPE__Probe_resp,
-	WIFI_VND_IE_TYPE_ASSOC_REQ   = CTRL__VENDOR_IETYPE__Assoc_req,
-	WIFI_VND_IE_TYPE_ASSOC_RESP  = CTRL__VENDOR_IETYPE__Assoc_resp,
-} wifi_vendor_ie_type_e;
+	WIFI_VND_IE_TYPE_BEACON = 0,
+	WIFI_VND_IE_TYPE_PROBE_REQ,
+	WIFI_VND_IE_TYPE_PROBE_RESP,
+	WIFI_VND_IE_TYPE_ASSOC_REQ,
+	WIFI_VND_IE_TYPE_ASSOC_RESP,
+} wifi_vendor_ie_type_t;
 
 typedef enum {
-	WIFI_VND_IE_ID_0 = CTRL__VENDOR_IEID__ID_0,
-	WIFI_VND_IE_ID_1 = CTRL__VENDOR_IEID__ID_1,
-} wifi_vendor_ie_id_e;
+	WIFI_VND_IE_ID_0 = 0,
+	WIFI_VND_IE_ID_1,
+} wifi_vendor_ie_id_t;
 
 
 typedef enum {
-    WIFI_IF_STA = ESP_IF_WIFI_STA,
-    WIFI_IF_AP  = ESP_IF_WIFI_AP,
+	WIFI_IF_STA = 0,
+	WIFI_IF_AP,
+	ESP_IF_ETH,
 	WIFI_IF_MAX,
 } wifi_interface_t;
 
@@ -251,7 +331,7 @@ typedef struct {
 
 typedef struct {
 	int mode;
-} wifi_mode_t;
+} hosted_mode_t;
 
 typedef struct {
 	uint8_t ssid[SSID_LENGTH];
@@ -273,112 +353,78 @@ typedef struct {
 	int encryption_mode;
 	int max_connections;
 	bool ssid_hidden;
-	wifi_bandwidth_e bandwidth;
+	wifi_bandwidth_t bandwidth;
 	char out_mac[MAX_MAC_STR_LEN];
 } hosted_softap_config_t;
 
 
-#if 1
-//TODO: unify wifi_ap_config_t and hosted_ap_config_t & softap configs
-/* Strength of authmodes */
-/* OPEN < WEP < WPA_PSK < OWE < WPA2_PSK = WPA_WPA2_PSK < WAPI_PSK < WPA2_ENTERPRISE < WPA3_PSK = WPA2_WPA3_PSK */
-typedef enum {
-    WIFI_AUTH_OPEN = 0,         /**< authenticate mode : open */
-    WIFI_AUTH_WEP,              /**< authenticate mode : WEP */
-    WIFI_AUTH_WPA_PSK,          /**< authenticate mode : WPA_PSK */
-    WIFI_AUTH_WPA2_PSK,         /**< authenticate mode : WPA2_PSK */
-    WIFI_AUTH_WPA_WPA2_PSK,     /**< authenticate mode : WPA_WPA2_PSK */
-    WIFI_AUTH_WPA2_ENTERPRISE,  /**< authenticate mode : WPA2_ENTERPRISE */
-    WIFI_AUTH_WPA3_PSK,         /**< authenticate mode : WPA3_PSK */
-    WIFI_AUTH_WPA2_WPA3_PSK,    /**< authenticate mode : WPA2_WPA3_PSK */
-    WIFI_AUTH_WAPI_PSK,         /**< authenticate mode : WAPI_PSK */
-    WIFI_AUTH_OWE,              /**< authenticate mode : OWE */
-    WIFI_AUTH_MAX
-} wifi_auth_mode_t;
-
-typedef enum {
-    WIFI_CIPHER_TYPE_NONE = 0,   /**< the cipher type is none */
-    WIFI_CIPHER_TYPE_WEP40,      /**< the cipher type is WEP40 */
-    WIFI_CIPHER_TYPE_WEP104,     /**< the cipher type is WEP104 */
-    WIFI_CIPHER_TYPE_TKIP,       /**< the cipher type is TKIP */
-    WIFI_CIPHER_TYPE_CCMP,       /**< the cipher type is CCMP */
-    WIFI_CIPHER_TYPE_TKIP_CCMP,  /**< the cipher type is TKIP and CCMP */
-    WIFI_CIPHER_TYPE_AES_CMAC128,/**< the cipher type is AES-CMAC-128 */
-    WIFI_CIPHER_TYPE_SMS4,       /**< the cipher type is SMS4 */
-    WIFI_CIPHER_TYPE_GCMP,       /**< the cipher type is GCMP */
-    WIFI_CIPHER_TYPE_GCMP256,    /**< the cipher type is GCMP-256 */
-    WIFI_CIPHER_TYPE_AES_GMAC128,/**< the cipher type is AES-GMAC-128 */
-    WIFI_CIPHER_TYPE_AES_GMAC256,/**< the cipher type is AES-GMAC-256 */
-    WIFI_CIPHER_TYPE_UNKNOWN,    /**< the cipher type is unknown */
-} wifi_cipher_type_t;
-
 /** Configuration structure for Protected Management Frame */
 typedef struct {
-    bool capable;            /**< Deprecated variable. Device will always connect in PMF mode if other device also advertizes PMF capability. */
-    bool required;           /**< Advertizes that Protected Management Frame is required. Device will not associate to non-PMF capable devices. */
+	bool capable;            /**< Deprecated variable. Device will always connect in PMF mode if other device also advertizes PMF capability. */
+	bool required;           /**< Advertizes that Protected Management Frame is required. Device will not associate to non-PMF capable devices. */
 } wifi_pmf_config_t;
 
 /** Configuration for SAE PWE derivation */
 typedef enum {
-    WPA3_SAE_PWE_UNSPECIFIED,
-    WPA3_SAE_PWE_HUNT_AND_PECK,
-    WPA3_SAE_PWE_HASH_TO_ELEMENT,
-    WPA3_SAE_PWE_BOTH,
+	WPA3_SAE_PWE_UNSPECIFIED = 0,
+	WPA3_SAE_PWE_HUNT_AND_PECK,
+	WPA3_SAE_PWE_HASH_TO_ELEMENT,
+	WPA3_SAE_PWE_BOTH,
 } wifi_sae_pwe_method_t;
 
 typedef enum {
-    WIFI_FAST_SCAN = 0,                   /**< Do fast scan, scan will end after find SSID match AP */
-    WIFI_ALL_CHANNEL_SCAN,                /**< All channel scan, scan will end after scan all the channel */
-}wifi_scan_method_t;
+	WIFI_FAST_SCAN = 0,                   /**< Do fast scan, scan will end after find SSID match AP */
+	WIFI_ALL_CHANNEL_SCAN,                /**< All channel scan, scan will end after scan all the channel */
+} wifi_scan_method_t;
 
 /** @brief Structure describing parameters for a WiFi fast scan */
 typedef struct {
-    int8_t              rssi;             /**< The minimum rssi to accept in the fast scan mode */
-    wifi_auth_mode_t    authmode;         /**< The weakest authmode to accept in the fast scan mode
+	int8_t              rssi;             /**< The minimum rssi to accept in the fast scan mode */
+	wifi_auth_mode_t    authmode;         /**< The weakest authmode to accept in the fast scan mode
                                                Note: Incase this value is not set and password is set as per WPA2 standards(password len >= 8), it will be defaulted to WPA2 and device won't connect to deprecated WEP/WPA networks. Please set authmode threshold as WIFI_AUTH_WEP/WIFI_AUTH_WPA_PSK to connect to WEP/WPA networks */
-}wifi_scan_threshold_t;
+} wifi_scan_threshold_t;
 
 typedef enum {
-    WIFI_CONNECT_AP_BY_SIGNAL = 0,        /**< Sort match AP in scan list by RSSI */
-    WIFI_CONNECT_AP_BY_SECURITY,          /**< Sort match AP in scan list by security mode */
-}wifi_sort_method_t;
+	WIFI_CONNECT_AP_BY_SIGNAL = 0,        /**< Sort match AP in scan list by RSSI */
+	WIFI_CONNECT_AP_BY_SECURITY,          /**< Sort match AP in scan list by security mode */
+} wifi_sort_method_t;
 
 /** @brief Soft-AP configuration settings for the ESP32 */
 typedef struct {
-    uint8_t ssid[32];           /**< SSID of ESP32 soft-AP. If ssid_len field is 0, this must be a Null terminated string. Otherwise, length is set according to ssid_len. */
-    uint8_t password[64];       /**< Password of ESP32 soft-AP. */
-    uint8_t ssid_len;           /**< Optional length of SSID field. */
-    uint8_t channel;            /**< Channel of ESP32 soft-AP */
-    wifi_auth_mode_t authmode;  /**< Auth mode of ESP32 soft-AP. Do not support AUTH_WEP in soft-AP mode */
-    uint8_t ssid_hidden;        /**< Broadcast SSID or not, default 0, broadcast the SSID */
-    uint8_t max_connection;     /**< Max number of stations allowed to connect in */
-    uint16_t beacon_interval;   /**< Beacon interval which should be multiples of 100. Unit: TU(time unit, 1 TU = 1024 us). Range: 100 ~ 60000. Default value: 100 */
-    wifi_cipher_type_t pairwise_cipher;   /**< pairwise cipher of SoftAP, group cipher will be derived using this. cipher values are valid starting from WIFI_CIPHER_TYPE_TKIP, enum values before that will be considered as invalid and default cipher suites(TKIP+CCMP) will be used. Valid cipher suites in softAP mode are WIFI_CIPHER_TYPE_TKIP, WIFI_CIPHER_TYPE_CCMP and WIFI_CIPHER_TYPE_TKIP_CCMP. */
-    bool ftm_responder;         /**< Enable FTM Responder mode */
-    wifi_pmf_config_t pmf_cfg;  /**< Configuration for Protected Management Frame */
+	uint8_t ssid[32];           /**< SSID of ESP32 soft-AP. If ssid_len field is 0, this must be a Null terminated string. Otherwise, length is set according to ssid_len. */
+	uint8_t password[64];       /**< Password of ESP32 soft-AP. */
+	uint8_t ssid_len;           /**< Optional length of SSID field. */
+	uint8_t channel;            /**< Channel of ESP32 soft-AP */
+	wifi_auth_mode_t authmode;  /**< Auth mode of ESP32 soft-AP. Do not support AUTH_WEP in soft-AP mode */
+	uint8_t ssid_hidden;        /**< Broadcast SSID or not, default 0, broadcast the SSID */
+	uint8_t max_connection;     /**< Max number of stations allowed to connect in */
+	uint16_t beacon_interval;   /**< Beacon interval which should be multiples of 100. Unit: TU(time unit, 1 TU = 1024 us). Range: 100 ~ 60000. Default value: 100 */
+	wifi_cipher_type_t pairwise_cipher;   /**< pairwise cipher of SoftAP, group cipher will be derived using this. cipher values are valid starting from WIFI_CIPHER_TYPE_TKIP, enum values before that will be considered as invalid and default cipher suites(TKIP+CCMP) will be used. Valid cipher suites in softAP mode are WIFI_CIPHER_TYPE_TKIP, WIFI_CIPHER_TYPE_CCMP and WIFI_CIPHER_TYPE_TKIP_CCMP. */
+	bool ftm_responder;         /**< Enable FTM Responder mode */
+	wifi_pmf_config_t pmf_cfg;  /**< Configuration for Protected Management Frame */
 } wifi_ap_config_t;
 
 /** @brief STA configuration settings for the ESP32 */
 typedef struct {
-    uint8_t ssid[32];      /**< SSID of target AP. */
-    uint8_t password[64];  /**< Password of target AP. */
-    wifi_scan_method_t scan_method;    /**< do all channel scan or fast scan */
-    bool bssid_set;        /**< whether set MAC address of target AP or not. Generally, station_config.bssid_set needs to be 0; and it needs to be 1 only when users need to check the MAC address of the AP.*/
-    uint8_t bssid[6];     /**< MAC address of target AP*/
-    uint8_t channel;       /**< channel of target AP. Set to 1~13 to scan starting from the specified channel before connecting to AP. If the channel of AP is unknown, set it to 0.*/
-    uint16_t listen_interval;   /**< Listen interval for ESP32 station to receive beacon when WIFI_PS_MAX_MODEM is set. Units: AP beacon intervals. Defaults to 3 if set to 0. */
-    wifi_sort_method_t sort_method;    /**< sort the connect AP in the list by rssi or security mode */
-    wifi_scan_threshold_t  threshold;     /**< When sort_method is set, only APs which have an auth mode that is more secure than the selected auth mode and a signal stronger than the minimum RSSI will be used. */
-    wifi_pmf_config_t pmf_cfg;    /**< Configuration for Protected Management Frame. Will be advertized in RSN Capabilities in RSN IE. */
-    uint32_t rm_enabled:1;        /**< Whether Radio Measurements are enabled for the connection */
-    uint32_t btm_enabled:1;       /**< Whether BSS Transition Management is enabled for the connection */
-    uint32_t mbo_enabled:1;       /**< Whether MBO is enabled for the connection */
-    uint32_t ft_enabled:1;        /**< Whether FT is enabled for the connection */
-    uint32_t owe_enabled:1;       /**< Whether OWE is enabled for the connection */
-    uint32_t transition_disable:1;      /**< Whether to enable transition disable feature */
-    uint32_t reserved:26;         /**< Reserved for future feature set */
-    wifi_sae_pwe_method_t sae_pwe_h2e;     /**< Whether SAE hash to element is enabled */
-    uint8_t failure_retry_cnt;    /**< Number of connection retries station will do before moving to next AP. scan_method should be set as WIFI_ALL_CHANNEL_SCAN to use this config. Note: Enabling this may cause connection time to increase incase best AP doesn't behave properly. */
+	uint8_t ssid[32];      /**< SSID of target AP. */
+	uint8_t password[64];  /**< Password of target AP. */
+	wifi_scan_method_t scan_method;    /**< do all channel scan or fast scan */
+	bool bssid_set;        /**< whether set MAC address of target AP or not. Generally, station_config.bssid_set needs to be 0; and it needs to be 1 only when users need to check the MAC address of the AP.*/
+	uint8_t bssid[6];     /**< MAC address of target AP*/
+	uint8_t channel;       /**< channel of target AP. Set to 1~13 to scan starting from the specified channel before connecting to AP. If the channel of AP is unknown, set it to 0.*/
+	uint16_t listen_interval;   /**< Listen interval for ESP32 station to receive beacon when WIFI_PS_MAX_MODEM is set. Units: AP beacon intervals. Defaults to 3 if set to 0. */
+	wifi_sort_method_t sort_method;    /**< sort the connect AP in the list by rssi or security mode */
+	wifi_scan_threshold_t  threshold;     /**< When sort_method is set, only APs which have an auth mode that is more secure than the selected auth mode and a signal stronger than the minimum RSSI will be used. */
+	wifi_pmf_config_t pmf_cfg;    /**< Configuration for Protected Management Frame. Will be advertized in RSN Capabilities in RSN IE. */
+	uint32_t rm_enabled:1;        /**< Whether Radio Measurements are enabled for the connection */
+	uint32_t btm_enabled:1;       /**< Whether BSS Transition Management is enabled for the connection */
+	uint32_t mbo_enabled:1;       /**< Whether MBO is enabled for the connection */
+	uint32_t ft_enabled:1;        /**< Whether FT is enabled for the connection */
+	uint32_t owe_enabled:1;       /**< Whether OWE is enabled for the connection */
+	uint32_t transition_disable:1;      /**< Whether to enable transition disable feature */
+	uint32_t reserved:26;         /**< Reserved for future feature set */
+	wifi_sae_pwe_method_t sae_pwe_h2e;     /**< Whether SAE hash to element is enabled */
+	uint8_t failure_retry_cnt;    /**< Number of connection retries station will do before moving to next AP. scan_method should be set as WIFI_ALL_CHANNEL_SCAN to use this config. Note: Enabling this may cause connection time to increase incase best AP doesn't behave properly. */
 } wifi_sta_config_t;
 
 /** @brief Configuration data for ESP32 AP or STA.
@@ -387,23 +433,38 @@ typedef struct {
  * interface argument passed to esp_wifi_set_config() or esp_wifi_get_config()
  *
  */
-typedef union {
-    wifi_ap_config_t  ap;  /**< configuration of AP */
-    wifi_sta_config_t sta; /**< configuration of STA */
+typedef struct {
+    uint8_t iface;
+    union {
+        wifi_ap_config_t  ap;  /**< configuration of AP */
+        wifi_sta_config_t sta; /**< configuration of STA */
+    };
 } wifi_config_t;
 
-#endif
-
-
-
-
-
-
-
-
-
-
-
+typedef struct {
+    //wifi_osi_funcs_t*      osi_funcs;              /**< WiFi OS functions */
+    //wpa_crypto_funcs_t     wpa_crypto_funcs;       /**< WiFi station crypto functions when connect */
+    int                    static_rx_buf_num;      /**< WiFi static RX buffer number */
+    int                    dynamic_rx_buf_num;     /**< WiFi dynamic RX buffer number */
+    int                    tx_buf_type;            /**< WiFi TX buffer type */
+    int                    static_tx_buf_num;      /**< WiFi static TX buffer number */
+    int                    dynamic_tx_buf_num;     /**< WiFi dynamic TX buffer number */
+    int                    cache_tx_buf_num;       /**< WiFi TX cache buffer number */
+    int                    csi_enable;             /**< WiFi channel state information enable flag */
+    int                    ampdu_rx_enable;        /**< WiFi AMPDU RX feature enable flag */
+    int                    ampdu_tx_enable;        /**< WiFi AMPDU TX feature enable flag */
+    int                    amsdu_tx_enable;        /**< WiFi AMSDU TX feature enable flag */
+    int                    nvs_enable;             /**< WiFi NVS flash enable flag */
+    int                    nano_enable;            /**< Nano option for printf/scan family enable flag */
+    int                    rx_ba_win;              /**< WiFi Block Ack RX window size */
+    int                    wifi_task_core_id;      /**< WiFi Task Core ID */
+    int                    beacon_max_len;         /**< WiFi softAP maximum length of the beacon */
+    int                    mgmt_sbuf_num;          /**< WiFi management short buffer number, the minimum value is 6, the maximum value is 32 */
+    uint64_t               feature_caps;           /**< Enables additional WiFi features and capabilities */
+    bool                   sta_disconnected_pm;    /**< WiFi Power Management for station at disconnected status */
+    int                    espnow_max_encrypt_num; /**< Maximum encrypt number of peers supported by espnow */
+    int                    magic;                  /**< WiFi init magic number, it should be the last field */
+} wifi_init_config_t;
 
 typedef struct {
 	int count;
@@ -423,8 +484,8 @@ typedef struct {
 
 typedef struct {
 	bool enable;
-	wifi_vendor_ie_type_e type;
-	wifi_vendor_ie_id_e idx;
+	wifi_vendor_ie_type_t type;
+	wifi_vendor_ie_id_t idx;
 	vendor_ie_data_t vnd_ie;
 } wifi_softap_vendor_ie_t;
 
@@ -450,6 +511,10 @@ typedef struct {
 	char mac[MAX_MAC_STR_LEN];
 } event_station_disconn_t;
 
+typedef struct {
+	int32_t wifi_event_id;
+} event_wifi_simple_t;
+
 typedef struct Ctrl_cmd_t {
 	/* msg type could be 1. req 2. resp 3. notification */
 	uint8_t msg_type;
@@ -461,13 +526,15 @@ typedef struct Ctrl_cmd_t {
 	uint8_t resp_event_status;
 
 	union {
+        wifi_init_config_t          wifi_init_config;
+        wifi_config_t               wifi_config;
 		wifi_mac_t                  wifi_mac;
-		wifi_mode_t                 wifi_mode;
+		hosted_mode_t               wifi_mode;
 
 		wifi_ap_scan_list_t         wifi_ap_scan;
-		wifi_ap_config_t            wifi_ap_config;
+		hosted_ap_config_t          hosted_ap_config;
 
-		softap_config_t             wifi_softap_config;
+		hosted_softap_config_t      wifi_softap_config;
 		wifi_softap_vendor_ie_t     wifi_softap_vendor_ie;
 		wifi_softap_conn_sta_list_t wifi_softap_con_sta;
 
@@ -480,6 +547,8 @@ typedef struct Ctrl_cmd_t {
 		event_heartbeat_t           e_heartbeat;
 
 		event_station_disconn_t     e_sta_disconnected;
+
+		event_wifi_simple_t         e_wifi_simple;
 	}u;
 
 	/* By default this callback is set to NULL.
@@ -656,6 +725,16 @@ ctrl_cmd_t * ota_write(ctrl_cmd_t req);
  * sets newly written OTA partition as boot partition for next boot,
  * Creates timer which reset ESP32 after 5 sec */
 ctrl_cmd_t * ota_end(ctrl_cmd_t req);
+
+/* TODO: add descriptions */
+ctrl_cmd_t * wifi_init(ctrl_cmd_t req);
+ctrl_cmd_t * wifi_deinit(ctrl_cmd_t req);
+ctrl_cmd_t * wifi_start(ctrl_cmd_t req);
+ctrl_cmd_t * wifi_stop(ctrl_cmd_t req);
+ctrl_cmd_t * wifi_connect(ctrl_cmd_t req);
+ctrl_cmd_t * wifi_disconnect(ctrl_cmd_t req);
+ctrl_cmd_t * wifi_set_config(ctrl_cmd_t req);
+ctrl_cmd_t * wifi_get_config(ctrl_cmd_t req);
 
 /* Get the interface up for interface `iface` */
 int interface_up(int sockfd, char* iface);

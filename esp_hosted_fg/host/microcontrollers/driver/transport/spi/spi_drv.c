@@ -22,6 +22,7 @@
 #include "spi_drv.h"
 #include "serial_drv.h"
 #include "adapter.h"
+#include "trace.h"
 
 
 #define GPIO_HANDSHAKE_Pin                           GPIO_HANDSHAKE
@@ -274,6 +275,7 @@ void transport_init(void(*transport_evt_handler_fp)(uint8_t))
 }
 
 
+#if 0
 /**
   * @brief  Give breathing time for slave on spi
   * @param  x - for loop delay count
@@ -281,8 +283,9 @@ void transport_init(void(*transport_evt_handler_fp)(uint8_t))
   */
 static void stop_spi_transactions_for_msec(int x)
 {
-	hard_delay(x);
+	g_h.funcs->_h_blocking_delay(x);
 }
+#endif
 
 
 /**
@@ -554,6 +557,8 @@ static void spi_process_rx_task(void const* pvParameters)
 		if (g_h.funcs->_h_dequeue_item(from_slave_queue, &buf_handle, portMAX_DELAY)) {
 			continue;
 		}
+		printf("New packet\n\r");
+		print_hex_dump(buf_handle.payload, buf_handle.payload_len, "spi_rx");
 
 		/* point to payload */
 		payload = buf_handle.payload;
@@ -606,7 +611,7 @@ static void spi_process_rx_task(void const* pvParameters)
 				/* halt spi transactions for some time,
 				 * this is one time delay, to give breathing
 				 * time to slave before spi trans start */
-				stop_spi_transactions_for_msec(50000);
+				//stop_spi_transactions_for_msec(50000);
 				if (spi_drv_evt_handler_fp) {
 					spi_drv_evt_handler_fp(TRANSPORT_ACTIVE);
 				}
@@ -658,6 +663,7 @@ static uint8_t * get_tx_buffer(uint8_t *is_valid_tx_buf)
 	}
 
 	if (len) {
+		print_hex_dump(buf_handle.payload, buf_handle.payload_len, "spi_tx");
 
         sendbuf = spi_buffer_alloc(MEMSET_REQUIRED);
 		if (!sendbuf) {

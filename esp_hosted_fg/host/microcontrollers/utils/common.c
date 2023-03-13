@@ -111,18 +111,6 @@ int min(int x, int y) {
 }
 
 /**
-  * @brief Delay without context switch
-  * @param  None
-  * @retval None
-  */
-void hard_delay(int x)
-{
-    volatile int idx = 0;
-    for (idx=0; idx<100*x; idx++) {
-    }
-}
-
-/**
   * @brief  get numbers from string
   * @param  val - return integer value,
   *         arg - input string

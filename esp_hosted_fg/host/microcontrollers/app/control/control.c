@@ -360,6 +360,8 @@ int station_connect(char *ssid, char *pwd, char *bssid,
 		printf("Connected to %s \n\r", ssid);
 		control_path_call_event(STATION_CONNECTED);
 	}
+
+	return STM_OK;
 }
 
 /**

@@ -643,6 +643,8 @@ static void queue_next_transaction(void)
 		ESP_LOGE(TAG , "Failed to queue new transaction\r\n");
 		return;
 	}
+	ESP_LOGI(TAG, "New TX");
+	ESP_LOG_BUFFER_HEXDUMP("spi_tx", tx_buffer, len, ESP_LOG_INFO);
 
 	spi_trans = spi_trans_alloc(MEMSET_REQUIRED);
 	assert(spi_trans);
