@@ -276,3 +276,51 @@ ctrl_cmd_t * wifi_get_protocol(ctrl_cmd_t req)
 	CTRL_SEND_REQ(CTRL_MSG_ID__Req_WifiGetProtocol);
 	CTRL_DECODE_RESP_IF_NOT_ASYNC();
 }
+
+ctrl_cmd_t * wifi_init(ctrl_cmd_t req)
+{
+	CTRL_SEND_REQ(CTRL_REQ_WIFI_INIT);
+	CTRL_DECODE_RESP_IF_NOT_ASYNC();
+}
+
+ctrl_cmd_t * wifi_deinit(ctrl_cmd_t req)
+{
+	CTRL_SEND_REQ(CTRL_REQ_WIFI_DEINIT);
+	CTRL_DECODE_RESP_IF_NOT_ASYNC();
+}
+
+ctrl_cmd_t * wifi_start(ctrl_cmd_t req)
+{
+	CTRL_SEND_REQ(CTRL_REQ_WIFI_START);
+	CTRL_DECODE_RESP_IF_NOT_ASYNC();
+}
+
+ctrl_cmd_t * wifi_stop(ctrl_cmd_t req)
+{
+	CTRL_SEND_REQ(CTRL_REQ_WIFI_STOP);
+	CTRL_DECODE_RESP_IF_NOT_ASYNC();
+}
+
+ctrl_cmd_t * wifi_connect(ctrl_cmd_t req)
+{
+	CTRL_SEND_REQ(CTRL_REQ_WIFI_CONNECT);
+	CTRL_DECODE_RESP_IF_NOT_ASYNC();
+}
+
+ctrl_cmd_t * wifi_disconnect(ctrl_cmd_t req)
+{
+	CTRL_SEND_REQ(CTRL_REQ_WIFI_DISCONNECT);
+	CTRL_DECODE_RESP_IF_NOT_ASYNC();
+}
+
+ctrl_cmd_t * wifi_get_config(ctrl_cmd_t req)
+{
+	CTRL_SEND_REQ(CTRL_REQ_WIFI_GET_CONFIG);
+	CTRL_DECODE_RESP_IF_NOT_ASYNC();
+}
+
+ctrl_cmd_t * wifi_set_config(ctrl_cmd_t req)
+{
+	CTRL_SEND_REQ(CTRL_REQ_WIFI_SET_CONFIG);
+	CTRL_DECODE_RESP_IF_NOT_ASYNC();
+}

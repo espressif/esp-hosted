@@ -51,6 +51,19 @@ enum {
     H_GPIO_INTR_MAX,
 };
 
+#define H_GPIO_MODE_DEF_DISABLE         (0)
+#define H_GPIO_MODE_DEF_INPUT           (BIT0)    ///< bit mask for input
+#define H_GPIO_MODE_DEF_OUTPUT          (BIT1)    ///< bit mask for output
+#define H_GPIO_MODE_DEF_OD              (BIT2)    ///< bit mask for OD mode
+enum {
+    H_GPIO_MODE_DISABLE = H_GPIO_MODE_DEF_DISABLE,                                                         /*!< GPIO mode : disable input and output             */
+    H_GPIO_MODE_INPUT = H_GPIO_MODE_DEF_INPUT,                                                             /*!< GPIO mode : input only                           */
+    H_GPIO_MODE_OUTPUT = H_GPIO_MODE_DEF_OUTPUT,                                                           /*!< GPIO mode : output only mode                     */
+    H_GPIO_MODE_OUTPUT_OD = ((H_GPIO_MODE_DEF_OUTPUT) | (H_GPIO_MODE_DEF_OD)),                               /*!< GPIO mode : output only with open-drain mode     */
+    H_GPIO_MODE_INPUT_OUTPUT_OD = ((H_GPIO_MODE_DEF_INPUT) | (H_GPIO_MODE_DEF_OUTPUT) | (H_GPIO_MODE_DEF_OD)), /*!< GPIO mode : output and input with open-drain mode*/
+    H_GPIO_MODE_INPUT_OUTPUT = ((H_GPIO_MODE_DEF_INPUT) | (H_GPIO_MODE_DEF_OUTPUT)),                         /*!< GPIO mode : output and input mode                */
+};
+
 #if 0
 #if 0 //defined OS_CMSIS
 #define thread_handle_t                        osThreadId
