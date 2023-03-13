@@ -119,6 +119,36 @@ static int ctrl_app_event_callback(ctrl_cmd_t * app_event)
 					get_timestamp(ts, MIN_TIMESTAMP_STR_SIZE), p);
 			}
 			break;
+		} case CTRL_EVENT_WIFI_EVENT_NO_ARGS: {
+			int wifi_event_id = app_event->u.e_wifi_simple.wifi_event_id;
+
+			switch (wifi_event_id) {
+
+			case WIFI_EVENT_STA_DISCONNECTED:
+				printf("%s App EVENT: WiFi Event[%s]\n\r",
+					get_timestamp(ts, MIN_TIMESTAMP_STR_SIZE), "WIFI_EVENT_STA_DISCONNECTED");
+
+				break;
+			case WIFI_EVENT_STA_CONNECTED:
+				printf("%s App EVENT: WiFi Event[%s]\n\r",
+					get_timestamp(ts, MIN_TIMESTAMP_STR_SIZE), "WIFI_EVENT_STA_CONNECTED");
+				break;
+			case WIFI_EVENT_STA_START:
+				printf("%s App EVENT: WiFi Event[%s]\n\r",
+					get_timestamp(ts, MIN_TIMESTAMP_STR_SIZE), "WIFI_EVENT_STA_START");
+				break;
+			case WIFI_EVENT_STA_STOP:
+				printf("%s App EVENT: WiFi Event[%s]\n\r",
+					get_timestamp(ts, MIN_TIMESTAMP_STR_SIZE), "WIFI_EVENT_STA_STOP");
+				break;
+			default:
+				printf("%s App EVENT: WiFi Event[%x]\n\r",
+					get_timestamp(ts, MIN_TIMESTAMP_STR_SIZE), wifi_event_id);
+				break;
+			} /* inner switch case */
+			g_h.funcs->_h_event_wifi_post(wifi_event_id, 0, 0, HOSTED_BLOCK_MAX);
+
+			break;
 		} default: {
 			printf("%s Invalid event[%u] to parse\n\r",
 				get_timestamp(ts, MIN_TIMESTAMP_STR_SIZE), app_event->msg_id);
@@ -233,6 +263,7 @@ int register_event_callbacks(void)
 		{ CTRL_EVENT_HEARTBEAT,                          ctrl_app_event_callback },
 		{ CTRL_EVENT_STATION_DISCONNECT_FROM_AP,         ctrl_app_event_callback },
 		{ CTRL_EVENT_STATION_DISCONNECT_FROM_ESP_SOFTAP, ctrl_app_event_callback },
+		{ CTRL_EVENT_WIFI_EVENT_NO_ARGS,                 ctrl_app_event_callback },
 	};
 
 	for (evt=0; evt<sizeof(events)/sizeof(event_callback_table_t); evt++) {
@@ -309,7 +340,7 @@ int ctrl_app_resp_callback(ctrl_cmd_t * app_resp)
 			}
 			break;
 		} case CTRL_RESP_GET_AP_CONFIG : {
-			hosted_ap_config_t *p = &app_resp->u.wifi_ap_config;
+			hosted_ap_config_t *p = &app_resp->u.hosted_ap_config;
 			if (0 == strncmp(SUCCESS_STR, p->status, strlen(SUCCESS_STR))) {
 				printf("AP's ssid '%s'\n\r", p->ssid);
 				printf("AP's bssid i.e. MAC address %s\n\r", p->bssid);
@@ -404,9 +435,20 @@ int ctrl_app_resp_callback(ctrl_cmd_t * app_resp)
 		} case CTRL_RESP_CONFIG_HEARTBEAT: {
 			printf("Heartbeat operation successful\n\r");
 			break;
+		}
+		case CTRL_RESP_WIFI_INIT:
+		case CTRL_RESP_WIFI_DEINIT:
+		case CTRL_RESP_WIFI_START:
+		case CTRL_RESP_WIFI_STOP:
+		case CTRL_RESP_WIFI_CONNECT:
+		case CTRL_RESP_WIFI_DISCONNECT:
+		case CTRL_RESP_WIFI_GET_CONFIG:
+		case CTRL_RESP_WIFI_SET_CONFIG: {
+			/* Intended fallthrough */
+			break;
 		} default: {
 			printf("Invalid Response[%u] to parse\n\r", app_resp->msg_id);
-			break;
+			goto fail_resp;
 		}
 	}
 
@@ -419,6 +461,7 @@ fail_resp:
 	return FAILURE;
 }
 
+/* TODO: deprecate this */
 int test_get_wifi_mode(void)
 {
 	/* implemented Asynchronous */
@@ -527,11 +570,11 @@ int test_async_station_mode_connect(char *ssid, char *pwd, char *bssid,
 	/* implemented Asynchronous */
 	ctrl_cmd_t req = CTRL_CMD_DEFAULT_REQ();
 
-	strcpy((char *)&req.u.wifi_ap_config.ssid, ssid);
-	strcpy((char *)&req.u.wifi_ap_config.pwd, pwd);
-	strcpy((char *)&req.u.wifi_ap_config.bssid, bssid);
-	req.u.wifi_ap_config.is_wpa3_supported = is_wpa3_supported;
-	req.u.wifi_ap_config.listen_interval = listen_interval;
+	strcpy((char *)&req.u.hosted_ap_config.ssid, ssid);
+	strcpy((char *)&req.u.hosted_ap_config.pwd, pwd);
+	strcpy((char *)&req.u.hosted_ap_config.bssid, bssid);
+	req.u.hosted_ap_config.is_wpa3_supported = is_wpa3_supported;
+	req.u.hosted_ap_config.listen_interval = listen_interval;
 
 	/* register callback for handling reply asynch-ly */
 	req.ctrl_resp_cb = ctrl_app_resp_callback;
@@ -548,11 +591,11 @@ int test_station_mode_connect(char *ssid, char *pwd, char *bssid,
 	ctrl_cmd_t req = CTRL_CMD_DEFAULT_REQ();
 	ctrl_cmd_t *resp = NULL;
 
-	strcpy((char *)&req.u.wifi_ap_config.ssid, ssid);
-	strcpy((char *)&req.u.wifi_ap_config.pwd, pwd);
-	strcpy((char *)&req.u.wifi_ap_config.bssid, bssid);
-	req.u.wifi_ap_config.is_wpa3_supported = is_wpa3_supported;
-	req.u.wifi_ap_config.listen_interval = listen_interval;
+	strcpy((char *)&req.u.hosted_ap_config.ssid, ssid);
+	strcpy((char *)&req.u.hosted_ap_config.pwd, pwd);
+	strcpy((char *)&req.u.hosted_ap_config.bssid, bssid);
+	req.u.hosted_ap_config.is_wpa3_supported = is_wpa3_supported;
+	req.u.hosted_ap_config.listen_interval = listen_interval;
 
 	resp = wifi_connect_ap(req);
 
@@ -868,6 +911,126 @@ int test_disable_heartbeat(void)
 	req.u.e_heartbeat.enable = NO;
 
 	resp = config_heartbeat(req);
+
+	return ctrl_app_resp_callback(resp);
+}
+
+int test_wifi_init(const wifi_init_config_t *arg)
+{
+	/* implemented synchronous */
+	ctrl_cmd_t req = CTRL_CMD_DEFAULT_REQ();
+	ctrl_cmd_t *resp = NULL;
+
+	if (!arg)
+		return FAILURE;
+
+	g_h.funcs->_h_memcpy(&req.u.wifi_init_config, (void*)arg, sizeof(wifi_init_config_t));
+	resp = wifi_init(req);
+
+	return ctrl_app_resp_callback(resp);
+}
+
+int test_wifi_deinit(void)
+{
+	/* implemented synchronous */
+	ctrl_cmd_t req = CTRL_CMD_DEFAULT_REQ();
+	ctrl_cmd_t *resp = NULL;
+
+	resp = wifi_deinit(req);
+	return ctrl_app_resp_callback(resp);
+}
+
+int test_wifi_set_mode(int mode)
+{
+	return test_set_wifi_mode(mode);
+}
+
+int test_wifi_get_mode(int* mode)
+{
+	/* implemented synchronous */
+	ctrl_cmd_t req = CTRL_CMD_DEFAULT_REQ();
+	ctrl_cmd_t *resp = NULL;
+
+	if (!mode)
+		return FAILURE;
+
+	resp = wifi_get_mode(req);
+
+	*mode = resp->u.wifi_mode.mode;
+
+	return SUCCESS;
+}
+
+int test_wifi_start(void)
+{
+	/* implemented synchronous */
+	ctrl_cmd_t req = CTRL_CMD_DEFAULT_REQ();
+	ctrl_cmd_t *resp = NULL;
+
+	resp = wifi_start(req);
+	return ctrl_app_resp_callback(resp);
+}
+
+int test_wifi_stop(void)
+{
+	/* implemented synchronous */
+	ctrl_cmd_t req = CTRL_CMD_DEFAULT_REQ();
+	ctrl_cmd_t *resp = NULL;
+
+	resp = wifi_stop(req);
+	return ctrl_app_resp_callback(resp);
+}
+
+int test_wifi_connect(void)
+{
+	/* implemented synchronous */
+	ctrl_cmd_t req = CTRL_CMD_DEFAULT_REQ();
+	ctrl_cmd_t *resp = NULL;
+	printf("test_wifi_connect\n");
+
+	resp = wifi_connect(req);
+	return ctrl_app_resp_callback(resp);
+}
+
+int test_wifi_disconnect(void)
+{
+	/* implemented synchronous */
+	ctrl_cmd_t req = CTRL_CMD_DEFAULT_REQ();
+	ctrl_cmd_t *resp = NULL;
+
+	resp = wifi_disconnect(req);
+	return ctrl_app_resp_callback(resp);
+}
+
+int test_wifi_set_config(int interface, wifi_config_t *conf)
+{
+	/* implemented synchronous */
+	ctrl_cmd_t req = CTRL_CMD_DEFAULT_REQ();
+	ctrl_cmd_t *resp = NULL;
+
+	if (!conf)
+		return FAILURE;
+
+	g_h.funcs->_h_memcpy(&req.u.wifi_config, conf, sizeof(wifi_config_t));
+
+	resp = wifi_set_config(req);
+	return ctrl_app_resp_callback(resp);
+}
+
+int test_wifi_get_config(int interface, wifi_config_t *conf)
+{
+	/* implemented synchronous */
+	ctrl_cmd_t req = CTRL_CMD_DEFAULT_REQ();
+	ctrl_cmd_t *resp = NULL;
+
+	if (!conf)
+		return FAILURE;
+
+	req.u.wifi_config.iface = interface;
+
+	resp = wifi_get_config(req);
+
+	g_h.funcs->_h_memcpy(conf, &resp->u.wifi_config, sizeof(wifi_config_t));
 
 	return ctrl_app_resp_callback(resp);
 }

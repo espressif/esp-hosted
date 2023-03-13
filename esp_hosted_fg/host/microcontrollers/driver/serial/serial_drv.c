@@ -241,6 +241,7 @@ int control_path_platform_init(void)
 	return RET_OK;
 }
 
+/* TODO: Why this is not called in transport_pserial_close() */
 int control_path_platform_deinit(void)
 {
 	if (RET_OK != serial_ll_if_g->fops->close(serial_ll_if_g)) {

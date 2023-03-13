@@ -155,6 +155,16 @@ int test_softap_mode_start(char *ssid, char *pwd, int channel,
 int unregister_event_callbacks(void);
 int register_event_callbacks(void);
 
+int test_wifi_init(const wifi_init_config_t *arg);
+int test_wifi_deinit(void);
+int test_wifi_set_mode(int mode);
+int test_wifi_get_mode(int* mode);
+int test_wifi_start(void);
+int test_wifi_stop(void);
+int test_wifi_connect(void);
+int test_wifi_disconnect(void);
+int test_wifi_set_config(int interface, wifi_config_t *conf);
+int test_wifi_get_config(int interface, wifi_config_t *conf);
 
 #ifdef __cplusplus
 }

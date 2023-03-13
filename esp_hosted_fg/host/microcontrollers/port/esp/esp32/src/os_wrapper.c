@@ -19,6 +19,7 @@
 #include "driver/spi_master.h"
 #include "driver/gpio.h"
 #include "transport_drv.h"
+#include "esp_event.h"
 
 #define MILLISEC_TO_SEC			1000
 #define TICKS_PER_SEC (1000 / portTICK_PERIOD_MS);
@@ -27,6 +28,7 @@
 extern void * spi_handle;
 
 //hosted_osi_funcs_t g_wifi_osi_funcs;
+ESP_EVENT_DECLARE_BASE(WIFI_EVENT);
 
 struct timer_handle_t {
 	//osTimerId timer_id;
@@ -178,6 +180,16 @@ unsigned int hosted_sleep(unsigned int seconds)
    //osDelay(seconds * 1000);
    return hosted_msleep(seconds * 1000UL);
 }
+
+/* Non sleepable delays - BLOCKING dead wait */
+unsigned int hosted_for_loop_delay(unsigned int number)
+{
+    volatile int idx = 0;
+    for (idx=0; idx<100*number; idx++) {
+    }
+	return 0;
+}
+
 
 
 /* -------- Queue --------------- */
@@ -650,8 +662,14 @@ void hosted_exit_critical(void *spinlock_handle)
 
 /* GPIO */
 
-int hosted_config_gpio(uint32_t gpio_port, uint32_t gpio_num)
+int hosted_config_gpio(uint32_t gpio_port, uint32_t gpio_num, uint32_t mode)
 {
+	gpio_config_t io_conf={
+		.intr_type=GPIO_INTR_DISABLE,
+		.mode=mode,
+		.pin_bit_mask=(1<<gpio_num),
+	};
+	gpio_config(&io_conf);
 	return 0;
 }
 
@@ -784,6 +802,13 @@ int hosted_do_spi_transfer(void *trans)
     return spi_device_transmit(*((spi_device_handle_t *)spi_handle), &t);
 }
 
+int hosted_wifi_event_post(int32_t event_id,
+        const void* event_data, size_t event_data_size, uint32_t ticks_to_wait)
+{
+	printf("os_Wrapper: event %ld recvd -->\n",event_id);
+	return esp_event_post(WIFI_EVENT, event_id, event_data, event_data_size, ticks_to_wait);
+}
+
 hosted_osi_funcs_t g_hosted_osi_funcs = {
 	._h_memcpy                   =  hosted_memcpy                  ,
 	._h_memset                   =  hosted_memset                  ,
@@ -795,6 +820,7 @@ hosted_osi_funcs_t g_hosted_osi_funcs = {
 	._h_thread_cancel            =  hosted_thread_cancel           ,
 	._h_msleep                   =  hosted_msleep                  ,
 	._h_sleep                    =  hosted_sleep                   ,
+	._h_blocking_delay           =  hosted_for_loop_delay          ,
 	._h_queue_item               =  hosted_queue_item              ,
 	._h_create_queue             =  hosted_create_queue            ,
 	._h_dequeue_item             =  hosted_dequeue_item            ,
@@ -820,5 +846,6 @@ hosted_osi_funcs_t g_hosted_osi_funcs = {
     ._h_write_gpio               =  hosted_write_gpio              ,
 	._h_bus_init                 =  hosted_spi_init                ,
     ._h_do_bus_transfer          =  hosted_do_spi_transfer         ,
+    ._h_event_wifi_post          =  hosted_wifi_event_post         ,
 };
 

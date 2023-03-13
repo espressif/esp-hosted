@@ -40,25 +40,6 @@ struct timer_handle_t;
 
 
 /*
- * control_path_platform_init function initializes the control
- * path data structures
- * Input parameter
- *      None
- * Returns
- *      SUCCESS(0) or FAILURE(-1) of above operation
- */
-int control_path_platform_init(void);
-
-/*
- * control_path_platform_deinit function cleans up the control
- * path library data structure
- * Input parameter
- *      None
- * Returns
- *      SUCCESS(0) or FAILURE(-1) of above operation
- */
-int control_path_platform_deinit(void);
-/*
  * hosted_malloc function allocates size bytes.
  * Input parameter
  *      size    :   Number of Bytes

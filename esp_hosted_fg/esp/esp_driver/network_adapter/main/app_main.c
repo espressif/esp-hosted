@@ -386,8 +386,8 @@ void process_rx_pkt(interface_buffer_handle_t *buf_handle)
 	payload = buf_handle->payload + le16toh(header->offset);
 	payload_len = le16toh(header->len);
 
-	ESP_LOGV(TAG, "Rx pkt: type:%u\n",buf_handle->if_type);
-	ESP_LOG_BUFFER_HEXDUMP(TAG, payload, payload_len, ESP_LOG_VERBOSE);
+	ESP_LOGV(TAG, "New Rx:");
+	ESP_LOG_BUFFER_HEXDUMP(TAG, header, payload_len+le16toh(header->offset), ESP_LOG_VERBOSE);
 
 	if ((buf_handle->if_type == ESP_STA_IF) && station_connected) {
 		/* Forward data to wlan driver */

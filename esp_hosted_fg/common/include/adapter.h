@@ -20,6 +20,25 @@
 #define CTRL_EP_NAME_RESP                         "ctrlResp"
 #define CTRL_EP_NAME_EVENT                        "ctrlEvnt"
 
+#define SET_BIT(pos, val)                         (val|=(1<<pos))
+#define GET_BIT(pos, val)                         (val&(1<<pos)? 1: 0)
+
+#define STA_RM_ENABLED_BIT                        1
+#define STA_BTM_ENABLED_BIT                       2
+#define STA_MBO_ENABLED_BIT                       3
+#define STA_FT_ENABLED_BIT                        4
+#define STA_OWE_ENABLED_BIT                       5
+#define STA_TRASITION_DISABLED_BIT                6
+#define STA_MAX_USED_BIT                          6
+
+#define WIFI_CONFIG_STA_RESERVED_BITMASK          0xFFC0
+
+#define WIFI_CONFIG_STA_GET_RESERVED_VAL(num)                                   \
+    ((num&WIFI_CONFIG_STA_RESERVED_BITMASK)>>STA_MAX_USED_BIT)
+
+#define WIFI_CONFIG_STA_SET_RESERVED_VAL(reserved_in,num_out)                   \
+    (num_out|=(reserved_in <<  STA_MAX_USED_BIT));
+
 struct esp_payload_header {
 	uint8_t          if_type:4;
 	uint8_t          if_num:4;
