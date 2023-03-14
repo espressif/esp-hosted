@@ -43,6 +43,7 @@
 #define ESP_PRIV_FIRMWARE_CHIP_ESP32C3      (0x5)
 #define ESP_PRIV_FIRMWARE_CHIP_ESP32S3      (0x9)
 #define ESP_PRIV_FIRMWARE_CHIP_ESP32C2      (0xC)
+#define ESP_PRIV_FIRMWARE_CHIP_ESP32C6      (0xD)
 
 static struct sk_buff * read_packet(struct esp_adapter *adapter);
 static int write_packet(struct esp_adapter *adapter, struct sk_buff *skb);
@@ -201,6 +202,7 @@ int process_init_event(u8 *evt_buf, u8 len)
 	    (hardware_type != ESP_PRIV_FIRMWARE_CHIP_ESP32S2) &&
 	    (hardware_type != ESP_PRIV_FIRMWARE_CHIP_ESP32C2) &&
 	    (hardware_type != ESP_PRIV_FIRMWARE_CHIP_ESP32C3) &&
+	    (hardware_type != ESP_PRIV_FIRMWARE_CHIP_ESP32C6) &&
 	    (hardware_type != ESP_PRIV_FIRMWARE_CHIP_ESP32S3)) {
 		printk(KERN_INFO "ESP board type is not mentioned, ignoring [%d]\n", hardware_type);
 		hardware_type = ESP_PRIV_FIRMWARE_CHIP_UNRECOGNIZED;
@@ -370,7 +372,8 @@ static int spi_dev_init(int spi_clk_mhz)
 
 	master = spi_busnum_to_master(esp_board.bus_num);
 	if (!master) {
-		printk(KERN_ERR "Failed to obtain SPI master handle\n");
+		printk(KERN_ERR "%s:%u Failed to obtain SPI handle for Bus[%u] CS[%u]\n",
+			__func__, __LINE__, esp_board.bus_num, esp_board.chip_select);
 		return -ENODEV;
 	}
 
@@ -388,8 +391,8 @@ static int spi_dev_init(int spi_clk_mhz)
 		return status;
 	}
 
-	printk (KERN_INFO "ESP32 peripheral is registered to SPI bus [%d]"
-			",chip select [%d], SPI Clock [%d]\n", esp_board.bus_num,
+	printk (KERN_INFO "ESP host driver claiming SPI bus [%d]"
+			",chip select [%d] with init SPI Clock [%d]\n", esp_board.bus_num,
 			esp_board.chip_select, spi_clk_mhz);
 
 	status = gpio_request(HANDSHAKE_PIN, "SPI_HANDSHAKE_PIN");
@@ -467,6 +470,9 @@ static int spi_init(void)
 		spi_exit();
 		return -EFAULT;
 	}
+
+	printk(KERN_INFO "ESP: SPI host config: GPIOs: Handshake[%u] DataReady[%u]",
+			HANDSHAKE_PIN, SPI_DATA_READY_PIN);
 
 	INIT_WORK(&spi_context.spi_work, esp_spi_work);
 

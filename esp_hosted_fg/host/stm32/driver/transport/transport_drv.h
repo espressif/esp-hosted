@@ -36,6 +36,7 @@ extern "C" {
 #define ESP_PRIV_FIRMWARE_CHIP_ESP32C3      (0x5)
 #define ESP_PRIV_FIRMWARE_CHIP_ESP32S3      (0x9)
 #define ESP_PRIV_FIRMWARE_CHIP_ESP32C2      (0xC)
+#define ESP_PRIV_FIRMWARE_CHIP_ESP32C6      (0xD)
 
 struct esp_private {
 	uint8_t     if_type;

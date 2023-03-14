@@ -777,7 +777,7 @@ void app_main()
 
 	ESP_ERROR_CHECK(initialise_wifi());
 
-	ESP_TCPIP_INIT();
+	//ESP_TCPIP_INIT(); //Not needed
 
 	ESP_LOGI(TAG,"Initial set up done");
 

@@ -125,13 +125,13 @@ void process_test_capabilities(uint8_t cap)
 	if ((cap & ESP_TEST_RAW_TP) == ESP_TEST_RAW_TP) {
 		if ((cap & ESP_TEST_RAW_TP__ESP_TO_HOST) == ESP_TEST_RAW_TP__ESP_TO_HOST) {
 			start_test_raw_tp(ESP_TEST_RAW_TP__RX);
-			printf("esp32: start testing of ESP->Host raw throughput\n\r");
+			printf("esp: start testing of ESP->Host raw throughput\n\r");
 		} else {
 			start_test_raw_tp(ESP_TEST_RAW_TP__TX);
-			printf("esp32: start testing of Host->ESP raw throughput\n\r");
+			printf("esp: start testing of Host->ESP raw throughput\n\r");
 		}
 	} else {
-		printf("esp32: stop raw throuput test if running\n");
+		printf("esp: stop raw throuput test if running\n");
 		stop_test_raw_tp();
 	}
 	process_raw_tp_flags();

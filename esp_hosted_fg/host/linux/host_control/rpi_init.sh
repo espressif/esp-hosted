@@ -99,7 +99,7 @@ usage()
     echo "  spi:    sets ESP32<->RPi communication over SPI"
     echo "  sdio:   sets ESP32<->RPi communication over SDIO"
     echo "  btuart: Set GPIO pins on RPi for HCI UART operations with TX, RX, CTS, RTS (defaulted to option btuart_4pins)"
-    echo "  btuart_2pins: Set GPIO pins on RPi for HCI UART operations with only TX & RX pins configured (only for ESP32-C2)"
+    echo "  btuart_2pins: Set GPIO pins on RPi for HCI UART operations with only TX & RX pins configured (only for ESP32-C2/C6)"
     echo "  resetpin=6:     Set GPIO pins on RPi connected to EN pin of ESP32, used to reset ESP32 (default:6 for BCM6)"
     echo "\nExample:"
     echo "  - Prepare RPi for WLAN operation on SDIO. sdio is default if no interface mentioned"

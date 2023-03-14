@@ -28,7 +28,19 @@ We recommend STM32CubeIDE version 1.4 IDE from STMicroelectronics on host machin
 * **Serial port communication program**:
 	For Linux and Mac development hosts, minicom is needed. For Windows based hosts Tera Term is needed.
 
-### 1.1.3 ESP-Hosted Code Repository
+### 1.1.3 Things worth noting
+* **Porting solution to Non-STM32 MCUs**
+	ESP-Hosted solution using one ESP chipset and host and other as slave can be found at [ESP as Host](https://github.com/espressif/esp-hosted/issues/186#issuecomment-1429252815)
+	This solution can be checked for easy porting to non-STM32 based MCUs. Port layer is much simplified here. Formal support is coming soon in upcoming releases.
+
+* **Network stack integration**
+	Although currently network stack is kept open to port for user, in the upcoming releaes, we plan to showcase lwip as example network stack.
+	Sample example of porting done by [Dror Gluska](https://github.com/drorgl) can be referred at https://github.com/drorgl/stm32-lwip-esp-hosted
+
+* **Clock considerations for STM32**
+	For STM32 based hosts, the default clocks are intentionally kept smaller for simplicity. Once base solution is working, It is recommended to increase/tune the SPI clock using ioc in STM32CubeIDE or STM32CubeMX.
+
+### 1.1.4 ESP-Hosted Code Repository
 Clone ESP-Hosted repository on machine, where STM32CubeIDE used to connect/flash to host.
 ```
 $ git clone --recurse-submodules <url_of_esp_hosted_repository>

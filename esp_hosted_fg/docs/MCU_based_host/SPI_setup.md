@@ -69,6 +69,22 @@ Setup image is here.
 
 ![alt text](stm_esp32_c3_setup.jpg "Setup of STM32F469I as host and ESP32-C3 as peripheral")
 
+#### Hardware connections for ESP32-C6
+| STM32 Pin | ESP32-C6 Pin | Function |
+|:---------:|:-----------:|:--------:|
+| PB4  (pin5) | IO02 | MISO |
+| PA5  (pin7) | IO06 | CLK |
+| PB5  (pin9) | IO07 | MOSI |
+| PA15 (pin11)| IO10 | CS |
+| GND  (pin2) | GND | GND |
+| PC6  (pin6) | IO03 | Handshake |
+| PC7  (pin8) | IO04 | Data ready from ESP |
+| PB13  (pin10) | RST | Reset ESP |
+
+Setup image is here.
+
+![alt text](stm_esp32_c6_setup.jpg "Setup of STM32F469I as host and ESP32-C6 as peripheral")
+
 #### Hardware connections for ESP32-S3
 | STM32 Pin | ESP32-S3 Pin | Function |
 |:---------:|:-----------:|:--------:|
@@ -89,7 +105,8 @@ Setup image is here.
 ## 2.1 ESP-IDF requirement
 :warning:`Note: ESP-IDF is needed to compile ESP-Hosted firmware source. Skip this step if you are planning to use pre-built release binaries.`
 
-- Clone the ESP-IDF [release/v5.0](https://github.com/espressif/esp-idf/tree/release/v5.0)  and checkout to `release/v5.0` branch.
+- For chipsets except ESP32-C6, Clone the ESP-IDF [release/v5.0](https://github.com/espressif/esp-idf/tree/release/v5.0)  and checkout to `release/v5.0` branch.
+- For chipset ESP32-C6, Clone the ESP-IDF [master](https://github.com/espressif/esp-idf) branch
 - The control path between MCU host and ESP peripheral is based on `protobuf`. For that, corresponding stack layer, `protocomm` from ESP-IDF is used. It will be already present in ESP-IDF, no extra setup required for that.
 
 ### 2.2 Setup
@@ -102,34 +119,29 @@ Setup image is here.
 #### 2.2.2 Compilation using source
 
 - Note: Please use the same git commit both at ESP and Host
-- Clone the ESP-IDF [release/v5.0](https://github.com/espressif/esp-idf/tree/release/v5.0) and git checkout to `release/v5.0` branch.
-- [Set-up the ESP-IDF](https://docs.espressif.com/projects/esp-idf/en/release-v5.0/esp32/get-started/index.html)
+- For chipsets except ESP32-C6
+  - Clone the ESP-IDF [release/v5.0](https://github.com/espressif/esp-idf/tree/release/v5.0) and git checkout to `release/v5.0` branch.
+  - [Set-up the ESP-IDF](https://docs.espressif.com/projects/esp-idf/en/release-v5.0/esp32/get-started/index.html)
+- For chipset ESP32-C6
+  - Clone the ESP-IDF [master](https://github.com/espressif/esp-idf)
+  - [Set-up the ESP-IDF](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/get-started/index.html)
 - Navigate to `esp_hosted_fg/esp/esp_driver/network_adapter` directory.
 
 ##### Using cmake
 
 ```
 $ idf.py fullclean
+$ idf.py --preview set-target <esp_chipset>
 ```
-:warning: Skip this step for ESP32. Run for ESP32-S2 / ESP32-C2 / ESP32-C3
-```
-$ idf.py set-target esp32s2
-```
-or
-```
-$ idf.py set-target esp32c2
-```
-or
-```
-$ idf.py set-target esp32c3
-```
+where <esp_chipset> could be one from "esp32", "esp32s2", "esp32s3", "esp32c2", "esp32c3", "esp32c6"
+
 
 Run following command and navigate to `Example Configuration -> Transport layer -> SPI interface -> select` and exit from menuconfig. Read more about [idf.py](https://docs.espressif.com/projects/esp-idf/en/latest/esp32s2/api-guides/build-system.html#using-the-build-system) here.
 ```
 $ idf.py menuconfig
 ```
 
-:warning: Skip below step for ESP32-S2 / ESP32-C2 / ESP32-C3. Run for  ESP32 only.
+:warning: Skip below step for ESP32-S2/S3/C2/C3/C6. Run for  ESP32 only.
 
 Change SPI controller to VSPI. Please navigate to `Example Configuration → SPI Configuration` and change value of `SPI controller to use` to `3`
 
