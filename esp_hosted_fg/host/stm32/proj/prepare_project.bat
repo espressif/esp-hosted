@@ -33,7 +33,10 @@ cd %CWD%
 rem  ### check workspace directory exist ###
 IF not exist %WORKSPACE% (
 echo %WORKSPACE% does not exist
-echo Please follow documentation to import STM project from stm_<TRANSPORT>_host_<ESP_slave_board_type>.ioc, if not already done
+echo For <SPI> transport and ESP one from <ESP32-C2/C3/C6/S2/S3> use spi/stm_spi_host_v2.ioc, if not already done
+echo For <SPI> transport and <ESP32> use spi/stm_spi_host_v1.ioc, if not already done
+echo For <SDIO> transport and <ESP32> use sdio/stm_sdio_host.ioc, if not already done
+
 goto error
  )
 
@@ -41,7 +44,9 @@ rem  ### check project directory exist ###
 IF not exist %WORKSPACE%\%PROJ_NAME%  (
 echo %WORKSPACE%\%PROJ_NAME% does not exist
 echo Either incorrect workspace directory or ioc project not imported
-echo Please follow documentation to import STM project from stm_<TRANSPORT>_host_<ESP_slave_board_type>.ioc, if not already done
+echo For <SPI> transport and ESP one from <ESP32-C2/C3/C6/S2/S3> use spi/stm_spi_host_v2.ioc, if not already done
+echo For <SPI> transport and <ESP32> use spi/stm_spi_host_v1.ioc, if not already done
+echo For <SDIO> transport and <ESP32> use sdio/stm_sdio_host.ioc, if not already done
 goto error
  )
 

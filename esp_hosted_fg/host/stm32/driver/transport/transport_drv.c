@@ -134,7 +134,7 @@ void process_event(uint8_t *evt_buf, uint16_t len)
 
 	if (event->event_type == ESP_PRIV_EVENT_INIT) {
 
-		printf("Received INIT event from ESP32 peripheral\n\r");
+		printf("Received INIT event from ESP peripheral\n\r");
 
 		print_hex_dump(event->event_data, event->event_len, "process event");
 
@@ -181,6 +181,7 @@ int process_init_event(uint8_t *evt_buf, uint8_t len)
 	    (chip_type != ESP_PRIV_FIRMWARE_CHIP_ESP32S2) &&
 	    (chip_type != ESP_PRIV_FIRMWARE_CHIP_ESP32C2) &&
 	    (chip_type != ESP_PRIV_FIRMWARE_CHIP_ESP32C3) &&
+	    (chip_type != ESP_PRIV_FIRMWARE_CHIP_ESP32C6) &&
 	    (chip_type != ESP_PRIV_FIRMWARE_CHIP_ESP32S3)) {
 		printf("ESP board type is not mentioned, ignoring [%d]\n\r", chip_type);
 		chip_type = ESP_PRIV_FIRMWARE_CHIP_UNRECOGNIZED;

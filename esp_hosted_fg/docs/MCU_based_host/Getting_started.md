@@ -28,7 +28,7 @@ Wi-Fi can be configured as either as `STATION` mode or `SOFTAP` mode or `STATION
 * **STATION+SOFTAP Mode**
     - This is combination of both the modes. In this mode, host behaves as station and connects to external AP. At the same time, host with help of ESP device, can create the Wi-Fi network.
 
-Host firmware provides Wi-Fi connectivity using control path and data path. Control path commands uses `protocomm` layer of ESP-IDF to serialize structured control data and communicates using SPI transport interface between Host(MCU based Host) and ESP peripheral (ESP32/ESP32-C2/ESP32-C3/ESP32-S2/ESP32-S3). User can use control commands to build application.
+Host firmware provides Wi-Fi connectivity using control path and data path. Control path commands uses `protocomm` layer of ESP-IDF to serialize structured control data and communicates using SPI transport interface between Host(MCU based Host) and ESP peripheral (ESP32/ESP32-C2/ESP32-C3/ESP32-C6/ESP32-S2/ESP32-S3). User can use control commands to build application.
 
 
 ### 2.1 Start Project with STM32
@@ -39,7 +39,7 @@ We have tested project for `SPI` transport with STM32F469I-Discovery board and `
 | ESP32 Board | STM32 Board  | Transport  |
 |:---------:|:------:|:----------:|
 | ESP32 | STM32F412ZGT6-Nucleo 144  | SDIO |
-| ESP32/S2/S3/C2/C3 | STM32F469I-Discovery  | SPI |
+| ESP32/S2/S3/C2/C3/C6 | STM32F469I-Discovery  | SPI |
 
 :warning: <code>**Note1:** For SDIO, please check [pull up requirements](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/peripherals/sd_pullup_requirements.html) while choosing ESP module</code>
 
@@ -51,7 +51,7 @@ We have tested project for `SPI` transport with STM32F469I-Discovery board and `
 * For SPI transport:
 ```
 For ESP32 peripheral: Select stm_spi_host_v1.ioc file
-For ESP32-C2/ESP32-C3/ESP32-S2/ESP32-S3 peripheral: Select stm_spi_host_v2.ioc file
+For ESP32-C2/ESP32-C3/ESP32-C6/ESP32-S2/ESP32-S3 peripheral: Select stm_spi_host_v2.ioc file
 ```
 * For SDIO transport:
 ```

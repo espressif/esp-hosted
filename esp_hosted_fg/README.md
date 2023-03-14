@@ -42,16 +42,17 @@ ESP-Hosted-FG solution provides following WLAN and BT/BLE features to the host:
 	- WLAN Soft AP
 - BT/BLE Features:
 	- ESP32 supports BR/EDR and BLE with v4.2
-	- ESP32-C3/ESP32-S3 supports BLE v4.2 and v5.0
+	- ESP32-C2/C3/C6/ESP32-S3 supports BLE v4.2 and v5.0
 
 ### 1.2 Supported ESP boards
 
 ESP-Hosted-FG solution is supported on following ESP boards:
 - ESP32
 - ESP32-S2
-- ESP32-C3
 - ESP32-S3
 - ESP32-C2
+- ESP32-C3
+- ESP32-C6
 
 ### 1.3 Supported Hosts
 
@@ -85,6 +86,9 @@ The below table explains which feature is supported on which transport interface
 | ESP32-C3 | SDIO | NA | NA | NA |
 | ESP32-C3 | SPI | Yes | Yes | BLE 5.0 |
 | ESP32-C3 | UART | No | No | BLE 5.0 |
+| ESP32-C6 | SDIO | ComingSoon | ComingSoon | ComingSoon |
+| ESP32-C6 | SPI | Yes | Yes | WIP |
+| ESP32-C6 | UART | No | No | WIP |
 | ESP32-S3 | SDIO | NA | NA | NA |
 | ESP32-S3 | SPI | Yes | Yes | BLE 5.0 |
 | ESP32-S3 | UART | No | No | BLE 5.0 |
@@ -113,6 +117,9 @@ The below table explains which feature is supported on which transport interface
 | ESP32-C3 | SDIO | NA | NA | NA |
 | ESP32-C3 | SPI | Yes | Yes | BLE 5.0\* |
 | ESP32-C3 | UART | No | No | BLE 5.0\*\* |
+| ESP32-C6 | SDIO | ComingSoon | ComingSoon | ComingSoon |
+| ESP32-C6 | SPI | Yes | Yes | WIP |
+| ESP32-C6 | UART | No | No | WIP |
 | ESP32-S3 | SDIO | NA | NA | NA |
 | ESP32-S3 | SPI | Yes | Yes | BLE 5.0\* |
 | ESP32-S3 | UART | No | No | BLE 5.0\*\* |
@@ -137,6 +144,12 @@ Note: BT stands for Bluetooth BR/EDR and BLE stands for Bluetooth Low Energy spe
 > Register the UART serial interface as a HCI interface with BT/BLE stack
 > With the help of this UART interface, BT/BLE stack can directly interact with BT controller present on ESP bypassing host driver and firmware
 > ESP Hosted host driver and a firmware plays no role in this communication
+
+WIP
+> Work In progress
+
+ComingSoon
+> Will be scheduled after WIP
 
 * Linux hosts support OTA update (Over The Air ESP firmware update) in C and python. MCU hosts can refer to the same for their development. For detailed documentation, please read
 [ota_update.md](docs/Linux_based_host/ota_update.md).

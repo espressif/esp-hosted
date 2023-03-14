@@ -342,7 +342,7 @@ int ctrl_app_resp_callback(ctrl_cmd_t * app_resp)
 			printf("Success in set vendor specific ie\n\r");
 			break;
 		} case CTRL_RESP_START_SOFTAP : {
-			printf("esp32 softAP started\n\r");
+			printf("ESP softAP started\n\r");
 			break;
 		} case CTRL_RESP_GET_SOFTAP_CONN_STA_LIST : {
 			int count = app_resp->u.wifi_softap_con_sta.count;
@@ -365,7 +365,7 @@ int ctrl_app_resp_callback(ctrl_cmd_t * app_resp)
 			}
 			break;
 		} case CTRL_RESP_STOP_SOFTAP : {
-			printf("esp32 softAP stopped\n\r");
+			printf("ESP softAP stopped\n\r");
 			break;
 		} case CTRL_RESP_SET_PS_MODE : {
 			printf("Wifi power save mode set\n\r");
@@ -821,7 +821,7 @@ int test_ota(char* image_path)
 	} else {
 		return FAILURE;
 	}
-	printf("ESP32 will restart after 5 sec\n");
+	printf("ESP will restart after 5 sec\n");
 	return SUCCESS;
 #endif
 	printf("For OTA, user need to integrate HTTP client lib and then invoke OTA\n\r");

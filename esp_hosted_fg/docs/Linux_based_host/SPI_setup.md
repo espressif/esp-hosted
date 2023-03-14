@@ -54,7 +54,7 @@ Setup image is here.
 ![alt text](rpi_esp32_c2_setup.jpeg "setup of Raspberry-Pi as host and ESP32-C2 as ESP peripheral")
 
 
-#### 1.1.3 ESP32-C3 setup
+#### 1.1.4 ESP32-C3 setup
 | Raspberry-Pi Pin | ESP32-C3 Pin | Function |
 |:----------------:|:------------:|:--------:|
 | 24 | IO10 | CS0 |
@@ -70,7 +70,24 @@ Setup image is here.
 
 ![alt text](rpi_esp32_c3_setup.jpg "setup of Raspberry-Pi as host and ESP32-C3 as ESP peripheral")
 
-#### 1.1.4 ESP32-S3 setup
+#### 1.1.5 ESP32-C6 setup
+| Raspberry-Pi Pin | ESP32-C6 Pin | Function |
+|:----------------:|:------------:|:--------:|
+| 24 | IO10 | CS0 |
+| 23 | IO06 | SCLK |
+| 21 | IO02 | MISO |
+| 19 | IO07 | MOSI |
+| 25 | GND | Ground |
+| 15 | IO03 | Handshake |
+| 13 | IO04 | Data ready |
+| 31 | RST | ESP Reset |
+
+Setup image is here.
+
+![alt text](rpi_esp32_c6_setup.jpg "setup of Raspberry-Pi as host and ESP32-C6 as ESP peripheral")
+
+
+#### 1.1.6 ESP32-S3 setup
 - For ESP32-S3, microUSB power is expected to insert in [UART port](https://docs.espressif.com/projects/esp-idf/en/latest/esp32s3/hw-reference/esp32s3/user-guide-devkitc-1.html#description-of-components)
 
 | Raspberry-Pi Pin | ESP32-S3 Pin | Function |

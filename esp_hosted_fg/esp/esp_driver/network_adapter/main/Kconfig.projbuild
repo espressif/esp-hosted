@@ -5,6 +5,9 @@ menu "Example Configuration"
         default ESP_SDIO_HOST_INTERFACE if IDF_TARGET_ESP32
         default ESP_SPI_HOST_INTERFACE if IDF_TARGET_ESP32S2
         default ESP_SPI_HOST_INTERFACE if IDF_TARGET_ESP32S3
+        default ESP_SPI_HOST_INTERFACE if IDF_TARGET_ESP32C2
+        default ESP_SPI_HOST_INTERFACE if IDF_TARGET_ESP32C3
+        default ESP_SPI_HOST_INTERFACE if IDF_TARGET_ESP32C6
         help
             Bus interface to be used for communication with the host
 
@@ -35,6 +38,7 @@ menu "Example Configuration"
         int "GPIO pin for handshake"
         default 3 if IDF_TARGET_ESP32C2
         default 3 if IDF_TARGET_ESP32C3
+        default 3 if IDF_TARGET_ESP32C6
         default 2
         help
             GPIO pin to use for handshake with other spi controller
@@ -47,15 +51,17 @@ menu "Example Configuration"
 
     config ESP_SPI_TX_Q_SIZE
         int "ESP to Host SPI queue size"
-        default 10
+        default 10 if IDF_TARGET_ESP32
+        default 20
         help
-            Very small tx queue will lower ESP -- SPI --> Host data rate (Only ESP32-C2)
+            Very small tx queue will lower ESP == SPI ==> Host data rate
 
     config ESP_SPI_RX_Q_SIZE
         int "Host to ESP SPI queue size"
-        default 10
+        default 10 if IDF_TARGET_ESP32
+        default 20
         help
-            Very small RX queue will lower ESP <-- SPI -- Host data rate (Only ESP32-C2)
+            Very small RX queue will lower ESP <== SPI == Host data rate
 
     config ESP_SPI_CHECKSUM
         bool "SPI checksum ENABLE/DISABLE"
@@ -77,11 +83,11 @@ menu "Example Configuration"
     config EXAMPLE_HCI_UART_BAUDRATE
         int "UART Baudrate for HCI: Only applicable for ESP32-C3/ESP32-S3"
         range 115200 921600
-        depends on IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S3
+        depends on IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S3 || IDF_TARGET_ESP32C2 || IDF_TARGET_ESP32C6
         depends on BT_CTRL_HCI_MODE_UART_H4
         default 921600
         help
-            UART Baudrate for HCI over ESP32C3/ESP32S3. Please use standard baudrate.
+            UART Baudrate for HCI over ESP32C2/C3/C6/S3. Please use standard baudrate.
 
     config ESP_DEFAULT_TASK_STACK_SIZE
         int "ESP-Hosted task stack size"

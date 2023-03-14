@@ -111,6 +111,21 @@ static const char TAG[] = "SPI_DRIVER";
      * */
     #define SPI_CLK_MHZ            30
 
+#elif defined CONFIG_IDF_TARGET_ESP32C6
+
+    #define ESP_SPI_CONTROLLER     1
+    #define GPIO_MOSI              7
+    #define GPIO_MISO              2
+    #define GPIO_SCLK              6
+    #define GPIO_CS                10
+    #define DMA_CHAN               SPI_DMA_CH_AUTO
+
+    /* Max supported SPI slave Clock for ESP32-C6 = **60MHz**
+     * Below value could be fine tuned to achieve highest
+     * data rate in accordance with SPI Master
+     * */
+    #define SPI_CLK_MHZ            30
+
 #elif defined CONFIG_IDF_TARGET_ESP32S3
 
     #define ESP_SPI_CONTROLLER     1
@@ -135,17 +150,9 @@ static const char TAG[] = "SPI_DRIVER";
 /* SPI internal configs */
 #define SPI_BUFFER_SIZE            1600
 #define SPI_QUEUE_SIZE             3
-#ifdef CONFIG_IDF_TARGET_ESP32
-    #define SPI_RX_QUEUE_SIZE      10
-    #define SPI_TX_QUEUE_SIZE      10
-#elif CONFIG_IDF_TARGET_ESP32C2
-    /* TODO: Use this for all the chipsets */
-    #define SPI_RX_QUEUE_SIZE      CONFIG_ESP_SPI_RX_Q_SIZE
-    #define SPI_TX_QUEUE_SIZE      CONFIG_ESP_SPI_TX_Q_SIZE
-#else
-    #define SPI_RX_QUEUE_SIZE      20
-    #define SPI_TX_QUEUE_SIZE      20
-#endif
+
+#define SPI_RX_QUEUE_SIZE          CONFIG_ESP_SPI_RX_Q_SIZE
+#define SPI_TX_QUEUE_SIZE          CONFIG_ESP_SPI_TX_Q_SIZE
 
 static interface_context_t context;
 static interface_handle_t if_handle_g;

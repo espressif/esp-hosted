@@ -50,7 +50,7 @@ static stm_ret_t (*spi_trans_func[])(uint8_t * txbuff) = {
 	 *
 	 * spi_transaction_v2
 	 *   It is supported for other esp chipsets
-	 *   like ESP32-C2, ESP32-C3, ESP32-S2 and ESP32-S3 */
+	 *   like ESP32-C2, ESP32-C3, ESP32-C6, ESP32-S2 and ESP32-S3 */
 		spi_transaction_v1,
 		spi_transaction_v2
 };
@@ -662,7 +662,7 @@ static void transaction_task(void const* pvParameters)
 	if (hardware_type == HARDWARE_TYPE_ESP32) {
 		printf("\n\rESP-Hosted for ESP32\n\r");
 	} else if (hardware_type == HARDWARE_TYPE_OTHER_ESP_CHIPSETS) {
-		printf("\n\rESP-Hosted for ESP32-C2/C3/S2/S3\n\r");
+		printf("\n\rESP-Hosted for ESP32-C2/C3/C6/S2/S3\n\r");
 	} else {
 		printf("Unsupported slave hardware\n\r");
 		assert(hardware_type != HARDWARE_TYPE_INVALID);
