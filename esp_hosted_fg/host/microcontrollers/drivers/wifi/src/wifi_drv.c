@@ -54,7 +54,7 @@ static void reset_slave(void)
 	g_h.funcs->_h_write_gpio(H_GPIO_PORT_DEFAULT, GPIO_PIN_RESET, 1);
 
 	/* stop spi transactions short time to avoid slave sync issues */
-	g_h.funcs->_h_blocking_delay(50000);
+	g_h.funcs->_h_blocking_delay(100000);
 }
 
 static void transport_driver_event_handler(uint8_t event)

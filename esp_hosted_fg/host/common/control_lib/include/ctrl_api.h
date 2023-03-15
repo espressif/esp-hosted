@@ -568,6 +568,12 @@ typedef struct Ctrl_cmd_t {
 	 * Default value for this time out is DEFAULT_CTRL_RESP_TIMEOUT */
 	int cmd_timeout_sec;
 
+	/* Ctrl path takes only one request at a time.
+	 * If new request comes before previous command execution,
+	 * wait for previous command execution for these many seconds, else return failure.
+	 * Default: WAIT_TIME_B2B_CTRL_REQ */
+	int wait_prev_cmd_completion;
+
 	/* assign the data pointer to free by lower layer.
 	 * Ignored if assigned as NULL */
 	void *free_buffer_handle;

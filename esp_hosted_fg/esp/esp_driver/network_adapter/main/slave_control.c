@@ -2583,6 +2583,7 @@ esp_err_t data_transfer_handler(uint32_t session_id,const uint8_t *inbuf,
 	resp.msg_type = CTRL_MSG_TYPE__Resp;
 	resp.msg_id = req->msg_id - CTRL_MSG_ID__Req_Base + CTRL_MSG_ID__Resp_Base;
 	resp.payload_case = resp.msg_id;
+	printf("Resp_MSGId for req[%x] is [%x]\n", req->msg_id, resp.msg_id);
 	ret = esp_ctrl_msg_command_dispatcher(req,&resp,NULL);
 	if (ret) {
 		ESP_LOGE(TAG, "Command dispatching not happening");

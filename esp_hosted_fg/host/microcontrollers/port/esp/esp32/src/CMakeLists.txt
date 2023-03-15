@@ -1,8 +1,8 @@
 # app & driver files
-#set(COMPONENT_SRCS "../../../../app/app_main.c" "../../../../app/app_main_api.c" "../../../../app/data/arp_server_stub.c" "../../../../app/control/control.c" "../../../../app/control/control_utils.c" "../../../../driver/transport/transport_drv.c"  "../../../../driver/network/netdev_api.c" "../../../../driver/network/netdev_stub.c" "../../../../driver/serial/serial_ll_if.c" "../../../../utils/common.c" "../../../../utils/util.c" "../../../../utils/stats.c" "os_wrapper.c" "../../../../driver/serial/serial_drv.c")
-set(COMPONENT_SRCS "../../hosted_app_main.c" "../../../../app/control/control_utils.c" "../../../../driver/transport/transport_drv.c"  "../../../../driver/network/netdev_api.c" "../../../../driver/network/netdev_stub.c" "../../../../driver/serial/serial_ll_if.c" "../../../../utils/common.c" "../../../../utils/util.c" "../../../../utils/stats.c" "os_wrapper.c" "../../../../driver/serial/serial_drv.c" "../../../../driver/wifi/src/wifi_drv.c")
+#set(COMPONENT_SRCS "../../../../app/app_main.c" "../../../../app/app_main_api.c" "../../../../app/data/arp_server_stub.c" "../../../../app/control/control.c" "../../../../app/control/control_utils.c" "../../../../drivers/transport/transport_drv.c"  "../../../../drivers/network/netdev_api.c" "../../../../drivers/network/netdev_stub.c" "../../../../drivers/serial/serial_ll_if.c" "../../../../utils/common.c" "../../../../utils/util.c" "../../../../utils/stats.c" "os_wrapper.c" "../../../../drivers/serial/serial_drv.c")
+set(COMPONENT_SRCS "../../hosted_app_main.c" "../../../../app/control/control_utils.c" "../../../../drivers/transport/transport_drv.c"  "../../../../drivers/network/netdev_api.c" "../../../../drivers/network/netdev_stub.c" "../../../../drivers/serial/serial_ll_if.c" "../../../../utils/common.c" "../../../../utils/util.c" "../../../../utils/stats.c" "os_wrapper.c" "../../../../drivers/serial/serial_drv.c" "../../../../drivers/wifi/src/wifi_drv.c")
 
-set(COMPONENT_ADD_INCLUDEDIRS "." "../../../../app" "../../../../app/data" "../../../../app/control" "../../../../driver/transport" "../../../../driver/transport/spi" "../../../../driver/transport/sdio" "../../../../driver/netif" "../../../../driver/network" "../../../../driver/serial" "../../../../utils" "../../../../../../common/include" "../include" "." "../../.." "../../../../driver/wifi/include")
+set(COMPONENT_ADD_INCLUDEDIRS "." "../../../../app" "../../../../app/data" "../../../../app/control" "../../../../drivers/transport" "../../../../drivers/transport/spi" "../../../../drivers/transport/sdio" "../../../../drivers/netif" "../../../../drivers/network" "../../../../drivers/serial" "../../../../utils" "../../../../../../common/include" "../include" "." "../../.." "../../../../drivers/wifi/include")
 
 #components
 # control path lib files
@@ -21,9 +21,9 @@ list(APPEND COMPONENT_ADD_INCLUDEDIRS "../../../../../../common/protobuf-c" )
 
 # transport files
 if(CONFIG_ESP_SDIO_HOST_INTERFACE)
-    list(APPEND COMPONENT_SRCS "../../../../driver/transport/sdio/sdio_ll.c" "../../../../driver/transport/sdio/sdio_api.c" "../../../../driver/transport/sdio/sdio_host.c" "../../../../driver/transport/sdio/sdio_drv.c")
+    list(APPEND COMPONENT_SRCS "../../../../drivers/transport/sdio/sdio_ll.c" "../../../../drivers/transport/sdio/sdio_api.c" "../../../../drivers/transport/sdio/sdio_host.c" "../../../../drivers/transport/sdio/sdio_drv.c")
 else(CONFIG_ESP_SPI_HOST_INTERFACE)
-	list(APPEND COMPONENT_SRCS "../../../../driver/transport/spi/spi_drv.c")
+	list(APPEND COMPONENT_SRCS "../../../../drivers/transport/spi/spi_drv.c")
 endif()
 
 
@@ -34,7 +34,8 @@ idf_component_get_property(freertos_dir freertos COMPONENT_DIR)
 target_include_directories(${COMPONENT_LIB} PRIVATE "${freertos_dir}/include/freertos")
 
 idf_component_get_property(driver_dir driver COMPONENT_DIR)
-target_include_directories(${COMPONENT_LIB} PRIVATE "${driver_dir}/include")
+#target_include_directories(${COMPONENT_LIB} PRIVATE "${driver_dir}/include")
+target_include_directories(${COMPONENT_LIB} PRIVATE "${driver_dir}/include" "${driver_dir}/spi/include" "${driver_dir}/gpio/include")
 
 idf_component_get_property(esp_timer_dir esp_timer COMPONENT_DIR)
 target_include_directories(${COMPONENT_LIB} PRIVATE "${esp_timer_dir}/include")
