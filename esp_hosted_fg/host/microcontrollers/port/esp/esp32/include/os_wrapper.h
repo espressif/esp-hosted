@@ -24,8 +24,8 @@
 #define CTRL__TIMER_ONESHOT                          0
 #define CTRL__TIMER_PERIODIC                         1
 
-#define HOSTED_SEM_BLOCKING                          -1
-#define HOSTED_SEM_NON_BLOCKING                      0
+#define HOSTED_BLOCKING                              -1
+#define HOSTED_NON_BLOCKING                          0
 
 #define thread_handle_t                              TaskHandle_t
 #define queue_handle_t                               QueueHandle_t
@@ -124,7 +124,7 @@ enum hardware_type_e {
 
 
 #define MILLISEC_TO_SEC			1000
-#define TICKS_PER_SEC (1000 / portTICK_PERIOD_MS);
+#define TICKS_PER_SEC(x) (1000*(x) / portTICK_PERIOD_MS)
 #define SEC_TO_MILLISEC(x) (1000*(x))
 
 

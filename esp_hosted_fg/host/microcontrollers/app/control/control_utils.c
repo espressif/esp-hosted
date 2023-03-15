@@ -43,7 +43,8 @@
 #define CTRL_CMD_DEFAULT_REQ() {                          \
   .msg_type = CTRL_REQ,                                   \
   .ctrl_resp_cb = NULL,                                   \
-  .cmd_timeout_sec = DEFAULT_CTRL_RESP_TIMEOUT /*30 sec*/ \
+  .cmd_timeout_sec = DEFAULT_CTRL_RESP_TIMEOUT, /*30 sec*/ \
+  .wait_prev_cmd_completion = WAIT_TIME_B2B_CTRL_REQ,      \
 }
 
 #define CLEANUP_CTRL_MSG(msg) do {                        \
@@ -287,7 +288,7 @@ int ctrl_app_resp_callback(ctrl_cmd_t * app_resp)
 	}
 
 	if ((app_resp->msg_id <= CTRL_RESP_BASE) || (app_resp->msg_id >= CTRL_RESP_MAX)) {
-		printf("Response Msg ID[%u] is not correct\n\r",app_resp->msg_id);
+		printf("Response Msg ID[%x] is not correct\n\r",app_resp->msg_id);
 		goto fail_resp;
 	}
 
@@ -983,6 +984,7 @@ int test_wifi_stop(void)
 
 int test_wifi_connect(void)
 {
+#if 1
 	/* implemented synchronous */
 	ctrl_cmd_t req = CTRL_CMD_DEFAULT_REQ();
 	ctrl_cmd_t *resp = NULL;
@@ -990,6 +992,18 @@ int test_wifi_connect(void)
 
 	resp = wifi_connect(req);
 	return ctrl_app_resp_callback(resp);
+	return 0;
+#else
+	/* implemented asynchronous */
+	ctrl_cmd_t req = CTRL_CMD_DEFAULT_REQ();
+	ctrl_cmd_t *resp = NULL;
+
+	req.ctrl_resp_cb = ctrl_app_resp_callback;
+
+	wifi_connect(req);
+
+	return SUCCESS;
+#endif
 }
 
 int test_wifi_disconnect(void)

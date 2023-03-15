@@ -21,8 +21,8 @@
 #define CTRL__TIMER_ONESHOT                    0
 #define CTRL__TIMER_PERIODIC                   1
 
-#define HOSTED_SEM_BLOCKING                    -1
-#define HOSTED_SEM_NON_BLOCKING                0
+#define HOSTED_BLOCKING                        -1
+#define HOSTED_NON_BLOCKING                    0
 
 #define mem_free(x)                            \
 {                                              \

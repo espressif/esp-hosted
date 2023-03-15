@@ -8,6 +8,8 @@
 #ifndef __ESP_QUEUE_H__
 #define __ESP_QUEUE_H__
 
+#include "os_wrapper.h"
+
 #define ESP_QUEUE_SUCCESS               0
 #define ESP_QUEUE_ERR_UNINITALISED      -1
 #define ESP_QUEUE_ERR_MEMORY            -2

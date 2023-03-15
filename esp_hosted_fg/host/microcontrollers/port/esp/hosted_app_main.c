@@ -24,7 +24,7 @@
 #include "esp_log.h"
 #include "esp_wifi.h"
 
-#include "esp_hosted_config.h"
+//#include "esp_hosted_config.h"
 
 #define EXAMPLE_ESP_WIFI_SSID      "SaveEarth" //CONFIG_ESP_WIFI_SSID
 #define EXAMPLE_ESP_WIFI_PASS      "PlantMoreTrees123" //CONFIG_ESP_WIFI_PASSWORD
@@ -66,7 +66,7 @@ static void event_handler(void* arg, esp_event_base_t event_base,
                                 int32_t event_id, void* event_data)
 {
 	ESP_LOGI(TAG,"-------- WiFi Event %ld received\n", event_id);
-#if 0
+#if 1
     if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_START) {
         esp_wifi_connect();
     } else if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_DISCONNECTED) {
@@ -78,7 +78,10 @@ static void event_handler(void* arg, esp_event_base_t event_base,
             xEventGroupSetBits(s_wifi_event_group, WIFI_FAIL_BIT);
         }
         ESP_LOGI(TAG,"connect to the AP fail");
-#if 0
+#if 1
+    } else if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_CONNECTED) {
+        xEventGroupSetBits(s_wifi_event_group, WIFI_CONNECTED_BIT);
+#else
     } else if (event_base == IP_EVENT && event_id == IP_EVENT_STA_GOT_IP) {
         ip_event_got_ip_t* event = (ip_event_got_ip_t*) event_data;
         ESP_LOGI(TAG, "got ip:" IPSTR, IP2STR(&event->ip_info.ip));
@@ -139,8 +142,6 @@ void wifi_init_sta(void)
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA) );
     ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &wifi_config) );
     ESP_ERROR_CHECK(esp_wifi_start() );
-	g_h.funcs->_h_sleep(1);
-	esp_wifi_connect();
 
     ESP_LOGI(TAG, "wifi_init_sta finished.");
 
@@ -177,4 +178,5 @@ void app_main(void)
 
     ESP_LOGI(TAG, "ESP_WIFI_MODE_STA");
     wifi_init_sta();
+	ESP_LOGE(TAG, "Wifi test case finished\n");
 }
