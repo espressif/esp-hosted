@@ -620,6 +620,15 @@ typedef wifi_event_ap_staconnected_t wifi_event_ap_stadisconnected_t;
 #endif
 
 typedef struct {
+    uint8_t mac[6];
+    uint8_t aid;
+    bool is_mesh_child;
+	int32_t wifi_event_id;
+} wifi_event_ap_staconnected_t;
+
+typedef wifi_event_ap_staconnected_t wifi_event_ap_stadisconnected_t;
+
+typedef struct {
 	int32_t wifi_event_id;
 } event_wifi_simple_t;
 

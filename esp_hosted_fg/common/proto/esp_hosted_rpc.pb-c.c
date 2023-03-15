@@ -12652,7 +12652,7 @@ static const ProtobufCFieldDescriptor rpc__event__ap__sta_disconnected__field_de
   },
   {
     "mac",
-    2,
+    3,
     PROTOBUF_C_LABEL_NONE,
     PROTOBUF_C_TYPE_BYTES,
     0,   /* quantifier_offset */
@@ -12837,7 +12837,7 @@ static const unsigned rpc__event__sta_scan_done__field_indices_by_name[] = {
 static const ProtobufCIntRange rpc__event__sta_scan_done__number_ranges[1 + 1] =
 {
   { 1, 0 },
-  { 0, 2 }
+  { 0, 5 }
 };
 const ProtobufCMessageDescriptor rpc__event__sta_scan_done__descriptor =
 {

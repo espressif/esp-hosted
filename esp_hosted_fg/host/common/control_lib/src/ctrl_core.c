@@ -1347,6 +1347,7 @@ static int process_ctrl_tx_msg(ctrl_cmd_t *app_req)
 
 		case WIFI_IF_STA: {
 			req_payload->cfg->u_case = WIFI_CONFIG__U_STA;
+			printf("%s:%u sta: 0x%p\n",__func__, __LINE__, req_payload->cfg->sta);
 
 			wifi_sta_config_t *p_a_sta = &p_a->u.sta;
 			CTRL_ALLOC_ELEMENT(WifiStaConfig, req_payload->cfg->sta, wifi_sta_config__init);
@@ -1833,7 +1834,9 @@ static void ctrl_tx_thread(void const *arg)
 			continue;
 		}
 
+		printf("%s:%u get ctrl_tx_sem\n",__func__,__LINE__);
 		g_h.funcs->_h_get_semaphore(ctrl_tx_sem, HOSTED_BLOCKING);
+		printf("%s:%u got ctrl_tx_sem\n",__func__,__LINE__);
 
 		app_req = esp_queue_get(ctrl_tx_q);
 		if (app_req) {
@@ -1905,8 +1908,10 @@ static ctrl_cmd_t * get_response(int *read_len, int timeout_sec)
 		timeout_sec = DEFAULT_CTRL_RESP_TIMEOUT;
 
 	/* 3. Wait for response */
+	printf("%s:%u get ctrl_rx_sem\n",__func__,__LINE__);
 	ret = g_h.funcs->_h_get_semaphore(ctrl_rx_sem, timeout_sec);
 	if (ret) {
+		printf("%s:%u FAIL ctrl_rx_sem\n",__func__,__LINE__);
 		if (errno == ETIMEDOUT)
 			printf("Control response timed out after %u sec\n", timeout_sec);
 		else
@@ -1915,6 +1920,7 @@ static ctrl_cmd_t * get_response(int *read_len, int timeout_sec)
 		g_h.funcs->_h_post_semaphore(ctrl_req_sem);
 		return NULL;
 	}
+	printf("%s:%u got ctrl_rx_sem\n",__func__,__LINE__);
 
 	/* 4. Fetch response from `esp_queue` */
 	data = esp_queue_get(ctrl_rx_q);
@@ -2138,13 +2144,16 @@ int ctrl_app_send_req(ctrl_cmd_t *app_req)
 	/* 1. Check if any ongoing request present
 	 * Send failure in that case */
 	if (app_req->wait_prev_cmd_completion) {
+	printf("%s:%u get ctrl_req_sem\n",__func__,__LINE__);
 	  ret = g_h.funcs->_h_get_semaphore(ctrl_req_sem,
 		  app_req->wait_prev_cmd_completion);
 	  if (ret) {
+	printf("%s:%u FAIL ctrl_req_sem\n",__func__,__LINE__);
 		command_log("prev command in progress\n");
 		goto fail_req;
 	  }
 	}
+	printf("%s:%u got ctrl_req_sem\n",__func__,__LINE__);
 
 	app_req->msg_type = CTRL_REQ;
 
@@ -2906,6 +2915,7 @@ int init_hosted_control_lib_internal(void)
 
 	/* Get semaphore for first time */
 	g_h.funcs->_h_get_semaphore(ctrl_tx_sem, HOSTED_BLOCKING);
+	printf("%s:%u got \n",__func__,__LINE__);
 
 	/* serial init */
 	if (serial_init()) {

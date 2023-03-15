@@ -3642,6 +3642,7 @@ static esp_err_t rpc_evt_sta_scan_done(Rpc *ntfy,
 
 err:
 	return ESP_OK;
+#endif
 }
 
 static esp_err_t rpc_evt_sta_connected(Rpc *ntfy,
