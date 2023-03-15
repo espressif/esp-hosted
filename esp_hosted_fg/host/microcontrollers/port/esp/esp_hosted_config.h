@@ -15,7 +15,7 @@
 
 
 #ifdef CONFIG_ESP_SPI_HOST_INTERFACE
-/*  ========================== SPI Master Config start ======================  */
+/*  -------------------------- SPI Master Config start ----------------------  */
 /*
 Pins in use. The SPI Master can use the GPIO mux,
 so feel free to change these if needed.
@@ -39,7 +39,7 @@ so feel free to change these if needed.
 #define SPI_MODE                                     CONFIG_ESP_SPI_MODE
 #define SPI_INIT_CLK_MHZ                             CONFIG_ESP_SPI_CLK_FREQ
 
-/*  ========================== SPI Master Config end ========================  */
+/*  -------------------------- SPI Master Config end ------------------------  */
 #endif
 
 /* Generic reset pin config */

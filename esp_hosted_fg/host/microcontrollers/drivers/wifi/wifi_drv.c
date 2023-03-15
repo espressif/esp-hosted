@@ -15,7 +15,7 @@
 
 #include "esp_wifi.h"
 //TODO: remove this header, move declarations to better header
-#include "control.h"
+#include "rpc_wrapper.h"
 
 /* TODO: move hosted specific functions and headers to diff file */
 #include "transport_drv.h"
