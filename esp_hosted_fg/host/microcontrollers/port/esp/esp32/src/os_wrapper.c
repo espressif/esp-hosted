@@ -21,9 +21,6 @@
 #include "transport_drv.h"
 #include "esp_event.h"
 
-#define MILLISEC_TO_SEC			1000
-#define TICKS_PER_SEC (1000 / portTICK_PERIOD_MS);
-#define SEC_TO_MILLISEC(x) (1000*(x))
 
 extern void * spi_handle;
 
@@ -565,6 +562,7 @@ int hosted_timer_stop(void *timer_handle)
 {
 	int ret = RET_OK;
 
+	printf("Stop the timer\n");
 	if (timer_handle) {
 		//ret = osTimerStop(((struct timer_handle_t *)timer_handle)->timer_id);
 		ret = esp_timer_stop(((struct timer_handle_t *)timer_handle)->timer_id);
@@ -599,6 +597,7 @@ void *hosted_timer_start(int duration, int type,
 	struct timer_handle_t *timer_handle = NULL;
 	int ret = RET_OK;
 
+	printf("Start the timer %u\n", duration);
 	//os_timer_type timer_type = osTimerOnce;
 	//osTimerDef (timerNew, timeout_handler);
 	const esp_timer_create_args_t timerNew_args = {
@@ -630,9 +629,9 @@ void *hosted_timer_start(int duration, int type,
 
 	/* Start depending upon timer type */
 	if (type == CTRL__TIMER_PERIODIC) {
-		ret = esp_timer_start_periodic(timer_handle->timer_id, SEC_TO_MILLISEC(duration));
+		ret = esp_timer_start_periodic(timer_handle->timer_id, TICKS_PER_SEC(duration));
 	} else if (type == CTRL__TIMER_ONESHOT) {
-		ret = esp_timer_start_once(timer_handle->timer_id, SEC_TO_MILLISEC(duration));
+		ret = esp_timer_start_once(timer_handle->timer_id, TICKS_PER_SEC(duration));
 	} else {
 		printf("Unsupported timer type. supported: one_shot, periodic\n");
 		esp_timer_delete(timer_handle->timer_id);

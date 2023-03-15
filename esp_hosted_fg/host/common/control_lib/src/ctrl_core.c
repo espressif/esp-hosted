@@ -1585,6 +1585,602 @@ fail_req2:
 	CTRL_FREE_ALLOCATIONS();
 	return FAILURE;
 }
+/* Process control msg (response or event) received from ESP32 */
+static int process_ctrl_rx_msg(CtrlMsg * proto_msg, ctrl_rx_ind_t ctrl_rx_func)
+{
+	esp_queue_elem_t *elem = NULL;
+	ctrl_cmd_t *app_resp = NULL;
+	ctrl_cmd_t *app_event = NULL;
+
+	/* 1. Check if valid proto msg */
+	if (!proto_msg) {
+		return FAILURE;
+	}
+
+	/* 2. Check if it is event msg */
+	if (proto_msg->msg_type == CTRL_MSG_TYPE__Event) {
+		/* Events are handled only asynchronously */
+
+		printf("Received Event [0x%x]\n", proto_msg->msg_id);
+		/* check if callback is available.
+		 * if not, silently drop the msg */
+		if (CALLBACK_AVAILABLE ==
+				is_event_callback_registered(proto_msg->msg_id)) {
+			/* if event callback is registered, we need to
+			 * parse the event into app structs and
+			 * call the registered callback function
+			 **/
+
+			/* Allocate app struct for event */
+			app_event = (ctrl_cmd_t *)g_h.funcs->_h_malloc(sizeof(ctrl_cmd_t));
+			if (!app_event) {
+				printf("Failed to allocate app_event\n");
+				goto free_buffers;
+			}
+			g_h.funcs->_h_memset(app_event, 0, sizeof(ctrl_cmd_t));
+
+			/* Decode protobuf buffer of event and
+			 * copy into app structures */
+			ctrl_app_parse_event(proto_msg, app_event);
+
+			/* callback to registered function */
+			call_event_callback(app_event);
+
+			//CLEANUP_APP_MSG(app_event);
+		} else {
+			/* silently drop */
+			goto free_buffers;
+		}
+
+	/* 3. Check if it is response msg */
+	} else if (proto_msg->msg_type == CTRL_MSG_TYPE__Resp) {
+
+		printf("Received Resp [0x%x]\n", proto_msg->msg_id);
+		/* Ctrl responses are handled asynchronously and
+		 * asynchronpusly */
+
+		/* Allocate app struct for response */
+		app_resp = (ctrl_cmd_t *)g_h.funcs->_h_malloc(sizeof(ctrl_cmd_t));
+		if (!app_resp) {
+			printf("Failed to allocate app_resp\n");
+			goto free_buffers;
+		}
+		g_h.funcs->_h_memset(app_resp, 0, sizeof(ctrl_cmd_t));
+
+		/* If this was async procedure, timer would have
+		 * been running for response.
+		 * As response received, stop timer */
+		if (async_timer_handle) {
+		  printf("Stopping the asyn timer for resp\n");
+			/* async_timer_handle will be cleaned in g_h.funcs->_h_timer_stop */
+			g_h.funcs->_h_timer_stop(async_timer_handle);
+			async_timer_handle = NULL;
+		}
+
+		/* Decode protobuf buffer of response and
+		 * copy into app structures */
+		ctrl_app_parse_resp(proto_msg, app_resp);
+
+		/* Is callback is available,
+		 * progress as async response */
+		if (CALLBACK_AVAILABLE ==
+			is_async_resp_callback_registered_by_resp_msg_id(app_resp->msg_id)) {
+
+			/* User registered control async response callback
+			 * function is available for this proto_msg,
+			 * so call to that function should be done and
+			 * return to select
+			 */
+			call_async_resp_callback(app_resp);
+
+			//CLEANUP_APP_MSG(app_resp);
+
+		} else {
+
+			/* as control async response callback function is
+			 * NOT available/registered, treat this response as
+			 * synchronous response. forward this response to app
+			 * using 'esp_queue' and help of semaphore
+			 **/
+
+			elem = (esp_queue_elem_t*)g_h.funcs->_h_malloc(sizeof(esp_queue_elem_t));
+			if (!elem) {
+				printf("%s %u: Malloc failed\n",__func__,__LINE__);
+				goto free_buffers;
+			}
+
+			/* User is RESPONSIBLE to free memory from
+			 * app_resp in case of async callbacks NOT provided
+			 * to free memory, please refer CLEANUP_APP_MSG macro
+			 **/
+			elem->buf = app_resp;
+			elem->buf_len = sizeof(ctrl_cmd_t);
+			if (esp_queue_put(ctrl_rx_q, (void*)elem)) {
+				printf("%s %u: ctrl Q put fail\n",__func__,__LINE__);
+				goto free_buffers;
+			}
+
+			/* Call up rx ind to unblock user */
+			if (ctrl_rx_func)
+				ctrl_rx_func();
+		}
+		g_h.funcs->_h_post_semaphore(ctrl_req_sem);
+
+	} else {
+		/* 4. some unsupported msg, drop it */
+		printf("Incorrect Ctrl Msg Type[%u]\n",proto_msg->msg_type);
+		goto free_buffers;
+	}
+	return SUCCESS;
+
+	/* 5. cleanup */
+free_buffers:
+	mem_free(elem);
+	mem_free(app_event);
+	if (proto_msg) {
+		ctrl_msg__free_unpacked(proto_msg, NULL);
+		proto_msg = NULL;
+	}
+	return FAILURE;
+}
+
+/* Control path rx thread
+ * This is entry point for control path messages received from ESP32 */
+static void ctrl_rx_thread(void const *arg)
+{
+	uint32_t buf_len = 0;
+
+	ctrl_rx_ind_t ctrl_rx_func;
+	ctrl_rx_func = (ctrl_rx_ind_t) arg;
+
+	/* 1. Get callback for synchronous procedure
+	 * for semaphore post */
+	if (!ctrl_rx_func) {
+		printf("ERROR: NULL rx async cb for esp_queue,sem\n");
+		return;
+	}
+
+	/* 2. If serial interface is not available, exit */
+	if (!serial_drv_open(SERIAL_IF_FILE)) {
+		printf("Exiting thread, handle invalid\n");
+		return;
+	}
+
+	/* 3. This queue should already be created
+	 * if NULL, exit here */
+	if (!ctrl_rx_q) {
+		printf("Ctrl msg rx Q is not created\n");
+		return;
+	}
+
+	/* 4. Infinite loop to process incoming msg on serial interface */
+	while (1) {
+		uint8_t *buf = NULL;
+		CtrlMsg *resp = NULL;
+
+		/* 4.1 Block on read of protobuf encoded msg */
+		if (is_ctrl_lib_state(CTRL_LIB_STATE_INACTIVE)) {
+			sleep(1);
+			continue;
+		}
+		buf = transport_pserial_read(&buf_len);
+
+		if (!buf_len || !buf) {
+			printf("%s buf_len read = 0\n",__func__);
+			goto free_bufs;
+		}
+
+		/* 4.2 Decode protobuf */
+		resp = ctrl_msg__unpack(NULL, buf_len, buf);
+		if (!resp) {
+			goto free_bufs;
+		}
+		/* 4.3 Free the read buffer */
+		mem_free(buf);
+
+		/* 4.4 Send for further processing as event or response */
+		process_ctrl_rx_msg(resp, ctrl_rx_func);
+		continue;
+
+		/* 5. cleanup */
+free_bufs:
+		mem_free(buf);
+		if (resp) {
+			ctrl_msg__free_unpacked(resp, NULL);
+			resp = NULL;
+		}
+	}
+}
+
+/* Async and sync request sends the control msg through this thread.
+ * Async thread will register callback, which will be invoked in ctrl_rx_thread, once received the response.
+ * Sync thread will block for response (in its own context) after submission of ctrl_msg to ctrl_tx_q */
+static void ctrl_tx_thread(void const *arg)
+{
+	ctrl_cmd_t *app_req = NULL;
+
+#if 0
+	ctrl_tx_ind_t ctrl_tx_func;
+	ctrl_tx_func = (ctrl_tx_ind_t) arg;
+
+	/* 1. Get callback for synchronous procedure
+	 * for semaphore post */
+	if (!ctrl_tx_func) {
+		printf("ERROR: NULL tx async cb for esp_queue,sem\n");
+		return;
+	}
+#endif
+
+	/* 2. If serial interface is not available, exit */
+	if (!serial_drv_open(SERIAL_IF_FILE)) {
+		printf("Exiting thread, handle invalid\n");
+		return;
+	}
+
+	/* 3. This queue should already be created
+	 * if NULL, exit here */
+	if (!ctrl_tx_q) {
+		printf("Ctrl msg tx Q is not created\n");
+		return;
+	}
+
+	/* 4. Infinite loop to process incoming msg on serial interface */
+	while (1) {
+
+		/* 4.1 Block on read of protobuf encoded msg */
+		if (is_ctrl_lib_state(CTRL_LIB_STATE_INACTIVE)) {
+			sleep(1);
+			continue;
+		}
+
+		g_h.funcs->_h_get_semaphore(ctrl_tx_sem, HOSTED_BLOCKING);
+
+		app_req = esp_queue_get(ctrl_tx_q);
+		if (app_req) {
+			printf("app req tx[%p]\n", app_req);
+			process_ctrl_tx_msg(app_req);
+		} else {
+			printf("Ctrl Tx Q empty or uninitialised\n");
+			continue;
+		}
+	}
+}
+
+
+static int spawn_ctrl_threads(void)
+{
+	/* create new thread for control RX path handling */
+	ctrl_rx_thread_handle = g_h.funcs->_h_thread_create("ctrl_rx", DFLT_TASK_PRIO,
+			CTRL_PATH_TASK_STACK_SIZE, ctrl_rx_thread, ctrl_rx_ind);
+	ctrl_tx_thread_handle = g_h.funcs->_h_thread_create("ctrl_tx", DFLT_TASK_PRIO,
+			CTRL_PATH_TASK_STACK_SIZE, ctrl_tx_thread, NULL /*ctrl_tx_ind*/);
+	if (!ctrl_rx_thread_handle || !ctrl_tx_thread_handle) {
+		printf("Thread creation failed for ctrl_rx_thread\n");
+		return FAILURE;
+	}
+	return SUCCESS;
+}
+
+/* cancel thread for control RX path handling */
+static int cancel_ctrl_threads(void)
+{
+	int ret1 = 0, ret2 =0;
+
+	if (ctrl_rx_thread_handle)
+		ret1 = g_h.funcs->_h_thread_cancel(ctrl_rx_thread_handle);
+
+	if (ctrl_tx_thread_handle)
+		ret2 = g_h.funcs->_h_thread_cancel(ctrl_tx_thread_handle);
+
+	if (ret1 || ret2) {
+		printf("pthread_cancel ctrl threads failed\n");
+		return FAILURE;
+	}
+
+	return SUCCESS;
+}
+
+
+
+/* This function will be only invoked in synchrounous control response path,
+ * i.e. if control response callbcak is not available i.e. NULL
+ * This function is called after sending synchrounous control request to wait
+ * for the response using semaphores and esp_queue
+ **/
+static ctrl_cmd_t * get_response(int *read_len, int timeout_sec)
+{
+	void * data = NULL;
+	uint8_t * buf = NULL;
+	esp_queue_elem_t *elem = NULL;
+	int ret = 0;
+
+	/* 1. Any problems in response, return NULL */
+	if (!read_len) {
+		printf("Invalid input parameter\n");
+		return NULL;
+	}
+
+	/* 2. If timeout not specified, use default */
+	if (!timeout_sec)
+		timeout_sec = DEFAULT_CTRL_RESP_TIMEOUT;
+
+	/* 3. Wait for response */
+	ret = g_h.funcs->_h_get_semaphore(ctrl_rx_sem, timeout_sec);
+	if (ret) {
+		if (errno == ETIMEDOUT)
+			printf("Control response timed out after %u sec\n", timeout_sec);
+		else
+			printf("ctrl lib error[%u] in sem of timeout[%u]\n", errno, timeout_sec);
+		/* Unlock semaphore in negative case */
+		g_h.funcs->_h_post_semaphore(ctrl_req_sem);
+		return NULL;
+	}
+
+	/* 4. Fetch response from `esp_queue` */
+	data = esp_queue_get(ctrl_rx_q);
+	if (data) {
+		elem = (esp_queue_elem_t*)data;
+		if (!elem)
+			return NULL;
+
+		*read_len = elem->buf_len;
+		buf = elem->buf;
+		mem_free(elem);
+		/* Free queue element and return the rx data */
+		return (ctrl_cmd_t*)buf;
+
+	} else {
+		printf("Ctrl Q empty or uninitialised\n");
+		return NULL;
+	}
+
+	return NULL;
+}
+
+/* Check and call control response asynchronous callback if available
+ * else flag error
+ *     MSG_ID_OUT_OF_ORDER - if response id is not understandable
+ *     CALLBACK_NOT_REGISTERED - callback is not registered
+ **/
+static int call_async_resp_callback(ctrl_cmd_t *app_resp)
+{
+	if ((app_resp->msg_id <= CTRL_RESP_BASE) ||
+	    (app_resp->msg_id >= CTRL_RESP_MAX)) {
+		return MSG_ID_OUT_OF_ORDER;
+	}
+
+	if (ctrl_resp_cb_table[app_resp->msg_id-CTRL_RESP_BASE]) {
+		return ctrl_resp_cb_table[app_resp->msg_id-CTRL_RESP_BASE](app_resp);
+	}
+
+	return CALLBACK_NOT_REGISTERED;
+}
+
+/* Check and call control event asynchronous callback if available
+ * else flag error
+ *     MSG_ID_OUT_OF_ORDER - if event id is not understandable
+ *     CALLBACK_NOT_REGISTERED - callback is not registered
+ **/
+static int call_event_callback(ctrl_cmd_t *app_event)
+{
+	if ((app_event->msg_id <= CTRL_EVENT_BASE) ||
+	    (app_event->msg_id >= CTRL_EVENT_MAX)) {
+		return MSG_ID_OUT_OF_ORDER;
+	}
+
+	if (ctrl_event_cb_table[app_event->msg_id-CTRL_EVENT_BASE]) {
+		return ctrl_event_cb_table[app_event->msg_id-CTRL_EVENT_BASE](app_event);
+	}
+
+	return CALLBACK_NOT_REGISTERED;
+}
+
+/* Set asynchronous control response callback from control **request**
+ * In case of synchronous request, `resp_cb` will be NULL and table
+ * `ctrl_resp_cb_table` will be updated with NULL
+ * In case of asynchronous request, valid callback will be cached
+ **/
+static int set_async_resp_callback(int req_msg_id, ctrl_resp_cb_t resp_cb)
+{
+	/* Assign(Replace) response callback passed */
+	int exp_resp_msg_id = (req_msg_id - CTRL_REQ_BASE + CTRL_RESP_BASE);
+	if (exp_resp_msg_id >= CTRL_RESP_MAX) {
+		printf("Not able to map new request to resp id\n");
+		return MSG_ID_OUT_OF_ORDER;
+	} else {
+		ctrl_resp_cb_table[exp_resp_msg_id-CTRL_RESP_BASE] = resp_cb;
+		return CALLBACK_SET_SUCCESS;
+	}
+}
+
+/* Set asynchronous control response callback from control **response**
+ * In case of synchronous request, `resp_cb` will be NULL and table
+ * `ctrl_resp_cb_table` will be updated with NULL
+ * In case of asynchronous request, valid callback will be cached
+ **/
+static int is_async_resp_callback_registered_by_resp_msg_id(int resp_msg_id)
+{
+	if ((resp_msg_id <= CTRL_RESP_BASE) || (resp_msg_id >= CTRL_RESP_MAX)) {
+		printf("resp id[%u] out of range\n", resp_msg_id);
+		return MSG_ID_OUT_OF_ORDER;
+	}
+
+	if (ctrl_resp_cb_table[resp_msg_id-CTRL_RESP_BASE]) {
+		return CALLBACK_AVAILABLE;
+	}
+
+	return CALLBACK_NOT_REGISTERED;
+}
+
+
+
+/* Check if async control response callback is available
+ * Returns CALLBACK_AVAILABLE if a non NULL asynchrounous control response
+ * callback is available. It will return failure -
+ *     MSG_ID_OUT_OF_ORDER - if request msg id is unsupported
+ *     CALLBACK_NOT_REGISTERED - if aync callback is not available
+ **/
+int is_async_resp_callback_registered(ctrl_cmd_t req)
+{
+	int exp_resp_msg_id = (req.msg_id - CTRL_REQ_BASE + CTRL_RESP_BASE);
+	if (exp_resp_msg_id >= CTRL_RESP_MAX) {
+		printf("Not able to map new request to resp id, using sync path\n");
+		return MSG_ID_OUT_OF_ORDER;
+	}
+
+	if (ctrl_resp_cb_table[exp_resp_msg_id-CTRL_RESP_BASE]) {
+		return CALLBACK_AVAILABLE;
+	}
+
+	return CALLBACK_NOT_REGISTERED;
+}
+
+/* Set control event callback
+ * `ctrl_event_cb_table` will be updated with NULL by default
+ * when user sets event callback, user provided function pointer
+ * will be registered with user function
+ * If user does not register event callback,
+ * events received from ESP32 will be dropped
+ **/
+int set_event_callback(int event, ctrl_resp_cb_t event_cb)
+{
+	int event_cb_tbl_idx = event - CTRL_EVENT_BASE;
+
+	if ((event<=CTRL_EVENT_BASE) || (event>=CTRL_EVENT_MAX)) {
+		printf("Could not identify event[%u]\n", event);
+		return MSG_ID_OUT_OF_ORDER;
+	}
+	ctrl_event_cb_table[event_cb_tbl_idx] = event_cb;
+	return CALLBACK_SET_SUCCESS;
+}
+
+/* Assign NULL event callback */
+int reset_event_callback(int event)
+{
+	return set_event_callback(event, NULL);
+}
+
+/* This is only used in synchrounous control path
+ * When request is sent without async callback, this function will be called
+ * It will wait for control response or timeout for control response
+ **/
+ctrl_cmd_t * ctrl_wait_and_parse_sync_resp(ctrl_cmd_t *app_req)
+{
+	ctrl_cmd_t * rx_buf = NULL;
+	int rx_buf_len = 0;
+
+	rx_buf = get_response(&rx_buf_len, app_req->cmd_timeout_sec);
+	if (!rx_buf || !rx_buf_len) {
+		printf("Response not received for [%x]\n", app_req->msg_id);
+		if (rx_buf) {
+			mem_free(rx_buf);
+		}
+	}
+	return rx_buf;
+}
+
+
+/* This function is called for async procedure
+ * Timer started when async control req is received
+ * But there was no response in due time, this function will
+ * be called to send error to application
+ * */
+//static void ctrl_async_timeout_handler(void const *arg)
+static void ctrl_async_timeout_handler(void *arg)
+{
+	ctrl_cmd_t *app_req = (ctrl_cmd_t *)arg;
+
+	if (!app_req || !app_req->ctrl_resp_cb) {
+	  if (!app_req)
+		printf("%s:%u NULL app_req\n",__func__, __LINE__);
+
+	  if (!app_req->ctrl_resp_cb)
+		printf("%s:%u NULL app_req->resp_cb\n",__func__, __LINE__);
+	  return;
+	}
+
+	printf("ASYNC Timeout for req [0x%x]\n",app_req->msg_id);
+	ctrl_resp_cb_t func = app_req->ctrl_resp_cb;
+	ctrl_cmd_t *app_resp = NULL;
+	app_resp = (ctrl_cmd_t *)g_h.funcs->_h_malloc(sizeof(ctrl_cmd_t));
+	if (!app_resp) {
+		printf("Failed to allocate app_resp\n");
+		return;
+	}
+	app_resp->msg_id = app_req->msg_id - CTRL_MSG_ID__Req_Base + CTRL_MSG_ID__Resp_Base;
+	app_resp->msg_type = CTRL_RESP;
+	app_resp->resp_event_status = CTRL_ERR_REQUEST_TIMEOUT;
+
+	/* call func pointer to notify failure */
+	func(app_resp);
+
+	/* Unlock semaphore in negative case */
+	g_h.funcs->_h_post_semaphore(ctrl_req_sem);
+}
+
+/* This is entry level function when control request APIs are used
+ * This function will encode control request in protobuf and send to ESP32
+ * It will copy application structure `ctrl_cmd_t` to
+ * protobuf control req `CtrlMsg`
+ **/
+int ctrl_app_send_req(ctrl_cmd_t *app_req)
+{
+	int       ret = SUCCESS;
+	ctrl_cmd_t *new_app_req = NULL;
+
+	if (!app_req) {
+		command_log("Invalid param in ctrl_app_send_req\n");
+		goto fail_req;
+	}
+	printf("app_req msgid : %x\n", app_req->msg_id);
+
+
+	/* 1. Check if any ongoing request present
+	 * Send failure in that case */
+	if (app_req->wait_prev_cmd_completion) {
+	  ret = g_h.funcs->_h_get_semaphore(ctrl_req_sem,
+		  app_req->wait_prev_cmd_completion);
+	  if (ret) {
+		command_log("prev command in progress\n");
+		goto fail_req;
+	  }
+	}
+
+	app_req->msg_type = CTRL_REQ;
+
+	new_app_req = (ctrl_cmd_t *)g_h.funcs->_h_calloc(1, sizeof(ctrl_cmd_t));
+	if (!new_app_req) {
+	  command_log("Alloc failed for new app req\n");
+	  goto fail_req;
+	}
+
+	g_h.funcs->_h_memcpy(new_app_req, app_req, sizeof(ctrl_cmd_t));
+	printf("app req put tx[%p]\n", new_app_req);
+	if (esp_queue_put(ctrl_tx_q, new_app_req)) {
+	  command_log("Failed to new app ctrl req in tx queue\n");
+	  g_h.funcs->_h_free(new_app_req);
+	  goto fail_req;
+	}
+
+	ctrl_tx_ind();
+
+
+	if (app_req->free_buffer_handle) {
+		if (app_req->free_buffer_func) {
+			app_req->free_buffer_func(app_req->free_buffer_handle);
+		}
+	}
+	return SUCCESS;
+
+fail_req:
+	if (app_req->free_buffer_handle) {
+		if (app_req->free_buffer_func) {
+			app_req->free_buffer_func(app_req->free_buffer_handle);
+		}
+	}
+
+	return FAILURE;
+}
 
 /* Process control msg (response or event) received from ESP32 */
 static int process_ctrl_rx_msg(CtrlMsg * proto_msg, ctrl_rx_ind_t ctrl_rx_func)
