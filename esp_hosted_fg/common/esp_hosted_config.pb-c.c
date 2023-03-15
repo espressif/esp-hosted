@@ -1402,96 +1402,6 @@ void   wifi_event_sta_wps_er_success__free_unpacked
   assert(message->base.descriptor == &wifi_event_sta_wps_er_success__descriptor);
   protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
 }
-void   wifi_event_ap_staconnected__init
-                     (WifiEventApStaconnected         *message)
-{
-  static const WifiEventApStaconnected init_value = WIFI_EVENT_AP_STACONNECTED__INIT;
-  *message = init_value;
-}
-size_t wifi_event_ap_staconnected__get_packed_size
-                     (const WifiEventApStaconnected *message)
-{
-  assert(message->base.descriptor == &wifi_event_ap_staconnected__descriptor);
-  return protobuf_c_message_get_packed_size ((const ProtobufCMessage*)(message));
-}
-size_t wifi_event_ap_staconnected__pack
-                     (const WifiEventApStaconnected *message,
-                      uint8_t       *out)
-{
-  assert(message->base.descriptor == &wifi_event_ap_staconnected__descriptor);
-  return protobuf_c_message_pack ((const ProtobufCMessage*)message, out);
-}
-size_t wifi_event_ap_staconnected__pack_to_buffer
-                     (const WifiEventApStaconnected *message,
-                      ProtobufCBuffer *buffer)
-{
-  assert(message->base.descriptor == &wifi_event_ap_staconnected__descriptor);
-  return protobuf_c_message_pack_to_buffer ((const ProtobufCMessage*)message, buffer);
-}
-WifiEventApStaconnected *
-       wifi_event_ap_staconnected__unpack
-                     (ProtobufCAllocator  *allocator,
-                      size_t               len,
-                      const uint8_t       *data)
-{
-  return (WifiEventApStaconnected *)
-     protobuf_c_message_unpack (&wifi_event_ap_staconnected__descriptor,
-                                allocator, len, data);
-}
-void   wifi_event_ap_staconnected__free_unpacked
-                     (WifiEventApStaconnected *message,
-                      ProtobufCAllocator *allocator)
-{
-  if(!message)
-    return;
-  assert(message->base.descriptor == &wifi_event_ap_staconnected__descriptor);
-  protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
-}
-void   wifi_event_ap_stadisconnected__init
-                     (WifiEventApStadisconnected         *message)
-{
-  static const WifiEventApStadisconnected init_value = WIFI_EVENT_AP_STADISCONNECTED__INIT;
-  *message = init_value;
-}
-size_t wifi_event_ap_stadisconnected__get_packed_size
-                     (const WifiEventApStadisconnected *message)
-{
-  assert(message->base.descriptor == &wifi_event_ap_stadisconnected__descriptor);
-  return protobuf_c_message_get_packed_size ((const ProtobufCMessage*)(message));
-}
-size_t wifi_event_ap_stadisconnected__pack
-                     (const WifiEventApStadisconnected *message,
-                      uint8_t       *out)
-{
-  assert(message->base.descriptor == &wifi_event_ap_stadisconnected__descriptor);
-  return protobuf_c_message_pack ((const ProtobufCMessage*)message, out);
-}
-size_t wifi_event_ap_stadisconnected__pack_to_buffer
-                     (const WifiEventApStadisconnected *message,
-                      ProtobufCBuffer *buffer)
-{
-  assert(message->base.descriptor == &wifi_event_ap_stadisconnected__descriptor);
-  return protobuf_c_message_pack_to_buffer ((const ProtobufCMessage*)message, buffer);
-}
-WifiEventApStadisconnected *
-       wifi_event_ap_stadisconnected__unpack
-                     (ProtobufCAllocator  *allocator,
-                      size_t               len,
-                      const uint8_t       *data)
-{
-  return (WifiEventApStadisconnected *)
-     protobuf_c_message_unpack (&wifi_event_ap_stadisconnected__descriptor,
-                                allocator, len, data);
-}
-void   wifi_event_ap_stadisconnected__free_unpacked
-                     (WifiEventApStadisconnected *message,
-                      ProtobufCAllocator *allocator)
-{
-  if(!message)
-    return;
-  assert(message->base.descriptor == &wifi_event_ap_stadisconnected__descriptor);
-  protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
-}
 void   wifi_event_ap_probe_req_rx__init
                      (WifiEventApProbeReqRx         *message)
 {
@@ -4552,49 +4462,49 @@ void   ctrl_msg__event__station_disconnect_from_ap__free_unpacked
   assert(message->base.descriptor == &ctrl_msg__event__station_disconnect_from_ap__descriptor);
   protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
 }
-void   ctrl_msg__event__station_disconnect_from_espsoft_ap__init
-                     (CtrlMsgEventStationDisconnectFromESPSoftAP         *message)
+void   ctrl_msg__event__ap__sta_con_or_disconnected__init
+                     (CtrlMsgEventAPStaConOrDisconnected         *message)
 {
-  static const CtrlMsgEventStationDisconnectFromESPSoftAP init_value = CTRL_MSG__EVENT__STATION_DISCONNECT_FROM_ESPSOFT_AP__INIT;
+  static const CtrlMsgEventAPStaConOrDisconnected init_value = CTRL_MSG__EVENT__AP__STA_CON_OR_DISCONNECTED__INIT;
   *message = init_value;
 }
-size_t ctrl_msg__event__station_disconnect_from_espsoft_ap__get_packed_size
-                     (const CtrlMsgEventStationDisconnectFromESPSoftAP *message)
+size_t ctrl_msg__event__ap__sta_con_or_disconnected__get_packed_size
+                     (const CtrlMsgEventAPStaConOrDisconnected *message)
 {
-  assert(message->base.descriptor == &ctrl_msg__event__station_disconnect_from_espsoft_ap__descriptor);
+  assert(message->base.descriptor == &ctrl_msg__event__ap__sta_con_or_disconnected__descriptor);
   return protobuf_c_message_get_packed_size ((const ProtobufCMessage*)(message));
 }
-size_t ctrl_msg__event__station_disconnect_from_espsoft_ap__pack
-                     (const CtrlMsgEventStationDisconnectFromESPSoftAP *message,
+size_t ctrl_msg__event__ap__sta_con_or_disconnected__pack
+                     (const CtrlMsgEventAPStaConOrDisconnected *message,
                       uint8_t       *out)
 {
-  assert(message->base.descriptor == &ctrl_msg__event__station_disconnect_from_espsoft_ap__descriptor);
+  assert(message->base.descriptor == &ctrl_msg__event__ap__sta_con_or_disconnected__descriptor);
   return protobuf_c_message_pack ((const ProtobufCMessage*)message, out);
 }
-size_t ctrl_msg__event__station_disconnect_from_espsoft_ap__pack_to_buffer
-                     (const CtrlMsgEventStationDisconnectFromESPSoftAP *message,
+size_t ctrl_msg__event__ap__sta_con_or_disconnected__pack_to_buffer
+                     (const CtrlMsgEventAPStaConOrDisconnected *message,
                       ProtobufCBuffer *buffer)
 {
-  assert(message->base.descriptor == &ctrl_msg__event__station_disconnect_from_espsoft_ap__descriptor);
+  assert(message->base.descriptor == &ctrl_msg__event__ap__sta_con_or_disconnected__descriptor);
   return protobuf_c_message_pack_to_buffer ((const ProtobufCMessage*)message, buffer);
 }
-CtrlMsgEventStationDisconnectFromESPSoftAP *
-       ctrl_msg__event__station_disconnect_from_espsoft_ap__unpack
+CtrlMsgEventAPStaConOrDisconnected *
+       ctrl_msg__event__ap__sta_con_or_disconnected__unpack
                      (ProtobufCAllocator  *allocator,
                       size_t               len,
                       const uint8_t       *data)
 {
-  return (CtrlMsgEventStationDisconnectFromESPSoftAP *)
-     protobuf_c_message_unpack (&ctrl_msg__event__station_disconnect_from_espsoft_ap__descriptor,
+  return (CtrlMsgEventAPStaConOrDisconnected *)
+     protobuf_c_message_unpack (&ctrl_msg__event__ap__sta_con_or_disconnected__descriptor,
                                 allocator, len, data);
 }
-void   ctrl_msg__event__station_disconnect_from_espsoft_ap__free_unpacked
-                     (CtrlMsgEventStationDisconnectFromESPSoftAP *message,
+void   ctrl_msg__event__ap__sta_con_or_disconnected__free_unpacked
+                     (CtrlMsgEventAPStaConOrDisconnected *message,
                       ProtobufCAllocator *allocator)
 {
   if(!message)
     return;
-  assert(message->base.descriptor == &ctrl_msg__event__station_disconnect_from_espsoft_ap__descriptor);
+  assert(message->base.descriptor == &ctrl_msg__event__ap__sta_con_or_disconnected__descriptor);
   protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
 }
 void   ctrl_msg__init
@@ -7469,134 +7379,6 @@ const ProtobufCMessageDescriptor wifi_event_sta_wps_er_success__descriptor =
   wifi_event_sta_wps_er_success__field_indices_by_name,
   1,  wifi_event_sta_wps_er_success__number_ranges,
   (ProtobufCMessageInit) wifi_event_sta_wps_er_success__init,
-  NULL,NULL,NULL    /* reserved[123] */
-};
-static const ProtobufCFieldDescriptor wifi_event_ap_staconnected__field_descriptors[3] =
-{
-  {
-    "mac",
-    1,
-    PROTOBUF_C_LABEL_NONE,
-    PROTOBUF_C_TYPE_BYTES,
-    0,   /* quantifier_offset */
-    offsetof(WifiEventApStaconnected, mac),
-    NULL,
-    NULL,
-    0,             /* flags */
-    0,NULL,NULL    /* reserved1,reserved2, etc */
-  },
-  {
-    "aid",
-    2,
-    PROTOBUF_C_LABEL_NONE,
-    PROTOBUF_C_TYPE_UINT32,
-    0,   /* quantifier_offset */
-    offsetof(WifiEventApStaconnected, aid),
-    NULL,
-    NULL,
-    0,             /* flags */
-    0,NULL,NULL    /* reserved1,reserved2, etc */
-  },
-  {
-    "is_mesh_child",
-    3,
-    PROTOBUF_C_LABEL_NONE,
-    PROTOBUF_C_TYPE_BOOL,
-    0,   /* quantifier_offset */
-    offsetof(WifiEventApStaconnected, is_mesh_child),
-    NULL,
-    NULL,
-    0,             /* flags */
-    0,NULL,NULL    /* reserved1,reserved2, etc */
-  },
-};
-static const unsigned wifi_event_ap_staconnected__field_indices_by_name[] = {
-  1,   /* field[1] = aid */
-  2,   /* field[2] = is_mesh_child */
-  0,   /* field[0] = mac */
-};
-static const ProtobufCIntRange wifi_event_ap_staconnected__number_ranges[1 + 1] =
-{
-  { 1, 0 },
-  { 0, 3 }
-};
-const ProtobufCMessageDescriptor wifi_event_ap_staconnected__descriptor =
-{
-  PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
-  "wifi_event_ap_staconnected",
-  "WifiEventApStaconnected",
-  "WifiEventApStaconnected",
-  "",
-  sizeof(WifiEventApStaconnected),
-  3,
-  wifi_event_ap_staconnected__field_descriptors,
-  wifi_event_ap_staconnected__field_indices_by_name,
-  1,  wifi_event_ap_staconnected__number_ranges,
-  (ProtobufCMessageInit) wifi_event_ap_staconnected__init,
-  NULL,NULL,NULL    /* reserved[123] */
-};
-static const ProtobufCFieldDescriptor wifi_event_ap_stadisconnected__field_descriptors[3] =
-{
-  {
-    "mac",
-    1,
-    PROTOBUF_C_LABEL_NONE,
-    PROTOBUF_C_TYPE_BYTES,
-    0,   /* quantifier_offset */
-    offsetof(WifiEventApStadisconnected, mac),
-    NULL,
-    NULL,
-    0,             /* flags */
-    0,NULL,NULL    /* reserved1,reserved2, etc */
-  },
-  {
-    "aid",
-    2,
-    PROTOBUF_C_LABEL_NONE,
-    PROTOBUF_C_TYPE_UINT32,
-    0,   /* quantifier_offset */
-    offsetof(WifiEventApStadisconnected, aid),
-    NULL,
-    NULL,
-    0,             /* flags */
-    0,NULL,NULL    /* reserved1,reserved2, etc */
-  },
-  {
-    "is_mesh_child",
-    3,
-    PROTOBUF_C_LABEL_NONE,
-    PROTOBUF_C_TYPE_BOOL,
-    0,   /* quantifier_offset */
-    offsetof(WifiEventApStadisconnected, is_mesh_child),
-    NULL,
-    NULL,
-    0,             /* flags */
-    0,NULL,NULL    /* reserved1,reserved2, etc */
-  },
-};
-static const unsigned wifi_event_ap_stadisconnected__field_indices_by_name[] = {
-  1,   /* field[1] = aid */
-  2,   /* field[2] = is_mesh_child */
-  0,   /* field[0] = mac */
-};
-static const ProtobufCIntRange wifi_event_ap_stadisconnected__number_ranges[1 + 1] =
-{
-  { 1, 0 },
-  { 0, 3 }
-};
-const ProtobufCMessageDescriptor wifi_event_ap_stadisconnected__descriptor =
-{
-  PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
-  "wifi_event_ap_stadisconnected",
-  "WifiEventApStadisconnected",
-  "WifiEventApStadisconnected",
-  "",
-  sizeof(WifiEventApStadisconnected),
-  3,
-  wifi_event_ap_stadisconnected__field_descriptors,
-  wifi_event_ap_stadisconnected__field_indices_by_name,
-  1,  wifi_event_ap_stadisconnected__number_ranges,
-  (ProtobufCMessageInit) wifi_event_ap_stadisconnected__init,
   NULL,NULL,NULL    /* reserved[123] */
 };
 static const ProtobufCFieldDescriptor wifi_event_ap_probe_req_rx__field_descriptors[2] =
@@ -10761,7 +10543,7 @@ const ProtobufCMessageDescriptor ctrl_msg__event__station_disconnect_from_ap__de
   (ProtobufCMessageInit) ctrl_msg__event__station_disconnect_from_ap__init,
   NULL,NULL,NULL    /* reserved[123] */
 };
-static const ProtobufCFieldDescriptor ctrl_msg__event__station_disconnect_from_espsoft_ap__field_descriptors[2] =
+static const ProtobufCFieldDescriptor ctrl_msg__event__ap__sta_con_or_disconnected__field_descriptors[5] =
 {
   {
     "resp",
@@ -10769,7 +10551,19 @@ static const ProtobufCFieldDescriptor ctrl_msg__event__station_disconnect_from_e
     PROTOBUF_C_LABEL_NONE,
     PROTOBUF_C_TYPE_INT32,
     0,   /* quantifier_offset */
-    offsetof(CtrlMsgEventStationDisconnectFromESPSoftAP, resp),
+    offsetof(CtrlMsgEventAPStaConOrDisconnected, resp),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "event_id",
+    2,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_INT32,
+    0,   /* quantifier_offset */
+    offsetof(CtrlMsgEventAPStaConOrDisconnected, event_id),
     NULL,
     NULL,
     0,             /* flags */
@@ -10777,39 +10571,66 @@ static const ProtobufCFieldDescriptor ctrl_msg__event__station_disconnect_from_e
   },
   {
     "mac",
-    2,
+    3,
     PROTOBUF_C_LABEL_NONE,
     PROTOBUF_C_TYPE_BYTES,
     0,   /* quantifier_offset */
-    offsetof(CtrlMsgEventStationDisconnectFromESPSoftAP, mac),
+    offsetof(CtrlMsgEventAPStaConOrDisconnected, mac),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "aid",
+    4,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_UINT32,
+    0,   /* quantifier_offset */
+    offsetof(CtrlMsgEventAPStaConOrDisconnected, aid),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "is_mesh_child",
+    5,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_BOOL,
+    0,   /* quantifier_offset */
+    offsetof(CtrlMsgEventAPStaConOrDisconnected, is_mesh_child),
     NULL,
     NULL,
     0,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
 };
-static const unsigned ctrl_msg__event__station_disconnect_from_espsoft_ap__field_indices_by_name[] = {
-  1,   /* field[1] = mac */
+static const unsigned ctrl_msg__event__ap__sta_con_or_disconnected__field_indices_by_name[] = {
+  3,   /* field[3] = aid */
+  1,   /* field[1] = event_id */
+  4,   /* field[4] = is_mesh_child */
+  2,   /* field[2] = mac */
   0,   /* field[0] = resp */
 };
-static const ProtobufCIntRange ctrl_msg__event__station_disconnect_from_espsoft_ap__number_ranges[1 + 1] =
+static const ProtobufCIntRange ctrl_msg__event__ap__sta_con_or_disconnected__number_ranges[1 + 1] =
 {
   { 1, 0 },
-  { 0, 2 }
+  { 0, 5 }
 };
-const ProtobufCMessageDescriptor ctrl_msg__event__station_disconnect_from_espsoft_ap__descriptor =
+const ProtobufCMessageDescriptor ctrl_msg__event__ap__sta_con_or_disconnected__descriptor =
 {
   PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
-  "CtrlMsg_Event_StationDisconnectFromESPSoftAP",
-  "CtrlMsgEventStationDisconnectFromESPSoftAP",
-  "CtrlMsgEventStationDisconnectFromESPSoftAP",
+  "CtrlMsg_Event_AP_StaConOrDisconnected",
+  "CtrlMsgEventAPStaConOrDisconnected",
+  "CtrlMsgEventAPStaConOrDisconnected",
   "",
-  sizeof(CtrlMsgEventStationDisconnectFromESPSoftAP),
-  2,
-  ctrl_msg__event__station_disconnect_from_espsoft_ap__field_descriptors,
-  ctrl_msg__event__station_disconnect_from_espsoft_ap__field_indices_by_name,
-  1,  ctrl_msg__event__station_disconnect_from_espsoft_ap__number_ranges,
-  (ProtobufCMessageInit) ctrl_msg__event__station_disconnect_from_espsoft_ap__init,
+  sizeof(CtrlMsgEventAPStaConOrDisconnected),
+  5,
+  ctrl_msg__event__ap__sta_con_or_disconnected__field_descriptors,
+  ctrl_msg__event__ap__sta_con_or_disconnected__field_indices_by_name,
+  1,  ctrl_msg__event__ap__sta_con_or_disconnected__number_ranges,
+  (ProtobufCMessageInit) ctrl_msg__event__ap__sta_con_or_disconnected__init,
   NULL,NULL,NULL    /* reserved[123] */
 };
 static const ProtobufCFieldDescriptor ctrl_msg__field_descriptors[65] =
@@ -11571,13 +11392,13 @@ static const ProtobufCFieldDescriptor ctrl_msg__field_descriptors[65] =
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
   {
-    "event_station_disconnect_from_ESP_SoftAP",
+    "event_ap_sta_conn_disconn",
     304,
     PROTOBUF_C_LABEL_NONE,
     PROTOBUF_C_TYPE_MESSAGE,
     offsetof(CtrlMsg, payload_case),
-    offsetof(CtrlMsg, event_station_disconnect_from_esp_softap),
-    &ctrl_msg__event__station_disconnect_from_espsoft_ap__descriptor,
+    offsetof(CtrlMsg, event_ap_sta_conn_disconn),
+    &ctrl_msg__event__ap__sta_con_or_disconnected__descriptor,
     NULL,
     0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
@@ -11596,10 +11417,10 @@ static const ProtobufCFieldDescriptor ctrl_msg__field_descriptors[65] =
   },
 };
 static const unsigned ctrl_msg__field_indices_by_name[] = {
+  63,   /* field[63] = event_ap_sta_conn_disconn */
   60,   /* field[60] = event_esp_init */
   61,   /* field[61] = event_heartbeat */
   62,   /* field[62] = event_station_disconnect_from_AP */
-  63,   /* field[63] = event_station_disconnect_from_ESP_SoftAP */
   64,   /* field[64] = event_wifi_event_no_args */
   1,   /* field[1] = msg_id */
   0,   /* field[0] = msg_type */
@@ -11986,7 +11807,7 @@ static const ProtobufCEnumValue ctrl_msg_id__enum_values_by_number[70] =
   { "Event_ESPInit", "CTRL_MSG_ID__Event_ESPInit", 301 },
   { "Event_Heartbeat", "CTRL_MSG_ID__Event_Heartbeat", 302 },
   { "Event_StationDisconnectFromAP", "CTRL_MSG_ID__Event_StationDisconnectFromAP", 303 },
-  { "Event_StationDisconnectFromESPSoftAP", "CTRL_MSG_ID__Event_StationDisconnectFromESPSoftAP", 304 },
+  { "Event_AP_StaConnDisconn", "CTRL_MSG_ID__Event_AP_StaConnDisconn", 304 },
   { "Event_WifiEventNoArgs", "CTRL_MSG_ID__Event_WifiEventNoArgs", 305 },
   { "Event_Max", "CTRL_MSG_ID__Event_Max", 306 },
 };
@@ -11995,12 +11816,12 @@ static const ProtobufCIntRange ctrl_msg_id__value_ranges[] = {
 };
 static const ProtobufCEnumValueIndex ctrl_msg_id__enum_values_by_name[70] =
 {
+  { "Event_AP_StaConnDisconn", 67 },
   { "Event_Base", 63 },
   { "Event_ESPInit", 64 },
   { "Event_Heartbeat", 65 },
   { "Event_Max", 69 },
   { "Event_StationDisconnectFromAP", 66 },
-  { "Event_StationDisconnectFromESPSoftAP", 67 },
   { "Event_WifiEventNoArgs", 68 },
   { "MsgId_Invalid", 0 },
   { "Req_Base", 1 },

@@ -113,11 +113,14 @@ static int ctrl_app_event_callback(ctrl_cmd_t * app_event)
 			printf("%s App EVENT: Station mode: Disconnect Reason[%u]\n\r",
 				get_timestamp(ts, MIN_TIMESTAMP_STR_SIZE), app_event->resp_event_status);
 			break;
-		} case CTRL_EVENT_STATION_DISCONNECT_FROM_ESP_SOFTAP: {
-			char *p = app_event->u.e_sta_disconnected.mac;
-			if (p && strlen(p)) {
-				printf("%s App EVENT: SoftAP mode: Disconnect MAC[%s]\n\r",
-					get_timestamp(ts, MIN_TIMESTAMP_STR_SIZE), p);
+		} case CTRL_EVENT_AP_STA_CONN_DISCONN: {
+			wifi_event_ap_staconnected_t *p_e = &app_event->u.e_wifi_ap_staconnected;
+			if (p_e->mac && strlen((char*)p_e->mac)) {
+				printf("%s App EVENT: SoftAP mode: %sconnected MAC[%s]\n\r",
+					get_timestamp(ts, MIN_TIMESTAMP_STR_SIZE),
+					p_e->wifi_event_id==WIFI_EVENT_AP_STADISCONNECTED? "dis": "",
+					p_e->mac);
+				g_h.funcs->_h_event_wifi_post(p_e->wifi_event_id, p_e, sizeof(wifi_event_ap_staconnected_t), HOSTED_BLOCK_MAX);
 			}
 			break;
 		} case CTRL_EVENT_WIFI_EVENT_NO_ARGS: {
@@ -263,7 +266,7 @@ int register_event_callbacks(void)
 		{ CTRL_EVENT_ESP_INIT,                           ctrl_app_event_callback },
 		{ CTRL_EVENT_HEARTBEAT,                          ctrl_app_event_callback },
 		{ CTRL_EVENT_STATION_DISCONNECT_FROM_AP,         ctrl_app_event_callback },
-		{ CTRL_EVENT_STATION_DISCONNECT_FROM_ESP_SOFTAP, ctrl_app_event_callback },
+		{ CTRL_EVENT_AP_STA_CONN_DISCONN,                ctrl_app_event_callback },
 		{ CTRL_EVENT_WIFI_EVENT_NO_ARGS,                 ctrl_app_event_callback },
 	};
 
@@ -1027,6 +1030,7 @@ int test_wifi_set_config(int interface, wifi_config_t *conf)
 
 	g_h.funcs->_h_memcpy(&req.u.wifi_config, conf, sizeof(wifi_config_t));
 
+	req.u.wifi_config.iface = interface;
 	resp = wifi_set_config(req);
 	return ctrl_app_resp_callback(resp);
 }

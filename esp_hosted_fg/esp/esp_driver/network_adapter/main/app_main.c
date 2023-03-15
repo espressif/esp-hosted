@@ -326,7 +326,7 @@ void send_event_to_host(int event_id)
 	protocomm_pserial_data_ready(pc_pserial, NULL, 0, event_id);
 }
 
-void send_event_data_to_host(int event_id, uint8_t *data, int size)
+void send_event_data_to_host(int event_id, void *data, int size)
 {
 	protocomm_pserial_data_ready(pc_pserial, data, size, event_id);
 }

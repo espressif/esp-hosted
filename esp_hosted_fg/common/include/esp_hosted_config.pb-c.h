@@ -46,8 +46,6 @@ typedef struct WifiEventStaAuthmodeChange WifiEventStaAuthmodeChange;
 typedef struct WifiEventStaWpsErPin WifiEventStaWpsErPin;
 typedef struct ApCred ApCred;
 typedef struct WifiEventStaWpsErSuccess WifiEventStaWpsErSuccess;
-typedef struct WifiEventApStaconnected WifiEventApStaconnected;
-typedef struct WifiEventApStadisconnected WifiEventApStadisconnected;
 typedef struct WifiEventApProbeReqRx WifiEventApProbeReqRx;
 typedef struct WifiEventBssRssiLow WifiEventBssRssiLow;
 typedef struct WifiFtmReportEntry WifiFtmReportEntry;
@@ -116,7 +114,7 @@ typedef struct CtrlMsgEventWifiEventNoArgs CtrlMsgEventWifiEventNoArgs;
 typedef struct CtrlMsgEventESPInit CtrlMsgEventESPInit;
 typedef struct CtrlMsgEventHeartbeat CtrlMsgEventHeartbeat;
 typedef struct CtrlMsgEventStationDisconnectFromAP CtrlMsgEventStationDisconnectFromAP;
-typedef struct CtrlMsgEventStationDisconnectFromESPSoftAP CtrlMsgEventStationDisconnectFromESPSoftAP;
+typedef struct CtrlMsgEventAPStaConOrDisconnected CtrlMsgEventAPStaConOrDisconnected;
 typedef struct CtrlMsg CtrlMsg;
 
 
@@ -266,7 +264,7 @@ typedef enum _CtrlMsgId {
   CTRL_MSG_ID__Event_ESPInit = 301,
   CTRL_MSG_ID__Event_Heartbeat = 302,
   CTRL_MSG_ID__Event_StationDisconnectFromAP = 303,
-  CTRL_MSG_ID__Event_StationDisconnectFromESPSoftAP = 304,
+  CTRL_MSG_ID__Event_AP_StaConnDisconn = 304,
   CTRL_MSG_ID__Event_WifiEventNoArgs = 305,
   /*
    * Add new control path command notification before Event_Max
@@ -1265,48 +1263,6 @@ struct  WifiEventStaWpsErSuccess
     , 0, 0,NULL }
 
 
-struct  WifiEventApStaconnected
-{
-  ProtobufCMessage base;
-  /*
-   **< 6bytes MAC address of the station connected to ESP32 soft-AP 
-   */
-  ProtobufCBinaryData mac;
-  /*
-   **< the aid that ESP32 soft-AP gives to the station connected to  
-   */
-  uint32_t aid;
-  /*
-   **< flag to identify mesh child 
-   */
-  protobuf_c_boolean is_mesh_child;
-};
-#define WIFI_EVENT_AP_STACONNECTED__INIT \
- { PROTOBUF_C_MESSAGE_INIT (&wifi_event_ap_staconnected__descriptor) \
-    , {0,NULL}, 0, 0 }
-
-
-struct  WifiEventApStadisconnected
-{
-  ProtobufCMessage base;
-  /*
-   **< 6bytes MAC address of the station disconnects to ESP32 soft-AP 
-   */
-  ProtobufCBinaryData mac;
-  /*
-   **< the aid that ESP32 soft-AP gave to the station disconnects to  
-   */
-  uint32_t aid;
-  /*
-   **< flag to identify mesh child 
-   */
-  protobuf_c_boolean is_mesh_child;
-};
-#define WIFI_EVENT_AP_STADISCONNECTED__INIT \
- { PROTOBUF_C_MESSAGE_INIT (&wifi_event_ap_stadisconnected__descriptor) \
-    , {0,NULL}, 0, 0 }
-
-
 /*
  ** Argument structure for WIFI_EVENT_AP_PROBEREQRECVED event 
  */
@@ -2144,15 +2100,18 @@ struct  CtrlMsgEventStationDisconnectFromAP
     , 0 }
 
 
-struct  CtrlMsgEventStationDisconnectFromESPSoftAP
+struct  CtrlMsgEventAPStaConOrDisconnected
 {
   ProtobufCMessage base;
   int32_t resp;
+  int32_t event_id;
   ProtobufCBinaryData mac;
+  uint32_t aid;
+  protobuf_c_boolean is_mesh_child;
 };
-#define CTRL_MSG__EVENT__STATION_DISCONNECT_FROM_ESPSOFT_AP__INIT \
- { PROTOBUF_C_MESSAGE_INIT (&ctrl_msg__event__station_disconnect_from_espsoft_ap__descriptor) \
-    , 0, {0,NULL} }
+#define CTRL_MSG__EVENT__AP__STA_CON_OR_DISCONNECTED__INIT \
+ { PROTOBUF_C_MESSAGE_INIT (&ctrl_msg__event__ap__sta_con_or_disconnected__descriptor) \
+    , 0, 0, {0,NULL}, 0, 0 }
 
 
 typedef enum {
@@ -2218,7 +2177,7 @@ typedef enum {
   CTRL_MSG__PAYLOAD_EVENT_ESP_INIT = 301,
   CTRL_MSG__PAYLOAD_EVENT_HEARTBEAT = 302,
   CTRL_MSG__PAYLOAD_EVENT_STATION_DISCONNECT_FROM__AP = 303,
-  CTRL_MSG__PAYLOAD_EVENT_STATION_DISCONNECT_FROM__ESP__SOFT_AP = 304,
+  CTRL_MSG__PAYLOAD_EVENT_AP_STA_CONN_DISCONN = 304,
   CTRL_MSG__PAYLOAD_EVENT_WIFI_EVENT_NO_ARGS = 305
     PROTOBUF_C__FORCE_ENUM_TO_BE_INT_SIZE(CTRL_MSG__PAYLOAD__CASE)
 } CtrlMsg__PayloadCase;
@@ -2306,7 +2265,7 @@ struct  CtrlMsg
     CtrlMsgEventESPInit *event_esp_init;
     CtrlMsgEventHeartbeat *event_heartbeat;
     CtrlMsgEventStationDisconnectFromAP *event_station_disconnect_from_ap;
-    CtrlMsgEventStationDisconnectFromESPSoftAP *event_station_disconnect_from_esp_softap;
+    CtrlMsgEventAPStaConOrDisconnected *event_ap_sta_conn_disconn;
     CtrlMsgEventWifiEventNoArgs *event_wifi_event_no_args;
   };
 };
@@ -2903,44 +2862,6 @@ WifiEventStaWpsErSuccess *
                       const uint8_t       *data);
 void   wifi_event_sta_wps_er_success__free_unpacked
                      (WifiEventStaWpsErSuccess *message,
-                      ProtobufCAllocator *allocator);
-/* WifiEventApStaconnected methods */
-void   wifi_event_ap_staconnected__init
-                     (WifiEventApStaconnected         *message);
-size_t wifi_event_ap_staconnected__get_packed_size
-                     (const WifiEventApStaconnected   *message);
-size_t wifi_event_ap_staconnected__pack
-                     (const WifiEventApStaconnected   *message,
-                      uint8_t             *out);
-size_t wifi_event_ap_staconnected__pack_to_buffer
-                     (const WifiEventApStaconnected   *message,
-                      ProtobufCBuffer     *buffer);
-WifiEventApStaconnected *
-       wifi_event_ap_staconnected__unpack
-                     (ProtobufCAllocator  *allocator,
-                      size_t               len,
-                      const uint8_t       *data);
-void   wifi_event_ap_staconnected__free_unpacked
-                     (WifiEventApStaconnected *message,
-                      ProtobufCAllocator *allocator);
-/* WifiEventApStadisconnected methods */
-void   wifi_event_ap_stadisconnected__init
-                     (WifiEventApStadisconnected         *message);
-size_t wifi_event_ap_stadisconnected__get_packed_size
-                     (const WifiEventApStadisconnected   *message);
-size_t wifi_event_ap_stadisconnected__pack
-                     (const WifiEventApStadisconnected   *message,
-                      uint8_t             *out);
-size_t wifi_event_ap_stadisconnected__pack_to_buffer
-                     (const WifiEventApStadisconnected   *message,
-                      ProtobufCBuffer     *buffer);
-WifiEventApStadisconnected *
-       wifi_event_ap_stadisconnected__unpack
-                     (ProtobufCAllocator  *allocator,
-                      size_t               len,
-                      const uint8_t       *data);
-void   wifi_event_ap_stadisconnected__free_unpacked
-                     (WifiEventApStadisconnected *message,
                       ProtobufCAllocator *allocator);
 /* WifiEventApProbeReqRx methods */
 void   wifi_event_ap_probe_req_rx__init
@@ -4234,24 +4155,24 @@ CtrlMsgEventStationDisconnectFromAP *
 void   ctrl_msg__event__station_disconnect_from_ap__free_unpacked
                      (CtrlMsgEventStationDisconnectFromAP *message,
                       ProtobufCAllocator *allocator);
-/* CtrlMsgEventStationDisconnectFromESPSoftAP methods */
-void   ctrl_msg__event__station_disconnect_from_espsoft_ap__init
-                     (CtrlMsgEventStationDisconnectFromESPSoftAP         *message);
-size_t ctrl_msg__event__station_disconnect_from_espsoft_ap__get_packed_size
-                     (const CtrlMsgEventStationDisconnectFromESPSoftAP   *message);
-size_t ctrl_msg__event__station_disconnect_from_espsoft_ap__pack
-                     (const CtrlMsgEventStationDisconnectFromESPSoftAP   *message,
+/* CtrlMsgEventAPStaConOrDisconnected methods */
+void   ctrl_msg__event__ap__sta_con_or_disconnected__init
+                     (CtrlMsgEventAPStaConOrDisconnected         *message);
+size_t ctrl_msg__event__ap__sta_con_or_disconnected__get_packed_size
+                     (const CtrlMsgEventAPStaConOrDisconnected   *message);
+size_t ctrl_msg__event__ap__sta_con_or_disconnected__pack
+                     (const CtrlMsgEventAPStaConOrDisconnected   *message,
                       uint8_t             *out);
-size_t ctrl_msg__event__station_disconnect_from_espsoft_ap__pack_to_buffer
-                     (const CtrlMsgEventStationDisconnectFromESPSoftAP   *message,
+size_t ctrl_msg__event__ap__sta_con_or_disconnected__pack_to_buffer
+                     (const CtrlMsgEventAPStaConOrDisconnected   *message,
                       ProtobufCBuffer     *buffer);
-CtrlMsgEventStationDisconnectFromESPSoftAP *
-       ctrl_msg__event__station_disconnect_from_espsoft_ap__unpack
+CtrlMsgEventAPStaConOrDisconnected *
+       ctrl_msg__event__ap__sta_con_or_disconnected__unpack
                      (ProtobufCAllocator  *allocator,
                       size_t               len,
                       const uint8_t       *data);
-void   ctrl_msg__event__station_disconnect_from_espsoft_ap__free_unpacked
-                     (CtrlMsgEventStationDisconnectFromESPSoftAP *message,
+void   ctrl_msg__event__ap__sta_con_or_disconnected__free_unpacked
+                     (CtrlMsgEventAPStaConOrDisconnected *message,
                       ProtobufCAllocator *allocator);
 /* CtrlMsg methods */
 void   ctrl_msg__init
@@ -4366,12 +4287,6 @@ typedef void (*ApCred_Closure)
                   void *closure_data);
 typedef void (*WifiEventStaWpsErSuccess_Closure)
                  (const WifiEventStaWpsErSuccess *message,
-                  void *closure_data);
-typedef void (*WifiEventApStaconnected_Closure)
-                 (const WifiEventApStaconnected *message,
-                  void *closure_data);
-typedef void (*WifiEventApStadisconnected_Closure)
-                 (const WifiEventApStadisconnected *message,
                   void *closure_data);
 typedef void (*WifiEventApProbeReqRx_Closure)
                  (const WifiEventApProbeReqRx *message,
@@ -4577,8 +4492,8 @@ typedef void (*CtrlMsgEventHeartbeat_Closure)
 typedef void (*CtrlMsgEventStationDisconnectFromAP_Closure)
                  (const CtrlMsgEventStationDisconnectFromAP *message,
                   void *closure_data);
-typedef void (*CtrlMsgEventStationDisconnectFromESPSoftAP_Closure)
-                 (const CtrlMsgEventStationDisconnectFromESPSoftAP *message,
+typedef void (*CtrlMsgEventAPStaConOrDisconnected_Closure)
+                 (const CtrlMsgEventAPStaConOrDisconnected *message,
                   void *closure_data);
 typedef void (*CtrlMsg_Closure)
                  (const CtrlMsg *message,
@@ -4628,8 +4543,6 @@ extern const ProtobufCMessageDescriptor wifi_event_sta_authmode_change__descript
 extern const ProtobufCMessageDescriptor wifi_event_sta_wps_er_pin__descriptor;
 extern const ProtobufCMessageDescriptor ap_cred__descriptor;
 extern const ProtobufCMessageDescriptor wifi_event_sta_wps_er_success__descriptor;
-extern const ProtobufCMessageDescriptor wifi_event_ap_staconnected__descriptor;
-extern const ProtobufCMessageDescriptor wifi_event_ap_stadisconnected__descriptor;
 extern const ProtobufCMessageDescriptor wifi_event_ap_probe_req_rx__descriptor;
 extern const ProtobufCMessageDescriptor wifi_event_bss_rssi_low__descriptor;
 extern const ProtobufCMessageDescriptor wifi_ftm_report_entry__descriptor;
@@ -4698,7 +4611,7 @@ extern const ProtobufCMessageDescriptor ctrl_msg__event__wifi_event_no_args__des
 extern const ProtobufCMessageDescriptor ctrl_msg__event__espinit__descriptor;
 extern const ProtobufCMessageDescriptor ctrl_msg__event__heartbeat__descriptor;
 extern const ProtobufCMessageDescriptor ctrl_msg__event__station_disconnect_from_ap__descriptor;
-extern const ProtobufCMessageDescriptor ctrl_msg__event__station_disconnect_from_espsoft_ap__descriptor;
+extern const ProtobufCMessageDescriptor ctrl_msg__event__ap__sta_con_or_disconnected__descriptor;
 extern const ProtobufCMessageDescriptor ctrl_msg__descriptor;
 
 PROTOBUF_C__END_DECLS
