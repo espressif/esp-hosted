@@ -49,6 +49,6 @@ esp_err_t data_transfer_handler(uint32_t session_id,const uint8_t *inbuf,
 esp_err_t ctrl_notify_handler(uint32_t session_id,const uint8_t *inbuf,
 		ssize_t inlen, uint8_t **outbuf, ssize_t *outlen, void *priv_data);
 void send_event_to_host(int event_id);
-void send_event_data_to_host(int event_id, uint8_t *data, int size);
+void send_event_data_to_host(int event_id, void *data, int size);
 
 #endif /*__SLAVE_CONTROL__H__*/

@@ -301,21 +301,25 @@ static int ctrl_app_parse_event(CtrlMsg *ctrl_msg, ctrl_cmd_t *app_ntfy)
 				ctrl_msg->event_station_disconnect_from_ap->resp);*/
 		app_ntfy->resp_event_status = ctrl_msg->event_station_disconnect_from_ap->resp;
 		break;
-	} case CTRL_EVENT_STATION_DISCONNECT_FROM_ESP_SOFTAP: {
-		CTRL_FAIL_ON_NULL(event_station_disconnect_from_esp_softap);
-		app_ntfy->resp_event_status =
-			ctrl_msg->event_station_disconnect_from_esp_softap->resp;
+	} case CTRL_EVENT_AP_STA_CONN_DISCONN: {
+		/* e_wifi_ap_staconnected or e_wifi_ap_stadisconnected, both point to same memory */
+		wifi_event_ap_staconnected_t * p_a = &(app_ntfy->u.e_wifi_ap_staconnected);
+		CtrlMsgEventAPStaConOrDisconnected * p_c = ctrl_msg->event_ap_sta_conn_disconn;
+
+		CTRL_FAIL_ON_NULL(event_ap_sta_conn_disconn);
+		app_ntfy->resp_event_status = p_c->resp;
 
 		if(SUCCESS==app_ntfy->resp_event_status) {
-			CTRL_FAIL_ON_NULL_PRINT(
-				ctrl_msg->event_station_disconnect_from_esp_softap->mac.data,
-				"NULL mac");
-			strncpy(app_ntfy->u.e_sta_disconnected.mac,
-				(char *)ctrl_msg->event_station_disconnect_from_esp_softap->mac.data,
-				ctrl_msg->event_station_disconnect_from_esp_softap->mac.len);
+			CTRL_FAIL_ON_NULL_PRINT(p_c->mac.data, "NULL mac");
+			strncpy((char*)p_a->mac, (char *)p_c->mac.data, p_c->mac.len);
 			/*printf("EVENT: SoftAP mode: Disconnect MAC[%s]\n",
-				app_ntfy->u.e_sta_disconnected.mac);*/
+				app_ntfy->u.e_ap_staconn_stadisconn.mac);*/
 		}
+
+		p_a->wifi_event_id = p_c->event_id;
+		p_a->aid = p_c->aid;
+		p_a->is_mesh_child = p_c->is_mesh_child;
+
 		break;
     } case CTRL_EVENT_WIFI_EVENT_NO_ARGS: {
 		CTRL_FAIL_ON_NULL(event_wifi_event_no_args);
@@ -1126,12 +1130,13 @@ static int process_ctrl_tx_msg(ctrl_cmd_t *app_req)
 		req_payload->iface = p_a->iface;
 
 		CTRL_ALLOC_ELEMENT(WifiConfig, req_payload->cfg, wifi_config__init);
-		printf("%s:%u req_payload->cfg: 0x%p req_payload->cfg->sta\n",__func__, __LINE__, req_payload->cfg);
+		printf("%s:%u req_payload->cfg: 0x%p iface:%ld\n",__func__, __LINE__, req_payload->cfg, req_payload->iface);
 
 		switch(p_a->iface) {
 
 		case WIFI_IF_STA: {
 			req_payload->cfg->u_case = WIFI_CONFIG__U_STA;
+			printf("%s:%u sta: 0x%p\n",__func__, __LINE__, req_payload->cfg->sta);
 
 			wifi_sta_config_t *p_a_sta = &p_a->sta;
 			CTRL_ALLOC_ELEMENT(WifiStaConfig, req_payload->cfg->sta, wifi_sta_config__init);
@@ -1197,6 +1202,7 @@ static int process_ctrl_tx_msg(ctrl_cmd_t *app_req)
 			p_c_ap->beacon_interval = p_a_ap->beacon_interval;
 			p_c_ap->pairwise_cipher = p_a_ap->pairwise_cipher;
 			p_c_ap->ftm_responder = p_a_ap->ftm_responder;
+			CTRL_ALLOC_ELEMENT(WifiPmfConfig, p_c_ap->pmf_cfg, wifi_pmf_config__init);
 			p_c_ap->pmf_cfg->capable = p_a_ap->pmf_cfg.capable;
 			p_c_ap->pmf_cfg->required = p_a_ap->pmf_cfg.required;
 			break;
@@ -1569,7 +1575,9 @@ static void ctrl_tx_thread(void const *arg)
 			continue;
 		}
 
+		printf("%s:%u get ctrl_tx_sem\n",__func__,__LINE__);
 		g_h.funcs->_h_get_semaphore(ctrl_tx_sem, HOSTED_BLOCKING);
+		printf("%s:%u got ctrl_tx_sem\n",__func__,__LINE__);
 
 		app_req = esp_queue_get(ctrl_tx_q);
 		if (app_req) {
@@ -1641,8 +1649,10 @@ static ctrl_cmd_t * get_response(int *read_len, int timeout_sec)
 		timeout_sec = DEFAULT_CTRL_RESP_TIMEOUT;
 
 	/* 3. Wait for response */
+	printf("%s:%u get ctrl_rx_sem\n",__func__,__LINE__);
 	ret = g_h.funcs->_h_get_semaphore(ctrl_rx_sem, timeout_sec);
 	if (ret) {
+		printf("%s:%u FAIL ctrl_rx_sem\n",__func__,__LINE__);
 		if (errno == ETIMEDOUT)
 			printf("Control response timed out after %u sec\n", timeout_sec);
 		else
@@ -1651,6 +1661,7 @@ static ctrl_cmd_t * get_response(int *read_len, int timeout_sec)
 		g_h.funcs->_h_post_semaphore(ctrl_req_sem);
 		return NULL;
 	}
+	printf("%s:%u got ctrl_rx_sem\n",__func__,__LINE__);
 
 	/* 4. Fetch response from `esp_queue` */
 	data = esp_queue_get(ctrl_rx_q);
@@ -1874,13 +1885,16 @@ int ctrl_app_send_req(ctrl_cmd_t *app_req)
 	/* 1. Check if any ongoing request present
 	 * Send failure in that case */
 	if (app_req->wait_prev_cmd_completion) {
+	printf("%s:%u get ctrl_req_sem\n",__func__,__LINE__);
 	  ret = g_h.funcs->_h_get_semaphore(ctrl_req_sem,
 		  app_req->wait_prev_cmd_completion);
 	  if (ret) {
+	printf("%s:%u FAIL ctrl_req_sem\n",__func__,__LINE__);
 		command_log("prev command in progress\n");
 		goto fail_req;
 	  }
 	}
+	printf("%s:%u got ctrl_req_sem\n",__func__,__LINE__);
 
 	app_req->msg_type = CTRL_REQ;
 
@@ -1990,8 +2004,11 @@ int init_hosted_control_lib_internal(void)
 	}
 
 	/* Get semaphore for first time */
+	printf("%s:%u get ctrl_rx_sem\n",__func__,__LINE__);
 	g_h.funcs->_h_get_semaphore(ctrl_rx_sem, HOSTED_BLOCKING);
+	printf("%s:%u get ctrl_tx_sem\n",__func__,__LINE__);
 	g_h.funcs->_h_get_semaphore(ctrl_tx_sem, HOSTED_BLOCKING);
+	printf("%s:%u got \n",__func__,__LINE__);
 
 	/* serial init */
 	if (serial_init()) {

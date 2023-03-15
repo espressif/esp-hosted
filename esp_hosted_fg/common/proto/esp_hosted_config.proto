@@ -385,7 +385,7 @@ enum CtrlMsgId {
 	Event_ESPInit = 301;
 	Event_Heartbeat = 302;
 	Event_StationDisconnectFromAP = 303;
-	Event_StationDisconnectFromESPSoftAP = 304;
+	Event_AP_StaConnDisconn = 304;
 	Event_WifiEventNoArgs = 305;
 
 	/* Add new control path command notification before Event_Max
@@ -693,18 +693,6 @@ message        ap_cred {
 message        wifi_event_sta_wps_er_success {
 	uint32     ap_cred_cnt = 1;                 /**< Number of AP credentials received */
 	repeated   ap_cred ap_creds = 2;            /**< All AP credentials received from WPS handshake */
-}
-
-message        wifi_event_ap_staconnected {
-	bytes      mac = 1;                         /**< 6bytes MAC address of the station connected to ESP32 soft-AP */
-	uint32     aid = 2;                         /**< the aid that ESP32 soft-AP gives to the station connected to  */
-	bool       is_mesh_child = 3;               /**< flag to identify mesh child */
-}
-
-message        wifi_event_ap_stadisconnected {
-	bytes      mac = 1;                         /**< 6bytes MAC address of the station disconnects to ESP32 soft-AP */
-	uint32     aid = 2;                         /**< the aid that ESP32 soft-AP gave to the station disconnects to  */
-	bool       is_mesh_child = 3;               /**< flag to identify mesh child */
 }
 
 /** Argument structure for WIFI_EVENT_AP_PROBEREQRECVED event */
@@ -1042,9 +1030,12 @@ message CtrlMsg_Event_StationDisconnectFromAP {
 	int32 resp = 1;
 }
 
-message CtrlMsg_Event_StationDisconnectFromESPSoftAP {
+message CtrlMsg_Event_AP_StaConOrDisconnected {
 	int32 resp = 1;
-	bytes mac = 2;
+    int32 event_id = 2;
+	bytes mac = 3;
+    uint32 aid = 4;
+    bool is_mesh_child = 5;
 }
 
 message CtrlMsg {
@@ -1133,7 +1124,7 @@ message CtrlMsg {
 		CtrlMsg_Event_ESPInit event_esp_init = 301;
 		CtrlMsg_Event_Heartbeat event_heartbeat = 302;
 		CtrlMsg_Event_StationDisconnectFromAP event_station_disconnect_from_AP = 303;
-		CtrlMsg_Event_StationDisconnectFromESPSoftAP event_station_disconnect_from_ESP_SoftAP = 304;
+		CtrlMsg_Event_AP_StaConOrDisconnected event_ap_sta_conn_disconn = 304;
 		CtrlMsg_Event_WifiEventNoArgs event_wifi_event_no_args = 305;
 	}
 }

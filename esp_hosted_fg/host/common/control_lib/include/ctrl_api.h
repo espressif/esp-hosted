@@ -211,7 +211,7 @@ enum AppMsgId_e {
 	CTRL_EVENT_ESP_INIT        = CTRL_MSG_ID__Event_ESPInit,
 	CTRL_EVENT_HEARTBEAT       = CTRL_MSG_ID__Event_Heartbeat,
 	CTRL_EVENT_STATION_DISCONNECT_FROM_AP = CTRL_MSG_ID__Event_StationDisconnectFromAP,
-	CTRL_EVENT_STATION_DISCONNECT_FROM_ESP_SOFTAP = CTRL_MSG_ID__Event_StationDisconnectFromESPSoftAP,
+	CTRL_EVENT_AP_STA_CONN_DISCONN = CTRL_MSG_ID__Event_AP_StaConnDisconn,
 	CTRL_EVENT_WIFI_EVENT_NO_ARGS =  CTRL_MSG_ID__Event_WifiEventNoArgs,
 	/*
 	 * Add new control path command notification before Event_Max
@@ -512,6 +512,15 @@ typedef struct {
 } event_station_disconn_t;
 
 typedef struct {
+    uint8_t mac[6];
+    uint8_t aid;
+    bool is_mesh_child;
+	int32_t wifi_event_id;
+} wifi_event_ap_staconnected_t;
+
+typedef wifi_event_ap_staconnected_t wifi_event_ap_stadisconnected_t;
+
+typedef struct {
 	int32_t wifi_event_id;
 } event_wifi_simple_t;
 
@@ -549,6 +558,9 @@ typedef struct Ctrl_cmd_t {
 		event_station_disconn_t     e_sta_disconnected;
 
 		event_wifi_simple_t         e_wifi_simple;
+
+		wifi_event_ap_staconnected_t e_wifi_ap_staconnected;
+		wifi_event_ap_stadisconnected_t e_wifi_ap_stadisconnected;
 	}u;
 
 	/* By default this callback is set to NULL.
