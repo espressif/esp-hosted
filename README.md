@@ -109,8 +109,7 @@ Following table summarizes this entire discussion.
   </tr>
   <tr>
     <td>Wi-Fi Security Protocols</td>
-    <td>Open / WPA / WPA2 / <span style="font-weight:bold">WPA3</span></td>
-    <td>Open / WPA / WPA2</td>
+    <td colspan="2"  style="text-align:center">Open / WPA / WPA2 / WPA3</td>
   </tr>
   <tr>
     <td>Bluetooth features</td>
