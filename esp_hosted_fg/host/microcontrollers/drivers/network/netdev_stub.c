@@ -15,7 +15,8 @@
 // limitations under the License.
 
 #include "string.h"
-#include "app_main.h"
+//#include "app_main.h"
+#include "netdev_api.h"
 #include "os_wrapper.h"
 
 struct netdev *ndev_db[MAX_INTERFACE];

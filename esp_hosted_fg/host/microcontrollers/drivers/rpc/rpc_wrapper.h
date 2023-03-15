@@ -14,8 +14,8 @@
 // limitations under the License.
 
 /** prevent recursive inclusion **/
-#ifndef __CONTROL_H
-#define __CONTROL_H
+#ifndef __RPC_WRAPPER_H__
+#define __RPC_WRAPPER_H__
 
 #ifdef __cplusplus
 extern "C" {
@@ -40,95 +40,6 @@ typedef enum control_path_events_s {
 	SOFTAP_STOPPED
 } control_path_events_e;
 
-/* Possible operating modes are "STATION" or "SOFTAP" or "SOFTAP+STATION" */
-/* "SOFTAP+STATION" and "STATION+SOFTAP" are same */
-#ifndef INPUT__OPERATING_MODE
-#define INPUT__OPERATING_MODE             "SOFTAP+STATION"
-#endif
-
-/* Please refer commands.h for more details about below fields */
-#ifndef INPUT_STATION__SSID
-#define INPUT_STATION__SSID               "SaveEarth"
-#endif
-
-#ifndef INPUT_STATION_PASSWORD
-#define INPUT_STATION_PASSWORD            "PlantMoreTrees123"
-#endif
-
-#ifndef INPUT_STATION_BSSID
-#define INPUT_STATION_BSSID               ""
-#endif
-
-#ifndef INPUT_STATION_IS_WPA3_SUPPORTED
-#define INPUT_STATION_IS_WPA3_SUPPORTED   "no"
-#endif
-
-#ifndef INPUT_STATION_LISTEN_INTERVAL
-#define INPUT_STATION_LISTEN_INTERVAL     "3"
-#endif
-
-/* softap means, ESP will act as Access point */
-#ifndef INPUT_SOFTAP__SSID
-#define INPUT_SOFTAP__SSID                "MySoftAPName"
-#endif
-
-#ifndef INPUT_SOFTAP_PASSWORD
-#define INPUT_SOFTAP_PASSWORD             "MySoftAPPasswd"
-#endif
-
-/* Channel to be used on soft ap */
-#ifndef INPUT_SOFTAP_CHANNEL
-#define INPUT_SOFTAP_CHANNEL              "1"
-#endif
-
-#ifndef INPUT_SOFTAP_ENCRYPTION
-#define INPUT_SOFTAP_ENCRYPTION           "WPA2_PSK"
-#endif
-
-/* Software limit of Max clients attached to softAP. Max value possible is 10 */
-#ifndef INPUT_SOFTAP_MAX_CONN
-#define INPUT_SOFTAP_MAX_CONN             "4"
-#endif
-
-/* 0 -> visible */
-#ifndef INPUT_SOFTAP_SSID_HIDDEN
-#define INPUT_SOFTAP_SSID_HIDDEN          "no"
-#endif
-
-/* possible values, "HT20" "HT40" */
-#ifndef INPUT_SOFTAP_BANDWIDTH
-#define INPUT_SOFTAP_BANDWIDTH            "40"
-#endif
-
-
-/* periodically scan neighbouring APs */
-#ifndef INPUT_GET_AP_SCAN_LIST
-#define INPUT_GET_AP_SCAN_LIST            "yes"
-#endif
-
-/* stm32 station self ip */
-#ifndef INPUT_STATION_SRC_IP
-#define INPUT_STATION_SRC_IP              "192.168.43.233"
-#endif
-
-/* stm32 station self ip */
-#ifndef INPUT_SOFTAP_SRC_IP
-#define INPUT_SOFTAP_SRC_IP              "192.168.2.1"
-#endif
-
-/* station - ARP destination ip */
-#ifndef INPUT_STATION_ARP_DEST_IP
-#define INPUT_STATION_ARP_DEST_IP         "192.168.43.36"
-#endif
-
-/* softap - ARP destination ip */
-#ifndef INPUT_SOFTAP_ARP_DEST_IP
-#define INPUT_SOFTAP_ARP_DEST_IP          "192.168.2.22"
-#endif
-
-#define WIFI_MAX_STR_LEN                  19
-
-/** Exported Structures **/
 
 /** Exported variables **/
 
