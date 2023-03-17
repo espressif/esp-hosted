@@ -161,14 +161,14 @@ static void softap_event_handler(void *arg, esp_event_base_t event_base,
 		wifi_event_ap_staconnected_t *event = (wifi_event_ap_staconnected_t *) event_data;
 		ESP_LOGI(TAG, "station "MACSTR" join, AID=%d",
 				MAC2STR(event->mac), event->aid);
-		send_event_data_to_host(CTRL_MSG_ID__Event_AP_StaConnDisconn,
+		send_event_data_to_host(CTRL_MSG_ID__Event_AP_StaConnected,
 				event_data, sizeof(wifi_event_ap_staconnected_t));
 	} else if (event_id == WIFI_EVENT_AP_STADISCONNECTED) {
 		wifi_event_ap_stadisconnected_t *event =
 			(wifi_event_ap_stadisconnected_t *) event_data;
 		ESP_LOGI(TAG, "station "MACSTR" leave, AID=%d",
 				MAC2STR(event->mac), event->aid);
-		send_event_data_to_host(-1*CTRL_MSG_ID__Event_AP_StaConnDisconn,
+		send_event_data_to_host(CTRL_MSG_ID__Event_AP_StaDisconnected,
 				event_data, sizeof(wifi_event_ap_stadisconnected_t));
 	} else if (event_id == WIFI_EVENT_AP_START) {
 		esp_wifi_internal_reg_rxcb(ESP_IF_WIFI_AP, (wifi_rxcb_t) wlan_ap_rx_callback);
@@ -241,14 +241,14 @@ static void ap_scan_list_event_unregister(void)
 /* Function converts mac string to byte stream */
 static esp_err_t convert_mac_to_bytes(uint8_t *out, char *s)
 {
-	int mac[MAC_LEN] = {0};
+	int mac[BSSID_BYTES_SIZE] = {0};
 	int num_bytes = 0;
 	if (!s || (strlen(s) < MAC_STR_LEN))  {
 		return ESP_FAIL;
 	}
 	num_bytes =  sscanf(s, "%2x:%2x:%2x:%2x:%2x:%2x",
 			&mac[0],&mac[1], &mac[2], &mac[3], &mac[4], &mac[5]);
-	if ((num_bytes < MAC_LEN)  ||
+	if ((num_bytes < BSSID_BYTES_SIZE)  ||
 	    (mac[0] > 0xFF) ||
 	    (mac[1] > 0xFF) ||
 	    (mac[2] > 0xFF) ||
@@ -271,7 +271,7 @@ static esp_err_t req_get_mac_address_handler(CtrlMsg *req,
 		CtrlMsg *resp, void *priv_data)
 {
 	esp_err_t ret = ESP_OK;
-	uint8_t mac[MAC_LEN] = {0};
+	uint8_t mac[BSSID_BYTES_SIZE] = {0};
 	char mac_str[BSSID_LENGTH] = "";
 	CtrlMsgRespGetMacAddress *resp_payload = NULL;
 
@@ -413,7 +413,7 @@ static esp_err_t req_connect_ap_handler (CtrlMsg *req,
 		CtrlMsg *resp, void *priv_data)
 {
 	char mac_str[BSSID_LENGTH] = "";
-	uint8_t mac[MAC_LEN] = {0};
+	uint8_t mac[BSSID_BYTES_SIZE] = {0};
 	esp_err_t ret = ESP_OK;
 	wifi_config_t *wifi_cfg = NULL;
 	CtrlMsgRespConnectAP *resp_payload = NULL;
@@ -859,7 +859,7 @@ static esp_err_t req_start_softap_handler (CtrlMsg *req,
 {
 	esp_err_t ret = ESP_OK;
 	char mac_str[BSSID_LENGTH] = "";
-	uint8_t mac[MAC_LEN] = {0};
+	uint8_t mac[BSSID_BYTES_SIZE] = {0};
 	wifi_config_t *wifi_config = NULL;
 	CtrlMsgRespStartSoftAP *resp_payload = NULL;
 
@@ -1314,7 +1314,7 @@ static esp_err_t req_set_mac_address_handler (CtrlMsg *req,
 		CtrlMsg *resp, void *priv_data)
 {
 	esp_err_t ret = ESP_OK;
-	uint8_t mac[MAC_LEN] = {0};
+	uint8_t mac[BSSID_BYTES_SIZE] = {0};
 	uint8_t interface = 0;
 	CtrlMsgRespSetMacAddress *resp_payload = NULL;
 
@@ -1908,7 +1908,7 @@ static esp_err_t configure_heartbeat(bool enable, int hb_duration)
   if (src && strlen(src))                                                       \
     if (convert_mac_to_bytes((char*)dest, src)) {                               \
       ESP_LOGE(TAG, "%s:%u Failed convert BSSID in bytes\n",__func__,__LINE__); \
-      memset(dest, 0, MAC_LEN);                                                 \
+      memset(dest, 0, BSSID_BYTES_SIZE);                                                 \
     }
 #endif
 
@@ -1951,8 +1951,23 @@ static esp_err_t req_config_heartbeat(CtrlMsg *req,
 static void event_handler(void* arg, esp_event_base_t event_base,
                                 int32_t event_id, void* event_data)
 {
-	send_event_data_to_host(CTRL_MSG_ID__Event_WifiEventNoArgs,
+	if (event_id == WIFI_EVENT_AP_STACONNECTED) {
+		wifi_event_ap_staconnected_t *event = (wifi_event_ap_staconnected_t *) event_data;
+		ESP_LOGI(TAG, "station "MACSTR" join, AID=%d",
+				MAC2STR(event->mac), event->aid);
+		send_event_data_to_host(CTRL_MSG_ID__Event_AP_StaConnected,
+				event_data, sizeof(wifi_event_ap_staconnected_t));
+	} else if (event_id == WIFI_EVENT_AP_STADISCONNECTED) {
+		wifi_event_ap_stadisconnected_t *event =
+			(wifi_event_ap_stadisconnected_t *) event_data;
+		ESP_LOGI(TAG, "station "MACSTR" leave, AID=%d",
+				MAC2STR(event->mac), event->aid);
+		send_event_data_to_host(CTRL_MSG_ID__Event_AP_StaDisconnected,
+				event_data, sizeof(wifi_event_ap_stadisconnected_t));
+	} else {
+		send_event_data_to_host(CTRL_MSG_ID__Event_WifiEventNoArgs,
 			(uint8_t*) event_id, 4);
+	}
 }
 
 static esp_err_t req_wifi_init(CtrlMsg *req, CtrlMsg *resp, void *priv_data)
@@ -2516,8 +2531,13 @@ static void esp_ctrl_msg_cleanup(CtrlMsg *resp)
 		} case (CTRL_MSG_ID__Event_StationDisconnectFromAP) : {
 			mem_free(resp->event_station_disconnect_from_ap);
 			break;
-		} case (CTRL_MSG_ID__Event_AP_StaConnDisconn) : {
-			mem_free(resp->event_ap_sta_conn_disconn);
+		} case (CTRL_MSG_ID__Event_AP_StaConnected) : {
+			//mem_free(resp->event_ap_sta_connected->mac.data);
+			mem_free(resp->event_ap_sta_connected);
+			break;
+		} case (CTRL_MSG_ID__Event_AP_StaDisconnected) : {
+			//mem_free(resp->event_ap_sta_disconnected->mac.data);
+			mem_free(resp->event_ap_sta_disconnected);
 			break;
 		} case (CTRL_MSG_ID__Resp_WifiInit) : {
 			mem_free(resp->resp_wifi_init);
@@ -2682,38 +2702,60 @@ static esp_err_t ctrl_ntfy_StationDisconnectFromAP(CtrlMsg *ntfy,
 static esp_err_t ctrl_ntfy_ap_staconn_conn_disconn(CtrlMsg *ntfy,
 		const uint8_t *data, ssize_t len, int event_id)
 {
-	//char mac_str[BSSID_LENGTH] = "";
-	CtrlMsgEventAPStaConOrDisconnected *ntfy_payload = NULL;
-	wifi_event_ap_staconnected_t * p_a = (wifi_event_ap_staconnected_t *)data;
+	printf("%s event:%u\n",__func__,event_id);
+	if (event_id == WIFI_EVENT_AP_STACONNECTED) {
 
-	ntfy_payload = (CtrlMsgEventAPStaConOrDisconnected*)
-		calloc(1,sizeof(CtrlMsgEventAPStaConOrDisconnected));
-	if (!ntfy_payload) {
-		ESP_LOGE(TAG,"Failed to allocate memory");
-		return ESP_ERR_NO_MEM;
+		CtrlMsgEventAPStaConnected *ntfy_payload = NULL;
+		wifi_event_ap_staconnected_t * p_a = (wifi_event_ap_staconnected_t *)data;
+
+		ntfy_payload = (CtrlMsgEventAPStaConnected*)
+			calloc(1,sizeof(CtrlMsgEventAPStaConnected));
+		if (!ntfy_payload) {
+			ESP_LOGE(TAG,"Failed to allocate memory");
+			return ESP_ERR_NO_MEM;
+		}
+		ctrl_msg__event__ap__sta_connected__init(ntfy_payload);
+
+		ntfy->payload_case = CTRL_MSG__PAYLOAD_EVENT_AP_STA_CONNECTED;
+		ntfy->event_ap_sta_connected = ntfy_payload;
+		ntfy_payload->event_id = event_id;
+		ntfy_payload->aid = p_a->aid;
+		ntfy_payload->mac.len = BSSID_BYTES_SIZE;
+		ntfy_payload->is_mesh_child = p_a->is_mesh_child;
+
+		ntfy_payload->mac.data = p_a->mac;
+		//ntfy_payload->mac.data = (uint8_t *)calloc(1, BSSID_BYTES_SIZE);
+		//memcpy(ntfy_payload->mac.data,p_a->mac,BSSID_BYTES_SIZE);
+		ntfy_payload->resp = SUCCESS;
+		return ESP_OK;
+
+	} else if (event_id == WIFI_EVENT_AP_STADISCONNECTED) {
+		CtrlMsgEventAPStaDisconnected *ntfy_payload = NULL;
+		wifi_event_ap_stadisconnected_t * p_a = (wifi_event_ap_stadisconnected_t *)data;
+
+		ntfy_payload = (CtrlMsgEventAPStaDisconnected*)
+			calloc(1,sizeof(CtrlMsgEventAPStaDisconnected));
+		if (!ntfy_payload) {
+			ESP_LOGE(TAG,"Failed to allocate memory");
+			return ESP_ERR_NO_MEM;
+		}
+		ctrl_msg__event__ap__sta_disconnected__init(ntfy_payload);
+
+		ntfy->payload_case = CTRL_MSG__PAYLOAD_EVENT_AP_STA_DISCONNECTED;
+		ntfy->event_ap_sta_disconnected = ntfy_payload;
+		ntfy_payload->event_id = event_id;
+		ntfy_payload->aid = p_a->aid;
+		ntfy_payload->mac.len = BSSID_BYTES_SIZE;
+		ntfy_payload->is_mesh_child = p_a->is_mesh_child;
+
+		//Note: alloc is not needed in this case
+		//ntfy_payload->mac.data = (uint8_t *)calloc(1, BSSID_BYTES_SIZE);
+		//memcpy(ntfy_payload->mac.data,p_a->mac,BSSID_BYTES_SIZE);
+		ntfy_payload->mac.data = p_a->mac;
+		ntfy_payload->resp = SUCCESS;
+		return ESP_OK;
 	}
-	ctrl_msg__event__ap__sta_con_or_disconnected__init(ntfy_payload);
-
-	ntfy->payload_case = CTRL_MSG__PAYLOAD_EVENT_AP_STA_CONN_DISCONN;
-	ntfy->event_ap_sta_conn_disconn = ntfy_payload;
-
-	ntfy_payload->event_id = event_id;
-	ntfy_payload->aid = p_a->aid;
-	//snprintf(mac_str, BSSID_LENGTH, MACSTR, MAC2STR(p_a->mac));
-	//ntfy_payload->mac.len = strnlen(mac_str, BSSID_LENGTH);
-	ntfy_payload->mac.len = 6;
-	ntfy_payload->is_mesh_child = p_a->is_mesh_child;
-
-	//ESP_LOGI(TAG,"mac [%s]\n", mac_str);
-
-	ntfy_payload->mac.data = p_a->mac;
-	ntfy_payload->resp = SUCCESS;
-	return ESP_OK;
-#if 0
-err:
-	ntfy_payload->resp = FAILURE;
-	return ESP_OK;
-#endif
+	return ESP_FAIL;
 }
 
 static esp_err_t ctrl_ntfy_Event_WifiEventNoArgs(CtrlMsg *ntfy,
@@ -2767,10 +2809,10 @@ esp_err_t ctrl_notify_handler(uint32_t session_id,const uint8_t *inbuf,
 		} case CTRL_MSG_ID__Event_StationDisconnectFromAP: {
 			ret = ctrl_ntfy_StationDisconnectFromAP(&ntfy, inbuf, inlen);
 			break;
-		} case CTRL_MSG_ID__Event_AP_StaConnDisconn: {
+		} case CTRL_MSG_ID__Event_AP_StaConnected: {
 			ret = ctrl_ntfy_ap_staconn_conn_disconn(&ntfy, inbuf, inlen, WIFI_EVENT_AP_STACONNECTED);
 			break;
-		} case -CTRL_MSG_ID__Event_AP_StaConnDisconn: {
+		} case CTRL_MSG_ID__Event_AP_StaDisconnected: {
 			ret = ctrl_ntfy_ap_staconn_conn_disconn(&ntfy, inbuf, inlen, WIFI_EVENT_AP_STADISCONNECTED);
 			break;
 		} case CTRL_MSG_ID__Event_WifiEventNoArgs: {
@@ -2802,6 +2844,10 @@ esp_err_t ctrl_notify_handler(uint32_t session_id,const uint8_t *inbuf,
 	}
 
 	ctrl_msg__pack (&ntfy, *outbuf);
+
+	//printf("outbuf:\n");
+	//ESP_LOG_BUFFER_HEXDUMP("outbuf", *outbuf, *outlen, ESP_LOG_INFO);
+
 	esp_ctrl_msg_cleanup(&ntfy);
 	return ESP_OK;
 

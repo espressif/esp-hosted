@@ -28,7 +28,7 @@
 #define SSID_LENGTH             32
 #define PASSWORD_LENGTH         64
 #define BSSID_LENGTH            19
-#define MAC_LEN                 6
+#define BSSID_BYTES_SIZE        6
 #define VENDOR_OUI_BUF          3
 
 typedef struct {

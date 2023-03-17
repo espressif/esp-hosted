@@ -18,6 +18,7 @@
 #define SSID_LENGTH                          32
 #define MAX_MAC_STR_LEN                      18
 #define BSSID_LENGTH                         MAX_MAC_STR_LEN
+#define BSSID_BYTES_SIZE                     6
 #define PASSWORD_LENGTH                      64
 #define STATUS_LENGTH                        14
 #define VENDOR_OUI_BUF                       3
@@ -211,7 +212,8 @@ enum AppMsgId_e {
 	CTRL_EVENT_ESP_INIT        = CTRL_MSG_ID__Event_ESPInit,
 	CTRL_EVENT_HEARTBEAT       = CTRL_MSG_ID__Event_Heartbeat,
 	CTRL_EVENT_STATION_DISCONNECT_FROM_AP = CTRL_MSG_ID__Event_StationDisconnectFromAP,
-	CTRL_EVENT_AP_STA_CONN_DISCONN = CTRL_MSG_ID__Event_AP_StaConnDisconn,
+	CTRL_EVENT_AP_STA_CONNECTED = CTRL_MSG_ID__Event_AP_StaConnected,
+	CTRL_EVENT_AP_STA_DISCONNECTED  = CTRL_MSG_ID__Event_AP_StaDisconnected,
 	CTRL_EVENT_WIFI_EVENT_NO_ARGS =  CTRL_MSG_ID__Event_WifiEventNoArgs,
 	/*
 	 * Add new control path command notification before Event_Max

@@ -99,7 +99,7 @@ static struct rx_data {
 	uint8_t data[4096];
 } r;
 
-uint8_t ap_mac[MAC_LEN] = {0};
+uint8_t ap_mac[BSSID_BYTES_SIZE] = {0};
 
 static void print_firmware_version()
 {
@@ -222,7 +222,7 @@ esp_err_t wlan_ap_rx_callback(void *buffer, uint16_t len, void *eb)
 	}
 
 	/* Check destination address against self address */
-	if (memcmp(ap_buf, ap_mac, MAC_LEN)) {
+	if (memcmp(ap_buf, ap_mac, BSSID_BYTES_SIZE)) {
 		/* Check for multicast or broadcast address */
 		if (!(ap_buf[0] & 1))
 			goto DONE;
@@ -517,7 +517,7 @@ static esp_err_t serial_write_data(uint8_t* data, ssize_t len)
 
 	printf("%s:%u\n",__func__,__LINE__);
 #if 1//CONFIG_ESP_SERIAL_DEBUG
-		ESP_LOG_BUFFER_HEXDUMP("s srl_tx", data, frag_len, ESP_LOG_INFO);
+		ESP_LOG_BUFFER_HEXDUMP("serial_tx", data, frag_len, ESP_LOG_INFO);
 #endif
 
 		left_len -= frag_len;
@@ -687,7 +687,7 @@ void app_main()
 	uint8_t capa = 0;
 	uint8_t prio_q_idx = 0;
 #ifdef CONFIG_BT_ENABLED
-	uint8_t mac[MAC_LEN] = {0};
+	uint8_t mac[BSSID_BYTES_SIZE] = {0};
 #endif
 	print_firmware_version();
 

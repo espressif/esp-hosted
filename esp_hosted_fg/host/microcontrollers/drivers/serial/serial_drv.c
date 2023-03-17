@@ -74,7 +74,9 @@ int serial_drv_write (struct serial_drv_handle_t* serial_drv_handle,
 		return RET_INVALID;
 	}
 
+#if CONFIG_SERIAL_LOG_LEVEL
 	print_hex_dump(buf, in_count,"serial_tx");
+#endif
 	ret = serial_ll_if_g->fops->write(serial_ll_if_g, buf, in_count);
 	if (ret != RET_OK) {
 		*out_count = 0;
@@ -133,7 +135,9 @@ uint8_t * serial_drv_read(struct serial_drv_handle_t *serial_drv_handle,
 		printf("serial read failed\n\r");
 		return NULL;
 	}
-	print_hex_dump(read_buf, rx_buf_len, "Serial read data");
+#if CONFIG_SERIAL_LOG_LEVEL
+	print_hex_dump(read_buf, rx_buf_len, "Serial Rx");
+#endif
 
 /*
  * Read Operation happens in two steps because total read length is unknown

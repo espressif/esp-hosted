@@ -65,7 +65,9 @@ static void transport_driver_event_handler(uint8_t event)
 		{
 			g_h.funcs->_h_post_semaphore_from_isr(transport_active_sem);
 			/* Initiate control path now */
+#if CONFIG_TRANSPORT_LOG_LEVEL
 			printf("Base transport is set-up\n\r");
+#endif
 			//control_path_init(control_path_event_handler);
 			break;
 		}

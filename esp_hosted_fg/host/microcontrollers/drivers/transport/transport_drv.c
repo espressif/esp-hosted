@@ -74,11 +74,11 @@ int esp_netdev_xmit(netdev_handle_t netdev, struct pbuf *net_buf)
 
 void process_capabilities(uint8_t cap)
 {
-#if DEBUG_TRANSPORT
+#if CONFIG_TRANSPORT_LOG_LEVEL
 	printf("capabilities: 0x%x\n\r",cap);
 #else
 	/* warning suppress */
-	if(cap);
+	if(cap){}
 #endif
 }
 
@@ -98,7 +98,9 @@ void process_priv_communication(struct pbuf *pbuf)
 	len = pbuf->len;
 
 	if (header->event_type == ESP_PRIV_EVENT_INIT) {
+#if CONFIG_TRANSPORT_LOG_LEVEL
 		printf("event packet type\n\r");
+#endif
 		process_event(payload, len);
 	}
 
@@ -107,6 +109,7 @@ void process_priv_communication(struct pbuf *pbuf)
 
 void print_capabilities(uint32_t cap)
 {
+#if CONFIG_TRANSPORT_LOG_LEVEL
 	printf("Features supported are:\n\r");
 	if (cap & ESP_WLAN_SDIO_SUPPORT)
 		printf("\t * WLAN\n\r");
@@ -123,6 +126,7 @@ void print_capabilities(uint32_t cap)
 		else if (cap & ESP_BR_EDR_ONLY_SUPPORT)
 			printf("\t   - BR EDR only\n\r");
 	}
+#endif
 }
 
 void process_event(uint8_t *evt_buf, uint16_t len)
@@ -138,7 +142,6 @@ void process_event(uint8_t *evt_buf, uint16_t len)
 	if (event->event_type == ESP_PRIV_EVENT_INIT) {
 
 		printf("Received INIT event from ESP peripheral\n\r");
-
 		print_hex_dump(event->event_data, event->event_len, "process event");
 
 		ret = process_init_event(event->event_data, event->event_len);
@@ -159,9 +162,13 @@ int process_init_event(uint8_t *evt_buf, uint8_t len)
 	pos = evt_buf;
 	while (len_left) {
 		tag_len = *(pos + 1);
+#if CONFIG_TRANSPORT_LOG_LEVEL
 		printf("EVENT: %d\n\r", *pos);
+#endif
 		if (*pos == ESP_PRIV_CAPABILITY) {
+#if CONFIG_TRANSPORT_LOG_LEVEL
 			printf("priv capabilty \n\r");
+#endif
 			process_capabilities(*(pos + 2));
 			print_capabilities(*(pos + 2));
 		} else if (*pos == ESP_PRIV_SPI_CLK_MHZ) {
@@ -169,7 +176,9 @@ int process_init_event(uint8_t *evt_buf, uint8_t len)
 		} else if (*pos == ESP_PRIV_FIRMWARE_CHIP_ID) {
 			chip_type = *(pos+2);
 		} else if (*pos == ESP_PRIV_TEST_RAW_TP) {
+#if CONFIG_TRANSPORT_LOG_LEVEL
 			printf("priv test raw tp\n\r");
+#endif
 #if TEST_RAW_TP
 			process_test_capabilities(*(pos + 2));
 #endif
@@ -190,7 +199,9 @@ int process_init_event(uint8_t *evt_buf, uint8_t len)
 		chip_type = ESP_PRIV_FIRMWARE_CHIP_UNRECOGNIZED;
 		return -1;
 	} else {
+#if CONFIG_TRANSPORT_LOG_LEVEL
 		printf("ESP board type is : %d \n\r", chip_type);
+#endif
 	}
 
 	return STM_OK;

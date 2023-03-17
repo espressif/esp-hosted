@@ -24,10 +24,8 @@
 #include "esp_log.h"
 #include "esp_wifi.h"
 
-//#include "esp_hosted_config.h"
-
-#define EXAMPLE_ESP_WIFI_SSID      "SaveEarth" //CONFIG_ESP_WIFI_SSID
-#define EXAMPLE_ESP_WIFI_PASS      "PlantMoreTrees123" //CONFIG_ESP_WIFI_PASSWORD
+#define EXAMPLE_ESP_WIFI_SSID      CONFIG_ESP_WIFI_SSID
+#define EXAMPLE_ESP_WIFI_PASS      CONFIG_ESP_WIFI_PASSWORD
 #define EXAMPLE_ESP_MAXIMUM_RETRY  CONFIG_ESP_MAXIMUM_RETRY
 
 #if CONFIG_ESP_WIFI_AUTH_OPEN
@@ -65,7 +63,6 @@ static int s_retry_num = 0;
 static void event_handler(void* arg, esp_event_base_t event_base,
                                 int32_t event_id, void* event_data)
 {
-	ESP_LOGI(TAG,"-------- WiFi Event %ld received\n", event_id);
 #if 1
     if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_START) {
         esp_wifi_connect();
@@ -106,7 +103,6 @@ void wifi_init_sta(void)
 
     wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
     ESP_ERROR_CHECK(esp_wifi_init(&cfg));
-	printf("------ wifi init done ---------\n");
 
     esp_event_handler_instance_t instance_any_id;
 #if 0
@@ -178,5 +174,4 @@ void app_main(void)
 
     ESP_LOGI(TAG, "ESP_WIFI_MODE_STA");
     wifi_init_sta();
-	ESP_LOGE(TAG, "Wifi test case finished\n");
 }
