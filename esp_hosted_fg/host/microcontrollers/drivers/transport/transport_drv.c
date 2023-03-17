@@ -183,6 +183,7 @@ void print_capabilities(uint32_t cap)
 		else if (cap & ESP_BR_EDR_ONLY_SUPPORT)
 			ESP_LOGI(TAG, "\t   - BR EDR only");
 	}
+#endif
 }
 
 static void process_event(uint8_t *evt_buf, uint16_t len)
