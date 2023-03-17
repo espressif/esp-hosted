@@ -32,6 +32,20 @@
     }                                          \
 }
 
+#if CONFIG_RPC_LOG_LEVEL
+  #define hosted_log(...)                                                    \
+    do {                                                                     \
+      printf("%s:%u ",__func__,__LINE__);                                    \
+      printf(__VA_ARGS__);                                                   \
+    } while(0)
+#else
+  #define hosted_log(...)                                                    \
+    do {                                                                     \
+    } while(0)
+#endif
+
+#define min(X, Y)                    (((X) < (Y)) ? (X) : (Y))
+
 /* Driver Handle */
 struct serial_drv_handle_t;
 

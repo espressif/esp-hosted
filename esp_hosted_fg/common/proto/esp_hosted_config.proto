@@ -385,12 +385,13 @@ enum CtrlMsgId {
 	Event_ESPInit = 301;
 	Event_Heartbeat = 302;
 	Event_StationDisconnectFromAP = 303;
-	Event_AP_StaConnDisconn = 304;
-	Event_WifiEventNoArgs = 305;
+	Event_AP_StaConnected = 304;
+	Event_AP_StaDisconnected = 305;
+	Event_WifiEventNoArgs = 306;
 
 	/* Add new control path command notification before Event_Max
 	 * and update Event_Max */
-	Event_Max = 306;
+	Event_Max = 307;
 }
 
 message wifi_init_config {
@@ -1030,7 +1031,15 @@ message CtrlMsg_Event_StationDisconnectFromAP {
 	int32 resp = 1;
 }
 
-message CtrlMsg_Event_AP_StaConOrDisconnected {
+message CtrlMsg_Event_AP_StaDisconnected {
+	int32 resp = 1;
+    int32 event_id = 2;
+	bytes mac = 3;
+    uint32 aid = 4;
+    bool is_mesh_child = 5;
+}
+
+message CtrlMsg_Event_AP_StaConnected {
 	int32 resp = 1;
     int32 event_id = 2;
 	bytes mac = 3;
@@ -1124,8 +1133,9 @@ message CtrlMsg {
 		CtrlMsg_Event_ESPInit event_esp_init = 301;
 		CtrlMsg_Event_Heartbeat event_heartbeat = 302;
 		CtrlMsg_Event_StationDisconnectFromAP event_station_disconnect_from_AP = 303;
-		CtrlMsg_Event_AP_StaConOrDisconnected event_ap_sta_conn_disconn = 304;
-		CtrlMsg_Event_WifiEventNoArgs event_wifi_event_no_args = 305;
+		CtrlMsg_Event_AP_StaConnected event_ap_sta_connected = 304;
+		CtrlMsg_Event_AP_StaDisconnected event_ap_sta_disconnected = 305;
+		CtrlMsg_Event_WifiEventNoArgs event_wifi_event_no_args = 306;
 	}
 }
 

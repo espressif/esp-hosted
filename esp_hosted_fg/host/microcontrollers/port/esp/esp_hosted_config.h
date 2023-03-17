@@ -7,39 +7,21 @@
 
 
 //////////////////// USER specific config start /////////////////////////////////
-/* Pin used to reset the ESP slave to start as fresh */
-#define GPIO_PIN_RESET                               5
 
 /*  ========================== SPI Master Config start ======================  */
 /*
 Pins in use. The SPI Master can use the GPIO mux,
 so feel free to change these if needed.
 */
-#if CONFIG_IDF_TARGET_ESP32
-#define GPIO_HANDSHAKE                               17
-#define GPIO_DATA_READY                              4
-#define GPIO_MOSI                                    12
-#define GPIO_MISO                                    13
-#define GPIO_SCLK                                    15
-#define GPIO_CS                                      14
 
-#elif CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32C2 || CONFIG_IDF_TARGET_ESP32C6 || CONFIG_IDF_TARGET_ESP32H2
-#define GPIO_HANDSHAKE                               3
-#define GPIO_DATA_READY                              4
-#define GPIO_MOSI                                    7
-#define GPIO_MISO                                    2
-#define GPIO_SCLK                                    6
-#define GPIO_CS                                      10
 
-#elif CONFIG_IDF_TARGET_ESP32S3  || CONFIG_IDF_TARGET_ESP32S2
-#define GPIO_HANDSHAKE                               17
-#define GPIO_DATA_READY                              4
-#define GPIO_MOSI                                    11
-#define GPIO_MISO                                    13
-#define GPIO_SCLK                                    12
-#define GPIO_CS                                      10
-
-#endif //CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32S2
+#define GPIO_HANDSHAKE                               CONFIG_ESP_SPI_GPIO_HANDSHAKE
+#define GPIO_DATA_READY                              CONFIG_ESP_SPI_GPIO_DATA_READY
+#define GPIO_MOSI                                    CONFIG_ESP_SPI_GPIO_MOSI
+#define GPIO_MISO                                    CONFIG_ESP_SPI_GPIO_MISO
+#define GPIO_SCLK                                    CONFIG_ESP_SPI_GPIO_CLK
+#define GPIO_CS                                      CONFIG_ESP_SPI_GPIO_CS
+#define GPIO_PIN_RESET                               CONFIG_ESP_SPI_GPIO_RESET_SLAVE
 
 
 /*  ========================== SPI Master Config end ========================  */

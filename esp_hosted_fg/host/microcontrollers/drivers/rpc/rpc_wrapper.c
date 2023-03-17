@@ -71,6 +71,7 @@ typedef struct {
 	ctrl_resp_cb_t fun;
 } event_callback_table_t;
 
+#if CONFIG_RPC_LOG_LEVEL
 static char * get_timestamp(char *str, uint16_t str_size)
 {
 	if (str && str_size>=MIN_TIMESTAMP_STR_SIZE) {
@@ -81,46 +82,56 @@ static char * get_timestamp(char *str, uint16_t str_size)
 	}
 	return NULL;
 }
+#endif
 
 static int ctrl_app_event_callback(ctrl_cmd_t * app_event)
 {
+#if CONFIG_RPC_LOG_LEVEL
 	char ts[MIN_TIMESTAMP_STR_SIZE] = {'\0'};
+#endif
 
+	hosted_log("%u",app_event->msg_id);
 	if (!app_event || (app_event->msg_type != CTRL_EVENT)) {
 		if (app_event)
-			printf("Msg type is not event[%u]\n\r",app_event->msg_type);
+			hosted_log("Msg type is not event[%u]\n\r",app_event->msg_type);
 		goto fail_parsing;
 	}
 
 	if ((app_event->msg_id <= CTRL_EVENT_BASE) ||
 	    (app_event->msg_id >= CTRL_EVENT_MAX)) {
-		printf("Event Msg ID[%u] is not correct\n\r",app_event->msg_id);
+		hosted_log("Event Msg ID[%u] is not correct\n\r",app_event->msg_id);
 		goto fail_parsing;
 	}
 
 	switch(app_event->msg_id) {
 
 		case CTRL_EVENT_ESP_INIT: {
-			printf("%s App EVENT: ESP INIT\n\r",
+			hosted_log("%s App EVENT: ESP INIT\n\r",
 				get_timestamp(ts, MIN_TIMESTAMP_STR_SIZE));
 			break;
 		} case CTRL_EVENT_HEARTBEAT: {
-			printf("%s App EVENT: Heartbeat event [%lu]\n\r",
+			hosted_log("%s App EVENT: Heartbeat event [%lu]\n\r",
 				get_timestamp(ts, MIN_TIMESTAMP_STR_SIZE),
 					(long unsigned int)app_event->u.e_heartbeat.hb_num);
 			break;
 		} case CTRL_EVENT_STATION_DISCONNECT_FROM_AP: {
-			printf("%s App EVENT: Station mode: Disconnect Reason[%u]\n\r",
+			hosted_log("%s App EVENT: Station mode: Disconnect Reason[%u]",
 				get_timestamp(ts, MIN_TIMESTAMP_STR_SIZE), app_event->resp_event_status);
 			break;
-		} case CTRL_EVENT_AP_STA_CONN_DISCONN: {
+		} case CTRL_EVENT_AP_STA_CONNECTED: {
 			wifi_event_ap_staconnected_t *p_e = &app_event->u.e_wifi_ap_staconnected;
-			if (p_e->mac && strlen((char*)p_e->mac)) {
-				printf("%s App EVENT: SoftAP mode: %sconnected MAC[%s]\n\r",
-					get_timestamp(ts, MIN_TIMESTAMP_STR_SIZE),
-					p_e->wifi_event_id==WIFI_EVENT_AP_STADISCONNECTED? "dis": "",
-					p_e->mac);
+			if (p_e->mac) {
+				hosted_log("%s App EVENT: SoftAP mode: connected station",
+					get_timestamp(ts, MIN_TIMESTAMP_STR_SIZE));
 				g_h.funcs->_h_event_wifi_post(p_e->wifi_event_id, p_e, sizeof(wifi_event_ap_staconnected_t), HOSTED_BLOCK_MAX);
+			}
+			break;
+		} case CTRL_EVENT_AP_STA_DISCONNECTED: {
+			wifi_event_ap_stadisconnected_t *p_e = &app_event->u.e_wifi_ap_stadisconnected;
+			if (p_e->mac) {
+				hosted_log("%s App EVENT: SoftAP mode: disconnected MAC",
+					get_timestamp(ts, MIN_TIMESTAMP_STR_SIZE));
+				g_h.funcs->_h_event_wifi_post(p_e->wifi_event_id, p_e, sizeof(wifi_event_ap_stadisconnected_t), HOSTED_BLOCK_MAX);
 			}
 			break;
 		} case CTRL_EVENT_WIFI_EVENT_NO_ARGS: {
@@ -129,24 +140,24 @@ static int ctrl_app_event_callback(ctrl_cmd_t * app_event)
 			switch (wifi_event_id) {
 
 			case WIFI_EVENT_STA_DISCONNECTED:
-				printf("%s App EVENT: WiFi Event[%s]\n\r",
+				hosted_log("%s App EVENT: WiFi Event[%s]\n\r",
 					get_timestamp(ts, MIN_TIMESTAMP_STR_SIZE), "WIFI_EVENT_STA_DISCONNECTED");
 
 				break;
 			case WIFI_EVENT_STA_CONNECTED:
-				printf("%s App EVENT: WiFi Event[%s]\n\r",
+				hosted_log("%s App EVENT: WiFi Event[%s]\n\r",
 					get_timestamp(ts, MIN_TIMESTAMP_STR_SIZE), "WIFI_EVENT_STA_CONNECTED");
 				break;
 			case WIFI_EVENT_STA_START:
-				printf("%s App EVENT: WiFi Event[%s]\n\r",
+				hosted_log("%s App EVENT: WiFi Event[%s]\n\r",
 					get_timestamp(ts, MIN_TIMESTAMP_STR_SIZE), "WIFI_EVENT_STA_START");
 				break;
 			case WIFI_EVENT_STA_STOP:
-				printf("%s App EVENT: WiFi Event[%s]\n\r",
+				hosted_log("%s App EVENT: WiFi Event[%s]\n\r",
 					get_timestamp(ts, MIN_TIMESTAMP_STR_SIZE), "WIFI_EVENT_STA_STOP");
 				break;
 			default:
-				printf("%s App EVENT: WiFi Event[%x]\n\r",
+				hosted_log("%s App EVENT: WiFi Event[%x]\n\r",
 					get_timestamp(ts, MIN_TIMESTAMP_STR_SIZE), wifi_event_id);
 				break;
 			} /* inner switch case */
@@ -154,7 +165,7 @@ static int ctrl_app_event_callback(ctrl_cmd_t * app_event)
 
 			break;
 		} default: {
-			printf("%s Invalid event[%u] to parse\n\r",
+			hosted_log("%s Invalid event[%u] to parse\n\r",
 				get_timestamp(ts, MIN_TIMESTAMP_STR_SIZE), app_event->msg_id);
 			break;
 		}
@@ -174,31 +185,31 @@ static void process_failed_responses(ctrl_cmd_t *app_msg)
 	/* Identify general issue, common for all control requests */
 	switch (app_msg->resp_event_status) {
 		case CTRL_ERR_REQ_IN_PROG:
-			printf("Error reported: Command In progress, Please wait\n\r");
+			hosted_log("Error reported: Command In progress, Please wait\n\r");
 			break;
 		case CTRL_ERR_REQUEST_TIMEOUT:
-			printf("Error reported: Response Timeout\n\r");
+			hosted_log("Error reported: Response Timeout\n\r");
 			break;
 		case CTRL_ERR_MEMORY_FAILURE:
-			printf("Error reported: Memory allocation failed\n\r");
+			hosted_log("Error reported: Memory allocation failed\n\r");
 			break;
 		case CTRL_ERR_UNSUPPORTED_MSG:
-			printf("Error reported: Unsupported control msg\n\r");
+			hosted_log("Error reported: Unsupported control msg\n\r");
 			break;
 		case CTRL_ERR_INCORRECT_ARG:
-			printf("Error reported: Invalid or out of range parameter values\n\r");
+			hosted_log("Error reported: Invalid or out of range parameter values\n\r");
 			break;
 		case CTRL_ERR_PROTOBUF_ENCODE:
-			printf("Error reported: Protobuf encode failed\n\r");
+			hosted_log("Error reported: Protobuf encode failed\n\r");
 			break;
 		case CTRL_ERR_PROTOBUF_DECODE:
-			printf("Error reported: Protobuf decode failed\n\r");
+			hosted_log("Error reported: Protobuf decode failed\n\r");
 			break;
 		case CTRL_ERR_SET_ASYNC_CB:
-			printf("Error reported: Failed to set aync callback\n\r");
+			hosted_log("Error reported: Failed to set aync callback\n\r");
 			break;
 		case CTRL_ERR_TRANSPORT_SEND:
-			printf("Error reported: Problem while sending data on serial driver\n\r");
+			hosted_log("Error reported: Problem while sending data on serial driver\n\r");
 			break;
 		default:
 			request_failed_flag = false;
@@ -216,28 +227,28 @@ static void process_failed_responses(ctrl_cmd_t *app_msg)
 		case CTRL_RESP_OTA_BEGIN:
 		case CTRL_RESP_OTA_WRITE: {
 			/* intentional fallthrough */
-			printf("OTA procedure failed\n\r");
+			hosted_log("OTA procedure failed\n\r");
 			break;
 		} case CTRL_RESP_CONNECT_AP: {
 			if (app_msg->resp_event_status == CTRL_ERR_NO_AP_FOUND) {
-				printf("SSID: not found/connectable\n\r");
+				hosted_log("SSID: not found/connectable\n\r");
 			} else if (app_msg->resp_event_status ==
 					CTRL_ERR_INVALID_PASSWORD) {
-				printf("Invalid password for SSID\n\r");
+				hosted_log("Invalid password for SSID\n\r");
 			} else {
-				printf("Failed to connect with AP\n\r");
+				hosted_log("Failed to connect with AP\n\r");
 			}
 			break;
 		} case CTRL_RESP_START_SOFTAP: {
-			printf("Failed to start SoftAP\n\r");
+			hosted_log("Failed to start SoftAP\n\r");
 			break;
 		}
 		case CTRL_RESP_STOP_SOFTAP:
 		case CTRL_RESP_GET_SOFTAP_CONFIG: {
-			printf("Possibly softap is not running/started\n\r");
+			hosted_log("Possibly softap is not running/started\n\r");
 			break;
 		} default: {
-			printf("Failed Control Response\n\r");
+			hosted_log("Failed Control Response\n\r");
 			break;
 		}
 	}
@@ -250,7 +261,7 @@ int unregister_event_callbacks(void)
 	int evt = 0;
 	for (evt=CTRL_EVENT_BASE+1; evt<CTRL_EVENT_MAX; evt++) {
 		if (CALLBACK_SET_SUCCESS != reset_event_callback(evt) ) {
-			printf("reset event callback failed for event[%u]\n\r", evt);
+			hosted_log("reset event callback failed for event[%u]\n\r", evt);
 			ret = FAILURE;
 		}
 	}
@@ -266,13 +277,14 @@ int register_event_callbacks(void)
 		{ CTRL_EVENT_ESP_INIT,                           ctrl_app_event_callback },
 		{ CTRL_EVENT_HEARTBEAT,                          ctrl_app_event_callback },
 		{ CTRL_EVENT_STATION_DISCONNECT_FROM_AP,         ctrl_app_event_callback },
-		{ CTRL_EVENT_AP_STA_CONN_DISCONN,                ctrl_app_event_callback },
+		{ CTRL_EVENT_AP_STA_CONNECTED,                   ctrl_app_event_callback },
+		{ CTRL_EVENT_AP_STA_DISCONNECTED,                ctrl_app_event_callback },
 		{ CTRL_EVENT_WIFI_EVENT_NO_ARGS,                 ctrl_app_event_callback },
 	};
 
 	for (evt=0; evt<sizeof(events)/sizeof(event_callback_table_t); evt++) {
 		if (CALLBACK_SET_SUCCESS != set_event_callback(events[evt].event, events[evt].fun) ) {
-			printf("event callback register failed for event[%u]\n\r", events[evt].event);
+			hosted_log("event callback register failed for event[%u]\n\r", events[evt].event);
 			ret = FAILURE;
 			break;
 		}
@@ -286,12 +298,12 @@ int ctrl_app_resp_callback(ctrl_cmd_t * app_resp)
 	uint16_t i = 0;
 	if (!app_resp || (app_resp->msg_type != CTRL_RESP)) {
 		if (app_resp)
-			printf("Msg type is not response[%u]\n\r",app_resp->msg_type);
+			hosted_log("Msg type is not response[%u]\n\r",app_resp->msg_type);
 		goto fail_resp;
 	}
 
 	if ((app_resp->msg_id <= CTRL_RESP_BASE) || (app_resp->msg_id >= CTRL_RESP_MAX)) {
-		printf("Response Msg ID[%x] is not correct\n\r",app_resp->msg_id);
+		hosted_log("Response Msg ID[%x] is not correct\n\r",app_resp->msg_id);
 		goto fail_resp;
 	}
 
@@ -303,40 +315,40 @@ int ctrl_app_resp_callback(ctrl_cmd_t * app_resp)
 	switch(app_resp->msg_id) {
 
 		case CTRL_RESP_GET_MAC_ADDR: {
-			printf("mac address is %s\n\r", app_resp->u.wifi_mac.mac);
+			hosted_log("mac address is %s\n\r", app_resp->u.wifi_mac.mac);
 			break;
 		} case CTRL_RESP_SET_MAC_ADDRESS : {
-			printf("MAC address is set\n\r");
+			hosted_log("MAC address is set\n\r");
 			break;
 		} case CTRL_RESP_GET_WIFI_MODE : {
-			printf("wifi mode is : ");
+			hosted_log("wifi mode is : ");
 			switch (app_resp->u.wifi_mode.mode) {
-				case WIFI_MODE_STA:     printf("station\n\r");        break;
-				case WIFI_MODE_AP:      printf("softap\n\r");         break;
-				case WIFI_MODE_APSTA:   printf("station+softap\n\r"); break;
-				case WIFI_MODE_NONE:    printf("none\n\r");           break;
-				default:                printf("unknown\n\r");        break;
+				case WIFI_MODE_STA:     hosted_log("station\n\r");        break;
+				case WIFI_MODE_AP:      hosted_log("softap\n\r");         break;
+				case WIFI_MODE_APSTA:   hosted_log("station+softap\n\r"); break;
+				case WIFI_MODE_NONE:    hosted_log("none\n\r");           break;
+				default:                hosted_log("unknown\n\r");        break;
 			}
 			break;
 		} case CTRL_RESP_SET_WIFI_MODE : {
-			printf("wifi mode is set\n\r");
+			hosted_log("wifi mode is set\n\r");
 			break;
 		} case CTRL_RESP_GET_AP_SCAN_LIST : {
 			wifi_ap_scan_list_t * w_scan_p = &app_resp->u.wifi_ap_scan;
 			wifi_scanlist_t *list = w_scan_p->out_list;
 
 			if (!w_scan_p->count) {
-				printf("No AP found\n\r");
+				hosted_log("No AP found\n\r");
 				goto finish_resp;
 			}
 			if (!list) {
-				printf("Failed to get scanned AP list\n\r");
+				hosted_log("Failed to get scanned AP list\n\r");
 				goto fail_resp;
 			} else {
 
-				printf("Number of available APs is %d\n\r", w_scan_p->count);
+				hosted_log("Number of available APs is %d\n\r", w_scan_p->count);
 				for (i=0; i<w_scan_p->count; i++) {
-					printf("%d) ssid \"%s\" bssid \"%s\" rssi \"%d\" channel \"%d\" auth mode \"%d\" \n\r",\
+					hosted_log("%d) ssid \"%s\" bssid \"%s\" rssi \"%d\" channel \"%d\" auth mode \"%d\" \n\r",\
 							i, list[i].ssid, list[i].bssid, list[i].rssi,
 							list[i].channel, list[i].encryption_mode);
 				}
@@ -346,98 +358,100 @@ int ctrl_app_resp_callback(ctrl_cmd_t * app_resp)
 		} case CTRL_RESP_GET_AP_CONFIG : {
 			hosted_ap_config_t *p = &app_resp->u.hosted_ap_config;
 			if (0 == strncmp(SUCCESS_STR, p->status, strlen(SUCCESS_STR))) {
-				printf("AP's ssid '%s'\n\r", p->ssid);
-				printf("AP's bssid i.e. MAC address %s\n\r", p->bssid);
-				printf("AP's channel number %d\n\r", p->channel);
-				printf("AP's rssi %d\n\r", p->rssi);
-				printf("AP's encryption mode %d\n\r", p->encryption_mode);
+				hosted_log("AP's ssid '%s'\n\r", p->ssid);
+				hosted_log("AP's bssid i.e. MAC address %s\n\r", p->bssid);
+				hosted_log("AP's channel number %d\n\r", p->channel);
+				hosted_log("AP's rssi %d\n\r", p->rssi);
+				hosted_log("AP's encryption mode %d\n\r", p->encryption_mode);
 			} else {
-				printf("Station mode status: %s\n\r",p->status);
+				hosted_log("Station mode status: %s\n\r",p->status);
 			}
 			break;
 		} case CTRL_RESP_CONNECT_AP : {
-			printf("Connected\n\r");
+			hosted_log("Connected\n\r");
 			break;
 		} case CTRL_RESP_DISCONNECT_AP : {
-			printf("Disconnected from AP\n\r");
+			hosted_log("Disconnected from AP\n\r");
 			break;
 		} case CTRL_RESP_GET_SOFTAP_CONFIG : {
+#if CONFIG_RPC_LOG_LEVEL
 			hosted_softap_config_t * resp_p = &app_resp->u.wifi_softap_config;
+#endif
 
-			printf("softAP ssid %s\n\r", resp_p->ssid);
-			printf("softAP pwd %s\n\r", resp_p->pwd);
-			printf("softAP channel ID %d\n\r", resp_p->channel);
-			printf("softAP encryption mode %d\n\r", resp_p->encryption_mode);
-			printf("softAP max connections %d\n\r", resp_p->max_connections);
-			printf("softAP ssid broadcast status %d \n", resp_p->ssid_hidden);
-			printf("softAP bandwidth mode %d\n\r", resp_p->bandwidth);
+			hosted_log("softAP ssid %s\n\r", resp_p->ssid);
+			hosted_log("softAP pwd %s\n\r", resp_p->pwd);
+			hosted_log("softAP channel ID %d\n\r", resp_p->channel);
+			hosted_log("softAP encryption mode %d\n\r", resp_p->encryption_mode);
+			hosted_log("softAP max connections %d\n\r", resp_p->max_connections);
+			hosted_log("softAP ssid broadcast status %d \n", resp_p->ssid_hidden);
+			hosted_log("softAP bandwidth mode %d\n\r", resp_p->bandwidth);
 
 			break;
 		} case CTRL_RESP_SET_SOFTAP_VND_IE : {
-			printf("Success in set vendor specific ie\n\r");
+			hosted_log("Success in set vendor specific ie\n\r");
 			break;
 		} case CTRL_RESP_START_SOFTAP : {
-			printf("ESP softAP started\n\r");
+			hosted_log("esp32 softAP started\n\r");
 			break;
 		} case CTRL_RESP_GET_SOFTAP_CONN_STA_LIST : {
 			int count = app_resp->u.wifi_softap_con_sta.count;
 			wifi_connected_stations_list_t *stations_list =
 				app_resp->u.wifi_softap_con_sta.out_list;
 
-			printf("sta list count: %u\n\r",count);
+			hosted_log("sta list count: %u\n\r",count);
 			if (!count) {
-				printf("No station found\n\r");
+				hosted_log("No station found\n\r");
 				goto fail_resp;
 			}
 
 			if (!stations_list) {
-				printf("Failed to get connected stations list\n\r");
+				hosted_log("Failed to get connected stations list\n\r");
 			} else if (count) {
 				for (i=0; i<count; i++) {
-					printf("%d th stations's bssid \"%s\" rssi \"%d\" \n\r",i, \
+					hosted_log("%d th stations's bssid \"%s\" rssi \"%d\" \n\r",i, \
 							stations_list[i].bssid, stations_list[i].rssi);
 				}
 			}
 			break;
 		} case CTRL_RESP_STOP_SOFTAP : {
-			printf("ESP softAP stopped\n\r");
+			hosted_log("esp32 softAP stopped\n\r");
 			break;
 		} case CTRL_RESP_SET_PS_MODE : {
-			printf("Wifi power save mode set\n\r");
+			hosted_log("Wifi power save mode set\n\r");
 			break;
 		} case CTRL_RESP_GET_PS_MODE : {
-			printf("Wifi power save mode is: ");
+			hosted_log("Wifi power save mode is: ");
 
 			switch(app_resp->u.wifi_ps.ps_mode) {
 				case WIFI_PS_MIN_MODEM:
-					printf("Min\n\r");
+					hosted_log("Min\n\r");
 					break;
 				case WIFI_PS_MAX_MODEM:
-					printf("Max\n\r");
+					hosted_log("Max\n\r");
 					break;
 				default:
-					printf("Invalid\n\r");
+					hosted_log("Invalid\n\r");
 					break;
 			}
 			break;
 		} case CTRL_RESP_OTA_BEGIN : {
-			printf("OTA begin success\n\r");
+			hosted_log("OTA begin success\n\r");
 			break;
 		} case CTRL_RESP_OTA_WRITE : {
-			printf("OTA write success\n\r");
+			hosted_log("OTA write success\n\r");
 			break;
 		} case CTRL_RESP_OTA_END : {
-			printf("OTA end success\n\r");
+			hosted_log("OTA end success\n\r");
 			break;
 		} case CTRL_RESP_SET_WIFI_MAX_TX_POWER: {
-			printf("Set wifi max tx power success\n\r");
+			hosted_log("Set wifi max tx power success\n\r");
 			break;
 		} case CTRL_RESP_GET_WIFI_CURR_TX_POWER: {
-			printf("wifi curr tx power : %d\n\r",
+			hosted_log("wifi curr tx power : %d\n\r",
 					app_resp->u.wifi_tx_power.power);
 			break;
 		} case CTRL_RESP_CONFIG_HEARTBEAT: {
-			printf("Heartbeat operation successful\n\r");
+			hosted_log("Heartbeat operation successful\n\r");
 			break;
 		}
 		case CTRL_RESP_WIFI_INIT:
@@ -451,7 +465,7 @@ int ctrl_app_resp_callback(ctrl_cmd_t * app_resp)
 			/* Intended fallthrough */
 			break;
 		} default: {
-			printf("Invalid Response[%u] to parse\n\r", app_resp->msg_id);
+			hosted_log("Invalid Response[%u] to parse\n\r", app_resp->msg_id);
 			goto fail_resp;
 		}
 	}
@@ -738,7 +752,7 @@ int test_reset_vendor_specific_ie(void)
 
 	char *v_data = (char*)calloc(1, strlen(data));
 	if (!v_data) {
-		printf("Failed to allocate memory \n");
+		hosted_log("Failed to allocate memory \n");
 		return FAILURE;
 	}
 	g_h.funcs->_h_memcpy(v_data, data, strlen(data));
@@ -772,7 +786,7 @@ int test_set_vendor_specific_ie(void)
 
 	char *v_data = (char*)calloc(1, strlen(data));
 	if (!v_data) {
-		printf("Failed to allocate memory \n");
+		hosted_log("Failed to allocate memory \n");
 		return FAILURE;
 	}
 	g_h.funcs->_h_memcpy(v_data, data, strlen(data));
@@ -842,16 +856,16 @@ int test_ota(char* image_path)
 	if (ret == SUCCESS) {
 		f = fopen(image_path,"rb");
 		if (f == NULL) {
-			printf("Failed to open file %s \n", image_path);
+			hosted_log("Failed to open file %s \n", image_path);
 			return FAILURE;
 		} else {
-			printf("Success in opening %s file \n", image_path);
+			hosted_log("Success in opening %s file \n", image_path);
 		}
 		while (!feof(f)) {
 			fread(&ota_chunk, CHUNK_SIZE, 1, f);
 			ret = test_ota_write((uint8_t* )&ota_chunk, CHUNK_SIZE);
 			if (ret) {
-				printf("OTA procedure failed!!\n");
+				hosted_log("OTA procedure failed!!\n");
 				/* TODO: Do we need to do OTA end irrespective of success/failure? */
 				test_ota_end();
 				return FAILURE;
@@ -864,10 +878,10 @@ int test_ota(char* image_path)
 	} else {
 		return FAILURE;
 	}
-	printf("ESP will restart after 5 sec\n");
+	hosted_log("ESP32 will restart after 5 sec\n");
 	return SUCCESS;
 #endif
-	printf("For OTA, user need to integrate HTTP client lib and then invoke OTA\n\r");
+	hosted_log("For OTA, user need to integrate HTTP client lib and then invoke OTA\n\r");
 	return FAILURE;
 }
 
@@ -991,7 +1005,6 @@ int test_wifi_connect(void)
 	/* implemented synchronous */
 	ctrl_cmd_t req = CTRL_CMD_DEFAULT_REQ();
 	ctrl_cmd_t *resp = NULL;
-	printf("test_wifi_connect\n");
 
 	resp = wifi_connect(req);
 	return ctrl_app_resp_callback(resp);
@@ -1002,6 +1015,7 @@ int test_wifi_connect(void)
 	ctrl_cmd_t *resp = NULL;
 
 	req.ctrl_resp_cb = ctrl_app_resp_callback;
+	hosted_log("Async call registerd: %p\n", ctrl_app_resp_callback);
 
 	wifi_connect(req);
 

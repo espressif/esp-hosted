@@ -20,6 +20,19 @@
 
 #define MCU_SYS                                      1
 
+#include "common.h"
+#if CONFIG_RPC_LOG_LEVEL
+  #define hosted_log(...)                                                    \
+    do {                                                                     \
+        printf("%s:%u ",__func__,__LINE__);                                  \
+        printf(__VA_ARGS__);                                                 \
+    } while(0)
+#else
+  #define hosted_log(...)                                                    \
+    do {                                                                     \
+    } while(0)
+#endif
+
 
 #define CTRL__TIMER_ONESHOT                          0
 #define CTRL__TIMER_PERIODIC                         1
@@ -126,6 +139,7 @@ enum hardware_type_e {
 #define MILLISEC_TO_SEC			1000
 #define TICKS_PER_SEC(x) (1000*(x) / portTICK_PERIOD_MS)
 #define SEC_TO_MILLISEC(x) (1000*(x))
+#define SEC_TO_MICROSEC(x) (1000*1000*(x))
 
 
 #define MEM_DUMP(s) \

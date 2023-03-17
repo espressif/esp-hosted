@@ -114,7 +114,8 @@ typedef struct CtrlMsgEventWifiEventNoArgs CtrlMsgEventWifiEventNoArgs;
 typedef struct CtrlMsgEventESPInit CtrlMsgEventESPInit;
 typedef struct CtrlMsgEventHeartbeat CtrlMsgEventHeartbeat;
 typedef struct CtrlMsgEventStationDisconnectFromAP CtrlMsgEventStationDisconnectFromAP;
-typedef struct CtrlMsgEventAPStaConOrDisconnected CtrlMsgEventAPStaConOrDisconnected;
+typedef struct CtrlMsgEventAPStaDisconnected CtrlMsgEventAPStaDisconnected;
+typedef struct CtrlMsgEventAPStaConnected CtrlMsgEventAPStaConnected;
 typedef struct CtrlMsg CtrlMsg;
 
 
@@ -264,13 +265,14 @@ typedef enum _CtrlMsgId {
   CTRL_MSG_ID__Event_ESPInit = 301,
   CTRL_MSG_ID__Event_Heartbeat = 302,
   CTRL_MSG_ID__Event_StationDisconnectFromAP = 303,
-  CTRL_MSG_ID__Event_AP_StaConnDisconn = 304,
-  CTRL_MSG_ID__Event_WifiEventNoArgs = 305,
+  CTRL_MSG_ID__Event_AP_StaConnected = 304,
+  CTRL_MSG_ID__Event_AP_StaDisconnected = 305,
+  CTRL_MSG_ID__Event_WifiEventNoArgs = 306,
   /*
    * Add new control path command notification before Event_Max
    * and update Event_Max 
    */
-  CTRL_MSG_ID__Event_Max = 306
+  CTRL_MSG_ID__Event_Max = 307
     PROTOBUF_C__FORCE_ENUM_TO_BE_INT_SIZE(CTRL_MSG_ID)
 } CtrlMsgId;
 
@@ -2100,7 +2102,7 @@ struct  CtrlMsgEventStationDisconnectFromAP
     , 0 }
 
 
-struct  CtrlMsgEventAPStaConOrDisconnected
+struct  CtrlMsgEventAPStaDisconnected
 {
   ProtobufCMessage base;
   int32_t resp;
@@ -2109,8 +2111,22 @@ struct  CtrlMsgEventAPStaConOrDisconnected
   uint32_t aid;
   protobuf_c_boolean is_mesh_child;
 };
-#define CTRL_MSG__EVENT__AP__STA_CON_OR_DISCONNECTED__INIT \
- { PROTOBUF_C_MESSAGE_INIT (&ctrl_msg__event__ap__sta_con_or_disconnected__descriptor) \
+#define CTRL_MSG__EVENT__AP__STA_DISCONNECTED__INIT \
+ { PROTOBUF_C_MESSAGE_INIT (&ctrl_msg__event__ap__sta_disconnected__descriptor) \
+    , 0, 0, {0,NULL}, 0, 0 }
+
+
+struct  CtrlMsgEventAPStaConnected
+{
+  ProtobufCMessage base;
+  int32_t resp;
+  int32_t event_id;
+  ProtobufCBinaryData mac;
+  uint32_t aid;
+  protobuf_c_boolean is_mesh_child;
+};
+#define CTRL_MSG__EVENT__AP__STA_CONNECTED__INIT \
+ { PROTOBUF_C_MESSAGE_INIT (&ctrl_msg__event__ap__sta_connected__descriptor) \
     , 0, 0, {0,NULL}, 0, 0 }
 
 
@@ -2177,8 +2193,9 @@ typedef enum {
   CTRL_MSG__PAYLOAD_EVENT_ESP_INIT = 301,
   CTRL_MSG__PAYLOAD_EVENT_HEARTBEAT = 302,
   CTRL_MSG__PAYLOAD_EVENT_STATION_DISCONNECT_FROM__AP = 303,
-  CTRL_MSG__PAYLOAD_EVENT_AP_STA_CONN_DISCONN = 304,
-  CTRL_MSG__PAYLOAD_EVENT_WIFI_EVENT_NO_ARGS = 305
+  CTRL_MSG__PAYLOAD_EVENT_AP_STA_CONNECTED = 304,
+  CTRL_MSG__PAYLOAD_EVENT_AP_STA_DISCONNECTED = 305,
+  CTRL_MSG__PAYLOAD_EVENT_WIFI_EVENT_NO_ARGS = 306
     PROTOBUF_C__FORCE_ENUM_TO_BE_INT_SIZE(CTRL_MSG__PAYLOAD__CASE)
 } CtrlMsg__PayloadCase;
 
@@ -2265,7 +2282,8 @@ struct  CtrlMsg
     CtrlMsgEventESPInit *event_esp_init;
     CtrlMsgEventHeartbeat *event_heartbeat;
     CtrlMsgEventStationDisconnectFromAP *event_station_disconnect_from_ap;
-    CtrlMsgEventAPStaConOrDisconnected *event_ap_sta_conn_disconn;
+    CtrlMsgEventAPStaConnected *event_ap_sta_connected;
+    CtrlMsgEventAPStaDisconnected *event_ap_sta_disconnected;
     CtrlMsgEventWifiEventNoArgs *event_wifi_event_no_args;
   };
 };
@@ -4155,24 +4173,43 @@ CtrlMsgEventStationDisconnectFromAP *
 void   ctrl_msg__event__station_disconnect_from_ap__free_unpacked
                      (CtrlMsgEventStationDisconnectFromAP *message,
                       ProtobufCAllocator *allocator);
-/* CtrlMsgEventAPStaConOrDisconnected methods */
-void   ctrl_msg__event__ap__sta_con_or_disconnected__init
-                     (CtrlMsgEventAPStaConOrDisconnected         *message);
-size_t ctrl_msg__event__ap__sta_con_or_disconnected__get_packed_size
-                     (const CtrlMsgEventAPStaConOrDisconnected   *message);
-size_t ctrl_msg__event__ap__sta_con_or_disconnected__pack
-                     (const CtrlMsgEventAPStaConOrDisconnected   *message,
+/* CtrlMsgEventAPStaDisconnected methods */
+void   ctrl_msg__event__ap__sta_disconnected__init
+                     (CtrlMsgEventAPStaDisconnected         *message);
+size_t ctrl_msg__event__ap__sta_disconnected__get_packed_size
+                     (const CtrlMsgEventAPStaDisconnected   *message);
+size_t ctrl_msg__event__ap__sta_disconnected__pack
+                     (const CtrlMsgEventAPStaDisconnected   *message,
                       uint8_t             *out);
-size_t ctrl_msg__event__ap__sta_con_or_disconnected__pack_to_buffer
-                     (const CtrlMsgEventAPStaConOrDisconnected   *message,
+size_t ctrl_msg__event__ap__sta_disconnected__pack_to_buffer
+                     (const CtrlMsgEventAPStaDisconnected   *message,
                       ProtobufCBuffer     *buffer);
-CtrlMsgEventAPStaConOrDisconnected *
-       ctrl_msg__event__ap__sta_con_or_disconnected__unpack
+CtrlMsgEventAPStaDisconnected *
+       ctrl_msg__event__ap__sta_disconnected__unpack
                      (ProtobufCAllocator  *allocator,
                       size_t               len,
                       const uint8_t       *data);
-void   ctrl_msg__event__ap__sta_con_or_disconnected__free_unpacked
-                     (CtrlMsgEventAPStaConOrDisconnected *message,
+void   ctrl_msg__event__ap__sta_disconnected__free_unpacked
+                     (CtrlMsgEventAPStaDisconnected *message,
+                      ProtobufCAllocator *allocator);
+/* CtrlMsgEventAPStaConnected methods */
+void   ctrl_msg__event__ap__sta_connected__init
+                     (CtrlMsgEventAPStaConnected         *message);
+size_t ctrl_msg__event__ap__sta_connected__get_packed_size
+                     (const CtrlMsgEventAPStaConnected   *message);
+size_t ctrl_msg__event__ap__sta_connected__pack
+                     (const CtrlMsgEventAPStaConnected   *message,
+                      uint8_t             *out);
+size_t ctrl_msg__event__ap__sta_connected__pack_to_buffer
+                     (const CtrlMsgEventAPStaConnected   *message,
+                      ProtobufCBuffer     *buffer);
+CtrlMsgEventAPStaConnected *
+       ctrl_msg__event__ap__sta_connected__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data);
+void   ctrl_msg__event__ap__sta_connected__free_unpacked
+                     (CtrlMsgEventAPStaConnected *message,
                       ProtobufCAllocator *allocator);
 /* CtrlMsg methods */
 void   ctrl_msg__init
@@ -4492,8 +4529,11 @@ typedef void (*CtrlMsgEventHeartbeat_Closure)
 typedef void (*CtrlMsgEventStationDisconnectFromAP_Closure)
                  (const CtrlMsgEventStationDisconnectFromAP *message,
                   void *closure_data);
-typedef void (*CtrlMsgEventAPStaConOrDisconnected_Closure)
-                 (const CtrlMsgEventAPStaConOrDisconnected *message,
+typedef void (*CtrlMsgEventAPStaDisconnected_Closure)
+                 (const CtrlMsgEventAPStaDisconnected *message,
+                  void *closure_data);
+typedef void (*CtrlMsgEventAPStaConnected_Closure)
+                 (const CtrlMsgEventAPStaConnected *message,
                   void *closure_data);
 typedef void (*CtrlMsg_Closure)
                  (const CtrlMsg *message,
@@ -4611,7 +4651,8 @@ extern const ProtobufCMessageDescriptor ctrl_msg__event__wifi_event_no_args__des
 extern const ProtobufCMessageDescriptor ctrl_msg__event__espinit__descriptor;
 extern const ProtobufCMessageDescriptor ctrl_msg__event__heartbeat__descriptor;
 extern const ProtobufCMessageDescriptor ctrl_msg__event__station_disconnect_from_ap__descriptor;
-extern const ProtobufCMessageDescriptor ctrl_msg__event__ap__sta_con_or_disconnected__descriptor;
+extern const ProtobufCMessageDescriptor ctrl_msg__event__ap__sta_disconnected__descriptor;
+extern const ProtobufCMessageDescriptor ctrl_msg__event__ap__sta_connected__descriptor;
 extern const ProtobufCMessageDescriptor ctrl_msg__descriptor;
 
 PROTOBUF_C__END_DECLS

@@ -557,8 +557,10 @@ static void spi_process_rx_task(void const* pvParameters)
 		if (g_h.funcs->_h_dequeue_item(from_slave_queue, &buf_handle, portMAX_DELAY)) {
 			continue;
 		}
+#if CONFIG_SPI_LOG_LEVEL
 		printf("New packet\n\r");
 		print_hex_dump(buf_handle.payload, buf_handle.payload_len, "spi_rx");
+#endif
 
 		/* point to payload */
 		payload = buf_handle.payload;
@@ -663,7 +665,9 @@ static uint8_t * get_tx_buffer(uint8_t *is_valid_tx_buf)
 	}
 
 	if (len) {
+#if CONFIG_SPI_LOG_LEVEL
 		print_hex_dump(buf_handle.payload, buf_handle.payload_len, "spi_tx");
+#endif
 
         sendbuf = spi_buffer_alloc(MEMSET_REQUIRED);
 		if (!sendbuf) {

@@ -629,9 +629,9 @@ void *hosted_timer_start(int duration, int type,
 
 	/* Start depending upon timer type */
 	if (type == CTRL__TIMER_PERIODIC) {
-		ret = esp_timer_start_periodic(timer_handle->timer_id, TICKS_PER_SEC(duration));
+		ret = esp_timer_start_periodic(timer_handle->timer_id, SEC_TO_MICROSEC(duration));
 	} else if (type == CTRL__TIMER_ONESHOT) {
-		ret = esp_timer_start_once(timer_handle->timer_id, TICKS_PER_SEC(duration));
+		ret = esp_timer_start_once(timer_handle->timer_id, SEC_TO_MICROSEC(duration));
 	} else {
 		printf("Unsupported timer type. supported: one_shot, periodic\n");
 		esp_timer_delete(timer_handle->timer_id);
@@ -804,7 +804,7 @@ int hosted_do_spi_transfer(void *trans)
 int hosted_wifi_event_post(int32_t event_id,
         const void* event_data, size_t event_data_size, uint32_t ticks_to_wait)
 {
-	printf("os_Wrapper: event %ld recvd -->\n",event_id);
+	hosted_log("event %ld recvd -->\n",event_id);
 	return esp_event_post(WIFI_EVENT, event_id, event_data, event_data_size, ticks_to_wait);
 }
 
