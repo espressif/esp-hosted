@@ -161,4 +161,8 @@ esp_err_t esp_wifi_connect(void);
 
 esp_err_t esp_wifi_set_config(int interface, wifi_config_t *conf);
 
+esp_err_t esp_wifi_get_mac(wifi_interface_t ifx, uint8_t mac[6]);
+
+esp_err_t esp_wifi_set_mac(wifi_interface_t ifx, uint8_t mac[6]);
+
 #endif /* __ESP_WIFI_H__ */

@@ -100,7 +100,7 @@ typedef struct {
 /* 35 */ int (*_h_write_gpio)(uint32_t gpio_port, uint32_t gpio_num, uint32_t value);
 
           /* Trasport - SPI */
-/* 36 */ void * (*_h_bus_init)(void (*gpio_hs_dr_isr_handler)(void* arg));
+/* 36 */ void * (*_h_bus_init)(void);
 /* 37 */ int (*_h_do_bus_transfer)(void *transfer_context);
 /* 38 */ int (*_h_event_wifi_post)(int32_t event_id, const void* event_data, size_t event_data_size, uint32_t ticks_to_wait);
 

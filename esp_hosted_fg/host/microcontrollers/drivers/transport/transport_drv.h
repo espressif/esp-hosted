@@ -25,11 +25,11 @@ extern "C" {
 
 #include "common.h"
 #if 0
-#include "adapter.h"
 #include "os_wrapper.h"
 #include "trace.h"
 #endif
-#include "netdev_if.h"
+//#include "netdev_if.h"
+#include "adapter.h"
 
 /* ESP in sdkconfig has CONFIG_IDF_FIRMWARE_CHIP_ID entry.
  * supported values of CONFIG_IDF_FIRMWARE_CHIP_ID are - */
@@ -59,18 +59,21 @@ struct hosted_transport_context_t {
     uint8_t  *rx_buf;
 };
 
+typedef esp_err_t (*hosted_rxcb_t)(void *buffer, uint16_t len, void *eb);
+extern hosted_rxcb_t g_rxcb[ESP_MAX_IF];
 
+#if 0
 /* netdev APIs*/
 int esp_netdev_open(netdev_handle_t netdev);
 int esp_netdev_close(netdev_handle_t netdev);
 int esp_netdev_xmit(netdev_handle_t netdev, struct pbuf *net_buf);
+#endif
 
 
 void process_capabilities(uint8_t cap);
 void transport_init(void(*transport_evt_handler)(uint8_t));
 
-void process_event(uint8_t *evt_buf, uint16_t len);
-void process_priv_communication(struct pbuf *pbuf);
+void process_priv_communication(void *payload, uint8_t len);
 void print_capabilities(uint32_t cap);
 int process_init_event(uint8_t *evt_buf, uint8_t len);
 
@@ -78,6 +81,15 @@ stm_ret_t send_to_slave(uint8_t iface_type, uint8_t iface_num,
 		uint8_t * wbuffer, uint16_t wlen);
 
 
+esp_err_t esp_hosted_init(void(*esp_hosted_up_cb)(void));
+esp_err_t esp_hosted_deinit(void);
+esp_err_t esp_hosted_tx(uint8_t iface_type, uint8_t iface_num,
+		uint8_t * buffer, uint16_t len);
+
+esp_err_t esp_hosted_register_wifi_rxcb(int ifx, hosted_rxcb_t fn);
+esp_err_t esp_hosted_register_wifi_txcb(int ifx, hosted_rxcb_t fn);
+
+int serial_rx_handler(interface_buffer_handle_t * buf_handle);
 #ifdef __cplusplus
 }
 #endif

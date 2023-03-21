@@ -10,5 +10,7 @@ message("                    Building ESP-Hosted-FG Firmware version :: ${PROJEC
 message(*************************************************************************************)
 
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
+set(COMPONENTS main nvs_flash protocomm)
+#set(COMPONENTS main nvs_flash protocomm esp_gdbstub) # incase gdbsub needed
 project(network_adapter)
 idf_build_set_property(COMPILE_OPTIONS "-fdiagnostics-color=always" APPEND)

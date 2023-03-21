@@ -30,15 +30,5 @@
 
 /** Exported Functions **/
 
-/**
- * Send to slave via sdio
- * @param  iface_type - type of interface
- *         iface_num - interface number
- *         wbuffer - tx buffer
- *         wlen - size of wbuffer
- * @retval STM_OK for success or failure from enum stm_ret_t
- */
-stm_ret_t send_to_slave(uint8_t iface_type, uint8_t iface_num,
-		uint8_t * wbuffer, uint16_t wlen);
 
 #endif /* __SDIO_DRV_H */

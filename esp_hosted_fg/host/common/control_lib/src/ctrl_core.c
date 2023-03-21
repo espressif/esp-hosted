@@ -138,21 +138,24 @@ struct ctrl_lib_context {
 typedef void (*ctrl_rx_ind_t)(void);
 typedef void (*ctrl_tx_ind_t)(void);
 
-esp_queue_t* ctrl_rx_q = NULL;
-esp_queue_t* ctrl_tx_q = NULL;
+static queue_handle_t ctrl_rx_q = NULL;
+static queue_handle_t ctrl_tx_q = NULL;
+
 static void * ctrl_rx_thread_handle;
 static void * ctrl_tx_thread_handle;
-static void * ctrl_rx_sem;
 static void * ctrl_tx_sem;
-static void * ctrl_req_sem;
 static void * async_timer_handle;
 static struct ctrl_lib_context ctrl_lib_ctxt;
 
 static int call_event_callback(ctrl_cmd_t *app_event);
 static int is_async_resp_callback_registered_by_resp_msg_id(int resp_msg_id);
+static int is_sync_resp_sem_for_resp_msg_id(int resp_msg_id);
 static int call_async_resp_callback(ctrl_cmd_t *app_resp);
 static int set_async_resp_callback(int req_msg_id, ctrl_resp_cb_t resp_cb);
+static int set_sync_resp_sem(ctrl_cmd_t *app_req);
+static int wait_for_sync_response(ctrl_cmd_t *app_req);
 static void ctrl_async_timeout_handler(void *arg);
+static int post_sync_resp_sem(ctrl_cmd_t *app_resp);
 
 
 /* Control response callbacks
@@ -167,6 +170,7 @@ static void ctrl_async_timeout_handler(void *arg);
  *    with input as response
  */
 static ctrl_resp_cb_t ctrl_resp_cb_table [CTRL_RESP_MAX - CTRL_RESP_BASE] = { NULL };
+static void* ctrl_resp_cb_sem_table [CTRL_RESP_MAX - CTRL_RESP_BASE] = { NULL };
 
 /* Control event callbacks
  * These will be updated when user registers event callback
@@ -296,13 +300,15 @@ static int ctrl_app_parse_event(CtrlMsg *ctrl_msg, ctrl_cmd_t *app_ntfy)
 		wifi_event_ap_staconnected_t * p_a = &(app_ntfy->u.e_wifi_ap_staconnected);
 		CtrlMsgEventAPStaConnected * p_c = ctrl_msg->event_ap_sta_connected;
 
-		hosted_log("EVENT: AP ->  sta disconnected\n");
 		CTRL_FAIL_ON_NULL(event_ap_sta_connected);
 		app_ntfy->resp_event_status = p_c->resp;
 
 		if(SUCCESS==app_ntfy->resp_event_status) {
 			CTRL_FAIL_ON_NULL_PRINT(p_c->mac.data, "NULL mac");
 			g_h.funcs->_h_memcpy(p_a->mac, p_c->mac.data, p_c->mac.len);
+			/*hosted_log("EVENT: id[%lx] AP ->  sta connected mac[%2x %2x %2x %2x %2x %2x] (len:%u)\n",
+					p_c->event_id, p_a->mac[0], p_a->mac[1], p_a->mac[2],
+				p_a->mac[3], p_a->mac[4], p_a->mac[5], p_c->mac.len);*/
 		}
 
 		p_a->wifi_event_id = p_c->event_id;
@@ -321,6 +327,9 @@ static int ctrl_app_parse_event(CtrlMsg *ctrl_msg, ctrl_cmd_t *app_ntfy)
 		if(SUCCESS==app_ntfy->resp_event_status) {
 			CTRL_FAIL_ON_NULL_PRINT(p_c->mac.data, "NULL mac");
 			g_h.funcs->_h_memcpy(p_a->mac, p_c->mac.data, p_c->mac.len);
+			/*hosted_log("EVENT: id[%lx] AP ->  sta DISconnected mac[%2x %2x %2x %2x %2x %2x] (len:%u)\n",
+					p_c->event_id, p_a->mac[0], p_a->mac[1], p_a->mac[2],
+				p_a->mac[3], p_a->mac[4], p_a->mac[5], p_c->mac.len);*/
 		}
 
 		p_a->wifi_event_id = p_c->event_id;
@@ -377,15 +386,11 @@ static int ctrl_app_parse_resp(CtrlMsg *ctrl_msg, ctrl_cmd_t *app_resp)
 	switch (ctrl_msg->msg_id) {
 
 	case CTRL_RESP_GET_MAC_ADDR : {
-		uint8_t len_l = min(ctrl_msg->resp_get_mac_address->mac.len, MAX_MAC_STR_LEN-1);
-
 		CTRL_FAIL_ON_NULL(resp_get_mac_address);
 		CTRL_FAIL_ON_NULL(resp_get_mac_address->mac.data);
 		CTRL_ERR_IN_RESP(resp_get_mac_address);
 
-		strncpy(app_resp->u.wifi_mac.mac,
-			(char *)ctrl_msg->resp_get_mac_address->mac.data, len_l);
-		app_resp->u.wifi_mac.mac[len_l] = '\0';
+		CTRL_RESP_COPY_BYTES(app_resp->u.wifi_mac.mac, ctrl_msg->resp_get_mac_address->mac);
 		break;
 	} case CTRL_RESP_SET_MAC_ADDRESS : {
 		CTRL_FAIL_ON_NULL(resp_set_mac_address);
@@ -787,16 +792,9 @@ fail_parse_ctrl_msg2:
 	return FAILURE;
 }
 
-/* Control path RX indication */
-static void ctrl_rx_ind(void)
-{
-	//printf("%s:%u post ctrl_rx_sem\n",__func__,__LINE__);
-	g_h.funcs->_h_post_semaphore(ctrl_rx_sem);
-}
-
+/* Control path TX indication */
 static void ctrl_tx_ind(void)
 {
-	//printf("%s:%u post ctrl_tx_sem\n",__func__,__LINE__);
 	g_h.funcs->_h_post_semaphore(ctrl_tx_sem);
 }
 
@@ -836,7 +834,7 @@ static int process_ctrl_tx_msg(ctrl_cmd_t *app_req)
 
 	req.msg_type = CTRL_REQ;
 
-	/* 2. Protobuf msg init */
+	/* 1. Protobuf msg init */
 	ctrl_msg__init(&req);
 
 	req.msg_id = app_req->msg_id;
@@ -845,7 +843,7 @@ static int process_ctrl_tx_msg(ctrl_cmd_t *app_req)
 	/* payload case is exact match to msg id in esp_hosted_config.pb-c.h */
 	req.payload_case = (CtrlMsg__PayloadCase) app_req->msg_id;
 
-	/* 3. identify request and compose CtrlMsg */
+	/* 2. identify request and compose CtrlMsg */
 	switch(req.msg_id) {
 
 	case CTRL_REQ_GET_WIFI_MODE:
@@ -872,12 +870,6 @@ static int process_ctrl_tx_msg(ctrl_cmd_t *app_req)
 	} case CTRL_REQ_GET_MAC_ADDR: {
 		CTRL_ALLOC_ASSIGN(CtrlMsgReqGetMacAddress, req_get_mac_address);
 
-		if ((app_req->u.wifi_mac.mode <= WIFI_MODE_NONE) ||
-		    (app_req->u.wifi_mac.mode >= WIFI_MODE_APSTA)) {
-			hosted_log("Invalid parameter\n");
-			failure_status = CTRL_ERR_INCORRECT_ARG;
-			goto fail_req;
-		}
 		ctrl_msg__req__get_mac_address__init(req_payload);
 		req_payload->mode = app_req->u.wifi_mac.mode;
 
@@ -888,8 +880,7 @@ static int process_ctrl_tx_msg(ctrl_cmd_t *app_req)
 
 		if ((p->mode <= WIFI_MODE_NONE) ||
 		    (p->mode >= WIFI_MODE_APSTA)||
-		    (!strlen(p->mac)) ||
-		    (strlen(p->mac) > MAX_MAC_STR_LEN)) {
+		    (!(p->mac))) {
 			hosted_log("Invalid parameter\n");
 			failure_status = CTRL_ERR_INCORRECT_ARG;
 			goto fail_req;
@@ -897,8 +888,7 @@ static int process_ctrl_tx_msg(ctrl_cmd_t *app_req)
 		ctrl_msg__req__set_mac_address__init(req_payload);
 
 		req_payload->mode = p->mode;
-		req_payload->mac.len = min(strlen(p->mac), MAX_MAC_STR_LEN);
-		req_payload->mac.data = (uint8_t *)p->mac;
+		CTRL_REQ_COPY_BYTES(req_payload->mac, p->mac, BSSID_LENGTH);
 
 		break;
 	} case CTRL_REQ_SET_WIFI_MODE: {
@@ -1231,7 +1221,7 @@ static int process_ctrl_tx_msg(ctrl_cmd_t *app_req)
 
 	} /* switch */
 
-	/* 4. Protobuf msg size */
+	/* 3. Protobuf msg size */
 	tx_len = ctrl_msg__get_packed_size(&req);
 	if (!tx_len) {
 		hosted_log("Invalid tx length\n");
@@ -1239,7 +1229,7 @@ static int process_ctrl_tx_msg(ctrl_cmd_t *app_req)
 		goto fail_req;
 	}
 
-	/* 5. Allocate protobuf msg */
+	/* 4. Allocate protobuf msg */
 	tx_data = (uint8_t *)g_h.funcs->_h_calloc(1, tx_len);
 	if (!tx_data) {
 		hosted_log("Failed to allocate memory for tx_data\n");
@@ -1247,7 +1237,7 @@ static int process_ctrl_tx_msg(ctrl_cmd_t *app_req)
 		goto fail_req;
 	}
 
-	/* 6. Assign response callback
+	/* 5. Assign response callback
 	 * a. If the response callback is not set, this will reset the
 	 *    callback to NULL.
 	 * b. If the non NULL response is assigned, this will set the
@@ -1259,7 +1249,9 @@ static int process_ctrl_tx_msg(ctrl_cmd_t *app_req)
 		goto fail_req;
 	}
 
-	/* 7. Start timeout for response for async only
+
+
+	/* 6. Start timeout for response for async only
 	 * For sync procedures, g_h.funcs->_h_get_semaphore takes care to
 	 * handle timeout situations */
 	if (app_req->ctrl_resp_cb) {
@@ -1273,7 +1265,7 @@ static int process_ctrl_tx_msg(ctrl_cmd_t *app_req)
 	}
 
 
-	/* 8. Pack in protobuf and send the request */
+	/* 7. Pack in protobuf and send the request */
 	ctrl_msg__pack(&req, tx_data);
 	if (transport_pserial_send(tx_data, tx_len)) {
 		hosted_log("Send control req[0x%x] failed\n",req.msg_id);
@@ -1284,14 +1276,14 @@ static int process_ctrl_tx_msg(ctrl_cmd_t *app_req)
 	hosted_log("Sent RPC_Req[0x%x]\n",req.msg_id);
 
 
-	/* 9. Free hook for application */
+	/* 8. Free hook for application */
 	if (app_req->free_buffer_handle) {
 		if (app_req->free_buffer_func) {
 			app_req->free_buffer_func(app_req->free_buffer_handle);
 		}
 	}
 
-	/* 10. Cleanup */
+	/* 9. Cleanup */
 	mem_free(tx_data);
 	CTRL_FREE_ALLOCATIONS();
 	return SUCCESS;
@@ -1316,7 +1308,7 @@ fail_req:
 		app_resp->resp_event_status = failure_status;
 
 		/* 12. In async procedure, it is important to get
-		 * some kind of acknowledgement to user when 
+		 * some kind of acknowledgement to user when
 		 * request is already sent and success return to the caller
 		 */
 		app_req->ctrl_resp_cb(app_resp);
@@ -1339,7 +1331,7 @@ fail_req2:
 /* Process control msg (response or event) received from ESP32 */
 static int process_ctrl_rx_msg(CtrlMsg * proto_msg, ctrl_rx_ind_t ctrl_rx_func)
 {
-	esp_queue_elem_t *elem = NULL;
+	esp_queue_elem_t elem = {0};
 	ctrl_cmd_t *app_resp = NULL;
 	ctrl_cmd_t *app_event = NULL;
 
@@ -1351,8 +1343,7 @@ static int process_ctrl_rx_msg(CtrlMsg * proto_msg, ctrl_rx_ind_t ctrl_rx_func)
 	/* 2. Check if it is event msg */
 	if (proto_msg->msg_type == CTRL_MSG_TYPE__Event) {
 		/* Events are handled only asynchronously */
-
-		hosted_log("Received Event [0x%x]\n", proto_msg->msg_id);
+		/*hosted_log("Received Event [0x%x]\n", proto_msg->msg_id);*/
 		/* check if callback is available.
 		 * if not, silently drop the msg */
 		if (CALLBACK_AVAILABLE ==
@@ -1385,7 +1376,6 @@ static int process_ctrl_rx_msg(CtrlMsg * proto_msg, ctrl_rx_ind_t ctrl_rx_func)
 
 	/* 3. Check if it is response msg */
 	} else if (proto_msg->msg_type == CTRL_MSG_TYPE__Resp) {
-
 		hosted_log("Received Resp [0x%x]\n", proto_msg->msg_id);
 		/* Ctrl responses are handled asynchronously and
 		 * asynchronpusly */
@@ -1434,28 +1424,23 @@ static int process_ctrl_rx_msg(CtrlMsg * proto_msg, ctrl_rx_ind_t ctrl_rx_func)
 			 * using 'esp_queue' and help of semaphore
 			 **/
 
-			elem = (esp_queue_elem_t*)g_h.funcs->_h_malloc(sizeof(esp_queue_elem_t));
-			if (!elem) {
-				hosted_log("Malloc failed\n");
-				goto free_buffers;
-			}
 
 			/* User is RESPONSIBLE to free memory from
 			 * app_resp in case of async callbacks NOT provided
 			 * to free memory, please refer CLEANUP_APP_MSG macro
 			 **/
-			elem->buf = app_resp;
-			elem->buf_len = sizeof(ctrl_cmd_t);
-			if (esp_queue_put(ctrl_rx_q, (void*)elem)) {
+			elem.buf = app_resp;
+			elem.buf_len = sizeof(ctrl_cmd_t);
+
+            if (g_h.funcs->_h_queue_item(ctrl_rx_q, &elem, portMAX_DELAY)) {
 				hosted_log("ctrl Q put fail\n");
 				goto free_buffers;
 			}
 
-			/* Call up rx ind to unblock user */
-			if (ctrl_rx_func)
-				ctrl_rx_func();
+			/* Call up rx ind to unblock caller */
+			if (CALLBACK_AVAILABLE == is_sync_resp_sem_for_resp_msg_id(app_resp->msg_id))
+				post_sync_resp_sem(app_resp);
 		}
-		g_h.funcs->_h_post_semaphore(ctrl_req_sem);
 
 	} else {
 		/* 4. some unsupported msg, drop it */
@@ -1466,8 +1451,8 @@ static int process_ctrl_rx_msg(CtrlMsg * proto_msg, ctrl_rx_ind_t ctrl_rx_func)
 
 	/* 5. cleanup */
 free_buffers:
-	mem_free(elem);
 	mem_free(app_event);
+	mem_free(app_resp);
 	if (proto_msg) {
 		ctrl_msg__free_unpacked(proto_msg, NULL);
 		proto_msg = NULL;
@@ -1484,32 +1469,25 @@ static void ctrl_rx_thread(void const *arg)
 	ctrl_rx_ind_t ctrl_rx_func;
 	ctrl_rx_func = (ctrl_rx_ind_t) arg;
 
-	/* 1. Get callback for synchronous procedure
-	 * for semaphore post */
-	if (!ctrl_rx_func) {
-		hosted_log("ERROR: NULL rx async cb for esp_queue,sem\n");
-		return;
-	}
-
-	/* 2. If serial interface is not available, exit */
+	/* If serial interface is not available, exit */
 	if (!serial_drv_open(SERIAL_IF_FILE)) {
 		hosted_log("Exiting thread, handle invalid\n");
 		return;
 	}
 
-	/* 3. This queue should already be created
+	/* This queue should already be created
 	 * if NULL, exit here */
 	if (!ctrl_rx_q) {
 		hosted_log("Ctrl msg rx Q is not created\n");
 		return;
 	}
 
-	/* 4. Infinite loop to process incoming msg on serial interface */
+	/* Infinite loop to process incoming msg on serial interface */
 	while (1) {
 		uint8_t *buf = NULL;
 		CtrlMsg *resp = NULL;
 
-		/* 4.1 Block on read of protobuf encoded msg */
+		/* Block on read of protobuf encoded msg */
 		if (is_ctrl_lib_state(CTRL_LIB_STATE_INACTIVE)) {
 			sleep(1);
 			continue;
@@ -1521,19 +1499,19 @@ static void ctrl_rx_thread(void const *arg)
 			goto free_bufs;
 		}
 
-		/* 4.2 Decode protobuf */
+		/* Decode protobuf */
 		resp = ctrl_msg__unpack(NULL, buf_len, buf);
 		if (!resp) {
 			goto free_bufs;
 		}
-		/* 4.3 Free the read buffer */
+		/* Free the read buffer */
 		mem_free(buf);
 
-		/* 4.4 Send for further processing as event or response */
+		/* Send for further processing as event or response */
 		process_ctrl_rx_msg(resp, ctrl_rx_func);
 		continue;
 
-		/* 5. cleanup */
+		/* Failed - cleanup */
 free_bufs:
 		mem_free(buf);
 		if (resp) {
@@ -1569,14 +1547,17 @@ static void ctrl_tx_thread(void const *arg)
 		/* 4.1 Block on read of protobuf encoded msg */
 		if (is_ctrl_lib_state(CTRL_LIB_STATE_INACTIVE)) {
 			sleep(1);
+			/*hosted_log("%s:%u ctrl lib inactive\n",__func__,__LINE__);*/
 			continue;
 		}
 
-		//printf("%s:%u get ctrl_tx_sem\n",__func__,__LINE__);
 		g_h.funcs->_h_get_semaphore(ctrl_tx_sem, HOSTED_BLOCKING);
-		//printf("%s:%u got ctrl_tx_sem\n",__func__,__LINE__);
 
-		app_req = esp_queue_get(ctrl_tx_q);
+		if (g_h.funcs->_h_dequeue_item(ctrl_tx_q, &app_req, portMAX_DELAY)) {
+			hosted_log("Ctrl TX Q Failed to dequeue\n");
+			continue;
+		}
+
 		if (app_req) {
 			process_ctrl_tx_msg(app_req);
 		} else {
@@ -1591,9 +1572,9 @@ static int spawn_ctrl_threads(void)
 {
 	/* create new thread for control RX path handling */
 	ctrl_rx_thread_handle = g_h.funcs->_h_thread_create("ctrl_rx", DFLT_TASK_PRIO,
-			CTRL_PATH_TASK_STACK_SIZE, ctrl_rx_thread, ctrl_rx_ind);
+			CTRL_PATH_TASK_STACK_SIZE, ctrl_rx_thread, NULL);
 	ctrl_tx_thread_handle = g_h.funcs->_h_thread_create("ctrl_tx", DFLT_TASK_PRIO,
-			CTRL_PATH_TASK_STACK_SIZE, ctrl_tx_thread, NULL /*ctrl_tx_ind*/);
+			CTRL_PATH_TASK_STACK_SIZE, ctrl_tx_thread, NULL);
 	if (!ctrl_rx_thread_handle || !ctrl_tx_thread_handle) {
 		hosted_log("Thread creation failed for ctrl_rx_thread\n");
 		return FAILURE;
@@ -1629,52 +1610,37 @@ static int cancel_ctrl_threads(void)
  **/
 static ctrl_cmd_t * get_response(int *read_len, ctrl_cmd_t *app_req)
 {
-	void * data = NULL;
 	uint8_t * buf = NULL;
-	esp_queue_elem_t *elem = NULL;
+	esp_queue_elem_t elem = {0};
 	int ret = 0;
-	int timeout_sec = 0;
 
-	/* 1. Any problems in response, return NULL */
-	if (!read_len) {
+	/* Any problems in response, return NULL */
+	if (!read_len || !app_req) {
 		hosted_log("Invalid input parameter\n");
 		return NULL;
 	}
 
-	/* 2. If timeout not specified, use default */
-	if (!app_req->cmd_timeout_sec)
-		timeout_sec = DEFAULT_CTRL_RESP_TIMEOUT;
-	else
-		timeout_sec = app_req->cmd_timeout_sec;
 
-	/* 3. Wait for response */
-	//printf("%s:%u get ctrl_rx_sem req[0x%x]\n",__func__,__LINE__,app_req->msg_id);
-	ret = g_h.funcs->_h_get_semaphore(ctrl_rx_sem, timeout_sec);
+	/* Wait for response */
+	ret = wait_for_sync_response(app_req);
 	if (ret) {
 		if (errno == ETIMEDOUT)
-			hosted_log("Resp timedout [%u] sec for req[0x%x]\n",
-					timeout_sec, app_req->msg_id);
+			hosted_log("Resp timedout for req[0x%x]\n", app_req->msg_id);
 		else
-			hosted_log("ERR [%u] with timeout[%u] sec for Req[0x%x]\n",
-					errno, timeout_sec,app_req->msg_id);
-		/* Unlock semaphore in negative case */
-		//printf("%s:%u post ctrl_req_sem req[0x%x]\n",__func__,__LINE__,app_req->msg_id);
-		g_h.funcs->_h_post_semaphore(ctrl_req_sem);
+			hosted_log("ERR [%u] ret[%u] for Req[0x%x]\n", errno, ret, app_req->msg_id);
 		return NULL;
 	}
-	//printf("%s:%u got ctrl_rx_sem req[0x%x]\n",__func__,__LINE__,app_req->msg_id);
 
-	/* 4. Fetch response from `esp_queue` */
-	data = esp_queue_get(ctrl_rx_q);
-	if (data) {
-		elem = (esp_queue_elem_t*)data;
-		if (!elem)
-			return NULL;
+	/* Fetch response from `esp_queue` */
+	if (g_h.funcs->_h_dequeue_item(ctrl_rx_q, &elem, portMAX_DELAY)) {
+		hosted_log("Ctrl Rx Q Failed to dequeue\n");
+		return NULL;
+	}
 
-		*read_len = elem->buf_len;
-		buf = elem->buf;
-		mem_free(elem);
-		/* Free queue element and return the rx data */
+	if (elem.buf_len) {
+
+		*read_len = elem.buf_len;
+		buf = elem.buf;
 		return (ctrl_cmd_t*)buf;
 
 	} else {
@@ -1703,6 +1669,22 @@ static int call_async_resp_callback(ctrl_cmd_t *app_resp)
 
 	return CALLBACK_NOT_REGISTERED;
 }
+
+
+static int post_sync_resp_sem(ctrl_cmd_t *app_resp)
+{
+	if ((app_resp->msg_id <= CTRL_RESP_BASE) ||
+	    (app_resp->msg_id >= CTRL_RESP_MAX)) {
+		return MSG_ID_OUT_OF_ORDER;
+	}
+
+	if (ctrl_resp_cb_sem_table[app_resp->msg_id-CTRL_RESP_BASE]) {
+		return g_h.funcs->_h_post_semaphore(ctrl_resp_cb_sem_table[app_resp->msg_id-CTRL_RESP_BASE]);
+	}
+
+	return CALLBACK_NOT_REGISTERED;
+}
+
 
 /* Check and call control event asynchronous callback if available
  * else flag error
@@ -1741,6 +1723,74 @@ static int set_async_resp_callback(int req_msg_id, ctrl_resp_cb_t resp_cb)
 	}
 }
 
+/* Set synchronous control response semaphore
+ * In case of asynchronous request, `rx_sem` will be NULL or disregarded
+ * `ctrl_resp_cb_sem_table` will be updated with NULL for async
+ * In case of synchronous request, valid callback will be cached
+ * This sem will posted after receiving the mapping response
+ **/
+static int set_sync_resp_sem(ctrl_cmd_t *app_req)
+{
+	int exp_resp_msg_id = (app_req->msg_id - CTRL_REQ_BASE + CTRL_RESP_BASE);
+
+	if (app_req->rx_sem)
+		g_h.funcs->_h_destroy_semaphore(app_req->rx_sem);
+
+	if (exp_resp_msg_id >= CTRL_RESP_MAX) {
+		hosted_log("Not able to map new request to resp id\n");
+		return MSG_ID_OUT_OF_ORDER;
+	} else if (!app_req->ctrl_resp_cb) {
+		/* For sync, set sem */
+		app_req->rx_sem = g_h.funcs->_h_create_binary_semaphore();
+		g_h.funcs->_h_get_semaphore(app_req->rx_sem, HOSTED_BLOCKING);
+
+		hosted_log("Register sync sem %p for resp[0x%x]\n", app_req->rx_sem, exp_resp_msg_id);
+		ctrl_resp_cb_sem_table[exp_resp_msg_id-CTRL_RESP_BASE] = app_req->rx_sem;
+		return CALLBACK_SET_SUCCESS;
+	} else {
+		/* For async, nothing to be done */
+		hosted_log("NOT Register sync sem for resp[0x%x]\n", exp_resp_msg_id);
+		return CALLBACK_NOT_REGISTERED;
+	}
+}
+
+static int wait_for_sync_response(ctrl_cmd_t *app_req)
+{
+	int timeout_sec = 0;
+	int exp_resp_msg_id = 0;
+	int ret = 0;
+
+	/* If timeout not specified, use default */
+	if (!app_req->cmd_timeout_sec)
+		timeout_sec = DEFAULT_CTRL_RESP_TIMEOUT;
+	else
+		timeout_sec = app_req->cmd_timeout_sec;
+
+	exp_resp_msg_id = (app_req->msg_id - CTRL_REQ_BASE + CTRL_RESP_BASE);
+
+	if (!ctrl_resp_cb_sem_table[exp_resp_msg_id-CTRL_RESP_BASE]) {
+		printf("Err: sync sem not registered\n");
+		return CTRL_ERR_SET_SYNC_SEM;
+	}
+
+	if (exp_resp_msg_id >= CTRL_RESP_MAX) {
+		hosted_log("Not able to map new request to resp id\n");
+		return MSG_ID_OUT_OF_ORDER;
+	}
+
+	/*hosted_log("Wait for sync resp for Req[0x%x] with timer of %u sec\n",
+			app_req->msg_id, timeout_sec);*/
+	ret = g_h.funcs->_h_get_semaphore(ctrl_resp_cb_sem_table[exp_resp_msg_id-CTRL_RESP_BASE], timeout_sec);
+
+	/* TODO: is this ret check required? */
+	if (!ret)
+		if (g_h.funcs->_h_destroy_semaphore(ctrl_resp_cb_sem_table[exp_resp_msg_id-CTRL_RESP_BASE])) {
+			hosted_log("read sem rx for resp[0x%x] destroy failed\n", exp_resp_msg_id);
+		}
+
+	return ret;
+}
+
 /* Set asynchronous control response callback from control **response**
  * In case of synchronous request, `resp_cb` will be NULL and table
  * `ctrl_resp_cb_table` will be updated with NULL
@@ -1763,6 +1813,22 @@ static int is_async_resp_callback_registered_by_resp_msg_id(int resp_msg_id)
 	return CALLBACK_NOT_REGISTERED;
 }
 
+static int is_sync_resp_sem_for_resp_msg_id(int resp_msg_id)
+{
+	if ((resp_msg_id <= CTRL_RESP_BASE) || (resp_msg_id >= CTRL_RESP_MAX)) {
+		hosted_log("resp id[%u] out of range\n", resp_msg_id);
+		return MSG_ID_OUT_OF_ORDER;
+	}
+
+	if (ctrl_resp_cb_sem_table[resp_msg_id-CTRL_RESP_BASE]) {
+		/*hosted_log("for [0x%x] : yes [%p]\n", resp_msg_id,
+				ctrl_resp_cb_sem_table[resp_msg_id-CTRL_RESP_BASE]);*/
+		return CALLBACK_AVAILABLE;
+	}
+	/*hosted_log("for [0x%x] : no\n", resp_msg_id);*/
+
+	return CALLBACK_NOT_REGISTERED;
+}
 
 
 /* Check if async control response callback is available
@@ -1841,11 +1907,8 @@ static void ctrl_async_timeout_handler(void *arg)
 {
 	/* Please Nore: Be careful while porting this to MCU.
 	 * ctrl_async_timeout_handler should only be invoked after the timer has expired.
-	 * In case the timer expires incorrect duration
-	 * (Missed seconds to sleep conversion correctly), this function will unnecessarily
-	 * Post _h_post_semaphore(ctrl_req_sem), which will open access to another
-	 * ctrl req, without getting response from ESP slave.
-	 * This prone to break the state machine, if not configured correctly
+	 * timer should not expire incorrect duration (Check os_wrapper layer for
+	 * correct seconds to milliseconds or ticks etc depending upon the platform
 	 * */
 	ctrl_cmd_t *app_req = (ctrl_cmd_t *)arg;
 
@@ -1872,10 +1935,6 @@ static void ctrl_async_timeout_handler(void *arg)
 
 	/* call func pointer to notify failure */
 	func(app_resp);
-
-	/* Unlock semaphore in negative case */
-	//printf("%s:%u post ctrl_req_sem\n",__func__,__LINE__);
-	g_h.funcs->_h_post_semaphore(ctrl_req_sem);
 }
 
 /* This is entry level function when control request APIs are used
@@ -1885,9 +1944,6 @@ static void ctrl_async_timeout_handler(void *arg)
  **/
 int ctrl_app_send_req(ctrl_cmd_t *app_req)
 {
-	int       ret = SUCCESS;
-	ctrl_cmd_t *new_app_req = NULL;
-
 	if (!app_req) {
 		hosted_log("Invalid param in ctrl_app_send_req\n");
 		goto fail_req;
@@ -1895,32 +1951,19 @@ int ctrl_app_send_req(ctrl_cmd_t *app_req)
 	//hosted_log("app_req msgid : %x\n", app_req->msg_id);
 
 
-	/* 1. Check if any ongoing request present
-	 * Send failure in that case */
-	if (app_req->wait_prev_cmd_completion) {
-		//printf("%s:%u get ctrl_req_sem\n",__func__,__LINE__);
-		ret = g_h.funcs->_h_get_semaphore(ctrl_req_sem,
-				app_req->wait_prev_cmd_completion);
-		if (ret) {
-			//printf("%s:%u FAIL ctrl_req_sem\n",__func__,__LINE__);
-			hosted_log("prev req in progress, Failed to send RPC_Req[0x%x]\n", app_req->msg_id);
+	if (!app_req->ctrl_resp_cb) {
+		/* sync proc only */
+		if (set_sync_resp_sem(app_req)) {
+			hosted_log("could not set sync resp sem for req[%u]\n",app_req->msg_id);
 			goto fail_req;
 		}
 	}
-	//printf("%s:%u got ctrl_req_sem\n",__func__,__LINE__);
 
 	app_req->msg_type = CTRL_REQ;
 
-	new_app_req = (ctrl_cmd_t *)g_h.funcs->_h_calloc(1, sizeof(ctrl_cmd_t));
-	if (!new_app_req) {
-	  hosted_log("Alloc failed for new app req\n");
-	  goto fail_req;
-	}
-
-	g_h.funcs->_h_memcpy(new_app_req, app_req, sizeof(ctrl_cmd_t));
-	if (esp_queue_put(ctrl_tx_q, new_app_req)) {
+	if (g_h.funcs->_h_queue_item(ctrl_tx_q, &app_req, portMAX_DELAY)) {
 	  hosted_log("Failed to new app ctrl req in tx queue\n");
-	  g_h.funcs->_h_free(new_app_req);
+	  g_h.funcs->_h_free(app_req);
 	  goto fail_req;
 	}
 
@@ -1935,6 +1978,9 @@ int ctrl_app_send_req(ctrl_cmd_t *app_req)
 	return SUCCESS;
 
 fail_req:
+	if (app_req->rx_sem)
+		g_h.funcs->_h_destroy_semaphore(app_req->rx_sem);
+
 	if (app_req->free_buffer_handle) {
 		if (app_req->free_buffer_func) {
 			app_req->free_buffer_func(app_req->free_buffer_handle);
@@ -1955,20 +2001,11 @@ int deinit_hosted_control_lib_internal(void)
 	set_ctrl_lib_state(CTRL_LIB_STATE_INACTIVE);
 
 	if (ctrl_rx_q) {
-		esp_queue_destroy(&ctrl_rx_q);
+		g_h.funcs->_h_destroy_queue(ctrl_rx_q);
 	}
+
 	if (ctrl_tx_q) {
-		esp_queue_destroy(&ctrl_tx_q);
-	}
-
-	if (ctrl_req_sem && g_h.funcs->_h_destroy_semaphore(ctrl_req_sem)) {
-		ret = FAILURE;
-		hosted_log("ctrl req sem deinit failed\n");
-	}
-
-	if (ctrl_rx_sem && g_h.funcs->_h_destroy_semaphore(ctrl_rx_sem)) {
-		ret = FAILURE;
-		hosted_log("read sem rx deinit failed\n");
+		g_h.funcs->_h_destroy_queue(ctrl_tx_q);
 	}
 
 	if (ctrl_tx_sem && g_h.funcs->_h_destroy_semaphore(ctrl_tx_sem)) {
@@ -2007,21 +2044,14 @@ int init_hosted_control_lib_internal(void)
 #endif
 
 	/* semaphore init */
-	ctrl_rx_sem = g_h.funcs->_h_create_binary_semaphore();
 	ctrl_tx_sem = g_h.funcs->_h_create_binary_semaphore();
-	ctrl_req_sem = g_h.funcs->_h_create_binary_semaphore();
-	if (!ctrl_rx_sem || !ctrl_tx_sem || !ctrl_req_sem) {
+	if (!ctrl_tx_sem) {
 		hosted_log("sem init failed, exiting\n");
 		goto free_bufs;
 	}
 
 	/* Get semaphore for first time */
-	//printf("%s:%u get ctrl_rx_sem\n",__func__,__LINE__);
-	g_h.funcs->_h_get_semaphore(ctrl_rx_sem, HOSTED_BLOCKING);
-	//printf("%s:%u got ctrl_rx_sem\n",__func__,__LINE__);
-	//printf("%s:%u get ctrl_tx_sem\n",__func__,__LINE__);
 	g_h.funcs->_h_get_semaphore(ctrl_tx_sem, HOSTED_BLOCKING);
-	//printf("%s:%u got ctrl_tx_sem\n",__func__,__LINE__);
 
 	/* serial init */
 	if (serial_init()) {
@@ -2029,9 +2059,11 @@ int init_hosted_control_lib_internal(void)
 		goto free_bufs;
 	}
 
-	/* queue init */
-	ctrl_rx_q = create_esp_queue();
-	ctrl_tx_q = create_esp_queue();
+	ctrl_rx_q = g_h.funcs->_h_create_queue(RPC_RX_QUEUE_SIZE,
+			sizeof(esp_queue_elem_t));
+
+	ctrl_tx_q = g_h.funcs->_h_create_queue(RPC_TX_QUEUE_SIZE,
+			sizeof(void *));
 	if (!ctrl_rx_q || !ctrl_tx_q) {
 		hosted_log("Failed to create app ctrl msg Q\n");
 		goto free_bufs;

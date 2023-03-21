@@ -18,6 +18,9 @@
 #include "adapter.h"
 #include "stats.h"
 #include "trace.h"
+#include "rpc_wrapper.h"
+#include "serial_drv.h"
+#include "serial_ll_if.h"
 /**
  * @brief  Slave capabilities are parsed
  *         Currently no added functionality to that
@@ -26,51 +29,112 @@
  */
 static char chip_type = ESP_PRIV_FIRMWARE_CHIP_UNRECOGNIZED;
 
-/**
- * @brief  open virtual network device
- * @param  netdev - network device
- * @retval 0 on success
- */
-int esp_netdev_open(netdev_handle_t netdev)
+/* TODO: better to move to port */
+hosted_rxcb_t g_rxcb[ESP_MAX_IF] = {0};
+static void process_event(uint8_t *evt_buf, uint16_t len);
+
+
+static void reset_slave(void)
 {
-	return STM_OK;
+	g_h.funcs->_h_config_gpio(H_GPIO_PORT_DEFAULT, GPIO_PIN_RESET, H_GPIO_MODE_DEF_OUTPUT);
+
+	g_h.funcs->_h_write_gpio(H_GPIO_PORT_DEFAULT, GPIO_PIN_RESET, 1);
+	g_h.funcs->_h_blocking_delay(100);
+	g_h.funcs->_h_write_gpio(H_GPIO_PORT_DEFAULT, GPIO_PIN_RESET, 0);
+	g_h.funcs->_h_blocking_delay(100);
+	g_h.funcs->_h_write_gpio(H_GPIO_PORT_DEFAULT, GPIO_PIN_RESET, 1);
+
+	/* stop spi transactions short time to avoid slave sync issues */
+	g_h.funcs->_h_blocking_delay(100000);
 }
 
-/**
- * @brief  close virtual network device
- * @param  netdev - network device
- * @retval 0 on success
- */
-int esp_netdev_close(netdev_handle_t netdev)
+static void transport_driver_event_handler(uint8_t event)
 {
-	return STM_OK;
+	switch(event)
+	{
+		case TRANSPORT_ACTIVE:
+		{
+			/* Initiate control path now */
+#if CONFIG_TRANSPORT_LOG_LEVEL
+			printf("Base transport is set-up\n\r");
+#endif
+			//control_path_init(control_path_event_handler);
+			break;
+		}
+		default:
+		break;
+	}
 }
 
-
-/**
- * @brief  transmit on virtual network device
- * @param  netdev - network device
- *         net_buf - buffer to transmit
- * @retval STM_OK for success or failure from enum stm_ret_t
- */
-int esp_netdev_xmit(netdev_handle_t netdev, struct pbuf *net_buf)
+esp_err_t esp_hosted_init(void(*esp_hosted_up_cb)(void))
 {
-	struct esp_private *priv = NULL;
-	int ret = 0;
+	reset_slave();
+	transport_init(transport_driver_event_handler);
+	if (init_hosted_control_lib()) {
+		printf("init hosted control lib failed\n");
+		return ESP_FAIL;
+	}
+	register_event_callbacks();
 
-	if (!netdev || !net_buf)
-		return STM_FAIL;
-	priv = (struct esp_private *) netdev_get_priv(netdev);
-
-	if (!priv)
-		return STM_FAIL;
-
-	ret = send_to_slave(priv->if_type, priv->if_num,
-			net_buf->payload, net_buf->len);
-	g_h.funcs->_h_free(net_buf);
-
-	return ret;
+	if (esp_hosted_up_cb)
+		esp_hosted_up_cb();
+    return ESP_OK;
 }
+
+esp_err_t esp_hosted_deinit(void)
+{
+	unregister_event_callbacks();
+	/* Call control path library init */
+	control_path_platform_deinit();
+	deinit_hosted_control_lib();
+    return ESP_OK;
+}
+
+///**
+// * @brief  open virtual network device
+// * @param  netdev - network device
+// * @retval 0 on success
+// */
+//int esp_netdev_open(netdev_handle_t netdev)
+//{
+//	return STM_OK;
+//}
+//
+///**
+// * @brief  close virtual network device
+// * @param  netdev - network device
+// * @retval 0 on success
+// */
+//int esp_netdev_close(netdev_handle_t netdev)
+//{
+//	return STM_OK;
+//}
+//
+//
+///**
+// * @brief  transmit on virtual network device
+// * @param  netdev - network device
+// *         net_buf - buffer to transmit
+// * @retval STM_OK for success or failure from enum stm_ret_t
+// */
+//int esp_netdev_xmit(netdev_handle_t netdev, struct pbuf *net_buf)
+//{
+//	struct esp_private *priv = NULL;
+//	int ret = 0;
+//
+//	if (!netdev || !net_buf)
+//		return STM_FAIL;
+//	priv = (struct esp_private *) netdev_get_priv(netdev);
+//
+//	if (!priv)
+//		return STM_FAIL;
+//
+//	ret = send_to_slave(priv->if_type, priv->if_num,
+//			net_buf->payload, net_buf->len);
+//	g_h.funcs->_h_free(net_buf);
+//
+//	return ret;
+//}
 
 void process_capabilities(uint8_t cap)
 {
@@ -82,29 +146,12 @@ void process_capabilities(uint8_t cap)
 #endif
 }
 
-void process_priv_communication(struct pbuf *pbuf)
+void process_priv_communication(void *payload, uint8_t len)
 {
-	struct esp_priv_event *header = NULL;
-
-	uint8_t *payload = NULL;
-	uint16_t len = 0;
-
-	if (!pbuf || !pbuf->payload)
+	if (!payload || !len)
 		return;
 
-	header = (struct esp_priv_event *) pbuf->payload;
-
-	payload = pbuf->payload;
-	len = pbuf->len;
-
-	if (header->event_type == ESP_PRIV_EVENT_INIT) {
-#if CONFIG_TRANSPORT_LOG_LEVEL
-		printf("event packet type\n\r");
-#endif
-		process_event(payload, len);
-	}
-
-	g_h.funcs->_h_free(pbuf);
+	process_event(payload, len);
 }
 
 void print_capabilities(uint32_t cap)
@@ -129,7 +176,7 @@ void print_capabilities(uint32_t cap)
 #endif
 }
 
-void process_event(uint8_t *evt_buf, uint16_t len)
+static void process_event(uint8_t *evt_buf, uint16_t len)
 {
 	int ret = 0;
 	struct esp_priv_event *event;
@@ -199,10 +246,27 @@ int process_init_event(uint8_t *evt_buf, uint8_t len)
 		chip_type = ESP_PRIV_FIRMWARE_CHIP_UNRECOGNIZED;
 		return -1;
 	} else {
-#if CONFIG_TRANSPORT_LOG_LEVEL
 		printf("ESP board type is : %d \n\r", chip_type);
-#endif
 	}
 
 	return STM_OK;
+}
+
+esp_err_t esp_hosted_register_wifi_rxcb(int ifx, hosted_rxcb_t fn)
+{
+	if (ifx >= ESP_MAX_IF) {
+		printf("ifx [%u] refused to register callback\n", ifx);
+		return ESP_FAIL;
+	}
+	g_rxcb[ifx] = fn;
+#if CONFIG_TRANSPORT_LOG_LEVEL
+	printf("Register wifi[%u] with %p\n", ifx, fn);
+#endif
+	return ESP_OK;
+}
+
+
+int serial_rx_handler(interface_buffer_handle_t * buf_handle)
+{
+	return serial_ll_rx_handler(buf_handle);
 }

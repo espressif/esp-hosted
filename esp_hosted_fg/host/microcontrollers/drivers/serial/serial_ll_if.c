@@ -200,7 +200,7 @@ static int serial_ll_write(const serial_ll_handle_t * serial_ll_hdl,
 		return STM_FAIL;
 	}
 
-	return send_to_slave(serial_ll_hdl->if_type,
+	return esp_hosted_tx(serial_ll_hdl->if_type,
 		serial_ll_hdl->if_num, wbuffer, wlen);
 }
 
@@ -252,6 +252,7 @@ stm_ret_t serial_ll_rx_handler(interface_buffer_handle_t * buf_handle)
 	/* Accumulate fragments */
 	if (buf_handle->flag & MORE_FRAGMENT) {
 
+		//printf("Fragment!!!\n");
 		SERIAL_ALLOC_REALLOC_RDATA();
 
 		g_h.funcs->_h_memcpy((r.data + r.len), buf_handle->payload, buf_handle->payload_len);

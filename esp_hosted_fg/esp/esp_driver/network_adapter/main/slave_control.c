@@ -63,11 +63,118 @@
             }                       \
         }
 
+
+#define CTRL_TEMPLATE(RspTyPe, RspStRuCt, ReqType, ReqStruct, InIt_FuN)         \
+  RspTyPe *resp_payload = NULL;                                                 \
+  ReqType *req_payload = NULL;                                                  \
+  if (!req || !resp) {                                                          \
+    ESP_LOGE(TAG, "Invalid parameters");                                        \
+    return ESP_FAIL;                                                            \
+  }                                                                             \
+  req_payload = req->ReqStruct;                                                 \
+  resp_payload = (RspTyPe *)calloc(1, sizeof(RspTyPe));                         \
+  if (!resp_payload) {                                                          \
+      ESP_LOGE(TAG, "Failed to alloc mem for resp.%s\n",#RspStRuCt);            \
+      return ESP_ERR_NO_MEM;                                                    \
+  }                                                                             \
+  resp->RspStRuCt = resp_payload;                                               \
+  InIt_FuN(resp_payload);                                                       \
+  resp_payload->resp = SUCCESS;                                                 \
+
+
+/* Simple is same above just, we dod not need req_payload unused warning */
+#define CTRL_TEMPLATE_SIMPLE(RspTyPe, RspStRuCt, ReqType, ReqStruct, InIt_FuN)  \
+  RspTyPe *resp_payload = NULL;                                                 \
+  if (!req || !resp) {                                                          \
+    ESP_LOGE(TAG, "Invalid parameters");                                        \
+    return ESP_FAIL;                                                            \
+  }                                                                             \
+  resp_payload = (RspTyPe *)calloc(1, sizeof(RspTyPe));                         \
+  if (!resp_payload) {                                                          \
+      ESP_LOGE(TAG, "Failed to alloc mem for resp.%s\n",#RspStRuCt);            \
+      return ESP_ERR_NO_MEM;                                                    \
+  }                                                                             \
+  resp->RspStRuCt = resp_payload;                                               \
+  InIt_FuN(resp_payload);                                                       \
+  resp_payload->resp = SUCCESS;                                                 \
+
+#define CTRL_RESP_ASSIGN_FIELD(PaRaM)                                           \
+  resp_payload->PaRaM = PaRaM
+
+#define CTRL_RET_FAIL_IF(ConDiTiOn)                                             \
+  if (ConDiTiOn) {                                                              \
+    resp_payload->resp = FAILURE;                                               \
+    ESP_LOGE(TAG, "%s:%u failed [%s] = [%d]", __func__,__LINE__,#ConDiTiOn, ConDiTiOn); \
+    return ESP_OK;                                                              \
+  }
+
+#define CTRL_ALLOC_ELEMENT(TypE, StrucTNamE)                                    \
+  StrucTNamE = (TypE *)calloc(1, sizeof(TypE));                                 \
+  if (!StrucTNamE) {                                                            \
+      ESP_LOGE(TAG, "Failed to alloc mem for resp.%s\n",#StrucTNamE);           \
+      return ESP_ERR_NO_MEM;                                                    \
+  }                                                                             \
+
+#if 0
+#define CTRL_REQ_COPY_STR(dest, src)                                            \
+  if (src.len && src.data)                                                      \
+    strncpy((char*)dest, (char*)src.data, min(sizeof(dest), src.len));
+#endif
+
+#define CTRL_REQ_COPY_BYTES(dest, src, num_bytes)                               \
+  if (src.len && src.data)                                                      \
+    memcpy((char*)dest, src.data, min(min(sizeof(dest), num_bytes), src.len));
+
+#define CTRL_REQ_COPY_STR CTRL_REQ_COPY_BYTES
+
+#if 0
+#define CTRL_REQ_COPY_BSSID(dest, src)                                          \
+  if (src && strlen(src))                                                       \
+    if (convert_mac_to_bytes((char*)dest, src)) {                               \
+      ESP_LOGE(TAG, "%s:%u Failed convert BSSID in bytes\n",__func__,__LINE__); \
+      memset(dest, 0, BSSID_BYTES_SIZE);                                                 \
+    }
+#endif
+
+#define CTRL_RESP_COPY_STR(dest, src, max_len)                                  \
+  if (src) {                                                                    \
+    dest.data = (uint8_t*)strndup((char*)src, max_len);                         \
+    if (!dest.data) {                                                           \
+      ESP_LOGE(TAG, "%s:%u Failed to duplicate bytes\n",__func__,__LINE__);     \
+      resp_payload->resp = FAILURE;                                             \
+      return ESP_OK;                                                            \
+    }                                                                           \
+  }
+
+#define CTRL_RESP_COPY_BYTES_SRC_UNCHECKED(dest, src, num)                      \
+  do {                                                                          \
+    if (num) {                                                                  \
+      dest.data = (uint8_t *)calloc(1, num);                                    \
+      if (!dest.data) {                                                         \
+        ESP_LOGE(TAG, "%s:%u Failed to duplicate bytes\n",__func__,__LINE__);   \
+        resp_payload->resp = FAILURE;                                           \
+        return ESP_OK;                                                          \
+      }                                                                         \
+      memcpy(dest.data, src, num);                                              \
+	  dest.len = num;                                                           \
+    }                                                                           \
+  } while(0)
+
+
+#define CTRL_RESP_COPY_BYTES(dest, src, num)                                    \
+  if (src) {                                                                    \
+    CTRL_RESP_COPY_BYTES_SRC_UNCHECKED(dest, src, num);                         \
+  }
+
+
+
+
 typedef struct esp_ctrl_msg_cmd {
 	int req_num;
 	esp_err_t (*command_handler)(CtrlMsg *req,
 			CtrlMsg *resp, void *priv_data);
 } esp_ctrl_msg_req_t;
+
 
 static const char* TAG = "slave_ctrl";
 extern volatile uint8_t ota_ongoing;
@@ -175,7 +282,7 @@ static void softap_event_handler(void *arg, esp_event_base_t event_base,
 		esp_update_ap_mac();
 	} else if (event_id == WIFI_EVENT_AP_STOP) {
 		ESP_LOGI(TAG,"softap stop handler stop");
-		esp_wifi_internal_reg_rxcb(ESP_IF_WIFI_AP,NULL);
+		//esp_wifi_internal_reg_rxcb(ESP_IF_WIFI_AP,NULL);
 	}
 }
 
@@ -290,16 +397,16 @@ static esp_err_t req_get_mac_address_handler(CtrlMsg *req,
 	resp->payload_case = CTRL_MSG__PAYLOAD_RESP_GET_MAC_ADDRESS;
 	resp->resp_get_mac_address = resp_payload;
 
-	if (req->req_get_mac_address->mode == WIFI_MODE_STA) {
-		ret = esp_wifi_get_mac(ESP_IF_WIFI_STA , mac);
+	if (req->req_get_mac_address->mode == ESP_IF_WIFI_STA) {
 		ESP_LOGI(TAG,"Get station mac address");
+		ret = esp_wifi_get_mac(ESP_IF_WIFI_STA , mac);
 		if (ret) {
 			ESP_LOGE(TAG,"Error in getting MAC of ESP Station %d", ret);
 			goto err;
 		}
-	} else if (req->req_get_mac_address->mode == WIFI_MODE_AP) {
-		ret = esp_wifi_get_mac(ESP_IF_WIFI_AP, mac);
+	} else if (req->req_get_mac_address->mode == ESP_IF_WIFI_AP) {
 		ESP_LOGI(TAG,"Get softap mac address");
+		ret = esp_wifi_get_mac(ESP_IF_WIFI_AP, mac);
 		if (ret) {
 			ESP_LOGE(TAG,"Error in getting MAC of ESP softap %d", ret);
 			goto err;
@@ -312,16 +419,15 @@ static esp_err_t req_get_mac_address_handler(CtrlMsg *req,
 	snprintf(mac_str,BSSID_LENGTH,MACSTR,MAC2STR(mac));
 	ESP_LOGI(TAG,"mac [%s] ", mac_str);
 
-	resp_payload->mac.len = strnlen(mac_str, BSSID_LENGTH);
-	if (!resp_payload->mac.len) {
-		ESP_LOGE(TAG, "Invalid MAC address length");
-		goto err;
-	}
-	resp_payload->mac.data = (uint8_t *)strndup(mac_str, BSSID_LENGTH);
-	if (!resp_payload->mac.data) {
-		ESP_LOGE(TAG, "Failed to allocate memory for MAC address");
-		goto err;
-	}
+	CTRL_RESP_COPY_BYTES_SRC_UNCHECKED(resp_payload->mac, mac, BSSID_BYTES_SIZE);
+
+	printf("%x %x %x %x %x %x\n",
+			resp_payload->mac.data[0],
+			resp_payload->mac.data[1],
+			resp_payload->mac.data[2],
+			resp_payload->mac.data[3],
+			resp_payload->mac.data[4],
+			resp_payload->mac.data[5]);
 
 	resp_payload->resp = SUCCESS;
 	return ESP_OK;
@@ -452,7 +558,7 @@ static esp_err_t req_connect_ap_handler (CtrlMsg *req,
 			pdFALSE,
 			TIMEOUT);
 		ESP_LOGI(TAG, "Disconnected from previously connected AP");
-		esp_wifi_internal_reg_rxcb(ESP_IF_WIFI_STA, NULL);
+		//esp_wifi_internal_reg_rxcb(ESP_IF_WIFI_STA, NULL);
 		xEventGroupClearBits(wifi_event_group,
 			(WIFI_CONNECTED_BIT | WIFI_FAIL_BIT |
 			 WIFI_NO_AP_FOUND_BIT | WIFI_WRONG_PASSWORD_BIT));
@@ -579,7 +685,7 @@ static esp_err_t req_connect_ap_handler (CtrlMsg *req,
 			} else {
 				ESP_LOGE(TAG, "Timeout occured");
 			}
-			esp_wifi_internal_reg_rxcb(ESP_IF_WIFI_STA, NULL);
+			//esp_wifi_internal_reg_rxcb(ESP_IF_WIFI_STA, NULL);
 		}
 
 		if (event_registered)
@@ -961,7 +1067,7 @@ static esp_err_t req_start_softap_handler (CtrlMsg *req,
 		softap_event_unregister();
 		softap_started = false;
 	}
-	softap_event_register();
+	//softap_event_register();
 	softap_started = true;
 
 	ret = esp_wifi_set_config(ESP_IF_WIFI_AP, wifi_config);
@@ -1346,9 +1452,9 @@ static esp_err_t req_set_mac_address_handler (CtrlMsg *req,
 		goto err;
 	}
 
-	if (req->req_set_mac_address->mode == WIFI_MODE_STA) {
+	if (req->req_set_mac_address->mode == WIFI_IF_STA) {
 		interface = WIFI_IF_STA;
-	} else if (req->req_set_mac_address->mode == WIFI_MODE_AP) {
+	} else if (req->req_set_mac_address->mode == WIFI_IF_AP) {
 		interface = WIFI_IF_AP;
 	} else {
 		ESP_LOGE(TAG, "Invalid mode to set MAC address");
@@ -1840,98 +1946,6 @@ static esp_err_t configure_heartbeat(bool enable, int hb_duration)
 	return ret;
 }
 
-#define CTRL_TEMPLATE(RspTyPe, RspStRuCt, ReqType, ReqStruct, InIt_FuN)         \
-  RspTyPe *resp_payload = NULL;                                                 \
-  ReqType *req_payload = NULL;                                                  \
-  if (!req || !resp) {                                                          \
-    ESP_LOGE(TAG, "Invalid parameters");                                        \
-    return ESP_FAIL;                                                            \
-  }                                                                             \
-  req_payload = req->ReqStruct;                                                 \
-  resp_payload = (RspTyPe *)calloc(1, sizeof(RspTyPe));                         \
-  if (!resp_payload) {                                                          \
-      ESP_LOGE(TAG, "Failed to alloc mem for resp.%s\n",#RspStRuCt);            \
-      return ESP_ERR_NO_MEM;                                                    \
-  }                                                                             \
-  resp->RspStRuCt = resp_payload;                                               \
-  InIt_FuN(resp_payload);                                                       \
-  resp_payload->resp = SUCCESS;                                                 \
-
-
-/* Simple is same above just, we dod not need req_payload unused warning */
-#define CTRL_TEMPLATE_SIMPLE(RspTyPe, RspStRuCt, ReqType, ReqStruct, InIt_FuN)  \
-  RspTyPe *resp_payload = NULL;                                                 \
-  if (!req || !resp) {                                                          \
-    ESP_LOGE(TAG, "Invalid parameters");                                        \
-    return ESP_FAIL;                                                            \
-  }                                                                             \
-  resp_payload = (RspTyPe *)calloc(1, sizeof(RspTyPe));                         \
-  if (!resp_payload) {                                                          \
-      ESP_LOGE(TAG, "Failed to alloc mem for resp.%s\n",#RspStRuCt);            \
-      return ESP_ERR_NO_MEM;                                                    \
-  }                                                                             \
-  resp->RspStRuCt = resp_payload;                                               \
-  InIt_FuN(resp_payload);                                                       \
-  resp_payload->resp = SUCCESS;                                                 \
-
-#define CTRL_RESP_ASSIGN_FIELD(PaRaM)                                           \
-  resp_payload->PaRaM = PaRaM
-
-#define CTRL_RET_FAIL_IF(ConDiTiOn)                                             \
-  if (ConDiTiOn) {                                                              \
-    resp_payload->resp = FAILURE;                                               \
-    ESP_LOGE(TAG, "%s:%u failed [%s] = [%d]", __func__,__LINE__,#ConDiTiOn, ConDiTiOn); \
-    return ESP_OK;                                                              \
-  }
-
-#define CTRL_ALLOC_ELEMENT(TypE, StrucTNamE)                                    \
-  StrucTNamE = (TypE *)calloc(1, sizeof(TypE));                                 \
-  if (!StrucTNamE) {                                                            \
-      ESP_LOGE(TAG, "Failed to alloc mem for resp.%s\n",#StrucTNamE);           \
-      return ESP_ERR_NO_MEM;                                                    \
-  }                                                                             \
-
-#if 0
-#define CTRL_REQ_COPY_STR(dest, src)                                            \
-  if (src.len && src.data)                                                      \
-    strncpy((char*)dest, (char*)src.data, min(sizeof(dest), src.len));
-#endif
-
-#define CTRL_REQ_COPY_BYTES(dest, src, num_bytes)                               \
-  if (src.len && src.data)                                                      \
-    memcpy((char*)dest, src.data, min(min(sizeof(dest), num_bytes), src.len));
-
-#define CTRL_REQ_COPY_STR CTRL_REQ_COPY_BYTES
-
-#if 0
-#define CTRL_REQ_COPY_BSSID(dest, src)                                          \
-  if (src && strlen(src))                                                       \
-    if (convert_mac_to_bytes((char*)dest, src)) {                               \
-      ESP_LOGE(TAG, "%s:%u Failed convert BSSID in bytes\n",__func__,__LINE__); \
-      memset(dest, 0, BSSID_BYTES_SIZE);                                                 \
-    }
-#endif
-
-#define CTRL_RESP_COPY_STR(dest, src, max_len)                                  \
-  if (src) {                                                                    \
-    dest.data = (uint8_t*)strndup((char*)src, max_len);                         \
-    if (!dest.data) {                                                           \
-      ESP_LOGE(TAG, "%s:%u Failed to duplicate bytes\n",__func__,__LINE__);     \
-      resp_payload->resp = FAILURE;                                             \
-      return ESP_OK;                                                            \
-    }                                                                           \
-  }
-
-#define CTRL_RESP_COPY_BYTES(dest, src, num)                                    \
-  if (src) {                                                                    \
-	dest.data = (uint8_t *)calloc(1, num);                                      \
-    if (!dest.data) {                                                           \
-      ESP_LOGE(TAG, "%s:%u Failed to duplicate bytes\n",__func__,__LINE__);     \
-      resp_payload->resp = FAILURE;                                             \
-      return ESP_OK;                                                            \
-    }                                                                           \
-  }
-
 /* Function to config heartbeat */
 static esp_err_t req_config_heartbeat(CtrlMsg *req,
 		CtrlMsg *resp, void *priv_data)
@@ -1951,22 +1965,41 @@ static esp_err_t req_config_heartbeat(CtrlMsg *req,
 static void event_handler(void* arg, esp_event_base_t event_base,
                                 int32_t event_id, void* event_data)
 {
-	if (event_id == WIFI_EVENT_AP_STACONNECTED) {
-		wifi_event_ap_staconnected_t *event = (wifi_event_ap_staconnected_t *) event_data;
-		ESP_LOGI(TAG, "station "MACSTR" join, AID=%d",
-				MAC2STR(event->mac), event->aid);
-		send_event_data_to_host(CTRL_MSG_ID__Event_AP_StaConnected,
-				event_data, sizeof(wifi_event_ap_staconnected_t));
-	} else if (event_id == WIFI_EVENT_AP_STADISCONNECTED) {
-		wifi_event_ap_stadisconnected_t *event =
-			(wifi_event_ap_stadisconnected_t *) event_data;
-		ESP_LOGI(TAG, "station "MACSTR" leave, AID=%d",
-				MAC2STR(event->mac), event->aid);
-		send_event_data_to_host(CTRL_MSG_ID__Event_AP_StaDisconnected,
-				event_data, sizeof(wifi_event_ap_stadisconnected_t));
-	} else {
-		send_event_data_to_host(CTRL_MSG_ID__Event_WifiEventNoArgs,
-			(uint8_t*) event_id, 4);
+	if (event_base == WIFI_EVENT) {
+		if (event_id == WIFI_EVENT_AP_STACONNECTED) {
+			wifi_event_ap_staconnected_t *event = (wifi_event_ap_staconnected_t *) event_data;
+			ESP_LOGI(TAG, "station "MACSTR" join, AID=%d",
+					MAC2STR(event->mac), event->aid);
+			send_event_data_to_host(CTRL_MSG_ID__Event_AP_StaConnected,
+					event_data, sizeof(wifi_event_ap_staconnected_t));
+		} else if (event_id == WIFI_EVENT_AP_STADISCONNECTED) {
+			wifi_event_ap_stadisconnected_t *event =
+				(wifi_event_ap_stadisconnected_t *) event_data;
+			ESP_LOGI(TAG, "station "MACSTR" leave, AID=%d",
+					MAC2STR(event->mac), event->aid);
+			send_event_data_to_host(CTRL_MSG_ID__Event_AP_StaDisconnected,
+					event_data, sizeof(wifi_event_ap_stadisconnected_t));
+		} else {
+
+			if (event_id == WIFI_EVENT_STA_CONNECTED) {
+				esp_wifi_internal_reg_rxcb(ESP_IF_WIFI_STA, (wifi_rxcb_t) wlan_sta_rx_callback);
+				station_connected = true;
+				ESP_LOGI(TAG, "Sta mode connected\n");
+			} else if (event_id == WIFI_EVENT_STA_DISCONNECTED) {
+				station_connected = false;
+				esp_wifi_internal_reg_rxcb(ESP_IF_WIFI_STA, NULL);
+				ESP_LOGI(TAG, "Sta mode disconnect\n");
+			} else if (event_id == WIFI_EVENT_AP_START) {
+				ESP_LOGI(TAG,"softap started");
+				esp_wifi_internal_reg_rxcb(ESP_IF_WIFI_AP, (wifi_rxcb_t) wlan_ap_rx_callback);
+			} else if (event_id == WIFI_EVENT_AP_STOP) {
+				ESP_LOGI(TAG,"softap stopped");
+				esp_wifi_internal_reg_rxcb(ESP_IF_WIFI_AP, NULL);
+			}
+
+			send_event_data_to_host(CTRL_MSG_ID__Event_WifiEventNoArgs,
+					(uint8_t*) event_id, 4);
+		}
 	}
 }
 
@@ -2105,7 +2138,7 @@ static esp_err_t req_wifi_set_config(CtrlMsg *req, CtrlMsg *resp, void *priv_dat
 
 		if (p_a_sta->bssid_set)
 			//CTRL_REQ_COPY_BSSID(p_a_sta->bssid, p_c_sta->bssid);
-			CTRL_REQ_COPY_BYTES(p_a_sta->bssid, p_c_sta->bssid, BSSID_LENGTH);
+			CTRL_REQ_COPY_BYTES(p_a_sta->bssid, p_c_sta->bssid, BSSID_BYTES_SIZE);
 
 		p_a_sta->channel = p_c_sta->channel;
 		p_a_sta->listen_interval = p_c_sta->listen_interval;
@@ -2178,7 +2211,7 @@ static esp_err_t req_wifi_get_config(CtrlMsg *req, CtrlMsg *resp, void *priv_dat
 
 		//TODO: Expected to break python for bssid
 		if (p_c_sta->bssid_set)
-			CTRL_RESP_COPY_BYTES(p_c_sta->bssid, p_a_sta->bssid, BSSID_LENGTH);
+			CTRL_RESP_COPY_BYTES(p_c_sta->bssid, p_a_sta->bssid, BSSID_BYTES_SIZE);
 
 		p_c_sta->channel = p_a_sta->channel;
 		p_c_sta->listen_interval = p_a_sta->listen_interval;
@@ -2628,6 +2661,10 @@ esp_err_t data_transfer_handler(uint32_t session_id,const uint8_t *inbuf,
 	}
 
 	ctrl_msg__pack (&resp, *outbuf);
+
+	//printf("Resp outbuf:\n");
+	//ESP_LOG_BUFFER_HEXDUMP("Resp outbuf", *outbuf, *outlen, ESP_LOG_INFO);
+
 	esp_ctrl_msg_cleanup(&resp);
 	return ESP_OK;
 
@@ -2845,8 +2882,8 @@ esp_err_t ctrl_notify_handler(uint32_t session_id,const uint8_t *inbuf,
 
 	ctrl_msg__pack (&ntfy, *outbuf);
 
-	//printf("outbuf:\n");
-	//ESP_LOG_BUFFER_HEXDUMP("outbuf", *outbuf, *outlen, ESP_LOG_INFO);
+	//printf("event outbuf:\n");
+	//ESP_LOG_BUFFER_HEXDUMP("event outbuf", *outbuf, *outlen, ESP_LOG_INFO);
 
 	esp_ctrl_msg_cleanup(&ntfy);
 	return ESP_OK;

@@ -29,7 +29,11 @@
 static const char TAG[] = "protocomm_pserial";
 
 #define EPNAME_MAX                   16
-#define REQ_Q_MAX                    10
+#if defined(CONFIG_IDF_TARGET_ESP32C2)
+  #define REQ_Q_MAX                  3
+#else
+  #define REQ_Q_MAX                  10
+#endif
 
 #define SIZE_OF_TYPE                  1
 #define SIZE_OF_LENGTH                2
@@ -319,7 +323,7 @@ esp_err_t protocomm_pserial_start(protocomm_t *pc,
 
 	pc->priv = pserial_cfg;
 
-	xTaskCreate(pserial_task, "pserial_task", CONFIG_ESP_DEFAULT_TASK_STACK_SIZE,
+	xTaskCreate(pserial_task, "pserial_task", 4096,
 			(void *) pc, CONFIG_ESP_DEFAULT_TASK_PRIO, NULL);
 
 	return ESP_OK;

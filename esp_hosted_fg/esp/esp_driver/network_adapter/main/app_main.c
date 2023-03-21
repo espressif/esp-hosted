@@ -67,7 +67,7 @@ static const char TAG_TX_S[] = "CONTROL S -> H";
 #define UNKNOWN_CTRL_MSG_ID              0
 
 #if CONFIG_ESP_SPI_HOST_INTERFACE
-  #ifdef CONFIG_IDF_TARGET_ESP32S2
+  #if defined(CONFIG_IDF_TARGET_ESP32S2) || defined(CONFIG_IDF_TARGET_ESP32C2)
     #define TO_HOST_QUEUE_SIZE           5
   #else
     #define TO_HOST_QUEUE_SIZE           20
@@ -220,6 +220,10 @@ esp_err_t wlan_ap_rx_callback(void *buffer, uint16_t len, void *eb)
 		}
 		return ESP_OK;
 	}
+#if NETWORK_STACK_LOG_LEVEL
+	ESP_LOGE("AP RX","New\n");
+	ESP_LOG_BUFFER_HEXDUMP("AP_RX", buffer, len, ESP_LOG_INFO);
+#endif
 
 	/* Check destination address against self address */
 	if (memcmp(ap_buf, ap_mac, BSSID_BYTES_SIZE)) {
@@ -255,6 +259,10 @@ esp_err_t wlan_sta_rx_callback(void *buffer, uint16_t len, void *eb)
 		}
 		return ESP_OK;
 	}
+#if NETWORK_STACK_LOG_LEVEL
+	ESP_LOGE("STA RX","New\n");
+	ESP_LOG_BUFFER_HEXDUMP("STA_RX", buffer, len, ESP_LOG_INFO);
+#endif
 
 	buf_handle.if_type = ESP_STA_IF;
 	buf_handle.if_num = 0;
@@ -389,8 +397,12 @@ void process_rx_pkt(interface_buffer_handle_t *buf_handle)
 	ESP_LOGV(TAG, "New Rx:");
 	ESP_LOG_BUFFER_HEXDUMP(TAG, header, payload_len+le16toh(header->offset), ESP_LOG_VERBOSE);
 
-	if ((buf_handle->if_type == ESP_STA_IF) && station_connected) {
+	if (buf_handle->if_type == ESP_STA_IF) {
 		/* Forward data to wlan driver */
+#if NETWORK_STACK_LOG_LEVEL
+		ESP_LOGE(TAG, "STA Tx");
+		ESP_LOG_BUFFER_HEXDUMP("STA Tx", payload, payload_len, ESP_LOG_INFO);
+#endif
 		esp_wifi_internal_tx(ESP_IF_WIFI_STA, payload, payload_len);
 		/*ESP_LOG_BUFFER_HEXDUMP("spi_sta_rx", payload, payload_len, ESP_LOG_INFO);*/
 	} else if (buf_handle->if_type == ESP_AP_IF && softap_started) {
@@ -484,7 +496,6 @@ static esp_err_t serial_write_data(uint8_t* data, ssize_t len)
 	int32_t frag_len = 0;
 	static uint16_t seq_num = 0;
 
-	printf("%s:%u\n",__func__,__LINE__);
 	do {
 		interface_buffer_handle_t buf_handle = {0};
 
@@ -515,15 +526,13 @@ static esp_err_t serial_write_data(uint8_t* data, ssize_t len)
 			return ESP_FAIL;
 		}
 
-	printf("%s:%u\n",__func__,__LINE__);
-#if 1//CONFIG_ESP_SERIAL_DEBUG
+#if CONFIG_ESP_SERIAL_DEBUG
 		ESP_LOG_BUFFER_HEXDUMP("serial_tx", data, frag_len, ESP_LOG_INFO);
 #endif
 
 		left_len -= frag_len;
 		pos += frag_len;
 	} while(left_len);
-	printf("%s:%u\n",__func__,__LINE__);
 
 	return ESP_OK;
 }
@@ -773,8 +782,10 @@ void app_main()
 
 	ESP_ERROR_CHECK(initialise_wifi());
 
-	while (!datapath) {
-		sleep(1);
+	ESP_LOGI(TAG,"Initial set up done");
+
+	while(!datapath) {
+		vTaskDelay(10);
 	}
 
 	/* send capabilities to host */

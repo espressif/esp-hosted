@@ -438,25 +438,16 @@ static void process_rx_task(void const* pvParameters)
 				g_h.funcs->_h_memcpy(buffer->payload, buf_handle.payload,
 						buf_handle.payload_len);
 
+				/* TODO: update this transport */
 				netdev_rx(priv->netdev, buffer);
 			}
 
 		} else if (buf_handle.if_type == ESP_PRIV_IF) {
-			buffer = (struct pbuf *)g_h.funcs->_h_malloc(sizeof(struct pbuf));
-			assert(buffer);
 
-			buffer->len = buf_handle.payload_len;
-			buffer->payload = g_h.funcs->_h_malloc(buf_handle.payload_len);
-			assert(buffer->payload);
-
-			g_h.funcs->_h_memcpy(buffer->payload, buf_handle.payload,
-					buf_handle.payload_len);
-
-
-			process_priv_communication(buffer);
+			process_priv_communication(buf_handle.payload, buf_handle.payload_len);
 			/* priv transaction received */
 			printf("Received INIT event\n\r");
-			event = (struct esp_priv_event *) (payload);
+			event = (struct esp_priv_event *) (buf_handle.payload);
 			if (event->event_type == ESP_PRIV_EVENT_INIT) {
 				/* User can re-use this type of transaction */
 				if (sdio_drv_evt_handler_fp) {
@@ -630,7 +621,7 @@ void transport_init(void(*transport_evt_handler_fp)(uint8_t))
  *         wlen - size of wbuffer
  * @retval STM_OK for success or failure from enum stm_ret_t
  */
-stm_ret_t send_to_slave(uint8_t iface_type, uint8_t iface_num,
+esp_err_t esp_hosted_tx(uint8_t iface_type, uint8_t iface_num,
 		uint8_t * wbuffer, uint16_t wlen)
 {
 	interface_buffer_handle_t buf_handle = {0};
