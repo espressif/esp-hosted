@@ -10,7 +10,7 @@
 #define CTRL_SEND_REQ(msGiD) do {                                     \
     req.msg_id = msGiD;                                               \
     if(SUCCESS != ctrl_app_send_req(&req)) {                          \
-        printf("Failed to send control req %u\n", req.msg_id);        \
+        printf("Failed to send control req 0x%x\n", req.msg_id);        \
         return NULL;                                                  \
     }                                                                 \
 } while(0);

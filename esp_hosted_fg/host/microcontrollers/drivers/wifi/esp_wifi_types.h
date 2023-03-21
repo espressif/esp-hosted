@@ -721,18 +721,18 @@ typedef struct {
 } wifi_event_sta_wps_er_success_t;
 
 /** Argument structure for WIFI_EVENT_AP_STACONNECTED event */
-typedef struct {
-    uint8_t mac[6];           /**< MAC address of the station connected to ESP32 soft-AP */
-    uint8_t aid;              /**< the aid that ESP32 soft-AP gives to the station connected to  */
-    bool is_mesh_child;       /**< flag to identify mesh child */
-} wifi_event_ap_staconnected_t;
-
-/** Argument structure for WIFI_EVENT_AP_STADISCONNECTED event */
-typedef struct {
-    uint8_t mac[6];           /**< MAC address of the station disconnects to ESP32 soft-AP */
-    uint8_t aid;              /**< the aid that ESP32 soft-AP gave to the station disconnects to  */
-    bool is_mesh_child;       /**< flag to identify mesh child */
-} wifi_event_ap_stadisconnected_t;
+//typedef struct {
+//    uint8_t mac[6];           /**< MAC address of the station connected to ESP32 soft-AP */
+//    uint8_t aid;              /**< the aid that ESP32 soft-AP gives to the station connected to  */
+//    bool is_mesh_child;       /**< flag to identify mesh child */
+//} wifi_event_ap_staconnected_t;
+//
+///** Argument structure for WIFI_EVENT_AP_STADISCONNECTED event */
+//typedef struct {
+//    uint8_t mac[6];           /**< MAC address of the station disconnects to ESP32 soft-AP */
+//    uint8_t aid;              /**< the aid that ESP32 soft-AP gave to the station disconnects to  */
+//    bool is_mesh_child;       /**< flag to identify mesh child */
+//} wifi_event_ap_stadisconnected_t;
 
 /** Argument structure for WIFI_EVENT_AP_PROBEREQRECVED event */
 typedef struct {

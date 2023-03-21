@@ -1,8 +1,8 @@
-# app & driver files
-#set(COMPONENT_SRCS "../../../../app/app_main.c" "../../../../app/app_main_api.c" "../../../../app/data/arp_server_stub.c" "../../../../app/control/control.c" "../../../../app/control/control_utils.c" "../../../../drivers/transport/transport_drv.c"  "../../../../drivers/network/netdev_api.c" "../../../../drivers/network/netdev_stub.c" "../../../../drivers/serial/serial_ll_if.c" "../../../../utils/common.c" "../../../../utils/util.c" "../../../../utils/stats.c" "os_wrapper.c" "../../../../drivers/serial/serial_drv.c")
+
 set(FG_ROOT_DIR "../../../../../../../..")
 set(MCU_DIR "${FG_ROOT_DIR}/host/microcontrollers")
-set(COMPONENT_SRCS "station_example_main.c" "${MCU_DIR}/drivers/rpc/rpc_wrapper.c" "${MCU_DIR}/drivers/transport/transport_drv.c"  "${MCU_DIR}/drivers/network/netdev_api.c" "${MCU_DIR}/drivers/network/netdev_stub.c" "${MCU_DIR}/drivers/serial/serial_ll_if.c" "${MCU_DIR}/utils/common.c" "${MCU_DIR}/utils/util.c" "${MCU_DIR}/utils/stats.c" "../../../../os_wrapper.c" "${MCU_DIR}/drivers/serial/serial_drv.c" "${MCU_DIR}/drivers/wifi/wifi_drv.c")
+
+set(COMPONENT_SRCS "station_example_main.c" "${MCU_DIR}/drivers/rpc/rpc_wrapper.c" "${MCU_DIR}/drivers/transport/transport_drv.c"  "${MCU_DIR}/drivers/network/netdev_api.c" "${MCU_DIR}/drivers/network/netdev_stub.c" "${MCU_DIR}/drivers/serial/serial_ll_if.c" "${MCU_DIR}/utils/common.c" "${MCU_DIR}/utils/util.c" "${MCU_DIR}/utils/stats.c" "../../../../os_wrapper.c" "${MCU_DIR}/drivers/serial/serial_drv.c" "${MCU_DIR}/drivers/wifi/wifi_drv.c" "${MCU_DIR}/drivers/netif/wifi_default.c" "${MCU_DIR}/drivers/netif/wifi_netif.c")
 
 set(COMPONENT_ADD_INCLUDEDIRS "." "${MCU_DIR}/drivers/rpc/" "${MCU_DIR}/drivers/transport" "${MCU_DIR}/drivers/transport/spi" "${MCU_DIR}/drivers/transport/sdio" "${MCU_DIR}/drivers/netif" "${MCU_DIR}/drivers/network" "${MCU_DIR}/drivers/serial" "${MCU_DIR}/utils" "${FG_ROOT_DIR}/common/include" "../../../.." "${MCU_DIR}/drivers/wifi")
 
@@ -28,25 +28,5 @@ else(CONFIG_ESP_SPI_HOST_INTERFACE)
 	list(APPEND COMPONENT_SRCS "${MCU_DIR}/drivers/transport/spi/spi_drv.c")
 endif()
 
-
-register_component()
-
-# Add needed components to include path
-idf_component_get_property(freertos_dir freertos COMPONENT_DIR)
-target_include_directories(${COMPONENT_LIB} PRIVATE "${freertos_dir}/include/freertos")
-
-idf_component_get_property(driver_dir driver COMPONENT_DIR)
-#target_include_directories(${COMPONENT_LIB} PRIVATE "${driver_dir}/include")
-target_include_directories(${COMPONENT_LIB} PRIVATE "${driver_dir}/include" "${driver_dir}/spi/include" "${driver_dir}/gpio/include")
-
-idf_component_get_property(esp_timer_dir esp_timer COMPONENT_DIR)
-target_include_directories(${COMPONENT_LIB} PRIVATE "${esp_timer_dir}/include")
-
-idf_component_get_property(esp_event_dir esp_event COMPONENT_DIR)
-target_include_directories(${COMPONENT_LIB} PRIVATE "${esp_event_dir}/include")
-
-idf_component_get_property(nvs_flash_dir nvs_flash COMPONENT_DIR)
-target_include_directories(${COMPONENT_LIB} PRIVATE "${nvs_flash_dir}/include")
-
-idf_component_get_property(esp_partition_dir esp_partition COMPONENT_DIR)
-target_include_directories(${COMPONENT_LIB} PRIVATE "${esp_partition_dir}/include")
+idf_component_register(SRCS ${COMPONENT_SRCS}
+                    INCLUDE_DIRS ${COMPONENT_ADD_INCLUDEDIRS})

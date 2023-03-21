@@ -33,18 +33,8 @@
 
 
 void * spi_handle = NULL;
-
-static struct esp_private *esp_priv[MAX_NETWORK_INTERFACES];
 static uint8_t hardware_type = HARDWARE_TYPE_INVALID;
-
-static struct netdev_ops esp_net_ops = {
-	.netdev_open = esp_netdev_open,
-	.netdev_close = esp_netdev_close,
-	.netdev_xmit = esp_netdev_xmit,
-};
-
 semaphore_handle_t spi_trans_ready_sem;
-
 static void * spi_rx_thread;
 static void * spi_transaction_thread;
 
@@ -53,78 +43,9 @@ static void * spi_transaction_thread;
 static struct mempool * buf_mp_g;
 
 
-/**
-  * @brief  destroy virtual network device
-  * @param  None
-  * @retval None
-  */
-static void deinit_netdev(void)
-{
-	for (int i = 0; i < MAX_NETWORK_INTERFACES; i++) {
-		if (esp_priv[i]) {
-			if (esp_priv[i]->netdev) {
-				netdev_unregister(esp_priv[i]->netdev);
-				netdev_free(esp_priv[i]->netdev);
-			}
-			esp_priv[i] = NULL;
-		}
-	}
-}
-
-
-/**
-  * @brief  create virtual network device
-  * @param  None
-  * @retval None
-  */
-static int init_netdev(void)
-{
-	void *ndev = NULL;
-	int i = 0;
-	struct esp_private *priv = NULL;
-	char *if_name = STA_INTERFACE;
-	uint8_t if_type = ESP_STA_IF;
-
-	for (i = 0; i < MAX_NETWORK_INTERFACES; i++) {
-		/* Alloc and init netdev */
-		ndev = netdev_alloc(sizeof(struct esp_private), if_name);
-		if (!ndev) {
-			deinit_netdev();
-			return STM_FAIL;
-		}
-
-		priv = (struct esp_private *) netdev_get_priv(ndev);
-		if (!priv) {
-			deinit_netdev();
-			return STM_FAIL;
-		}
-
-		priv->netdev = ndev;
-		priv->if_type = if_type;
-		priv->if_num = 0;
-
-		if (netdev_register(ndev, &esp_net_ops)) {
-			deinit_netdev();
-			return STM_FAIL;
-		}
-
-		if_name = SOFTAP_INTERFACE;
-		if_type = ESP_AP_IF;
-
-		esp_priv[i] = priv;
-	}
-
-	return STM_OK;
-}
-
 
 /** Exported variables **/
-//#define osMutexId portMUX_TYPE
 
-#if 0
-static osSemaphoreId osSemaphore;
-static osMutexId mutex_spi_trans;
-#endif
 static void * mutex_spi_trans;
 
 /* Queue declaration */
@@ -139,7 +60,7 @@ static void (*spi_drv_evt_handler_fp) (uint8_t);
 static void spi_transaction_task(void const* pvParameters);
 static void spi_process_rx_task(void const* pvParameters);
 static uint8_t * get_tx_buffer(uint8_t *is_valid_tx_buf);
-static void deinit_netdev(void);
+//static void deinit_netdev(void);
 
 /**
   * @brief  Set hardware type to ESP32 or ESP32S2 depending upon
@@ -184,7 +105,7 @@ static inline void spi_buffer_free(void *buf)
 /*
 This ISR is called when the handshake or data_ready line goes high.
 */
-static void IRAM_ATTR gpio_hs_dr_isr_handler(void* arg)
+static void IRAM_ATTR gpio_hs_isr_handler(void* arg)
 {
     //Sometimes due to interference or ringing or something, we get two irqs after eachother. This is solved by
     //looking at the time between interrupts and refusing any interrupt too close to another one.
@@ -200,6 +121,14 @@ static void IRAM_ATTR gpio_hs_dr_isr_handler(void* arg)
     g_h.funcs->_h_post_semaphore_from_isr(spi_trans_ready_sem);
 }
 
+/*
+This ISR is called when the handshake or data_ready line goes high.
+*/
+static void IRAM_ATTR gpio_dr_isr_handler(void* arg)
+{
+    g_h.funcs->_h_post_semaphore_from_isr(spi_trans_ready_sem);
+}
+
 /**
   * @brief  transport initializes
   * @param  transport_evt_handler_fp - event handler
@@ -207,7 +136,7 @@ static void IRAM_ATTR gpio_hs_dr_isr_handler(void* arg)
   */
 void transport_init(void(*transport_evt_handler_fp)(uint8_t))
 {
-	stm_ret_t retval = STM_OK;
+	//stm_ret_t retval = STM_OK;
 
 	/* Check if supported board */
 	set_hardware_type();
@@ -215,21 +144,6 @@ void transport_init(void(*transport_evt_handler_fp)(uint8_t))
 	/* register callback */
 	spi_drv_evt_handler_fp = transport_evt_handler_fp;
 
-	retval = init_netdev();
-	if (retval) {
-		printf("netdev failed to init\n\r");
-		assert(retval==STM_OK);
-	}
-
-#if 0
-	/* spi handshake semaphore */
-	osSemaphore = osSemaphoreCreate(osSemaphore(SEM) , 1);
-	assert(osSemaphore);
-#endif
-
-    //TODO: os agnostic  xSemaphoreCreateMutex
-	//mutex_spi_trans = xSemaphoreCreateMutex();
-	//assert(mutex_spi_trans);
     mutex_spi_trans = g_h.funcs->_h_create_mutex();
     assert(mutex_spi_trans);
 
@@ -246,46 +160,32 @@ void transport_init(void(*transport_evt_handler_fp)(uint8_t))
     spi_mempool_create();
 
     /* Creates & Give sem for next spi trans */
-    spi_trans_ready_sem = g_h.funcs->_h_create_binary_semaphore();
+    //spi_trans_ready_sem = xSemaphoreCreateCounting(10,0);
+	spi_trans_ready_sem = g_h.funcs->_h_create_binary_semaphore();
 
 
     g_h.funcs->_h_config_gpio_as_interrupt(H_GPIO_PORT_DEFAULT, GPIO_HANDSHAKE,
-            H_GPIO_INTR_POSEDGE, gpio_hs_dr_isr_handler);
+            H_GPIO_INTR_POSEDGE, gpio_hs_isr_handler);
 
     g_h.funcs->_h_config_gpio_as_interrupt(H_GPIO_PORT_DEFAULT, GPIO_DATA_READY,
-            H_GPIO_INTR_POSEDGE, gpio_hs_dr_isr_handler);
+            H_GPIO_INTR_POSEDGE, gpio_dr_isr_handler);
 
-    spi_handle = g_h.funcs->_h_bus_init(gpio_hs_dr_isr_handler);
+    spi_handle = g_h.funcs->_h_bus_init();
     if (!spi_handle) {
 		printf("could not create spi handle, exiting\n");
 		assert(spi_handle);
 	}
 
 	/* Task - SPI transaction (full duplex) */
-	//spi_transaction_thread = g_h.funcs->_h_thread_create(spi_transaction_task, NULL);
 	spi_transaction_thread = g_h.funcs->_h_thread_create("spi_trans", DFLT_TASK_PRIO,
         DFLT_TASK_STACK_SIZE, spi_transaction_task, NULL);
 	assert(spi_transaction_thread);
 
 	/* Task - RX processing */
-	//spi_rx_thread = g_h.funcs->_h_thread_create(spi_process_rx_task, NULL);
 	spi_rx_thread = g_h.funcs->_h_thread_create("spi_rx", DFLT_TASK_PRIO,
         DFLT_TASK_STACK_SIZE, spi_process_rx_task, NULL);
 	assert(spi_rx_thread);
 }
-
-
-#if 0
-/**
-  * @brief  Give breathing time for slave on spi
-  * @param  x - for loop delay count
-  * @retval None
-  */
-static void stop_spi_transactions_for_msec(int x)
-{
-	g_h.funcs->_h_blocking_delay(x);
-}
-#endif
 
 
 /**
@@ -318,7 +218,7 @@ static int process_spi_rx_buf(uint8_t * rxbuff)
         (len > MAX_PAYLOAD_SIZE) ||
         (offset != sizeof(struct esp_payload_header))) {
         /*printf("rx packet ignored: len [%u], rcvd_offset[%u], exp_offset[%u]\n",
-		 * len, offset, sizeof(struct esp_payload_header));*/
+		len, offset, sizeof(struct esp_payload_header));*/
 
         /* 1. no payload to process
          * 2. input packet size > driver capacity
@@ -353,6 +253,7 @@ static int process_spi_rx_buf(uint8_t * rxbuff)
             }
         } else {
             ret = -4;
+			printf("unexpected checksum failed\n\r");
             goto done;
         }
     }
@@ -444,7 +345,7 @@ static int check_and_execute_spi_transaction(void)
   *         wlen - size of wbuffer
   * @retval sendbuf - Tx buffer
   */
-stm_ret_t send_to_slave(uint8_t iface_type, uint8_t iface_num,
+esp_err_t esp_hosted_tx(uint8_t iface_type, uint8_t iface_num,
 		uint8_t * wbuffer, uint16_t wlen)
 {
 	interface_buffer_handle_t buf_handle = {0};
@@ -476,7 +377,6 @@ stm_ret_t send_to_slave(uint8_t iface_type, uint8_t iface_num,
 		return STM_FAIL;
 	}
 
-    //TODO: Os agnostic APIs
     g_h.funcs->_h_lock_mutex(mutex_spi_trans, portMAX_DELAY);
     check_and_execute_spi_transaction();
     g_h.funcs->_h_unlock_mutex(mutex_spi_trans);
@@ -486,25 +386,6 @@ stm_ret_t send_to_slave(uint8_t iface_type, uint8_t iface_num,
 
 
 /** Local Functions **/
-/**
-  * @brief  get private interface of expected type and number
-  * @param  if_type - interface type
-  *         if_num - interface number
-  * @retval interface handle if found, else NULL
-  */
-static struct esp_private * get_priv(uint8_t if_type, uint8_t if_num)
-{
-	int i = 0;
-
-	for (i = 0; i < MAX_NETWORK_INTERFACES; i++) {
-		if((esp_priv[i]) &&
-			(esp_priv[i]->if_type == if_type) &&
-			(esp_priv[i]->if_num == if_num))
-			return esp_priv[i];
-	}
-
-	return NULL;
-}
 
 
 /**
@@ -532,7 +413,6 @@ static void spi_transaction_task(void const* pvParameters)
 
         //Wait for slave to be ready for next byte before sending
         g_h.funcs->_h_get_semaphore(spi_trans_ready_sem, portMAX_DELAY); //Wait until slave is ready
-        //TODO: Os agnostic APIs
         g_h.funcs->_h_lock_mutex(mutex_spi_trans, portMAX_DELAY);
         check_and_execute_spi_transaction();
         g_h.funcs->_h_unlock_mutex(mutex_spi_trans);
@@ -547,10 +427,10 @@ static void spi_transaction_task(void const* pvParameters)
 static void spi_process_rx_task(void const* pvParameters)
 {
 	interface_buffer_handle_t buf_handle = {0};
-	uint8_t *payload = NULL;
-	struct pbuf *buffer = NULL;
+	//uint8_t *payload = NULL;
+	//struct pbuf *buffer = NULL;
 	struct esp_priv_event *event = NULL;
-	struct esp_private *priv = NULL;
+	//struct esp_private *priv = NULL;
 
 	while (1) {
 
@@ -558,12 +438,11 @@ static void spi_process_rx_task(void const* pvParameters)
 			continue;
 		}
 #if CONFIG_SPI_LOG_LEVEL
-		printf("New packet\n\r");
+		printf("New Rx packet\n\r");
 		print_hex_dump(buf_handle.payload, buf_handle.payload_len, "spi_rx");
 #endif
 
-		/* point to payload */
-		payload = buf_handle.payload;
+		//payload = buf_handle.payload;
 
 		/* process received buffer for all possible interface types */
 		if (buf_handle.if_type == ESP_SERIAL_IF) {
@@ -573,42 +452,16 @@ static void spi_process_rx_task(void const* pvParameters)
 
 		} else if((buf_handle.if_type == ESP_STA_IF) ||
 				(buf_handle.if_type == ESP_AP_IF)) {
-			priv = get_priv(buf_handle.if_type, buf_handle.if_num);
-
-			if (priv) {
-				buffer = (struct pbuf *)g_h.funcs->_h_malloc(sizeof(struct pbuf));
-                //heap_caps_dump_all();
-				assert(buffer);
-
-				buffer->len = buf_handle.payload_len;
-				buffer->payload = g_h.funcs->_h_malloc(buf_handle.payload_len);
-                //heap_caps_dump_all();
-				assert(buffer->payload);
-
-				g_h.funcs->_h_memcpy(buffer->payload, buf_handle.payload,
-						buf_handle.payload_len);
-
-				netdev_rx(priv->netdev, buffer);
+			if (g_rxcb[buf_handle.if_type]) {
+				g_rxcb[buf_handle.if_type](buf_handle.payload, buf_handle.payload_len, NULL);
 			}
 
 		} else if (buf_handle.if_type == ESP_PRIV_IF) {
-			buffer = (struct pbuf *)g_h.funcs->_h_malloc(sizeof(struct pbuf));
-            //heap_caps_dump_all();
-			assert(buffer);
-
-			buffer->len = buf_handle.payload_len;
-			buffer->payload = g_h.funcs->_h_malloc(buf_handle.payload_len);
-            //heap_caps_dump_all();
-			assert(buffer->payload);
-
-			g_h.funcs->_h_memcpy(buffer->payload, buf_handle.payload,
-					buf_handle.payload_len);
-
-			process_priv_communication(buffer);
+			process_priv_communication(buf_handle.payload, buf_handle.payload_len);
 			/* priv transaction received */
 			printf("Received INIT event\n\r");
 
-			event = (struct esp_priv_event *) (payload);
+			event = (struct esp_priv_event *) (buf_handle.payload);
 			if (event->event_type == ESP_PRIV_EVENT_INIT) {
 				/* halt spi transactions for some time,
 				 * this is one time delay, to give breathing

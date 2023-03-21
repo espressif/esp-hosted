@@ -77,7 +77,7 @@ static void raw_tp_tx_task(void const* pvParameters)
 	while (1) {
 
 		raw_tp_tx_buf = (uint8_t*)g_h.funcs->_h_calloc(1, TEST_RAW_TP__BUF_SIZE);
-		ret = send_to_slave(ESP_TEST_IF, 0, raw_tp_tx_buf, TEST_RAW_TP__BUF_SIZE);
+		ret = esp_hosted_tx(ESP_TEST_IF, 0, raw_tp_tx_buf, TEST_RAW_TP__BUF_SIZE);
 		if (ret != STM_OK) {
 			printf("Failed to send to queue\n");
 			continue;

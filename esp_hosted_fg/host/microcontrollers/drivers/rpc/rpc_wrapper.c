@@ -27,6 +27,7 @@
 #include "string.h"
 #include "serial_drv.h"
 #include "os_wrapper.h"
+#include "rpc_wrapper.h"
 
 
 /***** Please Read *****/
@@ -120,6 +121,7 @@ static int ctrl_app_event_callback(ctrl_cmd_t * app_event)
 			break;
 		} case CTRL_EVENT_AP_STA_CONNECTED: {
 			wifi_event_ap_staconnected_t *p_e = &app_event->u.e_wifi_ap_staconnected;
+
 			if (p_e->mac) {
 				hosted_log("%s App EVENT: SoftAP mode: connected station",
 					get_timestamp(ts, MIN_TIMESTAMP_STR_SIZE));
@@ -210,6 +212,9 @@ static void process_failed_responses(ctrl_cmd_t *app_msg)
 			break;
 		case CTRL_ERR_TRANSPORT_SEND:
 			hosted_log("Error reported: Problem while sending data on serial driver\n\r");
+			break;
+		case CTRL_ERR_SET_SYNC_SEM:
+			hosted_log("Error reported: Failed to set sync sem\n\r");
 			break;
 		default:
 			request_failed_flag = false;
@@ -314,161 +319,164 @@ int ctrl_app_resp_callback(ctrl_cmd_t * app_resp)
 
 	switch(app_resp->msg_id) {
 
-		case CTRL_RESP_GET_MAC_ADDR: {
-			hosted_log("mac address is %s\n\r", app_resp->u.wifi_mac.mac);
-			break;
-		} case CTRL_RESP_SET_MAC_ADDRESS : {
-			hosted_log("MAC address is set\n\r");
-			break;
-		} case CTRL_RESP_GET_WIFI_MODE : {
-			hosted_log("wifi mode is : ");
-			switch (app_resp->u.wifi_mode.mode) {
-				case WIFI_MODE_STA:     hosted_log("station\n\r");        break;
-				case WIFI_MODE_AP:      hosted_log("softap\n\r");         break;
-				case WIFI_MODE_APSTA:   hosted_log("station+softap\n\r"); break;
-				case WIFI_MODE_NONE:    hosted_log("none\n\r");           break;
-				default:                hosted_log("unknown\n\r");        break;
-			}
-			break;
-		} case CTRL_RESP_SET_WIFI_MODE : {
-			hosted_log("wifi mode is set\n\r");
-			break;
-		} case CTRL_RESP_GET_AP_SCAN_LIST : {
-			wifi_ap_scan_list_t * w_scan_p = &app_resp->u.wifi_ap_scan;
-			wifi_scanlist_t *list = w_scan_p->out_list;
+	case CTRL_RESP_GET_MAC_ADDR: {
+		char mac_str[BSSID_LENGTH] = {0};
+		snprintf(mac_str,BSSID_LENGTH,MACSTR,MAC2STR(app_resp->u.wifi_mac.mac));
+		hosted_log("mac address is [%s] ", mac_str);
+		break;
+	} case CTRL_RESP_SET_MAC_ADDRESS : {
+		hosted_log("MAC address is set\n\r");
+		break;
+	} case CTRL_RESP_GET_WIFI_MODE : {
+		hosted_log("wifi mode is : ");
+		switch (app_resp->u.wifi_mode.mode) {
+			case WIFI_MODE_STA:     hosted_log("station\n\r");        break;
+			case WIFI_MODE_AP:      hosted_log("softap\n\r");         break;
+			case WIFI_MODE_APSTA:   hosted_log("station+softap\n\r"); break;
+			case WIFI_MODE_NONE:    hosted_log("none\n\r");           break;
+			default:                hosted_log("unknown\n\r");        break;
+		}
+		break;
+	} case CTRL_RESP_SET_WIFI_MODE : {
+		hosted_log("wifi mode is set\n\r");
+		break;
+	} case CTRL_RESP_GET_AP_SCAN_LIST : {
+		wifi_ap_scan_list_t * w_scan_p = &app_resp->u.wifi_ap_scan;
+		wifi_scanlist_t *list = w_scan_p->out_list;
 
-			if (!w_scan_p->count) {
-				hosted_log("No AP found\n\r");
-				goto finish_resp;
-			}
-			if (!list) {
-				hosted_log("Failed to get scanned AP list\n\r");
-				goto fail_resp;
-			} else {
+		if (!w_scan_p->count) {
+			hosted_log("No AP found\n\r");
+			goto finish_resp;
+		}
+		if (!list) {
+			hosted_log("Failed to get scanned AP list\n\r");
+			goto fail_resp;
+		} else {
 
-				hosted_log("Number of available APs is %d\n\r", w_scan_p->count);
-				for (i=0; i<w_scan_p->count; i++) {
-					hosted_log("%d) ssid \"%s\" bssid \"%s\" rssi \"%d\" channel \"%d\" auth mode \"%d\" \n\r",\
-							i, list[i].ssid, list[i].bssid, list[i].rssi,
-							list[i].channel, list[i].encryption_mode);
-				}
-				g_h.funcs->_h_msleep(1);
+			hosted_log("Number of available APs is %d\n\r", w_scan_p->count);
+			for (i=0; i<w_scan_p->count; i++) {
+				hosted_log("%d) ssid \"%s\" bssid \"%s\" rssi \"%d\" channel \"%d\" auth mode \"%d\" \n\r",\
+						i, list[i].ssid, list[i].bssid, list[i].rssi,
+						list[i].channel, list[i].encryption_mode);
 			}
-			break;
-		} case CTRL_RESP_GET_AP_CONFIG : {
-			hosted_ap_config_t *p = &app_resp->u.hosted_ap_config;
-			if (0 == strncmp(SUCCESS_STR, p->status, strlen(SUCCESS_STR))) {
-				hosted_log("AP's ssid '%s'\n\r", p->ssid);
-				hosted_log("AP's bssid i.e. MAC address %s\n\r", p->bssid);
-				hosted_log("AP's channel number %d\n\r", p->channel);
-				hosted_log("AP's rssi %d\n\r", p->rssi);
-				hosted_log("AP's encryption mode %d\n\r", p->encryption_mode);
-			} else {
-				hosted_log("Station mode status: %s\n\r",p->status);
-			}
-			break;
-		} case CTRL_RESP_CONNECT_AP : {
-			hosted_log("Connected\n\r");
-			break;
-		} case CTRL_RESP_DISCONNECT_AP : {
-			hosted_log("Disconnected from AP\n\r");
-			break;
-		} case CTRL_RESP_GET_SOFTAP_CONFIG : {
+			g_h.funcs->_h_msleep(1);
+		}
+		break;
+	} case CTRL_RESP_GET_AP_CONFIG : {
+		hosted_ap_config_t *p = &app_resp->u.hosted_ap_config;
+		if (0 == strncmp(SUCCESS_STR, p->status, strlen(SUCCESS_STR))) {
+			hosted_log("AP's ssid '%s'\n\r", p->ssid);
+			hosted_log("AP's bssid i.e. MAC address %s\n\r", p->bssid);
+			hosted_log("AP's channel number %d\n\r", p->channel);
+			hosted_log("AP's rssi %d\n\r", p->rssi);
+			hosted_log("AP's encryption mode %d\n\r", p->encryption_mode);
+		} else {
+			hosted_log("Station mode status: %s\n\r",p->status);
+		}
+		break;
+	} case CTRL_RESP_CONNECT_AP : {
+		hosted_log("Connected\n\r");
+		break;
+	} case CTRL_RESP_DISCONNECT_AP : {
+		hosted_log("Disconnected from AP\n\r");
+		break;
+	} case CTRL_RESP_GET_SOFTAP_CONFIG : {
 #if CONFIG_RPC_LOG_LEVEL
-			hosted_softap_config_t * resp_p = &app_resp->u.wifi_softap_config;
+		hosted_softap_config_t * resp_p = &app_resp->u.wifi_softap_config;
 #endif
 
-			hosted_log("softAP ssid %s\n\r", resp_p->ssid);
-			hosted_log("softAP pwd %s\n\r", resp_p->pwd);
-			hosted_log("softAP channel ID %d\n\r", resp_p->channel);
-			hosted_log("softAP encryption mode %d\n\r", resp_p->encryption_mode);
-			hosted_log("softAP max connections %d\n\r", resp_p->max_connections);
-			hosted_log("softAP ssid broadcast status %d \n", resp_p->ssid_hidden);
-			hosted_log("softAP bandwidth mode %d\n\r", resp_p->bandwidth);
+		hosted_log("softAP ssid %s\n\r", resp_p->ssid);
+		hosted_log("softAP pwd %s\n\r", resp_p->pwd);
+		hosted_log("softAP channel ID %d\n\r", resp_p->channel);
+		hosted_log("softAP encryption mode %d\n\r", resp_p->encryption_mode);
+		hosted_log("softAP max connections %d\n\r", resp_p->max_connections);
+		hosted_log("softAP ssid broadcast status %d \n", resp_p->ssid_hidden);
+		hosted_log("softAP bandwidth mode %d\n\r", resp_p->bandwidth);
 
-			break;
-		} case CTRL_RESP_SET_SOFTAP_VND_IE : {
-			hosted_log("Success in set vendor specific ie\n\r");
-			break;
-		} case CTRL_RESP_START_SOFTAP : {
-			hosted_log("esp32 softAP started\n\r");
-			break;
-		} case CTRL_RESP_GET_SOFTAP_CONN_STA_LIST : {
-			int count = app_resp->u.wifi_softap_con_sta.count;
-			wifi_connected_stations_list_t *stations_list =
-				app_resp->u.wifi_softap_con_sta.out_list;
+		break;
+	} case CTRL_RESP_SET_SOFTAP_VND_IE : {
+		hosted_log("Success in set vendor specific ie\n\r");
+		break;
+	} case CTRL_RESP_START_SOFTAP : {
+		hosted_log("esp32 softAP started\n\r");
+		break;
+	} case CTRL_RESP_GET_SOFTAP_CONN_STA_LIST : {
+		int count = app_resp->u.wifi_softap_con_sta.count;
+		wifi_connected_stations_list_t *stations_list =
+			app_resp->u.wifi_softap_con_sta.out_list;
 
-			hosted_log("sta list count: %u\n\r",count);
-			if (!count) {
-				hosted_log("No station found\n\r");
-				goto fail_resp;
-			}
-
-			if (!stations_list) {
-				hosted_log("Failed to get connected stations list\n\r");
-			} else if (count) {
-				for (i=0; i<count; i++) {
-					hosted_log("%d th stations's bssid \"%s\" rssi \"%d\" \n\r",i, \
-							stations_list[i].bssid, stations_list[i].rssi);
-				}
-			}
-			break;
-		} case CTRL_RESP_STOP_SOFTAP : {
-			hosted_log("esp32 softAP stopped\n\r");
-			break;
-		} case CTRL_RESP_SET_PS_MODE : {
-			hosted_log("Wifi power save mode set\n\r");
-			break;
-		} case CTRL_RESP_GET_PS_MODE : {
-			hosted_log("Wifi power save mode is: ");
-
-			switch(app_resp->u.wifi_ps.ps_mode) {
-				case WIFI_PS_MIN_MODEM:
-					hosted_log("Min\n\r");
-					break;
-				case WIFI_PS_MAX_MODEM:
-					hosted_log("Max\n\r");
-					break;
-				default:
-					hosted_log("Invalid\n\r");
-					break;
-			}
-			break;
-		} case CTRL_RESP_OTA_BEGIN : {
-			hosted_log("OTA begin success\n\r");
-			break;
-		} case CTRL_RESP_OTA_WRITE : {
-			hosted_log("OTA write success\n\r");
-			break;
-		} case CTRL_RESP_OTA_END : {
-			hosted_log("OTA end success\n\r");
-			break;
-		} case CTRL_RESP_SET_WIFI_MAX_TX_POWER: {
-			hosted_log("Set wifi max tx power success\n\r");
-			break;
-		} case CTRL_RESP_GET_WIFI_CURR_TX_POWER: {
-			hosted_log("wifi curr tx power : %d\n\r",
-					app_resp->u.wifi_tx_power.power);
-			break;
-		} case CTRL_RESP_CONFIG_HEARTBEAT: {
-			hosted_log("Heartbeat operation successful\n\r");
-			break;
-		}
-		case CTRL_RESP_WIFI_INIT:
-		case CTRL_RESP_WIFI_DEINIT:
-		case CTRL_RESP_WIFI_START:
-		case CTRL_RESP_WIFI_STOP:
-		case CTRL_RESP_WIFI_CONNECT:
-		case CTRL_RESP_WIFI_DISCONNECT:
-		case CTRL_RESP_WIFI_GET_CONFIG:
-		case CTRL_RESP_WIFI_SET_CONFIG: {
-			/* Intended fallthrough */
-			break;
-		} default: {
-			hosted_log("Invalid Response[%u] to parse\n\r", app_resp->msg_id);
+		hosted_log("sta list count: %u\n\r",count);
+		if (!count) {
+			hosted_log("No station found\n\r");
 			goto fail_resp;
 		}
+
+		if (!stations_list) {
+			hosted_log("Failed to get connected stations list\n\r");
+		} else if (count) {
+			for (i=0; i<count; i++) {
+				hosted_log("%d th stations's bssid \"%s\" rssi \"%d\" \n\r",i, \
+						stations_list[i].bssid, stations_list[i].rssi);
+			}
+		}
+		break;
+	} case CTRL_RESP_STOP_SOFTAP : {
+		hosted_log("esp32 softAP stopped\n\r");
+		break;
+	} case CTRL_RESP_SET_PS_MODE : {
+		hosted_log("Wifi power save mode set\n\r");
+		break;
+	} case CTRL_RESP_GET_PS_MODE : {
+		hosted_log("Wifi power save mode is: ");
+
+		switch(app_resp->u.wifi_ps.ps_mode) {
+			case WIFI_PS_MIN_MODEM:
+				hosted_log("Min\n\r");
+				break;
+			case WIFI_PS_MAX_MODEM:
+				hosted_log("Max\n\r");
+				break;
+			default:
+				hosted_log("Invalid\n\r");
+				break;
+		}
+		break;
+	} case CTRL_RESP_OTA_BEGIN : {
+		hosted_log("OTA begin success\n\r");
+		break;
+	} case CTRL_RESP_OTA_WRITE : {
+		hosted_log("OTA write success\n\r");
+		break;
+	} case CTRL_RESP_OTA_END : {
+		hosted_log("OTA end success\n\r");
+		break;
+	} case CTRL_RESP_SET_WIFI_MAX_TX_POWER: {
+		hosted_log("Set wifi max tx power success\n\r");
+		break;
+	} case CTRL_RESP_GET_WIFI_CURR_TX_POWER: {
+		hosted_log("wifi curr tx power : %d\n\r",
+				app_resp->u.wifi_tx_power.power);
+		break;
+	} case CTRL_RESP_CONFIG_HEARTBEAT: {
+		hosted_log("Heartbeat operation successful\n\r");
+		break;
 	}
+	case CTRL_RESP_WIFI_INIT:
+	case CTRL_RESP_WIFI_DEINIT:
+	case CTRL_RESP_WIFI_START:
+	case CTRL_RESP_WIFI_STOP:
+	case CTRL_RESP_WIFI_CONNECT:
+	case CTRL_RESP_WIFI_DISCONNECT:
+	case CTRL_RESP_WIFI_GET_CONFIG:
+	case CTRL_RESP_WIFI_SET_CONFIG: {
+		/* Intended fallthrough */
+		break;
+	} default: {
+		hosted_log("Invalid Response[%u] to parse\n\r", app_resp->msg_id);
+		goto fail_resp;
+	}
+
+	} //switch
 
 finish_resp:
 	CLEANUP_CTRL_MSG(app_resp);
@@ -526,14 +534,12 @@ int test_set_wifi_mode_none(void)
 	return test_set_wifi_mode(WIFI_MODE_NONE);
 }
 
-int test_get_wifi_mac_addr(int mode, char *out_mac)
+int test_wifi_get_mac_addr(int mode, uint8_t *out_mac)
 {
 	ctrl_cmd_t *resp = NULL;
 
 	if (!out_mac)
 		return FAILURE;
-
-	out_mac[0]='\0';
 
 	/* implemented synchronous */
 	ctrl_cmd_t req = CTRL_CMD_DEFAULT_REQ();
@@ -546,29 +552,36 @@ int test_get_wifi_mac_addr(int mode, char *out_mac)
 			printf("NULL MAC returned\n\r");
 			return FAILURE;
 		}
-		strncpy(out_mac, resp->u.wifi_mac.mac, MAX_MAC_STR_LEN);
-		out_mac[MAX_MAC_STR_LEN-1] = '\0';
+
+		g_h.funcs->_h_memcpy(out_mac, resp->u.wifi_mac.mac, BSSID_BYTES_SIZE);
+		char mac_str[BSSID_LENGTH] = {0};
+		snprintf(mac_str,BSSID_LENGTH,MACSTR,MAC2STR(out_mac));
+		hosted_log("mac address is [%s] ", mac_str);
+
 	}
 
 	return ctrl_app_resp_callback(resp);
 }
 
-int test_station_mode_get_mac_addr(char *mac)
+int test_station_mode_get_mac_addr(uint8_t *mac)
 {
-	return test_get_wifi_mac_addr(WIFI_MODE_STA, mac);
+	return test_wifi_get_mac_addr(WIFI_MODE_STA, mac);
 }
 
-int test_set_mac_addr(int mode, char *mac)
+int test_wifi_set_mac_addr(int mode, uint8_t *mac)
 {
 	/* implemented synchronous */
 	ctrl_cmd_t req = CTRL_CMD_DEFAULT_REQ();
 	ctrl_cmd_t *resp = NULL;
+	int ret = 0;
 
-	int ret = test_set_wifi_mode(mode);
+	if (!mac)
+		return FAILURE;
+
+	ret = test_set_wifi_mode(mode);
 	if (ret == SUCCESS) {
 		req.u.wifi_mac.mode = mode;
-		strncpy(req.u.wifi_mac.mac, mac, MAX_MAC_STR_LEN);
-		req.u.wifi_mac.mac[MAX_MAC_STR_LEN-1] = '\0';
+		g_h.funcs->_h_memcpy(req.u.wifi_mac.mac, mac, BSSID_BYTES_SIZE);
 
 		resp = wifi_set_mac(req);
 		return ctrl_app_resp_callback(resp);
@@ -577,9 +590,9 @@ int test_set_mac_addr(int mode, char *mac)
 }
 
 
-int test_softap_mode_get_mac_addr(char *mac)
+int test_softap_mode_get_mac_addr(uint8_t *mac)
 {
-	return test_get_wifi_mac_addr(WIFI_MODE_AP, mac);
+	return test_wifi_get_mac_addr(WIFI_MODE_AP, mac);
 }
 
 int test_async_station_mode_connect(char *ssid, char *pwd, char *bssid,

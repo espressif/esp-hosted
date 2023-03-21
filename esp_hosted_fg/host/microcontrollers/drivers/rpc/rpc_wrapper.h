@@ -23,6 +23,7 @@ extern "C" {
 
 /** Includes **/
 #include "common.h"
+#include "ctrl_api.h"
 
 /** constants/macros **/
 typedef enum {
@@ -40,6 +41,8 @@ typedef enum control_path_events_s {
 	SOFTAP_STOPPED
 } control_path_events_e;
 
+#define MACSTR "%02x:%02x:%02x:%02x:%02x:%02x"
+#define MAC2STR(a) (a)[0], (a)[1], (a)[2], (a)[3], (a)[4], (a)[5]
 
 /** Exported variables **/
 
@@ -57,10 +60,10 @@ stm_ret_t get_arp_dst_ip_softap(uint32_t *soft_ip);
 
 int test_set_wifi_mode(int mode);
 int test_get_available_wifi(void);
-int test_station_mode_get_mac_addr(char *mac);
+int test_station_mode_get_mac_addr(uint8_t *mac);
 int test_station_mode_connect(char *ssid, char *pwd, char *bssid,
 	int is_wpa3_supported, int listen_interval);
-int test_softap_mode_get_mac_addr(char *mac);
+int test_softap_mode_get_mac_addr(uint8_t *mac);
 int test_softap_mode_start(char *ssid, char *pwd, int channel,
 	int encryption_mode, int max_conn, int ssid_hidden, int bw);
 int unregister_event_callbacks(void);
@@ -76,6 +79,8 @@ int test_wifi_connect(void);
 int test_wifi_disconnect(void);
 int test_wifi_set_config(int interface, wifi_config_t *conf);
 int test_wifi_get_config(int interface, wifi_config_t *conf);
+int test_wifi_get_mac_addr(int mode, uint8_t *out_mac);
+int test_wifi_set_mac_addr(int mode, uint8_t *mac);
 
 #ifdef __cplusplus
 }

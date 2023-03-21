@@ -41,6 +41,9 @@
 #define FAILURE_STR                          "failure"
 #define NOT_CONNECTED_STR                    "not_connected"
 
+#define RPC_RX_QUEUE_SIZE 3
+#define RPC_TX_QUEUE_SIZE 5
+
 /*---- Control structures ----*/
 
 enum {
@@ -58,6 +61,7 @@ enum {
 	CTRL_ERR_TRANSPORT_SEND,
 	CTRL_ERR_REQUEST_TIMEOUT,
 	CTRL_ERR_REQ_IN_PROG,
+	CTRL_ERR_SET_SYNC_SEM,
 	OUT_OF_RANGE
 };
 
@@ -328,7 +332,7 @@ typedef struct {
 
 typedef struct {
 	int mode;
-	char mac[MAX_MAC_STR_LEN];
+	uint8_t mac[BSSID_BYTES_SIZE];
 } wifi_mac_t;
 
 typedef struct {
@@ -535,6 +539,8 @@ typedef struct Ctrl_cmd_t {
 
 	/* statusof response or notification */
 	uint8_t resp_event_status;
+
+	void * rx_sem;
 
 	union {
         wifi_init_config_t          wifi_init_config;

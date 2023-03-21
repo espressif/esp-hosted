@@ -115,11 +115,6 @@ uint8_t * serial_drv_read(struct serial_drv_handle_t *serial_drv_handle,
 		return NULL;
 	}
 
-	//if (osSemaphoreWait(readSemaphore, HOSTED_BLOCK_MAX) != osOK) {
-	//	printf("Failed to read data \n\r");
-	//	return NULL;
-	//}
-
 	g_h.funcs->_h_get_semaphore(readSemaphore, HOSTED_BLOCK_MAX);
 
 	if( (!serial_ll_if_g) ||
@@ -188,6 +183,10 @@ uint8_t * serial_drv_read(struct serial_drv_handle_t *serial_drv_handle,
 		goto free_bufs;
 	}
 
+	if (rx_buf_len > (init_read_len + buf_len)) {
+		printf("Buf read on serial iface is smaller than expected len\n");
+	}
+
 	mem_free(buf);
 /*
  * (2) Read variable length of RX data:
@@ -221,15 +220,11 @@ int serial_drv_close(struct serial_drv_handle_t** serial_drv_handle)
 
 int control_path_platform_init(void)
 {
-	//osSemaphoreDef(READSEM);
-
 	/* control path semaphore */
-	//readSemaphore = osSemaphoreCreate(osSemaphore(READSEM) , 1);
 	readSemaphore = g_h.funcs->_h_create_binary_semaphore();
 	assert(readSemaphore);
 
 	/* grab the semaphore, so that task will be mandated to wait on semaphore */
-	//if (osSemaphoreWait(readSemaphore , HOSTED_BLOCK_MAX) != osOK) {
 	g_h.funcs->_h_get_semaphore(readSemaphore, HOSTED_BLOCK_MAX);
 
 	serial_ll_if_g = serial_ll_init(control_path_rx_indication);
@@ -259,7 +254,6 @@ static void control_path_rx_indication(void)
 {
 	/* heads up to control path for read */
 	if(readSemaphore) {
-		//osSemaphoreRelease(readSemaphore);
 		g_h.funcs->_h_post_semaphore(readSemaphore);
 	}
 }
