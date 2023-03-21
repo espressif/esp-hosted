@@ -217,6 +217,7 @@ typedef struct esp_rpc_cmd {
 } esp_rpc_req_t;
 
 
+
 static const char* TAG = "slave_ctrl";
 extern volatile uint8_t ota_ongoing;
 static TimerHandle_t handle_heartbeat_task;

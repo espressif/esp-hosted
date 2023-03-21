@@ -61,7 +61,7 @@ static const char TAG[] = "NETWORK_ADAPTER";
 #define UNKNOWN_RPC_MSG_ID              0
 
 #if CONFIG_ESP_SPI_HOST_INTERFACE
-  #ifdef CONFIG_IDF_TARGET_ESP32S2
+  #if defined(CONFIG_IDF_TARGET_ESP32S2) || defined(CONFIG_IDF_TARGET_ESP32C2)
     #define TO_HOST_QUEUE_SIZE           5
   #else
     #define TO_HOST_QUEUE_SIZE           20
@@ -451,7 +451,6 @@ static esp_err_t serial_write_data(uint8_t* data, ssize_t len)
 	int32_t frag_len = 0;
 	static uint16_t seq_num = 0;
 
-	printf("%s:%u\n",__func__,__LINE__);
 	do {
 		interface_buffer_handle_t buf_handle = {0};
 
@@ -488,7 +487,6 @@ static esp_err_t serial_write_data(uint8_t* data, ssize_t len)
 		left_len -= frag_len;
 		pos += frag_len;
 	} while(left_len);
-	printf("%s:%u\n",__func__,__LINE__);
 
 	return ESP_OK;
 }
