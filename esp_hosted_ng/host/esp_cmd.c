@@ -556,12 +556,6 @@ static void process_assoc_event(struct esp_wifi_device *priv,
 		struct assoc_event *event)
 {
 	u8 mac[6];
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 0, 0))
-	// cd47c0f57ae6607cfa3d161e341cbdd283bc444f
-	struct cfg80211_rx_assoc_resp resp = {
-		.uapsd_queues = 0,
-	};
-#endif
 
 	if (!priv || !event) {
 		printk(KERN_ERR "%s: Invalid arguments\n", __func__);
@@ -572,19 +566,8 @@ static void process_assoc_event(struct esp_wifi_device *priv,
 
 	memcpy(mac, event->bssid, MAC_ADDR_LEN);
 
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 0, 0))
-	// cd47c0f57ae6607cfa3d161e341cbdd283bc444f
-	resp.links[0].bss = priv->bss;
-	resp.buf = (u8 *)event->frame;
-	resp.len =  event->frame_len;
-	resp.req_ies = priv->assoc_req_ie;
-	resp.req_ies_len = priv->assoc_req_ie_len;
-	cfg80211_rx_assoc_resp(priv->ndev, &resp);
-
-#else
-	cfg80211_rx_assoc_resp(priv->ndev, priv->bss, event->frame, event->frame_len,
+	CFG80211_RX_ASSOC_RESP(priv->ndev, priv->bss, event->frame, event->frame_len,
 			0, priv->assoc_req_ie, priv->assoc_req_ie_len);
-#endif
 
 #if 0
 	if (priv->bss) {

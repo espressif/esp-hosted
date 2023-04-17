@@ -180,5 +180,65 @@ static inline void *skb_put_data(struct sk_buff *skb, const void *data,
         void esp_tx_timeout(struct net_device *ndev, unsigned int txqueue)
 #endif
 
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 17, 0))
+#define do_exit(code)	kthread_complete_and_exit(NULL, code)
+#endif
+
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 18, 0))
+#define NETIF_RX_NI(skb)	netif_rx(skb)
+#else
+#define NETIF_RX_NI(skb)	netif_rx_ni(skb)
+#endif
+
+static inline
+void CFG80211_RX_ASSOC_RESP(struct net_device *dev,
+			    struct cfg80211_bss *bss,
+			    const u8 *buf, size_t len,
+			    int uapsd_queues,
+			    const u8 *req_ies, size_t req_ies_len)
+{
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 0, 0))
+	struct cfg80211_rx_assoc_resp resp = {0};
+
+	resp.links[0].bss = bss;
+	resp.buf = (u8 *)buf;
+	resp.len =  len;
+	resp.req_ies = req_ies;
+	resp.uapsd_queues = uapsd_queues;
+	resp.req_ies_len = req_ies_len;
+
+	cfg80211_rx_assoc_resp(dev, &resp);
+#else
+	cfg80211_rx_assoc_resp(dev, bss, buf, len, uapsd_queues, req_ies, req_ies_len)
+#endif
+}
+
+
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 1, 0))
+static inline bool wireless_dev_current_bss_exists(struct wireless_dev *wdev)
+{
+	if (wdev->links[0].client.current_bss)
+		return true;
+	return false;
+}
+#define INT_LINK_ID int link_id,
+#define ZERO_LINK_ID 0,
+#else
+static inline bool wireless_dev_current_bss_exists(struct wireless_dev *wdev)
+{
+	if (wdev->current_bss)
+		return true;
+	return false;
+}
+#define INT_LINK_ID
+#define ZERO_LINK_ID
+#endif
+
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 15, 0))
+static inline void eth_hw_addr_set(struct net_device *dev, const u8 *addr)
+{
+	ether_addr_copy(dev->dev_addr, addr, ETH_ALEN);
+}
+#endif
 
 #endif

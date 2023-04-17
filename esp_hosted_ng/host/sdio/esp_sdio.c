@@ -30,6 +30,7 @@
 #include <linux/kthread.h>
 #include <linux/printk.h>
 #include "esp_stats.h"
+#include "include/esp_kernel_port.h"
 
 #define MAX_WRITE_RETRIES       2
 #define TX_MAX_PENDING_COUNT    200
@@ -61,10 +62,6 @@ static const struct sdio_device_id esp_devices[] = {
 	{ SDIO_DEVICE(ESP_VENDOR_ID, ESP_DEVICE_ID_2) },
 	{}
 };
-
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 17, 0))
-#define do_exit(code)	kthread_complete_and_exit(NULL, code)
-#endif
 
 static void esp_process_interrupt(struct esp_sdio_context *context, u32 int_status)
 {
