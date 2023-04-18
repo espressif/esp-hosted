@@ -11,6 +11,7 @@
 
 #include <stdbool.h>
 #include "esp_hosted_config.pb-c.h"
+#include "esp_wifi_types.h"
 
 #define SUCCESS                              0
 #define FAILURE                              -1
@@ -27,6 +28,9 @@
 #define CALLBACK_AVAILABLE                   0
 #define CALLBACK_NOT_REGISTERED              -1
 #define MSG_ID_OUT_OF_ORDER                  -2
+
+#define MACSTR "%02x:%02x:%02x:%02x:%02x:%02x"
+#define MAC2STR(a) (a)[0], (a)[1], (a)[2], (a)[3], (a)[4], (a)[5]
 
 /* If request is already being served and
  * another request is pending, time period for
@@ -46,25 +50,8 @@
 
 /*---- Control structures ----*/
 
-enum {
-	CTRL_ERR_NOT_CONNECTED = 1,
-	CTRL_ERR_NO_AP_FOUND,
-	CTRL_ERR_INVALID_PASSWORD,
-	CTRL_ERR_INVALID_ARGUMENT,
-	CTRL_ERR_OUT_OF_RANGE,
-	CTRL_ERR_MEMORY_FAILURE,
-	CTRL_ERR_UNSUPPORTED_MSG,
-	CTRL_ERR_INCORRECT_ARG,
-	CTRL_ERR_PROTOBUF_ENCODE,
-	CTRL_ERR_PROTOBUF_DECODE,
-	CTRL_ERR_SET_ASYNC_CB,
-	CTRL_ERR_TRANSPORT_SEND,
-	CTRL_ERR_REQUEST_TIMEOUT,
-	CTRL_ERR_REQ_IN_PROG,
-	CTRL_ERR_SET_SYNC_SEM,
-	OUT_OF_RANGE
-};
 
+#if 0
 enum wifi_event_e {
     WIFI_EVENT_WIFI_READY = 0,           /**< ESP32 WiFi ready */
     WIFI_EVENT_SCAN_DONE,                /**< ESP32 finish scanning AP */
@@ -105,7 +92,9 @@ enum wifi_event_e {
 
     WIFI_EVENT_MAX,                      /**< Invalid WiFi event ID */
 };
+#endif
 
+#if 0
 enum AppMsgType_e {
 
 	CTRL_MSGTYPE_INVALID = CTRL_MSG_TYPE__MsgType_Invalid,
@@ -139,7 +128,7 @@ enum AppMsgId_e {
 	CTRL_REQ_GET_SOFTAP_CONN_STA_LIST  = CTRL_MSG_ID__Req_GetSoftAPConnectedSTAList,  //0x70
 	CTRL_REQ_STOP_SOFTAP               = CTRL_MSG_ID__Req_StopSoftAP,                 //0x71
 
-	CTRL_REQ_SET_PS_MODE               = CTRL_MSG_ID__Req_SetPowerSaveMode,   //0x72
+	CTRL_MSG_ID__Req_SetPowerSaveMode               = CTRL_MSG_ID__Req_SetPowerSaveMode,   //0x72
 	CTRL_REQ_GET_PS_MODE               = CTRL_MSG_ID__Req_GetPowerSaveMode,   //0x73
 
 	CTRL_REQ_OTA_BEGIN                 = CTRL_MSG_ID__Req_OTABegin,           //0x74
@@ -225,7 +214,9 @@ enum AppMsgId_e {
 	 */
 	CTRL_EVENT_MAX = CTRL_MSG_ID__Event_Max,
 };
+#endif
 
+#if 0
 typedef enum {
 	WIFI_MODE_NONE = 0,
 	WIFI_MODE_STA,
@@ -249,10 +240,12 @@ typedef enum {
 	WIFI_CIPHER_TYPE_AES_GMAC256,/**< the cipher type is AES-GMAC-256 */
 	WIFI_CIPHER_TYPE_UNKNOWN,    /**< the cipher type is unknown */
 } wifi_cipher_type_t;
+#endif
 
 //TODO: unify wifi_ap_config_t and hosted_ap_config_t & softap configs
 /* Strength of authmodes */
 /* OPEN < WEP < WPA_PSK < OWE < WPA2_PSK = WPA_WPA2_PSK < WAPI_PSK < WPA2_ENTERPRISE < WPA3_PSK = WPA2_WPA3_PSK */
+#if 0
 typedef enum {
     WIFI_AUTH_OPEN = 0,         /**< authenticate mode : open */
     WIFI_AUTH_WEP,              /**< authenticate mode : WEP */
@@ -291,8 +284,10 @@ typedef enum {
 	WIFI_VND_IE_ID_0 = 0,
 	WIFI_VND_IE_ID_1,
 } wifi_vendor_ie_id_t;
+#endif
 
 
+#if 0
 typedef enum {
 	WIFI_IF_STA = 0,
 	WIFI_IF_AP,
@@ -329,6 +324,7 @@ typedef struct {
 	uint8_t bssid[BSSID_LENGTH];
 	int rssi;
 } wifi_connected_stations_list_t;
+#endif
 
 typedef struct {
 	int mode;
@@ -365,6 +361,7 @@ typedef struct {
 
 
 /** Configuration structure for Protected Management Frame */
+#if 0
 typedef struct {
 	bool capable;            /**< Deprecated variable. Device will always connect in PMF mode if other device also advertizes PMF capability. */
 	bool required;           /**< Advertizes that Protected Management Frame is required. Device will not associate to non-PMF capable devices. */
@@ -432,6 +429,7 @@ typedef struct {
 	wifi_sae_pwe_method_t sae_pwe_h2e;     /**< Whether SAE hash to element is enabled */
 	uint8_t failure_retry_cnt;    /**< Number of connection retries station will do before moving to next AP. scan_method should be set as WIFI_ALL_CHANNEL_SCAN to use this config. Note: Enabling this may cause connection time to increase incase best AP doesn't behave properly. */
 } wifi_sta_config_t;
+#endif
 
 /** @brief Configuration data for ESP32 AP or STA.
  *
@@ -441,11 +439,87 @@ typedef struct {
  */
 typedef struct {
     uint8_t iface;
-    union {
-        wifi_ap_config_t  ap;  /**< configuration of AP */
-        wifi_sta_config_t sta; /**< configuration of STA */
-    };
-} wifi_config_t;
+	wifi_config_t u;
+} wifi_cfg_t;
+
+
+#if 0
+typedef enum {
+    WIFI_SCAN_TYPE_ACTIVE = 0,  /**< active scan */
+    WIFI_SCAN_TYPE_PASSIVE,     /**< passive scan */
+} wifi_scan_type_t;
+
+/** @brief Range of active scan times per channel */
+typedef struct {
+    uint32_t min;  /**< minimum active scan time per channel, units: millisecond */
+    uint32_t max;  /**< maximum active scan time per channel, units: millisecond, values above 1500ms may
+                                          cause station to disconnect from AP and are not recommended.  */
+} wifi_active_scan_time_t;
+
+/** @brief Aggregate of active & passive scan time per channel */
+typedef struct {
+    wifi_active_scan_time_t active;  /**< active scan time per channel, units: millisecond. */
+    uint32_t passive;                /**< passive scan time per channel, units: millisecond, values above 1500ms may
+                                          cause station to disconnect from AP and are not recommended. */
+} wifi_scan_time_t;
+#endif
+
+/** @brief Parameters for an SSID scan. */
+typedef struct {
+	bool block;
+	wifi_scan_config_t cfg;
+	uint8_t cfg_set;
+} wifi_scan_cfg_t;
+
+#if 0
+typedef enum {
+    WIFI_SECOND_CHAN_NONE = 0,  /**< the channel width is HT20 */
+    WIFI_SECOND_CHAN_ABOVE,     /**< the channel width is HT40 and the secondary channel is above the primary channel */
+    WIFI_SECOND_CHAN_BELOW,     /**< the channel width is HT40 and the secondary channel is below the primary channel */
+} wifi_second_chan_t;
+
+typedef enum {
+    WIFI_ANT_ANT0,          /**< WiFi antenna 0 */
+    WIFI_ANT_ANT1,          /**< WiFi antenna 1 */
+    WIFI_ANT_MAX,           /**< Invalid WiFi antenna */
+} wifi_ant_t;
+
+typedef enum {
+    WIFI_COUNTRY_POLICY_AUTO,   /**< Country policy is auto, use the country info of AP to which the station is connected */
+    WIFI_COUNTRY_POLICY_MANUAL, /**< Country policy is manual, always use the configured country info */
+} wifi_country_policy_t;
+
+/** @brief Structure describing WiFi country-based regional restrictions. */
+typedef struct {
+    char                  cc[3];   /**< country code string */
+    uint8_t               schan;   /**< start channel */
+    uint8_t               nchan;   /**< total channel number */
+    int8_t                max_tx_power;   /**< This field is used for getting WiFi maximum transmitting power, call esp_wifi_set_max_tx_power to set the maximum transmitting power. */
+    wifi_country_policy_t policy;  /**< country policy */
+} wifi_country_t;
+
+/** @brief Description of a WiFi AP */
+typedef struct {
+    uint8_t bssid[6];                     /**< MAC address of AP */
+    uint8_t ssid[33];                     /**< SSID of AP */
+    uint8_t primary;                      /**< channel of AP */
+    wifi_second_chan_t second;            /**< secondary channel of AP */
+    int8_t  rssi;                         /**< signal strength of AP */
+    wifi_auth_mode_t authmode;            /**< authmode of AP */
+    wifi_cipher_type_t pairwise_cipher;   /**< pairwise cipher of AP */
+    wifi_cipher_type_t group_cipher;      /**< group cipher of AP */
+    wifi_ant_t ant;                       /**< antenna used to receive beacon from AP */
+    uint32_t phy_11b:1;                   /**< bit: 0 flag to identify if 11b mode is enabled or not */
+    uint32_t phy_11g:1;                   /**< bit: 1 flag to identify if 11g mode is enabled or not */
+    uint32_t phy_11n:1;                   /**< bit: 2 flag to identify if 11n mode is enabled or not */
+    uint32_t phy_lr:1;                    /**< bit: 3 flag to identify if low rate is enabled or not */
+    uint32_t wps:1;                       /**< bit: 4 flag to identify if WPS is supported or not */
+    uint32_t ftm_responder:1;             /**< bit: 5 flag to identify if FTM is supported in responder mode */
+    uint32_t ftm_initiator:1;             /**< bit: 6 flag to identify if FTM is supported in initiator mode */
+    uint32_t reserved:25;                 /**< bit: 7..31 reserved */
+    wifi_country_t country;               /**< country information of AP */
+} wifi_ap_record_t;
+#endif
 
 typedef struct {
     //wifi_osi_funcs_t*      osi_funcs;              /**< WiFi OS functions */
@@ -473,16 +547,20 @@ typedef struct {
 } wifi_init_config_t;
 
 typedef struct {
-	int count;
+	//int count;
+	int number;
 	/* dynamic size */
-	wifi_scanlist_t *out_list;
-} wifi_ap_scan_list_t;
+	//wifi_scanlist_t *out_list;
+	wifi_ap_record_t *out_list;
+} wifi_scan_ap_list_t;
 
+#if 0
 typedef struct {
 	int count;
 	/* dynamic list*/
 	wifi_connected_stations_list_t *out_list;
 } wifi_softap_conn_sta_list_t;
+#endif
 
 typedef struct {
 	int ps_mode;
@@ -517,6 +595,7 @@ typedef struct {
 	char mac[MAX_MAC_STR_LEN];
 } event_station_disconn_t;
 
+#if 0
 typedef struct {
     uint8_t mac[6];
     uint8_t aid;
@@ -524,7 +603,17 @@ typedef struct {
 	int32_t wifi_event_id;
 } wifi_event_ap_staconnected_t;
 
+typedef struct {
+    uint32_t status;
+    uint8_t  number;
+    uint8_t  scan_id;
+	int32_t wifi_event_id;
+} wifi_event_sta_scan_done_t;
+#endif
+
+#if 0
 typedef wifi_event_ap_staconnected_t wifi_event_ap_stadisconnected_t;
+#endif
 
 typedef struct {
 	int32_t wifi_event_id;
@@ -544,22 +633,24 @@ typedef struct Ctrl_cmd_t {
 
 	union {
         wifi_init_config_t          wifi_init_config;
-        wifi_config_t               wifi_config;
+        wifi_cfg_t                  wifi_config;
 		wifi_mac_t                  wifi_mac;
 		hosted_mode_t               wifi_mode;
 
-		wifi_ap_scan_list_t         wifi_ap_scan;
 		hosted_ap_config_t          hosted_ap_config;
 
 		hosted_softap_config_t      wifi_softap_config;
 		wifi_softap_vendor_ie_t     wifi_softap_vendor_ie;
-		wifi_softap_conn_sta_list_t wifi_softap_con_sta;
+		//wifi_softap_conn_sta_list_t wifi_softap_con_sta;
 
 		wifi_power_save_t           wifi_ps;
 
 		ota_write_t                 ota_write;
 
 		wifi_tx_power_t             wifi_tx_power;
+
+		wifi_scan_cfg_t             wifi_scan_config;
+		wifi_scan_ap_list_t         wifi_scan_ap_list;
 
 		event_heartbeat_t           e_heartbeat;
 
@@ -568,7 +659,10 @@ typedef struct Ctrl_cmd_t {
 		event_wifi_simple_t         e_wifi_simple;
 
 		wifi_event_ap_staconnected_t e_wifi_ap_staconnected;
+
 		wifi_event_ap_stadisconnected_t e_wifi_ap_stadisconnected;
+
+		wifi_event_sta_scan_done_t   e_wifi_sta_scan_done;
 	}u;
 
 	/* By default this callback is set to NULL.
@@ -631,7 +725,7 @@ typedef int (*ctrl_event_cb_t) (ctrl_cmd_t * event);
  * events received from ESP32 will be dropped
  *
  * Inputs:
- * > event - Control Event ID from `AppMsgId_e`
+ * > event - Control Event ID
  * > event_cb - NULL - resets event callback
  *              Function pointer - Registers event callback
  * Returns:
@@ -648,7 +742,7 @@ int set_event_callback(int event, ctrl_resp_cb_t event_cb);
  * events received from ESP32 will be dropped
  *
  * Inputs:
- * > event - Control Event ID from `AppMsgId_e`
+ * > event - Control Event ID
  *
  * Returns:
  * > MSG_ID_OUT_OF_ORDER - If event is not registered with hosted control lib
@@ -761,6 +855,11 @@ ctrl_cmd_t * wifi_connect(ctrl_cmd_t req);
 ctrl_cmd_t * wifi_disconnect(ctrl_cmd_t req);
 ctrl_cmd_t * wifi_set_config(ctrl_cmd_t req);
 ctrl_cmd_t * wifi_get_config(ctrl_cmd_t req);
+ctrl_cmd_t * wifi_scan_start(ctrl_cmd_t req);
+ctrl_cmd_t * wifi_scan_stop(ctrl_cmd_t req);
+ctrl_cmd_t * wifi_scan_get_ap_num(ctrl_cmd_t req);
+ctrl_cmd_t * wifi_scan_get_ap_records(ctrl_cmd_t req);
+ctrl_cmd_t * wifi_clear_ap_list(ctrl_cmd_t req);
 
 /* Get the interface up for interface `iface` */
 int interface_up(int sockfd, char* iface);

@@ -42,7 +42,7 @@
 
 
 #define CTRL_CMD_DEFAULT_REQ() {                          \
-  .msg_type = CTRL_REQ,                                   \
+  .msg_type = CTRL_MSG_TYPE__Req,                         \
   .ctrl_resp_cb = NULL,                                   \
   .cmd_timeout_sec = DEFAULT_CTRL_RESP_TIMEOUT, /*30 sec*/ \
   .wait_prev_cmd_completion = WAIT_TIME_B2B_CTRL_REQ,      \
@@ -92,34 +92,34 @@ static int ctrl_app_event_callback(ctrl_cmd_t * app_event)
 #endif
 
 	hosted_log("%u",app_event->msg_id);
-	if (!app_event || (app_event->msg_type != CTRL_EVENT)) {
+	if (!app_event || (app_event->msg_type != CTRL_MSG_TYPE__Event)) {
 		if (app_event)
 			hosted_log("Msg type is not event[%u]\n\r",app_event->msg_type);
 		goto fail_parsing;
 	}
 
-	if ((app_event->msg_id <= CTRL_EVENT_BASE) ||
-	    (app_event->msg_id >= CTRL_EVENT_MAX)) {
+	if ((app_event->msg_id <= CTRL_MSG_ID__Event_Base) ||
+	    (app_event->msg_id >= CTRL_MSG_ID__Event_Max)) {
 		hosted_log("Event Msg ID[%u] is not correct\n\r",app_event->msg_id);
 		goto fail_parsing;
 	}
 
 	switch(app_event->msg_id) {
 
-		case CTRL_EVENT_ESP_INIT: {
+		case CTRL_MSG_ID__Event_ESPInit: {
 			hosted_log("%s App EVENT: ESP INIT\n\r",
 				get_timestamp(ts, MIN_TIMESTAMP_STR_SIZE));
 			break;
-		} case CTRL_EVENT_HEARTBEAT: {
+		} case CTRL_MSG_ID__Event_Heartbeat: {
 			hosted_log("%s App EVENT: Heartbeat event [%lu]\n\r",
 				get_timestamp(ts, MIN_TIMESTAMP_STR_SIZE),
 					(long unsigned int)app_event->u.e_heartbeat.hb_num);
 			break;
-		} case CTRL_EVENT_STATION_DISCONNECT_FROM_AP: {
+		} case CTRL_MSG_ID__Event_StationDisconnectFromAP: {
 			hosted_log("%s App EVENT: Station mode: Disconnect Reason[%u]",
 				get_timestamp(ts, MIN_TIMESTAMP_STR_SIZE), app_event->resp_event_status);
 			break;
-		} case CTRL_EVENT_AP_STA_CONNECTED: {
+		} case CTRL_MSG_ID__Event_AP_StaConnected: {
 			wifi_event_ap_staconnected_t *p_e = &app_event->u.e_wifi_ap_staconnected;
 
 			if (p_e->mac) {
@@ -128,7 +128,7 @@ static int ctrl_app_event_callback(ctrl_cmd_t * app_event)
 				g_h.funcs->_h_event_wifi_post(p_e->wifi_event_id, p_e, sizeof(wifi_event_ap_staconnected_t), HOSTED_BLOCK_MAX);
 			}
 			break;
-		} case CTRL_EVENT_AP_STA_DISCONNECTED: {
+		} case CTRL_MSG_ID__Event_AP_StaDisconnected: {
 			wifi_event_ap_stadisconnected_t *p_e = &app_event->u.e_wifi_ap_stadisconnected;
 			if (p_e->mac) {
 				hosted_log("%s App EVENT: SoftAP mode: disconnected MAC",
@@ -136,7 +136,7 @@ static int ctrl_app_event_callback(ctrl_cmd_t * app_event)
 				g_h.funcs->_h_event_wifi_post(p_e->wifi_event_id, p_e, sizeof(wifi_event_ap_stadisconnected_t), HOSTED_BLOCK_MAX);
 			}
 			break;
-		} case CTRL_EVENT_WIFI_EVENT_NO_ARGS: {
+		} case CTRL_MSG_ID__Event_WifiEventNoArgs: {
 			int wifi_event_id = app_event->u.e_wifi_simple.wifi_event_id;
 
 			switch (wifi_event_id) {
@@ -165,6 +165,13 @@ static int ctrl_app_event_callback(ctrl_cmd_t * app_event)
 			} /* inner switch case */
 			g_h.funcs->_h_event_wifi_post(wifi_event_id, 0, 0, HOSTED_BLOCK_MAX);
 
+			break;
+		} case CTRL_MSG_ID__Event_StaScanDone: {
+			wifi_event_sta_scan_done_t *p_e = &app_event->u.e_wifi_sta_scan_done;
+			hosted_log("%s App EVENT: WiFi Event[%lx] - StaScanDone\n\r",
+					get_timestamp(ts, MIN_TIMESTAMP_STR_SIZE), p_e->wifi_event_id);
+			hosted_log("scan: status: %lu number:%u scan_id:%u\n", p_e->status, p_e->number, p_e->scan_id);
+			g_h.funcs->_h_event_wifi_post(p_e->wifi_event_id, p_e, sizeof(wifi_event_sta_scan_done_t), HOSTED_BLOCK_MAX);
 			break;
 		} default: {
 			hosted_log("%s Invalid event[%u] to parse\n\r",
@@ -228,13 +235,13 @@ static void process_failed_responses(ctrl_cmd_t *app_msg)
 	/* Identify control request specific issue */
 	switch (app_msg->msg_id) {
 
-		case CTRL_RESP_OTA_END:
-		case CTRL_RESP_OTA_BEGIN:
-		case CTRL_RESP_OTA_WRITE: {
+		case CTRL_MSG_ID__Resp_OTAEnd:
+		case CTRL_MSG_ID__Resp_OTABegin:
+		case CTRL_MSG_ID__Resp_OTAWrite: {
 			/* intentional fallthrough */
 			hosted_log("OTA procedure failed\n\r");
 			break;
-		} case CTRL_RESP_CONNECT_AP: {
+		} case CTRL_MSG_ID__Resp_ConnectAP: {
 			if (app_msg->resp_event_status == CTRL_ERR_NO_AP_FOUND) {
 				hosted_log("SSID: not found/connectable\n\r");
 			} else if (app_msg->resp_event_status ==
@@ -244,12 +251,12 @@ static void process_failed_responses(ctrl_cmd_t *app_msg)
 				hosted_log("Failed to connect with AP\n\r");
 			}
 			break;
-		} case CTRL_RESP_START_SOFTAP: {
+		} case CTRL_MSG_ID__Resp_StartSoftAP: {
 			hosted_log("Failed to start SoftAP\n\r");
 			break;
 		}
-		case CTRL_RESP_STOP_SOFTAP:
-		case CTRL_RESP_GET_SOFTAP_CONFIG: {
+		case CTRL_MSG_ID__Resp_StopSoftAP:
+		case CTRL_MSG_ID__Resp_GetSoftAPConfig: {
 			hosted_log("Possibly softap is not running/started\n\r");
 			break;
 		} default: {
@@ -264,7 +271,7 @@ int unregister_event_callbacks(void)
 {
 	int ret = SUCCESS;
 	int evt = 0;
-	for (evt=CTRL_EVENT_BASE+1; evt<CTRL_EVENT_MAX; evt++) {
+	for (evt=CTRL_MSG_ID__Event_Base+1; evt<CTRL_MSG_ID__Event_Max; evt++) {
 		if (CALLBACK_SET_SUCCESS != reset_event_callback(evt) ) {
 			hosted_log("reset event callback failed for event[%u]\n\r", evt);
 			ret = FAILURE;
@@ -279,12 +286,12 @@ int register_event_callbacks(void)
 	int evt = 0;
 
 	event_callback_table_t events[] = {
-		{ CTRL_EVENT_ESP_INIT,                           ctrl_app_event_callback },
-		{ CTRL_EVENT_HEARTBEAT,                          ctrl_app_event_callback },
-		{ CTRL_EVENT_STATION_DISCONNECT_FROM_AP,         ctrl_app_event_callback },
-		{ CTRL_EVENT_AP_STA_CONNECTED,                   ctrl_app_event_callback },
-		{ CTRL_EVENT_AP_STA_DISCONNECTED,                ctrl_app_event_callback },
-		{ CTRL_EVENT_WIFI_EVENT_NO_ARGS,                 ctrl_app_event_callback },
+		{ CTRL_MSG_ID__Event_ESPInit,                   ctrl_app_event_callback },
+		{ CTRL_MSG_ID__Event_Heartbeat,                 ctrl_app_event_callback },
+		{ CTRL_MSG_ID__Event_StationDisconnectFromAP,   ctrl_app_event_callback },
+		{ CTRL_MSG_ID__Event_AP_StaConnected,           ctrl_app_event_callback },
+		{ CTRL_MSG_ID__Event_AP_StaDisconnected,        ctrl_app_event_callback },
+		{ CTRL_MSG_ID__Event_WifiEventNoArgs,           ctrl_app_event_callback },
 	};
 
 	for (evt=0; evt<sizeof(events)/sizeof(event_callback_table_t); evt++) {
@@ -301,13 +308,13 @@ int register_event_callbacks(void)
 int ctrl_app_resp_callback(ctrl_cmd_t * app_resp)
 {
 	uint16_t i = 0;
-	if (!app_resp || (app_resp->msg_type != CTRL_RESP)) {
+	if (!app_resp || (app_resp->msg_type != CTRL_MSG_TYPE__Resp)) {
 		if (app_resp)
 			hosted_log("Msg type is not response[%u]\n\r",app_resp->msg_type);
 		goto fail_resp;
 	}
 
-	if ((app_resp->msg_id <= CTRL_RESP_BASE) || (app_resp->msg_id >= CTRL_RESP_MAX)) {
+	if ((app_resp->msg_id <= CTRL_MSG_ID__Resp_Base) || (app_resp->msg_id >= CTRL_MSG_ID__Resp_Max)) {
 		hosted_log("Response Msg ID[%x] is not correct\n\r",app_resp->msg_id);
 		goto fail_resp;
 	}
@@ -319,32 +326,33 @@ int ctrl_app_resp_callback(ctrl_cmd_t * app_resp)
 
 	switch(app_resp->msg_id) {
 
-	case CTRL_RESP_GET_MAC_ADDR: {
+	case CTRL_MSG_ID__Resp_GetMACAddress: {
 		char mac_str[BSSID_LENGTH] = {0};
 		snprintf(mac_str,BSSID_LENGTH,MACSTR,MAC2STR(app_resp->u.wifi_mac.mac));
 		hosted_log("mac address is [%s] ", mac_str);
 		break;
-	} case CTRL_RESP_SET_MAC_ADDRESS : {
+	} case CTRL_MSG_ID__Resp_SetMacAddress : {
 		hosted_log("MAC address is set\n\r");
 		break;
-	} case CTRL_RESP_GET_WIFI_MODE : {
+	} case CTRL_MSG_ID__Resp_GetWifiMode : {
 		hosted_log("wifi mode is : ");
 		switch (app_resp->u.wifi_mode.mode) {
 			case WIFI_MODE_STA:     hosted_log("station\n\r");        break;
 			case WIFI_MODE_AP:      hosted_log("softap\n\r");         break;
 			case WIFI_MODE_APSTA:   hosted_log("station+softap\n\r"); break;
-			case WIFI_MODE_NONE:    hosted_log("none\n\r");           break;
+			case WIFI_MODE_NULL:    hosted_log("none\n\r");           break;
 			default:                hosted_log("unknown\n\r");        break;
 		}
 		break;
-	} case CTRL_RESP_SET_WIFI_MODE : {
+	} case CTRL_MSG_ID__Resp_SetWifiMode : {
 		hosted_log("wifi mode is set\n\r");
 		break;
-	} case CTRL_RESP_GET_AP_SCAN_LIST : {
-		wifi_ap_scan_list_t * w_scan_p = &app_resp->u.wifi_ap_scan;
+	} case CTRL_MSG_ID__Resp_GetAPScanList : {
+#if 0
+		wifi_scan_ap_list_t * w_scan_p = &app_resp->u.wifi_scan_ap_list;
 		wifi_scanlist_t *list = w_scan_p->out_list;
 
-		if (!w_scan_p->count) {
+		if (!w_scan_p->number) {
 			hosted_log("No AP found\n\r");
 			goto finish_resp;
 		}
@@ -353,16 +361,17 @@ int ctrl_app_resp_callback(ctrl_cmd_t * app_resp)
 			goto fail_resp;
 		} else {
 
-			hosted_log("Number of available APs is %d\n\r", w_scan_p->count);
-			for (i=0; i<w_scan_p->count; i++) {
+			hosted_log("Number of available APs is %d\n\r", w_scan_p->number);
+			for (i=0; i<w_scan_p->number; i++) {
 				hosted_log("%d) ssid \"%s\" bssid \"%s\" rssi \"%d\" channel \"%d\" auth mode \"%d\" \n\r",\
 						i, list[i].ssid, list[i].bssid, list[i].rssi,
 						list[i].channel, list[i].encryption_mode);
 			}
 			g_h.funcs->_h_msleep(1);
 		}
+#endif
 		break;
-	} case CTRL_RESP_GET_AP_CONFIG : {
+	} case CTRL_MSG_ID__Resp_GetAPConfig : {
 		hosted_ap_config_t *p = &app_resp->u.hosted_ap_config;
 		if (0 == strncmp(SUCCESS_STR, p->status, strlen(SUCCESS_STR))) {
 			hosted_log("AP's ssid '%s'\n\r", p->ssid);
@@ -374,13 +383,13 @@ int ctrl_app_resp_callback(ctrl_cmd_t * app_resp)
 			hosted_log("Station mode status: %s\n\r",p->status);
 		}
 		break;
-	} case CTRL_RESP_CONNECT_AP : {
+	} case CTRL_MSG_ID__Resp_ConnectAP : {
 		hosted_log("Connected\n\r");
 		break;
-	} case CTRL_RESP_DISCONNECT_AP : {
+	} case CTRL_MSG_ID__Resp_DisconnectAP : {
 		hosted_log("Disconnected from AP\n\r");
 		break;
-	} case CTRL_RESP_GET_SOFTAP_CONFIG : {
+	} case CTRL_MSG_ID__Resp_GetSoftAPConfig : {
 #if CONFIG_RPC_LOG_LEVEL
 		hosted_softap_config_t * resp_p = &app_resp->u.wifi_softap_config;
 #endif
@@ -394,13 +403,14 @@ int ctrl_app_resp_callback(ctrl_cmd_t * app_resp)
 		hosted_log("softAP bandwidth mode %d\n\r", resp_p->bandwidth);
 
 		break;
-	} case CTRL_RESP_SET_SOFTAP_VND_IE : {
+	} case CTRL_MSG_ID__Resp_SetSoftAPVendorSpecificIE : {
 		hosted_log("Success in set vendor specific ie\n\r");
 		break;
-	} case CTRL_RESP_START_SOFTAP : {
+	} case CTRL_MSG_ID__Resp_StartSoftAP : {
 		hosted_log("esp32 softAP started\n\r");
 		break;
-	} case CTRL_RESP_GET_SOFTAP_CONN_STA_LIST : {
+	} case CTRL_MSG_ID__Resp_GetSoftAPConnectedSTAList : {
+#if 0
 		int count = app_resp->u.wifi_softap_con_sta.count;
 		wifi_connected_stations_list_t *stations_list =
 			app_resp->u.wifi_softap_con_sta.out_list;
@@ -419,14 +429,15 @@ int ctrl_app_resp_callback(ctrl_cmd_t * app_resp)
 						stations_list[i].bssid, stations_list[i].rssi);
 			}
 		}
+#endif
 		break;
-	} case CTRL_RESP_STOP_SOFTAP : {
+	} case CTRL_MSG_ID__Resp_StopSoftAP : {
 		hosted_log("esp32 softAP stopped\n\r");
 		break;
-	} case CTRL_RESP_SET_PS_MODE : {
+	} case CTRL_MSG_ID__Resp_SetPowerSaveMode : {
 		hosted_log("Wifi power save mode set\n\r");
 		break;
-	} case CTRL_RESP_GET_PS_MODE : {
+	} case CTRL_MSG_ID__Resp_GetPowerSaveMode : {
 		hosted_log("Wifi power save mode is: ");
 
 		switch(app_resp->u.wifi_ps.ps_mode) {
@@ -441,34 +452,64 @@ int ctrl_app_resp_callback(ctrl_cmd_t * app_resp)
 				break;
 		}
 		break;
-	} case CTRL_RESP_OTA_BEGIN : {
+	} case CTRL_MSG_ID__Resp_OTABegin : {
 		hosted_log("OTA begin success\n\r");
 		break;
-	} case CTRL_RESP_OTA_WRITE : {
+	} case CTRL_MSG_ID__Resp_OTAWrite : {
 		hosted_log("OTA write success\n\r");
 		break;
-	} case CTRL_RESP_OTA_END : {
+	} case CTRL_MSG_ID__Resp_OTAEnd : {
 		hosted_log("OTA end success\n\r");
 		break;
-	} case CTRL_RESP_SET_WIFI_MAX_TX_POWER: {
+	} case CTRL_MSG_ID__Resp_SetWifiMaxTxPower: {
 		hosted_log("Set wifi max tx power success\n\r");
 		break;
-	} case CTRL_RESP_GET_WIFI_CURR_TX_POWER: {
+	} case CTRL_MSG_ID__Resp_GetWifiCurrTxPower: {
 		hosted_log("wifi curr tx power : %d\n\r",
 				app_resp->u.wifi_tx_power.power);
 		break;
-	} case CTRL_RESP_CONFIG_HEARTBEAT: {
+	} case CTRL_MSG_ID__Resp_ConfigHeartbeat: {
 		hosted_log("Heartbeat operation successful\n\r");
 		break;
+    } case CTRL_MSG_ID__Resp_WifiScanGetApNum: {
+		hosted_log("Num Scanned APs: %u\n\r",
+				app_resp->u.wifi_scan_ap_list.number);
+		break;
+    } case CTRL_MSG_ID__Resp_WifiScanGetApRecords: {
+		wifi_scan_ap_list_t * p_a = &app_resp->u.wifi_scan_ap_list;
+		wifi_ap_record_t *list = p_a->out_list;
+
+		if (!p_a->number) {
+			hosted_log("No AP found\n\r");
+			goto finish_resp;
+		}
+		hosted_log("Num AP records: %u\n\r",
+				app_resp->u.wifi_scan_ap_list.number);
+		if (!list) {
+			hosted_log("Failed to get scanned AP list\n\r");
+			goto fail_resp;
+		} else {
+
+			hosted_log("Number of available APs is %d\n\r", p_a->number);
+			for (i=0; i<p_a->number; i++) {
+				hosted_log("%d) ssid \"%s\" bssid \"%s\" rssi \"%d\" channel \"%d\" auth mode \"%d\" \n\r",\
+						i, list[i].ssid, list[i].bssid, list[i].rssi,
+						list[i].primary, list[i].authmode);
+			}
+		}
+		break;
 	}
-	case CTRL_RESP_WIFI_INIT:
-	case CTRL_RESP_WIFI_DEINIT:
-	case CTRL_RESP_WIFI_START:
-	case CTRL_RESP_WIFI_STOP:
-	case CTRL_RESP_WIFI_CONNECT:
-	case CTRL_RESP_WIFI_DISCONNECT:
-	case CTRL_RESP_WIFI_GET_CONFIG:
-	case CTRL_RESP_WIFI_SET_CONFIG: {
+	case CTRL_MSG_ID__Resp_WifiInit:
+	case CTRL_MSG_ID__Resp_WifiDeinit:
+	case CTRL_MSG_ID__Resp_WifiStart:
+	case CTRL_MSG_ID__Resp_WifiStop:
+	case CTRL_MSG_ID__Resp_WifiConnect:
+	case CTRL_MSG_ID__Resp_WifiDisconnect:
+	case CTRL_MSG_ID__Resp_WifiGetConfig:
+    case CTRL_MSG_ID__Resp_WifiScanStart:
+    case CTRL_MSG_ID__Resp_WifiScanStop:
+    case CTRL_MSG_ID__Resp_WifiClearApList:
+	case CTRL_MSG_ID__Resp_WifiSetConfig: {
 		/* Intended fallthrough */
 		break;
 	} default: {
@@ -531,7 +572,7 @@ int test_set_wifi_mode_station_softap(void)
 
 int test_set_wifi_mode_none(void)
 {
-	return test_set_wifi_mode(WIFI_MODE_NONE);
+	return test_set_wifi_mode(WIFI_MODE_NULL);
 }
 
 int test_wifi_get_mac_addr(int mode, uint8_t *out_mac)
@@ -780,7 +821,7 @@ int test_reset_vendor_specific_ie(void)
 	req.u.wifi_softap_vendor_ie.vnd_ie.vendor_oui[2] = VENDOR_OUI_2;
 	req.u.wifi_softap_vendor_ie.vnd_ie.vendor_oui_type = VENDOR_OUI_TYPE;
 	req.u.wifi_softap_vendor_ie.vnd_ie.payload = (uint8_t *)v_data;
-	req.u.wifi_softap_vendor_ie.vnd_ie.payload_len = strlen(data);
+	//req.u.wifi_softap_vendor_ie.vnd_ie.payload_len = strlen(data);
 
 	req.free_buffer_func = g_h.funcs->_h_free;
 	req.free_buffer_handle = v_data;
@@ -814,7 +855,7 @@ int test_set_vendor_specific_ie(void)
 	req.u.wifi_softap_vendor_ie.vnd_ie.vendor_oui[2] = VENDOR_OUI_2;
 	req.u.wifi_softap_vendor_ie.vnd_ie.vendor_oui_type = VENDOR_OUI_TYPE;
 	req.u.wifi_softap_vendor_ie.vnd_ie.payload = (uint8_t *)v_data;
-	req.u.wifi_softap_vendor_ie.vnd_ie.payload_len = strlen(data);
+	//req.u.wifi_softap_vendor_ie.vnd_ie.payload_len = strlen(data);
 
 	req.free_buffer_func = g_h.funcs->_h_free;
 	req.free_buffer_handle = v_data;
@@ -1055,7 +1096,7 @@ int test_wifi_set_config(int interface, wifi_config_t *conf)
 	if (!conf)
 		return FAILURE;
 
-	g_h.funcs->_h_memcpy(&req.u.wifi_config, conf, sizeof(wifi_config_t));
+	g_h.funcs->_h_memcpy(&req.u.wifi_config.u, conf, sizeof(wifi_config_t));
 
 	req.u.wifi_config.iface = interface;
 	resp = wifi_set_config(req);
@@ -1075,7 +1116,84 @@ int test_wifi_get_config(int interface, wifi_config_t *conf)
 
 	resp = wifi_get_config(req);
 
-	g_h.funcs->_h_memcpy(conf, &resp->u.wifi_config, sizeof(wifi_config_t));
+	g_h.funcs->_h_memcpy(conf, &resp->u.wifi_config.u, sizeof(wifi_config_t));
 
+	return ctrl_app_resp_callback(resp);
+}
+
+int test_wifi_scan_start(wifi_scan_config_t *config, bool block)
+{
+	/* implemented synchronous */
+	ctrl_cmd_t req = CTRL_CMD_DEFAULT_REQ();
+	ctrl_cmd_t *resp = NULL;
+
+	if (config) {
+		g_h.funcs->_h_memcpy(&req.u.wifi_scan_config.cfg, config, sizeof(wifi_scan_config_t));
+		req.u.wifi_scan_config.cfg_set = 1;
+	}
+
+	printf("scan start2\n");
+	req.u.wifi_scan_config.block = block;
+
+	resp = wifi_scan_start(req);
+
+	return ctrl_app_resp_callback(resp);
+}
+
+int test_wifi_scan_stop(void)
+{
+	/* implemented synchronous */
+	ctrl_cmd_t req = CTRL_CMD_DEFAULT_REQ();
+	ctrl_cmd_t *resp = NULL;
+	printf("scan stop\n");
+
+	resp = wifi_scan_stop(req);
+	return ctrl_app_resp_callback(resp);
+}
+
+int test_wifi_scan_get_ap_num(uint16_t *number)
+{
+	/* implemented synchronous */
+	ctrl_cmd_t req = CTRL_CMD_DEFAULT_REQ();
+	ctrl_cmd_t *resp = NULL;
+
+	if (!number)
+		return FAILURE;
+
+	resp = wifi_scan_get_ap_num(req);
+
+	*number = resp->u.wifi_scan_ap_list.number;
+	return ctrl_app_resp_callback(resp);
+}
+
+int test_wifi_scan_get_ap_records(uint16_t *number, wifi_ap_record_t *ap_records)
+{
+	/* implemented synchronous */
+	ctrl_cmd_t req = CTRL_CMD_DEFAULT_REQ();
+	ctrl_cmd_t *resp = NULL;
+
+	if (!number || !*number || !ap_records)
+		return FAILURE;
+
+	g_h.funcs->_h_memset(ap_records, 0, (*number)*sizeof(wifi_ap_record_t));
+
+	hosted_log("d");
+	req.u.wifi_scan_ap_list.number = *number;
+	resp = wifi_scan_get_ap_records(req);
+	hosted_log("num: %u",resp->u.wifi_scan_ap_list.number);
+
+	g_h.funcs->_h_memcpy(ap_records, resp->u.wifi_scan_ap_list.out_list,
+			resp->u.wifi_scan_ap_list.number * sizeof(wifi_ap_record_t));
+
+	return ctrl_app_resp_callback(resp);
+}
+
+int test_wifi_clear_ap_list(void)
+{
+	/* implemented synchronous */
+	ctrl_cmd_t req = CTRL_CMD_DEFAULT_REQ();
+	ctrl_cmd_t *resp = NULL;
+
+	resp = wifi_clear_ap_list(req);
 	return ctrl_app_resp_callback(resp);
 }

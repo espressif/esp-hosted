@@ -4282,6 +4282,456 @@ void   ctrl_msg__resp__wifi_stop__free_unpacked
   assert(message->base.descriptor == &ctrl_msg__resp__wifi_stop__descriptor);
   protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
 }
+void   ctrl_msg__req__wifi_scan_start__init
+                     (CtrlMsgReqWifiScanStart         *message)
+{
+  static const CtrlMsgReqWifiScanStart init_value = CTRL_MSG__REQ__WIFI_SCAN_START__INIT;
+  *message = init_value;
+}
+size_t ctrl_msg__req__wifi_scan_start__get_packed_size
+                     (const CtrlMsgReqWifiScanStart *message)
+{
+  assert(message->base.descriptor == &ctrl_msg__req__wifi_scan_start__descriptor);
+  return protobuf_c_message_get_packed_size ((const ProtobufCMessage*)(message));
+}
+size_t ctrl_msg__req__wifi_scan_start__pack
+                     (const CtrlMsgReqWifiScanStart *message,
+                      uint8_t       *out)
+{
+  assert(message->base.descriptor == &ctrl_msg__req__wifi_scan_start__descriptor);
+  return protobuf_c_message_pack ((const ProtobufCMessage*)message, out);
+}
+size_t ctrl_msg__req__wifi_scan_start__pack_to_buffer
+                     (const CtrlMsgReqWifiScanStart *message,
+                      ProtobufCBuffer *buffer)
+{
+  assert(message->base.descriptor == &ctrl_msg__req__wifi_scan_start__descriptor);
+  return protobuf_c_message_pack_to_buffer ((const ProtobufCMessage*)message, buffer);
+}
+CtrlMsgReqWifiScanStart *
+       ctrl_msg__req__wifi_scan_start__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data)
+{
+  return (CtrlMsgReqWifiScanStart *)
+     protobuf_c_message_unpack (&ctrl_msg__req__wifi_scan_start__descriptor,
+                                allocator, len, data);
+}
+void   ctrl_msg__req__wifi_scan_start__free_unpacked
+                     (CtrlMsgReqWifiScanStart *message,
+                      ProtobufCAllocator *allocator)
+{
+  if(!message)
+    return;
+  assert(message->base.descriptor == &ctrl_msg__req__wifi_scan_start__descriptor);
+  protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
+}
+void   ctrl_msg__resp__wifi_scan_start__init
+                     (CtrlMsgRespWifiScanStart         *message)
+{
+  static const CtrlMsgRespWifiScanStart init_value = CTRL_MSG__RESP__WIFI_SCAN_START__INIT;
+  *message = init_value;
+}
+size_t ctrl_msg__resp__wifi_scan_start__get_packed_size
+                     (const CtrlMsgRespWifiScanStart *message)
+{
+  assert(message->base.descriptor == &ctrl_msg__resp__wifi_scan_start__descriptor);
+  return protobuf_c_message_get_packed_size ((const ProtobufCMessage*)(message));
+}
+size_t ctrl_msg__resp__wifi_scan_start__pack
+                     (const CtrlMsgRespWifiScanStart *message,
+                      uint8_t       *out)
+{
+  assert(message->base.descriptor == &ctrl_msg__resp__wifi_scan_start__descriptor);
+  return protobuf_c_message_pack ((const ProtobufCMessage*)message, out);
+}
+size_t ctrl_msg__resp__wifi_scan_start__pack_to_buffer
+                     (const CtrlMsgRespWifiScanStart *message,
+                      ProtobufCBuffer *buffer)
+{
+  assert(message->base.descriptor == &ctrl_msg__resp__wifi_scan_start__descriptor);
+  return protobuf_c_message_pack_to_buffer ((const ProtobufCMessage*)message, buffer);
+}
+CtrlMsgRespWifiScanStart *
+       ctrl_msg__resp__wifi_scan_start__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data)
+{
+  return (CtrlMsgRespWifiScanStart *)
+     protobuf_c_message_unpack (&ctrl_msg__resp__wifi_scan_start__descriptor,
+                                allocator, len, data);
+}
+void   ctrl_msg__resp__wifi_scan_start__free_unpacked
+                     (CtrlMsgRespWifiScanStart *message,
+                      ProtobufCAllocator *allocator)
+{
+  if(!message)
+    return;
+  assert(message->base.descriptor == &ctrl_msg__resp__wifi_scan_start__descriptor);
+  protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
+}
+void   ctrl_msg__req__wifi_scan_stop__init
+                     (CtrlMsgReqWifiScanStop         *message)
+{
+  static const CtrlMsgReqWifiScanStop init_value = CTRL_MSG__REQ__WIFI_SCAN_STOP__INIT;
+  *message = init_value;
+}
+size_t ctrl_msg__req__wifi_scan_stop__get_packed_size
+                     (const CtrlMsgReqWifiScanStop *message)
+{
+  assert(message->base.descriptor == &ctrl_msg__req__wifi_scan_stop__descriptor);
+  return protobuf_c_message_get_packed_size ((const ProtobufCMessage*)(message));
+}
+size_t ctrl_msg__req__wifi_scan_stop__pack
+                     (const CtrlMsgReqWifiScanStop *message,
+                      uint8_t       *out)
+{
+  assert(message->base.descriptor == &ctrl_msg__req__wifi_scan_stop__descriptor);
+  return protobuf_c_message_pack ((const ProtobufCMessage*)message, out);
+}
+size_t ctrl_msg__req__wifi_scan_stop__pack_to_buffer
+                     (const CtrlMsgReqWifiScanStop *message,
+                      ProtobufCBuffer *buffer)
+{
+  assert(message->base.descriptor == &ctrl_msg__req__wifi_scan_stop__descriptor);
+  return protobuf_c_message_pack_to_buffer ((const ProtobufCMessage*)message, buffer);
+}
+CtrlMsgReqWifiScanStop *
+       ctrl_msg__req__wifi_scan_stop__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data)
+{
+  return (CtrlMsgReqWifiScanStop *)
+     protobuf_c_message_unpack (&ctrl_msg__req__wifi_scan_stop__descriptor,
+                                allocator, len, data);
+}
+void   ctrl_msg__req__wifi_scan_stop__free_unpacked
+                     (CtrlMsgReqWifiScanStop *message,
+                      ProtobufCAllocator *allocator)
+{
+  if(!message)
+    return;
+  assert(message->base.descriptor == &ctrl_msg__req__wifi_scan_stop__descriptor);
+  protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
+}
+void   ctrl_msg__resp__wifi_scan_stop__init
+                     (CtrlMsgRespWifiScanStop         *message)
+{
+  static const CtrlMsgRespWifiScanStop init_value = CTRL_MSG__RESP__WIFI_SCAN_STOP__INIT;
+  *message = init_value;
+}
+size_t ctrl_msg__resp__wifi_scan_stop__get_packed_size
+                     (const CtrlMsgRespWifiScanStop *message)
+{
+  assert(message->base.descriptor == &ctrl_msg__resp__wifi_scan_stop__descriptor);
+  return protobuf_c_message_get_packed_size ((const ProtobufCMessage*)(message));
+}
+size_t ctrl_msg__resp__wifi_scan_stop__pack
+                     (const CtrlMsgRespWifiScanStop *message,
+                      uint8_t       *out)
+{
+  assert(message->base.descriptor == &ctrl_msg__resp__wifi_scan_stop__descriptor);
+  return protobuf_c_message_pack ((const ProtobufCMessage*)message, out);
+}
+size_t ctrl_msg__resp__wifi_scan_stop__pack_to_buffer
+                     (const CtrlMsgRespWifiScanStop *message,
+                      ProtobufCBuffer *buffer)
+{
+  assert(message->base.descriptor == &ctrl_msg__resp__wifi_scan_stop__descriptor);
+  return protobuf_c_message_pack_to_buffer ((const ProtobufCMessage*)message, buffer);
+}
+CtrlMsgRespWifiScanStop *
+       ctrl_msg__resp__wifi_scan_stop__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data)
+{
+  return (CtrlMsgRespWifiScanStop *)
+     protobuf_c_message_unpack (&ctrl_msg__resp__wifi_scan_stop__descriptor,
+                                allocator, len, data);
+}
+void   ctrl_msg__resp__wifi_scan_stop__free_unpacked
+                     (CtrlMsgRespWifiScanStop *message,
+                      ProtobufCAllocator *allocator)
+{
+  if(!message)
+    return;
+  assert(message->base.descriptor == &ctrl_msg__resp__wifi_scan_stop__descriptor);
+  protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
+}
+void   ctrl_msg__req__wifi_scan_get_ap_num__init
+                     (CtrlMsgReqWifiScanGetApNum         *message)
+{
+  static const CtrlMsgReqWifiScanGetApNum init_value = CTRL_MSG__REQ__WIFI_SCAN_GET_AP_NUM__INIT;
+  *message = init_value;
+}
+size_t ctrl_msg__req__wifi_scan_get_ap_num__get_packed_size
+                     (const CtrlMsgReqWifiScanGetApNum *message)
+{
+  assert(message->base.descriptor == &ctrl_msg__req__wifi_scan_get_ap_num__descriptor);
+  return protobuf_c_message_get_packed_size ((const ProtobufCMessage*)(message));
+}
+size_t ctrl_msg__req__wifi_scan_get_ap_num__pack
+                     (const CtrlMsgReqWifiScanGetApNum *message,
+                      uint8_t       *out)
+{
+  assert(message->base.descriptor == &ctrl_msg__req__wifi_scan_get_ap_num__descriptor);
+  return protobuf_c_message_pack ((const ProtobufCMessage*)message, out);
+}
+size_t ctrl_msg__req__wifi_scan_get_ap_num__pack_to_buffer
+                     (const CtrlMsgReqWifiScanGetApNum *message,
+                      ProtobufCBuffer *buffer)
+{
+  assert(message->base.descriptor == &ctrl_msg__req__wifi_scan_get_ap_num__descriptor);
+  return protobuf_c_message_pack_to_buffer ((const ProtobufCMessage*)message, buffer);
+}
+CtrlMsgReqWifiScanGetApNum *
+       ctrl_msg__req__wifi_scan_get_ap_num__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data)
+{
+  return (CtrlMsgReqWifiScanGetApNum *)
+     protobuf_c_message_unpack (&ctrl_msg__req__wifi_scan_get_ap_num__descriptor,
+                                allocator, len, data);
+}
+void   ctrl_msg__req__wifi_scan_get_ap_num__free_unpacked
+                     (CtrlMsgReqWifiScanGetApNum *message,
+                      ProtobufCAllocator *allocator)
+{
+  if(!message)
+    return;
+  assert(message->base.descriptor == &ctrl_msg__req__wifi_scan_get_ap_num__descriptor);
+  protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
+}
+void   ctrl_msg__resp__wifi_scan_get_ap_num__init
+                     (CtrlMsgRespWifiScanGetApNum         *message)
+{
+  static const CtrlMsgRespWifiScanGetApNum init_value = CTRL_MSG__RESP__WIFI_SCAN_GET_AP_NUM__INIT;
+  *message = init_value;
+}
+size_t ctrl_msg__resp__wifi_scan_get_ap_num__get_packed_size
+                     (const CtrlMsgRespWifiScanGetApNum *message)
+{
+  assert(message->base.descriptor == &ctrl_msg__resp__wifi_scan_get_ap_num__descriptor);
+  return protobuf_c_message_get_packed_size ((const ProtobufCMessage*)(message));
+}
+size_t ctrl_msg__resp__wifi_scan_get_ap_num__pack
+                     (const CtrlMsgRespWifiScanGetApNum *message,
+                      uint8_t       *out)
+{
+  assert(message->base.descriptor == &ctrl_msg__resp__wifi_scan_get_ap_num__descriptor);
+  return protobuf_c_message_pack ((const ProtobufCMessage*)message, out);
+}
+size_t ctrl_msg__resp__wifi_scan_get_ap_num__pack_to_buffer
+                     (const CtrlMsgRespWifiScanGetApNum *message,
+                      ProtobufCBuffer *buffer)
+{
+  assert(message->base.descriptor == &ctrl_msg__resp__wifi_scan_get_ap_num__descriptor);
+  return protobuf_c_message_pack_to_buffer ((const ProtobufCMessage*)message, buffer);
+}
+CtrlMsgRespWifiScanGetApNum *
+       ctrl_msg__resp__wifi_scan_get_ap_num__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data)
+{
+  return (CtrlMsgRespWifiScanGetApNum *)
+     protobuf_c_message_unpack (&ctrl_msg__resp__wifi_scan_get_ap_num__descriptor,
+                                allocator, len, data);
+}
+void   ctrl_msg__resp__wifi_scan_get_ap_num__free_unpacked
+                     (CtrlMsgRespWifiScanGetApNum *message,
+                      ProtobufCAllocator *allocator)
+{
+  if(!message)
+    return;
+  assert(message->base.descriptor == &ctrl_msg__resp__wifi_scan_get_ap_num__descriptor);
+  protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
+}
+void   ctrl_msg__req__wifi_scan_get_ap_records__init
+                     (CtrlMsgReqWifiScanGetApRecords         *message)
+{
+  static const CtrlMsgReqWifiScanGetApRecords init_value = CTRL_MSG__REQ__WIFI_SCAN_GET_AP_RECORDS__INIT;
+  *message = init_value;
+}
+size_t ctrl_msg__req__wifi_scan_get_ap_records__get_packed_size
+                     (const CtrlMsgReqWifiScanGetApRecords *message)
+{
+  assert(message->base.descriptor == &ctrl_msg__req__wifi_scan_get_ap_records__descriptor);
+  return protobuf_c_message_get_packed_size ((const ProtobufCMessage*)(message));
+}
+size_t ctrl_msg__req__wifi_scan_get_ap_records__pack
+                     (const CtrlMsgReqWifiScanGetApRecords *message,
+                      uint8_t       *out)
+{
+  assert(message->base.descriptor == &ctrl_msg__req__wifi_scan_get_ap_records__descriptor);
+  return protobuf_c_message_pack ((const ProtobufCMessage*)message, out);
+}
+size_t ctrl_msg__req__wifi_scan_get_ap_records__pack_to_buffer
+                     (const CtrlMsgReqWifiScanGetApRecords *message,
+                      ProtobufCBuffer *buffer)
+{
+  assert(message->base.descriptor == &ctrl_msg__req__wifi_scan_get_ap_records__descriptor);
+  return protobuf_c_message_pack_to_buffer ((const ProtobufCMessage*)message, buffer);
+}
+CtrlMsgReqWifiScanGetApRecords *
+       ctrl_msg__req__wifi_scan_get_ap_records__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data)
+{
+  return (CtrlMsgReqWifiScanGetApRecords *)
+     protobuf_c_message_unpack (&ctrl_msg__req__wifi_scan_get_ap_records__descriptor,
+                                allocator, len, data);
+}
+void   ctrl_msg__req__wifi_scan_get_ap_records__free_unpacked
+                     (CtrlMsgReqWifiScanGetApRecords *message,
+                      ProtobufCAllocator *allocator)
+{
+  if(!message)
+    return;
+  assert(message->base.descriptor == &ctrl_msg__req__wifi_scan_get_ap_records__descriptor);
+  protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
+}
+void   ctrl_msg__resp__wifi_scan_get_ap_records__init
+                     (CtrlMsgRespWifiScanGetApRecords         *message)
+{
+  static const CtrlMsgRespWifiScanGetApRecords init_value = CTRL_MSG__RESP__WIFI_SCAN_GET_AP_RECORDS__INIT;
+  *message = init_value;
+}
+size_t ctrl_msg__resp__wifi_scan_get_ap_records__get_packed_size
+                     (const CtrlMsgRespWifiScanGetApRecords *message)
+{
+  assert(message->base.descriptor == &ctrl_msg__resp__wifi_scan_get_ap_records__descriptor);
+  return protobuf_c_message_get_packed_size ((const ProtobufCMessage*)(message));
+}
+size_t ctrl_msg__resp__wifi_scan_get_ap_records__pack
+                     (const CtrlMsgRespWifiScanGetApRecords *message,
+                      uint8_t       *out)
+{
+  assert(message->base.descriptor == &ctrl_msg__resp__wifi_scan_get_ap_records__descriptor);
+  return protobuf_c_message_pack ((const ProtobufCMessage*)message, out);
+}
+size_t ctrl_msg__resp__wifi_scan_get_ap_records__pack_to_buffer
+                     (const CtrlMsgRespWifiScanGetApRecords *message,
+                      ProtobufCBuffer *buffer)
+{
+  assert(message->base.descriptor == &ctrl_msg__resp__wifi_scan_get_ap_records__descriptor);
+  return protobuf_c_message_pack_to_buffer ((const ProtobufCMessage*)message, buffer);
+}
+CtrlMsgRespWifiScanGetApRecords *
+       ctrl_msg__resp__wifi_scan_get_ap_records__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data)
+{
+  return (CtrlMsgRespWifiScanGetApRecords *)
+     protobuf_c_message_unpack (&ctrl_msg__resp__wifi_scan_get_ap_records__descriptor,
+                                allocator, len, data);
+}
+void   ctrl_msg__resp__wifi_scan_get_ap_records__free_unpacked
+                     (CtrlMsgRespWifiScanGetApRecords *message,
+                      ProtobufCAllocator *allocator)
+{
+  if(!message)
+    return;
+  assert(message->base.descriptor == &ctrl_msg__resp__wifi_scan_get_ap_records__descriptor);
+  protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
+}
+void   ctrl_msg__req__wifi_clear_ap_list__init
+                     (CtrlMsgReqWifiClearApList         *message)
+{
+  static const CtrlMsgReqWifiClearApList init_value = CTRL_MSG__REQ__WIFI_CLEAR_AP_LIST__INIT;
+  *message = init_value;
+}
+size_t ctrl_msg__req__wifi_clear_ap_list__get_packed_size
+                     (const CtrlMsgReqWifiClearApList *message)
+{
+  assert(message->base.descriptor == &ctrl_msg__req__wifi_clear_ap_list__descriptor);
+  return protobuf_c_message_get_packed_size ((const ProtobufCMessage*)(message));
+}
+size_t ctrl_msg__req__wifi_clear_ap_list__pack
+                     (const CtrlMsgReqWifiClearApList *message,
+                      uint8_t       *out)
+{
+  assert(message->base.descriptor == &ctrl_msg__req__wifi_clear_ap_list__descriptor);
+  return protobuf_c_message_pack ((const ProtobufCMessage*)message, out);
+}
+size_t ctrl_msg__req__wifi_clear_ap_list__pack_to_buffer
+                     (const CtrlMsgReqWifiClearApList *message,
+                      ProtobufCBuffer *buffer)
+{
+  assert(message->base.descriptor == &ctrl_msg__req__wifi_clear_ap_list__descriptor);
+  return protobuf_c_message_pack_to_buffer ((const ProtobufCMessage*)message, buffer);
+}
+CtrlMsgReqWifiClearApList *
+       ctrl_msg__req__wifi_clear_ap_list__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data)
+{
+  return (CtrlMsgReqWifiClearApList *)
+     protobuf_c_message_unpack (&ctrl_msg__req__wifi_clear_ap_list__descriptor,
+                                allocator, len, data);
+}
+void   ctrl_msg__req__wifi_clear_ap_list__free_unpacked
+                     (CtrlMsgReqWifiClearApList *message,
+                      ProtobufCAllocator *allocator)
+{
+  if(!message)
+    return;
+  assert(message->base.descriptor == &ctrl_msg__req__wifi_clear_ap_list__descriptor);
+  protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
+}
+void   ctrl_msg__resp__wifi_clear_ap_list__init
+                     (CtrlMsgRespWifiClearApList         *message)
+{
+  static const CtrlMsgRespWifiClearApList init_value = CTRL_MSG__RESP__WIFI_CLEAR_AP_LIST__INIT;
+  *message = init_value;
+}
+size_t ctrl_msg__resp__wifi_clear_ap_list__get_packed_size
+                     (const CtrlMsgRespWifiClearApList *message)
+{
+  assert(message->base.descriptor == &ctrl_msg__resp__wifi_clear_ap_list__descriptor);
+  return protobuf_c_message_get_packed_size ((const ProtobufCMessage*)(message));
+}
+size_t ctrl_msg__resp__wifi_clear_ap_list__pack
+                     (const CtrlMsgRespWifiClearApList *message,
+                      uint8_t       *out)
+{
+  assert(message->base.descriptor == &ctrl_msg__resp__wifi_clear_ap_list__descriptor);
+  return protobuf_c_message_pack ((const ProtobufCMessage*)message, out);
+}
+size_t ctrl_msg__resp__wifi_clear_ap_list__pack_to_buffer
+                     (const CtrlMsgRespWifiClearApList *message,
+                      ProtobufCBuffer *buffer)
+{
+  assert(message->base.descriptor == &ctrl_msg__resp__wifi_clear_ap_list__descriptor);
+  return protobuf_c_message_pack_to_buffer ((const ProtobufCMessage*)message, buffer);
+}
+CtrlMsgRespWifiClearApList *
+       ctrl_msg__resp__wifi_clear_ap_list__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data)
+{
+  return (CtrlMsgRespWifiClearApList *)
+     protobuf_c_message_unpack (&ctrl_msg__resp__wifi_clear_ap_list__descriptor,
+                                allocator, len, data);
+}
+void   ctrl_msg__resp__wifi_clear_ap_list__free_unpacked
+                     (CtrlMsgRespWifiClearApList *message,
+                      ProtobufCAllocator *allocator)
+{
+  if(!message)
+    return;
+  assert(message->base.descriptor == &ctrl_msg__resp__wifi_clear_ap_list__descriptor);
+  protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
+}
 void   ctrl_msg__event__wifi_event_no_args__init
                      (CtrlMsgEventWifiEventNoArgs         *message)
 {
@@ -4550,6 +5000,51 @@ void   ctrl_msg__event__ap__sta_connected__free_unpacked
   if(!message)
     return;
   assert(message->base.descriptor == &ctrl_msg__event__ap__sta_connected__descriptor);
+  protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
+}
+void   ctrl_msg__event__sta_scan_done__init
+                     (CtrlMsgEventStaScanDone         *message)
+{
+  static const CtrlMsgEventStaScanDone init_value = CTRL_MSG__EVENT__STA_SCAN_DONE__INIT;
+  *message = init_value;
+}
+size_t ctrl_msg__event__sta_scan_done__get_packed_size
+                     (const CtrlMsgEventStaScanDone *message)
+{
+  assert(message->base.descriptor == &ctrl_msg__event__sta_scan_done__descriptor);
+  return protobuf_c_message_get_packed_size ((const ProtobufCMessage*)(message));
+}
+size_t ctrl_msg__event__sta_scan_done__pack
+                     (const CtrlMsgEventStaScanDone *message,
+                      uint8_t       *out)
+{
+  assert(message->base.descriptor == &ctrl_msg__event__sta_scan_done__descriptor);
+  return protobuf_c_message_pack ((const ProtobufCMessage*)message, out);
+}
+size_t ctrl_msg__event__sta_scan_done__pack_to_buffer
+                     (const CtrlMsgEventStaScanDone *message,
+                      ProtobufCBuffer *buffer)
+{
+  assert(message->base.descriptor == &ctrl_msg__event__sta_scan_done__descriptor);
+  return protobuf_c_message_pack_to_buffer ((const ProtobufCMessage*)message, buffer);
+}
+CtrlMsgEventStaScanDone *
+       ctrl_msg__event__sta_scan_done__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data)
+{
+  return (CtrlMsgEventStaScanDone *)
+     protobuf_c_message_unpack (&ctrl_msg__event__sta_scan_done__descriptor,
+                                allocator, len, data);
+}
+void   ctrl_msg__event__sta_scan_done__free_unpacked
+                     (CtrlMsgEventStaScanDone *message,
+                      ProtobufCAllocator *allocator)
+{
+  if(!message)
+    return;
+  assert(message->base.descriptor == &ctrl_msg__event__sta_scan_done__descriptor);
   protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
 }
 void   ctrl_msg__init
@@ -5074,7 +5569,7 @@ const ProtobufCMessageDescriptor wifi_scan_time__descriptor =
   (ProtobufCMessageInit) wifi_scan_time__init,
   NULL,NULL,NULL    /* reserved[123] */
 };
-static const ProtobufCFieldDescriptor wifi_scan_config__field_descriptors[6] =
+static const ProtobufCFieldDescriptor wifi_scan_config__field_descriptors[7] =
 {
   {
     "ssid",
@@ -5148,8 +5643,21 @@ static const ProtobufCFieldDescriptor wifi_scan_config__field_descriptors[6] =
     0,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
+  {
+    "block",
+    7,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_BOOL,
+    0,   /* quantifier_offset */
+    offsetof(WifiScanConfig, block),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
 };
 static const unsigned wifi_scan_config__field_indices_by_name[] = {
+  6,   /* field[6] = block */
   1,   /* field[1] = bssid */
   2,   /* field[2] = channel */
   5,   /* field[5] = scan_time */
@@ -5160,7 +5668,7 @@ static const unsigned wifi_scan_config__field_indices_by_name[] = {
 static const ProtobufCIntRange wifi_scan_config__number_ranges[1 + 1] =
 {
   { 1, 0 },
-  { 0, 6 }
+  { 0, 7 }
 };
 const ProtobufCMessageDescriptor wifi_scan_config__descriptor =
 {
@@ -5170,7 +5678,7 @@ const ProtobufCMessageDescriptor wifi_scan_config__descriptor =
   "WifiScanConfig",
   "",
   sizeof(WifiScanConfig),
-  6,
+  7,
   wifi_scan_config__field_descriptors,
   wifi_scan_config__field_indices_by_name,
   1,  wifi_scan_config__number_ranges,
@@ -7992,8 +8500,20 @@ const ProtobufCMessageDescriptor wifi_event_ap_wps_rg_success__descriptor =
 static const ProtobufCFieldDescriptor scan_result__field_descriptors[5] =
 {
   {
-    "ssid",
+    "bssid",
     1,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_BYTES,
+    0,   /* quantifier_offset */
+    offsetof(ScanResult, bssid),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "ssid",
+    2,
     PROTOBUF_C_LABEL_NONE,
     PROTOBUF_C_TYPE_BYTES,
     0,   /* quantifier_offset */
@@ -8005,7 +8525,7 @@ static const ProtobufCFieldDescriptor scan_result__field_descriptors[5] =
   },
   {
     "chnl",
-    2,
+    3,
     PROTOBUF_C_LABEL_NONE,
     PROTOBUF_C_TYPE_UINT32,
     0,   /* quantifier_offset */
@@ -8017,23 +8537,11 @@ static const ProtobufCFieldDescriptor scan_result__field_descriptors[5] =
   },
   {
     "rssi",
-    3,
+    4,
     PROTOBUF_C_LABEL_NONE,
     PROTOBUF_C_TYPE_INT32,
     0,   /* quantifier_offset */
     offsetof(ScanResult, rssi),
-    NULL,
-    NULL,
-    0,             /* flags */
-    0,NULL,NULL    /* reserved1,reserved2, etc */
-  },
-  {
-    "bssid",
-    4,
-    PROTOBUF_C_LABEL_NONE,
-    PROTOBUF_C_TYPE_BYTES,
-    0,   /* quantifier_offset */
-    offsetof(ScanResult, bssid),
     NULL,
     NULL,
     0,             /* flags */
@@ -8053,11 +8561,11 @@ static const ProtobufCFieldDescriptor scan_result__field_descriptors[5] =
   },
 };
 static const unsigned scan_result__field_indices_by_name[] = {
-  3,   /* field[3] = bssid */
-  1,   /* field[1] = chnl */
-  2,   /* field[2] = rssi */
+  0,   /* field[0] = bssid */
+  2,   /* field[2] = chnl */
+  3,   /* field[3] = rssi */
   4,   /* field[4] = sec_prot */
-  0,   /* field[0] = ssid */
+  1,   /* field[1] = ssid */
 };
 static const ProtobufCIntRange scan_result__number_ranges[1 + 1] =
 {
@@ -10423,6 +10931,391 @@ const ProtobufCMessageDescriptor ctrl_msg__resp__wifi_stop__descriptor =
   (ProtobufCMessageInit) ctrl_msg__resp__wifi_stop__init,
   NULL,NULL,NULL    /* reserved[123] */
 };
+static const ProtobufCFieldDescriptor ctrl_msg__req__wifi_scan_start__field_descriptors[3] =
+{
+  {
+    "config",
+    1,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_MESSAGE,
+    0,   /* quantifier_offset */
+    offsetof(CtrlMsgReqWifiScanStart, config),
+    &wifi_scan_config__descriptor,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "block",
+    2,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_BOOL,
+    0,   /* quantifier_offset */
+    offsetof(CtrlMsgReqWifiScanStart, block),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "config_set",
+    3,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_INT32,
+    0,   /* quantifier_offset */
+    offsetof(CtrlMsgReqWifiScanStart, config_set),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+};
+static const unsigned ctrl_msg__req__wifi_scan_start__field_indices_by_name[] = {
+  1,   /* field[1] = block */
+  0,   /* field[0] = config */
+  2,   /* field[2] = config_set */
+};
+static const ProtobufCIntRange ctrl_msg__req__wifi_scan_start__number_ranges[1 + 1] =
+{
+  { 1, 0 },
+  { 0, 3 }
+};
+const ProtobufCMessageDescriptor ctrl_msg__req__wifi_scan_start__descriptor =
+{
+  PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
+  "CtrlMsg_Req_WifiScanStart",
+  "CtrlMsgReqWifiScanStart",
+  "CtrlMsgReqWifiScanStart",
+  "",
+  sizeof(CtrlMsgReqWifiScanStart),
+  3,
+  ctrl_msg__req__wifi_scan_start__field_descriptors,
+  ctrl_msg__req__wifi_scan_start__field_indices_by_name,
+  1,  ctrl_msg__req__wifi_scan_start__number_ranges,
+  (ProtobufCMessageInit) ctrl_msg__req__wifi_scan_start__init,
+  NULL,NULL,NULL    /* reserved[123] */
+};
+static const ProtobufCFieldDescriptor ctrl_msg__resp__wifi_scan_start__field_descriptors[1] =
+{
+  {
+    "resp",
+    1,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_INT32,
+    0,   /* quantifier_offset */
+    offsetof(CtrlMsgRespWifiScanStart, resp),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+};
+static const unsigned ctrl_msg__resp__wifi_scan_start__field_indices_by_name[] = {
+  0,   /* field[0] = resp */
+};
+static const ProtobufCIntRange ctrl_msg__resp__wifi_scan_start__number_ranges[1 + 1] =
+{
+  { 1, 0 },
+  { 0, 1 }
+};
+const ProtobufCMessageDescriptor ctrl_msg__resp__wifi_scan_start__descriptor =
+{
+  PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
+  "CtrlMsg_Resp_WifiScanStart",
+  "CtrlMsgRespWifiScanStart",
+  "CtrlMsgRespWifiScanStart",
+  "",
+  sizeof(CtrlMsgRespWifiScanStart),
+  1,
+  ctrl_msg__resp__wifi_scan_start__field_descriptors,
+  ctrl_msg__resp__wifi_scan_start__field_indices_by_name,
+  1,  ctrl_msg__resp__wifi_scan_start__number_ranges,
+  (ProtobufCMessageInit) ctrl_msg__resp__wifi_scan_start__init,
+  NULL,NULL,NULL    /* reserved[123] */
+};
+#define ctrl_msg__req__wifi_scan_stop__field_descriptors NULL
+#define ctrl_msg__req__wifi_scan_stop__field_indices_by_name NULL
+#define ctrl_msg__req__wifi_scan_stop__number_ranges NULL
+const ProtobufCMessageDescriptor ctrl_msg__req__wifi_scan_stop__descriptor =
+{
+  PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
+  "CtrlMsg_Req_WifiScanStop",
+  "CtrlMsgReqWifiScanStop",
+  "CtrlMsgReqWifiScanStop",
+  "",
+  sizeof(CtrlMsgReqWifiScanStop),
+  0,
+  ctrl_msg__req__wifi_scan_stop__field_descriptors,
+  ctrl_msg__req__wifi_scan_stop__field_indices_by_name,
+  0,  ctrl_msg__req__wifi_scan_stop__number_ranges,
+  (ProtobufCMessageInit) ctrl_msg__req__wifi_scan_stop__init,
+  NULL,NULL,NULL    /* reserved[123] */
+};
+static const ProtobufCFieldDescriptor ctrl_msg__resp__wifi_scan_stop__field_descriptors[1] =
+{
+  {
+    "resp",
+    1,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_INT32,
+    0,   /* quantifier_offset */
+    offsetof(CtrlMsgRespWifiScanStop, resp),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+};
+static const unsigned ctrl_msg__resp__wifi_scan_stop__field_indices_by_name[] = {
+  0,   /* field[0] = resp */
+};
+static const ProtobufCIntRange ctrl_msg__resp__wifi_scan_stop__number_ranges[1 + 1] =
+{
+  { 1, 0 },
+  { 0, 1 }
+};
+const ProtobufCMessageDescriptor ctrl_msg__resp__wifi_scan_stop__descriptor =
+{
+  PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
+  "CtrlMsg_Resp_WifiScanStop",
+  "CtrlMsgRespWifiScanStop",
+  "CtrlMsgRespWifiScanStop",
+  "",
+  sizeof(CtrlMsgRespWifiScanStop),
+  1,
+  ctrl_msg__resp__wifi_scan_stop__field_descriptors,
+  ctrl_msg__resp__wifi_scan_stop__field_indices_by_name,
+  1,  ctrl_msg__resp__wifi_scan_stop__number_ranges,
+  (ProtobufCMessageInit) ctrl_msg__resp__wifi_scan_stop__init,
+  NULL,NULL,NULL    /* reserved[123] */
+};
+#define ctrl_msg__req__wifi_scan_get_ap_num__field_descriptors NULL
+#define ctrl_msg__req__wifi_scan_get_ap_num__field_indices_by_name NULL
+#define ctrl_msg__req__wifi_scan_get_ap_num__number_ranges NULL
+const ProtobufCMessageDescriptor ctrl_msg__req__wifi_scan_get_ap_num__descriptor =
+{
+  PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
+  "CtrlMsg_Req_WifiScanGetApNum",
+  "CtrlMsgReqWifiScanGetApNum",
+  "CtrlMsgReqWifiScanGetApNum",
+  "",
+  sizeof(CtrlMsgReqWifiScanGetApNum),
+  0,
+  ctrl_msg__req__wifi_scan_get_ap_num__field_descriptors,
+  ctrl_msg__req__wifi_scan_get_ap_num__field_indices_by_name,
+  0,  ctrl_msg__req__wifi_scan_get_ap_num__number_ranges,
+  (ProtobufCMessageInit) ctrl_msg__req__wifi_scan_get_ap_num__init,
+  NULL,NULL,NULL    /* reserved[123] */
+};
+static const ProtobufCFieldDescriptor ctrl_msg__resp__wifi_scan_get_ap_num__field_descriptors[2] =
+{
+  {
+    "resp",
+    1,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_INT32,
+    0,   /* quantifier_offset */
+    offsetof(CtrlMsgRespWifiScanGetApNum, resp),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "number",
+    2,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_INT32,
+    0,   /* quantifier_offset */
+    offsetof(CtrlMsgRespWifiScanGetApNum, number),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+};
+static const unsigned ctrl_msg__resp__wifi_scan_get_ap_num__field_indices_by_name[] = {
+  1,   /* field[1] = number */
+  0,   /* field[0] = resp */
+};
+static const ProtobufCIntRange ctrl_msg__resp__wifi_scan_get_ap_num__number_ranges[1 + 1] =
+{
+  { 1, 0 },
+  { 0, 2 }
+};
+const ProtobufCMessageDescriptor ctrl_msg__resp__wifi_scan_get_ap_num__descriptor =
+{
+  PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
+  "CtrlMsg_Resp_WifiScanGetApNum",
+  "CtrlMsgRespWifiScanGetApNum",
+  "CtrlMsgRespWifiScanGetApNum",
+  "",
+  sizeof(CtrlMsgRespWifiScanGetApNum),
+  2,
+  ctrl_msg__resp__wifi_scan_get_ap_num__field_descriptors,
+  ctrl_msg__resp__wifi_scan_get_ap_num__field_indices_by_name,
+  1,  ctrl_msg__resp__wifi_scan_get_ap_num__number_ranges,
+  (ProtobufCMessageInit) ctrl_msg__resp__wifi_scan_get_ap_num__init,
+  NULL,NULL,NULL    /* reserved[123] */
+};
+static const ProtobufCFieldDescriptor ctrl_msg__req__wifi_scan_get_ap_records__field_descriptors[1] =
+{
+  {
+    "number",
+    1,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_INT32,
+    0,   /* quantifier_offset */
+    offsetof(CtrlMsgReqWifiScanGetApRecords, number),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+};
+static const unsigned ctrl_msg__req__wifi_scan_get_ap_records__field_indices_by_name[] = {
+  0,   /* field[0] = number */
+};
+static const ProtobufCIntRange ctrl_msg__req__wifi_scan_get_ap_records__number_ranges[1 + 1] =
+{
+  { 1, 0 },
+  { 0, 1 }
+};
+const ProtobufCMessageDescriptor ctrl_msg__req__wifi_scan_get_ap_records__descriptor =
+{
+  PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
+  "CtrlMsg_Req_WifiScanGetApRecords",
+  "CtrlMsgReqWifiScanGetApRecords",
+  "CtrlMsgReqWifiScanGetApRecords",
+  "",
+  sizeof(CtrlMsgReqWifiScanGetApRecords),
+  1,
+  ctrl_msg__req__wifi_scan_get_ap_records__field_descriptors,
+  ctrl_msg__req__wifi_scan_get_ap_records__field_indices_by_name,
+  1,  ctrl_msg__req__wifi_scan_get_ap_records__number_ranges,
+  (ProtobufCMessageInit) ctrl_msg__req__wifi_scan_get_ap_records__init,
+  NULL,NULL,NULL    /* reserved[123] */
+};
+static const ProtobufCFieldDescriptor ctrl_msg__resp__wifi_scan_get_ap_records__field_descriptors[3] =
+{
+  {
+    "resp",
+    1,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_INT32,
+    0,   /* quantifier_offset */
+    offsetof(CtrlMsgRespWifiScanGetApRecords, resp),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "number",
+    2,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_INT32,
+    0,   /* quantifier_offset */
+    offsetof(CtrlMsgRespWifiScanGetApRecords, number),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "ap_records",
+    3,
+    PROTOBUF_C_LABEL_REPEATED,
+    PROTOBUF_C_TYPE_MESSAGE,
+    offsetof(CtrlMsgRespWifiScanGetApRecords, n_ap_records),
+    offsetof(CtrlMsgRespWifiScanGetApRecords, ap_records),
+    &wifi_ap_record__descriptor,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+};
+static const unsigned ctrl_msg__resp__wifi_scan_get_ap_records__field_indices_by_name[] = {
+  2,   /* field[2] = ap_records */
+  1,   /* field[1] = number */
+  0,   /* field[0] = resp */
+};
+static const ProtobufCIntRange ctrl_msg__resp__wifi_scan_get_ap_records__number_ranges[1 + 1] =
+{
+  { 1, 0 },
+  { 0, 3 }
+};
+const ProtobufCMessageDescriptor ctrl_msg__resp__wifi_scan_get_ap_records__descriptor =
+{
+  PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
+  "CtrlMsg_Resp_WifiScanGetApRecords",
+  "CtrlMsgRespWifiScanGetApRecords",
+  "CtrlMsgRespWifiScanGetApRecords",
+  "",
+  sizeof(CtrlMsgRespWifiScanGetApRecords),
+  3,
+  ctrl_msg__resp__wifi_scan_get_ap_records__field_descriptors,
+  ctrl_msg__resp__wifi_scan_get_ap_records__field_indices_by_name,
+  1,  ctrl_msg__resp__wifi_scan_get_ap_records__number_ranges,
+  (ProtobufCMessageInit) ctrl_msg__resp__wifi_scan_get_ap_records__init,
+  NULL,NULL,NULL    /* reserved[123] */
+};
+#define ctrl_msg__req__wifi_clear_ap_list__field_descriptors NULL
+#define ctrl_msg__req__wifi_clear_ap_list__field_indices_by_name NULL
+#define ctrl_msg__req__wifi_clear_ap_list__number_ranges NULL
+const ProtobufCMessageDescriptor ctrl_msg__req__wifi_clear_ap_list__descriptor =
+{
+  PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
+  "CtrlMsg_Req_WifiClearApList",
+  "CtrlMsgReqWifiClearApList",
+  "CtrlMsgReqWifiClearApList",
+  "",
+  sizeof(CtrlMsgReqWifiClearApList),
+  0,
+  ctrl_msg__req__wifi_clear_ap_list__field_descriptors,
+  ctrl_msg__req__wifi_clear_ap_list__field_indices_by_name,
+  0,  ctrl_msg__req__wifi_clear_ap_list__number_ranges,
+  (ProtobufCMessageInit) ctrl_msg__req__wifi_clear_ap_list__init,
+  NULL,NULL,NULL    /* reserved[123] */
+};
+static const ProtobufCFieldDescriptor ctrl_msg__resp__wifi_clear_ap_list__field_descriptors[1] =
+{
+  {
+    "resp",
+    1,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_INT32,
+    0,   /* quantifier_offset */
+    offsetof(CtrlMsgRespWifiClearApList, resp),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+};
+static const unsigned ctrl_msg__resp__wifi_clear_ap_list__field_indices_by_name[] = {
+  0,   /* field[0] = resp */
+};
+static const ProtobufCIntRange ctrl_msg__resp__wifi_clear_ap_list__number_ranges[1 + 1] =
+{
+  { 1, 0 },
+  { 0, 1 }
+};
+const ProtobufCMessageDescriptor ctrl_msg__resp__wifi_clear_ap_list__descriptor =
+{
+  PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
+  "CtrlMsg_Resp_WifiClearApList",
+  "CtrlMsgRespWifiClearApList",
+  "CtrlMsgRespWifiClearApList",
+  "",
+  sizeof(CtrlMsgRespWifiClearApList),
+  1,
+  ctrl_msg__resp__wifi_clear_ap_list__field_descriptors,
+  ctrl_msg__resp__wifi_clear_ap_list__field_indices_by_name,
+  1,  ctrl_msg__resp__wifi_clear_ap_list__number_ranges,
+  (ProtobufCMessageInit) ctrl_msg__resp__wifi_clear_ap_list__init,
+  NULL,NULL,NULL    /* reserved[123] */
+};
 static const ProtobufCFieldDescriptor ctrl_msg__event__wifi_event_no_args__field_descriptors[2] =
 {
   {
@@ -10768,7 +11661,71 @@ const ProtobufCMessageDescriptor ctrl_msg__event__ap__sta_connected__descriptor 
   (ProtobufCMessageInit) ctrl_msg__event__ap__sta_connected__init,
   NULL,NULL,NULL    /* reserved[123] */
 };
-static const ProtobufCFieldDescriptor ctrl_msg__field_descriptors[66] =
+static const ProtobufCFieldDescriptor ctrl_msg__event__sta_scan_done__field_descriptors[3] =
+{
+  {
+    "resp",
+    1,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_INT32,
+    0,   /* quantifier_offset */
+    offsetof(CtrlMsgEventStaScanDone, resp),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "event_id",
+    2,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_INT32,
+    0,   /* quantifier_offset */
+    offsetof(CtrlMsgEventStaScanDone, event_id),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "scan_done",
+    3,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_MESSAGE,
+    0,   /* quantifier_offset */
+    offsetof(CtrlMsgEventStaScanDone, scan_done),
+    &wifi_event_sta_scan_done__descriptor,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+};
+static const unsigned ctrl_msg__event__sta_scan_done__field_indices_by_name[] = {
+  1,   /* field[1] = event_id */
+  0,   /* field[0] = resp */
+  2,   /* field[2] = scan_done */
+};
+static const ProtobufCIntRange ctrl_msg__event__sta_scan_done__number_ranges[1 + 1] =
+{
+  { 1, 0 },
+  { 0, 3 }
+};
+const ProtobufCMessageDescriptor ctrl_msg__event__sta_scan_done__descriptor =
+{
+  PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
+  "CtrlMsg_Event_StaScanDone",
+  "CtrlMsgEventStaScanDone",
+  "CtrlMsgEventStaScanDone",
+  "",
+  sizeof(CtrlMsgEventStaScanDone),
+  3,
+  ctrl_msg__event__sta_scan_done__field_descriptors,
+  ctrl_msg__event__sta_scan_done__field_indices_by_name,
+  1,  ctrl_msg__event__sta_scan_done__number_ranges,
+  (ProtobufCMessageInit) ctrl_msg__event__sta_scan_done__init,
+  NULL,NULL,NULL    /* reserved[123] */
+};
+static const ProtobufCFieldDescriptor ctrl_msg__field_descriptors[77] =
 {
   {
     "msg_type",
@@ -11143,6 +12100,66 @@ static const ProtobufCFieldDescriptor ctrl_msg__field_descriptors[66] =
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
   {
+    "req_wifi_scan_start",
+    286,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_MESSAGE,
+    offsetof(CtrlMsg, payload_case),
+    offsetof(CtrlMsg, req_wifi_scan_start),
+    &ctrl_msg__req__wifi_scan_start__descriptor,
+    NULL,
+    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "req_wifi_scan_stop",
+    287,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_MESSAGE,
+    offsetof(CtrlMsg, payload_case),
+    offsetof(CtrlMsg, req_wifi_scan_stop),
+    &ctrl_msg__req__wifi_scan_stop__descriptor,
+    NULL,
+    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "req_wifi_scan_get_ap_num",
+    288,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_MESSAGE,
+    offsetof(CtrlMsg, payload_case),
+    offsetof(CtrlMsg, req_wifi_scan_get_ap_num),
+    &ctrl_msg__req__wifi_scan_get_ap_num__descriptor,
+    NULL,
+    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "req_wifi_scan_get_ap_records",
+    289,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_MESSAGE,
+    offsetof(CtrlMsg, payload_case),
+    offsetof(CtrlMsg, req_wifi_scan_get_ap_records),
+    &ctrl_msg__req__wifi_scan_get_ap_records__descriptor,
+    NULL,
+    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "req_wifi_clear_ap_list",
+    290,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_MESSAGE,
+    offsetof(CtrlMsg, payload_case),
+    offsetof(CtrlMsg, req_wifi_clear_ap_list),
+    &ctrl_msg__req__wifi_clear_ap_list__descriptor,
+    NULL,
+    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
     "resp_get_mac_address",
     513,
     PROTOBUF_C_LABEL_NONE,
@@ -11491,6 +12508,66 @@ static const ProtobufCFieldDescriptor ctrl_msg__field_descriptors[66] =
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
   {
+    "resp_wifi_scan_start",
+    542,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_MESSAGE,
+    offsetof(CtrlMsg, payload_case),
+    offsetof(CtrlMsg, resp_wifi_scan_start),
+    &ctrl_msg__resp__wifi_scan_start__descriptor,
+    NULL,
+    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "resp_wifi_scan_stop",
+    543,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_MESSAGE,
+    offsetof(CtrlMsg, payload_case),
+    offsetof(CtrlMsg, resp_wifi_scan_stop),
+    &ctrl_msg__resp__wifi_scan_stop__descriptor,
+    NULL,
+    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "resp_wifi_scan_get_ap_num",
+    544,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_MESSAGE,
+    offsetof(CtrlMsg, payload_case),
+    offsetof(CtrlMsg, resp_wifi_scan_get_ap_num),
+    &ctrl_msg__resp__wifi_scan_get_ap_num__descriptor,
+    NULL,
+    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "resp_wifi_scan_get_ap_records",
+    545,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_MESSAGE,
+    offsetof(CtrlMsg, payload_case),
+    offsetof(CtrlMsg, resp_wifi_scan_get_ap_records),
+    &ctrl_msg__resp__wifi_scan_get_ap_records__descriptor,
+    NULL,
+    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "resp_wifi_clear_ap_list",
+    546,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_MESSAGE,
+    offsetof(CtrlMsg, payload_case),
+    offsetof(CtrlMsg, resp_wifi_clear_ap_list),
+    &ctrl_msg__resp__wifi_clear_ap_list__descriptor,
+    NULL,
+    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
     "event_esp_init",
     769,
     PROTOBUF_C_LABEL_NONE,
@@ -11562,14 +12639,27 @@ static const ProtobufCFieldDescriptor ctrl_msg__field_descriptors[66] =
     0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
+  {
+    "event_sta_scan_done",
+    775,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_MESSAGE,
+    offsetof(CtrlMsg, payload_case),
+    offsetof(CtrlMsg, event_sta_scan_done),
+    &ctrl_msg__event__sta_scan_done__descriptor,
+    NULL,
+    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
 };
 static const unsigned ctrl_msg__field_indices_by_name[] = {
-  63,   /* field[63] = event_ap_sta_connected */
-  64,   /* field[64] = event_ap_sta_disconnected */
-  60,   /* field[60] = event_esp_init */
-  61,   /* field[61] = event_heartbeat */
-  62,   /* field[62] = event_station_disconnect_from_AP */
-  65,   /* field[65] = event_wifi_event_no_args */
+  73,   /* field[73] = event_ap_sta_connected */
+  74,   /* field[74] = event_ap_sta_disconnected */
+  70,   /* field[70] = event_esp_init */
+  71,   /* field[71] = event_heartbeat */
+  76,   /* field[76] = event_sta_scan_done */
+  72,   /* field[72] = event_station_disconnect_from_AP */
+  75,   /* field[75] = event_wifi_event_no_args */
   1,   /* field[1] = msg_id */
   0,   /* field[0] = msg_type */
   22,   /* field[22] = req_config_heartbeat */
@@ -11593,51 +12683,61 @@ static const unsigned ctrl_msg__field_indices_by_name[] = {
   13,   /* field[13] = req_softap_connected_stas_list */
   12,   /* field[12] = req_start_softap */
   14,   /* field[14] = req_stop_softap */
+  35,   /* field[35] = req_wifi_clear_ap_list */
   27,   /* field[27] = req_wifi_connect */
   24,   /* field[24] = req_wifi_deinit */
   28,   /* field[28] = req_wifi_disconnect */
   30,   /* field[30] = req_wifi_get_config */
   23,   /* field[23] = req_wifi_init */
+  33,   /* field[33] = req_wifi_scan_get_ap_num */
+  34,   /* field[34] = req_wifi_scan_get_ap_records */
+  31,   /* field[31] = req_wifi_scan_start */
+  32,   /* field[32] = req_wifi_scan_stop */
   29,   /* field[29] = req_wifi_set_config */
   25,   /* field[25] = req_wifi_start */
   26,   /* field[26] = req_wifi_stop */
-  51,   /* field[51] = resp_config_heartbeat */
-  37,   /* field[37] = resp_connect_ap */
-  38,   /* field[38] = resp_disconnect_ap */
-  36,   /* field[36] = resp_get_ap_config */
-  31,   /* field[31] = resp_get_mac_address */
-  45,   /* field[45] = resp_get_power_save_mode */
-  39,   /* field[39] = resp_get_softap_config */
-  50,   /* field[50] = resp_get_wifi_curr_tx_power */
-  33,   /* field[33] = resp_get_wifi_mode */
-  46,   /* field[46] = resp_ota_begin */
-  48,   /* field[48] = resp_ota_end */
-  47,   /* field[47] = resp_ota_write */
-  35,   /* field[35] = resp_scan_ap_list */
-  32,   /* field[32] = resp_set_mac_address */
-  44,   /* field[44] = resp_set_power_save_mode */
-  40,   /* field[40] = resp_set_softap_vendor_specific_ie */
-  49,   /* field[49] = resp_set_wifi_max_tx_power */
-  34,   /* field[34] = resp_set_wifi_mode */
-  42,   /* field[42] = resp_softap_connected_stas_list */
-  41,   /* field[41] = resp_start_softap */
-  43,   /* field[43] = resp_stop_softap */
-  56,   /* field[56] = resp_wifi_connect */
-  53,   /* field[53] = resp_wifi_deinit */
-  57,   /* field[57] = resp_wifi_disconnect */
-  59,   /* field[59] = resp_wifi_get_config */
-  52,   /* field[52] = resp_wifi_init */
-  58,   /* field[58] = resp_wifi_set_config */
-  54,   /* field[54] = resp_wifi_start */
-  55,   /* field[55] = resp_wifi_stop */
+  56,   /* field[56] = resp_config_heartbeat */
+  42,   /* field[42] = resp_connect_ap */
+  43,   /* field[43] = resp_disconnect_ap */
+  41,   /* field[41] = resp_get_ap_config */
+  36,   /* field[36] = resp_get_mac_address */
+  50,   /* field[50] = resp_get_power_save_mode */
+  44,   /* field[44] = resp_get_softap_config */
+  55,   /* field[55] = resp_get_wifi_curr_tx_power */
+  38,   /* field[38] = resp_get_wifi_mode */
+  51,   /* field[51] = resp_ota_begin */
+  53,   /* field[53] = resp_ota_end */
+  52,   /* field[52] = resp_ota_write */
+  40,   /* field[40] = resp_scan_ap_list */
+  37,   /* field[37] = resp_set_mac_address */
+  49,   /* field[49] = resp_set_power_save_mode */
+  45,   /* field[45] = resp_set_softap_vendor_specific_ie */
+  54,   /* field[54] = resp_set_wifi_max_tx_power */
+  39,   /* field[39] = resp_set_wifi_mode */
+  47,   /* field[47] = resp_softap_connected_stas_list */
+  46,   /* field[46] = resp_start_softap */
+  48,   /* field[48] = resp_stop_softap */
+  69,   /* field[69] = resp_wifi_clear_ap_list */
+  61,   /* field[61] = resp_wifi_connect */
+  58,   /* field[58] = resp_wifi_deinit */
+  62,   /* field[62] = resp_wifi_disconnect */
+  64,   /* field[64] = resp_wifi_get_config */
+  57,   /* field[57] = resp_wifi_init */
+  67,   /* field[67] = resp_wifi_scan_get_ap_num */
+  68,   /* field[68] = resp_wifi_scan_get_ap_records */
+  65,   /* field[65] = resp_wifi_scan_start */
+  66,   /* field[66] = resp_wifi_scan_stop */
+  63,   /* field[63] = resp_wifi_set_config */
+  59,   /* field[59] = resp_wifi_start */
+  60,   /* field[60] = resp_wifi_stop */
 };
 static const ProtobufCIntRange ctrl_msg__number_ranges[4 + 1] =
 {
   { 1, 0 },
   { 257, 2 },
-  { 513, 31 },
-  { 769, 60 },
-  { 0, 66 }
+  { 513, 36 },
+  { 769, 70 },
+  { 0, 77 }
 };
 const ProtobufCMessageDescriptor ctrl_msg__descriptor =
 {
@@ -11647,7 +12747,7 @@ const ProtobufCMessageDescriptor ctrl_msg__descriptor =
   "CtrlMsg",
   "",
   sizeof(CtrlMsg),
-  66,
+  77,
   ctrl_msg__field_descriptors,
   ctrl_msg__field_indices_by_name,
   4,  ctrl_msg__number_ranges,
@@ -11886,7 +12986,7 @@ const ProtobufCEnumDescriptor ctrl_msg_type__descriptor =
   ctrl_msg_type__value_ranges,
   NULL,NULL,NULL,NULL   /* reserved[1234] */
 };
-static const ProtobufCEnumValue ctrl_msg_id__enum_values_by_number[71] =
+static const ProtobufCEnumValue ctrl_msg_id__enum_values_by_number[82] =
 {
   { "MsgId_Invalid", "CTRL_MSG_ID__MsgId_Invalid", 0 },
   { "Req_Base", "CTRL_MSG_ID__Req_Base", 256 },
@@ -11919,7 +13019,12 @@ static const ProtobufCEnumValue ctrl_msg_id__enum_values_by_number[71] =
   { "Req_WifiDisconnect", "CTRL_MSG_ID__Req_WifiDisconnect", 283 },
   { "Req_WifiSetConfig", "CTRL_MSG_ID__Req_WifiSetConfig", 284 },
   { "Req_WifiGetConfig", "CTRL_MSG_ID__Req_WifiGetConfig", 285 },
-  { "Req_Max", "CTRL_MSG_ID__Req_Max", 286 },
+  { "Req_WifiScanStart", "CTRL_MSG_ID__Req_WifiScanStart", 286 },
+  { "Req_WifiScanStop", "CTRL_MSG_ID__Req_WifiScanStop", 287 },
+  { "Req_WifiScanGetApNum", "CTRL_MSG_ID__Req_WifiScanGetApNum", 288 },
+  { "Req_WifiScanGetApRecords", "CTRL_MSG_ID__Req_WifiScanGetApRecords", 289 },
+  { "Req_WifiClearApList", "CTRL_MSG_ID__Req_WifiClearApList", 290 },
+  { "Req_Max", "CTRL_MSG_ID__Req_Max", 291 },
   { "Resp_Base", "CTRL_MSG_ID__Resp_Base", 512 },
   { "Resp_GetMACAddress", "CTRL_MSG_ID__Resp_GetMACAddress", 513 },
   { "Resp_SetMacAddress", "CTRL_MSG_ID__Resp_SetMacAddress", 514 },
@@ -11950,7 +13055,12 @@ static const ProtobufCEnumValue ctrl_msg_id__enum_values_by_number[71] =
   { "Resp_WifiDisconnect", "CTRL_MSG_ID__Resp_WifiDisconnect", 539 },
   { "Resp_WifiSetConfig", "CTRL_MSG_ID__Resp_WifiSetConfig", 540 },
   { "Resp_WifiGetConfig", "CTRL_MSG_ID__Resp_WifiGetConfig", 541 },
-  { "Resp_Max", "CTRL_MSG_ID__Resp_Max", 542 },
+  { "Resp_WifiScanStart", "CTRL_MSG_ID__Resp_WifiScanStart", 542 },
+  { "Resp_WifiScanStop", "CTRL_MSG_ID__Resp_WifiScanStop", 543 },
+  { "Resp_WifiScanGetApNum", "CTRL_MSG_ID__Resp_WifiScanGetApNum", 544 },
+  { "Resp_WifiScanGetApRecords", "CTRL_MSG_ID__Resp_WifiScanGetApRecords", 545 },
+  { "Resp_WifiClearApList", "CTRL_MSG_ID__Resp_WifiClearApList", 546 },
+  { "Resp_Max", "CTRL_MSG_ID__Resp_Max", 547 },
   { "Event_Base", "CTRL_MSG_ID__Event_Base", 768 },
   { "Event_ESPInit", "CTRL_MSG_ID__Event_ESPInit", 769 },
   { "Event_Heartbeat", "CTRL_MSG_ID__Event_Heartbeat", 770 },
@@ -11958,21 +13068,23 @@ static const ProtobufCEnumValue ctrl_msg_id__enum_values_by_number[71] =
   { "Event_AP_StaConnected", "CTRL_MSG_ID__Event_AP_StaConnected", 772 },
   { "Event_AP_StaDisconnected", "CTRL_MSG_ID__Event_AP_StaDisconnected", 773 },
   { "Event_WifiEventNoArgs", "CTRL_MSG_ID__Event_WifiEventNoArgs", 774 },
-  { "Event_Max", "CTRL_MSG_ID__Event_Max", 775 },
+  { "Event_StaScanDone", "CTRL_MSG_ID__Event_StaScanDone", 775 },
+  { "Event_Max", "CTRL_MSG_ID__Event_Max", 776 },
 };
 static const ProtobufCIntRange ctrl_msg_id__value_ranges[] = {
-{0, 0},{256, 1},{512, 32},{768, 63},{0, 71}
+{0, 0},{256, 1},{512, 37},{768, 73},{0, 82}
 };
-static const ProtobufCEnumValueIndex ctrl_msg_id__enum_values_by_name[71] =
+static const ProtobufCEnumValueIndex ctrl_msg_id__enum_values_by_name[82] =
 {
-  { "Event_AP_StaConnected", 67 },
-  { "Event_AP_StaDisconnected", 68 },
-  { "Event_Base", 63 },
-  { "Event_ESPInit", 64 },
-  { "Event_Heartbeat", 65 },
-  { "Event_Max", 70 },
-  { "Event_StationDisconnectFromAP", 66 },
-  { "Event_WifiEventNoArgs", 69 },
+  { "Event_AP_StaConnected", 77 },
+  { "Event_AP_StaDisconnected", 78 },
+  { "Event_Base", 73 },
+  { "Event_ESPInit", 74 },
+  { "Event_Heartbeat", 75 },
+  { "Event_Max", 81 },
+  { "Event_StaScanDone", 80 },
+  { "Event_StationDisconnectFromAP", 76 },
+  { "Event_WifiEventNoArgs", 79 },
   { "MsgId_Invalid", 0 },
   { "Req_Base", 1 },
   { "Req_ConfigHeartbeat", 22 },
@@ -11986,7 +13098,7 @@ static const ProtobufCEnumValueIndex ctrl_msg_id__enum_values_by_name[71] =
   { "Req_GetSoftAPConnectedSTAList", 13 },
   { "Req_GetWifiCurrTxPower", 21 },
   { "Req_GetWifiMode", 4 },
-  { "Req_Max", 31 },
+  { "Req_Max", 36 },
   { "Req_OTABegin", 17 },
   { "Req_OTAEnd", 19 },
   { "Req_OTAWrite", 18 },
@@ -11997,45 +13109,55 @@ static const ProtobufCEnumValueIndex ctrl_msg_id__enum_values_by_name[71] =
   { "Req_SetWifiMode", 5 },
   { "Req_StartSoftAP", 12 },
   { "Req_StopSoftAP", 14 },
+  { "Req_WifiClearApList", 35 },
   { "Req_WifiConnect", 27 },
   { "Req_WifiDeinit", 24 },
   { "Req_WifiDisconnect", 28 },
   { "Req_WifiGetConfig", 30 },
   { "Req_WifiInit", 23 },
+  { "Req_WifiScanGetApNum", 33 },
+  { "Req_WifiScanGetApRecords", 34 },
+  { "Req_WifiScanStart", 31 },
+  { "Req_WifiScanStop", 32 },
   { "Req_WifiSetConfig", 29 },
   { "Req_WifiStart", 25 },
   { "Req_WifiStop", 26 },
-  { "Resp_Base", 32 },
-  { "Resp_ConfigHeartbeat", 53 },
-  { "Resp_ConnectAP", 39 },
-  { "Resp_DisconnectAP", 40 },
-  { "Resp_GetAPConfig", 38 },
-  { "Resp_GetAPScanList", 37 },
-  { "Resp_GetMACAddress", 33 },
-  { "Resp_GetPowerSaveMode", 47 },
-  { "Resp_GetSoftAPConfig", 41 },
-  { "Resp_GetSoftAPConnectedSTAList", 44 },
-  { "Resp_GetWifiCurrTxPower", 52 },
-  { "Resp_GetWifiMode", 35 },
-  { "Resp_Max", 62 },
-  { "Resp_OTABegin", 48 },
-  { "Resp_OTAEnd", 50 },
-  { "Resp_OTAWrite", 49 },
-  { "Resp_SetMacAddress", 34 },
-  { "Resp_SetPowerSaveMode", 46 },
-  { "Resp_SetSoftAPVendorSpecificIE", 42 },
-  { "Resp_SetWifiMaxTxPower", 51 },
-  { "Resp_SetWifiMode", 36 },
-  { "Resp_StartSoftAP", 43 },
-  { "Resp_StopSoftAP", 45 },
-  { "Resp_WifiConnect", 58 },
-  { "Resp_WifiDeinit", 55 },
-  { "Resp_WifiDisconnect", 59 },
-  { "Resp_WifiGetConfig", 61 },
-  { "Resp_WifiInit", 54 },
-  { "Resp_WifiSetConfig", 60 },
-  { "Resp_WifiStart", 56 },
-  { "Resp_WifiStop", 57 },
+  { "Resp_Base", 37 },
+  { "Resp_ConfigHeartbeat", 58 },
+  { "Resp_ConnectAP", 44 },
+  { "Resp_DisconnectAP", 45 },
+  { "Resp_GetAPConfig", 43 },
+  { "Resp_GetAPScanList", 42 },
+  { "Resp_GetMACAddress", 38 },
+  { "Resp_GetPowerSaveMode", 52 },
+  { "Resp_GetSoftAPConfig", 46 },
+  { "Resp_GetSoftAPConnectedSTAList", 49 },
+  { "Resp_GetWifiCurrTxPower", 57 },
+  { "Resp_GetWifiMode", 40 },
+  { "Resp_Max", 72 },
+  { "Resp_OTABegin", 53 },
+  { "Resp_OTAEnd", 55 },
+  { "Resp_OTAWrite", 54 },
+  { "Resp_SetMacAddress", 39 },
+  { "Resp_SetPowerSaveMode", 51 },
+  { "Resp_SetSoftAPVendorSpecificIE", 47 },
+  { "Resp_SetWifiMaxTxPower", 56 },
+  { "Resp_SetWifiMode", 41 },
+  { "Resp_StartSoftAP", 48 },
+  { "Resp_StopSoftAP", 50 },
+  { "Resp_WifiClearApList", 71 },
+  { "Resp_WifiConnect", 63 },
+  { "Resp_WifiDeinit", 60 },
+  { "Resp_WifiDisconnect", 64 },
+  { "Resp_WifiGetConfig", 66 },
+  { "Resp_WifiInit", 59 },
+  { "Resp_WifiScanGetApNum", 69 },
+  { "Resp_WifiScanGetApRecords", 70 },
+  { "Resp_WifiScanStart", 67 },
+  { "Resp_WifiScanStop", 68 },
+  { "Resp_WifiSetConfig", 65 },
+  { "Resp_WifiStart", 61 },
+  { "Resp_WifiStop", 62 },
 };
 const ProtobufCEnumDescriptor ctrl_msg_id__descriptor =
 {
@@ -12044,9 +13166,9 @@ const ProtobufCEnumDescriptor ctrl_msg_id__descriptor =
   "CtrlMsgId",
   "CtrlMsgId",
   "",
-  71,
+  82,
   ctrl_msg_id__enum_values_by_number,
-  71,
+  82,
   ctrl_msg_id__enum_values_by_name,
   4,
   ctrl_msg_id__value_ranges,

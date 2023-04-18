@@ -1,0 +1,163 @@
+menu "Example Configuration"
+
+    config EXAMPLE_SCAN_LIST_SIZE
+        int "Max size of scan list"
+        range 0 20
+        default 10
+        help
+            The size of array that will be used to retrieve the list of access points.
+
+
+	menu "ESP-Hosted config"
+
+	    choice ESP_HOST_INTERFACE
+	        bool "Transport layer"
+	        default ESP_SPI_HOST_INTERFACE if IDF_TARGET_ESP32
+	        default ESP_SPI_HOST_INTERFACE
+	        help
+	            Bus interface to be used for communication with the host
+
+#	        config ESP_SDIO_HOST_INTERFACE
+#	            bool "SDIO interface"
+#	            depends on IDF_TARGET_ESP32
+#	            help
+#	                Enable/Disable SDIO host interface
+
+	        config ESP_SPI_HOST_INTERFACE
+	            bool "SPI interface"
+	            help
+	                Enable/Disable SPI host interface
+	    endchoice
+
+
+		menu "Wi-Fi Config inherited from ESP-IDF"
+
+			config ESP32_WIFI_STATIC_RX_BUFFER_NUM
+    		    int "param static rx buffs"
+    		    default 10
+
+			config ESP32_WIFI_DYNAMIC_RX_BUFFER_NUM
+    		    int "param dynamic rx buffs"
+    		    default 32
+
+			config ESP32_WIFI_TX_BUFFER_TYPE
+    		    int "param tx buff type"
+    		    default 1
+
+			config ESP_WIFI_ESPNOW_MAX_ENCRYPT_NUM
+    		    int "esp now mac encrypt"
+    		    default 2
+
+		endmenu
+
+		menu "SPI Configuration"
+    	    depends on ESP_SPI_HOST_INTERFACE
+
+			menu "GPIOs Config"
+				config ESP_SPI_CONTROLLER
+    			    int "SPI controller to use"
+    			    depends on IDF_TARGET_ESP32 && ESP_SPI_HOST_INTERFACE
+    			    default 2
+    			    range 2 3
+    			    help
+    			        SPI controller to be used. HSPI->2, VSPI->3
+
+
+    			config ESP_SPI_GPIO_MOSI
+    			    int "GPIO pin for MOSI"
+    			    default 12 if IDF_TARGET_ESP32
+    			    default 11 if IDF_TARGET_ESP32S2
+    			    default 11 if IDF_TARGET_ESP32S3
+					default 7
+    			    help
+    			        GPIO pin for SPI MOSI
+
+    			config ESP_SPI_GPIO_MISO
+    			    int "GPIO pin for MISO"
+    			    default 13 if IDF_TARGET_ESP32
+    			    default 13 if IDF_TARGET_ESP32S2
+    			    default 13 if IDF_TARGET_ESP32S3
+					default 2
+    			    help
+    			        GPIO pin for SPI MISO
+
+    			config ESP_SPI_GPIO_CLK
+    			    int "GPIO pin for CLK"
+    			    default 15 if IDF_TARGET_ESP32
+    			    default 12 if IDF_TARGET_ESP32S2
+    			    default 12 if IDF_TARGET_ESP32S3
+					default 6
+    			    help
+    			        GPIO pin for SPI CLK
+
+    			config ESP_SPI_GPIO_CS
+    			    int "GPIO pin for CS"
+    			    default 14 if IDF_TARGET_ESP32
+    			    default 10 if IDF_TARGET_ESP32S2
+    			    default 10 if IDF_TARGET_ESP32S3
+					default 10
+    			    help
+    			        GPIO pin for SPI CS
+
+    			config ESP_SPI_GPIO_HANDSHAKE
+    			    int "GPIO pin for handshake"
+    			    default 3 if IDF_TARGET_ESP32C2
+    			    default 3 if IDF_TARGET_ESP32C3
+    			    default 17
+    			    help
+    			        GPIO pin to use for handshake with other spi controller
+
+    			config ESP_SPI_GPIO_DATA_READY
+    			    int "GPIO pin for data ready interrupt"
+    			    default 4
+    			    help
+    			        GPIO pin for indicating host that SPI slave has data to be read by host
+
+    			config ESP_SPI_GPIO_RESET_SLAVE
+    			    int "GPIO pin for Reseting slave ESP"
+    			    default 5
+    			    help
+    			        GPIO pin for Resetting ESP SPI slave device. Should be connected to RST/EN of ESP SPI slave device.
+			endmenu
+
+    		config ESP_SPI_TX_Q_SIZE
+    		    int "ESP to Host SPI queue size"
+    		    default 10
+    		    help
+    		        Very small tx queue will lower ESP -- SPI --> Host data rate (Only ESP32-C2)
+
+    		config ESP_SPI_RX_Q_SIZE
+    		    int "Host to ESP SPI queue size"
+    		    default 10
+    		    help
+    		        Very small RX queue will lower ESP <-- SPI -- Host data rate (Only ESP32-C2)
+
+		endmenu
+
+		menu "Debug Logs"
+			config SERIAL_LOG_LEVEL
+			int "Print host serial logs (0: No logs) (1: verbose) (2: info)"
+			default 0
+
+			config SPI_LOG_LEVEL
+			int "Print host spi logs (0: No logs) (1: verbose) (2: info)"
+			default 0
+
+			config RPC_LOG_LEVEL
+			int "Print host RPC logs (0: No logs) (1: verbose) (2: info)"
+			default 0
+
+			config TRANSPORT_LOG_LEVEL
+			int "Print host Transport logs (0: No logs) (1: verbose) (2: info)"
+			default 1
+
+		endmenu
+
+		config ESP_CACHE_MALLOC
+    	    bool "Cache allocated memory like mempool - helps to reduce malloc calls"
+    	    default y
+    	    help
+    	        Cache allocated memory - reduces number of malloc calls
+	endmenu
+
+endmenu

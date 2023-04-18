@@ -169,6 +169,11 @@ esp_err_t esp_wifi_set_config(int interface, wifi_config_t *conf)
 	return test_wifi_set_config(interface, conf);
 }
 
+esp_err_t esp_wifi_get_config(int interface, wifi_config_t *conf)
+{
+	return test_wifi_get_config(interface, conf);
+}
+
 esp_err_t esp_wifi_get_mac(wifi_interface_t ifx, uint8_t mac[6])
 {
 	return test_wifi_get_mac_addr(ifx, mac);
@@ -179,3 +184,29 @@ esp_err_t esp_wifi_set_mac(wifi_interface_t ifx, uint8_t mac[6])
 	return test_wifi_set_mac_addr(ifx, mac);
 }
 
+esp_err_t esp_wifi_scan_start(wifi_scan_config_t *config, bool block)
+{
+	printf("scan start\n");
+	return test_wifi_scan_start(config, block);
+}
+
+esp_err_t esp_wifi_scan_stop(void)
+{
+	printf("scan stop\n");
+	return test_wifi_scan_stop();
+}
+
+esp_err_t esp_wifi_scan_get_ap_num(uint16_t *number)
+{
+	return test_wifi_scan_get_ap_num(number);
+}
+
+esp_err_t esp_wifi_scan_get_ap_records(uint16_t *number, wifi_ap_record_t *ap_records)
+{
+	return test_wifi_scan_get_ap_records(number, ap_records);
+}
+
+esp_err_t esp_wifi_clear_ap_list(void)
+{
+	return test_wifi_clear_ap_list();
+}

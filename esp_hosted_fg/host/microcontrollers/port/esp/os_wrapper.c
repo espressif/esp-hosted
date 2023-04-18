@@ -41,6 +41,9 @@ void * hosted_memcpy(void* dest, void* src, uint32_t size)
 			printf("%s:%u dest is NULL\n", __func__, __LINE__);
 		if (!src)
 			printf("%s:%u dest is NULL\n", __func__, __LINE__);
+
+		assert(dest);
+		assert(src);
 		return NULL;
 	}
 
