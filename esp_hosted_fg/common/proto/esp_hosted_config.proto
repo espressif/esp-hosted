@@ -332,9 +332,15 @@ enum CtrlMsgId {
 	Req_WifiSetConfig = 284; //0x11c
 	Req_WifiGetConfig = 285; //0x11d
 
+	Req_WifiScanStart = 286; //0x11e
+	Req_WifiScanStop = 287; //0x11f
+	Req_WifiScanGetApNum = 288; //0x120
+	Req_WifiScanGetApRecords = 289; //0x121
+	Req_WifiClearApList = 290;
+
 	/* Add new control path command response before Req_Max
 	 * and update Req_Max */
-	Req_Max = 286;
+	Req_Max = 291;
 
 	/** Response Msgs **/
 	Resp_Base = 512;
@@ -376,9 +382,15 @@ enum CtrlMsgId {
 	Resp_WifiSetConfig = 540;
 	Resp_WifiGetConfig = 541;
 
+	Resp_WifiScanStart = 542;
+	Resp_WifiScanStop = 543;
+	Resp_WifiScanGetApNum = 544;
+	Resp_WifiScanGetApRecords = 545;
+	Resp_WifiClearApList = 546;
+
 	/* Add new control path command response before Resp_Max
 	 * and update Resp_Max */
-	Resp_Max = 542;
+	Resp_Max = 547;
 
 	/** Event Msgs **/
 	Event_Base = 768;
@@ -388,10 +400,11 @@ enum CtrlMsgId {
 	Event_AP_StaConnected = 772;
 	Event_AP_StaDisconnected = 773;
 	Event_WifiEventNoArgs = 774;
+	Event_StaScanDone = 775;
 
 	/* Add new control path command notification before Event_Max
 	 * and update Event_Max */
-	Event_Max = 775;
+	Event_Max = 776;
 }
 
 message wifi_init_config {
@@ -446,6 +459,7 @@ message wifi_scan_config {
 	bool           show_hidden = 4;             /**< enable to scan AP whose SSID is hidden */
 	int32          scan_type = 5;               /**< scan type, active or passive */
 	wifi_scan_time scan_time = 6;               /**< scan time per channel */
+	bool           block = 7;
 }
 
 message wifi_ap_record {
@@ -755,10 +769,10 @@ message wifi_event_ap_wps_rg_success {
 
 /* internal supporting structures for CtrlMsg */
 message ScanResult {
-	bytes ssid = 1;
-	uint32 chnl = 2;
-	int32 rssi = 3;
-	bytes bssid = 4;
+	bytes bssid = 1;
+	bytes ssid = 2;
+	uint32 chnl = 3;
+	int32 rssi = 4;
 	int32 sec_prot = 5;
 }
 
@@ -1013,12 +1027,56 @@ message CtrlMsg_Resp_WifiStop {
 	int32 resp = 1;
 }
 
+message CtrlMsg_Req_WifiScanStart {
+	wifi_scan_config config = 1;
+	bool block = 2;
+	int32 config_set = 3;
+}
+
+message CtrlMsg_Resp_WifiScanStart {
+	int32 resp = 1;
+}
+
+message CtrlMsg_Req_WifiScanStop {
+}
+
+message CtrlMsg_Resp_WifiScanStop {
+	int32 resp = 1;
+}
+
+message CtrlMsg_Req_WifiScanGetApNum {
+}
+
+message CtrlMsg_Resp_WifiScanGetApNum {
+	int32 resp = 1;
+	int32 number = 2;
+}
+
+message CtrlMsg_Req_WifiScanGetApRecords {
+	int32 number = 1;
+}
+
+message CtrlMsg_Resp_WifiScanGetApRecords {
+	int32 resp = 1;
+	int32 number = 2;
+	repeated wifi_ap_record ap_records = 3;
+}
+
+message CtrlMsg_Req_WifiClearApList {
+}
+
+message CtrlMsg_Resp_WifiClearApList {
+	int32 resp = 1;
+}
+
+
+/** Event structure **/
+
 message CtrlMsg_Event_WifiEventNoArgs {
 	int32 resp = 1;
 	int32 event_id = 2;
 }
 
-/** Event structure **/
 message CtrlMsg_Event_ESPInit {
 	bytes init_data = 1;
 }
@@ -1045,6 +1103,12 @@ message CtrlMsg_Event_AP_StaConnected {
 	bytes mac = 3;
     uint32 aid = 4;
     bool is_mesh_child = 5;
+}
+
+message CtrlMsg_Event_StaScanDone {
+	int32 resp = 1;
+    int32 event_id = 2;
+	wifi_event_sta_scan_done scan_done = 3;
 }
 
 message CtrlMsg {
@@ -1093,6 +1157,12 @@ message CtrlMsg {
 		CtrlMsg_Req_WifiSetConfig req_wifi_set_config = 284;
 		CtrlMsg_Req_WifiGetConfig req_wifi_get_config = 285;
 
+		CtrlMsg_Req_WifiScanStart req_wifi_scan_start = 286;
+		CtrlMsg_Req_WifiScanStop req_wifi_scan_stop = 287;
+		CtrlMsg_Req_WifiScanGetApNum req_wifi_scan_get_ap_num = 288;
+		CtrlMsg_Req_WifiScanGetApRecords req_wifi_scan_get_ap_records = 289;
+		CtrlMsg_Req_WifiClearApList req_wifi_clear_ap_list = 290;
+
 		/** Responses **/
 		CtrlMsg_Resp_GetMacAddress resp_get_mac_address = 513;
 		CtrlMsg_Resp_SetMacAddress resp_set_mac_address = 514;
@@ -1129,6 +1199,12 @@ message CtrlMsg {
 		CtrlMsg_Resp_WifiSetConfig resp_wifi_set_config = 540;
 		CtrlMsg_Resp_WifiGetConfig resp_wifi_get_config = 541;
 
+		CtrlMsg_Resp_WifiScanStart resp_wifi_scan_start = 542;
+		CtrlMsg_Resp_WifiScanStop resp_wifi_scan_stop = 543;
+		CtrlMsg_Resp_WifiScanGetApNum resp_wifi_scan_get_ap_num = 544;
+		CtrlMsg_Resp_WifiScanGetApRecords resp_wifi_scan_get_ap_records = 545;
+		CtrlMsg_Resp_WifiClearApList resp_wifi_clear_ap_list = 546;
+
 		/** Notifications **/
 		CtrlMsg_Event_ESPInit event_esp_init = 769;
 		CtrlMsg_Event_Heartbeat event_heartbeat = 770;
@@ -1136,6 +1212,7 @@ message CtrlMsg {
 		CtrlMsg_Event_AP_StaConnected event_ap_sta_connected = 772;
 		CtrlMsg_Event_AP_StaDisconnected event_ap_sta_disconnected = 773;
 		CtrlMsg_Event_WifiEventNoArgs event_wifi_event_no_args = 774;
+		CtrlMsg_Event_StaScanDone event_sta_scan_done = 775;
 	}
 }
 

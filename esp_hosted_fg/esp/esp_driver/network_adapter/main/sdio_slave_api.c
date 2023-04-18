@@ -197,6 +197,9 @@ static interface_handle_t * sdio_init(void)
 		   bus in your real design.
 		   */
 		//.flags              = SDIO_SLAVE_FLAG_INTERNAL_PULLUP,
+#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 0, 0)
+		.flags              = SDIO_SLAVE_FLAG_DEFAULT_SPEED,
+#endif
 		/* Note: Sometimes the SDIO card is detected but gets problem in
 		 * Read/Write or handling ISR because of SDIO timing issues.
 		 * In these cases, Please tune timing below using value from

@@ -13,7 +13,9 @@
 #include <stdbool.h>
 #include "ctrl_api.h"
 
+#ifndef BIT
 #define BIT(n) (1UL << (n))
+#endif
 
 #define MAX_SSID_LENGTH              32
 #define MIN_PWD_LENGTH               8

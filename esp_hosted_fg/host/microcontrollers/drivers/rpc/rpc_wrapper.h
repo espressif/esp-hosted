@@ -41,8 +41,6 @@ typedef enum control_path_events_s {
 	SOFTAP_STOPPED
 } control_path_events_e;
 
-#define MACSTR "%02x:%02x:%02x:%02x:%02x:%02x"
-#define MAC2STR(a) (a)[0], (a)[1], (a)[2], (a)[3], (a)[4], (a)[5]
 
 /** Exported variables **/
 
@@ -81,6 +79,12 @@ int test_wifi_set_config(int interface, wifi_config_t *conf);
 int test_wifi_get_config(int interface, wifi_config_t *conf);
 int test_wifi_get_mac_addr(int mode, uint8_t *out_mac);
 int test_wifi_set_mac_addr(int mode, uint8_t *mac);
+
+int test_wifi_scan_start(wifi_scan_config_t *config, bool block);
+int test_wifi_scan_stop(void);
+int test_wifi_scan_get_ap_num(uint16_t *number);
+int test_wifi_scan_get_ap_records(uint16_t *number, wifi_ap_record_t *ap_records);
+int test_wifi_clear_ap_list(void);
 
 #ifdef __cplusplus
 }

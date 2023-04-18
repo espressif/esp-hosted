@@ -64,6 +64,19 @@
         }
 
 
+#define NTFY_TEMPLATE(NtFy_MsgId, NtFy_TyPe, NtFy_StRuCt, InIt_FuN)             \
+	NtFy_TyPe *ntfy_payload = NULL;                                             \
+	ntfy_payload = (NtFy_TyPe*)calloc(1,sizeof(NtFy_TyPe));                     \
+	if (!ntfy_payload) {                                                        \
+		ESP_LOGE(TAG,"Failed to allocate memory");                              \
+		return ESP_ERR_NO_MEM;                                                  \
+	}                                                                           \
+	InIt_FuN(ntfy_payload);                                                     \
+	ntfy->payload_case = NtFy_MsgId;                                            \
+	ntfy->NtFy_StRuCt = ntfy_payload;                                           \
+	ntfy_payload->resp = SUCCESS;                                               \
+	ntfy_payload->event_id = event_id;
+
 #define CTRL_TEMPLATE(RspTyPe, RspStRuCt, ReqType, ReqStruct, InIt_FuN)         \
   RspTyPe *resp_payload = NULL;                                                 \
   ReqType *req_payload = NULL;                                                  \
@@ -103,10 +116,12 @@
 
 #define CTRL_RET_FAIL_IF(ConDiTiOn)                                             \
   if (ConDiTiOn) {                                                              \
-    resp_payload->resp = FAILURE;                                               \
+    resp_payload->resp = (ConDiTiOn);                                               \
     ESP_LOGE(TAG, "%s:%u failed [%s] = [%d]", __func__,__LINE__,#ConDiTiOn, ConDiTiOn); \
     return ESP_OK;                                                              \
   }
+
+#if 0
 
 #define CTRL_ALLOC_ELEMENT(TypE, StrucTNamE)                                    \
   StrucTNamE = (TypE *)calloc(1, sizeof(TypE));                                 \
@@ -114,6 +129,30 @@
       ESP_LOGE(TAG, "Failed to alloc mem for resp.%s\n",#StrucTNamE);           \
       return ESP_ERR_NO_MEM;                                                    \
   }                                                                             \
+
+#endif
+
+#define CTRL_ALLOC_ELEMENT(TyPe,MsG_StRuCt,InIt_FuN) {                        \
+    TyPe *NeW_AllocN = (TyPe *)calloc(1, sizeof(TyPe));                       \
+    if (!NeW_AllocN) {                                                        \
+        ESP_LOGI(TAG,"Failed to allocate memory for req.%s\n",#MsG_StRuCt);   \
+        resp_payload->resp = CTRL_ERR_MEMORY_FAILURE;                         \
+		goto err;                                                             \
+    }                                                                         \
+    MsG_StRuCt = NeW_AllocN;                                                  \
+    InIt_FuN(MsG_StRuCt);                                                     \
+}
+
+#define NTFY_ALLOC_ELEMENT(TyPe,MsG_StRuCt,InIt_FuN) {                        \
+    TyPe *NeW_AllocN = (TyPe *)calloc(1, sizeof(TyPe));                       \
+    if (!NeW_AllocN) {                                                        \
+        ESP_LOGI(TAG,"Failed to allocate memory for req.%s\n",#MsG_StRuCt);   \
+        ntfy_payload->resp = CTRL_ERR_MEMORY_FAILURE;                         \
+		goto err;                                                             \
+    }                                                                         \
+    MsG_StRuCt = NeW_AllocN;                                                  \
+    InIt_FuN(MsG_StRuCt);                                                     \
+}
 
 #if 0
 #define CTRL_REQ_COPY_STR(dest, src)                                            \
@@ -144,6 +183,7 @@
       resp_payload->resp = FAILURE;                                             \
       return ESP_OK;                                                            \
     }                                                                           \
+	dest.len = min(max_len,strlen((char*)src)+1);                               \
   }
 
 #define CTRL_RESP_COPY_BYTES_SRC_UNCHECKED(dest, src, num)                      \
@@ -526,6 +566,7 @@ static esp_err_t req_connect_ap_handler (CtrlMsg *req,
 	EventBits_t bits = {0};
 	int retry = 0;
 
+#if 0
 	if (!req || !resp || !req->req_connect_ap) {
 		ESP_LOGE(TAG, "Invalid parameters");
 		return ESP_FAIL;
@@ -710,6 +751,7 @@ err:
 		xEventGroupClearBits(wifi_event_group,
 			(WIFI_CONNECTED_BIT | WIFI_FAIL_BIT | WIFI_HOST_REQUEST_BIT |
 			 WIFI_NO_AP_FOUND_BIT | WIFI_WRONG_PASSWORD_BIT));
+#endif
 	return ESP_OK;
 }
 
@@ -872,6 +914,7 @@ static esp_err_t req_get_softap_config_handler (CtrlMsg *req,
 	credentials_t credentials = {0};
 	wifi_config_t get_conf = {0};
 	CtrlMsgRespGetSoftAPConfig *resp_payload = NULL;
+#if 0
 
 	if (!req || !resp) {
 		ESP_LOGE(TAG, "Invalid parameters");
@@ -956,6 +999,7 @@ static esp_err_t req_get_softap_config_handler (CtrlMsg *req,
 
 err:
 	resp_payload->resp = FAILURE;
+#endif
 	return ESP_OK;
 }
 
@@ -968,6 +1012,7 @@ static esp_err_t req_start_softap_handler (CtrlMsg *req,
 	uint8_t mac[BSSID_BYTES_SIZE] = {0};
 	wifi_config_t *wifi_config = NULL;
 	CtrlMsgRespStartSoftAP *resp_payload = NULL;
+#if 0
 
 	if (!req || !resp || !req->req_start_softap) {
 		ESP_LOGE(TAG, "Invalid parameters");
@@ -1092,6 +1137,7 @@ err:
 	}
 	resp_payload->resp = FAILURE;
 	mem_free(wifi_config);
+#endif
 	return ESP_OK;
 }
 
@@ -1109,6 +1155,7 @@ static esp_err_t req_get_ap_scan_list_handler (CtrlMsg *req,
 	wifi_scan_config_t scanConf = {
 		.show_hidden = true
 	};
+#if 0
 
 	if (!req || !resp) {
 		ESP_LOGE(TAG, "Invalid parameters");
@@ -1251,6 +1298,7 @@ err:
 	resp_payload->resp = FAILURE;
 	mem_free(ap_info);
 	ap_scan_list_event_unregister();
+#endif
 	return ESP_OK;
 }
 
@@ -1261,6 +1309,7 @@ static esp_err_t req_stop_softap_handler (CtrlMsg *req,
 	esp_err_t ret = ESP_OK;
 	wifi_mode_t mode = 0;
 	CtrlMsgRespGetStatus *resp_payload = NULL;
+#if 0
 
 	if (!req || !resp) {
 		ESP_LOGE(TAG, "Invalid parameters");
@@ -1306,6 +1355,7 @@ static esp_err_t req_stop_softap_handler (CtrlMsg *req,
 
 err:
 	resp_payload->resp = FAILURE;
+#endif
 	return ESP_OK;
 }
 
@@ -1319,6 +1369,7 @@ static esp_err_t get_connected_sta_list_handler (CtrlMsg *req,
 	CtrlMsgRespSoftAPConnectedSTA *resp_payload = NULL;
 	ConnectedSTAList **results = NULL;
 	wifi_sta_list_t *stas_info = NULL;
+#if 0
 
 	if (!req || !resp) {
 		ESP_LOGE(TAG, "Invalid parameters");
@@ -1412,6 +1463,7 @@ static esp_err_t get_connected_sta_list_handler (CtrlMsg *req,
 err:
 	resp_payload->resp = FAILURE;
 	mem_free(stas_info);
+#endif
 	return ESP_OK;
 }
 
@@ -1979,6 +2031,11 @@ static void event_handler(void* arg, esp_event_base_t event_base,
 					MAC2STR(event->mac), event->aid);
 			send_event_data_to_host(CTRL_MSG_ID__Event_AP_StaDisconnected,
 					event_data, sizeof(wifi_event_ap_stadisconnected_t));
+		} else if (event_id == WIFI_EVENT_SCAN_DONE) {
+			//wifi_event_sta_scan_done_t event = (wifi_event_sta_scan_done_t*) event_data;
+			ESP_LOGI(TAG, "Wi-Fi sta scan done");
+			send_event_data_to_host(CTRL_MSG_ID__Event_StaScanDone,
+					event_data, sizeof(wifi_event_sta_scan_done_t));
 		} else {
 
 			if (event_id == WIFI_EVENT_STA_CONNECTED) {
@@ -2137,7 +2194,6 @@ static esp_err_t req_wifi_set_config(CtrlMsg *req, CtrlMsg *resp, void *priv_dat
 		p_a_sta->bssid_set = p_c_sta->bssid_set;
 
 		if (p_a_sta->bssid_set)
-			//CTRL_REQ_COPY_BSSID(p_a_sta->bssid, p_c_sta->bssid);
 			CTRL_REQ_COPY_BYTES(p_a_sta->bssid, p_c_sta->bssid, BSSID_BYTES_SIZE);
 
 		p_a_sta->channel = p_c_sta->channel;
@@ -2271,6 +2327,203 @@ static esp_err_t req_wifi_get_config(CtrlMsg *req, CtrlMsg *resp, void *priv_dat
 	return ESP_OK;
 }
 
+static esp_err_t req_wifi_scan_start(CtrlMsg *req, CtrlMsg *resp, void *priv_data)
+{
+	wifi_scan_config_t scan_conf = {0};
+	WifiScanConfig *p_c = NULL;
+	WifiScanTime *p_c_st = NULL;
+	wifi_scan_config_t * p_a = &scan_conf;
+	wifi_scan_time_t *p_a_st = &p_a->scan_time;
+
+    CTRL_TEMPLATE(CtrlMsgRespWifiScanStart, resp_wifi_scan_start,
+			CtrlMsgReqWifiScanStart, req_wifi_scan_start,
+			ctrl_msg__resp__wifi_scan_start__init);
+
+	p_c = req_payload->config;
+
+	if (!req_payload->config || !req_payload->config_set) {
+		p_a = NULL;
+	} else {
+		//CTRL_REQ_COPY_STR(p_a->ssid, p_c->ssid, SSID_LENGTH);
+		//CTRL_REQ_COPY_STR(p_a->bssid, p_c->ssid, MAC_SIZE_BYTES);
+
+		/* Note these are only pointers, not allocating memory for that */
+		if (p_c->ssid.len)
+			p_a->ssid = p_c->ssid.data;
+		if (p_c->bssid.len)
+			p_a->bssid = p_c->bssid.data;
+
+		p_a->channel = p_c->channel;
+		p_a->show_hidden = p_c->show_hidden;
+		p_a->scan_type = p_c->scan_type;
+
+		p_c_st = p_c->scan_time;
+
+		p_a_st->passive = p_c_st->passive;
+		p_a_st->active.min = p_c_st->active->min ;
+		p_a_st->active.max = p_c_st->active->max ;
+	}
+
+    CTRL_RET_FAIL_IF(esp_wifi_scan_start(p_a, req_payload->block));
+
+	return ESP_OK;
+}
+
+static esp_err_t req_wifi_scan_stop(CtrlMsg *req, CtrlMsg *resp, void *priv_data)
+{
+    CTRL_TEMPLATE_SIMPLE(CtrlMsgRespWifiScanStop, resp_wifi_scan_stop,
+			CtrlMsgReqWifiScanStop, req_wifi_scan_stop,
+			ctrl_msg__resp__wifi_scan_stop__init);
+
+    CTRL_RET_FAIL_IF(esp_wifi_scan_stop());
+	return ESP_OK;
+}
+
+static esp_err_t req_wifi_scan_get_ap_num(CtrlMsg *req, CtrlMsg *resp, void *priv_data)
+{
+	uint16_t number = 0;
+	int ret = 0;
+
+    CTRL_TEMPLATE_SIMPLE(CtrlMsgRespWifiScanGetApNum, resp_wifi_scan_get_ap_num,
+			CtrlMsgReqWifiScanGetApNum, req_wifi_scan_get_ap_num,
+			ctrl_msg__resp__wifi_scan_get_ap_num__init);
+
+	ret = esp_wifi_scan_get_ap_num(&number);
+    CTRL_RET_FAIL_IF(ret);
+
+	resp_payload->number = number;
+
+	return ESP_OK;
+}
+
+static esp_err_t req_wifi_scan_get_ap_records(CtrlMsg *req, CtrlMsg *resp, void *priv_data)
+{
+	uint16_t number = 0;
+	uint16_t ap_count = 0;
+	int ret = 0;
+	uint16_t i;
+
+	wifi_ap_record_t *p_a_ap_list = NULL;
+	WifiApRecord *p_c_ap_record = NULL;
+	WifiCountry * p_c_country = NULL;
+	wifi_country_t * p_a_country = NULL;
+
+    CTRL_TEMPLATE_SIMPLE(CtrlMsgRespWifiScanGetApRecords, resp_wifi_scan_get_ap_records,
+			CtrlMsgReqWifiScanGetApRecords, req_wifi_scan_get_ap_records,
+			ctrl_msg__resp__wifi_scan_get_ap_records__init);
+
+	number = req->req_wifi_scan_get_ap_records->number;
+	ESP_LOGI(TAG,"n_elem_scan_list predicted: %u\n", number);
+
+
+
+	p_a_ap_list = (wifi_ap_record_t *)calloc(number, sizeof(wifi_ap_record_t));
+	CTRL_RET_FAIL_IF(!p_a_ap_list);
+
+
+	ret = esp_wifi_scan_get_ap_num(&ap_count);
+	if (ret || !ap_count) {
+		ESP_LOGE(TAG,"esp_wifi_scan_get_ap_num: ret: %d num_ap_scanned:%u", ret, number);
+		goto err;
+	}
+	if (number < ap_count) {
+		ESP_LOGI(TAG,"n_elem_scan_list wants to return: %u Limit to %u\n", ap_count, number);
+	}
+
+	ret = esp_wifi_scan_get_ap_records(&number, p_a_ap_list);
+    if(ret) {
+		ESP_LOGE(TAG,"Failed to scan ap records");
+		goto err;
+	}
+
+
+	resp_payload->number = number;
+	resp_payload->ap_records = (WifiApRecord**)calloc(number, sizeof(WifiApRecord));
+	if (!resp_payload->ap_records) {
+		ESP_LOGE(TAG,"resp: malloc failed for resp_payload->ap_records");
+		goto err;
+	}
+
+	for (i=0;i<number;i++) {
+		printf("\n\nap_record[%u]:\n", i+1);
+		CTRL_ALLOC_ELEMENT(WifiApRecord, resp_payload->ap_records[i], wifi_ap_record__init);
+		CTRL_ALLOC_ELEMENT(WifiCountry, resp_payload->ap_records[i]->country, wifi_country__init);
+		p_c_ap_record = resp_payload->ap_records[i];
+		p_c_country = p_c_ap_record->country;
+		p_a_country = &p_a_ap_list[i].country;
+		printf("Ssid: %s\nBssid: "MACSTR"\nPrimary: %u\nSecond: %u\nRssi: %d\nAuthmode: %u\nPairwiseCipher: %u\nGroupcipher: %u\nAnt: %u\nBitmask:\t11b:%u g:%u n:%u lr:%u wps:%u ftm_resp:%u ftm_ini:%u res: %u\n",
+			p_a_ap_list[i].ssid, MAC2STR(p_a_ap_list[i].bssid),
+			p_a_ap_list[i].primary, p_a_ap_list[i].second,
+			p_a_ap_list[i].rssi, p_a_ap_list[i].authmode,
+			p_a_ap_list[i].pairwise_cipher, p_a_ap_list[i].group_cipher,
+			p_a_ap_list[i].ant, p_a_ap_list[i].phy_11b, p_a_ap_list[i].phy_11g,
+			p_a_ap_list[i].phy_11n, p_a_ap_list[i].phy_lr,
+			p_a_ap_list[i].wps, p_a_ap_list[i].ftm_responder,
+			p_a_ap_list[i].ftm_initiator, p_a_ap_list[i].reserved
+			);
+		CTRL_RESP_COPY_STR(p_c_ap_record->ssid, p_a_ap_list[i].ssid, SSID_LENGTH);
+		CTRL_RESP_COPY_BYTES(p_c_ap_record->bssid, p_a_ap_list[i].bssid, BSSID_BYTES_SIZE);
+		p_c_ap_record->primary = p_a_ap_list[i].primary;
+		p_c_ap_record->second = p_a_ap_list[i].second;
+		p_c_ap_record->rssi = p_a_ap_list[i].rssi;
+		p_c_ap_record->authmode = p_a_ap_list[i].authmode;
+		p_c_ap_record->pairwise_cipher = p_a_ap_list[i].pairwise_cipher;
+		p_c_ap_record->group_cipher = p_a_ap_list[i].group_cipher;
+		p_c_ap_record->ant = p_a_ap_list[i].ant;
+
+		/*Bitmask*/
+		if (p_a_ap_list[i].phy_11b)
+			SET_BIT(WIFI_SCAN_AP_REC_phy_11b_BIT,p_c_ap_record->bitmask);
+
+		if (p_a_ap_list[i].phy_11g)
+			SET_BIT(WIFI_SCAN_AP_REC_phy_11g_BIT,p_c_ap_record->bitmask);
+
+		if (p_a_ap_list[i].phy_11n)
+			SET_BIT(WIFI_SCAN_AP_REC_phy_11n_BIT,p_c_ap_record->bitmask);
+
+		if (p_a_ap_list[i].phy_lr)
+			SET_BIT(WIFI_SCAN_AP_REC_phy_lr_BIT,p_c_ap_record->bitmask);
+
+		if (p_a_ap_list[i].wps)
+			SET_BIT(WIFI_SCAN_AP_REC_wps_BIT,p_c_ap_record->bitmask);
+
+		if (p_a_ap_list[i].ftm_responder)
+			SET_BIT(WIFI_SCAN_AP_REC_ftm_responder_BIT,p_c_ap_record->bitmask);
+
+		if (p_a_ap_list[i].ftm_initiator)
+			SET_BIT(WIFI_SCAN_AP_REC_ftm_initiator_BIT,p_c_ap_record->bitmask);
+
+		WIFI_SCAN_AP_SET_RESERVED_VAL(p_a_ap_list[i].reserved, p_c_ap_record->bitmask);
+
+		/* country */
+		CTRL_RESP_COPY_BYTES(p_c_country->cc, p_a_country->cc, sizeof(p_a_country->cc));
+		p_c_country->schan = p_a_country->schan;
+		p_c_country->nchan = p_a_country->nchan;
+		p_c_country->max_tx_power = p_a_country->max_tx_power;
+		p_c_country->policy = p_a_country->policy;
+
+		printf("Country:\tcc:%s schan: %u nchan: %u max_tx_pow: %d policy: %u\n",
+			p_a_country->cc, p_a_country->schan, p_a_country->nchan,
+			p_a_country->max_tx_power,p_a_country->policy);
+		/* increment num of records in ctrl msg */
+		resp_payload->n_ap_records++;
+	}
+
+err:
+	mem_free(p_a_ap_list);
+	return ESP_OK;
+}
+
+static esp_err_t req_wifi_clear_ap_list(CtrlMsg *req, CtrlMsg *resp, void *priv_data)
+{
+    CTRL_TEMPLATE_SIMPLE(CtrlMsgRespWifiClearApList, resp_wifi_clear_ap_list,
+			CtrlMsgReqWifiClearApList, req_wifi_clear_ap_list,
+			ctrl_msg__resp__wifi_clear_ap_list__init);
+
+    CTRL_RET_FAIL_IF(esp_wifi_clear_ap_list());
+	return ESP_OK;
+}
+
 #if 0
 static esp_err_t req_wifi_(CtrlMsg *req, CtrlMsg *resp, void *priv_data)
 {
@@ -2400,6 +2653,26 @@ static esp_ctrl_msg_req_t req_table[] = {
 	{
 		.req_num = CTRL_MSG_ID__Req_WifiGetConfig,
 		.command_handler = req_wifi_get_config
+	},
+	{
+		.req_num = CTRL_MSG_ID__Req_WifiScanStart,
+		.command_handler = req_wifi_scan_start
+	},
+	{
+		.req_num = CTRL_MSG_ID__Req_WifiScanStop,
+		.command_handler = req_wifi_scan_stop
+	},
+	{
+		.req_num = CTRL_MSG_ID__Req_WifiScanGetApNum,
+		.command_handler = req_wifi_scan_get_ap_num
+	},
+	{
+		.req_num = CTRL_MSG_ID__Req_WifiScanGetApRecords,
+		.command_handler = req_wifi_scan_get_ap_records
+	},
+	{
+		.req_num = CTRL_MSG_ID__Req_WifiClearApList,
+		.command_handler = req_wifi_clear_ap_list
 	},
 };
 
@@ -2555,23 +2828,6 @@ static void esp_ctrl_msg_cleanup(CtrlMsg *resp)
 		} case (CTRL_MSG_ID__Resp_ConfigHeartbeat) : {
 			mem_free(resp->resp_config_heartbeat);
 			break;
-		} case (CTRL_MSG_ID__Event_ESPInit) : {
-			mem_free(resp->event_esp_init);
-			break;
-		} case (CTRL_MSG_ID__Event_Heartbeat) : {
-			mem_free(resp->event_heartbeat);
-			break;
-		} case (CTRL_MSG_ID__Event_StationDisconnectFromAP) : {
-			mem_free(resp->event_station_disconnect_from_ap);
-			break;
-		} case (CTRL_MSG_ID__Event_AP_StaConnected) : {
-			//mem_free(resp->event_ap_sta_connected->mac.data);
-			mem_free(resp->event_ap_sta_connected);
-			break;
-		} case (CTRL_MSG_ID__Event_AP_StaDisconnected) : {
-			//mem_free(resp->event_ap_sta_disconnected->mac.data);
-			mem_free(resp->event_ap_sta_disconnected);
-			break;
 		} case (CTRL_MSG_ID__Resp_WifiInit) : {
 			mem_free(resp->resp_wifi_init);
 			break;
@@ -2606,6 +2862,52 @@ static void esp_ctrl_msg_cleanup(CtrlMsg *resp)
 			}
 			mem_free(resp->resp_wifi_get_config->cfg);
 			mem_free(resp->resp_wifi_get_config);
+			break;
+
+		} case CTRL_MSG_ID__Resp_WifiScanStart: {
+			mem_free(resp->resp_wifi_scan_start);
+			break;
+		} case CTRL_MSG_ID__Resp_WifiScanStop: {
+			mem_free(resp->resp_wifi_scan_stop);
+			break;
+		} case CTRL_MSG_ID__Resp_WifiScanGetApNum: {
+			mem_free(resp->resp_wifi_scan_get_ap_num);
+			break;
+		} case CTRL_MSG_ID__Resp_WifiScanGetApRecords: {
+			if (resp->resp_wifi_scan_get_ap_records->ap_records)
+				for (int i=0 ; i<resp->resp_scan_ap_list->n_entries; i++) {
+					mem_free(resp->resp_wifi_scan_get_ap_records->ap_records[i]->ssid.data);
+					mem_free(resp->resp_wifi_scan_get_ap_records->ap_records[i]->bssid.data);
+					mem_free(resp->resp_wifi_scan_get_ap_records->ap_records[i]->country->cc.data);
+					mem_free(resp->resp_wifi_scan_get_ap_records->ap_records[i]->country);
+					mem_free(resp->resp_wifi_scan_get_ap_records->ap_records[i]);
+				}
+			mem_free(resp->resp_wifi_scan_get_ap_records->ap_records);
+			mem_free(resp->resp_wifi_scan_get_ap_records);
+			break;
+		} case CTRL_MSG_ID__Resp_WifiClearApList: {
+			mem_free(resp->resp_wifi_clear_ap_list);
+			break;
+		} case (CTRL_MSG_ID__Event_ESPInit) : {
+			mem_free(resp->event_esp_init);
+			break;
+		} case (CTRL_MSG_ID__Event_Heartbeat) : {
+			mem_free(resp->event_heartbeat);
+			break;
+		} case (CTRL_MSG_ID__Event_StationDisconnectFromAP) : {
+			mem_free(resp->event_station_disconnect_from_ap);
+			break;
+		} case (CTRL_MSG_ID__Event_AP_StaConnected) : {
+			//mem_free(resp->event_ap_sta_connected->mac.data);
+			mem_free(resp->event_ap_sta_connected);
+			break;
+		} case (CTRL_MSG_ID__Event_AP_StaDisconnected) : {
+			//mem_free(resp->event_ap_sta_disconnected->mac.data);
+			mem_free(resp->event_ap_sta_disconnected);
+			break;
+		} case (CTRL_MSG_ID__Event_StaScanDone) : {
+			mem_free(resp->event_sta_scan_done->scan_done);
+			mem_free(resp->event_sta_scan_done);
 			break;
 		} case CTRL_MSG_ID__Event_WifiEventNoArgs: {
 			mem_free(resp->event_wifi_event_no_args);
@@ -2735,10 +3037,32 @@ static esp_err_t ctrl_ntfy_StationDisconnectFromAP(CtrlMsg *ntfy,
 	return ESP_OK;
 
 }
+static esp_err_t ctrl_ntfy_sta_scan_done(CtrlMsg *ntfy,
+		const uint8_t *data, ssize_t len, int event_id)
+{
+	WifiEventStaScanDone *p_c_scan = NULL;
+	wifi_event_sta_scan_done_t * p_a = (wifi_event_sta_scan_done_t*)data;
+	NTFY_TEMPLATE(CTRL_MSG_ID__Event_StaScanDone,
+			CtrlMsgEventStaScanDone, event_sta_scan_done,
+			ctrl_msg__event__sta_scan_done__init);
+
+	NTFY_ALLOC_ELEMENT(WifiEventStaScanDone, ntfy_payload->scan_done,
+			wifi_event_sta_scan_done__init);
+	p_c_scan = ntfy_payload->scan_done;
+
+	p_c_scan->status = p_a->status;
+	p_c_scan->number = p_a->number;
+	p_c_scan->scan_id = p_a->scan_id;
+
+err:
+	return ESP_OK;
+}
+
 
 static esp_err_t ctrl_ntfy_ap_staconn_conn_disconn(CtrlMsg *ntfy,
 		const uint8_t *data, ssize_t len, int event_id)
 {
+	/* TODO: use NTFY_TEMPLATE */
 	printf("%s event:%u\n",__func__,event_id);
 	if (event_id == WIFI_EVENT_AP_STACONNECTED) {
 
@@ -2851,6 +3175,9 @@ esp_err_t ctrl_notify_handler(uint32_t session_id,const uint8_t *inbuf,
 			break;
 		} case CTRL_MSG_ID__Event_AP_StaDisconnected: {
 			ret = ctrl_ntfy_ap_staconn_conn_disconn(&ntfy, inbuf, inlen, WIFI_EVENT_AP_STADISCONNECTED);
+			break;
+		} case CTRL_MSG_ID__Event_StaScanDone: {
+			ret = ctrl_ntfy_sta_scan_done(&ntfy, inbuf, inlen, WIFI_EVENT_SCAN_DONE);
 			break;
 		} case CTRL_MSG_ID__Event_WifiEventNoArgs: {
 			ret = ctrl_ntfy_Event_WifiEventNoArgs(&ntfy, inbuf, inlen);
