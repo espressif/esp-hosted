@@ -106,6 +106,12 @@ int test_wifi_sta_get_rssi(int *rssi);
 int test_wifi_set_protocol(wifi_interface_t ifx, uint8_t protocol_bitmap);
 int test_wifi_get_protocol(wifi_interface_t ifx, uint8_t *protocol_bitmap);
 
+int test_wifi_scan_start(wifi_scan_config_t *config, bool block);
+int test_wifi_scan_stop(void);
+int test_wifi_scan_get_ap_num(uint16_t *number);
+int test_wifi_scan_get_ap_records(uint16_t *number, wifi_ap_record_t *ap_records);
+int test_wifi_clear_ap_list(void);
+
 #ifdef __cplusplus
 }
 #endif

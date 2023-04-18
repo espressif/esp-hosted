@@ -279,48 +279,80 @@ ctrl_cmd_t * wifi_get_protocol(ctrl_cmd_t req)
 
 ctrl_cmd_t * wifi_init(ctrl_cmd_t req)
 {
-	CTRL_SEND_REQ(CTRL_REQ_WIFI_INIT);
+	CTRL_SEND_REQ(CTRL_MSG_ID__Req_WifiInit);
 	CTRL_DECODE_RESP_IF_NOT_ASYNC();
 }
 
 ctrl_cmd_t * wifi_deinit(ctrl_cmd_t req)
 {
-	CTRL_SEND_REQ(CTRL_REQ_WIFI_DEINIT);
+	CTRL_SEND_REQ(CTRL_MSG_ID__Req_WifiDeinit);
 	CTRL_DECODE_RESP_IF_NOT_ASYNC();
 }
 
 ctrl_cmd_t * wifi_start(ctrl_cmd_t req)
 {
-	CTRL_SEND_REQ(CTRL_REQ_WIFI_START);
+	CTRL_SEND_REQ(CTRL_MSG_ID__Req_WifiStart);
 	CTRL_DECODE_RESP_IF_NOT_ASYNC();
 }
 
 ctrl_cmd_t * wifi_stop(ctrl_cmd_t req)
 {
-	CTRL_SEND_REQ(CTRL_REQ_WIFI_STOP);
+	CTRL_SEND_REQ(CTRL_MSG_ID__Req_WifiStop);
 	CTRL_DECODE_RESP_IF_NOT_ASYNC();
 }
 
 ctrl_cmd_t * wifi_connect(ctrl_cmd_t req)
 {
-	CTRL_SEND_REQ(CTRL_REQ_WIFI_CONNECT);
+	CTRL_SEND_REQ(CTRL_MSG_ID__Req_WifiConnect);
 	CTRL_DECODE_RESP_IF_NOT_ASYNC();
 }
 
 ctrl_cmd_t * wifi_disconnect(ctrl_cmd_t req)
 {
-	CTRL_SEND_REQ(CTRL_REQ_WIFI_DISCONNECT);
+	CTRL_SEND_REQ(CTRL_MSG_ID__Req_WifiDisconnect);
 	CTRL_DECODE_RESP_IF_NOT_ASYNC();
 }
 
 ctrl_cmd_t * wifi_get_config(ctrl_cmd_t req)
 {
-	CTRL_SEND_REQ(CTRL_REQ_WIFI_GET_CONFIG);
+	CTRL_SEND_REQ(CTRL_MSG_ID__Req_WifiGetConfig);
 	CTRL_DECODE_RESP_IF_NOT_ASYNC();
 }
 
 ctrl_cmd_t * wifi_set_config(ctrl_cmd_t req)
 {
-	CTRL_SEND_REQ(CTRL_REQ_WIFI_SET_CONFIG);
+	CTRL_SEND_REQ(CTRL_MSG_ID__Req_WifiSetConfig);
 	CTRL_DECODE_RESP_IF_NOT_ASYNC();
 }
+
+ctrl_cmd_t * wifi_scan_start(ctrl_cmd_t req)
+{
+	printf("scan start3\n");
+	CTRL_SEND_REQ(CTRL_MSG_ID__Req_WifiScanStart);
+	CTRL_DECODE_RESP_IF_NOT_ASYNC();
+}
+
+ctrl_cmd_t * wifi_scan_stop(ctrl_cmd_t req)
+{
+	CTRL_SEND_REQ(CTRL_MSG_ID__Req_WifiScanStop);
+	CTRL_DECODE_RESP_IF_NOT_ASYNC();
+}
+
+ctrl_cmd_t * wifi_scan_get_ap_num(ctrl_cmd_t req)
+{
+	CTRL_SEND_REQ(CTRL_MSG_ID__Req_WifiScanGetApNum);
+	CTRL_DECODE_RESP_IF_NOT_ASYNC();
+}
+
+ctrl_cmd_t * wifi_scan_get_ap_records(ctrl_cmd_t req)
+{
+	CTRL_SEND_REQ(CTRL_MSG_ID__Req_WifiScanGetApRecords);
+	CTRL_DECODE_RESP_IF_NOT_ASYNC();
+}
+
+ctrl_cmd_t * wifi_clear_ap_list(ctrl_cmd_t req)
+{
+	CTRL_SEND_REQ(CTRL_MSG_ID__Req_WifiClearApList);
+	CTRL_DECODE_RESP_IF_NOT_ASYNC();
+}
+

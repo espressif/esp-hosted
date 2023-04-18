@@ -19,6 +19,7 @@
 #include "ctrl_api.h"
 #include "esp_err.h"
 #include "esp_event.h"
+#include "esp_wifi_default.h"
 
 ESP_EVENT_DECLARE_BASE(WIFI_EVENT);
 
@@ -165,4 +166,13 @@ esp_err_t esp_wifi_get_mac(wifi_interface_t ifx, uint8_t mac[6]);
 
 esp_err_t esp_wifi_set_mac(wifi_interface_t ifx, uint8_t mac[6]);
 
+esp_err_t esp_wifi_scan_start(wifi_scan_config_t *config, bool block);
+
+esp_err_t esp_wifi_scan_stop(void);
+
+esp_err_t esp_wifi_scan_get_ap_num(uint16_t *number);
+
+esp_err_t esp_wifi_scan_get_ap_records(uint16_t *number, wifi_ap_record_t *ap_records);
+
+esp_err_t esp_wifi_clear_ap_list(void);
 #endif /* __ESP_WIFI_H__ */

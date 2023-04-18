@@ -138,13 +138,16 @@ enum {
 #define SET_BIT(pos, val)                         (val|=(1<<pos))
 #define GET_BIT(pos, val)                         (val&(1<<pos)? 1: 0)
 
-#define STA_RM_ENABLED_BIT                        1
-#define STA_BTM_ENABLED_BIT                       2
-#define STA_MBO_ENABLED_BIT                       3
-#define STA_FT_ENABLED_BIT                        4
-#define STA_OWE_ENABLED_BIT                       5
-#define STA_TRASITION_DISABLED_BIT                6
-#define STA_MAX_USED_BIT                          6
+/* Station config bitmasks */
+enum {
+	STA_RM_ENABLED_BIT         = 0,
+	STA_BTM_ENABLED_BIT        = 1,
+	STA_MBO_ENABLED_BIT        = 2,
+	STA_FT_ENABLED_BIT         = 3,
+	STA_OWE_ENABLED_BIT        = 4,
+	STA_TRASITION_DISABLED_BIT = 5,
+	STA_MAX_USED_BIT           = 5,
+};
 
 #define WIFI_CONFIG_STA_RESERVED_BITMASK          0xFFC0
 
@@ -153,6 +156,44 @@ enum {
 
 #define WIFI_CONFIG_STA_SET_RESERVED_VAL(reserved_in,num_out)                   \
     (num_out|=(reserved_in <<  STA_MAX_USED_BIT));
+
+enum {
+	WIFI_SCAN_AP_REC_phy_11b_BIT       = 0,
+	WIFI_SCAN_AP_REC_phy_11g_BIT       = 1,
+	WIFI_SCAN_AP_REC_phy_11n_BIT       = 2,
+	WIFI_SCAN_AP_REC_phy_lr_BIT        = 3,
+	WIFI_SCAN_AP_REC_wps_BIT           = 4,
+	WIFI_SCAN_AP_REC_ftm_responder_BIT = 5,
+	WIFI_SCAN_AP_REC_ftm_initiator_BIT = 6,
+	WIFI_SCAN_AP_REC_MAX_USED_BIT      = 6,
+};
+
+#define WIFI_SCAN_AP_RESERVED_BITMASK             0xFF80
+
+#define WIFI_SCAN_AP_GET_RESERVED_VAL(num)                                      \
+    ((num&WIFI_SCAN_AP_RESERVED_BITMASK)>>WIFI_SCAN_AP_REC_MAX_USED_BIT)
+
+#define WIFI_SCAN_AP_SET_RESERVED_VAL(reserved_in,num_out)                      \
+    (num_out|=(reserved_in <<  WIFI_SCAN_AP_REC_MAX_USED_BIT));
+
+enum {
+	CTRL_ERR_NOT_CONNECTED = 1,
+	CTRL_ERR_NO_AP_FOUND,
+	CTRL_ERR_INVALID_PASSWORD,
+	CTRL_ERR_INVALID_ARGUMENT,
+	CTRL_ERR_OUT_OF_RANGE,
+	CTRL_ERR_MEMORY_FAILURE,
+	CTRL_ERR_UNSUPPORTED_MSG,
+	CTRL_ERR_INCORRECT_ARG,
+	CTRL_ERR_PROTOBUF_ENCODE,
+	CTRL_ERR_PROTOBUF_DECODE,
+	CTRL_ERR_SET_ASYNC_CB,
+	CTRL_ERR_TRANSPORT_SEND,
+	CTRL_ERR_REQUEST_TIMEOUT,
+	CTRL_ERR_REQ_IN_PROG,
+	CTRL_ERR_SET_SYNC_SEM,
+	OUT_OF_RANGE
+};
 
 struct esp_payload_header {
 	uint8_t          if_type:4;

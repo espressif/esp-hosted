@@ -554,6 +554,7 @@ typedef struct {
 	wifi_ap_record_t *out_list;
 } wifi_scan_ap_list_t;
 
+#if 0
 typedef struct {
 	uint16_t aid;
 } wifi_deauth_sta_t;
@@ -626,7 +627,17 @@ typedef struct {
 	int32_t wifi_event_id;
 } wifi_event_ap_staconnected_t;
 
+typedef struct {
+    uint32_t status;
+    uint8_t  number;
+    uint8_t  scan_id;
+	int32_t wifi_event_id;
+} wifi_event_sta_scan_done_t;
+#endif
+
+#if 0
 typedef wifi_event_ap_staconnected_t wifi_event_ap_stadisconnected_t;
+#endif
 
 typedef struct {
 	int32_t wifi_event_id;

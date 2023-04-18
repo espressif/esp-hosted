@@ -400,6 +400,12 @@ enum RpcId {
 	Req_WifiSetDynamicCs              = 340; //0x154
 	Req_WifiStaGetRssi                = 341; //0x155
 
+	Req_WifiScanStart = 286; //0x11e
+	Req_WifiScanStop = 287; //0x11f
+	Req_WifiScanGetApNum = 288; //0x120
+	Req_WifiScanGetApRecords = 289; //0x121
+	Req_WifiClearApList = 290;
+
 	/* Add new control path command response before Req_Max
 	 * and update Req_Max */
 	Req_Max = 342; //0x156
@@ -511,6 +517,12 @@ enum RpcId {
 	Resp_WifiStaGetNegotiatedPhymode  = 595;
 	Resp_WifiSetDynamicCs             = 596;
 	Resp_WifiStaGetRssi               = 597;
+
+	Resp_WifiScanStart = 542;
+	Resp_WifiScanStop = 543;
+	Resp_WifiScanGetApNum = 544;
+	Resp_WifiScanGetApRecords = 545;
+	Resp_WifiClearApList = 546;
 
 	/* Add new control path command response before Resp_Max
 	 * and update Resp_Max */
@@ -1489,6 +1501,12 @@ message Rpc {
 
 		Rpc_Req_WifiStaGetRssi              req_wifi_sta_get_rssi             = 341;
 
+		CtrlMsg_Req_WifiScanStart req_wifi_scan_start = 286;
+		CtrlMsg_Req_WifiScanStop req_wifi_scan_stop = 287;
+		CtrlMsg_Req_WifiScanGetApNum req_wifi_scan_get_ap_num = 288;
+		CtrlMsg_Req_WifiScanGetApRecords req_wifi_scan_get_ap_records = 289;
+		CtrlMsg_Req_WifiClearApList req_wifi_clear_ap_list = 290;
+
 		/** Responses **/
 		Rpc_Resp_GetMacAddress              resp_get_mac_address               = 513;
 		Rpc_Resp_SetMacAddress              resp_set_mac_address               = 514;
@@ -1553,6 +1571,12 @@ message Rpc {
 		Rpc_Resp_WifiGetCountryCode         resp_wifi_get_country_code         = 591;
 
 		Rpc_Resp_WifiStaGetRssi             resp_wifi_sta_get_rssi             = 597;
+
+		CtrlMsg_Resp_WifiScanStart resp_wifi_scan_start = 542;
+		CtrlMsg_Resp_WifiScanStop resp_wifi_scan_stop = 543;
+		CtrlMsg_Resp_WifiScanGetApNum resp_wifi_scan_get_ap_num = 544;
+		CtrlMsg_Resp_WifiScanGetApRecords resp_wifi_scan_get_ap_records = 545;
+		CtrlMsg_Resp_WifiClearApList resp_wifi_clear_ap_list = 546;
 
 		/** Notifications **/
 		Rpc_Event_ESPInit                   event_esp_init                     = 769;

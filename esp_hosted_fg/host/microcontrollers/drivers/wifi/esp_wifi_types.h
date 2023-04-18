@@ -8,12 +8,15 @@
 #ifndef __ESP_WIFI_TYPES_H__
 #define __ESP_WIFI_TYPES_H__
 
-#include "esp_private/esp_wifi_types_private.h"
+//#include "esp_private/esp_wifi_types_private.h"
+#include "esp_event.h"
+#include "esp_interface.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+#if 1
 typedef enum {
     WIFI_MODE_NULL = 0,  /**< null mode */
     WIFI_MODE_STA,       /**< WiFi station mode */
@@ -25,6 +28,8 @@ typedef enum {
 typedef enum {
     WIFI_IF_STA = ESP_IF_WIFI_STA,
     WIFI_IF_AP  = ESP_IF_WIFI_AP,
+	WIFI_IF_ETH = ESP_IF_ETH,
+	WIFI_IF_MAX,
 } wifi_interface_t;
 
 #define WIFI_OFFCHAN_TX_REQ      1
@@ -33,6 +38,7 @@ typedef enum {
 #define WIFI_ROC_REQ     1
 #define WIFI_ROC_CANCEL  0
 
+#if 1
 typedef enum {
     WIFI_COUNTRY_POLICY_AUTO,   /**< Country policy is auto, use the country info of AP to which the station is connected */
     WIFI_COUNTRY_POLICY_MANUAL, /**< Country policy is manual, always use the configured country info */
@@ -62,6 +68,7 @@ typedef enum {
     WIFI_AUTH_OWE,              /**< authenticate mode : OWE */
     WIFI_AUTH_MAX
 } wifi_auth_mode_t;
+#endif
 
 typedef enum {
     WIFI_REASON_UNSPECIFIED                        = 1,
@@ -123,6 +130,7 @@ typedef enum {
     WIFI_REASON_ASSOC_COMEBACK_TIME_TOO_LONG       = 208,
 } wifi_err_reason_t;
 
+#if 1
 typedef enum {
     WIFI_SECOND_CHAN_NONE = 0,  /**< the channel width is HT20 */
     WIFI_SECOND_CHAN_ABOVE,     /**< the channel width is HT40 and the secondary channel is above the primary channel */
@@ -227,7 +235,9 @@ typedef enum {
     WIFI_PS_NONE,        /**< No power save */
     WIFI_PS_MIN_MODEM,   /**< Minimum modem power saving. In this mode, station wakes up to receive beacon every DTIM period */
     WIFI_PS_MAX_MODEM,   /**< Maximum modem power saving. In this mode, interval to receive beacons is determined by the listen_interval parameter in wifi_sta_config_t */
+	WIFI_PS_INVALID,
 } wifi_ps_type_t;
+#endif
 
 #define WIFI_PROTOCOL_11B         1
 #define WIFI_PROTOCOL_11G         2
@@ -239,6 +249,7 @@ typedef enum {
     WIFI_BW_HT40,     /* Bandwidth is HT40 */
 } wifi_bandwidth_t;
 
+#if 1
 /** Configuration structure for Protected Management Frame */
 typedef struct {
     bool capable;            /**< Deprecated variable. Device will always connect in PMF mode if other device also advertizes PMF capability. */
@@ -301,6 +312,7 @@ typedef union {
     wifi_ap_config_t  ap;  /**< configuration of AP */
     wifi_sta_config_t sta; /**< configuration of STA */
 } wifi_config_t;
+#endif
 
 /** @brief Description of STA associated with AP */
 typedef struct {
@@ -368,7 +380,9 @@ typedef struct {
     uint8_t length;          /**< Length of all bytes in the element data following this field. Minimum 4. */
     uint8_t vendor_oui[3];   /**< Vendor identifier (OUI). */
     uint8_t vendor_oui_type; /**< Vendor-specific OUI type. */
-    uint8_t payload[0];      /**< Payload. Length is equal to value in 'length' field, minus 4. */
+	//TODO: remove payload_len
+	//uint16_t payload_len;
+    uint8_t *payload;      /**< Payload. Length is equal to value in 'length' field, minus 4. */
 } vendor_ie_data_t;
 
 /** @brief Received packet radio metadata header, this is the common header at the beginning of all promiscuous mode RX callback buffers */
@@ -669,6 +683,7 @@ typedef struct {
     uint32_t status;          /**< status of scanning APs: 0 — success, 1 - failure */
     uint8_t  number;          /**< number of scan results */
     uint8_t  scan_id;         /**< scan sequence number, used for block scan */
+	int32_t wifi_event_id;
 } wifi_event_sta_scan_done_t;
 
 /** Argument structure for WIFI_EVENT_STA_CONNECTED event */
@@ -721,18 +736,20 @@ typedef struct {
 } wifi_event_sta_wps_er_success_t;
 
 /** Argument structure for WIFI_EVENT_AP_STACONNECTED event */
-//typedef struct {
-//    uint8_t mac[6];           /**< MAC address of the station connected to ESP32 soft-AP */
-//    uint8_t aid;              /**< the aid that ESP32 soft-AP gives to the station connected to  */
-//    bool is_mesh_child;       /**< flag to identify mesh child */
-//} wifi_event_ap_staconnected_t;
-//
-///** Argument structure for WIFI_EVENT_AP_STADISCONNECTED event */
-//typedef struct {
-//    uint8_t mac[6];           /**< MAC address of the station disconnects to ESP32 soft-AP */
-//    uint8_t aid;              /**< the aid that ESP32 soft-AP gave to the station disconnects to  */
-//    bool is_mesh_child;       /**< flag to identify mesh child */
-//} wifi_event_ap_stadisconnected_t;
+typedef struct {
+    uint8_t mac[6];           /**< MAC address of the station connected to ESP32 soft-AP */
+    uint8_t aid;              /**< the aid that ESP32 soft-AP gives to the station connected to  */
+    bool is_mesh_child;       /**< flag to identify mesh child */
+	int32_t wifi_event_id;
+} wifi_event_ap_staconnected_t;
+
+/** Argument structure for WIFI_EVENT_AP_STADISCONNECTED event */
+typedef struct {
+    uint8_t mac[6];           /**< MAC address of the station disconnects to ESP32 soft-AP */
+    uint8_t aid;              /**< the aid that ESP32 soft-AP gave to the station disconnects to  */
+    bool is_mesh_child;       /**< flag to identify mesh child */
+	int32_t wifi_event_id;
+} wifi_event_ap_stadisconnected_t;
 
 /** Argument structure for WIFI_EVENT_AP_PROBEREQRECVED event */
 typedef struct {
@@ -822,6 +839,7 @@ typedef struct {
     uint8_t peer_macaddr[6];           /**< Enrollee mac address */
 } wifi_event_ap_wps_rg_success_t;
 
+#endif
 #ifdef __cplusplus
 }
 #endif

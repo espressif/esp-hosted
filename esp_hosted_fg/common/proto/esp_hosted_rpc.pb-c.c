@@ -6512,6 +6512,7 @@ static const ProtobufCFieldDescriptor wifi_scan_config__field_descriptors[7] =
   },
 };
 static const unsigned wifi_scan_config__field_indices_by_name[] = {
+  6,   /* field[6] = block */
   1,   /* field[1] = bssid */
   2,   /* field[2] = channel */
   6,   /* field[6] = home_chan_dwell_time */
@@ -13499,6 +13500,66 @@ static const ProtobufCFieldDescriptor rpc__field_descriptors[96] =
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
   {
+    "req_wifi_scan_start",
+    286,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_MESSAGE,
+    offsetof(CtrlMsg, payload_case),
+    offsetof(CtrlMsg, req_wifi_scan_start),
+    &ctrl_msg__req__wifi_scan_start__descriptor,
+    NULL,
+    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "req_wifi_scan_stop",
+    287,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_MESSAGE,
+    offsetof(CtrlMsg, payload_case),
+    offsetof(CtrlMsg, req_wifi_scan_stop),
+    &ctrl_msg__req__wifi_scan_stop__descriptor,
+    NULL,
+    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "req_wifi_scan_get_ap_num",
+    288,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_MESSAGE,
+    offsetof(CtrlMsg, payload_case),
+    offsetof(CtrlMsg, req_wifi_scan_get_ap_num),
+    &ctrl_msg__req__wifi_scan_get_ap_num__descriptor,
+    NULL,
+    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "req_wifi_scan_get_ap_records",
+    289,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_MESSAGE,
+    offsetof(CtrlMsg, payload_case),
+    offsetof(CtrlMsg, req_wifi_scan_get_ap_records),
+    &ctrl_msg__req__wifi_scan_get_ap_records__descriptor,
+    NULL,
+    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "req_wifi_clear_ap_list",
+    290,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_MESSAGE,
+    offsetof(CtrlMsg, payload_case),
+    offsetof(CtrlMsg, req_wifi_clear_ap_list),
+    &ctrl_msg__req__wifi_clear_ap_list__descriptor,
+    NULL,
+    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
     "resp_get_mac_address",
     513,
     PROTOBUF_C_LABEL_NONE,
@@ -14015,6 +14076,66 @@ static const ProtobufCFieldDescriptor rpc__field_descriptors[96] =
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
   {
+    "resp_wifi_scan_start",
+    542,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_MESSAGE,
+    offsetof(CtrlMsg, payload_case),
+    offsetof(CtrlMsg, resp_wifi_scan_start),
+    &ctrl_msg__resp__wifi_scan_start__descriptor,
+    NULL,
+    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "resp_wifi_scan_stop",
+    543,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_MESSAGE,
+    offsetof(CtrlMsg, payload_case),
+    offsetof(CtrlMsg, resp_wifi_scan_stop),
+    &ctrl_msg__resp__wifi_scan_stop__descriptor,
+    NULL,
+    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "resp_wifi_scan_get_ap_num",
+    544,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_MESSAGE,
+    offsetof(CtrlMsg, payload_case),
+    offsetof(CtrlMsg, resp_wifi_scan_get_ap_num),
+    &ctrl_msg__resp__wifi_scan_get_ap_num__descriptor,
+    NULL,
+    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "resp_wifi_scan_get_ap_records",
+    545,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_MESSAGE,
+    offsetof(CtrlMsg, payload_case),
+    offsetof(CtrlMsg, resp_wifi_scan_get_ap_records),
+    &ctrl_msg__resp__wifi_scan_get_ap_records__descriptor,
+    NULL,
+    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "resp_wifi_clear_ap_list",
+    546,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_MESSAGE,
+    offsetof(CtrlMsg, payload_case),
+    offsetof(CtrlMsg, resp_wifi_clear_ap_list),
+    &ctrl_msg__resp__wifi_clear_ap_list__descriptor,
+    NULL,
+    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
     "event_esp_init",
     769,
     PROTOBUF_C_LABEL_NONE,
@@ -14106,6 +14227,18 @@ static const ProtobufCFieldDescriptor rpc__field_descriptors[96] =
     offsetof(Rpc, payload_case),
     offsetof(Rpc, event_sta_disconnected),
     &rpc__event__sta_disconnected__descriptor,
+    NULL,
+    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "event_sta_scan_done",
+    775,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_MESSAGE,
+    offsetof(CtrlMsg, payload_case),
+    offsetof(CtrlMsg, event_sta_scan_done),
+    &ctrl_msg__event__sta_scan_done__descriptor,
     NULL,
     0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */

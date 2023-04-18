@@ -1916,13 +1916,13 @@ static ctrl_cmd_t * get_response(int *read_len, ctrl_cmd_t *app_req)
  **/
 static int call_async_resp_callback(ctrl_cmd_t *app_resp)
 {
-	if ((app_resp->msg_id <= CTRL_RESP_BASE) ||
-	    (app_resp->msg_id >= CTRL_RESP_MAX)) {
+	if ((app_resp->msg_id <= CTRL_MSG_ID__Resp_Base) ||
+	    (app_resp->msg_id >= CTRL_MSG_ID__Resp_Max)) {
 		return MSG_ID_OUT_OF_ORDER;
 	}
 
-	if (ctrl_resp_cb_table[app_resp->msg_id-CTRL_RESP_BASE]) {
-		return ctrl_resp_cb_table[app_resp->msg_id-CTRL_RESP_BASE](app_resp);
+	if (ctrl_resp_cb_table[app_resp->msg_id-CTRL_MSG_ID__Resp_Base]) {
+		return ctrl_resp_cb_table[app_resp->msg_id-CTRL_MSG_ID__Resp_Base](app_resp);
 	}
 
 	return CALLBACK_NOT_REGISTERED;
@@ -1931,13 +1931,13 @@ static int call_async_resp_callback(ctrl_cmd_t *app_resp)
 
 static int post_sync_resp_sem(ctrl_cmd_t *app_resp)
 {
-	if ((app_resp->msg_id <= CTRL_RESP_BASE) ||
-	    (app_resp->msg_id >= CTRL_RESP_MAX)) {
+	if ((app_resp->msg_id <= CTRL_MSG_ID__Resp_Base) ||
+	    (app_resp->msg_id >= CTRL_MSG_ID__Resp_Max)) {
 		return MSG_ID_OUT_OF_ORDER;
 	}
 
-	if (ctrl_resp_cb_sem_table[app_resp->msg_id-CTRL_RESP_BASE]) {
-		return g_h.funcs->_h_post_semaphore(ctrl_resp_cb_sem_table[app_resp->msg_id-CTRL_RESP_BASE]);
+	if (ctrl_resp_cb_sem_table[app_resp->msg_id-CTRL_MSG_ID__Resp_Base]) {
+		return g_h.funcs->_h_post_semaphore(ctrl_resp_cb_sem_table[app_resp->msg_id-CTRL_MSG_ID__Resp_Base]);
 	}
 
 	return CALLBACK_NOT_REGISTERED;
@@ -1951,13 +1951,13 @@ static int post_sync_resp_sem(ctrl_cmd_t *app_resp)
  **/
 static int call_event_callback(ctrl_cmd_t *app_event)
 {
-	if ((app_event->msg_id <= CTRL_EVENT_BASE) ||
-	    (app_event->msg_id >= CTRL_EVENT_MAX)) {
+	if ((app_event->msg_id <= CTRL_MSG_ID__Event_Base) ||
+	    (app_event->msg_id >= CTRL_MSG_ID__Event_Max)) {
 		return MSG_ID_OUT_OF_ORDER;
 	}
 
-	if (ctrl_event_cb_table[app_event->msg_id-CTRL_EVENT_BASE]) {
-		return ctrl_event_cb_table[app_event->msg_id-CTRL_EVENT_BASE](app_event);
+	if (ctrl_event_cb_table[app_event->msg_id-CTRL_MSG_ID__Event_Base]) {
+		return ctrl_event_cb_table[app_event->msg_id-CTRL_MSG_ID__Event_Base](app_event);
 	}
 
 	return CALLBACK_NOT_REGISTERED;
@@ -1971,12 +1971,12 @@ static int call_event_callback(ctrl_cmd_t *app_event)
 static int set_async_resp_callback(int req_msg_id, ctrl_resp_cb_t resp_cb)
 {
 	/* Assign(Replace) response callback passed */
-	int exp_resp_msg_id = (req_msg_id - CTRL_REQ_BASE + CTRL_RESP_BASE);
-	if (exp_resp_msg_id >= CTRL_RESP_MAX) {
+	int exp_resp_msg_id = (req_msg_id - CTRL_MSG_ID__Req_Base + CTRL_MSG_ID__Resp_Base);
+	if (exp_resp_msg_id >= CTRL_MSG_ID__Resp_Max) {
 		hosted_log("Not able to map new request to resp id\n");
 		return MSG_ID_OUT_OF_ORDER;
 	} else {
-		ctrl_resp_cb_table[exp_resp_msg_id-CTRL_RESP_BASE] = resp_cb;
+		ctrl_resp_cb_table[exp_resp_msg_id-CTRL_MSG_ID__Resp_Base] = resp_cb;
 		return CALLBACK_SET_SUCCESS;
 	}
 }
@@ -1989,12 +1989,12 @@ static int set_async_resp_callback(int req_msg_id, ctrl_resp_cb_t resp_cb)
  **/
 static int set_sync_resp_sem(ctrl_cmd_t *app_req)
 {
-	int exp_resp_msg_id = (app_req->msg_id - CTRL_REQ_BASE + CTRL_RESP_BASE);
+	int exp_resp_msg_id = (app_req->msg_id - CTRL_MSG_ID__Req_Base + CTRL_MSG_ID__Resp_Base);
 
 	if (app_req->rx_sem)
 		g_h.funcs->_h_destroy_semaphore(app_req->rx_sem);
 
-	if (exp_resp_msg_id >= CTRL_RESP_MAX) {
+	if (exp_resp_msg_id >= CTRL_MSG_ID__Resp_Max) {
 		hosted_log("Not able to map new request to resp id\n");
 		return MSG_ID_OUT_OF_ORDER;
 	} else if (!app_req->ctrl_resp_cb) {
@@ -2003,7 +2003,7 @@ static int set_sync_resp_sem(ctrl_cmd_t *app_req)
 		g_h.funcs->_h_get_semaphore(app_req->rx_sem, HOSTED_BLOCKING);
 
 		hosted_log("Register sync sem %p for resp[0x%x]\n", app_req->rx_sem, exp_resp_msg_id);
-		ctrl_resp_cb_sem_table[exp_resp_msg_id-CTRL_RESP_BASE] = app_req->rx_sem;
+		ctrl_resp_cb_sem_table[exp_resp_msg_id-CTRL_MSG_ID__Resp_Base] = app_req->rx_sem;
 		return CALLBACK_SET_SUCCESS;
 	} else {
 		/* For async, nothing to be done */
@@ -2024,25 +2024,25 @@ static int wait_for_sync_response(ctrl_cmd_t *app_req)
 	else
 		timeout_sec = app_req->cmd_timeout_sec;
 
-	exp_resp_msg_id = (app_req->msg_id - CTRL_REQ_BASE + CTRL_RESP_BASE);
+	exp_resp_msg_id = (app_req->msg_id - CTRL_MSG_ID__Req_Base + CTRL_MSG_ID__Resp_Base);
 
-	if (!ctrl_resp_cb_sem_table[exp_resp_msg_id-CTRL_RESP_BASE]) {
+	if (!ctrl_resp_cb_sem_table[exp_resp_msg_id-CTRL_MSG_ID__Resp_Base]) {
 		printf("Err: sync sem not registered\n");
 		return CTRL_ERR_SET_SYNC_SEM;
 	}
 
-	if (exp_resp_msg_id >= CTRL_RESP_MAX) {
+	if (exp_resp_msg_id >= CTRL_MSG_ID__Resp_Max) {
 		hosted_log("Not able to map new request to resp id\n");
 		return MSG_ID_OUT_OF_ORDER;
 	}
 
 	/*hosted_log("Wait for sync resp for Req[0x%x] with timer of %u sec\n",
 			app_req->msg_id, timeout_sec);*/
-	ret = g_h.funcs->_h_get_semaphore(ctrl_resp_cb_sem_table[exp_resp_msg_id-CTRL_RESP_BASE], timeout_sec);
+	ret = g_h.funcs->_h_get_semaphore(ctrl_resp_cb_sem_table[exp_resp_msg_id-CTRL_MSG_ID__Resp_Base], timeout_sec);
 
 	/* TODO: is this ret check required? */
 	if (!ret)
-		if (g_h.funcs->_h_destroy_semaphore(ctrl_resp_cb_sem_table[exp_resp_msg_id-CTRL_RESP_BASE])) {
+		if (g_h.funcs->_h_destroy_semaphore(ctrl_resp_cb_sem_table[exp_resp_msg_id-CTRL_MSG_ID__Resp_Base])) {
 			hosted_log("read sem rx for resp[0x%x] destroy failed\n", exp_resp_msg_id);
 		}
 
@@ -2056,14 +2056,14 @@ static int wait_for_sync_response(ctrl_cmd_t *app_req)
  **/
 static int is_async_resp_callback_registered_by_resp_msg_id(int resp_msg_id)
 {
-	if ((resp_msg_id <= CTRL_RESP_BASE) || (resp_msg_id >= CTRL_RESP_MAX)) {
+	if ((resp_msg_id <= CTRL_MSG_ID__Resp_Base) || (resp_msg_id >= CTRL_MSG_ID__Resp_Max)) {
 		hosted_log("resp id[%u] out of range\n", resp_msg_id);
 		return MSG_ID_OUT_OF_ORDER;
 	}
 
-	if (ctrl_resp_cb_table[resp_msg_id-CTRL_RESP_BASE]) {
+	if (ctrl_resp_cb_table[resp_msg_id-CTRL_MSG_ID__Resp_Base]) {
 		/*hosted_log("for [0x%x] : yes [%p]\n", resp_msg_id,
-				ctrl_resp_cb_table[resp_msg_id-CTRL_RESP_BASE]);*/
+				ctrl_resp_cb_table[resp_msg_id-CTRL_MSG_ID__Resp_Base]);*/
 		return CALLBACK_AVAILABLE;
 	}
 	/*hosted_log("for [0x%x] : no\n", resp_msg_id);*/
@@ -2073,14 +2073,14 @@ static int is_async_resp_callback_registered_by_resp_msg_id(int resp_msg_id)
 
 static int is_sync_resp_sem_for_resp_msg_id(int resp_msg_id)
 {
-	if ((resp_msg_id <= CTRL_RESP_BASE) || (resp_msg_id >= CTRL_RESP_MAX)) {
+	if ((resp_msg_id <= CTRL_MSG_ID__Resp_Base) || (resp_msg_id >= CTRL_MSG_ID__Resp_Max)) {
 		hosted_log("resp id[%u] out of range\n", resp_msg_id);
 		return MSG_ID_OUT_OF_ORDER;
 	}
 
-	if (ctrl_resp_cb_sem_table[resp_msg_id-CTRL_RESP_BASE]) {
+	if (ctrl_resp_cb_sem_table[resp_msg_id-CTRL_MSG_ID__Resp_Base]) {
 		/*hosted_log("for [0x%x] : yes [%p]\n", resp_msg_id,
-				ctrl_resp_cb_sem_table[resp_msg_id-CTRL_RESP_BASE]);*/
+				ctrl_resp_cb_sem_table[resp_msg_id-CTRL_MSG_ID__Resp_Base]);*/
 		return CALLBACK_AVAILABLE;
 	}
 	/*hosted_log("for [0x%x] : no\n", resp_msg_id);*/
@@ -2097,13 +2097,13 @@ static int is_sync_resp_sem_for_resp_msg_id(int resp_msg_id)
  **/
 int is_async_resp_callback_registered(ctrl_cmd_t req)
 {
-	int exp_resp_msg_id = (req.msg_id - CTRL_REQ_BASE + CTRL_RESP_BASE);
-	if (exp_resp_msg_id >= CTRL_RESP_MAX) {
+	int exp_resp_msg_id = (req.msg_id - CTRL_MSG_ID__Req_Base + CTRL_MSG_ID__Resp_Base);
+	if (exp_resp_msg_id >= CTRL_MSG_ID__Resp_Max) {
 		hosted_log("Not able to map new request to resp id, using sync path\n");
 		return MSG_ID_OUT_OF_ORDER;
 	}
 
-	if (ctrl_resp_cb_table[exp_resp_msg_id-CTRL_RESP_BASE]) {
+	if (ctrl_resp_cb_table[exp_resp_msg_id-CTRL_MSG_ID__Resp_Base]) {
 		return CALLBACK_AVAILABLE;
 	}
 
@@ -2119,9 +2119,9 @@ int is_async_resp_callback_registered(ctrl_cmd_t req)
  **/
 int set_event_callback(int event, ctrl_resp_cb_t event_cb)
 {
-	int event_cb_tbl_idx = event - CTRL_EVENT_BASE;
+	int event_cb_tbl_idx = event - CTRL_MSG_ID__Event_Base;
 
-	if ((event<=CTRL_EVENT_BASE) || (event>=CTRL_EVENT_MAX)) {
+	if ((event<=CTRL_MSG_ID__Event_Base) || (event>=CTRL_MSG_ID__Event_Max)) {
 		hosted_log("Could not identify event[%u]\n", event);
 		return MSG_ID_OUT_OF_ORDER;
 	}
@@ -2188,7 +2188,7 @@ static void ctrl_async_timeout_handler(void *arg)
 		return;
 	}
 	app_resp->msg_id = app_req->msg_id - CTRL_MSG_ID__Req_Base + CTRL_MSG_ID__Resp_Base;
-	app_resp->msg_type = CTRL_RESP;
+	app_resp->msg_type = CTRL_MSG_TYPE__Resp;
 	app_resp->resp_event_status = CTRL_ERR_REQUEST_TIMEOUT;
 
 	/* call func pointer to notify failure */
@@ -2217,7 +2217,7 @@ int ctrl_app_send_req(ctrl_cmd_t *app_req)
 		}
 	}
 
-	app_req->msg_type = CTRL_REQ;
+	app_req->msg_type = CTRL_MSG_TYPE__Req;
 
 	if (g_h.funcs->_h_queue_item(ctrl_tx_q, &app_req, portMAX_DELAY)) {
 	  hosted_log("Failed to new app ctrl req in tx queue\n");
