@@ -30,6 +30,7 @@
 #include <linux/kthread.h>
 #include <linux/printk.h>
 #include "esp_stats.h"
+#include "include/esp_kernel_port.h"
 
 #define MAX_WRITE_RETRIES       2
 #define TX_MAX_PENDING_COUNT    200

@@ -223,8 +223,7 @@ struct wireless_dev *esp_cfg80211_add_iface(struct wiphy *wiphy,
 	if (cmd_get_mac(esp_wdev))
 		goto free_and_return;
 
-/*	memcpy(ndev->dev_addr, esp_wdev->mac_address, ETH_ALEN);*/
-	ether_addr_copy(ndev->dev_addr, esp_wdev->mac_address);
+	eth_hw_addr_set(ndev, esp_wdev->mac_address);
 
 	esp_init_priv(ndev);
 
@@ -312,7 +311,8 @@ static ESP_MGMT_TX_PROTOTYPE()
 }
 
 static int esp_cfg80211_set_default_key(struct wiphy *wiphy,
-		struct net_device *dev, u8 key_index, bool unicast, bool multicast)
+					struct net_device *dev, INT_LINK_ID
+					u8 key_index, bool unicast, bool multicast)
 {
 	struct esp_wifi_device *priv = NULL;
 
@@ -331,7 +331,8 @@ static int esp_cfg80211_set_default_key(struct wiphy *wiphy,
 }
 
 static int esp_cfg80211_del_key(struct wiphy *wiphy, struct net_device *dev,
-			u8 key_index, bool pairwise, const u8 *mac_addr)
+				INT_LINK_ID u8 key_index, bool pairwise,
+				const u8 *mac_addr)
 {
 	struct esp_wifi_device *priv = NULL;
 
@@ -351,8 +352,8 @@ static int esp_cfg80211_del_key(struct wiphy *wiphy, struct net_device *dev,
 }
 
 static int esp_cfg80211_add_key(struct wiphy *wiphy, struct net_device *dev,
-		 u8 key_index, bool pairwise, const u8 *mac_addr,
-		 struct key_params *params)
+				INT_LINK_ID u8 key_index, bool pairwise,
+				const u8 *mac_addr, struct key_params *params)
 {
 	struct esp_wifi_device *priv = NULL;
 
@@ -368,9 +369,9 @@ static int esp_cfg80211_add_key(struct wiphy *wiphy, struct net_device *dev,
 	}
 	printk(KERN_INFO "%s\n", __func__);
 
-	if (params->key_len == 0)
-		return esp_cfg80211_del_key(wiphy, dev, key_index, pairwise, mac_addr);
-
+	if (params->key_len == 0) {
+		return esp_cfg80211_del_key(wiphy, dev, ZERO_LINK_ID key_index, pairwise, mac_addr);
+	}
 	return cmd_add_key(priv, key_index, pairwise, mac_addr, params);
 }
 
