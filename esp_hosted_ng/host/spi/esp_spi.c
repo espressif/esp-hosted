@@ -26,11 +26,11 @@
 #include "esp_kernel_port.h"
 #include "esp_stats.h"
 
-#define SPI_INITIAL_CLK_MHZ     10
 #define NUMBER_1M               1000000
 #define TX_MAX_PENDING_COUNT    100
 #define TX_RESUME_THRESHOLD     (TX_MAX_PENDING_COUNT/5)
 
+static struct spi_master * esp_spi_master = NULL;
 static struct sk_buff * read_packet(struct esp_adapter *adapter);
 static int write_packet(struct esp_adapter *adapter, struct sk_buff *skb);
 static void spi_exit(void);
@@ -363,11 +363,22 @@ static int process_rx_buf(struct sk_buff *skb)
 static void esp_spi_work(struct work_struct *work)
 {
 	struct spi_transfer trans;
+	static struct spi_message m;
 	struct sk_buff *tx_skb = NULL, *rx_skb = NULL;
 	struct esp_skb_cb * cb = NULL;
 	u8 *rx_buf = NULL;
 	int ret = 0;
 	volatile int trans_ready, rx_pending;
+	unsigned long flags;
+
+	/*check spi_message is finish?*/
+	spin_lock_irqsave(&esp_spi_master->queue_lock, flags);
+	if(m.state != NULL) {
+		spin_unlock_irqrestore(&esp_spi_master->queue_lock, flags);
+		pr_err("spi_message not finish\n");
+		return;
+	}
+	spin_unlock_irqrestore(&esp_spi_master->queue_lock, flags);
 
 	mutex_lock(&spi_lock);
 
@@ -435,7 +446,14 @@ static void esp_spi_work(struct work_struct *work)
 			}
 #endif
 
+#if 0
 			ret = spi_sync_transfer(spi_context.esp_spi_dev, &trans, 1);
+#else
+			memset(&m,0,sizeof(m));
+			spi_message_init(&m);
+			spi_message_add_tail(&trans, &m);
+			ret = spi_sync(spi_context.esp_spi_dev,&m);
+#endif
 			if (ret) {
 				printk(KERN_ERR "SPI Transaction failed: %d", ret);
 				dev_kfree_skb(rx_skb);
@@ -506,21 +524,20 @@ static int spi_dev_init(int spi_clk_mhz)
 {
 	int status = 0;
 	struct spi_board_info esp_board = {{0}};
-	struct spi_master *master = NULL;
 
 	strlcpy(esp_board.modalias, "esp_spi", sizeof(esp_board.modalias));
-	esp_board.mode = SPI_MODE_2;
+	esp_board.mode = ESP_SPI_MODE;
 	esp_board.max_speed_hz = spi_clk_mhz * NUMBER_1M;
-	esp_board.bus_num = 0;
-	esp_board.chip_select = 0;
+	esp_board.bus_num = ESP_SPI_MASTER;
+	esp_board.chip_select = ESP_SPI_DEVICE;
 
-	master = spi_busnum_to_master(esp_board.bus_num);
-	if (!master) {
+	esp_spi_master = spi_busnum_to_master(esp_board.bus_num);
+	if (IS_ERR(esp_spi_master)) {
 		printk(KERN_ERR "Failed to obtain SPI master handle\n");
 		return -ENODEV;
 	}
 
-	spi_context.esp_spi_dev = spi_new_device(master, &esp_board);
+	spi_context.esp_spi_dev = spi_new_device(esp_spi_master, &esp_board);
 
 	if (!spi_context.esp_spi_dev) {
 		printk(KERN_ERR "Failed to add new SPI device\n");
