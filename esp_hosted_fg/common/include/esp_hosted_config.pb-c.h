@@ -88,10 +88,10 @@ typedef struct CtrlMsgRespOTAEnd CtrlMsgRespOTAEnd;
 typedef struct CtrlMsgReqVendorIEData CtrlMsgReqVendorIEData;
 typedef struct CtrlMsgReqSetSoftAPVendorSpecificIE CtrlMsgReqSetSoftAPVendorSpecificIE;
 typedef struct CtrlMsgRespSetSoftAPVendorSpecificIE CtrlMsgRespSetSoftAPVendorSpecificIE;
-typedef struct CtrlMsgReqSetWifiMaxTxPower CtrlMsgReqSetWifiMaxTxPower;
-typedef struct CtrlMsgRespSetWifiMaxTxPower CtrlMsgRespSetWifiMaxTxPower;
-typedef struct CtrlMsgReqGetWifiCurrTxPower CtrlMsgReqGetWifiCurrTxPower;
-typedef struct CtrlMsgRespGetWifiCurrTxPower CtrlMsgRespGetWifiCurrTxPower;
+typedef struct CtrlMsgReqWifiSetMaxTxPower CtrlMsgReqWifiSetMaxTxPower;
+typedef struct CtrlMsgRespWifiSetMaxTxPower CtrlMsgRespWifiSetMaxTxPower;
+typedef struct CtrlMsgReqWifiGetMaxTxPower CtrlMsgReqWifiGetMaxTxPower;
+typedef struct CtrlMsgRespWifiGetMaxTxPower CtrlMsgRespWifiGetMaxTxPower;
 typedef struct CtrlMsgReqConfigHeartbeat CtrlMsgReqConfigHeartbeat;
 typedef struct CtrlMsgRespConfigHeartbeat CtrlMsgRespConfigHeartbeat;
 typedef struct CtrlMsgReqWifiInit CtrlMsgReqWifiInit;
@@ -120,6 +120,14 @@ typedef struct CtrlMsgReqWifiScanGetApRecords CtrlMsgReqWifiScanGetApRecords;
 typedef struct CtrlMsgRespWifiScanGetApRecords CtrlMsgRespWifiScanGetApRecords;
 typedef struct CtrlMsgReqWifiClearApList CtrlMsgReqWifiClearApList;
 typedef struct CtrlMsgRespWifiClearApList CtrlMsgRespWifiClearApList;
+typedef struct CtrlMsgReqWifiRestore CtrlMsgReqWifiRestore;
+typedef struct CtrlMsgRespWifiRestore CtrlMsgRespWifiRestore;
+typedef struct CtrlMsgReqWifiClearFastConnect CtrlMsgReqWifiClearFastConnect;
+typedef struct CtrlMsgRespWifiClearFastConnect CtrlMsgRespWifiClearFastConnect;
+typedef struct CtrlMsgReqWifiDeauthSta CtrlMsgReqWifiDeauthSta;
+typedef struct CtrlMsgRespWifiDeauthSta CtrlMsgRespWifiDeauthSta;
+typedef struct CtrlMsgReqWifiStaGetApInfo CtrlMsgReqWifiStaGetApInfo;
+typedef struct CtrlMsgRespWifiStaGetApInfo CtrlMsgRespWifiStaGetApInfo;
 typedef struct CtrlMsgEventWifiEventNoArgs CtrlMsgEventWifiEventNoArgs;
 typedef struct CtrlMsgEventESPInit CtrlMsgEventESPInit;
 typedef struct CtrlMsgEventHeartbeat CtrlMsgEventHeartbeat;
@@ -255,11 +263,11 @@ typedef enum _CtrlMsgId {
   /*
    *0x10e
    */
-  CTRL_MSG_ID__Req_SetPowerSaveMode = 270,
+  CTRL_MSG_ID__Req_WifiSetPs = 270,
   /*
    *0x10f
    */
-  CTRL_MSG_ID__Req_GetPowerSaveMode = 271,
+  CTRL_MSG_ID__Req_WifiGetPs = 271,
   /*
    *0x110
    */
@@ -275,11 +283,11 @@ typedef enum _CtrlMsgId {
   /*
    *0x113
    */
-  CTRL_MSG_ID__Req_SetWifiMaxTxPower = 275,
+  CTRL_MSG_ID__Req_WifiSetMaxTxPower = 275,
   /*
    *0x114
    */
-  CTRL_MSG_ID__Req_GetWifiCurrTxPower = 276,
+  CTRL_MSG_ID__Req_WifiGetMaxTxPower = 276,
   /*
    *0x115
    */
@@ -332,12 +340,223 @@ typedef enum _CtrlMsgId {
    *0x121
    */
   CTRL_MSG_ID__Req_WifiScanGetApRecords = 289,
+  /*
+   *0x122
+   */
   CTRL_MSG_ID__Req_WifiClearApList = 290,
+  /*
+   *0x123
+   */
+  CTRL_MSG_ID__Req_WifiRestore = 291,
+  /*
+   *0x124
+   */
+  CTRL_MSG_ID__Req_WifiClearFastConnect = 292,
+  /*
+   *0x125
+   */
+  CTRL_MSG_ID__Req_WifiDeauthSta = 293,
+  /*
+   *0x126
+   */
+  CTRL_MSG_ID__Req_WifiStaGetApInfo = 294,
+  /*
+   *Req_WifiSetPs                     = 295; //0x127
+   *Req_WifiGetPs                     = 296; //0x128
+   */
+  /*
+   *0x129
+   */
+  CTRL_MSG_ID__Req_WifiSetProtocol = 297,
+  /*
+   *0x12a
+   */
+  CTRL_MSG_ID__Req_WifiGetProtocol = 298,
+  /*
+   *0x12b
+   */
+  CTRL_MSG_ID__Req_WifiSetBandwidth = 299,
+  /*
+   *0x12c
+   */
+  CTRL_MSG_ID__Req_WifiGetBandwidth = 300,
+  /*
+   *0x12d
+   */
+  CTRL_MSG_ID__Req_WifiSetChannel = 301,
+  /*
+   *0x12e
+   */
+  CTRL_MSG_ID__Req_WifiGetChannel = 302,
+  /*
+   *0x12f
+   */
+  CTRL_MSG_ID__Req_WifiSetCountry = 303,
+  /*
+   *0x130
+   */
+  CTRL_MSG_ID__Req_WifiGetCountry = 304,
+  /*
+   *  Req_WifiSetPromiscuousRxCb        = 305; //0x131
+   */
+  /*
+   *0x131
+   */
+  CTRL_MSG_ID__Req_WifiSetPromiscuous = 305,
+  /*
+   *0x132
+   */
+  CTRL_MSG_ID__Req_WifiGetPromiscuous = 306,
+  /*
+   *0x133
+   */
+  CTRL_MSG_ID__Req_WifiSetPromiscuousFilter = 307,
+  /*
+   *0x134
+   */
+  CTRL_MSG_ID__Req_WifiGetPromiscuousFilter = 308,
+  /*
+   *0x135
+   */
+  CTRL_MSG_ID__Req_WifiSetPromiscuousCtrlFilter = 309,
+  /*
+   *0x136
+   */
+  CTRL_MSG_ID__Req_WifiGetPromiscuousCtrlFilter = 310,
+  /*
+   *0x137
+   */
+  CTRL_MSG_ID__Req_WifiApGetStaList = 311,
+  /*
+   *0x138
+   */
+  CTRL_MSG_ID__Req_WifiApGetStaAid = 312,
+  /*
+   *0x139
+   */
+  CTRL_MSG_ID__Req_WifiSetStorage = 313,
+  /*
+   *0x13a
+   */
+  CTRL_MSG_ID__Req_WifiSetVendorIe = 314,
+  /*
+   *  Req_WifiSetVendorIeCb             = 315; //0x13b
+   */
+  /*
+   *0x13b
+   */
+  CTRL_MSG_ID__Req_WifiSetEventMask = 315,
+  /*
+   *0x13c
+   */
+  CTRL_MSG_ID__Req_WifiGetEventMask = 316,
+  /*
+   *0x13d
+   */
+  CTRL_MSG_ID__Req_Wifi80211Tx = 317,
+  /*
+   *	Req_WifiSetCsiRxCb                = 318; //0x13e
+   */
+  /*
+   *0x13e
+   */
+  CTRL_MSG_ID__Req_WifiSetCsiConfig = 318,
+  /*
+   *0x13f
+   */
+  CTRL_MSG_ID__Req_WifiSetCsi = 319,
+  /*
+   *0x140
+   */
+  CTRL_MSG_ID__Req_WifiSetAntGpio = 320,
+  /*
+   *0x141
+   */
+  CTRL_MSG_ID__Req_WifiGetAntGpio = 321,
+  /*
+   *0x142
+   */
+  CTRL_MSG_ID__Req_WifiSetAnt = 322,
+  /*
+   *0x143
+   */
+  CTRL_MSG_ID__Req_WifiGetAnt = 323,
+  /*
+   *0x144
+   */
+  CTRL_MSG_ID__Req_WifiGetTsfTime = 324,
+  /*
+   *0x145
+   */
+  CTRL_MSG_ID__Req_WifiSetInactiveTime = 325,
+  /*
+   *0x146
+   */
+  CTRL_MSG_ID__Req_WifiGetInactiveTime = 326,
+  /*
+   *0x147
+   */
+  CTRL_MSG_ID__Req_WifiStatisDump = 327,
+  /*
+   *0x148
+   */
+  CTRL_MSG_ID__Req_WifiSetRssiThreshold = 328,
+  /*
+   *0x149
+   */
+  CTRL_MSG_ID__Req_WifiFtmInitiateSession = 329,
+  /*
+   *0x14a
+   */
+  CTRL_MSG_ID__Req_WifiFtmEndSession = 330,
+  /*
+   *0x14b
+   */
+  CTRL_MSG_ID__Req_WifiFtmRespSetOffset = 331,
+  /*
+   *0x14c
+   */
+  CTRL_MSG_ID__Req_WifiConfig11bRate = 332,
+  /*
+   *0x14d
+   */
+  CTRL_MSG_ID__Req_WifiConnectionlessModuleSetWakeInterval = 333,
+  /*
+   *0x14e
+   */
+  CTRL_MSG_ID__Req_WifiSetCountryCode = 334,
+  /*
+   *0x14f
+   */
+  CTRL_MSG_ID__Req_WifiGetCountryCode = 335,
+  /*
+   *0x150
+   */
+  CTRL_MSG_ID__Req_WifiConfig80211TxRate = 336,
+  /*
+   *0x151
+   */
+  CTRL_MSG_ID__Req_WifiDisablePmfConfig = 337,
+  /*
+   *0x152
+   */
+  CTRL_MSG_ID__Req_WifiStaGetAid = 338,
+  /*
+   *0x153
+   */
+  CTRL_MSG_ID__Req_WifiStaGetNegotiatedPhymode = 339,
+  /*
+   *0x154
+   */
+  CTRL_MSG_ID__Req_WifiSetDynamicCs = 340,
   /*
    * Add new control path command response before Req_Max
    * and update Req_Max 
    */
-  CTRL_MSG_ID__Req_Max = 291,
+  /*
+   *0x155
+   */
+  CTRL_MSG_ID__Req_Max = 341,
   /*
    ** Response Msgs *
    */
@@ -355,13 +574,13 @@ typedef enum _CtrlMsgId {
   CTRL_MSG_ID__Resp_StartSoftAP = 523,
   CTRL_MSG_ID__Resp_GetSoftAPConnectedSTAList = 524,
   CTRL_MSG_ID__Resp_StopSoftAP = 525,
-  CTRL_MSG_ID__Resp_SetPowerSaveMode = 526,
-  CTRL_MSG_ID__Resp_GetPowerSaveMode = 527,
+  CTRL_MSG_ID__Resp_WifiSetPs = 526,
+  CTRL_MSG_ID__Resp_WifiGetPs = 527,
   CTRL_MSG_ID__Resp_OTABegin = 528,
   CTRL_MSG_ID__Resp_OTAWrite = 529,
   CTRL_MSG_ID__Resp_OTAEnd = 530,
-  CTRL_MSG_ID__Resp_SetWifiMaxTxPower = 531,
-  CTRL_MSG_ID__Resp_GetWifiCurrTxPower = 532,
+  CTRL_MSG_ID__Resp_WifiSetMaxTxPower = 531,
+  CTRL_MSG_ID__Resp_WifiGetMaxTxPower = 532,
   CTRL_MSG_ID__Resp_ConfigHeartbeat = 533,
   CTRL_MSG_ID__Resp_WifiInit = 534,
   CTRL_MSG_ID__Resp_WifiDeinit = 535,
@@ -376,11 +595,72 @@ typedef enum _CtrlMsgId {
   CTRL_MSG_ID__Resp_WifiScanGetApNum = 544,
   CTRL_MSG_ID__Resp_WifiScanGetApRecords = 545,
   CTRL_MSG_ID__Resp_WifiClearApList = 546,
+  CTRL_MSG_ID__Resp_WifiRestore = 547,
+  CTRL_MSG_ID__Resp_WifiClearFastConnect = 548,
+  CTRL_MSG_ID__Resp_WifiDeauthSta = 549,
+  CTRL_MSG_ID__Resp_WifiStaGetApInfo = 550,
+  /*
+   *Resp_WifiSetPs                    = 551;
+   *Resp_WifiGetPs                    = 552;
+   */
+  CTRL_MSG_ID__Resp_WifiSetProtocol = 553,
+  CTRL_MSG_ID__Resp_WifiGetProtocol = 554,
+  CTRL_MSG_ID__Resp_WifiSetBandwidth = 555,
+  CTRL_MSG_ID__Resp_WifiGetBandwidth = 556,
+  CTRL_MSG_ID__Resp_WifiSetChannel = 557,
+  CTRL_MSG_ID__Resp_WifiGetChannel = 558,
+  CTRL_MSG_ID__Resp_WifiSetCountry = 559,
+  CTRL_MSG_ID__Resp_WifiGetCountry = 560,
+  /*
+   *  Resp_WifiSetPromiscuousRxCb       = 561;
+   */
+  CTRL_MSG_ID__Resp_WifiSetPromiscuous = 561,
+  CTRL_MSG_ID__Resp_WifiGetPromiscuous = 562,
+  CTRL_MSG_ID__Resp_WifiSetPromiscuousFilter = 563,
+  CTRL_MSG_ID__Resp_WifiGetPromiscuousFilter = 564,
+  CTRL_MSG_ID__Resp_WifiSetPromiscuousCtrlFilter = 565,
+  CTRL_MSG_ID__Resp_WifiGetPromiscuousCtrlFilter = 566,
+  CTRL_MSG_ID__Resp_WifiApGetStaList = 567,
+  CTRL_MSG_ID__Resp_WifiApGetStaAid = 568,
+  CTRL_MSG_ID__Resp_WifiSetStorage = 569,
+  CTRL_MSG_ID__Resp_WifiSetVendorIe = 570,
+  /*
+   *  Resp_WifiSetVendorIeCb            = 571;
+   */
+  CTRL_MSG_ID__Resp_WifiSetEventMask = 571,
+  CTRL_MSG_ID__Resp_WifiGetEventMask = 572,
+  CTRL_MSG_ID__Resp_Wifi80211Tx = 573,
+  /*
+   *	Resp_WifiSetCsiRxCb               = 573;
+   */
+  CTRL_MSG_ID__Resp_WifiSetCsiConfig = 574,
+  CTRL_MSG_ID__Resp_WifiSetCsi = 575,
+  CTRL_MSG_ID__Resp_WifiSetAntGpio = 576,
+  CTRL_MSG_ID__Resp_WifiGetAntGpio = 577,
+  CTRL_MSG_ID__Resp_WifiSetAnt = 578,
+  CTRL_MSG_ID__Resp_WifiGetAnt = 579,
+  CTRL_MSG_ID__Resp_WifiGetTsfTime = 580,
+  CTRL_MSG_ID__Resp_WifiSetInactiveTime = 581,
+  CTRL_MSG_ID__Resp_WifiGetInactiveTime = 582,
+  CTRL_MSG_ID__Resp_WifiStatisDump = 583,
+  CTRL_MSG_ID__Resp_WifiSetRssiThreshold = 584,
+  CTRL_MSG_ID__Resp_WifiFtmInitiateSession = 585,
+  CTRL_MSG_ID__Resp_WifiFtmEndSession = 586,
+  CTRL_MSG_ID__Resp_WifiFtmRespSetOffset = 587,
+  CTRL_MSG_ID__Resp_WifiConfig11bRate = 588,
+  CTRL_MSG_ID__Resp_WifiConnectionlessModuleSetWakeInterval = 589,
+  CTRL_MSG_ID__Resp_WifiSetCountryCode = 590,
+  CTRL_MSG_ID__Resp_WifiGetCountryCode = 591,
+  CTRL_MSG_ID__Resp_WifiConfig80211TxRate = 592,
+  CTRL_MSG_ID__Resp_WifiDisablePmfConfig = 593,
+  CTRL_MSG_ID__Resp_WifiStaGetAid = 594,
+  CTRL_MSG_ID__Resp_WifiStaGetNegotiatedPhymode = 595,
+  CTRL_MSG_ID__Resp_WifiSetDynamicCs = 596,
   /*
    * Add new control path command response before Resp_Max
    * and update Resp_Max 
    */
-  CTRL_MSG_ID__Resp_Max = 547,
+  CTRL_MSG_ID__Resp_Max = 597,
   /*
    ** Event Msgs *
    */
@@ -1964,43 +2244,43 @@ struct  CtrlMsgRespSetSoftAPVendorSpecificIE
     , 0 }
 
 
-struct  CtrlMsgReqSetWifiMaxTxPower
+struct  CtrlMsgReqWifiSetMaxTxPower
 {
   ProtobufCMessage base;
   int32_t wifi_max_tx_power;
 };
-#define CTRL_MSG__REQ__SET_WIFI_MAX_TX_POWER__INIT \
- { PROTOBUF_C_MESSAGE_INIT (&ctrl_msg__req__set_wifi_max_tx_power__descriptor) \
+#define CTRL_MSG__REQ__WIFI_SET_MAX_TX_POWER__INIT \
+ { PROTOBUF_C_MESSAGE_INIT (&ctrl_msg__req__wifi_set_max_tx_power__descriptor) \
     , 0 }
 
 
-struct  CtrlMsgRespSetWifiMaxTxPower
+struct  CtrlMsgRespWifiSetMaxTxPower
 {
   ProtobufCMessage base;
   int32_t resp;
 };
-#define CTRL_MSG__RESP__SET_WIFI_MAX_TX_POWER__INIT \
- { PROTOBUF_C_MESSAGE_INIT (&ctrl_msg__resp__set_wifi_max_tx_power__descriptor) \
+#define CTRL_MSG__RESP__WIFI_SET_MAX_TX_POWER__INIT \
+ { PROTOBUF_C_MESSAGE_INIT (&ctrl_msg__resp__wifi_set_max_tx_power__descriptor) \
     , 0 }
 
 
-struct  CtrlMsgReqGetWifiCurrTxPower
+struct  CtrlMsgReqWifiGetMaxTxPower
 {
   ProtobufCMessage base;
 };
-#define CTRL_MSG__REQ__GET_WIFI_CURR_TX_POWER__INIT \
- { PROTOBUF_C_MESSAGE_INIT (&ctrl_msg__req__get_wifi_curr_tx_power__descriptor) \
+#define CTRL_MSG__REQ__WIFI_GET_MAX_TX_POWER__INIT \
+ { PROTOBUF_C_MESSAGE_INIT (&ctrl_msg__req__wifi_get_max_tx_power__descriptor) \
      }
 
 
-struct  CtrlMsgRespGetWifiCurrTxPower
+struct  CtrlMsgRespWifiGetMaxTxPower
 {
   ProtobufCMessage base;
   int32_t wifi_curr_tx_power;
   int32_t resp;
 };
-#define CTRL_MSG__RESP__GET_WIFI_CURR_TX_POWER__INIT \
- { PROTOBUF_C_MESSAGE_INIT (&ctrl_msg__resp__get_wifi_curr_tx_power__descriptor) \
+#define CTRL_MSG__RESP__WIFI_GET_MAX_TX_POWER__INIT \
+ { PROTOBUF_C_MESSAGE_INIT (&ctrl_msg__resp__wifi_get_max_tx_power__descriptor) \
     , 0, 0 }
 
 
@@ -2286,6 +2566,85 @@ struct  CtrlMsgRespWifiClearApList
     , 0 }
 
 
+struct  CtrlMsgReqWifiRestore
+{
+  ProtobufCMessage base;
+};
+#define CTRL_MSG__REQ__WIFI_RESTORE__INIT \
+ { PROTOBUF_C_MESSAGE_INIT (&ctrl_msg__req__wifi_restore__descriptor) \
+     }
+
+
+struct  CtrlMsgRespWifiRestore
+{
+  ProtobufCMessage base;
+  int32_t resp;
+};
+#define CTRL_MSG__RESP__WIFI_RESTORE__INIT \
+ { PROTOBUF_C_MESSAGE_INIT (&ctrl_msg__resp__wifi_restore__descriptor) \
+    , 0 }
+
+
+struct  CtrlMsgReqWifiClearFastConnect
+{
+  ProtobufCMessage base;
+};
+#define CTRL_MSG__REQ__WIFI_CLEAR_FAST_CONNECT__INIT \
+ { PROTOBUF_C_MESSAGE_INIT (&ctrl_msg__req__wifi_clear_fast_connect__descriptor) \
+     }
+
+
+struct  CtrlMsgRespWifiClearFastConnect
+{
+  ProtobufCMessage base;
+  int32_t resp;
+};
+#define CTRL_MSG__RESP__WIFI_CLEAR_FAST_CONNECT__INIT \
+ { PROTOBUF_C_MESSAGE_INIT (&ctrl_msg__resp__wifi_clear_fast_connect__descriptor) \
+    , 0 }
+
+
+struct  CtrlMsgReqWifiDeauthSta
+{
+  ProtobufCMessage base;
+  int32_t aid;
+};
+#define CTRL_MSG__REQ__WIFI_DEAUTH_STA__INIT \
+ { PROTOBUF_C_MESSAGE_INIT (&ctrl_msg__req__wifi_deauth_sta__descriptor) \
+    , 0 }
+
+
+struct  CtrlMsgRespWifiDeauthSta
+{
+  ProtobufCMessage base;
+  int32_t resp;
+  int32_t aid;
+};
+#define CTRL_MSG__RESP__WIFI_DEAUTH_STA__INIT \
+ { PROTOBUF_C_MESSAGE_INIT (&ctrl_msg__resp__wifi_deauth_sta__descriptor) \
+    , 0, 0 }
+
+
+struct  CtrlMsgReqWifiStaGetApInfo
+{
+  ProtobufCMessage base;
+};
+#define CTRL_MSG__REQ__WIFI_STA_GET_AP_INFO__INIT \
+ { PROTOBUF_C_MESSAGE_INIT (&ctrl_msg__req__wifi_sta_get_ap_info__descriptor) \
+     }
+
+
+struct  CtrlMsgRespWifiStaGetApInfo
+{
+  ProtobufCMessage base;
+  int32_t resp;
+  WifiApRecord *ap_records;
+};
+#define CTRL_MSG__RESP__WIFI_STA_GET_AP_INFO__INIT \
+ { PROTOBUF_C_MESSAGE_INIT (&ctrl_msg__resp__wifi_sta_get_ap_info__descriptor) \
+    , 0, NULL }
+
+
 struct  CtrlMsgEventWifiEventNoArgs
 {
   ProtobufCMessage base;
@@ -2382,8 +2741,8 @@ typedef enum {
   CTRL_MSG__PAYLOAD_REQ_START_SOFTAP = 267,
   CTRL_MSG__PAYLOAD_REQ_SOFTAP_CONNECTED_STAS_LIST = 268,
   CTRL_MSG__PAYLOAD_REQ_STOP_SOFTAP = 269,
-  CTRL_MSG__PAYLOAD_REQ_SET_POWER_SAVE_MODE = 270,
-  CTRL_MSG__PAYLOAD_REQ_GET_POWER_SAVE_MODE = 271,
+  CTRL_MSG__PAYLOAD_REQ_WIFI_SET_PS = 270,
+  CTRL_MSG__PAYLOAD_REQ_WIFI_GET_PS = 271,
   CTRL_MSG__PAYLOAD_REQ_OTA_BEGIN = 272,
   CTRL_MSG__PAYLOAD_REQ_OTA_WRITE = 273,
   CTRL_MSG__PAYLOAD_REQ_OTA_END = 274,
@@ -2403,6 +2762,10 @@ typedef enum {
   CTRL_MSG__PAYLOAD_REQ_WIFI_SCAN_GET_AP_NUM = 288,
   CTRL_MSG__PAYLOAD_REQ_WIFI_SCAN_GET_AP_RECORDS = 289,
   CTRL_MSG__PAYLOAD_REQ_WIFI_CLEAR_AP_LIST = 290,
+  CTRL_MSG__PAYLOAD_REQ_WIFI_RESTORE = 291,
+  CTRL_MSG__PAYLOAD_REQ_WIFI_CLEAR_FAST_CONNECT = 292,
+  CTRL_MSG__PAYLOAD_REQ_WIFI_DEAUTH_STA = 293,
+  CTRL_MSG__PAYLOAD_REQ_WIFI_STA_GET_AP_INFO = 294,
   CTRL_MSG__PAYLOAD_RESP_GET_MAC_ADDRESS = 513,
   CTRL_MSG__PAYLOAD_RESP_SET_MAC_ADDRESS = 514,
   CTRL_MSG__PAYLOAD_RESP_GET_WIFI_MODE = 515,
@@ -2416,8 +2779,8 @@ typedef enum {
   CTRL_MSG__PAYLOAD_RESP_START_SOFTAP = 523,
   CTRL_MSG__PAYLOAD_RESP_SOFTAP_CONNECTED_STAS_LIST = 524,
   CTRL_MSG__PAYLOAD_RESP_STOP_SOFTAP = 525,
-  CTRL_MSG__PAYLOAD_RESP_SET_POWER_SAVE_MODE = 526,
-  CTRL_MSG__PAYLOAD_RESP_GET_POWER_SAVE_MODE = 527,
+  CTRL_MSG__PAYLOAD_RESP_WIFI_SET_PS = 526,
+  CTRL_MSG__PAYLOAD_RESP_WIFI_GET_PS = 527,
   CTRL_MSG__PAYLOAD_RESP_OTA_BEGIN = 528,
   CTRL_MSG__PAYLOAD_RESP_OTA_WRITE = 529,
   CTRL_MSG__PAYLOAD_RESP_OTA_END = 530,
@@ -2437,6 +2800,10 @@ typedef enum {
   CTRL_MSG__PAYLOAD_RESP_WIFI_SCAN_GET_AP_NUM = 544,
   CTRL_MSG__PAYLOAD_RESP_WIFI_SCAN_GET_AP_RECORDS = 545,
   CTRL_MSG__PAYLOAD_RESP_WIFI_CLEAR_AP_LIST = 546,
+  CTRL_MSG__PAYLOAD_RESP_WIFI_RESTORE = 547,
+  CTRL_MSG__PAYLOAD_RESP_WIFI_CLEAR_FAST_CONNECT = 548,
+  CTRL_MSG__PAYLOAD_RESP_WIFI_DEAUTH_STA = 549,
+  CTRL_MSG__PAYLOAD_RESP_WIFI_STA_GET_AP_INFO = 550,
   CTRL_MSG__PAYLOAD_EVENT_ESP_INIT = 769,
   CTRL_MSG__PAYLOAD_EVENT_HEARTBEAT = 770,
   CTRL_MSG__PAYLOAD_EVENT_STATION_DISCONNECT_FROM__AP = 771,
@@ -2476,13 +2843,13 @@ struct  CtrlMsg
     CtrlMsgReqStartSoftAP *req_start_softap;
     CtrlMsgReqSoftAPConnectedSTA *req_softap_connected_stas_list;
     CtrlMsgReqGetStatus *req_stop_softap;
-    CtrlMsgReqSetMode *req_set_power_save_mode;
-    CtrlMsgReqGetMode *req_get_power_save_mode;
+    CtrlMsgReqSetMode *req_wifi_set_ps;
+    CtrlMsgReqGetMode *req_wifi_get_ps;
     CtrlMsgReqOTABegin *req_ota_begin;
     CtrlMsgReqOTAWrite *req_ota_write;
     CtrlMsgReqOTAEnd *req_ota_end;
-    CtrlMsgReqSetWifiMaxTxPower *req_set_wifi_max_tx_power;
-    CtrlMsgReqGetWifiCurrTxPower *req_get_wifi_curr_tx_power;
+    CtrlMsgReqWifiSetMaxTxPower *req_set_wifi_max_tx_power;
+    CtrlMsgReqWifiGetMaxTxPower *req_get_wifi_curr_tx_power;
     CtrlMsgReqConfigHeartbeat *req_config_heartbeat;
     CtrlMsgReqWifiInit *req_wifi_init;
     CtrlMsgReqWifiDeinit *req_wifi_deinit;
@@ -2497,6 +2864,10 @@ struct  CtrlMsg
     CtrlMsgReqWifiScanGetApNum *req_wifi_scan_get_ap_num;
     CtrlMsgReqWifiScanGetApRecords *req_wifi_scan_get_ap_records;
     CtrlMsgReqWifiClearApList *req_wifi_clear_ap_list;
+    CtrlMsgReqWifiRestore *req_wifi_restore;
+    CtrlMsgReqWifiClearFastConnect *req_wifi_clear_fast_connect;
+    CtrlMsgReqWifiDeauthSta *req_wifi_deauth_sta;
+    CtrlMsgReqWifiStaGetApInfo *req_wifi_sta_get_ap_info;
     /*
      ** Responses *
      */
@@ -2513,13 +2884,13 @@ struct  CtrlMsg
     CtrlMsgRespStartSoftAP *resp_start_softap;
     CtrlMsgRespSoftAPConnectedSTA *resp_softap_connected_stas_list;
     CtrlMsgRespGetStatus *resp_stop_softap;
-    CtrlMsgRespSetMode *resp_set_power_save_mode;
-    CtrlMsgRespGetMode *resp_get_power_save_mode;
+    CtrlMsgRespSetMode *resp_wifi_set_ps;
+    CtrlMsgRespGetMode *resp_wifi_get_ps;
     CtrlMsgRespOTABegin *resp_ota_begin;
     CtrlMsgRespOTAWrite *resp_ota_write;
     CtrlMsgRespOTAEnd *resp_ota_end;
-    CtrlMsgRespSetWifiMaxTxPower *resp_set_wifi_max_tx_power;
-    CtrlMsgRespGetWifiCurrTxPower *resp_get_wifi_curr_tx_power;
+    CtrlMsgRespWifiSetMaxTxPower *resp_set_wifi_max_tx_power;
+    CtrlMsgRespWifiGetMaxTxPower *resp_get_wifi_curr_tx_power;
     CtrlMsgRespConfigHeartbeat *resp_config_heartbeat;
     CtrlMsgRespWifiInit *resp_wifi_init;
     CtrlMsgRespWifiDeinit *resp_wifi_deinit;
@@ -2534,6 +2905,10 @@ struct  CtrlMsg
     CtrlMsgRespWifiScanGetApNum *resp_wifi_scan_get_ap_num;
     CtrlMsgRespWifiScanGetApRecords *resp_wifi_scan_get_ap_records;
     CtrlMsgRespWifiClearApList *resp_wifi_clear_ap_list;
+    CtrlMsgRespWifiRestore *resp_wifi_restore;
+    CtrlMsgRespWifiClearFastConnect *resp_wifi_clear_fast_connect;
+    CtrlMsgRespWifiDeauthSta *resp_wifi_deauth_sta;
+    CtrlMsgRespWifiStaGetApInfo *resp_wifi_sta_get_ap_info;
     /*
      ** Notifications *
      */
@@ -3938,81 +4313,81 @@ CtrlMsgRespSetSoftAPVendorSpecificIE *
 void   ctrl_msg__resp__set_soft_apvendor_specific_ie__free_unpacked
                      (CtrlMsgRespSetSoftAPVendorSpecificIE *message,
                       ProtobufCAllocator *allocator);
-/* CtrlMsgReqSetWifiMaxTxPower methods */
-void   ctrl_msg__req__set_wifi_max_tx_power__init
-                     (CtrlMsgReqSetWifiMaxTxPower         *message);
-size_t ctrl_msg__req__set_wifi_max_tx_power__get_packed_size
-                     (const CtrlMsgReqSetWifiMaxTxPower   *message);
-size_t ctrl_msg__req__set_wifi_max_tx_power__pack
-                     (const CtrlMsgReqSetWifiMaxTxPower   *message,
+/* CtrlMsgReqWifiSetMaxTxPower methods */
+void   ctrl_msg__req__wifi_set_max_tx_power__init
+                     (CtrlMsgReqWifiSetMaxTxPower         *message);
+size_t ctrl_msg__req__wifi_set_max_tx_power__get_packed_size
+                     (const CtrlMsgReqWifiSetMaxTxPower   *message);
+size_t ctrl_msg__req__wifi_set_max_tx_power__pack
+                     (const CtrlMsgReqWifiSetMaxTxPower   *message,
                       uint8_t             *out);
-size_t ctrl_msg__req__set_wifi_max_tx_power__pack_to_buffer
-                     (const CtrlMsgReqSetWifiMaxTxPower   *message,
+size_t ctrl_msg__req__wifi_set_max_tx_power__pack_to_buffer
+                     (const CtrlMsgReqWifiSetMaxTxPower   *message,
                       ProtobufCBuffer     *buffer);
-CtrlMsgReqSetWifiMaxTxPower *
-       ctrl_msg__req__set_wifi_max_tx_power__unpack
+CtrlMsgReqWifiSetMaxTxPower *
+       ctrl_msg__req__wifi_set_max_tx_power__unpack
                      (ProtobufCAllocator  *allocator,
                       size_t               len,
                       const uint8_t       *data);
-void   ctrl_msg__req__set_wifi_max_tx_power__free_unpacked
-                     (CtrlMsgReqSetWifiMaxTxPower *message,
+void   ctrl_msg__req__wifi_set_max_tx_power__free_unpacked
+                     (CtrlMsgReqWifiSetMaxTxPower *message,
                       ProtobufCAllocator *allocator);
-/* CtrlMsgRespSetWifiMaxTxPower methods */
-void   ctrl_msg__resp__set_wifi_max_tx_power__init
-                     (CtrlMsgRespSetWifiMaxTxPower         *message);
-size_t ctrl_msg__resp__set_wifi_max_tx_power__get_packed_size
-                     (const CtrlMsgRespSetWifiMaxTxPower   *message);
-size_t ctrl_msg__resp__set_wifi_max_tx_power__pack
-                     (const CtrlMsgRespSetWifiMaxTxPower   *message,
+/* CtrlMsgRespWifiSetMaxTxPower methods */
+void   ctrl_msg__resp__wifi_set_max_tx_power__init
+                     (CtrlMsgRespWifiSetMaxTxPower         *message);
+size_t ctrl_msg__resp__wifi_set_max_tx_power__get_packed_size
+                     (const CtrlMsgRespWifiSetMaxTxPower   *message);
+size_t ctrl_msg__resp__wifi_set_max_tx_power__pack
+                     (const CtrlMsgRespWifiSetMaxTxPower   *message,
                       uint8_t             *out);
-size_t ctrl_msg__resp__set_wifi_max_tx_power__pack_to_buffer
-                     (const CtrlMsgRespSetWifiMaxTxPower   *message,
+size_t ctrl_msg__resp__wifi_set_max_tx_power__pack_to_buffer
+                     (const CtrlMsgRespWifiSetMaxTxPower   *message,
                       ProtobufCBuffer     *buffer);
-CtrlMsgRespSetWifiMaxTxPower *
-       ctrl_msg__resp__set_wifi_max_tx_power__unpack
+CtrlMsgRespWifiSetMaxTxPower *
+       ctrl_msg__resp__wifi_set_max_tx_power__unpack
                      (ProtobufCAllocator  *allocator,
                       size_t               len,
                       const uint8_t       *data);
-void   ctrl_msg__resp__set_wifi_max_tx_power__free_unpacked
-                     (CtrlMsgRespSetWifiMaxTxPower *message,
+void   ctrl_msg__resp__wifi_set_max_tx_power__free_unpacked
+                     (CtrlMsgRespWifiSetMaxTxPower *message,
                       ProtobufCAllocator *allocator);
-/* CtrlMsgReqGetWifiCurrTxPower methods */
-void   ctrl_msg__req__get_wifi_curr_tx_power__init
-                     (CtrlMsgReqGetWifiCurrTxPower         *message);
-size_t ctrl_msg__req__get_wifi_curr_tx_power__get_packed_size
-                     (const CtrlMsgReqGetWifiCurrTxPower   *message);
-size_t ctrl_msg__req__get_wifi_curr_tx_power__pack
-                     (const CtrlMsgReqGetWifiCurrTxPower   *message,
+/* CtrlMsgReqWifiGetMaxTxPower methods */
+void   ctrl_msg__req__wifi_get_max_tx_power__init
+                     (CtrlMsgReqWifiGetMaxTxPower         *message);
+size_t ctrl_msg__req__wifi_get_max_tx_power__get_packed_size
+                     (const CtrlMsgReqWifiGetMaxTxPower   *message);
+size_t ctrl_msg__req__wifi_get_max_tx_power__pack
+                     (const CtrlMsgReqWifiGetMaxTxPower   *message,
                       uint8_t             *out);
-size_t ctrl_msg__req__get_wifi_curr_tx_power__pack_to_buffer
-                     (const CtrlMsgReqGetWifiCurrTxPower   *message,
+size_t ctrl_msg__req__wifi_get_max_tx_power__pack_to_buffer
+                     (const CtrlMsgReqWifiGetMaxTxPower   *message,
                       ProtobufCBuffer     *buffer);
-CtrlMsgReqGetWifiCurrTxPower *
-       ctrl_msg__req__get_wifi_curr_tx_power__unpack
+CtrlMsgReqWifiGetMaxTxPower *
+       ctrl_msg__req__wifi_get_max_tx_power__unpack
                      (ProtobufCAllocator  *allocator,
                       size_t               len,
                       const uint8_t       *data);
-void   ctrl_msg__req__get_wifi_curr_tx_power__free_unpacked
-                     (CtrlMsgReqGetWifiCurrTxPower *message,
+void   ctrl_msg__req__wifi_get_max_tx_power__free_unpacked
+                     (CtrlMsgReqWifiGetMaxTxPower *message,
                       ProtobufCAllocator *allocator);
-/* CtrlMsgRespGetWifiCurrTxPower methods */
-void   ctrl_msg__resp__get_wifi_curr_tx_power__init
-                     (CtrlMsgRespGetWifiCurrTxPower         *message);
-size_t ctrl_msg__resp__get_wifi_curr_tx_power__get_packed_size
-                     (const CtrlMsgRespGetWifiCurrTxPower   *message);
-size_t ctrl_msg__resp__get_wifi_curr_tx_power__pack
-                     (const CtrlMsgRespGetWifiCurrTxPower   *message,
+/* CtrlMsgRespWifiGetMaxTxPower methods */
+void   ctrl_msg__resp__wifi_get_max_tx_power__init
+                     (CtrlMsgRespWifiGetMaxTxPower         *message);
+size_t ctrl_msg__resp__wifi_get_max_tx_power__get_packed_size
+                     (const CtrlMsgRespWifiGetMaxTxPower   *message);
+size_t ctrl_msg__resp__wifi_get_max_tx_power__pack
+                     (const CtrlMsgRespWifiGetMaxTxPower   *message,
                       uint8_t             *out);
-size_t ctrl_msg__resp__get_wifi_curr_tx_power__pack_to_buffer
-                     (const CtrlMsgRespGetWifiCurrTxPower   *message,
+size_t ctrl_msg__resp__wifi_get_max_tx_power__pack_to_buffer
+                     (const CtrlMsgRespWifiGetMaxTxPower   *message,
                       ProtobufCBuffer     *buffer);
-CtrlMsgRespGetWifiCurrTxPower *
-       ctrl_msg__resp__get_wifi_curr_tx_power__unpack
+CtrlMsgRespWifiGetMaxTxPower *
+       ctrl_msg__resp__wifi_get_max_tx_power__unpack
                      (ProtobufCAllocator  *allocator,
                       size_t               len,
                       const uint8_t       *data);
-void   ctrl_msg__resp__get_wifi_curr_tx_power__free_unpacked
-                     (CtrlMsgRespGetWifiCurrTxPower *message,
+void   ctrl_msg__resp__wifi_get_max_tx_power__free_unpacked
+                     (CtrlMsgRespWifiGetMaxTxPower *message,
                       ProtobufCAllocator *allocator);
 /* CtrlMsgReqConfigHeartbeat methods */
 void   ctrl_msg__req__config_heartbeat__init
@@ -4546,6 +4921,158 @@ CtrlMsgRespWifiClearApList *
 void   ctrl_msg__resp__wifi_clear_ap_list__free_unpacked
                      (CtrlMsgRespWifiClearApList *message,
                       ProtobufCAllocator *allocator);
+/* CtrlMsgReqWifiRestore methods */
+void   ctrl_msg__req__wifi_restore__init
+                     (CtrlMsgReqWifiRestore         *message);
+size_t ctrl_msg__req__wifi_restore__get_packed_size
+                     (const CtrlMsgReqWifiRestore   *message);
+size_t ctrl_msg__req__wifi_restore__pack
+                     (const CtrlMsgReqWifiRestore   *message,
+                      uint8_t             *out);
+size_t ctrl_msg__req__wifi_restore__pack_to_buffer
+                     (const CtrlMsgReqWifiRestore   *message,
+                      ProtobufCBuffer     *buffer);
+CtrlMsgReqWifiRestore *
+       ctrl_msg__req__wifi_restore__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data);
+void   ctrl_msg__req__wifi_restore__free_unpacked
+                     (CtrlMsgReqWifiRestore *message,
+                      ProtobufCAllocator *allocator);
+/* CtrlMsgRespWifiRestore methods */
+void   ctrl_msg__resp__wifi_restore__init
+                     (CtrlMsgRespWifiRestore         *message);
+size_t ctrl_msg__resp__wifi_restore__get_packed_size
+                     (const CtrlMsgRespWifiRestore   *message);
+size_t ctrl_msg__resp__wifi_restore__pack
+                     (const CtrlMsgRespWifiRestore   *message,
+                      uint8_t             *out);
+size_t ctrl_msg__resp__wifi_restore__pack_to_buffer
+                     (const CtrlMsgRespWifiRestore   *message,
+                      ProtobufCBuffer     *buffer);
+CtrlMsgRespWifiRestore *
+       ctrl_msg__resp__wifi_restore__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data);
+void   ctrl_msg__resp__wifi_restore__free_unpacked
+                     (CtrlMsgRespWifiRestore *message,
+                      ProtobufCAllocator *allocator);
+/* CtrlMsgReqWifiClearFastConnect methods */
+void   ctrl_msg__req__wifi_clear_fast_connect__init
+                     (CtrlMsgReqWifiClearFastConnect         *message);
+size_t ctrl_msg__req__wifi_clear_fast_connect__get_packed_size
+                     (const CtrlMsgReqWifiClearFastConnect   *message);
+size_t ctrl_msg__req__wifi_clear_fast_connect__pack
+                     (const CtrlMsgReqWifiClearFastConnect   *message,
+                      uint8_t             *out);
+size_t ctrl_msg__req__wifi_clear_fast_connect__pack_to_buffer
+                     (const CtrlMsgReqWifiClearFastConnect   *message,
+                      ProtobufCBuffer     *buffer);
+CtrlMsgReqWifiClearFastConnect *
+       ctrl_msg__req__wifi_clear_fast_connect__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data);
+void   ctrl_msg__req__wifi_clear_fast_connect__free_unpacked
+                     (CtrlMsgReqWifiClearFastConnect *message,
+                      ProtobufCAllocator *allocator);
+/* CtrlMsgRespWifiClearFastConnect methods */
+void   ctrl_msg__resp__wifi_clear_fast_connect__init
+                     (CtrlMsgRespWifiClearFastConnect         *message);
+size_t ctrl_msg__resp__wifi_clear_fast_connect__get_packed_size
+                     (const CtrlMsgRespWifiClearFastConnect   *message);
+size_t ctrl_msg__resp__wifi_clear_fast_connect__pack
+                     (const CtrlMsgRespWifiClearFastConnect   *message,
+                      uint8_t             *out);
+size_t ctrl_msg__resp__wifi_clear_fast_connect__pack_to_buffer
+                     (const CtrlMsgRespWifiClearFastConnect   *message,
+                      ProtobufCBuffer     *buffer);
+CtrlMsgRespWifiClearFastConnect *
+       ctrl_msg__resp__wifi_clear_fast_connect__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data);
+void   ctrl_msg__resp__wifi_clear_fast_connect__free_unpacked
+                     (CtrlMsgRespWifiClearFastConnect *message,
+                      ProtobufCAllocator *allocator);
+/* CtrlMsgReqWifiDeauthSta methods */
+void   ctrl_msg__req__wifi_deauth_sta__init
+                     (CtrlMsgReqWifiDeauthSta         *message);
+size_t ctrl_msg__req__wifi_deauth_sta__get_packed_size
+                     (const CtrlMsgReqWifiDeauthSta   *message);
+size_t ctrl_msg__req__wifi_deauth_sta__pack
+                     (const CtrlMsgReqWifiDeauthSta   *message,
+                      uint8_t             *out);
+size_t ctrl_msg__req__wifi_deauth_sta__pack_to_buffer
+                     (const CtrlMsgReqWifiDeauthSta   *message,
+                      ProtobufCBuffer     *buffer);
+CtrlMsgReqWifiDeauthSta *
+       ctrl_msg__req__wifi_deauth_sta__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data);
+void   ctrl_msg__req__wifi_deauth_sta__free_unpacked
+                     (CtrlMsgReqWifiDeauthSta *message,
+                      ProtobufCAllocator *allocator);
+/* CtrlMsgRespWifiDeauthSta methods */
+void   ctrl_msg__resp__wifi_deauth_sta__init
+                     (CtrlMsgRespWifiDeauthSta         *message);
+size_t ctrl_msg__resp__wifi_deauth_sta__get_packed_size
+                     (const CtrlMsgRespWifiDeauthSta   *message);
+size_t ctrl_msg__resp__wifi_deauth_sta__pack
+                     (const CtrlMsgRespWifiDeauthSta   *message,
+                      uint8_t             *out);
+size_t ctrl_msg__resp__wifi_deauth_sta__pack_to_buffer
+                     (const CtrlMsgRespWifiDeauthSta   *message,
+                      ProtobufCBuffer     *buffer);
+CtrlMsgRespWifiDeauthSta *
+       ctrl_msg__resp__wifi_deauth_sta__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data);
+void   ctrl_msg__resp__wifi_deauth_sta__free_unpacked
+                     (CtrlMsgRespWifiDeauthSta *message,
+                      ProtobufCAllocator *allocator);
+/* CtrlMsgReqWifiStaGetApInfo methods */
+void   ctrl_msg__req__wifi_sta_get_ap_info__init
+                     (CtrlMsgReqWifiStaGetApInfo         *message);
+size_t ctrl_msg__req__wifi_sta_get_ap_info__get_packed_size
+                     (const CtrlMsgReqWifiStaGetApInfo   *message);
+size_t ctrl_msg__req__wifi_sta_get_ap_info__pack
+                     (const CtrlMsgReqWifiStaGetApInfo   *message,
+                      uint8_t             *out);
+size_t ctrl_msg__req__wifi_sta_get_ap_info__pack_to_buffer
+                     (const CtrlMsgReqWifiStaGetApInfo   *message,
+                      ProtobufCBuffer     *buffer);
+CtrlMsgReqWifiStaGetApInfo *
+       ctrl_msg__req__wifi_sta_get_ap_info__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data);
+void   ctrl_msg__req__wifi_sta_get_ap_info__free_unpacked
+                     (CtrlMsgReqWifiStaGetApInfo *message,
+                      ProtobufCAllocator *allocator);
+/* CtrlMsgRespWifiStaGetApInfo methods */
+void   ctrl_msg__resp__wifi_sta_get_ap_info__init
+                     (CtrlMsgRespWifiStaGetApInfo         *message);
+size_t ctrl_msg__resp__wifi_sta_get_ap_info__get_packed_size
+                     (const CtrlMsgRespWifiStaGetApInfo   *message);
+size_t ctrl_msg__resp__wifi_sta_get_ap_info__pack
+                     (const CtrlMsgRespWifiStaGetApInfo   *message,
+                      uint8_t             *out);
+size_t ctrl_msg__resp__wifi_sta_get_ap_info__pack_to_buffer
+                     (const CtrlMsgRespWifiStaGetApInfo   *message,
+                      ProtobufCBuffer     *buffer);
+CtrlMsgRespWifiStaGetApInfo *
+       ctrl_msg__resp__wifi_sta_get_ap_info__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data);
+void   ctrl_msg__resp__wifi_sta_get_ap_info__free_unpacked
+                     (CtrlMsgRespWifiStaGetApInfo *message,
+                      ProtobufCAllocator *allocator);
 /* CtrlMsgEventWifiEventNoArgs methods */
 void   ctrl_msg__event__wifi_event_no_args__init
                      (CtrlMsgEventWifiEventNoArgs         *message);
@@ -4919,17 +5446,17 @@ typedef void (*CtrlMsgReqSetSoftAPVendorSpecificIE_Closure)
 typedef void (*CtrlMsgRespSetSoftAPVendorSpecificIE_Closure)
                  (const CtrlMsgRespSetSoftAPVendorSpecificIE *message,
                   void *closure_data);
-typedef void (*CtrlMsgReqSetWifiMaxTxPower_Closure)
-                 (const CtrlMsgReqSetWifiMaxTxPower *message,
+typedef void (*CtrlMsgReqWifiSetMaxTxPower_Closure)
+                 (const CtrlMsgReqWifiSetMaxTxPower *message,
                   void *closure_data);
-typedef void (*CtrlMsgRespSetWifiMaxTxPower_Closure)
-                 (const CtrlMsgRespSetWifiMaxTxPower *message,
+typedef void (*CtrlMsgRespWifiSetMaxTxPower_Closure)
+                 (const CtrlMsgRespWifiSetMaxTxPower *message,
                   void *closure_data);
-typedef void (*CtrlMsgReqGetWifiCurrTxPower_Closure)
-                 (const CtrlMsgReqGetWifiCurrTxPower *message,
+typedef void (*CtrlMsgReqWifiGetMaxTxPower_Closure)
+                 (const CtrlMsgReqWifiGetMaxTxPower *message,
                   void *closure_data);
-typedef void (*CtrlMsgRespGetWifiCurrTxPower_Closure)
-                 (const CtrlMsgRespGetWifiCurrTxPower *message,
+typedef void (*CtrlMsgRespWifiGetMaxTxPower_Closure)
+                 (const CtrlMsgRespWifiGetMaxTxPower *message,
                   void *closure_data);
 typedef void (*CtrlMsgReqConfigHeartbeat_Closure)
                  (const CtrlMsgReqConfigHeartbeat *message,
@@ -5014,6 +5541,30 @@ typedef void (*CtrlMsgReqWifiClearApList_Closure)
                   void *closure_data);
 typedef void (*CtrlMsgRespWifiClearApList_Closure)
                  (const CtrlMsgRespWifiClearApList *message,
+                  void *closure_data);
+typedef void (*CtrlMsgReqWifiRestore_Closure)
+                 (const CtrlMsgReqWifiRestore *message,
+                  void *closure_data);
+typedef void (*CtrlMsgRespWifiRestore_Closure)
+                 (const CtrlMsgRespWifiRestore *message,
+                  void *closure_data);
+typedef void (*CtrlMsgReqWifiClearFastConnect_Closure)
+                 (const CtrlMsgReqWifiClearFastConnect *message,
+                  void *closure_data);
+typedef void (*CtrlMsgRespWifiClearFastConnect_Closure)
+                 (const CtrlMsgRespWifiClearFastConnect *message,
+                  void *closure_data);
+typedef void (*CtrlMsgReqWifiDeauthSta_Closure)
+                 (const CtrlMsgReqWifiDeauthSta *message,
+                  void *closure_data);
+typedef void (*CtrlMsgRespWifiDeauthSta_Closure)
+                 (const CtrlMsgRespWifiDeauthSta *message,
+                  void *closure_data);
+typedef void (*CtrlMsgReqWifiStaGetApInfo_Closure)
+                 (const CtrlMsgReqWifiStaGetApInfo *message,
+                  void *closure_data);
+typedef void (*CtrlMsgRespWifiStaGetApInfo_Closure)
+                 (const CtrlMsgRespWifiStaGetApInfo *message,
                   void *closure_data);
 typedef void (*CtrlMsgEventWifiEventNoArgs_Closure)
                  (const CtrlMsgEventWifiEventNoArgs *message,
@@ -5126,10 +5677,10 @@ extern const ProtobufCMessageDescriptor ctrl_msg__resp__otaend__descriptor;
 extern const ProtobufCMessageDescriptor ctrl_msg__req__vendor_iedata__descriptor;
 extern const ProtobufCMessageDescriptor ctrl_msg__req__set_soft_apvendor_specific_ie__descriptor;
 extern const ProtobufCMessageDescriptor ctrl_msg__resp__set_soft_apvendor_specific_ie__descriptor;
-extern const ProtobufCMessageDescriptor ctrl_msg__req__set_wifi_max_tx_power__descriptor;
-extern const ProtobufCMessageDescriptor ctrl_msg__resp__set_wifi_max_tx_power__descriptor;
-extern const ProtobufCMessageDescriptor ctrl_msg__req__get_wifi_curr_tx_power__descriptor;
-extern const ProtobufCMessageDescriptor ctrl_msg__resp__get_wifi_curr_tx_power__descriptor;
+extern const ProtobufCMessageDescriptor ctrl_msg__req__wifi_set_max_tx_power__descriptor;
+extern const ProtobufCMessageDescriptor ctrl_msg__resp__wifi_set_max_tx_power__descriptor;
+extern const ProtobufCMessageDescriptor ctrl_msg__req__wifi_get_max_tx_power__descriptor;
+extern const ProtobufCMessageDescriptor ctrl_msg__resp__wifi_get_max_tx_power__descriptor;
 extern const ProtobufCMessageDescriptor ctrl_msg__req__config_heartbeat__descriptor;
 extern const ProtobufCMessageDescriptor ctrl_msg__resp__config_heartbeat__descriptor;
 extern const ProtobufCMessageDescriptor ctrl_msg__req__wifi_init__descriptor;
@@ -5158,6 +5709,14 @@ extern const ProtobufCMessageDescriptor ctrl_msg__req__wifi_scan_get_ap_records_
 extern const ProtobufCMessageDescriptor ctrl_msg__resp__wifi_scan_get_ap_records__descriptor;
 extern const ProtobufCMessageDescriptor ctrl_msg__req__wifi_clear_ap_list__descriptor;
 extern const ProtobufCMessageDescriptor ctrl_msg__resp__wifi_clear_ap_list__descriptor;
+extern const ProtobufCMessageDescriptor ctrl_msg__req__wifi_restore__descriptor;
+extern const ProtobufCMessageDescriptor ctrl_msg__resp__wifi_restore__descriptor;
+extern const ProtobufCMessageDescriptor ctrl_msg__req__wifi_clear_fast_connect__descriptor;
+extern const ProtobufCMessageDescriptor ctrl_msg__resp__wifi_clear_fast_connect__descriptor;
+extern const ProtobufCMessageDescriptor ctrl_msg__req__wifi_deauth_sta__descriptor;
+extern const ProtobufCMessageDescriptor ctrl_msg__resp__wifi_deauth_sta__descriptor;
+extern const ProtobufCMessageDescriptor ctrl_msg__req__wifi_sta_get_ap_info__descriptor;
+extern const ProtobufCMessageDescriptor ctrl_msg__resp__wifi_sta_get_ap_info__descriptor;
 extern const ProtobufCMessageDescriptor ctrl_msg__event__wifi_event_no_args__descriptor;
 extern const ProtobufCMessageDescriptor ctrl_msg__event__espinit__descriptor;
 extern const ProtobufCMessageDescriptor ctrl_msg__event__heartbeat__descriptor;

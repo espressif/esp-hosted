@@ -627,14 +627,14 @@ static int ctrl_app_parse_resp(CtrlMsg *ctrl_msg, ctrl_cmd_t *app_resp)
 		CTRL_FAIL_ON_NULL(resp_stop_softap);
 		CTRL_ERR_IN_RESP(resp_stop_softap);
 		break;
-	} case CTRL_MSG_ID__Resp_SetPowerSaveMode : {
-		CTRL_FAIL_ON_NULL(resp_set_power_save_mode);
-		CTRL_ERR_IN_RESP(resp_set_power_save_mode);
+	} case CTRL_MSG_ID__Resp_WifiSetPs: {
+		CTRL_FAIL_ON_NULL(resp_wifi_set_ps);
+		CTRL_ERR_IN_RESP(resp_wifi_set_ps);
 		break;
-	} case CTRL_MSG_ID__Resp_GetPowerSaveMode : {
-		CTRL_FAIL_ON_NULL(resp_get_power_save_mode);
-		CTRL_ERR_IN_RESP(resp_get_power_save_mode);
-		app_resp->u.wifi_ps.ps_mode = ctrl_msg->resp_get_power_save_mode->mode;
+	} case CTRL_MSG_ID__Resp_WifiGetPs : {
+		CTRL_FAIL_ON_NULL(resp_wifi_get_ps);
+		CTRL_ERR_IN_RESP(resp_wifi_get_ps);
+		app_resp->u.wifi_ps.ps_mode = ctrl_msg->resp_wifi_get_ps->mode;
 		break;
 	} case CTRL_MSG_ID__Resp_OTABegin : {
 		CTRL_FAIL_ON_NULL(resp_ota_begin);
@@ -659,7 +659,7 @@ static int ctrl_app_parse_resp(CtrlMsg *ctrl_msg, ctrl_cmd_t *app_resp)
 			goto fail_parse_ctrl_msg;
 		}
 		break;
-	} case CTRL_MSG_ID__Resp_SetWifiMaxTxPower: {
+	} case CTRL_MSG_ID__Resp_WifiSetMaxTxPower: {
 		CTRL_FAIL_ON_NULL(req_set_wifi_max_tx_power);
 		switch (ctrl_msg->resp_set_wifi_max_tx_power->resp)
 		{
@@ -679,7 +679,7 @@ static int ctrl_app_parse_resp(CtrlMsg *ctrl_msg, ctrl_cmd_t *app_resp)
 				break;
 		}
 		break;
-	} case CTRL_MSG_ID__Resp_GetWifiCurrTxPower: {
+	} case CTRL_MSG_ID__Resp_WifiGetMaxTxPower: {
 		CTRL_FAIL_ON_NULL(resp_get_wifi_curr_tx_power);
 		CTRL_ERR_IN_RESP(resp_get_wifi_curr_tx_power);
 		app_resp->u.wifi_tx_power.power =
@@ -802,7 +802,6 @@ static int ctrl_app_parse_resp(CtrlMsg *ctrl_msg, ctrl_cmd_t *app_resp)
 		wifi_ap_record_t *list = NULL;
 		WifiApRecord **p_c_list = NULL;
 
-		hosted_log("a");
 		CTRL_FAIL_ON_NULL(resp_wifi_scan_get_ap_records);
 		CTRL_ERR_IN_RESP(resp_wifi_scan_get_ap_records);
 		p_c_list = ctrl_msg->resp_wifi_scan_get_ap_records->ap_records;
@@ -823,7 +822,6 @@ static int ctrl_app_parse_resp(CtrlMsg *ctrl_msg, ctrl_cmd_t *app_resp)
 		p_a->out_list = list;
 
 		CTRL_FAIL_ON_NULL_PRINT(list, "Malloc Failed");
-		hosted_log("b");
 
 		app_resp->free_buffer_func = g_h.funcs->_h_free;
 		app_resp->free_buffer_handle = list;
@@ -882,11 +880,97 @@ static int ctrl_app_parse_resp(CtrlMsg *ctrl_msg, ctrl_cmd_t *app_resp)
 
 			//p_a_sta->rm_enabled = GET_BIT(STA_RM_ENABLED_BIT, p_c_sta->bitmask);
 		}
-		hosted_log("c");
+		break;
+    } case CTRL_MSG_ID__Resp_WifiStaGetApInfo: {
+		WifiApRecord *p_c = NULL;
+		wifi_ap_record_t *ap_info = NULL;
+		wifi_scan_ap_list_t *p_a = &(app_resp->u.wifi_scan_ap_list);
+
+		CTRL_FAIL_ON_NULL(resp_wifi_sta_get_ap_info);
+		CTRL_ERR_IN_RESP(resp_wifi_sta_get_ap_info);
+		p_c = ctrl_msg->resp_wifi_sta_get_ap_info->ap_records;
+
+		p_a->number = 1;
+
+		CTRL_FAIL_ON_NULL(resp_wifi_sta_get_ap_info->ap_records);
+
+		ap_info = (wifi_ap_record_t*)g_h.funcs->_h_calloc(p_a->number,
+				sizeof(wifi_ap_record_t));
+		p_a->out_list = ap_info;
+
+		CTRL_FAIL_ON_NULL_PRINT(ap_info, "Malloc Failed");
+
+		app_resp->free_buffer_func = g_h.funcs->_h_free;
+		app_resp->free_buffer_handle = ap_info;
+
+		{
+			WifiCountry *p_c_cntry = p_c->country;
+			wifi_country_t *p_a_cntry = &ap_info->country;
+
+			hosted_log("\n\nap_info\n");
+			printf("ssid len: %u\n", p_c->ssid.len);
+			CTRL_RESP_COPY_BYTES(ap_info->ssid, p_c->ssid);
+			CTRL_RESP_COPY_BYTES(ap_info->bssid, p_c->bssid);
+			ap_info->primary = p_c->primary;
+			ap_info->second = p_c->second;
+			ap_info->rssi = p_c->rssi;
+			ap_info->authmode = p_c->authmode;
+			ap_info->pairwise_cipher = p_c->pairwise_cipher;
+			ap_info->group_cipher = p_c->group_cipher;
+			ap_info->ant = p_c->ant;
+			//list-> = p_c_list->;
+			//list-> = p_c_list->;
+			ap_info->phy_11b       = GET_BIT(WIFI_SCAN_AP_REC_phy_11b_BIT, p_c->bitmask);
+			ap_info->phy_11g       = GET_BIT(WIFI_SCAN_AP_REC_phy_11g_BIT, p_c->bitmask);
+			ap_info->phy_11n       = GET_BIT(WIFI_SCAN_AP_REC_phy_11n_BIT, p_c->bitmask);
+			ap_info->phy_lr        = GET_BIT(WIFI_SCAN_AP_REC_phy_lr_BIT, p_c->bitmask);
+			ap_info->wps           = GET_BIT(WIFI_SCAN_AP_REC_wps_BIT, p_c->bitmask);
+			ap_info->ftm_responder = GET_BIT(WIFI_SCAN_AP_REC_ftm_responder_BIT, p_c->bitmask);
+			ap_info->ftm_initiator = GET_BIT(WIFI_SCAN_AP_REC_ftm_initiator_BIT, p_c->bitmask);
+			ap_info->reserved      = WIFI_SCAN_AP_GET_RESERVED_VAL(p_c->bitmask);
+
+			CTRL_RESP_COPY_BYTES(p_a_cntry->cc, p_c_cntry->cc);
+			p_a_cntry->schan = p_c_cntry->schan;
+			p_a_cntry->nchan = p_c_cntry->nchan;
+			p_a_cntry->max_tx_power = p_c_cntry->max_tx_power;
+			p_a_cntry->policy = p_c_cntry->policy;
+
+			/*hosted_log("AP info: ssid \"%s\" bssid \"%s\" rssi \"%d\" channel \"%d\" auth mode \"%d\" \n\r",\
+			  ap_info->ssid, ap_info->bssid, ap_info->rssi,
+			  ap_info->channel, ap_info->authmode);*/
+
+			hosted_log("Ssid: %s\nBssid: "MACSTR"\nPrimary: %u\nSecond: %u\nRssi: %d\nAuthmode: %u\nPairwiseCipher: %u\nGroupcipher: %u\nAnt: %u\nBitmask:11b:%u g:%u n:%u lr:%u wps:%u ftm_resp:%u ftm_ini:%u res: %u\n",
+					ap_info->ssid, MAC2STR(ap_info->bssid),
+					ap_info->primary, ap_info->second,
+					ap_info->rssi, ap_info->authmode,
+					ap_info->pairwise_cipher, ap_info->group_cipher,
+					ap_info->ant, ap_info->phy_11b, ap_info->phy_11g,
+					ap_info->phy_11n, ap_info->phy_lr,
+					ap_info->wps, ap_info->ftm_responder,
+					ap_info->ftm_initiator, ap_info->reserved
+					);
+			hosted_log("Country:\n  cc:%s schan: %u nchan: %u max_tx_pow: %d policy: %u\n",
+					p_a_cntry->cc, p_a_cntry->schan, p_a_cntry->nchan,
+					p_a_cntry->max_tx_power,p_a_cntry->policy);
+
+			//p_a_sta->rm_enabled = GET_BIT(STA_RM_ENABLED_BIT, p_c_sta->bitmask);
+		}
 		break;
     } case CTRL_MSG_ID__Resp_WifiClearApList: {
 		CTRL_FAIL_ON_NULL(resp_wifi_clear_ap_list);
 		CTRL_ERR_IN_RESP(resp_wifi_clear_ap_list);
+		break;
+	} case CTRL_MSG_ID__Resp_WifiRestore: {
+		CTRL_FAIL_ON_NULL(resp_wifi_restore);
+		CTRL_ERR_IN_RESP(resp_wifi_restore);
+		break;
+	} case CTRL_MSG_ID__Resp_WifiClearFastConnect: {
+		CTRL_FAIL_ON_NULL(resp_wifi_clear_fast_connect);
+		CTRL_ERR_IN_RESP(resp_wifi_clear_fast_connect);
+		break;
+	} case CTRL_MSG_ID__Resp_WifiDeauthSta: {
+		CTRL_FAIL_ON_NULL(resp_wifi_deauth_sta);
+		CTRL_ERR_IN_RESP(resp_wifi_deauth_sta);
 		break;
 	} default: {
 		hosted_log("Unsupported Control Resp[%u]\n", ctrl_msg->msg_id);
@@ -975,7 +1059,7 @@ static int process_ctrl_tx_msg(ctrl_cmd_t *app_req)
 	case CTRL_MSG_ID__Req_GetSoftAPConfig:
 	case CTRL_MSG_ID__Req_GetSoftAPConnectedSTAList:
 	case CTRL_MSG_ID__Req_StopSoftAP:
-	case CTRL_MSG_ID__Req_GetPowerSaveMode:
+	case CTRL_MSG_ID__Req_WifiGetPs:
 	case CTRL_MSG_ID__Req_OTABegin:
 	case CTRL_MSG_ID__Req_OTAEnd:
 	case CTRL_MSG_ID__Req_WifiDeinit:
@@ -986,7 +1070,10 @@ static int process_ctrl_tx_msg(ctrl_cmd_t *app_req)
 	case CTRL_MSG_ID__Req_WifiScanStop:
 	case CTRL_MSG_ID__Req_WifiScanGetApNum:
 	case CTRL_MSG_ID__Req_WifiClearApList:
-	case CTRL_MSG_ID__Req_GetWifiCurrTxPower: {
+	case CTRL_MSG_ID__Req_WifiRestore:
+	case CTRL_MSG_ID__Req_WifiClearFastConnect:
+	case CTRL_MSG_ID__Req_WifiStaGetApInfo:
+	case CTRL_MSG_ID__Req_WifiGetMaxTxPower: {
 		/* Intentional fallthrough & empty */
 		break;
 	} case CTRL_MSG_ID__Req_GetAPScanList: {
@@ -1007,7 +1094,7 @@ static int process_ctrl_tx_msg(ctrl_cmd_t *app_req)
 
 		if ((p->mode <= WIFI_MODE_NULL) ||
 		    (p->mode >= WIFI_MODE_APSTA)||
-		    (!(p->mac))) {
+		    (!(p->mac[0]))) {
 			hosted_log("Invalid parameter\n");
 			failure_status = CTRL_ERR_INCORRECT_ARG;
 			goto fail_req;
@@ -1165,9 +1252,9 @@ static int process_ctrl_tx_msg(ctrl_cmd_t *app_req)
 		req_payload->ssid_hidden = p->ssid_hidden;
 		req_payload->bw = p->bandwidth;
 		break;
-	} case CTRL_MSG_ID__Req_SetPowerSaveMode: {
+	} case CTRL_MSG_ID__Req_WifiSetPs: {
 		wifi_power_save_t * p = &app_req->u.wifi_ps;
-		CTRL_ALLOC_ASSIGN(CtrlMsgReqSetMode, req_set_power_save_mode,
+		CTRL_ALLOC_ASSIGN(CtrlMsgReqSetMode, req_wifi_set_ps,
 				ctrl_msg__req__set_mode__init);
 
 		if ((p->ps_mode < WIFI_PS_MIN_MODEM) ||
@@ -1193,10 +1280,10 @@ static int process_ctrl_tx_msg(ctrl_cmd_t *app_req)
 		req_payload->ota_data.data = p->ota_data;
 		req_payload->ota_data.len = p->ota_data_len;
 		break;
-	} case CTRL_MSG_ID__Req_SetWifiMaxTxPower: {
-		CTRL_ALLOC_ASSIGN(CtrlMsgReqSetWifiMaxTxPower,
+	} case CTRL_MSG_ID__Req_WifiSetMaxTxPower: {
+		CTRL_ALLOC_ASSIGN(CtrlMsgReqWifiSetMaxTxPower,
 				req_set_wifi_max_tx_power,
-				ctrl_msg__req__set_wifi_max_tx_power__init);
+				ctrl_msg__req__wifi_set_max_tx_power__init);
 		req_payload->wifi_max_tx_power = app_req->u.wifi_tx_power.power;
 		break;
 	} case CTRL_MSG_ID__Req_ConfigHeartbeat: {
@@ -1378,6 +1465,11 @@ static int process_ctrl_tx_msg(ctrl_cmd_t *app_req)
 		CTRL_ALLOC_ASSIGN(CtrlMsgReqWifiScanGetApRecords, req_wifi_scan_get_ap_records,
 				ctrl_msg__req__wifi_scan_get_ap_records__init);
 		req_payload->number = app_req->u.wifi_scan_ap_list.number;
+		break;
+	} case CTRL_MSG_ID__Req_WifiDeauthSta: {
+		CTRL_ALLOC_ASSIGN(CtrlMsgReqWifiDeauthSta, req_wifi_deauth_sta,
+				ctrl_msg__req__wifi_deauth_sta__init);
+		req_payload->aid = app_req->u.wifi_deauth_sta.aid;
 		break;
 	} default: {
 		failure_status = CTRL_ERR_UNSUPPORTED_MSG;

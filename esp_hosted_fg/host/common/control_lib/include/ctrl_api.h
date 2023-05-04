@@ -554,6 +554,10 @@ typedef struct {
 	wifi_ap_record_t *out_list;
 } wifi_scan_ap_list_t;
 
+typedef struct {
+	uint16_t aid;
+} wifi_deauth_sta_t;
+
 #if 0
 typedef struct {
 	int count;
@@ -650,7 +654,10 @@ typedef struct Ctrl_cmd_t {
 		wifi_tx_power_t             wifi_tx_power;
 
 		wifi_scan_cfg_t             wifi_scan_config;
+
 		wifi_scan_ap_list_t         wifi_scan_ap_list;
+
+		wifi_deauth_sta_t           wifi_deauth_sta;
 
 		event_heartbeat_t           e_heartbeat;
 
@@ -860,6 +867,17 @@ ctrl_cmd_t * wifi_scan_stop(ctrl_cmd_t req);
 ctrl_cmd_t * wifi_scan_get_ap_num(ctrl_cmd_t req);
 ctrl_cmd_t * wifi_scan_get_ap_records(ctrl_cmd_t req);
 ctrl_cmd_t * wifi_clear_ap_list(ctrl_cmd_t req);
+ctrl_cmd_t * wifi_restore(ctrl_cmd_t req);
+ctrl_cmd_t * wifi_clear_fast_connect(ctrl_cmd_t req);
+ctrl_cmd_t * wifi_deauth_sta(ctrl_cmd_t req);
+ctrl_cmd_t * wifi_sta_get_ap_info(ctrl_cmd_t req);
+ctrl_cmd_t * wifi_set_ps(ctrl_cmd_t req);
+ctrl_cmd_t * wifi_get_ps(ctrl_cmd_t req);
+#if 0
+ctrl_cmd_t * wifi_set_protocol(ctrl_cmd_t req);
+ctrl_cmd_t * wifi_get_protocol(ctrl_cmd_t req);
+#endif
+
 
 /* Get the interface up for interface `iface` */
 int interface_up(int sockfd, char* iface);

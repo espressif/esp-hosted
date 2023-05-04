@@ -60,15 +60,15 @@ ctrl_cmd_t * wifi_set_mode(ctrl_cmd_t req)
 	CTRL_DECODE_RESP_IF_NOT_ASYNC();
 }
 
-ctrl_cmd_t * wifi_set_power_save_mode(ctrl_cmd_t req)
+ctrl_cmd_t * wifi_set_ps(ctrl_cmd_t req)
 {
-	CTRL_SEND_REQ(CTRL_MSG_ID__Req_SetPowerSaveMode);
+	CTRL_SEND_REQ(CTRL_MSG_ID__Req_WifiSetPs);
 	CTRL_DECODE_RESP_IF_NOT_ASYNC();
 }
 
-ctrl_cmd_t * wifi_get_power_save_mode(ctrl_cmd_t req)
+ctrl_cmd_t * wifi_get_ps(ctrl_cmd_t req)
 {
-	CTRL_SEND_REQ(CTRL_MSG_ID__Req_GetPowerSaveMode);
+	CTRL_SEND_REQ(CTRL_MSG_ID__Req_WifiGetPs);
 	CTRL_DECODE_RESP_IF_NOT_ASYNC();
 }
 
@@ -128,13 +128,13 @@ ctrl_cmd_t * wifi_set_vendor_specific_ie(ctrl_cmd_t req)
 
 ctrl_cmd_t * wifi_set_max_tx_power(ctrl_cmd_t req)
 {
-	CTRL_SEND_REQ(CTRL_MSG_ID__Req_SetWifiMaxTxPower);
+	CTRL_SEND_REQ(CTRL_MSG_ID__Req_WifiSetMaxTxPower);
 	CTRL_DECODE_RESP_IF_NOT_ASYNC();
 }
 
 ctrl_cmd_t * wifi_get_curr_tx_power(ctrl_cmd_t req)
 {
-	CTRL_SEND_REQ(CTRL_MSG_ID__Req_GetWifiCurrTxPower);
+	CTRL_SEND_REQ(CTRL_MSG_ID__Req_WifiGetMaxTxPower);
 	CTRL_DECODE_RESP_IF_NOT_ASYNC();
 }
 
@@ -241,3 +241,40 @@ ctrl_cmd_t * wifi_clear_ap_list(ctrl_cmd_t req)
 	CTRL_DECODE_RESP_IF_NOT_ASYNC();
 }
 
+ctrl_cmd_t * wifi_restore(ctrl_cmd_t req)
+{
+	CTRL_SEND_REQ(CTRL_MSG_ID__Req_WifiRestore);
+	CTRL_DECODE_RESP_IF_NOT_ASYNC();
+}
+
+ctrl_cmd_t * wifi_clear_fast_connect(ctrl_cmd_t req)
+{
+	CTRL_SEND_REQ(CTRL_MSG_ID__Req_WifiClearFastConnect);
+	CTRL_DECODE_RESP_IF_NOT_ASYNC();
+}
+
+ctrl_cmd_t * wifi_deauth_sta(ctrl_cmd_t req)
+{
+	CTRL_SEND_REQ(CTRL_MSG_ID__Req_WifiDeauthSta);
+	CTRL_DECODE_RESP_IF_NOT_ASYNC();
+}
+
+ctrl_cmd_t * wifi_sta_get_ap_info(ctrl_cmd_t req)
+{
+	CTRL_SEND_REQ(CTRL_MSG_ID__Req_WifiStaGetApInfo);
+	CTRL_DECODE_RESP_IF_NOT_ASYNC();
+}
+
+#if 0
+ctrl_cmd_t * wifi_set_protocol(ctrl_cmd_t req)
+{
+	CTRL_SEND_REQ(CTRL_MSG_ID__Req_WifiSetProtocol);
+	CTRL_DECODE_RESP_IF_NOT_ASYNC();
+}
+
+ctrl_cmd_t * wifi_get_protocol(ctrl_cmd_t req)
+{
+	CTRL_SEND_REQ(CTRL_MSG_ID__Req_WifiGetProtocol);
+	CTRL_DECODE_RESP_IF_NOT_ASYNC();
+}
+#endif
