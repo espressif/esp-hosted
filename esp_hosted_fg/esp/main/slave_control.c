@@ -3158,6 +3158,117 @@ static esp_err_t req_wifi_clear_ap_list(CtrlMsg *req, CtrlMsg *resp, void *priv_
 	return ESP_OK;
 }
 
+static esp_err_t req_wifi_restore(CtrlMsg *req, CtrlMsg *resp, void *priv_data)
+{
+    CTRL_TEMPLATE_SIMPLE(CtrlMsgRespWifiRestore, resp_wifi_restore,
+			CtrlMsgReqWifiRestore, req_wifi_restore,
+			ctrl_msg__resp__wifi_restore__init);
+
+    CTRL_RET_FAIL_IF(esp_wifi_restore());
+	return ESP_OK;
+}
+
+static esp_err_t req_wifi_clear_fast_connect(CtrlMsg *req, CtrlMsg *resp, void *priv_data)
+{
+    CTRL_TEMPLATE_SIMPLE(CtrlMsgRespWifiClearFastConnect, resp_wifi_clear_fast_connect,
+			CtrlMsgReqWifiClearFastConnect, req_wifi_clear_fast_connect,
+			ctrl_msg__resp__wifi_clear_fast_connect__init);
+
+    CTRL_RET_FAIL_IF(esp_wifi_clear_fast_connect());
+	return ESP_OK;
+}
+
+static esp_err_t req_wifi_sta_get_ap_info(CtrlMsg *req, CtrlMsg *resp, void *priv_data)
+{
+	wifi_ap_record_t p_a_ap_info = {0};
+	WifiApRecord *p_c_ap_record = NULL;
+	WifiCountry * p_c_country = NULL;
+	wifi_country_t * p_a_country = NULL;
+
+    CTRL_TEMPLATE_SIMPLE(CtrlMsgRespWifiStaGetApInfo, resp_wifi_sta_get_ap_info,
+			CtrlMsgReqWifiStaGetApInfo, req_wifi_sta_get_ap_info,
+			ctrl_msg__resp__wifi_sta_get_ap_info__init);
+
+
+    CTRL_RET_FAIL_IF(esp_wifi_sta_get_ap_info(&p_a_ap_info));
+	CTRL_ALLOC_ELEMENT(WifiApRecord, resp_payload->ap_records, wifi_ap_record__init);
+	CTRL_ALLOC_ELEMENT(WifiCountry, resp_payload->ap_records->country, wifi_country__init);
+	p_c_ap_record = resp_payload->ap_records;
+	p_c_country = p_c_ap_record->country;
+	p_a_country = &p_a_ap_info.country;
+
+	printf("Ssid: %s\nBssid: "MACSTR"\nPrimary: %u\nSecond: %u\nRssi: %d\nAuthmode: %u\nPairwiseCipher: %u\nGroupcipher: %u\nAnt: %u\nBitmask:\t11b:%u g:%u n:%u lr:%u wps:%u ftm_resp:%u ftm_ini:%u res: %u\n",
+			p_a_ap_info.ssid, MAC2STR(p_a_ap_info.bssid),
+			p_a_ap_info.primary, p_a_ap_info.second,
+			p_a_ap_info.rssi, p_a_ap_info.authmode,
+			p_a_ap_info.pairwise_cipher, p_a_ap_info.group_cipher,
+			p_a_ap_info.ant, p_a_ap_info.phy_11b, p_a_ap_info.phy_11g,
+			p_a_ap_info.phy_11n, p_a_ap_info.phy_lr,
+			p_a_ap_info.wps, p_a_ap_info.ftm_responder,
+			p_a_ap_info.ftm_initiator, p_a_ap_info.reserved);
+
+	CTRL_RESP_COPY_STR(p_c_ap_record->ssid, p_a_ap_info.ssid, SSID_LENGTH);
+	CTRL_RESP_COPY_BYTES(p_c_ap_record->bssid, p_a_ap_info.bssid, BSSID_BYTES_SIZE);
+	p_c_ap_record->primary = p_a_ap_info.primary;
+	p_c_ap_record->second = p_a_ap_info.second;
+	p_c_ap_record->rssi = p_a_ap_info.rssi;
+	p_c_ap_record->authmode = p_a_ap_info.authmode;
+	p_c_ap_record->pairwise_cipher = p_a_ap_info.pairwise_cipher;
+	p_c_ap_record->group_cipher = p_a_ap_info.group_cipher;
+	p_c_ap_record->ant = p_a_ap_info.ant;
+
+	/*Bitmask*/
+	if (p_a_ap_info.phy_11b)
+		SET_BIT(WIFI_SCAN_AP_REC_phy_11b_BIT,p_c_ap_record->bitmask);
+
+	if (p_a_ap_info.phy_11g)
+		SET_BIT(WIFI_SCAN_AP_REC_phy_11g_BIT,p_c_ap_record->bitmask);
+
+	if (p_a_ap_info.phy_11n)
+		SET_BIT(WIFI_SCAN_AP_REC_phy_11n_BIT,p_c_ap_record->bitmask);
+
+	if (p_a_ap_info.phy_lr)
+		SET_BIT(WIFI_SCAN_AP_REC_phy_lr_BIT,p_c_ap_record->bitmask);
+
+	if (p_a_ap_info.wps)
+		SET_BIT(WIFI_SCAN_AP_REC_wps_BIT,p_c_ap_record->bitmask);
+
+	if (p_a_ap_info.ftm_responder)
+		SET_BIT(WIFI_SCAN_AP_REC_ftm_responder_BIT,p_c_ap_record->bitmask);
+
+	if (p_a_ap_info.ftm_initiator)
+		SET_BIT(WIFI_SCAN_AP_REC_ftm_initiator_BIT,p_c_ap_record->bitmask);
+
+	WIFI_SCAN_AP_SET_RESERVED_VAL(p_a_ap_info.reserved, p_c_ap_record->bitmask);
+
+	/* country */
+	CTRL_RESP_COPY_BYTES(p_c_country->cc, p_a_country->cc, sizeof(p_a_country->cc));
+	p_c_country->schan = p_a_country->schan;
+	p_c_country->nchan = p_a_country->nchan;
+	p_c_country->max_tx_power = p_a_country->max_tx_power;
+	p_c_country->policy = p_a_country->policy;
+
+	printf("Country:\tcc:%s schan: %u nchan: %u max_tx_pow: %d policy: %u\n",
+			p_a_country->cc, p_a_country->schan, p_a_country->nchan,
+			p_a_country->max_tx_power,p_a_country->policy);
+	/* increment num of records in ctrl msg */
+
+err:
+	return ESP_OK;
+}
+
+
+static esp_err_t req_wifi_deauth_sta(CtrlMsg *req, CtrlMsg *resp, void *priv_data)
+{
+    CTRL_TEMPLATE(CtrlMsgRespWifiDeauthSta, resp_wifi_deauth_sta,
+			CtrlMsgReqWifiDeauthSta, req_wifi_deauth_sta,
+			ctrl_msg__resp__wifi_deauth_sta__init);
+
+    CTRL_RET_FAIL_IF(esp_wifi_deauth_sta(req_payload->aid));
+	return ESP_OK;
+}
+
+
 #if 0
 static esp_err_t req_wifi_(Rpc *req, Rpc *resp, void *priv_data)
 {

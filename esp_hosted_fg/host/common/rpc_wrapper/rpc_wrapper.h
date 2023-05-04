@@ -111,6 +111,16 @@ int test_wifi_scan_stop(void);
 int test_wifi_scan_get_ap_num(uint16_t *number);
 int test_wifi_scan_get_ap_records(uint16_t *number, wifi_ap_record_t *ap_records);
 int test_wifi_clear_ap_list(void);
+int test_wifi_restore(void);
+int test_wifi_clear_fast_connect(void);
+int test_wifi_deauth_sta(uint16_t aid);
+int test_wifi_sta_get_ap_info(wifi_ap_record_t *ap_info);
+int test_wifi_set_ps(wifi_ps_type_t type);
+int test_wifi_get_ps(wifi_ps_type_t *type);
+#if 0
+int test_wifi_set_protocol(wifi_interface_t ifx, uint8_t protocol_bitmap);
+int test_wifi_get_protocol(wifi_interface_t ifx, uint8_t *protocol_bitmap);
+#endif
 
 #ifdef __cplusplus
 }

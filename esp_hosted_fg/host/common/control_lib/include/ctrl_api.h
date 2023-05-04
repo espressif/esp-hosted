@@ -554,6 +554,10 @@ typedef struct {
 	wifi_ap_record_t *out_list;
 } wifi_scan_ap_list_t;
 
+typedef struct {
+	uint16_t aid;
+} wifi_deauth_sta_t;
+
 #if 0
 typedef struct {
 	uint16_t aid;

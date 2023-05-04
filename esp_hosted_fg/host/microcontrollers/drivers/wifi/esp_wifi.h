@@ -175,4 +175,22 @@ esp_err_t esp_wifi_scan_get_ap_num(uint16_t *number);
 esp_err_t esp_wifi_scan_get_ap_records(uint16_t *number, wifi_ap_record_t *ap_records);
 
 esp_err_t esp_wifi_clear_ap_list(void);
+
+esp_err_t esp_wifi_restore(void);
+
+esp_err_t esp_wifi_clear_fast_connect(void);
+
+esp_err_t esp_wifi_deauth_sta(uint16_t aid);
+
+esp_err_t esp_wifi_sta_get_ap_info(wifi_ap_record_t *ap_info);
+
+esp_err_t esp_wifi_set_ps(wifi_ps_type_t type);
+
+esp_err_t esp_wifi_get_ps(wifi_ps_type_t *type);
+
+#if 0
+esp_err_t esp_wifi_set_protocol(wifi_interface_t ifx, uint8_t protocol_bitmap);
+
+esp_err_t esp_wifi_get_protocol(wifi_interface_t ifx, uint8_t *protocol_bitmap);
+#endif
 #endif /* __ESP_WIFI_H__ */
