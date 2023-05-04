@@ -186,13 +186,11 @@ esp_err_t esp_wifi_set_mac(wifi_interface_t ifx, uint8_t mac[6])
 
 esp_err_t esp_wifi_scan_start(wifi_scan_config_t *config, bool block)
 {
-	printf("scan start\n");
 	return test_wifi_scan_start(config, block);
 }
 
 esp_err_t esp_wifi_scan_stop(void)
 {
-	printf("scan stop\n");
 	return test_wifi_scan_stop();
 }
 
@@ -210,3 +208,45 @@ esp_err_t esp_wifi_clear_ap_list(void)
 {
 	return test_wifi_clear_ap_list();
 }
+
+esp_err_t esp_wifi_restore(void)
+{
+	return test_wifi_restore();
+}
+
+esp_err_t esp_wifi_clear_fast_connect(void)
+{
+	return test_wifi_clear_fast_connect();
+}
+
+esp_err_t esp_wifi_deauth_sta(uint16_t aid)
+{
+	return test_wifi_deauth_sta(aid);
+}
+
+esp_err_t esp_wifi_sta_get_ap_info(wifi_ap_record_t *ap_info)
+{
+	return test_wifi_sta_get_ap_info(ap_info);
+}
+
+esp_err_t esp_wifi_set_ps(wifi_ps_type_t type)
+{
+	return test_wifi_set_ps(type);
+}
+
+esp_err_t esp_wifi_get_ps(wifi_ps_type_t *type)
+{
+	return test_wifi_get_ps(type);
+}
+
+#if 0
+esp_err_t esp_wifi_set_protocol(wifi_interface_t ifx, uint8_t protocol_bitmap)
+{
+	return test_wifi_set_protocol(ifx, protocol_bitmap);
+}
+
+esp_err_t esp_wifi_get_protocol(wifi_interface_t ifx, uint8_t *protocol_bitmap)
+{
+	return test_wifi_set_protocol(ifx, protocol_bitmap);
+}
+#endif

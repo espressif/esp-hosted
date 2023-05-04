@@ -1541,7 +1541,7 @@ static esp_err_t req_set_power_save_mode_handler (CtrlMsg *req,
 	esp_err_t ret = ESP_OK;
 	CtrlMsgRespSetMode *resp_payload = NULL;
 
-	if (!req || !resp || !req->req_set_power_save_mode) {
+	if (!req || !resp || !req->req_wifi_set_ps) {
 		ESP_LOGE(TAG, "Invalid parameters");
 		return ESP_FAIL;
 	}
@@ -1552,22 +1552,12 @@ static esp_err_t req_set_power_save_mode_handler (CtrlMsg *req,
 		return ESP_ERR_NO_MEM;
 	}
 	ctrl_msg__resp__set_mode__init(resp_payload);
-	resp->payload_case = CTRL_MSG__PAYLOAD_RESP_SET_POWER_SAVE_MODE;
-	resp->resp_set_power_save_mode = resp_payload;
+	resp->payload_case = CTRL_MSG__PAYLOAD_RESP_WIFI_SET_PS;
+	resp->resp_wifi_set_ps = resp_payload;
 
-	/*
-	 * WIFI_PS_NONE mode can not use in case of coex i.e. Wi-Fi+BT/BLE.
-	 * By default ESP has WIFI_PS_MIN_MODEM power save mode
-	 */
-	if ((req->req_set_power_save_mode->mode == WIFI_PS_MIN_MODEM) ||
-	    (req->req_set_power_save_mode->mode == WIFI_PS_MAX_MODEM)) {
-		ret = esp_wifi_set_ps(req->req_set_power_save_mode->mode);
-		if (ret) {
-			ESP_LOGE(TAG, "Failed to set power save mode");
-			goto err;
-		}
-	} else {
-		ESP_LOGE(TAG, "Invalid Power Save Mode");
+	ret = esp_wifi_set_ps(req->req_wifi_set_ps->mode);
+	if (ret) {
+		ESP_LOGE(TAG, "Failed to set power save mode");
 		goto err;
 	}
 
@@ -1598,8 +1588,8 @@ static esp_err_t req_get_power_save_mode_handler (CtrlMsg *req,
 		return ESP_ERR_NO_MEM;
 	}
 	ctrl_msg__resp__get_mode__init(resp_payload);
-	resp->payload_case = CTRL_MSG__PAYLOAD_RESP_GET_POWER_SAVE_MODE;
-	resp->resp_get_power_save_mode = resp_payload;
+	resp->payload_case = CTRL_MSG__PAYLOAD_RESP_WIFI_GET_PS;
+	resp->resp_wifi_get_ps = resp_payload;
 
 	ret = esp_wifi_get_ps(&ps_type);
 	if (ret) {
@@ -1607,7 +1597,7 @@ static esp_err_t req_get_power_save_mode_handler (CtrlMsg *req,
 		resp_payload->resp = FAILURE;
 		return ESP_OK;
 	} else {
-		resp->resp_get_power_save_mode->mode = ps_type;
+		resp->resp_wifi_get_ps->mode = ps_type;
 	}
 
 	resp_payload->resp = SUCCESS;
@@ -1861,20 +1851,20 @@ static esp_err_t req_set_wifi_max_tx_power_handler (CtrlMsg *req,
 		CtrlMsg *resp, void *priv_data)
 {
 	esp_err_t ret = ESP_OK;
-	CtrlMsgRespSetWifiMaxTxPower *resp_payload = NULL;
+	CtrlMsgRespWifiSetMaxTxPower *resp_payload = NULL;
 
 	if (!req || !resp ) {
 		ESP_LOGE(TAG, "Invalid parameters");
 		return ESP_FAIL;
 	}
 
-	resp_payload = (CtrlMsgRespSetWifiMaxTxPower *)
-		calloc(1,sizeof(CtrlMsgRespSetWifiMaxTxPower));
+	resp_payload = (CtrlMsgRespWifiSetMaxTxPower *)
+		calloc(1,sizeof(CtrlMsgRespWifiSetMaxTxPower));
 	if (!resp_payload) {
 		ESP_LOGE(TAG,"Failed to allocate memory");
 		return ESP_ERR_NO_MEM;
 	}
-	ctrl_msg__resp__set_wifi_max_tx_power__init(resp_payload);
+	ctrl_msg__resp__wifi_set_max_tx_power__init(resp_payload);
 	resp->payload_case = CTRL_MSG__PAYLOAD_RESP_SET_WIFI_MAX_TX_POWER;
 	resp->resp_set_wifi_max_tx_power = resp_payload;
 
@@ -1905,21 +1895,21 @@ static esp_err_t req_get_wifi_curr_tx_power_handler (CtrlMsg *req,
 {
 	esp_err_t ret = ESP_OK;
 	int8_t power = 0;
-	CtrlMsgRespGetWifiCurrTxPower *resp_payload = NULL;
+	CtrlMsgRespWifiGetMaxTxPower *resp_payload = NULL;
 
 	if (!req || !resp) {
 		ESP_LOGE(TAG, "Invalid parameters");
 		return ESP_FAIL;
 	}
 
-	resp_payload = (CtrlMsgRespGetWifiCurrTxPower *)
-		calloc(1,sizeof(CtrlMsgRespGetWifiCurrTxPower));
+	resp_payload = (CtrlMsgRespWifiGetMaxTxPower *)
+		calloc(1,sizeof(CtrlMsgRespWifiGetMaxTxPower));
 	if (!resp_payload) {
 		ESP_LOGE(TAG,"Failed to allocate memory");
 		return ESP_ERR_NO_MEM;
 	}
 
-	ctrl_msg__resp__get_wifi_curr_tx_power__init(resp_payload);
+	ctrl_msg__resp__wifi_get_max_tx_power__init(resp_payload);
 	resp->payload_case = CTRL_MSG__PAYLOAD_RESP_GET_WIFI_CURR_TX_POWER;
 	resp->resp_get_wifi_curr_tx_power = resp_payload;
 
@@ -2524,6 +2514,117 @@ static esp_err_t req_wifi_clear_ap_list(CtrlMsg *req, CtrlMsg *resp, void *priv_
 	return ESP_OK;
 }
 
+static esp_err_t req_wifi_restore(CtrlMsg *req, CtrlMsg *resp, void *priv_data)
+{
+    CTRL_TEMPLATE_SIMPLE(CtrlMsgRespWifiRestore, resp_wifi_restore,
+			CtrlMsgReqWifiRestore, req_wifi_restore,
+			ctrl_msg__resp__wifi_restore__init);
+
+    CTRL_RET_FAIL_IF(esp_wifi_restore());
+	return ESP_OK;
+}
+
+static esp_err_t req_wifi_clear_fast_connect(CtrlMsg *req, CtrlMsg *resp, void *priv_data)
+{
+    CTRL_TEMPLATE_SIMPLE(CtrlMsgRespWifiClearFastConnect, resp_wifi_clear_fast_connect,
+			CtrlMsgReqWifiClearFastConnect, req_wifi_clear_fast_connect,
+			ctrl_msg__resp__wifi_clear_fast_connect__init);
+
+    CTRL_RET_FAIL_IF(esp_wifi_clear_fast_connect());
+	return ESP_OK;
+}
+
+static esp_err_t req_wifi_sta_get_ap_info(CtrlMsg *req, CtrlMsg *resp, void *priv_data)
+{
+	wifi_ap_record_t p_a_ap_info = {0};
+	WifiApRecord *p_c_ap_record = NULL;
+	WifiCountry * p_c_country = NULL;
+	wifi_country_t * p_a_country = NULL;
+
+    CTRL_TEMPLATE_SIMPLE(CtrlMsgRespWifiStaGetApInfo, resp_wifi_sta_get_ap_info,
+			CtrlMsgReqWifiStaGetApInfo, req_wifi_sta_get_ap_info,
+			ctrl_msg__resp__wifi_sta_get_ap_info__init);
+
+
+    CTRL_RET_FAIL_IF(esp_wifi_sta_get_ap_info(&p_a_ap_info));
+	CTRL_ALLOC_ELEMENT(WifiApRecord, resp_payload->ap_records, wifi_ap_record__init);
+	CTRL_ALLOC_ELEMENT(WifiCountry, resp_payload->ap_records->country, wifi_country__init);
+	p_c_ap_record = resp_payload->ap_records;
+	p_c_country = p_c_ap_record->country;
+	p_a_country = &p_a_ap_info.country;
+
+	printf("Ssid: %s\nBssid: "MACSTR"\nPrimary: %u\nSecond: %u\nRssi: %d\nAuthmode: %u\nPairwiseCipher: %u\nGroupcipher: %u\nAnt: %u\nBitmask:\t11b:%u g:%u n:%u lr:%u wps:%u ftm_resp:%u ftm_ini:%u res: %u\n",
+			p_a_ap_info.ssid, MAC2STR(p_a_ap_info.bssid),
+			p_a_ap_info.primary, p_a_ap_info.second,
+			p_a_ap_info.rssi, p_a_ap_info.authmode,
+			p_a_ap_info.pairwise_cipher, p_a_ap_info.group_cipher,
+			p_a_ap_info.ant, p_a_ap_info.phy_11b, p_a_ap_info.phy_11g,
+			p_a_ap_info.phy_11n, p_a_ap_info.phy_lr,
+			p_a_ap_info.wps, p_a_ap_info.ftm_responder,
+			p_a_ap_info.ftm_initiator, p_a_ap_info.reserved);
+
+	CTRL_RESP_COPY_STR(p_c_ap_record->ssid, p_a_ap_info.ssid, SSID_LENGTH);
+	CTRL_RESP_COPY_BYTES(p_c_ap_record->bssid, p_a_ap_info.bssid, BSSID_BYTES_SIZE);
+	p_c_ap_record->primary = p_a_ap_info.primary;
+	p_c_ap_record->second = p_a_ap_info.second;
+	p_c_ap_record->rssi = p_a_ap_info.rssi;
+	p_c_ap_record->authmode = p_a_ap_info.authmode;
+	p_c_ap_record->pairwise_cipher = p_a_ap_info.pairwise_cipher;
+	p_c_ap_record->group_cipher = p_a_ap_info.group_cipher;
+	p_c_ap_record->ant = p_a_ap_info.ant;
+
+	/*Bitmask*/
+	if (p_a_ap_info.phy_11b)
+		SET_BIT(WIFI_SCAN_AP_REC_phy_11b_BIT,p_c_ap_record->bitmask);
+
+	if (p_a_ap_info.phy_11g)
+		SET_BIT(WIFI_SCAN_AP_REC_phy_11g_BIT,p_c_ap_record->bitmask);
+
+	if (p_a_ap_info.phy_11n)
+		SET_BIT(WIFI_SCAN_AP_REC_phy_11n_BIT,p_c_ap_record->bitmask);
+
+	if (p_a_ap_info.phy_lr)
+		SET_BIT(WIFI_SCAN_AP_REC_phy_lr_BIT,p_c_ap_record->bitmask);
+
+	if (p_a_ap_info.wps)
+		SET_BIT(WIFI_SCAN_AP_REC_wps_BIT,p_c_ap_record->bitmask);
+
+	if (p_a_ap_info.ftm_responder)
+		SET_BIT(WIFI_SCAN_AP_REC_ftm_responder_BIT,p_c_ap_record->bitmask);
+
+	if (p_a_ap_info.ftm_initiator)
+		SET_BIT(WIFI_SCAN_AP_REC_ftm_initiator_BIT,p_c_ap_record->bitmask);
+
+	WIFI_SCAN_AP_SET_RESERVED_VAL(p_a_ap_info.reserved, p_c_ap_record->bitmask);
+
+	/* country */
+	CTRL_RESP_COPY_BYTES(p_c_country->cc, p_a_country->cc, sizeof(p_a_country->cc));
+	p_c_country->schan = p_a_country->schan;
+	p_c_country->nchan = p_a_country->nchan;
+	p_c_country->max_tx_power = p_a_country->max_tx_power;
+	p_c_country->policy = p_a_country->policy;
+
+	printf("Country:\tcc:%s schan: %u nchan: %u max_tx_pow: %d policy: %u\n",
+			p_a_country->cc, p_a_country->schan, p_a_country->nchan,
+			p_a_country->max_tx_power,p_a_country->policy);
+	/* increment num of records in ctrl msg */
+
+err:
+	return ESP_OK;
+}
+
+
+static esp_err_t req_wifi_deauth_sta(CtrlMsg *req, CtrlMsg *resp, void *priv_data)
+{
+    CTRL_TEMPLATE(CtrlMsgRespWifiDeauthSta, resp_wifi_deauth_sta,
+			CtrlMsgReqWifiDeauthSta, req_wifi_deauth_sta,
+			ctrl_msg__resp__wifi_deauth_sta__init);
+
+    CTRL_RET_FAIL_IF(esp_wifi_deauth_sta(req_payload->aid));
+	return ESP_OK;
+}
+
+
 #if 0
 static esp_err_t req_wifi_(CtrlMsg *req, CtrlMsg *resp, void *priv_data)
 {
@@ -2587,11 +2688,11 @@ static esp_ctrl_msg_req_t req_table[] = {
 		.command_handler = req_set_mac_address_handler
 	},
 	{
-		.req_num = CTRL_MSG_ID__Req_SetPowerSaveMode,
+		.req_num = CTRL_MSG_ID__Req_WifiSetPs,
 		.command_handler = req_set_power_save_mode_handler
 	},
 	{
-		.req_num = CTRL_MSG_ID__Req_GetPowerSaveMode,
+		.req_num = CTRL_MSG_ID__Req_WifiGetPs,
 		.command_handler = req_get_power_save_mode_handler
 	},
 	{
@@ -2611,11 +2712,11 @@ static esp_ctrl_msg_req_t req_table[] = {
 		.command_handler = req_set_softap_vender_specific_ie_handler
 	},
 	{
-		.req_num = CTRL_MSG_ID__Req_SetWifiMaxTxPower,
+		.req_num = CTRL_MSG_ID__Req_WifiSetMaxTxPower,
 		.command_handler = req_set_wifi_max_tx_power_handler
 	},
 	{
-		.req_num = CTRL_MSG_ID__Req_GetWifiCurrTxPower,
+		.req_num = CTRL_MSG_ID__Req_WifiGetMaxTxPower,
 		.command_handler = req_get_wifi_curr_tx_power_handler
 	},
 	{
@@ -2673,6 +2774,22 @@ static esp_ctrl_msg_req_t req_table[] = {
 	{
 		.req_num = CTRL_MSG_ID__Req_WifiClearApList,
 		.command_handler = req_wifi_clear_ap_list
+	},
+	{
+		.req_num = CTRL_MSG_ID__Req_WifiRestore,
+		.command_handler = req_wifi_restore
+	},
+	{
+		.req_num = CTRL_MSG_ID__Req_WifiClearFastConnect,
+		.command_handler = req_wifi_clear_fast_connect
+	},
+	{
+		.req_num = CTRL_MSG_ID__Req_WifiStaGetApInfo,
+		.command_handler = req_wifi_sta_get_ap_info
+	},
+	{
+		.req_num = CTRL_MSG_ID__Req_WifiDeauthSta,
+		.command_handler = req_wifi_deauth_sta
 	},
 };
 
@@ -2801,11 +2918,11 @@ static void esp_ctrl_msg_cleanup(CtrlMsg *resp)
 		} case (CTRL_MSG_ID__Resp_SetMacAddress) : {
 			mem_free(resp->resp_set_mac_address);
 			break;
-		} case (CTRL_MSG_ID__Resp_SetPowerSaveMode) : {
-			mem_free(resp->resp_set_power_save_mode);
+		} case (CTRL_MSG_ID__Resp_WifiSetPs) : {
+			mem_free(resp->resp_wifi_set_ps);
 			break;
-		} case (CTRL_MSG_ID__Resp_GetPowerSaveMode) : {
-			mem_free(resp->resp_get_power_save_mode);
+		} case (CTRL_MSG_ID__Resp_WifiGetPs) : {
+			mem_free(resp->resp_wifi_get_ps);
 			break;
 		} case (CTRL_MSG_ID__Resp_OTABegin) : {
 			mem_free(resp->resp_ota_begin);
@@ -2819,10 +2936,10 @@ static void esp_ctrl_msg_cleanup(CtrlMsg *resp)
 		} case (CTRL_MSG_ID__Resp_SetSoftAPVendorSpecificIE) : {
 			mem_free(resp->resp_set_softap_vendor_specific_ie);
 			break;
-		} case (CTRL_MSG_ID__Resp_SetWifiMaxTxPower) : {
+		} case (CTRL_MSG_ID__Resp_WifiSetMaxTxPower) : {
 			mem_free(resp->resp_set_wifi_max_tx_power);
 			break;
-		} case (CTRL_MSG_ID__Resp_GetWifiCurrTxPower) : {
+		} case (CTRL_MSG_ID__Resp_WifiGetMaxTxPower) : {
 			mem_free(resp->resp_get_wifi_curr_tx_power);
 			break;
 		} case (CTRL_MSG_ID__Resp_ConfigHeartbeat) : {
@@ -2887,6 +3004,18 @@ static void esp_ctrl_msg_cleanup(CtrlMsg *resp)
 			break;
 		} case CTRL_MSG_ID__Resp_WifiClearApList: {
 			mem_free(resp->resp_wifi_clear_ap_list);
+			break;
+		} case CTRL_MSG_ID__Resp_WifiRestore: {
+			mem_free(resp->resp_wifi_restore);
+			break;
+		} case CTRL_MSG_ID__Resp_WifiClearFastConnect: {
+			mem_free(resp->resp_wifi_clear_fast_connect);
+			break;
+		} case CTRL_MSG_ID__Resp_WifiStaGetApInfo: {
+			mem_free(resp->resp_wifi_sta_get_ap_info);
+			break;
+		} case CTRL_MSG_ID__Resp_WifiDeauthSta: {
+			mem_free(resp->resp_wifi_deauth_sta);
 			break;
 		} case (CTRL_MSG_ID__Event_ESPInit) : {
 			mem_free(resp->event_esp_init);

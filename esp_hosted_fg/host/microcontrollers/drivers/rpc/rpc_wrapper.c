@@ -122,7 +122,7 @@ static int ctrl_app_event_callback(ctrl_cmd_t * app_event)
 		} case CTRL_MSG_ID__Event_AP_StaConnected: {
 			wifi_event_ap_staconnected_t *p_e = &app_event->u.e_wifi_ap_staconnected;
 
-			if (p_e->mac) {
+			if (strlen((char*)p_e->mac)) {
 				hosted_log("%s App EVENT: SoftAP mode: connected station",
 					get_timestamp(ts, MIN_TIMESTAMP_STR_SIZE));
 				g_h.funcs->_h_event_wifi_post(p_e->wifi_event_id, p_e, sizeof(wifi_event_ap_staconnected_t), HOSTED_BLOCK_MAX);
@@ -130,7 +130,7 @@ static int ctrl_app_event_callback(ctrl_cmd_t * app_event)
 			break;
 		} case CTRL_MSG_ID__Event_AP_StaDisconnected: {
 			wifi_event_ap_stadisconnected_t *p_e = &app_event->u.e_wifi_ap_stadisconnected;
-			if (p_e->mac) {
+			if (strlen((char*)p_e->mac)) {
 				hosted_log("%s App EVENT: SoftAP mode: disconnected MAC",
 					get_timestamp(ts, MIN_TIMESTAMP_STR_SIZE));
 				g_h.funcs->_h_event_wifi_post(p_e->wifi_event_id, p_e, sizeof(wifi_event_ap_stadisconnected_t), HOSTED_BLOCK_MAX);
@@ -434,10 +434,10 @@ int ctrl_app_resp_callback(ctrl_cmd_t * app_resp)
 	} case CTRL_MSG_ID__Resp_StopSoftAP : {
 		hosted_log("esp32 softAP stopped\n\r");
 		break;
-	} case CTRL_MSG_ID__Resp_SetPowerSaveMode : {
+	} case CTRL_MSG_ID__Resp_WifiSetPs: {
 		hosted_log("Wifi power save mode set\n\r");
 		break;
-	} case CTRL_MSG_ID__Resp_GetPowerSaveMode : {
+	} case CTRL_MSG_ID__Resp_WifiGetPs: {
 		hosted_log("Wifi power save mode is: ");
 
 		switch(app_resp->u.wifi_ps.ps_mode) {
@@ -461,10 +461,10 @@ int ctrl_app_resp_callback(ctrl_cmd_t * app_resp)
 	} case CTRL_MSG_ID__Resp_OTAEnd : {
 		hosted_log("OTA end success\n\r");
 		break;
-	} case CTRL_MSG_ID__Resp_SetWifiMaxTxPower: {
+	} case CTRL_MSG_ID__Resp_WifiSetMaxTxPower: {
 		hosted_log("Set wifi max tx power success\n\r");
 		break;
-	} case CTRL_MSG_ID__Resp_GetWifiCurrTxPower: {
+	} case CTRL_MSG_ID__Resp_WifiGetMaxTxPower: {
 		hosted_log("wifi curr tx power : %d\n\r",
 				app_resp->u.wifi_tx_power.power);
 		break;
@@ -509,6 +509,10 @@ int ctrl_app_resp_callback(ctrl_cmd_t * app_resp)
     case CTRL_MSG_ID__Resp_WifiScanStart:
     case CTRL_MSG_ID__Resp_WifiScanStop:
     case CTRL_MSG_ID__Resp_WifiClearApList:
+    case CTRL_MSG_ID__Resp_WifiRestore:
+    case CTRL_MSG_ID__Resp_WifiClearFastConnect:
+	case CTRL_MSG_ID__Resp_WifiDeauthSta:
+	case CTRL_MSG_ID__Resp_WifiStaGetApInfo:
 	case CTRL_MSG_ID__Resp_WifiSetConfig: {
 		/* Intended fallthrough */
 		break;
@@ -1197,3 +1201,110 @@ int test_wifi_clear_ap_list(void)
 	resp = wifi_clear_ap_list(req);
 	return ctrl_app_resp_callback(resp);
 }
+
+
+int test_wifi_restore(void)
+{
+	/* implemented synchronous */
+	ctrl_cmd_t req = CTRL_CMD_DEFAULT_REQ();
+	ctrl_cmd_t *resp = NULL;
+
+	resp = wifi_restore(req);
+	return ctrl_app_resp_callback(resp);
+}
+
+int test_wifi_clear_fast_connect(void)
+{
+	/* implemented synchronous */
+	ctrl_cmd_t req = CTRL_CMD_DEFAULT_REQ();
+	ctrl_cmd_t *resp = NULL;
+
+	resp = wifi_clear_fast_connect(req);
+	return ctrl_app_resp_callback(resp);
+}
+
+int test_wifi_deauth_sta(uint16_t aid)
+{
+	/* implemented synchronous */
+	ctrl_cmd_t req = CTRL_CMD_DEFAULT_REQ();
+	ctrl_cmd_t *resp = NULL;
+
+	req.u.wifi_deauth_sta.aid = aid;
+	resp = wifi_deauth_sta(req);
+	return ctrl_app_resp_callback(resp);
+}
+
+int test_wifi_sta_get_ap_info(wifi_ap_record_t *ap_info)
+{
+	/* implemented synchronous */
+	ctrl_cmd_t req = CTRL_CMD_DEFAULT_REQ();
+	ctrl_cmd_t *resp = NULL;
+
+	if (!ap_info)
+		return FAILURE;
+
+	resp = wifi_sta_get_ap_info(req);
+
+	g_h.funcs->_h_memcpy(ap_info, resp->u.wifi_scan_ap_list.out_list,
+			sizeof(wifi_ap_record_t));
+
+	return ctrl_app_resp_callback(resp);
+}
+
+int test_wifi_set_ps(wifi_ps_type_t type)
+{
+	/* implemented synchronous */
+	ctrl_cmd_t req = CTRL_CMD_DEFAULT_REQ();
+	ctrl_cmd_t *resp = NULL;
+
+	if (type > WIFI_PS_MAX_MODEM)
+		return FAILURE;
+
+	req.u.wifi_ps.ps_mode = type;
+
+	resp = wifi_set_ps(req);
+
+	return ctrl_app_resp_callback(resp);
+}
+
+int test_wifi_get_ps(wifi_ps_type_t *type)
+{
+	if (!type)
+		return FAILURE;
+
+	/* implemented synchronous */
+	ctrl_cmd_t req = CTRL_CMD_DEFAULT_REQ();
+	ctrl_cmd_t *resp = NULL;
+
+	if (!type)
+		return FAILURE;
+
+	resp = wifi_get_ps(req);
+
+	*type = resp->u.wifi_ps.ps_mode;
+
+	return ctrl_app_resp_callback(resp);
+}
+
+#if 0
+int test_wifi_set_protocol(wifi_interface_t ifx, uint8_t protocol_bitmap)
+{
+}
+
+int test_wifi_get_protocol(wifi_interface_t ifx, uint8_t *protocol_bitmap)
+{
+	/* implemented synchronous */
+	if (!protocol_bitmap)
+		return FAILURE;
+
+	ctrl_cmd_t req = CTRL_CMD_DEFAULT_REQ();
+	ctrl_cmd_t *resp = NULL;
+
+	if (!ap_info)
+		return FAILURE;
+
+	resp = wifi_sta_get_protocol(req);
+
+	*type = resp->u.wifi_protocol.protocol;
+}
+#endif
