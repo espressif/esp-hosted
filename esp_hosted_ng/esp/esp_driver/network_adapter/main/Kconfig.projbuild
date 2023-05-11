@@ -1,0 +1,103 @@
+menu "Example Configuration"
+
+    choice ESP_HOST_INTERFACE
+        bool "Transport layer"
+        default ESP_SDIO_HOST_INTERFACE if IDF_TARGET_ESP32
+        default ESP_SPI_HOST_INTERFACE if IDF_TARGET_ESP32S2
+        help
+	    Bus interface to be used for communication with the host
+
+        config ESP_SDIO_HOST_INTERFACE
+            bool "SDIO interface"
+            depends on IDF_TARGET_ESP32
+            help
+                Enable/Disable SDIO host interface
+
+        config ESP_SPI_HOST_INTERFACE
+            bool "SPI interface"
+            help
+                Enable/Disable SPI host interface
+    endchoice
+
+    menu "SPI Configuration"
+        depends on ESP_SPI_HOST_INTERFACE
+
+    config ESP_SPI_CONTROLLER
+        int "SPI controller to use"
+        depends on IDF_TARGET_ESP32 && ESP_SPI_HOST_INTERFACE
+        default 2
+	range 2 3
+        help
+            SPI controller to be used. HSPI->2, VSPI->3
+
+    config ESP_SPI_GPIO_HANDSHAKE
+        int "GPIO pin for handshake"
+        default 3 if IDF_TARGET_ESP32C3
+        default 2
+        help
+            GPIO pin to use for handshake with other spi controller
+
+    config ESP_SPI_GPIO_DATA_READY
+        int "GPIO pin for data ready interrupt"
+        default 4
+        help
+            GPIO pin for indicating host that SPI slave has data to be read by host
+
+    config ESP_SPI_CHECKSUM
+        bool "SPI checksum ENABLE/DISABLE"
+        default y
+        help
+            ENABLE/DISABLE software SPI checksum
+    endmenu
+
+    menu "SDIO Configuration"
+        depends on ESP_SDIO_HOST_INTERFACE
+
+    config ESP_SDIO_CHECKSUM
+        bool "SDIO checksum ENABLE/DISABLE"
+        default n
+        help
+            ENABLE/DISABLE software SDIO checksum
+
+    endmenu
+
+    config HOST_WAKEUP_GPIO
+        int "GPIO to wakeup GPIO"
+        depends on ESP_SDIO_HOST_INTERFACE
+        default 5
+        help
+            GPIO pin used to wake-up host
+
+    config ESP_OTA_WORKAROUND
+        bool "OTA workaround - Add sleeps while OTA write"
+        default y
+        help
+            Enable/disable sleeps while OTA operations
+
+    config ESP_SERIAL_DEBUG
+        bool "Debug Serial driver data path"
+        default 0
+        help
+            Enable/disable debug prints in serial driver data path
+
+    config ESP_WLAN_DEBUG
+        bool "Debug Wlan driver data path"
+        default 0
+        help
+            Enable/disable debug prints in wlan driver data path
+
+    config ESP_BT_DEBUG
+        bool "Debug Bluetooth driver data path"
+        default 0
+        help
+            Enable/disable debug prints in Bluetooth driver data path
+
+    config EXAMPLE_ESP32C3_HCI_UART_BAUDRATE
+        int "UART Baudrate for HCI"
+        range 115200 921600
+        depends on IDF_TARGET_ESP32C3
+        default 921600
+        help
+            UART Baudrate for HCI over ESP32C3. Please use standard baudrate.
+
+endmenu

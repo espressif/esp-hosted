@@ -1,3 +1,6 @@
 [submodule "esp_hosted_fg/common/protobuf-c"]
 	path = esp_hosted_fg/common/protobuf-c
 	url = https://github.com/protobuf-c/protobuf-c.git
+[submodule "esp_hosted_ng/esp/esp_driver/esp-idf"]
+	path = esp_hosted_ng/esp/esp_driver/esp-idf
+	url = https://github.com/espressif/esp-idf.git

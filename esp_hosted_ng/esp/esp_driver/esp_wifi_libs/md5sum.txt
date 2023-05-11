@@ -1,0 +1,43 @@
+Release: 1.0.2
+==============
+
+ESP-IDF:
+--------
+release/v4.4
+commit: 91dc99a3
+
+md5sums
+-------
+2f9b14eb8ddda693e2eed2bae4214b24  esp32/libcoexist.a
+8ef240523a38909887dbfe93d623a478  esp32/libcore.a
+466fe3db7615007a63dcfc8289c9e10c  esp32/libespnow.a
+93812f779a784cdbadb9d979bf21fa57  esp32/libmesh.a
+fcae39d49a857e46ddbc97eb5a706504  esp32/libnet80211.a
+079489a48e76cd4359b4237489088e02  esp32/libpp.a
+a8c62bc05e2d7f22134857bb319df58f  esp32/libsmartconfig.a
+a5cdf00c78c9f81d171e98529510d604  esp32/libwapi.a
+6223cca4d01654e354b1f91664447b25  esp32c3/libcoexist.a
+441215281f7d8eb2411d793e8f2f11e3  esp32c3/libcore.a
+ff7fe3285a2e4be347d0b744a3ee0864  esp32c3/libespnow.a
+7e214cb6e8f948c466fa0719bbf759a6  esp32c3/libmesh.a
+f46b0bb4702bc22a04d1ace80bf683ae  esp32c3/libnet80211.a
+b4bf40c412726d7e43720bb1b8c718e0  esp32c3/libpp.a
+26c69f7bfdca3b11e97976c0b2f3ba3f  esp32c3/libsmartconfig.a
+acf8880f0a5505d06cd5604b18a92b50  esp32c3/libwapi.a
+f2e2157c4ff06bb2b482bb213f5b84f3  esp32s2/libcoexist.a
+902b4f28f8fede64c69a69e62a75bfce  esp32s2/libcore.a
+c370fb7e0185c55af735d0d581ac0b54  esp32s2/libespnow.a
+bb42639063465b7bbc2dd57fc13bd06d  esp32s2/libmesh.a
+34a10218e56f61310d4706fc69105bc7  esp32s2/libnet80211.a
+c2d502ae8ce61003b6b7e352b6b7531f  esp32s2/libpp.a
+7a20d917541517a1b9bf16ac2dd0fb98  esp32s2/libsmartconfig.a
+289f1eb44b989907c9caf6d1bc94edba  esp32s2/libwapi.a
+cfab3ee7a5f0603d67fcec51492c662a  esp32s3/libcoexist.a
+5f85e527437f73639fa33b93da6a6927  esp32s3/libcore.a
+7654b4c7190aae0865f349e318c5d8b9  esp32s3/libespnow.a
+0decdc24096af5db11f648a6fc3844e9  esp32s3/libmesh.a
+2e8198cabaded55e1961677d4abdc286  esp32s3/libnet80211.a
+aa2b34fe1fd3d246a630bdf13af9d0fb  esp32s3/libpp.a
+fda7ffd31332a7f48d24280a77b6a088  esp32s3/libsmartconfig.a
+5328c24b8a6b77a33794ef53fbe39dc9  esp32s3/libwapi.a
+b27a1e192127830d49c3bd9acc00120d  esp_wifi_driver.h
