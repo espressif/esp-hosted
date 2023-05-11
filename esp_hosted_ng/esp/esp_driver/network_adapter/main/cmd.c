@@ -25,7 +25,7 @@
 #include "esp_private/wifi.h"
 #include "esp_wpa.h"
 #include "esp_wifi.h"
-#include <esp_wifi_driver.h>
+#include "esp_wifi_driver.h"
 #include "esp_event.h"
 
 #define TAG "FW_CMD"

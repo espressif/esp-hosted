@@ -41,14 +41,3 @@ aa2b34fe1fd3d246a630bdf13af9d0fb  esp32s3/libpp.a
 fda7ffd31332a7f48d24280a77b6a088  esp32s3/libsmartconfig.a
 5328c24b8a6b77a33794ef53fbe39dc9  esp32s3/libwapi.a
 b27a1e192127830d49c3bd9acc00120d  esp_wifi_driver.h
-
-Procedure:
-----------
-1. Clone esp-idf at commit 91dc99a3
-2. mv idf/components/esp_wifi/lib idf/components/esp_wifi/lib_old
-3. cd idf/components/esp_wifi/
-4. tar xvf <esp-hosted-80211-fw repo>/esp_wifi_libs/lib.tgz
-5. Verify above md5sums for all chipsets
-6. cd lib/ && cp esp_wifi_driver.h <esp-hosted-80211-fw repo>/network_adapter/main/include/
-7. cd <esp-hosted-80211-fw repo>/network_adapter
-8. rm -rf sdkconfig build/
