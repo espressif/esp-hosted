@@ -512,7 +512,7 @@ static void process_scan_result_event(struct esp_wifi_device *priv,
 		bss = CFG80211_INFORM_BSS(priv->adapter->wiphy, chan,
 				scan_evt->bssid, timestamp,
 				cap_info, beacon_interval, ie_buf, ie_len,
-				le32_to_cpu(scan_evt->rssi), GFP_ATOMIC);
+				(le32_to_cpu(scan_evt->rssi) * 100), GFP_ATOMIC);
 
 		if (bss)
 			cfg80211_put_bss(priv->adapter->wiphy, bss);
