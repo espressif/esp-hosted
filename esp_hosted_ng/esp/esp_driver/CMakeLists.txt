@@ -27,29 +27,29 @@ if(UNIX AND NOT APPLE)
         OUTPUT_STRIP_TRAILING_WHITESPACE
     )
     execute_process(
-        COMMAND ${BASH_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/install.sh
+        COMMAND ${BASH_PATH} install.sh
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/esp-idf
     )
 elseif(APPLE)
     execute_process(
-        COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/install.sh
+        COMMAND ./install.sh
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/esp-idf
     )
 elseif(WIN32)
     if(${CMAKE_GENERATOR} MATCHES ".*Visual Studio.*")
         execute_process(
-            COMMAND powershell.exe -File ${CMAKE_CURRENT_SOURCE_DIR}/install.ps1
+            COMMAND powershell.exe -File install.ps1
             WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/esp-idf
         )
     else()
         execute_process(
-            COMMAND cmd.exe /C ${CMAKE_CURRENT_SOURCE_DIR}/install.bat
+            COMMAND cmd.exe /C install.bat
             WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/esp-idf
         )
     endif()
 elseif(UNIX AND NOT WIN32)
     execute_process(
-        COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/install.fish
+        COMMAND install.fish
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/esp-idf
     )
 else()
