@@ -86,7 +86,7 @@ static int raw_tp_tx_process(void *data)
 								(TEST_RAW_TP__BUF_SIZE + pad_len)));
 			}
 			ret = esp_send_packet(esp_get_adapter(), tx_skb);
-			if(!ret)
+			if (!ret)
 				test_raw_tp_len += TEST_RAW_TP__BUF_SIZE;
 
 		} else {
@@ -160,7 +160,7 @@ void test_raw_tp_cleanup(void)
 
 	if (raw_tp_tx_thread) {
 		ret = kthread_stop(raw_tp_tx_thread);
-		if(ret) {
+		if (ret) {
 			msleep(10);
 			ret = kthread_stop(raw_tp_tx_thread);
 		}

@@ -37,18 +37,18 @@ struct multicast_list mcast_list = {0};
 struct esp_adapter adapter;
 /*struct esp_device esp_dev;*/
 
-struct esp_adapter * esp_get_adapter(void)
+struct esp_adapter *esp_get_adapter(void)
 {
 	return &adapter;
 }
 
 void esp_process_new_packet_intr(struct esp_adapter *adapter)
 {
-	if(adapter)
+	if (adapter)
 		queue_work(adapter->if_rx_workqueue, &adapter->if_rx_work);
 }
 
-static int process_tx_packet (struct sk_buff *skb)
+static int process_tx_packet(struct sk_buff *skb)
 {
 	struct esp_wifi_device *priv = NULL;
 	struct esp_skb_cb *cb = NULL;
@@ -58,7 +58,7 @@ static int process_tx_packet (struct sk_buff *skb)
 	u8 pad_len = 0, realloc_skb = 0;
 	u16 len = 0;
 	u16 total_len = 0;
-	static u8 c = 0;
+	static u8 c;
 	u8 *pos = NULL;
 
 	c++;
@@ -160,13 +160,13 @@ static int process_tx_packet (struct sk_buff *skb)
 	return 0;
 }
 
-void esp_port_open(struct esp_wifi_device * priv)
+void esp_port_open(struct esp_wifi_device *priv)
 {
 	priv->port_open = 1;
 	priv->stop_data = 0;
 }
 
-void esp_port_close(struct esp_wifi_device * priv)
+void esp_port_close(struct esp_wifi_device *priv)
 {
 	if (!priv)
 		return;
@@ -233,22 +233,22 @@ static void print_reset_reason(uint32_t reason)
 {
 	switch (reason)
 	{
-		case 1 : esp_info( "POWERON_RESET\n");break;          /**<1, Vbat power on reset*/
-		case 3 : esp_info( "SW_RESET\n");break;               /**<3, Software reset digital core*/
-		case 4 : esp_info( "OWDT_RESET\n");break;             /**<4, Legacy watch dog reset digital core*/
-		case 5 : esp_info( "DEEPSLEEP_RESET\n");break;        /**<5, Deep Sleep reset digital core*/
-		case 6 : esp_info( "SDIO_RESET\n");break;             /**<6, Reset by SLC module, reset digital core*/
-		case 7 : esp_info( "TG0WDT_SYS_RESET\n");break;       /**<7, Timer Group0 Watch dog reset digital core*/
-		case 8 : esp_info( "TG1WDT_SYS_RESET\n");break;       /**<8, Timer Group1 Watch dog reset digital core*/
-		case 9 : esp_info( "RTCWDT_SYS_RESET\n");break;       /**<9, RTC Watch dog Reset digital core*/
-		case 10 : esp_info( "INTRUSION_RESET\n");break;       /**<10, Instrusion tested to reset CPU*/
-		case 11 : esp_info( "TGWDT_CPU_RESET\n");break;       /**<11, Time Group reset CPU*/
-		case 12 : esp_info( "SW_CPU_RESET\n");break;          /**<12, Software reset CPU*/
-		case 13 : esp_info( "RTCWDT_CPU_RESET\n");break;      /**<13, RTC Watch dog Reset CPU*/
-		case 14 : esp_info( "EXT_CPU_RESET\n");break;         /**<14, for APP CPU, reseted by PRO CPU*/
-		case 15 : esp_info( "RTCWDT_BROWN_OUT_RESET\n");break;/**<15, Reset when the vdd voltage is not stable*/
-		case 16 : esp_info( "RTCWDT_RTC_RESET\n");break;      /**<16, RTC Watch dog reset digital core and rtc module*/
-		default : esp_info( "Unknown[%u]\n",reason);break;
+		case 1: esp_info("POWERON_RESET\n"); break;          /**<1, Vbat power on reset*/
+		case 3: esp_info("SW_RESET\n"); break;               /**<3, Software reset digital core*/
+		case 4: esp_info("OWDT_RESET\n"); break;             /**<4, Legacy watch dog reset digital core*/
+		case 5: esp_info("DEEPSLEEP_RESET\n"); break;        /**<5, Deep Sleep reset digital core*/
+		case 6: esp_info("SDIO_RESET\n"); break;             /**<6, Reset by SLC module, reset digital core*/
+		case 7: esp_info("TG0WDT_SYS_RESET\n"); break;       /**<7, Timer Group0 Watch dog reset digital core*/
+		case 8: esp_info("TG1WDT_SYS_RESET\n"); break;       /**<8, Timer Group1 Watch dog reset digital core*/
+		case 9: esp_info("RTCWDT_SYS_RESET\n"); break;       /**<9, RTC Watch dog Reset digital core*/
+		case 10: esp_info("INTRUSION_RESET\n"); break;       /**<10, Instrusion tested to reset CPU*/
+		case 11: esp_info("TGWDT_CPU_RESET\n"); break;       /**<11, Time Group reset CPU*/
+		case 12: esp_info("SW_CPU_RESET\n"); break;          /**<12, Software reset CPU*/
+		case 13: esp_info("RTCWDT_CPU_RESET\n"); break;      /**<13, RTC Watch dog Reset CPU*/
+		case 14: esp_info("EXT_CPU_RESET\n"); break;         /**<14, for APP CPU, reseted by PRO CPU*/
+		case 15: esp_info("RTCWDT_BROWN_OUT_RESET\n"); break;/**<15, Reset when the vdd voltage is not stable*/
+		case 16: esp_info("RTCWDT_RTC_RESET\n"); break;      /**<16, RTC Watch dog reset digital core and rtc module*/
+		default: esp_info("Unknown[%u]\n", reason); break;
 	}
 }
 
@@ -272,11 +272,12 @@ static int esp_open(struct net_device *ndev)
 static int esp_stop(struct net_device *ndev)
 {
 	struct esp_wifi_device *priv = netdev_priv(ndev);
+
 	ESP_MARK_SCAN_DONE(priv, true);
 	return 0;
 }
 
-static struct net_device_stats* esp_get_stats(struct net_device *ndev)
+static struct net_device_stats *esp_get_stats(struct net_device *ndev)
 {
 	struct esp_wifi_device *priv = netdev_priv(ndev);
 
@@ -332,7 +333,7 @@ static void esp_set_rx_mode(struct net_device *ndev)
 	}
 #if 0
 	cmd_set_mcast_mac_list(priv, &mcast_list);
-	while(ip_list) {
+	while (ip_list) {
 		esp_dbg(" IP MC Address: 0x%x\n", ip_list->multiaddr);
 		ip_list = ip_list->next;
 	}
@@ -395,8 +396,8 @@ void esp_init_priv(struct net_device *ndev)
 static int add_network_iface(void)
 {
 	int ret = 0;
-	struct esp_adapter * adapter = esp_get_adapter();
-	struct wireless_dev * wdev = NULL;
+	struct esp_adapter *adapter = esp_get_adapter();
+	struct wireless_dev *wdev = NULL;
 
 	if (!adapter) {
 		esp_info("adapter not yet init\n");
@@ -435,7 +436,7 @@ void esp_remove_network_interfaces(struct esp_adapter *adapter)
 	struct net_device *ndev = NULL;
 	struct esp_wifi_device *priv = NULL;
 
-	for (iface_idx=0; iface_idx < ESP_MAX_INTERFACE; iface_idx++) {
+	for (iface_idx = 0; iface_idx < ESP_MAX_INTERFACE; iface_idx++) {
 
 		priv = adapter->priv[iface_idx];
 
@@ -487,7 +488,7 @@ int esp_remove_card(struct esp_adapter *adapter)
 
 	esp_remove_network_interfaces(adapter);
 
-	for (iface_idx=0; iface_idx < ESP_MAX_INTERFACE; iface_idx++) {
+	for (iface_idx = 0; iface_idx < ESP_MAX_INTERFACE; iface_idx++) {
 		esp_port_close(adapter->priv[iface_idx]);
 		adapter->priv[iface_idx] = NULL;
 	}
@@ -495,7 +496,7 @@ int esp_remove_card(struct esp_adapter *adapter)
 	return 0;
 }
 
-struct esp_wifi_device * get_priv_from_payload_header(
+struct esp_wifi_device *get_priv_from_payload_header(
 		struct esp_payload_header *header)
 {
 	struct esp_wifi_device *priv = NULL;
@@ -571,8 +572,8 @@ static void process_rx_packet(struct esp_adapter *adapter, struct sk_buff *skb)
 	u16 rx_checksum = 0, checksum = 0;
 	struct hci_dev *hdev = adapter->hcidev;
 	u8 *type = NULL;
-	struct sk_buff * eap_skb = NULL;
-	struct ethhdr * eth = NULL;
+	struct sk_buff *eap_skb = NULL;
+	struct ethhdr *eth = NULL;
 
 	if (!skb)
 		return;
@@ -618,7 +619,7 @@ static void process_rx_packet(struct esp_adapter *adapter, struct sk_buff *skb)
 			esp_port_open(priv);
 
 			eap_skb = alloc_skb(skb->len + ETH_HLEN, GFP_KERNEL);
-			if(!eap_skb) {
+			if (!eap_skb) {
 				esp_info("%u memory alloc failed\n", __LINE__);
 				return;
 			}
@@ -723,7 +724,7 @@ void esp_tx_resume(struct esp_wifi_device *priv)
 	}
 }
 
-struct sk_buff * esp_alloc_skb(u32 len)
+struct sk_buff *esp_alloc_skb(u32 len)
 {
 	struct sk_buff *skb = NULL;
 
@@ -793,7 +794,7 @@ static void esp_events_work(struct work_struct *work)
 	dev_kfree_skb_any(skb);
 }
 
-static struct esp_adapter * init_adapter(void)
+static struct esp_adapter *init_adapter(void)
 {
 	memset(&adapter, 0, sizeof(adapter));
 
@@ -899,7 +900,7 @@ static void __exit esp_exit(void)
 #if TEST_RAW_TP
 	test_raw_tp_cleanup();
 #endif
-	for (iface_idx=0; iface_idx<ESP_MAX_INTERFACE; iface_idx++) {
+	for (iface_idx = 0; iface_idx < ESP_MAX_INTERFACE; iface_idx++) {
 		cmd_deinit_interface(adapter.priv[iface_idx]);
 	}
 	clear_bit(ESP_DRIVER_ACTIVE, &adapter.state_flags);

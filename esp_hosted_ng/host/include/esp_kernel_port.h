@@ -14,10 +14,10 @@
 
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(3, 13, 0))
     #define ESP_BT_SEND_FRAME_PROTOTYPE() \
-        int esp_bt_send_frame(struct sk_buff *skb)
+	int esp_bt_send_frame(struct sk_buff *skb)
 #else
     #define ESP_BT_SEND_FRAME_PROTOTYPE() \
-        int esp_bt_send_frame(struct hci_dev* hdev, struct sk_buff *skb)
+	int esp_bt_send_frame(struct hci_dev *hdev, struct sk_buff *skb)
 #endif
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(3, 14, 0)
@@ -35,14 +35,14 @@ static inline void ether_addr_copy(u8 *dst, const u8 *src)
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(3, 14, 0))
   #define ESP_MGMT_TX_PROTOTYPE()                                              \
     int esp_cfg80211_mgmt_tx(struct wiphy *wiphy,                              \
-            struct wireless_dev *wdev, struct ieee80211_channel *chan,         \
-            bool offchan, unsigned int wait, const u8 *buf, size_t len,        \
-            bool no_cck, bool dont_wait_for_ack, u64 *cookie)
+	    struct wireless_dev *wdev, struct ieee80211_channel *chan,         \
+	    bool offchan, unsigned int wait, const u8 *buf, size_t len,        \
+	    bool no_cck, bool dont_wait_for_ack, u64 *cookie)
 #else
   #define ESP_MGMT_TX_PROTOTYPE()                                              \
     int esp_cfg80211_mgmt_tx(struct wiphy *wiphy,                              \
-            struct wireless_dev *wdev, struct cfg80211_mgmt_tx_params *params, \
-            u64 *cookie)
+	    struct wireless_dev *wdev, struct cfg80211_mgmt_tx_params *params, \
+	    u64 *cookie)
 #endif
 
 
@@ -57,14 +57,14 @@ static inline void ether_addr_copy(u8 *dst, const u8 *src)
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(3, 18, 0)
   #define CFG80211_INFORM_BSS(wiphy, chan, bssid, tsf, \
-          cap, beacon_interval, ie, ielen, sig, gfp) \
+	  cap, beacon_interval, ie, ielen, sig, gfp) \
   cfg80211_inform_bss(wiphy, chan, bssid, tsf, \
-          cap, beacon_interval, ie, ielen, sig, gfp)
+	  cap, beacon_interval, ie, ielen, sig, gfp)
 #else
   #define CFG80211_INFORM_BSS(wiphy, chan, bssid, tsf, \
-          cap, beacon_interval, ie, ielen, signal, gfp) \
+	  cap, beacon_interval, ie, ielen, signal, gfp) \
   cfg80211_inform_bss(wiphy, chan, CFG80211_BSS_FTYPE_UNKNOWN, bssid, tsf, \
-          cap, beacon_interval, ie, ielen, signal, gfp)
+	  cap, beacon_interval, ie, ielen, signal, gfp)
 #endif
 
 
@@ -97,7 +97,7 @@ enum ieee80211_privacy {
     #if (LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 34))
         #define hci_skb_pkt_type(skb) bt_cb((skb))->pkt_type
     #else
-        #error "ESP-Hosted solution doesn't supported below kernel version < 2.6.34"
+	#error "ESP-Hosted solution doesn't supported below kernel version < 2.6.34"
     #endif
 #endif
 
@@ -105,7 +105,7 @@ enum ieee80211_privacy {
     #if (LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 34))
         #define HCI_PRIMARY HCI_BREDR
     #else
-        #error "ESP-Hosted solution doesn't supported below kernel version < 2.6.34"
+	#error "ESP-Hosted solution doesn't supported below kernel version < 2.6.34"
     #endif
 #endif
 
@@ -113,32 +113,32 @@ enum ieee80211_privacy {
 #if LINUX_VERSION_CODE < KERNEL_VERSION(4, 8, 0)
 
     #define ESP_MARK_SCAN_DONE(PrIv, abort) do {                               \
-                                                                               \
-        if (PrIv->request) {                                                   \
-            cfg80211_scan_done(PrIv->request, abort);                          \
-            PrIv->request = NULL;                                              \
-        }                                                                      \
-                                                                               \
-        PrIv->scan_in_progress = false;                                        \
-                                                                               \
-    } while(0);
+									       \
+	if (PrIv->request) {                                                   \
+	    cfg80211_scan_done(PrIv->request, abort);                          \
+	    PrIv->request = NULL;                                              \
+	}                                                                      \
+									       \
+	PrIv->scan_in_progress = false;                                        \
+									       \
+    } while (0);
 
 #else
 
     #define ESP_MARK_SCAN_DONE(PrIv, abort) do {                               \
-                                                                               \
-        struct cfg80211_scan_info info = {                                     \
-            .aborted = abort,                                                  \
-        };                                                                     \
-                                                                               \
-        if (PrIv->request) {                                                   \
-            cfg80211_scan_done(PrIv->request, &info);                          \
-            PrIv->request = NULL;                                              \
-        }                                                                      \
-                                                                               \
-        PrIv->scan_in_progress = false;                                        \
-                                                                               \
-    } while(0);
+									       \
+	struct cfg80211_scan_info info = {                                     \
+	    .aborted = abort,                                                  \
+	};                                                                     \
+									       \
+	if (PrIv->request) {                                                   \
+	    cfg80211_scan_done(PrIv->request, &info);                          \
+	    PrIv->request = NULL;                                              \
+	}                                                                      \
+									       \
+	PrIv->scan_in_progress = false;                                        \
+									       \
+    } while (0);
 
 #endif
 
@@ -162,10 +162,10 @@ static inline void *skb_put_data(struct sk_buff *skb, const void *data,
 
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 6, 0))
     #define NDO_TX_TIMEOUT_PROTOTYPE() \
-        void esp_tx_timeout(struct net_device *ndev)
+	void esp_tx_timeout(struct net_device *ndev)
 #else
     #define NDO_TX_TIMEOUT_PROTOTYPE() \
-        void esp_tx_timeout(struct net_device *ndev, unsigned int txqueue)
+	void esp_tx_timeout(struct net_device *ndev, unsigned int txqueue)
 #endif
 
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 17, 0))

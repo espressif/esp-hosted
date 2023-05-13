@@ -13,32 +13,33 @@
 
 void esp_hci_update_tx_counter(struct hci_dev *hdev, u8 pkt_type, size_t len)
 {
-	if (hdev) {
-		if (pkt_type == HCI_COMMAND_PKT) {
-			hdev->stat.cmd_tx++;
-		} else if (pkt_type == HCI_ACLDATA_PKT) {
-			hdev->stat.acl_tx++;
-		} else if (pkt_type == HCI_SCODATA_PKT) {
-			hdev->stat.sco_tx++;
-		}
-
-		hdev->stat.byte_tx += len;
+	if (!hdev)
+		return;
+	if (pkt_type == HCI_COMMAND_PKT) {
+		hdev->stat.cmd_tx++;
+	} else if (pkt_type == HCI_ACLDATA_PKT) {
+		hdev->stat.acl_tx++;
+	} else if (pkt_type == HCI_SCODATA_PKT) {
+		hdev->stat.sco_tx++;
 	}
+
+	hdev->stat.byte_tx += len;
 }
 
 void esp_hci_update_rx_counter(struct hci_dev *hdev, u8 pkt_type, size_t len)
 {
-	if (hdev) {
-		if (pkt_type == HCI_EVENT_PKT) {
-			hdev->stat.evt_rx++;
-		} else if (pkt_type == HCI_ACLDATA_PKT) {
-			hdev->stat.acl_rx++;
-		} else if (pkt_type == HCI_SCODATA_PKT) {
-			hdev->stat.sco_rx++;
-		}
+	if (!hdev)
+		return;
 
-		hdev->stat.byte_rx += len;
+	if (pkt_type == HCI_EVENT_PKT) {
+		hdev->stat.evt_rx++;
+	} else if (pkt_type == HCI_ACLDATA_PKT) {
+		hdev->stat.acl_rx++;
+	} else if (pkt_type == HCI_SCODATA_PKT) {
+		hdev->stat.sco_rx++;
 	}
+
+	hdev->stat.byte_rx += len;
 }
 
 static int esp_bt_open(struct hci_dev *hdev)
@@ -62,7 +63,7 @@ static ESP_BT_SEND_FRAME_PROTOTYPE()
 	size_t total_len, len = skb->len;
 	int ret = 0;
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(3, 13, 0))
-    struct hci_dev * hdev = (struct hci_dev *)(skb->dev);
+	struct hci_dev *hdev = (struct hci_dev *)(skb->dev);
 #endif
 	struct esp_adapter *adapter = hci_get_drvdata(hdev);
 	struct sk_buff *new_skb;
@@ -123,7 +124,7 @@ static ESP_BT_SEND_FRAME_PROTOTYPE()
 
 	hdr = (struct esp_payload_header *) skb->data;
 
-	memset (hdr, 0, sizeof(struct esp_payload_header));
+	memset(hdr, 0, sizeof(struct esp_payload_header));
 
 	hdr->if_type = ESP_HCI_IF;
 	hdr->if_num = 0;
@@ -219,7 +220,7 @@ int esp_init_bt(struct esp_adapter *adapter)
 		} else if (adapter->if_type == ESP_IF_TYPE_SPI) {
 			esp_err("Kernel version does not support HCI over SPI BUS\n");
 		} else {
-			esp_err("HCI over expected BUS[%u] is not supported\n",adapter->if_type);
+			esp_err("HCI over expected BUS[%u] is not supported\n", adapter->if_type);
 		}
 		hci_free_dev(hdev);
 		adapter->hcidev = NULL;

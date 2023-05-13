@@ -131,7 +131,7 @@ static int esp_inetaddr_event(struct notifier_block *nb,
 	case NETDEV_UP:
 		if (priv && (priv->if_type == ESP_STA_IF)) {
 			cmd_set_ip_address(priv, ifa->ifa_local);
-			esp_info("NETDEV_UP interface %s ip changed to  %pi4 \n",
+			esp_info("NETDEV_UP interface %s ip changed to  %pi4\n",
 					netdev->name, &ifa->ifa_local);
 		}
 		break;
@@ -170,9 +170,9 @@ struct wireless_dev *esp_cfg80211_add_iface(struct wiphy *wiphy,
 		return NULL;
 	}
 
-	if (NL80211_IFTYPE_STATION == type) {
+	if (type == NL80211_IFTYPE_STATION) {
 		esp_nw_if_num = ESP_STA_NW_IF;
-	} else if (NL80211_IFTYPE_AP == type) {
+	} else if (type == NL80211_IFTYPE_AP) {
 		esp_nw_if_num = ESP_AP_NW_IF;
 	} else {
 		esp_info("%u network type[%u] is not supported\n",

@@ -38,10 +38,10 @@ struct task_struct *monitor_thread;
 #endif
 struct task_struct *tx_thread;
 
-volatile u8 host_sleep = 0;
+volatile u8 host_sleep;
 
 static int init_context(struct esp_sdio_context *context);
-static struct sk_buff * read_packet(struct esp_adapter *adapter);
+static struct sk_buff *read_packet(struct esp_adapter *adapter);
 static int write_packet(struct esp_adapter *adapter, struct sk_buff *skb);
 /*int deinit_context(struct esp_adapter *adapter);*/
 
@@ -89,14 +89,14 @@ static void esp_handle_isr(struct sdio_func *func)
 
 	/* Read interrupt status register */
 	ret = esp_read_reg(context, ESP_SLAVE_INT_ST_REG,
-			(u8 *) int_status, sizeof(* int_status), ACQUIRE_LOCK);
+			(u8 *) int_status, sizeof(*int_status), ACQUIRE_LOCK);
 	CHECK_SDIO_RW_ERROR(ret);
 
 	esp_process_interrupt(context, *int_status);
 
 	/* Clear interrupt status */
 	ret = esp_write_reg(context, ESP_SLAVE_INT_CLR_REG,
-			(u8 *) int_status, sizeof(* int_status), ACQUIRE_LOCK);
+			(u8 *) int_status, sizeof(*int_status), ACQUIRE_LOCK);
 	CHECK_SDIO_RW_ERROR(ret);
 
 	kfree(int_status);
@@ -148,7 +148,7 @@ static int esp_slave_get_tx_buffer_num(struct esp_sdio_context *context, u32 *tx
 		return -ENOMEM;
 	}
 
-	ret = esp_read_reg(context, ESP_SLAVE_TOKEN_RDATA, (u8*) len, sizeof(*len), is_lock_needed);
+	ret = esp_read_reg(context, ESP_SLAVE_TOKEN_RDATA, (u8 *) len, sizeof(*len), is_lock_needed);
 
 	if (ret) {
 		kfree(len);
@@ -180,7 +180,7 @@ static int esp_get_len_from_slave(struct esp_sdio_context *context, u32 *rx_size
 			(u8 *) len, sizeof(*len), is_lock_needed);
 
 	if (ret) {
-		kfree (len);
+		kfree(len);
 		return ret;
 	}
 
@@ -200,7 +200,7 @@ static int esp_get_len_from_slave(struct esp_sdio_context *context, u32 *rx_size
 	}
 	*rx_size = *len;
 
-	kfree (len);
+	kfree(len);
 	return 0;
 }
 
@@ -232,6 +232,7 @@ static void esp_remove(struct sdio_func *func)
 {
 	struct esp_sdio_context *context;
 	uint8_t prio_q_idx = 0;
+
 	context = sdio_get_drvdata(func);
 
 #ifdef CONFIG_ENABLE_MONITOR_PROCESS
@@ -240,7 +241,7 @@ static void esp_remove(struct sdio_func *func)
 #endif
 	if (context) {
 		context->state = ESP_CONTEXT_INIT;
-		for (prio_q_idx=0; prio_q_idx<MAX_PRIORITY_QUEUES; prio_q_idx++)
+		for (prio_q_idx = 0; prio_q_idx < MAX_PRIORITY_QUEUES; prio_q_idx++)
 			skb_queue_purge(&(sdio_context.tx_q[prio_q_idx]));
 	}
 
@@ -288,7 +289,7 @@ static int get_firmware_data(struct esp_sdio_context *context)
 
 	/* Initialize rx_byte_count */
 	ret = esp_read_reg(context, ESP_SLAVE_PACKET_LEN_REG,
-			(u8 *) val, sizeof(* val), ACQUIRE_LOCK);
+			(u8 *) val, sizeof(*val), ACQUIRE_LOCK);
 	if (ret) {
 		kfree(val);
 		return ret;
@@ -300,7 +301,7 @@ static int get_firmware_data(struct esp_sdio_context *context)
 
 	/* Initialize tx_buffer_count */
 	ret = esp_read_reg(context, ESP_SLAVE_TOKEN_RDATA, (u8 *) val,
-			sizeof(* val), ACQUIRE_LOCK);
+			sizeof(*val), ACQUIRE_LOCK);
 
 	if (ret) {
 		kfree(val);
@@ -330,7 +331,7 @@ static int init_context(struct esp_sdio_context *context)
 	}
 
 	ret = get_firmware_data(context);
-	if(ret)
+	if (ret)
 		return ret;
 
 	context->adapter = esp_get_adapter();
@@ -338,7 +339,7 @@ static int init_context(struct esp_sdio_context *context)
 	if (unlikely(!context->adapter))
 		esp_err("Failed to get adapter\n");
 
-	for (prio_q_idx=0; prio_q_idx<MAX_PRIORITY_QUEUES; prio_q_idx++) {
+	for (prio_q_idx = 0; prio_q_idx < MAX_PRIORITY_QUEUES; prio_q_idx++) {
 		skb_queue_head_init(&(sdio_context.tx_q[prio_q_idx]));
 		atomic_set(&queue_items[prio_q_idx], 0);
 	}
@@ -348,7 +349,7 @@ static int init_context(struct esp_sdio_context *context)
 	return ret;
 }
 
-static struct sk_buff * read_packet(struct esp_adapter *adapter)
+static struct sk_buff *read_packet(struct esp_adapter *adapter)
 {
 	u32 len_from_slave, data_left, len_to_read, size, num_blocks;
 	int ret = 0;
@@ -363,7 +364,7 @@ static struct sk_buff * read_packet(struct esp_adapter *adapter)
 
 	context = adapter->if_context;
 
-	if(!context ||  (context->state != ESP_CONTEXT_READY) || !context->func) {
+	if (!context ||  (context->state != ESP_CONTEXT_READY) || !context->func) {
 		esp_err("Invalid context/state\n");
 		return NULL;
 	}
@@ -445,12 +446,12 @@ static int write_packet(struct esp_adapter *adapter, struct sk_buff *skb)
 {
 	u32 max_pkt_size = ESP_RX_BUFFER_SIZE - sizeof(struct esp_payload_header);
 	struct esp_payload_header *payload_header = (struct esp_payload_header *) skb->data;
-	struct esp_skb_cb * cb = NULL;
+	struct esp_skb_cb *cb = NULL;
 	uint8_t prio = PRIO_Q_LOW;
 
 	if (!adapter || !adapter->if_context || !skb || !skb->data || !skb->len) {
 		esp_err("Invalid args\n");
-		if(skb) {
+		if (skb) {
 			dev_kfree_skb(skb);
 			skb = NULL;
 		}
@@ -498,7 +499,7 @@ static int is_sdio_write_buffer_available(u32 buf_needed)
 #define BUFFER_UNAVAILABLE      0
 
 	int ret = 0;
-	static u32 buf_available = 0;
+	static u32 buf_available;
 	struct esp_sdio_context *context = &sdio_context;
 	u8 retry = MAX_WRITE_RETRIES;
 
@@ -512,7 +513,7 @@ static int is_sdio_write_buffer_available(u32 buf_needed)
 
 				/* Release SDIO and retry after delay*/
 				retry--;
-				usleep_range(10,50);
+				usleep_range(10, 50);
 				continue;
 			}
 
@@ -541,7 +542,7 @@ static int tx_process(void *data)
 	struct sk_buff *tx_skb = NULL;
 	struct esp_adapter *adapter = (struct esp_adapter *) data;
 	struct esp_sdio_context *context = NULL;
-	struct esp_skb_cb * cb = NULL;
+	struct esp_skb_cb *cb = NULL;
 	u8 retry;
 
 	context = adapter->if_context;
@@ -607,7 +608,7 @@ static int tx_process(void *data)
 		/*If SDIO slave buffer is available to write then only write data
 		else wait till buffer is available*/
 		ret = is_sdio_write_buffer_available(buf_needed);
-		if(!ret) {
+		if (!ret) {
 			dev_kfree_skb(tx_skb);
 			continue;
 		}
@@ -652,7 +653,7 @@ static int tx_process(void *data)
 	return 0;
 }
 
-static struct esp_sdio_context * init_sdio_func(struct sdio_func *func)
+static struct esp_sdio_context *init_sdio_func(struct sdio_func *func)
 {
 	struct esp_sdio_context *context = NULL;
 	int ret = 0;
@@ -915,16 +916,16 @@ void process_event_esp_bootup(struct esp_adapter *adapter, u8 *evt_buf, u8 len)
 			process_capabilities(adapter);
 			print_capabilities(*(pos + 2));
 
-		} else if (*pos == ESP_BOOTUP_FIRMWARE_CHIP_ID){
+		} else if (*pos == ESP_BOOTUP_FIRMWARE_CHIP_ID) {
 
 			esp_info("ESP chipset detected [%s]\n",
-				*(pos+2)==ESP_FIRMWARE_CHIP_ESP32 ? "esp32":
-				*(pos+2)==ESP_FIRMWARE_CHIP_ESP32S2 ? "esp32-s2" :
-				*(pos+2)==ESP_FIRMWARE_CHIP_ESP32C3 ? "esp32-c3" :
-				*(pos+2)==ESP_FIRMWARE_CHIP_ESP32S3 ? "esp32-s3" :
+				*(pos+2) == ESP_FIRMWARE_CHIP_ESP32 ? "esp32" :
+				*(pos+2) == ESP_FIRMWARE_CHIP_ESP32S2 ? "esp32-s2" :
+				*(pos+2) == ESP_FIRMWARE_CHIP_ESP32C3 ? "esp32-c3" :
+				*(pos+2) == ESP_FIRMWARE_CHIP_ESP32S3 ? "esp32-s3" :
 				"unknown");
 
-			if (*(pos+2)!=ESP_FIRMWARE_CHIP_ESP32)
+			if (*(pos+2) != ESP_FIRMWARE_CHIP_ESP32)
 				esp_err("SDIO is only supported with ESP32\n");
 
 		} else if (*pos == ESP_BOOTUP_TEST_RAW_TP) {
@@ -935,7 +936,7 @@ void process_event_esp_bootup(struct esp_adapter *adapter, u8 *evt_buf, u8 len)
 			if (tag_len != sizeof(struct fw_data))
 				esp_info("Length not matching to firmware data size\n");
 			else
-				if (process_fw_data((struct fw_data*)(pos + 2)))
+				if (process_fw_data((struct fw_data *)(pos + 2)))
 					if (context->func) {
 						generate_slave_intr(context, BIT(ESP_CLOSE_DATA_PATH));
 						return;

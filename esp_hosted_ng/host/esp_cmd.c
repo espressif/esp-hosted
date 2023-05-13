@@ -13,13 +13,13 @@
 #include "esp_cfg80211.h"
 #include "esp_kernel_port.h"
 
-#define PRINT_HEXDUMP(STR,ARG, ARG_LEN,level) \
+#define PRINT_HEXDUMP(STR, ARG, ARG_LEN, level) \
 	print_hex_dump(KERN_INFO, STR, DUMP_PREFIX_ADDRESS, 16, 1, ARG, ARG_LEN, 1);
 
 #define COMMAND_RESPONSE_TIMEOUT (5 * HZ)
 u8 ap_bssid[MAC_ADDR_LEN];
 
-int internal_scan_request(struct esp_wifi_device *priv, char* ssid,
+int internal_scan_request(struct esp_wifi_device *priv, char *ssid,
 		uint8_t channel, uint8_t is_blocking);
 
 struct beacon_probe_fixed_params {
@@ -28,7 +28,7 @@ struct beacon_probe_fixed_params {
 	__le16 cap_info;
 } __packed;
 
-static struct command_node * get_free_cmd_node(struct esp_adapter *adapter)
+static struct command_node *get_free_cmd_node(struct esp_adapter *adapter)
 {
 	struct command_node *cmd_node;
 
@@ -52,7 +52,7 @@ static struct command_node * get_free_cmd_node(struct esp_adapter *adapter)
 	return cmd_node;
 }
 
-static inline void reset_cmd_node(struct esp_adapter *adapter, struct command_node * cmd_node)
+static inline void reset_cmd_node(struct esp_adapter *adapter, struct command_node *cmd_node)
 {
 	cmd_node->cmd_code = 0;
 
@@ -65,7 +65,7 @@ static inline void reset_cmd_node(struct esp_adapter *adapter, struct command_no
 }
 
 static void queue_cmd_node(struct esp_adapter *adapter,
-		struct command_node * cmd_node, u8 flag_high_prio)
+		struct command_node *cmd_node, u8 flag_high_prio)
 {
 	spin_lock_bh(&adapter->cmd_pending_queue_lock);
 
@@ -114,10 +114,10 @@ static int decode_common_resp(struct command_node *cmd_node)
 
 	if (!cmd_node || !cmd_node->resp_skb || !cmd_node->resp_skb->data) {
 
-		esp_info("Failed. cmd_node:%p \n", cmd_node);
+		esp_info("Failed. cmd_node:%p\n", cmd_node);
 
 		if (cmd_node)
-			esp_info("code: %u resp_skb:%p \n",
+			esp_info("code: %u resp_skb:%p\n",
 				 cmd_node->cmd_code, cmd_node->resp_skb);
 
 		return -1;
@@ -134,7 +134,7 @@ static int decode_common_resp(struct command_node *cmd_node)
 }
 
 static void recycle_cmd_node(struct esp_adapter *adapter,
-		struct command_node * cmd_node)
+		struct command_node *cmd_node)
 {
 	if (!adapter || !cmd_node)
 		return;
@@ -229,14 +229,14 @@ static int wait_and_decode_cmd_resp(struct esp_wifi_device *priv,
 static void free_esp_cmd_pool(struct esp_adapter *adapter)
 {
 	int i;
-	struct command_node * cmd_pool = NULL;
+	struct command_node *cmd_pool = NULL;
 
 	if (!adapter || !adapter->cmd_pool)
 		return;
 
 	cmd_pool = adapter->cmd_pool;
 
-	for (i=0; i<ESP_NUM_OF_CMD_NODES; i++) {
+	for (i = 0; i < ESP_NUM_OF_CMD_NODES; i++) {
 
 		spin_lock_bh(&adapter->cmd_lock);
 		if (cmd_pool[i].resp_skb) {
@@ -254,15 +254,15 @@ static int alloc_esp_cmd_pool(struct esp_adapter *adapter)
 {
 	u16 i;
 
-	struct command_node * cmd_pool = kcalloc(ESP_NUM_OF_CMD_NODES,
+	struct command_node *cmd_pool = kcalloc(ESP_NUM_OF_CMD_NODES,
 		sizeof(struct command_node), GFP_KERNEL);
 
-	if(!cmd_pool)
+	if (!cmd_pool)
 		return -ENOMEM;
 
 	adapter->cmd_pool = cmd_pool;
 
-	for (i=0; i<ESP_NUM_OF_CMD_NODES; i++) {
+	for (i = 0; i < ESP_NUM_OF_CMD_NODES; i++) {
 
 		cmd_pool[i].cmd_skb = NULL;
 		cmd_pool[i].resp_skb = NULL;
@@ -276,7 +276,7 @@ static void esp_cmd_work(struct work_struct *work)
 {
 	int ret;
 	struct command_node *cmd_node = NULL;
-	struct esp_adapter * adapter = NULL;
+	struct esp_adapter *adapter = NULL;
 	struct esp_payload_header *payload_header = NULL;
 
 	adapter = esp_get_adapter();
@@ -308,7 +308,7 @@ static void esp_cmd_work(struct work_struct *work)
 
 	cmd_node = list_first_entry(&adapter->cmd_pending_queue,
 				    struct command_node, list);
-	if (! cmd_node) {
+	if (!cmd_node) {
 		esp_dbg("cmd node NULL\n");
 		spin_unlock_bh(&adapter->cmd_pending_queue_lock);
 		spin_unlock_bh(&adapter->cmd_lock);
@@ -318,8 +318,8 @@ static void esp_cmd_work(struct work_struct *work)
 
 	list_del(&cmd_node->list);
 
-	if (! cmd_node->cmd_skb) {
-		esp_dbg("cmd_node->cmd_skb NULL \n");
+	if (!cmd_node->cmd_skb) {
+		esp_dbg("cmd_node->cmd_skb NULL\n");
 		spin_unlock_bh(&adapter->cmd_pending_queue_lock);
 		spin_unlock_bh(&adapter->cmd_lock);
 		return;
@@ -339,7 +339,7 @@ static void esp_cmd_work(struct work_struct *work)
 	spin_unlock_bh(&adapter->cmd_lock);
 
 	if (ret) {
-		esp_err("Failed to send command [0x%X] \n", cmd_node->cmd_code);
+		esp_err("Failed to send command [0x%X]\n", cmd_node->cmd_code);
 		adapter->cur_cmd = NULL;
 		spin_unlock_bh(&adapter->cmd_pending_queue_lock);
 		recycle_cmd_node(adapter, cmd_node);
@@ -375,7 +375,7 @@ static void destroy_cmd_wq(struct esp_adapter *adapter)
 	}
 }
 
-struct command_node * prepare_command_request(struct esp_adapter *adapter, u8 cmd_code, u16 len)
+struct command_node *prepare_command_request(struct esp_adapter *adapter, u8 cmd_code, u16 len)
 {
 	struct command_header *cmd;
 	struct esp_payload_header *payload_header;
@@ -508,7 +508,7 @@ static void process_scan_result_event(struct esp_wifi_device *priv,
 	}
 }
 
-static void process_auth_event(struct esp_wifi_device * priv,
+static void process_auth_event(struct esp_wifi_device *priv,
 		struct auth_event *event)
 {
 	if (!priv || !event) {
@@ -848,7 +848,7 @@ int cmd_assoc_request(struct esp_wifi_device *priv,
 	priv->assoc_req_ie = kmemdup(req->ie, req->ie_len, GFP_ATOMIC);
 
 	if (!priv->assoc_req_ie) {
-		esp_err("Failed to allocate buffer for assoc request IEs \n");
+		esp_err("Failed to allocate buffer for assoc request IEs\n");
 		return -ENOMEM;
 	}
 
@@ -939,7 +939,7 @@ int cmd_set_default_key(struct esp_wifi_device *priv, u8 key_index)
 	u16 cmd_len;
 	struct command_node *cmd_node = NULL;
 	struct cmd_key_operation *cmd;
-	struct wifi_sec_key * key = NULL;
+	struct wifi_sec_key *key = NULL;
 
 	if (!priv || !priv->adapter) {
 		esp_err("Invalid argument\n");
@@ -989,7 +989,7 @@ int cmd_del_key(struct esp_wifi_device *priv, u8 key_index, bool pairwise,
 	u16 cmd_len;
 	struct command_node *cmd_node = NULL;
 	struct cmd_key_operation *cmd;
-	struct wifi_sec_key * key = NULL;
+	struct wifi_sec_key *key = NULL;
 	const u8 *mac = NULL;
 	const u8 bc_mac[] = {0xff, 0xff, 0xff, 0xff, 0xff, 0xff};
 
@@ -1045,12 +1045,12 @@ int cmd_add_key(struct esp_wifi_device *priv, u8 key_index, bool pairwise,
 	u16 cmd_len;
 	struct command_node *cmd_node = NULL;
 	struct cmd_key_operation *cmd;
-	struct wifi_sec_key * key = NULL;
+	struct wifi_sec_key *key = NULL;
 	const u8 bc_mac[] = {0xff, 0xff, 0xff, 0xff, 0xff, 0xff};
 	const u8 *mac = NULL;
 
 #if 0
-	esp_info("%u key_idx: %u pairwise: %u params->key_len: %u \nparams->seq_len:%u params->mode: 0x%x \nparams->cipher: 0x%x\n",
+	esp_info("%u key_idx: %u pairwise: %u params->key_len: %u \nparams->seq_len:%u params->mode: 0x%x\nparams->cipher: 0x%x\n",
       __LINE__,
       key_index, pairwise, params->key_len, params->seq_len, params->mode, params->cipher);
 #endif
@@ -1125,7 +1125,7 @@ int cmd_add_key(struct esp_wifi_device *priv, u8 key_index, bool pairwise,
 #endif
 
 #if 0
-	esp_err("%u algo: %u idx: %u seq_len: %u len:%u \n", __LINE__,
+	esp_err("%u algo: %u idx: %u seq_len: %u len:%u\n", __LINE__,
 			key->algo, key->index, key->seq_len, key->len);
 	PRINT_HEXDUMP("mac", key->mac_addr, 6, ESP_LOG_INFO);
 	PRINT_HEXDUMP("seq", key->seq, key->seq_len, ESP_LOG_INFO);
@@ -1197,7 +1197,7 @@ int cmd_deinit_interface(struct esp_wifi_device *priv)
 	return 0;
 }
 
-int internal_scan_request(struct esp_wifi_device *priv, char* ssid,
+int internal_scan_request(struct esp_wifi_device *priv, char *ssid,
 		uint8_t channel, uint8_t is_blocking)
 {
 	int ret = 0;
@@ -1292,7 +1292,7 @@ int cmd_scan_request(struct esp_wifi_device *priv, struct cfg80211_scan_request 
 			sizeof(struct esp_payload_header));
 
 	/* TODO: Handle case of multiple SSIDs or channels */
-	if(request->ssids && request->ssids[0].ssid_len) {
+	if (request->ssids && request->ssids[0].ssid_len) {
 		memcpy(scan_req->ssid, request->ssids[0].ssid, MAX_SSID_LEN);
 	}
 
@@ -1356,8 +1356,8 @@ int esp_commands_teardown(struct esp_adapter *adapter)
 	uint8_t iface_idx = 0;
 	struct esp_wifi_device *priv = NULL;
 
-    if (!adapter) {
-        return -EINVAL;
+	if (!adapter) {
+		return -EINVAL;
 	}
 
 	set_bit(ESP_CLEANUP_IN_PROGRESS, &adapter->state_flags);
@@ -1366,7 +1366,7 @@ int esp_commands_teardown(struct esp_adapter *adapter)
 		return 0;
 
 
-	for (iface_idx=0; iface_idx<ESP_MAX_INTERFACE; iface_idx++) {
+	for (iface_idx = 0; iface_idx < ESP_MAX_INTERFACE; iface_idx++) {
 
 		priv = adapter->priv[iface_idx];
 
@@ -1378,10 +1378,10 @@ int esp_commands_teardown(struct esp_adapter *adapter)
 		esp_port_close(priv);
 	}
 
-    destroy_cmd_wq(adapter);
-    free_esp_cmd_pool(adapter);
+	destroy_cmd_wq(adapter);
+	free_esp_cmd_pool(adapter);
 
-    return 0;
+	return 0;
 }
 
 int esp_commands_setup(struct esp_adapter *adapter)

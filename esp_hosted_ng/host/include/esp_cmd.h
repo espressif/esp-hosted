@@ -16,8 +16,7 @@
 #define ESP_CMD_HIGH_PRIO    1
 #define ESP_CMD_DFLT_PRIO    0
 
-struct multicast_list
-{
+struct multicast_list {
 	struct esp_wifi_device *priv;
 	u8 addr_count;
 	u8 mcast_addr[MAX_MULTICAST_ADDR_COUNT][MAC_ADDR_LEN];

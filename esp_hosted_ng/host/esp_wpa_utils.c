@@ -11,54 +11,53 @@
 
 int wpa_cipher_to_alg(int cipher)
 {
-    switch (cipher) {
-    case WLAN_CIPHER_SUITE_CCMP :
-        return WIFI_WPA_ALG_CCMP;
+	switch (cipher) {
+	case WLAN_CIPHER_SUITE_CCMP:
+		return WIFI_WPA_ALG_CCMP;
 #ifdef CONFIG_GCMP
-    case WLAN_CIPHER_SUITE_GCMP_256:
-    case WLAN_CIPHER_SUITE_GCMP:
-        return WIFI_WPA_ALG_GCMP;
+	case WLAN_CIPHER_SUITE_GCMP_256:
+	case WLAN_CIPHER_SUITE_GCMP:
+		return WIFI_WPA_ALG_GCMP;
 #endif
-    case WLAN_CIPHER_SUITE_TKIP:
-        return WIFI_WPA_ALG_TKIP;
-    case WLAN_CIPHER_SUITE_WEP104:
-        return WIFI_WPA_ALG_WEP104;
+	case WLAN_CIPHER_SUITE_TKIP:
+		return WIFI_WPA_ALG_TKIP;
+	case WLAN_CIPHER_SUITE_WEP104:
+		return WIFI_WPA_ALG_WEP104;
 	case WLAN_CIPHER_SUITE_WEP40:
 		return WIFI_WPA_ALG_WEP40;
 	case WLAN_CIPHER_SUITE_AES_CMAC:
 		return WIFI_WPA_ALG_IGTK;
-
-    }
-    return WIFI_WPA_ALG_NONE;
+	}
+	return WIFI_WPA_ALG_NONE;
 }
 
 int wpa_cipher_key_len(int cipher)
 {
-    switch (cipher) {
-    case WLAN_CIPHER_SUITE_TKIP:
+	switch (cipher) {
+	case WLAN_CIPHER_SUITE_TKIP:
 #ifdef CONFIG_GCMP
-    case WLAN_CIPHER_GCMP_SUITE_256:
+	case WLAN_CIPHER_GCMP_SUITE_256:
 #endif
 #ifdef CONFIG_GMAC
-    case WLAN_CIPHER_BIP_GMAC_SUITE_256:
+	case WLAN_CIPHER_BIP_GMAC_SUITE_256:
 #endif
-        return 32;
-    case WLAN_CIPHER_SUITE_CCMP:
+		return 32;
+	case WLAN_CIPHER_SUITE_CCMP:
 #ifdef CONFIG_GCMP
-    case WLAN_CIPHER_SUITE_GCMP:
+	case WLAN_CIPHER_SUITE_GCMP:
 #endif
 #ifdef CONFIG_GMAC
-    case WLAN_CIPHER_SUITE_BIP_GMAC_128:
+	case WLAN_CIPHER_SUITE_BIP_GMAC_128:
 #endif
 #if 0
-    case WLAN_CIPHER_SUITE_AES_128_CMAC:
-        return 16;
+	case WLAN_CIPHER_SUITE_AES_128_CMAC:
+		return 16;
 #endif
-    case WLAN_CIPHER_SUITE_WEP104:
-        return 13;
-    case WLAN_CIPHER_SUITE_WEP40:
-        return 5;
-    }
+	case WLAN_CIPHER_SUITE_WEP104:
+		return 13;
+	case WLAN_CIPHER_SUITE_WEP40:
+		return 5;
+	}
 
-    return 0;
+	return 0;
 }

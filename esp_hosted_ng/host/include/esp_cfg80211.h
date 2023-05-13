@@ -11,10 +11,10 @@
 #include <linux/version.h>
 
 struct wireless_dev *esp_cfg80211_add_iface(struct wiphy *wiphy,
-                              const char *name,
-                              unsigned char name_assign_type,
-                              enum nl80211_iftype type,
-                              struct vif_params *params);
+			      const char *name,
+			      unsigned char name_assign_type,
+			      enum nl80211_iftype type,
+			      struct vif_params *params);
 int esp_cfg80211_register(struct esp_adapter *adapter);
 
 int esp_mark_disconnect(struct esp_wifi_device *priv, uint16_t reason,
