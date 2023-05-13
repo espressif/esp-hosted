@@ -30,7 +30,7 @@ static void log_raw_tp_stats_timer_cb(struct timer_list *timer)
 
 	mod_timer(&log_raw_tp_stats_timer, jiffies + msecs_to_jiffies(1000));
 	actual_bandwidth = (test_raw_tp_len*8)/1024;
-	printk(KERN_INFO "%u-%u sec       %lu kbits/sec\n\r",
+	esp_info("%u-%u sec       %lu kbits/sec\n\r",
 			raw_tp_timer_count,
 			raw_tp_timer_count + 1, actual_bandwidth);
 
@@ -63,7 +63,7 @@ static int raw_tp_tx_process(void *data)
 
 			tx_skb = esp_alloc_skb(TEST_RAW_TP__BUF_SIZE);
 			if (!tx_skb) {
-				printk(KERN_INFO "%s:%u esp_alloc_skb failed\n",__func__,__LINE__);
+				esp_info("%u esp_alloc_skb failed\n", __LINE__);
 				msleep(10);
 				continue;
 			}
@@ -94,7 +94,7 @@ static int raw_tp_tx_process(void *data)
 				wait_for_completion_interruptible(&traffic_open);
 		}
 	}
-	printk(KERN_INFO "esp32: raw tp tx thrd stopped\n");
+	esp_info("raw tp tx thrd stopped\n");
 	return 0;
 }
 
@@ -112,7 +112,7 @@ static void process_raw_tp_flags(void)
 
 			raw_tp_tx_thread = kthread_run(raw_tp_tx_process, NULL, "raw tp thrd");
 			if (!raw_tp_tx_thread)
-				printk(KERN_ERR "Failed to create send traffic thread\n");
+				esp_err("Failed to create send traffic thread\n");
 
 		}
 		if (!traffic_open_init_done) {
@@ -165,7 +165,7 @@ void test_raw_tp_cleanup(void)
 			ret = kthread_stop(raw_tp_tx_thread);
 		}
 		if (ret)
-			printk(KERN_ERR "Kthread stop error\n");
+			esp_err("Kthread stop error\n");
 
 		raw_tp_tx_thread = 0;
 	}
@@ -182,17 +182,17 @@ void update_test_raw_tp_rx_stats(u16 len)
 void process_test_capabilities(u8 cap)
 {
 #if TEST_RAW_TP
-	printk(KERN_INFO "ESP peripheral test capabilities: 0x%x\n", cap);
+	esp_info("ESP peripheral test capabilities: 0x%x\n", cap);
 	if ((cap & ESP_TEST_RAW_TP) == ESP_TEST_RAW_TP) {
 		if ((cap & ESP_TEST_RAW_TP__ESP_TO_HOST) == ESP_TEST_RAW_TP__ESP_TO_HOST) {
 			start_test_raw_tp(ESP_TEST_RAW_TP__RX);
-			printk(KERN_INFO "esp32: start testing of ESP->Host raw throughput\n");
+			esp_info("start testing of ESP->Host raw throughput\n");
 		} else {
 			start_test_raw_tp(ESP_TEST_RAW_TP__TX);
-			printk(KERN_INFO "esp32: start testing of Host->ESP raw throughput\n");
+			esp_info("start testing of Host->ESP raw throughput\n");
 		}
 	} else {
-		printk(KERN_INFO "esp32: stop raw throuput test if running\n");
+		esp_info("stop raw throuput test if running\n");
 		stop_test_raw_tp();
 	}
 	process_raw_tp_flags();

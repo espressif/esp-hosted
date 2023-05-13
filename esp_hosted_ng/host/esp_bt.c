@@ -71,7 +71,7 @@ static ESP_BT_SEND_FRAME_PROTOTYPE()
 	u8 pkt_type;
 
 	if (!adapter) {
-		printk(KERN_ERR "%s: invalid args", __func__);
+		esp_err("Invalid args");
 		return -EINVAL;
 	}
 	//print_hex_dump(KERN_INFO, "bt_tx: ", DUMP_PREFIX_ADDRESS, 16, 1, skb->data, len, 1  );
@@ -100,7 +100,7 @@ static ESP_BT_SEND_FRAME_PROTOTYPE()
 		new_skb = esp_alloc_skb(skb->len + pad_len);
 
 		if (!new_skb) {
-			printk(KERN_ERR "%s: Failed to allocate SKB", __func__);
+			esp_err("Failed to allocate SKB");
 			hdev->stat.err_tx++;
 			return -ENOMEM;
 		}
@@ -215,11 +215,11 @@ int esp_init_bt(struct esp_adapter *adapter)
 	if (hdev->bus == INVALID_HDEV_BUS) {
 
 		if (adapter->if_type == ESP_IF_TYPE_SDIO) {
-			printk(KERN_ERR "%s: Kernel version does not support HCI over SDIO BUS\n",__func__);
+			esp_err("Kernel version does not support HCI over SDIO BUS\n");
 		} else if (adapter->if_type == ESP_IF_TYPE_SPI) {
-			printk(KERN_ERR "%s: Kernel version does not support HCI over SPI BUS\n",__func__);
+			esp_err("Kernel version does not support HCI over SPI BUS\n");
 		} else {
-			printk(KERN_ERR "%s: HCI over expected BUS[%u] is not supported\n",__func__, adapter->if_type);
+			esp_err("HCI over expected BUS[%u] is not supported\n",adapter->if_type);
 		}
 		hci_free_dev(hdev);
 		adapter->hcidev = NULL;

@@ -68,12 +68,12 @@ static int process_tx_packet (struct sk_buff *skb)
 
 	if (!priv) {
 		dev_kfree_skb(skb);
-		printk(KERN_INFO "%s: no priv\n", __func__);
+		esp_info("No priv\n");
 		return NETDEV_TX_OK;
 	}
 
 	if (netif_queue_stopped((const struct net_device *) priv->ndev)) {
-		printk(KERN_INFO "%s: Netif queue stopped\n", __func__);
+		esp_info("Netif queue stopped\n");
 		return NETDEV_TX_BUSY;
 	}
 
@@ -101,14 +101,14 @@ static int process_tx_packet (struct sk_buff *skb)
 		if (skb_linearize(skb)) {
 			priv->stats.tx_errors++;
 			dev_kfree_skb(skb);
-			printk(KERN_ERR "%s: Failed to linearize SKB", __func__);
+			esp_err("Failed to linearize SKB");
 			return NETDEV_TX_OK;
 		}
 
 		new_skb = esp_alloc_skb(skb->len + pad_len);
 
 		if (!new_skb) {
-			printk(KERN_ERR "%s: Failed to allocate SKB", __func__);
+			esp_err("Failed to allocate SKB");
 			priv->stats.tx_errors++;
 			dev_kfree_skb(skb);
 			return NETDEV_TX_OK;
@@ -146,7 +146,7 @@ static int process_tx_packet (struct sk_buff *skb)
 		ret = esp_send_packet(priv->adapter, skb);
 
 		if (ret) {
-/*			printk(KERN_ERR "%s: Failed to send SKB", __func__);*/
+/*			esp_err("Failed to send SKB");*/
 			priv->stats.tx_errors++;
 		} else {
 			priv->stats.tx_packets++;
@@ -177,35 +177,35 @@ void esp_port_close(struct esp_wifi_device * priv)
 
 void print_capabilities(u32 cap)
 {
-	printk(KERN_INFO "Capabilities: 0x%x. Features supported are:\n", cap);
+	esp_info("Capabilities: 0x%x. Features supported are:\n", cap);
 	if (cap & ESP_WLAN_SDIO_SUPPORT)
-		printk(KERN_INFO "\t * WLAN on SDIO\n");
+		esp_info("\t * WLAN on SDIO\n");
 	else if (cap & ESP_WLAN_SPI_SUPPORT)
-		printk(KERN_INFO "\t * WLAN on SPI\n");
+		esp_info("\t * WLAN on SPI\n");
 
 	if ((cap & ESP_BT_UART_SUPPORT) ||
 		    (cap & ESP_BT_SDIO_SUPPORT) ||
 		    (cap & ESP_BT_SPI_SUPPORT)) {
-		printk(KERN_INFO "\t * BT/BLE\n");
+		esp_info("\t * BT/BLE\n");
 		if (cap & ESP_BT_UART_SUPPORT)
-			printk(KERN_INFO "\t   - HCI over UART\n");
+			esp_info("\t   - HCI over UART\n");
 		if (cap & ESP_BT_SDIO_SUPPORT)
-			printk(KERN_INFO "\t   - HCI over SDIO\n");
+			esp_info("\t   - HCI over SDIO\n");
 		if (cap & ESP_BT_SPI_SUPPORT)
-			printk(KERN_INFO "\t   - HCI over SPI\n");
+			esp_info("\t   - HCI over SPI\n");
 
 		if ((cap & ESP_BLE_ONLY_SUPPORT) && (cap & ESP_BR_EDR_ONLY_SUPPORT))
-			printk(KERN_INFO "\t   - BT/BLE dual mode\n");
+			esp_info("\t   - BT/BLE dual mode\n");
 		else if (cap & ESP_BLE_ONLY_SUPPORT)
-			printk(KERN_INFO "\t   - BLE only\n");
+			esp_info("\t   - BLE only\n");
 		else if (cap & ESP_BR_EDR_ONLY_SUPPORT)
-			printk(KERN_INFO "\t   - BR EDR only\n");
+			esp_info("\t   - BR EDR only\n");
 	}
 }
 
 void process_capabilities(struct esp_adapter *adapter)
 {
-	printk(KERN_INFO "ESP peripheral capabilities: 0x%x\n", adapter->capabilities);
+	esp_info("ESP peripheral capabilities: 0x%x\n", adapter->capabilities);
 
 	/* Reset BT */
 	esp_deinit_bt(adapter);
@@ -213,17 +213,17 @@ void process_capabilities(struct esp_adapter *adapter)
 	if ((adapter->capabilities & ESP_BT_SPI_SUPPORT) ||
 		(adapter->capabilities & ESP_BT_SDIO_SUPPORT)) {
 		msleep(200);
-		printk(KERN_INFO "ESP Bluetooth init\n");
+		esp_info("ESP Bluetooth init\n");
 		esp_init_bt(adapter);
 	}
 }
 
 static int check_esp_version(struct fw_version *ver)
 {
-	printk(KERN_INFO "esp32: ESP Firmware version: %u.%u.%u\n",
+	esp_info("esp32: ESP Firmware version: %u.%u.%u\n",
 			ver->major1, ver->major2, ver->minor);
 	if (!ver->major1) {
-		printk(KERN_ERR "Incompatible ESP firmware release detected, Please use correct ESP-Hosted branch/compatible release\n");
+		esp_err("Incompatible ESP firmware release detected, Please use correct ESP-Hosted branch/compatible release\n");
 		return -1;
 	}
 	return 0;
@@ -233,33 +233,33 @@ static void print_reset_reason(uint32_t reason)
 {
 	switch (reason)
 	{
-		case 1 : printk(KERN_INFO  "POWERON_RESET\n");break;          /**<1, Vbat power on reset*/
-		case 3 : printk(KERN_INFO  "SW_RESET\n");break;               /**<3, Software reset digital core*/
-		case 4 : printk(KERN_INFO  "OWDT_RESET\n");break;             /**<4, Legacy watch dog reset digital core*/
-		case 5 : printk(KERN_INFO  "DEEPSLEEP_RESET\n");break;        /**<5, Deep Sleep reset digital core*/
-		case 6 : printk(KERN_INFO  "SDIO_RESET\n");break;             /**<6, Reset by SLC module, reset digital core*/
-		case 7 : printk(KERN_INFO  "TG0WDT_SYS_RESET\n");break;       /**<7, Timer Group0 Watch dog reset digital core*/
-		case 8 : printk(KERN_INFO  "TG1WDT_SYS_RESET\n");break;       /**<8, Timer Group1 Watch dog reset digital core*/
-		case 9 : printk(KERN_INFO  "RTCWDT_SYS_RESET\n");break;       /**<9, RTC Watch dog Reset digital core*/
-		case 10 : printk(KERN_INFO  "INTRUSION_RESET\n");break;       /**<10, Instrusion tested to reset CPU*/
-		case 11 : printk(KERN_INFO  "TGWDT_CPU_RESET\n");break;       /**<11, Time Group reset CPU*/
-		case 12 : printk(KERN_INFO  "SW_CPU_RESET\n");break;          /**<12, Software reset CPU*/
-		case 13 : printk(KERN_INFO  "RTCWDT_CPU_RESET\n");break;      /**<13, RTC Watch dog Reset CPU*/
-		case 14 : printk(KERN_INFO  "EXT_CPU_RESET\n");break;         /**<14, for APP CPU, reseted by PRO CPU*/
-		case 15 : printk(KERN_INFO  "RTCWDT_BROWN_OUT_RESET\n");break;/**<15, Reset when the vdd voltage is not stable*/
-		case 16 : printk(KERN_INFO  "RTCWDT_RTC_RESET\n");break;      /**<16, RTC Watch dog reset digital core and rtc module*/
-		default : printk(KERN_INFO  "Unknown[%u]\n",reason);break;
+		case 1 : esp_info( "POWERON_RESET\n");break;          /**<1, Vbat power on reset*/
+		case 3 : esp_info( "SW_RESET\n");break;               /**<3, Software reset digital core*/
+		case 4 : esp_info( "OWDT_RESET\n");break;             /**<4, Legacy watch dog reset digital core*/
+		case 5 : esp_info( "DEEPSLEEP_RESET\n");break;        /**<5, Deep Sleep reset digital core*/
+		case 6 : esp_info( "SDIO_RESET\n");break;             /**<6, Reset by SLC module, reset digital core*/
+		case 7 : esp_info( "TG0WDT_SYS_RESET\n");break;       /**<7, Timer Group0 Watch dog reset digital core*/
+		case 8 : esp_info( "TG1WDT_SYS_RESET\n");break;       /**<8, Timer Group1 Watch dog reset digital core*/
+		case 9 : esp_info( "RTCWDT_SYS_RESET\n");break;       /**<9, RTC Watch dog Reset digital core*/
+		case 10 : esp_info( "INTRUSION_RESET\n");break;       /**<10, Instrusion tested to reset CPU*/
+		case 11 : esp_info( "TGWDT_CPU_RESET\n");break;       /**<11, Time Group reset CPU*/
+		case 12 : esp_info( "SW_CPU_RESET\n");break;          /**<12, Software reset CPU*/
+		case 13 : esp_info( "RTCWDT_CPU_RESET\n");break;      /**<13, RTC Watch dog Reset CPU*/
+		case 14 : esp_info( "EXT_CPU_RESET\n");break;         /**<14, for APP CPU, reseted by PRO CPU*/
+		case 15 : esp_info( "RTCWDT_BROWN_OUT_RESET\n");break;/**<15, Reset when the vdd voltage is not stable*/
+		case 16 : esp_info( "RTCWDT_RTC_RESET\n");break;      /**<16, RTC Watch dog reset digital core and rtc module*/
+		default : esp_info( "Unknown[%u]\n",reason);break;
 	}
 }
 
 int process_fw_data(struct fw_data *fw_p)
 {
 	if (!fw_p) {
-		printk(KERN_ERR "Incomplete/incorrect bootup event received\n");
+		esp_err("Incomplete/incorrect bootup event received\n");
 		return -1;
 	}
 
-	printk(KERN_INFO "esp32: %s ESP chipset's last reset cause: ", __func__);
+	esp_info("ESP chipset's last reset cause: ");
 	print_reset_reason(le32_to_cpu(fw_p->last_reset_reason));
 	return check_esp_version(&fw_p->version);
 }
@@ -295,7 +295,7 @@ static int esp_set_mac_address(struct net_device *ndev, void *data)
 	if (!priv || !priv->adapter)
 		return -EINVAL;
 
-	printk(KERN_INFO "%s:%u %pM\n", __func__, __LINE__, priv->mac_address);
+	esp_info("%u %pM\n", __LINE__, priv->mac_address);
 	eth_hw_addr_set(ndev, priv->mac_address/*mac_addr->sa_data*/);
 
 	return 0;
@@ -317,7 +317,7 @@ static void esp_set_rx_mode(struct net_device *ndev)
 #endif
 	netdev_for_each_mc_addr(mac_addr, ndev) {
 		if (count < MAX_MULTICAST_ADDR_COUNT) {
-			/*printk(KERN_INFO "%d: %pM\n", count+1, mac_addr->addr);*/
+			/*esp_info("%d: %pM\n", count+1, mac_addr->addr);*/
 			memcpy(&mcast_list.mcast_addr[count++], mac_addr->addr, ETH_ALEN);
 		}
 	}
@@ -326,14 +326,14 @@ static void esp_set_rx_mode(struct net_device *ndev)
 	mcast_list.addr_count = count;
 
 	if (priv->port_open) {
-		/*printk (KERN_INFO "Set Multicast list\n");*/
+		/*esp_info("Set Multicast list\n");*/
 		if (adapter.mac_filter_wq)
 			queue_work(adapter.mac_filter_wq, &adapter.mac_flter_work);
 	}
 #if 0
 	cmd_set_mcast_mac_list(priv, &mcast_list);
 	while(ip_list) {
-		printk(KERN_DEBUG " IP MC Address: 0x%x\n", ip_list->multiaddr);
+		esp_dbg(" IP MC Address: 0x%x\n", ip_list->multiaddr);
 		ip_list = ip_list->next;
 	}
 #endif
@@ -356,13 +356,13 @@ static int esp_hard_start_xmit(struct sk_buff *skb, struct net_device *ndev)
 
 	if (!priv->port_open) {
 		priv->stats.tx_dropped++;
-		/*printk(KERN_ERR "esp32: %s: port not yet open\n", __func__);*/
+		/*esp_err("Port not yet open\n");*/
 		dev_kfree_skb(skb);
 		return NETDEV_TX_OK;
 	}
 
 	if (!skb->len || (skb->len > ETH_FRAME_LEN)) {
-		printk(KERN_ERR "esp32: %s: Bad len %d\n", __func__, skb->len);
+		esp_err("Bad len %d\n", skb->len);
 		priv->stats.tx_dropped++;
 		dev_kfree_skb(skb);
 		return NETDEV_TX_OK;
@@ -399,13 +399,13 @@ static int add_network_iface(void)
 	struct wireless_dev * wdev = NULL;
 
 	if (!adapter) {
-		printk(KERN_INFO "%s: adapter not yet init\n", __func__);
+		esp_info("adapter not yet init\n");
 		return -EINVAL;
 	}
 
 	ret = esp_cfg80211_register(adapter);
 	if (ret) {
-		printk(KERN_ERR "Failed to register with cfg80211 (err code 0x%x)\n", ret);
+		esp_err("Failed to register with cfg80211 (err code 0x%x)\n", ret);
 		return ret;
 	}
 
@@ -522,16 +522,16 @@ static void process_esp_bootup_event(struct esp_adapter *adapter,
 		struct esp_internal_bootup_event *evt)
 {
 	if (!adapter || !evt) {
-		printk(KERN_ERR "%s: Invalid arguments\n", __func__);
+		esp_err("Invalid arguments\n");
 		return;
 	}
 
 	if (evt->header.status) {
-		printk(KERN_ERR "%s: Incorrect ESP bootup event\n", __func__);
+		esp_err("Incorrect ESP bootup event\n");
 		return;
 	}
 
-	printk (KERN_INFO "\nReceived ESP bootup event\n");
+	esp_info("\nReceived ESP bootup event\n");
 	process_event_esp_bootup(adapter, evt->data, evt->len);
 }
 
@@ -541,7 +541,7 @@ static int process_internal_event(struct esp_adapter *adapter,
 	struct event_header *header = NULL;
 
 	if (!skb || !adapter) {
-		printk (KERN_ERR "esp32: Incorrect event data!\n");
+		esp_err("esp32: Incorrect event data!\n");
 		return -1;
 	}
 
@@ -555,8 +555,8 @@ static int process_internal_event(struct esp_adapter *adapter,
 		break;
 
 	default:
-		printk(KERN_INFO "%s:%u unhandled internal event[%u]\n",
-				__func__, __LINE__, header->event_code);
+		esp_info("%u unhandled internal event[%u]\n",
+				__LINE__, header->event_code);
 		break;
 	}
 
@@ -608,24 +608,24 @@ static void process_rx_packet(struct esp_adapter *adapter, struct sk_buff *skb)
 		priv = get_priv_from_payload_header(payload_header);
 
 		if (!priv) {
-			printk(KERN_ERR "%s: empty priv\n", __func__);
+			esp_err("Empty priv\n");
 			dev_kfree_skb_any(skb);
 			return;
 		}
 
 		if (payload_header->packet_type == PACKET_TYPE_EAPOL) {
-			printk(KERN_INFO "%s: Rx PACKET_TYPE_EAPOL!!!!\n", __func__);
+			esp_info("Rx PACKET_TYPE_EAPOL!!!!\n");
 			esp_port_open(priv);
 
 			eap_skb = alloc_skb(skb->len + ETH_HLEN, GFP_KERNEL);
 			if(!eap_skb) {
-				printk(KERN_INFO "%s:%u memory alloc failed\n",__func__, __LINE__);
+				esp_info("%u memory alloc failed\n", __LINE__);
 				return;
 			}
 			eap_skb->dev = priv->ndev;
 
 			if (!IS_ALIGNED((unsigned long) eap_skb->data, SKB_DATA_ADDR_ALIGNMENT)) {
-				printk(KERN_INFO "%s:%u eap skb unaligned\n",__func__, __LINE__);
+				esp_info("%u eap skb unaligned\n", __LINE__);
 			}
 
 			eth = (struct ethhdr *) skb_put(eap_skb, ETH_HLEN);
@@ -763,7 +763,7 @@ static int esp_get_packets(struct esp_adapter *adapter)
 int esp_send_packet(struct esp_adapter *adapter, struct sk_buff *skb)
 {
 	if (!adapter || !adapter->if_ops || !adapter->if_ops->write) {
-		printk(KERN_ERR "esp32: %s:%u adapter: %p\n", __func__, __LINE__, adapter);
+		esp_err("%u adapter: %p\n", __LINE__, adapter);
 		return -EINVAL;
 	}
 
@@ -848,7 +848,7 @@ static void esp_reset(void)
 	if (resetpin != HOST_GPIO_PIN_INVALID) {
 		/* Check valid GPIO or not */
 		if (!gpio_is_valid(resetpin)) {
-			printk(KERN_WARNING "%s, ESP32: host resetpin (%d) configured is invalid GPIO\n", __func__, resetpin);
+			esp_warn("host resetpin (%d) configured is invalid GPIO\n", resetpin);
 			resetpin = HOST_GPIO_PIN_INVALID;
 		} else {
 			gpio_request(resetpin, "sysfs");
@@ -863,7 +863,7 @@ static void esp_reset(void)
 			/* HOST's resetpin set to INPUT */
 			gpio_direction_input(resetpin);
 
-			printk(KERN_DEBUG "%s, ESP32: Triggering ESP reset.\n", __func__);
+			esp_dbg("Triggering ESP reset.\n");
 		}
 	}
 }
