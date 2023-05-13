@@ -6,6 +6,7 @@
  * SPDX-License-Identifier: GPL-2.0-only
  */
 
+#include "utils.h"
 #include "esp_stats.h"
 
 #if TEST_RAW_TP

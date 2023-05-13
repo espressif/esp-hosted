@@ -5,6 +5,7 @@
  *
  * SPDX-License-Identifier: GPL-2.0-only
  */
+#include "utils.h"
 #include "esp_cmd.h"
 #include "esp_api.h"
 #include "esp_wpa_utils.h"

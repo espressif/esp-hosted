@@ -5,6 +5,7 @@
  *
  * SPDX-License-Identifier: GPL-2.0-only
  */
+#include "utils.h"
 #include <linux/init.h>
 #include <linux/module.h>
 #include <linux/kernel.h>

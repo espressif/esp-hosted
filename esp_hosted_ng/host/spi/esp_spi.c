@@ -3,6 +3,7 @@
  *
  * SPDX-License-Identifier: GPL-2.0-only
  */
+#include "utils.h"
 #include <linux/spi/spi.h>
 #include <linux/gpio.h>
 #include <linux/mutex.h>

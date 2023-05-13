@@ -5,6 +5,7 @@
  *
  * SPDX-License-Identifier: GPL-2.0-only
  */
+#include "utils.h"
 #include <linux/mmc/sdio.h>
 #include <linux/mmc/sdio_func.h>
 #include <linux/mmc/sdio_ids.h>
