@@ -905,7 +905,12 @@ int cmd_auth_request(struct esp_wifi_device *priv,
 
 	adapter = priv->adapter;
 
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 9, 38)
+	cmd_len = sizeof(struct cmd_sta_auth) + req->sae_data_len;
+#else
 	cmd_len = sizeof(struct cmd_sta_auth) + req->auth_data_len;
+#endif
 
 	cmd_node = prepare_command_request(adapter, CMD_STA_AUTH, cmd_len);
 
@@ -918,8 +923,13 @@ int cmd_auth_request(struct esp_wifi_device *priv,
 	memcpy(cmd->bssid, bss->bssid, MAC_ADDR_LEN);
 	cmd->channel = bss->channel->hw_value;
 	cmd->auth_type = req->auth_type;
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 9, 38)
+	cmd->auth_data_len = req->sae_data_len;
+	memcpy(cmd->auth_data, req->sae_data, req->sae_data_len);
+#else
 	cmd->auth_data_len = req->auth_data_len;
 	memcpy(cmd->auth_data, req->auth_data, req->auth_data_len);
+#endif	
 
 	printk(KERN_INFO "Authentication request: %pM %d %d %d %d\n",
 			cmd->bssid, cmd->channel, cmd->auth_type, cmd->auth_data_len,

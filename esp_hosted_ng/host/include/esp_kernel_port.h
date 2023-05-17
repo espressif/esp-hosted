@@ -209,7 +209,12 @@ void CFG80211_RX_ASSOC_RESP(struct net_device *dev,
 
 	cfg80211_rx_assoc_resp(dev, &resp);
 #else
-	cfg80211_rx_assoc_resp(dev, bss, buf, len, uapsd_queues, req_ies, req_ies_len)
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 9, 38)
+    cfg80211_rx_assoc_resp(dev,bss,buf,len,0);
+#else
+	cfg80211_rx_assoc_resp(dev, bss, buf, len, uapsd_queues, req_ies, req_ies_len);
+#endif
 #endif
 }
 
@@ -237,7 +242,11 @@ static inline bool wireless_dev_current_bss_exists(struct wireless_dev *wdev)
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 15, 0))
 static inline void eth_hw_addr_set(struct net_device *dev, const u8 *addr)
 {
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 9, 38)
+    ether_addr_copy(dev->dev_addr, addr);
+#else
 	ether_addr_copy(dev->dev_addr, addr, ETH_ALEN);
+#endif
 }
 #endif
 

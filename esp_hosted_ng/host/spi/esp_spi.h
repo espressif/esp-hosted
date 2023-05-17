@@ -19,6 +19,12 @@
 
 #include "esp.h"
 
+#define ESP_SPI_MASTER					1
+#define ESP_SPI_DEVICE					0
+#define ESP_SPI_MODE					SPI_MODE_2
+
+#define SPI_INITIAL_CLK_MHZ     10
+
 #define HANDSHAKE_PIN           22
 #define SPI_IRQ                 gpio_to_irq(HANDSHAKE_PIN)
 #define SPI_DATA_READY_PIN      27
