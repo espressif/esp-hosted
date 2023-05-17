@@ -259,7 +259,7 @@ int process_fw_data(struct fw_data *fw_p)
 		return -1;
 	}
 
-	esp_info("ESP chipset's last reset cause: ");
+	esp_info("ESP chipset's last reset cause:\n");
 	print_reset_reason(le32_to_cpu(fw_p->last_reset_reason));
 	return check_esp_version(&fw_p->version);
 }
@@ -296,7 +296,7 @@ static int esp_set_mac_address(struct net_device *ndev, void *data)
 	if (!priv || !priv->adapter)
 		return -EINVAL;
 
-	esp_info("%u %pM\n", __LINE__, priv->mac_address);
+	esp_info("%u "MACSTR"\n", __LINE__, MAC2STR(priv->mac_address));
 	eth_hw_addr_set(ndev, priv->mac_address/*mac_addr->sa_data*/);
 
 	return 0;
@@ -318,7 +318,7 @@ static void esp_set_rx_mode(struct net_device *ndev)
 #endif
 	netdev_for_each_mc_addr(mac_addr, ndev) {
 		if (count < MAX_MULTICAST_ADDR_COUNT) {
-			/*esp_info("%d: %pM\n", count+1, mac_addr->addr);*/
+			/*esp_info("%d: "MACSTR"\n", count+1, MAC2STR(mac_addr->addr));*/
 			memcpy(&mcast_list.mcast_addr[count++], mac_addr->addr, ETH_ALEN);
 		}
 	}

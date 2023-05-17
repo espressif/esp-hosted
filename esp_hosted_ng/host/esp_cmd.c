@@ -771,8 +771,8 @@ int cmd_connect_request(struct esp_wifi_device *priv,
 	else
 		cmd->is_auth_open = 1;
 
-	esp_info("Connection request: %s %pM %d\n",
-			cmd->ssid, params->bssid, cmd->channel);
+	esp_info("Connection request: %s "MACSTR" %d\n",
+			cmd->ssid, MAC2STR(params->bssid), cmd->channel);
 
 	do {
 		bss = cfg80211_get_bss(adapter->wiphy, params->channel, params->bssid,
@@ -854,8 +854,8 @@ int cmd_assoc_request(struct esp_wifi_device *priv,
 
 	priv->assoc_req_ie_len = req->ie_len;
 
-	esp_info("Association request: %pM %d %d\n",
-			bss->bssid, bss->channel->hw_value, cmd->assoc_ie_len);
+	esp_info("Association request: "MACSTR" %d %d\n",
+			MAC2STR(bss->bssid), bss->channel->hw_value, cmd->assoc_ie_len);
 
 	queue_cmd_node(adapter, cmd_node, ESP_CMD_DFLT_PRIO);
 	queue_work(adapter->cmd_wq, &adapter->cmd_work);
@@ -908,8 +908,8 @@ int cmd_auth_request(struct esp_wifi_device *priv,
 	cmd->auth_data_len = req->auth_data_len;
 	memcpy(cmd->auth_data, req->auth_data, req->auth_data_len);
 
-	esp_info("Authentication request: %pM %d %d %d %d\n",
-			cmd->bssid, cmd->channel, cmd->auth_type, cmd->auth_data_len,
+	esp_info("Authentication request: "MACSTR" %d %d %d %d\n",
+			MAC2STR(cmd->bssid), cmd->channel, cmd->auth_type, cmd->auth_data_len,
 			(u32) req->ie_len);
 #if 0
 	do {
@@ -1050,7 +1050,7 @@ int cmd_add_key(struct esp_wifi_device *priv, u8 key_index, bool pairwise,
 	const u8 *mac = NULL;
 
 #if 0
-	esp_info("%u key_idx: %u pairwise: %u params->key_len: %u \nparams->seq_len:%u params->mode: 0x%x\nparams->cipher: 0x%x\n",
+	esp_info("%u key_idx: %u pairwise: %u params->key_len: %u\nparams->seq_len:%u params->mode: 0x%x\nparams->cipher: 0x%x\n",
       __LINE__,
       key_index, pairwise, params->key_len, params->seq_len, params->mode, params->cipher);
 #endif
@@ -1119,7 +1119,7 @@ int cmd_add_key(struct esp_wifi_device *priv, u8 key_index, bool pairwise,
 	key->algo = wpa_cipher_to_alg(params->cipher);
 #if 0
 	if (key->algo == WIFI_WPA_ALG_NONE) {
-		esp_info("CIPHER NONE does not use pairwise keys");
+		esp_info("CIPHER NONE does not use pairwise keys\n");
 		return 0;
 	}
 #endif

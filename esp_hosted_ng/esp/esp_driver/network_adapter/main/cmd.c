@@ -427,7 +427,7 @@ static void wifi_event_handler(void* arg, esp_event_base_t event_base,
 		break;
 
 	case WIFI_EVENT_STA_CONNECTED:
-		ESP_LOGI(TAG, "Wifi Station Connected event!! \n");
+		ESP_LOGI(TAG, "Wifi Station Connected event!!\n");
 		association_ongoing = 0;
 		station_connected = 1;
 

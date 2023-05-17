@@ -269,7 +269,7 @@ static int esp_cfg80211_scan(struct wiphy *wiphy,
 	ndev = request->wdev->netdev;
 	priv = netdev_priv(ndev);
 
-	esp_info("\n");
+	esp_dbg("\n");
 	if (!priv) {
 		esp_err("Empty priv\n");
 		return -EINVAL;
@@ -284,7 +284,7 @@ static int esp_cfg80211_connect(struct wiphy *wiphy, struct net_device *dev,
 {
 	struct esp_wifi_device *priv = netdev_priv(dev);
 
-	esp_info("\n");
+	esp_dbg("\n");
 	if (!priv) {
 		esp_err("Empty priv\n");
 		return -EINVAL;
@@ -335,7 +335,7 @@ static int esp_cfg80211_del_key(struct wiphy *wiphy, struct net_device *dev,
 		esp_err("Empty priv\n");
 		return -EINVAL;
 	}
-	esp_info("\n");
+	esp_dbg("\n");
 
 	return cmd_del_key(priv, key_index, pairwise, mac_addr);
 }
@@ -356,7 +356,7 @@ static int esp_cfg80211_add_key(struct wiphy *wiphy, struct net_device *dev,
 		esp_err("Empty priv\n");
 		return -EINVAL;
 	}
-	esp_info("\n");
+	esp_dbg("\n");
 
 	if (params->key_len == 0) {
 		return esp_cfg80211_del_key(wiphy, dev, ZERO_LINK_ID key_index, pairwise, mac_addr);
@@ -380,7 +380,7 @@ static int esp_cfg80211_disconnect(struct wiphy *wiphy,
 		esp_err("empty priv\n");
 		return 0;
 	}
-	esp_info("\n");
+	esp_dbg("\n");
 
 	return cmd_disconnect_request(priv, reason_code);
 }
@@ -395,7 +395,7 @@ static int esp_cfg80211_authenticate(struct wiphy *wiphy, struct net_device *dev
 		return -EINVAL;
 	}
 
-	esp_info("\n");
+	esp_dbg("\n");
 
 	priv = netdev_priv(dev);
 
@@ -420,7 +420,7 @@ static int esp_cfg80211_associate(struct wiphy *wiphy, struct net_device *dev,
 
 	priv = netdev_priv(dev);
 
-	esp_info("\n");
+	esp_dbg("\n");
 
 	if (!priv) {
 		esp_err("Empty priv\n");
@@ -440,7 +440,7 @@ static int esp_cfg80211_deauth(struct wiphy *wiphy, struct net_device *dev,
 		return -EINVAL;
 	}
 
-	esp_info("\n");
+	esp_dbg("\n");
 	priv = netdev_priv(dev);
 
 	if (!priv) {
@@ -461,7 +461,7 @@ static int esp_cfg80211_disassoc(struct wiphy *wiphy, struct net_device *dev,
 		return -EINVAL;
 	}
 
-	esp_info("\n");
+	esp_dbg("\n");
 	priv = netdev_priv(dev);
 
 	if (!priv) {
@@ -475,20 +475,20 @@ static int esp_cfg80211_disassoc(struct wiphy *wiphy, struct net_device *dev,
 static int esp_cfg80211_suspend(struct wiphy *wiphy,
 			struct cfg80211_wowlan *wowlan)
 {
-	/*esp_info("\n");*/
+	/*esp_dbg("\n");*/
 	return 0;
 }
 
 static int esp_cfg80211_resume(struct wiphy *wiphy)
 {
-	/*esp_info("\n");*/
+	/*esp_dbg("\n");*/
 	return 0;
 }
 
 static void esp_cfg80211_set_wakeup(struct wiphy *wiphy,
 			bool enabled)
 {
-	/*esp_info("\n");*/
+	/*esp_dbg("\n");*/
 }
 
 static struct cfg80211_ops esp_cfg80211_ops = {
