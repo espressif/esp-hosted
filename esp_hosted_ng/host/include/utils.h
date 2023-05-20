@@ -12,6 +12,15 @@
 #endif
 
 #define esp_err pr_err
-#define esp_info pr_info
 #define esp_warn pr_warn
+#ifdef CONFIG_INFO_LOGS
+#define esp_info pr_info
+#else
+#define esp_info(...) do {} while(0)
+#endif
+
+#ifdef CONFIG_DEBUG_LOGS
 #define esp_dbg pr_debug
+#else
+#define esp_dbg(...) do {} while(0)
+#endif

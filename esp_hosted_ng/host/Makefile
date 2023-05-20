@@ -11,6 +11,9 @@ ARCH := arm
 #Default interface is sdio
 MODULE_NAME=esp32_sdio
 
+#enable logging by default
+CONFIG_DEBUG_LOGS := y
+
 #Targets passed overrrides default value
 ifeq ($(target), sdio)
 	MODULE_NAME=esp32_sdio
@@ -22,6 +25,15 @@ endif
 
 ifeq ($(CONFIG_ENABLE_MONITOR_PROCESS), y)
 	EXTRA_CFLAGS += -DCONFIG_ENABLE_MONITOR_PROCESS
+endif
+
+ifeq ($(CONFIG_INFO_LOGS), y)
+	EXTRA_CFLAGS += -DCONFIG_INFO_LOGS
+endif
+
+ifeq ($(CONFIG_DEBUG_LOGS), y)
+	EXTRA_CFLAGS += -DCONFIG_INFO_LOGS
+	EXTRA_CFLAGS += -DCONFIG_DEBUG_LOGS
 endif
 
 ifeq ($(CONFIG_TEST_RAW_TP), y)
