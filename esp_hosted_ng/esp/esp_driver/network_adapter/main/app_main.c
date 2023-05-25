@@ -1,4 +1,4 @@
-// Copyright 2015-2022 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2015-2023 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -382,6 +382,11 @@ void process_priv_commamd(uint8_t if_type, uint8_t *payload, uint16_t payload_le
 		case CMD_GET_MAC:
 			ESP_LOGI(TAG, "Get MAC command\n");
 			process_get_mac(if_type);
+			break;
+
+		case CMD_SET_MAC:
+			ESP_LOGI(TAG, "Set MAC command\n");
+			process_set_mac(if_type, payload, payload_len);
 			break;
 
 		case CMD_SCAN_REQUEST:

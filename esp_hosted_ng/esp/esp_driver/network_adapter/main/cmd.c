@@ -427,7 +427,7 @@ static void wifi_event_handler(void* arg, esp_event_base_t event_base,
 		break;
 
 	case WIFI_EVENT_STA_CONNECTED:
-		ESP_LOGI(TAG, "Wifi Station Connected event!! \n");
+		ESP_LOGI(TAG, "Wifi Station Connected event!!\n");
 		association_ongoing = 0;
 		station_connected = 1;
 
@@ -1413,6 +1413,74 @@ DONE:
 
 	return ret;
 }
+
+int process_set_mac(uint8_t if_type, uint8_t *payload, uint16_t payload_len)
+{
+	esp_err_t ret = ESP_OK;
+	wifi_interface_t wifi_if_type = 0;
+	interface_buffer_handle_t buf_handle = {0};
+	struct cmd_config_mac_address *header;
+	uint8_t cmd_status = CMD_RESPONSE_SUCCESS;
+	struct cmd_config_mac_address *mac = (struct cmd_config_mac_address *) payload;
+
+	if (if_type == ESP_STA_IF) {
+		wifi_if_type = WIFI_IF_STA;
+	} else {
+		wifi_if_type = WIFI_IF_AP;
+	}
+
+
+	ESP_LOGE(TAG, "Setting mac address \n");
+	ESP_LOG_BUFFER_HEXDUMP(TAG, mac->mac_addr, MAC_ADDR_LEN, ESP_LOG_INFO);
+	ret = esp_wifi_set_mac(wifi_if_type, mac->mac_addr);
+
+	if (ret) {
+		ESP_LOGE(TAG, "Failed to set mac address\n");
+		cmd_status = CMD_RESPONSE_FAIL;
+	}
+
+
+	buf_handle.if_type = if_type;
+	buf_handle.if_num = 0;
+	buf_handle.payload_len = sizeof(struct cmd_config_mac_address);
+	buf_handle.pkt_type = PACKET_TYPE_COMMAND_RESPONSE;
+
+	buf_handle.payload = heap_caps_malloc(buf_handle.payload_len, MALLOC_CAP_DMA);
+	assert(buf_handle.payload);
+	memset(buf_handle.payload, 0, buf_handle.payload_len);
+
+	header = (struct cmd_config_mac_address *) buf_handle.payload;
+
+	header->header.cmd_code = CMD_SET_MAC;
+	header->header.len = 0;
+	header->header.cmd_status = cmd_status;
+
+	if (cmd_status == CMD_RESPONSE_SUCCESS) {
+		memcpy(header->mac_addr, mac->mac_addr, sizeof(header->mac_addr));
+		header->header.len = htole16(sizeof(header->mac_addr));
+	}
+
+	buf_handle.priv_buffer_handle = buf_handle.payload;
+	buf_handle.free_buf_handle = free;
+
+	ret = send_command_response(&buf_handle);
+	if (ret != pdTRUE) {
+		ESP_LOGE(TAG, "Slave -> Host: Failed to send command response\n");
+		goto DONE;
+	}
+
+	return ESP_OK;
+
+DONE:
+	if (buf_handle.payload) {
+		free(buf_handle.payload);
+		buf_handle.payload = NULL;
+	}
+
+	return ret;
+}
+
+
 
 int process_set_default_key(uint8_t if_type, uint8_t *payload, uint16_t payload_len)
 {

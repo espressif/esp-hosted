@@ -36,6 +36,7 @@ int process_init_interface(uint8_t if_type, uint8_t *payload, uint16_t payload_l
 int process_deinit_interface(uint8_t if_type, uint8_t *payload, uint16_t payload_len);
 int process_start_scan(uint8_t if_type, uint8_t *payload, uint16_t payload_len);
 int process_get_mac(uint8_t if_type);
+int process_set_mac(uint8_t if_type, uint8_t *payload, uint16_t payload_len);
 int process_sta_connect(uint8_t if_type, uint8_t *payload, uint16_t payload_len);
 int process_sta_disconnect(uint8_t if_type, uint8_t *payload, uint16_t payload_len);
 int process_add_key(uint8_t if_type, uint8_t *payload, uint16_t payload_len);

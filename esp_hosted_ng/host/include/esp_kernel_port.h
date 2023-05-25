@@ -1,22 +1,10 @@
 /*
  * Espressif Systems Wireless LAN device driver
  *
- * Copyright (C) 2015-2021 Espressif Systems (Shanghai) PTE LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
- * This software file (the "File") is distributed by Espressif Systems (Shanghai)
- * PTE LTD under the terms of the GNU General Public License Version 2, June 1991
- * (the "License").  You may use, redistribute and/or modify this File in
- * accordance with the terms and conditions of the License, a copy of which
- * is available by writing to the Free Software Foundation, Inc.,
- * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA or on the
- * worldwide web at http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
- *
- * THE FILE IS DISTRIBUTED AS-IS, WITHOUT WARRANTY OF ANY KIND, AND THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE
- * ARE EXPRESSLY DISCLAIMED.  The License provides additional details about
- * this warranty disclaimer.
+ * SPDX-License-Identifier: GPL-2.0-only
  */
-
 #ifndef _esp_kernel_port__h_
 #define _esp_kernel_port__h_
 
@@ -26,10 +14,10 @@
 
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(3, 13, 0))
     #define ESP_BT_SEND_FRAME_PROTOTYPE() \
-        int esp_bt_send_frame(struct sk_buff *skb)
+	int esp_bt_send_frame(struct sk_buff *skb)
 #else
     #define ESP_BT_SEND_FRAME_PROTOTYPE() \
-        int esp_bt_send_frame(struct hci_dev* hdev, struct sk_buff *skb)
+	int esp_bt_send_frame(struct hci_dev *hdev, struct sk_buff *skb)
 #endif
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(3, 14, 0)
@@ -47,14 +35,14 @@ static inline void ether_addr_copy(u8 *dst, const u8 *src)
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(3, 14, 0))
   #define ESP_MGMT_TX_PROTOTYPE()                                              \
     int esp_cfg80211_mgmt_tx(struct wiphy *wiphy,                              \
-            struct wireless_dev *wdev, struct ieee80211_channel *chan,         \
-            bool offchan, unsigned int wait, const u8 *buf, size_t len,        \
-            bool no_cck, bool dont_wait_for_ack, u64 *cookie)
+	    struct wireless_dev *wdev, struct ieee80211_channel *chan,         \
+	    bool offchan, unsigned int wait, const u8 *buf, size_t len,        \
+	    bool no_cck, bool dont_wait_for_ack, u64 *cookie)
 #else
   #define ESP_MGMT_TX_PROTOTYPE()                                              \
     int esp_cfg80211_mgmt_tx(struct wiphy *wiphy,                              \
-            struct wireless_dev *wdev, struct cfg80211_mgmt_tx_params *params, \
-            u64 *cookie)
+	    struct wireless_dev *wdev, struct cfg80211_mgmt_tx_params *params, \
+	    u64 *cookie)
 #endif
 
 
@@ -69,14 +57,14 @@ static inline void ether_addr_copy(u8 *dst, const u8 *src)
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(3, 18, 0)
   #define CFG80211_INFORM_BSS(wiphy, chan, bssid, tsf, \
-          cap, beacon_interval, ie, ielen, sig, gfp) \
+	  cap, beacon_interval, ie, ielen, sig, gfp) \
   cfg80211_inform_bss(wiphy, chan, bssid, tsf, \
-          cap, beacon_interval, ie, ielen, sig, gfp)
+	  cap, beacon_interval, ie, ielen, sig, gfp)
 #else
   #define CFG80211_INFORM_BSS(wiphy, chan, bssid, tsf, \
-          cap, beacon_interval, ie, ielen, signal, gfp) \
+	  cap, beacon_interval, ie, ielen, signal, gfp) \
   cfg80211_inform_bss(wiphy, chan, CFG80211_BSS_FTYPE_UNKNOWN, bssid, tsf, \
-          cap, beacon_interval, ie, ielen, signal, gfp)
+	  cap, beacon_interval, ie, ielen, signal, gfp)
 #endif
 
 
@@ -109,7 +97,7 @@ enum ieee80211_privacy {
     #if (LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 34))
         #define hci_skb_pkt_type(skb) bt_cb((skb))->pkt_type
     #else
-        #error "ESP-Hosted solution doesn't supported below kernel version < 2.6.34"
+	#error "ESP-Hosted solution doesn't supported below kernel version < 2.6.34"
     #endif
 #endif
 
@@ -117,7 +105,7 @@ enum ieee80211_privacy {
     #if (LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 34))
         #define HCI_PRIMARY HCI_BREDR
     #else
-        #error "ESP-Hosted solution doesn't supported below kernel version < 2.6.34"
+	#error "ESP-Hosted solution doesn't supported below kernel version < 2.6.34"
     #endif
 #endif
 
@@ -125,32 +113,32 @@ enum ieee80211_privacy {
 #if LINUX_VERSION_CODE < KERNEL_VERSION(4, 8, 0)
 
     #define ESP_MARK_SCAN_DONE(PrIv, abort) do {                               \
-                                                                               \
-        if (PrIv->request) {                                                   \
-            cfg80211_scan_done(PrIv->request, abort);                          \
-            PrIv->request = NULL;                                              \
-        }                                                                      \
-                                                                               \
-        PrIv->scan_in_progress = false;                                        \
-                                                                               \
-    } while(0);
+									       \
+	if (PrIv->request) {                                                   \
+	    cfg80211_scan_done(PrIv->request, abort);                          \
+	    PrIv->request = NULL;                                              \
+	}                                                                      \
+									       \
+	PrIv->scan_in_progress = false;                                        \
+									       \
+    } while (0);
 
 #else
 
     #define ESP_MARK_SCAN_DONE(PrIv, abort) do {                               \
-                                                                               \
-        struct cfg80211_scan_info info = {                                     \
-            .aborted = abort,                                                  \
-        };                                                                     \
-                                                                               \
-        if (PrIv->request) {                                                   \
-            cfg80211_scan_done(PrIv->request, &info);                          \
-            PrIv->request = NULL;                                              \
-        }                                                                      \
-                                                                               \
-        PrIv->scan_in_progress = false;                                        \
-                                                                               \
-    } while(0);
+									       \
+	struct cfg80211_scan_info info = {                                     \
+	    .aborted = abort,                                                  \
+	};                                                                     \
+									       \
+	if (PrIv->request) {                                                   \
+	    cfg80211_scan_done(PrIv->request, &info);                          \
+	    PrIv->request = NULL;                                              \
+	}                                                                      \
+									       \
+	PrIv->scan_in_progress = false;                                        \
+									       \
+    } while (0);
 
 #endif
 
@@ -174,10 +162,10 @@ static inline void *skb_put_data(struct sk_buff *skb, const void *data,
 
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 6, 0))
     #define NDO_TX_TIMEOUT_PROTOTYPE() \
-        void esp_tx_timeout(struct net_device *ndev)
+	void esp_tx_timeout(struct net_device *ndev)
 #else
     #define NDO_TX_TIMEOUT_PROTOTYPE() \
-        void esp_tx_timeout(struct net_device *ndev, unsigned int txqueue)
+	void esp_tx_timeout(struct net_device *ndev, unsigned int txqueue)
 #endif
 
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 17, 0))
@@ -209,7 +197,11 @@ void CFG80211_RX_ASSOC_RESP(struct net_device *dev,
 
 	cfg80211_rx_assoc_resp(dev, &resp);
 #else
-	cfg80211_rx_assoc_resp(dev, bss, buf, len, uapsd_queues, req_ies, req_ies_len)
+	#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 0, 21))
+	cfg80211_rx_assoc_resp(dev, bss, buf, len, uapsd_queues, req_ies, req_ies_len);
+	#else
+	cfg80211_rx_assoc_resp(dev, bss, buf, len, uapsd_queues);
+	#endif
 #endif
 }
 
@@ -237,7 +229,7 @@ static inline bool wireless_dev_current_bss_exists(struct wireless_dev *wdev)
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 15, 0))
 static inline void eth_hw_addr_set(struct net_device *dev, const u8 *addr)
 {
-	ether_addr_copy(dev->dev_addr, addr, ETH_ALEN);
+	ether_addr_copy(dev->dev_addr, addr);
 }
 #endif
 

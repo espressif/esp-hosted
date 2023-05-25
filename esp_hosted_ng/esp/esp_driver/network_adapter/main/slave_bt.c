@@ -292,7 +292,7 @@ static void init_uart(void)
 
 #ifdef CONFIG_IDF_TARGET_ESP32C3
     // configure UART1
-    ESP_LOGI(BT_TAG, "baud rate for HCI uart :: %d \n", 
+    ESP_LOGI(BT_TAG, "baud rate for HCI uart :: %d\n",
                                     CONFIG_EXAMPLE_ESP32C3_HCI_UART_BAUDRATE);
 
     uart_config_t uart_config = {

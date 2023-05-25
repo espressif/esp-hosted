@@ -1,22 +1,11 @@
 /*
  * Espressif Systems Wireless LAN device driver
  *
- * Copyright (C) 2015-2021 Espressif Systems (Shanghai) PTE LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
- * This software file (the "File") is distributed by Espressif Systems (Shanghai)
- * PTE LTD under the terms of the GNU General Public License Version 2, June 1991
- * (the "License").  You may use, redistribute and/or modify this File in
- * accordance with the terms and conditions of the License, a copy of which
- * is available by writing to the Free Software Foundation, Inc.,
- * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA or on the
- * worldwide web at http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
- *
- * THE FILE IS DISTRIBUTED AS-IS, WITHOUT WARRANTY OF ANY KIND, AND THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE
- * ARE EXPRESSLY DISCLAIMED.  The License provides additional details about
- * this warranty disclaimer.
+ * SPDX-License-Identifier: GPL-2.0-only
  */
-
+#include "utils.h"
 #include "esp.h"
 #include "esp_api.h"
 #include "esp_cfg80211.h"
@@ -131,7 +120,7 @@ static int esp_inetaddr_event(struct notifier_block *nb,
 	struct net_device *netdev = ifa->ifa_dev ? ifa->ifa_dev->dev : NULL;
 	struct esp_wifi_device *priv = netdev_priv(netdev);
 
-	/*printk(KERN_INFO "------- IP event -------: %d\n", priv->if_type);*/
+	/*esp_info("------- IP event -------: %d\n", priv->if_type);*/
 
 	if (!strstr(netdev->name, "espsta")) {
 		return 0;
@@ -142,13 +131,13 @@ static int esp_inetaddr_event(struct notifier_block *nb,
 	case NETDEV_UP:
 		if (priv && (priv->if_type == ESP_STA_IF)) {
 			cmd_set_ip_address(priv, ifa->ifa_local);
-			printk(KERN_INFO "%s: NETDEV_UP interface %s ip changed to  %pi4 \n",
-					__func__, netdev->name, &ifa->ifa_local);
+			esp_info("NETDEV_UP interface %s ip changed to  %pi4\n",
+					netdev->name, &ifa->ifa_local);
 		}
 		break;
 
 	case NETDEV_DOWN:
-		printk(KERN_INFO "Interface Down: %d\n", priv->if_type);
+		esp_info("Interface Down: %d\n", priv->if_type);
 		if (priv && (priv->if_type == ESP_STA_IF))
 			cmd_set_ip_address(priv, 0);
 		break;
@@ -170,24 +159,24 @@ struct wireless_dev *esp_cfg80211_add_iface(struct wiphy *wiphy,
 	uint8_t esp_nw_if_num = 0;
 
 	if (!wiphy || !name) {
-		printk(KERN_INFO "%s:%u invalid input\n", __func__, __LINE__);
+		esp_info("%u invalid input\n", __LINE__);
 		return NULL;
 	}
 
 	esp_dev = wiphy_priv(wiphy);
 
 	if (!esp_dev || !esp_dev->adapter) {
-		printk(KERN_INFO "%s:%u invalid input\n", __func__, __LINE__);
+		esp_info("%u invalid input\n", __LINE__);
 		return NULL;
 	}
 
-	if (NL80211_IFTYPE_STATION == type) {
+	if (type == NL80211_IFTYPE_STATION) {
 		esp_nw_if_num = ESP_STA_NW_IF;
-	} else if (NL80211_IFTYPE_AP == type) {
+	} else if (type == NL80211_IFTYPE_AP) {
 		esp_nw_if_num = ESP_AP_NW_IF;
 	} else {
-		printk(KERN_INFO "%s:%u network type[%u] is not supported\n",
-				__func__, __LINE__, type);
+		esp_info("%u network type[%u] is not supported\n",
+				 __LINE__, type);
 		return NULL;
 	}
 
@@ -206,7 +195,7 @@ struct wireless_dev *esp_cfg80211_add_iface(struct wiphy *wiphy,
 	esp_wdev->ndev = ndev;
 	esp_wdev->adapter = esp_dev->adapter;
 	esp_wdev->adapter->priv[esp_nw_if_num] = esp_wdev;
-	/*printk(KERN_INFO "Updated priv[%u] to %px\n",
+	/*esp_info("Updated priv[%u] to %px\n",
 	 * esp_nw_if_num, esp_wdev->adapter->priv[esp_nw_if_num]);*/
 	dev_net_set(ndev, wiphy_net(wiphy));
 	SET_NETDEV_DEV(ndev, wiphy_dev(esp_wdev->wdev.wiphy));
@@ -273,16 +262,16 @@ static int esp_cfg80211_scan(struct wiphy *wiphy,
 	struct esp_wifi_device *priv = NULL;
 
 	if (!wiphy || !request || !request->wdev || !request->wdev->netdev) {
-		printk(KERN_INFO "%s:%u invalid input\n", __func__, __LINE__);
+		esp_info("%u invalid input\n", __LINE__);
 		return -EINVAL;
 	}
 
 	ndev = request->wdev->netdev;
 	priv = netdev_priv(ndev);
 
-	printk(KERN_INFO "%s\n", __func__);
+	esp_dbg("\n");
 	if (!priv) {
-		printk(KERN_ERR "%s: empty priv\n", __func__);
+		esp_err("Empty priv\n");
 		return -EINVAL;
 	}
 
@@ -295,9 +284,9 @@ static int esp_cfg80211_connect(struct wiphy *wiphy, struct net_device *dev,
 {
 	struct esp_wifi_device *priv = netdev_priv(dev);
 
-	printk(KERN_INFO "%s\n", __func__);
+	esp_dbg("\n");
 	if (!priv) {
-		printk(KERN_ERR "%s: empty priv\n", __func__);
+		esp_err("Empty priv\n");
 		return -EINVAL;
 	}
 
@@ -317,13 +306,13 @@ static int esp_cfg80211_set_default_key(struct wiphy *wiphy,
 	struct esp_wifi_device *priv = NULL;
 
 	if (!wiphy || !dev) {
-		printk(KERN_ERR "%s:%u invalid params\n", __func__, __LINE__);
+		esp_err("%u invalid params\n", __LINE__);
 		return -EINVAL;
 	}
 
 	priv = netdev_priv(dev);
 	if (!priv) {
-		printk(KERN_ERR "%s: empty priv\n", __func__);
+		esp_err("Empty priv");
 		return -EINVAL;
 	}
 
@@ -337,16 +326,16 @@ static int esp_cfg80211_del_key(struct wiphy *wiphy, struct net_device *dev,
 	struct esp_wifi_device *priv = NULL;
 
 	if (!wiphy || !dev) {
-		printk(KERN_ERR "%s:%u invalid params\n", __func__, __LINE__);
+		esp_err("%u invalid params\n", __LINE__);
 		return -EINVAL;
 	}
 
 	priv = netdev_priv(dev);
 	if (!priv) {
-		printk(KERN_ERR "%s: empty priv\n", __func__);
+		esp_err("Empty priv\n");
 		return -EINVAL;
 	}
-	printk(KERN_INFO "%s\n", __func__);
+	esp_dbg("\n");
 
 	return cmd_del_key(priv, key_index, pairwise, mac_addr);
 }
@@ -358,16 +347,16 @@ static int esp_cfg80211_add_key(struct wiphy *wiphy, struct net_device *dev,
 	struct esp_wifi_device *priv = NULL;
 
 	if (!wiphy || !dev || !params) {
-		printk(KERN_ERR "%s:%u invalid params\n", __func__, __LINE__);
+		esp_err("%u invalid params\n", __LINE__);
 		return -EINVAL;
 	}
 
 	priv = netdev_priv(dev);
 	if (!priv) {
-		printk(KERN_ERR "%s: empty priv\n", __func__);
+		esp_err("Empty priv\n");
 		return -EINVAL;
 	}
-	printk(KERN_INFO "%s\n", __func__);
+	esp_dbg("\n");
 
 	if (params->key_len == 0) {
 		return esp_cfg80211_del_key(wiphy, dev, ZERO_LINK_ID key_index, pairwise, mac_addr);
@@ -381,17 +370,17 @@ static int esp_cfg80211_disconnect(struct wiphy *wiphy,
 	struct esp_wifi_device *priv = NULL;
 
 	if (!wiphy || !dev) {
-		printk(KERN_INFO "%s:%u invalid input\n", __func__, __LINE__);
+		esp_info("%u invalid input\n",  __LINE__);
 		return -EINVAL;
 	}
 
 	priv = netdev_priv(dev);
 
 	if (!priv) {
-		printk(KERN_ERR "%s: empty priv\n", __func__);
+		esp_err("empty priv\n");
 		return 0;
 	}
-	printk(KERN_INFO "%s\n", __func__);
+	esp_dbg("\n");
 
 	return cmd_disconnect_request(priv, reason_code);
 }
@@ -402,16 +391,16 @@ static int esp_cfg80211_authenticate(struct wiphy *wiphy, struct net_device *dev
 	struct esp_wifi_device *priv = NULL;
 
 	if (!wiphy || !dev || !req) {
-		printk(KERN_INFO "%s:%u invalid input\n", __func__, __LINE__);
+		esp_info("%u invalid input\n", __LINE__);
 		return -EINVAL;
 	}
 
-	printk(KERN_INFO "%s\n", __func__);
+	esp_dbg("\n");
 
 	priv = netdev_priv(dev);
 
 	if (!priv) {
-		printk(KERN_ERR "%s: empty priv\n", __func__);
+		esp_err("Empty priv\n");
 		return 0;
 	}
 
@@ -425,16 +414,16 @@ static int esp_cfg80211_associate(struct wiphy *wiphy, struct net_device *dev,
 	struct esp_wifi_device *priv = NULL;
 
 	if (!wiphy || !dev || !req) {
-		printk(KERN_INFO "%s:%u invalid input\n", __func__, __LINE__);
+		esp_info("%u invalid input\n", __LINE__);
 		return -EINVAL;
 	}
 
 	priv = netdev_priv(dev);
 
-	printk(KERN_INFO "%s\n", __func__);
+	esp_dbg("\n");
 
 	if (!priv) {
-		printk(KERN_ERR "%s: empty priv\n", __func__);
+		esp_err("Empty priv\n");
 		return 0;
 	}
 
@@ -447,15 +436,15 @@ static int esp_cfg80211_deauth(struct wiphy *wiphy, struct net_device *dev,
 	struct esp_wifi_device *priv = NULL;
 
 	if (!wiphy || !dev || !req) {
-		printk(KERN_INFO "%s:%u invalid input\n", __func__, __LINE__);
+		esp_info("%u invalid input\n", __LINE__);
 		return -EINVAL;
 	}
 
-	printk(KERN_INFO "%s\n", __func__);
+	esp_dbg("\n");
 	priv = netdev_priv(dev);
 
 	if (!priv) {
-		printk(KERN_ERR "%s: empty priv\n", __func__);
+		esp_err("Empty priv\n");
 		return 0;
 	}
 
@@ -468,15 +457,15 @@ static int esp_cfg80211_disassoc(struct wiphy *wiphy, struct net_device *dev,
 	struct esp_wifi_device *priv = NULL;
 
 	if (!wiphy || !dev || !req) {
-		printk(KERN_INFO "%s:%u invalid input\n", __func__, __LINE__);
+		esp_info("%u invalid input\n", __LINE__);
 		return -EINVAL;
 	}
 
-	printk(KERN_INFO "%s\n", __func__);
+	esp_dbg("\n");
 	priv = netdev_priv(dev);
 
 	if (!priv) {
-		printk(KERN_ERR "%s: empty priv\n", __func__);
+		esp_err("Empty priv\n");
 		return 0;
 	}
 
@@ -486,20 +475,20 @@ static int esp_cfg80211_disassoc(struct wiphy *wiphy, struct net_device *dev,
 static int esp_cfg80211_suspend(struct wiphy *wiphy,
 			struct cfg80211_wowlan *wowlan)
 {
-	/*printk(KERN_INFO "%s\n", __func__);*/
+	/*esp_dbg("\n");*/
 	return 0;
 }
 
 static int esp_cfg80211_resume(struct wiphy *wiphy)
 {
-	/*printk(KERN_INFO "%s\n", __func__);*/
+	/*esp_dbg("\n");*/
 	return 0;
 }
 
 static void esp_cfg80211_set_wakeup(struct wiphy *wiphy,
 			bool enabled)
 {
-	/*printk(KERN_INFO "%s\n", __func__);*/
+	/*esp_dbg("\n");*/
 }
 
 static struct cfg80211_ops esp_cfg80211_ops = {
@@ -533,7 +522,7 @@ int esp_cfg80211_register(struct esp_adapter *adapter)
 	wiphy = wiphy_new(&esp_cfg80211_ops, sizeof(struct esp_device));
 
 	if (!wiphy) {
-		printk(KERN_ERR "Failed to create wiphy\n");
+		esp_err("Failed to create wiphy\n");
 		return -EFAULT;
 	}
 

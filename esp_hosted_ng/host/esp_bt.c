@@ -1,22 +1,11 @@
 /*
  * Espressif Systems Wireless LAN device driver
  *
- * Copyright (C) 2015-2021 Espressif Systems (Shanghai) PTE LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
- * This software file (the "File") is distributed by Espressif Systems (Shanghai)
- * PTE LTD under the terms of the GNU General Public License Version 2, June 1991
- * (the "License").  You may use, redistribute and/or modify this File in
- * accordance with the terms and conditions of the License, a copy of which
- * is available by writing to the Free Software Foundation, Inc.,
- * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA or on the
- * worldwide web at http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
- *
- * THE FILE IS DISTRIBUTED AS-IS, WITHOUT WARRANTY OF ANY KIND, AND THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE
- * ARE EXPRESSLY DISCLAIMED.  The License provides additional details about
- * this warranty disclaimer.
+ * SPDX-License-Identifier: GPL-2.0-only
  */
-#include "esp_bt_api.h"
+#include "utils.h"
 #include "esp_api.h"
 #include "esp_kernel_port.h"
 
@@ -24,32 +13,33 @@
 
 void esp_hci_update_tx_counter(struct hci_dev *hdev, u8 pkt_type, size_t len)
 {
-	if (hdev) {
-		if (pkt_type == HCI_COMMAND_PKT) {
-			hdev->stat.cmd_tx++;
-		} else if (pkt_type == HCI_ACLDATA_PKT) {
-			hdev->stat.acl_tx++;
-		} else if (pkt_type == HCI_SCODATA_PKT) {
-			hdev->stat.sco_tx++;
-		}
-
-		hdev->stat.byte_tx += len;
+	if (!hdev)
+		return;
+	if (pkt_type == HCI_COMMAND_PKT) {
+		hdev->stat.cmd_tx++;
+	} else if (pkt_type == HCI_ACLDATA_PKT) {
+		hdev->stat.acl_tx++;
+	} else if (pkt_type == HCI_SCODATA_PKT) {
+		hdev->stat.sco_tx++;
 	}
+
+	hdev->stat.byte_tx += len;
 }
 
 void esp_hci_update_rx_counter(struct hci_dev *hdev, u8 pkt_type, size_t len)
 {
-	if (hdev) {
-		if (pkt_type == HCI_EVENT_PKT) {
-			hdev->stat.evt_rx++;
-		} else if (pkt_type == HCI_ACLDATA_PKT) {
-			hdev->stat.acl_rx++;
-		} else if (pkt_type == HCI_SCODATA_PKT) {
-			hdev->stat.sco_rx++;
-		}
+	if (!hdev)
+		return;
 
-		hdev->stat.byte_rx += len;
+	if (pkt_type == HCI_EVENT_PKT) {
+		hdev->stat.evt_rx++;
+	} else if (pkt_type == HCI_ACLDATA_PKT) {
+		hdev->stat.acl_rx++;
+	} else if (pkt_type == HCI_SCODATA_PKT) {
+		hdev->stat.sco_rx++;
 	}
+
+	hdev->stat.byte_rx += len;
 }
 
 static int esp_bt_open(struct hci_dev *hdev)
@@ -73,7 +63,7 @@ static ESP_BT_SEND_FRAME_PROTOTYPE()
 	size_t total_len, len = skb->len;
 	int ret = 0;
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(3, 13, 0))
-    struct hci_dev * hdev = (struct hci_dev *)(skb->dev);
+	struct hci_dev *hdev = (struct hci_dev *)(skb->dev);
 #endif
 	struct esp_adapter *adapter = hci_get_drvdata(hdev);
 	struct sk_buff *new_skb;
@@ -82,7 +72,7 @@ static ESP_BT_SEND_FRAME_PROTOTYPE()
 	u8 pkt_type;
 
 	if (!adapter) {
-		printk(KERN_ERR "%s: invalid args", __func__);
+		esp_err("Invalid args");
 		return -EINVAL;
 	}
 	//print_hex_dump(KERN_INFO, "bt_tx: ", DUMP_PREFIX_ADDRESS, 16, 1, skb->data, len, 1  );
@@ -111,7 +101,7 @@ static ESP_BT_SEND_FRAME_PROTOTYPE()
 		new_skb = esp_alloc_skb(skb->len + pad_len);
 
 		if (!new_skb) {
-			printk(KERN_ERR "%s: Failed to allocate SKB", __func__);
+			esp_err("Failed to allocate SKB");
 			hdev->stat.err_tx++;
 			return -ENOMEM;
 		}
@@ -134,7 +124,7 @@ static ESP_BT_SEND_FRAME_PROTOTYPE()
 
 	hdr = (struct esp_payload_header *) skb->data;
 
-	memset (hdr, 0, sizeof(struct esp_payload_header));
+	memset(hdr, 0, sizeof(struct esp_payload_header));
 
 	hdr->if_type = ESP_HCI_IF;
 	hdr->if_num = 0;
@@ -226,11 +216,11 @@ int esp_init_bt(struct esp_adapter *adapter)
 	if (hdev->bus == INVALID_HDEV_BUS) {
 
 		if (adapter->if_type == ESP_IF_TYPE_SDIO) {
-			printk(KERN_ERR "%s: Kernel version does not support HCI over SDIO BUS\n",__func__);
+			esp_err("Kernel version does not support HCI over SDIO BUS\n");
 		} else if (adapter->if_type == ESP_IF_TYPE_SPI) {
-			printk(KERN_ERR "%s: Kernel version does not support HCI over SPI BUS\n",__func__);
+			esp_err("Kernel version does not support HCI over SPI BUS\n");
 		} else {
-			printk(KERN_ERR "%s: HCI over expected BUS[%u] is not supported\n",__func__, adapter->if_type);
+			esp_err("HCI over expected BUS[%u] is not supported\n", adapter->if_type);
 		}
 		hci_free_dev(hdev);
 		adapter->hcidev = NULL;
