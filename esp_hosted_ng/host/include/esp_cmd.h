@@ -46,4 +46,6 @@ int cmd_del_key(struct esp_wifi_device *priv, u8 key_index, bool pairwise,
 int cmd_set_default_key(struct esp_wifi_device *priv, u8 key_index);
 int cmd_set_ip_address(struct esp_wifi_device *priv, u32 ip);
 int cmd_set_mcast_mac_list(struct esp_wifi_device *priv, struct multicast_list *list);
+int cmd_set_tx_power(struct esp_wifi_device *priv, int power);
+int cmd_get_tx_power(struct esp_wifi_device *priv);
 #endif

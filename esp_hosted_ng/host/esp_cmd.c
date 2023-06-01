@@ -77,7 +77,7 @@ static void queue_cmd_node(struct esp_adapter *adapter,
 	spin_unlock_bh(&adapter->cmd_pending_queue_lock);
 }
 
-static int decode_get_mac_addr(struct esp_wifi_device *priv,
+static int decode_mac_addr(struct esp_wifi_device *priv,
 		struct command_node *cmd_node)
 {
 	int ret = 0;
@@ -105,6 +105,33 @@ static int decode_get_mac_addr(struct esp_wifi_device *priv,
 	return ret;
 }
 
+static int decode_tx_power(struct esp_wifi_device *priv,
+		struct command_node *cmd_node)
+{
+	int ret = 0;
+	struct cmd_set_get_val *header;
+
+	if (!priv || !cmd_node ||
+	    !cmd_node->resp_skb ||
+	    !cmd_node->resp_skb->data) {
+		esp_info("Invalid arg\n");
+		return -1;
+	}
+
+	header = (struct cmd_set_get_val *) (cmd_node->resp_skb->data);
+
+	if (header->header.cmd_status != CMD_RESPONSE_SUCCESS) {
+		esp_info("Command failed\n");
+		ret = -1;
+	}
+
+	if (priv)
+		priv->tx_pwr = header->value;
+	else
+		esp_err("priv not updated\n");
+
+	return ret;
+}
 
 static int decode_common_resp(struct command_node *cmd_node)
 {
@@ -213,7 +240,13 @@ static int wait_and_decode_cmd_resp(struct esp_wifi_device *priv,
 
 	case CMD_GET_MAC:
 		if (ret == 0)
-			ret = decode_get_mac_addr(priv, cmd_node);
+			ret = decode_mac_addr(priv, cmd_node);
+		break;
+
+	case CMD_GET_TXPOWER:
+	case CMD_SET_TXPOWER:
+		if (ret == 0)
+			ret = decode_tx_power(priv, cmd_node);
 		break;
 
 	default:
@@ -1409,3 +1442,62 @@ int esp_commands_setup(struct esp_adapter *adapter)
 	return 0;
 }
 
+int cmd_set_tx_power(struct esp_wifi_device *priv, int power)
+{
+	u16 cmd_len;
+	struct command_node *cmd_node = NULL;
+	struct cmd_set_get_val *val;;
+
+	if (!priv || !priv->adapter) {
+		esp_err("Invalid argument\n");
+		return -EINVAL;
+	}
+
+	cmd_len = sizeof(struct cmd_set_get_val);
+
+	cmd_node = prepare_command_request(priv->adapter, CMD_SET_TXPOWER, cmd_len);
+
+	if (!cmd_node) {
+		esp_err("Failed to get command node\n");
+		return -ENOMEM;
+	}
+
+	val = (struct cmd_set_get_val *) (cmd_node->cmd_skb->data +
+				sizeof(struct esp_payload_header));
+
+	val->value = power;
+
+	queue_cmd_node(priv->adapter, cmd_node, ESP_CMD_DFLT_PRIO);
+	queue_work(priv->adapter->cmd_wq, &priv->adapter->cmd_work);
+
+	RET_ON_FAIL(wait_and_decode_cmd_resp(priv, cmd_node));
+
+	return 0;
+}
+
+int cmd_get_tx_power(struct esp_wifi_device *priv)
+{
+	u16 cmd_len;
+	struct command_node *cmd_node = NULL;
+
+	if (!priv || !priv->adapter) {
+		esp_err("Invalid argument\n");
+		return -EINVAL;
+	}
+
+	cmd_len = sizeof(struct command_header) + sizeof(int32_t);
+
+	cmd_node = prepare_command_request(priv->adapter, CMD_GET_TXPOWER, cmd_len);
+
+	if (!cmd_node) {
+		esp_err("Failed to get command node\n");
+		return -ENOMEM;
+	}
+
+	queue_cmd_node(priv->adapter, cmd_node, ESP_CMD_DFLT_PRIO);
+	queue_work(priv->adapter->cmd_wq, &priv->adapter->cmd_work);
+
+	RET_ON_FAIL(wait_and_decode_cmd_resp(priv, cmd_node));
+
+	return 0;
+}

@@ -439,6 +439,12 @@ void process_priv_commamd(uint8_t if_type, uint8_t *payload, uint16_t payload_le
 			process_set_mcast_mac_list(if_type, payload, payload_len);
 			break;
 
+		case CMD_GET_TXPOWER:
+		case CMD_SET_TXPOWER:
+			ESP_LOGI(TAG, "Tx power command\n");
+			process_tx_power(if_type, payload, payload_len, header->cmd_code);
+			break;
+
 		default:
 			ESP_LOGI(TAG, "Unsupported cmd[0x%x] received\n", header->cmd_code);
 			break;

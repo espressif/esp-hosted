@@ -116,6 +116,8 @@ enum COMMAND_CODE {
 	CMD_STA_ASSOC,
 	CMD_SET_IP_ADDR,
 	CMD_SET_MCAST_MAC_ADDR,
+	CMD_GET_TXPOWER,
+	CMD_SET_TXPOWER,
 	CMD_MAX,
 };
 
@@ -217,6 +219,11 @@ struct wifi_sec_key {
 	uint8_t    del;
 	uint8_t    set_cur;
 	uint8_t    pad[2];
+} __packed;
+
+struct cmd_set_get_val {
+	struct     command_header header;
+	uint32_t   value;
 } __packed;
 
 struct cmd_key_operation {

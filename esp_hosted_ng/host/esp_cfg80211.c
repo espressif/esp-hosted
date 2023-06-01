@@ -491,6 +491,93 @@ static void esp_cfg80211_set_wakeup(struct wiphy *wiphy,
 	/*esp_dbg("\n");*/
 }
 
+//TODO get MAX_TAX_POWER from Firmware for future chips
+#define MAX_TAX_POWER (20 * 100)
+static bool is_txpwr_valid(int mbm)
+{
+	if (mbm > MAX_TAX_POWER)
+		return false;
+
+	return true;
+}
+
+static int mbm_to_esp_pwr(int mbm)
+{
+	return ((mbm * 4) / 100);
+}
+
+static int esp_pwr_to_dbm(int power)
+{
+	return ((power / 4));
+}
+
+static int esp_cfg80211_set_tx_power(struct wiphy *wiphy,
+				     struct wireless_dev *wdev,
+				     enum nl80211_tx_power_setting type, int mbm)
+{
+	struct esp_adapter *adapter = esp_get_adapter();
+	struct esp_wifi_device *priv = NULL;
+
+	if (!wiphy || !adapter) {
+		esp_info("%u invalid input %p %p \n", __LINE__, wiphy, wdev);
+		return -EINVAL;
+	}
+
+	esp_dbg("\n");
+
+	priv = adapter->priv[0];
+	if (!priv) {
+		esp_err("Empty priv\n");
+		return 0;
+	}
+
+        switch (type) {
+        case NL80211_TX_POWER_AUTOMATIC:
+                priv->tx_pwr_type = NL80211_TX_POWER_AUTOMATIC;
+                priv->tx_pwr = mbm_to_esp_pwr(MAX_TAX_POWER);
+                break;
+        case NL80211_TX_POWER_LIMITED:
+                if (!is_txpwr_valid(mbm)) {
+                        esp_warn("mbm:%d not support\n", mbm);
+			return -EOPNOTSUPP;
+                }
+                priv->tx_pwr_type = NL80211_TX_POWER_LIMITED;
+                priv->tx_pwr = mbm_to_esp_pwr(mbm);
+                break;
+        case NL80211_TX_POWER_FIXED:
+		return -EOPNOTSUPP;
+                break;
+        default:
+                esp_warn("unknown type:%d\n", type);
+        }
+
+	return cmd_set_tx_power(priv, priv->tx_pwr);
+}
+
+static int esp_cfg80211_get_tx_power(struct wiphy *wiphy,
+				     struct wireless_dev *wdev,
+				     int *dbm)
+{
+	struct esp_wifi_device *priv = NULL;
+
+	if (!wiphy || !wdev || !dbm || !wdev->netdev) {
+		esp_info("%u invalid input\n", __LINE__);
+		return -EINVAL;
+	}
+
+	esp_dbg("\n");
+	priv = netdev_priv(wdev->netdev);
+
+	if (!priv) {
+		esp_err("Empty priv\n");
+		return -EINVAL;
+	}
+
+	*dbm = esp_pwr_to_dbm(priv->tx_pwr);
+
+	return 0;
+}
+
 static struct cfg80211_ops esp_cfg80211_ops = {
 #if 0
 	.add_virtual_intf = esp_cfg80211_add_iface,
@@ -511,6 +598,8 @@ static struct cfg80211_ops esp_cfg80211_ops = {
 	.suspend = esp_cfg80211_suspend,
 	.resume = esp_cfg80211_resume,
 	.set_wakeup = esp_cfg80211_set_wakeup,
+	.set_tx_power = esp_cfg80211_set_tx_power,
+	.get_tx_power = esp_cfg80211_get_tx_power,
 };
 
 int esp_cfg80211_register(struct esp_adapter *adapter)

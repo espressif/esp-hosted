@@ -153,6 +153,8 @@ struct esp_wifi_device {
 	wait_queue_head_t       wait_for_scan_completion;
 	unsigned long           priv_flags;
 	struct notifier_block   nb;
+	uint8_t                 tx_pwr_type;
+	uint8_t                 tx_pwr;
 };
 
 

@@ -875,6 +875,56 @@ DONE:
 	return ret;
 }
 
+int process_tx_power(uint8_t if_type, uint8_t *payload, uint16_t payload_len, uint8_t cmd)
+{
+	interface_buffer_handle_t buf_handle = {0};
+	esp_err_t ret = ESP_OK;
+	struct cmd_set_get_val *val;
+	int8_t max_tx_power;
+
+	if (cmd == CMD_SET_TXPOWER) {
+		val = (struct cmd_set_get_val *)payload;
+		max_tx_power = val->value;
+		esp_wifi_set_max_tx_power(max_tx_power);
+	}
+
+	/*ESP_LOG_BUFFER_HEXDUMP("MAC Filter", (uint8_t *) &mac_list, sizeof(mac_list), ESP_LOG_INFO);*/
+
+	buf_handle.if_type = if_type;
+	buf_handle.if_num = 0;
+	buf_handle.payload_len = sizeof(struct cmd_set_get_val);
+	buf_handle.pkt_type = PACKET_TYPE_COMMAND_RESPONSE;
+
+	buf_handle.payload = heap_caps_malloc(buf_handle.payload_len, MALLOC_CAP_DMA);
+	esp_wifi_get_max_tx_power(&max_tx_power);
+	assert(buf_handle.payload);
+	memset(buf_handle.payload, 0, buf_handle.payload_len);
+
+	val = (struct cmd_set_get_val *)(buf_handle.payload);
+	val->value = max_tx_power;
+	val->header.cmd_code = cmd;
+	val->header.len = 0;
+	val->header.cmd_status = CMD_RESPONSE_SUCCESS;
+
+	buf_handle.priv_buffer_handle = buf_handle.payload;
+	buf_handle.free_buf_handle = free;
+
+	ret = send_command_response(&buf_handle);
+	if (ret != pdTRUE) {
+		ESP_LOGE(TAG, "Slave -> Host: Failed to send command response\n");
+		goto DONE;
+	}
+
+	return ESP_OK;
+
+DONE:
+	if (buf_handle.payload)
+		free(buf_handle.payload);
+
+	return ret;
+}
+
+
 int process_sta_disconnect(uint8_t if_type, uint8_t *payload, uint16_t payload_len)
 {
 	struct command_header *header;
