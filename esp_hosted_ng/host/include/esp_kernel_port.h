@@ -160,14 +160,6 @@ static inline void *skb_put_data(struct sk_buff *skb, const void *data,
 }
 #endif
 
-#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 6, 0))
-    #define NDO_TX_TIMEOUT_PROTOTYPE() \
-	void esp_tx_timeout(struct net_device *ndev)
-#else
-    #define NDO_TX_TIMEOUT_PROTOTYPE() \
-	void esp_tx_timeout(struct net_device *ndev, unsigned int txqueue)
-#endif
-
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 17, 0))
 #define do_exit(code)	kthread_complete_and_exit(NULL, code)
 #endif

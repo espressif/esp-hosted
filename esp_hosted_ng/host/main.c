@@ -306,10 +306,6 @@ static int esp_set_mac_address(struct net_device *ndev, void *data)
 	return ret;
 }
 
-static NDO_TX_TIMEOUT_PROTOTYPE()
-{
-}
-
 static void esp_set_rx_mode(struct net_device *ndev)
 {
 	struct esp_wifi_device *priv = netdev_priv(ndev);
@@ -384,7 +380,6 @@ static const struct net_device_ops esp_netdev_ops = {
 	.ndo_start_xmit = esp_hard_start_xmit,
 	.ndo_set_mac_address = esp_set_mac_address,
 	.ndo_validate_addr = eth_validate_addr,
-	.ndo_tx_timeout = esp_tx_timeout,
 	.ndo_get_stats = esp_get_stats,
 	.ndo_set_rx_mode = esp_set_rx_mode,
 };
