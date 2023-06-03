@@ -287,21 +287,24 @@ static struct net_device_stats *esp_get_stats(struct net_device *ndev)
 	return &priv->stats;
 }
 
-#if 0
 static int esp_set_mac_address(struct net_device *ndev, void *data)
 {
 	struct esp_wifi_device *priv = netdev_priv(ndev);
-	//struct sockaddr *mac_addr = data;
+	struct sockaddr *sa = (struct sockaddr *)data;
+	int ret;
 
 	if (!priv || !priv->adapter)
 		return -EINVAL;
 
-	esp_info("%u "MACSTR"\n", __LINE__, MAC2STR(priv->mac_address));
-	eth_hw_addr_set(ndev, priv->mac_address/*mac_addr->sa_data*/);
+	esp_info("%u "MACSTR"\n", __LINE__, MAC2STR(sa->sa_data));
 
-	return 0;
+	ret = cmd_set_mac(priv, sa->sa_data);
+
+	if (ret == 0)
+		eth_hw_addr_set(ndev, priv->mac_address/*mac_addr->sa_data*/);
+
+	return ret;
 }
-#endif
 
 static NDO_TX_TIMEOUT_PROTOTYPE()
 {
@@ -379,6 +382,7 @@ static const struct net_device_ops esp_netdev_ops = {
 	.ndo_open = esp_open,
 	.ndo_stop = esp_stop,
 	.ndo_start_xmit = esp_hard_start_xmit,
+	.ndo_set_mac_address = esp_set_mac_address,
 	.ndo_validate_addr = eth_validate_addr,
 	.ndo_tx_timeout = esp_tx_timeout,
 	.ndo_get_stats = esp_get_stats,
