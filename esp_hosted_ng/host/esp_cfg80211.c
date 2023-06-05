@@ -491,11 +491,11 @@ static void esp_cfg80211_set_wakeup(struct wiphy *wiphy,
 	/*esp_dbg("\n");*/
 }
 
-//TODO get MAX_TAX_POWER from Firmware for future chips
-#define MAX_TAX_POWER (20 * 100)
+/* TODO get MAX_TX_POWER_MBM from Firmware for future chips */
+#define MAX_TX_POWER_MBM (20 * 100)
 static bool is_txpwr_valid(int mbm)
 {
-	if (mbm > MAX_TAX_POWER)
+	if (mbm > MAX_TX_POWER_MBM)
 		return false;
 
 	return true;
@@ -534,7 +534,7 @@ static int esp_cfg80211_set_tx_power(struct wiphy *wiphy,
         switch (type) {
         case NL80211_TX_POWER_AUTOMATIC:
                 priv->tx_pwr_type = NL80211_TX_POWER_AUTOMATIC;
-                priv->tx_pwr = mbm_to_esp_pwr(MAX_TAX_POWER);
+                priv->tx_pwr = mbm_to_esp_pwr(MAX_TX_POWER_MBM);
                 break;
         case NL80211_TX_POWER_LIMITED:
                 if (!is_txpwr_valid(mbm)) {

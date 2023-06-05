@@ -239,6 +239,7 @@ static int wait_and_decode_cmd_resp(struct esp_wifi_device *priv,
 		break;
 
 	case CMD_GET_MAC:
+	case CMD_SET_MAC:
 		if (ret == 0)
 			ret = decode_mac_addr(priv, cmd_node);
 		break;
@@ -1382,6 +1383,37 @@ int cmd_get_mac(struct esp_wifi_device *priv)
 	return 0;
 }
 
+int cmd_set_mac(struct esp_wifi_device *priv, uint8_t *mac_addr)
+{
+	u16 cmd_len;
+	struct command_node *cmd_node = NULL;
+	struct cmd_config_mac_address *cmd;;
+
+	if (!priv || !priv->adapter) {
+		esp_err("Invalid argument\n");
+		return -EINVAL;
+	}
+
+	cmd_len = sizeof(struct cmd_config_mac_address);
+
+	cmd_node = prepare_command_request(priv->adapter, CMD_SET_MAC, cmd_len);
+
+	if (!cmd_node) {
+		esp_err("Failed to get command node\n");
+		return -ENOMEM;
+	}
+
+	cmd = (struct cmd_config_mac_address *) (cmd_node->cmd_skb->data +
+				sizeof(struct esp_payload_header));
+
+	memcpy(cmd->mac_addr, mac_addr, MAC_ADDR_LEN);
+	queue_cmd_node(priv->adapter, cmd_node, ESP_CMD_DFLT_PRIO);
+	queue_work(priv->adapter->cmd_wq, &priv->adapter->cmd_work);
+
+	RET_ON_FAIL(wait_and_decode_cmd_resp(priv, cmd_node));
+
+	return 0;
+}
 
 int esp_commands_teardown(struct esp_adapter *adapter)
 {
