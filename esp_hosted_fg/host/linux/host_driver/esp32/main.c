@@ -671,13 +671,13 @@ error_exit:
 
 static void esp_remove_network_interfaces(struct esp_adapter *adapter)
 {
-	if (adapter->priv[0]->ndev) {
+	if (adapter->priv[0] && adapter->priv[0]->ndev) {
 		netif_stop_queue(adapter->priv[0]->ndev);
 		unregister_netdev(adapter->priv[0]->ndev);
 		free_netdev(adapter->priv[0]->ndev);
 	}
 
-	if (adapter->priv[1]->ndev) {
+	if (adapter->priv[1] && adapter->priv[1]->ndev) {
 		netif_stop_queue(adapter->priv[1]->ndev);
 		unregister_netdev(adapter->priv[1]->ndev);
 		free_netdev(adapter->priv[1]->ndev);
