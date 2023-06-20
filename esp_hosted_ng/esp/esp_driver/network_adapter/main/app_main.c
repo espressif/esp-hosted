@@ -32,6 +32,7 @@
 #include "app_main.h"
 #include "esp_wifi.h"
 #include "cmd.h"
+#include <esp_mac.h>
 
 #include "freertos/task.h"
 #include "freertos/queue.h"
@@ -664,7 +665,7 @@ void app_main()
 	/*send capabilities to host*/
 	send_bootup_event_to_host(capa);
 
-	tcpip_adapter_init();
+	esp_netif_init();
 
 	ESP_LOGI(TAG,"Initial set up done");
 }

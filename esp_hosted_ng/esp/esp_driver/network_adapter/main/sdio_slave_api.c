@@ -26,6 +26,7 @@
 #include "sdio_slave_api.h"
 #include "driver/sdio_slave.h"
 #include "soc/sdio_slave_periph.h"
+#include "soc/gpio_reg.h"
 #include "endian.h"
 #include "freertos/semphr.h"
 #include "stats.h"
