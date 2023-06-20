@@ -123,7 +123,7 @@ int sta_connection(uint8_t *bssid)
 		return ESP_FAIL;
 	}
 	memcpy(ap_bssid, bssid, MAC_ADDR_LEN);
-	esp_wifi_connect_internal(ap_bssid);
+	// esp_wifi_connect_internal(ap_bssid);
 
 	return ESP_OK;
 }
@@ -1011,7 +1011,7 @@ int process_auth_request(uint8_t if_type, uint8_t *payload, uint16_t payload_len
 
 		/* WPA3 specific */
 		ESP_LOGI(TAG, "AUTH Confirm\n");
-		esp_wifi_issue_auth_internal(0);
+		// esp_wifi_issue_auth_internal(0);
 
 	} else {
 		wifi_scan_config_t params = {0};
@@ -1147,7 +1147,7 @@ int process_assoc_request(uint8_t if_type, uint8_t *payload, uint16_t payload_le
 				cmd_assoc->assoc_ie_len, 0);
 	}
 
-	esp_wifi_issue_assoc_internal(0);
+	// esp_wifi_issue_assoc_internal(0);
 
 	buf_handle.if_type = if_type;
 	buf_handle.if_num = 0;
