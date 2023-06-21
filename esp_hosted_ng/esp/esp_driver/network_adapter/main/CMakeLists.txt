@@ -1,4 +1,4 @@
-set(COMPONENT_SRCS "app_main.c" "slave_bt.c" "cmd.c" "stats.c")
+set(COMPONENT_SRCS "app_main.c" "slave_bt.c" "cmd.c" "stats.c" "spi_lcd_touch.c" "lvgl_demo_ui.c" "adc_read.c")
 set(COMPONENT_ADD_INCLUDEDIRS "./include")
 
 if(CONFIG_ESP_SDIO_HOST_INTERFACE)

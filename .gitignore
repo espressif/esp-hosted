@@ -1,2 +1,5 @@
 **/build
+**/managed_components
 **/sdkconfig
+**/dependencies.lock
+**/sdkconfig.old

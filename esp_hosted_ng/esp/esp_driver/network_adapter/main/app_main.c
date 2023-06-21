@@ -47,6 +47,8 @@
 #include "driver/periph_ctrl.h"
 #include "slave_bt.c"
 #include "stats.h"
+#include "display.h"
+#include "adc_read.h"
 
 static const char TAG[] = "FW_MAIN";
 
@@ -608,6 +610,8 @@ void app_main()
 		ret = nvs_flash_init();
 	}
 	ESP_ERROR_CHECK( ret );
+
+	// spi_touch_tftf_init();
 
 	ret = initialise_wifi();
 	ESP_ERROR_CHECK( ret );
