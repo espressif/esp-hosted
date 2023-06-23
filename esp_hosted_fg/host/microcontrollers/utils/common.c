@@ -16,10 +16,13 @@
 
 /** Includes **/
 #include "common.h"
-#include "trace.h"
-#include "stdlib.h"
+#include "esp_log.h"
+#include <stdlib.h>
 #include <errno.h>
 
+#if 0
+DEFINE_LOG_TAG(utils);
+#endif
 /** Constants/Macros **/
 
 /** Exported variables **/
@@ -73,34 +76,6 @@ uint32_t hton_long (uint32_t x)
 }
 
 /**
-  * @brief  dump hex for buffer
-  * @param  buff - buff to print
-  *         rx_len - size of buf
-  *         human_str - help string to prepend
-  * @retval None
-  */
-void print_hex_dump(uint8_t *buff, uint16_t rx_len, char *human_str)
-{
-#if DEBUG_HEX_STREAM_PRINT
-    char * print_ptr = print_buff;
-    for (int i = 0; i< rx_len;i++) {
-        sprintf(print_ptr, "%02x ",buff[i]);
-        print_ptr+=3;
-    }
-    print_buff[rx_len*3] = '\0';
-
-    if(human_str)
-        printf("%s (len: %5u) -> %s\n\r",human_str, rx_len, print_buff);
-    else
-        printf("(len %5u), Data %s\n\r", rx_len, print_buff);
-#else
-    UNUSED_VAR(buff);
-    UNUSED_VAR(rx_len);
-    UNUSED_VAR(human_str);
-#endif /* DEBUG_HEX_STREAM_PRINT */
-}
-
-/**
   * @brief  Calculate minimum
   * @param  x - number
   *         y - number
@@ -110,6 +85,7 @@ int min(int x, int y) {
     return (x < y) ? x : y;
 }
 
+#if 0
 /**
   * @brief  get numbers from string
   * @param  val - return integer value,
@@ -122,12 +98,12 @@ int get_num_from_string(int *val, char *arg)
   char *endptr = NULL, *str = NULL;
 
   if (!arg || (arg[0]=='\0')) {
-    printf("No number Identified \n");
+    ESP_LOGE(TAG, "No number Identified \n");
     return STM_FAIL;
   }
 
   if (!val) {
-    printf("No memory allocated \n");
+    ESP_LOGE(TAG, "No memory allocated \n");
     return STM_FAIL;
   }
 
@@ -136,7 +112,7 @@ int get_num_from_string(int *val, char *arg)
   *val = strtol(str, &endptr, base);
 
   if (endptr == str) {
-    printf("No digits found \n");
+    ESP_LOGE(TAG, "No digits found \n");
     *val = 0;
     return STM_FAIL;
   }
@@ -149,5 +125,6 @@ int get_num_from_string(int *val, char *arg)
 
   return STM_OK;
 }
+#endif
 
 /** Local functions **/

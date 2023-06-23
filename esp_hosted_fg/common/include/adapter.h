@@ -8,6 +8,7 @@
 #define PRIO_Q_BT                                 1
 #define PRIO_Q_OTHERS                             2
 #define MAX_PRIORITY_QUEUES                       3
+#define MAC_SIZE_BYTES                            6
 
 /* ESP Payload Header Flags */
 #define MORE_FRAGMENT                             (1 << 0)
@@ -17,11 +18,13 @@
 
 /* Protobuf related info */
 /* Endpoints registered must have same string length */
-#define CTRL_EP_NAME_RESP                         "ctrlResp"
-#define CTRL_EP_NAME_EVENT                        "ctrlEvnt"
+#define RPC_EP_NAME_RSP                           "RPCRsp"
+#define RPC_EP_NAME_EVT                           "RPCEvt"
 
-#define SET_BIT(pos, val)                         (val|=(1<<pos))
-#define GET_BIT(pos, val)                         (val&(1<<pos)? 1: 0)
+
+#define H_SET_BIT(pos, val)                       (val|=(1<<pos))
+
+#define H_GET_BIT(pos, val)                       (val&(1<<pos)? 1: 0)
 
 /* Station config bitmasks */
 enum {
@@ -62,21 +65,21 @@ enum {
     (num_out|=(reserved_in <<  WIFI_SCAN_AP_REC_MAX_USED_BIT));
 
 enum {
-	CTRL_ERR_NOT_CONNECTED = 1,
-	CTRL_ERR_NO_AP_FOUND,
-	CTRL_ERR_INVALID_PASSWORD,
-	CTRL_ERR_INVALID_ARGUMENT,
-	CTRL_ERR_OUT_OF_RANGE,
-	CTRL_ERR_MEMORY_FAILURE,
-	CTRL_ERR_UNSUPPORTED_MSG,
-	CTRL_ERR_INCORRECT_ARG,
-	CTRL_ERR_PROTOBUF_ENCODE,
-	CTRL_ERR_PROTOBUF_DECODE,
-	CTRL_ERR_SET_ASYNC_CB,
-	CTRL_ERR_TRANSPORT_SEND,
-	CTRL_ERR_REQUEST_TIMEOUT,
-	CTRL_ERR_REQ_IN_PROG,
-	CTRL_ERR_SET_SYNC_SEM,
+	RPC_ERR_NOT_CONNECTED = 1,
+	RPC_ERR_NO_AP_FOUND,
+	RPC_ERR_INVALID_PASSWORD,
+	RPC_ERR_INVALID_ARGUMENT,
+	RPC_ERR_OUT_OF_RANGE,
+	RPC_ERR_MEMORY_FAILURE,
+	RPC_ERR_UNSUPPORTED_MSG,
+	RPC_ERR_INCORRECT_ARG,
+	RPC_ERR_PROTOBUF_ENCODE,
+	RPC_ERR_PROTOBUF_DECODE,
+	RPC_ERR_SET_ASYNC_CB,
+	RPC_ERR_TRANSPORT_SEND,
+	RPC_ERR_REQUEST_TIMEOUT,
+	RPC_ERR_REQ_IN_PROG,
+	RPC_ERR_SET_SYNC_SEM,
 	OUT_OF_RANGE
 };
 
@@ -98,6 +101,9 @@ struct esp_payload_header {
 	};
 	/* Do no add anything here */
 } __attribute__((packed));
+
+#define H_ESP_PAYLOAD_HEADER_OFFSET sizeof(struct esp_payload_header)
+
 
 typedef enum {
 	ESP_STA_IF,

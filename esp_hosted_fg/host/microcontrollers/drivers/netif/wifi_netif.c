@@ -7,9 +7,13 @@
 #include "esp_netif.h"
 #include "esp_log.h"
 #include "esp_wifi_netif.h"
-#include "ctrl_api.h"
+#include "rpc_api.h"
 #include "os_wrapper.h"
 #include "transport_drv.h"
+#include "esp_log.h"
+#include "stats.h"
+
+static const char TAG[] = "H_W_netif";
 
 //
 //  Purpose of this module is provide object oriented abstraction to wifi interfaces
@@ -24,7 +28,7 @@ struct wifi_netif_driver {
     wifi_interface_t wifi_if;
 };
 
-static const char* TAG = "wifi_netif";
+//static const char* TAG = "wifi_netif";
 
 /**
  * @brief Local storage for netif handles and callbacks for specific wifi interfaces
@@ -38,16 +42,14 @@ static esp_netif_t *s_wifi_netifs[MAX_WIFI_IFS] = { NULL };
  */
 static esp_err_t wifi_sta_receive(void *buffer, uint16_t len, void *eb)
 {
-#if NETWORK_STACK_LOG_LEVEL
-	ESP_LOGE("STA RX","New\n");
-	ESP_LOG_BUFFER_HEXDUMP("STA_RX", buffer, len, ESP_LOG_INFO);
-#endif
+	ESP_LOG_BUFFER_HEXDUMP(TAG, buffer, len, ESP_LOG_DEBUG);
     return s_wifi_rxcbs[WIFI_IF_STA](s_wifi_netifs[WIFI_IF_STA], buffer, len, eb);
 }
 
 #ifdef CONFIG_ESP_WIFI_SOFTAP_SUPPORT
 static esp_err_t wifi_ap_receive(void *buffer, uint16_t len, void *eb)
 {
+	ESP_LOG_BUFFER_HEXDUMP(TAG, buffer, len, ESP_LOG_DEBUG);
     return s_wifi_rxcbs[WIFI_IF_AP](s_wifi_netifs[WIFI_IF_AP], buffer, len, eb);
 }
 #endif
@@ -56,28 +58,48 @@ static void wifi_free(void *h, void* buffer)
 {
     if (buffer) {
         //esp_wifi_internal_free_rx_buffer(buffer);
-		g_h.funcs->_h_free(buffer);
+		g_h.funcs->_h_nw_free(buffer);
+#if H_MEM_STATS
+		h_stats_g.nw_mem_stats.tx_freed++;
+#endif
     }
+}
+
+static inline esp_err_t l_wifi_transmit(void *h, void *buffer, size_t len)
+{
+	wifi_netif_driver_t driver = h;
+		/* Hosted Tx to Slave */
+
+	#if CONFIG_H_LOWER_MEMCOPY
+#if 1
+		uint8_t * buf_copy = (uint8_t*)g_h.funcs->_h_nw_calloc(1, len);
+		assert(buf_copy);
+
+#if H_MEM_STATS
+		h_stats_g.nw_mem_stats.tx_alloc++;
+#endif
+		/* Keep empty space for ESP payload header, will be filled later */
+		g_h.funcs->_h_memcpy(buf_copy+H_ESP_PAYLOAD_HEADER_OFFSET, buffer, len);
+		return esp_hosted_tx(driver->wifi_if, 0, buf_copy, len, H_BUFF_ZEROCOPY, g_h.funcs->_h_nw_free);
+#else
+		return esp_hosted_tx(driver->wifi_if, 0, buffer, len, H_BUFF_ZEROCOPY, g_h.funcs->_h_nw_free);
+#endif
+	#else
+		uint8_t * buf_copy = (uint8_t*)g_h.funcs->_h_calloc(1, len);
+			assert(buf_copy);
+			g_h.funcs->_h_memcpy(buf_copy, buffer, len);
+			return esp_hosted_tx(driver->wifi_if, 0, buf_copy, len, H_BUFF_NO_ZEROCOPY, H_DEFLT_FREE_FUNC);
+	#endif
 }
 
 static esp_err_t wifi_transmit(void *h, void *buffer, size_t len)
 {
-    wifi_netif_driver_t driver = h;
-	/* Hosted Tx to Slave */
-	uint8_t * buf_copy = (uint8_t*)g_h.funcs->_h_calloc(1, len);
-	assert(buf_copy);
-	g_h.funcs->_h_memcpy(buf_copy, buffer, len);
-	return esp_hosted_tx(driver->wifi_if, 0, buf_copy, len);
+	return l_wifi_transmit(h,buffer,len);
 }
 
 static esp_err_t wifi_transmit_wrap(void *h, void *buffer, size_t len, void *netstack_buf)
 {
-    wifi_netif_driver_t driver = h;
-	/* Hosted Tx to Slave */
-	uint8_t * buf_copy = (uint8_t*)g_h.funcs->_h_calloc(1, len);
-	assert(buf_copy);
-	g_h.funcs->_h_memcpy(buf_copy, buffer, len);
-	return esp_hosted_tx(driver->wifi_if, 0, buf_copy, len);
+	return l_wifi_transmit(h,buffer,len);
 }
 
 static esp_err_t wifi_driver_start(esp_netif_t * esp_netif, void * args)
@@ -102,7 +124,7 @@ void esp_wifi_destroy_if_driver(wifi_netif_driver_t h)
                                                        // as the wifi might have been already uninitialized
         s_wifi_netifs[h->wifi_if] = NULL;
     }
-    free(h);
+    g_h.funcs->_h_free(h);
 }
 
 //WIFI_IF_STA -> ESP_STA_IF
@@ -110,9 +132,9 @@ void esp_wifi_destroy_if_driver(wifi_netif_driver_t h)
 
 wifi_netif_driver_t esp_wifi_create_if_driver(wifi_interface_t wifi_if)
 {
-    wifi_netif_driver_t driver = calloc(1, sizeof(struct wifi_netif_driver));
+    wifi_netif_driver_t driver = g_h.funcs->_h_calloc(1, sizeof(struct wifi_netif_driver));
     if (driver == NULL) {
-        ESP_LOGE(TAG, "No memory to create a wifi interface handle");
+        ESP_LOGE(TAG, "No memory to create a wifi interface handle\n");
         return NULL;
     }
 	/* Map WiFi IF to Hosted IFs */
@@ -149,7 +171,7 @@ bool esp_wifi_is_if_ready_when_started(wifi_netif_driver_t ifx)
 esp_err_t esp_wifi_register_if_rxcb(wifi_netif_driver_t ifx, esp_netif_receive_t fn, void * arg)
 {
     if (ifx->base.netif != arg) {
-        ESP_LOGE(TAG, "Invalid argument: supplied netif=%p does not equal to interface netif=%p", arg, ifx->base.netif);
+        ESP_LOGE(TAG, "Invalid argument: supplied netif=%p does not equal to interface netif=%p\n", arg, ifx->base.netif);
         return ESP_ERR_INVALID_ARG;
     }
     wifi_interface_t wifi_interface = ifx->wifi_if;
@@ -175,7 +197,7 @@ esp_err_t esp_wifi_register_if_rxcb(wifi_netif_driver_t ifx, esp_netif_receive_t
     }
 
     if (rxcb == NULL) {
-        ESP_LOGE(TAG, "Unknown wifi interface id if=%d", wifi_interface);
+        ESP_LOGE(TAG, "Unknown wifi interface id if=%d\n", wifi_interface);
         return ESP_ERR_NOT_SUPPORTED;
     }
 
@@ -184,7 +206,7 @@ esp_err_t esp_wifi_register_if_rxcb(wifi_netif_driver_t ifx, esp_netif_receive_t
 
     //if ((ret = esp_wifi_internal_reg_rxcb(wifi_interface,  rxcb)) != ESP_OK) {
     if ((ret = esp_hosted_register_wifi_rxcb(wifi_interface,  rxcb)) != ESP_OK) {
-        ESP_LOGE(TAG, "esp_wifi_internal_reg_rxcb for if=%d failed with %d", wifi_interface, ret);
+        ESP_LOGE(TAG, "esp_wifi_internal_reg_rxcb for if=%d failed with %d\n", wifi_interface, ret);
         return ESP_ERR_INVALID_STATE;
     }
     return ESP_OK;

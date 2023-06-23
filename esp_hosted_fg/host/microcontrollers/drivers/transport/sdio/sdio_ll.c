@@ -59,7 +59,7 @@
 /** Macros/Constants **/
 #define CHECK_SDIO_PRINT_ERR(ErR) {\
 	if (ErR) { \
-		printf("%s: %u err %lu\r\n",__func__,__LINE__,ErR); \
+		ESP_LOGE(TAG,"err %lu\r\n", ErR); \
 	} \
 }
 
@@ -103,13 +103,11 @@ static uint8_t CalcClockDivider(uint32_t freq, uint32_t *preal)
 
 	if (preal) {
 		*preal = sdioclk / (divider + 2);
-#if DEBUG_TRANSPORT
-		printf("sdioclk=%luHz\n\rreq_freq=%luHz\n\rout_freq=%luHz\n\rdiv=%d\n\r",
+		ESP_LOGD(TAG,"sdioclk=%luHz\n\rreq_freq=%luHz\n\rout_freq=%luHz\n\rdiv=%d\n\r",
 				sdioclk, freq, *preal, divider);
 	} else {
-		printf("sdioclk=%luHz\n\rreq_freq=%luHz\n\rdiv=%d\n\r",
+		ESP_LOGD(TAG,"sdioclk=%luHz\n\rreq_freq=%luHz\n\rdiv=%d\n\r",
 				sdioclk, freq, divider);
-#endif
 	}
 	return divider & 0xff;
 }
@@ -204,55 +202,53 @@ static int CheckError(const char *msg_title, uint32_t line)
 	{
 		__SDIO_CLEAR_FLAG(SDIO, SDIO_FLAG_CCRCFAIL);
 		err++;
-		printf("%s:%lu CMD%lu CRC failed!\n\r", msg_title, line, sdio_cmd.CmdIndex);
+		ESP_LOGE(TAG,"%s:%lu CMD%lu CRC failed!\n\r", msg_title, line, sdio_cmd.CmdIndex);
 	}
 	if (__SDIO_GET_FLAG(SDIO, SDIO_FLAG_CTIMEOUT) != RESET)
 	{
 		__SDIO_CLEAR_FLAG(SDIO, SDIO_FLAG_CTIMEOUT);
 		err++;
-#if !DEBUG_TRANSPORT
 		if(sdio_cmd.CmdIndex != 5)
-#endif
-			printf("%s:%lu CMD%lu timeout!\n\r", msg_title, line, sdio_cmd.CmdIndex);
+			ESP_LOGE(TAG,"%s:%lu CMD%lu timeout!\n\r", msg_title, line, sdio_cmd.CmdIndex);
 	}
 	if (__SDIO_GET_FLAG(SDIO, SDIO_FLAG_DCRCFAIL) != RESET)
 	{
 		__SDIO_CLEAR_FLAG(SDIO, SDIO_FLAG_DCRCFAIL);
 		err++;
-		printf("%s:%lu data CRC failed!\n\r", msg_title, line);
+		ESP_LOGE(TAG,"%s:%lu data CRC failed!\n\r", msg_title, line);
 	}
 	if (__SDIO_GET_FLAG(SDIO, SDIO_FLAG_DTIMEOUT) != RESET)
 	{
 		__SDIO_CLEAR_FLAG(SDIO, SDIO_FLAG_DTIMEOUT);
 		err++;
-		printf("%s:%lu data timeout!\n\r", msg_title, line);
+		ESP_LOGE(TAG,"%s:%lu data timeout!\n\r", msg_title, line);
 	}
 #if defined(SDIO_STA_STBITERR)
 	if (__SDIO_GET_FLAG(SDIO, SDIO_FLAG_STBITERR) != RESET)
 	{
 		__SDIO_CLEAR_FLAG(SDIO, SDIO_FLAG_STBITERR);
 		err++;
-		printf("%s:%lu start bit error!\n\r", msg_title, line);
+		ESP_LOGE(TAG,"%s:%lu start bit error!\n\r", msg_title, line);
 	}
 #endif
 	if (__SDIO_GET_FLAG(SDIO, SDIO_FLAG_TXUNDERR) != RESET)
 	{
 		__SDIO_CLEAR_FLAG(SDIO, SDIO_FLAG_TXUNDERR);
 		err++;
-		printf("%s:%lu data underrun!\n\r", msg_title, line);
+		ESP_LOGE(TAG,"%s:%lu data underrun!\n\r", msg_title, line);
 	}
 	if (__SDIO_GET_FLAG(SDIO, SDIO_FLAG_RXOVERR) != RESET)
 	{
 		__SDIO_CLEAR_FLAG(SDIO, SDIO_FLAG_RXOVERR);
 		err++;
-		printf("%s:%lu data overrun!\n\r", msg_title, line);
+		ESP_LOGE(TAG,"%s:%lu data overrun!\n\r", msg_title, line);
 	}
 #if WIFI_USEDMA
 	if (LL_DMA_IsActiveFlag_TE4(DMA2))
 	{
 		LL_DMA_ClearFlag_TE4(DMA2);
 		err++;
-		printf("%s:%lu DMA transfer error!\n\r", msg_title, line);
+		ESP_LOGE(TAG,"%s:%lu DMA transfer error!\n\r", msg_title, line);
 	}
 #endif
 	return err;
@@ -425,9 +421,7 @@ static stm_ret_t SdioDriverInit(SD_InitTypeDef init_para)
 	SDIO_SendCommand(SDIO, &sdio_cmd);
 	WaitForResponse(__FUNCTION__,__LINE__);
 	sdio_rca = SDIO_GetResponse(SDIO, SDIO_RESP1) >> 16;
-#if DEBUG_TRANSPORT
-	printf("Relative Card Address: 0x%04x\n\r", sdio_rca);
-#endif
+	ESP_LOGD(TAG,"Relative Card Address: 0x%04x\n\r", sdio_rca);
 
 	/* Command 7 - Select WiFi (SELECT/DESELECT_CARD) */
 	//sdio_cmd.Argument = sdio_rca << 16;	
@@ -435,9 +429,7 @@ static stm_ret_t SdioDriverInit(SD_InitTypeDef init_para)
 	sdio_cmd.CmdIndex = 7;
 	SDIO_SendCommand(SDIO, &sdio_cmd);
 	WaitForResponse(__FUNCTION__,__LINE__);
-#if DEBUG_TRANSPORT
-	printf("Card selected! RESP1_%08lx\n\r", SDIO_GetResponse(SDIO, SDIO_RESP1));
-#endif
+	ESP_LOGD(TAG,"Card selected! RESP1_%08lx\n\r", SDIO_GetResponse(SDIO, SDIO_RESP1));
 
 	/* Above sequence is needed while communicating to IO only device.
 	 * In case of failure/timeouts despite of maximum retry, IO would be unusable
@@ -448,17 +440,13 @@ static stm_ret_t SdioDriverInit(SD_InitTypeDef init_para)
 	bus_width = STM32ReadReg(SDIO_FUNC_0, SD_IO_CCCR_BUS_WIDTH);
 
 	if(init_para.BusWide == SDIO_BUS_WIDE_4B){
-#if DEBUG_TRANSPORT
-		printf("Use 4bit bus width\n\r");
-#endif
+		ESP_LOGD(TAG,"Use 4bit bus width\n\r");
 		bus_width |= CCCR_BUS_WIDTH_4;
 	}else if(init_para.BusWide == SDIO_BUS_WIDE_1B){
-#if DEBUG_TRANSPORT
-		printf("Use 1bit bus width\n\r");
-#endif
+		ESP_LOGD(TAG,"Use 1bit bus width\n\r");
 		bus_width &= ~CCCR_BUS_WIDTH_4;
 	} else {
-		printf("Illegal bus width\n\r");
+		ESP_LOGE(TAG,"Illegal bus width\n\r");
 		return STM_FAIL;
 	}
 	//STM32WriteReg(SDIO_FUNC_0, SD_IO_CCCR_BUS_WIDTH, bus_width);
@@ -566,12 +554,12 @@ int STM32WriteData(uint8_t func, uint32_t addr, const void *data, uint32_t len)
 
 	if ((uintptr_t)data & 3)
 	{
-		printf("%s: data must be 4-byte aligned!\n\r", __FUNCTION__);
+		ESP_LOGW(TAG,"%s: data must be 4-byte aligned!\n\r", __FUNCTION__);
 		return STM_FAIL_ALIGNMENT;
 	}
 	if (size == 0)
 	{
-		printf("%s: size cannot be 0!\n\r", __FUNCTION__);
+		ESP_LOGE(TAG,"%s: size cannot be 0!\n\r", __FUNCTION__);
 		return STM_FAIL_INVALID_ARG;
 	}
 	xSemaphoreTake(semahandle, HOSTED_BLOCK_MAX);
@@ -604,9 +592,7 @@ int STM32WriteData(uint8_t func, uint32_t addr, const void *data, uint32_t len)
 	 * get breathing time for checking new packets
 	 * */
 	while((uint32_t)HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_8) == (uint32_t)RESET);
-#if DEBUG_TRANSPORT
-	//printf("CMD53 response\n\r");
-#endif
+	ESP_LOGV(TAG,"CMD53 response\n\r");
 
 #if WIFI_USEDMA
 
@@ -641,9 +627,7 @@ int STM32WriteData(uint8_t func, uint32_t addr, const void *data, uint32_t len)
 		/* Wait untill there is space in FIFO */
 		err += CheckError(__FUNCTION__,__LINE__);
 		if (err) {
-#if DEBUG_TRANSPORT
-			printf("err while writing FIFO\n\r");
-#endif
+			ESP_LOGE(TAG,"err while writing FIFO\n\r");
 			break;
 		}
 	}
@@ -660,24 +644,20 @@ int STM32WriteData(uint8_t func, uint32_t addr, const void *data, uint32_t len)
 
 		err += CheckError(__FUNCTION__,__LINE__);
 		if (err) {
-#if DEBUG_TRANSPORT
-			printf("err before completing DATA END\n\r");
-#endif
+			ESP_LOGE(TAG,"err before completing DATA END\n\r");
 			break;
 		}
 
 		i++;
 		if (i == CMD53_TIMEOUT)
 		{
-			printf("%s: timeout!\n\r", __FUNCTION__);
+			ESP_LOGE(TAG,"%s: timeout!\n\r", __FUNCTION__);
 			err++;
 			break;
 		}
 	}
 
-#if DEBUG_TRANSPORT
-	//printf("\n\rData:\n\r===> Data : %s\n\r",(char*)data);
-#endif
+	ESP_LOGV(TAG,"\n\rData:\n\r===> Data : %s\n\r",(char*)data);
 
 	sdio_data.DPSM = SDIO_DPSM_DISABLE;
 	SDIO_ConfigData(SDIO, &sdio_data);
@@ -694,9 +674,7 @@ int STM32WriteData(uint8_t func, uint32_t addr, const void *data, uint32_t len)
 	err += CheckError(__FUNCTION__,__LINE__);
 	xSemaphoreGive(semahandle);
 	if (err != 0) {
-#if DEBUG_TRANSPORT
-		printf("err while writing\n\r");
-#endif
+		ESP_LOGE(TAG,"err while writing\n\r");
 		return STM_FAIL;
 	}
 	return STM_OK;
@@ -774,23 +752,21 @@ int STM32ReadData(uint8_t func, uint32_t addr, void *data,
 
 	if ((uintptr_t)data & 3)
 	{
-		printf("%s: data must be 4-byte aligned!\n\r", __FUNCTION__);
+		ESP_LOGE(TAG,"%s: data must be 4-byte aligned!\n\r", __FUNCTION__);
 		return STM_FAIL_ALIGNMENT;
 	}
 	if (size == 0)
 	{
-		printf("%s: size cannot be 0!\n\r", __FUNCTION__);
+		ESP_LOGE(TAG,"%s: size cannot be 0!\n\r", __FUNCTION__);
 		return STM_FAIL_INVALID_ARG;
 	}
 
 	xSemaphoreTake(semahandle, HOSTED_BLOCK_MAX);
 
 	block_num = GetBlockNum(func, &size, 0, &sdio_data);
-#if DEBUG_TRANSPORT
 	if (size > 4) {
-	//	printf("size after getblocknum: %lu\n\r",size);
+		ESP_LOGV(TAG,"size after getblocknum: %lu\n\r",size);
 	}
-#endif
 
 #if WIFI_USEDMA
 	//SDIO->DCTRL = SDIO_DCTRL_SDIOEN | SDIO_DCTRL_DMAEN;
@@ -854,16 +830,14 @@ int STM32ReadData(uint8_t func, uint32_t addr, void *data,
 
 			err += CheckError(__FUNCTION__,__LINE__);
 			if (err) {
-#if DEBUG_TRANSPORT
-				printf("Err while Reading from FIFO\n\r");
-#endif
+				ESP_LOGE(TAG,"Err while Reading from FIFO\n\r");
 				break;
 			}
 		}
 		timeout_not_reached--;
 	}
 	if (!timeout_not_reached) {
-		printf("timed out while reading!!!\n\r");
+		ESP_LOGE(TAG,"timed out while reading!!!\n\r");
 		/* try to rectify the situation */
 		sdio_data.DPSM = SDIO_DPSM_DISABLE;
 		SDIO_ConfigData(SDIO, &sdio_data);
@@ -886,7 +860,7 @@ int STM32ReadData(uint8_t func, uint32_t addr, void *data,
 		i++;
 		if (i == CMD53_TIMEOUT)
 		{
-			printf("%s: timeout!\n\r", __FUNCTION__);
+			ESP_LOGE(TAG,"%s: timeout!\n\r", __FUNCTION__);
 			err++;
 			break;
 		}
@@ -952,7 +926,7 @@ void STM32SdioInit(sdio_init_t sdio_init)
 
 	if (SdioDriverInit(Init))
 	{
-		printf("STM32 SDIO driver init error\n\r");
+		ESP_LOGE(TAG,"STM32 SDIO driver init error\n\r");
 		return;
 	}
 }

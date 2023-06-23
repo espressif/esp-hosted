@@ -9,7 +9,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-#include "ctrl_api.h"
+#include "rpc_api.h"
 
 /**
  * @brief Number of WiFi interfaces used by wifi-netif abstraction

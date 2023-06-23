@@ -14,7 +14,9 @@
 
 #include "serial_if.h"
 #include "serial_ll_if.h"
-#include "trace.h"
+#include "esp_log.h"
+
+DEFINE_LOG_TAG(serial);
 
 struct serial_drv_handle_t {
 	int handle; /* dummy variable */
@@ -23,35 +25,27 @@ struct serial_drv_handle_t {
 static serial_ll_handle_t * serial_ll_if_g;
 static void * readSemaphore;
 
-#define HOSTED_CALLOC(buff,nbytes) do {                           \
-    buff = (uint8_t *)g_h.funcs->_h_calloc(1, nbytes);                   \
-    if (!buff) {                                                  \
-        printf("%s, Failed to allocate memory \n", __func__);     \
-        goto free_bufs;                                           \
-    }                                                             \
-} while(0);
 
-
-static void control_path_rx_indication(void);
+static void rpc_rx_indication(void);
 
 /* -------- Serial Drv ---------- */
 struct serial_drv_handle_t* serial_drv_open(const char *transport)
 {
 	struct serial_drv_handle_t* serial_drv_handle = NULL;
 	if (!transport) {
-		printf("Invalid parameter in open \n\r");
+		ESP_LOGE(TAG, "Invalid parameter in open");
 		return NULL;
 	}
 
 	if(serial_drv_handle) {
-		printf("return orig hndl\n");
+		ESP_LOGE(TAG, "return orig hndl\n");
 		return serial_drv_handle;
 	}
 
 	serial_drv_handle = (struct serial_drv_handle_t*) g_h.funcs->_h_calloc
 		(1,sizeof(struct serial_drv_handle_t));
 	if (!serial_drv_handle) {
-		printf("Failed to allocate memory \n");
+		ESP_LOGE(TAG, "Failed to allocate memory \n");
 		return NULL;
 	}
 
@@ -63,24 +57,24 @@ int serial_drv_write (struct serial_drv_handle_t* serial_drv_handle,
 {
 	int ret = 0;
 	if (!serial_drv_handle || !buf || !in_count || !out_count) {
-		printf("Invalid parameters in write\n\r");
+		ESP_LOGE(TAG,"Invalid parameters in write\n\r");
 		return RET_INVALID;
 	}
 
 	if( (!serial_ll_if_g) ||
 		(!serial_ll_if_g->fops) ||
 		(!serial_ll_if_g->fops->write)) {
-		printf("serial interface not valid\n\r");
+		ESP_LOGE(TAG,"serial interface not valid\n\r");
 		return RET_INVALID;
 	}
 
 #if CONFIG_SERIAL_LOG_LEVEL
-	print_hex_dump(buf, in_count,"serial_tx");
+	ESP_LOG_BUFFER_HEXDUMP(TAG, buf, in_count, ESP_LOG_VERBOSE);
 #endif
 	ret = serial_ll_if_g->fops->write(serial_ll_if_g, buf, in_count);
 	if (ret != RET_OK) {
 		*out_count = 0;
-		printf("Failed to write data\n\r");
+		ESP_LOGE(TAG,"Failed to write data\n\r");
 		return RET_FAIL;
 	}
 
@@ -96,22 +90,22 @@ uint8_t * serial_drv_read(struct serial_drv_handle_t *serial_drv_handle,
 	uint16_t rx_buf_len = 0;
 	uint8_t* read_buf = NULL;
 	int ret = 0;
-	/* Any of `CTRL_EP_NAME_EVENT` and `CTRL_EP_NAME_RESP` could be used,
+	/* Any of `RPC_EP_NAME_EVT` and `RPC_EP_NAME_RSP` could be used,
 	 * as both have same strlen in adapter.h */
-	const char* ep_name = CTRL_EP_NAME_RESP;
+	const char* ep_name = RPC_EP_NAME_RSP;
 	uint8_t *buf = NULL;
 	uint32_t buf_len = 0;
 
 
 	if (!serial_drv_handle || !out_nbyte) {
-		printf("Invalid parameters in read\n\r");
+		ESP_LOGE(TAG,"Invalid parameters in read\n\r");
 		return NULL;
 	}
 
 	*out_nbyte = 0;
 
 	if(!readSemaphore) {
-		printf("Semaphore not initialized\n\r");
+		ESP_LOGE(TAG,"Semaphore not initialized\n\r");
 		return NULL;
 	}
 
@@ -120,18 +114,18 @@ uint8_t * serial_drv_read(struct serial_drv_handle_t *serial_drv_handle,
 	if( (!serial_ll_if_g) ||
 		(!serial_ll_if_g->fops) ||
 		(!serial_ll_if_g->fops->read)) {
-		printf("serial interface refusing to read\n\r");
+		ESP_LOGE(TAG,"serial interface refusing to read\n\r");
 		return NULL;
 	}
 
 	/* Get buffer from serial interface */
 	read_buf = serial_ll_if_g->fops->read(serial_ll_if_g, &rx_buf_len);
 	if ((!read_buf) || (!rx_buf_len)) {
-		printf("serial read failed\n\r");
+		ESP_LOGE(TAG,"serial read failed\n\r");
 		return NULL;
 	}
 #if CONFIG_SERIAL_LOG_LEVEL
-	print_hex_dump(read_buf, rx_buf_len, "Serial Rx");
+	ESP_LOG_BUFFER_HEXDUMP(TAG, read_buf, rx_buf_len, ESP_LOG_VERBOSE);
 #endif
 
 /*
@@ -158,12 +152,12 @@ uint8_t * serial_drv_read(struct serial_drv_handle_t *serial_drv_handle,
 		SIZE_OF_TYPE + SIZE_OF_LENGTH;
 
 	if(rx_buf_len < init_read_len) {
-		mem_free(read_buf);
-		printf("Incomplete serial buff, return\n");
+		HOSTED_FREE(read_buf);
+		ESP_LOGE(TAG,"Incomplete serial buff, return\n");
 		return NULL;
 	}
 
-	HOSTED_CALLOC(buf,init_read_len);
+	HOSTED_CALLOC(uint8_t,buf,init_read_len,free_bufs);
 
 	g_h.funcs->_h_memcpy(buf, read_buf, init_read_len);
 
@@ -172,87 +166,87 @@ uint8_t * serial_drv_read(struct serial_drv_handle_t *serial_drv_handle,
 	 **/
 	ret = parse_tlv(buf, &buf_len);
 	if (ret || !buf_len) {
-		mem_free(buf);
-		printf("Failed to parse RX data \n\r");
+		HOSTED_FREE(buf);
+		ESP_LOGE(TAG,"Failed to parse RX data \n\r");
 		goto free_bufs;
 	}
 
 	if (rx_buf_len < (init_read_len + buf_len)) {
-		printf("Buf read on serial iface is smaller than expected len\n");
-		mem_free(buf);
+		ESP_LOGE(TAG,"Buf read on serial iface is smaller than expected len\n");
+		HOSTED_FREE(buf);
 		goto free_bufs;
 	}
 
 	if (rx_buf_len > (init_read_len + buf_len)) {
-		printf("Buf read on serial iface is smaller than expected len\n");
+		ESP_LOGE(TAG,"Buf read on serial iface is smaller than expected len\n");
 	}
 
-	mem_free(buf);
+	HOSTED_FREE(buf);
 /*
  * (2) Read variable length of RX data:
  */
-	HOSTED_CALLOC(buf,buf_len);
+	HOSTED_CALLOC(uint8_t,buf,buf_len,free_bufs);
 
 	g_h.funcs->_h_memcpy((buf), read_buf+init_read_len, buf_len);
 
-	mem_free(read_buf);
+	HOSTED_FREE(read_buf);
 
 	*out_nbyte = buf_len;
 	return buf;
 
 free_bufs:
-	mem_free(read_buf);
-	mem_free(buf);
+	HOSTED_FREE(read_buf);
+	HOSTED_FREE(buf);
 	return NULL;
 }
 
 int serial_drv_close(struct serial_drv_handle_t** serial_drv_handle)
 {
 	if (!serial_drv_handle || !(*serial_drv_handle)) {
-		printf("Invalid parameter in close \n\r");
+		ESP_LOGE(TAG,"Invalid parameter in close \n\r");
 		if (serial_drv_handle)
-			mem_free(serial_drv_handle);
+			HOSTED_FREE(serial_drv_handle);
 		return RET_INVALID;
 	}
-	mem_free(*serial_drv_handle);
+	HOSTED_FREE(*serial_drv_handle);
 	return RET_OK;
 }
 
-int control_path_platform_init(void)
+int rpc_platform_init(void)
 {
-	/* control path semaphore */
-	readSemaphore = g_h.funcs->_h_create_binary_semaphore();
+	/* rpc semaphore */
+	readSemaphore = g_h.funcs->_h_create_semaphore(1);
 	assert(readSemaphore);
 
 	/* grab the semaphore, so that task will be mandated to wait on semaphore */
 	g_h.funcs->_h_get_semaphore(readSemaphore, HOSTED_BLOCK_MAX);
 
-	serial_ll_if_g = serial_ll_init(control_path_rx_indication);
+	serial_ll_if_g = serial_ll_init(rpc_rx_indication);
 	if (!serial_ll_if_g) {
-		printf("Serial interface creation failed\n\r");
+		ESP_LOGE(TAG,"Serial interface creation failed\n\r");
 		assert(serial_ll_if_g);
 		return RET_FAIL;
 	}
 	if (RET_OK != serial_ll_if_g->fops->open(serial_ll_if_g)) {
-		printf("Serial interface open failed\n\r");
+		ESP_LOGE(TAG,"Serial interface open failed\n\r");
 		return RET_FAIL;
 	}
 	return RET_OK;
 }
 
 /* TODO: Why this is not called in transport_pserial_close() */
-int control_path_platform_deinit(void)
+int rpc_platform_deinit(void)
 {
 	if (RET_OK != serial_ll_if_g->fops->close(serial_ll_if_g)) {
-		printf("Serial interface close failed\n\r");
+		ESP_LOGE(TAG,"Serial interface close failed\n\r");
 		return RET_FAIL;
 	}
 	return RET_OK;
 }
 
-static void control_path_rx_indication(void)
+static void rpc_rx_indication(void)
 {
-	/* heads up to control path for read */
+	/* heads up to rpc for read */
 	if(readSemaphore) {
 		g_h.funcs->_h_post_semaphore(readSemaphore);
 	}

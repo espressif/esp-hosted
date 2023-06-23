@@ -1,0 +1,90 @@
+stages:
+  - host_test
+  - deploy
+
+image: ${CI_DOCKER_REGISTRY}/esp-env-v5.0:2
+
+variables:
+  LWIP_CONTRIB_TAG: STABLE-2_1_0_RELEASE
+  CONTRIB: contrib-2.1.0
+  CMAKE_SH: cmake-3.22.3-linux-x86_64.sh
+  CC: cc
+
+before_script:
+  # Use CI Tools
+  - curl -sSL ${CIT_LOADER_URL} | sh
+  - source citools/import_functions
+
+.get_cmake: &get_cmake |
+  wget -q https://github.com/Kitware/CMake/releases/download/v3.22.3/${CMAKE_SH}
+  mkdir -p /opt/cmake && sh ${CMAKE_SH} --prefix=/opt/cmake --skip-license
+  export PATH=/opt/cmake/bin:$PATH
+
+.get_contrib: &get_contrib |
+  mkdir -p ~/.ssh
+  chmod 700 ~/.ssh
+  echo -n $GITLAB_KEY > ~/.ssh/id_rsa_base64
+  base64 --decode --ignore-garbage ~/.ssh/id_rsa_base64 > ~/.ssh/id_rsa
+  chmod 600 ~/.ssh/id_rsa
+  echo -e "Host ${GITLAB_HOSTNAME}\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config
+  git clone "${LWIP_CONTRIB_MIRROR}" ${CONTRIB} && cd ${CONTRIB} && git checkout tags/${LWIP_CONTRIB_TAG}
+  cd .. && sed -i $'s/\r$//' test/contrib-2.1.0.patch && patch -s -p0 < test/${CONTRIB}.patch
+
+run_unittests:
+  stage: host_test
+  tags:
+    - host_test
+  dependencies: []
+  script:
+    - *get_contrib
+    - ./test/ci/unit_tests.sh
+
+build_all:
+  stage: host_test
+  tags:
+    - host_test
+  script:
+    - *get_cmake
+    - mkdir build && cd build && cmake .. -G Ninja
+    - cmake --build .
+    - cmake --build . --target lwipdocs
+
+validate_opts:
+  stage: host_test
+  tags:
+    - host_test
+  script:
+    - *get_contrib
+    - ./test/ci/validate_opts.sh
+
+run_test_apps:
+  stage: host_test
+  tags:
+    - host_test
+  script:
+    - *get_contrib
+    - *get_cmake
+    - ./test/ci/test_apps.sh
+
+.add_gh_key_remote: &add_gh_key_remote |
+  command -v ssh-agent >/dev/null || exit 1
+  eval $(ssh-agent -s)
+  printf '%s\n' "${GH_PUSH_KEY}" | tr -d '\r' | ssh-add - > /dev/null
+  mkdir -p ~/.ssh && chmod 700 ~/.ssh
+  [[ -f /.dockerenv ]] && echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config || ssh-keyscan -t rsa github.com >> ~/.ssh/known_hosts
+  git remote remove github || true
+  git remote add github ${GH_PUSH_REPO}
+
+push_master_to_github:
+  stage: deploy
+  only:
+    - 2.1.2-esp
+    - 2.1.3-esp
+  when: on_success
+  variables:
+    GIT_STRATEGY: clone
+  script:
+    - *add_gh_key_remote
+    - "[ -n \"${CI_COMMIT_TAG:-}\" ] && git push github ${CI_COMMIT_TAG}"
+    - "[ -z \"${CI_COMMIT_TAG:-}\" ] && git push github ${CI_COMMIT_SHA}:refs/heads/${CI_COMMIT_REF_NAME}"
+

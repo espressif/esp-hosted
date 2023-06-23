@@ -13,19 +13,26 @@
 // limitations under the License.
 
 #include "string.h"
-#include "trace.h"
+#include "esp_log.h"
 #include "os_wrapper.h"
 #include "esp_log.h"
 #include "driver/spi_master.h"
 #include "driver/gpio.h"
 #include "transport_drv.h"
 #include "esp_event.h"
+#include "freertos/portmacro.h"
+#include "esp_macros.h"
+#include "esp_hosted_config.h"
 
+DEFINE_LOG_TAG(os_wrapper_esp);
 
 extern void * spi_handle;
+struct mempool * nw_mp_g = NULL;
 
 //hosted_osi_funcs_t g_wifi_osi_funcs;
-ESP_EVENT_DECLARE_BASE(WIFI_EVENT);
+//ESP_EVENT_DECLARE_BASE(WIFI_EVENT);
+ESP_EVENT_DEFINE_BASE(WIFI_EVENT);
+struct hosted_config_t g_h = HOSTED_CONFIG_INIT_DEFAULT();
 
 struct timer_handle_t {
 	//osTimerId timer_id;
@@ -38,9 +45,9 @@ void * hosted_memcpy(void* dest, void* src, uint32_t size)
 {
 	if (size && (!dest || !src)) {
 		if (!dest)
-			printf("%s:%u dest is NULL\n", __func__, __LINE__);
+			ESP_LOGE(TAG, "%s:%u dest is NULL\n", __func__, __LINE__);
 		if (!src)
-			printf("%s:%u dest is NULL\n", __func__, __LINE__);
+			ESP_LOGE(TAG, "%s:%u dest is NULL\n", __func__, __LINE__);
 
 		assert(dest);
 		assert(src);
@@ -84,7 +91,7 @@ void *hosted_realloc(void *mem, size_t newsize)
 	void *p = NULL;
 
 	if (newsize == 0) {
-		mem_free(mem);
+		HOSTED_FREE(mem);
 		return NULL;
 	}
 
@@ -93,10 +100,88 @@ void *hosted_realloc(void *mem, size_t newsize)
 		/* zero the memory */
 		if (mem != NULL) {
 			hosted_memcpy(p, mem, newsize);
-			mem_free(mem);
+			HOSTED_FREE(mem);
 		}
 	}
 	return p;
+}
+
+
+static inline void nw_mempool_create()
+{
+    MEM_DUMP("nw_mempool_create");
+    nw_mp_g = mempool_create(MAX_TRANSPORT_BUFFER_SIZE);
+#if CONFIG_USE_MEMPOOL
+    assert(nw_mp_g);
+#endif
+}
+
+static inline void nw_mempool_destroy()
+{
+    mempool_destroy(nw_mp_g);
+}
+
+static inline void *nw_buffer_alloc(uint need_memset)
+{
+    return mempool_alloc(nw_mp_g, MAX_TRANSPORT_BUFFER_SIZE, need_memset);
+}
+
+static inline void nw_buffer_free(void *buf)
+{
+    mempool_free(nw_mp_g, buf);
+}
+
+void hosted_init_hook(void)
+{
+	/* This is hook to initialize port specific contexts, if any */
+	nw_mempool_create();
+}
+
+
+void* hosted_nw_malloc(size_t size)
+{
+	if (size > MAX_TRANSPORT_BUFFER_SIZE) {
+		ESP_LOGE(TAG, "nw_malloc not supported with requested size, please change from os_wrapper.c");
+	}
+	return nw_buffer_alloc(MEMSET_NOT_REQUIRED);
+}
+
+void* hosted_nw_calloc(size_t blk_no, size_t size)
+{
+	return nw_buffer_alloc(MEMSET_REQUIRED);
+}
+
+void hosted_nw_free(void* ptr)
+{
+	nw_buffer_free(ptr);
+}
+
+void *hosted_nw_realloc(void *mem, size_t newsize)
+{
+#if 0
+	void *p = NULL;
+	/* as nw is mempool alloc with fixed size
+	 * realloc doesn't have much different
+	 * meaning than as malloc
+	 */
+
+	if (newsize == 0) {
+		hosted_nw_free(mem);
+		return NULL;
+	}
+
+	p = hosted_nw_malloc(newsize);
+	if (p) {
+		/* zero the memory */
+		if (mem != NULL) {
+			hosted_memcpy(p, mem, newsize);
+			hosted_nw_free(mem);
+		}
+	}
+
+	return nw_buffer_alloc(MEMSET_NOT_REQUIRED);
+#endif
+	return mem;
 }
 
 
@@ -107,14 +192,14 @@ void *hosted_thread_create(char *tname, uint32_t tprio, uint32_t tstack_size, vo
 	int task_created = RET_OK;
 
 	if (!start_routine) {
-		printf("start_routine is mandatory for thread create\n");
+		ESP_LOGE(TAG, "start_routine is mandatory for thread create\n");
 		return NULL;
 	}
 
 	thread_handle_t *thread_handle = (thread_handle_t *)hosted_malloc(
 			sizeof(thread_handle_t));
 	if (!thread_handle) {
-		printf("Failed to allocate thread handle\n");
+		ESP_LOGE(TAG, "Failed to allocate thread handle\n");
 		return NULL;
 	}
 
@@ -128,14 +213,14 @@ void *hosted_thread_create(char *tname, uint32_t tprio, uint32_t tstack_size, vo
 #endif
 	task_created = xTaskCreate((void (*)(void *))start_routine, tname, tstack_size, sr_arg, tprio, thread_handle);
 	if (!(*thread_handle)) {
-		printf("Failed to create thread: %s\n", tname);
-		mem_free(thread_handle);
+		ESP_LOGE(TAG, "Failed to create thread: %s\n", tname);
+		HOSTED_FREE(thread_handle);
 		return NULL;
 	}
 
 	if (task_created != pdTRUE) {
-		printf("Failed 2 to create thread: %s\n", tname);
-		mem_free(thread_handle);
+		ESP_LOGE(TAG, "Failed 2 to create thread: %s\n", tname);
+		HOSTED_FREE(thread_handle);
 		return NULL;
 	}
 
@@ -148,7 +233,7 @@ int hosted_thread_cancel(void *thread_handle)
 	thread_handle_t *thread_hdl = NULL;
 
 	if (!thread_handle) {
-		printf("Invalid thread handle\n");
+		ESP_LOGE(TAG, "Invalid thread handle\n");
 		return RET_INVALID;
 	}
 
@@ -156,13 +241,13 @@ int hosted_thread_cancel(void *thread_handle)
 
 	//ret = osThreadTerminate(*thread_hdl);
 	//if (ret) {
-	//	printf("Prob in pthread_cancel, destroy handle anyway\n");
-	//	mem_free(thread_handle);
+	//	ESP_LOGE(TAG, "Prob in pthread_cancel, destroy handle anyway\n");
+	//	HOSTED_FREE(thread_handle);
 	//	return RET_INVALID;
 	//}
 	vTaskDelete(*thread_hdl);
 
-	mem_free(thread_handle);
+	HOSTED_FREE(thread_handle);
 	return RET_OK;
 }
 
@@ -200,7 +285,7 @@ int hosted_queue_item(void * queue_handle, void *item, int timeout)
 	int item_added_in_back = 0;
 
 	if (!queue_handle) {
-		printf("Uninitialized sem id 3\n");
+		ESP_LOGE(TAG, "Uninitialized sem id 3\n");
 		return RET_INVALID;
 	}
 
@@ -221,7 +306,7 @@ void * hosted_create_queue(uint32_t qnum_elem, uint32_t qitem_size)
 	q_id = (queue_handle_t*)hosted_malloc(
 			sizeof(queue_handle_t));
 	if (!q_id) {
-		printf("Q allocation failed\n");
+		ESP_LOGE(TAG, "Q allocation failed\n");
 		return NULL;
 	}
 
@@ -229,7 +314,7 @@ void * hosted_create_queue(uint32_t qnum_elem, uint32_t qitem_size)
 
 	*q_id = xQueueCreate(qnum_elem, qitem_size);
 	if (!*q_id) {
-		printf("Q create failed\n");
+		ESP_LOGE(TAG, "Q create failed\n");
 		return NULL;
 	}
 
@@ -244,13 +329,13 @@ int hosted_dequeue_item(void * queue_handle, void *item, int timeout)
 	int item_retrieved = 0;
 
 	if (!queue_handle) {
-		printf("Uninitialized Q id 1\n\r");
+		ESP_LOGE(TAG, "Uninitialized Q id 1\n\r");
 		return RET_INVALID;
 	}
 
 	q_id = (queue_handle_t *)queue_handle;
 	if (!*q_id) {
-		printf("Uninitialized Q id 2\n\r");
+		ESP_LOGE(TAG, "Uninitialized Q id 2\n\r");
 		return RET_INVALID;
 	}
 
@@ -281,7 +366,7 @@ int hosted_destroy_queue(void * queue_handle)
 	queue_handle_t *q_id = NULL;
 
 	if (!queue_handle) {
-		printf("Uninitialized Q id 4\n");
+		ESP_LOGE(TAG, "Uninitialized Q id 4\n");
 		return RET_INVALID;
 	}
 
@@ -291,9 +376,9 @@ int hosted_destroy_queue(void * queue_handle)
 	//ret = osSemaphoreDelete(*q_id);
 	vQueueDelete(*q_id);
 	//if(ret)
-	//	printf("Failed to destroy Q\n");
+	//	ESP_LOGE(TAG, "Failed to destroy Q\n");
 
-	mem_free(queue_handle);
+	HOSTED_FREE(queue_handle);
 
 	return ret;
 }
@@ -304,7 +389,7 @@ int hosted_reset_queue(void * queue_handle)
 	queue_handle_t *q_id = NULL;
 
 	if (!queue_handle) {
-		printf("Uninitialized Q id 5\n");
+		ESP_LOGE(TAG, "Uninitialized Q id 5\n");
 		return RET_INVALID;
 	}
 
@@ -323,7 +408,7 @@ int hosted_unlock_mutex(void * mutex_handle)
 	int mut_unlocked = 0;
 
 	if (!mutex_handle) {
-		printf("Uninitialized mut id 3\n");
+		ESP_LOGE(TAG, "Uninitialized mut id 3\n");
 		return RET_INVALID;
 	}
 
@@ -346,14 +431,14 @@ void * hosted_create_mutex(void)
 			sizeof(mutex_handle_t));
 
 	if (!mut_id) {
-		printf("mut allocation failed\n");
+		ESP_LOGE(TAG, "mut allocation failed\n");
 		return NULL;
 	}
 
 	//*mut_id = osSemaphoreCreate(osSemaphore(sem_template_ctrl) , 1);
 	*mut_id = xSemaphoreCreateMutex();
 	if (!*mut_id) {
-		printf("mut create failed\n");
+		ESP_LOGE(TAG, "mut create failed\n");
 		return NULL;
 	}
 
@@ -369,13 +454,13 @@ int hosted_lock_mutex(void * mutex_handle, int timeout)
 	int mut_locked = 0;
 
 	if (!mutex_handle) {
-		printf("Uninitialized mut id 1\n\r");
+		ESP_LOGE(TAG, "Uninitialized mut id 1\n\r");
 		return RET_INVALID;
 	}
 
 	mut_id = (mutex_handle_t *)mutex_handle;
 	if (!*mut_id) {
-		printf("Uninitialized mut id 2\n\r");
+		ESP_LOGE(TAG, "Uninitialized mut id 2\n\r");
 		return RET_INVALID;
 	}
 
@@ -392,7 +477,7 @@ int hosted_destroy_mutex(void * mutex_handle)
 	mutex_handle_t *mut_id = NULL;
 
 	if (!mutex_handle) {
-		printf("Uninitialized mut id 4\n");
+		ESP_LOGE(TAG, "Uninitialized mut id 4\n");
 		return RET_INVALID;
 	}
 
@@ -402,9 +487,9 @@ int hosted_destroy_mutex(void * mutex_handle)
 	//ret = osSemaphoreDelete(*mut_id);
 	vSemaphoreDelete(*mut_id);
 	//if(ret)
-	//	printf("Failed to destroy sem\n");
+	//	ESP_LOGE(TAG, "Failed to destroy sem\n");
 
-	mem_free(mutex_handle);
+	HOSTED_FREE(mutex_handle);
 
 	return RET_OK;
 }
@@ -416,7 +501,7 @@ int hosted_post_semaphore(void * semaphore_handle)
 	int sem_posted = 0;
 
 	if (!semaphore_handle) {
-		printf("Uninitialized sem id 3\n");
+		ESP_LOGE(TAG, "Uninitialized sem id 3\n");
 		return RET_INVALID;
 	}
 
@@ -436,7 +521,7 @@ int hosted_post_semaphore_from_isr(void * semaphore_handle)
 	BaseType_t mustYield = false;
 
 	if (!semaphore_handle) {
-		printf("Uninitialized sem id 3\n");
+		ESP_LOGE(TAG, "Uninitialized sem id 3\n");
 		return RET_INVALID;
 	}
 
@@ -445,7 +530,11 @@ int hosted_post_semaphore_from_isr(void * semaphore_handle)
 	//return osSemaphoreRelease(*sem_id);
     sem_posted = xSemaphoreGiveFromISR(*sem_id, &mustYield);
     if (mustYield) {
+#if defined(__cplusplus) && (__cplusplus >  201703L)
+        portYIELD_FROM_ISR(mustYield);
+#else
         portYIELD_FROM_ISR();
+#endif
     }
 	if (pdTRUE == sem_posted)
 		return RET_OK;
@@ -453,7 +542,7 @@ int hosted_post_semaphore_from_isr(void * semaphore_handle)
 	return RET_FAIL;
 }
 
-void * hosted_create_binary_semaphore(void)
+void * hosted_create_semaphore(int maxCount)
 {
 	semaphore_handle_t *sem_id = NULL;
 	//osSemaphoreDef(sem_template_ctrl);
@@ -461,15 +550,19 @@ void * hosted_create_binary_semaphore(void)
 	sem_id = (semaphore_handle_t*)hosted_malloc(
 			sizeof(semaphore_handle_t));
 	if (!sem_id) {
-		printf("Sem allocation failed\n");
+		ESP_LOGE(TAG, "Sem allocation failed\n");
 		return NULL;
 	}
 
 	//*sem_id = osSemaphoreCreate(osSemaphore(sem_template_ctrl) , 1);
 
-	*sem_id = xSemaphoreCreateBinary();
+	if (maxCount>1)
+		*sem_id = xSemaphoreCreateCounting(maxCount,0);
+	else
+		*sem_id = xSemaphoreCreateBinary();
+
 	if (!*sem_id) {
-		printf("sem create failed\n");
+		ESP_LOGE(TAG, "sem create failed\n");
 		return NULL;
 	}
 
@@ -485,13 +578,13 @@ int hosted_get_semaphore(void * semaphore_handle, int timeout)
 	int sem_acquired = 0;
 
 	if (!semaphore_handle) {
-		printf("Uninitialized sem id 1\n\r");
+		ESP_LOGE(TAG, "Uninitialized sem id 1\n\r");
 		return RET_INVALID;
 	}
 
 	sem_id = (semaphore_handle_t *)semaphore_handle;
 	if (!*sem_id) {
-		printf("Uninitialized sem id 2\n\r");
+		ESP_LOGE(TAG, "Uninitialized sem id 2\n\r");
 		return RET_INVALID;
 	}
 
@@ -522,7 +615,7 @@ int hosted_destroy_semaphore(void * semaphore_handle)
 	semaphore_handle_t *sem_id = NULL;
 
 	if (!semaphore_handle) {
-		printf("Uninitialized sem id 4\n");
+		ESP_LOGE(TAG, "Uninitialized sem id 4\n");
 		return RET_INVALID;
 	}
 
@@ -532,14 +625,15 @@ int hosted_destroy_semaphore(void * semaphore_handle)
 	//ret = osSemaphoreDelete(*sem_id);
 	vSemaphoreDelete(*sem_id);
 	//if(ret)
-	//	printf("Failed to destroy sem\n");
+	//	ESP_LOGE(TAG, "Failed to destroy sem\n");
 
-	mem_free(semaphore_handle);
+	HOSTED_FREE(semaphore_handle);
 
 	return ret;
 }
 
-void * hosted_create_spinlock(void)
+#ifdef CONFIG_USE_MEMPOOL
+static void * hosted_create_spinlock(void)
 {
 	spinlock_handle_t spin_dummy = portMUX_INITIALIZER_UNLOCKED;
 	spinlock_handle_t *spin_id = NULL;
@@ -549,7 +643,7 @@ void * hosted_create_spinlock(void)
 			sizeof(spinlock_handle_t));
 
 	if (!spin_id) {
-		printf("mut allocation failed\n");
+		ESP_LOGE(TAG, "mut allocation failed\n");
 		return NULL;
 	}
 
@@ -560,25 +654,42 @@ void * hosted_create_spinlock(void)
 
 	return spin_id;
 }
+
+void* hosted_create_lock_mempool(void)
+{
+	return hosted_create_spinlock();
+}
+void hosted_lock_mempool(void *lock_handle)
+{
+	assert(lock_handle);
+	portENTER_CRITICAL((spinlock_handle_t *)lock_handle);
+}
+
+void hosted_unlock_mempool(void *lock_handle)
+{
+	assert(lock_handle);
+	portEXIT_CRITICAL((spinlock_handle_t *)spinlock_handle);
+}
+#endif
 /* -------- Timers  ---------- */
 int hosted_timer_stop(void *timer_handle)
 {
 	int ret = RET_OK;
 
-	printf("Stop the timer\n");
+	ESP_LOGD(TAG, "Stop the timer\n");
 	if (timer_handle) {
 		//ret = osTimerStop(((struct timer_handle_t *)timer_handle)->timer_id);
 		ret = esp_timer_stop(((struct timer_handle_t *)timer_handle)->timer_id);
 
 		if (ret < 0)
-			printf("Failed to stop timer\n");
+			ESP_LOGE(TAG, "Failed to stop timer\n");
 
 		//ret = osTimerDelete(((struct timer_handle_t *)timer_handle)->timer_id);
 		ret = esp_timer_delete(((struct timer_handle_t *)timer_handle)->timer_id);
 		if (ret < 0)
-			printf("Failed to delete timer\n");
+			ESP_LOGE(TAG, "Failed to delete timer\n");
 
-		mem_free(timer_handle);
+		HOSTED_FREE(timer_handle);
 		return ret;
 	}
 	return RET_FAIL;
@@ -588,7 +699,7 @@ int hosted_timer_stop(void *timer_handle)
  *
  * void expired(union sigval timer_data){
  *     struct mystruct *a = timer_data.sival_ptr;
- * 	printf("Expired %u\n", a->mydata++);
+ * 	ESP_LOGE(TAG, "Expired %u\n", a->mydata++);
  * }
  **/
 
@@ -600,7 +711,7 @@ void *hosted_timer_start(int duration, int type,
 	struct timer_handle_t *timer_handle = NULL;
 	int ret = RET_OK;
 
-	printf("Start the timer %u\n", duration);
+	ESP_LOGD(TAG, "Start the timer %u\n", duration);
 	//os_timer_type timer_type = osTimerOnce;
 	//osTimerDef (timerNew, timeout_handler);
 	const esp_timer_create_args_t timerNew_args = {
@@ -615,7 +726,7 @@ void *hosted_timer_start(int duration, int type,
 	timer_handle = (struct timer_handle_t *)hosted_malloc(
 			sizeof(struct timer_handle_t));
 	if (!timer_handle) {
-		printf("Memory allocation failed for timer\n");
+		ESP_LOGE(TAG, "Memory allocation failed for timer\n");
 		return NULL;
 	}
 
@@ -625,26 +736,26 @@ void *hosted_timer_start(int duration, int type,
 			timer_type, arg);*/
 	ret = esp_timer_create(&timerNew_args, &(timer_handle->timer_id));
 	if (ret || (!timer_handle->timer_id) ) {
-		printf("Failed to create timer\n");
-		mem_free(timer_handle);
+		ESP_LOGE(TAG, "Failed to create timer\n");
+		HOSTED_FREE(timer_handle);
 		return NULL;
 	}
 
 	/* Start depending upon timer type */
-	if (type == CTRL__TIMER_PERIODIC) {
+	if (type == RPC__TIMER_PERIODIC) {
 		ret = esp_timer_start_periodic(timer_handle->timer_id, SEC_TO_MICROSEC(duration));
-	} else if (type == CTRL__TIMER_ONESHOT) {
+	} else if (type == RPC__TIMER_ONESHOT) {
 		ret = esp_timer_start_once(timer_handle->timer_id, SEC_TO_MICROSEC(duration));
 	} else {
-		printf("Unsupported timer type. supported: one_shot, periodic\n");
+		ESP_LOGE(TAG, "Unsupported timer type. supported: one_shot, periodic\n");
 		esp_timer_delete(timer_handle->timer_id);
-		mem_free(timer_handle);
+		HOSTED_FREE(timer_handle);
 		return NULL;
 	}
 
 	if (ret) {
 		esp_timer_delete(timer_handle->timer_id);
-		mem_free(timer_handle);
+		HOSTED_FREE(timer_handle);
 		return NULL;
 	}
 
@@ -652,19 +763,9 @@ void *hosted_timer_start(int duration, int type,
 }
 
 
-void hosted_enter_critical(void *spinlock_handle)
-{
-	portENTER_CRITICAL((spinlock_handle_t *)spinlock_handle);
-}
-
-void hosted_exit_critical(void *spinlock_handle)
-{
-	portEXIT_CRITICAL((spinlock_handle_t *)spinlock_handle);
-}
-
 /* GPIO */
 
-int hosted_config_gpio(uint32_t gpio_port, uint32_t gpio_num, uint32_t mode)
+int hosted_config_gpio(void* gpio_port, uint32_t gpio_num, uint32_t mode)
 {
 	gpio_config_t io_conf={
 		.intr_type=GPIO_INTR_DISABLE,
@@ -675,7 +776,7 @@ int hosted_config_gpio(uint32_t gpio_port, uint32_t gpio_num, uint32_t mode)
 	return 0;
 }
 
-int hosted_config_gpio_as_interrupt(uint32_t gpio_port, uint32_t gpio_num, uint32_t intr_type, void (*gpio_isr_handler)(void* arg))
+int hosted_config_gpio_as_interrupt(void* gpio_port, uint32_t gpio_num, uint32_t intr_type, void (*gpio_isr_handler)(void* arg))
 {
     gpio_config_t handshake_io_conf={
         .intr_type=intr_type,
@@ -693,12 +794,12 @@ int hosted_config_gpio_as_interrupt(uint32_t gpio_port, uint32_t gpio_num, uint3
 	return 0;
 }
 
-int hosted_read_gpio(uint32_t gpio_port, uint32_t gpio_num)
+int hosted_read_gpio(void*gpio_port, uint32_t gpio_num)
 {
     return gpio_get_level(gpio_num);
 }
 
-int hosted_write_gpio(uint32_t gpio_port, uint32_t gpio_num, uint32_t value)
+int hosted_write_gpio(void* gpio_port, uint32_t gpio_num, uint32_t value)
 {
     return gpio_set_level(gpio_num, value);
 }
@@ -711,9 +812,6 @@ int hosted_write_gpio(uint32_t gpio_port, uint32_t gpio_num, uint32_t value)
 void * hosted_spi_init(void)
 {
 
-#define SPI_MODE                          SPI_MODE2
-#define SPI_INIT_CLK_MHZ                  5
-
 #ifdef CONFIG_IDF_TARGET_ESP32
 #define SENDER_HOST                                  HSPI_HOST
 
@@ -724,6 +822,9 @@ void * hosted_spi_init(void)
 
 
     esp_err_t ret;
+	ESP_LOGI(TAG, "Transport: SPI, Mode: %u Freq: %uMHz\n GPIOs: MOSI: %u MISO: %u CLK: %u CS: %u HS: %u DR: %u",
+			SPI_MODE, SPI_INIT_CLK_MHZ, H_GPIO_MOSI_Pin, H_GPIO_MISO_Pin,
+			H_GPIO_SCLK_Pin, H_GPIO_CS_Pin, H_GPIO_HANDSHAKE_Pin, H_GPIO_DATA_READY_Pin);
 
     HOSTED_CREATE_HANDLE(spi_device_handle_t, spi_handle);
     assert(spi_handle);
@@ -731,9 +832,9 @@ void * hosted_spi_init(void)
 
     //Configuration for the SPI bus
     spi_bus_config_t buscfg={
-        .mosi_io_num=GPIO_MOSI,
-        .miso_io_num=GPIO_MISO,
-        .sclk_io_num=GPIO_SCLK,
+        .mosi_io_num=H_GPIO_MOSI_Pin,
+        .miso_io_num=H_GPIO_MISO_Pin,
+        .sclk_io_num=H_GPIO_SCLK_Pin,
         .quadwp_io_num=-1,
         .quadhd_io_num=-1
     };
@@ -746,7 +847,7 @@ void * hosted_spi_init(void)
         .clock_speed_hz=MHZ_TO_HZ(SPI_INIT_CLK_MHZ),
         .duty_cycle_pos=128,        //50% duty cycle
         .mode=SPI_MODE,
-        .spics_io_num=GPIO_CS,
+        .spics_io_num=H_GPIO_CS_Pin,
         .cs_ena_posttrans=3,        //Keep the CS low 3 cycles after transaction, to stop slave from missing the last bit when CS has less propagation delay than CLK
         .queue_size=3
     };
@@ -805,11 +906,23 @@ int hosted_do_spi_transfer(void *trans)
 }
 
 int hosted_wifi_event_post(int32_t event_id,
-        const void* event_data, size_t event_data_size, uint32_t ticks_to_wait)
+        void* event_data, size_t event_data_size, uint32_t ticks_to_wait)
 {
 	//hosted_log("event %ld recvd --> event_data:%p event_data_size: %u\n",event_id, event_data, event_data_size);
 	return esp_event_post(WIFI_EVENT, event_id, event_data, event_data_size, ticks_to_wait);
 }
+
+void hosted_log_write(int  level,
+                   const char *tag,
+                   const char *format, ...)
+{
+	va_list list;
+	va_start(list, format);
+	printf(format, list);
+	va_end(list);
+}
+
+/* newlib hooks */
 
 hosted_osi_funcs_t g_hosted_osi_funcs = {
 	._h_memcpy                   =  hosted_memcpy                  ,
@@ -818,6 +931,10 @@ hosted_osi_funcs_t g_hosted_osi_funcs = {
 	._h_calloc                   =  hosted_calloc                  ,
 	._h_free                     =  hosted_free                    ,
 	._h_realloc                  =  hosted_realloc                 ,
+	._h_nw_malloc                =  hosted_nw_malloc               ,
+	._h_nw_calloc                =  hosted_nw_calloc               ,
+	._h_nw_free                  =  hosted_nw_free                 ,
+	._h_nw_realloc               =  hosted_nw_realloc              ,
 	._h_thread_create            =  hosted_thread_create           ,
 	._h_thread_cancel            =  hosted_thread_cancel           ,
 	._h_msleep                   =  hosted_msleep                  ,
@@ -834,14 +951,16 @@ hosted_osi_funcs_t g_hosted_osi_funcs = {
 	._h_destroy_mutex            =  hosted_destroy_mutex           ,
 	._h_post_semaphore           =  hosted_post_semaphore          ,
 	._h_post_semaphore_from_isr  =  hosted_post_semaphore_from_isr ,
-	._h_create_binary_semaphore  =  hosted_create_binary_semaphore ,
+	._h_create_semaphore         =  hosted_create_semaphore        ,
 	._h_get_semaphore            =  hosted_get_semaphore           ,
 	._h_destroy_semaphore        =  hosted_destroy_semaphore       ,
-	._h_create_spinlock          =  hosted_create_spinlock         ,
 	._h_timer_stop               =  hosted_timer_stop              ,
 	._h_timer_start              =  hosted_timer_start             ,
-	._h_enter_critical           =  hosted_enter_critical          ,
-	._h_exit_critical            =  hosted_exit_critical           ,
+#ifdef CONFIG_USE_MEMPOOL
+	._h_create_lock_mempool      =  hosted_create_lock_mempool     ,
+	._h_lock_mempool             =  hosted_lock_mempool            ,
+	._h_unlock_mempool           =  hosted_unlock_mempool          ,
+#endif
     ._h_config_gpio              =  hosted_config_gpio             ,
     ._h_config_gpio_as_interrupt =  hosted_config_gpio_as_interrupt,
     ._h_read_gpio                =  hosted_read_gpio               ,
@@ -849,5 +968,8 @@ hosted_osi_funcs_t g_hosted_osi_funcs = {
 	._h_bus_init                 =  hosted_spi_init                ,
     ._h_do_bus_transfer          =  hosted_do_spi_transfer         ,
     ._h_event_wifi_post          =  hosted_wifi_event_post         ,
+	._h_printf                   =  hosted_log_write               ,
+	._h_hosted_init_hook         =  hosted_init_hook               ,
 };
+
 

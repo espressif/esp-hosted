@@ -1,25 +1,35 @@
-# app & driver files
-#set(COMPONENT_SRCS "../../../../app/app_main.c" "../../../../app/app_main_api.c" "../../../../app/data/arp_server_stub.c" "../../../../app/control/control.c" "../../../../app/control/control_utils.c" "../../../../drivers/transport/transport_drv.c"  "../../../../drivers/network/netdev_api.c" "../../../../drivers/network/netdev_stub.c" "../../../../drivers/serial/serial_ll_if.c" "../../../../utils/common.c" "../../../../utils/util.c" "../../../../utils/stats.c" "os_wrapper.c" "../../../../drivers/serial/serial_drv.c")
 set(FG_ROOT_DIR "../../../../../../../..")
 set(MCU_DIR "${FG_ROOT_DIR}/host/microcontrollers")
-set(COMPONENT_SRCS "softap_example_main.c" "${MCU_DIR}/drivers/rpc/rpc_wrapper.c" "${MCU_DIR}/drivers/transport/transport_drv.c"  "${MCU_DIR}/drivers/network/netdev_api.c" "${MCU_DIR}/drivers/network/netdev_stub.c" "${MCU_DIR}/drivers/serial/serial_ll_if.c" "${MCU_DIR}/utils/common.c" "${MCU_DIR}/utils/util.c" "${MCU_DIR}/utils/stats.c" "../../../../os_wrapper.c" "${MCU_DIR}/drivers/serial/serial_drv.c" "${MCU_DIR}/drivers/wifi/wifi_drv.c")
 
-set(COMPONENT_ADD_INCLUDEDIRS "." "${MCU_DIR}/drivers/rpc/" "${MCU_DIR}/drivers/transport" "${MCU_DIR}/drivers/transport/spi" "${MCU_DIR}/drivers/transport/sdio" "${MCU_DIR}/drivers/netif" "${MCU_DIR}/drivers/network" "${MCU_DIR}/drivers/serial" "${MCU_DIR}/utils" "${FG_ROOT_DIR}/common/include" "../../../.." "${MCU_DIR}/drivers/wifi")
+set(COMPONENT_ADD_INCLUDEDIRS "${MCU_DIR}/port/esp")
+set(COMPONENT_SRCS "softap_example_main.c" "${MCU_DIR}/drivers/transport/transport_drv.c"  "${MCU_DIR}/drivers/network/netdev_api.c" "${MCU_DIR}/drivers/network/netdev_stub.c" "${MCU_DIR}/drivers/serial/serial_ll_if.c" "${MCU_DIR}/utils/common.c" "${MCU_DIR}/utils/util.c" "${MCU_DIR}/utils/stats.c" "../../../../os_wrapper.c" "${MCU_DIR}/drivers/serial/serial_drv.c" "${MCU_DIR}/drivers/netif/wifi_default.c" "${MCU_DIR}/drivers/netif/wifi_netif.c")
+
+list(APPEND COMPONENT_ADD_INCLUDEDIRS "." "${MCU_DIR}/drivers/transport" "${MCU_DIR}/drivers/transport/spi" "${MCU_DIR}/drivers/transport/sdio" "${MCU_DIR}/drivers/netif" "${MCU_DIR}/drivers/network" "${MCU_DIR}/drivers/serial" "${MCU_DIR}/utils" "${FG_ROOT_DIR}/common/include" "../../../.." )
+
+
+set(NETIF_DIR "${MCU_DIR}/drivers/netif")
+list(APPEND COMPONENT_SRCS "${NETIF_DIR}/wifi_default.c" "${NETIF_DIR}/wifi_netif.c" )
+list(APPEND COMPONENT_ADD_INCLUDEDIRS "${NETIF_DIR}" "${NETIF_DIR}/" )
+
 
 #components
-# control path lib files
-list(APPEND COMPONENT_SRCS  "${FG_ROOT_DIR}/host/common/control_lib/src/ctrl_core.c" "${FG_ROOT_DIR}/host/common/control_lib/src/ctrl_api.c" "${FG_ROOT_DIR}/host/common/virtual_serial_if/src/serial_if.c")
-list(APPEND COMPONENT_ADD_INCLUDEDIRS "${FG_ROOT_DIR}/host/common/control_lib/src/include" "${FG_ROOT_DIR}/host/common/control_lib/include" "${FG_ROOT_DIR}/host/common/virtual_serial_if/include")
-# esp_queue
-list(APPEND COMPONENT_SRCS "${FG_ROOT_DIR}/host/common/esp_queue/src/esp_queue.c")
-list(APPEND COMPONENT_ADD_INCLUDEDIRS "${FG_ROOT_DIR}/host/common/esp_queue/include")
-# mempool
-list(APPEND COMPONENT_SRCS "${FG_ROOT_DIR}/host/common/mempool/src/mempool.c")
-list(APPEND COMPONENT_ADD_INCLUDEDIRS "${FG_ROOT_DIR}/host/common/mempool/include" )
+# rpc lib files
+set(RPC_LIB_DIR "${FG_ROOT_DIR}/host/common/rpc_lib")
+set(RPC_CORE_DIR "${RPC_LIB_DIR}/core")
+list(APPEND COMPONENT_SRCS  "${RPC_CORE_DIR}/rpc_core.c" "${RPC_LIB_DIR}/rpc_req.c" "${RPC_LIB_DIR}/rpc_rsp.c" "${RPC_LIB_DIR}/rpc_evt.c" "${RPC_LIB_DIR}/rpc_api.c" "${FG_ROOT_DIR}/host/common/virtual_serial_if/serial_if.c")
+list(APPEND COMPONENT_ADD_INCLUDEDIRS "${RPC_CORE_DIR}" "${RPC_LIB_DIR}" "${FG_ROOT_DIR}/host/common/virtual_serial_if")
+
+list(APPEND COMPONENT_SRCS  "${FG_ROOT_DIR}/host/common/rpc_wrapper/rpc_wrapper.c" "${FG_ROOT_DIR}/host/common/rpc_wrapper/wifi/wifi_drv.c")
+list(APPEND COMPONENT_ADD_INCLUDEDIRS "${FG_ROOT_DIR}/host/common" "${FG_ROOT_DIR}/host/common/rpc_wrapper" "${FG_ROOT_DIR}/host/common/rpc_wrapper/wifi")
+
+# helpers - mempool
+list(APPEND COMPONENT_SRCS "${MCU_DIR}/components/mempool/mempool.c")
+list(APPEND COMPONENT_ADD_INCLUDEDIRS "${MCU_DIR}/components/mempool" )
+list(APPEND COMPONENT_ADD_INCLUDEDIRS "${MCU_DIR}/components/esp_system" )
 
 # protobuf files
-list(APPEND COMPONENT_SRCS "${FG_ROOT_DIR}/common/protobuf-c/protobuf-c/protobuf-c.c" "${FG_ROOT_DIR}/common/esp_hosted_config.pb-c.c" )
-list(APPEND COMPONENT_ADD_INCLUDEDIRS "${FG_ROOT_DIR}/common/protobuf-c" )
+list(APPEND COMPONENT_SRCS "${FG_ROOT_DIR}/common/protobuf-c/protobuf-c/protobuf-c.c" "${FG_ROOT_DIR}/common/proto/esp_hosted_rpc.pb-c.c" )
+list(APPEND COMPONENT_ADD_INCLUDEDIRS "${FG_ROOT_DIR}/common/protobuf-c" "${FG_ROOT_DIR}/common/proto" )
 
 # transport files
 if(CONFIG_ESP_SDIO_HOST_INTERFACE)
@@ -28,25 +38,5 @@ else(CONFIG_ESP_SPI_HOST_INTERFACE)
 	list(APPEND COMPONENT_SRCS "${MCU_DIR}/drivers/transport/spi/spi_drv.c")
 endif()
 
-
-register_component()
-
-# Add needed components to include path
-idf_component_get_property(freertos_dir freertos COMPONENT_DIR)
-target_include_directories(${COMPONENT_LIB} PRIVATE "${freertos_dir}/include/freertos")
-
-idf_component_get_property(driver_dir driver COMPONENT_DIR)
-#target_include_directories(${COMPONENT_LIB} PRIVATE "${driver_dir}/include")
-target_include_directories(${COMPONENT_LIB} PRIVATE "${driver_dir}/include" "${driver_dir}/spi/include" "${driver_dir}/gpio/include")
-
-idf_component_get_property(esp_timer_dir esp_timer COMPONENT_DIR)
-target_include_directories(${COMPONENT_LIB} PRIVATE "${esp_timer_dir}/include")
-
-idf_component_get_property(esp_event_dir esp_event COMPONENT_DIR)
-target_include_directories(${COMPONENT_LIB} PRIVATE "${esp_event_dir}/include")
-
-idf_component_get_property(nvs_flash_dir nvs_flash COMPONENT_DIR)
-target_include_directories(${COMPONENT_LIB} PRIVATE "${nvs_flash_dir}/include")
-
-idf_component_get_property(esp_partition_dir esp_partition COMPONENT_DIR)
-target_include_directories(${COMPONENT_LIB} PRIVATE "${esp_partition_dir}/include")
+#idf_component_register(SRCS ${COMPONENT_SRCS} EXCLUDE_SRCS ${EXCLUDE_COMPONENT_SRCS} INCLUDE_DIRS ${COMPONENT_ADD_INCLUDEDIRS} EXTRA_COMPONENT_DIRS "${XTRA_COMPONENTS}")
+idf_component_register(SRCS ${COMPONENT_SRCS} EXCLUDE_SRCS ${EXCLUDE_COMPONENT_SRCS} INCLUDE_DIRS ${COMPONENT_ADD_INCLUDEDIRS})

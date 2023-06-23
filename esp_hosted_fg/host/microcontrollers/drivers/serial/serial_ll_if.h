@@ -23,6 +23,7 @@ extern "C" {
 
 /** includes **/
 #include "transport_drv.h"
+#include "os_wrapper.h"
 
 struct serial_ll_operations;
 

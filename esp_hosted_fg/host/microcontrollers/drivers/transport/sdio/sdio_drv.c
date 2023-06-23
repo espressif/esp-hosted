@@ -23,6 +23,9 @@
 #include "sdio_ll.h"
 #include "serial_drv.h"
 #include "stats.h"
+#include "esp_log.h"
+
+static const char TAG[] = "H_SDIO_DRV";
 
 /** Constants/Macros **/
 #define TO_SLAVE_QUEUE_SIZE               10
@@ -196,7 +199,7 @@ static stm_ret_t generate_slave_intr(uint8_t intr_no)
 	stm_ret_t ret = STM_OK;
 
 	if (intr_no >= BIT(ESP_MAX_HOST_INTERRUPT)) {
-		printf("Invalid slave interrupt number\n\r");
+		ESP_LOGE(TAG,"Invalid slave interrupt number");
 		return STM_FAIL_INVALID_ARG;
 	}
 	xSemaphoreTake(transmit_mux, HOSTED_BLOCK_MAX);
@@ -220,7 +223,7 @@ static stm_ret_t io_init_seq(void)
 	/* sdio host mode init */
 	retval = sdio_host_init();
 	if (retval != STM_OK) {
-		printf("sdio init error,ret:%d\n\r", retval);
+		ESP_LOGE(TAG,"sdio init error,ret:%d", retval);
 		return STM_FAIL;
 	}
 	/* notify slave application that host driver is ready */
@@ -259,19 +262,17 @@ static stm_ret_t sdio_rx_esp32(void)
 				&size_read, RX_TIMEOUT_TICKS);
 
 		if (ret == STM_FAIL_NOT_FOUND) {
-			printf("interrupt but no data can be read\n\r");
+			ESP_LOGE(TAG,"interrupt but no data can be read");
 			break;
 		} else if (ret == STM_FAIL_TIMEOUT) {
 			continue;
 		} else if (ret && ret != STM_FAIL_NOT_FINISHED) {
-			printf("rx packet error: %d\n\r", ret);
+			ESP_LOGE(TAG,"rx packet error: %d", ret);
 			continue;
 		}
 
-#if DEBUG_TRANSPORT
 		/* Read buffer is easily accesible here, before processing */
-		//printf("data: %s size %u\n\r", (char*)(rxbuff), size_read);
-#endif
+		ESP_LOGV(TAG,"data: %s size %u", (char*)(rxbuff), size_read);
 
 		if (ret == STM_OK) {
 			break;
@@ -315,7 +316,7 @@ static stm_ret_t sdio_rx_esp32(void)
 			buf_handle.payload            = rxbuff + offset;
 			if (hosted_queue_item(from_slave_queue,
 						&buf_handle, HOSTED_BLOCK_MAX)) {
-				printf("Failed to send buffer\n\r");
+				ESP_LOGE(TAG,"Failed to send buffer");
 				goto done;
 			}
 		}
@@ -360,7 +361,7 @@ static void sdio_recv(void)
 	/* Clear interrupt */
 	ret = sdio_host_clear_intr(intr_st);
 	if (ret) {
-		//printf("clear intr %lx ret %x\n\r", intr_st, ret);
+		ESP_LOGV(TAG,"clear intr %lx ret %x", intr_st, ret);
 		__SDIO_CLEAR_FLAG(SDIO, SDIO_STATIC_DATA_FLAGS);
 	}
 	xSemaphoreGive(transmit_mux);
@@ -381,9 +382,9 @@ static void sdio_recv(void)
 static void rx_task(void const* pvParameters)
 {
 	if (hardware_type == HARDWARE_TYPE_ESP32) {
-		printf("\n\rESP-Hosted for ESP32\n\r");
+		ESP_LOGI(TAG,"ESP-Hosted for ESP32");
 	} else {
-		printf("Unsupported slave hardware\n\r");
+		ESP_LOGI(TAG,"Unsupported slave hardware");
 		assert(hardware_type != HARDWARE_TYPE_INVALID);
 	}
 
@@ -446,7 +447,7 @@ static void process_rx_task(void const* pvParameters)
 
 			process_priv_communication(buf_handle.payload, buf_handle.payload_len);
 			/* priv transaction received */
-			printf("Received INIT event\n\r");
+			ESP_LOGI(TAG,"Received INIT event");
 			event = (struct esp_priv_event *) (buf_handle.payload);
 			if (event->event_type == ESP_PRIV_EVENT_INIT) {
 				/* User can re-use this type of transaction */
@@ -461,7 +462,7 @@ static void process_rx_task(void const* pvParameters)
 			update_test_raw_tp_rx_len(buf_handle.payload_len);
 #endif
 		} else {
-			printf("unknown type %d \n\r", buf_handle.if_type);
+			ESP_LOGE(TAG,"unknown type %d ", buf_handle.if_type);
 		}
 		/* Free buffer handle */
 		/* When buffer offloaded to other module, that module is
@@ -489,9 +490,9 @@ static void tx_task(void const* pvParameters)
 	uint32_t total_len = 0;
 
 	if (hardware_type == HARDWARE_TYPE_ESP32) {
-		printf("\n\rESP-Hosted for ESP32\n\r");
+		ESP_LOGI(TAG,"ESP-Hosted for ESP32");
 	} else {
-		printf("Unsupported slave hardware\n\r");
+		ESP_LOGE(TAG,"Unsupported slave hardware");
 		assert(hardware_type != HARDWARE_TYPE_INVALID);
 	}
 
@@ -503,7 +504,7 @@ static void tx_task(void const* pvParameters)
 			if (!buf_handle.payload_len)
 				continue;
 			if (buf_handle.payload_len > MAX_PAYLOAD_SIZE) {
-				printf("Pkt dropped. Size[%u] > Max pkt size for SDIO interface[%u]\n\r",
+				ESP_LOGE(TAG,"Pkt dropped. Size[%u] > Max pkt size for SDIO interface[%u]",
 						buf_handle.payload_len, MAX_PAYLOAD_SIZE);
 				continue;
 			}
@@ -514,7 +515,7 @@ static void tx_task(void const* pvParameters)
 			sendbuf = (uint8_t *)g_h.funcs->_h_malloc(total_len);
 
 			if (!sendbuf) {
-				printf("malloc failed\n\r");
+				ESP_LOGE(TAG,"malloc failed");
 				goto done;
 			}
 			g_h.funcs->_h_memset(sendbuf, 0, total_len);
@@ -536,9 +537,9 @@ static void tx_task(void const* pvParameters)
 			xSemaphoreGive(transmit_mux);
 
 			if (ret == STM_FAIL_TIMEOUT) {
-				printf("send timeout, maybe SDIO slave restart, reinit SDIO slave\n\r");
+				ESP_LOGE(TAG,"send timeout, maybe SDIO slave restart, reinit SDIO slave");
 			} else if (ret != STM_OK) {
-				printf("sdio send err 0x%x\n\r", ret);
+				ESP_LOGE(TAG,"sdio send err 0x%x", ret);
 			}
 			/* De-allocate tx buffer */
 			g_h.funcs->_h_free(sendbuf);
@@ -570,7 +571,7 @@ void transport_init(void(*transport_evt_handler_fp)(uint8_t))
 
 	retval = init_netdev();
 	if (retval) {
-		printf("netdev failed to init\n\r");
+		ESP_LOGE(TAG,"netdev failed to init");
 		assert(retval==STM_OK);
 	}
 
@@ -627,7 +628,7 @@ esp_err_t esp_hosted_tx(uint8_t iface_type, uint8_t iface_num,
 	interface_buffer_handle_t buf_handle = {0};
 
 	if (!wbuffer || !wlen || (wlen > MAX_PAYLOAD_SIZE)) {
-		printf("write fail: buff(%p) 0? OR (0<len(%u)<=max_poss_len(%u))?\n\r",
+		ESP_LOGE(TAG,"write fail: buff(%p) 0? OR (0<len(%u)<=max_poss_len(%u))?",
 				wbuffer, wlen, MAX_PAYLOAD_SIZE);
 		if (wbuffer) {
 			g_h.funcs->_h_free(wbuffer);
@@ -644,7 +645,7 @@ esp_err_t esp_hosted_tx(uint8_t iface_type, uint8_t iface_num,
 	buf_handle.free_buf_handle = g_h.funcs->_h_free;
 
 	if (hosted_queue_item(to_slave_queue, &buf_handle, HOSTED_BLOCK_MAX)) {
-		printf("Failed to send buffer to_slave_queue\n\r");
+		ESP_LOGE(TAG,"Failed to send buffer to_slave_queue");
 		if (wbuffer) {
 			g_h.funcs->_h_free(wbuffer);
 			wbuffer = NULL;

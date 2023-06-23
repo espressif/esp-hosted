@@ -67,26 +67,6 @@ menu "Example Configuration"
 	    endchoice
 
 
-		menu "Wi-Fi Config inherited from ESP-IDF"
-
-			config ESP32_WIFI_STATIC_RX_BUFFER_NUM
-    		    int "param static rx buffs"
-    		    default 10
-
-			config ESP32_WIFI_DYNAMIC_RX_BUFFER_NUM
-    		    int "param dynamic rx buffs"
-    		    default 32
-
-			config ESP32_WIFI_TX_BUFFER_TYPE
-    		    int "param tx buff type"
-    		    default 1
-
-			config ESP_WIFI_ESPNOW_MAX_ENCRYPT_NUM
-    		    int "esp now mac encrypt"
-    		    default 2
-
-		endmenu
-
 		menu "SPI Configuration"
     	    depends on ESP_SPI_HOST_INTERFACE
 
@@ -190,7 +170,7 @@ menu "Example Configuration"
 
 		endmenu
 
-		config ESP_CACHE_MALLOC
+		config ESP_USE_MEMPOOL
     	    bool "Cache allocated memory like mempool - helps to reduce malloc calls"
     	    default y
     	    help

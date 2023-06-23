@@ -25,24 +25,24 @@ extern "C" {
 
 /** Exported Functions **/
 /*
- * control_path_platform_init function initializes the control
+ * rpc_platform_init function initializes the rpc
  * path data structures
  * Input parameter
  *      None
  * Returns
  *      SUCCESS(0) or FAILURE(-1) of above operation
  */
-int control_path_platform_init(void);
+int rpc_platform_init(void);
 
 /*
- * control_path_platform_deinit function cleans up the control
+ * rpc_platform_deinit function cleans up the rpc
  * path library data structure
  * Input parameter
  *      None
  * Returns
  *      SUCCESS(0) or FAILURE(-1) of above operation
  */
-int control_path_platform_deinit(void);
+int rpc_platform_deinit(void);
 
 /*
  * serial_drv_open function opens driver interface.

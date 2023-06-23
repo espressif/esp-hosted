@@ -1,0 +1,68 @@
+name: CI
+
+on: [push, pull_request]
+
+jobs:
+  build-and-test:
+    strategy:
+      matrix:
+        compiler: [gcc, clang]
+    env:
+      CC: ${{ matrix.compiler }}
+      LSAN_OPTIONS: verbosity=1:log_threads=1
+      WGET_PATH: http://download.savannah.nongnu.org/releases/lwip
+      CONTRIB: contrib-2.1.0
+      WGET_CHECK2JUNIT_PY: https://raw.githubusercontent.com/gsauthof/utility/42792030/check2junit.py
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Install deps
+      run: |
+        sudo apt-get install check ninja-build doxygen
+        wget --no-verbose ${WGET_PATH}/${CONTRIB}.zip
+        unzip -oq ${CONTRIB}.zip
+        patch -s -p0 < test/${CONTRIB}.patch
+        python -m pip install lxml junit-xml
+        wget --no-verbose ${WGET_CHECK2JUNIT_PY}
+
+    - name: Build and Run unit tests with make and cmake
+      run: ./test/ci/unit_tests.sh
+
+    - name: Run cmake
+      run: mkdir build && cd build && cmake .. -G Ninja
+    - name: Build with cmake
+      run: cd build && cmake --build .
+    - name: Build docs with cmake
+      run: cd build && cmake --build . --target lwipdocs
+
+    - name: Validate combinations of options
+      run: ./test/ci/validate_opts.sh
+
+    - name: Build and run test apps
+      run: ./test/ci/test_apps.sh
+
+    - name: Upload Test Results
+      if: always()
+      uses: actions/upload-artifact@v2
+      with:
+        name: Test Results ${{ matrix.compiler }}
+        path: "*.xml"
+
+  publish-test-results:
+    name: "Publish Tests Results"
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    permissions:
+      checks: write
+    if: always()
+    steps:
+      - name: Download Artifacts
+        uses: actions/download-artifact@v2
+        with:
+          path: artifacts
+
+      - name: Publish Test Results
+        uses: EnricoMi/publish-unit-test-result-action@v2
+        with:
+          junit_files: "artifacts/**/*.xml"
