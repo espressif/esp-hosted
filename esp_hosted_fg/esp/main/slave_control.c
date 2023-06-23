@@ -2961,7 +2961,7 @@ static esp_err_t req_wifi_sta_get_rssi(Rpc *req, Rpc *resp, void *priv_data)
 	return ESP_OK;
 }
 
-static esp_err_t req_wifi_scan_start(CtrlMsg *req, CtrlMsg *resp, void *priv_data)
+static esp_err_t req_wifi_scan_start(Rpc *req, Rpc *resp, void *priv_data)
 {
 	wifi_scan_config_t scan_conf = {0};
 	WifiScanConfig *p_c = NULL;
@@ -2969,17 +2969,17 @@ static esp_err_t req_wifi_scan_start(CtrlMsg *req, CtrlMsg *resp, void *priv_dat
 	wifi_scan_config_t * p_a = &scan_conf;
 	wifi_scan_time_t *p_a_st = &p_a->scan_time;
 
-    CTRL_TEMPLATE(CtrlMsgRespWifiScanStart, resp_wifi_scan_start,
-			CtrlMsgReqWifiScanStart, req_wifi_scan_start,
-			ctrl_msg__resp__wifi_scan_start__init);
+    RPC_TEMPLATE(RpcRespWifiScanStart, resp_wifi_scan_start,
+			RpcReqWifiScanStart, req_wifi_scan_start,
+			rpc__resp__wifi_scan_start__init);
 
 	p_c = req_payload->config;
 
 	if (!req_payload->config || !req_payload->config_set) {
 		p_a = NULL;
 	} else {
-		//CTRL_REQ_COPY_STR(p_a->ssid, p_c->ssid, SSID_LENGTH);
-		//CTRL_REQ_COPY_STR(p_a->bssid, p_c->ssid, MAC_SIZE_BYTES);
+		//RPC_REQ_COPY_STR(p_a->ssid, p_c->ssid, SSID_LENGTH);
+		//RPC_REQ_COPY_STR(p_a->bssid, p_c->ssid, MAC_SIZE_BYTES);
 
 		/* Note these are only pointers, not allocating memory for that */
 		if (p_c->ssid.len)
@@ -2998,39 +2998,39 @@ static esp_err_t req_wifi_scan_start(CtrlMsg *req, CtrlMsg *resp, void *priv_dat
 		p_a_st->active.max = p_c_st->active->max ;
 	}
 
-    CTRL_RET_FAIL_IF(esp_wifi_scan_start(p_a, req_payload->block));
+    RPC_RET_FAIL_IF(esp_wifi_scan_start(p_a, req_payload->block));
 
 	return ESP_OK;
 }
 
-static esp_err_t req_wifi_scan_stop(CtrlMsg *req, CtrlMsg *resp, void *priv_data)
+static esp_err_t req_wifi_scan_stop(Rpc *req, Rpc *resp, void *priv_data)
 {
-    CTRL_TEMPLATE_SIMPLE(CtrlMsgRespWifiScanStop, resp_wifi_scan_stop,
-			CtrlMsgReqWifiScanStop, req_wifi_scan_stop,
-			ctrl_msg__resp__wifi_scan_stop__init);
+    RPC_TEMPLATE_SIMPLE(RpcRespWifiScanStop, resp_wifi_scan_stop,
+			RpcReqWifiScanStop, req_wifi_scan_stop,
+			rpc__resp__wifi_scan_stop__init);
 
-    CTRL_RET_FAIL_IF(esp_wifi_scan_stop());
+    RPC_RET_FAIL_IF(esp_wifi_scan_stop());
 	return ESP_OK;
 }
 
-static esp_err_t req_wifi_scan_get_ap_num(CtrlMsg *req, CtrlMsg *resp, void *priv_data)
+static esp_err_t req_wifi_scan_get_ap_num(Rpc *req, Rpc *resp, void *priv_data)
 {
 	uint16_t number = 0;
 	int ret = 0;
 
-    CTRL_TEMPLATE_SIMPLE(CtrlMsgRespWifiScanGetApNum, resp_wifi_scan_get_ap_num,
-			CtrlMsgReqWifiScanGetApNum, req_wifi_scan_get_ap_num,
-			ctrl_msg__resp__wifi_scan_get_ap_num__init);
+    RPC_TEMPLATE_SIMPLE(RpcRespWifiScanGetApNum, resp_wifi_scan_get_ap_num,
+			RpcReqWifiScanGetApNum, req_wifi_scan_get_ap_num,
+			rpc__resp__wifi_scan_get_ap_num__init);
 
 	ret = esp_wifi_scan_get_ap_num(&number);
-    CTRL_RET_FAIL_IF(ret);
+    RPC_RET_FAIL_IF(ret);
 
 	resp_payload->number = number;
 
 	return ESP_OK;
 }
 
-static esp_err_t req_wifi_scan_get_ap_records(CtrlMsg *req, CtrlMsg *resp, void *priv_data)
+static esp_err_t req_wifi_scan_get_ap_records(Rpc *req, Rpc *resp, void *priv_data)
 {
 	uint16_t number = 0;
 	uint16_t ap_count = 0;
@@ -3042,9 +3042,9 @@ static esp_err_t req_wifi_scan_get_ap_records(CtrlMsg *req, CtrlMsg *resp, void 
 	WifiCountry * p_c_country = NULL;
 	wifi_country_t * p_a_country = NULL;
 
-    CTRL_TEMPLATE_SIMPLE(CtrlMsgRespWifiScanGetApRecords, resp_wifi_scan_get_ap_records,
-			CtrlMsgReqWifiScanGetApRecords, req_wifi_scan_get_ap_records,
-			ctrl_msg__resp__wifi_scan_get_ap_records__init);
+    RPC_TEMPLATE_SIMPLE(RpcRespWifiScanGetApRecords, resp_wifi_scan_get_ap_records,
+			RpcReqWifiScanGetApRecords, req_wifi_scan_get_ap_records,
+			rpc__resp__wifi_scan_get_ap_records__init);
 
 	number = req->req_wifi_scan_get_ap_records->number;
 	ESP_LOGI(TAG,"n_elem_scan_list predicted: %u\n", number);
@@ -3052,7 +3052,7 @@ static esp_err_t req_wifi_scan_get_ap_records(CtrlMsg *req, CtrlMsg *resp, void 
 
 
 	p_a_ap_list = (wifi_ap_record_t *)calloc(number, sizeof(wifi_ap_record_t));
-	CTRL_RET_FAIL_IF(!p_a_ap_list);
+	RPC_RET_FAIL_IF(!p_a_ap_list);
 
 
 	ret = esp_wifi_scan_get_ap_num(&ap_count);
@@ -3080,8 +3080,8 @@ static esp_err_t req_wifi_scan_get_ap_records(CtrlMsg *req, CtrlMsg *resp, void 
 
 	for (i=0;i<number;i++) {
 		printf("\n\nap_record[%u]:\n", i+1);
-		CTRL_ALLOC_ELEMENT(WifiApRecord, resp_payload->ap_records[i], wifi_ap_record__init);
-		CTRL_ALLOC_ELEMENT(WifiCountry, resp_payload->ap_records[i]->country, wifi_country__init);
+		RPC_ALLOC_ELEMENT(WifiApRecord, resp_payload->ap_records[i], wifi_ap_record__init);
+		RPC_ALLOC_ELEMENT(WifiCountry, resp_payload->ap_records[i]->country, wifi_country__init);
 		p_c_ap_record = resp_payload->ap_records[i];
 		p_c_country = p_c_ap_record->country;
 		p_a_country = &p_a_ap_list[i].country;
@@ -3095,8 +3095,8 @@ static esp_err_t req_wifi_scan_get_ap_records(CtrlMsg *req, CtrlMsg *resp, void 
 			p_a_ap_list[i].wps, p_a_ap_list[i].ftm_responder,
 			p_a_ap_list[i].ftm_initiator, p_a_ap_list[i].reserved
 			);
-		CTRL_RESP_COPY_STR(p_c_ap_record->ssid, p_a_ap_list[i].ssid, SSID_LENGTH);
-		CTRL_RESP_COPY_BYTES(p_c_ap_record->bssid, p_a_ap_list[i].bssid, BSSID_BYTES_SIZE);
+		RPC_RESP_COPY_STR(p_c_ap_record->ssid, p_a_ap_list[i].ssid, SSID_LENGTH);
+		RPC_RESP_COPY_BYTES(p_c_ap_record->bssid, p_a_ap_list[i].bssid, BSSID_BYTES_SIZE);
 		p_c_ap_record->primary = p_a_ap_list[i].primary;
 		p_c_ap_record->second = p_a_ap_list[i].second;
 		p_c_ap_record->rssi = p_a_ap_list[i].rssi;
@@ -3107,30 +3107,30 @@ static esp_err_t req_wifi_scan_get_ap_records(CtrlMsg *req, CtrlMsg *resp, void 
 
 		/*Bitmask*/
 		if (p_a_ap_list[i].phy_11b)
-			SET_BIT(WIFI_SCAN_AP_REC_phy_11b_BIT,p_c_ap_record->bitmask);
+			H_SET_BIT(WIFI_SCAN_AP_REC_phy_11b_BIT,p_c_ap_record->bitmask);
 
 		if (p_a_ap_list[i].phy_11g)
-			SET_BIT(WIFI_SCAN_AP_REC_phy_11g_BIT,p_c_ap_record->bitmask);
+			H_SET_BIT(WIFI_SCAN_AP_REC_phy_11g_BIT,p_c_ap_record->bitmask);
 
 		if (p_a_ap_list[i].phy_11n)
-			SET_BIT(WIFI_SCAN_AP_REC_phy_11n_BIT,p_c_ap_record->bitmask);
+			H_SET_BIT(WIFI_SCAN_AP_REC_phy_11n_BIT,p_c_ap_record->bitmask);
 
 		if (p_a_ap_list[i].phy_lr)
-			SET_BIT(WIFI_SCAN_AP_REC_phy_lr_BIT,p_c_ap_record->bitmask);
+			H_SET_BIT(WIFI_SCAN_AP_REC_phy_lr_BIT,p_c_ap_record->bitmask);
 
 		if (p_a_ap_list[i].wps)
-			SET_BIT(WIFI_SCAN_AP_REC_wps_BIT,p_c_ap_record->bitmask);
+			H_SET_BIT(WIFI_SCAN_AP_REC_wps_BIT,p_c_ap_record->bitmask);
 
 		if (p_a_ap_list[i].ftm_responder)
-			SET_BIT(WIFI_SCAN_AP_REC_ftm_responder_BIT,p_c_ap_record->bitmask);
+			H_SET_BIT(WIFI_SCAN_AP_REC_ftm_responder_BIT,p_c_ap_record->bitmask);
 
 		if (p_a_ap_list[i].ftm_initiator)
-			SET_BIT(WIFI_SCAN_AP_REC_ftm_initiator_BIT,p_c_ap_record->bitmask);
+			H_SET_BIT(WIFI_SCAN_AP_REC_ftm_initiator_BIT,p_c_ap_record->bitmask);
 
 		WIFI_SCAN_AP_SET_RESERVED_VAL(p_a_ap_list[i].reserved, p_c_ap_record->bitmask);
 
 		/* country */
-		CTRL_RESP_COPY_BYTES(p_c_country->cc, p_a_country->cc, sizeof(p_a_country->cc));
+		RPC_RESP_COPY_BYTES(p_c_country->cc, p_a_country->cc, sizeof(p_a_country->cc));
 		p_c_country->schan = p_a_country->schan;
 		p_c_country->nchan = p_a_country->nchan;
 		p_c_country->max_tx_power = p_a_country->max_tx_power;
@@ -3139,7 +3139,7 @@ static esp_err_t req_wifi_scan_get_ap_records(CtrlMsg *req, CtrlMsg *resp, void 
 		printf("Country:\tcc:%s schan: %u nchan: %u max_tx_pow: %d policy: %u\n",
 			p_a_country->cc, p_a_country->schan, p_a_country->nchan,
 			p_a_country->max_tx_power,p_a_country->policy);
-		/* increment num of records in ctrl msg */
+		/* increment num of records in rpc msg */
 		resp_payload->n_ap_records++;
 	}
 
@@ -3148,51 +3148,51 @@ err:
 	return ESP_OK;
 }
 
-static esp_err_t req_wifi_clear_ap_list(CtrlMsg *req, CtrlMsg *resp, void *priv_data)
+static esp_err_t req_wifi_clear_ap_list(Rpc *req, Rpc *resp, void *priv_data)
 {
-    CTRL_TEMPLATE_SIMPLE(CtrlMsgRespWifiClearApList, resp_wifi_clear_ap_list,
-			CtrlMsgReqWifiClearApList, req_wifi_clear_ap_list,
-			ctrl_msg__resp__wifi_clear_ap_list__init);
+    RPC_TEMPLATE_SIMPLE(RpcRespWifiClearApList, resp_wifi_clear_ap_list,
+			RpcReqWifiClearApList, req_wifi_clear_ap_list,
+			rpc__resp__wifi_clear_ap_list__init);
 
-    CTRL_RET_FAIL_IF(esp_wifi_clear_ap_list());
+    RPC_RET_FAIL_IF(esp_wifi_clear_ap_list());
 	return ESP_OK;
 }
 
-static esp_err_t req_wifi_restore(CtrlMsg *req, CtrlMsg *resp, void *priv_data)
+static esp_err_t req_wifi_restore(Rpc *req, Rpc *resp, void *priv_data)
 {
-    CTRL_TEMPLATE_SIMPLE(CtrlMsgRespWifiRestore, resp_wifi_restore,
-			CtrlMsgReqWifiRestore, req_wifi_restore,
-			ctrl_msg__resp__wifi_restore__init);
+    RPC_TEMPLATE_SIMPLE(RpcRespWifiRestore, resp_wifi_restore,
+			RpcReqWifiRestore, req_wifi_restore,
+			rpc__resp__wifi_restore__init);
 
-    CTRL_RET_FAIL_IF(esp_wifi_restore());
+    RPC_RET_FAIL_IF(esp_wifi_restore());
 	return ESP_OK;
 }
 
-static esp_err_t req_wifi_clear_fast_connect(CtrlMsg *req, CtrlMsg *resp, void *priv_data)
+static esp_err_t req_wifi_clear_fast_connect(Rpc *req, Rpc *resp, void *priv_data)
 {
-    CTRL_TEMPLATE_SIMPLE(CtrlMsgRespWifiClearFastConnect, resp_wifi_clear_fast_connect,
-			CtrlMsgReqWifiClearFastConnect, req_wifi_clear_fast_connect,
-			ctrl_msg__resp__wifi_clear_fast_connect__init);
+    RPC_TEMPLATE_SIMPLE(RpcRespWifiClearFastConnect, resp_wifi_clear_fast_connect,
+			RpcReqWifiClearFastConnect, req_wifi_clear_fast_connect,
+			rpc__resp__wifi_clear_fast_connect__init);
 
-    CTRL_RET_FAIL_IF(esp_wifi_clear_fast_connect());
+    RPC_RET_FAIL_IF(esp_wifi_clear_fast_connect());
 	return ESP_OK;
 }
 
-static esp_err_t req_wifi_sta_get_ap_info(CtrlMsg *req, CtrlMsg *resp, void *priv_data)
+static esp_err_t req_wifi_sta_get_ap_info(Rpc *req, Rpc *resp, void *priv_data)
 {
 	wifi_ap_record_t p_a_ap_info = {0};
 	WifiApRecord *p_c_ap_record = NULL;
 	WifiCountry * p_c_country = NULL;
 	wifi_country_t * p_a_country = NULL;
 
-    CTRL_TEMPLATE_SIMPLE(CtrlMsgRespWifiStaGetApInfo, resp_wifi_sta_get_ap_info,
-			CtrlMsgReqWifiStaGetApInfo, req_wifi_sta_get_ap_info,
-			ctrl_msg__resp__wifi_sta_get_ap_info__init);
+    RPC_TEMPLATE_SIMPLE(RpcRespWifiStaGetApInfo, resp_wifi_sta_get_ap_info,
+			RpcReqWifiStaGetApInfo, req_wifi_sta_get_ap_info,
+			rpc__resp__wifi_sta_get_ap_info__init);
 
 
-    CTRL_RET_FAIL_IF(esp_wifi_sta_get_ap_info(&p_a_ap_info));
-	CTRL_ALLOC_ELEMENT(WifiApRecord, resp_payload->ap_records, wifi_ap_record__init);
-	CTRL_ALLOC_ELEMENT(WifiCountry, resp_payload->ap_records->country, wifi_country__init);
+    RPC_RET_FAIL_IF(esp_wifi_sta_get_ap_info(&p_a_ap_info));
+	RPC_ALLOC_ELEMENT(WifiApRecord, resp_payload->ap_records, wifi_ap_record__init);
+	RPC_ALLOC_ELEMENT(WifiCountry, resp_payload->ap_records->country, wifi_country__init);
 	p_c_ap_record = resp_payload->ap_records;
 	p_c_country = p_c_ap_record->country;
 	p_a_country = &p_a_ap_info.country;
@@ -3207,8 +3207,8 @@ static esp_err_t req_wifi_sta_get_ap_info(CtrlMsg *req, CtrlMsg *resp, void *pri
 			p_a_ap_info.wps, p_a_ap_info.ftm_responder,
 			p_a_ap_info.ftm_initiator, p_a_ap_info.reserved);
 
-	CTRL_RESP_COPY_STR(p_c_ap_record->ssid, p_a_ap_info.ssid, SSID_LENGTH);
-	CTRL_RESP_COPY_BYTES(p_c_ap_record->bssid, p_a_ap_info.bssid, BSSID_BYTES_SIZE);
+	RPC_RESP_COPY_STR(p_c_ap_record->ssid, p_a_ap_info.ssid, SSID_LENGTH);
+	RPC_RESP_COPY_BYTES(p_c_ap_record->bssid, p_a_ap_info.bssid, BSSID_BYTES_SIZE);
 	p_c_ap_record->primary = p_a_ap_info.primary;
 	p_c_ap_record->second = p_a_ap_info.second;
 	p_c_ap_record->rssi = p_a_ap_info.rssi;
@@ -3219,30 +3219,30 @@ static esp_err_t req_wifi_sta_get_ap_info(CtrlMsg *req, CtrlMsg *resp, void *pri
 
 	/*Bitmask*/
 	if (p_a_ap_info.phy_11b)
-		SET_BIT(WIFI_SCAN_AP_REC_phy_11b_BIT,p_c_ap_record->bitmask);
+		H_SET_BIT(WIFI_SCAN_AP_REC_phy_11b_BIT,p_c_ap_record->bitmask);
 
 	if (p_a_ap_info.phy_11g)
-		SET_BIT(WIFI_SCAN_AP_REC_phy_11g_BIT,p_c_ap_record->bitmask);
+		H_SET_BIT(WIFI_SCAN_AP_REC_phy_11g_BIT,p_c_ap_record->bitmask);
 
 	if (p_a_ap_info.phy_11n)
-		SET_BIT(WIFI_SCAN_AP_REC_phy_11n_BIT,p_c_ap_record->bitmask);
+		H_SET_BIT(WIFI_SCAN_AP_REC_phy_11n_BIT,p_c_ap_record->bitmask);
 
 	if (p_a_ap_info.phy_lr)
-		SET_BIT(WIFI_SCAN_AP_REC_phy_lr_BIT,p_c_ap_record->bitmask);
+		H_SET_BIT(WIFI_SCAN_AP_REC_phy_lr_BIT,p_c_ap_record->bitmask);
 
 	if (p_a_ap_info.wps)
-		SET_BIT(WIFI_SCAN_AP_REC_wps_BIT,p_c_ap_record->bitmask);
+		H_SET_BIT(WIFI_SCAN_AP_REC_wps_BIT,p_c_ap_record->bitmask);
 
 	if (p_a_ap_info.ftm_responder)
-		SET_BIT(WIFI_SCAN_AP_REC_ftm_responder_BIT,p_c_ap_record->bitmask);
+		H_SET_BIT(WIFI_SCAN_AP_REC_ftm_responder_BIT,p_c_ap_record->bitmask);
 
 	if (p_a_ap_info.ftm_initiator)
-		SET_BIT(WIFI_SCAN_AP_REC_ftm_initiator_BIT,p_c_ap_record->bitmask);
+		H_SET_BIT(WIFI_SCAN_AP_REC_ftm_initiator_BIT,p_c_ap_record->bitmask);
 
 	WIFI_SCAN_AP_SET_RESERVED_VAL(p_a_ap_info.reserved, p_c_ap_record->bitmask);
 
 	/* country */
-	CTRL_RESP_COPY_BYTES(p_c_country->cc, p_a_country->cc, sizeof(p_a_country->cc));
+	RPC_RESP_COPY_BYTES(p_c_country->cc, p_a_country->cc, sizeof(p_a_country->cc));
 	p_c_country->schan = p_a_country->schan;
 	p_c_country->nchan = p_a_country->nchan;
 	p_c_country->max_tx_power = p_a_country->max_tx_power;
@@ -3251,20 +3251,20 @@ static esp_err_t req_wifi_sta_get_ap_info(CtrlMsg *req, CtrlMsg *resp, void *pri
 	printf("Country:\tcc:%s schan: %u nchan: %u max_tx_pow: %d policy: %u\n",
 			p_a_country->cc, p_a_country->schan, p_a_country->nchan,
 			p_a_country->max_tx_power,p_a_country->policy);
-	/* increment num of records in ctrl msg */
+	/* increment num of records in rpc msg */
 
 err:
 	return ESP_OK;
 }
 
 
-static esp_err_t req_wifi_deauth_sta(CtrlMsg *req, CtrlMsg *resp, void *priv_data)
+static esp_err_t req_wifi_deauth_sta(Rpc *req, Rpc *resp, void *priv_data)
 {
-    CTRL_TEMPLATE(CtrlMsgRespWifiDeauthSta, resp_wifi_deauth_sta,
-			CtrlMsgReqWifiDeauthSta, req_wifi_deauth_sta,
-			ctrl_msg__resp__wifi_deauth_sta__init);
+    RPC_TEMPLATE(RpcRespWifiDeauthSta, resp_wifi_deauth_sta,
+			RpcReqWifiDeauthSta, req_wifi_deauth_sta,
+			rpc__resp__wifi_deauth_sta__init);
 
-    CTRL_RET_FAIL_IF(esp_wifi_deauth_sta(req_payload->aid));
+    RPC_RET_FAIL_IF(esp_wifi_deauth_sta(req_payload->aid));
 	return ESP_OK;
 }
 

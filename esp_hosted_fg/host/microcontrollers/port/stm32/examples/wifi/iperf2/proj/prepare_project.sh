@@ -42,7 +42,7 @@ else
 	fi
 	TRANSPORT=$1
 	WORKSPACE=$2
-	PROJ_NAME=stm_${TRANSPORT}_host
+	PROJ_NAME=stm32h743zi_spi
 fi
 
 
@@ -60,9 +60,6 @@ fi
 if [ ! -d $WORKSPACE/$PROJ_NAME ]; then
 	echo "Err: Either incorrect Workspace directory or ioc project not imported."
 	echo "Please follow documentation to import STM project from stm_<transport>_host_<ESP_slave_board_type>.ioc if not already done"
-	echo "SPI : for ESP32 wroom/wrover use stm_spi_host_v1.ioc "
-	echo "	  : for other ESP modules use stm_spi_host_v2.ioc"
-	echo "SDIO: for ESP32 use stm_sdio_host.ioc"
 	usage
 	exit 1;
 fi

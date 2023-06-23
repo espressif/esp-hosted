@@ -49,6 +49,17 @@ static const char TAG[] = "SPI_DRIVER";
 #define SPI_RX_QUEUE_SIZE          CONFIG_ESP_SPI_RX_Q_SIZE
 #define SPI_TX_QUEUE_SIZE          CONFIG_ESP_SPI_TX_Q_SIZE
 
+#if CONFIG_ESP_SPI_MODE_0
+#  error "SPI mode 0 at SLAVE is NOT supported"
+#  define SPI_MODE SPI_MODE_0
+#elif CONFIG_ESP_SPI_MODE_1
+#  define SPI_MODE SPI_MODE_1
+#elif CONFIG_ESP_SPI_MODE_2
+#  define SPI_MODE SPI_MODE_2
+#elif CONFIG_ESP_SPI_MODE_3
+#  define SPI_MODE SPI_MODE_3
+#endif
+
 /* SPI-DMA settings */
 #define SPI_DMA_ALIGNMENT_BYTES    4
 #define SPI_DMA_ALIGNMENT_MASK     (SPI_DMA_ALIGNMENT_BYTES-1)

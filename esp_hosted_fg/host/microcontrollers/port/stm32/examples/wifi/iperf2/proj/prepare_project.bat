@@ -33,10 +33,7 @@ cd %CWD%
 rem  ### check workspace directory exist ###
 IF not exist %WORKSPACE% (
 echo %WORKSPACE% does not exist
-echo For <SPI> transport and ESP one from <ESP32-C2/C3/C6/S2/S3> use spi/stm_spi_host_v2.ioc, if not already done
-echo For <SPI> transport and <ESP32> use spi/stm_spi_host_v1.ioc, if not already done
-echo For <SDIO> transport and <ESP32> use sdio/stm_sdio_host.ioc, if not already done
-
+echo Please follow documentation to import STM project from stm_<TRANSPORT>_host_<ESP_slave_board_type>.ioc, if not already done
 goto error
  )
 
@@ -44,9 +41,7 @@ rem  ### check project directory exist ###
 IF not exist %WORKSPACE%\%PROJ_NAME%  (
 echo %WORKSPACE%\%PROJ_NAME% does not exist
 echo Either incorrect workspace directory or ioc project not imported
-echo For <SPI> transport and ESP one from <ESP32-C2/C3/C6/S2/S3> use spi/stm_spi_host_v2.ioc, if not already done
-echo For <SPI> transport and <ESP32> use spi/stm_spi_host_v1.ioc, if not already done
-echo For <SDIO> transport and <ESP32> use sdio/stm_sdio_host.ioc, if not already done
+echo Please follow documentation to import STM project from stm_<TRANSPORT>_host_<ESP_slave_board_type>.ioc, if not already done
 goto error
  )
 
@@ -54,17 +49,10 @@ rem ### search and replace project files ###
 DEL %WORKSPACE%\%PROJ_NAME%\.project 2>NUL
 DEL %WORKSPACE%\%PROJ_NAME%\.cproject 2>NUL
 
-rem ### .project file requires '/' instead of '\' as filepath separator
-rem ### and leading '/' before the filepath to work properly
-rem ### in STM32CubeIDE on Windows 11
-rem ### example: c:\esp\esp_hosted\esp_hosted_fg is converted to:
-rem ###          /c:/esp/esp_hosted/esp_hosted_fg
-set "CODE_BASE_2=/%CODE_BASE:\=/%"
-
 setLocal EnableDelayedExpansion
 For /f "tokens=* delims= " %%a in (%TRANSPORT%\.project) do (
 Set str=%%a
-set str=!str:CODE_BASE_PLACE_HOLDER=%CODE_BASE_2%!
+set str=!str:CODE_BASE_PLACE_HOLDER=%CODE_BASE%!
 echo !str!>>  %WORKSPACE%\%PROJ_NAME%\.project
 )
 ENDLOCAL

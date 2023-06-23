@@ -1557,16 +1557,16 @@ message Rpc {
 
 		Rpc_Req_WifiStaGetRssi              req_wifi_sta_get_rssi             = 341;
 
-		CtrlMsg_Req_WifiScanStart               req_wifi_scan_start               = 286;
-		CtrlMsg_Req_WifiScanStop                req_wifi_scan_stop                = 287;
-		CtrlMsg_Req_WifiScanGetApNum            req_wifi_scan_get_ap_num          = 288;
-		CtrlMsg_Req_WifiScanGetApRecords        req_wifi_scan_get_ap_records      = 289;
-		CtrlMsg_Req_WifiClearApList             req_wifi_clear_ap_list            = 290;
+		Rpc_Req_WifiScanStart               req_wifi_scan_start               = 286;
+		Rpc_Req_WifiScanStop                req_wifi_scan_stop                = 287;
+		Rpc_Req_WifiScanGetApNum            req_wifi_scan_get_ap_num          = 288;
+		Rpc_Req_WifiScanGetApRecords        req_wifi_scan_get_ap_records      = 289;
+		Rpc_Req_WifiClearApList             req_wifi_clear_ap_list            = 290;
 
-		CtrlMsg_Req_WifiRestore                 req_wifi_restore                  = 291;
-		CtrlMsg_Req_WifiClearFastConnect        req_wifi_clear_fast_connect       = 292;
-		CtrlMsg_Req_WifiDeauthSta               req_wifi_deauth_sta               = 293;
-		CtrlMsg_Req_WifiStaGetApInfo            req_wifi_sta_get_ap_info          = 294;
+		Rpc_Req_WifiRestore                 req_wifi_restore                  = 291;
+		Rpc_Req_WifiClearFastConnect        req_wifi_clear_fast_connect       = 292;
+		Rpc_Req_WifiDeauthSta               req_wifi_deauth_sta               = 293;
+		Rpc_Req_WifiStaGetApInfo            req_wifi_sta_get_ap_info          = 294;
 
 		/** Responses **/
 		Rpc_Resp_GetMacAddress              resp_get_mac_address               = 513;
@@ -1633,16 +1633,16 @@ message Rpc {
 
 		Rpc_Resp_WifiStaGetRssi             resp_wifi_sta_get_rssi             = 597;
 
-		CtrlMsg_Resp_WifiScanStart              resp_wifi_scan_start               = 542;
-		CtrlMsg_Resp_WifiScanStop               resp_wifi_scan_stop                = 543;
-		CtrlMsg_Resp_WifiScanGetApNum           resp_wifi_scan_get_ap_num          = 544;
-		CtrlMsg_Resp_WifiScanGetApRecords       resp_wifi_scan_get_ap_records      = 545;
-		CtrlMsg_Resp_WifiClearApList            resp_wifi_clear_ap_list            = 546;
+		Rpc_Resp_WifiScanStart              resp_wifi_scan_start               = 542;
+		Rpc_Resp_WifiScanStop               resp_wifi_scan_stop                = 543;
+		Rpc_Resp_WifiScanGetApNum           resp_wifi_scan_get_ap_num          = 544;
+		Rpc_Resp_WifiScanGetApRecords       resp_wifi_scan_get_ap_records      = 545;
+		Rpc_Resp_WifiClearApList            resp_wifi_clear_ap_list            = 546;
 
-		CtrlMsg_Resp_WifiRestore                resp_wifi_restore                  = 547;
-		CtrlMsg_Resp_WifiClearFastConnect       resp_wifi_clear_fast_connect       = 548;
-		CtrlMsg_Resp_WifiDeauthSta              resp_wifi_deauth_sta               = 549;
-		CtrlMsg_Resp_WifiStaGetApInfo           resp_wifi_sta_get_ap_info          = 550;
+		Rpc_Resp_WifiRestore                resp_wifi_restore                  = 547;
+		Rpc_Resp_WifiClearFastConnect       resp_wifi_clear_fast_connect       = 548;
+		Rpc_Resp_WifiDeauthSta              resp_wifi_deauth_sta               = 549;
+		Rpc_Resp_WifiStaGetApInfo           resp_wifi_sta_get_ap_info          = 550;
 
 		/** Notifications **/
 		Rpc_Event_ESPInit                   event_esp_init                     = 769;
