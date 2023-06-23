@@ -162,7 +162,7 @@ void transport_init(void(*transport_evt_handler_fp)(uint8_t))
 
     /* Creates & Give sem for next spi trans */
 	spi_trans_ready_sem = g_h.funcs->_h_create_semaphore(100);
-
+	assert(spi_trans_ready_sem);
 
     g_h.funcs->_h_config_gpio_as_interrupt(H_GPIO_HANDSHAKE_Port, H_GPIO_HANDSHAKE_Pin,
             H_GPIO_INTR_POSEDGE, gpio_hs_isr_handler);
@@ -236,12 +236,10 @@ static int process_spi_rx_buf(uint8_t * rxbuff)
         goto done;
 
     } else {
-        rx_checksum = le16toh(payload_header->checksum);
+        //rx_checksum = le16toh(payload_header->checksum);
         payload_header->checksum = 0;
 
         checksum = compute_checksum(rxbuff, len+offset);
-		//TODO: checksum is disabled here, need to be configurable from menuconfig
-        //checksum = rx_checksum = 0;
         ESP_LOGV(TAG, "rcvd_crc[%u], exp_crc[%u]\n",checksum, rx_checksum);
         if (checksum == rx_checksum) {
             buf_handle.priv_buffer_handle = rxbuff;

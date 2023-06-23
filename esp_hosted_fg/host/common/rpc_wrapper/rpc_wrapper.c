@@ -106,8 +106,7 @@ static int rpc_event_callback(ctrl_cmd_t * app_event)
 	switch(app_event->msg_id) {
 
 		case RPC_ID__Event_ESPInit: {
-			ESP_LOGV(TAG, "%s App EVENT: ESP INIT\n\r",
-				get_timestamp(ts, MIN_TIMESTAMP_STR_SIZE));
+			ESP_LOGI(TAG, "ESP bootup event");
 			break;
 		} case RPC_ID__Event_Heartbeat: {
 			ESP_LOGV(TAG, "%s App EVENT: Heartbeat event [%lu]\n\r",
@@ -291,8 +290,8 @@ int register_wifi_event_callbacks(void)
 	int evt = 0;
 
 	event_callback_table_t events[] = {
-#if 0
 		{ RPC_ID__Event_ESPInit,                   rpc_event_callback },
+#if 0
 		{ RPC_ID__Event_Heartbeat,                 rpc_event_callback },
 #endif
 		{ RPC_ID__Event_AP_StaConnected,           rpc_event_callback },

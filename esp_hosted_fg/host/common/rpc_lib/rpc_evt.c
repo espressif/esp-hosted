@@ -57,7 +57,6 @@ int rpc_parse_evt(Rpc *rpc_msg, ctrl_cmd_t *app_ntfy)
 			ESP_LOGI(TAG, "EVENT: AP ->  sta connected mac[" MACSTR "] (len:%u)",
 				MAC2STR(p_a->mac), p_c->mac.len);
 		}
-
 		p_a->aid = p_c->aid;
 		p_a->is_mesh_child = p_c->is_mesh_child;
 

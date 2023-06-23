@@ -35,8 +35,8 @@ This Iperf config is for iperf instance running on the host.
 | ESP chipset | Max SPI slave clock freq supported (Mhz) |
 | :---------: | :--------------------------------------: |
 | ESP32 | 10Mhz |
-| ESP32-S2 | 40MHz |
-| Others | 60MHz |
+| ESP32-S2/S3/C2/C3 | 40MHz |
+| Others | 26MHz |
 
 To change the clock, open the ioc file in the project using STM32CubeIDE and go to 'Clock Configuration' tab to adjust APB2 clock prescaler.
 Lower the prescaler, higher the frequency. Once prescaler changed, you can verify the frequency changed in 'Pinout & Configuration' Tab -> 'A->Z' -> 'SPI1' or 'SPI3' -> 'Parameter Settings' -> 'Baud rate'.

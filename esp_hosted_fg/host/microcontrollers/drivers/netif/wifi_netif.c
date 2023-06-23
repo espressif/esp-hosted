@@ -70,7 +70,7 @@ static inline esp_err_t l_wifi_transmit(void *h, void *buffer, size_t len)
 	wifi_netif_driver_t driver = h;
 	/* Translate netif interface type to hosted interface type */
 	uint8_t hosted_if_type = driver->wifi_if+1;
-		/* Hosted Tx to Slave */
+	/* Hosted Tx to Slave */
 
 	#if CONFIG_H_LOWER_MEMCOPY
 #if 1

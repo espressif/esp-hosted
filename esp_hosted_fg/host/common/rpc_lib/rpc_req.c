@@ -411,6 +411,7 @@ int compose_rpc_req(Rpc *req, ctrl_cmd_t *app_req, uint8_t *failure_status)
 			p_c_sta->sae_pwe_h2e = p_a_sta->sae_pwe_h2e;
 			p_c_sta->failure_retry_cnt = p_a_sta->failure_retry_cnt;
 
+<<<<<<< HEAD
 			if (p_a_sta->he_dcm_set)
 				H_SET_BIT(WIFI_HE_STA_CONFIG_he_dcm_set_BIT, p_c_sta->he_bitmask);
 
@@ -440,6 +441,8 @@ int compose_rpc_req(Rpc *req, ctrl_cmd_t *app_req, uint8_t *failure_status)
 			WIFI_HE_STA_SET_RESERVED_VAL(p_a_sta->he_reserved, p_c_sta->he_bitmask);
 
 			RPC_REQ_COPY_BYTES(p_c_sta->sae_h2e_identifier, p_a_sta->sae_h2e_identifier, SAE_H2E_IDENTIFIER_LEN);
+=======
+>>>>>>> c37216d (lwip ported over stm32 as host)
 			break;
 		} case WIFI_IF_AP: {
 			req_payload->cfg->u_case = WIFI_CONFIG__U_AP;
@@ -500,9 +503,12 @@ int compose_rpc_req(Rpc *req, ctrl_cmd_t *app_req, uint8_t *failure_status)
 			p_c_st->passive = p_a_st->passive;
 			p_c_st->active->min = p_a_st->active.min ;
 			p_c_st->active->max = p_a_st->active.max ;
+<<<<<<< HEAD
 
 			p_c->home_chan_dwell_time = p_a->home_chan_dwell_time;
 
+=======
+>>>>>>> c37216d (lwip ported over stm32 as host)
 			req_payload->config_set = 1;
 		}
 		ESP_LOGI(TAG, "Scan start Req\n");
@@ -519,6 +525,7 @@ int compose_rpc_req(Rpc *req, ctrl_cmd_t *app_req, uint8_t *failure_status)
 				rpc__req__wifi_deauth_sta__init);
 		req_payload->aid = app_req->u.wifi_deauth_sta.aid;
 		break;
+<<<<<<< HEAD
 	} case RPC_ID__Req_WifiSetStorage: {
 		wifi_storage_t * p = &app_req->u.wifi_storage;
 		RPC_ALLOC_ASSIGN(RpcReqWifiSetStorage, req_wifi_set_storage,
@@ -577,6 +584,8 @@ int compose_rpc_req(Rpc *req, ctrl_cmd_t *app_req, uint8_t *failure_status)
 				rpc__req__wifi_get_protocol__init);
 		req_payload->ifx = app_req->u.wifi_protocol.ifx;
 		break;
+=======
+>>>>>>> c37216d (lwip ported over stm32 as host)
 	} default: {
 		*failure_status = RPC_ERR_UNSUPPORTED_MSG;
 		ESP_LOGE(TAG, "Unsupported RPC Req[%u]",req->msg_id);

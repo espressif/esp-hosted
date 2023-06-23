@@ -43,6 +43,7 @@ DEFINE_LOG_TAG(stats);
 /** Exported Functions **/
 
 #if TEST_RAW_TP
+DEFINE_LOG_TAG(stats);
 static int test_raw_tp = 0;
 static uint8_t log_raw_tp_stats_timer_running = 0;
 static uint32_t raw_tp_timer_count = 0;

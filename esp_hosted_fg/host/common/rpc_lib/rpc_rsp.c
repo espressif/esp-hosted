@@ -522,8 +522,8 @@ int rpc_parse_rsp(Rpc *rpc_msg, ctrl_cmd_t *app_resp)
 			p_a_cntry->max_tx_power = p_c_cntry->max_tx_power;
 			p_a_cntry->policy = p_c_cntry->policy;
 
-			ESP_LOGD(TAG, "Ssid: %s Bssid: " MACSTR, list[i].ssid, MAC2STR(list[i].bssid));
-			ESP_LOGD(TAG, "Primary: %u Second: %u Rssi: %d Authmode: %u",
+			ESP_LOGD(TAG, "SSID: %s BSSid: " MACSTR, list[i].ssid, MAC2STR(list[i].bssid));
+			ESP_LOGD(TAG, "Primary: %u Second: %u RSSI: %d Authmode: %u",
 					list[i].primary, list[i].second,
 					list[i].rssi, list[i].authmode
 					);
@@ -613,8 +613,8 @@ int rpc_parse_rsp(Rpc *rpc_msg, ctrl_cmd_t *app_resp)
 			  ap_info->ssid, ap_info->bssid, ap_info->rssi,
 			  ap_info->channel, ap_info->authmode);*/
 
-			printf("Ssid: %s, Bssid: " MACSTR "\n", ap_info->ssid, MAC2STR(ap_info->bssid));
-			printf("Primary: %u\nSecond: %u\nRssi: %d\nAuthmode: %u\nPairwiseCipher: %u\nGroupcipher: %u\nAnt: %u\nBitmask:11b:%u g:%u n:%u lr:%u ax:%u wps:%u ftm_resp:%u ftm_ini:%u res: %u\n",
+			ESP_LOGI(TAG, "SSID: %s, BSSid: " MACSTR "\n", ap_info->ssid, MAC2STR(ap_info->bssid));
+			ESP_LOGI(TAG, "Primary: %u\nSecond: %u\nRssi: %d\nAuthmode: %u\nPairwiseCipher: %u\nGroupcipher: %u\nAnt: %u\nBitmask:11b:%u g:%u n:%u lr:%u ax:%u wps:%u ftm_resp:%u ftm_ini:%u res: %u\n",
 					ap_info->primary, ap_info->second,
 					ap_info->rssi, ap_info->authmode,
 					ap_info->pairwise_cipher, ap_info->group_cipher,
@@ -623,7 +623,7 @@ int rpc_parse_rsp(Rpc *rpc_msg, ctrl_cmd_t *app_resp)
 					ap_info->wps, ap_info->ftm_responder,
 					ap_info->ftm_initiator, ap_info->reserved
 					);
-			printf("Country cc:%c%c schan: %u nchan: %u max_tx_pow: %d policy: %u\n",
+			ESP_LOGI(TAG, "Country cc:%c%c schan: %u nchan: %u max_tx_pow: %d policy: %u\n",
 					p_a_cntry->cc[0], p_a_cntry->cc[1], p_a_cntry->schan, p_a_cntry->nchan,
 					p_a_cntry->max_tx_power,p_a_cntry->policy);
 
@@ -634,7 +634,7 @@ int rpc_parse_rsp(Rpc *rpc_msg, ctrl_cmd_t *app_resp)
 			p_a_he_ap->partial_bss_color = H_GET_BIT(WIFI_HE_AP_INFO_partial_bss_color_BIT, p_c_he_ap->bitmask);
 			p_a_he_ap->bss_color_disabled = H_GET_BIT(WIFI_HE_AP_INFO_bss_color_disabled_BIT, p_c_he_ap->bitmask);
 
-			printf("HE_AP: bss_color %d, partial_bss_color %d, bss_color_disabled %d\n",
+			ESP_LOGI(TAG, "HE_AP: bss_color %d, partial_bss_color %d, bss_color_disabled %d\n",
 					p_a_he_ap->bss_color, p_a_he_ap->bss_color_disabled, p_a_he_ap->bss_color_disabled);
 
 			//p_a_sta->rm_enabled = H_GET_BIT(STA_RM_ENABLED_BIT, p_c_sta->bitmask);

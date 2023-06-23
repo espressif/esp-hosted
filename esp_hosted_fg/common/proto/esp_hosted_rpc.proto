@@ -790,6 +790,7 @@ message wifi_sta_list {
 	int32               num = 2;                /**< number of stations in the list (other entries are invalid) */
 }
 
+
 //message vendor_ie_data {
 //	uint32              element_id = 1;         /**< Should be set to WIFI_VENDOR_IE_ELEMENT_ID (0xDD) */
 //	uint32              length = 2;             /**< Length of all bytes in the element data following this field. Minimum 4. */

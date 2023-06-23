@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <projectDescription>
-	<name>stm_spi_host</name>
+	<name>stm_sdio_host</name>
 	<comment></comment>
 	<projects>
 	</projects>

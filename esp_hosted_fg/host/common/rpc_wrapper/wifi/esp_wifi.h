@@ -214,6 +214,8 @@ esp_err_t esp_wifi_set_config(wifi_interface_t interface, wifi_config_t *conf);
 
 esp_err_t esp_wifi_get_config(wifi_interface_t interface, wifi_config_t *conf);
 
+esp_err_t esp_wifi_get_config(int interface, wifi_config_t *conf);
+
 esp_err_t esp_wifi_get_mac(wifi_interface_t ifx, uint8_t mac[6]);
 
 esp_err_t esp_wifi_set_mac(wifi_interface_t ifx, const uint8_t mac[6]);
@@ -267,6 +269,10 @@ esp_err_t esp_wifi_sta_get_rssi(int *rssi);
 esp_err_t esp_wifi_set_protocol(wifi_interface_t ifx, uint8_t protocol_bitmap);
 
 esp_err_t esp_wifi_get_protocol(wifi_interface_t ifx, uint8_t *protocol_bitmap);
+
+#ifdef __cplusplus
+}
+#endif
 
 #ifdef __cplusplus
 }

@@ -808,7 +808,6 @@ int hosted_write_gpio(void* gpio_port_in, uint32_t gpio_num, uint32_t value)
 
 
 
-
 void hosted_init_hook(void)
 {
 	/* This is hook to initialize port specific contexts, if any */
