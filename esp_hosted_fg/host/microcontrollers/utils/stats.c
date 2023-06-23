@@ -17,12 +17,16 @@
 /** Includes **/
 
 #include "stats.h"
+#include "esp_hosted_config.h"
 #if TEST_RAW_TP
 #include "os_wrapper.h"
 #include "transport_drv.h"
 #endif
+#include "esp_log.h"
+
+
 /** Constants/Macros **/
-#define RAW_TP_TX_TASK_STACK_SIZE        4096
+#define RAW_TP_TX_TASK_STACK_SIZE        2048
 
 /** Exported variables **/
 
@@ -31,12 +35,13 @@
 /** Exported Functions **/
 
 #if TEST_RAW_TP
+DEFINE_LOG_TAG(stats);
 static int test_raw_tp = 0;
 static int test_raw_tp__host_to_esp = 0;
 static uint8_t log_raw_tp_stats_timer_running = 0;
 static uint32_t raw_tp_timer_count = 0;
 void *hosted_timer_handler = NULL;
-static osThreadId raw_tp_tx_task_id = 0;
+static void * raw_tp_tx_task_id = 0;
 static uint64_t test_raw_tp_len = 0;
 
 void test_raw_tp_cleanup(void)
@@ -52,19 +57,28 @@ void test_raw_tp_cleanup(void)
 	}
 
 	if (raw_tp_tx_task_id) {
-		ret = osThreadTerminate(raw_tp_tx_task_id);
+		ret = g_h.funcs->_h_thread_cancel(raw_tp_tx_task_id);
 		raw_tp_tx_task_id = 0;
 	}
 }
 
-void raw_tp_timer_func(void const * arg)
+void raw_tp_timer_func(void * arg)
 {
+#if USE_FLOATING_POINT
 	double actual_bandwidth = 0;
+#else
+	uint64_t actual_bandwidth = 0;
+#endif
 	int32_t div = 1024;
 
-	actual_bandwidth = (test_raw_tp_len*8);
-	printf("%lu-%lu sec %.5f Kbits/sec\n\r", raw_tp_timer_count, raw_tp_timer_count + 1, actual_bandwidth/div);
-	raw_tp_timer_count++;
+
+	actual_bandwidth = (test_raw_tp_len*8)/TEST_RAW_TP__TIMEOUT;
+#if USE_FLOATING_POINT
+	ESP_LOGI(TAG, "%lu-%lu sec %.5f Kbits/sec\n\r", raw_tp_timer_count, raw_tp_timer_count + TEST_RAW_TP__TIMEOUT, actual_bandwidth/div);
+#else
+	ESP_LOGI(TAG, "%lu-%lu sec %lu Kbps", raw_tp_timer_count, raw_tp_timer_count + TEST_RAW_TP__TIMEOUT, actual_bandwidth/div);
+#endif
+	raw_tp_timer_count+=TEST_RAW_TP__TIMEOUT;
 	test_raw_tp_len = 0;
 }
 
@@ -73,16 +87,25 @@ static void raw_tp_tx_task(void const* pvParameters)
 	int ret;
 	static uint16_t seq_num = 0;
 	uint8_t *raw_tp_tx_buf = NULL;
-	sleep(5);
+	g_h.funcs->_h_sleep(5);
+
 	while (1) {
 
+#if CONFIG_H_LOWER_MEMCOPY
+		raw_tp_tx_buf = (uint8_t*)g_h.funcs->_h_calloc(1, MAX_TRANSPORT_BUFFER_SIZE);
+		ret = esp_hosted_tx(ESP_TEST_IF, 0, raw_tp_tx_buf, TEST_RAW_TP__BUF_SIZE, H_BUFF_ZEROCOPY, H_DEFLT_FREE_FUNC);
+#else
 		raw_tp_tx_buf = (uint8_t*)g_h.funcs->_h_calloc(1, TEST_RAW_TP__BUF_SIZE);
-		ret = esp_hosted_tx(ESP_TEST_IF, 0, raw_tp_tx_buf, TEST_RAW_TP__BUF_SIZE);
+		ret = esp_hosted_tx(ESP_TEST_IF, 0, raw_tp_tx_buf, TEST_RAW_TP__BUF_SIZE, H_BUFF_NO_ZEROCOPY, H_DEFLT_FREE_FUNC);
+#endif
 		if (ret != STM_OK) {
-			printf("Failed to send to queue\n");
+			ESP_LOGE(TAG, "Failed to send to queue\n");
 			continue;
 		}
-		test_raw_tp_len += (TEST_RAW_TP__BUF_SIZE+sizeof(struct esp_payload_header));
+#if CONFIG_H_LOWER_MEMCOPY
+		g_h.funcs->_h_free(raw_tp_tx_buf);
+#endif
+		test_raw_tp_len += (TEST_RAW_TP__BUF_SIZE+H_ESP_PAYLOAD_HEADER_OFFSET);
 		seq_num++;
 	}
 }
@@ -92,17 +115,17 @@ static void process_raw_tp_flags(void)
 	test_raw_tp_cleanup();
 
 	if (test_raw_tp) {
-		hosted_timer_handler = g_h.funcs->_h_timer_start(TEST_RAW_TP__TIMEOUT, CTRL__TIMER_PERIODIC, raw_tp_timer_func, NULL);
+		hosted_timer_handler = g_h.funcs->_h_timer_start(TEST_RAW_TP__TIMEOUT, RPC__TIMER_PERIODIC, raw_tp_timer_func, NULL);
 		if (!hosted_timer_handler) {
-			printf("Failed to create timer\n\r");
+			ESP_LOGE(TAG, "Failed to create timer\n\r");
 			return;
 		}
 		log_raw_tp_stats_timer_running = 1;
 
 		if (test_raw_tp__host_to_esp) {
-			osThreadDef(raw_tp_tx_thread, raw_tp_tx_task,
-					osPriorityAboveNormal, 0, RAW_TP_TX_TASK_STACK_SIZE);
-			raw_tp_tx_task_id = osThreadCreate(osThread(raw_tp_tx_thread), NULL);
+
+			raw_tp_tx_task_id = g_h.funcs->_h_thread_create("raw_tp_tx", DFLT_TASK_PRIO,
+					RAW_TP_TX_TASK_STACK_SIZE, raw_tp_tx_task, NULL);
 			assert(raw_tp_tx_task_id);
 		}
 	}
@@ -122,17 +145,17 @@ static void stop_test_raw_tp(void)
 
 void process_test_capabilities(uint8_t cap)
 {
-	printf("ESP peripheral capabilities: 0x%x\n\r", cap);
+	ESP_LOGI(TAG, "ESP peripheral capabilities: 0x%x\n\r", cap);
 	if ((cap & ESP_TEST_RAW_TP) == ESP_TEST_RAW_TP) {
 		if ((cap & ESP_TEST_RAW_TP__ESP_TO_HOST) == ESP_TEST_RAW_TP__ESP_TO_HOST) {
 			start_test_raw_tp(ESP_TEST_RAW_TP__RX);
-			printf("esp: start testing of ESP->Host raw throughput\n\r");
+			ESP_LOGI(TAG, "esp32: start testing of ESP->Host raw throughput\n\r");
 		} else {
 			start_test_raw_tp(ESP_TEST_RAW_TP__TX);
-			printf("esp: start testing of Host->ESP raw throughput\n\r");
+			ESP_LOGI(TAG, "esp32: start testing of Host->ESP raw throughput\n\r");
 		}
 	} else {
-		printf("esp: stop raw throuput test if running\n");
+		ESP_LOGI(TAG, "esp32: stop raw throuput test if running\n");
 		stop_test_raw_tp();
 	}
 	process_raw_tp_flags();
@@ -140,7 +163,10 @@ void process_test_capabilities(uint8_t cap)
 
 void update_test_raw_tp_rx_len(uint16_t len)
 {
-	test_raw_tp_len+=len;
+	test_raw_tp_len+=(len+H_ESP_PAYLOAD_HEADER_OFFSET);
 }
 
+#endif
+#if H_MEM_STATS
+struct mem_stats h_stats_g;
 #endif

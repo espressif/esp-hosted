@@ -28,20 +28,8 @@ extern "C" {
 
 
 /** Constants/Macros **/
-#define TO_SLAVE_QUEUE_SIZE               10
-#define FROM_SLAVE_QUEUE_SIZE             10
-
-#if 0
-/* NSS or CS0 configuration (Pin 11) */
-/* In case of different board than STM32F469I,
- * User need to update SPI NSS pin as per hardware*/
-#ifndef USR_SPI_CS_GPIO_Port
-#define USR_SPI_CS_GPIO_Port    GPIOA
-#endif
-#ifndef USR_SPI_CS_Pin
-#define USR_SPI_CS_Pin          GPIO_PIN_15
-#endif
-#endif
+#define TO_SLAVE_QUEUE_SIZE               20
+#define FROM_SLAVE_QUEUE_SIZE             20
 
 /** Exported Structures **/
 

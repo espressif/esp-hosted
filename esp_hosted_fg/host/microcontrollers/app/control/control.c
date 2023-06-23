@@ -13,22 +13,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-
+#if 0
 /** Includes **/
 #include "stdlib.h"
 #include "string.h"
 #include "util.h"
 #include "control.h"
-#include "trace.h"
-#include "ctrl_api.h"
+#include "esp_log.h"
+#include "rpc_api.h"
 #include "os_wrapper.h"
 #include "serial_drv.h"
+#include "esp_wifi.h"
 
 /* Maximum retry count*/
 #define RETRY_COUNT							5
 
 /* Constants / macro */
-#define CONTROL_MAIN_TASK_STACK_SIZE        4096
+#define RPC_MAIN_TASK_STACK_SIZE            4096
 
 #define PARAM_STR_YES                       "yes"
 #define PARAM_STR_HT20                      "20"
@@ -47,19 +48,44 @@
 #define DEFAULT_SOFTAP_MAX_CONNECTIONS      4
 #define DEFAULT_LISTEN_INTERVAL             3
 
-/* data path opens after control path is set */
-static int mode = WIFI_MODE_NONE;
+/* data path opens after rpc is init */
+static int mode = WIFI_MODE_NULL;
 static uint8_t self_station_mac[MAC_LEN] = { 0 };
 static uint8_t self_softap_mac[MAC_LEN]  = { 0 };
 
-/** Exported variables **/
-//static osThreadId control_main_task_id = 0;
-static void * ctrl_main_thread_handle = NULL;
 
-static void (*control_path_evt_handler_fp) (uint8_t);
+static EventGroupHandle_t s_wifi_event_group;
+
+static void event_handler(void* arg, esp_event_base_t event_base,
+                                int32_t event_id, void* event_data)
+{
+    if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_START) {
+        esp_wifi_connect();
+    } else if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_DISCONNECTED) {
+        if (s_retry_num < EXAMPLE_ESP_MAXIMUM_RETRY) {
+            esp_wifi_connect();
+            s_retry_num++;
+            ESP_LOGI(TAG, "retry to connect to the AP");
+        } else {
+            xEventGroupSetBits(s_wifi_event_group, WIFI_FAIL_BIT);
+        }
+        ESP_LOGI(TAG,"connect to the AP fail");
+    } else if (event_base == IP_EVENT && event_id == IP_EVENT_STA_GOT_IP) {
+        ip_event_got_ip_t* event = (ip_event_got_ip_t*) event_data;
+        ESP_LOGI(TAG, "got ip:" IPSTR, IP2STR(&event->ip_info.ip));
+        s_retry_num = 0;
+        xEventGroupSetBits(s_wifi_event_group, WIFI_CONNECTED_BIT);
+    }
+
+}
+
+/** Exported variables **/
+static void * rpc_main_thread_hdl = NULL;
+
+static void (*rpc_evt_handler_fp) (uint8_t);
 
 /** Function Declarations **/
-static void control_main_task(void const *argument);
+static void rpc_main_task(void const *argument);
 static int get_application_mode(void);
 static void print_configuration_parameters(void);
 
@@ -145,54 +171,72 @@ stm_ret_t get_arp_dst_ip_softap(uint32_t *soft_ip)
 	return STM_OK;
 }
 
+int subscribe_events(void)
+{
+	int ret = SUCCESS;
+	int evt = 0;
+
+	event_callback_table_t events[] = {
+		{ RPC_ID__Event_ESPInit,                   rpc_event_callback },
+		{ RPC_ID__Event_Heartbeat,                 rpc_event_callback },
+		{ RPC_ID__Event_StationDisconnectFromAP,   rpc_event_callback },
+		{ RPC_ID__Event_AP_StaConnected,           rpc_event_callback },
+		{ RPC_ID__Event_AP_StaDisconnected,        rpc_event_callback },
+		{ RPC_ID__Event_WifiEventNoArgs,           rpc_event_callback },
+	};
+
+	for (evt=0; evt<sizeof(events)/sizeof(event_callback_table_t); evt++) {
+		if (CALLBACK_SET_SUCCESS != set_event_callback(events[evt].event, events[evt].fun) ) {
+			hosted_log("event callback register failed for event[%u]\n\r", events[evt].event);
+			ret = FAILURE;
+			break;
+		}
+	}
+	return ret;
+}
+
 
 /**
-  * @brief  control path initialize
-  * @param  control_path_evt_handler - event handler of type
-  *         control_path_events_e
+  * @brief  rpc initialize
+  * @param  rpc_evt_handler - event handler of type
+  *         rpc_events_e
   * @retval None
   */
-void control_path_init(void(*control_path_evt_handler)(uint8_t))
+void rpc_init(void(*rpc_evt_handler)(uint8_t))
 {
 	print_configuration_parameters();
 
-	/* do not start control path until all tasks are in place */
-	mode = WIFI_MODE_NONE;
+	/* do not start rpc until all tasks are in place */
+	mode = WIFI_MODE_NULL;
 
-	if (init_hosted_control_lib()) {
-		printf("init hosted control lib failed\n");
+	if (init_rpc_lib()) {
+		printf("init rpc lib failed\n");
 		return;
 	}
 
 	/* register event handler */
-	control_path_evt_handler_fp = control_path_evt_handler;
+	rpc_evt_handler_fp = rpc_evt_handler;
 
 	/* Task - application task */
-	//osThreadDef(control_main_task, osPriorityAboveNormal, 0,
-	//		CONTROL_MAIN_TASK_STACK_SIZE);
-	//control_main_task_id = osThreadCreate(osThread(control_main_task), NULL);
-	//assert(control_main_task_id);
-
-	ctrl_main_thread_handle = g_h.funcs->_h_thread_create("ctrl_main", DFLT_TASK_PRIO,
-			CTRL_PATH_TASK_STACK_SIZE, control_main_task, NULL);
-	if (!ctrl_main_thread_handle) {
-		printf("Thread creation failed for ctrl_main_thread\n");
-		assert(ctrl_main_thread_handle);
+	rpc_main_thread_hdl = g_h.funcs->_h_thread_create("rpc_main", DFLT_TASK_PRIO,
+			RPC_TASK_STACK_SIZE, rpc_main_task, NULL);
+	if (!rpc_main_thread_hdl) {
+		printf("Thread creation failed for rpc_main_thread\n");
+		assert(rpc_main_thread_hdl);
 	}
 
-	register_event_callbacks();
 }
 
+
 /**
-  * @brief  control path de-initialize
+  * @brief  rpc de-initialize
   * @param  None
   * @retval None
   */
-void control_path_deinit(void)
+void rpc_deinit(void)
 {
 	unregister_event_callbacks();
-	/* Call control path library init */
-	control_path_platform_deinit();
+	rpc_platform_deinit();
 }
 
 /** Local functions **/
@@ -258,13 +302,13 @@ static uint8_t get_param_softap_encryption(void)
 
 /**
   * @brief  call up event handler registered
-  * @param  event - control path events of type control_path_events_e
+  * @param  event - rpc events of type rpc_events_e
   * @retval STM_OK/STM_FAIL
   */
-static void control_path_call_event(uint8_t event)
+static void rpc_call_event(uint8_t event)
 {
-	if(control_path_evt_handler_fp) {
-		control_path_evt_handler_fp(event);
+	if(rpc_evt_handler_fp) {
+		rpc_evt_handler_fp(event);
 	}
 }
 
@@ -338,6 +382,48 @@ int station_connect(char *ssid, char *pwd, char *bssid,
 		wifi_mode |= mode;
 	}
 
+    wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
+    ESP_ERROR_CHECK(esp_wifi_init(&cfg));
+
+    wifi_config_t wifi_config = {
+        .sta = {
+            .ssid = EXAMPLE_ESP_WIFI_SSID,
+            .password = EXAMPLE_ESP_WIFI_PASS,
+            /* Authmode threshold resets to WPA2 as default if password matches WPA2 standards (pasword len => 8).
+             * If you want to connect the device to deprecated WEP/WPA networks, Please set the threshold value
+             * to WIFI_AUTH_WEP/WIFI_AUTH_WPA_PSK and set the password with length and format matching to
+	     * WIFI_AUTH_WEP/WIFI_AUTH_WPA_PSK standards.
+             */
+            .threshold.authmode = ESP_WIFI_SCAN_AUTH_MODE_THRESHOLD,
+            .sae_pwe_h2e = WPA3_SAE_PWE_BOTH,
+        },
+    };
+
+    ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA) );
+    ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &wifi_config) );
+    ESP_ERROR_CHECK(esp_wifi_start() );
+
+    ESP_LOGI(TAG, "wifi_init_sta finished.");
+
+    EventBits_t bits = xEventGroupWaitBits(s_wifi_event_group,
+            WIFI_CONNECTED_BIT | WIFI_FAIL_BIT,
+            pdFALSE,
+            pdFALSE,
+            portMAX_DELAY);
+
+    /* xEventGroupWaitBits() returns the bits before the call returned, hence we can test which event actually
+     * happened. */
+    if (bits & WIFI_CONNECTED_BIT) {
+        ESP_LOGI(TAG, "connected to ap SSID:%s password:%s",
+                 EXAMPLE_ESP_WIFI_SSID, EXAMPLE_ESP_WIFI_PASS);
+		rpc_call_event(STATION_CONNECTED);
+    } else if (bits & WIFI_FAIL_BIT) {
+        ESP_LOGI(TAG, "Failed to connect to SSID:%s, password:%s",
+                 EXAMPLE_ESP_WIFI_SSID, EXAMPLE_ESP_WIFI_PASS);
+    } else {
+        ESP_LOGE(TAG, "UNEXPECTED EVENT");
+    }
+#if 0
 	if (test_set_wifi_mode(wifi_mode)) {
 		printf("Failed to set wifi mode to %u\n\r", wifi_mode);
 		return STM_FAIL;
@@ -358,8 +444,9 @@ int station_connect(char *ssid, char *pwd, char *bssid,
 		return STM_FAIL;
 	} else {
 		printf("Connected to %s \n\r", ssid);
-		control_path_call_event(STATION_CONNECTED);
+		rpc_call_event(STATION_CONNECTED);
 	}
+#endif
 
 	return STM_OK;
 }
@@ -469,7 +556,7 @@ static int softap_start_api(void)
 		return STM_FAIL;
 	} else {
 		printf("started %s softAP\n\r", ssid);
-		control_path_call_event(SOFTAP_STARTED);
+		rpc_call_event(SOFTAP_STARTED);
 	}
 	return STM_OK;
 }
@@ -518,11 +605,11 @@ static int get_application_mode(void)
 }
 
 /**
-  * @brief  Control path task
+  * @brief  rpc task
   * @param  argument: Not used
   * @retval None
   */
-static void control_main_task(void const *argument)
+static void rpc_main_task(void const *argument)
 {
 	int ret = 0, app_mode = 0, station_connect_retry = 0, softap_start_retry = 0;
 	bool scan_ap_list = false, stop = false;
@@ -629,3 +716,4 @@ static void control_main_task(void const *argument)
 		}
 	}
 }
+#endif

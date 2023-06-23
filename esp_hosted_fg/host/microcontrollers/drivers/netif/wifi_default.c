@@ -12,13 +12,15 @@
 #include <string.h>
 #include "os_wrapper.h"
 #include "esp_event.h"
+#include "esp_log.h"
 
-#define DEBUG_LOG printf("%s:%u\n",__func__,__LINE__);
+static const char TAG[] = "netif";
+
 //
 //  Purpose of this module is to provide basic wifi initialization setup for
 //  default station and AP and to register default handles for these interfaces
 //
-static const char* TAG = "wifi_init_default";
+//static const char* TAG = "wifi_init_default";
 
 static esp_netif_t *s_wifi_netifs[MAX_WIFI_IFS] = { NULL };
 static bool wifi_default_handlers_set = false;
@@ -37,27 +39,27 @@ static void wifi_action_start(void *esp_netif, esp_event_base_t base, int32_t ev
     uint8_t mac[6];
     esp_err_t ret;
 
-    ESP_LOGD(TAG, "%s esp-netif:%p event-id: %ld", __func__, esp_netif, event_id);
+    ESP_LOGD(TAG, "%s esp-netif:%p event-id: %ld\n", __func__, esp_netif, event_id);
 
     wifi_netif_driver_t driver = esp_netif_get_io_driver(esp_netif);
 
     if ((ret = esp_wifi_get_if_mac(driver, mac)) != ESP_OK) {
 		assert(ret==0);
-        ESP_LOGE(TAG, "esp_wifi_get_mac failed with %d", ret);
+        ESP_LOGE(TAG, "esp_wifi_get_mac failed with %d\n", ret);
         return;
     }
-    ESP_LOGD(TAG, "WIFI mac address: %x %x %x %x %x %x", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+    ESP_LOGV(TAG, "WIFI mac address: %x %x %x %x %x %x\n", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
 
     if (esp_wifi_is_if_ready_when_started(driver)) {
         if ((ret = esp_wifi_register_if_rxcb(driver,  esp_netif_receive, esp_netif)) != ESP_OK) {
-            ESP_LOGE(TAG, "esp_wifi_register_if_rxcb for if=%p failed with %d", driver, ret);
+            ESP_LOGE(TAG, "esp_wifi_register_if_rxcb for if=%p failed with %d\n", driver, ret);
             return;
         }
     }
 
 #if 0
     if ((ret = esp_wifi_internal_reg_netstack_buf_cb(esp_netif_netstack_buf_ref, esp_netif_netstack_buf_free)) != ESP_OK) {
-        ESP_LOGE(TAG, "netstack cb reg failed with %d", ret);
+        ESP_LOGE(TAG, "netstack cb reg failed with %d\n", ret);
         return;
     }
 #endif
@@ -71,7 +73,7 @@ static void wifi_action_start(void *esp_netif, esp_event_base_t base, int32_t ev
 
 static void wifi_default_action_sta_start(void *arg, esp_event_base_t base, int32_t event_id, void *data)
 {
-	ESP_LOGI(TAG, "%s:%u", __func__, __LINE__);
+	ESP_LOGV(TAG, "%s:%u", __func__, __LINE__);
     if (s_wifi_netifs[WIFI_IF_STA] != NULL) {
         wifi_action_start(s_wifi_netifs[WIFI_IF_STA], base, event_id, data);
     }
@@ -86,7 +88,7 @@ static void wifi_default_action_sta_stop(void *arg, esp_event_base_t base, int32
 
 static void wifi_default_action_sta_connected(void *arg, esp_event_base_t base, int32_t event_id, void *data)
 {
-	ESP_LOGI(TAG, "%s:%u", __func__, __LINE__);
+	ESP_LOGV(TAG, "%s:%u\n", __func__, __LINE__);
     if (s_wifi_netifs[WIFI_IF_STA] != NULL) {
         esp_err_t ret;
         esp_netif_t *esp_netif = s_wifi_netifs[WIFI_IF_STA];
@@ -95,7 +97,7 @@ static void wifi_default_action_sta_connected(void *arg, esp_event_base_t base, 
         if (!esp_wifi_is_if_ready_when_started(driver)) {
             // if interface not ready when started, rxcb to be registered on connection
             if ((ret = esp_wifi_register_if_rxcb(driver,  esp_netif_receive, esp_netif)) != ESP_OK) {
-                ESP_LOGE(TAG, "esp_wifi_register_if_rxcb for if=%p failed with %d", driver, ret);
+                ESP_LOGE(TAG, "esp_wifi_register_if_rxcb for if=%p failed with %d\n", driver, ret);
                 return;
             }
         }
@@ -130,12 +132,12 @@ static void wifi_default_action_ap_stop(void *arg, esp_event_base_t base, int32_
 static void wifi_default_action_sta_got_ip(void *arg, esp_event_base_t base, int32_t event_id, void *data)
 {
     if (s_wifi_netifs[WIFI_IF_STA] != NULL) {
-        ESP_LOGD(TAG, "Got IP wifi default handler entered");
+        ESP_LOGV(TAG, "Got IP wifi default handler entered\n");
 		//TODO: Hosted what to do for this?
 #if 0
         //int ret = esp_wifi_internal_set_sta_ip();
         //if (ret != ESP_OK) {
-        //    ESP_LOGI(TAG, "esp_wifi_internal_set_sta_ip failed with %d", ret);
+        //    ESP_LOGE(TAG, "esp_wifi_internal_set_sta_ip failed with %d", ret);
         //}
 #endif
         esp_netif_action_got_ip(s_wifi_netifs[WIFI_IF_STA], base, event_id, data);
@@ -262,7 +264,7 @@ esp_err_t esp_wifi_clear_default_wifi_driver_and_handlers(void *esp_netif)
     }
 
     if (i == MAX_WIFI_IFS) { // if all wifi default netifs are null
-        ESP_LOGD(TAG, "Clearing wifi default handlers");
+        ESP_LOGV(TAG, "Clearing wifi default handlers\n");
         clear_default_wifi_handlers();
     }
     return disconnect_and_destroy(esp_netif);
@@ -289,7 +291,7 @@ static esp_err_t create_and_attach(wifi_interface_t wifi_if, esp_netif_t* esp_ne
 {
     wifi_netif_driver_t driver = esp_wifi_create_if_driver(wifi_if);
     if (driver == NULL) {
-        ESP_LOGE(TAG, "Failed to create wifi interface handle");
+        ESP_LOGE(TAG, "Failed to create wifi interface handle\n");
         return ESP_FAIL;
     }
     return esp_netif_attach(esp_netif, driver);

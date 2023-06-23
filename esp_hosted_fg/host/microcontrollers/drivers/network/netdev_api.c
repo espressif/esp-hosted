@@ -14,6 +14,9 @@
 // limitations under the License.
 
 #include "netdev_api.h"
+#include "esp_log.h"
+
+DEFINE_LOG_TAG(netdev);
 
 /**
   * @brief  init network interface
@@ -44,18 +47,19 @@ struct network_handle * network_open(char *if_name, void (* net_rx_callback)(str
 	ndev = netdev_get(if_name);
 
 	if (!ndev) {
-		printf ("Invalid interface name\n");
+		ESP_LOGE(TAG, "Invalid interface name\n");
 		return NULL;
 	}
 
 	/* create network handle */
 	net_handle = g_h.funcs->_h_malloc(sizeof(struct network_handle));
+	assert(net_handle);
 
 	net_handle->ndev = ndev;
 	net_handle->net_rx_callback = net_rx_callback;
 
 	if (netdev_open(ndev)) {
-		printf ("Failed to setup netdev\n");
+		ESP_LOGE(TAG, "Failed to setup netdev\n");
 		g_h.funcs->_h_free(net_handle);
 		return NULL;
 	}
@@ -82,8 +86,12 @@ struct pbuf * network_read(struct network_handle *handle, TickType_t xTicksToWai
 
 	buffer = g_h.funcs->_h_malloc(sizeof(struct pbuf));
 
-	if (!buffer)
+	if (!buffer) {
+		ESP_LOGE(TAG, "Failed to allocate pbuf");
+		assert(buffer);
 		return NULL;
+	}
+
 
 	if (g_h.funcs->_h_dequeue_item(handle->ndev->rx_q, buffer, xTicksToWait))
 		return NULL;
@@ -101,7 +109,7 @@ struct pbuf * network_read(struct network_handle *handle, TickType_t xTicksToWai
 int network_write(struct network_handle *net_handle, struct pbuf *buffer)
 {
 	struct netdev *ndev;
-	int ret = -1;
+	int ret = STM_FAIL;
 
 	if (!net_handle || !buffer)
 		return STM_FAIL;

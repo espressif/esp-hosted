@@ -18,6 +18,9 @@
 //#include "app_main.h"
 #include "netdev_api.h"
 #include "os_wrapper.h"
+#include "esp_log.h"
+
+DEFINE_LOG_TAG(netdev);
 
 struct netdev *ndev_db[MAX_INTERFACE];
 static uint8_t ndev_index = 0;
@@ -131,13 +134,14 @@ netdev_handle_t netdev_alloc(uint32_t sizeof_priv, char *name)
 		ndev->priv = g_h.funcs->_h_malloc(sizeof_priv);
 
 		if (!ndev->priv) {
-			printf("Failed to allocate memory for priv\n");
+			ESP_LOGE(TAG, "Failed to allocate memory for priv\n");
 			g_h.funcs->_h_free(ndev);
 			ndev = NULL;
 			return NULL;
 		}
 	} else {
-		printf("Failed to allocate memory for net dev\n");
+		ESP_LOGE(TAG, "Failed to allocate memory for net dev\n");
+		assert(ndev);
 	}
 
 	return ndev;
@@ -199,7 +203,7 @@ int netdev_register(netdev_handle_t dev, struct netdev_ops *ops)
 	struct netdev *ndev = (struct netdev *) dev;
 
 	if (!ndev || !ops) {
-		printf ("Invalid arguments\n");
+		ESP_LOGE(TAG,"Invalid arguments\n");
 		return STM_FAIL;
 	}
 
@@ -222,7 +226,7 @@ int netdev_unregister(netdev_handle_t dev)
 	struct netdev *ndev = (struct netdev *) dev;
 
 	if (!ndev) {
-		printf ("Invalid arguments\n");
+		ESP_LOGE(TAG,"Invalid arguments\n");
 		return STM_FAIL;
 	}
 
@@ -244,14 +248,14 @@ int netdev_rx(netdev_handle_t dev, struct pbuf *net_buf)
 	struct network_handle *net_handle;
 
 	if (!ndev || !net_buf) {
-		printf ("Invalid arguments\n");
+		ESP_LOGE(TAG,"Invalid arguments\n");
 		g_h.funcs->_h_msleep(50);
 		return STM_FAIL;
 	}
 
 	if (ndev->state == NETDEV_STATE_UP) {
 		if (g_h.funcs->_h_queue_item(ndev->rx_q, net_buf, HOSTED_BLOCK_MAX)) {
-			printf ("Failed to enqueue received packet\n");
+			ESP_LOGE(TAG,"Failed to enqueue received packet\n");
 			goto done;
 		}
 

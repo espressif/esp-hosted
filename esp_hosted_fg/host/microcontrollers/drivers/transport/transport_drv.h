@@ -59,7 +59,7 @@ struct hosted_transport_context_t {
     uint8_t  *rx_buf;
 };
 
-typedef esp_err_t (*hosted_rxcb_t)(void *buffer, uint16_t len, void *eb);
+typedef int (*hosted_rxcb_t)(void *buffer, uint16_t len, void *free_buff_hdl);
 extern hosted_rxcb_t g_rxcb[ESP_MAX_IF];
 
 #if 0
@@ -77,17 +77,23 @@ void process_priv_communication(void *payload, uint8_t len);
 void print_capabilities(uint32_t cap);
 int process_init_event(uint8_t *evt_buf, uint8_t len);
 
-stm_ret_t send_to_slave(uint8_t iface_type, uint8_t iface_num,
-		uint8_t * wbuffer, uint16_t wlen);
+
+int esp_hosted_init(void(*esp_hosted_up_cb)(void));
+int esp_hosted_deinit(void);
+
+uint8_t get_transport_state(void);
+
+#define H_BUFF_NO_ZEROCOPY 0
+#define H_BUFF_ZEROCOPY 1
+
+#define H_DEFLT_FREE_FUNC g_h.funcs->_h_free
 
 
-esp_err_t esp_hosted_init(void(*esp_hosted_up_cb)(void));
-esp_err_t esp_hosted_deinit(void);
-esp_err_t esp_hosted_tx(uint8_t iface_type, uint8_t iface_num,
-		uint8_t * buffer, uint16_t len);
+int esp_hosted_tx(uint8_t iface_type, uint8_t iface_num,
+		uint8_t * buffer, uint16_t len, uint8_t buff_zerocopy, void (*free_buf_fun)(void* ptr));
 
-esp_err_t esp_hosted_register_wifi_rxcb(int ifx, hosted_rxcb_t fn);
-esp_err_t esp_hosted_register_wifi_txcb(int ifx, hosted_rxcb_t fn);
+int esp_hosted_register_wifi_rxcb(int ifx, hosted_rxcb_t fn);
+int esp_hosted_register_wifi_txcb(int ifx, hosted_rxcb_t fn);
 
 int serial_rx_handler(interface_buffer_handle_t * buf_handle);
 #ifdef __cplusplus

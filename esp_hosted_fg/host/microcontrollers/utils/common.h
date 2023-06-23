@@ -25,6 +25,7 @@ extern "C" {
 #include "stdint.h"
 #include "stdio.h"
 #include "os_wrapper.h"
+#include "esp_err.h"
 
 
 /** Constants/Macros **/
@@ -55,6 +56,9 @@ extern "C" {
 
 #define MHZ_TO_HZ(x) (1000000*(x))
 
+#define SUCCESS 0
+#define FAILURE -1
+
 typedef enum stm_ret_s {
 	STM_OK                =  0,
 	STM_FAIL              = -1,
@@ -83,6 +87,8 @@ typedef struct {
 	uint8_t flag;
 	uint16_t payload_len;
 	uint16_t seq_num;
+	/* no need of memcpy at different layers */
+	uint8_t payload_zcopy;
 
 	void (*free_buf_handle)(void *buf_handle);
 } interface_buffer_handle_t;
@@ -99,9 +105,18 @@ uint32_t hton_long (uint32_t x);
 typedef unsigned char   u_char;
 typedef unsigned long   u_long;
 
-void hard_delay(int x);
 int min(int x, int y);
+#if 0
+void hard_delay(int x);
 int get_num_from_string(int *val, char *arg);
+#endif
+
+#define H_FREE_PTR_WITH_FUNC(FreeFunc, FreePtr) do { \
+	if (FreeFunc && FreePtr) {             \
+		FreeFunc(FreePtr);                 \
+		FreePtr = NULL;                    \
+	}                                      \
+} while (0);
 
 #ifdef __cplusplus
 }

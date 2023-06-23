@@ -54,21 +54,69 @@ extern "C" {
  * i.e. ESP to Host OR
  * Host to ESP
  */
+#if 0
 #define TEST_RAW_TP__ESP_TO_HOST     1
 #define TEST_RAW_TP__HOST_TO_ESP     !TEST_RAW_TP__ESP_TO_HOST
-
-#define TEST_RAW_TP__TIMEOUT         1
+#endif
+#define TEST_RAW_TP__TIMEOUT         30
 
 void update_test_raw_tp_rx_len(uint16_t len);
 void process_test_capabilities(uint8_t cap);
 
-#define TEST_RAW_TP__BUF_SIZE    1460
+/* Please note, this size is to assess transport speed,
+ * so kept maximum possible for that transport
+ *
+ * If you want to compare maximum network throughput and
+ * relevance with max transport speed, Plz lower this value to
+ * UDP: 1460 - H_ESP_PAYLOAD_HEADER_OFFSET = 1460-12=1448
+ * TCP: Find MSS in nodes
+ * H_ESP_PAYLOAD_HEADER_OFFSET is header size,
+ * which we are incrementing already in calculations
+ */
+#define TEST_RAW_TP__BUF_SIZE    (MAX_TRANSPORT_BUFFER_SIZE-H_ESP_PAYLOAD_HEADER_OFFSET)
+
 
 #define ESP_TEST_RAW_TP__RX      0
 #define ESP_TEST_RAW_TP__TX      1
 
 #endif
 
+#if H_MEM_STATS
+struct mempool_stats
+{
+	uint32_t num_fresh_alloc;
+	uint32_t num_reuse;
+	uint32_t num_free;
+};
+
+struct spi_stats
+{
+	int rx_alloc;
+	int rx_freed;
+	int tx_alloc;
+	int tx_dummy_alloc;
+	int tx_freed;
+};
+
+struct nw_stats
+{
+	int tx_alloc;
+	int tx_freed;
+};
+
+struct others_stats {
+	int tx_others_freed;
+};
+
+struct mem_stats {
+	struct mempool_stats mp_stats;
+	struct spi_stats spi_mem_stats;
+	struct nw_stats nw_mem_stats;
+	struct others_stats others;
+};
+
+extern struct mem_stats h_stats_g;
+#endif
 #ifdef __cplusplus
 }
 #endif

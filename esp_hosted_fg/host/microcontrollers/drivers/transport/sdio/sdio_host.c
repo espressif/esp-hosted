@@ -20,11 +20,14 @@
 #include "sdio_ll.h"
 #include "trace.h"
 #include "os_wrapper.h"
+#include "esp_log.h"
+
+static const char TAG[] = "SDIO_HOST";
 
 /** Macros/Constants **/
 #define CHECK_SDIO_ERR(ErR) {\
 	if (ErR) { \
-		printf("%s: %u err %u\r\n",__func__,__LINE__,ErR); \
+		ESP_LOGE(TAG,"%s: %u err %u\r\n",__func__,__LINE__,ErR); \
 		return ErR; \
 	} \
 }
@@ -58,74 +61,50 @@ static stm_ret_t esp_slave_init_io(void)
 	uint8_t func2_bsl = 0, func2_bsh = 0;
 
 	CHECK_SDIO_ERR(sdio_driver_read_byte(SDIO_FUNC_0, SD_IO_CCCR_FN_ENABLE, &ioe));
-#if DEBUG_TRANSPORT
-	//printf("%s %u IOE: 0x%02x\n\r", __func__, __LINE__,ioe);
-#endif
+	ESP_LOGD(TAG,"IOE: 0x%02x", ioe);
 
 	CHECK_SDIO_ERR(sdio_driver_read_byte(SDIO_FUNC_0, SD_IO_CCCR_FN_READY, &ior));
-#if DEBUG_TRANSPORT
-	//printf("%s %u IOR: 0x%02x\n\r", __func__, __LINE__, ior);
-#endif
+	ESP_LOGD(TAG,"IOR: 0x%02x", ior);
 
 	// enable function 1
 	ioe = 6;
 	CHECK_SDIO_ERR(sdio_driver_write_byte(SDIO_FUNC_0, SD_IO_CCCR_FN_ENABLE, ioe, &ioe));
-#if DEBUG_TRANSPORT
-	//printf("%s %u IOE: 0x%02x\n\r", __func__,__LINE__,ioe);
-#endif
+	ESP_LOGD(TAG,"IOE: 0x%02x", ioe);
 
 	ior = 6;
 	CHECK_SDIO_ERR(sdio_driver_write_byte(SDIO_FUNC_0, SD_IO_CCCR_FN_READY, ioe, &ior));
-#if DEBUG_TRANSPORT
-//	printf("%s %u IOE: 0x%02x\n\r", __func__,__LINE__,ior);
-#endif
+	ESP_LOGD(TAG,"IOE: 0x%02x", ior);
 
 	// get interrupt status
 	CHECK_SDIO_ERR(sdio_driver_read_byte(SDIO_FUNC_0, SD_IO_CCCR_INT_ENABLE, &ie));
-#if DEBUG_TRANSPORT
-//	printf("IE: 0x%02x\n\r", ie);
-#endif
+	ESP_LOGD(TAG,"IE: 0x%02x", ie);
 
 	// enable interrupts for function 1&2 and master enable
 	ie = 7;
 	CHECK_SDIO_ERR(sdio_driver_write_byte(SDIO_FUNC_0, SD_IO_CCCR_INT_ENABLE, ie, &ie));
-#if DEBUG_TRANSPORT
-//	printf("%s: %u IE: 0x%02x\n\r", __func__,__LINE__,ie);
-#endif
+	ESP_LOGD(TAG,"IE: 0x%02x", ie);
 
 	CHECK_SDIO_ERR(sdio_driver_write_byte(SDIO_FUNC_0, SD_IO_CCCR_BLKSIZEL, bsl, &bsl));
-#if DEBUG_TRANSPORT
-//	printf("%s:%u Function 0 BSL: 0x%02x\n\r", __func__,__LINE__,bsl);
-#endif
+	ESP_LOGD(TAG,"Function 0 BSL: 0x%02x", bsl);
 
 	bsh = 2;
 	CHECK_SDIO_ERR(sdio_driver_write_byte(SDIO_FUNC_0, SD_IO_CCCR_BLKSIZEH, bsh, &bsh));
-#if DEBUG_TRANSPORT
-//	printf("%s %u Function 0 BSH: 0x%02x\n\r", __func__,__LINE__,bsh);
-#endif
+	ESP_LOGD(TAG,"Function 0 BSH: 0x%02x", bsh);
 
 	CHECK_SDIO_ERR(sdio_driver_write_byte(SDIO_FUNC_0, 0x110, func1_bsl, &func1_bsl));
-#if DEBUG_TRANSPORT
-//	printf("%s %u Function 1 BSL: 0x%02x\n\r",  __func__,__LINE__,func1_bsl);
-#endif
+	ESP_LOGD(TAG,"Function 1 BSL: 0x%02x",  func1_bsl);
 
 	func1_bsh = 2;         // Set block size 512 (0x200)
 	CHECK_SDIO_ERR(sdio_driver_write_byte(SDIO_FUNC_0, 0x111, func1_bsh, &func1_bsh));
-#if DEBUG_TRANSPORT
-//	printf("%s %u Function 1 BSH: 0x%02x\n\r", __func__,__LINE__, func1_bsh);
-#endif
+	ESP_LOGD(TAG,"Function 1 BSH: 0x%02x", func1_bsh);
 
 	CHECK_SDIO_ERR(sdio_driver_write_byte(SDIO_FUNC_0, 0x210, func2_bsl, &func2_bsl));
-#if DEBUG_TRANSPORT
-//	printf("%s %u Function 2 BSL: 0x%02x\n\r", __func__,__LINE__, func2_bsl);
-#endif
+	ESP_LOGD(TAG,"Function 2 BSL: 0x%02x", func2_bsl);
 
 	func2_bsh = 2;
 	CHECK_SDIO_ERR(sdio_driver_write_byte(SDIO_FUNC_0, 0x210, func2_bsh, &func2_bsh));
-#if DEBUG_TRANSPORT
-//	printf("%s %u Function 2 BSH: 0x%02x\n\r", __func__,__LINE__,func2_bsh);
-	printf("Slave Initialization completed\n\r");
-#endif
+	ESP_LOGD(TAG,"Function 2 BSH: 0x%02x", func2_bsh);
+	ESP_LOGI(TAG,"SDIO Slave Initialization completed");
 	return STM_OK;
 }
 
@@ -155,7 +134,7 @@ static stm_ret_t esp_sdio_slave_get_rx_data_size(uint32_t* rx_size)
 	stm_ret_t err = sdio_driver_read_bytes(SDIO_FUNC_1,
 			SDIO_REG(ESP_SLAVE_PACKET_LEN_REG), &len, 4, 0);
 	if (err) {
-		printf("Err while reading ESP_SLAVE_PACKET_LEN_REG\n\r");
+		ESP_LOGE(TAG,"Err while reading ESP_SLAVE_PACKET_LEN_REG");
 		return err;
 	}
 	len &= ESP_SLAVE_LEN_MASK;
@@ -165,8 +144,8 @@ static stm_ret_t esp_sdio_slave_get_rx_data_size(uint32_t* rx_size)
 		temp = ESP_RX_BYTE_MAX - sdio_esp_rx_bytes;
 		len = temp + len;
 		if (len > MAX_SDIO_BUFFER_SIZE) {
-			printf("%s: Len from slave[%lu] exceeds max [%d]\n",
-					__func__, len, MAX_SDIO_BUFFER_SIZE);
+			ESP_LOGE(TAG,"Len from slave[%lu] exceeds max [%d]\n",
+					len, MAX_SDIO_BUFFER_SIZE);
 		}
 	}
 #if 0
@@ -200,7 +179,7 @@ stm_ret_t sdio_host_get_packet(void* out_data, size_t size,
 	int len_to_send = 0, block_n = 0;
 
 	if (size <= 0) {
-		printf("Invalid size:%d\n\r", size);
+		ESP_LOGE(TAG,"Invalid size:%d", size);
 		return STM_FAIL_INVALID_ARG;
 	}
 
@@ -208,9 +187,7 @@ stm_ret_t sdio_host_get_packet(void* out_data, size_t size,
 		err = esp_sdio_slave_get_rx_data_size(&len);
 
 		if (err == STM_OK && len > 0) {
-#if DEBUG_TRANSPORT
-		//	printf("Expected length to be read %lu\n\n",len);
-#endif
+			ESP_LOGW(TAG,"Expected length to be read %lu",len);
 			break;
 		}
 
@@ -225,7 +202,7 @@ stm_ret_t sdio_host_get_packet(void* out_data, size_t size,
 	}
 
 	if (len > size) {
-		printf("Pkt size to be read[%lu] > max sdio size supported[%u]\n\r",len, size);
+		ESP_LOGE(TAG,"Pkt size to be read[%lu] > max sdio size supported[%u]",len, size);
 		return STM_OK;
 	}
 
@@ -239,9 +216,7 @@ stm_ret_t sdio_host_get_packet(void* out_data, size_t size,
 
 		if (block_n != 0) {
 			len_to_send = ESP_BLOCK_SIZE;
-#if DEBUG_TRANSPORT
-		//	printf("block_n %u, len-to_send %lu\n\r",block_n,len_to_send);
-#endif
+			ESP_LOGV(TAG,"block_n %u, len-to_send %lu",block_n,len_to_send);
 
 			err = sdio_driver_read_blocks(SDIO_FUNC_1,
 					ESP_SLAVE_CMD53_END_ADDR - len_remain,
@@ -259,9 +234,7 @@ stm_ret_t sdio_host_get_packet(void* out_data, size_t size,
 		}
 
 		if (err) {
-#if DEBUG_TRANSPORT
-			printf("Err from read bytes %x\n\r",err);
-#endif
+			ESP_LOGE(TAG,"Err from read bytes %x",err);
 			return err;
 		}
 
@@ -332,15 +305,13 @@ static uint32_t esp_sdio_host_get_buffer_size(void)
 	ret = sdio_driver_read_bytes(SDIO_FUNC_1,
 			SDIO_REG(ESP_SLAVE_TOKEN_RDATA), &len, 4, 0);
 	if (ret) {
-		printf("Read length error, ret=%d\n\r", ret);
+		ESP_LOGE(TAG,"Read length error, ret=%d", ret);
 		return 0;
 	}
 
 	len = (len >> ESP_SDIO_SEND_OFFSET) & ESP_TX_BUFFER_MASK;
 	len = (len + ESP_TX_BUFFER_MAX - sdio_esp_tx_bytes) % ESP_TX_BUFFER_MAX;
-#if DEBUG_TRANSPORT
-	/*printf("%s len %lu \n\r", __func__, len);*/
-#endif
+	ESP_LOGV(TAG,"Host get buff size: len %lu ", len);
 	return len;
 }
 
@@ -353,7 +324,7 @@ stm_ret_t sdio_host_send_intr(uint8_t intr_no)
 {
 	uint32_t intr_mask = 0;
 	if (intr_no >= MAX_SDIO_SCRATCH_REG_SUPPORTED) {
-		printf(" Error interrupt number\n\r");
+		ESP_LOGE(TAG," Error interrupt number");
 		return STM_FAIL_INVALID_ARG;
 	}
 
@@ -374,7 +345,7 @@ stm_ret_t sdio_host_send_packet(const void* start, uint32_t length)
 	stm_ret_t err;
 	uint8_t* start_ptr = (uint8_t*)start;
 	uint32_t len_remain = length, num = 0, cnt = 300;
-//	printf("length received %d %lu \n\r", length, len_remain);
+	ESP_LOGD(TAG,"length received %d %lu ", length, len_remain);
 
 	int buffer_used, block_n = 0,len_to_send = 0;
 
@@ -383,16 +354,14 @@ stm_ret_t sdio_host_send_packet(const void* start, uint32_t length)
 #if 0
 	while (1) {
 		num = esp_sdio_host_get_buffer_size();
-#if DEBUG_TRANSPORT
-		//printf("Buffer size %lu can be send, input len: %u, len_remain: %lu\n\r", num, length, len_remain);
-#endif
+		ESP_LOGD(TAG,"Buffer size %lu can be send, input len: %u, len_remain: %lu", num, length, len_remain);
 
 		if (num * ESP_BLOCK_SIZE < length) {
 			if (!--cnt) {
-				printf("buff not enough: curr[%lu], exp[%d]\n\r", num, buffer_used);
+				ESP_LOGE(TAG,"buff not enough: curr[%lu], exp[%d]", num, buffer_used);
 				return STM_FAIL_TIMEOUT;
 			} else {
-				printf("buff not enough: curr[%lu], exp[%d], retry..\n\r", num, buffer_used);
+				ESP_LOGE(TAG,"buff not enough: curr[%lu], exp[%d], retry..", num, buffer_used);
 			}
 
 			hard_delay(1);

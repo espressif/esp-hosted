@@ -4,20 +4,24 @@
 #ifndef __OS_WRAPPER_H
 #define __OS_WRAPPER_H
 
+#include "os_header.h"
 #include <signal.h>
 #include <unistd.h>
 #include <sys/types.h>
 
 #include "mempool.h"
+//#include "esp_hosted_config.h"
+
 #include "esp_hosted_config.h"
-
-#include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
-#include "freertos/semphr.h"
-#include "freertos/queue.h"
+#include "hosted_os_adapter.h"
 #include "esp_timer.h"
+#include "esp_event.h"
+#include "esp_netif_types.h"
+#include "esp_wifi_types.h"
+#include "esp_wifi_default.h"
 
 
+ESP_EVENT_DECLARE_BASE(WIFI_EVENT);
 #define MCU_SYS                                      1
 
 #include "common.h"
@@ -33,9 +37,12 @@
     } while(0)
 #endif
 
+#define MAX_TRANSPORT_BUFFER_SIZE        MAX_SPI_BUFFER_SIZE
+#define MAX_PAYLOAD_SIZE (MAX_SPI_BUFFER_SIZE-H_ESP_PAYLOAD_HEADER_OFFSET)
 
-#define CTRL__TIMER_ONESHOT                          0
-#define CTRL__TIMER_PERIODIC                         1
+
+#define RPC__TIMER_ONESHOT                           0
+#define RPC__TIMER_PERIODIC                          1
 
 #define HOSTED_BLOCKING                              -1
 #define HOSTED_NON_BLOCKING                          0
@@ -44,7 +51,9 @@
 #define queue_handle_t                               QueueHandle_t
 #define semaphore_handle_t                           SemaphoreHandle_t
 #define mutex_handle_t                               SemaphoreHandle_t
+
 #define spinlock_handle_t                            portMUX_TYPE
+#define gpio_port_handle_t                           (void*)
 
 
 /* this is needed when there is no gpio port being used */
@@ -101,28 +110,14 @@ enum {
 #define RET_FAIL_MEM                                 -3
 #define RET_FAIL4                                    -4
 
-#define mem_free(x)                                  \
-{                                                    \
-    if (x) {                                         \
-        g_h.funcs->_h_free(x);                       \
-        x = NULL;                                    \
-    }                                                \
-}
-
 /* without alignment */
 #define MALLOC(x)                        malloc(x)
 
 /* This is [malloc + aligned DMA] */
 #define MEM_ALLOC(x)                     heap_caps_malloc(x, MALLOC_CAP_DMA)
 
-#define FREE(x) do {                     \
-	if (x) {                             \
-		free(x);                         \
-		x = NULL;                        \
-	}                                    \
-} while(0);
+#define FREE(x)                          free(x);
 
-#define MAX_PAYLOAD_SIZE (MAX_SPI_BUFFER_SIZE-sizeof(struct esp_payload_header))
 
 /** Enumeration **/
 enum hardware_type_e {
@@ -157,14 +152,6 @@ enum hardware_type_e {
 #endif
 
 
-#define HOSTED_CALLOC(buff,nbytes) do {                           \
-    buff = (uint8_t *)g_h.funcs->_h_calloc(1, nbytes);            \
-    if (!buff) {                                                  \
-        printf("%s, Failed to allocate memory \n", __func__);     \
-        goto free_bufs;                                           \
-    }                                                             \
-} while(0);
-
 
 
 /* -------- Create handle ------- */
@@ -176,15 +163,23 @@ enum hardware_type_e {
 	}                                                                          \
 }
 
-/* -------- Free handle ------- */
-#define HOSTED_FREE_HANDLE(hANDLE) mem_free(hANDLE)
+/* -------- Calloc, Free handle ------- */
+#define HOSTED_FREE(buff) if (buff) { g_h.funcs->_h_free(buff); buff = NULL; }
+#define HOSTED_CALLOC(struct_name, buff, nbytes, gotosym) do {    \
+    buff = (struct_name *)g_h.funcs->_h_calloc(1, nbytes);        \
+    if (!buff) {                                                  \
+        printf("%s, Failed to allocate memory \n", __func__);     \
+        goto gotosym;                                             \
+    }                                                             \
+} while(0);
 
 /* Driver Handle */
 struct serial_drv_handle_t;
 
 /* Timer handle */
 struct timer_handle_t;
+extern struct mempool * nw_mp_g;
 
-
+ESP_EVENT_DECLARE_BASE(WIFI_EVENT);
 
 #endif /*__OS_WRAPPER_H*/

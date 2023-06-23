@@ -16,6 +16,9 @@
 /** Includes **/
 #include "common.h"
 #include "sdio_ll.h"
+#include "esp_log.h"
+
+static const char TAG[] = "H_SDIO_API";
 
 /** Constants/Macros **/
 
@@ -61,7 +64,7 @@ stm_ret_t sdio_driver_read_bytes(uint32_t function, uint32_t addr, void* buffer,
 	int ret = 0;
 	ret = STM32ReadData(function, addr, buffer, len, multi_blocks);
 	if (ret) {
-		printf("%s %d CMD53 error\r\n",__func__, __LINE__);
+		ESP_LOGE(TAG,"%s %d CMD53 error\r\n",__func__, __LINE__);
 		return STM_FAIL;
 	}
 
@@ -81,7 +84,7 @@ stm_ret_t sdio_driver_write_bytes(uint32_t function, uint32_t addr,
 {
 	int ret = STM32WriteData(function, addr, buffer, len);
 	if (ret < 0) {
-		printf("%s CMD53 write error\r\n",__func__);
+		ESP_LOGE(TAG,"%s CMD53 write error\r\n",__func__);
 		return STM_FAIL;
 	}
 	return STM_OK;
@@ -116,7 +119,7 @@ stm_ret_t sdio_driver_read_blocks(uint32_t function, uint32_t addr,
 
 	ret = sdio_driver_read_bytes(function, addr, buffer, len, multi_blocks);
 	if (ret) {
-		printf("%s %d CMD53 error\r\n",__func__, __LINE__);
+		ESP_LOGE(TAG,"%s %d CMD53 error\r\n",__func__, __LINE__);
 		return STM_FAIL;
 	}
 	return ret;
