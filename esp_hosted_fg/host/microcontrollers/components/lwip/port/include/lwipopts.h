@@ -922,7 +922,7 @@ static inline uint32_t timeout_from_offered(uint32_t lease, uint32_t min)
  * While this helps code completion, it might conflict with existing libraries.
  * (only used if you use sockets.c)
  */
-#define LWIP_COMPAT_SOCKETS             0
+#define LWIP_COMPAT_SOCKETS             1
 
 /**
  * LWIP_POSIX_SOCKETS_IO_NAMES==1: Enable POSIX-style sockets functions names.

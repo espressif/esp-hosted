@@ -44,6 +44,83 @@ enum {
 #error "Choose **slave** ESP chipset type to use with this host"
 #endif
 
+/* SPI instance used */
+#ifdef STM32F469xx
+#define SPI_BUS_HAL hspi1
+#elif STM32H743xx
+#define SPI_BUS_HAL hspi3
+#else
+	#error "Which SPI instance you want to use?"
+	#error "Please cross-check ioc file for your STM32 & Data sheet"
+	#error "If non STM MCU, please port os_wrapper.c, os_wrapper.h, os_header.h files"
+#endif
+
+#ifdef STM32F469xx
+#ifndef GPIO_HANDSHAKE_Pin
+#define GPIO_HANDSHAKE_Pin GPIO_PIN_6
+#define GPIO_HANDSHAKE_GPIO_Port GPIOC
+#endif
+
+#ifndef GPIO_RESET_Pin
+#define GPIO_RESET_Pin GPIO_PIN_13
+#define GPIO_RESET_GPIO_Port GPIOB
+#endif
+
+#ifndef USR_SPI_CS_Pin
+#define USR_SPI_CS_Pin GPIO_PIN_15
+#define USR_SPI_CS_GPIO_Port GPIOA
+#endif
+
+#ifndef GPIO_DATA_READY_Pin
+#define GPIO_DATA_READY_Pin GPIO_PIN_7
+#define GPIO_DATA_READY_GPIO_Port GPIOC
+#endif
+
+#ifndef GPIO_DATA_READY_EXTI_IRQn
+#define GPIO_DATA_READY_EXTI_IRQn EXTI9_5_IRQn
+#endif
+
+#ifndef GPIO_HANDSHAKE_EXTI_IRQn
+#define GPIO_HANDSHAKE_EXTI_IRQn EXTI9_5_IRQn
+#endif
+
+#elif STM32H743xx
+
+#ifndef GPIO_HANDSHAKE_Pin
+#define GPIO_HANDSHAKE_Pin GPIO_PIN_3
+#define GPIO_HANDSHAKE_GPIO_Port GPIOG
+#endif
+
+#ifndef GPIO_RESET_Pin
+#define GPIO_RESET_Pin GPIO_PIN_3
+#define GPIO_RESET_GPIO_Port GPIOF
+#endif
+
+#ifndef USR_SPI_CS_Pin
+#define USR_SPI_CS_Pin GPIO_PIN_14
+#define USR_SPI_CS_GPIO_Port GPIOD
+#endif
+
+#ifndef GPIO_DATA_READY_Pin
+#define GPIO_DATA_READY_Pin GPIO_PIN_2
+#define GPIO_DATA_READY_GPIO_Port GPIOG
+#endif
+
+#ifndef GPIO_DATA_READY_EXTI_IRQn
+#define GPIO_DATA_READY_EXTI_IRQn EXTI2_IRQn
+#endif
+
+#ifndef GPIO_HANDSHAKE_EXTI_IRQn
+#define GPIO_HANDSHAKE_EXTI_IRQn EXTI3_IRQn
+#endif
+
+#else
+
+#error "Please port these values for your MCU"
+
+#endif
+
+
 #define H_GPIO_HANDSHAKE_Port                        GPIO_HANDSHAKE_GPIO_Port
 #define H_GPIO_HANDSHAKE_Pin                         GPIO_HANDSHAKE_Pin
 
@@ -53,7 +130,8 @@ enum {
 #define H_GPIO_CS_Port                               GPIOA
 #define H_GPIO_CS_Pin                                GPIO_PIN_15
 
-#if 0
+#if !defined(STM32F469xx) &&  !defined(STM32H743xx)
+#error "Add GPIO for SPI for your MCU"
 #define GPIO_MOSI_Port                               -1
 #define GPIO_MOSI                                    CONFIG_ESP_SPI_GPIO_MOSI
 #define GPIO_MISO_Port                               -1
