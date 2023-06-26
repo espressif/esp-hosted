@@ -808,15 +808,11 @@ int hosted_write_gpio(void* gpio_port_in, uint32_t gpio_num, uint32_t value)
 
 
 
-<<<<<<< HEAD
 
-=======
->>>>>>> a0b6c3e (lwip ported over stm32 as host)
 void hosted_init_hook(void)
 {
 	/* This is hook to initialize port specific contexts, if any */
 	nw_mempool_create();
-<<<<<<< HEAD
 	ESP_LOGI(TAG, "\n\n\r");
 	ESP_LOGI(TAG, "********************************************************");
 	ESP_LOGI(TAG, "********             ESP-Hosted                 ********");
@@ -839,8 +835,6 @@ void hosted_init_hook(void)
 
 
 
-=======
->>>>>>> a0b6c3e (lwip ported over stm32 as host)
 }
 
 #define UART_TRANSMIT(ch) HAL_UART_Transmit(&huart3, (uint8_t *)&ch, 1, 0xFFFF);
@@ -862,12 +856,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 
 void * hosted_spi_init(void)
 {
-<<<<<<< HEAD
-
 	return &SPI_BUS_HAL;
-=======
-	return &hspi3;
->>>>>>> a0b6c3e (lwip ported over stm32 as host)
 
 #if 0
 #define SPI_MODE                          SPI_MODE2
@@ -958,13 +947,8 @@ static inline stm_ret_t spi_transaction(uint8_t * txbuff, uint8_t * rxbuff, uint
 	HAL_StatusTypeDef retval = HAL_ERROR;
 
 	/* SPI transaction */
-<<<<<<< HEAD
 	retval = HAL_SPI_TransmitReceive(&SPI_BUS_HAL, txbuff, rxbuff, size, HAL_MAX_DELAY);
 	while( SPI_BUS_HAL.State == HAL_SPI_STATE_BUSY );
-=======
-	retval = HAL_SPI_TransmitReceive(&hspi1, txbuff, rxbuff, size, HAL_MAX_DELAY);
-	while( hspi1.State == HAL_SPI_STATE_BUSY );
->>>>>>> a0b6c3e (lwip ported over stm32 as host)
 
 	return retval;
 }
@@ -977,13 +961,8 @@ static inline stm_ret_t spi_transaction(uint8_t * txbuff, uint8_t * rxbuff, uint
 	//ESP_LOGE(TAG, "Execute SPI transaction\n");
 	/* SPI transaction */
 	HAL_GPIO_WritePin(USR_SPI_CS_GPIO_Port, USR_SPI_CS_Pin, GPIO_PIN_RESET);
-<<<<<<< HEAD
 	retval = HAL_SPI_TransmitReceive(&SPI_BUS_HAL, txbuff, rxbuff, size, HAL_MAX_DELAY);
 	//while( SPI_BUS_HAL.State == HAL_SPI_STATE_BUSY );
-=======
-	retval = HAL_SPI_TransmitReceive(&hspi3, txbuff, rxbuff, size, HAL_MAX_DELAY);
-	//while( hspi1.State == HAL_SPI_STATE_BUSY );
->>>>>>> a0b6c3e (lwip ported over stm32 as host)
 	HAL_GPIO_WritePin(USR_SPI_CS_GPIO_Port, USR_SPI_CS_Pin, GPIO_PIN_SET);
 
 	return retval;
