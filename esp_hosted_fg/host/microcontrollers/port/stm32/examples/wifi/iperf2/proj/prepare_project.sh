@@ -42,7 +42,7 @@ else
 	fi
 	TRANSPORT=$1
 	WORKSPACE=$2
-	PROJ_NAME=stm32h743zi_spi
+	PROJ_NAME=stm_spi_host
 fi
 
 

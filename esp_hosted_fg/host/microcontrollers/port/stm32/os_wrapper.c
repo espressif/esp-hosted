@@ -833,7 +833,8 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 
 void * hosted_spi_init(void)
 {
-	return &hspi3;
+
+	return &SPI_BUS_HAL;
 
 #if 0
 #define SPI_MODE                          SPI_MODE2
@@ -924,8 +925,8 @@ static inline stm_ret_t spi_transaction(uint8_t * txbuff, uint8_t * rxbuff, uint
 	HAL_StatusTypeDef retval = HAL_ERROR;
 
 	/* SPI transaction */
-	retval = HAL_SPI_TransmitReceive(&hspi1, txbuff, rxbuff, size, HAL_MAX_DELAY);
-	while( hspi1.State == HAL_SPI_STATE_BUSY );
+	retval = HAL_SPI_TransmitReceive(&SPI_BUS_HAL, txbuff, rxbuff, size, HAL_MAX_DELAY);
+	while( SPI_BUS_HAL.State == HAL_SPI_STATE_BUSY );
 
 	return retval;
 }
@@ -938,8 +939,8 @@ static inline stm_ret_t spi_transaction(uint8_t * txbuff, uint8_t * rxbuff, uint
 	//ESP_LOGE(TAG, "Execute SPI transaction\n");
 	/* SPI transaction */
 	HAL_GPIO_WritePin(USR_SPI_CS_GPIO_Port, USR_SPI_CS_Pin, GPIO_PIN_RESET);
-	retval = HAL_SPI_TransmitReceive(&hspi3, txbuff, rxbuff, size, HAL_MAX_DELAY);
-	//while( hspi1.State == HAL_SPI_STATE_BUSY );
+	retval = HAL_SPI_TransmitReceive(&SPI_BUS_HAL, txbuff, rxbuff, size, HAL_MAX_DELAY);
+	//while( SPI_BUS_HAL.State == HAL_SPI_STATE_BUSY );
 	HAL_GPIO_WritePin(USR_SPI_CS_GPIO_Port, USR_SPI_CS_Pin, GPIO_PIN_SET);
 
 	return retval;
