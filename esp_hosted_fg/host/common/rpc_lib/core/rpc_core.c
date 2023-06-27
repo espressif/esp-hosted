@@ -294,7 +294,6 @@ fail_req:
 
 		HOSTED_CALLOC(ctrl_cmd_t, app_resp, sizeof(ctrl_cmd_t), fail_req2);
 
-		g_h.funcs->_h_memset(app_resp, 0, sizeof(ctrl_cmd_t));
 		app_resp->msg_type = RPC_TYPE__Resp;
 		app_resp->msg_id = (app_req->msg_id - RPC_ID__Req_Base + RPC_ID__Resp_Base);
 		app_resp->resp_event_status = failure_status;
@@ -304,6 +303,35 @@ fail_req:
 		 * request is already sent and success return to the caller
 		 */
 		app_req->rpc_rsp_cb(app_resp);
+	} else {
+		/* for sync procedure, put failed response into receive queue
+		 * so application is aware of transmit failure.
+		 * Prevents timeout waiting for a response that will never come
+		 * as request was never sent
+		 */
+		ESP_LOGV(TAG, "put failed response into rx queue");
+
+		ctrl_cmd_t *app_resp = NULL;
+
+		HOSTED_CALLOC(ctrl_cmd_t, app_resp, sizeof(ctrl_cmd_t), fail_req2);
+
+		app_resp->msg_type = RPC_TYPE__Resp;
+		app_resp->msg_id = (app_req->msg_id - RPC_ID__Req_Base + RPC_ID__Resp_Base);
+		app_resp->resp_event_status = failure_status;
+
+		// same as process_rpc_rx_msg() for failed condition
+		esp_queue_elem_t elem = {0};
+		elem.buf = app_resp;
+		elem.buf_len = sizeof(ctrl_cmd_t);
+
+		if (g_h.funcs->_h_queue_item(rpc_rx_q, &elem, HOSTED_BLOCK_MAX)) {
+			ESP_LOGE(TAG, "RPC Q put fail\n");
+		} else if (CALLBACK_AVAILABLE == is_sync_resp_sem_for_resp_msg_id(app_resp->msg_id)) {
+			ESP_LOGV(TAG, "trigger semaphore to react to failed message id %d", app_resp->msg_id);
+			post_sync_resp_sem(app_resp);
+		} else {
+			ESP_LOGE(TAG, "no sync resp callback to react to failed message id %d", app_resp->msg_id);
+		}
 	}
 
 fail_req2:

@@ -467,7 +467,7 @@ int rpc_parse_rsp(Rpc *rpc_msg, ctrl_cmd_t *app_resp)
 		RPC_ERR_IN_RESP(resp_wifi_scan_get_ap_records);
 		p_c_list = rpc_msg->resp_wifi_scan_get_ap_records->ap_records;
 
-		p_a->number = rpc_msg->resp_wifi_scan_get_ap_num->number;
+		p_a->number = rpc_msg->resp_wifi_scan_get_ap_records->number;
 
 		if (!p_a->number) {
 			ESP_LOGI(TAG, "No AP found\n\r");
