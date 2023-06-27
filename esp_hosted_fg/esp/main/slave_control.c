@@ -2258,13 +2258,17 @@ static esp_err_t req_wifi_get_config(Rpc *req, Rpc *resp, void *priv_data)
 	iface = req_payload->iface;
 	resp_payload->iface = iface;
 	RPC_RET_FAIL_IF(iface > WIFI_IF_AP);
+	RPC_RET_FAIL_IF(esp_wifi_get_config(iface, &cfg));
 
-    RPC_RET_FAIL_IF(esp_wifi_get_config(iface, &cfg));
-
+	RPC_ALLOC_ELEMENT(WifiConfig, resp_payload->cfg, wifi_config__init);
 	switch (iface) {
 
 	case WIFI_IF_STA: {
 		wifi_sta_config_t * p_a_sta = &(cfg.sta);
+		resp_payload->cfg->u_case = WIFI_CONFIG__U_STA;
+
+		RPC_ALLOC_ELEMENT(WifiStaConfig, resp_payload->cfg->sta, wifi_sta_config__init);
+
 		WifiStaConfig * p_c_sta = resp_payload->cfg->sta;
 		RPC_RESP_COPY_STR(p_c_sta->ssid, p_a_sta->ssid, SSID_LENGTH);
 		RPC_RESP_COPY_STR(p_c_sta->password, p_a_sta->password, PASSWORD_LENGTH);
@@ -2278,8 +2282,10 @@ static esp_err_t req_wifi_get_config(Rpc *req, Rpc *resp, void *priv_data)
 		p_c_sta->channel = p_a_sta->channel;
 		p_c_sta->listen_interval = p_a_sta->listen_interval;
 		p_c_sta->sort_method = p_a_sta->sort_method;
+		RPC_ALLOC_ELEMENT(WifiScanThreshold, p_c_sta->threshold, wifi_scan_threshold__init);
 		p_c_sta->threshold->rssi = p_a_sta->threshold.rssi;
 		p_c_sta->threshold->authmode = p_a_sta->threshold.authmode;
+		RPC_ALLOC_ELEMENT(WifiPmfConfig, p_c_sta->pmf_cfg, wifi_pmf_config__init);
 		p_c_sta->pmf_cfg->capable = p_a_sta->pmf_cfg.capable;
 		p_c_sta->pmf_cfg->required = p_a_sta->pmf_cfg.required;
 
@@ -2309,6 +2315,9 @@ static esp_err_t req_wifi_get_config(Rpc *req, Rpc *resp, void *priv_data)
 	}
 	case WIFI_IF_AP: {
 		wifi_ap_config_t * p_a_ap = &(cfg.ap);
+		resp_payload->cfg->u_case = WIFI_CONFIG__U_AP;
+
+		RPC_ALLOC_ELEMENT(WifiApConfig, resp_payload->cfg->ap, wifi_ap_config__init);
 		WifiApConfig * p_c_ap = resp_payload->cfg->ap;
 		RPC_RESP_COPY_STR(p_c_ap->password, p_a_ap->password, PASSWORD_LENGTH);
 		p_c_ap->ssid_len = p_a_ap->ssid_len;
@@ -2319,6 +2328,7 @@ static esp_err_t req_wifi_get_config(Rpc *req, Rpc *resp, void *priv_data)
 		p_c_ap->beacon_interval = p_a_ap->beacon_interval;
 		p_c_ap->pairwise_cipher = p_a_ap->pairwise_cipher;
 		p_c_ap->ftm_responder = p_a_ap->ftm_responder;
+		RPC_ALLOC_ELEMENT(WifiPmfConfig, p_c_ap->pmf_cfg, wifi_pmf_config__init);
 		p_c_ap->pmf_cfg->capable = p_a_ap->pmf_cfg.capable;
 		p_c_ap->pmf_cfg->required = p_a_ap->pmf_cfg.required;
 		if (p_c_ap->ssid_len)
@@ -2329,7 +2339,7 @@ static esp_err_t req_wifi_get_config(Rpc *req, Rpc *resp, void *priv_data)
         ESP_LOGE(TAG, "Unsupported WiFi interface[%u]\n", iface);
 	} //switch
 
-
+err:
 	return ESP_OK;
 }
 
@@ -2995,10 +3005,13 @@ static void esp_rpc_cleanup(Rpc *resp)
 				mem_free(resp->resp_wifi_get_config->cfg->sta->ssid.data);
 				mem_free(resp->resp_wifi_get_config->cfg->sta->password.data);
 				mem_free(resp->resp_wifi_get_config->cfg->sta->bssid.data);
+				mem_free(resp->resp_wifi_get_config->cfg->sta->threshold);
+				mem_free(resp->resp_wifi_get_config->cfg->sta->pmf_cfg);
 				mem_free(resp->resp_wifi_get_config->cfg->sta);
 			} else if (resp->resp_wifi_get_config->iface == WIFI_IF_AP) {
 				mem_free(resp->resp_wifi_get_config->cfg->ap->ssid.data);
 				mem_free(resp->resp_wifi_get_config->cfg->ap->password.data);
+				mem_free(resp->resp_wifi_get_config->cfg->ap->pmf_cfg);
 				mem_free(resp->resp_wifi_get_config->cfg->ap);
 			}
 			mem_free(resp->resp_wifi_get_config->cfg);

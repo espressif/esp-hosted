@@ -1185,11 +1185,12 @@ int test_wifi_scan_get_ap_records(uint16_t *number, wifi_ap_record_t *ap_records
 
 	req.u.wifi_scan_ap_list.number = *number;
 	resp = wifi_scan_get_ap_records(req);
-	ESP_LOGV(TAG, "num: %u",resp->u.wifi_scan_ap_list.number);
+	if (resp && resp->resp_event_status == SUCCESS) {
+		ESP_LOGV(TAG, "num: %u",resp->u.wifi_scan_ap_list.number);
 
-	g_h.funcs->_h_memcpy(ap_records, resp->u.wifi_scan_ap_list.out_list,
-			resp->u.wifi_scan_ap_list.number * sizeof(wifi_ap_record_t));
-
+		g_h.funcs->_h_memcpy(ap_records, resp->u.wifi_scan_ap_list.out_list,
+				resp->u.wifi_scan_ap_list.number * sizeof(wifi_ap_record_t));
+	}
 	return rpc_rsp_callback(resp);
 }
 
@@ -1246,9 +1247,10 @@ int test_wifi_sta_get_ap_info(wifi_ap_record_t *ap_info)
 
 	resp = wifi_sta_get_ap_info(req);
 
-	g_h.funcs->_h_memcpy(ap_info, resp->u.wifi_scan_ap_list.out_list,
-			sizeof(wifi_ap_record_t));
-
+	if (resp && resp->resp_event_status == SUCCESS) {
+		g_h.funcs->_h_memcpy(ap_info, resp->u.wifi_scan_ap_list.out_list,
+				sizeof(wifi_ap_record_t));
+	}
 	return rpc_rsp_callback(resp);
 }
 
