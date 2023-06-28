@@ -15,7 +15,19 @@ extern "C" {
 #include <stdbool.h>
 #include <stdint.h>
 #include <stddef.h>
+
 #include "esp_hosted_config.h"
+#include "sdkconfig.h"
+#if !defined(CONFIG_IDF_TARGET_ESP32) && \
+    !defined(CONFIG_IDF_TARGET_ESP32C2) && \
+    !defined(CONFIG_IDF_TARGET_ESP32C3) && \
+    !defined(CONFIG_IDF_TARGET_ESP32C6) && \
+    !defined(CONFIG_IDF_TARGET_ESP32S2) && \
+    !defined(CONFIG_IDF_TARGET_ESP32S3)
+  /* Host is not ESP32 but some structure internally need one of the variant chosen
+   * will just assume it is ESP32 */
+  #define CONFIG_IDF_TARGET_ESP32 1
+#endif
 
 typedef enum {
     ESP_IF_WIFI_STA = 0,     /**< Station interface */

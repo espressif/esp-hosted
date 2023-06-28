@@ -83,7 +83,9 @@ menu "Example Configuration"
     			    int "GPIO pin for handshake"
     			    default 3 if IDF_TARGET_ESP32C2
     			    default 3 if IDF_TARGET_ESP32C3
-    			    default 17
+    			    default 3 if IDF_TARGET_ESP32C6
+    			    default 17 if IDF_TARGET_ESP32S3
+    			    default 26
     			    help
     			        GPIO pin to use for handshake with other spi controller
 
@@ -104,13 +106,13 @@ menu "Example Configuration"
     		    int "ESP to Host SPI queue size"
     		    default 10
     		    help
-    		        Very small tx queue will lower ESP -- SPI --> Host data rate (Only ESP32-C2)
+    		        Very small tx queue will lower ESP -- SPI --> Host data rate
 
     		config ESP_SPI_RX_Q_SIZE
     		    int "Host to ESP SPI queue size"
     		    default 10
     		    help
-    		        Very small RX queue will lower ESP <-- SPI -- Host data rate (Only ESP32-C2)
+    		        Very small RX queue will lower ESP <-- SPI -- Host data rate
 
 		endmenu
 

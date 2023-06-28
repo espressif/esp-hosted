@@ -28,17 +28,9 @@ enum {
  * 1. Using Cs pin from SPI peripheral
  * 2. Manual CS switching for GPIO
  */
-#define ESP_CHIPSET_USED                             SLAVE_CHIPSET_ESP32C3
+#define ESP_CHIPSET_USED                             SLAVE_CHIPSET_ESP32
 
-#if !defined(CONFIG_IDF_TARGET_ESP32) && \
-    !defined(CONFIG_IDF_TARGET_ESP32C2) && \
-    !defined(CONFIG_IDF_TARGET_ESP32C3) && \
-    !defined(CONFIG_IDF_TARGET_ESP32C6) && \
-    !defined(CONFIG_IDF_TARGET_ESP32S2) && \
-    !defined(CONFIG_IDF_TARGET_ESP32S3)
-  /* Host is not ESP32 but some structure will just assume it is ESP32 */
-  #define CONFIG_IDF_TARGET_ESP32 1
-#endif
+
 
 #ifndef ESP_CHIPSET_USED
 #error "Choose **slave** ESP chipset type to use with this host"
@@ -56,6 +48,13 @@ enum {
 #endif
 
 #ifdef STM32F469xx
+/* Comment for STM32-F4
+ * This is just to print values.
+ * For MCU as STM32, you cannot change values for these pins here
+ * as they are needed to be configured by changing ioc file.
+ * Please open ioc file using STM32CubeIDE and change if need be
+ */
+
 #ifndef GPIO_HANDSHAKE_Pin
 #define GPIO_HANDSHAKE_Pin GPIO_PIN_6
 #define GPIO_HANDSHAKE_GPIO_Port GPIOC
@@ -84,7 +83,36 @@ enum {
 #define GPIO_HANDSHAKE_EXTI_IRQn EXTI9_5_IRQn
 #endif
 
+
+#ifndef GPIO_MOSI_Pin
+#define GPIO_MOSI_Pin GPIO_PIN_5
+#define GPIO_MOSI_GPIO_Port GPIOB
+#endif
+
+#ifndef GPIO_MISO_Pin
+#define GPIO_MISO_Pin GPIO_PIN_4
+#define GPIO_MISO_GPIO_Port GPIOB
+#endif
+
+#ifndef GPIO_CLK_Pin
+#define GPIO_CLK_Pin GPIO_PIN_5
+#define GPIO_CLK_GPIO_Port GPIOA
+#endif
+
+#ifndef GPIO_CS_Pin
+#define GPIO_CS_Pin GPIO_PIN_5
+#define GPIO_CS_GPIO_Port GPIOA
+#endif
+
+
+
 #elif STM32H743xx
+/* Comment for STM32-H7
+ * This is just to print values.
+ * For MCU as STM32, you cannot change values for these pins here
+ * as they are needed to be configured by changing ioc file.
+ * Please open ioc file using STM32CubeIDE and change if need be
+ */
 
 #ifndef GPIO_HANDSHAKE_Pin
 #define GPIO_HANDSHAKE_Pin GPIO_PIN_3
@@ -114,9 +142,30 @@ enum {
 #define GPIO_HANDSHAKE_EXTI_IRQn EXTI3_IRQn
 #endif
 
+#ifndef GPIO_MOSI_Pin
+#define GPIO_MOSI_Pin GPIO_PIN_5
+#define GPIO_MOSI_GPIO_Port GPIOB
+#endif
+
+
+#ifndef GPIO_MISO_Pin
+#define GPIO_MISO_Pin GPIO_PIN_4
+#define GPIO_MISO_GPIO_Port GPIOB
+#endif
+
+#ifndef GPIO_CLK_Pin
+#define GPIO_CLK_Pin GPIO_PIN_3
+#define GPIO_CLK_GPIO_Port GPIOB
+#endif
+
+#ifndef GPIO_CS_Pin
+#define GPIO_CS_Pin GPIO_PIN_14
+#define GPIO_CS_GPIO_Port GPIOD
+#endif
+
 #else
 
-#error "Please port these values for your MCU"
+#error "Please port above GPIO values for your MCU"
 
 #endif
 
@@ -159,7 +208,7 @@ enum {
 #define CONFIG_H_LOWER_MEMCOPY                       0
 
 /* Do not use standard c malloc and hook to freertos heap4 */
-#define USE_STD_C_LIB_MALLOC                         1
+#define USE_STD_C_LIB_MALLOC                         0
 
 #define CONFIG_USE_MEMPOOL                           1
 

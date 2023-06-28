@@ -497,7 +497,7 @@ static void iperf_task_traffic(void *arg)
     }
 
     if (s_iperf_ctrl.buffer) {
-        free(s_iperf_ctrl.buffer);
+    	g_h.funcs->_h_free(s_iperf_ctrl.buffer);
         s_iperf_ctrl.buffer = NULL;
     }
     ESP_LOGI(TAG, "iperf exit");
