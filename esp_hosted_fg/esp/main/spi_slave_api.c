@@ -35,21 +35,24 @@
 static const char TAG[] = "SPI_DRIVER";
 /* SPI settings */
 #define SPI_BITS_PER_WORD          8
-#define SPI_MODE_0                 0
-#define SPI_MODE_1                 1
-#define SPI_MODE_2                 2
-#define SPI_MODE_3                 3
 
-#if CONFIG_ESP_SPI_MODE_0
-#  error "SPI mode 0 at SLAVE is NOT supported"
-#  define SPI_MODE SPI_MODE_0
-#elif CONFIG_ESP_SPI_MODE_1
-#  define SPI_MODE SPI_MODE_1
-#elif CONFIG_ESP_SPI_MODE_2
-#  define SPI_MODE SPI_MODE_2
-#elif CONFIG_ESP_SPI_MODE_3
-#  define SPI_MODE SPI_MODE_3
-#endif
+#define ESP_SPI_MODE               CONFIG_ESP_SPI_MODE
+#define GPIO_MOSI                  CONFIG_ESP_SPI_GPIO_MOSI
+#define GPIO_MISO                  CONFIG_ESP_SPI_GPIO_MISO
+#define GPIO_SCLK                  CONFIG_ESP_SPI_GPIO_CLK
+#define GPIO_CS                    CONFIG_ESP_SPI_GPIO_CS
+#define GPIO_DATA_READY            CONFIG_ESP_SPI_GPIO_DATA_READY
+#define GPIO_HANDSHAKE             CONFIG_ESP_SPI_GPIO_HANDSHAKE
+
+#define ESP_SPI_CONTROLLER         CONFIG_ESP_SPI_CONTROLLER
+
+#define SPI_RX_QUEUE_SIZE          CONFIG_ESP_SPI_RX_Q_SIZE
+#define SPI_TX_QUEUE_SIZE          CONFIG_ESP_SPI_TX_Q_SIZE
+
+/* Optimize the SPI slave side clock for better data rate
+ * Below value could be fine tuned in small steps
+ * */
+#define SPI_CLK_MHZ                CONFIG_ESP_SPI_CLK_FREQ
 
 /* SPI-DMA settings */
 #define SPI_DMA_ALIGNMENT_BYTES    4
@@ -58,91 +61,23 @@ static const char TAG[] = "SPI_DRIVER";
 #define MAKE_SPI_DMA_ALIGNED(VAL)  (VAL += SPI_DMA_ALIGNMENT_BYTES - \
 				((VAL)& SPI_DMA_ALIGNMENT_MASK))
 
-/* Chipset specific configurations */
-#ifdef CONFIG_IDF_TARGET_ESP32
-
-    #if (CONFIG_ESP_SPI_CONTROLLER == 3)
-        #define ESP_SPI_CONTROLLER 2
-        #define GPIO_MOSI          23
-        #define GPIO_MISO          19
-        #define GPIO_SCLK          18
-        #define GPIO_CS            5
-    #elif (CONFIG_ESP_SPI_CONTROLLER == 2)
-        #define ESP_SPI_CONTROLLER 1
-        #define GPIO_MISO          12
-        #define GPIO_MOSI          13
-        #define GPIO_SCLK          14
-        #define GPIO_CS            15
-    #else
-        #error "Please choose correct SPI controller"
-    #endif
-
+#if defined(CONFIG_IDF_TARGET_ESP32) || defined(CONFIG_IDF_TARGET_ESP32S2)
     #define DMA_CHAN               ESP_SPI_CONTROLLER
-
-#elif defined CONFIG_IDF_TARGET_ESP32S2
-
-    #define ESP_SPI_CONTROLLER     1
-    #define GPIO_MOSI              11
-    #define GPIO_MISO              13
-    #define GPIO_SCLK              12
-    #define GPIO_CS                10
-    #define DMA_CHAN               ESP_SPI_CONTROLLER
-
-#elif defined CONFIG_IDF_TARGET_ESP32C2
-
-    #define ESP_SPI_CONTROLLER     1
-    #define GPIO_MOSI              7
-    #define GPIO_MISO              2
-    #define GPIO_SCLK              6
-    #define GPIO_CS                10
+#else
     #define DMA_CHAN               SPI_DMA_CH_AUTO
-
-#elif defined CONFIG_IDF_TARGET_ESP32C3
-
-    #define ESP_SPI_CONTROLLER     1
-    #define GPIO_MOSI              7
-    #define GPIO_MISO              2
-    #define GPIO_SCLK              6
-    #define GPIO_CS                10
-    #define DMA_CHAN               SPI_DMA_CH_AUTO
-
-#elif defined CONFIG_IDF_TARGET_ESP32S3
-
-    #define ESP_SPI_CONTROLLER     1
-    #define GPIO_MOSI              11
-    #define GPIO_MISO              13
-    #define GPIO_SCLK              12
-    #define GPIO_CS                10
-    #define DMA_CHAN               SPI_DMA_CH_AUTO
-
-
-#elif defined CONFIG_IDF_TARGET_ESP32C6
-
-    #define ESP_SPI_CONTROLLER     1
-    #define GPIO_MOSI              7
-    #define GPIO_MISO              2
-    #define GPIO_SCLK              6
-    #define GPIO_CS                10
-    #define DMA_CHAN               SPI_DMA_CH_AUTO
-
 #endif
 
-#define SPI_CLK_MHZ CONFIG_ESP_SPI_CLK_FREQ
-
-#define GPIO_HS                    CONFIG_ESP_SPI_GPIO_HANDSHAKE
-#define GPIO_DR                    CONFIG_ESP_SPI_GPIO_DATA_READY
 
 
-#define GPIO_MASK_DATA_READY (1 << GPIO_DR)
-#define GPIO_MASK_HANDSHAKE (1 << GPIO_HS)
-
-
+#if ESP_SPI_MODE==0
+#  error "SPI mode 0 at SLAVE is NOT supported"
+#endif
 /* SPI internal configs */
 #define SPI_BUFFER_SIZE            MAX_TRANSPORT_BUF_SIZE
 #define SPI_QUEUE_SIZE             3
 
-#define SPI_RX_QUEUE_SIZE      CONFIG_ESP_SPI_RX_Q_SIZE
-#define SPI_TX_QUEUE_SIZE      CONFIG_ESP_SPI_TX_Q_SIZE
+#define GPIO_MASK_DATA_READY (1 << GPIO_DATA_READY)
+#define GPIO_MASK_HANDSHAKE (1 << GPIO_HANDSHAKE)
 
 static interface_context_t context;
 static interface_handle_t if_handle_g;
@@ -801,7 +736,7 @@ static interface_handle_t * esp_spi_init(void)
 
 	/* Configuration for the SPI slave interface */
 	spi_slave_interface_config_t slvcfg={
-		.mode=SPI_MODE,
+		.mode=ESP_SPI_MODE,
 		.spics_io_num=GPIO_CS,
 		.queue_size=SPI_QUEUE_SIZE,
 		.flags=0,
@@ -842,7 +777,8 @@ static interface_handle_t * esp_spi_init(void)
 
 	ESP_LOGI(TAG, "SPI Ctrl:%u mode: %u, InitFreq: 10MHz, ReqFreq: %uMHz\nGPIOs: MOSI: %u, MISO: %u, CS: %u, CLK: %u HS: %u DR: %u\n",
 			ESP_SPI_CONTROLLER, slvcfg.mode, SPI_CLK_MHZ,
-			GPIO_MOSI, GPIO_MISO, GPIO_CS, GPIO_SCLK, GPIO_HS, GPIO_DR);
+			GPIO_MOSI, GPIO_MISO, GPIO_CS, GPIO_SCLK,
+			GPIO_HANDSHAKE, GPIO_DATA_READY);
 
 	ESP_LOGI(TAG, "Hosted SPI queue size: Tx:%u Rx:%u", SPI_TX_QUEUE_SIZE, SPI_RX_QUEUE_SIZE);
 	register_hs_disable_pin(GPIO_CS);

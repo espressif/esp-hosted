@@ -73,9 +73,9 @@ int esp_netdev_xmit(netdev_handle_t netdev, struct pbuf *net_buf);
 void process_capabilities(uint8_t cap);
 void transport_init(void(*transport_evt_handler)(uint8_t));
 
-void process_priv_communication(void *payload, uint8_t len);
+void process_priv_communication(void *payload, uint16_t len);
 void print_capabilities(uint32_t cap);
-int process_init_event(uint8_t *evt_buf, uint8_t len);
+int process_init_event(uint8_t *evt_buf, uint16_t len);
 
 
 int esp_hosted_init(void(*esp_hosted_up_cb)(void));

@@ -30,7 +30,7 @@ enum {
 	SLAVE_CHIPSET_MAX_SUPPORTED
 };
 
-#define ESP_CHIPSET_USED                             SLAVE_CHIPSET_ESP32C3
+//#define ESP_CHIPSET_USED                             SLAVE_CHIPSET_ESP32C3
 #ifndef ESP_CHIPSET_USED
 #error "Choose **slave** ESP chipset type to use with this host"
 #endif

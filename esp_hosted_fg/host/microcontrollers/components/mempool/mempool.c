@@ -32,19 +32,19 @@ struct mempool * mempool_create(uint32_t block_size)
 	struct mempool * new = (struct mempool *)g_h.funcs->_h_malloc(MEMPOOL_ALIGNED(sizeof(struct mempool)));
 
 	if (!new) {
-		printf("Prob to create mempool size(%u)\n", MEMPOOL_ALIGNED(sizeof(struct mempool)));
+		ESP_LOGE(MEM_TAG, "Prob to create mempool size(%u)\n", MEMPOOL_ALIGNED(sizeof(struct mempool)));
 		return NULL;
 	}
 
 	if (!IS_MEMPOOL_ALIGNED((long)new)) {
 
-		printf("Nonaligned\n");
+		ESP_LOGE(MEM_TAG, "Nonaligned\n");
 		g_h.funcs->_h_free(new);
 		new = (struct mempool *)g_h.funcs->_h_malloc(MEMPOOL_ALIGNED(sizeof(struct mempool)));
 	}
 
 	if (!new) {
-		printf("failed to create mempool size(%u)\n", MEMPOOL_ALIGNED(sizeof(struct mempool)));
+		ESP_LOGE(MEM_TAG, "failed to create mempool size(%u)\n", MEMPOOL_ALIGNED(sizeof(struct mempool)));
 		return NULL;
 	}
 
@@ -53,9 +53,8 @@ struct mempool * mempool_create(uint32_t block_size)
 	new->block_size = MEMPOOL_ALIGNED(block_size);
 	SLIST_INIT(&(new->head));
 
-#if H_MEM_STATS
-	ESP_LOGI(MEM_TAG, "Create mempool %p with block_size:%lu", new, (unsigned long int)block_size);
-#endif
+
+	ESP_LOGV(MEM_TAG, "Create mempool %p with block_size:%lu", new, (unsigned long int)block_size);
 	return new;
 #else
 	return NULL;
@@ -70,9 +69,9 @@ void mempool_destroy(struct mempool* mp)
 	if (!mp)
 		return;
 
-#if H_MEM_STATS
-	ESP_LOGI(MEM_TAG, "Destroy mempool %p", mp);
-#endif
+
+	ESP_LOGV(MEM_TAG, "Destroy mempool %p", mp);
+
 	while ((node1 = SLIST_FIRST(&(mp->head))) != NULL) {
 		SLIST_REMOVE_HEAD(&(mp->head), entries);
 		g_h.funcs->_h_free(node1);

@@ -808,10 +808,33 @@ int hosted_write_gpio(void* gpio_port_in, uint32_t gpio_num, uint32_t value)
 
 
 
+
 void hosted_init_hook(void)
 {
 	/* This is hook to initialize port specific contexts, if any */
 	nw_mempool_create();
+	ESP_LOGI(TAG, "\n\n\r");
+	ESP_LOGI(TAG, "********************************************************");
+	ESP_LOGI(TAG, "********             ESP-Hosted                 ********");
+	ESP_LOGI(TAG, "********************************************************");
+	ESP_LOGI(TAG, "Transport - SPI\n\rSPI master, CLK Freq:<Check IOC File, probably 10MHz>");
+	ESP_LOGI(TAG, "Mode: CLK Phase:%u Polarity:%u\n",
+			 SPI_BUS_HAL.Init.CLKPhase,SPI_BUS_HAL.Init.CLKPolarity-1);
+#if 0
+	ESP_LOGI(TAG, "GPIOs: MOSI:%s-%u MISO:%s-%u CLK:%s-%u CS:%s-%u Handshake:%s-%u Data_Ready:%s-%u ResetPin:%s-%u",
+			STR_FROM_VAL(GPIO_MOSI_GPIO_Port), GPIO_MOSI_Pin,
+			STR_FROM_VAL(GPIO_MISO_GPIO_Port), GPIO_MISO_Pin,
+			STR_FROM_VAL(GPIO_CLK_GPIO_Port), GPIO_CLK_Pin,
+			STR_FROM_VAL(GPIO_CS_GPIO_Port), GPIO_CS_Pin,
+			STR_FROM_VAL(GPIO_HANDSHAKE_GPIO_Port), GPIO_HANDSHAKE_Pin,
+			STR_FROM_VAL(GPIO_DATA_READY_GPIO_Port), GPIO_DATA_READY_Pin,
+			STR_FROM_VAL(GPIO_RESET_GPIO_Port), GPIO_RESET_Pin
+			);
+#endif
+
+
+
+
 }
 
 #define UART_TRANSMIT(ch) HAL_UART_Transmit(&huart3, (uint8_t *)&ch, 1, 0xFFFF);

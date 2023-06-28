@@ -156,7 +156,7 @@ void process_capabilities(uint8_t cap)
 	ESP_LOGI(TAG, "capabilities: 0x%x\n\r",cap);
 }
 
-void process_priv_communication(void *payload, uint8_t len)
+void process_priv_communication(void *payload, uint16_t len)
 {
 	if (!payload || !len)
 		return;
@@ -210,31 +210,40 @@ static void process_event(uint8_t *evt_buf, uint16_t len)
 	}
 }
 
-int process_init_event(uint8_t *evt_buf, uint8_t len)
+int process_init_event(uint8_t *evt_buf, uint16_t len)
 {
 	uint8_t len_left = len, tag_len;
 	uint8_t *pos;
 	if (!evt_buf)
 		return STM_FAIL;
 	pos = evt_buf;
+	ESP_LOGD(TAG, "Init event length: %u", len);
+	if (len > 64) {
+		ESP_LOGE(TAG, "Init event length: %u, seems incompatible SPI mode try changing SPI mode. Asserting for now.", len);
+		assert(len < 64);
+	}
+
 	while (len_left) {
 		tag_len = *(pos + 1);
 
-		ESP_LOGI(TAG, "EVENT: %d", *pos);
 		if (*pos == ESP_PRIV_CAPABILITY) {
+			ESP_LOGI(TAG, "EVENT: %2x", *pos);
 			process_capabilities(*(pos + 2));
 			print_capabilities(*(pos + 2));
 		} else if (*pos == ESP_PRIV_SPI_CLK_MHZ) {
 			// adjust spi clock
+			ESP_LOGI(TAG, "EVENT: %2x", *pos);
 		} else if (*pos == ESP_PRIV_FIRMWARE_CHIP_ID) {
+			ESP_LOGI(TAG, "EVENT: %2x", *pos);
 			chip_type = *(pos+2);
 		} else if (*pos == ESP_PRIV_TEST_RAW_TP) {
+			ESP_LOGI(TAG, "EVENT: %2x", *pos);
 			ESP_LOGD(TAG, "priv test raw tp\n\r");
 #if TEST_RAW_TP
 			process_test_capabilities(*(pos + 2));
 #endif
 		} else {
-			ESP_LOGW(TAG, "Unsupported tag in event\n\r");
+			ESP_LOGD(TAG, "Unsupported EVENT: %2x", *pos);
 		}
 		pos += (tag_len+2);
 		len_left -= (tag_len+2);
