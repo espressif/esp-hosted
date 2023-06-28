@@ -38,11 +38,11 @@
 
 
 #ifndef CONFIG_ESP_WIFI_SSID
-#define CONFIG_ESP_WIFI_SSID "ESP_1"
+#define CONFIG_ESP_WIFI_SSID "SaveEarth"
 #endif
 
 #ifndef CONFIG_ESP_WIFI_PASSWORD
-#define CONFIG_ESP_WIFI_PASSWORD "Espressif!123"
+#define CONFIG_ESP_WIFI_PASSWORD "PlantMoreTrees123"
 #endif
 
 #if IPERF_TEST_MODE==RUN_IPERF_CLIENT
@@ -83,10 +83,6 @@
 
 
 
-
-
-
-
 /* FreeRTOS event group to signal when we are connected*/
 static EventGroupHandle_t s_wifi_event_group;
 
@@ -115,7 +111,7 @@ static void event_handler(void* arg, esp_event_base_t event_base,
         } else {
             xEventGroupSetBits(s_wifi_event_group, WIFI_FAIL_BIT);
         }
-        ESP_LOGW(TAG, "connect to the AP fail");
+        ESP_LOGW(TAG, "connect to the AP %s fail", CONFIG_ESP_WIFI_SSID);
 
     } else if (event_base == IP_EVENT && event_id == IP_EVENT_STA_GOT_IP) {
         ip_event_got_ip_t* event = (ip_event_got_ip_t*) event_data;

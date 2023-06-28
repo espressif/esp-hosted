@@ -49,16 +49,23 @@ static const char TAG[] = "SPI_DRIVER";
 #define SPI_RX_QUEUE_SIZE          CONFIG_ESP_SPI_RX_Q_SIZE
 #define SPI_TX_QUEUE_SIZE          CONFIG_ESP_SPI_TX_Q_SIZE
 
-#if CONFIG_ESP_SPI_MODE_0
-#  error "SPI mode 0 at SLAVE is NOT supported"
-#  define SPI_MODE SPI_MODE_0
-#elif CONFIG_ESP_SPI_MODE_1
-#  define SPI_MODE SPI_MODE_1
-#elif CONFIG_ESP_SPI_MODE_2
-#  define SPI_MODE SPI_MODE_2
-#elif CONFIG_ESP_SPI_MODE_3
-#  define SPI_MODE SPI_MODE_3
-#endif
+#define ESP_SPI_MODE               CONFIG_ESP_SPI_MODE
+#define GPIO_MOSI                  CONFIG_ESP_SPI_GPIO_MOSI
+#define GPIO_MISO                  CONFIG_ESP_SPI_GPIO_MISO
+#define GPIO_SCLK                  CONFIG_ESP_SPI_GPIO_CLK
+#define GPIO_CS                    CONFIG_ESP_SPI_GPIO_CS
+#define GPIO_DATA_READY            CONFIG_ESP_SPI_GPIO_DATA_READY
+#define GPIO_HANDSHAKE             CONFIG_ESP_SPI_GPIO_HANDSHAKE
+
+#define ESP_SPI_CONTROLLER         CONFIG_ESP_SPI_CONTROLLER
+
+#define SPI_RX_QUEUE_SIZE          CONFIG_ESP_SPI_RX_Q_SIZE
+#define SPI_TX_QUEUE_SIZE          CONFIG_ESP_SPI_TX_Q_SIZE
+
+/* Optimize the SPI slave side clock for better data rate
+ * Below value could be fine tuned in small steps
+ * */
+#define SPI_CLK_MHZ                CONFIG_ESP_SPI_CLK_FREQ
 
 /* SPI-DMA settings */
 #define SPI_DMA_ALIGNMENT_BYTES    4

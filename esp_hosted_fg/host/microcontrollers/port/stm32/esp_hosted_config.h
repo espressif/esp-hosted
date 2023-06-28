@@ -8,7 +8,7 @@
  **/
 
 
-/*  ========================== SPI Master Config start ======================  */
+/*  -------------------------- SPI Master Config start ----------------------  */
 /*
 Pins in use. The SPI Master can use the GPIO mux,
 so feel free to change these if needed.
@@ -212,7 +212,7 @@ enum {
 #define H_GPIO_LOW                                   0
 #define H_GPIO_HIGH                                  1
 
-/*  ========================== SPI Master Config end ========================  */
+/*  -------------------------- SPI Master Config end ------------------------  */
 
 
 #define TIMEOUT_PSERIAL_RESP                         30
