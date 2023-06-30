@@ -205,8 +205,13 @@ static interface_handle_t * sdio_init(void)
 		.timing             = SDIO_SLAVE_TIMING_NSEND_PSAMPLE,
 #endif
 	};
-	config.flags |= SDIO_SLAVE_FLAG_DEFAULT_SPEED,
+	config.flags |= SDIO_SLAVE_FLAG_DEFAULT_SPEED;
 
+#if defined(CONFIG_IDF_TARGET_ESP32C6)
+	ESP_LOGI(TAG, "%s: ESP32-C6 SDIO timing: %u\n", __func__, config.timing);
+#else
+	ESP_LOGI(TAG, "%s: ESP32 SDIO timing: %u\n", __func__, config.timing);
+#endif
 	ret = sdio_slave_initialize(&config);
 	if (ret != ESP_OK) {
 		return NULL;

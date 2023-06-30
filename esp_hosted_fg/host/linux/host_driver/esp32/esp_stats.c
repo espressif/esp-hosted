@@ -190,7 +190,7 @@ void update_test_raw_tp_rx_stats(u16 len)
 void process_test_capabilities(u8 cap)
 {
 #if TEST_RAW_TP
-	printk(KERN_INFO "ESP peripheral capabilities: 0x%x\n", cap);
+	printk(KERN_INFO "ESP peripheral RAW TP capabilities: 0x%x\n", cap);
 	if ((cap & ESP_TEST_RAW_TP) == ESP_TEST_RAW_TP) {
 		if ((cap & ESP_TEST_RAW_TP__ESP_TO_HOST) == ESP_TEST_RAW_TP__ESP_TO_HOST) {
 			start_test_raw_tp(ESP_TEST_RAW_TP__RX);

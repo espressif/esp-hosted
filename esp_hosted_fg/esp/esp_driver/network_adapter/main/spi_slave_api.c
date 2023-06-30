@@ -654,7 +654,7 @@ static int32_t esp_spi_write(interface_handle_t *handle, interface_buffer_handle
 	}
 
 	if (total_len > SPI_BUFFER_SIZE) {
-#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 0, 0) 
+#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 0, 0)
 		ESP_LOGE(TAG, "Max frame length exceeded %ld.. drop it\n", total_len);
 #else
 		ESP_LOGE(TAG, "Max frame length exceeded %d.. drop it\n", total_len);

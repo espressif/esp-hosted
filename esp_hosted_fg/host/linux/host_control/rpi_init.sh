@@ -19,6 +19,9 @@ BT_INIT_SET="0"
 TEST_RAW_TP="0"
 IF_TYPE="sdio"
 MODULE_NAME="esp32_${IF_TYPE}.ko"
+ESP_SLAVE_CHIPSET=""
+#ESP_SLAVE_CHIPSET could be one of esp32, esp32c2, esp32c3, esp32c6, esp32s2, esp32s3
+#For now Slave chipset is needed to distinguish between ESP32 and ESP32-C6 chipset for SDIO protocol
 
 build_c_demo_app()
 {
@@ -37,11 +40,14 @@ build_python_demo_app()
     cd ..
 }
 
-wlan_init()
+demo_app_building()
 {
     build_c_demo_app
     build_python_demo_app
+}
 
+wlan_init()
+{
     cd ../host_driver/esp32/
     if [ `lsmod | grep esp32 | wc -l` != "0" ]; then
         sudo rm /dev/esps0
@@ -58,12 +64,19 @@ wlan_init()
         VAL_CONFIG_TEST_RAW_TP=y
     fi
 
+	if [ "$ESP_SLAVE" != "" ] ; then
+		CUSTOM_OPTS=${CUSTOM_OPTS}" ESP_SLAVE=\"$ESP_SLAVE"\"
+	fi
+	if [ "$CUSTOM_OPTS" != "" ] ; then
+		echo "Adding $CUSTOM_OPTS"
+	fi
     # For Linux other than Raspberry Pi, Please point
     # CROSS_COMPILE -> <Toolchain-Path>/bin/arm-linux-gnueabihf-
     # KERNEL        -> Place where kernel is checked out and built
     # ARCH          -> Architecture
-    make -j8 target=$IF_TYPE CROSS_COMPILE=/usr/bin/arm-linux-gnueabihf- KERNEL="/lib/modules/$(uname -r)/build" \
-    CONFIG_TEST_RAW_TP="$VAL_CONFIG_TEST_RAW_TP" ARCH=arm
+	make -j8 target=$IF_TYPE CROSS_COMPILE=/usr/bin/arm-linux-gnueabihf- KERNEL="/lib/modules/$(uname -r)/build" ARCH=arm \
+    CONFIG_TEST_RAW_TP="$VAL_CONFIG_TEST_RAW_TP" $CUSTOM_OPTS
+
 
     if [ "$RESETPIN" = "" ] ; then
         #By Default, BCM6 is GPIO on host. use resetpin=6
@@ -154,6 +167,77 @@ parse_arguments()
     done
 }
 
+select_esp_slave()
+{
+    case $ESP_SLAVE_CHIPSET in
+        [Ee][Ss][Pp]32)
+            echo "Building for esp32"
+			ESP_SLAVE='CONFIG_TARGET_ESP32=y'
+            ;;
+        [Ee][Ss][Pp]32[Cc]2)
+            echo "Building for esp32c2"
+			ESP_SLAVE='CONFIG_TARGET_ESP32C2=y'
+            ;;
+        [Ee][Ss][Pp]32-[Cc]2)
+            echo "Building for esp32c2"
+			ESP_SLAVE='CONFIG_TARGET_ESP32C2=y'
+            ;;
+        [Ee][Ss][Pp]32[Cc]3)
+            echo "Building for esp32c3"
+			ESP_SLAVE='CONFIG_TARGET_ESP32C3=y'
+            ;;
+        [Ee][Ss][Pp]32-[Cc]3)
+            echo "Building for esp32c3"
+			ESP_SLAVE='CONFIG_TARGET_ESP32C3=y'
+            ;;
+        [Ee][Ss][Pp]32[Cc]5)
+            echo "esp32c5 Not yet supported"
+			ESP_SLAVE='CONFIG_TARGET_ESP32C5=y'
+            ;;
+        [Ee][Ss][Pp]32-[Cc]5)
+            echo "esp32c5 Not yet supported"
+			ESP_SLAVE='CONFIG_TARGET_ESP32C5=y'
+            ;;
+        [Ee][Ss][Pp]32[Cc]6)
+            echo "Building for esp32c6"
+			ESP_SLAVE='CONFIG_TARGET_ESP32C6=y'
+            ;;
+        [Ee][Ss][Pp]32-[Cc]6)
+            echo "Building for esp32c6"
+			ESP_SLAVE='CONFIG_TARGET_ESP32C6=y'
+            ;;
+        [Ee][Ss][Pp]32[Ss]2)
+            echo "Building for esp32s2"
+			ESP_SLAVE='CONFIG_TARGET_ESP32S2=y'
+            ;;
+        [Ee][Ss][Pp]32-[Ss]2)
+            echo "Building for esp32s2"
+			ESP_SLAVE='CONFIG_TARGET_ESP32S2=y'
+            ;;
+        [Ee][Ss][Pp]32[Ss]3)
+            echo "Building for esp32s3"
+			ESP_SLAVE='CONFIG_TARGET_ESP32S3=y'
+            ;;
+        [Ee][Ss][Pp]32-[Ss]3)
+            echo "Building for esp32s3"
+			ESP_SLAVE='CONFIG_TARGET_ESP32S3=y'
+            ;;
+        [Ee][Ss][Pp]32[Pp]4)
+            echo "Not yet supported esp32p4"
+			ESP_SLAVE='CONFIG_TARGET_ESP32P4=y'
+            ;;
+        [Ee][Ss][Pp]32-[Pp]4)
+            echo "Not yet supported esp32p4"
+			ESP_SLAVE='CONFIG_TARGET_ESP32P4=y'
+            ;;
+        *)
+            echo "***** Err: Please set expected ESP slave chipset ****"
+			exit 1
+            ;;
+    esac
+
+}
+
 
 parse_arguments $*
 if [ "$IF_TYPE" = "" ] ; then
@@ -161,6 +245,10 @@ if [ "$IF_TYPE" = "" ] ; then
     usage
     exit 1
 else
+	if [ "$IF_TYPE" == "sdio" ] ; then
+		# SDIO Kernel driver registration varies for ESP32 and ESP32-C6 slave chipsets
+		select_esp_slave
+	fi
     echo "Building for $IF_TYPE protocol"
     MODULE_NAME=esp32_${IF_TYPE}.ko
 fi
@@ -176,6 +264,8 @@ if [ `lsmod | grep bluetooth | wc -l` = "0" ]; then
     echo "bluetooth module inserted"
     sudo modprobe bluetooth
 fi
+
+demo_app_building
 
 if [ `lsmod | grep bluetooth | wc -l` != "0" ]; then
     wlan_init

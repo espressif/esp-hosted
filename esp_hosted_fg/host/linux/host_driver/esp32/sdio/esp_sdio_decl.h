@@ -77,9 +77,19 @@
 
 #define ESP_ADDRESS_MASK              0x3FF
 
-#define ESP_VENDOR_ID                 0x6666
-#define ESP_DEVICE_ID_1               0x2222
-#define ESP_DEVICE_ID_2               0x3333
+#if defined(CONFIG_TARGET_ESP32C6)
+  #define ESP_VENDOR_ID               0x0092
+  #define ESP_DEVICE_ID_1             0x6666
+  #define ESP_DEVICE_ID_2             0x7777
+
+#elif defined(CONFIG_TARGET_ESP32)
+  #define ESP_VENDOR_ID               0x6666
+  #define ESP_DEVICE_ID_1             0x2222
+  #define ESP_DEVICE_ID_2             0x3333
+
+#else
+#error "SDIO not supported for selected ESP device"
+#endif
 
 
 enum context_state {

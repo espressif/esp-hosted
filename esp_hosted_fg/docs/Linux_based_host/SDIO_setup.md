@@ -30,6 +30,14 @@ Please reboot Raspberry-Pi after changing this file.
 
 ## 2. Load ESP-Hosted Solution
 ### 2.1 Host Software
+* As ESP32 & ESP32C6, both support SDIO, Let host know which slave chipset is being used by changing `esp_hosted_fg/host/linux/host_control/rpi_init.sh` as:
+```sh
+  ESP_SLAVE_CHIPSET="esp32"
+```
+or
+```sh
+  ESP_SLAVE_CHIPSET="esp32c6"
+```
 * Execute following commands in root directory of cloned ESP-Hosted repository on Raspberry-Pi
 ```sh
 $ cd esp_hosted_fg/host/linux/host_control/

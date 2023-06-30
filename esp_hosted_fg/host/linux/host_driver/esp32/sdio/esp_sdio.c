@@ -44,6 +44,18 @@
 	printk(KERN_ERR "%s: CMD53 read/write error at %d\n", __func__, __LINE__);	\
 } while (0);
 
+#define HOLD_SDIO_HOST_WHILE_READ 1
+
+#if HOLD_SDIO_HOST_WHILE_READ
+  #define CLAIM_SDIO_HOST(x) sdio_claim_host(x)
+  #define RELEASE_SDIO_HOST(x) sdio_release_host(x)
+  #define IS_SDIO_HOST_LOCK_NEEDED LOCK_ALREADY_ACQUIRED
+#else
+  #define CLAIM_SDIO_HOST(x)
+  #define RELEASE_SDIO_HOST(x)
+  #define IS_SDIO_HOST_LOCK_NEEDED ACQUIRE_LOCK
+#endif
+
 struct esp_sdio_context sdio_context;
 static atomic_t tx_pending;
 static atomic_t queue_items[MAX_PRIORITY_QUEUES];
@@ -374,6 +386,7 @@ static struct sk_buff * read_packet(struct esp_adapter *adapter)
 	struct sk_buff *skb;
 	u8 *pos;
 	struct esp_sdio_context *context;
+	int is_lock_needed = IS_SDIO_HOST_LOCK_NEEDED;
 
 	if (!adapter || !adapter->if_context) {
 		printk (KERN_ERR "%s: INVALID args\n", __func__);
@@ -382,15 +395,15 @@ static struct sk_buff * read_packet(struct esp_adapter *adapter)
 
 	context = adapter->if_context;
 
-	sdio_claim_host(context->func);
+	CLAIM_SDIO_HOST(context);
 
 	data_left = len_to_read = len_from_slave = num_blocks = 0;
 
 	/* Read length */
-	ret = esp_get_len_from_slave(context, &len_from_slave, LOCK_ALREADY_ACQUIRED);
+	ret = esp_get_len_from_slave(context, &len_from_slave, is_lock_needed);
 
 	if (ret || !len_from_slave) {
-		sdio_release_host(context->func);
+		RELEASE_SDIO_HOST(context);
 		return NULL;
 	}
 
@@ -404,7 +417,7 @@ static struct sk_buff * read_packet(struct esp_adapter *adapter)
 
 	if (!skb) {
 		printk (KERN_ERR "%s: SKB alloc failed\n", __func__);
-		sdio_release_host(context->func);
+		RELEASE_SDIO_HOST(context);
 		return NULL;
 	}
 
@@ -426,19 +439,19 @@ static struct sk_buff * read_packet(struct esp_adapter *adapter)
 			len_to_read = num_blocks * ESP_BLOCK_SIZE;
 			ret = esp_read_block(context,
 					ESP_SLAVE_CMD53_END_ADDR - len_to_read,
-					pos, len_to_read, LOCK_ALREADY_ACQUIRED);
+					pos, len_to_read, is_lock_needed);
 		} else {
 			len_to_read = data_left;
 			/* 4 byte aligned length */
 			ret = esp_read_block(context,
 					ESP_SLAVE_CMD53_END_ADDR - len_to_read,
-					pos, (len_to_read + 3) & (~3), LOCK_ALREADY_ACQUIRED);
+					pos, (len_to_read + 3) & (~3), is_lock_needed);
 		}
 
 		if (ret) {
 			printk (KERN_ERR "%s: Failed to read data - %d [%u - %d]\n", __func__, ret, num_blocks, len_to_read);
 			dev_kfree_skb(skb);
-			sdio_release_host(context->func);
+			RELEASE_SDIO_HOST(context);
 			return NULL;
 		}
 
@@ -449,7 +462,7 @@ static struct sk_buff * read_packet(struct esp_adapter *adapter)
 
 	} while (data_left > 0);
 
-	sdio_release_host(context->func);
+	RELEASE_SDIO_HOST(context);
 
 	return skb;
 }
@@ -637,7 +650,7 @@ static int tx_process(void *data)
 	return 0;
 }
 
-static struct esp_sdio_context * init_sdio_func(struct sdio_func *func)
+static struct esp_sdio_context * init_sdio_func(struct sdio_func *func, int *sdio_ret)
 {
 	struct esp_sdio_context *context = NULL;
 	int ret = 0;
@@ -654,13 +667,21 @@ static struct esp_sdio_context * init_sdio_func(struct sdio_func *func)
 	/* Enable Function */
 	ret = sdio_enable_func(func);
 	if (ret) {
+		printk(KERN_ERR "%s: sdio_enable_func ret: %d\n", __func__, ret);
+		if (sdio_ret)
+			*sdio_ret = ret;
+		sdio_release_host(func);
 		return NULL;
 	}
 
 	/* Register IRQ */
 	ret = sdio_claim_irq(func, esp_handle_isr);
 	if (ret) {
+		printk(KERN_ERR "%s: sdio_claim_irq ret: %d\n", __func__, ret);
 		sdio_disable_func(func);
+		if (sdio_ret)
+			*sdio_ret = ret;
+		sdio_release_host(func);
 		return NULL;
 	}
 
@@ -740,11 +761,20 @@ static int esp_probe(struct sdio_func *func,
 
 	printk(KERN_INFO "%s: ESP network device detected\n", __func__);
 
-	context = init_sdio_func(func);
+	context = init_sdio_func(func, &ret);
 
 	if (!context) {
-		return -ENOMEM;
+		if (ret)
+			return ret;
+		else
+			return -EINVAL;
 	}
+
+#if 0 /* in case to lower sdio clock speed */
+	struct mmc_host *host = func->card->host;
+	host->ios.clock = 5*1000000; //5MHz
+	host->ops->set_ios(host, &host->ios);
+#endif
 
 	atomic_set(&tx_pending, 0);
 	ret = init_context(context);
@@ -810,6 +840,11 @@ int process_init_event(u8 *evt_buf, u8 len)
 
 	pos = evt_buf;
 
+	if (len_left >= 64) {
+		printk(KERN_WARNING "ESP init event len looks unexpected: %u (>=64)\n", len_left);
+		printk(KERN_WARNING "You probably facing timing mismatch at transport layer\n");
+	}
+
 	while (len_left) {
 		tag_len = *(pos + 1);
 		printk(KERN_INFO "EVENT: %d\n", *pos);
@@ -818,8 +853,10 @@ int process_init_event(u8 *evt_buf, u8 len)
 			print_capabilities(*(pos + 2));
 		} else if (*pos == ESP_PRIV_TEST_RAW_TP) {
 			process_test_capabilities(*(pos + 2));
+		} else if (*pos == ESP_PRIV_FIRMWARE_CHIP_ID) {
+			printk(KERN_INFO "ESP slave Chip ID: 0x%X\n", *(pos + 2));
 		} else {
-			printk (KERN_WARNING "Unsupported tag in event");
+			printk (KERN_WARNING "Unsupported tag (0x%X) in event\n", *(pos + 2));
 		}
 		pos += (tag_len+2);
 		len_left -= (tag_len+2);

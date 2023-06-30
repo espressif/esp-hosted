@@ -1,6 +1,12 @@
 CONFIG_SUPPORT_ESP_SERIAL = y
 CONFIG_TEST_RAW_TP := n
 CONFIG_ENABLE_MONITOR_PROCESS = n
+# In case of SDIO as transport, one of slave chipset used,
+# CONFIG_TARGET_ESP32  OR
+# CONFIG_TARGET_ESP32C6
+# need to be added depending upon slave in use
+# rpi_init.sh will add that flag using ESP_SLAVE
+ESP_SLAVE := ""
 
 # Toolchain Path
 CROSS_COMPILE := /usr/bin/arm-linux-gnueabihf-
@@ -43,6 +49,10 @@ endif
 ifeq ($(MODULE_NAME), esp32_spi)
 	EXTRA_CFLAGS += -I$(PWD)/spi
 	module_objects += spi/esp_spi.o
+endif
+
+ifneq ($(ESP_SLAVE), "")
+EXTRA_CFLAGS += -D$(ESP_SLAVE)
 endif
 
 PWD := $(shell pwd)

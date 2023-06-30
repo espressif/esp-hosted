@@ -762,7 +762,7 @@ void app_main()
 	assert(xTaskCreate(recv_task , "recv_task" ,
 			CONFIG_ESP_DEFAULT_TASK_STACK_SIZE, NULL ,
 			CONFIG_ESP_DEFAULT_TASK_PRIO, NULL) == pdTRUE);
-	assert(xTaskCreate(send_task , "send_task" , 
+	assert(xTaskCreate(send_task , "send_task" ,
 			CONFIG_ESP_DEFAULT_TASK_STACK_SIZE, NULL ,
 			CONFIG_ESP_DEFAULT_TASK_PRIO, NULL) == pdTRUE);
 	create_debugging_tasks();
