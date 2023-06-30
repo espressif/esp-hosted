@@ -75,6 +75,7 @@ menu "Example Configuration"
 
     config ESP_SDIO_CHECKSUM
         bool "SDIO checksum ENABLE/DISABLE"
+		default n
         help
             ENABLE/DISABLE software SDIO checksum
 

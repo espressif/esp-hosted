@@ -385,9 +385,8 @@ void process_rx_pkt(interface_buffer_handle_t *buf_handle)
 	payload = buf_handle->payload + le16toh(header->offset);
 	payload_len = le16toh(header->len);
 
-#if CONFIG_ESP_WLAN_DEBUG
-	ESP_LOG_BUFFER_HEXDUMP(TAG_RX, payload, 8, ESP_LOG_INFO);
-#endif
+	ESP_LOGV(TAG, "Rx pkt: type:%u\n",buf_handle->if_type);
+	ESP_LOG_BUFFER_HEXDUMP(TAG, payload, payload_len, ESP_LOG_VERBOSE);
 
 	if ((buf_handle->if_type == ESP_STA_IF) && station_connected) {
 		/* Forward data to wlan driver */
@@ -768,9 +767,7 @@ void app_main()
 			CONFIG_ESP_DEFAULT_TASK_PRIO, NULL) == pdTRUE);
 	create_debugging_tasks();
 
-	//ESP_ERROR_CHECK(initialise_wifi());
-
-	//ESP_TCPIP_INIT(); //Not needed
+	ESP_ERROR_CHECK(initialise_wifi());
 
 	while (!datapath) {
 		sleep(1);
@@ -778,7 +775,6 @@ void app_main()
 
 	/* send capabilities to host */
 	generate_startup_event(capa);
-
 	ESP_LOGI(TAG,"Initial set up done");
 
 	send_event_to_host(CTRL_MSG_ID__Event_ESPInit);

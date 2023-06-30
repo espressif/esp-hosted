@@ -132,14 +132,12 @@ void debug_update_raw_tp_rx_count(uint16_t len)
 	test_raw_tp_rx_len += len;
 }
 
-extern void print_intr(void);
 static void raw_tp_timer_func(void* arg)
 {
 	static int32_t cur = 0;
 	double actual_bandwidth = 0;
 	int32_t div = 1024;
 
-	print_intr();
 	actual_bandwidth = (test_raw_tp_rx_len*8);
 #if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 0, 0)
 	printf("%lu-%lu sec       %.2f kbits/sec\n\r", cur, cur + 1, actual_bandwidth/div);

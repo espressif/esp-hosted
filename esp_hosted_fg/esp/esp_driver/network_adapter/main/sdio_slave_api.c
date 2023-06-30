@@ -102,16 +102,6 @@ IRAM_ATTR static void event_cb(uint8_t val)
 	}
 }
 
-#if 0
-void print_intr(void)
-{
-    volatile slc_dev_t * slc = context.hal->slc;
-    //ESP_LOGE("intr_raw", "0x%X slc0tx_link_addr: %X\n", slc->slc0int_raw.val, slc->slc0_txlink_addr);
-    ESP_LOGE("intr_raw", "0x%lX \n", slc->slc0int_raw.val);
-
-}
-#endif
-
 void generate_startup_event(uint8_t cap)
 {
 	struct esp_payload_header *header = NULL;
@@ -168,12 +158,11 @@ void generate_startup_event(uint8_t cap)
 	header->len = htole16(len);
 
 	buf_handle.payload_len = len + sizeof(struct esp_payload_header);
-	//buf_handle.payload_len = 80;
 #if CONFIG_ESP_SDIO_CHECKSUM
 	header->checksum = htole16(compute_checksum(buf_handle.payload, buf_handle.payload_len));
 #endif
 
-	ESP_LOG_BUFFER_HEXDUMP("sdio_tx", buf_handle.payload, buf_handle.payload_len, ESP_LOG_INFO);
+	ESP_LOG_BUFFER_HEXDUMP("sdio_tx", buf_handle.payload, buf_handle.payload_len, ESP_LOG_VERBOSE);
 
 	ret = sdio_slave_transmit(buf_handle.payload, buf_handle.payload_len);
 	if (ret != ESP_OK) {
@@ -200,22 +189,23 @@ static interface_handle_t * sdio_init(void)
 		.recv_buffer_size   = BUFFER_SIZE,
 		.event_cb           = event_cb,
 
-#if 1//defined(CONFIG_IDF_TARGET_ESP32C6)
 		/* Note: For small devkits there may be no pullups on the board.
 		   This enables the internal pullups to help evaluate the driver
 		   quickly. However the internal pullups are not sufficient and not
 		   reliable, please make sure external pullups are connected to the
 		   bus in your real design.
 		   */
-		.flags              = SDIO_SLAVE_FLAG_INTERNAL_PULLUP,
+		//.flags              = SDIO_SLAVE_FLAG_INTERNAL_PULLUP,
+		/* Note: Sometimes the SDIO card is detected but gets problem in
+		 * Read/Write or handling ISR because of SDIO timing issues.
+		 * In these cases, Please tune timing below using value from
+		 * https://github.com/espressif/esp-idf/blob/release/v5.0/components/hal/include/hal/sdio_slave_types.h#L26-L38
+		 * */
+#if defined(CONFIG_IDF_TARGET_ESP32C6)
+		.timing             = SDIO_SLAVE_TIMING_NSEND_PSAMPLE,
 #endif
-		.timing             = SDIO_SLAVE_TIMING_PSEND_PSAMPLE,
 	};
-#if 1
-//#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 0, 0) 
-		config.flags |= SDIO_SLAVE_FLAG_DEFAULT_SPEED,
-//#endif
-#endif
+	config.flags |= SDIO_SLAVE_FLAG_DEFAULT_SPEED,
 
 	ret = sdio_slave_initialize(&config);
 	if (ret != ESP_OK) {
@@ -338,8 +328,10 @@ static int sdio_read(interface_handle_t *if_handle, interface_buffer_handle_t *b
 
 	ret = sdio_slave_recv(&(buf_handle->sdio_buf_handle), &(buf_handle->payload),
 			&(sdio_read_len), portMAX_DELAY);
-	if (ret)
+	if (ret) {
+		ESP_LOGD(TAG, "sdio_slave_recv returned failure");
 		return ESP_FAIL;
+	}
 
 	buf_handle->payload_len = sdio_read_len & 0xFFFF;
 
