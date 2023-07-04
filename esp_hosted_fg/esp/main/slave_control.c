@@ -3268,6 +3268,15 @@ static esp_err_t req_wifi_deauth_sta(Rpc *req, Rpc *resp, void *priv_data)
 	return ESP_OK;
 }
 
+static esp_err_t req_wifi_set_storage(Rpc *req, Rpc *resp, void *priv_data)
+{
+	RPC_TEMPLATE(RpcRespWifiSetStorage, resp_wifi_set_storage,
+			RpcReqWifiSetStorage, req_wifi_set_storage,
+			rpc__resp__wifi_set_storage__init);
+
+	RPC_RET_FAIL_IF(esp_wifi_set_storage(req_payload->storage));
+	return ESP_OK;
+}
 
 #if 0
 static esp_err_t req_wifi_(Rpc *req, Rpc *resp, void *priv_data)

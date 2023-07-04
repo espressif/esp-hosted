@@ -117,6 +117,7 @@ int test_wifi_deauth_sta(uint16_t aid);
 int test_wifi_sta_get_ap_info(wifi_ap_record_t *ap_info);
 int test_wifi_set_ps(wifi_ps_type_t type);
 int test_wifi_get_ps(wifi_ps_type_t *type);
+int test_wifi_set_storage(wifi_storage_t storage);
 #if 0
 int test_wifi_set_protocol(wifi_interface_t ifx, uint8_t protocol_bitmap);
 int test_wifi_get_protocol(wifi_interface_t ifx, uint8_t *protocol_bitmap);
