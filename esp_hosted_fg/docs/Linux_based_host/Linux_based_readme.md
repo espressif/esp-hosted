@@ -3,7 +3,7 @@
 - Directory structure for Linux based host is explained [here](directory_structure.md)
 - Below diagram shows hardware and software block diagram for a typical linux based system built with ESP-Hosted.
 
-![ESP-Hosted linux based design](./linux_hosted_design.png)
+![ESP-Hosted linux based design](./linux_hosted_design.svg)
 
 - This document explains ESP-Hosted setup and usage. The document is divided in two parts:
   - [1. Quick Start Guide](#1-quick-start-guide)  

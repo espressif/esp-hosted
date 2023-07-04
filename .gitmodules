@@ -4,3 +4,6 @@
 [submodule "esp_hosted_ng/esp/esp_driver/esp-idf"]
 	path = esp_hosted_ng/esp/esp_driver/esp-idf
 	url = https://github.com/espressif/esp-idf.git
+[submodule "esp_hosted_fg/esp/esp_driver/esp-idf"]
+	path = esp_hosted_fg/esp/esp_driver/esp-idf
+	url = https://github.com/espressif/esp-idf.git

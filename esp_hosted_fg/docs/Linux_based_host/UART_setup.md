@@ -1,62 +1,53 @@
 # Bluetooth/BLE connectivity Setup over UART
-This section is only applicable to ESP32, ESP32-C3 and ESP32-S3 boards. ESP32-S2 does not support Bluetooth/BLE.
+
+| Supported Chipsets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-S3 | ESP32-C6 |
+| ------------------ | ----- | -------- | -------- | -------- | -------- |
+| 4 line UART supported | yes | no | yes | yes | no |
+| 2 line UART supported | yes | yes | yes | yes | yes |
+
+In this section, ESP chipset provides a way to run Bluetooth/BLE over UART interface.
+Please connect ESP peripheral to Raspberry-Pi with jumper cables (preferably PCB) as mentioned below.
+It may be good to use small length cables to ensure signal integrity.
+Power ESP32 and Raspberry Pi separately with a power supply that provide sufficient power.
+ESP chipset can be powered through PC using micro-USB/port-C cable.
+- In case of ESP32-S3, For avoidance of doubt, You can power using [UART port](https://docs.espressif.com/projects/esp-idf/en/latest/esp32s3/hw-reference/esp32s3/user-guide-devkitc-1.html#description-of-components)
+
+Points to note:
+- In case you wish to reduce number of hardware lines, you may consider SPI_only or SDIO_only transports, where Wi-Fi and Bluetooth traffic is multiplexed on same bus and no need of extra UART pins.
+- UART pin numbers are configurable
+- If you want to switch from 4 line UART mode to 2 lines, hardware flow control need to be turned off
 
 ## 1. Setup
-### 1.1 Hardware Setup
-In this setup, ESP chipset provides Bluetooth/BLE capabilities to host over UART interface. Please connect ESP peripheral to Raspberry-Pi with jumper cables as mentioned below. It may be good to use small length cables to ensure signal integrity. Power ESP32 and Raspberry Pi separately with a power supply that provide sufficient power. ESP chipset can be powered through PC using micro-USB cable.
 
 Raspberry-Pi pinout can be found [here!](https://pinout.xyz/pinout/uart)
 
-#### 1.1.1 ESP32 setup
-| Raspberry-Pi Pin Function | Raspberry-Pi Pin | ESP32 Pin | ESP32 Pin Function |
-|:-------:|:--------:|:---------:|:--------:|
-| RX | 10 | IO5 | TX |
-| TX | 8 | IO18 | RX |
-| CTS | 36 | IO19 | RTS |
-| RTS | 11 | IO23 | CTS |
+### 1.1 Hardware Setup
 
-Setup image is here.
+#### Four Line UART setup
 
-![alt text](rpi_esp32_uart_setup.jpg "setup of Raspberry-Pi as host and ESP32 as slave with UART transport")
+| Raspberry-Pi Pin Function | Raspberry-Pi Pin | ESP32 | ESP32-S3 | ESP32-C3 | ESP32 Pin Function |
+|:-------:|:--------:|:---------:|:--------:|:--------:|:--------:|
+| RX | 10 | IO5 | IO17 | IO5 | TX |
+| TX | 8 | IO18 | IO18 | IO18 | RX |
+| CTS | 36 | IO19 | IO19 | IO19 | RTS |
+| RTS | 11 | IO23 | IO20 | IO8 | CTS |
 
-#### 1.1.2 ESP32-C2 setup
-
-Although, `HCI with UART` is supported on `ESP32-C2`, `Wi-Fi + Bluetooth` (together) when used with `SPI+UART` setup, Bluetooth on UART works fine but Wi-Fi on SPI faces low throughput problem. By the time this is rectified, please use 'SPI only' i.e. `HCI over SPI` and `Wi-Fi over SPI` transport combination. In `SPI only` setup, there is no such limitation.
-
-| Raspberry-Pi Pin Function | Raspberry-Pi Pin | ESP32-C2 Pin | ESP32-C2 Pin Function |
-|:-------:|:--------:|:---------:|:--------:|
-| RX | 10 | IO5 | TX |
-| TX | 8 | IO18 | RX |
-
-Setup image is here.
-
-![alt text](rpi_esp32c2_uart_setup.jpg "setup of Raspberry-Pi as host and ESP32-C2 as slave with UART transport")
-
-#### 1.1.2 ESP32-C3 setup
-| Raspberry-Pi Pin Function | Raspberry-Pi Pin | ESP32-C3 Pin | ESP32-C3 Pin Function |
-|:-------:|:--------:|:---------:|:--------:|
-| RX | 10 | IO5 | TX |
-| TX | 8 | IO18 | RX |
-| CTS | 36 | IO19 | RTS |
-| RTS | 11 | IO8 | CTS |
-
-Setup image is here.
-
-![alt text](rpi_esp32c3_uart_setup.jpg "setup of Raspberry-Pi as host and ESP32-C3 as slave with UART transport")
-
-#### 1.1.3 ESP32-S3 setup
-- microUSB power is expected to insert in [UART port](https://docs.espressif.com/projects/esp-idf/en/latest/esp32s3/hw-reference/esp32s3/user-guide-devkitc-1.html#description-of-components)
-
-| Raspberry-Pi Pin Function | Raspberry-Pi Pin | ESP32-S3 Pin | ESP32-S3 Pin Function |
-|:-------:|:--------:|:---------:|:--------:|
-| RX | 10 | IO17 | TX |
-| TX | 8 | IO18 | RX |
-| CTS | 36 | IO19 | RTS |
-| RTS | 11 | IO20 | CTS |
-
-Setup image is here.
+Sample SPI+UART setup image looks like:
 
 ![alt text](rpi_esp32s3_spi_uart_setup.jpg "setup of Raspberry-Pi as host and ESP32-S3 as slave with UART transport")
+
+#### Two Line UART setup
+
+
+| Raspberry-Pi Pin Function | Raspberry-Pi Pin | ESP32-C2 | ESP32-C6 | ESP Function |
+|:-------:|:--------:|:---------:|:--------:|:--------:|
+| RX | 10 | IO5 | IO5 | TX |
+| TX | 8 | IO18 | IO12 | RX |
+
+Note:
+- ESP32-C2 only
+	- Although, `HCI with UART` is supported on `ESP32-C2`, `Wi-Fi + Bluetooth` (together) when used with `SPI+UART` setup, Bluetooth on UART works fine but Wi-Fi on SPI faces low throughput problem. By the time this is rectified, please use 'SPI only' i.e. `HCI over SPI` and `Wi-Fi over SPI` transport combination. In `SPI only` setup, there is no such limitation.
+
 
 ### 1.2 Raspberry-Pi Software Setup
 By default, the UART pins on Raspberry-Pi are in disabled state. In order to enable UART and setup it for bluetooth connection, follow below steps.
@@ -97,78 +88,87 @@ $ ./rpi_init.sh <transport> <bt_over_uart>
 	- <bt_over_uart> can take value `btuart` or `btuart_2pins`.
 	  - This option will setup HCI over UART
 	  - :warning: Note:
-	    - For ESP32-C2, 2 pin UART (TX & RX only) is supported. So `btuart_2pins` should be used for ESP32-C2.
-		- For other chipsets, `btuart` should be used, where 4 pin UART (TX, RX, CTS, RTS) is only supported.
+	    - For ESP32-C2/C6, 2 pin UART (TX & RX only) is supported. So `btuart_2pins` should be used for ESP32-C2/C6.
+		- For other chipsets, `btuart` should be used, where 4 pin UART (TX, RX, CTS, RTS) is used.
 
 ### 2.2 ESP Peripheral Firmware
 One can load pre-built release binaries on ESP peripheral or compile those from source. Below subsection explains both these methods.
 
 #### 2.2.1 Load Pre-built Release Binaries
-* Download pre-built firmware binaries from [releases](https://github.com/espressif/esp-hosted/releases)
-* Follow `readme.txt` from release tarball to flash the ESP binary
-* :warning: Make sure that you use `Source code (zip)` for host building.
-* Windows user can use ESP Flash Programming Tool to flash the pre-built binary.
+- Download pre-built firmware binaries from [releases](https://github.com/espressif/esp-hosted/releases)
+- Follow `readme.txt` from release tarball to flash the ESP binary
+- :warning: Make sure that you use `Source code (zip)` for host building.
+- Windows user can use ESP Flash Programming Tool to flash the pre-built binary.
+- Collect firmware log
+    - Use minicom or any similar terminal emulator with baud rate 115200 to fetch esp side logs on UART
+```sh
+$ minicom -D <serial_port>
+```
+serial_port is device where ESP chipset is detected. For example, /dev/ttyUSB0
 
 #### 2.2.2 Source Compilation
-- Note: Please use the same git commit both at ESP and Host
-- Clone the ESP-IDF [release/v5.0](https://github.com/espressif/esp-idf/tree/release/v5.0) and git checkout to `release/v5.0` branch.
-- [Set-up the ESP-IDF](https://docs.espressif.com/projects/esp-idf/en/release-v5.0/esp32/get-started/index.html)
-- In root directory of ESP-Hosted repository, execute below command
 
+Make sure that same code base (same git commit) is checked-out/copied at both, ESP and Host
+
+##### Set-up ESP-IDF
+- :warning: Omit this & move to `Configure, Build & Flash ESP firmware` step if IDF is already setup while SPI/SDIO setup
+- :warning: Following command is dangerous. It will revert all your local changes. Stash if need to keep them.
+- Install the ESP-IDF using script
 ```sh
-$ cd esp_hosted_fg/esp/esp_driver/network_adapter
+$ cd esp_hosted_fg/esp/esp_driver
+$ cmake .
+```
+- Set-Up the build environment using
+```sh
+$ . ./esp-idf/export.sh
+# Optionally, You can add alias for this command in ~/.bashrc for later use
 ```
 
-##### Using cmake
+##### Configure, Build & Flash ESP firmware
+- Set slave chipset environment
+```
+$ cd network_adapter
+$ rm -rf sdkconfig build
+$ idf.py set-target <esp_chipset>
+```
+where <esp_chipset> could be one from "esp32", "esp32s3", "esp32c2", "esp32c3", "esp32c6"
 
-- Set target
-	- ESP32-C2
-	```
-	$ idf.py set-target esp32c2
-	```
-	- ESP32-C3
-	```
-	$ idf.py set-target esp32c3
-	```
-	- ESP32-S3
-	```
-	$ idf.py set-target esp32s3
-	```
-	- ESP32
-	Skip to next step
-
-
-- Open project config
+- Execute following command to configure the project
 ```sh
 $ idf.py menuconfig
 ```
 
 - Set ESP-Hosted transport
-	- ESP32
+	- ESP32 / ESP32-C6
 		- Select transport either SDIO or SPI
 		- Navigate to `Example Configuration -> Transport layer` select `SDIO interface` or `SPI interface`, whichever expected
-	- ESP32-C2 / ESP32-C3 / ESP32-S3
+	- ESP32-C2/C3/S3
 		- SPI is automatically selected. Nothing to be done, skip to next step
 
 - Set Bluetooth over UART
-	- ESP32 / ESP32-C3 / ESP32-S3
+	- ESP32 / ESP32-C3/S3
 		- navigate to `Component config -> Bluetooth -> Bluetooth controller -> HCI mode`, select `UART(H4)`
-	- ESP32-C2
+	- ESP32-C2/C6
 		- Navigate to `Component config -> Bluetooth -> Bluetooth -> Controller`, select `Enabled` (Should be enabled by default)
 		- Navigate to `Component config -> Bluetooth -> Controller Options -> HCI Config -> Select HCI interface`, select `uart`
 		- Navigate to `Component config > Bluetooth > Controller Options > HCI Config`
           - DISABLE `HCI uart Hardware Flow ctrl` (Should be disabled by default)
+		- ESP32-C2
           - Change `HCI uart Tx gpio` to `5`
           - Change `HCI uart Rx gpio` to `18`
+		- ESP32-C6
+          - Change `HCI uart Tx gpio` to `5`
+          - Change `HCI uart Rx gpio` to `12`
 
 - Set UART baud rate
 	Default HCI over baud rate is `921600`. In case need to change,
 	- ESP32
 		- Navigate and change using `Component config -> Bluetooth -> Bluetooth controller -> HCI UART(H4) Options -> UART Baudrate for HCI`
-	- ESP32-C3 / ESP32-S3
+	- ESP32-C3/S3
 		- Navigate and change using `Component config -> Example Configuration -> UART Baudrate for HCI`
-	- ESP32-C2
+	- ESP32-C2/C6
 		- Navigate and change using `Component config -> Bluetooth -> Controller Options -> HCI Config` -> `HCI uart baudrate`
+- Please remember the UART baud rate used at ESP, as it is needed while setting up host
 
 - Additional settings
 	- ESP32-C3
@@ -186,15 +186,26 @@ $ idf.py -p <serial_port> build flash
 	```sh
 	$ sudo hciattach -s <baud_rate> /dev/serial0 any <baud_rate> flow
 	```
-- <baud_rate> should match UART baud rate while flashing ESP peripheral
+- <baud_rate> should match UART baud rate while flashing ESP peripheral (Default: 921600)
 
 ### For ESP32
 - Check `CONFIG_BT_HCI_UART_BAUDRATE` parameter in *esp_hosted_fg/esp/esp_driver/network_adapter/sdkconfig*
-- Alternatively baud rate could be located in menuconfig at, * Alternatively baud rate could be located in menuconfig at, `Component config ->  Bluetooth -> Bluetooth controller ->  HCI UART(H4) Options -> UART Baudrate for HCI`
+- Alternatively baud rate could be located using `idf.py menuconfig` at, `Component config ->  Bluetooth -> Bluetooth controller ->  HCI UART(H4) Options -> UART Baudrate for HCI`
 
-### For ESP32-C3 or ESP32-S3
+### For ESP32-C3/S3
 - Check `CONFIG_EXAMPLE_HCI_UART_BAUDRATE` parameter in *esp_hosted_fg/esp/esp_driver/network_adapter/sdkconfig*
-- Alternatively baud rate could be located in menuconfig at, `Component config -> Example Configuration -> UART Baudrate for HCI`
+- Alternatively baud rate could be located using `idf.py menuconfig` at, `Component config -> Example Configuration -> UART Baudrate for HCI`
+
+### For ESP32-C2/C6
+- Check `CONFIG_BT_LE_HCI_UART_BAUD` parameter in *esp_hosted_fg/esp/esp_driver/network_adapter/sdkconfig*
+- Alternatively baud rate could be located using `idf.py menuconfig` at, `Component config > Bluetooth > Controller Options > HCI Config -> HCI uart baudrate`
+
+- Check if UART is setup correctly
+```
+$ hciconfig
+```
+should list the hci interface with bus as 'UART' and interface should be 'UP'
+
 
 ## 4. Points to note
 

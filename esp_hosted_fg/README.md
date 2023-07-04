@@ -47,12 +47,10 @@ ESP-Hosted-FG solution provides following WLAN and BT/BLE features to the host:
 ### 1.2 Supported ESP boards
 
 ESP-Hosted-FG solution is supported on following ESP boards:
-- ESP32
-- ESP32-S2
-- ESP32-S3
-- ESP32-C2
-- ESP32-C3
-- ESP32-C6
+
+| Supported Targets | ESP32 | ESP32-S2 | ESP32-S3 | ESP32-C2 | ESP32-C3 | ESP32-C6 |
+| ----------------- | ----- | -------- | -------- | -------- | -------- | -------- |
+
 
 ### 1.3 Supported Hosts
 
@@ -61,43 +59,41 @@ ESP-Hosted-FG solution is supported on following ESP boards:
 * ESP-Hosted-FG solution showcase examples for following Linux based and MCU based hosts out of the box.
 	* MCU Based Hosts
 	  * STM32 Discovery Board (STM32F469I-DISCO)
+	  * STM32F412ZGT6-Nucleo 144
 	* Linux Based Hosts
 		* Raspberry-Pi 3 Model B
 		* Raspberry-Pi 3 Model B+
 		* Raspberry-Pi 4 Model B
-* It is relatively easy to port this solution to other Linux and MCU platforms.
+* You can port this solution to other Linux and MCU platforms using [porting guide](docs/Linux_based_host/porting_guide.md)
 
 ### 1.4 Supported Transports
 
-ESP-Hosted-FG uses SDIO or SPI bus and optionally UART for interfacing ESP boards and host platform. Not all host platforms support both these interfaces. Further section depicts supported host platforms and corresponding transport interface, ESP boards and feature set.
+* SDIO Only
+    * Wi-Fi and Bluetooth, traffic for both runs over SDIO
+* SDIO+UART
+    * Wi-Fi runs over SDIO and Bluetooth runs over UART
+* SPI Only
+    * Wi-Fi and Bluetooth, traffic for both runs over SPI
+* SPI+UART
+    * Wi-Fi runs over SPI and Bluetooth runs over UART
+
+Different ESP chipset support different set of peripherals. Below is features supported matrix for Linux & MCU.
+In this matrix, Each feature is by default enabled & supported with every trasport in left.
+Any Unwanted feature can be turned off with config change.
 
 ### 1.5 Feature Matrix
 ##### 1.5.1 Linux Host
 The below table explains which feature is supported on which transport interface for Linux based host.
 
-| ESP device | Transport Interface | WLAN support | Virtual serial interface | Bluetooth support |
-|:---------:|:-------:|:---------:|:--------:|:--------:|
-| ESP32 | SDIO | Yes | Yes | BT/BLE 4.2 |
-| ESP32 | SPI | Yes | Yes | BT/BLE 4.2 |
-| ESP32 | UART | No | No | BT/BLE 4.2 |
-| ESP32-S2 | SDIO | NA | NA | NA |
-| ESP32-S2 | SPI | Yes | Yes | NA |
-| ESP32-S2 | UART | No | No | NA |
-| ESP32-C3 | SDIO | NA | NA | NA |
-| ESP32-C3 | SPI | Yes | Yes | BLE 5.0 |
-| ESP32-C3 | UART | No | No | BLE 5.0 |
-| ESP32-C6 | SDIO | ComingSoon | ComingSoon | ComingSoon |
-| ESP32-C6 | SPI | Yes | Yes | WIP |
-| ESP32-C6 | UART | No | No | WIP |
-| ESP32-S3 | SDIO | NA | NA | NA |
-| ESP32-S3 | SPI | Yes | Yes | BLE 5.0 |
-| ESP32-S3 | UART | No | No | BLE 5.0 |
-| ESP32-C2 | SDIO | NA | NA | NA |
-| ESP32-C2 | SPI | Yes | Yes | BLE 5.0 |
-| ESP32-C2 | UART | No | No | BLE 5.0 |
+| ESP Chipset | Transport options | Linux Features supported |
+| -------: | :-------: | :-------: |
+| <a>![ESP32](docs/icons/esp32.svg)</a> | <a>![sdio_only](docs/icons/sdio_only.svg)</a><br/><a>![sdio_uart](docs/icons/sdio_uart.svg)</a><br/><a>![spi_only](docs/icons/spi_only.svg)</a><br/><a>![spi_uart](docs/icons/spi_uart.svg)</a> | <a>![Wi-Fi](docs/icons/wifi.svg)</a><br/><a>![Classic_BT](docs/icons/ClassicBT.svg)</a><br/><a>![BLE4.2](docs/icons/BLE4.2.svg)</a> |
+| <a>![ESP32-C6](docs/icons/esp32c6.svg)</a> | <a>![sdio_only](docs/icons/sdio_only.svg)</a><br/><a>![sdio_uart](docs/icons/sdio_uart.svg)</a><br/><a>![spi_only](docs/icons/spi_only.svg)</a><br/><a>![spi_uart](docs/icons/spi_uart.svg)</a> | <a>![Wi-Fi-6](docs/icons/wifi_6.svg)</a><br/><a>![BLE5.0](docs/icons/BLE5.3.svg)</a> |
+| <a>![ESP32-S2](docs/icons/esp32s2.svg)</a> | <a>![spi_only](docs/icons/spi_only.svg)</a> | <a>![Wi-Fi](docs/icons/wifi.svg)</a> |
+| <a>![ESP32-C3](docs/icons/esp32c3.svg)</a><br/><a>![ESP32-C2](docs/icons/esp32c2.svg)</a><br/><a>![ESP32-S3](docs/icons/esp32s3.svg)</a> | <a>![spi_only](docs/icons/spi_only.svg)</a><br/><a>![spi_uart](docs/icons/spi_uart.svg)</a> | <a>![Wi-Fi](docs/icons/wifi.svg)</a><br/><a>![BLE5.0](docs/icons/BLE5.0.svg)</a> |
+
 
 Note:
-- BT stands for Bluetooth BR/EDR and BLE stands for Bluetooth Low Energy specifications.
 - ESP-Hosted-FG related BR/EDR 4.2 and BLE 4.2 functionalities are tested with bluez 5.43+. Whereas, BLE 5.0 functionalities are tested with bluez 5.45+.
 - We suggest the latest stable bluez version to be used. Any other Bluetooth stack instead of bluez also could be used.
 - bluez 5.45 on-wards BLE 5.0 HCI commands are supported.
@@ -106,53 +102,41 @@ Note:
 ##### 1.5.2 MCU Host
 The below table explains which feature is supported on which transport interface for MCU based host.
 
-| ESP device | Transport Interface | WLAN support | Virtual serial interface | Bluetooth support |
-|:------------:|:-------:|:---------:|:--------:|:--------:|
-| ESP32 | SDIO | Yes | Yes | BT/BLE 4.2\* |
-| ESP32 | SPI | Yes | Yes | BT/BLE 4.2\* |
-| ESP32 | UART | No | No | BT/BLE 4.2\*\* |
-| ESP32-S2 | SDIO | NA | NA | NA |
-| ESP32-S2 | SPI | Yes | Yes | NA |
-| ESP32-S2 | UART | No | No | NA |
-| ESP32-C3 | SDIO | NA | NA | NA |
-| ESP32-C3 | SPI | Yes | Yes | BLE 5.0\* |
-| ESP32-C3 | UART | No | No | BLE 5.0\*\* |
-| ESP32-C6 | SDIO | ComingSoon | ComingSoon | ComingSoon |
-| ESP32-C6 | SPI | Yes | Yes | WIP |
-| ESP32-C6 | UART | No | No | WIP |
-| ESP32-S3 | SDIO | NA | NA | NA |
-| ESP32-S3 | SPI | Yes | Yes | BLE 5.0\* |
-| ESP32-S3 | UART | No | No | BLE 5.0\*\* |
-| ESP32-C2 | SDIO | NA | NA | NA |
-| ESP32-C2 | SPI | Yes | Yes | BLE 5.0\* |
-| ESP32-C2 | UART | No | No | BLE 5.0\*\* |
+| ESP Chipset | Transport options | Linux Features supported |
+| -------: | :-------: | :-------: |
+| <a>![ESP32](docs/icons/esp32.svg)</a> | <a>![sdio_only](docs/icons/sdio_only.svg)</a><br/><a>![sdio_uart](docs/icons/sdio_uart.svg)</a><br/><a>![spi_only](docs/icons/spi_only.svg)</a><br/><a>![spi_uart](docs/icons/spi_uart.svg)</a> | <a>![Wi-Fi](docs/icons/wifi.svg)</a><br/><a>![Classic_BT](docs/icons/ClassicBT.svg)</a><br/><a>![BLE4.2](docs/icons/BLE4.2.svg)</a> |
+| <a>![ESP32-C6](docs/icons/esp32c6.svg)</a> | <a>![spi_only](docs/icons/spi_only.svg)</a><br/><a>![spi_uart](docs/icons/spi_uart.svg)</a> | <a>![Wi-Fi-6](docs/icons/wifi_6.svg)</a><br/><a>![BLE5.0](docs/icons/BLE5.3.svg)</a> |
+| <a>![ESP32-S2](docs/icons/esp32s2.svg)</a> | <a>![spi_only](docs/icons/spi_only.svg)</a> | <a>![Wi-Fi](docs/icons/wifi.svg)</a> |
+| <a>![ESP32-C3](docs/icons/esp32c3.svg)</a><br/><a>![ESP32-C2](docs/icons/esp32c2.svg)</a><br/><a>![ESP32-S3](docs/icons/esp32s3.svg)</a> | <a>![spi_only](docs/icons/spi_only.svg)</a><br/><a>![spi_uart](docs/icons/spi_uart.svg)</a> | <a>![Wi-Fi](docs/icons/wifi.svg)</a><br/><a>![BLE5.0](docs/icons/BLE5.0.svg)</a> |
 
-Note: BT stands for Bluetooth BR/EDR and BLE stands for Bluetooth Low Energy specifications.
 
-\* BT/BLE over SPI
-> BT/BLE support over SPI is not readily available. In order to implement it, one needs to:
-> 
-> Port BT/BLE stack to MCU, \
-> Add a new virtual serial interface using the serial interface API's provided in host driver of ESP-Hosted-FG solution.
-> HCI implementation in Linux Driver `host/linux/host_driver/esp32` could be used as reference. Search keyword: `ESP_HCI_IF`
-> Register this serial interface with BT/BLE stack as a HCI interface.
+Note:
+-  Bluetooth at MCU
+  - UART is supported from ESP slave side. But not verified from MCU as Host (Works fine with Linux as host)
+  - If you have ported Bluetooth host stack on MCU, you can use ESP32 bluetooth controller in slave mode.
+  - BT/BLE over SPI/SDIO
+    - BT/BLE support over SPI/SDIO is not readily available. In order to implement it, one needs to:
+    - Port BT/BLE stack to MCU
+    - Add a new virtual serial interface using the serial interface API's provided in host driver of ESP-Hosted-FG solution.
+    - HCI implementation in Linux Driver `host/linux/host_driver/esp32` could be used as reference. Search keyword: `ESP_HCI_IF`
+    - Register this serial interface with BT/BLE stack as a HCI interface.
+  - BT/BLE over UART
+    - BT/BLE support over UART is not readily available. In order to implement this, one needs to:
+    - Port BT/BLE stack to MCU
+    - Register the UART serial interface as a HCI interface with BT/BLE stack
+    - With the help of this UART interface, BT/BLE stack can directly interact with BT controller present on ESP bypassing host driver and firmware
+    - ESP Hosted host driver and a firmware plays no role in this communication
+- OTA
+  - Linux hosts support OTA update (Over The Air ESP firmware update) in C and python
+  - MCU hosts can refer to the same for their development
+  - For detailed documentation, please read [ota_update.md](docs/Linux_based_host/ota_update.md).
+- Features awaiting:
+  - ESP32-C6 support for MCU
+  - SDIO support with MCU host
+  - LWIP integration at MCU host
+  - Bluetooth stack at MCU host
+  - ESP chipsets acting as MCU host (ESP as slave <----> ESP as host)
 
-\*\* BT/BLE over UART
-> BT/BLE support over UART is not readily available. In order to implement this, one needs to:
->
-> Port BT/BLE stack to MCU, \
-> Register the UART serial interface as a HCI interface with BT/BLE stack
-> With the help of this UART interface, BT/BLE stack can directly interact with BT controller present on ESP bypassing host driver and firmware
-> ESP Hosted host driver and a firmware plays no role in this communication
-
-WIP
-> Work In progress
-
-ComingSoon
-> Will be scheduled after WIP
-
-* Linux hosts support OTA update (Over The Air ESP firmware update) in C and python. MCU hosts can refer to the same for their development. For detailed documentation, please read
-[ota_update.md](docs/Linux_based_host/ota_update.md).
 
 ---
 
