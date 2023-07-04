@@ -1225,6 +1225,14 @@ message Rpc_Resp_WifiStaGetApInfo {
 	wifi_ap_record ap_records = 2;
 }
 
+message Rpc_Req_WifiSetStorage {
+	int32 storage = 1;
+}
+
+message Rpc_Resp_WifiSetStorage {
+	int32 resp = 1;
+}
+
 /** Event structure **/
 
 message Rpc_Event_WifiEventNoArgs {
@@ -1323,6 +1331,8 @@ message Rpc {
 		Rpc_Req_WifiDeauthSta               req_wifi_deauth_sta               = 293;
 		Rpc_Req_WifiStaGetApInfo            req_wifi_sta_get_ap_info          = 294;
 
+		Rpc_Req_WifiSetStorage              req_wifi_set_storage              = 313;
+
 		/** Responses **/
 		Rpc_Resp_GetMacAddress              resp_get_mac_address               = 513;
 		Rpc_Resp_SetMacAddress              resp_set_mac_address               = 514;
@@ -1369,6 +1379,8 @@ message Rpc {
 		Rpc_Resp_WifiClearFastConnect       resp_wifi_clear_fast_connect       = 548;
 		Rpc_Resp_WifiDeauthSta              resp_wifi_deauth_sta               = 549;
 		Rpc_Resp_WifiStaGetApInfo           resp_wifi_sta_get_ap_info          = 550;
+
+		Rpc_Resp_WifiSetStorage             resp_wifi_set_storage              = 569;
 
 		/** Notifications **/
 		Rpc_Event_ESPInit                   event_esp_init                     = 769;

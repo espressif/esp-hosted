@@ -476,6 +476,12 @@ int compose_rpc_req(Rpc *req, ctrl_cmd_t *app_req, uint8_t *failure_status)
 				rpc__req__wifi_deauth_sta__init);
 		req_payload->aid = app_req->u.wifi_deauth_sta.aid;
 		break;
+	} case RPC_ID__Req_WifiSetStorage: {
+		wifi_storage_t * p = &app_req->u.wifi_storage;
+		RPC_ALLOC_ASSIGN(RpcReqWifiSetStorage, req_wifi_set_storage,
+				rpc__req__wifi_set_storage__init);
+		req_payload->storage = *p;
+		break;
 	} default: {
 		*failure_status = RPC_ERR_UNSUPPORTED_MSG;
 		ESP_LOGE(TAG, "Unsupported RPC Req[%u]",req->msg_id);

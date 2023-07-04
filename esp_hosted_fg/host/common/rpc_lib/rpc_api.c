@@ -268,6 +268,12 @@ ctrl_cmd_t * wifi_sta_get_ap_info(ctrl_cmd_t req)
 	RPC_DECODE_RSP_IF_NOT_ASYNC();
 }
 
+ctrl_cmd_t * wifi_set_storage(ctrl_cmd_t req)
+{
+	RPC_SEND_REQ(RPC_ID__Req_WifiSetStorage);
+	RPC_DECODE_RSP_IF_NOT_ASYNC();
+}
+
 #if 0
 ctrl_cmd_t * wifi_set_protocol(ctrl_cmd_t req)
 {

@@ -514,7 +514,8 @@ int rpc_rsp_callback(ctrl_cmd_t * app_resp)
     case RPC_ID__Resp_WifiClearFastConnect:
 	case RPC_ID__Resp_WifiDeauthSta:
 	case RPC_ID__Resp_WifiStaGetApInfo:
-	case RPC_ID__Resp_WifiSetConfig: {
+	case RPC_ID__Resp_WifiSetConfig:
+	case RPC_ID__Resp_WifiSetStorage: {
 		/* Intended fallthrough */
 		break;
 	} default: {
@@ -1286,6 +1287,17 @@ int test_wifi_get_ps(wifi_ps_type_t *type)
 
 	*type = resp->u.wifi_ps.ps_mode;
 
+	return rpc_rsp_callback(resp);
+}
+
+int test_wifi_set_storage(wifi_storage_t storage)
+{
+	/* implemented synchronous */
+	ctrl_cmd_t req = RPC_DEFAULT_REQ();
+	ctrl_cmd_t *resp = NULL;
+
+	req.u.wifi_storage = storage;
+	resp = wifi_set_storage(req);
 	return rpc_rsp_callback(resp);
 }
 
