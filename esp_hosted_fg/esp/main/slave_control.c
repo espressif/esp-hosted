@@ -2650,6 +2650,15 @@ static esp_err_t req_wifi_deauth_sta(Rpc *req, Rpc *resp, void *priv_data)
 	return ESP_OK;
 }
 
+static esp_err_t req_wifi_set_storage(Rpc *req, Rpc *resp, void *priv_data)
+{
+	RPC_TEMPLATE(RpcRespWifiSetStorage, resp_wifi_set_storage,
+			RpcReqWifiSetStorage, req_wifi_set_storage,
+			rpc__resp__wifi_set_storage__init);
+
+	RPC_RET_FAIL_IF(esp_wifi_set_storage(req_payload->storage));
+	return ESP_OK;
+}
 
 #if 0
 static esp_err_t req_wifi_(Rpc *req, Rpc *resp, void *priv_data)
@@ -2821,6 +2830,10 @@ static esp_rpc_req_t req_table[] = {
 		.req_num = RPC_ID__Req_WifiDeauthSta,
 		.command_handler = req_wifi_deauth_sta
 	},
+	{
+		.req_num = RPC_ID__Req_WifiSetStorage,
+		.command_handler = req_wifi_set_storage
+	},
 };
 
 
@@ -2851,7 +2864,7 @@ static esp_err_t esp_rpc_command_dispatcher(
 		ESP_LOGE(TAG, "Invalid command request lookup");
 	}
 
-	printf("Received Req [0x%x]\n", req->msg_id);
+	ESP_LOGI(TAG, "Received Req [0x%x]", req->msg_id);
 
 	req_index = lookup_req_handler(req->msg_id);
 	if (req_index < 0) {
@@ -3054,6 +3067,9 @@ static void esp_rpc_cleanup(Rpc *resp)
 		} case RPC_ID__Resp_WifiDeauthSta: {
 			mem_free(resp->resp_wifi_deauth_sta);
 			break;
+		} case RPC_ID__Resp_WifiSetStorage: {
+			mem_free(resp->resp_wifi_set_storage);
+			break;
 		} case (RPC_ID__Event_ESPInit) : {
 			mem_free(resp->event_esp_init);
 			break;
@@ -3106,7 +3122,7 @@ esp_err_t data_transfer_handler(uint32_t session_id,const uint8_t *inbuf,
 	resp.msg_type = RPC_TYPE__Resp;
 	resp.msg_id = req->msg_id - RPC_ID__Req_Base + RPC_ID__Resp_Base;
 	resp.payload_case = resp.msg_id;
-	printf("Resp_MSGId for req[%x] is [%x]\n", req->msg_id, resp.msg_id);
+	ESP_LOGI(TAG, "Resp_MSGId for req[0x%x] is [0x%x]", req->msg_id, resp.msg_id);
 	ret = esp_rpc_command_dispatcher(req,&resp,NULL);
 	if (ret) {
 		ESP_LOGE(TAG, "Command dispatching not happening");

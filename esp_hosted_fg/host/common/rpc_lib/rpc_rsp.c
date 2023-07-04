@@ -630,6 +630,10 @@ int rpc_parse_rsp(Rpc *rpc_msg, ctrl_cmd_t *app_resp)
 		RPC_FAIL_ON_NULL(resp_wifi_deauth_sta);
 		RPC_ERR_IN_RESP(resp_wifi_deauth_sta);
 		break;
+	} case RPC_ID__Resp_WifiSetStorage: {
+		RPC_FAIL_ON_NULL(resp_wifi_set_storage);
+		RPC_ERR_IN_RESP(resp_wifi_set_storage);
+		break;
 	} default: {
 		ESP_LOGE(TAG, "Unsupported rpc Resp[%u]\n", rpc_msg->msg_id);
 		goto fail_parse_rpc_msg;

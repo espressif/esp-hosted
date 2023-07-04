@@ -217,6 +217,8 @@ typedef struct Ctrl_cmd_t {
 
 		wifi_deauth_sta_t           wifi_deauth_sta;
 
+		wifi_storage_t              wifi_storage;
+
 		event_heartbeat_t           e_heartbeat;
 
 		event_station_disconn_t     e_sta_disconnected;
@@ -434,6 +436,7 @@ ctrl_cmd_t * wifi_deauth_sta(ctrl_cmd_t req);
 ctrl_cmd_t * wifi_sta_get_ap_info(ctrl_cmd_t req);
 ctrl_cmd_t * wifi_set_ps(ctrl_cmd_t req);
 ctrl_cmd_t * wifi_get_ps(ctrl_cmd_t req);
+ctrl_cmd_t * wifi_set_storage(ctrl_cmd_t req);
 #if 0
 ctrl_cmd_t * wifi_set_protocol(ctrl_cmd_t req);
 ctrl_cmd_t * wifi_get_protocol(ctrl_cmd_t req);

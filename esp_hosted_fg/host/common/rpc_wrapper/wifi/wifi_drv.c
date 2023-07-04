@@ -250,6 +250,11 @@ esp_err_t esp_wifi_get_ps(wifi_ps_type_t *type)
 	return test_wifi_get_ps(type);
 }
 
+esp_err_t esp_wifi_set_storage(wifi_storage_t storage)
+{
+	return test_wifi_set_storage(storage);
+}
+
 #if 0
 esp_err_t esp_wifi_set_protocol(wifi_interface_t ifx, uint8_t protocol_bitmap)
 {

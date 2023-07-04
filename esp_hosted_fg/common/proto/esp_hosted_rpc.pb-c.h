@@ -109,6 +109,8 @@ typedef struct RpcReqWifiDeauthSta RpcReqWifiDeauthSta;
 typedef struct RpcRespWifiDeauthSta RpcRespWifiDeauthSta;
 typedef struct RpcReqWifiStaGetApInfo RpcReqWifiStaGetApInfo;
 typedef struct RpcRespWifiStaGetApInfo RpcRespWifiStaGetApInfo;
+typedef struct RpcReqWifiSetStorage RpcReqWifiSetStorage;
+typedef struct RpcRespWifiSetStorage RpcRespWifiSetStorage;
 typedef struct RpcEventWifiEventNoArgs RpcEventWifiEventNoArgs;
 typedef struct RpcEventESPInit RpcEventESPInit;
 typedef struct RpcEventHeartbeat RpcEventHeartbeat;
@@ -2311,6 +2313,26 @@ struct  RpcRespWifiStaGetApInfo
     , 0, NULL }
 
 
+struct  RpcReqWifiSetStorage
+{
+  ProtobufCMessage base;
+  int32_t storage;
+};
+#define RPC__REQ__WIFI_SET_STORAGE__INIT \
+ { PROTOBUF_C_MESSAGE_INIT (&rpc__req__wifi_set_storage__descriptor) \
+    , 0 }
+
+
+struct  RpcRespWifiSetStorage
+{
+  ProtobufCMessage base;
+  int32_t resp;
+};
+#define RPC__RESP__WIFI_SET_STORAGE__INIT \
+ { PROTOBUF_C_MESSAGE_INIT (&rpc__resp__wifi_set_storage__descriptor) \
+    , 0 }
+
+
 struct  RpcEventWifiEventNoArgs
 {
   ProtobufCMessage base;
@@ -2423,6 +2445,7 @@ typedef enum {
   RPC__PAYLOAD_REQ_WIFI_CLEAR_FAST_CONNECT = 292,
   RPC__PAYLOAD_REQ_WIFI_DEAUTH_STA = 293,
   RPC__PAYLOAD_REQ_WIFI_STA_GET_AP_INFO = 294,
+  RPC__PAYLOAD_REQ_WIFI_SET_STORAGE = 313,
   RPC__PAYLOAD_RESP_GET_MAC_ADDRESS = 513,
   RPC__PAYLOAD_RESP_SET_MAC_ADDRESS = 514,
   RPC__PAYLOAD_RESP_GET_WIFI_MODE = 515,
@@ -2452,6 +2475,7 @@ typedef enum {
   RPC__PAYLOAD_RESP_WIFI_CLEAR_FAST_CONNECT = 548,
   RPC__PAYLOAD_RESP_WIFI_DEAUTH_STA = 549,
   RPC__PAYLOAD_RESP_WIFI_STA_GET_AP_INFO = 550,
+  RPC__PAYLOAD_RESP_WIFI_SET_STORAGE = 569,
   RPC__PAYLOAD_EVENT_ESP_INIT = 769,
   RPC__PAYLOAD_EVENT_HEARTBEAT = 770,
   RPC__PAYLOAD_EVENT_STATION_DISCONNECT_FROM__AP = 771,
@@ -2507,6 +2531,7 @@ struct  Rpc
     RpcReqWifiClearFastConnect *req_wifi_clear_fast_connect;
     RpcReqWifiDeauthSta *req_wifi_deauth_sta;
     RpcReqWifiStaGetApInfo *req_wifi_sta_get_ap_info;
+    RpcReqWifiSetStorage *req_wifi_set_storage;
     /*
      ** Responses *
      */
@@ -2539,6 +2564,7 @@ struct  Rpc
     RpcRespWifiClearFastConnect *resp_wifi_clear_fast_connect;
     RpcRespWifiDeauthSta *resp_wifi_deauth_sta;
     RpcRespWifiStaGetApInfo *resp_wifi_sta_get_ap_info;
+    RpcRespWifiSetStorage *resp_wifi_set_storage;
     /*
      ** Notifications *
      */
@@ -4342,6 +4368,44 @@ RpcRespWifiStaGetApInfo *
 void   rpc__resp__wifi_sta_get_ap_info__free_unpacked
                      (RpcRespWifiStaGetApInfo *message,
                       ProtobufCAllocator *allocator);
+/* RpcReqWifiSetStorage methods */
+void   rpc__req__wifi_set_storage__init
+                     (RpcReqWifiSetStorage         *message);
+size_t rpc__req__wifi_set_storage__get_packed_size
+                     (const RpcReqWifiSetStorage   *message);
+size_t rpc__req__wifi_set_storage__pack
+                     (const RpcReqWifiSetStorage   *message,
+                      uint8_t             *out);
+size_t rpc__req__wifi_set_storage__pack_to_buffer
+                     (const RpcReqWifiSetStorage   *message,
+                      ProtobufCBuffer     *buffer);
+RpcReqWifiSetStorage *
+       rpc__req__wifi_set_storage__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data);
+void   rpc__req__wifi_set_storage__free_unpacked
+                     (RpcReqWifiSetStorage *message,
+                      ProtobufCAllocator *allocator);
+/* RpcRespWifiSetStorage methods */
+void   rpc__resp__wifi_set_storage__init
+                     (RpcRespWifiSetStorage         *message);
+size_t rpc__resp__wifi_set_storage__get_packed_size
+                     (const RpcRespWifiSetStorage   *message);
+size_t rpc__resp__wifi_set_storage__pack
+                     (const RpcRespWifiSetStorage   *message,
+                      uint8_t             *out);
+size_t rpc__resp__wifi_set_storage__pack_to_buffer
+                     (const RpcRespWifiSetStorage   *message,
+                      ProtobufCBuffer     *buffer);
+RpcRespWifiSetStorage *
+       rpc__resp__wifi_set_storage__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data);
+void   rpc__resp__wifi_set_storage__free_unpacked
+                     (RpcRespWifiSetStorage *message,
+                      ProtobufCAllocator *allocator);
 /* RpcEventWifiEventNoArgs methods */
 void   rpc__event__wifi_event_no_args__init
                      (RpcEventWifiEventNoArgs         *message);
@@ -4778,6 +4842,12 @@ typedef void (*RpcReqWifiStaGetApInfo_Closure)
 typedef void (*RpcRespWifiStaGetApInfo_Closure)
                  (const RpcRespWifiStaGetApInfo *message,
                   void *closure_data);
+typedef void (*RpcReqWifiSetStorage_Closure)
+                 (const RpcReqWifiSetStorage *message,
+                  void *closure_data);
+typedef void (*RpcRespWifiSetStorage_Closure)
+                 (const RpcRespWifiSetStorage *message,
+                  void *closure_data);
 typedef void (*RpcEventWifiEventNoArgs_Closure)
                  (const RpcEventWifiEventNoArgs *message,
                   void *closure_data);
@@ -4908,6 +4978,8 @@ extern const ProtobufCMessageDescriptor rpc__req__wifi_deauth_sta__descriptor;
 extern const ProtobufCMessageDescriptor rpc__resp__wifi_deauth_sta__descriptor;
 extern const ProtobufCMessageDescriptor rpc__req__wifi_sta_get_ap_info__descriptor;
 extern const ProtobufCMessageDescriptor rpc__resp__wifi_sta_get_ap_info__descriptor;
+extern const ProtobufCMessageDescriptor rpc__req__wifi_set_storage__descriptor;
+extern const ProtobufCMessageDescriptor rpc__resp__wifi_set_storage__descriptor;
 extern const ProtobufCMessageDescriptor rpc__event__wifi_event_no_args__descriptor;
 extern const ProtobufCMessageDescriptor rpc__event__espinit__descriptor;
 extern const ProtobufCMessageDescriptor rpc__event__heartbeat__descriptor;
