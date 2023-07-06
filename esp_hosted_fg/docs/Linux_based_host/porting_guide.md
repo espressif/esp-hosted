@@ -26,8 +26,6 @@ When you are opting microprocessor with Linux other than Raspberry, hardware per
 
 ###### Slave side
 - Changing GPIOs
-	- Reset Pin
-		- Use any unused GPIO, no restrictions.
 	- SPI GPIOs
 		- MISO, MOSI, CLK & CS are mapped to IO_MUX. They allowed to be changed with little overhead of GPIO Matrix routing.
 		- Data Ready & Handshake could be chosed from any free GPIOs
@@ -160,7 +158,7 @@ make CROSS_COMPILE=/home/user1/arm64_toolchain/bin/aarch64-linux-gnu-
 		- Try to add log `printk(KERN_ERR "%s\n",__func__);` in `spi_data_ready_interrupt_handler()` and `spi_interrupt_handler()` functions if the interrupts are hit by assessing dmesg log
 	* Device interoperability
 		- It is observed that first event is not received at host, despite of SPI mode changes, lowering of SPI frequency.
-		- We observed that there were [SPI timing issues](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/peripherals/spi_slave.html#speed-and-timing-considerations) possibly duue to jumper wire legths or base peripheral SPI device driver.
+		- We observed that there were [SPI timing issues](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/peripherals/spi_slave.html#speed-and-timing-considerations) possibly due to jumper wire lengths or base peripheral SPI device driver.
 		- In such cases, SPI mode mismatch helped. In this case, different SPI modes used at both ESP and Host side, helped to get consistent timing and reliable driver operation.
 		- From our past experience, some Linux SPI bus base driver add extra clocks delays(unreasonable) : This results in lower performance. If you face very less throughput, it is advised that we check Logic analyzer
 * SDIO

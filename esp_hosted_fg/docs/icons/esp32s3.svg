@@ -1,12 +1,12 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="90" height="20">
   <title>ESP-Hosted transport</title>
   <defs>
-    <linearGradient id="workflow-fill" x1="50%" y1="0%" x2="50%" y2="30%">
-      <stop stop-color="#ff0000" offset="0%"></stop>
+    <linearGradient id="workflow-fill" x1="50%" y1="0%" x2="50%" y2="50%">
+      <stop stop-color="#ABABAB" offset="0%"></stop>
       <stop stop-color="#000000" offset="100%"></stop>
     </linearGradient>
-    <linearGradient id="state-fill" x1="50%" y1="0%" x2="50%" y2="30%">
-      <stop stop-color="#ff0000" offset="0%"></stop>
+    <linearGradient id="state-fill" x1="50%" y1="0%" x2="50%" y2="50%">
+      <stop stop-color="#ABABAB" offset="0%"></stop>
       <stop stop-color="#000000" offset="100%"></stop>
     </linearGradient>
   </defs>

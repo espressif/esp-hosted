@@ -29,7 +29,7 @@ Setup image is here.
 
 ![alt text](stm32_esp32_sdio_setup.jpg "setup of STM32F412ZGT6-Nucleo 144 as host and ESP32 as peripheral")
 
-:warning:Note:
+:warning: Note:
 As SDIO faces signal integrity issues over jumper wires, we strongly recommend to **Design PCB boards with above connections**
 If that is not possible
  - Try to use extremely small and good quality jumper wires

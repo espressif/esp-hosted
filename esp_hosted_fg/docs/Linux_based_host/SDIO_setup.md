@@ -24,7 +24,7 @@ Sample setup image of ESP32 SDIO with RPi looks like:
 
 ![alt text](rpi_esp_sdio_setup.jpeg "setup of Raspberry-Pi as host and ESP32 as peripheral")
 
-:warning:Note:
+:warning: Note:
 As SDIO faces signal integrity issues over jumper wires, we strongly recommend to **Design PCB boards with above connections**
 If that is not possible
  - Try to use extremely small and good quality jumper wires
