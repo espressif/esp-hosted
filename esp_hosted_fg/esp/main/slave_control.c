@@ -3278,6 +3278,126 @@ static esp_err_t req_wifi_set_storage(Rpc *req, Rpc *resp, void *priv_data)
 	return ESP_OK;
 }
 
+static esp_err_t req_wifi_set_bandwidth(Rpc *req, Rpc *resp, void *priv_data)
+{
+	RPC_TEMPLATE(RpcRespWifiSetBandwidth, resp_wifi_set_bandwidth,
+			RpcReqWifiSetBandwidth, req_wifi_set_bandwidth,
+			rpc__resp__wifi_set_bandwidth__init);
+
+	RPC_RET_FAIL_IF(esp_wifi_set_bandwidth(req_payload->ifx, req_payload->bw));
+	return ESP_OK;
+}
+
+static esp_err_t req_wifi_get_bandwidth(Rpc *req, Rpc *resp, void *priv_data)
+{
+	RPC_TEMPLATE(RpcRespWifiGetBandwidth, resp_wifi_get_bandwidth,
+			RpcReqWifiGetBandwidth, req_wifi_get_bandwidth,
+			rpc__resp__wifi_get_bandwidth__init);
+
+	wifi_bandwidth_t bw = 0;
+	RPC_RET_FAIL_IF(esp_wifi_get_bandwidth(req_payload->ifx, &bw));
+
+	resp_payload->bw = bw;
+	return ESP_OK;
+}
+
+static esp_err_t req_wifi_set_channel(Rpc *req, Rpc *resp, void *priv_data)
+{
+	RPC_TEMPLATE(RpcRespWifiSetChannel, resp_wifi_set_channel,
+			RpcReqWifiSetChannel, req_wifi_set_channel,
+			rpc__resp__wifi_set_channel__init);
+
+	RPC_RET_FAIL_IF(esp_wifi_set_channel(req_payload->primary, req_payload->second));
+	return ESP_OK;
+}
+
+static esp_err_t req_wifi_get_channel(Rpc *req, Rpc *resp, void *priv_data)
+{
+	RPC_TEMPLATE_SIMPLE(RpcRespWifiGetChannel, resp_wifi_get_channel,
+			RpcReqWifiGetChannel, req_wifi_get_channel,
+			rpc__resp__wifi_get_channel__init);
+
+	uint8_t primary = 0;
+	wifi_second_chan_t second = 0;
+	RPC_RET_FAIL_IF(esp_wifi_get_channel(&primary, &second));
+
+	resp_payload->primary = primary;
+	resp_payload->second = second;
+	return ESP_OK;
+}
+
+static esp_err_t req_wifi_set_country_code(Rpc *req, Rpc *resp, void *priv_data)
+{
+	RPC_TEMPLATE(RpcRespWifiSetCountryCode, resp_wifi_set_country_code,
+			RpcReqWifiSetCountryCode, req_wifi_set_country_code,
+			rpc__resp__wifi_set_country_code__init);
+
+	char cc[3] = {0}; // country code
+	RPC_RET_FAIL_IF(!req_payload->country.data);
+	RPC_REQ_COPY_STR(&cc[0], req_payload->country, 2); // only copy the first two chars
+
+	RPC_RET_FAIL_IF(esp_wifi_set_country_code(&cc[0],
+			req_payload->ieee80211d_enabled));
+
+	return ESP_OK;
+}
+
+static esp_err_t req_wifi_get_country_code(Rpc *req, Rpc *resp, void *priv_data)
+{
+	RPC_TEMPLATE_SIMPLE(RpcRespWifiGetCountryCode, resp_wifi_get_country_code,
+			RpcReqWifiGetCountryCode, req_wifi_get_country_code,
+			rpc__resp__wifi_get_country_code__init);
+
+	char cc[3] = {0}; // country code
+	RPC_RET_FAIL_IF(esp_wifi_get_country_code(&cc[0]));
+
+	RPC_RESP_COPY_STR(resp_payload->country, &cc[0], sizeof(cc));
+
+	return ESP_OK;
+}
+
+static esp_err_t req_wifi_set_country(Rpc *req, Rpc *resp, void *priv_data)
+{
+	RPC_TEMPLATE(RpcRespWifiSetCountry, resp_wifi_set_country,
+			RpcReqWifiSetCountry, req_wifi_set_country,
+			rpc__resp__wifi_set_country__init);
+
+	RPC_RET_FAIL_IF(!req_payload->country);
+
+	wifi_country_t country = {0};
+	WifiCountry * p_c_country = req_payload->country;
+	RPC_REQ_COPY_BYTES(&country.cc[0], p_c_country->cc, sizeof(country.cc));
+	country.schan        = p_c_country->schan;
+	country.nchan        = p_c_country->nchan;
+	country.max_tx_power = p_c_country->max_tx_power;
+	country.policy       = p_c_country->policy;
+
+	RPC_RET_FAIL_IF(esp_wifi_set_country(&country));
+
+	return ESP_OK;
+}
+
+static esp_err_t req_wifi_get_country(Rpc *req, Rpc *resp, void *priv_data)
+{
+	RPC_TEMPLATE_SIMPLE(RpcRespWifiGetCountry, resp_wifi_get_country,
+			RpcReqWifiGetCountry, req_wifi_get_country,
+			rpc__resp__wifi_get_country__init);
+
+	wifi_country_t country = {0};
+	RPC_RET_FAIL_IF(esp_wifi_get_country(&country));
+
+	RPC_ALLOC_ELEMENT(WifiCountry, resp_payload->country, wifi_country__init);
+	WifiCountry * p_c_country = resp_payload->country;
+	RPC_RESP_COPY_BYTES(p_c_country->cc, &country.cc[0], sizeof(country.cc));
+	p_c_country->schan        = country.schan;
+	p_c_country->nchan        = country.nchan;
+	p_c_country->max_tx_power = country.max_tx_power;
+	p_c_country->policy       = country.policy;
+
+err:
+	return ESP_OK;
+}
+
 #if 0
 static esp_err_t req_wifi_(Rpc *req, Rpc *resp, void *priv_data)
 {

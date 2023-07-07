@@ -118,6 +118,15 @@ int test_wifi_sta_get_ap_info(wifi_ap_record_t *ap_info);
 int test_wifi_set_ps(wifi_ps_type_t type);
 int test_wifi_get_ps(wifi_ps_type_t *type);
 int test_wifi_set_storage(wifi_storage_t storage);
+int test_wifi_set_bandwidth(wifi_interface_t ifx, wifi_bandwidth_t bw);
+int test_wifi_get_bandwidth(wifi_interface_t ifx, wifi_bandwidth_t *bw);
+int test_wifi_set_channel(uint8_t primary, wifi_second_chan_t second);
+int test_wifi_get_channel(uint8_t *primary, wifi_second_chan_t *second);
+int test_wifi_set_country_code(const char *country, bool ieee80211d_enabled);
+int test_wifi_get_country_code(char *country);
+int test_wifi_set_country(const wifi_country_t *country);
+int test_wifi_get_country(wifi_country_t *country);
+
 #if 0
 int test_wifi_set_protocol(wifi_interface_t ifx, uint8_t protocol_bitmap);
 int test_wifi_get_protocol(wifi_interface_t ifx, uint8_t *protocol_bitmap);
