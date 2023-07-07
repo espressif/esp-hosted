@@ -393,6 +393,8 @@ static void process_rx_packet(struct sk_buff *skb)
 	len = le16_to_cpu(payload_header->len);
 	offset = le16_to_cpu(payload_header->offset);
 
+	/*print_hex_dump(KERN_INFO, "rx: ",
+		DUMP_PREFIX_ADDRESS, 16, 1, skb->data , len+offset, 1  );*/
 	if (adapter->capabilities & ESP_CHECKSUM_ENABLED) {
 		rx_checksum = le16_to_cpu(payload_header->checksum);
 		payload_header->checksum = 0;
@@ -407,8 +409,6 @@ static void process_rx_packet(struct sk_buff *skb)
 
 	if (payload_header->if_type == ESP_SERIAL_IF) {
 #ifdef CONFIG_SUPPORT_ESP_SERIAL
-		/* print_hex_dump(KERN_INFO, "esp_serial_rx: ",
-		 * DUMP_PREFIX_ADDRESS, 16, 1, skb->data + offset, len, 1  ); */
 		do {
 			ret = esp_serial_data_received(payload_header->if_num,
 					(skb->data + offset + ret_len), (len - ret_len));
@@ -561,6 +561,8 @@ int esp_send_packet(struct esp_adapter *adapter, struct sk_buff *skb)
 	if (!adapter || !adapter->if_ops || !adapter->if_ops->write)
 		return -EINVAL;
 
+	/*print_hex_dump(KERN_INFO, "tx: ",
+		DUMP_PREFIX_ADDRESS, 16, 1, skb->data , skb->len+sizeof(struct esp_payload_header), 1  );*/
 	return adapter->if_ops->write(adapter, skb);
 }
 

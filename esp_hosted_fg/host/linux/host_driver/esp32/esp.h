@@ -25,6 +25,7 @@
 #include <linux/netdevice.h>
 #include <net/bluetooth/bluetooth.h>
 #include <net/bluetooth/hci_core.h>
+#include "esp_kernel_port.h"
 #include "adapter.h"
 
 #define ESP_IF_TYPE_SDIO        1

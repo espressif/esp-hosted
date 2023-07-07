@@ -276,14 +276,12 @@ void process_tx_pkt(interface_buffer_handle_t *buf_handle)
 {
 	/* Check if data path is not yet open */
 	if (!datapath) {
-#if CONFIG_ESP_WLAN_DEBUG
-		ESP_LOGD (TAG_TX, "Data path stopped");
-#endif
 		/* Post processing */
 		if (buf_handle->free_buf_handle && buf_handle->priv_buffer_handle) {
 			buf_handle->free_buf_handle(buf_handle->priv_buffer_handle);
 			buf_handle->priv_buffer_handle = NULL;
 		}
+		ESP_LOGD(TAG, "Data path stopped");
 		usleep(100*1000);
 		return;
 	}
@@ -387,9 +385,8 @@ void process_rx_pkt(interface_buffer_handle_t *buf_handle)
 	payload = buf_handle->payload + le16toh(header->offset);
 	payload_len = le16toh(header->len);
 
-#if CONFIG_ESP_WLAN_DEBUG
-	ESP_LOG_BUFFER_HEXDUMP(TAG_RX, payload, 8, ESP_LOG_INFO);
-#endif
+	ESP_LOGV(TAG, "Rx pkt: type:%u\n",buf_handle->if_type);
+	ESP_LOG_BUFFER_HEXDUMP(TAG, payload, payload_len, ESP_LOG_VERBOSE);
 
 	if ((buf_handle->if_type == ESP_STA_IF) && station_connected) {
 		/* Forward data to wlan driver */
@@ -550,9 +547,9 @@ int event_handler(uint8_t val)
 {
 	switch(val) {
 		case ESP_OPEN_DATA_PATH:
-			datapath = 1;
 			if (if_handle) {
 				if_handle->state = ACTIVE;
+				datapath = 1;
 				ESP_EARLY_LOGI(TAG, "Start Data Path");
 			} else {
 				ESP_EARLY_LOGI(TAG, "Failed to Start Data Path");
@@ -737,6 +734,7 @@ void app_main()
 	protocomm_pserial_start(pc_pserial, serial_write_data, serial_read_data);
 
 	if_context = interface_insert_driver(event_handler);
+
 #if CONFIG_ESP_SPI_HOST_INTERFACE
 	datapath = 1;
 #endif
@@ -753,11 +751,6 @@ void app_main()
 		return;
 	}
 
-#if CONFIG_ESP_SPI_HOST_INTERFACE
-	/* send capabilities to host */
-	generate_startup_event(capa);
-#endif
-
 	meta_to_host_queue = xQueueCreate(TO_HOST_QUEUE_SIZE*3, sizeof(uint8_t));
 	assert(meta_to_host_queue);
 	for (prio_q_idx=0; prio_q_idx<MAX_PRIORITY_QUEUES; prio_q_idx++) {
@@ -769,25 +762,20 @@ void app_main()
 	assert(xTaskCreate(recv_task , "recv_task" ,
 			CONFIG_ESP_DEFAULT_TASK_STACK_SIZE, NULL ,
 			CONFIG_ESP_DEFAULT_TASK_PRIO, NULL) == pdTRUE);
-	assert(xTaskCreate(send_task , "send_task" , 
+	assert(xTaskCreate(send_task , "send_task" ,
 			CONFIG_ESP_DEFAULT_TASK_STACK_SIZE, NULL ,
 			CONFIG_ESP_DEFAULT_TASK_PRIO, NULL) == pdTRUE);
 	create_debugging_tasks();
 
-
 	ESP_ERROR_CHECK(initialise_wifi());
 
-	//ESP_TCPIP_INIT(); //Not needed
-
-	ESP_LOGI(TAG,"Initial set up done");
-
-	while(!datapath) {
-		vTaskDelay(10);
+	while (!datapath) {
+		sleep(1);
 	}
 
-#if CONFIG_ESP_SDIO_HOST_INTERFACE
 	/* send capabilities to host */
 	generate_startup_event(capa);
-#endif
+	ESP_LOGI(TAG,"Initial set up done");
+
 	send_event_to_host(CTRL_MSG_ID__Event_ESPInit);
 }

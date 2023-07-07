@@ -292,9 +292,11 @@ static void init_uart_c3_s3(void)
 
 	ESP_ERROR_CHECK( uart_set_pin(BLUETOOTH_UART, BT_TX_PIN,
 				BT_RX_PIN, BT_RTS_PIN, BT_CTS_PIN) );
+	ESP_LOGI(BT_TAG, "UART Pins: Tx:%u Rx:%u RTS:%u CTS:%u",
+			BT_TX_PIN, BT_RX_PIN, BT_RTS_PIN, BT_CTS_PIN);
 
     // configure UART1
-    ESP_LOGI(BT_TAG, "baud rate for HCI uart :: %d \n", 
+    ESP_LOGI(BT_TAG, "baud rate for HCI uart :: %d \n",
 			CONFIG_EXAMPLE_HCI_UART_BAUDRATE);
 
     uart_config_t uart_config = {
@@ -368,14 +370,26 @@ static void init_uart_esp32(void)
 
 	ESP_ERROR_CHECK( uart_set_pin(BLUETOOTH_UART, BT_TX_PIN,
 		BT_RX_PIN, BT_RTS_PIN, BT_CTS_PIN) );
+	ESP_LOGI(BT_TAG, "UART Pins: Tx:%u Rx:%u RTS:%u CTS:%u",
+			BT_TX_PIN, BT_RX_PIN, BT_RTS_PIN, BT_CTS_PIN);
 
 }
 #endif
 
-#if CONFIG_IDF_TARGET_ESP32C2
-static void init_uart_c2(void)
+#if (defined(CONFIG_IDF_TARGET_ESP32C2) || defined(CONFIG_IDF_TARGET_ESP32C6))
+static void init_uart_c2_c6(void)
 {
-	ESP_LOGD(BT_TAG, "Set-up BLE for ESP32-C2");
+    ESP_LOGD(BT_TAG, "Set-up BLE for ESP32-C2/C6");
+
+#if defined(CONFIG_IDF_TARGET_ESP32C2)
+    ESP_LOGI(BT_TAG, "UART Pins: Tx:%u Rx:%u", BT_TX_PIN, BT_RX_PIN);
+#elif defined(CONFIG_IDF_TARGET_ESP32C6)
+    //ESP_ERROR_CHECK( uart_set_pin(BLUETOOTH_UART, BT_TX_PIN,
+    //  BT_RX_PIN, BT_RTS_PIN, BT_CTS_PIN) );
+    ESP_LOGI(BT_TAG, "UART Pins: Tx:%u Rx:%u", BT_TX_PIN, BT_RX_PIN);
+    //ESP_LOGI(BT_TAG, "UART Pins: Tx:%u Rx:%u RTS:%u CTS:%u",
+            //BT_TX_PIN, BT_RX_PIN, BT_RTS_PIN, BT_CTS_PIN);
+#endif
 }
 #endif
 
@@ -383,8 +397,8 @@ void init_uart(void)
 {
 #if CONFIG_IDF_TARGET_ESP32
 	init_uart_esp32();
-#elif CONFIG_IDF_TARGET_ESP32C2
-	init_uart_c2();
+#elif (defined(CONFIG_IDF_TARGET_ESP32C2) || defined(CONFIG_IDF_TARGET_ESP32C6))
+	init_uart_c2_c6();
 #elif BT_OVER_C3_S3
 	init_uart_c3_s3();
 #endif
@@ -488,7 +502,7 @@ esp_err_t initialise_bluetooth(void)
 #if SOC_ESP_NIMBLE_CONTROLLER
     ble_hci_trans_cfg_hs((ble_hci_trans_rx_cmd_fn *)ble_hs_hci_rx_evt,NULL,
                          (ble_hci_trans_rx_acl_fn *)ble_hs_rx_data,NULL);
-#else 
+#else
 	ret = esp_vhci_host_register_callback(&vhci_host_cb);
 #endif
 

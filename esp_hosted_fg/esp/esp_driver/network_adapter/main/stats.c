@@ -153,7 +153,16 @@ extern volatile uint8_t datapath;
 static void raw_tp_tx_task(void* pvParameters)
 {
 	int ret;
+	unsigned int *ptr = raw_tp_tx_buf;
 	interface_buffer_handle_t buf_handle = {0};
+
+	sleep(5);
+
+	for(int i=0;i<sizeof(raw_tp_tx_buf) - sizeof(int);i+=sizeof(int)) {
+		*ptr = 0xefbeadde;
+		ptr++;
+	}
+
 
 	for (;;) {
 
