@@ -25,12 +25,29 @@
 //#include "esp_netif_types.h"
 //#include "esp_wifi_default.h"
 
+/* iperf test config */
+#define IPERF_TEST_IP_TYPE        IPERF_IP_TYPE_IPV4
+#define IPERF_TEST_MODE           IPERF_FLAG_SERVER
+#define IPERF_TEST_PROTOCOL       IPERF_FLAG_TCP
+#define IPERF_TEST_DURATION_SEC   300
+#define IPERF_TEST_INTERVAL_SEC   IPERF_DEFAULT_INTERVAL
+#define IPERF_TEST_PKT_LEN        0 /* take default length from IPERF_UDP_TX_LEN/IPERF_UDP_RX_LEN or IPERF_TCP_TX_LEN/IPERF_TCP_RX_LEN */
+#define IPERF_TEST_SRC_PORT       IPERF_DEFAULT_PORT
+#define IPERF_TEST_DEST_PORT      IPERF_DEFAULT_PORT
+#define IPERF_TEST_BW_LIMIT       IPERF_DEFAULT_NO_BW_LIMIT
+
+
 #ifndef CONFIG_ESP_WIFI_SSID
 #define CONFIG_ESP_WIFI_SSID "ESP_1"
 #endif
 
 #ifndef CONFIG_ESP_WIFI_PASSWORD
 #define CONFIG_ESP_WIFI_PASSWORD "Espressif!123"
+#endif
+
+#if IPERF_TEST_MODE==RUN_IPERF_CLIENT
+/* if your pc running iperf server and connected to same CONFIG_ESP_WIFI_SSID, provide its address */
+#define IPERF_TEST_CLIENT_DEST_IP_STR "192.168.98.36"
 #endif
 
 #ifndef CONFIG_ESP_MAXIMUM_RETRY
@@ -42,25 +59,29 @@
 #define EXAMPLE_ESP_MAXIMUM_RETRY  CONFIG_ESP_MAXIMUM_RETRY
 
 #if CONFIG_ESP_WIFI_AUTH_OPEN
-#define ESP_WIFI_SCAN_AUTH_MODE_THRESHOLD WIFI_AUTH_OPEN
+#define ESP_WIFI_AUTH_MODE_THRESHOLD WIFI_AUTH_OPEN
 #elif CONFIG_ESP_WIFI_AUTH_WEP
-#define ESP_WIFI_SCAN_AUTH_MODE_THRESHOLD WIFI_AUTH_WEP
+#define ESP_WIFI_AUTH_MODE_THRESHOLD WIFI_AUTH_WEP
 #elif CONFIG_ESP_WIFI_AUTH_WPA_PSK
-#define ESP_WIFI_SCAN_AUTH_MODE_THRESHOLD WIFI_AUTH_WPA_PSK
+#define ESP_WIFI_AUTH_MODE_THRESHOLD WIFI_AUTH_WPA_PSK
 #elif CONFIG_ESP_WIFI_AUTH_WPA2_PSK
-#define ESP_WIFI_SCAN_AUTH_MODE_THRESHOLD WIFI_AUTH_WPA2_PSK
+#define ESP_WIFI_AUTH_MODE_THRESHOLD WIFI_AUTH_WPA2_PSK
 #elif CONFIG_ESP_WIFI_AUTH_WPA_WPA2_PSK
-#define ESP_WIFI_SCAN_AUTH_MODE_THRESHOLD WIFI_AUTH_WPA_WPA2_PSK
+#define ESP_WIFI_AUTH_MODE_THRESHOLD WIFI_AUTH_WPA_WPA2_PSK
 #elif CONFIG_ESP_WIFI_AUTH_WPA3_PSK
-#define ESP_WIFI_SCAN_AUTH_MODE_THRESHOLD WIFI_AUTH_WPA3_PSK
+#define ESP_WIFI_AUTH_MODE_THRESHOLD WIFI_AUTH_WPA3_PSK
 #elif CONFIG_ESP_WIFI_AUTH_WPA2_WPA3_PSK
-#define ESP_WIFI_SCAN_AUTH_MODE_THRESHOLD WIFI_AUTH_WPA2_WPA3_PSK
+#define ESP_WIFI_AUTH_MODE_THRESHOLD WIFI_AUTH_WPA2_WPA3_PSK
 #elif CONFIG_ESP_WIFI_AUTH_WAPI_PSK
-#define ESP_WIFI_SCAN_AUTH_MODE_THRESHOLD WIFI_AUTH_WAPI_PSK
+#define ESP_WIFI_AUTH_MODE_THRESHOLD WIFI_AUTH_WAPI_PSK
 #else
 /* default */
-#define ESP_WIFI_SCAN_AUTH_MODE_THRESHOLD WIFI_AUTH_WPA_WPA2_PSK
+#define ESP_WIFI_AUTH_MODE_THRESHOLD WIFI_AUTH_WPA_WPA2_PSK
 #endif
+
+
+
+
 
 /* FreeRTOS event group to signal when we are connected*/
 static EventGroupHandle_t s_wifi_event_group;
@@ -90,7 +111,7 @@ static void event_handler(void* arg, esp_event_base_t event_base,
         } else {
             xEventGroupSetBits(s_wifi_event_group, WIFI_FAIL_BIT);
         }
-        ESP_LOGW(TAG, "connect to the AP fail");
+        ESP_LOGW(TAG, "connect to the AP %s fail", CONFIG_ESP_WIFI_SSID);
 
     } else if (event_base == IP_EVENT && event_id == IP_EVENT_STA_GOT_IP) {
         ip_event_got_ip_t* event = (ip_event_got_ip_t*) event_data;
@@ -141,7 +162,7 @@ void wifi_init_sta(void)
              * to WIFI_AUTH_WEP/WIFI_AUTH_WPA_PSK and set the password with length and format matching to
 	     * WIFI_AUTH_WEP/WIFI_AUTH_WPA_PSK standards.
              */
-            .threshold.authmode = ESP_WIFI_SCAN_AUTH_MODE_THRESHOLD,
+            .threshold.authmode = ESP_WIFI_AUTH_MODE_THRESHOLD,
             .sae_pwe_h2e = WPA3_SAE_PWE_BOTH,
         },
     };
@@ -200,22 +221,8 @@ static int wifi_cmd_iperf(void)
 
 
 
-#define IPERF_TEST_IP_TYPE        IPERF_IP_TYPE_IPV4
-#define IPERF_TEST_MODE           IPERF_FLAG_SERVER
-#define IPERF_TEST_PROTOCOL       IPERF_FLAG_TCP
-#define IPERF_TEST_DURATION_SEC   IPERF_DEFAULT_TIME
-#define IPERF_TEST_INTERVAL_SEC   IPERF_DEFAULT_INTERVAL
-#define IPERF_TEST_PKT_LEN        0 /* take default length from IPERF_UDP_TX_LEN/IPERF_UDP_RX_LEN or IPERF_TCP_TX_LEN/IPERF_TCP_RX_LEN */
-#define IPERF_TEST_SRC_PORT       IPERF_DEFAULT_PORT
-#define IPERF_TEST_DEST_PORT      IPERF_DEFAULT_PORT
-#define IPERF_TEST_BW_LIMIT       IPERF_DEFAULT_NO_BW_LIMIT
-
-
 
 #if IPERF_TEST_MODE==RUN_IPERF_CLIENT
-/* if your pc running iperf server and connected to same CONFIG_ESP_WIFI_SSID, provide its address */
-#define IPERF_TEST_CLIENT_DEST_IP_STR "10.10.2.200"
-
 	cfg.flag |= IPERF_FLAG_CLIENT;
 	cfg.destination_ip4 = esp_ip4addr_aton(IPERF_TEST_CLIENT_DEST_IP_STR);
 #endif

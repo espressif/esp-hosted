@@ -49,11 +49,6 @@ static const char TAG[] = "SPI_DRIVER";
 #define SPI_RX_QUEUE_SIZE          CONFIG_ESP_SPI_RX_Q_SIZE
 #define SPI_TX_QUEUE_SIZE          CONFIG_ESP_SPI_TX_Q_SIZE
 
-/* Optimize the SPI slave side clock for better data rate
- * Below value could be fine tuned in small steps
- * */
-#define SPI_CLK_MHZ                CONFIG_ESP_SPI_CLK_FREQ
-
 /* SPI-DMA settings */
 #define SPI_DMA_ALIGNMENT_BYTES    4
 #define SPI_DMA_ALIGNMENT_MASK     (SPI_DMA_ALIGNMENT_BYTES-1)
@@ -242,11 +237,6 @@ void generate_startup_event(uint8_t cap)
 	*pos = ESP_PRIV_FIRMWARE_CHIP_ID;   pos++;len++;
 	*pos = LENGTH_1_BYTE;               pos++;len++;
 	*pos = CONFIG_IDF_FIRMWARE_CHIP_ID; pos++;len++;
-
-	/* TLV - Peripheral clock in MHz */
-	*pos = ESP_PRIV_SPI_CLK_MHZ;        pos++;len++;
-	*pos = LENGTH_1_BYTE;               pos++;len++;
-	*pos = SPI_CLK_MHZ;                 pos++;len++;
 
 	/* TLV - Capability */
 	*pos = ESP_PRIV_CAPABILITY;         pos++;len++;
@@ -576,7 +566,7 @@ static void queue_next_transaction(void)
 		ESP_LOGE(TAG , "Failed to queue new transaction\r\n");
 		return;
 	}
-	ESP_LOGD(TAG, "SPI_Tx New");
+	ESP_LOGD(TAG, "Tx New");
 	ESP_LOG_BUFFER_HEXDUMP(TAG, tx_buffer, len, ESP_LOG_DEBUG);
 
 	spi_trans = spi_trans_alloc(MEMSET_REQUIRED);
@@ -775,8 +765,8 @@ static interface_handle_t * esp_spi_init(void)
 	gpio_set_pull_mode(GPIO_SCLK, GPIO_PULLUP_ONLY);
 	gpio_set_pull_mode(GPIO_CS, GPIO_PULLUP_ONLY);
 
-	ESP_LOGI(TAG, "SPI Ctrl:%u mode: %u, InitFreq: 10MHz, ReqFreq: %uMHz\nGPIOs: MOSI: %u, MISO: %u, CS: %u, CLK: %u HS: %u DR: %u\n",
-			ESP_SPI_CONTROLLER, slvcfg.mode, SPI_CLK_MHZ,
+	ESP_LOGI(TAG, "SPI Ctrl:%u mode: %u, Freq:ConfigAtHost\nGPIOs: MOSI: %u, MISO: %u, CS: %u, CLK: %u HS: %u DR: %u\n",
+			ESP_SPI_CONTROLLER, slvcfg.mode,
 			GPIO_MOSI, GPIO_MISO, GPIO_CS, GPIO_SCLK,
 			GPIO_HANDSHAKE, GPIO_DATA_READY);
 

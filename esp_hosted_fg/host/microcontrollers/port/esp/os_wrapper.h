@@ -25,17 +25,6 @@ ESP_EVENT_DECLARE_BASE(WIFI_EVENT);
 #define MCU_SYS                                      1
 
 #include "common.h"
-#if CONFIG_RPC_LOG_LEVEL
-  #define hosted_log(...)                                                    \
-    do {                                                                     \
-        printf("%s:%u ",__func__,__LINE__);                                  \
-        printf(__VA_ARGS__);                                                 \
-    } while(0)
-#else
-  #define hosted_log(...)                                                    \
-    do {                                                                     \
-    } while(0)
-#endif
 
 #define MAX_TRANSPORT_BUFFER_SIZE        MAX_SPI_BUFFER_SIZE
 #define MAX_PAYLOAD_SIZE (MAX_SPI_BUFFER_SIZE-H_ESP_PAYLOAD_HEADER_OFFSET)

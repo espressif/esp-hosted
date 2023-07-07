@@ -50,15 +50,6 @@
 
 static const char TAG[] = "NETWORK_ADAPTER";
 
-#if CONFIG_ESP_WLAN_DEBUG
-static const char TAG_RX[] = "H -> S";
-static const char TAG_TX[] = "S -> H";
-#endif
-
-#if CONFIG_ESP_SERIAL_DEBUG
-static const char TAG_RX_S[] = "CONTROL H -> S";
-static const char TAG_TX_S[] = "CONTROL S -> H";
-#endif
 
 #ifdef CONFIG_FREERTOS_GENERATE_RUN_TIME_STATS
 #define STATS_TICKS                      pdMS_TO_TICKS(1000*2)
@@ -221,10 +212,8 @@ esp_err_t wlan_ap_rx_callback(void *buffer, uint16_t len, void *eb)
 		}
 		return ESP_OK;
 	}
-#if NETWORK_STACK_LOG_LEVEL
-	ESP_LOGE("AP RX","New\n");
-	ESP_LOG_BUFFER_HEXDUMP("AP_RX", buffer, len, ESP_LOG_INFO);
-#endif
+	ESP_LOGV("AP RX","New\n");
+	ESP_LOG_BUFFER_HEXDUMP("AP_RX", buffer, len, ESP_LOG_VERBOSE);
 
 	/* Check destination address against self address */
 	if (memcmp(ap_buf, ap_mac, BSSID_BYTES_SIZE)) {
@@ -260,10 +249,8 @@ esp_err_t wlan_sta_rx_callback(void *buffer, uint16_t len, void *eb)
 		}
 		return ESP_OK;
 	}
-#if NETWORK_STACK_LOG_LEVEL
-	ESP_LOGE("STA RX","New\n");
-	ESP_LOG_BUFFER_HEXDUMP("STA_RX", buffer, len, ESP_LOG_INFO);
-#endif
+	ESP_LOGV("STA RX","New\n");
+	ESP_LOG_BUFFER_HEXDUMP("STA_RX", buffer, len, ESP_LOG_VERBOSE);
 
 	buf_handle.if_type = ESP_STA_IF;
 	buf_handle.if_num = 0;
@@ -286,6 +273,7 @@ void process_tx_pkt(interface_buffer_handle_t *buf_handle)
 {
 	/* Check if data path is not yet open */
 	if (!datapath) {
+		ESP_LOGD (TAG, "Data path stopped");
 		/* Post processing */
 		if (buf_handle->free_buf_handle && buf_handle->priv_buffer_handle) {
 			buf_handle->free_buf_handle(buf_handle->priv_buffer_handle);
@@ -352,9 +340,8 @@ void process_serial_rx_pkt(uint8_t *buf)
 	payload = buf + le16toh(header->offset);
 	rem_buff_size = sizeof(r.data) - r.len;
 
-#if CONFIG_ESP_SERIAL_DEBUG
-	ESP_LOG_BUFFER_HEXDUMP(TAG_RX_S, payload, payload_len, ESP_LOG_INFO);
-#endif
+	ESP_LOGV(TAG, "process_serial_rx_pkt:");
+	ESP_LOG_BUFFER_HEXDUMP(TAG, payload, payload_len, ESP_LOG_VERBOSE);
 
 	while (r.valid)
 	{
@@ -395,15 +382,13 @@ void process_rx_pkt(interface_buffer_handle_t *buf_handle)
 	payload = buf_handle->payload + le16toh(header->offset);
 	payload_len = le16toh(header->len);
 
-	ESP_LOGV(TAG, "New Rx:");
-	ESP_LOG_BUFFER_HEXDUMP(TAG, header, payload_len+le16toh(header->offset), ESP_LOG_VERBOSE);
+	ESP_LOGD(TAG, "Rx New");
+	ESP_LOG_BUFFER_HEXDUMP(TAG, buf_handle->payload, buf_handle->payload_len, ESP_LOG_DEBUG);
 
 	if (buf_handle->if_type == ESP_STA_IF) {
 		/* Forward data to wlan driver */
-#if NETWORK_STACK_LOG_LEVEL
-		ESP_LOGE(TAG, "STA Tx");
-		ESP_LOG_BUFFER_HEXDUMP("STA Tx", payload, payload_len, ESP_LOG_INFO);
-#endif
+		ESP_LOGV(TAG, "STA Tx");
+		ESP_LOG_BUFFER_HEXDUMP("STA Tx", payload, payload_len, ESP_LOG_VERBOSE);
 		esp_wifi_internal_tx(ESP_IF_WIFI_STA, payload, payload_len);
 		/*ESP_LOG_BUFFER_HEXDUMP("spi_sta_rx", payload, payload_len, ESP_LOG_INFO);*/
 	} else if (buf_handle->if_type == ESP_AP_IF && softap_started) {
@@ -527,9 +512,8 @@ static esp_err_t serial_write_data(uint8_t* data, ssize_t len)
 			return ESP_FAIL;
 		}
 
-#if CONFIG_ESP_SERIAL_DEBUG
-		ESP_LOG_BUFFER_HEXDUMP("serial_tx", data, frag_len, ESP_LOG_INFO);
-#endif
+		ESP_LOGV(TAG, "%s:", __func__);
+		ESP_LOG_BUFFER_HEXDUMP("serial_tx", data, frag_len, ESP_LOG_VERBOSE);
 
 		left_len -= frag_len;
 		pos += frag_len;

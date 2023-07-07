@@ -166,7 +166,6 @@ void process_priv_communication(void *payload, uint16_t len)
 
 void print_capabilities(uint32_t cap)
 {
-#if CONFIG_TRANSPORT_LOG_LEVEL
 	ESP_LOGI(TAG, "Features supported are:\n\r");
 	if (cap & ESP_WLAN_SDIO_SUPPORT)
 		ESP_LOGI(TAG, "\t * WLAN\n\r");
@@ -183,7 +182,6 @@ void print_capabilities(uint32_t cap)
 		else if (cap & ESP_BR_EDR_ONLY_SUPPORT)
 			ESP_LOGI(TAG, "\t   - BR EDR only\n\r");
 	}
-#endif
 }
 
 static void process_event(uint8_t *evt_buf, uint16_t len)
@@ -230,9 +228,6 @@ int process_init_event(uint8_t *evt_buf, uint16_t len)
 			ESP_LOGI(TAG, "EVENT: %2x", *pos);
 			process_capabilities(*(pos + 2));
 			print_capabilities(*(pos + 2));
-		} else if (*pos == ESP_PRIV_SPI_CLK_MHZ) {
-			// adjust spi clock
-			ESP_LOGI(TAG, "EVENT: %2x", *pos);
 		} else if (*pos == ESP_PRIV_FIRMWARE_CHIP_ID) {
 			ESP_LOGI(TAG, "EVENT: %2x", *pos);
 			chip_type = *(pos+2);

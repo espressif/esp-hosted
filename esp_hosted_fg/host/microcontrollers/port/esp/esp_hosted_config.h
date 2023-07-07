@@ -20,35 +20,6 @@ Pins in use. The SPI Master can use the GPIO mux,
 so feel free to change these if needed.
 */
 
-enum {
-	SLAVE_CHIPSET_ESP32,
-	SLAVE_CHIPSET_ESP32C2,
-	SLAVE_CHIPSET_ESP32C3,
-	SLAVE_CHIPSET_ESP32C6,
-	SLAVE_CHIPSET_ESP32S2,
-	SLAVE_CHIPSET_ESP32S3,
-	SLAVE_CHIPSET_MAX_SUPPORTED
-};
-
-//#define ESP_CHIPSET_USED                             SLAVE_CHIPSET_ESP32C3
-#ifndef ESP_CHIPSET_USED
-#error "Choose **slave** ESP chipset type to use with this host"
-#endif
-
-#if (ESP_CHIPSET_USED==SLAVE_CHIPSET_ESP32)
-  #define CONFIG_IDF_TARGET_ESP32 1
-#elif (ESP_CHIPSET_USED==SLAVE_CHIPSET_ESP32C2)
-  #define CONFIG_IDF_TARGET_ESP32C2 1
-#elif (ESP_CHIPSET_USED==SLAVE_CHIPSET_ESP32C3)
-  #define CONFIG_IDF_TARGET_ESP32C3 1
-#elif (ESP_CHIPSET_USED==SLAVE_CHIPSET_ESP32C6)
-  #define CONFIG_IDF_TARGET_ESP32C6 1
-#elif (ESP_CHIPSET_USED==SLAVE_CHIPSET_ESP32S2)
-  #define CONFIG_IDF_TARGET_ESP32S2 1
-#elif (ESP_CHIPSET_USED==SLAVE_CHIPSET_ESP32S3)
-  #define CONFIG_IDF_TARGET_ESP32S3 1
-#endif
-
 /* SPI config */
 #define H_GPIO_HANDSHAKE_Port                        NULL
 #define H_GPIO_HANDSHAKE_Pin                         CONFIG_ESP_SPI_GPIO_HANDSHAKE
@@ -66,8 +37,8 @@ enum {
 #define H_GPIO_PIN_RESET_Port                        NULL
 #define H_GPIO_PIN_RESET_Pin                         CONFIG_ESP_SPI_GPIO_RESET_SLAVE
 
-#define SPI_MODE                                     3
-#define SPI_INIT_CLK_MHZ                             10
+#define SPI_MODE                                     CONFIG_ESP_SPI_MODE
+#define SPI_INIT_CLK_MHZ                             CONFIG_ESP_SPI_CLK_FREQ
 
 
 /*  ========================== SPI Master Config end ========================  */
@@ -81,7 +52,7 @@ enum {
 #define PRE_FORMAT_NEWLINE_CHAR                      ""
 #define POST_FORMAT_NEWLINE_CHAR                     "\n"
 
-#define USE_STD_C_LIB_MALLOC                         1
+#define USE_STD_C_LIB_MALLOC                         0
 
 
 #endif /*__ESP_HOSTED_CONFIG_H__*/
