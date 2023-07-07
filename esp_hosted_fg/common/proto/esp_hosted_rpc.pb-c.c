@@ -4237,6 +4237,366 @@ void   rpc__resp__wifi_sta_get_ap_info__free_unpacked
   assert(message->base.descriptor == &rpc__resp__wifi_sta_get_ap_info__descriptor);
   protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
 }
+void   rpc__req__wifi_set_bandwidth__init
+                     (RpcReqWifiSetBandwidth         *message)
+{
+  static const RpcReqWifiSetBandwidth init_value = RPC__REQ__WIFI_SET_BANDWIDTH__INIT;
+  *message = init_value;
+}
+size_t rpc__req__wifi_set_bandwidth__get_packed_size
+                     (const RpcReqWifiSetBandwidth *message)
+{
+  assert(message->base.descriptor == &rpc__req__wifi_set_bandwidth__descriptor);
+  return protobuf_c_message_get_packed_size ((const ProtobufCMessage*)(message));
+}
+size_t rpc__req__wifi_set_bandwidth__pack
+                     (const RpcReqWifiSetBandwidth *message,
+                      uint8_t       *out)
+{
+  assert(message->base.descriptor == &rpc__req__wifi_set_bandwidth__descriptor);
+  return protobuf_c_message_pack ((const ProtobufCMessage*)message, out);
+}
+size_t rpc__req__wifi_set_bandwidth__pack_to_buffer
+                     (const RpcReqWifiSetBandwidth *message,
+                      ProtobufCBuffer *buffer)
+{
+  assert(message->base.descriptor == &rpc__req__wifi_set_bandwidth__descriptor);
+  return protobuf_c_message_pack_to_buffer ((const ProtobufCMessage*)message, buffer);
+}
+RpcReqWifiSetBandwidth *
+       rpc__req__wifi_set_bandwidth__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data)
+{
+  return (RpcReqWifiSetBandwidth *)
+     protobuf_c_message_unpack (&rpc__req__wifi_set_bandwidth__descriptor,
+                                allocator, len, data);
+}
+void   rpc__req__wifi_set_bandwidth__free_unpacked
+                     (RpcReqWifiSetBandwidth *message,
+                      ProtobufCAllocator *allocator)
+{
+  if(!message)
+    return;
+  assert(message->base.descriptor == &rpc__req__wifi_set_bandwidth__descriptor);
+  protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
+}
+void   rpc__resp__wifi_set_bandwidth__init
+                     (RpcRespWifiSetBandwidth         *message)
+{
+  static const RpcRespWifiSetBandwidth init_value = RPC__RESP__WIFI_SET_BANDWIDTH__INIT;
+  *message = init_value;
+}
+size_t rpc__resp__wifi_set_bandwidth__get_packed_size
+                     (const RpcRespWifiSetBandwidth *message)
+{
+  assert(message->base.descriptor == &rpc__resp__wifi_set_bandwidth__descriptor);
+  return protobuf_c_message_get_packed_size ((const ProtobufCMessage*)(message));
+}
+size_t rpc__resp__wifi_set_bandwidth__pack
+                     (const RpcRespWifiSetBandwidth *message,
+                      uint8_t       *out)
+{
+  assert(message->base.descriptor == &rpc__resp__wifi_set_bandwidth__descriptor);
+  return protobuf_c_message_pack ((const ProtobufCMessage*)message, out);
+}
+size_t rpc__resp__wifi_set_bandwidth__pack_to_buffer
+                     (const RpcRespWifiSetBandwidth *message,
+                      ProtobufCBuffer *buffer)
+{
+  assert(message->base.descriptor == &rpc__resp__wifi_set_bandwidth__descriptor);
+  return protobuf_c_message_pack_to_buffer ((const ProtobufCMessage*)message, buffer);
+}
+RpcRespWifiSetBandwidth *
+       rpc__resp__wifi_set_bandwidth__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data)
+{
+  return (RpcRespWifiSetBandwidth *)
+     protobuf_c_message_unpack (&rpc__resp__wifi_set_bandwidth__descriptor,
+                                allocator, len, data);
+}
+void   rpc__resp__wifi_set_bandwidth__free_unpacked
+                     (RpcRespWifiSetBandwidth *message,
+                      ProtobufCAllocator *allocator)
+{
+  if(!message)
+    return;
+  assert(message->base.descriptor == &rpc__resp__wifi_set_bandwidth__descriptor);
+  protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
+}
+void   rpc__req__wifi_get_bandwidth__init
+                     (RpcReqWifiGetBandwidth         *message)
+{
+  static const RpcReqWifiGetBandwidth init_value = RPC__REQ__WIFI_GET_BANDWIDTH__INIT;
+  *message = init_value;
+}
+size_t rpc__req__wifi_get_bandwidth__get_packed_size
+                     (const RpcReqWifiGetBandwidth *message)
+{
+  assert(message->base.descriptor == &rpc__req__wifi_get_bandwidth__descriptor);
+  return protobuf_c_message_get_packed_size ((const ProtobufCMessage*)(message));
+}
+size_t rpc__req__wifi_get_bandwidth__pack
+                     (const RpcReqWifiGetBandwidth *message,
+                      uint8_t       *out)
+{
+  assert(message->base.descriptor == &rpc__req__wifi_get_bandwidth__descriptor);
+  return protobuf_c_message_pack ((const ProtobufCMessage*)message, out);
+}
+size_t rpc__req__wifi_get_bandwidth__pack_to_buffer
+                     (const RpcReqWifiGetBandwidth *message,
+                      ProtobufCBuffer *buffer)
+{
+  assert(message->base.descriptor == &rpc__req__wifi_get_bandwidth__descriptor);
+  return protobuf_c_message_pack_to_buffer ((const ProtobufCMessage*)message, buffer);
+}
+RpcReqWifiGetBandwidth *
+       rpc__req__wifi_get_bandwidth__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data)
+{
+  return (RpcReqWifiGetBandwidth *)
+     protobuf_c_message_unpack (&rpc__req__wifi_get_bandwidth__descriptor,
+                                allocator, len, data);
+}
+void   rpc__req__wifi_get_bandwidth__free_unpacked
+                     (RpcReqWifiGetBandwidth *message,
+                      ProtobufCAllocator *allocator)
+{
+  if(!message)
+    return;
+  assert(message->base.descriptor == &rpc__req__wifi_get_bandwidth__descriptor);
+  protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
+}
+void   rpc__resp__wifi_get_bandwidth__init
+                     (RpcRespWifiGetBandwidth         *message)
+{
+  static const RpcRespWifiGetBandwidth init_value = RPC__RESP__WIFI_GET_BANDWIDTH__INIT;
+  *message = init_value;
+}
+size_t rpc__resp__wifi_get_bandwidth__get_packed_size
+                     (const RpcRespWifiGetBandwidth *message)
+{
+  assert(message->base.descriptor == &rpc__resp__wifi_get_bandwidth__descriptor);
+  return protobuf_c_message_get_packed_size ((const ProtobufCMessage*)(message));
+}
+size_t rpc__resp__wifi_get_bandwidth__pack
+                     (const RpcRespWifiGetBandwidth *message,
+                      uint8_t       *out)
+{
+  assert(message->base.descriptor == &rpc__resp__wifi_get_bandwidth__descriptor);
+  return protobuf_c_message_pack ((const ProtobufCMessage*)message, out);
+}
+size_t rpc__resp__wifi_get_bandwidth__pack_to_buffer
+                     (const RpcRespWifiGetBandwidth *message,
+                      ProtobufCBuffer *buffer)
+{
+  assert(message->base.descriptor == &rpc__resp__wifi_get_bandwidth__descriptor);
+  return protobuf_c_message_pack_to_buffer ((const ProtobufCMessage*)message, buffer);
+}
+RpcRespWifiGetBandwidth *
+       rpc__resp__wifi_get_bandwidth__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data)
+{
+  return (RpcRespWifiGetBandwidth *)
+     protobuf_c_message_unpack (&rpc__resp__wifi_get_bandwidth__descriptor,
+                                allocator, len, data);
+}
+void   rpc__resp__wifi_get_bandwidth__free_unpacked
+                     (RpcRespWifiGetBandwidth *message,
+                      ProtobufCAllocator *allocator)
+{
+  if(!message)
+    return;
+  assert(message->base.descriptor == &rpc__resp__wifi_get_bandwidth__descriptor);
+  protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
+}
+void   rpc__req__wifi_set_channel__init
+                     (RpcReqWifiSetChannel         *message)
+{
+  static const RpcReqWifiSetChannel init_value = RPC__REQ__WIFI_SET_CHANNEL__INIT;
+  *message = init_value;
+}
+size_t rpc__req__wifi_set_channel__get_packed_size
+                     (const RpcReqWifiSetChannel *message)
+{
+  assert(message->base.descriptor == &rpc__req__wifi_set_channel__descriptor);
+  return protobuf_c_message_get_packed_size ((const ProtobufCMessage*)(message));
+}
+size_t rpc__req__wifi_set_channel__pack
+                     (const RpcReqWifiSetChannel *message,
+                      uint8_t       *out)
+{
+  assert(message->base.descriptor == &rpc__req__wifi_set_channel__descriptor);
+  return protobuf_c_message_pack ((const ProtobufCMessage*)message, out);
+}
+size_t rpc__req__wifi_set_channel__pack_to_buffer
+                     (const RpcReqWifiSetChannel *message,
+                      ProtobufCBuffer *buffer)
+{
+  assert(message->base.descriptor == &rpc__req__wifi_set_channel__descriptor);
+  return protobuf_c_message_pack_to_buffer ((const ProtobufCMessage*)message, buffer);
+}
+RpcReqWifiSetChannel *
+       rpc__req__wifi_set_channel__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data)
+{
+  return (RpcReqWifiSetChannel *)
+     protobuf_c_message_unpack (&rpc__req__wifi_set_channel__descriptor,
+                                allocator, len, data);
+}
+void   rpc__req__wifi_set_channel__free_unpacked
+                     (RpcReqWifiSetChannel *message,
+                      ProtobufCAllocator *allocator)
+{
+  if(!message)
+    return;
+  assert(message->base.descriptor == &rpc__req__wifi_set_channel__descriptor);
+  protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
+}
+void   rpc__resp__wifi_set_channel__init
+                     (RpcRespWifiSetChannel         *message)
+{
+  static const RpcRespWifiSetChannel init_value = RPC__RESP__WIFI_SET_CHANNEL__INIT;
+  *message = init_value;
+}
+size_t rpc__resp__wifi_set_channel__get_packed_size
+                     (const RpcRespWifiSetChannel *message)
+{
+  assert(message->base.descriptor == &rpc__resp__wifi_set_channel__descriptor);
+  return protobuf_c_message_get_packed_size ((const ProtobufCMessage*)(message));
+}
+size_t rpc__resp__wifi_set_channel__pack
+                     (const RpcRespWifiSetChannel *message,
+                      uint8_t       *out)
+{
+  assert(message->base.descriptor == &rpc__resp__wifi_set_channel__descriptor);
+  return protobuf_c_message_pack ((const ProtobufCMessage*)message, out);
+}
+size_t rpc__resp__wifi_set_channel__pack_to_buffer
+                     (const RpcRespWifiSetChannel *message,
+                      ProtobufCBuffer *buffer)
+{
+  assert(message->base.descriptor == &rpc__resp__wifi_set_channel__descriptor);
+  return protobuf_c_message_pack_to_buffer ((const ProtobufCMessage*)message, buffer);
+}
+RpcRespWifiSetChannel *
+       rpc__resp__wifi_set_channel__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data)
+{
+  return (RpcRespWifiSetChannel *)
+     protobuf_c_message_unpack (&rpc__resp__wifi_set_channel__descriptor,
+                                allocator, len, data);
+}
+void   rpc__resp__wifi_set_channel__free_unpacked
+                     (RpcRespWifiSetChannel *message,
+                      ProtobufCAllocator *allocator)
+{
+  if(!message)
+    return;
+  assert(message->base.descriptor == &rpc__resp__wifi_set_channel__descriptor);
+  protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
+}
+void   rpc__req__wifi_get_channel__init
+                     (RpcReqWifiGetChannel         *message)
+{
+  static const RpcReqWifiGetChannel init_value = RPC__REQ__WIFI_GET_CHANNEL__INIT;
+  *message = init_value;
+}
+size_t rpc__req__wifi_get_channel__get_packed_size
+                     (const RpcReqWifiGetChannel *message)
+{
+  assert(message->base.descriptor == &rpc__req__wifi_get_channel__descriptor);
+  return protobuf_c_message_get_packed_size ((const ProtobufCMessage*)(message));
+}
+size_t rpc__req__wifi_get_channel__pack
+                     (const RpcReqWifiGetChannel *message,
+                      uint8_t       *out)
+{
+  assert(message->base.descriptor == &rpc__req__wifi_get_channel__descriptor);
+  return protobuf_c_message_pack ((const ProtobufCMessage*)message, out);
+}
+size_t rpc__req__wifi_get_channel__pack_to_buffer
+                     (const RpcReqWifiGetChannel *message,
+                      ProtobufCBuffer *buffer)
+{
+  assert(message->base.descriptor == &rpc__req__wifi_get_channel__descriptor);
+  return protobuf_c_message_pack_to_buffer ((const ProtobufCMessage*)message, buffer);
+}
+RpcReqWifiGetChannel *
+       rpc__req__wifi_get_channel__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data)
+{
+  return (RpcReqWifiGetChannel *)
+     protobuf_c_message_unpack (&rpc__req__wifi_get_channel__descriptor,
+                                allocator, len, data);
+}
+void   rpc__req__wifi_get_channel__free_unpacked
+                     (RpcReqWifiGetChannel *message,
+                      ProtobufCAllocator *allocator)
+{
+  if(!message)
+    return;
+  assert(message->base.descriptor == &rpc__req__wifi_get_channel__descriptor);
+  protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
+}
+void   rpc__resp__wifi_get_channel__init
+                     (RpcRespWifiGetChannel         *message)
+{
+  static const RpcRespWifiGetChannel init_value = RPC__RESP__WIFI_GET_CHANNEL__INIT;
+  *message = init_value;
+}
+size_t rpc__resp__wifi_get_channel__get_packed_size
+                     (const RpcRespWifiGetChannel *message)
+{
+  assert(message->base.descriptor == &rpc__resp__wifi_get_channel__descriptor);
+  return protobuf_c_message_get_packed_size ((const ProtobufCMessage*)(message));
+}
+size_t rpc__resp__wifi_get_channel__pack
+                     (const RpcRespWifiGetChannel *message,
+                      uint8_t       *out)
+{
+  assert(message->base.descriptor == &rpc__resp__wifi_get_channel__descriptor);
+  return protobuf_c_message_pack ((const ProtobufCMessage*)message, out);
+}
+size_t rpc__resp__wifi_get_channel__pack_to_buffer
+                     (const RpcRespWifiGetChannel *message,
+                      ProtobufCBuffer *buffer)
+{
+  assert(message->base.descriptor == &rpc__resp__wifi_get_channel__descriptor);
+  return protobuf_c_message_pack_to_buffer ((const ProtobufCMessage*)message, buffer);
+}
+RpcRespWifiGetChannel *
+       rpc__resp__wifi_get_channel__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data)
+{
+  return (RpcRespWifiGetChannel *)
+     protobuf_c_message_unpack (&rpc__resp__wifi_get_channel__descriptor,
+                                allocator, len, data);
+}
+void   rpc__resp__wifi_get_channel__free_unpacked
+                     (RpcRespWifiGetChannel *message,
+                      ProtobufCAllocator *allocator)
+{
+  if(!message)
+    return;
+  assert(message->base.descriptor == &rpc__resp__wifi_get_channel__descriptor);
+  protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
+}
 void   rpc__req__wifi_set_storage__init
                      (RpcReqWifiSetStorage         *message)
 {
@@ -4325,6 +4685,366 @@ void   rpc__resp__wifi_set_storage__free_unpacked
   if(!message)
     return;
   assert(message->base.descriptor == &rpc__resp__wifi_set_storage__descriptor);
+  protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
+}
+void   rpc__req__wifi_set_country_code__init
+                     (RpcReqWifiSetCountryCode         *message)
+{
+  static const RpcReqWifiSetCountryCode init_value = RPC__REQ__WIFI_SET_COUNTRY_CODE__INIT;
+  *message = init_value;
+}
+size_t rpc__req__wifi_set_country_code__get_packed_size
+                     (const RpcReqWifiSetCountryCode *message)
+{
+  assert(message->base.descriptor == &rpc__req__wifi_set_country_code__descriptor);
+  return protobuf_c_message_get_packed_size ((const ProtobufCMessage*)(message));
+}
+size_t rpc__req__wifi_set_country_code__pack
+                     (const RpcReqWifiSetCountryCode *message,
+                      uint8_t       *out)
+{
+  assert(message->base.descriptor == &rpc__req__wifi_set_country_code__descriptor);
+  return protobuf_c_message_pack ((const ProtobufCMessage*)message, out);
+}
+size_t rpc__req__wifi_set_country_code__pack_to_buffer
+                     (const RpcReqWifiSetCountryCode *message,
+                      ProtobufCBuffer *buffer)
+{
+  assert(message->base.descriptor == &rpc__req__wifi_set_country_code__descriptor);
+  return protobuf_c_message_pack_to_buffer ((const ProtobufCMessage*)message, buffer);
+}
+RpcReqWifiSetCountryCode *
+       rpc__req__wifi_set_country_code__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data)
+{
+  return (RpcReqWifiSetCountryCode *)
+     protobuf_c_message_unpack (&rpc__req__wifi_set_country_code__descriptor,
+                                allocator, len, data);
+}
+void   rpc__req__wifi_set_country_code__free_unpacked
+                     (RpcReqWifiSetCountryCode *message,
+                      ProtobufCAllocator *allocator)
+{
+  if(!message)
+    return;
+  assert(message->base.descriptor == &rpc__req__wifi_set_country_code__descriptor);
+  protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
+}
+void   rpc__resp__wifi_set_country_code__init
+                     (RpcRespWifiSetCountryCode         *message)
+{
+  static const RpcRespWifiSetCountryCode init_value = RPC__RESP__WIFI_SET_COUNTRY_CODE__INIT;
+  *message = init_value;
+}
+size_t rpc__resp__wifi_set_country_code__get_packed_size
+                     (const RpcRespWifiSetCountryCode *message)
+{
+  assert(message->base.descriptor == &rpc__resp__wifi_set_country_code__descriptor);
+  return protobuf_c_message_get_packed_size ((const ProtobufCMessage*)(message));
+}
+size_t rpc__resp__wifi_set_country_code__pack
+                     (const RpcRespWifiSetCountryCode *message,
+                      uint8_t       *out)
+{
+  assert(message->base.descriptor == &rpc__resp__wifi_set_country_code__descriptor);
+  return protobuf_c_message_pack ((const ProtobufCMessage*)message, out);
+}
+size_t rpc__resp__wifi_set_country_code__pack_to_buffer
+                     (const RpcRespWifiSetCountryCode *message,
+                      ProtobufCBuffer *buffer)
+{
+  assert(message->base.descriptor == &rpc__resp__wifi_set_country_code__descriptor);
+  return protobuf_c_message_pack_to_buffer ((const ProtobufCMessage*)message, buffer);
+}
+RpcRespWifiSetCountryCode *
+       rpc__resp__wifi_set_country_code__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data)
+{
+  return (RpcRespWifiSetCountryCode *)
+     protobuf_c_message_unpack (&rpc__resp__wifi_set_country_code__descriptor,
+                                allocator, len, data);
+}
+void   rpc__resp__wifi_set_country_code__free_unpacked
+                     (RpcRespWifiSetCountryCode *message,
+                      ProtobufCAllocator *allocator)
+{
+  if(!message)
+    return;
+  assert(message->base.descriptor == &rpc__resp__wifi_set_country_code__descriptor);
+  protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
+}
+void   rpc__req__wifi_get_country_code__init
+                     (RpcReqWifiGetCountryCode         *message)
+{
+  static const RpcReqWifiGetCountryCode init_value = RPC__REQ__WIFI_GET_COUNTRY_CODE__INIT;
+  *message = init_value;
+}
+size_t rpc__req__wifi_get_country_code__get_packed_size
+                     (const RpcReqWifiGetCountryCode *message)
+{
+  assert(message->base.descriptor == &rpc__req__wifi_get_country_code__descriptor);
+  return protobuf_c_message_get_packed_size ((const ProtobufCMessage*)(message));
+}
+size_t rpc__req__wifi_get_country_code__pack
+                     (const RpcReqWifiGetCountryCode *message,
+                      uint8_t       *out)
+{
+  assert(message->base.descriptor == &rpc__req__wifi_get_country_code__descriptor);
+  return protobuf_c_message_pack ((const ProtobufCMessage*)message, out);
+}
+size_t rpc__req__wifi_get_country_code__pack_to_buffer
+                     (const RpcReqWifiGetCountryCode *message,
+                      ProtobufCBuffer *buffer)
+{
+  assert(message->base.descriptor == &rpc__req__wifi_get_country_code__descriptor);
+  return protobuf_c_message_pack_to_buffer ((const ProtobufCMessage*)message, buffer);
+}
+RpcReqWifiGetCountryCode *
+       rpc__req__wifi_get_country_code__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data)
+{
+  return (RpcReqWifiGetCountryCode *)
+     protobuf_c_message_unpack (&rpc__req__wifi_get_country_code__descriptor,
+                                allocator, len, data);
+}
+void   rpc__req__wifi_get_country_code__free_unpacked
+                     (RpcReqWifiGetCountryCode *message,
+                      ProtobufCAllocator *allocator)
+{
+  if(!message)
+    return;
+  assert(message->base.descriptor == &rpc__req__wifi_get_country_code__descriptor);
+  protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
+}
+void   rpc__resp__wifi_get_country_code__init
+                     (RpcRespWifiGetCountryCode         *message)
+{
+  static const RpcRespWifiGetCountryCode init_value = RPC__RESP__WIFI_GET_COUNTRY_CODE__INIT;
+  *message = init_value;
+}
+size_t rpc__resp__wifi_get_country_code__get_packed_size
+                     (const RpcRespWifiGetCountryCode *message)
+{
+  assert(message->base.descriptor == &rpc__resp__wifi_get_country_code__descriptor);
+  return protobuf_c_message_get_packed_size ((const ProtobufCMessage*)(message));
+}
+size_t rpc__resp__wifi_get_country_code__pack
+                     (const RpcRespWifiGetCountryCode *message,
+                      uint8_t       *out)
+{
+  assert(message->base.descriptor == &rpc__resp__wifi_get_country_code__descriptor);
+  return protobuf_c_message_pack ((const ProtobufCMessage*)message, out);
+}
+size_t rpc__resp__wifi_get_country_code__pack_to_buffer
+                     (const RpcRespWifiGetCountryCode *message,
+                      ProtobufCBuffer *buffer)
+{
+  assert(message->base.descriptor == &rpc__resp__wifi_get_country_code__descriptor);
+  return protobuf_c_message_pack_to_buffer ((const ProtobufCMessage*)message, buffer);
+}
+RpcRespWifiGetCountryCode *
+       rpc__resp__wifi_get_country_code__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data)
+{
+  return (RpcRespWifiGetCountryCode *)
+     protobuf_c_message_unpack (&rpc__resp__wifi_get_country_code__descriptor,
+                                allocator, len, data);
+}
+void   rpc__resp__wifi_get_country_code__free_unpacked
+                     (RpcRespWifiGetCountryCode *message,
+                      ProtobufCAllocator *allocator)
+{
+  if(!message)
+    return;
+  assert(message->base.descriptor == &rpc__resp__wifi_get_country_code__descriptor);
+  protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
+}
+void   rpc__req__wifi_set_country__init
+                     (RpcReqWifiSetCountry         *message)
+{
+  static const RpcReqWifiSetCountry init_value = RPC__REQ__WIFI_SET_COUNTRY__INIT;
+  *message = init_value;
+}
+size_t rpc__req__wifi_set_country__get_packed_size
+                     (const RpcReqWifiSetCountry *message)
+{
+  assert(message->base.descriptor == &rpc__req__wifi_set_country__descriptor);
+  return protobuf_c_message_get_packed_size ((const ProtobufCMessage*)(message));
+}
+size_t rpc__req__wifi_set_country__pack
+                     (const RpcReqWifiSetCountry *message,
+                      uint8_t       *out)
+{
+  assert(message->base.descriptor == &rpc__req__wifi_set_country__descriptor);
+  return protobuf_c_message_pack ((const ProtobufCMessage*)message, out);
+}
+size_t rpc__req__wifi_set_country__pack_to_buffer
+                     (const RpcReqWifiSetCountry *message,
+                      ProtobufCBuffer *buffer)
+{
+  assert(message->base.descriptor == &rpc__req__wifi_set_country__descriptor);
+  return protobuf_c_message_pack_to_buffer ((const ProtobufCMessage*)message, buffer);
+}
+RpcReqWifiSetCountry *
+       rpc__req__wifi_set_country__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data)
+{
+  return (RpcReqWifiSetCountry *)
+     protobuf_c_message_unpack (&rpc__req__wifi_set_country__descriptor,
+                                allocator, len, data);
+}
+void   rpc__req__wifi_set_country__free_unpacked
+                     (RpcReqWifiSetCountry *message,
+                      ProtobufCAllocator *allocator)
+{
+  if(!message)
+    return;
+  assert(message->base.descriptor == &rpc__req__wifi_set_country__descriptor);
+  protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
+}
+void   rpc__resp__wifi_set_country__init
+                     (RpcRespWifiSetCountry         *message)
+{
+  static const RpcRespWifiSetCountry init_value = RPC__RESP__WIFI_SET_COUNTRY__INIT;
+  *message = init_value;
+}
+size_t rpc__resp__wifi_set_country__get_packed_size
+                     (const RpcRespWifiSetCountry *message)
+{
+  assert(message->base.descriptor == &rpc__resp__wifi_set_country__descriptor);
+  return protobuf_c_message_get_packed_size ((const ProtobufCMessage*)(message));
+}
+size_t rpc__resp__wifi_set_country__pack
+                     (const RpcRespWifiSetCountry *message,
+                      uint8_t       *out)
+{
+  assert(message->base.descriptor == &rpc__resp__wifi_set_country__descriptor);
+  return protobuf_c_message_pack ((const ProtobufCMessage*)message, out);
+}
+size_t rpc__resp__wifi_set_country__pack_to_buffer
+                     (const RpcRespWifiSetCountry *message,
+                      ProtobufCBuffer *buffer)
+{
+  assert(message->base.descriptor == &rpc__resp__wifi_set_country__descriptor);
+  return protobuf_c_message_pack_to_buffer ((const ProtobufCMessage*)message, buffer);
+}
+RpcRespWifiSetCountry *
+       rpc__resp__wifi_set_country__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data)
+{
+  return (RpcRespWifiSetCountry *)
+     protobuf_c_message_unpack (&rpc__resp__wifi_set_country__descriptor,
+                                allocator, len, data);
+}
+void   rpc__resp__wifi_set_country__free_unpacked
+                     (RpcRespWifiSetCountry *message,
+                      ProtobufCAllocator *allocator)
+{
+  if(!message)
+    return;
+  assert(message->base.descriptor == &rpc__resp__wifi_set_country__descriptor);
+  protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
+}
+void   rpc__req__wifi_get_country__init
+                     (RpcReqWifiGetCountry         *message)
+{
+  static const RpcReqWifiGetCountry init_value = RPC__REQ__WIFI_GET_COUNTRY__INIT;
+  *message = init_value;
+}
+size_t rpc__req__wifi_get_country__get_packed_size
+                     (const RpcReqWifiGetCountry *message)
+{
+  assert(message->base.descriptor == &rpc__req__wifi_get_country__descriptor);
+  return protobuf_c_message_get_packed_size ((const ProtobufCMessage*)(message));
+}
+size_t rpc__req__wifi_get_country__pack
+                     (const RpcReqWifiGetCountry *message,
+                      uint8_t       *out)
+{
+  assert(message->base.descriptor == &rpc__req__wifi_get_country__descriptor);
+  return protobuf_c_message_pack ((const ProtobufCMessage*)message, out);
+}
+size_t rpc__req__wifi_get_country__pack_to_buffer
+                     (const RpcReqWifiGetCountry *message,
+                      ProtobufCBuffer *buffer)
+{
+  assert(message->base.descriptor == &rpc__req__wifi_get_country__descriptor);
+  return protobuf_c_message_pack_to_buffer ((const ProtobufCMessage*)message, buffer);
+}
+RpcReqWifiGetCountry *
+       rpc__req__wifi_get_country__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data)
+{
+  return (RpcReqWifiGetCountry *)
+     protobuf_c_message_unpack (&rpc__req__wifi_get_country__descriptor,
+                                allocator, len, data);
+}
+void   rpc__req__wifi_get_country__free_unpacked
+                     (RpcReqWifiGetCountry *message,
+                      ProtobufCAllocator *allocator)
+{
+  if(!message)
+    return;
+  assert(message->base.descriptor == &rpc__req__wifi_get_country__descriptor);
+  protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
+}
+void   rpc__resp__wifi_get_country__init
+                     (RpcRespWifiGetCountry         *message)
+{
+  static const RpcRespWifiGetCountry init_value = RPC__RESP__WIFI_GET_COUNTRY__INIT;
+  *message = init_value;
+}
+size_t rpc__resp__wifi_get_country__get_packed_size
+                     (const RpcRespWifiGetCountry *message)
+{
+  assert(message->base.descriptor == &rpc__resp__wifi_get_country__descriptor);
+  return protobuf_c_message_get_packed_size ((const ProtobufCMessage*)(message));
+}
+size_t rpc__resp__wifi_get_country__pack
+                     (const RpcRespWifiGetCountry *message,
+                      uint8_t       *out)
+{
+  assert(message->base.descriptor == &rpc__resp__wifi_get_country__descriptor);
+  return protobuf_c_message_pack ((const ProtobufCMessage*)message, out);
+}
+size_t rpc__resp__wifi_get_country__pack_to_buffer
+                     (const RpcRespWifiGetCountry *message,
+                      ProtobufCBuffer *buffer)
+{
+  assert(message->base.descriptor == &rpc__resp__wifi_get_country__descriptor);
+  return protobuf_c_message_pack_to_buffer ((const ProtobufCMessage*)message, buffer);
+}
+RpcRespWifiGetCountry *
+       rpc__resp__wifi_get_country__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data)
+{
+  return (RpcRespWifiGetCountry *)
+     protobuf_c_message_unpack (&rpc__resp__wifi_get_country__descriptor,
+                                allocator, len, data);
+}
+void   rpc__resp__wifi_get_country__free_unpacked
+                     (RpcRespWifiGetCountry *message,
+                      ProtobufCAllocator *allocator)
+{
+  if(!message)
+    return;
+  assert(message->base.descriptor == &rpc__resp__wifi_get_country__descriptor);
   protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
 }
 void   rpc__event__wifi_event_no_args__init
@@ -10000,6 +10720,355 @@ const ProtobufCMessageDescriptor rpc__resp__wifi_sta_get_ap_info__descriptor =
   (ProtobufCMessageInit) rpc__resp__wifi_sta_get_ap_info__init,
   NULL,NULL,NULL    /* reserved[123] */
 };
+static const ProtobufCFieldDescriptor rpc__req__wifi_set_bandwidth__field_descriptors[2] =
+{
+  {
+    "ifx",
+    1,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_INT32,
+    0,   /* quantifier_offset */
+    offsetof(RpcReqWifiSetBandwidth, ifx),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "bw",
+    2,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_INT32,
+    0,   /* quantifier_offset */
+    offsetof(RpcReqWifiSetBandwidth, bw),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+};
+static const unsigned rpc__req__wifi_set_bandwidth__field_indices_by_name[] = {
+  1,   /* field[1] = bw */
+  0,   /* field[0] = ifx */
+};
+static const ProtobufCIntRange rpc__req__wifi_set_bandwidth__number_ranges[1 + 1] =
+{
+  { 1, 0 },
+  { 0, 2 }
+};
+const ProtobufCMessageDescriptor rpc__req__wifi_set_bandwidth__descriptor =
+{
+  PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
+  "Rpc_Req_WifiSetBandwidth",
+  "RpcReqWifiSetBandwidth",
+  "RpcReqWifiSetBandwidth",
+  "",
+  sizeof(RpcReqWifiSetBandwidth),
+  2,
+  rpc__req__wifi_set_bandwidth__field_descriptors,
+  rpc__req__wifi_set_bandwidth__field_indices_by_name,
+  1,  rpc__req__wifi_set_bandwidth__number_ranges,
+  (ProtobufCMessageInit) rpc__req__wifi_set_bandwidth__init,
+  NULL,NULL,NULL    /* reserved[123] */
+};
+static const ProtobufCFieldDescriptor rpc__resp__wifi_set_bandwidth__field_descriptors[1] =
+{
+  {
+    "resp",
+    1,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_INT32,
+    0,   /* quantifier_offset */
+    offsetof(RpcRespWifiSetBandwidth, resp),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+};
+static const unsigned rpc__resp__wifi_set_bandwidth__field_indices_by_name[] = {
+  0,   /* field[0] = resp */
+};
+static const ProtobufCIntRange rpc__resp__wifi_set_bandwidth__number_ranges[1 + 1] =
+{
+  { 1, 0 },
+  { 0, 1 }
+};
+const ProtobufCMessageDescriptor rpc__resp__wifi_set_bandwidth__descriptor =
+{
+  PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
+  "Rpc_Resp_WifiSetBandwidth",
+  "RpcRespWifiSetBandwidth",
+  "RpcRespWifiSetBandwidth",
+  "",
+  sizeof(RpcRespWifiSetBandwidth),
+  1,
+  rpc__resp__wifi_set_bandwidth__field_descriptors,
+  rpc__resp__wifi_set_bandwidth__field_indices_by_name,
+  1,  rpc__resp__wifi_set_bandwidth__number_ranges,
+  (ProtobufCMessageInit) rpc__resp__wifi_set_bandwidth__init,
+  NULL,NULL,NULL    /* reserved[123] */
+};
+static const ProtobufCFieldDescriptor rpc__req__wifi_get_bandwidth__field_descriptors[1] =
+{
+  {
+    "ifx",
+    1,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_INT32,
+    0,   /* quantifier_offset */
+    offsetof(RpcReqWifiGetBandwidth, ifx),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+};
+static const unsigned rpc__req__wifi_get_bandwidth__field_indices_by_name[] = {
+  0,   /* field[0] = ifx */
+};
+static const ProtobufCIntRange rpc__req__wifi_get_bandwidth__number_ranges[1 + 1] =
+{
+  { 1, 0 },
+  { 0, 1 }
+};
+const ProtobufCMessageDescriptor rpc__req__wifi_get_bandwidth__descriptor =
+{
+  PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
+  "Rpc_Req_WifiGetBandwidth",
+  "RpcReqWifiGetBandwidth",
+  "RpcReqWifiGetBandwidth",
+  "",
+  sizeof(RpcReqWifiGetBandwidth),
+  1,
+  rpc__req__wifi_get_bandwidth__field_descriptors,
+  rpc__req__wifi_get_bandwidth__field_indices_by_name,
+  1,  rpc__req__wifi_get_bandwidth__number_ranges,
+  (ProtobufCMessageInit) rpc__req__wifi_get_bandwidth__init,
+  NULL,NULL,NULL    /* reserved[123] */
+};
+static const ProtobufCFieldDescriptor rpc__resp__wifi_get_bandwidth__field_descriptors[2] =
+{
+  {
+    "resp",
+    1,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_INT32,
+    0,   /* quantifier_offset */
+    offsetof(RpcRespWifiGetBandwidth, resp),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "bw",
+    2,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_INT32,
+    0,   /* quantifier_offset */
+    offsetof(RpcRespWifiGetBandwidth, bw),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+};
+static const unsigned rpc__resp__wifi_get_bandwidth__field_indices_by_name[] = {
+  1,   /* field[1] = bw */
+  0,   /* field[0] = resp */
+};
+static const ProtobufCIntRange rpc__resp__wifi_get_bandwidth__number_ranges[1 + 1] =
+{
+  { 1, 0 },
+  { 0, 2 }
+};
+const ProtobufCMessageDescriptor rpc__resp__wifi_get_bandwidth__descriptor =
+{
+  PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
+  "Rpc_Resp_WifiGetBandwidth",
+  "RpcRespWifiGetBandwidth",
+  "RpcRespWifiGetBandwidth",
+  "",
+  sizeof(RpcRespWifiGetBandwidth),
+  2,
+  rpc__resp__wifi_get_bandwidth__field_descriptors,
+  rpc__resp__wifi_get_bandwidth__field_indices_by_name,
+  1,  rpc__resp__wifi_get_bandwidth__number_ranges,
+  (ProtobufCMessageInit) rpc__resp__wifi_get_bandwidth__init,
+  NULL,NULL,NULL    /* reserved[123] */
+};
+static const ProtobufCFieldDescriptor rpc__req__wifi_set_channel__field_descriptors[2] =
+{
+  {
+    "primary",
+    1,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_INT32,
+    0,   /* quantifier_offset */
+    offsetof(RpcReqWifiSetChannel, primary),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "second",
+    2,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_INT32,
+    0,   /* quantifier_offset */
+    offsetof(RpcReqWifiSetChannel, second),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+};
+static const unsigned rpc__req__wifi_set_channel__field_indices_by_name[] = {
+  0,   /* field[0] = primary */
+  1,   /* field[1] = second */
+};
+static const ProtobufCIntRange rpc__req__wifi_set_channel__number_ranges[1 + 1] =
+{
+  { 1, 0 },
+  { 0, 2 }
+};
+const ProtobufCMessageDescriptor rpc__req__wifi_set_channel__descriptor =
+{
+  PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
+  "Rpc_Req_WifiSetChannel",
+  "RpcReqWifiSetChannel",
+  "RpcReqWifiSetChannel",
+  "",
+  sizeof(RpcReqWifiSetChannel),
+  2,
+  rpc__req__wifi_set_channel__field_descriptors,
+  rpc__req__wifi_set_channel__field_indices_by_name,
+  1,  rpc__req__wifi_set_channel__number_ranges,
+  (ProtobufCMessageInit) rpc__req__wifi_set_channel__init,
+  NULL,NULL,NULL    /* reserved[123] */
+};
+static const ProtobufCFieldDescriptor rpc__resp__wifi_set_channel__field_descriptors[1] =
+{
+  {
+    "resp",
+    1,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_INT32,
+    0,   /* quantifier_offset */
+    offsetof(RpcRespWifiSetChannel, resp),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+};
+static const unsigned rpc__resp__wifi_set_channel__field_indices_by_name[] = {
+  0,   /* field[0] = resp */
+};
+static const ProtobufCIntRange rpc__resp__wifi_set_channel__number_ranges[1 + 1] =
+{
+  { 1, 0 },
+  { 0, 1 }
+};
+const ProtobufCMessageDescriptor rpc__resp__wifi_set_channel__descriptor =
+{
+  PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
+  "Rpc_Resp_WifiSetChannel",
+  "RpcRespWifiSetChannel",
+  "RpcRespWifiSetChannel",
+  "",
+  sizeof(RpcRespWifiSetChannel),
+  1,
+  rpc__resp__wifi_set_channel__field_descriptors,
+  rpc__resp__wifi_set_channel__field_indices_by_name,
+  1,  rpc__resp__wifi_set_channel__number_ranges,
+  (ProtobufCMessageInit) rpc__resp__wifi_set_channel__init,
+  NULL,NULL,NULL    /* reserved[123] */
+};
+#define rpc__req__wifi_get_channel__field_descriptors NULL
+#define rpc__req__wifi_get_channel__field_indices_by_name NULL
+#define rpc__req__wifi_get_channel__number_ranges NULL
+const ProtobufCMessageDescriptor rpc__req__wifi_get_channel__descriptor =
+{
+  PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
+  "Rpc_Req_WifiGetChannel",
+  "RpcReqWifiGetChannel",
+  "RpcReqWifiGetChannel",
+  "",
+  sizeof(RpcReqWifiGetChannel),
+  0,
+  rpc__req__wifi_get_channel__field_descriptors,
+  rpc__req__wifi_get_channel__field_indices_by_name,
+  0,  rpc__req__wifi_get_channel__number_ranges,
+  (ProtobufCMessageInit) rpc__req__wifi_get_channel__init,
+  NULL,NULL,NULL    /* reserved[123] */
+};
+static const ProtobufCFieldDescriptor rpc__resp__wifi_get_channel__field_descriptors[3] =
+{
+  {
+    "resp",
+    1,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_INT32,
+    0,   /* quantifier_offset */
+    offsetof(RpcRespWifiGetChannel, resp),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "primary",
+    2,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_INT32,
+    0,   /* quantifier_offset */
+    offsetof(RpcRespWifiGetChannel, primary),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "second",
+    3,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_INT32,
+    0,   /* quantifier_offset */
+    offsetof(RpcRespWifiGetChannel, second),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+};
+static const unsigned rpc__resp__wifi_get_channel__field_indices_by_name[] = {
+  1,   /* field[1] = primary */
+  0,   /* field[0] = resp */
+  2,   /* field[2] = second */
+};
+static const ProtobufCIntRange rpc__resp__wifi_get_channel__number_ranges[1 + 1] =
+{
+  { 1, 0 },
+  { 0, 3 }
+};
+const ProtobufCMessageDescriptor rpc__resp__wifi_get_channel__descriptor =
+{
+  PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
+  "Rpc_Resp_WifiGetChannel",
+  "RpcRespWifiGetChannel",
+  "RpcRespWifiGetChannel",
+  "",
+  sizeof(RpcRespWifiGetChannel),
+  3,
+  rpc__resp__wifi_get_channel__field_descriptors,
+  rpc__resp__wifi_get_channel__field_indices_by_name,
+  1,  rpc__resp__wifi_get_channel__number_ranges,
+  (ProtobufCMessageInit) rpc__resp__wifi_get_channel__init,
+  NULL,NULL,NULL    /* reserved[123] */
+};
 static const ProtobufCFieldDescriptor rpc__req__wifi_set_storage__field_descriptors[1] =
 {
   {
@@ -10074,6 +11143,309 @@ const ProtobufCMessageDescriptor rpc__resp__wifi_set_storage__descriptor =
   rpc__resp__wifi_set_storage__field_indices_by_name,
   1,  rpc__resp__wifi_set_storage__number_ranges,
   (ProtobufCMessageInit) rpc__resp__wifi_set_storage__init,
+  NULL,NULL,NULL    /* reserved[123] */
+};
+static const ProtobufCFieldDescriptor rpc__req__wifi_set_country_code__field_descriptors[2] =
+{
+  {
+    "country",
+    1,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_BYTES,
+    0,   /* quantifier_offset */
+    offsetof(RpcReqWifiSetCountryCode, country),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "ieee80211d_enabled",
+    2,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_BOOL,
+    0,   /* quantifier_offset */
+    offsetof(RpcReqWifiSetCountryCode, ieee80211d_enabled),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+};
+static const unsigned rpc__req__wifi_set_country_code__field_indices_by_name[] = {
+  0,   /* field[0] = country */
+  1,   /* field[1] = ieee80211d_enabled */
+};
+static const ProtobufCIntRange rpc__req__wifi_set_country_code__number_ranges[1 + 1] =
+{
+  { 1, 0 },
+  { 0, 2 }
+};
+const ProtobufCMessageDescriptor rpc__req__wifi_set_country_code__descriptor =
+{
+  PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
+  "Rpc_Req_WifiSetCountryCode",
+  "RpcReqWifiSetCountryCode",
+  "RpcReqWifiSetCountryCode",
+  "",
+  sizeof(RpcReqWifiSetCountryCode),
+  2,
+  rpc__req__wifi_set_country_code__field_descriptors,
+  rpc__req__wifi_set_country_code__field_indices_by_name,
+  1,  rpc__req__wifi_set_country_code__number_ranges,
+  (ProtobufCMessageInit) rpc__req__wifi_set_country_code__init,
+  NULL,NULL,NULL    /* reserved[123] */
+};
+static const ProtobufCFieldDescriptor rpc__resp__wifi_set_country_code__field_descriptors[1] =
+{
+  {
+    "resp",
+    1,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_INT32,
+    0,   /* quantifier_offset */
+    offsetof(RpcRespWifiSetCountryCode, resp),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+};
+static const unsigned rpc__resp__wifi_set_country_code__field_indices_by_name[] = {
+  0,   /* field[0] = resp */
+};
+static const ProtobufCIntRange rpc__resp__wifi_set_country_code__number_ranges[1 + 1] =
+{
+  { 1, 0 },
+  { 0, 1 }
+};
+const ProtobufCMessageDescriptor rpc__resp__wifi_set_country_code__descriptor =
+{
+  PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
+  "Rpc_Resp_WifiSetCountryCode",
+  "RpcRespWifiSetCountryCode",
+  "RpcRespWifiSetCountryCode",
+  "",
+  sizeof(RpcRespWifiSetCountryCode),
+  1,
+  rpc__resp__wifi_set_country_code__field_descriptors,
+  rpc__resp__wifi_set_country_code__field_indices_by_name,
+  1,  rpc__resp__wifi_set_country_code__number_ranges,
+  (ProtobufCMessageInit) rpc__resp__wifi_set_country_code__init,
+  NULL,NULL,NULL    /* reserved[123] */
+};
+#define rpc__req__wifi_get_country_code__field_descriptors NULL
+#define rpc__req__wifi_get_country_code__field_indices_by_name NULL
+#define rpc__req__wifi_get_country_code__number_ranges NULL
+const ProtobufCMessageDescriptor rpc__req__wifi_get_country_code__descriptor =
+{
+  PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
+  "Rpc_Req_WifiGetCountryCode",
+  "RpcReqWifiGetCountryCode",
+  "RpcReqWifiGetCountryCode",
+  "",
+  sizeof(RpcReqWifiGetCountryCode),
+  0,
+  rpc__req__wifi_get_country_code__field_descriptors,
+  rpc__req__wifi_get_country_code__field_indices_by_name,
+  0,  rpc__req__wifi_get_country_code__number_ranges,
+  (ProtobufCMessageInit) rpc__req__wifi_get_country_code__init,
+  NULL,NULL,NULL    /* reserved[123] */
+};
+static const ProtobufCFieldDescriptor rpc__resp__wifi_get_country_code__field_descriptors[2] =
+{
+  {
+    "resp",
+    1,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_INT32,
+    0,   /* quantifier_offset */
+    offsetof(RpcRespWifiGetCountryCode, resp),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "country",
+    2,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_BYTES,
+    0,   /* quantifier_offset */
+    offsetof(RpcRespWifiGetCountryCode, country),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+};
+static const unsigned rpc__resp__wifi_get_country_code__field_indices_by_name[] = {
+  1,   /* field[1] = country */
+  0,   /* field[0] = resp */
+};
+static const ProtobufCIntRange rpc__resp__wifi_get_country_code__number_ranges[1 + 1] =
+{
+  { 1, 0 },
+  { 0, 2 }
+};
+const ProtobufCMessageDescriptor rpc__resp__wifi_get_country_code__descriptor =
+{
+  PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
+  "Rpc_Resp_WifiGetCountryCode",
+  "RpcRespWifiGetCountryCode",
+  "RpcRespWifiGetCountryCode",
+  "",
+  sizeof(RpcRespWifiGetCountryCode),
+  2,
+  rpc__resp__wifi_get_country_code__field_descriptors,
+  rpc__resp__wifi_get_country_code__field_indices_by_name,
+  1,  rpc__resp__wifi_get_country_code__number_ranges,
+  (ProtobufCMessageInit) rpc__resp__wifi_get_country_code__init,
+  NULL,NULL,NULL    /* reserved[123] */
+};
+static const ProtobufCFieldDescriptor rpc__req__wifi_set_country__field_descriptors[1] =
+{
+  {
+    "country",
+    1,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_MESSAGE,
+    0,   /* quantifier_offset */
+    offsetof(RpcReqWifiSetCountry, country),
+    &wifi_country__descriptor,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+};
+static const unsigned rpc__req__wifi_set_country__field_indices_by_name[] = {
+  0,   /* field[0] = country */
+};
+static const ProtobufCIntRange rpc__req__wifi_set_country__number_ranges[1 + 1] =
+{
+  { 1, 0 },
+  { 0, 1 }
+};
+const ProtobufCMessageDescriptor rpc__req__wifi_set_country__descriptor =
+{
+  PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
+  "Rpc_Req_WifiSetCountry",
+  "RpcReqWifiSetCountry",
+  "RpcReqWifiSetCountry",
+  "",
+  sizeof(RpcReqWifiSetCountry),
+  1,
+  rpc__req__wifi_set_country__field_descriptors,
+  rpc__req__wifi_set_country__field_indices_by_name,
+  1,  rpc__req__wifi_set_country__number_ranges,
+  (ProtobufCMessageInit) rpc__req__wifi_set_country__init,
+  NULL,NULL,NULL    /* reserved[123] */
+};
+static const ProtobufCFieldDescriptor rpc__resp__wifi_set_country__field_descriptors[1] =
+{
+  {
+    "resp",
+    1,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_INT32,
+    0,   /* quantifier_offset */
+    offsetof(RpcRespWifiSetCountry, resp),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+};
+static const unsigned rpc__resp__wifi_set_country__field_indices_by_name[] = {
+  0,   /* field[0] = resp */
+};
+static const ProtobufCIntRange rpc__resp__wifi_set_country__number_ranges[1 + 1] =
+{
+  { 1, 0 },
+  { 0, 1 }
+};
+const ProtobufCMessageDescriptor rpc__resp__wifi_set_country__descriptor =
+{
+  PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
+  "Rpc_Resp_WifiSetCountry",
+  "RpcRespWifiSetCountry",
+  "RpcRespWifiSetCountry",
+  "",
+  sizeof(RpcRespWifiSetCountry),
+  1,
+  rpc__resp__wifi_set_country__field_descriptors,
+  rpc__resp__wifi_set_country__field_indices_by_name,
+  1,  rpc__resp__wifi_set_country__number_ranges,
+  (ProtobufCMessageInit) rpc__resp__wifi_set_country__init,
+  NULL,NULL,NULL    /* reserved[123] */
+};
+#define rpc__req__wifi_get_country__field_descriptors NULL
+#define rpc__req__wifi_get_country__field_indices_by_name NULL
+#define rpc__req__wifi_get_country__number_ranges NULL
+const ProtobufCMessageDescriptor rpc__req__wifi_get_country__descriptor =
+{
+  PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
+  "Rpc_Req_WifiGetCountry",
+  "RpcReqWifiGetCountry",
+  "RpcReqWifiGetCountry",
+  "",
+  sizeof(RpcReqWifiGetCountry),
+  0,
+  rpc__req__wifi_get_country__field_descriptors,
+  rpc__req__wifi_get_country__field_indices_by_name,
+  0,  rpc__req__wifi_get_country__number_ranges,
+  (ProtobufCMessageInit) rpc__req__wifi_get_country__init,
+  NULL,NULL,NULL    /* reserved[123] */
+};
+static const ProtobufCFieldDescriptor rpc__resp__wifi_get_country__field_descriptors[2] =
+{
+  {
+    "resp",
+    1,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_INT32,
+    0,   /* quantifier_offset */
+    offsetof(RpcRespWifiGetCountry, resp),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "country",
+    2,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_MESSAGE,
+    0,   /* quantifier_offset */
+    offsetof(RpcRespWifiGetCountry, country),
+    &wifi_country__descriptor,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+};
+static const unsigned rpc__resp__wifi_get_country__field_indices_by_name[] = {
+  1,   /* field[1] = country */
+  0,   /* field[0] = resp */
+};
+static const ProtobufCIntRange rpc__resp__wifi_get_country__number_ranges[1 + 1] =
+{
+  { 1, 0 },
+  { 0, 2 }
+};
+const ProtobufCMessageDescriptor rpc__resp__wifi_get_country__descriptor =
+{
+  PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
+  "Rpc_Resp_WifiGetCountry",
+  "RpcRespWifiGetCountry",
+  "RpcRespWifiGetCountry",
+  "",
+  sizeof(RpcRespWifiGetCountry),
+  2,
+  rpc__resp__wifi_get_country__field_descriptors,
+  rpc__resp__wifi_get_country__field_indices_by_name,
+  1,  rpc__resp__wifi_get_country__number_ranges,
+  (ProtobufCMessageInit) rpc__resp__wifi_get_country__init,
   NULL,NULL,NULL    /* reserved[123] */
 };
 static const ProtobufCFieldDescriptor rpc__event__wifi_event_no_args__field_descriptors[2] =
@@ -10485,7 +11857,7 @@ const ProtobufCMessageDescriptor rpc__event__sta_scan_done__descriptor =
   (ProtobufCMessageInit) rpc__event__sta_scan_done__init,
   NULL,NULL,NULL    /* reserved[123] */
 };
-static const ProtobufCFieldDescriptor rpc__field_descriptors[69] =
+static const ProtobufCFieldDescriptor rpc__field_descriptors[85] =
 {
   {
     "msg_type",
@@ -10860,6 +12232,78 @@ static const ProtobufCFieldDescriptor rpc__field_descriptors[69] =
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
   {
+    "req_wifi_set_bandwidth",
+    299,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_MESSAGE,
+    offsetof(Rpc, payload_case),
+    offsetof(Rpc, req_wifi_set_bandwidth),
+    &rpc__req__wifi_set_bandwidth__descriptor,
+    NULL,
+    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "req_wifi_get_bandwidth",
+    300,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_MESSAGE,
+    offsetof(Rpc, payload_case),
+    offsetof(Rpc, req_wifi_get_bandwidth),
+    &rpc__req__wifi_get_bandwidth__descriptor,
+    NULL,
+    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "req_wifi_set_channel",
+    301,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_MESSAGE,
+    offsetof(Rpc, payload_case),
+    offsetof(Rpc, req_wifi_set_channel),
+    &rpc__req__wifi_set_channel__descriptor,
+    NULL,
+    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "req_wifi_get_channel",
+    302,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_MESSAGE,
+    offsetof(Rpc, payload_case),
+    offsetof(Rpc, req_wifi_get_channel),
+    &rpc__req__wifi_get_channel__descriptor,
+    NULL,
+    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "req_wifi_set_country",
+    303,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_MESSAGE,
+    offsetof(Rpc, payload_case),
+    offsetof(Rpc, req_wifi_set_country),
+    &rpc__req__wifi_set_country__descriptor,
+    NULL,
+    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "req_wifi_get_country",
+    304,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_MESSAGE,
+    offsetof(Rpc, payload_case),
+    offsetof(Rpc, req_wifi_get_country),
+    &rpc__req__wifi_get_country__descriptor,
+    NULL,
+    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
     "req_wifi_set_storage",
     313,
     PROTOBUF_C_LABEL_NONE,
@@ -10867,6 +12311,30 @@ static const ProtobufCFieldDescriptor rpc__field_descriptors[69] =
     offsetof(Rpc, payload_case),
     offsetof(Rpc, req_wifi_set_storage),
     &rpc__req__wifi_set_storage__descriptor,
+    NULL,
+    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "req_wifi_set_country_code",
+    334,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_MESSAGE,
+    offsetof(Rpc, payload_case),
+    offsetof(Rpc, req_wifi_set_country_code),
+    &rpc__req__wifi_set_country_code__descriptor,
+    NULL,
+    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "req_wifi_get_country_code",
+    335,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_MESSAGE,
+    offsetof(Rpc, payload_case),
+    offsetof(Rpc, req_wifi_get_country_code),
+    &rpc__req__wifi_get_country_code__descriptor,
     NULL,
     0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
@@ -11220,6 +12688,78 @@ static const ProtobufCFieldDescriptor rpc__field_descriptors[69] =
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
   {
+    "resp_wifi_set_bandwidth",
+    555,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_MESSAGE,
+    offsetof(Rpc, payload_case),
+    offsetof(Rpc, resp_wifi_set_bandwidth),
+    &rpc__resp__wifi_set_bandwidth__descriptor,
+    NULL,
+    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "resp_wifi_get_bandwidth",
+    556,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_MESSAGE,
+    offsetof(Rpc, payload_case),
+    offsetof(Rpc, resp_wifi_get_bandwidth),
+    &rpc__resp__wifi_get_bandwidth__descriptor,
+    NULL,
+    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "resp_wifi_set_channel",
+    557,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_MESSAGE,
+    offsetof(Rpc, payload_case),
+    offsetof(Rpc, resp_wifi_set_channel),
+    &rpc__resp__wifi_set_channel__descriptor,
+    NULL,
+    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "resp_wifi_get_channel",
+    558,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_MESSAGE,
+    offsetof(Rpc, payload_case),
+    offsetof(Rpc, resp_wifi_get_channel),
+    &rpc__resp__wifi_get_channel__descriptor,
+    NULL,
+    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "resp_wifi_set_country",
+    559,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_MESSAGE,
+    offsetof(Rpc, payload_case),
+    offsetof(Rpc, resp_wifi_set_country),
+    &rpc__resp__wifi_set_country__descriptor,
+    NULL,
+    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "resp_wifi_get_country",
+    560,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_MESSAGE,
+    offsetof(Rpc, payload_case),
+    offsetof(Rpc, resp_wifi_get_country),
+    &rpc__resp__wifi_get_country__descriptor,
+    NULL,
+    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
     "resp_wifi_set_storage",
     569,
     PROTOBUF_C_LABEL_NONE,
@@ -11227,6 +12767,30 @@ static const ProtobufCFieldDescriptor rpc__field_descriptors[69] =
     offsetof(Rpc, payload_case),
     offsetof(Rpc, resp_wifi_set_storage),
     &rpc__resp__wifi_set_storage__descriptor,
+    NULL,
+    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "resp_wifi_set_country_code",
+    590,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_MESSAGE,
+    offsetof(Rpc, payload_case),
+    offsetof(Rpc, resp_wifi_set_country_code),
+    &rpc__resp__wifi_set_country_code__descriptor,
+    NULL,
+    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "resp_wifi_get_country_code",
+    591,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_MESSAGE,
+    offsetof(Rpc, payload_case),
+    offsetof(Rpc, resp_wifi_get_country_code),
+    &rpc__resp__wifi_get_country_code__descriptor,
     NULL,
     0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
@@ -11317,13 +12881,13 @@ static const ProtobufCFieldDescriptor rpc__field_descriptors[69] =
   },
 };
 static const unsigned rpc__field_indices_by_name[] = {
-  65,   /* field[65] = event_ap_sta_connected */
-  66,   /* field[66] = event_ap_sta_disconnected */
-  62,   /* field[62] = event_esp_init */
-  63,   /* field[63] = event_heartbeat */
-  68,   /* field[68] = event_sta_scan_done */
-  64,   /* field[64] = event_station_disconnect_from_AP */
-  67,   /* field[67] = event_wifi_event_no_args */
+  81,   /* field[81] = event_ap_sta_connected */
+  82,   /* field[82] = event_ap_sta_disconnected */
+  78,   /* field[78] = event_esp_init */
+  79,   /* field[79] = event_heartbeat */
+  84,   /* field[84] = event_sta_scan_done */
+  80,   /* field[80] = event_station_disconnect_from_AP */
+  83,   /* field[83] = event_wifi_event_no_args */
   1,   /* field[1] = msg_id */
   0,   /* field[0] = msg_type */
   13,   /* field[13] = req_config_heartbeat */
@@ -11342,7 +12906,11 @@ static const unsigned rpc__field_indices_by_name[] = {
   29,   /* field[29] = req_wifi_deauth_sta */
   15,   /* field[15] = req_wifi_deinit */
   19,   /* field[19] = req_wifi_disconnect */
+  32,   /* field[32] = req_wifi_get_bandwidth */
+  34,   /* field[34] = req_wifi_get_channel */
   21,   /* field[21] = req_wifi_get_config */
+  36,   /* field[36] = req_wifi_get_country */
+  39,   /* field[39] = req_wifi_get_country_code */
   7,   /* field[7] = req_wifi_get_ps */
   14,   /* field[14] = req_wifi_init */
   27,   /* field[27] = req_wifi_restore */
@@ -11350,54 +12918,70 @@ static const unsigned rpc__field_indices_by_name[] = {
   25,   /* field[25] = req_wifi_scan_get_ap_records */
   22,   /* field[22] = req_wifi_scan_start */
   23,   /* field[23] = req_wifi_scan_stop */
+  31,   /* field[31] = req_wifi_set_bandwidth */
+  33,   /* field[33] = req_wifi_set_channel */
   20,   /* field[20] = req_wifi_set_config */
+  35,   /* field[35] = req_wifi_set_country */
+  38,   /* field[38] = req_wifi_set_country_code */
   6,   /* field[6] = req_wifi_set_ps */
-  31,   /* field[31] = req_wifi_set_storage */
+  37,   /* field[37] = req_wifi_set_storage */
   30,   /* field[30] = req_wifi_sta_get_ap_info */
   16,   /* field[16] = req_wifi_start */
   17,   /* field[17] = req_wifi_stop */
-  43,   /* field[43] = resp_config_heartbeat */
-  32,   /* field[32] = resp_get_mac_address */
-  42,   /* field[42] = resp_get_wifi_curr_tx_power */
-  34,   /* field[34] = resp_get_wifi_mode */
-  38,   /* field[38] = resp_ota_begin */
-  40,   /* field[40] = resp_ota_end */
-  39,   /* field[39] = resp_ota_write */
-  33,   /* field[33] = resp_set_mac_address */
-  41,   /* field[41] = resp_set_wifi_max_tx_power */
-  35,   /* field[35] = resp_set_wifi_mode */
-  56,   /* field[56] = resp_wifi_clear_ap_list */
-  58,   /* field[58] = resp_wifi_clear_fast_connect */
-  48,   /* field[48] = resp_wifi_connect */
-  59,   /* field[59] = resp_wifi_deauth_sta */
-  45,   /* field[45] = resp_wifi_deinit */
-  49,   /* field[49] = resp_wifi_disconnect */
-  51,   /* field[51] = resp_wifi_get_config */
-  37,   /* field[37] = resp_wifi_get_ps */
-  44,   /* field[44] = resp_wifi_init */
-  57,   /* field[57] = resp_wifi_restore */
-  54,   /* field[54] = resp_wifi_scan_get_ap_num */
-  55,   /* field[55] = resp_wifi_scan_get_ap_records */
-  52,   /* field[52] = resp_wifi_scan_start */
-  53,   /* field[53] = resp_wifi_scan_stop */
-  50,   /* field[50] = resp_wifi_set_config */
-  36,   /* field[36] = resp_wifi_set_ps */
-  61,   /* field[61] = resp_wifi_set_storage */
-  60,   /* field[60] = resp_wifi_sta_get_ap_info */
-  46,   /* field[46] = resp_wifi_start */
-  47,   /* field[47] = resp_wifi_stop */
+  51,   /* field[51] = resp_config_heartbeat */
+  40,   /* field[40] = resp_get_mac_address */
+  50,   /* field[50] = resp_get_wifi_curr_tx_power */
+  42,   /* field[42] = resp_get_wifi_mode */
+  46,   /* field[46] = resp_ota_begin */
+  48,   /* field[48] = resp_ota_end */
+  47,   /* field[47] = resp_ota_write */
+  41,   /* field[41] = resp_set_mac_address */
+  49,   /* field[49] = resp_set_wifi_max_tx_power */
+  43,   /* field[43] = resp_set_wifi_mode */
+  64,   /* field[64] = resp_wifi_clear_ap_list */
+  66,   /* field[66] = resp_wifi_clear_fast_connect */
+  56,   /* field[56] = resp_wifi_connect */
+  67,   /* field[67] = resp_wifi_deauth_sta */
+  53,   /* field[53] = resp_wifi_deinit */
+  57,   /* field[57] = resp_wifi_disconnect */
+  70,   /* field[70] = resp_wifi_get_bandwidth */
+  72,   /* field[72] = resp_wifi_get_channel */
+  59,   /* field[59] = resp_wifi_get_config */
+  74,   /* field[74] = resp_wifi_get_country */
+  77,   /* field[77] = resp_wifi_get_country_code */
+  45,   /* field[45] = resp_wifi_get_ps */
+  52,   /* field[52] = resp_wifi_init */
+  65,   /* field[65] = resp_wifi_restore */
+  62,   /* field[62] = resp_wifi_scan_get_ap_num */
+  63,   /* field[63] = resp_wifi_scan_get_ap_records */
+  60,   /* field[60] = resp_wifi_scan_start */
+  61,   /* field[61] = resp_wifi_scan_stop */
+  69,   /* field[69] = resp_wifi_set_bandwidth */
+  71,   /* field[71] = resp_wifi_set_channel */
+  58,   /* field[58] = resp_wifi_set_config */
+  73,   /* field[73] = resp_wifi_set_country */
+  76,   /* field[76] = resp_wifi_set_country_code */
+  44,   /* field[44] = resp_wifi_set_ps */
+  75,   /* field[75] = resp_wifi_set_storage */
+  68,   /* field[68] = resp_wifi_sta_get_ap_info */
+  54,   /* field[54] = resp_wifi_start */
+  55,   /* field[55] = resp_wifi_stop */
 };
-static const ProtobufCIntRange rpc__number_ranges[8 + 1] =
+static const ProtobufCIntRange rpc__number_ranges[12 + 1] =
 {
   { 1, 0 },
   { 257, 2 },
   { 270, 6 },
-  { 313, 31 },
-  { 513, 32 },
-  { 526, 36 },
-  { 569, 61 },
-  { 769, 62 },
-  { 0, 69 }
+  { 299, 31 },
+  { 313, 37 },
+  { 334, 38 },
+  { 513, 40 },
+  { 526, 44 },
+  { 555, 69 },
+  { 569, 75 },
+  { 590, 76 },
+  { 769, 78 },
+  { 0, 85 }
 };
 const ProtobufCMessageDescriptor rpc__descriptor =
 {
@@ -11407,10 +12991,10 @@ const ProtobufCMessageDescriptor rpc__descriptor =
   "Rpc",
   "",
   sizeof(Rpc),
-  69,
+  85,
   rpc__field_descriptors,
   rpc__field_indices_by_name,
-  8,  rpc__number_ranges,
+  12,  rpc__number_ranges,
   (ProtobufCMessageInit) rpc__init,
   NULL,NULL,NULL    /* reserved[123] */
 };

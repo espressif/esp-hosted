@@ -295,6 +295,7 @@ int register_wifi_event_callbacks(void)
 		{ RPC_ID__Event_AP_StaConnected,           rpc_event_callback },
 		{ RPC_ID__Event_AP_StaDisconnected,        rpc_event_callback },
 		{ RPC_ID__Event_WifiEventNoArgs,           rpc_event_callback },
+		{ RPC_ID__Event_StaScanDone,               rpc_event_callback },
 	};
 
 	for (evt=0; evt<sizeof(events)/sizeof(event_callback_table_t); evt++) {
@@ -515,7 +516,15 @@ int rpc_rsp_callback(ctrl_cmd_t * app_resp)
 	case RPC_ID__Resp_WifiDeauthSta:
 	case RPC_ID__Resp_WifiStaGetApInfo:
 	case RPC_ID__Resp_WifiSetConfig:
-	case RPC_ID__Resp_WifiSetStorage: {
+	case RPC_ID__Resp_WifiSetStorage:
+	case RPC_ID__Resp_WifiSetBandwidth:
+	case RPC_ID__Resp_WifiGetBandwidth:
+	case RPC_ID__Resp_WifiSetChannel:
+	case RPC_ID__Resp_WifiGetChannel:
+	case RPC_ID__Resp_WifiSetCountryCode:
+	case RPC_ID__Resp_WifiGetCountryCode:
+	case RPC_ID__Resp_WifiSetCountry:
+	case RPC_ID__Resp_WifiGetCountry: {
 		/* Intended fallthrough */
 		break;
 	} default: {
@@ -1298,6 +1307,137 @@ int test_wifi_set_storage(wifi_storage_t storage)
 
 	req.u.wifi_storage = storage;
 	resp = wifi_set_storage(req);
+	return rpc_rsp_callback(resp);
+}
+
+int test_wifi_set_bandwidth(wifi_interface_t ifx, wifi_bandwidth_t bw)
+{
+	/* implemented synchronous */
+	ctrl_cmd_t req = RPC_DEFAULT_REQ();
+	ctrl_cmd_t *resp = NULL;
+
+	req.u.wifi_bandwidth.ifx = ifx;
+	req.u.wifi_bandwidth.bw = bw;
+	resp = wifi_set_bandwidth(req);
+	return rpc_rsp_callback(resp);
+}
+
+int test_wifi_get_bandwidth(wifi_interface_t ifx, wifi_bandwidth_t *bw)
+{
+	/* implemented synchronous */
+	ctrl_cmd_t req = RPC_DEFAULT_REQ();
+	ctrl_cmd_t *resp = NULL;
+
+	if (!bw)
+		return FAILURE;
+
+	req.u.wifi_bandwidth.ifx = ifx;
+	resp = wifi_get_bandwidth(req);
+
+	if (resp && resp->resp_event_status == SUCCESS) {
+		*bw = resp->u.wifi_bandwidth.bw;
+	}
+	return rpc_rsp_callback(resp);
+}
+
+int test_wifi_set_channel(uint8_t primary, wifi_second_chan_t second)
+{
+	/* implemented synchronous */
+	ctrl_cmd_t req = RPC_DEFAULT_REQ();
+	ctrl_cmd_t *resp = NULL;
+
+	req.u.wifi_channel.primary = primary;
+	req.u.wifi_channel.second = second;
+	resp = wifi_set_channel(req);
+	return rpc_rsp_callback(resp);
+}
+
+int test_wifi_get_channel(uint8_t *primary, wifi_second_chan_t *second)
+{
+	/* implemented synchronous */
+	ctrl_cmd_t req = RPC_DEFAULT_REQ();
+	ctrl_cmd_t *resp = NULL;
+
+	if ((!primary) || (!second))
+		return FAILURE;
+
+	resp = wifi_get_channel(req);
+
+	if (resp && resp->resp_event_status == SUCCESS) {
+		*primary = resp->u.wifi_channel.primary;
+		*second = resp->u.wifi_channel.second;
+	}
+	return rpc_rsp_callback(resp);
+}
+
+int test_wifi_set_country_code(const char *country, bool ieee80211d_enabled)
+{
+	/* implemented synchronous */
+	ctrl_cmd_t req = RPC_DEFAULT_REQ();
+	ctrl_cmd_t *resp = NULL;
+
+	if (!country)
+		return FAILURE;
+
+	memcpy(&req.u.wifi_country_code.cc[0], country, sizeof(req.u.wifi_country_code.cc));
+	req.u.wifi_country_code.ieee80211d_enabled = ieee80211d_enabled;
+	resp = wifi_set_country_code(req);
+	return rpc_rsp_callback(resp);
+}
+
+int test_wifi_get_country_code(char *country)
+{
+	/* implemented synchronous */
+	ctrl_cmd_t req = RPC_DEFAULT_REQ();
+	ctrl_cmd_t *resp = NULL;
+
+	if (!country)
+		return FAILURE;
+
+	resp = wifi_get_country_code(req);
+
+	if (resp && resp->resp_event_status == SUCCESS) {
+		memcpy(country, &resp->u.wifi_country_code.cc[0], sizeof(resp->u.wifi_country_code.cc));
+	}
+	return rpc_rsp_callback(resp);
+}
+
+int test_wifi_set_country(const wifi_country_t *country)
+{
+	/* implemented synchronous */
+	ctrl_cmd_t req = RPC_DEFAULT_REQ();
+	ctrl_cmd_t *resp = NULL;
+
+	if (!country)
+		return FAILURE;
+
+	memcpy(&req.u.wifi_country.cc[0], &country->cc[0], sizeof(country->cc));
+	req.u.wifi_country.schan        = country->schan;
+	req.u.wifi_country.nchan        = country->nchan;
+	req.u.wifi_country.max_tx_power = country->max_tx_power;
+	req.u.wifi_country.policy       = country->policy;
+
+	resp = wifi_set_country(req);
+	return rpc_rsp_callback(resp);
+}
+
+int test_wifi_get_country(wifi_country_t *country)
+{
+	/* implemented synchronous */
+	ctrl_cmd_t req = RPC_DEFAULT_REQ();
+	ctrl_cmd_t *resp = NULL;
+
+	if (!country)
+		return FAILURE;
+
+	resp = wifi_get_country(req);
+	if (resp && resp->resp_event_status == SUCCESS) {
+		memcpy(&country->cc[0], &resp->u.wifi_country.cc[0], sizeof(resp->u.wifi_country.cc));
+		country->schan        = resp->u.wifi_country.schan;
+		country->nchan        = resp->u.wifi_country.nchan;
+		country->max_tx_power = resp->u.wifi_country.max_tx_power;
+		country->policy       = resp->u.wifi_country.policy;
+	}
 	return rpc_rsp_callback(resp);
 }
 

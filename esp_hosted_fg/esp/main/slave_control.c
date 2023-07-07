@@ -2032,12 +2032,11 @@ static void event_handler(void* arg, esp_event_base_t event_base,
 			send_event_data_to_host(RPC_ID__Event_AP_StaDisconnected,
 					event_data, sizeof(wifi_event_ap_stadisconnected_t));
 		} else if (event_id == WIFI_EVENT_SCAN_DONE) {
-			//wifi_event_sta_scan_done_t event = (wifi_event_sta_scan_done_t*) event_data;
 			ESP_LOGI(TAG, "Wi-Fi sta scan done");
+			// rpc event receiver expects Scan Done to have this ID
 			send_event_data_to_host(RPC_ID__Event_StaScanDone,
 					event_data, sizeof(wifi_event_sta_scan_done_t));
 		} else {
-
 			if (event_id == WIFI_EVENT_STA_CONNECTED) {
 				esp_wifi_internal_reg_rxcb(ESP_IF_WIFI_STA, (wifi_rxcb_t) wlan_sta_rx_callback);
 				station_connected = true;
@@ -2049,9 +2048,11 @@ static void event_handler(void* arg, esp_event_base_t event_base,
 			} else if (event_id == WIFI_EVENT_AP_START) {
 				ESP_LOGI(TAG,"softap started");
 				esp_wifi_internal_reg_rxcb(ESP_IF_WIFI_AP, (wifi_rxcb_t) wlan_ap_rx_callback);
+				softap_started = 1;
 			} else if (event_id == WIFI_EVENT_AP_STOP) {
 				ESP_LOGI(TAG,"softap stopped");
 				esp_wifi_internal_reg_rxcb(ESP_IF_WIFI_AP, NULL);
+				softap_started = 0;
 			}
 
 			send_event_data_to_host(RPC_ID__Event_WifiEventNoArgs,
@@ -2226,6 +2227,8 @@ static esp_err_t req_wifi_set_config(Rpc *req, Rpc *resp, void *priv_data)
 		wifi_ap_config_t * p_a_ap = &(cfg.ap);
 		WifiApConfig * p_c_ap = req_payload->cfg->ap;
 		RPC_RET_FAIL_IF(!req_payload->cfg->ap);
+		/* esp_wifi_types.h says SSID should be NULL terminated if ssid_len is 0 */
+		RPC_REQ_COPY_STR(p_a_ap->ssid, p_c_ap->ssid, SSID_LENGTH);
 		p_a_ap->ssid_len = p_c_ap->ssid_len;
 		RPC_REQ_COPY_STR(p_a_ap->password, p_c_ap->password, PASSWORD_LENGTH);
 		p_a_ap->channel = p_c_ap->channel;
@@ -2237,8 +2240,6 @@ static esp_err_t req_wifi_set_config(Rpc *req, Rpc *resp, void *priv_data)
 		p_a_ap->ftm_responder = p_c_ap->ftm_responder;
 		p_a_ap->pmf_cfg.capable = p_c_ap->pmf_cfg->capable;
 		p_a_ap->pmf_cfg.required = p_c_ap->pmf_cfg->required;
-		if (p_a_ap->ssid_len)
-			RPC_REQ_COPY_STR(p_a_ap->ssid, p_c_ap->ssid, SSID_LENGTH);
 	}
 
     RPC_RET_FAIL_IF(esp_wifi_set_config(req_payload->iface, &cfg));
@@ -2660,6 +2661,126 @@ static esp_err_t req_wifi_set_storage(Rpc *req, Rpc *resp, void *priv_data)
 	return ESP_OK;
 }
 
+static esp_err_t req_wifi_set_bandwidth(Rpc *req, Rpc *resp, void *priv_data)
+{
+	RPC_TEMPLATE(RpcRespWifiSetBandwidth, resp_wifi_set_bandwidth,
+			RpcReqWifiSetBandwidth, req_wifi_set_bandwidth,
+			rpc__resp__wifi_set_bandwidth__init);
+
+	RPC_RET_FAIL_IF(esp_wifi_set_bandwidth(req_payload->ifx, req_payload->bw));
+	return ESP_OK;
+}
+
+static esp_err_t req_wifi_get_bandwidth(Rpc *req, Rpc *resp, void *priv_data)
+{
+	RPC_TEMPLATE(RpcRespWifiGetBandwidth, resp_wifi_get_bandwidth,
+			RpcReqWifiGetBandwidth, req_wifi_get_bandwidth,
+			rpc__resp__wifi_get_bandwidth__init);
+
+	wifi_bandwidth_t bw = 0;
+	RPC_RET_FAIL_IF(esp_wifi_get_bandwidth(req_payload->ifx, &bw));
+
+	resp_payload->bw = bw;
+	return ESP_OK;
+}
+
+static esp_err_t req_wifi_set_channel(Rpc *req, Rpc *resp, void *priv_data)
+{
+	RPC_TEMPLATE(RpcRespWifiSetChannel, resp_wifi_set_channel,
+			RpcReqWifiSetChannel, req_wifi_set_channel,
+			rpc__resp__wifi_set_channel__init);
+
+	RPC_RET_FAIL_IF(esp_wifi_set_channel(req_payload->primary, req_payload->second));
+	return ESP_OK;
+}
+
+static esp_err_t req_wifi_get_channel(Rpc *req, Rpc *resp, void *priv_data)
+{
+	RPC_TEMPLATE_SIMPLE(RpcRespWifiGetChannel, resp_wifi_get_channel,
+			RpcReqWifiGetChannel, req_wifi_get_channel,
+			rpc__resp__wifi_get_channel__init);
+
+	uint8_t primary = 0;
+	wifi_second_chan_t second = 0;
+	RPC_RET_FAIL_IF(esp_wifi_get_channel(&primary, &second));
+
+	resp_payload->primary = primary;
+	resp_payload->second = second;
+	return ESP_OK;
+}
+
+static esp_err_t req_wifi_set_country_code(Rpc *req, Rpc *resp, void *priv_data)
+{
+	RPC_TEMPLATE(RpcRespWifiSetCountryCode, resp_wifi_set_country_code,
+			RpcReqWifiSetCountryCode, req_wifi_set_country_code,
+			rpc__resp__wifi_set_country_code__init);
+
+	char cc[3] = {0}; // country code
+	RPC_RET_FAIL_IF(!req_payload->country.data);
+	RPC_REQ_COPY_STR(&cc[0], req_payload->country, 2); // only copy the first two chars
+
+	RPC_RET_FAIL_IF(esp_wifi_set_country_code(&cc[0],
+			req_payload->ieee80211d_enabled));
+
+	return ESP_OK;
+}
+
+static esp_err_t req_wifi_get_country_code(Rpc *req, Rpc *resp, void *priv_data)
+{
+	RPC_TEMPLATE_SIMPLE(RpcRespWifiGetCountryCode, resp_wifi_get_country_code,
+			RpcReqWifiGetCountryCode, req_wifi_get_country_code,
+			rpc__resp__wifi_get_country_code__init);
+
+	char cc[3] = {0}; // country code
+	RPC_RET_FAIL_IF(esp_wifi_get_country_code(&cc[0]));
+
+	RPC_RESP_COPY_STR(resp_payload->country, &cc[0], sizeof(cc));
+
+	return ESP_OK;
+}
+
+static esp_err_t req_wifi_set_country(Rpc *req, Rpc *resp, void *priv_data)
+{
+	RPC_TEMPLATE(RpcRespWifiSetCountry, resp_wifi_set_country,
+			RpcReqWifiSetCountry, req_wifi_set_country,
+			rpc__resp__wifi_set_country__init);
+
+	RPC_RET_FAIL_IF(!req_payload->country);
+
+	wifi_country_t country = {0};
+	WifiCountry * p_c_country = req_payload->country;
+	RPC_REQ_COPY_BYTES(&country.cc[0], p_c_country->cc, sizeof(country.cc));
+	country.schan        = p_c_country->schan;
+	country.nchan        = p_c_country->nchan;
+	country.max_tx_power = p_c_country->max_tx_power;
+	country.policy       = p_c_country->policy;
+
+	RPC_RET_FAIL_IF(esp_wifi_set_country(&country));
+
+	return ESP_OK;
+}
+
+static esp_err_t req_wifi_get_country(Rpc *req, Rpc *resp, void *priv_data)
+{
+	RPC_TEMPLATE_SIMPLE(RpcRespWifiGetCountry, resp_wifi_get_country,
+			RpcReqWifiGetCountry, req_wifi_get_country,
+			rpc__resp__wifi_get_country__init);
+
+	wifi_country_t country = {0};
+	RPC_RET_FAIL_IF(esp_wifi_get_country(&country));
+
+	RPC_ALLOC_ELEMENT(WifiCountry, resp_payload->country, wifi_country__init);
+	WifiCountry * p_c_country = resp_payload->country;
+	RPC_RESP_COPY_BYTES(p_c_country->cc, &country.cc[0], sizeof(country.cc));
+	p_c_country->schan        = country.schan;
+	p_c_country->nchan        = country.nchan;
+	p_c_country->max_tx_power = country.max_tx_power;
+	p_c_country->policy       = country.policy;
+
+err:
+	return ESP_OK;
+}
+
 #if 0
 static esp_err_t req_wifi_(Rpc *req, Rpc *resp, void *priv_data)
 {
@@ -2833,6 +2954,38 @@ static esp_rpc_req_t req_table[] = {
 	{
 		.req_num = RPC_ID__Req_WifiSetStorage,
 		.command_handler = req_wifi_set_storage
+	},
+	{
+		.req_num = RPC_ID__Req_WifiSetBandwidth,
+		.command_handler = req_wifi_set_bandwidth
+	},
+	{
+		.req_num = RPC_ID__Req_WifiGetBandwidth,
+		.command_handler = req_wifi_get_bandwidth
+	},
+	{
+		.req_num = RPC_ID__Req_WifiSetChannel,
+		.command_handler = req_wifi_set_channel
+	},
+	{
+		.req_num = RPC_ID__Req_WifiGetChannel,
+		.command_handler = req_wifi_get_channel
+	},
+	{
+		.req_num = RPC_ID__Req_WifiSetCountryCode,
+		.command_handler = req_wifi_set_country_code
+	},
+	{
+		.req_num = RPC_ID__Req_WifiGetCountryCode,
+		.command_handler = req_wifi_get_country_code
+	},
+	{
+		.req_num = RPC_ID__Req_WifiSetCountry,
+		.command_handler = req_wifi_set_country
+	},
+	{
+		.req_num = RPC_ID__Req_WifiGetCountry,
+		.command_handler = req_wifi_get_country
 	},
 };
 
@@ -3069,6 +3222,32 @@ static void esp_rpc_cleanup(Rpc *resp)
 			break;
 		} case RPC_ID__Resp_WifiSetStorage: {
 			mem_free(resp->resp_wifi_set_storage);
+			break;
+		} case RPC_ID__Resp_WifiSetBandwidth: {
+			mem_free(resp->resp_wifi_set_bandwidth);
+			break;
+		} case RPC_ID__Resp_WifiGetBandwidth: {
+			mem_free(resp->resp_wifi_get_bandwidth);
+			break;
+		} case RPC_ID__Resp_WifiSetChannel: {
+			mem_free(resp->resp_wifi_set_channel);
+			break;
+		} case RPC_ID__Resp_WifiGetChannel: {
+			mem_free(resp->resp_wifi_get_channel);
+			break;
+		} case RPC_ID__Resp_WifiSetCountryCode: {
+			mem_free(resp->resp_wifi_set_country_code);
+			break;
+		} case RPC_ID__Resp_WifiGetCountryCode: {
+			mem_free(resp->resp_wifi_get_country_code->country.data);
+			mem_free(resp->resp_wifi_get_country_code);
+			break;
+		} case RPC_ID__Resp_WifiSetCountry: {
+			mem_free(resp->resp_wifi_set_country);
+			break;
+		} case RPC_ID__Resp_WifiGetCountry: {
+			mem_free(resp->resp_wifi_get_country->country);
+			mem_free(resp->resp_wifi_get_country);
 			break;
 		} case (RPC_ID__Event_ESPInit) : {
 			mem_free(resp->event_esp_init);

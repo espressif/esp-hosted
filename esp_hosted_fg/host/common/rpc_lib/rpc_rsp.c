@@ -634,6 +634,54 @@ int rpc_parse_rsp(Rpc *rpc_msg, ctrl_cmd_t *app_resp)
 		RPC_FAIL_ON_NULL(resp_wifi_set_storage);
 		RPC_ERR_IN_RESP(resp_wifi_set_storage);
 		break;
+	} case RPC_ID__Resp_WifiSetBandwidth: {
+		RPC_FAIL_ON_NULL(resp_wifi_set_bandwidth);
+		RPC_ERR_IN_RESP(resp_wifi_set_bandwidth);
+		break;
+	} case RPC_ID__Resp_WifiGetBandwidth: {
+		RPC_FAIL_ON_NULL(resp_wifi_get_bandwidth);
+		RPC_ERR_IN_RESP(resp_wifi_get_bandwidth);
+		app_resp->u.wifi_bandwidth.bw =
+			rpc_msg->resp_wifi_get_bandwidth->bw;
+		break;
+	} case RPC_ID__Resp_WifiSetChannel: {
+		RPC_FAIL_ON_NULL(resp_wifi_set_channel);
+		RPC_ERR_IN_RESP(resp_wifi_set_channel);
+		break;
+	} case RPC_ID__Resp_WifiGetChannel: {
+		RPC_FAIL_ON_NULL(resp_wifi_get_channel);
+		RPC_ERR_IN_RESP(resp_wifi_get_channel);
+		app_resp->u.wifi_channel.primary =
+			rpc_msg->resp_wifi_get_channel->primary;
+		app_resp->u.wifi_channel.second =
+			rpc_msg->resp_wifi_get_channel->second;
+		break;
+	} case RPC_ID__Resp_WifiSetCountryCode: {
+		RPC_FAIL_ON_NULL(resp_wifi_set_country_code);
+		RPC_ERR_IN_RESP(resp_wifi_set_country_code);
+		break;
+	} case RPC_ID__Resp_WifiGetCountryCode: {
+		RPC_FAIL_ON_NULL(resp_wifi_get_country_code);
+		RPC_ERR_IN_RESP(resp_wifi_get_country_code);
+
+		RPC_RSP_COPY_BYTES(&app_resp->u.wifi_country_code.cc[0],
+				rpc_msg->resp_wifi_get_country_code->country);
+		break;
+	} case RPC_ID__Resp_WifiSetCountry: {
+		RPC_FAIL_ON_NULL(resp_wifi_set_country);
+		RPC_ERR_IN_RESP(resp_wifi_set_country);
+		break;
+	} case RPC_ID__Resp_WifiGetCountry: {
+		RPC_FAIL_ON_NULL(resp_wifi_get_country);
+		RPC_ERR_IN_RESP(resp_wifi_get_country);
+
+		RPC_RSP_COPY_BYTES(&app_resp->u.wifi_country.cc[0],
+				rpc_msg->resp_wifi_get_country->country->cc);
+		app_resp->u.wifi_country.schan        = rpc_msg->resp_wifi_get_country->country->schan;
+		app_resp->u.wifi_country.nchan        = rpc_msg->resp_wifi_get_country->country->nchan;
+		app_resp->u.wifi_country.max_tx_power = rpc_msg->resp_wifi_get_country->country->max_tx_power;
+		app_resp->u.wifi_country.policy       = rpc_msg->resp_wifi_get_country->country->policy;
+		break;
 	} default: {
 		ESP_LOGE(TAG, "Unsupported rpc Resp[%u]\n", rpc_msg->msg_id);
 		goto fail_parse_rpc_msg;

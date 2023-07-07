@@ -242,6 +242,22 @@ esp_err_t esp_wifi_get_ps(wifi_ps_type_t *type);
 
 esp_err_t esp_wifi_set_storage(wifi_storage_t storage);
 
+esp_err_t esp_wifi_set_bandwidth(wifi_interface_t ifx, wifi_bandwidth_t bw);
+
+esp_err_t esp_wifi_get_bandwidth(wifi_interface_t ifx, wifi_bandwidth_t *bw);
+
+esp_err_t esp_wifi_set_channel(uint8_t primary, wifi_second_chan_t second);
+
+esp_err_t esp_wifi_get_channel(uint8_t *primary, wifi_second_chan_t *second);
+
+esp_err_t esp_wifi_set_country_code(const char *country, bool ieee80211d_enabled);
+
+esp_err_t esp_wifi_get_country_code(char *country);
+
+esp_err_t esp_wifi_set_country(const wifi_country_t *country);
+
+esp_err_t esp_wifi_get_country(wifi_country_t *country);
+
 #if 0
 esp_err_t esp_wifi_set_protocol(wifi_interface_t ifx, uint8_t protocol_bitmap);
 

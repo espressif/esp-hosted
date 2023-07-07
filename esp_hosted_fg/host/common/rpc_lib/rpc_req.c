@@ -73,7 +73,10 @@ int compose_rpc_req(Rpc *req, ctrl_cmd_t *app_req, uint8_t *failure_status)
 	case RPC_ID__Req_WifiRestore:
 	case RPC_ID__Req_WifiClearFastConnect:
 	case RPC_ID__Req_WifiStaGetApInfo:
-	case RPC_ID__Req_WifiGetMaxTxPower: {
+	case RPC_ID__Req_WifiGetMaxTxPower:
+	case RPC_ID__Req_WifiGetChannel:
+	case RPC_ID__Req_WifiGetCountryCode:
+	case RPC_ID__Req_WifiGetCountry: {
 		/* Intentional fallthrough & empty */
 		break;
 #if 0
@@ -481,6 +484,40 @@ int compose_rpc_req(Rpc *req, ctrl_cmd_t *app_req, uint8_t *failure_status)
 		RPC_ALLOC_ASSIGN(RpcReqWifiSetStorage, req_wifi_set_storage,
 				rpc__req__wifi_set_storage__init);
 		req_payload->storage = *p;
+		break;
+	} case RPC_ID__Req_WifiSetBandwidth: {
+		RPC_ALLOC_ASSIGN(RpcReqWifiSetBandwidth, req_wifi_set_bandwidth,
+				rpc__req__wifi_set_bandwidth__init);
+		req_payload->ifx = app_req->u.wifi_bandwidth.ifx;
+		req_payload->bw = app_req->u.wifi_bandwidth.bw;
+		break;
+	} case RPC_ID__Req_WifiGetBandwidth: {
+		RPC_ALLOC_ASSIGN(RpcReqWifiGetBandwidth, req_wifi_get_bandwidth,
+				rpc__req__wifi_get_bandwidth__init);
+		req_payload->ifx = app_req->u.wifi_bandwidth.ifx;
+		break;
+	} case RPC_ID__Req_WifiSetChannel: {
+		RPC_ALLOC_ASSIGN(RpcReqWifiSetChannel, req_wifi_set_channel,
+				rpc__req__wifi_set_channel__init);
+		req_payload->primary = app_req->u.wifi_channel.primary;
+		req_payload->second = app_req->u.wifi_channel.second;
+		break;
+	} case RPC_ID__Req_WifiSetCountryCode: {
+		RPC_ALLOC_ASSIGN(RpcReqWifiSetCountryCode, req_wifi_set_country_code,
+				rpc__req__wifi_set_country_code__init);
+		RPC_REQ_COPY_BYTES(req_payload->country, (uint8_t *)&app_req->u.wifi_country_code.cc[0], sizeof(app_req->u.wifi_country_code.cc));
+		req_payload->ieee80211d_enabled = app_req->u.wifi_country_code.ieee80211d_enabled;
+		break;
+	} case RPC_ID__Req_WifiSetCountry: {
+		RPC_ALLOC_ASSIGN(RpcReqWifiSetCountry, req_wifi_set_country,
+				rpc__req__wifi_set_country__init);
+
+		RPC_ALLOC_ELEMENT(WifiCountry, req_payload->country, wifi_country__init);
+		RPC_REQ_COPY_BYTES(req_payload->country->cc, (uint8_t *)&app_req->u.wifi_country.cc[0], sizeof(app_req->u.wifi_country.cc));
+		req_payload->country->schan        = app_req->u.wifi_country.schan;
+		req_payload->country->nchan        = app_req->u.wifi_country.nchan;
+		req_payload->country->max_tx_power = app_req->u.wifi_country.max_tx_power;
+		req_payload->country->policy       = app_req->u.wifi_country.policy;
 		break;
 	} default: {
 		*failure_status = RPC_ERR_UNSUPPORTED_MSG;

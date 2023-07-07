@@ -165,6 +165,21 @@ typedef struct {
 } wifi_tx_power_t;
 
 typedef struct {
+	wifi_interface_t ifx;
+	wifi_bandwidth_t bw;
+} rpc_wifi_bandwidth_t;
+
+typedef struct {
+	uint8_t primary;
+	wifi_second_chan_t second;
+} rpc_wifi_channel_t;
+
+typedef struct {
+	char cc[3];
+	bool ieee80211d_enabled;
+} rpc_wifi_country_code;
+
+typedef struct {
 	/* event */
 	uint32_t hb_num;
 	/* Req */
@@ -218,6 +233,14 @@ typedef struct Ctrl_cmd_t {
 		wifi_deauth_sta_t           wifi_deauth_sta;
 
 		wifi_storage_t              wifi_storage;
+
+		rpc_wifi_bandwidth_t        wifi_bandwidth;
+
+		rpc_wifi_channel_t          wifi_channel;
+
+		rpc_wifi_country_code       wifi_country_code;
+
+		wifi_country_t              wifi_country;
 
 		event_heartbeat_t           e_heartbeat;
 
@@ -437,6 +460,14 @@ ctrl_cmd_t * wifi_sta_get_ap_info(ctrl_cmd_t req);
 ctrl_cmd_t * wifi_set_ps(ctrl_cmd_t req);
 ctrl_cmd_t * wifi_get_ps(ctrl_cmd_t req);
 ctrl_cmd_t * wifi_set_storage(ctrl_cmd_t req);
+ctrl_cmd_t * wifi_set_bandwidth(ctrl_cmd_t req);
+ctrl_cmd_t * wifi_get_bandwidth(ctrl_cmd_t req);
+ctrl_cmd_t * wifi_set_channel(ctrl_cmd_t req);
+ctrl_cmd_t * wifi_get_channel(ctrl_cmd_t req);
+ctrl_cmd_t * wifi_set_country_code(ctrl_cmd_t req);
+ctrl_cmd_t * wifi_get_country_code(ctrl_cmd_t req);
+ctrl_cmd_t * wifi_set_country(ctrl_cmd_t req);
+ctrl_cmd_t * wifi_get_country(ctrl_cmd_t req);
 #if 0
 ctrl_cmd_t * wifi_set_protocol(ctrl_cmd_t req);
 ctrl_cmd_t * wifi_get_protocol(ctrl_cmd_t req);

@@ -109,8 +109,24 @@ typedef struct RpcReqWifiDeauthSta RpcReqWifiDeauthSta;
 typedef struct RpcRespWifiDeauthSta RpcRespWifiDeauthSta;
 typedef struct RpcReqWifiStaGetApInfo RpcReqWifiStaGetApInfo;
 typedef struct RpcRespWifiStaGetApInfo RpcRespWifiStaGetApInfo;
+typedef struct RpcReqWifiSetBandwidth RpcReqWifiSetBandwidth;
+typedef struct RpcRespWifiSetBandwidth RpcRespWifiSetBandwidth;
+typedef struct RpcReqWifiGetBandwidth RpcReqWifiGetBandwidth;
+typedef struct RpcRespWifiGetBandwidth RpcRespWifiGetBandwidth;
+typedef struct RpcReqWifiSetChannel RpcReqWifiSetChannel;
+typedef struct RpcRespWifiSetChannel RpcRespWifiSetChannel;
+typedef struct RpcReqWifiGetChannel RpcReqWifiGetChannel;
+typedef struct RpcRespWifiGetChannel RpcRespWifiGetChannel;
 typedef struct RpcReqWifiSetStorage RpcReqWifiSetStorage;
 typedef struct RpcRespWifiSetStorage RpcRespWifiSetStorage;
+typedef struct RpcReqWifiSetCountryCode RpcReqWifiSetCountryCode;
+typedef struct RpcRespWifiSetCountryCode RpcRespWifiSetCountryCode;
+typedef struct RpcReqWifiGetCountryCode RpcReqWifiGetCountryCode;
+typedef struct RpcRespWifiGetCountryCode RpcRespWifiGetCountryCode;
+typedef struct RpcReqWifiSetCountry RpcReqWifiSetCountry;
+typedef struct RpcRespWifiSetCountry RpcRespWifiSetCountry;
+typedef struct RpcReqWifiGetCountry RpcReqWifiGetCountry;
+typedef struct RpcRespWifiGetCountry RpcRespWifiGetCountry;
 typedef struct RpcEventWifiEventNoArgs RpcEventWifiEventNoArgs;
 typedef struct RpcEventESPInit RpcEventESPInit;
 typedef struct RpcEventHeartbeat RpcEventHeartbeat;
@@ -2313,6 +2329,90 @@ struct  RpcRespWifiStaGetApInfo
     , 0, NULL }
 
 
+struct  RpcReqWifiSetBandwidth
+{
+  ProtobufCMessage base;
+  int32_t ifx;
+  int32_t bw;
+};
+#define RPC__REQ__WIFI_SET_BANDWIDTH__INIT \
+ { PROTOBUF_C_MESSAGE_INIT (&rpc__req__wifi_set_bandwidth__descriptor) \
+    , 0, 0 }
+
+
+struct  RpcRespWifiSetBandwidth
+{
+  ProtobufCMessage base;
+  int32_t resp;
+};
+#define RPC__RESP__WIFI_SET_BANDWIDTH__INIT \
+ { PROTOBUF_C_MESSAGE_INIT (&rpc__resp__wifi_set_bandwidth__descriptor) \
+    , 0 }
+
+
+struct  RpcReqWifiGetBandwidth
+{
+  ProtobufCMessage base;
+  int32_t ifx;
+};
+#define RPC__REQ__WIFI_GET_BANDWIDTH__INIT \
+ { PROTOBUF_C_MESSAGE_INIT (&rpc__req__wifi_get_bandwidth__descriptor) \
+    , 0 }
+
+
+struct  RpcRespWifiGetBandwidth
+{
+  ProtobufCMessage base;
+  int32_t resp;
+  int32_t bw;
+};
+#define RPC__RESP__WIFI_GET_BANDWIDTH__INIT \
+ { PROTOBUF_C_MESSAGE_INIT (&rpc__resp__wifi_get_bandwidth__descriptor) \
+    , 0, 0 }
+
+
+struct  RpcReqWifiSetChannel
+{
+  ProtobufCMessage base;
+  int32_t primary;
+  int32_t second;
+};
+#define RPC__REQ__WIFI_SET_CHANNEL__INIT \
+ { PROTOBUF_C_MESSAGE_INIT (&rpc__req__wifi_set_channel__descriptor) \
+    , 0, 0 }
+
+
+struct  RpcRespWifiSetChannel
+{
+  ProtobufCMessage base;
+  int32_t resp;
+};
+#define RPC__RESP__WIFI_SET_CHANNEL__INIT \
+ { PROTOBUF_C_MESSAGE_INIT (&rpc__resp__wifi_set_channel__descriptor) \
+    , 0 }
+
+
+struct  RpcReqWifiGetChannel
+{
+  ProtobufCMessage base;
+};
+#define RPC__REQ__WIFI_GET_CHANNEL__INIT \
+ { PROTOBUF_C_MESSAGE_INIT (&rpc__req__wifi_get_channel__descriptor) \
+     }
+
+
+struct  RpcRespWifiGetChannel
+{
+  ProtobufCMessage base;
+  int32_t resp;
+  int32_t primary;
+  int32_t second;
+};
+#define RPC__RESP__WIFI_GET_CHANNEL__INIT \
+ { PROTOBUF_C_MESSAGE_INIT (&rpc__resp__wifi_get_channel__descriptor) \
+    , 0, 0, 0 }
+
+
 struct  RpcReqWifiSetStorage
 {
   ProtobufCMessage base;
@@ -2331,6 +2431,87 @@ struct  RpcRespWifiSetStorage
 #define RPC__RESP__WIFI_SET_STORAGE__INIT \
  { PROTOBUF_C_MESSAGE_INIT (&rpc__resp__wifi_set_storage__descriptor) \
     , 0 }
+
+
+struct  RpcReqWifiSetCountryCode
+{
+  ProtobufCMessage base;
+  ProtobufCBinaryData country;
+  protobuf_c_boolean ieee80211d_enabled;
+};
+#define RPC__REQ__WIFI_SET_COUNTRY_CODE__INIT \
+ { PROTOBUF_C_MESSAGE_INIT (&rpc__req__wifi_set_country_code__descriptor) \
+    , {0,NULL}, 0 }
+
+
+struct  RpcRespWifiSetCountryCode
+{
+  ProtobufCMessage base;
+  int32_t resp;
+};
+#define RPC__RESP__WIFI_SET_COUNTRY_CODE__INIT \
+ { PROTOBUF_C_MESSAGE_INIT (&rpc__resp__wifi_set_country_code__descriptor) \
+    , 0 }
+
+
+struct  RpcReqWifiGetCountryCode
+{
+  ProtobufCMessage base;
+};
+#define RPC__REQ__WIFI_GET_COUNTRY_CODE__INIT \
+ { PROTOBUF_C_MESSAGE_INIT (&rpc__req__wifi_get_country_code__descriptor) \
+     }
+
+
+struct  RpcRespWifiGetCountryCode
+{
+  ProtobufCMessage base;
+  int32_t resp;
+  ProtobufCBinaryData country;
+};
+#define RPC__RESP__WIFI_GET_COUNTRY_CODE__INIT \
+ { PROTOBUF_C_MESSAGE_INIT (&rpc__resp__wifi_get_country_code__descriptor) \
+    , 0, {0,NULL} }
+
+
+struct  RpcReqWifiSetCountry
+{
+  ProtobufCMessage base;
+  WifiCountry *country;
+};
+#define RPC__REQ__WIFI_SET_COUNTRY__INIT \
+ { PROTOBUF_C_MESSAGE_INIT (&rpc__req__wifi_set_country__descriptor) \
+    , NULL }
+
+
+struct  RpcRespWifiSetCountry
+{
+  ProtobufCMessage base;
+  int32_t resp;
+};
+#define RPC__RESP__WIFI_SET_COUNTRY__INIT \
+ { PROTOBUF_C_MESSAGE_INIT (&rpc__resp__wifi_set_country__descriptor) \
+    , 0 }
+
+
+struct  RpcReqWifiGetCountry
+{
+  ProtobufCMessage base;
+};
+#define RPC__REQ__WIFI_GET_COUNTRY__INIT \
+ { PROTOBUF_C_MESSAGE_INIT (&rpc__req__wifi_get_country__descriptor) \
+     }
+
+
+struct  RpcRespWifiGetCountry
+{
+  ProtobufCMessage base;
+  int32_t resp;
+  WifiCountry *country;
+};
+#define RPC__RESP__WIFI_GET_COUNTRY__INIT \
+ { PROTOBUF_C_MESSAGE_INIT (&rpc__resp__wifi_get_country__descriptor) \
+    , 0, NULL }
 
 
 struct  RpcEventWifiEventNoArgs
@@ -2445,7 +2626,15 @@ typedef enum {
   RPC__PAYLOAD_REQ_WIFI_CLEAR_FAST_CONNECT = 292,
   RPC__PAYLOAD_REQ_WIFI_DEAUTH_STA = 293,
   RPC__PAYLOAD_REQ_WIFI_STA_GET_AP_INFO = 294,
+  RPC__PAYLOAD_REQ_WIFI_SET_BANDWIDTH = 299,
+  RPC__PAYLOAD_REQ_WIFI_GET_BANDWIDTH = 300,
+  RPC__PAYLOAD_REQ_WIFI_SET_CHANNEL = 301,
+  RPC__PAYLOAD_REQ_WIFI_GET_CHANNEL = 302,
+  RPC__PAYLOAD_REQ_WIFI_SET_COUNTRY = 303,
+  RPC__PAYLOAD_REQ_WIFI_GET_COUNTRY = 304,
   RPC__PAYLOAD_REQ_WIFI_SET_STORAGE = 313,
+  RPC__PAYLOAD_REQ_WIFI_SET_COUNTRY_CODE = 334,
+  RPC__PAYLOAD_REQ_WIFI_GET_COUNTRY_CODE = 335,
   RPC__PAYLOAD_RESP_GET_MAC_ADDRESS = 513,
   RPC__PAYLOAD_RESP_SET_MAC_ADDRESS = 514,
   RPC__PAYLOAD_RESP_GET_WIFI_MODE = 515,
@@ -2475,7 +2664,15 @@ typedef enum {
   RPC__PAYLOAD_RESP_WIFI_CLEAR_FAST_CONNECT = 548,
   RPC__PAYLOAD_RESP_WIFI_DEAUTH_STA = 549,
   RPC__PAYLOAD_RESP_WIFI_STA_GET_AP_INFO = 550,
+  RPC__PAYLOAD_RESP_WIFI_SET_BANDWIDTH = 555,
+  RPC__PAYLOAD_RESP_WIFI_GET_BANDWIDTH = 556,
+  RPC__PAYLOAD_RESP_WIFI_SET_CHANNEL = 557,
+  RPC__PAYLOAD_RESP_WIFI_GET_CHANNEL = 558,
+  RPC__PAYLOAD_RESP_WIFI_SET_COUNTRY = 559,
+  RPC__PAYLOAD_RESP_WIFI_GET_COUNTRY = 560,
   RPC__PAYLOAD_RESP_WIFI_SET_STORAGE = 569,
+  RPC__PAYLOAD_RESP_WIFI_SET_COUNTRY_CODE = 590,
+  RPC__PAYLOAD_RESP_WIFI_GET_COUNTRY_CODE = 591,
   RPC__PAYLOAD_EVENT_ESP_INIT = 769,
   RPC__PAYLOAD_EVENT_HEARTBEAT = 770,
   RPC__PAYLOAD_EVENT_STATION_DISCONNECT_FROM__AP = 771,
@@ -2531,7 +2728,15 @@ struct  Rpc
     RpcReqWifiClearFastConnect *req_wifi_clear_fast_connect;
     RpcReqWifiDeauthSta *req_wifi_deauth_sta;
     RpcReqWifiStaGetApInfo *req_wifi_sta_get_ap_info;
+    RpcReqWifiSetBandwidth *req_wifi_set_bandwidth;
+    RpcReqWifiGetBandwidth *req_wifi_get_bandwidth;
+    RpcReqWifiSetChannel *req_wifi_set_channel;
+    RpcReqWifiGetChannel *req_wifi_get_channel;
+    RpcReqWifiSetCountry *req_wifi_set_country;
+    RpcReqWifiGetCountry *req_wifi_get_country;
     RpcReqWifiSetStorage *req_wifi_set_storage;
+    RpcReqWifiSetCountryCode *req_wifi_set_country_code;
+    RpcReqWifiGetCountryCode *req_wifi_get_country_code;
     /*
      ** Responses *
      */
@@ -2564,7 +2769,15 @@ struct  Rpc
     RpcRespWifiClearFastConnect *resp_wifi_clear_fast_connect;
     RpcRespWifiDeauthSta *resp_wifi_deauth_sta;
     RpcRespWifiStaGetApInfo *resp_wifi_sta_get_ap_info;
+    RpcRespWifiSetBandwidth *resp_wifi_set_bandwidth;
+    RpcRespWifiGetBandwidth *resp_wifi_get_bandwidth;
+    RpcRespWifiSetChannel *resp_wifi_set_channel;
+    RpcRespWifiGetChannel *resp_wifi_get_channel;
+    RpcRespWifiSetCountry *resp_wifi_set_country;
+    RpcRespWifiGetCountry *resp_wifi_get_country;
     RpcRespWifiSetStorage *resp_wifi_set_storage;
+    RpcRespWifiSetCountryCode *resp_wifi_set_country_code;
+    RpcRespWifiGetCountryCode *resp_wifi_get_country_code;
     /*
      ** Notifications *
      */
@@ -4368,6 +4581,158 @@ RpcRespWifiStaGetApInfo *
 void   rpc__resp__wifi_sta_get_ap_info__free_unpacked
                      (RpcRespWifiStaGetApInfo *message,
                       ProtobufCAllocator *allocator);
+/* RpcReqWifiSetBandwidth methods */
+void   rpc__req__wifi_set_bandwidth__init
+                     (RpcReqWifiSetBandwidth         *message);
+size_t rpc__req__wifi_set_bandwidth__get_packed_size
+                     (const RpcReqWifiSetBandwidth   *message);
+size_t rpc__req__wifi_set_bandwidth__pack
+                     (const RpcReqWifiSetBandwidth   *message,
+                      uint8_t             *out);
+size_t rpc__req__wifi_set_bandwidth__pack_to_buffer
+                     (const RpcReqWifiSetBandwidth   *message,
+                      ProtobufCBuffer     *buffer);
+RpcReqWifiSetBandwidth *
+       rpc__req__wifi_set_bandwidth__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data);
+void   rpc__req__wifi_set_bandwidth__free_unpacked
+                     (RpcReqWifiSetBandwidth *message,
+                      ProtobufCAllocator *allocator);
+/* RpcRespWifiSetBandwidth methods */
+void   rpc__resp__wifi_set_bandwidth__init
+                     (RpcRespWifiSetBandwidth         *message);
+size_t rpc__resp__wifi_set_bandwidth__get_packed_size
+                     (const RpcRespWifiSetBandwidth   *message);
+size_t rpc__resp__wifi_set_bandwidth__pack
+                     (const RpcRespWifiSetBandwidth   *message,
+                      uint8_t             *out);
+size_t rpc__resp__wifi_set_bandwidth__pack_to_buffer
+                     (const RpcRespWifiSetBandwidth   *message,
+                      ProtobufCBuffer     *buffer);
+RpcRespWifiSetBandwidth *
+       rpc__resp__wifi_set_bandwidth__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data);
+void   rpc__resp__wifi_set_bandwidth__free_unpacked
+                     (RpcRespWifiSetBandwidth *message,
+                      ProtobufCAllocator *allocator);
+/* RpcReqWifiGetBandwidth methods */
+void   rpc__req__wifi_get_bandwidth__init
+                     (RpcReqWifiGetBandwidth         *message);
+size_t rpc__req__wifi_get_bandwidth__get_packed_size
+                     (const RpcReqWifiGetBandwidth   *message);
+size_t rpc__req__wifi_get_bandwidth__pack
+                     (const RpcReqWifiGetBandwidth   *message,
+                      uint8_t             *out);
+size_t rpc__req__wifi_get_bandwidth__pack_to_buffer
+                     (const RpcReqWifiGetBandwidth   *message,
+                      ProtobufCBuffer     *buffer);
+RpcReqWifiGetBandwidth *
+       rpc__req__wifi_get_bandwidth__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data);
+void   rpc__req__wifi_get_bandwidth__free_unpacked
+                     (RpcReqWifiGetBandwidth *message,
+                      ProtobufCAllocator *allocator);
+/* RpcRespWifiGetBandwidth methods */
+void   rpc__resp__wifi_get_bandwidth__init
+                     (RpcRespWifiGetBandwidth         *message);
+size_t rpc__resp__wifi_get_bandwidth__get_packed_size
+                     (const RpcRespWifiGetBandwidth   *message);
+size_t rpc__resp__wifi_get_bandwidth__pack
+                     (const RpcRespWifiGetBandwidth   *message,
+                      uint8_t             *out);
+size_t rpc__resp__wifi_get_bandwidth__pack_to_buffer
+                     (const RpcRespWifiGetBandwidth   *message,
+                      ProtobufCBuffer     *buffer);
+RpcRespWifiGetBandwidth *
+       rpc__resp__wifi_get_bandwidth__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data);
+void   rpc__resp__wifi_get_bandwidth__free_unpacked
+                     (RpcRespWifiGetBandwidth *message,
+                      ProtobufCAllocator *allocator);
+/* RpcReqWifiSetChannel methods */
+void   rpc__req__wifi_set_channel__init
+                     (RpcReqWifiSetChannel         *message);
+size_t rpc__req__wifi_set_channel__get_packed_size
+                     (const RpcReqWifiSetChannel   *message);
+size_t rpc__req__wifi_set_channel__pack
+                     (const RpcReqWifiSetChannel   *message,
+                      uint8_t             *out);
+size_t rpc__req__wifi_set_channel__pack_to_buffer
+                     (const RpcReqWifiSetChannel   *message,
+                      ProtobufCBuffer     *buffer);
+RpcReqWifiSetChannel *
+       rpc__req__wifi_set_channel__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data);
+void   rpc__req__wifi_set_channel__free_unpacked
+                     (RpcReqWifiSetChannel *message,
+                      ProtobufCAllocator *allocator);
+/* RpcRespWifiSetChannel methods */
+void   rpc__resp__wifi_set_channel__init
+                     (RpcRespWifiSetChannel         *message);
+size_t rpc__resp__wifi_set_channel__get_packed_size
+                     (const RpcRespWifiSetChannel   *message);
+size_t rpc__resp__wifi_set_channel__pack
+                     (const RpcRespWifiSetChannel   *message,
+                      uint8_t             *out);
+size_t rpc__resp__wifi_set_channel__pack_to_buffer
+                     (const RpcRespWifiSetChannel   *message,
+                      ProtobufCBuffer     *buffer);
+RpcRespWifiSetChannel *
+       rpc__resp__wifi_set_channel__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data);
+void   rpc__resp__wifi_set_channel__free_unpacked
+                     (RpcRespWifiSetChannel *message,
+                      ProtobufCAllocator *allocator);
+/* RpcReqWifiGetChannel methods */
+void   rpc__req__wifi_get_channel__init
+                     (RpcReqWifiGetChannel         *message);
+size_t rpc__req__wifi_get_channel__get_packed_size
+                     (const RpcReqWifiGetChannel   *message);
+size_t rpc__req__wifi_get_channel__pack
+                     (const RpcReqWifiGetChannel   *message,
+                      uint8_t             *out);
+size_t rpc__req__wifi_get_channel__pack_to_buffer
+                     (const RpcReqWifiGetChannel   *message,
+                      ProtobufCBuffer     *buffer);
+RpcReqWifiGetChannel *
+       rpc__req__wifi_get_channel__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data);
+void   rpc__req__wifi_get_channel__free_unpacked
+                     (RpcReqWifiGetChannel *message,
+                      ProtobufCAllocator *allocator);
+/* RpcRespWifiGetChannel methods */
+void   rpc__resp__wifi_get_channel__init
+                     (RpcRespWifiGetChannel         *message);
+size_t rpc__resp__wifi_get_channel__get_packed_size
+                     (const RpcRespWifiGetChannel   *message);
+size_t rpc__resp__wifi_get_channel__pack
+                     (const RpcRespWifiGetChannel   *message,
+                      uint8_t             *out);
+size_t rpc__resp__wifi_get_channel__pack_to_buffer
+                     (const RpcRespWifiGetChannel   *message,
+                      ProtobufCBuffer     *buffer);
+RpcRespWifiGetChannel *
+       rpc__resp__wifi_get_channel__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data);
+void   rpc__resp__wifi_get_channel__free_unpacked
+                     (RpcRespWifiGetChannel *message,
+                      ProtobufCAllocator *allocator);
 /* RpcReqWifiSetStorage methods */
 void   rpc__req__wifi_set_storage__init
                      (RpcReqWifiSetStorage         *message);
@@ -4405,6 +4770,158 @@ RpcRespWifiSetStorage *
                       const uint8_t       *data);
 void   rpc__resp__wifi_set_storage__free_unpacked
                      (RpcRespWifiSetStorage *message,
+                      ProtobufCAllocator *allocator);
+/* RpcReqWifiSetCountryCode methods */
+void   rpc__req__wifi_set_country_code__init
+                     (RpcReqWifiSetCountryCode         *message);
+size_t rpc__req__wifi_set_country_code__get_packed_size
+                     (const RpcReqWifiSetCountryCode   *message);
+size_t rpc__req__wifi_set_country_code__pack
+                     (const RpcReqWifiSetCountryCode   *message,
+                      uint8_t             *out);
+size_t rpc__req__wifi_set_country_code__pack_to_buffer
+                     (const RpcReqWifiSetCountryCode   *message,
+                      ProtobufCBuffer     *buffer);
+RpcReqWifiSetCountryCode *
+       rpc__req__wifi_set_country_code__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data);
+void   rpc__req__wifi_set_country_code__free_unpacked
+                     (RpcReqWifiSetCountryCode *message,
+                      ProtobufCAllocator *allocator);
+/* RpcRespWifiSetCountryCode methods */
+void   rpc__resp__wifi_set_country_code__init
+                     (RpcRespWifiSetCountryCode         *message);
+size_t rpc__resp__wifi_set_country_code__get_packed_size
+                     (const RpcRespWifiSetCountryCode   *message);
+size_t rpc__resp__wifi_set_country_code__pack
+                     (const RpcRespWifiSetCountryCode   *message,
+                      uint8_t             *out);
+size_t rpc__resp__wifi_set_country_code__pack_to_buffer
+                     (const RpcRespWifiSetCountryCode   *message,
+                      ProtobufCBuffer     *buffer);
+RpcRespWifiSetCountryCode *
+       rpc__resp__wifi_set_country_code__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data);
+void   rpc__resp__wifi_set_country_code__free_unpacked
+                     (RpcRespWifiSetCountryCode *message,
+                      ProtobufCAllocator *allocator);
+/* RpcReqWifiGetCountryCode methods */
+void   rpc__req__wifi_get_country_code__init
+                     (RpcReqWifiGetCountryCode         *message);
+size_t rpc__req__wifi_get_country_code__get_packed_size
+                     (const RpcReqWifiGetCountryCode   *message);
+size_t rpc__req__wifi_get_country_code__pack
+                     (const RpcReqWifiGetCountryCode   *message,
+                      uint8_t             *out);
+size_t rpc__req__wifi_get_country_code__pack_to_buffer
+                     (const RpcReqWifiGetCountryCode   *message,
+                      ProtobufCBuffer     *buffer);
+RpcReqWifiGetCountryCode *
+       rpc__req__wifi_get_country_code__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data);
+void   rpc__req__wifi_get_country_code__free_unpacked
+                     (RpcReqWifiGetCountryCode *message,
+                      ProtobufCAllocator *allocator);
+/* RpcRespWifiGetCountryCode methods */
+void   rpc__resp__wifi_get_country_code__init
+                     (RpcRespWifiGetCountryCode         *message);
+size_t rpc__resp__wifi_get_country_code__get_packed_size
+                     (const RpcRespWifiGetCountryCode   *message);
+size_t rpc__resp__wifi_get_country_code__pack
+                     (const RpcRespWifiGetCountryCode   *message,
+                      uint8_t             *out);
+size_t rpc__resp__wifi_get_country_code__pack_to_buffer
+                     (const RpcRespWifiGetCountryCode   *message,
+                      ProtobufCBuffer     *buffer);
+RpcRespWifiGetCountryCode *
+       rpc__resp__wifi_get_country_code__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data);
+void   rpc__resp__wifi_get_country_code__free_unpacked
+                     (RpcRespWifiGetCountryCode *message,
+                      ProtobufCAllocator *allocator);
+/* RpcReqWifiSetCountry methods */
+void   rpc__req__wifi_set_country__init
+                     (RpcReqWifiSetCountry         *message);
+size_t rpc__req__wifi_set_country__get_packed_size
+                     (const RpcReqWifiSetCountry   *message);
+size_t rpc__req__wifi_set_country__pack
+                     (const RpcReqWifiSetCountry   *message,
+                      uint8_t             *out);
+size_t rpc__req__wifi_set_country__pack_to_buffer
+                     (const RpcReqWifiSetCountry   *message,
+                      ProtobufCBuffer     *buffer);
+RpcReqWifiSetCountry *
+       rpc__req__wifi_set_country__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data);
+void   rpc__req__wifi_set_country__free_unpacked
+                     (RpcReqWifiSetCountry *message,
+                      ProtobufCAllocator *allocator);
+/* RpcRespWifiSetCountry methods */
+void   rpc__resp__wifi_set_country__init
+                     (RpcRespWifiSetCountry         *message);
+size_t rpc__resp__wifi_set_country__get_packed_size
+                     (const RpcRespWifiSetCountry   *message);
+size_t rpc__resp__wifi_set_country__pack
+                     (const RpcRespWifiSetCountry   *message,
+                      uint8_t             *out);
+size_t rpc__resp__wifi_set_country__pack_to_buffer
+                     (const RpcRespWifiSetCountry   *message,
+                      ProtobufCBuffer     *buffer);
+RpcRespWifiSetCountry *
+       rpc__resp__wifi_set_country__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data);
+void   rpc__resp__wifi_set_country__free_unpacked
+                     (RpcRespWifiSetCountry *message,
+                      ProtobufCAllocator *allocator);
+/* RpcReqWifiGetCountry methods */
+void   rpc__req__wifi_get_country__init
+                     (RpcReqWifiGetCountry         *message);
+size_t rpc__req__wifi_get_country__get_packed_size
+                     (const RpcReqWifiGetCountry   *message);
+size_t rpc__req__wifi_get_country__pack
+                     (const RpcReqWifiGetCountry   *message,
+                      uint8_t             *out);
+size_t rpc__req__wifi_get_country__pack_to_buffer
+                     (const RpcReqWifiGetCountry   *message,
+                      ProtobufCBuffer     *buffer);
+RpcReqWifiGetCountry *
+       rpc__req__wifi_get_country__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data);
+void   rpc__req__wifi_get_country__free_unpacked
+                     (RpcReqWifiGetCountry *message,
+                      ProtobufCAllocator *allocator);
+/* RpcRespWifiGetCountry methods */
+void   rpc__resp__wifi_get_country__init
+                     (RpcRespWifiGetCountry         *message);
+size_t rpc__resp__wifi_get_country__get_packed_size
+                     (const RpcRespWifiGetCountry   *message);
+size_t rpc__resp__wifi_get_country__pack
+                     (const RpcRespWifiGetCountry   *message,
+                      uint8_t             *out);
+size_t rpc__resp__wifi_get_country__pack_to_buffer
+                     (const RpcRespWifiGetCountry   *message,
+                      ProtobufCBuffer     *buffer);
+RpcRespWifiGetCountry *
+       rpc__resp__wifi_get_country__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data);
+void   rpc__resp__wifi_get_country__free_unpacked
+                     (RpcRespWifiGetCountry *message,
                       ProtobufCAllocator *allocator);
 /* RpcEventWifiEventNoArgs methods */
 void   rpc__event__wifi_event_no_args__init
@@ -4842,11 +5359,59 @@ typedef void (*RpcReqWifiStaGetApInfo_Closure)
 typedef void (*RpcRespWifiStaGetApInfo_Closure)
                  (const RpcRespWifiStaGetApInfo *message,
                   void *closure_data);
+typedef void (*RpcReqWifiSetBandwidth_Closure)
+                 (const RpcReqWifiSetBandwidth *message,
+                  void *closure_data);
+typedef void (*RpcRespWifiSetBandwidth_Closure)
+                 (const RpcRespWifiSetBandwidth *message,
+                  void *closure_data);
+typedef void (*RpcReqWifiGetBandwidth_Closure)
+                 (const RpcReqWifiGetBandwidth *message,
+                  void *closure_data);
+typedef void (*RpcRespWifiGetBandwidth_Closure)
+                 (const RpcRespWifiGetBandwidth *message,
+                  void *closure_data);
+typedef void (*RpcReqWifiSetChannel_Closure)
+                 (const RpcReqWifiSetChannel *message,
+                  void *closure_data);
+typedef void (*RpcRespWifiSetChannel_Closure)
+                 (const RpcRespWifiSetChannel *message,
+                  void *closure_data);
+typedef void (*RpcReqWifiGetChannel_Closure)
+                 (const RpcReqWifiGetChannel *message,
+                  void *closure_data);
+typedef void (*RpcRespWifiGetChannel_Closure)
+                 (const RpcRespWifiGetChannel *message,
+                  void *closure_data);
 typedef void (*RpcReqWifiSetStorage_Closure)
                  (const RpcReqWifiSetStorage *message,
                   void *closure_data);
 typedef void (*RpcRespWifiSetStorage_Closure)
                  (const RpcRespWifiSetStorage *message,
+                  void *closure_data);
+typedef void (*RpcReqWifiSetCountryCode_Closure)
+                 (const RpcReqWifiSetCountryCode *message,
+                  void *closure_data);
+typedef void (*RpcRespWifiSetCountryCode_Closure)
+                 (const RpcRespWifiSetCountryCode *message,
+                  void *closure_data);
+typedef void (*RpcReqWifiGetCountryCode_Closure)
+                 (const RpcReqWifiGetCountryCode *message,
+                  void *closure_data);
+typedef void (*RpcRespWifiGetCountryCode_Closure)
+                 (const RpcRespWifiGetCountryCode *message,
+                  void *closure_data);
+typedef void (*RpcReqWifiSetCountry_Closure)
+                 (const RpcReqWifiSetCountry *message,
+                  void *closure_data);
+typedef void (*RpcRespWifiSetCountry_Closure)
+                 (const RpcRespWifiSetCountry *message,
+                  void *closure_data);
+typedef void (*RpcReqWifiGetCountry_Closure)
+                 (const RpcReqWifiGetCountry *message,
+                  void *closure_data);
+typedef void (*RpcRespWifiGetCountry_Closure)
+                 (const RpcRespWifiGetCountry *message,
                   void *closure_data);
 typedef void (*RpcEventWifiEventNoArgs_Closure)
                  (const RpcEventWifiEventNoArgs *message,
@@ -4978,8 +5543,24 @@ extern const ProtobufCMessageDescriptor rpc__req__wifi_deauth_sta__descriptor;
 extern const ProtobufCMessageDescriptor rpc__resp__wifi_deauth_sta__descriptor;
 extern const ProtobufCMessageDescriptor rpc__req__wifi_sta_get_ap_info__descriptor;
 extern const ProtobufCMessageDescriptor rpc__resp__wifi_sta_get_ap_info__descriptor;
+extern const ProtobufCMessageDescriptor rpc__req__wifi_set_bandwidth__descriptor;
+extern const ProtobufCMessageDescriptor rpc__resp__wifi_set_bandwidth__descriptor;
+extern const ProtobufCMessageDescriptor rpc__req__wifi_get_bandwidth__descriptor;
+extern const ProtobufCMessageDescriptor rpc__resp__wifi_get_bandwidth__descriptor;
+extern const ProtobufCMessageDescriptor rpc__req__wifi_set_channel__descriptor;
+extern const ProtobufCMessageDescriptor rpc__resp__wifi_set_channel__descriptor;
+extern const ProtobufCMessageDescriptor rpc__req__wifi_get_channel__descriptor;
+extern const ProtobufCMessageDescriptor rpc__resp__wifi_get_channel__descriptor;
 extern const ProtobufCMessageDescriptor rpc__req__wifi_set_storage__descriptor;
 extern const ProtobufCMessageDescriptor rpc__resp__wifi_set_storage__descriptor;
+extern const ProtobufCMessageDescriptor rpc__req__wifi_set_country_code__descriptor;
+extern const ProtobufCMessageDescriptor rpc__resp__wifi_set_country_code__descriptor;
+extern const ProtobufCMessageDescriptor rpc__req__wifi_get_country_code__descriptor;
+extern const ProtobufCMessageDescriptor rpc__resp__wifi_get_country_code__descriptor;
+extern const ProtobufCMessageDescriptor rpc__req__wifi_set_country__descriptor;
+extern const ProtobufCMessageDescriptor rpc__resp__wifi_set_country__descriptor;
+extern const ProtobufCMessageDescriptor rpc__req__wifi_get_country__descriptor;
+extern const ProtobufCMessageDescriptor rpc__resp__wifi_get_country__descriptor;
 extern const ProtobufCMessageDescriptor rpc__event__wifi_event_no_args__descriptor;
 extern const ProtobufCMessageDescriptor rpc__event__espinit__descriptor;
 extern const ProtobufCMessageDescriptor rpc__event__heartbeat__descriptor;
