@@ -280,7 +280,13 @@ ESP32XX_SPI_CLK_FREQ_RANGE_MAX := 40
 				help
 					Very small RX queue will lower ESP <-- SPI -- Host data rate
 
-		endmenu
+		config ESP_SPI_FREQ_ESP32S2
+			depends on SLAVE_CHIPSET_ESP32S2
+			int "SPI Clock Freq"
+			default 30
+			range $(ESP32XX_SPI_CLK_FREQ_RANGE_MIN) $(ESP32S2_SPI_CLK_FREQ_RANGE_MAX)
+			help
+				"Optimize SPI CLK by increasing till host practically can support"
 
 		menu "Hosted SDIO Configuration"
 			depends on ESP_SDIO_HOST_INTERFACE

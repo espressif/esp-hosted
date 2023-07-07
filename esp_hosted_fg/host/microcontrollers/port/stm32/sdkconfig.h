@@ -5,13 +5,6 @@
 #pragma once
 
 // STM32 specific changes
-<<<<<<< HEAD
-=======
-#define CONFIG_SERIAL_LOG_LEVEL 1
-#define CONFIG_SPI_LOG_LEVEL 1
-#define CONFIG_RPC_LOG_LEVEL 1
-#define CONFIG_TRANSPORT_LOG_LEVEL 1
->>>>>>> a0b6c3e (lwip ported over stm32 as host)
 #define CONFIG_ESP_USE_MEMPOOL 1
 //#define CONFIG_ESP_WIFI_SSID "myssid"
 //#define CONFIG_ESP_WIFI_PASSWORD "mypassword"
