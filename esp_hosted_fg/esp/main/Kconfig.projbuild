@@ -50,40 +50,21 @@ menu "Example Configuration"
 			default 2 if ESP_SPI_PRIV_MODE_2
 			default 3
 
-ESP32XX_SPI_CLK_FREQ_RANGE_MIN := 1
-ESP32_SPI_CLK_FREQ_RANGE_MAX := 10
-ESP32S2_SPI_CLK_FREQ_RANGE_MAX := 40
-ESP32XX_SPI_CLK_FREQ_RANGE_MAX := 60
-
-ESP32_DEFAULT_SPI_CLK := 10
-ESP32XX_DEFAULT_SPI_CLK := 30
-
-
-		config ESP_SPI_CLK_FREQ
-			int "SPI Slave SPI frequency"
-			default $(ESP32_DEFAULT_SPI_CLK) if IDF_TARGET_ESP32
-			default $(ESP32XX_DEFAULT_SPI_CLK)
-			range $(ESP32XX_SPI_CLK_FREQ_RANGE_MIN) $(ESP32_SPI_CLK_FREQ_RANGE_MAX) if IDF_TARGET_ESP32
-			range $(ESP32XX_SPI_CLK_FREQ_RANGE_MIN) $(ESP32S2_SPI_CLK_FREQ_RANGE_MAX) if IDF_TARGET_ESP32S2
-			range $(ESP32XX_SPI_CLK_FREQ_RANGE_MIN) $(ESP32XX_SPI_CLK_FREQ_RANGE_MAX)
-			help
-				"Optimize SPI CLK by increasing till host practically can support"
-
 
 		choice SPI_CONTROLLER
 			bool "SPI controller to use"
 			default SPI_HSPI
 
 			config SPI_HSPI
-				bool "HSPI"
+				bool "FSPI/HSPI"
 				help
-					"HSPI SPI controller"
+					"HSPI/FSPI: SPI_controller_1"
 
 			config SPI_VSPI
 				depends on IDF_TARGET_ESP32
 				bool "VSPI"
 				help
-					"VSPI SPI controller"
+					"VSPI: SPI_controller_2"
 
 		endchoice
 
@@ -92,115 +73,120 @@ ESP32XX_DEFAULT_SPI_CLK := 30
 			default 2 if SPI_VSPI
 			default 1
 
-		menu "SPI Bus HSPI Pins"
-			depends on SPI_HSPI
-
+		menu "Hosted SPI GPIOs Config"
 			config ESP_SPI_HSPI_GPIO_MOSI
-				int "GPIO pin for slave MOSI"
+				depends on SPI_HSPI
+				int "GPIO pin for Host MOSI"
 				default 13 if IDF_TARGET_ESP32
 				default 11 if IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32S3
 				default 7
 				help
-					SPI controller slave MOSI
+					SPI controller Host MOSI
 
 			config ESP_SPI_HSPI_GPIO_MISO
-				int "GPIO pin for slave MISO"
+				depends on SPI_HSPI
+				int "GPIO pin for Host MISO"
 				default 12 if IDF_TARGET_ESP32
 				default 13 if IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32S3
 				default 2
 				help
-					SPI controller slave MISO
+					SPI controller Host MISO
 
 			config ESP_SPI_HSPI_GPIO_CLK
-				int "GPIO pin for slave CLK"
+				depends on SPI_HSPI
+				int "GPIO pin for Host CLK"
 				default 14 if IDF_TARGET_ESP32
 				default 12 if IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32S3
 				default 6
 				help
-					SPI controller slave CLK
+					SPI controller Host CLK
 
 			config ESP_SPI_HSPI_GPIO_CS
-				int "GPIO pin for slave CS"
+				depends on SPI_HSPI
+				int "GPIO pin for Host  CS"
 				default 15 if IDF_TARGET_ESP32
 				default 10 if IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32S3
 				default 10
 				help
-					SPI controller slave CS
-		endmenu
-
-		menu "SPI Bus VSPI Pins"
-			depends on SPI_VSPI
+					SPI controller Host CS
 
 			config ESP_SPI_VSPI_GPIO_MOSI
-				int "GPIO pin for slave MOSI"
+				depends on SPI_VSPI
+				int "GPIO pin for Host MOSI"
 				default 23
 				help
-					SPI controller slave MOSI
+					SPI controller Host MOSI
 
 			config ESP_SPI_VSPI_GPIO_MISO
-				int "GPIO pin for slave MISO"
+				depends on SPI_VSPI
+				int "GPIO pin for Host MISO"
 				default 19
 				help
-					SPI controller slave MISO
+					SPI controller Host MISO
 
 			config ESP_SPI_VSPI_GPIO_CLK
-				int "GPIO pin for slave CLK"
+				depends on SPI_VSPI
+				int "GPIO pin for Host CLK"
 				default 18
 				help
-					SPI controller slave CLK
+					SPI controller Host CLK
 
 			config ESP_SPI_VSPI_GPIO_CS
-				int "GPIO pin for slave CS"
+				depends on SPI_VSPI
+				int "GPIO pin for Host CS"
 				default 5
 				help
-					SPI controller slave CS
+					SPI controller Host CS
+
+			config ESP_SPI_GPIO_MOSI
+				int
+				default ESP_SPI_VSPI_GPIO_MOSI if SPI_VSPI
+				default ESP_SPI_HSPI_GPIO_MOSI
+
+			config ESP_SPI_GPIO_MISO
+				int
+				default ESP_SPI_VSPI_GPIO_MISO if SPI_VSPI
+				default ESP_SPI_HSPI_GPIO_MISO
+
+			config ESP_SPI_GPIO_CLK
+				int
+				default ESP_SPI_VSPI_GPIO_CLK if SPI_VSPI
+				default ESP_SPI_HSPI_GPIO_CLK
+
+			config ESP_SPI_GPIO_CS
+				int
+				default ESP_SPI_VSPI_GPIO_CS if SPI_VSPI
+				default ESP_SPI_HSPI_GPIO_CS
+
+			config ESP_SPI_GPIO_HANDSHAKE
+				int "GPIO pin for handshake"
+				default 3 if IDF_TARGET_ESP32C2 || IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32C6
+				default 17 if IDF_TARGET_ESP32S3
+				default 26
+				help
+					GPIO pin to use for handshake with other spi controller
+
+			config ESP_SPI_GPIO_DATA_READY
+				int "GPIO pin for data ready interrupt"
+				default 4
+				help
+					GPIO pin for indicating host that SPI slave has data to be read by host
 		endmenu
 
-		config ESP_SPI_GPIO_MOSI
-			int
-			default ESP_SPI_VSPI_GPIO_MOSI if SPI_VSPI
-			default ESP_SPI_HSPI_GPIO_MOSI
-
-		config ESP_SPI_GPIO_MISO
-			int
-			default ESP_SPI_VSPI_GPIO_MISO if SPI_VSPI
-			default ESP_SPI_HSPI_GPIO_MISO
-
-		config ESP_SPI_GPIO_CLK
-			int
-			default ESP_SPI_VSPI_GPIO_CLK if SPI_VSPI
-			default ESP_SPI_HSPI_GPIO_CLK
-
-		config ESP_SPI_GPIO_CS
-			int
-			default ESP_SPI_VSPI_GPIO_CS if SPI_VSPI
-			default ESP_SPI_HSPI_GPIO_CS
-
-		config ESP_SPI_GPIO_HANDSHAKE
-			int "GPIO pin for handshake"
-			default 3 if IDF_TARGET_ESP32C2
-			default 3 if IDF_TARGET_ESP32C3
-			default 26
-			help
-				GPIO pin to use for handshake with other spi controller
-
-		config ESP_SPI_GPIO_DATA_READY
-			int "GPIO pin for data ready interrupt"
-			default 4
-			help
-				GPIO pin for indicating host that SPI slave has data to be read by host
 
 		config ESP_SPI_TX_Q_SIZE
 			int "ESP to Host SPI queue size"
-			default 10
+			default 10 if IDF_TARGET_ESP32
+			default 20
 			help
-				Very small tx queue will lower ESP -- SPI --> Host data rate (Only ESP32-C2)
+				Very small tx queue will lower ESP -- SPI --> Host data rate
 
 		config ESP_SPI_RX_Q_SIZE
 			int "Host to ESP SPI queue size"
-			default 10
+			default 10 if IDF_TARGET_ESP32
+			default 20
 			help
-				Very small RX queue will lower ESP <-- SPI -- Host data rate (Only ESP32-C2)
+				Very small RX queue will lower ESP <-- SPI -- Host data rate
 
 		config ESP_SPI_CHECKSUM
 			bool "SPI checksum ENABLE/DISABLE"
@@ -252,46 +238,24 @@ ESP32XX_DEFAULT_SPI_CLK := 30
 		help
 			Enable/disable sleeps while OTA operations
 
-	menu "Enable Debug logs"
+	menu "Raw Transport throughout"
 
-		config ESP_SERIAL_DEBUG
-			bool "Debug Serial driver data path"
+		config ESP_RAW_THROUGHPUT_TRANSPORT
+			bool "Transport level throughput debug test"
 			default 0
-			help
-				Enable/disable debug prints in serial driver data path
+				help
+					Find max transport performance which helps to assess stability of porting done
 
-		config ESP_WLAN_DEBUG
-			bool "Debug Wlan driver data path"
-			default 0
-			help
-				Enable/disable debug prints in wlan driver data path
+		choice ESP_RAW_TP_DIRECTION
+			depends on ESP_RAW_THROUGHPUT_TRANSPORT
+			bool "RawTP direction"
 
-		config ESP_BT_DEBUG
-			bool "Debug Bluetooth driver data path"
-			default 0
-			help
-				Enable/disable debug prints in Bluetooth driver data path
+			config ESP_RAW_TP_ESP_TO_HOST
+				bool "RawTP ESP --> Host"
 
-		menu "Raw Transport throughout"
-
-			config ESP_RAW_THROUGHPUT_TRANSPORT
-				bool "Transport level throughput debug test"
-				default 0
-					help
-						Find max transport performance which helps to assess stability of porting done
-
-			choice ESP_RAW_TP_DIRECTION
-				depends on ESP_RAW_THROUGHPUT_TRANSPORT
-				bool "RawTP direction"
-
-				config ESP_RAW_TP_ESP_TO_HOST
-					bool "RawTP ESP --> Host"
-
-				config ESP_RAW_TP_HOST_TO_ESP
-					bool "RawTP ESP <-- Host"
-			endchoice
-
-		endmenu
+			config ESP_RAW_TP_HOST_TO_ESP
+				bool "RawTP ESP <-- Host"
+		endchoice
 
 	endmenu
 

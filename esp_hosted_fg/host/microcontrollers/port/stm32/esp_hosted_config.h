@@ -28,13 +28,6 @@ enum {
  * 1. Using Cs pin from SPI peripheral
  * 2. Manual CS switching for GPIO
  */
-#define ESP_CHIPSET_USED                             SLAVE_CHIPSET_ESP32
-
-
-
-#ifndef ESP_CHIPSET_USED
-#error "Choose **slave** ESP chipset type to use with this host"
-#endif
 
 /* SPI instance used */
 #ifdef STM32F469xx

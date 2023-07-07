@@ -908,7 +908,7 @@ int hosted_do_spi_transfer(void *trans)
 int hosted_wifi_event_post(int32_t event_id,
         void* event_data, size_t event_data_size, uint32_t ticks_to_wait)
 {
-	//hosted_log("event %ld recvd --> event_data:%p event_data_size: %u\n",event_id, event_data, event_data_size);
+	ESP_LOGV(TAG, "event %ld recvd --> event_data:%p event_data_size: %u\n",event_id, event_data, event_data_size);
 	return esp_event_post(WIFI_EVENT, event_id, event_data, event_data_size, ticks_to_wait);
 }
 

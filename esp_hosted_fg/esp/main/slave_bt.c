@@ -71,9 +71,8 @@ static int host_rcv_pkt(uint8_t *data, uint16_t len)
 	buf_handle.wlan_buf_handle = buf;
 	buf_handle.free_buf_handle = free;
 
-#if CONFIG_ESP_BT_DEBUG
-	ESP_LOG_BUFFER_HEXDUMP("bt_tx", data, len, ESP_LOG_INFO);
-#endif
+	ESP_LOGV(BT_TAG, "bt_tx new:");
+	ESP_LOG_BUFFER_HEXDUMP(BT_TAG, data, len, ESP_LOG_VERBOSE);
 
 	if (send_to_host_queue(&buf_handle, PRIO_Q_BT)) {
 		free(buf);
@@ -91,9 +90,8 @@ static esp_vhci_host_callback_t vhci_host_cb = {
 void process_hci_rx_pkt(uint8_t *payload, uint16_t payload_len) {
 	/* VHCI needs one extra byte at the start of payload */
 	/* that is accomodated in esp_payload_header */
-#if CONFIG_ESP_BT_DEBUG
-    ESP_LOG_BUFFER_HEXDUMP("bt_rx", payload, payload_len, ESP_LOG_INFO);
-#endif
+	ESP_LOGV(BT_TAG, "bt_rx new:");
+    ESP_LOG_BUFFER_HEXDUMP("bt_rx", payload, payload_len, ESP_LOG_VERBOSE);
 	payload--;
 	payload_len++;
 
