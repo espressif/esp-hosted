@@ -274,6 +274,54 @@ ctrl_cmd_t * wifi_set_storage(ctrl_cmd_t req)
 	RPC_DECODE_RSP_IF_NOT_ASYNC();
 }
 
+ctrl_cmd_t * wifi_set_bandwidth(ctrl_cmd_t req)
+{
+	RPC_SEND_REQ(RPC_ID__Req_WifiSetBandwidth);
+	RPC_DECODE_RSP_IF_NOT_ASYNC();
+}
+
+ctrl_cmd_t * wifi_get_bandwidth(ctrl_cmd_t req)
+{
+	RPC_SEND_REQ(RPC_ID__Req_WifiGetBandwidth);
+	RPC_DECODE_RSP_IF_NOT_ASYNC();
+}
+
+ctrl_cmd_t * wifi_set_channel(ctrl_cmd_t req)
+{
+	RPC_SEND_REQ(RPC_ID__Req_WifiSetChannel);
+	RPC_DECODE_RSP_IF_NOT_ASYNC();
+}
+
+ctrl_cmd_t * wifi_get_channel(ctrl_cmd_t req)
+{
+	RPC_SEND_REQ(RPC_ID__Req_WifiGetChannel);
+	RPC_DECODE_RSP_IF_NOT_ASYNC();
+}
+
+ctrl_cmd_t * wifi_set_country_code(ctrl_cmd_t req)
+{
+	RPC_SEND_REQ(RPC_ID__Req_WifiSetCountryCode);
+	RPC_DECODE_RSP_IF_NOT_ASYNC();
+}
+
+ctrl_cmd_t * wifi_get_country_code(ctrl_cmd_t req)
+{
+	RPC_SEND_REQ(RPC_ID__Req_WifiGetCountryCode);
+	RPC_DECODE_RSP_IF_NOT_ASYNC();
+}
+
+ctrl_cmd_t * wifi_set_country(ctrl_cmd_t req)
+{
+	RPC_SEND_REQ(RPC_ID__Req_WifiSetCountry);
+	RPC_DECODE_RSP_IF_NOT_ASYNC();
+}
+
+ctrl_cmd_t * wifi_get_country(ctrl_cmd_t req)
+{
+	RPC_SEND_REQ(RPC_ID__Req_WifiGetCountry);
+	RPC_DECODE_RSP_IF_NOT_ASYNC();
+}
+
 #if 0
 ctrl_cmd_t * wifi_set_protocol(ctrl_cmd_t req)
 {

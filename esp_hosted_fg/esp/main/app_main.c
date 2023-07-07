@@ -139,53 +139,6 @@ static uint8_t get_capabilities()
 	return cap;
 }
 
-static void esp_wifi_set_debug_log()
-{
-	/* set WiFi log level and module */
-#if CONFIG_ESP32_WIFI_DEBUG_LOG_ENABLE
-	uint32_t g_wifi_log_level = WIFI_LOG_INFO;
-	uint32_t g_wifi_log_module = 0;
-	uint32_t g_wifi_log_submodule = 0;
-#if CONFIG_ESP32_WIFI_DEBUG_LOG_DEBUG
-	g_wifi_log_level = WIFI_LOG_DEBUG;
-#endif
-#if CONFIG_ESP32_WIFI_DEBUG_LOG_VERBOSE
-	g_wifi_log_level = WIFI_LOG_VERBOSE;
-#endif
-#if CONFIG_ESP32_WIFI_DEBUG_LOG_MODULE_ALL
-	g_wifi_log_module = WIFI_LOG_MODULE_ALL;
-#endif
-#if CONFIG_ESP32_WIFI_DEBUG_LOG_MODULE_WIFI
-	g_wifi_log_module = WIFI_LOG_MODULE_WIFI;
-#endif
-#if CONFIG_ESP32_WIFI_DEBUG_LOG_MODULE_COEX
-	g_wifi_log_module = WIFI_LOG_MODULE_COEX;
-#endif
-#if CONFIG_ESP32_WIFI_DEBUG_LOG_MODULE_MESH
-	g_wifi_log_module = WIFI_LOG_MODULE_MESH;
-#endif
-#if CONFIG_ESP32_WIFI_DEBUG_LOG_SUBMODULE_ALL
-	g_wifi_log_submodule |= WIFI_LOG_SUBMODULE_ALL;
-#endif
-#if CONFIG_ESP32_WIFI_DEBUG_LOG_SUBMODULE_INIT
-	g_wifi_log_submodule |= WIFI_LOG_SUBMODULE_INIT;
-#endif
-#if CONFIG_ESP32_WIFI_DEBUG_LOG_SUBMODULE_IOCTL
-	g_wifi_log_submodule |= WIFI_LOG_SUBMODULE_IOCTL;
-#endif
-#if CONFIG_ESP32_WIFI_DEBUG_LOG_SUBMODULE_CONN
-	g_wifi_log_submodule |= WIFI_LOG_SUBMODULE_CONN;
-#endif
-#if CONFIG_ESP32_WIFI_DEBUG_LOG_SUBMODULE_SCAN
-	g_wifi_log_submodule |= WIFI_LOG_SUBMODULE_SCAN;
-#endif
-	esp_wifi_internal_set_log_level(g_wifi_log_level);
-	esp_wifi_internal_set_log_mod(g_wifi_log_module, g_wifi_log_submodule, true);
-
-#endif /* CONFIG_ESP32_WIFI_DEBUG_LOG_ENABLE*/
-
-}
-
 void esp_update_ap_mac(void)
 {
 	esp_err_t ret = ESP_OK;
@@ -522,15 +475,6 @@ static esp_err_t serial_write_data(uint8_t* data, ssize_t len)
 	return ESP_OK;
 }
 
-static esp_err_t initialise_wifi(void)
-{
-	ESP_ERROR_CHECK(esp_event_loop_create_default());
-
-	esp_wifi_set_debug_log();
-
-	return 0;
-}
-
 int event_handler(uint8_t val)
 {
 	switch(val) {
@@ -755,7 +699,7 @@ void app_main()
 			CONFIG_ESP_DEFAULT_TASK_PRIO, NULL) == pdTRUE);
 	create_debugging_tasks();
 
-	ESP_ERROR_CHECK(initialise_wifi());
+	ESP_ERROR_CHECK(esp_event_loop_create_default());
 
 	while(!datapath) {
 		vTaskDelay(10);
