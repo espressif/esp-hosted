@@ -122,11 +122,8 @@ static void IRAM_ATTR gpio_hs_isr_handler(void* arg)
     }
     lasthandshaketime_us = currtime_us;
 #endif
-    /*gpio_pin_state_t gpio_rx_data_ready = H_GPIO_LOW;
-    gpio_rx_data_ready = g_h.funcs->_h_read_gpio(H_GPIO_DATA_READY_Port,
-    		H_GPIO_DATA_READY_Pin);
-    if (gpio_rx_data_ready == H_GPIO_HIGH)*/
-    	g_h.funcs->_h_post_semaphore_from_isr(spi_trans_ready_sem);
+	g_h.funcs->_h_post_semaphore_from_isr(spi_trans_ready_sem);
+	ESP_EARLY_LOGV(TAG, "%s", __func__);
 }
 
 /*
@@ -134,11 +131,8 @@ This ISR is called when the handshake or data_ready line goes high.
 */
 static void IRAM_ATTR gpio_dr_isr_handler(void* arg)
 {
-    /*gpio_pin_state_t gpio_rx_data_ready = H_GPIO_LOW;
-    gpio_rx_data_ready = g_h.funcs->_h_read_gpio(H_GPIO_DATA_READY_Port,
-    		H_GPIO_DATA_READY_Pin);
-    if (gpio_rx_data_ready == H_GPIO_HIGH)*/
-    	g_h.funcs->_h_post_semaphore_from_isr(spi_trans_ready_sem);
+	g_h.funcs->_h_post_semaphore_from_isr(spi_trans_ready_sem);
+	ESP_EARLY_LOGV(TAG, "%s", __func__);
 }
 //static osThreadId transaction_task_id = 0;
 /**

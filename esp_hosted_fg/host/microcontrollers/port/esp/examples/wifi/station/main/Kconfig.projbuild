@@ -95,7 +95,7 @@ menu "Example Configuration"
 
 			choice ESP_SPI_PRIV_MODE
 				bool "Host SPI mode"
-				default ESP_SPI_PRIV_MODE_3
+				default ESP_SPI_PRIV_MODE_2
 
 				config ESP_SPI_PRIV_MODE_0
 					bool "Host  SPI mode 0"
@@ -115,7 +115,8 @@ menu "Example Configuration"
 				default 0 if ESP_SPI_PRIV_MODE_0
 				default 1 if ESP_SPI_PRIV_MODE_1
 				default 2 if ESP_SPI_PRIV_MODE_2
-				default 3
+				default 3 if ESP_SPI_PRIV_MODE_3
+				default 2
 
 			choice SPI_CONTROLLER
 				bool "Host SPI controller to use"
@@ -124,13 +125,13 @@ menu "Example Configuration"
 				config SPI_HSPI
 					bool "HSPI/FSPI"
 					help
-						"HSPI/FSPI SPI controller"
+						"HSPI/FSPI: SPI_controller_1"
 
 				config SPI_VSPI
 					depends on IDF_TARGET_ESP32
 					bool "VSPI"
 					help
-						"VSPI SPI controller"
+						"VSPI: SPI_controller_2"
 
 			endchoice
 
@@ -286,13 +287,13 @@ ESP32XX_SPI_CLK_FREQ_RANGE_MAX := 60
 
 			config ESP_SPI_TX_Q_SIZE
 				int "ESP to Host SPI queue size"
-				default 10
+				default 20
 				help
 					Very small tx queue will lower ESP -- SPI --> Host data rate
 
 			config ESP_SPI_RX_Q_SIZE
 				int "Host to ESP SPI queue size"
-				default 10
+				default 20
 				help
 					Very small RX queue will lower ESP <-- SPI -- Host data rate
 

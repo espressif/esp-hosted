@@ -81,7 +81,7 @@ int process_init_event(uint8_t *evt_buf, uint16_t len);
 int esp_hosted_init(void(*esp_hosted_up_cb)(void));
 int esp_hosted_deinit(void);
 
-uint8_t get_transport_state(void);
+uint8_t is_transport_up(void);
 
 #define H_BUFF_NO_ZEROCOPY 0
 #define H_BUFF_ZEROCOPY 1
