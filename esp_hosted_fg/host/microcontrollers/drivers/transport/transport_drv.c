@@ -42,7 +42,7 @@ hosted_rxcb_t g_rxcb[ESP_MAX_IF] = {0};
 static void process_event(uint8_t *evt_buf, uint16_t len);
 
 
-uint8_t get_transport_state(void)
+uint8_t is_transport_up(void)
 {
 	return transport_state;
 }
@@ -58,7 +58,7 @@ static void reset_slave(void)
 	g_h.funcs->_h_write_gpio(H_GPIO_PIN_RESET_Port, H_GPIO_PIN_RESET_Pin, H_GPIO_HIGH);
 
 	/* stop spi transactions short time to avoid slave sync issues */
-	g_h.funcs->_h_sleep(5);
+	g_h.funcs->_h_sleep(1);
 }
 
 static void transport_driver_event_handler(uint8_t event)

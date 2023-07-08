@@ -95,7 +95,7 @@ menu "Example Configuration"
 
 			choice ESP_SPI_PRIV_MODE
 				bool "Host SPI mode"
-				default ESP_SPI_PRIV_MODE_3
+				default ESP_SPI_PRIV_MODE_2
 
 				config ESP_SPI_PRIV_MODE_0
 					bool "Host  SPI mode 0"
@@ -115,7 +115,8 @@ menu "Example Configuration"
 				default 0 if ESP_SPI_PRIV_MODE_0
 				default 1 if ESP_SPI_PRIV_MODE_1
 				default 2 if ESP_SPI_PRIV_MODE_2
-				default 3
+				default 3 if ESP_SPI_PRIV_MODE_3
+				default 2
 
 			choice SPI_CONTROLLER
 				bool "Host SPI controller to use"
@@ -297,25 +298,6 @@ ESP32XX_SPI_CLK_FREQ_RANGE_MAX := 60
 					Very small RX queue will lower ESP <-- SPI -- Host data rate
 
 		endmenu
-
-#		menu "Debug Logs"
-#			config SERIAL_LOG_LEVEL
-#			int "Print host serial logs (0: No logs) (1: verbose) (2: info)"
-#			default 0
-#
-#			config SPI_LOG_LEVEL
-#			int "Print host spi logs (0: No logs) (1: verbose) (2: info)"
-#			default 0
-#
-#			config RPC_LOG_LEVEL
-#			int "Print host RPC logs (0: No logs) (1: verbose) (2: info)"
-#			default 0
-#
-#			config TRANSPORT_LOG_LEVEL
-#			int "Print host Transport logs (0: No logs) (1: verbose) (2: info)"
-#			default 1
-#
-#		endmenu
 
 		config ESP_USE_MEMPOOL
 			bool "Cache allocated memory like mempool - helps to reduce malloc calls"

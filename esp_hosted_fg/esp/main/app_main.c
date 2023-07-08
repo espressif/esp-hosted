@@ -96,7 +96,7 @@ uint8_t ap_mac[BSSID_BYTES_SIZE] = {0};
 static void print_firmware_version()
 {
 	ESP_LOGI(TAG, "*********************************************************************");
-	ESP_LOGI(TAG, "                ESP-Hosted-FG Firmware version :: %d.%d.%d                        ",
+	ESP_LOGI(TAG, "                ESP-Hosted-FG Slave Firmware version :: %d.%d.%d                        ",
 			PROJECT_VERSION_MAJOR_1, PROJECT_VERSION_MAJOR_2, PROJECT_VERSION_MINOR);
 #if CONFIG_ESP_SPI_HOST_INTERFACE
   #if BLUETOOTH_UART

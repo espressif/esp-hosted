@@ -21,7 +21,7 @@
 #include "esp_event.h"
 #include "esp_mac.h"
 #include "iperf.h"
-#include "esp_coexist.h"
+//#include "esp_coexist.h"
 #include "wifi_cmd.h"
 //#include "esp_wifi_he.h"
 
