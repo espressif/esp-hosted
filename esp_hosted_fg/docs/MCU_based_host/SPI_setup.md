@@ -5,8 +5,8 @@
 | ----------------- | ----- | -------- | -------- | -------- | -------- | -------- |
 
 ### 1.1 Hardware Setup/Connections
-* In this setup, ESP board acts as a SPI peripheral and provides Wi-Fi capabilities to host. Please connect ESP peripheral to STM32F469I board's CN12 Extension connecter with jumper cables as mentioned below. It may be good to use small length cables to ensure signal integrity.
-* Power ESP peripheral and STM32F469I separately with a power supply that provide sufficient power. ESP peripheral can be powered through PC using micro-USB cable. STM32 can be powered with mini-B cable. It is also used as USART connection for debug logs from host. Serial port communicaton program like tera term or minicom used to print the logs.
+* In this setup, ESP board acts as a SPI peripheral and provides Wi-Fi capabilities to host. Please connect ESP board to STM32F469I board's CN12 Extension connecter with jumper cables as mentioned below. It may be good to use small length cables to ensure signal integrity.
+* STM32F469I should be powered with correct incoming power rating. ESP peripheral can be powered through PC using micro-USB/USB-C cable. STM32 can be powered with mini-B cable. It is also used as USART connection for debug logs from host. Serial port communicaton program like tera term or minicom used to print the logs.
 * BT/BLE support will be added in upcoming release.
 
 #### Hardware connections for ESP32
@@ -24,6 +24,8 @@
 SPI setup sample image with ESP32-C6 as slave & STM32 as Host:
 ![alt text](stm_esp32_c6_setup.jpg "Setup of STM32F469I as host and ESP32-C6 as peripheral")
 
+- Use good quality extremely small (smaller than 10cm) jumper wires, all equal length
+- Optionally, Add external pull-up of min 10k Ohm on CS line just to prevent bus floating
 - In case of ESP32-S3, For avoidance of doubt, You can power using [UART port](https://docs.espressif.com/projects/esp-idf/en/latest/esp32s3/hw-reference/esp32s3/user-guide-devkitc-1.html#description-of-components)
 
 ## 2. ESP peripheral setup

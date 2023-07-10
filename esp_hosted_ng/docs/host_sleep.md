@@ -196,7 +196,7 @@ D (1414058) SDIO_HAL: restart new send: 0x3ffe1c60->0x3ffe1c60, pkt_len: 54
 Where,
 1. `I (147170) FW_MAIN: Set IP Address` is printed when the IP address is assigned to espsta0
 2. `I (170236) FW_MAIN: Host Sleep` is printed when Host is put to sleep
-3. `E (1413238) FW_SDIO_SLAVE: WAKE UP Host!!!!!` is printed when we have pinged to espsta0 IP adress (from laptop connected to AP, where ESP is connected to)
+3. `E (1413238) FW_SDIO_SLAVE: WAKE UP Host!!!!!` is printed when we have pinged to espsta0 IP adress (e.g. from PC connected to AP, where ESP is connected to)
 4. `WAKE UP Host` is printed when ESP triggers high output on `gpio_esp_to_host_wakeup`.
 5. If it is printed **repeatedly** without host getting wakeup, please check your GPIO is connected correctly from ESP to host & Device tree is correctly configured on host.
 

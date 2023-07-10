@@ -5,8 +5,8 @@
 
 ## 1. Setup
 ### 1.1 Hardware Setup/Connections
-* In this setup, ESP board acts as a SDIO peripheral and provides Wi-Fi capabilities to host. Please connect ESP peripheral to STM32F412ZGT6-Nucleo 144 board's CN8 Extension connecter with jumper cables as mentioned below. It may be good to use small length cables to ensure signal integrity.
-* Power ESP peripheral and STM32F412ZGT6-Nucleo 144 separately with a power supply that provide sufficient power. ESP peripheral and STM32 can be powered through USB-Hub using micro-USB cable. It is also used as USART connection for debug logs from host. Serial port communicaton program like tera term or minicom used to print the logs.
+* In this setup, ESP board acts as a SDIO peripheral and provides Wi-Fi capabilities to host. Please connect ESP peripheral to STM32F412ZGT6-Nucleo 144 board's CN8 Extension connecter as mentioned below.
+* STM32F412ZGT6-Nucleo 144 should be powered with correct incoming power rating. ESP peripheral and STM32 can be powered through USB-Hub using micro-USB/USB-C cable. It is also used as USART connection for debug logs from host. Serial port communicaton program like tera term or minicom used to print the logs.
 * Upcoming releases are expected to have:
     * BT/BLE stack integration at MCU side
     * ESP32-C6 support for MCU
@@ -16,12 +16,12 @@
 #### Hardware connections for ESP32
 | STM32 Pin | ESP32 Pin | Function |
 |:----------:|:---------:|:--------:|
-| PC8 (pin2) | IO2 | DATA0 |
-| PC9 (pin4) | IO4 | DATA1 |
-| PC10 (pin6) | IO12 | DATA2 |
-| PC11 (pin8) | IO13 | DATA3 |
+| PC8 (pin2) | IO2+[pull-up](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/peripherals/sd_pullup_requirements.html) | DATA0 |
+| PC9 (pin4) | IO4+[pull-up](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/peripherals/sd_pullup_requirements.html) | DATA1 |
+| PC10 (pin6) | IO12+[pull-up](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/peripherals/sd_pullup_requirements.html) | DATA2 |
+| PC11 (pin8) | IO13+[pull-up](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/peripherals/sd_pullup_requirements.html) | DATA3 |
 | PC12 (pin10)| IO14 | Clock |
-| PD2 (pin12) | IO15 | Command |
+| PD2 (pin12) | IO15+[pull-up](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/peripherals/sd_pullup_requirements.html) | Command |
 | GND (pin13) | GND | Ground |
 | PG2 (pin14) | EN | Reset ESP |
 
@@ -32,8 +32,9 @@ Setup image is here.
 :warning: Note:
 As SDIO faces signal integrity issues over jumper wires, we strongly recommend to **Design PCB boards with above connections**
 If that is not possible
- - Try to use extremely small and good quality jumper wires
+ - Use good quality extremely small (smaller than 5cm) jumper wires, all equal length
  - Join all possible grounds interconnected to lower noise
+ - Add at least, 10k Ohm external pull-up resistors on 5 lines: CMD, DAT0-4. We use 51k Ohm resistors in our set-up.
 
 
 ## 2. ESP Peripheral Firmware

@@ -5,7 +5,9 @@
 
 ## 1. Setup
 ### 1.1 Hardware Setup
-In this setup, ESP board acts as a SDIO peripheral and provides Wi-Fi capabilities to host. Please connect ESP peripheral to Raspberry-Pi with jumper cables as mentioned below. It may be good to use small length cables to ensure signal integrity. Power ESP32 and Raspberry Pi separately with a power supply that provide sufficient power. ESP32 can be powered through PC using micro-USB cable.
+In this setup, ESP board acts as a SDIO peripheral and provides Wi-Fi capabilities to host. Please connect ESP board to Raspberry-Pi with jumper cables as mentioned below.
+Raspberry Pi should be powered with correct incoming power rating.
+ESP can be powered through PC using micro-USB/USB-C cable.
 
 | Raspberry-Pi Pin | ESP32 Pin | ESP32-C6 Pin | Function |
 |:-------:|:---------:|:--------:|:--------:|
@@ -27,8 +29,9 @@ Sample setup image of ESP32 SDIO with RPi looks like:
 :warning: Note:
 As SDIO faces signal integrity issues over jumper wires, we strongly recommend to **Design PCB boards with above connections**
 If that is not possible
- - Try to use extremely small and good quality jumper wires
+ - Use good quality extremely small (smaller than 5cm) jumper wires, all equal length
  - Join all possible grounds interconnected to lower noise
+ - Add at least, 10k Ohm external pull-up resistors on 5 lines: CMD, DAT0-4. We use 51k Ohm resistors in our set-up.
 
 
 ### 1.2 Raspberry-Pi Software Setup

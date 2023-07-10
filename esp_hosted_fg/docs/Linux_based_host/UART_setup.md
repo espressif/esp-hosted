@@ -8,14 +8,15 @@
 In this section, ESP chipset provides a way to run Bluetooth/BLE over UART interface.
 Please connect ESP peripheral to Raspberry-Pi with jumper cables (preferably PCB) as mentioned below.
 It may be good to use small length cables to ensure signal integrity.
-Power ESP32 and Raspberry Pi separately with a power supply that provide sufficient power.
+Raspberry Pi should be powered with correct incoming power rating.
 ESP chipset can be powered through PC using micro-USB/port-C cable.
-- In case of ESP32-S3, For avoidance of doubt, You can power using [UART port](https://docs.espressif.com/projects/esp-idf/en/latest/esp32s3/hw-reference/esp32s3/user-guide-devkitc-1.html#description-of-components)
+In case of ESP32-S3, For avoidance of doubt, You can power using [UART port](https://docs.espressif.com/projects/esp-idf/en/latest/esp32s3/hw-reference/esp32s3/user-guide-devkitc-1.html#description-of-components)
 
 Points to note:
 - In case you wish to reduce number of hardware lines, you may consider SPI_only or SDIO_only transports, where Wi-Fi and Bluetooth traffic is multiplexed on same bus and no need of extra UART pins.
 - UART pin numbers are configurable
 - If you want to switch from 4 line UART mode to 2 lines, hardware flow control need to be turned off
+ - Use good quality small (smaller than 10cm) jumper wires, all equal length
 
 ## 1. Setup
 
