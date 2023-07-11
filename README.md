@@ -113,7 +113,7 @@ Following table summarizes this entire discussion.
   </tr>
   <tr>
     <td>Bluetooth features</td>
-    <td colspan="2"  style="text-align:center">BLE 4.2, BLE 5.0</td>
+    <td colspan="2"  style="text-align:center">BLE 4.2, BLE 5.0, BLE 5.3</td>
   </tr>
   <tr>
     <td>Chipsets supported</td>

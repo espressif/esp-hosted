@@ -142,7 +142,7 @@ hci0:	Type: Primary  Bus: SDIO
 ### 3.1 BT/BLE Test procedure
 
 * ESP-Hosted related BR/EDR 4.2 and BLE 4.2 functionalities are tested with `bluez` 5.50+.
-Whereas BLE 5.0 functionalities are tested with `bluez` 5.45+.
+Whereas BLE 5.X functionalities are tested with `bluez` 5.45+.
 * We suggest latest stable `bluez` version to be used. Any other bluetooth stack instead of `bluez` also could be used.
 * To upgrade `bluez` for particular version, follow this [link](https://scribles.net/updating-bluez-on-raspberry-pi-from-5-43-to-5-50/). Replace bluez `older version` to `expected version` while following mentioned link.
 
@@ -190,9 +190,9 @@ Run `hcitool scan` for BT device scanning.
 
 Run `hcitool lescan` for BLE device scanning.
 
-### 3.2 BLE 5.0 testing
+### 3.2 BLE 5.X testing
 
-ESP32-C3 and ESP32-S3 HCI controller supports BLE 5.0. Several new features are introduced in BLE 5.0. The major areas of improvement are:
+ESP32-C2/C3/S3 HCI controller supports BLE 5.0. ESP32-C6 supports BLE 5.3. Some of the BLE 5.x features are:
 1. Slot Availability Mask (SAM)
 2. 2 Msym/s PHY for LE
 3. LE Long Range
@@ -200,7 +200,7 @@ ESP32-C3 and ESP32-S3 HCI controller supports BLE 5.0. Several new features are 
 5. LE Advertising Extensions
 6. LE Channel Selection Algorithm #2
 
-To test BLE 5.0 on Raspberry Pi, minimum `bluez` version `5.45` and above required. If `bluez` version is less than 5.45 ,then upgrade `bluez` version.
+To test BLE 5.X on Raspberry Pi, minimum `bluez` version `5.45` and above required. If `bluez` version is less than 5.45 ,then upgrade `bluez` version.
 
 Check current `bluez` version by running following command on Raspberry Pi:
 
@@ -230,40 +230,40 @@ Steps:
 
 #### 3.2.2 GATT Server
 
-BLE 5.0 has backword compability. It can connect with BLE4.2 devices.
+BLE 5.X has backword compability. It can connect with BLE4.2 devices.
 Below example demonstrate linux host as GATT server and mobile phone as GATT client. We are using `nRF connect` application for GATT client operartion.
 
 Follow section [3.1.1](#311-gatt-server) for GATT server connections.
 
 #### 3.2.3 GATT client
 
-BLE 5.0 has backword compability. It can connect with BLE4.2 devices.
+BLE 5.X has backword compability. It can connect with BLE4.2 devices.
 Below example demonstrate linux host as GATT client and mobile phone as GATT server. We are using `nRF connect` application for GATT server operartion.
 
 Follow section [3.1.2](#312-gatt-client) for GATT client connections.
 
 #### 3.2.4 1M, 2M, CODED phy for LE
 
-BLE5.0 supports 1M, 2M and CODED phy. To use 2M and CODED phy for gatt read/write procedure as follow:
+BLE5.X supports 1M, 2M and CODED phy. To use 2M and CODED phy for gatt read/write procedure as follow:
 
 Note:
-* Default selected phy is 1M. To perform gatt read/write with BLE5.0 peripheral, both host and peripheral must have same phy configuration.
+* Default selected phy is 1M. To perform gatt read/write with BLE5.X peripheral, both host and peripheral must have same phy configuration.
 
-* 'PHY' feature in BLE 5.0 is verified with btmgmt tool from bluez version 5.56+.
+* 'PHY' feature in BLE 5.X is verified with btmgmt tool from bluez version 5.56+.
 
 * If `bluez` version is less than 5.56 ,then upgrade `bluez` version.
 
 #####  Using 1M phy:
-1M phy is default phy for BLE5.0. Follow above mentioned steps in section 3.2.1
+1M phy is default phy for BLE5.X. Follow above mentioned steps in section 3.2.1
 for connection. After connection follow gatt read/write from gatt menu in bluetoothctl.
 
 ##### Using 2M phy:
-2M phy can not use for connection in BLE5.0 . So configure phy as 1M and 2M both, make connection with other BLE5.0 device and then set phy as 2M. On peripheral side make primary phy as 1M and secondary phy as 2M.
+2M phy can not use for connection in BLE5.X . So configure phy as 1M and 2M both, make connection with other BLE5.X device and then set phy as 2M. On peripheral side make primary phy as 1M and secondary phy as 2M.
 
 Steps:
 1. To configure phy as 1M and 2M both, run `sudo hcitool cmd 08 31 03 03 03`.
 2. To check selected phy, Go to `bluez-5.56` directory. Run `sudo ./tools/btmgmt --index hci0` and run `phy`.
-3. Connect to BLE5.0 device using above mentioned steps in section 3.2.1.
+3. Connect to BLE5.X device using above mentioned steps in section 3.2.1.
 4. while executing connect command, there is `LE Enhanced Connection Complete` event in `btmon` log. Note down `handle` value.
 5. After connection, exit form bluetoothctl. Run `exit` in bluetoothctl.
 6. Now configure phy into 2M. Run `sudo hcitool cmd 08 32 <handle value in two bytes in little endian format > 03 02 02 00 00`.
@@ -276,7 +276,7 @@ Configure CODED phy on host and peripheral side.
 Steps:
 1. To configure phy as CODED phy, run `sudo hcitool cmd 08 31 03 04 04`.
 2. To check selected phy, Go to `bluez-5.56` directory. Run `sudo ./tools/btmgmt --index hci0` and run `phy`.
-3. Connect to BLE5.0 device using above mentioned steps in section 3.2.1.
+3. Connect to BLE5.X device using above mentioned steps in section 3.2.1.
 4. Follow gatt read/write from `menu gatt` in bluetoothctl.
 
 ## 4. OTA operation

@@ -19,7 +19,7 @@
 
 ### 1.1 Hardware Requirements
 * Raspberry-Pi model 3 Model B/B+ or Raspberry-Pi 4 model B
-* ESP32/ESP32-S2/ESP32-C2/ESP32-C3/ESP32-S3 board
+* ESP32/ESP32-S2/S3/C2/C3/C6 board
 * 8-12 jumper wires of length < 10cm
 
 ### 1.2 Host Setup
@@ -192,11 +192,19 @@ This section identifies Raspberry-Pi specific setup requirements.
 	* We suggest latest stable bluez version to be used. Any other bluetooth stack instead of bluez also could be used.
 
 ### 2.2 ESP-IDF Setup
-:warning:`Note: ESP-IDF is needed to compile ESP-Hosted firmware source. Skip this step if you are planning to use pre-built release binaries.`  
 
-- Clone the ESP-IDF [release/v5.0](https://github.com/espressif/esp-idf/tree/release/v5.0) and git checkout to `release/v5.0` branch.
-- [Set-up the ESP-IDF](https://docs.espressif.com/projects/esp-idf/en/release-v5.0/esp32/get-started/index.html)
-- The control path between MCU host and ESP peripheral is based on `protobuf`. For that, corresponding stack layer, `protocomm` from ESP-IDF is used. It will be already present in ESP-IDF, no extra setup required for that.
+- If you are going to use released firmware binaries, ESP-IDF setup is not required, please continue with `2.3 ESP-Hosted Code Repository` below.
+- :warning: Following command is dangerous. It will revert all your local changes. Stash if need to keep them.
+- Install the ESP-IDF using script
+```sh
+$ cd esp_hosted_fg/esp/esp_driver
+$ cmake .
+```
+- Set-Up the build environment using
+```sh
+$ . ./esp-idf/export.sh
+# Optionally, You can add alias for this command in ~/.bashrc for later use
+```
 
 ### 2.3 ESP-Hosted Code Repository
 Clone esp-hosted repository on Linux host.

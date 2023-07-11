@@ -5,7 +5,10 @@
 
 ## 1. Setup
 ### 1.1 Hardware Setup
-In this setup, ESP board acts as a SPI peripheral and provides Wi-Fi capabilities to host. Please connect ESP peripheral to Raspberry-Pi with jumper cables as mentioned below. It may be good to use small length cables to ensure signal integrity. Power ESP and Raspberry Pi separately with a power supply that provide sufficient power. ESP can be powered through PC using micro-USB cable.
+In this setup, ESP board acts as a SPI peripheral and provides Wi-Fi capabilities to host. Please connect ESP board to Raspberry-Pi with jumper cables as mentioned below.
+It may be good to use small length cables to ensure signal integrity.
+Raspberry Pi should be powered with correct incoming power rating.
+ESP can be powered through PC using micro-USB/USB-C cable.
 
 Raspberry-Pi pinout can be found [here!](https://pinout.xyz/pinout/spi)
 
@@ -25,6 +28,9 @@ Sample SPI setup with ESP32-C6 as slave and RaspberryPi as Host looks like:
 
 ![alt text](rpi_esp32_c6_setup.jpg "setup of Raspberry-Pi as host and ESP32-C6 as ESP peripheral")
 
+- Use good quality extremely small (smaller than 10cm) jumper wires, all equal length
+- Optionally, Add external pull-up of min 10k Ohm on CS line just to prevent bus floating
+- In case of ESP32-S3, For avoidance of doubt, You can power using [UART port](https://docs.espressif.com/projects/esp-idf/en/latest/esp32s3/hw-reference/esp32s3/user-guide-devkitc-1.html#description-of-components)
 
 ### 1.2 Raspberry-Pi Software Setup
 The SPI master driver is disabled by default on Raspberry-Pi OS. To enable it add following commands in  _/boot/config.txt_ file

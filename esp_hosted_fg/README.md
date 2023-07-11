@@ -42,7 +42,8 @@ ESP-Hosted-FG solution provides following WLAN and BT/BLE features to the host:
 	- WLAN Soft AP
 - BT/BLE Features:
 	- ESP32 supports BR/EDR and BLE with v4.2
-	- ESP32-C2/C3/C6/ESP32-S3 supports BLE v4.2 and v5.0
+	- ESP32-C2/C3/S3 supports BLE v4.2 and v5.0
+	- ESP32-C6 supports BLE 5.3
 
 ### 1.2 Supported ESP boards
 
