@@ -125,37 +125,41 @@ static void log_runtime_stats_task(void* pvParameters) {
 #endif
 
 #if TEST_RAW_TP
-uint8_t raw_tp_tx_buf[TEST_RAW_TP__BUF_SIZE] = {0};
 uint64_t test_raw_tp_rx_len;
+uint64_t test_raw_tp_tx_len;
 
 void debug_update_raw_tp_rx_count(uint16_t len)
 {
-	test_raw_tp_rx_len += (len+H_ESP_PAYLOAD_HEADER_OFFSET);
+	test_raw_tp_rx_len += (len);
 }
 
 static void raw_tp_timer_func(void* arg)
 {
 	static int32_t cur = 0;
-	double actual_bandwidth = 0;
+	double actual_bandwidth_rx = 0;
+	double actual_bandwidth_tx = 0;
 	int32_t div = 1024;
 
-	actual_bandwidth = (test_raw_tp_rx_len*8);
+	actual_bandwidth_tx = (test_raw_tp_tx_len*8);
+	actual_bandwidth_rx = (test_raw_tp_rx_len*8);
 #if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 0, 0)
-	printf("%lu-%lu sec       %.2f kbits/sec\n\r", cur, cur + 1, actual_bandwidth/div);
+	printf("%lu-%lu sec       Rx: %.2f Tx: %.2f kbps\n\r", cur, cur + 1, actual_bandwidth_rx/div, actual_bandwidth_tx/div);
 #else
-	printf("%u-%u sec       %.2f kbits/sec\n\r", cur, cur + 1, actual_bandwidth/div);
+	printf("%u-%u sec       Rx: %.2f Tx: %.2f kbps\n\r", cur, cur + 1, actual_bandwidth_rx/div, actual_bandwidth_tx/div);
 #endif
 	cur++;
-	test_raw_tp_rx_len = 0;
+	test_raw_tp_rx_len = test_raw_tp_tx_len = 0;
 }
 
-#if TEST_RAW_TP__ESP_TO_HOST
 extern volatile uint8_t datapath;
 static void raw_tp_tx_task(void* pvParameters)
 {
 	int ret;
 	unsigned int *ptr = raw_tp_tx_buf;
 	interface_buffer_handle_t buf_handle = {0};
+	uint8_t *raw_tp_tx_buf = NULL;
+	uint32_t *ptr = NULL;
+	uint16_t i = 0;
 
 	sleep(5);
 
@@ -175,6 +179,12 @@ static void raw_tp_tx_task(void* pvParameters)
 		buf_handle.if_type = ESP_TEST_IF;
 		buf_handle.if_num = 0;
 
+		raw_tp_tx_buf = (uint8_t*)malloc(TEST_RAW_TP__BUF_SIZE);
+		ptr = (uint32_t*)raw_tp_tx_buf;
+
+		for (i=0; i<(TEST_RAW_TP__BUF_SIZE/4-1); i++, ptr++)
+			*ptr = 0xdeadbeef;
+
 		buf_handle.payload = raw_tp_tx_buf;
 		buf_handle.payload_len = TEST_RAW_TP__BUF_SIZE;
 
@@ -184,10 +194,10 @@ static void raw_tp_tx_task(void* pvParameters)
 			printf("Failed to send to queue\n");
 			continue;
 		}
-		test_raw_tp_rx_len += (TEST_RAW_TP__BUF_SIZE+H_ESP_PAYLOAD_HEADER_OFFSET);
+		test_raw_tp_tx_len += (TEST_RAW_TP__BUF_SIZE);
+		free(raw_tp_tx_buf);
 	}
 }
-#endif
 
 static void start_timer_to_display_raw_tp(void)
 {
@@ -218,11 +228,9 @@ void create_debugging_tasks(void)
 
 #if TEST_RAW_TP
 	start_timer_to_display_raw_tp();
-  #if TEST_RAW_TP__ESP_TO_HOST
 	assert(xTaskCreate(raw_tp_tx_task , "raw_tp_tx_task",
 				CONFIG_ESP_DEFAULT_TASK_STACK_SIZE, NULL ,
 				CONFIG_ESP_DEFAULT_TASK_PRIO, NULL) == pdTRUE);
-  #endif
 #endif
 }
 
@@ -230,13 +238,7 @@ uint8_t debug_get_raw_tp_conf(void) {
 	uint8_t raw_tp_cap = 0;
 #if TEST_RAW_TP
 	raw_tp_cap |= ESP_TEST_RAW_TP;
-  #if TEST_RAW_TP__ESP_TO_HOST
-	raw_tp_cap |= ESP_TEST_RAW_TP__ESP_TO_HOST;
-  #endif
-	if ((raw_tp_cap & ESP_TEST_RAW_TP__ESP_TO_HOST) == ESP_TEST_RAW_TP__ESP_TO_HOST)
-		ESP_LOGI(TAG, "\n\n*** Raw Throughput testing: ESP --> Host started ***\n");
-	else
-		ESP_LOGI(TAG, "\n\n*** Raw Throughput testing: Host --> ESP started ***\n");
+	ESP_LOGI(TAG, "\n\n***** Slave: Raw Throughput testing (Report per %u sec)*****\n", CONFIG_ESP_RAW_TP_REPORT_INTERVAL);
 #endif
 	return raw_tp_cap;
 }

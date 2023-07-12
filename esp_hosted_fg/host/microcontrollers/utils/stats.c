@@ -37,12 +37,12 @@
 #if TEST_RAW_TP
 DEFINE_LOG_TAG(stats);
 static int test_raw_tp = 0;
-static int test_raw_tp__host_to_esp = 0;
 static uint8_t log_raw_tp_stats_timer_running = 0;
 static uint32_t raw_tp_timer_count = 0;
 void *hosted_timer_handler = NULL;
 static void * raw_tp_tx_task_id = 0;
-static uint64_t test_raw_tp_len = 0;
+static uint64_t test_raw_tx_len = 0;
+static uint64_t test_raw_rx_len = 0;
 
 void test_raw_tp_cleanup(void)
 {
@@ -65,21 +65,24 @@ void test_raw_tp_cleanup(void)
 void raw_tp_timer_func(void * arg)
 {
 #if USE_FLOATING_POINT
-	double actual_bandwidth = 0;
+	double actual_bandwidth_tx = 0;
+	double actual_bandwidth_rx = 0;
 #else
-	uint64_t actual_bandwidth = 0;
+	uint64_t actual_bandwidth_tx = 0;
+	uint64_t actual_bandwidth_rx = 0;
 #endif
 	int32_t div = 1024;
 
 
-	actual_bandwidth = (test_raw_tp_len*8)/TEST_RAW_TP__TIMEOUT;
+	actual_bandwidth_tx = (test_raw_tx_len*8)/TEST_RAW_TP__TIMEOUT;
+	actual_bandwidth_rx = (test_raw_rx_len*8)/TEST_RAW_TP__TIMEOUT;
 #if USE_FLOATING_POINT
-	ESP_LOGI(TAG, "%lu-%lu sec %.5f Kbits/sec\n\r", raw_tp_timer_count, raw_tp_timer_count + TEST_RAW_TP__TIMEOUT, actual_bandwidth/div);
+	ESP_LOGI(TAG, "%lu-%lu sec Tx:%.2f Rx:%.2f kbps\n\r", raw_tp_timer_count, raw_tp_timer_count + TEST_RAW_TP__TIMEOUT, actual_bandwidth_tx/div, actual_bandwidth_rx/div);
 #else
-	ESP_LOGI(TAG, "%lu-%lu sec %lu Kbps", raw_tp_timer_count, raw_tp_timer_count + TEST_RAW_TP__TIMEOUT, actual_bandwidth/div);
+	ESP_LOGI(TAG, "%lu-%lu sec Tx:%llu Rx:%llu Kbps", raw_tp_timer_count, raw_tp_timer_count + TEST_RAW_TP__TIMEOUT, actual_bandwidth_tx/div, actual_bandwidth_rx/div);
 #endif
 	raw_tp_timer_count+=TEST_RAW_TP__TIMEOUT;
-	test_raw_tp_len = 0;
+	test_raw_tx_len = test_raw_rx_len = 0;
 }
 
 static void raw_tp_tx_task(void const* pvParameters)
@@ -87,15 +90,28 @@ static void raw_tp_tx_task(void const* pvParameters)
 	int ret;
 	static uint16_t seq_num = 0;
 	uint8_t *raw_tp_tx_buf = NULL;
+	uint32_t *ptr = NULL;
+	uint32_t i = 0;
 	g_h.funcs->_h_sleep(5);
 
 	while (1) {
 
 #if CONFIG_H_LOWER_MEMCOPY
 		raw_tp_tx_buf = (uint8_t*)g_h.funcs->_h_calloc(1, MAX_TRANSPORT_BUFFER_SIZE);
+
+		ptr = (uint32_t*) raw_tp_tx_buf;
+		for (i=0; i<(TEST_RAW_TP__BUF_SIZE/4-1); i++, ptr++)
+            *ptr = 0xBAADF00D;
+
 		ret = esp_hosted_tx(ESP_TEST_IF, 0, raw_tp_tx_buf, TEST_RAW_TP__BUF_SIZE, H_BUFF_ZEROCOPY, H_DEFLT_FREE_FUNC);
+
 #else
 		raw_tp_tx_buf = (uint8_t*)g_h.funcs->_h_calloc(1, TEST_RAW_TP__BUF_SIZE);
+
+		ptr = (uint32_t*) raw_tp_tx_buf;
+		for (i=0; i<(TEST_RAW_TP__BUF_SIZE/4-1); i++, ptr++)
+            *ptr = 0xBAADF00D;
+
 		ret = esp_hosted_tx(ESP_TEST_IF, 0, raw_tp_tx_buf, TEST_RAW_TP__BUF_SIZE, H_BUFF_NO_ZEROCOPY, H_DEFLT_FREE_FUNC);
 #endif
 		if (ret != STM_OK) {
@@ -105,7 +121,7 @@ static void raw_tp_tx_task(void const* pvParameters)
 #if CONFIG_H_LOWER_MEMCOPY
 		g_h.funcs->_h_free(raw_tp_tx_buf);
 #endif
-		test_raw_tp_len += (TEST_RAW_TP__BUF_SIZE+H_ESP_PAYLOAD_HEADER_OFFSET);
+		test_raw_tx_len += (TEST_RAW_TP__BUF_SIZE);
 		seq_num++;
 	}
 }
@@ -122,38 +138,28 @@ static void process_raw_tp_flags(void)
 		}
 		log_raw_tp_stats_timer_running = 1;
 
-		if (test_raw_tp__host_to_esp) {
-
-			raw_tp_tx_task_id = g_h.funcs->_h_thread_create("raw_tp_tx", DFLT_TASK_PRIO,
-					RAW_TP_TX_TASK_STACK_SIZE, raw_tp_tx_task, NULL);
-			assert(raw_tp_tx_task_id);
-		}
+		raw_tp_tx_task_id = g_h.funcs->_h_thread_create("raw_tp_tx", DFLT_TASK_PRIO,
+				RAW_TP_TX_TASK_STACK_SIZE, raw_tp_tx_task, NULL);
+		assert(raw_tp_tx_task_id);
 	}
 }
 
-static void start_test_raw_tp(int raw_tp__host_to_esp)
+static void start_test_raw_tp(void)
 {
 	test_raw_tp = 1;
-	test_raw_tp__host_to_esp = raw_tp__host_to_esp;
 }
 
 static void stop_test_raw_tp(void)
 {
 	test_raw_tp = 0;
-	test_raw_tp__host_to_esp = 0;
 }
 
 void process_test_capabilities(uint8_t cap)
 {
 	ESP_LOGI(TAG, "ESP peripheral capabilities: 0x%x\n\r", cap);
 	if ((cap & ESP_TEST_RAW_TP) == ESP_TEST_RAW_TP) {
-		if ((cap & ESP_TEST_RAW_TP__ESP_TO_HOST) == ESP_TEST_RAW_TP__ESP_TO_HOST) {
-			start_test_raw_tp(ESP_TEST_RAW_TP__RX);
-			ESP_LOGI(TAG, "esp32: start testing of ESP->Host raw throughput\n\r");
-		} else {
-			start_test_raw_tp(ESP_TEST_RAW_TP__TX);
-			ESP_LOGI(TAG, "esp32: start testing of Host->ESP raw throughput\n\r");
-		}
+		start_test_raw_tp();
+		ESP_LOGI(TAG, "***** Host Raw throughput Testing (report per %u sec) *****\n\r",TEST_RAW_TP__TIMEOUT);
 	} else {
 		ESP_LOGI(TAG, "esp32: stop raw throuput test if running\n");
 		stop_test_raw_tp();
@@ -163,7 +169,7 @@ void process_test_capabilities(uint8_t cap)
 
 void update_test_raw_tp_rx_len(uint16_t len)
 {
-	test_raw_tp_len+=(len+H_ESP_PAYLOAD_HEADER_OFFSET);
+	test_raw_rx_len+=(len);
 }
 
 #endif
