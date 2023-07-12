@@ -13,7 +13,6 @@
 // limitations under the License.
 
 
-/* Use mempool */
 #include "mempool.h"
 #include "common.h"
 #include "esp_hosted_config.h"
@@ -43,7 +42,7 @@ static struct mempool * buf_mp_g;
 
 /** Exported variables **/
 
-static void * mutex_spi_trans;
+static void * spi_bus_lock;
 
 /* Queue declaration */
 static queue_handle_t to_slave_queue = NULL;
@@ -145,8 +144,8 @@ void transport_init(void(*transport_evt_handler_fp)(uint8_t))
 	/* register callback */
 	spi_drv_evt_handler_fp = transport_evt_handler_fp;
 
-    mutex_spi_trans = g_h.funcs->_h_create_mutex();
-    assert(mutex_spi_trans);
+    spi_bus_lock = g_h.funcs->_h_create_mutex();
+    assert(spi_bus_lock);
 
 	/* Queue - tx */
 	to_slave_queue = g_h.funcs->_h_create_queue(TO_SLAVE_QUEUE_SIZE,
@@ -162,8 +161,7 @@ void transport_init(void(*transport_evt_handler_fp)(uint8_t))
     spi_mempool_create();
 
     /* Creates & Give sem for next spi trans */
-    //spi_trans_ready_sem = xSemaphoreCreateCounting(10,0);
-	spi_trans_ready_sem = g_h.funcs->_h_create_semaphore(10);
+	spi_trans_ready_sem = g_h.funcs->_h_create_semaphore(100);
 
 
     g_h.funcs->_h_config_gpio_as_interrupt(H_GPIO_HANDSHAKE_Port, H_GPIO_HANDSHAKE_Pin,
@@ -242,6 +240,7 @@ static int process_spi_rx_buf(uint8_t * rxbuff)
         payload_header->checksum = 0;
 
         //checksum = compute_checksum(rxbuff, len+offset);
+		//TODO: checksum is disabled here, need to be configurable from menuconfig
         checksum = rx_checksum = 0;
         ESP_LOGV(TAG, "rcvd_crc[%u], exp_crc[%u]\n",checksum, rx_checksum);
         if (checksum == rx_checksum) {
@@ -352,7 +351,9 @@ static int check_and_execute_spi_transaction(void)
 			 * a. A valid tx buffer to be transmitted towards slave
 			 * b. Slave wants to send something (Rx for host)
 			 */
+			g_h.funcs->_h_lock_mutex(spi_bus_lock, portMAX_DELAY);
             ret = g_h.funcs->_h_do_bus_transfer(&spi_trans);
+			g_h.funcs->_h_unlock_mutex(spi_bus_lock);
 
             if (!ret)
                 process_spi_rx_buf(spi_trans.rx_buf);
@@ -420,9 +421,7 @@ int esp_hosted_tx(uint8_t iface_type, uint8_t iface_num,
 		return STM_FAIL;
 	}
 
-    g_h.funcs->_h_lock_mutex(mutex_spi_trans, portMAX_DELAY);
-    check_and_execute_spi_transaction();
-    g_h.funcs->_h_unlock_mutex(mutex_spi_trans);
+	g_h.funcs->_h_post_semaphore(spi_trans_ready_sem);
 
 	return STM_OK;
 }
@@ -453,10 +452,7 @@ static void spi_transaction_task(void const* pvParameters)
          */
 
         g_h.funcs->_h_get_semaphore(spi_trans_ready_sem, portMAX_DELAY); //Wait until slave is ready
-
-        g_h.funcs->_h_lock_mutex(mutex_spi_trans, portMAX_DELAY);
         check_and_execute_spi_transaction();
-        g_h.funcs->_h_unlock_mutex(mutex_spi_trans);
     }
 }
 
@@ -489,7 +485,7 @@ static void spi_process_rx(interface_buffer_handle_t *buf_handle)
 #if SEPERATE_SPI_RX_TASK
 
 #endif
-		ESP_LOG_BUFFER_HEXDUMP(TAG, buf_handle->payload, buf_handle->payload_len, ESP_LOG_VERBOSE);
+		ESP_LOG_BUFFER_HEXDUMP(TAG, buf_handle->payload, buf_handle->payload_len, ESP_LOG_DEBUG);
 
 		//payload = buf_handle.payload;
 
@@ -584,7 +580,7 @@ static uint8_t * get_tx_buffer(uint8_t *is_valid_tx_buf, void (**free_func)(void
 
 	if (len) {
 
-		ESP_LOG_BUFFER_HEXDUMP(TAG, buf_handle.payload, buf_handle.payload_len, ESP_LOG_VERBOSE);
+		ESP_LOG_BUFFER_HEXDUMP(TAG, buf_handle.payload, buf_handle.payload_len, ESP_LOG_DEBUG);
 
 		if (!buf_handle.payload_zcopy) {
 			sendbuf = spi_buffer_alloc(MEMSET_REQUIRED);
@@ -617,8 +613,9 @@ static uint8_t * get_tx_buffer(uint8_t *is_valid_tx_buf, void (**free_func)(void
 		if (!buf_handle.payload_zcopy)
 			g_h.funcs->_h_memcpy(payload, buf_handle.payload, min(len, MAX_PAYLOAD_SIZE));
 
+		//TODO: checksum should be configurable from menuconfig
 		payload_header->checksum = htole16(compute_checksum(sendbuf,
-				sizeof(struct esp_payload_header)+len));;
+				sizeof(struct esp_payload_header)+len));
 	}
 
 done:

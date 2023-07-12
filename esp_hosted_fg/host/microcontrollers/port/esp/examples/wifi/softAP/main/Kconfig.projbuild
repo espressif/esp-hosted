@@ -283,6 +283,23 @@ ESP32XX_SPI_CLK_FREQ_RANGE_MAX := 60
 			default y
 			help
 				Cache allocated memory - reduces number of malloc calls
+
+		config ESP_RAW_THROUGHPUT_TRANSPORT
+			bool "RawTP: Transport level throughput debug test"
+			default n
+				help
+					Find max transport performance which helps to assess stability of porting done
+
+		config ESP_RAW_TP_HOST_TO_ESP_PKT_LEN
+			depends on ESP_RAW_THROUGHPUT_TRANSPORT
+			int "RawTP: Host to ESP packet size"
+			range 1 1500
+			default 1460
+
+		config ESP_RAW_TP_REPORT_INTERVAL
+			depends on ESP_RAW_THROUGHPUT_TRANSPORT
+			int "RawTP: periodic duration to report stats accumulated"
+			default 30
 	endmenu
 
 endmenu

@@ -51,6 +51,7 @@
 static const char TAG[] = "NETWORK_ADAPTER";
 
 
+//#define BYPASS_TX_PRIORITY_Q 1
 #ifdef CONFIG_FREERTOS_GENERATE_RUN_TIME_STATS
 #define STATS_TICKS                      pdMS_TO_TICKS(1000*2)
 #define ARRAY_SIZE_OFFSET                5
@@ -59,7 +60,7 @@ static const char TAG[] = "NETWORK_ADAPTER";
 #define UNKNOWN_RPC_MSG_ID              0
 
 #if CONFIG_ESP_SPI_HOST_INTERFACE
-  #if defined(CONFIG_IDF_TARGET_ESP32S2) || defined(CONFIG_IDF_TARGET_ESP32C2)
+  #ifdef CONFIG_IDF_TARGET_ESP32S2
     #define TO_HOST_QUEUE_SIZE           5
   #else
     #define TO_HOST_QUEUE_SIZE           20
@@ -355,7 +356,7 @@ void process_rx_pkt(interface_buffer_handle_t *buf_handle)
 		process_hci_rx_pkt(payload, payload_len);
 	}
 #endif
-#if TEST_RAW_TP && TEST_RAW_TP__HOST_TO_ESP
+#if TEST_RAW_TP
 	else if (buf_handle->if_type == ESP_TEST_IF) {
 		debug_update_raw_tp_rx_count(payload_len);
 	}
@@ -410,6 +411,10 @@ static ssize_t serial_read_data(uint8_t *data, ssize_t len)
 
 int send_to_host_queue(interface_buffer_handle_t *buf_handle, uint8_t queue_type)
 {
+#if BYPASS_TX_PRIORITY_Q
+	process_tx_pkt(buf_handle);
+	return ESP_OK;
+#else
 	int ret = xQueueSend(to_host_queue[queue_type], buf_handle, portMAX_DELAY);
 	if (ret != pdTRUE) {
 		ESP_LOGE(TAG, "Failed to send buffer into queue[%u]\n",queue_type);
@@ -426,6 +431,7 @@ int send_to_host_queue(interface_buffer_handle_t *buf_handle, uint8_t queue_type
 	}
 
 	return ESP_OK;
+#endif
 }
 
 static esp_err_t serial_write_data(uint8_t* data, ssize_t len)
@@ -609,6 +615,31 @@ void task_runtime_stats_task(void* pvParameters)
 }
 #endif
 
+static void IRAM_ATTR gpio_resetpin_isr_handler(void* arg)
+{
+    ESP_EARLY_LOGI(TAG, "Host triggered slave reset");
+	esp_restart();
+}
+
+static void register_reset_pin(uint32_t gpio_num)
+{
+	if (gpio_num != -1) {
+	gpio_reset_pin(gpio_num);
+
+    gpio_config_t slave_reset_pin_conf={
+        .intr_type=GPIO_INTR_DISABLE,
+        .mode=GPIO_MODE_INPUT,
+        .pull_up_en=1,
+        .pin_bit_mask=(1<<gpio_num)
+    };
+
+    gpio_config(&slave_reset_pin_conf);
+    gpio_set_intr_type(gpio_num, GPIO_INTR_NEGEDGE);
+    gpio_install_isr_service(0);
+    gpio_isr_handler_add(gpio_num, gpio_resetpin_isr_handler, NULL);
+	}
+}
+
 void app_main()
 {
 	esp_err_t ret;
@@ -618,6 +649,7 @@ void app_main()
 	uint8_t mac[BSSID_BYTES_SIZE] = {0};
 #endif
 	print_firmware_version();
+	register_reset_pin(CONFIG_ESP_SPI_GPIO_RESET);
 
 	capa = get_capabilities();
 

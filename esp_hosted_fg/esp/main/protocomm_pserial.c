@@ -323,7 +323,7 @@ esp_err_t protocomm_pserial_start(protocomm_t *pc,
 
 	pc->priv = pserial_cfg;
 
-	xTaskCreate(pserial_task, "pserial_task", 4096,
+	xTaskCreate(pserial_task, "pserial_task", 1024*5,
 			(void *) pc, CONFIG_ESP_DEFAULT_TASK_PRIO, NULL);
 
 	return ESP_OK;

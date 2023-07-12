@@ -60,7 +60,7 @@
 #define RPC_TASK_STACK_SIZE           (3584 + TASK_EXTRA_STACK_SIZE)
 #define RPC_TASK_PRIO                 (ESP_TASK_PRIO_MIN + 2)
 
-#define DFLT_TASK_STACK_SIZE          2048
+#define DFLT_TASK_STACK_SIZE          (1024*3)
 #define DFLT_TASK_PRIO                (ESP_TASK_PRIO_MIN + 2)
 
 #endif
