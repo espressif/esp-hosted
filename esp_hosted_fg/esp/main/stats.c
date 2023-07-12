@@ -187,7 +187,6 @@ static void raw_tp_tx_task(void* pvParameters)
 		test_raw_tp_tx_len += (TEST_RAW_TP__BUF_SIZE);
 	}
 }
-#endif
 
 #if TEST_RAW_TP || ESP_PKT_STATS
 
