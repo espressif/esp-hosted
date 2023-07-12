@@ -38,14 +38,9 @@
  * 2. TEST_RAW_TP
  *    These are debug stats which show the raw throughput
  *    performance of transport like SPI or SDIO
- *    (a) TEST_RAW_TP__ESP_TO_HOST
  *    When this enabled, it will measure throughput will be measured from ESP to Host
- *    using raw packets. The intention is to check the maximum transport capacity.
- *
- *
- *    (b) TEST_RAW_TP__HOST_TO_ESP
- *    This is opposite of TEST_RAW_TP__ESP_TO_HOST.
- *    It measures throughput of transport from host to ESP
+ *    and Host to ESP throughput using raw packets.
+ *    The intention is to check the maximum transport capacity.
  *
  *    These tests do not replace iperf stats as iperf operates in network layer.
  *    To tune the packet size, use TEST_RAW_TP__BUF_SIZE
@@ -78,17 +73,6 @@ void debug_runtime_stats_task(void* pvParameters);
  * i.e. ESP to Host OR
  * Host to ESP
  */
-#ifdef CONFIG_ESP_RAW_TP_ESP_TO_HOST
-#define TEST_RAW_TP__ESP_TO_HOST     1
-#endif
-
-#ifdef CONFIG_ESP_RAW_TP_HOST_TO_ESP
-#define TEST_RAW_TP__HOST_TO_ESP     1
-#endif
-
-#if CONFIG_ESP_RAW_TP_ESP_TO_HOST && CONFIG_ESP_RAW_TP_HOST_TO_ESP
-#error "Only one Direction supported"
-#endif
 
 /* You can optimize this value to understand the behaviour for smaller packet size
  * Intention of Raw throughout test is to assess the transport stability.
@@ -97,13 +81,12 @@ void debug_runtime_stats_task(void* pvParameters);
  * to change TEST_RAW_TP__BUF_SIZE as:
  *
  * UDP : Max unfragmented packet size: 1472.
- * H_ESP_PAYLOAD_HEADER_OFFSET is already added into the calulations.
- * Max TEST_RAW_TP__BUF_SIZE = 1472 - H_ESP_PAYLOAD_HEADER_OFFSET = 1472 - 12 = 1460
+ * H_ESP_PAYLOAD_HEADER_OFFSET is not included into the calulations.
  *
  * TCP: Assess MSS and decide similar to above
  */
-#define TEST_RAW_TP__BUF_SIZE        (MAX_TRANSPORT_BUF_SIZE-H_ESP_PAYLOAD_HEADER_OFFSET)
-#define TEST_RAW_TP__TIMEOUT         SEC_TO_USEC(1)
+#define TEST_RAW_TP__BUF_SIZE        CONFIG_ESP_RAW_TP_ESP_TO_HOST_PKT_LEN
+#define TEST_RAW_TP__TIMEOUT         SEC_TO_USEC(CONFIG_ESP_RAW_TP_REPORT_INTERVAL)
 
 typedef struct {
 	esp_timer_handle_t timer;

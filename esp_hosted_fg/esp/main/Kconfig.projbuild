@@ -239,25 +239,21 @@ menu "Example Configuration"
 		help
 			Enable/disable sleeps while OTA operations
 
-	menu "Raw Transport throughout"
+	config ESP_RAW_THROUGHPUT_TRANSPORT
+		bool "RawTP: Transport level throughput debug test"
+		default n
+			help
+				Find max transport performance which helps to assess stability of porting done
 
-		config ESP_RAW_THROUGHPUT_TRANSPORT
-			bool "Transport level throughput debug test"
-			default 0
-				help
-					Find max transport performance which helps to assess stability of porting done
+	config ESP_RAW_TP_ESP_TO_HOST_PKT_LEN
+		depends on ESP_RAW_THROUGHPUT_TRANSPORT
+		int "RawTP: ESP to Host packet size"
+		range 1 1500
+		default 1460
 
-		choice ESP_RAW_TP_DIRECTION
-			depends on ESP_RAW_THROUGHPUT_TRANSPORT
-			bool "RawTP direction"
-
-			config ESP_RAW_TP_ESP_TO_HOST
-				bool "RawTP ESP --> Host"
-
-			config ESP_RAW_TP_HOST_TO_ESP
-				bool "RawTP ESP <-- Host"
-		endchoice
-
-	endmenu
+	config ESP_RAW_TP_REPORT_INTERVAL
+		depends on ESP_RAW_THROUGHPUT_TRANSPORT
+		int "RawTP: periodic duration to report stats accumulated"
+		default 1
 
 endmenu

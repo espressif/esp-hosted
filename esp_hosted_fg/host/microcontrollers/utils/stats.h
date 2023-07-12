@@ -35,7 +35,7 @@ extern "C" {
  *    This is opposite of TEST_RAW_TP__ESP_TO_HOST. when (a) TEST_RAW_TP__ESP_TO_HOST
  *    is disabled, it will automatically mean throughput to be measured from host to ESP
  */
-#define TEST_RAW_TP                    0
+#define TEST_RAW_TP                    CONFIG_ESP_RAW_THROUGHPUT_TRANSPORT
 
 
 /* TEST_RAW_TP is disabled on production.
@@ -58,7 +58,7 @@ extern "C" {
 #define TEST_RAW_TP__ESP_TO_HOST     1
 #define TEST_RAW_TP__HOST_TO_ESP     !TEST_RAW_TP__ESP_TO_HOST
 #endif
-#define TEST_RAW_TP__TIMEOUT         30
+#define TEST_RAW_TP__TIMEOUT         CONFIG_ESP_RAW_TP_REPORT_INTERVAL
 
 void update_test_raw_tp_rx_len(uint16_t len);
 void process_test_capabilities(uint8_t cap);
@@ -70,14 +70,10 @@ void process_test_capabilities(uint8_t cap);
  * relevance with max transport speed, Plz lower this value to
  * UDP: 1460 - H_ESP_PAYLOAD_HEADER_OFFSET = 1460-12=1448
  * TCP: Find MSS in nodes
- * H_ESP_PAYLOAD_HEADER_OFFSET is header size,
- * which we are incrementing already in calculations
+ * H_ESP_PAYLOAD_HEADER_OFFSET is header size, which is not included in calcs
  */
-#define TEST_RAW_TP__BUF_SIZE    (MAX_TRANSPORT_BUFFER_SIZE-H_ESP_PAYLOAD_HEADER_OFFSET)
+#define TEST_RAW_TP__BUF_SIZE    CONFIG_ESP_RAW_TP_HOST_TO_ESP_PKT_LEN
 
-
-#define ESP_TEST_RAW_TP__RX      0
-#define ESP_TEST_RAW_TP__TX      1
 
 #endif
 
