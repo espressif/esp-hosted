@@ -61,7 +61,7 @@ static const char TAG[] = "NETWORK_ADAPTER";
 #define UNKNOWN_RPC_MSG_ID              0
 
 #if CONFIG_ESP_SPI_HOST_INTERFACE
-  #if defined(CONFIG_IDF_TARGET_ESP32S2) || defined(CONFIG_IDF_TARGET_ESP32C2)
+  #ifdef CONFIG_IDF_TARGET_ESP32S2
     #define TO_HOST_QUEUE_SIZE           5
   #else
     #define TO_HOST_QUEUE_SIZE           20
