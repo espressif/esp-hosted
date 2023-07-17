@@ -236,7 +236,7 @@ static int process_spi_rx_buf(uint8_t * rxbuff)
         goto done;
 
     } else {
-        //rx_checksum = le16toh(payload_header->checksum);
+        rx_checksum = le16toh(payload_header->checksum);
         payload_header->checksum = 0;
 
         checksum = compute_checksum(rxbuff, len+offset);
