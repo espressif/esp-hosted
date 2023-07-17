@@ -350,6 +350,10 @@ static int process_spi_rx(interface_buffer_handle_t *buf_handle)
 	buf_handle->payload_len = le16toh(header->len) + offset;
 	buf_handle->priv_buffer_handle = buf_handle->payload;
 
+#if ESP_PKT_STATS
+	if (buf_handle->if_type == ESP_STA_IF)
+		pkt_stats.sta_rx_in++;
+#endif
 	if (header->if_type == ESP_SERIAL_IF) {
 		ret = xQueueSend(spi_rx_queue[PRIO_Q_SERIAL], buf_handle, portMAX_DELAY);
 	} else if (header->if_type == ESP_HCI_IF) {
@@ -429,6 +433,12 @@ static void spi_transaction_post_process_task(void* pvParameters)
 			ESP_LOGW(TAG , "spi_trans fetched NULL\n");
 			continue;
 		}
+#if ESP_PKT_STATS
+		struct esp_payload_header *header =
+			(struct esp_payload_header *)spi_trans->tx_buffer;
+		if (header->if_type == ESP_STA_IF)
+				pkt_stats.sta_tx_out++;
+#endif
 
 		/* Free any tx buffer, data is not relevant anymore */
 		spi_buffer_free((void *)spi_trans->tx_buffer);

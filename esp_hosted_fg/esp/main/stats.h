@@ -47,6 +47,10 @@
  */
 #define TEST_RAW_TP                    CONFIG_ESP_RAW_THROUGHPUT_TRANSPORT
 
+#ifdef CONFIG_ESP_PKT_STATS
+#define ESP_PKT_STATS 1
+#endif
+
 #ifdef CONFIG_FREERTOS_GENERATE_RUN_TIME_STATS
   /* Stats to show task wise CPU utilization */
   #define STATS_TICKS                  pdMS_TO_TICKS(1000*2)
@@ -63,10 +67,19 @@ void debug_runtime_stats_task(void* pvParameters);
  * at a time
  */
 
-#if TEST_RAW_TP
-
+#if TEST_RAW_TP || ESP_PKT_STATS
 #include "esp_timer.h"
 #include "interface.h"
+
+typedef struct {
+	esp_timer_handle_t timer;
+	size_t cur_interval;
+	int64_t t_start;
+	SemaphoreHandle_t done;
+} test_args_t;
+#endif
+
+#if TEST_RAW_TP
 
 /* Raw throughput is supported only one direction
  * at a time
@@ -86,20 +99,24 @@ void debug_runtime_stats_task(void* pvParameters);
  * TCP: Assess MSS and decide similar to above
  */
 #define TEST_RAW_TP__BUF_SIZE        CONFIG_ESP_RAW_TP_ESP_TO_HOST_PKT_LEN
-#define TEST_RAW_TP__TIMEOUT         SEC_TO_USEC(CONFIG_ESP_RAW_TP_REPORT_INTERVAL)
+#define TEST_RAW_TP__TIMEOUT         CONFIG_ESP_RAW_TP_REPORT_INTERVAL
 
-typedef struct {
-	esp_timer_handle_t timer;
-	size_t cur_interval;
-	int64_t t_start;
-	SemaphoreHandle_t done;
-} test_args_t;
 
 void debug_update_raw_tp_rx_count(uint16_t len);
+#endif
+
+#if ESP_PKT_STATS
+struct pkt_stats_t {
+	uint32_t sta_tx_in;
+	uint32_t sta_tx_out;
+	uint32_t sta_rx_in;
+	uint32_t sta_rx_out;
+};
+
+extern struct pkt_stats_t pkt_stats;
 #endif
 
 
 void create_debugging_tasks(void);
 uint8_t debug_get_raw_tp_conf(void);
-void debug_set_wifi_logging(void);
 #endif  /*__STATS__H__*/

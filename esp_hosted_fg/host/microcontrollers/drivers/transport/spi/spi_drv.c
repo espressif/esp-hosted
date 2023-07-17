@@ -236,12 +236,12 @@ static int process_spi_rx_buf(uint8_t * rxbuff)
         goto done;
 
     } else {
-        //rx_checksum = le16toh(payload_header->checksum);
+        rx_checksum = le16toh(payload_header->checksum);
         payload_header->checksum = 0;
 
-        //checksum = compute_checksum(rxbuff, len+offset);
+        checksum = compute_checksum(rxbuff, len+offset);
 		//TODO: checksum is disabled here, need to be configurable from menuconfig
-        checksum = rx_checksum = 0;
+        //checksum = rx_checksum = 0;
         ESP_LOGV(TAG, "rcvd_crc[%u], exp_crc[%u]\n",checksum, rx_checksum);
         if (checksum == rx_checksum) {
             buf_handle.priv_buffer_handle = rxbuff;
@@ -258,6 +258,10 @@ static int process_spi_rx_buf(uint8_t * rxbuff)
             	(buf_handle.if_type == ESP_AP_IF))
             	buf_handle.payload_zcopy = 1;
 #endif
+#endif
+#if ESP_PKT_STATS
+			if (buf_handle.if_type == ESP_STA_IF)
+				pkt_stats.sta_rx_in++;
 #endif
 #if SEPERATE_SPI_RX_TASK
             if (g_h.funcs->_h_queue_item(from_slave_queue,
@@ -347,6 +351,13 @@ static int check_and_execute_spi_transaction(void)
             spi_trans.tx_buf_size = MAX_SPI_BUFFER_SIZE;
             spi_trans.rx_buf = rxbuff;
 
+#if ESP_PKT_STATS
+				struct  esp_payload_header *payload_header =
+					(struct esp_payload_header *) txbuff;
+				if (payload_header->if_type == ESP_STA_IF)
+					pkt_stats.sta_tx_out++;
+#endif
+
 			/* Execute transaction only if EITHER holds true-
 			 * a. A valid tx buffer to be transmitted towards slave
 			 * b. Slave wants to send something (Rx for host)
@@ -420,6 +431,10 @@ int esp_hosted_tx(uint8_t iface_type, uint8_t iface_num,
 
 		return STM_FAIL;
 	}
+#if ESP_PKT_STATS
+	if (buf_handle.if_type == ESP_STA_IF)
+		pkt_stats.sta_tx_in++;
+#endif
 
 	g_h.funcs->_h_post_semaphore(spi_trans_ready_sem);
 
@@ -451,8 +466,8 @@ static void spi_transaction_task(void const* pvParameters)
          * on Either Data ready and Handshake pin
          */
 
-        g_h.funcs->_h_get_semaphore(spi_trans_ready_sem, portMAX_DELAY); //Wait until slave is ready
-        check_and_execute_spi_transaction();
+        if (!g_h.funcs->_h_get_semaphore(spi_trans_ready_sem, portMAX_DELAY)) //Wait until slave is ready
+			check_and_execute_spi_transaction();
     }
 }
 
@@ -466,6 +481,7 @@ static void spi_process_rx_task(void const* pvParameters)
 {
 	interface_buffer_handle_t buf_handle_l = {0};
 	interface_buffer_handle_t *buf_handle = NULL;
+
 	while (1) {
 
 		if (g_h.funcs->_h_dequeue_item(from_slave_queue, &buf_handle_l, portMAX_DELAY)) {
@@ -477,15 +493,15 @@ static void spi_process_rx(interface_buffer_handle_t *buf_handle)
 {
 #endif
 
+	uint32_t netif_interface_type = 0;
 	//uint8_t *payload = NULL;
 	//struct pbuf *buffer = NULL;
 	struct esp_priv_event *event = NULL;
 	//struct esp_private *priv = NULL;
 
-#if SEPERATE_SPI_RX_TASK
-
-#endif
 		ESP_LOG_BUFFER_HEXDUMP(TAG, buf_handle->payload, buf_handle->payload_len, ESP_LOG_DEBUG);
+		/* Translate Hosted interface type to netif interface type */
+		netif_interface_type = buf_handle->if_type-1;
 
 		//payload = buf_handle.payload;
 
@@ -497,12 +513,16 @@ static void spi_process_rx(interface_buffer_handle_t *buf_handle)
 
 		} else if((buf_handle->if_type == ESP_STA_IF) ||
 				(buf_handle->if_type == ESP_AP_IF)) {
-			if (g_rxcb[buf_handle->if_type]) {
+			if (g_rxcb[netif_interface_type]) {
 				if (buf_handle->payload_zcopy)
-					g_rxcb[buf_handle->if_type](buf_handle->payload, buf_handle->payload_len, buf_handle->priv_buffer_handle);
+					g_rxcb[netif_interface_type](buf_handle->payload, buf_handle->payload_len, buf_handle->priv_buffer_handle);
 				else
-					g_rxcb[buf_handle->if_type](buf_handle->payload, buf_handle->payload_len, NULL);
+					g_rxcb[netif_interface_type](buf_handle->payload, buf_handle->payload_len, NULL);
 			}
+#if ESP_PKT_STATS
+			if (buf_handle->if_type == ESP_STA_IF)
+				pkt_stats.sta_rx_out++;
+#endif
 
 		} else if (buf_handle->if_type == ESP_PRIV_IF) {
 			process_priv_communication(buf_handle->payload, buf_handle->payload_len);

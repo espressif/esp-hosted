@@ -24,6 +24,14 @@
 #endif
 #include "esp_log.h"
 
+#if ESP_PKT_STATS
+struct pkt_stats_t pkt_stats;
+void *pkt_stats_thread = NULL;
+#endif
+
+#if ESP_PKT_STATS || TEST_RAW_TP
+DEFINE_LOG_TAG(stats);
+#endif
 
 /** Constants/Macros **/
 #define RAW_TP_TX_TASK_STACK_SIZE        2048
@@ -35,7 +43,6 @@
 /** Exported Functions **/
 
 #if TEST_RAW_TP
-DEFINE_LOG_TAG(stats);
 static int test_raw_tp = 0;
 static uint8_t log_raw_tp_stats_timer_running = 0;
 static uint32_t raw_tp_timer_count = 0;
@@ -131,7 +138,8 @@ static void process_raw_tp_flags(void)
 	test_raw_tp_cleanup();
 
 	if (test_raw_tp) {
-		hosted_timer_handler = g_h.funcs->_h_timer_start(TEST_RAW_TP__TIMEOUT, RPC__TIMER_PERIODIC, raw_tp_timer_func, NULL);
+		hosted_timer_handler = g_h.funcs->_h_timer_start(TEST_RAW_TP__TIMEOUT,
+				RPC__TIMER_PERIODIC, raw_tp_timer_func, NULL);
 		if (!hosted_timer_handler) {
 			ESP_LOGE(TAG, "Failed to create timer\n\r");
 			return;
@@ -176,3 +184,20 @@ void update_test_raw_tp_rx_len(uint16_t len)
 #if H_MEM_STATS
 struct mem_stats h_stats_g;
 #endif
+
+#if ESP_PKT_STATS
+void stats_timer_func(void * arg)
+{
+	ESP_LOGI(TAG, "slave: sta_rx_in: %lu sta_rx_out: %lu sta_tx_in: %lu sta_tx_out: %lu ",
+			pkt_stats.sta_rx_in,pkt_stats.sta_rx_out,
+			pkt_stats.sta_tx_in,pkt_stats.sta_tx_out);
+}
+#endif
+
+void create_debugging_tasks(void)
+{
+#if ESP_PKT_STATS
+		pkt_stats_thread = g_h.funcs->_h_timer_start(ESP_PKT_STATS_REPORT_INTERVAL,
+				RPC__TIMER_PERIODIC, stats_timer_func, NULL);
+#endif
+}

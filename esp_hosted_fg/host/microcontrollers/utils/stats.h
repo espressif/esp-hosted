@@ -77,6 +77,10 @@ void process_test_capabilities(uint8_t cap);
 
 #endif
 
+#ifdef CONFIG_ESP_PKT_STATS
+#define ESP_PKT_STATS 1
+#endif
+
 #if H_MEM_STATS
 struct mempool_stats
 {
@@ -113,8 +117,22 @@ struct mem_stats {
 
 extern struct mem_stats h_stats_g;
 #endif
+
+#if ESP_PKT_STATS
+#define ESP_PKT_STATS_REPORT_INTERVAL  10
+struct pkt_stats_t {
+	uint32_t sta_rx_in;
+	uint32_t sta_rx_out;
+	uint32_t sta_tx_in;
+	uint32_t sta_tx_out;
+};
+
+extern struct pkt_stats_t pkt_stats;
+#endif
 #ifdef __cplusplus
 }
 #endif
+
+void create_debugging_tasks(void);
 
 #endif

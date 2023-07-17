@@ -91,6 +91,7 @@ esp_err_t esp_hosted_init(void(*esp_hosted_up_cb)(void))
 		return ESP_FAIL;
 	}
 	register_wifi_event_callbacks();
+	create_debugging_tasks();
 
 	transport_esp_hosted_up_cb = esp_hosted_up_cb;
     return ESP_OK;

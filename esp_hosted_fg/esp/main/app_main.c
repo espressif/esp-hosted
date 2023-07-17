@@ -216,6 +216,10 @@ esp_err_t wlan_sta_rx_callback(void *buffer, uint16_t len, void *eb)
 	if (send_to_host_queue(&buf_handle, PRIO_Q_OTHERS))
 		goto DONE;
 
+#if ESP_PKT_STATS
+	pkt_stats.sta_tx_in++;
+#endif
+
 	return ESP_OK;
 
 DONE:
@@ -343,7 +347,12 @@ void process_rx_pkt(interface_buffer_handle_t *buf_handle)
 		/* Forward data to wlan driver */
 		ESP_LOGV(TAG, "STA Tx");
 		ESP_LOG_BUFFER_HEXDUMP("STA Tx", payload, payload_len, ESP_LOG_VERBOSE);
-		esp_wifi_internal_tx(ESP_IF_WIFI_STA, payload, payload_len);
+		if (ESP_OK == esp_wifi_internal_tx(ESP_IF_WIFI_STA, payload, payload_len)) {
+#if ESP_PKT_STATS
+			pkt_stats.sta_rx_out++;
+#endif
+		}
+
 		/*ESP_LOG_BUFFER_HEXDUMP("spi_sta_rx", payload, payload_len, ESP_LOG_INFO);*/
 	} else if (buf_handle->if_type == ESP_AP_IF && softap_started) {
 		/* Forward data to wlan driver */

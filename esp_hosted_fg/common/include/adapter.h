@@ -106,6 +106,7 @@ struct esp_payload_header {
 
 
 typedef enum {
+	ESP_DUMMY_IF,
 	ESP_STA_IF,
 	ESP_AP_IF,
 	ESP_SERIAL_IF,
