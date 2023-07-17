@@ -18,8 +18,13 @@
 #include <unistd.h>
 #include "esp_log.h"
 
-#if TEST_RAW_TP
+#if TEST_RAW_TP || ESP_PKT_STATS
 static const char TAG[] = "stats";
+#endif
+
+#if ESP_PKT_STATS
+#define ESP_PKT_STATS_REPORT_INTERVAL  10
+struct pkt_stats_t pkt_stats;
 #endif
 
 #ifdef CONFIG_FREERTOS_GENERATE_RUN_TIME_STATS
@@ -69,7 +74,7 @@ static esp_err_t log_real_time_stats(TickType_t xTicksToWait) {
         goto exit;
     }
 
-    printf("| Task | Run Time | Percentage\n");
+    ESP_LOGI(TAG,"| Task | Run Time | Percentage\n");
     /*Match each task in start_array to those in the end_array*/
     for (int i = 0; i < start_array_size; i++) {
         int k = -1;
@@ -86,19 +91,19 @@ static esp_err_t log_real_time_stats(TickType_t xTicksToWait) {
         if (k >= 0) {
             uint32_t task_elapsed_time = end_array[k].ulRunTimeCounter - start_array[i].ulRunTimeCounter;
             uint32_t percentage_time = (task_elapsed_time * 100UL) / (total_elapsed_time * portNUM_PROCESSORS);
-            printf("| %s | %d | %d%%\n", start_array[i].pcTaskName, task_elapsed_time, percentage_time);
+            ESP_LOGI(TAG,"| %s | %d | %d%%\n", start_array[i].pcTaskName, task_elapsed_time, percentage_time);
         }
     }
 
     /*Print unmatched tasks*/
     for (int i = 0; i < start_array_size; i++) {
         if (start_array[i].xHandle != NULL) {
-            printf("| %s | Deleted\n", start_array[i].pcTaskName);
+            ESP_LOGI(TAG,"| %s | Deleted\n", start_array[i].pcTaskName);
         }
     }
     for (int i = 0; i < end_array_size; i++) {
         if (end_array[i].xHandle != NULL) {
-            printf("| %s | Created\n", end_array[i].pcTaskName);
+            ESP_LOGI(TAG,"| %s | Created\n", end_array[i].pcTaskName);
         }
     }
     ret = ESP_OK;
@@ -113,11 +118,11 @@ exit:    /*Common return path*/
 
 static void log_runtime_stats_task(void* pvParameters) {
     while (1) {
-        printf("\n\nGetting real time stats over %d ticks\n", STATS_TICKS);
+        ESP_LOGI(TAG,"\n\nGetting real time stats over %d ticks\n", STATS_TICKS);
         if (log_real_time_stats(STATS_TICKS) == ESP_OK) {
-            printf("Real time stats obtained\n");
+            ESP_LOGI(TAG,"Real time stats obtained\n");
         } else {
-            printf("Error getting real time stats\n");
+            ESP_LOGE(TAG,"Error getting real time stats\n");
         }
         vTaskDelay(pdMS_TO_TICKS(1000*2));
     }
@@ -133,23 +138,6 @@ void debug_update_raw_tp_rx_count(uint16_t len)
 	test_raw_tp_rx_len += (len);
 }
 
-static void raw_tp_timer_func(void* arg)
-{
-	static int32_t cur = 0;
-	double actual_bandwidth_rx = 0;
-	double actual_bandwidth_tx = 0;
-	int32_t div = 1024;
-
-	actual_bandwidth_tx = (test_raw_tp_tx_len*8);
-	actual_bandwidth_rx = (test_raw_tp_rx_len*8);
-#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 0, 0)
-	printf("%lu-%lu sec       Rx: %.2f Tx: %.2f kbps\n\r", cur, cur + 1, actual_bandwidth_rx/div, actual_bandwidth_tx/div);
-#else
-	printf("%u-%u sec       Rx: %.2f Tx: %.2f kbps\n\r", cur, cur + 1, actual_bandwidth_rx/div, actual_bandwidth_tx/div);
-#endif
-	cur++;
-	test_raw_tp_rx_len = test_raw_tp_tx_len = 0;
-}
 
 extern volatile uint8_t datapath;
 static void raw_tp_tx_task(void* pvParameters)
@@ -191,20 +179,49 @@ static void raw_tp_tx_task(void* pvParameters)
 		ret = send_to_host_queue(&buf_handle, PRIO_Q_OTHERS);
 
 		if (ret) {
-			printf("Failed to send to queue\n");
+			ESP_LOGE(TAG,"Failed to send to queue\n");
 			continue;
 		}
 		test_raw_tp_tx_len += (TEST_RAW_TP__BUF_SIZE);
 		free(raw_tp_tx_buf);
 	}
 }
+#endif
 
-static void start_timer_to_display_raw_tp(void)
+#if TEST_RAW_TP || ESP_PKT_STATS
+
+static void stats_timer_func(void* arg)
+{
+#if TEST_RAW_TP
+	static int32_t cur = 0;
+	double actual_bandwidth_rx = 0;
+	double actual_bandwidth_tx = 0;
+	int32_t div = 1024;
+
+	actual_bandwidth_tx = (test_raw_tp_tx_len*8);
+	actual_bandwidth_rx = (test_raw_tp_rx_len*8);
+#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 0, 0)
+	ESP_LOGI(TAG,"%lu-%lu sec       Rx: %.2f Tx: %.2f kbps\n\r", cur, cur + 1, actual_bandwidth_rx/div, actual_bandwidth_tx/div);
+#else
+	ESP_LOGI(TAG,"%u-%u sec       Rx: %.2f Tx: %.2f kbps\n\r", cur, cur + 1, actual_bandwidth_rx/div, actual_bandwidth_tx/div);
+#endif
+	cur++;
+	test_raw_tp_rx_len = test_raw_tp_tx_len = 0;
+#endif
+#if ESP_PKT_STATS
+	ESP_LOGI(TAG, "slave: sta_rx_in: %lu sta_rx_out: %lu sta_tx_in: %lu sta_tx_out: %lu ",
+			pkt_stats.sta_rx_in,pkt_stats.sta_rx_out,
+			pkt_stats.sta_tx_in,pkt_stats.sta_tx_out);
+
+#endif
+}
+
+static void start_timer_to_display_stats(int periodic_time_sec)
 {
 	test_args_t args = {0};
 	esp_timer_handle_t raw_tp_timer = {0};
 	esp_timer_create_args_t create_args = {
-			.callback = &raw_tp_timer_func,
+			.callback = &stats_timer_func,
 			.arg = &args,
 			.name = "raw_tp_timer",
 	};
@@ -213,10 +230,10 @@ static void start_timer_to_display_raw_tp(void)
 
 	args.timer = raw_tp_timer;
 
-	ESP_ERROR_CHECK(esp_timer_start_periodic(raw_tp_timer, TEST_RAW_TP__TIMEOUT));
+	ESP_ERROR_CHECK(esp_timer_start_periodic(raw_tp_timer, SEC_TO_USEC(periodic_time_sec)));
 }
-
 #endif
+
 
 void create_debugging_tasks(void)
 {
@@ -227,10 +244,13 @@ void create_debugging_tasks(void)
 #endif
 
 #if TEST_RAW_TP
-	start_timer_to_display_raw_tp();
+	start_timer_to_display_stats(TEST_RAW_TP__TIMEOUT);
 	assert(xTaskCreate(raw_tp_tx_task , "raw_tp_tx_task",
 				CONFIG_ESP_DEFAULT_TASK_STACK_SIZE, NULL ,
 				CONFIG_ESP_DEFAULT_TASK_PRIO, NULL) == pdTRUE);
+#endif
+#if ESP_PKT_STATS
+	start_timer_to_display_stats(ESP_PKT_STATS_REPORT_INTERVAL);
 #endif
 }
 
@@ -243,48 +263,3 @@ uint8_t debug_get_raw_tp_conf(void) {
 	return raw_tp_cap;
 }
 
-void debug_set_wifi_logging(void) {
-    /* set WiFi log level and module */
-#if CONFIG_ESP32_WIFI_DEBUG_LOG_ENABLE
-    uint32_t g_wifi_log_level = WIFI_LOG_INFO;
-    uint32_t g_wifi_log_module = 0;
-    uint32_t g_wifi_log_submodule = 0;
-#if CONFIG_ESP32_WIFI_DEBUG_LOG_DEBUG
-    g_wifi_log_level = WIFI_LOG_DEBUG;
-#endif
-#if CONFIG_ESP32_WIFI_DEBUG_LOG_VERBOSE
-    g_wifi_log_level = WIFI_LOG_VERBOSE;
-#endif
-#if CONFIG_ESP32_WIFI_DEBUG_LOG_MODULE_ALL
-    g_wifi_log_module = WIFI_LOG_MODULE_ALL;
-#endif
-#if CONFIG_ESP32_WIFI_DEBUG_LOG_MODULE_WIFI
-    g_wifi_log_module = WIFI_LOG_MODULE_WIFI;
-#endif
-#if CONFIG_ESP32_WIFI_DEBUG_LOG_MODULE_COEX
-    g_wifi_log_module = WIFI_LOG_MODULE_COEX;
-#endif
-#if CONFIG_ESP32_WIFI_DEBUG_LOG_MODULE_MESH
-    g_wifi_log_module = WIFI_LOG_MODULE_MESH;
-#endif
-#if CONFIG_ESP32_WIFI_DEBUG_LOG_SUBMODULE_ALL
-    g_wifi_log_submodule |= WIFI_LOG_SUBMODULE_ALL;
-#endif
-#if CONFIG_ESP32_WIFI_DEBUG_LOG_SUBMODULE_INIT
-    g_wifi_log_submodule |= WIFI_LOG_SUBMODULE_INIT;
-#endif
-#if CONFIG_ESP32_WIFI_DEBUG_LOG_SUBMODULE_IOCTL
-    g_wifi_log_submodule |= WIFI_LOG_SUBMODULE_IOCTL;
-#endif
-#if CONFIG_ESP32_WIFI_DEBUG_LOG_SUBMODULE_CONN
-    g_wifi_log_submodule |= WIFI_LOG_SUBMODULE_CONN;
-#endif
-#if CONFIG_ESP32_WIFI_DEBUG_LOG_SUBMODULE_SCAN
-    g_wifi_log_submodule |= WIFI_LOG_SUBMODULE_SCAN;
-#endif
-    esp_wifi_internal_set_log_level(g_wifi_log_level);
-    esp_wifi_internal_set_log_mod(g_wifi_log_module, g_wifi_log_submodule, true);
-
-#endif /* CONFIG_ESP32_WIFI_DEBUG_LOG_ENABLE*/
-
-}

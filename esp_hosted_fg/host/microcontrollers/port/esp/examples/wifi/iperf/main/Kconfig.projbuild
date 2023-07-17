@@ -1,50 +1,5 @@
 menu "Example Configuration"
 
-	config ESP_WIFI_SSID
-		string "WiFi SSID"
-		default "myssid"
-		help
-			SSID (network name) for the example to connect to.
-
-	config ESP_WIFI_PASSWORD
-		string "WiFi Password"
-		default "mypassword"
-		help
-			WiFi password (WPA or WPA2) for the example to use.
-
-	config ESP_MAXIMUM_RETRY
-		int "Maximum retry"
-		default 5
-		help
-			Set the Maximum retry to avoid station reconnecting to the AP unlimited when the AP is really inexistent.
-
-	choice ESP_WIFI_SCAN_AUTH_MODE_THRESHOLD
-		prompt "WiFi Scan auth mode threshold"
-		default ESP_WIFI_AUTH_WPA2_PSK
-		help
-			The weakest authmode to accept in the scan mode.
-			This value defaults to ESP_WIFI_AUTH_WPA2_PSK incase password is present and ESP_WIFI_AUTH_OPEN is used.
-			Please select ESP_WIFI_AUTH_WEP/ESP_WIFI_AUTH_WPA_PSK incase AP is operating in WEP/WPA mode.
-
-		config ESP_WIFI_AUTH_OPEN
-			bool "OPEN"
-		config ESP_WIFI_AUTH_WEP
-			bool "WEP"
-		config ESP_WIFI_AUTH_WPA_PSK
-			bool "WPA PSK"
-		config ESP_WIFI_AUTH_WPA2_PSK
-			bool "WPA2 PSK"
-		config ESP_WIFI_AUTH_WPA_WPA2_PSK
-			bool "WPA/WPA2 PSK"
-		config ESP_WIFI_AUTH_WPA3_PSK
-			bool "WPA3 PSK"
-		config ESP_WIFI_AUTH_WPA2_WPA3_PSK
-			bool "WPA2/WPA3 PSK"
-		config ESP_WIFI_AUTH_WAPI_PSK
-			bool "WAPI PSK"
-	endchoice
-
-
 	menu "ESP-Hosted config"
 
 		choice ESP_HOST_INTERFACE
@@ -305,22 +260,31 @@ ESP32XX_SPI_CLK_FREQ_RANGE_MAX := 60
 			help
 				Cache allocated memory - reduces number of malloc calls
 
-		config ESP_RAW_THROUGHPUT_TRANSPORT
-			bool "RawTP: Transport level throughput debug test"
-			default n
+		menu "Hosted Debugging"
+			config ESP_RAW_THROUGHPUT_TRANSPORT
+				bool "RawTP: Transport level throughput debug test"
+				default n
+					help
+						Find max transport performance which helps to assess stability of porting done
+
+			config ESP_RAW_TP_HOST_TO_ESP_PKT_LEN
+				depends on ESP_RAW_THROUGHPUT_TRANSPORT
+				int "RawTP: Host to ESP packet size"
+				range 1 1500
+				default 1460
+
+			config ESP_RAW_TP_REPORT_INTERVAL
+				depends on ESP_RAW_THROUGHPUT_TRANSPORT
+				int "RawTP: periodic duration to report stats accumulated"
+				default 30
+
+			config ESP_PKT_STATS
+				bool "Transport level packet stats"
+				default n
 				help
-					Find max transport performance which helps to assess stability of porting done
+					On comparing with slave packet stats helps to understand any packet loss at hosted
 
-		config ESP_RAW_TP_HOST_TO_ESP_PKT_LEN
-			depends on ESP_RAW_THROUGHPUT_TRANSPORT
-			int "RawTP: Host to ESP packet size"
-			range 1 1500
-			default 1460
-
-		config ESP_RAW_TP_REPORT_INTERVAL
-			depends on ESP_RAW_THROUGHPUT_TRANSPORT
-			int "RawTP: periodic duration to report stats accumulated"
-			default 30
+		endmenu
 	endmenu
 
 endmenu

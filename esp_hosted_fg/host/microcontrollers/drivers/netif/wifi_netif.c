@@ -68,6 +68,8 @@ static void wifi_free(void *h, void* buffer)
 static inline esp_err_t l_wifi_transmit(void *h, void *buffer, size_t len)
 {
 	wifi_netif_driver_t driver = h;
+	/* Translate netif interface type to hosted interface type */
+	uint8_t hosted_if_type = driver->wifi_if+1;
 		/* Hosted Tx to Slave */
 
 	#if CONFIG_H_LOWER_MEMCOPY
@@ -80,15 +82,15 @@ static inline esp_err_t l_wifi_transmit(void *h, void *buffer, size_t len)
 #endif
 		/* Keep empty space for ESP payload header, will be filled later */
 		g_h.funcs->_h_memcpy(buf_copy+H_ESP_PAYLOAD_HEADER_OFFSET, buffer, len);
-		return esp_hosted_tx(driver->wifi_if, 0, buf_copy, len, H_BUFF_ZEROCOPY, g_h.funcs->_h_nw_free);
+		return esp_hosted_tx(hosted_if_type, 0, buf_copy, len, H_BUFF_ZEROCOPY, g_h.funcs->_h_nw_free);
 #else
-		return esp_hosted_tx(driver->wifi_if, 0, buffer, len, H_BUFF_ZEROCOPY, g_h.funcs->_h_nw_free);
+		return esp_hosted_tx(hosted_if_type, 0, buffer, len, H_BUFF_ZEROCOPY, g_h.funcs->_h_nw_free);
 #endif
 	#else
 		uint8_t * buf_copy = (uint8_t*)g_h.funcs->_h_calloc(1, len);
 			assert(buf_copy);
 			g_h.funcs->_h_memcpy(buf_copy, buffer, len);
-			return esp_hosted_tx(driver->wifi_if, 0, buf_copy, len, H_BUFF_NO_ZEROCOPY, H_DEFLT_FREE_FUNC);
+			return esp_hosted_tx(hosted_if_type, 0, buf_copy, len, H_BUFF_NO_ZEROCOPY, H_DEFLT_FREE_FUNC);
 	#endif
 }
 

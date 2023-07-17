@@ -1,21 +1,21 @@
 menu "Example Configuration"
 
-    choice ESP_HOST_INTERFACE
-        bool "Transport layer"
-        default ESP_SDIO_HOST_INTERFACE if IDF_TARGET_ESP32
-        default ESP_SPI_HOST_INTERFACE if IDF_TARGET_ESP32S2
-        default ESP_SPI_HOST_INTERFACE if IDF_TARGET_ESP32S3
-        default ESP_SPI_HOST_INTERFACE if IDF_TARGET_ESP32C2
-        default ESP_SPI_HOST_INTERFACE if IDF_TARGET_ESP32C3
-        default ESP_SPI_HOST_INTERFACE if IDF_TARGET_ESP32C6
-        help
-            Bus interface to be used for communication with the host
+	choice ESP_HOST_INTERFACE
+		bool "Transport layer"
+		default ESP_SDIO_HOST_INTERFACE if IDF_TARGET_ESP32
+		default ESP_SPI_HOST_INTERFACE if IDF_TARGET_ESP32S2
+		default ESP_SPI_HOST_INTERFACE if IDF_TARGET_ESP32S3
+		default ESP_SPI_HOST_INTERFACE if IDF_TARGET_ESP32C2
+		default ESP_SPI_HOST_INTERFACE if IDF_TARGET_ESP32C3
+		default ESP_SPI_HOST_INTERFACE if IDF_TARGET_ESP32C6
+		help
+			Bus interface to be used for communication with the host
 
-        config ESP_SDIO_HOST_INTERFACE
-            bool "SDIO interface"
-            depends on IDF_TARGET_ESP32 || IDF_TARGET_ESP32C6
-            help
-                Enable/Disable SDIO host interface
+		config ESP_SDIO_HOST_INTERFACE
+			bool "SDIO interface"
+			depends on IDF_TARGET_ESP32 || IDF_TARGET_ESP32C6
+			help
+				Enable/Disable SDIO host interface
 
 		config ESP_SPI_HOST_INTERFACE
 			bool "SPI interface"
@@ -249,21 +249,29 @@ menu "Example Configuration"
 		help
 			Enable/disable sleeps while OTA operations
 
-	config ESP_RAW_THROUGHPUT_TRANSPORT
-		bool "RawTP: Transport level throughput debug test"
-		default n
-			help
-				Find max transport performance which helps to assess stability of porting done
+	menu "Hosted Debugging"
+		config ESP_RAW_THROUGHPUT_TRANSPORT
+			bool "RawTP: Transport level throughput debug test"
+			default n
+				help
+					Find max transport performance which helps to assess stability of porting done
 
-	config ESP_RAW_TP_ESP_TO_HOST_PKT_LEN
-		depends on ESP_RAW_THROUGHPUT_TRANSPORT
-		int "RawTP: ESP to Host packet size"
-		range 1 1500
-		default 1460
+		config ESP_RAW_TP_ESP_TO_HOST_PKT_LEN
+			depends on ESP_RAW_THROUGHPUT_TRANSPORT
+			int "RawTP: ESP to Host packet size"
+			range 1 1500
+			default 1460
 
-	config ESP_RAW_TP_REPORT_INTERVAL
-		depends on ESP_RAW_THROUGHPUT_TRANSPORT
-		int "RawTP: periodic duration to report stats accumulated"
-		default 1
+		config ESP_RAW_TP_REPORT_INTERVAL
+			depends on ESP_RAW_THROUGHPUT_TRANSPORT
+			int "RawTP: periodic duration to report stats accumulated"
+			default 1
+
+			config ESP_PKT_STATS
+				bool "Transport level packet stats"
+				default n
+				help
+					On comparing with slave packet stats helps to understand any packet loss at hosted
+	endmenu
 
 endmenu
