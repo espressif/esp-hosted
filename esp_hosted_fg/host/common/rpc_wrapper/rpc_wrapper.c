@@ -604,12 +604,8 @@ int test_wifi_get_mac_addr(int mode, uint8_t *out_mac)
 	req.u.wifi_mac.mode = mode;
 	resp = wifi_get_mac(req);
 
-	ret = rpc_rsp_callback(resp);
-	if (ret) {
-		ESP_LOGE(TAG, "Failed response for mac\n\r");
-		return FAILURE;
-	} else {
-		if(!resp->u.wifi_mac.mac[0]) {
+	if (resp && resp->resp_event_status == SUCCESS) {
+		if(!strlen(resp->u.wifi_mac.mac)) {
 			ESP_LOGE(TAG, "NULL MAC returned\n\r");
 			return FAILURE;
 		}
@@ -618,9 +614,8 @@ int test_wifi_get_mac_addr(int mode, uint8_t *out_mac)
 		char mac_str[BSSID_LENGTH] = {0};
 		snprintf(mac_str,BSSID_LENGTH,MACSTR,MAC2STR(out_mac));
 		ESP_LOGV(TAG, "mac address is [%s] ", mac_str);
-
 	}
-	return SUCCESS;
+	return rpc_rsp_callback(resp);
 }
 
 int test_station_mode_get_mac_addr(uint8_t *mac)
