@@ -230,9 +230,30 @@ esp_err_t protocomm_pserial_data_ready(protocomm_t *pc,
 		return ESP_FAIL;
 	}
 
-	arg.msg_id = msg_id;
-	arg.len = len;
-	arg.data = in;
+	if ((msg_id > RPC_ID__Event_Base) &&
+		(msg_id < RPC_ID__Event_Max) &&
+		(msg_id != RPC_ID__Event_WifiEventNoArgs)) {
+		/* Events */
+		/* make a copy of incoming event data, as it might be cleared
+		 * by the time the event is removed from pserial_cfg->req_queue for processing */
+		/* Special case: don't malloc for Event_WifiEventNoArgs - no event data */
+		uint8_t *buf = NULL;
+		if (len) {
+			buf = (uint8_t *)malloc(len);
+			if (buf == NULL) {
+				ESP_LOGE(TAG,"%s Failed to allocate memory", __func__);
+				return ESP_FAIL;
+			}
+			memcpy(buf, in, len);
+		}
+		arg.msg_id = msg_id;
+		arg.len = len;
+		arg.data = buf;
+	} else {
+		arg.msg_id = msg_id;
+		arg.len = len;
+		arg.data = in;
+	}
 
 	if (xQueueSend(pserial_cfg->req_queue, &arg, portMAX_DELAY) != pdTRUE) {
 		ESP_LOGE(TAG, "Failed to indicate data ready");
@@ -276,6 +297,11 @@ static void pserial_task(void *params)
 			ret = rpc_evt_handler(pc, arg.data, arg.len, arg.msg_id);
 			if (ret)
 				ESP_LOGI(TAG, "protobuf rpc event handling failed %d\n", ret);
+			if (arg.msg_id != RPC_ID__Event_WifiEventNoArgs) {
+				// Free any allocated buffer for copied event data
+				if (arg.data)
+					free(arg.data);
+			}
 		} else {
 			/* Request */
 			buf = (uint8_t *) malloc(arg.len);

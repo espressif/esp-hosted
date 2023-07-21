@@ -180,6 +180,15 @@ typedef struct {
 } rpc_wifi_country_code;
 
 typedef struct {
+	uint8_t mac[6];
+	uint16_t aid;
+} rpc_wifi_ap_get_sta_aid;
+
+typedef struct {
+	int rssi;
+} rpc_wifi_sta_get_rssi;
+
+typedef struct {
 	/* event */
 	uint32_t hb_num;
 	/* Req */
@@ -242,6 +251,12 @@ typedef struct Ctrl_cmd_t {
 
 		wifi_country_t              wifi_country;
 
+		wifi_sta_list_t             wifi_ap_sta_list;
+
+		rpc_wifi_ap_get_sta_aid     wifi_ap_get_sta_aid;
+
+		rpc_wifi_sta_get_rssi       wifi_sta_get_rssi;
+
 		event_heartbeat_t           e_heartbeat;
 
 		event_station_disconn_t     e_sta_disconnected;
@@ -253,6 +268,10 @@ typedef struct Ctrl_cmd_t {
 		wifi_event_ap_stadisconnected_t e_wifi_ap_stadisconnected;
 
 		wifi_event_sta_scan_done_t   e_wifi_sta_scan_done;
+
+		wifi_event_sta_connected_t   e_wifi_sta_connected;
+
+		wifi_event_sta_disconnected_t e_wifi_sta_disconnected;
 	}u;
 
 	/* By default this callback is set to NULL.
@@ -468,6 +487,10 @@ ctrl_cmd_t * wifi_set_country_code(ctrl_cmd_t req);
 ctrl_cmd_t * wifi_get_country_code(ctrl_cmd_t req);
 ctrl_cmd_t * wifi_set_country(ctrl_cmd_t req);
 ctrl_cmd_t * wifi_get_country(ctrl_cmd_t req);
+ctrl_cmd_t * wifi_ap_get_sta_list(ctrl_cmd_t req);
+ctrl_cmd_t * wifi_ap_get_sta_aid(ctrl_cmd_t req);
+ctrl_cmd_t * wifi_sta_get_rssi(ctrl_cmd_t req);
+
 #if 0
 ctrl_cmd_t * wifi_set_protocol(ctrl_cmd_t req);
 ctrl_cmd_t * wifi_get_protocol(ctrl_cmd_t req);
