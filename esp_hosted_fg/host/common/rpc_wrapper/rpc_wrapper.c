@@ -592,7 +592,6 @@ int test_set_wifi_mode_none(void)
 
 int test_wifi_get_mac_addr(int mode, uint8_t *out_mac)
 {
-	int ret = SUCCESS;
 	ctrl_cmd_t *resp = NULL;
 
 	if (!out_mac)
@@ -605,7 +604,7 @@ int test_wifi_get_mac_addr(int mode, uint8_t *out_mac)
 	resp = wifi_get_mac(req);
 
 	if (resp && resp->resp_event_status == SUCCESS) {
-		if(!strlen(resp->u.wifi_mac.mac)) {
+		if(!strlen((char *)resp->u.wifi_mac.mac)) {
 			ESP_LOGE(TAG, "NULL MAC returned\n\r");
 			return FAILURE;
 		}

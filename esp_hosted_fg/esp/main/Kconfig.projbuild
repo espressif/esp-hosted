@@ -2,7 +2,7 @@ menu "Example Configuration"
 
 	choice ESP_HOST_INTERFACE
 		bool "Transport layer"
-		default ESP_SDIO_HOST_INTERFACE if IDF_TARGET_ESP32
+		default ESP_SPI_HOST_INTERFACE if IDF_TARGET_ESP32
 		default ESP_SPI_HOST_INTERFACE if IDF_TARGET_ESP32S2
 		default ESP_SPI_HOST_INTERFACE if IDF_TARGET_ESP32S3
 		default ESP_SPI_HOST_INTERFACE if IDF_TARGET_ESP32C2
@@ -10,12 +10,6 @@ menu "Example Configuration"
 		default ESP_SPI_HOST_INTERFACE if IDF_TARGET_ESP32C6
 		help
 			Bus interface to be used for communication with the host
-
-		config ESP_SDIO_HOST_INTERFACE
-			bool "SDIO interface"
-			depends on IDF_TARGET_ESP32 || IDF_TARGET_ESP32C6
-			help
-				Enable/Disable SDIO host interface
 
 		config ESP_SPI_HOST_INTERFACE
 			bool "SPI interface"
