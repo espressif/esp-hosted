@@ -139,6 +139,41 @@ int rpc_parse_evt(Rpc *rpc_msg, ctrl_cmd_t *app_ntfy)
 		p_a->number = p_c->scan_done->number;
 		p_a->scan_id = p_c->scan_done->scan_id;
 		break;
+	} case RPC_ID__Event_StaConnected: {
+		RPC_FAIL_ON_NULL(event_sta_connected);
+		RPC_FAIL_ON_NULL(event_sta_connected->sta_connected);
+		WifiEventStaConnected *p_c = rpc_msg->event_sta_connected->sta_connected;
+		wifi_event_sta_connected_t *p_a = &app_ntfy->u.e_wifi_sta_connected;
+		app_ntfy->resp_event_status = rpc_msg->event_sta_connected->resp;
+		if (SUCCESS == app_ntfy->resp_event_status) {
+			RPC_FAIL_ON_NULL_PRINT(p_c->ssid.data, "NULL SSID");
+			g_h.funcs->_h_memcpy(p_a->ssid, p_c->ssid.data, p_c->ssid.len);
+			p_a->ssid_len = p_c->ssid_len;
+			RPC_FAIL_ON_NULL_PRINT(p_c->bssid.data, "NULL BSSID");
+			g_h.funcs->_h_memcpy(p_a->bssid, p_c->bssid.data, p_c->bssid.len);
+			p_a->channel = p_c->channel;
+			p_a->authmode = p_c->authmode;
+			p_a->aid = p_c->aid;
+		}
+		p_a->wifi_event_id = rpc_msg->event_sta_connected->event_id;
+		break;
+	} case RPC_ID__Event_StaDisconnected: {
+		RPC_FAIL_ON_NULL(event_sta_disconnected);
+		RPC_FAIL_ON_NULL(event_sta_disconnected->sta_disconnected);
+		WifiEventStaDisconnected *p_c = rpc_msg->event_sta_disconnected->sta_disconnected;
+		wifi_event_sta_disconnected_t *p_a = &app_ntfy->u.e_wifi_sta_disconnected;
+		app_ntfy->resp_event_status = rpc_msg->event_sta_connected->resp;
+		if (SUCCESS == app_ntfy->resp_event_status) {
+			RPC_FAIL_ON_NULL_PRINT(p_c->ssid.data, "NULL SSID");
+			g_h.funcs->_h_memcpy(p_a->ssid, p_c->ssid.data, p_c->ssid.len);
+			p_a->ssid_len = p_c->ssid_len;
+			RPC_FAIL_ON_NULL_PRINT(p_c->bssid.data, "NULL BSSID");
+			g_h.funcs->_h_memcpy(p_a->bssid, p_c->bssid.data, p_c->bssid.len);
+			p_a->reason = p_c->reason;
+			p_a->rssi = p_c->rssi;
+		}
+		p_a->wifi_event_id = rpc_msg->event_sta_disconnected->event_id;
+		break;
 	} default: {
 		ESP_LOGE(TAG, "Invalid/unsupported event[%u] received\n",rpc_msg->msg_id);
 		goto fail_parse_rpc_msg;

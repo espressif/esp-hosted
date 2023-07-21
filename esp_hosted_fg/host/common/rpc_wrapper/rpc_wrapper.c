@@ -135,20 +135,23 @@ static int rpc_event_callback(ctrl_cmd_t * app_event)
 				g_h.funcs->_h_event_wifi_post(p_e->wifi_event_id, p_e, sizeof(wifi_event_ap_stadisconnected_t), HOSTED_BLOCK_MAX);
 			}
 			break;
+		} case RPC_ID__Event_StaConnected: {
+			ESP_LOGV(TAG, "%s App EVENT: Station mode: Connected",
+				get_timestamp(ts, MIN_TIMESTAMP_STR_SIZE));
+			wifi_event_sta_connected_t *p_e = &app_event->u.e_wifi_sta_connected;
+			g_h.funcs->_h_event_wifi_post(p_e->wifi_event_id, p_e, sizeof(wifi_event_sta_connected_t), HOSTED_BLOCK_MAX);
+			break;
+		} case RPC_ID__Event_StaDisconnected: {
+			ESP_LOGV(TAG, "%s App EVENT: Station mode: Disconnected",
+				get_timestamp(ts, MIN_TIMESTAMP_STR_SIZE));
+			wifi_event_sta_disconnected_t *p_e = &app_event->u.e_wifi_sta_disconnected;
+			g_h.funcs->_h_event_wifi_post(p_e->wifi_event_id, p_e, sizeof(wifi_event_sta_disconnected_t), HOSTED_BLOCK_MAX);
+			break;
 		} case RPC_ID__Event_WifiEventNoArgs: {
 			int wifi_event_id = app_event->u.e_wifi_simple.wifi_event_id;
 
 			switch (wifi_event_id) {
 
-			case WIFI_EVENT_STA_DISCONNECTED:
-				ESP_LOGV(TAG, "%s App EVENT: WiFi Event[%s]\n\r",
-					get_timestamp(ts, MIN_TIMESTAMP_STR_SIZE), "WIFI_EVENT_STA_DISCONNECTED");
-
-				break;
-			case WIFI_EVENT_STA_CONNECTED:
-				ESP_LOGV(TAG, "%s App EVENT: WiFi Event[%s]\n\r",
-					get_timestamp(ts, MIN_TIMESTAMP_STR_SIZE), "WIFI_EVENT_STA_CONNECTED");
-				break;
 			case WIFI_EVENT_STA_START:
 				ESP_LOGV(TAG, "%s App EVENT: WiFi Event[%s]\n\r",
 					get_timestamp(ts, MIN_TIMESTAMP_STR_SIZE), "WIFI_EVENT_STA_START");
@@ -296,6 +299,8 @@ int register_wifi_event_callbacks(void)
 		{ RPC_ID__Event_AP_StaDisconnected,        rpc_event_callback },
 		{ RPC_ID__Event_WifiEventNoArgs,           rpc_event_callback },
 		{ RPC_ID__Event_StaScanDone,               rpc_event_callback },
+		{ RPC_ID__Event_StaConnected,              rpc_event_callback },
+		{ RPC_ID__Event_StaDisconnected,           rpc_event_callback },
 	};
 
 	for (evt=0; evt<sizeof(events)/sizeof(event_callback_table_t); evt++) {
@@ -524,7 +529,10 @@ int rpc_rsp_callback(ctrl_cmd_t * app_resp)
 	case RPC_ID__Resp_WifiSetCountryCode:
 	case RPC_ID__Resp_WifiGetCountryCode:
 	case RPC_ID__Resp_WifiSetCountry:
-	case RPC_ID__Resp_WifiGetCountry: {
+	case RPC_ID__Resp_WifiGetCountry:
+	case RPC_ID__Resp_WifiApGetStaList:
+	case RPC_ID__Resp_WifiApGetStaAid:
+	case RPC_ID__Resp_WifiStaGetRssi: {
 		/* Intended fallthrough */
 		break;
 	} default: {
@@ -1435,6 +1443,70 @@ int test_wifi_get_country(wifi_country_t *country)
 	return rpc_rsp_callback(resp);
 }
 
+int test_wifi_ap_get_sta_list(wifi_sta_list_t *sta)
+{
+	/* implemented synchronous */
+	ctrl_cmd_t req = RPC_DEFAULT_REQ();
+	ctrl_cmd_t *resp = NULL;
+
+	if (!sta)
+		return FAILURE;
+
+	resp = wifi_ap_get_sta_list(req);
+	if (resp && resp->resp_event_status == SUCCESS) {
+		for (int i = 0; i < ESP_WIFI_MAX_CONN_NUM; i++) {
+			memcpy(sta->sta[i].mac, resp->u.wifi_ap_sta_list.sta[i].mac, 6);
+			sta->sta[i].rssi = resp->u.wifi_ap_sta_list.sta[i].rssi;
+			sta->sta[i].phy_11b = resp->u.wifi_ap_sta_list.sta[i].phy_11b;
+			sta->sta[i].phy_11g = resp->u.wifi_ap_sta_list.sta[i].phy_11g;
+			sta->sta[i].phy_11n = resp->u.wifi_ap_sta_list.sta[i].phy_11n;
+			sta->sta[i].phy_lr = resp->u.wifi_ap_sta_list.sta[i].phy_lr;
+			sta->sta[i].phy_11ax = resp->u.wifi_ap_sta_list.sta[i].phy_11ax;
+			sta->sta[i].is_mesh_child = resp->u.wifi_ap_sta_list.sta[i].is_mesh_child;
+			sta->sta[i].reserved = resp->u.wifi_ap_sta_list.sta[i].reserved;
+
+		}
+	}
+	sta->num = resp->u.wifi_ap_sta_list.num;
+
+	return rpc_rsp_callback(resp);
+}
+
+int test_wifi_ap_get_sta_aid(const uint8_t mac[6], uint16_t *aid)
+{
+	/* implemented synchronous */
+	ctrl_cmd_t req = RPC_DEFAULT_REQ();
+	ctrl_cmd_t *resp = NULL;
+
+	if (!mac || !aid)
+		return FAILURE;
+
+	memcpy(&req.u.wifi_ap_get_sta_aid.mac[0], &mac[0], MAC_SIZE_BYTES);
+
+	resp = wifi_ap_get_sta_aid(req);
+	if (resp && resp->resp_event_status == SUCCESS) {
+		*aid = resp->u.wifi_ap_get_sta_aid.aid;
+	}
+
+	return rpc_rsp_callback(resp);
+}
+
+int test_wifi_sta_get_rssi(int *rssi)
+{
+	/* implemented synchronous */
+	ctrl_cmd_t req = RPC_DEFAULT_REQ();
+	ctrl_cmd_t *resp = NULL;
+
+	if (!rssi)
+		return FAILURE;
+
+	resp = wifi_sta_get_rssi(req);
+	if (resp && resp->resp_event_status == SUCCESS) {
+		*rssi = resp->u.wifi_sta_get_rssi.rssi;
+	}
+
+	return rpc_rsp_callback(resp);
+}
 #if 0
 int test_wifi_set_protocol(wifi_interface_t ifx, uint8_t protocol_bitmap)
 {

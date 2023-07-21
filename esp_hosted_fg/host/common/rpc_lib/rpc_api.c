@@ -322,6 +322,24 @@ ctrl_cmd_t * wifi_get_country(ctrl_cmd_t req)
 	RPC_DECODE_RSP_IF_NOT_ASYNC();
 }
 
+ctrl_cmd_t * wifi_ap_get_sta_list(ctrl_cmd_t req)
+{
+	RPC_SEND_REQ(RPC_ID__Req_WifiApGetStaList);
+	RPC_DECODE_RSP_IF_NOT_ASYNC();
+}
+
+ctrl_cmd_t * wifi_ap_get_sta_aid(ctrl_cmd_t req)
+{
+	RPC_SEND_REQ(RPC_ID__Req_WifiApGetStaAid);
+	RPC_DECODE_RSP_IF_NOT_ASYNC();
+}
+
+ctrl_cmd_t * wifi_sta_get_rssi(ctrl_cmd_t req)
+{
+	RPC_SEND_REQ(RPC_ID__Req_WifiStaGetRssi);
+	RPC_DECODE_RSP_IF_NOT_ASYNC();
+}
+
 #if 0
 ctrl_cmd_t * wifi_set_protocol(ctrl_cmd_t req)
 {

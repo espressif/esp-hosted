@@ -76,7 +76,9 @@ int compose_rpc_req(Rpc *req, ctrl_cmd_t *app_req, uint8_t *failure_status)
 	case RPC_ID__Req_WifiGetMaxTxPower:
 	case RPC_ID__Req_WifiGetChannel:
 	case RPC_ID__Req_WifiGetCountryCode:
-	case RPC_ID__Req_WifiGetCountry: {
+	case RPC_ID__Req_WifiGetCountry:
+	case RPC_ID__Req_WifiApGetStaList:
+	case RPC_ID__Req_WifiStaGetRssi: {
 		/* Intentional fallthrough & empty */
 		break;
 #if 0
@@ -403,6 +405,35 @@ int compose_rpc_req(Rpc *req, ctrl_cmd_t *app_req, uint8_t *failure_status)
 			p_c_sta->sae_pwe_h2e = p_a_sta->sae_pwe_h2e;
 			p_c_sta->failure_retry_cnt = p_a_sta->failure_retry_cnt;
 
+			if (p_a_sta->he_dcm_set)
+				H_SET_BIT(WIFI_HE_STA_CONFIG_he_dcm_set_BIT, p_c_sta->he_bitmask);
+
+			// WIFI_HE_STA_CONFIG_he_dcm_max_constellation_tx is two bits wide
+			if (p_a_sta->he_dcm_max_constellation_tx)
+				p_c_sta->he_bitmask |= ((p_a_sta->he_dcm_max_constellation_tx & 0x03) << WIFI_HE_STA_CONFIG_he_dcm_max_constellation_tx_BITS);
+
+			// WIFI_HE_STA_CONFIG_he_dcm_max_constellation_rx is two bits wide
+			if (p_a_sta->he_dcm_max_constellation_rx)
+				p_c_sta->he_bitmask |= ((p_a_sta->he_dcm_max_constellation_rx & 0x03) << WIFI_HE_STA_CONFIG_he_dcm_max_constellation_rx_BITS);
+
+			if (p_a_sta->he_mcs9_enabled)
+				H_SET_BIT(WIFI_HE_STA_CONFIG_he_mcs9_enabled_BIT, p_c_sta->he_bitmask);
+
+			if (p_a_sta->he_su_beamformee_disabled)
+				H_SET_BIT(WIFI_HE_STA_CONFIG_he_su_beamformee_disabled_BIT, p_c_sta->he_bitmask);
+
+			if (p_a_sta->he_trig_su_bmforming_feedback_disabled)
+				H_SET_BIT(WIFI_HE_STA_CONFIG_he_trig_su_bmforming_feedback_disabled_BIT, p_c_sta->he_bitmask);
+
+			if (p_a_sta->he_trig_mu_bmforming_partial_feedback_disabled)
+				H_SET_BIT(WIFI_HE_STA_CONFIG_he_trig_mu_bmforming_partial_feedback_disabled_BIT, p_c_sta->he_bitmask);
+
+			if (p_a_sta->he_trig_cqi_feedback_disabled)
+				H_SET_BIT(WIFI_HE_STA_CONFIG_he_trig_cqi_feedback_disabled_BIT, p_c_sta->he_bitmask);
+
+			WIFI_HE_STA_SET_RESERVED_VAL(p_a_sta->he_reserved, p_c_sta->he_bitmask);
+
+			RPC_REQ_COPY_BYTES(p_c_sta->sae_h2e_identifier, p_a_sta->sae_h2e_identifier, SAE_H2E_IDENTIFIER_LEN);
 			break;
 		} case WIFI_IF_AP: {
 			req_payload->cfg->u_case = WIFI_CONFIG__U_AP;
@@ -518,6 +549,13 @@ int compose_rpc_req(Rpc *req, ctrl_cmd_t *app_req, uint8_t *failure_status)
 		req_payload->country->nchan        = app_req->u.wifi_country.nchan;
 		req_payload->country->max_tx_power = app_req->u.wifi_country.max_tx_power;
 		req_payload->country->policy       = app_req->u.wifi_country.policy;
+		break;
+	} case RPC_ID__Req_WifiApGetStaAid: {
+		RPC_ALLOC_ASSIGN(RpcReqWifiApGetStaAid, req_wifi_ap_get_sta_aid,
+				rpc__req__wifi_ap_get_sta_aid__init);
+
+		uint8_t * p = &app_req->u.wifi_ap_get_sta_aid.mac[0];
+		RPC_REQ_COPY_BYTES(req_payload->mac, p, MAC_SIZE_BYTES);
 		break;
 	} default: {
 		*failure_status = RPC_ERR_UNSUPPORTED_MSG;

@@ -470,10 +470,10 @@ int rpc_parse_rsp(Rpc *rpc_msg, ctrl_cmd_t *app_resp)
 		p_a->number = rpc_msg->resp_wifi_scan_get_ap_records->number;
 
 		if (!p_a->number) {
-			ESP_LOGI(TAG, "No AP found\n\r");
+			ESP_LOGI(TAG, "No AP found");
 			goto fail_parse_rpc_msg2;
 		}
-		ESP_LOGI(TAG, "Num AP records: %u\n\r",
+		ESP_LOGD(TAG, "Num AP records: %u",
 				app_resp->u.wifi_scan_ap_list.number);
 
 		RPC_FAIL_ON_NULL(resp_wifi_scan_get_ap_records->ap_records);
@@ -487,14 +487,14 @@ int rpc_parse_rsp(Rpc *rpc_msg, ctrl_cmd_t *app_resp)
 		app_resp->app_free_buff_func = g_h.funcs->_h_free;
 		app_resp->app_free_buff_hdl = list;
 
-		ESP_LOGI(TAG, "Number of available APs is %d\n\r", p_a->number);
+		ESP_LOGD(TAG, "Number of available APs is %d", p_a->number);
 		for (i=0; i<p_a->number; i++) {
 
 			WifiCountry *p_c_cntry = p_c_list[i]->country;
 			wifi_country_t *p_a_cntry = &list[i].country;
 
-			ESP_LOGI(TAG, "\n\nap_record[%u]:\n", i+1);
-			ESP_LOGI(TAG, "ssid len: %u\n", p_c_list[i]->ssid.len);
+			ESP_LOGD(TAG, "ap_record[%u]:", i+1);
+			ESP_LOGD(TAG, "ssid len: %u", p_c_list[i]->ssid.len);
 			RPC_RSP_COPY_BYTES(list[i].ssid, p_c_list[i]->ssid);
 			RPC_RSP_COPY_BYTES(list[i].bssid, p_c_list[i]->bssid);
 			list[i].primary = p_c_list[i]->primary;
@@ -510,6 +510,7 @@ int rpc_parse_rsp(Rpc *rpc_msg, ctrl_cmd_t *app_resp)
 			list[i].phy_11g       = H_GET_BIT(WIFI_SCAN_AP_REC_phy_11g_BIT, p_c_list[i]->bitmask);
 			list[i].phy_11n       = H_GET_BIT(WIFI_SCAN_AP_REC_phy_11n_BIT, p_c_list[i]->bitmask);
 			list[i].phy_lr        = H_GET_BIT(WIFI_SCAN_AP_REC_phy_lr_BIT, p_c_list[i]->bitmask);
+			list[i].phy_11ax      = H_GET_BIT(WIFI_SCAN_AP_REC_phy_11ax_BIT, p_c_list[i]->bitmask);
 			list[i].wps           = H_GET_BIT(WIFI_SCAN_AP_REC_wps_BIT, p_c_list[i]->bitmask);
 			list[i].ftm_responder = H_GET_BIT(WIFI_SCAN_AP_REC_ftm_responder_BIT, p_c_list[i]->bitmask);
 			list[i].ftm_initiator = H_GET_BIT(WIFI_SCAN_AP_REC_ftm_initiator_BIT, p_c_list[i]->bitmask);
@@ -521,20 +522,34 @@ int rpc_parse_rsp(Rpc *rpc_msg, ctrl_cmd_t *app_resp)
 			p_a_cntry->max_tx_power = p_c_cntry->max_tx_power;
 			p_a_cntry->policy = p_c_cntry->policy;
 
-
-			ESP_LOGI(TAG, "Ssid: %s\nBssid: "MACSTR"\nPrimary: %u\nSecond: %u\nRssi: %d\nAuthmode: %u\nPairwiseCipher: %u\nGroupcipher: %u\nAnt: %u\nBitmask:11b:%u g:%u n:%u lr:%u wps:%u ftm_resp:%u ftm_ini:%u res: %u\n",
-					list[i].ssid, MAC2STR(list[i].bssid),
+			ESP_LOGD(TAG, "Ssid: %s Bssid: " MACSTR, list[i].ssid, MAC2STR(list[i].bssid));
+			ESP_LOGD(TAG, "Primary: %u Second: %u Rssi: %d Authmode: %u",
 					list[i].primary, list[i].second,
-					list[i].rssi, list[i].authmode,
+					list[i].rssi, list[i].authmode
+					);
+			ESP_LOGD(TAG, "PairwiseCipher: %u Groupcipher: %u Ant: %u",
 					list[i].pairwise_cipher, list[i].group_cipher,
-					list[i].ant, list[i].phy_11b, list[i].phy_11g,
-					list[i].phy_11n, list[i].phy_lr,
+					list[i].ant
+					);
+			ESP_LOGD(TAG, "Bitmask: 11b:%u g:%u n:%u ax: %u lr:%u wps:%u ftm_resp:%u ftm_ini:%u res: %u",
+					list[i].phy_11b, list[i].phy_11g,
+					list[i].phy_11n, list[i].phy_11ax, list[i].phy_lr,
 					list[i].wps, list[i].ftm_responder,
 					list[i].ftm_initiator, list[i].reserved
 					);
-			ESP_LOGI(TAG, "Country:\n  cc:%s schan: %u nchan: %u max_tx_pow: %d policy: %u\n",
-					p_a_cntry->cc, p_a_cntry->schan, p_a_cntry->nchan,
+			ESP_LOGD(TAG, "Country cc:%c%c schan: %u nchan: %u max_tx_pow: %d policy: %u",
+					p_a_cntry->cc[0], p_a_cntry->cc[1], p_a_cntry->schan, p_a_cntry->nchan,
 					p_a_cntry->max_tx_power,p_a_cntry->policy);
+
+			WifiHeApInfo *p_c_he_ap = p_c_list[i]->he_ap;
+			wifi_he_ap_info_t *p_a_he_ap = &list[i].he_ap;
+			// six bits
+			p_a_he_ap->bss_color = p_c_he_ap->bitmask & 0x3F;
+			p_a_he_ap->partial_bss_color = H_GET_BIT(WIFI_HE_AP_INFO_partial_bss_color_BIT, p_c_he_ap->bitmask);
+			p_a_he_ap->bss_color_disabled = H_GET_BIT(WIFI_HE_AP_INFO_bss_color_disabled_BIT, p_c_he_ap->bitmask);
+
+			ESP_LOGD(TAG, "HE_AP: bss_color %d, partial_bss_color %d, bss_color_disabled %d",
+					p_a_he_ap->bss_color, p_a_he_ap->bss_color_disabled, p_a_he_ap->bss_color_disabled);
 
 			//p_a_sta->rm_enabled = H_GET_BIT(STA_RM_ENABLED_BIT, p_c_sta->bitmask);
 		}
@@ -565,8 +580,8 @@ int rpc_parse_rsp(Rpc *rpc_msg, ctrl_cmd_t *app_resp)
 			WifiCountry *p_c_cntry = p_c->country;
 			wifi_country_t *p_a_cntry = &ap_info->country;
 
-			ESP_LOGI(TAG, "\n\nap_info\n");
-			ESP_LOGI(TAG,"ssid len: %u\n", p_c->ssid.len);
+			ESP_LOGI(TAG, "ap_info");
+			ESP_LOGI(TAG,"ssid len: %u", p_c->ssid.len);
 			RPC_RSP_COPY_BYTES(ap_info->ssid, p_c->ssid);
 			RPC_RSP_COPY_BYTES(ap_info->bssid, p_c->bssid);
 			ap_info->primary = p_c->primary;
@@ -582,6 +597,7 @@ int rpc_parse_rsp(Rpc *rpc_msg, ctrl_cmd_t *app_resp)
 			ap_info->phy_11g       = H_GET_BIT(WIFI_SCAN_AP_REC_phy_11g_BIT, p_c->bitmask);
 			ap_info->phy_11n       = H_GET_BIT(WIFI_SCAN_AP_REC_phy_11n_BIT, p_c->bitmask);
 			ap_info->phy_lr        = H_GET_BIT(WIFI_SCAN_AP_REC_phy_lr_BIT, p_c->bitmask);
+			ap_info->phy_11ax      = H_GET_BIT(WIFI_SCAN_AP_REC_phy_11ax_BIT, p_c->bitmask);
 			ap_info->wps           = H_GET_BIT(WIFI_SCAN_AP_REC_wps_BIT, p_c->bitmask);
 			ap_info->ftm_responder = H_GET_BIT(WIFI_SCAN_AP_REC_ftm_responder_BIT, p_c->bitmask);
 			ap_info->ftm_initiator = H_GET_BIT(WIFI_SCAN_AP_REC_ftm_initiator_BIT, p_c->bitmask);
@@ -597,19 +613,29 @@ int rpc_parse_rsp(Rpc *rpc_msg, ctrl_cmd_t *app_resp)
 			  ap_info->ssid, ap_info->bssid, ap_info->rssi,
 			  ap_info->channel, ap_info->authmode);*/
 
-			ESP_LOGI(TAG, "Ssid: %s\nBssid: "MACSTR"\nPrimary: %u\nSecond: %u\nRssi: %d\nAuthmode: %u\nPairwiseCipher: %u\nGroupcipher: %u\nAnt: %u\nBitmask:11b:%u g:%u n:%u lr:%u wps:%u ftm_resp:%u ftm_ini:%u res: %u\n",
-					ap_info->ssid, MAC2STR(ap_info->bssid),
+			printf("Ssid: %s, Bssid: " MACSTR "\n", ap_info->ssid, MAC2STR(ap_info->bssid));
+			printf("Primary: %u\nSecond: %u\nRssi: %d\nAuthmode: %u\nPairwiseCipher: %u\nGroupcipher: %u\nAnt: %u\nBitmask:11b:%u g:%u n:%u lr:%u ax:%u wps:%u ftm_resp:%u ftm_ini:%u res: %u\n",
 					ap_info->primary, ap_info->second,
 					ap_info->rssi, ap_info->authmode,
 					ap_info->pairwise_cipher, ap_info->group_cipher,
 					ap_info->ant, ap_info->phy_11b, ap_info->phy_11g,
-					ap_info->phy_11n, ap_info->phy_lr,
+					ap_info->phy_11n, ap_info->phy_11ax, ap_info->phy_lr,
 					ap_info->wps, ap_info->ftm_responder,
 					ap_info->ftm_initiator, ap_info->reserved
 					);
-			ESP_LOGI(TAG, "Country:\n  cc:%s schan: %u nchan: %u max_tx_pow: %d policy: %u\n",
-					p_a_cntry->cc, p_a_cntry->schan, p_a_cntry->nchan,
+			printf("Country cc:%c%c schan: %u nchan: %u max_tx_pow: %d policy: %u\n",
+					p_a_cntry->cc[0], p_a_cntry->cc[1], p_a_cntry->schan, p_a_cntry->nchan,
 					p_a_cntry->max_tx_power,p_a_cntry->policy);
+
+			WifiHeApInfo *p_c_he_ap = p_c->he_ap;
+			wifi_he_ap_info_t *p_a_he_ap = &ap_info->he_ap;
+			// six bits
+			p_a_he_ap->bss_color = p_c_he_ap->bitmask & 0x3F;
+			p_a_he_ap->partial_bss_color = H_GET_BIT(WIFI_HE_AP_INFO_partial_bss_color_BIT, p_c_he_ap->bitmask);
+			p_a_he_ap->bss_color_disabled = H_GET_BIT(WIFI_HE_AP_INFO_bss_color_disabled_BIT, p_c_he_ap->bitmask);
+
+			printf("HE_AP: bss_color %d, partial_bss_color %d, bss_color_disabled %d\n",
+					p_a_he_ap->bss_color, p_a_he_ap->bss_color_disabled, p_a_he_ap->bss_color_disabled);
 
 			//p_a_sta->rm_enabled = H_GET_BIT(STA_RM_ENABLED_BIT, p_c_sta->bitmask);
 		}
@@ -681,6 +707,48 @@ int rpc_parse_rsp(Rpc *rpc_msg, ctrl_cmd_t *app_resp)
 		app_resp->u.wifi_country.nchan        = rpc_msg->resp_wifi_get_country->country->nchan;
 		app_resp->u.wifi_country.max_tx_power = rpc_msg->resp_wifi_get_country->country->max_tx_power;
 		app_resp->u.wifi_country.policy       = rpc_msg->resp_wifi_get_country->country->policy;
+		break;
+	} case RPC_ID__Resp_WifiApGetStaList: {
+		RPC_FAIL_ON_NULL(resp_wifi_ap_get_sta_list);
+		RPC_ERR_IN_RESP(resp_wifi_ap_get_sta_list);
+
+		// handle case where slave's num is bigger than our ESP_WIFI_MAX_CONN_NUM
+		uint32_t num_stations = rpc_msg->resp_wifi_ap_get_sta_list->sta_list->num;
+		if (num_stations > ESP_WIFI_MAX_CONN_NUM) {
+			ESP_LOGI(TAG, "Warning: slave returned %ld connected stations, but we can only accept %d items", num_stations, ESP_WIFI_MAX_CONN_NUM);
+			num_stations = ESP_WIFI_MAX_CONN_NUM;
+		}
+
+		WifiStaInfo ** p_c_sta_list = rpc_msg->resp_wifi_ap_get_sta_list->sta_list->sta;
+
+		for (int i = 0; i < num_stations; i++) {
+			wifi_sta_info_t * p_a_sta = &app_resp->u.wifi_ap_sta_list.sta[i];
+
+			RPC_RSP_COPY_BYTES(p_a_sta->mac, p_c_sta_list[i]->mac);
+			p_a_sta->rssi = p_c_sta_list[i]->rssi;
+
+			p_a_sta->phy_11b = H_GET_BIT(WIFI_STA_INFO_phy_11b_BIT, p_c_sta_list[i]->bitmask);
+			p_a_sta->phy_11g = H_GET_BIT(WIFI_STA_INFO_phy_11g_BIT, p_c_sta_list[i]->bitmask);
+			p_a_sta->phy_11n = H_GET_BIT(WIFI_STA_INFO_phy_11n_BIT, p_c_sta_list[i]->bitmask);
+			p_a_sta->phy_lr = H_GET_BIT(WIFI_STA_INFO_phy_lr_BIT, p_c_sta_list[i]->bitmask);
+			p_a_sta->phy_11ax = H_GET_BIT(WIFI_STA_INFO_phy_11ax_BIT, p_c_sta_list[i]->bitmask);
+			p_a_sta->is_mesh_child = H_GET_BIT(WIFI_STA_INFO_is_mesh_child_BIT, p_c_sta_list[i]->bitmask);
+			p_a_sta->reserved = WIFI_STA_INFO_GET_RESERVED_VAL(p_c_sta_list[i]->bitmask);
+		}
+
+		app_resp->u.wifi_ap_sta_list.num = rpc_msg->resp_wifi_ap_get_sta_list->sta_list->num;
+		break;
+	} case RPC_ID__Resp_WifiApGetStaAid: {
+		RPC_FAIL_ON_NULL(resp_wifi_ap_get_sta_aid);
+		RPC_ERR_IN_RESP(resp_wifi_ap_get_sta_aid);
+
+		app_resp->u.wifi_ap_get_sta_aid.aid = rpc_msg->resp_wifi_ap_get_sta_aid->aid;
+		break;
+	} case RPC_ID__Resp_WifiStaGetRssi: {
+		RPC_FAIL_ON_NULL(resp_wifi_sta_get_rssi);
+		RPC_ERR_IN_RESP(resp_wifi_sta_get_rssi);
+
+		app_resp->u.wifi_sta_get_rssi.rssi = rpc_msg->resp_wifi_sta_get_rssi->rssi;
 		break;
 	} default: {
 		ESP_LOGE(TAG, "Unsupported rpc Resp[%u]\n", rpc_msg->msg_id);

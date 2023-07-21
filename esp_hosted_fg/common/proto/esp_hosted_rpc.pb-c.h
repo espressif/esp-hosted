@@ -20,6 +20,7 @@ typedef struct WifiCountry WifiCountry;
 typedef struct WifiActiveScanTime WifiActiveScanTime;
 typedef struct WifiScanTime WifiScanTime;
 typedef struct WifiScanConfig WifiScanConfig;
+typedef struct WifiHeApInfo WifiHeApInfo;
 typedef struct WifiApRecord WifiApRecord;
 typedef struct WifiScanThreshold WifiScanThreshold;
 typedef struct WifiPmfConfig WifiPmfConfig;
@@ -127,6 +128,12 @@ typedef struct RpcReqWifiSetCountry RpcReqWifiSetCountry;
 typedef struct RpcRespWifiSetCountry RpcRespWifiSetCountry;
 typedef struct RpcReqWifiGetCountry RpcReqWifiGetCountry;
 typedef struct RpcRespWifiGetCountry RpcRespWifiGetCountry;
+typedef struct RpcReqWifiApGetStaList RpcReqWifiApGetStaList;
+typedef struct RpcRespWifiApGetStaList RpcRespWifiApGetStaList;
+typedef struct RpcReqWifiApGetStaAid RpcReqWifiApGetStaAid;
+typedef struct RpcRespWifiApGetStaAid RpcRespWifiApGetStaAid;
+typedef struct RpcReqWifiStaGetRssi RpcReqWifiStaGetRssi;
+typedef struct RpcRespWifiStaGetRssi RpcRespWifiStaGetRssi;
 typedef struct RpcEventWifiEventNoArgs RpcEventWifiEventNoArgs;
 typedef struct RpcEventESPInit RpcEventESPInit;
 typedef struct RpcEventHeartbeat RpcEventHeartbeat;
@@ -134,6 +141,8 @@ typedef struct RpcEventStationDisconnectFromAP RpcEventStationDisconnectFromAP;
 typedef struct RpcEventAPStaDisconnected RpcEventAPStaDisconnected;
 typedef struct RpcEventAPStaConnected RpcEventAPStaConnected;
 typedef struct RpcEventStaScanDone RpcEventStaScanDone;
+typedef struct RpcEventStaConnected RpcEventStaConnected;
+typedef struct RpcEventStaDisconnected RpcEventStaDisconnected;
 typedef struct Rpc Rpc;
 
 
@@ -497,13 +506,17 @@ typedef enum _RpcId {
    */
   RPC_ID__Req_WifiSetDynamicCs = 340,
   /*
+   *0x155
+   */
+  RPC_ID__Req_WifiStaGetRssi = 341,
+  /*
    * Add new control path command response before Req_Max
    * and update Req_Max 
    */
   /*
-   *0x155
+   *0x156
    */
-  RPC_ID__Req_Max = 341,
+  RPC_ID__Req_Max = 342,
   /*
    ** Response Msgs *
    */
@@ -594,11 +607,12 @@ typedef enum _RpcId {
   RPC_ID__Resp_WifiStaGetAid = 594,
   RPC_ID__Resp_WifiStaGetNegotiatedPhymode = 595,
   RPC_ID__Resp_WifiSetDynamicCs = 596,
+  RPC_ID__Resp_WifiStaGetRssi = 597,
   /*
    * Add new control path command response before Resp_Max
    * and update Resp_Max 
    */
-  RPC_ID__Resp_Max = 597,
+  RPC_ID__Resp_Max = 598,
   /*
    ** Event Msgs *
    */
@@ -610,11 +624,13 @@ typedef enum _RpcId {
   RPC_ID__Event_AP_StaDisconnected = 773,
   RPC_ID__Event_WifiEventNoArgs = 774,
   RPC_ID__Event_StaScanDone = 775,
+  RPC_ID__Event_StaConnected = 776,
+  RPC_ID__Event_StaDisconnected = 777,
   /*
    * Add new control path command notification before Event_Max
    * and update Event_Max 
    */
-  RPC_ID__Event_Max = 776
+  RPC_ID__Event_Max = 778
     PROTOBUF_C__FORCE_ENUM_TO_BE_INT_SIZE(RPC_ID)
 } RpcId;
 
@@ -809,6 +825,28 @@ struct  WifiScanConfig
     , {0,NULL}, {0,NULL}, 0, 0, 0, NULL, 0 }
 
 
+struct  WifiHeApInfo
+{
+  ProtobufCMessage base;
+  /*
+   *uint8_t bss_color:6;                   **< an unsigned integer whose value is the BSS Color of the BSS corresponding to the AP * 
+   *uint8_t partial_bss_color:1;           **< indicate if an AID assignment rule based on the BSS color * 
+   *uint8_t bss_color_disabled:1;          **< indicate if the use of BSS color is disabled * 
+   */
+  /*
+   * Manually have to parse for above bits 
+   */
+  uint32_t bitmask;
+  /*
+   **< in M-BSSID set, identifies the nontransmitted BSSID 
+   */
+  uint32_t bssid_index;
+};
+#define WIFI_HE_AP_INFO__INIT \
+ { PROTOBUF_C_MESSAGE_INIT (&wifi_he_ap_info__descriptor) \
+    , 0, 0 }
+
+
 struct  WifiApRecord
 {
   ProtobufCMessage base;
@@ -866,10 +904,11 @@ struct  WifiApRecord
    **< country information of AP 
    */
   WifiCountry *country;
+  WifiHeApInfo *he_ap;
 };
 #define WIFI_AP_RECORD__INIT \
  { PROTOBUF_C_MESSAGE_INIT (&wifi_ap_record__descriptor) \
-    , {0,NULL}, {0,NULL}, 0, 0, 0, 0, 0, 0, 0, 0, NULL }
+    , {0,NULL}, {0,NULL}, 0, 0, 0, 0, 0, 0, 0, 0, NULL, NULL }
 
 
 struct  WifiScanThreshold
@@ -958,10 +997,14 @@ struct  WifiApConfig
    **< Configuration for Protected Management Frame 
    */
   WifiPmfConfig *pmf_cfg;
+  /*
+   **< Configuration for SAE PWE derivation method 
+   */
+  int32_t sae_pwe_h2e;
 };
 #define WIFI_AP_CONFIG__INIT \
  { PROTOBUF_C_MESSAGE_INIT (&wifi_ap_config__descriptor) \
-    , {0,NULL}, {0,NULL}, 0, 0, 0, 0, 0, 0, 0, 0, NULL }
+    , {0,NULL}, {0,NULL}, 0, 0, 0, 0, 0, 0, 0, 0, NULL, 0 }
 
 
 struct  WifiStaConfig
@@ -1031,10 +1074,26 @@ struct  WifiStaConfig
    *Note: Enabling this may cause connection time to increase incase best AP doesn't behave properly. 
    */
   uint32_t failure_retry_cnt;
+  /*
+   *uint32_t he_dcm_set:1;                                         **< Whether DCM max.constellation for transmission and reception is set. * 
+   *uint32_t he_dcm_max_constellation_tx:2;                        **< Indicate the max.constellation for DCM in TB PPDU the STA supported. 0: not supported. 1: BPSK, 2: QPSK, 3: 16-QAM. The default value is 3. * 
+   *uint32_t he_dcm_max_constellation_rx:2;                        **< Indicate the max.constellation for DCM in both Data field and HE-SIG-B field the STA supported. 0: not supported. 1: BPSK, 2: QPSK, 3: 16-QAM. The default value is 3. * 
+   *uint32_t he_mcs9_enabled:1;                                    **< Whether to support HE-MCS 0 to 9. The default value is 0. * 
+   *uint32_t he_su_beamformee_disabled:1;                          **< Whether to disable support for operation as an SU beamformee. * 
+   *uint32_t he_trig_su_bmforming_feedback_disabled:1;             **< Whether to disable support the transmission of SU feedback in an HE TB sounding sequence. * 
+   *uint32_t he_trig_mu_bmforming_partial_feedback_disabled:1;     **< Whether to disable support the transmission of partial-bandwidth MU feedback in an HE TB sounding sequence. * 
+   * uint32_t he_trig_cqi_feedback_disabled:1;                      **< Whether to disable support the transmission of CQI feedback in an HE TB sounding sequence. * 
+   * uint32_t he_reserved:22;                                       **< Reserved for future feature set * 
+   */
+  uint32_t he_bitmask;
+  /*
+   **< Password identifier for H2E. this needs to be null terminated string. SAE_H2E_IDENTIFIER_LEN chars 
+   */
+  ProtobufCBinaryData sae_h2e_identifier;
 };
 #define WIFI_STA_CONFIG__INIT \
  { PROTOBUF_C_MESSAGE_INIT (&wifi_sta_config__descriptor) \
-    , {0,NULL}, {0,NULL}, 0, 0, {0,NULL}, 0, 0, 0, NULL, NULL, 0, 0, 0 }
+    , {0,NULL}, {0,NULL}, 0, 0, {0,NULL}, 0, 0, 0, NULL, NULL, 0, 0, 0, 0, {0,NULL} }
 
 
 typedef enum {
@@ -1080,8 +1139,9 @@ struct  WifiStaInfo
    *uint32_t phy_11g:1;                        **< bit: 1 flag to identify if 11g mode is enabled or not * 
    *uint32_t phy_11n:1;                        **< bit: 2 flag to identify if 11n mode is enabled or not * 
    *uint32_t phy_lr:1;                         **< bit: 3 flag to identify if low rate is enabled or not * 
-   *uint32_t is_mesh_child:1;                  **< bit: 4 flag to identify mesh child * 
-   *uint32_t reserved:27;                      **< bit: 5..31 reserved * 
+   *uint32_t phy_11x:1;                        **< bit: 4 flag to identify identify if 11ax mode is enabled or not * 
+   *uint32_t is_mesh_child:1;                  **< bit: 5 flag to identify mesh child * 
+   *uint32_t reserved:27;                      **< bit: 6..31 reserved * 
    */
   uint32_t bitmask;
 };
@@ -1479,10 +1539,14 @@ struct  WifiEventStaConnected
    **< authentication mode used by AP
    */
   int32_t authmode;
+  /*
+   **< authentication id assigned by the connected AP
+   */
+  int32_t aid;
 };
 #define WIFI_EVENT_STA_CONNECTED__INIT \
  { PROTOBUF_C_MESSAGE_INIT (&wifi_event_sta_connected__descriptor) \
-    , {0,NULL}, 0, {0,NULL}, 0, 0 }
+    , {0,NULL}, 0, {0,NULL}, 0, 0, 0 }
 
 
 struct  WifiEventStaDisconnected
@@ -2514,6 +2578,67 @@ struct  RpcRespWifiGetCountry
     , 0, NULL }
 
 
+struct  RpcReqWifiApGetStaList
+{
+  ProtobufCMessage base;
+};
+#define RPC__REQ__WIFI_AP_GET_STA_LIST__INIT \
+ { PROTOBUF_C_MESSAGE_INIT (&rpc__req__wifi_ap_get_sta_list__descriptor) \
+     }
+
+
+struct  RpcRespWifiApGetStaList
+{
+  ProtobufCMessage base;
+  int32_t resp;
+  WifiStaList *sta_list;
+};
+#define RPC__RESP__WIFI_AP_GET_STA_LIST__INIT \
+ { PROTOBUF_C_MESSAGE_INIT (&rpc__resp__wifi_ap_get_sta_list__descriptor) \
+    , 0, NULL }
+
+
+struct  RpcReqWifiApGetStaAid
+{
+  ProtobufCMessage base;
+  ProtobufCBinaryData mac;
+};
+#define RPC__REQ__WIFI_AP_GET_STA_AID__INIT \
+ { PROTOBUF_C_MESSAGE_INIT (&rpc__req__wifi_ap_get_sta_aid__descriptor) \
+    , {0,NULL} }
+
+
+struct  RpcRespWifiApGetStaAid
+{
+  ProtobufCMessage base;
+  int32_t resp;
+  uint32_t aid;
+};
+#define RPC__RESP__WIFI_AP_GET_STA_AID__INIT \
+ { PROTOBUF_C_MESSAGE_INIT (&rpc__resp__wifi_ap_get_sta_aid__descriptor) \
+    , 0, 0 }
+
+
+struct  RpcReqWifiStaGetRssi
+{
+  ProtobufCMessage base;
+};
+#define RPC__REQ__WIFI_STA_GET_RSSI__INIT \
+ { PROTOBUF_C_MESSAGE_INIT (&rpc__req__wifi_sta_get_rssi__descriptor) \
+     }
+
+
+struct  RpcRespWifiStaGetRssi
+{
+  ProtobufCMessage base;
+  int32_t resp;
+  int32_t rssi;
+};
+#define RPC__RESP__WIFI_STA_GET_RSSI__INIT \
+ { PROTOBUF_C_MESSAGE_INIT (&rpc__resp__wifi_sta_get_rssi__descriptor) \
+    , 0, 0 }
+
+
 struct  RpcEventWifiEventNoArgs
 {
   ProtobufCMessage base;
@@ -2595,6 +2720,30 @@ struct  RpcEventStaScanDone
     , 0, 0, NULL }
 
 
+struct  RpcEventStaConnected
+{
+  ProtobufCMessage base;
+  int32_t resp;
+  int32_t event_id;
+  WifiEventStaConnected *sta_connected;
+};
+#define RPC__EVENT__STA_CONNECTED__INIT \
+ { PROTOBUF_C_MESSAGE_INIT (&rpc__event__sta_connected__descriptor) \
+    , 0, 0, NULL }
+
+
+struct  RpcEventStaDisconnected
+{
+  ProtobufCMessage base;
+  int32_t resp;
+  int32_t event_id;
+  WifiEventStaDisconnected *sta_disconnected;
+};
+#define RPC__EVENT__STA_DISCONNECTED__INIT \
+ { PROTOBUF_C_MESSAGE_INIT (&rpc__event__sta_disconnected__descriptor) \
+    , 0, 0, NULL }
+
+
 typedef enum {
   RPC__PAYLOAD__NOT_SET = 0,
   RPC__PAYLOAD_REQ_GET_MAC_ADDRESS = 257,
@@ -2632,9 +2781,12 @@ typedef enum {
   RPC__PAYLOAD_REQ_WIFI_GET_CHANNEL = 302,
   RPC__PAYLOAD_REQ_WIFI_SET_COUNTRY = 303,
   RPC__PAYLOAD_REQ_WIFI_GET_COUNTRY = 304,
+  RPC__PAYLOAD_REQ_WIFI_AP_GET_STA_LIST = 311,
+  RPC__PAYLOAD_REQ_WIFI_AP_GET_STA_AID = 312,
   RPC__PAYLOAD_REQ_WIFI_SET_STORAGE = 313,
   RPC__PAYLOAD_REQ_WIFI_SET_COUNTRY_CODE = 334,
   RPC__PAYLOAD_REQ_WIFI_GET_COUNTRY_CODE = 335,
+  RPC__PAYLOAD_REQ_WIFI_STA_GET_RSSI = 341,
   RPC__PAYLOAD_RESP_GET_MAC_ADDRESS = 513,
   RPC__PAYLOAD_RESP_SET_MAC_ADDRESS = 514,
   RPC__PAYLOAD_RESP_GET_WIFI_MODE = 515,
@@ -2670,16 +2822,21 @@ typedef enum {
   RPC__PAYLOAD_RESP_WIFI_GET_CHANNEL = 558,
   RPC__PAYLOAD_RESP_WIFI_SET_COUNTRY = 559,
   RPC__PAYLOAD_RESP_WIFI_GET_COUNTRY = 560,
+  RPC__PAYLOAD_RESP_WIFI_AP_GET_STA_LIST = 567,
+  RPC__PAYLOAD_RESP_WIFI_AP_GET_STA_AID = 568,
   RPC__PAYLOAD_RESP_WIFI_SET_STORAGE = 569,
   RPC__PAYLOAD_RESP_WIFI_SET_COUNTRY_CODE = 590,
   RPC__PAYLOAD_RESP_WIFI_GET_COUNTRY_CODE = 591,
+  RPC__PAYLOAD_RESP_WIFI_STA_GET_RSSI = 597,
   RPC__PAYLOAD_EVENT_ESP_INIT = 769,
   RPC__PAYLOAD_EVENT_HEARTBEAT = 770,
   RPC__PAYLOAD_EVENT_STATION_DISCONNECT_FROM__AP = 771,
   RPC__PAYLOAD_EVENT_AP_STA_CONNECTED = 772,
   RPC__PAYLOAD_EVENT_AP_STA_DISCONNECTED = 773,
   RPC__PAYLOAD_EVENT_WIFI_EVENT_NO_ARGS = 774,
-  RPC__PAYLOAD_EVENT_STA_SCAN_DONE = 775
+  RPC__PAYLOAD_EVENT_STA_SCAN_DONE = 775,
+  RPC__PAYLOAD_EVENT_STA_CONNECTED = 776,
+  RPC__PAYLOAD_EVENT_STA_DISCONNECTED = 777
     PROTOBUF_C__FORCE_ENUM_TO_BE_INT_SIZE(RPC__PAYLOAD__CASE)
 } Rpc__PayloadCase;
 
@@ -2734,9 +2891,12 @@ struct  Rpc
     RpcReqWifiGetChannel *req_wifi_get_channel;
     RpcReqWifiSetCountry *req_wifi_set_country;
     RpcReqWifiGetCountry *req_wifi_get_country;
+    RpcReqWifiApGetStaList *req_wifi_ap_get_sta_list;
+    RpcReqWifiApGetStaAid *req_wifi_ap_get_sta_aid;
     RpcReqWifiSetStorage *req_wifi_set_storage;
     RpcReqWifiSetCountryCode *req_wifi_set_country_code;
     RpcReqWifiGetCountryCode *req_wifi_get_country_code;
+    RpcReqWifiStaGetRssi *req_wifi_sta_get_rssi;
     /*
      ** Responses *
      */
@@ -2775,9 +2935,12 @@ struct  Rpc
     RpcRespWifiGetChannel *resp_wifi_get_channel;
     RpcRespWifiSetCountry *resp_wifi_set_country;
     RpcRespWifiGetCountry *resp_wifi_get_country;
+    RpcRespWifiApGetStaList *resp_wifi_ap_get_sta_list;
+    RpcRespWifiApGetStaAid *resp_wifi_ap_get_sta_aid;
     RpcRespWifiSetStorage *resp_wifi_set_storage;
     RpcRespWifiSetCountryCode *resp_wifi_set_country_code;
     RpcRespWifiGetCountryCode *resp_wifi_get_country_code;
+    RpcRespWifiStaGetRssi *resp_wifi_sta_get_rssi;
     /*
      ** Notifications *
      */
@@ -2788,6 +2951,8 @@ struct  Rpc
     RpcEventAPStaDisconnected *event_ap_sta_disconnected;
     RpcEventWifiEventNoArgs *event_wifi_event_no_args;
     RpcEventStaScanDone *event_sta_scan_done;
+    RpcEventStaConnected *event_sta_connected;
+    RpcEventStaDisconnected *event_sta_disconnected;
   };
 };
 #define RPC__INIT \
@@ -2889,6 +3054,25 @@ WifiScanConfig *
                       const uint8_t       *data);
 void   wifi_scan_config__free_unpacked
                      (WifiScanConfig *message,
+                      ProtobufCAllocator *allocator);
+/* WifiHeApInfo methods */
+void   wifi_he_ap_info__init
+                     (WifiHeApInfo         *message);
+size_t wifi_he_ap_info__get_packed_size
+                     (const WifiHeApInfo   *message);
+size_t wifi_he_ap_info__pack
+                     (const WifiHeApInfo   *message,
+                      uint8_t             *out);
+size_t wifi_he_ap_info__pack_to_buffer
+                     (const WifiHeApInfo   *message,
+                      ProtobufCBuffer     *buffer);
+WifiHeApInfo *
+       wifi_he_ap_info__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data);
+void   wifi_he_ap_info__free_unpacked
+                     (WifiHeApInfo *message,
                       ProtobufCAllocator *allocator);
 /* WifiApRecord methods */
 void   wifi_ap_record__init
@@ -4923,6 +5107,120 @@ RpcRespWifiGetCountry *
 void   rpc__resp__wifi_get_country__free_unpacked
                      (RpcRespWifiGetCountry *message,
                       ProtobufCAllocator *allocator);
+/* RpcReqWifiApGetStaList methods */
+void   rpc__req__wifi_ap_get_sta_list__init
+                     (RpcReqWifiApGetStaList         *message);
+size_t rpc__req__wifi_ap_get_sta_list__get_packed_size
+                     (const RpcReqWifiApGetStaList   *message);
+size_t rpc__req__wifi_ap_get_sta_list__pack
+                     (const RpcReqWifiApGetStaList   *message,
+                      uint8_t             *out);
+size_t rpc__req__wifi_ap_get_sta_list__pack_to_buffer
+                     (const RpcReqWifiApGetStaList   *message,
+                      ProtobufCBuffer     *buffer);
+RpcReqWifiApGetStaList *
+       rpc__req__wifi_ap_get_sta_list__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data);
+void   rpc__req__wifi_ap_get_sta_list__free_unpacked
+                     (RpcReqWifiApGetStaList *message,
+                      ProtobufCAllocator *allocator);
+/* RpcRespWifiApGetStaList methods */
+void   rpc__resp__wifi_ap_get_sta_list__init
+                     (RpcRespWifiApGetStaList         *message);
+size_t rpc__resp__wifi_ap_get_sta_list__get_packed_size
+                     (const RpcRespWifiApGetStaList   *message);
+size_t rpc__resp__wifi_ap_get_sta_list__pack
+                     (const RpcRespWifiApGetStaList   *message,
+                      uint8_t             *out);
+size_t rpc__resp__wifi_ap_get_sta_list__pack_to_buffer
+                     (const RpcRespWifiApGetStaList   *message,
+                      ProtobufCBuffer     *buffer);
+RpcRespWifiApGetStaList *
+       rpc__resp__wifi_ap_get_sta_list__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data);
+void   rpc__resp__wifi_ap_get_sta_list__free_unpacked
+                     (RpcRespWifiApGetStaList *message,
+                      ProtobufCAllocator *allocator);
+/* RpcReqWifiApGetStaAid methods */
+void   rpc__req__wifi_ap_get_sta_aid__init
+                     (RpcReqWifiApGetStaAid         *message);
+size_t rpc__req__wifi_ap_get_sta_aid__get_packed_size
+                     (const RpcReqWifiApGetStaAid   *message);
+size_t rpc__req__wifi_ap_get_sta_aid__pack
+                     (const RpcReqWifiApGetStaAid   *message,
+                      uint8_t             *out);
+size_t rpc__req__wifi_ap_get_sta_aid__pack_to_buffer
+                     (const RpcReqWifiApGetStaAid   *message,
+                      ProtobufCBuffer     *buffer);
+RpcReqWifiApGetStaAid *
+       rpc__req__wifi_ap_get_sta_aid__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data);
+void   rpc__req__wifi_ap_get_sta_aid__free_unpacked
+                     (RpcReqWifiApGetStaAid *message,
+                      ProtobufCAllocator *allocator);
+/* RpcRespWifiApGetStaAid methods */
+void   rpc__resp__wifi_ap_get_sta_aid__init
+                     (RpcRespWifiApGetStaAid         *message);
+size_t rpc__resp__wifi_ap_get_sta_aid__get_packed_size
+                     (const RpcRespWifiApGetStaAid   *message);
+size_t rpc__resp__wifi_ap_get_sta_aid__pack
+                     (const RpcRespWifiApGetStaAid   *message,
+                      uint8_t             *out);
+size_t rpc__resp__wifi_ap_get_sta_aid__pack_to_buffer
+                     (const RpcRespWifiApGetStaAid   *message,
+                      ProtobufCBuffer     *buffer);
+RpcRespWifiApGetStaAid *
+       rpc__resp__wifi_ap_get_sta_aid__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data);
+void   rpc__resp__wifi_ap_get_sta_aid__free_unpacked
+                     (RpcRespWifiApGetStaAid *message,
+                      ProtobufCAllocator *allocator);
+/* RpcReqWifiStaGetRssi methods */
+void   rpc__req__wifi_sta_get_rssi__init
+                     (RpcReqWifiStaGetRssi         *message);
+size_t rpc__req__wifi_sta_get_rssi__get_packed_size
+                     (const RpcReqWifiStaGetRssi   *message);
+size_t rpc__req__wifi_sta_get_rssi__pack
+                     (const RpcReqWifiStaGetRssi   *message,
+                      uint8_t             *out);
+size_t rpc__req__wifi_sta_get_rssi__pack_to_buffer
+                     (const RpcReqWifiStaGetRssi   *message,
+                      ProtobufCBuffer     *buffer);
+RpcReqWifiStaGetRssi *
+       rpc__req__wifi_sta_get_rssi__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data);
+void   rpc__req__wifi_sta_get_rssi__free_unpacked
+                     (RpcReqWifiStaGetRssi *message,
+                      ProtobufCAllocator *allocator);
+/* RpcRespWifiStaGetRssi methods */
+void   rpc__resp__wifi_sta_get_rssi__init
+                     (RpcRespWifiStaGetRssi         *message);
+size_t rpc__resp__wifi_sta_get_rssi__get_packed_size
+                     (const RpcRespWifiStaGetRssi   *message);
+size_t rpc__resp__wifi_sta_get_rssi__pack
+                     (const RpcRespWifiStaGetRssi   *message,
+                      uint8_t             *out);
+size_t rpc__resp__wifi_sta_get_rssi__pack_to_buffer
+                     (const RpcRespWifiStaGetRssi   *message,
+                      ProtobufCBuffer     *buffer);
+RpcRespWifiStaGetRssi *
+       rpc__resp__wifi_sta_get_rssi__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data);
+void   rpc__resp__wifi_sta_get_rssi__free_unpacked
+                     (RpcRespWifiStaGetRssi *message,
+                      ProtobufCAllocator *allocator);
 /* RpcEventWifiEventNoArgs methods */
 void   rpc__event__wifi_event_no_args__init
                      (RpcEventWifiEventNoArgs         *message);
@@ -5056,6 +5354,44 @@ RpcEventStaScanDone *
 void   rpc__event__sta_scan_done__free_unpacked
                      (RpcEventStaScanDone *message,
                       ProtobufCAllocator *allocator);
+/* RpcEventStaConnected methods */
+void   rpc__event__sta_connected__init
+                     (RpcEventStaConnected         *message);
+size_t rpc__event__sta_connected__get_packed_size
+                     (const RpcEventStaConnected   *message);
+size_t rpc__event__sta_connected__pack
+                     (const RpcEventStaConnected   *message,
+                      uint8_t             *out);
+size_t rpc__event__sta_connected__pack_to_buffer
+                     (const RpcEventStaConnected   *message,
+                      ProtobufCBuffer     *buffer);
+RpcEventStaConnected *
+       rpc__event__sta_connected__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data);
+void   rpc__event__sta_connected__free_unpacked
+                     (RpcEventStaConnected *message,
+                      ProtobufCAllocator *allocator);
+/* RpcEventStaDisconnected methods */
+void   rpc__event__sta_disconnected__init
+                     (RpcEventStaDisconnected         *message);
+size_t rpc__event__sta_disconnected__get_packed_size
+                     (const RpcEventStaDisconnected   *message);
+size_t rpc__event__sta_disconnected__pack
+                     (const RpcEventStaDisconnected   *message,
+                      uint8_t             *out);
+size_t rpc__event__sta_disconnected__pack_to_buffer
+                     (const RpcEventStaDisconnected   *message,
+                      ProtobufCBuffer     *buffer);
+RpcEventStaDisconnected *
+       rpc__event__sta_disconnected__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data);
+void   rpc__event__sta_disconnected__free_unpacked
+                     (RpcEventStaDisconnected *message,
+                      ProtobufCAllocator *allocator);
 /* Rpc methods */
 void   rpc__init
                      (Rpc         *message);
@@ -5091,6 +5427,9 @@ typedef void (*WifiScanTime_Closure)
                   void *closure_data);
 typedef void (*WifiScanConfig_Closure)
                  (const WifiScanConfig *message,
+                  void *closure_data);
+typedef void (*WifiHeApInfo_Closure)
+                 (const WifiHeApInfo *message,
                   void *closure_data);
 typedef void (*WifiApRecord_Closure)
                  (const WifiApRecord *message,
@@ -5413,6 +5752,24 @@ typedef void (*RpcReqWifiGetCountry_Closure)
 typedef void (*RpcRespWifiGetCountry_Closure)
                  (const RpcRespWifiGetCountry *message,
                   void *closure_data);
+typedef void (*RpcReqWifiApGetStaList_Closure)
+                 (const RpcReqWifiApGetStaList *message,
+                  void *closure_data);
+typedef void (*RpcRespWifiApGetStaList_Closure)
+                 (const RpcRespWifiApGetStaList *message,
+                  void *closure_data);
+typedef void (*RpcReqWifiApGetStaAid_Closure)
+                 (const RpcReqWifiApGetStaAid *message,
+                  void *closure_data);
+typedef void (*RpcRespWifiApGetStaAid_Closure)
+                 (const RpcRespWifiApGetStaAid *message,
+                  void *closure_data);
+typedef void (*RpcReqWifiStaGetRssi_Closure)
+                 (const RpcReqWifiStaGetRssi *message,
+                  void *closure_data);
+typedef void (*RpcRespWifiStaGetRssi_Closure)
+                 (const RpcRespWifiStaGetRssi *message,
+                  void *closure_data);
 typedef void (*RpcEventWifiEventNoArgs_Closure)
                  (const RpcEventWifiEventNoArgs *message,
                   void *closure_data);
@@ -5434,6 +5791,12 @@ typedef void (*RpcEventAPStaConnected_Closure)
 typedef void (*RpcEventStaScanDone_Closure)
                  (const RpcEventStaScanDone *message,
                   void *closure_data);
+typedef void (*RpcEventStaConnected_Closure)
+                 (const RpcEventStaConnected *message,
+                  void *closure_data);
+typedef void (*RpcEventStaDisconnected_Closure)
+                 (const RpcEventStaDisconnected *message,
+                  void *closure_data);
 typedef void (*Rpc_Closure)
                  (const Rpc *message,
                   void *closure_data);
@@ -5454,6 +5817,7 @@ extern const ProtobufCMessageDescriptor wifi_country__descriptor;
 extern const ProtobufCMessageDescriptor wifi_active_scan_time__descriptor;
 extern const ProtobufCMessageDescriptor wifi_scan_time__descriptor;
 extern const ProtobufCMessageDescriptor wifi_scan_config__descriptor;
+extern const ProtobufCMessageDescriptor wifi_he_ap_info__descriptor;
 extern const ProtobufCMessageDescriptor wifi_ap_record__descriptor;
 extern const ProtobufCMessageDescriptor wifi_scan_threshold__descriptor;
 extern const ProtobufCMessageDescriptor wifi_pmf_config__descriptor;
@@ -5561,6 +5925,12 @@ extern const ProtobufCMessageDescriptor rpc__req__wifi_set_country__descriptor;
 extern const ProtobufCMessageDescriptor rpc__resp__wifi_set_country__descriptor;
 extern const ProtobufCMessageDescriptor rpc__req__wifi_get_country__descriptor;
 extern const ProtobufCMessageDescriptor rpc__resp__wifi_get_country__descriptor;
+extern const ProtobufCMessageDescriptor rpc__req__wifi_ap_get_sta_list__descriptor;
+extern const ProtobufCMessageDescriptor rpc__resp__wifi_ap_get_sta_list__descriptor;
+extern const ProtobufCMessageDescriptor rpc__req__wifi_ap_get_sta_aid__descriptor;
+extern const ProtobufCMessageDescriptor rpc__resp__wifi_ap_get_sta_aid__descriptor;
+extern const ProtobufCMessageDescriptor rpc__req__wifi_sta_get_rssi__descriptor;
+extern const ProtobufCMessageDescriptor rpc__resp__wifi_sta_get_rssi__descriptor;
 extern const ProtobufCMessageDescriptor rpc__event__wifi_event_no_args__descriptor;
 extern const ProtobufCMessageDescriptor rpc__event__espinit__descriptor;
 extern const ProtobufCMessageDescriptor rpc__event__heartbeat__descriptor;
@@ -5568,6 +5938,8 @@ extern const ProtobufCMessageDescriptor rpc__event__station_disconnect_from_ap__
 extern const ProtobufCMessageDescriptor rpc__event__ap__sta_disconnected__descriptor;
 extern const ProtobufCMessageDescriptor rpc__event__ap__sta_connected__descriptor;
 extern const ProtobufCMessageDescriptor rpc__event__sta_scan_done__descriptor;
+extern const ProtobufCMessageDescriptor rpc__event__sta_connected__descriptor;
+extern const ProtobufCMessageDescriptor rpc__event__sta_disconnected__descriptor;
 extern const ProtobufCMessageDescriptor rpc__descriptor;
 
 PROTOBUF_C__END_DECLS

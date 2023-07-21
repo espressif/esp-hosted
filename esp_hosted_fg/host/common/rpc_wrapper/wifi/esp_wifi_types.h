@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -42,14 +42,17 @@ typedef enum {
     WIFI_MODE_STA,       /**< WiFi station mode */
     WIFI_MODE_AP,        /**< WiFi soft-AP mode */
     WIFI_MODE_APSTA,     /**< WiFi station + soft-AP mode */
+    WIFI_MODE_NAN,       /**< WiFi NAN mode */
     WIFI_MODE_MAX
 } wifi_mode_t;
 
 typedef enum {
     WIFI_IF_STA = ESP_IF_WIFI_STA,
     WIFI_IF_AP  = ESP_IF_WIFI_AP,
-	WIFI_IF_ETH = ESP_IF_ETH,
-	WIFI_IF_MAX,
+#if defined(CONFIG_IDF_TARGET_ESP32) || defined(CONFIG_IDF_TARGET_ESP32S2)
+    WIFI_IF_NAN = ESP_IF_WIFI_NAN,
+#endif
+    WIFI_IF_MAX
 } wifi_interface_t;
 
 #define WIFI_OFFCHAN_TX_REQ      1
@@ -57,7 +60,6 @@ typedef enum {
 
 #define WIFI_ROC_REQ     1
 #define WIFI_ROC_CANCEL  0
-
 
 typedef enum {
     WIFI_COUNTRY_POLICY_AUTO,   /**< Country policy is auto, use the country info of AP to which the station is connected */
@@ -88,7 +90,6 @@ typedef enum {
     WIFI_AUTH_OWE,              /**< authenticate mode : OWE */
     WIFI_AUTH_MAX
 } wifi_auth_mode_t;
-
 
 typedef enum {
     WIFI_REASON_UNSPECIFIED                        = 1,
@@ -148,8 +149,8 @@ typedef enum {
     WIFI_REASON_AP_TSF_RESET                       = 206,
     WIFI_REASON_ROAMING                            = 207,
     WIFI_REASON_ASSOC_COMEBACK_TIME_TOO_LONG       = 208,
+    WIFI_REASON_SA_QUERY_TIMEOUT                   = 209,
 } wifi_err_reason_t;
-
 
 typedef enum {
     WIFI_SECOND_CHAN_NONE = 0,  /**< the channel width is HT20 */
@@ -212,6 +213,14 @@ typedef enum {
     WIFI_ANT_MAX,           /**< Invalid WiFi antenna */
 } wifi_ant_t;
 
+/** @brief Description of a WiFi AP HE Info */
+typedef struct {
+    uint8_t bss_color:6;                  /**< an unsigned integer whose value is the BSS Color of the BSS corresponding to the AP */
+    uint8_t partial_bss_color:1;          /**< indicate if an AID assignment rule based on the BSS color */
+    uint8_t bss_color_disabled:1;         /**< indicate if the use of BSS color is disabled */
+    uint8_t bssid_index;                  /**< in M-BSSID set, identifies the nontransmitted BSSID */
+} wifi_he_ap_info_t;
+
 /** @brief Description of a WiFi AP */
 typedef struct {
     uint8_t bssid[6];                     /**< MAC address of AP */
@@ -227,11 +236,13 @@ typedef struct {
     uint32_t phy_11g:1;                   /**< bit: 1 flag to identify if 11g mode is enabled or not */
     uint32_t phy_11n:1;                   /**< bit: 2 flag to identify if 11n mode is enabled or not */
     uint32_t phy_lr:1;                    /**< bit: 3 flag to identify if low rate is enabled or not */
-    uint32_t wps:1;                       /**< bit: 4 flag to identify if WPS is supported or not */
-    uint32_t ftm_responder:1;             /**< bit: 5 flag to identify if FTM is supported in responder mode */
-    uint32_t ftm_initiator:1;             /**< bit: 6 flag to identify if FTM is supported in initiator mode */
-    uint32_t reserved:25;                 /**< bit: 7..31 reserved */
+    uint32_t phy_11ax:1;                  /**< bit: 4 flag to identify if 11ax mode is enabled or not */
+    uint32_t wps:1;                       /**< bit: 5 flag to identify if WPS is supported or not */
+    uint32_t ftm_responder:1;             /**< bit: 6 flag to identify if FTM is supported in responder mode */
+    uint32_t ftm_initiator:1;             /**< bit: 7 flag to identify if FTM is supported in initiator mode */
+    uint32_t reserved:24;                 /**< bit: 8..31 reserved */
     wifi_country_t country;               /**< country information of AP */
+    wifi_he_ap_info_t he_ap;              /**< HE AP info */
 } wifi_ap_record_t;
 
 typedef enum {
@@ -258,17 +269,16 @@ typedef enum {
 	WIFI_PS_INVALID,
 } wifi_ps_type_t;
 
-
 #define WIFI_PROTOCOL_11B         1
 #define WIFI_PROTOCOL_11G         2
 #define WIFI_PROTOCOL_11N         4
 #define WIFI_PROTOCOL_LR          8
+#define WIFI_PROTOCOL_11AX        16
 
 typedef enum {
     WIFI_BW_HT20 = 1, /* Bandwidth is HT20 */
     WIFI_BW_HT40,     /* Bandwidth is HT40 */
 } wifi_bandwidth_t;
-
 
 /** Configuration structure for Protected Management Frame */
 typedef struct {
@@ -284,77 +294,110 @@ typedef enum {
     WPA3_SAE_PWE_BOTH,
 } wifi_sae_pwe_method_t;
 
-/** @brief Soft-AP configuration settings for the ESP32 */
+/** Configuration for SAE-PK  */
+typedef enum {
+    WPA3_SAE_PK_MODE_AUTOMATIC = 0,
+    WPA3_SAE_PK_MODE_ONLY = 1,
+    WPA3_SAE_PK_MODE_DISABLED = 2,
+} wifi_sae_pk_mode_t;
+
+/** @brief Soft-AP configuration settings for the device */
 typedef struct {
-    uint8_t ssid[32];           /**< SSID of ESP32 soft-AP. If ssid_len field is 0, this must be a Null terminated string. Otherwise, length is set according to ssid_len. */
-    uint8_t password[64];       /**< Password of ESP32 soft-AP. */
+    uint8_t ssid[32];           /**< SSID of soft-AP. If ssid_len field is 0, this must be a Null terminated string. Otherwise, length is set according to ssid_len. */
+    uint8_t password[64];       /**< Password of soft-AP. */
     uint8_t ssid_len;           /**< Optional length of SSID field. */
-    uint8_t channel;            /**< Channel of ESP32 soft-AP */
-    wifi_auth_mode_t authmode;  /**< Auth mode of ESP32 soft-AP. Do not support AUTH_WEP in soft-AP mode */
+    uint8_t channel;            /**< Channel of soft-AP */
+    wifi_auth_mode_t authmode;  /**< Auth mode of soft-AP. Do not support AUTH_WEP, AUTH_WAPI_PSK and AUTH_OWE in soft-AP mode. When the auth mode is set to WPA2_PSK, WPA2_WPA3_PSK or WPA3_PSK, the pairwise cipher will be overwritten with WIFI_CIPHER_TYPE_CCMP.  */
     uint8_t ssid_hidden;        /**< Broadcast SSID or not, default 0, broadcast the SSID */
     uint8_t max_connection;     /**< Max number of stations allowed to connect in */
     uint16_t beacon_interval;   /**< Beacon interval which should be multiples of 100. Unit: TU(time unit, 1 TU = 1024 us). Range: 100 ~ 60000. Default value: 100 */
-    wifi_cipher_type_t pairwise_cipher;   /**< pairwise cipher of SoftAP, group cipher will be derived using this. cipher values are valid starting from WIFI_CIPHER_TYPE_TKIP, enum values before that will be considered as invalid and default cipher suites(TKIP+CCMP) will be used. Valid cipher suites in softAP mode are WIFI_CIPHER_TYPE_TKIP, WIFI_CIPHER_TYPE_CCMP and WIFI_CIPHER_TYPE_TKIP_CCMP. */
+    wifi_cipher_type_t pairwise_cipher;   /**< Pairwise cipher of SoftAP, group cipher will be derived using this. Cipher values are valid starting from WIFI_CIPHER_TYPE_TKIP, enum values before that will be considered as invalid and default cipher suites(TKIP+CCMP) will be used. Valid cipher suites in softAP mode are WIFI_CIPHER_TYPE_TKIP, WIFI_CIPHER_TYPE_CCMP and WIFI_CIPHER_TYPE_TKIP_CCMP. */
     bool ftm_responder;         /**< Enable FTM Responder mode */
     wifi_pmf_config_t pmf_cfg;  /**< Configuration for Protected Management Frame */
+    wifi_sae_pwe_method_t sae_pwe_h2e;  /**< Configuration for SAE PWE derivation method */
 } wifi_ap_config_t;
 
-/** @brief STA configuration settings for the ESP32 */
+#define SAE_H2E_IDENTIFIER_LEN 32
+/** @brief STA configuration settings for the device */
 typedef struct {
-    uint8_t ssid[32];      /**< SSID of target AP. */
-    uint8_t password[64];  /**< Password of target AP. */
-    wifi_scan_method_t scan_method;    /**< do all channel scan or fast scan */
-    bool bssid_set;        /**< whether set MAC address of target AP or not. Generally, station_config.bssid_set needs to be 0; and it needs to be 1 only when users need to check the MAC address of the AP.*/
-    uint8_t bssid[6];     /**< MAC address of target AP*/
-    uint8_t channel;       /**< channel of target AP. Set to 1~13 to scan starting from the specified channel before connecting to AP. If the channel of AP is unknown, set it to 0.*/
-    uint16_t listen_interval;   /**< Listen interval for ESP32 station to receive beacon when WIFI_PS_MAX_MODEM is set. Units: AP beacon intervals. Defaults to 3 if set to 0. */
-    wifi_sort_method_t sort_method;    /**< sort the connect AP in the list by rssi or security mode */
-    wifi_scan_threshold_t  threshold;     /**< When sort_method is set, only APs which have an auth mode that is more secure than the selected auth mode and a signal stronger than the minimum RSSI will be used. */
-    wifi_pmf_config_t pmf_cfg;    /**< Configuration for Protected Management Frame. Will be advertized in RSN Capabilities in RSN IE. */
-    uint32_t rm_enabled:1;        /**< Whether Radio Measurements are enabled for the connection */
-    uint32_t btm_enabled:1;       /**< Whether BSS Transition Management is enabled for the connection */
-    uint32_t mbo_enabled:1;       /**< Whether MBO is enabled for the connection */
-    uint32_t ft_enabled:1;        /**< Whether FT is enabled for the connection */
-    uint32_t owe_enabled:1;       /**< Whether OWE is enabled for the connection */
-    uint32_t transition_disable:1;      /**< Whether to enable transition disable feature */
-    uint32_t reserved:26;         /**< Reserved for future feature set */
-    wifi_sae_pwe_method_t sae_pwe_h2e;     /**< Whether SAE hash to element is enabled */
-    uint8_t failure_retry_cnt;    /**< Number of connection retries station will do before moving to next AP. scan_method should be set as WIFI_ALL_CHANNEL_SCAN to use this config. Note: Enabling this may cause connection time to increase incase best AP doesn't behave properly. */
+    uint8_t ssid[32];                         /**< SSID of target AP. */
+    uint8_t password[64];                     /**< Password of target AP. */
+    wifi_scan_method_t scan_method;           /**< do all channel scan or fast scan */
+    bool bssid_set;                           /**< whether set MAC address of target AP or not. Generally, station_config.bssid_set needs to be 0; and it needs to be 1 only when users need to check the MAC address of the AP.*/
+    uint8_t bssid[6];                         /**< MAC address of target AP*/
+    uint8_t channel;                          /**< channel of target AP. Set to 1~13 to scan starting from the specified channel before connecting to AP. If the channel of AP is unknown, set it to 0.*/
+    uint16_t listen_interval;                 /**< Listen interval for ESP32 station to receive beacon when WIFI_PS_MAX_MODEM is set. Units: AP beacon intervals. Defaults to 3 if set to 0. */
+    wifi_sort_method_t sort_method;           /**< sort the connect AP in the list by rssi or security mode */
+    wifi_scan_threshold_t  threshold;         /**< When sort_method is set, only APs which have an auth mode that is more secure than the selected auth mode and a signal stronger than the minimum RSSI will be used. */
+    wifi_pmf_config_t pmf_cfg;                /**< Configuration for Protected Management Frame. Will be advertised in RSN Capabilities in RSN IE. */
+    uint32_t rm_enabled:1;                    /**< Whether Radio Measurements are enabled for the connection */
+    uint32_t btm_enabled:1;                   /**< Whether BSS Transition Management is enabled for the connection */
+    uint32_t mbo_enabled:1;                   /**< Whether MBO is enabled for the connection */
+    uint32_t ft_enabled:1;                    /**< Whether FT is enabled for the connection */
+    uint32_t owe_enabled:1;                   /**< Whether OWE is enabled for the connection */
+    uint32_t transition_disable:1;            /**< Whether to enable transition disable feature */
+    uint32_t reserved:26;                     /**< Reserved for future feature set */
+    wifi_sae_pwe_method_t sae_pwe_h2e;        /**< Configuration for SAE PWE derivation method */
+    wifi_sae_pk_mode_t sae_pk_mode;           /**< Configuration for SAE-PK (Public Key) Authentication method */
+    uint8_t failure_retry_cnt;                /**< Number of connection retries station will do before moving to next AP. scan_method should be set as WIFI_ALL_CHANNEL_SCAN to use this config.
+                                                   Note: Enabling this may cause connection time to increase incase best AP doesn't behave properly. */
+    uint32_t he_dcm_set:1;                                        /**< Whether DCM max.constellation for transmission and reception is set. */
+    uint32_t he_dcm_max_constellation_tx:2;                       /**< Indicate the max.constellation for DCM in TB PPDU the STA supported. 0: not supported. 1: BPSK, 2: QPSK, 3: 16-QAM. The default value is 3. */
+    uint32_t he_dcm_max_constellation_rx:2;                       /**< Indicate the max.constellation for DCM in both Data field and HE-SIG-B field the STA supported. 0: not supported. 1: BPSK, 2: QPSK, 3: 16-QAM. The default value is 3. */
+    uint32_t he_mcs9_enabled:1;                                   /**< Whether to support HE-MCS 0 to 9. The default value is 0. */
+    uint32_t he_su_beamformee_disabled:1;                         /**< Whether to disable support for operation as an SU beamformee. */
+    uint32_t he_trig_su_bmforming_feedback_disabled:1;            /**< Whether to disable support the transmission of SU feedback in an HE TB sounding sequence. */
+    uint32_t he_trig_mu_bmforming_partial_feedback_disabled:1;    /**< Whether to disable support the transmission of partial-bandwidth MU feedback in an HE TB sounding sequence. */
+    uint32_t he_trig_cqi_feedback_disabled:1;                     /**< Whether to disable support the transmission of CQI feedback in an HE TB sounding sequence. */
+    uint32_t he_reserved:22;                                      /**< Reserved for future feature set */
+    uint8_t sae_h2e_identifier[SAE_H2E_IDENTIFIER_LEN];/**< Password identifier for H2E. this needs to be null terminated string */
 } wifi_sta_config_t;
 
-/** @brief Configuration data for ESP32 AP or STA.
+/**
+  * @brief NAN Discovery start configuration
+  *
+  */
+typedef struct {
+    uint8_t op_channel;    /**< NAN Discovery operating channel */
+    uint8_t master_pref;   /**< Device's preference value to serve as NAN Master */
+    uint8_t scan_time;     /**< Scan time in seconds while searching for a NAN cluster */
+    uint16_t warm_up_sec;  /**< Warm up time before assuming NAN Anchor Master role */
+} wifi_nan_config_t;
+
+/** @brief Configuration data for device's AP or STA or NAN.
  *
- * The usage of this union (for ap or sta configuration) is determined by the accompanying
+ * The usage of this union (for ap, sta or nan configuration) is determined by the accompanying
  * interface argument passed to esp_wifi_set_config() or esp_wifi_get_config()
  *
  */
 typedef union {
     wifi_ap_config_t  ap;  /**< configuration of AP */
     wifi_sta_config_t sta; /**< configuration of STA */
+    wifi_nan_config_t nan; /**< configuration of NAN */
 } wifi_config_t;
-
 
 /** @brief Description of STA associated with AP */
 typedef struct {
-    uint8_t mac[6];  /**< mac address */
-    int8_t  rssi;    /**< current average rssi of sta connected */
+    uint8_t mac[6];          /**< mac address */
+    int8_t  rssi;            /**< current average rssi of sta connected */
     uint32_t phy_11b:1;      /**< bit: 0 flag to identify if 11b mode is enabled or not */
     uint32_t phy_11g:1;      /**< bit: 1 flag to identify if 11g mode is enabled or not */
     uint32_t phy_11n:1;      /**< bit: 2 flag to identify if 11n mode is enabled or not */
     uint32_t phy_lr:1;       /**< bit: 3 flag to identify if low rate is enabled or not */
-    uint32_t is_mesh_child:1;/**< bit: 4 flag to identify mesh child */
-    uint32_t reserved:27;    /**< bit: 5..31 reserved */
+    uint32_t phy_11ax:1;     /**< bit: 4 flag to identify if 11ax mode is enabled or not */
+    uint32_t is_mesh_child:1;/**< bit: 5 flag to identify mesh child */
+    uint32_t reserved:26;    /**< bit: 6..31 reserved */
 } wifi_sta_info_t;
 
-#if CONFIG_IDF_TARGET_ESP32C2
+#if CONFIG_SLAVE_CHIPSET_ESP32C2
 #define ESP_WIFI_MAX_CONN_NUM  (4)        /**< max number of stations which can connect to ESP32C2 soft-AP */
-#elif CONFIG_IDF_TARGET_ESP32C3
+#elif CONFIG_SLAVE_CHIPSET_ESP32C3 || CONFIG_IDF_TARGET_ESP32C6
 #define ESP_WIFI_MAX_CONN_NUM  (10)       /**< max number of stations which can connect to ESP32C3 soft-AP */
 #else
 #define ESP_WIFI_MAX_CONN_NUM  (15)       /**< max number of stations which can connect to ESP32/ESP32S3/ESP32S2 soft-AP */
 #endif
 
-/** @brief List of stations associated with the ESP32 Soft-AP */
+/** @brief List of stations associated with the Soft-AP */
 typedef struct {
     wifi_sta_info_t sta[ESP_WIFI_MAX_CONN_NUM]; /**< station list */
     int       num; /**< number of stations in the list (other entries are invalid) */
@@ -391,6 +434,19 @@ typedef enum {
 #define WIFI_VENDOR_IE_ELEMENT_ID 0xDD
 
 /**
+  * @brief     Operation Phymode
+  */
+typedef enum
+{
+    WIFI_PHY_MODE_LR,   /**< PHY mode for Low Rate */
+    WIFI_PHY_MODE_11B,  /**< PHY mode for 11b */
+    WIFI_PHY_MODE_11G,  /**< PHY mode for 11g */
+    WIFI_PHY_MODE_HT20, /**< PHY mode for Bandwidth HT20 */
+    WIFI_PHY_MODE_HT40, /**< PHY mode for Bandwidth HT40 */
+    WIFI_PHY_MODE_HE20, /**< PHY mode for Bandwidth HE20 */
+} wifi_phy_mode_t;
+
+/**
  * @brief Vendor Information Element header
  *
  * The first bytes of the Information Element will match this header. Payload follows.
@@ -422,9 +478,9 @@ typedef struct {
     unsigned stbc:2;              /**< Space Time Block Code(STBC). 0: non STBC packet; 1: STBC packet */
     unsigned fec_coding:1;        /**< Flag is set for 11n packets which are LDPC */
     unsigned sgi:1;               /**< Short Guide Interval(SGI). 0: Long GI; 1: Short GI */
-#if CONFIG_IDF_TARGET_ESP32
+#if CONFIG_SLAVE_CHIPSET_ESP32
     signed noise_floor:8;         /**< noise floor of Radio Frequency Module(RF). unit: dBm*/
-#elif CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32C2
+#elif CONFIG_SLAVE_CHIPSET_ESP32S2 || CONFIG_SLAVE_CHIPSET_ESP32S3 || CONFIG_SLAVE_CHIPSET_ESP32C3 || CONFIG_SLAVE_CHIPSET_ESP32C2
     unsigned :8;                  /**< reserved */
 #endif
     unsigned ampdu_cnt:8;         /**< ampdu cnt */
@@ -433,19 +489,19 @@ typedef struct {
     unsigned :8;                  /**< reserved */
     unsigned timestamp:32;        /**< timestamp. The local time when this packet is received. It is precise only if modem sleep or light sleep is not enabled. unit: microsecond */
     unsigned :32;                 /**< reserved */
-#if CONFIG_IDF_TARGET_ESP32S2
+#if CONFIG_SLAVE_CHIPSET_ESP32S2
     unsigned :32;                 /**< reserved */
-#elif CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32C2
+#elif CONFIG_SLAVE_CHIPSET_ESP32S3 || CONFIG_SLAVE_CHIPSET_ESP32C3 || CONFIG_SLAVE_CHIPSET_ESP32C2
     signed noise_floor:8;         /**< noise floor of Radio Frequency Module(RF). unit: dBm*/
     unsigned :24;                 /**< reserved */
     unsigned :32;                 /**< reserved */
 #endif
     unsigned :31;                 /**< reserved */
     unsigned ant:1;               /**< antenna number from which this packet is received. 0: WiFi antenna 0; 1: WiFi antenna 1 */
-#if CONFIG_IDF_TARGET_ESP32S2
+#if CONFIG_SLAVE_CHIPSET_ESP32S2
     signed noise_floor:8;         /**< noise floor of Radio Frequency Module(RF). unit: dBm*/
     unsigned :24;                 /**< reserved */
-#elif CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32C2
+#elif CONFIG_SLAVE_CHIPSET_ESP32S3 || CONFIG_SLAVE_CHIPSET_ESP32C3 || CONFIG_SLAVE_CHIPSET_ESP32C2
     unsigned :32;                 /**< reserved */
     unsigned :32;                 /**< reserved */
     unsigned :32;                 /**< reserved */
@@ -650,27 +706,26 @@ typedef enum {
     WIFI_PHY_RATE_MAX,
 } wifi_phy_rate_t;
 
-
 /** WiFi event declarations */
 typedef enum {
-    WIFI_EVENT_WIFI_READY = 0,           /**< ESP32 WiFi ready */
-    WIFI_EVENT_SCAN_DONE,                /**< ESP32 finish scanning AP */
-    WIFI_EVENT_STA_START,                /**< ESP32 station start */
-    WIFI_EVENT_STA_STOP,                 /**< ESP32 station stop */
-    WIFI_EVENT_STA_CONNECTED,            /**< ESP32 station connected to AP */
-    WIFI_EVENT_STA_DISCONNECTED,         /**< ESP32 station disconnected from AP */
-    WIFI_EVENT_STA_AUTHMODE_CHANGE,      /**< the auth mode of AP connected by ESP32 station changed */
+    WIFI_EVENT_WIFI_READY = 0,           /**< WiFi ready */
+    WIFI_EVENT_SCAN_DONE,                /**< Finished scanning AP */
+    WIFI_EVENT_STA_START,                /**< Station start */
+    WIFI_EVENT_STA_STOP,                 /**< Station stop */
+    WIFI_EVENT_STA_CONNECTED,            /**< Station connected to AP */
+    WIFI_EVENT_STA_DISCONNECTED,         /**< Station disconnected from AP */
+    WIFI_EVENT_STA_AUTHMODE_CHANGE,      /**< the auth mode of AP connected by device's station changed */
 
-    WIFI_EVENT_STA_WPS_ER_SUCCESS,       /**< ESP32 station wps succeeds in enrollee mode */
-    WIFI_EVENT_STA_WPS_ER_FAILED,        /**< ESP32 station wps fails in enrollee mode */
-    WIFI_EVENT_STA_WPS_ER_TIMEOUT,       /**< ESP32 station wps timeout in enrollee mode */
-    WIFI_EVENT_STA_WPS_ER_PIN,           /**< ESP32 station wps pin code in enrollee mode */
-    WIFI_EVENT_STA_WPS_ER_PBC_OVERLAP,   /**< ESP32 station wps overlap in enrollee mode */
+    WIFI_EVENT_STA_WPS_ER_SUCCESS,       /**< Station wps succeeds in enrollee mode */
+    WIFI_EVENT_STA_WPS_ER_FAILED,        /**< Station wps fails in enrollee mode */
+    WIFI_EVENT_STA_WPS_ER_TIMEOUT,       /**< Station wps timeout in enrollee mode */
+    WIFI_EVENT_STA_WPS_ER_PIN,           /**< Station wps pin code in enrollee mode */
+    WIFI_EVENT_STA_WPS_ER_PBC_OVERLAP,   /**< Station wps overlap in enrollee mode */
 
-    WIFI_EVENT_AP_START,                 /**< ESP32 soft-AP start */
-    WIFI_EVENT_AP_STOP,                  /**< ESP32 soft-AP stop */
-    WIFI_EVENT_AP_STACONNECTED,          /**< a station connected to ESP32 soft-AP */
-    WIFI_EVENT_AP_STADISCONNECTED,       /**< a station disconnected from ESP32 soft-AP */
+    WIFI_EVENT_AP_START,                 /**< Soft-AP start */
+    WIFI_EVENT_AP_STOP,                  /**< Soft-AP stop */
+    WIFI_EVENT_AP_STACONNECTED,          /**< a station connected to Soft-AP */
+    WIFI_EVENT_AP_STADISCONNECTED,       /**< a station disconnected from Soft-AP */
     WIFI_EVENT_AP_PROBEREQRECVED,        /**< Receive probe request packet in soft-AP interface */
 
     WIFI_EVENT_FTM_REPORT,               /**< Receive report of FTM procedure */
@@ -680,9 +735,9 @@ typedef enum {
     WIFI_EVENT_ACTION_TX_STATUS,         /**< Status indication of Action Tx operation */
     WIFI_EVENT_ROC_DONE,                 /**< Remain-on-Channel operation complete */
 
-    WIFI_EVENT_STA_BEACON_TIMEOUT,       /**< ESP32 station beacon timeout */
+    WIFI_EVENT_STA_BEACON_TIMEOUT,       /**< Station beacon timeout */
 
-    WIFI_EVENT_CONNECTIONLESS_MODULE_WAKE_INTERVAL_START,   /**< ESP32 connectionless module wake interval start */
+    WIFI_EVENT_CONNECTIONLESS_MODULE_WAKE_INTERVAL_START,   /**< Connectionless module wake interval start */
 
     WIFI_EVENT_AP_WPS_RG_SUCCESS,       /**< Soft-AP wps succeeds in registrar mode */
     WIFI_EVENT_AP_WPS_RG_FAILED,        /**< Soft-AP wps fails in registrar mode */
@@ -702,7 +757,7 @@ typedef struct {
     uint32_t status;          /**< status of scanning APs: 0 — success, 1 - failure */
     uint8_t  number;          /**< number of scan results */
     uint8_t  scan_id;         /**< scan sequence number, used for block scan */
-	int32_t wifi_event_id;
+    int32_t wifi_event_id;
 } wifi_event_sta_scan_done_t;
 
 /** Argument structure for WIFI_EVENT_STA_CONNECTED event */
@@ -712,6 +767,8 @@ typedef struct {
     uint8_t bssid[6];         /**< BSSID of connected AP*/
     uint8_t channel;          /**< channel of connected AP*/
     wifi_auth_mode_t authmode;/**< authentication mode used by AP*/
+    uint16_t aid;             /**< authentication id assigned by the connected AP */
+    int32_t wifi_event_id;
 } wifi_event_sta_connected_t;
 
 /** Argument structure for WIFI_EVENT_STA_DISCONNECTED event */
@@ -721,6 +778,7 @@ typedef struct {
     uint8_t bssid[6];         /**< BSSID of disconnected AP */
     uint8_t reason;           /**< reason of disconnection */
     int8_t  rssi;             /**< rssi of disconnection */
+    int32_t wifi_event_id;
 } wifi_event_sta_disconnected_t;
 
 /** Argument structure for WIFI_EVENT_STA_AUTHMODE_CHANGE event */
@@ -736,8 +794,8 @@ typedef struct {
 
 /** Argument structure for WIFI_EVENT_STA_WPS_ER_FAILED event */
 typedef enum {
-    WPS_FAIL_REASON_NORMAL = 0,     /**< ESP32 WPS normal fail reason */
-    WPS_FAIL_REASON_RECV_M2D,       /**< ESP32 WPS receive M2D frame */
+    WPS_FAIL_REASON_NORMAL = 0,     /**< WPS normal fail reason */
+    WPS_FAIL_REASON_RECV_M2D,       /**< WPS receive M2D frame */
     WPS_FAIL_REASON_MAX
 } wifi_event_sta_wps_fail_reason_t;
 
@@ -756,16 +814,16 @@ typedef struct {
 
 /** Argument structure for WIFI_EVENT_AP_STACONNECTED event */
 typedef struct {
-    uint8_t mac[6];           /**< MAC address of the station connected to ESP32 soft-AP */
-    uint8_t aid;              /**< the aid that ESP32 soft-AP gives to the station connected to  */
+    uint8_t mac[6];           /**< MAC address of the station connected to Soft-AP */
+    uint8_t aid;              /**< the aid that soft-AP gives to the station connected to  */
     bool is_mesh_child;       /**< flag to identify mesh child */
 	int32_t wifi_event_id;
 } wifi_event_ap_staconnected_t;
 
 /** Argument structure for WIFI_EVENT_AP_STADISCONNECTED event */
 typedef struct {
-    uint8_t mac[6];           /**< MAC address of the station disconnects to ESP32 soft-AP */
-    uint8_t aid;              /**< the aid that ESP32 soft-AP gave to the station disconnects to  */
+    uint8_t mac[6];           /**< MAC address of the station disconnects to soft-AP */
+    uint8_t aid;              /**< the aid that soft-AP gave to the station disconnects to  */
     bool is_mesh_child;       /**< flag to identify mesh child */
 	int32_t wifi_event_id;
 } wifi_event_ap_stadisconnected_t;
@@ -775,7 +833,6 @@ typedef struct {
     int rssi;                 /**< Received probe request signal strength */
     uint8_t mac[6];           /**< MAC address of the station which send probe request */
 } wifi_event_ap_probe_req_rx_t;
-
 
 /** Argument structure for WIFI_EVENT_STA_BSS_RSSI_LOW event */
 typedef struct {

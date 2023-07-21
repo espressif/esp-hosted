@@ -154,7 +154,7 @@ esp_err_t esp_hosted_deinit(void)
 
 void process_capabilities(uint8_t cap)
 {
-	ESP_LOGI(TAG, "capabilities: 0x%x\n\r",cap);
+	ESP_LOGI(TAG, "capabilities: 0x%x",cap);
 }
 
 void process_priv_communication(void *payload, uint16_t len)
@@ -167,21 +167,21 @@ void process_priv_communication(void *payload, uint16_t len)
 
 void print_capabilities(uint32_t cap)
 {
-	ESP_LOGI(TAG, "Features supported are:\n\r");
+	ESP_LOGI(TAG, "Features supported are:");
 	if (cap & ESP_WLAN_SDIO_SUPPORT)
-		ESP_LOGI(TAG, "\t * WLAN\n\r");
+		ESP_LOGI(TAG, "\t * WLAN");
 	if ((cap & ESP_BT_UART_SUPPORT) || (cap & ESP_BT_SDIO_SUPPORT)) {
-		ESP_LOGI(TAG, "\t * BT/BLE\n\r");
+		ESP_LOGI(TAG, "\t * BT/BLE");
 		if (cap & ESP_BT_UART_SUPPORT)
-			ESP_LOGI(TAG, "\t   - HCI over UART\n\r");
+			ESP_LOGI(TAG, "\t   - HCI over UART");
 		if (cap & ESP_BT_SDIO_SUPPORT)
-			ESP_LOGI(TAG, "\t   - HCI over SDIO\n\r");
+			ESP_LOGI(TAG, "\t   - HCI over SDIO");
 		if ((cap & ESP_BLE_ONLY_SUPPORT) && (cap & ESP_BR_EDR_ONLY_SUPPORT))
-			ESP_LOGI(TAG, "\t   - BT/BLE dual mode\n\r");
+			ESP_LOGI(TAG, "\t   - BT/BLE dual mode");
 		else if (cap & ESP_BLE_ONLY_SUPPORT)
-			ESP_LOGI(TAG, "\t   - BLE only\n\r");
+			ESP_LOGI(TAG, "\t   - BLE only");
 		else if (cap & ESP_BR_EDR_ONLY_SUPPORT)
-			ESP_LOGI(TAG, "\t   - BR EDR only\n\r");
+			ESP_LOGI(TAG, "\t   - BR EDR only");
 	}
 }
 

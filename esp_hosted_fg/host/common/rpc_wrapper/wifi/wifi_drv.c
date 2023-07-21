@@ -295,6 +295,21 @@ esp_err_t esp_wifi_get_country(wifi_country_t *country)
 	return test_wifi_get_country(country);
 }
 
+esp_err_t esp_wifi_ap_get_sta_list(wifi_sta_list_t *sta)
+{
+	return test_wifi_ap_get_sta_list(sta);
+}
+
+esp_err_t esp_wifi_ap_get_sta_aid(const uint8_t mac[6], uint16_t *aid)
+{
+	return test_wifi_ap_get_sta_aid(mac, aid);
+}
+
+esp_err_t esp_wifi_sta_get_rssi(int *rssi)
+{
+	return test_wifi_sta_get_rssi(rssi);
+}
+
 #if 0
 esp_err_t esp_wifi_set_protocol(wifi_interface_t ifx, uint8_t protocol_bitmap)
 {

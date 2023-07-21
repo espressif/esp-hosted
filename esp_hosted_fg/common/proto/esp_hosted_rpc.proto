@@ -398,11 +398,11 @@ enum RpcId {
 	Req_WifiStaGetAid                 = 338; //0x152
 	Req_WifiStaGetNegotiatedPhymode   = 339; //0x153
 	Req_WifiSetDynamicCs              = 340; //0x154
-
+	Req_WifiStaGetRssi                = 341; //0x155
 
 	/* Add new control path command response before Req_Max
 	 * and update Req_Max */
-	Req_Max = 341; //0x155
+	Req_Max = 342; //0x156
 
 	/** Response Msgs **/
 	Resp_Base                         = 512;
@@ -510,10 +510,11 @@ enum RpcId {
 	Resp_WifiStaGetAid                = 594;
 	Resp_WifiStaGetNegotiatedPhymode  = 595;
 	Resp_WifiSetDynamicCs             = 596;
+	Resp_WifiStaGetRssi               = 597;
 
 	/* Add new control path command response before Resp_Max
 	 * and update Resp_Max */
-	Resp_Max = 597;
+	Resp_Max = 598;
 
 	/** Event Msgs **/
 	Event_Base = 768;
@@ -524,10 +525,12 @@ enum RpcId {
 	Event_AP_StaDisconnected = 773;
 	Event_WifiEventNoArgs = 774;
 	Event_StaScanDone = 775;
+	Event_StaConnected = 776;
+	Event_StaDisconnected = 777;
 
 	/* Add new control path command notification before Event_Max
 	 * and update Event_Max */
-	Event_Max = 776;
+	Event_Max = 778;
 }
 
 message wifi_init_config {
@@ -585,6 +588,14 @@ message wifi_scan_config {
 	bool           block = 7;
 }
 
+message wifi_he_ap_info {
+    //uint8_t bss_color:6;                  /**< an unsigned integer whose value is the BSS Color of the BSS corresponding to the AP */
+    //uint8_t partial_bss_color:1;          /**< indicate if an AID assignment rule based on the BSS color */
+    //uint8_t bss_color_disabled:1;         /**< indicate if the use of BSS color is disabled */
+    uint32         bitmask = 1;                 /* Manually have to parse for above bits */
+    uint32         bssid_index = 2;             /**< in M-BSSID set, identifies the nontransmitted BSSID */
+}
+
 message wifi_ap_record {
 	bytes          bssid = 1;                   /**< MAC address of AP 6char */
 	bytes          ssid = 2;                    /**< SSID of AP 33char */
@@ -606,6 +617,7 @@ message wifi_ap_record {
 	uint32         bitmask = 10;                /* Manually have to parse for above bits */
 
 	wifi_country   country = 11;                /**< country information of AP */
+	wifi_he_ap_info he_ap = 12;
 }
 
 message wifi_scan_threshold {
@@ -635,6 +647,7 @@ message wifi_ap_config {
 												  Valid cipher suites in softAP mode are WIFI_CIPHER_TYPE_TKIP, WIFI_CIPHER_TYPE_CCMP and WIFI_CIPHER_TYPE_TKIP_CCMP. */
 	bool           ftm_responder = 10;          /**< Enable FTM Responder mode */
 	wifi_pmf_config pmf_cfg = 11;               /**< Configuration for Protected Management Frame */
+	int32         sae_pwe_h2e = 12;             /**< Configuration for SAE PWE derivation method */
 }
 
 message  wifi_sta_config {
@@ -663,7 +676,18 @@ Units: AP beacon intervals. Defaults to 3 if set to 0. */
 	int32               sae_pwe_h2e = 12;       /**< Whether SAE hash to element is enabled */
 	uint32              failure_retry_cnt = 13; /**< Number of connection retries station will do before moving to next AP.
 												  scan_method should be set as WIFI_ALL_CHANNEL_SCAN to use this config.
-Note: Enabling this may cause connection time to increase incase best AP doesn't behave properly. */
+												  Note: Enabling this may cause connection time to increase incase best AP doesn't behave properly. */
+    //uint32_t he_dcm_set:1;                                        /**< Whether DCM max.constellation for transmission and reception is set. */
+    //uint32_t he_dcm_max_constellation_tx:2;                       /**< Indicate the max.constellation for DCM in TB PPDU the STA supported. 0: not supported. 1: BPSK, 2: QPSK, 3: 16-QAM. The default value is 3. */
+    //uint32_t he_dcm_max_constellation_rx:2;                       /**< Indicate the max.constellation for DCM in both Data field and HE-SIG-B field the STA supported. 0: not supported. 1: BPSK, 2: QPSK, 3: 16-QAM. The default value is 3. */
+    //uint32_t he_mcs9_enabled:1;                                   /**< Whether to support HE-MCS 0 to 9. The default value is 0. */
+    //uint32_t he_su_beamformee_disabled:1;                         /**< Whether to disable support for operation as an SU beamformee. */
+    //uint32_t he_trig_su_bmforming_feedback_disabled:1;            /**< Whether to disable support the transmission of SU feedback in an HE TB sounding sequence. */
+    //uint32_t he_trig_mu_bmforming_partial_feedback_disabled:1;    /**< Whether to disable support the transmission of partial-bandwidth MU feedback in an HE TB sounding sequence. */
+    // uint32_t he_trig_cqi_feedback_disabled:1;                     /**< Whether to disable support the transmission of CQI feedback in an HE TB sounding sequence. */
+    // uint32_t he_reserved:22;                                      /**< Reserved for future feature set */
+    uint32              he_bitmask = 14;
+    bytes               sae_h2e_identifier = 15;                     /**< Password identifier for H2E. this needs to be null terminated string. SAE_H2E_IDENTIFIER_LEN chars */
 }
 
 message wifi_config {
@@ -680,8 +704,9 @@ message wifi_sta_info {
 	//uint32_t phy_11g:1;                       /**< bit: 1 flag to identify if 11g mode is enabled or not */
 	//uint32_t phy_11n:1;                       /**< bit: 2 flag to identify if 11n mode is enabled or not */
 	//uint32_t phy_lr:1;                        /**< bit: 3 flag to identify if low rate is enabled or not */
-	//uint32_t is_mesh_child:1;                 /**< bit: 4 flag to identify mesh child */
-	//uint32_t reserved:27;                     /**< bit: 5..31 reserved */
+	//uint32_t phy_11x:1;                       /**< bit: 4 flag to identify identify if 11ax mode is enabled or not */
+	//uint32_t is_mesh_child:1;                 /**< bit: 5 flag to identify mesh child */
+	//uint32_t reserved:26;                     /**< bit: 6..31 reserved */
 	uint32              bitmask = 3;
 }
 
@@ -689,7 +714,6 @@ message wifi_sta_list {
 	repeated            wifi_sta_info sta = 1;  /**< station list */
 	int32               num = 2;                /**< number of stations in the list (other entries are invalid) */
 }
-
 
 //message vendor_ie_data {
 //	uint32              element_id = 1;         /**< Should be set to WIFI_VENDOR_IE_ELEMENT_ID (0xDD) */
@@ -805,6 +829,7 @@ message wifi_event_sta_connected {
 	bytes           bssid = 3;                  /**< 6bytes BSSID of connected AP*/
 	uint32          channel = 4;                /**< channel of connected AP*/
 	int32           authmode = 5;               /**< authentication mode used by AP*/
+	int32           aid = 6;                    /**< authentication id assigned by the connected AP*/
 }
 
 message wifi_event_sta_disconnected {
@@ -1302,6 +1327,31 @@ message Rpc_Resp_WifiGetCountry {
 	wifi_country country = 2;
 }
 
+message Rpc_Req_WifiApGetStaList {
+}
+
+message Rpc_Resp_WifiApGetStaList {
+	int32 resp = 1;
+	wifi_sta_list sta_list = 2;
+}
+
+message Rpc_Req_WifiApGetStaAid {
+	bytes mac = 1;
+}
+
+message Rpc_Resp_WifiApGetStaAid {
+	int32 resp = 1;
+	uint32 aid = 2;
+}
+
+message Rpc_Req_WifiStaGetRssi {
+}
+
+message Rpc_Resp_WifiStaGetRssi {
+	int32 resp = 1;
+	int32 rssi = 2;
+}
+
 /** Event structure **/
 
 message Rpc_Event_WifiEventNoArgs {
@@ -1341,6 +1391,18 @@ message Rpc_Event_StaScanDone {
 	int32 resp = 1;
     int32 event_id = 2;
 	wifi_event_sta_scan_done scan_done = 3;
+}
+
+message Rpc_Event_StaConnected {
+	int32 resp = 1;
+	int32 event_id = 2;
+	wifi_event_sta_connected sta_connected = 3;
+}
+
+message Rpc_Event_StaDisconnected {
+	int32 resp = 1;
+	int32 event_id = 2;
+	wifi_event_sta_disconnected sta_disconnected = 3;
 }
 
 message Rpc {
@@ -1407,10 +1469,14 @@ message Rpc {
 		Rpc_Req_WifiSetCountry              req_wifi_set_country              = 303;
 		Rpc_Req_WifiGetCountry              req_wifi_get_country              = 304;
 
+		Rpc_Req_WifiApGetStaList            req_wifi_ap_get_sta_list          = 311;
+		Rpc_Req_WifiApGetStaAid             req_wifi_ap_get_sta_aid           = 312;
 		Rpc_Req_WifiSetStorage              req_wifi_set_storage              = 313;
 
 		Rpc_Req_WifiSetCountryCode          req_wifi_set_country_code         = 334;
 		Rpc_Req_WifiGetCountryCode          req_wifi_get_country_code         = 335;
+
+		Rpc_Req_WifiStaGetRssi              req_wifi_sta_get_rssi             = 341;
 
 		/** Responses **/
 		Rpc_Resp_GetMacAddress              resp_get_mac_address               = 513;
@@ -1466,10 +1532,14 @@ message Rpc {
 		Rpc_Resp_WifiSetCountry             resp_wifi_set_country              = 559;
 		Rpc_Resp_WifiGetCountry             resp_wifi_get_country              = 560;
 
+		Rpc_Resp_WifiApGetStaList           resp_wifi_ap_get_sta_list          = 567;
+		Rpc_Resp_WifiApGetStaAid            resp_wifi_ap_get_sta_aid           = 568;
 		Rpc_Resp_WifiSetStorage             resp_wifi_set_storage              = 569;
 
 		Rpc_Resp_WifiSetCountryCode         resp_wifi_set_country_code         = 590;
 		Rpc_Resp_WifiGetCountryCode         resp_wifi_get_country_code         = 591;
+
+		Rpc_Resp_WifiStaGetRssi             resp_wifi_sta_get_rssi             = 597;
 
 		/** Notifications **/
 		Rpc_Event_ESPInit                   event_esp_init                     = 769;
@@ -1479,6 +1549,8 @@ message Rpc {
 		Rpc_Event_AP_StaDisconnected        event_ap_sta_disconnected          = 773;
 		Rpc_Event_WifiEventNoArgs           event_wifi_event_no_args           = 774;
 		Rpc_Event_StaScanDone               event_sta_scan_done                = 775;
+		Rpc_Event_StaConnected              event_sta_connected                = 776;
+		Rpc_Event_StaDisconnected           event_sta_disconnected             = 777;
 	}
 }
 
