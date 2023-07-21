@@ -126,6 +126,9 @@ int test_wifi_set_country_code(const char *country, bool ieee80211d_enabled);
 int test_wifi_get_country_code(char *country);
 int test_wifi_set_country(const wifi_country_t *country);
 int test_wifi_get_country(wifi_country_t *country);
+int test_wifi_ap_get_sta_list(wifi_sta_list_t *sta);
+int test_wifi_ap_get_sta_aid(const uint8_t mac[6], uint16_t *aid);
+int test_wifi_sta_get_rssi(int *rssi);
 
 #if 0
 int test_wifi_set_protocol(wifi_interface_t ifx, uint8_t protocol_bitmap);

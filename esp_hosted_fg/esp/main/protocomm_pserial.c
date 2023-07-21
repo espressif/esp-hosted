@@ -286,6 +286,11 @@ static void pserial_task(void *params)
 			ret = rpc_evt_handler(pc, arg.data, arg.len, arg.msg_id);
 			if (ret)
 				ESP_LOGI(TAG, "protobuf rpc event handling failed %d\n", ret);
+			if (arg.msg_id != RPC_ID__Event_WifiEventNoArgs) {
+				// Free any allocated buffer for copied event data
+				if (arg.data)
+					free(arg.data);
+			}
 		} else {
 			/* Request */
 			len = pserial_cfg->recv(arg.data, arg.len);

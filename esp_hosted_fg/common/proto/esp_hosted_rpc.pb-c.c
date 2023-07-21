@@ -14339,6 +14339,30 @@ static const ProtobufCFieldDescriptor rpc__field_descriptors[96] =
     0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
+  {
+    "event_sta_connected",
+    776,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_MESSAGE,
+    offsetof(Rpc, payload_case),
+    offsetof(Rpc, event_sta_connected),
+    &rpc__event__sta_connected__descriptor,
+    NULL,
+    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "event_sta_disconnected",
+    777,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_MESSAGE,
+    offsetof(Rpc, payload_case),
+    offsetof(Rpc, event_sta_disconnected),
+    &rpc__event__sta_disconnected__descriptor,
+    NULL,
+    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
 };
 static const unsigned rpc__field_indices_by_name[] = {
   90,   /* field[90] = event_ap_sta_connected */

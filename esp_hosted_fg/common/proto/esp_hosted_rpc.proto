@@ -663,6 +663,14 @@ message wifi_he_ap_info {
     uint32         bssid_index = 2;             /**< in M-BSSID set, identifies the nontransmitted BSSID */
 }
 
+message wifi_he_ap_info {
+    //uint8_t bss_color:6;                  /**< an unsigned integer whose value is the BSS Color of the BSS corresponding to the AP */
+    //uint8_t partial_bss_color:1;          /**< indicate if an AID assignment rule based on the BSS color */
+    //uint8_t bss_color_disabled:1;         /**< indicate if the use of BSS color is disabled */
+    uint32         bitmask = 1;                 /* Manually have to parse for above bits */
+    uint32         bssid_index = 2;             /**< in M-BSSID set, identifies the nontransmitted BSSID */
+}
+
 message wifi_ap_record {
 	bytes          bssid = 1;                   /**< MAC address of AP 6char */
 	bytes          ssid = 2;                    /**< SSID of AP 33char */
@@ -1480,6 +1488,18 @@ message Rpc_Event_StaConnected {
 message Rpc_Event_StaDisconnected {
 	int32 resp = 1;
 	wifi_event_sta_disconnected sta_disconnected = 2;
+}
+
+message Rpc_Event_StaConnected {
+	int32 resp = 1;
+	int32 event_id = 2;
+	wifi_event_sta_connected sta_connected = 3;
+}
+
+message Rpc_Event_StaDisconnected {
+	int32 resp = 1;
+	int32 event_id = 2;
+	wifi_event_sta_disconnected sta_disconnected = 3;
 }
 
 message Rpc {
