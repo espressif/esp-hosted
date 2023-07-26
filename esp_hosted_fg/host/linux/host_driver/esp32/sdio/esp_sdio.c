@@ -47,8 +47,8 @@
 #define HOLD_SDIO_HOST_WHILE_READ 1
 
 #if HOLD_SDIO_HOST_WHILE_READ
-  #define CLAIM_SDIO_HOST(x) sdio_claim_host(x)
-  #define RELEASE_SDIO_HOST(x) sdio_release_host(x)
+  #define CLAIM_SDIO_HOST(x) sdio_claim_host(x->func)
+  #define RELEASE_SDIO_HOST(x) sdio_release_host(x->func)
   #define IS_SDIO_HOST_LOCK_NEEDED LOCK_ALREADY_ACQUIRED
 #else
   #define CLAIM_SDIO_HOST(x)
