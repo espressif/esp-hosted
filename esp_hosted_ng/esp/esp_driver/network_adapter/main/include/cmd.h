@@ -48,6 +48,9 @@ int process_assoc_request(uint8_t if_type, uint8_t *payload, uint16_t payload_le
 int process_set_ip(uint8_t if_type, uint8_t *payload, uint16_t payload_len);
 int process_set_mcast_mac_list(uint8_t if_type, uint8_t *payload, uint16_t payload_len);
 int process_tx_power(uint8_t if_type, uint8_t *payload, uint16_t payload_len, uint8_t cmd_code);
+int process_reg_set(uint8_t if_type, uint8_t *payload, uint16_t payload_len);
+int process_reg_get(uint8_t if_type, uint8_t *payload, uint16_t payload_len);
+
 esp_err_t initialise_wifi(void);
 
 inline esp_err_t send_command_response(interface_buffer_handle_t *buf_handle)

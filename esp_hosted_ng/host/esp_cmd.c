@@ -233,6 +233,8 @@ static int wait_and_decode_cmd_resp(struct esp_wifi_device *priv,
 	case CMD_SET_DEFAULT_KEY:
 	case CMD_SET_IP_ADDR:
 	case CMD_SET_MCAST_MAC_ADDR:
+	case CMD_GET_REG_DOMAIN:
+	case CMD_SET_REG_DOMAIN:
 		/* intentional fallthrough */
 		if (ret == 0)
 			ret = decode_common_resp(cmd_node);
@@ -1525,6 +1527,65 @@ int cmd_get_tx_power(struct esp_wifi_device *priv)
 		esp_err("Failed to get command node\n");
 		return -ENOMEM;
 	}
+
+	queue_cmd_node(priv->adapter, cmd_node, ESP_CMD_DFLT_PRIO);
+	queue_work(priv->adapter->cmd_wq, &priv->adapter->cmd_work);
+
+	RET_ON_FAIL(wait_and_decode_cmd_resp(priv, cmd_node));
+
+	return 0;
+}
+
+int cmd_get_reg_domain(struct esp_wifi_device *priv)
+{
+	u16 cmd_len;
+	struct command_node *cmd_node = NULL;
+
+	if (!priv || !priv->adapter) {
+		esp_err("Invalid argument\n");
+		return -EINVAL;
+	}
+
+	cmd_len = sizeof(struct cmd_reg_domain);
+
+	cmd_node = prepare_command_request(priv->adapter, CMD_GET_REG_DOMAIN, cmd_len);
+
+	if (!cmd_node) {
+		esp_err("Failed to get command node\n");
+		return -ENOMEM;
+	}
+
+	queue_cmd_node(priv->adapter, cmd_node, ESP_CMD_DFLT_PRIO);
+	queue_work(priv->adapter->cmd_wq, &priv->adapter->cmd_work);
+
+	RET_ON_FAIL(wait_and_decode_cmd_resp(priv, cmd_node));
+
+	return 0;
+}
+
+int cmd_set_reg_domain(struct esp_wifi_device *priv)
+{
+	u16 cmd_len;
+	struct command_node *cmd_node = NULL;
+	struct cmd_reg_domain *cmd;
+
+	if (!priv || !priv->adapter) {
+		esp_err("Invalid argument\n");
+		return -EINVAL;
+	}
+
+	cmd_len = sizeof(struct cmd_reg_domain);
+
+	cmd_node = prepare_command_request(priv->adapter, CMD_SET_REG_DOMAIN, cmd_len);
+
+	if (!cmd_node) {
+		esp_err("Failed to get command node\n");
+		return -ENOMEM;
+	}
+
+	cmd = (struct cmd_reg_domain *) (cmd_node->cmd_skb->data + sizeof(struct esp_payload_header));
+
+	strlcpy(cmd->country_code, priv->country_code, MAX_COUNTRY_LEN);
 
 	queue_cmd_node(priv->adapter, cmd_node, ESP_CMD_DFLT_PRIO);
 	queue_work(priv->adapter->cmd_wq, &priv->adapter->cmd_work);
