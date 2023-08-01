@@ -1,13 +1,13 @@
-#ifndef __esp_cfg80211_h_
-#define __esp_cfg80211_h_
-
+// SPDX-License-Identifier: GPL-2.0-only
 /*
  * Espressif Systems Wireless LAN device driver
  *
  * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
- * SPDX-License-Identifier: GPL-2.0-only
  */
+#ifndef __esp_cfg80211_h_
+#define __esp_cfg80211_h_
+
 #include <linux/version.h>
 
 struct wireless_dev *esp_cfg80211_add_iface(struct wiphy *wiphy,

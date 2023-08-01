@@ -1,5 +1,5 @@
+// SPDX-License-Identifier: GPL-2.0-only OR Apache-2.0
 // Copyright 2015-2022 Espressif Systems (Shanghai) PTE LTD
-/* SPDX-License-Identifier: Dual-licensed under GPL-2.0 or Apache-2.0, at your option */
 
 #ifndef __PLATFORM_WRAPPER_H
 #define __PLATFORM_WRAPPER_H
