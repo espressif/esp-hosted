@@ -1,5 +1,6 @@
 #!/bin/sh
 
+# SPDX-License-Identifier: Apache-2.0
 # Copyright 2015-2021 Espressif Systems (Shanghai) PTE LTD
 #
 # Licensed under the Apache License, Version 2.0 (the "License");

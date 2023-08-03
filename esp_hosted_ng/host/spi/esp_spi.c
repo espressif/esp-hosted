@@ -1,7 +1,7 @@
+// SPDX-License-Identifier: GPL-2.0-only
 /*
  * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
- * SPDX-License-Identifier: GPL-2.0-only
  */
 #include "utils.h"
 #include <linux/spi/spi.h>
