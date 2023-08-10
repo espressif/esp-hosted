@@ -925,6 +925,87 @@ DONE:
 	return ret;
 }
 
+int process_reg_set(uint8_t if_type, uint8_t *payload, uint16_t payload_len)
+{
+	interface_buffer_handle_t buf_handle = {0};
+	esp_err_t ret = ESP_OK;
+	struct cmd_reg_domain *cmd;
+
+	cmd = (struct cmd_reg_domain *)payload;
+	esp_wifi_set_country_code(cmd->country_code, false);
+
+	buf_handle.if_type = if_type;
+	buf_handle.if_num = 0;
+	buf_handle.payload_len = sizeof(struct cmd_reg_domain);
+	buf_handle.pkt_type = PACKET_TYPE_COMMAND_RESPONSE;
+
+	buf_handle.payload = heap_caps_malloc(buf_handle.payload_len, MALLOC_CAP_DMA);
+	assert(buf_handle.payload);
+	memset(buf_handle.payload, 0, buf_handle.payload_len);
+
+	cmd = (struct cmd_reg_domain *)(buf_handle.payload);
+	esp_wifi_get_country_code(cmd->country_code);
+	cmd->header.cmd_code = cmd;
+	cmd->header.len = 0;
+	cmd->header.cmd_status = CMD_RESPONSE_SUCCESS;
+
+	buf_handle.priv_buffer_handle = buf_handle.payload;
+	buf_handle.free_buf_handle = free;
+
+	ret = send_command_response(&buf_handle);
+	if (ret != pdTRUE) {
+		ESP_LOGE(TAG, "Slave -> Host: Failed to send command response\n");
+		goto DONE;
+	}
+
+	return ESP_OK;
+
+DONE:
+	if (buf_handle.payload)
+		free(buf_handle.payload);
+
+	return ret;
+}
+
+int process_reg_get(uint8_t if_type, uint8_t *payload, uint16_t payload_len)
+{
+	interface_buffer_handle_t buf_handle = {0};
+	esp_err_t ret = ESP_OK;
+	struct cmd_reg_domain *cmd;
+
+	buf_handle.if_type = if_type;
+	buf_handle.if_num = 0;
+	buf_handle.payload_len = sizeof(struct cmd_reg_domain);
+	buf_handle.pkt_type = PACKET_TYPE_COMMAND_RESPONSE;
+
+	buf_handle.payload = heap_caps_malloc(buf_handle.payload_len, MALLOC_CAP_DMA);
+	assert(buf_handle.payload);
+	memset(buf_handle.payload, 0, buf_handle.payload_len);
+
+	cmd = (struct cmd_reg_domain *)(buf_handle.payload);
+	esp_wifi_get_country_code(cmd->country_code);
+	cmd->header.cmd_code = cmd;
+	cmd->header.len = 0;
+	cmd->header.cmd_status = CMD_RESPONSE_SUCCESS;
+
+	buf_handle.priv_buffer_handle = buf_handle.payload;
+	buf_handle.free_buf_handle = free;
+
+	ret = send_command_response(&buf_handle);
+	if (ret != pdTRUE) {
+		ESP_LOGE(TAG, "Slave -> Host: Failed to send command response\n");
+		goto DONE;
+	}
+
+	return ESP_OK;
+
+DONE:
+	if (buf_handle.payload)
+		free(buf_handle.payload);
+
+	return ret;
+}
+
 
 int process_sta_disconnect(uint8_t if_type, uint8_t *payload, uint16_t payload_len)
 {

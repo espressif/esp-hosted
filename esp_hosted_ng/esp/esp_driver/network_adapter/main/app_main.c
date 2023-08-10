@@ -446,6 +446,16 @@ void process_priv_commamd(uint8_t if_type, uint8_t *payload, uint16_t payload_le
 			process_tx_power(if_type, payload, payload_len, header->cmd_code);
 			break;
 
+		case CMD_SET_REG_DOMAIN:
+			ESP_LOGI(TAG, "REG set command");
+			process_reg_set(if_type, payload, payload_len);
+			break;
+
+		case CMD_GET_REG_DOMAIN:
+			ESP_LOGI(TAG, "REG get command");
+			process_reg_get(if_type, payload, payload_len);
+			break;
+
 		default:
 			ESP_LOGI(TAG, "Unsupported cmd[0x%x] received\n", header->cmd_code);
 			break;

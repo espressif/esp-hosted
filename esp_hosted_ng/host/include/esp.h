@@ -52,6 +52,8 @@ struct esp_adapter;
 #define SKB_DATA_ADDR_ALIGNMENT 4
 #define INTERFACE_HEADER_PADDING (SKB_DATA_ADDR_ALIGNMENT*3)
 
+#define MAX_COUNTRY_LEN 3
+
 enum adapter_flags_e {
 	ESP_CLEANUP_IN_PROGRESS,    /* Driver unloading or ESP reseted */
 	ESP_CMD_INIT_DONE,          /* Cmd component is initialized with esp_commands_setup() */
@@ -149,7 +151,8 @@ struct esp_wifi_device {
 	volatile uint8_t        stop_data;
 	volatile uint8_t        port_open;
 
-	uint8_t                 pad[3];
+	char                    country_code[MAX_COUNTRY_LEN];
+
 	wait_queue_head_t       wait_for_scan_completion;
 	unsigned long           priv_flags;
 	struct notifier_block   nb;
