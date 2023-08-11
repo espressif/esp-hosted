@@ -5,17 +5,9 @@ set(COMPONENT_ADD_INCLUDEDIRS "${MCU_DIR}/port/esp")
 set(COMPONENT_SRCS "cmd_wifi.c" "iperf_example_main.c" "${MCU_DIR}/drivers/transport/transport_drv.c"  "${MCU_DIR}/drivers/network/netdev_api.c" "${MCU_DIR}/drivers/network/netdev_stub.c" "${MCU_DIR}/drivers/serial/serial_ll_if.c" "${MCU_DIR}/utils/common.c" "${MCU_DIR}/utils/util.c" "${MCU_DIR}/utils/stats.c" "../../../../os_wrapper.c" "${MCU_DIR}/drivers/serial/serial_drv.c" "${MCU_DIR}/drivers/netif/wifi_default.c" "${MCU_DIR}/drivers/netif/wifi_netif.c")
 list(APPEND COMPONENT_ADD_INCLUDEDIRS "." "${MCU_DIR}/drivers/transport" "${MCU_DIR}/drivers/transport/spi" "${MCU_DIR}/drivers/transport/sdio" "${MCU_DIR}/drivers/netif" "${MCU_DIR}/drivers/network" "${MCU_DIR}/drivers/serial" "${MCU_DIR}/utils" "${FG_ROOT_DIR}/common/include" "../../../.." )
 
-#list(APPEND COMPONENT_SRCS "${MCU_DIR}/drivers/esp_event/" "${MCU_DIR}/drivers/esp_event/esp_event.c" "${MCU_DIR}/drivers/esp_event/event_loop_legacy.c" "${MCU_DIR}/drivers/esp_event/default_event_loop.c" "${MCU_DIR}/drivers/esp_event/esp_event_private.c" "${MCU_DIR}/drivers/esp_event/event_send.c" )
-#list(APPEND COMPONENT_ADD_INCLUDEDIRS "${MCU_DIR}/drivers/esp_event" "${MCU_DIR}/drivers/esp_event/include" "${MCU_DIR}/drivers/esp_event/private_include"  )
-
 set(NETIF_DIR "${MCU_DIR}/drivers/netif")
 list(APPEND COMPONENT_SRCS "${NETIF_DIR}/wifi_default.c" "${NETIF_DIR}/wifi_netif.c" )
 list(APPEND COMPONENT_ADD_INCLUDEDIRS "${NETIF_DIR}" "${NETIF_DIR}/" )
-
-#set(ESP_NETIF_DIR "${MCU_DIR}/drivers/netif/esp_netif")
-#set(XTRA_COMPONENTS "${ESP_NETIF_DIR}")
-#list(APPEND COMPONENT_SRCS "${NETIF_DIR}/wifi_default.c" "${NETIF_DIR}/wifi_netif.c" )
-#list(APPEND COMPONENT_ADD_INCLUDEDIRS "${NETIF_DIR}" "${NETIF_DIR}/" )
 
 #components
 # rpc lib files
@@ -43,9 +35,4 @@ else(CONFIG_ESP_SPI_HOST_INTERFACE)
 	list(APPEND COMPONENT_SRCS "${MCU_DIR}/drivers/transport/spi/spi_drv.c")
 endif()
 
-#list (APPEND EXCLUDE_COMPONENT_SRCS "${IDF_PATH}/components/mbedtls")
-#list(APPEND COMPONENT_ADD_INCLUDEDIRS "${MCU_DIR}/helpers/esp_md5")
-#list(APPEND COMPONENT_SRCS "${MCU_DIR}/helpers/esp_md5/esp_md5.c")
-
-#idf_component_register(SRCS ${COMPONENT_SRCS} EXCLUDE_SRCS ${EXCLUDE_COMPONENT_SRCS} INCLUDE_DIRS ${COMPONENT_ADD_INCLUDEDIRS} EXTRA_COMPONENT_DIRS "${XTRA_COMPONENTS}")
 idf_component_register(SRCS ${COMPONENT_SRCS} EXCLUDE_SRCS ${EXCLUDE_COMPONENT_SRCS} INCLUDE_DIRS ${COMPONENT_ADD_INCLUDEDIRS})
