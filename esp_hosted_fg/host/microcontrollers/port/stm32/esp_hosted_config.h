@@ -108,21 +108,25 @@ enum {
  */
 
 #ifndef GPIO_HANDSHAKE_Pin
+/* CN8 16 */
 #define GPIO_HANDSHAKE_Pin GPIO_PIN_3
 #define GPIO_HANDSHAKE_GPIO_Port GPIOG
 #endif
 
 #ifndef GPIO_RESET_Pin
+/* CN7 20 */
 #define GPIO_RESET_Pin GPIO_PIN_3
 #define GPIO_RESET_GPIO_Port GPIOF
 #endif
 
 #ifndef USR_SPI_CS_Pin
+/* CN7 16 */
 #define USR_SPI_CS_Pin GPIO_PIN_14
 #define USR_SPI_CS_GPIO_Port GPIOD
 #endif
 
 #ifndef GPIO_DATA_READY_Pin
+/* CN8 14 */
 #define GPIO_DATA_READY_Pin GPIO_PIN_2
 #define GPIO_DATA_READY_GPIO_Port GPIOG
 #endif
@@ -136,17 +140,20 @@ enum {
 #endif
 
 #ifndef GPIO_MOSI_Pin
+/* CN7 13 */
 #define GPIO_MOSI_Pin GPIO_PIN_5
 #define GPIO_MOSI_GPIO_Port GPIOB
 #endif
 
 
 #ifndef GPIO_MISO_Pin
+/* CN7 19 */
 #define GPIO_MISO_Pin GPIO_PIN_4
 #define GPIO_MISO_GPIO_Port GPIOB
 #endif
 
 #ifndef GPIO_CLK_Pin
+/* CN7 15 */
 #define GPIO_CLK_Pin GPIO_PIN_3
 #define GPIO_CLK_GPIO_Port GPIOB
 #endif
@@ -155,6 +162,21 @@ enum {
 #define GPIO_CS_Pin GPIO_PIN_14
 #define GPIO_CS_GPIO_Port GPIOD
 #endif
+
+/*
+ *   +---------+-----------------------+----------+----------+
+ *   |  Func   | STM32- NUCLEO H743ZI2 | ESP32-C3 | ESP32-C6 |
+ *   +---------+-----------------------+----------+----------+
+ *   |  MOSI   |       CN7 13          |   10     |   7      |
+ *   |  MISO   |       CN7 19          |   18     |  20      |
+ *   |  CLK    |       CN7 15          |    3     |   3      |
+ *   |  CS     |       CN7 16          |   19     |  21      |
+ *   |  HS     |       CN8 16          |    0     |   0      |
+ *   |  DR     |       CN8 14          |    9     |   9      |
+ *   | GND     |       CN7  8          |   GND    |  GND     |
+ *   | Sl RES  |       CN7 20          |   RST    |  RST     |
+ *   +---------+-----------------------+----------+----------+
+ */
 
 #else
 
