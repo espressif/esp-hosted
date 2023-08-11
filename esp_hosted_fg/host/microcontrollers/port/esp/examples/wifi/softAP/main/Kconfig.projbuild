@@ -228,8 +228,8 @@ menu "Example Configuration"
 
 ESP32XX_SPI_CLK_FREQ_RANGE_MIN := 1
 ESP32_SPI_CLK_FREQ_RANGE_MAX := 10
-ESP32S2_SPI_CLK_FREQ_RANGE_MAX := 40
-ESP32XX_SPI_CLK_FREQ_RANGE_MAX := 60
+ESP32C6_SPI_CLK_FREQ_RANGE_MAX := 40
+ESP32XX_SPI_CLK_FREQ_RANGE_MAX := 40
 
 		config ESP_SPI_FREQ_ESP32
 			depends on SLAVE_CHIPSET_ESP32
@@ -239,18 +239,18 @@ ESP32XX_SPI_CLK_FREQ_RANGE_MAX := 60
 			help
 				"Optimize SPI CLK by increasing till host practically can support"
 
-		config ESP_SPI_FREQ_ESP32S2
-			depends on SLAVE_CHIPSET_ESP32S2
+		config ESP_SPI_FREQ_ESP32C6
+			depends on SLAVE_CHIPSET_ESP32C6
 			int "SPI Clock Freq"
-			default 30
-			range $(ESP32XX_SPI_CLK_FREQ_RANGE_MIN) $(ESP32S2_SPI_CLK_FREQ_RANGE_MAX)
+			default 26
+			range $(ESP32XX_SPI_CLK_FREQ_RANGE_MIN) $(ESP32C6_SPI_CLK_FREQ_RANGE_MAX)
 			help
 				"Optimize SPI CLK by increasing till host practically can support"
 
 		config ESP_SPI_FREQ_ESP32XX
-			depends on SLAVE_CHIPSET_ESP32C2 || SLAVE_CHIPSET_ESP32C3 || SLAVE_CHIPSET_ESP32C6 || SLAVE_CHIPSET_ESP32S3
+			depends on SLAVE_CHIPSET_ESP32C2 || SLAVE_CHIPSET_ESP32C3 || SLAVE_CHIPSET_ESP32S2 || SLAVE_CHIPSET_ESP32S3
 			int "SPI Clock Freq"
-			default 30 if SLAVE_CHIPSET_ESP32C2 || SLAVE_CHIPSET_ESP32C3 || SLAVE_CHIPSET_ESP32C6 || SLAVE_CHIPSET_ESP32S3
+			default 30 if SLAVE_CHIPSET_ESP32C2 || SLAVE_CHIPSET_ESP32C3 || SLAVE_CHIPSET_ESP32S2 || SLAVE_CHIPSET_ESP32S3
 			range $(ESP32XX_SPI_CLK_FREQ_RANGE_MIN) $(ESP32XX_SPI_CLK_FREQ_RANGE_MAX)
 			help
 				"Optimize SPI CLK by increasing till host practically can support"
@@ -259,8 +259,8 @@ ESP32XX_SPI_CLK_FREQ_RANGE_MAX := 60
 		config ESP_SPI_CLK_FREQ
 			int
 			default ESP_SPI_FREQ_ESP32 if SLAVE_CHIPSET_ESP32
-			default ESP_SPI_FREQ_ESP32S2 if SLAVE_CHIPSET_ESP32S2
-			default ESP_SPI_FREQ_ESP32XX if SLAVE_CHIPSET_ESP32C2 || SLAVE_CHIPSET_ESP32C3 || SLAVE_CHIPSET_ESP32C6 || SLAVE_CHIPSET_ESP32S3
+			default ESP_SPI_FREQ_ESP32C6 if SLAVE_CHIPSET_ESP32C6
+			default ESP_SPI_FREQ_ESP32XX if SLAVE_CHIPSET_ESP32C2 || SLAVE_CHIPSET_ESP32C3 || SLAVE_CHIPSET_ESP32S2 || SLAVE_CHIPSET_ESP32S3
 			help
 				"Optimize SPI CLK by increasing till host practically can support"
 
@@ -284,22 +284,31 @@ ESP32XX_SPI_CLK_FREQ_RANGE_MAX := 60
 			help
 				Cache allocated memory - reduces number of malloc calls
 
-		config ESP_RAW_THROUGHPUT_TRANSPORT
-			bool "RawTP: Transport level throughput debug test"
-			default n
+		menu "Hosted Debugging"
+			config ESP_RAW_THROUGHPUT_TRANSPORT
+				bool "RawTP: Transport level throughput debug test"
+				default n
+					help
+						Find max transport performance which helps to assess stability of porting done
+
+			config ESP_RAW_TP_HOST_TO_ESP_PKT_LEN
+				depends on ESP_RAW_THROUGHPUT_TRANSPORT
+				int "RawTP: Host to ESP packet size"
+				range 1 1500
+				default 1460
+
+			config ESP_RAW_TP_REPORT_INTERVAL
+				depends on ESP_RAW_THROUGHPUT_TRANSPORT
+				int "RawTP: periodic duration to report stats accumulated"
+				default 30
+
+			config ESP_PKT_STATS
+				bool "Transport level packet stats"
+				default n
 				help
-					Find max transport performance which helps to assess stability of porting done
+					On comparing with slave packet stats helps to understand any packet loss at hosted
 
-		config ESP_RAW_TP_HOST_TO_ESP_PKT_LEN
-			depends on ESP_RAW_THROUGHPUT_TRANSPORT
-			int "RawTP: Host to ESP packet size"
-			range 1 1500
-			default 1460
-
-		config ESP_RAW_TP_REPORT_INTERVAL
-			depends on ESP_RAW_THROUGHPUT_TRANSPORT
-			int "RawTP: periodic duration to report stats accumulated"
-			default 30
+		endmenu
 	endmenu
 
 endmenu
