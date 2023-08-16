@@ -223,6 +223,7 @@ esp_err_t protocomm_pserial_data_ready(protocomm_t *pc,
 {
 	struct pserial_config *pserial_cfg = NULL;
 	serial_arg_t arg = {0};
+	uint8_t *buf = NULL;
 
 	pserial_cfg = (struct pserial_config *) pc->priv;
 	if (!pserial_cfg) {
@@ -230,33 +231,22 @@ esp_err_t protocomm_pserial_data_ready(protocomm_t *pc,
 		return ESP_FAIL;
 	}
 
-	if ((msg_id > RPC_ID__Event_Base) &&
-		(msg_id < RPC_ID__Event_Max) &&
-		(msg_id != RPC_ID__Event_WifiEventNoArgs)) {
-		/* Events */
-		/* make a copy of incoming event data, as it might be cleared
-		 * by the time the event is removed from pserial_cfg->req_queue for processing */
-		/* Special case: don't malloc for Event_WifiEventNoArgs - no event data */
-		uint8_t *buf = NULL;
-		if (len) {
-			buf = (uint8_t *)malloc(len);
-			if (buf == NULL) {
-				ESP_LOGE(TAG,"%s Failed to allocate memory", __func__);
-				return ESP_FAIL;
-			}
-			memcpy(buf, in, len);
+	if (len) {
+		buf = (uint8_t *)malloc(len);
+		if (buf == NULL) {
+			ESP_LOGE(TAG,"%s Failed to allocate memory", __func__);
+			return ESP_FAIL;
 		}
-		arg.msg_id = msg_id;
-		arg.len = len;
-		arg.data = buf;
-	} else {
-		arg.msg_id = msg_id;
-		arg.len = len;
-		arg.data = in;
+		memcpy(buf, in, len);
 	}
+	arg.msg_id = msg_id;
+	arg.len = len;
+	arg.data = buf;
 
 	if (xQueueSend(pserial_cfg->req_queue, &arg, portMAX_DELAY) != pdTRUE) {
 		ESP_LOGE(TAG, "Failed to indicate data ready");
+		if (buf)
+			free(buf);
 		return ESP_FAIL;
 	}
 
@@ -281,7 +271,6 @@ static void pserial_task(void *params)
 	protocomm_t *pc = (protocomm_t *) params;
 	struct pserial_config *pserial_cfg = NULL;
 	int len = 0, ret = 0;
-	uint8_t *buf = NULL;
 	serial_arg_t arg = {0};
 
 	pserial_cfg = (struct pserial_config *) pc->priv;
@@ -297,30 +286,18 @@ static void pserial_task(void *params)
 			ret = rpc_evt_handler(pc, arg.data, arg.len, arg.msg_id);
 			if (ret)
 				ESP_LOGI(TAG, "protobuf rpc event handling failed %d\n", ret);
-			if (arg.msg_id != RPC_ID__Event_WifiEventNoArgs) {
-				// Free any allocated buffer for copied event data
-				if (arg.data)
-					free(arg.data);
-			}
 		} else {
 			/* Request */
-			buf = (uint8_t *) malloc(arg.len);
-			if (buf == NULL) {
-				ESP_LOGE(TAG,"%s Failed to allocate memory", __func__);
-				return;
-			}
-			len = pserial_cfg->recv(buf, arg.len);
+			len = pserial_cfg->recv(arg.data, arg.len);
 			if (len) {
-				/*ESP_LOG_BUFFER_HEXDUMP("serial_rx", buf, len<16?len:16, ESP_LOG_INFO);*/
-				ret = rpc_req_handler(pc, buf, len);
+				/*ESP_LOG_BUFFER_HEXDUMP("serial_rx", arg.data, len<16?len:16, ESP_LOG_INFO);*/
+				ret = rpc_req_handler(pc, arg.data, len);
 				if (ret)
 					ESP_LOGI(TAG, "protocom rpc req handling failed %d\n", ret);
-				if (buf) {
-					free(buf);
-					buf = NULL;
-				}
 			}
 		}
+		if (arg.data)
+			free(arg.data);
 	}
 
 	ESP_LOGI(TAG, "Unexpected termination of pserial task");

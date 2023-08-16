@@ -137,7 +137,6 @@ typedef struct RpcRespWifiStaGetRssi RpcRespWifiStaGetRssi;
 typedef struct RpcEventWifiEventNoArgs RpcEventWifiEventNoArgs;
 typedef struct RpcEventESPInit RpcEventESPInit;
 typedef struct RpcEventHeartbeat RpcEventHeartbeat;
-typedef struct RpcEventStationDisconnectFromAP RpcEventStationDisconnectFromAP;
 typedef struct RpcEventAPStaDisconnected RpcEventAPStaDisconnected;
 typedef struct RpcEventAPStaConnected RpcEventAPStaConnected;
 typedef struct RpcEventStaScanDone RpcEventStaScanDone;
@@ -619,18 +618,17 @@ typedef enum _RpcId {
   RPC_ID__Event_Base = 768,
   RPC_ID__Event_ESPInit = 769,
   RPC_ID__Event_Heartbeat = 770,
-  RPC_ID__Event_StationDisconnectFromAP = 771,
-  RPC_ID__Event_AP_StaConnected = 772,
-  RPC_ID__Event_AP_StaDisconnected = 773,
-  RPC_ID__Event_WifiEventNoArgs = 774,
-  RPC_ID__Event_StaScanDone = 775,
-  RPC_ID__Event_StaConnected = 776,
-  RPC_ID__Event_StaDisconnected = 777,
+  RPC_ID__Event_AP_StaConnected = 771,
+  RPC_ID__Event_AP_StaDisconnected = 772,
+  RPC_ID__Event_WifiEventNoArgs = 773,
+  RPC_ID__Event_StaScanDone = 774,
+  RPC_ID__Event_StaConnected = 775,
+  RPC_ID__Event_StaDisconnected = 776,
   /*
    * Add new control path command notification before Event_Max
    * and update Event_Max 
    */
-  RPC_ID__Event_Max = 778
+  RPC_ID__Event_Max = 777
     PROTOBUF_C__FORCE_ENUM_TO_BE_INT_SIZE(RPC_ID)
 } RpcId;
 
@@ -818,7 +816,10 @@ struct  WifiScanConfig
    **< scan time per channel 
    */
   WifiScanTime *scan_time;
-  protobuf_c_boolean block;
+  /*
+   **< time spent at home channel between scanning consecutive channels.
+   */
+  uint32_t home_chan_dwell_time;
 };
 #define WIFI_SCAN_CONFIG__INIT \
  { PROTOBUF_C_MESSAGE_INIT (&wifi_scan_config__descriptor) \
@@ -1141,7 +1142,7 @@ struct  WifiStaInfo
    *uint32_t phy_lr:1;                         **< bit: 3 flag to identify if low rate is enabled or not * 
    *uint32_t phy_11x:1;                        **< bit: 4 flag to identify identify if 11ax mode is enabled or not * 
    *uint32_t is_mesh_child:1;                  **< bit: 5 flag to identify mesh child * 
-   *uint32_t reserved:27;                      **< bit: 6..31 reserved * 
+   *uint32_t reserved:26;                      **< bit: 6..31 reserved * 
    */
   uint32_t bitmask;
 };
@@ -2670,16 +2671,6 @@ struct  RpcEventHeartbeat
     , 0 }
 
 
-struct  RpcEventStationDisconnectFromAP
-{
-  ProtobufCMessage base;
-  int32_t resp;
-};
-#define RPC__EVENT__STATION_DISCONNECT_FROM_AP__INIT \
- { PROTOBUF_C_MESSAGE_INIT (&rpc__event__station_disconnect_from_ap__descriptor) \
-    , 0 }
-
-
 struct  RpcEventAPStaDisconnected
 {
   ProtobufCMessage base;
@@ -2688,10 +2679,11 @@ struct  RpcEventAPStaDisconnected
   ProtobufCBinaryData mac;
   uint32_t aid;
   protobuf_c_boolean is_mesh_child;
+  uint32_t reason;
 };
 #define RPC__EVENT__AP__STA_DISCONNECTED__INIT \
  { PROTOBUF_C_MESSAGE_INIT (&rpc__event__ap__sta_disconnected__descriptor) \
-    , 0, 0, {0,NULL}, 0, 0 }
+    , 0, 0, {0,NULL}, 0, 0, 0 }
 
 
 struct  RpcEventAPStaConnected
@@ -2830,13 +2822,12 @@ typedef enum {
   RPC__PAYLOAD_RESP_WIFI_STA_GET_RSSI = 597,
   RPC__PAYLOAD_EVENT_ESP_INIT = 769,
   RPC__PAYLOAD_EVENT_HEARTBEAT = 770,
-  RPC__PAYLOAD_EVENT_STATION_DISCONNECT_FROM__AP = 771,
-  RPC__PAYLOAD_EVENT_AP_STA_CONNECTED = 772,
-  RPC__PAYLOAD_EVENT_AP_STA_DISCONNECTED = 773,
-  RPC__PAYLOAD_EVENT_WIFI_EVENT_NO_ARGS = 774,
-  RPC__PAYLOAD_EVENT_STA_SCAN_DONE = 775,
-  RPC__PAYLOAD_EVENT_STA_CONNECTED = 776,
-  RPC__PAYLOAD_EVENT_STA_DISCONNECTED = 777
+  RPC__PAYLOAD_EVENT_AP_STA_CONNECTED = 771,
+  RPC__PAYLOAD_EVENT_AP_STA_DISCONNECTED = 772,
+  RPC__PAYLOAD_EVENT_WIFI_EVENT_NO_ARGS = 773,
+  RPC__PAYLOAD_EVENT_STA_SCAN_DONE = 774,
+  RPC__PAYLOAD_EVENT_STA_CONNECTED = 775,
+  RPC__PAYLOAD_EVENT_STA_DISCONNECTED = 776
     PROTOBUF_C__FORCE_ENUM_TO_BE_INT_SIZE(RPC__PAYLOAD__CASE)
 } Rpc__PayloadCase;
 
@@ -2946,7 +2937,6 @@ struct  Rpc
      */
     RpcEventESPInit *event_esp_init;
     RpcEventHeartbeat *event_heartbeat;
-    RpcEventStationDisconnectFromAP *event_station_disconnect_from_ap;
     RpcEventAPStaConnected *event_ap_sta_connected;
     RpcEventAPStaDisconnected *event_ap_sta_disconnected;
     RpcEventWifiEventNoArgs *event_wifi_event_no_args;
@@ -5278,25 +5268,6 @@ RpcEventHeartbeat *
 void   rpc__event__heartbeat__free_unpacked
                      (RpcEventHeartbeat *message,
                       ProtobufCAllocator *allocator);
-/* RpcEventStationDisconnectFromAP methods */
-void   rpc__event__station_disconnect_from_ap__init
-                     (RpcEventStationDisconnectFromAP         *message);
-size_t rpc__event__station_disconnect_from_ap__get_packed_size
-                     (const RpcEventStationDisconnectFromAP   *message);
-size_t rpc__event__station_disconnect_from_ap__pack
-                     (const RpcEventStationDisconnectFromAP   *message,
-                      uint8_t             *out);
-size_t rpc__event__station_disconnect_from_ap__pack_to_buffer
-                     (const RpcEventStationDisconnectFromAP   *message,
-                      ProtobufCBuffer     *buffer);
-RpcEventStationDisconnectFromAP *
-       rpc__event__station_disconnect_from_ap__unpack
-                     (ProtobufCAllocator  *allocator,
-                      size_t               len,
-                      const uint8_t       *data);
-void   rpc__event__station_disconnect_from_ap__free_unpacked
-                     (RpcEventStationDisconnectFromAP *message,
-                      ProtobufCAllocator *allocator);
 /* RpcEventAPStaDisconnected methods */
 void   rpc__event__ap__sta_disconnected__init
                      (RpcEventAPStaDisconnected         *message);
@@ -5779,9 +5750,6 @@ typedef void (*RpcEventESPInit_Closure)
 typedef void (*RpcEventHeartbeat_Closure)
                  (const RpcEventHeartbeat *message,
                   void *closure_data);
-typedef void (*RpcEventStationDisconnectFromAP_Closure)
-                 (const RpcEventStationDisconnectFromAP *message,
-                  void *closure_data);
 typedef void (*RpcEventAPStaDisconnected_Closure)
                  (const RpcEventAPStaDisconnected *message,
                   void *closure_data);
@@ -5934,7 +5902,6 @@ extern const ProtobufCMessageDescriptor rpc__resp__wifi_sta_get_rssi__descriptor
 extern const ProtobufCMessageDescriptor rpc__event__wifi_event_no_args__descriptor;
 extern const ProtobufCMessageDescriptor rpc__event__espinit__descriptor;
 extern const ProtobufCMessageDescriptor rpc__event__heartbeat__descriptor;
-extern const ProtobufCMessageDescriptor rpc__event__station_disconnect_from_ap__descriptor;
 extern const ProtobufCMessageDescriptor rpc__event__ap__sta_disconnected__descriptor;
 extern const ProtobufCMessageDescriptor rpc__event__ap__sta_connected__descriptor;
 extern const ProtobufCMessageDescriptor rpc__event__sta_scan_done__descriptor;

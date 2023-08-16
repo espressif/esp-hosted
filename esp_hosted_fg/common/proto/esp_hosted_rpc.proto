@@ -520,17 +520,16 @@ enum RpcId {
 	Event_Base = 768;
 	Event_ESPInit = 769;
 	Event_Heartbeat = 770;
-	Event_StationDisconnectFromAP = 771;
-	Event_AP_StaConnected = 772;
-	Event_AP_StaDisconnected = 773;
-	Event_WifiEventNoArgs = 774;
-	Event_StaScanDone = 775;
-	Event_StaConnected = 776;
-	Event_StaDisconnected = 777;
+	Event_AP_StaConnected = 771;
+	Event_AP_StaDisconnected = 772;
+	Event_WifiEventNoArgs = 773;
+	Event_StaScanDone = 774;
+	Event_StaConnected = 775;
+	Event_StaDisconnected = 776;
 
 	/* Add new control path command notification before Event_Max
 	 * and update Event_Max */
-	Event_Max = 778;
+	Event_Max = 777;
 }
 
 message wifi_init_config {
@@ -585,7 +584,7 @@ message wifi_scan_config {
 	bool           show_hidden = 4;             /**< enable to scan AP whose SSID is hidden */
 	int32          scan_type = 5;               /**< scan type, active or passive */
 	wifi_scan_time scan_time = 6;               /**< scan time per channel */
-	bool           block = 7;
+	uint32         home_chan_dwell_time = 7;    /**< time spent at home channel between scanning consecutive channels.*/
 }
 
 message wifi_he_ap_info {
@@ -1367,16 +1366,13 @@ message Rpc_Event_Heartbeat {
 	int32 hb_num = 1;
 }
 
-message Rpc_Event_StationDisconnectFromAP {
-	int32 resp = 1;
-}
-
 message Rpc_Event_AP_StaDisconnected {
 	int32 resp = 1;
     int32 event_id = 2;
 	bytes mac = 3;
     uint32 aid = 4;
     bool is_mesh_child = 5;
+    uint32 reason = 6;
 }
 
 message Rpc_Event_AP_StaConnected {
@@ -1544,13 +1540,12 @@ message Rpc {
 		/** Notifications **/
 		Rpc_Event_ESPInit                   event_esp_init                     = 769;
 		Rpc_Event_Heartbeat                 event_heartbeat                    = 770;
-		Rpc_Event_StationDisconnectFromAP   event_station_disconnect_from_AP   = 771;
-		Rpc_Event_AP_StaConnected           event_ap_sta_connected             = 772;
-		Rpc_Event_AP_StaDisconnected        event_ap_sta_disconnected          = 773;
-		Rpc_Event_WifiEventNoArgs           event_wifi_event_no_args           = 774;
-		Rpc_Event_StaScanDone               event_sta_scan_done                = 775;
-		Rpc_Event_StaConnected              event_sta_connected                = 776;
-		Rpc_Event_StaDisconnected           event_sta_disconnected             = 777;
+		Rpc_Event_AP_StaConnected           event_ap_sta_connected             = 771;
+		Rpc_Event_AP_StaDisconnected        event_ap_sta_disconnected          = 772;
+		Rpc_Event_WifiEventNoArgs           event_wifi_event_no_args           = 773;
+		Rpc_Event_StaScanDone               event_sta_scan_done                = 774;
+		Rpc_Event_StaConnected              event_sta_connected                = 775;
+		Rpc_Event_StaDisconnected           event_sta_disconnected             = 776;
 	}
 }
 

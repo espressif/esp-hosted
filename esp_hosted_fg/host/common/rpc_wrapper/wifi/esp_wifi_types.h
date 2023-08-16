@@ -185,6 +185,7 @@ typedef struct {
     bool show_hidden;            /**< enable to scan AP whose SSID is hidden */
     wifi_scan_type_t scan_type;  /**< scan type, active or passive */
     wifi_scan_time_t scan_time;  /**< scan time per channel */
+    uint8_t home_chan_dwell_time;/**< time spent at home channel between scanning consecutive channels.*/
 } wifi_scan_config_t;
 
 typedef enum {
@@ -391,7 +392,7 @@ typedef struct {
 
 #if CONFIG_SLAVE_CHIPSET_ESP32C2
 #define ESP_WIFI_MAX_CONN_NUM  (4)        /**< max number of stations which can connect to ESP32C2 soft-AP */
-#elif CONFIG_SLAVE_CHIPSET_ESP32C3 || CONFIG_IDF_TARGET_ESP32C6
+#elif CONFIG_SLAVE_CHIPSET_ESP32C3 || CONFIG_SLAVE_TARGET_ESP32C6
 #define ESP_WIFI_MAX_CONN_NUM  (10)       /**< max number of stations which can connect to ESP32C3 soft-AP */
 #else
 #define ESP_WIFI_MAX_CONN_NUM  (15)       /**< max number of stations which can connect to ESP32/ESP32S3/ESP32S2 soft-AP */
@@ -757,7 +758,6 @@ typedef struct {
     uint32_t status;          /**< status of scanning APs: 0 — success, 1 - failure */
     uint8_t  number;          /**< number of scan results */
     uint8_t  scan_id;         /**< scan sequence number, used for block scan */
-    int32_t wifi_event_id;
 } wifi_event_sta_scan_done_t;
 
 /** Argument structure for WIFI_EVENT_STA_CONNECTED event */
@@ -768,7 +768,6 @@ typedef struct {
     uint8_t channel;          /**< channel of connected AP*/
     wifi_auth_mode_t authmode;/**< authentication mode used by AP*/
     uint16_t aid;             /**< authentication id assigned by the connected AP */
-    int32_t wifi_event_id;
 } wifi_event_sta_connected_t;
 
 /** Argument structure for WIFI_EVENT_STA_DISCONNECTED event */
@@ -778,7 +777,6 @@ typedef struct {
     uint8_t bssid[6];         /**< BSSID of disconnected AP */
     uint8_t reason;           /**< reason of disconnection */
     int8_t  rssi;             /**< rssi of disconnection */
-    int32_t wifi_event_id;
 } wifi_event_sta_disconnected_t;
 
 /** Argument structure for WIFI_EVENT_STA_AUTHMODE_CHANGE event */
@@ -817,7 +815,6 @@ typedef struct {
     uint8_t mac[6];           /**< MAC address of the station connected to Soft-AP */
     uint8_t aid;              /**< the aid that soft-AP gives to the station connected to  */
     bool is_mesh_child;       /**< flag to identify mesh child */
-	int32_t wifi_event_id;
 } wifi_event_ap_staconnected_t;
 
 /** Argument structure for WIFI_EVENT_AP_STADISCONNECTED event */
@@ -825,7 +822,7 @@ typedef struct {
     uint8_t mac[6];           /**< MAC address of the station disconnects to soft-AP */
     uint8_t aid;              /**< the aid that soft-AP gave to the station disconnects to  */
     bool is_mesh_child;       /**< flag to identify mesh child */
-	int32_t wifi_event_id;
+    uint8_t reason;           /**< reason of disconnection */
 } wifi_event_ap_stadisconnected_t;
 
 /** Argument structure for WIFI_EVENT_AP_PROBEREQRECVED event */

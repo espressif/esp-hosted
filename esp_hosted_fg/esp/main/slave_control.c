@@ -286,8 +286,8 @@ static void station_event_handler(void *arg, esp_event_base_t event_base,
 			/* Event should not be triggered if event handler is
 			 * called as part of host triggered procedure like sta_disconnect etc
 			 **/
-			send_event_data_to_host(RPC_ID__Event_StationDisconnectFromAP,
-					&disconnected_event->reason, 1);
+			send_event_data_to_host(RPC_ID__Event_StaDisconnected,
+				disconnected_event, sizeof(wifi_event_sta_disconnected_t));
 		} else {
 			ESP_LOGI(TAG, "Station not connected. reason: %u",
 					disconnected_event->reason);
@@ -2060,7 +2060,7 @@ static void event_handler(void* arg, esp_event_base_t event_base,
 			}
 
 			send_event_data_to_host(RPC_ID__Event_WifiEventNoArgs,
-					(uint8_t*) event_id, 4);
+					&event_id, sizeof(event_id));
 		}
 	}
 }
@@ -2399,6 +2399,8 @@ static esp_err_t req_wifi_scan_start(Rpc *req, Rpc *resp, void *priv_data)
 		p_a_st->passive = p_c_st->passive;
 		p_a_st->active.min = p_c_st->active->min ;
 		p_a_st->active.max = p_c_st->active->max ;
+
+		p_a->home_chan_dwell_time = p_c->home_chan_dwell_time;
 	}
 
     RPC_RET_FAIL_IF(esp_wifi_scan_start(p_a, req_payload->block));
@@ -3460,9 +3462,6 @@ static void esp_rpc_cleanup(Rpc *resp)
 		} case (RPC_ID__Event_Heartbeat) : {
 			mem_free(resp->event_heartbeat);
 			break;
-		} case (RPC_ID__Event_StationDisconnectFromAP) : {
-			mem_free(resp->event_station_disconnect_from_ap);
-			break;
 		} case (RPC_ID__Event_AP_StaConnected) : {
 			//mem_free(resp->event_ap_sta_connected->mac.data);
 			mem_free(resp->event_ap_sta_connected);
@@ -3590,27 +3589,6 @@ static esp_err_t rpc_evt_heartbeat(Rpc *ntfy)
 
 }
 
-static esp_err_t rpc_evt_StationDisconnectFromAP(Rpc *ntfy,
-		const uint8_t *data, ssize_t len)
-{
-	RpcEventStationDisconnectFromAP *ntfy_payload = NULL;
-
-	ntfy_payload = (RpcEventStationDisconnectFromAP*)
-		calloc(1,sizeof(RpcEventStationDisconnectFromAP));
-	if (!ntfy_payload) {
-		ESP_LOGE(TAG,"Failed to allocate memory");
-		return ESP_ERR_NO_MEM;
-	}
-	rpc__event__station_disconnect_from_ap__init(ntfy_payload);
-
-	ntfy->payload_case = RPC__PAYLOAD_EVENT_STATION_DISCONNECT_FROM__AP;
-	ntfy->event_station_disconnect_from_ap = ntfy_payload;
-
-	ntfy_payload->resp = *data;
-
-	return ESP_OK;
-
-}
 static esp_err_t rpc_evt_sta_scan_done(Rpc *ntfy,
 		const uint8_t *data, ssize_t len, int event_id)
 {
@@ -3746,6 +3724,7 @@ static esp_err_t rpc_evt_ap_staconn_conn_disconn(Rpc *ntfy,
 		ntfy_payload->aid = p_a->aid;
 		ntfy_payload->mac.len = BSSID_BYTES_SIZE;
 		ntfy_payload->is_mesh_child = p_a->is_mesh_child;
+		ntfy_payload->reason = p_a->reason;
 
 		//Note: alloc is not needed in this case
 		//ntfy_payload->mac.data = (uint8_t *)calloc(1, BSSID_BYTES_SIZE);
@@ -3774,7 +3753,7 @@ static esp_err_t rpc_evt_Event_WifiEventNoArgs(Rpc *ntfy,
 	ntfy->payload_case = RPC__PAYLOAD_EVENT_WIFI_EVENT_NO_ARGS;
 	ntfy->event_wifi_event_no_args = ntfy_payload;
 
-	event_id = (int)data;
+	event_id = (int32_t)*data;
 	ESP_LOGI(TAG, "Sending Wi-Fi event [%ld]", event_id);
 
 	ntfy_payload->event_id = event_id;
@@ -3804,9 +3783,6 @@ esp_err_t rpc_evt_handler(uint32_t session_id,const uint8_t *inbuf,
 			break;
 		} case RPC_ID__Event_Heartbeat: {
 			ret = rpc_evt_heartbeat(&ntfy);
-			break;
-		} case RPC_ID__Event_StationDisconnectFromAP: {
-			ret = rpc_evt_StationDisconnectFromAP(&ntfy, inbuf, inlen);
 			break;
 		} case RPC_ID__Event_AP_StaConnected: {
 			ret = rpc_evt_ap_staconn_conn_disconn(&ntfy, inbuf, inlen, WIFI_EVENT_AP_STACONNECTED);

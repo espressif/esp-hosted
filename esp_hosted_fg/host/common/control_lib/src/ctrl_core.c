@@ -322,7 +322,6 @@ static int ctrl_app_parse_event(CtrlMsg *ctrl_msg, ctrl_cmd_t *app_ntfy)
 		wifi_event_ap_stadisconnected_t * p_a = &(app_ntfy->u.e_wifi_ap_stadisconnected);
 		CtrlMsgEventAPStaDisconnected * p_c = ctrl_msg->event_ap_sta_disconnected;
 
-		hosted_log("EVENT: AP ->  sta disconnected\n");
 		CTRL_FAIL_ON_NULL(event_ap_sta_disconnected);
 		app_ntfy->resp_event_status = p_c->resp;
 
