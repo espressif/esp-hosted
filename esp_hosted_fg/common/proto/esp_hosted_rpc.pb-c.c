@@ -6512,7 +6512,6 @@ static const ProtobufCFieldDescriptor wifi_scan_config__field_descriptors[7] =
   },
 };
 static const unsigned wifi_scan_config__field_indices_by_name[] = {
-  6,   /* field[6] = block */
   1,   /* field[1] = bssid */
   2,   /* field[2] = channel */
   6,   /* field[6] = home_chan_dwell_time */
@@ -12710,7 +12709,7 @@ static const unsigned rpc__event__ap__sta_disconnected__field_indices_by_name[] 
 static const ProtobufCIntRange rpc__event__ap__sta_disconnected__number_ranges[1 + 1] =
 {
   { 1, 0 },
-  { 0, 5 }
+  { 0, 6 }
 };
 const ProtobufCMessageDescriptor rpc__event__ap__sta_disconnected__descriptor =
 {
@@ -12720,7 +12719,7 @@ const ProtobufCMessageDescriptor rpc__event__ap__sta_disconnected__descriptor =
   "RpcEventAPStaDisconnected",
   "",
   sizeof(RpcEventAPStaDisconnected),
-  5,
+  6,
   rpc__event__ap__sta_disconnected__field_descriptors,
   rpc__event__ap__sta_disconnected__field_indices_by_name,
   1,  rpc__event__ap__sta_disconnected__number_ranges,
@@ -14341,7 +14340,7 @@ static const ProtobufCFieldDescriptor rpc__field_descriptors[96] =
   },
   {
     "event_sta_connected",
-    776,
+    775,
     PROTOBUF_C_LABEL_NONE,
     PROTOBUF_C_TYPE_MESSAGE,
     offsetof(Rpc, payload_case),
@@ -14353,7 +14352,7 @@ static const ProtobufCFieldDescriptor rpc__field_descriptors[96] =
   },
   {
     "event_sta_disconnected",
-    777,
+    776,
     PROTOBUF_C_LABEL_NONE,
     PROTOBUF_C_TYPE_MESSAGE,
     offsetof(Rpc, payload_case),
