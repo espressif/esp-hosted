@@ -500,6 +500,9 @@ int compose_rpc_req(Rpc *req, ctrl_cmd_t *app_req, uint8_t *failure_status)
 			p_c_st->passive = p_a_st->passive;
 			p_c_st->active->min = p_a_st->active.min ;
 			p_c_st->active->max = p_a_st->active.max ;
+
+			p_c->home_chan_dwell_time = p_a->home_chan_dwell_time;
+
 			req_payload->config_set = 1;
 		}
 		ESP_LOGI(TAG, "Scan start Req\n");

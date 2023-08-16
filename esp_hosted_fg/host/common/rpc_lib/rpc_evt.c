@@ -44,12 +44,6 @@ int rpc_parse_evt(Rpc *rpc_msg, ctrl_cmd_t *app_ntfy)
 		RPC_FAIL_ON_NULL(event_heartbeat);
 		app_ntfy->u.e_heartbeat.hb_num = rpc_msg->event_heartbeat->hb_num;
 		break;
-	} case RPC_ID__Event_StationDisconnectFromAP: {
-		RPC_FAIL_ON_NULL(event_station_disconnect_from_ap);
-		ESP_LOGI(TAG, "EVENT: Station mode: Disconnect with reason [%lu]\n",
-				rpc_msg->event_station_disconnect_from_ap->resp);
-		app_ntfy->resp_event_status = rpc_msg->event_station_disconnect_from_ap->resp;
-		break;
 	} case RPC_ID__Event_AP_StaConnected: {
 		wifi_event_ap_staconnected_t * p_a = &(app_ntfy->u.e_wifi_ap_staconnected);
 		RpcEventAPStaConnected * p_c = rpc_msg->event_ap_sta_connected;
@@ -60,12 +54,11 @@ int rpc_parse_evt(Rpc *rpc_msg, ctrl_cmd_t *app_ntfy)
 		if(SUCCESS==app_ntfy->resp_event_status) {
 			RPC_FAIL_ON_NULL_PRINT(p_c->mac.data, "NULL mac");
 			g_h.funcs->_h_memcpy(p_a->mac, p_c->mac.data, p_c->mac.len);
-			ESP_LOGI(TAG, "EVENT: id[%lx] AP ->  sta connected mac[%2x %2x %2x %2x %2x %2x] (len:%u)\n",
+			ESP_LOGI(TAG, "EVENT: id[%lx] AP ->  sta connected mac[%2x %2x %2x %2x %2x %2x] (len:%u)",
 					p_c->event_id, p_a->mac[0], p_a->mac[1], p_a->mac[2],
 				p_a->mac[3], p_a->mac[4], p_a->mac[5], p_c->mac.len);
 		}
 
-		p_a->wifi_event_id = p_c->event_id;
 		p_a->aid = p_c->aid;
 		p_a->is_mesh_child = p_c->is_mesh_child;
 
@@ -74,27 +67,27 @@ int rpc_parse_evt(Rpc *rpc_msg, ctrl_cmd_t *app_ntfy)
 		wifi_event_ap_stadisconnected_t * p_a = &(app_ntfy->u.e_wifi_ap_stadisconnected);
 		RpcEventAPStaDisconnected * p_c = rpc_msg->event_ap_sta_disconnected;
 
-		ESP_LOGE(TAG, "EVENT: AP ->  sta disconnected\n");
+		ESP_LOGD(TAG, "EVENT: AP ->  sta disconnected");
 		RPC_FAIL_ON_NULL(event_ap_sta_disconnected);
 		app_ntfy->resp_event_status = p_c->resp;
 
 		if(SUCCESS==app_ntfy->resp_event_status) {
 			RPC_FAIL_ON_NULL_PRINT(p_c->mac.data, "NULL mac");
 			g_h.funcs->_h_memcpy(p_a->mac, p_c->mac.data, p_c->mac.len);
-			ESP_LOGI(TAG, "EVENT: id[%lx] AP ->  sta DISconnected mac[%2x %2x %2x %2x %2x %2x] (len:%u)\n",
+			ESP_LOGI(TAG, "EVENT: id[%lx] AP ->  sta DISconnected mac[%2x %2x %2x %2x %2x %2x] (len:%u)",
 					p_c->event_id, p_a->mac[0], p_a->mac[1], p_a->mac[2],
 				p_a->mac[3], p_a->mac[4], p_a->mac[5], p_c->mac.len);
 		}
 
-		p_a->wifi_event_id = p_c->event_id;
 		p_a->aid = p_c->aid;
 		p_a->is_mesh_child = p_c->is_mesh_child;
+		p_a->reason = p_c->reason;
 
 		break;
     } case RPC_ID__Event_WifiEventNoArgs: {
 		RPC_FAIL_ON_NULL(event_wifi_event_no_args);
 		app_ntfy->resp_event_status = rpc_msg->event_wifi_event_no_args->resp;
-        ESP_LOGI(TAG, "Event [0x%lx] received\n", rpc_msg->event_wifi_event_no_args->event_id);
+        ESP_LOGI(TAG, "Event [0x%lx] received", rpc_msg->event_wifi_event_no_args->event_id);
 		app_ntfy->u.e_wifi_simple.wifi_event_id = rpc_msg->event_wifi_event_no_args->event_id;
 
 		switch (rpc_msg->event_wifi_event_no_args->event_id) {
@@ -133,8 +126,7 @@ int rpc_parse_evt(Rpc *rpc_msg, ctrl_cmd_t *app_ntfy)
 		wifi_event_sta_scan_done_t *p_a = &app_ntfy->u.e_wifi_sta_scan_done;
 		RPC_FAIL_ON_NULL(event_sta_scan_done);
 		app_ntfy->resp_event_status = p_c->resp;
-        ESP_LOGI(TAG, "Event [0x%lx] received\n", rpc_msg->event_wifi_event_no_args->event_id);
-		p_a->wifi_event_id = p_c->event_id;
+		ESP_LOGI(TAG, "Event [0x%lx] received", rpc_msg->event_wifi_event_no_args->event_id);
 		p_a->status = p_c->scan_done->status;
 		p_a->number = p_c->scan_done->number;
 		p_a->scan_id = p_c->scan_done->scan_id;
@@ -155,7 +147,6 @@ int rpc_parse_evt(Rpc *rpc_msg, ctrl_cmd_t *app_ntfy)
 			p_a->authmode = p_c->authmode;
 			p_a->aid = p_c->aid;
 		}
-		p_a->wifi_event_id = rpc_msg->event_sta_connected->event_id;
 		break;
 	} case RPC_ID__Event_StaDisconnected: {
 		RPC_FAIL_ON_NULL(event_sta_disconnected);
@@ -172,7 +163,6 @@ int rpc_parse_evt(Rpc *rpc_msg, ctrl_cmd_t *app_ntfy)
 			p_a->reason = p_c->reason;
 			p_a->rssi = p_c->rssi;
 		}
-		p_a->wifi_event_id = rpc_msg->event_sta_disconnected->event_id;
 		break;
 	} default: {
 		ESP_LOGE(TAG, "Invalid/unsupported event[%u] received\n",rpc_msg->msg_id);

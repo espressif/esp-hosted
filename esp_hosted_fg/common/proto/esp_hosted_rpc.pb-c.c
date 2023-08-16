@@ -5497,51 +5497,6 @@ void   rpc__event__heartbeat__free_unpacked
   assert(message->base.descriptor == &rpc__event__heartbeat__descriptor);
   protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
 }
-void   rpc__event__station_disconnect_from_ap__init
-                     (RpcEventStationDisconnectFromAP         *message)
-{
-  static const RpcEventStationDisconnectFromAP init_value = RPC__EVENT__STATION_DISCONNECT_FROM_AP__INIT;
-  *message = init_value;
-}
-size_t rpc__event__station_disconnect_from_ap__get_packed_size
-                     (const RpcEventStationDisconnectFromAP *message)
-{
-  assert(message->base.descriptor == &rpc__event__station_disconnect_from_ap__descriptor);
-  return protobuf_c_message_get_packed_size ((const ProtobufCMessage*)(message));
-}
-size_t rpc__event__station_disconnect_from_ap__pack
-                     (const RpcEventStationDisconnectFromAP *message,
-                      uint8_t       *out)
-{
-  assert(message->base.descriptor == &rpc__event__station_disconnect_from_ap__descriptor);
-  return protobuf_c_message_pack ((const ProtobufCMessage*)message, out);
-}
-size_t rpc__event__station_disconnect_from_ap__pack_to_buffer
-                     (const RpcEventStationDisconnectFromAP *message,
-                      ProtobufCBuffer *buffer)
-{
-  assert(message->base.descriptor == &rpc__event__station_disconnect_from_ap__descriptor);
-  return protobuf_c_message_pack_to_buffer ((const ProtobufCMessage*)message, buffer);
-}
-RpcEventStationDisconnectFromAP *
-       rpc__event__station_disconnect_from_ap__unpack
-                     (ProtobufCAllocator  *allocator,
-                      size_t               len,
-                      const uint8_t       *data)
-{
-  return (RpcEventStationDisconnectFromAP *)
-     protobuf_c_message_unpack (&rpc__event__station_disconnect_from_ap__descriptor,
-                                allocator, len, data);
-}
-void   rpc__event__station_disconnect_from_ap__free_unpacked
-                     (RpcEventStationDisconnectFromAP *message,
-                      ProtobufCAllocator *allocator)
-{
-  if(!message)
-    return;
-  assert(message->base.descriptor == &rpc__event__station_disconnect_from_ap__descriptor);
-  protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
-}
 void   rpc__event__ap__sta_disconnected__init
                      (RpcEventAPStaDisconnected         *message)
 {
@@ -6364,12 +6319,12 @@ static const ProtobufCFieldDescriptor wifi_scan_config__field_descriptors[7] =
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
   {
-    "block",
+    "home_chan_dwell_time",
     7,
     PROTOBUF_C_LABEL_NONE,
-    PROTOBUF_C_TYPE_BOOL,
+    PROTOBUF_C_TYPE_UINT32,
     0,   /* quantifier_offset */
-    offsetof(WifiScanConfig, block),
+    offsetof(WifiScanConfig, home_chan_dwell_time),
     NULL,
     NULL,
     0,             /* flags */
@@ -6377,9 +6332,9 @@ static const ProtobufCFieldDescriptor wifi_scan_config__field_descriptors[7] =
   },
 };
 static const unsigned wifi_scan_config__field_indices_by_name[] = {
-  6,   /* field[6] = block */
   1,   /* field[1] = bssid */
   2,   /* field[2] = channel */
+  6,   /* field[6] = home_chan_dwell_time */
   5,   /* field[5] = scan_time */
   4,   /* field[4] = scan_type */
   3,   /* field[3] = show_hidden */
@@ -12323,45 +12278,7 @@ const ProtobufCMessageDescriptor rpc__event__heartbeat__descriptor =
   (ProtobufCMessageInit) rpc__event__heartbeat__init,
   NULL,NULL,NULL    /* reserved[123] */
 };
-static const ProtobufCFieldDescriptor rpc__event__station_disconnect_from_ap__field_descriptors[1] =
-{
-  {
-    "resp",
-    1,
-    PROTOBUF_C_LABEL_NONE,
-    PROTOBUF_C_TYPE_INT32,
-    0,   /* quantifier_offset */
-    offsetof(RpcEventStationDisconnectFromAP, resp),
-    NULL,
-    NULL,
-    0,             /* flags */
-    0,NULL,NULL    /* reserved1,reserved2, etc */
-  },
-};
-static const unsigned rpc__event__station_disconnect_from_ap__field_indices_by_name[] = {
-  0,   /* field[0] = resp */
-};
-static const ProtobufCIntRange rpc__event__station_disconnect_from_ap__number_ranges[1 + 1] =
-{
-  { 1, 0 },
-  { 0, 1 }
-};
-const ProtobufCMessageDescriptor rpc__event__station_disconnect_from_ap__descriptor =
-{
-  PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
-  "Rpc_Event_StationDisconnectFromAP",
-  "RpcEventStationDisconnectFromAP",
-  "RpcEventStationDisconnectFromAP",
-  "",
-  sizeof(RpcEventStationDisconnectFromAP),
-  1,
-  rpc__event__station_disconnect_from_ap__field_descriptors,
-  rpc__event__station_disconnect_from_ap__field_indices_by_name,
-  1,  rpc__event__station_disconnect_from_ap__number_ranges,
-  (ProtobufCMessageInit) rpc__event__station_disconnect_from_ap__init,
-  NULL,NULL,NULL    /* reserved[123] */
-};
-static const ProtobufCFieldDescriptor rpc__event__ap__sta_disconnected__field_descriptors[5] =
+static const ProtobufCFieldDescriptor rpc__event__ap__sta_disconnected__field_descriptors[6] =
 {
   {
     "resp",
@@ -12423,18 +12340,31 @@ static const ProtobufCFieldDescriptor rpc__event__ap__sta_disconnected__field_de
     0,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
+  {
+    "reason",
+    6,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_UINT32,
+    0,   /* quantifier_offset */
+    offsetof(RpcEventAPStaDisconnected, reason),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
 };
 static const unsigned rpc__event__ap__sta_disconnected__field_indices_by_name[] = {
   3,   /* field[3] = aid */
   1,   /* field[1] = event_id */
   4,   /* field[4] = is_mesh_child */
   2,   /* field[2] = mac */
+  5,   /* field[5] = reason */
   0,   /* field[0] = resp */
 };
 static const ProtobufCIntRange rpc__event__ap__sta_disconnected__number_ranges[1 + 1] =
 {
   { 1, 0 },
-  { 0, 5 }
+  { 0, 6 }
 };
 const ProtobufCMessageDescriptor rpc__event__ap__sta_disconnected__descriptor =
 {
@@ -12444,7 +12374,7 @@ const ProtobufCMessageDescriptor rpc__event__ap__sta_disconnected__descriptor =
   "RpcEventAPStaDisconnected",
   "",
   sizeof(RpcEventAPStaDisconnected),
-  5,
+  6,
   rpc__event__ap__sta_disconnected__field_descriptors,
   rpc__event__ap__sta_disconnected__field_indices_by_name,
   1,  rpc__event__ap__sta_disconnected__number_ranges,
@@ -12733,7 +12663,7 @@ const ProtobufCMessageDescriptor rpc__event__sta_disconnected__descriptor =
   (ProtobufCMessageInit) rpc__event__sta_disconnected__init,
   NULL,NULL,NULL    /* reserved[123] */
 };
-static const ProtobufCFieldDescriptor rpc__field_descriptors[93] =
+static const ProtobufCFieldDescriptor rpc__field_descriptors[92] =
 {
   {
     "msg_type",
@@ -13768,20 +13698,8 @@ static const ProtobufCFieldDescriptor rpc__field_descriptors[93] =
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
   {
-    "event_station_disconnect_from_AP",
-    771,
-    PROTOBUF_C_LABEL_NONE,
-    PROTOBUF_C_TYPE_MESSAGE,
-    offsetof(Rpc, payload_case),
-    offsetof(Rpc, event_station_disconnect_from_ap),
-    &rpc__event__station_disconnect_from_ap__descriptor,
-    NULL,
-    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
-    0,NULL,NULL    /* reserved1,reserved2, etc */
-  },
-  {
     "event_ap_sta_connected",
-    772,
+    771,
     PROTOBUF_C_LABEL_NONE,
     PROTOBUF_C_TYPE_MESSAGE,
     offsetof(Rpc, payload_case),
@@ -13793,7 +13711,7 @@ static const ProtobufCFieldDescriptor rpc__field_descriptors[93] =
   },
   {
     "event_ap_sta_disconnected",
-    773,
+    772,
     PROTOBUF_C_LABEL_NONE,
     PROTOBUF_C_TYPE_MESSAGE,
     offsetof(Rpc, payload_case),
@@ -13805,7 +13723,7 @@ static const ProtobufCFieldDescriptor rpc__field_descriptors[93] =
   },
   {
     "event_wifi_event_no_args",
-    774,
+    773,
     PROTOBUF_C_LABEL_NONE,
     PROTOBUF_C_TYPE_MESSAGE,
     offsetof(Rpc, payload_case),
@@ -13817,7 +13735,7 @@ static const ProtobufCFieldDescriptor rpc__field_descriptors[93] =
   },
   {
     "event_sta_scan_done",
-    775,
+    774,
     PROTOBUF_C_LABEL_NONE,
     PROTOBUF_C_TYPE_MESSAGE,
     offsetof(Rpc, payload_case),
@@ -13829,7 +13747,7 @@ static const ProtobufCFieldDescriptor rpc__field_descriptors[93] =
   },
   {
     "event_sta_connected",
-    776,
+    775,
     PROTOBUF_C_LABEL_NONE,
     PROTOBUF_C_TYPE_MESSAGE,
     offsetof(Rpc, payload_case),
@@ -13841,7 +13759,7 @@ static const ProtobufCFieldDescriptor rpc__field_descriptors[93] =
   },
   {
     "event_sta_disconnected",
-    777,
+    776,
     PROTOBUF_C_LABEL_NONE,
     PROTOBUF_C_TYPE_MESSAGE,
     offsetof(Rpc, payload_case),
@@ -13853,15 +13771,14 @@ static const ProtobufCFieldDescriptor rpc__field_descriptors[93] =
   },
 };
 static const unsigned rpc__field_indices_by_name[] = {
-  87,   /* field[87] = event_ap_sta_connected */
-  88,   /* field[88] = event_ap_sta_disconnected */
+  86,   /* field[86] = event_ap_sta_connected */
+  87,   /* field[87] = event_ap_sta_disconnected */
   84,   /* field[84] = event_esp_init */
   85,   /* field[85] = event_heartbeat */
-  91,   /* field[91] = event_sta_connected */
-  92,   /* field[92] = event_sta_disconnected */
-  90,   /* field[90] = event_sta_scan_done */
-  86,   /* field[86] = event_station_disconnect_from_AP */
-  89,   /* field[89] = event_wifi_event_no_args */
+  90,   /* field[90] = event_sta_connected */
+  91,   /* field[91] = event_sta_disconnected */
+  89,   /* field[89] = event_sta_scan_done */
+  88,   /* field[88] = event_wifi_event_no_args */
   1,   /* field[1] = msg_id */
   0,   /* field[0] = msg_type */
   13,   /* field[13] = req_config_heartbeat */
@@ -13963,7 +13880,7 @@ static const ProtobufCIntRange rpc__number_ranges[14 + 1] =
   { 590, 81 },
   { 597, 83 },
   { 769, 84 },
-  { 0, 93 }
+  { 0, 92 }
 };
 const ProtobufCMessageDescriptor rpc__descriptor =
 {
@@ -13973,7 +13890,7 @@ const ProtobufCMessageDescriptor rpc__descriptor =
   "Rpc",
   "",
   sizeof(Rpc),
-  93,
+  92,
   rpc__field_descriptors,
   rpc__field_indices_by_name,
   14,  rpc__number_ranges,
@@ -14150,7 +14067,7 @@ const ProtobufCEnumDescriptor rpc_type__descriptor =
   rpc_type__value_ranges,
   NULL,NULL,NULL,NULL   /* reserved[1234] */
 };
-static const ProtobufCEnumValue rpc_id__enum_values_by_number[164] =
+static const ProtobufCEnumValue rpc_id__enum_values_by_number[163] =
 {
   { "MsgId_Invalid", "RPC_ID__MsgId_Invalid", 0 },
   { "Req_Base", "RPC_ID__Req_Base", 256 },
@@ -14308,31 +14225,29 @@ static const ProtobufCEnumValue rpc_id__enum_values_by_number[164] =
   { "Event_Base", "RPC_ID__Event_Base", 768 },
   { "Event_ESPInit", "RPC_ID__Event_ESPInit", 769 },
   { "Event_Heartbeat", "RPC_ID__Event_Heartbeat", 770 },
-  { "Event_StationDisconnectFromAP", "RPC_ID__Event_StationDisconnectFromAP", 771 },
-  { "Event_AP_StaConnected", "RPC_ID__Event_AP_StaConnected", 772 },
-  { "Event_AP_StaDisconnected", "RPC_ID__Event_AP_StaDisconnected", 773 },
-  { "Event_WifiEventNoArgs", "RPC_ID__Event_WifiEventNoArgs", 774 },
-  { "Event_StaScanDone", "RPC_ID__Event_StaScanDone", 775 },
-  { "Event_StaConnected", "RPC_ID__Event_StaConnected", 776 },
-  { "Event_StaDisconnected", "RPC_ID__Event_StaDisconnected", 777 },
-  { "Event_Max", "RPC_ID__Event_Max", 778 },
+  { "Event_AP_StaConnected", "RPC_ID__Event_AP_StaConnected", 771 },
+  { "Event_AP_StaDisconnected", "RPC_ID__Event_AP_StaDisconnected", 772 },
+  { "Event_WifiEventNoArgs", "RPC_ID__Event_WifiEventNoArgs", 773 },
+  { "Event_StaScanDone", "RPC_ID__Event_StaScanDone", 774 },
+  { "Event_StaConnected", "RPC_ID__Event_StaConnected", 775 },
+  { "Event_StaDisconnected", "RPC_ID__Event_StaDisconnected", 776 },
+  { "Event_Max", "RPC_ID__Event_Max", 777 },
 };
 static const ProtobufCIntRange rpc_id__value_ranges[] = {
-{0, 0},{256, 1},{270, 6},{297, 31},{512, 77},{526, 82},{553, 107},{768, 153},{0, 164}
+{0, 0},{256, 1},{270, 6},{297, 31},{512, 77},{526, 82},{553, 107},{768, 153},{0, 163}
 };
-static const ProtobufCEnumValueIndex rpc_id__enum_values_by_name[164] =
+static const ProtobufCEnumValueIndex rpc_id__enum_values_by_name[163] =
 {
-  { "Event_AP_StaConnected", 157 },
-  { "Event_AP_StaDisconnected", 158 },
+  { "Event_AP_StaConnected", 156 },
+  { "Event_AP_StaDisconnected", 157 },
   { "Event_Base", 153 },
   { "Event_ESPInit", 154 },
   { "Event_Heartbeat", 155 },
-  { "Event_Max", 163 },
-  { "Event_StaConnected", 161 },
-  { "Event_StaDisconnected", 162 },
-  { "Event_StaScanDone", 160 },
-  { "Event_StationDisconnectFromAP", 156 },
-  { "Event_WifiEventNoArgs", 159 },
+  { "Event_Max", 162 },
+  { "Event_StaConnected", 160 },
+  { "Event_StaDisconnected", 161 },
+  { "Event_StaScanDone", 159 },
+  { "Event_WifiEventNoArgs", 158 },
   { "MsgId_Invalid", 0 },
   { "Req_Base", 1 },
   { "Req_ConfigHeartbeat", 13 },
@@ -14494,9 +14409,9 @@ const ProtobufCEnumDescriptor rpc_id__descriptor =
   "RpcId",
   "RpcId",
   "",
-  164,
+  163,
   rpc_id__enum_values_by_number,
-  164,
+  163,
   rpc_id__enum_values_by_name,
   8,
   rpc_id__value_ranges,
