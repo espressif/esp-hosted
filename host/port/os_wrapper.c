@@ -23,12 +23,9 @@
 #include "esp_macros.h"
 #include "esp_hosted_config.h"
 
-#if 0
-// Need to uncomment if need to use wifi headers right from idf
 /* Wi-Fi headers are reused at ESP-Hosted */
 #include "esp_wifi_crypto_types.h"
 #include "esp_private/wifi_os_adapter.h"
-#endif
 
 #ifdef CONFIG_ESP_SDIO_HOST_INTERFACE
 #include "sdio_wrapper.h"
@@ -42,11 +39,8 @@ DEFINE_LOG_TAG(os_wrapper_esp);
 
 struct mempool * nw_mp_g = NULL;
 
-#if 0
-// Need to uncomment if need to use wifi headers right from idf
 wpa_crypto_funcs_t g_wifi_default_wpa_crypto_funcs;
 wifi_osi_funcs_t g_wifi_osi_funcs;
-#endif
 
 //ESP_EVENT_DECLARE_BASE(WIFI_EVENT);
 ESP_EVENT_DEFINE_BASE(WIFI_EVENT);
