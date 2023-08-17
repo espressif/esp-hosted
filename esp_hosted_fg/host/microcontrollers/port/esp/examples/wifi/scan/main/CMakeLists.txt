@@ -31,7 +31,7 @@ list(APPEND COMPONENT_ADD_INCLUDEDIRS "${FG_ROOT_DIR}/common/protobuf-c" "${FG_R
 
 # transport files
 if(CONFIG_ESP_SDIO_HOST_INTERFACE)
-    list(APPEND COMPONENT_SRCS "${MCU_DIR}/drivers/transport/sdio/sdio_ll.c" "${MCU_DIR}/drivers/transport/sdio/sdio_api.c" "${MCU_DIR}/drivers/transport/sdio/sdio_host.c" "${MCU_DIR}/drivers/transport/sdio/sdio_drv.c")
+    list(APPEND COMPONENT_SRCS "${MCU_DIR}/drivers/transport/sdio/sdio_drv.c")
 else(CONFIG_ESP_SPI_HOST_INTERFACE)
 	list(APPEND COMPONENT_SRCS "${MCU_DIR}/drivers/transport/spi/spi_drv.c")
 endif()

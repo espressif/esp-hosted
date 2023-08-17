@@ -1,8 +1,8 @@
-// SPDX-License-Identifier: GPL-2.0-only
+// SPDX-License-Identifier: Apache-2.0
 /*
  * Espressif Systems Wireless LAN device driver
  *
- * Copyright (C) 2015-2021 Espressif Systems (Shanghai) PTE LTD
+ * Copyright (C) 2015-2023 Espressif Systems (Shanghai) PTE LTD
  *
  * This software file (the "File") is distributed by Espressif Systems (Shanghai)
  * PTE LTD under the terms of the GNU General Public License Version 2, June 1991
@@ -47,7 +47,6 @@
 #define ESP_SLAVE_RX_UNDERFLOW_INT     BIT(16)
 #define ESP_SLAVE_TX_OVERFLOW_INT      BIT(17)
 #define ESP_SLAVE_RX_NEW_PACKET_INT    BIT(23)
-
 
 #define ESP_SLAVE_CMD53_END_ADDR       0x1F800
 #define ESP_SLAVE_LEN_MASK             0xFFFFF
@@ -102,74 +101,5 @@
 
 #define ESP_SDIO_CONF_OFFSET           (0)
 #define ESP_SDIO_SEND_OFFSET           (16)
-
-/* New slave packet incoming bit */
-#define HOST_SLC0_RX_NEW_PACKET_INT_ST (BIT(23))
-
-/* SDIO pin configuration */
-/* In case of different board than STM32 Nucleo-F412ZG,
- * User need to update pins as per hardware*/
-
-/* SDIO D0 - PC8 */
-#ifndef USR_SDIO_D0_Port
-#define USR_SDIO_D0_Port               GPIOC
-#endif
-#ifndef USR_SDIO_D0_Pin
-#define USR_SDIO_D0_Pin                GPIO_PIN_8
-#endif
-
-/* SDIO D1 - PC9 */
-#ifndef USR_SDIO_D1_Port
-#define USR_SDIO_D1_Port               GPIOC
-#endif
-#ifndef USR_SDIO_D1_Pin
-#define USR_SDIO_D1_Pin                GPIO_PIN_9
-#endif
-
-/* SDIO D2 - PC10 */
-#ifndef USR_SDIO_D2_Port
-#define USR_SDIO_D2_Port               GPIOC
-#endif
-#ifndef USR_SDIO_D2_Pin
-#define USR_SDIO_D2_Pin                GPIO_PIN_10
-#endif
-
-/* SDIO D3 - PC11 */
-#ifndef USR_SDIO_D3_Port
-#define USR_SDIO_D3_Port               GPIOC
-#endif
-#ifndef USR_SDIO_D3_Pin
-#define USR_SDIO_D3_Pin                GPIO_PIN_11
-#endif
-
-/* SDIO CLK - PC12 */
-#ifndef USR_SDIO_CLK_Port
-#define USR_SDIO_CLK_Port              GPIOC
-#endif
-#ifndef USR_SDIO_CLK_Pin
-#define USR_SDIO_CLK_Pin               GPIO_PIN_12
-#endif
-
-/* SDIO CMD - PD2 */
-#ifndef USR_SDIO_CMD_Port
-#define USR_SDIO_CMD_Port              GPIOD
-#endif
-#ifndef USR_SDIO_CMD_Pin
-#define USR_SDIO_CMD_Pin               GPIO_PIN_2
-#endif
-
-/* SDIO Reset slave - PG2 */
-#ifndef GPIO_RESET_GPIO_Port
-#define GPIO_RESET_GPIO_Port           GPIOG
-#endif
-#ifndef GPIO_RESET_Pin
-#define GPIO_RESET_Pin                 GPIO_PIN_2
-#endif
-
-#define __HAL_RCC_SDIO_GPIO_ENABLE()  \
-{                                     \
-	__HAL_RCC_GPIOC_CLK_ENABLE();     \
-	__HAL_RCC_GPIOD_CLK_ENABLE();     \
-}
 
 #endif /* __SDIO_REG_H */

@@ -70,11 +70,21 @@ typedef struct {
 
           /* Transport - SPI */
 /* 39 */ void * (*_h_bus_init)(void);
+#ifdef CONFIG_ESP_SPI_HOST_INTERFACE
 /* 40 */ int (*_h_do_bus_transfer)(void *transfer_context);
+#endif
 /* 41 */ int (*_h_event_wifi_post)(int32_t event_id, void* event_data, size_t event_data_size, uint32_t ticks_to_wait);
 /* 43 */ void (*_h_printf)(int level, const char *tag, const char *format, ...);
 /* 43 */ void (*_h_hosted_init_hook)(void);
 
+#ifdef CONFIG_ESP_SDIO_HOST_INTERFACE
+          /* Transport - SPI */
+/* 44 */ int (*_h_sdio_read_reg)(uint32_t reg, uint8_t *data, uint16_t size, bool lock_required);
+/* 45 */ int (*_h_sdio_write_reg)(uint32_t reg, uint8_t *data, uint16_t size, bool lock_required);
+/* 46 */ int (*_h_sdio_read_block)(uint32_t reg, uint8_t *data, uint16_t size, bool lock_required);
+/* 47 */ int (*_h_sdio_write_block)(uint32_t reg, uint8_t *data, uint16_t size, bool lock_required);
+/* 48 */ int (*_h_sdio_wait_slave_intr)(uint32_t ticks_to_wait);
+#endif
 } hosted_osi_funcs_t;
 
 struct hosted_config_t {

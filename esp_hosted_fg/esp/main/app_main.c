@@ -658,7 +658,7 @@ void app_main()
 	uint8_t mac[BSSID_BYTES_SIZE] = {0};
 #endif
 	print_firmware_version();
-	register_reset_pin(CONFIG_ESP_SPI_GPIO_RESET);
+	register_reset_pin(CONFIG_ESP_GPIO_SLAVE_RESET);
 
 	capa = get_capabilities();
 

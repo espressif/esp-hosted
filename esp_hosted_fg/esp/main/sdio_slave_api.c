@@ -200,8 +200,12 @@ static interface_handle_t * sdio_init(void)
 		   bus in your real design.
 		   */
 		//.flags              = SDIO_SLAVE_FLAG_INTERNAL_PULLUP,
-#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 0, 0)
+#if CONFIG_ESP_SDIO_DEFAULT_SPEED
 		.flags              = SDIO_SLAVE_FLAG_DEFAULT_SPEED,
+#elif CONFIG_ESP_SDIO_HIGH_SPEED
+		.flags              = SDIO_SLAVE_FLAG_HIGH_SPEED,
+#else
+#error Invalid SDIO bus speed selection
 #endif
 		/* Note: Sometimes the SDIO card is detected but gets problem in
 		 * Read/Write or handling ISR because of SDIO timing issues.
@@ -212,7 +216,6 @@ static interface_handle_t * sdio_init(void)
 		.timing             = SDIO_SLAVE_TIMING_NSEND_PSAMPLE,
 #endif
 	};
-	config.flags |= SDIO_SLAVE_FLAG_DEFAULT_SPEED;
 
 #if defined(CONFIG_IDF_TARGET_ESP32C6)
 	ESP_LOGI(TAG, "%s: ESP32-C6 SDIO timing: %u\n", __func__, config.timing);
@@ -299,6 +302,8 @@ static int32_t sdio_write(interface_handle_t *handle, interface_buffer_handle_t 
 	header->len = htole16(buf_handle->payload_len);
 	offset = sizeof(struct esp_payload_header);
 	header->offset = htole16(offset);
+	header->seq_num = htole16(buf_handle->seq_num);
+	header->flags = buf_handle->flag;
 
 	memcpy(sendbuf + offset, buf_handle->payload, buf_handle->payload_len);
 
@@ -360,6 +365,7 @@ static int sdio_read(interface_handle_t *if_handle, interface_buffer_handle_t *b
 	checksum = compute_checksum(buf_handle->payload, len);
 
 	if (checksum != rx_checksum) {
+		ESP_LOGE(TAG, "sdio rx calc_chksum[%u] != exp_chksum[%u], drop pkt", checksum, rx_checksum);
 		sdio_read_done(buf_handle->sdio_buf_handle);
 		return ESP_FAIL;
 	}

@@ -138,24 +138,23 @@ void debug_update_raw_tp_rx_count(uint16_t len)
 	test_raw_tp_rx_len += (len);
 }
 
+/* function to free tx buffer after sending */
+static void raw_buf_free(void *ptr)
+{
+	if (ptr)
+		free(ptr);
+}
 
 extern volatile uint8_t datapath;
 static void raw_tp_tx_task(void* pvParameters)
 {
 	int ret;
-	unsigned int *ptr = raw_tp_tx_buf;
 	interface_buffer_handle_t buf_handle = {0};
 	uint8_t *raw_tp_tx_buf = NULL;
 	uint32_t *ptr = NULL;
 	uint16_t i = 0;
 
 	sleep(5);
-
-	for(int i=0;i<sizeof(raw_tp_tx_buf) - sizeof(int);i+=sizeof(int)) {
-		*ptr = 0xefbeadde;
-		ptr++;
-	}
-
 
 	for (;;) {
 
@@ -175,6 +174,9 @@ static void raw_tp_tx_task(void* pvParameters)
 
 		buf_handle.payload = raw_tp_tx_buf;
 		buf_handle.payload_len = TEST_RAW_TP__BUF_SIZE;
+		// free the buffer after it has been sent
+		buf_handle.free_buf_handle = raw_buf_free;
+		buf_handle.priv_buffer_handle = buf_handle.payload;
 
 		ret = send_to_host_queue(&buf_handle, PRIO_Q_OTHERS);
 
@@ -183,7 +185,6 @@ static void raw_tp_tx_task(void* pvParameters)
 			continue;
 		}
 		test_raw_tp_tx_len += (TEST_RAW_TP__BUF_SIZE);
-		free(raw_tp_tx_buf);
 	}
 }
 #endif
@@ -201,9 +202,9 @@ static void stats_timer_func(void* arg)
 	actual_bandwidth_tx = (test_raw_tp_tx_len*8);
 	actual_bandwidth_rx = (test_raw_tp_rx_len*8);
 #if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 0, 0)
-	ESP_LOGI(TAG,"%lu-%lu sec       Rx: %.2f Tx: %.2f kbps\n\r", cur, cur + 1, actual_bandwidth_rx/div, actual_bandwidth_tx/div);
+	ESP_LOGI(TAG,"%lu-%lu sec       Rx: %.2f Tx: %.2f kbps", cur, cur + 1, actual_bandwidth_rx/div, actual_bandwidth_tx/div);
 #else
-	ESP_LOGI(TAG,"%u-%u sec       Rx: %.2f Tx: %.2f kbps\n\r", cur, cur + 1, actual_bandwidth_rx/div, actual_bandwidth_tx/div);
+	ESP_LOGI(TAG,"%u-%u sec       Rx: %.2f Tx: %.2f kbps", cur, cur + 1, actual_bandwidth_rx/div, actual_bandwidth_tx/div);
 #endif
 	cur++;
 	test_raw_tp_rx_len = test_raw_tp_tx_len = 0;

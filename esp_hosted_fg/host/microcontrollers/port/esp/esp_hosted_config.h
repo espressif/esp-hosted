@@ -14,6 +14,7 @@
  **/
 
 
+#ifdef CONFIG_ESP_SPI_HOST_INTERFACE
 /*  ========================== SPI Master Config start ======================  */
 /*
 Pins in use. The SPI Master can use the GPIO mux,
@@ -34,15 +35,16 @@ so feel free to change these if needed.
 #define H_GPIO_SCLK_Pin                              CONFIG_ESP_SPI_GPIO_CLK
 #define H_GPIO_CS_Port                               NULL
 #define H_GPIO_CS_Pin                                CONFIG_ESP_SPI_GPIO_CS
-#define H_GPIO_PIN_RESET_Port                        NULL
-#define H_GPIO_PIN_RESET_Pin                         CONFIG_ESP_SPI_GPIO_RESET_SLAVE
 
 #define SPI_MODE                                     CONFIG_ESP_SPI_MODE
 #define SPI_INIT_CLK_MHZ                             CONFIG_ESP_SPI_CLK_FREQ
 
-
 /*  ========================== SPI Master Config end ========================  */
+#endif
 
+/* Generic reset pin config */
+#define H_GPIO_PIN_RESET_Port                        NULL
+#define H_GPIO_PIN_RESET_Pin                         CONFIG_ESP_GPIO_SLAVE_RESET_SLAVE
 
 #define TIMEOUT_PSERIAL_RESP                         30
 

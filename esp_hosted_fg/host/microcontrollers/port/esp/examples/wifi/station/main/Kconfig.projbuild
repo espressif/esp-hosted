@@ -54,16 +54,16 @@ menu "Example Configuration"
 			help
 				Bus interface to be used for communication with the host
 
-#			config ESP_SDIO_HOST_INTERFACE
-#				bool "SDIO interface"
-#				depends on IDF_TARGET_ESP32
-#				help
-#					Enable/Disable SDIO host interface
-
 			config ESP_SPI_HOST_INTERFACE
 				bool "SPI Transport"
 				help
 					Enable/Disable SPI host interface
+
+			config ESP_SDIO_HOST_INTERFACE
+				bool "SDIO interface"
+				depends on IDF_TARGET_ESP32 || IDF_TARGET_ESP32S3
+				help
+					Enable/Disable SDIO host interface
 		endchoice
 
 
@@ -71,27 +71,32 @@ menu "Example Configuration"
 			bool "Slave chipset to be used"
 
 			config SLAVE_CHIPSET_ESP32
+				depends on ESP_SPI_HOST_INTERFACE || ESP_SDIO_HOST_INTERFACE
 				bool "Slave as ESP32"
 
 			config SLAVE_CHIPSET_ESP32S2
+				depends on ESP_SPI_HOST_INTERFACE
 				bool "Slave as ESP32S2"
 
 			config SLAVE_CHIPSET_ESP32S3
+				depends on ESP_SPI_HOST_INTERFACE
 				bool "Slave as ESP32S3"
 
 			config SLAVE_CHIPSET_ESP32C2
+				depends on ESP_SPI_HOST_INTERFACE
 				bool "Slave as ESP32C2"
 
 			config SLAVE_CHIPSET_ESP32C3
+				depends on ESP_SPI_HOST_INTERFACE
 				bool "Slave as ESP32C3"
 
 			config SLAVE_CHIPSET_ESP32C6
+				depends on ESP_SPI_HOST_INTERFACE || ESP_SDIO_HOST_INTERFACE
 				bool "Slave as ESP32C6"
 		endchoice
 
 		menu "Hosted SPI Configuration"
 			depends on ESP_SPI_HOST_INTERFACE
-
 
 			choice ESP_SPI_PRIV_MODE
 				bool "Host SPI mode"
@@ -276,7 +281,6 @@ ESP32XX_SPI_CLK_FREQ_RANGE_MAX := 40
 			help
 				"Optimize SPI CLK by increasing till host practically can support"
 
-
 		config ESP_SPI_CLK_FREQ
 			int
 			default ESP_SPI_FREQ_ESP32 if SLAVE_CHIPSET_ESP32
@@ -298,6 +302,84 @@ ESP32XX_SPI_CLK_FREQ_RANGE_MAX := 40
 					Very small RX queue will lower ESP <-- SPI -- Host data rate
 
 		endmenu
+
+		menu "Hosted SDIO Configuration"
+			depends on ESP_SDIO_HOST_INTERFACE
+
+			config ESP_SDIO_GPIO_RESET_SLAVE
+				int "GPIO pin for Reseting slave ESP"
+				default 5
+				help
+					GPIO pin for Resetting ESP SDIO slave device. Should be connected to RST/EN of ESP SDIO slave device.
+
+			choice
+				prompt "SDIO Bus Width"
+				default ESP_SDIO_4_BIT_BUS
+				help
+					Select the SDIO Bus Width to use
+
+				config ESP_SDIO_4_BIT_BUS
+					bool "4 Bits"
+
+				config ESP_SDIO_1_BIT_BUS
+					bool "1 Bit"
+			endchoice
+
+			config ESP_SDIO_BUS_WIDTH
+				int
+				default 1 if ESP_SDIO_1_BIT_BUS
+				default 4
+
+ESP32XX_SDIO_CLK_FREQ_KHZ_RANGE_MIN := 400
+ESP32XX_SDIO_CLK_FREQ_KHZ_RANGE_MAX := 40000
+ESP32S3_SDIO_CLK_FREQ_KHZ_RANGE_MIN := 400
+ESP32S3_SDIO_CLK_FREQ_KHZ_RANGE_MAX := 80000
+
+			config ESP_SDIO_FREQ_ESP32
+				depends on IDF_TARGET_ESP32
+				int "SDIO Clock Freq (in KHz)"
+				default 40000
+				range $(ESP32XX_SDIO_CLK_FREQ_KHZ_RANGE_MIN) $(ESP32XX_SDIO_CLK_FREQ_KHZ_RANGE_MAX)
+				help
+					"Optimize SDIO CLK by increasing till host practically can support"
+
+			config ESP_SDIO_FREQ_ESP32S3
+				depends on IDF_TARGET_ESP32S3
+				int "SDIO Clock Freq (in KHz)"
+				default 40000
+				range $(ESP32S3_SDIO_CLK_FREQ_KHZ_RANGE_MIN) $(ESP32S3_SDIO_CLK_FREQ_KHZ_RANGE_MAX)
+				help
+					"Optimize SDIO CLK by increasing till host practically can support"
+
+			config ESP_SDIO_CLOCK_FREQ
+				int
+				default ESP_SDIO_FREQ_ESP32 if IDF_TARGET_ESP32
+				default ESP_SDIO_FREQ_ESP32S3 if IDF_TARGET_ESP32S3
+				help
+					"Optimize SDIO CLK by increasing till host practically can support"
+
+			config ESP_SDIO_TX_Q_SIZE
+				int "Host SDIO Tx queue size"
+				default 20
+				help
+					Very small tx queue will lower data rate
+
+			config ESP_SDIO_RX_Q_SIZE
+				int "Host SDIO Rx queue size"
+				default 20
+				help
+					Very small RX queue will lower data rate
+
+			config ESP_SDIO_CHECKSUM
+				bool "SDIO checksum ENABLE/DISABLE"
+				help
+					ENABLE/DISABLE software SDIO checksum
+		endmenu
+
+		config ESP_GPIO_SLAVE_RESET_SLAVE
+			int
+			default ESP_SPI_GPIO_RESET_SLAVE if ESP_SPI_HOST_INTERFACE
+			default ESP_SDIO_GPIO_RESET_SLAVE if ESP_SDIO_HOST_INTERFACE
 
 		config ESP_USE_MEMPOOL
 			bool "Cache allocated memory like mempool - helps to reduce malloc calls"

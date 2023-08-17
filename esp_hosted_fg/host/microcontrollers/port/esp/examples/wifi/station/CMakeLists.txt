@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.5)
 
-set(COMPONENTS main esp_partition nvs_flash esp_timer driver freertos esp_netif newlib esp_event lwip esp_timer log)
+set(COMPONENTS main esp_partition nvs_flash esp_timer driver freertos esp_netif newlib esp_event lwip esp_timer log sdmmc)
 list(APPEND EXTRA_COMPONENT_DIRS "${COMPONENTS_DIR}")
 
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)

@@ -15,6 +15,12 @@ menu "Example Configuration"
 			bool "SPI interface"
 			help
 				Enable/Disable SPI host interface
+
+		config ESP_SDIO_HOST_INTERFACE
+			bool "SDIO interface"
+			depends on IDF_TARGET_ESP32 || IDF_TARGET_ESP32C6
+			help
+				Enable/Disable SDIO host interface
 	endchoice
 
 	menu "SPI Configuration"
@@ -199,6 +205,67 @@ menu "Example Configuration"
 	menu "SDIO Configuration"
 		depends on ESP_SDIO_HOST_INTERFACE
 
+		config ESP_SDIO_GPIO_RESET
+			int "Slave GPIO pin to reset itself"
+			default -1
+			help
+				Host uses this pin to reset the slave ESP. To re-use ESP 'RST' or 'EN' GPIO, set value to -1
+
+		choice
+			prompt "SDIO Bus Speed"
+			default ESP_SDIO_HIGH_SPEED
+			help
+				Select the SDIO Slave Bus Speed. Actual speed in use depends on SDIO bus speed the SDIO Master can support
+
+			config ESP_SDIO_DEFAULT_SPEED
+				bool "Default Speed (20 MHz)"
+
+			config ESP_SDIO_HIGH_SPEED
+				bool "High Speed (40 MHz)"
+		endchoice
+
+		config ESP_SDIO_PIN_CMD
+			int "CMD GPIO number"
+			range 15 15 if IDF_TARGET_ESP32
+			range 18 18 if IDF_TARGET_ESP32C6
+			help
+				"Value cannot be configured. Displayed for reference."
+
+		config ESP_SDIO_PIN_CLK
+			int "CLK GPIO number"
+			range 14 14 if IDF_TARGET_ESP32
+			range 19 19 if IDF_TARGET_ESP32C6
+			help
+				"Value cannot be configured. Displayed for reference."
+
+		config ESP_SDIO_PIN_D0
+			int "D0 GPIO number"
+			range 2 2 if IDF_TARGET_ESP32
+			range 20 20 if IDF_TARGET_ESP32C6
+			help
+				"Value cannot be configured. Displayed for reference."
+
+		config ESP_SDIO_PIN_D1
+			int "D1 GPIO number"
+			range 4 4 if IDF_TARGET_ESP32
+			range 21 21 if IDF_TARGET_ESP32C6
+			help
+				"Value cannot be configured. Displayed for reference."
+
+		config ESP_SDIO_PIN_D2
+			int "D2 GPIO number"
+			range 12 12 if IDF_TARGET_ESP32
+			range 22 22 if IDF_TARGET_ESP32C6
+			help
+				"Value cannot be configured. Displayed for reference."
+
+		config ESP_SDIO_PIN_D3
+			int "D3 GPIO number"
+			range 13 13 if IDF_TARGET_ESP32
+			range 23 23 if IDF_TARGET_ESP32C6
+			help
+				"Value cannot be configured. Displayed for reference."
+
 		config ESP_SDIO_CHECKSUM
 			bool "SDIO checksum ENABLE/DISABLE"
 			help
@@ -208,7 +275,8 @@ menu "Example Configuration"
 
 	config ESP_GPIO_SLAVE_RESET
 		int
-		default ESP_SPI_GPIO_RESET
+		default ESP_SPI_GPIO_RESET if ESP_SPI_HOST_INTERFACE
+		default ESP_SDIO_GPIO_RESET if ESP_SDIO_HOST_INTERFACE
 
 	config EXAMPLE_HCI_UART_BAUDRATE
 		int "UART Baudrate for HCI: Only applicable for ESP32-C3/ESP32-S3"
