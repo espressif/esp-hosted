@@ -198,7 +198,7 @@ esp_err_t esp_wifi_init(const wifi_init_config_t *config);
 
 esp_err_t esp_wifi_deinit(void);
 
-esp_err_t esp_wifi_set_mode(int mode);
+esp_err_t esp_wifi_set_mode(wifi_mode_t mode);
 
 esp_err_t esp_wifi_get_mode(wifi_mode_t *mode);
 
@@ -210,15 +210,15 @@ esp_err_t esp_wifi_disconnect(void);
 
 esp_err_t esp_wifi_connect(void);
 
-esp_err_t esp_wifi_set_config(int interface, wifi_config_t *conf);
+esp_err_t esp_wifi_set_config(wifi_interface_t interface, wifi_config_t *conf);
 
-esp_err_t esp_wifi_get_config(int interface, wifi_config_t *conf);
+esp_err_t esp_wifi_get_config(wifi_interface_t interface, wifi_config_t *conf);
 
 esp_err_t esp_wifi_get_mac(wifi_interface_t ifx, uint8_t mac[6]);
 
-esp_err_t esp_wifi_set_mac(wifi_interface_t ifx, uint8_t mac[6]);
+esp_err_t esp_wifi_set_mac(wifi_interface_t ifx, const uint8_t mac[6]);
 
-esp_err_t esp_wifi_scan_start(wifi_scan_config_t *config, bool block);
+esp_err_t esp_wifi_scan_start(const wifi_scan_config_t *config, bool block);
 
 esp_err_t esp_wifi_scan_stop(void);
 

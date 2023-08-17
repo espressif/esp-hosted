@@ -598,7 +598,7 @@ int test_set_wifi_mode_none(void)
 	return test_set_wifi_mode(WIFI_MODE_NULL);
 }
 
-int test_wifi_get_mac_addr(int mode, uint8_t *out_mac)
+int test_wifi_get_mac_addr(wifi_interface_t mode, uint8_t *out_mac)
 {
 	ctrl_cmd_t *resp = NULL;
 
@@ -630,7 +630,7 @@ int test_station_mode_get_mac_addr(uint8_t *mac)
 	return test_wifi_get_mac_addr(WIFI_MODE_STA, mac);
 }
 
-int test_wifi_set_mac_addr(int mode, uint8_t *mac)
+int test_wifi_set_mac_addr(wifi_interface_t mode, const uint8_t *mac)
 {
 	/* implemented synchronous */
 	ctrl_cmd_t req = RPC_DEFAULT_REQ();
@@ -1106,7 +1106,7 @@ int test_wifi_disconnect(void)
 	return rpc_rsp_callback(resp);
 }
 
-int test_wifi_set_config(int interface, wifi_config_t *conf)
+int test_wifi_set_config(wifi_interface_t interface, wifi_config_t *conf)
 {
 	/* implemented synchronous */
 	ctrl_cmd_t req = RPC_DEFAULT_REQ();
@@ -1122,7 +1122,7 @@ int test_wifi_set_config(int interface, wifi_config_t *conf)
 	return rpc_rsp_callback(resp);
 }
 
-int test_wifi_get_config(int interface, wifi_config_t *conf)
+int test_wifi_get_config(wifi_interface_t interface, wifi_config_t *conf)
 {
 	/* implemented synchronous */
 	ctrl_cmd_t req = RPC_DEFAULT_REQ();
@@ -1140,7 +1140,7 @@ int test_wifi_get_config(int interface, wifi_config_t *conf)
 	return rpc_rsp_callback(resp);
 }
 
-int test_wifi_scan_start(wifi_scan_config_t *config, bool block)
+int test_wifi_scan_start(const wifi_scan_config_t *config, bool block)
 {
 	/* implemented synchronous */
 	ctrl_cmd_t req = RPC_DEFAULT_REQ();
