@@ -129,7 +129,7 @@ esp_err_t esp_wifi_init(const wifi_init_config_t *config)
 		printf("Unable to create sem %s:%u\n", __func__, __LINE__);
 	g_h.funcs->_h_get_semaphore(esp_hosted_up_sem, portMAX_DELAY);
 
-	H_ERROR_CHECK(esp_hosted_init(esp_hosted_up_cb));
+	ESP_ERROR_CHECK(esp_hosted_init(esp_hosted_up_cb));
 	g_h.funcs->_h_get_semaphore(esp_hosted_up_sem, portMAX_DELAY);
 
 #if 0//TEST_RAW_TP
@@ -145,7 +145,7 @@ esp_err_t esp_wifi_deinit(void)
 	return test_wifi_deinit();
 }
 
-esp_err_t esp_wifi_set_mode(int mode)
+esp_err_t esp_wifi_set_mode(wifi_mode_t mode)
 {
 	return test_wifi_set_mode(mode);
 }
@@ -175,12 +175,12 @@ esp_err_t esp_wifi_connect(void)
 	return test_wifi_connect();
 }
 
-esp_err_t esp_wifi_set_config(int interface, wifi_config_t *conf)
+esp_err_t esp_wifi_set_config(wifi_interface_t interface, wifi_config_t *conf)
 {
 	return test_wifi_set_config(interface, conf);
 }
 
-esp_err_t esp_wifi_get_config(int interface, wifi_config_t *conf)
+esp_err_t esp_wifi_get_config(wifi_interface_t interface, wifi_config_t *conf)
 {
 	return test_wifi_get_config(interface, conf);
 }
@@ -190,12 +190,12 @@ esp_err_t esp_wifi_get_mac(wifi_interface_t ifx, uint8_t mac[6])
 	return test_wifi_get_mac_addr(ifx, mac);
 }
 
-esp_err_t esp_wifi_set_mac(wifi_interface_t ifx, uint8_t mac[6])
+esp_err_t esp_wifi_set_mac(wifi_interface_t ifx, const uint8_t mac[6])
 {
 	return test_wifi_set_mac_addr(ifx, mac);
 }
 
-esp_err_t esp_wifi_scan_start(wifi_scan_config_t *config, bool block)
+esp_err_t esp_wifi_scan_start(const wifi_scan_config_t *config, bool block)
 {
 	return test_wifi_scan_start(config, block);
 }

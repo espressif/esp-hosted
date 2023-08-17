@@ -75,12 +75,12 @@ int test_wifi_start(void);
 int test_wifi_stop(void);
 int test_wifi_connect(void);
 int test_wifi_disconnect(void);
-int test_wifi_set_config(int interface, wifi_config_t *conf);
-int test_wifi_get_config(int interface, wifi_config_t *conf);
-int test_wifi_get_mac_addr(int mode, uint8_t *out_mac);
-int test_wifi_set_mac_addr(int mode, uint8_t *mac);
+int test_wifi_set_config(wifi_interface_t interface, wifi_config_t *conf);
+int test_wifi_get_config(wifi_interface_t interface, wifi_config_t *conf);
+int test_wifi_get_mac_addr(wifi_interface_t mode, uint8_t *out_mac);
+int test_wifi_set_mac_addr(wifi_interface_t mode, const uint8_t *mac);
 
-int test_wifi_scan_start(wifi_scan_config_t *config, bool block);
+int test_wifi_scan_start(const wifi_scan_config_t *config, bool block);
 int test_wifi_scan_stop(void);
 int test_wifi_scan_get_ap_num(uint16_t *number);
 int test_wifi_scan_get_ap_records(uint16_t *number, wifi_ap_record_t *ap_records);

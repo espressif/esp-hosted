@@ -267,8 +267,14 @@ int compose_rpc_req(Rpc *req, ctrl_cmd_t *app_req, uint8_t *failure_status)
 		RPC_ALLOC_ASSIGN(RpcReqSetMode, req_wifi_set_ps,
 				rpc__req__set_mode__init);
 
-		if ((p->ps_mode < WIFI_PS_MIN_MODEM) ||
-		    (p->ps_mode >= WIFI_PS_INVALID)) {
+#if CONFIG_BT_ENABLED
+		if (p->ps_mode < WIFI_PS_MIN_MODEM) {
+			ESP_LOGE(TAG, "Invalid power save mode (BT enabled)\n");
+			*failure_status = RPC_ERR_INCORRECT_ARG;
+			return FAILURE;
+		}
+#endif
+		if (p->ps_mode > WIFI_PS_MAX_MODEM) {
 			ESP_LOGE(TAG, "Invalid power save mode\n");
 			*failure_status = RPC_ERR_INCORRECT_ARG;
 			return FAILURE;

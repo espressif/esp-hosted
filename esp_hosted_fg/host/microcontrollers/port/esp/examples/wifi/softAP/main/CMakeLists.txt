@@ -2,15 +2,13 @@ set(FG_ROOT_DIR "../../../../../../../..")
 set(MCU_DIR "${FG_ROOT_DIR}/host/microcontrollers")
 
 set(COMPONENT_ADD_INCLUDEDIRS "${MCU_DIR}/port/esp")
-set(COMPONENT_SRCS "softap_example_main.c" "${MCU_DIR}/drivers/transport/transport_drv.c"  "${MCU_DIR}/drivers/network/netdev_api.c" "${MCU_DIR}/drivers/network/netdev_stub.c" "${MCU_DIR}/drivers/serial/serial_ll_if.c" "${MCU_DIR}/utils/common.c" "${MCU_DIR}/utils/util.c" "${MCU_DIR}/utils/stats.c" "../../../../os_wrapper.c" "${MCU_DIR}/drivers/serial/serial_drv.c" "${MCU_DIR}/drivers/netif/wifi_default.c" "${MCU_DIR}/drivers/netif/wifi_netif.c")
+set(COMPONENT_SRCS "softap_example_main.c" "${MCU_DIR}/drivers/transport/transport_drv.c" "${MCU_DIR}/drivers/serial/serial_ll_if.c" "${MCU_DIR}/utils/common.c" "${MCU_DIR}/utils/util.c" "${MCU_DIR}/utils/stats.c" "../../../../os_wrapper.c" "${MCU_DIR}/drivers/serial/serial_drv.c" "${MCU_DIR}/drivers/netif/wifi_default.c" "${MCU_DIR}/drivers/netif/wifi_netif.c")
 
-list(APPEND COMPONENT_ADD_INCLUDEDIRS "." "${MCU_DIR}/drivers/transport" "${MCU_DIR}/drivers/transport/spi" "${MCU_DIR}/drivers/transport/sdio" "${MCU_DIR}/drivers/netif" "${MCU_DIR}/drivers/network" "${MCU_DIR}/drivers/serial" "${MCU_DIR}/utils" "${FG_ROOT_DIR}/common/include" "../../../.." )
-
+list(APPEND COMPONENT_ADD_INCLUDEDIRS "." "${MCU_DIR}/drivers/transport" "${MCU_DIR}/drivers/transport/spi" "${MCU_DIR}/drivers/transport/sdio" "${MCU_DIR}/drivers/netif" "${MCU_DIR}/drivers/serial" "${MCU_DIR}/utils" "${FG_ROOT_DIR}/common/include" "../../../.." )
 
 set(NETIF_DIR "${MCU_DIR}/drivers/netif")
 list(APPEND COMPONENT_SRCS "${NETIF_DIR}/wifi_default.c" "${NETIF_DIR}/wifi_netif.c" )
 list(APPEND COMPONENT_ADD_INCLUDEDIRS "${NETIF_DIR}" "${NETIF_DIR}/" )
-
 
 #components
 # rpc lib files
@@ -38,5 +36,4 @@ else(CONFIG_ESP_SPI_HOST_INTERFACE)
 	list(APPEND COMPONENT_SRCS "${MCU_DIR}/drivers/transport/spi/spi_drv.c")
 endif()
 
-#idf_component_register(SRCS ${COMPONENT_SRCS} EXCLUDE_SRCS ${EXCLUDE_COMPONENT_SRCS} INCLUDE_DIRS ${COMPONENT_ADD_INCLUDEDIRS} EXTRA_COMPONENT_DIRS "${XTRA_COMPONENTS}")
 idf_component_register(SRCS ${COMPONENT_SRCS} EXCLUDE_SRCS ${EXCLUDE_COMPONENT_SRCS} INCLUDE_DIRS ${COMPONENT_ADD_INCLUDEDIRS})

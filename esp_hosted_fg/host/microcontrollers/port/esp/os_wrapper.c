@@ -24,12 +24,24 @@
 #include "esp_macros.h"
 #include "esp_hosted_config.h"
 
+#if 0
+// Need to uncomment if need to use wifi headers right from idf
+/* Wi-Fi headers are reused at ESP-Hosted */
+#include "esp_wifi_crypto_types.h"
+#include "esp_private/wifi_os_adapter.h"
+#endif
+
 DEFINE_LOG_TAG(os_wrapper_esp);
 
 extern void * spi_handle;
 struct mempool * nw_mp_g = NULL;
 
-//hosted_osi_funcs_t g_wifi_osi_funcs;
+#if 0
+// Need to uncomment if need to use wifi headers right from idf
+wpa_crypto_funcs_t g_wifi_default_wpa_crypto_funcs;
+wifi_osi_funcs_t g_wifi_osi_funcs;
+#endif
+
 //ESP_EVENT_DECLARE_BASE(WIFI_EVENT);
 ESP_EVENT_DEFINE_BASE(WIFI_EVENT);
 struct hosted_config_t g_h = HOSTED_CONFIG_INIT_DEFAULT();
@@ -41,7 +53,7 @@ struct timer_handle_t {
 
 /* -------- Memory ---------- */
 
-void * hosted_memcpy(void* dest, void* src, uint32_t size)
+void * hosted_memcpy(void* dest, const void* src, uint32_t size)
 {
 	if (size && (!dest || !src)) {
 		if (!dest)

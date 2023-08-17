@@ -9,7 +9,7 @@
 
 typedef struct {
           /* Memory */
-/* 1 */   void*  (*_h_memcpy)(void* dest, void* src, uint32_t size);
+/* 1 */   void*  (*_h_memcpy)(void* dest, const void* src, uint32_t size);
 /* 2 */   void*  (*_h_memset)(void* buf, int val, size_t len);
 /* 3 */   void*  (*_h_malloc)(size_t size);
 /* 4 */   void*  (*_h_calloc)(size_t blk_no, size_t size);
