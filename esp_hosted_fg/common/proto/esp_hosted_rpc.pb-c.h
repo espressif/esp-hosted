@@ -2675,7 +2675,6 @@ struct  RpcEventAPStaDisconnected
 {
   ProtobufCMessage base;
   int32_t resp;
-  int32_t event_id;
   ProtobufCBinaryData mac;
   uint32_t aid;
   protobuf_c_boolean is_mesh_child;
@@ -2683,57 +2682,53 @@ struct  RpcEventAPStaDisconnected
 };
 #define RPC__EVENT__AP__STA_DISCONNECTED__INIT \
  { PROTOBUF_C_MESSAGE_INIT (&rpc__event__ap__sta_disconnected__descriptor) \
-    , 0, 0, {0,NULL}, 0, 0, 0 }
+    , 0, {0,NULL}, 0, 0, 0 }
 
 
 struct  RpcEventAPStaConnected
 {
   ProtobufCMessage base;
   int32_t resp;
-  int32_t event_id;
   ProtobufCBinaryData mac;
   uint32_t aid;
   protobuf_c_boolean is_mesh_child;
 };
 #define RPC__EVENT__AP__STA_CONNECTED__INIT \
  { PROTOBUF_C_MESSAGE_INIT (&rpc__event__ap__sta_connected__descriptor) \
-    , 0, 0, {0,NULL}, 0, 0 }
+    , 0, {0,NULL}, 0, 0 }
 
 
 struct  RpcEventStaScanDone
 {
   ProtobufCMessage base;
   int32_t resp;
-  int32_t event_id;
   WifiEventStaScanDone *scan_done;
 };
 #define RPC__EVENT__STA_SCAN_DONE__INIT \
  { PROTOBUF_C_MESSAGE_INIT (&rpc__event__sta_scan_done__descriptor) \
-    , 0, 0, NULL }
+    , 0, NULL }
 
 
 struct  RpcEventStaConnected
 {
   ProtobufCMessage base;
   int32_t resp;
-  int32_t event_id;
   WifiEventStaConnected *sta_connected;
 };
 #define RPC__EVENT__STA_CONNECTED__INIT \
  { PROTOBUF_C_MESSAGE_INIT (&rpc__event__sta_connected__descriptor) \
-    , 0, 0, NULL }
+    , 0, NULL }
 
 
 struct  RpcEventStaDisconnected
 {
   ProtobufCMessage base;
   int32_t resp;
-  int32_t event_id;
   WifiEventStaDisconnected *sta_disconnected;
 };
 #define RPC__EVENT__STA_DISCONNECTED__INIT \
  { PROTOBUF_C_MESSAGE_INIT (&rpc__event__sta_disconnected__descriptor) \
-    , 0, 0, NULL }
+    , 0, NULL }
 
 
 typedef enum {

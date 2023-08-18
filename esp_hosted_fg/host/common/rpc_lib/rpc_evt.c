@@ -54,9 +54,8 @@ int rpc_parse_evt(Rpc *rpc_msg, ctrl_cmd_t *app_ntfy)
 		if(SUCCESS==app_ntfy->resp_event_status) {
 			RPC_FAIL_ON_NULL_PRINT(p_c->mac.data, "NULL mac");
 			g_h.funcs->_h_memcpy(p_a->mac, p_c->mac.data, p_c->mac.len);
-			ESP_LOGI(TAG, "EVENT: id[%lx] AP ->  sta connected mac[%2x %2x %2x %2x %2x %2x] (len:%u)",
-					p_c->event_id, p_a->mac[0], p_a->mac[1], p_a->mac[2],
-				p_a->mac[3], p_a->mac[4], p_a->mac[5], p_c->mac.len);
+			ESP_LOGI(TAG, "EVENT: AP ->  sta connected mac[" MACSTR "] (len:%u)",
+				MAC2STR(p_a->mac), p_c->mac.len);
 		}
 
 		p_a->aid = p_c->aid;
@@ -74,9 +73,8 @@ int rpc_parse_evt(Rpc *rpc_msg, ctrl_cmd_t *app_ntfy)
 		if(SUCCESS==app_ntfy->resp_event_status) {
 			RPC_FAIL_ON_NULL_PRINT(p_c->mac.data, "NULL mac");
 			g_h.funcs->_h_memcpy(p_a->mac, p_c->mac.data, p_c->mac.len);
-			ESP_LOGI(TAG, "EVENT: id[%lx] AP ->  sta DISconnected mac[%2x %2x %2x %2x %2x %2x] (len:%u)",
-					p_c->event_id, p_a->mac[0], p_a->mac[1], p_a->mac[2],
-				p_a->mac[3], p_a->mac[4], p_a->mac[5], p_c->mac.len);
+			ESP_LOGI(TAG, "EVENT: AP ->  sta DISconnected mac[" MACSTR "] (len:%u)",
+				MAC2STR(p_a->mac), p_c->mac.len);
 		}
 
 		p_a->aid = p_c->aid;
@@ -126,7 +124,7 @@ int rpc_parse_evt(Rpc *rpc_msg, ctrl_cmd_t *app_ntfy)
 		wifi_event_sta_scan_done_t *p_a = &app_ntfy->u.e_wifi_sta_scan_done;
 		RPC_FAIL_ON_NULL(event_sta_scan_done);
 		app_ntfy->resp_event_status = p_c->resp;
-		ESP_LOGI(TAG, "Event [0x%lx] received", rpc_msg->event_wifi_event_no_args->event_id);
+		ESP_LOGI(TAG, "Event Scan Done, %ld items", rpc_msg->event_sta_scan_done->scan_done->number);
 		p_a->status = p_c->scan_done->status;
 		p_a->number = p_c->scan_done->number;
 		p_a->scan_id = p_c->scan_done->scan_id;

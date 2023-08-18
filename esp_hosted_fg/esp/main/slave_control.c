@@ -74,8 +74,7 @@
 	InIt_FuN(ntfy_payload);                                                     \
 	ntfy->payload_case = NtFy_MsgId;                                            \
 	ntfy->NtFy_StRuCt = ntfy_payload;                                           \
-	ntfy_payload->resp = SUCCESS;                                               \
-	ntfy_payload->event_id = event_id;
+	ntfy_payload->resp = SUCCESS;
 
 #define RPC_TEMPLATE(RspTyPe, RspStRuCt, ReqType, ReqStruct, InIt_FuN)         \
   RspTyPe *resp_payload = NULL;                                                 \
@@ -3621,7 +3620,6 @@ static esp_err_t rpc_evt_sta_connected(Rpc *ntfy,
 
 	NTFY_ALLOC_ELEMENT(WifiEventStaConnected, ntfy_payload->sta_connected,
 			wifi_event_sta_connected__init);
-	ntfy_payload->event_id = event_id;
 
 	p_c = ntfy_payload->sta_connected;
 
@@ -3654,7 +3652,6 @@ static esp_err_t rpc_evt_sta_disconnected(Rpc *ntfy,
 
 	NTFY_ALLOC_ELEMENT(WifiEventStaDisconnected, ntfy_payload->sta_disconnected,
 			wifi_event_sta_disconnected__init);
-	ntfy_payload->event_id = event_id;
 
 	p_c = ntfy_payload->sta_disconnected;
 
@@ -3695,7 +3692,6 @@ static esp_err_t rpc_evt_ap_staconn_conn_disconn(Rpc *ntfy,
 
 		ntfy->payload_case = RPC__PAYLOAD_EVENT_AP_STA_CONNECTED;
 		ntfy->event_ap_sta_connected = ntfy_payload;
-		ntfy_payload->event_id = event_id;
 		ntfy_payload->aid = p_a->aid;
 		ntfy_payload->mac.len = BSSID_BYTES_SIZE;
 		ntfy_payload->is_mesh_child = p_a->is_mesh_child;
@@ -3720,7 +3716,6 @@ static esp_err_t rpc_evt_ap_staconn_conn_disconn(Rpc *ntfy,
 
 		ntfy->payload_case = RPC__PAYLOAD_EVENT_AP_STA_DISCONNECTED;
 		ntfy->event_ap_sta_disconnected = ntfy_payload;
-		ntfy_payload->event_id = event_id;
 		ntfy_payload->aid = p_a->aid;
 		ntfy_payload->mac.len = BSSID_BYTES_SIZE;
 		ntfy_payload->is_mesh_child = p_a->is_mesh_child;

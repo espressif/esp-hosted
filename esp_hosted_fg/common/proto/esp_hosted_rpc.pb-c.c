@@ -12278,7 +12278,7 @@ const ProtobufCMessageDescriptor rpc__event__heartbeat__descriptor =
   (ProtobufCMessageInit) rpc__event__heartbeat__init,
   NULL,NULL,NULL    /* reserved[123] */
 };
-static const ProtobufCFieldDescriptor rpc__event__ap__sta_disconnected__field_descriptors[6] =
+static const ProtobufCFieldDescriptor rpc__event__ap__sta_disconnected__field_descriptors[5] =
 {
   {
     "resp",
@@ -12293,20 +12293,8 @@ static const ProtobufCFieldDescriptor rpc__event__ap__sta_disconnected__field_de
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
   {
-    "event_id",
-    2,
-    PROTOBUF_C_LABEL_NONE,
-    PROTOBUF_C_TYPE_INT32,
-    0,   /* quantifier_offset */
-    offsetof(RpcEventAPStaDisconnected, event_id),
-    NULL,
-    NULL,
-    0,             /* flags */
-    0,NULL,NULL    /* reserved1,reserved2, etc */
-  },
-  {
     "mac",
-    3,
+    2,
     PROTOBUF_C_LABEL_NONE,
     PROTOBUF_C_TYPE_BYTES,
     0,   /* quantifier_offset */
@@ -12318,7 +12306,7 @@ static const ProtobufCFieldDescriptor rpc__event__ap__sta_disconnected__field_de
   },
   {
     "aid",
-    4,
+    3,
     PROTOBUF_C_LABEL_NONE,
     PROTOBUF_C_TYPE_UINT32,
     0,   /* quantifier_offset */
@@ -12330,7 +12318,7 @@ static const ProtobufCFieldDescriptor rpc__event__ap__sta_disconnected__field_de
   },
   {
     "is_mesh_child",
-    5,
+    4,
     PROTOBUF_C_LABEL_NONE,
     PROTOBUF_C_TYPE_BOOL,
     0,   /* quantifier_offset */
@@ -12342,7 +12330,7 @@ static const ProtobufCFieldDescriptor rpc__event__ap__sta_disconnected__field_de
   },
   {
     "reason",
-    6,
+    5,
     PROTOBUF_C_LABEL_NONE,
     PROTOBUF_C_TYPE_UINT32,
     0,   /* quantifier_offset */
@@ -12354,17 +12342,16 @@ static const ProtobufCFieldDescriptor rpc__event__ap__sta_disconnected__field_de
   },
 };
 static const unsigned rpc__event__ap__sta_disconnected__field_indices_by_name[] = {
-  3,   /* field[3] = aid */
-  1,   /* field[1] = event_id */
-  4,   /* field[4] = is_mesh_child */
-  2,   /* field[2] = mac */
-  5,   /* field[5] = reason */
+  2,   /* field[2] = aid */
+  3,   /* field[3] = is_mesh_child */
+  1,   /* field[1] = mac */
+  4,   /* field[4] = reason */
   0,   /* field[0] = resp */
 };
 static const ProtobufCIntRange rpc__event__ap__sta_disconnected__number_ranges[1 + 1] =
 {
   { 1, 0 },
-  { 0, 6 }
+  { 0, 5 }
 };
 const ProtobufCMessageDescriptor rpc__event__ap__sta_disconnected__descriptor =
 {
@@ -12374,14 +12361,14 @@ const ProtobufCMessageDescriptor rpc__event__ap__sta_disconnected__descriptor =
   "RpcEventAPStaDisconnected",
   "",
   sizeof(RpcEventAPStaDisconnected),
-  6,
+  5,
   rpc__event__ap__sta_disconnected__field_descriptors,
   rpc__event__ap__sta_disconnected__field_indices_by_name,
   1,  rpc__event__ap__sta_disconnected__number_ranges,
   (ProtobufCMessageInit) rpc__event__ap__sta_disconnected__init,
   NULL,NULL,NULL    /* reserved[123] */
 };
-static const ProtobufCFieldDescriptor rpc__event__ap__sta_connected__field_descriptors[5] =
+static const ProtobufCFieldDescriptor rpc__event__ap__sta_connected__field_descriptors[4] =
 {
   {
     "resp",
@@ -12396,20 +12383,8 @@ static const ProtobufCFieldDescriptor rpc__event__ap__sta_connected__field_descr
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
   {
-    "event_id",
-    2,
-    PROTOBUF_C_LABEL_NONE,
-    PROTOBUF_C_TYPE_INT32,
-    0,   /* quantifier_offset */
-    offsetof(RpcEventAPStaConnected, event_id),
-    NULL,
-    NULL,
-    0,             /* flags */
-    0,NULL,NULL    /* reserved1,reserved2, etc */
-  },
-  {
     "mac",
-    3,
+    2,
     PROTOBUF_C_LABEL_NONE,
     PROTOBUF_C_TYPE_BYTES,
     0,   /* quantifier_offset */
@@ -12421,7 +12396,7 @@ static const ProtobufCFieldDescriptor rpc__event__ap__sta_connected__field_descr
   },
   {
     "aid",
-    4,
+    3,
     PROTOBUF_C_LABEL_NONE,
     PROTOBUF_C_TYPE_UINT32,
     0,   /* quantifier_offset */
@@ -12433,7 +12408,7 @@ static const ProtobufCFieldDescriptor rpc__event__ap__sta_connected__field_descr
   },
   {
     "is_mesh_child",
-    5,
+    4,
     PROTOBUF_C_LABEL_NONE,
     PROTOBUF_C_TYPE_BOOL,
     0,   /* quantifier_offset */
@@ -12445,16 +12420,15 @@ static const ProtobufCFieldDescriptor rpc__event__ap__sta_connected__field_descr
   },
 };
 static const unsigned rpc__event__ap__sta_connected__field_indices_by_name[] = {
-  3,   /* field[3] = aid */
-  1,   /* field[1] = event_id */
-  4,   /* field[4] = is_mesh_child */
-  2,   /* field[2] = mac */
+  2,   /* field[2] = aid */
+  3,   /* field[3] = is_mesh_child */
+  1,   /* field[1] = mac */
   0,   /* field[0] = resp */
 };
 static const ProtobufCIntRange rpc__event__ap__sta_connected__number_ranges[1 + 1] =
 {
   { 1, 0 },
-  { 0, 5 }
+  { 0, 4 }
 };
 const ProtobufCMessageDescriptor rpc__event__ap__sta_connected__descriptor =
 {
@@ -12464,14 +12438,14 @@ const ProtobufCMessageDescriptor rpc__event__ap__sta_connected__descriptor =
   "RpcEventAPStaConnected",
   "",
   sizeof(RpcEventAPStaConnected),
-  5,
+  4,
   rpc__event__ap__sta_connected__field_descriptors,
   rpc__event__ap__sta_connected__field_indices_by_name,
   1,  rpc__event__ap__sta_connected__number_ranges,
   (ProtobufCMessageInit) rpc__event__ap__sta_connected__init,
   NULL,NULL,NULL    /* reserved[123] */
 };
-static const ProtobufCFieldDescriptor rpc__event__sta_scan_done__field_descriptors[3] =
+static const ProtobufCFieldDescriptor rpc__event__sta_scan_done__field_descriptors[2] =
 {
   {
     "resp",
@@ -12486,20 +12460,8 @@ static const ProtobufCFieldDescriptor rpc__event__sta_scan_done__field_descripto
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
   {
-    "event_id",
-    2,
-    PROTOBUF_C_LABEL_NONE,
-    PROTOBUF_C_TYPE_INT32,
-    0,   /* quantifier_offset */
-    offsetof(RpcEventStaScanDone, event_id),
-    NULL,
-    NULL,
-    0,             /* flags */
-    0,NULL,NULL    /* reserved1,reserved2, etc */
-  },
-  {
     "scan_done",
-    3,
+    2,
     PROTOBUF_C_LABEL_NONE,
     PROTOBUF_C_TYPE_MESSAGE,
     0,   /* quantifier_offset */
@@ -12511,14 +12473,13 @@ static const ProtobufCFieldDescriptor rpc__event__sta_scan_done__field_descripto
   },
 };
 static const unsigned rpc__event__sta_scan_done__field_indices_by_name[] = {
-  1,   /* field[1] = event_id */
   0,   /* field[0] = resp */
-  2,   /* field[2] = scan_done */
+  1,   /* field[1] = scan_done */
 };
 static const ProtobufCIntRange rpc__event__sta_scan_done__number_ranges[1 + 1] =
 {
   { 1, 0 },
-  { 0, 3 }
+  { 0, 2 }
 };
 const ProtobufCMessageDescriptor rpc__event__sta_scan_done__descriptor =
 {
@@ -12528,14 +12489,14 @@ const ProtobufCMessageDescriptor rpc__event__sta_scan_done__descriptor =
   "RpcEventStaScanDone",
   "",
   sizeof(RpcEventStaScanDone),
-  3,
+  2,
   rpc__event__sta_scan_done__field_descriptors,
   rpc__event__sta_scan_done__field_indices_by_name,
   1,  rpc__event__sta_scan_done__number_ranges,
   (ProtobufCMessageInit) rpc__event__sta_scan_done__init,
   NULL,NULL,NULL    /* reserved[123] */
 };
-static const ProtobufCFieldDescriptor rpc__event__sta_connected__field_descriptors[3] =
+static const ProtobufCFieldDescriptor rpc__event__sta_connected__field_descriptors[2] =
 {
   {
     "resp",
@@ -12550,20 +12511,8 @@ static const ProtobufCFieldDescriptor rpc__event__sta_connected__field_descripto
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
   {
-    "event_id",
-    2,
-    PROTOBUF_C_LABEL_NONE,
-    PROTOBUF_C_TYPE_INT32,
-    0,   /* quantifier_offset */
-    offsetof(RpcEventStaConnected, event_id),
-    NULL,
-    NULL,
-    0,             /* flags */
-    0,NULL,NULL    /* reserved1,reserved2, etc */
-  },
-  {
     "sta_connected",
-    3,
+    2,
     PROTOBUF_C_LABEL_NONE,
     PROTOBUF_C_TYPE_MESSAGE,
     0,   /* quantifier_offset */
@@ -12575,14 +12524,13 @@ static const ProtobufCFieldDescriptor rpc__event__sta_connected__field_descripto
   },
 };
 static const unsigned rpc__event__sta_connected__field_indices_by_name[] = {
-  1,   /* field[1] = event_id */
   0,   /* field[0] = resp */
-  2,   /* field[2] = sta_connected */
+  1,   /* field[1] = sta_connected */
 };
 static const ProtobufCIntRange rpc__event__sta_connected__number_ranges[1 + 1] =
 {
   { 1, 0 },
-  { 0, 3 }
+  { 0, 2 }
 };
 const ProtobufCMessageDescriptor rpc__event__sta_connected__descriptor =
 {
@@ -12592,14 +12540,14 @@ const ProtobufCMessageDescriptor rpc__event__sta_connected__descriptor =
   "RpcEventStaConnected",
   "",
   sizeof(RpcEventStaConnected),
-  3,
+  2,
   rpc__event__sta_connected__field_descriptors,
   rpc__event__sta_connected__field_indices_by_name,
   1,  rpc__event__sta_connected__number_ranges,
   (ProtobufCMessageInit) rpc__event__sta_connected__init,
   NULL,NULL,NULL    /* reserved[123] */
 };
-static const ProtobufCFieldDescriptor rpc__event__sta_disconnected__field_descriptors[3] =
+static const ProtobufCFieldDescriptor rpc__event__sta_disconnected__field_descriptors[2] =
 {
   {
     "resp",
@@ -12614,20 +12562,8 @@ static const ProtobufCFieldDescriptor rpc__event__sta_disconnected__field_descri
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
   {
-    "event_id",
-    2,
-    PROTOBUF_C_LABEL_NONE,
-    PROTOBUF_C_TYPE_INT32,
-    0,   /* quantifier_offset */
-    offsetof(RpcEventStaDisconnected, event_id),
-    NULL,
-    NULL,
-    0,             /* flags */
-    0,NULL,NULL    /* reserved1,reserved2, etc */
-  },
-  {
     "sta_disconnected",
-    3,
+    2,
     PROTOBUF_C_LABEL_NONE,
     PROTOBUF_C_TYPE_MESSAGE,
     0,   /* quantifier_offset */
@@ -12639,14 +12575,13 @@ static const ProtobufCFieldDescriptor rpc__event__sta_disconnected__field_descri
   },
 };
 static const unsigned rpc__event__sta_disconnected__field_indices_by_name[] = {
-  1,   /* field[1] = event_id */
   0,   /* field[0] = resp */
-  2,   /* field[2] = sta_disconnected */
+  1,   /* field[1] = sta_disconnected */
 };
 static const ProtobufCIntRange rpc__event__sta_disconnected__number_ranges[1 + 1] =
 {
   { 1, 0 },
-  { 0, 3 }
+  { 0, 2 }
 };
 const ProtobufCMessageDescriptor rpc__event__sta_disconnected__descriptor =
 {
@@ -12656,7 +12591,7 @@ const ProtobufCMessageDescriptor rpc__event__sta_disconnected__descriptor =
   "RpcEventStaDisconnected",
   "",
   sizeof(RpcEventStaDisconnected),
-  3,
+  2,
   rpc__event__sta_disconnected__field_descriptors,
   rpc__event__sta_disconnected__field_indices_by_name,
   1,  rpc__event__sta_disconnected__number_ranges,
