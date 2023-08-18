@@ -12652,7 +12652,7 @@ static const ProtobufCFieldDescriptor rpc__event__ap__sta_disconnected__field_de
   },
   {
     "mac",
-    3,
+    2,
     PROTOBUF_C_LABEL_NONE,
     PROTOBUF_C_TYPE_BYTES,
     0,   /* quantifier_offset */
@@ -12709,7 +12709,7 @@ static const unsigned rpc__event__ap__sta_disconnected__field_indices_by_name[] 
 static const ProtobufCIntRange rpc__event__ap__sta_disconnected__number_ranges[1 + 1] =
 {
   { 1, 0 },
-  { 0, 6 }
+  { 0, 5 }
 };
 const ProtobufCMessageDescriptor rpc__event__ap__sta_disconnected__descriptor =
 {
@@ -12719,7 +12719,7 @@ const ProtobufCMessageDescriptor rpc__event__ap__sta_disconnected__descriptor =
   "RpcEventAPStaDisconnected",
   "",
   sizeof(RpcEventAPStaDisconnected),
-  6,
+  5,
   rpc__event__ap__sta_disconnected__field_descriptors,
   rpc__event__ap__sta_disconnected__field_indices_by_name,
   1,  rpc__event__ap__sta_disconnected__number_ranges,

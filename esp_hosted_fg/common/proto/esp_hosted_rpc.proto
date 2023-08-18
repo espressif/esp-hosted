@@ -1492,14 +1492,12 @@ message Rpc_Event_StaDisconnected {
 
 message Rpc_Event_StaConnected {
 	int32 resp = 1;
-	int32 event_id = 2;
-	wifi_event_sta_connected sta_connected = 3;
+	wifi_event_sta_connected sta_connected = 2;
 }
 
 message Rpc_Event_StaDisconnected {
 	int32 resp = 1;
-	int32 event_id = 2;
-	wifi_event_sta_disconnected sta_disconnected = 3;
+	wifi_event_sta_disconnected sta_disconnected = 2;
 }
 
 message Rpc {

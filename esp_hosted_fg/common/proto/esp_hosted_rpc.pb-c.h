@@ -2781,24 +2781,22 @@ struct  RpcEventStaConnected
 {
   ProtobufCMessage base;
   int32_t resp;
-  int32_t event_id;
   WifiEventStaConnected *sta_connected;
 };
 #define RPC__EVENT__STA_CONNECTED__INIT \
  { PROTOBUF_C_MESSAGE_INIT (&rpc__event__sta_connected__descriptor) \
-    , 0, 0, NULL }
+    , 0, NULL }
 
 
 struct  RpcEventStaDisconnected
 {
   ProtobufCMessage base;
   int32_t resp;
-  int32_t event_id;
   WifiEventStaDisconnected *sta_disconnected;
 };
 #define RPC__EVENT__STA_DISCONNECTED__INIT \
  { PROTOBUF_C_MESSAGE_INIT (&rpc__event__sta_disconnected__descriptor) \
-    , 0, 0, NULL }
+    , 0, NULL }
 
 
 typedef enum {
