@@ -15,7 +15,7 @@ jobs:
   upload_components:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@master
         with:
           submodules: "recursive"
 
@@ -25,4 +25,4 @@ jobs:
           name: "esp_hosted"
           version: "0.0.5-dev"
           namespace: "espressif"
-          api_token: ${{ IDF_COMPONENT_API_TOKEN }}
+          api_token: ${{ secrets.IDF_COMPONENT_API_TOKEN }}
