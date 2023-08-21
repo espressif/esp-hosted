@@ -5,3 +5,24 @@ dependencies:
   idf:
     version: ">=5.0"
 license: "Apache-2.0"
+
+name: Push component to https://components.espressif.com
+on:
+  push:
+    tags:
+      - v*
+jobs:
+  upload_components:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: "recursive"
+
+      - name: Upload component to the component registry
+        uses: espressif/upload-components-ci-action@v1
+        with:
+          name: "esp_hosted"
+          version: "0.0.5-dev"
+          namespace: "espressif"
+          api_token: ${{ IDF_COMPONENT_API_TOKEN }}
