@@ -9,8 +9,8 @@ license: "Apache-2.0"
 name: Push component to https://components.espressif.com
 on:
   push:
-    tags:
-      - v*
+    branches:
+      - feature/esp_as_mcu_host
 jobs:
   upload_components:
     runs-on: ubuntu-latest
