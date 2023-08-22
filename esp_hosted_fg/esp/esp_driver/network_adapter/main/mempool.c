@@ -15,130 +15,9 @@
 //
 
 #include "mempool.h"
-#define MEMPOOL_DEBUG 0
-
-#if MEMPOOL_DEBUG
 #include "esp_log.h"
 
-static char * MEM_TAG = "mpool";
-
-struct mempool_stats
-{
-	uint32_t num_fresh_alloc;
-	uint32_t num_reuse;
-	uint32_t num_free;
-};
-
-static struct mempool_stats m_stats;
-#endif
-
-//struct mempool * mempool_create(uint32_t block_size)
-//{
-//#ifdef CONFIG_ESP_CACHE_MALLOC
-//	struct mempool * new = (struct mempool *)MALLOC(MEMPOOL_ALIGNED(sizeof(struct mempool)));
-//
-//	if (!new)
-//		return NULL;
-//
-//	if (!IS_MEMPOOL_ALIGNED((long)new)) {
-//
-//		printf("Nonaligned\n");
-//		free(new);
-//		new = (struct mempool *)MALLOC(MEMPOOL_ALIGNED(sizeof(struct mempool)));
-//	}
-//
-//	if (!new)
-//		return NULL;
-//
-//	ESP_MUTEX_INIT(new->mutex);
-//
-//	new->block_size = MEMPOOL_ALIGNED(block_size);
-//	SLIST_INIT(&(new->head));
-//
-//#if MEMPOOL_DEBUG
-//	ESP_LOGI(MEM_TAG, "Create mempool %p with block_size:%lu", new, block_size);
-//#endif
-//	return new;
-//#else
-//	return NULL;
-//#endif
-//}
-
-//void mempool_destroy(struct mempool* mp)
-//{
-//#ifdef CONFIG_ESP_CACHE_MALLOC
-//	void * node1 = NULL;
-//
-//	if (!mp)
-//		return;
-//
-//#if MEMPOOL_DEBUG
-//	ESP_LOGI(MEM_TAG, "Destroy mempool %p", mp);
-//#endif
-//	while ((node1 = SLIST_FIRST(&(mp->head))) != NULL) {
-//		SLIST_REMOVE_HEAD(&(mp->head), entries);
-//		FREE(node1);
-//	}
-//	SLIST_INIT(&(mp->head));
-//
-//	FREE(mp);
-//#endif
-//}
-//
-//void * mempool_alloc(struct mempool* mp, int nbytes, int need_memset)
-//{
-//	void *buf = NULL;
-//
-//#ifdef CONFIG_ESP_CACHE_MALLOC
-//	if (!mp || mp->block_size < nbytes)
-//		return NULL;
-//
-//	portENTER_CRITICAL(&(mp->mutex));
-//	if (!SLIST_EMPTY(&(mp->head))) {
-//		buf = SLIST_FIRST(&(mp->head));
-//		SLIST_REMOVE_HEAD(&(mp->head), entries);
-//		portEXIT_CRITICAL(&(mp->mutex));
-//#if MEMPOOL_DEBUG
-//		ESP_LOGI(MEM_TAG, "%p: num_reuse: %lu", mp, ++m_stats.num_reuse);
-//#endif
-//	} else {
-//		portEXIT_CRITICAL(&(mp->mutex));
-//		buf = MEM_ALLOC(mp->block_size);
-//#if MEMPOOL_DEBUG
-//		ESP_LOGI(MEM_TAG, "%p: num_alloc: %lu", mp, ++m_stats.num_fresh_alloc);
-//#endif
-//	}
-//#else
-//	buf = MEM_ALLOC(MEMPOOL_ALIGNED(nbytes));
-//#endif
-//
-//	if (buf && need_memset)
-//		memset(buf, 0, nbytes);
-//
-//	return buf;
-//
-//}
-//
-//void mempool_free(struct mempool* mp, void *mem)
-//{
-//	if (!mem)
-//		return;
-//#ifdef CONFIG_ESP_CACHE_MALLOC
-//	if (!mp)
-//		return;
-//
-//	portENTER_CRITICAL(&(mp->mutex));
-//	SLIST_INSERT_HEAD(&(mp->head), (struct mempool_entry *)mem, entries);
-//	portEXIT_CRITICAL(&(mp->mutex));
-//#if MEMPOOL_DEBUG
-//	ESP_LOGI(MEM_TAG, "%p: num_ret: %lu", mp, ++m_stats.num_free);
-//#endif	
-//
-//#else
-//	FREE(mem);
-//#endif
-//}
-
+const char *TAG = "HS_MP";
 
 /* For Statically allocated memory, please pass as pre_allocated_mem.
  * If NULL passed, will allocate from heap
@@ -157,7 +36,7 @@ struct hosted_mempool * hosted_mempool_create(void *pre_allocated_mem,
 		heap = (uint8_t *)MALLOC( MEMPOOL_ALIGNED(OS_MEMPOOL_BYTES(
 					num_blocks,block_size)));
 		if (!heap) {
-			LOG("mem pool creation failed, no mem\n");
+			ESP_LOGE(TAG, "mem pool creation failed, no mem\n");
 			return NULL;
 		}
 	} else {
@@ -175,7 +54,7 @@ struct hosted_mempool * hosted_mempool_create(void *pre_allocated_mem,
 	snprintf(str, MEMPOOL_NAME_STR_SIZE, "hosted_%p", pool);
 
     if (os_mempool_init(pool, num_blocks, block_size, heap, str)) {
-		LOG("os_mempool_init failed\n");
+		ESP_LOGE(TAG, "os_mempool_init failed\n");
 		goto free_buffs;
 	}
 
@@ -235,7 +114,7 @@ void * hosted_mempool_alloc(struct hosted_mempool* mempool,
 	assert(mempool->pool);
 
 	if(nbytes > mempool->block_size) {
-		printf("Exp alloc bytes[%u] > mempool block size[%u]\n",
+		ESP_LOGE(TAG, "Exp alloc bytes[%u] > mempool block size[%u]\n",
 				nbytes, mempool->block_size);
 		return NULL;
 	}
@@ -245,7 +124,7 @@ void * hosted_mempool_alloc(struct hosted_mempool* mempool,
 	if (mem && need_memset)
 		memset(mem, 0, nbytes);
 #else
-	buf = MEM_ALLOC(MEMPOOL_ALIGNED(nbytes));
+	mem = MEM_ALLOC(MEMPOOL_ALIGNED(nbytes));
 #endif
 
 	return mem;

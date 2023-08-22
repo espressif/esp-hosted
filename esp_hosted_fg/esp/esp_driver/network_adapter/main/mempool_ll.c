@@ -17,15 +17,14 @@
  * under the License.
  */
 
-//#include "os/os.h"
-
 #include <string.h>
 #include <assert.h>
 #include <stdbool.h>
 #include "mempool_ll.h"
 #include "freertos/portable.h"
 
-portMUX_TYPE hosted_port_mutex = portMUX_INITIALIZER_UNLOCKED;
+//portMUX_TYPE hosted_port_mutex = portMUX_INITIALIZER_UNLOCKED;
+SemaphoreHandle_t hosted_port_mutex;
 
 #define OS_MEM_TRUE_BLOCK_SIZE(bsize)   OS_ALIGN(bsize, OS_ALIGNMENT)
 #define OS_MEMPOOL_TRUE_BLOCK_SIZE(mp) OS_MEM_TRUE_BLOCK_SIZE(mp->mp_block_size)
@@ -81,6 +80,7 @@ os_mempool_init(struct os_mempool *mp, uint16_t blocks, uint32_t block_size,
     if ((!membuf) && (blocks != 0)) {
         return OS_INVALID_PARM;
     }
+	OS_INIT_CRITICAL();
 
     if (membuf != NULL) {
         /* Blocks need to be sized properly and memory buffer should be

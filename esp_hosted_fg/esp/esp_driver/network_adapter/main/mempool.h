@@ -52,8 +52,6 @@ struct hosted_mempool {
 	}                                    \
 } while(0);
 
-#define LOG                              printf
-
 #define MEMPOOL_NAME_STR_SIZE            32
 
 #define MEMPOOL_ALIGNMENT_BYTES          4
@@ -65,31 +63,13 @@ struct hosted_mempool {
 #define MEMSET_REQUIRED                  1
 #define MEMSET_NOT_REQUIRED              0
 
-#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(4, 4, 0) 
+#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(4, 4, 0)
   #define ESP_MUTEX_INIT(mUtEx) portMUX_INITIALIZE(&(mUtEx));
 #else
   #define ESP_MUTEX_INIT(mUtEx) vPortCPUInitializeMutex(&(mUtEx));
 #endif
 
 
-//#ifdef CONFIG_ESP_CACHE_MALLOC
-//struct mempool_entry {
-//	SLIST_ENTRY(mempool_entry) entries;
-//};
-//
-//typedef SLIST_HEAD(slisthead, mempool_entry) mempool_t;
-//
-//struct mempool {
-//	mempool_t head;
-//	portMUX_TYPE mutex;
-//	uint32_t block_size;
-//};
-//#endif
-
-//struct mempool * mempool_create(uint32_t block_size);
-//void mempool_destroy(struct mempool* mp);
-//void * mempool_alloc(struct mempool* mp, int nbytes, int need_memset);
-//void mempool_free(struct mempool* mp, void *mem);
 #ifdef CONFIG_ESP_CACHE_MALLOC
 struct hosted_mempool * hosted_mempool_create(void *pre_allocated_mem,
 		uint16_t num_blocks, uint32_t block_size);
@@ -97,5 +77,6 @@ void hosted_mempool_destroy(struct hosted_mempool* mempool);
 void * hosted_mempool_alloc(struct hosted_mempool* mempool,
 		int nbytes, int need_memset);
 int hosted_mempool_free(struct hosted_mempool* mempool, void *mem);
+
 #endif
 #endif

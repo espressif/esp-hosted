@@ -29,16 +29,11 @@
 #define _OS_MEMPOOL_H_
 
 #include <stdbool.h>
-//#include "esp_nimble_cfg.h"
-//#include "nimble/nimble_npl_os.h"
-//#include "nimble/npl_freertos.h"
-//#include "nimble/nimble_port_freertos.h"
 #include "sys/queue.h"
-//#include "os/os.h"
-//#include "os/queue.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/portmacro.h"
 #include "freertos/task.h"
+#include "freertos/semphr.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -66,8 +61,12 @@ extern "C" {
         )
 #define OS_ALIGNMENT 4
 
+#if 0
 extern portMUX_TYPE hosted_port_mutex;
+#endif
+extern SemaphoreHandle_t hosted_port_mutex;
 //critical section
+#if 0
 static inline uint32_t
 hosted_mp_enter_critical(void)
 {
@@ -81,11 +80,18 @@ hosted_mp_exit_critical(uint32_t ctx)
     portEXIT_CRITICAL(&hosted_port_mutex);
 
 }
+#endif
 
 typedef uint32_t os_sr_t;
 
+#if 0
 #define OS_ENTER_CRITICAL(_sr) (_sr = hosted_mp_enter_critical())
 #define OS_EXIT_CRITICAL(_sr) (hosted_mp_exit_critical(_sr))
+#endif
+
+#define OS_INIT_CRITICAL() (hosted_port_mutex = xSemaphoreCreateMutex())
+#define OS_ENTER_CRITICAL(_sr) (xSemaphoreTake((hosted_port_mutex), portMAX_DELAY))
+#define OS_EXIT_CRITICAL(_sr) (xSemaphoreGive((hosted_port_mutex)))
 
 enum os_error {
     OS_OK = 0,

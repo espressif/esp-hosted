@@ -1,6 +1,5 @@
-idf_component_get_property(bt_dir bt COMPONENT_DIR)
 set(COMPONENT_SRCS "slave_control.c" "../../../../common/esp_hosted_config.pb-c.c" "protocomm_pserial.c" "app_main.c" "slave_bt.c" "mempool.c" "stats.c" "mempool_ll.c")
-set(COMPONENT_ADD_INCLUDEDIRS "." "../../../../common/include" "${bt_dir}/host/nimble/nimble/porting/nimble/include"  "${bt_dir}/host/nimble/nimble/porting/npl/freertos/include" "${bt_dir}//host/nimble/port/include")
+set(COMPONENT_ADD_INCLUDEDIRS "." "../../../../common/include")
 
 if(CONFIG_ESP_SDIO_HOST_INTERFACE)
     list(APPEND COMPONENT_SRCS sdio_slave_api.c)
@@ -18,4 +17,3 @@ target_compile_definitions(${COMPONENT_LIB} PRIVATE ${PROJECT_VERSION_MAJOR_1} $
 # Add directory of protocomm_priv.h to include paths
 idf_component_get_property(protocomm_dir protocomm COMPONENT_DIR)
 target_include_directories(${COMPONENT_LIB} PRIVATE "${protocomm_dir}/src/common")
-
