@@ -160,6 +160,8 @@ static interface_handle_t if_handle_g;
 static QueueHandle_t spi_rx_queue[MAX_PRIORITY_QUEUES] = {NULL};
 static QueueHandle_t spi_tx_queue[MAX_PRIORITY_QUEUES] = {NULL};
 
+
+
 static interface_handle_t * esp_spi_init(void);
 static int32_t esp_spi_write(interface_handle_t *handle,
 				interface_buffer_handle_t *buf_handle);
@@ -177,43 +179,50 @@ if_ops_t if_ops = {
 	.deinit = esp_spi_deinit,
 };
 
-static struct mempool * buf_mp_g;
-static struct mempool * trans_mp_g;
+#define SPI_MEMPOOL_NUM_BLOCKS     50
+//static struct hosted_mempool * spi_trans_mempool;
+//static struct hosted_mempool * spi_buffer_mempool;
+static struct hosted_mempool * buf_mp_g;
+static struct hosted_mempool * trans_mp_g;
 
 static inline void spi_mempool_create()
 {
-	buf_mp_g = mempool_create(SPI_BUFFER_SIZE);
-	trans_mp_g = mempool_create(sizeof(spi_slave_transaction_t));
+	buf_mp_g = hosted_mempool_create(NULL,
+			SPI_MEMPOOL_NUM_BLOCKS, SPI_BUFFER_SIZE);
+	trans_mp_g = hosted_mempool_create(NULL,
+			SPI_MEMPOOL_NUM_BLOCKS, sizeof(spi_slave_transaction_t));
 #ifdef CONFIG_ESP_CACHE_MALLOC
 	assert(buf_mp_g);
 	assert(trans_mp_g);
 #endif
+
 }
 
 static inline void spi_mempool_destroy()
 {
-	mempool_destroy(buf_mp_g);
-	mempool_destroy(trans_mp_g);
+	hosted_mempool_destroy(buf_mp_g);
+	hosted_mempool_destroy(trans_mp_g);
 }
 
 static inline void *spi_buffer_alloc(uint need_memset)
 {
-	return mempool_alloc(buf_mp_g, SPI_BUFFER_SIZE, need_memset);
+	//return hosted_mempool_alloc(buf_mp_g, SPI_BUFFER_SIZE, need_memset);
+	return hosted_mempool_alloc(buf_mp_g, SPI_BUFFER_SIZE, need_memset);
 }
 
 static inline spi_slave_transaction_t *spi_trans_alloc(uint need_memset)
 {
-	return mempool_alloc(trans_mp_g, sizeof(spi_slave_transaction_t), need_memset);
+	return hosted_mempool_alloc(trans_mp_g, sizeof(spi_slave_transaction_t), need_memset);
 }
 
 static inline void spi_buffer_free(void *buf)
 {
-	mempool_free(buf_mp_g, buf);
+	hosted_mempool_free(buf_mp_g, buf);
 }
 
 static inline void spi_trans_free(spi_slave_transaction_t *trans)
 {
-	mempool_free(trans_mp_g, trans);
+	hosted_mempool_free(trans_mp_g, trans);
 }
 
 static inline void set_handshake_gpio(void)
