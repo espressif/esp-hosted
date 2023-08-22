@@ -102,8 +102,6 @@ static QueueHandle_t spi_tx_queue[MAX_PRIORITY_QUEUES];
 static SemaphoreHandle_t spi_sema;
 #endif
 
-
-
 static interface_handle_t * esp_spi_init(void);
 static int32_t esp_spi_write(interface_handle_t *handle,
 				interface_buffer_handle_t *buf_handle);
@@ -144,7 +142,6 @@ static inline void spi_mempool_create()
 	assert(buf_mp_rx_g);
 	assert(trans_mp_g);
 #endif
-
 }
 
 static inline void spi_mempool_destroy()
@@ -827,6 +824,7 @@ static interface_handle_t * esp_spi_init(void)
 		spi_rx_queue[prio_q_idx] = xQueueCreate(SPI_RX_QUEUE_SIZE, sizeof(interface_buffer_handle_t));
 		assert(spi_rx_queue[prio_q_idx] != NULL);
 
+	for (prio_q_idx=0; prio_q_idx<MAX_PRIORITY_QUEUES;prio_q_idx++) {
 		spi_tx_queue[prio_q_idx] = xQueueCreate(SPI_TX_QUEUE_SIZE, sizeof(interface_buffer_handle_t));
 		assert(spi_tx_queue[prio_q_idx] != NULL);
 	}
