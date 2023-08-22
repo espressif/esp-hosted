@@ -434,7 +434,11 @@ static int process_spi_rx(interface_buffer_handle_t *buf_handle)
 	len = le16toh(header->len);
 	offset = le16toh(header->offset);
 
-	if (!len || (len > SPI_BUFFER_SIZE)) {
+	if (!len)
+		return -1;
+
+	if (len > SPI_BUFFER_SIZE) {
+		ESP_LOGE(TAG, "rx_pkt len[%u]>max[%u], dropping it", len, SPI_BUFFER_SIZE);
 		return -1;
 	}
 
@@ -445,6 +449,8 @@ static int process_spi_rx(interface_buffer_handle_t *buf_handle)
 	checksum = compute_checksum(buf_handle->payload, len+offset);
 
 	if (checksum != rx_checksum) {
+		ESP_LOGE(TAG, "%s: cal_chksum[%u] != exp_chksum[%u], drop len[%u] offset[%u]",
+				__func__, checksum, rx_checksum, len, offset);
 		return -1;
 	}
 #endif
@@ -682,6 +688,7 @@ static int32_t esp_spi_write(interface_handle_t *handle, interface_buffer_handle
 	tx_buf_handle.payload_len = total_len;
 
 	tx_buf_handle.payload = spi_buffer_tx_alloc(MEMSET_NOT_REQUIRED);
+	assert(tx_buf_handle.payload);
 
 	header = (struct esp_payload_header *) tx_buf_handle.payload;
 
