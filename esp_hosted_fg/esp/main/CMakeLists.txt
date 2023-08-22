@@ -17,3 +17,4 @@ target_compile_definitions(${COMPONENT_LIB} PRIVATE ${PROJECT_VERSION_MAJOR_1} $
 # Add directory of protocomm_priv.h to include paths
 idf_component_get_property(protocomm_dir protocomm COMPONENT_DIR)
 target_include_directories(${COMPONENT_LIB} PRIVATE "${protocomm_dir}/src/common")
+

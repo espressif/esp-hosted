@@ -102,6 +102,8 @@ static QueueHandle_t spi_tx_queue[MAX_PRIORITY_QUEUES];
 static SemaphoreHandle_t spi_sema;
 #endif
 
+
+
 static interface_handle_t * esp_spi_init(void);
 static int32_t esp_spi_write(interface_handle_t *handle,
 				interface_buffer_handle_t *buf_handle);
@@ -142,6 +144,7 @@ static inline void spi_mempool_create()
 	assert(buf_mp_rx_g);
 	assert(trans_mp_g);
 #endif
+
 }
 
 static inline void spi_mempool_destroy()
