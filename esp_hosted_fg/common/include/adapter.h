@@ -257,6 +257,7 @@ struct esp_payload_header {
 	uint16_t         offset;
 	uint16_t         checksum;
 	uint16_t		 seq_num;
+	uint16_t		 pkt_num;
 	uint8_t          reserved2;
 	/* Position of union field has to always be last,
 	 * this is required for hci_pkt_type */

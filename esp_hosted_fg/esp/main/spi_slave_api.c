@@ -410,6 +410,8 @@ static uint8_t * get_next_tx_buffer(uint32_t *len)
 	return sendbuf;
 }
 
+static uint8_t last_pkt[16] = {0};
+static uint16_t last_pkt_num = 0;
 static int process_spi_rx(interface_buffer_handle_t *buf_handle)
 {
 	int ret = 0;
@@ -418,6 +420,7 @@ static int process_spi_rx(interface_buffer_handle_t *buf_handle)
 #if CONFIG_ESP_SPI_CHECKSUM
 	uint16_t rx_checksum = 0, checksum = 0;
 #endif
+	uint16_t pkt_num = 0;
 
 	/* Validate received buffer. Drop invalid buffer. */
 
@@ -429,6 +432,7 @@ static int process_spi_rx(interface_buffer_handle_t *buf_handle)
 	header = (struct esp_payload_header *) buf_handle->payload;
 	len = le16toh(header->len);
 	offset = le16toh(header->offset);
+	pkt_num = le16toh(header->pkt_num);
 
 	if (!len)
 		return -1;
@@ -451,6 +455,9 @@ static int process_spi_rx(interface_buffer_handle_t *buf_handle)
 		return -1;
 	}
 #endif
+
+	memcpy(last_pkt, (uint8_t*)header, 16);
+	last_pkt_num = pkt_num;
 
 	/* Buffer is valid */
 	buf_handle->if_type = header->if_type;
@@ -670,10 +677,16 @@ static void spi_transaction_post_process_task(void* pvParameters)
 			ESP_LOGE(TAG , "spi transmit error, ret : 0x%x\r\n", ret);
 			continue;
 		}
+		if (spi_trans->tx_buffer) {
+			header = (struct esp_payload_header *) spi_trans->tx_buffer;
 
-		if (!spi_trans) {
-			ESP_LOGW(TAG , "spi_trans fetched NULL\n");
-			continue;
+			if (header->if_type == 0xF && header->if_num == 0xF && header->offset == 0) {
+				/* Dummy Tx buffer consumed by host */
+				dummy_queued = pdFALSE;
+			}
+
+			spi_buffer_tx_free((void *)spi_trans->tx_buffer);
+			spi_trans->tx_buffer = NULL;
 		}
 #if ESP_PKT_STATS
 		struct esp_payload_header *header =
@@ -824,10 +837,8 @@ static interface_handle_t * esp_spi_init(void)
 		spi_rx_queue[prio_q_idx] = xQueueCreate(SPI_RX_QUEUE_SIZE, sizeof(interface_buffer_handle_t));
 		assert(spi_rx_queue[prio_q_idx] != NULL);
 
-	for (prio_q_idx=0; prio_q_idx<MAX_PRIORITY_QUEUES;prio_q_idx++) {
-		spi_tx_queue[prio_q_idx] = xQueueCreate(SPI_TX_QUEUE_SIZE, sizeof(interface_buffer_handle_t));
-		assert(spi_tx_queue[prio_q_idx] != NULL);
-	}
+	spi_tx_queue = xQueueCreate(SPI_TX_QUEUE_SIZE, sizeof(interface_buffer_handle_t));
+	assert(spi_tx_queue != NULL);
 
 #if DUMMY_TRANS_DESIGN
 	spi_sema = xSemaphoreCreateBinary();
@@ -908,13 +919,7 @@ static int32_t esp_spi_write(interface_handle_t *handle, interface_buffer_handle
 				offset+buf_handle->payload_len));
 #endif
 
-	if (header->if_type == ESP_SERIAL_IF)
-		ret = xQueueSend(spi_tx_queue[PRIO_Q_SERIAL], &tx_buf_handle, portMAX_DELAY);
-	else if (header->if_type == ESP_HCI_IF)
-		ret = xQueueSend(spi_tx_queue[PRIO_Q_BT], &tx_buf_handle, portMAX_DELAY);
-	else
-		ret = xQueueSend(spi_tx_queue[PRIO_Q_OTHERS], &tx_buf_handle, portMAX_DELAY);
-
+	ret = xQueueSend(spi_tx_queue, &tx_buf_handle, portMAX_DELAY);
 	if (ret != pdTRUE)
 		return ESP_FAIL;
 
