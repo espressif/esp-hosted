@@ -4,4 +4,3 @@ url: https://github.com/espressif/esp-hosted/tree/feature/esp_as_mcu_host
 dependencies:
   idf:
     version: ">=5.0"
-license: "Apache-2.0"
