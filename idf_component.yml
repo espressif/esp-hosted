@@ -3,4 +3,4 @@ description: ESP-Hosted provides driver such that any host can re-use ESP chipse
 url: https://github.com/espressif/esp-hosted/tree/feature/esp_as_mcu_host
 dependencies:
   idf:
-    version: ">=5.0"
+    version: ">=5.1"
