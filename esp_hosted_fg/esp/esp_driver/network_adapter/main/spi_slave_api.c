@@ -76,10 +76,6 @@ static const char TAG[] = "SPI_DRIVER";
     #define GPIO_CS                10
     #define DMA_CHAN               ESP_SPI_CONTROLLER
 
-    /* Max supported SPI slave Clock for ESP32-S2 = **40MHz**
-     * Below value could be fine tuned to achieve highest
-     * data rate in accordance with SPI Master
-     * */
     #define SPI_CLK_MHZ            30
 
 #elif defined CONFIG_IDF_TARGET_ESP32C2
@@ -91,10 +87,6 @@ static const char TAG[] = "SPI_DRIVER";
     #define GPIO_CS                10
     #define DMA_CHAN               SPI_DMA_CH_AUTO
 
-    /* Max supported SPI slave Clock for ESP32-C2 = **60MHz**
-     * Below value could be fine tuned to achieve highest
-     * data rate in accordance with SPI Master
-     * */
     #define SPI_CLK_MHZ            30
 
 #elif defined CONFIG_IDF_TARGET_ESP32C3
@@ -106,11 +98,7 @@ static const char TAG[] = "SPI_DRIVER";
     #define GPIO_CS                10
     #define DMA_CHAN               SPI_DMA_CH_AUTO
 
-    /* Max supported SPI slave Clock for ESP32-C3 = **60MHz**
-     * Below value could be fine tuned to achieve highest
-     * data rate in accordance with SPI Master
-     * */
-    #define SPI_CLK_MHZ            26
+    #define SPI_CLK_MHZ            30
 
 #elif defined CONFIG_IDF_TARGET_ESP32C6
 
@@ -136,11 +124,18 @@ static const char TAG[] = "SPI_DRIVER";
     #define GPIO_CS                10
     #define DMA_CHAN               SPI_DMA_CH_AUTO
 
-    /* Max supported SPI slave Clock for ESP32-S3 = **60MHz**
-     * Below value could be fine tuned to achieve highest
-     * data rate in accordance with SPI Master
-     * */
     #define SPI_CLK_MHZ            30
+
+#elif defined CONFIG_IDF_TARGET_ESP32C6
+
+    #define ESP_SPI_CONTROLLER     1
+    #define GPIO_MOSI              7
+    #define GPIO_MISO              2
+    #define GPIO_SCLK              6
+    #define GPIO_CS                10
+    #define DMA_CHAN               SPI_DMA_CH_AUTO
+
+    #define SPI_CLK_MHZ            26
 
 #endif
 
@@ -152,8 +147,8 @@ static const char TAG[] = "SPI_DRIVER";
 #define SPI_BUFFER_SIZE            1600
 #define SPI_QUEUE_SIZE             3
 
-#define SPI_RX_QUEUE_SIZE          CONFIG_ESP_SPI_RX_Q_SIZE
-#define SPI_TX_QUEUE_SIZE          CONFIG_ESP_SPI_TX_Q_SIZE
+#define SPI_RX_QUEUE_SIZE      CONFIG_ESP_SPI_RX_Q_SIZE
+#define SPI_TX_QUEUE_SIZE      CONFIG_ESP_SPI_TX_Q_SIZE
 
 static interface_context_t context;
 static interface_handle_t if_handle_g;
@@ -473,7 +468,7 @@ static int process_spi_rx(interface_buffer_handle_t *buf_handle)
 		ESP_LOGE(TAG, "rx_pkt len[%u]>max[%u], dropping it", len, SPI_BUFFER_SIZE);
 		ESP_LOGI(TAG, "last pkt count: %u", last_pkt_num);
 
-		ESP_LOG_BUFFER_HEXDUMP("curr_pkt", last_pkt, 16, ESP_LOG_INFO);
+		ESP_LOG_BUFFER_HEXDUMP("curr_pkt", (uint8_t *)header, 16, ESP_LOG_INFO);
 		ESP_LOG_BUFFER_HEXDUMP("last_pkt", last_pkt, 16, ESP_LOG_INFO);
 		return -1;
 	}
@@ -799,7 +794,7 @@ static interface_handle_t * esp_spi_init(void)
 
 	assert(xTaskCreate(spi_transaction_tx_task , "spi_tx_task" ,
 			CONFIG_ESP_DEFAULT_TASK_STACK_SIZE, NULL,
-			CONFIG_ESP_DEFAULT_TASK_PRIO, NULL) == pdTRUE);
+			CONFIG_ESP_DEFAULT_TASK_PRIO+1, NULL) == pdTRUE);
 	assert(xTaskCreate(spi_transaction_post_process_task , "spi_post_process_task" ,
 			CONFIG_ESP_DEFAULT_TASK_STACK_SIZE, NULL,
 			CONFIG_ESP_DEFAULT_TASK_PRIO, NULL) == pdTRUE);

@@ -651,7 +651,7 @@ static esp_err_t req_get_ap_config_handler (CtrlMsg *req,
 	}
 
 	snprintf((char *)credentials.bssid,BSSID_LENGTH,MACSTR,MAC2STR(ap_info->bssid));
-	if (strlen((char*)ap_info->ssid)) {
+	if (strlen((char *)ap_info->ssid)) {
 		strncpy((char *)credentials.ssid, (char *)ap_info->ssid,
 				min(sizeof(credentials.ssid), strlen((char *)ap_info->ssid)+1));
 	}
@@ -795,11 +795,11 @@ static esp_err_t req_get_softap_config_handler (CtrlMsg *req,
 		goto err;
 	}
 
-	if (strlen((char*)get_conf.ap.ssid)) {
+	if (strlen((char *)get_conf.ap.ssid)) {
 		strncpy((char *)credentials.ssid,(char *)&get_conf.ap.ssid,
 				min(sizeof(credentials.ssid), strlen((char *)&get_conf.ap.ssid)+1));
 	}
-	if (strlen((char*)get_conf.ap.password)) {
+	if (strlen((char *)get_conf.ap.password)) {
 		strncpy((char *)credentials.pwd,(char *)&get_conf.ap.password,
 				min(sizeof(credentials.pwd), strlen((char *)&get_conf.ap.password)+1));
 	}
