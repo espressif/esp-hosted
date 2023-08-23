@@ -16,6 +16,6 @@ jobs:
         uses: espressif/upload-components-ci-action@v1
         with:
           name: "esp_hosted"
-          namespace: "kumekay"
+          namespace: "mantriyogesh"
           registry_url: https://components-staging.espressif.com/
           api_token: ${{ secrets.IDF_COMPONENT_API_TOKEN }}
