@@ -17,5 +17,4 @@ jobs:
         with:
           name: "esp_hosted"
           namespace: "mantriyogesh"
-          registry_url: https://components-staging.espressif.com/
           api_token: ${{ secrets.IDF_COMPONENT_API_TOKEN }}
