@@ -945,7 +945,7 @@ int process_reg_set(uint8_t if_type, uint8_t *payload, uint16_t payload_len)
 
 	cmd = (struct cmd_reg_domain *)(buf_handle.payload);
 	esp_wifi_get_country_code(cmd->country_code);
-	cmd->header.cmd_code = cmd;
+	cmd->header.cmd_code = CMD_SET_REG_DOMAIN;
 	cmd->header.len = 0;
 	cmd->header.cmd_status = CMD_RESPONSE_SUCCESS;
 
@@ -984,7 +984,7 @@ int process_reg_get(uint8_t if_type, uint8_t *payload, uint16_t payload_len)
 
 	cmd = (struct cmd_reg_domain *)(buf_handle.payload);
 	esp_wifi_get_country_code(cmd->country_code);
-	cmd->header.cmd_code = cmd;
+	cmd->header.cmd_code = CMD_GET_REG_DOMAIN;
 	cmd->header.len = 0;
 	cmd->header.cmd_status = CMD_RESPONSE_SUCCESS;
 
