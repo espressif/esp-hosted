@@ -25,10 +25,10 @@
 #include "slave_bt.h"
 
 #if defined(CONFIG_IDF_TARGET_ESP32C3) || defined(CONFIG_IDF_TARGET_ESP32S3)
-#include "esp_private/gdma.h"
-#if BLUETOOTH_UART
-#include "hal/uhci_ll.h"
-#endif
+    #include "esp_private/gdma.h"
+    #if BLUETOOTH_UART
+        #include "hal/uhci_ll.h"
+    #endif
 #endif
 
 static const char BT_TAG[] = "FW_BT";
@@ -255,6 +255,7 @@ static IRAM_ATTR bool hci_uart_tl_tx_eof_callback(gdma_channel_handle_t dma_chan
 }
 #endif
 
+#if defined(CONFIG_IDF_TARGET_ESP32C3) || defined(CONFIG_IDF_TARGET_ESP32S3)
 static void init_uart(void)
 {
 #if BLUETOOTH_UART == 1
@@ -348,7 +349,29 @@ static void init_uart(void)
 	uhci_ll_attach_uart_port(s_uhci_hw, 1);
 #endif
 }
+#elif CONFIG_IDF_TARGET_ESP32
+static void init_uart(void)
+{
+	ESP_LOGD(BT_TAG, "Set-up BLE for ESP32");
+#if BLUETOOTH_UART == 1
+	periph_module_enable(PERIPH_UART1_MODULE);
+	periph_module_reset(PERIPH_UART1_MODULE);
+#elif BLUETOOTH_UART == 2
+	periph_module_enable(PERIPH_UART2_MODULE);
+	periph_module_reset(PERIPH_UART2_MODULE);
+#endif
 
+	periph_module_enable(PERIPH_UHCI0_MODULE);
+	periph_module_reset(PERIPH_UHCI0_MODULE);
+
+
+	ESP_ERROR_CHECK( uart_set_pin(BLUETOOTH_UART, BT_TX_PIN,
+		BT_RX_PIN, BT_RTS_PIN, BT_CTS_PIN) );
+	ESP_LOGI(BT_TAG, "UART Pins: Tx:%u Rx:%u RTS:%u CTS:%u",
+			BT_TX_PIN, BT_RX_PIN, BT_RTS_PIN, BT_CTS_PIN);
+
+}
+#endif
 #endif
 
 esp_err_t initialise_bluetooth(void)
