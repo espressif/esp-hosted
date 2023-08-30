@@ -94,5 +94,15 @@ static inline void *skb_put_data(struct sk_buff *skb, const void *data,
         void esp_tx_timeout(struct net_device *ndev, unsigned int txqueue)
 #endif
 
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 15, 0))
+static inline void eth_hw_addr_set(struct net_device *dev, const u8 *addr)
+{
+       ether_addr_copy(dev->dev_addr, addr, ETH_ALEN);
+}
+#endif
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 18, 0))
+    #define netif_rx_ni(skb)    netif_rx(skb)
+#endif
+
 
 #endif

@@ -139,7 +139,7 @@ static int esp_set_mac_address(struct net_device *ndev, void *data)
 		return -EINVAL;
 
 	ether_addr_copy(priv->mac_address, mac_addr->sa_data);
-	ether_addr_copy(ndev->dev_addr, mac_addr->sa_data);
+	eth_hw_addr_set(ndev, mac_addr->sa_data);
 	return 0;
 }
 
@@ -218,10 +218,9 @@ static int process_tx_packet (struct sk_buff *skb)
 	u8 pad_len = 0, realloc_skb = 0;
 	u16 len = 0;
 	u16 total_len = 0;
-	static u8 c = 0;
 	u8 *pos = NULL;
+	static u16 pkt_count = 0;
 
-	c++;
 	/* Get the priv */
 	cb = (struct esp_skb_cb *) skb->cb;
 	priv = cb->priv;
@@ -291,6 +290,8 @@ static int process_tx_packet (struct sk_buff *skb)
 	payload_header->if_num = priv->if_num;
 	payload_header->len = cpu_to_le16(len);
 	payload_header->offset = cpu_to_le16(pad_len);
+	payload_header->pkt_num = cpu_to_le16(pkt_count);
+	pkt_count++;
 
 	if (adapter.capabilities & ESP_CHECKSUM_ENABLED)
 		payload_header->checksum = cpu_to_le16(compute_checksum(skb->data, (len + pad_len)));
@@ -396,6 +397,7 @@ static void process_rx_packet(struct sk_buff *skb)
 
 	/*print_hex_dump(KERN_INFO, "rx: ",
 		DUMP_PREFIX_ADDRESS, 16, 1, skb->data , len+offset, 1  );*/
+
 	if (adapter->capabilities & ESP_CHECKSUM_ENABLED) {
 		rx_checksum = le16_to_cpu(payload_header->checksum);
 		payload_header->checksum = 0;
@@ -613,7 +615,7 @@ static int esp_init_net_dev(struct net_device *ndev, struct esp_private *priv)
 	/* set net dev ops */
 	ndev->netdev_ops = &esp_netdev_ops;
 
-	ether_addr_copy(ndev->dev_addr, priv->mac_address);
+	eth_hw_addr_set(ndev, priv->mac_address);
 	/* set ethtool ops */
 
 	/* update features supported */
@@ -674,13 +676,13 @@ error_exit:
 
 static void esp_remove_network_interfaces(struct esp_adapter *adapter)
 {
-	if (adapter->priv[0]->ndev) {
+	if (adapter->priv[0] && adapter->priv[0]->ndev) {
 		netif_stop_queue(adapter->priv[0]->ndev);
 		unregister_netdev(adapter->priv[0]->ndev);
 		free_netdev(adapter->priv[0]->ndev);
 	}
 
-	if (adapter->priv[1]->ndev) {
+	if (adapter->priv[1] && adapter->priv[1]->ndev) {
 		netif_stop_queue(adapter->priv[1]->ndev);
 		unregister_netdev(adapter->priv[1]->ndev);
 		free_netdev(adapter->priv[1]->ndev);
