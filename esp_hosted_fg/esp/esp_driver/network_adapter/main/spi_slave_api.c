@@ -28,7 +28,9 @@
 #include "freertos/task.h"
 #include "mempool.h"
 #include "stats.h"
+#include "esp_timer.h"
 
+/* DUMMY_TRANS_DESIGN is not enabled */
 static const char TAG[] = "SPI_DRIVER";
 /* SPI settings */
 #define SPI_BITS_PER_WORD          8
@@ -154,7 +156,9 @@ static interface_context_t context;
 static interface_handle_t if_handle_g;
 static QueueHandle_t spi_rx_queue = {NULL};
 static QueueHandle_t spi_tx_queue = {NULL};
+#if DUMMY_TRANS_DESIGN
 static SemaphoreHandle_t spi_sema;
+#endif
 
 static interface_handle_t * esp_spi_init(void);
 static int32_t esp_spi_write(interface_handle_t *handle,
@@ -163,7 +167,9 @@ static int esp_spi_read(interface_handle_t *if_handle, interface_buffer_handle_t
 static esp_err_t esp_spi_reset(interface_handle_t *handle);
 static void esp_spi_deinit(interface_handle_t *handle);
 static void esp_spi_read_done(void *handle);
-//static void queue_next_transaction(void);
+#if !DUMMY_TRANS_DESIGN
+static void queue_next_transaction(void);
+#endif
 
 if_ops_t if_ops = {
 	.init = esp_spi_init,
@@ -177,7 +183,9 @@ if_ops_t if_ops = {
 static struct hosted_mempool * buf_mp_tx_g;
 static struct hosted_mempool * buf_mp_rx_g;
 static struct hosted_mempool * trans_mp_g;
+#if DUMMY_TRANS_DESIGN
 static uint8_t dummy_queued = pdFALSE;
+#endif
 
 static inline void spi_mempool_create()
 {
@@ -187,7 +195,7 @@ static inline void spi_mempool_create()
 			SPI_MEMPOOL_NUM_BLOCKS, SPI_BUFFER_SIZE);
 	trans_mp_g = hosted_mempool_create(NULL,
 			SPI_MEMPOOL_NUM_BLOCKS, sizeof(spi_slave_transaction_t));
-#ifdef CONFIG_ESP_CACHE_MALLOC
+#if CONFIG_ESP_CACHE_MALLOC
 	assert(buf_mp_tx_g);
 	assert(buf_mp_rx_g);
 	assert(trans_mp_g);
@@ -334,6 +342,11 @@ void generate_startup_event(uint8_t cap)
 #endif
 
 	xQueueSend(spi_tx_queue, &buf_handle, portMAX_DELAY);
+#if !DUMMY_TRANS_DESIGN
+	set_dataready_gpio();
+	/* process first data packet here to start transactions */
+	queue_next_transaction();
+#endif
 }
 
 
@@ -344,6 +357,7 @@ static void IRAM_ATTR spi_post_setup_cb(spi_slave_transaction_t *trans)
 	set_handshake_gpio();
 }
 
+#if DUMMY_TRANS_DESIGN
 static int is_valid_trans_buffer(uint8_t *trans_buf)
 {
 	struct esp_payload_header *header;
@@ -369,14 +383,12 @@ static int is_valid_trans_buffer(uint8_t *trans_buf)
 
 	return pdTRUE;
 }
-
+#endif
 /* Invoked after transaction is sent/received.
  * Use this to set the handshake line low */
 static void IRAM_ATTR spi_post_trans_cb(spi_slave_transaction_t *trans)
 {
-	/* Clear handshake line */
-	reset_handshake_gpio();
-
+#if DUMMY_TRANS_DESIGN
 	if (trans && is_valid_trans_buffer((uint8_t *)trans->tx_buffer)) {
 		/* Host has consumed a valid TX buffer
 		 * Clear Data ready line and release semaphore */
@@ -385,6 +397,10 @@ static void IRAM_ATTR spi_post_trans_cb(spi_slave_transaction_t *trans)
 		if (spi_sema)
 			xSemaphoreGive(spi_sema);
 	}
+#endif
+	/* Clear handshake line */
+	reset_handshake_gpio();
+
 }
 
 static uint8_t * get_next_tx_buffer(uint32_t *len)
@@ -407,12 +423,17 @@ static uint8_t * get_next_tx_buffer(uint32_t *len)
 		return buf_handle.payload;
 	}
 
+#if DUMMY_TRANS_DESIGN
 	/* Dummy transaction is already queued. Return. */
 	if (dummy_queued) {
 		if (len)
 			*len = 0;
 		return NULL;
 	}
+#else
+	/* No real data pending, clear ready line and indicate host an idle state */
+	reset_dataready_gpio();
+#endif
 
 	/* Create empty dummy buffer */
 	sendbuf = spi_buffer_tx_alloc(MEMSET_REQUIRED);
@@ -504,6 +525,7 @@ static int process_spi_rx(interface_buffer_handle_t *buf_handle)
 	return 0;
 }
 
+#if DUMMY_TRANS_DESIGN
 static void spi_transaction_tx_task(void* pvParameters)
 {
 	spi_slave_transaction_t *spi_trans;
@@ -605,7 +627,7 @@ static void queue_dummy_transaction()
 	}
 }
 
-#if 0
+#else
 static void queue_next_transaction(void)
 {
 	spi_slave_transaction_t *spi_trans = NULL;
@@ -647,7 +669,9 @@ static void spi_transaction_post_process_task(void* pvParameters)
 {
 	spi_slave_transaction_t *spi_trans = NULL;
 	esp_err_t ret = ESP_OK;
+#if DUMMY_TRANS_DESIGN
 	struct esp_payload_header *header;
+#endif
 	interface_buffer_handle_t rx_buf_handle;
 
 	for (;;) {
@@ -658,6 +682,7 @@ static void spi_transaction_post_process_task(void* pvParameters)
 		 */
 		ret = spi_slave_get_trans_result(ESP_SPI_CONTROLLER, &spi_trans,
 				portMAX_DELAY);
+#if DUMMY_TRANS_DESIGN
 		if (ret != ESP_OK) {
 			ESP_LOGE(TAG , "spi transmit error, ret : 0x%x\r\n", ret);
 			continue;
@@ -687,6 +712,23 @@ static void spi_transaction_post_process_task(void* pvParameters)
 
 		if (ret == pdTRUE)
 			queue_dummy_transaction();
+#else
+		/* Queue new transaction to get ready as soon as possible */
+		queue_next_transaction();
+
+		if (ret != ESP_OK) {
+			ESP_LOGE(TAG , "spi transmit error, ret : 0x%x\r\n", ret);
+			continue;
+		}
+
+		if (!spi_trans) {
+			ESP_LOGW(TAG , "spi_trans fetched NULL\n");
+			continue;
+		}
+
+		/* Free any tx buffer, data is not relevant anymore */
+		spi_buffer_tx_free((void *)spi_trans->tx_buffer);
+#endif
 
 		/* Process received data */
 		if (spi_trans->rx_buffer) {
@@ -706,6 +748,30 @@ static void spi_transaction_post_process_task(void* pvParameters)
 		/* Free Transfer structure */
 		spi_trans_free(spi_trans);
 	}
+}
+
+static void IRAM_ATTR gpio_disable_hs_isr_handler(void* arg)
+{
+	reset_handshake_gpio();
+}
+
+static void register_hs_disable_pin(uint32_t gpio_num)
+{
+    if (gpio_num != -1) {
+    gpio_reset_pin(gpio_num);
+
+    gpio_config_t slave_disable_hs_pin_conf={
+        .intr_type=GPIO_INTR_DISABLE,
+        .mode=GPIO_MODE_INPUT,
+        .pull_up_en=1,
+        .pin_bit_mask=(1<<gpio_num)
+    };
+
+    gpio_config(&slave_disable_hs_pin_conf);
+    gpio_set_intr_type(gpio_num, GPIO_INTR_POSEDGE);
+    gpio_install_isr_service(0);
+    gpio_isr_handler_add(gpio_num, gpio_disable_hs_isr_handler, NULL);
+    }
 }
 
 static interface_handle_t * esp_spi_init(void)
@@ -759,11 +825,14 @@ static interface_handle_t * esp_spi_init(void)
 	gpio_config(&io_conf);
 	gpio_config(&io_data_ready_conf);
 	reset_handshake_gpio();
+	register_hs_disable_pin(1);
 	reset_dataready_gpio();
 
 	/* Enable pull-ups on SPI lines
 	 * so that no rogue pulses when no master is connected
 	 */
+	gpio_set_pull_mode(CONFIG_ESP_SPI_GPIO_HANDSHAKE, GPIO_PULLDOWN_ONLY);
+	gpio_set_pull_mode(CONFIG_ESP_SPI_GPIO_DATA_READY, GPIO_PULLDOWN_ONLY);
 	gpio_set_pull_mode(GPIO_MOSI, GPIO_PULLUP_ONLY);
 	gpio_set_pull_mode(GPIO_SCLK, GPIO_PULLUP_ONLY);
 	gpio_set_pull_mode(GPIO_CS, GPIO_PULLUP_ONLY);
@@ -779,6 +848,12 @@ static interface_handle_t * esp_spi_init(void)
 	ret=spi_slave_initialize(ESP_SPI_CONTROLLER, &buscfg, &slvcfg, DMA_CHAN);
 	assert(ret==ESP_OK);
 
+	gpio_set_drive_capability(CONFIG_ESP_SPI_GPIO_HANDSHAKE, GPIO_DRIVE_CAP_0);
+	gpio_set_drive_capability(CONFIG_ESP_SPI_GPIO_DATA_READY, GPIO_DRIVE_CAP_0);
+	gpio_set_drive_capability(GPIO_SCLK, GPIO_DRIVE_CAP_3);
+	gpio_set_drive_capability(GPIO_MISO, GPIO_DRIVE_CAP_3);
+	gpio_set_pull_mode(GPIO_MISO, GPIO_PULLDOWN_ONLY);
+
 	memset(&if_handle_g, 0, sizeof(if_handle_g));
 	if_handle_g.state = INIT;
 
@@ -788,6 +863,7 @@ static interface_handle_t * esp_spi_init(void)
 	spi_tx_queue = xQueueCreate(SPI_TX_QUEUE_SIZE, sizeof(interface_buffer_handle_t));
 	assert(spi_tx_queue != NULL);
 
+#if DUMMY_TRANS_DESIGN
 	spi_sema = xSemaphoreCreateBinary();
 	assert(spi_sema != NULL);
 	xSemaphoreGive(spi_sema);
@@ -795,6 +871,7 @@ static interface_handle_t * esp_spi_init(void)
 	assert(xTaskCreate(spi_transaction_tx_task , "spi_tx_task" ,
 			CONFIG_ESP_DEFAULT_TASK_STACK_SIZE, NULL,
 			CONFIG_ESP_DEFAULT_TASK_PRIO+1, NULL) == pdTRUE);
+#endif
 	assert(xTaskCreate(spi_transaction_post_process_task , "spi_post_process_task" ,
 			CONFIG_ESP_DEFAULT_TASK_STACK_SIZE, NULL,
 			CONFIG_ESP_DEFAULT_TASK_PRIO, NULL) == pdTRUE);
@@ -872,7 +949,9 @@ static int32_t esp_spi_write(interface_handle_t *handle, interface_buffer_handle
 		return ESP_FAIL;
 
 	/* indicate waiting data on ready pin */
+#if 1
 	set_dataready_gpio();
+#endif
 
 	return buf_handle->payload_len;
 }
@@ -915,8 +994,10 @@ static void esp_spi_deinit(interface_handle_t *handle)
 	esp_err_t ret = ESP_OK;
 
 	spi_mempool_destroy();
+#if DUMMY_TRANS_DESIGN
 	if (spi_sema)
 		vSemaphoreDelete(spi_sema);
+#endif
 
 	ret = spi_slave_free(ESP_SPI_CONTROLLER);
 	if (ESP_OK != ret) {
