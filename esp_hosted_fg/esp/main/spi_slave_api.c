@@ -795,7 +795,6 @@ static interface_handle_t * esp_spi_init(void)
 	gpio_config(&io_conf);
 	gpio_config(&io_data_ready_conf);
 	reset_handshake_gpio();
-	register_hs_disable_pin(1);
 	reset_dataready_gpio();
 
 	/* Enable pull-ups on SPI lines
