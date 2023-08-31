@@ -299,10 +299,10 @@ static int process_rx_buf(struct sk_buff *skb)
 
 	/* Validate received SKB. Check len and offset fields */
 	if (offset != sizeof(struct esp_payload_header)) {
-		printk(KERN_INFO "offset_rcv[%u] != exp[%lu], drop\n",
-				offset, sizeof(struct esp_payload_header));
-		print_hex_dump(KERN_INFO, "wrong offset: ",
-				DUMP_PREFIX_ADDRESS, 16, 1, skb->data , 8, 1  );
+//		printk(KERN_INFO "offset_rcv[%u] != exp[%lu], drop\n",
+//				offset, sizeof(struct esp_payload_header));
+//		print_hex_dump(KERN_INFO, "wrong offset: ",
+//				DUMP_PREFIX_ADDRESS, 16, 1, skb->data , 8, 1  );
 		return -EINVAL;
 	}
 
@@ -313,9 +313,9 @@ static int process_rx_buf(struct sk_buff *skb)
 
 	len += sizeof(struct esp_payload_header);
 	if (len > SPI_BUF_SIZE) {
-		printk(KERN_INFO "len[%u] > max[%u], drop\n", len, SPI_BUF_SIZE);
-		print_hex_dump(KERN_INFO, "wrong len: ",
-				DUMP_PREFIX_ADDRESS, 16, 1, skb->data , 8, 1  );
+//		printk(KERN_INFO "len[%u] > max[%u], drop\n", len, SPI_BUF_SIZE);
+//		print_hex_dump(KERN_INFO, "wrong len: ",
+//				DUMP_PREFIX_ADDRESS, 16, 1, skb->data , 8, 1  );
 		return -EINVAL;
 	}
 
