@@ -31,6 +31,7 @@
 #include "esp_timer.h"
 
 /* DUMMY_TRANS_DESIGN is not enabled */
+#define DUMMY_TRANS_DESIGN 1
 static const char TAG[] = "SPI_DRIVER";
 /* SPI settings */
 #define SPI_BITS_PER_WORD          8
