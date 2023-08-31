@@ -54,7 +54,6 @@
   #define IS_CS_ASSERTED(sPiDeV) gpiod_get_value(((const struct spi_device*)sPiDeV)->cs_gpiod)
 #endif
 
-//#define GPIO_DISABLE_HS 17
 
 static struct sk_buff * read_packet(struct esp_adapter *adapter);
 static int write_packet(struct esp_adapter *adapter, struct sk_buff *skb);
@@ -351,7 +350,6 @@ static void esp_spi_transaction(void)
 
 	mutex_lock(&spi_lock);
 
-
 	if (IS_CS_ASSERTED(spi_context.esp_spi_dev)) {
 		mutex_unlock(&spi_lock);
 		return;
@@ -381,7 +379,6 @@ static void esp_spi_transaction(void)
 		}
 
 		if (rx_pending || tx_skb) {
-			gpio_direction_output(GPIO_DISABLE_HS, 1);
 			memset(&trans, 0, sizeof(trans));
 
 			/* Setup and execute SPI transaction
@@ -418,7 +415,6 @@ static void esp_spi_transaction(void)
 			}
 #endif
 
-			gpio_direction_output(GPIO_DISABLE_HS, 0);
 			ret = spi_sync_transfer(spi_context.esp_spi_dev, &trans, 1);
 			if (ret) {
 				printk(KERN_ERR "SPI Transaction failed: %d", ret);
@@ -519,14 +515,6 @@ static int spi_dev_init(int spi_clk_mhz)
 		return status;
 	}
 
-	gpio_request(GPIO_DISABLE_HS, "esp_disable_hs");
-
-	/* HOST's resetpin set to OUTPUT, LOW*/
-	gpio_direction_output(GPIO_DISABLE_HS, 0);
-
-	/* HOST's resetpin set to LOW */
-	gpio_set_value(GPIO_DISABLE_HS, 0);
-
 	open_data_path();
 
 	return 0;
@@ -580,7 +568,7 @@ static int spi_init(void)
 	int status = 0;
 	uint8_t prio_q_idx = 0;
 
-	sema_init(&spi_sem, 1);
+	sema_init(&spi_sem, 10);
 
 	spi_thread = kthread_run(esp_spi_thread, spi_context.adapter, "esp32_spi");
 	if (!spi_thread) {

@@ -25,7 +25,6 @@
 #define SPI_DATA_READY_PIN      27
 #define SPI_DATA_READY_IRQ      gpio_to_irq(SPI_DATA_READY_PIN)
 #define SPI_BUF_SIZE            1600
-#define GPIO_DISABLE_HS         17 /* pin 11 Raspberry to ESP32-C3 IO1 */
 enum context_state {
 	ESP_CONTEXT_DISABLED = 0,
 	ESP_CONTEXT_INIT,
