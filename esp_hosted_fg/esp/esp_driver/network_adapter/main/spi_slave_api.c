@@ -31,7 +31,7 @@
 #include "esp_timer.h"
 
 /* DUMMY_TRANS_DESIGN is not enabled */
-#define DUMMY_TRANS_DESIGN 1
+#define DUMMY_TRANS_DESIGN 0
 static const char TAG[] = "SPI_DRIVER";
 /* SPI settings */
 #define SPI_BITS_PER_WORD          8
@@ -769,7 +769,7 @@ static void register_hs_disable_pin(uint32_t gpio_num)
     };
 
     gpio_config(&slave_disable_hs_pin_conf);
-    gpio_set_intr_type(gpio_num, GPIO_INTR_POSEDGE);
+    gpio_set_intr_type(gpio_num, GPIO_INTR_NEGEDGE);
     gpio_install_isr_service(0);
     gpio_isr_handler_add(gpio_num, gpio_disable_hs_isr_handler, NULL);
     }
@@ -826,7 +826,6 @@ static interface_handle_t * esp_spi_init(void)
 	gpio_config(&io_conf);
 	gpio_config(&io_data_ready_conf);
 	reset_handshake_gpio();
-	register_hs_disable_pin(1);
 	reset_dataready_gpio();
 
 	/* Enable pull-ups on SPI lines
@@ -844,16 +843,18 @@ static interface_handle_t * esp_spi_init(void)
 			CONFIG_ESP_SPI_GPIO_HANDSHAKE, CONFIG_ESP_SPI_GPIO_DATA_READY);
 
 	ESP_LOGI(TAG, "Hosted SPI queue size: Tx:%u Rx:%u", SPI_TX_QUEUE_SIZE, SPI_RX_QUEUE_SIZE);
+	register_hs_disable_pin(GPIO_CS);
 
 	/* Initialize SPI slave interface */
 	ret=spi_slave_initialize(ESP_SPI_CONTROLLER, &buscfg, &slvcfg, DMA_CHAN);
 	assert(ret==ESP_OK);
 
-	gpio_set_drive_capability(CONFIG_ESP_SPI_GPIO_HANDSHAKE, GPIO_DRIVE_CAP_0);
-	gpio_set_drive_capability(CONFIG_ESP_SPI_GPIO_DATA_READY, GPIO_DRIVE_CAP_0);
+	//gpio_set_drive_capability(CONFIG_ESP_SPI_GPIO_HANDSHAKE, GPIO_DRIVE_CAP_3);
+	//gpio_set_drive_capability(CONFIG_ESP_SPI_GPIO_DATA_READY, GPIO_DRIVE_CAP_3);
 	gpio_set_drive_capability(GPIO_SCLK, GPIO_DRIVE_CAP_3);
 	gpio_set_drive_capability(GPIO_MISO, GPIO_DRIVE_CAP_3);
 	gpio_set_pull_mode(GPIO_MISO, GPIO_PULLDOWN_ONLY);
+
 
 	memset(&if_handle_g, 0, sizeof(if_handle_g));
 	if_handle_g.state = INIT;
