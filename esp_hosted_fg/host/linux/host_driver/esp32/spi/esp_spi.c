@@ -55,6 +55,7 @@
 #endif
 
 
+u8 spi_new_clk = SPI_INITIAL_CLK_MHZ;
 static struct sk_buff * read_packet(struct esp_adapter *adapter);
 static int write_packet(struct esp_adapter *adapter, struct sk_buff *skb);
 static void spi_exit(void);
@@ -351,6 +352,8 @@ static void esp_spi_transaction(void)
 	mutex_lock(&spi_lock);
 
 	if (IS_CS_ASSERTED(spi_context.esp_spi_dev)) {
+		if (atomic_read(&tx_pending))
+			up(&spi_sem);
 		mutex_unlock(&spi_lock);
 		return;
 	}
@@ -380,6 +383,7 @@ static void esp_spi_transaction(void)
 
 		if (rx_pending || tx_skb) {
 			memset(&trans, 0, sizeof(trans));
+			trans.speed_hz = spi_new_clk * NUMBER_1M;
 
 			/* Setup and execute SPI transaction
 			 * 	Tx_buf: Check if tx_q has valid buffer for transmission,
@@ -532,6 +536,7 @@ static int spi_reinit_spidev(int spi_clk_mhz)
 
 	if (spi_context.esp_spi_dev)
 		spi_unregister_device(spi_context.esp_spi_dev);
+	spi_new_clk = spi_clk_mhz;
 
 	return spi_dev_init(spi_clk_mhz);
 }

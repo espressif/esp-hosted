@@ -395,7 +395,7 @@ static void process_rx_packet(struct sk_buff *skb)
 	len = le16_to_cpu(payload_header->len);
 	offset = le16_to_cpu(payload_header->offset);
 
-	/*print_hex_dump(KERN_INFO, "rx: ",
+	/*print_hex_dump(KERN_INFO, "rx2: ",
 		DUMP_PREFIX_ADDRESS, 16, 1, skb->data , len+offset, 1  );*/
 
 	if (adapter->capabilities & ESP_CHECKSUM_ENABLED) {
@@ -405,6 +405,7 @@ static void process_rx_packet(struct sk_buff *skb)
 		checksum = compute_checksum(skb->data, (len + offset));
 
 		if (checksum != rx_checksum) {
+			printk(KERN_INFO "cal_chksum[%u]!=rx_chksum[%u]\n", checksum, rx_checksum);
 			dev_kfree_skb_any(skb);
 			return;
 		}

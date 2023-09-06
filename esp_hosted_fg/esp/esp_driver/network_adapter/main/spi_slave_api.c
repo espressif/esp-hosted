@@ -180,7 +180,7 @@ if_ops_t if_ops = {
 	.deinit = esp_spi_deinit,
 };
 
-#define SPI_MEMPOOL_NUM_BLOCKS     40
+#define SPI_MEMPOOL_NUM_BLOCKS     ((SPI_TX_QUEUE_SIZE+SPI_RX_QUEUE_SIZE)*2)
 static struct hosted_mempool * buf_mp_tx_g;
 static struct hosted_mempool * buf_mp_rx_g;
 static struct hosted_mempool * trans_mp_g;
@@ -192,8 +192,8 @@ static inline void spi_mempool_create()
 {
 	buf_mp_tx_g = hosted_mempool_create(NULL,
 			SPI_MEMPOOL_NUM_BLOCKS, SPI_BUFFER_SIZE);
-	buf_mp_rx_g = hosted_mempool_create(NULL,
-			SPI_MEMPOOL_NUM_BLOCKS, SPI_BUFFER_SIZE);
+	/* re-use the mempool, as same size, can be seperate, if needed */
+	buf_mp_rx_g = buf_mp_tx_g;
 	trans_mp_g = hosted_mempool_create(NULL,
 			SPI_MEMPOOL_NUM_BLOCKS, sizeof(spi_slave_transaction_t));
 #if CONFIG_ESP_CACHE_MALLOC
@@ -206,7 +206,6 @@ static inline void spi_mempool_create()
 static inline void spi_mempool_destroy()
 {
 	hosted_mempool_destroy(buf_mp_tx_g);
-	hosted_mempool_destroy(buf_mp_rx_g);
 	hosted_mempool_destroy(trans_mp_g);
 }
 
@@ -286,6 +285,7 @@ void generate_startup_event(uint8_t cap)
 	uint8_t *pos = NULL;
 	uint16_t len = 0;
 	uint8_t raw_tp_cap = 0;
+	uint32_t total_len = 0;
 
 	buf_handle.payload = spi_buffer_tx_alloc(MEMSET_REQUIRED);
 
@@ -336,10 +336,16 @@ void generate_startup_event(uint8_t cap)
 	len += 2;
 	header->len = htole16(len);
 
-	buf_handle.payload_len = len + sizeof(struct esp_payload_header);
+	total_len = len + sizeof(struct esp_payload_header);
+
+	if (!IS_SPI_DMA_ALIGNED(total_len)) {
+		MAKE_SPI_DMA_ALIGNED(total_len);
+	}
+
+	buf_handle.payload_len = total_len;
 
 #if CONFIG_ESP_SPI_CHECKSUM
-	header->checksum = htole16(compute_checksum(buf_handle.payload, buf_handle.payload_len));
+	header->checksum = htole16(compute_checksum(buf_handle.payload, len + sizeof(struct esp_payload_header)));
 #endif
 
 	xQueueSend(spi_tx_queue, &buf_handle, portMAX_DELAY);

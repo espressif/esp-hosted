@@ -35,6 +35,7 @@
 #include "freertos/task.h"
 #include "freertos/semphr.h"
 
+#if CONFIG_ESP_CACHE_MALLOC
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -90,8 +91,8 @@ typedef uint32_t os_sr_t;
 #endif
 
 #define OS_INIT_CRITICAL() (hosted_port_mutex = xSemaphoreCreateMutex())
-#define OS_ENTER_CRITICAL(_sr) (xSemaphoreTake((hosted_port_mutex), portMAX_DELAY))
-#define OS_EXIT_CRITICAL(_sr) (xSemaphoreGive((hosted_port_mutex)))
+#define OS_ENTER_CRITICAL() (xSemaphoreTake((hosted_port_mutex), portMAX_DELAY))
+#define OS_EXIT_CRITICAL() (xSemaphoreGive((hosted_port_mutex)))
 
 enum os_error {
     OS_OK = 0,
@@ -339,6 +340,8 @@ os_error_t os_memblock_put(struct os_mempool *mp, void *block_addr);
 
 #ifdef __cplusplus
 }
+#endif
+
 #endif
 
 #endif  /* _OS_MEMPOOL_H_ */

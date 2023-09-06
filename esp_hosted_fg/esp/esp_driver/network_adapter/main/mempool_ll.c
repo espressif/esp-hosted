@@ -22,6 +22,7 @@
 #include <stdbool.h>
 #include "mempool_ll.h"
 #include "freertos/portable.h"
+#if CONFIG_ESP_CACHE_MALLOC
 
 //portMUX_TYPE hosted_port_mutex = portMUX_INITIALIZER_UNLOCKED;
 SemaphoreHandle_t hosted_port_mutex;
@@ -235,13 +236,12 @@ os_memblock_from(const struct os_mempool *mp, const void *block_addr)
 void *
 os_memblock_get(struct os_mempool *mp)
 {
-    os_sr_t sr;
     struct os_memblock *block;
 
     /* Check to make sure they passed in a memory pool (or something) */
     block = NULL;
     if (mp) {
-        OS_ENTER_CRITICAL(sr);
+        OS_ENTER_CRITICAL();
         /* Check for any free */
         if (mp->mp_num_free) {
             /* Get a free block */
@@ -256,7 +256,7 @@ os_memblock_get(struct os_mempool *mp)
                 mp->mp_min_free = mp->mp_num_free;
             }
         }
-        OS_EXIT_CRITICAL(sr);
+        OS_EXIT_CRITICAL();
 
         if (block) {
             os_mempool_poison_check(block, OS_MEMPOOL_TRUE_BLOCK_SIZE(mp));
@@ -269,13 +269,12 @@ os_memblock_get(struct os_mempool *mp)
 os_error_t
 os_memblock_put_from_cb(struct os_mempool *mp, void *block_addr)
 {
-    os_sr_t sr;
     struct os_memblock *block;
 
     os_mempool_poison(block_addr, OS_MEMPOOL_TRUE_BLOCK_SIZE(mp));
 
     block = (struct os_memblock *)block_addr;
-    OS_ENTER_CRITICAL(sr);
+    OS_ENTER_CRITICAL();
 
     /* Chain current free list pointer to this block; make this block head */
     SLIST_NEXT(block, mb_next) = SLIST_FIRST(mp);
@@ -285,7 +284,7 @@ os_memblock_put_from_cb(struct os_mempool *mp, void *block_addr)
     /* Increment number free */
     mp->mp_num_free++;
 
-    OS_EXIT_CRITICAL(sr);
+    OS_EXIT_CRITICAL();
 
     return OS_OK;
 }
@@ -357,3 +356,4 @@ os_mempool_info_get_next(struct os_mempool *mp, struct os_mempool_info *omi)
 }
 
 
+#endif

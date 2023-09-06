@@ -121,11 +121,11 @@ void * hosted_mempool_alloc(struct hosted_mempool* mempool,
 #endif
 
     mem = os_memblock_get(mempool->pool);
-	if (mem && need_memset)
-		memset(mem, 0, nbytes);
 #else
 	mem = MEM_ALLOC(MEMPOOL_ALIGNED(nbytes));
 #endif
+	if (mem && need_memset)
+		memset(mem, 0, nbytes);
 
 	return mem;
 }
@@ -146,5 +146,6 @@ int hosted_mempool_free(struct hosted_mempool* mempool, void *mem)
 	return os_memblock_put(mempool->pool, mem);
 #else
 	FREE(mem);
+	return 0;
 #endif
 }
