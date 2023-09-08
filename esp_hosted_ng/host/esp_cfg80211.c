@@ -607,6 +607,7 @@ static void esp_reg_notifier(struct wiphy *wiphy,
 {
 	struct esp_wifi_device *priv = NULL;
 	struct esp_device *esp_dev = NULL;
+	struct esp_adapter *adapter = esp_get_adapter();
 
 	if (!wiphy || !request) {
 		esp_info("%u invalid input\n", __LINE__);
@@ -619,6 +620,10 @@ static void esp_reg_notifier(struct wiphy *wiphy,
 		esp_info("%u esp_dev not initialized yet \n", __LINE__);
 		return;
 	}
+	if (test_bit(ESP_CLEANUP_IN_PROGRESS, &adapter->state_flags)) {
+               return;
+	}
+
 	priv = esp_dev->adapter->priv[0];
 
 	if (!priv) {
