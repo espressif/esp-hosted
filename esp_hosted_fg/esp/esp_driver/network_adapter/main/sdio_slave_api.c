@@ -30,7 +30,6 @@
 #define SDIO_SLAVE_QUEUE_SIZE   20
 #define BUFFER_SIZE     	1536 /* 512*3 */
 #define BUFFER_NUM      	10
-#define SDIO_BLOCK_SIZE 	512
 static uint8_t sdio_slave_rx_buffer[BUFFER_NUM][BUFFER_SIZE];
 
 #define SDIO_MEMPOOL_NUM_BLOCKS     40

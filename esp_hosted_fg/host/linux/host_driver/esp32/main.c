@@ -219,7 +219,6 @@ static int process_tx_packet (struct sk_buff *skb)
 	u16 len = 0;
 	u16 total_len = 0;
 	u8 *pos = NULL;
-	static u16 pkt_count = 0;
 
 	/* Get the priv */
 	cb = (struct esp_skb_cb *) skb->cb;
@@ -290,8 +289,6 @@ static int process_tx_packet (struct sk_buff *skb)
 	payload_header->if_num = priv->if_num;
 	payload_header->len = cpu_to_le16(len);
 	payload_header->offset = cpu_to_le16(pad_len);
-	payload_header->pkt_num = cpu_to_le16(pkt_count);
-	pkt_count++;
 
 	if (adapter.capabilities & ESP_CHECKSUM_ENABLED)
 		payload_header->checksum = cpu_to_le16(compute_checksum(skb->data, (len + pad_len)));
@@ -395,7 +392,7 @@ static void process_rx_packet(struct sk_buff *skb)
 	len = le16_to_cpu(payload_header->len);
 	offset = le16_to_cpu(payload_header->offset);
 
-	/*print_hex_dump(KERN_INFO, "rx2: ",
+	/*print_hex_dump(KERN_INFO, "rx: ",
 		DUMP_PREFIX_ADDRESS, 16, 1, skb->data , len+offset, 1  );*/
 
 	if (adapter->capabilities & ESP_CHECKSUM_ENABLED) {

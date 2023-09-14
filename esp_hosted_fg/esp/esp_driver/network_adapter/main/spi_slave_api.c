@@ -103,21 +103,6 @@ static const char TAG[] = "SPI_DRIVER";
 
     #define SPI_CLK_MHZ            30
 
-#elif defined CONFIG_IDF_TARGET_ESP32C6
-
-    #define ESP_SPI_CONTROLLER     1
-    #define GPIO_MOSI              7
-    #define GPIO_MISO              2
-    #define GPIO_SCLK              6
-    #define GPIO_CS                10
-    #define DMA_CHAN               SPI_DMA_CH_AUTO
-
-    /* Max supported SPI slave Clock for ESP32-C6 = **60MHz**
-     * Below value could be fine tuned to achieve highest
-     * data rate in accordance with SPI Master
-     * */
-    #define SPI_CLK_MHZ            30
-
 #elif defined CONFIG_IDF_TARGET_ESP32S3
 
     #define ESP_SPI_CONTROLLER     1
@@ -141,6 +126,11 @@ static const char TAG[] = "SPI_DRIVER";
     #define SPI_CLK_MHZ            26
 
 #endif
+/* Max SPI slave CLK in IO_MUX tested in IDF:
+ * ESP32: 10MHz
+ * ESP32-C2/C3/S2/S3: 40MHz
+ * ESP32-C6: 26MHz
+ */
 
 #define GPIO_MASK_DATA_READY (1 << CONFIG_ESP_SPI_GPIO_DATA_READY)
 #define GPIO_MASK_HANDSHAKE (1 << CONFIG_ESP_SPI_GPIO_HANDSHAKE)
@@ -155,8 +145,10 @@ static const char TAG[] = "SPI_DRIVER";
 
 static interface_context_t context;
 static interface_handle_t if_handle_g;
-static QueueHandle_t spi_rx_queue = {NULL};
-static QueueHandle_t spi_tx_queue = {NULL};
+static SemaphoreHandle_t spi_tx_sem;
+static SemaphoreHandle_t spi_rx_sem;
+static QueueHandle_t spi_rx_queue[MAX_PRIORITY_QUEUES];
+static QueueHandle_t spi_tx_queue[MAX_PRIORITY_QUEUES];
 #if DUMMY_TRANS_DESIGN
 static SemaphoreHandle_t spi_sema;
 #endif
@@ -348,7 +340,9 @@ void generate_startup_event(uint8_t cap)
 	header->checksum = htole16(compute_checksum(buf_handle.payload, len + sizeof(struct esp_payload_header)));
 #endif
 
-	xQueueSend(spi_tx_queue, &buf_handle, portMAX_DELAY);
+	xQueueSend(spi_tx_queue[PRIO_Q_OTHERS], &buf_handle, portMAX_DELAY);
+	xSemaphoreGive(spi_tx_sem);
+
 #if !DUMMY_TRANS_DESIGN
 	set_dataready_gpio();
 	/* process first data packet here to start transactions */
@@ -422,7 +416,13 @@ static uint8_t * get_next_tx_buffer(uint32_t *len)
 	 *	2. Create a new empty tx buffer and return */
 
 	/* Get buffer from SPI Tx queue */
-	ret = xQueueReceive(spi_tx_queue, &buf_handle, 0);
+	ret = xSemaphoreTake(spi_tx_sem, 0);
+	if (pdTRUE == ret)
+		if (pdFALSE == xQueueReceive(spi_tx_queue[PRIO_Q_SERIAL], &buf_handle, 0))
+			if (pdFALSE == xQueueReceive(spi_tx_queue[PRIO_Q_BT], &buf_handle, 0))
+				if (pdFALSE == xQueueReceive(spi_tx_queue[PRIO_Q_OTHERS], &buf_handle, 0))
+					ret = pdFALSE;
+
 	if (ret == pdTRUE && buf_handle.payload) {
 		if (len)
 			*len = buf_handle.payload_len;
@@ -465,8 +465,6 @@ static uint8_t * get_next_tx_buffer(uint32_t *len)
 	return sendbuf;
 }
 
-static uint8_t last_pkt[16] = {0};
-static uint16_t last_pkt_num = 0;
 static int process_spi_rx(interface_buffer_handle_t *buf_handle)
 {
 	int ret = 0;
@@ -475,7 +473,6 @@ static int process_spi_rx(interface_buffer_handle_t *buf_handle)
 #if CONFIG_ESP_SPI_CHECKSUM
 	uint16_t rx_checksum = 0, checksum = 0;
 #endif
-	uint16_t pkt_num = 0;
 
 	/* Validate received buffer. Drop invalid buffer. */
 
@@ -487,17 +484,13 @@ static int process_spi_rx(interface_buffer_handle_t *buf_handle)
 	header = (struct esp_payload_header *) buf_handle->payload;
 	len = le16toh(header->len);
 	offset = le16toh(header->offset);
-	pkt_num = le16toh(header->pkt_num);
 
 	if (!len)
 		return -1;
 
 	if (len > SPI_BUFFER_SIZE) {
 		ESP_LOGE(TAG, "rx_pkt len[%u]>max[%u], dropping it", len, SPI_BUFFER_SIZE);
-		ESP_LOGI(TAG, "last pkt count: %u", last_pkt_num);
 
-		ESP_LOG_BUFFER_HEXDUMP("curr_pkt", (uint8_t *)header, 16, ESP_LOG_INFO);
-		ESP_LOG_BUFFER_HEXDUMP("last_pkt", last_pkt, 16, ESP_LOG_INFO);
 		return -1;
 	}
 
@@ -514,9 +507,6 @@ static int process_spi_rx(interface_buffer_handle_t *buf_handle)
 	}
 #endif
 
-	memcpy(last_pkt, (uint8_t*)header, 16);
-	last_pkt_num = pkt_num;
-
 	/* Buffer is valid */
 	buf_handle->if_type = header->if_type;
 	buf_handle->if_num = header->if_num;
@@ -524,11 +514,17 @@ static int process_spi_rx(interface_buffer_handle_t *buf_handle)
 	buf_handle->payload_len = le16toh(header->len) + offset;
 	buf_handle->priv_buffer_handle = buf_handle->payload;
 
-	ret = xQueueSend(spi_rx_queue, buf_handle, portMAX_DELAY);
-
+	if (header->if_type == ESP_SERIAL_IF) {
+		ret = xQueueSend(spi_rx_queue[PRIO_Q_SERIAL], buf_handle, portMAX_DELAY);
+	} else if (header->if_type == ESP_HCI_IF) {
+		ret = xQueueSend(spi_rx_queue[PRIO_Q_BT], buf_handle, portMAX_DELAY);
+	} else {
+		ret = xQueueSend(spi_rx_queue[PRIO_Q_OTHERS], buf_handle, portMAX_DELAY);
+	}
 	if (ret != pdTRUE)
 		return -1;
 
+	xSemaphoreGive(spi_rx_sem);
 	return 0;
 }
 
@@ -540,7 +536,16 @@ static void spi_transaction_tx_task(void* pvParameters)
 	interface_buffer_handle_t buf_handle;
 
 	for(;;) {
-		ret = xQueueReceive(spi_tx_queue, &buf_handle, portMAX_DELAY);
+		ret = xSemaphoreTake(spi_tx_sem, portMAX_DELAY);
+		if (pdFALSE == ret) {
+			vTaskDelay(100);
+			continue;
+		}
+
+		if (pdFALSE == xQueueReceive(spi_tx_queue[PRIO_Q_SERIAL], &buf_handle, 0))
+			if (pdFALSE == xQueueReceive(spi_tx_queue[PRIO_Q_BT], &buf_handle, 0))
+				if (pdFALSE == xQueueReceive(spi_tx_queue[PRIO_Q_OTHERS], &buf_handle, 0))
+					ret = pdFALSE;
 
 		if (ret == pdTRUE && buf_handle.payload) {
 			spi_trans = spi_trans_alloc(MEMSET_REQUIRED);
@@ -784,6 +789,7 @@ static void register_hs_disable_pin(uint32_t gpio_num)
 static interface_handle_t * esp_spi_init(void)
 {
 	esp_err_t ret = ESP_OK;
+	uint16_t prio_q_idx = 0;
 
 	/* Configuration for the SPI bus */
 	spi_bus_config_t buscfg={
@@ -865,11 +871,18 @@ static interface_handle_t * esp_spi_init(void)
 	memset(&if_handle_g, 0, sizeof(if_handle_g));
 	if_handle_g.state = INIT;
 
-	spi_rx_queue = xQueueCreate(SPI_RX_QUEUE_SIZE, sizeof(interface_buffer_handle_t));
-	assert(spi_rx_queue);
+	spi_tx_sem = xSemaphoreCreateCounting(SPI_TX_QUEUE_SIZE*3, 0);
+	assert(spi_tx_sem != NULL);
+	spi_rx_sem = xSemaphoreCreateCounting(SPI_RX_QUEUE_SIZE*3, 0);
+	assert(spi_rx_sem != NULL);
 
-	spi_tx_queue = xQueueCreate(SPI_TX_QUEUE_SIZE, sizeof(interface_buffer_handle_t));
-	assert(spi_tx_queue != NULL);
+	for (prio_q_idx=0; prio_q_idx<MAX_PRIORITY_QUEUES;prio_q_idx++) {
+		spi_rx_queue[prio_q_idx] = xQueueCreate(SPI_RX_QUEUE_SIZE, sizeof(interface_buffer_handle_t));
+		assert(spi_rx_queue[prio_q_idx] != NULL);
+
+		spi_tx_queue[prio_q_idx] = xQueueCreate(SPI_TX_QUEUE_SIZE, sizeof(interface_buffer_handle_t));
+		assert(spi_tx_queue[prio_q_idx] != NULL);
+	}
 
 #if DUMMY_TRANS_DESIGN
 	spi_sema = xSemaphoreCreateBinary();
@@ -952,9 +965,17 @@ static int32_t esp_spi_write(interface_handle_t *handle, interface_buffer_handle
 				offset+buf_handle->payload_len));
 #endif
 
-	ret = xQueueSend(spi_tx_queue, &tx_buf_handle, portMAX_DELAY);
+	if (header->if_type == ESP_SERIAL_IF)
+		ret = xQueueSend(spi_tx_queue[PRIO_Q_SERIAL], &tx_buf_handle, portMAX_DELAY);
+	else if (header->if_type == ESP_HCI_IF)
+		ret = xQueueSend(spi_tx_queue[PRIO_Q_BT], &tx_buf_handle, portMAX_DELAY);
+	else
+		ret = xQueueSend(spi_tx_queue[PRIO_Q_OTHERS], &tx_buf_handle, portMAX_DELAY);
+
 	if (ret != pdTRUE)
 		return ESP_FAIL;
+
+	xSemaphoreGive(spi_tx_sem);
 
 	/* indicate waiting data on ready pin */
 #if 1
@@ -978,12 +999,17 @@ static int esp_spi_read(interface_handle_t *if_handle, interface_buffer_handle_t
 		return ESP_FAIL;
 	}
 
-	ret = xQueueReceive(spi_rx_queue, buf_handle, portMAX_DELAY);
+	ret = xSemaphoreTake(spi_rx_sem, portMAX_DELAY);
+	if (ret != pdTRUE)
+		return ESP_FAIL;
 
-	if (ret != pdTRUE) {
-		ESP_LOGI(TAG, "%s err", __func__);
+	if (pdFALSE == xQueueReceive(spi_rx_queue[PRIO_Q_SERIAL], buf_handle, 0))
+		if (pdFALSE == xQueueReceive(spi_rx_queue[PRIO_Q_BT], buf_handle, 0))
+			if (pdFALSE == xQueueReceive(spi_rx_queue[PRIO_Q_OTHERS], buf_handle, 0)) {
+				ESP_LOGI(TAG, "%s No element in rx queue", __func__);
 		return ESP_FAIL;
 	}
+
 	return buf_handle->payload_len;
 }
 

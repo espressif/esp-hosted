@@ -104,5 +104,9 @@ static inline void eth_hw_addr_set(struct net_device *dev, const u8 *addr)
     #define netif_rx_ni(skb)    netif_rx(skb)
 #endif
 
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 17, 0))
+#define do_exit(code)	kthread_complete_and_exit(NULL, code)
+#endif
+
 
 #endif

@@ -66,15 +66,8 @@ volatile u8 data_path = 0;
 static struct esp_spi_context spi_context;
 static char hardware_type = ESP_PRIV_FIRMWARE_CHIP_UNRECOGNIZED;
 static atomic_t tx_pending;
-uint32_t intr_hs_req = 0;
-uint32_t intr_hs_ovr = 0;
-uint32_t intr_dr_req = 0;
-uint32_t intr_dr_ovr = 0;
-uint32_t ignore_hs = 0;
-uint32_t ignore_dr = 0;
 struct task_struct *spi_thread;
 struct semaphore spi_sem;
-
 
 static struct esp_if_ops if_ops = {
 	.read		= read_packet,
@@ -144,7 +137,6 @@ static void close_data_path(void)
 	data_path = CLOSE_DATAPATH;
 	msleep(200);
 }
-
 
 static irqreturn_t spi_data_ready_interrupt_handler(int irq, void * dev)
 {
@@ -229,7 +221,6 @@ static int write_packet(struct esp_adapter *adapter, struct sk_buff *skb)
 		atomic_inc(&tx_pending);
 	}
 
-
 	up(&spi_sem);
 
 	return 0;
@@ -300,10 +291,10 @@ static int process_rx_buf(struct sk_buff *skb)
 
 	/* Validate received SKB. Check len and offset fields */
 	if (offset != sizeof(struct esp_payload_header)) {
-//		printk(KERN_INFO "offset_rcv[%u] != exp[%lu], drop\n",
-//				offset, sizeof(struct esp_payload_header));
-//		print_hex_dump(KERN_INFO, "wrong offset: ",
-//				DUMP_PREFIX_ADDRESS, 16, 1, skb->data , 8, 1  );
+  		/*printk(KERN_INFO "offset_rcv[%u] != exp[%lu], drop\n",
+  				offset, sizeof(struct esp_payload_header));
+  		print_hex_dump(KERN_INFO, "wrong offset: ",
+  				DUMP_PREFIX_ADDRESS, 16, 1, skb->data , 8, 1  );*/
 		return -EINVAL;
 	}
 
@@ -314,9 +305,9 @@ static int process_rx_buf(struct sk_buff *skb)
 
 	len += sizeof(struct esp_payload_header);
 	if (len > SPI_BUF_SIZE) {
-//		printk(KERN_INFO "len[%u] > max[%u], drop\n", len, SPI_BUF_SIZE);
-//		print_hex_dump(KERN_INFO, "wrong len: ",
-//				DUMP_PREFIX_ADDRESS, 16, 1, skb->data , 8, 1  );
+  		/*printk(KERN_INFO "len[%u] > max[%u], drop\n", len, SPI_BUF_SIZE);
+  		print_hex_dump(KERN_INFO, "wrong len: ",
+  				DUMP_PREFIX_ADDRESS, 16, 1, skb->data , 8, 1  );*/
 		return -EINVAL;
 	}
 
@@ -558,13 +549,10 @@ static int esp_spi_thread(void *data)
 
 			down_interruptible(&spi_sem);
 			esp_spi_transaction();
-			intr_dr_ovr = intr_dr_req;
-			intr_hs_ovr = intr_hs_req;
-//		}
 	}
 	set_current_state(TASK_RUNNING);
 	printk(KERN_INFO "esp spi thread stopped\n");
-	//do_exit(0);
+	do_exit(0);
 	return 0;
 }
 
