@@ -182,11 +182,11 @@ static uint8_t dummy_queued = pdFALSE;
 
 static inline void spi_mempool_create()
 {
-	buf_mp_tx_g = hosted_mempool_create(NULL,
+	buf_mp_tx_g = hosted_mempool_create(NULL, 0,
 			SPI_MEMPOOL_NUM_BLOCKS, SPI_BUFFER_SIZE);
 	/* re-use the mempool, as same size, can be seperate, if needed */
 	buf_mp_rx_g = buf_mp_tx_g;
-	trans_mp_g = hosted_mempool_create(NULL,
+	trans_mp_g = hosted_mempool_create(NULL, 0,
 			SPI_MEMPOOL_NUM_BLOCKS, sizeof(spi_slave_transaction_t));
 #if CONFIG_ESP_CACHE_MALLOC
 	assert(buf_mp_tx_g);

@@ -71,10 +71,10 @@ struct hosted_mempool {
 
 
 struct hosted_mempool * hosted_mempool_create(void *pre_allocated_mem,
-		uint16_t num_blocks, uint32_t block_size);
+		size_t pre_allocated_mem_size, size_t num_blocks, size_t block_size);
 void hosted_mempool_destroy(struct hosted_mempool* mempool);
 void * hosted_mempool_alloc(struct hosted_mempool* mempool,
-		int nbytes, int need_memset);
+		size_t nbytes, uint8_t need_memset);
 int hosted_mempool_free(struct hosted_mempool* mempool, void *mem);
 
 #endif

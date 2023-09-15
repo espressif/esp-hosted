@@ -23,7 +23,7 @@ const char *TAG = "HS_MP";
  * If NULL passed, will allocate from heap
  */
 struct hosted_mempool * hosted_mempool_create(void *pre_allocated_mem,
-		uint16_t num_blocks, uint32_t block_size)
+		size_t pre_allocated_mem_size, size_t num_blocks, size_t block_size)
 {
 #ifdef CONFIG_ESP_CACHE_MALLOC
 	struct hosted_mempool *new = NULL;
@@ -36,12 +36,21 @@ struct hosted_mempool * hosted_mempool_create(void *pre_allocated_mem,
 		heap = (uint8_t *)MALLOC( MEMPOOL_ALIGNED(OS_MEMPOOL_BYTES(
 					num_blocks,block_size)));
 		if (!heap) {
-			ESP_LOGE(TAG, "mem pool creation failed, no mem\n");
+			ESP_LOGE(TAG, "mempool create failed, no mem\n");
 			return NULL;
 		}
 	} else {
 		/* preallocated memory for mem pool */
 		heap = pre_allocated_mem;
+		if (pre_allocated_mem_size < num_blocks*block_size) {
+			ESP_LOGE(TAG, "mempool create failed, insufficient mem\n");
+			return NULL;
+		}
+
+		if (!IS_MEMPOOL_ALIGNED((unsigned long)pre_allocated_mem)) {
+			ESP_LOGE(TAG, "mempool create failed, mempool start addr unaligned\n");
+			return NULL;
+		}
 	}
 
 	new = (struct hosted_mempool*)MALLOC(sizeof(struct hosted_mempool));
@@ -101,7 +110,7 @@ void hosted_mempool_destroy(struct hosted_mempool* mempool)
 }
 
 void * hosted_mempool_alloc(struct hosted_mempool* mempool,
-		int nbytes, int need_memset)
+		size_t nbytes, uint8_t need_memset)
 {
 	void *mem = NULL;
 
