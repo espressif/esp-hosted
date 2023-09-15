@@ -359,7 +359,7 @@ static void IRAM_ATTR spi_post_setup_cb(spi_slave_transaction_t *trans)
 }
 
 #if DUMMY_TRANS_DESIGN
-static int is_valid_trans_buffer(uint8_t *trans_buf)
+static inline int is_valid_trans_buffer(uint8_t *trans_buf)
 {
 	struct esp_payload_header *header;
 	uint16_t len, offset;
@@ -536,12 +536,13 @@ static void spi_transaction_tx_task(void* pvParameters)
 	interface_buffer_handle_t buf_handle;
 
 	for(;;) {
-		xSemaphoreTake(spi_tx_sem, portMAX_DELAY);
+		ret = xSemaphoreTake(spi_tx_sem, portMAX_DELAY);
 
-		if (pdFALSE == xQueueReceive(spi_tx_queue[PRIO_Q_SERIAL], &buf_handle, 0))
-			if (pdFALSE == xQueueReceive(spi_tx_queue[PRIO_Q_BT], &buf_handle, 0))
-				if (pdFALSE == xQueueReceive(spi_tx_queue[PRIO_Q_OTHERS], &buf_handle, 0))
-					ret = pdFALSE;
+		if (ret == pdTRUE)
+			if (pdFALSE == xQueueReceive(spi_tx_queue[PRIO_Q_SERIAL], &buf_handle, 0))
+				if (pdFALSE == xQueueReceive(spi_tx_queue[PRIO_Q_BT], &buf_handle, 0))
+					if (pdFALSE == xQueueReceive(spi_tx_queue[PRIO_Q_OTHERS], &buf_handle, 0))
+						ret = pdFALSE;
 
 		if (ret == pdTRUE && buf_handle.payload) {
 			spi_trans = spi_trans_alloc(MEMSET_REQUIRED);
