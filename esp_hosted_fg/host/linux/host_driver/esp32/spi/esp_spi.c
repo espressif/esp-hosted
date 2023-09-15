@@ -75,7 +75,6 @@ static struct esp_if_ops if_ops = {
 };
 
 static DEFINE_MUTEX(spi_lock);
-//static DEFINE_SPINLOCK(spi_spin_lock);
 
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 16, 0))
 #include <linux/platform_device.h>
@@ -547,11 +546,15 @@ static int esp_spi_thread(void *data)
 
 		set_current_state(TASK_RUNNING);
 
-			down_interruptible(&spi_sem);
+		if (down_interruptible(&spi_sem)) {
+			//printk(KERN_INFO "Failed to acquire spi_sem\n");
+			msleep(10);
+			continue;
+		}
 			esp_spi_transaction();
 	}
 	set_current_state(TASK_RUNNING);
-	printk(KERN_INFO "esp spi thread stopped\n");
+	printk(KERN_INFO "esp spi thread cleared\n");
 	do_exit(0);
 	return 0;
 }

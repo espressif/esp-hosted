@@ -536,11 +536,7 @@ static void spi_transaction_tx_task(void* pvParameters)
 	interface_buffer_handle_t buf_handle;
 
 	for(;;) {
-		ret = xSemaphoreTake(spi_tx_sem, portMAX_DELAY);
-		if (pdFALSE == ret) {
-			vTaskDelay(100);
-			continue;
-		}
+		xSemaphoreTake(spi_tx_sem, portMAX_DELAY);
 
 		if (pdFALSE == xQueueReceive(spi_tx_queue[PRIO_Q_SERIAL], &buf_handle, 0))
 			if (pdFALSE == xQueueReceive(spi_tx_queue[PRIO_Q_BT], &buf_handle, 0))
@@ -562,16 +558,7 @@ static void spi_transaction_tx_task(void* pvParameters)
 			spi_trans->length = SPI_BUFFER_SIZE * SPI_BITS_PER_WORD;
 
 			/* Execute transaction */
-			ret = xSemaphoreTake(spi_sema, portMAX_DELAY);
-
-			if (ret != pdTRUE) {
-				ESP_LOGE(TAG, "Failed to obtain semaphore\n");
-				free(spi_trans->rx_buffer);
-				free((void *)spi_trans->tx_buffer);
-				free(spi_trans);
-
-				continue;
-			}
+			xSemaphoreTake(spi_sema, portMAX_DELAY);
 
 			ret = spi_slave_queue_trans(ESP_SPI_CONTROLLER, spi_trans,
 					portMAX_DELAY);
@@ -721,7 +708,6 @@ static void spi_transaction_post_process_task(void* pvParameters)
 		 **/
 
 		ret = xSemaphoreTake(spi_sema, 0);
-
 		if (ret == pdTRUE)
 			queue_dummy_transaction();
 #else
@@ -992,16 +978,12 @@ static void IRAM_ATTR esp_spi_read_done(void *handle)
 
 static int esp_spi_read(interface_handle_t *if_handle, interface_buffer_handle_t *buf_handle)
 {
-	esp_err_t ret = ESP_OK;
-
 	if (!if_handle) {
 		ESP_LOGE(TAG, "Invalid arguments to esp_spi_read\n");
 		return ESP_FAIL;
 	}
 
-	ret = xSemaphoreTake(spi_rx_sem, portMAX_DELAY);
-	if (ret != pdTRUE)
-		return ESP_FAIL;
+	xSemaphoreTake(spi_rx_sem, portMAX_DELAY);
 
 	if (pdFALSE == xQueueReceive(spi_rx_queue[PRIO_Q_SERIAL], buf_handle, 0))
 		if (pdFALSE == xQueueReceive(spi_rx_queue[PRIO_Q_BT], buf_handle, 0))
