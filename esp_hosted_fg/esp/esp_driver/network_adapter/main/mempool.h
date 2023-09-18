@@ -23,6 +23,17 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/portmacro.h>
 
+#ifdef CONFIG_ESP_CACHE_MALLOC
+#include "mempool_ll.h"
+struct hosted_mempool {
+	struct os_mempool *pool;
+	uint8_t *heap;
+	uint8_t static_heap;
+	size_t num_blocks;
+	size_t block_size;
+};
+#endif
+
 #define MEM_DUMP(s) \
     printf("%s free:%lu min-free:%lu lfb-def:%u lfb-8bit:%u\n\n", s, \
                   esp_get_free_heap_size(), esp_get_minimum_free_heap_size(), \
@@ -32,7 +43,7 @@
 #define MEMPOOL_OK                       0
 #define MEMPOOL_FAIL                     -1
 
-#define MALLOC(x)                        malloc(x)
+#define CALLOC(x,y)                      calloc(x,y)
 #define MEM_ALLOC(x)                     heap_caps_malloc(x, MALLOC_CAP_DMA)
 #define FREE(x) do {                     \
 	if (x) {                             \
@@ -40,8 +51,6 @@
 		x = NULL;                        \
 	}                                    \
 } while(0);
-
-#define LOG                              printf
 
 #define MEMPOOL_NAME_STR_SIZE            32
 
@@ -54,29 +63,18 @@
 #define MEMSET_REQUIRED                  1
 #define MEMSET_NOT_REQUIRED              0
 
-#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(4, 4, 0) 
+#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(4, 4, 0)
   #define ESP_MUTEX_INIT(mUtEx) portMUX_INITIALIZE(&(mUtEx));
 #else
   #define ESP_MUTEX_INIT(mUtEx) vPortCPUInitializeMutex(&(mUtEx));
 #endif
 
 
-#ifdef CONFIG_ESP_CACHE_MALLOC
-struct mempool_entry {
-	SLIST_ENTRY(mempool_entry) entries;
-};
+struct hosted_mempool * hosted_mempool_create(void *pre_allocated_mem,
+		size_t pre_allocated_mem_size, size_t num_blocks, size_t block_size);
+void hosted_mempool_destroy(struct hosted_mempool *mempool);
+void * hosted_mempool_alloc(struct hosted_mempool *mempool,
+		size_t nbytes, uint8_t need_memset);
+int hosted_mempool_free(struct hosted_mempool *mempool, void *mem);
 
-typedef SLIST_HEAD(slisthead, mempool_entry) mempool_t;
-
-struct mempool {
-	mempool_t head;
-	portMUX_TYPE mutex;
-	uint32_t block_size;
-};
-#endif
-
-struct mempool * mempool_create(uint32_t block_size);
-void mempool_destroy(struct mempool* mp);
-void * mempool_alloc(struct mempool* mp, int nbytes, int need_memset);
-void mempool_free(struct mempool* mp, void *mem);
 #endif

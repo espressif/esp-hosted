@@ -46,6 +46,8 @@ MODULE_VERSION("0.4");
 
 struct esp_adapter adapter;
 volatile u8 stop_data = 0;
+static struct task_struct *rx_thread;
+static struct semaphore rx_sem;
 
 #define ACTION_DROP 1
 /* Unless specified as part of argument, resetpin,
@@ -139,7 +141,7 @@ static int esp_set_mac_address(struct net_device *ndev, void *data)
 		return -EINVAL;
 
 	ether_addr_copy(priv->mac_address, mac_addr->sa_data);
-	ether_addr_copy(ndev->dev_addr, mac_addr->sa_data);
+	eth_hw_addr_set(ndev, mac_addr->sa_data);
 	return 0;
 }
 
@@ -204,8 +206,7 @@ static struct esp_private * get_priv_from_payload_header(struct esp_payload_head
 
 void esp_process_new_packet_intr(struct esp_adapter *adapter)
 {
-	if(adapter)
-		queue_work(adapter->if_rx_workqueue, &adapter->if_rx_work);
+	up(&rx_sem);
 }
 
 static int process_tx_packet (struct sk_buff *skb)
@@ -218,10 +219,8 @@ static int process_tx_packet (struct sk_buff *skb)
 	u8 pad_len = 0, realloc_skb = 0;
 	u16 len = 0;
 	u16 total_len = 0;
-	static u8 c = 0;
 	u8 *pos = NULL;
 
-	c++;
 	/* Get the priv */
 	cb = (struct esp_skb_cb *) skb->cb;
 	priv = cb->priv;
@@ -396,6 +395,7 @@ static void process_rx_packet(struct sk_buff *skb)
 
 	/*print_hex_dump(KERN_INFO, "rx: ",
 		DUMP_PREFIX_ADDRESS, 16, 1, skb->data , len+offset, 1  );*/
+
 	if (adapter->capabilities & ESP_CHECKSUM_ENABLED) {
 		rx_checksum = le16_to_cpu(payload_header->checksum);
 		payload_header->checksum = 0;
@@ -403,6 +403,7 @@ static void process_rx_packet(struct sk_buff *skb)
 		checksum = compute_checksum(skb->data, (len + offset));
 
 		if (checksum != rx_checksum) {
+			printk(KERN_INFO "cal_chksum[%u]!=rx_chksum[%u]\n", checksum, rx_checksum);
 			dev_kfree_skb_any(skb);
 			return;
 		}
@@ -613,7 +614,7 @@ static int esp_init_net_dev(struct net_device *ndev, struct esp_private *priv)
 	/* set net dev ops */
 	ndev->netdev_ops = &esp_netdev_ops;
 
-	ether_addr_copy(ndev->dev_addr, priv->mac_address);
+	eth_hw_addr_set(ndev, priv->mac_address);
 	/* set ethtool ops */
 
 	/* update features supported */
@@ -674,13 +675,13 @@ error_exit:
 
 static void esp_remove_network_interfaces(struct esp_adapter *adapter)
 {
-	if (adapter->priv[0]->ndev) {
+	if (adapter->priv[0] && adapter->priv[0]->ndev) {
 		netif_stop_queue(adapter->priv[0]->ndev);
 		unregister_netdev(adapter->priv[0]->ndev);
 		free_netdev(adapter->priv[0]->ndev);
 	}
 
-	if (adapter->priv[1]->ndev) {
+	if (adapter->priv[1] && adapter->priv[1]->ndev) {
 		netif_stop_queue(adapter->priv[1]->ndev);
 		unregister_netdev(adapter->priv[1]->ndev);
 		free_netdev(adapter->priv[1]->ndev);
@@ -721,13 +722,6 @@ int esp_remove_card(struct esp_adapter *adapter)
 	if (!adapter)
 		return 0;
 
-	/* Flush workqueues */
-	if (adapter->if_rx_workqueue)
-		flush_workqueue(adapter->if_rx_workqueue);
-
-	if (adapter->tx_workqueue)
-		flush_workqueue(adapter->tx_workqueue);
-
 	esp_remove_network_interfaces(adapter);
 
 	adapter->priv[0] = NULL;
@@ -736,19 +730,12 @@ int esp_remove_card(struct esp_adapter *adapter)
 	return 0;
 }
 
-static void esp_if_rx_work (struct work_struct *work)
-{
-	/* read inbound packet and forward it to network/serial interface */
-	esp_get_packets(&adapter);
-}
-
 static void deinit_adapter(void)
 {
-	if (adapter.if_rx_workqueue)
-		destroy_workqueue(adapter.if_rx_workqueue);
-
-	if (adapter.tx_workqueue)
-		destroy_workqueue(adapter.tx_workqueue);
+	if (rx_thread) {
+		kthread_stop(rx_thread);
+		rx_thread = NULL;
+	}
 }
 
 static void esp_reset(void)
@@ -778,24 +765,36 @@ static void esp_reset(void)
 	}
 }
 
+static int esp_rx_thread(void *data)
+{
+	printk(KERN_INFO "esp rx thread created\n");
+
+	while (!kthread_should_stop()) {
+
+		set_current_state(TASK_RUNNING);
+
+		if (down_interruptible(&rx_sem)) {
+			//printk(KERN_INFO "Failed to acquire rx_sem\n");
+			msleep(10);
+			continue;
+	}
+
+		/* read inbound packet and forward it to network/serial interface */
+		esp_get_packets(&adapter);
+	}
+	printk(KERN_INFO "esp rx thread cleared\n");
+	do_exit(0);
+	return 0;
+}
+
 static struct esp_adapter * init_adapter(void)
 {
 	memset(&adapter, 0, sizeof(adapter));
 
-	/* Prepare interface RX work */
-	adapter.if_rx_workqueue = create_workqueue("ESP_IF_RX_WORK_QUEUE");
-
-	if (!adapter.if_rx_workqueue) {
-		deinit_adapter();
-		return NULL;
-	}
-
-	INIT_WORK(&adapter.if_rx_work, esp_if_rx_work);
-
-	/* Prepare TX work */
-	adapter.tx_workqueue = create_workqueue("ESP_TX_WORK_QUEUE");
-
-	if (!adapter.tx_workqueue) {
+	sema_init(&rx_sem, 10);
+	rx_thread = kthread_run(esp_rx_thread, NULL, "esp32_rx");
+	if (!rx_thread) {
+		printk (KERN_ERR "Failed to create esp32_rx thread\n");
 		deinit_adapter();
 		return NULL;
 	}

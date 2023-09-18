@@ -59,7 +59,7 @@
 #define STATION_MODE_PWD                    "MyWifiPass@123"
 #define STATION_MODE_BSSID                  ""
 #define STATION_MODE_IS_WPA3_SUPPORTED      false
-#define STATION_MODE_LISTEN_INTERVAL        5
+#define STATION_MODE_LISTEN_INTERVAL        3
 
 /* softap mode */
 #define SOFTAP_MODE_MAC_ADDRESS             "cc:bb:aa:ee:ff:dd"
