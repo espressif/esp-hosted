@@ -132,8 +132,8 @@ static const char TAG[] = "SPI_DRIVER";
  * ESP32-C6: 26MHz
  */
 
-#define GPIO_MASK_DATA_READY (1 << CONFIG_ESP_SPI_GPIO_DATA_READY)
-#define GPIO_MASK_HANDSHAKE (1 << CONFIG_ESP_SPI_GPIO_HANDSHAKE)
+#define GPIO_MASK_DATA_READY (1ull << CONFIG_ESP_SPI_GPIO_DATA_READY)
+#define GPIO_MASK_HANDSHAKE (1ull << CONFIG_ESP_SPI_GPIO_HANDSHAKE)
 
 
 /* SPI internal configs */
@@ -233,22 +233,22 @@ static inline void spi_trans_free(spi_slave_transaction_t *trans)
 
 static inline void set_handshake_gpio(void)
 {
-	WRITE_PERI_REG(GPIO_OUT_W1TS_REG, GPIO_MASK_HANDSHAKE);
+	gpio_set_level(CONFIG_ESP_SPI_GPIO_HANDSHAKE, 1);
 }
 
 static inline void reset_handshake_gpio(void)
 {
-	WRITE_PERI_REG(GPIO_OUT_W1TC_REG, GPIO_MASK_HANDSHAKE);
+	gpio_set_level(CONFIG_ESP_SPI_GPIO_HANDSHAKE, 0);
 }
 
 static inline void set_dataready_gpio(void)
 {
-	WRITE_PERI_REG(GPIO_OUT_W1TS_REG, GPIO_MASK_DATA_READY);
+	gpio_set_level(CONFIG_ESP_SPI_GPIO_DATA_READY, 1);
 }
 
 static inline void reset_dataready_gpio(void)
 {
-	WRITE_PERI_REG(GPIO_OUT_W1TC_REG, GPIO_MASK_DATA_READY);
+	gpio_set_level(CONFIG_ESP_SPI_GPIO_DATA_READY, 0);
 }
 
 interface_context_t *interface_insert_driver(int (*event_handler)(uint8_t val))
