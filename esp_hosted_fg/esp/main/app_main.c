@@ -30,6 +30,7 @@
 #include "interface.h"
 #include "esp_wpa.h"
 #include "app_main.h"
+#include "driver/gpio.h"
 
 #include "freertos/task.h"
 #include "freertos/queue.h"

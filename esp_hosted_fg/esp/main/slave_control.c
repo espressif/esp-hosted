@@ -2161,8 +2161,9 @@ static esp_err_t req_wifi_connect(Rpc *req, Rpc *resp, void *priv_data)
 	ESP_LOGI(TAG, "************ connect ****************");
     RPC_RET_FAIL_IF(esp_wifi_connect());
 	ESP_ERROR_CHECK(esp_wifi_set_protocol(0, WIFI_PROTOCOL_11B | WIFI_PROTOCOL_11G | WIFI_PROTOCOL_11N));
+#if !CONFIG_IDF_TARGET_ESP32C2
 	ESP_ERROR_CHECK(esp_wifi_set_bandwidth(0, WIFI_BW_HT40));
-
+#endif
 	return ESP_OK;
 }
 
