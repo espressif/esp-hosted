@@ -617,6 +617,7 @@ static int handle_wpa_sta_rx_mgmt(uint8_t type, uint8_t *frame, size_t len, uint
 
 	case WLAN_FC_STYPE_BEACON:
 		/*ESP_LOGV(TAG, "%s:%u beacon frames ignored\n", __func__, __LINE__);*/
+		sta_rx_probe(type, frame, len, sender, rssi, channel, current_tsf);
 		break;
 
 	case WLAN_FC_STYPE_PROBE_RESP:
@@ -709,6 +710,7 @@ int process_start_scan(uint8_t if_type, uint8_t *payload, uint16_t payload_len)
 	interface_buffer_handle_t buf_handle = {0};
 	uint8_t cmd_status = CMD_RESPONSE_SUCCESS;
 	struct scan_request *scan_req;
+	bool config_present = false;
 
 	/* Register to receive probe response and beacon frames */
 	type = (1 << WLAN_FC_STYPE_BEACON) | (1 << WLAN_FC_STYPE_PROBE_RESP) |
@@ -723,15 +725,20 @@ int process_start_scan(uint8_t if_type, uint8_t *payload, uint16_t payload_len)
 
 		memcpy(params.ssid, scan_req->ssid, sizeof(scan_req->ssid));
 		params.scan_type = 0;
+		config_present = true;
 	}
 
 	if (scan_req->channel) {
 		params.channel = scan_req->channel;
+		config_present = true;
 	}
 
 	if (sta_init_flag) {
 		/* Trigger scan */
-		ret = esp_wifi_scan_start(&params, false);
+		if (config_present)
+		    ret = esp_wifi_scan_start(&params, false);
+		else
+		    ret = esp_wifi_scan_start(NULL, false);
 
 		if (ret) {
 			ESP_LOGI(TAG, "Scan failed ret=[0x%x]\n",ret);

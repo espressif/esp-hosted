@@ -56,14 +56,14 @@ static inline void ether_addr_copy(u8 *dst, const u8 *src)
 
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(3, 18, 0)
-  #define CFG80211_INFORM_BSS(wiphy, chan, bssid, tsf, \
+  #define CFG80211_INFORM_BSS(wiphy, chan, type, bssid, tsf, \
 	  cap, beacon_interval, ie, ielen, sig, gfp) \
   cfg80211_inform_bss(wiphy, chan, bssid, tsf, \
 	  cap, beacon_interval, ie, ielen, sig, gfp)
 #else
-  #define CFG80211_INFORM_BSS(wiphy, chan, bssid, tsf, \
+  #define CFG80211_INFORM_BSS(wiphy, chan, type, bssid, tsf, \
 	  cap, beacon_interval, ie, ielen, signal, gfp) \
-  cfg80211_inform_bss(wiphy, chan, CFG80211_BSS_FTYPE_UNKNOWN, bssid, tsf, \
+  cfg80211_inform_bss(wiphy, chan, type, bssid, tsf, \
 	  cap, beacon_interval, ie, ielen, signal, gfp)
 #endif
 
