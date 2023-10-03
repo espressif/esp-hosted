@@ -495,6 +495,7 @@ static void process_scan_result_event(struct esp_wifi_device *priv,
 	u16 cap_info;
 	u32 ie_len;
 	int freq;
+	int frame_type = CFG80211_BSS_FTYPE_UNKNOWN; /* int type for older compatibilty */
 
 	if (!priv || !scan_evt) {
 		esp_err("Invalid arguments\n");
@@ -531,9 +532,15 @@ static void process_scan_result_event(struct esp_wifi_device *priv,
 	ie_buf += sizeof(struct beacon_probe_fixed_params);
 	ie_len -= sizeof(struct beacon_probe_fixed_params);
 
+	if ((scan_evt->frame_type << 4) == IEEE80211_STYPE_BEACON) {
+		frame_type = CFG80211_BSS_FTYPE_BEACON;
+	} else if ((scan_evt->frame_type << 4) == IEEE80211_STYPE_PROBE_RESP) {
+		frame_type = CFG80211_BSS_FTYPE_PRESP;
+	}
+
 	if (chan && !(chan->flags & IEEE80211_CHAN_DISABLED)) {
 		bss = CFG80211_INFORM_BSS(priv->adapter->wiphy, chan,
-				scan_evt->bssid, timestamp,
+				frame_type, scan_evt->bssid, timestamp,
 				cap_info, beacon_interval, ie_buf, ie_len,
 				(le32_to_cpu(scan_evt->rssi) * 100), GFP_ATOMIC);
 
