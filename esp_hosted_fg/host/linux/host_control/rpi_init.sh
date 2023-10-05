@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 # SPDX-License-Identifier: Apache-2.0
 # Copyright 2015-2021 Espressif Systems (Shanghai) PTE LTD
@@ -71,12 +71,17 @@ wlan_init()
 	if [ "$CUSTOM_OPTS" != "" ] ; then
 		echo "Adding $CUSTOM_OPTS"
 	fi
-    # For Linux other than Raspberry Pi, Please point
-    # CROSS_COMPILE -> <Toolchain-Path>/bin/arm-linux-gnueabihf-
-    # KERNEL        -> Place where kernel is checked out and built
-    # ARCH          -> Architecture
-	make -j8 target=$IF_TYPE CROSS_COMPILE=/usr/bin/arm-linux-gnueabihf- KERNEL="/lib/modules/$(uname -r)/build" ARCH=arm \
-    CONFIG_TEST_RAW_TP="$VAL_CONFIG_TEST_RAW_TP" $CUSTOM_OPTS
+
+    # For Linux other than Raspberry Pi, Please uncomment below 'make' line and provide:
+    # <CROSS_COMPILE> -> <Toolchain-Path>/bin/arm-linux-gnueabihf-
+    # <KERNEL>        -> Place where kernel is checked out and built. For Example, "/lib/modules/$(uname -r)/build"
+    # <ARCH>          -> Architecture. for example, arm64
+	#make -j8 target=$IF_TYPE CROSS_COMPILE=<CROSS_COMPILE> KERNEL=<KERNEL> ARCH=<ARCH> CONFIG_TEST_RAW_TP="$VAL_CONFIG_TEST_RAW_TP" $CUSTOM_OPTS
+
+	# Also, Check detailed doc, esp_hosted_fg/docs/Linux_based_host/porting_guide.md for more details.
+
+	# For 32bit Raspberry Pi devices, please change ARCH=arm in below line
+	make -j8 target=$IF_TYPE KERNEL="/lib/modules/$(uname -r)/build" ARCH=arm64 CONFIG_TEST_RAW_TP="$VAL_CONFIG_TEST_RAW_TP" $CUSTOM_OPTS
 
 
     if [ "$RESETPIN" = "" ] ; then
@@ -246,7 +251,7 @@ if [ "$IF_TYPE" = "" ] ; then
     usage
     exit 1
 else
-	if [ "$IF_TYPE" == "sdio" ] ; then
+	if [ "$IF_TYPE" = "sdio" ] ; then
 		# SDIO Kernel driver registration varies for ESP32 and ESP32-C6 slave chipsets
 		select_esp_slave
 	fi

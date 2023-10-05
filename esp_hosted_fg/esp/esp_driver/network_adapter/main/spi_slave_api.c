@@ -132,8 +132,12 @@ static const char TAG[] = "SPI_DRIVER";
  * ESP32-C6: 26MHz
  */
 
-#define GPIO_MASK_DATA_READY (1 << CONFIG_ESP_SPI_GPIO_DATA_READY)
-#define GPIO_MASK_HANDSHAKE (1 << CONFIG_ESP_SPI_GPIO_HANDSHAKE)
+#define GPIO_HS                    CONFIG_ESP_SPI_GPIO_HANDSHAKE
+#define GPIO_DR                    CONFIG_ESP_SPI_GPIO_DATA_READY
+
+
+#define GPIO_MASK_DATA_READY (1 << GPIO_DR)
+#define GPIO_MASK_HANDSHAKE (1 << GPIO_HS)
 
 
 /* SPI internal configs */
@@ -838,8 +842,7 @@ static interface_handle_t * esp_spi_init(void)
 
 	ESP_LOGI(TAG, "SPI Ctrl:%u mode: %u, InitFreq: 10MHz, ReqFreq: %uMHz\nGPIOs: MOSI: %u, MISO: %u, CS: %u, CLK: %u HS: %u DR: %u\n",
 			ESP_SPI_CONTROLLER, slvcfg.mode, SPI_CLK_MHZ,
-			GPIO_MOSI, GPIO_MISO, GPIO_CS, GPIO_SCLK,
-			CONFIG_ESP_SPI_GPIO_HANDSHAKE, CONFIG_ESP_SPI_GPIO_DATA_READY);
+			GPIO_MOSI, GPIO_MISO, GPIO_CS, GPIO_SCLK, GPIO_HS, GPIO_DR);
 
 	ESP_LOGI(TAG, "Hosted SPI queue size: Tx:%u Rx:%u", SPI_TX_QUEUE_SIZE, SPI_RX_QUEUE_SIZE);
 	register_hs_disable_pin(GPIO_CS);

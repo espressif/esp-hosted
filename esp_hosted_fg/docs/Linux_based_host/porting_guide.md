@@ -96,6 +96,7 @@ CROSS_COMPILE=/home/user1/arm64_toolchain/bin/aarch64-linux-gnu- \
 KERNEL=/home/user1/arm64_kernel
 ```
 `target` may take have value, `spi` or `sdio`. It defaults to `sdio` if not provided.
+    * Less likely, but if you are running 64-bit kernel on 32-bit OS, you may face building issues. Please check [this](https://forums.raspberrypi.com/viewtopic.php?p=2105400&sid=6fc8ea9fdd7a44b1804b3444ce2fb2ac#p2105400) for resolution
 
 * C control path test application  
 Test application is located at `host/linux/host_control/c_support`.
