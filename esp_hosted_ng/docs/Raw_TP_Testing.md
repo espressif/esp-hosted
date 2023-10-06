@@ -11,7 +11,7 @@
     1. While setting up the host, pass `rawtp` argument to `rpi_init.sh`.
         - e.g if you are setting Wi-Fi over SDIO and you want to test raw TP over SDIO interface, then compile and load host driver as below:
         ```sh
-        $ cd esp_hosted_ng/host/linux/host_control/
+        $ cd esp_hosted_ng/host/
         $ ./rpi_init.sh sdio rawtp
         ```
 
