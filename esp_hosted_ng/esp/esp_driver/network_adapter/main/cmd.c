@@ -654,7 +654,7 @@ static int handle_wpa_sta_rx_mgmt(uint8_t type, uint8_t *frame, size_t len, uint
 	return ESP_OK;
 }
 
-
+extern char * wpa_config_parse_string(const char *value, size_t *len);
 esp_err_t initialise_wifi(void)
 {
 	wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
@@ -682,6 +682,7 @@ esp_err_t initialise_wifi(void)
 	wpa_cb.wpa3_build_sae_msg = build_sae_msg;
 	wpa_cb.wpa3_parse_sae_msg = rx_sae_msg;
 	wpa_cb.wpa_config_done = config_done;
+	wpa_cb.wpa_config_parse_string  = wpa_config_parse_string;
 
 	esp_wifi_register_wpa_cb_internal(&wpa_cb);
 
@@ -952,7 +953,7 @@ int process_reg_set(uint8_t if_type, uint8_t *payload, uint16_t payload_len)
 
 	cmd = (struct cmd_reg_domain *)(buf_handle.payload);
 	esp_wifi_get_country_code(cmd->country_code);
-	cmd->header.cmd_code = cmd;
+	cmd->header.cmd_code = CMD_SET_REG_DOMAIN;
 	cmd->header.len = 0;
 	cmd->header.cmd_status = CMD_RESPONSE_SUCCESS;
 
@@ -991,7 +992,7 @@ int process_reg_get(uint8_t if_type, uint8_t *payload, uint16_t payload_len)
 
 	cmd = (struct cmd_reg_domain *)(buf_handle.payload);
 	esp_wifi_get_country_code(cmd->country_code);
-	cmd->header.cmd_code = cmd;
+	cmd->header.cmd_code = CMD_GET_REG_DOMAIN;
 	cmd->header.len = 0;
 	cmd->header.cmd_status = CMD_RESPONSE_SUCCESS;
 
@@ -1159,9 +1160,17 @@ int process_auth_request(uint8_t if_type, uint8_t *payload, uint16_t payload_len
 		ESP_LOGI(TAG, "Connecting to %s, channel: %u [%d]", wifi_config.sta.ssid, cmd_auth->channel, auth_type);
 
 
-		if (auth_type)
+		if (auth_type == WIFI_AUTH_WEP) {
+			if (!cmd_auth->key_len)
+				ESP_LOGE(TAG, "WEP password not present");
+			memcpy(wifi_config.sta.password, cmd_auth->key, 27);
+			wifi_config.sta.threshold.authmode = WIFI_AUTH_WEP;
+		} else if (auth_type != WIFI_AUTH_OPEN) {
 			memcpy(wifi_config.sta.password, DUMMY_PASSPHRASE, sizeof(DUMMY_PASSPHRASE));
+			wifi_config.sta.threshold.authmode = WIFI_AUTH_WPA_PSK;;
+		}
 
+		ESP_LOGD(TAG, "AUTH type=%d password used=%s\n", auth_type, wifi_config.sta.password);
 		memcpy(wifi_config.sta.bssid, cmd_auth->bssid, MAC_ADDR_LEN);
 
 		wifi_config.sta.channel = cmd_auth->channel;
@@ -1795,6 +1804,10 @@ int process_add_key(uint8_t if_type, uint8_t *payload, uint16_t payload_len)
 		goto SEND_CMD;
 	}
 
+	if (key->algo == WIFI_WPA_ALG_WEP40 || key->algo == WIFI_WPA_ALG_WEP104) {
+		header->cmd_status = CMD_RESPONSE_SUCCESS;
+		goto SEND_CMD;
+	}
 	if (key->index) {
 		if (key->algo == WIFI_WPA_ALG_IGTK) {
 			wifi_wpa_igtk_t igtk = {0};

@@ -170,6 +170,8 @@ struct cmd_sta_auth {
 	uint8_t    channel;
 	uint8_t    auth_type;
 	char       ssid[MAX_SSID_LEN+1];
+	uint8_t    key_len;
+	uint8_t    key[27];
 	uint8_t    auth_data_len;
 	uint8_t    pad[2];
 	uint8_t    auth_data[];

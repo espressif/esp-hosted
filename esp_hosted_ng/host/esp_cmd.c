@@ -951,6 +951,10 @@ int cmd_auth_request(struct esp_wifi_device *priv,
 	cmd->auth_data_len = req->auth_data_len;
 	memcpy(cmd->auth_data, req->auth_data, req->auth_data_len);
 
+	if (req->key_len) {
+		memcpy(cmd->key, req->key, req->key_len);
+		cmd->key_len = req->key_len;
+	}
 	esp_info("Authentication request: "MACSTR" %d %d %d %d\n",
 			MAC2STR(cmd->bssid), cmd->channel, cmd->auth_type, cmd->auth_data_len,
 			(u32) req->ie_len);
