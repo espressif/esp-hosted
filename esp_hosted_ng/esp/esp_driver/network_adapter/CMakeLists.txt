@@ -4,7 +4,7 @@ cmake_minimum_required(VERSION 3.5)
 
 set(PROJECT_VERSION_MAJOR_1 "1")
 set(PROJECT_VERSION_MAJOR_2 "0")
-set(PROJECT_VERSION_MINOR "2")
+set(PROJECT_VERSION_MINOR "3")
 message(*************************************************************************************)
 message("                    Building ESP-Hosted Firmware version :: ${PROJECT_VERSION_MAJOR_1}.${PROJECT_VERSION_MAJOR_2}.${PROJECT_VERSION_MINOR} ")
 message(*************************************************************************************)
