@@ -265,7 +265,6 @@ ctrl_cmd_t * wifi_sta_get_ap_info(ctrl_cmd_t req)
 	CTRL_DECODE_RESP_IF_NOT_ASYNC();
 }
 
-#if 0
 ctrl_cmd_t * wifi_set_protocol(ctrl_cmd_t req)
 {
 	CTRL_SEND_REQ(CTRL_MSG_ID__Req_WifiSetProtocol);
@@ -277,4 +276,3 @@ ctrl_cmd_t * wifi_get_protocol(ctrl_cmd_t req)
 	CTRL_SEND_REQ(CTRL_MSG_ID__Req_WifiGetProtocol);
 	CTRL_DECODE_RESP_IF_NOT_ASYNC();
 }
-#endif

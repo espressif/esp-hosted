@@ -310,7 +310,6 @@ esp_err_t esp_wifi_sta_get_rssi(int *rssi)
 	return test_wifi_sta_get_rssi(rssi);
 }
 
-#if 0
 esp_err_t esp_wifi_set_protocol(wifi_interface_t ifx, uint8_t protocol_bitmap)
 {
 	return test_wifi_set_protocol(ifx, protocol_bitmap);
@@ -318,6 +317,5 @@ esp_err_t esp_wifi_set_protocol(wifi_interface_t ifx, uint8_t protocol_bitmap)
 
 esp_err_t esp_wifi_get_protocol(wifi_interface_t ifx, uint8_t *protocol_bitmap)
 {
-	return test_wifi_set_protocol(ifx, protocol_bitmap);
+	return test_wifi_get_protocol(ifx, protocol_bitmap);
 }
-#endif

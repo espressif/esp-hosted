@@ -256,7 +256,7 @@ static int wifi_cmd_sta40(int argc, char **argv)
         return 1;
     }
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
-    //ESP_ERROR_CHECK(esp_wifi_set_protocol(0, WIFI_PROTOCOL_11B | WIFI_PROTOCOL_11G | WIFI_PROTOCOL_11N));
+    ESP_ERROR_CHECK(esp_wifi_set_protocol(0, WIFI_PROTOCOL_11B | WIFI_PROTOCOL_11G | WIFI_PROTOCOL_11N));
     //ESP_ERROR_CHECK(esp_wifi_set_bandwidth(0, WIFI_BW_HT40));
     ESP_ERROR_CHECK(esp_wifi_set_ps(WIFI_PS_NONE));
 
@@ -274,7 +274,7 @@ static int wifi_cmd_sta_mcs89(int argc, char **argv)
         return 1;
     }
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
-    //ESP_ERROR_CHECK(esp_wifi_set_protocol(0, WIFI_PROTOCOL_11B | WIFI_PROTOCOL_11G | WIFI_PROTOCOL_11N | WIFI_PROTOCOL_11AX));
+    ESP_ERROR_CHECK(esp_wifi_set_protocol(0, WIFI_PROTOCOL_11B | WIFI_PROTOCOL_11G | WIFI_PROTOCOL_11N | WIFI_PROTOCOL_11AX));
     //ESP_ERROR_CHECK(esp_wifi_set_bandwidth(0, WIFI_BW_HT20));
 
     ESP_LOGI(TAG, "sta connecting to '%s'", sta_args.ssid->sval[0]);

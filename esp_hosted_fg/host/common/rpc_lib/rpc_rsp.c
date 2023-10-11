@@ -750,6 +750,16 @@ int rpc_parse_rsp(Rpc *rpc_msg, ctrl_cmd_t *app_resp)
 
 		app_resp->u.wifi_sta_get_rssi.rssi = rpc_msg->resp_wifi_sta_get_rssi->rssi;
 		break;
+	} case RPC_ID__Resp_WifiSetProtocol: {
+		RPC_FAIL_ON_NULL(resp_wifi_set_protocol);
+		RPC_ERR_IN_RESP(resp_wifi_set_protocol);
+		break;
+	} case RPC_ID__Resp_WifiGetProtocol: {
+		RPC_FAIL_ON_NULL(resp_wifi_get_protocol);
+		RPC_ERR_IN_RESP(resp_wifi_get_protocol);
+		app_resp->u.wifi_protocol.protocol_bitmap =
+			rpc_msg->resp_wifi_get_protocol->protocol_bitmap;
+		break;
 	} default: {
 		ESP_LOGE(TAG, "Unsupported rpc Resp[%u]\n", rpc_msg->msg_id);
 		goto fail_parse_rpc_msg;

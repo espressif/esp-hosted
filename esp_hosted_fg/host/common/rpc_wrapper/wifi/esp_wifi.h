@@ -264,11 +264,9 @@ esp_err_t esp_wifi_ap_get_sta_aid(const uint8_t mac[6], uint16_t *aid);
 
 esp_err_t esp_wifi_sta_get_rssi(int *rssi);
 
-#if 0
 esp_err_t esp_wifi_set_protocol(wifi_interface_t ifx, uint8_t protocol_bitmap);
 
 esp_err_t esp_wifi_get_protocol(wifi_interface_t ifx, uint8_t *protocol_bitmap);
-#endif
 
 #ifdef __cplusplus
 }

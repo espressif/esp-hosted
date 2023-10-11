@@ -566,6 +566,17 @@ int compose_rpc_req(Rpc *req, ctrl_cmd_t *app_req, uint8_t *failure_status)
 		uint8_t * p = &app_req->u.wifi_ap_get_sta_aid.mac[0];
 		RPC_REQ_COPY_BYTES(req_payload->mac, p, MAC_SIZE_BYTES);
 		break;
+	} case RPC_ID__Req_WifiSetProtocol: {
+		RPC_ALLOC_ASSIGN(RpcReqWifiSetProtocol, req_wifi_set_protocol,
+				rpc__req__wifi_set_protocol__init);
+		req_payload->ifx = app_req->u.wifi_protocol.ifx;
+		req_payload->protocol_bitmap = app_req->u.wifi_protocol.protocol_bitmap;
+		break;
+	} case RPC_ID__Req_WifiGetProtocol: {
+		RPC_ALLOC_ASSIGN(RpcReqWifiGetProtocol, req_wifi_get_protocol,
+				rpc__req__wifi_get_protocol__init);
+		req_payload->ifx = app_req->u.wifi_protocol.ifx;
+		break;
 	} default: {
 		*failure_status = RPC_ERR_UNSUPPORTED_MSG;
 		ESP_LOGE(TAG, "Unsupported RPC Req[%u]",req->msg_id);

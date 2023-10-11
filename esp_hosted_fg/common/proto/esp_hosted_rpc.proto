@@ -1249,6 +1249,24 @@ message Rpc_Resp_WifiStaGetApInfo {
 	wifi_ap_record ap_records = 2;
 }
 
+message Rpc_Req_WifiSetProtocol {
+	int32 ifx = 1;
+	int32 protocol_bitmap = 2;
+}
+
+message Rpc_Resp_WifiSetProtocol {
+	int32 resp = 1;
+}
+
+message Rpc_Req_WifiGetProtocol {
+	int32 ifx = 1;
+}
+
+message Rpc_Resp_WifiGetProtocol {
+	int32 resp = 1;
+	int32 protocol_bitmap = 2;
+}
+
 message Rpc_Req_WifiSetBandwidth {
 	int32 ifx = 1;
 	int32 bw = 2;
@@ -1453,6 +1471,8 @@ message Rpc {
 		Rpc_Req_WifiDeauthSta               req_wifi_deauth_sta               = 293;
 		Rpc_Req_WifiStaGetApInfo            req_wifi_sta_get_ap_info          = 294;
 
+		Rpc_Req_WifiSetProtocol             req_wifi_set_protocol             = 297;
+		Rpc_Req_WifiGetProtocol             req_wifi_get_protocol             = 298;
 		Rpc_Req_WifiSetBandwidth            req_wifi_set_bandwidth            = 299;
 		Rpc_Req_WifiGetBandwidth            req_wifi_get_bandwidth            = 300;
 		Rpc_Req_WifiSetChannel              req_wifi_set_channel              = 301;
@@ -1516,6 +1536,8 @@ message Rpc {
 		Rpc_Resp_WifiDeauthSta              resp_wifi_deauth_sta               = 549;
 		Rpc_Resp_WifiStaGetApInfo           resp_wifi_sta_get_ap_info          = 550;
 
+		Rpc_Resp_WifiSetProtocol            resp_wifi_set_protocol             = 553;
+		Rpc_Resp_WifiGetProtocol            resp_wifi_get_protocol             = 554;
 		Rpc_Resp_WifiSetBandwidth           resp_wifi_set_bandwidth            = 555;
 		Rpc_Resp_WifiGetBandwidth           resp_wifi_get_bandwidth            = 556;
 		Rpc_Resp_WifiSetChannel             resp_wifi_set_channel              = 557;

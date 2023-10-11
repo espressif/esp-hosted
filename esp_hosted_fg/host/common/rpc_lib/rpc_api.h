@@ -180,6 +180,11 @@ typedef struct {
 } rpc_wifi_country_code;
 
 typedef struct {
+	wifi_interface_t ifx;
+	uint8_t protocol_bitmap;
+} rpc_wifi_protocol;
+
+typedef struct {
 	uint8_t mac[6];
 	uint16_t aid;
 } rpc_wifi_ap_get_sta_aid;
@@ -256,6 +261,8 @@ typedef struct Ctrl_cmd_t {
 		rpc_wifi_ap_get_sta_aid     wifi_ap_get_sta_aid;
 
 		rpc_wifi_sta_get_rssi       wifi_sta_get_rssi;
+
+		rpc_wifi_protocol           wifi_protocol;
 
 		event_heartbeat_t           e_heartbeat;
 
@@ -490,12 +497,8 @@ ctrl_cmd_t * wifi_get_country(ctrl_cmd_t req);
 ctrl_cmd_t * wifi_ap_get_sta_list(ctrl_cmd_t req);
 ctrl_cmd_t * wifi_ap_get_sta_aid(ctrl_cmd_t req);
 ctrl_cmd_t * wifi_sta_get_rssi(ctrl_cmd_t req);
-
-#if 0
 ctrl_cmd_t * wifi_set_protocol(ctrl_cmd_t req);
 ctrl_cmd_t * wifi_get_protocol(ctrl_cmd_t req);
-#endif
-
 
 /* Get the interface up for interface `iface` */
 int interface_up(int sockfd, char* iface);

@@ -2160,10 +2160,6 @@ static esp_err_t req_wifi_connect(Rpc *req, Rpc *resp, void *priv_data)
 
 	ESP_LOGI(TAG, "************ connect ****************");
     RPC_RET_FAIL_IF(esp_wifi_connect());
-	ESP_ERROR_CHECK(esp_wifi_set_protocol(0, WIFI_PROTOCOL_11B | WIFI_PROTOCOL_11G | WIFI_PROTOCOL_11N));
-#if !CONFIG_IDF_TARGET_ESP32C2
-	ESP_ERROR_CHECK(esp_wifi_set_bandwidth(0, WIFI_BW_HT40));
-#endif
 	return ESP_OK;
 }
 
@@ -2733,6 +2729,30 @@ static esp_err_t req_wifi_set_storage(Rpc *req, Rpc *resp, void *priv_data)
 	return ESP_OK;
 }
 
+static esp_err_t req_wifi_set_protocol(Rpc *req, Rpc *resp, void *priv_data)
+{
+	RPC_TEMPLATE(RpcRespWifiSetProtocol, resp_wifi_set_protocol,
+			RpcReqWifiSetProtocol, req_wifi_set_protocol,
+			rpc__resp__wifi_set_protocol__init);
+
+	RPC_RET_FAIL_IF(esp_wifi_set_protocol(req_payload->ifx,
+			req_payload->protocol_bitmap));
+	return ESP_OK;
+}
+
+static esp_err_t req_wifi_get_protocol(Rpc *req, Rpc *resp, void *priv_data)
+{
+	RPC_TEMPLATE(RpcRespWifiGetProtocol, resp_wifi_get_protocol,
+			RpcReqWifiGetProtocol, req_wifi_get_protocol,
+			rpc__resp__wifi_get_protocol__init);
+
+	uint8_t protocol_bitmap = 0;
+	RPC_RET_FAIL_IF(esp_wifi_get_protocol(req_payload->ifx, &protocol_bitmap));
+
+	resp_payload->protocol_bitmap = protocol_bitmap;
+	return ESP_OK;
+}
+
 static esp_err_t req_wifi_set_bandwidth(Rpc *req, Rpc *resp, void *priv_data)
 {
 	RPC_TEMPLATE(RpcRespWifiSetBandwidth, resp_wifi_set_bandwidth,
@@ -3115,6 +3135,14 @@ static esp_rpc_req_t req_table[] = {
 		.command_handler = req_wifi_set_storage
 	},
 	{
+		.req_num = RPC_ID__Req_WifiSetProtocol,
+		.command_handler = req_wifi_set_protocol
+	},
+	{
+		.req_num = RPC_ID__Req_WifiGetProtocol,
+		.command_handler = req_wifi_get_protocol
+	},
+	{
 		.req_num = RPC_ID__Req_WifiSetBandwidth,
 		.command_handler = req_wifi_set_bandwidth
 	},
@@ -3408,6 +3436,12 @@ static void esp_rpc_cleanup(Rpc *resp)
 			break;
 		} case RPC_ID__Resp_WifiSetStorage: {
 			mem_free(resp->resp_wifi_set_storage);
+			break;
+		} case RPC_ID__Resp_WifiSetProtocol: {
+			mem_free(resp->resp_wifi_set_protocol);
+			break;
+		} case RPC_ID__Resp_WifiGetProtocol: {
+			mem_free(resp->resp_wifi_get_protocol);
 			break;
 		} case RPC_ID__Resp_WifiSetBandwidth: {
 			mem_free(resp->resp_wifi_set_bandwidth);

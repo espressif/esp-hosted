@@ -110,6 +110,10 @@ typedef struct RpcReqWifiDeauthSta RpcReqWifiDeauthSta;
 typedef struct RpcRespWifiDeauthSta RpcRespWifiDeauthSta;
 typedef struct RpcReqWifiStaGetApInfo RpcReqWifiStaGetApInfo;
 typedef struct RpcRespWifiStaGetApInfo RpcRespWifiStaGetApInfo;
+typedef struct RpcReqWifiSetProtocol RpcReqWifiSetProtocol;
+typedef struct RpcRespWifiSetProtocol RpcRespWifiSetProtocol;
+typedef struct RpcReqWifiGetProtocol RpcReqWifiGetProtocol;
+typedef struct RpcRespWifiGetProtocol RpcRespWifiGetProtocol;
 typedef struct RpcReqWifiSetBandwidth RpcReqWifiSetBandwidth;
 typedef struct RpcRespWifiSetBandwidth RpcRespWifiSetBandwidth;
 typedef struct RpcReqWifiGetBandwidth RpcReqWifiGetBandwidth;
@@ -2394,6 +2398,48 @@ struct  RpcRespWifiStaGetApInfo
     , 0, NULL }
 
 
+struct  RpcReqWifiSetProtocol
+{
+  ProtobufCMessage base;
+  int32_t ifx;
+  int32_t protocol_bitmap;
+};
+#define RPC__REQ__WIFI_SET_PROTOCOL__INIT \
+ { PROTOBUF_C_MESSAGE_INIT (&rpc__req__wifi_set_protocol__descriptor) \
+    , 0, 0 }
+
+
+struct  RpcRespWifiSetProtocol
+{
+  ProtobufCMessage base;
+  int32_t resp;
+};
+#define RPC__RESP__WIFI_SET_PROTOCOL__INIT \
+ { PROTOBUF_C_MESSAGE_INIT (&rpc__resp__wifi_set_protocol__descriptor) \
+    , 0 }
+
+
+struct  RpcReqWifiGetProtocol
+{
+  ProtobufCMessage base;
+  int32_t ifx;
+};
+#define RPC__REQ__WIFI_GET_PROTOCOL__INIT \
+ { PROTOBUF_C_MESSAGE_INIT (&rpc__req__wifi_get_protocol__descriptor) \
+    , 0 }
+
+
+struct  RpcRespWifiGetProtocol
+{
+  ProtobufCMessage base;
+  int32_t resp;
+  int32_t protocol_bitmap;
+};
+#define RPC__RESP__WIFI_GET_PROTOCOL__INIT \
+ { PROTOBUF_C_MESSAGE_INIT (&rpc__resp__wifi_get_protocol__descriptor) \
+    , 0, 0 }
+
+
 struct  RpcReqWifiSetBandwidth
 {
   ProtobufCMessage base;
@@ -2762,6 +2808,8 @@ typedef enum {
   RPC__PAYLOAD_REQ_WIFI_CLEAR_FAST_CONNECT = 292,
   RPC__PAYLOAD_REQ_WIFI_DEAUTH_STA = 293,
   RPC__PAYLOAD_REQ_WIFI_STA_GET_AP_INFO = 294,
+  RPC__PAYLOAD_REQ_WIFI_SET_PROTOCOL = 297,
+  RPC__PAYLOAD_REQ_WIFI_GET_PROTOCOL = 298,
   RPC__PAYLOAD_REQ_WIFI_SET_BANDWIDTH = 299,
   RPC__PAYLOAD_REQ_WIFI_GET_BANDWIDTH = 300,
   RPC__PAYLOAD_REQ_WIFI_SET_CHANNEL = 301,
@@ -2803,6 +2851,8 @@ typedef enum {
   RPC__PAYLOAD_RESP_WIFI_CLEAR_FAST_CONNECT = 548,
   RPC__PAYLOAD_RESP_WIFI_DEAUTH_STA = 549,
   RPC__PAYLOAD_RESP_WIFI_STA_GET_AP_INFO = 550,
+  RPC__PAYLOAD_RESP_WIFI_SET_PROTOCOL = 553,
+  RPC__PAYLOAD_RESP_WIFI_GET_PROTOCOL = 554,
   RPC__PAYLOAD_RESP_WIFI_SET_BANDWIDTH = 555,
   RPC__PAYLOAD_RESP_WIFI_GET_BANDWIDTH = 556,
   RPC__PAYLOAD_RESP_WIFI_SET_CHANNEL = 557,
@@ -2871,6 +2921,8 @@ struct  Rpc
     RpcReqWifiClearFastConnect *req_wifi_clear_fast_connect;
     RpcReqWifiDeauthSta *req_wifi_deauth_sta;
     RpcReqWifiStaGetApInfo *req_wifi_sta_get_ap_info;
+    RpcReqWifiSetProtocol *req_wifi_set_protocol;
+    RpcReqWifiGetProtocol *req_wifi_get_protocol;
     RpcReqWifiSetBandwidth *req_wifi_set_bandwidth;
     RpcReqWifiGetBandwidth *req_wifi_get_bandwidth;
     RpcReqWifiSetChannel *req_wifi_set_channel;
@@ -2915,6 +2967,8 @@ struct  Rpc
     RpcRespWifiClearFastConnect *resp_wifi_clear_fast_connect;
     RpcRespWifiDeauthSta *resp_wifi_deauth_sta;
     RpcRespWifiStaGetApInfo *resp_wifi_sta_get_ap_info;
+    RpcRespWifiSetProtocol *resp_wifi_set_protocol;
+    RpcRespWifiGetProtocol *resp_wifi_get_protocol;
     RpcRespWifiSetBandwidth *resp_wifi_set_bandwidth;
     RpcRespWifiGetBandwidth *resp_wifi_get_bandwidth;
     RpcRespWifiSetChannel *resp_wifi_set_channel;
@@ -4750,6 +4804,82 @@ RpcRespWifiStaGetApInfo *
 void   rpc__resp__wifi_sta_get_ap_info__free_unpacked
                      (RpcRespWifiStaGetApInfo *message,
                       ProtobufCAllocator *allocator);
+/* RpcReqWifiSetProtocol methods */
+void   rpc__req__wifi_set_protocol__init
+                     (RpcReqWifiSetProtocol         *message);
+size_t rpc__req__wifi_set_protocol__get_packed_size
+                     (const RpcReqWifiSetProtocol   *message);
+size_t rpc__req__wifi_set_protocol__pack
+                     (const RpcReqWifiSetProtocol   *message,
+                      uint8_t             *out);
+size_t rpc__req__wifi_set_protocol__pack_to_buffer
+                     (const RpcReqWifiSetProtocol   *message,
+                      ProtobufCBuffer     *buffer);
+RpcReqWifiSetProtocol *
+       rpc__req__wifi_set_protocol__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data);
+void   rpc__req__wifi_set_protocol__free_unpacked
+                     (RpcReqWifiSetProtocol *message,
+                      ProtobufCAllocator *allocator);
+/* RpcRespWifiSetProtocol methods */
+void   rpc__resp__wifi_set_protocol__init
+                     (RpcRespWifiSetProtocol         *message);
+size_t rpc__resp__wifi_set_protocol__get_packed_size
+                     (const RpcRespWifiSetProtocol   *message);
+size_t rpc__resp__wifi_set_protocol__pack
+                     (const RpcRespWifiSetProtocol   *message,
+                      uint8_t             *out);
+size_t rpc__resp__wifi_set_protocol__pack_to_buffer
+                     (const RpcRespWifiSetProtocol   *message,
+                      ProtobufCBuffer     *buffer);
+RpcRespWifiSetProtocol *
+       rpc__resp__wifi_set_protocol__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data);
+void   rpc__resp__wifi_set_protocol__free_unpacked
+                     (RpcRespWifiSetProtocol *message,
+                      ProtobufCAllocator *allocator);
+/* RpcReqWifiGetProtocol methods */
+void   rpc__req__wifi_get_protocol__init
+                     (RpcReqWifiGetProtocol         *message);
+size_t rpc__req__wifi_get_protocol__get_packed_size
+                     (const RpcReqWifiGetProtocol   *message);
+size_t rpc__req__wifi_get_protocol__pack
+                     (const RpcReqWifiGetProtocol   *message,
+                      uint8_t             *out);
+size_t rpc__req__wifi_get_protocol__pack_to_buffer
+                     (const RpcReqWifiGetProtocol   *message,
+                      ProtobufCBuffer     *buffer);
+RpcReqWifiGetProtocol *
+       rpc__req__wifi_get_protocol__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data);
+void   rpc__req__wifi_get_protocol__free_unpacked
+                     (RpcReqWifiGetProtocol *message,
+                      ProtobufCAllocator *allocator);
+/* RpcRespWifiGetProtocol methods */
+void   rpc__resp__wifi_get_protocol__init
+                     (RpcRespWifiGetProtocol         *message);
+size_t rpc__resp__wifi_get_protocol__get_packed_size
+                     (const RpcRespWifiGetProtocol   *message);
+size_t rpc__resp__wifi_get_protocol__pack
+                     (const RpcRespWifiGetProtocol   *message,
+                      uint8_t             *out);
+size_t rpc__resp__wifi_get_protocol__pack_to_buffer
+                     (const RpcRespWifiGetProtocol   *message,
+                      ProtobufCBuffer     *buffer);
+RpcRespWifiGetProtocol *
+       rpc__resp__wifi_get_protocol__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data);
+void   rpc__resp__wifi_get_protocol__free_unpacked
+                     (RpcRespWifiGetProtocol *message,
+                      ProtobufCAllocator *allocator);
 /* RpcReqWifiSetBandwidth methods */
 void   rpc__req__wifi_set_bandwidth__init
                      (RpcReqWifiSetBandwidth         *message);
@@ -5664,6 +5794,18 @@ typedef void (*RpcReqWifiStaGetApInfo_Closure)
 typedef void (*RpcRespWifiStaGetApInfo_Closure)
                  (const RpcRespWifiStaGetApInfo *message,
                   void *closure_data);
+typedef void (*RpcReqWifiSetProtocol_Closure)
+                 (const RpcReqWifiSetProtocol *message,
+                  void *closure_data);
+typedef void (*RpcRespWifiSetProtocol_Closure)
+                 (const RpcRespWifiSetProtocol *message,
+                  void *closure_data);
+typedef void (*RpcReqWifiGetProtocol_Closure)
+                 (const RpcReqWifiGetProtocol *message,
+                  void *closure_data);
+typedef void (*RpcRespWifiGetProtocol_Closure)
+                 (const RpcRespWifiGetProtocol *message,
+                  void *closure_data);
 typedef void (*RpcReqWifiSetBandwidth_Closure)
                  (const RpcReqWifiSetBandwidth *message,
                   void *closure_data);
@@ -5870,6 +6012,10 @@ extern const ProtobufCMessageDescriptor rpc__req__wifi_deauth_sta__descriptor;
 extern const ProtobufCMessageDescriptor rpc__resp__wifi_deauth_sta__descriptor;
 extern const ProtobufCMessageDescriptor rpc__req__wifi_sta_get_ap_info__descriptor;
 extern const ProtobufCMessageDescriptor rpc__resp__wifi_sta_get_ap_info__descriptor;
+extern const ProtobufCMessageDescriptor rpc__req__wifi_set_protocol__descriptor;
+extern const ProtobufCMessageDescriptor rpc__resp__wifi_set_protocol__descriptor;
+extern const ProtobufCMessageDescriptor rpc__req__wifi_get_protocol__descriptor;
+extern const ProtobufCMessageDescriptor rpc__resp__wifi_get_protocol__descriptor;
 extern const ProtobufCMessageDescriptor rpc__req__wifi_set_bandwidth__descriptor;
 extern const ProtobufCMessageDescriptor rpc__resp__wifi_set_bandwidth__descriptor;
 extern const ProtobufCMessageDescriptor rpc__req__wifi_get_bandwidth__descriptor;

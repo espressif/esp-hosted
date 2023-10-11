@@ -98,7 +98,7 @@ static int rpc_event_callback(ctrl_cmd_t * app_event)
 	}
 
 	if ((app_event->msg_id <= RPC_ID__Event_Base) ||
-	    (app_event->msg_id >= RPC_ID__Event_Max)) {
+		(app_event->msg_id >= RPC_ID__Event_Max)) {
 		ESP_LOGE(TAG, "Event Msg ID[%u] is not correct\n\r",app_event->msg_id);
 		goto fail_parsing;
 	}
@@ -478,11 +478,11 @@ int rpc_rsp_callback(ctrl_cmd_t * app_resp)
 	} case RPC_ID__Resp_ConfigHeartbeat: {
 		ESP_LOGV(TAG, "Heartbeat operation successful\n\r");
 		break;
-    } case RPC_ID__Resp_WifiScanGetApNum: {
+	} case RPC_ID__Resp_WifiScanGetApNum: {
 		ESP_LOGV(TAG, "Num Scanned APs: %u\n\r",
 				app_resp->u.wifi_scan_ap_list.number);
 		break;
-    } case RPC_ID__Resp_WifiScanGetApRecords: {
+	} case RPC_ID__Resp_WifiScanGetApRecords: {
 		wifi_scan_ap_list_t * p_a = &app_resp->u.wifi_scan_ap_list;
 		wifi_ap_record_t *list = p_a->out_list;
 
@@ -513,11 +513,11 @@ int rpc_rsp_callback(ctrl_cmd_t * app_resp)
 	case RPC_ID__Resp_WifiConnect:
 	case RPC_ID__Resp_WifiDisconnect:
 	case RPC_ID__Resp_WifiGetConfig:
-    case RPC_ID__Resp_WifiScanStart:
-    case RPC_ID__Resp_WifiScanStop:
-    case RPC_ID__Resp_WifiClearApList:
-    case RPC_ID__Resp_WifiRestore:
-    case RPC_ID__Resp_WifiClearFastConnect:
+	case RPC_ID__Resp_WifiScanStart:
+	case RPC_ID__Resp_WifiScanStop:
+	case RPC_ID__Resp_WifiClearApList:
+	case RPC_ID__Resp_WifiRestore:
+	case RPC_ID__Resp_WifiClearFastConnect:
 	case RPC_ID__Resp_WifiDeauthSta:
 	case RPC_ID__Resp_WifiStaGetApInfo:
 	case RPC_ID__Resp_WifiSetConfig:
@@ -532,7 +532,9 @@ int rpc_rsp_callback(ctrl_cmd_t * app_resp)
 	case RPC_ID__Resp_WifiGetCountry:
 	case RPC_ID__Resp_WifiApGetStaList:
 	case RPC_ID__Resp_WifiApGetStaAid:
-	case RPC_ID__Resp_WifiStaGetRssi: {
+	case RPC_ID__Resp_WifiStaGetRssi:
+	case RPC_ID__Resp_WifiSetProtocol:
+	case RPC_ID__Resp_WifiGetProtocol: {
 		/* Intended fallthrough */
 		break;
 	} default: {
@@ -1507,9 +1509,18 @@ int test_wifi_sta_get_rssi(int *rssi)
 
 	return rpc_rsp_callback(resp);
 }
-#if 0
+
 int test_wifi_set_protocol(wifi_interface_t ifx, uint8_t protocol_bitmap)
 {
+	/* implemented synchronous */
+	ctrl_cmd_t req = RPC_DEFAULT_REQ();
+	ctrl_cmd_t *resp = NULL;
+
+	req.u.wifi_protocol.ifx = ifx;
+	req.u.wifi_protocol.protocol_bitmap = protocol_bitmap;
+
+	resp = wifi_set_protocol(req);
+	return rpc_rsp_callback(resp);
 }
 
 int test_wifi_get_protocol(wifi_interface_t ifx, uint8_t *protocol_bitmap)
@@ -1521,11 +1532,10 @@ int test_wifi_get_protocol(wifi_interface_t ifx, uint8_t *protocol_bitmap)
 	ctrl_cmd_t req = RPC_DEFAULT_REQ();
 	ctrl_cmd_t *resp = NULL;
 
-	if (!ap_info)
-		return FAILURE;
+	resp = wifi_get_protocol(req);
+	if (resp && resp->resp_event_status == SUCCESS) {
+		*protocol_bitmap = resp->u.wifi_protocol.protocol_bitmap;
+	}
 
-	resp = wifi_sta_get_protocol(req);
-
-	*type = resp->u.wifi_protocol.protocol;
+	return rpc_rsp_callback(resp);
 }
-#endif
