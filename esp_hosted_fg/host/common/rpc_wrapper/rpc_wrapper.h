@@ -133,7 +133,6 @@ int test_wifi_sta_get_rssi(int *rssi);
 #if 0
 int test_wifi_set_protocol(wifi_interface_t ifx, uint8_t protocol_bitmap);
 int test_wifi_get_protocol(wifi_interface_t ifx, uint8_t *protocol_bitmap);
-#endif
 
 #ifdef __cplusplus
 }
