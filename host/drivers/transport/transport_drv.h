@@ -60,7 +60,19 @@ struct hosted_transport_context_t {
 };
 
 typedef int (*hosted_rxcb_t)(void *buffer, uint16_t len, void *free_buff_hdl);
-extern hosted_rxcb_t g_rxcb[ESP_MAX_IF];
+
+typedef void (transport_free_cb_t)(void* buffer);
+typedef esp_err_t (*transport_channel_tx_fn_t)(void *h, void *buffer, size_t len);
+typedef esp_err_t (*transport_channel_rx_fn_t)(void *h, void *buffer, void * buff_to_free, size_t len);
+
+typedef struct {
+	void * api_chan;
+	esp_hosted_if_type_t if_type;
+    uint8_t secure;
+	transport_channel_tx_fn_t tx;
+	transport_channel_rx_fn_t rx;
+	void *memp;
+} transport_channel_t;
 
 #if 0
 /* netdev APIs*/
@@ -70,23 +82,34 @@ int esp_netdev_xmit(netdev_handle_t netdev, struct pbuf *net_buf);
 #endif
 
 
-void process_capabilities(uint8_t cap);
-void transport_init(void(*transport_evt_handler)(uint8_t));
+esp_err_t transport_drv_init(void(*esp_hosted_up_cb)(void));
+esp_err_t transport_drv_deinit(void);
+esp_err_t transport_drv_reconfigure(void);
+transport_channel_t *transport_drv_add_channel(void *api_chan,
+		esp_hosted_if_type_t if_type, uint8_t secure,
+		transport_channel_tx_fn_t *tx, const transport_channel_rx_fn_t rx);
+esp_err_t transport_drv_remove_channel(transport_channel_t *channel);
 
-void process_priv_communication(void *payload, uint16_t len);
+/* TODO To move to private header */
+void process_capabilities(uint8_t cap);
+void transport_init_internal(void(*transport_evt_handler)(uint8_t));
+void transport_deinit_internal(void);
+
+void process_priv_communication(interface_buffer_handle_t *buf_handle);
 void print_capabilities(uint32_t cap);
 int process_init_event(uint8_t *evt_buf, uint16_t len);
 
 
-int esp_hosted_init(void(*esp_hosted_up_cb)(void));
-int esp_hosted_deinit(void);
 
 uint8_t is_transport_up(void);
+uint8_t is_transport_ready(void);
 
 #define H_BUFF_NO_ZEROCOPY 0
 #define H_BUFF_ZEROCOPY 1
 
 #define H_DEFLT_FREE_FUNC g_h.funcs->_h_free
+
+#define MAX_RETRY_TRANSPORT_ACTIVE 1000
 
 
 int esp_hosted_tx(uint8_t iface_type, uint8_t iface_num,

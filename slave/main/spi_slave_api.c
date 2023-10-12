@@ -49,24 +49,6 @@ static const char TAG[] = "SPI_DRIVER";
 #define SPI_RX_QUEUE_SIZE          CONFIG_ESP_SPI_RX_Q_SIZE
 #define SPI_TX_QUEUE_SIZE          CONFIG_ESP_SPI_TX_Q_SIZE
 
-#define ESP_SPI_MODE               CONFIG_ESP_SPI_MODE
-#define GPIO_MOSI                  CONFIG_ESP_SPI_GPIO_MOSI
-#define GPIO_MISO                  CONFIG_ESP_SPI_GPIO_MISO
-#define GPIO_SCLK                  CONFIG_ESP_SPI_GPIO_CLK
-#define GPIO_CS                    CONFIG_ESP_SPI_GPIO_CS
-#define GPIO_DATA_READY            CONFIG_ESP_SPI_GPIO_DATA_READY
-#define GPIO_HANDSHAKE             CONFIG_ESP_SPI_GPIO_HANDSHAKE
-
-#define ESP_SPI_CONTROLLER         CONFIG_ESP_SPI_CONTROLLER
-
-#define SPI_RX_QUEUE_SIZE          CONFIG_ESP_SPI_RX_Q_SIZE
-#define SPI_TX_QUEUE_SIZE          CONFIG_ESP_SPI_TX_Q_SIZE
-
-/* Optimize the SPI slave side clock for better data rate
- * Below value could be fine tuned in small steps
- * */
-#define SPI_CLK_MHZ                CONFIG_ESP_SPI_CLK_FREQ
-
 /* SPI-DMA settings */
 #define SPI_DMA_ALIGNMENT_BYTES    4
 #define SPI_DMA_ALIGNMENT_MASK     (SPI_DMA_ALIGNMENT_BYTES-1)
@@ -587,8 +569,7 @@ static void queue_next_transaction(void)
 		ESP_LOGE(TAG , "Failed to queue new transaction\r\n");
 		return;
 	}
-	ESP_LOGD(TAG, "SPI_Tx New");
-	ESP_LOG_BUFFER_HEXDUMP(TAG, tx_buffer, len, ESP_LOG_DEBUG);
+	ESP_HEXLOGD("spi_tx", tx_buffer, len);
 
 	spi_trans = spi_trans_alloc(MEMSET_REQUIRED);
 	assert(spi_trans);
@@ -669,17 +650,8 @@ static void spi_transaction_post_process_task(void* pvParameters)
 			ESP_LOGE(TAG , "spi transmit error, ret : 0x%x\r\n", ret);
 			continue;
 		}
-		if (spi_trans->tx_buffer) {
-			header = (struct esp_payload_header *) spi_trans->tx_buffer;
 
-			if (header->if_type == 0xF && header->if_num == 0xF && header->offset == 0) {
-				/* Dummy Tx buffer consumed by host */
-				dummy_queued = pdFALSE;
-			}
-
-			spi_buffer_tx_free((void *)spi_trans->tx_buffer);
-			spi_trans->tx_buffer = NULL;
-		}
+		assert(spi_trans);
 #if ESP_PKT_STATS
 		struct esp_payload_header *header =
 			(struct esp_payload_header *)spi_trans->tx_buffer;

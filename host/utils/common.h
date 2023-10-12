@@ -72,6 +72,7 @@ typedef enum stm_ret_s {
 
 typedef enum {
 	TRANSPORT_INACTIVE,
+	TRANSPORT_RESET,
 	TRANSPORT_ACTIVE
 } transport_drv_events_e;
 

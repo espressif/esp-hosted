@@ -44,6 +44,7 @@ struct hosted_mempool {
 #define MEMPOOL_FAIL                     -1
 
 #define CALLOC(x,y)                      calloc(x,y)
+#define MALLOC(x)                        malloc(x)
 #define MEM_ALLOC(x)                     heap_caps_malloc(x, MALLOC_CAP_DMA)
 #define FREE(x) do {                     \
 	if (x) {                             \

@@ -15,6 +15,7 @@
 #include "serial_if.h"
 #include "serial_ll_if.h"
 #include "esp_log.h"
+#include "esp_hosted_log.h"
 
 DEFINE_LOG_TAG(serial);
 
@@ -68,8 +69,7 @@ int serial_drv_write (struct serial_drv_handle_t* serial_drv_handle,
 		return RET_INVALID;
 	}
 
-	ESP_LOGV(TAG, "%s:",__func__);
-	ESP_LOG_BUFFER_HEXDUMP(TAG, buf, in_count, ESP_LOG_VERBOSE);
+	ESP_HEXLOGV("serial_write", buf, in_count);
 	ret = serial_ll_if_g->fops->write(serial_ll_if_g, buf, in_count);
 	if (ret != RET_OK) {
 		*out_count = 0;
@@ -123,8 +123,7 @@ uint8_t * serial_drv_read(struct serial_drv_handle_t *serial_drv_handle,
 		ESP_LOGE(TAG,"serial read failed\n\r");
 		return NULL;
 	}
-	ESP_LOGV(TAG, "%s:",__func__);
-	ESP_LOG_BUFFER_HEXDUMP(TAG, read_buf, rx_buf_len, ESP_LOG_VERBOSE);
+	ESP_HEXLOGV("serial_read", read_buf, rx_buf_len);
 
 /*
  * Read Operation happens in two steps because total read length is unknown

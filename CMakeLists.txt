@@ -2,45 +2,49 @@ if(CONFIG_SOC_WIFI_SUPPORTED)
 	message(STATUS "Not using Hosted Wi-Fi")
 else()
 	message(STATUS "Using Hosted Wi-Fi")
-	set(FG_ROOT_DIR ".")
-	set(MCU_DIR "${FG_ROOT_DIR}/host")
+	set(FG_root_dir ".")
+	set(host_dir "${FG_root_dir}/host")
 
-	set(COMPONENT_ADD_INCLUDEDIRS "${MCU_DIR}" "${MCU_DIR}/port")
-	set(COMPONENT_SRCS "${MCU_DIR}/drivers/transport/transport_drv.c" "${MCU_DIR}/drivers/serial/serial_ll_if.c" "${MCU_DIR}/utils/common.c" "${MCU_DIR}/utils/util.c" "${MCU_DIR}/utils/stats.c" "${MCU_DIR}/port/os_wrapper.c" "${MCU_DIR}/drivers/serial/serial_drv.c" "${MCU_DIR}/drivers/netif/wifi_default.c" "${MCU_DIR}/drivers/netif/wifi_netif.c")
+	set(COMPONENT_ADD_INCLUDEDIRS "${host_dir}" "${host_dir}/port" "${host_dir}/api")
+	set(COMPONENT_SRCS "${host_dir}/esp_hosted_host_init.c" "${host_dir}/api/esp_hosted_api.c" "${host_dir}/drivers/transport/transport_drv.c" "${host_dir}/drivers/serial/serial_ll_if.c" "${host_dir}/utils/common.c" "${host_dir}/utils/util.c" "${host_dir}/utils/stats.c" "${host_dir}/port/os_wrapper.c" "${host_dir}/drivers/serial/serial_drv.c")
 
-	list(APPEND COMPONENT_ADD_INCLUDEDIRS "." "${MCU_DIR}/drivers/transport" "${MCU_DIR}/drivers/transport/spi" "${MCU_DIR}/drivers/transport/sdio" "${MCU_DIR}/drivers/netif" "${MCU_DIR}/drivers/serial" "${MCU_DIR}/utils" "${FG_ROOT_DIR}/common/include")
+	list(APPEND COMPONENT_ADD_INCLUDEDIRS "." "${host_dir}/api" "${host_dir}/drivers/transport" "${host_dir}/drivers/transport/spi" "${host_dir}/drivers/transport/sdio" "${host_dir}/drivers/serial" "${host_dir}/utils")
 
-	set(NETIF_DIR "${MCU_DIR}/drivers/netif")
-	list(APPEND COMPONENT_SRCS "${NETIF_DIR}/wifi_default.c" "${NETIF_DIR}/wifi_netif.c" )
-	list(APPEND COMPONENT_ADD_INCLUDEDIRS "${NETIF_DIR}" "${NETIF_DIR}/" )
+	# rpc files - wrap -> slaveif -> core
+	set(rpc_dir "${host_dir}/drivers/rpc")
+	set(rpc_core_dir "${rpc_dir}/core")
+	set(rpc_slaveif_dir "${rpc_dir}/slaveif")
+	set(rpc_wrap_dir "${rpc_dir}/wrap")
+	list(APPEND COMPONENT_SRCS  "${rpc_core_dir}/rpc_core.c" "${rpc_core_dir}/rpc_req.c" "${rpc_core_dir}/rpc_rsp.c" "${rpc_core_dir}/rpc_evt.c"
+		"${rpc_slaveif_dir}/rpc_slave_if.c"
+		"${rpc_wrap_dir}/rpc_wrap.c")
+	list(APPEND COMPONENT_ADD_INCLUDEDIRS "${rpc_core_dir}" "${rpc_slaveif_dir}" "${rpc_wrap_dir}")
 
-	#drivers
-	# rpc lib files
-	set(RPC_LIB_DIR "${FG_ROOT_DIR}/host/drivers/rpc_lib")
-	set(RPC_CORE_DIR "${RPC_LIB_DIR}/core")
-	list(APPEND COMPONENT_SRCS  "${RPC_CORE_DIR}/rpc_core.c" "${RPC_LIB_DIR}/rpc_req.c" "${RPC_LIB_DIR}/rpc_rsp.c" "${RPC_LIB_DIR}/rpc_evt.c" "${RPC_LIB_DIR}/rpc_api.c" "${FG_ROOT_DIR}/host/drivers/virtual_serial_if/serial_if.c")
-	list(APPEND COMPONENT_ADD_INCLUDEDIRS "${RPC_CORE_DIR}" "${RPC_LIB_DIR}" "${FG_ROOT_DIR}/host/drivers/virtual_serial_if")
+	# virtual serial
+	set(virt_serial_dir "${host_dir}/drivers/virtual_serial_if")
+	list(APPEND COMPONENT_SRCS  "${virt_serial_dir}/serial_if.c")
+	list(APPEND COMPONENT_ADD_INCLUDEDIRS "${virt_serial_dir}")
 
-	list(APPEND COMPONENT_SRCS  "${FG_ROOT_DIR}/host/drivers/rpc_wrapper/rpc_wrapper.c" "${FG_ROOT_DIR}/host/drivers/rpc_wrapper/wifi/wifi_drv.c")
-	list(APPEND COMPONENT_ADD_INCLUDEDIRS "${FG_ROOT_DIR}/host/drivers" "${FG_ROOT_DIR}/host/drivers/rpc_wrapper" "${FG_ROOT_DIR}/host/drivers/rpc_wrapper/wifi")
+	# mempool
+	list(APPEND COMPONENT_SRCS "${host_dir}/drivers/mempool/mempool.c")
+	list(APPEND COMPONENT_ADD_INCLUDEDIRS "${host_dir}/drivers/mempool" )
 
-	# helpers - mempool
-	list(APPEND COMPONENT_SRCS "${MCU_DIR}/drivers/mempool/mempool.c")
-	list(APPEND COMPONENT_ADD_INCLUDEDIRS "${MCU_DIR}/drivers/mempool" )
-
-	# protobuf files
-	list(APPEND COMPONENT_SRCS "${FG_ROOT_DIR}/common/protobuf-c/protobuf-c/protobuf-c.c" "${FG_ROOT_DIR}/common/proto/esp_hosted_rpc.pb-c.c" )
-	list(APPEND COMPONENT_ADD_INCLUDEDIRS "${FG_ROOT_DIR}/common/protobuf-c" "${FG_ROOT_DIR}/common/proto" )
+	# slave and host common files
+	set(common_dir "${FG_root_dir}/common")
+	list(APPEND COMPONENT_SRCS "${common_dir}/protobuf-c/protobuf-c/protobuf-c.c" "${common_dir}/proto/esp_hosted_rpc.pb-c.c" )
+	list(APPEND COMPONENT_ADD_INCLUDEDIRS "${common_dir}/include" "${common_dir}/protobuf-c" "${common_dir}/proto" )
 
 	# transport files
 	if(CONFIG_ESP_SDIO_HOST_INTERFACE)
-	    list(APPEND COMPONENT_SRCS "${MCU_DIR}/drivers/transport/sdio/sdio_ll.c" "${MCU_DIR}/drivers/transport/sdio/sdio_api.c" "${MCU_DIR}/drivers/transport/sdio/sdio_host.c" "${MCU_DIR}/drivers/transport/sdio/sdio_drv.c")
+	    list(APPEND COMPONENT_SRCS "${host_dir}/drivers/transport/sdio/sdio_ll.c" "${host_dir}/drivers/transport/sdio/sdio_api.c" "${host_dir}/drivers/transport/sdio/sdio_host.c" "${host_dir}/drivers/transport/sdio/sdio_drv.c")
 	else(CONFIG_ESP_SPI_HOST_INTERFACE)
-		list(APPEND COMPONENT_SRCS "${MCU_DIR}/drivers/transport/spi/spi_drv.c")
+		list(APPEND COMPONENT_SRCS "${host_dir}/drivers/transport/spi/spi_drv.c")
 	endif()
 endif()
 
 idf_component_register(SRCS ${COMPONENT_SRCS}
-	REQUIRES soc esp_event esp_netif esp_timer driver esp_wifi
+	REQUIRES soc esp_event esp_netif esp_timer driver esp_wifi esp_wifi_remote
 	EXCLUDE_SRCS ${EXCLUDE_COMPONENT_SRCS}
 	INCLUDE_DIRS ${COMPONENT_ADD_INCLUDEDIRS})
+
+idf_component_set_property(${COMPONENT_NAME} WHOLE_ARCHIVE TRUE)

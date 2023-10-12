@@ -167,8 +167,7 @@ esp_err_t wlan_ap_rx_callback(void *buffer, uint16_t len, void *eb)
 		}
 		return ESP_OK;
 	}
-	ESP_LOGV("AP RX","New\n");
-	ESP_LOG_BUFFER_HEXDUMP("AP_RX", buffer, len, ESP_LOG_VERBOSE);
+	ESP_HEXLOGV("AP_Get", buffer, len);
 
 	/* Check destination address against self address */
 	if (memcmp(ap_buf, ap_mac, BSSID_BYTES_SIZE)) {
@@ -204,8 +203,7 @@ esp_err_t wlan_sta_rx_callback(void *buffer, uint16_t len, void *eb)
 		}
 		return ESP_OK;
 	}
-	ESP_LOGV("STA RX","New\n");
-	ESP_LOG_BUFFER_HEXDUMP("STA_RX", buffer, len, ESP_LOG_VERBOSE);
+	ESP_HEXLOGV("STA_Get", buffer, len);
 
 	buf_handle.if_type = ESP_STA_IF;
 	buf_handle.if_num = 0;
@@ -299,8 +297,7 @@ void process_serial_rx_pkt(uint8_t *buf)
 	payload = buf + le16toh(header->offset);
 	rem_buff_size = sizeof(r.data) - r.len;
 
-	ESP_LOGV(TAG, "process_serial_rx_pkt:");
-	ESP_LOG_BUFFER_HEXDUMP(TAG, payload, payload_len, ESP_LOG_VERBOSE);
+	ESP_HEXLOGV("serial_rx", payload, payload_len);
 
 	while (r.valid)
 	{
@@ -336,28 +333,27 @@ void process_rx_pkt(interface_buffer_handle_t *buf_handle)
 	struct esp_payload_header *header = NULL;
 	uint8_t *payload = NULL;
 	uint16_t payload_len = 0;
+	int ret = 0;
 
 	header = (struct esp_payload_header *) buf_handle->payload;
 	payload = buf_handle->payload + le16toh(header->offset);
 	payload_len = le16toh(header->len);
 
-	ESP_LOGD(TAG, "Rx New");
-	ESP_LOG_BUFFER_HEXDUMP(TAG, buf_handle->payload, buf_handle->payload_len, ESP_LOG_DEBUG);
+	ESP_HEXLOGD("rx_new", buf_handle->payload, min(16,buf_handle->payload_len));
 
-	if (buf_handle->if_type == ESP_STA_IF) {
+	if (buf_handle->if_type == ESP_STA_IF && station_connected) {
 		/* Forward data to wlan driver */
-		ESP_LOGV(TAG, "STA Tx");
-		ESP_LOG_BUFFER_HEXDUMP("STA Tx", payload, payload_len, ESP_LOG_VERBOSE);
-		if (ESP_OK == esp_wifi_internal_tx(ESP_IF_WIFI_STA, payload, payload_len)) {
+		ret = esp_wifi_internal_tx(ESP_IF_WIFI_STA, payload, payload_len);
+		ESP_HEXLOGV("STA_Put", payload, payload_len);
+		if (ESP_OK == ret) {
 #if ESP_PKT_STATS
 			pkt_stats.sta_rx_out++;
 #endif
 		}
-
-		/*ESP_LOG_BUFFER_HEXDUMP("spi_sta_rx", payload, payload_len, ESP_LOG_INFO);*/
 	} else if (buf_handle->if_type == ESP_AP_IF && softap_started) {
 		/* Forward data to wlan driver */
 		esp_wifi_internal_tx(ESP_IF_WIFI_AP, payload, payload_len);
+		ESP_HEXLOGV("AP_Put", payload, payload_len);
 	} else if (buf_handle->if_type == ESP_SERIAL_IF) {
 		process_serial_rx_pkt(buf_handle->payload);
 	}
@@ -481,8 +477,7 @@ static esp_err_t serial_write_data(uint8_t* data, ssize_t len)
 			return ESP_FAIL;
 		}
 
-		ESP_LOGV(TAG, "%s:", __func__);
-		ESP_LOG_BUFFER_HEXDUMP("serial_tx", data, frag_len, ESP_LOG_VERBOSE);
+		ESP_HEXLOGV("serial_tx", data, frag_len);
 
 		left_len -= frag_len;
 		pos += frag_len;

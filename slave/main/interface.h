@@ -17,6 +17,7 @@
 #ifndef __TRANSPORT_LAYER_INTERFACE_H
 #define __TRANSPORT_LAYER_INTERFACE_H
 #include "esp_err.h"
+#include "esp_hosted_log.h"
 
 #ifdef CONFIG_ESP_SDIO_HOST_INTERFACE
 

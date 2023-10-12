@@ -18,6 +18,7 @@
 #include <string.h>
 #include <unistd.h>
 #include "esp_log.h"
+#include "esp_hosted_log.h"
 #include "interface.h"
 #include "adapter.h"
 #include "sdio_slave_api.h"
@@ -163,10 +164,8 @@ void generate_startup_event(uint8_t cap)
 #if CONFIG_ESP_SDIO_CHECKSUM
 	header->checksum = htole16(compute_checksum(buf_handle.payload, buf_handle.payload_len));
 #endif
-	ESP_LOGD(TAG, "Tx Init");
-	ESP_LOG_BUFFER_HEXDUMP(TAG, buf_handle.payload, buf_handle.payload_len, ESP_LOG_DEBUG);
 
-	ESP_LOG_BUFFER_HEXDUMP("sdio_tx", buf_handle.payload, buf_handle.payload_len, ESP_LOG_VERBOSE);
+	ESP_HEXLOGD("sdio_tx_init", buf_handle.payload, buf_handle.payload_len);
 
 	ret = sdio_slave_transmit(buf_handle.payload, buf_handle.payload_len);
 	if (ret != ESP_OK) {
@@ -311,8 +310,8 @@ static int32_t sdio_write(interface_handle_t *handle, interface_buffer_handle_t 
 	header->checksum = htole16(compute_checksum(sendbuf,
 				offset+buf_handle->payload_len));
 #endif
-	ESP_LOGD(TAG, "Tx New");
-	ESP_LOG_BUFFER_HEXDUMP(TAG, sendbuf, total_len, ESP_LOG_DEBUG);
+
+	ESP_HEXLOGD("sdio_tx", sendbuf, total_len);
 
 	ret = sdio_slave_transmit(sendbuf, total_len);
 	if (ret != ESP_OK) {

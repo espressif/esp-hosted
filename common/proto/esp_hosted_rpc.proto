@@ -400,7 +400,6 @@ enum RpcId {
 	Req_WifiSetDynamicCs              = 340; //0x154
 	Req_WifiStaGetRssi                = 341; //0x155
 
-
 	/* Add new control path command response before Req_Max
 	 * and update Req_Max */
 	Req_Max = 342; //0x156
@@ -513,73 +512,6 @@ enum RpcId {
 	Resp_WifiSetDynamicCs             = 596;
 	Resp_WifiStaGetRssi               = 597;
 
-	Resp_WifiScanStart                = 542;
-	Resp_WifiScanStop                 = 543;
-	Resp_WifiScanGetApNum             = 544;
-	Resp_WifiScanGetApRecords         = 545;
-	Resp_WifiClearApList              = 546;
-
-	Resp_WifiRestore                  = 547;
-	Resp_WifiClearFastConnect         = 548;
-	Resp_WifiDeauthSta                = 549;
-	Resp_WifiStaGetApInfo             = 550;
-	//Resp_WifiSetPs                    = 551;
-	//Resp_WifiGetPs                    = 552;
-	Resp_WifiSetProtocol              = 553;
-	Resp_WifiGetProtocol              = 554;
-	Resp_WifiSetBandwidth             = 555;
-	Resp_WifiGetBandwidth             = 556;
-	Resp_WifiSetChannel               = 557;
-	Resp_WifiGetChannel               = 558;
-	Resp_WifiSetCountry               = 559;
-	Resp_WifiGetCountry               = 560;
-
-//  Resp_WifiSetPromiscuousRxCb       = 561;
-	Resp_WifiSetPromiscuous           = 561;
-	Resp_WifiGetPromiscuous           = 562;
-	Resp_WifiSetPromiscuousFilter     = 563;
-	Resp_WifiGetPromiscuousFilter     = 564;
-	Resp_WifiSetPromiscuousCtrlFilter = 565;
-	Resp_WifiGetPromiscuousCtrlFilter = 566;
-
-	Resp_WifiApGetStaList             = 567;
-	Resp_WifiApGetStaAid              = 568;
-	Resp_WifiSetStorage               = 569;
-	Resp_WifiSetVendorIe              = 570;
-//  Resp_WifiSetVendorIeCb            = 571;
-	Resp_WifiSetEventMask             = 571;
-	Resp_WifiGetEventMask             = 572;
-	Resp_Wifi80211Tx                  = 573;
-
-//	Resp_WifiSetCsiRxCb               = 573;
-	Resp_WifiSetCsiConfig             = 574;
-	Resp_WifiSetCsi                   = 575;
-
-	Resp_WifiSetAntGpio               = 576;
-	Resp_WifiGetAntGpio               = 577;
-	Resp_WifiSetAnt                   = 578;
-	Resp_WifiGetAnt                   = 579;
-
-	Resp_WifiGetTsfTime               = 580;
-	Resp_WifiSetInactiveTime          = 581;
-	Resp_WifiGetInactiveTime          = 582;
-	Resp_WifiStatisDump               = 583;
-	Resp_WifiSetRssiThreshold         = 584;
-
-	Resp_WifiFtmInitiateSession       = 585;
-	Resp_WifiFtmEndSession            = 586;
-	Resp_WifiFtmRespSetOffset         = 587;
-
-	Resp_WifiConfig11bRate            = 588;
-	Resp_WifiConnectionlessModuleSetWakeInterval = 589;
-	Resp_WifiSetCountryCode           = 590;
-	Resp_WifiGetCountryCode           = 591;
-	Resp_WifiConfig80211TxRate        = 592;
-	Resp_WifiDisablePmfConfig         = 593;
-	Resp_WifiStaGetAid                = 594;
-	Resp_WifiStaGetNegotiatedPhymode  = 595;
-	Resp_WifiSetDynamicCs             = 596;
-
 	/* Add new control path command response before Resp_Max
 	 * and update Resp_Max */
 	Resp_Max = 598;
@@ -653,14 +585,6 @@ message wifi_scan_config {
 	int32          scan_type = 5;               /**< scan type, active or passive */
 	wifi_scan_time scan_time = 6;               /**< scan time per channel */
 	uint32         home_chan_dwell_time = 7;    /**< time spent at home channel between scanning consecutive channels.*/
-}
-
-message wifi_he_ap_info {
-    //uint8_t bss_color:6;                  /**< an unsigned integer whose value is the BSS Color of the BSS corresponding to the AP */
-    //uint8_t partial_bss_color:1;          /**< indicate if an AID assignment rule based on the BSS color */
-    //uint8_t bss_color_disabled:1;         /**< indicate if the use of BSS color is disabled */
-    uint32         bitmask = 1;                 /* Manually have to parse for above bits */
-    uint32         bssid_index = 2;             /**< in M-BSSID set, identifies the nontransmitted BSSID */
 }
 
 message wifi_he_ap_info {
@@ -789,7 +713,6 @@ message wifi_sta_list {
 	repeated            wifi_sta_info sta = 1;  /**< station list */
 	int32               num = 2;                /**< number of stations in the list (other entries are invalid) */
 }
-
 
 //message vendor_ie_data {
 //	uint32              element_id = 1;         /**< Should be set to WIFI_VENDOR_IE_ELEMENT_ID (0xDD) */
@@ -1491,16 +1414,6 @@ message Rpc_Event_StaDisconnected {
 	wifi_event_sta_disconnected sta_disconnected = 2;
 }
 
-message Rpc_Event_StaConnected {
-	int32 resp = 1;
-	wifi_event_sta_connected sta_connected = 2;
-}
-
-message Rpc_Event_StaDisconnected {
-	int32 resp = 1;
-	wifi_event_sta_disconnected sta_disconnected = 2;
-}
-
 message Rpc {
 	/* msg_type could be req, resp or Event */
 	RpcType msg_type = 1;
@@ -1576,17 +1489,6 @@ message Rpc {
 
 		Rpc_Req_WifiStaGetRssi              req_wifi_sta_get_rssi             = 341;
 
-		Rpc_Req_WifiScanStart               req_wifi_scan_start               = 286;
-		Rpc_Req_WifiScanStop                req_wifi_scan_stop                = 287;
-		Rpc_Req_WifiScanGetApNum            req_wifi_scan_get_ap_num          = 288;
-		Rpc_Req_WifiScanGetApRecords        req_wifi_scan_get_ap_records      = 289;
-		Rpc_Req_WifiClearApList             req_wifi_clear_ap_list            = 290;
-
-		Rpc_Req_WifiRestore                 req_wifi_restore                  = 291;
-		Rpc_Req_WifiClearFastConnect        req_wifi_clear_fast_connect       = 292;
-		Rpc_Req_WifiDeauthSta               req_wifi_deauth_sta               = 293;
-		Rpc_Req_WifiStaGetApInfo            req_wifi_sta_get_ap_info          = 294;
-
 		/** Responses **/
 		Rpc_Resp_GetMacAddress              resp_get_mac_address               = 513;
 		Rpc_Resp_SetMacAddress              resp_set_mac_address               = 514;
@@ -1651,17 +1553,6 @@ message Rpc {
 		Rpc_Resp_WifiGetCountryCode         resp_wifi_get_country_code         = 591;
 
 		Rpc_Resp_WifiStaGetRssi             resp_wifi_sta_get_rssi             = 597;
-
-		Rpc_Resp_WifiScanStart              resp_wifi_scan_start               = 542;
-		Rpc_Resp_WifiScanStop               resp_wifi_scan_stop                = 543;
-		Rpc_Resp_WifiScanGetApNum           resp_wifi_scan_get_ap_num          = 544;
-		Rpc_Resp_WifiScanGetApRecords       resp_wifi_scan_get_ap_records      = 545;
-		Rpc_Resp_WifiClearApList            resp_wifi_clear_ap_list            = 546;
-
-		Rpc_Resp_WifiRestore                resp_wifi_restore                  = 547;
-		Rpc_Resp_WifiClearFastConnect       resp_wifi_clear_fast_connect       = 548;
-		Rpc_Resp_WifiDeauthSta              resp_wifi_deauth_sta               = 549;
-		Rpc_Resp_WifiStaGetApInfo           resp_wifi_sta_get_ap_info          = 550;
 
 		/** Notifications **/
 		Rpc_Event_ESPInit                   event_esp_init                     = 769;

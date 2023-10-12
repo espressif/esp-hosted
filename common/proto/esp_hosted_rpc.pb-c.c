@@ -12837,7 +12837,7 @@ static const unsigned rpc__event__sta_scan_done__field_indices_by_name[] = {
 static const ProtobufCIntRange rpc__event__sta_scan_done__number_ranges[1 + 1] =
 {
   { 1, 0 },
-  { 0, 5 }
+  { 0, 2 }
 };
 const ProtobufCMessageDescriptor rpc__event__sta_scan_done__descriptor =
 {
@@ -13499,114 +13499,6 @@ static const ProtobufCFieldDescriptor rpc__field_descriptors[96] =
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
   {
-    "req_wifi_scan_start",
-    286,
-    PROTOBUF_C_LABEL_NONE,
-    PROTOBUF_C_TYPE_MESSAGE,
-    offsetof(Rpc, payload_case),
-    offsetof(Rpc, req_wifi_scan_start),
-    &rpc__req__wifi_scan_start__descriptor,
-    NULL,
-    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
-    0,NULL,NULL    /* reserved1,reserved2, etc */
-  },
-  {
-    "req_wifi_scan_stop",
-    287,
-    PROTOBUF_C_LABEL_NONE,
-    PROTOBUF_C_TYPE_MESSAGE,
-    offsetof(Rpc, payload_case),
-    offsetof(Rpc, req_wifi_scan_stop),
-    &rpc__req__wifi_scan_stop__descriptor,
-    NULL,
-    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
-    0,NULL,NULL    /* reserved1,reserved2, etc */
-  },
-  {
-    "req_wifi_scan_get_ap_num",
-    288,
-    PROTOBUF_C_LABEL_NONE,
-    PROTOBUF_C_TYPE_MESSAGE,
-    offsetof(Rpc, payload_case),
-    offsetof(Rpc, req_wifi_scan_get_ap_num),
-    &rpc__req__wifi_scan_get_ap_num__descriptor,
-    NULL,
-    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
-    0,NULL,NULL    /* reserved1,reserved2, etc */
-  },
-  {
-    "req_wifi_scan_get_ap_records",
-    289,
-    PROTOBUF_C_LABEL_NONE,
-    PROTOBUF_C_TYPE_MESSAGE,
-    offsetof(Rpc, payload_case),
-    offsetof(Rpc, req_wifi_scan_get_ap_records),
-    &rpc__req__wifi_scan_get_ap_records__descriptor,
-    NULL,
-    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
-    0,NULL,NULL    /* reserved1,reserved2, etc */
-  },
-  {
-    "req_wifi_clear_ap_list",
-    290,
-    PROTOBUF_C_LABEL_NONE,
-    PROTOBUF_C_TYPE_MESSAGE,
-    offsetof(Rpc, payload_case),
-    offsetof(Rpc, req_wifi_clear_ap_list),
-    &rpc__req__wifi_clear_ap_list__descriptor,
-    NULL,
-    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
-    0,NULL,NULL    /* reserved1,reserved2, etc */
-  },
-  {
-    "req_wifi_restore",
-    291,
-    PROTOBUF_C_LABEL_NONE,
-    PROTOBUF_C_TYPE_MESSAGE,
-    offsetof(Rpc, payload_case),
-    offsetof(Rpc, req_wifi_restore),
-    &rpc__req__wifi_restore__descriptor,
-    NULL,
-    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
-    0,NULL,NULL    /* reserved1,reserved2, etc */
-  },
-  {
-    "req_wifi_clear_fast_connect",
-    292,
-    PROTOBUF_C_LABEL_NONE,
-    PROTOBUF_C_TYPE_MESSAGE,
-    offsetof(Rpc, payload_case),
-    offsetof(Rpc, req_wifi_clear_fast_connect),
-    &rpc__req__wifi_clear_fast_connect__descriptor,
-    NULL,
-    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
-    0,NULL,NULL    /* reserved1,reserved2, etc */
-  },
-  {
-    "req_wifi_deauth_sta",
-    293,
-    PROTOBUF_C_LABEL_NONE,
-    PROTOBUF_C_TYPE_MESSAGE,
-    offsetof(Rpc, payload_case),
-    offsetof(Rpc, req_wifi_deauth_sta),
-    &rpc__req__wifi_deauth_sta__descriptor,
-    NULL,
-    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
-    0,NULL,NULL    /* reserved1,reserved2, etc */
-  },
-  {
-    "req_wifi_sta_get_ap_info",
-    294,
-    PROTOBUF_C_LABEL_NONE,
-    PROTOBUF_C_TYPE_MESSAGE,
-    offsetof(Rpc, payload_case),
-    offsetof(Rpc, req_wifi_sta_get_ap_info),
-    &rpc__req__wifi_sta_get_ap_info__descriptor,
-    NULL,
-    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
-    0,NULL,NULL    /* reserved1,reserved2, etc */
-  },
-  {
     "resp_get_mac_address",
     513,
     PROTOBUF_C_LABEL_NONE,
@@ -14123,114 +14015,6 @@ static const ProtobufCFieldDescriptor rpc__field_descriptors[96] =
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
   {
-    "resp_wifi_scan_start",
-    542,
-    PROTOBUF_C_LABEL_NONE,
-    PROTOBUF_C_TYPE_MESSAGE,
-    offsetof(Rpc, payload_case),
-    offsetof(Rpc, resp_wifi_scan_start),
-    &rpc__resp__wifi_scan_start__descriptor,
-    NULL,
-    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
-    0,NULL,NULL    /* reserved1,reserved2, etc */
-  },
-  {
-    "resp_wifi_scan_stop",
-    543,
-    PROTOBUF_C_LABEL_NONE,
-    PROTOBUF_C_TYPE_MESSAGE,
-    offsetof(Rpc, payload_case),
-    offsetof(Rpc, resp_wifi_scan_stop),
-    &rpc__resp__wifi_scan_stop__descriptor,
-    NULL,
-    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
-    0,NULL,NULL    /* reserved1,reserved2, etc */
-  },
-  {
-    "resp_wifi_scan_get_ap_num",
-    544,
-    PROTOBUF_C_LABEL_NONE,
-    PROTOBUF_C_TYPE_MESSAGE,
-    offsetof(Rpc, payload_case),
-    offsetof(Rpc, resp_wifi_scan_get_ap_num),
-    &rpc__resp__wifi_scan_get_ap_num__descriptor,
-    NULL,
-    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
-    0,NULL,NULL    /* reserved1,reserved2, etc */
-  },
-  {
-    "resp_wifi_scan_get_ap_records",
-    545,
-    PROTOBUF_C_LABEL_NONE,
-    PROTOBUF_C_TYPE_MESSAGE,
-    offsetof(Rpc, payload_case),
-    offsetof(Rpc, resp_wifi_scan_get_ap_records),
-    &rpc__resp__wifi_scan_get_ap_records__descriptor,
-    NULL,
-    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
-    0,NULL,NULL    /* reserved1,reserved2, etc */
-  },
-  {
-    "resp_wifi_clear_ap_list",
-    546,
-    PROTOBUF_C_LABEL_NONE,
-    PROTOBUF_C_TYPE_MESSAGE,
-    offsetof(Rpc, payload_case),
-    offsetof(Rpc, resp_wifi_clear_ap_list),
-    &rpc__resp__wifi_clear_ap_list__descriptor,
-    NULL,
-    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
-    0,NULL,NULL    /* reserved1,reserved2, etc */
-  },
-  {
-    "resp_wifi_restore",
-    547,
-    PROTOBUF_C_LABEL_NONE,
-    PROTOBUF_C_TYPE_MESSAGE,
-    offsetof(Rpc, payload_case),
-    offsetof(Rpc, resp_wifi_restore),
-    &rpc__resp__wifi_restore__descriptor,
-    NULL,
-    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
-    0,NULL,NULL    /* reserved1,reserved2, etc */
-  },
-  {
-    "resp_wifi_clear_fast_connect",
-    548,
-    PROTOBUF_C_LABEL_NONE,
-    PROTOBUF_C_TYPE_MESSAGE,
-    offsetof(Rpc, payload_case),
-    offsetof(Rpc, resp_wifi_clear_fast_connect),
-    &rpc__resp__wifi_clear_fast_connect__descriptor,
-    NULL,
-    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
-    0,NULL,NULL    /* reserved1,reserved2, etc */
-  },
-  {
-    "resp_wifi_deauth_sta",
-    549,
-    PROTOBUF_C_LABEL_NONE,
-    PROTOBUF_C_TYPE_MESSAGE,
-    offsetof(Rpc, payload_case),
-    offsetof(Rpc, resp_wifi_deauth_sta),
-    &rpc__resp__wifi_deauth_sta__descriptor,
-    NULL,
-    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
-    0,NULL,NULL    /* reserved1,reserved2, etc */
-  },
-  {
-    "resp_wifi_sta_get_ap_info",
-    550,
-    PROTOBUF_C_LABEL_NONE,
-    PROTOBUF_C_TYPE_MESSAGE,
-    offsetof(Rpc, payload_case),
-    offsetof(Rpc, resp_wifi_sta_get_ap_info),
-    &rpc__resp__wifi_sta_get_ap_info__descriptor,
-    NULL,
-    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
-    0,NULL,NULL    /* reserved1,reserved2, etc */
-  },
-  {
     "event_esp_init",
     769,
     PROTOBUF_C_LABEL_NONE,
@@ -14293,42 +14077,6 @@ static const ProtobufCFieldDescriptor rpc__field_descriptors[96] =
   {
     "event_sta_scan_done",
     774,
-    PROTOBUF_C_LABEL_NONE,
-    PROTOBUF_C_TYPE_MESSAGE,
-    offsetof(Rpc, payload_case),
-    offsetof(Rpc, event_sta_scan_done),
-    &rpc__event__sta_scan_done__descriptor,
-    NULL,
-    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
-    0,NULL,NULL    /* reserved1,reserved2, etc */
-  },
-  {
-    "event_sta_connected",
-    775,
-    PROTOBUF_C_LABEL_NONE,
-    PROTOBUF_C_TYPE_MESSAGE,
-    offsetof(Rpc, payload_case),
-    offsetof(Rpc, event_sta_connected),
-    &rpc__event__sta_connected__descriptor,
-    NULL,
-    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
-    0,NULL,NULL    /* reserved1,reserved2, etc */
-  },
-  {
-    "event_sta_disconnected",
-    776,
-    PROTOBUF_C_LABEL_NONE,
-    PROTOBUF_C_TYPE_MESSAGE,
-    offsetof(Rpc, payload_case),
-    offsetof(Rpc, event_sta_disconnected),
-    &rpc__event__sta_disconnected__descriptor,
-    NULL,
-    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
-    0,NULL,NULL    /* reserved1,reserved2, etc */
-  },
-  {
-    "event_sta_scan_done",
-    775,
     PROTOBUF_C_LABEL_NONE,
     PROTOBUF_C_TYPE_MESSAGE,
     offsetof(Rpc, payload_case),
