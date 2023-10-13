@@ -866,6 +866,8 @@ static int32_t esp_spi_write(interface_handle_t *handle, interface_buffer_handle
 
 	header = (struct esp_payload_header *) tx_buf_handle.payload;
 
+	memset (header, 0, sizeof(struct esp_payload_header));
+
 	/* Initialize header */
 	header->if_type = buf_handle->if_type;
 	header->if_num = buf_handle->if_num;
