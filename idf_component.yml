@@ -1,4 +1,4 @@
-version: "0.0.5-dev.1"
+version: "0.0.5-dev.2"
 description: ESP-Hosted provides driver such that any host can re-use ESP chipset as Wi-Fi or Bluetooth co-processor.
 url: https://github.com/espressif/esp-hosted/tree/feature/esp_as_mcu_host
 dependencies:

@@ -316,6 +316,16 @@ esp_err_t esp_hosted_wifi_sta_get_rssi(int *rssi)
 	return rpc_wifi_sta_get_rssi(rssi);
 }
 
+esp_err_t esp_hosted_wifi_set_protocol(wifi_interface_t ifx, uint8_t protocol_bitmap)
+{
+    return rpc_wifi_set_protocol(ifx, protocol_bitmap);
+}
+
+esp_err_t esp_hosted_wifi_get_protocol(wifi_interface_t ifx, uint8_t *protocol_bitmap)
+{
+    return rpc_wifi_get_protocol(ifx, protocol_bitmap);
+}
+
 
 #ifdef __cplusplus
 }

@@ -89,6 +89,8 @@ esp_err_t esp_hosted_wifi_get_country(wifi_country_t *country);
 esp_err_t esp_hosted_wifi_ap_get_sta_list(wifi_sta_list_t *sta);
 esp_err_t esp_hosted_wifi_ap_get_sta_aid(const uint8_t mac[6], uint16_t *aid);
 esp_err_t esp_hosted_wifi_sta_get_rssi(int *rssi);
+esp_err_t esp_hosted_wifi_set_protocol(wifi_interface_t ifx, uint8_t protocol_bitmap);
+esp_err_t esp_hosted_wifi_get_protocol(wifi_interface_t ifx, uint8_t *protocol_bitmap);
 
 #ifdef __cplusplus
 }
