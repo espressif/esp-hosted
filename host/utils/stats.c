@@ -86,7 +86,7 @@ void raw_tp_timer_func(void * arg)
 #if USE_FLOATING_POINT
 	ESP_LOGI(TAG, "%lu-%lu sec Tx:%.2f Rx:%.2f kbps\n\r", raw_tp_timer_count, raw_tp_timer_count + TEST_RAW_TP__TIMEOUT, actual_bandwidth_tx/div, actual_bandwidth_rx/div);
 #else
-	ESP_LOGI(TAG, "%lu-%lu sec Tx:%llu Rx:%llu Kbps", raw_tp_timer_count, raw_tp_timer_count + TEST_RAW_TP__TIMEOUT, actual_bandwidth_tx/div, actual_bandwidth_rx/div);
+	ESP_LOGI(TAG, "%lu-%lu sec Tx:%lu Rx:%lu Kbps", raw_tp_timer_count, raw_tp_timer_count + TEST_RAW_TP__TIMEOUT, (unsigned long)actual_bandwidth_tx/div, (unsigned long)actual_bandwidth_rx/div);
 #endif
 	raw_tp_timer_count+=TEST_RAW_TP__TIMEOUT;
 	test_raw_tx_len = test_raw_rx_len = 0;

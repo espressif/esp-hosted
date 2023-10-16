@@ -70,7 +70,8 @@ esp_err_t esp_hosted_setup(void)
 esp_err_t esp_hosted_init(void(*esp_hosted_up_cb)(void))
 {
 	//create_esp_hosted_transport_up_sem();
-	ESP_LOGI(TAG, "ESP-Hosted init\n");
+	ESP_LOGI(TAG, "ESP-Hosted starting. Hosted_Tasks: prio:%u, stack: %u RPC_task_stack: %u",
+			DFLT_TASK_PRIO, DFLT_TASK_STACK_SIZE, RPC_TASK_STACK_SIZE);
 	ESP_ERROR_CHECK(transport_drv_init(transport_active_cb));
 	ESP_ERROR_CHECK(rpc_init());
 	rpc_register_event_callbacks();
