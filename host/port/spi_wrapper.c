@@ -21,6 +21,7 @@
 #include "os_wrapper.h"
 #include "transport_drv.h"
 #include "spi_wrapper.h"
+#include "driver/gpio.h"
 
 DEFINE_LOG_TAG(spi_wrapper);
 
@@ -39,9 +40,10 @@ void * hosted_spi_init(void)
 
 
     esp_err_t ret;
-	ESP_LOGI(TAG, "Transport: SPI, Mode: %u Freq: %uMHz\n GPIOs: MOSI: %u MISO: %u CLK: %u CS: %u HS: %u DR: %u",
-			SPI_MODE, SPI_INIT_CLK_MHZ, H_GPIO_MOSI_Pin, H_GPIO_MISO_Pin,
-			H_GPIO_SCLK_Pin, H_GPIO_CS_Pin, H_GPIO_HANDSHAKE_Pin, H_GPIO_DATA_READY_Pin);
+	ESP_LOGI(TAG, "Transport: SPI, Mode:%u Freq:%uMHz TxQ:%u RxQ:%u\n GPIOs: MOSI:%u MISO:%u CLK:%u CS:%u HS:%u DR:%u",
+			H_SPI_MODE, H_SPI_INIT_CLK_MHZ, H_SPI_TX_Q, H_SPI_RX_Q,
+			H_GPIO_MOSI_Pin, H_GPIO_MISO_Pin, H_GPIO_SCLK_Pin,
+			H_GPIO_CS_Pin, H_GPIO_HANDSHAKE_Pin, H_GPIO_DATA_READY_Pin);
 
     HOSTED_CREATE_HANDLE(spi_device_handle_t, spi_handle);
     assert(spi_handle);
@@ -61,9 +63,9 @@ void * hosted_spi_init(void)
         .command_bits=0,
         .address_bits=0,
         .dummy_bits=0,
-        .clock_speed_hz=MHZ_TO_HZ(SPI_INIT_CLK_MHZ),
+        .clock_speed_hz=MHZ_TO_HZ(H_SPI_INIT_CLK_MHZ),
         .duty_cycle_pos=128,        //50% duty cycle
-        .mode=SPI_MODE,
+        .mode=H_SPI_MODE,
         .spics_io_num=H_GPIO_CS_Pin,
         .cs_ena_posttrans=3,        //Keep the CS low 3 cycles after transaction, to stop slave from missing the last bit when CS has less propagation delay than CLK
         .queue_size=3
@@ -77,6 +79,8 @@ void * hosted_spi_init(void)
 
     //Assume the slave is ready for the first transmission: if the slave started up before us, we will not detect
     //positive edge on the handshake line.
+	gpio_set_drive_capability(H_GPIO_CS_Pin, GPIO_DRIVE_CAP_3);
+	gpio_set_drive_capability(H_GPIO_SCLK_Pin, GPIO_DRIVE_CAP_3);
     return spi_handle;
 }
 

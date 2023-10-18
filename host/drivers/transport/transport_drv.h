@@ -104,6 +104,7 @@ int process_init_event(uint8_t *evt_buf, uint16_t len);
 uint8_t is_transport_up(void);
 uint8_t is_transport_ready(void);
 
+
 #define H_BUFF_NO_ZEROCOPY 0
 #define H_BUFF_ZEROCOPY 1
 

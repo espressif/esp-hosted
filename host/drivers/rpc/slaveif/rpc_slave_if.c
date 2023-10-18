@@ -28,11 +28,13 @@ DEFINE_LOG_TAG(rpc_api);
 
 int rpc_slaveif_init(void)
 {
+	ESP_LOGD(TAG, "%s", __func__);
 	return rpc_core_init();
 }
 
 int rpc_slaveif_deinit(void)
 {
+	ESP_LOGD(TAG, "%s", __func__);
 	return rpc_core_deinit();
 }
 

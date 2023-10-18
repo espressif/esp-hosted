@@ -45,7 +45,7 @@ ESP_EVENT_DECLARE_BASE(WIFI_EVENT);
 #define spinlock_handle_t                            portMUX_TYPE
 #define gpio_port_handle_t                           (void*)
 
-
+#define FAST_RAM_ATTR                                IRAM_ATTR
 /* this is needed when there is no gpio port being used */
 #define H_GPIO_PORT_DEFAULT                          -1
 

@@ -55,8 +55,7 @@ int rpc_parse_rsp(Rpc *rpc_msg, ctrl_cmd_t *app_resp)
 	/* 2. update basic fields */
 	app_resp->msg_type = RPC_TYPE__Resp;
 	app_resp->msg_id = rpc_msg->msg_id;
-	ESP_LOGD(TAG, "-------->> Recvd Resp [0x%x] (for RPC_Req [0x%x])\n",
-			app_resp->msg_id, (app_resp->msg_id - RPC_ID__Resp_Base + RPC_ID__Req_Base));
+	ESP_LOGI(TAG, " --> RPC_Resp [0x%x]", app_resp->msg_id);
 
 	/* 3. parse Rpc into ctrl_cmd_t */
 	switch (rpc_msg->msg_id) {

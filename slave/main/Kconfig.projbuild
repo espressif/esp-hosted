@@ -180,10 +180,11 @@ menu "Example Configuration"
 					Host uses this pin to reset the slave ESP. To re-use ESP 'RST' or 'EN' GPIO, set value to -1
 		endmenu
 
-
 		config ESP_SPI_TX_Q_SIZE
 			int "ESP to Host SPI queue size"
 			default 10 if IDF_TARGET_ESP32
+			default 6 if IDF_TARGET_ESP32C2 && BT_ENABLED
+			default 10 if IDF_TARGET_ESP32C2
 			default 20
 			help
 				Very small tx queue will lower ESP -- SPI --> Host data rate
@@ -191,6 +192,8 @@ menu "Example Configuration"
 		config ESP_SPI_RX_Q_SIZE
 			int "Host to ESP SPI queue size"
 			default 10 if IDF_TARGET_ESP32
+			default 6 if IDF_TARGET_ESP32C2 && BT_ENABLED
+			default 7 if IDF_TARGET_ESP32C2
 			default 20
 			help
 				Very small RX queue will lower ESP <-- SPI -- Host data rate
@@ -300,10 +303,10 @@ menu "Example Configuration"
 			Default task priority of ESP-Hosted tasks
 
 	config ESP_CACHE_MALLOC
-		bool "Cache allocated memory like mempool - helps to reduce malloc calls"
+		bool "Enable Mempool"
 		default y
 		help
-			Cache allocated memory - reduces number of malloc calls
+			Mempool will help to alloc buffer without going to heap for every memory allocation or free
 
 	config ESP_OTA_WORKAROUND
 		bool "OTA workaround - Add sleeps while OTA write"

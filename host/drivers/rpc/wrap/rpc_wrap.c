@@ -76,11 +76,13 @@ typedef struct {
 
 int rpc_init(void)
 {
+	ESP_LOGD(TAG, "%s", __func__);
 	return rpc_slaveif_init();
 }
 
 int rpc_deinit(void)
 {
+	ESP_LOGD(TAG, "%s", __func__);
 	return rpc_slaveif_deinit();
 }
 

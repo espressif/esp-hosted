@@ -30,6 +30,9 @@ DEFINE_LOG_TAG(spi);
 void * spi_handle = NULL;
 semaphore_handle_t spi_trans_ready_sem;
 
+#define H_DEBUG_GPIO_PIN_Host_Tx_Port NULL
+#define H_DEBUG_GPIO_PIN_Host_Tx_Pin  9
+
 static void * spi_transaction_thread;
 /* TODO to move this in transport drv */
 extern transport_channel_t *chan_arr[ESP_MAX_IF];
@@ -47,6 +50,7 @@ static void * spi_rx_thread;
 static queue_handle_t from_slave_queue = NULL;
 /* callback of event handler */
 static void (*spi_drv_evt_handler_fp) (uint8_t) = NULL;
+
 
 /** function declaration **/
 /** Exported functions **/
@@ -82,7 +86,7 @@ static inline void spi_buffer_free(void *buf)
 /*
 This ISR is called when the handshake or data_ready line goes high.
 */
-static void IRAM_ATTR gpio_hs_isr_handler(void* arg)
+static void FAST_RAM_ATTR gpio_hs_isr_handler(void* arg)
 {
 #if 0
 	//Sometimes due to interference or ringing or something, we get two irqs after eachother. This is solved by
@@ -102,7 +106,7 @@ static void IRAM_ATTR gpio_hs_isr_handler(void* arg)
 /*
 This ISR is called when the handshake or data_ready line goes high.
 */
-static void IRAM_ATTR gpio_dr_isr_handler(void* arg)
+static void FAST_RAM_ATTR gpio_dr_isr_handler(void* arg)
 {
 	g_h.funcs->_h_post_semaphore_from_isr(spi_trans_ready_sem);
 	ESP_EARLY_LOGV(TAG, "%s", __func__);
@@ -138,7 +142,7 @@ void transport_init_internal(void(*transport_evt_handler_fp)(uint8_t))
 	spi_mempool_create();
 
 	/* Creates & Give sem for next spi trans */
-	spi_trans_ready_sem = g_h.funcs->_h_create_semaphore(100);
+	spi_trans_ready_sem = g_h.funcs->_h_create_semaphore(1);
 	assert(spi_trans_ready_sem);
 
 	g_h.funcs->_h_config_gpio_as_interrupt(H_GPIO_HANDSHAKE_Port, H_GPIO_HANDSHAKE_Pin,
@@ -152,6 +156,9 @@ void transport_init_internal(void(*transport_evt_handler_fp)(uint8_t))
 		ESP_LOGE(TAG, "could not create spi handle, exiting\n");
 		assert(spi_handle);
 	}
+
+	if (H_DEBUG_GPIO_PIN_Host_Tx_Pin != -1)
+		g_h.funcs->_h_config_gpio(H_DEBUG_GPIO_PIN_Host_Tx_Port, H_DEBUG_GPIO_PIN_Host_Tx_Pin, H_GPIO_MODE_DEF_OUTPUT);
 
 	/* Task - SPI transaction (full duplex) */
 	spi_transaction_thread = g_h.funcs->_h_thread_create("spi_trans", DFLT_TASK_PRIO,
@@ -272,12 +279,14 @@ static int check_and_execute_spi_transaction(void)
 	uint8_t is_valid_tx_buf = 0;
 	void (*tx_buff_free_func)(void* ptr) = NULL;
 	struct esp_payload_header *h = NULL;
+	static uint8_t schedule_dummy_tx = 0;
 
 	uint32_t ret = 0;
 	struct hosted_transport_context_t spi_trans = {0};
 	gpio_pin_state_t gpio_handshake = H_GPIO_LOW;
 	gpio_pin_state_t gpio_rx_data_ready = H_GPIO_LOW;
 
+	g_h.funcs->_h_lock_mutex(spi_bus_lock, portMAX_DELAY);
 
 	/* handshake line SET -> slave ready for next transaction */
 	gpio_handshake = g_h.funcs->_h_read_gpio(H_GPIO_HANDSHAKE_Port,
@@ -293,7 +302,7 @@ static int check_and_execute_spi_transaction(void)
 		txbuff = get_next_tx_buffer(&is_valid_tx_buf, &tx_buff_free_func);
 
 		if ( (gpio_rx_data_ready == H_GPIO_HIGH) ||
-				(is_valid_tx_buf) ) {
+				(is_valid_tx_buf) || schedule_dummy_tx ) {
 
 			if (!txbuff) {
 				/* Even though, there is nothing to send,
@@ -308,7 +317,9 @@ static int check_and_execute_spi_transaction(void)
 				h_stats_g.spi_mem_stats.tx_dummy_alloc++;
 #endif
 				tx_buff_free_func = spi_buffer_free;
+				schedule_dummy_tx = 0;
 			} else {
+				schedule_dummy_tx = 1;
 				ESP_HEXLOGV("h_spi_tx", txbuff, 16);
 			}
 
@@ -336,9 +347,7 @@ static int check_and_execute_spi_transaction(void)
 			 * a. A valid tx buffer to be transmitted towards slave
 			 * b. Slave wants to send something (Rx for host)
 			 */
-			g_h.funcs->_h_lock_mutex(spi_bus_lock, portMAX_DELAY);
 			ret = g_h.funcs->_h_do_bus_transfer(&spi_trans);
-			g_h.funcs->_h_unlock_mutex(spi_bus_lock);
 
 			if (!ret)
 				process_spi_rx_buf(spi_trans.rx_buf);
@@ -354,6 +363,10 @@ static int check_and_execute_spi_transaction(void)
 #endif
 		}
 	}
+	if (schedule_dummy_tx)
+		g_h.funcs->_h_post_semaphore(spi_trans_ready_sem);
+
+	g_h.funcs->_h_unlock_mutex(spi_bus_lock);
 
 	return ret;
 }
@@ -406,6 +419,8 @@ int esp_hosted_tx(uint8_t iface_type, uint8_t iface_num,
 		pkt_stats.sta_tx_in++;
 #endif
 
+	//if (H_DEBUG_GPIO_PIN_Host_Tx_Pin != -1)
+		//g_h.funcs->_h_write_gpio(H_DEBUG_GPIO_PIN_Host_Tx_Port, H_DEBUG_GPIO_PIN_Host_Tx_Pin, H_GPIO_HIGH);
 	g_h.funcs->_h_post_semaphore(spi_trans_ready_sem);
 
 	return STM_OK;
@@ -436,8 +451,15 @@ static void spi_transaction_task(void const* pvParameters)
 		 * on Either Data ready and Handshake pin
 		 */
 
-		if (!g_h.funcs->_h_get_semaphore(spi_trans_ready_sem, portMAX_DELAY)) //Wait until slave is ready
+		if (!g_h.funcs->_h_get_semaphore(spi_trans_ready_sem, portMAX_DELAY)) {
+			if (H_DEBUG_GPIO_PIN_Host_Tx_Pin != -1)
+				g_h.funcs->_h_write_gpio(H_DEBUG_GPIO_PIN_Host_Tx_Port, H_DEBUG_GPIO_PIN_Host_Tx_Pin, H_GPIO_LOW);
+
 			check_and_execute_spi_transaction();
+
+			if (H_DEBUG_GPIO_PIN_Host_Tx_Pin != -1)
+				g_h.funcs->_h_write_gpio(H_DEBUG_GPIO_PIN_Host_Tx_Port, H_DEBUG_GPIO_PIN_Host_Tx_Pin, H_GPIO_HIGH);
+		}
 	}
 }
 

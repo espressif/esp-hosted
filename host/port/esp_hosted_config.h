@@ -36,8 +36,11 @@ so feel free to change these if needed.
 #define H_GPIO_CS_Port                               NULL
 #define H_GPIO_CS_Pin                                CONFIG_ESP_SPI_GPIO_CS
 
-#define SPI_MODE                                     CONFIG_ESP_SPI_MODE
-#define SPI_INIT_CLK_MHZ                             CONFIG_ESP_SPI_CLK_FREQ
+#define H_SPI_TX_Q                                   CONFIG_ESP_SPI_TX_Q_SIZE
+#define H_SPI_RX_Q                                   CONFIG_ESP_SPI_RX_Q_SIZE
+
+#define H_SPI_MODE                                   CONFIG_ESP_SPI_MODE
+#define H_SPI_INIT_CLK_MHZ                           CONFIG_ESP_SPI_CLK_FREQ
 
 /*  -------------------------- SPI Master Config end ------------------------  */
 #endif

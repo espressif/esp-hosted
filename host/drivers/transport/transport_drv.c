@@ -109,7 +109,7 @@ esp_err_t transport_drv_reconfigure(void)
 	int retry = 0;
 
 	if (!is_transport_up()) {
-	reset_slave();
+		reset_slave();
 		transport_state = TRANSPORT_RESET;
 
 		while (!is_transport_up()) {
@@ -121,12 +121,12 @@ esp_err_t transport_drv_reconfigure(void)
 				}
 			} else {
 				ESP_LOGE(TAG, "Failed to get ESP_Hosted slave transport up");
-		return ESP_FAIL;
-	}
-			g_h.funcs->_h_msleep(500);
+				return ESP_FAIL;
+			}
+			g_h.funcs->_h_sleep(1);
 		}
 	}
-    return ESP_OK;
+	return ESP_OK;
 }
 
 esp_err_t transport_drv_remove_channel(transport_channel_t *channel)
@@ -344,6 +344,74 @@ static void process_event(uint8_t *evt_buf, uint16_t len)
 	}
 }
 
+static esp_err_t get_chip_str_from_id(int chip_id, char* chip_str)
+{
+	int ret = ESP_OK;
+	assert(chip_str);
+
+	switch(chip_id) {
+	case ESP_PRIV_FIRMWARE_CHIP_ESP32:
+		strcpy(chip_str, "esp32");
+		break;
+	case ESP_PRIV_FIRMWARE_CHIP_ESP32C2:
+		strcpy(chip_str, "esp32c2");
+		break;
+	case ESP_PRIV_FIRMWARE_CHIP_ESP32C3:
+		strcpy(chip_str, "esp32c3");
+		break;
+	case ESP_PRIV_FIRMWARE_CHIP_ESP32C6:
+		strcpy(chip_str, "esp32c6");
+		break;
+	case ESP_PRIV_FIRMWARE_CHIP_ESP32S2:
+		strcpy(chip_str, "esp32s2");
+		break;
+	case ESP_PRIV_FIRMWARE_CHIP_ESP32S3:
+		strcpy(chip_str, "esp32s3");
+		break;
+	default:
+		ESP_LOGW(TAG, "Unsupported chip id: %u", chip_id);
+		strcpy(chip_str, "unsupported");
+		ret = ESP_FAIL;
+		break;
+	}
+	return ret;
+}
+
+static void verify_host_config_for_slave(uint8_t chip_type)
+{
+	uint8_t exp_chip_id = 0xff;
+
+
+#if CONFIG_SLAVE_CHIPSET_ESP32
+	exp_chip_id = ESP_PRIV_FIRMWARE_CHIP_ESP32;
+#elif CONFIG_SLAVE_CHIPSET_ESP32C2
+	exp_chip_id = ESP_PRIV_FIRMWARE_CHIP_ESP32C2;
+#elif CONFIG_SLAVE_CHIPSET_ESP32C3
+	exp_chip_id = ESP_PRIV_FIRMWARE_CHIP_ESP32C3;
+#elif CONFIG_SLAVE_CHIPSET_ESP32C6
+	exp_chip_id = ESP_PRIV_FIRMWARE_CHIP_ESP32C6;
+#elif CONFIG_SLAVE_CHIPSET_ESP32S2
+	exp_chip_id = ESP_PRIV_FIRMWARE_CHIP_ESP32S2;
+#elif CONFIG_SLAVE_CHIPSET_ESP32S3
+	exp_chip_id = ESP_PRIV_FIRMWARE_CHIP_ESP32S3;
+#else
+	ESP_LOGW(TAG, "Incorrect host config for ESP slave chipset[%x]", chip_type);
+	assert(0!=0);
+#endif
+	if (chip_type!=exp_chip_id) {
+		char slave_str[20], exp_str[20];
+
+		memset(slave_str, '\0', 20);
+		memset(exp_str, '\0', 20);
+
+		get_chip_str_from_id(chip_type, slave_str);
+		get_chip_str_from_id(exp_chip_id, exp_str);
+		ESP_LOGE(TAG, "Identified slave [%s] != Expected [%s], Abort..", slave_str, exp_str);
+		sleep(10);
+		assert(0!=0);
+	}
+}
+
 int process_init_event(uint8_t *evt_buf, uint16_t len)
 {
 	uint8_t len_left = len, tag_len;
@@ -367,6 +435,7 @@ int process_init_event(uint8_t *evt_buf, uint16_t len)
 		} else if (*pos == ESP_PRIV_FIRMWARE_CHIP_ID) {
 			ESP_LOGI(TAG, "EVENT: %2x", *pos);
 			chip_type = *(pos+2);
+			verify_host_config_for_slave(chip_type);
 		} else if (*pos == ESP_PRIV_TEST_RAW_TP) {
 			ESP_LOGI(TAG, "EVENT: %2x", *pos);
 			ESP_LOGD(TAG, "priv test raw tp\n\r");

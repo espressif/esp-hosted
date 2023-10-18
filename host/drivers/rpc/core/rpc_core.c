@@ -214,8 +214,7 @@ static int process_rpc_tx_msg(ctrl_cmd_t *app_req)
 	rpc__init(&req);
 
 	req.msg_id = app_req->msg_id;
-	ESP_LOGD(TAG, "<<======== Sending RPC_Req[0x%x], expect Rsp[0x%x]\n",
-			app_req->msg_id, (app_req->msg_id - RPC_ID__Req_Base + RPC_ID__Resp_Base));
+	ESP_LOGI(TAG, "<-- RPC_Req  [0x%x]", app_req->msg_id);
 	/* payload case is exact match to msg id in esp_hosted_config.pb-c.h */
 	req.payload_case = (Rpc__PayloadCase) app_req->msg_id;
 

@@ -302,7 +302,6 @@ int hosted_queue_item(void * queue_handle, void *item, int timeout)
 	}
 
 	q_id = (queue_handle_t *)queue_handle;
-	//return osSemaphoreRelease(*q_id);
 	item_added_in_back = xQueueSendToBack(*q_id, item, timeout);
 	if (pdTRUE == item_added_in_back)
 		return RET_OK;
@@ -313,7 +312,6 @@ int hosted_queue_item(void * queue_handle, void *item, int timeout)
 void * hosted_create_queue(uint32_t qnum_elem, uint32_t qitem_size)
 {
 	queue_handle_t *q_id = NULL;
-	//osSemaphoreDef(sem_template_ctrl);
 
 	q_id = (queue_handle_t*)hosted_malloc(
 			sizeof(queue_handle_t));
@@ -321,8 +319,6 @@ void * hosted_create_queue(uint32_t qnum_elem, uint32_t qitem_size)
 		ESP_LOGE(TAG, "Q allocation failed\n");
 		return NULL;
 	}
-
-	//*q_id = osSemaphoreCreate(osSemaphore(sem_template_ctrl) , 1);
 
 	*q_id = xQueueCreate(qnum_elem, qitem_size);
 	if (!*q_id) {
@@ -353,23 +349,30 @@ int hosted_dequeue_item(void * queue_handle, void *item, int timeout)
 
 	if (!timeout) {
 		/* non blocking */
-		//return osSemaphoreWait(*q_id, 0);
 		item_retrieved = xQueueReceive(*q_id, item, 0);
 	} else if (timeout<0) {
 		/* Blocking */
-		//return osSemaphoreWait(*q_id, osWaitForever);
 		item_retrieved = xQueueReceive(*q_id, item, HOSTED_BLOCK_MAX);
 	} else {
-		//return osSemaphoreWait(*q_id, SEC_TO_MILLISEC(timeout));
-		////TODO: uncomment below line
 		item_retrieved = xQueueReceive(*q_id, item, pdMS_TO_TICKS(SEC_TO_MILLISEC(timeout)));
-		//item_retrieved = xQueueReceive(*q_id, HOSTED_BLOCK_MAX);
 	}
 
 	if (item_retrieved == pdTRUE)
 		return 0;
 
 	return RET_FAIL;
+}
+
+int hosted_queue_msg_waiting(void * queue_handle)
+{
+	queue_handle_t *q_id = NULL;
+	if (!queue_handle) {
+		ESP_LOGE(TAG, "Uninitialized sem id 9\n");
+		return RET_INVALID;
+	}
+
+	q_id = (queue_handle_t *)queue_handle;
+	return uxQueueMessagesWaiting(*q_id);
 }
 
 int hosted_destroy_queue(void * queue_handle)
@@ -384,11 +387,7 @@ int hosted_destroy_queue(void * queue_handle)
 
 	q_id = (queue_handle_t *)queue_handle;
 
-	//ret = osSemaphoreDelete(*q_id);
-	//ret = osSemaphoreDelete(*q_id);
 	vQueueDelete(*q_id);
-	//if(ret)
-	//	ESP_LOGE(TAG, "Failed to destroy Q\n");
 
 	HOSTED_FREE(queue_handle);
 
@@ -407,8 +406,6 @@ int hosted_reset_queue(void * queue_handle)
 
 	q_id = (queue_handle_t *)queue_handle;
 
-	//ret = osSemaphoreDelete(*q_id);
-	//ret = osSemaphoreDelete(*q_id);
 	return xQueueReset(*q_id);
 }
 
@@ -425,7 +422,6 @@ int hosted_unlock_mutex(void * mutex_handle)
 	}
 
 	mut_id = (mutex_handle_t *)mutex_handle;
-	//return osSemaphoreRelease(*mut_id);
 
 	mut_unlocked = xSemaphoreGive(*mut_id);
 	if (mut_unlocked)
@@ -437,7 +433,6 @@ int hosted_unlock_mutex(void * mutex_handle)
 void * hosted_create_mutex(void)
 {
 	mutex_handle_t *mut_id = NULL;
-	//osSemaphoreDef(sem_template_ctrl);
 
 	mut_id = (mutex_handle_t*)hosted_malloc(
 			sizeof(mutex_handle_t));
@@ -447,7 +442,6 @@ void * hosted_create_mutex(void)
 		return NULL;
 	}
 
-	//*mut_id = osSemaphoreCreate(osSemaphore(sem_template_ctrl) , 1);
 	*mut_id = xSemaphoreCreateMutex();
 	if (!*mut_id) {
 		ESP_LOGE(TAG, "mut create failed\n");
@@ -476,7 +470,6 @@ int hosted_lock_mutex(void * mutex_handle, int timeout)
 		return RET_INVALID;
 	}
 
-	//return osSemaphoreWait(*mut_id, osWaitForever); //??
 	mut_locked = xSemaphoreTake(*mut_id, HOSTED_BLOCK_MAX);
 	if (mut_locked == pdTRUE)
 		return 0;
@@ -495,11 +488,7 @@ int hosted_destroy_mutex(void * mutex_handle)
 
 	mut_id = (mutex_handle_t *)mutex_handle;
 
-	//ret = osSemaphoreDelete(*mut_id);
-	//ret = osSemaphoreDelete(*mut_id);
 	vSemaphoreDelete(*mut_id);
-	//if(ret)
-	//	ESP_LOGE(TAG, "Failed to destroy sem\n");
 
 	HOSTED_FREE(mutex_handle);
 
@@ -518,7 +507,6 @@ int hosted_post_semaphore(void * semaphore_handle)
 	}
 
 	sem_id = (semaphore_handle_t *)semaphore_handle;
-	//return osSemaphoreRelease(*sem_id);
 	sem_posted = xSemaphoreGive(*sem_id);
 	if (pdTRUE == sem_posted)
 		return RET_OK;
@@ -526,7 +514,7 @@ int hosted_post_semaphore(void * semaphore_handle)
 	return RET_FAIL;
 }
 
-int hosted_post_semaphore_from_isr(void * semaphore_handle)
+FAST_RAM_ATTR int hosted_post_semaphore_from_isr(void * semaphore_handle)
 {
 	semaphore_handle_t *sem_id = NULL;
 	int sem_posted = 0;
@@ -539,7 +527,6 @@ int hosted_post_semaphore_from_isr(void * semaphore_handle)
 
 	sem_id = (semaphore_handle_t *)semaphore_handle;
 
-	//return osSemaphoreRelease(*sem_id);
     sem_posted = xSemaphoreGiveFromISR(*sem_id, &mustYield);
     if (mustYield) {
 #if defined(__cplusplus) && (__cplusplus >  201703L)
@@ -557,7 +544,6 @@ int hosted_post_semaphore_from_isr(void * semaphore_handle)
 void * hosted_create_semaphore(int maxCount)
 {
 	semaphore_handle_t *sem_id = NULL;
-	//osSemaphoreDef(sem_template_ctrl);
 
 	sem_id = (semaphore_handle_t*)hosted_malloc(
 			sizeof(semaphore_handle_t));
@@ -565,8 +551,6 @@ void * hosted_create_semaphore(int maxCount)
 		ESP_LOGE(TAG, "Sem allocation failed\n");
 		return NULL;
 	}
-
-	//*sem_id = osSemaphoreCreate(osSemaphore(sem_template_ctrl) , 1);
 
 	if (maxCount>1)
 		*sem_id = xSemaphoreCreateCounting(maxCount,0);
@@ -602,16 +586,11 @@ int hosted_get_semaphore(void * semaphore_handle, int timeout)
 
 	if (!timeout) {
 		/* non blocking */
-		//return osSemaphoreWait(*sem_id, 0);
 		sem_acquired = xSemaphoreTake(*sem_id, 0);
 	} else if (timeout<0) {
 		/* Blocking */
-		//return osSemaphoreWait(*sem_id, osWaitForever);
 		sem_acquired = xSemaphoreTake(*sem_id, HOSTED_BLOCK_MAX);
 	} else {
-		//return osSemaphoreWait(*sem_id, SEC_TO_MILLISEC(timeout));
-		////TODO: uncomment below line
-		//sem_acquired = xSemaphoreTake(*sem_id, pdMS_TO_TICKS(SEC_TO_MILLISEC(timeout)));
 		sem_acquired = xSemaphoreTake(*sem_id, pdMS_TO_TICKS(SEC_TO_MILLISEC(timeout)));
 	}
 
@@ -633,11 +612,7 @@ int hosted_destroy_semaphore(void * semaphore_handle)
 
 	sem_id = (semaphore_handle_t *)semaphore_handle;
 
-	//ret = osSemaphoreDelete(*sem_id);
-	//ret = osSemaphoreDelete(*sem_id);
 	vSemaphoreDelete(*sem_id);
-	//if(ret)
-	//	ESP_LOGE(TAG, "Failed to destroy sem\n");
 
 	HOSTED_FREE(semaphore_handle);
 
@@ -649,7 +624,6 @@ static void * hosted_create_spinlock(void)
 {
 	spinlock_handle_t spin_dummy = portMUX_INITIALIZER_UNLOCKED;
 	spinlock_handle_t *spin_id = NULL;
-	//osSemaphoreDef(sem_template_ctrl);
 
 	spin_id = (spinlock_handle_t*)hosted_malloc(
 			sizeof(spinlock_handle_t));
@@ -659,7 +633,6 @@ static void * hosted_create_spinlock(void)
 		return NULL;
 	}
 
-	//*spinmut_id = osSemaphoreCreate(osSemaphore(sem_template_ctrl) , 1);
 	*spin_id = spin_dummy;
 
 	//hosted_unlock_mutex(*mut_id);
@@ -853,6 +826,7 @@ hosted_osi_funcs_t g_hosted_osi_funcs = {
 	._h_blocking_delay           =  hosted_for_loop_delay          ,
 	._h_queue_item               =  hosted_queue_item              ,
 	._h_create_queue             =  hosted_create_queue            ,
+	._h_queue_msg_waiting        =  hosted_queue_msg_waiting       ,
 	._h_dequeue_item             =  hosted_dequeue_item            ,
 	._h_destroy_queue            =  hosted_destroy_queue           ,
 	._h_reset_queue              =  hosted_reset_queue             ,
