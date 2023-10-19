@@ -296,7 +296,7 @@ static void process_failed_responses(ctrl_cmd_t *app_msg)
 }
 
 
-int unregister_event_callbacks(void)
+int rpc_unregister_event_callbacks(void)
 {
 	int ret = SUCCESS;
 	int evt = 0;

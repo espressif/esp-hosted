@@ -28,6 +28,7 @@ menu "ESP-Hosted config"
 
 	choice ESP_HOSTED_SLAVE_CHIPSET_USED
 		bool "Slave chipset to be used"
+		default SLAVE_CHIPSET_ESP32C6
 
 		config SLAVE_CHIPSET_ESP32
 				depends on ESP_SPI_HOST_INTERFACE || ESP_SDIO_HOST_INTERFACE
@@ -67,30 +68,52 @@ menu "ESP-Hosted config"
 	menu "SPI Configuration"
 		depends on ESP_SPI_HOST_INTERFACE
 
-		choice ESP_SPI_PRIV_MODE
+		choice ESP_SPI_PRIV_MODE_ESP32
+			depends on SLAVE_CHIPSET_ESP32
 			bool "Host SPI mode"
-			default ESP_SPI_PRIV_MODE_2
+			default ESP_SPI_PRIV_MODE_2_ESP32
 
-			config ESP_SPI_PRIV_MODE_0
+			config ESP_SPI_PRIV_MODE_0_ESP32
 				bool "Host  SPI mode 0"
 
-			config ESP_SPI_PRIV_MODE_1
+			config ESP_SPI_PRIV_MODE_1_ESP32
 				bool "Host  SPI mode 1"
 
-			config ESP_SPI_PRIV_MODE_2
+			config ESP_SPI_PRIV_MODE_2_ESP32
 				bool "Host  SPI mode 2"
 
-			config ESP_SPI_PRIV_MODE_3
+			config ESP_SPI_PRIV_MODE_3_ESP32
+				bool "Host  SPI mode 3"
+		endchoice
+
+		choice ESP_SPI_PRIV_MODE_ESP32XX
+			depends on !SLAVE_CHIPSET_ESP32
+			bool "Host SPI mode"
+			default ESP_SPI_PRIV_MODE_3_ESP32XX
+
+			config ESP_SPI_PRIV_MODE_0_ESP32XX
+				bool "Host  SPI mode 0"
+
+			config ESP_SPI_PRIV_MODE_1_ESP32XX
+				bool "Host  SPI mode 1"
+
+			config ESP_SPI_PRIV_MODE_2_ESP32XX
+				bool "Host  SPI mode 2"
+
+			config ESP_SPI_PRIV_MODE_3_ESP32XX
 				bool "Host  SPI mode 3"
 		endchoice
 
 		config ESP_SPI_MODE
 			int
-			default 0 if ESP_SPI_PRIV_MODE_0
-			default 1 if ESP_SPI_PRIV_MODE_1
-			default 2 if ESP_SPI_PRIV_MODE_2
-			default 3 if ESP_SPI_PRIV_MODE_3
-			default 2
+			default 0 if ESP_SPI_PRIV_MODE_0_ESP32
+			default 1 if ESP_SPI_PRIV_MODE_1_ESP32
+			default 2 if ESP_SPI_PRIV_MODE_2_ESP32
+			default 3 if ESP_SPI_PRIV_MODE_3_ESP32
+			default 0 if ESP_SPI_PRIV_MODE_0_ESP32XX
+			default 1 if ESP_SPI_PRIV_MODE_1_ESP32XX
+			default 2 if ESP_SPI_PRIV_MODE_2_ESP32XX
+			default 3 if ESP_SPI_PRIV_MODE_3_ESP32XX
 
 		choice SPI_CONTROLLER
 			bool "Host SPI controller to use"

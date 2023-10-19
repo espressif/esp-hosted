@@ -382,7 +382,7 @@ static uint8_t * get_next_tx_buffer(uint32_t *len)
 	header = (struct esp_payload_header *) sendbuf;
 
 	/* Populate header to indicate it as a dummy buffer */
-	header->if_type = 0xF;
+	header->if_type = ESP_MAX_IF;
 	header->if_num = 0xF;
 	header->len = 0;
 

@@ -30,8 +30,12 @@ DEFINE_LOG_TAG(spi);
 void * spi_handle = NULL;
 semaphore_handle_t spi_trans_ready_sem;
 
+#if DEBUG_HOST_TX_SEMAPHORE
 #define H_DEBUG_GPIO_PIN_Host_Tx_Port NULL
-#define H_DEBUG_GPIO_PIN_Host_Tx_Pin  9
+#define H_DEBUG_GPIO_PIN_Host_Tx_Pin  -1
+#endif
+
+static uint8_t schedule_dummy_rx = 0;
 
 static void * spi_transaction_thread;
 /* TODO to move this in transport drv */
@@ -145,20 +149,11 @@ void transport_init_internal(void(*transport_evt_handler_fp)(uint8_t))
 	spi_trans_ready_sem = g_h.funcs->_h_create_semaphore(1);
 	assert(spi_trans_ready_sem);
 
-	g_h.funcs->_h_config_gpio_as_interrupt(H_GPIO_HANDSHAKE_Port, H_GPIO_HANDSHAKE_Pin,
-			H_GPIO_INTR_POSEDGE, gpio_hs_isr_handler);
-
-	g_h.funcs->_h_config_gpio_as_interrupt(H_GPIO_DATA_READY_Port, H_GPIO_DATA_READY_Pin,
-			H_GPIO_INTR_POSEDGE, gpio_dr_isr_handler);
-
 	spi_handle = g_h.funcs->_h_bus_init();
 	if (!spi_handle) {
 		ESP_LOGE(TAG, "could not create spi handle, exiting\n");
 		assert(spi_handle);
 	}
-
-	if (H_DEBUG_GPIO_PIN_Host_Tx_Pin != -1)
-		g_h.funcs->_h_config_gpio(H_DEBUG_GPIO_PIN_Host_Tx_Port, H_DEBUG_GPIO_PIN_Host_Tx_Pin, H_GPIO_MODE_DEF_OUTPUT);
 
 	/* Task - SPI transaction (full duplex) */
 	spi_transaction_thread = g_h.funcs->_h_thread_create("spi_trans", DFLT_TASK_PRIO,
@@ -199,6 +194,9 @@ static int process_spi_rx_buf(uint8_t * rxbuff)
 	/* Fetch length and offset from payload header */
 	len = le16toh(payload_header->len);
 	offset = le16toh(payload_header->offset);
+
+	if (ESP_MAX_IF == payload_header->if_type)
+		schedule_dummy_rx = 0;
 
 	if (!len) {
 		ret = -5;
@@ -302,7 +300,7 @@ static int check_and_execute_spi_transaction(void)
 		txbuff = get_next_tx_buffer(&is_valid_tx_buf, &tx_buff_free_func);
 
 		if ( (gpio_rx_data_ready == H_GPIO_HIGH) ||
-				(is_valid_tx_buf) || schedule_dummy_tx ) {
+				(is_valid_tx_buf) || schedule_dummy_tx || schedule_dummy_rx ) {
 
 			if (!txbuff) {
 				/* Even though, there is nothing to send,
@@ -363,7 +361,7 @@ static int check_and_execute_spi_transaction(void)
 #endif
 		}
 	}
-	if (schedule_dummy_tx)
+	if (schedule_dummy_tx || schedule_dummy_rx)
 		g_h.funcs->_h_post_semaphore(spi_trans_ready_sem);
 
 	g_h.funcs->_h_unlock_mutex(spi_bus_lock);
@@ -419,8 +417,10 @@ int esp_hosted_tx(uint8_t iface_type, uint8_t iface_num,
 		pkt_stats.sta_tx_in++;
 #endif
 
-	//if (H_DEBUG_GPIO_PIN_Host_Tx_Pin != -1)
-		//g_h.funcs->_h_write_gpio(H_DEBUG_GPIO_PIN_Host_Tx_Port, H_DEBUG_GPIO_PIN_Host_Tx_Pin, H_GPIO_HIGH);
+#if DEBUG_HOST_TX_SEMAPHORE
+	if (H_DEBUG_GPIO_PIN_Host_Tx_Pin != -1)
+		g_h.funcs->_h_write_gpio(H_DEBUG_GPIO_PIN_Host_Tx_Port, H_DEBUG_GPIO_PIN_Host_Tx_Pin, H_GPIO_HIGH);
+#endif
 	g_h.funcs->_h_post_semaphore(spi_trans_ready_sem);
 
 	return STM_OK;
@@ -437,7 +437,20 @@ int esp_hosted_tx(uint8_t iface_type, uint8_t iface_num,
   */
 static void spi_transaction_task(void const* pvParameters)
 {
-	ESP_LOGV(TAG, "Staring SPI task");
+
+	ESP_LOGD(TAG, "Staring SPI task");
+#if DEBUG_HOST_TX_SEMAPHORE
+	if (H_DEBUG_GPIO_PIN_Host_Tx_Pin != -1)
+		g_h.funcs->_h_config_gpio(H_DEBUG_GPIO_PIN_Host_Tx_Port, H_DEBUG_GPIO_PIN_Host_Tx_Pin, H_GPIO_MODE_DEF_OUTPUT);
+#endif
+
+	g_h.funcs->_h_config_gpio_as_interrupt(H_GPIO_HANDSHAKE_Port, H_GPIO_HANDSHAKE_Pin,
+			H_GPIO_INTR_POSEDGE, gpio_hs_isr_handler);
+
+	g_h.funcs->_h_config_gpio_as_interrupt(H_GPIO_DATA_READY_Port, H_GPIO_DATA_READY_Pin,
+			H_GPIO_INTR_POSEDGE, gpio_dr_isr_handler);
+	ESP_LOGD(TAG, "SPI GPIOs configured");
+
 	for (;;) {
 
 		if ((!is_transport_ready()) ||
@@ -452,13 +465,12 @@ static void spi_transaction_task(void const* pvParameters)
 		 */
 
 		if (!g_h.funcs->_h_get_semaphore(spi_trans_ready_sem, portMAX_DELAY)) {
+#if DEBUG_HOST_TX_SEMAPHORE
 			if (H_DEBUG_GPIO_PIN_Host_Tx_Pin != -1)
 				g_h.funcs->_h_write_gpio(H_DEBUG_GPIO_PIN_Host_Tx_Port, H_DEBUG_GPIO_PIN_Host_Tx_Pin, H_GPIO_LOW);
+#endif
 
 			check_and_execute_spi_transaction();
-
-			if (H_DEBUG_GPIO_PIN_Host_Tx_Pin != -1)
-				g_h.funcs->_h_write_gpio(H_DEBUG_GPIO_PIN_Host_Tx_Port, H_DEBUG_GPIO_PIN_Host_Tx_Pin, H_GPIO_HIGH);
 		}
 	}
 }
@@ -490,6 +502,7 @@ static void spi_process_rx_task(void const* pvParameters)
 
 		} else if((buf_handle->if_type == ESP_STA_IF) ||
 		          (buf_handle->if_type == ESP_AP_IF)) {
+			schedule_dummy_rx = 1;
 #if 0
 			if (chan_arr[buf_handle->if_type] && chan_arr[buf_handle->if_type]->rx) {
 				/* TODO : Need to abstract heap_caps_malloc */

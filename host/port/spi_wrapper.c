@@ -40,10 +40,11 @@ void * hosted_spi_init(void)
 
 
     esp_err_t ret;
-	ESP_LOGI(TAG, "Transport: SPI, Mode:%u Freq:%uMHz TxQ:%u RxQ:%u\n GPIOs: MOSI:%u MISO:%u CLK:%u CS:%u HS:%u DR:%u",
+	ESP_LOGI(TAG, "Transport: SPI, Mode:%u Freq:%uMHz TxQ:%u RxQ:%u\n GPIOs: MOSI:%u MISO:%u CLK:%u CS:%u HS:%u DR:%u SlaveReset:%u",
 			H_SPI_MODE, H_SPI_INIT_CLK_MHZ, H_SPI_TX_Q, H_SPI_RX_Q,
 			H_GPIO_MOSI_Pin, H_GPIO_MISO_Pin, H_GPIO_SCLK_Pin,
-			H_GPIO_CS_Pin, H_GPIO_HANDSHAKE_Pin, H_GPIO_DATA_READY_Pin);
+			H_GPIO_CS_Pin, H_GPIO_HANDSHAKE_Pin, H_GPIO_DATA_READY_Pin,
+			H_GPIO_PIN_RESET_Pin);
 
     HOSTED_CREATE_HANDLE(spi_device_handle_t, spi_handle);
     assert(spi_handle);

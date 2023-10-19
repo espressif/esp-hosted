@@ -108,6 +108,7 @@ esp_err_t transport_drv_reconfigure(void)
 {
 	int retry = 0;
 
+	ESP_LOGI(TAG, "Attempt connection with slave: retry[%u]",retry);
 	if (!is_transport_up()) {
 		reset_slave();
 		transport_state = TRANSPORT_RESET;
@@ -406,7 +407,7 @@ static void verify_host_config_for_slave(uint8_t chip_type)
 
 		get_chip_str_from_id(chip_type, slave_str);
 		get_chip_str_from_id(exp_chip_id, exp_str);
-		ESP_LOGE(TAG, "Identified slave [%s] != Expected [%s], Abort..", slave_str, exp_str);
+		ESP_LOGE(TAG, "Identified slave [%s] != Expected [%s]\n\t\trun 'idf.py menuconfig' at host to reselect the slave?\n\t\tAborting.. ", slave_str, exp_str);
 		sleep(10);
 		assert(0!=0);
 	}

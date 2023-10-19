@@ -119,81 +119,9 @@ void *hosted_realloc(void *mem, size_t newsize)
 }
 
 
-static inline void nw_mempool_create()
-{
-    MEM_DUMP("nw_mempool_create");
-    nw_mp_g = mempool_create(MAX_TRANSPORT_BUFFER_SIZE);
-#if CONFIG_USE_MEMPOOL
-    assert(nw_mp_g);
-#endif
-}
-
-static inline void nw_mempool_destroy()
-{
-    mempool_destroy(nw_mp_g);
-}
-
-static inline void *nw_buffer_alloc(uint need_memset)
-{
-    return mempool_alloc(nw_mp_g, MAX_TRANSPORT_BUFFER_SIZE, need_memset);
-}
-
-static inline void nw_buffer_free(void *buf)
-{
-    mempool_free(nw_mp_g, buf);
-}
-
 void hosted_init_hook(void)
 {
 	/* This is hook to initialize port specific contexts, if any */
-	nw_mempool_create();
-}
-
-
-void* hosted_nw_malloc(size_t size)
-{
-	if (size > MAX_TRANSPORT_BUFFER_SIZE) {
-		ESP_LOGE(TAG, "nw_malloc not supported with requested size, please change from os_wrapper.c");
-	}
-	return nw_buffer_alloc(MEMSET_NOT_REQUIRED);
-}
-
-void* hosted_nw_calloc(size_t blk_no, size_t size)
-{
-	return nw_buffer_alloc(MEMSET_REQUIRED);
-}
-
-void hosted_nw_free(void* ptr)
-{
-	nw_buffer_free(ptr);
-}
-
-void *hosted_nw_realloc(void *mem, size_t newsize)
-{
-#if 0
-	void *p = NULL;
-	/* as nw is mempool alloc with fixed size
-	 * realloc doesn't have much different
-	 * meaning than as malloc
-	 */
-
-	if (newsize == 0) {
-		hosted_nw_free(mem);
-		return NULL;
-	}
-
-	p = hosted_nw_malloc(newsize);
-	if (p) {
-		/* zero the memory */
-		if (mem != NULL) {
-			hosted_memcpy(p, mem, newsize);
-			hosted_nw_free(mem);
-		}
-	}
-
-	return nw_buffer_alloc(MEMSET_NOT_REQUIRED);
-#endif
-	return mem;
 }
 
 
@@ -815,10 +743,6 @@ hosted_osi_funcs_t g_hosted_osi_funcs = {
 	._h_calloc                   =  hosted_calloc                  ,
 	._h_free                     =  hosted_free                    ,
 	._h_realloc                  =  hosted_realloc                 ,
-	._h_nw_malloc                =  hosted_nw_malloc               ,
-	._h_nw_calloc                =  hosted_nw_calloc               ,
-	._h_nw_free                  =  hosted_nw_free                 ,
-	._h_nw_realloc               =  hosted_nw_realloc              ,
 	._h_thread_create            =  hosted_thread_create           ,
 	._h_thread_cancel            =  hosted_thread_cancel           ,
 	._h_msleep                   =  hosted_msleep                  ,

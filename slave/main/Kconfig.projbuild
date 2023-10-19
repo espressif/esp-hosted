@@ -28,7 +28,8 @@ menu "Example Configuration"
 
 		choice ESP_SPI_PRIV_MODE
 			bool "Slave SPI mode"
-			default ESP_SPI_PRIV_MODE_2
+			default ESP_SPI_PRIV_MODE_2 if IDF_TARGET_ESP32
+			default ESP_SPI_PRIV_MODE_3
 
 			config ESP_SPI_PRIV_MODE_0
 				bool "Slave SPI mode 0"
@@ -49,7 +50,7 @@ menu "Example Configuration"
 			default 1 if ESP_SPI_PRIV_MODE_1
 			default 2 if ESP_SPI_PRIV_MODE_2
 			default 3 if ESP_SPI_PRIV_MODE_3
-			default 2
+			default 3
 
 
 		choice SPI_CONTROLLER
