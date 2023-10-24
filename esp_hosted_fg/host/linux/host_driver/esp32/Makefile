@@ -1,6 +1,5 @@
 CONFIG_SUPPORT_ESP_SERIAL = y
 CONFIG_TEST_RAW_TP := n
-CONFIG_ENABLE_MONITOR_PROCESS = n
 # In case of SDIO as transport, one of slave chipset used,
 # CONFIG_TARGET_ESP32  OR
 # CONFIG_TARGET_ESP32C6
@@ -33,10 +32,6 @@ endif
 
 ifeq ($(CONFIG_TEST_RAW_TP), y)
 	EXTRA_CFLAGS += -DCONFIG_TEST_RAW_TP
-endif
-
-ifeq ($(CONFIG_ENABLE_MONITOR_PROCESS), y)
-	EXTRA_CFLAGS += -DCONFIG_ENABLE_MONITOR_PROCESS
 endif
 
 EXTRA_CFLAGS += -I$(PWD)/../../../../common/include -I$(PWD)

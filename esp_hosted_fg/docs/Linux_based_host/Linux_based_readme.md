@@ -139,6 +139,12 @@ Once everything is setup and host software and ESP firmware are loaded
 
 # 2. ESP-Hosted Comprehensive Guide
 
+Setup is required on two machines.
+**First** to setup `ESP-Hosted Linux Host driver building` on Raspberry Pi
+**Second** to create a development environment set-up on your native machine so that you can build the ESP-Hosted firmware and flash it on the ESP chipset.
+The native machine here refers to your Windows/Linux/Mac desktop/laptop.
+Although, if you prefer to use the released binaries for ESP firmware, second part of native machine setup can be skipped.
+
 ### 2.1 Linux Host: Development Environment Setup
 * This section list downs environment setup and tools needed to make ESP-Hosted solution work with Linux based host.
 * If you are using Raspberry-Pi as a Linux host, both [section 2.1.1](#211-raspberry-pi-specific-setup) and [section 2.1.2](#212-additional-setup) are applicable.
@@ -148,14 +154,14 @@ Once everything is setup and host software and ESP firmware are loaded
 This section identifies Raspberry-Pi specific setup requirements.
 
 * Linux Kernel Setup
-	* We recommend full version Raspbian install on Raspberry-Pi to ensure easy driver compilation.
+	* We recommend full version Raspberry Pi OS install on Raspberry-Pi to ensure easy driver compilation. 64bit OS is preferred, although 32bit OS is also supported.
 	* Please make sure to use kernel version `v4.19` and above. Prior kernel versions may work, but are not tested.
 	* Kernel headers are required for driver compilation. Please install them as:
 	```sh
 	$ sudo apt update
 	$ sudo apt install raspberrypi-kernel-headers
 	```
-	* Verify that kernel headers are installed properly by running following command. Failure of this command indicates that kernel headers are not installed correctly. In such case, follow https://github.com/notro/rpi-source/wiki and run `rpi-source` to get current kernel headers. Alternatively upgrade/downgrade kernel and reinstall kernel headers.
+	* Verify that kernel headers are installed properly by running following command. Failure of this command indicates that kernel headers are not installed correctly. In such case, follow https://github.com/RPi-Distro/rpi-source and run `rpi-source` to get current kernel headers. Alternatively upgrade/downgrade kernel and reinstall kernel headers.
 	```sh
 	$ ls /lib/modules/$(uname -r)/build
 	```
@@ -168,6 +174,11 @@ This section identifies Raspberry-Pi specific setup requirements.
 	* Bluetooth Stack and utilities:
 		```sh
 		$ sudo apt install pi-bluetooth
+		```
+    * For throughput testing
+		```sh
+		$ sudo apt install iperf #for iperf2
+		$ sudo apt install iperf3 #for iperf3
 		```
 
 #### 2.1.2 Additional Setup
@@ -192,8 +203,8 @@ This section identifies Raspberry-Pi specific setup requirements.
 	* We suggest latest stable bluez version to be used. Any other bluetooth stack instead of bluez also could be used.
 
 ### 2.2 ESP-IDF Setup
-
 - If you are going to use released firmware binaries, ESP-IDF setup is not required, please continue with `2.3 ESP-Hosted Code Repository` below.
+- Follow steps hereon on your **native machine** (your Windows/Linux/Mac desktop/laptop)
 - :warning: Following command is dangerous. It will revert all your local changes. Stash if need to keep them.
 - Install the ESP-IDF using script
 ```sh

@@ -41,6 +41,9 @@ dtoverlay=sdio,poll_once=off
 dtoverlay=disable-bt
 ```
 Please reboot Raspberry-Pi after changing this file.
+Please note, that the default Wi-Fi on your Raspberry Pi will be disabled on reboot. This is because the SDIO used in ESP-Hosted is going to use this SDIO port here on.
+If you are not using desktop variant of Raspberry Pi, It would be good to set up static IP SSH with ethernet cable .
+Also, it is recommended to download (any) software needed (like iperf etc) before rebooting, so that losing wlan0 is not issue
 
 ## 2. Load ESP-Hosted Solution
 ### 2.1 Host Software

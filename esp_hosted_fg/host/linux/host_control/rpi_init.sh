@@ -65,23 +65,27 @@ wlan_init()
         VAL_CONFIG_TEST_RAW_TP=y
     fi
 
-	if [ "$ESP_SLAVE" != "" ] ; then
-		CUSTOM_OPTS=${CUSTOM_OPTS}" ESP_SLAVE=\"$ESP_SLAVE"\"
-	fi
-	if [ "$CUSTOM_OPTS" != "" ] ; then
-		echo "Adding $CUSTOM_OPTS"
-	fi
+    if [ "$ESP_SLAVE" != "" ] ; then
+	    CUSTOM_OPTS=${CUSTOM_OPTS}" ESP_SLAVE=\"$ESP_SLAVE"\"
+    fi
+    if [ "$CUSTOM_OPTS" != "" ] ; then
+	    echo "Adding $CUSTOM_OPTS"
+    fi
 
     # For Linux other than Raspberry Pi, Please uncomment below 'make' line and provide:
     # <CROSS_COMPILE> -> <Toolchain-Path>/bin/arm-linux-gnueabihf-
     # <KERNEL>        -> Place where kernel is checked out and built. For Example, "/lib/modules/$(uname -r)/build"
     # <ARCH>          -> Architecture. for example, arm64
-	#make -j8 target=$IF_TYPE CROSS_COMPILE=<CROSS_COMPILE> KERNEL=<KERNEL> ARCH=<ARCH> CONFIG_TEST_RAW_TP="$VAL_CONFIG_TEST_RAW_TP" $CUSTOM_OPTS
 
-	# Also, Check detailed doc, esp_hosted_fg/docs/Linux_based_host/porting_guide.md for more details.
+    #make -j8 target=$IF_TYPE CROSS_COMPILE=<CROSS_COMPILE> KERNEL=<KERNEL> ARCH=<ARCH> CONFIG_TEST_RAW_TP="$VAL_CONFIG_TEST_RAW_TP" $CUSTOM_OPTS
 
-	# For 32bit Raspberry Pi devices, please change ARCH=arm in below line
-	make -j8 target=$IF_TYPE KERNEL="/lib/modules/$(uname -r)/build" ARCH=arm64 CONFIG_TEST_RAW_TP="$VAL_CONFIG_TEST_RAW_TP" $CUSTOM_OPTS
+    # Also, Check detailed doc, esp_hosted_fg/docs/Linux_based_host/porting_guide.md for more details.
+
+    # Populate your arch if not populated correctly.
+    arch_num_bits=$(getconf LONG_BIT)
+    if [ "$arch_num_bits" = "32" ] ; then arch_found="arm"; else arch_found="arm64"; fi
+
+    make -j8 target=$IF_TYPE KERNEL="/lib/modules/$(uname -r)/build" ARCH=$arch_found CONFIG_TEST_RAW_TP="$VAL_CONFIG_TEST_RAW_TP" $CUSTOM_OPTS
 
 
     if [ "$RESETPIN" = "" ] ; then

@@ -42,7 +42,7 @@ MODULE_AUTHOR("Amey Inamdar <amey.inamdar@espressif.com>");
 MODULE_AUTHOR("Mangesh Malusare <mangesh.malusare@espressif.com>");
 MODULE_AUTHOR("Yogesh Mantri <yogesh.mantri@espressif.com>");
 MODULE_DESCRIPTION("Host driver for ESP-Hosted solution");
-MODULE_VERSION("0.4");
+MODULE_VERSION("0.0.5");
 
 struct esp_adapter adapter;
 volatile u8 stop_data = 0;
@@ -732,6 +732,10 @@ int esp_remove_card(struct esp_adapter *adapter)
 
 static void deinit_adapter(void)
 {
+	if (adapter.if_context)
+		adapter.state = ESP_CONTEXT_DISABLED;
+
+	up(&rx_sem);
 	if (rx_thread) {
 		kthread_stop(rx_thread);
 		rx_thread = NULL;
@@ -771,13 +775,15 @@ static int esp_rx_thread(void *data)
 
 	while (!kthread_should_stop()) {
 
-		set_current_state(TASK_RUNNING);
-
 		if (down_interruptible(&rx_sem)) {
-			//printk(KERN_INFO "Failed to acquire rx_sem\n");
 			msleep(10);
 			continue;
-	}
+		}
+
+		if (adapter.state != ESP_CONTEXT_READY) {
+			msleep(100);
+			continue;
+		}
 
 		/* read inbound packet and forward it to network/serial interface */
 		esp_get_packets(&adapter);
@@ -791,7 +797,7 @@ static struct esp_adapter * init_adapter(void)
 {
 	memset(&adapter, 0, sizeof(adapter));
 
-	sema_init(&rx_sem, 10);
+	sema_init(&rx_sem, 0);
 	rx_thread = kthread_run(esp_rx_thread, NULL, "esp32_rx");
 	if (!rx_thread) {
 		printk (KERN_ERR "Failed to create esp32_rx thread\n");

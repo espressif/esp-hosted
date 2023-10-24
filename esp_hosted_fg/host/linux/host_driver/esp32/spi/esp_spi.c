@@ -99,7 +99,6 @@ static irqreturn_t spi_data_ready_interrupt_handler(int irq, void * dev)
 static irqreturn_t spi_interrupt_handler(int irq, void * dev)
 {
 	up(&spi_sem);
-
 	return IRQ_HANDLED;
 }
 
@@ -540,21 +539,19 @@ static int esp_spi_thread(void *data)
 
 	while (!kthread_should_stop()) {
 
-		if (context->state != ESP_CONTEXT_READY) {
-			msleep(10);
-			continue;
-		}
-
-		set_current_state(TASK_RUNNING);
-
 		if (down_interruptible(&spi_sem)) {
 			//printk(KERN_INFO "Failed to acquire spi_sem\n");
 			msleep(10);
 			continue;
 		}
-			esp_spi_transaction();
+
+		if (context->adapter->state != ESP_CONTEXT_READY) {
+			msleep(10);
+			continue;
+		}
+
+		esp_spi_transaction();
 	}
-	set_current_state(TASK_RUNNING);
 	printk(KERN_INFO "esp spi thread cleared\n");
 	do_exit(0);
 	return 0;
@@ -565,7 +562,7 @@ static int spi_init(void)
 	int status = 0;
 	uint8_t prio_q_idx = 0;
 
-	sema_init(&spi_sem, 10);
+	sema_init(&spi_sem, 0);
 
 	spi_thread = kthread_run(esp_spi_thread, spi_context.adapter, "esp32_spi");
 	if (!spi_thread) {
@@ -605,7 +602,7 @@ static int spi_init(void)
 		return status;
 	}
 
-	spi_context.state = ESP_CONTEXT_READY;
+	spi_context.adapter->state = ESP_CONTEXT_READY;
 
 	msleep(200);
 
@@ -616,7 +613,7 @@ static void spi_exit(void)
 {
 	uint8_t prio_q_idx = 0;
 
-	spi_context.state = ESP_CONTEXT_INIT;
+	spi_context.adapter->state = ESP_CONTEXT_DISABLED;
 	disable_irq(SPI_IRQ);
 	disable_irq(SPI_DATA_READY_IRQ);
 	close_data_path();
@@ -627,6 +624,7 @@ static void spi_exit(void)
 		skb_queue_purge(&spi_context.rx_q[prio_q_idx]);
 	}
 
+	up(&spi_sem);
 	if (spi_thread) {
 		kthread_stop(spi_thread);
 		spi_thread = NULL;
