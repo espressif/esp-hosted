@@ -262,7 +262,8 @@ void esp_serial_cleanup(void)
 
 	for (i = 0; serial_init_done && i < ESP_SERIAL_MINOR_MAX; i++) {
 		if (!devs[i].cdev.ops)
-		cdev_del(&devs[i].cdev);
+			cdev_del(&devs[i].cdev);
+
 		esp_rb_cleanup(&devs[i].rb);
 		mutex_destroy(&devs[i].lock);
 	}

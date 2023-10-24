@@ -61,9 +61,6 @@ struct esp_sdio_context sdio_context;
 static atomic_t tx_pending;
 static atomic_t queue_items[MAX_PRIORITY_QUEUES];
 
-#ifdef CONFIG_ENABLE_MONITOR_PROCESS
-struct task_struct *monitor_thread;
-#endif
 struct task_struct *tx_thread;
 
 static int init_context(struct esp_sdio_context *context);
@@ -121,7 +118,9 @@ static void esp_handle_isr(struct sdio_func *func)
 
 	context = sdio_get_drvdata(func);
 
-	if (!context) {
+	if (!(context) ||
+	    !(context->adapter) ||
+	    (context->adapter->state != ESP_CONTEXT_READY)) {
 		return;
 	}
 
@@ -279,11 +278,6 @@ static void esp_remove(struct sdio_func *func)
 
 #ifdef CONFIG_SUPPORT_ESP_SERIAL
 	esp_serial_cleanup();
-#endif
-
-#ifdef CONFIG_ENABLE_MONITOR_PROCESS
-	if (monitor_thread)
-		kthread_stop(monitor_thread);
 #endif
 
 	if (tx_thread)
@@ -451,6 +445,7 @@ static struct sk_buff * read_packet(struct esp_adapter *adapter)
 
 		if (ret) {
 			printk (KERN_ERR "%s: Failed to read data - %d [%u - %d]\n", __func__, ret, num_blocks, len_to_read);
+			context->adapter->state = ESP_CONTEXT_DISABLED;
 			dev_kfree_skb(skb);
 			RELEASE_SDIO_HOST(context);
 			return NULL;
@@ -563,7 +558,7 @@ static int tx_process(void *data)
 
 	while (!kthread_should_stop()) {
 
-		if (context->state != ESP_CONTEXT_READY) {
+		if (context->adapter->state != ESP_CONTEXT_READY) {
 			msleep(10);
 			continue;
 		}
@@ -574,7 +569,7 @@ static int tx_process(void *data)
 				continue;
 			}
 			atomic_dec(&queue_items[PRIO_Q_SERIAL]);
-		}else if (atomic_read(&queue_items[PRIO_Q_BT]) > 0) {
+		} else if (atomic_read(&queue_items[PRIO_Q_BT]) > 0) {
 			tx_skb = skb_dequeue(&(context->tx_q[PRIO_Q_BT]));
 			if (!tx_skb) {
 				continue;
@@ -689,66 +684,11 @@ static struct esp_sdio_context * init_sdio_func(struct sdio_func *func, int *sdi
 	/* Set private data */
 	sdio_set_drvdata(func, context);
 
-	context->state = ESP_CONTEXT_INIT;
-
 	sdio_release_host(func);
 
 	return context;
 }
 
-#ifdef CONFIG_ENABLE_MONITOR_PROCESS
-static int monitor_process(void *data)
-{
-	u32 val, intr, len_reg, rdata, old_len = 0;
-	struct esp_sdio_context *context = (struct esp_sdio_context *) data;
-	struct sk_buff *skb;
-
-	while (!kthread_should_stop()) {
-		msleep(5000);
-
-		val = intr = len_reg = rdata = 0;
-
-		esp_read_reg(context, ESP_SLAVE_PACKET_LEN_REG,
-				(u8 *) &val, sizeof(val), ACQUIRE_LOCK);
-
-		len_reg = val & ESP_SLAVE_LEN_MASK;
-
-		val = 0;
-		esp_read_reg(context, ESP_SLAVE_TOKEN_RDATA, (u8 *) &val,
-				sizeof(val), ACQUIRE_LOCK);
-
-		rdata = ((val >> 16) & ESP_TX_BUFFER_MASK);
-
-		esp_read_reg(context, ESP_SLAVE_INT_ST_REG,
-				(u8 *) &intr, sizeof(intr), ACQUIRE_LOCK);
-
-
-		if (len_reg > context->rx_byte_count) {
-			if (old_len && (context->rx_byte_count == old_len)) {
-				printk (KERN_DEBUG "Monitor thread ----> [%d - %d] [%d - %d] %d\n",
-						len_reg, context->rx_byte_count,
-						rdata, context->tx_buffer_count, intr);
-
-				skb = read_packet(context->adapter);
-
-				if (!skb)
-					continue;
-
-				if (skb->len)
-					printk (KERN_DEBUG "%s: Flushed %d bytes\n", __func__, skb->len);
-
-				/* drop the packet */
-				dev_kfree_skb(skb);
-			}
-		}
-
-		old_len = context->rx_byte_count;
-	}
-
-	do_exit(0);
-	return 0;
-}
-#endif
 
 static int esp_probe(struct sdio_func *func,
 				  const struct sdio_device_id *id)
@@ -798,14 +738,7 @@ static int esp_probe(struct sdio_func *func,
 	}
 
 
-	context->state = ESP_CONTEXT_READY;
-
-#ifdef CONFIG_ENABLE_MONITOR_PROCESS
-	monitor_thread = kthread_run(monitor_process, context, "Monitor process");
-
-	if (!monitor_thread)
-		printk (KERN_ERR "Failed to create monitor thread\n");
-#endif
+	context->adapter->state = ESP_CONTEXT_READY;
 
 	generate_slave_intr(context, BIT(ESP_OPEN_DATA_PATH));
 	return ret;

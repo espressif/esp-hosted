@@ -25,11 +25,6 @@
 #define SPI_DATA_READY_PIN      27
 #define SPI_DATA_READY_IRQ      gpio_to_irq(SPI_DATA_READY_PIN)
 #define SPI_BUF_SIZE            1600
-enum context_state {
-	ESP_CONTEXT_DISABLED = 0,
-	ESP_CONTEXT_INIT,
-	ESP_CONTEXT_READY
-};
 
 struct esp_spi_context {
 	struct esp_adapter          *adapter;

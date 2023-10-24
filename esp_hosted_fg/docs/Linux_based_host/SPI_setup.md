@@ -44,6 +44,7 @@ core_freq=250
 core_freq_min=250
 ```
 Please reboot Raspberry-Pi after changing this file.
+Also, please disable the default Wi-Fi network interface (e.g `wlan0`) using networking configuration on your Linux host so that we will be sure that Wi-Fi is only provided with ESP-Hosted. Every packet would be passed through the ESP-Hosted Wi-Fi interface and not the native onboard Wi-Fi.
 
 ## 2. Load ESP-Hosted Solution
 ### 2.1 Host Software

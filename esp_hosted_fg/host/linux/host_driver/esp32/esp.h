@@ -48,8 +48,15 @@ struct esp_adapter;
 #define SKB_DATA_ADDR_ALIGNMENT 4
 #define INTERFACE_HEADER_PADDING (SKB_DATA_ADDR_ALIGNMENT*3)
 
+enum context_state {
+	ESP_CONTEXT_DISABLED = 0,
+	ESP_CONTEXT_INIT,
+	ESP_CONTEXT_READY
+};
+
 struct esp_adapter {
 	u8                      if_type;
+	enum context_state      state;
 	u32                     capabilities;
 
 	/* Possible types:
