@@ -380,6 +380,12 @@ ESP32S3_SDIO_CLK_FREQ_KHZ_RANGE_MAX := 80000
 			Cache allocated memory - reduces number of malloc calls
 
 	menu "Debug Settings"
+		config ESP_HOSTED_ENABLE_HEXDUMP
+			bool "Hexdump logs enable"
+			default n
+				help
+					Enable Hex logs to print msg content
+
 		config ESP_RAW_THROUGHPUT_TRANSPORT
 			bool "RawTP: Transport level throughput debug test"
 			default n

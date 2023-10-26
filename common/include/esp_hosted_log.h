@@ -19,12 +19,12 @@
 #include "esp_log.h"
 
 
-#if ESP_HOSTED_ENABLE_HEXDUMP
+#if CONFIG_ESP_HOSTED_ENABLE_HEXDUMP
 
   #define ESP_PRIV_HEXDUMP(tag1, tag2, buff, len, curr_level)                   \
     if ( LOG_LOCAL_LEVEL >= curr_level) {                                       \
       ESP_LOGD(tag1, tag2);                                                     \
-      ESP_LOG_BUFFER_HEXDUMP(tag2, buff, len, level);                           \
+      ESP_LOG_BUFFER_HEXDUMP(tag2, buff, len, curr_level);                           \
     }
 
   #define ESP_HEXLOGE(tag2, buff, len) ESP_PRIV_HEXDUMP(TAG, tag2, buff, len, ESP_LOG_ERROR)
