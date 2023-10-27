@@ -169,6 +169,14 @@ enum hardware_type_e {
     }                                                             \
 } while(0);
 
+#define HOSTED_MALLOC(struct_name, buff, nbytes, gotosym) do {    \
+    buff = (struct_name *)g_h.funcs->_h_malloc(nbytes);           \
+    if (!buff) {                                                  \
+        printf("%s, Failed to allocate memory \n", __func__);     \
+        goto gotosym;                                             \
+    }                                                             \
+} while(0);
+
 /* Driver Handle */
 struct serial_drv_handle_t;
 

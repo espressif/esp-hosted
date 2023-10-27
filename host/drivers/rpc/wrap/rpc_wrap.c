@@ -46,8 +46,8 @@ uint8_t softap_started = 0;
 #define RPC_DEFAULT_REQ() {                              \
   .msg_type = RPC_TYPE__Req,                             \
   .rpc_rsp_cb = NULL,                                    \
-  .rsp_timeout_sec = DEFAULT_RPC_RSP_TIMEOUT, /*30 sec*/ \
-  .wait_prev_cmd_completion = WAIT_TIME_B2B_RPC_REQ,     \
+  .rsp_timeout_sec = DEFAULT_RPC_RSP_TIMEOUT, /* 5 sec*/ \
+  /*.wait_prev_cmd_completion = WAIT_TIME_B2B_RPC_REQ,*/     \
 }
 
 #define CLEANUP_RPC(msg) do {                            \

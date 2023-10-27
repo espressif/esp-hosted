@@ -169,12 +169,14 @@ esp_err_t wlan_ap_rx_callback(void *buffer, uint16_t len, void *eb)
 	}
 	ESP_HEXLOGV("AP_Get", buffer, len);
 
+#if 0
 	/* Check destination address against self address */
 	if (memcmp(ap_buf, ap_mac, BSSID_BYTES_SIZE)) {
 		/* Check for multicast or broadcast address */
 		if (!(ap_buf[0] & 1))
 			goto DONE;
 	}
+#endif
 
 	buf_handle.if_type = ESP_AP_IF;
 	buf_handle.if_num = 0;
