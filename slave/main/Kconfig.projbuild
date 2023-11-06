@@ -176,7 +176,7 @@ menu "Example Configuration"
 
 			config ESP_SPI_GPIO_RESET
 				int "Slave GPIO pin to reset itself"
-				default 5
+				default -1
 				help
 					Host uses this pin to reset the slave ESP. To re-use ESP 'RST' or 'EN' GPIO, set value to -1
 		endmenu

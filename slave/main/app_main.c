@@ -159,7 +159,7 @@ void esp_update_ap_mac(void)
 esp_err_t wlan_ap_rx_callback(void *buffer, uint16_t len, void *eb)
 {
 	interface_buffer_handle_t buf_handle = {0};
-	uint8_t * ap_buf = buffer;
+	//uint8_t * ap_buf = buffer;
 
 	if (!buffer || !eb || !datapath || ota_ongoing) {
 		if (eb) {
@@ -350,6 +350,10 @@ void process_rx_pkt(interface_buffer_handle_t *buf_handle)
 		if (ESP_OK == ret) {
 #if ESP_PKT_STATS
 			pkt_stats.sta_rx_out++;
+#endif
+		} else {
+#if ESP_PKT_STATS
+			pkt_stats.sta_rx_out_fail++;
 #endif
 		}
 	} else if (buf_handle->if_type == ESP_AP_IF && softap_started) {
@@ -624,26 +628,43 @@ void task_runtime_stats_task(void* pvParameters)
 
 static void IRAM_ATTR gpio_resetpin_isr_handler(void* arg)
 {
-    ESP_EARLY_LOGI(TAG, "Host triggered slave reset");
-	esp_restart();
+
+	if (CONFIG_ESP_GPIO_SLAVE_RESET == -1)
+		return;
+
+	static uint32_t lasthandshaketime_us;
+	uint32_t currtime_us = esp_timer_get_time();
+
+	if (gpio_get_level(CONFIG_ESP_GPIO_SLAVE_RESET) == 0) {
+		lasthandshaketime_us = currtime_us;
+	} else {
+		uint32_t diff = currtime_us - lasthandshaketime_us;
+		if (diff < 50000) {
+			return; //ignore everything <1ms after an earlier irq
+		} else {
+			ESP_EARLY_LOGI(TAG, "Host triggered slave reset");
+			esp_restart();
+		}
+	}
 }
 
 static void register_reset_pin(uint32_t gpio_num)
 {
 	if (gpio_num != -1) {
-	gpio_reset_pin(gpio_num);
+		ESP_LOGI(TAG, "Using GPIO [%lu] as slave reset pin", gpio_num);
+		gpio_reset_pin(gpio_num);
 
-    gpio_config_t slave_reset_pin_conf={
-        .intr_type=GPIO_INTR_DISABLE,
-        .mode=GPIO_MODE_INPUT,
-        .pull_up_en=1,
-        .pin_bit_mask=(1<<gpio_num)
-    };
+		gpio_config_t slave_reset_pin_conf={
+			.intr_type=GPIO_INTR_DISABLE,
+			.mode=GPIO_MODE_INPUT,
+			.pull_up_en=1,
+			.pin_bit_mask=(1<<gpio_num)
+		};
 
-    gpio_config(&slave_reset_pin_conf);
-    gpio_set_intr_type(gpio_num, GPIO_INTR_NEGEDGE);
-    gpio_install_isr_service(0);
-    gpio_isr_handler_add(gpio_num, gpio_resetpin_isr_handler, NULL);
+		gpio_config(&slave_reset_pin_conf);
+		gpio_set_intr_type(gpio_num, GPIO_INTR_ANYEDGE);
+		gpio_install_isr_service(0);
+		gpio_isr_handler_add(gpio_num, gpio_resetpin_isr_handler, NULL);
 	}
 }
 

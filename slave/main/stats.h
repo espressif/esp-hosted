@@ -111,6 +111,7 @@ struct pkt_stats_t {
 	uint32_t sta_tx_out;
 	uint32_t sta_rx_in;
 	uint32_t sta_rx_out;
+	uint32_t sta_rx_out_fail;
 };
 
 extern struct pkt_stats_t pkt_stats;
