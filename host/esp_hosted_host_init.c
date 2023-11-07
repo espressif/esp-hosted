@@ -4,7 +4,7 @@
 #include "esp_hosted_api.h"
 #include "esp_private/startup_internal.h"
 
-DEFINE_LOG_TAG(spi);
+DEFINE_LOG_TAG(host_init);
 
 //ESP_SYSTEM_INIT_FN(esp_hosted_host_init, BIT(0), 120)
 static void __attribute__((constructor)) esp_hosted_host_init(void)
