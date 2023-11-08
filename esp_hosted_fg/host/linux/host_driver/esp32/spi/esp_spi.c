@@ -232,20 +232,9 @@ static int process_rx_buf(struct sk_buff *skb)
 	header = (struct esp_payload_header *) skb->data;
 
 	/*print_hex_dump(KERN_INFO, "rx: ",
-			DUMP_PREFIX_ADDRESS, 16, 1, skb->data , 8, 1  );*/
+	  DUMP_PREFIX_ADDRESS, 16, 1, skb->data , 8, 1  );*/
 
 	if (header->if_type >= ESP_MAX_IF) {
-		return -EINVAL;
-	}
-
-	offset = le16_to_cpu(header->offset);
-
-	/* Validate received SKB. Check len and offset fields */
-	if (offset != sizeof(struct esp_payload_header)) {
-  		/*printk(KERN_INFO "offset_rcv[%u] != exp[%lu], drop\n",
-  				offset, sizeof(struct esp_payload_header));
-  		print_hex_dump(KERN_INFO, "wrong offset: ",
-  				DUMP_PREFIX_ADDRESS, 16, 1, skb->data , 8, 1  );*/
 		return -EINVAL;
 	}
 
@@ -254,11 +243,23 @@ static int process_rx_buf(struct sk_buff *skb)
 		return -EINVAL;
 	}
 
+	offset = le16_to_cpu(header->offset);
+
+	/* Validate received SKB. Check len and offset fields */
+	if (offset != sizeof(struct esp_payload_header)) {
+		printk(KERN_INFO "offset_rcv[%u] != exp[%u], drop\n",
+				offset, sizeof(struct esp_payload_header));
+		/*print_hex_dump(KERN_INFO, "wrong offset: ",
+		  DUMP_PREFIX_ADDRESS, 16, 1, skb->data , 8, 1  );*/
+		return -EINVAL;
+	}
+
+
 	len += sizeof(struct esp_payload_header);
 	if (len > SPI_BUF_SIZE) {
-  		/*printk(KERN_INFO "len[%u] > max[%u], drop\n", len, SPI_BUF_SIZE);
-  		print_hex_dump(KERN_INFO, "wrong len: ",
-  				DUMP_PREFIX_ADDRESS, 16, 1, skb->data , 8, 1  );*/
+		printk(KERN_INFO "len[%u] > max[%u], drop\n", len, SPI_BUF_SIZE);
+		/*print_hex_dump(KERN_INFO, "wrong len: ",
+		  DUMP_PREFIX_ADDRESS, 16, 1, skb->data , 8, 1  );*/
 		return -EINVAL;
 	}
 
@@ -293,13 +294,6 @@ static void esp_spi_transaction(void)
 
 	mutex_lock(&spi_lock);
 
-	if (IS_CS_ASSERTED(spi_context.esp_spi_dev)) {
-		if (atomic_read(&tx_pending))
-			up(&spi_sem);
-		mutex_unlock(&spi_lock);
-		return;
-	}
-
 	trans_ready = gpio_get_value(HANDSHAKE_PIN);
 	rx_pending = gpio_get_value(SPI_DATA_READY_PIN);
 
@@ -316,9 +310,9 @@ static void esp_spi_transaction(void)
 
 				if (atomic_read(&tx_pending) < TX_RESUME_THRESHOLD) {
 					esp_tx_resume();
-					#if TEST_RAW_TP
-						esp_raw_tp_queue_resume();
-					#endif
+#if TEST_RAW_TP
+					esp_raw_tp_queue_resume();
+#endif
 				}
 			}
 		}
@@ -340,6 +334,8 @@ static void esp_spi_transaction(void)
 
 			if (tx_skb) {
 				trans.tx_buf = tx_skb->data;
+				/*print_hex_dump(KERN_INFO, "spi_tx: ",
+				  DUMP_PREFIX_ADDRESS, 16, 1, trans.tx_buf, 32, 1  );*/
 			} else {
 				tx_skb = esp_alloc_skb(SPI_BUF_SIZE);
 				trans.tx_buf = skb_put(tx_skb, SPI_BUF_SIZE);
@@ -360,7 +356,6 @@ static void esp_spi_transaction(void)
 				trans.cs_change = 1;
 			}
 #endif
-
 			ret = spi_sync_transfer(spi_context.esp_spi_dev, &trans, 1);
 			if (ret) {
 				printk(KERN_ERR "SPI Transaction failed: %d", ret);
@@ -377,6 +372,8 @@ static void esp_spi_transaction(void)
 					dev_kfree_skb(tx_skb);
 			}
 		}
+	} else {
+		up(&spi_sem);
 	}
 
 	mutex_unlock(&spi_lock);
