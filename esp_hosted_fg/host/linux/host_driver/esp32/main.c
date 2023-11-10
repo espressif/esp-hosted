@@ -46,8 +46,6 @@ MODULE_VERSION("0.0.5");
 
 struct esp_adapter adapter;
 volatile u8 stop_data = 0;
-static struct task_struct *rx_thread;
-static struct semaphore rx_sem;
 
 #define ACTION_DROP 1
 /* Unless specified as part of argument, resetpin,
@@ -206,7 +204,8 @@ static struct esp_private * get_priv_from_payload_header(struct esp_payload_head
 
 void esp_process_new_packet_intr(struct esp_adapter *adapter)
 {
-	up(&rx_sem);
+	if(adapter)
+		queue_work(adapter->if_rx_workqueue, &adapter->if_rx_work);
 }
 
 static int process_tx_packet (struct sk_buff *skb)
@@ -722,6 +721,10 @@ int esp_remove_card(struct esp_adapter *adapter)
 	if (!adapter)
 		return 0;
 
+	/* Flush workqueues */
+	if (adapter->if_rx_workqueue)
+		flush_workqueue(adapter->if_rx_workqueue);
+
 	esp_remove_network_interfaces(adapter);
 
 	adapter->priv[0] = NULL;
@@ -730,16 +733,19 @@ int esp_remove_card(struct esp_adapter *adapter)
 	return 0;
 }
 
+static void esp_if_rx_work (struct work_struct *work)
+{
+	/* read inbound packet and forward it to network/serial interface */
+	esp_get_packets(&adapter);
+}
+
 static void deinit_adapter(void)
 {
 	if (adapter.if_context)
 		adapter.state = ESP_CONTEXT_DISABLED;
 
-	up(&rx_sem);
-	if (rx_thread) {
-		kthread_stop(rx_thread);
-		rx_thread = NULL;
-	}
+	if (adapter.if_rx_workqueue)
+		destroy_workqueue(adapter.if_rx_workqueue);
 }
 
 static void esp_reset(void)
@@ -769,41 +775,19 @@ static void esp_reset(void)
 	}
 }
 
-static int esp_rx_thread(void *data)
-{
-	printk(KERN_INFO "esp rx thread created\n");
-
-	while (!kthread_should_stop()) {
-
-		if (down_interruptible(&rx_sem)) {
-			msleep(10);
-			continue;
-		}
-
-		if (adapter.state != ESP_CONTEXT_READY) {
-			msleep(100);
-			continue;
-		}
-
-		/* read inbound packet and forward it to network/serial interface */
-		esp_get_packets(&adapter);
-	}
-	printk(KERN_INFO "esp rx thread cleared\n");
-	do_exit(0);
-	return 0;
-}
-
 static struct esp_adapter * init_adapter(void)
 {
 	memset(&adapter, 0, sizeof(adapter));
 
-	sema_init(&rx_sem, 0);
-	rx_thread = kthread_run(esp_rx_thread, NULL, "esp32_rx");
-	if (!rx_thread) {
-		printk (KERN_ERR "Failed to create esp32_rx thread\n");
+	/* Prepare interface RX work */
+	adapter.if_rx_workqueue = create_workqueue("ESP_IF_RX_WORK_QUEUE");
+
+	if (!adapter.if_rx_workqueue) {
 		deinit_adapter();
 		return NULL;
 	}
+
+	INIT_WORK(&adapter.if_rx_work, esp_if_rx_work);
 
 	return &adapter;
 }

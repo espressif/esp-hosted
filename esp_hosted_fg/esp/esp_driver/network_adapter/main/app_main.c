@@ -70,7 +70,7 @@ static const char TAG_TX_S[] = "CONTROL S -> H";
   #ifdef CONFIG_IDF_TARGET_ESP32S2
     #define TO_HOST_QUEUE_SIZE           5
   #else
-    #define TO_HOST_QUEUE_SIZE           20
+    #define TO_HOST_QUEUE_SIZE           40
   #endif
 #else
   #define TO_HOST_QUEUE_SIZE             100
@@ -459,11 +459,16 @@ static ssize_t serial_read_data(uint8_t *data, ssize_t len)
 
 int send_to_host_queue(interface_buffer_handle_t *buf_handle, uint8_t queue_type)
 {
+
+#if 0
+	process_tx_pkt(buf_handle);
+#else
 	int ret = xQueueSend(to_host_queue[queue_type], buf_handle, portMAX_DELAY);
 	if (ret != pdTRUE) {
 		ESP_LOGE(TAG, "Failed to send buffer into queue[%u]\n",queue_type);
 		return ESP_FAIL;
 	}
+
 	if (queue_type == PRIO_Q_SERIAL)
 		ret = xQueueSendToFront(meta_to_host_queue, &queue_type, portMAX_DELAY);
 	else
@@ -473,6 +478,7 @@ int send_to_host_queue(interface_buffer_handle_t *buf_handle, uint8_t queue_type
 		ESP_LOGE(TAG, "Failed to send buffer into meta queue[%u]\n",queue_type);
 		return ESP_FAIL;
 	}
+#endif
 
 	return ESP_OK;
 }
