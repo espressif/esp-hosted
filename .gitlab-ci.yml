@@ -2,7 +2,7 @@ stages:
   - deploy
 
 variables:
-  GIT_SUBMODULE_STRATEGY: recursive
+  GIT_SUBMODULE_STRATEGY: none
 
 before_script:
   # add gitlab ssh key
