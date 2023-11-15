@@ -10,7 +10,7 @@
 
 ### 1.1.1 STM32CubeIDE installation
 
-We recommend STM32CubeIDE version 1.4 IDE from STMicroelectronics on host machine(Laptop, Desktop etc.). User can download IDE from [Here](https://www.st.com/en/development-tools/stm32cubeide.html#get-software).
+We recommend the latest version of STM32CubeIDE from STMicroelectronics on PC. User can download IDE from [Here](https://www.st.com/en/development-tools/stm32cubeide.html#get-software).
 
 ### 1.1.2 Tools for testing
 * **Arping**:

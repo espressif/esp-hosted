@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-2.0-only
 /*
  * Espressif Systems Wireless LAN device driver
  *
@@ -259,8 +260,10 @@ void esp_serial_cleanup(void)
 {
 	int i = 0;
 
-	for (i = 0; i < ESP_SERIAL_MINOR_MAX; i++) {
-		cdev_del(&devs[i].cdev);
+	for (i = 0; serial_init_done && i < ESP_SERIAL_MINOR_MAX; i++) {
+		if (!devs[i].cdev.ops)
+			cdev_del(&devs[i].cdev);
+
 		esp_rb_cleanup(&devs[i].rb);
 		mutex_destroy(&devs[i].lock);
 	}

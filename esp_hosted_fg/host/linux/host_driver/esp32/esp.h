@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-2.0-only
 /*
  * Espressif Systems Wireless LAN device driver
  *
@@ -25,6 +26,7 @@
 #include <linux/netdevice.h>
 #include <net/bluetooth/bluetooth.h>
 #include <net/bluetooth/hci_core.h>
+#include "esp_kernel_port.h"
 #include "adapter.h"
 
 #define ESP_IF_TYPE_SDIO        1
@@ -46,8 +48,15 @@ struct esp_adapter;
 #define SKB_DATA_ADDR_ALIGNMENT 4
 #define INTERFACE_HEADER_PADDING (SKB_DATA_ADDR_ALIGNMENT*3)
 
+enum context_state {
+	ESP_CONTEXT_DISABLED = 0,
+	ESP_CONTEXT_INIT,
+	ESP_CONTEXT_READY
+};
+
 struct esp_adapter {
 	u8                      if_type;
+	enum context_state      state;
 	u32                     capabilities;
 
 	/* Possible types:
@@ -82,9 +91,4 @@ struct esp_private {
 struct esp_skb_cb {
 	struct esp_private      *priv;
 };
-
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 17, 0))
-#define do_exit(code)	kthread_complete_and_exit(NULL, code)
-#endif
-
 #endif

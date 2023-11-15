@@ -54,10 +54,17 @@ rem ### search and replace project files ###
 DEL %WORKSPACE%\%PROJ_NAME%\.project 2>NUL
 DEL %WORKSPACE%\%PROJ_NAME%\.cproject 2>NUL
 
+rem ### .project file requires '/' instead of '\' as filepath separator
+rem ### and leading '/' before the filepath to work properly
+rem ### in STM32CubeIDE on Windows 11
+rem ### example: c:\esp\esp_hosted\esp_hosted_fg is converted to:
+rem ###          /c:/esp/esp_hosted/esp_hosted_fg
+set "CODE_BASE_2=/%CODE_BASE:\=/%"
+
 setLocal EnableDelayedExpansion
 For /f "tokens=* delims= " %%a in (%TRANSPORT%\.project) do (
 Set str=%%a
-set str=!str:CODE_BASE_PLACE_HOLDER=%CODE_BASE%!
+set str=!str:CODE_BASE_PLACE_HOLDER=%CODE_BASE_2%!
 echo !str!>>  %WORKSPACE%\%PROJ_NAME%\.project
 )
 ENDLOCAL

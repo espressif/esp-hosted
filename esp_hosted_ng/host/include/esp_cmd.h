@@ -1,13 +1,13 @@
-#ifndef __esp_cmd_h_
-#define __esp_cmd_h_
-
+// SPDX-License-Identifier: GPL-2.0-only
 /*
  * Espressif Systems Wireless LAN device driver
  *
  * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
- * SPDX-License-Identifier: GPL-2.0-only
  */
+#ifndef __esp_cmd_h_
+#define __esp_cmd_h_
+
 #include "esp.h"
 
 #define ESP_NUM_OF_CMD_NODES 20
@@ -49,4 +49,6 @@ int cmd_set_ip_address(struct esp_wifi_device *priv, u32 ip);
 int cmd_set_mcast_mac_list(struct esp_wifi_device *priv, struct multicast_list *list);
 int cmd_set_tx_power(struct esp_wifi_device *priv, int power);
 int cmd_get_tx_power(struct esp_wifi_device *priv);
+int cmd_set_reg_domain(struct esp_wifi_device *priv);
+int cmd_get_reg_domain(struct esp_wifi_device *priv);
 #endif

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 // Copyright 2015-2021 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -29,14 +30,15 @@
 #define SDIO_SLAVE_QUEUE_SIZE   20
 #define BUFFER_SIZE     	1536 /* 512*3 */
 #define BUFFER_NUM      	10
-#define SDIO_BLOCK_SIZE 	512
 static uint8_t sdio_slave_rx_buffer[BUFFER_NUM][BUFFER_SIZE];
 
-static struct mempool * buf_mp_g;
+#define SDIO_MEMPOOL_NUM_BLOCKS     40
+static struct hosted_mempool * buf_mp_tx_g;
 
 interface_context_t context;
 interface_handle_t if_handle_g;
 static const char TAG[] = "SDIO_SLAVE";
+
 
 static interface_handle_t * sdio_init(void);
 static int32_t sdio_write(interface_handle_t *handle, interface_buffer_handle_t *buf_handle);
@@ -54,22 +56,22 @@ if_ops_t if_ops = {
 
 static inline void sdio_mempool_create(void)
 {
-	buf_mp_g = mempool_create(BUFFER_SIZE);
+	buf_mp_tx_g = hosted_mempool_create(NULL, 0, SDIO_MEMPOOL_NUM_BLOCKS, BUFFER_SIZE);
 #ifdef CONFIG_ESP_CACHE_MALLOC
-	assert(buf_mp_g);
+	assert(buf_mp_tx_g);
 #endif
 }
 static inline void sdio_mempool_destroy(void)
 {
-	mempool_destroy(buf_mp_g);
+	hosted_mempool_destroy(buf_mp_tx_g);
 }
-static inline void *sdio_buffer_alloc(uint need_memset)
+static inline void *sdio_buffer_tx_alloc(uint need_memset)
 {
-	return mempool_alloc(buf_mp_g, BUFFER_SIZE, need_memset);
+	return hosted_mempool_alloc(buf_mp_tx_g, BUFFER_SIZE, need_memset);
 }
-static inline void sdio_buffer_free(void *buf)
+static inline void sdio_buffer_tx_free(void *buf)
 {
-	mempool_free(buf_mp_g, buf);
+	hosted_mempool_free(buf_mp_tx_g, buf);
 }
 
 interface_context_t *interface_insert_driver(int (*event_handler)(uint8_t val))
@@ -116,7 +118,7 @@ void generate_startup_event(uint8_t cap)
 
 	memset(&buf_handle, 0, sizeof(buf_handle));
 
-	buf_handle.payload = sdio_buffer_alloc(MEMSET_REQUIRED);
+	buf_handle.payload = sdio_buffer_tx_alloc(MEMSET_REQUIRED);
 	assert(buf_handle.payload);
 
 	header = (struct esp_payload_header *) buf_handle.payload;
@@ -162,14 +164,16 @@ void generate_startup_event(uint8_t cap)
 	header->checksum = htole16(compute_checksum(buf_handle.payload, buf_handle.payload_len));
 #endif
 
+	ESP_LOG_BUFFER_HEXDUMP("sdio_tx", buf_handle.payload, buf_handle.payload_len, ESP_LOG_VERBOSE);
+
 	ret = sdio_slave_transmit(buf_handle.payload, buf_handle.payload_len);
 	if (ret != ESP_OK) {
 		ESP_LOGE(TAG , "sdio slave tx error, ret : 0x%x\r\n", ret);
-		sdio_buffer_free(buf_handle.payload);
+		sdio_buffer_tx_free(buf_handle.payload);
 		return;
 	}
 
-	sdio_buffer_free(buf_handle.payload);
+	sdio_buffer_tx_free(buf_handle.payload);
 }
 
 static void sdio_read_done(void *handle)
@@ -180,11 +184,13 @@ static void sdio_read_done(void *handle)
 static interface_handle_t * sdio_init(void)
 {
 	esp_err_t ret = ESP_OK;
+	sdio_slave_buf_handle_t handle = {0};
 	sdio_slave_config_t config = {
 		.sending_mode       = SDIO_SLAVE_SEND_STREAM,
 		.send_queue_size    = SDIO_SLAVE_QUEUE_SIZE,
 		.recv_buffer_size   = BUFFER_SIZE,
 		.event_cb           = event_cb,
+
 		/* Note: For small devkits there may be no pullups on the board.
 		   This enables the internal pullups to help evaluate the driver
 		   quickly. However the internal pullups are not sufficient and not
@@ -192,16 +198,22 @@ static interface_handle_t * sdio_init(void)
 		   bus in your real design.
 		   */
 		//.flags              = SDIO_SLAVE_FLAG_INTERNAL_PULLUP,
-		.flags              = SDIO_SLAVE_FLAG_DEFAULT_SPEED,
 		/* Note: Sometimes the SDIO card is detected but gets problem in
 		 * Read/Write or handling ISR because of SDIO timing issues.
 		 * In these cases, Please tune timing below using value from
 		 * https://github.com/espressif/esp-idf/blob/release/v5.0/components/hal/include/hal/sdio_slave_types.h#L26-L38
 		 * */
-		/* .timing             = SDIO_SLAVE_TIMING_NSEND_PSAMPLE,*/
+#if defined(CONFIG_IDF_TARGET_ESP32C6)
+		.timing             = SDIO_SLAVE_TIMING_NSEND_PSAMPLE,
+#endif
 	};
-	sdio_slave_buf_handle_t handle;
+	config.flags |= SDIO_SLAVE_FLAG_DEFAULT_SPEED;
 
+#if defined(CONFIG_IDF_TARGET_ESP32C6)
+	ESP_LOGI(TAG, "%s: ESP32-C6 SDIO timing: %u\n", __func__, config.timing);
+#else
+	ESP_LOGI(TAG, "%s: ESP32 SDIO timing: %u\n", __func__, config.timing);
+#endif
 	ret = sdio_slave_initialize(&config);
 	if (ret != ESP_OK) {
 		return NULL;
@@ -266,7 +278,7 @@ static int32_t sdio_write(interface_handle_t *handle, interface_buffer_handle_t 
 
 	total_len = buf_handle->payload_len + sizeof (struct esp_payload_header);
 
-	sendbuf = sdio_buffer_alloc(MEMSET_REQUIRED);
+	sendbuf = sdio_buffer_tx_alloc(MEMSET_REQUIRED);
 	if (sendbuf == NULL) {
 		ESP_LOGE(TAG , "Malloc send buffer fail!");
 		return ESP_FAIL;
@@ -293,11 +305,11 @@ static int32_t sdio_write(interface_handle_t *handle, interface_buffer_handle_t 
 	ret = sdio_slave_transmit(sendbuf, total_len);
 	if (ret != ESP_OK) {
 		ESP_LOGE(TAG , "sdio slave transmit error, ret : 0x%x\r\n", ret);
-		sdio_buffer_free(sendbuf);
+		sdio_buffer_tx_free(sendbuf);
 		return ESP_FAIL;
 	}
 
-	sdio_buffer_free(sendbuf);
+	sdio_buffer_tx_free(sendbuf);
 
 	return buf_handle->payload_len;
 }
@@ -323,8 +335,10 @@ static int sdio_read(interface_handle_t *if_handle, interface_buffer_handle_t *b
 
 	ret = sdio_slave_recv(&(buf_handle->sdio_buf_handle), &(buf_handle->payload),
 			&(sdio_read_len), portMAX_DELAY);
-	if (ret)
+	if (ret) {
+		ESP_LOGD(TAG, "sdio_slave_recv returned failure");
 		return ESP_FAIL;
+	}
 
 	buf_handle->payload_len = sdio_read_len & 0xFFFF;
 

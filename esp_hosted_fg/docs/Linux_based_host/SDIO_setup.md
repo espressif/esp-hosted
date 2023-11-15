@@ -1,24 +1,38 @@
 # Wi-Fi and BT/BLE connectivity Setup over SDIO
+
+| Supported Targets | ESP32 | ESP32-C6 |
+| ----------------- | ----- | -------- |
+
 ## 1. Setup
 ### 1.1 Hardware Setup
-In this setup, ESP board acts as a SDIO peripheral and provides Wi-Fi capabilities to host. Please connect ESP peripheral to Raspberry-Pi with jumper cables as mentioned below. It may be good to use small length cables to ensure signal integrity. Power ESP32 and Raspberry Pi separately with a power supply that provide sufficient power. ESP32 can be powered through PC using micro-USB cable.
+In this setup, ESP board acts as a SDIO peripheral and provides Wi-Fi capabilities to host. Please connect ESP board to Raspberry-Pi with jumper cables as mentioned below.
+Raspberry Pi should be powered with correct incoming power rating.
+ESP can be powered through PC using micro-USB/USB-C cable.
 
-| Raspberry-Pi Pin | ESP Pin | Function |
-|:-------:|:---------:|:--------:|
-| 13 | IO13 | DAT3 |
-| 15 | IO14 | CLK |
-| 16 | IO15 | CMD |
-| 18 | IO2 | DAT0 |
-| 22 | IO4 | DAT1 |
+| Raspberry-Pi Pin | ESP32 Pin | ESP32-C6 Pin | Function |
+|:-------:|:---------:|:--------:|:--------:|
+| 13 | IO13+[pull-up](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/peripherals/sd_pullup_requirements.html)| IO23+[pull-up](https://docs.espressif.com/projects/esp-idf/en/latest/esp32c6/api-reference/peripherals/sd_pullup_requirements.html) | DAT3 |
+| 15 | IO14 | IO19 | CLK |
+| 16 | IO15+[pull-up](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/peripherals/sd_pullup_requirements.html) | IO18+[pull-up](https://docs.espressif.com/projects/esp-idf/en/latest/esp32c6/api-reference/peripherals/sd_pullup_requirements.html) | CMD |
+| 18 | IO2+[pull-up](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/peripherals/sd_pullup_requirements.html)| IO20+[pull-up](https://docs.espressif.com/projects/esp-idf/en/latest/esp32c6/api-reference/peripherals/sd_pullup_requirements.html) | DAT0 |
+| 22 | IO4+[pull-up](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/peripherals/sd_pullup_requirements.html)| IO21+[pull-up](https://docs.espressif.com/projects/esp-idf/en/latest/esp32c6/api-reference/peripherals/sd_pullup_requirements.html) | DAT1 |
 | 31 | EN  | ESP Reset |
-| 37 | IO12 | DAT2 |
-| 39 | GND | GND |
+| 37 | IO12+[pull-up](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/peripherals/sd_pullup_requirements.html)| IO22+[pull-up](https://docs.espressif.com/projects/esp-idf/en/latest/esp32c6/api-reference/peripherals/sd_pullup_requirements.html) | DAT2 |
+| 39 | GND | GND | GND|
 
 Raspberry-Pi pinout can be found [here!](https://pinout.xyz/pinout/sdio)
 
-Setup image is here.
+Sample setup image of ESP32 SDIO with RPi looks like:
 
 ![alt text](rpi_esp_sdio_setup.jpeg "setup of Raspberry-Pi as host and ESP32 as peripheral")
+
+:warning: Note:
+As SDIO faces signal integrity issues over jumper wires, we strongly recommend to **Design PCB boards with above connections**
+If that is not possible
+ - Use good quality extremely small (smaller than 5cm) jumper wires, all equal length
+ - Join all possible grounds interconnected to lower noise
+ - Add at least, 10k Ohm external pull-up resistors on 5 lines: CMD, DAT0-4. We use 51k Ohm resistors in our set-up.
+
 
 ### 1.2 Raspberry-Pi Software Setup
 By default, the SDIO pins of Raspberry-pi are not configured and are internally used for built-in Wi-Fi interface. Please enable SDIO pins by appending following line to _/boot/config.txt_ file
@@ -27,9 +41,20 @@ dtoverlay=sdio,poll_once=off
 dtoverlay=disable-bt
 ```
 Please reboot Raspberry-Pi after changing this file.
+Please note, that the default Wi-Fi on your Raspberry Pi will be disabled on reboot. This is because the SDIO used in ESP-Hosted is going to use this SDIO port here on.
+If you are not using desktop variant of Raspberry Pi, It would be good to set up static IP SSH with ethernet cable .
+Also, it is recommended to download (any) software needed (like iperf etc) before rebooting, so that losing wlan0 is not issue
 
 ## 2. Load ESP-Hosted Solution
 ### 2.1 Host Software
+* As ESP32 & ESP32C6, both support SDIO, Let host know which slave chipset is being used by changing `esp_hosted_fg/host/linux/host_control/rpi_init.sh` as:
+```sh
+  ESP_SLAVE_CHIPSET="esp32"
+```
+or
+```sh
+  ESP_SLAVE_CHIPSET="esp32c6"
+```
 * Execute following commands in root directory of cloned ESP-Hosted repository on Raspberry-Pi
 ```sh
 $ cd esp_hosted_fg/host/linux/host_control/
@@ -45,19 +70,41 @@ One can load pre-built release binaries on ESP peripheral or compile those from 
 * Follow `readme.txt` from release tarball to flash the ESP binary
 * :warning: Make sure that you use `Source code (zip)` in `Assets` fold with associated release for host building.
 * Windows user can use ESP Flash Programming Tool to flash the pre-built binary.
+* Collect firmware log
+    * Use minicom or any similar terminal emulator with baud rate 115200 to fetch esp side logs on UART
+```sh
+$ minicom -D <serial_port>
+```
+serial_port is device where ESP chipset is detected. For example, /dev/ttyUSB0
 
 
 #### 2.2.2 Source Compilation
-- Note: Please use the same git commit both at ESP and Host
-- Clone the ESP-IDF [release/v5.0](https://github.com/espressif/esp-idf/tree/release/v5.0) and git checkout to `release/v5.0` branch.
-- [Set-up the ESP-IDF](https://docs.espressif.com/projects/esp-idf/en/release-v5.0/esp32/get-started/index.html)
-- In root directory of ESP-Hosted repository, execute below command
 
+Make sure that same code base (same git commit) is checked-out/copied at both, ESP and Host
+
+##### Set-up ESP-IDF
+- :warning: Following command is dangerous. It will revert all your local changes. Stash if need to keep them.
+- Install the ESP-IDF using script
 ```sh
-$ cd esp_hosted_fg/esp/esp_driver/network_adapter
+$ cd esp_hosted_fg/esp/esp_driver
+$ cmake .
+```
+- Set-Up the build environment using
+```sh
+$ . ./esp-idf/export.sh
+# Optionally, You can add alias for this command in ~/.bashrc for later use
 ```
 
-##### Using cmake
+
+##### Configure, Build & Flash SDIO ESP firmware
+* Set slave chipset environment
+
+```sh
+$ cd network_adapter
+$ rm -rf sdkconfig build
+$ idf.py set-target <esp_chipset>
+```
+For SDIO, <esp_chipset> could be `esp32` or `esp32c6`
 * Execute following command to configure the project
 ```sh
 $ idf.py menuconfig
@@ -67,8 +114,24 @@ $ idf.py menuconfig
 ```sh
 $ idf.py -p <serial_port> build flash
 ```
+* Collect the firmware log using
+```sh
+$ idf.py -p <serial_port> monitor
+```
+
 
 ## 3. Checking the Setup for SDIO
+- Firmware log
+On successful flashing, you should see following entry in ESP log:
+
+```
+[   77.877892] Features supported are:
+[   77.877901]   * WLAN
+[   77.877906]   * BT/BLE
+[   77.877911]     - HCI over SDIO
+[   77.877916]     - BT/BLE dual mode
+```
+- Host log
 Once ESP peripheral has a valid firmware and booted successfully, you should be able to see successful enumeration on Raspberry Pi side as:
 ```sh
 $ dmesg
@@ -123,3 +186,5 @@ $ dmesg
 [   77.877916] 	   - BT/BLE dual mode
 [   78.096179] esp_sdio: probe of mmc1:0001:2 failed with error -22
 ```
+
+**If intended transport is SDIO+UART, please continue ahead with UART setup**

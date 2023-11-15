@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-2.0-only
 /*
  * Espressif Systems Wireless LAN device driver
  *
@@ -467,7 +468,6 @@ int test_set_wifi_mode_none(void)
 
 int test_get_wifi_mac_addr(int mode, char *out_mac)
 {
-	int ret = SUCCESS;
 	ctrl_cmd_t *resp = NULL;
 
 	if (!out_mac)
@@ -481,19 +481,16 @@ int test_get_wifi_mac_addr(int mode, char *out_mac)
 	req.u.wifi_mac.mode = mode;
 	resp = wifi_get_mac(req);
 
-	ret = ctrl_app_resp_callback(resp);
-	if (ret) {
-		printf("Failed response for mac\n\r");
-		return FAILURE;
-	} else {
-		if(!resp->u.wifi_mac.mac) {
+	if (resp && SUCCESS == resp->resp_event_status) {
+		if(!strlen(resp->u.wifi_mac.mac)) {
 			printf("NULL MAC returned\n\r");
 			return FAILURE;
 		}
 		strncpy(out_mac, resp->u.wifi_mac.mac, MAX_MAC_STR_LEN);
 		out_mac[MAX_MAC_STR_LEN-1] = '\0';
 	}
-	return SUCCESS;
+
+	return ctrl_app_resp_callback(resp);
 }
 
 int test_station_mode_get_mac_addr(char *mac)

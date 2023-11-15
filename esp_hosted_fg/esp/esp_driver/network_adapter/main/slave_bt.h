@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 // Copyright 2015-2021 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,7 +19,7 @@
 
 #ifdef CONFIG_BT_ENABLED
 
-#if ESP_IDF_VERSION < ESP_IDF_VERSION_VAL(5, 0, 0) 
+#if ESP_IDF_VERSION < ESP_IDF_VERSION_VAL(5, 0, 0)
   #include "driver/periph_ctrl.h"
   #define DISABLE_INTR_ON_GPIO GPIO_PIN_INTR_DISABLE
 #else
@@ -49,7 +50,7 @@
     #define BLUETOOTH_UART   CONFIG_BTDM_CTRL_HCI_UART_NO
   #endif
 
-#elif CONFIG_IDF_TARGET_ESP32C2
+#elif (defined(CONFIG_IDF_TARGET_ESP32C2) || defined(CONFIG_IDF_TARGET_ESP32C6))
 
   #define BLUETOOTH_BLE      1
 
@@ -88,8 +89,15 @@
 
       #define BT_TX_PIN         5
       #define BT_RX_PIN         18
-      #define BT_RTS_PIN        9
-      #define BT_CTS_PIN        8
+      //#define BT_RTS_PIN        9
+      //#define BT_CTS_PIN        8
+
+  #elif defined(CONFIG_IDF_TARGET_ESP32C6)
+
+      #define BT_TX_PIN         5
+      #define BT_RX_PIN         12
+      //#define BT_RTS_PIN        9
+      //#define BT_CTS_PIN        13
 
   #elif BT_OVER_C3_S3
 

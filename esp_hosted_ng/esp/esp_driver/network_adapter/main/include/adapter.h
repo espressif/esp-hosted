@@ -1,5 +1,5 @@
 // Copyright 2015-2021 Espressif Systems (Shanghai) PTE LTD
-/* SPDX-License-Identifier: GPL-2.0 OR Apache-2.0 */
+/* SPDX-License-Identifier: GPL-2.0-only OR Apache-2.0 */
 
 #ifndef __ESP_NETWORK_ADAPTER__H
 #define __ESP_NETWORK_ADAPTER__H
@@ -120,6 +120,8 @@ enum COMMAND_CODE {
 	CMD_SET_MCAST_MAC_ADDR,
 	CMD_GET_TXPOWER,
 	CMD_SET_TXPOWER,
+	CMD_GET_REG_DOMAIN,
+	CMD_SET_REG_DOMAIN,
 	CMD_MAX,
 };
 
@@ -147,7 +149,7 @@ struct command_header {
 	uint16_t   seq_num;
 	uint8_t    reserved1;
 	uint8_t    reserved2;
-}__attribute__((packed));
+} __packed;
 
 struct scan_request {
 	struct     command_header header;
@@ -170,6 +172,8 @@ struct cmd_sta_auth {
 	uint8_t    channel;
 	uint8_t    auth_type;
 	char       ssid[MAX_SSID_LEN+1];
+	uint8_t    key_len;
+	uint8_t    key[27];
 	uint8_t    auth_data_len;
 	uint8_t    pad[2];
 	uint8_t    auth_data[];
@@ -226,6 +230,11 @@ struct wifi_sec_key {
 struct cmd_set_get_val {
 	struct     command_header header;
 	uint32_t   value;
+} __packed;
+
+struct cmd_reg_domain {
+	struct     command_header header;
+	char       country_code[4];  /* 4 for padding */
 } __packed;
 
 struct cmd_key_operation {

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-2.0-only
 /*
  * Espressif Systems Wireless LAN device driver
  *
@@ -44,13 +45,22 @@
 	printk(KERN_ERR "%s: CMD53 read/write error at %d\n", __func__, __LINE__);	\
 } while (0);
 
+#define HOLD_SDIO_HOST_WHILE_READ 1
+
+#if HOLD_SDIO_HOST_WHILE_READ
+  #define CLAIM_SDIO_HOST(x) sdio_claim_host(x->func)
+  #define RELEASE_SDIO_HOST(x) sdio_release_host(x->func)
+  #define IS_SDIO_HOST_LOCK_NEEDED LOCK_ALREADY_ACQUIRED
+#else
+  #define CLAIM_SDIO_HOST(x)
+  #define RELEASE_SDIO_HOST(x)
+  #define IS_SDIO_HOST_LOCK_NEEDED ACQUIRE_LOCK
+#endif
+
 struct esp_sdio_context sdio_context;
 static atomic_t tx_pending;
 static atomic_t queue_items[MAX_PRIORITY_QUEUES];
 
-#ifdef CONFIG_ENABLE_MONITOR_PROCESS
-struct task_struct *monitor_thread;
-#endif
 struct task_struct *tx_thread;
 
 static int init_context(struct esp_sdio_context *context);
@@ -108,7 +118,9 @@ static void esp_handle_isr(struct sdio_func *func)
 
 	context = sdio_get_drvdata(func);
 
-	if (!context) {
+	if (!(context) ||
+	    !(context->adapter) ||
+	    (context->adapter->state != ESP_CONTEXT_READY)) {
 		return;
 	}
 
@@ -268,11 +280,6 @@ static void esp_remove(struct sdio_func *func)
 	esp_serial_cleanup();
 #endif
 
-#ifdef CONFIG_ENABLE_MONITOR_PROCESS
-	if (monitor_thread)
-		kthread_stop(monitor_thread);
-#endif
-
 	if (tx_thread)
 		kthread_stop(tx_thread);
 
@@ -374,6 +381,7 @@ static struct sk_buff * read_packet(struct esp_adapter *adapter)
 	struct sk_buff *skb;
 	u8 *pos;
 	struct esp_sdio_context *context;
+	int is_lock_needed = IS_SDIO_HOST_LOCK_NEEDED;
 
 	if (!adapter || !adapter->if_context) {
 		printk (KERN_ERR "%s: INVALID args\n", __func__);
@@ -382,15 +390,15 @@ static struct sk_buff * read_packet(struct esp_adapter *adapter)
 
 	context = adapter->if_context;
 
-	sdio_claim_host(context->func);
+	CLAIM_SDIO_HOST(context);
 
 	data_left = len_to_read = len_from_slave = num_blocks = 0;
 
 	/* Read length */
-	ret = esp_get_len_from_slave(context, &len_from_slave, LOCK_ALREADY_ACQUIRED);
+	ret = esp_get_len_from_slave(context, &len_from_slave, is_lock_needed);
 
 	if (ret || !len_from_slave) {
-		sdio_release_host(context->func);
+		RELEASE_SDIO_HOST(context);
 		return NULL;
 	}
 
@@ -404,7 +412,7 @@ static struct sk_buff * read_packet(struct esp_adapter *adapter)
 
 	if (!skb) {
 		printk (KERN_ERR "%s: SKB alloc failed\n", __func__);
-		sdio_release_host(context->func);
+		RELEASE_SDIO_HOST(context);
 		return NULL;
 	}
 
@@ -426,19 +434,20 @@ static struct sk_buff * read_packet(struct esp_adapter *adapter)
 			len_to_read = num_blocks * ESP_BLOCK_SIZE;
 			ret = esp_read_block(context,
 					ESP_SLAVE_CMD53_END_ADDR - len_to_read,
-					pos, len_to_read, LOCK_ALREADY_ACQUIRED);
+					pos, len_to_read, is_lock_needed);
 		} else {
 			len_to_read = data_left;
 			/* 4 byte aligned length */
 			ret = esp_read_block(context,
 					ESP_SLAVE_CMD53_END_ADDR - len_to_read,
-					pos, (len_to_read + 3) & (~3), LOCK_ALREADY_ACQUIRED);
+					pos, (len_to_read + 3) & (~3), is_lock_needed);
 		}
 
 		if (ret) {
 			printk (KERN_ERR "%s: Failed to read data - %d [%u - %d]\n", __func__, ret, num_blocks, len_to_read);
+			context->adapter->state = ESP_CONTEXT_DISABLED;
 			dev_kfree_skb(skb);
-			sdio_release_host(context->func);
+			RELEASE_SDIO_HOST(context);
 			return NULL;
 		}
 
@@ -449,7 +458,7 @@ static struct sk_buff * read_packet(struct esp_adapter *adapter)
 
 	} while (data_left > 0);
 
-	sdio_release_host(context->func);
+	RELEASE_SDIO_HOST(context);
 
 	return skb;
 }
@@ -549,7 +558,7 @@ static int tx_process(void *data)
 
 	while (!kthread_should_stop()) {
 
-		if (context->state != ESP_CONTEXT_READY) {
+		if (context->adapter->state != ESP_CONTEXT_READY) {
 			msleep(10);
 			continue;
 		}
@@ -560,7 +569,7 @@ static int tx_process(void *data)
 				continue;
 			}
 			atomic_dec(&queue_items[PRIO_Q_SERIAL]);
-		}else if (atomic_read(&queue_items[PRIO_Q_BT]) > 0) {
+		} else if (atomic_read(&queue_items[PRIO_Q_BT]) > 0) {
 			tx_skb = skb_dequeue(&(context->tx_q[PRIO_Q_BT]));
 			if (!tx_skb) {
 				continue;
@@ -637,7 +646,7 @@ static int tx_process(void *data)
 	return 0;
 }
 
-static struct esp_sdio_context * init_sdio_func(struct sdio_func *func)
+static struct esp_sdio_context * init_sdio_func(struct sdio_func *func, int *sdio_ret)
 {
 	struct esp_sdio_context *context = NULL;
 	int ret = 0;
@@ -654,79 +663,32 @@ static struct esp_sdio_context * init_sdio_func(struct sdio_func *func)
 	/* Enable Function */
 	ret = sdio_enable_func(func);
 	if (ret) {
+		printk(KERN_ERR "%s: sdio_enable_func ret: %d\n", __func__, ret);
+		if (sdio_ret)
+			*sdio_ret = ret;
+		sdio_release_host(func);
 		return NULL;
 	}
 
 	/* Register IRQ */
 	ret = sdio_claim_irq(func, esp_handle_isr);
 	if (ret) {
+		printk(KERN_ERR "%s: sdio_claim_irq ret: %d\n", __func__, ret);
 		sdio_disable_func(func);
+		if (sdio_ret)
+			*sdio_ret = ret;
+		sdio_release_host(func);
 		return NULL;
 	}
 
 	/* Set private data */
 	sdio_set_drvdata(func, context);
 
-	context->state = ESP_CONTEXT_INIT;
-
 	sdio_release_host(func);
 
 	return context;
 }
 
-#ifdef CONFIG_ENABLE_MONITOR_PROCESS
-static int monitor_process(void *data)
-{
-	u32 val, intr, len_reg, rdata, old_len = 0;
-	struct esp_sdio_context *context = (struct esp_sdio_context *) data;
-	struct sk_buff *skb;
-
-	while (!kthread_should_stop()) {
-		msleep(5000);
-
-		val = intr = len_reg = rdata = 0;
-
-		esp_read_reg(context, ESP_SLAVE_PACKET_LEN_REG,
-				(u8 *) &val, sizeof(val), ACQUIRE_LOCK);
-
-		len_reg = val & ESP_SLAVE_LEN_MASK;
-
-		val = 0;
-		esp_read_reg(context, ESP_SLAVE_TOKEN_RDATA, (u8 *) &val,
-				sizeof(val), ACQUIRE_LOCK);
-
-		rdata = ((val >> 16) & ESP_TX_BUFFER_MASK);
-
-		esp_read_reg(context, ESP_SLAVE_INT_ST_REG,
-				(u8 *) &intr, sizeof(intr), ACQUIRE_LOCK);
-
-
-		if (len_reg > context->rx_byte_count) {
-			if (old_len && (context->rx_byte_count == old_len)) {
-				printk (KERN_DEBUG "Monitor thread ----> [%d - %d] [%d - %d] %d\n",
-						len_reg, context->rx_byte_count,
-						rdata, context->tx_buffer_count, intr);
-
-				skb = read_packet(context->adapter);
-
-				if (!skb)
-					continue;
-
-				if (skb->len)
-					printk (KERN_DEBUG "%s: Flushed %d bytes\n", __func__, skb->len);
-
-				/* drop the packet */
-				dev_kfree_skb(skb);
-			}
-		}
-
-		old_len = context->rx_byte_count;
-	}
-
-	do_exit(0);
-	return 0;
-}
-#endif
 
 static int esp_probe(struct sdio_func *func,
 				  const struct sdio_device_id *id)
@@ -740,11 +702,20 @@ static int esp_probe(struct sdio_func *func,
 
 	printk(KERN_INFO "%s: ESP network device detected\n", __func__);
 
-	context = init_sdio_func(func);
+	context = init_sdio_func(func, &ret);
 
 	if (!context) {
-		return -ENOMEM;
+		if (ret)
+			return ret;
+		else
+			return -EINVAL;
 	}
+
+#if 0 /* in case to lower sdio clock speed */
+	struct mmc_host *host = func->card->host;
+	host->ios.clock = 5*1000000; //5MHz
+	host->ops->set_ios(host, &host->ios);
+#endif
 
 	atomic_set(&tx_pending, 0);
 	ret = init_context(context);
@@ -767,14 +738,7 @@ static int esp_probe(struct sdio_func *func,
 	}
 
 
-	context->state = ESP_CONTEXT_READY;
-
-#ifdef CONFIG_ENABLE_MONITOR_PROCESS
-	monitor_thread = kthread_run(monitor_process, context, "Monitor process");
-
-	if (!monitor_thread)
-		printk (KERN_ERR "Failed to create monitor thread\n");
-#endif
+	context->adapter->state = ESP_CONTEXT_READY;
 
 	generate_slave_intr(context, BIT(ESP_OPEN_DATA_PATH));
 	return ret;
@@ -810,6 +774,11 @@ int process_init_event(u8 *evt_buf, u8 len)
 
 	pos = evt_buf;
 
+	if (len_left >= 64) {
+		printk(KERN_WARNING "ESP init event len looks unexpected: %u (>=64)\n", len_left);
+		printk(KERN_WARNING "You probably facing timing mismatch at transport layer\n");
+	}
+
 	while (len_left) {
 		tag_len = *(pos + 1);
 		printk(KERN_INFO "EVENT: %d\n", *pos);
@@ -818,8 +787,10 @@ int process_init_event(u8 *evt_buf, u8 len)
 			print_capabilities(*(pos + 2));
 		} else if (*pos == ESP_PRIV_TEST_RAW_TP) {
 			process_test_capabilities(*(pos + 2));
+		} else if (*pos == ESP_PRIV_FIRMWARE_CHIP_ID) {
+			printk(KERN_INFO "ESP slave Chip ID: 0x%X\n", *(pos + 2));
 		} else {
-			printk (KERN_WARNING "Unsupported tag in event");
+			printk (KERN_WARNING "Unsupported tag (0x%X) in event\n", *(pos + 2));
 		}
 		pos += (tag_len+2);
 		len_left -= (tag_len+2);

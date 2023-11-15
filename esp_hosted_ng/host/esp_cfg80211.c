@@ -1,9 +1,9 @@
+// SPDX-License-Identifier: GPL-2.0-only
 /*
  * Espressif Systems Wireless LAN device driver
  *
  * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
- * SPDX-License-Identifier: GPL-2.0-only
  */
 #include "utils.h"
 #include "esp.h"
@@ -602,6 +602,55 @@ static struct cfg80211_ops esp_cfg80211_ops = {
 	.get_tx_power = esp_cfg80211_get_tx_power,
 };
 
+static void esp_reg_notifier(struct wiphy *wiphy,
+			     struct regulatory_request *request)
+{
+	struct esp_wifi_device *priv = NULL;
+	struct esp_device *esp_dev = NULL;
+	struct esp_adapter *adapter = esp_get_adapter();
+
+	if (!wiphy || !request) {
+		esp_info("%u invalid input\n", __LINE__);
+		return;
+	}
+
+	esp_dev = wiphy_priv(wiphy);
+
+	if (!esp_dev || !esp_dev->adapter) {
+		esp_info("%u esp_dev not initialized yet \n", __LINE__);
+		return;
+	}
+	if (test_bit(ESP_CLEANUP_IN_PROGRESS, &adapter->state_flags)) {
+               return;
+	}
+
+	priv = esp_dev->adapter->priv[0];
+
+	if (!priv) {
+		esp_info("%u esp_wifi_device not initialized yet \n", __LINE__);
+		return;
+	}
+	esp_info("cfg80211 regulatory domain callback for %c%c, current=%c%c\n",
+		    request->alpha2[0], request->alpha2[1], priv->country_code[0], priv->country_code[1]);
+
+	switch (request->initiator) {
+	case NL80211_REGDOM_SET_BY_DRIVER:
+	case NL80211_REGDOM_SET_BY_CORE:
+	case NL80211_REGDOM_SET_BY_USER:
+	case NL80211_REGDOM_SET_BY_COUNTRY_IE:
+		break;
+	default:
+		esp_dbg("unknown regdom initiator: %d\n", request->initiator);
+		return;
+	}
+
+	/* Don't send same regdom info to firmware */
+	if (strncmp(request->alpha2, priv->country_code, strlen(request->alpha2))) {
+		strlcpy(priv->country_code, request->alpha2, MAX_COUNTRY_LEN);
+		cmd_set_reg_domain(priv);
+	}
+}
+
 int esp_cfg80211_register(struct esp_adapter *adapter)
 {
 	struct wiphy *wiphy;
@@ -638,10 +687,14 @@ int esp_cfg80211_register(struct esp_adapter *adapter)
 	wiphy->max_scan_ie_len = 1000;
 	wiphy->max_sched_scan_ssids = 10;
 	wiphy->signal_type = CFG80211_SIGNAL_TYPE_MBM;
+#ifdef CONFIG_PM
 	wiphy->wowlan = &esp_wowlan_support;
+#endif
 
 	/* Advertise SAE support */
 	wiphy->features |= NL80211_FEATURE_SAE;
+
+	wiphy->reg_notifier = esp_reg_notifier;
 
 	ret = wiphy_register(wiphy);
 

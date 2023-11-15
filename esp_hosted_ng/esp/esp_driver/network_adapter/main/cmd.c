@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 // Copyright 2015-2022 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -616,6 +617,7 @@ static int handle_wpa_sta_rx_mgmt(uint8_t type, uint8_t *frame, size_t len, uint
 
 	case WLAN_FC_STYPE_BEACON:
 		/*ESP_LOGV(TAG, "%s:%u beacon frames ignored\n", __func__, __LINE__);*/
+		sta_rx_probe(type, frame, len, sender, rssi, channel, current_tsf);
 		break;
 
 	case WLAN_FC_STYPE_PROBE_RESP:
@@ -652,7 +654,7 @@ static int handle_wpa_sta_rx_mgmt(uint8_t type, uint8_t *frame, size_t len, uint
 	return ESP_OK;
 }
 
-
+extern char * wpa_config_parse_string(const char *value, size_t *len);
 esp_err_t initialise_wifi(void)
 {
 	wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
@@ -680,6 +682,7 @@ esp_err_t initialise_wifi(void)
 	wpa_cb.wpa3_build_sae_msg = build_sae_msg;
 	wpa_cb.wpa3_parse_sae_msg = rx_sae_msg;
 	wpa_cb.wpa_config_done = config_done;
+	wpa_cb.wpa_config_parse_string  = wpa_config_parse_string;
 
 	esp_wifi_register_wpa_cb_internal(&wpa_cb);
 
@@ -708,6 +711,7 @@ int process_start_scan(uint8_t if_type, uint8_t *payload, uint16_t payload_len)
 	interface_buffer_handle_t buf_handle = {0};
 	uint8_t cmd_status = CMD_RESPONSE_SUCCESS;
 	struct scan_request *scan_req;
+	bool config_present = false;
 
 	/* Register to receive probe response and beacon frames */
 	type = (1 << WLAN_FC_STYPE_BEACON) | (1 << WLAN_FC_STYPE_PROBE_RESP) |
@@ -722,15 +726,20 @@ int process_start_scan(uint8_t if_type, uint8_t *payload, uint16_t payload_len)
 
 		memcpy(params.ssid, scan_req->ssid, sizeof(scan_req->ssid));
 		params.scan_type = 0;
+		config_present = true;
 	}
 
 	if (scan_req->channel) {
 		params.channel = scan_req->channel;
+		config_present = true;
 	}
 
 	if (sta_init_flag) {
 		/* Trigger scan */
-		ret = esp_wifi_scan_start(&params, false);
+		if (config_present)
+		    ret = esp_wifi_scan_start(&params, false);
+		else
+		    ret = esp_wifi_scan_start(NULL, false);
 
 		if (ret) {
 			ESP_LOGI(TAG, "Scan failed ret=[0x%x]\n",ret);
@@ -924,6 +933,87 @@ DONE:
 	return ret;
 }
 
+int process_reg_set(uint8_t if_type, uint8_t *payload, uint16_t payload_len)
+{
+	interface_buffer_handle_t buf_handle = {0};
+	esp_err_t ret = ESP_OK;
+	struct cmd_reg_domain *cmd;
+
+	cmd = (struct cmd_reg_domain *)payload;
+	esp_wifi_set_country_code(cmd->country_code, false);
+
+	buf_handle.if_type = if_type;
+	buf_handle.if_num = 0;
+	buf_handle.payload_len = sizeof(struct cmd_reg_domain);
+	buf_handle.pkt_type = PACKET_TYPE_COMMAND_RESPONSE;
+
+	buf_handle.payload = heap_caps_malloc(buf_handle.payload_len, MALLOC_CAP_DMA);
+	assert(buf_handle.payload);
+	memset(buf_handle.payload, 0, buf_handle.payload_len);
+
+	cmd = (struct cmd_reg_domain *)(buf_handle.payload);
+	esp_wifi_get_country_code(cmd->country_code);
+	cmd->header.cmd_code = CMD_SET_REG_DOMAIN;
+	cmd->header.len = 0;
+	cmd->header.cmd_status = CMD_RESPONSE_SUCCESS;
+
+	buf_handle.priv_buffer_handle = buf_handle.payload;
+	buf_handle.free_buf_handle = free;
+
+	ret = send_command_response(&buf_handle);
+	if (ret != pdTRUE) {
+		ESP_LOGE(TAG, "Slave -> Host: Failed to send command response\n");
+		goto DONE;
+	}
+
+	return ESP_OK;
+
+DONE:
+	if (buf_handle.payload)
+		free(buf_handle.payload);
+
+	return ret;
+}
+
+int process_reg_get(uint8_t if_type, uint8_t *payload, uint16_t payload_len)
+{
+	interface_buffer_handle_t buf_handle = {0};
+	esp_err_t ret = ESP_OK;
+	struct cmd_reg_domain *cmd;
+
+	buf_handle.if_type = if_type;
+	buf_handle.if_num = 0;
+	buf_handle.payload_len = sizeof(struct cmd_reg_domain);
+	buf_handle.pkt_type = PACKET_TYPE_COMMAND_RESPONSE;
+
+	buf_handle.payload = heap_caps_malloc(buf_handle.payload_len, MALLOC_CAP_DMA);
+	assert(buf_handle.payload);
+	memset(buf_handle.payload, 0, buf_handle.payload_len);
+
+	cmd = (struct cmd_reg_domain *)(buf_handle.payload);
+	esp_wifi_get_country_code(cmd->country_code);
+	cmd->header.cmd_code = CMD_GET_REG_DOMAIN;
+	cmd->header.len = 0;
+	cmd->header.cmd_status = CMD_RESPONSE_SUCCESS;
+
+	buf_handle.priv_buffer_handle = buf_handle.payload;
+	buf_handle.free_buf_handle = free;
+
+	ret = send_command_response(&buf_handle);
+	if (ret != pdTRUE) {
+		ESP_LOGE(TAG, "Slave -> Host: Failed to send command response\n");
+		goto DONE;
+	}
+
+	return ESP_OK;
+
+DONE:
+	if (buf_handle.payload)
+		free(buf_handle.payload);
+
+	return ret;
+}
+
 
 int process_sta_disconnect(uint8_t if_type, uint8_t *payload, uint16_t payload_len)
 {
@@ -1070,9 +1160,17 @@ int process_auth_request(uint8_t if_type, uint8_t *payload, uint16_t payload_len
 		ESP_LOGI(TAG, "Connecting to %s, channel: %u [%d]", wifi_config.sta.ssid, cmd_auth->channel, auth_type);
 
 
-		if (auth_type)
+		if (auth_type == WIFI_AUTH_WEP) {
+			if (!cmd_auth->key_len)
+				ESP_LOGE(TAG, "WEP password not present");
+			memcpy(wifi_config.sta.password, cmd_auth->key, 27);
+			wifi_config.sta.threshold.authmode = WIFI_AUTH_WEP;
+		} else if (auth_type != WIFI_AUTH_OPEN) {
 			memcpy(wifi_config.sta.password, DUMMY_PASSPHRASE, sizeof(DUMMY_PASSPHRASE));
+			wifi_config.sta.threshold.authmode = WIFI_AUTH_WPA_PSK;;
+		}
 
+		ESP_LOGD(TAG, "AUTH type=%d password used=%s\n", auth_type, wifi_config.sta.password);
 		memcpy(wifi_config.sta.bssid, cmd_auth->bssid, MAC_ADDR_LEN);
 
 		wifi_config.sta.channel = cmd_auth->channel;
@@ -1706,6 +1804,10 @@ int process_add_key(uint8_t if_type, uint8_t *payload, uint16_t payload_len)
 		goto SEND_CMD;
 	}
 
+	if (key->algo == WIFI_WPA_ALG_WEP40 || key->algo == WIFI_WPA_ALG_WEP104) {
+		header->cmd_status = CMD_RESPONSE_SUCCESS;
+		goto SEND_CMD;
+	}
 	if (key->index) {
 		if (key->algo == WIFI_WPA_ALG_IGTK) {
 			wifi_wpa_igtk_t igtk = {0};

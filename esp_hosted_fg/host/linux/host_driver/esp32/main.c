@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-2.0-only
 /*
  * Espressif Systems Wireless LAN device driver
  *
@@ -41,7 +42,7 @@ MODULE_AUTHOR("Amey Inamdar <amey.inamdar@espressif.com>");
 MODULE_AUTHOR("Mangesh Malusare <mangesh.malusare@espressif.com>");
 MODULE_AUTHOR("Yogesh Mantri <yogesh.mantri@espressif.com>");
 MODULE_DESCRIPTION("Host driver for ESP-Hosted solution");
-MODULE_VERSION("0.4");
+MODULE_VERSION("0.0.5");
 
 struct esp_adapter adapter;
 volatile u8 stop_data = 0;
@@ -138,7 +139,7 @@ static int esp_set_mac_address(struct net_device *ndev, void *data)
 		return -EINVAL;
 
 	ether_addr_copy(priv->mac_address, mac_addr->sa_data);
-	ether_addr_copy(ndev->dev_addr, mac_addr->sa_data);
+	eth_hw_addr_set(ndev, mac_addr->sa_data);
 	return 0;
 }
 
@@ -217,10 +218,8 @@ static int process_tx_packet (struct sk_buff *skb)
 	u8 pad_len = 0, realloc_skb = 0;
 	u16 len = 0;
 	u16 total_len = 0;
-	static u8 c = 0;
 	u8 *pos = NULL;
 
-	c++;
 	/* Get the priv */
 	cb = (struct esp_skb_cb *) skb->cb;
 	priv = cb->priv;
@@ -393,6 +392,9 @@ static void process_rx_packet(struct sk_buff *skb)
 	len = le16_to_cpu(payload_header->len);
 	offset = le16_to_cpu(payload_header->offset);
 
+	/*print_hex_dump(KERN_INFO, "rx: ",
+		DUMP_PREFIX_ADDRESS, 16, 1, skb->data , len+offset, 1  );*/
+
 	if (adapter->capabilities & ESP_CHECKSUM_ENABLED) {
 		rx_checksum = le16_to_cpu(payload_header->checksum);
 		payload_header->checksum = 0;
@@ -400,6 +402,7 @@ static void process_rx_packet(struct sk_buff *skb)
 		checksum = compute_checksum(skb->data, (len + offset));
 
 		if (checksum != rx_checksum) {
+			printk(KERN_INFO "cal_chksum[%u]!=rx_chksum[%u]\n", checksum, rx_checksum);
 			dev_kfree_skb_any(skb);
 			return;
 		}
@@ -407,8 +410,6 @@ static void process_rx_packet(struct sk_buff *skb)
 
 	if (payload_header->if_type == ESP_SERIAL_IF) {
 #ifdef CONFIG_SUPPORT_ESP_SERIAL
-		/* print_hex_dump(KERN_INFO, "esp_serial_rx: ",
-		 * DUMP_PREFIX_ADDRESS, 16, 1, skb->data + offset, len, 1  ); */
 		do {
 			ret = esp_serial_data_received(payload_header->if_num,
 					(skb->data + offset + ret_len), (len - ret_len));
@@ -561,6 +562,8 @@ int esp_send_packet(struct esp_adapter *adapter, struct sk_buff *skb)
 	if (!adapter || !adapter->if_ops || !adapter->if_ops->write)
 		return -EINVAL;
 
+	/*print_hex_dump(KERN_INFO, "tx: ",
+		DUMP_PREFIX_ADDRESS, 16, 1, skb->data , skb->len+sizeof(struct esp_payload_header), 1  );*/
 	return adapter->if_ops->write(adapter, skb);
 }
 
@@ -610,7 +613,7 @@ static int esp_init_net_dev(struct net_device *ndev, struct esp_private *priv)
 	/* set net dev ops */
 	ndev->netdev_ops = &esp_netdev_ops;
 
-	ether_addr_copy(ndev->dev_addr, priv->mac_address);
+	eth_hw_addr_set(ndev, priv->mac_address);
 	/* set ethtool ops */
 
 	/* update features supported */
@@ -671,13 +674,13 @@ error_exit:
 
 static void esp_remove_network_interfaces(struct esp_adapter *adapter)
 {
-	if (adapter->priv[0]->ndev) {
+	if (adapter->priv[0] && adapter->priv[0]->ndev) {
 		netif_stop_queue(adapter->priv[0]->ndev);
 		unregister_netdev(adapter->priv[0]->ndev);
 		free_netdev(adapter->priv[0]->ndev);
 	}
 
-	if (adapter->priv[1]->ndev) {
+	if (adapter->priv[1] && adapter->priv[1]->ndev) {
 		netif_stop_queue(adapter->priv[1]->ndev);
 		unregister_netdev(adapter->priv[1]->ndev);
 		free_netdev(adapter->priv[1]->ndev);
@@ -722,9 +725,6 @@ int esp_remove_card(struct esp_adapter *adapter)
 	if (adapter->if_rx_workqueue)
 		flush_workqueue(adapter->if_rx_workqueue);
 
-	if (adapter->tx_workqueue)
-		flush_workqueue(adapter->tx_workqueue);
-
 	esp_remove_network_interfaces(adapter);
 
 	adapter->priv[0] = NULL;
@@ -741,11 +741,11 @@ static void esp_if_rx_work (struct work_struct *work)
 
 static void deinit_adapter(void)
 {
+	if (adapter.if_context)
+		adapter.state = ESP_CONTEXT_DISABLED;
+
 	if (adapter.if_rx_workqueue)
 		destroy_workqueue(adapter.if_rx_workqueue);
-
-	if (adapter.tx_workqueue)
-		destroy_workqueue(adapter.tx_workqueue);
 }
 
 static void esp_reset(void)
@@ -788,14 +788,6 @@ static struct esp_adapter * init_adapter(void)
 	}
 
 	INIT_WORK(&adapter.if_rx_work, esp_if_rx_work);
-
-	/* Prepare TX work */
-	adapter.tx_workqueue = create_workqueue("ESP_TX_WORK_QUEUE");
-
-	if (!adapter.tx_workqueue) {
-		deinit_adapter();
-		return NULL;
-	}
 
 	return &adapter;
 }

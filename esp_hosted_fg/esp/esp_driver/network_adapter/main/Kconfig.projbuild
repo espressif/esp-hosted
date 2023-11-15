@@ -13,7 +13,7 @@ menu "Example Configuration"
 
         config ESP_SDIO_HOST_INTERFACE
             bool "SDIO interface"
-            depends on IDF_TARGET_ESP32
+            depends on IDF_TARGET_ESP32 || IDF_TARGET_ESP32C6
             help
                 Enable/Disable SDIO host interface
 
@@ -75,6 +75,7 @@ menu "Example Configuration"
 
     config ESP_SDIO_CHECKSUM
         bool "SDIO checksum ENABLE/DISABLE"
+		default n
         help
             ENABLE/DISABLE software SDIO checksum
 
@@ -103,6 +104,7 @@ menu "Example Configuration"
 
     config ESP_CACHE_MALLOC
         bool "Cache allocated memory like mempool - helps to reduce malloc calls"
+        default n if IDF_TARGET_ESP32C2
         default y
         help
             Cache allocated memory - reduces number of malloc calls

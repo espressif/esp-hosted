@@ -2,7 +2,7 @@
  * Espressif Systems Wireless LAN device driver
  *
  * Copyright (C) 2015-2022 Espressif Systems (Shanghai) PTE LTD
- * SPDX-License-Identifier: GPL-2.0 OR Apache-2.0
+ * SPDX-License-Identifier: GPL-2.0-only OR Apache-2.0
  */
 
 #include <stdio.h>

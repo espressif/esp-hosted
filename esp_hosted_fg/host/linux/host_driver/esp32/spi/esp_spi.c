@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (C) 2015-2021 Espressif Systems (Shanghai) PTE LTD
  *
@@ -45,15 +46,28 @@
 #define ESP_PRIV_FIRMWARE_CHIP_ESP32C2      (0xC)
 #define ESP_PRIV_FIRMWARE_CHIP_ESP32C6      (0xD)
 
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 4, 0))
+  /* gpio_get_value reads raw state & not aware of CS being active low */
+  #define IS_CS_ASSERTED(sPiDeV) !gpio_get_value(((const struct spi_device*)sPiDeV)->cs_gpio)
+#else
+  /* gpiod_get_value is aware of CS being active low */
+  #define IS_CS_ASSERTED(sPiDeV) gpiod_get_value(((const struct spi_device*)sPiDeV)->cs_gpiod)
+#endif
+
+
+u8 spi_new_clk = SPI_INITIAL_CLK_MHZ;
 static struct sk_buff * read_packet(struct esp_adapter *adapter);
 static int write_packet(struct esp_adapter *adapter, struct sk_buff *skb);
 static void spi_exit(void);
 static void adjust_spi_clock(u8 spi_clk_mhz);
+static void esp_spi_transaction(void);
 
 volatile u8 data_path = 0;
 static struct esp_spi_context spi_context;
 static char hardware_type = ESP_PRIV_FIRMWARE_CHIP_UNRECOGNIZED;
 static atomic_t tx_pending;
+struct task_struct *spi_thread;
+struct semaphore spi_sem;
 
 static struct esp_if_ops if_ops = {
 	.read		= read_packet,
@@ -61,6 +75,7 @@ static struct esp_if_ops if_ops = {
 };
 
 static DEFINE_MUTEX(spi_lock);
+
 
 static void open_data_path(void)
 {
@@ -77,19 +92,13 @@ static void close_data_path(void)
 
 static irqreturn_t spi_data_ready_interrupt_handler(int irq, void * dev)
 {
-	/* ESP peripheral has queued buffer for transmission */
- 	if (spi_context.spi_workqueue)
- 		queue_work(spi_context.spi_workqueue, &spi_context.spi_work);
-
+	up(&spi_sem);
  	return IRQ_HANDLED;
  }
 
 static irqreturn_t spi_interrupt_handler(int irq, void * dev)
 {
-	/* ESP peripheral is ready for next SPI transaction */
-	if (spi_context.spi_workqueue)
-		queue_work(spi_context.spi_workqueue, &spi_context.spi_work);
-
+	up(&spi_sem);
 	return IRQ_HANDLED;
 }
 
@@ -156,16 +165,14 @@ static int write_packet(struct esp_adapter *adapter, struct sk_buff *skb)
 		if (atomic_read(&tx_pending) >= TX_MAX_PENDING_COUNT) {
 			esp_tx_pause();
 			dev_kfree_skb(skb);
-			if (spi_context.spi_workqueue)
-				queue_work(spi_context.spi_workqueue, &spi_context.spi_work);
+			up(&spi_sem);
 			return -EBUSY;
 		}
 		skb_queue_tail(&spi_context.tx_q[PRIO_Q_OTHERS], skb);
 		atomic_inc(&tx_pending);
 	}
 
-	if (spi_context.spi_workqueue)
-		queue_work(spi_context.spi_workqueue, &spi_context.spi_work);
+	up(&spi_sem);
 
 	return 0;
 }
@@ -224,14 +231,10 @@ static int process_rx_buf(struct sk_buff *skb)
 
 	header = (struct esp_payload_header *) skb->data;
 
+	/*print_hex_dump(KERN_INFO, "rx: ",
+	  DUMP_PREFIX_ADDRESS, 16, 1, skb->data , 8, 1  );*/
+
 	if (header->if_type >= ESP_MAX_IF) {
-		return -EINVAL;
-	}
-
-	offset = le16_to_cpu(header->offset);
-
-	/* Validate received SKB. Check len and offset fields */
-	if (offset != sizeof(struct esp_payload_header)) {
 		return -EINVAL;
 	}
 
@@ -240,9 +243,23 @@ static int process_rx_buf(struct sk_buff *skb)
 		return -EINVAL;
 	}
 
-	len += sizeof(struct esp_payload_header);
+	offset = le16_to_cpu(header->offset);
 
+	/* Validate received SKB. Check len and offset fields */
+	if (offset != sizeof(struct esp_payload_header)) {
+		printk(KERN_INFO "offset_rcv[%u] != exp[%u], drop\n",
+				offset, sizeof(struct esp_payload_header));
+		/*print_hex_dump(KERN_INFO, "wrong offset: ",
+		  DUMP_PREFIX_ADDRESS, 16, 1, skb->data , 8, 1  );*/
+		return -EINVAL;
+	}
+
+
+	len += sizeof(struct esp_payload_header);
 	if (len > SPI_BUF_SIZE) {
+		printk(KERN_INFO "len[%u] > max[%u], drop\n", len, SPI_BUF_SIZE);
+		/*print_hex_dump(KERN_INFO, "wrong len: ",
+		  DUMP_PREFIX_ADDRESS, 16, 1, skb->data , 8, 1  );*/
 		return -EINVAL;
 	}
 
@@ -267,7 +284,7 @@ static int process_rx_buf(struct sk_buff *skb)
 	return 0;
 }
 
-static void esp_spi_work(struct work_struct *work)
+static void esp_spi_transaction(void)
 {
 	struct spi_transfer trans;
 	struct sk_buff *tx_skb = NULL, *rx_skb = NULL;
@@ -293,15 +310,16 @@ static void esp_spi_work(struct work_struct *work)
 
 				if (atomic_read(&tx_pending) < TX_RESUME_THRESHOLD) {
 					esp_tx_resume();
-					#if TEST_RAW_TP
-						esp_raw_tp_queue_resume();
-					#endif
+#if TEST_RAW_TP
+					esp_raw_tp_queue_resume();
+#endif
 				}
 			}
 		}
 
 		if (rx_pending || tx_skb) {
 			memset(&trans, 0, sizeof(trans));
+			trans.speed_hz = spi_new_clk * NUMBER_1M;
 
 			/* Setup and execute SPI transaction
 			 * 	Tx_buf: Check if tx_q has valid buffer for transmission,
@@ -316,6 +334,8 @@ static void esp_spi_work(struct work_struct *work)
 
 			if (tx_skb) {
 				trans.tx_buf = tx_skb->data;
+				/*print_hex_dump(KERN_INFO, "spi_tx: ",
+				  DUMP_PREFIX_ADDRESS, 16, 1, trans.tx_buf, 32, 1  );*/
 			} else {
 				tx_skb = esp_alloc_skb(SPI_BUF_SIZE);
 				trans.tx_buf = skb_put(tx_skb, SPI_BUF_SIZE);
@@ -336,7 +356,6 @@ static void esp_spi_work(struct work_struct *work)
 				trans.cs_change = 1;
 			}
 #endif
-
 			ret = spi_sync_transfer(spi_context.esp_spi_dev, &trans, 1);
 			if (ret) {
 				printk(KERN_ERR "SPI Transaction failed: %d", ret);
@@ -353,10 +372,60 @@ static void esp_spi_work(struct work_struct *work)
 					dev_kfree_skb(tx_skb);
 			}
 		}
+	} else {
+		up(&spi_sem);
 	}
 
 	mutex_unlock(&spi_lock);
 }
+
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 16, 0))
+#include <linux/platform_device.h>
+static int __spi_controller_match(struct device *dev, const void *data)
+{
+	struct spi_controller *ctlr;
+	const u16 *bus_num = data;
+
+	ctlr = container_of(dev, struct spi_controller, dev);
+
+	if (!ctlr) {
+		return 0;
+	}
+
+	return ctlr->bus_num == *bus_num;
+}
+
+static struct spi_controller *spi_busnum_to_master(u16 bus_num)
+{
+	struct platform_device *pdev = NULL;
+	struct spi_master *master = NULL;
+	struct spi_controller *ctlr = NULL;
+	struct device *dev = NULL;
+
+	pdev = platform_device_alloc("pdev", PLATFORM_DEVID_NONE);
+	pdev->num_resources = 0;
+	platform_device_add(pdev);
+
+	master = spi_alloc_master(&pdev->dev, sizeof(void *));
+	if (!master) {
+		pr_err("Error: failed to allocate SPI master device\n");
+		platform_device_del(pdev);
+		platform_device_put(pdev);
+		return NULL;
+	}
+
+	dev = class_find_device(master->dev.class, NULL, &bus_num, __spi_controller_match);
+	if (dev) {
+		ctlr = container_of(dev, struct spi_controller, dev);
+	}
+
+	spi_master_put(master);
+	platform_device_del(pdev);
+	platform_device_put(pdev);
+
+	return ctlr;
+}
+#endif
 
 static int spi_dev_init(int spi_clk_mhz)
 {
@@ -454,8 +523,35 @@ static int spi_reinit_spidev(int spi_clk_mhz)
 
 	if (spi_context.esp_spi_dev)
 		spi_unregister_device(spi_context.esp_spi_dev);
+	spi_new_clk = spi_clk_mhz;
 
 	return spi_dev_init(spi_clk_mhz);
+}
+
+static int esp_spi_thread(void *data)
+{
+	struct esp_spi_context *context = &spi_context;
+
+	printk(KERN_INFO "esp spi thread created\n");
+
+	while (!kthread_should_stop()) {
+
+		if (down_interruptible(&spi_sem)) {
+			//printk(KERN_INFO "Failed to acquire spi_sem\n");
+			msleep(10);
+			continue;
+		}
+
+		if (context->adapter->state != ESP_CONTEXT_READY) {
+			msleep(10);
+			continue;
+		}
+
+		esp_spi_transaction();
+	}
+	printk(KERN_INFO "esp spi thread cleared\n");
+	do_exit(0);
+	return 0;
 }
 
 static int spi_init(void)
@@ -463,18 +559,16 @@ static int spi_init(void)
 	int status = 0;
 	uint8_t prio_q_idx = 0;
 
-	spi_context.spi_workqueue = create_workqueue("ESP_SPI_WORK_QUEUE");
+	sema_init(&spi_sem, 0);
 
-	if (!spi_context.spi_workqueue) {
-		printk(KERN_ERR "spi workqueue failed to create\n");
-		spi_exit();
+	spi_thread = kthread_run(esp_spi_thread, spi_context.adapter, "esp32_spi");
+	if (!spi_thread) {
+		printk (KERN_ERR "Failed to create esp32_spi thread\n");
 		return -EFAULT;
 	}
 
 	printk(KERN_INFO "ESP: SPI host config: GPIOs: Handshake[%u] DataReady[%u]",
 			HANDSHAKE_PIN, SPI_DATA_READY_PIN);
-
-	INIT_WORK(&spi_context.spi_work, esp_spi_work);
 
 	for (prio_q_idx=0; prio_q_idx<MAX_PRIORITY_QUEUES; prio_q_idx++) {
 		skb_queue_head_init(&spi_context.tx_q[prio_q_idx]);
@@ -505,6 +599,8 @@ static int spi_init(void)
 		return status;
 	}
 
+	spi_context.adapter->state = ESP_CONTEXT_READY;
+
 	msleep(200);
 
 	return status;
@@ -514,6 +610,7 @@ static void spi_exit(void)
 {
 	uint8_t prio_q_idx = 0;
 
+	spi_context.adapter->state = ESP_CONTEXT_DISABLED;
 	disable_irq(SPI_IRQ);
 	disable_irq(SPI_DATA_READY_IRQ);
 	close_data_path();
@@ -524,10 +621,10 @@ static void spi_exit(void)
 		skb_queue_purge(&spi_context.rx_q[prio_q_idx]);
 	}
 
-	if (spi_context.spi_workqueue) {
-		flush_scheduled_work();
-		destroy_workqueue(spi_context.spi_workqueue);
-		spi_context.spi_workqueue = NULL;
+	up(&spi_sem);
+	if (spi_thread) {
+		kthread_stop(spi_thread);
+		spi_thread = NULL;
 	}
 
 	esp_serial_cleanup();

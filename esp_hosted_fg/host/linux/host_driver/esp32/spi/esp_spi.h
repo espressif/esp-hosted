@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (C) 2015-2021 Espressif Systems (Shanghai) PTE LTD
  *
@@ -32,6 +33,7 @@ struct esp_spi_context {
 	struct sk_buff_head         rx_q[MAX_PRIORITY_QUEUES];
 	struct workqueue_struct     *spi_workqueue;
 	struct work_struct          spi_work;
+	enum context_state          state;
 };
 
 enum {

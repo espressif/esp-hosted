@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 // Copyright 2015-2021 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -650,9 +651,11 @@ static esp_err_t req_get_ap_config_handler (CtrlMsg *req,
 	}
 
 	snprintf((char *)credentials.bssid,BSSID_LENGTH,MACSTR,MAC2STR(ap_info->bssid));
-	
-	strncpy((char *)credentials.ssid, (char *)ap_info->ssid,
-			min(sizeof(credentials.ssid), strlen((char *)ap_info->ssid)+1));
+
+	if (strlen((char *)ap_info->ssid)) {
+		strncpy((char *)credentials.ssid, (char *)ap_info->ssid,
+				min(sizeof(credentials.ssid), strlen((char *)ap_info->ssid)+1));
+	}
 
 	credentials.rssi = ap_info->rssi;
 	credentials.chnl = ap_info->primary;
@@ -794,12 +797,14 @@ static esp_err_t req_get_softap_config_handler (CtrlMsg *req,
 		goto err;
 	}
 
-
-	strncpy((char *)credentials.ssid,(char *)&get_conf.ap.ssid,
-			min(sizeof(credentials.ssid), strlen((char *)&get_conf.ap.ssid)+1));
-
-	strncpy((char *)credentials.pwd,(char *)&get_conf.ap.password,
-			min(sizeof(credentials.pwd), strlen((char *)&get_conf.ap.password)+1));
+	if (strlen((char *)get_conf.ap.ssid)) {
+		strncpy((char *)credentials.ssid,(char *)&get_conf.ap.ssid,
+				min(sizeof(credentials.ssid), strlen((char *)&get_conf.ap.ssid)+1));
+	}
+	if (strlen((char *)get_conf.ap.password)) {
+		strncpy((char *)credentials.pwd,(char *)&get_conf.ap.password,
+				min(sizeof(credentials.pwd), strlen((char *)&get_conf.ap.password)+1));
+	}
 
 	credentials.chnl = get_conf.ap.channel;
 	credentials.max_conn = get_conf.ap.max_connection;

@@ -1,5 +1,5 @@
 // Copyright 2015-2021 Espressif Systems (Shanghai) PTE LTD
-/* SPDX-License-Identifier: GPL-2.0 OR Apache-2.0 */
+/* SPDX-License-Identifier: GPL-2.0-only OR Apache-2.0 */
 
 #ifndef __ESP_NETWORK_ADAPTER__H
 #define __ESP_NETWORK_ADAPTER__H
@@ -40,6 +40,7 @@ struct esp_payload_header {
 } __attribute__((packed));
 
 typedef enum {
+	ESP_INVALID_IF,
 	ESP_STA_IF,
 	ESP_AP_IF,
 	ESP_SERIAL_IF,

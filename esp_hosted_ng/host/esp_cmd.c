@@ -1,9 +1,9 @@
+// SPDX-License-Identifier: GPL-2.0-only
 /*
  * Espressif Systems Wireless LAN device driver
  *
  * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
- * SPDX-License-Identifier: GPL-2.0-only
  */
 #include "utils.h"
 #include "esp_cmd.h"
@@ -233,6 +233,8 @@ static int wait_and_decode_cmd_resp(struct esp_wifi_device *priv,
 	case CMD_SET_DEFAULT_KEY:
 	case CMD_SET_IP_ADDR:
 	case CMD_SET_MCAST_MAC_ADDR:
+	case CMD_GET_REG_DOMAIN:
+	case CMD_SET_REG_DOMAIN:
 		/* intentional fallthrough */
 		if (ret == 0)
 			ret = decode_common_resp(cmd_node);
@@ -493,6 +495,7 @@ static void process_scan_result_event(struct esp_wifi_device *priv,
 	u16 cap_info;
 	u32 ie_len;
 	int freq;
+	int frame_type = CFG80211_BSS_FTYPE_UNKNOWN; /* int type for older compatibilty */
 
 	if (!priv || !scan_evt) {
 		esp_err("Invalid arguments\n");
@@ -529,9 +532,15 @@ static void process_scan_result_event(struct esp_wifi_device *priv,
 	ie_buf += sizeof(struct beacon_probe_fixed_params);
 	ie_len -= sizeof(struct beacon_probe_fixed_params);
 
+	if ((scan_evt->frame_type << 4) == IEEE80211_STYPE_BEACON) {
+		frame_type = CFG80211_BSS_FTYPE_BEACON;
+	} else if ((scan_evt->frame_type << 4) == IEEE80211_STYPE_PROBE_RESP) {
+		frame_type = CFG80211_BSS_FTYPE_PRESP;
+	}
+
 	if (chan && !(chan->flags & IEEE80211_CHAN_DISABLED)) {
 		bss = CFG80211_INFORM_BSS(priv->adapter->wiphy, chan,
-				scan_evt->bssid, timestamp,
+				frame_type, scan_evt->bssid, timestamp,
 				cap_info, beacon_interval, ie_buf, ie_len,
 				(le32_to_cpu(scan_evt->rssi) * 100), GFP_ATOMIC);
 
@@ -942,6 +951,10 @@ int cmd_auth_request(struct esp_wifi_device *priv,
 	cmd->auth_data_len = req->auth_data_len;
 	memcpy(cmd->auth_data, req->auth_data, req->auth_data_len);
 
+	if (req->key_len) {
+		memcpy(cmd->key, req->key, req->key_len);
+		cmd->key_len = req->key_len;
+	}
 	esp_info("Authentication request: "MACSTR" %d %d %d %d\n",
 			MAC2STR(cmd->bssid), cmd->channel, cmd->auth_type, cmd->auth_data_len,
 			(u32) req->ie_len);
@@ -1157,6 +1170,15 @@ int cmd_add_key(struct esp_wifi_device *priv, u8 key_index, bool pairwise,
 		return 0;
 	}
 #endif
+
+       /* Supplicant swaps tx/rx Mic keys whereas esp needs it normal format */
+       if (key->algo == WIFI_WPA_ALG_TKIP && !key->index) {
+               u8 buf[8];
+               memcpy(buf, &key->data[16], 8);
+               memcpy(&key->data[16], &key->data[24], 8);
+               memcpy(&key->data[24], buf, 8);
+               memset(buf, 0, 8);
+       }
 
 #if 0
 	esp_err("%u algo: %u idx: %u seq_len: %u len:%u\n", __LINE__,
@@ -1525,6 +1547,65 @@ int cmd_get_tx_power(struct esp_wifi_device *priv)
 		esp_err("Failed to get command node\n");
 		return -ENOMEM;
 	}
+
+	queue_cmd_node(priv->adapter, cmd_node, ESP_CMD_DFLT_PRIO);
+	queue_work(priv->adapter->cmd_wq, &priv->adapter->cmd_work);
+
+	RET_ON_FAIL(wait_and_decode_cmd_resp(priv, cmd_node));
+
+	return 0;
+}
+
+int cmd_get_reg_domain(struct esp_wifi_device *priv)
+{
+	u16 cmd_len;
+	struct command_node *cmd_node = NULL;
+
+	if (!priv || !priv->adapter) {
+		esp_err("Invalid argument\n");
+		return -EINVAL;
+	}
+
+	cmd_len = sizeof(struct cmd_reg_domain);
+
+	cmd_node = prepare_command_request(priv->adapter, CMD_GET_REG_DOMAIN, cmd_len);
+
+	if (!cmd_node) {
+		esp_err("Failed to get command node\n");
+		return -ENOMEM;
+	}
+
+	queue_cmd_node(priv->adapter, cmd_node, ESP_CMD_DFLT_PRIO);
+	queue_work(priv->adapter->cmd_wq, &priv->adapter->cmd_work);
+
+	RET_ON_FAIL(wait_and_decode_cmd_resp(priv, cmd_node));
+
+	return 0;
+}
+
+int cmd_set_reg_domain(struct esp_wifi_device *priv)
+{
+	u16 cmd_len;
+	struct command_node *cmd_node = NULL;
+	struct cmd_reg_domain *cmd;
+
+	if (!priv || !priv->adapter) {
+		esp_err("Invalid argument\n");
+		return -EINVAL;
+	}
+
+	cmd_len = sizeof(struct cmd_reg_domain);
+
+	cmd_node = prepare_command_request(priv->adapter, CMD_SET_REG_DOMAIN, cmd_len);
+
+	if (!cmd_node) {
+		esp_err("Failed to get command node\n");
+		return -ENOMEM;
+	}
+
+	cmd = (struct cmd_reg_domain *) (cmd_node->cmd_skb->data + sizeof(struct esp_payload_header));
+
+	strlcpy(cmd->country_code, priv->country_code, MAX_COUNTRY_LEN);
 
 	queue_cmd_node(priv->adapter, cmd_node, ESP_CMD_DFLT_PRIO);
 	queue_work(priv->adapter->cmd_wq, &priv->adapter->cmd_work);
