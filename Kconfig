@@ -350,6 +350,51 @@ ESP32S3_SDIO_CLK_FREQ_KHZ_RANGE_MAX := 80000
 				help
 					"Optimize SDIO CLK by increasing till host practically can support"
 
+			config ESP_SDIO_PIN_CMD
+				int "CMD GPIO number"
+				default 35 if IDF_TARGET_ESP32S3
+				range 15 15 if IDF_TARGET_ESP32
+				help
+					"Value can only be configured for some targets. Displayed always for reference."
+
+			config ESP_SDIO_PIN_CLK
+				int "CLK GPIO number"
+				default 36 if IDF_TARGET_ESP32S3
+				range 14 14 if IDF_TARGET_ESP32
+				help
+					"Value can only be configured for some targets. Displayed always for reference."
+
+			config ESP_SDIO_PIN_D0
+				int "D0 GPIO number"
+				default 37 if IDF_TARGET_ESP32S3
+				range 2 2 if IDF_TARGET_ESP32
+				help
+					"Value can only be configured for some targets. Displayed always for reference."
+
+			config ESP_SDIO_PIN_D1
+				int "D1 GPIO number"
+				default 38 if IDF_TARGET_ESP32S3
+				range 4 4 if IDF_TARGET_ESP32
+				help
+					"Value can only be configured for some targets. Displayed always for reference."
+
+			if ESP_SDIO_4_BIT_BUS
+				config ESP_SDIO_PIN_D2
+					int "D2 GPIO number"
+					default 33 if IDF_TARGET_ESP32S3
+					range 12 12 if IDF_TARGET_ESP32
+					help
+						"Value can only be configured for some targets. Displayed always for reference."
+
+				config ESP_SDIO_PIN_D3
+					int "D3 GPIO number"
+					default 34 if IDF_TARGET_ESP32S3
+					range 13 13 if IDF_TARGET_ESP32
+					help
+						"Value can only be configured for some targets. Displayed always for reference."
+
+			endif
+
 			config ESP_SDIO_TX_Q_SIZE
 				int "Host SDIO Tx queue size"
 				default 20

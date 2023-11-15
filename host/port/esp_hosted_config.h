@@ -9,6 +9,10 @@
 #include "esp_task.h"
 #include "hosted_os_adapter.h"
 
+#ifdef CONFIG_ESP_SDIO_HOST_INTERFACE
+#include "driver/sdmmc_host.h"
+#endif
+
 /* This file is to tune the main ESP-Hosted configurations.
  * In case you are not sure of some value, Let it be default.
  **/
@@ -43,6 +47,52 @@ so feel free to change these if needed.
 #define H_SPI_INIT_CLK_MHZ                           CONFIG_ESP_SPI_CLK_FREQ
 
 /*  -------------------------- SPI Master Config end ------------------------  */
+#endif
+
+#ifdef CONFIG_ESP_SDIO_HOST_INTERFACE
+/*  -------------------------- SDIO Host Config start -----------------------  */
+
+#ifdef CONFIG_SOC_SDMMC_USE_GPIO_MATRIX
+#define H_SDIO_SOC_USE_GPIO_MATRIX
+#endif
+
+#define H_SDIO_CLOCK_FREQ                            CONFIG_ESP_SDIO_CLOCK_FREQ
+#define H_SDIO_BUS_WIDTH                             CONFIG_ESP_SDIO_BUS_WIDTH
+#define H_SDMMC_HOST_SLOT                            SDMMC_HOST_SLOT_1
+#define H_SDIO_CLOCK_FREQ                            CONFIG_ESP_SDIO_CLOCK_FREQ
+
+#ifdef H_SDIO_SOC_USE_GPIO_MATRIX
+#define H_SDIO_PIN_CLK                               CONFIG_ESP_SDIO_PIN_CLK
+#define H_SDIO_PIN_CMD                               CONFIG_ESP_SDIO_PIN_CMD
+#define H_SDIO_PIN_D0                                CONFIG_ESP_SDIO_PIN_D0
+#define H_SDIO_PIN_D1                                CONFIG_ESP_SDIO_PIN_D1
+#if (H_SDIO_BUS_WIDTH == 4)
+#define H_SDIO_PIN_D2                                CONFIG_ESP_SDIO_PIN_D2
+#define H_SDIO_PIN_D3                                CONFIG_ESP_SDIO_PIN_D3
+#endif
+#endif
+
+// Pad transfer len for host operation
+#define H_SDIO_TX_LEN_TO_TRANSFER(x) ((x + 3) & (~3))
+#define H_SDIO_RX_LEN_TO_TRANSFER(x) ((x + 3) & (~3))
+
+// workarounds for some SDIO transfer errors that may occur
+#define H_SDIO_TX_LIMIT_XFER_SIZE_WORKAROUND // limit transfer to one ESP_BLOCK_SIZE at a time
+#define H_SDIO_RX_LIMIT_XFER_SIZE_WORKDAROUND // limit transfer to one ESP_BLOCK_SIZE at a time
+
+#if defined(H_SDIO_TX_LIMIT_XFER_SIZE_WORKAROUND)
+#define H_SDIO_TX_BLOCKS_TO_TRANSFER(x) (1)
+#else
+#define H_SDIO_TX_BLOCKS_TO_TRANSFER(x) (x / ESP_BLOCK_SIZE)
+#endif
+
+#if defined(H_SDIO_RX_LIMIT_XFER_SIZE_WORKDAROUND)
+#define H_SDIO_RX_BLOCKS_TO_TRANSFER(x) (1)
+#else
+#define H_SDIO_RX_BLOCKS_TO_TRANSFER(x) (x / ESP_BLOCK_SIZE)
+#endif
+
+/*  -------------------------- SDIO Host Config end -------------------------  */
 #endif
 
 /* Generic reset pin config */

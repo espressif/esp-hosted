@@ -187,7 +187,7 @@ static interface_handle_t * sdio_init(void)
 	esp_err_t ret = ESP_OK;
 	sdio_slave_buf_handle_t handle = {0};
 	sdio_slave_config_t config = {
-		.sending_mode       = SDIO_SLAVE_SEND_STREAM,
+		.sending_mode       = SDIO_SLAVE_SEND_PACKET,
 		.send_queue_size    = SDIO_SLAVE_QUEUE_SIZE,
 		.recv_buffer_size   = BUFFER_SIZE,
 		.event_cb           = event_cb,

@@ -783,6 +783,7 @@ hosted_osi_funcs_t g_hosted_osi_funcs = {
 	._h_hosted_init_hook         =  hosted_init_hook               ,
 #ifdef CONFIG_ESP_SDIO_HOST_INTERFACE
 	._h_bus_init                 =  hosted_sdio_init               ,
+	._h_sdio_card_init           =  hosted_sdio_card_init          ,
 	._h_sdio_read_reg            =  hosted_sdio_read_reg           ,
 	._h_sdio_write_reg           =  hosted_sdio_write_reg          ,
 	._h_sdio_read_block          =  hosted_sdio_read_block         ,

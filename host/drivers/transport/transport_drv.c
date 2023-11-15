@@ -53,6 +53,11 @@ uint8_t is_transport_ready(void)
 	return !(TRANSPORT_INACTIVE == transport_state);
 }
 
+uint8_t is_transport_in_reset(void)
+{
+	return TRANSPORT_RESET == transport_state;
+}
+
 static void reset_slave(void)
 {
 	ESP_LOGI(TAG, "Reset slave using GPIO[%u]", H_GPIO_PIN_RESET_Pin);

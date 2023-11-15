@@ -65,8 +65,9 @@ typedef struct {
 /* 38 */ int (*_h_read_gpio)(void* gpio_port, uint32_t gpio_num);
 /* 39 */ int (*_h_write_gpio)(void* gpio_port, uint32_t gpio_num, uint32_t value);
 
-          /* Transport - SPI */
+          /* All Transports - Init */
 /* 40 */ void * (*_h_bus_init)(void);
+          /* Transport - SPI */
 #ifdef CONFIG_ESP_SPI_HOST_INTERFACE
 /* 41 */ int (*_h_do_bus_transfer)(void *transfer_context);
 #endif
@@ -75,12 +76,13 @@ typedef struct {
 /* 44 */ void (*_h_hosted_init_hook)(void);
 
 #ifdef CONFIG_ESP_SDIO_HOST_INTERFACE
-          /* Transport - SPI */
-/* 45 */ int (*_h_sdio_read_reg)(uint32_t reg, uint8_t *data, uint16_t size, bool lock_required);
-/* 46 */ int (*_h_sdio_write_reg)(uint32_t reg, uint8_t *data, uint16_t size, bool lock_required);
-/* 47 */ int (*_h_sdio_read_block)(uint32_t reg, uint8_t *data, uint16_t size, bool lock_required);
-/* 48 */ int (*_h_sdio_write_block)(uint32_t reg, uint8_t *data, uint16_t size, bool lock_required);
-/* 49 */ int (*_h_sdio_wait_slave_intr)(uint32_t ticks_to_wait);
+          /* Transport - SDIO */
+/* 45 */ int (*_h_sdio_card_init)(void *ctx);
+/* 46 */ int (*_h_sdio_read_reg)(uint32_t reg, uint8_t *data, uint16_t size, bool lock_required);
+/* 47 */ int (*_h_sdio_write_reg)(uint32_t reg, uint8_t *data, uint16_t size, bool lock_required);
+/* 48 */ int (*_h_sdio_read_block)(uint32_t reg, uint8_t *data, uint16_t size, bool lock_required);
+/* 49 */ int (*_h_sdio_write_block)(uint32_t reg, uint8_t *data, uint16_t size, bool lock_required);
+/* 50 */ int (*_h_sdio_wait_slave_intr)(uint32_t ticks_to_wait);
 #endif
 } hosted_osi_funcs_t;
 

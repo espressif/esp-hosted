@@ -21,6 +21,7 @@
 #include "os_wrapper.h"
 #include "sdio_reg.h"
 #include "sdio_wrapper.h"
+#include "esp_hosted_config.h"
 
 DEFINE_LOG_TAG(sdio_wrapper);
 
@@ -176,7 +177,7 @@ static esp_err_t sdio_read_fromio(sdmmc_card_t *card, uint32_t function, uint32_
 
 	// do block mode transfer
 	while (remainder >= ESP_BLOCK_SIZE) {
-		blocks = remainder / ESP_BLOCK_SIZE;
+		blocks = H_SDIO_RX_BLOCKS_TO_TRANSFER(remainder);
 		size = blocks * ESP_BLOCK_SIZE;
 		res = sdmmc_io_read_blocks(card, function, addr, ptr, size);
 		if (res)
@@ -212,7 +213,7 @@ static esp_err_t sdio_write_toio(sdmmc_card_t *card, uint32_t function, uint32_t
 
 	// do block mode transfer
 	while (remainder >= ESP_BLOCK_SIZE) {
-		blocks = remainder / ESP_BLOCK_SIZE;
+		blocks = H_SDIO_TX_BLOCKS_TO_TRANSFER(remainder);
 		size = blocks * ESP_BLOCK_SIZE;
 		res = sdmmc_io_write_blocks(card, function, addr, ptr, size);
 		if (res)
@@ -242,7 +243,6 @@ void * hosted_sdio_init(void)
 {
 	esp_err_t res;
 
-	sdmmc_host_t config = SDMMC_HOST_DEFAULT();
 	sdmmc_slot_config_t slot_config = SDMMC_SLOT_CONFIG_DEFAULT();
 
 	// initialise SDMMC host
@@ -251,23 +251,43 @@ void * hosted_sdio_init(void)
 		return NULL;
 
 	// configure SDIO interface and slot
-	slot_config.width = CONFIG_ESP_SDIO_BUS_WIDTH;
-	if (slot_config.width == 4)
-		config.flags = SDMMC_HOST_FLAG_4BIT;
-	else
-		config.flags = SDMMC_HOST_FLAG_1BIT;
-
-	config.max_freq_khz = CONFIG_ESP_SDIO_CLOCK_FREQ;
-
-	res = sdmmc_host_init_slot(SDMMC_HOST_SLOT_1, &slot_config);
+	slot_config.width = H_SDIO_BUS_WIDTH;
+#if defined(H_SDIO_SOC_USE_GPIO_MATRIX)
+	slot_config.clk = H_SDIO_PIN_CLK;
+	slot_config.cmd = H_SDIO_PIN_CMD;
+	slot_config.d0  = H_SDIO_PIN_D0;
+	slot_config.d1  = H_SDIO_PIN_D1;
+#if (H_SDIO_BUS_WIDTH == 4)
+	slot_config.d2  = H_SDIO_PIN_D2;
+	slot_config.d3  = H_SDIO_PIN_D3;
+#endif
+#endif
+	res = sdmmc_host_init_slot(H_SDMMC_HOST_SLOT, &slot_config);
 	if (res != ESP_OK) {
-		ESP_LOGE(TAG, "init SDMMC Host slot %d failed", SDMMC_HOST_SLOT_1);
+		ESP_LOGE(TAG, "init SDMMC Host slot %d failed", H_SDMMC_HOST_SLOT);
 		return NULL;
 	}
 	// initialise connected SDIO card/slave
 	card = (sdmmc_card_t *)g_h.funcs->_h_malloc(sizeof(sdmmc_card_t));
 	if (!card)
 		return NULL;
+
+	// initialise mutex for bus locking
+	sdio_bus_lock = g_h.funcs->_h_create_mutex();
+	assert(sdio_bus_lock);
+
+	return (void *)card;
+}
+
+int hosted_sdio_card_init(void *ctx)
+{
+	sdmmc_host_t config = SDMMC_HOST_DEFAULT();
+
+	if (H_SDIO_BUS_WIDTH == 4)
+		config.flags = SDMMC_HOST_FLAG_4BIT;
+	else
+		config.flags = SDMMC_HOST_FLAG_1BIT;
+	config.max_freq_khz = H_SDIO_CLOCK_FREQ;
 
 	if (sdmmc_card_init(&config, card) != ESP_OK) {
 		ESP_LOGE(TAG, "sdmmc_card_init failed");
@@ -286,19 +306,14 @@ void * hosted_sdio_init(void)
 		ESP_LOGE(TAG, "sdio_cared_fn_init failed");
 		goto fail;
 	}
-
-	// initialise mutex for bus locking
-	sdio_bus_lock = g_h.funcs->_h_create_mutex();
-	assert(sdio_bus_lock);
-
-	return (void *)card;
+	return ESP_OK;
 
 fail:
 	sdmmc_host_deinit();
 	if (card) {
 		HOSTED_FREE(card);
 	}
-	return NULL;
+	return ESP_FAIL;
 }
 
 esp_err_t hosted_sdio_deinit(void *ctx)
@@ -361,7 +376,7 @@ int hosted_sdio_read_block(uint32_t reg, uint8_t *data, uint16_t size, bool lock
 	if (size <= 1) {
 		res = sdmmc_io_read_byte(card, SDIO_FUNC_1, reg, data);
 	} else {
-		res = sdio_read_fromio(card, SDIO_FUNC_1, reg, data, size);
+		res = sdio_read_fromio(card, SDIO_FUNC_1, reg, data, H_SDIO_RX_LEN_TO_TRANSFER(size));
 	}
 	SDIO_UNLOCK(lock_required);
 	return res;
@@ -377,7 +392,7 @@ int hosted_sdio_write_block(uint32_t reg, uint8_t *data, uint16_t size, bool loc
 	if (size <= 1) {
 		res = sdmmc_io_write_byte(card, SDIO_FUNC_1, reg, *data, NULL);
 	} else {
-		res = sdio_write_toio(card, SDIO_FUNC_1, reg, data, size);
+		res = sdio_write_toio(card, SDIO_FUNC_1, reg, data, H_SDIO_TX_LEN_TO_TRANSFER(size));
 	}
 	SDIO_UNLOCK(lock_required);
 	return res;
