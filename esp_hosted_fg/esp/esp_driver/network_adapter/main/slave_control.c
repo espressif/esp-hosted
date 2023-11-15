@@ -651,10 +651,12 @@ static esp_err_t req_get_ap_config_handler (CtrlMsg *req,
 	}
 
 	snprintf((char *)credentials.bssid,BSSID_LENGTH,MACSTR,MAC2STR(ap_info->bssid));
+
 	if (strlen((char *)ap_info->ssid)) {
 		strncpy((char *)credentials.ssid, (char *)ap_info->ssid,
 				min(sizeof(credentials.ssid), strlen((char *)ap_info->ssid)+1));
 	}
+
 	credentials.rssi = ap_info->rssi;
 	credentials.chnl = ap_info->primary;
 	credentials.ecn = ap_info->authmode;
@@ -803,6 +805,7 @@ static esp_err_t req_get_softap_config_handler (CtrlMsg *req,
 		strncpy((char *)credentials.pwd,(char *)&get_conf.ap.password,
 				min(sizeof(credentials.pwd), strlen((char *)&get_conf.ap.password)+1));
 	}
+
 	credentials.chnl = get_conf.ap.channel;
 	credentials.max_conn = get_conf.ap.max_connection;
 	credentials.ecn = get_conf.ap.authmode;

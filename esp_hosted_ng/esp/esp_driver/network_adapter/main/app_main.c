@@ -33,6 +33,7 @@
 #include "app_main.h"
 #include "esp_wifi.h"
 #include "cmd.h"
+#include <esp_mac.h>
 
 #include "freertos/task.h"
 #include "freertos/queue.h"
@@ -47,6 +48,8 @@
 #include "driver/periph_ctrl.h"
 #include "slave_bt.c"
 #include "stats.h"
+#include "display.h"
+#include "adc_read.h"
 
 static const char TAG[] = "FW_MAIN";
 
@@ -619,6 +622,8 @@ void app_main()
 	}
 	ESP_ERROR_CHECK( ret );
 
+	// spi_touch_tftf_init();
+
 	ret = initialise_wifi();
 	ESP_ERROR_CHECK( ret );
 
@@ -675,7 +680,7 @@ void app_main()
 	/*send capabilities to host*/
 	send_bootup_event_to_host(capa);
 
-	tcpip_adapter_init();
+	esp_netif_init();
 
 	ESP_LOGI(TAG,"Initial set up done");
 }
