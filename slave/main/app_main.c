@@ -48,6 +48,7 @@
 #include "slave_bt.c"
 #include "stats.h"
 #include "esp_mac.h"
+#include "esp_timer.h"
 
 static const char TAG[] = "NETWORK_ADAPTER";
 
@@ -279,11 +280,17 @@ void parse_protobuf_req(void)
 
 void send_event_to_host(int event_id)
 {
+#if ESP_PKT_STATS
+	pkt_stats.serial_tx_evt++;
+#endif
 	protocomm_pserial_data_ready(pc_pserial, NULL, 0, event_id);
 }
 
 void send_event_data_to_host(int event_id, void *data, int size)
 {
+#if ESP_PKT_STATS
+	pkt_stats.serial_tx_evt++;
+#endif
 	protocomm_pserial_data_ready(pc_pserial, data, size, event_id);
 }
 
@@ -336,6 +343,7 @@ void process_rx_pkt(interface_buffer_handle_t *buf_handle)
 	uint8_t *payload = NULL;
 	uint16_t payload_len = 0;
 	int ret = 0;
+	int retry_wifi_tx = 3;
 
 	header = (struct esp_payload_header *) buf_handle->payload;
 	payload = buf_handle->payload + le16toh(header->offset);
@@ -345,7 +353,13 @@ void process_rx_pkt(interface_buffer_handle_t *buf_handle)
 
 	if (buf_handle->if_type == ESP_STA_IF && station_connected) {
 		/* Forward data to wlan driver */
-		ret = esp_wifi_internal_tx(ESP_IF_WIFI_STA, payload, payload_len);
+		do {
+			ret = esp_wifi_internal_tx(ESP_IF_WIFI_STA, payload, payload_len);
+			if (ret)
+				vTaskDelay(10);
+			retry_wifi_tx--;
+		} while (ret && retry_wifi_tx);
+
 		ESP_HEXLOGV("STA_Put", payload, payload_len);
 		if (ESP_OK == ret) {
 #if ESP_PKT_STATS
@@ -361,6 +375,9 @@ void process_rx_pkt(interface_buffer_handle_t *buf_handle)
 		esp_wifi_internal_tx(ESP_IF_WIFI_AP, payload, payload_len);
 		ESP_HEXLOGV("AP_Put", payload, payload_len);
 	} else if (buf_handle->if_type == ESP_SERIAL_IF) {
+#if ESP_PKT_STATS
+			pkt_stats.serial_rx++;
+#endif
 		process_serial_rx_pkt(buf_handle->payload);
 	}
 #if defined(CONFIG_BT_ENABLED) && BLUETOOTH_HCI

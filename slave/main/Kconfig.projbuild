@@ -340,4 +340,16 @@ menu "Example Configuration"
 					On comparing with slave packet stats helps to understand any packet loss at hosted
 	endmenu
 
+	menu "Data path options"
+        config REPORT_SLAVE_DATA_Q_LOAD_TO_HOST
+            bool "Report WiFi queue utilization to host"
+            default y
+            help
+                Slave Wi-Fi may drop packets while sending data packets received on transport.
+                To have synchronous way of packet dropped for application,
+                Host will throttle incoming data if the slave datapath Rx load is high
+				host feature, TO_SLAVE_DATA_THROTTLE_THRESHOLD is useless if this is disabled
+	endmenu
+
+
 endmenu

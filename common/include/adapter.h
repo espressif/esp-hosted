@@ -143,7 +143,11 @@ struct esp_payload_header {
 	uint16_t         offset;
 	uint16_t         checksum;
 	uint16_t		 seq_num;
-	uint8_t          reserved2;
+	union {
+		uint8_t      reserved2;
+		/* if CONFIG_REPORT_SLAVE_DATA_Q_LOAD_TO_HOST used */
+		uint8_t      slave_rx_q_load;
+	};
 	/* Position of union field has to always be last,
 	 * this is required for hci_pkt_type */
 	union {
@@ -204,7 +208,9 @@ typedef enum {
 typedef enum {
 	ESP_PRIV_CAPABILITY=0x11,
 	ESP_PRIV_FIRMWARE_CHIP_ID,
-	ESP_PRIV_TEST_RAW_TP
+	ESP_PRIV_TEST_RAW_TP,
+	ESP_PRIV_RX_Q_SIZE,
+	ESP_PRIV_TX_Q_SIZE,
 } ESP_PRIV_TAG_TYPE;
 
 struct esp_priv_event {

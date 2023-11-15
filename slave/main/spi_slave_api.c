@@ -102,7 +102,7 @@ if_ops_t if_ops = {
 	.deinit = esp_spi_deinit,
 };
 
-#define SPI_MEMPOOL_NUM_BLOCKS     ((SPI_TX_QUEUE_SIZE+SPI_RX_QUEUE_SIZE))
+#define SPI_MEMPOOL_NUM_BLOCKS     ((SPI_TX_QUEUE_SIZE+SPI_RX_QUEUE_SIZE)+SPI_QUEUE_SIZE*2)
 static struct hosted_mempool * buf_mp_tx_g;
 static struct hosted_mempool * buf_mp_rx_g;
 static struct hosted_mempool * trans_mp_g;
@@ -221,6 +221,12 @@ void generate_startup_event(uint8_t cap)
 	header->if_num = 0;
 	header->offset = htole16(sizeof(struct esp_payload_header));
 	header->priv_pkt_type = ESP_PACKET_TYPE_EVENT;
+#if CONFIG_REPORT_SLAVE_DATA_Q_LOAD_TO_HOST
+	header->slave_rx_q_load = uxQueueMessagesWaiting(spi_rx_queue[PRIO_Q_OTHERS]);
+  #if ESP_PKT_STATS
+	pkt_stats.slave_wifi_rx_msg_loaded = header->slave_rx_q_load;
+  #endif
+#endif
 
 	/* Populate event data */
 	event = (struct esp_priv_event *) (buf_handle.payload + sizeof(struct esp_payload_header));
@@ -246,6 +252,14 @@ void generate_startup_event(uint8_t cap)
 	*pos = ESP_PRIV_TEST_RAW_TP;        pos++;len++;
 	*pos = LENGTH_1_BYTE;               pos++;len++;
 	*pos = raw_tp_cap;                  pos++;len++;
+
+	*pos = ESP_PRIV_RX_Q_SIZE;          pos++;len++;
+	*pos = LENGTH_1_BYTE;               pos++;len++;
+	*pos = SPI_RX_QUEUE_SIZE;           pos++;len++;
+
+	*pos = ESP_PRIV_TX_Q_SIZE;          pos++;len++;
+	*pos = LENGTH_1_BYTE;               pos++;len++;
+	*pos = SPI_TX_QUEUE_SIZE;           pos++;len++;
 
 	/* TLVs end */
 
@@ -351,8 +365,13 @@ static uint8_t * get_next_tx_buffer(uint32_t *len)
 					ret = pdFALSE;
 
 	if (ret == pdTRUE && buf_handle.payload) {
-		if (len)
+		if (len) {
+#if ESP_PKT_STATS
+			if (buf_handle.if_type == ESP_SERIAL_IF)
+				pkt_stats.serial_tx_total++;
+#endif
 			*len = buf_handle.payload_len;
+		}
 		/* Return real data buffer from queue */
 		return buf_handle.payload;
 	}
@@ -385,6 +404,12 @@ static uint8_t * get_next_tx_buffer(uint32_t *len)
 	header->if_type = ESP_MAX_IF;
 	header->if_num = 0xF;
 	header->len = 0;
+#if CONFIG_REPORT_SLAVE_DATA_Q_LOAD_TO_HOST
+	header->slave_rx_q_load = uxQueueMessagesWaiting(spi_rx_queue[PRIO_Q_OTHERS]);
+  #if ESP_PKT_STATS
+	pkt_stats.slave_wifi_rx_msg_loaded = header->slave_rx_q_load;
+  #endif
+#endif
 
 	if (len)
 		*len = 0;
@@ -437,8 +462,9 @@ static int process_spi_rx(interface_buffer_handle_t *buf_handle)
 	buf_handle->if_type = header->if_type;
 	buf_handle->if_num = header->if_num;
 	buf_handle->free_buf_handle = esp_spi_read_done;
-	buf_handle->payload_len = le16toh(header->len) + offset;
+	buf_handle->payload_len = len + offset;
 	buf_handle->priv_buffer_handle = buf_handle->payload;
+
 
 #if ESP_PKT_STATS
 	if (buf_handle->if_type == ESP_STA_IF)
@@ -842,6 +868,13 @@ static int32_t esp_spi_write(interface_handle_t *handle, interface_buffer_handle
 	header->offset = htole16(offset);
 	header->seq_num = htole16(buf_handle->seq_num);
 	header->flags = buf_handle->flag;
+
+#if CONFIG_REPORT_SLAVE_DATA_Q_LOAD_TO_HOST
+	header->slave_rx_q_load = uxQueueMessagesWaiting(spi_rx_queue[PRIO_Q_OTHERS]);
+  #if ESP_PKT_STATS
+	pkt_stats.slave_wifi_rx_msg_loaded = header->slave_rx_q_load;
+  #endif
+#endif
 
 	/* copy the data from caller */
 	memcpy(tx_buf_handle.payload + offset, buf_handle->payload, buf_handle->payload_len);

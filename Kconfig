@@ -455,4 +455,16 @@ ESP32S3_SDIO_CLK_FREQ_KHZ_RANGE_MAX := 80000
 				On comparing with slave packet stats helps to understand any packet loss at hosted
 
 	endmenu
+
+	menu "Data path options"
+		config TO_SLAVE_DATA_THROTTLE_THRESHOLD
+			int "Packet drop threshold at host, depends upon slave Tx data load"
+			range 0 110
+			default 90
+			help
+				Slave Wi-Fi may drop packets while sending data packets received on transport.
+				To have synchronous way of packet dropped for application,
+				Host will throttle incoming data if the slave datapath Rx load goes beyond this threshold
+				0 value will disable this function
+	endmenu
 endmenu

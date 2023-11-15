@@ -649,7 +649,7 @@ void *hosted_timer_start(int duration, int type,
 			timer_type, arg);*/
 	ret = esp_timer_create(&timerNew_args, &(timer_handle->timer_id));
 	if (ret || (!timer_handle->timer_id) ) {
-		ESP_LOGE(TAG, "Failed to create timer\n");
+		ESP_LOGE(TAG, "Failed to create timer. Err 0x%X\n", ret);
 		HOSTED_FREE(timer_handle);
 		return NULL;
 	}

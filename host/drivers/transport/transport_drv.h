@@ -59,6 +59,10 @@ struct hosted_transport_context_t {
     uint8_t  *rx_buf;
 };
 
+extern uint8_t trans_slave_rx_queue_size;
+extern uint8_t trans_slave_tx_queue_size;
+extern volatile uint32_t slave_wifi_rx_msg_loaded;
+
 typedef int (*hosted_rxcb_t)(void *buffer, uint16_t len, void *free_buff_hdl);
 
 typedef void (transport_free_cb_t)(void* buffer);

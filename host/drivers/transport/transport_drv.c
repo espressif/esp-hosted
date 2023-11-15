@@ -24,6 +24,8 @@
 #include "serial_ll_if.h"
 #include "esp_hosted_config.h"
 #include "mempool.h"
+#include "stats.h"
+#include "errno.h"
 
 /**
  * @brief  Slave capabilities are parsed
@@ -36,6 +38,9 @@ DEFINE_LOG_TAG(transport);
 static char chip_type = ESP_PRIV_FIRMWARE_CHIP_UNRECOGNIZED;
 void(*transport_esp_hosted_up_cb)(void) = NULL;
 transport_channel_t *chan_arr[ESP_MAX_IF];
+uint8_t trans_slave_rx_queue_size;
+uint8_t trans_slave_tx_queue_size;
+volatile uint32_t slave_wifi_rx_msg_loaded;
 
 
 static uint8_t transport_state = TRANSPORT_INACTIVE;
@@ -103,7 +108,6 @@ esp_err_t transport_drv_init(void(*esp_hosted_up_cb)(void))
 {
 	g_h.funcs->_h_hosted_init_hook();
 	transport_init_internal(transport_driver_event_handler);
-	create_debugging_tasks();
 	transport_esp_hosted_up_cb = esp_hosted_up_cb;
 
 	return ESP_OK;
@@ -205,12 +209,21 @@ static esp_err_t transport_drv_sta_tx(void *h, void *buffer, size_t len)
 	void * copy_buff = NULL;
 
 	if (!buffer || !len)
-    return ESP_OK;
+		return ESP_OK;
+
+	if (unlikely(slave_wifi_rx_msg_loaded > CONFIG_TO_SLAVE_DATA_THROTTLE_THRESHOLD)) {
+	#if ESP_PKT_STATS
+		pkt_stats.sta_tx_in_drop++;
+	#endif
+		errno = -ENOBUFS;
+		return ESP_ERR_ERR_NO_BUFFS;
+	}
 
 	assert(h && h==chan_arr[ESP_STA_IF]->api_chan);
 
 	/*  Prepare transport buffer directly consumable */
 	copy_buff = mempool_alloc(((struct mempool*)chan_arr[ESP_STA_IF]->memp), MAX_SPI_BUFFER_SIZE, true);
+	assert(copy_buff);
 	g_h.funcs->_h_memcpy(copy_buff+H_ESP_PAYLOAD_HEADER_OFFSET, buffer, len);
 
 	return esp_hosted_tx(ESP_STA_IF, 0, copy_buff, len, H_BUFF_ZEROCOPY, transport_sta_free_cb);
@@ -227,6 +240,7 @@ static esp_err_t transport_drv_ap_tx(void *h, void *buffer, size_t len)
 
 	/*  Prepare transport buffer directly consumable */
 	copy_buff = mempool_alloc(((struct mempool*)chan_arr[ESP_AP_IF]->memp), MAX_SPI_BUFFER_SIZE, true);
+	assert(copy_buff);
 	g_h.funcs->_h_memcpy(copy_buff+H_ESP_PAYLOAD_HEADER_OFFSET, buffer, len);
 
 	return esp_hosted_tx(ESP_AP_IF, 0, copy_buff, len, H_BUFF_ZEROCOPY, transport_ap_free_cb);
@@ -456,6 +470,16 @@ int process_init_event(uint8_t *evt_buf, uint16_t len)
 			ESP_LOGD(TAG, "priv test raw tp\n\r");
 #if TEST_RAW_TP
 			process_test_capabilities(*(pos + 2));
+#endif
+#if CONFIG_ESP_SPI_HOST_INTERFACE
+		} else if (*pos == ESP_PRIV_RX_Q_SIZE) {
+			ESP_LOGI(TAG, "EVENT: %2x", *pos);
+			trans_slave_rx_queue_size = *(pos + 2);
+			ESP_LOGD(TAG, "slave rx queue size: %u", trans_slave_rx_queue_size);
+		} else if (*pos == ESP_PRIV_TX_Q_SIZE) {
+			ESP_LOGI(TAG, "EVENT: %2x", *pos);
+			trans_slave_tx_queue_size = *(pos + 2);
+			ESP_LOGD(TAG, "slave tx queue size: %u", trans_slave_tx_queue_size);
 #endif
 		} else {
 			ESP_LOGD(TAG, "Unsupported EVENT: %2x", *pos);

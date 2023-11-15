@@ -49,9 +49,12 @@ static struct mempool * buf_mp_g;
 static void * spi_bus_lock;
 
 /* Queue declaration */
-static queue_handle_t to_slave_queue = NULL;
+static queue_handle_t to_slave_queue[MAX_PRIORITY_QUEUES];
+semaphore_handle_t sem_to_slave_queue;
+static queue_handle_t from_slave_queue[MAX_PRIORITY_QUEUES];
+semaphore_handle_t sem_from_slave_queue;
+
 static void * spi_rx_thread;
-static queue_handle_t from_slave_queue = NULL;
 /* callback of event handler */
 static void (*spi_drv_evt_handler_fp) (uint8_t) = NULL;
 
@@ -128,21 +131,30 @@ void transport_deinit_internal(void)
   */
 void transport_init_internal(void(*transport_evt_handler_fp)(uint8_t))
 {
+	uint8_t prio_q_idx;
+
 	/* register callback */
 	spi_drv_evt_handler_fp = transport_evt_handler_fp;
 
 	spi_bus_lock = g_h.funcs->_h_create_mutex();
 	assert(spi_bus_lock);
 
-	/* Queue - tx */
-	to_slave_queue = g_h.funcs->_h_create_queue(TO_SLAVE_QUEUE_SIZE,
-			sizeof(interface_buffer_handle_t));
-	assert(to_slave_queue);
 
-	/* Queue - rx */
-	from_slave_queue = g_h.funcs->_h_create_queue(FROM_SLAVE_QUEUE_SIZE,
-			sizeof(interface_buffer_handle_t));
-	assert(from_slave_queue);
+	sem_to_slave_queue = g_h.funcs->_h_create_semaphore(TO_SLAVE_QUEUE_SIZE*3);
+	assert(sem_to_slave_queue);
+	sem_from_slave_queue = g_h.funcs->_h_create_semaphore(FROM_SLAVE_QUEUE_SIZE*3);
+	assert(sem_from_slave_queue);
+
+	for (prio_q_idx=0; prio_q_idx<MAX_PRIORITY_QUEUES;prio_q_idx++) {
+		/* Queue - rx */
+		from_slave_queue[prio_q_idx] = g_h.funcs->_h_create_queue(FROM_SLAVE_QUEUE_SIZE, sizeof(interface_buffer_handle_t));
+		assert(from_slave_queue[prio_q_idx]);
+
+		/* Queue - tx */
+		to_slave_queue[prio_q_idx] = g_h.funcs->_h_create_queue(TO_SLAVE_QUEUE_SIZE, sizeof(interface_buffer_handle_t));
+		assert(to_slave_queue[prio_q_idx]);
+	}
+
 	spi_mempool_create();
 
 	/* Creates & Give sem for next spi trans */
@@ -167,6 +179,14 @@ void transport_init_internal(void(*transport_evt_handler_fp)(uint8_t))
 }
 
 
+static void get_slave_wifi_rx_msg_load(uint8_t load)
+{
+	if (trans_slave_rx_queue_size) {
+		slave_wifi_rx_msg_loaded = load*100/trans_slave_rx_queue_size;
+		ESP_LOGV(TAG, "new slave_wifi_rx_msg_loaded: %"PRIu32, slave_wifi_rx_msg_loaded);
+	}
+}
+
 /**
   * @brief  Schedule SPI transaction if -
   * a. valid TX buffer is ready at SPI host (STM)
@@ -182,6 +202,7 @@ static int process_spi_rx_buf(uint8_t * rxbuff)
 	interface_buffer_handle_t buf_handle = {0};
 	uint16_t len, offset;
 	int ret = 0;
+	uint8_t pkt_prio = PRIO_Q_OTHERS;
 
 	if (!rxbuff)
 		return -1;
@@ -199,6 +220,8 @@ static int process_spi_rx_buf(uint8_t * rxbuff)
 		schedule_dummy_rx = 0;
 
 	if (!len) {
+		if (CONFIG_TO_SLAVE_DATA_THROTTLE_THRESHOLD > 0)
+			get_slave_wifi_rx_msg_load(payload_header->slave_rx_q_load);
 		ret = -5;
 		goto done;
 	}
@@ -231,6 +254,8 @@ static int process_spi_rx_buf(uint8_t * rxbuff)
 			buf_handle.payload     = rxbuff + offset;
 			buf_handle.seq_num     = le16toh(payload_header->seq_num);
 			buf_handle.flag        = payload_header->flags;
+			if (CONFIG_TO_SLAVE_DATA_THROTTLE_THRESHOLD > 0)
+				get_slave_wifi_rx_msg_load(payload_header->slave_rx_q_load);
 #if 0
 #if CONFIG_H_LOWER_MEMCOPY
 			if ((buf_handle.if_type == ESP_STA_IF) ||
@@ -242,12 +267,15 @@ static int process_spi_rx_buf(uint8_t * rxbuff)
 			if (buf_handle.if_type == ESP_STA_IF)
 				pkt_stats.sta_rx_in++;
 #endif
-			if (g_h.funcs->_h_queue_item(from_slave_queue,
-						&buf_handle, portMAX_DELAY)) {
-				ESP_LOGE(TAG, "Failed to send buffer");
-				ret = -3;
-				goto done;
-			}
+			if (buf_handle.if_type == ESP_SERIAL_IF)
+				pkt_prio = PRIO_Q_SERIAL;
+			else if (buf_handle.if_type == ESP_HCI_IF)
+				pkt_prio = PRIO_Q_BT;
+			/* else OTHERS by default */
+
+			g_h.funcs->_h_queue_item(from_slave_queue[pkt_prio], &buf_handle, portMAX_DELAY);
+			g_h.funcs->_h_post_semaphore(sem_from_slave_queue);
+
 		} else {
 			ESP_LOGI(TAG, "rcvd_crc[%u] != exp_crc[%u], drop pkt\n",checksum, rx_checksum);
 			ret = -4;
@@ -361,7 +389,7 @@ static int check_and_execute_spi_transaction(void)
 #endif
 		}
 	}
-	if (schedule_dummy_tx || schedule_dummy_rx)
+	if ((gpio_handshake != H_GPIO_HIGH) || schedule_dummy_tx || schedule_dummy_rx)
 		g_h.funcs->_h_post_semaphore(spi_trans_ready_sem);
 
 	g_h.funcs->_h_unlock_mutex(spi_bus_lock);
@@ -385,6 +413,7 @@ int esp_hosted_tx(uint8_t iface_type, uint8_t iface_num,
 	interface_buffer_handle_t buf_handle = {0};
 	void (*free_func)(void* ptr) = NULL;
 	uint8_t transport_up = is_transport_up();
+	uint8_t pkt_prio = PRIO_Q_OTHERS;
 
 	if (free_wbuf_fun)
 		free_func = free_wbuf_fun;
@@ -406,15 +435,18 @@ int esp_hosted_tx(uint8_t iface_type, uint8_t iface_num,
 
 	ESP_LOGV(TAG, "ifype: %u wbuff:%p, free: %p wlen:%u ", iface_type, wbuffer, free_func, wlen);
 
-	if (g_h.funcs->_h_queue_item(to_slave_queue, &buf_handle, portMAX_DELAY)) {
-		ESP_LOGE(TAG, "Failed to send buffer to_slave_queue");
-		H_FREE_PTR_WITH_FUNC(buf_handle.free_buf_handle, wbuffer);
+	if (buf_handle.if_type == ESP_SERIAL_IF)
+		pkt_prio = PRIO_Q_SERIAL;
+	else if (buf_handle.if_type == ESP_HCI_IF)
+		pkt_prio = PRIO_Q_BT;
+	/* else OTHERS by default */
 
-		return STM_FAIL;
-	}
+	g_h.funcs->_h_queue_item(to_slave_queue[pkt_prio], &buf_handle, portMAX_DELAY);
+	g_h.funcs->_h_post_semaphore(sem_to_slave_queue);
+
 #if ESP_PKT_STATS
 	if (buf_handle.if_type == ESP_STA_IF)
-		pkt_stats.sta_tx_in++;
+		pkt_stats.sta_tx_in_pass++;
 #endif
 
 #if DEBUG_HOST_TX_SEMAPHORE
@@ -450,6 +482,8 @@ static void spi_transaction_task(void const* pvParameters)
 	g_h.funcs->_h_config_gpio_as_interrupt(H_GPIO_DATA_READY_Port, H_GPIO_DATA_READY_Pin,
 			H_GPIO_INTR_POSEDGE, gpio_dr_isr_handler);
 	ESP_LOGD(TAG, "SPI GPIOs configured");
+
+	create_debugging_tasks();
 
 	for (;;) {
 
@@ -487,9 +521,15 @@ static void spi_process_rx_task(void const* pvParameters)
 
 	while (1) {
 
-		if (g_h.funcs->_h_dequeue_item(from_slave_queue, &buf_handle_l, portMAX_DELAY)) {
-			continue;
-		}
+		g_h.funcs->_h_get_semaphore(sem_from_slave_queue, portMAX_DELAY);
+
+		if (g_h.funcs->_h_dequeue_item(from_slave_queue[PRIO_Q_SERIAL], &buf_handle_l, 0))
+			if (g_h.funcs->_h_dequeue_item(from_slave_queue[PRIO_Q_BT], &buf_handle_l, 0))
+				if (g_h.funcs->_h_dequeue_item(from_slave_queue[PRIO_Q_OTHERS], &buf_handle_l, 0)) {
+					ESP_LOGI(TAG, "No element in any queue found");
+					continue;
+				}
+
 		buf_handle = &buf_handle_l;
 
 		struct esp_priv_event *event = NULL;
@@ -577,6 +617,7 @@ static uint8_t * get_next_tx_buffer(uint8_t *is_valid_tx_buf, void (**free_func)
 	uint8_t *payload = NULL;
 	uint16_t len = 0;
 	interface_buffer_handle_t buf_handle = {0};
+	uint8_t tx_needed = 1;
 
 	assert(is_valid_tx_buf);
 	assert(free_func);
@@ -588,8 +629,18 @@ static uint8_t * get_next_tx_buffer(uint8_t *is_valid_tx_buf, void (**free_func)
 	 * In that case only payload header with zero payload
 	 * length would be transmitted.
 	 */
-	if (!g_h.funcs->_h_dequeue_item(to_slave_queue, &buf_handle, 0)) {
-		len = buf_handle.payload_len;
+
+	if (!g_h.funcs->_h_get_semaphore(sem_to_slave_queue, 0)) {
+
+		/* Tx msg is present as per sem */
+		if (g_h.funcs->_h_dequeue_item(to_slave_queue[PRIO_Q_SERIAL], &buf_handle, 0))
+			if (g_h.funcs->_h_dequeue_item(to_slave_queue[PRIO_Q_BT], &buf_handle, 0))
+				if (g_h.funcs->_h_dequeue_item(to_slave_queue[PRIO_Q_OTHERS], &buf_handle, 0)) {
+					tx_needed = 0; /* No Tx msg */
+				}
+
+		if (tx_needed)
+			len = buf_handle.payload_len;
 	}
 
 	if (len) {
