@@ -16,7 +16,6 @@
 #include "esp_stats.h"
 
 #define SPI_INITIAL_CLK_MHZ     10
-#define NUMBER_1M               1000000
 #define TX_MAX_PENDING_COUNT    100
 #define TX_RESUME_THRESHOLD     (TX_MAX_PENDING_COUNT/5)
 
@@ -675,7 +674,7 @@ static void adjust_spi_clock(u8 spi_clk_mhz)
 	}
 }
 
-int esp_init_interface_layer(struct esp_adapter *adapter)
+int esp_init_interface_layer(struct esp_adapter *adapter, u32 speed)
 {
 	if (!adapter)
 		return -EINVAL;
@@ -686,7 +685,10 @@ int esp_init_interface_layer(struct esp_adapter *adapter)
 	adapter->if_ops = &if_ops;
 	adapter->if_type = ESP_IF_TYPE_SPI;
 	spi_context.adapter = adapter;
-	spi_context.spi_clk_mhz = SPI_INITIAL_CLK_MHZ;
+	if (speed)
+		spi_context.spi_clk_mhz = speed;
+	else
+		spi_context.spi_clk_mhz = SPI_INITIAL_CLK_MHZ;
 
 	return spi_init();
 }
