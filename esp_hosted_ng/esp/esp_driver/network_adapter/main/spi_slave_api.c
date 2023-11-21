@@ -50,13 +50,13 @@ static const char TAG[] = "FW_SPI";
 		#define GPIO_MOSI		23
 		#define GPIO_MISO		19
 		#define GPIO_SCLK		18
-		#define GPIO_CS		5
+		#define GPIO_CS 		5
 	#elif (CONFIG_ESP_SPI_CONTROLLER == 2)
 		#define ESP_SPI_CONTROLLER	1
 		#define GPIO_MISO		12
 		#define GPIO_MOSI		13
 		#define GPIO_SCLK		14
-		#define GPIO_CS		15
+		#define GPIO_CS 		15
 	#else
 		#error "Please choose correct SPI controller"
 	#endif
@@ -71,7 +71,7 @@ static const char TAG[] = "FW_SPI";
 	#define GPIO_MOSI			11
 	#define GPIO_MISO			13
 	#define GPIO_SCLK			12
-	#define GPIO_CS			10
+	#define GPIO_CS 			10
 	#define DMA_CHAN			ESP_SPI_CONTROLLER
 
 	#define SPI_CLK_MHZ			30
@@ -82,7 +82,7 @@ static const char TAG[] = "FW_SPI";
 	#define GPIO_MOSI			7
 	#define GPIO_MISO			2
 	#define GPIO_SCLK			6
-	#define GPIO_CS			10
+	#define GPIO_CS 			10
 	#define DMA_CHAN			SPI_DMA_CH_AUTO
 
 	#define SPI_CLK_MHZ			30
@@ -93,7 +93,18 @@ static const char TAG[] = "FW_SPI";
 	#define GPIO_MOSI			11
 	#define GPIO_MISO			13
 	#define GPIO_SCLK			12
-	#define GPIO_CS			10
+	#define GPIO_CS 			10
+	#define DMA_CHAN			SPI_DMA_CH_AUTO
+
+	#define SPI_CLK_MHZ			30
+
+#elif defined CONFIG_IDF_TARGET_ESP32C2
+
+	#define ESP_SPI_CONTROLLER		1
+	#define GPIO_MOSI			7
+	#define GPIO_MISO			2
+	#define GPIO_SCLK			6
+	#define GPIO_CS 			10
 	#define DMA_CHAN			SPI_DMA_CH_AUTO
 
 	#define SPI_CLK_MHZ			30

@@ -71,12 +71,14 @@ wlan_init()
     fi
 }
 
-bt_uart_init()
+bt_init()
 {
     sudo raspi-gpio set 15 a0 pu
     sudo raspi-gpio set 14 a0 pu
-    sudo raspi-gpio set 16 a3 pu
-    sudo raspi-gpio set 17 a3 pu
+    if [ "$BT_INIT_SET" = "4" ] ; then
+        sudo raspi-gpio set 16 a3 pu
+        sudo raspi-gpio set 17 a3 pu
+    fi
 }
 
 usage()
@@ -86,7 +88,8 @@ usage()
     echo "\nArguments are optional and are as below"
     echo "  spi:    sets ESP32<->RPi communication over SPI"
     echo "  sdio:   sets ESP32<->RPi communication over SDIO"
-    echo "  btuart: Set GPIO pins on RPi for HCI UART operations"
+    echo "  btuart: Set GPIO pins on RPi for HCI UART operations with TX, RX, CTS, RTS (defaulted to option btuart_4pins)"
+    echo "  btuart_2pins: Set GPIO pins on RPi for HCI UART operations with only TX & RX pins configured (only for ESP32-C2/C6)"
     echo "  resetpin=6:     Set GPIO pins on RPi connected to EN pin of ESP32, used to reset ESP32 (default:6 for BCM6)"
     echo "\nExample:"
     echo "  - Prepare RPi for WLAN operation on SDIO. sdio is default if no interface mentioned"
@@ -119,9 +122,13 @@ parse_arguments()
                 echo "Recvd Option: $1"
                 RESETPIN=$1
                 ;;
-            btuart)
-                echo "Recvd Option: $1"
-                BT_UART_INIT="1"
+            btuart | btuart_4pins | btuart_4pin)
+                echo "Configure Host BT UART with 4 pins, RX, TX, CTS, RTS"
+                BT_INIT_SET="4"
+                ;;
+            btuart_2pins | btuart_2pin)
+                echo "Configure Host BT UART with 2 pins, RX & TX"
+                BT_INIT_SET="2"
                 ;;
             rawtp)
                 echo "Test RAW TP"
@@ -168,8 +175,8 @@ if [ `lsmod | grep bluetooth | wc -l` != "0" ]; then
     wlan_init
 fi
 
-if [ "$BT_UART_INIT" = "1" ] ; then
-    bt_uart_init
+if [ "$BT_INIT_SET" != "0" ] ; then
+    bt_init
 fi
 
 

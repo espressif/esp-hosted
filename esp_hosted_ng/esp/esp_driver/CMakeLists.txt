@@ -61,6 +61,7 @@ file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/lib/esp32/ DESTINATION ${CMAKE_CURRENT_SOU
 file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/lib/esp32c3/ DESTINATION ${CMAKE_CURRENT_SOURCE_DIR}/esp-idf/components/esp_wifi/lib/esp32c3/)
 file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/lib/esp32s2/ DESTINATION ${CMAKE_CURRENT_SOURCE_DIR}/esp-idf/components/esp_wifi/lib/esp32s2/)
 file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/lib/esp32s3/ DESTINATION ${CMAKE_CURRENT_SOURCE_DIR}/esp-idf/components/esp_wifi/lib/esp32s3/)
+file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/lib/esp32c2/ DESTINATION ${CMAKE_CURRENT_SOURCE_DIR}/esp-idf/components/esp_wifi/lib/esp32c2/)
 
 # Output message
 message("###### Setup Done ######")

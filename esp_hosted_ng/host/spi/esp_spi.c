@@ -221,6 +221,7 @@ void process_event_esp_bootup(struct esp_adapter *adapter, u8 *evt_buf, u8 len)
 	if ((hardware_type != ESP_FIRMWARE_CHIP_ESP32) &&
 	    (hardware_type != ESP_FIRMWARE_CHIP_ESP32S2) &&
 	    (hardware_type != ESP_FIRMWARE_CHIP_ESP32C3) &&
+	    (hardware_type != ESP_FIRMWARE_CHIP_ESP32C2) &&
 	    (hardware_type != ESP_FIRMWARE_CHIP_ESP32S3)) {
 		esp_info("ESP chipset not recognized, ignoring [%d]\n", hardware_type);
 		hardware_type = ESP_FIRMWARE_CHIP_UNRECOGNIZED;
@@ -229,6 +230,7 @@ void process_event_esp_bootup(struct esp_adapter *adapter, u8 *evt_buf, u8 len)
 				hardware_type == ESP_FIRMWARE_CHIP_ESP32 ? "esp32" :
 				hardware_type == ESP_FIRMWARE_CHIP_ESP32S2 ? "esp32-s2" :
 				hardware_type == ESP_FIRMWARE_CHIP_ESP32C3 ? "esp32-c3" :
+				hardware_type == ESP_FIRMWARE_CHIP_ESP32C2 ? "esp32-c2" :
 				hardware_type == ESP_FIRMWARE_CHIP_ESP32S3 ? "esp32-s3" :
 				"unknown");
 	}

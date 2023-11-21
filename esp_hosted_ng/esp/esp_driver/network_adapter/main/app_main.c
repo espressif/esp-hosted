@@ -44,7 +44,6 @@
 #endif
 #include "endian.h"
 
-#include "driver/periph_ctrl.h"
 #include "slave_bt.c"
 #include "stats.h"
 
