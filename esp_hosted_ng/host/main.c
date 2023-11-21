@@ -22,6 +22,7 @@
 #include "esp_cfg80211.h"
 #include "esp_stats.h"
 
+#define RELEASE_VERSION "1.0.3"
 #define HOST_GPIO_PIN_INVALID -1
 static int resetpin = HOST_GPIO_PIN_INVALID;
 static u32 clockspeed = 0;
@@ -920,6 +921,6 @@ MODULE_AUTHOR("Amey Inamdar <amey.inamdar@espressif.com>");
 MODULE_AUTHOR("Mangesh Malusare <mangesh.malusare@espressif.com>");
 MODULE_AUTHOR("Yogesh Mantri <yogesh.mantri@espressif.com>");
 MODULE_DESCRIPTION("Wifi driver for ESP-Hosted solution");
-MODULE_VERSION("0.1");
+MODULE_VERSION(RELEASE_VERSION);
 module_init(esp_init);
 module_exit(esp_exit);
