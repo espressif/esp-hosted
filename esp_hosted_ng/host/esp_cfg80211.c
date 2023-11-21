@@ -260,7 +260,6 @@ static int esp_cfg80211_scan(struct wiphy *wiphy,
 
 	struct net_device *ndev = NULL;
 	struct esp_wifi_device *priv = NULL;
-
 	if (!wiphy || !request || !request->wdev || !request->wdev->netdev) {
 		esp_info("%u invalid input\n", __LINE__);
 		return -EINVAL;

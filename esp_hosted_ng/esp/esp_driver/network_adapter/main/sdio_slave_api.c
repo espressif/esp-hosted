@@ -30,6 +30,7 @@
 #include "endian.h"
 #include "freertos/semphr.h"
 #include "stats.h"
+#include "soc/gpio_reg.h"
 
 static uint8_t sdio_slave_rx_buffer[RX_BUF_NUM][RX_BUF_SIZE];
 
@@ -115,6 +116,7 @@ static interface_handle_t * sdio_init(void)
 		   */
 		//.flags              = SDIO_SLAVE_FLAG_INTERNAL_PULLUP,
 	};
+	config.flags |= SDIO_SLAVE_FLAG_DEFAULT_SPEED;
 	sdio_slave_buf_handle_t handle;
 
 	/* Configuration for the OOB line */

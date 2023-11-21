@@ -27,6 +27,7 @@
 #include "endian.h"
 #include "freertos/task.h"
 #include "stats.h"
+#include "soc/gpio_reg.h"
 
 static const char TAG[] = "FW_SPI";
 #define SPI_BITS_PER_WORD			8
@@ -579,7 +580,7 @@ static int32_t esp_spi_write(interface_handle_t *handle, interface_buffer_handle
 	}
 
 	if (total_len > RX_BUF_SIZE) {
-		ESP_LOGE(TAG, "Max frame length exceeded %d.. drop it\n", total_len);
+		ESP_LOGE(TAG, "Max frame length exceeded %ld.. drop it\n", total_len);
 		return ESP_FAIL;
 	}
 

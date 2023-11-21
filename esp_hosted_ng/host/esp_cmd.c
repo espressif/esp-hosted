@@ -450,7 +450,6 @@ struct command_node *prepare_command_request(struct esp_adapter *adapter, u8 cmd
 	cmd->cmd_code = cmd_code;
 
 /*	payload_header->checksum = cpu_to_le16(compute_checksum(skb->data, len));*/
-
 	return node;
 }
 

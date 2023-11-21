@@ -137,7 +137,7 @@ int station_rx_eapol(uint8_t *src_addr, uint8_t *buf, uint32_t len)
 	u8 own_mac[MAC_ADDR_LEN] = {0};
 
 	if (!src_addr || !buf || !len) {
-		ESP_LOGI(TAG, "eapol err - src_addr: %p buf: %p len: %u\n",
+		ESP_LOGI(TAG, "eapol err - src_addr: %p buf: %p len: %ld\n",
 				src_addr, buf, len);
 		//TODO : free buf using esp_wifi_internal_free_rx_buffer?
 		return ESP_FAIL;
@@ -416,7 +416,7 @@ static void wifi_event_handler(void* arg, esp_event_base_t event_base,
 	esp_err_t result;
 
 	if (event_base != WIFI_EVENT) {
-		ESP_LOGI(TAG, "Received unregistered event %s[%d]\n", event_base, event_id);
+		ESP_LOGI(TAG, "Received unregistered event %s[%ld]\n", event_base, event_id);
 		return;
 	}
 
@@ -459,7 +459,7 @@ static void wifi_event_handler(void* arg, esp_event_base_t event_base,
 		break;
 
 	default:
-		ESP_LOGI(TAG, "Unregistered event: %d\n", event_id);
+		ESP_LOGI(TAG, "Unregistered event: %ld\n", event_id);
 	}
 }
 
@@ -1106,7 +1106,7 @@ int process_auth_request(uint8_t if_type, uint8_t *payload, uint16_t payload_len
 	} else {
 		wifi_scan_config_t params = {0};
 
-		if (cmd_auth->bssid) {
+		if (memcmp(cmd_auth->bssid, (uint8_t[MAC_ADDR_LEN]) {0}, MAC_ADDR_LEN) != 0) {
 			params.bssid = malloc(sizeof(cmd_auth->bssid));
 			assert(params.bssid);
 
@@ -1309,7 +1309,7 @@ int process_sta_connect(uint8_t if_type, uint8_t *payload, uint16_t payload_len)
 	wifi_config.sta.channel = cmd_connect->channel;
 	ESP_LOGI(TAG, "%s, channel: %u", cmd_connect->ssid, cmd_connect->channel);
 
-	if (cmd_connect->assoc_ie && cmd_connect->assoc_ie_len) {
+	if (cmd_connect->assoc_ie_len) {
 		esp_wifi_unset_appie_internal(WIFI_APPIE_ASSOC_REQ);
 		esp_wifi_set_appie_internal(WIFI_APPIE_ASSOC_REQ, cmd_connect->assoc_ie,
 			cmd_connect->assoc_ie_len, 0);
@@ -1812,7 +1812,7 @@ int process_add_key(uint8_t if_type, uint8_t *payload, uint16_t payload_len)
 		if (key->algo == WIFI_WPA_ALG_IGTK) {
 			wifi_wpa_igtk_t igtk = {0};
 
-			ESP_LOGI(TAG, "Setting iGTK [%d]\n", key->index);
+			ESP_LOGI(TAG, "Setting iGTK [%ld]\n", key->index);
 
 			memcpy(igtk.igtk, key->data, key->len);
 			memcpy(igtk.pn, key->seq, key->seq_len);
@@ -1820,7 +1820,7 @@ int process_add_key(uint8_t if_type, uint8_t *payload, uint16_t payload_len)
 			ret = esp_wifi_set_igtk_internal(0, &igtk);
 		} else {
 			/* GTK */
-			ESP_LOGI(TAG, "Setting GTK [%d]\n", key->index);
+			ESP_LOGI(TAG, "Setting GTK [%ld]\n", key->index);
 			ret = esp_wifi_set_sta_key_internal(key->algo, key->mac_addr, key->index,
 					0, key->seq, key->seq_len, key->data, key->len, 
 					KEY_FLAG_GROUP | KEY_FLAG_RX);
