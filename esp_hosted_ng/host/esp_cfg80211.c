@@ -322,21 +322,7 @@ static int esp_cfg80211_del_key(struct wiphy *wiphy, struct net_device *dev,
 				INT_LINK_ID u8 key_index, bool pairwise,
 				const u8 *mac_addr)
 {
-	struct esp_wifi_device *priv = NULL;
-
-	if (!wiphy || !dev) {
-		esp_err("%u invalid params\n", __LINE__);
-		return -EINVAL;
-	}
-
-	priv = netdev_priv(dev);
-	if (!priv) {
-		esp_err("Empty priv\n");
-		return -EINVAL;
-	}
-	esp_dbg("\n");
-
-	return cmd_del_key(priv, key_index, pairwise, mac_addr);
+	return 0;
 }
 
 static int esp_cfg80211_add_key(struct wiphy *wiphy, struct net_device *dev,
