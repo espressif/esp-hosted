@@ -7,7 +7,7 @@
 #define pr_fmt(fmt) "%s:%s: " fmt, KBUILD_MODNAME, __func__
 
 #ifndef NUMBER_1M
-#define define NUMBER_1M 1000000
+#define NUMBER_1M 1000000
 #endif
 
 #ifndef MAC2STR
