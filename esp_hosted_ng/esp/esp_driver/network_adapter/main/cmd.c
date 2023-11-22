@@ -227,6 +227,11 @@ static int rx_sae_msg(uint8_t *data, size_t len, uint32_t sae_msg_type, uint16_t
 	return ESP_OK;
 }
 
+static void sta_connected_cb(uint8_t *bssid)
+{
+	ESP_LOGI(TAG, "STA connected with:" MACSTR "\n", MAC2STR(bssid);
+}
+
 void disconnected_cb(uint8_t reason_code)
 {
 	ESP_LOGI(TAG, "STA disconnected [%u]\n", reason_code);
@@ -674,6 +679,7 @@ esp_err_t initialise_wifi(void)
 	wpa_cb.wpa_sta_init = sta_init;
 	wpa_cb.wpa_sta_deinit = sta_deinit;
 	wpa_cb.wpa_sta_connect = sta_connection;
+	wpa_cb.wpa_sta_connected_cb = sta_connected_cb;
 	wpa_cb.wpa_sta_disconnected_cb = disconnected_cb;
 	wpa_cb.wpa_sta_rx_eapol = station_rx_eapol;
 	wpa_cb.wpa_sta_in_4way_handshake = in_4way;
@@ -1092,8 +1098,8 @@ int process_auth_request(uint8_t if_type, uint8_t *payload, uint16_t payload_len
 		msg_type = *pos;
 
 		/* Set Auth IEs */
-		esp_wifi_unset_appie_internal(WIFI_APPIE_AUTH);
-		esp_wifi_set_appie_internal(WIFI_APPIE_AUTH, cmd_auth->auth_data + 4,
+		esp_wifi_unset_appie_internal(WIFI_APPIE_RAM_STA_AUTH);
+		esp_wifi_set_appie_internal(WIFI_APPIE_RAM_STA_AUTH, cmd_auth->auth_data + 4,
 				cmd_auth->auth_data_len - 4, 0);
 	}
 
