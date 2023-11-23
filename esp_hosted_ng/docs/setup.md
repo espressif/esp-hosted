@@ -276,8 +276,8 @@ Make sure that host machine is equipped with following:
 
 | Supported Uart line | ESP32 | ESP32-C3 | ESP32-S3 | ESP32-C2 |
 | ------------------- | ----- | -------- | -------- | -------- |
-| 4 line UART supported | yes | no | yes |
-| 2 line UART supported | yes | yes | yes |
+| 4 line UART supported | yes | yes | yes | no |
+| 2 line UART supported | yes | yes | yes | yes |
 * In this section, ESP chipset provides a way to run Bluetooth/BLE over UART interface.
 
 * This section is divided in two parts 
@@ -300,7 +300,7 @@ Make sure that host machine is equipped with following:
 
     * Two line setup
         | Raspberry-Pi Pin Function | Raspberry-Pi Pin | ESP32-C2 | ESP Function |
-        |:-------:|:--------:|:---------:|:--------:|:--------:|
+        |:-------:|:--------:|:---------:|:--------:|
         | RX | 10 | IO5 | TX |
         | TX | 8 | IO18 | RX |
 
