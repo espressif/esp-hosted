@@ -185,8 +185,11 @@ $ idf.py -p <serial_port> build flash
 ## 3. Post Setup
 - After setting up host and loading ESP firmware, execute below command to create `hci0` interface
 	```sh
-	$ sudo hciattach -s <baud_rate> /dev/serial0 any <baud_rate> flow
+	$ sudo hciattach -s <baud_rate> <serial_device_name> /dev/serial0 any <baud_rate> flow
 	```
+- <serial_device_name>
+  - RPi with Kernels < 6.2.21 => `/dev/serial0`
+  - RPi with Kernels >= 6.2.21 => `/dev/ttyAMA0`
 - <baud_rate> should match UART baud rate while flashing ESP peripheral (Default: 921600)
 
 ### For ESP32

@@ -53,8 +53,9 @@ $ sudo rfkill list # should be not blocked now
 2. Execute `hciconfig` command to ensure that device is detected and initialized properly
 3. User permissions
 ```sh
-$ sudo usermod -G bluetooth -a pi
+$ sudo usermod -G bluetooth -a $(whoami)
 ```
+This would add current user to bluetooth group. you can change $(whoami) to username if needed, desired to to add bluetooth permission
 
 4. Reinstall bluetooth software
 ```sh

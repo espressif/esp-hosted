@@ -29,27 +29,14 @@ Make sure that Raspberry-Pi is equipped with following:
 	$ sudo apt update
 	$ sudo apt install raspberrypi-kernel-headers
 	```
-* Following tools are installed on Raspberry-Pi:
-	* Git
-	* Raspi-gpio utility
-	* bluetooth
-	* bluez
-	* bluez-tools
-	* rfkill
-	* bluez-firmware
-	* pi-bluetooth
+* Dependency tools need to be installed on Raspberry-Pi:
 	```sh
-	$ sudo apt install git raspi-gpio bluetooth bluez bluez-tools rfkill bluez-firmware pi-bluetooth
+	$ sudo apt install git raspi-gpio bluetooth bluez bluez-tools rfkill bluez-firmware pi-bluetooth python3
 	```
-* Python Requirement
-	* Python 2.x or 3.x
-		```sh
-		$ sudo apt install python
-		```
-		 or
-		```sh
-		$ sudo apt install python3
-		```
+* User access for bluetooth service
+	```sh
+	$ sudo usermod -G bluetooth -a $(whoami)
+	```
 * Using released codebase
 	* Download pre-built ESP-Hosted firmware release binaries from [releases](https://github.com/espressif/esp-hosted/releases)
 	* :warning: Make sure that you use `Source code (zip)` in `Assets` fold with associated release for host building.
@@ -163,14 +150,15 @@ This section identifies Raspberry-Pi specific setup requirements.
 	```
 	* Verify that kernel headers are installed properly by running following command. Failure of this command indicates that kernel headers are not installed correctly. In such case, follow https://github.com/RPi-Distro/rpi-source and run `rpi-source` to get current kernel headers. Alternatively upgrade/downgrade kernel and reinstall kernel headers.
 	```sh
-	$ ls /lib/modules/$(uname -r)/build
+	$ ls /lib/modules/$(uname -r)/build/  #Note the ending '/'
+	```
+* User previledges
+	* Current user needs to be added to `bluetooth` group to use bluetoothctl without sudo
+	```sh
+	$ sudo usermod -G bluetooth -a $(whoami)
 	```
 
 * Additional Tools
-	* Raspi-gpio utility:
-		```sh
-		$ sudo apt install raspi-gpio
-		```
 	* Bluetooth Stack and utilities:
 		```sh
 		$ sudo apt install pi-bluetooth
@@ -187,7 +175,7 @@ This section identifies Raspberry-Pi specific setup requirements.
 	* Please install kernel headers as those are required for driver compilation.
 	* Verify that kernel headers are installed properly by running following command. Failure of this command indicates that kernel headers are not installed correctly.
 	```sh
-	$ ls /lib/modules/$(uname -r)/build
+	$ ls /lib/modules/$(uname -r)/build/  # Note the last '/'
 	```
 
 * Install following tools on Linux Host machine.

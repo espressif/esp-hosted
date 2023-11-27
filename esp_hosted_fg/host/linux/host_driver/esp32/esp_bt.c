@@ -186,6 +186,7 @@ int esp_deinit_bt(struct esp_adapter *adapter)
 
 	hdev = adapter->hcidev;
 
+	hci_set_drvdata(hdev, NULL);
 	hci_unregister_dev(hdev);
 	hci_free_dev(hdev);
 
@@ -239,6 +240,9 @@ int esp_init_bt(struct esp_adapter *adapter)
 		adapter->hcidev = NULL;
 		return -EINVAL;
 	}
+
+	if (adapter->dev)
+		SET_HCIDEV_DEV(hdev, adapter->dev);
 
 	hdev->open  = esp_bt_open;
 	hdev->close = esp_bt_close;
