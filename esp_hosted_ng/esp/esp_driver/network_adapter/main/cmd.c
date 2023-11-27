@@ -28,6 +28,7 @@
 #include "esp_wifi.h"
 #include "esp_wifi_driver.h"
 #include "esp_event.h"
+#include "esp_mac.h"
 
 #define TAG "FW_CMD"
 
@@ -229,7 +230,7 @@ static int rx_sae_msg(uint8_t *data, size_t len, uint32_t sae_msg_type, uint16_t
 
 static void sta_connected_cb(uint8_t *bssid)
 {
-	ESP_LOGI(TAG, "STA connected with:" MACSTR "\n", MAC2STR(bssid);
+	ESP_LOGI(TAG, "STA connected with:" MACSTR "\n", MAC2STR(bssid));
 }
 
 void disconnected_cb(uint8_t reason_code)
