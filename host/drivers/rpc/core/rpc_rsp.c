@@ -27,7 +27,8 @@ DEFINE_LOG_TAG(rpc_rsp);
 
 #define RPC_ERR_IN_RESP(msGparaM)                                             \
     if (rpc_msg->msGparaM->resp) {                                            \
-        ESP_LOGE(TAG, "Failure resp/event: possibly precondition not met\n");    \
+        app_resp->resp_event_status = rpc_msg->msGparaM->resp;                \
+        ESP_LOGE(TAG, "Failure resp/event: possibly precondition not met");   \
         goto fail_parse_rpc_msg;                                              \
     }
 
@@ -48,7 +49,7 @@ int rpc_parse_rsp(Rpc *rpc_msg, ctrl_cmd_t *app_resp)
 
 	/* 1. Check non NULL */
 	if (!rpc_msg || !app_resp) {
-		ESP_LOGE(TAG, "NULL rpc resp or NULL App Resp\n");
+		ESP_LOGE(TAG, "NULL rpc resp or NULL App Resp");
 		goto fail_parse_rpc_msg;
 	}
 
@@ -63,8 +64,8 @@ int rpc_parse_rsp(Rpc *rpc_msg, ctrl_cmd_t *app_resp)
 
 	case RPC_ID__Resp_GetMACAddress : {
 		RPC_FAIL_ON_NULL(resp_get_mac_address);
-		RPC_FAIL_ON_NULL(resp_get_mac_address->mac.data);
 		RPC_ERR_IN_RESP(resp_get_mac_address);
+		RPC_FAIL_ON_NULL(resp_get_mac_address->mac.data);
 
 		RPC_RSP_COPY_BYTES(app_resp->u.wifi_mac.mac, rpc_msg->resp_get_mac_address->mac);
 		ESP_LOGD(TAG, "Mac addr: "MACSTR, MAC2STR(app_resp->u.wifi_mac.mac));
@@ -90,13 +91,13 @@ int rpc_parse_rsp(Rpc *rpc_msg, ctrl_cmd_t *app_resp)
 	} case RPC_ID__Resp_WifiGetPs : {
 		RPC_FAIL_ON_NULL(resp_wifi_get_ps);
 		RPC_ERR_IN_RESP(resp_wifi_get_ps);
-		app_resp->u.wifi_ps.ps_mode = rpc_msg->resp_wifi_get_ps->mode;
+		app_resp->u.wifi_ps.ps_mode = rpc_msg->resp_wifi_get_ps->type;
 		break;
 	} case RPC_ID__Resp_OTABegin : {
 		RPC_FAIL_ON_NULL(resp_ota_begin);
 		RPC_ERR_IN_RESP(resp_ota_begin);
 		if (rpc_msg->resp_ota_begin->resp) {
-			ESP_LOGE(TAG, "OTA Begin Failed\n");
+			ESP_LOGE(TAG, "OTA Begin Failed");
 			goto fail_parse_rpc_msg;
 		}
 		break;
@@ -104,42 +105,26 @@ int rpc_parse_rsp(Rpc *rpc_msg, ctrl_cmd_t *app_resp)
 		RPC_FAIL_ON_NULL(resp_ota_write);
 		RPC_ERR_IN_RESP(resp_ota_write);
 		if (rpc_msg->resp_ota_write->resp) {
-			ESP_LOGE(TAG, "OTA write failed\n");
+			ESP_LOGE(TAG, "OTA write failed");
 			goto fail_parse_rpc_msg;
 		}
 		break;
 	} case RPC_ID__Resp_OTAEnd: {
 		RPC_FAIL_ON_NULL(resp_ota_end);
 		if (rpc_msg->resp_ota_end->resp) {
-			ESP_LOGE(TAG, "OTA write failed\n");
+			ESP_LOGE(TAG, "OTA write failed");
 			goto fail_parse_rpc_msg;
 		}
 		break;
 	} case RPC_ID__Resp_WifiSetMaxTxPower: {
-		RPC_FAIL_ON_NULL(req_set_wifi_max_tx_power);
-		switch (rpc_msg->resp_set_wifi_max_tx_power->resp)
-		{
-			case FAILURE:
-				ESP_LOGE(TAG, "Failed to set max tx power\n");
-				goto fail_parse_rpc_msg;
-				break;
-			case SUCCESS:
-				break;
-			case RPC_ERR_OUT_OF_RANGE:
-				ESP_LOGE(TAG, "Power is OutOfRange. Check api doc for reference\n");
-				goto fail_parse_rpc_msg;
-				break;
-			default:
-				ESP_LOGE(TAG, "unexpected response\n");
-				goto fail_parse_rpc_msg;
-				break;
-		}
+		RPC_FAIL_ON_NULL(resp_set_wifi_max_tx_power);
+		RPC_ERR_IN_RESP(resp_set_wifi_max_tx_power);
 		break;
 	} case RPC_ID__Resp_WifiGetMaxTxPower: {
-		RPC_FAIL_ON_NULL(resp_get_wifi_curr_tx_power);
-		RPC_ERR_IN_RESP(resp_get_wifi_curr_tx_power);
+		RPC_FAIL_ON_NULL(resp_get_wifi_max_tx_power);
+		RPC_ERR_IN_RESP(resp_get_wifi_max_tx_power);
 		app_resp->u.wifi_tx_power.power =
-			rpc_msg->resp_get_wifi_curr_tx_power->wifi_curr_tx_power;
+			rpc_msg->resp_get_wifi_max_tx_power->power;
 		break;
 	} case RPC_ID__Resp_ConfigHeartbeat: {
 		RPC_FAIL_ON_NULL(resp_config_heartbeat);
@@ -233,7 +218,7 @@ int rpc_parse_rsp(Rpc *rpc_msg, ctrl_cmd_t *app_resp)
 			break;
 		}
 		default:
-            ESP_LOGE(TAG, "Unsupported WiFi interface[%u]\n", app_resp->u.wifi_config.iface);
+			ESP_LOGE(TAG, "Unsupported WiFi interface[%u]", app_resp->u.wifi_config.iface);
 		} //switch
 
 		break;
@@ -299,8 +284,6 @@ int rpc_parse_rsp(Rpc *rpc_msg, ctrl_cmd_t *app_resp)
 			list[i].pairwise_cipher = p_c_list[i]->pairwise_cipher;
 			list[i].group_cipher = p_c_list[i]->group_cipher;
 			list[i].ant = p_c_list[i]->ant;
-			//list-> = p_c_list->;
-			//list-> = p_c_list->;
 			list[i].phy_11b       = H_GET_BIT(WIFI_SCAN_AP_REC_phy_11b_BIT, p_c_list[i]->bitmask);
 			list[i].phy_11g       = H_GET_BIT(WIFI_SCAN_AP_REC_phy_11g_BIT, p_c_list[i]->bitmask);
 			list[i].phy_11n       = H_GET_BIT(WIFI_SCAN_AP_REC_phy_11n_BIT, p_c_list[i]->bitmask);
@@ -353,6 +336,8 @@ int rpc_parse_rsp(Rpc *rpc_msg, ctrl_cmd_t *app_resp)
 		WifiApRecord *p_c = NULL;
 		wifi_ap_record_t *ap_info = NULL;
 		wifi_scan_ap_list_t *p_a = &(app_resp->u.wifi_scan_ap_list);
+		WifiCountry *p_c_cntry = NULL;
+		wifi_country_t *p_a_cntry = NULL;
 
 		RPC_FAIL_ON_NULL(resp_wifi_sta_get_ap_info);
 		RPC_ERR_IN_RESP(resp_wifi_sta_get_ap_info);
@@ -371,69 +356,45 @@ int rpc_parse_rsp(Rpc *rpc_msg, ctrl_cmd_t *app_resp)
 		app_resp->app_free_buff_func = g_h.funcs->_h_free;
 		app_resp->app_free_buff_hdl = ap_info;
 
-		{
-			WifiCountry *p_c_cntry = p_c->country;
-			wifi_country_t *p_a_cntry = &ap_info->country;
+		p_c_cntry = p_c->country;
+		p_a_cntry = &ap_info->country;
 
-			ESP_LOGI(TAG, "ap_info");
-			ESP_LOGI(TAG,"ssid len: %u", p_c->ssid.len);
-			RPC_RSP_COPY_BYTES(ap_info->ssid, p_c->ssid);
-			RPC_RSP_COPY_BYTES(ap_info->bssid, p_c->bssid);
-			ap_info->primary = p_c->primary;
-			ap_info->second = p_c->second;
-			ap_info->rssi = p_c->rssi;
-			ap_info->authmode = p_c->authmode;
-			ap_info->pairwise_cipher = p_c->pairwise_cipher;
-			ap_info->group_cipher = p_c->group_cipher;
-			ap_info->ant = p_c->ant;
-			//list-> = p_c_list->;
-			//list-> = p_c_list->;
-			ap_info->phy_11b       = H_GET_BIT(WIFI_SCAN_AP_REC_phy_11b_BIT, p_c->bitmask);
-			ap_info->phy_11g       = H_GET_BIT(WIFI_SCAN_AP_REC_phy_11g_BIT, p_c->bitmask);
-			ap_info->phy_11n       = H_GET_BIT(WIFI_SCAN_AP_REC_phy_11n_BIT, p_c->bitmask);
-			ap_info->phy_lr        = H_GET_BIT(WIFI_SCAN_AP_REC_phy_lr_BIT, p_c->bitmask);
-			ap_info->phy_11ax      = H_GET_BIT(WIFI_SCAN_AP_REC_phy_11ax_BIT, p_c->bitmask);
-			ap_info->wps           = H_GET_BIT(WIFI_SCAN_AP_REC_wps_BIT, p_c->bitmask);
-			ap_info->ftm_responder = H_GET_BIT(WIFI_SCAN_AP_REC_ftm_responder_BIT, p_c->bitmask);
-			ap_info->ftm_initiator = H_GET_BIT(WIFI_SCAN_AP_REC_ftm_initiator_BIT, p_c->bitmask);
-			ap_info->reserved      = WIFI_SCAN_AP_GET_RESERVED_VAL(p_c->bitmask);
+		ESP_LOGD(TAG, "ap_info");
+		ESP_LOGD(TAG,"ssid len: %u", p_c->ssid.len);
+		RPC_RSP_COPY_BYTES(ap_info->ssid, p_c->ssid);
+		RPC_RSP_COPY_BYTES(ap_info->bssid, p_c->bssid);
+		ap_info->primary = p_c->primary;
+		ap_info->second = p_c->second;
+		ap_info->rssi = p_c->rssi;
+		ap_info->authmode = p_c->authmode;
+		ap_info->pairwise_cipher = p_c->pairwise_cipher;
+		ap_info->group_cipher = p_c->group_cipher;
+		ap_info->ant = p_c->ant;
+		ap_info->phy_11b       = H_GET_BIT(WIFI_SCAN_AP_REC_phy_11b_BIT, p_c->bitmask);
+		ap_info->phy_11g       = H_GET_BIT(WIFI_SCAN_AP_REC_phy_11g_BIT, p_c->bitmask);
+		ap_info->phy_11n       = H_GET_BIT(WIFI_SCAN_AP_REC_phy_11n_BIT, p_c->bitmask);
+		ap_info->phy_lr        = H_GET_BIT(WIFI_SCAN_AP_REC_phy_lr_BIT, p_c->bitmask);
+		ap_info->phy_11ax      = H_GET_BIT(WIFI_SCAN_AP_REC_phy_11ax_BIT, p_c->bitmask);
+		ap_info->wps           = H_GET_BIT(WIFI_SCAN_AP_REC_wps_BIT, p_c->bitmask);
+		ap_info->ftm_responder = H_GET_BIT(WIFI_SCAN_AP_REC_ftm_responder_BIT, p_c->bitmask);
+		ap_info->ftm_initiator = H_GET_BIT(WIFI_SCAN_AP_REC_ftm_initiator_BIT, p_c->bitmask);
+		ap_info->reserved      = WIFI_SCAN_AP_GET_RESERVED_VAL(p_c->bitmask);
 
-			RPC_RSP_COPY_BYTES(p_a_cntry->cc, p_c_cntry->cc);
-			p_a_cntry->schan = p_c_cntry->schan;
-			p_a_cntry->nchan = p_c_cntry->nchan;
-			p_a_cntry->max_tx_power = p_c_cntry->max_tx_power;
-			p_a_cntry->policy = p_c_cntry->policy;
+		RPC_RSP_COPY_BYTES(p_a_cntry->cc, p_c_cntry->cc);
+		p_a_cntry->schan = p_c_cntry->schan;
+		p_a_cntry->nchan = p_c_cntry->nchan;
+		p_a_cntry->max_tx_power = p_c_cntry->max_tx_power;
+		p_a_cntry->policy = p_c_cntry->policy;
 
-			/*ESP_LOGE(TAG, "AP info: ssid \"%s\" bssid \"%s\" rssi \"%d\" channel \"%d\" auth mode \"%d\" \n\r",\
-			  ap_info->ssid, ap_info->bssid, ap_info->rssi,
-			  ap_info->channel, ap_info->authmode);*/
+		WifiHeApInfo *p_c_he_ap = p_c->he_ap;
+		wifi_he_ap_info_t *p_a_he_ap = &ap_info->he_ap;
+		// six bits
+		p_a_he_ap->bss_color = p_c_he_ap->bitmask & 0x3F;
+		p_a_he_ap->partial_bss_color = H_GET_BIT(WIFI_HE_AP_INFO_partial_bss_color_BIT,
+				p_c_he_ap->bitmask);
+		p_a_he_ap->bss_color_disabled = H_GET_BIT(WIFI_HE_AP_INFO_bss_color_disabled_BIT,
+				p_c_he_ap->bitmask);
 
-			ESP_LOGI(TAG, "SSID: %s, BSSid: " MACSTR "\n", ap_info->ssid, MAC2STR(ap_info->bssid));
-			ESP_LOGI(TAG, "Primary: %u\nSecond: %u\nRssi: %d\nAuthmode: %u\nPairwiseCipher: %u\nGroupcipher: %u\nAnt: %u\nBitmask:11b:%u g:%u n:%u lr:%u ax:%u wps:%u ftm_resp:%u ftm_ini:%u res: %u\n",
-					ap_info->primary, ap_info->second,
-					ap_info->rssi, ap_info->authmode,
-					ap_info->pairwise_cipher, ap_info->group_cipher,
-					ap_info->ant, ap_info->phy_11b, ap_info->phy_11g,
-					ap_info->phy_11n, ap_info->phy_11ax, ap_info->phy_lr,
-					ap_info->wps, ap_info->ftm_responder,
-					ap_info->ftm_initiator, ap_info->reserved
-					);
-			ESP_LOGI(TAG, "Country cc:%c%c schan: %u nchan: %u max_tx_pow: %d policy: %u\n",
-					p_a_cntry->cc[0], p_a_cntry->cc[1], p_a_cntry->schan, p_a_cntry->nchan,
-					p_a_cntry->max_tx_power,p_a_cntry->policy);
-
-			WifiHeApInfo *p_c_he_ap = p_c->he_ap;
-			wifi_he_ap_info_t *p_a_he_ap = &ap_info->he_ap;
-			// six bits
-			p_a_he_ap->bss_color = p_c_he_ap->bitmask & 0x3F;
-			p_a_he_ap->partial_bss_color = H_GET_BIT(WIFI_HE_AP_INFO_partial_bss_color_BIT, p_c_he_ap->bitmask);
-			p_a_he_ap->bss_color_disabled = H_GET_BIT(WIFI_HE_AP_INFO_bss_color_disabled_BIT, p_c_he_ap->bitmask);
-
-			ESP_LOGI(TAG, "HE_AP: bss_color %d, partial_bss_color %d, bss_color_disabled %d\n",
-					p_a_he_ap->bss_color, p_a_he_ap->bss_color_disabled, p_a_he_ap->bss_color_disabled);
-
-			//p_a_sta->rm_enabled = H_GET_BIT(STA_RM_ENABLED_BIT, p_c_sta->bitmask);
-		}
 		break;
     } case RPC_ID__Resp_WifiClearApList: {
 		RPC_FAIL_ON_NULL(resp_wifi_clear_ap_list);
@@ -510,7 +471,7 @@ int rpc_parse_rsp(Rpc *rpc_msg, ctrl_cmd_t *app_resp)
 		// handle case where slave's num is bigger than our ESP_WIFI_MAX_CONN_NUM
 		uint32_t num_stations = rpc_msg->resp_wifi_ap_get_sta_list->sta_list->num;
 		if (num_stations > ESP_WIFI_MAX_CONN_NUM) {
-			ESP_LOGI(TAG, "Warning: slave returned %ld connected stations, but we can only accept %d items", num_stations, ESP_WIFI_MAX_CONN_NUM);
+			ESP_LOGW(TAG, "Slave returned %ld connected stations, but we can only accept %d items", num_stations, ESP_WIFI_MAX_CONN_NUM);
 			num_stations = ESP_WIFI_MAX_CONN_NUM;
 		}
 
@@ -556,28 +517,20 @@ int rpc_parse_rsp(Rpc *rpc_msg, ctrl_cmd_t *app_resp)
 			rpc_msg->resp_wifi_get_protocol->protocol_bitmap;
 		break;
 	} default: {
-		ESP_LOGE(TAG, "Unsupported rpc Resp[%u]\n", rpc_msg->msg_id);
+		ESP_LOGE(TAG, "Unsupported rpc Resp[%u]", rpc_msg->msg_id);
 		goto fail_parse_rpc_msg;
 		break;
 	}
 
 	}
 
-	/* 4. Free up buffers */
-	rpc__free_unpacked(rpc_msg, NULL);
-	rpc_msg = NULL;
 	app_resp->resp_event_status = SUCCESS;
 	return SUCCESS;
 
 	/* 5. Free up buffers in failure cases */
 fail_parse_rpc_msg:
-	rpc__free_unpacked(rpc_msg, NULL);
-	rpc_msg = NULL;
-	app_resp->resp_event_status = FAILURE;
-	return FAILURE;
+	return SUCCESS;
 
 fail_parse_rpc_msg2:
-	rpc__free_unpacked(rpc_msg, NULL);
-	rpc_msg = NULL;
 	return FAILURE;
 }

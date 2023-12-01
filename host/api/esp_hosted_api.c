@@ -326,6 +326,15 @@ esp_err_t esp_hosted_wifi_get_protocol(wifi_interface_t ifx, uint8_t *protocol_b
     return rpc_wifi_get_protocol(ifx, protocol_bitmap);
 }
 
+esp_err_t esp_hosted_wifi_set_max_tx_power(int8_t power)
+{
+    return rpc_wifi_set_max_tx_power(power);
+}
+
+esp_err_t esp_hosted_wifi_get_max_tx_power(int8_t *power)
+{
+    return rpc_wifi_get_max_tx_power(power);
+}
 
 #ifdef __cplusplus
 }

@@ -21,6 +21,7 @@
 #include "slave_control.h"
 #include "esp_hosted_rpc.pb-c.h"
 #include "esp_ota_ops.h"
+#include "rpc_common.h"
 #include "adapter.h"
 
 #define MAC_STR_LEN                 17
@@ -30,7 +31,6 @@
 #define FAILURE                     -1
 #define SSID_LENGTH                 32
 #define PASSWORD_LENGTH             64
-#define BSSID_LENGTH                19
 #define MIN_TX_POWER                8
 #define MAX_TX_POWER                84
 
@@ -79,7 +79,7 @@
 #define RPC_TEMPLATE(RspTyPe, RspStRuCt, ReqType, ReqStruct, InIt_FuN)         \
   RspTyPe *resp_payload = NULL;                                                 \
   ReqType *req_payload = NULL;                                                  \
-  if (!req || !resp) {                                                          \
+  if (!req || !resp || !req->ReqStruct) {                                      \
     ESP_LOGE(TAG, "Invalid parameters");                                        \
     return ESP_FAIL;                                                            \
   }                                                                             \
@@ -206,11 +206,8 @@ static esp_ota_handle_t handle;
 const esp_partition_t* update_partition = NULL;
 static int ota_msg = 0;
 
-static esp_err_t convert_mac_to_bytes(uint8_t *out, char *s);
-
 extern esp_err_t wlan_sta_rx_callback(void *buffer, uint16_t len, void *eb);
 extern esp_err_t wlan_ap_rx_callback(void *buffer, uint16_t len, void *eb);
-void esp_update_ap_mac(void);
 
 extern volatile uint8_t station_connected;
 extern volatile uint8_t softap_started;
@@ -222,311 +219,106 @@ void vTimerCallback( TimerHandle_t xTimer )
 	esp_restart();
 }
 
-/* event handler for station connect/disconnect to/from AP */
-
-/* Function converts mac string to byte stream */
-static esp_err_t convert_mac_to_bytes(uint8_t *out, char *s)
-{
-	int mac[BSSID_BYTES_SIZE] = {0};
-	int num_bytes = 0;
-	if (!s || (strlen(s) < MAC_STR_LEN))  {
-		return ESP_FAIL;
-	}
-	num_bytes =  sscanf(s, "%2x:%2x:%2x:%2x:%2x:%2x",
-			&mac[0],&mac[1], &mac[2], &mac[3], &mac[4], &mac[5]);
-	if ((num_bytes < BSSID_BYTES_SIZE)  ||
-	    (mac[0] > 0xFF) ||
-	    (mac[1] > 0xFF) ||
-	    (mac[2] > 0xFF) ||
-	    (mac[3] > 0xFF) ||
-	    (mac[4] > 0xFF) ||
-	    (mac[5] > 0xFF)) {
-		return ESP_FAIL;
-	}
-	out[0] = mac[0]&0xff;
-	out[1] = mac[1]&0xff;
-	out[2] = mac[2]&0xff;
-	out[3] = mac[3]&0xff;
-	out[4] = mac[4]&0xff;
-	out[5] = mac[5]&0xff;
-	return ESP_OK;
-}
-
 /* Function returns mac address of station/softap */
-static esp_err_t req_get_mac_address_handler(Rpc *req,
+static esp_err_t req_wifi_get_mac(Rpc *req,
 		Rpc *resp, void *priv_data)
 {
-	esp_err_t ret = ESP_OK;
 	uint8_t mac[BSSID_BYTES_SIZE] = {0};
-	char mac_str[BSSID_LENGTH] = "";
-	RpcRespGetMacAddress *resp_payload = NULL;
 
-	if (!req || !resp || !req->req_get_mac_address) {
-		ESP_LOGE(TAG, "Invalid parameters");
-		return ESP_FAIL;
-	}
+	RPC_TEMPLATE_SIMPLE(RpcRespGetMacAddress, resp_get_mac_address,
+			RpcReqGetMacAddress, req_get_mac_address,
+			rpc__resp__get_mac_address__init);
 
-	resp_payload = (RpcRespGetMacAddress *)
-		calloc(1,sizeof(RpcRespGetMacAddress));
-	if (!resp_payload) {
-		ESP_LOGE(TAG,"Failed to allocate memory");
-		return ESP_ERR_NO_MEM;
-	}
-	rpc__resp__get_mac_address__init(resp_payload);
-	resp->payload_case = RPC__PAYLOAD_RESP_GET_MAC_ADDRESS;
-	resp->resp_get_mac_address = resp_payload;
+	RPC_RET_FAIL_IF(esp_wifi_get_mac(req->req_get_mac_address->mode, mac));
 
-	if (req->req_get_mac_address->mode == ESP_IF_WIFI_STA) {
-		ESP_LOGI(TAG,"Get station mac address");
-		ret = esp_wifi_get_mac(ESP_IF_WIFI_STA , mac);
-		if (ret) {
-			ESP_LOGE(TAG,"Error in getting MAC of ESP Station %d", ret);
-			goto err;
-		}
-	} else if (req->req_get_mac_address->mode == ESP_IF_WIFI_AP) {
-		ESP_LOGI(TAG,"Get softap mac address");
-		ret = esp_wifi_get_mac(ESP_IF_WIFI_AP, mac);
-		if (ret) {
-			ESP_LOGE(TAG,"Error in getting MAC of ESP softap %d", ret);
-			goto err;
-		}
-	} else {
-		ESP_LOGI(TAG,"Invalid get mac msg type");
-		goto err;
-	}
-
-	snprintf(mac_str,BSSID_LENGTH,MACSTR,MAC2STR(mac));
-	ESP_LOGI(TAG,"mac [%s] ", mac_str);
+	ESP_LOGI(TAG,"mac [" MACSTR "]", MAC2STR(mac));
 
 	RPC_RESP_COPY_BYTES_SRC_UNCHECKED(resp_payload->mac, mac, BSSID_BYTES_SIZE);
 
-	ESP_LOGD(TAG, "%x %x %x %x %x %x",
-			resp_payload->mac.data[0],
-			resp_payload->mac.data[1],
-			resp_payload->mac.data[2],
-			resp_payload->mac.data[3],
-			resp_payload->mac.data[4],
-			resp_payload->mac.data[5]);
+	ESP_LOGD(TAG, "resp mac [" MACSTR "]", MAC2STR(resp_payload->mac.data));
 
-	resp_payload->resp = SUCCESS;
-	return ESP_OK;
-err:
-	resp_payload->resp = FAILURE;
 	return ESP_OK;
 }
 
 /* Function returns wifi mode */
-static esp_err_t req_get_wifi_mode_handler (Rpc *req,
+static esp_err_t req_wifi_get_mode(Rpc *req,
 		Rpc *resp, void *priv_data)
 {
-	esp_err_t ret = ESP_OK;
 	wifi_mode_t mode = 0;
-	RpcRespGetMode *resp_payload = NULL;
 
-	if (!req || !resp) {
-		ESP_LOGE(TAG, "Invalid parameters");
-		return ESP_FAIL;
-	}
+	RPC_TEMPLATE_SIMPLE(RpcRespGetMode, resp_get_wifi_mode,
+			RpcReqGetMode, req_get_wifi_mode,
+			rpc__resp__get_mode__init);
 
-	resp_payload = (RpcRespGetMode *)calloc(1,sizeof(RpcRespGetMode));
-	if (!resp_payload) {
-		ESP_LOGE(TAG,"Failed to allocate memory");
-		return ESP_ERR_NO_MEM;
-	}
-	rpc__resp__get_mode__init(resp_payload);
-	resp->payload_case = RPC__PAYLOAD_RESP_GET_WIFI_MODE;
-	resp->resp_get_wifi_mode = resp_payload;
-
-	ret = esp_wifi_get_mode(&mode);
-	if (ret) {
-		ESP_LOGE(TAG, "Failed to get wifi mode %d", ret);
-		goto err;
-	}
+	RPC_RET_FAIL_IF(esp_wifi_get_mode(&mode));
 
 	resp_payload->mode = mode;
-	resp_payload->resp = SUCCESS;
-	return ESP_OK;
-err:
-	resp_payload->resp = FAILURE;
+
 	return ESP_OK;
 }
 
 /* Function sets wifi mode */
-static esp_err_t req_set_wifi_mode_handler (Rpc *req,
+static esp_err_t req_wifi_set_mode(Rpc *req,
 		Rpc *resp, void *priv_data)
 {
-	esp_err_t ret = ESP_OK;
 	wifi_mode_t num = 0;
-	RpcRespSetMode *resp_payload = NULL;
 
-	if (!req || !resp || !req->req_set_wifi_mode) {
-		ESP_LOGE(TAG, "Invalid parameters");
-		return ESP_FAIL;
-	}
+	RPC_TEMPLATE(RpcRespSetMode, resp_set_wifi_mode,
+			RpcReqSetMode, req_set_wifi_mode,
+			rpc__resp__set_mode__init);
 
-	if (req->req_set_wifi_mode->mode >= WIFI_MODE_MAX) {
-		ESP_LOGE(TAG, "Invalid wifi mode");
-		return ESP_FAIL;
-	}
+	num = req_payload->mode;
+	RPC_RET_FAIL_IF(esp_wifi_set_mode(num));
 
-	resp_payload = (RpcRespSetMode *)calloc(1,sizeof(RpcRespSetMode));
-	if (!resp_payload) {
-		ESP_LOGE(TAG,"Failed to allocate memory");
-		return ESP_ERR_NO_MEM;
-	}
-	rpc__resp__set_mode__init(resp_payload);
-	resp->payload_case = RPC__PAYLOAD_RESP_SET_WIFI_MODE;
-	resp->resp_set_wifi_mode = resp_payload;
-
-	num = req->req_set_wifi_mode->mode;
-	ret = esp_wifi_set_mode(num);
-	if (ret) {
-		ESP_LOGE(TAG,"Failed to set mode");
-		goto err;
-	}
-	ESP_LOGI(TAG,"Set wifi mode %d ", num);
-
-	resp_payload->resp = SUCCESS;
-	return ESP_OK;
-err:
-	resp_payload->resp = FAILURE;
 	return ESP_OK;
 }
 
 /* Function sets MAC address for station/softap */
-static esp_err_t req_set_mac_address_handler (Rpc *req,
+static esp_err_t req_wifi_set_mac(Rpc *req,
 		Rpc *resp, void *priv_data)
 {
-	esp_err_t ret = ESP_OK;
-	uint8_t mac[BSSID_BYTES_SIZE] = {0};
-	uint8_t interface = 0;
-	RpcRespSetMacAddress *resp_payload = NULL;
+	uint8_t * mac = NULL;
 
-	if (!req || !resp || !req->req_set_mac_address ||
-	    !req->req_set_mac_address->mac.data) {
-		ESP_LOGE(TAG," Invalid command request");
-		return ESP_FAIL;
-	}
+	RPC_TEMPLATE(RpcRespSetMacAddress, resp_set_mac_address,
+			RpcReqSetMacAddress, req_set_mac_address,
+			rpc__resp__set_mac_address__init);
 
-	resp_payload = (RpcRespSetMacAddress *)
-		calloc(1,sizeof(RpcRespSetMacAddress));
-	if (!resp_payload) {
-		ESP_LOGE(TAG,"Failed to allocate memory");
-		return ESP_ERR_NO_MEM;
-	}
-	rpc__resp__set_mac_address__init(resp_payload);
-	resp->payload_case = RPC__PAYLOAD_RESP_SET_MAC_ADDRESS;
-	resp->resp_set_mac_address = resp_payload;
-
-	if (req->req_set_mac_address->mac.len > MAC_STR_LEN) {
-		ESP_LOGE(TAG, "MAC address should be in aa:bb:cc:dd:ee:ff format");
+	if (!req_payload->mac.data || (req_payload->mac.len != BSSID_BYTES_SIZE)) {
+		ESP_LOGE(TAG, "Invalid MAC address data or len: %d", req->req_set_mac_address->mac.len);
+		resp_payload->resp = ESP_ERR_INVALID_ARG;
 		goto err;
 	}
 
-	ret = convert_mac_to_bytes(mac, (char *)req->req_set_mac_address->mac.data);
-	if (ret) {
-		ESP_LOGE(TAG, "Mac address not recognized from %s",
-				(char *)req->req_set_mac_address->mac.data);
-		goto err;
-	}
+	mac = req_payload->mac.data;
+	ESP_LOGD(TAG, "mac: " MACSTR, MAC2STR(mac));
 
-	if (req->req_set_mac_address->mode == WIFI_IF_STA) {
-		interface = WIFI_IF_STA;
-	} else if (req->req_set_mac_address->mode == WIFI_IF_AP) {
-		interface = WIFI_IF_AP;
-	} else {
-		ESP_LOGE(TAG, "Invalid mode to set MAC address");
-		goto err;
-	}
-
-	ret = esp_wifi_set_mac(interface, mac);
-	if (ret == ESP_ERR_WIFI_MODE) {
-		ESP_LOGE(TAG, "ESP32 mode is different than asked one");
-		goto err;
-	} else if (ret == ESP_ERR_WIFI_MAC) {
-		ESP_LOGE(TAG, "station and softap interface has same MAC address. OR");
-		ESP_LOGE(TAG, "Invalid MAC Address, The bit 0 of the first byte of ESP32 MAC address can not be 1, For example, the MAC address can set to be 1a:XX:XX:XX:XX:XX, but can not be 15:XX:XX:XX:XX:XX");
-		goto err;
-	} else if (ret) {
-		ESP_LOGE(TAG, "Failed to set MAC address, error %d ", ret);
-		goto err;
-	}
-
-	resp_payload->resp = SUCCESS;
-	return ESP_OK;
-
+	RPC_RET_FAIL_IF(esp_wifi_set_mac(req_payload->mode, mac));
 err:
-	resp_payload->resp = FAILURE;
 	return ESP_OK;
 }
 
 /* Function sets power save mode */
-static esp_err_t req_set_power_save_mode_handler (Rpc *req,
+static esp_err_t req_wifi_set_ps(Rpc *req,
 		Rpc *resp, void *priv_data)
 {
-	esp_err_t ret = ESP_OK;
-	RpcRespSetMode *resp_payload = NULL;
-
-	if (!req || !resp || !req->req_wifi_set_ps) {
-		ESP_LOGE(TAG, "Invalid parameters");
-		return ESP_FAIL;
-	}
-
-	resp_payload = (RpcRespSetMode *)calloc(1,sizeof(RpcRespSetMode));
-	if (!resp_payload) {
-		ESP_LOGE(TAG,"Failed to allocate memory");
-		return ESP_ERR_NO_MEM;
-	}
-	rpc__resp__set_mode__init(resp_payload);
-	resp->payload_case = RPC__PAYLOAD_RESP_WIFI_SET_PS;
-	resp->resp_wifi_set_ps = resp_payload;
-
-	ret = esp_wifi_set_ps(req->req_wifi_set_ps->mode);
-	if (ret) {
-		ESP_LOGE(TAG, "Failed to set power save mode");
-		goto err;
-	}
-
-	resp_payload->resp = SUCCESS;
-	return ESP_OK;
-
-err:
-	resp_payload->resp = FAILURE;
+	RPC_TEMPLATE(RpcRespSetPs, resp_wifi_set_ps,
+			RpcReqSetPs, req_wifi_set_ps,
+			rpc__resp__set_ps__init);
+	RPC_RET_FAIL_IF(esp_wifi_set_ps(req_payload->type));
 	return ESP_OK;
 }
 
 /* Function returns current power save mode */
-static esp_err_t req_get_power_save_mode_handler (Rpc *req,
+static esp_err_t req_wifi_get_ps(Rpc *req,
 		Rpc *resp, void *priv_data)
 {
-	esp_err_t ret = ESP_OK;
 	wifi_ps_type_t ps_type = 0;
-	RpcRespGetMode *resp_payload = NULL;
 
-	if (!req || !resp) {
-		ESP_LOGE(TAG, "Invalid parameters");
-		return ESP_FAIL;
-	}
-
-	resp_payload = (RpcRespGetMode *)calloc(1,sizeof(RpcRespGetMode));
-	if (!resp_payload) {
-		ESP_LOGE(TAG,"Failed to allocate memory");
-		return ESP_ERR_NO_MEM;
-	}
-	rpc__resp__get_mode__init(resp_payload);
-	resp->payload_case = RPC__PAYLOAD_RESP_WIFI_GET_PS;
-	resp->resp_wifi_get_ps = resp_payload;
-
-	ret = esp_wifi_get_ps(&ps_type);
-	if (ret) {
-		ESP_LOGE(TAG, "Failed to set power save mode");
-		resp_payload->resp = FAILURE;
-		return ESP_OK;
-	} else {
-		resp->resp_wifi_get_ps->mode = ps_type;
-	}
-
-	resp_payload->resp = SUCCESS;
+	RPC_TEMPLATE_SIMPLE(RpcRespGetPs, resp_wifi_get_ps,
+			RpcReqGetPs, req_wifi_get_ps,
+			rpc__resp__get_ps__init);
+	RPC_RET_FAIL_IF(esp_wifi_get_ps(&ps_type));
+	resp_payload->type = ps_type;
 	return ESP_OK;
 }
 
@@ -775,82 +567,27 @@ static esp_err_t req_set_softap_vender_specific_ie_handler (Rpc *req,
 #endif
 
 /* Function set wifi maximum TX power */
-static esp_err_t req_set_wifi_max_tx_power_handler (Rpc *req,
+static esp_err_t req_wifi_set_max_tx_power(Rpc *req,
 		Rpc *resp, void *priv_data)
 {
-	esp_err_t ret = ESP_OK;
-	RpcRespWifiSetMaxTxPower *resp_payload = NULL;
-
-	if (!req || !resp ) {
-		ESP_LOGE(TAG, "Invalid parameters");
-		return ESP_FAIL;
-	}
-
-	resp_payload = (RpcRespWifiSetMaxTxPower *)
-		calloc(1,sizeof(RpcRespWifiSetMaxTxPower));
-	if (!resp_payload) {
-		ESP_LOGE(TAG,"Failed to allocate memory");
-		return ESP_ERR_NO_MEM;
-	}
-	rpc__resp__wifi_set_max_tx_power__init(resp_payload);
-	resp->payload_case = RPC__PAYLOAD_RESP_SET_WIFI_MAX_TX_POWER;
-	resp->resp_set_wifi_max_tx_power = resp_payload;
-
-	if ((req->req_set_wifi_max_tx_power->wifi_max_tx_power > MAX_TX_POWER)
-			|| (req->req_set_wifi_max_tx_power->wifi_max_tx_power < MIN_TX_POWER)) {
-		ESP_LOGE(TAG, "Invalid maximum transmitting power value");
-		ESP_LOGE(TAG, "Value lies between [8,84]");
-		ESP_LOGE(TAG, "Please refer `wifi_set_max_tx_power` API documentation \n");
-		resp_payload->resp = RPC__STATUS__Out_Of_Range;
-		return ESP_OK;
-	}
-
-	ret = esp_wifi_set_max_tx_power(req->req_set_wifi_max_tx_power->wifi_max_tx_power);
-	if (ret != SUCCESS) {
-		ESP_LOGE(TAG, "Failed to set TX power");
-		goto err;
-	}
-	resp_payload->resp = SUCCESS;
-	return ESP_OK;
-err:
-	resp_payload->resp = FAILURE;
+	RPC_TEMPLATE(RpcRespWifiSetMaxTxPower, resp_set_wifi_max_tx_power,
+			RpcReqWifiSetMaxTxPower, req_set_wifi_max_tx_power,
+			rpc__resp__wifi_set_max_tx_power__init);
+	RPC_RET_FAIL_IF(esp_wifi_set_max_tx_power(req_payload->power));
 	return ESP_OK;
 }
 
 /* Function get wifi TX current power */
-static esp_err_t req_get_wifi_curr_tx_power_handler (Rpc *req,
+static esp_err_t req_wifi_get_max_tx_power(Rpc *req,
 		Rpc *resp, void *priv_data)
 {
-	esp_err_t ret = ESP_OK;
 	int8_t power = 0;
-	RpcRespWifiGetMaxTxPower *resp_payload = NULL;
 
-	if (!req || !resp) {
-		ESP_LOGE(TAG, "Invalid parameters");
-		return ESP_FAIL;
-	}
-
-	resp_payload = (RpcRespWifiGetMaxTxPower *)
-		calloc(1,sizeof(RpcRespWifiGetMaxTxPower));
-	if (!resp_payload) {
-		ESP_LOGE(TAG,"Failed to allocate memory");
-		return ESP_ERR_NO_MEM;
-	}
-
-	rpc__resp__wifi_get_max_tx_power__init(resp_payload);
-	resp->payload_case = RPC__PAYLOAD_RESP_GET_WIFI_CURR_TX_POWER;
-	resp->resp_get_wifi_curr_tx_power = resp_payload;
-
-	ret = esp_wifi_get_max_tx_power(&power);
-	if (ret != SUCCESS) {
-		ESP_LOGE(TAG, "Failed to get TX power");
-		goto err;
-	}
-	resp_payload->wifi_curr_tx_power = power;
-	resp_payload->resp = SUCCESS;
-	return ESP_OK;
-err:
-	resp_payload->resp = FAILURE;
+	RPC_TEMPLATE_SIMPLE(RpcRespWifiGetMaxTxPower, resp_get_wifi_max_tx_power,
+			RpcReqWifiGetMaxTxPower, req_get_wifi_max_tx_power,
+			rpc__resp__wifi_get_max_tx_power__init);
+	RPC_RET_FAIL_IF(esp_wifi_get_max_tx_power(&power));
+	resp_payload->power = power;
 	return ESP_OK;
 }
 
@@ -1851,8 +1588,7 @@ static esp_err_t req_wifi_ap_get_sta_aid(Rpc *req, Rpc *resp, void *priv_data)
 	uint16_t aid;
 
 	RPC_REQ_COPY_BYTES(mac, req_payload->mac, sizeof(mac));
-	ESP_LOGI(TAG, "mac: %02x:%02x:%02x:%02x:%02x:%02x",
-			 mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+	ESP_LOGI(TAG, "mac: " MACSTR, MAC2STR(mac));
 	RPC_RET_FAIL_IF(esp_wifi_ap_get_sta_aid(mac, &aid));
 
 	resp_payload->aid = aid;
@@ -1890,27 +1626,27 @@ static esp_err_t req_wifi_(Rpc *req, Rpc *resp, void *priv_data)
 static esp_rpc_req_t req_table[] = {
 	{
 		.req_num = RPC_ID__Req_GetMACAddress ,
-		.command_handler = req_get_mac_address_handler
+		.command_handler = req_wifi_get_mac
 	},
 	{
 		.req_num = RPC_ID__Req_GetWifiMode,
-		.command_handler = req_get_wifi_mode_handler
+		.command_handler = req_wifi_get_mode
 	},
 	{
 		.req_num = RPC_ID__Req_SetWifiMode,
-		.command_handler = req_set_wifi_mode_handler
+		.command_handler = req_wifi_set_mode
 	},
 	{
 		.req_num = RPC_ID__Req_SetMacAddress,
-		.command_handler = req_set_mac_address_handler
+		.command_handler = req_wifi_set_mac
 	},
 	{
 		.req_num = RPC_ID__Req_WifiSetPs,
-		.command_handler = req_set_power_save_mode_handler
+		.command_handler = req_wifi_set_ps
 	},
 	{
 		.req_num = RPC_ID__Req_WifiGetPs,
-		.command_handler = req_get_power_save_mode_handler
+		.command_handler = req_wifi_get_ps
 	},
 	{
 		.req_num = RPC_ID__Req_OTABegin,
@@ -1924,19 +1660,13 @@ static esp_rpc_req_t req_table[] = {
 		.req_num = RPC_ID__Req_OTAEnd,
 		.command_handler = req_ota_end_handler
 	},
-#if 0
-	{
-		.req_num = RPC_ID__Req_SetSoftAPVendorSpecificIE,
-		.command_handler = req_set_softap_vender_specific_ie_handler
-	},
-#endif
 	{
 		.req_num = RPC_ID__Req_WifiSetMaxTxPower,
-		.command_handler = req_set_wifi_max_tx_power_handler
+		.command_handler = req_wifi_set_max_tx_power
 	},
 	{
 		.req_num = RPC_ID__Req_WifiGetMaxTxPower,
-		.command_handler = req_get_wifi_curr_tx_power_handler
+		.command_handler = req_wifi_get_max_tx_power
 	},
 	{
 		.req_num = RPC_ID__Req_ConfigHeartbeat,
@@ -2158,7 +1888,7 @@ static void esp_rpc_cleanup(Rpc *resp)
 			mem_free(resp->resp_set_wifi_max_tx_power);
 			break;
 		} case (RPC_ID__Resp_WifiGetMaxTxPower) : {
-			mem_free(resp->resp_get_wifi_curr_tx_power);
+			mem_free(resp->resp_get_wifi_max_tx_power);
 			break;
 		} case (RPC_ID__Resp_ConfigHeartbeat) : {
 			mem_free(resp->resp_config_heartbeat);

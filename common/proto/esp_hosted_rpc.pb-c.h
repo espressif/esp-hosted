@@ -62,6 +62,10 @@ typedef struct RpcReqGetMode RpcReqGetMode;
 typedef struct RpcRespGetMode RpcRespGetMode;
 typedef struct RpcReqSetMode RpcReqSetMode;
 typedef struct RpcRespSetMode RpcRespSetMode;
+typedef struct RpcReqGetPs RpcReqGetPs;
+typedef struct RpcRespGetPs RpcRespGetPs;
+typedef struct RpcReqSetPs RpcReqSetPs;
+typedef struct RpcRespSetPs RpcRespSetPs;
 typedef struct RpcReqSetMacAddress RpcReqSetMacAddress;
 typedef struct RpcRespSetMacAddress RpcRespSetMacAddress;
 typedef struct RpcReqOTABegin RpcReqOTABegin;
@@ -1918,6 +1922,46 @@ struct  RpcRespSetMode
     , 0 }
 
 
+struct  RpcReqGetPs
+{
+  ProtobufCMessage base;
+};
+#define RPC__REQ__GET_PS__INIT \
+ { PROTOBUF_C_MESSAGE_INIT (&rpc__req__get_ps__descriptor) \
+     }
+
+
+struct  RpcRespGetPs
+{
+  ProtobufCMessage base;
+  int32_t resp;
+  int32_t type;
+};
+#define RPC__RESP__GET_PS__INIT \
+ { PROTOBUF_C_MESSAGE_INIT (&rpc__resp__get_ps__descriptor) \
+    , 0, 0 }
+
+
+struct  RpcReqSetPs
+{
+  ProtobufCMessage base;
+  int32_t type;
+};
+#define RPC__REQ__SET_PS__INIT \
+ { PROTOBUF_C_MESSAGE_INIT (&rpc__req__set_ps__descriptor) \
+    , 0 }
+
+
+struct  RpcRespSetPs
+{
+  ProtobufCMessage base;
+  int32_t resp;
+};
+#define RPC__RESP__SET_PS__INIT \
+ { PROTOBUF_C_MESSAGE_INIT (&rpc__resp__set_ps__descriptor) \
+    , 0 }
+
+
 struct  RpcReqSetMacAddress
 {
   ProtobufCMessage base;
@@ -2000,7 +2044,7 @@ struct  RpcRespOTAEnd
 struct  RpcReqWifiSetMaxTxPower
 {
   ProtobufCMessage base;
-  int32_t wifi_max_tx_power;
+  int32_t power;
 };
 #define RPC__REQ__WIFI_SET_MAX_TX_POWER__INIT \
  { PROTOBUF_C_MESSAGE_INIT (&rpc__req__wifi_set_max_tx_power__descriptor) \
@@ -2029,7 +2073,7 @@ struct  RpcReqWifiGetMaxTxPower
 struct  RpcRespWifiGetMaxTxPower
 {
   ProtobufCMessage base;
-  int32_t wifi_curr_tx_power;
+  int32_t power;
   int32_t resp;
 };
 #define RPC__RESP__WIFI_GET_MAX_TX_POWER__INIT \
@@ -2789,7 +2833,7 @@ typedef enum {
   RPC__PAYLOAD_REQ_OTA_WRITE = 273,
   RPC__PAYLOAD_REQ_OTA_END = 274,
   RPC__PAYLOAD_REQ_SET_WIFI_MAX_TX_POWER = 275,
-  RPC__PAYLOAD_REQ_GET_WIFI_CURR_TX_POWER = 276,
+  RPC__PAYLOAD_REQ_GET_WIFI_MAX_TX_POWER = 276,
   RPC__PAYLOAD_REQ_CONFIG_HEARTBEAT = 277,
   RPC__PAYLOAD_REQ_WIFI_INIT = 278,
   RPC__PAYLOAD_REQ_WIFI_DEINIT = 279,
@@ -2832,7 +2876,7 @@ typedef enum {
   RPC__PAYLOAD_RESP_OTA_WRITE = 529,
   RPC__PAYLOAD_RESP_OTA_END = 530,
   RPC__PAYLOAD_RESP_SET_WIFI_MAX_TX_POWER = 531,
-  RPC__PAYLOAD_RESP_GET_WIFI_CURR_TX_POWER = 532,
+  RPC__PAYLOAD_RESP_GET_WIFI_MAX_TX_POWER = 532,
   RPC__PAYLOAD_RESP_CONFIG_HEARTBEAT = 533,
   RPC__PAYLOAD_RESP_WIFI_INIT = 534,
   RPC__PAYLOAD_RESP_WIFI_DEINIT = 535,
@@ -2900,13 +2944,13 @@ struct  Rpc
     RpcReqSetMacAddress *req_set_mac_address;
     RpcReqGetMode *req_get_wifi_mode;
     RpcReqSetMode *req_set_wifi_mode;
-    RpcReqSetMode *req_wifi_set_ps;
-    RpcReqGetMode *req_wifi_get_ps;
+    RpcReqSetPs *req_wifi_set_ps;
+    RpcReqGetPs *req_wifi_get_ps;
     RpcReqOTABegin *req_ota_begin;
     RpcReqOTAWrite *req_ota_write;
     RpcReqOTAEnd *req_ota_end;
     RpcReqWifiSetMaxTxPower *req_set_wifi_max_tx_power;
-    RpcReqWifiGetMaxTxPower *req_get_wifi_curr_tx_power;
+    RpcReqWifiGetMaxTxPower *req_get_wifi_max_tx_power;
     RpcReqConfigHeartbeat *req_config_heartbeat;
     RpcReqWifiInit *req_wifi_init;
     RpcReqWifiDeinit *req_wifi_deinit;
@@ -2946,13 +2990,13 @@ struct  Rpc
     RpcRespSetMacAddress *resp_set_mac_address;
     RpcRespGetMode *resp_get_wifi_mode;
     RpcRespSetMode *resp_set_wifi_mode;
-    RpcRespSetMode *resp_wifi_set_ps;
-    RpcRespGetMode *resp_wifi_get_ps;
+    RpcRespSetPs *resp_wifi_set_ps;
+    RpcRespGetPs *resp_wifi_get_ps;
     RpcRespOTABegin *resp_ota_begin;
     RpcRespOTAWrite *resp_ota_write;
     RpcRespOTAEnd *resp_ota_end;
     RpcRespWifiSetMaxTxPower *resp_set_wifi_max_tx_power;
-    RpcRespWifiGetMaxTxPower *resp_get_wifi_curr_tx_power;
+    RpcRespWifiGetMaxTxPower *resp_get_wifi_max_tx_power;
     RpcRespConfigHeartbeat *resp_config_heartbeat;
     RpcRespWifiInit *resp_wifi_init;
     RpcRespWifiDeinit *resp_wifi_deinit;
@@ -3895,6 +3939,82 @@ RpcRespSetMode *
                       const uint8_t       *data);
 void   rpc__resp__set_mode__free_unpacked
                      (RpcRespSetMode *message,
+                      ProtobufCAllocator *allocator);
+/* RpcReqGetPs methods */
+void   rpc__req__get_ps__init
+                     (RpcReqGetPs         *message);
+size_t rpc__req__get_ps__get_packed_size
+                     (const RpcReqGetPs   *message);
+size_t rpc__req__get_ps__pack
+                     (const RpcReqGetPs   *message,
+                      uint8_t             *out);
+size_t rpc__req__get_ps__pack_to_buffer
+                     (const RpcReqGetPs   *message,
+                      ProtobufCBuffer     *buffer);
+RpcReqGetPs *
+       rpc__req__get_ps__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data);
+void   rpc__req__get_ps__free_unpacked
+                     (RpcReqGetPs *message,
+                      ProtobufCAllocator *allocator);
+/* RpcRespGetPs methods */
+void   rpc__resp__get_ps__init
+                     (RpcRespGetPs         *message);
+size_t rpc__resp__get_ps__get_packed_size
+                     (const RpcRespGetPs   *message);
+size_t rpc__resp__get_ps__pack
+                     (const RpcRespGetPs   *message,
+                      uint8_t             *out);
+size_t rpc__resp__get_ps__pack_to_buffer
+                     (const RpcRespGetPs   *message,
+                      ProtobufCBuffer     *buffer);
+RpcRespGetPs *
+       rpc__resp__get_ps__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data);
+void   rpc__resp__get_ps__free_unpacked
+                     (RpcRespGetPs *message,
+                      ProtobufCAllocator *allocator);
+/* RpcReqSetPs methods */
+void   rpc__req__set_ps__init
+                     (RpcReqSetPs         *message);
+size_t rpc__req__set_ps__get_packed_size
+                     (const RpcReqSetPs   *message);
+size_t rpc__req__set_ps__pack
+                     (const RpcReqSetPs   *message,
+                      uint8_t             *out);
+size_t rpc__req__set_ps__pack_to_buffer
+                     (const RpcReqSetPs   *message,
+                      ProtobufCBuffer     *buffer);
+RpcReqSetPs *
+       rpc__req__set_ps__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data);
+void   rpc__req__set_ps__free_unpacked
+                     (RpcReqSetPs *message,
+                      ProtobufCAllocator *allocator);
+/* RpcRespSetPs methods */
+void   rpc__resp__set_ps__init
+                     (RpcRespSetPs         *message);
+size_t rpc__resp__set_ps__get_packed_size
+                     (const RpcRespSetPs   *message);
+size_t rpc__resp__set_ps__pack
+                     (const RpcRespSetPs   *message,
+                      uint8_t             *out);
+size_t rpc__resp__set_ps__pack_to_buffer
+                     (const RpcRespSetPs   *message,
+                      ProtobufCBuffer     *buffer);
+RpcRespSetPs *
+       rpc__resp__set_ps__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data);
+void   rpc__resp__set_ps__free_unpacked
+                     (RpcRespSetPs *message,
                       ProtobufCAllocator *allocator);
 /* RpcReqSetMacAddress methods */
 void   rpc__req__set_mac_address__init
@@ -5654,6 +5774,18 @@ typedef void (*RpcReqSetMode_Closure)
 typedef void (*RpcRespSetMode_Closure)
                  (const RpcRespSetMode *message,
                   void *closure_data);
+typedef void (*RpcReqGetPs_Closure)
+                 (const RpcReqGetPs *message,
+                  void *closure_data);
+typedef void (*RpcRespGetPs_Closure)
+                 (const RpcRespGetPs *message,
+                  void *closure_data);
+typedef void (*RpcReqSetPs_Closure)
+                 (const RpcReqSetPs *message,
+                  void *closure_data);
+typedef void (*RpcRespSetPs_Closure)
+                 (const RpcRespSetPs *message,
+                  void *closure_data);
 typedef void (*RpcReqSetMacAddress_Closure)
                  (const RpcReqSetMacAddress *message,
                   void *closure_data);
@@ -5968,6 +6100,10 @@ extern const ProtobufCMessageDescriptor rpc__req__get_mode__descriptor;
 extern const ProtobufCMessageDescriptor rpc__resp__get_mode__descriptor;
 extern const ProtobufCMessageDescriptor rpc__req__set_mode__descriptor;
 extern const ProtobufCMessageDescriptor rpc__resp__set_mode__descriptor;
+extern const ProtobufCMessageDescriptor rpc__req__get_ps__descriptor;
+extern const ProtobufCMessageDescriptor rpc__resp__get_ps__descriptor;
+extern const ProtobufCMessageDescriptor rpc__req__set_ps__descriptor;
+extern const ProtobufCMessageDescriptor rpc__resp__set_ps__descriptor;
 extern const ProtobufCMessageDescriptor rpc__req__set_mac_address__descriptor;
 extern const ProtobufCMessageDescriptor rpc__resp__set_mac_address__descriptor;
 extern const ProtobufCMessageDescriptor rpc__req__otabegin__descriptor;

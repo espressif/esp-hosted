@@ -135,7 +135,7 @@ ctrl_cmd_t * wifi_set_max_tx_power(ctrl_cmd_t req)
 	RPC_DECODE_RSP_IF_NOT_ASYNC();
 }
 
-ctrl_cmd_t * wifi_get_curr_tx_power(ctrl_cmd_t req)
+ctrl_cmd_t * wifi_get_max_tx_power(ctrl_cmd_t req)
 {
 	RPC_SEND_REQ(RPC_ID__Req_WifiGetMaxTxPower);
 	RPC_DECODE_RSP_IF_NOT_ASYNC();

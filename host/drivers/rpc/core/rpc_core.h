@@ -126,7 +126,7 @@ ctrl_cmd_t * rpc_wait_and_parse_sync_resp(ctrl_cmd_t *req);
  * > MSG_ID_OUT_OF_ORDER - if request msg id is unsupported
  * > CALLBACK_NOT_REGISTERED - if aync callback is not available
  **/
-int compose_rpc_req(Rpc *req, ctrl_cmd_t *app_req, uint8_t *failure_status);
+int compose_rpc_req(Rpc *req, ctrl_cmd_t *app_req, int32_t *failure_status);
 
 int is_event_callback_registered(int event);
 

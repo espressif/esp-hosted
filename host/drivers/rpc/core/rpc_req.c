@@ -3,6 +3,7 @@
 
 #include "rpc_core.h"
 #include "rpc_slave_if.h"
+#include "rpc_common.h"
 #include "adapter.h"
 #include "esp_log.h"
 
@@ -49,7 +50,7 @@ DEFINE_LOG_TAG(rpc_req);
  * For altogether new RPC function addition, please check
  * esp_hosted_fg/common/proto/esp_hosted_config.proto
  */
-int compose_rpc_req(Rpc *req, ctrl_cmd_t *app_req, uint8_t *failure_status)
+int compose_rpc_req(Rpc *req, ctrl_cmd_t *app_req, int32_t *failure_status)
 {
 	switch(req->msg_id) {
 
@@ -93,16 +94,8 @@ int compose_rpc_req(Rpc *req, ctrl_cmd_t *app_req, uint8_t *failure_status)
 		RPC_ALLOC_ASSIGN(RpcReqSetMacAddress, req_set_mac_address,
 				rpc__req__set_mac_address__init);
 
-		if ((p->mode <= WIFI_MODE_NULL) ||
-		    (p->mode >= WIFI_MODE_APSTA)||
-		    (!(p->mac[0]))) {
-			ESP_LOGE(TAG, "Invalid parameter\n");
-			*failure_status = RPC_ERR_INCORRECT_ARG;
-			return FAILURE;
-		}
-
 		req_payload->mode = p->mode;
-		RPC_REQ_COPY_BYTES(req_payload->mac, p->mac, BSSID_LENGTH);
+		RPC_REQ_COPY_BYTES(req_payload->mac, p->mac, BSSID_BYTES_SIZE);
 
 		break;
 	} case RPC_ID__Req_SetWifiMode: {
@@ -119,23 +112,10 @@ int compose_rpc_req(Rpc *req, ctrl_cmd_t *app_req, uint8_t *failure_status)
 		break;
 	} case RPC_ID__Req_WifiSetPs: {
 		wifi_power_save_t * p = &app_req->u.wifi_ps;
-		RPC_ALLOC_ASSIGN(RpcReqSetMode, req_wifi_set_ps,
-				rpc__req__set_mode__init);
+		RPC_ALLOC_ASSIGN(RpcReqSetPs, req_wifi_set_ps,
+				rpc__req__set_ps__init);
 
-#if CONFIG_BT_ENABLED
-		if (p->ps_mode < WIFI_PS_MIN_MODEM) {
-			ESP_LOGE(TAG, "Invalid power save mode (BT enabled)\n");
-			*failure_status = RPC_ERR_INCORRECT_ARG;
-			return FAILURE;
-		}
-#endif
-		if (p->ps_mode > WIFI_PS_MAX_MODEM) {
-			ESP_LOGE(TAG, "Invalid power save mode\n");
-			*failure_status = RPC_ERR_INCORRECT_ARG;
-			return FAILURE;
-		}
-
-		req_payload->mode = p->ps_mode;
+		req_payload->type = p->ps_mode;
 		break;
 	} case RPC_ID__Req_OTAWrite: {
 		ota_write_t *p = & app_req->u.ota_write;
@@ -155,7 +135,7 @@ int compose_rpc_req(Rpc *req, ctrl_cmd_t *app_req, uint8_t *failure_status)
 		RPC_ALLOC_ASSIGN(RpcReqWifiSetMaxTxPower,
 				req_set_wifi_max_tx_power,
 				rpc__req__wifi_set_max_tx_power__init);
-		req_payload->wifi_max_tx_power = app_req->u.wifi_tx_power.power;
+		req_payload->power = app_req->u.wifi_tx_power.power;
 		break;
 	} case RPC_ID__Req_ConfigHeartbeat: {
 		RPC_ALLOC_ASSIGN(RpcReqConfigHeartbeat, req_config_heartbeat,
@@ -231,7 +211,7 @@ int compose_rpc_req(Rpc *req, ctrl_cmd_t *app_req, uint8_t *failure_status)
 			p_c_sta->bssid_set = p_a_sta->bssid_set;
 
 			if (p_a_sta->bssid_set)
-				RPC_REQ_COPY_BYTES(p_c_sta->bssid, p_a_sta->bssid, BSSID_LENGTH);
+				RPC_REQ_COPY_BYTES(p_c_sta->bssid, p_a_sta->bssid, BSSID_BYTES_SIZE);
 
 			p_c_sta->channel = p_a_sta->channel;
 			p_c_sta->listen_interval = p_a_sta->listen_interval;

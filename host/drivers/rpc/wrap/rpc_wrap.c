@@ -27,6 +27,7 @@
 #include "adapter.h"
 #include "os_wrapper.h"
 #include "rpc_wrap.h"
+#include "rpc_common.h"
 #include "esp_log.h"
 
 DEFINE_LOG_TAG(rpc_wrap);
@@ -104,13 +105,13 @@ static int rpc_event_callback(ctrl_cmd_t * app_event)
 	ESP_LOGV(TAG, "%u",app_event->msg_id);
 	if (!app_event || (app_event->msg_type != RPC_TYPE__Event)) {
 		if (app_event)
-			ESP_LOGE(TAG, "Msg type is not event[%u]\n\r",app_event->msg_type);
+			ESP_LOGE(TAG, "Msg type is not event[%u]",app_event->msg_type);
 		goto fail_parsing;
 	}
 
 	if ((app_event->msg_id <= RPC_ID__Event_Base) ||
 	    (app_event->msg_id >= RPC_ID__Event_Max)) {
-		ESP_LOGE(TAG, "Event Msg ID[%u] is not correct\n\r",app_event->msg_id);
+		ESP_LOGE(TAG, "Event Msg ID[%u] is not correct",app_event->msg_id);
 		goto fail_parsing;
 	}
 
@@ -121,7 +122,7 @@ static int rpc_event_callback(ctrl_cmd_t * app_event)
 			/* TODO: slave silently rebooted, Host has to be rebooted in this case? */
 			break;
 		} case RPC_ID__Event_Heartbeat: {
-			ESP_LOGV(TAG, "%s App EVENT: Heartbeat event [%lu]\n\r",
+			ESP_LOGV(TAG, "%s App EVENT: Heartbeat event [%lu]",
 				get_timestamp(ts, MIN_TIMESTAMP_STR_SIZE),
 					(long unsigned int)app_event->u.e_heartbeat.hb_num);
 			break;
@@ -214,41 +215,43 @@ fail_parsing:
 	return FAILURE;
 }
 
-static void process_failed_responses(ctrl_cmd_t *app_msg)
+static int process_failed_responses(ctrl_cmd_t *app_msg)
 {
 	uint8_t request_failed_flag = true;
+	int result = app_msg->resp_event_status;
 
 	/* Identify general issue, common for all control requests */
+	/* Map results to a matching ESP_ERR_ code */
 	switch (app_msg->resp_event_status) {
 		case RPC_ERR_REQ_IN_PROG:
-			ESP_LOGE(TAG, "Error reported: Command In progress, Please wait\n\r");
+			ESP_LOGE(TAG, "Error reported: Command In progress, Please wait");
 			break;
 		case RPC_ERR_REQUEST_TIMEOUT:
-			ESP_LOGE(TAG, "Error reported: Response Timeout\n\r");
+			ESP_LOGE(TAG, "Error reported: Response Timeout");
 			break;
 		case RPC_ERR_MEMORY_FAILURE:
-			ESP_LOGE(TAG, "Error reported: Memory allocation failed\n\r");
+			ESP_LOGE(TAG, "Error reported: Memory allocation failed");
 			break;
 		case RPC_ERR_UNSUPPORTED_MSG:
-			ESP_LOGE(TAG, "Error reported: Unsupported control msg\n\r");
+			ESP_LOGE(TAG, "Error reported: Unsupported control msg");
 			break;
 		case RPC_ERR_INCORRECT_ARG:
-			ESP_LOGE(TAG, "Error reported: Invalid or out of range parameter values\n\r");
+			ESP_LOGE(TAG, "Error reported: Invalid or out of range parameter values");
 			break;
 		case RPC_ERR_PROTOBUF_ENCODE:
-			ESP_LOGE(TAG, "Error reported: Protobuf encode failed\n\r");
+			ESP_LOGE(TAG, "Error reported: Protobuf encode failed");
 			break;
 		case RPC_ERR_PROTOBUF_DECODE:
-			ESP_LOGE(TAG, "Error reported: Protobuf decode failed\n\r");
+			ESP_LOGE(TAG, "Error reported: Protobuf decode failed");
 			break;
 		case RPC_ERR_SET_ASYNC_CB:
-			ESP_LOGE(TAG, "Error reported: Failed to set aync callback\n\r");
+			ESP_LOGE(TAG, "Error reported: Failed to set aync callback");
 			break;
 		case RPC_ERR_TRANSPORT_SEND:
-			ESP_LOGE(TAG, "Error reported: Problem while sending data on serial driver\n\r");
+			ESP_LOGE(TAG, "Error reported: Problem while sending data on serial driver");
 			break;
 		case RPC_ERR_SET_SYNC_SEM:
-			ESP_LOGE(TAG, "Error reported: Failed to set sync sem\n\r");
+			ESP_LOGE(TAG, "Error reported: Failed to set sync sem");
 			break;
 		default:
 			request_failed_flag = false;
@@ -257,7 +260,7 @@ static void process_failed_responses(ctrl_cmd_t *app_msg)
 
 	/* if control request failed, no need to proceed for response checking */
 	if (request_failed_flag)
-		return;
+		return result;
 
 	/* Identify control request specific issue */
 	switch (app_msg->msg_id) {
@@ -266,33 +269,34 @@ static void process_failed_responses(ctrl_cmd_t *app_msg)
 		case RPC_ID__Resp_OTABegin:
 		case RPC_ID__Resp_OTAWrite: {
 			/* intentional fallthrough */
-			ESP_LOGE(TAG, "OTA procedure failed\n\r");
+			ESP_LOGE(TAG, "OTA procedure failed");
 			break;
 #if 0
 		} case RPC_ID__Resp_ConnectAP: {
 			if (app_msg->resp_event_status == RPC_ERR_NO_AP_FOUND) {
-				ESP_LOGE(TAG, "SSID: not found/connectable\n\r");
+				ESP_LOGE(TAG, "SSID: not found/connectable");
 			} else if (app_msg->resp_event_status ==
 					RPC_ERR_INVALID_PASSWORD) {
-				ESP_LOGE(TAG, "Invalid password for SSID\n\r");
+				ESP_LOGE(TAG, "Invalid password for SSID");
 			} else {
-				ESP_LOGE(TAG, "Failed to connect with AP\n\r");
+				ESP_LOGE(TAG, "Failed to connect with AP");
 			}
 			break;
 		} case RPC_ID__Resp_StartSoftAP: {
-			ESP_LOGE(TAG, "Failed to start SoftAP\n\r");
+			ESP_LOGE(TAG, "Failed to start SoftAP");
 			break;
 		}
 		case RPC_ID__Resp_StopSoftAP:
 		case RPC_ID__Resp_GetSoftAPConfig: {
-			ESP_LOGE(TAG, "Possibly softap is not running/started\n\r");
+			ESP_LOGE(TAG, "Possibly softap is not running/started");
 			break;
 #endif
 		} default: {
-			ESP_LOGE(TAG, "Failed Control Response\n\r");
+			ESP_LOGE(TAG, "Failed Control Response");
 			break;
 		}
 	}
+	return result;
 }
 
 
@@ -302,7 +306,7 @@ int rpc_unregister_event_callbacks(void)
 	int evt = 0;
 	for (evt=RPC_ID__Event_Base+1; evt<RPC_ID__Event_Max; evt++) {
 		if (CALLBACK_SET_SUCCESS != reset_event_callback(evt) ) {
-			ESP_LOGV(TAG, "reset event callback failed for event[%u]\n\r", evt);
+			ESP_LOGV(TAG, "reset event callback failed for event[%u]", evt);
 			ret = FAILURE;
 		}
 	}
@@ -340,170 +344,85 @@ int rpc_register_event_callbacks(void)
 
 int rpc_rsp_callback(ctrl_cmd_t * app_resp)
 {
+	int response = ESP_FAIL; // default response
+
 	uint16_t i = 0;
 	if (!app_resp || (app_resp->msg_type != RPC_TYPE__Resp)) {
 		if (app_resp)
-			ESP_LOGE(TAG, "Msg type is not response[%u]\n\r",app_resp->msg_type);
+			ESP_LOGE(TAG, "Msg type is not response[%u]",app_resp->msg_type);
 		goto fail_resp;
 	}
 
 	if ((app_resp->msg_id <= RPC_ID__Resp_Base) || (app_resp->msg_id >= RPC_ID__Resp_Max)) {
-		ESP_LOGE(TAG, "Response Msg ID[%x] is not correct\n\r",app_resp->msg_id);
+		ESP_LOGE(TAG, "Response Msg ID[%x] is not correct",app_resp->msg_id);
 		goto fail_resp;
 	}
 
 	if (app_resp->resp_event_status != SUCCESS) {
-		process_failed_responses(app_resp);
+		response = process_failed_responses(app_resp);
 		goto fail_resp;
 	}
 
 	switch(app_resp->msg_id) {
 
 	case RPC_ID__Resp_GetMACAddress: {
-		char mac_str[BSSID_LENGTH] = {0};
-		snprintf(mac_str,BSSID_LENGTH,MACSTR,MAC2STR(app_resp->u.wifi_mac.mac));
-		ESP_LOGV(TAG, "mac address is [%s] ", mac_str);
+		ESP_LOGV(TAG, "mac address is [" MACSTR "]", MAC2STR(app_resp->u.wifi_mac.mac));
 		break;
 	} case RPC_ID__Resp_SetMacAddress : {
-		ESP_LOGV(TAG, "MAC address is set\n\r");
+		ESP_LOGV(TAG, "MAC address is set");
 		break;
 	} case RPC_ID__Resp_GetWifiMode : {
 		ESP_LOGV(TAG, "wifi mode is : ");
 		switch (app_resp->u.wifi_mode.mode) {
-			case WIFI_MODE_STA:     ESP_LOGV(TAG, "station\n\r");        break;
-			case WIFI_MODE_AP:      ESP_LOGV(TAG, "softap\n\r");         break;
-			case WIFI_MODE_APSTA:   ESP_LOGV(TAG, "station+softap\n\r"); break;
-			case WIFI_MODE_NULL:    ESP_LOGV(TAG, "none\n\r");           break;
-			default:                ESP_LOGV(TAG, "unknown\n\r");        break;
+			case WIFI_MODE_STA:     ESP_LOGV(TAG, "station");        break;
+			case WIFI_MODE_AP:      ESP_LOGV(TAG, "softap");         break;
+			case WIFI_MODE_APSTA:   ESP_LOGV(TAG, "station+softap"); break;
+			case WIFI_MODE_NULL:    ESP_LOGV(TAG, "none");           break;
+			default:                ESP_LOGV(TAG, "unknown");        break;
 		}
 		break;
 	} case RPC_ID__Resp_SetWifiMode : {
-		ESP_LOGV(TAG, "wifi mode is set\n\r");
+		ESP_LOGV(TAG, "wifi mode is set");
 		break;
-#if 0
-	} case RPC_ID__Resp_GetAPScanList : {
-		wifi_scan_ap_list_t * w_scan_p = &app_resp->u.wifi_scan_ap_list;
-		wifi_scanlist_t *list = w_scan_p->out_list;
-
-		if (!w_scan_p->number) {
-			ESP_LOGE(TAG, "No AP found\n\r");
-			goto finish_resp;
-		}
-		if (!list) {
-			ESP_LOGE(TAG, "Failed to get scanned AP list\n\r");
-			goto fail_resp;
-		} else {
-
-			ESP_LOGE(TAG, "Number of available APs is %d\n\r", w_scan_p->number);
-			for (i=0; i<w_scan_p->number; i++) {
-				ESP_LOGE(TAG, "%d) ssid \"%s\" bssid \"%s\" rssi \"%d\" channel \"%d\" auth mode \"%d\" \n\r",\
-						i, list[i].ssid, list[i].bssid, list[i].rssi,
-						list[i].channel, list[i].encryption_mode);
-			}
-			g_h.funcs->_h_msleep(1);
-		}
-		break;
-	} case RPC_ID__Resp_GetAPConfig : {
-		hosted_ap_config_t *p = &app_resp->u.hosted_ap_config;
-		if (0 == strncmp(SUCCESS_STR, p->status, strlen(SUCCESS_STR))) {
-			ESP_LOGE(TAG, "AP's ssid '%s'\n\r", p->ssid);
-			ESP_LOGE(TAG, "AP's bssid i.e. MAC address %s\n\r", p->bssid);
-			ESP_LOGE(TAG, "AP's channel number %d\n\r", p->channel);
-			ESP_LOGE(TAG, "AP's rssi %d\n\r", p->rssi);
-			ESP_LOGE(TAG, "AP's encryption mode %d\n\r", p->encryption_mode);
-		} else {
-			ESP_LOGE(TAG, "Station mode status: %s\n\r",p->status);
-		}
-		break;
-	} case RPC_ID__Resp_ConnectAP : {
-		ESP_LOGE(TAG, "Connected\n\r");
-		break;
-	} case RPC_ID__Resp_DisconnectAP : {
-		ESP_LOGE(TAG, "Disconnected from AP\n\r");
-		break;
-	} case RPC_ID__Resp_GetSoftAPConfig : {
-#if CONFIG_RPC_LOG_LEVEL
-		hosted_softap_config_t * resp_p = &app_resp->u.wifi_softap_config;
-#endif
-
-		ESP_LOGE(TAG, "softAP ssid %s\n\r", resp_p->ssid);
-		ESP_LOGE(TAG, "softAP pwd %s\n\r", resp_p->pwd);
-		ESP_LOGE(TAG, "softAP channel ID %d\n\r", resp_p->channel);
-		ESP_LOGE(TAG, "softAP encryption mode %d\n\r", resp_p->encryption_mode);
-		ESP_LOGE(TAG, "softAP max connections %d\n\r", resp_p->max_connections);
-		ESP_LOGE(TAG, "softAP ssid broadcast status %d \n", resp_p->ssid_hidden);
-		ESP_LOGE(TAG, "softAP bandwidth mode %d\n\r", resp_p->bandwidth);
-
-		break;
-	} case RPC_ID__Resp_SetSoftAPVendorSpecificIE : {
-		ESP_LOGE(TAG, "Success in set vendor specific ie\n\r");
-		break;
-	} case RPC_ID__Resp_StartSoftAP : {
-		ESP_LOGE(TAG, "esp32 softAP started\n\r");
-		break;
-	} case RPC_ID__Resp_GetSoftAPConnectedSTAList : {
-		int count = app_resp->u.wifi_softap_con_sta.count;
-		wifi_connected_stations_list_t *stations_list =
-			app_resp->u.wifi_softap_con_sta.out_list;
-
-		ESP_LOGE(TAG, "sta list count: %u\n\r",count);
-		if (!count) {
-			ESP_LOGE(TAG, "No station found\n\r");
-			goto fail_resp;
-		}
-
-		if (!stations_list) {
-			ESP_LOGE(TAG, "Failed to get connected stations list\n\r");
-		} else if (count) {
-			for (i=0; i<count; i++) {
-				ESP_LOGE(TAG, "%d th stations's bssid \"%s\" rssi \"%d\" \n\r",i, \
-						stations_list[i].bssid, stations_list[i].rssi);
-			}
-		}
-		break;
-	} case RPC_ID__Resp_StopSoftAP : {
-		ESP_LOGE(TAG, "esp32 softAP stopped\n\r");
-		break;
-#endif
 	} case RPC_ID__Resp_WifiSetPs: {
-		ESP_LOGV(TAG, "Wifi power save mode set\n\r");
+		ESP_LOGV(TAG, "Wifi power save mode set");
 		break;
 	} case RPC_ID__Resp_WifiGetPs: {
 		ESP_LOGV(TAG, "Wifi power save mode is: ");
 
 		switch(app_resp->u.wifi_ps.ps_mode) {
 			case WIFI_PS_MIN_MODEM:
-				ESP_LOGV(TAG, "Min\n\r");
+				ESP_LOGV(TAG, "Min");
 				break;
 			case WIFI_PS_MAX_MODEM:
-				ESP_LOGV(TAG, "Max\n\r");
+				ESP_LOGV(TAG, "Max");
 				break;
 			default:
-				ESP_LOGV(TAG, "Invalid\n\r");
+				ESP_LOGV(TAG, "Invalid");
 				break;
 		}
 		break;
 	} case RPC_ID__Resp_OTABegin : {
-		ESP_LOGV(TAG, "OTA begin success\n\r");
+		ESP_LOGV(TAG, "OTA begin success");
 		break;
 	} case RPC_ID__Resp_OTAWrite : {
-		ESP_LOGV(TAG, "OTA write success\n\r");
+		ESP_LOGV(TAG, "OTA write success");
 		break;
 	} case RPC_ID__Resp_OTAEnd : {
-		ESP_LOGV(TAG, "OTA end success\n\r");
+		ESP_LOGV(TAG, "OTA end success");
 		break;
 	} case RPC_ID__Resp_WifiSetMaxTxPower: {
-		ESP_LOGV(TAG, "Set wifi max tx power success\n\r");
+		ESP_LOGV(TAG, "Set wifi max tx power success");
 		break;
 	} case RPC_ID__Resp_WifiGetMaxTxPower: {
-		ESP_LOGV(TAG, "wifi curr tx power : %d\n\r",
+		ESP_LOGV(TAG, "wifi curr tx power : %d",
 				app_resp->u.wifi_tx_power.power);
 		break;
 	} case RPC_ID__Resp_ConfigHeartbeat: {
-		ESP_LOGV(TAG, "Heartbeat operation successful\n\r");
+		ESP_LOGV(TAG, "Heartbeat operation successful");
 		break;
 	} case RPC_ID__Resp_WifiScanGetApNum: {
-		ESP_LOGV(TAG, "Num Scanned APs: %u\n\r",
+		ESP_LOGV(TAG, "Num Scanned APs: %u",
 				app_resp->u.wifi_scan_ap_list.number);
 		break;
 	} case RPC_ID__Resp_WifiScanGetApRecords: {
@@ -511,19 +430,19 @@ int rpc_rsp_callback(ctrl_cmd_t * app_resp)
 		wifi_ap_record_t *list = p_a->out_list;
 
 		if (!p_a->number) {
-			ESP_LOGV(TAG, "No AP found\n\r");
+			ESP_LOGV(TAG, "No AP info found");
 			goto finish_resp;
 		}
-		ESP_LOGV(TAG, "Num AP records: %u\n\r",
+		ESP_LOGV(TAG, "Num AP records: %u",
 				app_resp->u.wifi_scan_ap_list.number);
 		if (!list) {
-			ESP_LOGV(TAG, "Failed to get scanned AP list\n\r");
+			ESP_LOGV(TAG, "Failed to get scanned AP list");
 			goto fail_resp;
 		} else {
 
-			ESP_LOGV(TAG, "Number of available APs is %d\n\r", p_a->number);
+			ESP_LOGV(TAG, "Number of available APs is %d", p_a->number);
 			for (i=0; i<p_a->number; i++) {
-				ESP_LOGV(TAG, "%d) ssid \"%s\" bssid \"%s\" rssi \"%d\" channel \"%d\" auth mode \"%d\" \n\r",\
+				ESP_LOGV(TAG, "%d) ssid \"%s\" bssid \"%s\" rssi \"%d\" channel \"%d\" auth mode \"%d\"",\
 						i, list[i].ssid, list[i].bssid, list[i].rssi,
 						list[i].primary, list[i].authmode);
 			}
@@ -562,19 +481,21 @@ int rpc_rsp_callback(ctrl_cmd_t * app_resp)
 		/* Intended fallthrough */
 		break;
 	} default: {
-		ESP_LOGE(TAG, "Invalid Response[%u] to parse\n\r", app_resp->msg_id);
+		ESP_LOGE(TAG, "Invalid Response[%u] to parse", app_resp->msg_id);
 		goto fail_resp;
 	}
 
 	} //switch
 
 finish_resp:
+	// extract response from app_resp
+	response = app_resp->resp_event_status;
 	CLEANUP_RPC(app_resp);
-	return SUCCESS;
+	return response;
 
 fail_resp:
 	CLEANUP_RPC(app_resp);
-	return FAILURE;
+	return response;
 }
 
 int rpc_get_wifi_mode(void)
@@ -628,7 +549,7 @@ int rpc_wifi_get_mac(wifi_interface_t mode, uint8_t *out_mac)
 	ctrl_cmd_t *resp = NULL;
 
 	if (!out_mac)
-		return FAILURE;
+		return ESP_ERR_INVALID_ARG;
 
 	/* implemented synchronous */
 	ctrl_cmd_t req = RPC_DEFAULT_REQ();
@@ -639,9 +560,7 @@ int rpc_wifi_get_mac(wifi_interface_t mode, uint8_t *out_mac)
 	if (resp && resp->resp_event_status == SUCCESS) {
 
 		g_h.funcs->_h_memcpy(out_mac, resp->u.wifi_mac.mac, BSSID_BYTES_SIZE);
-		char mac_str[BSSID_LENGTH] = {0};
-		snprintf(mac_str,BSSID_LENGTH,MACSTR,MAC2STR(out_mac));
-		ESP_LOGV(TAG, "mac address is [%s] ", mac_str);
+		ESP_LOGV(TAG, "mac address is [" MACSTR "]", MAC2STR(out_mac));
 	}
 	return rpc_rsp_callback(resp);
 }
@@ -656,20 +575,15 @@ int rpc_wifi_set_mac(wifi_interface_t mode, const uint8_t *mac)
 	/* implemented synchronous */
 	ctrl_cmd_t req = RPC_DEFAULT_REQ();
 	ctrl_cmd_t *resp = NULL;
-	int ret = 0;
 
 	if (!mac)
-		return FAILURE;
+		return ESP_ERR_INVALID_ARG;
 
-	ret = rpc_set_wifi_mode(mode);
-	if (ret == SUCCESS) {
-		req.u.wifi_mac.mode = mode;
-		g_h.funcs->_h_memcpy(req.u.wifi_mac.mac, mac, BSSID_BYTES_SIZE);
+	req.u.wifi_mac.mode = mode;
+	g_h.funcs->_h_memcpy(req.u.wifi_mac.mac, mac, BSSID_BYTES_SIZE);
 
-		resp = wifi_set_mac(req);
-		return rpc_rsp_callback(resp);
-	}
-	return ret;
+	resp = wifi_set_mac(req);
+	return rpc_rsp_callback(resp);
 }
 
 
@@ -951,16 +865,16 @@ int rpc_ota(char* image_path)
 	if (ret == SUCCESS) {
 		f = fopen(image_path,"rb");
 		if (f == NULL) {
-			ESP_LOGE(TAG, "Failed to open file %s \n", image_path);
+			ESP_LOGE(TAG, "Failed to open file %s", image_path);
 			return FAILURE;
 		} else {
-			ESP_LOGV(TAG, "Success in opening %s file \n", image_path);
+			ESP_LOGV(TAG, "Success in opening %s file", image_path);
 		}
 		while (!feof(f)) {
 			fread(&ota_chunk, CHUNK_SIZE, 1, f);
 			ret = rpc_ota_write((uint8_t* )&ota_chunk, CHUNK_SIZE);
 			if (ret) {
-				ESP_LOGE(TAG, "OTA procedure failed!!\n");
+				ESP_LOGE(TAG, "OTA procedure failed!!");
 				/* TODO: Do we need to do OTA end irrespective of success/failure? */
 				rpc_ota_end();
 				return FAILURE;
@@ -973,13 +887,13 @@ int rpc_ota(char* image_path)
 	} else {
 		return FAILURE;
 	}
-	ESP_LOGE(TAG, "ESP32 will restart after 5 sec\n");
+	ESP_LOGE(TAG, "ESP32 will restart after 5 sec");
 	return SUCCESS;
-	ESP_LOGE(TAG, "For OTA, user need to integrate HTTP client lib and then invoke OTA\n\r");
+	ESP_LOGE(TAG, "For OTA, user need to integrate HTTP client lib and then invoke OTA");
 	return FAILURE;
 }
 
-int rpc_wifi_set_max_tx_power(int in_power)
+int rpc_wifi_set_max_tx_power(int8_t in_power)
 {
 	/* implemented synchronous */
 	ctrl_cmd_t req = RPC_DEFAULT_REQ();
@@ -991,14 +905,14 @@ int rpc_wifi_set_max_tx_power(int in_power)
 	return rpc_rsp_callback(resp);
 }
 
-int rpc_wifi_get_curr_tx_power()
+int rpc_wifi_get_max_tx_power(int8_t *power)
 {
 	/* implemented synchronous */
 	ctrl_cmd_t req = RPC_DEFAULT_REQ();
 	ctrl_cmd_t *resp = NULL;
 
-	resp = wifi_get_curr_tx_power(req);
-
+	resp = wifi_get_max_tx_power(req);
+	*power = resp->u.wifi_tx_power.power;
 	return rpc_rsp_callback(resp);
 }
 
@@ -1109,7 +1023,7 @@ int rpc_wifi_connect(void)
 	ctrl_cmd_t *resp = NULL;
 
 	req.rpc_rsp_cb = rpc_rsp_callback;
-	ESP_LOGE(TAG, "Async call registerd: %p\n", rpc_rsp_callback);
+	ESP_LOGE(TAG, "Async call registerd: %p", rpc_rsp_callback);
 
 	wifi_connect(req);
 
@@ -1184,7 +1098,7 @@ int rpc_wifi_scan_stop(void)
 	/* implemented synchronous */
 	ctrl_cmd_t req = RPC_DEFAULT_REQ();
 	ctrl_cmd_t *resp = NULL;
-	ESP_LOGV(TAG, "scan stop\n");
+	ESP_LOGV(TAG, "scan stop");
 
 	resp = wifi_scan_stop(req);
 	return rpc_rsp_callback(resp);

@@ -73,6 +73,8 @@ esp_err_t rpc_wifi_ap_get_sta_aid(const uint8_t mac[6], uint16_t *aid);
 esp_err_t rpc_wifi_sta_get_rssi(int *rssi);
 esp_err_t rpc_wifi_set_protocol(wifi_interface_t ifx, uint8_t protocol_bitmap);
 esp_err_t rpc_wifi_get_protocol(wifi_interface_t ifx, uint8_t *protocol_bitmap);
+esp_err_t rpc_wifi_set_max_tx_power(int8_t power);
+esp_err_t rpc_wifi_get_max_tx_power(int8_t *power);
 
 #ifdef __cplusplus
 }

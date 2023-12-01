@@ -5,6 +5,7 @@
 #include <string.h>
 #include <errno.h>
 #include "rpc_core.h"
+#include "rpc_common.h"
 #include "serial_if.h"
 #include "serial_drv.h"
 #include <unistd.h>
@@ -161,7 +162,7 @@ static int process_rpc_tx_msg(ctrl_cmd_t *app_req)
 	uint32_t  tx_len = 0;
 	uint8_t  *tx_data = NULL;
 	int       ret = SUCCESS;
-	uint8_t   failure_status = 0;
+	int32_t   failure_status = 0;
 
 	req.msg_type = RPC_TYPE__Req;
 
@@ -307,6 +308,8 @@ static int process_rpc_rx_msg(Rpc * proto_msg, rpc_rx_ind_t rpc_rx_func)
 		return FAILURE;
 	}
 
+	/* Note: free proto_msg at the end of processing*/
+
 	/* 2. Check if it is event msg */
 	if (proto_msg->msg_type == RPC_TYPE__Event) {
 		/* Events are handled only asynchronously */
@@ -326,16 +329,15 @@ static int process_rpc_rx_msg(Rpc * proto_msg, rpc_rx_ind_t rpc_rx_func)
 
 			/* Decode protobuf buffer of event and
 			 * copy into app structures */
-			rpc_parse_evt(proto_msg, app_event);
+			if (rpc_parse_evt(proto_msg, app_event)) {
+				ESP_LOGE(TAG, "failed to parse event");
+				goto free_buffers;
+			}
 
 			/* callback to registered function */
 			call_event_callback(app_event);
-
-			//CLEANUP_APP_MSG(app_event);
-		} else {
-			/* silently drop */
+		} else
 			goto free_buffers;
-		}
 
 	/* 3. Check if it is response msg */
 	} else if (proto_msg->msg_type == RPC_TYPE__Resp) {
@@ -359,7 +361,10 @@ static int process_rpc_rx_msg(Rpc * proto_msg, rpc_rx_ind_t rpc_rx_func)
 
 		/* Decode protobuf buffer of response and
 		 * copy into app structures */
-		rpc_parse_rsp(proto_msg, app_resp);
+		if (rpc_parse_rsp(proto_msg, app_resp)) {
+			ESP_LOGE(TAG, "failed to parse response");
+			goto free_buffers;
+		}
 
 		/* Is callback is available,
 		 * progress as async response */
@@ -373,8 +378,6 @@ static int process_rpc_rx_msg(Rpc * proto_msg, rpc_rx_ind_t rpc_rx_func)
 			 */
 			call_async_resp_callback(app_resp);
 			clear_async_resp_callback(app_resp);
-			//CLEANUP_APP_MSG(app_resp);
-
 		} else {
 
 			/* as RPC async response callback function is
@@ -391,7 +394,7 @@ static int process_rpc_rx_msg(Rpc * proto_msg, rpc_rx_ind_t rpc_rx_func)
 			elem.buf = app_resp;
 			elem.buf_len = sizeof(ctrl_cmd_t);
 
-            if (g_h.funcs->_h_queue_item(rpc_rx_q, &elem, HOSTED_BLOCK_MAX)) {
+			if (g_h.funcs->_h_queue_item(rpc_rx_q, &elem, HOSTED_BLOCK_MAX)) {
 				ESP_LOGE(TAG, "RPC Q put fail\n");
 				goto free_buffers;
 			}
@@ -406,17 +409,17 @@ static int process_rpc_rx_msg(Rpc * proto_msg, rpc_rx_ind_t rpc_rx_func)
 		ESP_LOGE(TAG, "Incorrect RPC Msg Type[%u]\n",proto_msg->msg_type);
 		goto free_buffers;
 	}
+	rpc__free_unpacked(proto_msg, NULL);
+	proto_msg = NULL;
 	return SUCCESS;
 
 	/* 5. cleanup */
 free_buffers:
+	rpc__free_unpacked(proto_msg, NULL);
+	proto_msg = NULL;
 	HOSTED_FREE(app_event);
 	HOSTED_FREE(app_resp);
-	if (proto_msg) {
-		rpc__free_unpacked(proto_msg, NULL);
-		proto_msg = NULL;
-	}
-	return FAILURE;
+	return RPC_ERR_PROTOBUF_DECODE;
 }
 
 /* RPC rx thread

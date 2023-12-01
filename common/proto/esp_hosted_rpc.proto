@@ -957,12 +957,21 @@ message Rpc_Resp_SetMode {
 	int32 resp = 1;
 }
 
-//message Rpc_Req_GetStatus {
-//}
+message Rpc_Req_GetPs {
+}
 
-//message Rpc_Resp_GetStatus {
-//	int32 resp = 1;
-//}
+message Rpc_Resp_GetPs {
+	int32 resp = 1;
+	int32 type = 2;
+}
+
+message Rpc_Req_SetPs {
+	int32 type = 1;
+}
+
+message Rpc_Resp_SetPs {
+	int32 resp = 1;
+}
 
 message Rpc_Req_SetMacAddress {
 	bytes mac = 1;
@@ -1090,7 +1099,7 @@ message Rpc_Resp_OTAEnd {
 //}
 
 message Rpc_Req_WifiSetMaxTxPower {
-	int32 wifi_max_tx_power = 1;
+	int32 power = 1;
 }
 
 message Rpc_Resp_WifiSetMaxTxPower {
@@ -1101,7 +1110,7 @@ message Rpc_Req_WifiGetMaxTxPower {
 }
 
 message Rpc_Resp_WifiGetMaxTxPower {
-	int32 wifi_curr_tx_power = 1;
+	int32 power = 1;
 	int32 resp = 2;
 }
 
@@ -1421,8 +1430,8 @@ message Rpc {
 	/* msg id */
 	RpcId msg_id = 2;
 
-        /* UID of message */
-        uint32 uid = 3;
+	/* UID of message */
+	uint32 uid = 3;
 
 	/* union of all msg ids */
 	oneof payload {
@@ -1443,15 +1452,15 @@ message Rpc {
 		//Rpc_Req_SoftAPConnectedSTA          req_softap_connected_stas_list    = 268;
 		//Rpc_Req_GetStatus                   req_stop_softap                   = 269;
 
-		Rpc_Req_SetMode                     req_wifi_set_ps                   = 270;
-		Rpc_Req_GetMode                     req_wifi_get_ps                   = 271;
+		Rpc_Req_SetPs                       req_wifi_set_ps                   = 270;
+		Rpc_Req_GetPs                       req_wifi_get_ps                   = 271;
 
 		Rpc_Req_OTABegin                    req_ota_begin                     = 272;
 		Rpc_Req_OTAWrite                    req_ota_write                     = 273;
 		Rpc_Req_OTAEnd                      req_ota_end                       = 274;
 
 		Rpc_Req_WifiSetMaxTxPower           req_set_wifi_max_tx_power         = 275;
-		Rpc_Req_WifiGetMaxTxPower           req_get_wifi_curr_tx_power        = 276;
+		Rpc_Req_WifiGetMaxTxPower           req_get_wifi_max_tx_power         = 276;
 		Rpc_Req_ConfigHeartbeat             req_config_heartbeat              = 277;
 
 		Rpc_Req_WifiInit                    req_wifi_init                     = 278;
@@ -1509,14 +1518,14 @@ message Rpc {
 		//Rpc_Resp_SoftAPConnectedSTA         resp_softap_connected_stas_list    = 524;
 		//Rpc_Resp_GetStatus                  resp_stop_softap                   = 525;
 
-		Rpc_Resp_SetMode                    resp_wifi_set_ps                   = 526;
-		Rpc_Resp_GetMode                    resp_wifi_get_ps                   = 527;
+		Rpc_Resp_SetPs                      resp_wifi_set_ps                   = 526;
+		Rpc_Resp_GetPs                      resp_wifi_get_ps                   = 527;
 
 		Rpc_Resp_OTABegin                   resp_ota_begin                     = 528;
 		Rpc_Resp_OTAWrite                   resp_ota_write                     = 529;
 		Rpc_Resp_OTAEnd                     resp_ota_end                       = 530;
 		Rpc_Resp_WifiSetMaxTxPower          resp_set_wifi_max_tx_power         = 531;
-		Rpc_Resp_WifiGetMaxTxPower          resp_get_wifi_curr_tx_power        = 532;
+		Rpc_Resp_WifiGetMaxTxPower          resp_get_wifi_max_tx_power         = 532;
 		Rpc_Resp_ConfigHeartbeat            resp_config_heartbeat              = 533;
 
 		Rpc_Resp_WifiInit                   resp_wifi_init                     = 534;
