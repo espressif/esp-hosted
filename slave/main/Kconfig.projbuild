@@ -75,7 +75,7 @@ menu "Example Configuration"
 			default 2 if SPI_VSPI
 			default 1
 
-		menu "Hosted SPI GPIOs Config"
+		menu "Hosted SPI GPIOs"
 			config ESP_SPI_HSPI_GPIO_MOSI
 				depends on SPI_HSPI
 				int "Slave GPIO pin for Host MOSI"
@@ -228,47 +228,56 @@ menu "Example Configuration"
 				bool "High Speed (40 MHz)"
 		endchoice
 
-		config ESP_SDIO_PIN_CMD
-			int "CMD GPIO number"
-			range 15 15 if IDF_TARGET_ESP32
-			range 18 18 if IDF_TARGET_ESP32C6
-			help
-				"Value cannot be configured. Displayed for reference."
 
-		config ESP_SDIO_PIN_CLK
-			int "CLK GPIO number"
-			range 14 14 if IDF_TARGET_ESP32
-			range 19 19 if IDF_TARGET_ESP32C6
-			help
-				"Value cannot be configured. Displayed for reference."
+		menu "Hosted SDIO GPIOs"
+			config ESP_SDIO_PIN_CMD
+				int "CMD GPIO number"
+				range 15 15 if IDF_TARGET_ESP32
+				range 18 18 if IDF_TARGET_ESP32C6
+				help
+					"Value cannot be configured. Displayed for reference."
 
-		config ESP_SDIO_PIN_D0
-			int "D0 GPIO number"
-			range 2 2 if IDF_TARGET_ESP32
-			range 20 20 if IDF_TARGET_ESP32C6
-			help
-				"Value cannot be configured. Displayed for reference."
+			config ESP_SDIO_PIN_CLK
+				int "CLK GPIO number"
+				range 14 14 if IDF_TARGET_ESP32
+				range 19 19 if IDF_TARGET_ESP32C6
+				help
+					"Value cannot be configured. Displayed for reference."
 
-		config ESP_SDIO_PIN_D1
-			int "D1 GPIO number"
-			range 4 4 if IDF_TARGET_ESP32
-			range 21 21 if IDF_TARGET_ESP32C6
-			help
-				"Value cannot be configured. Displayed for reference."
+			config ESP_SDIO_PIN_D0
+				int "D0 GPIO number"
+				range 2 2 if IDF_TARGET_ESP32
+				range 20 20 if IDF_TARGET_ESP32C6
+				help
+					"Value cannot be configured. Displayed for reference."
 
-		config ESP_SDIO_PIN_D2
-			int "D2 GPIO number"
-			range 12 12 if IDF_TARGET_ESP32
-			range 22 22 if IDF_TARGET_ESP32C6
-			help
-				"Value cannot be configured. Displayed for reference."
+			config ESP_SDIO_PIN_D1
+				int "D1 GPIO number"
+				range 4 4 if IDF_TARGET_ESP32
+				range 21 21 if IDF_TARGET_ESP32C6
+				help
+					"Value cannot be configured. Displayed for reference."
 
-		config ESP_SDIO_PIN_D3
-			int "D3 GPIO number"
-			range 13 13 if IDF_TARGET_ESP32
-			range 23 23 if IDF_TARGET_ESP32C6
+			config ESP_SDIO_PIN_D2
+				int "D2 GPIO number"
+				range 12 12 if IDF_TARGET_ESP32
+				range 22 22 if IDF_TARGET_ESP32C6
+				help
+					"Value cannot be configured. Displayed for reference."
+
+			config ESP_SDIO_PIN_D3
+				int "D3 GPIO number"
+				range 13 13 if IDF_TARGET_ESP32
+				range 23 23 if IDF_TARGET_ESP32C6
+				help
+					"Value cannot be configured. Displayed for reference."
+		endmenu
+
+		config ESP_SDIO_RX_Q_SIZE
+			int "SDIO RX queue size"
+			default 100
 			help
-				"Value cannot be configured. Displayed for reference."
+				Very small RX queue will lower ESP <-- SDIO -- Host data rate
 
 		config ESP_SDIO_CHECKSUM
 			bool "SDIO checksum ENABLE/DISABLE"
@@ -341,14 +350,34 @@ menu "Example Configuration"
 	endmenu
 
 	menu "Data path options"
-        config REPORT_SLAVE_DATA_Q_LOAD_TO_HOST
-            bool "Report WiFi queue utilization to host"
-            default y
-            help
-                Slave Wi-Fi may drop packets while sending data packets received on transport.
-                To have synchronous way of packet dropped for application,
-                Host will throttle incoming data if the slave datapath Rx load is high
-				host feature, TO_SLAVE_DATA_THROTTLE_THRESHOLD is useless if this is disabled
+		config REPORT_SLAVE_DATA_Q_LOAD_TO_HOST
+			bool "Report WiFi queue utilization to host"
+			default y
+			help
+				Slave Wi-Fi may drop ingress bursty or higher than capacity packets.
+				To have synchronous way of packet dropped for application,
+				Host will throttle incoming data if the slave datapath Rx load is high
+				host feature, SLAVE_DATA_THROTTLE_THRESHOLD is useless if this is disabled
+
+		config TO_WIFI_DATA_THROTTLE_HIGH_THRESHOLD
+			depends on REPORT_SLAVE_DATA_Q_LOAD_TO_HOST
+			int "High threshold to report host to drop data when wifi highly loaded"
+			range 0 100
+			default 90
+			help
+				Slave Wi-Fi may drop packets while sending data packets received on transport.
+				To have synchronous way of packet dropped for application,
+				Host will throttle incoming data if the slave datapath Rx load goes beyond this threshold
+				0 value will disable this function
+
+		config TO_WIFI_DATA_THROTTLE_LOW_THRESHOLD
+			depends on REPORT_SLAVE_DATA_Q_LOAD_TO_HOST
+			int "Low threshold to report host to stop dropping data"
+			range 0 TO_WIFI_DATA_THROTTLE_HIGH_THRESHOLD
+			default 80
+			help
+				Once the Wi-Fi is no more stressed, we should stop data throttling.
+				When the queue load is less than this threshold, host throttling will be stopped
 	endmenu
 
 

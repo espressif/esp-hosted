@@ -179,7 +179,7 @@ void transport_init_internal(void(*transport_evt_handler_fp)(uint8_t))
 }
 
 
-static void get_slave_wifi_rx_msg_load(uint8_t load)
+static void fetch_slave_wifi_rx_msg_load(uint8_t load)
 {
 	if (trans_slave_rx_queue_size) {
 		slave_wifi_rx_msg_loaded = load*100/trans_slave_rx_queue_size;
@@ -221,7 +221,7 @@ static int process_spi_rx_buf(uint8_t * rxbuff)
 
 	if (!len) {
 		if (CONFIG_TO_SLAVE_DATA_THROTTLE_THRESHOLD > 0)
-			get_slave_wifi_rx_msg_load(payload_header->slave_rx_q_load);
+			fetch_slave_wifi_rx_msg_load(payload_header->slave_rx_q_load);
 		ret = -5;
 		goto done;
 	}
@@ -255,7 +255,7 @@ static int process_spi_rx_buf(uint8_t * rxbuff)
 			buf_handle.seq_num     = le16toh(payload_header->seq_num);
 			buf_handle.flag        = payload_header->flags;
 			if (CONFIG_TO_SLAVE_DATA_THROTTLE_THRESHOLD > 0)
-				get_slave_wifi_rx_msg_load(payload_header->slave_rx_q_load);
+				fetch_slave_wifi_rx_msg_load(payload_header->slave_rx_q_load);
 #if 0
 #if CONFIG_H_LOWER_MEMCOPY
 			if ((buf_handle.if_type == ESP_STA_IF) ||

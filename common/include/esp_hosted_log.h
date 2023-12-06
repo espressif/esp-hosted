@@ -23,7 +23,7 @@
 
   #define ESP_PRIV_HEXDUMP(tag1, tag2, buff, len, curr_level)                   \
     if ( LOG_LOCAL_LEVEL >= curr_level) {                                       \
-      ESP_LOGD(tag1, tag2);                                                     \
+      ESP_LOGD(tag1, tag2 " len:%d", (int)len);                                                     \
       ESP_LOG_BUFFER_HEXDUMP(tag2, buff, len, curr_level);                           \
     }
 
@@ -31,7 +31,7 @@
   #define ESP_HEXLOGW(tag2, buff, len) ESP_PRIV_HEXDUMP(TAG, tag2, buff, len, ESP_LOG_WARN)
   #define ESP_HEXLOGI(tag2, buff, len) ESP_PRIV_HEXDUMP(TAG, tag2, buff, len, ESP_LOG_INFO)
   #define ESP_HEXLOGD(tag2, buff, len) ESP_PRIV_HEXDUMP(TAG, tag2, buff, len, ESP_LOG_DEBUG)
-  #define ESP_HEXLOGV(tag2, buff, len) ESP_PRIV_HEXDUMP(TAG, tag2, buff, len, ESP_LOG_DEBUG)
+  #define ESP_HEXLOGV(tag2, buff, len) ESP_PRIV_HEXDUMP(TAG, tag2, buff, len, ESP_LOG_VERBOSE)
 
 #else
 

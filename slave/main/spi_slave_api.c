@@ -439,8 +439,8 @@ static int process_spi_rx(interface_buffer_handle_t *buf_handle)
 	if (!len)
 		return -1;
 
-	if (len > SPI_BUFFER_SIZE) {
-		ESP_LOGE(TAG, "rx_pkt len[%u]>max[%u], dropping it", len, SPI_BUFFER_SIZE);
+	if ((len+offset) > SPI_BUFFER_SIZE) {
+		ESP_LOGE(TAG, "rx_pkt len[%u]>max[%u], dropping it", len+offset, SPI_BUFFER_SIZE);
 
 		return -1;
 	}
@@ -870,6 +870,7 @@ static int32_t esp_spi_write(interface_handle_t *handle, interface_buffer_handle
 	header->flags = buf_handle->flag;
 
 #if CONFIG_REPORT_SLAVE_DATA_Q_LOAD_TO_HOST
+	/* Pass the queue loading info to host, to make decision of data throttling */
 	header->slave_rx_q_load = uxQueueMessagesWaiting(spi_rx_queue[PRIO_Q_OTHERS]);
   #if ESP_PKT_STATS
 	pkt_stats.slave_wifi_rx_msg_loaded = header->slave_rx_q_load;
