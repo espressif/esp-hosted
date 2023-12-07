@@ -51,4 +51,5 @@ int cmd_set_tx_power(struct esp_wifi_device *priv, int power);
 int cmd_get_tx_power(struct esp_wifi_device *priv);
 int cmd_set_reg_domain(struct esp_wifi_device *priv);
 int cmd_get_reg_domain(struct esp_wifi_device *priv);
+int cmd_init_raw_tp_task_timer(struct esp_wifi_device *priv);
 #endif

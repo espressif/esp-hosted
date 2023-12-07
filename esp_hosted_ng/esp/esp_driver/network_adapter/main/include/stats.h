@@ -33,18 +33,7 @@
  * 1. CONFIG_FREERTOS_GENERATE_RUN_TIME_STATS
  *    These are debug stats to show the CPU utilization by all tasks
  *    This is set through sdkconfig
- *
- * 2. TEST_RAW_TP
- *    These are debug stats which show the raw throughput
- *    performance of transport like SPI or SDIO
- *    (a) TEST_RAW_TP__ESP_TO_HOST
- *    When this enabled, throughput will be measured from ESP to Host
- *
- *    (b) TEST_RAW_TP__HOST_TO_ESP
- *    This is opposite of TEST_RAW_TP__ESP_TO_HOST. when (a) TEST_RAW_TP__ESP_TO_HOST
- *    is disabled, it will automatically mean throughput to be measured from host to ESP
  */
-#define TEST_RAW_TP                    0
 
 #ifdef CONFIG_FREERTOS_GENERATE_RUN_TIME_STATS
   /* Stats to show task wise CPU utilization */
@@ -62,7 +51,6 @@ void debug_runtime_stats_task(void* pvParameters);
  * at a time
  */
 
-#if TEST_RAW_TP
 
 #include "esp_timer.h"
 #include "interface.h"
@@ -72,8 +60,6 @@ void debug_runtime_stats_task(void* pvParameters);
  * i.e. ESP to Host OR
  * Host to ESP
  */
-#define TEST_RAW_TP__ESP_TO_HOST     1
-#define TEST_RAW_TP__HOST_TO_ESP     !TEST_RAW_TP__ESP_TO_HOST
 
 #define TEST_RAW_TP__BUF_SIZE        1460
 #define TEST_RAW_TP__TIMEOUT         SEC_TO_USEC(1)
@@ -86,11 +72,11 @@ typedef struct {
 } test_args_t;
 
 void debug_update_raw_tp_rx_count(uint16_t len);
-#endif
 
 
 void debug_log_firmware_version(void);
 void create_debugging_tasks(void);
-uint8_t debug_get_raw_tp_conf(void);
+void debug_get_raw_tp_conf(uint32_t raw_tp_type);
 void debug_set_wifi_logging(void);
+int process_raw_tp(uint8_t if_type, uint8_t *payload, uint16_t payload_len);
 #endif  /*__STATS__H__*/

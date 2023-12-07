@@ -28,12 +28,16 @@ static int resetpin = HOST_GPIO_PIN_INVALID;
 static u32 clockspeed = 0;
 extern u8 ap_bssid[MAC_ADDR_LEN];
 extern volatile u8 host_sleep;
+u32 raw_tp_mode = 0;
 
 module_param(resetpin, int, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
 MODULE_PARM_DESC(resetpin, "Host's GPIO pin number which is connected to ESP32's EN to reset ESP32 device");
 
 module_param(clockspeed, uint, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
 MODULE_PARM_DESC(clockspeed, "Hosts clock speed in MHz");
+
+module_param(raw_tp_mode, uint, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
+MODULE_PARM_DESC(raw_tp_mode, "Mode choosed to test raw throughput");
 
 static void deinit_adapter(void);
 
@@ -320,6 +324,16 @@ int process_event_esp_bootup(struct esp_adapter *adapter, u8 *evt_buf, u8 len)
 		return -1;
 	}
 	init_bt(adapter);
+
+	if (raw_tp_mode !=0) {
+#if TEST_RAW_TP
+		process_test_capabilities(raw_tp_mode);
+		esp_init_raw_tp(adapter);
+#elif
+		esp_err("RAW TP mode selected but not enabled\n");
+		return -1;
+#endif
+	}
 	set_bit(ESP_INIT_DONE, &adapter->state_flags);
 	print_capabilities(adapter->capabilities);
 
@@ -469,6 +483,12 @@ static int esp_add_network_ifaces(struct esp_adapter *adapter)
 		return 0;
 
 	return -1;
+}
+
+int esp_init_raw_tp(struct esp_adapter *adapter)
+{
+	RET_ON_FAIL(cmd_init_raw_tp_task_timer(adapter->priv[ESP_STA_NW_IF]));
+	return 0;
 }
 
 int esp_add_card(struct esp_adapter *adapter)
@@ -763,9 +783,11 @@ static void process_rx_packet(struct esp_adapter *adapter, struct sk_buff *skb)
 			dev_kfree_skb_any(skb);
 
 	} else if (payload_header->if_type == ESP_TEST_IF) {
-		#if TEST_RAW_TP
+#if TEST_RAW_TP
+		if (raw_tp_mode != 0) {
 			update_test_raw_tp_rx_stats(len);
-		#endif
+		}
+#endif
 		dev_kfree_skb_any(skb);
 	} else {
 		dev_kfree_skb_any(skb);
@@ -977,7 +999,9 @@ static void __exit esp_exit(void)
 {
 	uint8_t iface_idx = 0;
 #if TEST_RAW_TP
-	test_raw_tp_cleanup();
+	if (raw_tp_mode != 0) {
+		test_raw_tp_cleanup();
+	}
 #endif
 	for (iface_idx = 0; iface_idx < ESP_MAX_INTERFACE; iface_idx++) {
 		cmd_deinit_interface(adapter.priv[iface_idx]);

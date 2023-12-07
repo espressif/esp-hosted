@@ -12,12 +12,14 @@
 #include "esp.h"
 #include "esp_cfg80211.h"
 #include "esp_kernel_port.h"
+#include "esp_stats.h"
 
 #define PRINT_HEXDUMP(STR, ARG, ARG_LEN, level) \
 	print_hex_dump(KERN_INFO, STR, DUMP_PREFIX_ADDRESS, 16, 1, ARG, ARG_LEN, 1);
 
 #define COMMAND_RESPONSE_TIMEOUT (5 * HZ)
 u8 ap_bssid[MAC_ADDR_LEN];
+extern u32 raw_tp_mode;
 
 int internal_scan_request(struct esp_wifi_device *priv, char *ssid,
 		uint8_t channel, uint8_t is_blocking);
@@ -235,6 +237,8 @@ static int wait_and_decode_cmd_resp(struct esp_wifi_device *priv,
 	case CMD_SET_MCAST_MAC_ADDR:
 	case CMD_GET_REG_DOMAIN:
 	case CMD_SET_REG_DOMAIN:
+	case CMD_RAW_TP_ESP_TO_HOST:
+	case CMD_RAW_TP_HOST_TO_ESP:
 		/* intentional fallthrough */
 		if (ret == 0)
 			ret = decode_common_resp(cmd_node);
@@ -1404,6 +1408,36 @@ int cmd_scan_request(struct esp_wifi_device *priv, struct cfg80211_scan_request 
 	return 0;
 }
 
+int cmd_init_raw_tp_task_timer(struct esp_wifi_device *priv)
+{
+	u16 cmd_len;
+	struct command_node *cmd_node = NULL;
+
+	if (!priv || !priv->adapter) {
+		esp_err("Invalid argument\n");
+		return -EINVAL;
+	}
+
+	cmd_len = sizeof(struct command_header);
+
+	if (raw_tp_mode == ESP_TEST_RAW_TP_ESP_TO_HOST) {
+		cmd_node = prepare_command_request(priv->adapter, CMD_RAW_TP_ESP_TO_HOST, cmd_len);
+	} else if (raw_tp_mode == ESP_TEST_RAW_TP_HOST_TO_ESP) {
+		cmd_node = prepare_command_request(priv->adapter, CMD_RAW_TP_HOST_TO_ESP, cmd_len);
+	}
+
+	if (!cmd_node) {
+		esp_err("Failed to get command node\n");
+		return -ENOMEM;
+	}
+
+	queue_cmd_node(priv->adapter, cmd_node, ESP_CMD_DFLT_PRIO);
+	queue_work(priv->adapter->cmd_wq, &priv->adapter->cmd_work);
+
+	RET_ON_FAIL(wait_and_decode_cmd_resp(priv, cmd_node));
+
+	return 0;
+}
 
 int cmd_get_mac(struct esp_wifi_device *priv)
 {

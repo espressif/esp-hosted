@@ -19,6 +19,8 @@
 #include "esp_log.h"
 #include "esp.h"
 #include "slave_bt.h"
+#include "cmd.h"
+#include <string.h>
 
 static const char TAG[] = "stats";
 
@@ -124,7 +126,6 @@ static void log_runtime_stats_task(void* pvParameters) {
 }
 #endif
 
-#if TEST_RAW_TP
 uint8_t raw_tp_tx_buf[TEST_RAW_TP__BUF_SIZE] = {0};
 uint64_t test_raw_tp_rx_len;
 
@@ -145,7 +146,6 @@ static void raw_tp_timer_func(void* arg)
 	test_raw_tp_rx_len = 0;
 }
 
-#if TEST_RAW_TP__ESP_TO_HOST
 extern volatile uint8_t datapath;
 static void raw_tp_tx_task(void* pvParameters)
 {
@@ -174,7 +174,6 @@ static void raw_tp_tx_task(void* pvParameters)
 		test_raw_tp_rx_len += (TEST_RAW_TP__BUF_SIZE+sizeof(struct esp_payload_header));
 	}
 }
-#endif
 
 static void start_timer_to_display_raw_tp(void)
 {
@@ -193,37 +192,31 @@ static void start_timer_to_display_raw_tp(void)
 	ESP_ERROR_CHECK(esp_timer_start_periodic(raw_tp_timer, TEST_RAW_TP__TIMEOUT));
 }
 
-#endif
-
 void create_debugging_tasks(void)
 {
 #ifdef CONFIG_FREERTOS_GENERATE_RUN_TIME_STATS
 	assert(xTaskCreate(log_runtime_stats_task, "log_runtime_stats_task",
 				TASK_DEFAULT_STACK_SIZE, NULL, TASK_DEFAULT_PRIO, NULL) == pdTRUE);
 #endif
-
-#if TEST_RAW_TP
-	start_timer_to_display_raw_tp();
-  #if TEST_RAW_TP__ESP_TO_HOST
-	assert(xTaskCreate(raw_tp_tx_task , "raw_tp_tx_task",
-				TASK_DEFAULT_STACK_SIZE, NULL , TASK_DEFAULT_PRIO, NULL) == pdTRUE);
-  #endif
-#endif
 }
 
-uint8_t debug_get_raw_tp_conf(void) {
-	uint8_t raw_tp_cap = 0;
-#if TEST_RAW_TP
-	raw_tp_cap |= ESP_TEST_RAW_TP;
-  #if TEST_RAW_TP__ESP_TO_HOST
-	raw_tp_cap |= ESP_TEST_RAW_TP__ESP_TO_HOST;
-  #endif
-	if ((raw_tp_cap & ESP_TEST_RAW_TP__ESP_TO_HOST) == ESP_TEST_RAW_TP__ESP_TO_HOST)
+void init_raw_tp_test_task(void)
+{
+	assert(xTaskCreate(raw_tp_tx_task , "raw_tp_tx_task",
+				TASK_DEFAULT_STACK_SIZE, NULL , TASK_DEFAULT_PRIO, NULL) == pdTRUE);
+}
+
+void init_raw_tp_timer(void)
+{
+	start_timer_to_display_raw_tp();
+}
+
+void debug_get_raw_tp_conf(uint32_t raw_tp_type) {
+	if (raw_tp_type == CMD_RAW_TP_ESP_TO_HOST) {
 		ESP_LOGI(TAG, "\n\n*** Raw Throughput testing: ESP --> Host started ***\n");
-	else
+	} else if (raw_tp_type == CMD_RAW_TP_HOST_TO_ESP) {
 		ESP_LOGI(TAG, "\n\n*** Raw Throughput testing: Host --> ESP started ***\n");
-#endif
-	return raw_tp_cap;
+	}
 }
 
 void debug_set_wifi_logging(void) {
@@ -292,4 +285,50 @@ void debug_log_firmware_version(void)
   #endif
 #endif
 	ESP_LOGI(TAG, "*********************************************************************");
+}
+
+int process_raw_tp(uint8_t if_type, uint8_t *payload, uint16_t payload_len)
+{
+	interface_buffer_handle_t buf_handle = {0};
+	esp_err_t ret = ESP_OK;
+	struct command_header *header = (struct command_header *) payload;
+	struct command_header *resp_header;
+
+	buf_handle.if_type = if_type;
+	buf_handle.if_num = 0;
+	buf_handle.payload_len = sizeof(struct command_header);
+	buf_handle.pkt_type = PACKET_TYPE_COMMAND_RESPONSE;
+
+	buf_handle.payload = heap_caps_malloc(buf_handle.payload_len, MALLOC_CAP_DMA);
+	assert(buf_handle.payload);
+	memset(buf_handle.payload, 0, buf_handle.payload_len);
+    resp_header = (struct command_header *) buf_handle.payload;
+
+	debug_get_raw_tp_conf(header->cmd_code);
+	init_raw_tp_timer();
+
+	if (header->cmd_code == CMD_RAW_TP_ESP_TO_HOST) {
+		init_raw_tp_test_task();
+	}
+
+    resp_header->cmd_code = header->cmd_code;
+	resp_header->len = 0;
+	resp_header->cmd_status = CMD_RESPONSE_SUCCESS;
+
+	buf_handle.priv_buffer_handle = buf_handle.payload;
+	buf_handle.free_buf_handle = free;
+
+	ret = send_command_response(&buf_handle);
+	if (ret != pdTRUE) {
+		ESP_LOGE(TAG, "Slave -> Host: Failed to send command response\n");
+		goto DONE;
+	}
+
+	return ESP_OK;
+
+DONE:
+	if (buf_handle.payload)
+		free(buf_handle.payload);
+
+	return ret;
 }

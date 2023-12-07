@@ -179,21 +179,16 @@ void update_test_raw_tp_rx_stats(u16 len)
 }
 #endif
 
-void process_test_capabilities(u8 cap)
+void process_test_capabilities(u32 raw_tp_mode)
 {
 #if TEST_RAW_TP
-	esp_info("ESP peripheral test capabilities: 0x%x\n", cap);
-	if ((cap & ESP_TEST_RAW_TP) == ESP_TEST_RAW_TP) {
-		if ((cap & ESP_TEST_RAW_TP__ESP_TO_HOST) == ESP_TEST_RAW_TP__ESP_TO_HOST) {
-			start_test_raw_tp(ESP_TEST_RAW_TP__RX);
-			esp_info("start testing of ESP->Host raw throughput\n");
-		} else {
-			start_test_raw_tp(ESP_TEST_RAW_TP__TX);
-			esp_info("start testing of Host->ESP raw throughput\n");
-		}
-	} else {
-		esp_info("stop raw throuput test if running\n");
-		stop_test_raw_tp();
+	stop_test_raw_tp();
+	if (raw_tp_mode == ESP_TEST_RAW_TP_ESP_TO_HOST) {
+		start_test_raw_tp(ESP_TEST_RAW_TP__RX);
+		esp_info("start testing of ESP->Host raw throughput\n");
+	} else if (raw_tp_mode == ESP_TEST_RAW_TP_HOST_TO_ESP) {
+		start_test_raw_tp(ESP_TEST_RAW_TP__TX);
+		esp_info("start testing of Host->ESP raw throughput\n");
 	}
 	process_raw_tp_flags();
 #endif

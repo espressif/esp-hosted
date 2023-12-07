@@ -301,8 +301,6 @@ esp_err_t send_bootup_event_to_host(uint8_t cap)
 	uint8_t * pos = NULL;
 	esp_err_t ret = ESP_OK;
 	uint16_t len = 0;
-	uint8_t raw_tp_cap = 0;
-	raw_tp_cap = debug_get_raw_tp_conf();
 
 	memset(&buf_handle, 0, sizeof(buf_handle));
 
@@ -334,10 +332,6 @@ esp_err_t send_bootup_event_to_host(uint8_t cap)
 	*pos = ESP_BOOTUP_CAPABILITY;         pos++;len++;
 	*pos = LENGTH_1_BYTE;                 pos++;len++;
 	*pos = cap;                           pos++;len++;
-
-	*pos = ESP_BOOTUP_TEST_RAW_TP;        pos++;len++;
-	*pos = LENGTH_1_BYTE;                 pos++;len++;
-	*pos = raw_tp_cap;                    pos++;len++;
 
 	/* TLV - FW data */
 	*pos = ESP_BOOTUP_FW_DATA;            pos++; len++;
