@@ -2365,8 +2365,9 @@ esp_err_t data_transfer_handler(uint32_t session_id,const uint8_t *inbuf,
 	rpc__init (&resp);
 	resp.msg_type = RPC_TYPE__Resp;
 	resp.msg_id = req->msg_id - RPC_ID__Req_Base + RPC_ID__Resp_Base;
+	resp.uid = req->uid;
 	resp.payload_case = resp.msg_id;
-	ESP_LOGI(TAG, "Resp_MSGId for req[0x%x] is [0x%x]", req->msg_id, resp.msg_id);
+	ESP_LOGI(TAG, "Resp_MSGId for req[0x%x] is [0x%x], uid %ld", req->msg_id, resp.msg_id, resp.uid);
 	ret = esp_rpc_command_dispatcher(req,&resp,NULL);
 	if (ret) {
 		ESP_LOGE(TAG, "Command dispatching not happening");

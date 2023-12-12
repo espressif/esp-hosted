@@ -2887,6 +2887,10 @@ struct  Rpc
    * msg id 
    */
   RpcId msg_id;
+  /*
+   * UID of message 
+   */
+  uint32_t uid;
   Rpc__PayloadCase payload_case;
   union {
     /*
@@ -2996,7 +3000,7 @@ struct  Rpc
 };
 #define RPC__INIT \
  { PROTOBUF_C_MESSAGE_INIT (&rpc__descriptor) \
-    , RPC_TYPE__MsgType_Invalid, RPC_ID__MsgId_Invalid, RPC__PAYLOAD__NOT_SET, {0} }
+    , RPC_TYPE__MsgType_Invalid, RPC_ID__MsgId_Invalid, 0, RPC__PAYLOAD__NOT_SET, {0} }
 
 
 /* WifiInitConfig methods */
