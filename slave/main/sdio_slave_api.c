@@ -28,19 +28,19 @@
 #include "mempool.h"
 #include "stats.h"
 
-#define SDIO_SLAVE_QUEUE_SIZE   20
-#define BUFFER_SIZE     	MAX_TRANSPORT_BUF_SIZE
-#define BUFFER_NUM      	10
+#define SDIO_SLAVE_QUEUE_SIZE        20
+#define BUFFER_SIZE     	         MAX_TRANSPORT_BUF_SIZE
+#define BUFFER_NUM      	         20
 static uint8_t sdio_slave_rx_buffer[BUFFER_NUM][BUFFER_SIZE];
 
-#define SDIO_MEMPOOL_NUM_BLOCKS     40
+#define SDIO_MEMPOOL_NUM_BLOCKS      40
 static struct hosted_mempool * buf_mp_tx_g;
 
 interface_context_t context;
 interface_handle_t if_handle_g;
 static const char TAG[] = "SDIO_SLAVE";
 
-#define SDIO_RX_QUEUE_SIZE          CONFIG_ESP_SDIO_RX_Q_SIZE
+#define SDIO_RX_QUEUE_SIZE           CONFIG_ESP_SDIO_RX_Q_SIZE
 static SemaphoreHandle_t sdio_rx_sem;
 static QueueHandle_t sdio_rx_queue[MAX_PRIORITY_QUEUES];
 
@@ -48,8 +48,10 @@ static QueueHandle_t sdio_rx_queue[MAX_PRIORITY_QUEUES];
 static uint8_t current_throttling = 0;
 #endif
 
-#define HOST_INT_START_THROTTLE SDIO_SLAVE_HOSTINT_BIT1
-#define HOST_INT_STOP_THROTTLE SDIO_SLAVE_HOSTINT_BIT0
+#define SDIO_SLAVE_TO_HOST_INT_BIT7     7
+#define SDIO_SLAVE_TO_HOST_INT_BIT6     6
+#define HOST_INT_START_THROTTLE      SDIO_SLAVE_TO_HOST_INT_BIT7
+#define HOST_INT_STOP_THROTTLE       SDIO_SLAVE_TO_HOST_INT_BIT6
 
 static interface_handle_t * sdio_init(void);
 static int32_t sdio_write(interface_handle_t *handle, interface_buffer_handle_t *buf_handle);
@@ -98,20 +100,21 @@ static void start_rx_data_throttling_if_needed(void)
 	uint32_t queue_load;
 	uint8_t load_percent;
 
+	queue_load = uxQueueMessagesWaiting(sdio_rx_queue[PRIO_Q_OTHERS]);
+#if ESP_PKT_STATS
+	pkt_stats.slave_wifi_rx_msg_loaded = queue_load;
+#endif
+
 	/* Already throttling, nothing to be done */
 	if (current_throttling)
 		return;
 
 	if (CONFIG_TO_WIFI_DATA_THROTTLE_HIGH_THRESHOLD > 0) {
-		queue_load = uxQueueMessagesWaiting(sdio_rx_queue[PRIO_Q_OTHERS]);
-#if ESP_PKT_STATS
-		pkt_stats.slave_wifi_rx_msg_loaded = queue_load;
-#endif
 		load_percent = (queue_load*100/SDIO_RX_QUEUE_SIZE);
 
 		if (load_percent > CONFIG_TO_WIFI_DATA_THROTTLE_HIGH_THRESHOLD) {
 			current_throttling = 1;
-			ESP_LOGI(TAG, "start data throttling at host");
+			ESP_LOGV(TAG, "start data throttling at host");
 			sdio_slave_send_host_int(HOST_INT_START_THROTTLE);
 		}
 	}
@@ -124,20 +127,21 @@ static void stop_rx_data_throttling_if_needed(void)
 	uint32_t queue_load;
 	uint8_t load_percent;
 
+	queue_load = uxQueueMessagesWaiting(sdio_rx_queue[PRIO_Q_OTHERS]);
+#if ESP_PKT_STATS
+	pkt_stats.slave_wifi_rx_msg_loaded = queue_load;
+#endif
+
 	/* Already not throttling, nothing to be done */
 	if (!current_throttling)
 		return;
 
 	if (CONFIG_TO_WIFI_DATA_THROTTLE_LOW_THRESHOLD > 0) {
-		queue_load = uxQueueMessagesWaiting(sdio_rx_queue[PRIO_Q_OTHERS]);
-#if ESP_PKT_STATS
-		pkt_stats.slave_wifi_rx_msg_loaded = queue_load;
-#endif
 		load_percent = (queue_load*100/SDIO_RX_QUEUE_SIZE);
 
 		if (load_percent < CONFIG_TO_WIFI_DATA_THROTTLE_LOW_THRESHOLD) {
 			current_throttling = 0;
-			ESP_LOGI(TAG, "stop data throttling at host");
+			ESP_LOGV(TAG, "stop data throttling at host");
 			sdio_slave_send_host_int(HOST_INT_STOP_THROTTLE);
 		}
 	}
@@ -292,6 +296,12 @@ static interface_handle_t * sdio_init(void)
 	ESP_LOGI(TAG, "%s: ESP32 SDIO RxQ[%d] timing[%u]\n", __func__, SDIO_RX_QUEUE_SIZE, config.timing);
 #endif
 
+#if CONFIG_REPORT_SLAVE_DATA_Q_LOAD_TO_HOST
+	if (CONFIG_FREERTOS_HZ < 1000) {
+		ESP_LOGW(TAG, "FreeRTOS tick[%d]<1000. Enabling throttling with lower FrerRTOS tick may result in lower peak data throughput", (int) CONFIG_FREERTOS_HZ);
+	}
+#endif
+
 	sdio_rx_sem = xSemaphoreCreateCounting(SDIO_RX_QUEUE_SIZE*3, 0);
 	assert(sdio_rx_sem != NULL);
 
@@ -317,9 +327,8 @@ static interface_handle_t * sdio_init(void)
 		}
 	}
 
+	/* Do not use Bit 0 and bit 1, ESP-Hosted uses bit6 and bit 7 internal use */
 	sdio_slave_set_host_intena(SDIO_SLAVE_HOSTINT_SEND_NEW_PACKET |
-			SDIO_SLAVE_HOSTINT_BIT0 |
-			SDIO_SLAVE_HOSTINT_BIT1 |
 			SDIO_SLAVE_HOSTINT_BIT2 |
 			SDIO_SLAVE_HOSTINT_BIT3 |
 			SDIO_SLAVE_HOSTINT_BIT4 |
@@ -519,6 +528,15 @@ static esp_err_t sdio_reset(interface_handle_t *handle)
 	ret = sdio_slave_reset();
 	if (ret != ESP_OK)
 		return ret;
+
+	/* Do not use Bit 0 and bit 1, ESP-Hosted uses bit6 and bit 7 internal use */
+	sdio_slave_set_host_intena(SDIO_SLAVE_HOSTINT_SEND_NEW_PACKET |
+			SDIO_SLAVE_HOSTINT_BIT2 |
+			SDIO_SLAVE_HOSTINT_BIT3 |
+			SDIO_SLAVE_HOSTINT_BIT4 |
+			SDIO_SLAVE_HOSTINT_BIT5 |
+			SDIO_SLAVE_HOSTINT_BIT6 |
+			SDIO_SLAVE_HOSTINT_BIT7);
 
 	ret = sdio_slave_start();
 	if (ret != ESP_OK)

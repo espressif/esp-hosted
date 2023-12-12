@@ -77,8 +77,21 @@ so feel free to change these if needed.
 #define H_SDIO_RX_LEN_TO_TRANSFER(x) ((x + 3) & (~3))
 
 // workarounds for some SDIO transfer errors that may occur
+#if 0
+/* Below workarounds could be enabled for non-ESP MCUs to test first
+ * Once everything is stable, can disable workarounds and test again
+ * */
 #define H_SDIO_TX_LIMIT_XFER_SIZE_WORKAROUND // limit transfer to one ESP_BLOCK_SIZE at a time
 #define H_SDIO_RX_LIMIT_XFER_SIZE_WORKDAROUND // limit transfer to one ESP_BLOCK_SIZE at a time
+#endif
+
+/* Bypass bytes_to_read before actual read.
+ * Always ask 512*3 bytes from SDIO slave to host.
+ * This setting however will underperform for small byte sized messages
+ * When host reads more bytes than slave appliaction written,
+ * SDIO driver at slave automatically pads rest of the bytes with 0
+ */
+#define H_SDIO_ALWAYS_HOST_RX_MAX_TRANSPORT_SIZE  (1)
 
 #if defined(H_SDIO_TX_LIMIT_XFER_SIZE_WORKAROUND)
 #define H_SDIO_TX_BLOCKS_TO_TRANSFER(x) (1)

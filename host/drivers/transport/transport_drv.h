@@ -42,10 +42,15 @@ extern "C" {
 #define ESP_PRIV_FIRMWARE_CHIP_ESP32C6      (0xD)
 
 
+#if CONFIG_ESP_SPI_HOST_INTERFACE
+#include "spi_wrapper.h"
 #define SPI_MODE0                           (0)
 #define SPI_MODE1                           (1)
 #define SPI_MODE2                           (2)
 #define SPI_MODE3                           (3)
+#else
+#include "sdio_wrapper.h"
+#endif
 
 struct esp_private {
 	uint8_t     if_type;

@@ -222,7 +222,7 @@ static esp_err_t transport_drv_sta_tx(void *h, void *buffer, size_t len)
 	assert(h && h==chan_arr[ESP_STA_IF]->api_chan);
 
 	/*  Prepare transport buffer directly consumable */
-	copy_buff = mempool_alloc(((struct mempool*)chan_arr[ESP_STA_IF]->memp), MAX_SPI_BUFFER_SIZE, true);
+	copy_buff = mempool_alloc(((struct mempool*)chan_arr[ESP_STA_IF]->memp), MAX_TRANSPORT_BUFFER_SIZE, true);
 	assert(copy_buff);
 	g_h.funcs->_h_memcpy(copy_buff+H_ESP_PAYLOAD_HEADER_OFFSET, buffer, len);
 
@@ -239,7 +239,7 @@ static esp_err_t transport_drv_ap_tx(void *h, void *buffer, size_t len)
 	assert(h && h==chan_arr[ESP_AP_IF]->api_chan);
 
 	/*  Prepare transport buffer directly consumable */
-	copy_buff = mempool_alloc(((struct mempool*)chan_arr[ESP_AP_IF]->memp), MAX_SPI_BUFFER_SIZE, true);
+	copy_buff = mempool_alloc(((struct mempool*)chan_arr[ESP_AP_IF]->memp), MAX_TRANSPORT_BUFFER_SIZE, true);
 	assert(copy_buff);
 	g_h.funcs->_h_memcpy(copy_buff+H_ESP_PAYLOAD_HEADER_OFFSET, buffer, len);
 
@@ -305,7 +305,7 @@ transport_channel_t *transport_drv_add_channel(void *api_chan,
 	channel->rx = rx;
 
 	/* Need to change size wrt transport */
-    channel->memp = mempool_create(MAX_SPI_BUFFER_SIZE);
+    channel->memp = mempool_create(MAX_TRANSPORT_BUFFER_SIZE);
 #ifdef CONFIG_ESP_CACHE_MALLOC
     assert(channel->memp);
 #endif
@@ -450,7 +450,10 @@ int process_init_event(uint8_t *evt_buf, uint16_t len)
 	pos = evt_buf;
 	ESP_LOGD(TAG, "Init event length: %u", len);
 	if (len > 64) {
-		ESP_LOGE(TAG, "Init event length: %u, seems incompatible SPI mode try changing SPI mode. Asserting for now.", len);
+		ESP_LOGE(TAG, "Init event length: %u", len);
+#if CONFIG_ESP_SPI_HOST_INTERFACE
+		ESP_LOGE(TAG, "Seems incompatible SPI mode try changing SPI mode. Asserting for now.");
+#endif
 		assert(len < 64);
 	}
 

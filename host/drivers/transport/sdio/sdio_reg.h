@@ -52,7 +52,7 @@
 #define ESP_SLAVE_LEN_MASK             0xFFFFF
 #define ESP_BLOCK_SIZE                 512
 #define ESP_RX_BYTE_MAX                0x100000
-#define ESP_RX_BUFFER_SIZE             2048
+#define ESP_RX_BUFFER_SIZE             1536
 
 #define ESP_TX_BUFFER_MASK             0xFFF
 #define ESP_TX_BUFFER_MAX              0x1000
@@ -72,15 +72,12 @@
 
 /* Host side interrupts for ESP_HOST_INT_ENA_REG */
 #if CONFIG_SLAVE_CHIPSET_ESP32 || CONFIG_SLAVE_CHIPSET_ESP32C6
-  #define HOST_INT_NEW_PACKET            BIT(23)
-  #define HOST_INT_START_THROTTLE        BIT(1)
-  #define HOST_INT_STOP_THROTTLE         BIT(0)
+  #define SDIO_INT_NEW_PACKET          (23)
+  #define SDIO_INT_START_THROTTLE      (7)
+  #define SDIO_INT_STOP_THROTTLE       (6)
 #else
   #error "SDIO New Packet Intr Bit not defined for Hosted Slave"
 #endif
-
-#define ESP_HOST_INT_ENABLE_MASK       (HOST_INT_NEW_PACKET | HOST_INT_START_THROTTLE | HOST_INT_STOP_THROTTLE)
-
 
 /* Data path registers*/
 #define ESP_SLAVE_PACKET_LEN_REG       (ESP_SLAVE_SLCHOST_BASE + 0x60)

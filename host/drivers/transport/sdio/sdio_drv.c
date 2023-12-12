@@ -37,7 +37,7 @@ static const char TAG[] = "H_SDIO_DRV";
 #define BUFFER_UNAVAILABLE                0
 
 // max number of time to try to read write buffer available reg
-#define MAX_WRITE_BUF_RETRIES             2
+#define MAX_WRITE_BUF_RETRIES             50
 
 // max number of times to try to write data to slave device
 #define MAX_WRITE_RETRIES                 2
@@ -228,10 +228,11 @@ static int sdio_is_write_buffer_available(uint32_t buf_needed)
 				return BUFFER_UNAVAILABLE;
 			}
 			if (buf_available < buf_needed) {
-				ESP_LOGI(TAG, "Retry get write buffers %d", retry);
+				ESP_LOGV(TAG, "Retry get write buffers %d", retry);
 				/* Release SDIO and retry after delay*/
 				retry--;
-				g_h.funcs->_h_msleep(10);
+				if (retry > MAX_WRITE_BUF_RETRIES/2)
+					g_h.funcs->_h_msleep(1);
 				continue;
 			}
 			break;
@@ -335,7 +336,7 @@ static void sdio_write_task(void const* pvParameters)
 
 		ret = sdio_is_write_buffer_available(buf_needed);
 		if (ret != BUFFER_AVAILABLE) {
-			ESP_LOGE(TAG, "no SDIO write buffers on slave device");
+			ESP_LOGV(TAG, "no SDIO write buffers on slave device");
 			goto done;
 		}
 
@@ -386,11 +387,6 @@ done:
 		}
 		H_FREE_PTR_WITH_FUNC(free_func, sendbuf);
 	}
-}
-
-static int enable_sdio_master_interrupts(uint32_t enable_mask)
-{
-	return g_h.funcs->_h_sdio_write_reg(ESP_HOST_INT_ENA_REG, (uint8_t *) &enable_mask, 4, ACQUIRE_LOCK);
 }
 
 static int is_valid_sdio_rx_packet(uint8_t *rxbuff_a, uint16_t *len_a, uint16_t *offset_a)
@@ -479,11 +475,7 @@ static void sdio_read_task(void const* pvParameters)
 		return;
 	}
 
-	/* Enable needed interrupts */
-	if (enable_sdio_master_interrupts(ESP_HOST_INT_ENABLE_MASK) != ESP_OK) {
-		ESP_LOGE(TAG, "Host interrupt enable failed");
-		return;
-	}
+	create_debugging_tasks();
 
 	ESP_LOGI(TAG, "generate slave intr");
 
@@ -512,26 +504,35 @@ static void sdio_read_task(void const* pvParameters)
 		}
 		sdio_clear_intr(interrupts);
 
+		ESP_LOGV(TAG, "Intr: %08"PRIX32, interrupts);
+
 		/* Check all supported interrupts */
-		if (HOST_INT_START_THROTTLE & interrupts) {
+		if (BIT(SDIO_INT_START_THROTTLE) & interrupts) {
 
-			ESP_LOGI(TAG, "Start pkt drop for Wifi");
-			start_dropping_wifi_packets = 1;
+			slave_wifi_rx_msg_loaded = CONFIG_TO_SLAVE_DATA_THROTTLE_THRESHOLD+1;
 
 		}
 
-		if (HOST_INT_STOP_THROTTLE & interrupts) {
+		if (BIT(SDIO_INT_STOP_THROTTLE) & interrupts) {
 
-			ESP_LOGI(TAG, "End pkt drop for Wifi");
-			start_dropping_wifi_packets = 0;
+			slave_wifi_rx_msg_loaded = 0;
 		}
 
-		if (!(HOST_INT_NEW_PACKET & interrupts)) {
+		if (!(BIT(SDIO_INT_NEW_PACKET) & interrupts)) {
 
 			SDIO_DRV_UNLOCK();
 			continue;
 		}
 
+#if H_SDIO_ALWAYS_HOST_RX_MAX_TRANSPORT_SIZE
+		/* Bypass the check to find the bytes to be read from slave to host
+		 * always assume max transport size to be read.
+		 * slave sdio driver will automatically pad the remaining bytes after
+		 * actual written bytes till requested size from host
+		 * This typically improves throughput for larger packet sizes
+		 **/
+		len_from_slave = MAX_TRANSPORT_BUFFER_SIZE;
+#else
 		/* check the bytes to be read */
 		ret = sdio_get_len_from_slave(&len_from_slave, ACQUIRE_LOCK);
 		if (ret || !len_from_slave) {
@@ -540,6 +541,8 @@ static void sdio_read_task(void const* pvParameters)
 			SDIO_DRV_UNLOCK();
 			continue;
 		}
+#endif
+
 
 		/* Allocate rx buffer */
 		rxbuff = sdio_buffer_alloc(MEMSET_REQUIRED);
@@ -641,11 +644,12 @@ static void sdio_process_rx_task(void const* pvParameters)
 			serial_rx_handler(buf_handle);
 		} else if((buf_handle->if_type == ESP_STA_IF) ||
 				(buf_handle->if_type == ESP_AP_IF)) {
-#if 0
+#if 1
 			if (chan_arr[buf_handle->if_type] && chan_arr[buf_handle->if_type]->rx) {
 				/* TODO : Need to abstract heap_caps_malloc */
 				uint8_t * copy_payload = (uint8_t *)malloc(buf_handle->payload_len);
 				assert(copy_payload);
+				assert(buf_handle->payload_len);
 				memcpy(copy_payload, buf_handle->payload, buf_handle->payload_len);
 
 				chan_arr[buf_handle->if_type]->rx(chan_arr[buf_handle->if_type]->api_chan,

@@ -356,9 +356,13 @@ void process_rx_pkt(interface_buffer_handle_t *buf_handle)
 		do {
 			ret = esp_wifi_internal_tx(ESP_IF_WIFI_STA, payload, payload_len);
 			if (ret)
-				vTaskDelay(10);
+				vTaskDelay(2);
+
 			retry_wifi_tx--;
 		} while (ret && retry_wifi_tx);
+
+			if (ret)
+				taskYIELD();
 
 		ESP_HEXLOGV("STA_Put", payload, payload_len);
 		if (ESP_OK == ret) {

@@ -275,7 +275,7 @@ menu "Example Configuration"
 
 		config ESP_SDIO_RX_Q_SIZE
 			int "SDIO RX queue size"
-			default 100
+			default 20
 			help
 				Very small RX queue will lower ESP <-- SDIO -- Host data rate
 
