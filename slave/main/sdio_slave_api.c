@@ -44,10 +44,6 @@ static const char TAG[] = "SDIO_SLAVE";
 static SemaphoreHandle_t sdio_rx_sem;
 static QueueHandle_t sdio_rx_queue[MAX_PRIORITY_QUEUES];
 
-#if CONFIG_REPORT_SLAVE_DATA_Q_LOAD_TO_HOST
-static uint8_t current_throttling = 0;
-#endif
-
 #define SDIO_SLAVE_TO_HOST_INT_BIT7     7
 #define SDIO_SLAVE_TO_HOST_INT_BIT6     6
 #define HOST_INT_START_THROTTLE      SDIO_SLAVE_TO_HOST_INT_BIT7
@@ -96,56 +92,49 @@ static inline void sdio_buffer_tx_free(void *buf)
 
 static void start_rx_data_throttling_if_needed(void)
 {
-#if CONFIG_REPORT_SLAVE_DATA_Q_LOAD_TO_HOST
 	uint32_t queue_load;
 	uint8_t load_percent;
 
-	queue_load = uxQueueMessagesWaiting(sdio_rx_queue[PRIO_Q_OTHERS]);
+	if (slv_cfg_g.throttle_high_threshold > 0) {
+
+		/* Already throttling, nothing to be done */
+		if (slv_state_g.current_throttling)
+			return;
+
+
+		queue_load = uxQueueMessagesWaiting(sdio_rx_queue[PRIO_Q_OTHERS]);
 #if ESP_PKT_STATS
-	pkt_stats.slave_wifi_rx_msg_loaded = queue_load;
+		pkt_stats.slave_wifi_rx_msg_loaded = queue_load;
 #endif
 
-	/* Already throttling, nothing to be done */
-	if (current_throttling)
-		return;
-
-	if (CONFIG_TO_WIFI_DATA_THROTTLE_HIGH_THRESHOLD > 0) {
 		load_percent = (queue_load*100/SDIO_RX_QUEUE_SIZE);
-
-		if (load_percent > CONFIG_TO_WIFI_DATA_THROTTLE_HIGH_THRESHOLD) {
-			current_throttling = 1;
+		if (load_percent > slv_cfg_g.throttle_high_threshold) {
+			slv_state_g.current_throttling = 1;
 			ESP_LOGV(TAG, "start data throttling at host");
 			sdio_slave_send_host_int(HOST_INT_START_THROTTLE);
 		}
 	}
-#endif
 }
 
 static void stop_rx_data_throttling_if_needed(void)
 {
-#if CONFIG_REPORT_SLAVE_DATA_Q_LOAD_TO_HOST
 	uint32_t queue_load;
 	uint8_t load_percent;
 
-	queue_load = uxQueueMessagesWaiting(sdio_rx_queue[PRIO_Q_OTHERS]);
+	if (slv_state_g.current_throttling) {
+
+		queue_load = uxQueueMessagesWaiting(sdio_rx_queue[PRIO_Q_OTHERS]);
 #if ESP_PKT_STATS
-	pkt_stats.slave_wifi_rx_msg_loaded = queue_load;
+		pkt_stats.slave_wifi_rx_msg_loaded = queue_load;
 #endif
 
-	/* Already not throttling, nothing to be done */
-	if (!current_throttling)
-		return;
-
-	if (CONFIG_TO_WIFI_DATA_THROTTLE_LOW_THRESHOLD > 0) {
 		load_percent = (queue_load*100/SDIO_RX_QUEUE_SIZE);
-
-		if (load_percent < CONFIG_TO_WIFI_DATA_THROTTLE_LOW_THRESHOLD) {
-			current_throttling = 0;
+		if (load_percent < slv_cfg_g.throttle_low_threshold) {
+			slv_state_g.current_throttling = 0;
 			ESP_LOGV(TAG, "stop data throttling at host");
 			sdio_slave_send_host_int(HOST_INT_STOP_THROTTLE);
 		}
 	}
-#endif
 }
 
 interface_context_t *interface_insert_driver(int (*event_handler)(uint8_t val))
@@ -225,6 +214,10 @@ void generate_startup_event(uint8_t cap)
 	*pos = ESP_PRIV_TEST_RAW_TP;        pos++;len++;
 	*pos = LENGTH_1_BYTE;               pos++;len++;
 	*pos = raw_tp_cap;                  pos++;len++;
+
+	*pos = ESP_PRIV_RX_Q_SIZE;          pos++;len++;
+	*pos = LENGTH_1_BYTE;               pos++;len++;
+	*pos = SDIO_RX_QUEUE_SIZE;          pos++;len++;
 	/* TLVs end */
 
 	event->event_len = len;
@@ -296,12 +289,6 @@ static interface_handle_t * sdio_init(void)
 	ESP_LOGI(TAG, "%s: ESP32 SDIO RxQ[%d] timing[%u]\n", __func__, SDIO_RX_QUEUE_SIZE, config.timing);
 #endif
 
-#if CONFIG_REPORT_SLAVE_DATA_Q_LOAD_TO_HOST
-	if (CONFIG_FREERTOS_HZ < 1000) {
-		ESP_LOGW(TAG, "FreeRTOS tick[%d]<1000. Enabling throttling with lower FrerRTOS tick may result in lower peak data throughput", (int) CONFIG_FREERTOS_HZ);
-	}
-#endif
-
 	sdio_rx_sem = xSemaphoreCreateCounting(SDIO_RX_QUEUE_SIZE*3, 0);
 	assert(sdio_rx_sem != NULL);
 
@@ -327,8 +314,10 @@ static interface_handle_t * sdio_init(void)
 		}
 	}
 
-	/* Do not use Bit 0 and bit 1, ESP-Hosted uses bit6 and bit 7 internal use */
+	/* ESP-Hosted uses bit6 and bit 7 internal use. Rest free for Users */
 	sdio_slave_set_host_intena(SDIO_SLAVE_HOSTINT_SEND_NEW_PACKET |
+			SDIO_SLAVE_HOSTINT_BIT0 |
+			SDIO_SLAVE_HOSTINT_BIT1 |
 			SDIO_SLAVE_HOSTINT_BIT2 |
 			SDIO_SLAVE_HOSTINT_BIT3 |
 			SDIO_SLAVE_HOSTINT_BIT4 |
@@ -473,6 +462,7 @@ static void sdio_rx_task(void* pvParameters)
 		len = le16toh(header->len);
 		if (!len) {
 			ESP_LOGE(TAG, "sdio_slave_recv returned 0 len");
+			sdio_read_done(buf_handle.sdio_buf_handle);
 			continue;
 		}
 
@@ -481,17 +471,19 @@ static void sdio_rx_task(void* pvParameters)
 		if (buf_handle.payload_len < len+offset) {
 			ESP_LOGE(TAG, "%s: err: read_len[%u] < len[%u]+offset[%u]", __func__,
 					buf_handle.payload_len, len, offset);
+			sdio_read_done(buf_handle.sdio_buf_handle);
+			continue;
 		}
 
 #if CONFIG_ESP_SDIO_CHECKSUM
 		rx_checksum = le16toh(header->checksum);
 		header->checksum = 0;
 
-		checksum = compute_checksum(buf_handle->payload, len+offset);
+		checksum = compute_checksum(buf_handle.payload, len+offset);
 
 		if (checksum != rx_checksum) {
 			ESP_LOGE(TAG, "sdio rx calc_chksum[%u] != exp_chksum[%u], drop pkt", checksum, rx_checksum);
-			sdio_read_done(buf_handle->sdio_buf_handle);
+			sdio_read_done(buf_handle.sdio_buf_handle);
 			continue;
 		}
 #endif
@@ -499,7 +491,6 @@ static void sdio_rx_task(void* pvParameters)
 		buf_handle.if_type = header->if_type;
 		buf_handle.if_num = header->if_num;
 		buf_handle.free_buf_handle = sdio_read_done;
-		//buf_handle.payload_len = len + offset;
 
 		start_rx_data_throttling_if_needed();
 
@@ -529,8 +520,10 @@ static esp_err_t sdio_reset(interface_handle_t *handle)
 	if (ret != ESP_OK)
 		return ret;
 
-	/* Do not use Bit 0 and bit 1, ESP-Hosted uses bit6 and bit 7 internal use */
+	/* ESP-Hosted uses bit6 and bit 7 internal use, rest bits free */
 	sdio_slave_set_host_intena(SDIO_SLAVE_HOSTINT_SEND_NEW_PACKET |
+			SDIO_SLAVE_HOSTINT_BIT0 |
+			SDIO_SLAVE_HOSTINT_BIT1 |
 			SDIO_SLAVE_HOSTINT_BIT2 |
 			SDIO_SLAVE_HOSTINT_BIT3 |
 			SDIO_SLAVE_HOSTINT_BIT4 |

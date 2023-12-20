@@ -7,7 +7,7 @@ menu "Example Configuration"
 		default ESP_SPI_HOST_INTERFACE if IDF_TARGET_ESP32S3
 		default ESP_SPI_HOST_INTERFACE if IDF_TARGET_ESP32C2
 		default ESP_SPI_HOST_INTERFACE if IDF_TARGET_ESP32C3
-		default ESP_SPI_HOST_INTERFACE if IDF_TARGET_ESP32C6
+		default ESP_SDIO_HOST_INTERFACE if IDF_TARGET_ESP32C6
 		help
 			Bus interface to be used for communication with the host
 
@@ -348,37 +348,4 @@ menu "Example Configuration"
 				help
 					On comparing with slave packet stats helps to understand any packet loss at hosted
 	endmenu
-
-	menu "Data path options"
-		config REPORT_SLAVE_DATA_Q_LOAD_TO_HOST
-			bool "Report WiFi queue utilization to host"
-			default y
-			help
-				Slave Wi-Fi may drop ingress bursty or higher than capacity packets.
-				To have synchronous way of packet dropped for application,
-				Host will throttle incoming data if the slave datapath Rx load is high
-				host feature, SLAVE_DATA_THROTTLE_THRESHOLD is useless if this is disabled
-
-		config TO_WIFI_DATA_THROTTLE_HIGH_THRESHOLD
-			depends on REPORT_SLAVE_DATA_Q_LOAD_TO_HOST
-			int "High threshold to report host to drop data when wifi highly loaded"
-			range 0 100
-			default 90
-			help
-				Slave Wi-Fi may drop packets while sending data packets received on transport.
-				To have synchronous way of packet dropped for application,
-				Host will throttle incoming data if the slave datapath Rx load goes beyond this threshold
-				0 value will disable this function
-
-		config TO_WIFI_DATA_THROTTLE_LOW_THRESHOLD
-			depends on REPORT_SLAVE_DATA_Q_LOAD_TO_HOST
-			int "Low threshold to report host to stop dropping data"
-			range 0 TO_WIFI_DATA_THROTTLE_HIGH_THRESHOLD
-			default 80
-			help
-				Once the Wi-Fi is no more stressed, we should stop data throttling.
-				When the queue load is less than this threshold, host throttling will be stopped
-	endmenu
-
-
 endmenu

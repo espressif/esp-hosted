@@ -88,16 +88,12 @@ static uint32_t sdio_rx_byte_count = 0;
 // one-time trigger to start write thread
 static bool sdio_start_write_thread = false;
 
-volatile uint8_t start_dropping_wifi_packets;
-
 static esp_err_t sdio_generate_slave_intr(uint8_t intr_no);
 
 static void sdio_write_task(void const* pvParameters);
 static void sdio_read_task(void const* pvParameters);
 static void sdio_process_rx_task(void const* pvParameters);
 
-/* callback of event handler */
-static void (*sdio_drv_evt_handler_fp) (uint8_t) = NULL;
 
 static inline void sdio_mempool_create()
 {
@@ -137,7 +133,7 @@ static int sdio_generate_slave_intr(uint8_t intr_no)
 		return ESP_ERR_INVALID_ARG;
 	}
 
-	return g_h.funcs->_h_sdio_write_reg(ESP_SLAVE_SCRATCH_REG_7, &intr_mask,
+	return g_h.funcs->_h_sdio_write_reg(HOST_TO_SLAVE_INTR, &intr_mask,
 		sizeof(intr_mask), ACQUIRE_LOCK);
 }
 
@@ -173,6 +169,8 @@ static int sdio_get_tx_buffer_num(uint32_t *tx_num, bool is_lock_needed)
 
 	return ret;
 }
+
+#if !H_SDIO_ALWAYS_HOST_RX_MAX_TRANSPORT_SIZE
 
 static int sdio_get_len_from_slave(uint32_t *rx_size, bool is_lock_needed)
 {
@@ -210,6 +208,7 @@ static int sdio_get_len_from_slave(uint32_t *rx_size, bool is_lock_needed)
 
 	return 0;
 }
+#endif
 
 static int sdio_is_write_buffer_available(uint32_t buf_needed)
 {
@@ -462,8 +461,7 @@ static void sdio_read_task(void const* pvParameters)
 
 	// wait for transport to be in reset state
 	while (true) {
-		if (is_transport_in_reset()) {
-			ESP_LOGI(TAG, "transport has been reset");
+		if (is_transport_rx_ready()) {
 			break;
 		}
 		vTaskDelay(pdMS_TO_TICKS(100));
@@ -507,16 +505,11 @@ static void sdio_read_task(void const* pvParameters)
 		ESP_LOGV(TAG, "Intr: %08"PRIX32, interrupts);
 
 		/* Check all supported interrupts */
-		if (BIT(SDIO_INT_START_THROTTLE) & interrupts) {
+		if (BIT(SDIO_INT_START_THROTTLE) & interrupts)
+			wifi_tx_throttling = 1;
 
-			slave_wifi_rx_msg_loaded = CONFIG_TO_SLAVE_DATA_THROTTLE_THRESHOLD+1;
-
-		}
-
-		if (BIT(SDIO_INT_STOP_THROTTLE) & interrupts) {
-
-			slave_wifi_rx_msg_loaded = 0;
-		}
+		if (BIT(SDIO_INT_STOP_THROTTLE) & interrupts)
+			wifi_tx_throttling = 0;
 
 		if (!(BIT(SDIO_INT_NEW_PACKET) & interrupts)) {
 
@@ -622,6 +615,12 @@ static void sdio_process_rx_task(void const* pvParameters)
 
 	struct esp_priv_event *event = NULL;
 
+	while (true) {
+		vTaskDelay(pdMS_TO_TICKS(100));
+		if (is_transport_rx_ready()) {
+			break;
+		}
+	}
 	ESP_LOGI(TAG, "Starting SDIO process rx task");
 
 	while (1) {
@@ -650,8 +649,10 @@ static void sdio_process_rx_task(void const* pvParameters)
 				uint8_t * copy_payload = (uint8_t *)malloc(buf_handle->payload_len);
 				assert(copy_payload);
 				assert(buf_handle->payload_len);
+				assert(buf_handle->payload);
 				memcpy(copy_payload, buf_handle->payload, buf_handle->payload_len);
 
+				assert(chan_arr[buf_handle->if_type]->rx);
 				chan_arr[buf_handle->if_type]->rx(chan_arr[buf_handle->if_type]->api_chan,
 						copy_payload, copy_payload, buf_handle->payload_len);
 				H_FREE_PTR_WITH_FUNC(buf_handle->free_buf_handle, buf_handle->priv_buffer_handle);
@@ -669,11 +670,7 @@ static void sdio_process_rx_task(void const* pvParameters)
 			sdio_start_write_thread = true;
 
 			event = (struct esp_priv_event *) (buf_handle->payload);
-			if (event->event_type == ESP_PRIV_EVENT_INIT) {
-				if (sdio_drv_evt_handler_fp) {
-					sdio_drv_evt_handler_fp(TRANSPORT_ACTIVE);
-				}
-			} else {
+			if (event->event_type != ESP_PRIV_EVENT_INIT) {
 				/* User can re-use this type of transaction */
 			}
 		} else if (buf_handle->if_type == ESP_TEST_IF) {
@@ -697,23 +694,23 @@ static void sdio_process_rx_task(void const* pvParameters)
 	}
 }
 
-void transport_init_internal(void(*transport_evt_handler_fp)(uint8_t))
+void transport_init_internal(void)
 {
 	uint8_t prio_q_idx = 0;
 	/* register callback */
-	sdio_drv_evt_handler_fp = transport_evt_handler_fp;
 
 	sdio_bus_lock = g_h.funcs->_h_create_mutex();
 	assert(sdio_bus_lock);
 
-	sem_to_slave_queue = g_h.funcs->_h_create_semaphore(TO_SLAVE_QUEUE_SIZE*3);
+	sem_to_slave_queue = g_h.funcs->_h_create_semaphore(TO_SLAVE_QUEUE_SIZE*MAX_PRIORITY_QUEUES);
 	assert(sem_to_slave_queue);
-	sem_from_slave_queue = g_h.funcs->_h_create_semaphore(FROM_SLAVE_QUEUE_SIZE*3);
+	g_h.funcs->_h_get_semaphore(sem_to_slave_queue, 0);
+
+	sem_from_slave_queue = g_h.funcs->_h_create_semaphore(FROM_SLAVE_QUEUE_SIZE*MAX_PRIORITY_QUEUES);
 	assert(sem_from_slave_queue);
+	g_h.funcs->_h_get_semaphore(sem_from_slave_queue, 0);
 
 	/* cleanup the semaphores */
-	g_h.funcs->_h_get_semaphore(sem_to_slave_queue, 0);
-	g_h.funcs->_h_get_semaphore(sem_from_slave_queue, 0);
 
 
 	for (prio_q_idx=0; prio_q_idx<MAX_PRIORITY_QUEUES;prio_q_idx++) {
@@ -759,16 +756,16 @@ int esp_hosted_tx(uint8_t iface_type, uint8_t iface_num,
 	interface_buffer_handle_t buf_handle = {0};
 	void (*free_func)(void* ptr) = NULL;
 	uint8_t pkt_prio = PRIO_Q_OTHERS;
-	uint8_t transport_up = is_transport_up();
+	uint8_t transport_up = is_transport_tx_ready();
 
 	if (free_wbuf_fun)
 		free_func = free_wbuf_fun;
 
 	if (!wbuffer || !wlen ||
-		(wlen > (MAX_PAYLOAD_SIZE - sizeof(struct esp_payload_header)))
-		|| !transport_up) {
-		ESP_LOGE(TAG, "tx fail: NULL buff, invalid len (%u) or len > max len (%u))",
-				wlen, MAX_PAYLOAD_SIZE  - sizeof(struct esp_payload_header));
+		(wlen > MAX_PAYLOAD_SIZE) ||
+		!transport_up) {
+		ESP_LOGE(TAG, "tx fail: NULL buff, invalid len (%u) or len > max len (%u), transport_up(%u))",
+				wlen, MAX_PAYLOAD_SIZE, transport_up);
 		H_FREE_PTR_WITH_FUNC(free_func, wbuffer);
 		return ESP_FAIL;
 	}

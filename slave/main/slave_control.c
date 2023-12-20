@@ -1142,6 +1142,9 @@ static esp_err_t req_wifi_set_config(Rpc *req, Rpc *resp, void *priv_data)
 		p_a_sta->he_trig_cqi_feedback_disabled = H_GET_BIT(WIFI_HE_STA_CONFIG_he_trig_cqi_feedback_disabled_BIT, p_c_sta->bitmask);
 		p_a_sta->he_reserved = WIFI_HE_STA_GET_RESERVED_VAL(p_c_sta->bitmask);
 
+		/* Avoid using fast scan, which leads to faster SSID selection,
+		 * but faces data throughput issues when same SSID broadcasted by weaker AP
+		 */
 		p_a_sta->scan_method = WIFI_ALL_CHANNEL_SCAN;
 		p_a_sta->sort_method = WIFI_CONNECT_AP_BY_SIGNAL;
 

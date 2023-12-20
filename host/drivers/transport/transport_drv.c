@@ -38,9 +38,7 @@ DEFINE_LOG_TAG(transport);
 static char chip_type = ESP_PRIV_FIRMWARE_CHIP_UNRECOGNIZED;
 void(*transport_esp_hosted_up_cb)(void) = NULL;
 transport_channel_t *chan_arr[ESP_MAX_IF];
-uint8_t trans_slave_rx_queue_size;
-uint8_t trans_slave_tx_queue_size;
-volatile uint32_t slave_wifi_rx_msg_loaded;
+volatile uint8_t wifi_tx_throttling;
 
 
 static uint8_t transport_state = TRANSPORT_INACTIVE;
@@ -48,19 +46,14 @@ static uint8_t transport_state = TRANSPORT_INACTIVE;
 static void process_event(uint8_t *evt_buf, uint16_t len);
 
 
-uint8_t is_transport_up(void)
+uint8_t is_transport_rx_ready(void)
 {
-	return TRANSPORT_ACTIVE == transport_state;
+	return (transport_state >= TRANSPORT_RX_ACTIVE);
 }
 
-uint8_t is_transport_ready(void)
+uint8_t is_transport_tx_ready(void)
 {
-	return !(TRANSPORT_INACTIVE == transport_state);
-}
-
-uint8_t is_transport_in_reset(void)
-{
-	return TRANSPORT_RESET == transport_state;
+	return (transport_state >= TRANSPORT_TX_ACTIVE);
 }
 
 static void reset_slave(void)
@@ -82,13 +75,13 @@ static void transport_driver_event_handler(uint8_t event)
 {
 	switch(event)
 	{
-		case TRANSPORT_ACTIVE:
+		case TRANSPORT_TX_ACTIVE:
 		{
 			/* Initiate control path now */
 			ESP_LOGI(TAG, "Base transport is set-up\n\r");
 			if (transport_esp_hosted_up_cb)
 				transport_esp_hosted_up_cb();
-			transport_state = TRANSPORT_ACTIVE;
+			transport_state = TRANSPORT_TX_ACTIVE;
 			break;
 		}
 
@@ -107,7 +100,7 @@ esp_err_t transport_drv_deinit(void)
 esp_err_t transport_drv_init(void(*esp_hosted_up_cb)(void))
 {
 	g_h.funcs->_h_hosted_init_hook();
-	transport_init_internal(transport_driver_event_handler);
+	transport_init_internal();
 	transport_esp_hosted_up_cb = esp_hosted_up_cb;
 
 	return ESP_OK;
@@ -115,17 +108,17 @@ esp_err_t transport_drv_init(void(*esp_hosted_up_cb)(void))
 
 esp_err_t transport_drv_reconfigure(void)
 {
-	int retry = 0;
+	static int retry_slave_connection = 0;
 
-	ESP_LOGI(TAG, "Attempt connection with slave: retry[%u]",retry);
-	if (!is_transport_up()) {
+	ESP_LOGI(TAG, "Attempt connection with slave: retry[%u]",retry_slave_connection);
+	if (!is_transport_tx_ready()) {
 		reset_slave();
-		transport_state = TRANSPORT_RESET;
+		transport_state = TRANSPORT_RX_ACTIVE;
 
-		while (!is_transport_up()) {
-			if (retry < MAX_RETRY_TRANSPORT_ACTIVE) {
-				retry++;
-				if (retry%10==0) {
+		while (!is_transport_tx_ready()) {
+			if (retry_slave_connection < MAX_RETRY_TRANSPORT_ACTIVE) {
+				retry_slave_connection++;
+				if (retry_slave_connection%10==0) {
 					ESP_LOGE(TAG, "Not able to connect with ESP-Hosted slave device");
 					reset_slave();
 				}
@@ -135,7 +128,10 @@ esp_err_t transport_drv_reconfigure(void)
 			}
 			g_h.funcs->_h_sleep(1);
 		}
+	} else {
+		ESP_LOGI(TAG, "Transport is already up");
 	}
+	retry_slave_connection = 0;
 	return ESP_OK;
 }
 
@@ -211,7 +207,7 @@ static esp_err_t transport_drv_sta_tx(void *h, void *buffer, size_t len)
 	if (!buffer || !len)
 		return ESP_OK;
 
-	if (unlikely(slave_wifi_rx_msg_loaded > CONFIG_TO_SLAVE_DATA_THROTTLE_THRESHOLD)) {
+	if (unlikely(wifi_tx_throttling)) {
 	#if ESP_PKT_STATS
 		pkt_stats.sta_tx_in_drop++;
 	#endif
@@ -441,12 +437,75 @@ static void verify_host_config_for_slave(uint8_t chip_type)
 	}
 }
 
+esp_err_t send_slave_config(uint8_t host_cap, uint8_t firmware_chip_id,
+		uint8_t raw_tp_direction, uint8_t low_thr_thesh, uint8_t high_thr_thesh)
+{
+#define LENGTH_1_BYTE 1
+	struct esp_priv_event *event = NULL;
+	uint8_t *pos = NULL;
+	uint16_t len = 0;
+	uint8_t raw_tp_cap = 0;
+	uint8_t *sendbuf = NULL;
+
+	sendbuf = malloc(500); /*Arbitrary number*/
+	assert(sendbuf);
+
+	/* Populate event data */
+	//event = (struct esp_priv_event *) (sendbuf + sizeof(struct esp_payload_header)); //ZeroCopy
+	event = (struct esp_priv_event *) (sendbuf);
+
+	event->event_type = ESP_PRIV_EVENT_INIT;
+
+	/* Populate TLVs for event */
+	pos = event->event_data;
+
+	/* TLVs start */
+
+	/* TLV - Board type */
+	ESP_LOGI(TAG, "Slave chip Id[%x]", ESP_PRIV_FIRMWARE_CHIP_ID);
+	*pos = HOST_CAPABILITIES;                          pos++;len++;
+	*pos = LENGTH_1_BYTE;                              pos++;len++;
+	*pos = host_cap;                                   pos++;len++;
+
+	/* TLV - Capability */
+	*pos = RCVD_ESP_FIRMWARE_CHIP_ID;                  pos++;len++;
+	*pos = LENGTH_1_BYTE;                              pos++;len++;
+	*pos = firmware_chip_id;                           pos++;len++;
+
+#if CONFIG_TEST_RAW_TP
+
+	*pos = ESP_PRIV_TEST_RAW_TP;                       pos++;len++;
+	*pos = LENGTH_1_BYTE;                              pos++;len++;
+	*pos = raw_tp_direction;                           pos++;len++;
+#endif
+
+	*pos = SLV_CONFIG_THROTTLE_HIGH_THRESHOLD;         pos++;len++;
+	*pos = LENGTH_1_BYTE;                              pos++;len++;
+	*pos = high_thr_thesh;                             pos++;len++;
+
+	*pos = SLV_CONFIG_THROTTLE_LOW_THRESHOLD;          pos++;len++;
+	*pos = LENGTH_1_BYTE;                              pos++;len++;
+	*pos = low_thr_thesh;                              pos++;len++;
+
+	/* TLVs end */
+
+	event->event_len = len;
+
+	/* payload len = Event len + sizeof(event type) + sizeof(event len) */
+	len += 2;
+
+	return esp_hosted_tx(ESP_PRIV_IF, 0, sendbuf, len, H_BUFF_NO_ZEROCOPY, free);
+}
+
 int process_init_event(uint8_t *evt_buf, uint16_t len)
 {
 	uint8_t len_left = len, tag_len;
 	uint8_t *pos;
+	uint8_t raw_tp_config = 0;
+
 	if (!evt_buf)
-		return STM_FAIL;
+		return ESP_FAIL;
+
 	pos = evt_buf;
 	ESP_LOGD(TAG, "Init event length: %u", len);
 	if (len > 64) {
@@ -474,16 +533,10 @@ int process_init_event(uint8_t *evt_buf, uint16_t len)
 #if TEST_RAW_TP
 			process_test_capabilities(*(pos + 2));
 #endif
-#if CONFIG_ESP_SPI_HOST_INTERFACE
 		} else if (*pos == ESP_PRIV_RX_Q_SIZE) {
-			ESP_LOGI(TAG, "EVENT: %2x", *pos);
-			trans_slave_rx_queue_size = *(pos + 2);
-			ESP_LOGD(TAG, "slave rx queue size: %u", trans_slave_rx_queue_size);
+			ESP_LOGD(TAG, "slave rx queue size: %u", *(pos + 2));
 		} else if (*pos == ESP_PRIV_TX_Q_SIZE) {
-			ESP_LOGI(TAG, "EVENT: %2x", *pos);
-			trans_slave_tx_queue_size = *(pos + 2);
-			ESP_LOGD(TAG, "slave tx queue size: %u", trans_slave_tx_queue_size);
-#endif
+			ESP_LOGD(TAG, "slave tx queue size: %u", *(pos + 2));
 		} else {
 			ESP_LOGD(TAG, "Unsupported EVENT: %2x", *pos);
 		}
@@ -504,7 +557,10 @@ int process_init_event(uint8_t *evt_buf, uint16_t len)
 		ESP_LOGI(TAG, "ESP board type is : %d \n\r", chip_type);
 	}
 
-	return STM_OK;
+	transport_driver_event_handler(TRANSPORT_TX_ACTIVE);
+	return send_slave_config(0, chip_type, raw_tp_config,
+		H_WIFI_TX_DATA_THROTTLE_LOW_THRESHOLD,
+		H_WIFI_TX_DATA_THROTTLE_HIGH_THRESHOLD);
 }
 
 int serial_rx_handler(interface_buffer_handle_t * buf_handle)

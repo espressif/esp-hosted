@@ -80,6 +80,8 @@ volatile uint8_t ota_ongoing = 0;
 
 interface_context_t *if_context = NULL;
 interface_handle_t *if_handle = NULL;
+slave_config_t slv_cfg_g;
+slave_state_t  slv_state_g;
 
 static QueueHandle_t meta_to_host_queue = NULL;
 static QueueHandle_t to_host_queue[MAX_PRIORITY_QUEUES] = {NULL};
@@ -160,7 +162,6 @@ void esp_update_ap_mac(void)
 esp_err_t wlan_ap_rx_callback(void *buffer, uint16_t len, void *eb)
 {
 	interface_buffer_handle_t buf_handle = {0};
-	//uint8_t * ap_buf = buffer;
 
 	if (!buffer || !eb || !datapath || ota_ongoing) {
 		if (eb) {
@@ -171,6 +172,10 @@ esp_err_t wlan_ap_rx_callback(void *buffer, uint16_t len, void *eb)
 	ESP_HEXLOGV("AP_Get", buffer, len);
 
 #if 0
+	/* Only enable this is you want to avoid multi and bradcast
+	 * traffic to be reduced from stations to softap
+	 */
+	uint8_t * ap_buf = buffer;
 	/* Check destination address against self address */
 	if (memcmp(ap_buf, ap_mac, BSSID_BYTES_SIZE)) {
 		/* Check for multicast or broadcast address */
@@ -337,6 +342,120 @@ void process_serial_rx_pkt(uint8_t *buf)
 	}
 }
 
+
+static int host_to_slave_reconfig(uint8_t *evt_buf, uint16_t len)
+{
+	uint8_t len_left = len, tag_len;
+	uint8_t *pos;
+
+	if (!evt_buf)
+		return ESP_FAIL;
+
+	pos = evt_buf;
+	ESP_LOGD(TAG, "Init event length: %u", len);
+	if (len > 64) {
+		ESP_LOGE(TAG, "Init event length: %u", len);
+#if CONFIG_ESP_SPI_HOST_INTERFACE
+		ESP_LOGE(TAG, "Seems incompatible SPI mode try changing SPI mode. Asserting for now.");
+#endif
+		assert(len < 64);
+	}
+
+	while (len_left) {
+		tag_len = *(pos + 1);
+
+		if (*pos == HOST_CAPABILITIES) {
+
+			ESP_LOGI(TAG, "Host capabilities: %2x", *pos);
+
+		} else if (*pos == RCVD_ESP_FIRMWARE_CHIP_ID) {
+
+			if (CONFIG_IDF_FIRMWARE_CHIP_ID != *(pos+2)) {
+				ESP_LOGE(TAG, "Chip id returned[%u] doesn't match with chip id sent[%u]",
+						*(pos+2), CONFIG_IDF_FIRMWARE_CHIP_ID);
+			}
+
+		} else if (*pos == SLV_CONFIG_TEST_RAW_TP) {
+
+			switch (*(pos + 2)) {
+
+			case ESP_TEST_RAW_TP__ESP_TO_HOST:
+				ESP_LOGI(TAG, "Raw TP ESP --> Host");
+				/* TODO */
+			break;
+
+			case ESP_TEST_RAW_TP__HOST_TO_ESP:
+				ESP_LOGI(TAG, "Raw TP ESP <-- Host");
+				/* TODO */
+			break;
+
+			case ESP_TEST_RAW_TP__BIDIRECTIONAL:
+				ESP_LOGI(TAG, "Raw TP ESP <--> Host");
+				/* TODO */
+			break;
+
+			default:
+				ESP_LOGE(TAG, "Unsupported Raw TP config");
+			}
+
+#if TEST_RAW_TP
+			//process_test_capabilities(*(pos + 2));
+#endif
+		} else if (*pos == SLV_CONFIG_THROTTLE_HIGH_THRESHOLD) {
+
+			slv_cfg_g.throttle_high_threshold = *(pos + 2);
+			ESP_LOGI(TAG, "ESP<-Host high data throttle threshold [%u%%]",
+					slv_cfg_g.throttle_high_threshold);
+
+			/* Warn if FreeRTOS tick is small */
+			if ((slv_cfg_g.throttle_low_threshold > 0) &&
+			    (CONFIG_FREERTOS_HZ < 1000)) {
+				ESP_LOGW(TAG, "FreeRTOS tick[%d]<1000. Enabling throttling with lower FrerRTOS tick may result in lower peak data throughput", (int) CONFIG_FREERTOS_HZ);
+			}
+
+		} else if (*pos == SLV_CONFIG_THROTTLE_LOW_THRESHOLD) {
+
+			slv_cfg_g.throttle_low_threshold = *(pos + 2);
+			ESP_LOGI(TAG, "ESP<-Host low data throttle threshold [%u%%]",
+					slv_cfg_g.throttle_low_threshold);
+
+		} else {
+
+			ESP_LOGD(TAG, "Unsupported H->S config: %2x", *pos);
+
+		}
+
+		pos += (tag_len+2);
+		len_left -= (tag_len+2);
+	}
+
+	return ESP_OK;
+}
+
+static void process_priv_pkt(uint8_t *payload, uint16_t payload_len)
+{
+	int ret = 0;
+	struct esp_priv_event *event;
+
+	if (!payload || !payload_len)
+		return;
+
+	event = (struct esp_priv_event *) payload;
+
+	if (event->event_type == ESP_PRIV_EVENT_INIT) {
+
+		ESP_LOGI(TAG, "Slave init_config received from host");
+		ESP_HEXLOGD("init_config", event->event_data, event->event_len);
+
+		ret = host_to_slave_reconfig(event->event_data, event->event_len);
+		if (ret) {
+			ESP_LOGE(TAG, "failed to init event\n\r");
+		}
+	} else {
+		ESP_LOGW(TAG, "Drop unknown event\n\r");
+	}
+}
+
 void process_rx_pkt(interface_buffer_handle_t *buf_handle)
 {
 	struct esp_payload_header *header = NULL;
@@ -361,9 +480,6 @@ void process_rx_pkt(interface_buffer_handle_t *buf_handle)
 			retry_wifi_tx--;
 		} while (ret && retry_wifi_tx);
 
-			if (ret)
-				taskYIELD();
-
 		ESP_HEXLOGV("STA_Put", payload, payload_len);
 		if (ESP_OK == ret) {
 #if ESP_PKT_STATS
@@ -383,6 +499,8 @@ void process_rx_pkt(interface_buffer_handle_t *buf_handle)
 			pkt_stats.serial_rx++;
 #endif
 		process_serial_rx_pkt(buf_handle->payload);
+	} else if (buf_handle->if_type == ESP_PRIV_IF) {
+		process_priv_pkt(payload, payload_len);
 	}
 #if defined(CONFIG_BT_ENABLED) && BLUETOOTH_HCI
 	else if (buf_handle->if_type == ESP_HCI_IF) {
@@ -650,8 +768,11 @@ void task_runtime_stats_task(void* pvParameters)
 static void IRAM_ATTR gpio_resetpin_isr_handler(void* arg)
 {
 
-	if (CONFIG_ESP_GPIO_SLAVE_RESET == -1)
+	ESP_EARLY_LOGI(TAG, "*********");
+	if (CONFIG_ESP_GPIO_SLAVE_RESET == -1) {
+		ESP_EARLY_LOGI(TAG, "%s: using EN pin for slave reset", __func__);
 		return;
+	}
 
 	static uint32_t lasthandshaketime_us;
 	uint32_t currtime_us = esp_timer_get_time();
@@ -660,8 +781,9 @@ static void IRAM_ATTR gpio_resetpin_isr_handler(void* arg)
 		lasthandshaketime_us = currtime_us;
 	} else {
 		uint32_t diff = currtime_us - lasthandshaketime_us;
-		if (diff < 50000) {
-			return; //ignore everything <1ms after an earlier irq
+		ESP_EARLY_LOGI(TAG, "%s Diff: %u", __func__, diff);
+		if (diff < 500) {
+			return; //ignore everything < half ms after an earlier irq
 		} else {
 			ESP_EARLY_LOGI(TAG, "Host triggered slave reset");
 			esp_restart();

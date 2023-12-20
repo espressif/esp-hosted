@@ -55,8 +55,6 @@ static queue_handle_t from_slave_queue[MAX_PRIORITY_QUEUES];
 semaphore_handle_t sem_from_slave_queue;
 
 static void * spi_rx_thread;
-/* callback of event handler */
-static void (*spi_drv_evt_handler_fp) (uint8_t) = NULL;
 
 
 /** function declaration **/
@@ -129,20 +127,17 @@ void transport_deinit_internal(void)
   * @param  transport_evt_handler_fp - event handler
   * @retval None
   */
-void transport_init_internal(void(*transport_evt_handler_fp)(uint8_t))
+void transport_init_internal(void)
 {
 	uint8_t prio_q_idx;
-
-	/* register callback */
-	spi_drv_evt_handler_fp = transport_evt_handler_fp;
 
 	spi_bus_lock = g_h.funcs->_h_create_mutex();
 	assert(spi_bus_lock);
 
 
-	sem_to_slave_queue = g_h.funcs->_h_create_semaphore(TO_SLAVE_QUEUE_SIZE*3);
+	sem_to_slave_queue = g_h.funcs->_h_create_semaphore(TO_SLAVE_QUEUE_SIZE*MAX_PRIORITY_QUEUES);
 	assert(sem_to_slave_queue);
-	sem_from_slave_queue = g_h.funcs->_h_create_semaphore(FROM_SLAVE_QUEUE_SIZE*3);
+	sem_from_slave_queue = g_h.funcs->_h_create_semaphore(FROM_SLAVE_QUEUE_SIZE*MAX_PRIORITY_QUEUES);
 	assert(sem_from_slave_queue);
 
 	for (prio_q_idx=0; prio_q_idx<MAX_PRIORITY_QUEUES;prio_q_idx++) {
@@ -179,14 +174,6 @@ void transport_init_internal(void(*transport_evt_handler_fp)(uint8_t))
 }
 
 
-static void fetch_slave_wifi_rx_msg_load(uint8_t load)
-{
-	if (trans_slave_rx_queue_size) {
-		slave_wifi_rx_msg_loaded = load*100/trans_slave_rx_queue_size;
-		ESP_LOGV(TAG, "new slave_wifi_rx_msg_loaded: %"PRIu32, slave_wifi_rx_msg_loaded);
-	}
-}
-
 /**
   * @brief  Schedule SPI transaction if -
   * a. valid TX buffer is ready at SPI host (STM)
@@ -220,8 +207,7 @@ static int process_spi_rx_buf(uint8_t * rxbuff)
 		schedule_dummy_rx = 0;
 
 	if (!len) {
-		if (CONFIG_TO_SLAVE_DATA_THROTTLE_THRESHOLD > 0)
-			fetch_slave_wifi_rx_msg_load(payload_header->slave_rx_q_load);
+		wifi_tx_throttling = payload_header->throttle_cmd;
 		ret = -5;
 		goto done;
 	}
@@ -254,8 +240,7 @@ static int process_spi_rx_buf(uint8_t * rxbuff)
 			buf_handle.payload     = rxbuff + offset;
 			buf_handle.seq_num     = le16toh(payload_header->seq_num);
 			buf_handle.flag        = payload_header->flags;
-			if (CONFIG_TO_SLAVE_DATA_THROTTLE_THRESHOLD > 0)
-				fetch_slave_wifi_rx_msg_load(payload_header->slave_rx_q_load);
+			wifi_tx_throttling     = payload_header->throttle_cmd;
 #if 0
 #if CONFIG_H_LOWER_MEMCOPY
 			if ((buf_handle.if_type == ESP_STA_IF) ||
@@ -309,8 +294,8 @@ static int check_and_execute_spi_transaction(void)
 
 	uint32_t ret = 0;
 	struct hosted_transport_context_t spi_trans = {0};
-	gpio_pin_state_t gpio_handshake = H_GPIO_LOW;
-	gpio_pin_state_t gpio_rx_data_ready = H_GPIO_LOW;
+	gpio_pin_state_t gpio_handshake = H_HS_VAL_INACTIVE;
+	gpio_pin_state_t gpio_rx_data_ready = H_DR_VAL_INACTIVE;
 
 	g_h.funcs->_h_lock_mutex(spi_bus_lock, portMAX_DELAY);
 
@@ -322,12 +307,12 @@ static int check_and_execute_spi_transaction(void)
 	gpio_rx_data_ready = g_h.funcs->_h_read_gpio(H_GPIO_DATA_READY_Port,
 			H_GPIO_DATA_READY_Pin);
 
-	if (gpio_handshake == H_GPIO_HIGH) {
+	if (gpio_handshake == H_HS_VAL_ACTIVE) {
 
 		/* Get next tx buffer to be sent */
 		txbuff = get_next_tx_buffer(&is_valid_tx_buf, &tx_buff_free_func);
 
-		if ( (gpio_rx_data_ready == H_GPIO_HIGH) ||
+		if ( (gpio_rx_data_ready == H_DR_VAL_ACTIVE) ||
 				(is_valid_tx_buf) || schedule_dummy_tx || schedule_dummy_rx ) {
 
 			if (!txbuff) {
@@ -389,7 +374,7 @@ static int check_and_execute_spi_transaction(void)
 #endif
 		}
 	}
-	if ((gpio_handshake != H_GPIO_HIGH) || schedule_dummy_tx || schedule_dummy_rx)
+	if ((gpio_handshake != H_HS_VAL_ACTIVE) || schedule_dummy_tx || schedule_dummy_rx)
 		g_h.funcs->_h_post_semaphore(spi_trans_ready_sem);
 
 	g_h.funcs->_h_unlock_mutex(spi_bus_lock);
@@ -412,14 +397,14 @@ int esp_hosted_tx(uint8_t iface_type, uint8_t iface_num,
 {
 	interface_buffer_handle_t buf_handle = {0};
 	void (*free_func)(void* ptr) = NULL;
-	uint8_t transport_up = is_transport_up();
+	uint8_t transport_up = is_transport_tx_ready();
 	uint8_t pkt_prio = PRIO_Q_OTHERS;
 
 	if (free_wbuf_fun)
 		free_func = free_wbuf_fun;
 
 	if (!wbuffer || !wlen || (wlen > MAX_PAYLOAD_SIZE) || !transport_up) {
-		ESP_LOGE(TAG, "write fail: trans[%u] buff(%p) 0? OR (0<len(%u)<=max_poss_len(%u))?",
+		ESP_LOGE(TAG, "write fail: trans_ready[%u] buff(%p) 0? OR (0<len(%u)<=max_poss_len(%u))?",
 				transport_up, wbuffer, wlen, MAX_PAYLOAD_SIZE);
 		H_FREE_PTR_WITH_FUNC(free_func, wbuffer);
 		return STM_FAIL;
@@ -477,17 +462,25 @@ static void spi_transaction_task(void const* pvParameters)
 #endif
 
 	g_h.funcs->_h_config_gpio_as_interrupt(H_GPIO_HANDSHAKE_Port, H_GPIO_HANDSHAKE_Pin,
-			H_GPIO_INTR_POSEDGE, gpio_hs_isr_handler);
+			H_HS_INTR_EDGE, gpio_hs_isr_handler);
 
 	g_h.funcs->_h_config_gpio_as_interrupt(H_GPIO_DATA_READY_Port, H_GPIO_DATA_READY_Pin,
-			H_GPIO_INTR_POSEDGE, gpio_dr_isr_handler);
+			H_DR_INTR_EDGE, gpio_dr_isr_handler);
+
+#if !H_HANDSHAKE_ACTIVE_HIGH
+    ESP_LOGI(TAG, "Handshake: Active Low");
+#endif
+#if !H_DATAREADY_ACTIVE_HIGH
+    ESP_LOGI(TAG, "DataReady: Active Low");
+#endif
+
 	ESP_LOGD(TAG, "SPI GPIOs configured");
 
 	create_debugging_tasks();
 
 	for (;;) {
 
-		if ((!is_transport_ready()) ||
+		if ((!is_transport_rx_ready()) ||
 		    (!spi_trans_ready_sem)) {
 			g_h.funcs->_h_msleep(300);
 			continue;
@@ -567,14 +560,7 @@ static void spi_process_rx_task(void const* pvParameters)
 			ESP_LOGI(TAG, "Received INIT event");
 
 			event = (struct esp_priv_event *) (buf_handle->payload);
-			if (event->event_type == ESP_PRIV_EVENT_INIT) {
-				/* halt spi transactions for some time,
-				 * this is one time delay, to give breathing
-				 * time to slave before spi trans start */
-				if (spi_drv_evt_handler_fp) {
-					spi_drv_evt_handler_fp(TRANSPORT_ACTIVE);
-				}
-			} else {
+			if (event->event_type != ESP_PRIV_EVENT_INIT) {
 				/* User can re-use this type of transaction */
 			}
 		} else if (buf_handle->if_type == ESP_TEST_IF) {

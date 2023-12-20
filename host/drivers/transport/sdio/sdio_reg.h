@@ -61,8 +61,6 @@
 #define ESP_SLAVE_SLCHOST_BASE         0x3FF55000
 
 #define HOST_TO_SLAVE_INTR             ESP_SLAVE_SCRATCH_REG_7
-#define SLAVE_TO_HOST_INTR             SLCINTVEC_SLC0_TOHOST_INTVEC
-#define SLCINTVEC_SLC0_TOHOST_INTVEC   (0x3FF58000+0x4c)
 /* SLAVE registers */
 /* Interrupt Registers */
 #define ESP_SLAVE_INT_RAW_REG          (ESP_SLAVE_SLCHOST_BASE + 0x50)

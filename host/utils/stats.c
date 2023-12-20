@@ -27,7 +27,7 @@
 #if ESP_PKT_STATS
 struct pkt_stats_t pkt_stats;
 void *pkt_stats_thread = NULL;
-extern uint32_t slave_wifi_rx_msg_loaded;
+extern uint8_t wifi_tx_throttling;
 #endif
 
 #if ESP_PKT_STATS || TEST_RAW_TP
@@ -192,7 +192,7 @@ void stats_timer_func(void * arg)
 	ESP_LOGI(TAG, "slave: sta_rx_in: %lu sta_rx_out: %lu sta_tx_in [pass: %lu drop: %lu] sta_tx_out: %lu ",
 			pkt_stats.sta_rx_in,pkt_stats.sta_rx_out,
 			pkt_stats.sta_tx_in_pass, pkt_stats.sta_tx_in_drop, pkt_stats.sta_tx_out);
-	ESP_LOGI(TAG, "slave_rx_q_wifi_curr_load: %"PRIu32, slave_wifi_rx_msg_loaded);
+	ESP_LOGI(TAG, "wifi_tx_throttling %u", wifi_tx_throttling);
 }
 #endif
 

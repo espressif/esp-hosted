@@ -8,7 +8,7 @@ menu "ESP-Hosted config"
 
 	choice ESP_HOST_INTERFACE
 		bool "Transport layer"
-		default ESP_SPI_HOST_INTERFACE if IDF_TARGET_ESP32
+		default ESP_SDIO_HOST_INTERFACE if IDF_TARGET_ESP32
 		default ESP_SPI_HOST_INTERFACE
 		help
 			Bus interface to be used for communication with the host
@@ -138,6 +138,26 @@ menu "ESP-Hosted config"
 			default 1
 
 		menu "Host SPI GPIOs Config"
+
+			choice SPI_HANDSHAKE_GPIO_CONFIG
+				bool "Handshake GPIO Config"
+				default HS_ACTIVE_HIGH
+
+				config HS_ACTIVE_HIGH
+					bool "HS: Active High"
+				config HS_ACTIVE_LOW
+					bool "HS: Active Low"
+			endchoice
+
+			choice SPI_DATAREADY__GPIO_CONFIG
+				bool "DataReady GPIO Config"
+				default DR_ACTIVE_HIGH
+
+				config DR_ACTIVE_HIGH
+					bool "DR: Active High"
+				config DR_ACTIVE_LOW
+					bool "DR: Active Low"
+			endchoice
 
 			config ESP_SPI_HSPI_GPIO_MOSI
 				depends on SPI_HSPI
@@ -457,14 +477,46 @@ ESP32S3_SDIO_CLK_FREQ_KHZ_RANGE_MAX := 80000
 	endmenu
 
 	menu "Data path options"
-		config TO_SLAVE_DATA_THROTTLE_THRESHOLD
-			int "Packet drop threshold at host, depends upon slave Tx data load"
+		config HOST_TO_ESP_WIFI_DATA_THROTTLE
+			bool "Report WiFi queue utilization to host"
+			default y
+			help
+				Proactively drop Host->slave Wi-Fi data when Slave Wi-Fi is under load
+				Slave Wi-Fi may drop ingress bursty or higher than capacity packets.
+				To have synchronous way of packet dropped for application,
+				Host will throttle incoming data if the slave datapath Rx load is high
+
+		config PRIV_WIFI_TX_SPI_HIGH_THRESHOLD
+			depends on HOST_TO_ESP_WIFI_DATA_THROTTLE && ESP_SPI_HOST_INTERFACE
+			int "High threshold to report host to drop data when wifi highly loaded"
 			range 0 100
 			default 90
 			help
-				Slave Wi-Fi may drop packets while sending data packets received on transport.
-				To have synchronous way of packet dropped for application,
 				Host will throttle incoming data if the slave datapath Rx load goes beyond this threshold
 				0 value will disable this function
+
+		config PRIV_WIFI_TX_SDIO_HIGH_THRESHOLD
+			depends on HOST_TO_ESP_WIFI_DATA_THROTTLE && ESP_SDIO_HOST_INTERFACE
+			int "High threshold to report host to drop data when wifi highly loaded"
+			range 0 100
+			default 80
+			help
+				Host will throttle incoming data if the slave datapath Rx load goes beyond this threshold
+				0 value will disable this function
+
+		config TO_WIFI_DATA_THROTTLE_HIGH_THRESHOLD
+			depends on HOST_TO_ESP_WIFI_DATA_THROTTLE
+			int
+			default PRIV_WIFI_TX_SPI_HIGH_THRESHOLD if ESP_SPI_HOST_INTERFACE
+			default PRIV_WIFI_TX_SDIO_HIGH_THRESHOLD if ESP_SDIO_HOST_INTERFACE
+
+		config TO_WIFI_DATA_THROTTLE_LOW_THRESHOLD
+			depends on HOST_TO_ESP_WIFI_DATA_THROTTLE
+			int "Low threshold to report host to stop dropping data"
+			range 0 TO_WIFI_DATA_THROTTLE_HIGH_THRESHOLD
+			default 60
+			help
+				Once the Wi-Fi is no more stressed, data throttling would be stopped, once slave Wi-Fi load
+				is lower than this threshold
 	endmenu
 endmenu

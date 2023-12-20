@@ -58,15 +58,6 @@ ESP_EVENT_DECLARE_BASE(WIFI_EVENT);
 #define DFLT_TASK_PRIO                               (ESP_TASK_PRIO_MIN + 5)
 
 
-enum {
-    H_GPIO_INTR_DISABLE = 0,     /*!< Disable GPIO interrupt                             */
-    H_GPIO_INTR_POSEDGE = 1,     /*!< GPIO interrupt type : rising edge                  */
-    H_GPIO_INTR_NEGEDGE = 2,     /*!< GPIO interrupt type : falling edge                 */
-    H_GPIO_INTR_ANYEDGE = 3,     /*!< GPIO interrupt type : both rising and falling edge */
-    H_GPIO_INTR_LOW_LEVEL = 4,   /*!< GPIO interrupt type : input low level trigger      */
-    H_GPIO_INTR_HIGH_LEVEL = 5,  /*!< GPIO interrupt type : input high level trigger     */
-    H_GPIO_INTR_MAX,
-};
 
 #define H_GPIO_MODE_DEF_DISABLE         (0)
 #define H_GPIO_MODE_DEF_INPUT           (BIT0)    ///< bit mask for input

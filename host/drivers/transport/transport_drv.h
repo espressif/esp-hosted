@@ -64,9 +64,7 @@ struct hosted_transport_context_t {
     uint8_t  *rx_buf;
 };
 
-extern uint8_t trans_slave_rx_queue_size;
-extern uint8_t trans_slave_tx_queue_size;
-extern volatile uint32_t slave_wifi_rx_msg_loaded;
+extern volatile uint8_t wifi_tx_throttling;
 
 typedef int (*hosted_rxcb_t)(void *buffer, uint16_t len, void *free_buff_hdl);
 
@@ -101,18 +99,17 @@ esp_err_t transport_drv_remove_channel(transport_channel_t *channel);
 
 /* TODO To move to private header */
 void process_capabilities(uint8_t cap);
-void transport_init_internal(void(*transport_evt_handler)(uint8_t));
+void transport_init_internal(void);
 void transport_deinit_internal(void);
 
 void process_priv_communication(interface_buffer_handle_t *buf_handle);
 void print_capabilities(uint32_t cap);
 int process_init_event(uint8_t *evt_buf, uint16_t len);
+esp_err_t send_slave_config(uint8_t host_cap, uint8_t firmware_chip_id,
+		uint8_t raw_tp_direction, uint8_t low_thr_thesh, uint8_t high_thr_thesh);
 
-
-
-uint8_t is_transport_up(void);
-uint8_t is_transport_ready(void);
-uint8_t is_transport_in_reset(void);
+uint8_t is_transport_rx_ready(void);
+uint8_t is_transport_tx_ready(void);
 
 #define H_BUFF_NO_ZEROCOPY 0
 #define H_BUFF_ZEROCOPY 1
