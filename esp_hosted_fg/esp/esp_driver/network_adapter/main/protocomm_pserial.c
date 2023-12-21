@@ -219,6 +219,7 @@ esp_err_t protocomm_pserial_data_ready(protocomm_t *pc,
 {
 	struct pserial_config *pserial_cfg = NULL;
 	serial_arg_t arg = {0};
+	uint8_t *buf = NULL;
 
 	pserial_cfg = (struct pserial_config *) pc->priv;
 	if (!pserial_cfg) {
@@ -226,9 +227,18 @@ esp_err_t protocomm_pserial_data_ready(protocomm_t *pc,
 		return ESP_FAIL;
 	}
 
+	if (len) {
+			buf = (uint8_t *)malloc(len);
+			if (buf == NULL) {
+					ESP_LOGE(TAG,"%s Failed to allocate memory", __func__);
+					return ESP_FAIL;
+			}
+			memcpy(buf, in, len);
+	}
+
 	arg.msg_id = msg_id;
 	arg.len = len;
-	arg.data = in;
+	arg.data = buf;
 
 	if (xQueueSend(pserial_cfg->req_queue, &arg, portMAX_DELAY) != pdTRUE) {
 		ESP_LOGE(TAG, "Failed to indicate data ready");
@@ -256,7 +266,6 @@ static void pserial_task(void *params)
 	protocomm_t *pc = (protocomm_t *) params;
 	struct pserial_config *pserial_cfg = NULL;
 	int len = 0, ret = 0;
-	uint8_t *buf = NULL;
 	serial_arg_t arg = {0};
 
 	pserial_cfg = (struct pserial_config *) pc->priv;
@@ -266,30 +275,27 @@ static void pserial_task(void *params)
 	}
 
 	while (xQueueReceive(pserial_cfg->req_queue, &arg, portMAX_DELAY) == pdTRUE) {
+
 		if ((arg.msg_id > CTRL_MSG_ID__Event_Base) &&
-				(arg.msg_id < CTRL_MSG_ID__Event_Max)) {
+		    (arg.msg_id < CTRL_MSG_ID__Event_Max)) {
 			/* Events */
 			ret = protocomm_pserial_ctrl_evnt_handler(pc, arg.data, arg.len, arg.msg_id);
-			if (ret)
-				ESP_LOGI(TAG, "protobuf ctrl event handling failed %d\n", ret);
 		} else {
 			/* Request */
-			buf = (uint8_t *) malloc(arg.len);
-			if (buf == NULL) {
-				ESP_LOGE(TAG,"%s Failed to allocate memory", __func__);
-				return;
-			}
-			len = pserial_cfg->recv(buf, arg.len);
+			len = pserial_cfg->recv(arg.data, arg.len);
 			if (len) {
-				/*ESP_LOG_BUFFER_HEXDUMP("serial_rx", buf, len<16?len:16, ESP_LOG_INFO);*/
-				ret = protocomm_pserial_ctrl_req_handler(pc, buf, len);
-				if (ret)
-					ESP_LOGI(TAG, "protocom ctrl req handling failed %d\n", ret);
-				if (buf) {
-					free(buf);
-					buf = NULL;
-				}
+				/*ESP_LOG_BUFFER_HEXDUMP("serial_rx", arg.data, len<16?len:16, ESP_LOG_INFO);*/
+				ret = protocomm_pserial_ctrl_req_handler(pc, arg.data, len);
 			}
+		}
+
+
+		if (ret)
+			ESP_LOGI(TAG, "protobuf ctrl msg[0x%x] handling err[%d]", arg.msg_id, ret);
+
+		if (arg.data) {
+			free(arg.data);
+			arg.data = NULL;
 		}
 	}
 
