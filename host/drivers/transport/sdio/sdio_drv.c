@@ -20,6 +20,7 @@
 #include "serial_drv.h"
 #include "stats.h"
 #include "esp_log.h"
+#include "esp_hosted_log.h"
 
 static const char TAG[] = "H_SDIO_DRV";
 
@@ -36,7 +37,7 @@ static const char TAG[] = "H_SDIO_DRV";
 #define BUFFER_UNAVAILABLE                0
 
 // max number of time to try to read write buffer available reg
-#define MAX_WRITE_BUF_RETRIES             2
+#define MAX_WRITE_BUF_RETRIES             50
 
 // max number of times to try to write data to slave device
 #define MAX_WRITE_RETRIES                 2
@@ -48,14 +49,6 @@ static const char TAG[] = "H_SDIO_DRV";
 #define ACQUIRE_LOCK false
 #else
 #define ACQUIRE_LOCK true
-#endif
-
-#if CONFIG_SLAVE_CHIPSET_ESP32
-#define NEW_PACKET_INTR (1 << 23)
-#elif CONFIG_SLAVE_CHIPSET_ESP32C6
-#define NEW_PACKET_INTR (1 << 23)
-#else
-#error SDIO New Packet Intr Bit not defined for Hosted Slave
 #endif
 
 #if defined(USE_DRIVER_LOCK)
@@ -81,8 +74,10 @@ static void * sdio_read_thread;
 static void * sdio_process_rx_thread;
 static void * sdio_write_thread;
 
-static queue_handle_t to_slave_queue = NULL;
-static queue_handle_t from_slave_queue = NULL;
+static queue_handle_t to_slave_queue[MAX_PRIORITY_QUEUES];
+semaphore_handle_t sem_to_slave_queue;
+static queue_handle_t from_slave_queue[MAX_PRIORITY_QUEUES];
+semaphore_handle_t sem_from_slave_queue;
 
 /* Counter to hold the amount of buffers already sent to sdio slave */
 static uint32_t sdio_tx_buf_count = 0;
@@ -99,8 +94,6 @@ static void sdio_write_task(void const* pvParameters);
 static void sdio_read_task(void const* pvParameters);
 static void sdio_process_rx_task(void const* pvParameters);
 
-/* callback of event handler */
-static void (*sdio_drv_evt_handler_fp) (uint8_t) = NULL;
 
 static inline void sdio_mempool_create()
 {
@@ -140,7 +133,7 @@ static int sdio_generate_slave_intr(uint8_t intr_no)
 		return ESP_ERR_INVALID_ARG;
 	}
 
-	return g_h.funcs->_h_sdio_write_reg(ESP_SLAVE_SCRATCH_REG_7, &intr_mask,
+	return g_h.funcs->_h_sdio_write_reg(HOST_TO_SLAVE_INTR, &intr_mask,
 		sizeof(intr_mask), ACQUIRE_LOCK);
 }
 
@@ -176,6 +169,8 @@ static int sdio_get_tx_buffer_num(uint32_t *tx_num, bool is_lock_needed)
 
 	return ret;
 }
+
+#if !H_SDIO_ALWAYS_HOST_RX_MAX_TRANSPORT_SIZE
 
 static int sdio_get_len_from_slave(uint32_t *rx_size, bool is_lock_needed)
 {
@@ -213,6 +208,7 @@ static int sdio_get_len_from_slave(uint32_t *rx_size, bool is_lock_needed)
 
 	return 0;
 }
+#endif
 
 static int sdio_is_write_buffer_available(uint32_t buf_needed)
 {
@@ -231,10 +227,11 @@ static int sdio_is_write_buffer_available(uint32_t buf_needed)
 				return BUFFER_UNAVAILABLE;
 			}
 			if (buf_available < buf_needed) {
-				ESP_LOGI(TAG, "Retry get write buffers %d", retry);
+				ESP_LOGV(TAG, "Retry get write buffers %d", retry);
 				/* Release SDIO and retry after delay*/
 				retry--;
-				g_h.funcs->_h_msleep(10);
+				if (retry > MAX_WRITE_BUF_RETRIES/2)
+					g_h.funcs->_h_msleep(1);
 				continue;
 			}
 			break;
@@ -267,20 +264,29 @@ static void sdio_write_task(void const* pvParameters)
 	uint32_t data_left;
 	uint32_t len_to_send;
 	uint32_t buf_needed;
+	uint8_t tx_needed = 1;
 
 	while (!sdio_start_write_thread)
 		g_h.funcs->_h_msleep(10);
 
 	for (;;) {
 		/* Check if higher layers have anything to transmit */
-		if (0 != g_h.funcs->_h_dequeue_item(to_slave_queue, &buf_handle,
-			HOSTED_BLOCK_MAX)) {
-			continue;
-		}
+		g_h.funcs->_h_get_semaphore(sem_to_slave_queue, HOSTED_BLOCK_MAX);
 
-		len = buf_handle.payload_len;
-		if (!len)
-			continue;
+		/* Tx msg is present as per sem */
+		if (g_h.funcs->_h_dequeue_item(to_slave_queue[PRIO_Q_SERIAL], &buf_handle, 0))
+			if (g_h.funcs->_h_dequeue_item(to_slave_queue[PRIO_Q_BT], &buf_handle, 0))
+				if (g_h.funcs->_h_dequeue_item(to_slave_queue[PRIO_Q_OTHERS], &buf_handle, 0)) {
+					tx_needed = 0; /* No Tx msg */
+				}
+
+		if (tx_needed)
+			len = buf_handle.payload_len;
+
+		if (!len) {
+			ESP_LOGE(TAG, "%s: Empty len", __func__);
+			goto done;
+		}
 
 		if (!buf_handle.payload_zcopy) {
 			sendbuf = sdio_buffer_alloc(MEMSET_REQUIRED);
@@ -329,12 +335,14 @@ static void sdio_write_task(void const* pvParameters)
 
 		ret = sdio_is_write_buffer_available(buf_needed);
 		if (ret != BUFFER_AVAILABLE) {
-			ESP_LOGE(TAG, "no SDIO write buffers on slave device");
+			ESP_LOGV(TAG, "no SDIO write buffers on slave device");
 			goto done;
 		}
 
 		pos = sendbuf;
 		data_left = len + sizeof(struct esp_payload_header);
+
+		ESP_HEXLOGV("h_sdio_tx", sendbuf, data_left);
 
 		len_to_send = 0;
 		retries = 0;
@@ -364,6 +372,11 @@ static void sdio_write_task(void const* pvParameters)
 		sdio_tx_buf_count += buf_needed;
 		sdio_tx_buf_count = sdio_tx_buf_count % ESP_TX_BUFFER_MAX;
 
+#if ESP_PKT_STATS
+			if (buf_handle.if_type == ESP_STA_IF)
+				pkt_stats.sta_tx_out++;
+#endif
+
 done:
 		SDIO_DRV_UNLOCK();
 
@@ -375,11 +388,60 @@ done:
 	}
 }
 
+static int is_valid_sdio_rx_packet(uint8_t *rxbuff_a, uint16_t *len_a, uint16_t *offset_a)
+{
+	struct esp_payload_header * h = (struct esp_payload_header *)rxbuff_a;
+	uint16_t len = 0, offset = 0;
+
+	if (!h || !len_a || !offset_a)
+		return 0;
+
+	/* Fetch length and offset from payload header */
+	len = le16toh(h->len);
+	offset = le16toh(h->offset);
+
+	if ((!len) ||
+	    (len > MAX_PAYLOAD_SIZE) ||
+	    (offset != sizeof(struct esp_payload_header))) {
+
+		/* Free up buffer, as one of following -
+		 * 1. no payload to process
+		 * 2. input packet size > driver capacity
+		 * 3. payload header size mismatch,
+		 * wrong header/bit packing?
+		 * */
+		return 0;
+
+	}
+
+#if CONFIG_ESP_SDIO_CHECKSUM
+	rx_checksum = le16toh(h->checksum);
+	h->checksum = 0;
+	checksum = compute_checksum(h, len + offset);
+
+	if (checksum != rx_checksum) {
+		ESP_LOGE(TAG, "SDIO RX rx_chksum[%u] != checksum[%u]. Drop.",
+				checksum, rx_checksum);
+		return 0;
+	}
+#endif
+
+#if ESP_PKT_STATS
+	if (h->if_type == ESP_STA_IF)
+		pkt_stats.sta_rx_in++;
+#endif
+
+	*len_a = len;
+	*offset_a = offset;
+
+	return 1;
+}
+
 static void sdio_read_task(void const* pvParameters)
 {
 	esp_err_t res;
 	uint8_t *rxbuff = NULL;
-	struct esp_payload_header *payload_header = NULL;
+	struct esp_payload_header *h= NULL;
 	uint16_t len = 0;
 	uint16_t offset = 0;
 #if CONFIG_ESP_SDIO_CHECKSUM
@@ -392,13 +454,14 @@ static void sdio_read_task(void const* pvParameters)
 	uint32_t len_to_read;
 	uint8_t *pos;
 	uint32_t interrupts;
+	uint8_t pkt_prio = PRIO_Q_OTHERS;
+	interface_buffer_handle_t buf_handle;
 
 	assert(sdio_handle);
 
 	// wait for transport to be in reset state
 	while (true) {
-		if (is_transport_in_reset()) {
-			ESP_LOGI(TAG, "transport has been reset");
+		if (is_transport_rx_ready()) {
 			break;
 		}
 		vTaskDelay(pdMS_TO_TICKS(100));
@@ -409,12 +472,16 @@ static void sdio_read_task(void const* pvParameters)
 		ESP_LOGE(TAG, "sdio card init failed");
 		return;
 	}
+
+	create_debugging_tasks();
+
 	ESP_LOGI(TAG, "generate slave intr");
 
 	// inform the slave device that we are ready
 	sdio_generate_slave_intr(ESP_OPEN_DATA_PATH);
 
 	for (;;) {
+
 		// wait for sdio interrupt from slave
 		// call will block until there is an interrupt, timeout or error
 		res = g_h.funcs->_h_sdio_wait_slave_intr(portMAX_DELAY);
@@ -435,14 +502,31 @@ static void sdio_read_task(void const* pvParameters)
 		}
 		sdio_clear_intr(interrupts);
 
-		if (!(NEW_PACKET_INTR & interrupts)) {
-			// interrupt is not for a new packet
-			ESP_LOGD(TAG, "Slave intr is not for 'new packet'");
+		ESP_LOGV(TAG, "Intr: %08"PRIX32, interrupts);
+
+		/* Check all supported interrupts */
+		if (BIT(SDIO_INT_START_THROTTLE) & interrupts)
+			wifi_tx_throttling = 1;
+
+		if (BIT(SDIO_INT_STOP_THROTTLE) & interrupts)
+			wifi_tx_throttling = 0;
+
+		if (!(BIT(SDIO_INT_NEW_PACKET) & interrupts)) {
 
 			SDIO_DRV_UNLOCK();
 			continue;
 		}
 
+#if H_SDIO_ALWAYS_HOST_RX_MAX_TRANSPORT_SIZE
+		/* Bypass the check to find the bytes to be read from slave to host
+		 * always assume max transport size to be read.
+		 * slave sdio driver will automatically pad the remaining bytes after
+		 * actual written bytes till requested size from host
+		 * This typically improves throughput for larger packet sizes
+		 **/
+		len_from_slave = MAX_TRANSPORT_BUFFER_SIZE;
+#else
+		/* check the bytes to be read */
 		ret = sdio_get_len_from_slave(&len_from_slave, ACQUIRE_LOCK);
 		if (ret || !len_from_slave) {
 			ESP_LOGD(TAG, "invalid ret or len_from_slave: %d %ld", ret, len_from_slave);
@@ -450,6 +534,8 @@ static void sdio_read_task(void const* pvParameters)
 			SDIO_DRV_UNLOCK();
 			continue;
 		}
+#endif
+
 
 		/* Allocate rx buffer */
 		rxbuff = sdio_buffer_alloc(MEMSET_REQUIRED);
@@ -480,53 +566,42 @@ static void sdio_read_task(void const* pvParameters)
 		sdio_rx_byte_count += len_from_slave;
 		sdio_rx_byte_count = sdio_rx_byte_count % ESP_RX_BYTE_MAX;
 
-		/* create buffer rx handle, used for processing */
-		payload_header = (struct esp_payload_header *)rxbuff;
 
-		/* Fetch length and offset from payload header */
-		len = le16toh(payload_header->len);
-		offset = le16toh(payload_header->offset);
-
-		if ((!len) ||
-			(len > MAX_PAYLOAD_SIZE) ||
-			(offset != sizeof(struct esp_payload_header))) {
-
+		/* Drop packet if no processing needed */
+		if (!is_valid_sdio_rx_packet(rxbuff, &len, &offset)) {
 			/* Free up buffer, as one of following -
-			* 1. no payload to process
-			* 2. input packet size > driver capacity
-			* 3. payload header size mismatch,
-			* wrong header/bit packing?
-			* */
+			 * 1. no payload to process
+			 * 2. input packet size > driver capacity
+			 * 3. payload header size mismatch,
+			 * wrong header/bit packing?
+			 * */
+			ESP_LOGI(TAG, "Dropping packet");
 			HOSTED_FREE(rxbuff);
-		} else {
-			interface_buffer_handle_t buf_handle = {0};
-
-#if CONFIG_ESP_SDIO_CHECKSUM
-			rx_checksum = le16toh(payload_header->checksum);
-			payload_header->checksum = 0;
-			checksum = compute_checksum(rxbuff, len + offset);
-			if (checksum != rx_checksum) {
-				ESP_LOGE(TAG, "SDIO RX rx_chksum[%u] != checksum[%u]. Drop.",
-						checksum, rx_checksum);
-				HOSTED_FREE(rxbuff);
-				continue;
-			}
-#endif
-			buf_handle.priv_buffer_handle = rxbuff;
-			buf_handle.free_buf_handle    = sdio_buffer_free;
-			buf_handle.payload_len        = len;
-			buf_handle.if_type            = payload_header->if_type;
-			buf_handle.if_num             = payload_header->if_num;
-			buf_handle.payload            = rxbuff + offset;
-			buf_handle.seq_num            = le16toh(payload_header->seq_num);
-			buf_handle.flag               = payload_header->flags;
-
-			if (g_h.funcs->_h_queue_item(from_slave_queue,
-				&buf_handle, HOSTED_BLOCK_MAX)) {
-				ESP_LOGE(TAG,"Failed to send buffer");
-				HOSTED_FREE(rxbuff);
-			}
+			continue;
 		}
+
+		/* create buffer rx handle, used for processing */
+		h = (struct esp_payload_header *)rxbuff;
+
+		memset(&buf_handle, 0, sizeof(interface_buffer_handle_t));
+
+		buf_handle.priv_buffer_handle = rxbuff;
+		buf_handle.free_buf_handle    = sdio_buffer_free;
+		buf_handle.payload_len        = len;
+		buf_handle.if_type            = h->if_type;
+		buf_handle.if_num             = h->if_num;
+		buf_handle.payload            = rxbuff + offset;
+		buf_handle.seq_num            = le16toh(h->seq_num);
+		buf_handle.flag               = h->flags;
+
+		if (buf_handle.if_type == ESP_SERIAL_IF)
+			pkt_prio = PRIO_Q_SERIAL;
+		else if (buf_handle.if_type == ESP_HCI_IF)
+			pkt_prio = PRIO_Q_BT;
+		/* else OTHERS by default */
+
+		g_h.funcs->_h_queue_item(from_slave_queue[pkt_prio], &buf_handle, portMAX_DELAY);
+		g_h.funcs->_h_post_semaphore(sem_from_slave_queue);
 	}
 }
 
@@ -540,26 +615,54 @@ static void sdio_process_rx_task(void const* pvParameters)
 
 	struct esp_priv_event *event = NULL;
 
+	while (true) {
+		vTaskDelay(pdMS_TO_TICKS(100));
+		if (is_transport_rx_ready()) {
+			break;
+		}
+	}
 	ESP_LOGI(TAG, "Starting SDIO process rx task");
 
 	while (1) {
-		if (g_h.funcs->_h_dequeue_item(from_slave_queue, &buf_handle_l,
-			portMAX_DELAY)) {
-			continue;
-		}
+		g_h.funcs->_h_get_semaphore(sem_from_slave_queue, portMAX_DELAY);
+
+		if (g_h.funcs->_h_dequeue_item(from_slave_queue[PRIO_Q_SERIAL], &buf_handle_l, 0))
+			if (g_h.funcs->_h_dequeue_item(from_slave_queue[PRIO_Q_BT], &buf_handle_l, 0))
+				if (g_h.funcs->_h_dequeue_item(from_slave_queue[PRIO_Q_OTHERS], &buf_handle_l, 0)) {
+					ESP_LOGI(TAG, "No element in any queue found");
+					continue;
+				}
+
 		buf_handle = &buf_handle_l;
 
-		ESP_LOG_BUFFER_HEXDUMP(TAG, buf_handle->payload, buf_handle->payload_len, ESP_LOG_DEBUG);
+		ESP_LOGV(TAG, "h_sdio_rx: iftype:%d", (int)buf_handle->if_type);
+		ESP_HEXLOGV("h_sdio_rx", copy_payload, buf_handle->payload_len);
 
 		if (buf_handle->if_type == ESP_SERIAL_IF) {
 			/* serial interface path */
 			serial_rx_handler(buf_handle);
 		} else if((buf_handle->if_type == ESP_STA_IF) ||
 				(buf_handle->if_type == ESP_AP_IF)) {
+#if 1
+			if (chan_arr[buf_handle->if_type] && chan_arr[buf_handle->if_type]->rx) {
+				/* TODO : Need to abstract heap_caps_malloc */
+				uint8_t * copy_payload = (uint8_t *)malloc(buf_handle->payload_len);
+				assert(copy_payload);
+				assert(buf_handle->payload_len);
+				assert(buf_handle->payload);
+				memcpy(copy_payload, buf_handle->payload, buf_handle->payload_len);
+
+				assert(chan_arr[buf_handle->if_type]->rx);
+				chan_arr[buf_handle->if_type]->rx(chan_arr[buf_handle->if_type]->api_chan,
+						copy_payload, copy_payload, buf_handle->payload_len);
+				H_FREE_PTR_WITH_FUNC(buf_handle->free_buf_handle, buf_handle->priv_buffer_handle);
+			}
+#else
 			if (chan_arr[buf_handle->if_type] && chan_arr[buf_handle->if_type]->rx) {
 				chan_arr[buf_handle->if_type]->rx(chan_arr[buf_handle->if_type]->api_chan,
 						buf_handle->payload, NULL, buf_handle->payload_len);
 			}
+#endif
 		} else if (buf_handle->if_type == ESP_PRIV_IF) {
 			process_priv_communication(buf_handle);
 			/* priv transaction received */
@@ -567,11 +670,7 @@ static void sdio_process_rx_task(void const* pvParameters)
 			sdio_start_write_thread = true;
 
 			event = (struct esp_priv_event *) (buf_handle->payload);
-			if (event->event_type == ESP_PRIV_EVENT_INIT) {
-				if (sdio_drv_evt_handler_fp) {
-					sdio_drv_evt_handler_fp(TRANSPORT_ACTIVE);
-				}
-			} else {
+			if (event->event_type != ESP_PRIV_EVENT_INIT) {
 				/* User can re-use this type of transaction */
 			}
 		} else if (buf_handle->if_type == ESP_TEST_IF) {
@@ -595,23 +694,34 @@ static void sdio_process_rx_task(void const* pvParameters)
 	}
 }
 
-void transport_init_internal(void(*transport_evt_handler_fp)(uint8_t))
+void transport_init_internal(void)
 {
+	uint8_t prio_q_idx = 0;
 	/* register callback */
-	sdio_drv_evt_handler_fp = transport_evt_handler_fp;
 
 	sdio_bus_lock = g_h.funcs->_h_create_mutex();
 	assert(sdio_bus_lock);
 
-	/* Queue - tx */
-	to_slave_queue = g_h.funcs->_h_create_queue(TO_SLAVE_QUEUE_SIZE,
-			sizeof(interface_buffer_handle_t));
-	assert(to_slave_queue);
+	sem_to_slave_queue = g_h.funcs->_h_create_semaphore(TO_SLAVE_QUEUE_SIZE*MAX_PRIORITY_QUEUES);
+	assert(sem_to_slave_queue);
+	g_h.funcs->_h_get_semaphore(sem_to_slave_queue, 0);
 
-	/* Queue - rx */
-	from_slave_queue = g_h.funcs->_h_create_queue(FROM_SLAVE_QUEUE_SIZE,
-			sizeof(interface_buffer_handle_t));
-	assert(from_slave_queue);
+	sem_from_slave_queue = g_h.funcs->_h_create_semaphore(FROM_SLAVE_QUEUE_SIZE*MAX_PRIORITY_QUEUES);
+	assert(sem_from_slave_queue);
+	g_h.funcs->_h_get_semaphore(sem_from_slave_queue, 0);
+
+	/* cleanup the semaphores */
+
+
+	for (prio_q_idx=0; prio_q_idx<MAX_PRIORITY_QUEUES;prio_q_idx++) {
+		/* Queue - rx */
+		from_slave_queue[prio_q_idx] = g_h.funcs->_h_create_queue(FROM_SLAVE_QUEUE_SIZE, sizeof(interface_buffer_handle_t));
+		assert(from_slave_queue[prio_q_idx]);
+
+		/* Queue - tx */
+		to_slave_queue[prio_q_idx] = g_h.funcs->_h_create_queue(TO_SLAVE_QUEUE_SIZE, sizeof(interface_buffer_handle_t));
+		assert(to_slave_queue[prio_q_idx]);
+	}
 
 	sdio_mempool_create();
 
@@ -645,16 +755,17 @@ int esp_hosted_tx(uint8_t iface_type, uint8_t iface_num,
 {
 	interface_buffer_handle_t buf_handle = {0};
 	void (*free_func)(void* ptr) = NULL;
-	uint8_t transport_up = is_transport_up();
+	uint8_t pkt_prio = PRIO_Q_OTHERS;
+	uint8_t transport_up = is_transport_tx_ready();
 
 	if (free_wbuf_fun)
 		free_func = free_wbuf_fun;
 
 	if (!wbuffer || !wlen ||
-		(wlen > (MAX_PAYLOAD_SIZE - sizeof(struct esp_payload_header)))
-		|| !transport_up) {
-		ESP_LOGE(TAG, "tx fail: NULL buff, invalid len (%u) or len > max len (%u))",
-				wlen, MAX_PAYLOAD_SIZE  - sizeof(struct esp_payload_header));
+		(wlen > MAX_PAYLOAD_SIZE) ||
+		!transport_up) {
+		ESP_LOGE(TAG, "tx fail: NULL buff, invalid len (%u) or len > max len (%u), transport_up(%u))",
+				wlen, MAX_PAYLOAD_SIZE, transport_up);
 		H_FREE_PTR_WITH_FUNC(free_func, wbuffer);
 		return ESP_FAIL;
 	}
@@ -666,11 +777,19 @@ int esp_hosted_tx(uint8_t iface_type, uint8_t iface_num,
 	buf_handle.priv_buffer_handle = wbuffer;
 	buf_handle.free_buf_handle = free_func;
 
-	if (g_h.funcs->_h_queue_item(to_slave_queue, &buf_handle, portMAX_DELAY)) {
-		ESP_LOGE(TAG, "Failed to send buffer to_slave_queue");
-		H_FREE_PTR_WITH_FUNC(buf_handle.free_buf_handle, wbuffer);
+	if (buf_handle.if_type == ESP_SERIAL_IF)
+		pkt_prio = PRIO_Q_SERIAL;
+	else if (buf_handle.if_type == ESP_HCI_IF)
+		pkt_prio = PRIO_Q_BT;
+	/* else OTHERS by default */
 
-		return ESP_FAIL;
-	}
+	g_h.funcs->_h_queue_item(to_slave_queue[pkt_prio], &buf_handle, portMAX_DELAY);
+	g_h.funcs->_h_post_semaphore(sem_to_slave_queue);
+
+#if ESP_PKT_STATS
+	if (buf_handle.if_type == ESP_STA_IF)
+		pkt_stats.sta_tx_in_pass++;
+#endif
+
 	return ESP_OK;
 }

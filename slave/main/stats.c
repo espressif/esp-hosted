@@ -210,9 +210,12 @@ static void stats_timer_func(void* arg)
 	test_raw_tp_rx_len = test_raw_tp_tx_len = 0;
 #endif
 #if ESP_PKT_STATS
-	ESP_LOGI(TAG, "slave: sta_rx_in: %lu sta_rx_out: %lu sta_tx_in: %lu sta_tx_out: %lu ",
-			pkt_stats.sta_rx_in,pkt_stats.sta_rx_out,
+	ESP_LOGI(TAG, "slave StaRxQLoad: %lu sta_rx: [in: %lu out: %lu fail: %lu] sta_tx: [in: %lu out: %lu]",
+			pkt_stats.slave_wifi_rx_msg_loaded,
+			pkt_stats.sta_rx_in,pkt_stats.sta_rx_out, pkt_stats.sta_rx_out_fail,
 			pkt_stats.sta_tx_in,pkt_stats.sta_tx_out);
+	ESP_LOGI(TAG, "slave serial_rx: %lu serial_tx [total: %lu evt: %lu]",
+			pkt_stats.serial_rx, pkt_stats.serial_tx_total, pkt_stats.serial_tx_evt);
 
 #endif
 }

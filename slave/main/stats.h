@@ -111,6 +111,11 @@ struct pkt_stats_t {
 	uint32_t sta_tx_out;
 	uint32_t sta_rx_in;
 	uint32_t sta_rx_out;
+	uint32_t sta_rx_out_fail;
+	uint32_t serial_rx;
+	uint32_t serial_tx_total;
+	uint32_t serial_tx_evt;
+	uint32_t slave_wifi_rx_msg_loaded;
 };
 
 extern struct pkt_stats_t pkt_stats;

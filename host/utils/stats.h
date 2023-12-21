@@ -123,7 +123,8 @@ extern struct mem_stats h_stats_g;
 struct pkt_stats_t {
 	uint32_t sta_rx_in;
 	uint32_t sta_rx_out;
-	uint32_t sta_tx_in;
+	uint32_t sta_tx_in_pass;
+	uint32_t sta_tx_in_drop;
 	uint32_t sta_tx_out;
 };
 

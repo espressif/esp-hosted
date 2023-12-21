@@ -72,7 +72,7 @@ static struct serial_ll_operations serial_ll_fops = {
 static int serial_ll_open(serial_ll_handle_t *serial_ll_hdl)
 {
 	if (! serial_ll_hdl) {
-		ESP_LOGE(TAG, "serial invalid hdr\n\r");
+		ESP_LOGE(TAG, "serial invalid hdr");
 		return STM_FAIL;
 	}
 
@@ -154,7 +154,7 @@ static uint8_t * serial_ll_read(const serial_ll_handle_t * serial_ll_hdl,
 
 	/* check if serial interface valid */
 	if ((! serial_ll_hdl) || (serial_ll_hdl->state != ACTIVE)) {
-		ESP_LOGE(TAG, "serial invalid interface\n\r");
+		ESP_LOGE(TAG, "serial invalid interface");
 		return NULL;
 	}
 
@@ -172,7 +172,7 @@ static uint8_t * serial_ll_read(const serial_ll_handle_t * serial_ll_hdl,
 	 * In our example, first approach of blocking read is used.
 	 */
 	if (g_h.funcs->_h_dequeue_item(serial_ll_hdl->queue, &buf_handle, HOSTED_BLOCK_MAX)) {
-		ESP_LOGE(TAG, "serial queue recv failed \n\r");
+		ESP_LOGE(TAG, "serial queue recv failed ");
 		return NULL;
 	}
 
@@ -198,7 +198,7 @@ static int serial_ll_write(const serial_ll_handle_t * serial_ll_hdl,
 {
 
 	if ((! serial_ll_hdl) || (serial_ll_hdl->state != ACTIVE)) {
-		ESP_LOGE(TAG, "serial invalid interface for write\n\r");
+		ESP_LOGE(TAG, "serial invalid interface for write");
 		return STM_FAIL;
 	}
 
@@ -227,7 +227,7 @@ stm_ret_t serial_ll_rx_handler(interface_buffer_handle_t * buf_handle)
 			r.data = (uint8_t *)g_h.funcs->_h_realloc(r.data, r.len + buf_handle->payload_len); \
 		} \
 		if (!r.data) { \
-			ESP_LOGE(TAG, "Failed to allocate serial data\n\r"); \
+			ESP_LOGE(TAG, "Failed to allocate serial data"); \
 			goto serial_buff_cleanup; \
 		} \
 	} while(0);
@@ -238,7 +238,7 @@ stm_ret_t serial_ll_rx_handler(interface_buffer_handle_t * buf_handle)
 
 	/* Check valid handle and length */
 	if (!buf_handle || !buf_handle->payload_len) {
-		ESP_LOGE(TAG, "%s:%u Invalid parameters\n\r", __func__, __LINE__);
+		ESP_LOGE(TAG, "%s:%u Invalid parameters", __func__, __LINE__);
 		goto serial_buff_cleanup;
 	}
 
@@ -246,7 +246,7 @@ stm_ret_t serial_ll_rx_handler(interface_buffer_handle_t * buf_handle)
 
 	/* Is serial interface up */
 	if ((! serial_ll_hdl) || (serial_ll_hdl->state != ACTIVE)) {
-		ESP_LOGE(TAG, "Serial interface not registered yet\n\r");
+		ESP_LOGE(TAG, "Serial interface not registered yet");
 		goto serial_buff_cleanup;
 	}
 
@@ -254,7 +254,7 @@ stm_ret_t serial_ll_rx_handler(interface_buffer_handle_t * buf_handle)
 	/* Accumulate fragments */
 	if (buf_handle->flag & MORE_FRAGMENT) {
 
-		ESP_LOGD(TAG, "Fragment!!!\n");
+		ESP_LOGD(TAG, "Fragment!!!");
 		SERIAL_ALLOC_REALLOC_RDATA();
 
 		g_h.funcs->_h_memcpy((r.data + r.len), buf_handle->payload, buf_handle->payload_len);
@@ -270,7 +270,7 @@ stm_ret_t serial_ll_rx_handler(interface_buffer_handle_t * buf_handle)
 
 	serial_buf = (uint8_t *)g_h.funcs->_h_malloc(r.len);
 	if(!serial_buf) {
-		ESP_LOGE(TAG, "Malloc failed, drop pkt\n\r");
+		ESP_LOGE(TAG, "Malloc failed, drop pkt");
 		goto serial_buff_cleanup;
 	}
 	g_h.funcs->_h_memcpy(serial_buf, r.data, r.len);
@@ -294,7 +294,7 @@ stm_ret_t serial_ll_rx_handler(interface_buffer_handle_t * buf_handle)
 	/* send to serial queue */
 	if (g_h.funcs->_h_queue_item(serial_ll_hdl->queue,
 		    &new_buf_handle, HOSTED_BLOCK_MAX)) {
-		ESP_LOGE(TAG, "Failed send serialif queue[%u]\n\r", new_buf_handle.if_num);
+		ESP_LOGE(TAG, "Failed send serialif queue[%u]", new_buf_handle.if_num);
 		goto serial_buff_cleanup;
 	}
 
@@ -335,7 +335,7 @@ serial_ll_handle_t * serial_ll_init(void(*serial_rx_callback)(void))
 
 		serial_ll_hdl = (serial_ll_handle_t *)g_h.funcs->_h_malloc(sizeof(serial_ll_handle_t));
 		if (! serial_ll_hdl) {
-			ESP_LOGE(TAG, "Serial interface - malloc failed\n\r");
+			ESP_LOGE(TAG, "Serial interface - malloc failed");
 			return NULL;
 		}
 
@@ -349,7 +349,7 @@ serial_ll_handle_t * serial_ll_init(void(*serial_rx_callback)(void))
 		conn_num++;
 
 	} else {
-		ESP_LOGE(TAG, "Number of serial interface connections overflow\n\r");
+		ESP_LOGE(TAG, "Number of serial interface connections overflow");
 		return NULL;
 	}
 

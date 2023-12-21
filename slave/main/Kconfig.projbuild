@@ -7,7 +7,7 @@ menu "Example Configuration"
 		default ESP_SPI_HOST_INTERFACE if IDF_TARGET_ESP32S3
 		default ESP_SPI_HOST_INTERFACE if IDF_TARGET_ESP32C2
 		default ESP_SPI_HOST_INTERFACE if IDF_TARGET_ESP32C3
-		default ESP_SPI_HOST_INTERFACE if IDF_TARGET_ESP32C6
+		default ESP_SDIO_HOST_INTERFACE if IDF_TARGET_ESP32C6
 		help
 			Bus interface to be used for communication with the host
 
@@ -75,7 +75,7 @@ menu "Example Configuration"
 			default 2 if SPI_VSPI
 			default 1
 
-		menu "Hosted SPI GPIOs Config"
+		menu "Hosted SPI GPIOs"
 			config ESP_SPI_HSPI_GPIO_MOSI
 				depends on SPI_HSPI
 				int "Slave GPIO pin for Host MOSI"
@@ -176,7 +176,7 @@ menu "Example Configuration"
 
 			config ESP_SPI_GPIO_RESET
 				int "Slave GPIO pin to reset itself"
-				default 5
+				default -1
 				help
 					Host uses this pin to reset the slave ESP. To re-use ESP 'RST' or 'EN' GPIO, set value to -1
 		endmenu
@@ -228,47 +228,56 @@ menu "Example Configuration"
 				bool "High Speed (40 MHz)"
 		endchoice
 
-		config ESP_SDIO_PIN_CMD
-			int "CMD GPIO number"
-			range 15 15 if IDF_TARGET_ESP32
-			range 18 18 if IDF_TARGET_ESP32C6
-			help
-				"Value cannot be configured. Displayed for reference."
 
-		config ESP_SDIO_PIN_CLK
-			int "CLK GPIO number"
-			range 14 14 if IDF_TARGET_ESP32
-			range 19 19 if IDF_TARGET_ESP32C6
-			help
-				"Value cannot be configured. Displayed for reference."
+		menu "Hosted SDIO GPIOs"
+			config ESP_SDIO_PIN_CMD
+				int "CMD GPIO number"
+				range 15 15 if IDF_TARGET_ESP32
+				range 18 18 if IDF_TARGET_ESP32C6
+				help
+					"Value cannot be configured. Displayed for reference."
 
-		config ESP_SDIO_PIN_D0
-			int "D0 GPIO number"
-			range 2 2 if IDF_TARGET_ESP32
-			range 20 20 if IDF_TARGET_ESP32C6
-			help
-				"Value cannot be configured. Displayed for reference."
+			config ESP_SDIO_PIN_CLK
+				int "CLK GPIO number"
+				range 14 14 if IDF_TARGET_ESP32
+				range 19 19 if IDF_TARGET_ESP32C6
+				help
+					"Value cannot be configured. Displayed for reference."
 
-		config ESP_SDIO_PIN_D1
-			int "D1 GPIO number"
-			range 4 4 if IDF_TARGET_ESP32
-			range 21 21 if IDF_TARGET_ESP32C6
-			help
-				"Value cannot be configured. Displayed for reference."
+			config ESP_SDIO_PIN_D0
+				int "D0 GPIO number"
+				range 2 2 if IDF_TARGET_ESP32
+				range 20 20 if IDF_TARGET_ESP32C6
+				help
+					"Value cannot be configured. Displayed for reference."
 
-		config ESP_SDIO_PIN_D2
-			int "D2 GPIO number"
-			range 12 12 if IDF_TARGET_ESP32
-			range 22 22 if IDF_TARGET_ESP32C6
-			help
-				"Value cannot be configured. Displayed for reference."
+			config ESP_SDIO_PIN_D1
+				int "D1 GPIO number"
+				range 4 4 if IDF_TARGET_ESP32
+				range 21 21 if IDF_TARGET_ESP32C6
+				help
+					"Value cannot be configured. Displayed for reference."
 
-		config ESP_SDIO_PIN_D3
-			int "D3 GPIO number"
-			range 13 13 if IDF_TARGET_ESP32
-			range 23 23 if IDF_TARGET_ESP32C6
+			config ESP_SDIO_PIN_D2
+				int "D2 GPIO number"
+				range 12 12 if IDF_TARGET_ESP32
+				range 22 22 if IDF_TARGET_ESP32C6
+				help
+					"Value cannot be configured. Displayed for reference."
+
+			config ESP_SDIO_PIN_D3
+				int "D3 GPIO number"
+				range 13 13 if IDF_TARGET_ESP32
+				range 23 23 if IDF_TARGET_ESP32C6
+				help
+					"Value cannot be configured. Displayed for reference."
+		endmenu
+
+		config ESP_SDIO_RX_Q_SIZE
+			int "SDIO RX queue size"
+			default 20
 			help
-				"Value cannot be configured. Displayed for reference."
+				Very small RX queue will lower ESP <-- SDIO -- Host data rate
 
 		config ESP_SDIO_CHECKSUM
 			bool "SDIO checksum ENABLE/DISABLE"
@@ -339,5 +348,4 @@ menu "Example Configuration"
 				help
 					On comparing with slave packet stats helps to understand any packet loss at hosted
 	endmenu
-
 endmenu

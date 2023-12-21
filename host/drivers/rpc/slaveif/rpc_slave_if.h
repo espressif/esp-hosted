@@ -47,9 +47,8 @@ extern "C" {
  * another request is pending, time period for
  * which new request will wait in seconds
  * */
-#define WAIT_TIME_B2B_RPC_REQ               5
-#define DEFAULT_RPC_RSP_TIMEOUT             30
-#define DEFAULT_RPC_RSP_AP_SCAN_TIMEOUT     (60*3)
+//#define WAIT_TIME_B2B_RPC_REQ               5
+#define DEFAULT_RPC_RSP_TIMEOUT             5
 
 
 #define SUCCESS_STR                          "success"

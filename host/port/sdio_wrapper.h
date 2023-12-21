@@ -21,6 +21,8 @@
 #include "esp_check.h"
 #include "sdmmc_cmd.h"
 
+#define MAX_TRANSPORT_BUFFER_SIZE        MAX_SDIO_BUFFER_SIZE
+
 /* Hosted init function to init the SDIO host
  * returns a pointer to the sdio context */
 void * hosted_sdio_init(void);

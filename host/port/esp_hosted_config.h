@@ -17,6 +17,21 @@
  * In case you are not sure of some value, Let it be default.
  **/
 
+#define H_GPIO_LOW                                   0
+#define H_GPIO_HIGH                                  1
+
+enum {
+    H_GPIO_INTR_DISABLE = 0,     /*!< Disable GPIO interrupt                             */
+    H_GPIO_INTR_POSEDGE = 1,     /*!< GPIO interrupt type : rising edge                  */
+    H_GPIO_INTR_NEGEDGE = 2,     /*!< GPIO interrupt type : falling edge                 */
+    H_GPIO_INTR_ANYEDGE = 3,     /*!< GPIO interrupt type : both rising and falling edge */
+    H_GPIO_INTR_LOW_LEVEL = 4,   /*!< GPIO interrupt type : input low level trigger      */
+    H_GPIO_INTR_HIGH_LEVEL = 5,  /*!< GPIO interrupt type : input high level trigger     */
+    H_GPIO_INTR_MAX,
+};
+
+
+
 
 #ifdef CONFIG_ESP_SPI_HOST_INTERFACE
 /*  -------------------------- SPI Master Config start ----------------------  */
@@ -25,11 +40,49 @@ Pins in use. The SPI Master can use the GPIO mux,
 so feel free to change these if needed.
 */
 
+
 /* SPI config */
+
+#ifdef CONFIG_HS_ACTIVE_LOW
+  #define H_HANDSHAKE_ACTIVE_HIGH 0
+#else
+  /* Default HS: Active High */
+  #define H_HANDSHAKE_ACTIVE_HIGH 1
+#endif
+
+#ifdef CONFIG_DR_ACTIVE_LOW
+  #define H_DATAREADY_ACTIVE_HIGH 0
+#else
+  /* Default DR: Active High */
+  #define H_DATAREADY_ACTIVE_HIGH 1
+#endif
+
+#ifdef H_HANDSHAKE_ACTIVE_HIGH
+  #define H_HS_VAL_ACTIVE                            H_GPIO_HIGH
+  #define H_HS_VAL_INACTIVE                          H_GPIO_LOW
+  #define H_HS_INTR_EDGE                             H_GPIO_INTR_POSEDGE
+#else
+  #define H_HS_VAL_ACTIVE                            H_GPIO_LOW
+  #define H_HS_VAL_INACTIVE                          H_GPIO_HIGH
+  #define H_HS_INTR_EDGE                             H_GPIO_INTR_NEGEDGE
+#endif
+
+#ifdef H_DATAREADY_ACTIVE_HIGH
+  #define H_DR_VAL_ACTIVE                            H_GPIO_HIGH
+  #define H_DR_VAL_INACTIVE                          H_GPIO_LOW
+  #define H_DR_INTR_EDGE                             H_GPIO_INTR_POSEDGE
+#else
+  #define H_DR_VAL_ACTIVE                            H_GPIO_LOW
+  #define H_DR_VAL_INACTIVE                          H_GPIO_HIGH
+  #define H_DR_INTR_EDGE                             H_GPIO_INTR_NEGEDGE
+#endif
+
 #define H_GPIO_HANDSHAKE_Port                        NULL
 #define H_GPIO_HANDSHAKE_Pin                         CONFIG_ESP_SPI_GPIO_HANDSHAKE
 #define H_GPIO_DATA_READY_Port                       NULL
 #define H_GPIO_DATA_READY_Pin                        CONFIG_ESP_SPI_GPIO_DATA_READY
+
+
 
 #define H_GPIO_MOSI_Port                             NULL
 #define H_GPIO_MOSI_Pin                              CONFIG_ESP_SPI_GPIO_MOSI
@@ -77,8 +130,21 @@ so feel free to change these if needed.
 #define H_SDIO_RX_LEN_TO_TRANSFER(x) ((x + 3) & (~3))
 
 // workarounds for some SDIO transfer errors that may occur
+#if 0
+/* Below workarounds could be enabled for non-ESP MCUs to test first
+ * Once everything is stable, can disable workarounds and test again
+ * */
 #define H_SDIO_TX_LIMIT_XFER_SIZE_WORKAROUND // limit transfer to one ESP_BLOCK_SIZE at a time
 #define H_SDIO_RX_LIMIT_XFER_SIZE_WORKDAROUND // limit transfer to one ESP_BLOCK_SIZE at a time
+#endif
+
+/* Bypass bytes_to_read before actual read.
+ * Always ask 512*3 bytes from SDIO slave to host.
+ * This setting however will underperform for small byte sized messages
+ * When host reads more bytes than slave appliaction written,
+ * SDIO driver at slave automatically pads rest of the bytes with 0
+ */
+#define H_SDIO_ALWAYS_HOST_RX_MAX_TRANSPORT_SIZE  (1)
 
 #if defined(H_SDIO_TX_LIMIT_XFER_SIZE_WORKAROUND)
 #define H_SDIO_TX_BLOCKS_TO_TRANSFER(x) (1)
@@ -101,13 +167,19 @@ so feel free to change these if needed.
 
 #define TIMEOUT_PSERIAL_RESP                         30
 
-#define H_GPIO_LOW                                   0
-#define H_GPIO_HIGH                                  1
 
 #define PRE_FORMAT_NEWLINE_CHAR                      ""
 #define POST_FORMAT_NEWLINE_CHAR                     "\n"
 
 #define USE_STD_C_LIB_MALLOC                         0
+
+#ifdef CONFIG_HOST_TO_ESP_WIFI_DATA_THROTTLE
+  #define H_WIFI_TX_DATA_THROTTLE_LOW_THRESHOLD        CONFIG_TO_WIFI_DATA_THROTTLE_LOW_THRESHOLD
+  #define H_WIFI_TX_DATA_THROTTLE_HIGH_THRESHOLD       CONFIG_TO_WIFI_DATA_THROTTLE_HIGH_THRESHOLD
+#else
+  #define H_WIFI_TX_DATA_THROTTLE_LOW_THRESHOLD        0
+  #define H_WIFI_TX_DATA_THROTTLE_HIGH_THRESHOLD       0
+#endif
 
 
 #endif /*__ESP_HOSTED_CONFIG_H__*/

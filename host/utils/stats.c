@@ -27,6 +27,7 @@
 #if ESP_PKT_STATS
 struct pkt_stats_t pkt_stats;
 void *pkt_stats_thread = NULL;
+extern uint8_t wifi_tx_throttling;
 #endif
 
 #if ESP_PKT_STATS || TEST_RAW_TP
@@ -188,16 +189,21 @@ struct mem_stats h_stats_g;
 #if ESP_PKT_STATS
 void stats_timer_func(void * arg)
 {
-	ESP_LOGI(TAG, "slave: sta_rx_in: %lu sta_rx_out: %lu sta_tx_in: %lu sta_tx_out: %lu ",
+	ESP_LOGI(TAG, "slave: sta_rx_in: %lu sta_rx_out: %lu sta_tx_in [pass: %lu drop: %lu] sta_tx_out: %lu ",
 			pkt_stats.sta_rx_in,pkt_stats.sta_rx_out,
-			pkt_stats.sta_tx_in,pkt_stats.sta_tx_out);
+			pkt_stats.sta_tx_in_pass, pkt_stats.sta_tx_in_drop, pkt_stats.sta_tx_out);
+	ESP_LOGI(TAG, "wifi_tx_throttling %u", wifi_tx_throttling);
 }
 #endif
 
 void create_debugging_tasks(void)
 {
 #if ESP_PKT_STATS
+	if (ESP_PKT_STATS_REPORT_INTERVAL) {
+		ESP_LOGI(TAG, "Start Pkt_stats reporting thread [timer: %u sec]", ESP_PKT_STATS_REPORT_INTERVAL);
 		pkt_stats_thread = g_h.funcs->_h_timer_start(ESP_PKT_STATS_REPORT_INTERVAL,
 				RPC__TIMER_PERIODIC, stats_timer_func, NULL);
+		assert(pkt_stats_thread);
+	}
 #endif
 }

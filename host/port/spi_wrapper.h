@@ -18,6 +18,7 @@
 #ifndef __SPI_WRAPPER_H_
 #define __SPI_WRAPPER_H_
 
+#define MAX_TRANSPORT_BUFFER_SIZE        MAX_SPI_BUFFER_SIZE
 /* Hosted SPI init function
  * returns a pointer to the spi context */
 void * hosted_spi_init(void);

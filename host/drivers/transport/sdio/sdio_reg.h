@@ -52,7 +52,7 @@
 #define ESP_SLAVE_LEN_MASK             0xFFFFF
 #define ESP_BLOCK_SIZE                 512
 #define ESP_RX_BYTE_MAX                0x100000
-#define ESP_RX_BUFFER_SIZE             2048
+#define ESP_RX_BUFFER_SIZE             1536
 
 #define ESP_TX_BUFFER_MASK             0xFFF
 #define ESP_TX_BUFFER_MAX              0x1000
@@ -60,12 +60,22 @@
 
 #define ESP_SLAVE_SLCHOST_BASE         0x3FF55000
 
-#define ESP_SLAVE_SCRATCH_REG_7        (ESP_SLAVE_SLCHOST_BASE + 0x8C)
+#define HOST_TO_SLAVE_INTR             ESP_SLAVE_SCRATCH_REG_7
 /* SLAVE registers */
 /* Interrupt Registers */
 #define ESP_SLAVE_INT_RAW_REG          (ESP_SLAVE_SLCHOST_BASE + 0x50)
 #define ESP_SLAVE_INT_ST_REG           (ESP_SLAVE_SLCHOST_BASE + 0x58)
 #define ESP_SLAVE_INT_CLR_REG          (ESP_SLAVE_SLCHOST_BASE + 0xD4)
+#define ESP_HOST_INT_ENA_REG           (ESP_SLAVE_SLCHOST_BASE + 0xDC)
+
+/* Host side interrupts for ESP_HOST_INT_ENA_REG */
+#if CONFIG_SLAVE_CHIPSET_ESP32 || CONFIG_SLAVE_CHIPSET_ESP32C6
+  #define SDIO_INT_NEW_PACKET          (23)
+  #define SDIO_INT_START_THROTTLE      (7)
+  #define SDIO_INT_STOP_THROTTLE       (6)
+#else
+  #error "SDIO New Packet Intr Bit not defined for Hosted Slave"
+#endif
 
 /* Data path registers*/
 #define ESP_SLAVE_PACKET_LEN_REG       (ESP_SLAVE_SLCHOST_BASE + 0x60)
@@ -78,6 +88,7 @@
 #define ESP_SLAVE_SCRATCH_REG_3        (ESP_SLAVE_SLCHOST_BASE + 0x78)
 #define ESP_SLAVE_SCRATCH_REG_4        (ESP_SLAVE_SLCHOST_BASE + 0x7C)
 #define ESP_SLAVE_SCRATCH_REG_6        (ESP_SLAVE_SLCHOST_BASE + 0x88)
+#define ESP_SLAVE_SCRATCH_REG_7        (ESP_SLAVE_SLCHOST_BASE + 0x8C)
 #define ESP_SLAVE_SCRATCH_REG_8        (ESP_SLAVE_SLCHOST_BASE + 0x9C)
 #define ESP_SLAVE_SCRATCH_REG_9        (ESP_SLAVE_SLCHOST_BASE + 0xA0)
 #define ESP_SLAVE_SCRATCH_REG_10       (ESP_SLAVE_SLCHOST_BASE + 0xA4)

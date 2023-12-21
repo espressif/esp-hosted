@@ -27,8 +27,7 @@ ESP_EVENT_DECLARE_BASE(WIFI_EVENT);
 
 #include "common.h"
 
-#define MAX_TRANSPORT_BUFFER_SIZE        MAX_SPI_BUFFER_SIZE
-#define MAX_PAYLOAD_SIZE (MAX_SPI_BUFFER_SIZE-H_ESP_PAYLOAD_HEADER_OFFSET)
+#define MAX_PAYLOAD_SIZE (MAX_TRANSPORT_BUFFER_SIZE-H_ESP_PAYLOAD_HEADER_OFFSET)
 
 
 #define RPC__TIMER_ONESHOT                           0
@@ -59,15 +58,6 @@ ESP_EVENT_DECLARE_BASE(WIFI_EVENT);
 #define DFLT_TASK_PRIO                               (ESP_TASK_PRIO_MIN + 5)
 
 
-enum {
-    H_GPIO_INTR_DISABLE = 0,     /*!< Disable GPIO interrupt                             */
-    H_GPIO_INTR_POSEDGE = 1,     /*!< GPIO interrupt type : rising edge                  */
-    H_GPIO_INTR_NEGEDGE = 2,     /*!< GPIO interrupt type : falling edge                 */
-    H_GPIO_INTR_ANYEDGE = 3,     /*!< GPIO interrupt type : both rising and falling edge */
-    H_GPIO_INTR_LOW_LEVEL = 4,   /*!< GPIO interrupt type : input low level trigger      */
-    H_GPIO_INTR_HIGH_LEVEL = 5,  /*!< GPIO interrupt type : input high level trigger     */
-    H_GPIO_INTR_MAX,
-};
 
 #define H_GPIO_MODE_DEF_DISABLE         (0)
 #define H_GPIO_MODE_DEF_INPUT           (BIT0)    ///< bit mask for input
@@ -163,6 +153,14 @@ enum hardware_type_e {
 #define HOSTED_FREE(buff) if (buff) { g_h.funcs->_h_free(buff); buff = NULL; }
 #define HOSTED_CALLOC(struct_name, buff, nbytes, gotosym) do {    \
     buff = (struct_name *)g_h.funcs->_h_calloc(1, nbytes);        \
+    if (!buff) {                                                  \
+        printf("%s, Failed to allocate memory \n", __func__);     \
+        goto gotosym;                                             \
+    }                                                             \
+} while(0);
+
+#define HOSTED_MALLOC(struct_name, buff, nbytes, gotosym) do {    \
+    buff = (struct_name *)g_h.funcs->_h_malloc(nbytes);           \
     if (!buff) {                                                  \
         printf("%s, Failed to allocate memory \n", __func__);     \
         goto gotosym;                                             \

@@ -143,7 +143,8 @@ struct esp_payload_header {
 	uint16_t         offset;
 	uint16_t         checksum;
 	uint16_t		 seq_num;
-	uint8_t          reserved2;
+	uint8_t          throttle_cmd:1;
+	uint8_t          reserved2:7;
 	/* Position of union field has to always be last,
 	 * this is required for hci_pkt_type */
 	union {
@@ -158,6 +159,7 @@ struct esp_payload_header {
 
 
 typedef enum {
+	ESP_INVALID_IF,
 	ESP_STA_IF,
 	ESP_AP_IF,
 	ESP_SERIAL_IF,
@@ -189,7 +191,9 @@ typedef enum {
 
 typedef enum {
 	ESP_TEST_RAW_TP = (1 << 0),
-	ESP_TEST_RAW_TP__ESP_TO_HOST = (1 << 1)
+	ESP_TEST_RAW_TP__ESP_TO_HOST = (1 << 1),
+	ESP_TEST_RAW_TP__HOST_TO_ESP = (1 << 2),
+	ESP_TEST_RAW_TP__BIDIRECTIONAL = (1 << 3),
 } ESP_RAW_TP_MEASUREMENT;
 
 typedef enum {
@@ -203,8 +207,18 @@ typedef enum {
 typedef enum {
 	ESP_PRIV_CAPABILITY=0x11,
 	ESP_PRIV_FIRMWARE_CHIP_ID,
-	ESP_PRIV_TEST_RAW_TP
+	ESP_PRIV_TEST_RAW_TP,
+	ESP_PRIV_RX_Q_SIZE,
+	ESP_PRIV_TX_Q_SIZE,
 } ESP_PRIV_TAG_TYPE;
+
+typedef enum {
+	HOST_CAPABILITIES=0x44,
+	RCVD_ESP_FIRMWARE_CHIP_ID,
+	SLV_CONFIG_TEST_RAW_TP,
+	SLV_CONFIG_THROTTLE_HIGH_THRESHOLD,
+	SLV_CONFIG_THROTTLE_LOW_THRESHOLD,
+} SLAVE_CONFIG_PRIV_TAG_TYPE;
 
 struct esp_priv_event {
 	uint8_t		event_type;

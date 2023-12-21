@@ -98,8 +98,20 @@ typedef struct {
 	int (*event_handler)(uint8_t bitmap);
 } interface_context_t;
 
+typedef struct {
+	uint8_t throttle_high_threshold;
+	uint8_t throttle_low_threshold;
+} slave_config_t;
+
+typedef struct {
+	uint8_t current_throttling;
+} slave_state_t;
+
 interface_context_t * interface_insert_driver(int (*callback)(uint8_t val));
 int interface_remove_driver();
 void generate_startup_event(uint8_t cap);
 int send_to_host_queue(interface_buffer_handle_t *buf_handle, uint8_t queue_type);
+
+extern slave_config_t slv_cfg_g;
+extern slave_state_t  slv_state_g;
 #endif

@@ -12,25 +12,7 @@
 #include "esp_task.h"
 
 
-#ifndef MCU_SYS
-#define MAX_INTERFACE_LEN            IFNAMSIZ
-#define MIN_MAC_STR_LEN              17
-#endif
-
 DEFINE_LOG_TAG(rpc_core);
-/*
-#define SUCCESS                      0
-#define FAILURE                      -1
-*/
-#define MAX_SSID_LENGTH              32
-#define MIN_PWD_LENGTH               8
-#define MAX_PWD_LENGTH               64
-#define STATUS_LENGTH                14
-#define TIMEOUT_PSERIAL_RESP         30
-#define MIN_CHNL_NO                  1
-#define MAX_CHNL_NO                  11
-#define MIN_CONN_NO                  1
-#define MAX_CONN_NO                  10
 
 
 #define RPC_LIB_STATE_INACTIVE      0
@@ -121,53 +103,6 @@ static inline int is_rpc_lib_state(int state)
 		return 1;
 	return 0;
 }
-
-
-#ifndef MCU_SYS
- /* Function converts mac string to byte stream */
-static int convert_mac_to_bytes(uint8_t *out, size_t out_size, char *s)
-{
-	int mac[MAC_SIZE_BYTES] = {0};
-	int num_bytes = 0;
-	if (!s || (strlen(s) < MIN_MAC_STR_LEN) || (out_size < MAC_SIZE_BYTES))  {
-		if (!s) {
-			ESP_LOGE(TAG, "empty input mac str\n");
-		}
-		else if (strlen(s)<MIN_MAC_STR_LEN) {
-			ESP_LOGE(TAG, "strlen of in str [%zu]<MIN_MAC_STR_LEN[%u]\n",
-					strlen(s), MIN_MAC_STR_LEN);
-		}
-		else {
-			ESP_LOGE(TAG, "out_size[%zu]<MAC_SIZE_BYTES[%u]\n",
-					out_size, MAC_SIZE_BYTES);
-		}
-		return FAILURE;
-	}
-
-	num_bytes =  sscanf(s, "%2x:%2x:%2x:%2x:%2x:%2x",
-			&mac[0],&mac[1], &mac[2], &mac[3], &mac[4], &mac[5]);
-
-	if ((num_bytes < (MAC_SIZE_BYTES - 1))  ||
-	    (mac[0] > 0xFF) ||
-	    (mac[1] > 0xFF) ||
-	    (mac[2] > 0xFF) ||
-	    (mac[3] > 0xFF) ||
-	    (mac[4] > 0xFF) ||
-	    (mac[5] > 0xFF)) {
-		ESP_LOGE(TAG, "failed\n");
-		return FAILURE;
-	}
-
-	out[0] = mac[0]&0xff;
-	out[1] = mac[1]&0xff;
-	out[2] = mac[2]&0xff;
-	out[3] = mac[3]&0xff;
-	out[4] = mac[4]&0xff;
-	out[5] = mac[5]&0xff;
-	return SUCCESS;
-}
-#endif
-
 
 
 /* RPC TX indication */
@@ -790,11 +725,10 @@ static int wait_for_sync_response(ctrl_cmd_t *app_req)
 			app_req->msg_id, timeout_sec);
 	ret = g_h.funcs->_h_get_semaphore(rpc_rsp_cb_sem_table[exp_resp_msg_id-RPC_ID__Resp_Base], timeout_sec);
 
-	/* TODO: is this ret check required? */
-	if (!ret)
-		if (g_h.funcs->_h_destroy_semaphore(rpc_rsp_cb_sem_table[exp_resp_msg_id-RPC_ID__Resp_Base])) {
-			ESP_LOGE(TAG, "read sem rx for resp[0x%x] destroy failed\n", exp_resp_msg_id);
-		}
+	if (g_h.funcs->_h_destroy_semaphore(rpc_rsp_cb_sem_table[exp_resp_msg_id-RPC_ID__Resp_Base])) {
+		ESP_LOGE(TAG, "read sem rx for resp[0x%x] destroy failed\n", exp_resp_msg_id);
+	}
+	rpc_rsp_cb_sem_table[exp_resp_msg_id-RPC_ID__Resp_Base] = NULL;
 
 	return ret;
 }
@@ -1033,12 +967,6 @@ int rpc_core_deinit(void)
 int rpc_core_init(void)
 {
 	int ret = SUCCESS;
-#ifndef MCU_SYS
-	if(getuid()) {
-		ESP_LOGE(TAG, "Please re-run program with superuser access\n");
-		return FAILURE;
-	}
-#endif
 
 	/* semaphore init */
 	rpc_tx_sem = g_h.funcs->_h_create_semaphore(1);
@@ -1082,133 +1010,3 @@ free_bufs:
 
 
 
-#ifndef MCU_SYS
-
- /* Function ups in given interface */
-int interface_up(int sockfd, char* iface)
-{
-	int ret = SUCCESS;
-	struct ifreq req = {0};
-	size_t if_name_len = strnlen(iface, MAX_INTERFACE_LEN-1);
-
-	if (!iface) {
-		ESP_LOGE(TAG, "Invalid parameter\n");
-		return FAILURE;
-	}
-
-	if (if_name_len < sizeof(req.ifr_name)) {
-		g_h.funcs->_h_memcpy(req.ifr_name,iface,if_name_len);
-		req.ifr_name[if_name_len]='\0';
-	} else {
-		ESP_LOGE(TAG, "Failed: Max interface len allowed: %zu \n", sizeof(req.ifr_name)-1);
-		return FAILURE;
-	}
-
-	req.ifr_flags |= IFF_UP;
-	ret = ioctl(sockfd, SIOCSIFFLAGS, &req);
-	if (ret < 0) {
-		return FAILURE;
-	}
-	return SUCCESS;
-}
-
- /* Function downs in given interface */
-int interface_down(int sockfd, char* iface)
-{
-	int ret = SUCCESS;
-	struct ifreq req = {0};
-	size_t if_name_len = strnlen(iface, MAX_INTERFACE_LEN-1);
-
-	if (!iface) {
-		ESP_LOGE(TAG, "Invalid parameter\n");
-		return FAILURE;
-	}
-
-	if (if_name_len < sizeof(req.ifr_name)) {
-		g_h.funcs->_h_memcpy(req.ifr_name,iface,if_name_len);
-		req.ifr_name[if_name_len]='\0';
-	} else {
-		ESP_LOGE(TAG, "Failed: Max interface len allowed- %zu \n", sizeof(req.ifr_name)-1);
-		return FAILURE;
-	}
-
-	req.ifr_flags &= ~IFF_UP;
-	ret = ioctl(sockfd, SIOCSIFFLAGS, &req);
-	if (ret < 0) {
-		perror("interface down:");
-		return FAILURE;
-	}
-	return SUCCESS;
-}
-
- /* Function sets mac address to given interface */
-int set_hw_addr(int sockfd, char* iface, char* mac)
-{
-	int ret = SUCCESS;
-	struct ifreq req = {0};
-	char mac_bytes[MAC_SIZE_BYTES] = "";
-	size_t if_name_len = strnlen(iface, MAX_INTERFACE_LEN-1);
-
-	if (!iface || !mac) {
-		ESP_LOGE(TAG, "Invalid parameter\n");
-		return FAILURE;
-	}
-
-	if (if_name_len < sizeof(req.ifr_name)) {
-		g_h.funcs->_h_memcpy(req.ifr_name,iface,if_name_len);
-		req.ifr_name[if_name_len]='\0';
-	} else {
-		ESP_LOGE(TAG, "Failed: Max interface len allowed: %zu \n", sizeof(req.ifr_name)-1);
-		return FAILURE;
-	}
-
-	g_h.funcs->_h_memset(mac_bytes, '\0', MAC_SIZE_BYTES);
-	ret = convert_mac_to_bytes((uint8_t *)&mac_bytes, sizeof(mac_bytes), mac);
-
-	if (ret) {
-		ESP_LOGE(TAG, "Failed to convert mac address \n");
-		return FAILURE;
-	}
-
-	req.ifr_hwaddr.sa_family = ARPHRD_ETHER;
-	g_h.funcs->_h_memcpy(req.ifr_hwaddr.sa_data, mac_bytes, MAC_SIZE_BYTES);
-	ret = ioctl(sockfd, SIOCSIFHWADDR, &req);
-
-	if (ret < 0) {
-		return FAILURE;
-	}
-	return SUCCESS;
-}
-
- /* Function creates an endpoint for communication and
-  * returns a file descriptor (integer number) that
-  * refers to that endpoint */
-int create_socket(int domain, int type, int protocol, int *sock)
-{
-	if (!sock) {
-		ESP_LOGE(TAG, "Invalid parameter\n");
-		return FAILURE;
-	}
-
-	*sock = socket(domain, type, protocol);
-	if (*sock < 0)
-	{
-		ESP_LOGE(TAG, "Failure to open socket\n");
-		return FAILURE;
-	}
-	return SUCCESS;
-}
-
- /* Function closes an endpoint for communication */
-int close_socket(int sock)
-{
-	int ret;
-	ret = close(sock);
-	if (ret < 0) {
-		ESP_LOGE(TAG, "Failure to close socket\n");
-		return FAILURE;
-	}
-	return SUCCESS;
-}
-
-#endif

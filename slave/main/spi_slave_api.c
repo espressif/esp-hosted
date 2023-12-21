@@ -30,8 +30,6 @@
 #include "stats.h"
 #include "esp_timer.h"
 
-/* DUMMY_TRANS_DESIGN is not enabled */
-#define DUMMY_TRANS_DESIGN 0
 static const char TAG[] = "SPI_DRIVER";
 /* SPI settings */
 #define SPI_BITS_PER_WORD          8
@@ -48,6 +46,12 @@ static const char TAG[] = "SPI_DRIVER";
 
 #define SPI_RX_QUEUE_SIZE          CONFIG_ESP_SPI_RX_Q_SIZE
 #define SPI_TX_QUEUE_SIZE          CONFIG_ESP_SPI_TX_Q_SIZE
+
+/* By default both Handshake and Data Ready used Active High,
+ * unless configured otherwise.
+ * For Active low, set value as 0 */
+#define H_HANDSHAKE_ACTIVE_HIGH    1
+#define H_DATAREADY_ACTIVE_HIGH    1
 
 /* SPI-DMA settings */
 #define SPI_DMA_ALIGNMENT_BYTES    4
@@ -72,6 +76,26 @@ static const char TAG[] = "SPI_DRIVER";
 
 #define GPIO_MASK_DATA_READY (1 << GPIO_DATA_READY)
 #define GPIO_MASK_HANDSHAKE (1 << GPIO_HANDSHAKE)
+
+#if H_HANDSHAKE_ACTIVE_HIGH
+  #define H_HS_VAL_ACTIVE                            GPIO_OUT_W1TS_REG
+  #define H_HS_VAL_INACTIVE                          GPIO_OUT_W1TC_REG
+  #define H_HS_PULL_REGISTER                         GPIO_PULLDOWN_ONLY
+#else
+  #define H_HS_VAL_ACTIVE                            GPIO_OUT_W1TC_REG
+  #define H_HS_VAL_INACTIVE                          GPIO_OUT_W1TS_REG
+  #define H_HS_PULL_REGISTER                         GPIO_PULLUP_ONLY
+#endif
+
+#if H_DATAREADY_ACTIVE_HIGH
+  #define H_DR_VAL_ACTIVE                            GPIO_OUT_W1TS_REG
+  #define H_DR_VAL_INACTIVE                          GPIO_OUT_W1TC_REG
+  #define H_DR_PULL_REGISTER                         GPIO_PULLDOWN_ONLY
+#else
+  #define H_DR_VAL_ACTIVE                            GPIO_OUT_W1TC_REG
+  #define H_DR_VAL_INACTIVE                          GPIO_OUT_W1TS_REG
+  #define H_DR_PULL_REGISTER                         GPIO_PULLUP_ONLY
+#endif
 
 static interface_context_t context;
 static interface_handle_t if_handle_g;
@@ -102,7 +126,7 @@ if_ops_t if_ops = {
 	.deinit = esp_spi_deinit,
 };
 
-#define SPI_MEMPOOL_NUM_BLOCKS     ((SPI_TX_QUEUE_SIZE+SPI_RX_QUEUE_SIZE))
+#define SPI_MEMPOOL_NUM_BLOCKS     ((SPI_TX_QUEUE_SIZE+SPI_RX_QUEUE_SIZE)+SPI_QUEUE_SIZE*2)
 static struct hosted_mempool * buf_mp_tx_g;
 static struct hosted_mempool * buf_mp_rx_g;
 static struct hosted_mempool * trans_mp_g;
@@ -161,25 +185,10 @@ static inline void spi_trans_free(spi_slave_transaction_t *trans)
 	hosted_mempool_free(trans_mp_g, trans);
 }
 
-static inline void set_handshake_gpio(void)
-{
-	WRITE_PERI_REG(GPIO_OUT_W1TS_REG, GPIO_MASK_HANDSHAKE);
-}
-
-static inline void reset_handshake_gpio(void)
-{
-	WRITE_PERI_REG(GPIO_OUT_W1TC_REG, GPIO_MASK_HANDSHAKE);
-}
-
-static inline void set_dataready_gpio(void)
-{
-	WRITE_PERI_REG(GPIO_OUT_W1TS_REG, GPIO_MASK_DATA_READY);
-}
-
-static inline void reset_dataready_gpio(void)
-{
-	WRITE_PERI_REG(GPIO_OUT_W1TC_REG, GPIO_MASK_DATA_READY);
-}
+#define set_handshake_gpio()     WRITE_PERI_REG(H_HS_VAL_ACTIVE,   GPIO_MASK_HANDSHAKE)
+#define reset_handshake_gpio()   WRITE_PERI_REG(H_HS_VAL_INACTIVE, GPIO_MASK_HANDSHAKE)
+#define set_dataready_gpio()     WRITE_PERI_REG(H_DR_VAL_ACTIVE,   GPIO_MASK_DATA_READY)
+#define reset_dataready_gpio()   WRITE_PERI_REG(H_DR_VAL_INACTIVE, GPIO_MASK_DATA_READY)
 
 interface_context_t *interface_insert_driver(int (*event_handler)(uint8_t val))
 {
@@ -197,6 +206,37 @@ int interface_remove_driver()
 {
 	memset(&context, 0, sizeof(context));
 	return 0;
+}
+
+
+static inline int find_wifi_tx_throttling_to_be_set(void)
+{
+	uint16_t queue_load;
+	uint8_t load_percent;
+
+	if (!slv_cfg_g.throttle_high_threshold) {
+		/* No high threshold set, no throttlling */
+		return 0;
+	}
+
+	queue_load = uxQueueMessagesWaiting(spi_rx_queue[PRIO_Q_OTHERS]);
+#if ESP_PKT_STATS
+	pkt_stats.slave_wifi_rx_msg_loaded = queue_load;
+#endif
+
+	load_percent = (queue_load*100/SPI_RX_QUEUE_SIZE);
+
+	if (load_percent > slv_cfg_g.throttle_high_threshold) {
+		slv_state_g.current_throttling = 1;
+		ESP_LOGV(TAG, "throttling started");
+	}
+
+	if (load_percent < slv_cfg_g.throttle_low_threshold) {
+		slv_state_g.current_throttling = 0;
+		ESP_LOGV(TAG, "throttling stopped");
+	}
+
+	return slv_state_g.current_throttling;
 }
 
 
@@ -221,6 +261,7 @@ void generate_startup_event(uint8_t cap)
 	header->if_num = 0;
 	header->offset = htole16(sizeof(struct esp_payload_header));
 	header->priv_pkt_type = ESP_PACKET_TYPE_EVENT;
+	header->throttle_cmd = find_wifi_tx_throttling_to_be_set();
 
 	/* Populate event data */
 	event = (struct esp_priv_event *) (buf_handle.payload + sizeof(struct esp_payload_header));
@@ -246,6 +287,14 @@ void generate_startup_event(uint8_t cap)
 	*pos = ESP_PRIV_TEST_RAW_TP;        pos++;len++;
 	*pos = LENGTH_1_BYTE;               pos++;len++;
 	*pos = raw_tp_cap;                  pos++;len++;
+
+	*pos = ESP_PRIV_RX_Q_SIZE;          pos++;len++;
+	*pos = LENGTH_1_BYTE;               pos++;len++;
+	*pos = SPI_RX_QUEUE_SIZE;           pos++;len++;
+
+	*pos = ESP_PRIV_TX_Q_SIZE;          pos++;len++;
+	*pos = LENGTH_1_BYTE;               pos++;len++;
+	*pos = SPI_TX_QUEUE_SIZE;           pos++;len++;
 
 	/* TLVs end */
 
@@ -351,8 +400,13 @@ static uint8_t * get_next_tx_buffer(uint32_t *len)
 					ret = pdFALSE;
 
 	if (ret == pdTRUE && buf_handle.payload) {
-		if (len)
+		if (len) {
+#if ESP_PKT_STATS
+			if (buf_handle.if_type == ESP_SERIAL_IF)
+				pkt_stats.serial_tx_total++;
+#endif
 			*len = buf_handle.payload_len;
+		}
 		/* Return real data buffer from queue */
 		return buf_handle.payload;
 	}
@@ -385,6 +439,7 @@ static uint8_t * get_next_tx_buffer(uint32_t *len)
 	header->if_type = ESP_MAX_IF;
 	header->if_num = 0xF;
 	header->len = 0;
+	header->throttle_cmd = find_wifi_tx_throttling_to_be_set();
 
 	if (len)
 		*len = 0;
@@ -414,8 +469,8 @@ static int process_spi_rx(interface_buffer_handle_t *buf_handle)
 	if (!len)
 		return -1;
 
-	if (len > SPI_BUFFER_SIZE) {
-		ESP_LOGE(TAG, "rx_pkt len[%u]>max[%u], dropping it", len, SPI_BUFFER_SIZE);
+	if ((len+offset) > SPI_BUFFER_SIZE) {
+		ESP_LOGE(TAG, "rx_pkt len[%u]>max[%u], dropping it", len+offset, SPI_BUFFER_SIZE);
 
 		return -1;
 	}
@@ -437,8 +492,9 @@ static int process_spi_rx(interface_buffer_handle_t *buf_handle)
 	buf_handle->if_type = header->if_type;
 	buf_handle->if_num = header->if_num;
 	buf_handle->free_buf_handle = esp_spi_read_done;
-	buf_handle->payload_len = le16toh(header->len) + offset;
+	buf_handle->payload_len = len + offset;
 	buf_handle->priv_buffer_handle = buf_handle->payload;
+
 
 #if ESP_PKT_STATS
 	if (buf_handle->if_type == ESP_STA_IF)
@@ -731,8 +787,8 @@ static interface_handle_t * esp_spi_init(void)
 	/* Enable pull-ups on SPI lines
 	 * so that no rogue pulses when no master is connected
 	 */
-	gpio_set_pull_mode(CONFIG_ESP_SPI_GPIO_HANDSHAKE, GPIO_PULLDOWN_ONLY);
-	gpio_set_pull_mode(CONFIG_ESP_SPI_GPIO_DATA_READY, GPIO_PULLDOWN_ONLY);
+	gpio_set_pull_mode(CONFIG_ESP_SPI_GPIO_HANDSHAKE, H_HS_PULL_REGISTER);
+	gpio_set_pull_mode(CONFIG_ESP_SPI_GPIO_DATA_READY, H_DR_PULL_REGISTER);
 	gpio_set_pull_mode(GPIO_MOSI, GPIO_PULLUP_ONLY);
 	gpio_set_pull_mode(GPIO_SCLK, GPIO_PULLUP_ONLY);
 	gpio_set_pull_mode(GPIO_CS, GPIO_PULLUP_ONLY);
@@ -744,6 +800,15 @@ static interface_handle_t * esp_spi_init(void)
 
 	ESP_LOGI(TAG, "Hosted SPI queue size: Tx:%u Rx:%u", SPI_TX_QUEUE_SIZE, SPI_RX_QUEUE_SIZE);
 	register_hs_disable_pin(GPIO_CS);
+
+#if !H_HANDSHAKE_ACTIVE_HIGH
+	ESP_LOGI(TAG, "Handshake: Active Low");
+#endif
+
+#if !H_DATAREADY_ACTIVE_HIGH
+	ESP_LOGI(TAG, "DataReady: Active Low");
+#endif
+
 
 	/* Initialize SPI slave interface */
 	ret=spi_slave_initialize(ESP_SPI_CONTROLLER, &buscfg, &slvcfg, DMA_CHAN);
@@ -842,6 +907,8 @@ static int32_t esp_spi_write(interface_handle_t *handle, interface_buffer_handle
 	header->offset = htole16(offset);
 	header->seq_num = htole16(buf_handle->seq_num);
 	header->flags = buf_handle->flag;
+
+	header->throttle_cmd = find_wifi_tx_throttling_to_be_set();
 
 	/* copy the data from caller */
 	memcpy(tx_buf_handle.payload + offset, buf_handle->payload, buf_handle->payload_len);

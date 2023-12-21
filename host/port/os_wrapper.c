@@ -535,6 +535,7 @@ int hosted_destroy_semaphore(void * semaphore_handle)
 
 	if (!semaphore_handle) {
 		ESP_LOGE(TAG, "Uninitialized sem id 4\n");
+		assert(semaphore_handle);
 		return RET_INVALID;
 	}
 
@@ -649,7 +650,7 @@ void *hosted_timer_start(int duration, int type,
 			timer_type, arg);*/
 	ret = esp_timer_create(&timerNew_args, &(timer_handle->timer_id));
 	if (ret || (!timer_handle->timer_id) ) {
-		ESP_LOGE(TAG, "Failed to create timer\n");
+		ESP_LOGE(TAG, "Failed to create timer. Err 0x%X", ret);
 		HOSTED_FREE(timer_handle);
 		return NULL;
 	}
@@ -689,20 +690,20 @@ int hosted_config_gpio(void* gpio_port, uint32_t gpio_num, uint32_t mode)
 	return 0;
 }
 
-int hosted_config_gpio_as_interrupt(void* gpio_port, uint32_t gpio_num, uint32_t intr_type, void (*gpio_isr_handler)(void* arg))
+int hosted_config_gpio_as_interrupt(void* gpio_port, uint32_t gpio_num, uint32_t intr_type, void (*new_gpio_isr_handler)(void* arg))
 {
-    gpio_config_t handshake_io_conf={
+    gpio_config_t new_gpio_io_conf={
         .intr_type=intr_type,
         .mode=GPIO_MODE_INPUT,
         .pull_up_en=1,
         .pin_bit_mask=(1<<gpio_num)
     };
 
-    gpio_config(&handshake_io_conf);
+    gpio_config(&new_gpio_io_conf);
 
-    gpio_set_intr_type(gpio_num, GPIO_INTR_POSEDGE);
+    gpio_set_intr_type(gpio_num, intr_type);
     gpio_install_isr_service(0);
-    gpio_isr_handler_add(gpio_num, gpio_isr_handler, NULL);
+    gpio_isr_handler_add(gpio_num, new_gpio_isr_handler, NULL);
 
 	return 0;
 }
