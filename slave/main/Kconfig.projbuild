@@ -209,6 +209,15 @@ menu "Example Configuration"
 	menu "SDIO Configuration"
 		depends on ESP_SDIO_HOST_INTERFACE
 
+		config ESP_SDIO_STREAMING_MODE
+			bool "Enable SDIO Streaming Mode"
+			default y
+			help
+				Enable Streaming Mode. Host to receive queued data from slave
+				as one stream instead of individual packets. This can improve
+				host SDIO read performance by doing one large read transaction
+				instead of many smaller read transactions.
+
 		config ESP_SDIO_GPIO_RESET
 			int "Slave GPIO pin to reset itself"
 			default -1
@@ -272,6 +281,29 @@ menu "Example Configuration"
 				help
 					"Value cannot be configured. Displayed for reference."
 		endmenu
+
+		choice
+			prompt "SDIO Slave Timing"
+			default ESP_SDIO_PSEND_PSAMPLE
+			help
+				Select the SDIO timing used by slave. Default value works with most
+				SDMMC controllers but if transfer errors are encountered, selecting a
+				different timing may help resolve the errors.
+				See https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/peripherals/sdio_slave.html#_CPPv419sdio_slave_timing_t
+				for more information
+
+			config ESP_SDIO_PSEND_PSAMPLE
+				bool "Send at positive edge, sample at positive edge"
+
+			config ESP_SDIO_NSEND_PSAMPLE
+				bool "Send at negative edge, sample at positive edge"
+
+			config ESP_SDIO_PSEND_NSAMPLE
+				bool "Send at positive edge, sample at negative edge"
+
+			config ESP_SDIO_NSEND_NSAMPLE
+				bool "Send at negative edge, sample at negative edge"
+		endchoice
 
 		config ESP_SDIO_RX_Q_SIZE
 			int "SDIO RX queue size"

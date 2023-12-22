@@ -49,12 +49,29 @@ static QueueHandle_t sdio_rx_queue[MAX_PRIORITY_QUEUES];
 #define HOST_INT_START_THROTTLE      SDIO_SLAVE_TO_HOST_INT_BIT7
 #define HOST_INT_STOP_THROTTLE       SDIO_SLAVE_TO_HOST_INT_BIT6
 
+/* Note: Sometimes the SDIO card is detected but gets problem in
+ * Read/Write or handling ISR because of SDIO timing issues.
+ * In these cases, Please tune timing below via Menuconfig
+ * */
+#if CONFIG_ESP_SDIO_PSEND_PSAMPLE
+#define SDIO_SLAVE_TIMING SDIO_SLAVE_TIMING_PSEND_PSAMPLE
+#elif CONFIG_ESP_SDIO_NSEND_PSAMPLE
+#define SDIO_SLAVE_TIMING SDIO_SLAVE_TIMING_NSEND_PSAMPLE
+#elif CONFIG_ESP_SDIO_PSEND_NSAMPLE
+#define SDIO_SLAVE_TIMING SDIO_SLAVE_TIMING_PSEND_NSAMPLE
+#elif CONFIG_ESP_SDIO_NSEND_NSAMPLE
+#define SDIO_SLAVE_TIMING SDIO_SLAVE_TIMING_NSEND_NSAMPLE
+#else
+#error No SDIO Slave Timing configured
+#endif
+
 static interface_handle_t * sdio_init(void);
 static int32_t sdio_write(interface_handle_t *handle, interface_buffer_handle_t *buf_handle);
 static int sdio_read(interface_handle_t *if_handle, interface_buffer_handle_t *buf_handle);
 static esp_err_t sdio_reset(interface_handle_t *handle);
 static void sdio_deinit(interface_handle_t *handle);
 static void sdio_rx_task(void* pvParameters);
+static void sdio_tx_done_task(void* pvParameters);
 
 if_ops_t if_ops = {
 	.init = sdio_init,
@@ -233,14 +250,13 @@ void generate_startup_event(uint8_t cap)
 
 	ESP_HEXLOGD("sdio_tx_init", buf_handle.payload, buf_handle.payload_len);
 
-	ret = sdio_slave_transmit(buf_handle.payload, buf_handle.payload_len);
+	ret = sdio_slave_send_queue(buf_handle.payload, buf_handle.payload_len,
+			buf_handle.payload, portMAX_DELAY);
 	if (ret != ESP_OK) {
 		ESP_LOGE(TAG , "sdio slave tx error, ret : 0x%x\r\n", ret);
 		sdio_buffer_tx_free(buf_handle.payload);
 		return;
 	}
-
-	sdio_buffer_tx_free(buf_handle.payload);
 }
 
 static void sdio_read_done(void *handle)
@@ -254,7 +270,11 @@ static interface_handle_t * sdio_init(void)
 	uint16_t prio_q_idx = 0;
 	sdio_slave_buf_handle_t handle = {0};
 	sdio_slave_config_t config = {
+#if CONFIG_ESP_SDIO_STREAMING_MODE
+		.sending_mode       = SDIO_SLAVE_SEND_STREAM,
+#else
 		.sending_mode       = SDIO_SLAVE_SEND_PACKET,
+#endif
 		.send_queue_size    = SDIO_SLAVE_QUEUE_SIZE,
 		.recv_buffer_size   = BUFFER_SIZE,
 		.event_cb           = event_cb,
@@ -273,16 +293,14 @@ static interface_handle_t * sdio_init(void)
 #else
 #error Invalid SDIO bus speed selection
 #endif
-		/* Note: Sometimes the SDIO card is detected but gets problem in
-		 * Read/Write or handling ISR because of SDIO timing issues.
-		 * In these cases, Please tune timing below using value from
-		 * https://github.com/espressif/esp-idf/blob/release/v5.0/components/hal/include/hal/sdio_slave_types.h#L26-L38
-		 * */
-#if defined(CONFIG_IDF_TARGET_ESP32C6)
-		.timing             = SDIO_SLAVE_TIMING_NSEND_PSAMPLE,
-#endif
+  		.timing             = SDIO_SLAVE_TIMING,
 	};
 
+#if CONFIG_ESP_SDIO_STREAMING_MODE
+	ESP_LOGI(TAG, "%s: sending mode: SDIO_SLAVE_SEND_STREAM", __func__);
+#else
+	ESP_LOGI(TAG, "%s: sending mode: SDIO_SLAVE_SEND_PACKET", __func__);
+#endif
 #if defined(CONFIG_IDF_TARGET_ESP32C6)
 	ESP_LOGI(TAG, "%s: ESP32-C6 SDIO RxQ[%d] timing[%u]\n", __func__, SDIO_RX_QUEUE_SIZE, config.timing);
 #else
@@ -340,7 +358,28 @@ static interface_handle_t * sdio_init(void)
 			CONFIG_ESP_DEFAULT_TASK_STACK_SIZE, NULL,
 			CONFIG_ESP_DEFAULT_TASK_PRIO, NULL) == pdTRUE);
 
+	// task to clean up after doing sdio tx
+	assert(xTaskCreate(sdio_tx_done_task, "sdio_tx_done_task" ,
+			CONFIG_ESP_DEFAULT_TASK_STACK_SIZE, NULL,
+			CONFIG_ESP_DEFAULT_TASK_PRIO, NULL) == pdTRUE);
+
 	return &if_handle_g;
+}
+
+/* wait for sdio to finish tx, then free the buffer */
+static void sdio_tx_done_task(void* pvParameters)
+{
+	esp_err_t res;
+	uint8_t * sendbuf = NULL;
+
+	while (true) {
+		res = sdio_slave_send_get_finished((void**)&sendbuf, portMAX_DELAY);
+		if (res) {
+			ESP_LOGE(TAG, "sdio_slave_send_get_finished() error");
+			continue;
+		}
+		sdio_buffer_tx_free(sendbuf);
+	}
 }
 
 static int32_t sdio_write(interface_handle_t *handle, interface_buffer_handle_t *buf_handle)
@@ -395,7 +434,7 @@ static int32_t sdio_write(interface_handle_t *handle, interface_buffer_handle_t 
 
 	ESP_HEXLOGD("sdio_tx", sendbuf, total_len);
 
-	ret = sdio_slave_transmit(sendbuf, total_len);
+	ret = sdio_slave_send_queue(sendbuf, total_len, sendbuf, portMAX_DELAY);
 	if (ret != ESP_OK) {
 		ESP_LOGE(TAG , "sdio slave transmit error, ret : 0x%x\r\n", ret);
 		sdio_buffer_tx_free(sendbuf);
@@ -408,9 +447,6 @@ static int32_t sdio_write(interface_handle_t *handle, interface_buffer_handle_t 
 	else if (header->if_type == ESP_SERIAL_IF)
 		pkt_stats.serial_tx_total++;
 #endif
-
-	sdio_buffer_tx_free(sendbuf);
-
 	return buf_handle->payload_len;
 }
 
