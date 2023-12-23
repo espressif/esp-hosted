@@ -1421,6 +1421,9 @@ message Rpc {
 	/* msg id */
 	RpcId msg_id = 2;
 
+        /* UID of message */
+        uint32 uid = 3;
+
 	/* union of all msg ids */
 	oneof payload {
 		/** Requests **/

@@ -37,15 +37,32 @@ static void * async_timer_hdl;
 static struct rpc_lib_context rpc_lib_ctxt;
 
 static int call_event_callback(ctrl_cmd_t *app_event);
-static int is_async_resp_callback_registered_by_resp_msg_id(int resp_msg_id);
-static int is_sync_resp_sem_for_resp_msg_id(int resp_msg_id);
+static int is_async_resp_callback_available(ctrl_cmd_t *app_resp);
+static int is_sync_resp_sem_available(uint32_t uid);
+static int clear_async_resp_callback(ctrl_cmd_t *app_resp);
 static int call_async_resp_callback(ctrl_cmd_t *app_resp);
-static int set_async_resp_callback(int req_msg_id, rpc_rsp_cb_t resp_cb);
+static int set_async_resp_callback(ctrl_cmd_t *app_req, rpc_rsp_cb_t resp_cb);
 static int set_sync_resp_sem(ctrl_cmd_t *app_req);
 static int wait_for_sync_response(ctrl_cmd_t *app_req);
 static void rpc_async_timeout_handler(void *arg);
 static int post_sync_resp_sem(ctrl_cmd_t *app_resp);
 
+/* uid to link between requests and responses */
+/* uids are incrementing values from 1 onwards.
+ * 0 means not a valid id */
+static uint32_t uid = 0;
+
+/* structures used to keep track of response semaphores
+ * and callbacks via their uid */
+typedef struct {
+	uint32_t uid;
+	void * sem;
+} sync_rsp_t;
+
+typedef struct {
+	uint32_t uid;
+	rpc_rsp_cb_t cb;
+} async_rsp_t;
 
 /* rpc response callbacks
  * These will be updated per rpc request received
@@ -58,8 +75,11 @@ static int post_sync_resp_sem(ctrl_cmd_t *app_resp);
  *    When the response comes, the this registered callback function will be called
  *    with input as response
  */
-static rpc_rsp_cb_t rpc_rsp_cb_table [RPC_ID__Resp_Max - RPC_ID__Resp_Base] = { NULL };
-static void* rpc_rsp_cb_sem_table [RPC_ID__Resp_Max - RPC_ID__Resp_Base] = { NULL };
+#define MAX_SYNC_RPC_TRANSACTIONS  CONFIG_ESP_MAX_SIMULTANEOUS_SYNC_RPC_REQUESTS
+#define MAX_ASYNC_RPC_TRANSACTIONS CONFIG_ESP_MAX_SIMULTANEOUS_ASYNC_RPC_REQUESTS
+
+static sync_rsp_t sync_rsp_table[MAX_SYNC_RPC_TRANSACTIONS] = { 0 };
+static async_rsp_t async_rsp_table[MAX_ASYNC_RPC_TRANSACTIONS] = { 0 };
 
 /* rpc event callbacks
  * These will be updated when user registers event callback
@@ -149,7 +169,8 @@ static int process_rpc_tx_msg(ctrl_cmd_t *app_req)
 	rpc__init(&req);
 
 	req.msg_id = app_req->msg_id;
-	ESP_LOGI(TAG, "<-- RPC_Req  [0x%x]", app_req->msg_id);
+	req.uid = app_req->uid;
+	ESP_LOGI(TAG, "<-- RPC_Req  [0x%x], uid %ld", app_req->msg_id, app_req->uid);
 	/* payload case is exact match to msg id in esp_hosted_config.pb-c.h */
 	req.payload_case = (Rpc__PayloadCase) app_req->msg_id;
 
@@ -169,19 +190,15 @@ static int process_rpc_tx_msg(ctrl_cmd_t *app_req)
 	/* 4. Allocate protobuf msg */
 	HOSTED_CALLOC(uint8_t, tx_data, tx_len, fail_req0);
 
-	/* 5. Assign response callback
-	 * a. If the response callback is not set, this will reset the
-	 *    callback to NULL.
-	 * b. If the non NULL response is assigned, this will set the
-	 *    callback to user defined callback function */
-	ret = set_async_resp_callback(app_req->msg_id, app_req->rpc_rsp_cb);
-	if (ret < 0) {
-		ESP_LOGE(TAG, "could not set callback for req[%u]\n",req.msg_id);
-		failure_status = RPC_ERR_SET_ASYNC_CB;
-		goto fail_req;
+	/* 5. Assign response callback, if valid */
+	if (app_req->rpc_rsp_cb) {
+		ret = set_async_resp_callback(app_req, app_req->rpc_rsp_cb);
+		if (ret < 0) {
+			ESP_LOGE(TAG, "could not set callback for req[%u]\n",req.msg_id);
+			failure_status = RPC_ERR_SET_ASYNC_CB;
+			goto fail_req;
+		}
 	}
-
-
 
 	/* 6. Start timeout for response for async only
 	 * For sync procedures, g_h.funcs->_h_get_semaphore takes care to
@@ -260,11 +277,11 @@ fail_req:
 
 		if (g_h.funcs->_h_queue_item(rpc_rx_q, &elem, HOSTED_BLOCK_MAX)) {
 			ESP_LOGE(TAG, "RPC Q put fail\n");
-		} else if (CALLBACK_AVAILABLE == is_sync_resp_sem_for_resp_msg_id(app_resp->msg_id)) {
-			ESP_LOGV(TAG, "trigger semaphore to react to failed message id %d", app_resp->msg_id);
+		} else if (CALLBACK_AVAILABLE == is_sync_resp_sem_available(app_resp->uid)) {
+			ESP_LOGV(TAG, "trigger semaphore to react to failed message uid %ld", app_resp->uid);
 			post_sync_resp_sem(app_resp);
 		} else {
-			ESP_LOGE(TAG, "no sync resp callback to react to failed message id %d", app_resp->msg_id);
+			ESP_LOGE(TAG, "no sync resp callback to react to failed message uid %ld", app_resp->uid);
 		}
 	}
 
@@ -347,7 +364,7 @@ static int process_rpc_rx_msg(Rpc * proto_msg, rpc_rx_ind_t rpc_rx_func)
 		/* Is callback is available,
 		 * progress as async response */
 		if (CALLBACK_AVAILABLE ==
-			is_async_resp_callback_registered_by_resp_msg_id(app_resp->msg_id)) {
+			is_async_resp_callback_available(app_resp)) {
 
 			/* User registered RPC async response callback
 			 * function is available for this proto_msg,
@@ -355,7 +372,7 @@ static int process_rpc_rx_msg(Rpc * proto_msg, rpc_rx_ind_t rpc_rx_func)
 			 * return to select
 			 */
 			call_async_resp_callback(app_resp);
-
+			clear_async_resp_callback(app_resp);
 			//CLEANUP_APP_MSG(app_resp);
 
 		} else {
@@ -380,7 +397,7 @@ static int process_rpc_rx_msg(Rpc * proto_msg, rpc_rx_ind_t rpc_rx_func)
 			}
 
 			/* Call up rx ind to unblock caller */
-			if (CALLBACK_AVAILABLE == is_sync_resp_sem_for_resp_msg_id(app_resp->msg_id))
+			if (CALLBACK_AVAILABLE == is_sync_resp_sem_available(app_resp->uid))
 				post_sync_resp_sem(app_resp);
 		}
 
@@ -594,6 +611,21 @@ static ctrl_cmd_t * get_response(int *read_len, ctrl_cmd_t *app_req)
 	return NULL;
 }
 
+static int clear_async_resp_callback(ctrl_cmd_t *app_resp)
+{
+	int i;
+
+	for (i = 0; i < MAX_ASYNC_RPC_TRANSACTIONS; i++) {
+		if (async_rsp_table[i].uid == app_resp->uid) {
+			async_rsp_table[i].uid = 0;
+			async_rsp_table[i].cb = NULL;
+			return ESP_OK;
+		}
+	}
+
+	return CALLBACK_NOT_REGISTERED;
+}
+
 /* Check and call rpc response asynchronous callback if available
  * else flag error
  *     MSG_ID_OUT_OF_ORDER - if response id is not understandable
@@ -601,13 +633,17 @@ static ctrl_cmd_t * get_response(int *read_len, ctrl_cmd_t *app_req)
  **/
 static int call_async_resp_callback(ctrl_cmd_t *app_resp)
 {
+	int i;
+
 	if ((app_resp->msg_id <= RPC_ID__Resp_Base) ||
 	    (app_resp->msg_id >= RPC_ID__Resp_Max)) {
 		return MSG_ID_OUT_OF_ORDER;
 	}
 
-	if (rpc_rsp_cb_table[app_resp->msg_id-RPC_ID__Resp_Base]) {
-		return rpc_rsp_cb_table[app_resp->msg_id-RPC_ID__Resp_Base](app_resp);
+	for (i = 0; i < MAX_ASYNC_RPC_TRANSACTIONS; i++) {
+		if (async_rsp_table[i].uid == app_resp->uid) {
+			return async_rsp_table[i].cb(app_resp);
+		}
 	}
 
 	return CALLBACK_NOT_REGISTERED;
@@ -616,13 +652,17 @@ static int call_async_resp_callback(ctrl_cmd_t *app_resp)
 
 static int post_sync_resp_sem(ctrl_cmd_t *app_resp)
 {
+	int i;
+
 	if ((app_resp->msg_id <= RPC_ID__Resp_Base) ||
 	    (app_resp->msg_id >= RPC_ID__Resp_Max)) {
 		return MSG_ID_OUT_OF_ORDER;
 	}
 
-	if (rpc_rsp_cb_sem_table[app_resp->msg_id-RPC_ID__Resp_Base]) {
-		return g_h.funcs->_h_post_semaphore(rpc_rsp_cb_sem_table[app_resp->msg_id-RPC_ID__Resp_Base]);
+	for (i = 0; i < MAX_SYNC_RPC_TRANSACTIONS; i++) {
+		if (sync_rsp_table[i].uid == app_resp->uid) {
+			return g_h.funcs->_h_post_semaphore(sync_rsp_table[i].sem);
+		}
 	}
 
 	return CALLBACK_NOT_REGISTERED;
@@ -649,21 +689,27 @@ static int call_event_callback(ctrl_cmd_t *app_event)
 }
 
 /* Set asynchronous rpc response callback from rpc **request**
- * In case of synchronous request, `resp_cb` will be NULL and table
- * `rpc_rsp_cb_table` will be updated with NULL
- * In case of asynchronous request, valid callback will be cached
- **/
-static int set_async_resp_callback(int req_msg_id, rpc_rsp_cb_t resp_cb)
+ */
+static int set_async_resp_callback(ctrl_cmd_t *app_req, rpc_rsp_cb_t resp_cb)
 {
-	/* Assign(Replace) response callback passed */
-	int exp_resp_msg_id = (req_msg_id - RPC_ID__Req_Base + RPC_ID__Resp_Base);
+	int i;
+
+	int exp_resp_msg_id = (app_req->msg_id - RPC_ID__Req_Base + RPC_ID__Resp_Base);
 	if (exp_resp_msg_id >= RPC_ID__Resp_Max) {
 		ESP_LOGW(TAG, "Not able to map new request to resp id\n");
 		return MSG_ID_OUT_OF_ORDER;
-	} else {
-		rpc_rsp_cb_table[exp_resp_msg_id-RPC_ID__Resp_Base] = resp_cb;
-		return CALLBACK_SET_SUCCESS;
 	}
+
+	for (i = 0; i < MAX_ASYNC_RPC_TRANSACTIONS; i++) {
+		if (!async_rsp_table[i].uid) {
+			async_rsp_table[i].uid = app_req->uid;
+			async_rsp_table[i].cb = resp_cb;
+			return CALLBACK_SET_SUCCESS;
+		}
+	}
+
+	ESP_LOGE(TAG, "Async cb not registered: out of buffer space");
+	return CALLBACK_NOT_REGISTERED;
 }
 
 /* Set synchronous rpc response semaphore
@@ -675,6 +721,7 @@ static int set_async_resp_callback(int req_msg_id, rpc_rsp_cb_t resp_cb)
 static int set_sync_resp_sem(ctrl_cmd_t *app_req)
 {
 	int exp_resp_msg_id = (app_req->msg_id - RPC_ID__Req_Base + RPC_ID__Resp_Base);
+	int i;
 
 	if (app_req->rx_sem)
 		g_h.funcs->_h_destroy_semaphore(app_req->rx_sem);
@@ -687,9 +734,16 @@ static int set_sync_resp_sem(ctrl_cmd_t *app_req)
 		app_req->rx_sem = g_h.funcs->_h_create_semaphore(1);
 		g_h.funcs->_h_get_semaphore(app_req->rx_sem, HOSTED_BLOCKING);
 
-		ESP_LOGD(TAG, "Register sync sem %p for resp[0x%x]\n", app_req->rx_sem, exp_resp_msg_id);
-		rpc_rsp_cb_sem_table[exp_resp_msg_id-RPC_ID__Resp_Base] = app_req->rx_sem;
-		return CALLBACK_SET_SUCCESS;
+		for (i = 0; i < MAX_SYNC_RPC_TRANSACTIONS; i++) {
+			if (!sync_rsp_table[i].uid) {
+				ESP_LOGD(TAG, "Register sync sem %p for uid %ld", app_req->rx_sem, app_req->uid);
+				sync_rsp_table[i].uid = app_req->uid;
+				sync_rsp_table[i].sem = app_req->rx_sem;
+				return CALLBACK_SET_SUCCESS;
+			}
+		}
+		ESP_LOGE(TAG, "Symc sem not registered: out of buffer space");
+		return CALLBACK_NOT_REGISTERED;
 	} else {
 		/* For async, nothing to be done */
 		ESP_LOGD(TAG, "NOT Register sync sem for resp[0x%x]\n", exp_resp_msg_id);
@@ -702,6 +756,7 @@ static int wait_for_sync_response(ctrl_cmd_t *app_req)
 	int timeout_sec = 0;
 	int exp_resp_msg_id = 0;
 	int ret = 0;
+	int i;
 
 	/* If timeout not specified, use default */
 	if (!app_req->rsp_timeout_sec)
@@ -711,11 +766,6 @@ static int wait_for_sync_response(ctrl_cmd_t *app_req)
 
 	exp_resp_msg_id = (app_req->msg_id - RPC_ID__Req_Base + RPC_ID__Resp_Base);
 
-	if (!rpc_rsp_cb_sem_table[exp_resp_msg_id-RPC_ID__Resp_Base]) {
-		ESP_LOGE(TAG, "Err: sync sem not registered\n");
-		return RPC_ERR_SET_SYNC_SEM;
-	}
-
 	if (exp_resp_msg_id >= RPC_ID__Resp_Max) {
 		ESP_LOGW(TAG, "Not able to map new request to resp id\n");
 		return MSG_ID_OUT_OF_ORDER;
@@ -723,72 +773,50 @@ static int wait_for_sync_response(ctrl_cmd_t *app_req)
 
 	ESP_LOGV(TAG, "Wait for sync resp for Req[0x%x] with timer of %u sec\n",
 			app_req->msg_id, timeout_sec);
-	ret = g_h.funcs->_h_get_semaphore(rpc_rsp_cb_sem_table[exp_resp_msg_id-RPC_ID__Resp_Base], timeout_sec);
-
-	if (g_h.funcs->_h_destroy_semaphore(rpc_rsp_cb_sem_table[exp_resp_msg_id-RPC_ID__Resp_Base])) {
-		ESP_LOGE(TAG, "read sem rx for resp[0x%x] destroy failed\n", exp_resp_msg_id);
+	for (i = 0; i < MAX_SYNC_RPC_TRANSACTIONS; i++) {
+		if (sync_rsp_table[i].uid == app_req->uid) {
+			ret = g_h.funcs->_h_get_semaphore(sync_rsp_table[i].sem, timeout_sec);
+			if (g_h.funcs->_h_destroy_semaphore(sync_rsp_table[i].sem)) {
+				ESP_LOGE(TAG, "read sem rx for resp[0x%x] destroy failed\n", exp_resp_msg_id);
+			}
+			// clear table entry
+			sync_rsp_table[i].uid = 0;
+			sync_rsp_table[i].sem = NULL;
+			return ret;
+		}
 	}
-	rpc_rsp_cb_sem_table[exp_resp_msg_id-RPC_ID__Resp_Base] = NULL;
-
-	return ret;
+	ESP_LOGW(TAG, "Not able to map new request to resp id");
+	return MSG_ID_OUT_OF_ORDER;
 }
 
-/* Set asynchronous rpc response callback from rpc **response**
- * In case of synchronous request, `resp_cb` will be NULL and table
- * `rpc_rsp_cb_table` will be updated with NULL
- * In case of asynchronous request, valid callback will be cached
- **/
-static int is_async_resp_callback_registered_by_resp_msg_id(int resp_msg_id)
+/* Is asynchronous rpc response callback from rpc response */
+static int is_async_resp_callback_available(ctrl_cmd_t *app_resp)
 {
-	if ((resp_msg_id <= RPC_ID__Resp_Base) || (resp_msg_id >= RPC_ID__Resp_Max)) {
-		ESP_LOGE(TAG, "resp id[%u] out of range\n", resp_msg_id);
+	int i;
+
+	if ((app_resp->msg_id <= RPC_ID__Resp_Base) || (app_resp->msg_id >= RPC_ID__Resp_Max)) {
+		ESP_LOGE(TAG, "resp id[%u] out of range\n", app_resp->msg_id);
 		return MSG_ID_OUT_OF_ORDER;
 	}
 
-	if (rpc_rsp_cb_table[resp_msg_id-RPC_ID__Resp_Base]) {
-		ESP_LOGV(TAG, "for [0x%x] : yes [%p]\n", resp_msg_id,
-				rpc_rsp_cb_table[resp_msg_id-RPC_ID__Resp_Base]);
-		return CALLBACK_AVAILABLE;
+	for (i = 0; i < MAX_ASYNC_RPC_TRANSACTIONS; i++) {
+		if (async_rsp_table[i].uid == app_resp->uid) {
+			return CALLBACK_AVAILABLE;
+		}
 	}
 
 	return CALLBACK_NOT_REGISTERED;
 }
 
-static int is_sync_resp_sem_for_resp_msg_id(int resp_msg_id)
+static int is_sync_resp_sem_available(uint32_t uid)
 {
-	if ((resp_msg_id <= RPC_ID__Resp_Base) || (resp_msg_id >= RPC_ID__Resp_Max)) {
-		ESP_LOGE(TAG, "resp id[%u] out of range\n", resp_msg_id);
-		return MSG_ID_OUT_OF_ORDER;
+	int i;
+
+	for (i = 0; i < MAX_SYNC_RPC_TRANSACTIONS; i++) {
+		if (sync_rsp_table[i].uid == uid) {
+			return CALLBACK_AVAILABLE;
+		}
 	}
-
-	if (rpc_rsp_cb_sem_table[resp_msg_id-RPC_ID__Resp_Base]) {
-		ESP_LOGV(TAG, "for [0x%x] : yes [%p]\n", resp_msg_id,
-				rpc_rsp_cb_sem_table[resp_msg_id-RPC_ID__Resp_Base]);
-		return CALLBACK_AVAILABLE;
-	}
-
-	return CALLBACK_NOT_REGISTERED;
-}
-
-
-/* Check if async rpc response callback is available
- * Returns CALLBACK_AVAILABLE if a non NULL asynchrounous rpc response
- * callback is available. It will return failure -
- *     MSG_ID_OUT_OF_ORDER - if request msg id is unsupported
- *     CALLBACK_NOT_REGISTERED - if aync callback is not available
- **/
-int is_async_resp_callback_registered(ctrl_cmd_t req)
-{
-	int exp_resp_msg_id = (req.msg_id - RPC_ID__Req_Base + RPC_ID__Resp_Base);
-	if (exp_resp_msg_id >= RPC_ID__Resp_Max) {
-		ESP_LOGW(TAG, "Not able to map new request to resp id, using sync path\n");
-		return MSG_ID_OUT_OF_ORDER;
-	}
-
-	if (rpc_rsp_cb_table[exp_resp_msg_id-RPC_ID__Resp_Base]) {
-		return CALLBACK_AVAILABLE;
-	}
-
 	return CALLBACK_NOT_REGISTERED;
 }
 
@@ -888,6 +916,11 @@ int rpc_send_req(ctrl_cmd_t *app_req)
 	}
 	ESP_LOGV(TAG, "app_req msgid : %x\n", app_req->msg_id);
 
+	uid++;
+	// handle rollover in uid value
+	if (!uid)
+		uid++;
+	app_req->uid = uid;
 
 	if (!app_req->rpc_rsp_cb) {
 		/* sync proc only */

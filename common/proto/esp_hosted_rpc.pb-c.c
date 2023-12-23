@@ -12956,7 +12956,7 @@ const ProtobufCMessageDescriptor rpc__event__sta_disconnected__descriptor =
   (ProtobufCMessageInit) rpc__event__sta_disconnected__init,
   NULL,NULL,NULL    /* reserved[123] */
 };
-static const ProtobufCFieldDescriptor rpc__field_descriptors[96] =
+static const ProtobufCFieldDescriptor rpc__field_descriptors[97] =
 {
   {
     "msg_type",
@@ -12978,6 +12978,18 @@ static const ProtobufCFieldDescriptor rpc__field_descriptors[96] =
     0,   /* quantifier_offset */
     offsetof(Rpc, msg_id),
     &rpc_id__descriptor,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "uid",
+    3,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_UINT32,
+    0,   /* quantifier_offset */
+    offsetof(Rpc, uid),
+    NULL,
     NULL,
     0,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
@@ -14112,120 +14124,121 @@ static const ProtobufCFieldDescriptor rpc__field_descriptors[96] =
   },
 };
 static const unsigned rpc__field_indices_by_name[] = {
-  90,   /* field[90] = event_ap_sta_connected */
-  91,   /* field[91] = event_ap_sta_disconnected */
-  88,   /* field[88] = event_esp_init */
-  89,   /* field[89] = event_heartbeat */
-  94,   /* field[94] = event_sta_connected */
-  95,   /* field[95] = event_sta_disconnected */
-  93,   /* field[93] = event_sta_scan_done */
-  92,   /* field[92] = event_wifi_event_no_args */
+  91,   /* field[91] = event_ap_sta_connected */
+  92,   /* field[92] = event_ap_sta_disconnected */
+  89,   /* field[89] = event_esp_init */
+  90,   /* field[90] = event_heartbeat */
+  95,   /* field[95] = event_sta_connected */
+  96,   /* field[96] = event_sta_disconnected */
+  94,   /* field[94] = event_sta_scan_done */
+  93,   /* field[93] = event_wifi_event_no_args */
   1,   /* field[1] = msg_id */
   0,   /* field[0] = msg_type */
-  13,   /* field[13] = req_config_heartbeat */
-  2,   /* field[2] = req_get_mac_address */
-  12,   /* field[12] = req_get_wifi_curr_tx_power */
-  4,   /* field[4] = req_get_wifi_mode */
-  8,   /* field[8] = req_ota_begin */
-  10,   /* field[10] = req_ota_end */
-  9,   /* field[9] = req_ota_write */
-  3,   /* field[3] = req_set_mac_address */
-  11,   /* field[11] = req_set_wifi_max_tx_power */
-  5,   /* field[5] = req_set_wifi_mode */
-  40,   /* field[40] = req_wifi_ap_get_sta_aid */
-  39,   /* field[39] = req_wifi_ap_get_sta_list */
-  26,   /* field[26] = req_wifi_clear_ap_list */
-  28,   /* field[28] = req_wifi_clear_fast_connect */
-  18,   /* field[18] = req_wifi_connect */
-  29,   /* field[29] = req_wifi_deauth_sta */
-  15,   /* field[15] = req_wifi_deinit */
-  19,   /* field[19] = req_wifi_disconnect */
-  34,   /* field[34] = req_wifi_get_bandwidth */
-  36,   /* field[36] = req_wifi_get_channel */
-  21,   /* field[21] = req_wifi_get_config */
-  38,   /* field[38] = req_wifi_get_country */
-  43,   /* field[43] = req_wifi_get_country_code */
-  32,   /* field[32] = req_wifi_get_protocol */
-  7,   /* field[7] = req_wifi_get_ps */
-  14,   /* field[14] = req_wifi_init */
-  27,   /* field[27] = req_wifi_restore */
-  24,   /* field[24] = req_wifi_scan_get_ap_num */
-  25,   /* field[25] = req_wifi_scan_get_ap_records */
-  22,   /* field[22] = req_wifi_scan_start */
-  23,   /* field[23] = req_wifi_scan_stop */
-  33,   /* field[33] = req_wifi_set_bandwidth */
-  35,   /* field[35] = req_wifi_set_channel */
-  20,   /* field[20] = req_wifi_set_config */
-  37,   /* field[37] = req_wifi_set_country */
-  42,   /* field[42] = req_wifi_set_country_code */
-  31,   /* field[31] = req_wifi_set_protocol */
-  6,   /* field[6] = req_wifi_set_ps */
-  41,   /* field[41] = req_wifi_set_storage */
-  30,   /* field[30] = req_wifi_sta_get_ap_info */
-  44,   /* field[44] = req_wifi_sta_get_rssi */
-  16,   /* field[16] = req_wifi_start */
-  17,   /* field[17] = req_wifi_stop */
-  56,   /* field[56] = resp_config_heartbeat */
-  45,   /* field[45] = resp_get_mac_address */
-  55,   /* field[55] = resp_get_wifi_curr_tx_power */
-  47,   /* field[47] = resp_get_wifi_mode */
-  51,   /* field[51] = resp_ota_begin */
-  53,   /* field[53] = resp_ota_end */
-  52,   /* field[52] = resp_ota_write */
-  46,   /* field[46] = resp_set_mac_address */
-  54,   /* field[54] = resp_set_wifi_max_tx_power */
-  48,   /* field[48] = resp_set_wifi_mode */
-  83,   /* field[83] = resp_wifi_ap_get_sta_aid */
-  82,   /* field[82] = resp_wifi_ap_get_sta_list */
-  69,   /* field[69] = resp_wifi_clear_ap_list */
-  71,   /* field[71] = resp_wifi_clear_fast_connect */
-  61,   /* field[61] = resp_wifi_connect */
-  72,   /* field[72] = resp_wifi_deauth_sta */
-  58,   /* field[58] = resp_wifi_deinit */
-  62,   /* field[62] = resp_wifi_disconnect */
-  77,   /* field[77] = resp_wifi_get_bandwidth */
-  79,   /* field[79] = resp_wifi_get_channel */
-  64,   /* field[64] = resp_wifi_get_config */
-  81,   /* field[81] = resp_wifi_get_country */
-  86,   /* field[86] = resp_wifi_get_country_code */
-  75,   /* field[75] = resp_wifi_get_protocol */
-  50,   /* field[50] = resp_wifi_get_ps */
-  57,   /* field[57] = resp_wifi_init */
-  70,   /* field[70] = resp_wifi_restore */
-  67,   /* field[67] = resp_wifi_scan_get_ap_num */
-  68,   /* field[68] = resp_wifi_scan_get_ap_records */
-  65,   /* field[65] = resp_wifi_scan_start */
-  66,   /* field[66] = resp_wifi_scan_stop */
-  76,   /* field[76] = resp_wifi_set_bandwidth */
-  78,   /* field[78] = resp_wifi_set_channel */
-  63,   /* field[63] = resp_wifi_set_config */
-  80,   /* field[80] = resp_wifi_set_country */
-  85,   /* field[85] = resp_wifi_set_country_code */
-  74,   /* field[74] = resp_wifi_set_protocol */
-  49,   /* field[49] = resp_wifi_set_ps */
-  84,   /* field[84] = resp_wifi_set_storage */
-  73,   /* field[73] = resp_wifi_sta_get_ap_info */
-  87,   /* field[87] = resp_wifi_sta_get_rssi */
-  59,   /* field[59] = resp_wifi_start */
-  60,   /* field[60] = resp_wifi_stop */
+  14,   /* field[14] = req_config_heartbeat */
+  3,   /* field[3] = req_get_mac_address */
+  13,   /* field[13] = req_get_wifi_curr_tx_power */
+  5,   /* field[5] = req_get_wifi_mode */
+  9,   /* field[9] = req_ota_begin */
+  11,   /* field[11] = req_ota_end */
+  10,   /* field[10] = req_ota_write */
+  4,   /* field[4] = req_set_mac_address */
+  12,   /* field[12] = req_set_wifi_max_tx_power */
+  6,   /* field[6] = req_set_wifi_mode */
+  41,   /* field[41] = req_wifi_ap_get_sta_aid */
+  40,   /* field[40] = req_wifi_ap_get_sta_list */
+  27,   /* field[27] = req_wifi_clear_ap_list */
+  29,   /* field[29] = req_wifi_clear_fast_connect */
+  19,   /* field[19] = req_wifi_connect */
+  30,   /* field[30] = req_wifi_deauth_sta */
+  16,   /* field[16] = req_wifi_deinit */
+  20,   /* field[20] = req_wifi_disconnect */
+  35,   /* field[35] = req_wifi_get_bandwidth */
+  37,   /* field[37] = req_wifi_get_channel */
+  22,   /* field[22] = req_wifi_get_config */
+  39,   /* field[39] = req_wifi_get_country */
+  44,   /* field[44] = req_wifi_get_country_code */
+  33,   /* field[33] = req_wifi_get_protocol */
+  8,   /* field[8] = req_wifi_get_ps */
+  15,   /* field[15] = req_wifi_init */
+  28,   /* field[28] = req_wifi_restore */
+  25,   /* field[25] = req_wifi_scan_get_ap_num */
+  26,   /* field[26] = req_wifi_scan_get_ap_records */
+  23,   /* field[23] = req_wifi_scan_start */
+  24,   /* field[24] = req_wifi_scan_stop */
+  34,   /* field[34] = req_wifi_set_bandwidth */
+  36,   /* field[36] = req_wifi_set_channel */
+  21,   /* field[21] = req_wifi_set_config */
+  38,   /* field[38] = req_wifi_set_country */
+  43,   /* field[43] = req_wifi_set_country_code */
+  32,   /* field[32] = req_wifi_set_protocol */
+  7,   /* field[7] = req_wifi_set_ps */
+  42,   /* field[42] = req_wifi_set_storage */
+  31,   /* field[31] = req_wifi_sta_get_ap_info */
+  45,   /* field[45] = req_wifi_sta_get_rssi */
+  17,   /* field[17] = req_wifi_start */
+  18,   /* field[18] = req_wifi_stop */
+  57,   /* field[57] = resp_config_heartbeat */
+  46,   /* field[46] = resp_get_mac_address */
+  56,   /* field[56] = resp_get_wifi_curr_tx_power */
+  48,   /* field[48] = resp_get_wifi_mode */
+  52,   /* field[52] = resp_ota_begin */
+  54,   /* field[54] = resp_ota_end */
+  53,   /* field[53] = resp_ota_write */
+  47,   /* field[47] = resp_set_mac_address */
+  55,   /* field[55] = resp_set_wifi_max_tx_power */
+  49,   /* field[49] = resp_set_wifi_mode */
+  84,   /* field[84] = resp_wifi_ap_get_sta_aid */
+  83,   /* field[83] = resp_wifi_ap_get_sta_list */
+  70,   /* field[70] = resp_wifi_clear_ap_list */
+  72,   /* field[72] = resp_wifi_clear_fast_connect */
+  62,   /* field[62] = resp_wifi_connect */
+  73,   /* field[73] = resp_wifi_deauth_sta */
+  59,   /* field[59] = resp_wifi_deinit */
+  63,   /* field[63] = resp_wifi_disconnect */
+  78,   /* field[78] = resp_wifi_get_bandwidth */
+  80,   /* field[80] = resp_wifi_get_channel */
+  65,   /* field[65] = resp_wifi_get_config */
+  82,   /* field[82] = resp_wifi_get_country */
+  87,   /* field[87] = resp_wifi_get_country_code */
+  76,   /* field[76] = resp_wifi_get_protocol */
+  51,   /* field[51] = resp_wifi_get_ps */
+  58,   /* field[58] = resp_wifi_init */
+  71,   /* field[71] = resp_wifi_restore */
+  68,   /* field[68] = resp_wifi_scan_get_ap_num */
+  69,   /* field[69] = resp_wifi_scan_get_ap_records */
+  66,   /* field[66] = resp_wifi_scan_start */
+  67,   /* field[67] = resp_wifi_scan_stop */
+  77,   /* field[77] = resp_wifi_set_bandwidth */
+  79,   /* field[79] = resp_wifi_set_channel */
+  64,   /* field[64] = resp_wifi_set_config */
+  81,   /* field[81] = resp_wifi_set_country */
+  86,   /* field[86] = resp_wifi_set_country_code */
+  75,   /* field[75] = resp_wifi_set_protocol */
+  50,   /* field[50] = resp_wifi_set_ps */
+  85,   /* field[85] = resp_wifi_set_storage */
+  74,   /* field[74] = resp_wifi_sta_get_ap_info */
+  88,   /* field[88] = resp_wifi_sta_get_rssi */
+  60,   /* field[60] = resp_wifi_start */
+  61,   /* field[61] = resp_wifi_stop */
+  2,   /* field[2] = uid */
 };
 static const ProtobufCIntRange rpc__number_ranges[14 + 1] =
 {
   { 1, 0 },
-  { 257, 2 },
-  { 270, 6 },
-  { 297, 31 },
-  { 311, 39 },
-  { 334, 42 },
-  { 341, 44 },
-  { 513, 45 },
-  { 526, 49 },
-  { 553, 74 },
-  { 567, 82 },
-  { 590, 85 },
-  { 597, 87 },
-  { 769, 88 },
-  { 0, 96 }
+  { 257, 3 },
+  { 270, 7 },
+  { 297, 32 },
+  { 311, 40 },
+  { 334, 43 },
+  { 341, 45 },
+  { 513, 46 },
+  { 526, 50 },
+  { 553, 75 },
+  { 567, 83 },
+  { 590, 86 },
+  { 597, 88 },
+  { 769, 89 },
+  { 0, 97 }
 };
 const ProtobufCMessageDescriptor rpc__descriptor =
 {
@@ -14235,7 +14248,7 @@ const ProtobufCMessageDescriptor rpc__descriptor =
   "Rpc",
   "",
   sizeof(Rpc),
-  96,
+  97,
   rpc__field_descriptors,
   rpc__field_indices_by_name,
   14,  rpc__number_ranges,
