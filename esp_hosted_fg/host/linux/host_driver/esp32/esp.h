@@ -50,11 +50,25 @@ struct esp_adapter;
 
 enum context_state {
 	ESP_CONTEXT_DISABLED = 0,
-	ESP_CONTEXT_INIT,
-	ESP_CONTEXT_READY
+	ESP_CONTEXT_RX_READY,
+	ESP_CONTEXT_READY,
+};
+
+/* ESP in sdkconfig has CONFIG_IDF_FIRMWARE_CHIP_ID entry.
+ * supported values of CONFIG_IDF_FIRMWARE_CHIP_ID are - */
+enum chipset_type_e {
+	ESP_FIRMWARE_CHIP_UNRECOGNIZED = 0xff,
+	ESP_FIRMWARE_CHIP_ESP32 = 0x0,
+	ESP_FIRMWARE_CHIP_ESP32S2 = 0x2,
+	ESP_FIRMWARE_CHIP_ESP32C2 = 0xC,
+	ESP_FIRMWARE_CHIP_ESP32C3 = 0x5,
+	ESP_FIRMWARE_CHIP_ESP32C6 = 0xD,
+	ESP_FIRMWARE_CHIP_ESP32S3 = 0x9,
 };
 
 struct esp_adapter {
+	struct hci_dev          *hcidev;
+	struct device           *dev;
 	u8                      if_type;
 	enum context_state      state;
 	u32                     capabilities;
@@ -67,10 +81,13 @@ struct esp_adapter {
 
 	/* Private for each interface */
 	struct esp_private      *priv[ESP_MAX_INTERFACE];
-	struct hci_dev          *hcidev;
 
 	struct workqueue_struct *if_rx_workqueue;
 	struct work_struct       if_rx_work;
+
+	struct sk_buff_head     events_skb_q;
+	struct workqueue_struct *events_wq;
+	struct work_struct      events_work;
 
 	/* Process TX work */
 	struct workqueue_struct *tx_workqueue;

@@ -25,9 +25,7 @@
 #include "esp_if.h"
 #include "esp_api.h"
 #include "esp_bt_api.h"
-#ifdef CONFIG_SUPPORT_ESP_SERIAL
 #include "esp_serial.h"
-#endif
 #include "esp_kernel_port.h"
 #include "esp_stats.h"
 
@@ -55,12 +53,13 @@
 #endif
 
 
-u8 spi_new_clk = SPI_INITIAL_CLK_MHZ;
 static struct sk_buff * read_packet(struct esp_adapter *adapter);
 static int write_packet(struct esp_adapter *adapter, struct sk_buff *skb);
 static void spi_exit(void);
 static void adjust_spi_clock(u8 spi_clk_mhz);
 static void esp_spi_transaction(void);
+static int spi_dev_init(int spi_clk_mhz);
+static int spi_init(void);
 
 volatile u8 data_path = 0;
 static struct esp_spi_context spi_context;
@@ -68,6 +67,7 @@ static char hardware_type = ESP_PRIV_FIRMWARE_CHIP_UNRECOGNIZED;
 static atomic_t tx_pending;
 struct task_struct *spi_thread;
 struct semaphore spi_sem;
+u8 first_esp_bootup_over;
 
 static struct esp_if_ops if_ops = {
 	.read		= read_packet,
@@ -182,6 +182,9 @@ int process_init_event(u8 *evt_buf, u8 len)
 {
 	u8 len_left = len, tag_len;
 	u8 *pos;
+	struct esp_adapter *adapter = esp_get_adapter();
+	uint8_t prio_q_idx = 0;
+	int ret = 0;
 
 	if (!evt_buf)
 		return -1;
@@ -192,7 +195,7 @@ int process_init_event(u8 *evt_buf, u8 len)
 		tag_len = *(pos + 1);
 		printk(KERN_INFO "EVENT: %d\n", *pos);
 		if (*pos == ESP_PRIV_CAPABILITY) {
-			process_capabilities(*(pos + 2));
+			adapter->capabilities = *(pos + 2);
 		} else if (*pos == ESP_PRIV_SPI_CLK_MHZ){
 			adjust_spi_clock(*(pos + 2));
 		} else if (*pos == ESP_PRIV_FIRMWARE_CHIP_ID){
@@ -215,6 +218,30 @@ int process_init_event(u8 *evt_buf, u8 len)
 		hardware_type = ESP_PRIV_FIRMWARE_CHIP_UNRECOGNIZED;
 		return -1;
 	}
+
+	if (first_esp_bootup_over) {
+		for (prio_q_idx=0; prio_q_idx<MAX_PRIORITY_QUEUES; prio_q_idx++) {
+			skb_queue_purge(&spi_context.tx_q[prio_q_idx]);
+			skb_queue_purge(&spi_context.rx_q[prio_q_idx]);
+		}
+
+		esp_remove_card(spi_context.adapter);
+
+		for (prio_q_idx=0; prio_q_idx<MAX_PRIORITY_QUEUES; prio_q_idx++) {
+			skb_queue_head_init(&spi_context.tx_q[prio_q_idx]);
+			skb_queue_head_init(&spi_context.rx_q[prio_q_idx]);
+		}
+	}
+
+	ret = esp_add_card(spi_context.adapter);
+	if (ret) {
+		spi_exit();
+		printk (KERN_ERR "Failed to add card\n");
+		return ret;
+	}
+	first_esp_bootup_over = 1;
+
+	process_capabilities(adapter->capabilities);
 
 	return 0;
 }
@@ -247,8 +274,8 @@ static int process_rx_buf(struct sk_buff *skb)
 
 	/* Validate received SKB. Check len and offset fields */
 	if (offset != sizeof(struct esp_payload_header)) {
-		printk(KERN_INFO "offset_rcv[%u] != exp[%u], drop\n",
-				offset, sizeof(struct esp_payload_header));
+		printk(KERN_INFO "offset_rcv[%d] != exp[%d], drop\n",
+				(int)offset, (int)sizeof(struct esp_payload_header));
 		/*print_hex_dump(KERN_INFO, "wrong offset: ",
 		  DUMP_PREFIX_ADDRESS, 16, 1, skb->data , 8, 1  );*/
 		return -EINVAL;
@@ -319,7 +346,7 @@ static void esp_spi_transaction(void)
 
 		if (rx_pending || tx_skb) {
 			memset(&trans, 0, sizeof(trans));
-			trans.speed_hz = spi_new_clk * NUMBER_1M;
+			trans.speed_hz = spi_context.spi_clk_mhz * NUMBER_1M;
 
 			/* Setup and execute SPI transaction
 			 * 	Tx_buf: Check if tx_q has valid buffer for transmission,
@@ -443,8 +470,11 @@ static int spi_dev_init(int spi_clk_mhz)
 	if (!master) {
 		printk(KERN_ERR "%s:%u Failed to obtain SPI handle for Bus[%u] CS[%u]\n",
 			__func__, __LINE__, esp_board.bus_num, esp_board.chip_select);
+		printk(KERN_INFO "** Check if SPI peripheral and extra GPIO device tree correct **\n");
+		printk(KERN_INFO "** Please refer https://github.com/espressif/esp-hosted/blob/master/esp_hosted_fg/docs/Linux_based_host/porting_guide.md **\n");
 		return -ENODEV;
 	}
+	set_bit(ESP_SPI_BUS_CLAIMED, &spi_context.spi_flags);
 
 	spi_context.esp_spi_dev = spi_new_device(master, &esp_board);
 
@@ -452,6 +482,7 @@ static int spi_dev_init(int spi_clk_mhz)
 		printk(KERN_ERR "Failed to add new SPI device\n");
 		return -ENODEV;
 	}
+	spi_context.adapter->dev = &spi_context.esp_spi_dev->dev;
 
 	status = spi_setup(spi_context.esp_spi_dev);
 
@@ -463,6 +494,8 @@ static int spi_dev_init(int spi_clk_mhz)
 	printk (KERN_INFO "ESP host driver claiming SPI bus [%d]"
 			",chip select [%d] with init SPI Clock [%d]\n", esp_board.bus_num,
 			esp_board.chip_select, spi_clk_mhz);
+
+	set_bit(ESP_SPI_BUS_SET, &spi_context.spi_flags);
 
 	status = gpio_request(HANDSHAKE_PIN, "SPI_HANDSHAKE_PIN");
 
@@ -477,6 +510,7 @@ static int spi_dev_init(int spi_clk_mhz)
 		printk (KERN_ERR "Failed to set GPIO direction of Handshake pin, err: %d\n",status);
 		return status;
 	}
+	set_bit(ESP_SPI_GPIO_HS_REQUESTED, &spi_context.spi_flags);
 
 	status = request_irq(SPI_IRQ, spi_interrupt_handler,
 			IRQF_SHARED | IRQF_TRIGGER_RISING,
@@ -485,12 +519,14 @@ static int spi_dev_init(int spi_clk_mhz)
 		printk (KERN_ERR "Failed to request IRQ for Handshake pin, err:%d\n",status);
 		return status;
 	}
+	set_bit(ESP_SPI_GPIO_HS_IRQ_DONE, &spi_context.spi_flags);
 
 	status = gpio_request(SPI_DATA_READY_PIN, "SPI_DATA_READY_PIN");
 	if (status) {
 		printk (KERN_ERR "Failed to obtain GPIO for Data ready pin, err:%d\n",status);
 		return status;
 	}
+	set_bit(ESP_SPI_GPIO_DR_REQUESTED, &spi_context.spi_flags);
 
 	status = gpio_direction_input(SPI_DATA_READY_PIN);
 	if (status) {
@@ -505,27 +541,13 @@ static int spi_dev_init(int spi_clk_mhz)
 		printk (KERN_ERR "Failed to request IRQ for Data ready pin, err:%d\n",status);
 		return status;
 	}
+	set_bit(ESP_SPI_GPIO_DR_IRQ_DONE, &spi_context.spi_flags);
 
 	open_data_path();
+	//set_bit(ESP_SPI_DATAPATH_OPEN, &spi_context.spi_flags);
+
 
 	return 0;
-}
-
-static int spi_reinit_spidev(int spi_clk_mhz)
-{
-	disable_irq(SPI_IRQ);
-	disable_irq(SPI_DATA_READY_IRQ);
-	close_data_path();
-	free_irq(SPI_IRQ, spi_context.esp_spi_dev);
-	free_irq(SPI_DATA_READY_IRQ, spi_context.esp_spi_dev);
-	gpio_free(HANDSHAKE_PIN);
-	gpio_free(SPI_DATA_READY_PIN);
-
-	if (spi_context.esp_spi_dev)
-		spi_unregister_device(spi_context.esp_spi_dev);
-	spi_new_clk = spi_clk_mhz;
-
-	return spi_dev_init(spi_clk_mhz);
 }
 
 static int esp_spi_thread(void *data)
@@ -576,26 +598,17 @@ static int spi_init(void)
 	}
 
 
-	status = spi_dev_init(SPI_INITIAL_CLK_MHZ);
+	status = spi_dev_init(spi_context.spi_clk_mhz);
 	if (status) {
 		spi_exit();
 		printk (KERN_ERR "Failed Init SPI device\n");
 		return status;
 	}
 
-#ifdef CONFIG_SUPPORT_ESP_SERIAL
 	status = esp_serial_init((void *) spi_context.adapter);
 	if (status != 0) {
 		spi_exit();
 		printk(KERN_ERR "Error initialising serial interface\n");
-		return status;
-	}
-#endif
-
-	status = esp_add_card(spi_context.adapter);
-	if (status) {
-		spi_exit();
-		printk (KERN_ERR "Failed to add card\n");
 		return status;
 	}
 
@@ -611,8 +624,15 @@ static void spi_exit(void)
 	uint8_t prio_q_idx = 0;
 
 	spi_context.adapter->state = ESP_CONTEXT_DISABLED;
-	disable_irq(SPI_IRQ);
-	disable_irq(SPI_DATA_READY_IRQ);
+
+	if (test_bit(ESP_SPI_GPIO_HS_IRQ_DONE, &spi_context.spi_flags)) {
+		disable_irq(SPI_IRQ);
+	}
+
+	if (test_bit(ESP_SPI_GPIO_DR_IRQ_DONE, &spi_context.spi_flags)) {
+		disable_irq(SPI_DATA_READY_IRQ);
+	}
+
 	close_data_path();
 	msleep(200);
 
@@ -630,17 +650,42 @@ static void spi_exit(void)
 	esp_serial_cleanup();
 	esp_remove_card(spi_context.adapter);
 
+	if (test_bit(ESP_SPI_GPIO_HS_IRQ_DONE, &spi_context.spi_flags)) {
+		free_irq(SPI_IRQ, spi_context.esp_spi_dev);
+		clear_bit(ESP_SPI_GPIO_HS_IRQ_DONE, &spi_context.spi_flags);
+	}
+
+	if (test_bit(ESP_SPI_GPIO_DR_IRQ_DONE, &spi_context.spi_flags)) {
+		free_irq(SPI_DATA_READY_IRQ, spi_context.esp_spi_dev);
+		clear_bit(ESP_SPI_GPIO_DR_IRQ_DONE, &spi_context.spi_flags);
+	}
+
+	if (test_bit(ESP_SPI_GPIO_DR_IRQ_DONE, &spi_context.spi_flags)) {
+		free_irq(SPI_DATA_READY_IRQ, spi_context.esp_spi_dev);
+		clear_bit(ESP_SPI_GPIO_DR_IRQ_DONE, &spi_context.spi_flags);
+	}
+
+	if (test_bit(ESP_SPI_GPIO_DR_REQUESTED, &spi_context.spi_flags)) {
+		gpio_free(SPI_DATA_READY_PIN);
+		clear_bit(ESP_SPI_GPIO_DR_REQUESTED, &spi_context.spi_flags);
+	}
+
+	if (test_bit(ESP_SPI_GPIO_HS_REQUESTED, &spi_context.spi_flags)) {
+		gpio_free(HANDSHAKE_PIN);
+		clear_bit(ESP_SPI_GPIO_HS_REQUESTED, &spi_context.spi_flags);
+	}
+
+
 	if (spi_context.adapter->hcidev)
 		esp_deinit_bt(spi_context.adapter);
 
-	free_irq(SPI_IRQ, spi_context.esp_spi_dev);
-	free_irq(SPI_DATA_READY_IRQ, spi_context.esp_spi_dev);
+	spi_context.adapter->dev = NULL;
 
-	gpio_free(HANDSHAKE_PIN);
-	gpio_free(SPI_DATA_READY_PIN);
-
-	if (spi_context.esp_spi_dev)
+	if (spi_context.esp_spi_dev) {
 		spi_unregister_device(spi_context.esp_spi_dev);
+		spi_context.esp_spi_dev = NULL;
+		msleep(400);
+	}
 
 	memset(&spi_context, 0, sizeof(spi_context));
 }
@@ -649,12 +694,8 @@ static void adjust_spi_clock(u8 spi_clk_mhz)
 {
 	if ((spi_clk_mhz) && (spi_clk_mhz != SPI_INITIAL_CLK_MHZ)) {
 		printk(KERN_INFO "ESP Reconfigure SPI CLK to %u MHz\n",spi_clk_mhz);
-
-		if (spi_reinit_spidev(spi_clk_mhz)) {
-			printk(KERN_ERR "Failed to reinit SPI device\n");
-			spi_exit();
-			return;
-		}
+		spi_context.spi_clk_mhz = spi_clk_mhz;
+		spi_context.esp_spi_dev->max_speed_hz = spi_clk_mhz * NUMBER_1M;
 	}
 }
 
@@ -669,6 +710,7 @@ int esp_init_interface_layer(struct esp_adapter *adapter)
 	adapter->if_ops = &if_ops;
 	adapter->if_type = ESP_IF_TYPE_SPI;
 	spi_context.adapter = adapter;
+	spi_context.spi_clk_mhz = SPI_INITIAL_CLK_MHZ;
 
 	return spi_init();
 }

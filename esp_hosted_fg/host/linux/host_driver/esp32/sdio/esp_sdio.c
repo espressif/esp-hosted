@@ -29,9 +29,7 @@
 #include "esp_sdio_api.h"
 #include "esp_api.h"
 #include "esp_bt_api.h"
-#ifdef CONFIG_SUPPORT_ESP_SERIAL
 #include "esp_serial.h"
-#endif
 #include <linux/kthread.h>
 #include <linux/printk.h>
 #include "esp_stats.h"
@@ -120,7 +118,7 @@ static void esp_handle_isr(struct sdio_func *func)
 
 	if (!(context) ||
 	    !(context->adapter) ||
-	    (context->adapter->state != ESP_CONTEXT_READY)) {
+	    (context->adapter->state < ESP_CONTEXT_RX_READY)) {
 		return;
 	}
 
@@ -171,13 +169,13 @@ int generate_slave_intr(struct esp_sdio_context *context, u8 data)
 
 static void deinit_sdio_func(struct sdio_func *func)
 {
+	sdio_set_drvdata(func, NULL);
 	sdio_claim_host(func);
 	/* Release IRQ */
 	sdio_release_irq(func);
 	/* Disable sdio function */
 	sdio_disable_func(func);
 	sdio_release_host(func);
-	sdio_set_drvdata(func, NULL);
 }
 
 static int esp_slave_get_tx_buffer_num(struct esp_sdio_context *context, u32 *tx_num, u8 is_lock_needed)
@@ -274,11 +272,19 @@ static void esp_remove(struct sdio_func *func)
 	uint8_t prio_q_idx = 0;
 	context = sdio_get_drvdata(func);
 
+	if (func->num != 1) {
+		return;
+	}
+
 	printk(KERN_INFO "%s -> Remove card", __func__);
 
-#ifdef CONFIG_SUPPORT_ESP_SERIAL
 	esp_serial_cleanup();
-#endif
+
+
+	for (prio_q_idx=0; prio_q_idx<MAX_PRIORITY_QUEUES; prio_q_idx++) {
+		skb_queue_purge(&(sdio_context.tx_q[prio_q_idx]));
+	}
+
 
 	if (tx_thread)
 		kthread_stop(tx_thread);
@@ -297,14 +303,15 @@ static void esp_remove(struct sdio_func *func)
 			}
 
 		}
-		for (prio_q_idx=0; prio_q_idx<MAX_PRIORITY_QUEUES; prio_q_idx++) {
-			skb_queue_purge(&(sdio_context.tx_q[prio_q_idx]));
-		}
 
 		memset(context, 0, sizeof(struct esp_sdio_context));
 	}
 
-	deinit_sdio_func(func);
+	if (context->func) {
+		deinit_sdio_func(func);
+		context->func = NULL;
+		context->adapter->dev = NULL;
+	}
 
 	printk (KERN_INFO "%s: Context deinit %d - %d\n", __func__, context->rx_byte_count,
 			context->tx_buffer_count);
@@ -383,12 +390,16 @@ static struct sk_buff * read_packet(struct esp_adapter *adapter)
 	struct esp_sdio_context *context;
 	int is_lock_needed = IS_SDIO_HOST_LOCK_NEEDED;
 
-	if (!adapter || !adapter->if_context) {
+	if (!adapter) {
 		printk (KERN_ERR "%s: INVALID args\n", __func__);
 		return NULL;
 	}
 
 	context = adapter->if_context;
+	if (!context || !context->func) {
+		printk (KERN_ERR "%s: INVALID args\n", __func__);
+		return NULL;
+	}
 
 	CLAIM_SDIO_HOST(context);
 
@@ -558,8 +569,9 @@ static int tx_process(void *data)
 
 	while (!kthread_should_stop()) {
 
-		if (context->adapter->state != ESP_CONTEXT_READY) {
-			msleep(10);
+		if (context->adapter->state < ESP_CONTEXT_READY) {
+			/*printk(KERN_INFO "Tx process not ready yet\n");*/
+			msleep(1);
 			continue;
 		}
 
@@ -703,6 +715,7 @@ static int esp_probe(struct sdio_func *func,
 	printk(KERN_INFO "%s: ESP network device detected\n", __func__);
 
 	context = init_sdio_func(func, &ret);
+	atomic_set(&tx_pending, 0);
 
 	if (!context) {
 		if (ret)
@@ -717,7 +730,6 @@ static int esp_probe(struct sdio_func *func,
 	host->ops->set_ios(host, &host->ios);
 #endif
 
-	atomic_set(&tx_pending, 0);
 	ret = init_context(context);
 	if (ret) {
 		deinit_sdio_func(func);
@@ -729,17 +741,10 @@ static int esp_probe(struct sdio_func *func,
 	if (!tx_thread)
 		printk (KERN_ERR "Failed to create esp32_sdio TX thread\n");
 
-	ret = esp_add_card(context->adapter);
-	if (ret) {
-		esp_remove(func);
-		printk (KERN_ERR "Failed to add card\n");
-		deinit_sdio_func(func);
-		return ret;
-	}
 
+	context->adapter->dev = &func->dev;
 
-	context->adapter->state = ESP_CONTEXT_READY;
-
+	context->adapter->state = ESP_CONTEXT_RX_READY;
 	generate_slave_intr(context, BIT(ESP_OPEN_DATA_PATH));
 	return ret;
 }
@@ -768,8 +773,10 @@ int process_init_event(u8 *evt_buf, u8 len)
 {
 	u8 len_left = len, tag_len;
 	u8 *pos;
+	int ret = 0;
+	struct esp_adapter *adapter = esp_get_adapter();
 
-	if (!evt_buf)
+	if (!evt_buf || !adapter)
 		return -1;
 
 	pos = evt_buf;
@@ -783,18 +790,33 @@ int process_init_event(u8 *evt_buf, u8 len)
 		tag_len = *(pos + 1);
 		printk(KERN_INFO "EVENT: %d\n", *pos);
 		if (*pos == ESP_PRIV_CAPABILITY) {
-			process_capabilities(*(pos + 2));
+			adapter->capabilities = *(pos + 2);
 			print_capabilities(*(pos + 2));
 		} else if (*pos == ESP_PRIV_TEST_RAW_TP) {
 			process_test_capabilities(*(pos + 2));
 		} else if (*pos == ESP_PRIV_FIRMWARE_CHIP_ID) {
-			printk(KERN_INFO "ESP slave Chip ID: 0x%X\n", *(pos + 2));
+			printk("ESP chipset detected [%s]\n",
+				*(pos+2) == ESP_FIRMWARE_CHIP_ESP32 ? "esp32" :
+				*(pos+2) == ESP_FIRMWARE_CHIP_ESP32C6 ? "esp32-c6" :
+				"unknown/unsupported ESP chiset");
 		} else {
 			printk (KERN_WARNING "Unsupported tag (0x%X) in event\n", *(pos + 2));
 		}
 		pos += (tag_len+2);
 		len_left -= (tag_len+2);
 	}
+
+	sdio_context.adapter->state = ESP_CONTEXT_READY;
+	ret = esp_add_card(sdio_context.adapter);
+	if (ret) {
+		printk(KERN_INFO "network iterface init failed\n");
+		generate_slave_intr(&sdio_context, BIT(ESP_CLOSE_DATA_PATH));
+		sdio_context.adapter->state = ESP_CONTEXT_DISABLED;
+		return ret;
+	}
+
+
+	process_capabilities(adapter->capabilities);
 	return 0;
 }
 

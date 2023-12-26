@@ -29,9 +29,7 @@
 
 #include "esp.h"
 #include "esp_if.h"
-#ifdef CONFIG_SUPPORT_ESP_SERIAL
 #include "esp_serial.h"
-#endif
 #include "esp_bt_api.h"
 #include "esp_api.h"
 #include "esp_kernel_port.h"
@@ -309,7 +307,6 @@ static int process_tx_packet (struct sk_buff *skb)
 
 	return 0;
 }
-
 void process_capabilities(u8 cap)
 {
 	struct esp_adapter *adapter = esp_get_adapter();
@@ -337,14 +334,13 @@ static void process_event(u8 *evt_buf, u16 len)
 
 	if (event->event_type == ESP_PRIV_EVENT_INIT) {
 
-		printk (KERN_INFO "\nReceived INIT event from ESP32 peripheral");
+		printk (KERN_INFO "INIT event rcvd from ESP\n");
 
-		ret = process_init_event(event->event_data, event->event_len);
+		ret = esp_serial_reinit(esp_get_adapter());
+		if (ret)
+			printk(KERN_ERR "Failed to init serial interface\n");
 
-#ifdef CONFIG_SUPPORT_ESP_SERIAL
-		if (!ret)
-			esp_serial_reinit(esp_get_adapter());
-#endif
+		process_init_event(event->event_data, event->event_len);
 
 	} else {
 		printk (KERN_WARNING "Drop unknown event\n");
@@ -357,8 +353,13 @@ static void process_priv_communication(struct sk_buff *skb)
 	u8 *payload;
 	u16 len;
 
-	if (!skb || !skb->data)
+	if (!skb)
 		return;
+
+	if (!skb->data) {
+		dev_kfree_skb_any(skb);
+		return;
+	}
 
 	header = (struct esp_payload_header *) skb->data;
 
@@ -369,7 +370,18 @@ static void process_priv_communication(struct sk_buff *skb)
 		process_event(payload, len);
 	}
 
-	dev_kfree_skb(skb);
+	dev_kfree_skb_any(skb);
+}
+
+static void esp_events_work(struct work_struct *work)
+{
+	struct sk_buff *skb = NULL;
+
+	skb = skb_dequeue(&adapter.events_skb_q);
+	if (!skb)
+		return;
+
+	process_priv_communication(skb);
 }
 
 static void process_rx_packet(struct sk_buff *skb)
@@ -409,7 +421,6 @@ static void process_rx_packet(struct sk_buff *skb)
 	}
 
 	if (payload_header->if_type == ESP_SERIAL_IF) {
-#ifdef CONFIG_SUPPORT_ESP_SERIAL
 		do {
 			ret = esp_serial_data_received(payload_header->if_num,
 					(skb->data + offset + ret_len), (len - ret_len));
@@ -420,9 +431,6 @@ static void process_rx_packet(struct sk_buff *skb)
 			}
 			ret_len += ret;
 		} while (ret_len < len);
-#else
-		printk(KERN_ERR "%s, Dropping unsupported serial frame\n", __func__);
-#endif
 		dev_kfree_skb_any(skb);
 	} else if (payload_header->if_type == ESP_STA_IF ||
 	           payload_header->if_type == ESP_AP_IF) {
@@ -469,7 +477,14 @@ static void process_rx_packet(struct sk_buff *skb)
 			}
 		}
 	} else if (payload_header->if_type == ESP_PRIV_IF) {
-		process_priv_communication(skb);
+		/* Queue event skb for processing in events workqueue */
+		skb_queue_tail(&adapter->events_skb_q, skb);
+
+		if (adapter->events_wq)
+			queue_work(adapter->events_wq, &adapter->events_work);
+		else
+			dev_kfree_skb_any(skb);
+
 	} else if (payload_header->if_type == ESP_TEST_IF) {
 		#if TEST_RAW_TP
 			update_test_raw_tp_rx_stats(len);
@@ -578,7 +593,7 @@ static int insert_priv_to_adapter(struct esp_private *priv)
 			return 0;
 		}
 	}
-
+	printk(KERN_ERR "%s:%u\n", __func__, __LINE__);
 	return -1;
 }
 
@@ -591,8 +606,10 @@ static int esp_init_priv(struct esp_private *priv, struct net_device *dev,
 		return -EINVAL;
 
 	ret = insert_priv_to_adapter(priv);
-	if (ret)
+	if (ret) {
+		printk(KERN_ERR "%s:%u err:0x%x\n", __func__, __LINE__, ret);
 		return ret;
+}
 
 	priv->ndev = dev;
 	priv->if_type = if_type;
@@ -678,12 +695,14 @@ static void esp_remove_network_interfaces(struct esp_adapter *adapter)
 		netif_stop_queue(adapter->priv[0]->ndev);
 		unregister_netdev(adapter->priv[0]->ndev);
 		free_netdev(adapter->priv[0]->ndev);
+		adapter->priv[0] = NULL;
 	}
 
 	if (adapter->priv[1] && adapter->priv[1]->ndev) {
 		netif_stop_queue(adapter->priv[1]->ndev);
 		unregister_netdev(adapter->priv[1]->ndev);
 		free_netdev(adapter->priv[1]->ndev);
+		adapter->priv[1] = NULL;
 	}
 }
 
@@ -721,14 +740,13 @@ int esp_remove_card(struct esp_adapter *adapter)
 	if (!adapter)
 		return 0;
 
+	esp_deinit_bt(adapter);
+
 	/* Flush workqueues */
 	if (adapter->if_rx_workqueue)
 		flush_workqueue(adapter->if_rx_workqueue);
 
 	esp_remove_network_interfaces(adapter);
-
-	adapter->priv[0] = NULL;
-	adapter->priv[1] = NULL;
 
 	return 0;
 }
@@ -743,6 +761,11 @@ static void deinit_adapter(void)
 {
 	if (adapter.if_context)
 		adapter.state = ESP_CONTEXT_DISABLED;
+
+	skb_queue_purge(&adapter.events_skb_q);
+
+	if (adapter.events_wq)
+		destroy_workqueue(adapter.events_wq);
 
 	if (adapter.if_rx_workqueue)
 		destroy_workqueue(adapter.if_rx_workqueue);
@@ -788,6 +811,17 @@ static struct esp_adapter * init_adapter(void)
 	}
 
 	INIT_WORK(&adapter.if_rx_work, esp_if_rx_work);
+
+	skb_queue_head_init(&adapter.events_skb_q);
+
+	adapter.events_wq = alloc_workqueue("ESP_EVENTS_WORKQUEUE", WQ_HIGHPRI, 0);
+
+	if (!adapter.events_wq) {
+		deinit_adapter();
+		return NULL;
+	}
+
+	INIT_WORK(&adapter.events_work, esp_events_work);
 
 	return &adapter;
 }

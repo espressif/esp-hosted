@@ -500,6 +500,13 @@ static esp_err_t req_connect_ap_handler (CtrlMsg *req,
 		wifi_cfg->sta.listen_interval = req->req_connect_ap->listen_interval;
 	}
 
+	/* Make sure that we connect to strongest signal, when multiple SSID with
+	 * the same name. This should take a small extra time to search for all SSIDs,
+	 * but with this, there will be hige performace gain on data throughput
+	 */
+	wifi_cfg->sta.scan_method = WIFI_ALL_CHANNEL_SCAN;
+	wifi_cfg->sta.sort_method = WIFI_CONNECT_AP_BY_SIGNAL;
+
 	ret = esp_wifi_get_mac(ESP_IF_WIFI_STA , mac);
 	ESP_LOGI(TAG,"Get station mac address");
 	if (ret) {
