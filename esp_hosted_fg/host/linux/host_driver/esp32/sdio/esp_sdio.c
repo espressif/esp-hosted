@@ -769,22 +769,6 @@ int esp_init_interface_layer(struct esp_adapter *adapter)
 	return sdio_register_driver(&esp_sdio_driver);
 }
 
-void process_capabilities(u8 cap)
-{
-	//struct hci_dev *hdev = NULL;
-	struct esp_adapter *adapter = esp_get_adapter();
-
-	printk (KERN_INFO "ESP peripheral capabilities: 0x%x\n", cap);
-	esp_deinit_bt(adapter);
-
-	if ((cap & ESP_BT_SPI_SUPPORT) ||
-	    (cap & ESP_BT_SDIO_SUPPORT)) {
-		msleep(200);
-		printk(KERN_INFO "ESP Bluetooth init\n");
-		esp_init_bt(adapter);
-	}
-}
-
 int process_init_event(u8 *evt_buf, u8 len)
 {
 	u8 len_left = len, tag_len;

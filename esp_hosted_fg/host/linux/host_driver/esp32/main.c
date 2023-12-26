@@ -307,7 +307,6 @@ static int process_tx_packet (struct sk_buff *skb)
 
 	return 0;
 }
-#if 0
 void process_capabilities(u8 cap)
 {
 	struct esp_adapter *adapter = esp_get_adapter();
@@ -322,7 +321,6 @@ void process_capabilities(u8 cap)
 		esp_init_bt(esp_get_adapter());
 	}
 }
-#endif
 
 static void process_event(u8 *evt_buf, u16 len)
 {
@@ -377,13 +375,13 @@ static void process_priv_communication(struct sk_buff *skb)
 
 static void esp_events_work(struct work_struct *work)
 {
-    struct sk_buff *skb = NULL;
+	struct sk_buff *skb = NULL;
 
-    skb = skb_dequeue(&adapter.events_skb_q);
-    if (!skb)
-        return;
+	skb = skb_dequeue(&adapter.events_skb_q);
+	if (!skb)
+		return;
 
-    process_priv_communication(skb);
+	process_priv_communication(skb);
 }
 
 static void process_rx_packet(struct sk_buff *skb)
@@ -479,14 +477,13 @@ static void process_rx_packet(struct sk_buff *skb)
 			}
 		}
 	} else if (payload_header->if_type == ESP_PRIV_IF) {
-		//process_priv_communication(skb);
 		/* Queue event skb for processing in events workqueue */
-        skb_queue_tail(&adapter->events_skb_q, skb);
+		skb_queue_tail(&adapter->events_skb_q, skb);
 
-        if (adapter->events_wq)
-            queue_work(adapter->events_wq, &adapter->events_work);
-        else
-            dev_kfree_skb_any(skb);
+		if (adapter->events_wq)
+			queue_work(adapter->events_wq, &adapter->events_work);
+		else
+			dev_kfree_skb_any(skb);
 
 	} else if (payload_header->if_type == ESP_TEST_IF) {
 		#if TEST_RAW_TP
@@ -815,16 +812,16 @@ static struct esp_adapter * init_adapter(void)
 
 	INIT_WORK(&adapter.if_rx_work, esp_if_rx_work);
 
-    skb_queue_head_init(&adapter.events_skb_q);
+	skb_queue_head_init(&adapter.events_skb_q);
 
-    adapter.events_wq = alloc_workqueue("ESP_EVENTS_WORKQUEUE", WQ_HIGHPRI, 0);
+	adapter.events_wq = alloc_workqueue("ESP_EVENTS_WORKQUEUE", WQ_HIGHPRI, 0);
 
-    if (!adapter.events_wq) {
-        deinit_adapter();
-        return NULL;
-    }
+	if (!adapter.events_wq) {
+		deinit_adapter();
+		return NULL;
+	}
 
-    INIT_WORK(&adapter.events_work, esp_events_work);
+	INIT_WORK(&adapter.events_work, esp_events_work);
 
 	return &adapter;
 }

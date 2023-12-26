@@ -667,8 +667,8 @@ Control request as input with following API specific data set
         - 1 : SSID not be broadcasted
     - **`req.u.wifi_softap_config.bandwidth`** :
       - Set bandwidth of ESP softAP
-        - `WIFI_BW_HT20` : 20MHz Bandwidth
-        - `WIFI_BW_HT40` : 40MHz Bandwidth
+        - 1 : 20MHz Bandwidth
+        - 2 : 40MHz Bandwidth (Not supported on some ESP32-C2/ESP8684 chips)
   - `req.ctrl_resp_cb` : optional
     - `NULL` :
       - Treat as synchronous procedure

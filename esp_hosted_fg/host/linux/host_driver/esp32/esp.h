@@ -86,8 +86,8 @@ struct esp_adapter {
 	struct work_struct       if_rx_work;
 
 	struct sk_buff_head     events_skb_q;
-    struct workqueue_struct *events_wq;
-    struct work_struct      events_work;
+	struct workqueue_struct *events_wq;
+	struct work_struct      events_work;
 
 	/* Process TX work */
 	struct workqueue_struct *tx_workqueue;
