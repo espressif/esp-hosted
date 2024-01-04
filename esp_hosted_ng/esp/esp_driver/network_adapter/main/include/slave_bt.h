@@ -98,6 +98,13 @@
 		//#define BT_RTS_PIN        9
 		//#define BT_CTS_PIN        8
 
+	#elif defined(CONFIG_IDF_TARGET_ESP32C6)
+
+		#define BT_TX_PIN		5
+		#define BT_RX_PIN		12
+		//#define BT_RTS_PIN		9
+		//#define BT_CTS_PIN		13
+
 	#endif
 
 	#if defined(CONFIG_IDF_TARGET_ESP32C3) || defined(CONFIG_IDF_TARGET_ESP32S3)

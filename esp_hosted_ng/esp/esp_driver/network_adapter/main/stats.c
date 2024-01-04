@@ -140,7 +140,7 @@ static void raw_tp_timer_func(void* arg)
 	int32_t div = 1024;
 
 	actual_bandwidth = (test_raw_tp_rx_len*8);
-	ESP_LOGI(TAG, "%u-%u sec       %.2f kbits/sec", cur, cur + 1, actual_bandwidth/div);
+	ESP_LOGI(TAG, "%ld-%ld sec       %.2f kbits/sec", cur, cur + 1, actual_bandwidth/div);
 	cur++;
 	test_raw_tp_rx_len = 0;
 }

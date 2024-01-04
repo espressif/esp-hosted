@@ -261,6 +261,7 @@ static IRAM_ATTR bool hci_uart_tl_tx_eof_callback(gdma_channel_handle_t dma_chan
 #if defined(CONFIG_IDF_TARGET_ESP32C3) || defined(CONFIG_IDF_TARGET_ESP32S3)
 static void init_uart(void)
 {
+	ESP_LOGD(BT_TAG, "Set-up BLE for ESP32-C3/ESP32-S3");
 #if BLUETOOTH_UART == 1
 	periph_module_enable(PERIPH_UART1_MODULE);
 	periph_module_reset(PERIPH_UART1_MODULE);
@@ -272,7 +273,6 @@ static void init_uart(void)
 	periph_module_enable(PERIPH_UHCI0_MODULE);
 	periph_module_reset(PERIPH_UHCI0_MODULE);
 
-#if defined(CONFIG_IDF_TARGET_ESP32C3) || defined(CONFIG_IDF_TARGET_ESP32S3)
 	gpio_config_t io_output_conf = {
 		.intr_type = GPIO_PIN_INTR_DISABLE,	//disable interrupt
 		.mode = GPIO_MODE_OUTPUT,	// output mode
@@ -290,12 +290,12 @@ static void init_uart(void)
 		.pull_up_en = 0,	// disable pull-down mode
 	};
 	gpio_config(&io_input_conf);
-#endif
 
 	ESP_ERROR_CHECK( uart_set_pin(BLUETOOTH_UART, BT_TX_PIN,
 				BT_RX_PIN, BT_RTS_PIN, BT_CTS_PIN) );
+	ESP_LOGI(BT_TAG, "UART Pins: Tx:%u Rx:%u RTS:%u CTS:%u",
+			BT_TX_PIN, BT_RX_PIN, BT_RTS_PIN, BT_CTS_PIN);
 
-#if defined(CONFIG_IDF_TARGET_ESP32C3) || defined(CONFIG_IDF_TARGET_ESP32S3)
 	// configure UART1
 	ESP_LOGI(BT_TAG, "baud rate for HCI uart :: %d\n",
 					CONFIG_EXAMPLE_HCI_UART_BAUDRATE);
@@ -350,7 +350,6 @@ static void init_uart(void)
 	// disable software flow control
 	s_uhci_hw->escape_conf.val = 0;
 	uhci_ll_attach_uart_port(s_uhci_hw, 1);
-#endif
 }
 #elif CONFIG_IDF_TARGET_ESP32
 static void init_uart(void)
@@ -374,12 +373,16 @@ static void init_uart(void)
 			BT_TX_PIN, BT_RX_PIN, BT_RTS_PIN, BT_CTS_PIN);
 
 }
-#elif defined(CONFIG_IDF_TARGET_ESP32C2)
+#elif defined(CONFIG_IDF_TARGET_ESP32C2) || defined(CONFIG_IDF_TARGET_ESP32C6)
 static void init_uart(void)
 {
-	ESP_LOGD(BT_TAG, "Set-up BLE for ESP32-C2");
+	ESP_LOGD(BT_TAG, "Set-up BLE for ESP32-C2/C6");
 
+#if defined(CONFIG_IDF_TARGET_ESP32C2)
 	ESP_LOGI(BT_TAG, "UART Pins: Tx:%u Rx:%u", BT_TX_PIN, BT_RX_PIN);
+#elif defined(CONFIG_IDF_TARGET_ESP32C6)
+	ESP_LOGI(BT_TAG, "UART Pins: Tx:%u Rx:%u", BT_TX_PIN, BT_RX_PIN);
+#endif
 }
 #endif
 #endif
@@ -416,7 +419,6 @@ void esp_vhci_host_send_packet(uint8_t *data, uint16_t len)
         os_mbuf_append(om, &data[1], len - 1);
         ble_hci_trans_hs_acl_tx(om);
     }
-
 }
 
 bool esp_vhci_host_check_send_available() {
@@ -424,8 +426,7 @@ bool esp_vhci_host_check_send_available() {
     return true;
 }
 
-int
-ble_hs_hci_rx_evt(uint8_t *hci_ev, void *arg)
+int ble_hs_hci_rx_evt(uint8_t *hci_ev, void *arg)
 {
     uint16_t len = hci_ev[1] + 3;
     uint8_t *data = (uint8_t *)malloc(len);
@@ -438,8 +439,7 @@ ble_hs_hci_rx_evt(uint8_t *hci_ev, void *arg)
 }
 
 
-int
-ble_hs_rx_data(struct os_mbuf *om, void *arg)
+int ble_hs_rx_data(struct os_mbuf *om, void *arg)
 {
     uint16_t len = om->om_len + 1;
     uint8_t *data = (uint8_t *)malloc(len);
