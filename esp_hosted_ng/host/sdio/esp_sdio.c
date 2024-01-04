@@ -941,12 +941,14 @@ void process_event_esp_bootup(struct esp_adapter *adapter, u8 *evt_buf, u8 len)
 			esp_info("ESP chipset detected [%s]\n",
 				*(pos+2) == ESP_FIRMWARE_CHIP_ESP32 ? "esp32" :
 				*(pos+2) == ESP_FIRMWARE_CHIP_ESP32S2 ? "esp32-s2" :
-				*(pos+2) == ESP_FIRMWARE_CHIP_ESP32C3 ? "esp32-c3" :
 				*(pos+2) == ESP_FIRMWARE_CHIP_ESP32S3 ? "esp32-s3" :
+				*(pos+2) == ESP_FIRMWARE_CHIP_ESP32C2 ? "esp32-c2" :
+				*(pos+2) == ESP_FIRMWARE_CHIP_ESP32C3 ? "esp32-c3" :
+				*(pos+2) == ESP_FIRMWARE_CHIP_ESP32C6 ? "esp32-c6" :
 				"unknown");
 
-			if (*(pos+2) != ESP_FIRMWARE_CHIP_ESP32)
-				esp_err("SDIO is only supported with ESP32\n");
+			if ((*(pos+2) != ESP_FIRMWARE_CHIP_ESP32) && (*(pos+2) != ESP_FIRMWARE_CHIP_ESP32C6))
+				esp_err("SDIO is only supported with ESP32/ESP32C6\n");
 
 		} else if (*pos == ESP_BOOTUP_TEST_RAW_TP) {
 			process_test_capabilities(*(pos + 2));
