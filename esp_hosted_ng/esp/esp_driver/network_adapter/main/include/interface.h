@@ -23,7 +23,7 @@
 #if defined(CONFIG_IDF_TARGET_ESP32)||defined(CONFIG_IDF_TARGET_ESP32C6)
 	#include "driver/sdio_slave.h"
 #else
-	#error "SDIO is not supported ESP32S2"
+	#error "SDIO is not supported"
 #endif
 
 #endif

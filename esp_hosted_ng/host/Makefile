@@ -8,11 +8,11 @@ CONFIG_ENABLE_MONITOR_PROCESS = n
 ESP_SLAVE := ""
 
 # Toolchain Path
-CROSS_COMPILE := /usr/bin/arm-linux-gnueabihf-
+CROSS_COMPILE :=
 # Linux Kernel header
 KERNEL := /lib/modules/$(shell uname -r)/build
 # Architecture
-ARCH := arm
+ARCH := arm64
 
 #Default interface is sdio
 MODULE_NAME=esp32_sdio

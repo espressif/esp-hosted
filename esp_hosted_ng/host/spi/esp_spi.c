@@ -286,6 +286,8 @@ void process_event_esp_bootup(struct esp_adapter *adapter, u8 *evt_buf, u8 len)
 
 	if (esp_add_card(adapter)) {
 		esp_err("network iterface init failed\n");
+	} else {
+		set_bit(ESP_INIT_DONE, &adapter->state_flags);
 	}
 
 	process_capabilities(adapter);
