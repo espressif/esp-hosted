@@ -300,6 +300,7 @@ void process_tx_pkt(interface_buffer_handle_t *buf_handle)
 			buf_handle->free_buf_handle(buf_handle->priv_buffer_handle);
 			buf_handle->priv_buffer_handle = NULL;
 		}
+		ESP_LOGD(TAG, "Data path stopped");
 		usleep(100*1000);
 		return;
 	}
@@ -550,9 +551,9 @@ int event_handler(uint8_t val)
 
 	case ESP_OPEN_DATA_PATH:
 
-		datapath = 1;
 		if (if_handle) {
 			if_handle->state = ACTIVE;
+			datapath = 1;
 			ESP_EARLY_LOGI(TAG, "Start Data Path");
 
 			if (init_sem) {

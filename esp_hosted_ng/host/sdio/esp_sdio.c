@@ -760,7 +760,7 @@ static int esp_probe(struct sdio_func *func,
 	context = init_sdio_func(func);
 
 	if (!context) {
-		return -ENOMEM;
+		return -EINVAL;
 	}
 
 	if (sdio_context.sdio_clk_mhz) {
