@@ -567,6 +567,23 @@ static void process_auth_event(struct esp_wifi_device *priv,
 
 }
 
+#define IEEE80211_DEAUTH_FRAME_LEN      (24 /* hdr */ + 2 /* reason */)
+static void process_deauth_event(struct esp_wifi_device *priv, struct disconnect_event *event)
+{
+	u8 frame_buf[IEEE80211_DEAUTH_FRAME_LEN];
+	struct ieee80211_mgmt *mgmt = (void *)frame_buf;
+
+	/* build frame */
+	mgmt->frame_control = cpu_to_le16(IEEE80211_FTYPE_MGMT | IEEE80211_STYPE_DEAUTH);
+	mgmt->duration = 0; /* initialize only */
+	mgmt->seq_ctrl = 0; /* initialize only */
+	memcpy(mgmt->da, priv->mac_address, ETH_ALEN); /* own address */
+	memcpy(mgmt->sa, event->bssid, ETH_ALEN);
+	memcpy(mgmt->bssid, event->bssid, ETH_ALEN);
+	mgmt->u.deauth.reason_code = cpu_to_le16(event->reason);
+	cfg80211_rx_mlme_mgmt(priv->ndev, frame_buf, IEEE80211_DEAUTH_FRAME_LEN);
+}
+
 static void process_disconnect_event(struct esp_wifi_device *priv,
 		struct disconnect_event *event)
 {
@@ -579,6 +596,12 @@ static void process_disconnect_event(struct esp_wifi_device *priv,
 			event->ssid, event->reason);
 
 	esp_mark_disconnect(priv, event->reason, true);
+	/* Flush previous scan results from kernel */
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 9, 0))
+	cfg80211_bss_flush(priv->adapter->wiphy);
+#endif
+	/* Send dummpy deauth to userspace */
+	process_deauth_event(priv, event);
 }
 
 static void process_assoc_event(struct esp_wifi_device *priv,
