@@ -103,6 +103,7 @@ static void sdio_read_done(void *handle)
 static interface_handle_t * sdio_init(void)
 {
 	esp_err_t ret = ESP_OK;
+	sdio_slave_buf_handle_t handle = {0};
 	sdio_slave_config_t config = {
 		.sending_mode       = SDIO_SLAVE_SEND_STREAM,
 		.send_queue_size    = SDIO_SLAVE_QUEUE_SIZE,
@@ -125,7 +126,6 @@ static interface_handle_t * sdio_init(void)
 #endif
 	};
 	config.flags |= SDIO_SLAVE_FLAG_DEFAULT_SPEED;
-	sdio_slave_buf_handle_t handle;
 
 	/* Configuration for the OOB line */
 	gpio_config_t io_conf={

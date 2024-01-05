@@ -599,14 +599,20 @@ static void esp_reg_notifier(struct wiphy *wiphy,
 		return;
 	}
 
+	if (!test_bit(ESP_INIT_DONE, &adapter->state_flags)) {
+		esp_info("Driver init is ongoing\n");
+		return;
+	}
+	if (test_bit(ESP_CLEANUP_IN_PROGRESS, &adapter->state_flags)) {
+		esp_info("Driver cleanup is ongoing\n");
+		return;
+	}
+
 	esp_dev = wiphy_priv(wiphy);
 
 	if (!esp_dev || !esp_dev->adapter) {
 		esp_info("%u esp_dev not initialized yet \n", __LINE__);
 		return;
-	}
-	if (test_bit(ESP_CLEANUP_IN_PROGRESS, &adapter->state_flags)) {
-               return;
 	}
 
 	priv = esp_dev->adapter->priv[0];

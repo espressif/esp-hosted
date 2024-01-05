@@ -13,7 +13,7 @@ menu "Example Configuration"
 
         config ESP_SDIO_HOST_INTERFACE
             bool "SDIO interface"
-            depends on IDF_TARGET_ESP32
+            depends on IDF_TARGET_ESP32 || IDF_TARGET_ESP32C6
             help
                 Enable/Disable SDIO host interface
 

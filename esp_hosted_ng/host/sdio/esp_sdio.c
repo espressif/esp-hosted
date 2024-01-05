@@ -653,7 +653,7 @@ static int tx_process(void *data)
 	return 0;
 }
 
-static struct esp_sdio_context *init_sdio_func(struct sdio_func *func)
+static struct esp_sdio_context *init_sdio_func(struct sdio_func *func, int *sdio_ret)
 {
 	struct esp_sdio_context *context = NULL;
 	int ret = 0;
@@ -670,13 +670,24 @@ static struct esp_sdio_context *init_sdio_func(struct sdio_func *func)
 	/* Enable Function */
 	ret = sdio_enable_func(func);
 	if (ret) {
+		esp_err("sdio_enable_func ret: %d\n", ret);
+		if (sdio_ret)
+			*sdio_ret = ret;
+		sdio_release_host(func);
+
 		return NULL;
 	}
 
 	/* Register IRQ */
 	ret = sdio_claim_irq(func, esp_handle_isr);
 	if (ret) {
+		esp_err("sdio_claim_irq ret: %d\n", ret);
 		sdio_disable_func(func);
+
+		if (sdio_ret)
+			*sdio_ret = ret;
+		sdio_release_host(func);
+
 		return NULL;
 	}
 
@@ -757,10 +768,13 @@ static int esp_probe(struct sdio_func *func,
 
 	esp_info("ESP network device detected\n");
 
-	context = init_sdio_func(func);
+	context = init_sdio_func(func, &ret);;
 
 	if (!context) {
-		return -ENOMEM;
+		if (ret)
+			return ret;
+		else
+			return -EINVAL;
 	}
 
 	if (sdio_context.sdio_clk_mhz) {
@@ -886,12 +900,12 @@ MODULE_DEVICE_TABLE(of, esp_sdio_of_match);
 
 /* SDIO driver structure to be registered with kernel */
 static struct sdio_driver esp_sdio_driver = {
-	.name		= "esp_sdio",
+	.name		= KBUILD_MODNAME,
 	.id_table	= esp_devices,
 	.probe		= esp_probe,
 	.remove		= esp_remove,
 	.drv = {
-		.name = "esp_sdio",
+		.name = KBUILD_MODNAME,
 		.owner = THIS_MODULE,
 		.pm = &esp_pm_ops,
 		.of_match_table = esp_sdio_of_match,
@@ -923,8 +937,14 @@ void process_event_esp_bootup(struct esp_adapter *adapter, u8 *evt_buf, u8 len)
 	if (!evt_buf)
 		return;
 
+	if (len_left >= 64) {
+		esp_info("ESP init event len looks unexpected: %u (>=64)\n", len_left);
+		esp_info("You probably facing timing mismatch at transport layer\n");
+	}
+
 	pos = evt_buf;
 
+	clear_bit(ESP_INIT_DONE, &adapter->state_flags);
 	while (len_left) {
 		tag_len = *(pos + 1);
 
@@ -933,8 +953,6 @@ void process_event_esp_bootup(struct esp_adapter *adapter, u8 *evt_buf, u8 len)
 		if (*pos == ESP_BOOTUP_CAPABILITY) {
 
 			adapter->capabilities = *(pos + 2);
-			process_capabilities(adapter);
-			print_capabilities(*(pos + 2));
 
 		} else if (*pos == ESP_BOOTUP_FIRMWARE_CHIP_ID) {
 
@@ -958,11 +976,12 @@ void process_event_esp_bootup(struct esp_adapter *adapter, u8 *evt_buf, u8 len)
 			if (tag_len != sizeof(struct fw_data))
 				esp_info("Length not matching to firmware data size\n");
 			else
-				if (process_fw_data((struct fw_data *)(pos + 2)))
+				if (process_fw_data((struct fw_data *)(pos + 2))) {
 					if (context->func) {
 						generate_slave_intr(context, BIT(ESP_CLOSE_DATA_PATH));
 						return;
 					}
+				}
 
 		} else {
 			esp_warn("Unsupported tag in event");
@@ -975,6 +994,10 @@ void process_event_esp_bootup(struct esp_adapter *adapter, u8 *evt_buf, u8 len)
 	if (esp_add_card(adapter)) {
 		esp_err("network iterface init failed\n");
 		generate_slave_intr(context, BIT(ESP_CLOSE_DATA_PATH));
+	} else {
+		set_bit(ESP_INIT_DONE, &adapter->state_flags);
+		process_capabilities(adapter);
+		print_capabilities(adapter->capabilities);
 	}
 }
 

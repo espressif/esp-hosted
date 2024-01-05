@@ -20,6 +20,8 @@ BT_UART_INIT="0"
 TEST_RAW_TP="0"
 IF_TYPE="sdio"
 MODULE_NAME="esp32_${IF_TYPE}.ko"
+ESP_SLAVE_CHIPSET=""
+#For sdio ESP_SLAVE_CHIPSET can esp32 or esp32c6
 RPI_RESETPIN=6
 
 bringup_network_interface()
@@ -47,12 +49,25 @@ wlan_init()
         VAL_CONFIG_TEST_RAW_TP=y
     fi
 
+    if [ "$ESP_SLAVE" != "" ] ; then
+        CUSTOM_OPTS=${CUSTOM_OPTS}" ESP_SLAVE=\"$ESP_SLAVE"\"
+    fi
+    if [ "$CUSTOM_OPTS" != "" ] ; then
+        echo "Adding $CUSTOM_OPTS"
+    fi
+
     # For Linux other than Raspberry Pi, Please point
     # CROSS_COMPILE -> <Toolchain-Path>/bin/arm-linux-gnueabihf-
     # KERNEL        -> Place where kernel is checked out and built
     # ARCH          -> Architecture
-    make -j8 target=$IF_TYPE CROSS_COMPILE=/usr/bin/arm-linux-gnueabihf- KERNEL="/lib/modules/$(uname -r)/build" \
-    CONFIG_TEST_RAW_TP="$VAL_CONFIG_TEST_RAW_TP" ARCH=arm
+    # make -j8 target=$IF_TYPE CROSS_COMPILE=/usr/bin/arm-linux-gnueabihf- KERNEL="/lib/modules/$(uname -r)/build" \
+    # CONFIG_TEST_RAW_TP="$VAL_CONFIG_TEST_RAW_TP" ARCH=arm64
+
+    # Populate your arch if not populated correctly.
+    arch_num_bits=$(getconf LONG_BIT)
+    if [ "$arch_num_bits" = "32" ] ; then arch_found="arm"; else arch_found="arm64"; fi
+
+    make -j8 target=$IF_TYPE KERNEL="/lib/modules/$(uname -r)/build" CONFIG_TEST_RAW_TP="$VAL_CONFIG_TEST_RAW_TP" ARCH=$arch_found $CUSTOM_OPTS
 
     if [ "$RESETPIN" = "" ] ; then
         #By Default, BCM6 is GPIO on host. use resetpin=6
@@ -144,12 +159,40 @@ parse_arguments()
     done
 }
 
+select_esp_slave()
+{
+    case $ESP_SLAVE_CHIPSET in
+        [Ee][Ss][Pp]32)
+            echo "Building for esp32"
+			ESP_SLAVE='CONFIG_TARGET_ESP32=y'
+            ;;
+        [Ee][Ss][Pp]32[Cc]6)
+            echo "Building for esp32c6"
+			ESP_SLAVE='CONFIG_TARGET_ESP32C6=y'
+            ;;
+        [Ee][Ss][Pp]32-[Cc]6)
+            echo "Building for esp32c6"
+			ESP_SLAVE='CONFIG_TARGET_ESP32C6=y'
+            ;;
+        *)
+            echo "***** Err: Please set expected ESP slave chipset ****"
+			exit 1
+            ;;
+    esac
+
+}
+
+
 parse_arguments $*
 if [ "$IF_TYPE" = "" ] ; then
     echo "Error: No protocol selected"
     usage
     exit 1
 else
+if [ "$IF_TYPE" = "sdio" ] ; then
+    # SDIO Kernel driver registration varies for ESP32 and ESP32-C6 slave chipsets
+    select_esp_slave
+fi
     echo "Building for $IF_TYPE protocol"
     MODULE_NAME=esp32_${IF_TYPE}.ko
 fi
