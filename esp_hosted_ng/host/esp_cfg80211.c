@@ -642,11 +642,16 @@ static void esp_reg_notifier(struct wiphy *wiphy,
 	}
 }
 
-int esp_cfg80211_register(struct esp_adapter *adapter)
+int esp_add_wiphy(struct esp_adapter *adapter)
 {
 	struct wiphy *wiphy;
 	struct esp_device *esp_dev;
 	int ret = 0;
+
+	if (!adapter) {
+		esp_info("adapter not yet initialized\n");
+		return -EINVAL;
+	}
 
 	wiphy = wiphy_new(&esp_cfg80211_ops, sizeof(struct esp_device));
 
@@ -692,28 +697,35 @@ int esp_cfg80211_register(struct esp_adapter *adapter)
 	return ret;
 }
 
-int esp_mark_disconnect(struct esp_wifi_device *priv, uint16_t reason,
-		uint8_t locally_disconnect)
+int esp_remove_wiphy(struct esp_adapter *adapter)
 {
-	if (priv && priv->ndev)
-		if (priv->ndev->reg_state == NETREG_REGISTERED)
-			CFG80211_DISCONNECTED(priv->ndev, reason, NULL, 0, locally_disconnect,
-					GFP_KERNEL);
+	if (adapter && adapter->wiphy) {
+		wiphy_unregister(adapter->wiphy);
+		wiphy_free(adapter->wiphy);
+		adapter->wiphy = NULL;
+	}
+
 	return 0;
 }
 
-int esp_mark_scan_done_and_disconnect(struct esp_wifi_device *priv,
-		uint8_t locally_disconnect)
+int esp_mark_disconnect(struct esp_wifi_device *priv, uint16_t reason, uint8_t locally_disconnect)
+{
+	if (priv && priv->ndev && wireless_dev_current_bss_exists(&priv->wdev))
+		CFG80211_DISCONNECTED(priv->ndev, reason, NULL, 0, locally_disconnect, GFP_KERNEL);
+
+	return 0;
+}
+
+int esp_mark_scan_done_and_disconnect(struct esp_wifi_device *priv, uint8_t locally_disconnect)
 {
 
 	if (!priv)
 		return -EINVAL;
 
+	if (priv->wdev.iftype != NL80211_IFTYPE_STATION)
+		return 0;
+
 	ESP_MARK_SCAN_DONE(priv, true);
-
 	ESP_CANCEL_SCHED_SCAN();
-
-	esp_mark_disconnect(priv, 0, locally_disconnect);
-
-	return 0;
+	return esp_mark_disconnect(priv, 0, locally_disconnect);
 }

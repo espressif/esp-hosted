@@ -14,7 +14,7 @@
 	do {                                                          \
 		int ret = (x);                                        \
 		if (!!(ret)) {                                        \
-		    esp_err("esp32: %s failure, ret: %d\n", #x, ret); \
+		    esp_err("%s failure, ret: %d\n", #x, ret);        \
 		    return ret;                                       \
 		}                                                     \
 	} while (0);                                                  \
@@ -29,8 +29,6 @@ int esp_send_packet(struct esp_adapter *adapter, struct sk_buff *skb);
 u8 esp_is_bt_supported_over_sdio(u32 cap);
 void esp_tx_pause(struct esp_wifi_device *priv);
 void esp_tx_resume(struct esp_wifi_device *priv);
-void process_event_esp_bootup(struct esp_adapter *adapter, u8 *evt_buf, u8 len);
-int process_fw_data(struct fw_data *fw_p);
 void esp_init_priv(struct net_device *ndev);
 void esp_port_open(struct esp_wifi_device *priv);
 void esp_port_close(struct esp_wifi_device *priv);
@@ -39,4 +37,7 @@ void print_capabilities(u32 cap);
 void process_capabilities(struct esp_adapter *adapter);
 void process_test_capabilities(u8 cap);
 int esp_is_tx_queue_paused(struct esp_wifi_device *priv);
+int esp_deinit_module(struct esp_adapter *adapter);
+int esp_validate_chipset(struct esp_adapter *adapter, u8 chipset);
+int esp_adjust_spi_clock(struct esp_adapter *adapter, u8 spi_clk_mhz);
 #endif

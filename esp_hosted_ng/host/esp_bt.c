@@ -242,8 +242,7 @@ int esp_init_bt(struct esp_adapter *adapter)
 
 	hdev->dev_type = HCI_PRIMARY;
 
-	if (adapter->if_type == ESP_IF_TYPE_SDIO)
-		SET_HCIDEV_DEV(hdev, adapter->dev);
+	SET_HCIDEV_DEV(hdev, adapter->dev);
 
 	ret = hci_register_dev(hdev);
 	if (ret < 0) {
