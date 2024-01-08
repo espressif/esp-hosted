@@ -5,8 +5,8 @@
  * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  */
-#ifndef __esp_wpa_utils_h_
-#define __esp_wpa_utils_h_
+#ifndef __esp_utils_h_
+#define __esp_utils_h_
 
 #include "esp.h"
 
@@ -37,5 +37,6 @@ enum wpa_alg {
 
 int wpa_cipher_to_alg(int cipher);
 
+char * esp_chipname_from_id(int chipset_id);
 
 #endif

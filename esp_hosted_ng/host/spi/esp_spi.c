@@ -14,6 +14,8 @@
 #include "esp_bt_api.h"
 #include "esp_kernel_port.h"
 #include "esp_stats.h"
+#include "esp_utils.h"
+#include "esp_cfg80211.h"
 
 #define SPI_INITIAL_CLK_MHZ     10
 #define TX_MAX_PENDING_COUNT    100
@@ -30,7 +32,6 @@ volatile u8 host_sleep;
 static struct esp_spi_context spi_context;
 static char hardware_type = ESP_FIRMWARE_CHIP_UNRECOGNIZED;
 static atomic_t tx_pending;
-static uint8_t esp_reset_after_module_load;
 
 static struct esp_if_ops if_ops = {
 	.read		= read_packet,
@@ -155,148 +156,56 @@ static int write_packet(struct esp_adapter *adapter, struct sk_buff *skb)
 	return 0;
 }
 
-void process_event_esp_bootup(struct esp_adapter *adapter, u8 *evt_buf, u8 len)
+int esp_validate_chipset(struct esp_adapter *adapter, u8 chipset)
 {
-	/* Bootup event will be received whenever ESP is booted.
-	 * It is termed 'First bootup' when this event is received
-	 * the first time module loaded. It is termed 'Second & onward bootup' when
-	 * there is ESP reset (reason may be manual reset of ESP or any crash at ESP)
-	 */
-	u8 len_left = len, tag_len;
-	u8 *pos;
-	uint8_t iface_idx = 0;
-	uint8_t prio_q_idx = 0;
+	int ret = 0;
 
-	if (!adapter)
-		return;
-
-	if (!evt_buf)
-		return;
-
-	/* Second & onward bootup, cleanup and re-init the driver */
-	if (esp_reset_after_module_load)
-		set_bit(ESP_CLEANUP_IN_PROGRESS, &adapter->state_flags);
-
-	pos = evt_buf;
-
-	while (len_left) {
-
-		tag_len = *(pos + 1);
-
-		esp_info("EVENT: %d\n", *pos);
-
-		if (*pos == ESP_BOOTUP_CAPABILITY) {
-
-			adapter->capabilities = *(pos + 2);
-
-		} else if (*pos == ESP_BOOTUP_FW_DATA) {
-
-			if (tag_len != sizeof(struct fw_data))
-				esp_info("Length not matching to firmware data size\n");
-			else
-				if (process_fw_data((struct fw_data *)(pos + 2))) {
-					esp_remove_card(spi_context.adapter);
-					return;
-				}
-
-		} else if (*pos == ESP_BOOTUP_SPI_CLK_MHZ) {
-
-			adjust_spi_clock(*(pos + 2));
-			adapter->dev = &spi_context.esp_spi_dev->dev;
-
-		} else if (*pos == ESP_BOOTUP_FIRMWARE_CHIP_ID) {
-
-			hardware_type = *(pos+2);
-
-		} else if (*pos == ESP_BOOTUP_TEST_RAW_TP) {
-			process_test_capabilities(*(pos + 2));
-		} else {
-			esp_warn("Unsupported tag in event");
-		}
-
-		pos += (tag_len+2);
-		len_left -= (tag_len+2);
+	switch(chipset) {
+	case ESP_FIRMWARE_CHIP_ESP32:
+	case ESP_FIRMWARE_CHIP_ESP32S2:
+	case ESP_FIRMWARE_CHIP_ESP32S3:
+	case ESP_FIRMWARE_CHIP_ESP32C2:
+	case ESP_FIRMWARE_CHIP_ESP32C3:
+	case ESP_FIRMWARE_CHIP_ESP32C6:
+		adapter->chipset = chipset;
+		esp_info("Chipset=%s ID=%02x detected over SPI\n", esp_chipname_from_id(chipset), chipset);
+		break;
+	default:
+		esp_err("Unrecognized chipset ID=%02x\n", chipset);
+		adapter->chipset = ESP_FIRMWARE_CHIP_UNRECOGNIZED;
+		break;
 	}
 
-	if ((hardware_type != ESP_FIRMWARE_CHIP_ESP32) &&
-	    (hardware_type != ESP_FIRMWARE_CHIP_ESP32S2) &&
-	    (hardware_type != ESP_FIRMWARE_CHIP_ESP32C3) &&
-	    (hardware_type != ESP_FIRMWARE_CHIP_ESP32C2) &&
-	    (hardware_type != ESP_FIRMWARE_CHIP_ESP32C6) &&
-	    (hardware_type != ESP_FIRMWARE_CHIP_ESP32S3)) {
-		esp_info("ESP chipset not recognized, ignoring [%d]\n", hardware_type);
-		hardware_type = ESP_FIRMWARE_CHIP_UNRECOGNIZED;
-	} else {
-		esp_info("ESP chipset detected [%s]\n",
-				hardware_type == ESP_FIRMWARE_CHIP_ESP32 ? "esp32" :
-				hardware_type == ESP_FIRMWARE_CHIP_ESP32S2 ? "esp32-s2" :
-				hardware_type == ESP_FIRMWARE_CHIP_ESP32C3 ? "esp32-c3" :
-				hardware_type == ESP_FIRMWARE_CHIP_ESP32C2 ? "esp32-c2" :
-				hardware_type == ESP_FIRMWARE_CHIP_ESP32S3 ? "esp32-s3" :
-				hardware_type == ESP_FIRMWARE_CHIP_ESP32C6 ? "esp32-c6" :
-				"unknown");
-	}
-
-	if (esp_reset_after_module_load) {
-
-		/* Second & onward bootup:
-		 *
-		 * SPI is software and not a hardware based module.
-		 * When bootup event is received, we should discard all prior commands,
-		 * old messages pending at network and re-initialize everything.
-		 *
-		 * Such handling is not required
-		 * 1. for SDIO
-		 *   as Removal of SDIO triggers complete Deinit and on SDIO insertion/
-		 *   detection, i.e., after probing, initialization is triggered
-		 *
-		 * 2. On first bootup (if counterpart of this else)
-		 *   First bootup event is received immediately after module insertion.
-		 *   As all network or cmds are init and clean for the first time,
-		 *   there is no need to re-init them
-		 */
-
-		for (prio_q_idx = 0; prio_q_idx < MAX_PRIORITY_QUEUES; prio_q_idx++) {
-			skb_queue_purge(&spi_context.tx_q[prio_q_idx]);
-		}
-
-		for (iface_idx = 0; iface_idx < ESP_MAX_INTERFACE; iface_idx++) {
-
-			struct esp_wifi_device *priv = adapter->priv[iface_idx];
-
-			if (!priv)
-				continue;
-
-			if (priv->scan_in_progress)
-				ESP_MARK_SCAN_DONE(priv, true);
-
-			if (priv->ndev &&
-			    wireless_dev_current_bss_exists(&priv->wdev)) {
-				CFG80211_DISCONNECTED(priv->ndev,
-						0, NULL, 0, false, GFP_KERNEL);
-			}
-		}
-
-		esp_remove_card(adapter);
-
-		for (prio_q_idx = 0; prio_q_idx < MAX_PRIORITY_QUEUES; prio_q_idx++) {
-			skb_queue_head_init(&spi_context.tx_q[prio_q_idx]);
-		}
-	}
-
-	if (esp_add_card(adapter)) {
-		esp_err("network iterface init failed\n");
-	} else {
-		set_bit(ESP_INIT_DONE, &adapter->state_flags);
-	}
-
-	process_capabilities(adapter);
-	print_capabilities(adapter->capabilities);
-
-
-	esp_reset_after_module_load = 1;
+	return ret;
 }
 
+int esp_deinit_module(struct esp_adapter *adapter)
+{
+	/* Second & onward bootup cleanup:
+	 *
+	 * SPI is software and not a hardware based module.
+	 * When bootup event is received, we should discard all prior commands,
+	 * old messages pending at network and re-initialize everything.
+	 */
+	uint8_t prio_q_idx, iface_idx;
+
+	for (prio_q_idx = 0; prio_q_idx < MAX_PRIORITY_QUEUES; prio_q_idx++) {
+		skb_queue_purge(&spi_context.tx_q[prio_q_idx]);
+	}
+
+	for (iface_idx = 0; iface_idx < ESP_MAX_INTERFACE; iface_idx++) {
+		struct esp_wifi_device *priv = adapter->priv[iface_idx];
+		esp_mark_scan_done_and_disconnect(priv, true);
+	}
+
+	esp_remove_card(adapter);
+
+	for (prio_q_idx = 0; prio_q_idx < MAX_PRIORITY_QUEUES; prio_q_idx++) {
+		skb_queue_head_init(&spi_context.tx_q[prio_q_idx]);
+	}
+
+	return 0;
+}
 
 static int process_rx_buf(struct sk_buff *skb)
 {
@@ -678,6 +587,13 @@ static void adjust_spi_clock(u8 spi_clk_mhz)
 		spi_context.spi_clk_mhz = spi_clk_mhz;
 		spi_context.esp_spi_dev->max_speed_hz = spi_clk_mhz * NUMBER_1M;
 	}
+}
+
+int esp_adjust_spi_clock(struct esp_adapter *adapter, u8 spi_clk_mhz)
+{
+	adjust_spi_clock(spi_clk_mhz);
+
+	return 0;
 }
 
 int esp_init_interface_layer(struct esp_adapter *adapter, u32 speed)

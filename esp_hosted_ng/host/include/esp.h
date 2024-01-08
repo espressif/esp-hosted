@@ -118,6 +118,7 @@ struct esp_adapter {
 	struct work_struct      events_work;
 
 	unsigned long           state_flags;
+	int                     chipset;
 };
 
 struct esp_device {

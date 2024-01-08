@@ -8,7 +8,7 @@
 #include "utils.h"
 #include "esp_cmd.h"
 #include "esp_api.h"
-#include "esp_wpa_utils.h"
+#include "esp_utils.h"
 #include "esp.h"
 #include "esp_cfg80211.h"
 #include "esp_kernel_port.h"
@@ -424,6 +424,10 @@ struct command_node *prepare_command_request(struct esp_adapter *adapter, u8 cmd
 
 	if (!cmd_code || cmd_code >= CMD_MAX) {
 		esp_err("unsupported command code\n");
+		return NULL;
+	}
+	if (!test_bit(ESP_CMD_INIT_DONE, &adapter->state_flags)) {
+		esp_err("command queue init is not done yet\n");
 		return NULL;
 	}
 
@@ -1461,30 +1465,18 @@ int cmd_set_mac(struct esp_wifi_device *priv, uint8_t *mac_addr)
 
 int esp_commands_teardown(struct esp_adapter *adapter)
 {
-#define MAX_DEINIT_RETRY 5
 	uint8_t iface_idx = 0;
-	struct esp_wifi_device *priv = NULL;
 
 	if (!adapter) {
 		return -EINVAL;
 	}
 
 	set_bit(ESP_CLEANUP_IN_PROGRESS, &adapter->state_flags);
-
-	if (!test_bit(ESP_CMD_INIT_DONE, &adapter->state_flags))
-		return 0;
-
+	clear_bit(ESP_CMD_INIT_DONE, &adapter->state_flags);
 
 	for (iface_idx = 0; iface_idx < ESP_MAX_INTERFACE; iface_idx++) {
-
-		priv = adapter->priv[iface_idx];
-
-		if (!priv)
-			continue;
-
-		esp_mark_scan_done_and_disconnect(priv, false);
-
-		esp_port_close(priv);
+		esp_mark_scan_done_and_disconnect(adapter->priv[iface_idx], false);
+		esp_port_close(adapter->priv[iface_idx]);
 	}
 
 	destroy_cmd_wq(adapter);
