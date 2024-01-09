@@ -1002,14 +1002,15 @@ int rpc_core_init(void)
 	int ret = SUCCESS;
 
 	/* semaphore init */
-	rpc_tx_sem = g_h.funcs->_h_create_semaphore(1);
+	rpc_tx_sem = g_h.funcs->_h_create_semaphore(CONFIG_ESP_MAX_SIMULTANEOUS_SYNC_RPC_REQUESTS +
+			CONFIG_ESP_MAX_SIMULTANEOUS_ASYNC_RPC_REQUESTS);
 	if (!rpc_tx_sem) {
 		ESP_LOGE(TAG, "sem init failed, exiting\n");
 		goto free_bufs;
 	}
 
 	/* Get semaphore for first time */
-	g_h.funcs->_h_get_semaphore(rpc_tx_sem, HOSTED_BLOCKING);
+	g_h.funcs->_h_get_semaphore(rpc_tx_sem, 0);
 
 	/* serial init */
 	if (serial_init()) {
