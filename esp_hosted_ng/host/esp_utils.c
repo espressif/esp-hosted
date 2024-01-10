@@ -6,7 +6,7 @@
  *
  */
 #include "utils.h"
-#include "esp_wpa_utils.h"
+#include "esp_utils.h"
 
 
 int wpa_cipher_to_alg(int cipher)
