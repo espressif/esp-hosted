@@ -552,7 +552,7 @@ Refer [Porting Guide](docs/porting_guide.md) which explains how one can port the
 
 ---
 # 5. Throughput Performance
-
+Refer [RAW throughput guide](docs/Raw_TP_Testing.md) for verifying connection as well as throughput between host and ESP.
 <table style="width:100%" align="center">
 <thead>
 <tr>
@@ -596,8 +596,6 @@ Tremendous work to be done ahead! Below is glimpse of upcoming release:
 
 - Functionality
 	- cfg802.11 support for ESP as SoftAP
-- Chipsets
-	- ESP32-C6 support
 
 ---
 
