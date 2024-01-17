@@ -274,7 +274,7 @@ static void init_uart(void)
 	periph_module_reset(PERIPH_UHCI0_MODULE);
 
 	gpio_config_t io_output_conf = {
-		.intr_type = GPIO_PIN_INTR_DISABLE,	//disable interrupt
+		.intr_type = GPIO_INTR_DISABLE,	//disable interrupt
 		.mode = GPIO_MODE_OUTPUT,	// output mode
 		.pin_bit_mask = GPIO_OUTPUT_PIN_SEL,	// bit mask of the output pins
 		.pull_down_en = 0,	// disable pull-down mode
@@ -283,7 +283,7 @@ static void init_uart(void)
 	gpio_config(&io_output_conf);
 
 	gpio_config_t io_input_conf = {
-		.intr_type = GPIO_PIN_INTR_DISABLE,	//disable interrupt
+		.intr_type = GPIO_INTR_DISABLE,	//disable interrupt
 		.mode = GPIO_MODE_INPUT,	// input mode
 		.pin_bit_mask = GPIO_INPUT_PIN_SEL,  // bit mask of the input pins
 		.pull_down_en = 0,	// disable pull-down mode
@@ -324,8 +324,8 @@ static void init_uart(void)
 	};
 	ESP_ERROR_CHECK(gdma_new_channel(&rx_channel_config, &s_rx_channel));
 
-	gdma_connect(s_tx_channel, GDMA_MAKE_TRIGGER(GDMA_TRIG_PERIPH_UART, 0));
-	gdma_connect(s_rx_channel, GDMA_MAKE_TRIGGER(GDMA_TRIG_PERIPH_UART, 0));
+	gdma_connect(s_tx_channel, GDMA_MAKE_TRIGGER(GDMA_TRIG_PERIPH_UHCI, 0));
+	gdma_connect(s_rx_channel, GDMA_MAKE_TRIGGER(GDMA_TRIG_PERIPH_UHCI, 0));
 
 	gdma_strategy_config_t strategy_config = {
 		.auto_update_desc = false,
