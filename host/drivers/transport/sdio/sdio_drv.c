@@ -97,26 +97,26 @@ static void sdio_process_rx_task(void const* pvParameters);
 
 static inline void sdio_mempool_create()
 {
-    MEM_DUMP("sdio_mempool_create");
-    buf_mp_g = mempool_create(MAX_SDIO_BUFFER_SIZE);
+	MEM_DUMP("sdio_mempool_create");
+	buf_mp_g = mempool_create(MAX_SDIO_BUFFER_SIZE);
 #ifdef CONFIG_ESP_CACHE_MALLOC
-    assert(buf_mp_g);
+	assert(buf_mp_g);
 #endif
 }
 
 static inline void sdio_mempool_destroy()
 {
-    mempool_destroy(buf_mp_g);
+	mempool_destroy(buf_mp_g);
 }
 
 static inline void *sdio_buffer_alloc(uint need_memset)
 {
-    return mempool_alloc(buf_mp_g, MAX_SDIO_BUFFER_SIZE, need_memset);
+	return mempool_alloc(buf_mp_g, MAX_SDIO_BUFFER_SIZE, need_memset);
 }
 
 static inline void sdio_buffer_free(void *buf)
 {
-    mempool_free(buf_mp_g, buf);
+	mempool_free(buf_mp_g, buf);
 }
 
 void transport_deinit_internal(void)
@@ -401,8 +401,8 @@ static int is_valid_sdio_rx_packet(uint8_t *rxbuff_a, uint16_t *len_a, uint16_t 
 	offset = le16toh(h->offset);
 
 	if ((!len) ||
-	    (len > MAX_PAYLOAD_SIZE) ||
-	    (offset != sizeof(struct esp_payload_header))) {
+		(len > MAX_PAYLOAD_SIZE) ||
+		(offset != sizeof(struct esp_payload_header))) {
 
 		/* Free up buffer, as one of following -
 		 * 1. no payload to process
@@ -461,10 +461,10 @@ static void sdio_read_task(void const* pvParameters)
 
 	// wait for transport to be in reset state
 	while (true) {
+		vTaskDelay(pdMS_TO_TICKS(100));
 		if (is_transport_rx_ready()) {
 			break;
 		}
-		vTaskDelay(pdMS_TO_TICKS(100));
 	}
 
 	res = g_h.funcs->_h_sdio_card_init(sdio_handle);

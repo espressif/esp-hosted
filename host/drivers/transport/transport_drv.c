@@ -61,11 +61,11 @@ static void reset_slave(void)
 	ESP_LOGI(TAG, "Reset slave using GPIO[%u]", H_GPIO_PIN_RESET_Pin);
 	g_h.funcs->_h_config_gpio(H_GPIO_PIN_RESET_Port, H_GPIO_PIN_RESET_Pin, H_GPIO_MODE_DEF_OUTPUT);
 
-	g_h.funcs->_h_write_gpio(H_GPIO_PIN_RESET_Port, H_GPIO_PIN_RESET_Pin, H_GPIO_HIGH);
-	g_h.funcs->_h_msleep(100);
-	g_h.funcs->_h_write_gpio(H_GPIO_PIN_RESET_Port, H_GPIO_PIN_RESET_Pin, H_GPIO_LOW);
-	g_h.funcs->_h_msleep(100);
-	g_h.funcs->_h_write_gpio(H_GPIO_PIN_RESET_Port, H_GPIO_PIN_RESET_Pin, H_GPIO_HIGH);
+	g_h.funcs->_h_write_gpio(H_GPIO_PIN_RESET_Port, H_GPIO_PIN_RESET_Pin, H_RESET_VAL_ACTIVE);
+	g_h.funcs->_h_msleep(50);
+	g_h.funcs->_h_write_gpio(H_GPIO_PIN_RESET_Port, H_GPIO_PIN_RESET_Pin, H_RESET_VAL_INACTIVE);
+	g_h.funcs->_h_msleep(50);
+	g_h.funcs->_h_write_gpio(H_GPIO_PIN_RESET_Port, H_GPIO_PIN_RESET_Pin, H_RESET_VAL_ACTIVE);
 
 	/* stop spi transactions short time to avoid slave sync issues */
 	g_h.funcs->_h_sleep(1);
@@ -301,15 +301,15 @@ transport_channel_t *transport_drv_add_channel(void *api_chan,
 	channel->rx = rx;
 
 	/* Need to change size wrt transport */
-    channel->memp = mempool_create(MAX_TRANSPORT_BUFFER_SIZE);
+	channel->memp = mempool_create(MAX_TRANSPORT_BUFFER_SIZE);
 #ifdef CONFIG_ESP_CACHE_MALLOC
-    assert(channel->memp);
+	assert(channel->memp);
 #endif
 
 	ESP_LOGI(TAG, "Add ESP-Hosted channel IF[%u]: S[%u] Tx[%p] Rx[%p]",
 			if_type, secure, *tx, rx);
 
-    return channel;
+	return channel;
 }
 
 void process_capabilities(uint8_t cap)
@@ -447,7 +447,7 @@ esp_err_t send_slave_config(uint8_t host_cap, uint8_t firmware_chip_id,
 	uint8_t raw_tp_cap = 0;
 	uint8_t *sendbuf = NULL;
 
-	sendbuf = malloc(500); /*Arbitrary number*/
+	sendbuf = malloc(512); /*Arbitrary number*/
 	assert(sendbuf);
 
 	/* Populate event data */
@@ -545,11 +545,11 @@ int process_init_event(uint8_t *evt_buf, uint16_t len)
 	}
 
 	if ((chip_type != ESP_PRIV_FIRMWARE_CHIP_ESP32) &&
-	    (chip_type != ESP_PRIV_FIRMWARE_CHIP_ESP32S2) &&
-	    (chip_type != ESP_PRIV_FIRMWARE_CHIP_ESP32C2) &&
-	    (chip_type != ESP_PRIV_FIRMWARE_CHIP_ESP32C3) &&
-	    (chip_type != ESP_PRIV_FIRMWARE_CHIP_ESP32C6) &&
-	    (chip_type != ESP_PRIV_FIRMWARE_CHIP_ESP32S3)) {
+		(chip_type != ESP_PRIV_FIRMWARE_CHIP_ESP32S2) &&
+		(chip_type != ESP_PRIV_FIRMWARE_CHIP_ESP32C2) &&
+		(chip_type != ESP_PRIV_FIRMWARE_CHIP_ESP32C3) &&
+		(chip_type != ESP_PRIV_FIRMWARE_CHIP_ESP32C6) &&
+		(chip_type != ESP_PRIV_FIRMWARE_CHIP_ESP32S3)) {
 		ESP_LOGI(TAG, "ESP board type is not mentioned, ignoring [%d]\n\r", chip_type);
 		chip_type = ESP_PRIV_FIRMWARE_CHIP_UNRECOGNIZED;
 		return -1;

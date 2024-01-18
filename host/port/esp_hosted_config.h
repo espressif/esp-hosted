@@ -57,7 +57,7 @@ so feel free to change these if needed.
   #define H_DATAREADY_ACTIVE_HIGH 1
 #endif
 
-#ifdef H_HANDSHAKE_ACTIVE_HIGH
+#if H_HANDSHAKE_ACTIVE_HIGH
   #define H_HS_VAL_ACTIVE                            H_GPIO_HIGH
   #define H_HS_VAL_INACTIVE                          H_GPIO_LOW
   #define H_HS_INTR_EDGE                             H_GPIO_INTR_POSEDGE
@@ -67,7 +67,7 @@ so feel free to change these if needed.
   #define H_HS_INTR_EDGE                             H_GPIO_INTR_NEGEDGE
 #endif
 
-#ifdef H_DATAREADY_ACTIVE_HIGH
+#if H_DATAREADY_ACTIVE_HIGH
   #define H_DR_VAL_ACTIVE                            H_GPIO_HIGH
   #define H_DR_VAL_INACTIVE                          H_GPIO_LOW
   #define H_DR_INTR_EDGE                             H_GPIO_INTR_POSEDGE
@@ -164,6 +164,23 @@ so feel free to change these if needed.
 /* Generic reset pin config */
 #define H_GPIO_PIN_RESET_Port                        NULL
 #define H_GPIO_PIN_RESET_Pin                         CONFIG_ESP_GPIO_SLAVE_RESET_SLAVE
+
+/* If Reset pin is Enable, it is Active High.
+ * If it is RST, active low */
+#ifdef CONFIG_RESET_GPIO_ACTIVE_LOW
+  #define H_RESET_ACTIVE_HIGH                           0
+#else
+  #define H_RESET_ACTIVE_HIGH                           1
+#endif
+
+#ifdef H_RESET_ACTIVE_HIGH
+  #define H_RESET_VAL_ACTIVE                            H_GPIO_HIGH
+  #define H_RESET_VAL_INACTIVE                          H_GPIO_LOW
+#else
+  #define H_RESET_VAL_ACTIVE                            H_GPIO_LOW
+  #define H_RESET_VAL_INACTIVE                          H_GPIO_HIGH
+#endif
+
 
 #define TIMEOUT_PSERIAL_RESP                         30
 

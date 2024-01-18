@@ -209,9 +209,9 @@ unsigned int hosted_sleep(unsigned int seconds)
 /* Non sleepable delays - BLOCKING dead wait */
 unsigned int hosted_for_loop_delay(unsigned int number)
 {
-    volatile int idx = 0;
-    for (idx=0; idx<100*number; idx++) {
-    }
+	volatile int idx = 0;
+	for (idx=0; idx<100*number; idx++) {
+	}
 	return 0;
 }
 
@@ -455,14 +455,14 @@ FAST_RAM_ATTR int hosted_post_semaphore_from_isr(void * semaphore_handle)
 
 	sem_id = (semaphore_handle_t *)semaphore_handle;
 
-    sem_posted = xSemaphoreGiveFromISR(*sem_id, &mustYield);
-    if (mustYield) {
+	sem_posted = xSemaphoreGiveFromISR(*sem_id, &mustYield);
+	if (mustYield) {
 #if defined(__cplusplus) && (__cplusplus >  201703L)
-        portYIELD_FROM_ISR(mustYield);
+		portYIELD_FROM_ISR(mustYield);
 #else
-        portYIELD_FROM_ISR();
+		portYIELD_FROM_ISR();
 #endif
-    }
+	}
 	if (pdTRUE == sem_posted)
 		return RET_OK;
 
@@ -633,7 +633,7 @@ void *hosted_timer_start(int duration, int type,
 		/* argument specified here will be passed to timer callback function */
 		.arg = (void*) arg,
 		.name = "one-shot"
-    };
+	};
 
 
 	/* alloc */
@@ -684,50 +684,59 @@ int hosted_config_gpio(void* gpio_port, uint32_t gpio_num, uint32_t mode)
 	gpio_config_t io_conf={
 		.intr_type=GPIO_INTR_DISABLE,
 		.mode=mode,
-		.pin_bit_mask=(1<<gpio_num),
+		.pin_bit_mask=(1ULL<<gpio_num),
+		.pull_down_en = 0,
+		.pull_up_en = 0,
 	};
+	ESP_LOGI(TAG, "GPIO [%d] configured", (int) gpio_num);
 	gpio_config(&io_conf);
 	return 0;
 }
 
 int hosted_config_gpio_as_interrupt(void* gpio_port, uint32_t gpio_num, uint32_t intr_type, void (*new_gpio_isr_handler)(void* arg))
 {
-    gpio_config_t new_gpio_io_conf={
-        .intr_type=intr_type,
-        .mode=GPIO_MODE_INPUT,
-        .pull_up_en=1,
-        .pin_bit_mask=(1<<gpio_num)
-    };
+	gpio_config_t new_gpio_io_conf={
+		.intr_type=intr_type,
+		.mode=GPIO_MODE_INPUT,
+		.pin_bit_mask=(1ULL<<gpio_num)
+	};
 
-    gpio_config(&new_gpio_io_conf);
+	if (intr_type == H_GPIO_INTR_NEGEDGE) {
+		new_gpio_io_conf.pull_down_en = 1;
+	} else {
+		new_gpio_io_conf.pull_up_en = 1;
+	}
 
-    gpio_set_intr_type(gpio_num, intr_type);
-    gpio_install_isr_service(0);
-    gpio_isr_handler_add(gpio_num, new_gpio_isr_handler, NULL);
+	ESP_LOGI(TAG, "GPIO [%d] configuring as Interrupt", (int) gpio_num);
+	gpio_config(&new_gpio_io_conf);
+
+	gpio_set_intr_type(gpio_num, intr_type);
+	gpio_install_isr_service(0);
+	gpio_isr_handler_add(gpio_num, new_gpio_isr_handler, NULL);
 
 	return 0;
 }
 
 int hosted_read_gpio(void*gpio_port, uint32_t gpio_num)
 {
-    return gpio_get_level(gpio_num);
+	return gpio_get_level(gpio_num);
 }
 
 int hosted_write_gpio(void* gpio_port, uint32_t gpio_num, uint32_t value)
 {
-    return gpio_set_level(gpio_num, value);
+	return gpio_set_level(gpio_num, value);
 }
 
 int hosted_wifi_event_post(int32_t event_id,
-        void* event_data, size_t event_data_size, uint32_t ticks_to_wait)
+		void* event_data, size_t event_data_size, uint32_t ticks_to_wait)
 {
 	ESP_LOGV(TAG, "event %ld recvd --> event_data:%p event_data_size: %u\n",event_id, event_data, event_data_size);
 	return esp_event_post(WIFI_EVENT, event_id, event_data, event_data_size, ticks_to_wait);
 }
 
 void hosted_log_write(int  level,
-                   const char *tag,
-                   const char *format, ...)
+					const char *tag,
+					const char *format, ...)
 {
 	va_list list;
 	va_start(list, format);
