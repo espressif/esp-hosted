@@ -280,7 +280,7 @@ static void esp_remove(struct sdio_func *func)
 		}
 		memset(context, 0, sizeof(struct esp_sdio_context));
 	}
-	esp_debug("ESP SDIO cleanup completed\n");
+	esp_dbg("ESP SDIO cleanup completed\n");
 }
 
 static struct esp_if_ops if_ops = {
@@ -825,7 +825,7 @@ static int esp_probe(struct sdio_func *func,
 		esp_err("Failed to create monitor thread\n");
 #endif
 
-	esp_debug("ESP SDIO probe completed\n");
+	esp_dbg("ESP SDIO probe completed\n");
 
 	return ret;
 }
