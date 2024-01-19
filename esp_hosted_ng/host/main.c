@@ -329,7 +329,7 @@ int process_event_esp_bootup(struct esp_adapter *adapter, u8 *evt_buf, u8 len)
 #if TEST_RAW_TP
 		process_test_capabilities(raw_tp_mode);
 		esp_init_raw_tp(adapter);
-#elif
+#else
 		esp_err("RAW TP mode selected but not enabled\n");
 		return -1;
 #endif

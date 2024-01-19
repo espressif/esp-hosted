@@ -56,8 +56,8 @@ This solution provides following WLAN and BT/BLE features to the host:
 
 ESP-Hosted-NG solution is supported on following ESP boards:
 
-| Supported Targets | ESP32 | ESP32-S3 | ESP32-C3 | ESP32-C2 |
-| ----------------- | ----- | -------- | -------- | -------- |
+| Supported Targets | ESP32 | ESP32-S2 | ESP32-S3 | ESP32-C2 | ESP32-C3 | ESP32-C6 |
+| ----------------- | ----- | -------- | -------- | -------- | -------- | -------- |
 
 Looking for other chipset? Please do check [Coming Soon](#5-coming-soon) section.
 
@@ -127,20 +127,11 @@ The below table explains which feature is supported on which transport interface
       <td style="text-align:center;">&#10003;</td>
     </tr>
     <tr>
-      <td rowspan="3" style="text-align:center;">ESP32-C3</td>
+      <td rowspan="3" style="text-align:center;">ESP32-S2</td>
+      <tr></tr>
       <td style="text-align:center;">SPI</td>
       <td style="text-align:center;">&#10003;</td>
-      <td style="text-align:center;">&#10003;</td>
-    </tr>
-    <tr>
-      <td style="text-align:center;">UART</td>
       <td style="text-align:center;">&#10005;</td>
-      <td style="text-align:center;">&#10003;</td>
-    </tr>
-    <tr>
-      <td style="text-align:center;">SPI(WiFi) + UART(BT)</td>
-      <td style="text-align:center;">&#10003;</td>
-      <td style="text-align:center;">&#10003;</td>
     </tr>
     <tr>
       <td rowspan="3" style="text-align:center;">ESP32-S3</td>
@@ -158,8 +149,24 @@ The below table explains which feature is supported on which transport interface
       <td style="text-align:center;">&#10003;</td>
       <td style="text-align:center;">&#10003;</td>
     </tr>
-        <tr>
+    <tr>
       <td rowspan="3" style="text-align:center;">ESP32-C2</td>
+      <td style="text-align:center;">SPI</td>
+      <td style="text-align:center;">&#10003;</td>
+      <td style="text-align:center;">&#10003;</td>
+    </tr>
+    <tr>
+      <td style="text-align:center;">UART</td>
+      <td style="text-align:center;">&#10005;</td>
+      <td style="text-align:center;">&#10003;</td>
+    </tr>
+    <tr>
+      <td style="text-align:center;">SPI(WiFi) + UART(BT)</td>
+      <td style="text-align:center;">&#10003;</td>
+      <td style="text-align:center;">&#10003;</td>
+    </tr>
+    <tr>
+      <td rowspan="3" style="text-align:center;">ESP32-C3</td>
       <td style="text-align:center;">SPI</td>
       <td style="text-align:center;">&#10003;</td>
       <td style="text-align:center;">&#10003;</td>
