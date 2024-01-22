@@ -333,7 +333,7 @@ static int esp_open(struct net_device *ndev)
 
 static int esp_stop(struct net_device *ndev)
 {
-	return esp_mark_scan_done_and_disconnect(netdev_priv(ndev), false);
+	return 0;
 }
 
 static struct net_device_stats *esp_get_stats(struct net_device *ndev)
@@ -486,10 +486,6 @@ static int esp_remove_network_ifaces(struct esp_adapter *adapter)
 	struct net_device *ndev = NULL;
 	struct esp_wifi_device *priv = NULL;
 
-	rtnl_lock();
-	if (adapter->wiphy)
-		cfg80211_shutdown_all_interfaces(adapter->wiphy);
-
 	for (iface_idx = 0; iface_idx < ESP_MAX_INTERFACE; iface_idx++) {
 
 		priv = adapter->priv[iface_idx];
@@ -499,14 +495,23 @@ static int esp_remove_network_ifaces(struct esp_adapter *adapter)
 			continue;
 
 		ndev = priv->ndev;
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 12, 0)
 		if (ndev)
 			ndev->needs_free_netdev = true;
+		rtnl_lock();
 		wiphy_lock(adapter->wiphy);
 		cfg80211_unregister_wdev(&priv->wdev);
 		wiphy_unlock(adapter->wiphy);
+		rtnl_unlock();
+#else
+		if (ndev && ndev->reg_state == NETREG_REGISTERED) {
+			unregister_netdev(ndev);
+			free_netdev(ndev);
+			ndev = NULL;
+		}
+#endif
 		adapter->priv[iface_idx] = NULL;
 	}
-	rtnl_unlock();
 
 	return 0;
 }
@@ -521,6 +526,7 @@ static int stop_network_iface(struct esp_wifi_device *priv)
 	if (!test_bit(ESP_NETWORK_UP, &priv->priv_flags))
 		return 0;
 
+	esp_mark_scan_done_and_disconnect(priv, false);
 	esp_port_close(priv);
 
 	/* stop and unregister network */
@@ -543,6 +549,12 @@ int esp_stop_network_ifaces(struct esp_adapter *adapter)
 	for (iface_idx = 0; iface_idx < ESP_MAX_INTERFACE; iface_idx++) {
 		stop_network_iface(adapter->priv[iface_idx]);
 	}
+
+	rtnl_lock();
+	if (adapter->wiphy)
+		cfg80211_shutdown_all_interfaces(adapter->wiphy);
+
+	rtnl_unlock();
 
 	return 0;
 }

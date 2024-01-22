@@ -1465,20 +1465,12 @@ int cmd_set_mac(struct esp_wifi_device *priv, uint8_t *mac_addr)
 
 int esp_commands_teardown(struct esp_adapter *adapter)
 {
-	uint8_t iface_idx = 0;
-
 	if (!adapter) {
 		return -EINVAL;
 	}
 
 	set_bit(ESP_CLEANUP_IN_PROGRESS, &adapter->state_flags);
 	clear_bit(ESP_CMD_INIT_DONE, &adapter->state_flags);
-
-	for (iface_idx = 0; iface_idx < ESP_MAX_INTERFACE; iface_idx++) {
-		esp_mark_scan_done_and_disconnect(adapter->priv[iface_idx], false);
-		esp_port_close(adapter->priv[iface_idx]);
-	}
-
 	destroy_cmd_wq(adapter);
 	free_esp_cmd_pool(adapter);
 
