@@ -289,6 +289,13 @@ int hosted_sdio_card_init(void *ctx)
 		config.flags = SDMMC_HOST_FLAG_1BIT;
 	config.max_freq_khz = H_SDIO_CLOCK_FREQ;
 
+#ifdef CONFIG_IDF_TARGET_ESP32P4
+	// Set this flag to allocate aligned buffer of 512 bytes to meet
+	// DMA's requirements for CMD53 byte mode. Mandatory when any
+	// buffer is behind the cache, or not aligned to 4 byte boundary.
+	config.flags |= SDMMC_HOST_FLAG_ALLOC_ALIGNED_BUF;
+#endif
+
 	if (sdmmc_card_init(&config, card) != ESP_OK) {
 		ESP_LOGE(TAG, "sdmmc_card_init failed");
 		goto fail;

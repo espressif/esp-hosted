@@ -16,13 +16,14 @@
 #include "mempool.h"
 #include "esp_hosted_config.h"
 #include "stats.h"
+#include "esp_log.h"
 #define MEMPOOL_DEBUG 1
 
 
+static char * MEM_TAG = "mpool";
 #if H_MEM_STATS
 #include "esp_log.h"
 
-static char * MEM_TAG = "mpool";
 
 #endif
 
@@ -48,7 +49,7 @@ struct mempool * mempool_create(uint32_t block_size)
 		return NULL;
 	}
 
-    new->spinlock = g_h.funcs->_h_create_lock_mempool();
+	new->spinlock = g_h.funcs->_h_create_lock_mempool();
 
 	new->block_size = MEMPOOL_ALIGNED(block_size);
 	SLIST_INIT(&(new->head));
@@ -111,7 +112,7 @@ void * mempool_alloc(struct mempool* mp, int nbytes, int need_memset)
 
 		g_h.funcs->_h_unlock_mempool(mp->spinlock);
 
-		buf = MEM_ALLOC(mp->block_size);
+		buf = MEM_ALLOC(MEMPOOL_ALIGNED(mp->block_size));
 #if H_MEM_STATS
 		h_stats_g.mp_stats.num_fresh_alloc++;
 		ESP_LOGV(MEM_TAG, "%p: num_alloc: %lu", mp, (unsigned long int)(h_stats_g.mp_stats.num_fresh_alloc));
@@ -120,6 +121,7 @@ void * mempool_alloc(struct mempool* mp, int nbytes, int need_memset)
 #else
 	buf = MEM_ALLOC(MEMPOOL_ALIGNED(nbytes));
 #endif
+	ESP_LOGV(MEM_TAG, "alloc %u bytes at %p", nbytes, buf);
 
 	if (buf && need_memset)
 		g_h.funcs->_h_memset(buf, 0, nbytes);
@@ -152,4 +154,3 @@ void mempool_free(struct mempool* mp, void *mem)
 	g_h.funcs->_h_free(mem);
 #endif
 }
-

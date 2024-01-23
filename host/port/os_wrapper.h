@@ -26,6 +26,7 @@ ESP_EVENT_DECLARE_BASE(WIFI_EVENT);
 #define MCU_SYS                                      1
 
 #include "common.h"
+#include "esp_dma_utils.h"
 
 #define MAX_PAYLOAD_SIZE (MAX_TRANSPORT_BUFFER_SIZE-H_ESP_PAYLOAD_HEADER_OFFSET)
 
@@ -64,12 +65,12 @@ ESP_EVENT_DECLARE_BASE(WIFI_EVENT);
 #define H_GPIO_MODE_DEF_OUTPUT          (BIT1)    ///< bit mask for output
 #define H_GPIO_MODE_DEF_OD              (BIT2)    ///< bit mask for OD mode
 enum {
-    H_GPIO_MODE_DISABLE = H_GPIO_MODE_DEF_DISABLE,                                                         /*!< GPIO mode : disable input and output             */
-    H_GPIO_MODE_INPUT = H_GPIO_MODE_DEF_INPUT,                                                             /*!< GPIO mode : input only                           */
-    H_GPIO_MODE_OUTPUT = H_GPIO_MODE_DEF_OUTPUT,                                                           /*!< GPIO mode : output only mode                     */
-    H_GPIO_MODE_OUTPUT_OD = ((H_GPIO_MODE_DEF_OUTPUT) | (H_GPIO_MODE_DEF_OD)),                               /*!< GPIO mode : output only with open-drain mode     */
-    H_GPIO_MODE_INPUT_OUTPUT_OD = ((H_GPIO_MODE_DEF_INPUT) | (H_GPIO_MODE_DEF_OUTPUT) | (H_GPIO_MODE_DEF_OD)), /*!< GPIO mode : output and input with open-drain mode*/
-    H_GPIO_MODE_INPUT_OUTPUT = ((H_GPIO_MODE_DEF_INPUT) | (H_GPIO_MODE_DEF_OUTPUT)),                         /*!< GPIO mode : output and input mode                */
+	H_GPIO_MODE_DISABLE = H_GPIO_MODE_DEF_DISABLE,                                                         /*!< GPIO mode : disable input and output             */
+	H_GPIO_MODE_INPUT = H_GPIO_MODE_DEF_INPUT,                                                             /*!< GPIO mode : input only                           */
+	H_GPIO_MODE_OUTPUT = H_GPIO_MODE_DEF_OUTPUT,                                                           /*!< GPIO mode : output only mode                     */
+	H_GPIO_MODE_OUTPUT_OD = ((H_GPIO_MODE_DEF_OUTPUT) | (H_GPIO_MODE_DEF_OD)),                               /*!< GPIO mode : output only with open-drain mode     */
+	H_GPIO_MODE_INPUT_OUTPUT_OD = ((H_GPIO_MODE_DEF_INPUT) | (H_GPIO_MODE_DEF_OUTPUT) | (H_GPIO_MODE_DEF_OD)), /*!< GPIO mode : output and input with open-drain mode*/
+	H_GPIO_MODE_INPUT_OUTPUT = ((H_GPIO_MODE_DEF_INPUT) | (H_GPIO_MODE_DEF_OUTPUT)),                         /*!< GPIO mode : output and input mode                */
 };
 
 #if 0
@@ -100,7 +101,13 @@ enum {
 #define MALLOC(x)                        malloc(x)
 
 /* This is [malloc + aligned DMA] */
-#define MEM_ALLOC(x)                     heap_caps_malloc(x, MALLOC_CAP_DMA)
+#define MEM_ALLOC(x)       ({                                       \
+	void *tmp_buf = NULL;                                           \
+	size_t actual_size = 0;                                         \
+	esp_err_t err = ESP_OK;                                         \
+	err = esp_dma_malloc((x), 0, &tmp_buf, &actual_size);           \
+	if (err) tmp_buf = NULL;                                        \
+	tmp_buf;})
 
 #define FREE(x)                          free(x);
 
@@ -124,10 +131,10 @@ enum hardware_type_e {
 
 
 #define MEM_DUMP(s) \
-    printf("%s free:%lu min-free:%lu lfb-def:%u lfb-8bit:%u\n\n", s, \
-                  (unsigned long int)esp_get_free_heap_size(), (unsigned long int)esp_get_minimum_free_heap_size(), \
-                  heap_caps_get_largest_free_block(MALLOC_CAP_DEFAULT),\
-                  heap_caps_get_largest_free_block(MALLOC_CAP_8BIT))
+	printf("%s free:%lu min-free:%lu lfb-def:%u lfb-8bit:%u\n\n", s,	\
+			(unsigned long int)esp_get_free_heap_size(), (unsigned long int)esp_get_minimum_free_heap_size(), \
+			heap_caps_get_largest_free_block(MALLOC_CAP_DEFAULT),		\
+			heap_caps_get_largest_free_block(MALLOC_CAP_8BIT))
 
 #if 0
 #if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(4, 4, 0)
@@ -152,19 +159,19 @@ enum hardware_type_e {
 /* -------- Calloc, Free handle ------- */
 #define HOSTED_FREE(buff) if (buff) { g_h.funcs->_h_free(buff); buff = NULL; }
 #define HOSTED_CALLOC(struct_name, buff, nbytes, gotosym) do {    \
-    buff = (struct_name *)g_h.funcs->_h_calloc(1, nbytes);        \
-    if (!buff) {                                                  \
-        printf("%s, Failed to allocate memory \n", __func__);     \
-        goto gotosym;                                             \
-    }                                                             \
+	buff = (struct_name *)g_h.funcs->_h_calloc(1, nbytes);	  \
+	if (!buff) {                                                  \
+		printf("%s, Failed to allocate memory \n", __func__);     \
+		goto gotosym;                                             \
+	}                                                             \
 } while(0);
 
 #define HOSTED_MALLOC(struct_name, buff, nbytes, gotosym) do {    \
-    buff = (struct_name *)g_h.funcs->_h_malloc(nbytes);           \
-    if (!buff) {                                                  \
-        printf("%s, Failed to allocate memory \n", __func__);     \
-        goto gotosym;                                             \
-    }                                                             \
+	buff = (struct_name *)g_h.funcs->_h_malloc(nbytes);		  \
+	if (!buff) {                                                  \
+		printf("%s, Failed to allocate memory \n", __func__);     \
+		goto gotosym;                                             \
+	}                                                             \
 } while(0);
 
 /* Driver Handle */
