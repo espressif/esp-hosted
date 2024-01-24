@@ -162,6 +162,7 @@ struct esp_wifi_device {
 	struct notifier_block   nb;
 	uint8_t                 tx_pwr_type;
 	uint8_t                 tx_pwr;
+	uint32_t                rssi;
 };
 
 

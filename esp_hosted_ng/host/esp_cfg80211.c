@@ -539,6 +539,39 @@ static int esp_cfg80211_set_tx_power(struct wiphy *wiphy,
 	return cmd_set_tx_power(priv, priv->tx_pwr);
 }
 
+static int esp_cfg80211_get_station(struct wiphy *wiphy, struct net_device *ndev,
+				    const u8 *mac, struct station_info *sinfo)
+{
+	struct esp_wifi_device *priv = NULL;
+
+	priv = netdev_priv(ndev);
+
+	if (!mac || !priv) {
+		esp_err("mac=%p priv=%p\n", mac, priv);
+		return -ENOENT;
+	}
+	if (wireless_dev_current_bss_exists(&priv->wdev)) {
+
+		sinfo->filled |= BIT(NL80211_STA_INFO_SIGNAL);
+		sinfo->signal = priv->rssi;
+
+		sinfo->filled |= BIT(NL80211_STA_INFO_RX_BYTES);
+		sinfo->rx_bytes = priv->stats.rx_bytes;
+		sinfo->filled |= BIT(NL80211_STA_INFO_RX_PACKETS);
+		sinfo->rx_packets = priv->stats.rx_packets;
+
+		sinfo->filled |= BIT(NL80211_STA_INFO_TX_BYTES);
+		sinfo->tx_bytes = priv->stats.tx_bytes;
+		sinfo->filled |= BIT(NL80211_STA_INFO_TX_PACKETS);
+		sinfo->tx_packets = priv->stats.tx_packets;
+
+		sinfo->filled |= BIT(NL80211_STA_INFO_TX_FAILED);
+		sinfo->tx_failed = priv->stats.tx_dropped;
+	}
+
+	return 0;
+}
+
 static int esp_cfg80211_get_tx_power(struct wiphy *wiphy,
 				     struct wireless_dev *wdev,
 				     int *dbm)
@@ -585,6 +618,7 @@ static struct cfg80211_ops esp_cfg80211_ops = {
 	.set_wakeup = esp_cfg80211_set_wakeup,
 	.set_tx_power = esp_cfg80211_set_tx_power,
 	.get_tx_power = esp_cfg80211_get_tx_power,
+	.get_station = esp_cfg80211_get_station,
 };
 
 static void esp_reg_notifier(struct wiphy *wiphy,
