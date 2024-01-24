@@ -74,6 +74,21 @@ menu "Example Configuration"
         help
             GPIO pin used to wake-up host
 
+    choice SDIO_SLAVE_SPEED
+        prompt "SDIO slave speed"
+        depends on ESP_SDIO_HOST_INTERFACE
+        default SDIO_DEFAULT_SPEED
+        help
+            SDIO slave speed, could be either default speed or high speed.
+            Enabling this will cause the host to see highspeed capability.
+
+        config SDIO_DEFAULT_SPEED
+            bool "Default Speed"
+
+        config SDIO_HIGH_SPEED
+            bool "High Speed"
+    endchoice
+
     config ESP_OTA_WORKAROUND
         bool "OTA workaround - Add sleeps while OTA write"
         default y

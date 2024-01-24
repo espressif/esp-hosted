@@ -125,7 +125,9 @@ static interface_handle_t * sdio_init(void)
 		.timing             = SDIO_SLAVE_TIMING_NSEND_PSAMPLE,
 #endif
 	};
+#ifdef CONFIG_SDIO_DEFAULT_SPEED
 	config.flags |= SDIO_SLAVE_FLAG_DEFAULT_SPEED;
+#endif
 
 	/* Configuration for the OOB line */
 	gpio_config_t io_conf={
