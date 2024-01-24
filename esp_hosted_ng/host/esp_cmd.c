@@ -621,6 +621,7 @@ static void process_assoc_event(struct esp_wifi_device *priv,
 	esp_info("Connection status: %d\n", event->header.status);
 
 	memcpy(mac, event->bssid, MAC_ADDR_LEN);
+	priv->rssi = event->rssi;
 
 	CFG80211_RX_ASSOC_RESP(priv->ndev, priv->bss, event->frame, event->frame_len,
 			0, priv->assoc_req_ie, priv->assoc_req_ie_len);
