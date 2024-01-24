@@ -74,8 +74,10 @@ static const char TAG[] = "SPI_DRIVER";
 #define SPI_BUFFER_SIZE            MAX_TRANSPORT_BUF_SIZE
 #define SPI_QUEUE_SIZE             3
 
-#define GPIO_MASK_DATA_READY (1 << GPIO_DATA_READY)
-#define GPIO_MASK_HANDSHAKE (1 << GPIO_HANDSHAKE)
+#define GPIO_MASK_DATA_READY (1ULL << GPIO_DATA_READY)
+#define GPIO_MASK_HANDSHAKE (1ULL << GPIO_HANDSHAKE)
+
+#define H_CS_INTR_TO_CLEAR_HS                        GPIO_INTR_NEGEDGE
 
 #if H_HANDSHAKE_ACTIVE_HIGH
   #define H_HS_VAL_ACTIVE                            GPIO_OUT_W1TS_REG
@@ -185,10 +187,10 @@ static inline void spi_trans_free(spi_slave_transaction_t *trans)
 	hosted_mempool_free(trans_mp_g, trans);
 }
 
-#define set_handshake_gpio()     WRITE_PERI_REG(H_HS_VAL_ACTIVE,   GPIO_MASK_HANDSHAKE)
-#define reset_handshake_gpio()   WRITE_PERI_REG(H_HS_VAL_INACTIVE, GPIO_MASK_HANDSHAKE)
-#define set_dataready_gpio()     WRITE_PERI_REG(H_DR_VAL_ACTIVE,   GPIO_MASK_DATA_READY)
-#define reset_dataready_gpio()   WRITE_PERI_REG(H_DR_VAL_INACTIVE, GPIO_MASK_DATA_READY)
+#define set_handshake_gpio()     gpio_set_level(GPIO_HANDSHAKE, 1);
+#define reset_handshake_gpio()   gpio_set_level(GPIO_HANDSHAKE, 0);
+#define set_dataready_gpio()     gpio_set_level(GPIO_DATA_READY, 1);
+#define reset_dataready_gpio()   gpio_set_level(GPIO_DATA_READY, 0);
 
 interface_context_t *interface_insert_driver(int (*event_handler)(uint8_t val))
 {
@@ -350,7 +352,7 @@ static inline int is_valid_trans_buffer(uint8_t *trans_buf)
 	offset = le16toh(header->offset);
 
 	if (!len || (len > SPI_BUFFER_SIZE) ||
-            (offset != sizeof(struct esp_payload_header))) {
+	    (offset != sizeof(struct esp_payload_header))) {
 		return pdFALSE;
 	}
 
@@ -713,21 +715,20 @@ static void IRAM_ATTR gpio_disable_hs_isr_handler(void* arg)
 
 static void register_hs_disable_pin(uint32_t gpio_num)
 {
-    if (gpio_num != -1) {
-    gpio_reset_pin(gpio_num);
+	if (gpio_num != -1) {
+		gpio_reset_pin(gpio_num);
 
-    gpio_config_t slave_disable_hs_pin_conf={
-        .intr_type=GPIO_INTR_DISABLE,
-        .mode=GPIO_MODE_INPUT,
-        .pull_up_en=1,
-        .pin_bit_mask=(1<<gpio_num)
-    };
-
-    gpio_config(&slave_disable_hs_pin_conf);
-    gpio_set_intr_type(gpio_num, GPIO_INTR_NEGEDGE);
-    gpio_install_isr_service(0);
-    gpio_isr_handler_add(gpio_num, gpio_disable_hs_isr_handler, NULL);
-    }
+		gpio_config_t slave_disable_hs_pin_conf={
+			.intr_type=GPIO_INTR_DISABLE,
+			.mode=GPIO_MODE_INPUT,
+			.pin_bit_mask=(1ULL<<gpio_num)
+		};
+		slave_disable_hs_pin_conf.pull_up_en = 1;
+		gpio_config(&slave_disable_hs_pin_conf);
+		gpio_set_intr_type(gpio_num, H_CS_INTR_TO_CLEAR_HS);
+		gpio_install_isr_service(0);
+		gpio_isr_handler_add(gpio_num, gpio_disable_hs_isr_handler, NULL);
+	}
 }
 
 static interface_handle_t * esp_spi_init(void)
