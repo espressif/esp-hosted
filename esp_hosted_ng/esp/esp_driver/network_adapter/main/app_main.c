@@ -454,6 +454,11 @@ void process_priv_commamd(uint8_t if_type, uint8_t *payload, uint16_t payload_le
 			ESP_LOGI(TAG, "REG get command");
 			process_reg_get(if_type, payload, payload_len);
 			break;
+		case CMD_RAW_TP_ESP_TO_HOST:
+		case CMD_RAW_TP_HOST_TO_ESP:
+			ESP_LOGI(TAG, "RAW TP init command %s", CMD_RAW_TP_ESP_TO_HOST ? "slave to host" : "host to slave");
+			process_raw_tp(if_type, payload, payload_len);
+			break;
 
 		default:
 			ESP_LOGI(TAG, "Unsupported cmd[0x%x] received\n", header->cmd_code);
@@ -505,11 +510,9 @@ void process_rx_pkt(interface_buffer_handle_t *buf_handle)
 			process_hci_rx_pkt(payload, payload_len);
 		}
 #endif
-#if TEST_RAW_TP && TEST_RAW_TP__HOST_TO_ESP
 		else if (buf_handle->if_type == ESP_TEST_IF) {
 			debug_update_raw_tp_rx_count(payload_len);
 		}
-#endif
 	}
 	/* Free buffer handle */
 	if (buf_handle->free_buf_handle && buf_handle->priv_buffer_handle) {

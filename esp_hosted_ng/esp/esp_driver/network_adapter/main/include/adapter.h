@@ -87,8 +87,8 @@ enum ESP_CAPABILITIES {
 };
 
 typedef enum {
-	ESP_TEST_RAW_TP = (1 << 0),
-	ESP_TEST_RAW_TP__ESP_TO_HOST = (1 << 1)
+	ESP_TEST_RAW_TP_HOST_TO_ESP = (1 << 0),
+	ESP_TEST_RAW_TP_ESP_TO_HOST = (1 << 1)
 } ESP_RAW_TP_MEASUREMENT;
 
 enum ESP_INTERNAL_MSG {
@@ -122,6 +122,8 @@ enum COMMAND_CODE {
 	CMD_SET_TXPOWER,
 	CMD_GET_REG_DOMAIN,
 	CMD_SET_REG_DOMAIN,
+	CMD_RAW_TP_ESP_TO_HOST,
+	CMD_RAW_TP_HOST_TO_ESP,
 	CMD_MAX,
 };
 
@@ -228,6 +230,11 @@ struct wifi_sec_key {
 } __packed;
 
 struct cmd_set_get_val {
+	struct     command_header header;
+	uint32_t   value;
+} __packed;
+
+struct cmd_raw_tp {
 	struct     command_header header;
 	uint32_t   value;
 } __packed;

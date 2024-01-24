@@ -21,6 +21,7 @@
 #define TX_MAX_PENDING_COUNT    100
 #define TX_RESUME_THRESHOLD     (TX_MAX_PENDING_COUNT/5)
 
+extern u32 raw_tp_mode;
 static struct sk_buff *read_packet(struct esp_adapter *adapter);
 static int write_packet(struct esp_adapter *adapter, struct sk_buff *skb);
 static void spi_exit(void);
@@ -292,9 +293,11 @@ static void esp_spi_work(struct work_struct *work)
 				cb = (struct esp_skb_cb *)tx_skb->cb;
 				if (cb && cb->priv && atomic_read(&tx_pending) < TX_RESUME_THRESHOLD) {
 					esp_tx_resume(cb->priv);
-					#if TEST_RAW_TP
+#if TEST_RAW_TP
+					if (raw_tp_mode != 0) {
 						esp_raw_tp_queue_resume();
-					#endif
+					}
+#endif
 				}
 			}
 		}

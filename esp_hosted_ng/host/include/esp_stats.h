@@ -10,11 +10,7 @@
 
 #include "esp.h"
 
-#ifdef CONFIG_TEST_RAW_TP
 #define TEST_RAW_TP 1
-#else
-#define TEST_RAW_TP 0
-#endif
 
 #if TEST_RAW_TP
 

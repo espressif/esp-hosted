@@ -111,13 +111,13 @@ Make sure that host machine is equipped with following:
 ### 2.1 SPI configuration
 **Wi-Fi and Bluetooth over SPI**
 
-| Supported Targets | ESP32 | ESP32-S3 | ESP32-C3 | ESP32-C2 |
-| ----------------- | ----- | -------- | -------- |--------- |
+| Supported Targets | ESP32 | ESP32-S2 | ESP32-S3 | ESP32-C2 | ESP32-C3 | ESP32-C6 |
+| ----------------- | ----- | -------- | -------- |--------- |--------- |--------- |
 * Hardware setup
     * In this setup, ESP board acts as a SPI peripheral and provides Wi-Fi capabilities to host. Please connect ESP board to Raspberry-Pi with jumper cables as mentioned below. Please use short jumper cables to ensure signal integrity. Raspberry Pi should be powered with correct incoming power rating. ESP can be powered through PC using micro-USB/USB-C cable.
     * **Pin Connections**
 
-        | Raspberry-Pi Pin | ESP32 | ESP32-S3 | ESP32-C2/C3/C6 | Function |
+        | Raspberry-Pi Pin | ESP32 | ESP32-S2/S3 | ESP32-C2/C3/C6 | Function |
         |:-------:|:---------:|:--------:|:--------:|:--------:|
         | 24 | IO15 | IO10 | IO10 | CS0 |
         | 23 | IO14 | IO12 | IO6 | SCLK |
@@ -166,7 +166,7 @@ Make sure that host machine is equipped with following:
             $ rm -rf sdkconfig build
             $ idf.py set-target <esp_chipset>
             ```
-        * For SPI, <esp_chipset> could be one of `esp32`, `esp32s3`, `esp32c3`, `esp32c2`.
+        * For SPI, <esp_chipset> could be one of `esp32`, `esp32s2`, `esp32s3`, `esp32c2`, `esp32c3`, `esp32c6`.
         * Execute following command to configure the project
             ```
             $ idf.py menuconfig
@@ -195,8 +195,8 @@ Make sure that host machine is equipped with following:
 ### 2.2 SDIO configuration
 **Wi-Fi and Bluetooth over SDIO**
 
-| Supported Targets | ESP32 |
-| ----------------- | ----- |
+| Supported Targets | ESP32 | ESP32-C6 |
+| ----------------- | ----- | -------- |
 * Hardware setup
     * In this setup, ESP board acts as a SDIO peripheral and provides Wi-Fi capabilities to host. Please connect ESP board to Raspberry-Pi with jumper cables as mentioned below. Raspberry Pi should be powered with correct incoming power rating. ESP can be powered through PC using micro-USB/USB-C cable.
     * **Pin connections**
@@ -224,6 +224,14 @@ Make sure that host machine is equipped with following:
     * Please reboot Raspberry-Pi after changing this file.
 * Setting up the environment and getting started
     * Host environment setup  
+        * As ESP32 & ESP32C6, both support SDIO, Let host know which slave chipset is being used by changing `ESP_SLAVE_CHIPSET` in `esp_hosted_ng/host/rpi_init.sh` as:
+            ```sh
+            ESP_SLAVE_CHIPSET="esp32"
+            ```
+            or
+            ```sh
+            ESP_SLAVE_CHIPSET="esp32c6"
+            ```
         * Execute following commands in root directory of cloned ESP-Hosted repository on Raspberry-Pi
             ```sh
             $ cd esp_hosted/esp_hosted_ng/host/
@@ -246,7 +254,7 @@ Make sure that host machine is equipped with following:
             $ rm -rf sdkconfig build
             $ idf.py set-target <esp_chipset>
             ```
-        * For SDIO, <esp_chipset> could is `esp32`.
+        * For SDIO, <esp_chipset> could is `esp32`, `esp32c6`.
         * Execute following command to configure the project
             ```
             $ idf.py menuconfig
@@ -274,18 +282,18 @@ Make sure that host machine is equipped with following:
 ### 2.3 SDIO/SPI + Uart configuration
 **Wi-Fi over SDIO/SPI and Bluetooth over UART**
 
-| Supported Uart line | ESP32 | ESP32-C3 | ESP32-S3 | ESP32-C2 |
-| ------------------- | ----- | -------- | -------- | -------- |
-| 4 line UART supported | yes | yes | yes | no |
-| 2 line UART supported | yes | yes | yes | yes |
+| Supported Chipsets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-S3 | ESP32-C6 |
+| ------------------ | ----- | -------- | -------- | -------- | -------- |
+| 4 line UART supported | yes | no | yes | yes | no |
+| 2 line UART supported | yes | yes | yes | yes | yes |
 * In this section, ESP chipset provides a way to run Bluetooth/BLE over UART interface.
 
 * This section is divided in two parts 
 * Wi-fi over SPI and Bluetooth over UART
-    * Supported targets **ESP32, ESP32S3, ESP32C3, ESP32C2** 
+    * Supported targets **ESP32, ESP32S3, ESP32C3, ESP32C2, ESP32C6**
     * Please follows these steps first to setup esp device in SPI mode [SPI configuration](#21-spi-configuration)
 * Wi-fi over SDIO and Bluetooth over UART
-    * Supported targets **ESP32** 
+    * Supported targets **ESP32, ESP32C6**
     * Please follows these steps first to setup esp device in SDIO mode [SDIO configuration](#22-sdio-configuration)
         
 * Hardware Uart setup
@@ -299,10 +307,10 @@ Make sure that host machine is equipped with following:
         | RTS | 11 | IO23 | IO20 | IO8 | CTS |
 
     * Two line setup
-        | Raspberry-Pi Pin Function | Raspberry-Pi Pin | ESP32-C2 | ESP Function |
-        |:-------:|:--------:|:---------:|:--------:|
-        | RX | 10 | IO5 | TX |
-        | TX | 8 | IO18 | RX |
+        | Raspberry-Pi Pin Function | Raspberry-Pi Pin | ESP32-C2 | ESP32-C6 | ESP Function |
+        |:-------:|:--------:|:---------:|:---------:|:--------:|
+        | RX | 10 | IO5 | IO5 | TX |
+        | TX | 8 | IO18 | IO12 | RX |
 
     * Raspberry-Pi pinout can be found [here!](https://pinout.xyz/pinout/uart)
     * In case you wish to reduce number of hardware lines, you may consider SPI_only or SDIO_only transports, where Wi-Fi and Bluetooth traffic is multiplexed on same bus and no need of extra UART pins. UART pin numbers are configurable. If you want to switch from 4 line UART mode to 2 lines, hardware flow control need to be turned off.

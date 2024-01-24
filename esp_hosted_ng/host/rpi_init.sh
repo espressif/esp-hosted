@@ -17,7 +17,7 @@
 
 RESETPIN=""
 BT_UART_INIT="0"
-TEST_RAW_TP="0"
+RAW_TP_MODE="0"
 IF_TYPE="sdio"
 MODULE_NAME="esp32_${IF_TYPE}.ko"
 ESP_SLAVE_CHIPSET=""
@@ -43,12 +43,6 @@ wlan_init()
         fi
     fi
 
-    if [ "$TEST_RAW_TP" = "0" ] ; then
-        VAL_CONFIG_TEST_RAW_TP=n
-    else
-        VAL_CONFIG_TEST_RAW_TP=y
-    fi
-
     if [ "$ESP_SLAVE" != "" ] ; then
         CUSTOM_OPTS=${CUSTOM_OPTS}" ESP_SLAVE=\"$ESP_SLAVE"\"
     fi
@@ -61,20 +55,20 @@ wlan_init()
     # KERNEL        -> Place where kernel is checked out and built
     # ARCH          -> Architecture
     # make -j8 target=$IF_TYPE CROSS_COMPILE=/usr/bin/arm-linux-gnueabihf- KERNEL="/lib/modules/$(uname -r)/build" \
-    # CONFIG_TEST_RAW_TP="$VAL_CONFIG_TEST_RAW_TP" ARCH=arm64
+    # ARCH=arm64
 
     # Populate your arch if not populated correctly.
     arch_num_bits=$(getconf LONG_BIT)
     if [ "$arch_num_bits" = "32" ] ; then arch_found="arm"; else arch_found="arm64"; fi
 
-    make -j8 target=$IF_TYPE KERNEL="/lib/modules/$(uname -r)/build" CONFIG_TEST_RAW_TP="$VAL_CONFIG_TEST_RAW_TP" ARCH=$arch_found $CUSTOM_OPTS
+    make -j8 target=$IF_TYPE KERNEL="/lib/modules/$(uname -r)/build" ARCH=$arch_found $CUSTOM_OPTS \
 
     if [ "$RESETPIN" = "" ] ; then
         #By Default, BCM6 is GPIO on host. use resetpin=6
-        sudo insmod $MODULE_NAME resetpin=$RPI_RESETPIN
+        sudo insmod $MODULE_NAME resetpin=$RPI_RESETPIN raw_tp_mode=$RAW_TP_MODE
     else
         #Use resetpin value from argument
-        sudo insmod $MODULE_NAME $RESETPIN
+        sudo insmod $MODULE_NAME $RESETPIN raw_tp_mode=$RAW_TP_MODE
     fi
 
     if [ `lsmod | grep esp32 | wc -l` != "0" ]; then
@@ -145,9 +139,13 @@ parse_arguments()
                 echo "Configure Host BT UART with 2 pins, RX & TX"
                 BT_INIT_SET="2"
                 ;;
-            rawtp)
-                echo "Test RAW TP"
-                TEST_RAW_TP="1"
+            rawtp_host_to_esp)
+                echo "Test RAW TP ESP to HOST"
+                RAW_TP_MODE="1"
+                ;;
+            rawtp_esp_to_host)
+                echo "Test RAW TP ESP to HOST"
+                RAW_TP_MODE="2"
                 ;;
             *)
                 echo "$1 : unknown option"
@@ -165,10 +163,6 @@ select_esp_slave()
         [Ee][Ss][Pp]32)
             echo "Building for esp32"
 			ESP_SLAVE='CONFIG_TARGET_ESP32=y'
-            ;;
-        [Ee][Ss][Pp]32[Cc]6)
-            echo "Building for esp32c6"
-			ESP_SLAVE='CONFIG_TARGET_ESP32C6=y'
             ;;
         [Ee][Ss][Pp]32-[Cc]6)
             echo "Building for esp32c6"

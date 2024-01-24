@@ -35,9 +35,10 @@ void esp_port_close(struct esp_wifi_device *priv);
 void esp_remove_network_interfaces(struct esp_adapter *adapter);
 void print_capabilities(u32 cap);
 void process_capabilities(struct esp_adapter *adapter);
-void process_test_capabilities(u8 cap);
 int esp_is_tx_queue_paused(struct esp_wifi_device *priv);
 int esp_deinit_module(struct esp_adapter *adapter);
 int esp_validate_chipset(struct esp_adapter *adapter, u8 chipset);
 int esp_adjust_spi_clock(struct esp_adapter *adapter, u8 spi_clk_mhz);
+void process_test_capabilities(u32 raw_tp_mode);
+int esp_init_raw_tp(struct esp_adapter *adapter);
 #endif

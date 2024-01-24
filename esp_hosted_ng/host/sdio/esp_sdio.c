@@ -21,6 +21,7 @@
 #include "esp_utils.h"
 #include "include/esp_kernel_port.h"
 
+extern u32 raw_tp_mode;
 #define MAX_WRITE_RETRIES       2
 #define TX_MAX_PENDING_COUNT    200
 #define TX_RESUME_THRESHOLD     (TX_MAX_PENDING_COUNT/5)
@@ -610,9 +611,11 @@ static int tx_process(void *data)
 		cb = (struct esp_skb_cb *)tx_skb->cb;
 		if (cb && cb->priv && atomic_read(&tx_pending) < TX_RESUME_THRESHOLD) {
 			esp_tx_resume(cb->priv);
-			#if TEST_RAW_TP
+#if TEST_RAW_TP
+			if (raw_tp_mode != 0) {
 				esp_raw_tp_queue_resume();
-			#endif
+			}
+#endif
 		}
 
 		buf_needed = (tx_skb->len + ESP_RX_BUFFER_SIZE - 1) / ESP_RX_BUFFER_SIZE;
