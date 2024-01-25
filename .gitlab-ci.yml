@@ -89,3 +89,27 @@ deploy_esp32p4_github:
       - git remote remove github &>/dev/null || true
       - git remote add github git@github.com:espressif/esp-hosted.git
       - git push -f github "${CI_COMMIT_SHA}:refs/heads/${CI_COMMIT_REF_NAME}"
+
+.deploy_esp_hosted_master_comp:
+  stage: deploy
+  image: $CI_DOCKER_REGISTRY/esp32-ci-env
+  tags:
+    - deploy
+  rules:
+    - if $CI_COMMIT_TAG
+  when: manual
+  only:
+    - feature/ext_component_host
+  files:
+    exclude:
+      - slave/
+      - slave/**/*
+    include:
+      - host/**/*
+  script:
+    - cp -r common host/
+    - cp -r common slave/
+    - cd host
+    - compote component upload --name esp_hosted_master --allow-existing --namespace=mantriyogesh --project-dir ./
+    - cd ../slave
+    - compote component upload --name esp_hosted_slave --allow-existing --namespace=mantriyogesh --project-dir ./
