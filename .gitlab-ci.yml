@@ -99,10 +99,11 @@ deploy_esp32p4_github:
   only:
     - feature/ext_component_host
   script:
+    - export IDF_COMPONENT_API_TOKEN=${ESP_HOSTED_API_KEY}
+    - pip install idf-component-manager
     - cp -r common host/
     - cp -r common slave/
     - cd host
-    - pip install idf-component-manager
-    - python -m idf_component_manager upload-component --allow-existing --name esp_hosted_master --namespace=mantriyogesh
+    - compote component upload --allow-existing --name esp_hosted_master --namespace mantriyogesh --project-dir ./
     - cd ../slave
-    - python -m idf_component_manager upload-component --allow-existing --name esp_hosted_slave --namespace=mantriyogesh
+    - compote component upload --allow-existing --name esp_hosted_slave --namespace mantriyogesh --project-dir ./
