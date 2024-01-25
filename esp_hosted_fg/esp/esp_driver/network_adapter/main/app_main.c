@@ -212,20 +212,12 @@ void esp_update_ap_mac(void)
 esp_err_t wlan_ap_rx_callback(void *buffer, uint16_t len, void *eb)
 {
 	interface_buffer_handle_t buf_handle = {0};
-	uint8_t * ap_buf = buffer;
 
 	if (!buffer || !eb || !datapath || ota_ongoing) {
 		if (eb) {
 			esp_wifi_internal_free_rx_buffer(eb);
 		}
 		return ESP_OK;
-	}
-
-	/* Check destination address against self address */
-	if (memcmp(ap_buf, ap_mac, MAC_LEN)) {
-		/* Check for multicast or broadcast address */
-		if (!(ap_buf[0] & 1))
-			goto DONE;
 	}
 
 	buf_handle.if_type = ESP_AP_IF;
