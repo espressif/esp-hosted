@@ -102,6 +102,7 @@ deploy_esp32p4_github:
     - cp -r common host/
     - cp -r common slave/
     - cd host
-    - compote component upload --name esp_hosted_master --allow-existing --namespace=mantriyogesh --project-dir ./
+    - pip install idf-component-manager
+    - python -m idf_component_manager upload-component --allow-existing --name esp_hosted_master --namespace=mantriyogesh
     - cd ../slave
-    - compote component upload --name esp_hosted_slave --allow-existing --namespace=mantriyogesh --project-dir ./
+    - python -m idf_component_manager upload-component --allow-existing --name esp_hosted_slave --namespace=mantriyogesh
