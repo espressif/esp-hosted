@@ -90,20 +90,20 @@ deploy_esp32p4_github:
       - git remote add github git@github.com:espressif/esp-hosted.git
       - git push -f github "${CI_COMMIT_SHA}:refs/heads/${CI_COMMIT_REF_NAME}"
 
-.deploy_esp_hosted_master_comp:
-  stage: deploy
-  image: $CI_DOCKER_REGISTRY/esp32-ci-env
-  tags:
-    - deploy
-  when: manual
-  only:
-    - feature/ext_component_host
-  script:
-    - export IDF_COMPONENT_API_TOKEN=${ESP_HOSTED_API_KEY}
-    - pip install idf-component-manager
-    - cp -r common host/
-    - cp -r common slave/
-    - cd host
-    - compote component upload --allow-existing --name esp_hosted_master --namespace mantriyogesh --project-dir ./
-    - cd ../slave
-    - compote component upload --allow-existing --name esp_hosted_slave --namespace mantriyogesh --project-dir ./
+#.deploy_esp_hosted_master_comp:
+#  stage: deploy
+#  image: $CI_DOCKER_REGISTRY/esp32-ci-env
+#  tags:
+#    - deploy
+#  when: manual
+#  only:
+#    - feature/ext_component_host
+#  script:
+#    - export IDF_COMPONENT_API_TOKEN=${ESP_HOSTED_API_KEY}
+#    - pip install idf-component-manager
+#    - cp -r common host/
+#    - cp -r common slave/
+#    - cd host
+#    - compote component upload --allow-existing --name esp_hosted_master --namespace mantriyogesh --project-dir ./
+#    - cd ../slave
+#    - compote component upload --allow-existing --name esp_hosted_slave --namespace mantriyogesh --project-dir ./
