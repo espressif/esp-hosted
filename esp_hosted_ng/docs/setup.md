@@ -82,6 +82,7 @@ Make sure that host machine is equipped with following:
 * Follow these steps to setup required configurations for desired transport layer [Transport layer configuration](#2-transport-layer-configuration)
 
 ### 1.3 ESP Comprehensive guide
+- **Note on Windows 11**: you can follow [these instructions](/esp_hosted_ng/esp/esp_driver/README.md#building-on-windows-11-using-command-prompt) to setup ESP-IDF to build the esp firmware.
 - :warning: **Following command is dangerous. It will revert all your local changes. Stash if need to keep them**.
 - Install the ESP-IDF using script
     ```sh

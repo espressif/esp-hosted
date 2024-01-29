@@ -193,6 +193,8 @@ This section identifies Raspberry-Pi specific setup requirements.
 ### 2.2 ESP-IDF Setup
 - If you are going to use released firmware binaries, ESP-IDF setup is not required, please continue with `2.3 ESP-Hosted Code Repository` below.
 - Follow steps hereon on your **native machine** (your Windows/Linux/Mac desktop/laptop)
+- **Note on Windows 11**: you can follow [these instructions](/esp_hosted_fg/esp/esp_driver/setup_windows11.md),
+instead of the following, to setup ESP-IDF and build the esp firmware.
 - :warning: Following command is dangerous. It will revert all your local changes. Stash if need to keep them.
 - Install the ESP-IDF using script
 ```sh
