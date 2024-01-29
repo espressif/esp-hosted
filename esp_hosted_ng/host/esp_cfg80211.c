@@ -671,7 +671,7 @@ static void esp_reg_notifier(struct wiphy *wiphy,
 
 	/* Don't send same regdom info to firmware */
 	if (strncmp(request->alpha2, priv->country_code, strlen(request->alpha2))) {
-		strlcpy(priv->country_code, request->alpha2, MAX_COUNTRY_LEN);
+		strscpy(priv->country_code, request->alpha2, MAX_COUNTRY_LEN);
 		cmd_set_reg_domain(priv);
 	}
 }
