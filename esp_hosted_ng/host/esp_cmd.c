@@ -1646,7 +1646,7 @@ int cmd_set_reg_domain(struct esp_wifi_device *priv)
 
 	cmd = (struct cmd_reg_domain *) (cmd_node->cmd_skb->data + sizeof(struct esp_payload_header));
 
-	strlcpy(cmd->country_code, priv->country_code, MAX_COUNTRY_LEN);
+	strscpy(cmd->country_code, priv->country_code, MAX_COUNTRY_LEN);
 
 	queue_cmd_node(priv->adapter, cmd_node, ESP_CMD_DFLT_PRIO);
 	queue_work(priv->adapter->cmd_wq, &priv->adapter->cmd_work);

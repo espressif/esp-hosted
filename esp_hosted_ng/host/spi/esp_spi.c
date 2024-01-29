@@ -416,7 +416,7 @@ static int spi_dev_init(int spi_clk_mhz)
 	struct spi_board_info esp_board = {{0}};
 	struct spi_master *master = NULL;
 
-	strlcpy(esp_board.modalias, "esp_spi", sizeof(esp_board.modalias));
+	strscpy(esp_board.modalias, "esp_spi", sizeof(esp_board.modalias));
 	esp_board.mode = SPI_MODE_2;
 	esp_board.max_speed_hz = spi_clk_mhz * NUMBER_1M;
 	esp_board.bus_num = 0;
