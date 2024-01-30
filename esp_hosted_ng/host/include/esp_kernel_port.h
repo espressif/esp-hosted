@@ -178,7 +178,12 @@ void CFG80211_RX_ASSOC_RESP(struct net_device *dev,
 			    const u8 *req_ies, size_t req_ies_len)
 {
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 0, 0))
+
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 7, 0))
+	struct cfg80211_rx_assoc_resp_data resp = {0};
+#else
 	struct cfg80211_rx_assoc_resp resp = {0};
+#endif
 
 	resp.links[0].bss = bss;
 	resp.buf = (u8 *)buf;
