@@ -113,6 +113,8 @@ Make sure that same code base (same git commit) is checked-out/copied at both, E
 
 ##### Set-up ESP-IDF
 - :warning: Omit this & move to `Configure, Build & Flash ESP firmware` step if IDF is already setup while SPI/SDIO setup
+- **Note on Windows 11**: you can follow [these instructions](/esp_hosted_fg/esp/esp_driver/setup_windows11.md),
+instead of the following, to setup ESP-IDF and build the esp firmware.
 - :warning: Following command is dangerous. It will revert all your local changes. Stash if need to keep them.
 - Install the ESP-IDF using script
 ```sh
