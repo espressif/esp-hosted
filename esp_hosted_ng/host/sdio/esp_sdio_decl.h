@@ -65,15 +65,13 @@
 
 #define ESP_ADDRESS_MASK              0x3FF
 
-#if defined(CONFIG_TARGET_ESP32)
-	#define ESP_VENDOR_ID               0x6666
-	#define ESP_DEVICE_ID_1             0x2222
-	#define ESP_DEVICE_ID_2             0x3333
-#elif defined(CONFIG_TARGET_ESP32C6)
-	#define ESP_VENDOR_ID               0x0092
-	#define ESP_DEVICE_ID_1             0x6666
-	#define ESP_DEVICE_ID_2             0x7777
-#endif
+#define ESP_VENDOR_ID_1             0x6666
+#define ESP_DEVICE_ID_ESP32_1       0x2222
+#define ESP_DEVICE_ID_ESP32_2       0x3333
+
+#define ESP_VENDOR_ID_2             0x0092
+#define ESP_DEVICE_ID_ESP32C6_1     0x6666
+#define ESP_DEVICE_ID_ESP32C6_2     0x7777
 
 enum context_state {
 	ESP_CONTEXT_DISABLED = 0,
