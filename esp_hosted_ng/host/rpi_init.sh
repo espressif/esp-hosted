@@ -20,8 +20,6 @@ BT_UART_INIT="0"
 RAW_TP_MODE="0"
 IF_TYPE="sdio"
 MODULE_NAME="esp32_${IF_TYPE}.ko"
-ESP_SLAVE_CHIPSET=""
-#For sdio ESP_SLAVE_CHIPSET can esp32 or esp32c6
 RPI_RESETPIN=6
 
 bringup_network_interface()
@@ -157,36 +155,12 @@ parse_arguments()
     done
 }
 
-select_esp_slave()
-{
-    case $ESP_SLAVE_CHIPSET in
-        [Ee][Ss][Pp]32)
-            echo "Building for esp32"
-			ESP_SLAVE='CONFIG_TARGET_ESP32=y'
-            ;;
-        [Ee][Ss][Pp]32-[Cc]6)
-            echo "Building for esp32c6"
-			ESP_SLAVE='CONFIG_TARGET_ESP32C6=y'
-            ;;
-        *)
-            echo "***** Err: Please set expected ESP slave chipset ****"
-			exit 1
-            ;;
-    esac
-
-}
-
-
 parse_arguments $*
 if [ "$IF_TYPE" = "" ] ; then
     echo "Error: No protocol selected"
     usage
     exit 1
 else
-if [ "$IF_TYPE" = "sdio" ] ; then
-    # SDIO Kernel driver registration varies for ESP32 and ESP32-C6 slave chipsets
-    select_esp_slave
-fi
     echo "Building for $IF_TYPE protocol"
     MODULE_NAME=esp32_${IF_TYPE}.ko
 fi

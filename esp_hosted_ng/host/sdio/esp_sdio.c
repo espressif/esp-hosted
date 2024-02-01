@@ -48,8 +48,10 @@ static int write_packet(struct esp_adapter *adapter, struct sk_buff *skb);
 /*int deinit_context(struct esp_adapter *adapter);*/
 
 static const struct sdio_device_id esp_devices[] = {
-	{ SDIO_DEVICE(ESP_VENDOR_ID, ESP_DEVICE_ID_1) },
-	{ SDIO_DEVICE(ESP_VENDOR_ID, ESP_DEVICE_ID_2) },
+	{ SDIO_DEVICE(ESP_VENDOR_ID_1, ESP_DEVICE_ID_ESP32_1) },
+	{ SDIO_DEVICE(ESP_VENDOR_ID_1, ESP_DEVICE_ID_ESP32_2) },
+	{ SDIO_DEVICE(ESP_VENDOR_ID_2, ESP_DEVICE_ID_ESP32C6_1) },
+	{ SDIO_DEVICE(ESP_VENDOR_ID_2, ESP_DEVICE_ID_ESP32C6_2) },
 	{}
 };
 
