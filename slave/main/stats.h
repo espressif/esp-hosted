@@ -101,7 +101,6 @@ typedef struct {
 #define TEST_RAW_TP__BUF_SIZE        CONFIG_ESP_RAW_TP_ESP_TO_HOST_PKT_LEN
 #define TEST_RAW_TP__TIMEOUT         CONFIG_ESP_RAW_TP_REPORT_INTERVAL
 
-
 void debug_update_raw_tp_rx_count(uint16_t len);
 #endif
 
@@ -122,6 +121,7 @@ extern struct pkt_stats_t pkt_stats;
 #endif
 
 
+void process_test_capabilities(uint8_t capabilities);
 void create_debugging_tasks(void);
 uint8_t debug_get_raw_tp_conf(void);
 #endif  /*__STATS__H__*/

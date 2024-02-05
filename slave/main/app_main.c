@@ -361,7 +361,7 @@ static int host_to_slave_reconfig(uint8_t *evt_buf, uint16_t len)
 			}
 
 		} else if (*pos == SLV_CONFIG_TEST_RAW_TP) {
-
+#if TEST_RAW_TP
 			switch (*(pos + 2)) {
 
 			case ESP_TEST_RAW_TP__ESP_TO_HOST:
@@ -380,11 +380,13 @@ static int host_to_slave_reconfig(uint8_t *evt_buf, uint16_t len)
 			break;
 
 			default:
-				ESP_LOGE(TAG, "Unsupported Raw TP config");
+				ESP_LOGW(TAG, "Unsupported Raw TP config");
 			}
 
-#if TEST_RAW_TP
-			//process_test_capabilities(*(pos + 2));
+			process_test_capabilities(*(pos + 2));
+#else
+			if (*(pos + 2))
+				ESP_LOGW(TAG, "Host requested raw throughput testing, but not enabled in slave");
 #endif
 		} else if (*pos == SLV_CONFIG_THROTTLE_HIGH_THRESHOLD) {
 

@@ -542,6 +542,26 @@ ESP32P4_SDIO_CLK_FREQ_KHZ_RANGE_MAX := 80000
 				help
 					Find max transport performance which helps to assess stability of porting done
 
+		choice ESP_RAW_THROUGHPUT_DIRECTION
+			bool "RawTP: Send data from:"
+			depends on ESP_RAW_THROUGHPUT_TRANSPORT
+
+			config ESP_RAW_THROUGHPUT_TX_TO_SLAVE
+				bool "Host to Slave"
+				help
+					Sends data from Host to Slave
+
+			config ESP_RAW_THROUGHPUT_RX_FROM_SLAVE
+				bool "Slave to Host"
+				help
+					Sends data from Slave to Slave
+
+			config ESP_RAW_THROUGHPUT_BIDIRECTIONAL
+				bool "Bidirectional"
+				help
+					Sends data in both directions
+		endchoice
+
 		config ESP_RAW_TP_HOST_TO_ESP_PKT_LEN
 			depends on ESP_RAW_THROUGHPUT_TRANSPORT
 			int "RawTP: Host to ESP packet size"

@@ -444,7 +444,6 @@ esp_err_t send_slave_config(uint8_t host_cap, uint8_t firmware_chip_id,
 	struct esp_priv_event *event = NULL;
 	uint8_t *pos = NULL;
 	uint16_t len = 0;
-	uint8_t raw_tp_cap = 0;
 	uint8_t *sendbuf = NULL;
 
 	sendbuf = malloc(512); /*Arbitrary number*/
@@ -472,12 +471,9 @@ esp_err_t send_slave_config(uint8_t host_cap, uint8_t firmware_chip_id,
 	*pos = LENGTH_1_BYTE;                              pos++;len++;
 	*pos = firmware_chip_id;                           pos++;len++;
 
-#if CONFIG_TEST_RAW_TP
-
-	*pos = ESP_PRIV_TEST_RAW_TP;                       pos++;len++;
+	*pos = SLV_CONFIG_TEST_RAW_TP;                     pos++;len++;
 	*pos = LENGTH_1_BYTE;                              pos++;len++;
 	*pos = raw_tp_direction;                           pos++;len++;
-#endif
 
 	*pos = SLV_CONFIG_THROTTLE_HIGH_THRESHOLD;         pos++;len++;
 	*pos = LENGTH_1_BYTE;                              pos++;len++;
@@ -501,7 +497,7 @@ int process_init_event(uint8_t *evt_buf, uint16_t len)
 {
 	uint8_t len_left = len, tag_len;
 	uint8_t *pos;
-	uint8_t raw_tp_config = 0;
+	uint8_t raw_tp_config = H_TEST_RAW_TP_DIR;
 
 	if (!evt_buf)
 		return ESP_FAIL;
@@ -529,9 +525,11 @@ int process_init_event(uint8_t *evt_buf, uint16_t len)
 			verify_host_config_for_slave(chip_type);
 		} else if (*pos == ESP_PRIV_TEST_RAW_TP) {
 			ESP_LOGI(TAG, "EVENT: %2x", *pos);
-			ESP_LOGD(TAG, "priv test raw tp\n\r");
 #if TEST_RAW_TP
 			process_test_capabilities(*(pos + 2));
+#else
+			if (*(pos + 2))
+				ESP_LOGW(TAG, "Slave enabled Raw Throughput Testing, but not enabled on Host");
 #endif
 		} else if (*pos == ESP_PRIV_RX_Q_SIZE) {
 			ESP_LOGD(TAG, "slave rx queue size: %u", *(pos + 2));

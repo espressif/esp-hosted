@@ -171,6 +171,7 @@ typedef enum {
 } ESP_CAPABILITIES;
 
 typedef enum {
+	ESP_TEST_RAW_TP_NONE = 0,
 	ESP_TEST_RAW_TP = (1 << 0),
 	ESP_TEST_RAW_TP__ESP_TO_HOST = (1 << 1),
 	ESP_TEST_RAW_TP__HOST_TO_ESP = (1 << 2),

@@ -134,7 +134,7 @@ static void raw_tp_tx_task(void const* pvParameters)
 	}
 }
 
-static void process_raw_tp_flags(void)
+static void process_raw_tp_flags(uint8_t cap)
 {
 	test_raw_tp_cleanup();
 
@@ -147,9 +147,13 @@ static void process_raw_tp_flags(void)
 		}
 		log_raw_tp_stats_timer_running = 1;
 
-		raw_tp_tx_task_id = g_h.funcs->_h_thread_create("raw_tp_tx", DFLT_TASK_PRIO,
+		ESP_LOGD(TAG, "capabilities: %d", cap);
+		if ((cap & ESP_TEST_RAW_TP__HOST_TO_ESP) ||
+			(cap & ESP_TEST_RAW_TP__BIDIRECTIONAL)) {
+			raw_tp_tx_task_id = g_h.funcs->_h_thread_create("raw_tp_tx", DFLT_TASK_PRIO,
 				RAW_TP_TX_TASK_STACK_SIZE, raw_tp_tx_task, NULL);
-		assert(raw_tp_tx_task_id);
+			assert(raw_tp_tx_task_id);
+		}
 	}
 }
 
@@ -165,15 +169,15 @@ static void stop_test_raw_tp(void)
 
 void process_test_capabilities(uint8_t cap)
 {
-	ESP_LOGI(TAG, "ESP peripheral capabilities: 0x%x\n\r", cap);
+	ESP_LOGI(TAG, "ESP peripheral capabilities: 0x%x", cap);
 	if ((cap & ESP_TEST_RAW_TP) == ESP_TEST_RAW_TP) {
 		start_test_raw_tp();
 		ESP_LOGI(TAG, "***** Host Raw throughput Testing (report per %u sec) *****\n\r",TEST_RAW_TP__TIMEOUT);
 	} else {
-		ESP_LOGI(TAG, "esp32: stop raw throuput test if running\n");
+		ESP_LOGW(TAG, "Raw Throughput testing not enabled on slave. Stopping test.");
 		stop_test_raw_tp();
 	}
-	process_raw_tp_flags();
+	process_raw_tp_flags(H_TEST_RAW_TP_DIR);
 }
 
 void update_test_raw_tp_rx_len(uint16_t len)
