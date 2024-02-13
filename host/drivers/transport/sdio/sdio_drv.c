@@ -88,12 +88,16 @@ static uint32_t sdio_rx_byte_count = 0;
 // one-time trigger to start write thread
 static bool sdio_start_write_thread = false;
 
+#if H_SDIO_HOST_STREAMING_MODE
+static uint32_t recv_buf_size = 0;
+static uint8_t * recv_buf = NULL;
+#endif
+
 static esp_err_t sdio_generate_slave_intr(uint8_t intr_no);
 
 static void sdio_write_task(void const* pvParameters);
 static void sdio_read_task(void const* pvParameters);
 static void sdio_process_rx_task(void const* pvParameters);
-
 
 static inline void sdio_mempool_create()
 {
@@ -199,10 +203,12 @@ static int sdio_get_len_from_slave(uint32_t *rx_size, bool is_lock_needed)
 		temp = ESP_RX_BYTE_MAX - sdio_rx_byte_count;
 		len = temp + len;
 
+#if !H_SDIO_HOST_STREAMING_MODE // in streaming mode we may get very large buffer sizes
 		if (len > ESP_RX_BUFFER_SIZE) {
 			ESP_LOGI(TAG, "%s: Len from slave[%ld] exceeds max [%d]",
 					__func__, len, ESP_RX_BUFFER_SIZE);
 		}
+#endif
 	}
 	*rx_size = len;
 
@@ -436,13 +442,152 @@ static int is_valid_sdio_rx_packet(uint8_t *rxbuff_a, uint16_t *len_a, uint16_t 
 	return 1;
 }
 
+// pushes received packet data on to rx queue
+static esp_err_t sdio_push_pkt_to_queue(uint8_t * rxbuff, uint16_t len, uint16_t offset)
+{
+	uint8_t pkt_prio = PRIO_Q_OTHERS;
+	struct esp_payload_header *h= NULL;
+	interface_buffer_handle_t buf_handle;
+
+	h = (struct esp_payload_header *)rxbuff;
+
+	memset(&buf_handle, 0, sizeof(interface_buffer_handle_t));
+
+	buf_handle.priv_buffer_handle = rxbuff;
+	buf_handle.free_buf_handle    = sdio_buffer_free;
+	buf_handle.payload_len        = len;
+	buf_handle.if_type            = h->if_type;
+	buf_handle.if_num             = h->if_num;
+	buf_handle.payload            = rxbuff + offset;
+	buf_handle.seq_num            = le16toh(h->seq_num);
+	buf_handle.flag               = h->flags;
+
+	if (buf_handle.if_type == ESP_SERIAL_IF)
+		pkt_prio = PRIO_Q_SERIAL;
+	else if (buf_handle.if_type == ESP_HCI_IF)
+		pkt_prio = PRIO_Q_BT;
+	/* else OTHERS by default */
+
+	g_h.funcs->_h_queue_item(from_slave_queue[pkt_prio], &buf_handle, portMAX_DELAY);
+	g_h.funcs->_h_post_semaphore(sem_from_slave_queue);
+
+	return ESP_OK;
+}
+
+/**
+ * These function definitions depend on whether we are in SDIO
+ * streaming mode or not.
+ */
+#if !H_SDIO_HOST_STREAMING_MODE
+// SDIO packet mode
+// return a buffer big enough to contain the data
+static uint8_t * sdio_rx_get_buffer(uint32_t len)
+{
+	// return mempool allocated buffer
+	return sdio_buffer_alloc(MEMSET_REQUIRED);
+}
+
+// this frees the buffer *before* it is queued
+static void sdio_rx_free_buffer(uint8_t * buf)
+{
+	sdio_buffer_free(buf);
+}
+
+// push buffer on to the queue
+static esp_err_t sdio_push_data_to_queue(uint8_t * buf, uint32_t buf_len)
+{
+	uint16_t len = 0;
+	uint16_t offset = 0;
+
+	/* Drop packet if no processing needed */
+	if (!is_valid_sdio_rx_packet(buf, &len, &offset)) {
+		/* Free up buffer, as one of following -
+		 * 1. no payload to process
+		 * 2. input packet size > driver capacity
+		 * 3. payload header size mismatch,
+		 * wrong header/bit packing?
+		 * */
+		ESP_LOGE(TAG, "Dropping packet");
+		HOSTED_FREE(buf);
+		return ESP_FAIL;
+	}
+
+	if (sdio_push_pkt_to_queue(buf, len, offset)) {
+		ESP_LOGE(TAG, "Failed to push Rx packet to queue");
+		return ESP_FAIL;
+	}
+
+	return ESP_OK;
+}
+#else // H_SDIO_HOST_STREAMING_MODE
+// SDIO streaming mode
+// return a buffer big enough to contain the data
+static uint8_t * sdio_rx_get_buffer(uint32_t len)
+{
+	// (re)allocate a buffer big enough to contain the data stream
+	if (len > recv_buf_size) {
+		if (recv_buf) {
+			// free already allocated memory
+			g_h.funcs->_h_free(recv_buf);
+		}
+		recv_buf = (uint8_t *)MEM_ALLOC(len);
+		assert(recv_buf);
+		recv_buf_size = len;
+		ESP_LOGD(TAG, "recv_buf_size %ld", recv_buf_size);
+	}
+	return recv_buf;
+}
+
+// this frees the buffer *before* it is queued
+static void sdio_rx_free_buffer(uint8_t * buf)
+{
+	// no op - keep the allocated static buffer as it is
+}
+
+// extract packets from the stream and push on to the queue
+static esp_err_t sdio_push_data_to_queue(uint8_t * buf, uint32_t buf_len)
+{
+	uint8_t * pkt_rxbuff = NULL;
+	uint16_t len = 0;
+	uint16_t offset = 0;
+	uint32_t packet_size;
+
+	// break up the data stream into packets to send to the queue
+	do {
+		if (!is_valid_sdio_rx_packet(buf, &len, &offset)) {
+			/* Have to drop packets in the stream as we cannot decode
+			 * them after this error */
+			ESP_LOGE(TAG, "Dropping packet(s) from stream");
+			return ESP_FAIL;
+		}
+		/* Allocate rx buffer */
+		pkt_rxbuff = sdio_buffer_alloc(MEMSET_REQUIRED);
+		assert(pkt_rxbuff);
+
+		packet_size = len + offset;
+		if (packet_size > buf_len) {
+			ESP_LOGE(TAG, "packet size too big for remaining stream data");
+			return ESP_FAIL;
+		}
+		memcpy(pkt_rxbuff, buf, packet_size);
+
+		if (sdio_push_pkt_to_queue(pkt_rxbuff, len, offset)) {
+			ESP_LOGI(TAG, "Failed to push a packet to queue from stream");
+		}
+
+		// move to the next packet in the stream
+		buf_len -= packet_size;
+		buf     += packet_size;
+	} while (buf_len);
+
+	return ESP_OK;
+}
+#endif
+
 static void sdio_read_task(void const* pvParameters)
 {
 	esp_err_t res;
 	uint8_t *rxbuff = NULL;
-	struct esp_payload_header *h= NULL;
-	uint16_t len = 0;
-	uint16_t offset = 0;
 #if CONFIG_ESP_SDIO_CHECKSUM
 	uint16_t rx_checksum = 0, checksum = 0;
 #endif
@@ -453,8 +598,6 @@ static void sdio_read_task(void const* pvParameters)
 	uint32_t len_to_read;
 	uint8_t *pos;
 	uint32_t interrupts;
-	uint8_t pkt_prio = PRIO_Q_OTHERS;
-	interface_buffer_handle_t buf_handle;
 
 	assert(sdio_handle);
 
@@ -473,6 +616,13 @@ static void sdio_read_task(void const* pvParameters)
 	}
 
 	create_debugging_tasks();
+
+	// display which SDIO mode we are operating in
+#if H_SDIO_HOST_STREAMING_MODE
+	ESP_LOGI(TAG, "SDIO Host operating in STREAMING MODE");
+#else
+	ESP_LOGI(TAG, "SDIO Host operating in PACKET MODE");
+#endif
 
 	ESP_LOGI(TAG, "generate slave intr");
 
@@ -535,9 +685,8 @@ static void sdio_read_task(void const* pvParameters)
 		}
 #endif
 
-
 		/* Allocate rx buffer */
-		rxbuff = sdio_buffer_alloc(MEMSET_REQUIRED);
+		rxbuff = sdio_rx_get_buffer(len_from_slave);
 		assert(rxbuff);
 
 		data_left = len_from_slave;
@@ -552,7 +701,7 @@ static void sdio_read_task(void const* pvParameters)
 			if (ret) {
 				ESP_LOGE(TAG, "%s: Failed to read data - %d %ld %ld",
 					__func__, ret, len_to_read, data_left);
-				HOSTED_FREE(rxbuff);
+				sdio_rx_free_buffer(rxbuff);
 				break;
 			}
 			data_left -= len_to_read;
@@ -569,41 +718,8 @@ static void sdio_read_task(void const* pvParameters)
 		if (ret)
 			continue;
 
-		/* Drop packet if no processing needed */
-		if (!is_valid_sdio_rx_packet(rxbuff, &len, &offset)) {
-			/* Free up buffer, as one of following -
-			 * 1. no payload to process
-			 * 2. input packet size > driver capacity
-			 * 3. payload header size mismatch,
-			 * wrong header/bit packing?
-			 * */
-			ESP_LOGI(TAG, "Dropping packet");
-			HOSTED_FREE(rxbuff);
-			continue;
-		}
-
-		/* create buffer rx handle, used for processing */
-		h = (struct esp_payload_header *)rxbuff;
-
-		memset(&buf_handle, 0, sizeof(interface_buffer_handle_t));
-
-		buf_handle.priv_buffer_handle = rxbuff;
-		buf_handle.free_buf_handle    = sdio_buffer_free;
-		buf_handle.payload_len        = len;
-		buf_handle.if_type            = h->if_type;
-		buf_handle.if_num             = h->if_num;
-		buf_handle.payload            = rxbuff + offset;
-		buf_handle.seq_num            = le16toh(h->seq_num);
-		buf_handle.flag               = h->flags;
-
-		if (buf_handle.if_type == ESP_SERIAL_IF)
-			pkt_prio = PRIO_Q_SERIAL;
-		else if (buf_handle.if_type == ESP_HCI_IF)
-			pkt_prio = PRIO_Q_BT;
-		/* else OTHERS by default */
-
-		g_h.funcs->_h_queue_item(from_slave_queue[pkt_prio], &buf_handle, portMAX_DELAY);
-		g_h.funcs->_h_post_semaphore(sem_from_slave_queue);
+		if (sdio_push_data_to_queue(rxbuff, len_from_slave))
+			ESP_LOGE(TAG, "Failed to push data to rx queue");
 	}
 }
 
@@ -648,7 +764,7 @@ static void sdio_process_rx_task(void const* pvParameters)
 #if 1
 			if (chan_arr[buf_handle->if_type] && chan_arr[buf_handle->if_type]->rx) {
 				/* TODO : Need to abstract heap_caps_malloc */
-				uint8_t * copy_payload = (uint8_t *)malloc(buf_handle->payload_len);
+				uint8_t * copy_payload = (uint8_t *)g_h.funcs->_h_malloc(buf_handle->payload_len);
 				assert(copy_payload);
 				assert(buf_handle->payload_len);
 				assert(buf_handle->payload);
