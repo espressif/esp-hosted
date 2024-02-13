@@ -181,6 +181,32 @@ The below table explains which feature is supported on which transport interface
       <td style="text-align:center;">&#10003;</td>
       <td style="text-align:center;">&#10003;</td>
     </tr>
+    <tr>
+      <td rowspan="5" style="text-align:center;">ESP32-C6</td>
+      <td style="text-align:center;">SDIO</td>
+      <td style="text-align:center;">&#10003;</td>
+      <td style="text-align:center;">&#10003;</td>
+    </tr>
+    <tr>
+      <td style="text-align:center;">SPI</td>
+      <td style="text-align:center;">&#10003;</td>
+      <td style="text-align:center;">&#10003;</td>
+    </tr>
+    <tr>
+      <td style="text-align:center;">UART</td>
+      <td style="text-align:center;">&#10005;</td>
+      <td style="text-align:center;">&#10003;</td>
+    </tr>
+    <tr>
+      <td style="text-align:center;">SDIO(WiFi) + UART(BT)</td>
+      <td style="text-align:center;">&#10003;</td>
+      <td style="text-align:center;">&#10003;</td>
+    </tr>
+    <tr>
+      <td style="text-align:center;">SPI(WiFi) + UART(BT)</td>
+      <td style="text-align:center;">&#10003;</td>
+      <td style="text-align:center;">&#10003;</td>
+    </tr>
   </tbody>
 </table>
 
