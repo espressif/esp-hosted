@@ -553,8 +553,7 @@ static void sdio_read_task(void const* pvParameters)
 				ESP_LOGE(TAG, "%s: Failed to read data - %d %ld %ld",
 					__func__, ret, len_to_read, data_left);
 				HOSTED_FREE(rxbuff);
-				SDIO_DRV_UNLOCK();
-				continue;
+				break;
 			}
 			data_left -= len_to_read;
 			pos += len_to_read;
@@ -562,9 +561,13 @@ static void sdio_read_task(void const* pvParameters)
 
 		SDIO_DRV_UNLOCK();
 
+		//TODO: unclear, on failure case
+		//sdio_rx_byte_count += (len_from_slave-data_left);
 		sdio_rx_byte_count += len_from_slave;
 		sdio_rx_byte_count = sdio_rx_byte_count % ESP_RX_BYTE_MAX;
 
+		if (ret)
+			continue;
 
 		/* Drop packet if no processing needed */
 		if (!is_valid_sdio_rx_packet(rxbuff, &len, &offset)) {
