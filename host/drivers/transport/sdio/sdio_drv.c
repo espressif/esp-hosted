@@ -336,7 +336,7 @@ static void sdio_write_task(void const* pvParameters)
 		ret = sdio_is_write_buffer_available(buf_needed);
 		if (ret != BUFFER_AVAILABLE) {
 			ESP_LOGV(TAG, "no SDIO write buffers on slave device");
-			goto done;
+			goto unlock_done;
 		}
 
 		pos = sendbuf;
@@ -358,10 +358,9 @@ static void sdio_write_task(void const* pvParameters)
 				if (retries < MAX_WRITE_RETRIES) {
 					ESP_LOGD(TAG, "retry");
 					continue;
-				}
-				else {
+				} else {
 					ESP_LOGE(TAG, "abort sending of data");
-					goto done;
+					goto unlock_done;
 				}
 			}
 
@@ -377,9 +376,9 @@ static void sdio_write_task(void const* pvParameters)
 				pkt_stats.sta_tx_out++;
 #endif
 
-done:
+unlock_done:
 		SDIO_DRV_UNLOCK();
-
+done:
 		if (len && !buf_handle.payload_zcopy) {
 			/* free allocated buffer, only if zerocopy is not requested */
 			H_FREE_PTR_WITH_FUNC(buf_handle.free_buf_handle, buf_handle.priv_buffer_handle);
@@ -554,8 +553,7 @@ static void sdio_read_task(void const* pvParameters)
 				ESP_LOGE(TAG, "%s: Failed to read data - %d %ld %ld",
 					__func__, ret, len_to_read, data_left);
 				HOSTED_FREE(rxbuff);
-				SDIO_DRV_UNLOCK();
-				continue;
+				break;
 			}
 			data_left -= len_to_read;
 			pos += len_to_read;
@@ -563,9 +561,13 @@ static void sdio_read_task(void const* pvParameters)
 
 		SDIO_DRV_UNLOCK();
 
+		//TODO: unclear, on failure case
+		//sdio_rx_byte_count += (len_from_slave-data_left);
 		sdio_rx_byte_count += len_from_slave;
 		sdio_rx_byte_count = sdio_rx_byte_count % ESP_RX_BYTE_MAX;
 
+		if (ret)
+			continue;
 
 		/* Drop packet if no processing needed */
 		if (!is_valid_sdio_rx_packet(rxbuff, &len, &offset)) {
