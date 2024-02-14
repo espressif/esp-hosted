@@ -169,13 +169,9 @@ int rpc_parse_evt(Rpc *rpc_msg, ctrl_cmd_t *app_ntfy)
 
 	}
 
-	rpc__free_unpacked(rpc_msg, NULL);
-	rpc_msg = NULL;
 	return SUCCESS;
 
 fail_parse_rpc_msg:
-	rpc__free_unpacked(rpc_msg, NULL);
-	rpc_msg = NULL;
 	app_ntfy->resp_event_status = FAILURE;
 	return FAILURE;
 }

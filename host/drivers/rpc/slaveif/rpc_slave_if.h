@@ -18,11 +18,7 @@
 extern "C" {
 #endif
 
-
-
 #define SSID_LENGTH                          32
-#define MAX_MAC_STR_LEN                      18
-#define BSSID_LENGTH                         MAX_MAC_STR_LEN
 #define BSSID_BYTES_SIZE                     6
 #define PASSWORD_LENGTH                      64
 #define STATUS_LENGTH                        14
@@ -68,31 +64,6 @@ typedef struct {
 typedef struct {
 	int mode;
 } hosted_mode_t;
-
-typedef struct {
-	uint8_t ssid[SSID_LENGTH];
-	uint8_t pwd[PASSWORD_LENGTH];
-	uint8_t bssid[BSSID_LENGTH];
-	bool is_wpa3_supported;
-	int rssi;
-	int channel;
-	int encryption_mode;
-	uint16_t listen_interval;
-	char status[STATUS_LENGTH];
-	char out_mac[MAX_MAC_STR_LEN];
-} hosted_ap_config_t;
-
-typedef struct {
-	uint8_t ssid[SSID_LENGTH];
-	uint8_t pwd[PASSWORD_LENGTH];
-	int channel;
-	int encryption_mode;
-	int max_connections;
-	bool ssid_hidden;
-	wifi_bandwidth_t bandwidth;
-	char out_mac[MAX_MAC_STR_LEN];
-} hosted_softap_config_t;
-
 
 typedef struct {
     uint8_t iface;
@@ -177,11 +148,6 @@ typedef struct {
 } event_heartbeat_t;
 
 typedef struct {
-	int32_t reason;
-	char mac[MAX_MAC_STR_LEN];
-} event_station_disconn_t;
-
-typedef struct {
 	int32_t wifi_event_id;
 } event_wifi_simple_t;
 
@@ -196,7 +162,7 @@ typedef struct Ctrl_cmd_t {
 	uint32_t uid;
 
 	/* statusof response or notification */
-	uint8_t resp_event_status;
+	int32_t resp_event_status;
 
 	void * rx_sem;
 
@@ -206,9 +172,6 @@ typedef struct Ctrl_cmd_t {
 		wifi_mac_t                  wifi_mac;
 		hosted_mode_t               wifi_mode;
 
-		hosted_ap_config_t          hosted_ap_config;
-
-		hosted_softap_config_t      wifi_softap_config;
 		wifi_softap_vendor_ie_t     wifi_softap_vendor_ie;
 		//wifi_softap_conn_sta_list_t wifi_softap_con_sta;
 
@@ -243,8 +206,6 @@ typedef struct Ctrl_cmd_t {
 		rpc_wifi_protocol           wifi_protocol;
 
 		event_heartbeat_t           e_heartbeat;
-
-		event_station_disconn_t     e_sta_disconnected;
 
 		event_wifi_simple_t         e_wifi_simple;
 
@@ -420,8 +381,8 @@ ctrl_cmd_t * wifi_get_power_save_mode(ctrl_cmd_t req);
 /* Sets maximum WiFi transmitting power at ESP32 */
 ctrl_cmd_t * wifi_set_max_tx_power(ctrl_cmd_t req);
 
-/* Gets current WiFi transmiting power at ESP32 */
-ctrl_cmd_t * wifi_get_curr_tx_power(ctrl_cmd_t req);
+/* Gets maximum WiFi transmiting power at ESP32 */
+ctrl_cmd_t * wifi_get_max_tx_power(ctrl_cmd_t req);
 
 /* Configure heartbeat event. Be default heartbeat is not enabled.
  * To enable heartbeats, user need to use this API in addition

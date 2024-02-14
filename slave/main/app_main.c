@@ -144,21 +144,6 @@ static uint8_t get_capabilities()
 	return cap;
 }
 
-void esp_update_ap_mac(void)
-{
-	esp_err_t ret = ESP_OK;
-	char mac_str[BSSID_LENGTH] = "";
-
-	ret = esp_wifi_get_mac(ESP_IF_WIFI_AP, ap_mac);
-	ESP_LOGI(TAG,"Get softap mac address");
-	if (ret) {
-		ESP_LOGE(TAG,"Error in getting MAC of ESP softap %d", ret);
-	} else {
-		snprintf(mac_str,BSSID_LENGTH,MACSTR,MAC2STR(ap_mac));
-		ESP_LOGI(TAG,"AP mac [%s] ", mac_str);
-	}
-}
-
 esp_err_t wlan_ap_rx_callback(void *buffer, uint16_t len, void *eb)
 {
 	interface_buffer_handle_t buf_handle = {0};
