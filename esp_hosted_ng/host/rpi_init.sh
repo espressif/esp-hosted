@@ -80,11 +80,11 @@ wlan_init()
 
 bt_init()
 {
-    sudo raspi-gpio set 15 a0 pu
-    sudo raspi-gpio set 14 a0 pu
+    sudo pinctrl set 15 a0 pu
+    sudo pinctrl set 14 a0 pu
     if [ "$BT_INIT_SET" = "4" ] ; then
-        sudo raspi-gpio set 16 a3 pu
-        sudo raspi-gpio set 17 a3 pu
+        sudo pinctrl set 16 a3 pu
+        sudo pinctrl set 17 a3 pu
     fi
 }
 

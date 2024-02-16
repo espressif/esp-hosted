@@ -33,8 +33,15 @@ endif
 ifeq ($(CONFIG_DEBUG_LOGS), y)
 	EXTRA_CFLAGS += -DCONFIG_INFO_LOGS
 	EXTRA_CFLAGS += -DCONFIG_DEBUG_LOGS
+	debug_flags := -DDEBUG
 endif
 
+ifeq ($(CONFIG_VERBOSE_LOGS), y)
+	EXTRA_CFLAGS += -DCONFIG_INFO_LOGS
+	EXTRA_CFLAGS += -DCONFIG_DEBUG_LOGS
+	EXTRA_CFLAGS += -DCONFIG_VERBOSE_LOGS
+	debug_flags := -DDEBUG
+endif
 
 EXTRA_CFLAGS += -I$(PWD)/include -I$(PWD)
 
@@ -48,10 +55,13 @@ ifeq ($(MODULE_NAME), esp32_spi)
 	module_objects += spi/esp_spi.o
 endif
 
+module_objects += esp_bt.o main.o esp_cmd.o esp_utils.o esp_cfg80211.o esp_stats.o
+$(foreach obj,$(module_objects),$(eval CFLAGS_$(obj:.o=).o := $(debug_flags)))
+
 PWD := $(shell pwd)
 
 obj-m := $(MODULE_NAME).o
-$(MODULE_NAME)-y := esp_bt.o main.o esp_cmd.o esp_utils.o esp_cfg80211.o esp_stats.o $(module_objects)
+$(MODULE_NAME)-y := $(module_objects)
 
 all: clean
 	make ARCH=$(ARCH) CROSS_COMPILE=$(CROSS_COMPILE) -C $(KERNEL) M=$(PWD) modules

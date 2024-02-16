@@ -14,9 +14,6 @@
 #include "esp_kernel_port.h"
 #include "esp_stats.h"
 
-#define PRINT_HEXDUMP(STR, ARG, ARG_LEN, level) \
-	print_hex_dump(KERN_INFO, STR, DUMP_PREFIX_ADDRESS, 16, 1, ARG, ARG_LEN, 1);
-
 #define COMMAND_RESPONSE_TIMEOUT (5 * HZ)
 u8 ap_bssid[MAC_ADDR_LEN];
 extern u32 raw_tp_mode;
@@ -51,14 +48,22 @@ static struct command_node *get_free_cmd_node(struct esp_adapter *adapter)
 		esp_err("No free cmd node skb found\n");
 	}
 
+	cmd_node->in_cmd_queue = true;
+
 	return cmd_node;
 }
 
 static inline void reset_cmd_node(struct esp_adapter *adapter, struct command_node *cmd_node)
 {
-	cmd_node->cmd_code = 0;
-
 	spin_lock_bh(&adapter->cmd_lock);
+
+	if (cmd_node->in_cmd_queue) {
+		esp_verbose("recycling command still in cmd queue\n");
+		spin_lock_bh(&adapter->cmd_pending_queue_lock);
+		list_del(&cmd_node->list);
+		spin_unlock_bh(&adapter->cmd_pending_queue_lock);
+	}
+	cmd_node->cmd_code = 0;
 	if (cmd_node->resp_skb) {
 		dev_kfree_skb_any(cmd_node->resp_skb);
 		cmd_node->resp_skb = NULL;
@@ -202,10 +207,10 @@ static int wait_and_decode_cmd_resp(struct esp_wifi_device *priv,
 		return 0;
 
 	if (ret == 0) {
-		esp_err("Command[%u] timed out\n", cmd_node->cmd_code);
+		esp_err("Command[0x%X] timed out\n", cmd_node->cmd_code);
 		ret = -EINVAL;
 	} else {
-		/*esp_dbg("Resp for command [%u]\n", cmd_node->cmd_code);*/
+		esp_verbose("Resp for command [0x%X]\n", cmd_node->cmd_code);
 		ret = 0;
 	}
 
@@ -331,8 +336,9 @@ static void esp_cmd_work(struct work_struct *work)
 	spin_lock_bh(&adapter->cmd_lock);
 	if (adapter->cur_cmd) {
 		/* Busy in another command */
-		/*esp_dbg("Busy in another cmd execution\n");*/
+		esp_verbose("Busy in another cmd execution\n");
 		spin_unlock_bh(&adapter->cmd_lock);
+		/* We should queue ourself here and remove the queuing from process_cmd_resp */
 		return;
 	}
 
@@ -340,7 +346,7 @@ static void esp_cmd_work(struct work_struct *work)
 
 	if (list_empty(&adapter->cmd_pending_queue)) {
 		/* No command to process */
-		/*esp_dbg("No more command in queue.\n");*/
+		esp_verbose("No more command in queue.\n");
 		spin_unlock_bh(&adapter->cmd_pending_queue_lock);
 		spin_unlock_bh(&adapter->cmd_lock);
 		return;
@@ -354,12 +360,14 @@ static void esp_cmd_work(struct work_struct *work)
 		spin_unlock_bh(&adapter->cmd_lock);
 		return;
 	}
-	/*esp_dbg("Processing Command [0x%X]\n", cmd_node->cmd_code);*/
+	esp_verbose("Processing Command [0x%X]\n", cmd_node->cmd_code);
 
 	list_del(&cmd_node->list);
+	cmd_node->in_cmd_queue = false;
 
-	if (!cmd_node->cmd_skb) {
-		esp_dbg("cmd_node->cmd_skb NULL\n");
+	/* this should never happen */
+	if (!cmd_node->cmd_skb || !cmd_node->cmd_code) {
+		esp_warn("cmd_node->cmd_skb =%p , cmd_code=[0x%X]\n", cmd_node->cmd_skb, cmd_node->cmd_code);
 		spin_unlock_bh(&adapter->cmd_pending_queue_lock);
 		spin_unlock_bh(&adapter->cmd_lock);
 		return;
@@ -376,28 +384,30 @@ static void esp_cmd_work(struct work_struct *work)
 					payload_header->len+payload_header->offset));
 
 	ret = esp_send_packet(adapter, cmd_node->cmd_skb);
-	spin_unlock_bh(&adapter->cmd_lock);
 
 	if (ret) {
 		esp_err("Failed to send command [0x%X]\n", cmd_node->cmd_code);
 		adapter->cur_cmd = NULL;
 		spin_unlock_bh(&adapter->cmd_pending_queue_lock);
-		recycle_cmd_node(adapter, cmd_node);
+		spin_unlock_bh(&adapter->cmd_lock);
 		return;
 	}
 
 	if (!list_empty(&adapter->cmd_pending_queue)) {
-		/*esp_dbg("Ym2: Pending cmds, queue work again\n");*/
+		esp_verbose("Pending cmds, queue work again\n");
 		spin_unlock_bh(&adapter->cmd_pending_queue_lock);
+		spin_unlock_bh(&adapter->cmd_lock);
+                /* should we wait before queuing the work again? */
 		queue_work(adapter->cmd_wq, &adapter->cmd_work);
 		return;
 	}
 	spin_unlock_bh(&adapter->cmd_pending_queue_lock);
+	spin_unlock_bh(&adapter->cmd_lock);
 }
 
 static int create_cmd_wq(struct esp_adapter *adapter)
 {
-	adapter->cmd_wq = alloc_workqueue("ESP_CMD_WORK_QUEUE", 0, 0);
+	adapter->cmd_wq = create_singlethread_workqueue("ESP_CMD_WORK_QUEUE");
 
 	RET_ON_FAIL(!adapter->cmd_wq);
 
@@ -472,17 +482,17 @@ int process_cmd_resp(struct esp_adapter *adapter, struct sk_buff *skb)
 		return -1;
 	}
 
+	spin_lock_bh(&adapter->cmd_lock);
 	if (!adapter->cur_cmd) {
 		esp_err("Command response not expected\n");
 		dev_kfree_skb_any(skb);
+		spin_unlock_bh(&adapter->cmd_lock);
 		return -1;
 	}
 
-	spin_lock_bh(&adapter->cmd_lock);
 	adapter->cur_cmd->resp_skb = skb;
 	adapter->cmd_resp = adapter->cur_cmd->cmd_code;
 	spin_unlock_bh(&adapter->cmd_lock);
-
 
 	wake_up_interruptible(&adapter->wait_for_cmd_resp);
 	queue_work(adapter->cmd_wq, &adapter->cmd_work);
@@ -566,10 +576,7 @@ static void process_auth_event(struct esp_wifi_device *priv,
 		return;
 	}
 
-#if 0
-	print_hex_dump(KERN_INFO, "Auth frame: ", DUMP_PREFIX_ADDRESS, 16, 1,
-			event->frame, event->frame_len, 1);
-#endif
+	esp_hex_dump_verbose("Auth frame: ", event->frame, event->frame_len);
 
 	cfg80211_rx_mlme_mgmt(priv->ndev, event->frame, event->frame_len);
 
@@ -603,7 +610,7 @@ static void process_disconnect_event(struct esp_wifi_device *priv,
 	esp_info("Disconnect event for ssid %s [reason:%d]\n",
 			event->ssid, event->reason);
 
-	esp_mark_disconnect(priv, event->reason, true);
+	//esp_mark_disconnect(priv, event->reason, true);
 	/* Flush previous scan results from kernel */
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 9, 0))
 	cfg80211_bss_flush(priv->adapter->wiphy);
@@ -1127,11 +1134,11 @@ int cmd_add_key(struct esp_wifi_device *priv, u8 key_index, bool pairwise,
 	const u8 bc_mac[] = {0xff, 0xff, 0xff, 0xff, 0xff, 0xff};
 	const u8 *mac = NULL;
 
-#if 0
-	esp_info("%u key_idx: %u pairwise: %u params->key_len: %u\nparams->seq_len:%u params->mode: 0x%x\nparams->cipher: 0x%x\n",
-      __LINE__,
-      key_index, pairwise, params->key_len, params->seq_len, params->mode, params->cipher);
-#endif
+	esp_verbose("key_idx: %u pairwise: %u params->key_len: %u\n"
+                     "params->seq_len:%u params->mode: 0x%x\n"
+                     "params->cipher: 0x%x\n",
+                     key_index, pairwise, params->key_len, params->seq_len,
+                     params->mode, params->cipher);
 	if (!priv || !priv->adapter || !params ||
 	    !params->key || !params->key_len || !params->seq_len) {
 		esp_err("Invalid argument\n");
@@ -1163,10 +1170,7 @@ int cmd_add_key(struct esp_wifi_device *priv, u8 key_index, bool pairwise,
 
 	mac = pairwise ? mac_addr : bc_mac;
 	if (mac) {
-#if 0
-		print_hex_dump(KERN_INFO, "mac: ", DUMP_PREFIX_ADDRESS, 16, 1,
-				mac, MAC_ADDR_LEN, 1);
-#endif
+		esp_hex_dump_verbose("mac: ", mac, MAC_ADDR_LEN);
 	}
 
 	cmd_len = sizeof(struct cmd_key_operation);
@@ -1211,13 +1215,11 @@ int cmd_add_key(struct esp_wifi_device *priv, u8 key_index, bool pairwise,
                memset(buf, 0, 8);
        }
 
-#if 0
-	esp_err("%u algo: %u idx: %u seq_len: %u len:%u\n", __LINE__,
+	esp_verbose("algo: %u idx: %u seq_len: %u len:%u\n",
 			key->algo, key->index, key->seq_len, key->len);
-	PRINT_HEXDUMP("mac", key->mac_addr, 6, ESP_LOG_INFO);
-	PRINT_HEXDUMP("seq", key->seq, key->seq_len, ESP_LOG_INFO);
-	PRINT_HEXDUMP("key_data", key->data, key->len, ESP_LOG_INFO);
-#endif
+	esp_hex_dump_verbose("mac", key->mac_addr, 6);
+	esp_hex_dump_verbose("seq", key->seq, key->seq_len);
+	esp_hex_dump_verbose("key_data", key->data, key->len);
 
 	queue_cmd_node(priv->adapter, cmd_node, ESP_CMD_DFLT_PRIO);
 	queue_work(priv->adapter->cmd_wq, &priv->adapter->cmd_work);
