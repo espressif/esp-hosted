@@ -155,7 +155,7 @@ static int process_tx_packet(struct sk_buff *skb)
 		ret = esp_send_packet(priv->adapter, skb);
 
 		if (ret) {
-/*			esp_err("Failed to send SKB");*/
+			esp_verbose("Failed to send SKB");
 			priv->stats.tx_errors++;
 		} else {
 			priv->stats.tx_packets++;
@@ -381,36 +381,9 @@ static int esp_set_mac_address(struct net_device *ndev, void *data)
 
 static void esp_set_rx_mode(struct net_device *ndev)
 {
-	struct esp_wifi_device *priv = netdev_priv(ndev);
-	struct netdev_hw_addr *mac_addr;
-	u32 count = 0;
-#if 0
-	struct in_device *in_dev = in_dev_get(ndev);
-	struct ip_mc_list *ip_list = in_dev->mc_list;
-#endif
-	netdev_for_each_mc_addr(mac_addr, ndev) {
-		if (count < MAX_MULTICAST_ADDR_COUNT) {
-			/*esp_info("%d: "MACSTR"\n", count+1, MAC2STR(mac_addr->addr));*/
-			memcpy(&mcast_list.mcast_addr[count++], mac_addr->addr, ETH_ALEN);
-		}
-	}
+        struct esp_adapter *adapter = esp_get_adapter();
 
-	mcast_list.priv = priv;
-	mcast_list.addr_count = count;
-
-	if (priv->port_open) {
-		/*esp_info("Set Multicast list\n");*/
-		if (adapter.mac_filter_wq)
-			queue_work(adapter.mac_filter_wq, &adapter.mac_flter_work);
-	}
-#if 0
-	cmd_set_mcast_mac_list(priv, &mcast_list);
-	while (ip_list) {
-		esp_dbg(" IP MC Address: 0x%x\n", ip_list->multiaddr);
-		ip_list = ip_list->next;
-	}
-#endif
-
+	schedule_work(&adapter->mac_flter_work);
 }
 
 static int esp_hard_start_xmit(struct sk_buff *skb, struct net_device *ndev)
@@ -429,7 +402,7 @@ static int esp_hard_start_xmit(struct sk_buff *skb, struct net_device *ndev)
 
 	if (!priv->port_open) {
 		priv->stats.tx_dropped++;
-		/*esp_err("Port not yet open\n");*/
+		esp_verbose("Port not yet open\n");
 		dev_kfree_skb(skb);
 		return NETDEV_TX_OK;
 	}
@@ -684,7 +657,7 @@ static void process_rx_packet(struct esp_adapter *adapter, struct sk_buff *skb)
 	offset = le16_to_cpu(payload_header->offset);
 
 	if (payload_header->reserved2 == 0xFF) {
-		print_hex_dump(KERN_INFO, "Wake up packet: ", DUMP_PREFIX_ADDRESS, 16, 1, skb->data, len+offset, 1);
+		esp_hex_dump("Wake up packet: ", skb->data, len+offset);
 	}
 
 	if (adapter->capabilities & ESP_CHECKSUM_ENABLED) {
@@ -882,6 +855,35 @@ static void esp_if_rx_work(struct work_struct *work)
 
 static void update_mac_filter(struct work_struct *work)
 {
+	struct esp_adapter *adapter = esp_get_adapter();
+	struct esp_wifi_device *priv = adapter->priv[0];
+	struct net_device *ndev;
+	struct netdev_hw_addr *mac_addr;
+	u32 count = 0;
+
+	if (!priv)
+		return;
+
+	ndev = priv->ndev;
+	if (!ndev)
+		return;
+
+	if (!priv->port_open) {
+		esp_verbose("Port is not open yet, skipping mac filter update\n");
+		return;
+	}
+
+	netdev_for_each_mc_addr(mac_addr, ndev) {
+		if (count < MAX_MULTICAST_ADDR_COUNT) {
+			esp_verbose("%d: "MACSTR"\n", count+1, MAC2STR(mac_addr->addr));
+			memcpy(&mcast_list.mcast_addr[count++], mac_addr->addr, ETH_ALEN);
+		}
+	}
+
+	mcast_list.priv = priv;
+	mcast_list.addr_count = count;
+
+	esp_verbose("Setting Multicast list\n");
 	cmd_set_mcast_mac_list(mcast_list.priv, &mcast_list);
 }
 
@@ -922,12 +924,6 @@ static struct esp_adapter *init_adapter(void)
 
 	INIT_WORK(&adapter.events_work, esp_events_work);
 
-	adapter.mac_filter_wq = alloc_workqueue("MAC_FILTER", 0, 0);
-	if (!adapter.mac_filter_wq) {
-		deinit_adapter();
-		return NULL;
-	}
-
 	INIT_WORK(&adapter.mac_flter_work, update_mac_filter);
 
 	return &adapter;
@@ -942,9 +938,6 @@ static void deinit_adapter(void)
 
 	if (adapter.if_rx_workqueue)
 		destroy_workqueue(adapter.if_rx_workqueue);
-
-	if (adapter.mac_filter_wq)
-		destroy_workqueue(adapter.mac_filter_wq);
 }
 
 static void esp_reset(void)

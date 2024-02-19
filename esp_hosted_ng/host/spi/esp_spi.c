@@ -135,7 +135,7 @@ static int write_packet(struct esp_adapter *adapter, struct sk_buff *skb)
 		esp_tx_pause(cb->priv);
 		dev_kfree_skb(skb);
 		skb = NULL;
-		/*esp_err("TX Pause busy");*/
+		esp_verbose("TX Pause busy");
 		if (spi_context.spi_workqueue)
 			queue_work(spi_context.spi_workqueue, &spi_context.spi_work);
 		return -EBUSY;
@@ -246,7 +246,7 @@ static int process_rx_buf(struct sk_buff *skb)
 
 
 	if (!data_path) {
-		/*esp_info("%u datapath closed\n", __LINE__);*/
+		esp_verbose("%u datapath closed\n", __LINE__);
 		return -EPERM;
 	}
 
@@ -319,7 +319,7 @@ static void esp_spi_work(struct work_struct *work)
 
 			if (tx_skb) {
 				trans.tx_buf = tx_skb->data;
-				/*print_hex_dump(KERN_ERR, "tx: ", DUMP_PREFIX_ADDRESS, 16, 1, trans.tx_buf, 32, 1);*/
+				esp_hex_dump_verbose("tx: ", trans.tx_buf, 32);
 			} else {
 				tx_skb = esp_alloc_skb(SPI_BUF_SIZE);
 				trans.tx_buf = skb_put(tx_skb, SPI_BUF_SIZE);

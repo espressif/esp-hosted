@@ -595,11 +595,10 @@ static int tx_process(void *data)
 			}
 			atomic_dec(&queue_items[PRIO_Q_LOW]);
 		} else {
-#if 0
-			esp_err("not ready 2 [%d %d]\n",
-					atomic_read(&queue_items[PRIO_Q_OTHERS]),
-					atomic_read(&queue_items[PRIO_Q_SERIAL]));
-#endif
+			/* esp_verbose("not ready high=%d mid=%d low=%d\n",
+					atomic_read(&queue_items[PRIO_Q_HIGH]),
+					atomic_read(&queue_items[PRIO_Q_MID]),
+					atomic_read(&queue_items[PRIO_Q_LOW])); */
 			msleep(1);
 			continue;
 		}

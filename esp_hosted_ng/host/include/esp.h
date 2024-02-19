@@ -72,6 +72,7 @@ struct command_node {
 	uint8_t cmd_code;
 	struct sk_buff *cmd_skb;
 	struct sk_buff *resp_skb;
+	bool in_cmd_queue;
 };
 
 struct esp_adapter {
@@ -107,7 +108,6 @@ struct esp_adapter {
 	struct command_node     *cur_cmd;
 	spinlock_t              cmd_lock;
 
-	struct workqueue_struct *mac_filter_wq;
 	struct work_struct      mac_flter_work;
 
 	struct workqueue_struct *cmd_wq;
