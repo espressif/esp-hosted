@@ -138,12 +138,8 @@ void debug_update_raw_tp_rx_count(uint16_t len)
 	test_raw_tp_rx_len += (len);
 }
 
-/* function to free tx buffer after sending */
-static void raw_buf_free(void *ptr)
-{
-	if (ptr)
-		free(ptr);
-}
+// static buffer to hold tx data during test
+DMA_ATTR static uint8_t tx_buf[TEST_RAW_TP__BUF_SIZE];
 
 extern volatile uint8_t datapath;
 static void raw_tp_tx_task(void* pvParameters)
@@ -156,6 +152,13 @@ static void raw_tp_tx_task(void* pvParameters)
 
 	sleep(5);
 
+	// initialise the static buffer
+	raw_tp_tx_buf = tx_buf;
+	ptr = (uint32_t*)raw_tp_tx_buf;
+	// initialise the tx buffer
+	for (i=0; i<(TEST_RAW_TP__BUF_SIZE/4-1); i++, ptr++)
+		*ptr = 0xdeadbeef;
+
 	for (;;) {
 
 		if (!datapath) {
@@ -166,16 +169,10 @@ static void raw_tp_tx_task(void* pvParameters)
 		buf_handle.if_type = ESP_TEST_IF;
 		buf_handle.if_num = 0;
 
-		raw_tp_tx_buf = (uint8_t*)malloc(TEST_RAW_TP__BUF_SIZE);
-		ptr = (uint32_t*)raw_tp_tx_buf;
-
-		for (i=0; i<(TEST_RAW_TP__BUF_SIZE/4-1); i++, ptr++)
-			*ptr = 0xdeadbeef;
-
 		buf_handle.payload = raw_tp_tx_buf;
 		buf_handle.payload_len = TEST_RAW_TP__BUF_SIZE;
 		// free the buffer after it has been sent
-		buf_handle.free_buf_handle = raw_buf_free;
+		buf_handle.free_buf_handle = NULL;
 		buf_handle.priv_buffer_handle = buf_handle.payload;
 
 		ret = send_to_host_queue(&buf_handle, PRIO_Q_OTHERS);
@@ -239,6 +236,20 @@ static void start_timer_to_display_stats(int periodic_time_sec)
 #endif
 
 
+#if TEST_RAW_TP
+void process_test_capabilities(uint8_t capabilities)
+{
+	ESP_LOGD(TAG, "capabilites: %d", capabilities);
+	start_timer_to_display_stats(TEST_RAW_TP__TIMEOUT);
+	if ((capabilities & ESP_TEST_RAW_TP__ESP_TO_HOST) ||
+		(capabilities & ESP_TEST_RAW_TP__BIDIRECTIONAL)) {
+		assert(xTaskCreate(raw_tp_tx_task , "raw_tp_tx_task",
+						   CONFIG_ESP_DEFAULT_TASK_STACK_SIZE, NULL ,
+						   CONFIG_ESP_DEFAULT_TASK_PRIO, NULL) == pdTRUE);
+	}
+}
+#endif
+
 void create_debugging_tasks(void)
 {
 #ifdef CONFIG_FREERTOS_GENERATE_RUN_TIME_STATS
@@ -247,12 +258,6 @@ void create_debugging_tasks(void)
 				CONFIG_ESP_DEFAULT_TASK_PRIO, NULL) == pdTRUE);
 #endif
 
-#if TEST_RAW_TP
-	start_timer_to_display_stats(TEST_RAW_TP__TIMEOUT);
-	assert(xTaskCreate(raw_tp_tx_task , "raw_tp_tx_task",
-				CONFIG_ESP_DEFAULT_TASK_STACK_SIZE, NULL ,
-				CONFIG_ESP_DEFAULT_TASK_PRIO, NULL) == pdTRUE);
-#endif
 #if ESP_PKT_STATS
 	start_timer_to_display_stats(ESP_PKT_STATS_REPORT_INTERVAL);
 #endif

@@ -8,6 +8,7 @@
 #include "sdkconfig.h"
 #include "esp_task.h"
 #include "hosted_os_adapter.h"
+#include "adapter.h"
 
 #ifdef CONFIG_ESP_SDIO_HOST_INTERFACE
 #include "driver/sdmmc_host.h"
@@ -193,5 +194,21 @@ so feel free to change these if needed.
   #define H_WIFI_TX_DATA_THROTTLE_HIGH_THRESHOLD       0
 #endif
 
+/* Raw Throughput Testing */
+#define H_TEST_RAW_TP     CONFIG_ESP_RAW_THROUGHPUT_TRANSPORT
+
+#if H_TEST_RAW_TP
+#if CONFIG_ESP_RAW_THROUGHPUT_TX_TO_SLAVE
+#define H_TEST_RAW_TP_DIR (ESP_TEST_RAW_TP__HOST_TO_ESP)
+#elif CONFIG_ESP_RAW_THROUGHPUT_RX_FROM_SLAVE
+#define H_TEST_RAW_TP_DIR (ESP_TEST_RAW_TP__ESP_TO_HOST)
+#elif CONFIG_ESP_RAW_THROUGHPUT_BIDIRECTIONAL
+#define H_TEST_RAW_TP_DIR (ESP_TEST_RAW_TP__BIDIRECTIONAL)
+#else
+#error Test Raw TP direction not defined
+#endif
+#else
+#define H_TEST_RAW_TP_DIR (ESP_TEST_RAW_TP_NONE)
+#endif
 
 #endif /*__ESP_HOSTED_CONFIG_H__*/

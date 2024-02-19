@@ -22,6 +22,7 @@ extern "C" {
 #endif
 
 #include "common.h"
+#include "esp_hosted_config.h"
 
 /* Stats CONFIG:
  *
@@ -35,8 +36,7 @@ extern "C" {
  *    This is opposite of TEST_RAW_TP__ESP_TO_HOST. when (a) TEST_RAW_TP__ESP_TO_HOST
  *    is disabled, it will automatically mean throughput to be measured from host to ESP
  */
-#define TEST_RAW_TP                    CONFIG_ESP_RAW_THROUGHPUT_TRANSPORT
-
+#define TEST_RAW_TP                    H_TEST_RAW_TP
 
 /* TEST_RAW_TP is disabled on production.
  * This is only to test the throughout over transport
