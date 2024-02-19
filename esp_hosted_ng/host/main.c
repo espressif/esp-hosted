@@ -720,6 +720,7 @@ static void process_rx_packet(struct esp_adapter *adapter, struct sk_buff *skb)
 			eap_skb = alloc_skb(skb->len + ETH_HLEN, GFP_KERNEL);
 			if (!eap_skb) {
 				esp_info("%u memory alloc failed\n", __LINE__);
+				dev_kfree_skb_any(skb);
 				return;
 			}
 			eap_skb->dev = priv->ndev;
@@ -735,6 +736,7 @@ static void process_rx_packet(struct esp_adapter *adapter, struct sk_buff *skb)
 
 			skb_put_data(eap_skb, skb->data, skb->len);
 			eap_skb->protocol = eth_type_trans(eap_skb, eap_skb->dev);
+			dev_kfree_skb_any(skb);
 
 			netif_rx(eap_skb);
 
