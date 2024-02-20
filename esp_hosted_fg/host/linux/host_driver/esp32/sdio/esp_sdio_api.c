@@ -17,6 +17,7 @@
  * ARE EXPRESSLY DISCLAIMED.  The License provides additional details about
  * this warranty disclaimer.
  */
+#include "esp_utils.h"
 
 #include <linux/mmc/sdio.h>
 #include <linux/mmc/sdio_func.h>
@@ -31,7 +32,7 @@ static int esp_read_byte(struct esp_sdio_context *context, u32 reg, u8 *data, u8
 	int ret;
 
 	if (!context || !context->func || !data) {
-		printk (KERN_ERR "%s: Invalid or incomplete arguments!\n", __func__);
+		esp_err("Invalid or incomplete arguments!\n");
 		return -1;
 	}
 
@@ -54,7 +55,7 @@ static int esp_write_byte(struct esp_sdio_context *context, u32 reg, u8 data, u8
 	int ret;
 
 	if (!context || !context->func) {
-		printk (KERN_ERR "%s: Invalid or incomplete arguments!\n", __func__);
+		esp_err("Invalid or incomplete arguments!\n");
 		return -1;
 	}
 
@@ -68,6 +69,10 @@ static int esp_write_byte(struct esp_sdio_context *context, u32 reg, u8 data, u8
 	if (is_lock_needed)
 		sdio_release_host(func);
 
+	if (ret) {
+		esp_verbose("err: %d\n", ret);
+	}
+
 	return ret;
 }
 
@@ -77,7 +82,7 @@ static int esp_read_multi_byte(struct esp_sdio_context *context, u32 reg, u8 *da
 	int ret;
 
 	if (!context || !context->func || !data) {
-		printk (KERN_ERR "%s: Invalid or incomplete arguments!\n", __func__);
+		esp_err("Invalid or incomplete arguments!\n");
 		return -1;
 	}
 
@@ -91,6 +96,10 @@ static int esp_read_multi_byte(struct esp_sdio_context *context, u32 reg, u8 *da
 	if (is_lock_needed)
 		sdio_release_host(func);
 
+	if (ret) {
+		esp_verbose("err: %d\n", ret);
+	}
+
 	return ret;
 }
 
@@ -100,7 +109,7 @@ static int esp_write_multi_byte(struct esp_sdio_context *context, u32 reg, u8 *d
 	int ret;
 
 	if (!context || !context->func || !data) {
-		printk (KERN_ERR "%s: Invalid or incomplete arguments!\n", __func__);
+		esp_err("Invalid or incomplete arguments!\n");
 		return -1;
 	}
 
@@ -113,6 +122,10 @@ static int esp_write_multi_byte(struct esp_sdio_context *context, u32 reg, u8 *d
 
 	if (is_lock_needed)
 		sdio_release_host(func);
+
+	if (ret) {
+		esp_verbose("err: %d\n", ret);
+	}
 
 	return ret;
 }

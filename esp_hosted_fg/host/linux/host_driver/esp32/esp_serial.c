@@ -17,6 +17,7 @@
  * ARE EXPRESSLY DISCLAIMED.  The License provides additional details about
  * this warranty disclaimer.
  */
+#include "esp_utils.h"
 
 #include <linux/init.h>
 #include <linux/module.h>
@@ -36,8 +37,6 @@
 #define ESP_SERIAL_MINOR_MAX  2
 #define ESP_RX_RB_SIZE        4096
 #define ESP_SERIAL_MAX_TX     4096
-
-//#define ESP_SERIAL_TEST
 
 static struct esp_serial_devs {
 	struct cdev cdev;
@@ -76,7 +75,7 @@ static ssize_t esp_serial_write(struct file *file, const char __user *user_buffe
 	u8 *pos;
 
 	if (size > ESP_SERIAL_MAX_TX) {
-		printk(KERN_ERR "%s: Exceed max tx buffer size [%zu]\n", __func__, size);
+		esp_err("Exceed max tx buffer size [%zu]\n", size);
 		return 0;
 	}
 
@@ -101,7 +100,7 @@ static ssize_t esp_serial_write(struct file *file, const char __user *user_buffe
 
 		tx_skb = esp_alloc_skb(total_len);
 		if (!tx_skb) {
-			printk (KERN_ERR "%s: SKB alloc failed\n", __func__);
+			esp_err("SKB alloc failed\n");
 			return (size - left_len);
 		}
 
@@ -121,16 +120,16 @@ static ssize_t esp_serial_write(struct file *file, const char __user *user_buffe
 		ret = copy_from_user(tx_buf + hdr->offset, pos, frag_len);
 		if (ret) {
 			dev_kfree_skb(tx_skb);
-			printk(KERN_ERR "%s, Error copying buffer to send serial data\n", __func__);
+			esp_err("Error copying buffer to send serial data\n");
 			return (size - left_len);
 		}
 		hdr->checksum = cpu_to_le16(compute_checksum(tx_skb->data, (frag_len + sizeof(struct esp_payload_header))));
 
-		/* print_hex_dump(KERN_INFO, "esp_serial_tx: ", DUMP_PREFIX_ADDRESS, 16, 1, pos, frag_len, 1 ); */
+		esp_hex_dump_dbg("esp_serial_tx: ", pos, frag_len);
 
 		ret = esp_send_packet(dev->priv, tx_skb);
 		if (ret) {
-			printk (KERN_ERR "%s: Failed to transmit data, error %d\n", __func__, ret);
+			esp_err("Failed to transmit data, error %d\n", ret);
 			return (size - left_len);
 		}
 
@@ -143,7 +142,7 @@ static ssize_t esp_serial_write(struct file *file, const char __user *user_buffe
 
 static long esp_serial_ioctl (struct file *file, unsigned int cmd, unsigned long arg)
 {
-	printk(KERN_INFO "%s IOCTL %d\n", __func__, cmd);
+	esp_info("IOCTL unsupported %d\n", cmd);
 	return 0;
 }
 
@@ -204,39 +203,24 @@ int esp_serial_data_received(int dev_index, const char *data, size_t len)
 		return ret;
 	}
 	if (ret_len != len) {
-		printk(KERN_ERR "%s, RB full, no space to receive. Dropping packet",__func__);
+		esp_err("RB full, no space to receive. Dropping packet\n");
 	}
 
 	return ret_len;
 }
-
-#ifdef ESP_SERIAL_TEST
-static int thread_fn(void *unused)
-{
-	int i = 100;
-
-	while(i--) {
-		esp_rb_write_by_kernel(&devs[0].rb, "alphabetagamma", 14);
-		ssleep(1);
-	}
-	printk(KERN_INFO "%s, Thread stopping\n", __func__);
-	do_exit(0);
-	return 0;
-}
-#endif
 
 int esp_serial_init(void *priv)
 {
 	int err = 0, i = 0;
 
 	if (!priv) {
-		printk(KERN_ERR "esp: %s: failed. NULL adapter\n", __func__);
+		esp_err("failed. NULL adapter\n");
 		return -1;
 	}
 
 	err = register_chrdev_region(MKDEV(ESP_SERIAL_MAJOR, 0), ESP_SERIAL_MINOR_MAX, "esp_serial_driver");
 	if (err) {
-		printk(KERN_ERR "%s, Error registering chrdev region %d\n", __func__, err);
+		esp_err("Error registering chrdev region %d\n", err);
 		return -1;
 	}
 
@@ -249,10 +233,8 @@ int esp_serial_init(void *priv)
 		mutex_init(&devs[i].lock);
 	}
 
-#ifdef ESP_SERIAL_TEST
-	kthread_run(thread_fn, NULL, "esptest-thread");
-#endif
 	serial_init_done = 1;
+	esp_verbose("\n");
 	return 0;
 }
 
@@ -271,11 +253,13 @@ void esp_serial_cleanup(void)
 	unregister_chrdev_region(MKDEV(ESP_SERIAL_MAJOR, 0), ESP_SERIAL_MINOR_MAX);
 
 	serial_init_done = 0;
+	esp_verbose("\n");
 	return;
 }
 
 int esp_serial_reinit(void *priv)
 {
+	esp_verbose("\n");
 	if (serial_init_done)
 		esp_serial_cleanup();
 

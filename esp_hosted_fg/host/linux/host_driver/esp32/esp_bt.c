@@ -17,6 +17,7 @@
  * ARE EXPRESSLY DISCLAIMED.  The License provides additional details about
  * this warranty disclaimer.
  */
+#include "esp_utils.h"
 #include "esp_bt_api.h"
 #include "esp_api.h"
 #include "esp_kernel_port.h"
@@ -86,10 +87,10 @@ static ESP_BT_SEND_FRAME_PROTOTYPE()
 	u8 pkt_type;
 
 	if (!adapter) {
-		printk(KERN_ERR "%s: invalid args", __func__);
+		esp_err("invalid args\n");
 		return -EINVAL;
 	}
-	//print_hex_dump(KERN_INFO, "bt_tx: ", DUMP_PREFIX_ADDRESS, 16, 1, skb->data, len, 1  );
+	esp_hex_dump_dbg("bt_tx: ", skb->data, len);
 
 	/* Create space for payload header */
 	pad_len = sizeof(struct esp_payload_header);
@@ -115,7 +116,7 @@ static ESP_BT_SEND_FRAME_PROTOTYPE()
 		new_skb = esp_alloc_skb(skb->len + pad_len);
 
 		if (!new_skb) {
-			printk(KERN_ERR "%s: Failed to allocate SKB", __func__);
+			esp_err("Failed to allocate SKB\n");
 			hdev->stat.err_tx++;
 			return -ENOMEM;
 		}
@@ -201,17 +202,19 @@ int esp_init_bt(struct esp_adapter *adapter)
 	struct hci_dev *hdev = NULL;
 
 	if (!adapter) {
+		esp_err("null adapter\n");
 		return -EINVAL;
 	}
 
 	if (adapter->hcidev) {
+		esp_err("hcidev already exists\n");
 		return -EEXIST;
 	}
 
 	hdev = hci_alloc_dev();
 
 	if (!hdev) {
-		BT_ERR("Can not allocate HCI device");
+		esp_err("Can not allocate HCI device\n");
 		return -ENOMEM;
 	}
 
@@ -230,11 +233,11 @@ int esp_init_bt(struct esp_adapter *adapter)
 	if (hdev->bus == INVALID_HDEV_BUS) {
 
 		if (adapter->if_type == ESP_IF_TYPE_SDIO) {
-			printk(KERN_ERR "%s: Kernel version does not support HCI over SDIO BUS\n",__func__);
+			esp_err("Kernel version does not support HCI over SDIO BUS\n");
 		} else if (adapter->if_type == ESP_IF_TYPE_SPI) {
-			printk(KERN_ERR "%s: Kernel version does not support HCI over SPI BUS\n",__func__);
+			esp_err("Kernel version does not support HCI over SPI BUS\n");
 		} else {
-			printk(KERN_ERR "%s: HCI over expected BUS[%u] is not supported\n",__func__, adapter->if_type);
+			esp_err("HCI over expected BUS[%u] is not supported\n", adapter->if_type);
 		}
 		hci_free_dev(hdev);
 		adapter->hcidev = NULL;
@@ -261,7 +264,7 @@ int esp_init_bt(struct esp_adapter *adapter)
 
 	ret = hci_register_dev(hdev);
 	if (ret < 0) {
-		BT_ERR("Can not register HCI device");
+		esp_err("Can not register HCI device\n");
 		hci_free_dev(hdev);
 		return -ENOMEM;
 	}

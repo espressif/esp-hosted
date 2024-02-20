@@ -15,6 +15,8 @@
  * ARE EXPRESSLY DISCLAIMED.  The License provides additional details about
  * this warranty disclaimer.
  */
+#include "esp_utils.h"
+
 #include <linux/device.h>
 #include <linux/spi/spi.h>
 #include <linux/gpio.h>
@@ -93,12 +95,14 @@ static void close_data_path(void)
 static irqreturn_t spi_data_ready_interrupt_handler(int irq, void * dev)
 {
 	up(&spi_sem);
+	esp_verbose("\n");
  	return IRQ_HANDLED;
  }
 
 static irqreturn_t spi_interrupt_handler(int irq, void * dev)
 {
 	up(&spi_sem);
+	esp_verbose("\n");
 	return IRQ_HANDLED;
 }
 
@@ -108,11 +112,12 @@ static struct sk_buff * read_packet(struct esp_adapter *adapter)
 	struct sk_buff *skb = NULL;
 
 	if (!data_path) {
+		esp_verbose("datapath not yet open\n");
 		return NULL;
 	}
 
 	if (!adapter || !adapter->if_context) {
-		printk (KERN_ERR "%s: Invalid args\n", __func__);
+		esp_err("Invalid args\n");
 		return NULL;
 	}
 
@@ -125,7 +130,7 @@ static struct sk_buff * read_packet(struct esp_adapter *adapter)
 		if (!skb)
 			skb = skb_dequeue(&(context->rx_q[PRIO_Q_OTHERS]));
 	} else {
-		printk (KERN_ERR "%s: Invalid args\n", __func__);
+		esp_err("Invalid args\n");
 		return NULL;
 	}
 
@@ -138,19 +143,20 @@ static int write_packet(struct esp_adapter *adapter, struct sk_buff *skb)
 	struct esp_payload_header *payload_header = (struct esp_payload_header *) skb->data;
 
 	if (!adapter || !adapter->if_context || !skb || !skb->data || !skb->len) {
-		printk (KERN_ERR "%s: Invalid args\n", __func__);
+		esp_err("Invalid args\n");
 		dev_kfree_skb(skb);
 		return -EINVAL;
 	}
 
 	if (skb->len > max_pkt_size) {
-		printk (KERN_ERR "%s: Drop pkt of len[%u] > max spi transport len[%u]\n",
-				__func__, skb->len, max_pkt_size);
+		esp_err("Drop pkt of len[%u] > max spi transport len[%u]\n",
+				skb->len, max_pkt_size);
 		dev_kfree_skb(skb);
 		return -EPERM;
 	}
 
 	if (!data_path) {
+		esp_verbose("datapath not yet open\n");
 		dev_kfree_skb(skb);
 		return -EPERM;
 	}
@@ -193,7 +199,7 @@ int process_init_event(u8 *evt_buf, u8 len)
 
 	while (len_left) {
 		tag_len = *(pos + 1);
-		printk(KERN_INFO "EVENT: %d\n", *pos);
+		esp_info("EVENT: %d\n", *pos);
 		if (*pos == ESP_PRIV_CAPABILITY) {
 			adapter->capabilities = *(pos + 2);
 		} else if (*pos == ESP_PRIV_SPI_CLK_MHZ){
@@ -203,7 +209,7 @@ int process_init_event(u8 *evt_buf, u8 len)
 		} else if (*pos == ESP_PRIV_TEST_RAW_TP) {
 			process_test_capabilities(*(pos + 2));
 		} else {
-			printk (KERN_WARNING "Unsupported tag in event");
+			esp_warn("Unsupported tag in event\n");
 		}
 		pos += (tag_len+2);
 		len_left -= (tag_len+2);
@@ -214,7 +220,7 @@ int process_init_event(u8 *evt_buf, u8 len)
 	    (hardware_type != ESP_PRIV_FIRMWARE_CHIP_ESP32C3) &&
 	    (hardware_type != ESP_PRIV_FIRMWARE_CHIP_ESP32C6) &&
 	    (hardware_type != ESP_PRIV_FIRMWARE_CHIP_ESP32S3)) {
-		printk(KERN_INFO "ESP board type is not mentioned, ignoring [%d]\n", hardware_type);
+		esp_err("ESP board type [%d] is not recognized: aborting\n", hardware_type);
 		hardware_type = ESP_PRIV_FIRMWARE_CHIP_UNRECOGNIZED;
 		return -1;
 	}
@@ -236,12 +242,13 @@ int process_init_event(u8 *evt_buf, u8 len)
 	ret = esp_add_card(spi_context.adapter);
 	if (ret) {
 		spi_exit();
-		printk (KERN_ERR "Failed to add card\n");
+		esp_err("Failed to add card\n");
 		return ret;
 	}
 	first_esp_bootup_over = 1;
 
 	process_capabilities(adapter->capabilities);
+	esp_info("esp boot-up event processed\n");
 
 	return 0;
 }
@@ -258,8 +265,7 @@ static int process_rx_buf(struct sk_buff *skb)
 
 	header = (struct esp_payload_header *) skb->data;
 
-	/*print_hex_dump(KERN_INFO, "rx: ",
-	  DUMP_PREFIX_ADDRESS, 16, 1, skb->data , 8, 1  );*/
+	esp_hex_dump_dbg("spi_rx: ", skb->data , min(skb->len, 32));
 
 	if (header->if_type >= ESP_MAX_IF) {
 		return -EINVAL;
@@ -274,19 +280,17 @@ static int process_rx_buf(struct sk_buff *skb)
 
 	/* Validate received SKB. Check len and offset fields */
 	if (offset != sizeof(struct esp_payload_header)) {
-		printk(KERN_INFO "offset_rcv[%d] != exp[%d], drop\n",
+		esp_err("offset_rcv[%d] != exp[%d], drop\n",
 				(int)offset, (int)sizeof(struct esp_payload_header));
-		/*print_hex_dump(KERN_INFO, "wrong offset: ",
-		  DUMP_PREFIX_ADDRESS, 16, 1, skb->data , 8, 1  );*/
+		esp_hex_dump_dbg("wrong offset: ", skb->data , min(skb->len, 32));
 		return -EINVAL;
 	}
 
 
 	len += sizeof(struct esp_payload_header);
 	if (len > SPI_BUF_SIZE) {
-		printk(KERN_INFO "len[%u] > max[%u], drop\n", len, SPI_BUF_SIZE);
-		/*print_hex_dump(KERN_INFO, "wrong len: ",
-		  DUMP_PREFIX_ADDRESS, 16, 1, skb->data , 8, 1  );*/
+		esp_info("len[%u] > max[%u], drop\n", len, SPI_BUF_SIZE);
+		esp_hex_dump_dbg("wrong len: ", skb->data , 8);
 		return -EINVAL;
 	}
 
@@ -294,8 +298,10 @@ static int process_rx_buf(struct sk_buff *skb)
 	skb_trim(skb, len);
 
 
-	if (!data_path)
+	if (!data_path) {
+		esp_verbose("datapath closed\n");
 		return -EPERM;
+	}
 
 	/* enqueue skb for read_packet to pick it */
 	if (header->if_type == ESP_SERIAL_IF)
@@ -361,8 +367,7 @@ static void esp_spi_transaction(void)
 
 			if (tx_skb) {
 				trans.tx_buf = tx_skb->data;
-				/*print_hex_dump(KERN_INFO, "spi_tx: ",
-				  DUMP_PREFIX_ADDRESS, 16, 1, trans.tx_buf, 32, 1  );*/
+				esp_hex_dump_dbg("spi_tx: ", trans.tx_buf, 32);
 			} else {
 				tx_skb = esp_alloc_skb(SPI_BUF_SIZE);
 				trans.tx_buf = skb_put(tx_skb, SPI_BUF_SIZE);
@@ -385,7 +390,7 @@ static void esp_spi_transaction(void)
 #endif
 			ret = spi_sync_transfer(spi_context.esp_spi_dev, &trans, 1);
 			if (ret) {
-				printk(KERN_ERR "SPI Transaction failed: %d", ret);
+				esp_err("SPI Transaction failed: %d\n", ret);
 				dev_kfree_skb(rx_skb);
 				dev_kfree_skb(tx_skb);
 			} else {
@@ -468,10 +473,10 @@ static int spi_dev_init(int spi_clk_mhz)
 
 	master = spi_busnum_to_master(esp_board.bus_num);
 	if (!master) {
-		printk(KERN_ERR "%s:%u Failed to obtain SPI handle for Bus[%u] CS[%u]\n",
-			__func__, __LINE__, esp_board.bus_num, esp_board.chip_select);
-		printk(KERN_INFO "** Check if SPI peripheral and extra GPIO device tree correct **\n");
-		printk(KERN_INFO "** Please refer https://github.com/espressif/esp-hosted/blob/master/esp_hosted_fg/docs/Linux_based_host/porting_guide.md **\n");
+		esp_err("%u Failed to obtain SPI handle for Bus[%u] CS[%u]\n",
+			__LINE__, esp_board.bus_num, esp_board.chip_select);
+		esp_info("** Check if SPI peripheral and extra GPIO device tree correct **\n");
+		esp_info("** Please refer https://github.com/espressif/esp-hosted/blob/master/esp_hosted_fg/docs/Linux_based_host/porting_guide.md **\n");
 		return -ENODEV;
 	}
 	set_bit(ESP_SPI_BUS_CLAIMED, &spi_context.spi_flags);
@@ -479,7 +484,7 @@ static int spi_dev_init(int spi_clk_mhz)
 	spi_context.esp_spi_dev = spi_new_device(master, &esp_board);
 
 	if (!spi_context.esp_spi_dev) {
-		printk(KERN_ERR "Failed to add new SPI device\n");
+		esp_err("Failed to add new SPI device\n");
 		return -ENODEV;
 	}
 	spi_context.adapter->dev = &spi_context.esp_spi_dev->dev;
@@ -487,11 +492,11 @@ static int spi_dev_init(int spi_clk_mhz)
 	status = spi_setup(spi_context.esp_spi_dev);
 
 	if (status) {
-		printk (KERN_ERR "Failed to setup new SPI device");
+		esp_err("Failed to setup new SPI device\n");
 		return status;
 	}
 
-	printk (KERN_INFO "ESP host driver claiming SPI bus [%d]"
+	esp_info("ESP host driver claiming SPI bus [%d]"
 			",chip select [%d] with init SPI Clock [%d]\n", esp_board.bus_num,
 			esp_board.chip_select, spi_clk_mhz);
 
@@ -500,14 +505,14 @@ static int spi_dev_init(int spi_clk_mhz)
 	status = gpio_request(HANDSHAKE_PIN, "SPI_HANDSHAKE_PIN");
 
 	if (status) {
-		printk (KERN_ERR "Failed to obtain GPIO for Handshake pin, err:%d\n",status);
+		esp_err("Failed to obtain GPIO for Handshake pin, err:%d\n", status);
 		return status;
 	}
 
 	status = gpio_direction_input(HANDSHAKE_PIN);
 
 	if (status) {
-		printk (KERN_ERR "Failed to set GPIO direction of Handshake pin, err: %d\n",status);
+		esp_err("Failed to set GPIO direction of Handshake pin, err: %d\n", status);
 		return status;
 	}
 	set_bit(ESP_SPI_GPIO_HS_REQUESTED, &spi_context.spi_flags);
@@ -516,21 +521,21 @@ static int spi_dev_init(int spi_clk_mhz)
 			IRQF_SHARED | IRQF_TRIGGER_RISING,
 			"ESP_SPI", spi_context.esp_spi_dev);
 	if (status) {
-		printk (KERN_ERR "Failed to request IRQ for Handshake pin, err:%d\n",status);
+		esp_err("Failed to request IRQ for Handshake pin, err:%d\n", status);
 		return status;
 	}
 	set_bit(ESP_SPI_GPIO_HS_IRQ_DONE, &spi_context.spi_flags);
 
 	status = gpio_request(SPI_DATA_READY_PIN, "SPI_DATA_READY_PIN");
 	if (status) {
-		printk (KERN_ERR "Failed to obtain GPIO for Data ready pin, err:%d\n",status);
+		esp_err("Failed to obtain GPIO for Data ready pin, err:%d\n", status);
 		return status;
 	}
 	set_bit(ESP_SPI_GPIO_DR_REQUESTED, &spi_context.spi_flags);
 
 	status = gpio_direction_input(SPI_DATA_READY_PIN);
 	if (status) {
-		printk (KERN_ERR "Failed to set GPIO direction of Data ready pin\n");
+		esp_err("Failed to set GPIO direction of Data ready pin\n");
 		return status;
 	}
 
@@ -538,7 +543,7 @@ static int spi_dev_init(int spi_clk_mhz)
 			IRQF_SHARED | IRQF_TRIGGER_RISING,
 			"ESP_SPI_DATA_READY", spi_context.esp_spi_dev);
 	if (status) {
-		printk (KERN_ERR "Failed to request IRQ for Data ready pin, err:%d\n",status);
+		esp_err("Failed to request IRQ for Data ready pin, err:%d\n", status);
 		return status;
 	}
 	set_bit(ESP_SPI_GPIO_DR_IRQ_DONE, &spi_context.spi_flags);
@@ -554,12 +559,12 @@ static int esp_spi_thread(void *data)
 {
 	struct esp_spi_context *context = &spi_context;
 
-	printk(KERN_INFO "esp spi thread created\n");
+	esp_info("esp spi thread created\n");
 
 	while (!kthread_should_stop()) {
 
 		if (down_interruptible(&spi_sem)) {
-			//printk(KERN_INFO "Failed to acquire spi_sem\n");
+			esp_verbose("Failed to acquire spi_sem\n");
 			msleep(10);
 			continue;
 		}
@@ -571,7 +576,7 @@ static int esp_spi_thread(void *data)
 
 		esp_spi_transaction();
 	}
-	printk(KERN_INFO "esp spi thread cleared\n");
+	esp_info("esp spi thread cleared\n");
 	do_exit(0);
 	return 0;
 }
@@ -585,11 +590,11 @@ static int spi_init(void)
 
 	spi_thread = kthread_run(esp_spi_thread, spi_context.adapter, "esp32_spi");
 	if (!spi_thread) {
-		printk (KERN_ERR "Failed to create esp32_spi thread\n");
+		esp_err("Failed to create esp32_spi thread\n");
 		return -EFAULT;
 	}
 
-	printk(KERN_INFO "ESP: SPI host config: GPIOs: Handshake[%u] DataReady[%u]",
+	esp_info("ESP: SPI host config: GPIOs: Handshake[%u] DataReady[%u]\n",
 			HANDSHAKE_PIN, SPI_DATA_READY_PIN);
 
 	for (prio_q_idx=0; prio_q_idx<MAX_PRIORITY_QUEUES; prio_q_idx++) {
@@ -601,14 +606,14 @@ static int spi_init(void)
 	status = spi_dev_init(spi_context.spi_clk_mhz);
 	if (status) {
 		spi_exit();
-		printk (KERN_ERR "Failed Init SPI device\n");
+		esp_err("Failed Init SPI device\n");
 		return status;
 	}
 
 	status = esp_serial_init((void *) spi_context.adapter);
 	if (status != 0) {
 		spi_exit();
-		printk(KERN_ERR "Error initialising serial interface\n");
+		esp_err("Error initialising serial interface\n");
 		return status;
 	}
 
@@ -693,7 +698,7 @@ static void spi_exit(void)
 static void adjust_spi_clock(u8 spi_clk_mhz)
 {
 	if ((spi_clk_mhz) && (spi_clk_mhz != SPI_INITIAL_CLK_MHZ)) {
-		printk(KERN_INFO "ESP Reconfigure SPI CLK to %u MHz\n",spi_clk_mhz);
+		esp_info("ESP Reconfigure SPI CLK to %u MHz\n",spi_clk_mhz);
 		spi_context.spi_clk_mhz = spi_clk_mhz;
 		spi_context.esp_spi_dev->max_speed_hz = spi_clk_mhz * NUMBER_1M;
 	}
@@ -701,8 +706,10 @@ static void adjust_spi_clock(u8 spi_clk_mhz)
 
 int esp_init_interface_layer(struct esp_adapter *adapter)
 {
-	if (!adapter)
+	if (!adapter) {
+		esp_err("null adapter\n");
 		return -EINVAL;
+	}
 
 	memset(&spi_context, 0, sizeof(spi_context));
 
