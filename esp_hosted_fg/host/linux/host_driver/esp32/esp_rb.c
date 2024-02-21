@@ -116,7 +116,7 @@ int esp_rb_write_by_kernel(esp_rb_t *rb, const char *buf, size_t sz)
 	if (get_free_space(rb) <= 0) {
 		up(&rb->sem);
 		printk(KERN_ERR "%s, %d, Ringbuffer full or inaccessible\n", __func__, __LINE__);
-		return 0;
+		return -EFAULT;
 	}
 
 	sz = min(sz, (size_t)get_free_space(rb));
