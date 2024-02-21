@@ -3,6 +3,8 @@
  * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  */
+#ifndef _UTIL_H_
+#define _UTIL_H_
 
 #define pr_fmt(fmt) "%s: %s: " fmt, KBUILD_MODNAME, __func__
 
@@ -50,4 +52,6 @@ static inline void esp_hex_dump_verbose(const char *prefix_str, const void *buf,
 }
 #else
 #define esp_hex_dump_verbose(...) do {} while(0)
+#endif
+
 #endif
