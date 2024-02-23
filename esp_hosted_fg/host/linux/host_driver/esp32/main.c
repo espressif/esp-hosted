@@ -17,6 +17,7 @@
  * ARE EXPRESSLY DISCLAIMED.  The License provides additional details about
  * this warranty disclaimer.
  */
+#include "esp_utils.h"
 
 #include <linux/init.h>
 #include <linux/module.h>
@@ -101,10 +102,6 @@ static const struct net_device_ops esp_netdev_ops = {
 	.ndo_set_rx_mode = esp_set_rx_mode,
 };
 
-#if 0
-u64 start_time, end_time;
-#endif
-
 struct esp_adapter * esp_get_adapter(void)
 {
 	return &adapter;
@@ -160,7 +157,7 @@ static int esp_hard_start_xmit(struct sk_buff *skb, struct net_device *ndev)
 	}
 
 	if (!skb->len || (skb->len > ETH_FRAME_LEN)) {
-		printk (KERN_ERR "%s: Bad len %d\n", __func__, skb->len);
+		esp_err("tx len[%d], max_len[%d]\n", skb->len, ETH_FRAME_LEN);
 		priv->stats.tx_dropped++;
 		dev_kfree_skb(skb);
 		return NETDEV_TX_OK;
@@ -258,7 +255,7 @@ static int process_tx_packet (struct sk_buff *skb)
 		new_skb = esp_alloc_skb(skb->len + pad_len);
 
 		if (!new_skb) {
-			printk(KERN_ERR "%s: Failed to allocate SKB", __func__);
+			esp_err("Failed to allocate SKB\n");
 			priv->stats.tx_errors++;
 			dev_kfree_skb(skb);
 			return NETDEV_TX_OK;
@@ -310,7 +307,7 @@ static int process_tx_packet (struct sk_buff *skb)
 void process_capabilities(u8 cap)
 {
 	struct esp_adapter *adapter = esp_get_adapter();
-	printk (KERN_INFO "ESP peripheral capabilities: 0x%x\n", cap);
+	esp_info("ESP peripheral capabilities: 0x%x\n", cap);
 	adapter->capabilities = cap;
 
 	/* Reset BT */
@@ -334,16 +331,16 @@ static void process_event(u8 *evt_buf, u16 len)
 
 	if (event->event_type == ESP_PRIV_EVENT_INIT) {
 
-		printk (KERN_INFO "INIT event rcvd from ESP\n");
+		esp_info("INIT event rcvd from ESP\n");
 
 		ret = esp_serial_reinit(esp_get_adapter());
 		if (ret)
-			printk(KERN_ERR "Failed to init serial interface\n");
+			esp_err("Failed to init serial interface\n");
 
 		process_init_event(event->event_data, event->event_len);
 
 	} else {
-		printk (KERN_WARNING "Drop unknown event\n");
+		esp_warn("Drop unknown event\n");
 	}
 }
 
@@ -404,8 +401,7 @@ static void process_rx_packet(struct sk_buff *skb)
 	len = le16_to_cpu(payload_header->len);
 	offset = le16_to_cpu(payload_header->offset);
 
-	/*print_hex_dump(KERN_INFO, "rx: ",
-		DUMP_PREFIX_ADDRESS, 16, 1, skb->data , len+offset, 1  );*/
+	esp_hex_dump_dbg("rx: ", skb->data , len+offset);
 
 	if (adapter->capabilities & ESP_CHECKSUM_ENABLED) {
 		rx_checksum = le16_to_cpu(payload_header->checksum);
@@ -414,7 +410,7 @@ static void process_rx_packet(struct sk_buff *skb)
 		checksum = compute_checksum(skb->data, (len + offset));
 
 		if (checksum != rx_checksum) {
-			printk(KERN_INFO "cal_chksum[%u]!=rx_chksum[%u]\n", checksum, rx_checksum);
+			esp_info("cal_chksum[%u]!=rx_chksum[%u]\n", checksum, rx_checksum);
 			dev_kfree_skb_any(skb);
 			return;
 		}
@@ -425,8 +421,8 @@ static void process_rx_packet(struct sk_buff *skb)
 			ret = esp_serial_data_received(payload_header->if_num,
 					(skb->data + offset + ret_len), (len - ret_len));
 			if (ret < 0) {
-				printk(KERN_ERR "%s, Failed to process data for iface type %d\n",
-						__func__, payload_header->if_num);
+				esp_err("Failed to process data for iface type %d\n",
+						payload_header->if_num);
 				break;
 			}
 			ret_len += ret;
@@ -441,7 +437,7 @@ static void process_rx_packet(struct sk_buff *skb)
 		priv = get_priv_from_payload_header(payload_header);
 
 		if (!priv) {
-			printk (KERN_ERR "%s: empty priv\n", __func__);
+			esp_err("empty priv\n");
 			dev_kfree_skb_any(skb);
 			return;
 		}
@@ -461,8 +457,7 @@ static void process_rx_packet(struct sk_buff *skb)
 			skb_pull(skb, offset);
 
 			type = skb->data;
-			/* print_hex_dump(KERN_INFO, "bt_rx: ",
-			 * DUMP_PREFIX_ADDRESS, 16, 1, skb->data, len, 1);*/
+			esp_hex_dump_dbg("bt_rx: ", skb->data, len);
 			hci_skb_pkt_type(skb) = *type;
 			skb_pull(skb, 1);
 
@@ -577,8 +572,6 @@ int esp_send_packet(struct esp_adapter *adapter, struct sk_buff *skb)
 	if (!adapter || !adapter->if_ops || !adapter->if_ops->write)
 		return -EINVAL;
 
-	/*print_hex_dump(KERN_INFO, "tx: ",
-		DUMP_PREFIX_ADDRESS, 16, 1, skb->data , skb->len+sizeof(struct esp_payload_header), 1  );*/
 	return adapter->if_ops->write(adapter, skb);
 }
 
@@ -593,7 +586,7 @@ static int insert_priv_to_adapter(struct esp_private *priv)
 			return 0;
 		}
 	}
-	printk(KERN_ERR "%s:%u\n", __func__, __LINE__);
+	esp_err("insert failed: max number of adapters exceeded\n");
 	return -1;
 }
 
@@ -607,7 +600,7 @@ static int esp_init_priv(struct esp_private *priv, struct net_device *dev,
 
 	ret = insert_priv_to_adapter(priv);
 	if (ret) {
-		printk(KERN_ERR "%s:%u err:0x%x\n", __func__, __LINE__, ret);
+		esp_err("%u err:0x%x\n", __LINE__, ret);
 		return ret;
 }
 
@@ -663,7 +656,7 @@ static int esp_add_interface(struct esp_adapter *adapter, u8 if_type, u8 if_num,
 #endif
 
 	if (!ndev) {
-		printk(KERN_ERR "%s: alloc failed\n", __func__);
+		esp_err("alloc failed\n");
 		return -ENOMEM;
 	}
 
@@ -672,13 +665,13 @@ static int esp_add_interface(struct esp_adapter *adapter, u8 if_type, u8 if_num,
 	/* Init priv */
 	ret = esp_init_priv(priv, ndev, if_type, if_num);
 	if (ret) {
-		printk(KERN_ERR "%s: Init priv failed\n", __func__);
+		esp_err("Init priv failed\n");
 		goto error_exit;
 	}
 
 	ret = esp_init_net_dev(ndev, priv);
 	if (ret) {
-		printk(KERN_ERR "%s: Init netdev failed\n", __func__);
+		esp_err("Init netdev failed\n");
 		goto error_exit;
 	}
 
@@ -711,7 +704,7 @@ int esp_add_card(struct esp_adapter *adapter)
 	int ret = 0;
 
 	if (!adapter) {
-		printk(KERN_ERR "%s: Invalid args\n", __func__);
+		esp_err("Invalid args\n");
 		return -EINVAL;
 	}
 
@@ -720,13 +713,13 @@ int esp_add_card(struct esp_adapter *adapter)
 	/* Add interface STA and AP */
 	ret = esp_add_interface(adapter, ESP_STA_IF, 0, "ethsta%d");
 	if (ret) {
-		printk(KERN_ERR "%s: Failed to add STA\n", __func__);
+		esp_err("Failed to add STA\n");
 		return ret;
 	}
 
 	ret = esp_add_interface(adapter, ESP_AP_IF, 0, "ethap%d");
 	if (ret) {
-		printk(KERN_ERR "%s: Failed to add AP\n", __func__);
+		esp_err("Failed to add AP\n");
 		esp_remove_network_interfaces(adapter);
 	}
 
@@ -747,6 +740,8 @@ int esp_remove_card(struct esp_adapter *adapter)
 		flush_workqueue(adapter->if_rx_workqueue);
 
 	esp_remove_network_interfaces(adapter);
+
+	esp_verbose("\n");
 
 	return 0;
 }
@@ -769,6 +764,8 @@ static void deinit_adapter(void)
 
 	if (adapter.if_rx_workqueue)
 		destroy_workqueue(adapter.if_rx_workqueue);
+
+	esp_verbose("\n");
 }
 
 static void esp_reset(void)
@@ -776,11 +773,11 @@ static void esp_reset(void)
 	if (resetpin != HOST_GPIO_PIN_INVALID) {
 		/* Check valid GPIO or not */
 		if (!gpio_is_valid(resetpin)) {
-			printk(KERN_WARNING "%s, ESP32: host resetpin (%d) configured is invalid GPIO\n", __func__, resetpin);
+			esp_warn("host resetpin (%d) configured is invalid GPIO\n", resetpin);
 			resetpin = HOST_GPIO_PIN_INVALID;
 		}
 		else {
-			printk(KERN_DEBUG "%s, ESP32: Resetpin of Host is %d\n", __func__, resetpin);
+			esp_dbg("Resetpin of Host is %d\n", resetpin);
 			gpio_request(resetpin, "sysfs");
 
 			/* HOST's resetpin set to OUTPUT, HIGH */
@@ -789,11 +786,12 @@ static void esp_reset(void)
 			/* HOST's resetpin set to LOW */
 			gpio_set_value(resetpin, 0);
 			udelay(200);
+			gpio_set_value(resetpin, 1);
 
 			/* HOST's resetpin set to INPUT */
 			gpio_direction_input(resetpin);
 
-			printk(KERN_DEBUG "%s, ESP32: Triggering ESP reset.\n", __func__);
+			esp_info("Triggering ESP reset.\n");
 		}
 	}
 }
@@ -806,6 +804,7 @@ static struct esp_adapter * init_adapter(void)
 	adapter.if_rx_workqueue = create_workqueue("ESP_IF_RX_WORK_QUEUE");
 
 	if (!adapter.if_rx_workqueue) {
+		esp_err("failed to create rx workqueue\n");
 		deinit_adapter();
 		return NULL;
 	}
@@ -817,6 +816,7 @@ static struct esp_adapter * init_adapter(void)
 	adapter.events_wq = alloc_workqueue("ESP_EVENTS_WORKQUEUE", WQ_HIGHPRI, 0);
 
 	if (!adapter.events_wq) {
+		esp_err("failed to create workqueue\n");
 		deinit_adapter();
 		return NULL;
 	}
