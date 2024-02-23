@@ -461,7 +461,7 @@ int ctrl_app_resp_callback(ctrl_cmd_t * app_resp)
 				case WIFI_MODE_STA:     printf("station\n");        break;
 				case WIFI_MODE_AP:      printf("softap\n");         break;
 				case WIFI_MODE_APSTA:   printf("station+softap\n"); break;
-				case WIFI_MODE_NONE:    printf("none");             break;
+				case WIFI_MODE_NONE:    printf("none\n");           break;
 				default:                printf("unknown\n");        break;
 			}
 			break;
@@ -609,15 +609,13 @@ fail_resp:
 
 int test_get_wifi_mode(void)
 {
-	/* implemented Asynchronous */
+	/* implemented synchronous */
 	ctrl_cmd_t req = CTRL_CMD_DEFAULT_REQ();
+	ctrl_cmd_t *resp = NULL;
 
-	/* register callback for reply */
-	req.ctrl_resp_cb = ctrl_app_resp_callback;
+	resp = wifi_get_mode(req);
 
-	wifi_get_mode(req);
-
-	return SUCCESS;
+	return ctrl_app_resp_callback(resp);
 }
 
 
@@ -705,8 +703,9 @@ int test_softap_mode_get_mac_addr(void)
 
 int test_station_mode_connect(void)
 {
-	/* implemented Asynchronous */
+	/* implemented synchronous */
 	ctrl_cmd_t req = CTRL_CMD_DEFAULT_REQ();
+	ctrl_cmd_t *resp = NULL;
 
 	strcpy((char *)&req.u.wifi_ap_config.ssid, STATION_MODE_SSID);
 	strcpy((char *)&req.u.wifi_ap_config.pwd, STATION_MODE_PWD);
@@ -714,12 +713,9 @@ int test_station_mode_connect(void)
 	req.u.wifi_ap_config.is_wpa3_supported = STATION_MODE_IS_WPA3_SUPPORTED;
 	req.u.wifi_ap_config.listen_interval = STATION_MODE_LISTEN_INTERVAL;
 
-	/* register callback for handling reply asynch-ly */
-	req.ctrl_resp_cb = ctrl_app_resp_callback;
+	resp = wifi_connect_ap(req);
 
-	wifi_connect_ap(req);
-
-	return SUCCESS;
+	return ctrl_app_resp_callback(resp);
 }
 
 int test_station_mode_get_info(void)
