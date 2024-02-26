@@ -73,9 +73,22 @@ menu "Example Configuration"
     menu "SDIO Configuration"
         depends on ESP_SDIO_HOST_INTERFACE
 
+    choice
+        prompt "SDIO Bus Speed"
+        default ESP_SDIO_HIGH_SPEED
+        help
+            Select the SDIO Slave Bus Speed. Actual speed in use depends on SDIO bus speed the SDIO Master can support
+
+        config ESP_SDIO_DEFAULT_SPEED
+            bool "Default Speed (20 MHz)"
+
+        config ESP_SDIO_HIGH_SPEED
+            bool "High Speed (40 MHz)"
+    endchoice
+
     config ESP_SDIO_CHECKSUM
         bool "SDIO checksum ENABLE/DISABLE"
-		default n
+        default n
         help
             ENABLE/DISABLE software SDIO checksum
 
