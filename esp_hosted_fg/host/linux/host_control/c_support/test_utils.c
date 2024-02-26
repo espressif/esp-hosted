@@ -437,13 +437,15 @@ int ctrl_app_resp_callback(ctrl_cmd_t * app_resp)
 		goto fail_resp;
 	}
 
-	if ((app_resp->msg_id <= CTRL_RESP_BASE) || (app_resp->msg_id >= CTRL_RESP_MAX)) {
-		printf("Response Msg ID[%u] is not correct\n",app_resp->msg_id);
+	/* a timeout doesn't have a response id
+	 * process failed responses before checking for incorrect response id */
+	if (app_resp->resp_event_status != SUCCESS) {
+		process_failed_responses(app_resp);
 		goto fail_resp;
 	}
 
-	if (app_resp->resp_event_status != SUCCESS) {
-		process_failed_responses(app_resp);
+	if ((app_resp->msg_id <= CTRL_RESP_BASE) || (app_resp->msg_id >= CTRL_RESP_MAX)) {
+		printf("Response Msg ID[%u] is not correct\n",app_resp->msg_id);
 		goto fail_resp;
 	}
 
@@ -609,13 +611,15 @@ fail_resp:
 
 int test_get_wifi_mode(void)
 {
-	/* implemented synchronous */
+	/* implemented Asynchronous */
 	ctrl_cmd_t req = CTRL_CMD_DEFAULT_REQ();
-	ctrl_cmd_t *resp = NULL;
 
-	resp = wifi_get_mode(req);
+	/* register callback for reply */
+	req.ctrl_resp_cb = ctrl_app_resp_callback;
 
-	return ctrl_app_resp_callback(resp);
+	wifi_get_mode(req);
+
+	return SUCCESS;
 }
 
 
@@ -703,9 +707,8 @@ int test_softap_mode_get_mac_addr(void)
 
 int test_station_mode_connect(void)
 {
-	/* implemented synchronous */
+	/* implemented Asynchronous */
 	ctrl_cmd_t req = CTRL_CMD_DEFAULT_REQ();
-	ctrl_cmd_t *resp = NULL;
 
 	strcpy((char *)&req.u.wifi_ap_config.ssid, STATION_MODE_SSID);
 	strcpy((char *)&req.u.wifi_ap_config.pwd, STATION_MODE_PWD);
@@ -713,9 +716,12 @@ int test_station_mode_connect(void)
 	req.u.wifi_ap_config.is_wpa3_supported = STATION_MODE_IS_WPA3_SUPPORTED;
 	req.u.wifi_ap_config.listen_interval = STATION_MODE_LISTEN_INTERVAL;
 
-	resp = wifi_connect_ap(req);
+	/* register callback for handling asynch reply */
+	req.ctrl_resp_cb = ctrl_app_resp_callback;
 
-	return ctrl_app_resp_callback(resp);
+	wifi_connect_ap(req);
+
+	return SUCCESS;
 }
 
 int test_station_mode_get_info(void)

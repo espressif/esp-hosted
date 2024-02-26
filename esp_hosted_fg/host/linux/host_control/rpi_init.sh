@@ -26,7 +26,19 @@ build_c_demo_app()
     cd c_support/
     make clean
     make -j8
+    # Check the exit status
+    if [ $? -ne 0 ] ; then
+        echo "Failed to build test app"
+        exit -1
+    fi
+
     make -j8 stress
+    # Check the exit status
+    if [ $? -ne 0 ] ; then
+        echo "Failed to build stress app"
+        exit -1
+    fi
+
     cd ..
 }
 
@@ -35,6 +47,12 @@ build_python_demo_app()
     cd python_support/
     make clean
     make -j8
+    # Check the exit status
+    if [ $? -ne 0 ] ; then
+        echo "Failed to build python demo app"
+        exit -1
+    fi
+
     cd ..
 }
 

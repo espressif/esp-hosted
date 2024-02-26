@@ -36,13 +36,8 @@
 #define thread_handle_t pthread_t
 #define semaphore_handle_t sem_t
 
-
 struct serial_drv_handle_t {
 	int file_desc;
-};
-
-struct timer_handle_t {
-	timer_t timer_id;
 };
 
 static struct serial_drv_handle_t* serial_drv_handle;
@@ -303,6 +298,14 @@ int hosted_destroy_semaphore(void * semaphore_handle)
 
 /* -------- Timers  ---------- */
 
+typedef void (*hosted_timer_cb_t) (void const* resp);
+
+struct timer_handle_t {
+	timer_t timer_id;
+	hosted_timer_cb_t timer_cb;
+	void * arg;
+};
+
 int hosted_timer_stop(void *timer_handle)
 {
 	if (timer_handle) {
@@ -324,19 +327,12 @@ int hosted_timer_stop(void *timer_handle)
  * }
  **/
 
-typedef void (*hosted_timer_cb_t) (void const* resp);
-
-struct timer_arg_t {
-	hosted_timer_cb_t timer_cb;
-	void * arg;
-};
-
 static void timer_ll_callback(union sigval timer_data)
 {
-	struct timer_arg_t *timer_arg = timer_data.sival_ptr;
+	struct timer_handle_t *timer_handle = timer_data.sival_ptr;
 
-	if (timer_arg->timer_cb)
-		timer_arg->timer_cb(timer_arg->arg);
+	if (timer_handle->timer_cb)
+		timer_handle->timer_cb(timer_handle->arg);
 	else
 		printf("NULL func, failed to call callback\n");
 }
@@ -345,10 +341,15 @@ void *hosted_timer_start(int duration, int type,
 		void (*timeout_handler)(void const *), void * arg)
 {
 	int res = 0;
-	struct timer_arg_t timer_arg;
-	struct timer_handle_t *timer_handle = (struct timer_handle_t *)hosted_malloc(
-			sizeof(struct timer_handle_t));
+	struct timer_handle_t *timer_handle = NULL;
 
+	if (!timeout_handler) {
+		printf("Error: NULL timeout_hander\n");
+		return NULL;
+	}
+
+	timer_handle = (struct timer_handle_t *)hosted_malloc(
+			sizeof(struct timer_handle_t));
 	if (!timer_handle) {
 		printf("Mem Alloc for Timer failed\n");
 		mem_free(timer_handle);
@@ -368,8 +369,8 @@ void *hosted_timer_start(int duration, int type,
 		.it_interval.tv_nsec = 0
 	};
 
-	timer_arg.timer_cb = timeout_handler;
-	timer_arg.arg = arg;
+	timer_handle->timer_cb = timeout_handler;
+	timer_handle->arg = arg;
 
 	if (type == CTRL__TIMER_PERIODIC) {
 		its.it_interval.tv_sec = duration;
@@ -378,7 +379,7 @@ void *hosted_timer_start(int duration, int type,
 	sev.sigev_notify = SIGEV_THREAD;
 	sev.sigev_notify_function = timer_ll_callback;
 	sev.sigev_signo = SIGRTMAX-1;
-	sev.sigev_value.sival_ptr = &timer_arg;
+	sev.sigev_value.sival_ptr = timer_handle;
 
 
 	/* create timer */
