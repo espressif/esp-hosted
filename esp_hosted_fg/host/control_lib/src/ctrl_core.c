@@ -1079,7 +1079,7 @@ static void ctrl_async_timeout_handler(void const *arg)
 	}
 	else {
 		ctrl_cmd_t *app_resp = NULL;
-		app_resp = (ctrl_cmd_t *)hosted_malloc(sizeof(ctrl_cmd_t));
+		app_resp = (ctrl_cmd_t *)hosted_calloc(1, sizeof(ctrl_cmd_t));
 		if (!app_resp) {
 			printf("Failed to allocate app_resp\n");
 			return;
