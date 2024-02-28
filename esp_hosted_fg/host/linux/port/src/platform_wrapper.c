@@ -373,6 +373,7 @@ void *hosted_timer_start(int duration, int type,
 	timer_handle->arg = arg;
 
 	if (type == CTRL__TIMER_PERIODIC) {
+		assert(0); // periodic timers not supported for now
 		its.it_interval.tv_sec = duration;
 	}
 
