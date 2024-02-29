@@ -1090,6 +1090,15 @@ static void ctrl_async_timeout_handler(void const *arg)
 		/* call func pointer to notify failure */
 		func(app_resp);
 
+		/* only one async timer at a time is handled
+		 * therefore, only one wifi request can be sent at a time
+		 */
+		if (async_timer_handle) {
+			/* async_timer_handle will be cleaned in hosted_timer_stop */
+			hosted_timer_stop(async_timer_handle);
+			async_timer_handle = NULL;
+		}
+
 		/* Unlock semaphore in negative case */
 		hosted_post_semaphore(ctrl_req_sem);
 	}
