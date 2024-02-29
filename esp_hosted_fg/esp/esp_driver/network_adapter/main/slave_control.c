@@ -2016,8 +2016,10 @@ static void esp_ctrl_msg_cleanup(CtrlMsg *resp)
 
 	switch (resp->msg_id) {
 		case (CTRL_MSG_ID__Resp_GetMACAddress ) : {
-			mem_free(resp->resp_get_mac_address->mac.data);
-			mem_free(resp->resp_get_mac_address);
+			if (resp->resp_get_mac_address) {
+				mem_free(resp->resp_get_mac_address->mac.data);
+				mem_free(resp->resp_get_mac_address);
+			}
 			break;
 		} case (CTRL_MSG_ID__Resp_GetWifiMode) : {
 			mem_free(resp->resp_get_wifi_mode);
@@ -2026,22 +2028,30 @@ static void esp_ctrl_msg_cleanup(CtrlMsg *resp)
 			mem_free(resp->resp_set_wifi_mode);
 			break;
 		} case (CTRL_MSG_ID__Resp_GetAPConfig ) : {
-			mem_free(resp->resp_get_ap_config->ssid.data);
-			mem_free(resp->resp_get_ap_config->bssid.data);
-			mem_free(resp->resp_get_ap_config);
+			if (resp->resp_get_ap_config) {
+				mem_free(resp->resp_get_ap_config->ssid.data);
+				mem_free(resp->resp_get_ap_config->bssid.data);
+				mem_free(resp->resp_get_ap_config);
+			}
 			break;
 		} case (CTRL_MSG_ID__Resp_ConnectAP ) : {
-			mem_free(resp->resp_connect_ap->mac.data);
-			mem_free(resp->resp_connect_ap);
+			if (resp->resp_connect_ap) {
+				mem_free(resp->resp_connect_ap->mac.data);
+				mem_free(resp->resp_connect_ap);
+			}
 			break;
 		} case (CTRL_MSG_ID__Resp_GetSoftAPConfig ) : {
-			mem_free(resp->resp_get_softap_config->ssid.data);
-			mem_free(resp->resp_get_softap_config->pwd.data);
-			mem_free(resp->resp_get_softap_config);
+			if (resp->resp_get_softap_config) {
+				mem_free(resp->resp_get_softap_config->ssid.data);
+				mem_free(resp->resp_get_softap_config->pwd.data);
+				mem_free(resp->resp_get_softap_config);
+			}
 			break;
 		} case (CTRL_MSG_ID__Resp_StartSoftAP ) : {
-			mem_free(resp->resp_start_softap->mac.data);
-			mem_free(resp->resp_start_softap);
+			if (resp->resp_start_softap) {
+				mem_free(resp->resp_start_softap->mac.data);
+				mem_free(resp->resp_start_softap);
+			}
 			break;
 		} case (CTRL_MSG_ID__Resp_DisconnectAP ) : {
 			mem_free(resp->resp_disconnect_ap);
