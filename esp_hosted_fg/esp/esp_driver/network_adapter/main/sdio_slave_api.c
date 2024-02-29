@@ -207,7 +207,13 @@ static interface_handle_t * sdio_init(void)
 		.timing             = SDIO_SLAVE_TIMING_NSEND_PSAMPLE,
 #endif
 	};
+#if CONFIG_ESP_SDIO_DEFAULT_SPEED
 	config.flags |= SDIO_SLAVE_FLAG_DEFAULT_SPEED;
+#elif CONFIG_ESP_SDIO_HIGH_SPEED
+	config.flags |= SDIO_SLAVE_FLAG_HIGH_SPEED;
+#else
+#error Invalid SDIO bus speed selection
+#endif
 
 #if defined(CONFIG_IDF_TARGET_ESP32C6)
 	ESP_LOGI(TAG, "%s: ESP32-C6 SDIO timing: %u\n", __func__, config.timing);
