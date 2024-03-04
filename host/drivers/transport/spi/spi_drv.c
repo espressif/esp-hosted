@@ -24,6 +24,7 @@
 #include "esp_log.h"
 #include "esp_hosted_log.h"
 #include "stats.h"
+#include "hci_drv.h"
 
 DEFINE_LOG_TAG(spi);
 
@@ -213,7 +214,7 @@ static int process_spi_rx_buf(uint8_t * rxbuff)
 	}
 
 	if ((len > MAX_PAYLOAD_SIZE) ||
-	    (offset != sizeof(struct esp_payload_header))) {
+		(offset != sizeof(struct esp_payload_header))) {
 		ESP_LOGI(TAG, "rx packet ignored: len [%u], rcvd_offset[%u], exp_offset[%u]\n",
 				len, offset, sizeof(struct esp_payload_header));
 
@@ -468,10 +469,10 @@ static void spi_transaction_task(void const* pvParameters)
 			H_DR_INTR_EDGE, gpio_dr_isr_handler);
 
 #if !H_HANDSHAKE_ACTIVE_HIGH
-    ESP_LOGI(TAG, "Handshake: Active Low");
+	ESP_LOGI(TAG, "Handshake: Active Low");
 #endif
 #if !H_DATAREADY_ACTIVE_HIGH
-    ESP_LOGI(TAG, "DataReady: Active Low");
+	ESP_LOGI(TAG, "DataReady: Active Low");
 #endif
 
 	ESP_LOGD(TAG, "SPI GPIOs configured");
@@ -481,7 +482,7 @@ static void spi_transaction_task(void const* pvParameters)
 	for (;;) {
 
 		if ((!is_transport_rx_ready()) ||
-		    (!spi_trans_ready_sem)) {
+			(!spi_trans_ready_sem)) {
 			g_h.funcs->_h_msleep(300);
 			continue;
 		}
@@ -534,7 +535,7 @@ static void spi_process_rx_task(void const* pvParameters)
 			serial_rx_handler(buf_handle);
 
 		} else if((buf_handle->if_type == ESP_STA_IF) ||
-		          (buf_handle->if_type == ESP_AP_IF)) {
+				(buf_handle->if_type == ESP_AP_IF)) {
 			schedule_dummy_rx = 1;
 #if 0
 			if (chan_arr[buf_handle->if_type] && chan_arr[buf_handle->if_type]->rx) {
@@ -556,6 +557,7 @@ static void spi_process_rx_task(void const* pvParameters)
 #endif
 		} else if (buf_handle->if_type == ESP_PRIV_IF) {
 			process_priv_communication(buf_handle);
+			hci_drv_show_configuration();
 			/* priv transaction received */
 			ESP_LOGI(TAG, "Received INIT event");
 
@@ -563,6 +565,8 @@ static void spi_process_rx_task(void const* pvParameters)
 			if (event->event_type != ESP_PRIV_EVENT_INIT) {
 				/* User can re-use this type of transaction */
 			}
+		} else if (buf_handle->if_type == ESP_HCI_IF) {
+			hci_rx_handler(buf_handle);
 		} else if (buf_handle->if_type == ESP_TEST_IF) {
 #if TEST_RAW_TP
 			update_test_raw_tp_rx_len(buf_handle->payload_len+H_ESP_PAYLOAD_HEADER_OFFSET);
@@ -570,7 +574,6 @@ static void spi_process_rx_task(void const* pvParameters)
 		} else {
 			ESP_LOGW(TAG, "unknown type %d ", buf_handle->if_type);
 		}
-
 		/* Free buffer handle */
 		/* When buffer offloaded to other module, that module is
 		 * responsible for freeing buffer. In case not offloaded or
@@ -662,6 +665,17 @@ static uint8_t * get_next_tx_buffer(uint8_t *is_valid_tx_buf, void (**free_func)
 		payload_header->offset  = htole16(sizeof(struct esp_payload_header));
 		payload_header->if_type = buf_handle.if_type;
 		payload_header->if_num  = buf_handle.if_num;
+
+		if (payload_header->if_type == ESP_HCI_IF) {
+			// special handling for HCI
+			if (!buf_handle.payload_zcopy) {
+				// copy first byte of payload into header
+				payload_header->hci_pkt_type = buf_handle.payload[0];
+				// adjust actual payload len
+				payload_header->len = htole16(len - 1);
+				g_h.funcs->_h_memcpy(payload, &buf_handle.payload[1], len - 1);
+			}
+		} else
 		if (!buf_handle.payload_zcopy)
 			g_h.funcs->_h_memcpy(payload, buf_handle.payload, min(len, MAX_PAYLOAD_SIZE));
 
@@ -686,4 +700,3 @@ done:
 
 	return sendbuf;
 }
-

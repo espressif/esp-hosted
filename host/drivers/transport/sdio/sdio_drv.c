@@ -21,6 +21,7 @@
 #include "stats.h"
 #include "esp_log.h"
 #include "esp_hosted_log.h"
+#include "hci_drv.h"
 
 static const char TAG[] = "H_SDIO_DRV";
 
@@ -326,6 +327,16 @@ static void sdio_write_task(void const* pvParameters)
 		payload_header->seq_num = htole16(buf_handle.seq_num);
 		payload_header->flags = buf_handle.flag;
 
+		if (payload_header->if_type == ESP_HCI_IF) {
+			// special handling for HCI
+			if (!buf_handle.payload_zcopy) {
+				// copy first byte of payload into header
+				payload_header->hci_pkt_type = buf_handle.payload[0];
+				// adjust actual payload len
+				payload_header->len = htole16(len - 1);
+				g_h.funcs->_h_memcpy(payload, &buf_handle.payload[1], len - 1);
+			}
+		} else
 		if (!buf_handle.payload_zcopy)
 			g_h.funcs->_h_memcpy(payload, buf_handle.payload, len);
 
@@ -783,6 +794,7 @@ static void sdio_process_rx_task(void const* pvParameters)
 #endif
 		} else if (buf_handle->if_type == ESP_PRIV_IF) {
 			process_priv_communication(buf_handle);
+			hci_drv_show_configuration();
 			/* priv transaction received */
 			ESP_LOGI(TAG, "Received INIT event");
 			sdio_start_write_thread = true;
@@ -791,6 +803,8 @@ static void sdio_process_rx_task(void const* pvParameters)
 			if (event->event_type != ESP_PRIV_EVENT_INIT) {
 				/* User can re-use this type of transaction */
 			}
+		} else if (buf_handle->if_type == ESP_HCI_IF) {
+			hci_rx_handler(buf_handle);
 		} else if (buf_handle->if_type == ESP_TEST_IF) {
 #if TEST_RAW_TP
 			update_test_raw_tp_rx_len(buf_handle->payload_len +

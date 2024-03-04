@@ -26,6 +26,7 @@
 #include "mempool.h"
 #include "stats.h"
 #include "errno.h"
+#include "hci_drv.h"
 
 /**
  * @brief  Slave capabilities are parsed
@@ -101,6 +102,7 @@ esp_err_t transport_drv_init(void(*esp_hosted_up_cb)(void))
 {
 	g_h.funcs->_h_hosted_init_hook();
 	transport_init_internal();
+	hci_drv_init();
 	transport_esp_hosted_up_cb = esp_hosted_up_cb;
 
 	return ESP_OK;
