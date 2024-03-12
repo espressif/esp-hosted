@@ -96,6 +96,7 @@ $ cmake .
 $ . ./esp-idf/export.sh
 # Optionally, You can add alias for this command in ~/.bashrc for later use
 ```
+- If you are using the ESP-WROVER-KIT and plan to use the internal pull-up resistors to quickly evaluate the driver, make sure to set the `SDIO_SLAVE_FLAG_INTERNAL_PULLUP` flag in the `sdio_slave_config_t config` of the `sdio_init` function. (However, the internal pullups are not sufficient and not reliable, please make sure external pullups are connected to the bus in your real design. For more information, check [SDIO pull-up requirements](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/peripherals/sd_pullup_requirements.html).)
 
 
 ##### Configure, Build & Flash SDIO ESP firmware
