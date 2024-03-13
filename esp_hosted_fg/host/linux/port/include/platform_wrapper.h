@@ -95,6 +95,12 @@ void hosted_free(void* ptr);
  */
 void *hosted_thread_create(void (*start_routine)(void const *), void *arg);
 
+#if defined __ANDROID__
+/* hosted_thread_create_hook Hook to execute on thread creation
+ */
+void hosted_thread_create_hook(void);
+#endif
+
 /* hosted_thread_cancel stops and clears thread
  * Input parameter
  *       thread_handle : valid thread handle
