@@ -44,6 +44,49 @@ static struct serial_drv_handle_t* serial_drv_handle;
 
 extern int errno;
 
+#if defined __ANDROID__
+/* Android does not implement pthread_cancel()
+ *
+ * As a workaround, the created thread is marked as cancelable by
+ * the SIGUSR1 signal. This signal is sent to the thread when our
+ * version of pthread_cancel() is called, which executes pthread_exit()
+ * on the thread.
+ */
+#include <signal.h>
+#define SIG_CANCEL_SIGNAL SIGUSR1
+
+static void thread_cancel_signal_handler(int sig_num);
+static int mark_thread_cancelable();
+static int local_pthread_cancel(pthread_t thread);
+
+static void thread_cancel_signal_handler(int sig_num)
+{
+	if (sig_num == SIG_CANCEL_SIGNAL) {
+		printf("Exiting thread via signal handler\n");
+		pthread_exit(0);
+	}
+}
+
+/* This function can be called in the place of pthread_setcancelstate()
+ * and setcanceltype()
+ * Note it must be called for cancelable threads
+ */
+static int mark_thread_cancelable(void)
+{
+	struct sigaction action;
+	memset(&action, 0, sizeof(action));
+	sigemptyset(&action.sa_mask);
+	action.sa_flags = 0;
+	action.sa_handler = &thread_cancel_signal_handler;
+
+	return sigaction(SIG_CANCEL_SIGNAL, &action, NULL);
+}
+
+static int local_pthread_cancel(pthread_t thread) {
+	return pthread_kill(thread, SIG_CANCEL_SIGNAL);
+}
+#endif
+
 int control_path_platform_init(void)
 {
 	/* 1. Open serial file
@@ -142,6 +185,10 @@ static void *thread_routine(void *arg)
 
 	mem_free(thread_arg);
 
+#if defined __ANDROID__
+	hosted_thread_create_hook();
+#endif
+
 	if (new_thread_arg.thread_cb)
 		new_thread_arg.thread_cb(new_thread_arg.arg);
 	else
@@ -172,6 +219,13 @@ void *hosted_thread_create(void (*start_routine)(void const *), void *arg)
 	return thread_handle;
 }
 
+#if defined __ANDROID__
+void hosted_thread_create_hook(void)
+{
+	mark_thread_cancelable();
+}
+#endif
+
 int hosted_thread_cancel(void *thread_handle)
 {
 	thread_handle_t *thread_hdl = NULL;
@@ -180,7 +234,11 @@ int hosted_thread_cancel(void *thread_handle)
 		return FAILURE;
 	thread_hdl = (thread_handle_t *)thread_handle;
 
+#if defined __ANDROID__
+	int s = local_pthread_cancel(*thread_hdl);
+#else
 	int s = pthread_cancel(*thread_hdl);
+#endif
 	if (s != 0) {
 		mem_free(thread_handle);
 		printf("Prob in pthread_cancel\n");
