@@ -652,7 +652,6 @@ static void spi_exit(void)
 		spi_thread = NULL;
 	}
 
-	esp_serial_cleanup();
 	esp_remove_card(spi_context.adapter);
 
 	if (test_bit(ESP_SPI_GPIO_HS_IRQ_DONE, &spi_context.spi_flags)) {

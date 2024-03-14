@@ -282,7 +282,6 @@ static void esp_remove(struct sdio_func *func)
 
 	esp_info("-> Remove card\n");
 
-	esp_serial_cleanup();
 
 
 	for (prio_q_idx=0; prio_q_idx<MAX_PRIORITY_QUEUES; prio_q_idx++) {
