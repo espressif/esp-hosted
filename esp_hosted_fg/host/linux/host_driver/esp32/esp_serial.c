@@ -48,6 +48,7 @@ static struct esp_serial_devs {
 } devs[ESP_SERIAL_MINOR_MAX];
 
 static uint8_t serial_init_done;
+static atomic_t ref_count_open;
 
 static ssize_t esp_serial_read(struct file *file, char __user *user_buffer, size_t size, loff_t *offset)
 {
@@ -155,6 +156,19 @@ static int esp_serial_open(struct inode *inode, struct file *file)
 	devs = container_of(inode->i_cdev, struct esp_serial_devs, cdev);
 	file->private_data = devs;
 
+	atomic_inc(&ref_count_open);
+
+	return 0;
+}
+
+static int esp_serial_release(struct inode *inode, struct file *file)
+{
+	if (atomic_read(&ref_count_open)) {
+		atomic_dec(&ref_count_open);
+	} else {
+		esp_warn("ref_count_open count already zero\n");
+	}
+
 	return 0;
 }
 
@@ -183,7 +197,8 @@ const struct file_operations esp_serial_fops = {
 	.read = esp_serial_read,
 	.write = esp_serial_write,
 	.unlocked_ioctl = esp_serial_ioctl,
-	.poll = esp_serial_poll
+	.poll = esp_serial_poll,
+	.release = esp_serial_release,
 };
 
 int esp_serial_data_received(int dev_index, const char *data, size_t len)
@@ -193,6 +208,11 @@ int esp_serial_data_received(int dev_index, const char *data, size_t len)
 		esp_err("%u ERR: serial_dev_idx[%d] >= minor_max[%d]\n",
 				__LINE__, dev_index, ESP_SERIAL_MINOR_MAX);
 		return -EINVAL;
+	}
+
+	if (!atomic_read(&ref_count_open)) {
+		esp_verbose("no user app listening: dropping packet\n");
+		return len;
 	}
 
 	while (ret_len != len) {
@@ -254,6 +274,9 @@ int esp_serial_init(void *priv)
 	}
 
 	serial_init_done = 1;
+
+	atomic_set(&ref_count_open, 0);
+
 	esp_verbose("\n");
 	return 0;
 
