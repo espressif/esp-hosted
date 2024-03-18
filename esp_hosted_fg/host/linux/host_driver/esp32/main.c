@@ -856,6 +856,7 @@ static void __exit esp_exit(void)
 #if TEST_RAW_TP
 	test_raw_tp_cleanup();
 #endif
+	esp_serial_cleanup();
 	esp_deinit_interface_layer();
 	deinit_adapter();
 

@@ -18,6 +18,7 @@
 
 int esp_rb_init(esp_rb_t *rb, size_t sz)
 {
+	esp_dbg("%u\n", __LINE__);
 	init_waitqueue_head(&(rb->wq));
 
 	rb->buf = kmalloc(sz, GFP_KERNEL);
@@ -40,18 +41,22 @@ int esp_rb_read_by_user(esp_rb_t *rb, const char __user *buf, size_t sz, int blo
 	int read_len = 0, temp_len = 0;
 
 	if (down_interruptible(&rb->sem)) {
+		esp_verbose("%u interrupted by signal\n", __LINE__);
 		return -ERESTARTSYS; /* Signal interruption */
 	}
 
 	while (rb->rp == rb->wp) {
 		up(&rb->sem);
 		if (block == 0) {
+			esp_verbose("%u EAGAIN\n", __LINE__);
 			return -EAGAIN;
 		}
 		if (wait_event_interruptible(rb->wq, (rb->rp != rb->wp))) {
+			esp_verbose("%u Interrupted2 by signal\n", __LINE__);
 			return -ERESTARTSYS; /* Signal interruption */
 		}
 		if (down_interruptible(&rb->sem)) {
+			esp_verbose("%u Interrupted3 by signal\n", __LINE__);
 			return -ERESTARTSYS;
 		}
 	}
@@ -93,6 +98,7 @@ int esp_rb_read_by_user(esp_rb_t *rb, const char __user *buf, size_t sz, int blo
 int get_free_space(esp_rb_t *rb)
 {
 	if (!rb || !rb->rp || !rb->wp) {
+		esp_err("%u Err fault\n", __LINE__);
 		return -EFAULT;
 	}
 	if (rb->rp == rb->wp) {
@@ -112,6 +118,7 @@ int esp_rb_write_by_kernel(esp_rb_t *rb, const char *buf, size_t sz)
 	}
 
 	if (down_interruptible(&rb->sem)) {
+		esp_verbose("%u intr by sig\n", __LINE__);
 		return -ERESTARTSYS;
 	}
 

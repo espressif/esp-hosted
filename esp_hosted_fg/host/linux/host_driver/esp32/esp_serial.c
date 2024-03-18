@@ -34,11 +34,12 @@
 #include "esp_api.h"
 
 #define ESP_SERIAL_MAJOR      221
-#define ESP_SERIAL_MINOR_MAX  2
+#define ESP_SERIAL_MINOR_MAX  1
 #define ESP_RX_RB_SIZE        4096
 #define ESP_SERIAL_MAX_TX     4096
 
 static struct esp_serial_devs {
+	struct device* dev;
 	struct cdev cdev;
 	int dev_index;
 	esp_rb_t rb;
@@ -47,6 +48,7 @@ static struct esp_serial_devs {
 } devs[ESP_SERIAL_MINOR_MAX];
 
 static uint8_t serial_init_done;
+static atomic_t ref_count_open;
 
 static ssize_t esp_serial_read(struct file *file, char __user *user_buffer, size_t size, loff_t *offset)
 {
@@ -55,6 +57,7 @@ static ssize_t esp_serial_read(struct file *file, char __user *user_buffer, size
 	dev = (struct esp_serial_devs *) file->private_data;
 	ret_size = esp_rb_read_by_user(&dev->rb, user_buffer, size, !(file->f_flags & O_NONBLOCK));
 	if (ret_size == 0) {
+		esp_verbose("%u err: EAGAIN\n", __LINE__);
 		return -EAGAIN;
 	}
 	return ret_size;
@@ -153,6 +156,19 @@ static int esp_serial_open(struct inode *inode, struct file *file)
 	devs = container_of(inode->i_cdev, struct esp_serial_devs, cdev);
 	file->private_data = devs;
 
+	atomic_inc(&ref_count_open);
+
+	return 0;
+}
+
+static int esp_serial_release(struct inode *inode, struct file *file)
+{
+	if (atomic_read(&ref_count_open)) {
+		atomic_dec(&ref_count_open);
+	} else {
+		esp_warn("ref_count_open count already zero\n");
+	}
+
 	return 0;
 }
 
@@ -181,14 +197,22 @@ const struct file_operations esp_serial_fops = {
 	.read = esp_serial_read,
 	.write = esp_serial_write,
 	.unlocked_ioctl = esp_serial_ioctl,
-	.poll = esp_serial_poll
+	.poll = esp_serial_poll,
+	.release = esp_serial_release,
 };
 
 int esp_serial_data_received(int dev_index, const char *data, size_t len)
 {
 	int ret = 0, ret_len = 0;
 	if (dev_index >= ESP_SERIAL_MINOR_MAX) {
+		esp_err("%u ERR: serial_dev_idx[%d] >= minor_max[%d]\n",
+				__LINE__, dev_index, ESP_SERIAL_MINOR_MAX);
 		return -EINVAL;
+	}
+
+	if (!atomic_read(&ref_count_open)) {
+		esp_verbose("no user app listening: dropping packet\n");
+		return len;
 	}
 
 	while (ret_len != len) {
@@ -209,33 +233,57 @@ int esp_serial_data_received(int dev_index, const char *data, size_t len)
 	return ret_len;
 }
 
+static dev_t dev_first;
+static struct class *cl;
+
 int esp_serial_init(void *priv)
 {
-	int err = 0, i = 0;
+	int err = -EINVAL, i = 0;
 
 	if (!priv) {
 		esp_err("failed. NULL adapter\n");
-		return -1;
+		goto err;
 	}
 
-	err = register_chrdev_region(MKDEV(ESP_SERIAL_MAJOR, 0), ESP_SERIAL_MINOR_MAX, "esp_serial_driver");
+	/* already in correct state, ignore */
+	if (serial_init_done)
+		return 0;
+
+	err = alloc_chrdev_region(&dev_first, 0, ESP_SERIAL_MINOR_MAX, "esp_serial_driver");
 	if (err) {
-		esp_err("Error registering chrdev region %d\n", err);
-		return -1;
+		esp_err("Error alloc chrdev region %d\n", err);
+		goto err;
+	}
+
+	cl = class_create(THIS_MODULE, "esp_serial_chardrv");
+	if (IS_ERR(cl)) {
+		esp_err("Class create err[%d]\n", err);
+		err = PTR_ERR(cl);
+		goto err_class_create;
 	}
 
 	for (i = 0; i < ESP_SERIAL_MINOR_MAX; i++) {
-		cdev_init(&devs[i].cdev, &esp_serial_fops);
+		dev_t dev_num = dev_first + i;
 		devs[i].dev_index = i;
-		cdev_add(&devs[i].cdev, MKDEV(ESP_SERIAL_MAJOR, i), 1);
+		devs[i].dev = device_create(cl, NULL, dev_num, NULL, "esps%d", i);
+		cdev_init(&devs[i].cdev, &esp_serial_fops);
+		cdev_add(&devs[i].cdev, dev_num, 1);
 		esp_rb_init(&devs[i].rb, ESP_RX_RB_SIZE);
 		devs[i].priv = priv;
 		mutex_init(&devs[i].lock);
 	}
 
 	serial_init_done = 1;
+
+	atomic_set(&ref_count_open, 0);
+
 	esp_verbose("\n");
 	return 0;
+
+err_class_create:
+	unregister_chrdev_region(dev_first, ESP_SERIAL_MINOR_MAX);
+err:
+	return err;
 }
 
 void esp_serial_cleanup(void)
@@ -243,6 +291,8 @@ void esp_serial_cleanup(void)
 	int i = 0;
 
 	for (i = 0; serial_init_done && i < ESP_SERIAL_MINOR_MAX; i++) {
+		dev_t dev_num = dev_first + i;
+		device_destroy(cl, dev_num);
 		if (!devs[i].cdev.ops)
 			cdev_del(&devs[i].cdev);
 
@@ -250,18 +300,19 @@ void esp_serial_cleanup(void)
 		mutex_destroy(&devs[i].lock);
 	}
 
-	unregister_chrdev_region(MKDEV(ESP_SERIAL_MAJOR, 0), ESP_SERIAL_MINOR_MAX);
+	class_destroy(cl);
+	unregister_chrdev_region(dev_first, ESP_SERIAL_MINOR_MAX);
 
 	serial_init_done = 0;
-	esp_verbose("\n");
+	esp_info("\n");
 	return;
 }
 
 int esp_serial_reinit(void *priv)
 {
-	esp_verbose("\n");
-	if (serial_init_done)
-		esp_serial_cleanup();
+	if (serial_init_done) {
+		return 0;
+	}
 
 	return esp_serial_init(priv);
 }
