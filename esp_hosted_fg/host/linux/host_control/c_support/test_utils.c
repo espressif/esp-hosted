@@ -975,18 +975,25 @@ int test_ota(char* image_path)
 			if (ret) {
 				printf("OTA procedure failed!!\n");
 				test_ota_end();
-				return FAILURE;
+				goto fail;
 			}
 		}
+		fclose(f);
+		f = NULL;
 		ret = test_ota_end();
 		if (ret) {
-			return FAILURE;
+			goto fail;
 		}
 	} else {
 		return FAILURE;
 	}
 	printf("ESP32 will restart after 5 sec\n");
 	return SUCCESS;
+fail:
+	if (f) {
+		fclose(f);
+	}
+	return FAILURE;
 }
 
 int test_wifi_set_max_tx_power(int in_power)
@@ -1035,4 +1042,18 @@ int test_disable_heartbeat(void)
 	resp = config_heartbeat(req);
 
 	return ctrl_app_resp_callback(resp);
+}
+
+int test_disable_heartbeat_async(void)
+{
+	/* implemented asynchronous */
+	ctrl_cmd_t req = CTRL_CMD_DEFAULT_REQ();
+	req.u.e_heartbeat.enable = NO;
+
+	/* register callback for handling asynch reply */
+	req.ctrl_resp_cb = ctrl_app_resp_callback;
+
+	config_heartbeat(req);
+
+	return SUCCESS;
 }

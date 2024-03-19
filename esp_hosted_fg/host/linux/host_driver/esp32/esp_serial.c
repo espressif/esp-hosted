@@ -153,6 +153,14 @@ static int esp_serial_open(struct inode *inode, struct file *file)
 {
 	struct esp_serial_devs *devs = NULL;
 
+	if (atomic_read(&ref_count_open) >= 1) {
+		esp_warn("already opened: denying new open request\n");
+		/* returning -EPERM may mislead user into checking the permission bits
+		 * of the device file. -EBUSY tells the user that the serial channel is
+		 * busy servicing another user of the device file */
+		return -EBUSY;
+	}
+
 	devs = container_of(inode->i_cdev, struct esp_serial_devs, cdev);
 	file->private_data = devs;
 
