@@ -106,7 +106,7 @@ static const u32 esp_cipher_suites[] = {
 };
 
 static const struct wiphy_wowlan_support esp_wowlan_support = {
-	.flags = WIPHY_WOWLAN_ANY | WIPHY_WOWLAN_MAGIC_PKT,
+	.flags = WIPHY_WOWLAN_ANY | WIPHY_WOWLAN_MAGIC_PKT | WIPHY_WOWLAN_DISCONNECT | WIPHY_WOWLAN_4WAY_HANDSHAKE,
 	.n_patterns = 0,
 	.pattern_max_len = 0,
 	.pattern_min_len = 0,
@@ -486,14 +486,45 @@ static int esp_cfg80211_disassoc(struct wiphy *wiphy, struct net_device *dev,
 static int esp_cfg80211_suspend(struct wiphy *wiphy,
 			struct cfg80211_wowlan *wowlan)
 {
-	/*esp_dbg("\n");*/
-	return 0;
+	struct esp_adapter *adapter = esp_get_adapter();
+	struct esp_wifi_device *priv = NULL;
+	if (!wowlan || !wiphy || !adapter) {
+		esp_info("%u invalid input %p %p %p\n", __LINE__, wiphy, adapter, wowlan);
+		return -EINVAL;
+	}
+
+	esp_dbg("wow any=%d disconnect=%d magic_pkt=%d four_way_handshake=%d eap_identity_req=%d",
+		    wowlan->any, wowlan->disconnect, wowlan->magic_pkt,
+		    wowlan->four_way_handshake, wowlan->eap_identity_req);
+
+	priv = adapter->priv[0];
+	if (!priv) {
+		esp_err("Empty priv\n");
+		return 0;
+	}
+
+	return cmd_set_wow_config(priv, wowlan);
 }
 
 static int esp_cfg80211_resume(struct wiphy *wiphy)
 {
-	/*esp_dbg("\n");*/
-	return 0;
+	struct esp_adapter *adapter = esp_get_adapter();
+	struct esp_wifi_device *priv = NULL;
+	struct cfg80211_wowlan wowlan = {0};
+
+	esp_dbg("\n");
+	if (!wiphy || !adapter) {
+		esp_info("%u invalid input %p %p\n", __LINE__, wiphy, adapter);
+		return -EINVAL;
+	}
+
+	priv = adapter->priv[0];
+	if (!priv) {
+		esp_err("Empty priv\n");
+		return 0;
+	}
+
+	return cmd_set_wow_config(priv, &wowlan);
 }
 
 static void esp_cfg80211_set_wakeup(struct wiphy *wiphy,

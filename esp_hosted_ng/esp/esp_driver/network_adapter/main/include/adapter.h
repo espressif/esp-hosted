@@ -124,6 +124,7 @@ enum COMMAND_CODE {
 	CMD_SET_REG_DOMAIN,
 	CMD_RAW_TP_ESP_TO_HOST,
 	CMD_RAW_TP_HOST_TO_ESP,
+	CMD_SET_WOW_CONFIG,
 	CMD_MAX,
 };
 
@@ -232,6 +233,15 @@ struct wifi_sec_key {
 struct cmd_set_get_val {
 	struct     command_header header;
 	uint32_t   value;
+} __packed;
+
+struct cmd_wow_config {
+	struct command_header header;
+	uint8_t any;
+	uint8_t disconnect;
+	uint8_t magic_pkt;
+	uint8_t four_way_handshake;
+	uint8_t eap_identity_req;
 } __packed;
 
 struct cmd_raw_tp {
