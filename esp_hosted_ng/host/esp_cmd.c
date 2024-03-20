@@ -246,6 +246,7 @@ static int wait_and_decode_cmd_resp(struct esp_wifi_device *priv,
 	case CMD_SET_REG_DOMAIN:
 	case CMD_RAW_TP_ESP_TO_HOST:
 	case CMD_RAW_TP_HOST_TO_ESP:
+	case CMD_SET_WOW_CONFIG:
 		/* intentional fallthrough */
 		if (ret == 0)
 			ret = decode_common_resp(cmd_node);
@@ -1538,6 +1539,43 @@ int esp_commands_setup(struct esp_adapter *adapter)
 	RET_ON_FAIL(alloc_esp_cmd_pool(adapter));
 
 	set_bit(ESP_CMD_INIT_DONE, &adapter->state_flags);
+	return 0;
+}
+
+int cmd_set_wow_config(struct esp_wifi_device *priv, struct cfg80211_wowlan *wowlan)
+{
+	u16 cmd_len;
+	struct command_node *cmd_node = NULL;
+	struct cmd_wow_config *config;;
+
+	if (!priv || !priv->adapter) {
+		esp_err("Invalid argument\n");
+		return -EINVAL;
+	}
+
+	cmd_len = sizeof(struct cmd_wow_config);
+
+	cmd_node = prepare_command_request(priv->adapter, CMD_SET_WOW_CONFIG, cmd_len);
+
+	if (!cmd_node) {
+		esp_err("Failed to get command node\n");
+		return -ENOMEM;
+	}
+
+	config = (struct cmd_wow_config *) (cmd_node->cmd_skb->data +
+				sizeof(struct esp_payload_header));
+
+	config->any = wowlan->any;
+	config->disconnect = wowlan->disconnect;
+	config->magic_pkt = wowlan->magic_pkt;
+	config->four_way_handshake = wowlan->four_way_handshake;
+	config->eap_identity_req = wowlan->eap_identity_req;
+
+	queue_cmd_node(priv->adapter, cmd_node, ESP_CMD_DFLT_PRIO);
+	queue_work(priv->adapter->cmd_wq, &priv->adapter->cmd_work);
+
+	RET_ON_FAIL(wait_and_decode_cmd_resp(priv, cmd_node));
+
 	return 0;
 }
 

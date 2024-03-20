@@ -24,6 +24,7 @@
 
 #define RELEASE_VERSION "1.0.3"
 #define HOST_GPIO_PIN_INVALID -1
+#define CONFIG_ALLOW_MULTICAST_WAKEUP 1
 static int resetpin = HOST_GPIO_PIN_INVALID;
 static u32 clockspeed = 0;
 extern u8 ap_bssid[MAC_ADDR_LEN];
@@ -873,6 +874,7 @@ static void update_mac_filter(struct work_struct *work)
 		return;
 	}
 
+#if CONFIG_ALLOW_MULTICAST_WAKEUP
 	netdev_for_each_mc_addr(mac_addr, ndev) {
 		if (count < MAX_MULTICAST_ADDR_COUNT) {
 			esp_verbose("%d: "MACSTR"\n", count+1, MAC2STR(mac_addr->addr));
@@ -885,6 +887,9 @@ static void update_mac_filter(struct work_struct *work)
 
 	esp_verbose("Setting Multicast list\n");
 	cmd_set_mcast_mac_list(mcast_list.priv, &mcast_list);
+#else
+  esp_info("Not setting FW multicast addresses\n");
+#endif
 }
 
 static void esp_events_work(struct work_struct *work)
