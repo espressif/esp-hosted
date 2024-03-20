@@ -173,10 +173,10 @@ uint8_t is_wakeup_needed(interface_buffer_handle_t *buf_handle)
 
 			if (memcmp(target_ip, &ip_address, 4) == 0) {
 				/* Wake up host for self IP ARP request */
-				ESP_LOGD(TAG, "IP matched\n");
+				ESP_LOGD(TAG, "IP matched, Wakup host");
 				return 1;
 			} else {
-				ESP_LOGD(TAG, "IP not matched\n");
+				ESP_LOGD(TAG, "IP not matched, noop");
 				return 0;
 			}
 		}
@@ -189,20 +189,21 @@ uint8_t is_wakeup_needed(interface_buffer_handle_t *buf_handle)
 
 		if (address_lookup(pos)) {
 			/* Multicast group is subscribed. Wake up host */
-			ESP_LOGD(TAG, "Address matched");
+			ESP_LOGD(TAG, "Multicast addr matched, wakeup host");
 			return 1;
 		}
 
 		/* Host did not subscribed this group. Do not wake host */
-		ESP_LOGD(TAG, "Address did not match");
+		ESP_LOGD(TAG, "Multicast addr did not match. noop");
 		return 0;
 	}
 
 	if (memcmp(sta_mac, pos, MAC_ADDR_LEN) == 0) {
-		ESP_LOGD(TAG, "unicast frame wakeup");
+		ESP_LOGD(TAG, "Unicast addr matched, wakup host");
 		return 1;
 	}
 
+	ESP_LOGD(TAG, "Default : noop");
 	return 0;
 }
 #endif
@@ -357,6 +358,7 @@ void send_task(void* pvParameters)
 #if CONFIG_ESP_SDIO_HOST_INTERFACE
 				if (power_save_on && wow.magic_pkt) {
 					if (is_wakeup_needed(&buf_handle)) {
+						ESP_LOGI(TAG, "Wakeup on Magic packet");
 						wake_host();
 						buf_handle.flag = 0xFF;
 					}

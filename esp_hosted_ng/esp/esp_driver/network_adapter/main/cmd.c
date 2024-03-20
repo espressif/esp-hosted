@@ -163,9 +163,12 @@ int station_rx_eapol(uint8_t *src_addr, uint8_t *buf, uint32_t len)
 
 #if CONFIG_ESP_SDIO_HOST_INTERFACE
 	if (power_save_on && wow.four_way_handshake) {
+		ESP_LOGI(TAG, "Wakeup on FourWayHandshake");
 		wake_host();
+		sleep(1);
 	}
 #endif
+
 	/* Check destination address against self address */
 	if (memcmp(ap_bssid, src_addr, MAC_ADDR_LEN)) {
 		/* Check for multicast or broadcast address */
@@ -468,7 +471,10 @@ static void wifi_event_handler(void* arg, esp_event_base_t event_base,
 		}
 #if CONFIG_ESP_SDIO_HOST_INTERFACE
 		if (power_save_on && wow.disconnect) {
+		/* Wake-up host always on disconnect */
+			ESP_LOGI(TAG, "Wakeup on disconnect");
 			wake_host();
+			sleep(1);
 		}
 #endif
 		handle_sta_disconnected_event((wifi_event_sta_disconnected_t*) event_data);
@@ -1599,9 +1605,9 @@ int process_get_mac(uint8_t if_type)
 		cmd_status = CMD_RESPONSE_FAIL;
 	}
 	if (if_type == ESP_STA_IF) {
-		memcpy(sta_mac, mac->mac_addr, MAC_ADDR_LEN);
+		memcpy(sta_mac, mac, MAC_ADDR_LEN);
 	} else {
-		memcpy(ap_mac, mac->mac_addr, MAC_ADDR_LEN);
+		memcpy(ap_mac, mac, MAC_ADDR_LEN);
 	}
 
 
