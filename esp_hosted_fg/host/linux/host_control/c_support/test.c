@@ -128,7 +128,10 @@ static int init_app(void)
 
 static void cleanup_app(void)
 {
-	test_disable_heartbeat();
+	// TODO properly disable heartbeat
+	test_disable_heartbeat_async();
+	// wait for async to complete
+	sleep(1);
 	unregister_event_callbacks();
 
 	control_path_platform_deinit();

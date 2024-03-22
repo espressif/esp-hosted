@@ -40,7 +40,7 @@ struct serial_drv_handle_t {
 	int file_desc;
 };
 
-static struct serial_drv_handle_t* serial_drv_handle;
+static struct serial_drv_handle_t* serial_drv_handle = NULL;
 
 extern int errno;
 
@@ -87,21 +87,39 @@ static int local_pthread_cancel(pthread_t thread) {
 }
 #endif
 
+static int set_read_access_nonblocking(struct serial_drv_handle_t* handle, bool enable)
+{
+	int flags;
+
+	// get the current file access mode
+	flags = fcntl(handle->file_desc, F_GETFL);
+	if (flags < 0) {
+		printf("%s: Error: fcntl(F_GETFL) failed\n");
+		return FAILURE;
+	}
+
+	if (enable) {
+		flags |= O_NONBLOCK;
+	} else {
+		flags &= ~O_NONBLOCK;
+	}
+	// set the new file access mode
+	fcntl(handle->file_desc, F_SETFL, flags);
+
+	return SUCCESS;
+}
+
 int control_path_platform_init(void)
 {
-	/* 1. Open serial file
+	/* 1. Switch to non-blocking
 	 * 2. Flush all data available for reading
-	 * 3. Close serial file
+	 * 3. Switch back to blocking
 	 **/
 	int ret = 0, count = 0;
 	uint8_t *buf = NULL;
-	struct serial_drv_handle_t init_serial_handle = {0};
-	const char* transport = SERIAL_IF_FILE;
 
-	/* open file */
-	init_serial_handle.file_desc = open(transport,O_NONBLOCK|O_RDWR);
-	if (init_serial_handle.file_desc == -1) {
-		printf("Failed to open driver interface \n");
+	if (!serial_drv_handle) {
+		printf("%s: Error: serial_drv_handle not initialised\n");
 		return FAILURE;
 	}
 
@@ -111,9 +129,15 @@ int control_path_platform_init(void)
 		goto close1;
 	}
 
+	/* set to non-blocking to flush stale messages */
+	if (SUCCESS != set_read_access_nonblocking(serial_drv_handle, true)) {
+		printf("%s: failed to set_read_access to nonblocking\n");
+		goto close;
+	}
+
 	do {
 		/* dummy read, discard data */
-		count = read(init_serial_handle.file_desc,
+		count = read(serial_drv_handle->file_desc,
 				(buf), (DUMMY_READ_BUF_LEN));
 		if (count < 0) {
 			if (-errno != -EAGAIN) {
@@ -125,23 +149,21 @@ int control_path_platform_init(void)
 	} while (count>0);
 
 	mem_free(buf);
-	/* close file */
-	ret = close(init_serial_handle.file_desc);
-	if (ret < 0) {
-		perror("close:");
-		return FAILURE;
+
+	/* set to blocking: expected behaviour of read() in the rx thread */
+	if (SUCCESS != set_read_access_nonblocking(serial_drv_handle, false)) {
+		printf("%s: failed to set_read_access back to blocking\n");
+		goto close1;
 	}
+
 	return SUCCESS;
 
 close:
 	mem_free(buf);
 close1:
-	ret = close(init_serial_handle.file_desc);
-	if (ret < 0) {
-		perror("close: Failed to close interface for control path platform init:");
-	}
+	/* switch back to blocking mode before failure exit */
+	set_read_access_nonblocking(serial_drv_handle, false);
 	return FAILURE;
-
 }
 
 int control_path_platform_deinit(void)
@@ -484,6 +506,20 @@ struct serial_drv_handle_t* serial_drv_open(const char *transport)
 
 	serial_drv_handle->file_desc = open(transport, O_RDWR);
 	if (serial_drv_handle->file_desc == -1) {
+		int errsv = errno;
+		printf("%s failed: ", __func__);
+		switch (errsv) {
+			case EBUSY: {
+				printf("it is busy\n");
+				break;
+			} case ENOENT: {
+				printf("driver not loaded\n");
+				break;
+			} default: {
+				printf("errno %d\n", errsv);
+				break;
+			}
+		}
 		mem_free(serial_drv_handle);
 		return NULL;
 	}
