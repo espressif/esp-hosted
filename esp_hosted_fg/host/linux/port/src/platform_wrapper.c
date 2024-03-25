@@ -94,7 +94,7 @@ static int set_read_access_nonblocking(struct serial_drv_handle_t* handle, bool 
 	// get the current file access mode
 	flags = fcntl(handle->file_desc, F_GETFL);
 	if (flags < 0) {
-		printf("%s: Error: fcntl(F_GETFL) failed\n");
+		printf("%s: Error: fcntl(F_GETFL) failed\n", __func__);
 		return FAILURE;
 	}
 
@@ -115,11 +115,11 @@ int control_path_platform_init(void)
 	 * 2. Flush all data available for reading
 	 * 3. Switch back to blocking
 	 **/
-	int ret = 0, count = 0;
+	int count = 0;
 	uint8_t *buf = NULL;
 
 	if (!serial_drv_handle) {
-		printf("%s: Error: serial_drv_handle not initialised\n");
+		printf("%s: Error: serial_drv_handle not initialised\n", __func__);
 		return FAILURE;
 	}
 
@@ -131,7 +131,7 @@ int control_path_platform_init(void)
 
 	/* set to non-blocking to flush stale messages */
 	if (SUCCESS != set_read_access_nonblocking(serial_drv_handle, true)) {
-		printf("%s: failed to set_read_access to nonblocking\n");
+		printf("%s: failed to set_read_access to nonblocking\n", __func__);
 		goto close;
 	}
 
@@ -152,7 +152,7 @@ int control_path_platform_init(void)
 
 	/* set to blocking: expected behaviour of read() in the rx thread */
 	if (SUCCESS != set_read_access_nonblocking(serial_drv_handle, false)) {
-		printf("%s: failed to set_read_access back to blocking\n");
+		printf("%s: failed to set_read_access back to blocking\n", __func__);
 		goto close1;
 	}
 
