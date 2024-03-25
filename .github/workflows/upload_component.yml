@@ -16,5 +16,5 @@ jobs:
         uses: espressif/upload-components-ci-action@v1
         with:
           name: "esp_hosted"
-          namespace: "mantriyogesh"
+          namespace: "espressif"
           api_token: ${{ secrets.IDF_COMPONENT_API_TOKEN }}
