@@ -34,6 +34,15 @@ else()
 	list(APPEND COMPONENT_SRCS "${common_dir}/protobuf-c/protobuf-c/protobuf-c.c" "${common_dir}/proto/esp_hosted_rpc.pb-c.c" )
 	list(APPEND COMPONENT_ADD_INCLUDEDIRS "${common_dir}/include" "${common_dir}/protobuf-c" "${common_dir}/proto" )
 
+	# bt (NimBLE)
+	### TODO config for HCI over UART
+	list(APPEND COMPONENT_ADD_INCLUDEDIRS "${host_dir}/drivers/bt")
+	if(CONFIG_ESP_HCI_VHCI)
+		list(APPEND COMPONENT_SRCS "${host_dir}/drivers/bt/vhci_drv.c")
+	else()
+		list(APPEND COMPONENT_SRCS "${host_dir}/drivers/bt/hci_stub_drv.c")
+	endif()
+
 	# transport files
 	if(CONFIG_ESP_SDIO_HOST_INTERFACE)
 		list(APPEND COMPONENT_SRCS "${host_dir}/drivers/transport/sdio/sdio_drv.c" "${host_dir}/port/sdio_wrapper.c")
@@ -43,7 +52,7 @@ else()
 endif()
 
 idf_component_register(SRCS ${COMPONENT_SRCS}
-	REQUIRES soc esp_event esp_netif esp_timer driver esp_wifi esp_wifi_remote sdmmc
+	REQUIRES soc esp_event esp_netif esp_timer driver esp_wifi esp_wifi_remote sdmmc bt
 	EXCLUDE_SRCS ${EXCLUDE_COMPONENT_SRCS}
 	INCLUDE_DIRS ${COMPONENT_ADD_INCLUDEDIRS})
 

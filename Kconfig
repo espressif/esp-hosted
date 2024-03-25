@@ -503,6 +503,45 @@ ESP32P4_SDIO_CLK_FREQ_KHZ_RANGE_MAX := 80000
 			default n if SDIO_RESET_ACTIVE_HIGH || SPI_RESET_ACTIVE_HIGH
 			default y if SDIO_RESET_ACTIVE_LOW || SPI_RESET_ACTIVE_LOW
 
+	menu "Bluetooth Support"
+
+		comment "Following options must be set before this option can be enabled"
+			depends on !BT_ENABLED || !BT_NIMBLE_ENABLED || BT_CONTROLLER_ENABLED || BT_NIMBLE_TRANSPORT_UART
+
+		comment "'Component config->Bluetooth' must be enabled"
+			depends on !BT_ENABLED
+
+		comment "'Component config->Bluetooth Host' must be set to 'NimBLE - BLE only'"
+			depends on !BT_NIMBLE_ENABLED
+
+		comment "'Component config->Bluetooth->Controller' must be disabled"
+			depends on !BT_ENABLED || BT_CONTROLLER_ENABLED
+
+		comment "'Component config->Bluetooth->NimBLE Options->Host-controller Transport->Uart Transport' must be disabled"
+			depends on !BT_ENABLED || !BT_NIMBLE_ENABLED || BT_NIMBLE_TRANSPORT_UART
+
+		if BT_ENABLED && BT_NIMBLE_ENABLED && !BT_CONTROLLER_ENABLED && !BT_NIMBLE_TRANSPORT_UART
+			config ESP_ENABLE_BT
+				bool "Enable Hosted Bluetooth support"
+				default n
+				help
+					Enable Bluetooth Support via Hosted
+
+			choice ESP_HCI_Type
+				bool "BT HCI Type"
+				default ESP_HCI_VHCI
+				depends on ESP_ENABLE_BT
+				help
+					Selects the HCI to use
+
+				config ESP_HCI_VHCI
+					bool "VHCI"
+					help
+						Bluetooth data is sent through the selected transport layer (SPI/SDIO)
+			endchoice
+		endif
+	endmenu
+
 	config ESP_USE_MEMPOOL
 		bool "Cache allocated memory like mempool - helps to reduce malloc calls"
 		default y
