@@ -47,7 +47,21 @@ menu "Example Configuration"
         int "GPIO pin for data ready interrupt"
         default 4
         help
-               GPIO pin for indicating host that SPI slave has data to be read by host
+            GPIO pin for indicating host that SPI slave has data to be read by host
+
+    config ESP_SPI_TX_Q_SIZE
+        int "ESP to Host SPI queue size"
+        default 10 if IDF_TARGET_ESP32
+        default 20
+        help
+            Very small tx queue will lower ESP == SPI ==> Host data rate
+
+    config ESP_SPI_RX_Q_SIZE
+        int "Host to ESP SPI queue size"
+        default 10 if IDF_TARGET_ESP32
+        default 20
+        help
+            Very small RX queue will lower ESP <== SPI == Host data rate
 
     config ESP_SPI_CHECKSUM
         bool "SPI checksum ENABLE/DISABLE"

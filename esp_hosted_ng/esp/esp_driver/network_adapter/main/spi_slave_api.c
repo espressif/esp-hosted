@@ -128,13 +128,9 @@ static const char TAG[] = "FW_SPI";
  */
 
 #define SPI_QUEUE_SIZE			3
-#ifdef CONFIG_IDF_TARGET_ESP32
-	#define SPI_RX_QUEUE_SIZE	10
-	#define SPI_TX_QUEUE_SIZE	10
-#else
-	#define SPI_RX_QUEUE_SIZE	20
-	#define SPI_TX_QUEUE_SIZE	20
-#endif
+
+#define SPI_TX_QUEUE_SIZE		CONFIG_ESP_SPI_TX_Q_SIZE
+#define SPI_RX_QUEUE_SIZE		CONFIG_ESP_SPI_RX_Q_SIZE
 
 static interface_context_t context;
 static interface_handle_t if_handle_g;
