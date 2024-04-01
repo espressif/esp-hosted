@@ -1210,7 +1210,7 @@ int cmd_add_key(struct esp_wifi_device *priv, u8 key_index, bool pairwise,
 #endif
 
        /* Supplicant swaps tx/rx Mic keys whereas esp needs it normal format */
-       if (key->algo == WIFI_WPA_ALG_TKIP && !key->index) {
+       if (key->algo == WIFI_WPA_ALG_TKIP) {
                u8 buf[8];
                memcpy(buf, &key->data[16], 8);
                memcpy(&key->data[16], &key->data[24], 8);
