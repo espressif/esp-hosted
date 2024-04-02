@@ -40,7 +40,6 @@ struct esp_payload_header {
 } __attribute__((packed));
 
 typedef enum {
-	ESP_INVALID_IF,
 	ESP_STA_IF,
 	ESP_AP_IF,
 	ESP_SERIAL_IF,
