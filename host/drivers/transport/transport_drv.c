@@ -214,7 +214,8 @@ static esp_err_t transport_drv_sta_tx(void *h, void *buffer, size_t len)
 		pkt_stats.sta_tx_in_drop++;
 	#endif
 		errno = -ENOBUFS;
-		return ESP_ERR_NO_BUFFS;
+		//return ESP_ERR_NO_BUFFS;
+		return ESP_ERR_ESP_NETIF_TX_FAILED;
 	}
 
 	assert(h && h==chan_arr[ESP_STA_IF]->api_chan);

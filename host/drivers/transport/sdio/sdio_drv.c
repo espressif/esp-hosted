@@ -219,7 +219,6 @@ static int sdio_get_len_from_slave(uint32_t *rx_size, bool is_lock_needed)
 
 static int sdio_is_write_buffer_available(uint32_t buf_needed)
 {
-	int ret = 0;
 	static uint32_t buf_available = 0;
 	uint8_t retry = MAX_WRITE_BUF_RETRIES;
 
@@ -227,18 +226,16 @@ static int sdio_is_write_buffer_available(uint32_t buf_needed)
 	  then only read for available buffer number from slave*/
 	if (buf_available < buf_needed) {
 		while (retry) {
-			ret = sdio_get_tx_buffer_num(&buf_available, ACQUIRE_LOCK);
+			sdio_get_tx_buffer_num(&buf_available, ACQUIRE_LOCK);
 
-			if (ret) {
-				ESP_LOGI(TAG, "Buffer unavailable");
-				return BUFFER_UNAVAILABLE;
-			}
 			if (buf_available < buf_needed) {
+
 				ESP_LOGV(TAG, "Retry get write buffers %d", retry);
-				/* Release SDIO and retry after delay*/
 				retry--;
-				if (retry > MAX_WRITE_BUF_RETRIES/2)
+
+				if (retry < MAX_WRITE_BUF_RETRIES/2)
 					g_h.funcs->_h_msleep(1);
+
 				continue;
 			}
 			break;
@@ -408,6 +405,9 @@ static int is_valid_sdio_rx_packet(uint8_t *rxbuff_a, uint16_t *len_a, uint16_t 
 {
 	struct esp_payload_header * h = (struct esp_payload_header *)rxbuff_a;
 	uint16_t len = 0, offset = 0;
+#if CONFIG_ESP_SDIO_CHECKSUM
+	uint16_t rx_checksum = 0, checksum = 0;
+#endif
 
 	if (!h || !len_a || !offset_a)
 		return 0;
@@ -433,7 +433,7 @@ static int is_valid_sdio_rx_packet(uint8_t *rxbuff_a, uint16_t *len_a, uint16_t 
 #if CONFIG_ESP_SDIO_CHECKSUM
 	rx_checksum = le16toh(h->checksum);
 	h->checksum = 0;
-	checksum = compute_checksum(h, len + offset);
+	checksum = compute_checksum((uint8_t*)h, len + offset);
 
 	if (checksum != rx_checksum) {
 		ESP_LOGE(TAG, "SDIO RX rx_chksum[%u] != checksum[%u]. Drop.",
@@ -599,9 +599,6 @@ static void sdio_read_task(void const* pvParameters)
 {
 	esp_err_t res;
 	uint8_t *rxbuff = NULL;
-#if CONFIG_ESP_SDIO_CHECKSUM
-	uint16_t rx_checksum = 0, checksum = 0;
-#endif
 	int ret;
 	uint32_t len_from_slave;
 
@@ -741,6 +738,7 @@ static void sdio_process_rx_task(void const* pvParameters)
 {
 	interface_buffer_handle_t buf_handle_l = {0};
 	interface_buffer_handle_t *buf_handle = NULL;
+	int ret = 0;
 
 	struct esp_priv_event *event = NULL;
 
@@ -781,9 +779,11 @@ static void sdio_process_rx_task(void const* pvParameters)
 				assert(buf_handle->payload);
 				memcpy(copy_payload, buf_handle->payload, buf_handle->payload_len);
 
-				assert(chan_arr[buf_handle->if_type]->rx);
-				chan_arr[buf_handle->if_type]->rx(chan_arr[buf_handle->if_type]->api_chan,
+				ret = chan_arr[buf_handle->if_type]->rx(chan_arr[buf_handle->if_type]->api_chan,
 						copy_payload, copy_payload, buf_handle->payload_len);
+				if (unlikely(ret))
+					HOSTED_FREE(copy_payload);
+
 				H_FREE_PTR_WITH_FUNC(buf_handle->free_buf_handle, buf_handle->priv_buffer_handle);
 			}
 #else

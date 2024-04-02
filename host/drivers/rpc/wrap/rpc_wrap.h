@@ -45,8 +45,8 @@ esp_err_t rpc_wifi_connect(void);
 esp_err_t rpc_wifi_disconnect(void);
 esp_err_t rpc_wifi_set_config(wifi_interface_t interface, wifi_config_t *conf);
 esp_err_t rpc_wifi_get_config(wifi_interface_t interface, wifi_config_t *conf);
-esp_err_t rpc_wifi_get_mac(wifi_interface_t mode, uint8_t *out_mac);
-esp_err_t rpc_wifi_set_mac(wifi_interface_t mode, const uint8_t *mac);
+esp_err_t rpc_wifi_get_mac(wifi_interface_t mode, uint8_t mac[6]);
+esp_err_t rpc_wifi_set_mac(wifi_interface_t mode, const uint8_t mac[6]);
 
 esp_err_t rpc_wifi_scan_start(const wifi_scan_config_t *config, bool block);
 esp_err_t rpc_wifi_scan_stop(void);

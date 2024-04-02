@@ -31,8 +31,6 @@
 #include "esp_log.h"
 
 DEFINE_LOG_TAG(rpc_wrap);
-uint8_t sta_connected = 0;
-uint8_t softap_started = 0;
 
 
 #define WIFI_VENDOR_IE_ELEMENT_ID                         0xDD
@@ -119,7 +117,6 @@ static int rpc_event_callback(ctrl_cmd_t * app_event)
 
 		case RPC_ID__Event_ESPInit: {
 			ESP_LOGI(TAG, "Received Slave ESP Init");
-			/* TODO: slave silently rebooted, Host has to be rebooted in this case? */
 			break;
 		} case RPC_ID__Event_Heartbeat: {
 			ESP_LOGV(TAG, "%s App EVENT: Heartbeat event [%lu]",
@@ -151,7 +148,6 @@ static int rpc_event_callback(ctrl_cmd_t * app_event)
 			wifi_event_sta_connected_t *p_e = &app_event->u.e_wifi_sta_connected;
 			g_h.funcs->_h_event_wifi_post(WIFI_EVENT_STA_CONNECTED,
 				p_e, sizeof(wifi_event_sta_connected_t), HOSTED_BLOCK_MAX);
-			sta_connected = 1;
 			break;
 		} case RPC_ID__Event_StaDisconnected: {
 			ESP_LOGV(TAG, "%s App EVENT: Station mode: Disconnected",
@@ -159,7 +155,6 @@ static int rpc_event_callback(ctrl_cmd_t * app_event)
 			wifi_event_sta_disconnected_t *p_e = &app_event->u.e_wifi_sta_disconnected;
 			g_h.funcs->_h_event_wifi_post(WIFI_EVENT_STA_DISCONNECTED,
 				p_e, sizeof(wifi_event_sta_disconnected_t), HOSTED_BLOCK_MAX);
-			sta_connected = 0;
 			break;
 		} case RPC_ID__Event_WifiEventNoArgs: {
 			int wifi_event_id = app_event->u.e_wifi_simple.wifi_event_id;
@@ -176,13 +171,11 @@ static int rpc_event_callback(ctrl_cmd_t * app_event)
 				break;
 
 			case WIFI_EVENT_AP_START:
-                ESP_LOGI(TAG,"App Event: softap started");
-                softap_started = 1;
+				ESP_LOGI(TAG,"App Event: softap started");
 				break;
 
 			case WIFI_EVENT_AP_STOP:
-                ESP_LOGI(TAG,"App Event: softap stopped");
-                softap_started = 0;
+				ESP_LOGI(TAG,"App Event: softap stopped");
 				break;
 
 			default:
@@ -271,26 +264,6 @@ static int process_failed_responses(ctrl_cmd_t *app_msg)
 			/* intentional fallthrough */
 			ESP_LOGE(TAG, "OTA procedure failed");
 			break;
-#if 0
-		} case RPC_ID__Resp_ConnectAP: {
-			if (app_msg->resp_event_status == RPC_ERR_NO_AP_FOUND) {
-				ESP_LOGE(TAG, "SSID: not found/connectable");
-			} else if (app_msg->resp_event_status ==
-					RPC_ERR_INVALID_PASSWORD) {
-				ESP_LOGE(TAG, "Invalid password for SSID");
-			} else {
-				ESP_LOGE(TAG, "Failed to connect with AP");
-			}
-			break;
-		} case RPC_ID__Resp_StartSoftAP: {
-			ESP_LOGE(TAG, "Failed to start SoftAP");
-			break;
-		}
-		case RPC_ID__Resp_StopSoftAP:
-		case RPC_ID__Resp_GetSoftAPConfig: {
-			ESP_LOGE(TAG, "Possibly softap is not running/started");
-			break;
-#endif
 		} default: {
 			ESP_LOGE(TAG, "Failed Control Response");
 			break;
@@ -544,12 +517,9 @@ int rpc_set_wifi_mode_none(void)
 	return rpc_set_wifi_mode(WIFI_MODE_NULL);
 }
 
-int rpc_wifi_get_mac(wifi_interface_t mode, uint8_t *out_mac)
+int rpc_wifi_get_mac(wifi_interface_t mode, uint8_t out_mac[6])
 {
 	ctrl_cmd_t *resp = NULL;
-
-	if (!out_mac)
-		return ESP_ERR_INVALID_ARG;
 
 	/* implemented synchronous */
 	ctrl_cmd_t req = RPC_DEFAULT_REQ();
@@ -565,19 +535,16 @@ int rpc_wifi_get_mac(wifi_interface_t mode, uint8_t *out_mac)
 	return rpc_rsp_callback(resp);
 }
 
-int rpc_station_mode_get_mac(uint8_t *mac)
+int rpc_station_mode_get_mac(uint8_t mac[6])
 {
 	return rpc_wifi_get_mac(WIFI_MODE_STA, mac);
 }
 
-int rpc_wifi_set_mac(wifi_interface_t mode, const uint8_t *mac)
+int rpc_wifi_set_mac(wifi_interface_t mode, const uint8_t mac[6])
 {
 	/* implemented synchronous */
 	ctrl_cmd_t req = RPC_DEFAULT_REQ();
 	ctrl_cmd_t *resp = NULL;
-
-	if (!mac)
-		return ESP_ERR_INVALID_ARG;
 
 	req.u.wifi_mac.mode = mode;
 	g_h.funcs->_h_memcpy(req.u.wifi_mac.mac, mac, BSSID_BYTES_SIZE);
@@ -587,7 +554,7 @@ int rpc_wifi_set_mac(wifi_interface_t mode, const uint8_t *mac)
 }
 
 
-int rpc_softap_mode_get_mac_addr(uint8_t *mac)
+int rpc_softap_mode_get_mac_addr(uint8_t mac[6])
 {
 	return rpc_wifi_get_mac(WIFI_MODE_AP, mac);
 }

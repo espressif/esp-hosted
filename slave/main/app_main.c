@@ -49,6 +49,7 @@
 #include "stats.h"
 #include "esp_mac.h"
 #include "esp_timer.h"
+#include "mempool.h"
 
 static const char TAG[] = "NETWORK_ADAPTER";
 
@@ -68,10 +69,11 @@ static const char TAG[] = "NETWORK_ADAPTER";
     #define TO_HOST_QUEUE_SIZE           20
   #endif
 #else
-  #define TO_HOST_QUEUE_SIZE             100
+  #define TO_HOST_QUEUE_SIZE             20
 #endif
 
 #define ETH_DATA_LEN                     1500
+#define MAX_WIFI_STA_TX_RETRY            6
 
 volatile uint8_t datapath = 0;
 volatile uint8_t station_connected = 0;
@@ -83,8 +85,10 @@ interface_handle_t *if_handle = NULL;
 slave_config_t slv_cfg_g;
 slave_state_t  slv_state_g;
 
+#if !BYPASS_TX_PRIORITY_Q
 static QueueHandle_t meta_to_host_queue = NULL;
 static QueueHandle_t to_host_queue[MAX_PRIORITY_QUEUES] = {NULL};
+#endif
 
 
 static protocomm_t *pc_pserial;
@@ -205,12 +209,13 @@ esp_err_t wlan_sta_rx_callback(void *buffer, uint16_t len, void *eb)
 	buf_handle.wlan_buf_handle = eb;
 	buf_handle.free_buf_handle = esp_wifi_internal_free_rx_buffer;
 
+#if ESP_PKT_STATS
+	pkt_stats.sta_sh_in++;
+#endif
+
 	if (send_to_host_queue(&buf_handle, PRIO_Q_OTHERS))
 		goto DONE;
 
-#if ESP_PKT_STATS
-	pkt_stats.sta_tx_in++;
-#endif
 
 	return ESP_OK;
 
@@ -243,6 +248,7 @@ void process_tx_pkt(interface_buffer_handle_t *buf_handle)
 	}
 }
 
+#if !BYPASS_TX_PRIORITY_Q
 /* Send data to host */
 void send_task(void* pvParameters)
 {
@@ -261,6 +267,7 @@ void send_task(void* pvParameters)
 				process_tx_pkt(&buf_handle);
 	}
 }
+#endif
 
 void parse_protobuf_req(void)
 {
@@ -449,7 +456,7 @@ void process_rx_pkt(interface_buffer_handle_t *buf_handle)
 	uint8_t *payload = NULL;
 	uint16_t payload_len = 0;
 	int ret = 0;
-	int retry_wifi_tx = 3;
+	int retry_wifi_tx = MAX_WIFI_STA_TX_RETRY;
 
 	header = (struct esp_payload_header *) buf_handle->payload;
 	payload = buf_handle->payload + le16toh(header->offset);
@@ -461,8 +468,13 @@ void process_rx_pkt(interface_buffer_handle_t *buf_handle)
 		/* Forward data to wlan driver */
 		do {
 			ret = esp_wifi_internal_tx(ESP_IF_WIFI_STA, payload, payload_len);
-			if (ret)
+
+			/* Delay only if throttling is enabled */
+			if (ret &&
+			    slv_cfg_g.throttle_high_threshold &&
+			    (retry_wifi_tx<(MAX_WIFI_STA_TX_RETRY/2))) {
 				vTaskDelay(2);
+			}
 
 			retry_wifi_tx--;
 		} while (ret && retry_wifi_tx);
@@ -470,11 +482,11 @@ void process_rx_pkt(interface_buffer_handle_t *buf_handle)
 		ESP_HEXLOGV("STA_Put", payload, payload_len);
 		if (ESP_OK == ret) {
 #if ESP_PKT_STATS
-			pkt_stats.sta_rx_out++;
+			pkt_stats.hs_bus_sta_out++;
 #endif
 		} else {
 #if ESP_PKT_STATS
-			pkt_stats.sta_rx_out_fail++;
+			pkt_stats.hs_bus_sta_fail++;
 #endif
 		}
 	} else if (buf_handle->if_type == ESP_AP_IF && softap_started) {
@@ -873,6 +885,11 @@ void app_main()
 		return;
 	}
 
+
+	assert(xTaskCreate(recv_task , "recv_task" ,
+			CONFIG_ESP_DEFAULT_TASK_STACK_SIZE, NULL ,
+			CONFIG_ESP_DEFAULT_TASK_PRIO, NULL) == pdTRUE);
+#if !BYPASS_TX_PRIORITY_Q
 	meta_to_host_queue = xQueueCreate(TO_HOST_QUEUE_SIZE*3, sizeof(uint8_t));
 	assert(meta_to_host_queue);
 	for (prio_q_idx=0; prio_q_idx<MAX_PRIORITY_QUEUES; prio_q_idx++) {
@@ -880,13 +897,10 @@ void app_main()
 				sizeof(interface_buffer_handle_t));
 		assert(to_host_queue[prio_q_idx]);
 	}
-
-	assert(xTaskCreate(recv_task , "recv_task" ,
-			CONFIG_ESP_DEFAULT_TASK_STACK_SIZE, NULL ,
-			CONFIG_ESP_DEFAULT_TASK_PRIO, NULL) == pdTRUE);
 	assert(xTaskCreate(send_task , "send_task" ,
 			CONFIG_ESP_DEFAULT_TASK_STACK_SIZE, NULL ,
 			CONFIG_ESP_DEFAULT_TASK_PRIO, NULL) == pdTRUE);
+#endif
 	create_debugging_tasks();
 
 	ESP_ERROR_CHECK(esp_event_loop_create_default());
@@ -900,4 +914,10 @@ void app_main()
 	ESP_LOGI(TAG,"Initial set up done");
 
 	send_event_to_host(RPC_ID__Event_ESPInit);
+
+	while (1) {
+		MEM_DUMP("mem_dump");
+		sleep(2);
+	}
+
 }
