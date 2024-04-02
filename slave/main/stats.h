@@ -106,11 +106,11 @@ void debug_update_raw_tp_rx_count(uint16_t len);
 
 #if ESP_PKT_STATS
 struct pkt_stats_t {
-	uint32_t sta_tx_in;
-	uint32_t sta_tx_out;
-	uint32_t sta_rx_in;
-	uint32_t sta_rx_out;
-	uint32_t sta_rx_out_fail;
+	uint32_t sta_sh_in;
+	uint32_t sta_sh_out;
+	uint32_t hs_bus_sta_in;
+	uint32_t hs_bus_sta_out;
+	uint32_t hs_bus_sta_fail;
 	uint32_t serial_rx;
 	uint32_t serial_tx_total;
 	uint32_t serial_tx_evt;
