@@ -199,6 +199,7 @@ uint8_t is_wakeup_needed(interface_buffer_handle_t *buf_handle)
 	}
 
 	if (memcmp(sta_mac, pos, MAC_ADDR_LEN) == 0) {
+		ESP_LOG_BUFFER_HEXDUMP("Frame", pos, 32, ESP_LOG_DEBUG);
 		ESP_LOGD(TAG, "Unicast addr matched, wakup host");
 		return 1;
 	}
