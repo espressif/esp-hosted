@@ -140,7 +140,7 @@ int transport_pserial_open(void)
 		return FAILURE;
 	}
 
-	ret = control_path_platform_init();
+	ret = control_path_platform_init(serial_handle);
 	if (ret != SUCCESS) {
 		printf("Platform init failed\n");
 		transport_pserial_close();

@@ -113,12 +113,6 @@ static int init_app(void)
 		return FAILURE;
 	}
 
-	if (control_path_platform_init()) {
-		printf("Failed to read serial driver file\n");
-		deinit_hosted_control_lib();
-		return FAILURE;
-	}
-
 	register_event_callbacks();
 
 	test_config_heartbeat();
