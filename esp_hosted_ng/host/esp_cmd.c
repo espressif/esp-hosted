@@ -132,12 +132,10 @@ static int decode_tx_power(struct esp_wifi_device *priv,
 		ret = -1;
 	}
 
-#if 0  //TODO firmware is not returning correct tx power value, remove this once we update IDF version
 	if (priv)
 		priv->tx_pwr = header->value;
 	else
 		esp_err("priv not updated\n");
-#endif
 
 	return ret;
 }
