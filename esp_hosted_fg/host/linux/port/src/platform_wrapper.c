@@ -40,8 +40,6 @@ struct serial_drv_handle_t {
 	int file_desc;
 };
 
-static struct serial_drv_handle_t* serial_drv_handle = NULL;
-
 extern int errno;
 
 #if defined __ANDROID__
@@ -109,7 +107,7 @@ static int set_read_access_nonblocking(struct serial_drv_handle_t* handle, bool 
 	return SUCCESS;
 }
 
-int control_path_platform_init(void)
+int control_path_platform_init(struct serial_drv_handle_t* serial_drv_handle)
 {
 	/* 1. Switch to non-blocking
 	 * 2. Flush all data available for reading
@@ -492,12 +490,7 @@ struct serial_drv_handle_t* serial_drv_open(const char *transport)
 		return NULL;
 	}
 
-	if(serial_drv_handle) {
-		//printf("return orig hndl\n");
-		return serial_drv_handle;
-	}
-
-	serial_drv_handle = (struct serial_drv_handle_t *)
+	struct serial_drv_handle_t * serial_drv_handle = (struct serial_drv_handle_t *)
 		hosted_calloc(1, sizeof(struct serial_drv_handle_t));
 	if (!serial_drv_handle) {
 		printf("%s, Failed to allocate memory \n",__func__);

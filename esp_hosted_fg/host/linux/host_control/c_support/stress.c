@@ -44,7 +44,7 @@ static void inline usage(char *argv[])
 int main(int argc, char *argv[])
 {
 	/* Below APIs could be used by demo application */
-	int ret = 0, stress_test_count = 0;
+	int stress_test_count = 0;
 	int str_args_start = 2;
 
 	if(getuid()) {
@@ -79,12 +79,6 @@ int main(int argc, char *argv[])
 			DEFAULT_ITERATIONS);
 		stress_test_count = DEFAULT_ITERATIONS;
 		str_args_start = 1;
-	}
-
-	ret = control_path_platform_init();
-	if (ret != SUCCESS) {
-		printf("Failed to read serial driver file\n");
-		return FAILURE;
 	}
 
 	register_event_callbacks();

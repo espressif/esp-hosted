@@ -790,25 +790,19 @@ static void ctrl_rx_thread(void const *arg)
 		return;
 	}
 
-	/* 2. If serial interface is not available, exit */
-	if (!serial_drv_open(SERIAL_IF_FILE)) {
-		printf("Exiting thread, handle invalid\n");
-		return;
-	}
-
-	/* 3. This queue should already be created
+	/* 2. This queue should already be created
 	 * if NULL, exit here */
 	if (!ctrl_msg_Q) {
 		printf("Ctrl msg Q is not created\n");
 		return;
 	}
 
-	/* 4. Infinite loop to process incoming msg on serial interface */
+	/* 3. Infinite loop to process incoming msg on serial interface */
 	while (1) {
 		uint8_t *buf = NULL;
 		CtrlMsg *resp = NULL;
 
-		/* 4.1 Block on read of protobuf encoded msg */
+		/* 3.1 Block on read of protobuf encoded msg */
 		if (is_ctrl_lib_state(CTRL_LIB_STATE_INACTIVE)) {
 			sleep(1);
 			continue;
@@ -820,19 +814,19 @@ static void ctrl_rx_thread(void const *arg)
 			goto free_bufs;
 		}
 
-		/* 4.2 Decode protobuf */
+		/* 3.2 Decode protobuf */
 		resp = ctrl_msg__unpack(NULL, buf_len, buf);
 		if (!resp) {
 			goto free_bufs;
 		}
-		/* 4.3 Free the read buffer */
+		/* 3.3 Free the read buffer */
 		mem_free(buf);
 
-		/* 4.4 Send for further processing as event or response */
+		/* 3.4 Send for further processing as event or response */
 		process_ctrl_rx_msg(resp, ctrl_rx_func);
 		continue;
 
-		/* 5. cleanup */
+		/* 4. cleanup */
 free_bufs:
 		mem_free(buf);
 		if (resp) {
