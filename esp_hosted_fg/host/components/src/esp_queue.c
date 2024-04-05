@@ -99,6 +99,11 @@ void esp_queue_destroy(esp_queue_t** q)
 		temp = (*q)->front;
 		(*q)->front = (*q)->front->next;
 
+		if (temp->data) {
+			free(temp->data);
+			temp->data = NULL;
+		}
+
 		free(temp);
 		temp = NULL;
 	}
