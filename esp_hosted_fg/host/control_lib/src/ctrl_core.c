@@ -10,7 +10,6 @@
 #include "esp_queue.h"
 #include <unistd.h>
 
-
 #ifdef MCU_SYS
 #include "common.h"
 #define command_log(...)             printf(__VA_ARGS__); printf("\r");
@@ -102,6 +101,14 @@ static int call_event_callback(ctrl_cmd_t *app_event);
 static int is_async_resp_callback_registered_by_resp_msg_id(int resp_msg_id);
 static int call_async_resp_callback(ctrl_cmd_t *app_resp);
 
+/* uid to link between requests and responses
+ * uids are incrementing values from 1 onwards. */
+static int32_t uid = 0;
+
+/* expected uid in response
+ * -1 means not a valid id
+ *  0 means slave fw was not updated to support UIDs */
+static int32_t expected_resp_uid = -1;
 
 /* Control response callbacks
  * These will be updated per control request received
@@ -290,6 +297,13 @@ static int ctrl_app_parse_resp(CtrlMsg *ctrl_msg, ctrl_cmd_t *app_resp)
 	/* 2. update basic fields */
 	app_resp->msg_type = CTRL_RESP;
 	app_resp->msg_id = ctrl_msg->msg_id;
+	app_resp->uid = ctrl_msg->uid;
+	/* if app_resp->uid is 0, slave fw is not updated to return uid
+	 * so we skip this check */
+	if (app_resp->uid && (expected_resp_uid != app_resp->uid)) {
+		// response uid mis-match: ignore this response
+		goto fail_parse_ctrl_msg2;
+	}
 
 	/* 3. parse CtrlMsg into ctrl_cmd_t */
 	switch (ctrl_msg->msg_id) {
@@ -595,18 +609,18 @@ static int ctrl_app_parse_resp(CtrlMsg *ctrl_msg, ctrl_cmd_t *app_resp)
 	ctrl_msg__free_unpacked(ctrl_msg, NULL);
 	ctrl_msg = NULL;
 	app_resp->resp_event_status = SUCCESS;
+	expected_resp_uid = -1; // reset expected response uid
 	return SUCCESS;
 
 	/* 5. Free up buffers in failure cases */
 fail_parse_ctrl_msg:
-	ctrl_msg__free_unpacked(ctrl_msg, NULL);
-	ctrl_msg = NULL;
 	app_resp->resp_event_status = FAILURE;
-	return FAILURE;
+	/* intended fall-through */
 
 fail_parse_ctrl_msg2:
 	ctrl_msg__free_unpacked(ctrl_msg, NULL);
 	ctrl_msg = NULL;
+	expected_resp_uid = -1; // reset expected response uid
 	return FAILURE;
 }
 
@@ -709,7 +723,12 @@ static int process_ctrl_rx_msg(CtrlMsg * proto_msg, ctrl_rx_ind_t ctrl_rx_func)
 
 		/* Decode protobuf buffer of response and
 		 * copy into app structures */
-		ctrl_app_parse_resp(proto_msg, app_resp);
+		if (ctrl_app_parse_resp(proto_msg, app_resp)) {
+			// failed to parse response into app_resp
+			if (app_resp)
+				mem_free(app_resp);
+			return FAILURE;
+		}
 
 		/* Is callback is available,
 		 * progress as async response */
@@ -1055,6 +1074,13 @@ ctrl_cmd_t * ctrl_wait_and_parse_sync_resp(ctrl_cmd_t *app_req)
 		if (rx_buf) {
 			mem_free(rx_buf);
 		}
+
+		/* Response timeout
+		 * Reset the response uid to an invalid value as we no longer
+		 * expect a response until the next request
+		 * If a response arrives after this, it will be flagged
+		 * as an invalid response */
+		expected_resp_uid = -1;
 	}
 	return rx_buf;
 }
@@ -1093,6 +1119,13 @@ static void ctrl_async_timeout_handler(void const *arg)
 			async_timer_handle = NULL;
 		}
 
+		/* Response timeout
+		 * Reset the response uid to an invalid value as we no longer
+		 * expect a response until the next request
+		 * If a response arrives after this, it will be flagged
+		 * as an invalid response */
+		expected_resp_uid = -1;
+
 		/* Unlock semaphore in negative case */
 		hosted_post_semaphore(ctrl_req_sem);
 	}
@@ -1113,13 +1146,10 @@ int ctrl_app_send_req(ctrl_cmd_t *app_req)
 	void     *buff_to_free2 = NULL;
 	uint8_t   failure_status = 0;
 
-
-
 	if (!app_req) {
 		failure_status = CTRL_ERR_INCORRECT_ARG;
 		goto fail_req;
 	}
-
 
 	/* 1. Check if any ongoing request present
 	 * Send failure in that case */
@@ -1131,12 +1161,24 @@ int ctrl_app_send_req(ctrl_cmd_t *app_req)
 
 	app_req->msg_type = CTRL_REQ;
 
+	// handle rollover in uid value (range: 1 to INT32_MAX)
+	if (uid < INT32_MAX)
+		uid++;
+	else
+		uid = 1;
+	app_req->uid = uid;
+
 	/* 2. Protobuf msg init */
 	ctrl_msg__init(&req);
 
 	req.msg_id = app_req->msg_id;
 	/* payload case is exact match to msg id in esp_hosted_config.pb-c.h */
 	req.payload_case = (CtrlMsg__PayloadCase) app_req->msg_id;
+
+	req.uid = app_req->uid;
+	assert(expected_resp_uid == -1);
+	// set the expected response uid
+	expected_resp_uid = req.uid;
 
 	/* 3. identify request and compose CtrlMsg */
 	switch(req.msg_id) {

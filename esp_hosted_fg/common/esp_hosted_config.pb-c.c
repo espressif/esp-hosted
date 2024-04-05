@@ -4039,7 +4039,7 @@ const ProtobufCMessageDescriptor ctrl_msg__event__station_disconnect_from_espsof
   (ProtobufCMessageInit) ctrl_msg__event__station_disconnect_from_espsoft_ap__init,
   NULL,NULL,NULL    /* reserved[123] */
 };
-static const ProtobufCFieldDescriptor ctrl_msg__field_descriptors[48] =
+static const ProtobufCFieldDescriptor ctrl_msg__field_descriptors[50] =
 {
   {
     "msg_type",
@@ -4061,6 +4061,30 @@ static const ProtobufCFieldDescriptor ctrl_msg__field_descriptors[48] =
     0,   /* quantifier_offset */
     offsetof(CtrlMsg, msg_id),
     &ctrl_msg_id__descriptor,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "uid",
+    3,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_INT32,
+    0,   /* quantifier_offset */
+    offsetof(CtrlMsg, uid),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "req_resp_type",
+    4,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_UINT32,
+    0,   /* quantifier_offset */
+    offsetof(CtrlMsg, req_resp_type),
+    NULL,
     NULL,
     0,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
@@ -4619,62 +4643,64 @@ static const ProtobufCFieldDescriptor ctrl_msg__field_descriptors[48] =
   },
 };
 static const unsigned ctrl_msg__field_indices_by_name[] = {
-  44,   /* field[44] = event_esp_init */
-  45,   /* field[45] = event_heartbeat */
-  46,   /* field[46] = event_station_disconnect_from_AP */
-  47,   /* field[47] = event_station_disconnect_from_ESP_SoftAP */
+  46,   /* field[46] = event_esp_init */
+  47,   /* field[47] = event_heartbeat */
+  48,   /* field[48] = event_station_disconnect_from_AP */
+  49,   /* field[49] = event_station_disconnect_from_ESP_SoftAP */
   1,   /* field[1] = msg_id */
   0,   /* field[0] = msg_type */
-  22,   /* field[22] = req_config_heartbeat */
-  8,   /* field[8] = req_connect_ap */
-  9,   /* field[9] = req_disconnect_ap */
-  7,   /* field[7] = req_get_ap_config */
-  2,   /* field[2] = req_get_mac_address */
-  16,   /* field[16] = req_get_power_save_mode */
-  10,   /* field[10] = req_get_softap_config */
-  21,   /* field[21] = req_get_wifi_curr_tx_power */
-  4,   /* field[4] = req_get_wifi_mode */
-  17,   /* field[17] = req_ota_begin */
-  19,   /* field[19] = req_ota_end */
-  18,   /* field[18] = req_ota_write */
-  6,   /* field[6] = req_scan_ap_list */
-  3,   /* field[3] = req_set_mac_address */
-  15,   /* field[15] = req_set_power_save_mode */
-  11,   /* field[11] = req_set_softap_vendor_specific_ie */
-  20,   /* field[20] = req_set_wifi_max_tx_power */
-  5,   /* field[5] = req_set_wifi_mode */
-  13,   /* field[13] = req_softap_connected_stas_list */
-  12,   /* field[12] = req_start_softap */
-  14,   /* field[14] = req_stop_softap */
-  43,   /* field[43] = resp_config_heartbeat */
-  29,   /* field[29] = resp_connect_ap */
-  30,   /* field[30] = resp_disconnect_ap */
-  28,   /* field[28] = resp_get_ap_config */
-  23,   /* field[23] = resp_get_mac_address */
-  37,   /* field[37] = resp_get_power_save_mode */
-  31,   /* field[31] = resp_get_softap_config */
-  42,   /* field[42] = resp_get_wifi_curr_tx_power */
-  25,   /* field[25] = resp_get_wifi_mode */
-  38,   /* field[38] = resp_ota_begin */
-  40,   /* field[40] = resp_ota_end */
-  39,   /* field[39] = resp_ota_write */
-  27,   /* field[27] = resp_scan_ap_list */
-  24,   /* field[24] = resp_set_mac_address */
-  36,   /* field[36] = resp_set_power_save_mode */
-  32,   /* field[32] = resp_set_softap_vendor_specific_ie */
-  41,   /* field[41] = resp_set_wifi_max_tx_power */
-  26,   /* field[26] = resp_set_wifi_mode */
-  34,   /* field[34] = resp_softap_connected_stas_list */
-  33,   /* field[33] = resp_start_softap */
-  35,   /* field[35] = resp_stop_softap */
+  24,   /* field[24] = req_config_heartbeat */
+  10,   /* field[10] = req_connect_ap */
+  11,   /* field[11] = req_disconnect_ap */
+  9,   /* field[9] = req_get_ap_config */
+  4,   /* field[4] = req_get_mac_address */
+  18,   /* field[18] = req_get_power_save_mode */
+  12,   /* field[12] = req_get_softap_config */
+  23,   /* field[23] = req_get_wifi_curr_tx_power */
+  6,   /* field[6] = req_get_wifi_mode */
+  19,   /* field[19] = req_ota_begin */
+  21,   /* field[21] = req_ota_end */
+  20,   /* field[20] = req_ota_write */
+  3,   /* field[3] = req_resp_type */
+  8,   /* field[8] = req_scan_ap_list */
+  5,   /* field[5] = req_set_mac_address */
+  17,   /* field[17] = req_set_power_save_mode */
+  13,   /* field[13] = req_set_softap_vendor_specific_ie */
+  22,   /* field[22] = req_set_wifi_max_tx_power */
+  7,   /* field[7] = req_set_wifi_mode */
+  15,   /* field[15] = req_softap_connected_stas_list */
+  14,   /* field[14] = req_start_softap */
+  16,   /* field[16] = req_stop_softap */
+  45,   /* field[45] = resp_config_heartbeat */
+  31,   /* field[31] = resp_connect_ap */
+  32,   /* field[32] = resp_disconnect_ap */
+  30,   /* field[30] = resp_get_ap_config */
+  25,   /* field[25] = resp_get_mac_address */
+  39,   /* field[39] = resp_get_power_save_mode */
+  33,   /* field[33] = resp_get_softap_config */
+  44,   /* field[44] = resp_get_wifi_curr_tx_power */
+  27,   /* field[27] = resp_get_wifi_mode */
+  40,   /* field[40] = resp_ota_begin */
+  42,   /* field[42] = resp_ota_end */
+  41,   /* field[41] = resp_ota_write */
+  29,   /* field[29] = resp_scan_ap_list */
+  26,   /* field[26] = resp_set_mac_address */
+  38,   /* field[38] = resp_set_power_save_mode */
+  34,   /* field[34] = resp_set_softap_vendor_specific_ie */
+  43,   /* field[43] = resp_set_wifi_max_tx_power */
+  28,   /* field[28] = resp_set_wifi_mode */
+  36,   /* field[36] = resp_softap_connected_stas_list */
+  35,   /* field[35] = resp_start_softap */
+  37,   /* field[37] = resp_stop_softap */
+  2,   /* field[2] = uid */
 };
 static const ProtobufCIntRange ctrl_msg__number_ranges[4 + 1] =
 {
   { 1, 0 },
-  { 101, 2 },
-  { 201, 23 },
-  { 301, 44 },
-  { 0, 48 }
+  { 101, 4 },
+  { 201, 25 },
+  { 301, 46 },
+  { 0, 50 }
 };
 const ProtobufCMessageDescriptor ctrl_msg__descriptor =
 {
@@ -4684,7 +4710,7 @@ const ProtobufCMessageDescriptor ctrl_msg__descriptor =
   "CtrlMsg",
   "",
   sizeof(CtrlMsg),
-  48,
+  50,
   ctrl_msg__field_descriptors,
   ctrl_msg__field_indices_by_name,
   4,  ctrl_msg__number_ranges,

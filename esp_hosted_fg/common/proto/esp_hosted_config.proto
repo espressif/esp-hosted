@@ -305,7 +305,7 @@ message CtrlMsg_Req_VendorIEData {
     int32 length = 2;
     bytes vendor_oui = 3;
     int32 vendor_oui_type = 4;
-    bytes payload = 5; 
+    bytes payload = 5;
 }
 
 message CtrlMsg_Req_SetSoftAPVendorSpecificIE {
@@ -368,6 +368,12 @@ message CtrlMsg {
 
     /* msg id */
     CtrlMsgId msg_id = 2;
+
+    /* UID of message */
+    int32 uid = 3;
+
+    /* Request/response type: sync or async */
+    uint32 req_resp_type = 4;
 
     /* union of all msg ids */
     oneof payload {

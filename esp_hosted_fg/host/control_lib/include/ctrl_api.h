@@ -324,6 +324,9 @@ typedef struct Ctrl_cmd_t {
 	/* control path protobuf msg number */
 	uint16_t msg_id;
 
+	/* uid of request / response */
+	int32_t uid;
+
 	/* statusof response or notification */
 	uint8_t resp_event_status;
 
