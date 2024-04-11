@@ -2163,6 +2163,10 @@ esp_err_t data_transfer_handler(uint32_t session_id,const uint8_t *inbuf,
 	ctrl_msg__init (&resp);
 	resp.msg_type = CTRL_MSG_TYPE__Resp;
 	resp.msg_id = req->msg_id - CTRL_MSG_ID__Req_Base + CTRL_MSG_ID__Resp_Base;
+
+	// link the response to the request via the request id
+	resp.uid = req->uid;
+
 	ret = esp_ctrl_msg_command_dispatcher(req,&resp,NULL);
 	if (ret) {
 		ESP_LOGE(TAG, "Command dispatching not happening");
