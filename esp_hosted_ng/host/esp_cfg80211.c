@@ -488,9 +488,15 @@ static int esp_cfg80211_suspend(struct wiphy *wiphy,
 {
 	struct esp_adapter *adapter = esp_get_adapter();
 	struct esp_wifi_device *priv = NULL;
-	if (!wowlan || !wiphy || !adapter) {
-		esp_info("%u invalid input %p %p %p\n", __LINE__, wiphy, adapter, wowlan);
+
+	if (!wiphy || !adapter) {
+		esp_info("%u invalid input wiphy=%p adapter=%p\n", __LINE__, wiphy, adapter);
 		return -EINVAL;
+	}
+
+	if (!wowlan) {
+		esp_dbg("%u wow config is not set, still suspending\n", __LINE__);
+		return 0;
 	}
 
 	esp_dbg("wow any=%d disconnect=%d magic_pkt=%d four_way_handshake=%d eap_identity_req=%d",
