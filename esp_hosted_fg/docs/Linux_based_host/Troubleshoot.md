@@ -153,3 +153,23 @@ coming continuously, Please verify your 'uart' baud_rate is correct and restart 
 $ sudo killall hciattach
 $ sudo hciattach -s <baud_rate> /dev/serial0 any <baud_rate> flow
 ```
+
+## 4. SPI
+
+### 4.1 SPI Clock is lower than expected on Raspberry Pi
+
+This issue has been reported for [Raspberry Pi 3](https://github.com/raspberrypi/linux/issues/2286) and [Raspberry Pi 4](https://github.com/raspberrypi/linux/issues/3381).
+
+For Raspberry Pi OS prior to _Bookworm_, edit the _/boot/config.txt_ file and add these lines:
+```
+core_freq=250
+core_freq_min=250
+```
+
+For _Bookworm_, see [Setting the correct SPI Clock on Raspberry-Pi](SPI_setup.md#121-setting-the-correct-spi-clock-on-raspberry-pi).
+
+### 4.2 Reset Pin and SPI GPIO numbering
+
+On older Raspberry Pi OS (before March 2024), the GPIO numbers used for the `resetpin` parameter in `rpi_init.sh` and assigned to `HANDSHAKE_PIN` and `SPI_DATA_READY_PIN` in `esp_spi.h` should match the actual Raspberry Pi GPIOs on the header.
+
+On newer Raspberry Pi OS (after March 2024), the GPIO numbers have been remapped. See the [Porting Guide](porting_guide.md#241-gpio-numbering-in-raspberry-pi-os) for more information.

@@ -52,7 +52,7 @@ Note:
 
 ### 1.2 Raspberry-Pi Software Setup
 By default, the UART pins on Raspberry-Pi are in disabled state. In order to enable UART and setup it for bluetooth connection, follow below steps.
-1. Enable UART pins and disable in built bluetooth on Raspberry-Pi by appending following lines to _/boot/config.txt_ file
+1. Enable UART pins and disable in built bluetooth on Raspberry-Pi by appending following lines to the _/boot/firmware/config.txt_ file (prior to _Bookworm_, the file is at _/boot/config.txt_):
 ```
 enable_uart=1
 dtoverlay=disable-bt

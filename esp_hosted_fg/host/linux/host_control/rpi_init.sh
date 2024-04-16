@@ -106,7 +106,8 @@ wlan_init()
 
     if [ "$RESETPIN" = "" ] ; then
         #By Default, BCM6 is GPIO on host. use resetpin=6
-        sudo insmod $MODULE_NAME resetpin=6
+        # `cat /sys/kernel/debug/gpio` says this maps to 518
+        sudo insmod $MODULE_NAME resetpin=518
     else
         #Use resetpin value from argument
         sudo insmod $MODULE_NAME $RESETPIN
