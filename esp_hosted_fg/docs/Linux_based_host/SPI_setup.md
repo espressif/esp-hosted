@@ -33,18 +33,27 @@ Sample SPI setup with ESP32-C6 as slave and RaspberryPi as Host looks like:
 - In case of ESP32-S3, For avoidance of doubt, You can power using [UART port](https://docs.espressif.com/projects/esp-idf/en/latest/esp32s3/hw-reference/esp32s3/user-guide-devkitc-1.html#description-of-components)
 
 ### 1.2 Raspberry-Pi Software Setup
-The SPI master driver is disabled by default on Raspberry-Pi OS. To enable it add following commands in  _/boot/config.txt_ file
+The SPI master driver is disabled by default on Raspberry-Pi OS. To enable it add following commands in the _/boot/firmware/config.txt_ file (prior to _Bookworm_, the file is at _/boot/config.txt_):
 ```
 dtparam=spi=on
 dtoverlay=disable-bt
 ```
-In addition, below options are set as the SPI clock frequency in analyzer is observed to be smaller than expected clock. This is RaspberryPi specific [issue](https://github.com/raspberrypi/linux/issues/2286).
+
+#### 1.2.1 Setting the correct SPI Clock on Raspberry-Pi
+By default, the Raspberry Pi sets the CPU scaling governor to `ondemand` (`cat /sys/devices/system/cpu/cpufreq/policy0/scaling_governor` to see the scaling governor currently in use). This causes the SPI clock frequency used to be lower than the requested one.
+
+Setting the scaling governor to `performance` ensure the SPI clock frequency used is close to the requested one.
+
+To change this, edit `/etc/default/cpu_governor` and add this line:
 ```
-core_freq=250
-core_freq_min=250
+CPU_DEFAULT_GOVERNOR="performance"
 ```
 Please reboot Raspberry-Pi after changing this file.
-Also, please disable the default Wi-Fi network interface (e.g `wlan0`) using networking configuration on your Linux host so that we will be sure that Wi-Fi is only provided with ESP-Hosted. Every packet would be passed through the ESP-Hosted Wi-Fi interface and not the native onboard Wi-Fi.
+
+#### 1.2.2. Disable default Wi-Fi interface
+Disable the default Wi-Fi network interface (e.g `wlan0`) using networking configuration on your Linux host so that we will be sure that Wi-Fi is only provided with ESP-Hosted.
+
+Every packet would be passed through the ESP-Hosted Wi-Fi interface and not the native onboard Wi-Fi.
 
 ## 2. Load ESP-Hosted Solution
 ### 2.1 Host Software

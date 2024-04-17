@@ -32,6 +32,7 @@
 #include "esp.h"
 #include "esp_rb.h"
 #include "esp_api.h"
+#include "esp_kernel_port.h"
 
 #define ESP_SERIAL_MAJOR      221
 #define ESP_SERIAL_MINOR_MAX  1
@@ -263,7 +264,7 @@ int esp_serial_init(void *priv)
 		goto err;
 	}
 
-	cl = class_create(THIS_MODULE, "esp_serial_chardrv");
+	cl = CLASS_CREATE("esp_serial_chardrv");
 	if (IS_ERR(cl)) {
 		esp_err("Class create err[%d]\n", err);
 		err = PTR_ERR(cl);

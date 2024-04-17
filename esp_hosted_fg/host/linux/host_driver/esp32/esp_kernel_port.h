@@ -109,5 +109,10 @@ static inline void eth_hw_addr_set(struct net_device *dev, const u8 *addr)
 #define do_exit(code)	kthread_complete_and_exit(NULL, code)
 #endif
 
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(6, 4, 0))
+#define CLASS_CREATE(x)	class_create(THIS_MODULE, x);
+#else
+#define CLASS_CREATE(x)	class_create(x);
+#endif
 
 #endif

@@ -72,10 +72,11 @@ Driver underlies heavily over underlying kernel. ESP-Hosted is tested over Linux
 * Reset Pin
 	* Reset pin could be chosen over unused GPIO.
 	* Input parameter to script, `resetpin=X` to be changed accordingly. This is used to reset ESP on loading the kernel module.
+	- **Note:** See [Section 2.4.1](#241-gpio-numbering-in-raspberry-pi-os) for changes in Raspberry Pi OS GPIO mappings.
 * UART configuration
 	* `bt_init()` lists `raspi-gpio` commands.
 	* `rapi-gpio` are simple utilities used to configure GPIO pins for their levels, alternate functions and pull up values.
-	* As per raspberry Pi documentation, these UART pins are configured.
+	* As per Raspberry Pi documentation, these UART pins are configured.
 	* These pins and any other peripheral pins which are not already taken care in their drivers, need to be configured.
 * spidev_disabler
 	* This is applicable for SPI peripheral configuration and explained in next section.
@@ -112,7 +113,27 @@ make CROSS_COMPILE=/home/user1/arm64_toolchain/bin/aarch64-linux-gnu-
 
 ## 2.4 Peripheral configurations
 
-### 2.4.1 SPI
+### 2.4.1 GPIO numbering in Raspberry Pi OS
+The GPIO numbering for Raspberry Pi OS has changed since 2024. See [this](https://forums.raspberrypi.com/viewtopic.php?t=368018#p2206621) for more info.
+
+To discover the current GPIO mapping, do `cat /sys/kernel/debug/gpio`. You will see lines similar to this:
+```
+gpiochip0: GPIOs 512-569, parent: platform/fe200000.gpio, pinctrl-bcm2711:
+ gpio-512 (ID_SDA              )
+ gpio-513 (ID_SCL              )
+ gpio-514 (GPIO2               )
+ gpio-515 (GPIO3               )
+ gpio-516 (GPIO4               )
+ gpio-517 (GPIO5               )
+ gpio-518 (GPIO6               )
+```
+| Function       | Old GPIO | New GPIO |
+| :------------- | :------: | :------: |
+| Reset          |     6    |    518   |
+| SPI Handshake  |    22    |    534   |
+| SPI Data Ready |    27    |    539   |
+
+### 2.4.2 SPI
 
 * Verify user space SPI driver
 	- If the user space drivers like spidev works as expected in Tx & Rx, then we would be assured that the SPI Linux drivers for your SoCs are working fine & SPI bus is correctly configured
@@ -124,7 +145,7 @@ make CROSS_COMPILE=/home/user1/arm64_toolchain/bin/aarch64-linux-gnu-
 	dtc spidev_disabler.dts -O dtb > spidev_disabler.dtbo
 	sudo dtoverlay -d . spidev_disabler
 	```
-		While porting, equivalent commands or steps need to be run to disable default SPI driver through the Device Tree for expected SoC.
+	- While porting, equivalent commands or steps need to be run to disable default SPI driver through the Device Tree for expected SoC.
 * Verify disabling of spidev
 	- Default spidev when not disabled, create a device file, /dev/spidevX.Y where X refers SPI bus and Y refers to Chip Select to be used.
 	- For example, Say User disables SPI bus 1 and Chip select 0 through Device Tree, then verify after loading Device Tree changes, /dev/spidev1.0 is no more listed
@@ -132,6 +153,7 @@ make CROSS_COMPILE=/home/user1/arm64_toolchain/bin/aarch64-linux-gnu-
 	- Apart from regular MOSI, MISO, CLK and Chip select, there are two additional GPIO pins used for SPI implementation.
 	- These pins should be selected such that they would not interfere other any peripheral work.
 	- Alter `HANDSHAKE_PIN` and `SPI_DATA_READY_PIN` in [esp_spi.h](../../host/linux/host_driver/esp32/spi/esp_spi.h).
+	- **Note:** See [Section 2.4.1](#241-gpio-numbering-in-raspberry-pi-os) for changes in Raspberry Pi OS GPIO mappings.
 	- Additional pins functionality details mentioned in [1.1.1 additional pin setup](../spi_protocol.md#111-additional-pin-setup) of [spi protocol documentation](../spi_protocol.md).
 * cs_change
 	- Reason why this setting was enabled is, SPI transfer was loosing first byte in transfer. Although this issue is only observed while testing with Raspberry Pi. Enabling cs_change=1 makes CS always de-assert after each transfer request. While porting, you may want to remove line, `trans.cs_change = 1;`.
@@ -147,10 +169,9 @@ make CROSS_COMPILE=/home/user1/arm64_toolchain/bin/aarch64-linux-gnu-
 	- Higher the frequency set, better the throughput would be.
 	- SPI clock frequency could be changed from macro `SPI_CLK_MHZ` in `esp/esp_driver/network_adapter/main/spi_slave_api.c`
 * Identify peripheral limitations
-	- For Raspberry Pi, Please use
+	- For Raspberry Pi, add this line to `/etc/default/cpu_governor`
 	  ```
-	  core_freq=250
-	  core_freq_min=250
+	  CPU_DEFAULT_GOVERNOR="performance"
 	  ```
 	  as mentioned in [SPI setup](SPI_setup.md#12-raspberry-pi-software-setup)
 	- Raspberry Pi could not perform reliably when the SPI clock was set higher frequency than 30MHz
@@ -201,7 +222,7 @@ you can suspect SPI timings mismatch. In such case, tuning might be required
 ###### Option 2 - Mismatch the slave and Host SPI modes
 * Set different SPI modes at Slave and Host and test again
 
-### 2.4.2 SDIO
+### 2.4.3 SDIO
 
 * File: *esp/esp_driver/network_adapter/main/sdio_slave_api.c*
 * If first event is not received at SDIO, you can tune `SDIO Timing`
