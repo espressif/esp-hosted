@@ -30,6 +30,7 @@ static u32 clockspeed = 0;
 extern u8 ap_bssid[MAC_ADDR_LEN];
 extern volatile u8 host_sleep;
 u32 raw_tp_mode = 0;
+int log_level = ESP_INFO;
 
 module_param(resetpin, int, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
 MODULE_PARM_DESC(resetpin, "Host's GPIO pin number which is connected to ESP32's EN to reset ESP32 device");
@@ -970,7 +971,6 @@ static void esp_reset(void)
 	}
 }
 
-
 static int __init esp_init(void)
 {
 	int ret = 0;
@@ -992,6 +992,7 @@ static int __init esp_init(void)
 		deinit_adapter();
 	}
 
+	ret = debugfs_init();
 	return ret;
 }
 
@@ -1014,11 +1015,13 @@ static void __exit esp_exit(void)
 	if (resetpin != HOST_GPIO_PIN_INVALID) {
 		gpio_free(resetpin);
 	}
+	debugfs_exit();
 }
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Amey Inamdar <amey.inamdar@espressif.com>");
 MODULE_AUTHOR("Mangesh Malusare <mangesh.malusare@espressif.com>");
 MODULE_AUTHOR("Yogesh Mantri <yogesh.mantri@espressif.com>");
+MODULE_AUTHOR("Kapil Gupta <kapil.gupta@espressif.com>");
 MODULE_DESCRIPTION("Wifi driver for ESP-Hosted solution");
 MODULE_VERSION(RELEASE_VERSION);
 module_init(esp_init);

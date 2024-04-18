@@ -6,7 +6,9 @@
 #ifndef _UTIL_H_
 #define _UTIL_H_
 
-#define pr_fmt(fmt) "%s: %s: " fmt, KBUILD_MODNAME, __func__
+#include <linux/stdarg.h>
+#include <linux/types.h>
+
 
 #ifndef NUMBER_1M
 #define NUMBER_1M 1000000
@@ -14,44 +16,30 @@
 
 #ifndef MAC2STR
 #define MAC2STR(a) (a)[0], (a)[1], (a)[2], (a)[3], (a)[4], (a)[5]
+#endif
+#ifndef MACSTR
 #define MACSTR "%02x:%02x:%02x:%02x:%02x:%02x"
 #endif
 
-#define esp_err pr_err
-#define esp_warn pr_warn
-#ifdef CONFIG_INFO_LOGS
-#define esp_info pr_info
-#else
-#define esp_info(...) do {} while(0)
-#endif
+enum esp_log_level {
+	ESP_ERR,
+	ESP_WARNING,
+	ESP_INFO,
+	ESP_DEBUG,
+	ESP_VERBOSE,
+};
 
-#ifdef CONFIG_DEBUG_LOGS
-#define esp_dbg pr_debug
-#else
-#define esp_dbg(...) do {} while(0)
-#endif
+void esp_logger(int level, const char *function, const char* format, ...);
+void esp_hex_dump(const char *prefix_str, const void *buf, size_t len);
+void esp_hex_dump_verbose(const char *prefix_str, const void *buf, size_t len);
 
-#ifdef CONFIG_VERBOSE_LOGS
-#define esp_verbose pr_debug
-#else
-#define esp_verbose(...) do {} while(0)
-#endif
+int debugfs_init(void);
+void debugfs_exit(void);
 
-#include <linux/types.h>
-#include <linux/printk.h>
-
-static inline void esp_hex_dump(const char *prefix_str, const void *buf, size_t len)
-{
-	print_hex_dump(KERN_INFO, prefix_str, DUMP_PREFIX_ADDRESS, 16, 1, buf, len, 1);
-}
-
-#ifdef CONFIG_VERBOSE_LOGS
-static inline void esp_hex_dump_verbose(const char *prefix_str, const void *buf, size_t len)
-{
-	print_hex_dump(KERN_INFO, prefix_str, DUMP_PREFIX_ADDRESS, 16, 1, buf, len, 1);
-}
-#else
-#define esp_hex_dump_verbose(...) do {} while(0)
-#endif
+#define esp_err(format, ...) esp_logger(ESP_ERR, __func__, format, ##__VA_ARGS__)
+#define esp_warn(format, ...) esp_logger(ESP_WARNING, __func__, format, ##__VA_ARGS__)
+#define esp_info(format, ...) esp_logger(ESP_INFO, __func__, format, ##__VA_ARGS__)
+#define esp_dbg(format, ...) esp_logger(ESP_DEBUG, __func__, format, ##__VA_ARGS__)
+#define esp_verbose(format, ...) esp_logger(ESP_VERBOSE, __func__, format, ##__VA_ARGS__)
 
 #endif
