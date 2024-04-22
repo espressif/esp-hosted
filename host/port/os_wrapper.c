@@ -35,6 +35,10 @@
 #include "spi_wrapper.h"
 #endif
 
+#ifdef CONFIG_ESP_SPI_HD_HOST_INTERFACE
+#include "spi_hd_wrapper.h"
+#endif
+
 DEFINE_LOG_TAG(os_wrapper_esp);
 
 struct mempool * nw_mp_g = NULL;
@@ -799,5 +803,14 @@ hosted_osi_funcs_t g_hosted_osi_funcs = {
 	._h_sdio_read_block          =  hosted_sdio_read_block         ,
 	._h_sdio_write_block         =  hosted_sdio_write_block        ,
 	._h_sdio_wait_slave_intr     =  hosted_sdio_wait_slave_intr    ,
+#endif
+#ifdef CONFIG_ESP_SPI_HD_HOST_INTERFACE
+	._h_bus_init                 =  hosted_spi_hd_init               ,
+	._h_spi_hd_read_reg          =  hosted_spi_hd_read_reg           ,
+	._h_spi_hd_write_reg         =  hosted_spi_hd_write_reg          ,
+	._h_spi_hd_read_dma          =  hosted_spi_hd_read_dma           ,
+	._h_spi_hd_write_dma         =  hosted_spi_hd_write_dma          ,
+	._h_spi_hd_set_data_lines    =  hosted_spi_hd_set_data_lines     ,
+	._h_spi_hd_send_cmd9         =  hosted_spi_hd_send_cmd9          ,
 #endif
 };

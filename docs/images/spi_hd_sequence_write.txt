@@ -1,0 +1,24 @@
+@startuml
+
+Title SPI HD Host Write
+
+participant Slave
+participant Host
+
+note over Host: Prepare data to send
+
+Host -> Slave: Read RX_BUF_LEN
+
+note over Host: available buffers =\nRX_BUF_LEN - (cached)RX_BUF_LEN
+
+note over Host: loop reading RX_BUF_LEN until\nbuffers available
+
+Host -> Slave: Send WRDMA
+
+Host -> Slave: Tranfer Data
+
+Host -> Slave: Send WR_DONE\n(at end of transfer)
+
+note over Host: update (cached)RX_BUF_LEN
+
+@enduml

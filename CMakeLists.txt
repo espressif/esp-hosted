@@ -46,6 +46,8 @@ else()
 	# transport files
 	if(CONFIG_ESP_SDIO_HOST_INTERFACE)
 		list(APPEND COMPONENT_SRCS "${host_dir}/drivers/transport/sdio/sdio_drv.c" "${host_dir}/port/sdio_wrapper.c")
+	elseif(CONFIG_ESP_SPI_HD_HOST_INTERFACE)
+		list(APPEND COMPONENT_SRCS "${host_dir}/drivers/transport/spi_hd/spi_hd_drv.c" "${host_dir}/port/spi_hd_wrapper.c")
 	else(CONFIG_ESP_SPI_HOST_INTERFACE)
 		list(APPEND COMPONENT_SRCS "${host_dir}/drivers/transport/spi/spi_drv.c" "${host_dir}/port/spi_wrapper.c")
 	endif()

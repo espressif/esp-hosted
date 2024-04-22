@@ -1,0 +1,42 @@
+@startuml
+hide time-axis
+
+binary "Chip Select" as cs
+clock "Clock" as clk with period 1
+concise "Data0-1" as data
+
+Title SPI HD Transaction Using Two Data Lines
+
+@0
+cs is high
+data is {-}
+
+@+1
+cs is low
+data is "Command (D0 only)"
+
+@+8
+data is "Address (D0-1)"
+
+@+4
+data is "Dummy"
+
+@+8
+data is "Data (D0-1)"
+
+@+4
+data is "..."
+
+@+4
+cs is high
+data is {-}
+
+@1 <-> @9 : 8 clk
+@9 <-> @13 : 4 clk
+@13 <-> @21 : 8 clk
+@21 <-> @25 : 4 clk
+@25 <-> @29 : 4 clk
+
+highlight 21 to 29 : Optional for SPI Transactions\nwithout data
+
+@enduml

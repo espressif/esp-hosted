@@ -1,0 +1,34 @@
+@startuml
+
+Title SPI HD Host and Slave Initialization
+
+participant Slave
+participant Host
+
+note across: Init
+
+Host -> Slave: Read SLAVE_READY reg
+Slave -> Host: Not Ready (!0xEE)
+
+...(loop)...
+
+note over Slave: Now Ready: Set\nSLAVE_READY = 0xEE
+
+Host -> Slave: Read SLAVE_READY reg
+Slave -> Host: Ready (0xEE)
+
+Host -> Slave: Set SLAVE_CONTROL = 1
+
+note over Slave: Open Data Path
+
+note over Slave: Prepare Capability data
+
+Slave -> Host: Assert Data_Ready
+
+Host -> Slave: Read Data
+
+Slave -> Host: Capability
+
+note over Host: Configure based\non slave capabilities
+
+@enduml

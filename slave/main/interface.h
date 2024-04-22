@@ -29,6 +29,10 @@
 
 #endif
 
+#ifdef CONFIG_ESP_SPI_HD_HOST_INTERFACE
+	#include "driver/spi_slave_hd.h"
+#endif
+
 typedef enum {
 	LENGTH_1_BYTE  = 1,
 	LENGTH_2_BYTE  = 2,
@@ -39,8 +43,9 @@ typedef enum {
 typedef void *wlan_buf_handle_t;
 
 typedef enum {
-	SDIO = 0,
-	SPI = 1,
+	SDIO   = 0,
+	SPI    = 1,
+	SPI_HD = 2,
 } transport_layer;
 
 typedef enum {
@@ -55,6 +60,9 @@ typedef struct {
 #ifdef CONFIG_ESP_SDIO_HOST_INTERFACE
 		sdio_slave_buf_handle_t sdio_buf_handle;
 #endif
+#ifdef CONFIG_ESP_SPI_HD_HOST_INTERFACE
+		spi_slave_hd_data_t * spi_hd_trans_handle;
+#endif
 		wlan_buf_handle_t	wlan_buf_handle;
 		void *priv_buffer_handle;
 	};
@@ -64,6 +72,9 @@ typedef struct {
 	uint8_t flag;
 	uint16_t payload_len;
 	uint16_t seq_num;
+#ifdef CONFIG_ESP_SPI_HD_HOST_INTERFACE
+	uint8_t flow_ctrl_en;
+#endif
 
 	void (*free_buf_handle)(void *buf_handle);
 } interface_buffer_handle_t;
@@ -80,6 +91,8 @@ typedef struct {
 #define MAX_TRANSPORT_BUF_SIZE 1600
 #elif CONFIG_ESP_SDIO_HOST_INTERFACE
 #define MAX_TRANSPORT_BUF_SIZE 1536
+#elif CONFIG_ESP_SPI_HD_HOST_INTERFACE
+#define MAX_TRANSPORT_BUF_SIZE 1600
 #endif
 
 #define BSSID_BYTES_SIZE       6
@@ -110,7 +123,7 @@ typedef struct {
 
 interface_context_t * interface_insert_driver(int (*callback)(uint8_t val));
 int interface_remove_driver();
-void generate_startup_event(uint8_t cap);
+void generate_startup_event(uint8_t cap, uint32_t ext_cap);
 int send_to_host_queue(interface_buffer_handle_t *buf_handle, uint8_t queue_type);
 
 #ifndef min
