@@ -88,6 +88,24 @@ menu "Example Configuration"
         help
             GPIO pin used to wake-up host
 
+    config SDIO_CARD_DETECTION_PIN_SUPPORT
+        bool "SDIO CD Pin support"
+        default n
+        help
+            Some hosts' implementations may require an additional signal by firmware
+            to indicate that it's ready for communication. This config option enables
+            support for that extra signal. GPIO pin number can be configured using SDIO_CD_PIN_GPIO.
+
+    config SDIO_CD_PIN_GPIO
+        int "CD Pin GPIO "
+        depends on ESP_SDIO_HOST_INTERFACE
+        depends on SDIO_CARD_DETECTION_PIN_SUPPORT
+        default 6
+        help
+            Some hosts' implementations may require an additional signal by firmware
+            to indicate that it's ready for communication. This GPIO pin used to indicate
+            host that card is ready for communication.
+
     choice SDIO_SLAVE_SPEED
         prompt "SDIO slave speed"
         depends on ESP_SDIO_HOST_INTERFACE
