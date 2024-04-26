@@ -634,7 +634,7 @@ static int esp_cfg80211_get_tx_power(struct wiphy *wiphy,
 		return -EINVAL;
 	}
 	/* Update Tx power from firmware */
-	//cmd_get_tx_power(priv);
+	cmd_get_tx_power(priv);
 
 	*dbm = esp_pwr_to_dbm(priv->tx_pwr);
 

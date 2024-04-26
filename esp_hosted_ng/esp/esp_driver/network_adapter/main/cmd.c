@@ -1175,6 +1175,7 @@ int process_auth_request(uint8_t if_type, uint8_t *payload, uint16_t payload_len
 	cmd_auth = (struct cmd_sta_auth *) payload;
 
 
+	esp_wifi_unset_appie_internal(WIFI_APPIE_RAM_STA_AUTH);
 	/* Auth data generally present in WPA3 frame */
 	if (cmd_auth->auth_data_len) {
 
@@ -1182,7 +1183,6 @@ int process_auth_request(uint8_t if_type, uint8_t *payload, uint16_t payload_len
 		msg_type = *pos;
 
 		/* Set Auth IEs */
-		esp_wifi_unset_appie_internal(WIFI_APPIE_RAM_STA_AUTH);
 		esp_wifi_set_appie_internal(WIFI_APPIE_RAM_STA_AUTH, cmd_auth->auth_data + 4,
 				cmd_auth->auth_data_len - 4, 0);
 	}
