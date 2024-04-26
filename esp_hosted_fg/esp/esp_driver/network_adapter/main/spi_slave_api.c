@@ -432,9 +432,8 @@ static int process_spi_rx(interface_buffer_handle_t *buf_handle)
 	if (!len)
 		return -1;
 
-	if (len > SPI_BUFFER_SIZE) {
-		ESP_LOGE(TAG, "rx_pkt len[%u]>max[%u], dropping it", len, SPI_BUFFER_SIZE);
-
+	if (len+offset > SPI_BUFFER_SIZE) {
+		ESP_LOGE(TAG, "rx_pkt len+offset[%u]>max[%u], dropping it", len+offset, SPI_BUFFER_SIZE);
 		return -1;
 	}
 

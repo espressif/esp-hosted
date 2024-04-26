@@ -19,7 +19,7 @@
 #define ESP_TEST_RAW_TP__RX      0
 #define ESP_TEST_RAW_TP__TX      1
 
-inline void esp_raw_tp_queue_resume(void);
+void esp_raw_tp_queue_resume(void);
 #endif
 
 void test_raw_tp_cleanup(void);
