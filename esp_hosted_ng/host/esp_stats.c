@@ -135,7 +135,7 @@ static void stop_test_raw_tp(void)
 	test_raw_tp__host_to_esp = 0;
 }
 
-inline void esp_raw_tp_queue_resume(void)
+void esp_raw_tp_queue_resume(void)
 {
 	if (traffic_open_init_done)
 		if (!completion_done(&traffic_open))
