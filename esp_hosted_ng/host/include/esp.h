@@ -32,6 +32,12 @@
 #define ESP_STA_NW_IF           0
 #define ESP_AP_NW_IF            1
 
+enum context_state {
+	ESP_CONTEXT_DISABLED = 0,
+	ESP_CONTEXT_RX_READY,
+	ESP_CONTEXT_READY
+};
+
 /* ESP in sdkconfig has CONFIG_IDF_FIRMWARE_CHIP_ID entry.
  * supported values of CONFIG_IDF_FIRMWARE_CHIP_ID are - */
 enum chipset_type_e {
@@ -80,6 +86,7 @@ struct esp_adapter {
 	struct wiphy            *wiphy;
 
 	uint8_t                 if_type;
+	atomic_t                state;
 	uint32_t                capabilities;
 
 	/* Possible types:

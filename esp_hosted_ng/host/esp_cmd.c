@@ -459,10 +459,14 @@ static int create_cmd_wq(struct esp_adapter *adapter)
 static void destroy_cmd_wq(struct esp_adapter *adapter)
 {
 	if (adapter->cmd_wq) {
-		flush_scheduled_work();
+		cancel_work_sync(&adapter->cmd_work);
 		destroy_workqueue(adapter->cmd_wq);
 		adapter->cmd_wq = NULL;
 	}
+	if (adapter->if_rx_workqueue) {
+		flush_workqueue(adapter->if_rx_workqueue);
+	}
+
 }
 
 struct command_node *prepare_command_request(struct esp_adapter *adapter, u8 cmd_code, u16 len)
