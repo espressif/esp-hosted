@@ -163,6 +163,7 @@ struct esp_wifi_device {
 	uint8_t                 tx_pwr_type;
 	uint8_t                 tx_pwr;
 	uint32_t                rssi;
+	bool                    local_disconnect_req;
 };
 
 
