@@ -6,7 +6,7 @@
 #ifndef _UTIL_H_
 #define _UTIL_H_
 
-#include <linux/stdarg.h>
+#include <linux/kernel.h>
 #include <linux/types.h>
 
 
