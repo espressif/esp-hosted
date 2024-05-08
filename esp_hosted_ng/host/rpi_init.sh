@@ -16,7 +16,7 @@
 # limitations under the License.
 
 RESETPIN=""
-BT_UART_INIT="0"
+BT_INIT_SET="0"
 RAW_TP_MODE="0"
 IF_TYPE="sdio"
 MODULE_NAME="esp32_${IF_TYPE}.ko"
