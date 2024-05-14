@@ -102,10 +102,14 @@ enum {
 
 /* This is [malloc + aligned DMA] */
 #define MEM_ALLOC(x)       ({                                       \
+	esp_dma_mem_info_t dma_mem_info = {                             \
+		.extra_heap_caps = 0,                                       \
+		.dma_alignment_bytes = 64,                                  \
+	};                                                              \
 	void *tmp_buf = NULL;                                           \
 	size_t actual_size = 0;                                         \
 	esp_err_t err = ESP_OK;                                         \
-	err = esp_dma_malloc((x), 0, &tmp_buf, &actual_size);           \
+	err = esp_dma_capable_malloc((x), &dma_mem_info, &tmp_buf, &actual_size);\
 	if (err) tmp_buf = NULL;                                        \
 	tmp_buf;})
 
