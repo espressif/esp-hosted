@@ -7,7 +7,7 @@ menu "Example Configuration"
         default ESP_SPI_HOST_INTERFACE if IDF_TARGET_ESP32S3
         default ESP_SPI_HOST_INTERFACE if IDF_TARGET_ESP32C2
         default ESP_SPI_HOST_INTERFACE if IDF_TARGET_ESP32C3
-        default ESP_SPI_HOST_INTERFACE if IDF_TARGET_ESP32C6
+        default ESP_SDIO_HOST_INTERFACE if IDF_TARGET_ESP32C6
         help
             Bus interface to be used for communication with the host
 
@@ -109,7 +109,7 @@ menu "Example Configuration"
     choice SDIO_SLAVE_SPEED
         prompt "SDIO slave speed"
         depends on ESP_SDIO_HOST_INTERFACE
-        default SDIO_DEFAULT_SPEED
+        default SDIO_HIGH_SPEED
         help
             SDIO slave speed, could be either default speed or high speed.
             Enabling this will cause the host to see highspeed capability.
