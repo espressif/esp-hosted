@@ -1,4 +1,4 @@
 dependencies:
   espressif/esp_hosted:
     version: "*"
-	override_path: "../.."
+override_path: "../.."
