@@ -1,5 +1,0 @@
-dependencies:
-  espressif/esp_hosted:
-    override_path: "../.."
-    pre_release: true
-    version: "*"
