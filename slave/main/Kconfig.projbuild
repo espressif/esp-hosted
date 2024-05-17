@@ -211,7 +211,7 @@ menu "Example Configuration"
 
 		config ESP_SDIO_STREAMING_MODE
 			bool "Enable SDIO Streaming Mode"
-			default y
+			default n
 			help
 				Enable Streaming Mode. Host to receive queued data from slave
 				as one stream instead of individual packets. This can improve
