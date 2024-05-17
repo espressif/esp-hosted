@@ -215,7 +215,11 @@ static esp_err_t transport_drv_sta_tx(void *h, void *buffer, size_t len)
 	#endif
 		errno = -ENOBUFS;
 		//return ESP_ERR_NO_BUFFS;
+#if defined(ESP_ERR_ESP_NETIF_TX_FAILED)
 		return ESP_ERR_ESP_NETIF_TX_FAILED;
+#else
+		return ESP_ERR_ESP_NETIF_NO_MEM;
+#endif
 	}
 
 	assert(h && h==chan_arr[ESP_STA_IF]->api_chan);
