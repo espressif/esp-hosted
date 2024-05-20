@@ -500,7 +500,7 @@ static int process_spi_rx(interface_buffer_handle_t *buf_handle)
 
 #if ESP_PKT_STATS
 	if (buf_handle->if_type == ESP_STA_IF)
-		pkt_stats.sta_rx_in++;
+		pkt_stats.hs_bus_sta_in++;
 #endif
 	if (header->if_type == ESP_SERIAL_IF) {
 		xQueueSend(spi_rx_queue[PRIO_Q_SERIAL], buf_handle, portMAX_DELAY);
@@ -681,7 +681,7 @@ static void spi_transaction_post_process_task(void* pvParameters)
 		struct esp_payload_header *header =
 			(struct esp_payload_header *)spi_trans->tx_buffer;
 		if (header->if_type == ESP_STA_IF)
-				pkt_stats.sta_tx_out++;
+			pkt_stats.sta_sh_out++;
 #endif
 
 		/* Free any tx buffer, data is not relevant anymore */

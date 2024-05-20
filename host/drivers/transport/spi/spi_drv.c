@@ -512,6 +512,7 @@ static void spi_process_rx_task(void const* pvParameters)
 {
 	interface_buffer_handle_t buf_handle_l = {0};
 	interface_buffer_handle_t *buf_handle = NULL;
+	int ret = 0;
 
 	while (1) {
 
@@ -537,16 +538,18 @@ static void spi_process_rx_task(void const* pvParameters)
 		} else if((buf_handle->if_type == ESP_STA_IF) ||
 				(buf_handle->if_type == ESP_AP_IF)) {
 			schedule_dummy_rx = 1;
-#if 0
+#if 1
 			if (chan_arr[buf_handle->if_type] && chan_arr[buf_handle->if_type]->rx) {
 				/* TODO : Need to abstract heap_caps_malloc */
-				uint8_t * copy_payload = (uint8_t *)heap_caps_malloc(buf_handle->payload_len, MALLOC_CAP_32BIT);
+				uint8_t * copy_payload = (uint8_t *)g_h.funcs->_h_malloc(buf_handle->payload_len);
 				assert(copy_payload);
 				memcpy(copy_payload, buf_handle->payload, buf_handle->payload_len);
 				H_FREE_PTR_WITH_FUNC(buf_handle->free_buf_handle, buf_handle->priv_buffer_handle);
 
-				chan_arr[buf_handle->if_type]->rx(chan_arr[buf_handle->if_type]->api_chan,
+				ret = chan_arr[buf_handle->if_type]->rx(chan_arr[buf_handle->if_type]->api_chan,
 						copy_payload, copy_payload, buf_handle->payload_len);
+				if (unlikely(ret))
+					HOSTED_FREE(copy_payload);
 			}
 #else
 
