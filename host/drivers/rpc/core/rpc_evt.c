@@ -37,7 +37,7 @@ int rpc_parse_evt(Rpc *rpc_msg, ctrl_cmd_t *app_ntfy)
 	switch (rpc_msg->msg_id) {
 
 	case RPC_ID__Event_ESPInit: {
-		ESP_LOGD(TAG, "EVENT: ESP INIT\n");
+		ESP_LOGI(TAG, "EVENT: ESP INIT\n");
 		break;
 	} case RPC_ID__Event_Heartbeat: {
 		ESP_LOGD(TAG, "EVENT: Heartbeat\n");

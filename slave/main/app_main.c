@@ -1,18 +1,8 @@
-// SPDX-License-Identifier: Apache-2.0
-// Copyright 2015-2021 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-//
+/*
+ * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -34,24 +24,19 @@
 
 #include "freertos/task.h"
 #include "freertos/queue.h"
-#ifdef CONFIG_BT_ENABLED
 #include "esp_bt.h"
-#ifdef CONFIG_BT_HCI_UART_NO
-#include "driver/uart.h"
-#endif
-#endif
 #include "endian.h"
 
 #include <protocomm.h>
 #include "protocomm_pserial.h"
 #include "slave_control.h"
-#include "slave_bt.c"
+#include "slave_bt.h"
 #include "stats.h"
 #include "esp_mac.h"
 #include "esp_timer.h"
 #include "mempool.h"
 
-static const char TAG[] = "NETWORK_ADAPTER";
+static const char *TAG = "fg_mcu_slave";
 
 
 //#define BYPASS_TX_PRIORITY_Q 1
@@ -78,7 +63,6 @@ static const char TAG[] = "NETWORK_ADAPTER";
 volatile uint8_t datapath = 0;
 volatile uint8_t station_connected = 0;
 volatile uint8_t softap_started = 0;
-volatile uint8_t ota_ongoing = 0;
 
 interface_context_t *if_context = NULL;
 interface_handle_t *if_handle = NULL;
@@ -105,7 +89,7 @@ uint8_t ap_mac[BSSID_BYTES_SIZE] = {0};
 static void print_firmware_version()
 {
 	ESP_LOGI(TAG, "*********************************************************************");
-	ESP_LOGI(TAG, "                ESP-Hosted-FG Slave Firmware version :: %d.%d.%d                        ",
+	ESP_LOGI(TAG, "                ESP-Hosted-MCU Slave FW version :: %d.%d.%d                        ",
 			PROJECT_VERSION_MAJOR_1, PROJECT_VERSION_MAJOR_2, PROJECT_VERSION_MINOR);
 #if CONFIG_ESP_SPI_HOST_INTERFACE
   #if BLUETOOTH_UART
@@ -140,9 +124,7 @@ static uint8_t get_capabilities()
 	cap |= ESP_CHECKSUM_ENABLED;
 #endif
 
-#ifdef CONFIG_BT_ENABLED
 	cap |= get_bluetooth_capabilities();
-#endif
 	ESP_LOGI(TAG, "capabilities: 0x%x", cap);
 
 	return cap;
@@ -152,7 +134,7 @@ esp_err_t wlan_ap_rx_callback(void *buffer, uint16_t len, void *eb)
 {
 	interface_buffer_handle_t buf_handle = {0};
 
-	if (!buffer || !eb || !datapath || ota_ongoing) {
+	if (!buffer || !eb || !datapath) {
 		if (eb) {
 			esp_wifi_internal_free_rx_buffer(eb);
 		}
@@ -194,7 +176,7 @@ esp_err_t wlan_sta_rx_callback(void *buffer, uint16_t len, void *eb)
 {
 	interface_buffer_handle_t buf_handle = {0};
 
-	if (!buffer || !eb || !datapath || ota_ongoing) {
+	if (!buffer || !eb || !datapath) {
 		if (eb) {
 			esp_wifi_internal_free_rx_buffer(eb);
 		}
@@ -228,7 +210,6 @@ void process_tx_pkt(interface_buffer_handle_t *buf_handle)
 {
 	/* Check if data path is not yet open */
 	if (!datapath) {
-		ESP_LOGD (TAG, "Data path stopped");
 		/* Post processing */
 		if (buf_handle->free_buf_handle && buf_handle->priv_buffer_handle) {
 			buf_handle->free_buf_handle(buf_handle->priv_buffer_handle);
@@ -462,7 +443,7 @@ void process_rx_pkt(interface_buffer_handle_t *buf_handle)
 	payload = buf_handle->payload + le16toh(header->offset);
 	payload_len = le16toh(header->len);
 
-	ESP_HEXLOGD("rx_new", buf_handle->payload, min(16,buf_handle->payload_len));
+	ESP_HEXLOGD("rx_new", buf_handle->payload, min(32,buf_handle->payload_len));
 
 	if (buf_handle->if_type == ESP_STA_IF && station_connected) {
 		/* Forward data to wlan driver */
@@ -621,7 +602,7 @@ static esp_err_t serial_write_data(uint8_t* data, ssize_t len)
 			return ESP_FAIL;
 		}
 
-		ESP_HEXLOGV("serial_tx", data, frag_len);
+		ESP_HEXLOGV("serial_tx_create", data, frag_len);
 
 		left_len -= frag_len;
 		pos += frag_len;
@@ -815,9 +796,7 @@ void app_main()
 	esp_err_t ret;
 	uint8_t capa = 0;
 	uint8_t prio_q_idx = 0;
-#ifdef CONFIG_BT_ENABLED
-	uint8_t mac[BSSID_BYTES_SIZE] = {0};
-#endif
+
 	print_firmware_version();
 	register_reset_pin(CONFIG_ESP_GPIO_SLAVE_RESET);
 
@@ -833,17 +812,7 @@ void app_main()
 	}
 	ESP_ERROR_CHECK( ret );
 
-#ifdef CONFIG_BT_ENABLED
 	initialise_bluetooth();
-
-	ret = esp_read_mac(mac, ESP_MAC_BT);
-	if (ret) {
-		ESP_LOGE(TAG,"Failed to read BT Mac addr\n");
-	} else {
-		ESP_LOGI(TAG, "ESP Bluetooth MAC addr: %2x:%2x:%2x:%2x:%2x:%2x",
-				mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
-	}
-#endif
 
 	pc_pserial = protocomm_new();
 	if (pc_pserial == NULL) {

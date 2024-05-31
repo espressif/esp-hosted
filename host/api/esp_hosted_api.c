@@ -95,8 +95,16 @@ static esp_err_t add_esp_wifi_remote_channels(void)
 	return ESP_OK;
 }
 
+static void set_host_modules_log_level(void)
+{
+	esp_log_level_set("rpc_core", ESP_LOG_WARN);
+	esp_log_level_set("rpc_rsp", ESP_LOG_WARN);
+	esp_log_level_set("rpc_evt", ESP_LOG_WARN);
+}
 esp_err_t esp_hosted_init(void(*esp_hosted_up_cb)(void))
 {
+	set_host_modules_log_level();
+
 	//create_esp_hosted_transport_up_sem();
 	ESP_LOGI(TAG, "ESP-Hosted starting. Hosted_Tasks: prio:%u, stack: %u RPC_task_stack: %u",
 			DFLT_TASK_PRIO, DFLT_TASK_STACK_SIZE, RPC_TASK_STACK_SIZE);
@@ -365,6 +373,12 @@ esp_err_t esp_wifi_remote_get_max_tx_power(int8_t *power)
 {
 	return rpc_wifi_get_max_tx_power(power);
 }
+
+esp_err_t esp_hosted_ota(const char* image_url)
+{
+	return rpc_ota(image_url);
+}
+
 
 //esp_err_t esp_wifi_remote_scan_get_ap_record(wifi_ap_record_t *ap_record)
 //esp_err_t esp_wifi_remote_set_csi(_Bool en)

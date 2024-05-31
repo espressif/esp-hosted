@@ -18,31 +18,17 @@
 #define __ESP_HOSTED_LOG_H
 #include "esp_log.h"
 
+#define ESP_PRIV_HEXDUMP(tag1, tag2, buff, len, curr_level)                   \
+  if ( LOG_LOCAL_LEVEL >= curr_level) {                                       \
+    ESP_LOG_LEVEL_LOCAL(curr_level, tag1, "%s: len[%d]", tag2, (int)len);     \
+    ESP_LOG_BUFFER_HEXDUMP(tag2, buff, len, curr_level);                      \
+  }
 
-#if CONFIG_ESP_HOSTED_ENABLE_HEXDUMP
-
-  #define ESP_PRIV_HEXDUMP(tag1, tag2, buff, len, curr_level)                   \
-    if ( LOG_LOCAL_LEVEL >= curr_level) {                                       \
-      ESP_LOGD(tag1, tag2 " len:%d", (int)len);                                                     \
-      ESP_LOG_BUFFER_HEXDUMP(tag2, buff, len, curr_level);                           \
-    }
-
-  #define ESP_HEXLOGE(tag2, buff, len) ESP_PRIV_HEXDUMP(TAG, tag2, buff, len, ESP_LOG_ERROR)
-  #define ESP_HEXLOGW(tag2, buff, len) ESP_PRIV_HEXDUMP(TAG, tag2, buff, len, ESP_LOG_WARN)
-  #define ESP_HEXLOGI(tag2, buff, len) ESP_PRIV_HEXDUMP(TAG, tag2, buff, len, ESP_LOG_INFO)
-  #define ESP_HEXLOGD(tag2, buff, len) ESP_PRIV_HEXDUMP(TAG, tag2, buff, len, ESP_LOG_DEBUG)
-  #define ESP_HEXLOGV(tag2, buff, len) ESP_PRIV_HEXDUMP(TAG, tag2, buff, len, ESP_LOG_VERBOSE)
-
-#else
-
-#define ESP_HEXLOGE(tag2, buff, len)
-#define ESP_HEXLOGW(tag2, buff, len)
-#define ESP_HEXLOGI(tag2, buff, len)
-#define ESP_HEXLOGD(tag2, buff, len)
-#define ESP_HEXLOGV(tag2, buff, len)
-
-#endif
-
+#define ESP_HEXLOGE(tag2, buff, len) ESP_PRIV_HEXDUMP(TAG, tag2, buff, len, ESP_LOG_ERROR)
+#define ESP_HEXLOGW(tag2, buff, len) ESP_PRIV_HEXDUMP(TAG, tag2, buff, len, ESP_LOG_WARN)
+#define ESP_HEXLOGI(tag2, buff, len) ESP_PRIV_HEXDUMP(TAG, tag2, buff, len, ESP_LOG_INFO)
+#define ESP_HEXLOGD(tag2, buff, len) ESP_PRIV_HEXDUMP(TAG, tag2, buff, len, ESP_LOG_DEBUG)
+#define ESP_HEXLOGV(tag2, buff, len) ESP_PRIV_HEXDUMP(TAG, tag2, buff, len, ESP_LOG_VERBOSE)
 
 #endif
 

@@ -82,6 +82,7 @@ typedef struct {
 #define MAX_TRANSPORT_BUF_SIZE 1536
 #endif
 
+#define BSSID_BYTES_SIZE       6
 
 typedef struct {
 	interface_handle_t * (*init)(void);
@@ -111,6 +112,10 @@ interface_context_t * interface_insert_driver(int (*callback)(uint8_t val));
 int interface_remove_driver();
 void generate_startup_event(uint8_t cap);
 int send_to_host_queue(interface_buffer_handle_t *buf_handle, uint8_t queue_type);
+
+#ifndef min
+#define min(a, b) ((a) < (b) ? (a) : (b))
+#endif
 
 extern slave_config_t slv_cfg_g;
 extern slave_state_t  slv_state_g;

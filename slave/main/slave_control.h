@@ -16,9 +16,9 @@
 #ifndef __SLAVE_CONTROL__H__
 #define __SLAVE_CONTROL__H__
 #include <esp_err.h>
-#define min(X, Y)               (((X) < (Y)) ? (X) : (Y))
+#include "interface.h"
 
-#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 0, 0) 
+#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 0, 0)
   #define TIMEOUT_IN_SEC          (1000 / portTICK_PERIOD_MS)
 #else
   #define TIMEOUT_IN_SEC          (1000 / portTICK_RATE_MS)
@@ -26,7 +26,6 @@
 
 #define SSID_LENGTH             32
 #define PASSWORD_LENGTH         64
-#define BSSID_BYTES_SIZE        6
 #define VENDOR_OUI_BUF          3
 
 esp_err_t data_transfer_handler(uint32_t session_id,const uint8_t *inbuf,

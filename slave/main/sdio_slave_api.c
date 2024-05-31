@@ -445,7 +445,7 @@ static int32_t sdio_write(interface_handle_t *handle, interface_buffer_handle_t 
 				offset+buf_handle->payload_len));
 #endif
 
-	ESP_HEXLOGD("sdio_tx", sendbuf, total_len);
+	ESP_HEXLOGD("sdio_tx", sendbuf, min(32,total_len));
 
 #if !SIMPLIFIED_SDIO_SLAVE
 	ret = sdio_slave_send_queue(sendbuf, total_len, sendbuf, portMAX_DELAY);

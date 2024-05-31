@@ -48,10 +48,6 @@
 #define TIMEOUT                     (2*TIMEOUT_IN_MIN)
 #define RESTART_TIMEOUT             (5*TIMEOUT_IN_SEC)
 
-#if CONFIG_ESP_OTA_WORKAROUND
-#define OTA_SLEEP_TIME_MS           (40)
-#endif
-
 #define MIN_HEARTBEAT_INTERVAL      (10)
 #define MAX_HEARTBEAT_INTERVAL      (60*60)
 
@@ -195,7 +191,6 @@ typedef struct esp_rpc_cmd {
 
 
 static const char* TAG = "slave_ctrl";
-extern volatile uint8_t ota_ongoing;
 static TimerHandle_t handle_heartbeat_task;
 static uint32_t hb_num;
 
@@ -350,18 +345,14 @@ static esp_err_t req_ota_begin_handler (Rpc *req,
 	update_partition = esp_ota_get_next_update_partition(NULL);
 	if (update_partition == NULL) {
 		ESP_LOGE(TAG, "Failed to get next update partition");
+		ret = -1;
 		goto err;
 	}
 
 	ESP_LOGI(TAG, "Prepare partition for OTA\n");
-	ota_ongoing=1;
-#if CONFIG_ESP_OTA_WORKAROUND
-	vTaskDelay(OTA_SLEEP_TIME_MS/portTICK_PERIOD_MS);
-#endif
 	ret = esp_ota_begin(update_partition, OTA_SIZE_UNKNOWN, &handle);
-	ota_ongoing=0;
 	if (ret) {
-		ESP_LOGE(TAG, "OTA update failed in OTA begin");
+		ESP_LOGE(TAG, "OTA begin failed[%d]", ret);
 		goto err;
 	}
 
@@ -370,7 +361,7 @@ static esp_err_t req_ota_begin_handler (Rpc *req,
 	resp_payload->resp = SUCCESS;
 	return ESP_OK;
 err:
-	resp_payload->resp = FAILURE;
+	resp_payload->resp = ret;
 	return ESP_OK;
 
 }
@@ -401,22 +392,11 @@ static esp_err_t req_ota_write_handler (Rpc *req,
 	resp->payload_case = RPC__PAYLOAD_RESP_OTA_WRITE;
 	resp->resp_ota_write = resp_payload;
 
-	ota_ongoing=1;
-#if CONFIG_ESP_OTA_WORKAROUND
-	/* Delay added is to give chance to transfer pending data at transport
-	 * Care to be taken, when OTA ongoing, no other processing should happen
-	 * So big sleep is added before any flash operations start
-	 * */
-	vTaskDelay(OTA_SLEEP_TIME_MS/portTICK_PERIOD_MS);
-#endif
-	printf(".");
-	fflush(stdout);
 	ret = esp_ota_write( handle, (const void *)req->req_ota_write->ota_data.data,
 			req->req_ota_write->ota_data.len);
-	ota_ongoing=0;
 	if (ret != ESP_OK) {
 		ESP_LOGE(TAG, "OTA write failed with return code 0x%x",ret);
-		resp_payload->resp = FAILURE;
+		resp_payload->resp = ret;
 		return ESP_OK;
 	}
 	resp_payload->resp = SUCCESS;
@@ -445,12 +425,7 @@ static esp_err_t req_ota_end_handler (Rpc *req,
 	resp->payload_case = RPC__PAYLOAD_RESP_OTA_END;
 	resp->resp_ota_end = resp_payload;
 
-	ota_ongoing=1;
-#if CONFIG_ESP_OTA_WORKAROUND
-	vTaskDelay(OTA_SLEEP_TIME_MS/portTICK_PERIOD_MS);
-#endif
 	ret = esp_ota_end(handle);
-	ota_ongoing=0;
 	if (ret != ESP_OK) {
 		if (ret == ESP_ERR_OTA_VALIDATE_FAILED) {
 			ESP_LOGE(TAG, "Image validation failed, image is corrupted");
@@ -469,18 +444,20 @@ static esp_err_t req_ota_end_handler (Rpc *req,
 	xTimer = xTimerCreate("Timer", RESTART_TIMEOUT , pdFALSE, 0, vTimerCallback);
 	if (xTimer == NULL) {
 		ESP_LOGE(TAG, "Failed to create timer to restart system");
+		ret = -1;
 		goto err;
 	}
 	ret = xTimerStart(xTimer, 0);
 	if (ret != pdPASS) {
 		ESP_LOGE(TAG, "Failed to start timer to restart system");
+		ret = -2;
 		goto err;
 	}
 	ESP_LOGE(TAG, "**** OTA updated successful, ESP32 will reboot in 5 sec ****");
 	resp_payload->resp = SUCCESS;
 	return ESP_OK;
 err:
-	resp_payload->resp = FAILURE;
+	resp_payload->resp = ret;
 	return ESP_OK;
 }
 
