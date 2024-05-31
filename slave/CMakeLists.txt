@@ -4,9 +4,9 @@ cmake_minimum_required(VERSION 3.5)
 
 set(PROJECT_VERSION_MAJOR_1 "0")
 set(PROJECT_VERSION_MAJOR_2 "0")
-set(PROJECT_VERSION_MINOR "5")
+set(PROJECT_VERSION_MINOR "6")
 message(*************************************************************************************)
-message("                    Building ESP-Hosted-FG Firmware version :: ${PROJECT_VERSION_MAJOR_1}.${PROJECT_VERSION_MAJOR_2}.${PROJECT_VERSION_MINOR} ")
+message("                    Building ESP-Hosted-MCU FW :: ${PROJECT_VERSION_MAJOR_1}.${PROJECT_VERSION_MAJOR_2}.${PROJECT_VERSION_MINOR} ")
 message(*************************************************************************************)
 
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)

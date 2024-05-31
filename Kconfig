@@ -570,11 +570,6 @@ ESP32P4_SDIO_CLK_FREQ_KHZ_RANGE_MAX := 80000
 			Note: the slave will only process one RPC request (sync and async) at a time
 
 	menu "Debug Settings"
-		config ESP_HOSTED_ENABLE_HEXDUMP
-			bool "Hexdump logs enable"
-			default n
-				help
-					Enable Hex logs to print msg content
 
 		config ESP_RAW_THROUGHPUT_TRANSPORT
 			bool "RawTP: Transport level throughput debug test"

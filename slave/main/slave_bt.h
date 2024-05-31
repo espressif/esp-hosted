@@ -17,6 +17,7 @@
 #ifndef __SLAVE_BT_H__
 #define __SLAVE_BT_H__
 
+#include "esp_err.h"
 #ifdef CONFIG_BT_ENABLED
 
 #if ESP_IDF_VERSION < ESP_IDF_VERSION_VAL(5, 0, 0)
@@ -127,10 +128,9 @@
   void process_hci_rx_pkt(uint8_t *payload, uint16_t payload_len);
 #endif
 
+#endif /* CONFIG_BT_ENABLED */
 void deinitialize_bluetooth(void);
 esp_err_t initialise_bluetooth(void);
 uint8_t get_bluetooth_capabilities(void);
-
-#endif /* CONFIG_BT_ENABLED */
 
 #endif /* __SLAVE_BT_H__ */

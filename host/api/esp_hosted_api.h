@@ -93,6 +93,7 @@ esp_err_t esp_wifi_remote_set_protocol(wifi_interface_t ifx, uint8_t protocol_bi
 esp_err_t esp_wifi_remote_get_protocol(wifi_interface_t ifx, uint8_t *protocol_bitmap);
 esp_err_t esp_wifi_remote_set_max_tx_power(int8_t power);
 esp_err_t esp_wifi_remote_get_max_tx_power(int8_t *power);
+esp_err_t esp_hosted_ota(const char* image_url);
 
 #ifdef __cplusplus
 }

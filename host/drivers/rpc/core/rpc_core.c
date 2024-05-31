@@ -590,7 +590,7 @@ static ctrl_cmd_t * get_response(int *read_len, ctrl_cmd_t *app_req)
 		if (errno == ETIMEDOUT)
 			ESP_LOGW(TAG, "Resp timedout for req[0x%x]\n", app_req->msg_id);
 		else
-			ESP_LOGE(TAG, "ERR [%u] ret[%u] for Req[0x%x]\n", errno, ret, app_req->msg_id);
+			ESP_LOGE(TAG, "ERR [%u] ret[%d] for Req[0x%x]\n", errno, ret, app_req->msg_id);
 		return NULL;
 	}
 

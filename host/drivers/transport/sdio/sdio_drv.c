@@ -356,7 +356,7 @@ static void sdio_write_task(void const* pvParameters)
 		pos = sendbuf;
 		data_left = len + sizeof(struct esp_payload_header);
 
-		ESP_HEXLOGV("h_sdio_tx", sendbuf, data_left);
+		ESP_HEXLOGV("h_sdio_tx", sendbuf, min(32,data_left));
 
 		len_to_send = 0;
 		retries = 0;
@@ -763,7 +763,7 @@ static void sdio_process_rx_task(void const* pvParameters)
 		buf_handle = &buf_handle_l;
 
 		ESP_LOGV(TAG, "h_sdio_rx: iftype:%d", (int)buf_handle->if_type);
-		ESP_HEXLOGV("h_sdio_rx", copy_payload, buf_handle->payload_len);
+		ESP_HEXLOGV("h_sdio_rx", buf_handle->payload, min(buf_handle->payload_len,32));
 
 		if (buf_handle->if_type == ESP_SERIAL_IF) {
 			/* serial interface path */
