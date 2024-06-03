@@ -240,7 +240,9 @@ int esp_init_bt(struct esp_adapter *adapter)
 	hdev->set_bdaddr = esp_bt_set_bdaddr;
 #endif
 
+#ifdef HCI_PRIMARY
 	hdev->dev_type = HCI_PRIMARY;
+#endif
 
 	SET_HCIDEV_DEV(hdev, adapter->dev);
 
