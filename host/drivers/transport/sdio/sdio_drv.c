@@ -100,7 +100,7 @@ static void sdio_write_task(void const* pvParameters);
 static void sdio_read_task(void const* pvParameters);
 static void sdio_process_rx_task(void const* pvParameters);
 
-static inline void sdio_mempool_create()
+static inline void sdio_mempool_create(void)
 {
 	MEM_DUMP("sdio_mempool_create");
 	buf_mp_g = mempool_create(MAX_SDIO_BUFFER_SIZE);
@@ -109,7 +109,7 @@ static inline void sdio_mempool_create()
 #endif
 }
 
-static inline void sdio_mempool_destroy()
+static inline void sdio_mempool_destroy(void)
 {
 	mempool_destroy(buf_mp_g);
 }

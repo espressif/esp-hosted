@@ -64,7 +64,7 @@ static void spi_transaction_task(void const* pvParameters);
 static void spi_process_rx_task(void const* pvParameters);
 static uint8_t * get_next_tx_buffer(uint8_t *is_valid_tx_buf, void (**free_func)(void* ptr));
 
-static inline void spi_mempool_create()
+static inline void spi_mempool_create(void)
 {
 	MEM_DUMP("spi_mempool_create");
 	buf_mp_g = mempool_create(MAX_SPI_BUFFER_SIZE);
@@ -73,7 +73,7 @@ static inline void spi_mempool_create()
 #endif
 }
 
-static inline void spi_mempool_destroy()
+static inline void spi_mempool_destroy(void)
 {
 	mempool_destroy(buf_mp_g);
 }
