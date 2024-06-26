@@ -764,9 +764,9 @@ int test_softap_mode_start(void)
 	ctrl_cmd_t *resp = NULL;
 
 	strncpy((char *)&req.u.wifi_softap_config.ssid,
-			SOFTAP_MODE_SSID, MAX_MAC_STR_LEN-1);
+			SOFTAP_MODE_SSID, SSID_LENGTH - 1);
 	strncpy((char *)&req.u.wifi_softap_config.pwd,
-			SOFTAP_MODE_PWD, MAX_MAC_STR_LEN-1);
+			SOFTAP_MODE_PWD, PASSWORD_LENGTH - 1);
 	req.u.wifi_softap_config.channel = SOFTAP_MODE_CHANNEL;
 	req.u.wifi_softap_config.encryption_mode = SOFTAP_MODE_ENCRYPTION_MODE;
 	req.u.wifi_softap_config.max_connections = SOFTAP_MODE_MAX_ALLOWED_CLIENTS;
