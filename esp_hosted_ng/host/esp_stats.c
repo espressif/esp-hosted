@@ -13,6 +13,7 @@
 
 #include "esp_api.h"
 #include <linux/timer.h>
+#include <linux/kthread.h>
 
 static struct task_struct *raw_tp_tx_thread;
 static int test_raw_tp;

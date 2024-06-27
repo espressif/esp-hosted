@@ -46,6 +46,7 @@
 
 #include "slave_bt.c"
 #include "stats.h"
+#include "esp_mac.h"
 
 static const char TAG[] = "FW_MAIN";
 
@@ -223,20 +224,12 @@ esp_err_t wlan_ap_rx_callback(void *buffer, uint16_t len, void *eb)
 {
 	esp_err_t ret = ESP_OK;
 	interface_buffer_handle_t buf_handle = {0};
-	uint8_t * ap_buf = buffer;
 
 	if (!buffer || !eb || !datapath || ota_ongoing) {
 		if (eb) {
 			esp_wifi_internal_free_rx_buffer(eb);
 		}
 		return ESP_OK;
-	}
-
-	/* Check destination address against self address */
-	if (memcmp(ap_buf, ap_mac, MAC_ADDR_LEN)) {
-		/* Check for multicast or broadcast address */
-		if (!(ap_buf[0] & 1))
-			goto DONE;
 	}
 
 	buf_handle.if_type = ESP_AP_IF;
@@ -247,6 +240,8 @@ esp_err_t wlan_ap_rx_callback(void *buffer, uint16_t len, void *eb)
 	buf_handle.free_buf_handle = esp_wifi_internal_free_rx_buffer;
 	buf_handle.pkt_type = PACKET_TYPE_DATA;
 
+	/* ESP_LOGI(TAG, "Slave -> Host: AP data packet\n"); */
+	/* ESP_LOG_BUFFER_HEXDUMP("RX", buffer, len, ESP_LOG_INFO); */
 	ret = xQueueSend(to_host_queue[PRIO_Q_LOW], &buf_handle, portMAX_DELAY);
 
 	if (ret != pdTRUE) {
@@ -419,9 +414,9 @@ void process_priv_commamd(uint8_t if_type, uint8_t *payload, uint16_t payload_le
 			process_sta_connect(if_type, payload, payload_len);
 			break;
 
-		case CMD_STA_DISCONNECT:
-			ESP_LOGI(TAG, "STA disconnect request\n");
-			process_sta_disconnect(if_type, payload, payload_len);
+		case CMD_DISCONNECT:
+			ESP_LOGI(TAG, "disconnect request\n");
+			process_disconnect(if_type, payload, payload_len);
 			break;
 
 		case CMD_ADD_KEY:
@@ -453,6 +448,31 @@ void process_priv_commamd(uint8_t if_type, uint8_t *payload, uint16_t payload_le
 		case CMD_SET_TXPOWER:
 			ESP_LOGI(TAG, "Tx power command\n");
 			process_tx_power(if_type, payload, payload_len, header->cmd_code);
+			break;
+
+		case CMD_SET_MODE:
+			ESP_LOGI(TAG, "Set MODE command\n");
+			process_set_mode(if_type, payload, payload_len);
+			break;
+
+		case CMD_SET_IE:
+			ESP_LOGI(TAG, "Set IE command\n");
+			process_set_ie(if_type, payload, payload_len);
+			break;
+
+		case CMD_AP_CONFIG:
+			ESP_LOGI(TAG, "Set AP config command\n");
+			process_set_ap_config(if_type, payload, payload_len);
+			break;
+
+		case CMD_MGMT_TX:
+			//ESP_LOGI(TAG, "Send mgmt tx command\n");
+			process_mgmt_tx(if_type, payload, payload_len);
+			break;
+
+		case CMD_AP_STATION:
+			ESP_LOGI(TAG, "AP station command\n");
+			process_ap_station(if_type, payload, payload_len);
 			break;
 
 		case CMD_SET_REG_DOMAIN:
@@ -503,7 +523,7 @@ void process_rx_pkt(interface_buffer_handle_t *buf_handle)
 
 	} else if (header->packet_type == PACKET_TYPE_DATA) {
 
-		/*ESP_LOGI(TAG, "Data packet\n");*/
+		/* ESP_LOGI(TAG, "Data packet on iface=%d\n", buf_handle->if_type); */
 		/* Data Path */
 		if (buf_handle->if_type == ESP_STA_IF) {
 			/*ESP_LOGI(TAG, "Station IF\n");*/
@@ -517,7 +537,10 @@ void process_rx_pkt(interface_buffer_handle_t *buf_handle)
 		} else if (buf_handle->if_type == ESP_AP_IF && softap_started) {
 
 			/* Forward packet over soft AP interface */
-			esp_wifi_internal_tx(ESP_IF_WIFI_AP, payload, payload_len);
+			/* ESP_LOGI(TAG, "Send data pkt over wlan\n"); */
+			int ret = esp_wifi_internal_tx(ESP_IF_WIFI_AP, payload, payload_len);
+			if (ret)
+				ESP_LOGE(TAG, "Sending data failed=%d\n", ret);
 		}
 #if defined(CONFIG_BT_ENABLED) && BLUETOOTH_HCI
 		else if (buf_handle->if_type == ESP_HCI_IF) {

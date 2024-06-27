@@ -12,6 +12,7 @@
 #include <linux/mmc/sdio_ids.h>
 #include <linux/mmc/card.h>
 #include <linux/mmc/host.h>
+#include <linux/module.h>
 #include "esp_if.h"
 #include "esp_sdio_api.h"
 #include "esp_api.h"

@@ -133,14 +133,13 @@ struct wpa_funcs {
     int (*wpa_parse_wpa_ie)(const uint8_t *wpa_ie, size_t wpa_ie_len, wifi_wpa_ie_t *data);
     int (*wpa_config_bss)(uint8_t *bssid);
     int (*wpa_michael_mic_failure)(uint16_t is_unicast);
-    uint8_t *(*wpa3_build_sae_msg)(uint8_t *bssid, uint32_t type, size_t *len);
-    int (*wpa3_parse_sae_msg)(uint8_t *buf, size_t len, uint32_t type, uint16_t status);
     int (*wpa3_hostap_handle_auth)(uint8_t *buf, size_t len, uint32_t type, uint16_t status, uint8_t *bssid);
     int (*wpa_sta_rx_mgmt)(uint8_t type, uint8_t *frame, size_t len, uint8_t *sender, uint32_t rssi, uint8_t channel, uint64_t current_tsf);
     void (*wpa_config_done)(void);
     uint8_t *(*owe_build_dhie)(uint16_t group);
     int (*owe_process_assoc_resp)(const uint8_t *rsn_ie, size_t rsn_len, const uint8_t *dh_ie, size_t dh_len);
     int (*wpa_sta_set_ap_rsnxe)(const uint8_t *rsnxe, size_t rsnxe_ie_len);
+    int (*wpa_ap_rx_mgmt)(void *pkt, uint32_t pkt_len, uint8_t chan, int rssi, int nf);
 };
 
 struct wpa2_funcs {
@@ -296,8 +295,9 @@ bool esp_wifi_ap_notify_node_sae_auth_done(uint8_t *mac);
 bool esp_wifi_ap_is_sta_sae_reauth_node(uint8_t *mac);
 uint8_t* esp_wifi_sta_get_sae_identifier_internal(void);
 bool esp_wifi_eb_tx_status_success_internal(void *eb);
-esp_err_t esp_wifi_connect_internal(const uint8_t *bssid);
-esp_err_t esp_wifi_issue_auth_internal(uint8_t status);
-esp_err_t esp_wifi_issue_assoc_internal(uint8_t status);
+void esp_wifi_sta_toggle_wpa3_security(bool disable);
+esp_err_t esp_wifi_sta_connect_internal(const uint8_t *bssid);
+esp_err_t esp_wifi_send_auth_internal(uint8_t ifx, uint8_t *bssid, uint8_t algo, uint8_t seq, uint32_t status);
+esp_err_t esp_wifi_send_assoc_internal(uint8_t ifx, uint8_t *bssid, uint8_t type, uint8_t status);
 
 #endif /* _ESP_WIFI_DRIVER_H_ */

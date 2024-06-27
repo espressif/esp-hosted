@@ -57,6 +57,44 @@ enum ESP_INTERFACE_TYPE {
 	ESP_MAX_IF,
 };
 
+enum ESP_IE_TYPE{
+	IE_BEACON,
+	IE_PROBE_RESP,
+	IE_ASSOC_RESP,
+	IE_RSN,
+	IE_BEACON_PROBE,
+};
+
+enum esp_auth_mode {
+	WIFI_AUTH_OPEN = 0,
+	WIFI_AUTH_WEP,
+	WIFI_AUTH_WPA_PSK,
+	WIFI_AUTH_WPA2_PSK,
+	WIFI_AUTH_WPA_WPA2_PSK,
+	WIFI_AUTH_WPA2_ENTERPRISE,
+	WIFI_AUTH_WPA3_PSK,
+	WIFI_AUTH_WPA2_WPA3_PSK,
+	WIFI_AUTH_WAPI_PSK,
+	WIFI_AUTH_OWE,
+	WIFI_AUTH_MAX
+};
+
+enum esp_cipher_type {
+	WIFI_CIPHER_TYPE_NONE = 0,
+	WIFI_CIPHER_TYPE_WEP40,
+	WIFI_CIPHER_TYPE_WEP104,
+	WIFI_CIPHER_TYPE_TKIP,
+	WIFI_CIPHER_TYPE_CCMP,
+	WIFI_CIPHER_TYPE_TKIP_CCMP,
+	WIFI_CIPHER_TYPE_AES_CMAC128,
+	WIFI_CIPHER_TYPE_SMS4,
+	WIFI_CIPHER_TYPE_GCMP,
+	WIFI_CIPHER_TYPE_GCMP256,
+	WIFI_CIPHER_TYPE_AES_GMAC128,
+	WIFI_CIPHER_TYPE_AES_GMAC256,
+	WIFI_CIPHER_TYPE_UNKNOWN,
+};
+
 enum ESP_PACKET_TYPE {
 	PACKET_TYPE_DATA,
 	PACKET_TYPE_COMMAND_REQUEST,
@@ -107,7 +145,7 @@ enum COMMAND_CODE {
 	CMD_GET_MAC,
 	CMD_SCAN_REQUEST,
 	CMD_STA_CONNECT,
-	CMD_STA_DISCONNECT,
+	CMD_DISCONNECT,
 	CMD_DEINIT_INTERFACE,
 	CMD_ADD_KEY,
 	CMD_DEL_KEY,
@@ -123,6 +161,11 @@ enum COMMAND_CODE {
 	CMD_RAW_TP_ESP_TO_HOST,
 	CMD_RAW_TP_HOST_TO_ESP,
 	CMD_SET_WOW_CONFIG,
+	CMD_SET_MODE,
+	CMD_SET_IE,
+	CMD_AP_CONFIG,
+	CMD_MGMT_TX,
+	CMD_AP_STATION,
 	CMD_MAX,
 };
 
@@ -132,6 +175,7 @@ enum EVENT_CODE {
 	EVENT_STA_DISCONNECT,
 	EVENT_AUTH_RX,
 	EVENT_ASSOC_RX,
+	EVENT_AP_MGMT_RX,
 };
 
 enum COMMAND_RESPONSE_TYPE {
@@ -167,6 +211,58 @@ struct cmd_config_mac_address {
 	uint8_t    pad[2];
 } __packed;
 
+struct cmd_config_ie {
+	struct     command_header header;
+	uint8_t    ie_type;
+	uint8_t    pad;
+	uint16_t   ie_len;
+	uint8_t    ie[];
+}__attribute__((packed));
+
+struct esp_ap_config {
+    uint8_t ssid[32];
+    uint8_t ssid_len;
+    uint8_t channel;
+    uint8_t authmode;
+    uint8_t ssid_hidden;
+    uint8_t max_connection;
+    uint8_t pairwise_cipher;
+    uint8_t pmf_cfg;
+    uint8_t sae_pwe_h2e;
+    uint16_t beacon_interval;
+    uint16_t inactivity_timeout;
+}__attribute__((packed));
+
+struct cmd_ap_config {
+	struct command_header header;
+	struct esp_ap_config ap_config;
+}__attribute__((packed));
+
+#define ADD_STA 0
+#define CHANGE_STA 1
+#define DEL_STA 2
+
+struct cmd_ap_sta_param {
+	uint8_t mac[6];
+	uint16_t cmd;
+	uint32_t sta_flags_mask, sta_flags_set;
+	uint32_t sta_modify_mask;
+	int32_t listen_interval;
+	uint16_t aid;
+	uint8_t ext_capab[6];
+	uint8_t supported_rates[12];
+	uint8_t ht_caps[28];
+	uint8_t vht_caps[14];
+	uint8_t pad1[2];
+	uint8_t he_caps[27];
+	uint8_t pad2;
+}__attribute__((packed));
+
+struct cmd_ap_add_sta_config {
+	struct command_header header;
+	struct cmd_ap_sta_param sta_param;
+}__attribute__((packed));
+
 struct cmd_sta_auth {
 	struct     command_header header;
 	uint8_t    bssid[MAC_ADDR_LEN];
@@ -179,6 +275,17 @@ struct cmd_sta_auth {
 	uint8_t    pad[2];
 	uint8_t    auth_data[];
 } __packed;
+
+struct cmd_mgmt_tx {
+        struct     command_header header;
+        uint8_t    channel;
+        uint8_t    offchan;
+        uint32_t   wait;
+        uint8_t    no_cck;
+        uint8_t    dont_wait_for_ack;
+        uint32_t   len;
+        uint8_t    buf[];
+}__attribute__((packed));
 
 struct cmd_sta_assoc {
 	struct     command_header header;
@@ -198,10 +305,10 @@ struct cmd_sta_connect {
 	uint8_t    assoc_ie[];
 } __packed;
 
-struct cmd_sta_disconnect {
+struct cmd_disconnect {
 	struct     command_header header;
 	uint16_t   reason_code;
-	uint8_t    pad[2];
+	uint8_t    mac[MAC_ADDR_LEN];
 } __packed;
 
 struct cmd_set_ip_addr {
@@ -295,12 +402,27 @@ struct assoc_event {
 	uint8_t    frame[0];
 } __packed;
 
+struct mgmt_event {
+        struct     event_header header;
+        int32_t    nf;
+        int32_t    rssi;
+        int32_t    chan;
+        uint32_t   frame_len;
+        uint8_t    frame[0];
+}__attribute__((packed));
+
 struct disconnect_event {
 	struct     event_header header;
 	uint8_t    bssid[MAC_ADDR_LEN];
 	char       ssid[MAX_SSID_LEN+1];
 	uint8_t    reason;
 } __packed;
+
+struct cmd_config_mode {
+	struct     command_header header;
+	uint16_t   mode;
+	uint8_t    pad[2];
+}__attribute__((packed));
 
 struct esp_internal_bootup_event {
 	struct     event_header header;
