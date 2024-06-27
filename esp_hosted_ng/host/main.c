@@ -450,7 +450,7 @@ static int esp_add_network_ifaces(struct esp_adapter *adapter)
 	}
 
 	rtnl_lock();
-	wdev = esp_cfg80211_add_iface(adapter->wiphy, "espsta%d", 1, NL80211_IFTYPE_STATION, NULL);
+	wdev = esp_cfg80211_add_iface(adapter->wiphy, "wlan%d", 1, NL80211_IFTYPE_STATION, NULL);
 	rtnl_unlock();
 
 	/* Return success if network added successfully */
@@ -471,6 +471,7 @@ int esp_add_card(struct esp_adapter *adapter)
 	RET_ON_FAIL(esp_commands_setup(adapter));
 	RET_ON_FAIL(esp_add_wiphy(adapter));
 	RET_ON_FAIL(esp_add_network_ifaces(adapter));
+	clear_bit(ESP_CLEANUP_IN_PROGRESS, &adapter->state_flags);
 
 	return 0;
 }
@@ -561,6 +562,7 @@ int esp_remove_card(struct esp_adapter *adapter)
 	}
 
 	esp_stop_network_ifaces(adapter);
+	esp_cfg_cleanup(adapter);
 	/* BT may have been initialized after fw bootup event, deinit it */
 	esp_deinit_bt(adapter);
 	esp_commands_teardown(adapter);
@@ -646,8 +648,6 @@ static void process_rx_packet(struct esp_adapter *adapter, struct sk_buff *skb)
 	u16 rx_checksum = 0, checksum = 0;
 	struct hci_dev *hdev = adapter->hcidev;
 	u8 *type = NULL;
-	struct sk_buff *eap_skb = NULL;
-	struct ethhdr *eth = NULL;
 
 	if (!skb)
 		return;
@@ -689,31 +689,11 @@ static void process_rx_packet(struct esp_adapter *adapter, struct sk_buff *skb)
 		}
 
 		if (payload_header->packet_type == PACKET_TYPE_EAPOL) {
-			esp_info("Rx PACKET_TYPE_EAPOL!!!!\n");
+			esp_dbg("Rx PACKET_TYPE_EAPOL!!!!\n");
 			esp_port_open(priv);
-
-			eap_skb = alloc_skb(skb->len + ETH_HLEN, GFP_KERNEL);
-			if (!eap_skb) {
-				esp_info("%u memory alloc failed\n", __LINE__);
-				dev_kfree_skb_any(skb);
-				return;
-			}
-			eap_skb->dev = priv->ndev;
-
-			if (!IS_ALIGNED((unsigned long) eap_skb->data, SKB_DATA_ADDR_ALIGNMENT)) {
-				esp_info("%u eap skb unaligned\n", __LINE__);
-			}
-
-			eth = (struct ethhdr *) skb_put(eap_skb, ETH_HLEN);
-			ether_addr_copy(eth->h_dest, /*skb->data*/priv->ndev->dev_addr);
-			ether_addr_copy(eth->h_source, /*skb->data+6*/ ap_bssid);
-			eth->h_proto = cpu_to_be16(ETH_P_PAE);
-
-			skb_put_data(eap_skb, skb->data, skb->len);
-			eap_skb->protocol = eth_type_trans(eap_skb, eap_skb->dev);
-			dev_kfree_skb_any(skb);
-
-			netif_rx(eap_skb);
+			skb->dev = priv->ndev;
+			skb->protocol = eth_type_trans(skb, priv->ndev);
+			netif_rx(skb);
 
 		} else if (payload_header->packet_type == PACKET_TYPE_DATA) {
 
@@ -768,6 +748,39 @@ static void process_rx_packet(struct esp_adapter *adapter, struct sk_buff *skb)
 		dev_kfree_skb_any(skb);
 	} else {
 		dev_kfree_skb_any(skb);
+	}
+}
+
+char *esp_get_hardware_name(int hardware_id)
+{
+	if(hardware_id == ESP_FIRMWARE_CHIP_ESP32)
+		return "ESP32";
+	else if(hardware_id == ESP_FIRMWARE_CHIP_ESP32S2)
+		return "ESP32S2";
+	else if(hardware_id == ESP_FIRMWARE_CHIP_ESP32C3)
+		return "ESP32C3";
+	else if(hardware_id == ESP_FIRMWARE_CHIP_ESP32S3)
+		return "ESP32S3";
+	else if(hardware_id == ESP_FIRMWARE_CHIP_ESP32C2)
+		return "ESP32C2";
+	else if(hardware_id == ESP_FIRMWARE_CHIP_ESP32C6)
+		return "ESP32C6";
+	else
+		return "N/A";
+}
+
+bool esp_is_valid_hardware_id(int hardware_id)
+{
+	switch(hardware_id) {
+	case ESP_FIRMWARE_CHIP_ESP32:
+	case ESP_FIRMWARE_CHIP_ESP32S2:
+	case ESP_FIRMWARE_CHIP_ESP32C3:
+	case ESP_FIRMWARE_CHIP_ESP32S3:
+	case ESP_FIRMWARE_CHIP_ESP32C2:
+	case ESP_FIRMWARE_CHIP_ESP32C6:
+		return true;
+	default:
+		return false;
 	}
 }
 

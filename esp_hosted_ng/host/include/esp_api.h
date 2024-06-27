@@ -41,4 +41,6 @@ int esp_validate_chipset(struct esp_adapter *adapter, u8 chipset);
 int esp_adjust_spi_clock(struct esp_adapter *adapter, u8 spi_clk_mhz);
 void process_test_capabilities(u32 raw_tp_mode);
 int esp_init_raw_tp(struct esp_adapter *adapter);
+bool esp_is_valid_hardware_id(int hardware_id);
+char *esp_get_hardware_name(int hardware_id);
 #endif

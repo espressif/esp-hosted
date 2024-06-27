@@ -39,7 +39,7 @@ int process_start_scan(uint8_t if_type, uint8_t *payload, uint16_t payload_len);
 int process_get_mac(uint8_t if_type);
 int process_set_mac(uint8_t if_type, uint8_t *payload, uint16_t payload_len);
 int process_sta_connect(uint8_t if_type, uint8_t *payload, uint16_t payload_len);
-int process_sta_disconnect(uint8_t if_type, uint8_t *payload, uint16_t payload_len);
+int process_disconnect(uint8_t if_type, uint8_t *payload, uint16_t payload_len);
 int process_add_key(uint8_t if_type, uint8_t *payload, uint16_t payload_len);
 int process_del_key(uint8_t if_type, uint8_t *payload, uint16_t payload_len);
 int process_set_default_key(uint8_t if_type, uint8_t *payload, uint16_t payload_len);
@@ -51,8 +51,16 @@ int process_tx_power(uint8_t if_type, uint8_t *payload, uint16_t payload_len, ui
 int process_reg_set(uint8_t if_type, uint8_t *payload, uint16_t payload_len);
 int process_reg_get(uint8_t if_type, uint8_t *payload, uint16_t payload_len);
 int process_wow_set(uint8_t if_type, uint8_t *payload, uint16_t payload_len);
+int process_set_mode(uint8_t if_type, uint8_t *payload, uint16_t payload_len);
+int process_set_ie(uint8_t if_type, uint8_t *payload, uint16_t payload_len);
+int process_set_ap_config(uint8_t if_type, uint8_t *payload, uint16_t payload_len);
+int process_mgmt_tx(uint8_t if_type, uint8_t *payload, uint16_t payload_len);
+int process_ap_station(uint8_t if_type, uint8_t *payload, uint16_t payload_len);
+int process_tx_power(uint8_t if_type, uint8_t *payload, uint16_t payload_len, uint8_t cmd);
 
 esp_err_t initialise_wifi(void);
+
+void esp_create_wifi_event_loop(void);
 
 inline esp_err_t send_command_response(interface_buffer_handle_t *buf_handle)
 {

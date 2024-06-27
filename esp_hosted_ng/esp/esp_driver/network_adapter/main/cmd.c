@@ -1,22 +1,14 @@
-// SPDX-License-Identifier: Apache-2.0
-// Copyright 2015-2022 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
+#include <inttypes.h>
 #include "esp_log.h"
 #include "interface.h"
 #include "esp.h"
@@ -30,52 +22,44 @@
 #include "esp_wifi_driver.h"
 #include "esp_event.h"
 #include "esp_mac.h"
+#include "wifi_defs.h"
 
 #define TAG "FW_CMD"
-
-/* management */
-#define WLAN_FC_STYPE_ASSOC_REQ     0
-#define WLAN_FC_STYPE_ASSOC_RESP    1
-#define WLAN_FC_STYPE_REASSOC_REQ   2
-#define WLAN_FC_STYPE_REASSOC_RESP  3
-#define WLAN_FC_STYPE_PROBE_REQ     4
-#define WLAN_FC_STYPE_PROBE_RESP    5
-#define WLAN_FC_STYPE_BEACON        8
-#define WLAN_FC_STYPE_ATIM          9
-#define WLAN_FC_STYPE_DISASSOC      10
-#define WLAN_FC_STYPE_AUTH          11
-#define WLAN_FC_STYPE_DEAUTH        12
-#define WLAN_FC_STYPE_ACTION        13
-
-#define IE_POS_ASSOC_RESP_STATUS    2
 
 /* This is limitation of ESP WiFi lib.
  * It needs the password field updated to understand
  * we are triggering non-open connection */
 #define DUMMY_PASSPHRASE            "12345678"
-#define IEEE_HEADER_SIZE            24
-#define DEFAULT_SCAN_LIST_SIZE      20
-
 extern volatile uint8_t station_connected;
 extern volatile uint8_t association_ongoing;
+extern volatile uint8_t softap_started;
 
 volatile uint8_t sta_init_flag;
 
 static struct wpa_funcs wpa_cb;
 static esp_event_handler_instance_t instance_any_id;
 static uint8_t *ap_bssid;
+
 extern uint32_t ip_address;
 extern struct macfilter_list mac_list;
 extern uint8_t sta_mac[MAC_ADDR_LEN];
 extern uint8_t ap_mac[MAC_ADDR_LEN];
 
-esp_err_t esp_wifi_register_mgmt_frame_internal(uint32_t type, uint32_t subtype);
+uint8_t *ap_rsn_ie;
+uint8_t ap_rsn_ie_len;
+
 int esp_wifi_register_wpa_cb_internal(struct wpa_funcs *cb);
 int esp_wifi_unregister_wpa_cb_internal(void);
 extern esp_err_t wlan_sta_rx_callback(void *buffer, uint16_t len, void *eb);
 extern volatile uint8_t power_save_on;
 extern void wake_host();
 extern struct wow_config wow;
+
+#ifdef CONFIG_IDF_TARGET_ESP32C6
+	#define TX_DONE_PREFIX 8
+#else
+	#define TX_DONE_PREFIX 0
+#endif
 
 extern int wpa_parse_wpa_ie(const u8 *wpa_ie, size_t wpa_ie_len, wifi_wpa_ie_t *data);
 static inline void WPA_PUT_LE16(u8 *a, u16 val)
@@ -99,6 +83,68 @@ static void esp_wifi_set_debug_log()
 	esp_wifi_internal_set_log_mod(g_wifi_log_module, g_wifi_log_submodule, true);
 
 	esp_wifi_internal_set_log_level(WIFI_LOG_VERBOSE);
+}
+
+static int send_command_resp(uint8_t if_type,
+			     uint8_t cmd_code, uint8_t cmd_status,
+			     uint8_t *data, uint32_t len, uint32_t offset)
+{
+	int ret;
+	struct command_header *header;
+	interface_buffer_handle_t buf_handle = {0};
+
+	ESP_LOGD(TAG , "Sending response of cmd=%d status=%d\n", cmd_code, cmd_status);
+
+	buf_handle.payload_len = sizeof(struct command_header) +
+		sizeof (struct esp_payload_header) +
+		len;
+	buf_handle.payload = heap_caps_malloc(buf_handle.payload_len, MALLOC_CAP_DMA);
+	if (!buf_handle.payload) {
+		ESP_LOGE(TAG , "Malloc send buffer fail!");
+		return ESP_FAIL;
+	}
+	memset(buf_handle.payload, 0, buf_handle.payload_len);
+
+	if (data && len) {
+		memcpy(buf_handle.payload + offset, data, len);
+	}
+
+	header = (struct command_header *) buf_handle.payload;
+
+	header->cmd_status = cmd_status;
+	header->cmd_code = cmd_code;
+	header->len = len;
+
+	buf_handle.if_type = if_type;
+	buf_handle.if_num = 0;
+	buf_handle.pkt_type = PACKET_TYPE_COMMAND_RESPONSE;
+
+	buf_handle.priv_buffer_handle = buf_handle.payload;
+	buf_handle.free_buf_handle = free;
+
+	/* Send command response */
+	ret = send_command_response(&buf_handle);
+	if (ret != pdTRUE) {
+		ESP_LOGE(TAG, "Slave -> Host: Failed to send command response\n");
+		goto cleanup;
+	}
+
+	return ESP_OK;
+cleanup:
+	if (buf_handle.payload) {
+		free(buf_handle.payload);
+		buf_handle.payload = NULL;
+	}
+
+	return ret;
+}
+
+static void deinitialize_wifi(void)
+{
+	/*esp_event_handler_unregister(WIFI_EVENT, WIFI_EVENT_SCAN_DONE,
+	  &esp_scan_done_event_handler);*/
+	esp_wifi_stop();
+	esp_wifi_deinit();
 }
 
 static void cleanup_ap_bssid(void)
@@ -131,7 +177,7 @@ int sta_connection(uint8_t *bssid)
 		return ESP_FAIL;
 	}
 	memcpy(ap_bssid, bssid, MAC_ADDR_LEN);
-	esp_wifi_connect_internal(ap_bssid);
+	esp_wifi_sta_connect_internal(ap_bssid);
 
 	return ESP_OK;
 }
@@ -144,7 +190,7 @@ int station_rx_eapol(uint8_t *src_addr, uint8_t *buf, uint32_t len)
 	u8 own_mac[MAC_ADDR_LEN] = {0};
 
 	if (!src_addr || !buf || !len) {
-		ESP_LOGI(TAG, "eapol err - src_addr: %p buf: %p len: %ld\n",
+		ESP_LOGI(TAG, "eapol err - src_addr: %p buf: %p len: %lu\n",
 				src_addr, buf, len);
 		//TODO : free buf using esp_wifi_internal_free_rx_buffer?
 		return ESP_FAIL;
@@ -191,12 +237,6 @@ int station_rx_eapol(uint8_t *src_addr, uint8_t *buf, uint32_t len)
 
 	memcpy((char *)tx_buf, buf, len);
 
-#if 0
-	if (len)
-		ESP_LOG_BUFFER_HEXDUMP("tx_buf", tx_buf, len, ESP_LOG_INFO);
-#endif
-
-
 	buf_handle.if_type = ESP_STA_IF;
 	buf_handle.if_num = 0;
 	buf_handle.payload_len = len;
@@ -233,31 +273,12 @@ static int sta_michael_mic_failure(uint16_t is_unicast)
 	return ESP_OK;
 }
 
-static uint8_t *build_sae_msg(uint8_t *bssid, uint32_t sae_msg_type, size_t *sae_msg_len)
-{
-	return ESP_OK;
-}
-
-static int rx_sae_msg(uint8_t *data, size_t len, uint32_t sae_msg_type, uint16_t status)
-{
-	return ESP_OK;
-}
-
-static void sta_connected_cb(uint8_t *bssid)
-{
-	ESP_LOGI(TAG, "STA connected with:" MACSTR "\n", MAC2STR(bssid));
-}
-
 void disconnected_cb(uint8_t reason_code)
 {
 	ESP_LOGI(TAG, "STA disconnected [%u]\n", reason_code);
 }
 
-void config_done(void)
-{
-}
-
-int prepare_event(uint8_t if_type, interface_buffer_handle_t *buf_handle, uint16_t event_len)
+static int prepare_event(uint8_t if_type, interface_buffer_handle_t *buf_handle, uint16_t event_len)
 {
 	esp_err_t ret = ESP_OK;
 
@@ -279,6 +300,9 @@ int prepare_event(uint8_t if_type, interface_buffer_handle_t *buf_handle, uint16
 	return ret;
 }
 
+void config_done(void)
+{
+}
 
 static void handle_scan_event(void)
 {
@@ -287,7 +311,7 @@ static void handle_scan_event(void)
 	struct event_header *header;
 	esp_err_t ret = ESP_OK;
 
-    /*type = ~(1 << WLAN_FC_STYPE_BEACON) & ~(1 << WLAN_FC_STYPE_PROBE_RESP);*/
+	/*type = ~(1 << WLAN_FC_STYPE_BEACON) & ~(1 << WLAN_FC_STYPE_PROBE_RESP);*/
 	/*esp_wifi_register_mgmt_frame_internal(type, 0);*/
 
 	ret = prepare_event(ESP_STA_IF, &buf_handle, sizeof(struct event_header));
@@ -441,7 +465,7 @@ static void wifi_event_handler(void* arg, esp_event_base_t event_base,
 	bool wakeup_flag = false;
 
 	if (event_base != WIFI_EVENT) {
-		ESP_LOGI(TAG, "Received unregistered event %s[%ld]\n", event_base, event_id);
+		ESP_LOGI(TAG, "Received unregistered event %s[%lu]\n", event_base, event_id);
 		return;
 	}
 
@@ -453,7 +477,7 @@ static void wifi_event_handler(void* arg, esp_event_base_t event_base,
 		break;
 
 	case WIFI_EVENT_STA_CONNECTED:
-		ESP_LOGI(TAG, "Wifi Station Connected event!!\n");
+		ESP_LOGI(TAG, "Wifi Station Connected event!! \n");
 		association_ongoing = 0;
 		station_connected = 1;
 
@@ -492,9 +516,27 @@ static void wifi_event_handler(void* arg, esp_event_base_t event_base,
 		handle_scan_event();
 		break;
 
+	case WIFI_EVENT_AP_START:
+		softap_started = 1;
+		break;
+
+	case WIFI_EVENT_AP_STOP:
+		softap_started = 0;
+		break;
+
 	default:
-		ESP_LOGI(TAG, "Unregistered event: %ld\n", event_id);
+		ESP_LOGI(TAG, "Unregistered event: %lu\n", event_id);
 	}
+}
+
+void esp_create_wifi_event_loop(void)
+{
+	ESP_ERROR_CHECK(esp_event_loop_create_default());
+	ESP_ERROR_CHECK(esp_event_handler_instance_register(WIFI_EVENT,
+				ESP_EVENT_ANY_ID,
+				&wifi_event_handler,
+				NULL,
+				&instance_any_id));
 }
 
 static int sta_rx_auth(uint8_t type, uint8_t *frame, size_t len, uint8_t *sender,
@@ -565,7 +607,7 @@ static int sta_rx_probe(uint8_t type, uint8_t *frame, size_t len, uint8_t *sende
 	esp_err_t ret = ESP_OK;
 	interface_buffer_handle_t buf_handle = {0};
 
-	/*ESP_LOGI(TAG, "SCAN# Type: %d, Channel: %d, Len: %d\n", type, channel, len);
+	/*ESP_LOGI(TAG, "SCAN# Type: %d, Channel: %d, Len: %lu\n", type, channel, len);
 	ESP_LOG_BUFFER_HEXDUMP("Frame", frame, len, ESP_LOG_INFO);
 	ESP_LOG_BUFFER_HEXDUMP("MAC", sender, MAC_ADDR_LEN, ESP_LOG_INFO);
 	*/
@@ -688,7 +730,160 @@ static int handle_wpa_sta_rx_mgmt(uint8_t type, uint8_t *frame, size_t len, uint
 	return ESP_OK;
 }
 
+static int hostap_sta_join(uint8_t *bssid, uint8_t *wpa_ie, uint8_t wpa_ie_len,
+			uint8_t* rsnxe, uint8_t rsnxe_len, bool *pmf_enable, int subtype)
+{
+	return true;
+}
+
+
+static int wpa_ap_remove(uint8_t* bssid)
+{
+	return true;
+}
+
+static uint8_t  *wpa_ap_get_wpa_ie(uint8_t *ie_len)
+{
+	if (ap_rsn_ie) {
+		*ie_len = ap_rsn_ie_len;
+		return ap_rsn_ie;
+	}
+
+	*ie_len = 0;
+
+	return NULL;
+}
+
+static int wpa_ap_rx_eapol(uint8_t *addr, uint8_t *buf, size_t len)
+{
+	esp_err_t ret = ESP_OK;
+	interface_buffer_handle_t buf_handle = {0};
+	uint8_t * tx_buf = NULL;
+
+	if (!buf || !len) {
+		ESP_LOGI(TAG, "eapol err - buf: %p len: %zu\n",
+				buf, len);
+		//TODO : free buf using esp_wifi_internal_free_rx_buffer?
+		return ESP_FAIL;
+	}
+
+	tx_buf = (uint8_t *)malloc(len);
+	if (!tx_buf) {
+		ESP_LOGE(TAG, "%s:%u malloc failed\n",__func__, __LINE__);
+		return ESP_FAIL;
+	}
+
+	memcpy((char *)tx_buf, buf, len);
+
+#if 0
+	if (len)
+		ESP_LOG_BUFFER_HEXDUMP("tx_buf", tx_buf, len, ESP_LOG_INFO);
+#endif
+
+
+	buf_handle.if_type = ESP_AP_IF;
+	buf_handle.if_num = 0;
+	buf_handle.payload_len = len;
+	buf_handle.payload = tx_buf;
+	buf_handle.wlan_buf_handle = tx_buf;
+	buf_handle.free_buf_handle = free;
+	buf_handle.pkt_type = PACKET_TYPE_EAPOL;
+
+	ESP_LOGD(TAG, "Sending eapol to host on AP iface\n");
+	ret = send_frame_to_host(&buf_handle);
+
+	if (ret != pdTRUE) {
+		ESP_LOGE(TAG, "Slave -> Host: Failed to send buffer\n");
+		goto DONE;
+	}
+
+	return true;
+
+DONE:
+	free(tx_buf);
+	tx_buf = NULL;
+
+	return false;
+}
+
+static int wpa_ap_get_peer_spp_msg(void *sm_data, bool *spp_cap, bool *spp_req)
+{
+    return 0;
+}
+
+char hostapd;
+static int *hostap_init(void)
+{
+	return NULL;
+}
+
+
+static int hostap_deinit(void *data)
+{
+	return true;
+}
+
+static int handle_wpa_ap_rx_mgmt(void *pkt, uint32_t pkt_len, uint8_t chan, int rssi, int nf)
+{
+	struct mgmt_frm_event *event;
+	esp_err_t ret = ESP_OK;
+	interface_buffer_handle_t buf_handle = {0};
+	pkt_len = pkt_len + 24;
+
+	//ESP_LOG_BUFFER_HEXDUMP(TAG, pkt, pkt_len, ESP_LOG_INFO);
+	ret = prepare_event(ESP_AP_IF, &buf_handle, sizeof(struct mgmt_frm_event)
+			+ pkt_len);
+	if (ret) {
+		ESP_LOGE(TAG, "%s: Failed to prepare event buffer\n", __func__);
+		return ESP_FAIL;
+	}
+
+	event = (struct mgmt_frm_event *) buf_handle.payload;
+
+	/* Populate event header */
+	event->header.event_code = EVENT_AP_MGMT_RX;
+	event->header.len = htole16(buf_handle.payload_len - sizeof(struct event_header));
+	/*event->header.status = 1;*/
+
+	memcpy(event->frame, pkt, pkt_len);
+	event->frame_len = pkt_len;
+	event->chan = chan;
+	event->rssi = rssi;
+	event->nf = nf;
+
+	if (event->frame[0] != 0x40) {
+		ESP_LOGE(TAG, "%s: Got packet type as %x \n", __func__, event->frame[0]);
+	}
+
+	/*ESP_LOG_BUFFER_HEXDUMP(TAG, event->frame, event->frame_len, ESP_LOG_INFO);*/
+
+	ret = send_command_event(&buf_handle);
+	if (ret != pdTRUE) {
+		ESP_LOGE(TAG, "Slave -> Host: Failed to send mgmt frames\n");
+		goto DONE;
+	}
+
+	return ESP_OK;
+
+DONE:
+	if (buf_handle.payload) {
+		free(buf_handle.payload);
+		buf_handle.payload = NULL;
+	}
+	return ret;
+
+	return 0;
+}
+
+static void sta_connected(uint8_t *bssid)
+{
+}
+
 extern char * wpa_config_parse_string(const char *value, size_t *len);
+static void sta_disconnected(uint8_t reason_code)
+{
+}
+
 esp_err_t initialise_wifi(void)
 {
 	wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
@@ -708,16 +903,24 @@ esp_err_t initialise_wifi(void)
 	wpa_cb.wpa_sta_init = sta_init;
 	wpa_cb.wpa_sta_deinit = sta_deinit;
 	wpa_cb.wpa_sta_connect = sta_connection;
-	wpa_cb.wpa_sta_connected_cb = sta_connected_cb;
+	wpa_cb.wpa_sta_connected_cb = sta_connected;
+	wpa_cb.wpa_sta_disconnected_cb = sta_disconnected;
 	wpa_cb.wpa_sta_disconnected_cb = disconnected_cb;
 	wpa_cb.wpa_sta_rx_eapol = station_rx_eapol;
 	wpa_cb.wpa_sta_in_4way_handshake = in_4way;
 	wpa_cb.wpa_parse_wpa_ie = wpa_parse_wpa_ie;
 	wpa_cb.wpa_michael_mic_failure = sta_michael_mic_failure;
-	wpa_cb.wpa3_build_sae_msg = build_sae_msg;
-	wpa_cb.wpa3_parse_sae_msg = rx_sae_msg;
 	wpa_cb.wpa_config_done = config_done;
 	wpa_cb.wpa_config_parse_string  = wpa_config_parse_string;
+
+	wpa_cb.wpa_ap_join       = hostap_sta_join;
+	wpa_cb.wpa_ap_remove     = wpa_ap_remove;
+	wpa_cb.wpa_ap_get_wpa_ie = wpa_ap_get_wpa_ie;
+	wpa_cb.wpa_ap_rx_eapol   = wpa_ap_rx_eapol;
+	wpa_cb.wpa_ap_get_peer_spp_msg  = wpa_ap_get_peer_spp_msg;
+	wpa_cb.wpa_ap_init       = hostap_init;
+	wpa_cb.wpa_ap_deinit     = hostap_deinit;
+	wpa_cb.wpa_ap_rx_mgmt    = handle_wpa_ap_rx_mgmt;
 
 	esp_wifi_register_wpa_cb_internal(&wpa_cb);
 
@@ -729,21 +932,13 @@ esp_err_t initialise_wifi(void)
 	return result;
 }
 
-static void deinitialize_wifi(void)
-{
-	/*esp_event_handler_unregister(WIFI_EVENT, WIFI_EVENT_SCAN_DONE,
-	  &esp_scan_done_event_handler);*/
-	esp_wifi_stop();
-	esp_wifi_deinit();
-}
+
 
 int process_start_scan(uint8_t if_type, uint8_t *payload, uint16_t payload_len)
 {
 	uint32_t type = 0;
 	wifi_scan_config_t params = {0};
 	esp_err_t ret = ESP_OK;
-	struct command_header *header;
-	interface_buffer_handle_t buf_handle = {0};
 	uint8_t cmd_status = CMD_RESPONSE_SUCCESS;
 	struct scan_request *scan_req;
 	bool config_present = false;
@@ -784,53 +979,20 @@ int process_start_scan(uint8_t if_type, uint8_t *payload, uint16_t payload_len)
 			esp_wifi_register_mgmt_frame_internal(0, 0);
 		}
 	} else {
-			ESP_LOGI(TAG, "Scan not permited as WiFi is not yet up");
-			cmd_status = CMD_RESPONSE_FAIL;
+		ESP_LOGI(TAG, "Scan not permited as WiFi is not yet up");
+		cmd_status = CMD_RESPONSE_FAIL;
 
-			/* Reset frame registration */
-			esp_wifi_register_mgmt_frame_internal(0, 0);
+		/* Reset frame registration */
+		esp_wifi_register_mgmt_frame_internal(0, 0);
 	}
 
-	buf_handle.if_type = ESP_STA_IF;
-	buf_handle.if_num = 0;
-	buf_handle.payload_len = sizeof(struct command_header);
-	buf_handle.pkt_type = PACKET_TYPE_COMMAND_RESPONSE;
-
-	buf_handle.payload = heap_caps_malloc(buf_handle.payload_len, MALLOC_CAP_DMA);
-	assert(buf_handle.payload);
-	memset(buf_handle.payload, 0, buf_handle.payload_len);
-
-	header = (struct command_header *) buf_handle.payload;
-
-	header->cmd_code = CMD_SCAN_REQUEST;
-	header->len = 0;
-	header->cmd_status = cmd_status;
-
-	buf_handle.priv_buffer_handle = buf_handle.payload;
-	buf_handle.free_buf_handle = free;
-
-	/* Send command response */
-	ret = send_command_response(&buf_handle);
-	if (ret != pdTRUE) {
-		ESP_LOGE(TAG, "Slave -> Host: Failed to send command response\n");
-		goto DONE;
-	}
-
-	return ESP_OK;
-
-DONE:
-	if (buf_handle.payload) {
-		free(buf_handle.payload);
-		buf_handle.payload = NULL;
-	}
+	ret = send_command_resp(if_type, CMD_SCAN_REQUEST, cmd_status, NULL, 0, 0);
 
 	return ret;
 }
 
 int process_set_mcast_mac_list(uint8_t if_type, uint8_t *payload, uint16_t payload_len)
 {
-	struct command_header *header;
-	interface_buffer_handle_t buf_handle = {0};
 	esp_err_t ret = ESP_OK;
 	struct cmd_set_mcast_mac_addr *cmd_mcast_mac_list;
 
@@ -842,89 +1004,16 @@ int process_set_mcast_mac_list(uint8_t if_type, uint8_t *payload, uint16_t paylo
 
 	/*ESP_LOG_BUFFER_HEXDUMP("MAC Filter", (uint8_t *) &mac_list, sizeof(mac_list), ESP_LOG_INFO);*/
 
-	buf_handle.if_type = if_type;
-	buf_handle.if_num = 0;
-	buf_handle.payload_len = sizeof(struct command_header);
-	buf_handle.pkt_type = PACKET_TYPE_COMMAND_RESPONSE;
-
-	buf_handle.payload = heap_caps_malloc(buf_handle.payload_len, MALLOC_CAP_DMA);
-	assert(buf_handle.payload);
-	memset(buf_handle.payload, 0, buf_handle.payload_len);
-
-	header = (struct command_header *) buf_handle.payload;
-
-	header->cmd_code = CMD_SET_MCAST_MAC_ADDR;
-	header->len = 0;
-	header->cmd_status = CMD_RESPONSE_SUCCESS;
-
-	buf_handle.priv_buffer_handle = buf_handle.payload;
-	buf_handle.free_buf_handle = free;
-
-	ret = send_command_response(&buf_handle);
-	if (ret != pdTRUE) {
-		ESP_LOGE(TAG, "Slave -> Host: Failed to send command response\n");
-		goto DONE;
-	}
-
-	return ESP_OK;
-
-DONE:
-	if (buf_handle.payload)
-		free(buf_handle.payload);
-
-	return ret;
-}
-
-int process_set_ip(uint8_t if_type, uint8_t *payload, uint16_t payload_len)
-{
-	struct command_header *header;
-	interface_buffer_handle_t buf_handle = {0};
-	esp_err_t ret = ESP_OK;
-	struct cmd_set_ip_addr *cmd_set_ip;
-
-	cmd_set_ip = (struct cmd_set_ip_addr *) payload;
-
-	ip_address = le32toh(cmd_set_ip->ip);
-
-	buf_handle.if_type = if_type;
-	buf_handle.if_num = 0;
-	buf_handle.payload_len = sizeof(struct command_header);
-	buf_handle.pkt_type = PACKET_TYPE_COMMAND_RESPONSE;
-
-	buf_handle.payload = heap_caps_malloc(buf_handle.payload_len, MALLOC_CAP_DMA);
-	assert(buf_handle.payload);
-	memset(buf_handle.payload, 0, buf_handle.payload_len);
-
-	header = (struct command_header *) buf_handle.payload;
-
-	header->cmd_code = CMD_SET_IP_ADDR;
-	header->len = 0;
-	header->cmd_status = CMD_RESPONSE_SUCCESS;
-
-	buf_handle.priv_buffer_handle = buf_handle.payload;
-	buf_handle.free_buf_handle = free;
-
-	ret = send_command_response(&buf_handle);
-	if (ret != pdTRUE) {
-		ESP_LOGE(TAG, "Slave -> Host: Failed to send command response\n");
-		goto DONE;
-	}
-
-	return ESP_OK;
-
-DONE:
-	if (buf_handle.payload)
-		free(buf_handle.payload);
+	ret = send_command_resp(if_type, CMD_SET_MCAST_MAC_ADDR, CMD_RESPONSE_SUCCESS, NULL, 0, 0);
 
 	return ret;
 }
 
 int process_tx_power(uint8_t if_type, uint8_t *payload, uint16_t payload_len, uint8_t cmd)
 {
-	interface_buffer_handle_t buf_handle = {0};
 	esp_err_t ret = ESP_OK;
 	struct cmd_set_get_val *val;
-	int8_t max_tx_power;
+	uint8_t max_tx_power;
 
 	if (cmd == CMD_SET_TXPOWER) {
 		val = (struct cmd_set_get_val *)payload;
@@ -932,38 +1021,21 @@ int process_tx_power(uint8_t if_type, uint8_t *payload, uint16_t payload_len, ui
 		esp_wifi_set_max_tx_power(max_tx_power);
 	}
 
-	/*ESP_LOG_BUFFER_HEXDUMP("MAC Filter", (uint8_t *) &mac_list, sizeof(mac_list), ESP_LOG_INFO);*/
+	ret = send_command_resp(if_type, cmd, CMD_RESPONSE_SUCCESS, &max_tx_power, sizeof(int8_t), 0);
 
-	buf_handle.if_type = if_type;
-	buf_handle.if_num = 0;
-	buf_handle.payload_len = sizeof(struct cmd_set_get_val);
-	buf_handle.pkt_type = PACKET_TYPE_COMMAND_RESPONSE;
+	return ret;
+}
 
-	buf_handle.payload = heap_caps_malloc(buf_handle.payload_len, MALLOC_CAP_DMA);
-	esp_wifi_get_max_tx_power(&max_tx_power);
-	assert(buf_handle.payload);
-	memset(buf_handle.payload, 0, buf_handle.payload_len);
+int process_set_ip(uint8_t if_type, uint8_t *payload, uint16_t payload_len)
+{
+	esp_err_t ret = ESP_OK;
+	struct cmd_set_ip_addr *cmd_set_ip;
 
-	val = (struct cmd_set_get_val *)(buf_handle.payload);
-	val->value = max_tx_power;
-	val->header.cmd_code = cmd;
-	val->header.len = 0;
-	val->header.cmd_status = CMD_RESPONSE_SUCCESS;
+	cmd_set_ip = (struct cmd_set_ip_addr *) payload;
 
-	buf_handle.priv_buffer_handle = buf_handle.payload;
-	buf_handle.free_buf_handle = free;
+	ip_address = le32toh(cmd_set_ip->ip);
 
-	ret = send_command_response(&buf_handle);
-	if (ret != pdTRUE) {
-		ESP_LOGE(TAG, "Slave -> Host: Failed to send command response\n");
-		goto DONE;
-	}
-
-	return ESP_OK;
-
-DONE:
-	if (buf_handle.payload)
-		free(buf_handle.payload);
+	ret = send_command_resp(if_type, CMD_SET_IP_ADDR, CMD_RESPONSE_SUCCESS, NULL, 0, 0);
 
 	return ret;
 }
@@ -1105,61 +1177,30 @@ DONE:
 }
 
 
-int process_sta_disconnect(uint8_t if_type, uint8_t *payload, uint16_t payload_len)
+int process_disconnect(uint8_t if_type, uint8_t *payload, uint16_t payload_len)
 {
-	struct command_header *header;
-	interface_buffer_handle_t buf_handle = {0};
 	esp_err_t ret = ESP_OK;
-	struct cmd_sta_disconnect *cmd_disconnect;
+	struct cmd_disconnect *cmd_disconnect;
 	wifi_mode_t wifi_mode = {0};
 
-	cmd_disconnect = (struct cmd_sta_disconnect *) payload;
+	cmd_disconnect = (struct cmd_disconnect *) payload;
 
-	ESP_LOGI(TAG, "STA Disconnect request: reason [%d]\n", cmd_disconnect->reason_code);
+	ESP_LOGI(TAG, "Disconnect request: reason [%d], interface=%d\n", cmd_disconnect->reason_code, if_type);
 
-	if (sta_init_flag && esp_wifi_get_mode(&wifi_mode)==0)
-		esp_wifi_deauthenticate_internal(cmd_disconnect->reason_code);
-
-	buf_handle.if_type = if_type;
-	buf_handle.if_num = 0;
-	buf_handle.payload_len = sizeof(struct command_header);
-	buf_handle.pkt_type = PACKET_TYPE_COMMAND_RESPONSE;
-
-	buf_handle.payload = heap_caps_malloc(buf_handle.payload_len, MALLOC_CAP_DMA);
-	assert(buf_handle.payload);
-	memset(buf_handle.payload, 0, buf_handle.payload_len);
-
-	header = (struct command_header *) buf_handle.payload;
-
-	header->cmd_code = CMD_STA_DISCONNECT;
-	header->len = 0;
-	header->cmd_status = CMD_RESPONSE_SUCCESS;
-
-	buf_handle.priv_buffer_handle = buf_handle.payload;
-	buf_handle.free_buf_handle = free;
-
-	/* Send command response */
-	ret = send_command_response(&buf_handle);
-	if (ret != pdTRUE) {
-		ESP_LOGE(TAG, "Slave -> Host: Failed to send command response\n");
-		goto DONE;
+	if (if_type == ESP_STA_IF) {
+		if (sta_init_flag && esp_wifi_get_mode(&wifi_mode)==0)
+			esp_wifi_deauthenticate_internal(cmd_disconnect->reason_code);
+	} else if (if_type == ESP_AP_IF) {
+		esp_wifi_ap_deauth_internal(cmd_disconnect->mac, cmd_disconnect->reason_code);
 	}
 
-	return ESP_OK;
-
-DONE:
-	if (buf_handle.payload) {
-		free(buf_handle.payload);
-		buf_handle.payload = NULL;
-	}
+	ret = send_command_resp(if_type, CMD_DISCONNECT, CMD_RESPONSE_SUCCESS, NULL, 0, 0);
 
 	return ret;
 }
 
 int process_auth_request(uint8_t if_type, uint8_t *payload, uint16_t payload_len)
 {
-	struct command_header *header;
-	interface_buffer_handle_t buf_handle = {0};
 	esp_err_t ret = ESP_OK;
 	struct cmd_sta_auth *cmd_auth;
 	wifi_config_t wifi_config = {0};
@@ -1188,21 +1229,19 @@ int process_auth_request(uint8_t if_type, uint8_t *payload, uint16_t payload_len
 	}
 
 	if (msg_type == 2) {
-
+#define WLAN_AUTH_FT 2
 		/* WPA3 specific */
 		ESP_LOGI(TAG, "AUTH Confirm\n");
-		esp_wifi_issue_auth_internal(0);
+		esp_wifi_send_auth_internal(0, cmd_auth->bssid, WLAN_AUTH_FT, 2, 0);
 
 	} else {
 		wifi_scan_config_t params = {0};
 
-		if (memcmp(cmd_auth->bssid, (uint8_t[MAC_ADDR_LEN]) {0}, MAC_ADDR_LEN) != 0) {
-			params.bssid = malloc(sizeof(cmd_auth->bssid));
-			assert(params.bssid);
+		params.bssid = malloc(sizeof(cmd_auth->bssid));
+		assert(params.bssid);
 
-			memcpy(params.bssid, cmd_auth->bssid, sizeof(cmd_auth->bssid));
-			params.scan_type = WIFI_SCAN_TYPE_ACTIVE;
-		}
+		memcpy(params.bssid, cmd_auth->bssid, sizeof(cmd_auth->bssid));
+		params.scan_type = 1;
 
 		if (cmd_auth->channel) {
 			params.channel = cmd_auth->channel;
@@ -1210,6 +1249,7 @@ int process_auth_request(uint8_t if_type, uint8_t *payload, uint16_t payload_len
 
 		esp_wifi_scan_start(&params, true);
 
+		free(params.bssid);
 		ret = esp_wifi_scan_get_ap_records(&number, ap_info);
 		if (ret)
 			ESP_LOGI (TAG, "Err: esp_wifi_scan_get_ap_records: %d\n", ret);
@@ -1242,7 +1282,7 @@ int process_auth_request(uint8_t if_type, uint8_t *payload, uint16_t payload_len
 		if (!found_ssid) {
 			ESP_LOGI(TAG, "AP not found to connect.");
 			cmd_status = CMD_RESPONSE_FAIL;
-			goto SEND_RESP;
+			goto send_resp;
 		}
 
 		/* ESP_LOGI(TAG, "ssid_found:%u Auth type scanned[%u], exp[%u] for ssid %s", found_ssid, auth_type, cmd_auth->auth_type, wifi_config.sta.ssid); */
@@ -1271,7 +1311,7 @@ int process_auth_request(uint8_t if_type, uint8_t *payload, uint16_t payload_len
 		if (ret) {
 			ESP_LOGE(TAG, "Failed to set wifi config: %d\n", ret);
 			cmd_status = CMD_RESPONSE_FAIL;
-			goto SEND_RESP;
+			goto send_resp;
 		}
 
 		/* This API sends auth commit to AP */
@@ -1279,53 +1319,22 @@ int process_auth_request(uint8_t if_type, uint8_t *payload, uint16_t payload_len
 		if (ret) {
 			ESP_LOGE(TAG, "Failed to connect wifi\n");
 			cmd_status = CMD_RESPONSE_FAIL;
-			goto SEND_RESP;
+			goto send_resp;
 		}
 	}
 	association_ongoing = 1;
 
-SEND_RESP:
-	buf_handle.if_type = if_type;
-	buf_handle.if_num = 0;
-	buf_handle.payload_len = sizeof(struct command_header);
-	buf_handle.pkt_type = PACKET_TYPE_COMMAND_RESPONSE;
-
-	buf_handle.payload = heap_caps_malloc(buf_handle.payload_len, MALLOC_CAP_DMA);
-	assert(buf_handle.payload);
-	memset(buf_handle.payload, 0, buf_handle.payload_len);
-
-	header = (struct command_header *) buf_handle.payload;
-
-	header->cmd_code = CMD_STA_AUTH;
-	header->len = 0;
-	header->cmd_status = cmd_status;
-
-	buf_handle.priv_buffer_handle = buf_handle.payload;
-	buf_handle.free_buf_handle = free;
-
-	ret = send_command_response(&buf_handle);
-	if (ret != pdTRUE) {
-		ESP_LOGE(TAG, "Slave -> Host: Failed to send command response\n");
-		goto DONE;
-	}
-
-	return ESP_OK;
-DONE:
-
-	if (buf_handle.payload) {
-		free(buf_handle.payload);
-		buf_handle.payload = NULL;
-	}
+send_resp:
+	ret = send_command_resp(if_type, CMD_STA_AUTH, cmd_status, NULL, 0, 0);
 
 	return ret;
 }
 
 int process_assoc_request(uint8_t if_type, uint8_t *payload, uint16_t payload_len)
 {
-	struct command_header *header;
-	interface_buffer_handle_t buf_handle = {0};
 	esp_err_t ret = ESP_OK;
 	struct cmd_sta_assoc *cmd_assoc;
+	uint16_t cmd_status = CMD_RESPONSE_SUCCESS;
 
 	cmd_assoc = (struct cmd_sta_assoc *) payload;
 
@@ -1334,40 +1343,14 @@ int process_assoc_request(uint8_t if_type, uint8_t *payload, uint16_t payload_le
 		esp_wifi_set_appie_internal(WIFI_APPIE_ASSOC_REQ, cmd_assoc->assoc_ie,
 				cmd_assoc->assoc_ie_len, 0);
 	}
+#define WLAN_FC_STYPE_ASSOC_REQ         0
+#define WLAN_STATUS_SUCCESS 0
+	esp_wifi_send_assoc_internal(WIFI_IF_STA, NULL, WLAN_FC_STYPE_ASSOC_REQ, WLAN_STATUS_SUCCESS);
 
-	esp_wifi_issue_assoc_internal(0);
+	ret = send_command_resp(if_type, CMD_STA_ASSOC, cmd_status, NULL, 0, 0);
 
-	buf_handle.if_type = if_type;
-	buf_handle.if_num = 0;
-	buf_handle.payload_len = sizeof(struct command_header);
-	buf_handle.pkt_type = PACKET_TYPE_COMMAND_RESPONSE;
-
-	buf_handle.payload = heap_caps_malloc(buf_handle.payload_len, MALLOC_CAP_DMA);
-	assert(buf_handle.payload);
-	memset(buf_handle.payload, 0, buf_handle.payload_len);
-
-	header = (struct command_header *) buf_handle.payload;
-
-	header->cmd_code = CMD_STA_ASSOC;
-	header->len = 0;
-	header->cmd_status = CMD_RESPONSE_SUCCESS;
-
-	buf_handle.priv_buffer_handle = buf_handle.payload;
-	buf_handle.free_buf_handle = free;
-
-	ret = send_command_response(&buf_handle);
-	if (ret != pdTRUE) {
-		ESP_LOGE(TAG, "Slave -> Host: Failed to send command response\n");
-		goto DONE;
-	}
-	association_ongoing = 1;
-
-	return ESP_OK;
-DONE:
-
-	if (buf_handle.payload) {
-		free(buf_handle.payload);
-		buf_handle.payload = NULL;
+	if (!ret) {
+		association_ongoing = 1;
 	}
 
 	return ret;
@@ -1375,12 +1358,11 @@ DONE:
 
 int process_sta_connect(uint8_t if_type, uint8_t *payload, uint16_t payload_len)
 {
-	struct command_header *header;
-	interface_buffer_handle_t buf_handle = {0};
 	esp_err_t ret = ESP_OK;
 	struct cmd_sta_connect *cmd_connect;
 	wifi_config_t wifi_config = {0};
 	uint32_t type = 0;
+	uint16_t cmd_status = CMD_RESPONSE_FAIL;
 
 	type = (1 << WLAN_FC_STYPE_ASSOC_RESP)
 		| (1 << WLAN_FC_STYPE_REASSOC_RESP)
@@ -1408,50 +1390,27 @@ int process_sta_connect(uint8_t if_type, uint8_t *payload, uint16_t payload_len)
 	ret = esp_wifi_set_config(WIFI_IF_STA, &wifi_config);
 	if (ret) {
 		ESP_LOGE(TAG, "Failed to set wifi config: %d\n", ret);
+		goto send_resp;
 	}
 
 	ret = esp_wifi_start();
 	if (ret) {
 		ESP_LOGE(TAG, "Failed to start wifi\n");
+		goto send_resp;
 	}
 
 	ret = esp_wifi_connect();
 	if (ret) {
 		ESP_LOGE(TAG, "Failed to connect wifi\n");
+		goto send_resp;
 	}
 
-	buf_handle.if_type = if_type;
-	buf_handle.if_num = 0;
-	buf_handle.payload_len = sizeof(struct command_header);
-	buf_handle.pkt_type = PACKET_TYPE_COMMAND_RESPONSE;
+	cmd_status = CMD_RESPONSE_SUCCESS;
+send_resp:
+	ret = send_command_resp(if_type, CMD_STA_CONNECT, cmd_status, NULL, 0, 0);
 
-	buf_handle.payload = heap_caps_malloc(buf_handle.payload_len, MALLOC_CAP_DMA);
-	assert(buf_handle.payload);
-	memset(buf_handle.payload, 0, buf_handle.payload_len);
-
-	header = (struct command_header *) buf_handle.payload;
-
-	header->cmd_code = CMD_STA_CONNECT;
-	header->len = 0;
-	header->cmd_status = CMD_RESPONSE_SUCCESS;
-
-	buf_handle.priv_buffer_handle = buf_handle.payload;
-	buf_handle.free_buf_handle = free;
-
-	/* Send command response */
-	ret = send_command_response(&buf_handle);
-	if (ret != pdTRUE) {
-		ESP_LOGE(TAG, "Slave -> Host: Failed to send command response\n");
-		goto DONE;
-	}
-	association_ongoing = 1;
-
-	return ESP_OK;
-
-DONE:
-	if (buf_handle.payload) {
-		free(buf_handle.payload);
-		buf_handle.payload = NULL;
+	if (!ret) {
+		association_ongoing = 1;
 	}
 
 	return ret;
@@ -1459,10 +1418,9 @@ DONE:
 
 int process_deinit_interface(uint8_t if_type, uint8_t *payload, uint16_t payload_len)
 {
-	struct command_header *header;
 	esp_err_t ret = ESP_OK;
-	interface_buffer_handle_t buf_handle = {0};
 	wifi_mode_t wifi_mode = {0};
+	uint16_t cmd_status = CMD_RESPONSE_SUCCESS;
 
 	if (if_type == ESP_STA_IF) {
 		if (sta_init_flag && esp_wifi_get_mode(&wifi_mode)==0)
@@ -1472,59 +1430,21 @@ int process_deinit_interface(uint8_t if_type, uint8_t *payload, uint16_t payload
 	esp_wifi_scan_stop();
 	esp_wifi_stop();
 
-	buf_handle.if_type = if_type;
-	buf_handle.if_num = 0;
-	buf_handle.payload_len = sizeof(struct command_header);
-	buf_handle.pkt_type = PACKET_TYPE_COMMAND_RESPONSE;
-
-	buf_handle.payload = heap_caps_malloc(buf_handle.payload_len, MALLOC_CAP_DMA);
-	assert(buf_handle.payload);
-	memset(buf_handle.payload, 0, buf_handle.payload_len);
-
-	header = (struct command_header *) buf_handle.payload;
-
-	header->cmd_code = CMD_DEINIT_INTERFACE;
-	header->len = 0;
-	header->cmd_status = CMD_RESPONSE_SUCCESS;
-
-	buf_handle.priv_buffer_handle = buf_handle.payload;
-	buf_handle.free_buf_handle = free;
-
-	/* Send command response */
-	ret = send_command_response(&buf_handle);
-	if (ret != pdTRUE) {
-		ESP_LOGE(TAG, "Slave -> Host: Failed to send command response\n");
-		goto DONE;
-	}
-
-	return ESP_OK;
-
-DONE:
-	if (buf_handle.payload) {
-		free(buf_handle.payload);
-		buf_handle.payload = NULL;
-	}
+	ret = send_command_resp(if_type, CMD_DEINIT_INTERFACE, cmd_status, NULL, 0, 0);
 
 	return ret;
 }
 
 int process_init_interface(uint8_t if_type, uint8_t *payload, uint16_t payload_len)
 {
-	struct command_header *header;
-	interface_buffer_handle_t buf_handle = {0};
 	esp_err_t ret = ESP_OK;
 	wifi_mode_t mode = 0;
+	uint16_t cmd_status = CMD_RESPONSE_FAIL;
 
 	if (!sta_init_flag) {
 
 		/* Register to get events from wifi driver */
-		ESP_ERROR_CHECK(esp_event_loop_create_default());
-		ESP_ERROR_CHECK(esp_event_handler_instance_register(WIFI_EVENT,
-					ESP_EVENT_ANY_ID,
-					&wifi_event_handler,
-					NULL,
-					&instance_any_id));
-
+		esp_create_wifi_event_loop();
 		ret = esp_wifi_get_mode(&mode);
 		if (ret) {
 			ESP_LOGE(TAG,"Failed to get wifi mode");
@@ -1549,40 +1469,12 @@ int process_init_interface(uint8_t if_type, uint8_t *payload, uint16_t payload_l
 			goto DONE;
 		}
 	}
-
-	buf_handle.if_type = if_type;
-	buf_handle.if_num = 0;
-	buf_handle.payload_len = sizeof(struct command_header);
-	buf_handle.pkt_type = PACKET_TYPE_COMMAND_RESPONSE;
-
-	buf_handle.payload = heap_caps_malloc(buf_handle.payload_len, MALLOC_CAP_DMA);
-	assert(buf_handle.payload);
-	memset(buf_handle.payload, 0, buf_handle.payload_len);
-
-	header = (struct command_header *) buf_handle.payload;
-
-	header->cmd_code = CMD_INIT_INTERFACE;
-	header->len = 0;
-	header->cmd_status = CMD_RESPONSE_SUCCESS;
-
-	buf_handle.priv_buffer_handle = buf_handle.payload;
-	buf_handle.free_buf_handle = free;
-
-	/* Send command response */
-	ret = send_command_response(&buf_handle);
-	if (ret != pdTRUE) {
-		ESP_LOGE(TAG, "Slave -> Host: Failed to send command response\n");
-		goto DONE;
-	}
-
-	return ESP_OK;
-
+	cmd_status = CMD_RESPONSE_SUCCESS;
 DONE:
-	if (buf_handle.payload) {
-		free(buf_handle.payload);
-		buf_handle.payload = NULL;
+	ret = send_command_resp(if_type, CMD_INIT_INTERFACE, cmd_status, NULL, 0, 0);
+	if (ret) {
+		deinitialize_wifi();
 	}
-	deinitialize_wifi();
 
 	return ret;
 
@@ -1592,8 +1484,6 @@ int process_get_mac(uint8_t if_type)
 {
 	esp_err_t ret = ESP_OK;
 	wifi_interface_t wifi_if_type = 0;
-	interface_buffer_handle_t buf_handle = {0};
-	struct cmd_config_mac_address *header;
 	uint8_t cmd_status = CMD_RESPONSE_SUCCESS;
 	uint8_t mac[MAC_ADDR_LEN];
 
@@ -1618,44 +1508,8 @@ int process_get_mac(uint8_t if_type)
 
 
 	/*ESP_LOG_BUFFER_HEXDUMP(TAG, mac, MAC_ADDR_LEN, ESP_LOG_INFO);*/
-
-	buf_handle.if_type = if_type;
-	buf_handle.if_num = 0;
-	buf_handle.payload_len = sizeof(struct cmd_config_mac_address);
-	buf_handle.pkt_type = PACKET_TYPE_COMMAND_RESPONSE;
-
-	buf_handle.payload = heap_caps_malloc(buf_handle.payload_len, MALLOC_CAP_DMA);
-	assert(buf_handle.payload);
-	memset(buf_handle.payload, 0, buf_handle.payload_len);
-
-	header = (struct cmd_config_mac_address *) buf_handle.payload;
-
-	header->header.cmd_code = CMD_GET_MAC;
-	header->header.len = 0;
-	header->header.cmd_status = cmd_status;
-
-	if (cmd_status == CMD_RESPONSE_SUCCESS) {
-		memcpy(header->mac_addr, mac, sizeof(header->mac_addr));
-		header->header.len = htole16(sizeof(header->mac_addr));
-	}
-
-	buf_handle.priv_buffer_handle = buf_handle.payload;
-	buf_handle.free_buf_handle = free;
-
-	ret = send_command_response(&buf_handle);
-	if (ret != pdTRUE) {
-		ESP_LOGE(TAG, "Slave -> Host: Failed to send command response\n");
-		goto DONE;
-	}
-
-	return ESP_OK;
-
-DONE:
-	if (buf_handle.payload) {
-		free(buf_handle.payload);
-		buf_handle.payload = NULL;
-	}
-
+	ret = send_command_resp(if_type, CMD_GET_MAC, cmd_status, (uint8_t *)mac,
+				MAC_ADDR_LEN, sizeof(struct command_header));
 	return ret;
 }
 
@@ -1663,8 +1517,6 @@ int process_set_mac(uint8_t if_type, uint8_t *payload, uint16_t payload_len)
 {
 	esp_err_t ret = ESP_OK;
 	wifi_interface_t wifi_if_type = 0;
-	interface_buffer_handle_t buf_handle = {0};
-	struct cmd_config_mac_address *header;
 	uint8_t cmd_status = CMD_RESPONSE_SUCCESS;
 	struct cmd_config_mac_address *mac = (struct cmd_config_mac_address *) payload;
 
@@ -1676,237 +1528,99 @@ int process_set_mac(uint8_t if_type, uint8_t *payload, uint16_t payload_len)
 		memcpy(ap_mac, mac->mac_addr, MAC_ADDR_LEN);
 	}
 
-
-	ESP_LOGE(TAG, "Setting mac address \n");
-	ESP_LOG_BUFFER_HEXDUMP(TAG, mac->mac_addr, MAC_ADDR_LEN, ESP_LOG_INFO);
+	ESP_LOGI(TAG, "Setting mac address \n");
 	ret = esp_wifi_set_mac(wifi_if_type, mac->mac_addr);
 
 	if (ret) {
 		ESP_LOGE(TAG, "Failed to set mac address\n");
 		cmd_status = CMD_RESPONSE_FAIL;
 	}
-
-
-	buf_handle.if_type = if_type;
-	buf_handle.if_num = 0;
-	buf_handle.payload_len = sizeof(struct cmd_config_mac_address);
-	buf_handle.pkt_type = PACKET_TYPE_COMMAND_RESPONSE;
-
-	buf_handle.payload = heap_caps_malloc(buf_handle.payload_len, MALLOC_CAP_DMA);
-	assert(buf_handle.payload);
-	memset(buf_handle.payload, 0, buf_handle.payload_len);
-
-	header = (struct cmd_config_mac_address *) buf_handle.payload;
-
-	header->header.cmd_code = CMD_SET_MAC;
-	header->header.len = 0;
-	header->header.cmd_status = cmd_status;
-
-	if (cmd_status == CMD_RESPONSE_SUCCESS) {
-		memcpy(header->mac_addr, mac->mac_addr, sizeof(header->mac_addr));
-		header->header.len = htole16(sizeof(header->mac_addr));
-	}
-
-	buf_handle.priv_buffer_handle = buf_handle.payload;
-	buf_handle.free_buf_handle = free;
-
-	ret = send_command_response(&buf_handle);
-	if (ret != pdTRUE) {
-		ESP_LOGE(TAG, "Slave -> Host: Failed to send command response\n");
-		goto DONE;
-	}
-
-	return ESP_OK;
-
-DONE:
-	if (buf_handle.payload) {
-		free(buf_handle.payload);
-		buf_handle.payload = NULL;
-	}
-
+	ret = send_command_resp(if_type, CMD_SET_MAC, cmd_status, (uint8_t *)mac->mac_addr,
+				MAC_ADDR_LEN, sizeof(struct command_header));
 	return ret;
 }
 
-
-
 int process_set_default_key(uint8_t if_type, uint8_t *payload, uint16_t payload_len)
 {
-	struct command_header *header = NULL;
-	interface_buffer_handle_t buf_handle = {0};
 	esp_err_t ret = ESP_OK;
-	struct wifi_sec_key * key = NULL;
 	struct cmd_key_operation *cmd = NULL;
+	uint16_t cmd_status;
 
 	/*ESP_LOGI(TAG, "%s:%u\n", __func__, __LINE__);*/
 
-	buf_handle.payload_len = sizeof(struct command_header) + sizeof (struct esp_payload_header);
-	buf_handle.payload = heap_caps_malloc(buf_handle.payload_len, MALLOC_CAP_DMA);
-	if (!buf_handle.payload) {
-		ESP_LOGE(TAG , "Malloc send buffer fail!");
-		return ESP_FAIL;
-	}
-	memset(buf_handle.payload, 0, buf_handle.payload_len);
-
-	header = (struct command_header *) buf_handle.payload;
-	header->cmd_code = CMD_SET_DEFAULT_KEY;
-	header->len = 0;
-
 	cmd = (struct cmd_key_operation *) payload;
-
 	if (!cmd) {
 		ESP_LOGE(TAG, "%s:%u command failed\n", __func__, __LINE__);
-		header->cmd_status = CMD_RESPONSE_FAIL;
-		goto SEND_CMD;
-	}
-
-	key = &cmd->key;
-
-	if (!key || !key->set_cur) {
-		ESP_LOGE(TAG, "%s:%u command failed\n", __func__, __LINE__);
-		header->cmd_status = CMD_RESPONSE_FAIL;
+		cmd_status = CMD_RESPONSE_FAIL;
 		goto SEND_CMD;
 	}
 
 	/* Firmware just responds to this request as success. */
-	header->cmd_status = CMD_RESPONSE_SUCCESS;
+	cmd_status = CMD_RESPONSE_SUCCESS;
 
 SEND_CMD:
-	buf_handle.if_type = if_type;
-	buf_handle.if_num = 0;
-	buf_handle.payload_len = sizeof(struct command_header);
-	buf_handle.pkt_type = PACKET_TYPE_COMMAND_RESPONSE;
-
-	buf_handle.priv_buffer_handle = buf_handle.payload;
-	buf_handle.free_buf_handle = free;
-
-	/* Send command response */
-	ret = send_command_response(&buf_handle);
-	if (ret != pdTRUE) {
-		ESP_LOGE(TAG, "Slave -> Host: Failed to send command response\n");
-		goto DONE;
-	}
-
-	return ESP_OK;
-
-DONE:
-	if (buf_handle.payload) {
-		free(buf_handle.payload);
-		buf_handle.payload = NULL;
-	}
+	ret = send_command_resp(if_type, CMD_SET_DEFAULT_KEY, cmd_status, NULL, 0, 0);
 
 	return ret;
 }
 
 int process_del_key(uint8_t if_type, uint8_t *payload, uint16_t payload_len)
 {
-	struct command_header *header = NULL;
-	interface_buffer_handle_t buf_handle = {0};
 	esp_err_t ret = ESP_OK;
 	struct wifi_sec_key * key = NULL;
 	struct cmd_key_operation *cmd = NULL;
+	uint16_t cmd_status = CMD_RESPONSE_SUCCESS;
 
 	/*ESP_LOGI(TAG, "%s:%u\n", __func__, __LINE__);*/
-
-	buf_handle.payload_len = sizeof(struct command_header) + sizeof (struct esp_payload_header);
-	buf_handle.payload = heap_caps_malloc(buf_handle.payload_len, MALLOC_CAP_DMA);
-	if (!buf_handle.payload) {
-		ESP_LOGE(TAG , "Malloc send buffer fail!");
-		return ESP_FAIL;
-	}
-	memset(buf_handle.payload, 0, buf_handle.payload_len);
-
-	header = (struct command_header *) buf_handle.payload;
-	header->cmd_code = CMD_DEL_KEY;
-	header->len = 0;
 
 	cmd = (struct cmd_key_operation *) payload;
 
 	if (!cmd) {
 		ESP_LOGE(TAG, "%s:%u command failed\n", __func__, __LINE__);
-		header->cmd_status = CMD_RESPONSE_FAIL;
-		goto SEND_CMD;
+		cmd_status = CMD_RESPONSE_FAIL;
+		goto send_resp;
 	}
 
 	key = &cmd->key;
 
-	if (!key || !key->del) {
+	if (!key->del) {
 		ESP_LOGE(TAG, "%s:%u command failed\n", __func__, __LINE__);
-		header->cmd_status = CMD_RESPONSE_FAIL;
-		goto SEND_CMD;
+		cmd_status = CMD_RESPONSE_FAIL;
+		goto send_resp;
 	}
 
-	/* Firmware just responds to this request as success */
-	header->cmd_status = CMD_RESPONSE_SUCCESS;
-
-SEND_CMD:
-	buf_handle.if_type = if_type;
-	buf_handle.if_num = 0;
-	buf_handle.payload_len = sizeof(struct command_header);
-	buf_handle.pkt_type = PACKET_TYPE_COMMAND_RESPONSE;
-
-	buf_handle.priv_buffer_handle = buf_handle.payload;
-	buf_handle.free_buf_handle = free;
-
-	/* Send command response */
-	ret = send_command_response(&buf_handle);
-	if (ret != pdTRUE) {
-		ESP_LOGE(TAG, "Slave -> Host: Failed to send command response\n");
-		goto DONE;
-	}
-
-	return ESP_OK;
-
-DONE:
-	if (buf_handle.payload) {
-		free(buf_handle.payload);
-		buf_handle.payload = NULL;
-	}
+send_resp:
+	ret = send_command_resp(if_type, CMD_DEL_KEY, cmd_status, NULL, 0, 0);
 
 	return ret;
 }
 
-int process_add_key(uint8_t if_type, uint8_t *payload, uint16_t payload_len)
+static int set_key_internal(void *data)
 {
-	struct command_header *header = NULL;
-	interface_buffer_handle_t buf_handle = {0};
-	esp_err_t ret = ESP_OK;
-	struct wifi_sec_key * key = NULL;
+	wifi_interface_t iface = WIFI_IF_STA;
 	struct cmd_key_operation *cmd = NULL;
+	struct wifi_sec_key * key = NULL;
+	uint8_t if_type;
+	int ret;
 
 	ESP_LOGI(TAG, "%s:%u\n", __func__, __LINE__);
 
-	buf_handle.payload_len = sizeof(struct command_header) + sizeof (struct esp_payload_header);
-	buf_handle.payload = heap_caps_malloc(buf_handle.payload_len, MALLOC_CAP_DMA);
-	if (!buf_handle.payload) {
-		ESP_LOGE(TAG , "Malloc send buffer fail!");
-		return ESP_FAIL;
+	cmd = (struct cmd_key_operation *) data;
+
+	if_type = cmd->header.reserved1;
+	if (if_type == ESP_AP_IF) {
+		iface = WIFI_IF_AP;
 	}
-	memset(buf_handle.payload, 0, buf_handle.payload_len);
-
-	header = (struct command_header *) buf_handle.payload;
-	header->cmd_code = CMD_ADD_KEY;
-	header->len = 0;
-
-	cmd = (struct cmd_key_operation *) payload;
-
 	if (!cmd) {
 		ESP_LOGE(TAG, "%s:%u command failed\n", __func__, __LINE__);
-		header->cmd_status = CMD_RESPONSE_FAIL;
-		goto SEND_CMD;
+		return -1;
 	}
 
 	key = &cmd->key;
 
-	if (!key) {
-		ESP_LOGE(TAG, "%s:%u command failed\n", __func__, __LINE__);
-		header->cmd_status = CMD_RESPONSE_FAIL;
-		goto SEND_CMD;
-	}
-
 	if (key->algo == WIFI_WPA_ALG_WEP40 || key->algo == WIFI_WPA_ALG_WEP104) {
-		header->cmd_status = CMD_RESPONSE_SUCCESS;
-		goto SEND_CMD;
-	}
+	    return 0;
+    }
 	if (key->index) {
 		if (key->algo == WIFI_WPA_ALG_IGTK) {
 			wifi_wpa_igtk_t igtk = {0};
@@ -1916,42 +1630,263 @@ int process_add_key(uint8_t if_type, uint8_t *payload, uint16_t payload_len)
 			memcpy(igtk.igtk, key->data, key->len);
 			memcpy(igtk.pn, key->seq, key->seq_len);
 			WPA_PUT_LE16(igtk.keyid, key->index);
-			ret = esp_wifi_set_igtk_internal(0, &igtk);
+			ret = esp_wifi_set_igtk_internal(iface, &igtk);
 		} else {
 			/* GTK */
 			ESP_LOGI(TAG, "Setting GTK [%ld]\n", key->index);
-			ret = esp_wifi_set_sta_key_internal(key->algo, key->mac_addr, key->index,
+			if (iface == WIFI_IF_AP) {
+				ret = esp_wifi_set_ap_key_internal(key->algo, key->mac_addr, key->index,
+						key->data, key->len);
+			} else {
+				ret = esp_wifi_set_sta_key_internal(key->algo, key->mac_addr, key->index,
 					0, key->seq, key->seq_len, key->data, key->len, 
 					KEY_FLAG_GROUP | KEY_FLAG_RX);
+				esp_wifi_auth_done_internal();
+			}
 		}
 	} else {
 		/* PTK */
-		ret = esp_wifi_set_sta_key_internal(key->algo, key->mac_addr, key->index,
+		ESP_LOGI(TAG, "Setting PTK \n");
+		if (iface == WIFI_IF_AP) {
+			ret = esp_wifi_set_ap_key_internal(key->algo, key->mac_addr, key->index,
+						key->data, key->len);
+			esp_wifi_wpa_ptk_init_done_internal(key->mac_addr);
+		} else {
+			ret = esp_wifi_set_sta_key_internal(key->algo, key->mac_addr, key->index,
 				1, key->seq, key->seq_len, key->data, key->len, 
 				KEY_FLAG_PAIRWISE | KEY_FLAG_RX | KEY_FLAG_TX);
+		}
 	}
 	if (ret) {
 		ESP_LOGE(TAG, "%s:%u driver key set failed\n", __func__, __LINE__);
-		header->cmd_status = CMD_RESPONSE_FAIL;
+	}
+
+	return ret;
+}
+
+static int wifi_set_keys(void *args)
+{
+        wifi_ipc_config_t cfg;
+
+        cfg.fn = set_key_internal;
+        cfg.arg = args;
+        cfg.arg_size = 0;
+        return esp_wifi_ipc_internal(&cfg, true);
+}
+
+int process_add_key(uint8_t if_type, uint8_t *payload, uint16_t payload_len)
+{
+	esp_err_t ret = ESP_OK;
+	struct cmd_key_operation *cmd = NULL;
+	uint8_t cmd_status;
+
+	cmd = (struct cmd_key_operation *) payload;
+	if (!cmd) {
+		ESP_LOGE(TAG, "%s:%u command failed\n", __func__, __LINE__);
+		cmd_status = CMD_RESPONSE_FAIL;
 		goto SEND_CMD;
 	}
+	cmd->header.reserved1 = if_type;
 
-	if (key->index) {
-		esp_wifi_auth_done_internal();
-		ESP_LOGI(TAG, "%s:%u auth done\n", __func__, __LINE__);
-	}
-
-	header->cmd_status = CMD_RESPONSE_SUCCESS;
+	cmd_status = CMD_RESPONSE_SUCCESS;
+	ret = wifi_set_keys(cmd);
+	if (ret)
+		cmd_status = CMD_RESPONSE_FAIL;
 
 SEND_CMD:
-	buf_handle.if_type = if_type;
+	ret = send_command_resp(if_type, CMD_ADD_KEY, cmd_status, NULL, 0, 0);
+	return ret;
+}
+
+int process_set_mode(uint8_t if_type, uint8_t *payload, uint16_t payload_len)
+{
+	esp_err_t ret = ESP_OK;
+	uint8_t cmd_status = CMD_RESPONSE_SUCCESS;
+	struct cmd_config_mode *mode = (struct cmd_config_mode *) payload;
+
+	ESP_LOGE(TAG, "Setting mode=%d \n", mode->mode);
+	ret = esp_wifi_stop();
+	ret = esp_wifi_set_mode(mode->mode);
+	ESP_ERROR_CHECK(esp_wifi_start());
+
+	if (ret) {
+		ESP_LOGE(TAG, "Failed to set mode\n");
+		cmd_status = CMD_RESPONSE_FAIL;
+		goto send_resp;
+	}
+
+send_resp:
+	ret = send_command_resp(if_type, CMD_SET_MODE, cmd_status, (uint8_t *)&mode->mode,
+				sizeof(uint16_t), sizeof(struct command_header));
+
+	return ret;
+}
+
+int process_set_ie(uint8_t if_type, uint8_t *payload, uint16_t payload_len)
+{
+	esp_err_t ret = ESP_OK;
+	uint8_t cmd_status = CMD_RESPONSE_SUCCESS;
+	struct cmd_config_ie *ie = (struct cmd_config_ie *) payload;
+	int type = 0;
+
+	ESP_LOGI(TAG, "Setting %d IEs len=%d\n", ie->ie_type, ie->ie_len);
+
+	if (if_type != ESP_AP_IF) {
+		cmd_status = CMD_RESPONSE_INVALID;
+		goto send_resp;
+	}
+	if (ie->ie_type == IE_BEACON) {
+		type = WIFI_APPIE_RAM_BEACON;
+		ESP_LOG_BUFFER_HEXDUMP("BEACON", (uint8_t *) ie->ie, ie->ie_len, ESP_LOG_INFO);
+	} else if (ie->ie_type == IE_PROBE_RESP) {
+		type = WIFI_APPIE_RAM_PROBE_RSP;
+		ESP_LOG_BUFFER_HEXDUMP("PROBE", (uint8_t *) ie->ie, ie->ie_len, ESP_LOG_INFO);
+	} else if (ie->ie_type == IE_ASSOC_RESP) {
+		type = WIFI_APPIE_ASSOC_RESP;
+	} else if (ie->ie_type == IE_RSN) {
+		if (ap_rsn_ie)
+			free(ap_rsn_ie);
+		ap_rsn_ie = malloc(ie->ie_len);
+		memcpy(ap_rsn_ie, ie->ie, ie->ie_len);
+		ap_rsn_ie_len = ie->ie_len;
+		/* ESP_LOG_BUFFER_HEXDUMP("RSN IE", (uint8_t *) ie->ie, ie->ie_len, ESP_LOG_INFO); */
+	} else {
+		cmd_status = CMD_RESPONSE_INVALID;
+		goto send_resp;
+	}
+
+	if (ie->ie_type != IE_RSN) {
+		ret = esp_wifi_set_appie_internal(type, ie->ie, ie->ie_len, 0);
+	}
+	if (ret) {
+		cmd_status = CMD_RESPONSE_INVALID;
+	}
+send_resp:
+	ret = send_command_resp(if_type, CMD_SET_IE, cmd_status, NULL, 0, 0);
+
+	return ret;
+}
+
+static int send_mgmt_tx_done(uint8_t cmd_status, wifi_interface_t wifi_if_type, uint8_t *data, uint32_t len);
+
+
+uint8_t *esp_wifi_get_eb_data(void *eb);
+uint32_t esp_wifi_get_eb_data_len(void *eb);
+
+void ieee80211_tx_mgt_cb(void *eb);
+
+static void mgmt_txcb(void *eb)
+{
+	uint8_t cmd_status = CMD_RESPONSE_FAIL;
+
+	if (esp_wifi_eb_tx_status_success_internal(eb)) {
+		cmd_status = CMD_RESPONSE_SUCCESS;
+	}
+
+	uint8_t *data = esp_wifi_get_eb_data(eb);
+	uint32_t len = esp_wifi_get_eb_data_len(eb);
+
+	ieee80211_tx_mgt_cb(eb);
+	//printf("tx cb status=%d data_len=%ld\n", cmd_status, len);
+	//ESP_LOG_BUFFER_HEXDUMP(TAG, data, len, ESP_LOG_INFO);
+	send_mgmt_tx_done(cmd_status, WIFI_IF_AP, data, len);
+}
+
+typedef enum {
+    ETS_OK     = 0, /**< return successful in ets*/
+    ETS_FAILED = 1, /**< return failed in ets*/
+    ETS_PENDING = 2,
+    ETS_BUSY = 3,
+    ETS_CANCEL = 4,
+} ETS_STATUS;
+ETS_STATUS pp_unregister_tx_cb(uint8_t id);
+
+esp_err_t wlan_ap_rx_callback(void *buffer, uint16_t len, void *eb);
+int process_set_ap_config(uint8_t if_type, uint8_t *payload, uint16_t payload_len)
+{
+	esp_err_t ret = ESP_OK;
+	uint8_t cmd_status = CMD_RESPONSE_SUCCESS;
+	struct cmd_ap_config *ap_config = (struct cmd_ap_config *) payload;
+
+	if (if_type != ESP_AP_IF) {
+		cmd_status = CMD_RESPONSE_INVALID;
+		goto send_resp;
+	}
+
+	wifi_config_t wifi_config = {0};
+
+	memcpy(wifi_config.ap.ssid, ap_config->ap_config.ssid, ap_config->ap_config.ssid_len);
+	wifi_config.ap.ssid_len = ap_config->ap_config.ssid_len;
+	wifi_config.ap.channel = ap_config->ap_config.channel;
+	wifi_config.ap.authmode = ap_config->ap_config.authmode;
+	wifi_config.ap.ssid_hidden = ap_config->ap_config.ssid_hidden;
+	wifi_config.ap.beacon_interval = ap_config->ap_config.beacon_interval;
+//	wifi_config.ap.pairwise_cipher = ap_config->ap_config.pairwise_cipher;
+	if (ap_config->ap_config.authmode != WIFI_AUTH_OPEN) {
+		strcpy((char *)wifi_config.ap.password, "1234567890");
+	} else {
+		ap_rsn_ie_len = 0;
+		if (ap_rsn_ie) {
+			free(ap_rsn_ie);
+			ap_rsn_ie = NULL;
+		}
+	}
+
+	ESP_LOGI(TAG, "ap config ssid=%s ssid_len=%d, pass=%s channel=%d authmode=%d hidden=%d bi=%d cipher=%d\n",
+			wifi_config.ap.ssid, wifi_config.ap.ssid_len,
+			wifi_config.ap.password,
+			wifi_config.ap.channel, wifi_config.ap.authmode,
+			wifi_config.ap.ssid_hidden, wifi_config.ap.beacon_interval,
+			wifi_config.ap.pairwise_cipher);
+
+	wifi_config.ap.max_connection = 8;
+	ret = esp_wifi_stop();
+	esp_wifi_set_config(WIFI_IF_AP, &wifi_config);
+
+#define WIFI_TXCB_MGMT_ID 2
+	/* register for mgmt tx done */
+	ret = pp_unregister_tx_cb(WIFI_TXCB_MGMT_ID);
+	ESP_LOGI(TAG, "tx cb unregister ret=%d\n", ret);
+	ret = esp_wifi_register_tx_cb_internal(mgmt_txcb, WIFI_TXCB_MGMT_ID);
+	ESP_LOGI(TAG, "tx cb register ret=%d\n", ret);
+	ret = esp_wifi_internal_reg_rxcb(ESP_IF_WIFI_AP, (wifi_rxcb_t)wlan_ap_rx_callback);
+#undef WIFI_TXCB_MGMT_ID
+	ESP_ERROR_CHECK(esp_wifi_start());
+send_resp:
+	ret = send_command_resp(if_type, CMD_AP_CONFIG, cmd_status, NULL, 0, 0);
+
+	return ret;
+}
+
+static int send_mgmt_tx_done(uint8_t cmd_status, wifi_interface_t wifi_if_type, uint8_t *data, uint32_t len)
+{
+	interface_buffer_handle_t buf_handle = {0};
+	struct cmd_mgmt_tx *header;
+	esp_err_t ret = ESP_OK;
+
+	if (wifi_if_type == WIFI_IF_AP)
+		buf_handle.if_type = ESP_AP_IF;
+	else
+		buf_handle.if_type = ESP_STA_IF;
 	buf_handle.if_num = 0;
+	buf_handle.payload_len = sizeof(struct cmd_mgmt_tx) + len;
 	buf_handle.pkt_type = PACKET_TYPE_COMMAND_RESPONSE;
+
+	buf_handle.payload = heap_caps_malloc(buf_handle.payload_len, MALLOC_CAP_DMA);
+	assert(buf_handle.payload);
+	memset(buf_handle.payload, 0, buf_handle.payload_len);
+
+	header = (struct cmd_mgmt_tx *) buf_handle.payload;
+
+	header->header.cmd_code = CMD_MGMT_TX;
+	header->header.len = 0;
+	header->header.cmd_status = cmd_status;
+	header->len = len - TX_DONE_PREFIX;
+	memcpy(header->buf, data + TX_DONE_PREFIX, header->len);
 
 	buf_handle.priv_buffer_handle = buf_handle.payload;
 	buf_handle.free_buf_handle = free;
 
-	/* Send command response */
 	ret = send_command_response(&buf_handle);
 	if (ret != pdTRUE) {
 		ESP_LOGE(TAG, "Slave -> Host: Failed to send command response\n");
@@ -1959,11 +1894,103 @@ SEND_CMD:
 	}
 
 	return ESP_OK;
-
 DONE:
 	if (buf_handle.payload) {
 		free(buf_handle.payload);
 		buf_handle.payload = NULL;
 	}
+
 	return ret;
+}
+
+int ieee80211_send_mgmt_internal(wifi_interface_t wifi_if_type, uint8_t *buf, size_t len);
+
+static uint8_t broadcast_mac[ETH_ALEN] = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };
+#define IS_BROADCAST_ADDR(addr) (memcmp(addr, broadcast_mac, ETH_ALEN) == 0)
+
+int process_mgmt_tx(uint8_t if_type, uint8_t *payload, uint16_t payload_len)
+{
+	esp_err_t ret = ESP_OK;
+	wifi_interface_t wifi_if_type = WIFI_IF_AP;
+	uint8_t cmd_status = CMD_RESPONSE_SUCCESS;
+	struct cmd_mgmt_tx *mgmt_tx = (struct cmd_mgmt_tx *) payload;
+
+	if (if_type != ESP_AP_IF) {
+		ESP_LOGE(TAG, "%s: err on wrong interface=%d\n", __func__, if_type);
+		cmd_status = CMD_RESPONSE_INVALID;
+		wifi_if_type = ESP_STA_IF;
+		goto send_resp;
+	}
+
+	/* ESP_LOG_BUFFER_HEXDUMP("sending frame", mgmt_tx->buf, mgmt_tx->len, ESP_LOG_INFO); */
+
+	ret = ieee80211_send_mgmt_internal(WIFI_IF_AP, mgmt_tx->buf, mgmt_tx->len);
+
+	if (ret) {
+		cmd_status = CMD_RESPONSE_INVALID;
+		goto send_resp;
+	}
+
+	if (IS_BROADCAST_ADDR(mgmt_tx->buf + 4)) {
+		ESP_LOGI(TAG, "%s: broadcast address, sending response immediately\n", __func__);
+		goto send_resp;
+	}
+	/* send response in seperate ctx once done */
+	return 0;
+send_resp:
+	return send_mgmt_tx_done(cmd_status, wifi_if_type, NULL, 0);
+}
+
+int ieee80211_add_node(wifi_interface_t wifi_if_type, uint8_t *mac, uint16_t aid,
+			uint8_t *rates, uint8_t *htcap, uint8_t *vhtcap, uint8_t *hecap);
+
+
+int add_station_node_ap(void *data)
+{
+	struct cmd_ap_add_sta_config *sta = (struct cmd_ap_add_sta_config *) data;
+
+	ESP_LOG_BUFFER_HEXDUMP("mac", sta->sta_param.mac, 6, ESP_LOG_INFO);
+	ESP_LOGI(TAG,"aid=%d\n", sta->sta_param.aid);
+
+	ESP_LOG_BUFFER_HEXDUMP("supported_rates", sta->sta_param.supported_rates, 12, ESP_LOG_INFO);
+	ESP_LOG_BUFFER_HEXDUMP("ht_rates", sta->sta_param.ht_caps, 28, ESP_LOG_INFO);
+	ESP_LOG_BUFFER_HEXDUMP("vht_rates", sta->sta_param.vht_caps, 14, ESP_LOG_INFO);
+	ESP_LOG_BUFFER_HEXDUMP("he_rates", sta->sta_param.he_caps, 27, ESP_LOG_INFO);
+	if (sta->sta_param.cmd != ADD_STA) {
+		ESP_LOGI(TAG, "%s: not station add cmd, handle later\n", __func__);
+		return 0;
+	}
+	return ieee80211_add_node(WIFI_IF_AP, sta->sta_param.mac, sta->sta_param.aid,
+			sta->sta_param.supported_rates[0] ? sta->sta_param.supported_rates : NULL,
+			sta->sta_param.ht_caps[0] ? sta->sta_param.ht_caps : NULL,
+			sta->sta_param.vht_caps[0] ? sta->sta_param.vht_caps : NULL,
+			sta->sta_param.he_caps[0] ? sta->sta_param.he_caps : NULL);
+}
+
+static int add_node_ap(void *args)
+{
+        wifi_ipc_config_t cfg;
+
+        cfg.fn = add_station_node_ap;
+        cfg.arg = args;
+        cfg.arg_size = 0;
+        return esp_wifi_ipc_internal(&cfg, true);
+}
+
+int process_ap_station(uint8_t if_type, uint8_t *payload, uint16_t payload_len)
+{
+	uint8_t cmd_status = CMD_RESPONSE_SUCCESS;
+
+	if (if_type != ESP_AP_IF) {
+		ESP_LOGE(TAG, "%s: err on wrong interface=%d\n", __func__, if_type);
+		cmd_status = CMD_RESPONSE_INVALID;
+		goto send_resp;
+	}
+
+	ESP_LOGI(TAG, "%s:got station add command\n", __func__);
+	/* ESP_LOG_BUFFER_HEXDUMP("sending frame", mgmt_tx->buf, mgmt_tx->len, ESP_LOG_INFO); */
+	add_node_ap(payload);
+	//esp_wifi_add_node(WIFI_IF_AP, );
+send_resp:
+	return send_command_resp(if_type, CMD_AP_STATION, cmd_status, NULL, 0, 0);
 }
