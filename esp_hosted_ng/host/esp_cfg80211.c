@@ -769,9 +769,13 @@ static int esp_set_ies(struct esp_wifi_device *priv, struct cfg80211_beacon_data
 	return ret;
 }
 
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 7, 0))
+static int esp_cfg80211_change_beacon(struct wiphy *wiphy, struct net_device *ndev,
+				   struct  cfg80211_ap_update *info)
+#else
 static int esp_cfg80211_change_beacon(struct wiphy *wiphy, struct net_device *ndev,
 				   struct cfg80211_beacon_data *info)
-
+#endif
 {
 	struct esp_wifi_device *priv = NULL;
 
@@ -791,7 +795,11 @@ static int esp_cfg80211_change_beacon(struct wiphy *wiphy, struct net_device *nd
 		return -EINVAL;
 	}
 
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 7, 0))
+	return esp_set_ies(priv, &info->beacon);
+#else
 	return esp_set_ies(priv, info);
+#endif
 }
 
 static const uint8_t *esp_get_rsn_ie(struct cfg80211_beacon_data *beacon, size_t *rsn_ie_len)
