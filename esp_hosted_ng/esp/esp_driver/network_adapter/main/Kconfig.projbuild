@@ -84,7 +84,8 @@ menu "Example Configuration"
     config HOST_WAKEUP_GPIO
         int "GPIO to wakeup GPIO"
         depends on ESP_SDIO_HOST_INTERFACE
-        default 5
+        default 22 if IDF_TARGET_ESP32
+        default 4 if IDF_TARGET_ESP32C6
         help
             GPIO pin used to wake-up host
 
