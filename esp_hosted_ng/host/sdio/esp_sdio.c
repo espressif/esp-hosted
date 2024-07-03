@@ -175,7 +175,6 @@ int esp_deinit_module(struct esp_adapter *adapter)
 	 * As Removal of SDIO triggers complete Deinit and SDIO insertion/
 	 * detection, triggers probing which does initialization.
 	 */
-
 	return 0;
 }
 
