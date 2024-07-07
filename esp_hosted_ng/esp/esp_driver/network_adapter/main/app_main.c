@@ -613,6 +613,7 @@ int event_handler(uint8_t val)
 		} else {
 			ESP_EARLY_LOGI(TAG, "Failed to Stop Data Path");
 		}
+		esp_restart();
 		break;
 
 	case ESP_POWER_SAVE_ON:
@@ -724,13 +725,11 @@ void app_main()
 
 	create_debugging_tasks();
 
-	while (!datapath) {
-		usleep(100*1000);
-	}
-
 	set_gpio_cd_pin();
-	/*send capabilities to host*/
-	send_bootup_event_to_host(capa);
+
+	/* send capabilities to host */
+	if (datapath || xSemaphoreTake(init_sem, portMAX_DELAY))
+		send_bootup_event_to_host(capa);
 
 	ESP_LOGI(TAG,"Initial set up done");
 }
