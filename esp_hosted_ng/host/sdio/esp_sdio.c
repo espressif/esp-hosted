@@ -6,6 +6,10 @@
  *
  */
 #include "utils.h"
+#include <linux/device.h>
+#include <linux/kernel.h>
+#include <linux/kthread.h>
+#include <linux/module.h>
 #include <linux/mutex.h>
 #include <linux/mmc/sdio.h>
 #include <linux/mmc/sdio_func.h>
@@ -20,7 +24,8 @@
 #include <linux/kthread.h>
 #include "esp_stats.h"
 #include "esp_utils.h"
-#include "include/esp_kernel_port.h"
+#include "esp_kernel_port.h"
+#include "main.h"
 
 extern u32 raw_tp_mode;
 #define MAX_WRITE_RETRIES       2
@@ -32,11 +37,12 @@ extern u32 raw_tp_mode;
 	esp_err("CMD53 read/write error at %d\n", __LINE__);	\
 } while (0);
 
-struct esp_sdio_context sdio_context;
+//struct esp_sdio_context sdio_context;
+static struct esp_adapter *adapter;
 static atomic_t tx_pending;
 static atomic_t queue_items[MAX_PRIORITY_QUEUES];
 
-#ifdef CONFIG_ENABLE_MONITOR_PROCESS
+#ifdef CONFIG_ESP_HOSTED_NG_MONITOR_PROCESS
 struct task_struct *monitor_thread;
 #endif
 struct task_struct *tx_thread;
@@ -249,7 +255,7 @@ static void esp_remove(struct sdio_func *func)
 
 	context = sdio_get_drvdata(func);
 
-#ifdef CONFIG_ENABLE_MONITOR_PROCESS
+#ifdef CONFIG_ESP_HOSTED_NG_MONITOR_PROCESS
 	if (monitor_thread)
 		kthread_stop(monitor_thread);
 #endif
@@ -669,17 +675,21 @@ static int tx_process(void *data)
 	return 0;
 }
 
-static struct esp_sdio_context *init_sdio_func(struct sdio_func *func, int *sdio_ret)
+static struct int init_sdio_func(struct sdio_func *func)
 {
-	struct esp_sdio_context *context = NULL;
+	struct esp_sdio_context *context;
 	int ret = 0;
 
 	if (!func)
 		return NULL;
 
-	context = &sdio_context;
+	context = sdio_get_drvdata(func);
 
-	context->func = func;
+
+	context->adapter = adapter;
+        context->func = func;
+        adapter->if_context = context;
+        adapter->dev = func->dev;
 
 	sdio_claim_host(func);
 
@@ -687,11 +697,7 @@ static struct esp_sdio_context *init_sdio_func(struct sdio_func *func, int *sdio
 	ret = sdio_enable_func(func);
 	if (ret) {
 		esp_err("sdio_enable_func ret: %d\n", ret);
-		if (sdio_ret)
-			*sdio_ret = ret;
-		sdio_release_host(func);
-
-		return NULL;
+		goto release_host;
 	}
 
 	/* Register IRQ */
@@ -699,25 +705,18 @@ static struct esp_sdio_context *init_sdio_func(struct sdio_func *func, int *sdio
 	if (ret) {
 		esp_err("sdio_claim_irq ret: %d\n", ret);
 		sdio_disable_func(func);
-
-		if (sdio_ret)
-			*sdio_ret = ret;
-		sdio_release_host(func);
-
-		return NULL;
+		goto release_host;
 	}
-
-	/* Set private data */
-	sdio_set_drvdata(func, context);
 
 	context->state = ESP_CONTEXT_INIT;
 
+release_host:
 	sdio_release_host(func);
 
-	return context;
+	return ret;
 }
 
-#ifdef CONFIG_ENABLE_MONITOR_PROCESS
+#ifdef CONFIG_ESP_HOSTED_NG_MONITOR_PROCESS
 static int monitor_process(void *data)
 {
 	u32 val, intr, len_reg, rdata, old_len = 0;
@@ -775,7 +774,7 @@ static int monitor_process(void *data)
 static int esp_probe(struct sdio_func *func,
 				  const struct sdio_device_id *id)
 {
-	struct esp_sdio_context *context = NULL;
+	struct esp_sdio_context *context;
 	int ret = 0;
 
 	if (func->num != 1) {
@@ -784,16 +783,18 @@ static int esp_probe(struct sdio_func *func,
 
 	esp_info("ESP network device detected\n");
 
-	context = init_sdio_func(func, &ret);;
+	context = devm_kzalloc(func->dev, sizeof(*context), GFP_KERNEL);
+	if (!context)
+		return -ENOMEM;
+	sdio_set_drvdata(func, context);
 
-	if (!context) {
-		if (ret)
-			return ret;
-		else
-			return -EINVAL;
-	}
 
-	if (sdio_context.sdio_clk_mhz) {
+	ret = init_sdio_func(func);
+	if (ret)
+		return ret;
+
+
+	if (context->sdio_clk_mhz) {
 		struct mmc_host *host = func->card->host;
 		u32 hz = sdio_context.sdio_clk_mhz * NUMBER_1M;
 		/* Expansion of mmc_set_clock that isnt exported */
@@ -822,7 +823,7 @@ static int esp_probe(struct sdio_func *func,
 	generate_slave_intr(context, BIT(ESP_OPEN_DATA_PATH));
 
 
-#ifdef CONFIG_ENABLE_MONITOR_PROCESS
+#ifdef CONFIG_ESP_HOSTED_NG_MONITOR_PROCESS
 	monitor_thread = kthread_run(monitor_process, context, "Monitor process");
 
 	if (!monitor_thread)
@@ -911,7 +912,7 @@ static const struct dev_pm_ops esp_pm_ops = {
 };
 
 static const struct of_device_id esp_sdio_of_match[] = {
-	{ .compatible = "espressif,esp_sdio", },
+	{ .compatible = "espressif,esp-sdio", },
 	{ /* sentinel */ }
 };
 MODULE_DEVICE_TABLE(of, esp_sdio_of_match);
@@ -930,17 +931,24 @@ static struct sdio_driver esp_sdio_driver = {
 	},
 };
 
-int esp_init_interface_layer(struct esp_adapter *adapter, u32 speed)
+int esp_init_interface_layer(struct esp_adapter *adapter)
 {
-	if (!adapter)
+	int ret;
+
+	if (!adapt)
 		return -EINVAL;
 
-	adapter->if_context = &sdio_context;
+	adapter = adapt;
 	adapter->if_ops = &if_ops;
-	sdio_context.adapter = adapter;
-	sdio_context.sdio_clk_mhz = speed;
+	adapter->if_type = ESP_IF_TYPE_SDIO;
 
-	return sdio_register_driver(&esp_sdio_driver);
+	ret = sdio_register_driver(&esp_sdio_driver);
+	if (ret < 0) {
+		esp_err("Unable to register SDIO driver: ret=%d\n", ret);
+		return ret;
+	}
+
+	return 0;
 }
 
 int esp_validate_chipset(struct esp_adapter *adapter, u8 chipset)
@@ -979,3 +987,24 @@ void esp_deinit_interface_layer(void)
 {
 	sdio_unregister_driver(&esp_sdio_driver);
 }
+
+static int __init esp_sdio_init(void)
+{
+	return esp_init();
+}
+
+static void __exit esp_sdio_exit(void)
+{
+	esp_exit();
+}
+
+module_init(esp_sdio_init);
+module_exit(esp_sdio_exit);
+
+MODULE_LICENSE("GPL");
+MODULE_VERSION(RELEASE_VERSION);
+MODULE_DESCRIPTION("SDIO Driver for ESP-Hosted solution");
+MODULE_AUTHOR("Amey Inamdar <amey.inamdar@espressif.com>");
+MODULE_AUTHOR("Mangesh Malusare <mangesh.malusare@espressif.com>");
+MODULE_AUTHOR("Yogesh Mantri <yogesh.mantri@espressif.com>");
+MODULE_AUTHOR("Sergey Suloev <ssuloev@orpaltech.com>");

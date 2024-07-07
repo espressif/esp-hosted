@@ -1,0 +1,43 @@
+# SPDX-License-Identifier: GPL-2.0-only
+#
+# ESP hosted (New Generation) wireless drivers
+#
+
+config ESPRESSIF_ESP_HOSTED_NG
+	tristate
+	help
+	  The driver allows for using ESP32-series SoC as a hosted wireless transceiver.
+
+config ESP_HOSTED_NG_SDIO
+	tristate "Espressif ESP-Series hosted (NG) with SDIO"
+	select ESPRESSIF_ESP_HOSTED_NG
+
+config ESP_HOSTED_NG_SPI
+	tristate "Espressif ESP-Series hosted (NG) with SPI"
+	depends on SPI
+	select SPI_MASTER
+	select ESPRESSIF_ESP_HOSTED_NG
+
+config ESP_HOSTED_NG_TEST_RAW_TP
+	bool "-- Raw Throughput testing"
+	depends on ESPRESSIF_ESP_HOSTED_NG
+
+config ESP_HOSTED_NG_LOG_LEVEL
+	int "-- Debug log verbosity level"
+	depends on ESPRESSIF_ESP_HOSTED_NG
+	range 0 4
+	default 0
+	help
+	  The entry defines a verbosity level of the debug log. Allowed values are 0-4.
+
+config ESP_HOSTED_NG_NO_ADJUST_SPI_CLOCK
+	bool "-- Disallow ESP adjust SPI clock"
+	depends on ESP_HOSTED_NG_SPI
+
+config ESP_HOSTED_NG_NO_CS_CHANGE
+	bool "-- Disallow CS change"
+	depends on ESP_HOSTED_NG_SPI
+
+config ESP_HOSTED_NG_MONITOR_PROCESS
+	bool "-- Enable Monitoring process"
+	depends on ESP_HOSTED_NG_SDIO

@@ -10,7 +10,11 @@
 
 #include "esp.h"
 
-#define TEST_RAW_TP 1
+#ifdef CONFIG_ESP_HOSTED_NG_TEST_RAW_TP
+#define TEST_RAW_TP	1
+#else
+#define TEST_RAW_TP	0
+#endif
 
 #if TEST_RAW_TP
 
@@ -20,9 +24,10 @@
 #define ESP_TEST_RAW_TP__TX      1
 
 void esp_raw_tp_queue_resume(void);
-#endif
 
 void test_raw_tp_cleanup(void);
 void update_test_raw_tp_rx_stats(u16 len);
+
+#endif	//TEST_RAW_TP
 
 #endif

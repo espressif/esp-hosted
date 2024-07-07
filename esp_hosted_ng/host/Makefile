@@ -1,57 +1,41 @@
-CONFIG_ENABLE_MONITOR_PROCESS = n
+ifneq ($(filter $(CONFIG_ESPRESSIF_ESP_HOSTED_NG),y m),)
 
-# Toolchain Path
-CROSS_COMPILE :=
-# Linux Kernel header
-KERNEL := /lib/modules/$(shell uname -r)/build
-# Architecture
-ARCH := arm64
+mod_name_sdio = esp32_sdio
+mod_name_spi = esp32_spi
 
-#Default interface is sdio
-MODULE_NAME=esp32_sdio
+ccflags-y += -I$(src)/include -I$(src)
 
-#enable logging by default
-CONFIG_DEBUG_LOGS := y
+mod_objects = \
+	esp_bt.o \
+	esp_cmd.o \
+	esp_utils.o \
+	esp_cfg80211.o \
+	esp_stats.o \
+	esp_debugfs.o \
+	esp_log.o \
+	main.o \
 
-#Targets passed overrrides default value
-ifeq ($(target), sdio)
-	MODULE_NAME=esp32_sdio
+$(mod_name_sdio)-objs := $(mod_objects)
+$(mod_name_spi)-objs := $(mod_objects)
+
+ifneq ($(filter $(CONFIG_ESP_HOSTED_NG_SDIO),y m),)
+	ccflags-y += -I$(src)/sdio
+	$(mod_name_sdio)-objs += sdio/esp_sdio.o sdio/esp_sdio_api.o
 endif
 
-ifeq ($(target), spi)
-	MODULE_NAME=esp32_spi
+ifneq ($(filter $(CONFIG_ESP_HOSTED_NG_SPI),y m),)
+	ccflags-y += -I$(src)/spi
+	$(mod_name_spi)-objs += spi/esp_spi.o
 endif
 
-ifeq ($(CONFIG_ENABLE_MONITOR_PROCESS), y)
-	EXTRA_CFLAGS += -DCONFIG_ENABLE_MONITOR_PROCESS
+log_level := $(CONFIG_ESP_HOSTED_NG_LOG_LEVEL)
+log_debug := 3
+is_debug := $(shell echo ${log_level}\>=${log_debug} | bc)
+ifeq ($(is_debug),1)
+	ccflags-y += -DDEBUG
 endif
 
-#debug_flags := -DDEBUG
+obj-$(CONFIG_ESP_HOSTED_NG_SDIO) += $(mod_name_sdio).o
+obj-$(CONFIG_ESP_HOSTED_NG_SPI) += $(mod_name_spi).o
 
-EXTRA_CFLAGS += -I$(PWD)/include -I$(PWD)
-
-ifeq ($(MODULE_NAME), esp32_sdio)
-	EXTRA_CFLAGS += -I$(PWD)/sdio
-	module_objects += sdio/esp_sdio.o sdio/esp_sdio_api.o
 endif
-
-ifeq ($(MODULE_NAME), esp32_spi)
-	EXTRA_CFLAGS += -I$(PWD)/spi
-	module_objects += spi/esp_spi.o
-endif
-
-module_objects += esp_bt.o main.o esp_cmd.o esp_utils.o esp_cfg80211.o esp_stats.o esp_debugfs.o esp_log.o
-#$(foreach obj,$(module_objects),$(eval CFLAGS_$(obj:.o=).o := $(debug_flags)))
-CFLAGS_esp_log.o = -DDEBUG
-
-PWD := $(shell pwd)
-
-obj-m := $(MODULE_NAME).o
-$(MODULE_NAME)-y := $(module_objects)
-
-all: clean
-	make ARCH=$(ARCH) CROSS_COMPILE=$(CROSS_COMPILE) -C $(KERNEL) M=$(PWD) modules
-
-clean:
-	rm -rf *.o sdio/*.o spi/*.o *.ko
-	make ARCH=$(ARCH) CROSS_COMPILE=$(CROSS_COMPILE) -C $(KERNEL) M=$(PWD) clean
