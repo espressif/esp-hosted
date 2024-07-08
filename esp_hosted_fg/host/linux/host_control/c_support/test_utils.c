@@ -721,6 +721,7 @@ int test_station_mode_connect(void)
 	/* implemented Asynchronous */
 	ctrl_cmd_t req = CTRL_CMD_DEFAULT_REQ();
 
+	printf("Connect to AP[%s]", STATION_MODE_SSID);
 	strcpy((char *)&req.u.wifi_ap_config.ssid, STATION_MODE_SSID);
 	strcpy((char *)&req.u.wifi_ap_config.pwd, STATION_MODE_PWD);
 	strcpy((char *)&req.u.wifi_ap_config.bssid, STATION_MODE_BSSID);

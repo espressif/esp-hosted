@@ -751,6 +751,7 @@ static int esp_probe(struct sdio_func *func,
 			hz = host->f_max;
 		host->ios.clock = hz;
 		host->ops->set_ios(host, &host->ios);
+		esp_info("Using sdio clock[%u MHz]\n", sdio_context.sdio_clk_mhz);
 	}
 
 	ret = init_context(context);
@@ -780,7 +781,7 @@ static struct sdio_driver esp_sdio_driver = {
 	.remove		= esp_remove,
 };
 
-int esp_init_interface_layer(struct esp_adapter *adapter, u32 clk_speed)
+int esp_init_interface_layer(struct esp_adapter *adapter)
 {
 	if (!adapter)
 		return -EINVAL;
@@ -788,7 +789,8 @@ int esp_init_interface_layer(struct esp_adapter *adapter, u32 clk_speed)
 	adapter->if_context = &sdio_context;
 	adapter->if_ops = &if_ops;
 	sdio_context.adapter = adapter;
-	sdio_context.sdio_clk_mhz = clk_speed;
+	if (adapter->mod_param.clockspeed != MOD_PARAM_UNINITIALISED)
+		sdio_context.sdio_clk_mhz = adapter->mod_param.clockspeed;
 
 	return sdio_register_driver(&esp_sdio_driver);
 }

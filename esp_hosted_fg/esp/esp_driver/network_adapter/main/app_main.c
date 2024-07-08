@@ -384,14 +384,18 @@ void process_rx_pkt(interface_buffer_handle_t *buf_handle)
 
 	if ((buf_handle->if_type == ESP_STA_IF) && station_connected) {
 		/* Forward data to wlan driver */
-		int retry = 5;
+		int retry = 6;
 
 		do {
 			ret = esp_wifi_internal_tx(ESP_IF_WIFI_STA, payload, payload_len);
 			retry--;
 
-			if (ret)
-				usleep(400);
+			if (ret) {
+				if (retry % 3)
+					usleep(600);
+				else
+					vTaskDelay(1);
+			}
 
 		} while (ret && retry);
 		/*ESP_LOG_BUFFER_HEXDUMP("spi_sta_rx", payload, payload_len, ESP_LOG_INFO);*/

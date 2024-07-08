@@ -36,6 +36,16 @@
 #include "esp_kernel_port.h"
 #include "esp_stats.h"
 
+/* Module parameters */
+/* You can hardcode the parameters if do not wish to pass them as argument to insmod */
+static int resetpin = MOD_PARAM_UNINITIALISED;
+static int clockspeed = MOD_PARAM_UNINITIALISED;
+static int spi_bus = MOD_PARAM_UNINITIALISED;
+static int spi_cs = MOD_PARAM_UNINITIALISED;
+static int spi_mode = MOD_PARAM_UNINITIALISED; /* 1/2/3 */
+static int spi_handshake = MOD_PARAM_UNINITIALISED;
+static int spi_dataready = MOD_PARAM_UNINITIALISED;
+
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Amey Inamdar <amey.inamdar@espressif.com>");
 MODULE_AUTHOR("Mangesh Malusare <mangesh.malusare@espressif.com>");
@@ -43,22 +53,31 @@ MODULE_AUTHOR("Yogesh Mantri <yogesh.mantri@espressif.com>");
 MODULE_DESCRIPTION("Host driver for ESP-Hosted solution");
 MODULE_VERSION("0.0.5");
 
-struct esp_adapter adapter;
-volatile u8 stop_data = 0;
-
-#define ACTION_DROP 1
-/* Unless specified as part of argument, resetpin,
- * do not reset ESP32.
- */
-#define HOST_GPIO_PIN_INVALID -1
-static int resetpin = HOST_GPIO_PIN_INVALID;
-static u32 clockspeed = 0;
-
 module_param(resetpin, int, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
 MODULE_PARM_DESC(resetpin, "Host's GPIO pin number which is connected to ESP32's EN to reset ESP32 device");
 
-module_param(clockspeed, uint, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
-MODULE_PARM_DESC(clockspeed, "Hosts clock speed in MHz");
+module_param(clockspeed, int, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
+MODULE_PARM_DESC(clockspeed, "SPI/SDIO bus clock freq (MHz)");
+
+module_param(spi_bus, int, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
+MODULE_PARM_DESC(spi_bus, "SPI: bus instance to use");
+
+module_param(spi_cs, int, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
+MODULE_PARM_DESC(spi_cs, "SPI: chip select instance to use");
+
+module_param(spi_mode, int, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
+MODULE_PARM_DESC(spi_mode, "SPI: mode to use");
+
+module_param(spi_handshake, int, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
+MODULE_PARM_DESC(spi_handshake, "SPI: Handshake GPIO number");
+
+module_param(spi_dataready, int, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
+MODULE_PARM_DESC(spi_dataready, "SPI: Data Ready GPIO number");
+
+struct esp_adapter adapter;
+volatile u8 stop_data = 0;
+
+
 
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(3, 14, 0))
 /**
@@ -457,7 +476,7 @@ static void process_rx_packet(struct sk_buff *skb)
 		priv = get_priv_from_payload_header(payload_header);
 
 		if (!priv) {
-			esp_err("empty priv\n");
+			esp_verbose("empty priv\n");
 			dev_kfree_skb_any(skb);
 			return;
 		}
@@ -772,11 +791,11 @@ static void deinit_adapter(void)
 
 static void esp_reset(void)
 {
-	if (resetpin != HOST_GPIO_PIN_INVALID) {
+	if (resetpin != MOD_PARAM_UNINITIALISED) {
 		/* Check valid GPIO or not */
 		if (!gpio_is_valid(resetpin)) {
 			esp_warn("host resetpin (%d) configured is invalid GPIO\n", resetpin);
-			resetpin = HOST_GPIO_PIN_INVALID;
+			resetpin = MOD_PARAM_UNINITIALISED;
 		}
 		else {
 			esp_info("Resetpin of Host is %d\n", resetpin);
@@ -798,6 +817,18 @@ static void esp_reset(void)
 	}
 }
 
+static int update_module_params(struct esp_adapter *adapter)
+{
+	adapter->mod_param.resetpin = resetpin;
+	adapter->mod_param.clockspeed = clockspeed;
+	adapter->mod_param.spi_bus = spi_bus;
+	adapter->mod_param.spi_cs = spi_cs;
+	adapter->mod_param.spi_mode = spi_mode;
+	adapter->mod_param.spi_handshake = spi_handshake;
+	adapter->mod_param.spi_dataready = spi_dataready;
+	return 0;
+}
+
 static struct esp_adapter * init_adapter(void)
 {
 	memset(&adapter, 0, sizeof(adapter));
@@ -807,6 +838,11 @@ static struct esp_adapter * init_adapter(void)
 
 	if (!adapter.if_rx_workqueue) {
 		esp_err("failed to create rx workqueue\n");
+		deinit_adapter();
+		return NULL;
+	}
+
+	if(update_module_params(&adapter)) {
 		deinit_adapter();
 		return NULL;
 	}
@@ -844,7 +880,7 @@ static int __init esp_init(void)
 		return -EFAULT;
 
 	/* Init transport layer */
-	ret = esp_init_interface_layer(adapter, clockspeed);
+	ret = esp_init_interface_layer(adapter);
 
 	if (ret != 0) {
 		deinit_adapter();
@@ -862,7 +898,7 @@ static void __exit esp_exit(void)
 	esp_deinit_interface_layer();
 	deinit_adapter();
 
-	if (resetpin != HOST_GPIO_PIN_INVALID) {
+	if (resetpin != MOD_PARAM_UNINITIALISED) {
 		gpio_free(resetpin);
 	}
 }

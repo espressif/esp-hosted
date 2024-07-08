@@ -9,23 +9,28 @@
 #
 
 ##################  USER config (porting) ######################
-MP_RESETPIN="518"
+# Module param, resetpin: Mandatory for SPI
+resetpin="518"
 
-# SPI or SDIO clock freq to use
-# SPI: defaults to 10MHz
-# SDIO: defaults to device tree config, typically 25 or 50MHz
-MP_CLOCKSPEED=""
+# Module param, clockspeed : clock freq of SPI or SDIO - Optional
+# Defaults: SPI: 10MHz SDIO: As per device tree, typically 25MHz or 50MHz
+clockspeed="10"
 
-# SPI specific params
-MP_SPI_BUS=""
-MP_SPI_CS=""
-MP_SPI_HANDSHAKE="534"
-MP_SPI_DATAREADY="539"
+# Module param, spi_bus: spi bus instance to use
+spi_bus="0"
+# Module param, spi_cs: spi cs instance to use
+spi_cs="0"
+# Module param, spi_mode: spi mode to use from (1/2/3)
+spi_mode="2"
+# Module param, spi_handshake: spi handshake GPIO to use
+spi_handshake="534"
+# Module param, spi_dataready: spi dataready GPIO to use
+spi_dataready="539"
 
 # Old Raspberry Pi config
-#MP_RESETPIN="6"
-#MP_SPI_HANDSHAKE="22"
-#MP_SPI_DATAREADY="27"
+#resetpin="6"
+#spi_handshake="22"
+#spi_dataready="27"
 
 XTRA_MODULE_PARAMS=""
 
@@ -67,6 +72,10 @@ MODULE_NAME="esp32_${IF_TYPE}.ko"
 
 log() {
     echo "[$(date +'%Y-%m-%d %H:%M:%S')] $1"
+}
+
+warn() {
+    echo "[$(date +'%Y-%m-%d %H:%M:%S')] **Warn** $1"
 }
 
 log_enter() {
@@ -251,15 +260,8 @@ insert_module() {
         device_tree_dependency_spi
     fi
 
-	if [ "$MP_CLOCKSPEED" != "" ]; then
-		XTRA_MODULE_PARAMS="$XTRA_MODULE_PARAMS clockspeed=$MP_CLOCKSPEED"
-	fi
-
-	if [ "$XTRA_MODULE_PARAMS" != "" ]; then
-		sudo insmod "$MODULE_NAME" resetpin="$MP_RESETPIN" $XTRA_MODULE_PARAMS
-	else
-		sudo insmod "$MODULE_NAME" resetpin="$MP_RESETPIN"
-	fi
+	# Insert module with parameters
+	sudo insmod $MODULE_NAME $XTRA_MODULE_PARAMS
 
     if [ $? -ne 0 ]; then
         log "Failed to insert module"
@@ -300,7 +302,7 @@ parse_arguments() {
                 ;;
             resetpin=*)
                 log "Recvd Option: $1"
-                MP_RESETPIN=${1#*=}
+                resetpin=${1#*=}
                 ;;
 			bt=*)
                 log "Recvd Option: $1"
@@ -332,9 +334,29 @@ parse_arguments() {
                 TEST_RAW_TP="1"
                 ;;
             clockspeed=*)
-                MP_CLOCKSPEED=${1#*=}
-                log "Clock freq: $MP_CLOCKSPEED MHz"
+                clockspeed=${1#*=}
+                log "Clock freq: $clockspeed MHz"
                 ;;
+			spi_bus=*)
+				spi_bus=${1#*=}
+				log "SPI bus: $spi_bus"
+				;;
+			spi_cs=*)
+				spi_cs=${1#*=}
+				log "SPI CS: $spi_cs"
+				;;
+			spi_mode=*)
+				spi_mode=${1#*=}
+				log "SPI Mode: $spi_mode"
+				;;
+			spi_handshake=*)
+				spi_handshake=${1#*=}
+				log "SPI handshake gpio: $spi_handshake"
+				;;
+			spi_dataready=*)
+				spi_dataready=${1#*=}
+				log "SPI dataready gpio: $spi_dataready"
+				;;
             *)
                 log "$1 : unknown option"
                 usage
@@ -376,14 +398,25 @@ verify_transport_combination()
 
 verify_clock_freq()
 {
-	if [ "$MP_CLOCKSPEED" != "" ]; then
-		if [ "$IF_TYPE" = "spi" ] && [ $MP_CLOCKSPEED -gt 40 ]; then
-			log "SPI slave clock freq [$MP_CLOCKSPEED]  not supported"
+	if [ "$clockspeed" != "" ]; then
+		if [ "$IF_TYPE" = "spi" ] && [ $clockspeed -gt 40 ]; then
+			log "SPI slave clock freq [$clockspeed]  not supported"
 			exit 1
-		elif [ "$IF_TYPE" = "sdio" ] && [ $MP_CLOCKSPEED -gt 50 ]; then
-			log "SDIO slave clock [$MP_CLOCKSPEED] not supported"
+		elif [ "$IF_TYPE" = "sdio" ] && [ $clockspeed -gt 50 ]; then
+			log "SDIO slave clock [$clockspeed] not supported"
 			exit 1
 		fi
+	fi
+}
+
+add_module_param()
+{
+	local param_name=$1
+	if [ "${!param_name}" = "" ]; then
+		warn "Param, $param_name not configured, ignoring"
+	else
+		XTRA_MODULE_PARAMS="$XTRA_MODULE_PARAMS $param_name=${!param_name}"
+		log "Adding module_param '$param_name=${!param_name}'"
 	fi
 }
 
@@ -406,11 +439,30 @@ usage() {
     echo "  clockspeed=<freq_in_mhz>     Set SPI/SDIO clock frequency to be used"
     echo "                                     SPI Default: 10MHz"
     echo "                                     SDIO Default: As per Device Tree (25 or 50MHz)"
+    echo "  spi_bus=<num>                Use this SPI bus instance"
+    echo "  spi_cs=<num>                 Use this ChipSelect instance"
+    echo "  spi_mode=<num>               Use this SPI mode"
+    echo "  spi_handshake=<gpio_num>     SPI Handshake GPIO"
+    echo "  spi_dataready=<gpio_num>     SPI DataReady GPIO"
     echo "  rawtp                 Test RAW TP"
     echo ""
 }
 
 
+populate_module_params()
+{
+	# Populate module params
+	add_module_param "resetpin"
+	add_module_param "clockspeed"
+
+    if [ "$IF_TYPE" = "spi" ]; then
+		add_module_param "spi_bus"
+		add_module_param "spi_cs"
+		add_module_param "spi_mode"
+		add_module_param "spi_handshake"
+		add_module_param "spi_dataready"
+	fi
+}
 
 
 ######## Script ##########
@@ -423,6 +475,7 @@ parse_arguments "$@"
 log "Building for $IF_TYPE protocol"
 MODULE_NAME=esp32_${IF_TYPE}.ko
 
+populate_module_params
 
 build_user_space_apps
 
