@@ -94,10 +94,12 @@
 
   #elif defined(CONFIG_IDF_TARGET_ESP32C6)
 
-      #define BT_TX_PIN         5
-      #define BT_RX_PIN         12
-      //#define BT_RTS_PIN        9
-      //#define BT_CTS_PIN        13
+      #define BT_TX_PIN         CONFIG_BT_LE_HCI_UART_TX_PIN
+      #define BT_RX_PIN         CONFIG_BT_LE_HCI_UART_RX_PIN
+#ifdef CONFIG_BT_LE_HCI_UART_FLOWCTRL
+      #define BT_RTS_PIN        CONFIG_BT_LE_HCI_UART_RTS_PIN
+      #define BT_CTS_PIN        CONFIG_BT_LE_HCI_UART_CTS_PIN
+#endif
 
   #elif BT_OVER_C3_S3
 

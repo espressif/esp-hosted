@@ -161,3 +161,9 @@ ctrl_cmd_t * ota_end(ctrl_cmd_t req)
 	CTRL_SEND_REQ(CTRL_REQ_OTA_END);
 	CTRL_DECODE_RESP_IF_NOT_ASYNC();
 }
+
+ctrl_cmd_t * feature_config(ctrl_cmd_t req)
+{
+	CTRL_SEND_REQ(CTRL_REQ_ENABLE_DISABLE);
+	CTRL_DECODE_RESP_IF_NOT_ASYNC();
+}

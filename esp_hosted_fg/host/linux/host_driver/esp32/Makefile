@@ -1,5 +1,5 @@
+CONFIG_BT_ENABLED := y
 CONFIG_TEST_RAW_TP := n
-
 CONFIG_INFO_LOGS=y
 CONFIG_DEBUG_LOGS=n
 CONFIG_VERBOSE_LOGS=n
@@ -32,6 +32,11 @@ endif
 
 ifeq ($(CONFIG_TEST_RAW_TP), y)
 	EXTRA_CFLAGS += -DCONFIG_TEST_RAW_TP
+endif
+
+ifeq ($(CONFIG_BT_ENABLED), y)
+	EXTRA_CFLAGS += -DCONFIG_BT_ENABLED
+	module_objects += esp_bt.o
 endif
 
 EXTRA_CFLAGS += -I$(PWD)/../../../../common/include -I$(PWD)
@@ -72,7 +77,7 @@ endif
 PWD := $(shell pwd)
 
 obj-m := $(MODULE_NAME).o
-$(MODULE_NAME)-y := esp_bt.o main.o esp_stats.o $(module_objects)
+$(MODULE_NAME)-y := main.o esp_stats.o $(module_objects)
 $(MODULE_NAME)-y += esp_serial.o esp_rb.o
 
 all: clean

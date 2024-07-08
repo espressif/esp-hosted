@@ -92,6 +92,7 @@ struct esp_sdio_context {
 	struct sk_buff_head    tx_q[MAX_PRIORITY_QUEUES];
 	u32                    rx_byte_count;
 	u32                    tx_buffer_count;
+	u32                    sdio_clk_mhz;
 };
 
 #endif

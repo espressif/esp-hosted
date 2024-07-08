@@ -52,9 +52,13 @@ volatile u8 stop_data = 0;
  */
 #define HOST_GPIO_PIN_INVALID -1
 static int resetpin = HOST_GPIO_PIN_INVALID;
+static u32 clockspeed = 0;
 
 module_param(resetpin, int, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
 MODULE_PARM_DESC(resetpin, "Host's GPIO pin number which is connected to ESP32's EN to reset ESP32 device");
+
+module_param(clockspeed, uint, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
+MODULE_PARM_DESC(clockspeed, "Hosts clock speed in MHz");
 
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(3, 14, 0))
 /**
@@ -172,6 +176,24 @@ static int esp_hard_start_xmit(struct sk_buff *skb, struct net_device *ndev)
 u8 esp_is_bt_supported_over_sdio(u32 cap)
 {
 	return (cap & ESP_BT_SDIO_SUPPORT);
+}
+
+__weak int esp_init_bt(struct esp_adapter *adapter)
+{
+	/* weak def if 'bt over hci' is not needed */
+	return 0;
+}
+
+__weak int esp_deinit_bt(struct esp_adapter *adapter)
+{
+	/* weak def if 'bt over hci' is not needed */
+	return 0;
+}
+
+__weak void esp_hci_rx(struct esp_adapter *adapter, struct sk_buff *skb)
+{
+	if (skb)
+		dev_kfree_skb_any(skb);
 }
 
 static struct esp_private * get_priv_from_payload_header(struct esp_payload_header *header)
@@ -387,8 +409,6 @@ static void process_rx_packet(struct sk_buff *skb)
 	struct esp_payload_header *payload_header = NULL;
 	u16 len = 0, offset = 0;
 	u16 rx_checksum = 0, checksum = 0;
-	struct hci_dev *hdev = adapter.hcidev;
-	u8 *type = NULL;
 	int ret = 0, ret_len = 0;
 	struct esp_adapter *adapter = esp_get_adapter();
 
@@ -452,25 +472,7 @@ static void process_rx_packet(struct sk_buff *skb)
 		priv->stats.rx_bytes += skb->len;
 		priv->stats.rx_packets++;
 	} else if (payload_header->if_type == ESP_HCI_IF) {
-		if (hdev) {
-			/* chop off the header from skb */
-			skb_pull(skb, offset);
-
-			type = skb->data;
-			esp_hex_dump_dbg("bt_rx: ", skb->data, len);
-			hci_skb_pkt_type(skb) = *type;
-			skb_pull(skb, 1);
-
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 13, 0))
-			if (hci_recv_frame(hdev, skb)) {
-#else
-			if (hci_recv_frame(skb)) {
-#endif
-				hdev->stat.err_rx++;
-			} else {
-				esp_hci_update_rx_counter(hdev, *type, skb->len);
-			}
-		}
+		esp_hci_rx(adapter, skb);
 	} else if (payload_header->if_type == ESP_PRIV_IF) {
 		/* Queue event skb for processing in events workqueue */
 		skb_queue_tail(&adapter->events_skb_q, skb);
@@ -777,7 +779,7 @@ static void esp_reset(void)
 			resetpin = HOST_GPIO_PIN_INVALID;
 		}
 		else {
-			esp_dbg("Resetpin of Host is %d\n", resetpin);
+			esp_info("Resetpin of Host is %d\n", resetpin);
 			gpio_request(resetpin, "sysfs");
 
 			/* HOST's resetpin set to OUTPUT, HIGH */
@@ -842,7 +844,7 @@ static int __init esp_init(void)
 		return -EFAULT;
 
 	/* Init transport layer */
-	ret = esp_init_interface_layer(adapter);
+	ret = esp_init_interface_layer(adapter, clockspeed);
 
 	if (ret != 0) {
 		deinit_adapter();

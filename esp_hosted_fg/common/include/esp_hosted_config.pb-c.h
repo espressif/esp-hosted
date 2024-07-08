@@ -54,6 +54,8 @@ typedef struct CtrlMsgReqGetWifiCurrTxPower CtrlMsgReqGetWifiCurrTxPower;
 typedef struct CtrlMsgRespGetWifiCurrTxPower CtrlMsgRespGetWifiCurrTxPower;
 typedef struct CtrlMsgReqConfigHeartbeat CtrlMsgReqConfigHeartbeat;
 typedef struct CtrlMsgRespConfigHeartbeat CtrlMsgRespConfigHeartbeat;
+typedef struct CtrlMsgReqEnableDisable CtrlMsgReqEnableDisable;
+typedef struct CtrlMsgRespEnableDisable CtrlMsgRespEnableDisable;
 typedef struct CtrlMsgEventESPInit CtrlMsgEventESPInit;
 typedef struct CtrlMsgEventHeartbeat CtrlMsgEventHeartbeat;
 typedef struct CtrlMsgEventStationDisconnectFromAP CtrlMsgEventStationDisconnectFromAP;
@@ -156,11 +158,12 @@ typedef enum _CtrlMsgId {
   CTRL_MSG_ID__Req_SetWifiMaxTxPower = 119,
   CTRL_MSG_ID__Req_GetWifiCurrTxPower = 120,
   CTRL_MSG_ID__Req_ConfigHeartbeat = 121,
+  CTRL_MSG_ID__Req_EnableDisable = 122,
   /*
    * Add new control path command response before Req_Max
    * and update Req_Max 
    */
-  CTRL_MSG_ID__Req_Max = 122,
+  CTRL_MSG_ID__Req_Max = 123,
   /*
    ** Response Msgs *
    */
@@ -186,11 +189,12 @@ typedef enum _CtrlMsgId {
   CTRL_MSG_ID__Resp_SetWifiMaxTxPower = 219,
   CTRL_MSG_ID__Resp_GetWifiCurrTxPower = 220,
   CTRL_MSG_ID__Resp_ConfigHeartbeat = 221,
+  CTRL_MSG_ID__Resp_EnableDisable = 222,
   /*
    * Add new control path command response before Resp_Max
    * and update Resp_Max 
    */
-  CTRL_MSG_ID__Resp_Max = 222,
+  CTRL_MSG_ID__Resp_Max = 223,
   /*
    ** Event Msgs *
    */
@@ -206,6 +210,12 @@ typedef enum _CtrlMsgId {
   CTRL_MSG_ID__Event_Max = 305
     PROTOBUF_C__FORCE_ENUM_TO_BE_INT_SIZE(CTRL_MSG_ID)
 } CtrlMsgId;
+typedef enum _HostedFeature {
+  HOSTED_FEATURE__Hosted_InvalidFeature = 0,
+  HOSTED_FEATURE__Hosted_Wifi = 1,
+  HOSTED_FEATURE__Hosted_Bluetooth = 2
+    PROTOBUF_C__FORCE_ENUM_TO_BE_INT_SIZE(HOSTED_FEATURE)
+} HostedFeature;
 
 /* --- messages --- */
 
@@ -643,6 +653,27 @@ struct  CtrlMsgRespConfigHeartbeat
     , 0 }
 
 
+struct  CtrlMsgReqEnableDisable
+{
+  ProtobufCMessage base;
+  uint32_t feature;
+  protobuf_c_boolean enable;
+};
+#define CTRL_MSG__REQ__ENABLE_DISABLE__INIT \
+ { PROTOBUF_C_MESSAGE_INIT (&ctrl_msg__req__enable_disable__descriptor) \
+    , 0, 0 }
+
+
+struct  CtrlMsgRespEnableDisable
+{
+  ProtobufCMessage base;
+  int32_t resp;
+};
+#define CTRL_MSG__RESP__ENABLE_DISABLE__INIT \
+ { PROTOBUF_C_MESSAGE_INIT (&ctrl_msg__resp__enable_disable__descriptor) \
+    , 0 }
+
+
 /*
  ** Event structure *
  */
@@ -710,6 +741,7 @@ typedef enum {
   CTRL_MSG__PAYLOAD_REQ_SET_WIFI_MAX_TX_POWER = 119,
   CTRL_MSG__PAYLOAD_REQ_GET_WIFI_CURR_TX_POWER = 120,
   CTRL_MSG__PAYLOAD_REQ_CONFIG_HEARTBEAT = 121,
+  CTRL_MSG__PAYLOAD_REQ_ENABLE_DISABLE_FEAT = 122,
   CTRL_MSG__PAYLOAD_RESP_GET_MAC_ADDRESS = 201,
   CTRL_MSG__PAYLOAD_RESP_SET_MAC_ADDRESS = 202,
   CTRL_MSG__PAYLOAD_RESP_GET_WIFI_MODE = 203,
@@ -731,6 +763,7 @@ typedef enum {
   CTRL_MSG__PAYLOAD_RESP_SET_WIFI_MAX_TX_POWER = 219,
   CTRL_MSG__PAYLOAD_RESP_GET_WIFI_CURR_TX_POWER = 220,
   CTRL_MSG__PAYLOAD_RESP_CONFIG_HEARTBEAT = 221,
+  CTRL_MSG__PAYLOAD_RESP_ENABLE_DISABLE_FEAT = 222,
   CTRL_MSG__PAYLOAD_EVENT_ESP_INIT = 301,
   CTRL_MSG__PAYLOAD_EVENT_HEARTBEAT = 302,
   CTRL_MSG__PAYLOAD_EVENT_STATION_DISCONNECT_FROM__AP = 303,
@@ -783,6 +816,7 @@ struct  CtrlMsg
     CtrlMsgReqSetWifiMaxTxPower *req_set_wifi_max_tx_power;
     CtrlMsgReqGetWifiCurrTxPower *req_get_wifi_curr_tx_power;
     CtrlMsgReqConfigHeartbeat *req_config_heartbeat;
+    CtrlMsgReqEnableDisable *req_enable_disable_feat;
     /*
      ** Responses *
      */
@@ -807,6 +841,7 @@ struct  CtrlMsg
     CtrlMsgRespSetWifiMaxTxPower *resp_set_wifi_max_tx_power;
     CtrlMsgRespGetWifiCurrTxPower *resp_get_wifi_curr_tx_power;
     CtrlMsgRespConfigHeartbeat *resp_config_heartbeat;
+    CtrlMsgRespEnableDisable *resp_enable_disable_feat;
     /*
      ** Notifications *
      */
@@ -1562,6 +1597,44 @@ CtrlMsgRespConfigHeartbeat *
 void   ctrl_msg__resp__config_heartbeat__free_unpacked
                      (CtrlMsgRespConfigHeartbeat *message,
                       ProtobufCAllocator *allocator);
+/* CtrlMsgReqEnableDisable methods */
+void   ctrl_msg__req__enable_disable__init
+                     (CtrlMsgReqEnableDisable         *message);
+size_t ctrl_msg__req__enable_disable__get_packed_size
+                     (const CtrlMsgReqEnableDisable   *message);
+size_t ctrl_msg__req__enable_disable__pack
+                     (const CtrlMsgReqEnableDisable   *message,
+                      uint8_t             *out);
+size_t ctrl_msg__req__enable_disable__pack_to_buffer
+                     (const CtrlMsgReqEnableDisable   *message,
+                      ProtobufCBuffer     *buffer);
+CtrlMsgReqEnableDisable *
+       ctrl_msg__req__enable_disable__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data);
+void   ctrl_msg__req__enable_disable__free_unpacked
+                     (CtrlMsgReqEnableDisable *message,
+                      ProtobufCAllocator *allocator);
+/* CtrlMsgRespEnableDisable methods */
+void   ctrl_msg__resp__enable_disable__init
+                     (CtrlMsgRespEnableDisable         *message);
+size_t ctrl_msg__resp__enable_disable__get_packed_size
+                     (const CtrlMsgRespEnableDisable   *message);
+size_t ctrl_msg__resp__enable_disable__pack
+                     (const CtrlMsgRespEnableDisable   *message,
+                      uint8_t             *out);
+size_t ctrl_msg__resp__enable_disable__pack_to_buffer
+                     (const CtrlMsgRespEnableDisable   *message,
+                      ProtobufCBuffer     *buffer);
+CtrlMsgRespEnableDisable *
+       ctrl_msg__resp__enable_disable__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data);
+void   ctrl_msg__resp__enable_disable__free_unpacked
+                     (CtrlMsgRespEnableDisable *message,
+                      ProtobufCAllocator *allocator);
 /* CtrlMsgEventESPInit methods */
 void   ctrl_msg__event__espinit__init
                      (CtrlMsgEventESPInit         *message);
@@ -1776,6 +1849,12 @@ typedef void (*CtrlMsgReqConfigHeartbeat_Closure)
 typedef void (*CtrlMsgRespConfigHeartbeat_Closure)
                  (const CtrlMsgRespConfigHeartbeat *message,
                   void *closure_data);
+typedef void (*CtrlMsgReqEnableDisable_Closure)
+                 (const CtrlMsgReqEnableDisable *message,
+                  void *closure_data);
+typedef void (*CtrlMsgRespEnableDisable_Closure)
+                 (const CtrlMsgRespEnableDisable *message,
+                  void *closure_data);
 typedef void (*CtrlMsgEventESPInit_Closure)
                  (const CtrlMsgEventESPInit *message,
                   void *closure_data);
@@ -1806,6 +1885,7 @@ extern const ProtobufCEnumDescriptor    ctrl__wifi_sec_prot__descriptor;
 extern const ProtobufCEnumDescriptor    ctrl__status__descriptor;
 extern const ProtobufCEnumDescriptor    ctrl_msg_type__descriptor;
 extern const ProtobufCEnumDescriptor    ctrl_msg_id__descriptor;
+extern const ProtobufCEnumDescriptor    hosted_feature__descriptor;
 extern const ProtobufCMessageDescriptor scan_result__descriptor;
 extern const ProtobufCMessageDescriptor connected_stalist__descriptor;
 extern const ProtobufCMessageDescriptor ctrl_msg__req__get_mac_address__descriptor;
@@ -1845,6 +1925,8 @@ extern const ProtobufCMessageDescriptor ctrl_msg__req__get_wifi_curr_tx_power__d
 extern const ProtobufCMessageDescriptor ctrl_msg__resp__get_wifi_curr_tx_power__descriptor;
 extern const ProtobufCMessageDescriptor ctrl_msg__req__config_heartbeat__descriptor;
 extern const ProtobufCMessageDescriptor ctrl_msg__resp__config_heartbeat__descriptor;
+extern const ProtobufCMessageDescriptor ctrl_msg__req__enable_disable__descriptor;
+extern const ProtobufCMessageDescriptor ctrl_msg__resp__enable_disable__descriptor;
 extern const ProtobufCMessageDescriptor ctrl_msg__event__espinit__descriptor;
 extern const ProtobufCMessageDescriptor ctrl_msg__event__heartbeat__descriptor;
 extern const ProtobufCMessageDescriptor ctrl_msg__event__station_disconnect_from_ap__descriptor;

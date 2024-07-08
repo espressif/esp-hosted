@@ -72,5 +72,9 @@ int unregister_event_callbacks(void);
 int test_config_heartbeat(void);
 int test_disable_heartbeat(void);
 int test_disable_heartbeat_async(void);
+int test_disable_bt(void);
+int test_enable_bt(void);
+int test_disable_wifi(void);
+int test_enable_wifi(void);
 
 #endif

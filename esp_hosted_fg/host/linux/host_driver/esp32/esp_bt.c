@@ -27,7 +27,7 @@
 
 static ESP_BT_SEND_FRAME_PROTOTYPE();
 
-void esp_hci_update_tx_counter(struct hci_dev *hdev, u8 pkt_type, size_t len)
+static void esp_hci_update_tx_counter(struct hci_dev *hdev, u8 pkt_type, size_t len)
 {
 	if (hdev) {
 		if (pkt_type == HCI_COMMAND_PKT) {
@@ -42,7 +42,7 @@ void esp_hci_update_tx_counter(struct hci_dev *hdev, u8 pkt_type, size_t len)
 	}
 }
 
-void esp_hci_update_rx_counter(struct hci_dev *hdev, u8 pkt_type, size_t len)
+static void esp_hci_update_rx_counter(struct hci_dev *hdev, u8 pkt_type, size_t len)
 {
 	if (hdev) {
 		if (pkt_type == HCI_EVENT_PKT) {
@@ -54,6 +54,50 @@ void esp_hci_update_rx_counter(struct hci_dev *hdev, u8 pkt_type, size_t len)
 		}
 
 		hdev->stat.byte_rx += len;
+	}
+}
+
+void esp_hci_rx(struct esp_adapter *adapter, struct sk_buff *skb)
+{
+	struct hci_dev *hdev = NULL;
+	struct esp_payload_header *h = NULL;
+	u16 offset = 0;
+	u16 len = 0;
+	u8 *type = NULL;
+
+	if (unlikely(!adapter || !skb || !skb->data)) {
+		if (skb)
+			dev_kfree_skb_any(skb);
+		return;
+	}
+
+	h = (struct esp_payload_header *)skb->data;
+	hdev = adapter->hcidev;
+	offset = le16_to_cpu(h->offset);
+	len = le16_to_cpu(h->len);
+
+	if (unlikely(!hdev || !offset || !len)) {
+		dev_kfree_skb_any(skb);
+		return;
+	}
+
+	/* chop off the header from skb */
+	skb_pull(skb, offset);
+
+	type = skb->data;
+	esp_hex_dump_dbg("bt_rx: ", skb->data, len);
+	hci_skb_pkt_type(skb) = *type;
+	skb_pull(skb, 1);
+
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 13, 0))
+	if (hci_recv_frame(hdev, skb))
+#else
+	if (hci_recv_frame(skb))
+#endif
+	{
+		hdev->stat.err_rx++;
+	} else {
+		esp_hci_update_rx_counter(hdev, *type, skb->len);
 	}
 }
 
@@ -260,7 +304,9 @@ int esp_init_bt(struct esp_adapter *adapter)
 	hdev->set_bdaddr = esp_bt_set_bdaddr;
 #endif
 
+#ifdef HCI_PRIMARY
 	hdev->dev_type = HCI_PRIMARY;
+#endif
 
 	ret = hci_register_dev(hdev);
 	if (ret < 0) {

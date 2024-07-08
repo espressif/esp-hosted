@@ -58,7 +58,6 @@
 static struct sk_buff * read_packet(struct esp_adapter *adapter);
 static int write_packet(struct esp_adapter *adapter, struct sk_buff *skb);
 static void spi_exit(void);
-static void adjust_spi_clock(u8 spi_clk_mhz);
 static void esp_spi_transaction(void);
 static int spi_dev_init(int spi_clk_mhz);
 static int spi_init(void);
@@ -170,9 +169,6 @@ static int write_packet(struct esp_adapter *adapter, struct sk_buff *skb)
 	} else {
 		if (atomic_read(&tx_pending) >= TX_MAX_PENDING_COUNT) {
 			esp_tx_pause();
-			dev_kfree_skb(skb);
-			up(&spi_sem);
-			return -EBUSY;
 		}
 		skb_queue_tail(&spi_context.tx_q[PRIO_Q_OTHERS], skb);
 		atomic_inc(&tx_pending);
@@ -202,8 +198,6 @@ int process_init_event(u8 *evt_buf, u8 len)
 		esp_info("EVENT: %d\n", *pos);
 		if (*pos == ESP_PRIV_CAPABILITY) {
 			adapter->capabilities = *(pos + 2);
-		} else if (*pos == ESP_PRIV_SPI_CLK_MHZ){
-			adjust_spi_clock(*(pos + 2));
 		} else if (*pos == ESP_PRIV_FIRMWARE_CHIP_ID){
 			hardware_type = *(pos+2);
 		} else if (*pos == ESP_PRIV_TEST_RAW_TP) {
@@ -694,16 +688,7 @@ static void spi_exit(void)
 	memset(&spi_context, 0, sizeof(spi_context));
 }
 
-static void adjust_spi_clock(u8 spi_clk_mhz)
-{
-	if ((spi_clk_mhz) && (spi_clk_mhz != SPI_INITIAL_CLK_MHZ)) {
-		esp_info("ESP Reconfigure SPI CLK to %u MHz\n",spi_clk_mhz);
-		spi_context.spi_clk_mhz = spi_clk_mhz;
-		spi_context.esp_spi_dev->max_speed_hz = spi_clk_mhz * NUMBER_1M;
-	}
-}
-
-int esp_init_interface_layer(struct esp_adapter *adapter)
+int esp_init_interface_layer(struct esp_adapter *adapter, u32 clk_speed)
 {
 	if (!adapter) {
 		esp_err("null adapter\n");
@@ -716,7 +701,12 @@ int esp_init_interface_layer(struct esp_adapter *adapter)
 	adapter->if_ops = &if_ops;
 	adapter->if_type = ESP_IF_TYPE_SPI;
 	spi_context.adapter = adapter;
-	spi_context.spi_clk_mhz = SPI_INITIAL_CLK_MHZ;
+	if (clk_speed)
+		spi_context.spi_clk_mhz = clk_speed;
+	else
+		spi_context.spi_clk_mhz = SPI_INITIAL_CLK_MHZ;
+
+	esp_info("SPI clock used: %u MHz\n", spi_context.spi_clk_mhz);
 
 	return spi_init();
 }

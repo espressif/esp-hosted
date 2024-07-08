@@ -1,86 +1,187 @@
 #!/bin/bash
+# SPDX-License-Identifier: GPL-2.0-only
+#
+# Espressif Systems Wireless LAN device driver
+#
+# SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+#
+# SPDX-License-Identifier: GPL-2.0-only
+#
 
-# SPDX-License-Identifier: Apache-2.0
-# Copyright 2015-2021 Espressif Systems (Shanghai) PTE LTD
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+##################  USER config (porting) ######################
+MP_RESETPIN="518"
 
-RESETPIN=""
-BT_INIT_SET="0"
+# SPI or SDIO clock freq to use
+# SPI: defaults to 10MHz
+# SDIO: defaults to device tree config, typically 25 or 50MHz
+MP_CLOCKSPEED=""
+
+# SPI specific params
+MP_SPI_BUS=""
+MP_SPI_CS=""
+MP_SPI_HANDSHAKE="534"
+MP_SPI_DATAREADY="539"
+
+# Old Raspberry Pi config
+#MP_RESETPIN="6"
+#MP_SPI_HANDSHAKE="22"
+#MP_SPI_DATAREADY="27"
+
+XTRA_MODULE_PARAMS=""
+
+##################  Bluetooth Config ###########################
+# 1) Bluetooth over HCI : Bluetooth over spi/sdio
+#    No extra pins or config needed. Reuse SPI/SDIO pins for Wi-Fi+Bluetooth
+#    Use: BT_CONFIG="bt_using_hci"
+# 2) Bluetooth over UART : Wi-Fi over spi/sdio. Bluetooth over dedicated UART
+#    Use: BT_CONFIG="bt_using_uart_2pins" OR
+#         BT_CONFIG="bt_using_uart_4pins"
+#    2 pins UART: Tx and Rx only
+#    4 pins UART: Tx, Rx, RTS, CTS.
+#    Extra configuration needed!
+#    - Connect extra pins
+#    - Configure these 2/4 UART pins in your device tree as UART pins
+# 3) Disable Bluetooth (Only Wi-Fi)
+#    Use: BT_CONFIG=""
+BT_CONFIG=""
+#BT_CONFIG="bt_using_hci"
+#BT_CONFIG="bt_using_uart_2pins"
+#BT_CONFIG="bt_using_uart_4pins"
+
+
+##################  Wi-Fi config  ##############################
+#  1) wifi enabled : 'wifi_on' (default)
+#  2) wifi disabled : 'wifi_off'
+WIFI_CONFIG="wifi_on"
+#WIFI_CONFIG="wifi_off"
+
+############  Cross compilation options ########################
+CROSS_COMPILE="/bin/arm-linux-gnueabihf-"
+KERNEL_BUILD_DIR="/lib/modules/$(uname -r)/build"
+ARCH=""
+
 TEST_RAW_TP="0"
 IF_TYPE=""
 MODULE_NAME="esp32_${IF_TYPE}.ko"
 
-build_c_demo_app()
-{
-    cd c_support/
+
+log() {
+    echo "[$(date +'%Y-%m-%d %H:%M:%S')] $1"
+}
+
+log_enter() {
+    log "Entering ${FUNCNAME[1]}"
+}
+
+log_exit() {
+    log "Exiting ${FUNCNAME[1]}"
+}
+
+device_tree_dependency_spi() {
+    log_enter
+	cd $SCRIPT_DIR
+	log "Current dir: $PWD"
+    rm spidev_disabler.dtbo > /dev/null
+    dtc spidev_disabler.dts -O dtb > spidev_disabler.dtbo
+    sudo dtoverlay -d . spidev_disabler
+	cd $MAKE_DIR
+    log_exit
+}
+
+device_tree_dependency_uart_2pins() {
+    log_enter
+	gpio_pin_ctl=pinctrl
+	$gpio_pin_ctl 2> /dev/null
+	if [ $? -ne 0 ]; then
+		gpio_pin_ctl=raspi-gpio
+	fi
+    sudo $gpio_pin_ctl set 15 a0 pu
+    sudo $gpio_pin_ctl set 14 a0 pu
+    log_exit
+}
+
+device_tree_dependency_uart_4pins() {
+    log_enter
+	gpio_pin_ctl=pinctrl
+	$gpio_pin_ctl 2> /dev/null
+	if [ $? -ne 0 ]; then
+		gpio_pin_ctl=raspi-gpio
+	fi
+    sudo $gpio_pin_ctl set 15 a0 pu
+    sudo $gpio_pin_ctl set 14 a0 pu
+    sudo $gpio_pin_ctl set 16 a3 pu
+    sudo $gpio_pin_ctl set 17 a3 pu
+    log_exit
+}
+
+build_c_demo_app() {
+    log_enter
+    cd $SCRIPT_DIR/c_support/
     make clean
     make -j8
-    # Check the exit status
-    if [ $? -ne 0 ] ; then
-        echo "Failed to build test app"
-        exit -1
+    if [ $? -ne 0 ]; then
+        log "Failed to build test app"
+        exit 1
     fi
 
     make -j8 stress
-    # Check the exit status
-    if [ $? -ne 0 ] ; then
-        echo "Failed to build stress app"
-        exit -1
+    if [ $? -ne 0 ]; then
+        log "Failed to build stress app"
+        exit 1
     fi
-
     cd ..
+    log_exit
 }
 
-build_python_demo_app()
-{
-    cd python_support/
+build_python_demo_app() {
+    log_enter
+    cd $SCRIPT_DIR/python_support/
     make clean
     make -j8
-    # Check the exit status
-    if [ $? -ne 0 ] ; then
-        echo "Failed to build python demo app"
-        exit -1
+    if [ $? -ne 0 ]; then
+        log "Failed to build python demo app"
+        exit 1
     fi
-
     cd ..
+    log_exit
 }
 
-demo_app_building()
-{
+build_user_space_apps() {
+    log_enter
     build_c_demo_app
     build_python_demo_app
+    log_exit
 }
 
-wlan_init()
-{
-    cd ../host_driver/esp32/
-    if [ `lsmod | grep esp32 | wc -l` != "0" ]; then
-        if [ `lsmod | grep esp32_sdio | wc -l` != "0" ]; then
+remove_module() {
+    log_enter
+    if [ "$(lsmod | grep esp32 | wc -l)" != "0" ]; then
+        if [ "$(lsmod | grep esp32_sdio | wc -l)" != "0" ]; then
             sudo rmmod esp32_sdio &> /dev/null
             else
             sudo rmmod esp32_spi &> /dev/null
         fi
+        if [ $? -ne 0 ]; then
+            log "Failed to remove esp kernel module"
+            exit 1
+        fi
+        log "esp module removed using script"
     fi
+    log_exit
+}
 
+build_module()
+{
     if [ "$TEST_RAW_TP" = "0" ] ; then
         VAL_CONFIG_TEST_RAW_TP=n
     else
         VAL_CONFIG_TEST_RAW_TP=y
     fi
 
-    if [ "$CUSTOM_OPTS" != "" ] ; then
-	    echo "Adding $CUSTOM_OPTS"
+    if [ "$BT_CONFIG" != "" ] ; then
+        VAL_BT_ENABLED=y
+    else
+        VAL_BT_ENABLED=n
     fi
 
     # For Linux other than Raspberry Pi, Please uncomment below 'make' line and provide:
@@ -88,138 +189,246 @@ wlan_init()
     # <KERNEL>        -> Place where kernel is checked out and built. For Example, "/lib/modules/$(uname -r)/build"
     # <ARCH>          -> Architecture. for example, arm64
 
-    #make -j8 target=$IF_TYPE CROSS_COMPILE=<CROSS_COMPILE> KERNEL=<KERNEL> ARCH=<ARCH> CONFIG_TEST_RAW_TP="$VAL_CONFIG_TEST_RAW_TP" $CUSTOM_OPTS
+    #make -j8 target=$IF_TYPE CROSS_COMPILE=<CROSS_COMPILE> KERNEL=<KERNEL> ARCH=<ARCH> CONFIG_TEST_RAW_TP="$VAL_CONFIG_TEST_RAW_TP"
 
     # Also, Check detailed doc, esp_hosted_fg/docs/Linux_based_host/porting_guide.md for more details.
 
     # Populate your arch if not populated correctly.
-    arch_num_bits=$(getconf LONG_BIT)
-    if [ "$arch_num_bits" = "32" ] ; then arch_found="arm"; else arch_found="arm64"; fi
+	if [ "$ARCH" = "" ]; then
+		arch_num_bits=$(getconf LONG_BIT)
+		if [ "$arch_num_bits" = "32" ] ; then arch_found="arm"; else arch_found="arm64"; fi
+		ARCH="$arch_found"
+	fi
 
-    make -j8 target=$IF_TYPE KERNEL="/lib/modules/$(uname -r)/build" ARCH=$arch_found CONFIG_TEST_RAW_TP="$VAL_CONFIG_TEST_RAW_TP" $CUSTOM_OPTS
+	cd $MAKE_DIR
+	log "Current dir: $PWD"
+	log "Building for target $IF_TYPE"
+	log "Using ARCH as : $ARCH"
+	log "Using KERNEL as $KERNEL_BUILD_DIR"
+	log "Using CONFIG_TEST_RAW_TP as $CONFIG_TEST_RAW_TP"
+
+    make -j8 target="$IF_TYPE" KERNEL="$KERNEL_BUILD_DIR" ARCH="$ARCH" CONFIG_TEST_RAW_TP="$VAL_CONFIG_TEST_RAW_TP" CONFIG_BT_ENABLED="$VAL_BT_ENABLED"
 
     # Check the exit status of make
     if [ $? -ne 0 ] ; then
-        echo "Failed to build the driver"
+        log "Failed to build the esp kernel module"
         exit -1
     fi
+}
 
-    if [ "$RESETPIN" = "" ] ; then
-        #By Default, BCM6 is GPIO on host. use resetpin=6
-        # `cat /sys/kernel/debug/gpio` says this maps to 518
-        sudo insmod $MODULE_NAME resetpin=518
+load_bluetooth_module()
+{
+	sudo modprobe bluetooth
+
+	if [ `lsmod | grep bluetooth | wc -l` = "0" ]; then
+		log "Failed to insert bluetooth module, comment if bluetooth is configured directly in kernel"
+		exit -1
+	fi
+}
+
+insert_module() {
+    log_enter
+    # Check and apply bluetooth config
+    if [ "$BT_CONFIG" != "" ]; then
+        load_bluetooth_module
+
+        if [ "$BT_CONFIG" = "bt_using_uart_2pins" ]; then
+			log "Wi-Fi ($IF_TYPE) + Bluetooth (UART-2pins)"
+            device_tree_dependency_uart_2pins
+        elif [ "$BT_CONFIG" = "bt_using_uart_4pins" ]; then
+			log "Wi-Fi ($IF_TYPE) + Bluetooth (UART-4pins)"
+            device_tree_dependency_uart_4pins
+        elif [ "$BT_CONFIG" = "bt_using_hci" ]; then
+			log "$IF_TYPE only setup: Wi-Fi+Bluetooth both over $IF_TYPE"
+		else
+            log "Incorrect bluetooth config"
+            exit 1
+        fi
+    fi
+
+    # Additional dependency for SPI
+    if [ "$IF_TYPE" = "spi" ]; then
+        device_tree_dependency_spi
+    fi
+
+	if [ "$MP_CLOCKSPEED" != "" ]; then
+		XTRA_MODULE_PARAMS="$XTRA_MODULE_PARAMS clockspeed=$MP_CLOCKSPEED"
+	fi
+
+	if [ "$XTRA_MODULE_PARAMS" != "" ]; then
+		sudo insmod "$MODULE_NAME" resetpin="$MP_RESETPIN" $XTRA_MODULE_PARAMS
+	else
+		sudo insmod "$MODULE_NAME" resetpin="$MP_RESETPIN"
+	fi
+
+    if [ $? -ne 0 ]; then
+        log "Failed to insert module"
+        exit 1
+    fi
+
+    if [ "$(lsmod | grep esp32 | wc -l)" != "0" ]; then
+        log "esp32 module inserted using script"
     else
-        #Use resetpin value from argument
-        sudo insmod $MODULE_NAME $RESETPIN
+        log "Failed to insert esp32 module"
+        exit 1
     fi
-    if [ `lsmod | grep esp32 | wc -l` != "0" ]; then
-        echo "esp32 module inserted "
-        echo "RPi init successfully completed"
-    fi
+    log_exit
 }
 
-bt_init()
-{
-    sudo pinctrl set 15 a0 pu
-    sudo pinctrl set 14 a0 pu
-    if [ "$BT_INIT_SET" = "4" ] ; then
-        sudo pinctrl set 16 a3 pu
-        sudo pinctrl set 17 a3 pu
-    fi
-}
-
-usage()
-{
-    echo "This script prepares RPI for wlan and bt/ble operation over esp32 device"
-    echo "\nUsage: ./rpi_init.sh [arguments]"
-    echo "\nArguments are optional and are as below"
-    echo "  spi:    sets ESP32<->RPi communication over SPI"
-    echo "  sdio:   sets ESP32<->RPi communication over SDIO"
-    echo "  btuart: Set GPIO pins on RPi for HCI UART operations with TX, RX, CTS, RTS (defaulted to option btuart_4pins)"
-    echo "  btuart_2pins: Set GPIO pins on RPi for HCI UART operations with only TX & RX pins configured (only for ESP32-C2/C6)"
-    echo "  resetpin=6:     Set GPIO pins on RPi connected to EN pin of ESP32, used to reset ESP32 (default:6 for BCM6)"
-    echo "\nExample:"
-    echo "  - Prepare RPi for WLAN operation on SDIO. sdio is default if no interface mentioned"
-    echo "   # ./rpi_init.sh or ./rpi_init.sh sdio"
-    echo "\n  - Use spi for host<->ESP32 communication. sdio is default if no interface mentioned"
-    echo "   # ./rpi_init.sh spi"
-    echo "\n  - Prepare RPi for bt/ble operation over UART and WLAN over SDIO/SPI"
-    echo "   # ./rpi_init.sh sdio btuart or ./rpi_init.sh spi btuart"
-    echo "\n  - use GPIO pin BCM5 (GPIO29) for reset"
-    echo "   # ./rpi_init.sh resetpin=5"
-    echo "\n  - do btuart, use GPIO pin BCM5 (GPIO29) for reset over SDIO/SPI"
-    echo "   # ./rpi_init.sh sdio btuart resetpin=5 or ./rpi_init.sh spi btuart resetpin=5"
-}
-
-parse_arguments()
-{
-    while [ "$1" != "" ] ; do
+parse_arguments() {
+    log_enter
+    while [ "$1" != "" ]; do
         case $1 in
             --help | -h )
                 usage
                 exit 0
                 ;;
-            sdio)
-                IF_TYPE=$1
-                ;;
-            spi)
-                IF_TYPE=$1
+			wifi=*)
+                WIFI_TP=${1#*=}
+				if [ "$WIFI_TP" = "spi" ]; then
+					log "Wi-Fi on SPI"
+				elif [ "$WIFI_TP" = "sdio" ]; then
+					log "Wi-Fi on SDIO"
+				elif [ "$WIFI_TP" = "-" ]; then
+					log "****** Disable Wi-Fi ******"
+					WIFI_TP=""
+				else
+					log "****** Unsupported Wi-Fi transport[$WIFI_TP] ******"
+					log "Possible transport values: 'spi' / 'sdio' / '-'"
+					exit 1
+				fi
                 ;;
             resetpin=*)
-                echo "Recvd Option: $1"
-                RESETPIN=$1
+                log "Recvd Option: $1"
+                MP_RESETPIN=${1#*=}
                 ;;
-            btuart | btuart_4pins | btuart_4pin)
-                echo "Configure Host BT UART with 4 pins, RX, TX, CTS, RTS"
-                BT_INIT_SET="4"
-                ;;
-            btuart_2pins | btuart_2pin)
-                echo "Configure Host BT UART with 2 pins, RX & TX"
-                BT_INIT_SET="2"
+			bt=*)
+                log "Recvd Option: $1"
+				BT_TP=${1#*=}
+				if [ "$BT_TP" = "spi" ]; then
+					BT_CONFIG="bt_using_hci"
+					log "BT on SPI"
+				elif [ "$BT_TP" = "sdio" ]; then
+					BT_CONFIG="bt_using_hci"
+					log "BT on SDIO"
+				elif [ "$BT_TP" = "uart_2pins" ]; then
+					BT_CONFIG="bt_using_uart_2pins"
+					log "BT on UART (Tx, RX)"
+				elif [ "$BT_TP" = "uart_4pins" ]; then
+					BT_CONFIG="bt_using_uart_4pins"
+					log "BT on UART (Tx, RX, CTS, RTS)"
+				elif [ "$BT_TP" = "-" ]; then
+					BT_CONFIG=""
+					log "****** Disable BT ******"
+					BT_TP=""
+				else
+					log "****** Unsupported BT transport[$BT_TP] ******"
+					log "Possible transport values: 'spi' / 'sdio' / 'uart_2pins' / 'uart_4pins' / '-'"
+					exit 1
+				fi
                 ;;
             rawtp)
-                echo "Test RAW TP"
+                log "Test RAW TP"
                 TEST_RAW_TP="1"
                 ;;
+            clockspeed=*)
+                MP_CLOCKSPEED=${1#*=}
+                log "Clock freq: $MP_CLOCKSPEED MHz"
+                ;;
             *)
-                echo "$1 : unknown option"
+                log "$1 : unknown option"
                 usage
                 exit 1
                 ;;
-                esac
+        esac
         shift
     done
+
+	verify_transport_combination
+	verify_clock_freq
+    log_exit
+}
+
+verify_transport_combination()
+{
+	if [ "$WIFI_TP" != "" ]; then
+		IF_TYPE=$WIFI_TP
+	fi
+
+	if [ "$BT_TP" != "" ]; then
+		if [ "$BT_TP" != "uart_2pins" ] && [ "$BT_TP" != "uart_4pins" ]; then
+			if [ "$WIFI_TP" != "" ] && [ "$BT_TP" != "$WIFI_TP" ]; then
+				log "Transport combination unsupported: Wifi[$WIFI_TP] BT[$BT_TP]"
+				exit 1
+			fi
+			IF_TYPE=$BT_TP
+		fi
+	fi
+
+	if [ "$IF_TYPE" = "" ] ; then
+		echo ""
+		log "transport combination unsupported. At least, Wi-Fi or BT need to run over SPI/SDIO"
+		echo ""
+		usage
+		exit 1
+	fi
+}
+
+verify_clock_freq()
+{
+	if [ "$MP_CLOCKSPEED" != "" ]; then
+		if [ "$IF_TYPE" = "spi" ] && [ $MP_CLOCKSPEED -gt 40 ]; then
+			log "SPI slave clock freq [$MP_CLOCKSPEED]  not supported"
+			exit 1
+		elif [ "$IF_TYPE" = "sdio" ] && [ $MP_CLOCKSPEED -gt 50 ]; then
+			log "SDIO slave clock [$MP_CLOCKSPEED] not supported"
+			exit 1
+		fi
+	fi
+}
+
+# Example usage function
+usage() {
+    echo "Usage: $0 [options]"
+    echo "Options:"
+    echo "  --help, -h                   Show this help message"
+    echo "  wifi=<value>                 Set bluetooth transport"
+    echo "     > 'sdio'                       <Use Wi-Fi over SDIO>"
+    echo "     > 'spi'                        <Use Wi-Fi over SPI>"
+    echo "     > '-'                          <Disable Wi-Fi>"
+    echo "  resetpin=<gpio>              Set the reset pin GPIO"
+    echo "  bt=<value>                   Set bluetooth transport"
+    echo "     > 'spi'                        <Use bluetooth over SPI>"
+    echo "     > 'sdio'                       <Use bluetooth over SDIO>"
+    echo "     > 'uart_2pins'                 <Use bluetooth over UART Tx,Rx>"
+    echo "     > 'uart_4pins'                 <Use bluetooth over UART Tx,Rx,CTS,RTS>"
+    echo "     > '-'                          <Disable bluetooth>"
+    echo "  clockspeed=<freq_in_mhz>     Set SPI/SDIO clock frequency to be used"
+    echo "                                     SPI Default: 10MHz"
+    echo "                                     SDIO Default: As per Device Tree (25 or 50MHz)"
+    echo "  rawtp                 Test RAW TP"
+    echo ""
 }
 
 
-parse_arguments $*
-if [ "$IF_TYPE" = "" ] ; then
-    echo "Error: No protocol selected"
-    usage
-    exit 1
-else
-    echo "Building for $IF_TYPE protocol"
-    MODULE_NAME=esp32_${IF_TYPE}.ko
-fi
 
-if [ "$IF_TYPE" = "spi" ] ; then
-    rm spidev_disabler.dtbo
-    # Disable default spidev driver
-    dtc spidev_disabler.dts -O dtb > spidev_disabler.dtbo
-    sudo dtoverlay -d . spidev_disabler
-fi
 
-if [ `lsmod | grep bluetooth | wc -l` = "0" ]; then
-    echo "bluetooth module inserted"
-    sudo modprobe bluetooth
-fi
+######## Script ##########
+SCRIPT_DIR=$PWD
+MAKE_DIR=$SCRIPT_DIR/../host_driver/esp32/
 
-demo_app_building
+cd $MAKE_DIR
+parse_arguments "$@"
 
-if [ `lsmod | grep bluetooth | wc -l` != "0" ]; then
-    wlan_init
-fi
+log "Building for $IF_TYPE protocol"
+MODULE_NAME=esp32_${IF_TYPE}.ko
 
-if [ "$BT_INIT_SET" != "0" ] ; then
-    bt_init
-fi
+
+build_user_space_apps
+
+remove_module
+build_module
+insert_module
+
+
+log "--- finished ---"
