@@ -1894,6 +1894,11 @@ int cmd_add_station(struct esp_wifi_device *priv, const uint8_t *mac,
 	struct command_node *cmd_node = NULL;
 	struct cmd_ap_add_sta_config *cmd_config;
 	size_t cmd_len;
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 0, 0))
+	struct link_station_parameters *rate_params = &sta->link_sta_params;
+#else
+	struct station_parameters *rate_params = sta;
+#endif
 
 	if (!priv || !priv->adapter) {
 		esp_err("Invalid argument\n");
@@ -1931,30 +1936,28 @@ int cmd_add_station(struct esp_wifi_device *priv, const uint8_t *mac,
 		memcpy(cmd_config->sta_param.ext_capab, sta->ext_capab, sta->ext_capab_len);
 	}
 
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 0, 0))
-	if (sta->link_sta_params.supported_rates_len && sta->link_sta_params.supported_rates) {
+	if (rate_params->supported_rates_len && rate_params->supported_rates) {
 		cmd_config->sta_param.supported_rates[0] = WLAN_EID_SUPP_RATES;
 		cmd_config->sta_param.supported_rates[1] = 10;
-		memcpy(&cmd_config->sta_param.supported_rates[2], sta->link_sta_params.supported_rates, 10);
+		memcpy(&cmd_config->sta_param.supported_rates[2], rate_params->supported_rates, 10);
 	}
 
-	if (sta->link_sta_params.ht_capa) {
+	if (rate_params->ht_capa) {
 		cmd_config->sta_param.ht_caps[0] = WLAN_EID_HT_CAPABILITY;
 		cmd_config->sta_param.ht_caps[1] = 26;
-		memcpy(&cmd_config->sta_param.ht_caps[2], sta->link_sta_params.ht_capa, 26);
+		memcpy(&cmd_config->sta_param.ht_caps[2], rate_params->ht_capa, 26);
 	}
-	if (sta->link_sta_params.vht_capa) {
+	if (rate_params->vht_capa) {
 		cmd_config->sta_param.vht_caps[0] = WLAN_EID_VHT_CAPABILITY;
 		cmd_config->sta_param.vht_caps[1] = 12;
-		memcpy(&cmd_config->sta_param.vht_caps[2], sta->link_sta_params.vht_capa, 12);
+		memcpy(&cmd_config->sta_param.vht_caps[2], rate_params->vht_capa, 12);
 	}
-	if (sta->link_sta_params.he_capa) {
+	if (rate_params->he_capa) {
 		cmd_config->sta_param.he_caps[0] = WLAN_EID_EXTENSION;
 		cmd_config->sta_param.he_caps[1] = 25;
 		cmd_config->sta_param.he_caps[2] = WLAN_EID_EXT_HE_CAPABILITY;
-		memcpy(&cmd_config->sta_param.he_caps[3], sta->link_sta_params.he_capa, 24);
+		memcpy(&cmd_config->sta_param.he_caps[3], rate_params->he_capa, 24);
 	}
-#endif
 
 	queue_cmd_node(priv->adapter, cmd_node, ESP_CMD_DFLT_PRIO);
 	queue_work(priv->adapter->cmd_wq, &priv->adapter->cmd_work);
