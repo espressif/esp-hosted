@@ -432,9 +432,12 @@ struct esp_internal_bootup_event {
 } __packed;
 
 struct fw_version {
+	char       project_name[3];
 	uint8_t    major1;
 	uint8_t    major2;
 	uint8_t    minor;
+	uint8_t    revision_patch_1;
+	uint8_t    revision_patch_2;
 } __packed;
 
 struct fw_data {

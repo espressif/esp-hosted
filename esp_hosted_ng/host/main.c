@@ -18,11 +18,11 @@
 #include "esp_api.h"
 #include "esp_cmd.h"
 #include "esp_kernel_port.h"
+#include "esp_fw_version.h"
 
 #include "esp_cfg80211.h"
 #include "esp_stats.h"
 
-#define RELEASE_VERSION "1.0.3"
 #define HOST_GPIO_PIN_INVALID -1
 #define CONFIG_ALLOW_MULTICAST_WAKEUP 1
 static int resetpin = HOST_GPIO_PIN_INVALID;
@@ -227,9 +227,9 @@ void init_bt(struct esp_adapter *adapter)
 
 static int check_esp_version(struct fw_version *ver)
 {
-	esp_info("ESP Firmware version: %u.%u.%u\n",
-			ver->major1, ver->major2, ver->minor);
-	if (!ver->major1) {
+	esp_info("ESP Firmware version: %s-%u.%u.%u.%u.%u\n",
+			ver->project_name, ver->major1, ver->major2, ver->minor, ver->revision_patch_1, ver->revision_patch_2);
+	if (ver->major1 != PROJECT_VERSION_MAJOR) {
 		esp_err("Incompatible ESP firmware release detected, Please use correct ESP-Hosted branch/compatible release\n");
 		return -1;
 	}
@@ -276,6 +276,7 @@ int process_event_esp_bootup(struct esp_adapter *adapter, u8 *evt_buf, u8 len)
 {
 	int len_left = len, tag_len, ret = 0;
 	u8 *pos;
+	struct fw_data *fw_p;
 
 	if (!adapter || !evt_buf)
 		return -1;
@@ -305,7 +306,8 @@ int process_event_esp_bootup(struct esp_adapter *adapter, u8 *evt_buf, u8 len)
 			ret = esp_validate_chipset(adapter, *(pos + 2));
 			break;
 		case ESP_BOOTUP_FW_DATA:
-			ret = process_fw_data((struct fw_data *)(pos + 2), tag_len);
+			fw_p = (struct fw_data *)(pos + 2);
+			ret = process_fw_data(fw_p, tag_len);
 			break;
 		case ESP_BOOTUP_SPI_CLK_MHZ:
 			ret = esp_adjust_spi_clock(adapter, *(pos + 2));

@@ -20,6 +20,7 @@
 #include "esp.h"
 #include "slave_bt.h"
 #include "cmd.h"
+#include "esp_fw_version.h"
 #include <string.h>
 
 static const char TAG[] = "stats";
@@ -268,8 +269,8 @@ void debug_set_wifi_logging(void) {
 void debug_log_firmware_version(void)
 {
 	ESP_LOGI(TAG, "*********************************************************************");
-	ESP_LOGI(TAG, "                ESP-Hosted Firmware version :: %d.%d.%d                        ",
-			PROJECT_VERSION_MAJOR_1,PROJECT_VERSION_MAJOR_2,PROJECT_VERSION_MINOR);
+	ESP_LOGI(TAG, "                ESP-Hosted Firmware version :: %s-%d.%d.%d.%d.%d                        ",
+			PROJECT_NAME, PROJECT_VERSION_MAJOR_1, PROJECT_VERSION_MAJOR_2, PROJECT_VERSION_MINOR, PROJECT_REVISION_PATCH_1, PROJECT_REVISION_PATCH_2);
 
 #if CONFIG_ESP_SPI_HOST_INTERFACE
   #if BLUETOOTH_UART
