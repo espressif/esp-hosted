@@ -66,8 +66,6 @@ static const char TAG[] = "SPI_DRIVER";
 
     #define DMA_CHAN               ESP_SPI_CONTROLLER
 
-    #define SPI_CLK_MHZ            10
-
 #elif defined CONFIG_IDF_TARGET_ESP32S2
 
     #define ESP_SPI_CONTROLLER     1
@@ -76,8 +74,6 @@ static const char TAG[] = "SPI_DRIVER";
     #define GPIO_SCLK              12
     #define GPIO_CS                10
     #define DMA_CHAN               ESP_SPI_CONTROLLER
-
-    #define SPI_CLK_MHZ            30
 
 #elif defined CONFIG_IDF_TARGET_ESP32C2
 
@@ -88,8 +84,6 @@ static const char TAG[] = "SPI_DRIVER";
     #define GPIO_CS                10
     #define DMA_CHAN               SPI_DMA_CH_AUTO
 
-    #define SPI_CLK_MHZ            30
-
 #elif defined CONFIG_IDF_TARGET_ESP32C3
 
     #define ESP_SPI_CONTROLLER     1
@@ -98,8 +92,6 @@ static const char TAG[] = "SPI_DRIVER";
     #define GPIO_SCLK              6
     #define GPIO_CS                10
     #define DMA_CHAN               SPI_DMA_CH_AUTO
-
-    #define SPI_CLK_MHZ            30
 
 #elif defined CONFIG_IDF_TARGET_ESP32S3
 
@@ -110,8 +102,6 @@ static const char TAG[] = "SPI_DRIVER";
     #define GPIO_CS                10
     #define DMA_CHAN               SPI_DMA_CH_AUTO
 
-    #define SPI_CLK_MHZ            30
-
 #elif defined CONFIG_IDF_TARGET_ESP32C6
 
     #define ESP_SPI_CONTROLLER     1
@@ -120,8 +110,6 @@ static const char TAG[] = "SPI_DRIVER";
     #define GPIO_SCLK              6
     #define GPIO_CS                10
     #define DMA_CHAN               SPI_DMA_CH_AUTO
-
-    #define SPI_CLK_MHZ            26
 
 #endif
 /* Max SPI slave CLK in IO_MUX tested in IDF:
@@ -299,11 +287,6 @@ void generate_startup_event(uint8_t cap)
 	*pos = ESP_PRIV_FIRMWARE_CHIP_ID;   pos++;len++;
 	*pos = LENGTH_1_BYTE;               pos++;len++;
 	*pos = CONFIG_IDF_FIRMWARE_CHIP_ID; pos++;len++;
-
-	/* TLV - Peripheral clock in MHz */
-	*pos = ESP_PRIV_SPI_CLK_MHZ;        pos++;len++;
-	*pos = LENGTH_1_BYTE;               pos++;len++;
-	*pos = SPI_CLK_MHZ;                 pos++;len++;
 
 	/* TLV - Capability */
 	*pos = ESP_PRIV_CAPABILITY;         pos++;len++;
@@ -628,8 +611,8 @@ static interface_handle_t * esp_spi_init(void)
 	gpio_set_pull_mode(GPIO_SCLK, GPIO_PULLUP_ONLY);
 	gpio_set_pull_mode(GPIO_CS, GPIO_PULLUP_ONLY);
 
-	ESP_LOGI(TAG, "SPI Ctrl:%u mode: %u, InitFreq: 10MHz, ReqFreq: %uMHz\nGPIOs: MOSI: %u, MISO: %u, CS: %u, CLK: %u HS: %u DR: %u\n",
-			ESP_SPI_CONTROLLER, slvcfg.mode, SPI_CLK_MHZ,
+	ESP_LOGI(TAG, "SPI Ctrl:%u mode: %u, GPIOs: MOSI: %u, MISO: %u, CS: %u, CLK: %u HS: %u DR: %u\n",
+			ESP_SPI_CONTROLLER, slvcfg.mode,
 			GPIO_MOSI, GPIO_MISO, GPIO_CS, GPIO_SCLK, GPIO_HS, GPIO_DR);
 
 	ESP_LOGI(TAG, "Hosted SPI queue size: Tx:%u Rx:%u", SPI_TX_QUEUE_SIZE, SPI_RX_QUEUE_SIZE);

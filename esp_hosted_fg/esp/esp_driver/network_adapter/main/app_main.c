@@ -373,6 +373,7 @@ void process_rx_pkt(interface_buffer_handle_t *buf_handle)
 	struct esp_payload_header *header = NULL;
 	uint8_t *payload = NULL;
 	uint16_t payload_len = 0;
+	int ret = 0;
 
 	header = (struct esp_payload_header *) buf_handle->payload;
 	payload = buf_handle->payload + le16toh(header->offset);
@@ -383,7 +384,20 @@ void process_rx_pkt(interface_buffer_handle_t *buf_handle)
 
 	if ((buf_handle->if_type == ESP_STA_IF) && station_connected) {
 		/* Forward data to wlan driver */
-		esp_wifi_internal_tx(ESP_IF_WIFI_STA, payload, payload_len);
+		int retry = 6;
+
+		do {
+			ret = esp_wifi_internal_tx(ESP_IF_WIFI_STA, payload, payload_len);
+			retry--;
+
+			if (ret) {
+				if (retry % 3)
+					usleep(600);
+				else
+					vTaskDelay(1);
+			}
+
+		} while (ret && retry);
 		/*ESP_LOG_BUFFER_HEXDUMP("spi_sta_rx", payload, payload_len, ESP_LOG_INFO);*/
 	} else if (buf_handle->if_type == ESP_AP_IF && softap_started) {
 		/* Forward data to wlan driver */

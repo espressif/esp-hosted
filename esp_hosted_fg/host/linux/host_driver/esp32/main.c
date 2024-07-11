@@ -36,6 +36,16 @@
 #include "esp_kernel_port.h"
 #include "esp_stats.h"
 
+/* Module parameters */
+/* You can hardcode the parameters if do not wish to pass them as argument to insmod */
+static int resetpin = MOD_PARAM_UNINITIALISED;
+static int clockspeed = MOD_PARAM_UNINITIALISED;
+static int spi_bus = MOD_PARAM_UNINITIALISED;
+static int spi_cs = MOD_PARAM_UNINITIALISED;
+static int spi_mode = MOD_PARAM_UNINITIALISED; /* 1/2/3 */
+static int spi_handshake = MOD_PARAM_UNINITIALISED;
+static int spi_dataready = MOD_PARAM_UNINITIALISED;
+
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Amey Inamdar <amey.inamdar@espressif.com>");
 MODULE_AUTHOR("Mangesh Malusare <mangesh.malusare@espressif.com>");
@@ -43,18 +53,31 @@ MODULE_AUTHOR("Yogesh Mantri <yogesh.mantri@espressif.com>");
 MODULE_DESCRIPTION("Host driver for ESP-Hosted solution");
 MODULE_VERSION("0.0.5");
 
+module_param(resetpin, int, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
+MODULE_PARM_DESC(resetpin, "Host's GPIO pin number which is connected to ESP32's EN to reset ESP32 device");
+
+module_param(clockspeed, int, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
+MODULE_PARM_DESC(clockspeed, "SPI/SDIO bus clock freq (MHz)");
+
+module_param(spi_bus, int, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
+MODULE_PARM_DESC(spi_bus, "SPI: bus instance to use");
+
+module_param(spi_cs, int, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
+MODULE_PARM_DESC(spi_cs, "SPI: chip select instance to use");
+
+module_param(spi_mode, int, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
+MODULE_PARM_DESC(spi_mode, "SPI: mode to use");
+
+module_param(spi_handshake, int, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
+MODULE_PARM_DESC(spi_handshake, "SPI: Handshake GPIO number");
+
+module_param(spi_dataready, int, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
+MODULE_PARM_DESC(spi_dataready, "SPI: Data Ready GPIO number");
+
 struct esp_adapter adapter;
 volatile u8 stop_data = 0;
 
-#define ACTION_DROP 1
-/* Unless specified as part of argument, resetpin,
- * do not reset ESP32.
- */
-#define HOST_GPIO_PIN_INVALID -1
-static int resetpin = HOST_GPIO_PIN_INVALID;
 
-module_param(resetpin, int, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
-MODULE_PARM_DESC(resetpin, "Host's GPIO pin number which is connected to ESP32's EN to reset ESP32 device");
 
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(3, 14, 0))
 /**
@@ -172,6 +195,24 @@ static int esp_hard_start_xmit(struct sk_buff *skb, struct net_device *ndev)
 u8 esp_is_bt_supported_over_sdio(u32 cap)
 {
 	return (cap & ESP_BT_SDIO_SUPPORT);
+}
+
+__weak int esp_init_bt(struct esp_adapter *adapter)
+{
+	/* weak def if 'bt over hci' is not needed */
+	return 0;
+}
+
+__weak int esp_deinit_bt(struct esp_adapter *adapter)
+{
+	/* weak def if 'bt over hci' is not needed */
+	return 0;
+}
+
+__weak void esp_hci_rx(struct esp_adapter *adapter, struct sk_buff *skb)
+{
+	if (skb)
+		dev_kfree_skb_any(skb);
 }
 
 static struct esp_private * get_priv_from_payload_header(struct esp_payload_header *header)
@@ -387,8 +428,6 @@ static void process_rx_packet(struct sk_buff *skb)
 	struct esp_payload_header *payload_header = NULL;
 	u16 len = 0, offset = 0;
 	u16 rx_checksum = 0, checksum = 0;
-	struct hci_dev *hdev = adapter.hcidev;
-	u8 *type = NULL;
 	int ret = 0, ret_len = 0;
 	struct esp_adapter *adapter = esp_get_adapter();
 
@@ -437,7 +476,7 @@ static void process_rx_packet(struct sk_buff *skb)
 		priv = get_priv_from_payload_header(payload_header);
 
 		if (!priv) {
-			esp_err("empty priv\n");
+			esp_verbose("empty priv\n");
 			dev_kfree_skb_any(skb);
 			return;
 		}
@@ -452,25 +491,7 @@ static void process_rx_packet(struct sk_buff *skb)
 		priv->stats.rx_bytes += skb->len;
 		priv->stats.rx_packets++;
 	} else if (payload_header->if_type == ESP_HCI_IF) {
-		if (hdev) {
-			/* chop off the header from skb */
-			skb_pull(skb, offset);
-
-			type = skb->data;
-			esp_hex_dump_dbg("bt_rx: ", skb->data, len);
-			hci_skb_pkt_type(skb) = *type;
-			skb_pull(skb, 1);
-
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 13, 0))
-			if (hci_recv_frame(hdev, skb)) {
-#else
-			if (hci_recv_frame(skb)) {
-#endif
-				hdev->stat.err_rx++;
-			} else {
-				esp_hci_update_rx_counter(hdev, *type, skb->len);
-			}
-		}
+		esp_hci_rx(adapter, skb);
 	} else if (payload_header->if_type == ESP_PRIV_IF) {
 		/* Queue event skb for processing in events workqueue */
 		skb_queue_tail(&adapter->events_skb_q, skb);
@@ -770,14 +791,14 @@ static void deinit_adapter(void)
 
 static void esp_reset(void)
 {
-	if (resetpin != HOST_GPIO_PIN_INVALID) {
+	if (resetpin != MOD_PARAM_UNINITIALISED) {
 		/* Check valid GPIO or not */
 		if (!gpio_is_valid(resetpin)) {
 			esp_warn("host resetpin (%d) configured is invalid GPIO\n", resetpin);
-			resetpin = HOST_GPIO_PIN_INVALID;
+			resetpin = MOD_PARAM_UNINITIALISED;
 		}
 		else {
-			esp_dbg("Resetpin of Host is %d\n", resetpin);
+			esp_info("Resetpin of Host is %d\n", resetpin);
 			gpio_request(resetpin, "sysfs");
 
 			/* HOST's resetpin set to OUTPUT, HIGH */
@@ -796,6 +817,18 @@ static void esp_reset(void)
 	}
 }
 
+static int update_module_params(struct esp_adapter *adapter)
+{
+	adapter->mod_param.resetpin = resetpin;
+	adapter->mod_param.clockspeed = clockspeed;
+	adapter->mod_param.spi_bus = spi_bus;
+	adapter->mod_param.spi_cs = spi_cs;
+	adapter->mod_param.spi_mode = spi_mode;
+	adapter->mod_param.spi_handshake = spi_handshake;
+	adapter->mod_param.spi_dataready = spi_dataready;
+	return 0;
+}
+
 static struct esp_adapter * init_adapter(void)
 {
 	memset(&adapter, 0, sizeof(adapter));
@@ -805,6 +838,11 @@ static struct esp_adapter * init_adapter(void)
 
 	if (!adapter.if_rx_workqueue) {
 		esp_err("failed to create rx workqueue\n");
+		deinit_adapter();
+		return NULL;
+	}
+
+	if(update_module_params(&adapter)) {
 		deinit_adapter();
 		return NULL;
 	}
@@ -860,7 +898,7 @@ static void __exit esp_exit(void)
 	esp_deinit_interface_layer();
 	deinit_adapter();
 
-	if (resetpin != HOST_GPIO_PIN_INVALID) {
+	if (resetpin != MOD_PARAM_UNINITIALISED) {
 		gpio_free(resetpin);
 	}
 }

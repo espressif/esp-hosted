@@ -49,6 +49,12 @@
 #define SET_WIFI_MAX_TX_POWER              "set_wifi_max_tx_power"
 #define GET_WIFI_CURR_TX_POWER             "get_wifi_curr_tx_power"
 
+#define ENABLE_WIFI                        "enable_wifi"
+#define DISABLE_WIFI                       "disable_wifi"
+#define ENABLE_BT                          "enable_bt"
+#define DISABLE_BT                         "disable_bt"
+
+
 #define SSID_LENGTH                         32
 #define PWD_LENGTH                          64
 #define CHUNK_SIZE                          4000

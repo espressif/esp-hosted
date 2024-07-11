@@ -1251,6 +1251,55 @@ This specifies the file descriptor of the endpoint/socket to be closed
 - This API is only applicable in Unix based systems
 - Set ethernet interface MAC address `mac` to interface `iface`
 
+---
+
+### 1.29 [ctrl_cmd_t](#416-struct-ctrl_cmd_t) * feature_config([ctrl_cmd_t](#416-struct-ctrl_cmd_t) req)
+
+- Enable or Disable the feature
+- feature is integer as per `feature_t`
+
+#### Parameters
+
+- `ctrl_cmd_t req` :
+Control request as input with following
+  - **`req.u.feat_ena_disable.feature`** :
+    - `feature_t` featture to be enabled or disable
+  - **`req.u.feat_ena_disable.enable`** :
+    - 1: enable
+    - 0: disable
+  - `req.ctrl_resp_cb` : optional
+    - `NULL` :
+      - Treat as synchronous procedure
+      - Application would be blocked till response is received from hosted control library
+    - `Non-NULL` :
+      - Treat as asynchronous procedure
+      - Callback function of type [ctrl_resp_cb_t](#31-typedef-int-ctrl_resp_cb_t-ctrl_cmd_t-resp) is registered
+      - Application would be will **not** be blocked for response and API is returned immediately
+      - Response from ESP when received by hosted control library, this callback would be called
+  - `req.cmd_timeout_sec` : optional
+    - Timeout duration to wait for response in sync or async procedure
+    - Default value is 30 sec
+    - In case of async procedure, response callback function with error control response would be called to wait for response
+
+#### Return
+
+- `ctrl_cmd_t *app_resp` :
+dynamically allocated response pointer of type struct `ctrl_cmd_t *`
+  - **`resp->resp_event_status`** :
+    - 0 : `SUCCESS`
+    - != 0 : `FAILURE`
+      - Failure should be considered as complete OTA procedure failure
+- `NULL` :
+  - Synchronous procedure: Failure
+  - Asynchronous procedure:
+    - Expected as NULL return value as response is processed in callback function
+    - In callback function, parameter `ctrl_cmd_t *app_resp` behaves same as above
+
+#### Note
+- Application is expected to free `ctrl_cmd_t *app_resp`
+
+
+
 #### Parameters
 
 - `sockfd` :

@@ -66,6 +66,17 @@ enum chipset_type_e {
 	ESP_FIRMWARE_CHIP_ESP32S3 = 0x9,
 };
 
+#define MOD_PARAM_UNINITIALISED -1
+struct module_params {
+	int resetpin;
+	int clockspeed;
+	int spi_bus;
+	int spi_mode;
+	int spi_cs;
+	int spi_handshake;
+	int spi_dataready;
+};
+
 struct esp_adapter {
 	struct hci_dev          *hcidev;
 	struct device           *dev;
@@ -92,6 +103,7 @@ struct esp_adapter {
 	/* Process TX work */
 	struct workqueue_struct *tx_workqueue;
 	struct work_struct      tx_work;
+	struct module_params    mod_param;
 };
 
 

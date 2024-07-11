@@ -21,6 +21,7 @@
 #include "slave_control.h"
 #include "esp_hosted_config.pb-c.h"
 #include "esp_ota_ops.h"
+#include "slave_bt.h"
 
 #define MAC_STR_LEN                 17
 #define MAC2STR(a)                  (a)[0], (a)[1], (a)[2], (a)[3], (a)[4], (a)[5]
@@ -1820,6 +1821,57 @@ static esp_err_t start_heartbeat(int duration)
 	return ESP_OK;
 }
 
+static esp_err_t enable_disable_feature(HostedFeature feature, bool enable)
+{
+	esp_err_t ret = ESP_OK;
+
+	esp_err_t val = 0;
+	wifi_mode_t mode = 0;
+	wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
+
+	switch(feature) {
+
+	case HOSTED_FEATURE__Hosted_Wifi:
+		if (enable) {
+			val = esp_wifi_get_mode(&mode);
+			if (val == ESP_ERR_WIFI_NOT_INIT) {
+				esp_wifi_init(&cfg);
+				esp_wifi_set_mode(WIFI_MODE_NULL);
+				esp_wifi_start();
+				ESP_LOGI(TAG, "Wifi configured, user need to trigger sta/softap APIs to further proceed");
+			} else {
+				ESP_LOGI(TAG, "Wifi already configured earlier, ignore");
+			}
+		} else {
+			esp_wifi_stop();
+			esp_wifi_deinit();
+			ESP_LOGI(TAG, "Destroy Wifi instance");
+		}
+		break;
+
+	case HOSTED_FEATURE__Hosted_Bluetooth:
+#ifdef CONFIG_BT_ENABLED
+		if (enable) {
+			initialise_bluetooth();
+		} else {
+			deinitialize_bluetooth();
+			ESP_LOGI(TAG, "Destroy Bluetooth instance");
+		}
+#else
+		if (enable)
+			ret = ESP_FAIL;
+#endif
+		break;
+
+	default:
+		ESP_LOGI(TAG, "Unsupported feature[%u]", feature);
+		ret = ESP_FAIL;
+		break;
+	}
+
+	return ret;
+}
+
 static esp_err_t configure_heartbeat(bool enable, int hb_duration)
 {
 	esp_err_t ret = ESP_OK;
@@ -1875,6 +1927,39 @@ static esp_err_t req_config_heartbeat(CtrlMsg *req,
 	return ESP_OK;
 err:
 	resp_payload->resp = FAILURE;
+	return ESP_OK;
+}
+
+static esp_err_t req_enable_disable(CtrlMsg *req,
+		CtrlMsg *resp, void *priv_data)
+{
+	CtrlMsgRespEnableDisable *resp_payload = NULL;
+
+	if (!req || !resp) {
+		ESP_LOGE(TAG, "Invalid parameters");
+		return ESP_FAIL;
+	}
+
+	resp_payload = (CtrlMsgRespEnableDisable*)
+		calloc(1,sizeof(CtrlMsgRespEnableDisable));
+	if (!resp_payload) {
+		ESP_LOGE(TAG,"Failed to allocate memory");
+		return ESP_ERR_NO_MEM;
+	}
+
+	ctrl_msg__resp__enable_disable__init(resp_payload);
+	resp->payload_case = CTRL_MSG__PAYLOAD_RESP_ENABLE_DISABLE_FEAT;
+	resp->resp_enable_disable_feat = resp_payload;
+
+	if (ESP_OK == enable_disable_feature( req->req_enable_disable_feat->feature,
+			req->req_enable_disable_feat->enable)) {
+		resp_payload->resp = SUCCESS;
+		ESP_LOGI(TAG, "Request successful");
+	} else {
+		resp_payload->resp = FAILURE;
+		ESP_LOGI(TAG, "Request Failed");
+	}
+
 	return ESP_OK;
 }
 
@@ -1962,6 +2047,10 @@ static esp_ctrl_msg_req_t req_table[] = {
 	{
 		.req_num = CTRL_MSG_ID__Req_ConfigHeartbeat,
 		.command_handler = req_config_heartbeat
+	},
+	{
+		.req_num = CTRL_MSG_ID__Req_EnableDisable,
+		.command_handler = req_enable_disable
 	},
 };
 
@@ -2123,6 +2212,9 @@ static void esp_ctrl_msg_cleanup(CtrlMsg *resp)
 			break;
 		} case (CTRL_MSG_ID__Resp_ConfigHeartbeat) : {
 			mem_free(resp->resp_config_heartbeat);
+			break;
+		} case (CTRL_MSG_ID__Resp_EnableDisable) : {
+			mem_free(resp->resp_enable_disable_feat);
 			break;
 		} case (CTRL_MSG_ID__Event_ESPInit) : {
 			mem_free(resp->event_esp_init);

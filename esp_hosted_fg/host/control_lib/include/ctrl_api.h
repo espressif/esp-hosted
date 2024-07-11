@@ -105,6 +105,7 @@ typedef enum {
 	CTRL_REQ_GET_WIFI_CURR_TX_POWER    = CTRL_MSG_ID__Req_GetWifiCurrTxPower, //0x78
 
 	CTRL_REQ_CONFIG_HEARTBEAT          = CTRL_MSG_ID__Req_ConfigHeartbeat,    //0x79
+	CTRL_REQ_ENABLE_DISABLE            = CTRL_MSG_ID__Req_EnableDisable,      //0x7a
 	/*
 	 * Add new control path command response before Req_Max
 	 * and update Req_Max
@@ -141,6 +142,7 @@ typedef enum {
 	CTRL_RESP_GET_WIFI_CURR_TX_POWER    = CTRL_MSG_ID__Resp_GetWifiCurrTxPower, //0x78 -> 0xdc
 
 	CTRL_RESP_CONFIG_HEARTBEAT          = CTRL_MSG_ID__Resp_ConfigHeartbeat,    //0x79 -> 0xdd
+	CTRL_RESP_ENABLE_DISABLE            = CTRL_MSG_ID__Resp_EnableDisable,      //0x7a -> 0xde
 	/*
 	 * Add new control path comm       and response before Resp_Max
 	 * and update Resp_Max
@@ -208,6 +210,10 @@ typedef enum {
 } wifi_vendor_ie_id_e;
 
 
+enum hosted_features_t {
+	HOSTED_WIFI = HOSTED_FEATURE__Hosted_Wifi,
+	HOSTED_BT = HOSTED_FEATURE__Hosted_Bluetooth,
+};
 
 typedef struct {
 	/* Should be set to WIFI_VENDOR_IE_ELEMENT_ID (0xDD) */
@@ -304,6 +310,12 @@ typedef struct {
 	int power;
 } wifi_tx_power_t;
 
+
+typedef struct {
+	HostedFeature feature;
+	uint8_t enable;
+} feature_enable_disable_t;
+
 typedef struct {
 	/* event */
 	uint32_t hb_num;
@@ -344,6 +356,8 @@ typedef struct Ctrl_cmd_t {
 		wifi_power_save_t           wifi_ps;
 
 		ota_write_t                 ota_write;
+
+		feature_enable_disable_t    feat_ena_disable;
 
 		wifi_tx_power_t             wifi_tx_power;
 
@@ -526,6 +540,9 @@ ctrl_cmd_t * ota_write(ctrl_cmd_t req);
  * sets newly written OTA partition as boot partition for next boot,
  * Creates timer which reset ESP32 after 5 sec */
 ctrl_cmd_t * ota_end(ctrl_cmd_t req);
+
+/* Enable or disable specific feautures from hosted_features_t */
+ctrl_cmd_t * feature_config(ctrl_cmd_t req);
 
 /* Get the interface up for interface `iface` */
 int interface_up(int sockfd, char* iface);

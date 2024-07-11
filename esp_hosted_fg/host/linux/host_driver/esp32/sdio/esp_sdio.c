@@ -741,11 +741,18 @@ static int esp_probe(struct sdio_func *func,
 		return -EINVAL;
 	}
 
-#if 0 /* in case to lower sdio clock speed */
-	struct mmc_host *host = func->card->host;
-	host->ios.clock = 5*1000000; //5MHz
-	host->ops->set_ios(host, &host->ios);
-#endif
+	if (sdio_context.sdio_clk_mhz) {
+		struct mmc_host *host = func->card->host;
+		u32 hz = sdio_context.sdio_clk_mhz * 1000000;
+		/* Expantion of mmc_set_clock that isnt exported */
+		if (hz < host->f_min)
+			hz = host->f_min;
+		if (hz > host->f_max)
+			hz = host->f_max;
+		host->ios.clock = hz;
+		host->ops->set_ios(host, &host->ios);
+		esp_info("Using sdio clock[%u MHz]\n", sdio_context.sdio_clk_mhz);
+	}
 
 	ret = init_context(context);
 	if (ret) {
@@ -782,6 +789,8 @@ int esp_init_interface_layer(struct esp_adapter *adapter)
 	adapter->if_context = &sdio_context;
 	adapter->if_ops = &if_ops;
 	sdio_context.adapter = adapter;
+	if (adapter->mod_param.clockspeed != MOD_PARAM_UNINITIALISED)
+		sdio_context.sdio_clk_mhz = adapter->mod_param.clockspeed;
 
 	return sdio_register_driver(&esp_sdio_driver);
 }
