@@ -94,6 +94,8 @@ static struct ieee80211_supported_band esp_wifi_bands = {
 	.n_channels = ARRAY_SIZE(esp_channels_2ghz),
 	.bitrates = esp_rates,
 	.n_bitrates = ARRAY_SIZE(esp_rates),
+	.ht_cap.cap = IEEE80211_HT_CAP_SGI_20,
+	.ht_cap.ht_supported = true,
 };
 
 /* Supported crypto cipher suits to be advertised to cfg80211 */
@@ -412,6 +414,14 @@ int esp_cfg80211_mgmt_tx(struct wiphy *wiphy, struct wireless_dev *wdev,
 	}
 
 	return cmd_mgmt_request(priv, params);
+}
+
+static int esp_cfg80211_set_ap_chanwidth(struct wiphy *wiphy,
+					 struct net_device *dev,
+					 INT_LINK_ID struct cfg80211_chan_def *chandef)
+{
+	esp_info("%u \n", __LINE__);
+	return 0;
 }
 
 static int esp_cfg80211_set_default_key(struct wiphy *wiphy,
@@ -1035,6 +1045,7 @@ static struct cfg80211_ops esp_cfg80211_ops = {
 	.add_station = esp_cfg80211_add_station,
 	.change_station = esp_cfg80211_change_station,
 	.get_station = esp_cfg80211_get_station,
+	.set_ap_chanwidth = esp_cfg80211_set_ap_chanwidth
 };
 
 static const struct ieee80211_txrx_stypes
