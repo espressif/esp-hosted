@@ -418,7 +418,10 @@ int esp_cfg80211_mgmt_tx(struct wiphy *wiphy, struct wireless_dev *wdev,
 
 static int esp_cfg80211_set_ap_chanwidth(struct wiphy *wiphy,
 					 struct net_device *dev,
-					 INT_LINK_ID struct cfg80211_chan_def *chandef)
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 19, 2))
+					 unsigned int link_id,
+#endif
+					 struct cfg80211_chan_def *chandef)
 {
 	esp_info("%u \n", __LINE__);
 	return 0;
