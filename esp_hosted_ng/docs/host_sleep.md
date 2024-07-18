@@ -114,21 +114,21 @@ b. GPIO wakeup-source for [imx8mm example](https://community.nxp.com/t5/i-MX-Pro
 
 ### 4.2 Host software setup
 1. Once the esp32 kernel driver is loaded, validate if network device is detected and driver is active. \
-Following command should show 'espsta0' network interface
+Following command should show 'wlanX' network interface
 ```sh
 $ ifconfig -a
 ```
 2. Using procedure [Connect the Wi-Fi](https://github.com/espressif/esp-hosted/tree/master/esp_hosted_ng#321-wi-fi) establish the station mode connection
 3. Execute following command to verify connection with Access point
 ```sh
-$ sudo iwconfig espsta0
-espsta0   IEEE 802.11  ESSID:"<SSID>"
-		  Mode:Managed  Frequency:2.462 GHz  Access Point: C4:70:0B:CF:F9:AF
-          Retry short limit:7   RTS thr:off   Fragment thr:off
-          Encryption key:off
-          Power Management:on
+$ sudo iwconfig wlan0
+wlan0   IEEE 802.11  ESSID:"<SSID>"
+        Mode:Managed  Frequency:2.462 GHz  Access Point: C4:70:0B:CF:F9:AF
+        Retry short limit:7   RTS thr:off   Fragment thr:off
+        Encryption key:off
+        Power Management:on
 ```
-4. Assign appropriate IP address (using dhclient or manually a static IP) to espsta0 interface and ping access point to ensure data path is working fine
+4. Assign appropriate IP address (using dhclient or manually a static IP) to wlanX interface and ping access point to ensure data path is working fine
 5. To test host suspend/resume, execute following command to enable host wake up
 
 ```sh
@@ -194,9 +194,9 @@ D (1414058) SDIO_HAL: restart new send: 0x3ffe1c60->0x3ffe1c60, pkt_len: 54
 ```
 
 Where,
-1. `I (147170) FW_MAIN: Set IP Address` is printed when the IP address is assigned to espsta0
+1. `I (147170) FW_MAIN: Set IP Address` is printed when the IP address is assigned to wlanX
 2. `I (170236) FW_MAIN: Host Sleep` is printed when Host is put to sleep
-3. `E (1413238) FW_SDIO_SLAVE: WAKE UP Host!!!!!` is printed when we have pinged to espsta0 IP adress (e.g. from PC connected to AP, where ESP is connected to)
+3. `E (1413238) FW_SDIO_SLAVE: WAKE UP Host!!!!!` is printed when we have pinged to wlanX IP adress (e.g. from PC connected to AP, where ESP is connected to)
 4. `WAKE UP Host` is printed when ESP triggers high output on `gpio_esp_to_host_wakeup`.
 5. If it is printed **repeatedly** without host getting wakeup, please check your GPIO is connected correctly from ESP to host & Device tree is correctly configured on host.
 
@@ -213,8 +213,8 @@ root@imx8mm-lpddr4-evk:~# cat sleep_now.sh
 echo s2idle > /sys/power/mem_sleep
 echo mem > /sys/power/state
 root@imx8mm-lpddr4-evk:~#
-root@imx8mm-lpddr4-evk:~# ifconfig espsta0 192.168.1.88
-[  179.047223] esp_inetaddr_event: NETDEV_UP interface espsta0 ip changed to  192.168.001.088
+root@imx8mm-lpddr4-evk:~# ifconfig wlan0 192.168.1.88
+[  179.047223] esp_inetaddr_event: NETDEV_UP interface wlan0 ip changed to  192.168.001.088
 root@imx8mm-lpddr4-evk:~#
 root@imx8mm-lpddr4-evk:~#
 root@imx8mm-lpddr4-evk:~#
@@ -250,8 +250,8 @@ Where,
 1. `set_sleepable.sh` is script which enables host sleep configuration
 2. `sleep_now.sh` is script which when fired, puts host, `imx8mm-lpddr-evk` into deep sleep.
 3. Commands in `sleep_now.sh`, demonstrates way to sleep imx8mm-lpddr-evk. It may vary for other Linux hosts depending upon SoC.
-4. `ifconfig espsta0 192.168.1.88` assigns static IP address to espsta0 network interface
+4. `ifconfig wlan0 192.168.1.88` assigns static IP address to wlanX network interface
 5. `[  206.857408] ----> Host Suspend`  shows host went to deep sleep. But the log would only be printed after waking up (As Linux went to deep sleep already by the time)
 6. Host will stay in suspend state unless waken up by one of way discussed earlier (GPIO awake from ESP OR Hosts self GPIO OR screen touch etc)
-7. `[  207.979186] -----> Host Awake` is printed because ESP sensed input data packet on espsta0 and triggered pin 38 on J1003 using `gpio_esp_to_host_wakeup` GPIO
+7. `[  207.979186] -----> Host Awake` is printed because ESP sensed input data packet on wlanX and triggered pin 38 on J1003 using `gpio_esp_to_host_wakeup` GPIO
 8. Normal operation on host resumed after that.

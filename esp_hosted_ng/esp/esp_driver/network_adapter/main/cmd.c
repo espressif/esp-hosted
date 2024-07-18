@@ -472,7 +472,8 @@ static void wifi_event_handler(void* arg, esp_event_base_t event_base,
 	switch(event_id) {
 
 	case WIFI_EVENT_STA_START:
-		ESP_LOGI(TAG, "Wifi Sta mode set\n");
+		ESP_LOGI(TAG, "station started and disabled softap mode");
+		softap_started = 0;
 		sta_init_flag = 1;
 		break;
 
@@ -517,6 +518,8 @@ static void wifi_event_handler(void* arg, esp_event_base_t event_base,
 		break;
 
 	case WIFI_EVENT_AP_START:
+		ESP_LOGI(TAG, "softap started and disabled station mode");
+		sta_init_flag = 0;
 		softap_started = 1;
 		break;
 
@@ -1042,8 +1045,6 @@ int process_set_ip(uint8_t if_type, uint8_t *payload, uint16_t payload_len)
 
 int process_wow_set(uint8_t if_type, uint8_t *payload, uint16_t payload_len)
 {
-	interface_buffer_handle_t buf_handle = {0};
-	esp_err_t ret = ESP_OK;
 	struct cmd_wow_config *cmd;
 
 	cmd = (struct cmd_wow_config *)payload;
@@ -1061,119 +1062,27 @@ int process_wow_set(uint8_t if_type, uint8_t *payload, uint16_t payload_len)
 		wow.eap_identity_req = 1;
 	}
 
-	buf_handle.if_type = if_type;
-	buf_handle.if_num = 0;
-	buf_handle.payload_len = sizeof(struct cmd_wow_config);
-	buf_handle.pkt_type = PACKET_TYPE_COMMAND_RESPONSE;
-
-	buf_handle.payload = heap_caps_malloc(buf_handle.payload_len, MALLOC_CAP_DMA);
-	assert(buf_handle.payload);
-	memset(buf_handle.payload, 0, buf_handle.payload_len);
-
-	cmd = (struct cmd_wow_config *)(buf_handle.payload);
-	cmd->header.cmd_code = CMD_SET_WOW_CONFIG;
-	cmd->header.len = 0;
-	cmd->header.cmd_status = CMD_RESPONSE_SUCCESS;
-
-	buf_handle.priv_buffer_handle = buf_handle.payload;
-	buf_handle.free_buf_handle = free;
-
-	ret = send_command_response(&buf_handle);
-	if (ret != pdTRUE) {
-		ESP_LOGE(TAG, "Slave -> Host: Failed to send command response\n");
-		goto DONE;
-	}
-
-	return ESP_OK;
-
-DONE:
-	if (buf_handle.payload)
-		free(buf_handle.payload);
-
-	return ret;
+	return send_command_resp(if_type, CMD_SET_WOW_CONFIG, CMD_RESPONSE_SUCCESS, NULL, 0, 0);
 }
 
 
 
 int process_reg_set(uint8_t if_type, uint8_t *payload, uint16_t payload_len)
 {
-	interface_buffer_handle_t buf_handle = {0};
-	esp_err_t ret = ESP_OK;
 	struct cmd_reg_domain *cmd;
 
 	cmd = (struct cmd_reg_domain *)payload;
 	esp_wifi_set_country_code(cmd->country_code, false);
 
-	buf_handle.if_type = if_type;
-	buf_handle.if_num = 0;
-	buf_handle.payload_len = sizeof(struct cmd_reg_domain);
-	buf_handle.pkt_type = PACKET_TYPE_COMMAND_RESPONSE;
-
-	buf_handle.payload = heap_caps_malloc(buf_handle.payload_len, MALLOC_CAP_DMA);
-	assert(buf_handle.payload);
-	memset(buf_handle.payload, 0, buf_handle.payload_len);
-
-	cmd = (struct cmd_reg_domain *)(buf_handle.payload);
-	esp_wifi_get_country_code(cmd->country_code);
-	cmd->header.cmd_code = CMD_SET_REG_DOMAIN;
-	cmd->header.len = 0;
-	cmd->header.cmd_status = CMD_RESPONSE_SUCCESS;
-
-	buf_handle.priv_buffer_handle = buf_handle.payload;
-	buf_handle.free_buf_handle = free;
-
-	ret = send_command_response(&buf_handle);
-	if (ret != pdTRUE) {
-		ESP_LOGE(TAG, "Slave -> Host: Failed to send command response\n");
-		goto DONE;
-	}
-
-	return ESP_OK;
-
-DONE:
-	if (buf_handle.payload)
-		free(buf_handle.payload);
-
-	return ret;
+	return send_command_resp(if_type, CMD_SET_REG_DOMAIN, CMD_RESPONSE_SUCCESS, (uint8_t *)cmd->country_code, sizeof(cmd->country_code), 0);
 }
 
 int process_reg_get(uint8_t if_type, uint8_t *payload, uint16_t payload_len)
 {
-	interface_buffer_handle_t buf_handle = {0};
-	esp_err_t ret = ESP_OK;
-	struct cmd_reg_domain *cmd;
+	char country_code[4];
 
-	buf_handle.if_type = if_type;
-	buf_handle.if_num = 0;
-	buf_handle.payload_len = sizeof(struct cmd_reg_domain);
-	buf_handle.pkt_type = PACKET_TYPE_COMMAND_RESPONSE;
-
-	buf_handle.payload = heap_caps_malloc(buf_handle.payload_len, MALLOC_CAP_DMA);
-	assert(buf_handle.payload);
-	memset(buf_handle.payload, 0, buf_handle.payload_len);
-
-	cmd = (struct cmd_reg_domain *)(buf_handle.payload);
-	esp_wifi_get_country_code(cmd->country_code);
-	cmd->header.cmd_code = CMD_GET_REG_DOMAIN;
-	cmd->header.len = 0;
-	cmd->header.cmd_status = CMD_RESPONSE_SUCCESS;
-
-	buf_handle.priv_buffer_handle = buf_handle.payload;
-	buf_handle.free_buf_handle = free;
-
-	ret = send_command_response(&buf_handle);
-	if (ret != pdTRUE) {
-		ESP_LOGE(TAG, "Slave -> Host: Failed to send command response\n");
-		goto DONE;
-	}
-
-	return ESP_OK;
-
-DONE:
-	if (buf_handle.payload)
-		free(buf_handle.payload);
-
-	return ret;
+	esp_wifi_get_country_code(country_code);
+	return send_command_resp(if_type, CMD_SET_REG_DOMAIN, CMD_RESPONSE_SUCCESS, (uint8_t *)country_code, sizeof(country_code), 0);
 }
 
 
@@ -1187,13 +1096,20 @@ int process_disconnect(uint8_t if_type, uint8_t *payload, uint16_t payload_len)
 
 	ESP_LOGI(TAG, "Disconnect request: reason [%d], interface=%d\n", cmd_disconnect->reason_code, if_type);
 
+	ret = esp_wifi_get_mode(&wifi_mode);
+
+	if (ret != ESP_OK) {
+		goto resp;
+	}
 	if (if_type == ESP_STA_IF) {
-		if (sta_init_flag && esp_wifi_get_mode(&wifi_mode)==0)
+		if (sta_init_flag && wifi_mode == WIFI_MODE_STA)
 			esp_wifi_deauthenticate_internal(cmd_disconnect->reason_code);
 	} else if (if_type == ESP_AP_IF) {
+		if (softap_started && wifi_mode == WIFI_MODE_AP)
 		esp_wifi_ap_deauth_internal(cmd_disconnect->mac, cmd_disconnect->reason_code);
 	}
 
+resp:
 	ret = send_command_resp(if_type, CMD_DISCONNECT, CMD_RESPONSE_SUCCESS, NULL, 0, 0);
 
 	return ret;
@@ -1915,7 +1831,7 @@ int process_mgmt_tx(uint8_t if_type, uint8_t *payload, uint16_t payload_len)
 	uint8_t cmd_status = CMD_RESPONSE_SUCCESS;
 	struct cmd_mgmt_tx *mgmt_tx = (struct cmd_mgmt_tx *) payload;
 
-	if (if_type != ESP_AP_IF) {
+	if (if_type != ESP_AP_IF || !softap_started) {
 		ESP_LOGE(TAG, "%s: err on wrong interface=%d\n", __func__, if_type);
 		cmd_status = CMD_RESPONSE_INVALID;
 		wifi_if_type = ESP_STA_IF;

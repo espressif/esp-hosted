@@ -150,7 +150,7 @@ Make sure that host machine is equipped with following:
             $ cd esp_hosted/esp_hosted_ng/host/
             $ bash rpi_init.sh spi
             ```
-        * This script compiles and loads host driver on Raspberry-Pi. It also creates virtual serial interface `/dev/espsta0` which is used as a control interface for Wi-Fi on ESP peripheral
+        * This script compiles and loads host driver on Raspberry-Pi. It also creates network interface `wlanX` which is used as a control interface for Wi-Fi on ESP peripheral
 
     * For esp firmware if you are using [ESP Quick start guide](#12-esp-quick-start-guide)
         * Please flash the required binaries using with command mentioned in `flashing_cmd.txt` within desired transport configuration folder as explained in [ESP Quick start guide](#12-esp-quick-start-guide).  
@@ -238,7 +238,7 @@ Make sure that host machine is equipped with following:
             $ cd esp_hosted/esp_hosted_ng/host/
             $ bash rpi_init.sh sdio
             ```
-        * This script compiles and loads host driver on Raspberry-Pi. It also creates virtual serial interface `/dev/espsta0` which is used as a control interface for Wi-Fi on ESP peripheral
+        * This script compiles and loads host driver on Raspberry-Pi. It also creates network interface `wlanX` which is used for Wi-Fi in host.
 
     * For esp firmware if you are using [ESP Quick start guide](#12-esp-quick-start-guide)
         * Please flash the required binaries using with command mentioned in `flashing_cmd.txt` within desired transport configuration folder as explained in [ESP Quick start guide](#12-esp-quick-start-guide).  
