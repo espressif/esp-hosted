@@ -72,7 +72,7 @@ wlan_init()
     if [ `lsmod | grep esp32 | wc -l` != "0" ]; then
         echo "esp32 module inserted "
 		sleep 4
-		bringup_network_interface "espsta0"
+		bringup_network_interface "wlan0"
 
         echo "ESP32 host init successfully completed"
     fi
@@ -191,5 +191,5 @@ if [ "$BT_INIT_SET" != "0" ] ; then
 fi
 
 
-#alias load_module_sdio='sudo modprobe bluetooth; sudo modprobe cfg80211; sudo insmod ./esp32_sdio.ko resetpin=6; sleep 4;sudo ifconfig espsta0 up'
-#alias load_module_spi='sudo dtoverlay spidev_disabler; sudo modprobe bluetooth; sudo modprobe cfg80211; sudo insmod ./esp32_spi.ko resetpin=6; sleep 4;sudo ifconfig espsta0 up'
+#alias load_module_sdio='sudo modprobe bluetooth; sudo modprobe cfg80211; sudo insmod ./esp32_sdio.ko resetpin=6; sleep 4;sudo ifconfig wlan0 up'
+#alias load_module_spi='sudo dtoverlay spidev_disabler; sudo modprobe bluetooth; sudo modprobe cfg80211; sudo insmod ./esp32_spi.ko resetpin=6; sleep 4;sudo ifconfig wlan0 up'

@@ -228,7 +228,7 @@ Please check [Hardware and Software Setup](docs/setup.md).
 
 ## 3.1 User Guide
 
-This section explains how to setup and use Wi-Fi and BT/BLE.
+This section explains how to setup and use Wi-Fi and BT/BLE. This section assumes the network interface name as wlan0, if wlanX is already available in host, next available number will be assigned.
 
 ### 3.1.1 Wi-Fi
 
@@ -245,7 +245,7 @@ Following operations supported as of now:
 - To scan nearby APs available, please use
 
   ```sh
-  $ sudo iw dev espsta0 scan
+  $ sudo iw dev wlan0 scan
   ```
 
 #### Connect to AP
@@ -276,7 +276,7 @@ Following operations supported as of now:
 > 
 > * Start the wpa supplicant for connection
 > ```sh
-> $ sudo wpa_supplicant -D nl80211 -i espsta0 -c ~/open.conf
+> $ sudo wpa_supplicant -D nl80211 -i wlan0 -c ~/open.conf
 > ```
 >
 > ---
@@ -284,8 +284,8 @@ Following operations supported as of now:
 > * Verify the connection status using following command and verify `ESSID:<ssid>` in output
 > 
 > ```sh
-> $ iwconfig espsta0
-> espsta0   IEEE 802.11  ESSID:"MY_OPEN_SSID"
+> $ iwconfig wlan0
+> wlan0     IEEE 802.11  ESSID:"MY_OPEN_SSID"
 >           Mode:Managed  Frequency:2.437 GHz  Access Point: 00:0A:F5:14:33:5C
 >           Retry short limit:7   RTS thr:off   Fragment thr:off
 >           Power Management:on
@@ -296,18 +296,18 @@ Following operations supported as of now:
 > * Use dhclient command to get IP. Please note, `dhclient` command may not be available on all Linux. Use DHCP client command supported on your Linux.
 > 
 > ```sh
-> $ sudo dhclient -v espsta0
+> $ sudo dhclient -v wlan0
 > Internet Systems Consortium DHCP Client 4.4.1
 > Copyright 2004-2018 Internet Systems Consortium.
 > All rights reserved.
 > For info, please visit https://www.isc.org/software/dhcp/
-> Listening on LPF/espsta0/24:6f:28:80:2c:34
-> Sending on   LPF/espsta0/24:6f:28:80:2c:34
+> Listening on LPF/wlan0/24:6f:28:80:2c:34
+> Sending on   LPF/wlan0/24:6f:28:80:2c:34
 > Sending on   Socket/fallback
 > .
-> DHCPDISCOVER on espsta0 to 255.255.255.255 port 67 interval 7
+> DHCPDISCOVER on wlan0 to 255.255.255.255 port 67 interval 7
 > DHCPOFFER of 192.168.43.32 from 192.168.43.1
-> DHCPREQUEST for 192.168.43.32 on espsta0 to 255.255.255.255 port 67
+> DHCPREQUEST for 192.168.43.32 on wlan0 to 255.255.255.255 port 67
 > DHCPACK of 192.168.43.32 from 192.168.43.1
 > bound to 192.168.43.32 -- renewal in 1482 seconds.
 >   
@@ -352,15 +352,15 @@ Following operations supported as of now:
 > 
 > * Start the wpa supplicant for connection
 > ```sh
-> $ sudo wpa_supplicant -D nl80211 -i espsta0 -c ~/wpa2.conf
+> $ sudo wpa_supplicant -D nl80211 -i wlan0 -c ~/wpa2.conf
 > ```
 >
 > ---
 > ### Verify connection
 > * Verify the connection status using following command and verify `ESSID:<ssid>` in output
 > ```sh
-> $ iwconfig espsta0
-> espsta0    IEEE 802.11  ESSID:"MY_OPEN_SSID"
+> $ iwconfig wlan0
+> wlan0     IEEE 802.11  ESSID:"MY_OPEN_SSID"
 >           Mode:Managed  Frequency:2.412 GHz  Access Point: XX:XX:XX:XX:XX:XX   
 >           Bit Rate=XXX Mb/s   Tx-Power=XX dBm   
 >           Retry short limit:X   RTS thr:off   Fragment thr:off
@@ -375,18 +375,18 @@ Following operations supported as of now:
 > * Use dhclient command to get IP. Please note, `dhclient` command may not be available on all Linux. Use DHCP client command supported on your Linux.
 >
 > ```sh
-> $ sudo dhclient -v espsta0
+> $ sudo dhclient -v wlan0
 > Internet Systems Consortium DHCP Client 4.4.1
 > Copyright 2004-2018 Internet Systems Consortium.
 > All rights reserved.
 > For info, please visit https://www.isc.org/software/dhcp/
-> Listening on LPF/espsta0/24:6f:28:80:2c:34
-> Sending on   LPF/espsta0/24:6f:28:80:2c:34
+> Listening on LPF/wlan0/24:6f:28:80:2c:34
+> Sending on   LPF/wlan0/24:6f:28:80:2c:34
 > Sending on   Socket/fallback
 > .
-> DHCPDISCOVER on espsta0 to 255.255.255.255 port 67 interval 7
+> DHCPDISCOVER on wlan0 to 255.255.255.255 port 67 interval 7
 > DHCPOFFER of 192.168.43.32 from 192.168.43.1
-> DHCPREQUEST for 192.168.43.32 on espsta0 to 255.255.255.255 port 67
+> DHCPREQUEST for 192.168.43.32 on wlan0 to 255.255.255.255 port 67
 > DHCPACK of 192.168.43.32 from 192.168.43.1
 > bound to 192.168.43.32 -- renewal in 1482 seconds.
 > 
@@ -427,15 +427,15 @@ Following operations supported as of now:
 > 
 > * Start the wpa supplicant for connection
 > ```sh
-> $ sudo wpa_supplicant -D nl80211 -i espsta0 -c ~/wpa3.conf
+> $ sudo wpa_supplicant -D nl80211 -i wlan0 -c ~/wpa3.conf
 > ```
 >
 > ---
 > ### Verify connection
 > * Verify the connection status using following command and verify `ESSID:<ssid>` in output
 > ```sh
-> $ iwconfig espsta0
->   espsta0   IEEE 802.11  ESSID:"MY_WPA3_SSID"
+> $ iwconfig wlan0
+>   wlan0     IEEE 802.11  ESSID:"MY_WPA3_SSID"
 >             Mode:Managed  Frequency:2.412 GHz  Access Point: C4:41:1E:BE:F0:B2
 >             Retry short limit:7   RTS thr:off   Fragment thr:off
 >             Power Management:on
@@ -446,18 +446,18 @@ Following operations supported as of now:
 > * Use dhclient command to get IP. Please note, `dhclient` command may not be available on all Linux. Use DHCP client command supported on your Linux.
 >
 > ```sh
-> $ sudo dhclient -v espsta0
+> $ sudo dhclient -v wlan0
 > Internet Systems Consortium DHCP Client 4.4.1
 > Copyright 2004-2018 Internet Systems Consortium.
 > All rights reserved.
 > For info, please visit https://www.isc.org/software/dhcp/
-> Listening on LPF/espsta0/24:6f:28:80:2c:34
-> Sending on   LPF/espsta0/24:6f:28:80:2c:34
+> Listening on LPF/wlan0/24:6f:28:80:2c:34
+> Sending on   LPF/wlan0/24:6f:28:80:2c:34
 > Sending on   Socket/fallback
 > .
-> DHCPDISCOVER on espsta0 to 255.255.255.255 port 67 interval 7
+> DHCPDISCOVER on wlan0 to 255.255.255.255 port 67 interval 7
 > DHCPOFFER of 192.168.43.32 from 192.168.43.1
-> DHCPREQUEST for 192.168.43.32 on espsta0 to 255.255.255.255 port 67
+> DHCPREQUEST for 192.168.43.32 on wlan0 to 255.255.255.255 port 67
 > DHCPACK of 192.168.43.32 from 192.168.43.1
 > bound to 192.168.43.32 -- renewal in 1482 seconds.
 > 
@@ -477,12 +477,12 @@ Following operations supported as of now:
 
 * Execute following command to disconnect from AP
   ```sh
-  $ sudo iw dev espsta0 disconnect
+  $ sudo iw dev wlan0 disconnect
   ```
 
 * Verify status using
   ```sh
-  $ iwconfig espsta0
+  $ iwconfig wlan0
   ```
 
 ### 3.1.2 Bluetooth/BLE
@@ -515,7 +515,7 @@ This runs on host platform and it implements following.
   - Implements transport layer over SDIO/SPI interface. \
   Communication protocol is explained in further section.
 - **Network Interface**
-  - Registers Wi-Fi interface `espsta0` with Linux kernel.
+  - Registers Wi-Fi interface `wlan0` with Linux kernel.
     - This allows exchange of network data packets between Linux kernel and ESP firmware.
   - Implements needed cfg80211_ops to support configuration through wpa_supplicant or iw utility
 - **HCI Interface**
