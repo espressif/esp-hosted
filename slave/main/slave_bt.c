@@ -90,8 +90,8 @@ static int host_rcv_pkt(uint8_t *data, uint16_t len)
 }
 
 static esp_vhci_host_callback_t vhci_host_cb = {
-	controller_rcv_pkt_ready,
-	host_rcv_pkt
+	.notify_host_send_available = controller_rcv_pkt_ready,
+	.notify_host_recv = host_rcv_pkt
 };
 
 void process_hci_rx_pkt(uint8_t *payload, uint16_t payload_len) {
@@ -413,6 +413,8 @@ void init_uart(void)
 
 #if BLUETOOTH_HCI
 #if SOC_ESP_NIMBLE_CONTROLLER
+
+#if ESP_IDF_VERSION < ESP_IDF_VERSION_VAL(5, 3, 0)
 #include "nimble/ble_hci_trans.h"
 
 typedef enum {
@@ -425,8 +427,8 @@ typedef enum {
 /* Host-to-controller command. */
 #define BLE_HCI_TRANS_BUF_CMD       3
 
-/* ACL_DATA_MBUF_LEADINGSPCAE: The leadingspace in user info header for ACL data */
-#define ACL_DATA_MBUF_LEADINGSPCAE    4
+/* ACL_DATA_MBUF_LEADINGSPACE: The leadingspace in user info header for ACL data */
+#define ACL_DATA_MBUF_LEADINGSPACE    4
 
 void esp_vhci_host_send_packet(uint8_t *data, uint16_t len)
 {
@@ -443,7 +445,7 @@ void esp_vhci_host_send_packet(uint8_t *data, uint16_t len)
     }
 
     if (*(data) == DATA_TYPE_ACL) {
-        struct os_mbuf *om = os_msys_get_pkthdr(len, ACL_DATA_MBUF_LEADINGSPCAE);
+        struct os_mbuf *om = os_msys_get_pkthdr(len, ACL_DATA_MBUF_LEADINGSPACE);
         assert(om);
         os_mbuf_append(om, &data[1], len - 1);
         ble_hci_trans_hs_acl_tx(om);
@@ -482,6 +484,7 @@ ble_hs_rx_data(struct os_mbuf *om, void *arg)
     os_mbuf_free_chain(om);
     return 0;
 }
+#endif // ESP_IDF_VERSION < ESP_IDF_VERSION_VAL(5, 3, 0)
 
 #endif
 #endif
@@ -516,7 +519,7 @@ esp_err_t initialise_bluetooth(void)
 #if BLUETOOTH_HCI
 	esp_err_t ret = ESP_OK;
 
-#if SOC_ESP_NIMBLE_CONTROLLER
+#if SOC_ESP_NIMBLE_CONTROLLER && (ESP_IDF_VERSION < ESP_IDF_VERSION_VAL(5, 3, 0))
     ble_hci_trans_cfg_hs((ble_hci_trans_rx_cmd_fn *)ble_hs_hci_rx_evt,NULL,
                          (ble_hci_trans_rx_acl_fn *)ble_hs_rx_data,NULL);
 #else
