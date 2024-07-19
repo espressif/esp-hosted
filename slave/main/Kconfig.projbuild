@@ -24,6 +24,7 @@ menu "Example Configuration"
 		default ESP_SPI_HOST_INTERFACE if IDF_TARGET_ESP32C2
 		default ESP_SPI_HOST_INTERFACE if IDF_TARGET_ESP32C3
 		default ESP_SDIO_HOST_INTERFACE if IDF_TARGET_ESP32C6
+		default ESP_SPI_HOST_INTERFACE if IDF_TARGET_ESP32C5
 		help
 			Bus interface to be used for communication with the host
 
@@ -199,6 +200,7 @@ menu "Example Configuration"
 			config ESP_SPI_GPIO_DATA_READY
 				int "Slave GPIO pin for data ready interrupt"
 				default 23 if ESP_HOST_DEV_BOARD_P4_FUNC_BOARD
+				default 13 if IDF_TARGET_ESP32C5
 				default 4
 				help
 					Slave GPIO pin for indicating host that SPI slave has data to be read by host
@@ -400,6 +402,7 @@ menu "Example Configuration"
 			config ESP_SPI_HD_GPIO_CS
 				int "Slave GPIO pin for Host CS"
 				default 18 if ESP_HOST_DEV_BOARD_P4_FUNC_BOARD
+				default 10 if IDF_TARGET_ESP32C5
 				default 10
 				help
 					SPI HD controller Host CS
@@ -407,6 +410,7 @@ menu "Example Configuration"
 			config ESP_SPI_HD_GPIO_CLK
 				int "Slave GPIO pin for Host CLK"
 				default 19 if ESP_HOST_DEV_BOARD_P4_FUNC_BOARD
+				default 6 if IDF_TARGET_ESP32C5
 				default 12
 				help
 					SPI HD controller Host CS
@@ -414,6 +418,7 @@ menu "Example Configuration"
 			config ESP_SPI_HD_GPIO_D0
 				int "Slave GPIO pin for Host D0"
 				default 20 if ESP_HOST_DEV_BOARD_P4_FUNC_BOARD
+				default 7 if IDF_TARGET_ESP32C5
 				default 11
 				help
 					SPI HD controller Host D0
@@ -421,6 +426,7 @@ menu "Example Configuration"
 			config ESP_SPI_HD_GPIO_D1
 				int "Slave GPIO pin for Host D1"
 				default 21 if ESP_HOST_DEV_BOARD_P4_FUNC_BOARD
+				default 2 if IDF_TARGET_ESP32C5
 				default 13
 				help
 					SPI HD controller Host D1
@@ -429,6 +435,7 @@ menu "Example Configuration"
 				depends on ESP_SPI_HD_PRIV_INTERFACE_4_DATA_LINES
 				int "Slave GPIO pin for Host D2"
 				default 22 if ESP_HOST_DEV_BOARD_P4_FUNC_BOARD
+				default 5 if IDF_TARGET_ESP32C5
 				default 14
 				help
 					SPI HD controller Host D2
@@ -437,6 +444,7 @@ menu "Example Configuration"
 				depends on ESP_SPI_HD_PRIV_INTERFACE_4_DATA_LINES
 				int "Slave GPIO pin for Host D3"
 				default 23 if ESP_HOST_DEV_BOARD_P4_FUNC_BOARD
+				default 4 if IDF_TARGET_ESP32C5
 				default 9
 				help
 					SPI HD controller Host D3
@@ -444,6 +452,7 @@ menu "Example Configuration"
 			config ESP_SPI_HD_GPIO_DATA_READY
 				int "Slave GPIO pin for Data Ready"
 				default 2 if ESP_HOST_DEV_BOARD_P4_FUNC_BOARD
+				default 13 if IDF_TARGET_ESP32C5
 				default 8
 				help
 					Slave GPIO pin for indicating host that SPI slave has data to be read by host
@@ -468,19 +477,13 @@ menu "Example Configuration"
 
 		endmenu
 
-		config ESP_SPI_HD_TX_Q_SIZE
-			int "Tx Queue size"
+		config ESP_SPI_HD_Q_SIZE
+			int "Queue size"
 			default 12 if IDF_TARGET_ESP32C2
+			default 10 if IDF_TARGET_ESP32C5
 			default 20
 			help
-				Very small tx queue will lower SPI HD data rate
-
-		config ESP_SPI_HD_RX_Q_SIZE
-			int "Rx Queue size"
-			default 5 if IDF_TARGET_ESP32C2
-			default 20
-			help
-				Very small rx queue will lower SPI HD data rate
+				Very small queue will lower SPI HD data rate
 
 		config ESP_SPI_HD_CHECKSUM
 			bool "Checksum ENABLE/DISABLE"

@@ -104,7 +104,7 @@ typedef struct {
 void debug_update_raw_tp_rx_count(uint16_t len);
 #endif
 
-#if ESP_PKT_STATS
+#if ESP_PKT_STATS || TEST_RAW_TP
 struct pkt_stats_t {
 	uint32_t sta_sh_in;
 	uint32_t sta_sh_out;

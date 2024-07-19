@@ -374,6 +374,53 @@ esp_err_t esp_wifi_remote_get_max_tx_power(int8_t *power)
 	return rpc_wifi_get_max_tx_power(power);
 }
 
+esp_err_t esp_wifi_remote_sta_get_aid(uint16_t *aid)
+{
+	return rpc_wifi_sta_get_aid(aid);
+}
+
+esp_err_t esp_wifi_remote_set_band(wifi_band_t band)
+{
+	return rpc_wifi_set_band(band);
+}
+
+esp_err_t esp_wifi_remote_get_band(wifi_band_t *band)
+{
+	return rpc_wifi_get_band(band);
+}
+
+esp_err_t esp_wifi_remote_set_band_mode(wifi_band_mode_t band_mode)
+{
+	return rpc_wifi_set_band_mode(band_mode);
+}
+
+esp_err_t esp_wifi_remote_get_band_mode(wifi_band_mode_t *band_mode)
+{
+	return rpc_wifi_get_band_mode(band_mode);
+}
+
+#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 4, 0)
+esp_err_t esp_wifi_remote_set_protocols(wifi_interface_t ifx, wifi_protocols_t *protocols)
+{
+	return rpc_wifi_set_protocols(ifx, protocols);
+}
+
+esp_err_t esp_wifi_remote_get_protocols(wifi_interface_t ifx, wifi_protocols_t *protocols)
+{
+	return rpc_wifi_get_protocols(ifx, protocols);
+}
+
+esp_err_t esp_wifi_remote_set_bandwidths(wifi_interface_t ifx, wifi_bandwidths_t *bw)
+{
+	return rpc_wifi_set_bandwidths(ifx, bw);
+}
+
+esp_err_t esp_wifi_remote_get_bandwidths(wifi_interface_t ifx, wifi_bandwidths_t *bw)
+{
+	return rpc_wifi_get_bandwidths(ifx, bw);
+}
+#endif
+
 esp_err_t esp_hosted_ota(const char* image_url)
 {
 	return rpc_ota(image_url);

@@ -45,11 +45,8 @@ static const char TAG[] = "SPI_HD_DRIVER";
 #endif
 #define GPIO_DATA_READY            CONFIG_ESP_SPI_HD_GPIO_DATA_READY
 
-#define TX_MEMPOOL_NUM_BLOCKS      CONFIG_ESP_SPI_HD_TX_Q_SIZE
-#define RX_MEMPOOL_NUM_BLOCKS      CONFIG_ESP_SPI_HD_RX_Q_SIZE
-
-#define TX_QUEUE_SIZE              CONFIG_ESP_SPI_HD_TX_Q_SIZE
-#define RX_QUEUE_SIZE              CONFIG_ESP_SPI_HD_RX_Q_SIZE
+#define TX_MEMPOOL_NUM_BLOCKS      CONFIG_ESP_SPI_HD_Q_SIZE
+#define RX_MEMPOOL_NUM_BLOCKS      CONFIG_ESP_SPI_HD_Q_SIZE
 
 #define SPI_HD_CHECKSUM            CONFIG_ESP_SPI_HD_CHECKSUM
 
@@ -80,8 +77,7 @@ static const char TAG[] = "SPI_HD_DRIVER";
 #define DMA_CHAN SPI_DMA_CH_AUTO // automatically select the DMA channel
 
 #define SPI_HD_BUFFER_SIZE          MAX_TRANSPORT_BUF_SIZE
-#define SPI_HD_TX_QUEUE_SIZE        CONFIG_ESP_SPI_HD_TX_Q_SIZE
-#define SPI_HD_RX_QUEUE_SIZE        CONFIG_ESP_SPI_HD_RX_Q_SIZE
+#define SPI_HD_QUEUE_SIZE           CONFIG_ESP_SPI_HD_Q_SIZE
 
 #define GPIO_MASK_DATA_READY        (1ULL << GPIO_DATA_READY)
 
@@ -143,6 +139,7 @@ static struct hosted_mempool * buf_mp_tx_g;
 static struct hosted_mempool * buf_mp_rx_g;
 static struct hosted_mempool * trans_tx_g;
 static struct hosted_mempool * trans_rx_g;
+static SemaphoreHandle_t mempool_tx_sem = NULL; // to count number of Tx bufs in IDF SPI HD driver
 
 static inline void spi_hd_mempool_create()
 {
@@ -292,7 +289,7 @@ static void start_rx_data_throttling_if_needed(void)
 		pkt_stats.slave_wifi_rx_msg_loaded = queue_load;
 #endif
 
-		load_percent = (queue_load*100/RX_QUEUE_SIZE);
+		load_percent = (queue_load*100/SPI_HD_QUEUE_SIZE);
 		if (load_percent > slv_cfg_g.throttle_high_threshold) {
 			slv_state_g.current_throttling = 1;
 			wifi_flow_ctrl = 1;
@@ -313,7 +310,7 @@ static void stop_rx_data_throttling_if_needed(void)
 		pkt_stats.slave_wifi_rx_msg_loaded = queue_load;
 #endif
 
-		load_percent = (queue_load*100/RX_QUEUE_SIZE);
+		load_percent = (queue_load*100/SPI_HD_QUEUE_SIZE);
 		if (load_percent < slv_cfg_g.throttle_low_threshold) {
 			slv_state_g.current_throttling = 0;
 			wifi_flow_ctrl = 0;
@@ -351,7 +348,7 @@ static void esp_spi_hd_get_slot_cfg(spi_slave_hd_slot_config_t * slot_cfg)
 	slot_cfg->command_bits = NUM_COMMAND_BITS;
 	slot_cfg->address_bits = NUM_ADDRESS_BITS;
 	slot_cfg->dummy_bits   = NUM_DUMMY_BITS;
-	slot_cfg->queue_size = RX_QUEUE_SIZE;
+	slot_cfg->queue_size = SPI_HD_QUEUE_SIZE;
 	slot_cfg->dma_chan = DMA_CHAN;
 	slot_cfg->cb_config = (spi_slave_hd_callback_config_t) {
 		.cb_send_dma_ready = cb_tx_ready,  // triggered when Tx buffer is loaded to DMA
@@ -413,7 +410,7 @@ static void spi_hd_rx_task(void* pvParameters)
 #endif
 
 	// prepare buffers and preload rx transactions
-	for (i = 0; i < RX_QUEUE_SIZE; i++) {
+	for (i = 0; i < SPI_HD_QUEUE_SIZE; i++) {
 		buf = spi_hd_buffer_rx_alloc(MEMSET_REQUIRED);
 		rx_trans = spi_hd_trans_rx_alloc(MEMSET_REQUIRED);
 		rx_trans->data = buf;
@@ -518,6 +515,7 @@ static void spi_hd_tx_done_task(void* pvParameters)
 		if (err == ESP_OK) {
 			spi_hd_buffer_tx_free(ret_trans->data);
 			spi_hd_trans_tx_free(ret_trans);
+			xSemaphoreGive(mempool_tx_sem);
 		} else {
 			ESP_LOGE(TAG, "error getting completed tx transaction");
 			ESP_LOGE(TAG, "error code: %d %s", err, esp_err_to_name(err));
@@ -568,8 +566,7 @@ static interface_handle_t * esp_spi_hd_init(void)
 			", CS: %"PRIu16 ", CLK: %"PRIu16 ", Data Ready: %"PRIu16 ,
 			GPIO_D0, GPIO_D1, GPIO_CS, GPIO_SCLK, GPIO_DATA_READY);
 #endif
-	ESP_LOGI(TAG, "Hosted SPI HD TX queue size:%"PRIu16, TX_QUEUE_SIZE);
-	ESP_LOGI(TAG, "Hosted SPI HD RX queue size:%"PRIu16, RX_QUEUE_SIZE);
+	ESP_LOGI(TAG, "Hosted SPI HD queue size:%"PRIu16, SPI_HD_QUEUE_SIZE);
 
 #if !H_DATAREADY_ACTIVE_HIGH
 	ESP_LOGI(TAG, "DataReady: Active Low");
@@ -614,12 +611,14 @@ static interface_handle_t * esp_spi_hd_init(void)
 	}
 
 	spi_hd_mempool_create();
+	mempool_tx_sem = xSemaphoreCreateCounting(SPI_HD_QUEUE_SIZE, SPI_HD_QUEUE_SIZE);
+	assert(mempool_tx_sem);
 
-	spi_hd_rx_sem = xSemaphoreCreateCounting(RX_QUEUE_SIZE * MAX_PRIORITY_QUEUES, 0);
+	spi_hd_rx_sem = xSemaphoreCreateCounting(SPI_HD_QUEUE_SIZE * MAX_PRIORITY_QUEUES, 0);
 	assert(spi_hd_rx_sem != NULL);
 
 	for (prio_q_idx = 0; prio_q_idx < MAX_PRIORITY_QUEUES; prio_q_idx++) {
-		spi_hd_rx_queue[prio_q_idx] = xQueueCreate(RX_QUEUE_SIZE, sizeof(interface_buffer_handle_t));
+		spi_hd_rx_queue[prio_q_idx] = xQueueCreate(SPI_HD_QUEUE_SIZE, sizeof(interface_buffer_handle_t));
 		assert(spi_hd_rx_queue[prio_q_idx] != NULL);
 	}
 
@@ -627,7 +626,7 @@ static interface_handle_t * esp_spi_hd_init(void)
 			CONFIG_ESP_DEFAULT_TASK_STACK_SIZE, NULL,
 			CONFIG_ESP_DEFAULT_TASK_PRIO, NULL) == pdTRUE);
 
-	// task to clean up after doing sdio tx
+	// task to clean up after doing tx
 	assert(xTaskCreate(spi_hd_tx_done_task, "spi_hd_tx_done_task" ,
 			CONFIG_ESP_DEFAULT_TASK_STACK_SIZE, NULL,
 			CONFIG_ESP_DEFAULT_TASK_PRIO, NULL) == pdTRUE);
@@ -646,6 +645,8 @@ static interface_handle_t * esp_spi_hd_init(void)
 static void esp_spi_hd_deinit(interface_handle_t * handle)
 {
 	spi_hd_mempool_destroy();
+	vSemaphoreDelete(mempool_tx_sem);
+	mempool_tx_sem = NULL;
 
 	// close data path
 	if (context.event_handler) {
@@ -702,9 +703,11 @@ static int32_t esp_spi_hd_write(interface_handle_t *handle, interface_buffer_han
 
 	total_len = buf_handle->payload_len + offset;
 
+	xSemaphoreTake(mempool_tx_sem, portMAX_DELAY);
 	sendbuf = spi_hd_buffer_tx_alloc(total_len, MEMSET_REQUIRED);
 	if (sendbuf == NULL) {
 		ESP_LOGE(TAG , "send buffer[%"PRIu32"] malloc fail", total_len);
+		MEM_DUMP("malloc failed");
 		return ESP_FAIL;
 	}
 
@@ -781,6 +784,7 @@ void generate_startup_event(uint8_t cap, uint32_t ext_cap)
 	spi_slave_hd_data_t *tx_trans = NULL;
 	esp_err_t ret;
 
+	xSemaphoreTake(mempool_tx_sem, portMAX_DELAY);
 	buf_handle.payload = spi_hd_buffer_tx_alloc(512, MEMSET_REQUIRED);
 	assert(buf_handle.payload);
 
@@ -829,11 +833,11 @@ void generate_startup_event(uint8_t cap, uint32_t ext_cap)
 
 	*pos = ESP_PRIV_RX_Q_SIZE;          pos++;len++;
 	*pos = LENGTH_1_BYTE;               pos++;len++;
-	*pos = RX_QUEUE_SIZE;               pos++;len++;
+	*pos = SPI_HD_QUEUE_SIZE;           pos++;len++;
 
 	*pos = ESP_PRIV_TX_Q_SIZE;          pos++;len++;
 	*pos = LENGTH_1_BYTE;               pos++;len++;
-	*pos = TX_QUEUE_SIZE;               pos++;len++;
+	*pos = SPI_HD_QUEUE_SIZE;           pos++;len++;
 
 	/* TLVs end */
 

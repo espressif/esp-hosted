@@ -66,7 +66,7 @@ typedef struct {
 } hosted_mode_t;
 
 typedef struct {
-    uint8_t iface;
+	uint8_t iface;
 	wifi_config_t u;
 } wifi_cfg_t;
 
@@ -140,6 +140,22 @@ typedef struct {
 } rpc_wifi_sta_get_rssi_t;
 
 typedef struct {
+	uint16_t aid;
+} rpc_wifi_sta_get_aid_t;
+
+typedef struct {
+	wifi_interface_t ifx;
+	uint16_t ghz_2g;
+	uint16_t ghz_5g;
+} rpc_wifi_protocols_t;
+
+typedef struct {
+	wifi_interface_t ifx;
+	wifi_bandwidth_t ghz_2g;
+	wifi_bandwidth_t ghz_5g;
+} rpc_wifi_bandwidths_t;
+
+typedef struct {
 	/* event */
 	uint32_t hb_num;
 	/* Req */
@@ -167,8 +183,8 @@ typedef struct Ctrl_cmd_t {
 	void * rx_sem;
 
 	union {
-        wifi_init_config_t          wifi_init_config;
-        wifi_cfg_t                  wifi_config;
+		wifi_init_config_t          wifi_init_config;
+		wifi_cfg_t                  wifi_config;
 		wifi_mac_t                  wifi_mac;
 		hosted_mode_t               wifi_mode;
 
@@ -204,6 +220,16 @@ typedef struct Ctrl_cmd_t {
 		rpc_wifi_sta_get_rssi_t     wifi_sta_get_rssi;
 
 		rpc_wifi_protocol           wifi_protocol;
+
+		rpc_wifi_sta_get_aid_t      wifi_sta_get_aid;
+
+		rpc_wifi_protocols_t        wifi_protocols;
+
+		rpc_wifi_bandwidths_t       wifi_bandwidths;
+
+		wifi_band_t                 wifi_band;
+
+		wifi_band_mode_t            wifi_band_mode;
 
 		event_heartbeat_t           e_heartbeat;
 
@@ -439,6 +465,15 @@ ctrl_cmd_t * wifi_ap_get_sta_aid(ctrl_cmd_t *req);
 ctrl_cmd_t * wifi_sta_get_rssi(ctrl_cmd_t *req);
 ctrl_cmd_t * wifi_set_protocol(ctrl_cmd_t *req);
 ctrl_cmd_t * wifi_get_protocol(ctrl_cmd_t *req);
+ctrl_cmd_t * wifi_sta_get_aid(ctrl_cmd_t *req);
+ctrl_cmd_t * wifi_set_protocols(ctrl_cmd_t *req);
+ctrl_cmd_t * wifi_get_protocols(ctrl_cmd_t *req);
+ctrl_cmd_t * wifi_set_bandwidths(ctrl_cmd_t *req);
+ctrl_cmd_t * wifi_get_bandwidths(ctrl_cmd_t *req);
+ctrl_cmd_t * wifi_set_band(ctrl_cmd_t *req);
+ctrl_cmd_t * wifi_get_band(ctrl_cmd_t *req);
+ctrl_cmd_t * wifi_set_band_mode(ctrl_cmd_t *req);
+ctrl_cmd_t * wifi_get_band_mode(ctrl_cmd_t *req);
 
 /* Get the interface up for interface `iface` */
 int interface_up(int sockfd, char* iface);
