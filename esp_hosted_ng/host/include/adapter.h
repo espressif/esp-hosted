@@ -1,8 +1,12 @@
-// Copyright 2015-2021 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2015-2024 Espressif Systems (Shanghai) PTE LTD
 /* SPDX-License-Identifier: GPL-2.0-only OR Apache-2.0 */
 
 #ifndef __ESP_NETWORK_ADAPTER__H
 #define __ESP_NETWORK_ADAPTER__H
+
+#ifndef __packed
+#define __packed        __attribute__((__packed__))
+#endif
 
 #define PRIO_Q_HIGH                     0
 #define PRIO_Q_MID                      1
@@ -63,36 +67,6 @@ enum ESP_IE_TYPE{
 	IE_ASSOC_RESP,
 	IE_RSN,
 	IE_BEACON_PROBE,
-};
-
-enum esp_auth_mode {
-	WIFI_AUTH_OPEN = 0,
-	WIFI_AUTH_WEP,
-	WIFI_AUTH_WPA_PSK,
-	WIFI_AUTH_WPA2_PSK,
-	WIFI_AUTH_WPA_WPA2_PSK,
-	WIFI_AUTH_WPA2_ENTERPRISE,
-	WIFI_AUTH_WPA3_PSK,
-	WIFI_AUTH_WPA2_WPA3_PSK,
-	WIFI_AUTH_WAPI_PSK,
-	WIFI_AUTH_OWE,
-	WIFI_AUTH_MAX
-};
-
-enum esp_cipher_type {
-	WIFI_CIPHER_TYPE_NONE = 0,
-	WIFI_CIPHER_TYPE_WEP40,
-	WIFI_CIPHER_TYPE_WEP104,
-	WIFI_CIPHER_TYPE_TKIP,
-	WIFI_CIPHER_TYPE_CCMP,
-	WIFI_CIPHER_TYPE_TKIP_CCMP,
-	WIFI_CIPHER_TYPE_AES_CMAC128,
-	WIFI_CIPHER_TYPE_SMS4,
-	WIFI_CIPHER_TYPE_GCMP,
-	WIFI_CIPHER_TYPE_GCMP256,
-	WIFI_CIPHER_TYPE_AES_GMAC128,
-	WIFI_CIPHER_TYPE_AES_GMAC256,
-	WIFI_CIPHER_TYPE_UNKNOWN,
 };
 
 enum ESP_PACKET_TYPE {

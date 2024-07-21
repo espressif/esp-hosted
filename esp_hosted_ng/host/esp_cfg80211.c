@@ -900,7 +900,9 @@ static int esp_cfg80211_start_ap(struct wiphy *wiphy, struct net_device *dev,
 	if (rsn_ie && (rsn_ie_len != 0)) {
 		res = cmd_set_ie(priv, IE_RSN, rsn_ie, rsn_ie_len);
 		/* Dummy mode set set security */
-		ap_config.authmode = WIFI_AUTH_WPA2_PSK;
+#define WPA2_PSK_MODE 3
+		ap_config.authmode = WPA2_PSK_MODE;
+#undef WPA2_PSK_MODE
 		if (res < 0)
 			return res;
 	}
