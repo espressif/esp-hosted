@@ -1,4 +1,5 @@
 stages:
+  - pre_check
   - deploy
 
 variables:
@@ -12,6 +13,12 @@ before_script:
   - base64 --decode --ignore-garbage ~/.ssh/id_rsa_base64 > ~/.ssh/id_rsa
   - chmod 600 ~/.ssh/id_rsa
   - echo -e "Host gitlab.espressif.cn\n\tStrictHostKeyChecking no\n" > ~/.ssh/config
+
+check_version:
+  stage: pre_check
+  script:
+    - export HOSTED_NG_PATH=$PWD/esp_hosted_ng
+    - ci/check_hosted_ng_version.sh
 
 deploy_master_github:
   stage: deploy
