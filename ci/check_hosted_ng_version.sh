@@ -7,7 +7,6 @@ if [ -z "${HOSTED_NG_PATH:-}" ]; then
     exit 1
 fi
 
-echo "Checking if version in host matches version in firmware"
 
 FAILURES=0
 
@@ -27,7 +26,10 @@ function check_md5()
     fi
 }
 
+echo "Checking if version in host matches version in firmware"
 check_md5 ${HOSTED_NG_PATH}/esp/esp_driver/network_adapter/main/include/esp_fw_version.h ${HOSTED_NG_PATH}/host/include/esp_fw_version.h
+echo "Checking if interface in host matches interface in firmware"
+check_md5 ${HOSTED_NG_PATH}/esp/esp_driver/network_adapter/main/include/adapter.h ${HOSTED_NG_PATH}/host/include/adapter.h
 
 if [ $FAILURES -gt 0 ]; then
     exit 1
