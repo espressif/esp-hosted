@@ -191,7 +191,7 @@ struct cmd_config_ie {
 	uint8_t    pad;
 	uint16_t   ie_len;
 	uint8_t    ie[];
-}__attribute__((packed));
+} __packed;
 
 struct esp_ap_config {
     uint8_t ssid[32];
@@ -205,12 +205,12 @@ struct esp_ap_config {
     uint8_t sae_pwe_h2e;
     uint16_t beacon_interval;
     uint16_t inactivity_timeout;
-}__attribute__((packed));
+} __packed;
 
 struct cmd_ap_config {
 	struct command_header header;
 	struct esp_ap_config ap_config;
-}__attribute__((packed));
+} __packed;
 
 #define ADD_STA 0
 #define CHANGE_STA 1
@@ -230,12 +230,12 @@ struct cmd_ap_sta_param {
 	uint8_t pad1[2];
 	uint8_t he_caps[27];
 	uint8_t pad2;
-}__attribute__((packed));
+} __packed;
 
 struct cmd_ap_add_sta_config {
 	struct command_header header;
 	struct cmd_ap_sta_param sta_param;
-}__attribute__((packed));
+} __packed;
 
 struct cmd_sta_auth {
 	struct     command_header header;
@@ -259,7 +259,7 @@ struct cmd_mgmt_tx {
         uint8_t    dont_wait_for_ack;
         uint32_t   len;
         uint8_t    buf[];
-}__attribute__((packed));
+} __packed;
 
 struct cmd_sta_assoc {
 	struct     command_header header;
@@ -383,7 +383,7 @@ struct mgmt_event {
         int32_t    chan;
         uint32_t   frame_len;
         uint8_t    frame[0];
-}__attribute__((packed));
+} __packed;
 
 struct disconnect_event {
 	struct     event_header header;
@@ -396,7 +396,7 @@ struct cmd_config_mode {
 	struct     command_header header;
 	uint16_t   mode;
 	uint8_t    pad[2];
-}__attribute__((packed));
+} __packed;
 
 struct esp_internal_bootup_event {
 	struct     event_header header;

@@ -20,6 +20,8 @@ if(PROJECT_VERSION_MATCH)
     message(*************************************************************************************)
     message("                    Building ESP-Hosted Firmware version :: ${PROJECT_VER} ")
     message(*************************************************************************************)
+else()
+    message(FATAL_ERROR "Failed to read project version from main/include/esp_fw_version.h")
 endif()
 
 set(PROJECT_VER "${PROJECT_VER}")

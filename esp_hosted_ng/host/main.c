@@ -231,14 +231,21 @@ void init_bt(struct esp_adapter *adapter)
 	}
 }
 
+#define VERSION_BUFFER_SIZE 50
+
 static int check_esp_version(struct fw_version *ver)
 {
-	esp_info("ESP Firmware version: %s-%u.%u.%u.%u.%u\n",
-			ver->project_name, ver->major1, ver->major2, ver->minor, ver->revision_patch_1, ver->revision_patch_2);
-	if (ver->major1 != PROJECT_VERSION_MAJOR) {
-		esp_err("Incompatible ESP firmware release detected, Please use correct ESP-Hosted branch/compatible release\n");
+	char version_str[VERSION_BUFFER_SIZE] = {0};
+
+	snprintf(version_str, VERSION_BUFFER_SIZE, "%s-%u.%u.%u.%u.%u",
+		ver->project_name, ver->major1, ver->major2, ver->minor, ver->revision_patch_1, ver->revision_patch_2);
+
+	if (strncmp(RELEASE_VERSION, version_str, strlen(version_str)) != 0) {
+		esp_err("Firmware version: %s, Host version: %s\n", version_str, RELEASE_VERSION);
+		esp_err("Incompatible ESP Host-firmware release detected, Please use correct ESP-Hosted branch/compatible release\n");
 		return -1;
 	}
+	esp_info("ESP-Hosted Version: %s\n", version_str);
 	return 0;
 }
 
