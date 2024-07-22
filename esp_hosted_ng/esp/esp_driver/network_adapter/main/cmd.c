@@ -828,20 +828,20 @@ static int hostap_deinit(void *data)
 
 static int handle_wpa_ap_rx_mgmt(void *pkt, uint32_t pkt_len, uint8_t chan, int rssi, int nf)
 {
-	struct mgmt_frm_event *event;
+	struct mgmt_event *event;
 	esp_err_t ret = ESP_OK;
 	interface_buffer_handle_t buf_handle = {0};
 	pkt_len = pkt_len + 24;
 
 	//ESP_LOG_BUFFER_HEXDUMP(TAG, pkt, pkt_len, ESP_LOG_INFO);
-	ret = prepare_event(ESP_AP_IF, &buf_handle, sizeof(struct mgmt_frm_event)
+	ret = prepare_event(ESP_AP_IF, &buf_handle, sizeof(struct mgmt_event)
 			+ pkt_len);
 	if (ret) {
 		ESP_LOGE(TAG, "%s: Failed to prepare event buffer\n", __func__);
 		return ESP_FAIL;
 	}
 
-	event = (struct mgmt_frm_event *) buf_handle.payload;
+	event = (struct mgmt_event *) buf_handle.payload;
 
 	/* Populate event header */
 	event->header.event_code = EVENT_AP_MGMT_RX;

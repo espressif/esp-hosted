@@ -1,8 +1,12 @@
-// Copyright 2015-2021 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2015-2024 Espressif Systems (Shanghai) PTE LTD
 /* SPDX-License-Identifier: GPL-2.0-only OR Apache-2.0 */
 
 #ifndef __ESP_NETWORK_ADAPTER__H
 #define __ESP_NETWORK_ADAPTER__H
+
+#ifndef __packed
+#define __packed        __attribute__((__packed__))
+#endif
 
 #define PRIO_Q_HIGH                     0
 #define PRIO_Q_MID                      1
@@ -63,36 +67,6 @@ enum ESP_IE_TYPE{
 	IE_ASSOC_RESP,
 	IE_RSN,
 	IE_BEACON_PROBE,
-};
-
-enum esp_auth_mode {
-	WIFI_AUTH_OPEN = 0,
-	WIFI_AUTH_WEP,
-	WIFI_AUTH_WPA_PSK,
-	WIFI_AUTH_WPA2_PSK,
-	WIFI_AUTH_WPA_WPA2_PSK,
-	WIFI_AUTH_WPA2_ENTERPRISE,
-	WIFI_AUTH_WPA3_PSK,
-	WIFI_AUTH_WPA2_WPA3_PSK,
-	WIFI_AUTH_WAPI_PSK,
-	WIFI_AUTH_OWE,
-	WIFI_AUTH_MAX
-};
-
-enum esp_cipher_type {
-	WIFI_CIPHER_TYPE_NONE = 0,
-	WIFI_CIPHER_TYPE_WEP40,
-	WIFI_CIPHER_TYPE_WEP104,
-	WIFI_CIPHER_TYPE_TKIP,
-	WIFI_CIPHER_TYPE_CCMP,
-	WIFI_CIPHER_TYPE_TKIP_CCMP,
-	WIFI_CIPHER_TYPE_AES_CMAC128,
-	WIFI_CIPHER_TYPE_SMS4,
-	WIFI_CIPHER_TYPE_GCMP,
-	WIFI_CIPHER_TYPE_GCMP256,
-	WIFI_CIPHER_TYPE_AES_GMAC128,
-	WIFI_CIPHER_TYPE_AES_GMAC256,
-	WIFI_CIPHER_TYPE_UNKNOWN,
 };
 
 enum ESP_PACKET_TYPE {
@@ -217,7 +191,7 @@ struct cmd_config_ie {
 	uint8_t    pad;
 	uint16_t   ie_len;
 	uint8_t    ie[];
-}__attribute__((packed));
+} __packed;
 
 struct esp_ap_config {
     uint8_t ssid[32];
@@ -231,12 +205,12 @@ struct esp_ap_config {
     uint8_t sae_pwe_h2e;
     uint16_t beacon_interval;
     uint16_t inactivity_timeout;
-}__attribute__((packed));
+} __packed;
 
 struct cmd_ap_config {
 	struct command_header header;
 	struct esp_ap_config ap_config;
-}__attribute__((packed));
+} __packed;
 
 #define ADD_STA 0
 #define CHANGE_STA 1
@@ -256,12 +230,12 @@ struct cmd_ap_sta_param {
 	uint8_t pad1[2];
 	uint8_t he_caps[27];
 	uint8_t pad2;
-}__attribute__((packed));
+} __packed;
 
 struct cmd_ap_add_sta_config {
 	struct command_header header;
 	struct cmd_ap_sta_param sta_param;
-}__attribute__((packed));
+} __packed;
 
 struct cmd_sta_auth {
 	struct     command_header header;
@@ -285,7 +259,7 @@ struct cmd_mgmt_tx {
         uint8_t    dont_wait_for_ack;
         uint32_t   len;
         uint8_t    buf[];
-}__attribute__((packed));
+} __packed;
 
 struct cmd_sta_assoc {
 	struct     command_header header;
@@ -409,7 +383,7 @@ struct mgmt_event {
         int32_t    chan;
         uint32_t   frame_len;
         uint8_t    frame[0];
-}__attribute__((packed));
+} __packed;
 
 struct disconnect_event {
 	struct     event_header header;
@@ -422,7 +396,7 @@ struct cmd_config_mode {
 	struct     command_header header;
 	uint16_t   mode;
 	uint8_t    pad[2];
-}__attribute__((packed));
+} __packed;
 
 struct esp_internal_bootup_event {
 	struct     event_header header;
@@ -432,9 +406,12 @@ struct esp_internal_bootup_event {
 } __packed;
 
 struct fw_version {
+	char       project_name[3];
 	uint8_t    major1;
 	uint8_t    major2;
 	uint8_t    minor;
+	uint8_t    revision_patch_1;
+	uint8_t    revision_patch_2;
 } __packed;
 
 struct fw_data {

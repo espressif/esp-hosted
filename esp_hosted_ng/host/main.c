@@ -18,13 +18,19 @@
 #include "esp_api.h"
 #include "esp_cmd.h"
 #include "esp_kernel_port.h"
+#include "esp_fw_version.h"
 
 #include "esp_cfg80211.h"
 #include "esp_stats.h"
 
-#define RELEASE_VERSION "1.0.3"
 #define HOST_GPIO_PIN_INVALID -1
 #define CONFIG_ALLOW_MULTICAST_WAKEUP 1
+
+#define STRINGIFY_HELPER(x) #x
+#define STRINGIFY(x) STRINGIFY_HELPER(x)
+
+#define RELEASE_VERSION PROJECT_NAME "-" STRINGIFY(PROJECT_VERSION_MAJOR_1) "." STRINGIFY(PROJECT_VERSION_MAJOR_2) "." STRINGIFY(PROJECT_VERSION_MINOR) "." STRINGIFY(PROJECT_REVISION_PATCH_1) "." STRINGIFY(PROJECT_REVISION_PATCH_2)
+
 static int resetpin = HOST_GPIO_PIN_INVALID;
 static u32 clockspeed = 0;
 extern u8 ap_bssid[MAC_ADDR_LEN];
@@ -225,14 +231,21 @@ void init_bt(struct esp_adapter *adapter)
 	}
 }
 
+#define VERSION_BUFFER_SIZE 50
+
 static int check_esp_version(struct fw_version *ver)
 {
-	esp_info("ESP Firmware version: %u.%u.%u\n",
-			ver->major1, ver->major2, ver->minor);
-	if (!ver->major1) {
-		esp_err("Incompatible ESP firmware release detected, Please use correct ESP-Hosted branch/compatible release\n");
+	char version_str[VERSION_BUFFER_SIZE] = {0};
+
+	snprintf(version_str, VERSION_BUFFER_SIZE, "%s-%u.%u.%u.%u.%u",
+		ver->project_name, ver->major1, ver->major2, ver->minor, ver->revision_patch_1, ver->revision_patch_2);
+
+	if (strncmp(RELEASE_VERSION, version_str, strlen(version_str)) != 0) {
+		esp_err("Firmware version: %s, Host version: %s\n", version_str, RELEASE_VERSION);
+		esp_err("Incompatible ESP Host-firmware release detected, Please use correct ESP-Hosted branch/compatible release\n");
 		return -1;
 	}
+	esp_info("ESP-Hosted Version: %s\n", version_str);
 	return 0;
 }
 
@@ -276,6 +289,7 @@ int process_event_esp_bootup(struct esp_adapter *adapter, u8 *evt_buf, u8 len)
 {
 	int len_left = len, tag_len, ret = 0;
 	u8 *pos;
+	struct fw_data *fw_p;
 
 	if (!adapter || !evt_buf)
 		return -1;
@@ -305,7 +319,8 @@ int process_event_esp_bootup(struct esp_adapter *adapter, u8 *evt_buf, u8 len)
 			ret = esp_validate_chipset(adapter, *(pos + 2));
 			break;
 		case ESP_BOOTUP_FW_DATA:
-			ret = process_fw_data((struct fw_data *)(pos + 2), tag_len);
+			fw_p = (struct fw_data *)(pos + 2);
+			ret = process_fw_data(fw_p, tag_len);
 			break;
 		case ESP_BOOTUP_SPI_CLK_MHZ:
 			ret = esp_adjust_spi_clock(adapter, *(pos + 2));

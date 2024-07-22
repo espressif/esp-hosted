@@ -1,8 +1,12 @@
-// Copyright 2015-2021 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2015-2024 Espressif Systems (Shanghai) PTE LTD
 /* SPDX-License-Identifier: GPL-2.0-only OR Apache-2.0 */
 
 #ifndef __ESP_NETWORK_ADAPTER__H
 #define __ESP_NETWORK_ADAPTER__H
+
+#ifndef __packed
+#define __packed        __attribute__((__packed__))
+#endif
 
 #define PRIO_Q_HIGH                     0
 #define PRIO_Q_MID                      1
@@ -37,7 +41,7 @@ struct esp_payload_header {
 		uint8_t      priv_pkt_type;   /* Packet type for priv interface */
 	};
 	/* Do no add anything here */
-} __attribute__((packed));
+} __packed;
 
 struct ieee_mgmt_header {
 	uint16_t   frame_control;
@@ -46,9 +50,9 @@ struct ieee_mgmt_header {
 	uint8_t    sa[MAC_ADDR_LEN];
 	uint8_t    bssid[MAC_ADDR_LEN];
 	uint16_t   seq_ctrl;
-}__attribute__((packed));
+} __packed;
 
-enum ESP_INTERFACE_TYPE{
+enum ESP_INTERFACE_TYPE {
 	ESP_STA_IF,
 	ESP_AP_IF,
 	ESP_HCI_IF,
@@ -58,10 +62,11 @@ enum ESP_INTERFACE_TYPE{
 };
 
 enum ESP_IE_TYPE{
-        IE_BEACON,
-        IE_PROBE_RESP,
-        IE_ASSOC_RESP,
+	IE_BEACON,
+	IE_PROBE_RESP,
+	IE_ASSOC_RESP,
 	IE_RSN,
+	IE_BEACON_PROBE,
 };
 
 enum ESP_PACKET_TYPE {
@@ -172,13 +177,40 @@ struct scan_request {
 	char       ssid[MAX_SSID_LEN+1];
 	uint8_t    channel;
 	uint8_t    pad[2];
-}__attribute__((packed));
+} __packed;
 
 struct cmd_config_mac_address {
 	struct     command_header header;
 	uint8_t    mac_addr[MAC_ADDR_LEN];
 	uint8_t    pad[2];
-}__attribute__((packed));
+} __packed;
+
+struct cmd_config_ie {
+	struct     command_header header;
+	uint8_t    ie_type;
+	uint8_t    pad;
+	uint16_t   ie_len;
+	uint8_t    ie[];
+} __packed;
+
+struct esp_ap_config {
+    uint8_t ssid[32];
+    uint8_t ssid_len;
+    uint8_t channel;
+    uint8_t authmode;
+    uint8_t ssid_hidden;
+    uint8_t max_connection;
+    uint8_t pairwise_cipher;
+    uint8_t pmf_cfg;
+    uint8_t sae_pwe_h2e;
+    uint16_t beacon_interval;
+    uint16_t inactivity_timeout;
+} __packed;
+
+struct cmd_ap_config {
+	struct command_header header;
+	struct esp_ap_config ap_config;
+} __packed;
 
 #define ADD_STA 0
 #define CHANGE_STA 1
@@ -198,12 +230,12 @@ struct cmd_ap_sta_param {
 	uint8_t pad1[2];
 	uint8_t he_caps[27];
 	uint8_t pad2;
-}__attribute__((packed));
+} __packed;
 
 struct cmd_ap_add_sta_config {
 	struct command_header header;
 	struct cmd_ap_sta_param sta_param;
-}__attribute__((packed));
+} __packed;
 
 struct cmd_sta_auth {
 	struct     command_header header;
@@ -216,25 +248,25 @@ struct cmd_sta_auth {
 	uint8_t    auth_data_len;
 	uint8_t    pad[2];
 	uint8_t    auth_data[];
-}__attribute__((packed));
+} __packed;
 
 struct cmd_mgmt_tx {
-	struct     command_header header;
-	uint8_t    channel;
-	uint8_t    offchan;
-	uint32_t   wait;
-	uint8_t    no_cck;
-	uint8_t    dont_wait_for_ack;
-	uint32_t   len;
-	uint8_t    buf[];
-}__attribute__((packed));
+        struct     command_header header;
+        uint8_t    channel;
+        uint8_t    offchan;
+        uint32_t   wait;
+        uint8_t    no_cck;
+        uint8_t    dont_wait_for_ack;
+        uint32_t   len;
+        uint8_t    buf[];
+} __packed;
 
 struct cmd_sta_assoc {
 	struct     command_header header;
 	uint8_t    assoc_ie_len;
 	uint8_t    pad[3];
 	uint8_t    assoc_ie[];
-}__attribute__((packed));
+} __packed;
 
 struct cmd_sta_connect {
 	struct     command_header header;
@@ -245,24 +277,24 @@ struct cmd_sta_connect {
 	uint8_t    is_auth_open;
 	uint8_t    assoc_ie_len;
 	uint8_t    assoc_ie[];
-}__attribute__((packed));
+} __packed;
 
 struct cmd_disconnect {
 	struct     command_header header;
 	uint16_t   reason_code;
 	uint8_t    mac[MAC_ADDR_LEN];
-}__attribute__((packed));
+} __packed;
 
 struct cmd_set_ip_addr {
 	struct command_header header;
 	uint32_t ip;
-}__attribute__((packed));
+} __packed;
 
 struct cmd_set_mcast_mac_addr {
 	struct command_header header;
 	uint8_t count;
 	uint8_t mcast_addr[MAX_MULTICAST_ADDR_COUNT][MAC_ADDR_LEN];
-}__attribute__((packed));
+} __packed;
 
 struct wifi_sec_key {
 	uint32_t   algo;
@@ -275,12 +307,12 @@ struct wifi_sec_key {
 	uint8_t    del;
 	uint8_t    set_cur;
 	uint8_t    pad[2];
-}__attribute__((packed));
+} __packed;
 
 struct cmd_set_get_val {
 	struct     command_header header;
 	uint32_t   value;
-}__attribute__((packed));
+} __packed;
 
 struct cmd_wow_config {
 	struct command_header header;
@@ -289,28 +321,23 @@ struct cmd_wow_config {
 	uint8_t magic_pkt;
 	uint8_t four_way_handshake;
 	uint8_t eap_identity_req;
-}__attribute__((packed));
-
-struct cmd_raw_tp {
-	struct     command_header header;
-	uint32_t   value;
-}__attribute__((packed));
+} __packed;
 
 struct cmd_reg_domain {
 	struct     command_header header;
 	char       country_code[4];  /* 4 for padding */
-}__attribute__((packed));
+} __packed;
 
 struct cmd_key_operation {
 	struct     command_header header;
 	struct     wifi_sec_key key;
-}__attribute__((packed));
+} __packed;
 
 struct event_header {
 	uint8_t    event_code;
 	uint8_t    status;
 	uint16_t   len;
-}__attribute__((packed));
+} __packed;
 
 struct scan_event {
 	struct     event_header header;
@@ -322,7 +349,7 @@ struct scan_event {
 	uint16_t   frame_len;
 	uint8_t    pad[2];
 	uint8_t    frame[0];
-}__attribute__((packed));
+} __packed;
 
 struct auth_event {
 	struct     event_header header;
@@ -334,7 +361,7 @@ struct auth_event {
 	uint16_t   frame_len;
 	uint8_t    pad[2];
 	uint8_t    frame[0];
-}__attribute__((packed));
+} __packed;
 
 struct assoc_event {
 	struct     event_header header;
@@ -347,74 +374,50 @@ struct assoc_event {
 	uint32_t   rssi;
 	uint64_t   tsf;
 	uint8_t    frame[0];
-}__attribute__((packed));
+} __packed;
 
-struct mgmt_frm_event {
-	struct     event_header header;
-	int32_t    nf;
-	int32_t    rssi;
-	int32_t    chan;
-	uint32_t   frame_len;
-	uint8_t    frame[0];
-}__attribute__((packed));
+struct mgmt_event {
+        struct     event_header header;
+        int32_t    nf;
+        int32_t    rssi;
+        int32_t    chan;
+        uint32_t   frame_len;
+        uint8_t    frame[0];
+} __packed;
 
 struct disconnect_event {
 	struct     event_header header;
 	uint8_t    bssid[MAC_ADDR_LEN];
 	char       ssid[MAX_SSID_LEN+1];
 	uint8_t    reason;
-}__attribute__((packed));
+} __packed;
 
 struct cmd_config_mode {
 	struct     command_header header;
-	uint16_t    mode;
+	uint16_t   mode;
 	uint8_t    pad[2];
-}__attribute__((packed));
-
-struct cmd_config_ie {
-	struct     command_header header;
-	uint8_t    ie_type;
-	uint8_t    pad;
-	uint16_t   ie_len;
-	uint8_t    ie[];
-}__attribute__((packed));
-
-struct esp_ap_config {
-	uint8_t ssid[32];
-	uint8_t ssid_len;
-	uint8_t channel;
-	uint8_t authmode;
-	uint8_t ssid_hidden;
-	uint8_t max_connection;
-	uint8_t pairwise_cipher;
-	uint8_t pmf_cfg;
-	uint8_t sae_pwe_h2e;
-	uint16_t beacon_interval;
-	uint16_t inactivity_timeout;
-}__attribute__((packed));
-
-struct cmd_ap_config {
-	struct command_header header;
-	struct esp_ap_config ap_config;
-}__attribute__((packed));
+} __packed;
 
 struct esp_internal_bootup_event {
 	struct     event_header header;
 	uint8_t    len;
 	uint8_t    pad[3];
 	uint8_t    data[0];
-}__attribute__((packed));
+} __packed;
 
 struct fw_version {
+	char       project_name[3];
 	uint8_t    major1;
 	uint8_t    major2;
 	uint8_t    minor;
-}__attribute__((packed));
+	uint8_t    revision_patch_1;
+	uint8_t    revision_patch_2;
+} __packed;
 
 struct fw_data {
 	struct     fw_version version;
 	uint32_t   last_reset_reason;
-}__attribute__((packed));
+} __packed;
 
 
 
