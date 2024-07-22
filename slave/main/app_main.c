@@ -13,6 +13,7 @@
 #include "nvs_flash.h"
 #include "sdkconfig.h"
 #include <unistd.h>
+#include <inttypes.h>
 #ifndef CONFIG_IDF_TARGET_ARCH_RISCV
 #include "xtensa/core-macros.h"
 #endif
@@ -24,7 +25,9 @@
 
 #include "freertos/task.h"
 #include "freertos/queue.h"
+#if CONFIG_BT_ENABLED
 #include "esp_bt.h"
+#endif
 #include "endian.h"
 
 #include <protocomm.h>
@@ -97,6 +100,12 @@ static void print_firmware_version()
   #else
 	ESP_LOGI(TAG, "                Transport used :: SPI only                      ");
   #endif
+#elif CONFIG_ESP_SPI_HD_HOST_INTERFACE
+  #if BLUETOOTH_UART
+	ESP_LOGI(TAG, "                Transport used :: SPI HD + UART                 ");
+  #else
+	ESP_LOGI(TAG, "                Transport used :: SPI HD only                   ");
+  #endif
 #else
   #if BLUETOOTH_UART
 	ESP_LOGI(TAG, "                Transport used :: SDIO + UART                   ");
@@ -107,7 +116,7 @@ static void print_firmware_version()
 	ESP_LOGI(TAG, "*********************************************************************");
 }
 
-static uint8_t get_capabilities()
+static uint8_t get_capabilities(void)
 {
 	uint8_t cap = 0;
 
@@ -115,12 +124,12 @@ static uint8_t get_capabilities()
 #if CONFIG_ESP_SPI_HOST_INTERFACE
 	ESP_LOGI(TAG, "- WLAN over SPI");
 	cap |= ESP_WLAN_SPI_SUPPORT;
-#else
+#elif CONFIG_ESP_SDIO_HOST_INTERFACE
 	ESP_LOGI(TAG, "- WLAN over SDIO");
 	cap |= ESP_WLAN_SDIO_SUPPORT;
 #endif
 
-#if CONFIG_ESP_SPI_CHECKSUM || CONFIG_ESP_SDIO_CHECKSUM
+#if CONFIG_ESP_SPI_CHECKSUM || CONFIG_ESP_SDIO_CHECKSUM || CONFIG_ESP_SPI_HD_CHECKSUM
 	cap |= ESP_CHECKSUM_ENABLED;
 #endif
 
@@ -128,6 +137,35 @@ static uint8_t get_capabilities()
 	ESP_LOGI(TAG, "capabilities: 0x%x", cap);
 
 	return cap;
+}
+
+static uint32_t get_capabilities_ext(void)
+{
+	uint32_t ext_cap = 0;
+
+	ESP_LOGI(TAG, "Supported extended features are:");
+#if CONFIG_ESP_SPI_HD_HOST_INTERFACE
+
+#if (CONFIG_ESP_SPI_HD_INTERFACE_NUM_DATA_LINES == 4)
+	ESP_LOGI(TAG, "- SPI HD 4-bit interface");
+	ext_cap |= ESP_SPI_HD_INTERFACE_SUPPORT_4_DATA_LINES;
+#elif (CONFIG_ESP_SPI_HD_INTERFACE_NUM_DATA_LINES == 2)
+	ESP_LOGI(TAG, "- SPI HD 2-bit interface");
+	ext_cap |= ESP_SPI_HD_INTERFACE_SUPPORT_2_DATA_LINES;
+#else
+#error "Invalid SPI HD Number of Data Bits configuration"
+#endif
+
+	ESP_LOGI(TAG, "- WLAN over SPI HD");
+	ext_cap |= ESP_WLAN_SUPPORT;
+#endif
+
+#ifdef CONFIG_BT_ENABLED
+	ext_cap |= get_bluetooth_ext_capabilities();
+#endif
+	ESP_LOGI(TAG, "extended capabilities: 0x%"PRIx32, ext_cap);
+
+	return ext_cap;
 }
 
 esp_err_t wlan_ap_rx_callback(void *buffer, uint16_t len, void *eb)
@@ -795,18 +833,20 @@ void app_main()
 {
 	esp_err_t ret;
 	uint8_t capa = 0;
+	uint32_t ext_capa = 0;
 	uint8_t prio_q_idx = 0;
 
 	print_firmware_version();
 	register_reset_pin(CONFIG_ESP_GPIO_SLAVE_RESET);
 
 	capa = get_capabilities();
+	ext_capa = get_capabilities_ext();
 
 	/* Initialize NVS */
 	ret = nvs_flash_init();
 
 	if (ret == ESP_ERR_NVS_NO_FREE_PAGES ||
-	    ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
+		ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
 		ESP_ERROR_CHECK(nvs_flash_erase());
 		ret = nvs_flash_init();
 	}
@@ -879,7 +919,7 @@ void app_main()
 	}
 
 	/* send capabilities to host */
-	generate_startup_event(capa);
+	generate_startup_event(capa, ext_capa);
 	ESP_LOGI(TAG,"Initial set up done");
 
 	send_event_to_host(RPC_ID__Event_ESPInit);

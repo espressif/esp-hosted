@@ -778,13 +778,12 @@ static void sdio_process_rx_task(void const* pvParameters)
 				assert(buf_handle->payload_len);
 				assert(buf_handle->payload);
 				memcpy(copy_payload, buf_handle->payload, buf_handle->payload_len);
+				H_FREE_PTR_WITH_FUNC(buf_handle->free_buf_handle, buf_handle->priv_buffer_handle);
 
 				ret = chan_arr[buf_handle->if_type]->rx(chan_arr[buf_handle->if_type]->api_chan,
 						copy_payload, copy_payload, buf_handle->payload_len);
 				if (unlikely(ret))
 					HOSTED_FREE(copy_payload);
-
-				H_FREE_PTR_WITH_FUNC(buf_handle->free_buf_handle, buf_handle->priv_buffer_handle);
 			}
 #else
 			if (chan_arr[buf_handle->if_type] && chan_arr[buf_handle->if_type]->rx) {

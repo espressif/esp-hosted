@@ -242,7 +242,7 @@ static inline int find_wifi_tx_throttling_to_be_set(void)
 }
 
 
-void generate_startup_event(uint8_t cap)
+void generate_startup_event(uint8_t cap, uint32_t ext_cap)
 {
 	struct esp_payload_header *header = NULL;
 	interface_buffer_handle_t buf_handle = {0};

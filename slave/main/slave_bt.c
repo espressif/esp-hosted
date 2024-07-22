@@ -18,7 +18,9 @@
 #include <string.h>
 #include "driver/gpio.h"
 #include "driver/uart.h"
+#if CONFIG_BT_ENABLED
 #include "esp_bt.h"
+#endif
 #include "slave_bt.h"
 #include "interface.h"
 #include "adapter.h"
@@ -487,8 +489,8 @@ ble_hs_rx_data(struct os_mbuf *om, void *arg)
 
 esp_err_t initialise_bluetooth(void)
 {
-	uint8_t mac[BSSID_BYTES_SIZE] = {0};
 #ifdef CONFIG_BT_ENABLED
+	uint8_t mac[BSSID_BYTES_SIZE] = {0};
 	esp_bt_controller_config_t bt_cfg = BT_CONTROLLER_INIT_CONFIG_DEFAULT();
 
 	ESP_ERROR_CHECK(esp_read_mac(mac, ESP_MAC_BT));
@@ -562,13 +564,15 @@ uint8_t get_bluetooth_capabilities(void)
 #ifdef CONFIG_BT_ENABLED
 	ESP_LOGI(TAG, "- BT/BLE");
 #if BLUETOOTH_HCI
+
 #if CONFIG_ESP_SPI_HOST_INTERFACE
 	ESP_LOGI(TAG, "   - HCI Over SPI");
 	cap |= ESP_BT_SPI_SUPPORT;
-#else
+#elif CONFIG_ESP_SDIO_HOST_INTERFACE
 	ESP_LOGI(TAG, "   - HCI Over SDIO");
 	cap |= ESP_BT_SDIO_SUPPORT;
 #endif
+
 #elif BLUETOOTH_UART
 	ESP_LOGI(TAG, "   - HCI Over UART");
 	cap |= ESP_BT_UART_SUPPORT;
@@ -588,3 +592,17 @@ uint8_t get_bluetooth_capabilities(void)
 	return cap;
 }
 
+uint32_t get_bluetooth_ext_capabilities(void)
+{
+	uint32_t ext_cap = 0;
+#ifdef CONFIG_BT_ENABLED
+	ESP_LOGI(TAG, "- BT/BLE (extended)");
+#if BLUETOOTH_HCI
+#if CONFIG_ESP_SPI_HD_HOST_INTERFACE
+	ESP_LOGI(TAG, "   - HCI Over SPI HD");
+	ext_cap |= ESP_BT_INTERFACE_SUPPORT;
+#endif
+#endif
+#endif
+	return ext_cap;
+}

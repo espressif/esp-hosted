@@ -1,5 +1,17 @@
 menu "Example Configuration"
 
+	 config C6_SPI_WITH_P4
+		depends on IDF_TARGET_ESP32C6
+		bool "Warn_SC: Use SPI for onboard P4 to C6 communication over P4 evaluation board"
+		help
+			"SC Static Conf: change sdkconfig.default.<esp> for using this conf, then fullclean and menuconfig again"
+
+	 config C6_SPI_HD_WITH_P4
+		depends on IDF_TARGET_ESP32C6
+		bool "Warn_SC: Use SPI HD for onboard P4 to C6 communication over P4 evaluation board"
+		help
+			"SC Static Conf: change sdkconfig.default.<esp> for using this conf, then fullclean and menuconfig again"
+
 	choice ESP_HOST_INTERFACE
 		bool "Transport layer"
 		default ESP_SPI_HOST_INTERFACE if IDF_TARGET_ESP32
@@ -7,23 +19,32 @@ menu "Example Configuration"
 		default ESP_SPI_HOST_INTERFACE if IDF_TARGET_ESP32S3
 		default ESP_SPI_HOST_INTERFACE if IDF_TARGET_ESP32C2
 		default ESP_SPI_HOST_INTERFACE if IDF_TARGET_ESP32C3
+		default ESP_SPI_HOST_INTERFACE if C6_SPI_WITH_P4
+		default	ESP_SPI_HD_HOST_INTERFACE if C6_SPI_HD_WITH_P4
 		default ESP_SDIO_HOST_INTERFACE if IDF_TARGET_ESP32C6
 		help
 			Bus interface to be used for communication with the host
 
 		config ESP_SPI_HOST_INTERFACE
-			bool "SPI interface"
+			bool "SPI Full-duplex"
 			help
-				Enable/Disable SPI host interface
+				Enable/Disable SPI Full-duplex host interface
 
 		config ESP_SDIO_HOST_INTERFACE
-			bool "SDIO interface"
+			bool "SDIO"
 			depends on IDF_TARGET_ESP32 || IDF_TARGET_ESP32C6
 			help
 				Enable/Disable SDIO host interface
+
+		# SPI Half Duplex is not supported in ESP32
+		config ESP_SPI_HD_HOST_INTERFACE
+			bool "SPI Half-duplex"
+			depends on !IDF_TARGET_ESP32
+			help
+				Enable/Disable SPI Half-duplex host interface
 	endchoice
 
-	menu "SPI Configuration"
+	menu "SPI Full-duplex Configuration"
 		depends on ESP_SPI_HOST_INTERFACE
 
 		choice ESP_SPI_PRIV_MODE
@@ -81,6 +102,7 @@ menu "Example Configuration"
 				int "Slave GPIO pin for Host MOSI"
 				default 13 if IDF_TARGET_ESP32
 				default 11 if IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32S3
+				default 20 if C6_SPI_WITH_P4
 				default 7
 				help
 					SPI controller Host MOSI
@@ -90,6 +112,7 @@ menu "Example Configuration"
 				int "Slave GPIO pin for Host MISO"
 				default 12 if IDF_TARGET_ESP32
 				default 13 if IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32S3
+				default 21 if C6_SPI_WITH_P4
 				default 2
 				help
 					SPI controller Host MISO
@@ -99,6 +122,7 @@ menu "Example Configuration"
 				int "Slave GPIO pin for Host CLK"
 				default 14 if IDF_TARGET_ESP32
 				default 12 if IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32S3
+				default 19 if C6_SPI_WITH_P4
 				default 6
 				help
 					SPI controller Host CLK
@@ -108,6 +132,7 @@ menu "Example Configuration"
 				int "Slave GPIO pin for Host  CS"
 				default 15 if IDF_TARGET_ESP32
 				default 10 if IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32S3
+				default 18 if C6_SPI_WITH_P4
 				default 10
 				help
 					SPI controller Host CS
@@ -162,6 +187,7 @@ menu "Example Configuration"
 
 			config ESP_SPI_GPIO_HANDSHAKE
 				int "Slave GPIO pin for handshake"
+				default 22 if C6_SPI_WITH_P4
 				default 3 if IDF_TARGET_ESP32C2 || IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32C6
 				default 17 if IDF_TARGET_ESP32S3
 				default 26
@@ -170,6 +196,7 @@ menu "Example Configuration"
 
 			config ESP_SPI_GPIO_DATA_READY
 				int "Slave GPIO pin for data ready interrupt"
+				default 23 if C6_SPI_WITH_P4
 				default 4
 				help
 					Slave GPIO pin for indicating host that SPI slave has data to be read by host
@@ -313,8 +340,163 @@ menu "Example Configuration"
 
 		config ESP_SDIO_CHECKSUM
 			bool "SDIO checksum ENABLE/DISABLE"
+			default n
 			help
 				ENABLE/DISABLE software SDIO checksum
+
+	endmenu
+
+	menu "SPI Half-duplex Configuration"
+		depends on ESP_SPI_HD_HOST_INTERFACE
+
+		choice ESP_SPI_HD_PRIV_MODE
+			bool "Slave SPI mode"
+			default ESP_SPI_HD_PRIV_MODE_3
+
+			config ESP_SPI_HD_PRIV_MODE_0
+				bool "Slave SPI mode 0"
+
+			config ESP_SPI_HD_PRIV_MODE_1
+				bool "Slave SPI mode 1"
+
+			config ESP_SPI_HD_PRIV_MODE_2
+				bool "Slave SPI mode 2"
+
+			config ESP_SPI_HD_PRIV_MODE_3
+				bool "Slave SPI mode 3"
+		endchoice
+
+		config ESP_SPI_HD_MODE
+			int
+			default 0 if ESP_SPI_HD_PRIV_MODE_0
+			default 1 if ESP_SPI_HD_PRIV_MODE_1
+			default 2 if ESP_SPI_HD_PRIV_MODE_2
+			default 3 if ESP_SPI_HD_PRIV_MODE_3
+			help
+				SPI Mode to use. The same mode must be used on both host and slave.
+
+		choice ESP_SPI_HD_PRIV_INTERFACE_NUM_DATA_LINES
+			bool "Num Data Lines to use"
+			default ESP_SPI_HD_PRIV_INTERFACE_4_DATA_LINES
+			help
+				Number of Data Lines to use in the SPI HD interface
+
+			config ESP_SPI_HD_PRIV_INTERFACE_4_DATA_LINES
+				bool "4 data lines"
+
+			config ESP_SPI_HD_PRIV_INTERFACE_2_DATA_LINES
+				bool "2 data lines"
+		endchoice
+
+		config ESP_SPI_HD_INTERFACE_NUM_DATA_LINES
+			int
+			default 4 if ESP_SPI_HD_PRIV_INTERFACE_4_DATA_LINES
+			default 2 if ESP_SPI_HD_PRIV_INTERFACE_2_DATA_LINES
+
+		menu "GPIOs"
+
+			config ESP_SPI_HD_GPIO_CS
+				int "Slave GPIO pin for Host CS"
+				default 18 if C6_SPI_HD_WITH_P4
+				default 18 if IDF_TARGET_ESP32C6
+				default 3 if IDF_TARGET_ESP32C2
+				default 19
+				help
+					SPI HD controller Host CS
+
+			config ESP_SPI_HD_GPIO_CLK
+				int "Slave GPIO pin for Host CLK"
+				default 19 if C6_SPI_HD_WITH_P4
+				default 19 if IDF_TARGET_ESP32C6
+				default 6 if IDF_TARGET_ESP32C2
+				default 6
+				help
+					SPI HD controller Host CS
+
+			config ESP_SPI_HD_GPIO_D0
+				int "Slave GPIO pin for Host D0"
+				default 20 if C6_SPI_HD_WITH_P4
+				default 20 if IDF_TARGET_ESP32C6
+				default 7 if IDF_TARGET_ESP32C2
+				default 7
+				help
+					SPI HD controller Host D0
+
+			config ESP_SPI_HD_GPIO_D1
+				int "Slave GPIO pin for Host D1"
+				default 21 if C6_SPI_HD_WITH_P4
+				default 21 if IDF_TARGET_ESP32C6
+				default 2 if IDF_TARGET_ESP32C2
+				default 2
+				help
+					SPI HD controller Host D1
+
+			config ESP_SPI_HD_GPIO_D2
+				depends on ESP_SPI_HD_PRIV_INTERFACE_4_DATA_LINES
+				int "Slave GPIO pin for Host D2"
+				default 22 if IDF_TARGET_ESP32C6
+				default 5 if IDF_TARGET_ESP32C2
+				default 5
+				help
+					SPI HD controller Host D2
+
+			config ESP_SPI_HD_GPIO_D3
+				depends on ESP_SPI_HD_PRIV_INTERFACE_4_DATA_LINES
+				int "Slave GPIO pin for Host D3"
+				default 23 if IDF_TARGET_ESP32C6
+				default 4 if IDF_TARGET_ESP32C2
+				default 4
+				help
+					SPI HD controller Host D3
+
+			config ESP_SPI_HD_GPIO_DATA_READY
+				int "Slave GPIO pin for Data Ready"
+				default 2 if C6_SPI_HD_WITH_P4
+				default 5 if IDF_TARGET_ESP32C6
+				default 10 if IDF_TARGET_ESP32C2
+				default 11
+				help
+					Slave GPIO pin for indicating host that SPI slave has data to be read by host
+
+			choice ESP_SPI_HD_DATAREADY_GPIO_CONFIG
+				bool "DataReady GPIO Config"
+				default ESP_DR_ACTIVE_HIGH
+				help
+					Configure Data Ready to be active high (default) or active low
+
+				config ESP_DR_ACTIVE_HIGH
+					bool "Active High"
+				config ESP_DR_ACTIVE_LOW
+					bool "Active Low"
+			endchoice
+
+			config ESP_SPI_HD_GPIO_RESET
+				int "Slave GPIO pin to reset itself"
+				default -1
+				help
+					Host uses this pin to reset the slave ESP. To re-use ESP 'RST' or 'EN' GPIO, set value to -1
+
+		endmenu
+
+		config ESP_SPI_HD_TX_Q_SIZE
+			int "Tx Queue size"
+			default 12 if IDF_TARGET_ESP32C2
+			default 20
+			help
+				Very small tx queue will lower SPI HD data rate
+
+		config ESP_SPI_HD_RX_Q_SIZE
+			int "Rx Queue size"
+			default 5 if IDF_TARGET_ESP32C2
+			default 20
+			help
+				Very small rx queue will lower SPI HD data rate
+
+		config ESP_SPI_HD_CHECKSUM
+			bool "Checksum ENABLE/DISABLE"
+			default y
+			help
+				ENABLE/DISABLE SPI HD software checksum
 
 	endmenu
 
@@ -322,6 +504,7 @@ menu "Example Configuration"
 		int
 		default ESP_SPI_GPIO_RESET if ESP_SPI_HOST_INTERFACE
 		default ESP_SDIO_GPIO_RESET if ESP_SDIO_HOST_INTERFACE
+		default ESP_SPI_HD_GPIO_RESET if ESP_SPI_HD_HOST_INTERFACE
 
 	config EXAMPLE_HCI_UART_BAUDRATE
 		int "UART Baudrate for HCI: Only applicable for ESP32-C3/ESP32-S3"

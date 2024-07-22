@@ -116,6 +116,10 @@ enum {
 #define WIFI_HE_STA_SET_RESERVED_VAL(reserved_in,num_out)                      \
     (num_out|=(reserved_in <<  WIFI_HE_STA_CONFIG_MAX_USED_BIT));
 
+#define H_FLOW_CTRL_NC  0
+#define H_FLOW_CTRL_ON  1
+#define H_FLOW_CTRL_OFF 2
+
 struct esp_payload_header {
 	uint8_t          if_type:4;
 	uint8_t          if_num:4;
@@ -124,8 +128,8 @@ struct esp_payload_header {
 	uint16_t         offset;
 	uint16_t         checksum;
 	uint16_t		 seq_num;
-	uint8_t          throttle_cmd:1;
-	uint8_t          reserved2:7;
+	uint8_t          throttle_cmd:2;
+	uint8_t          reserved2:6;
 	/* Position of union field has to always be last,
 	 * this is required for hci_pkt_type */
 	union {
@@ -158,7 +162,6 @@ typedef enum {
 	ESP_MAX_HOST_INTERRUPT,
 } ESP_HOST_INTERRUPT;
 
-
 typedef enum {
 	ESP_WLAN_SDIO_SUPPORT = (1 << 0),
 	ESP_BT_UART_SUPPORT = (1 << 1),
@@ -169,6 +172,17 @@ typedef enum {
 	ESP_BT_SPI_SUPPORT = (1 << 6),
 	ESP_CHECKSUM_ENABLED = (1 << 7),
 } ESP_CAPABILITIES;
+
+typedef enum {
+	// spi hd capabilities
+	ESP_SPI_HD_INTERFACE_SUPPORT_2_DATA_LINES = (1 << 0),
+	ESP_SPI_HD_INTERFACE_SUPPORT_4_DATA_LINES = (1 << 1),
+	// leave a gap for future expansion
+
+	// features supported
+	ESP_WLAN_SUPPORT         = (1 << 4),
+	ESP_BT_INTERFACE_SUPPORT = (1 << 5), // bt supported over current interface
+} ESP_EXTENDED_CAPABILITIES;
 
 typedef enum {
 	ESP_TEST_RAW_TP_NONE = 0,
@@ -192,6 +206,7 @@ typedef enum {
 	ESP_PRIV_TEST_RAW_TP,
 	ESP_PRIV_RX_Q_SIZE,
 	ESP_PRIV_TX_Q_SIZE,
+	ESP_PRIV_CAP_EXT, // extended capability (4 bytes)
 } ESP_PRIV_TAG_TYPE;
 
 typedef enum {
@@ -208,6 +223,34 @@ struct esp_priv_event {
 	uint8_t		event_data[0];
 }__attribute__((packed));
 
+#define SPI_HD_HOST_24_BIT_TX_INT  1
+
+/* use upper 8 bits of tx buf len register as interrupt control bits
+ * host sends CMD9 to clear the register */
+#define SPI_HD_TX_BUF_LEN_MASK  (0x00FFFFFF)
+
+#define SPI_HD_INT_MASK           (3 << 24)
+#define SPI_HD_INT_START_THROTTLE (1 << 24)
+#define SPI_HD_INT_STOP_THROTTLE  (1 << 25)
+
+/** Slave Registers used for SPI Half-Duplex mode transfers */
+typedef enum {
+	SPI_HD_REG_SLAVE_READY     = 0x00,
+	SPI_HD_REG_MAX_TX_BUF_LEN  = 0x04,
+	SPI_HD_REG_MAX_RX_BUF_LEN  = 0x08,
+	SPI_HD_REG_TX_BUF_LEN      = 0x0C, // updated when slave wants to tx data
+	SPI_HD_REG_RX_BUF_LEN      = 0x10, // updated when slave can rx data
+	SPI_HD_REG_SLAVE_CTRL      = 0x14, // to control the slave
+} SLAVE_CONFIG_SPI_HD_REGISTERS;
+
+typedef enum {
+	SPI_HD_STATE_SLAVE_READY = 0xEE, // Slave SPI is ready
+} SLAVE_CONFIG_SPI_HD_STATE;
+
+// slave control bits
+typedef enum {
+	SPI_HD_CTRL_DATAPATH_ON  = (1 << 0),
+} SLAVE_CTRL_MASK;
 
 static inline uint16_t compute_checksum(uint8_t *buf, uint16_t len)
 {

@@ -1,0 +1,27 @@
+@startuml
+
+Title SPI HD Host Read
+
+participant Slave
+participant Host
+
+note over Slave: Prepare data to send
+
+Slave -> Host: Assert Data_Ready
+
+Host -> Slave: Read TX_BUF_LEN
+note over Host: Bytes to transfer =\nTX_BUF_LEN - (cached)TX_BUF_LEN
+
+Host -> Slave: Send CMD9
+
+note over Slave: De-Assert Data_Ready
+
+Host -> Slave: Send RDDMA
+
+Slave -> Host: Transfer Data
+
+Host -> Slave: CMD8\n(at end of transfer)
+
+note over Host: update (cached)TX_BUF_LEN
+
+@enduml

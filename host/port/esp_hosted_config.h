@@ -110,10 +110,9 @@ so feel free to change these if needed.
 #define H_SDIO_SOC_USE_GPIO_MATRIX
 #endif
 
-#define H_SDIO_CLOCK_FREQ                            CONFIG_ESP_SDIO_CLOCK_FREQ
+#define H_SDIO_CLOCK_FREQ_KHZ                        CONFIG_ESP_SDIO_CLOCK_FREQ_KHZ
 #define H_SDIO_BUS_WIDTH                             CONFIG_ESP_SDIO_BUS_WIDTH
 #define H_SDMMC_HOST_SLOT                            SDMMC_HOST_SLOT_1
-#define H_SDIO_CLOCK_FREQ                            CONFIG_ESP_SDIO_CLOCK_FREQ
 
 #ifdef H_SDIO_SOC_USE_GPIO_MATRIX
 #define H_SDIO_PIN_CLK                               CONFIG_ESP_SDIO_PIN_CLK
@@ -157,6 +156,61 @@ so feel free to change these if needed.
 /*  -------------------------- SDIO Host Config end -------------------------  */
 #endif
 
+#ifdef CONFIG_ESP_SPI_HD_HOST_INTERFACE
+/*  -------------------------- SPI_HD Host Config start -----------------------  */
+
+#define H_SPI_HD_HOST_INTERFACE 1
+
+enum {
+  H_SPI_HD_CONFIG_2_DATA_LINES,
+  H_SPI_HD_CONFIG_4_DATA_LINES,
+};
+
+#if CONFIG_SPI_HD_DR_ACTIVE_HIGH
+  #define H_SPI_HD_DATAREADY_ACTIVE_HIGH 1
+#else
+  #define H_SPI_HD_DATAREADY_ACTIVE_HIGH 0
+#endif
+
+#if H_SPI_HD_DATAREADY_ACTIVE_HIGH
+  #define H_SPI_HD_DR_VAL_ACTIVE                     H_GPIO_HIGH
+  #define H_SPI_HD_DR_VAL_INACTIVE                   H_GPIO_LOW
+  #define H_SPI_HD_DR_INTR_EDGE                      H_GPIO_INTR_POSEDGE
+#else
+  #define H_SPI_HD_DR_VAL_ACTIVE                     H_GPIO_LOW
+  #define H_SPI_HD_DR_VAL_INACTIVE                   H_GPIO_HIGH
+  #define H_SPI_HD_DR_INTR_EDGE                      H_GPIO_INTR_NEGEDGE
+#endif
+
+#define H_SPI_HD_HOST_NUM_DATA_LINES                 CONFIG_ESP_SPI_HD_INTERFACE_NUM_DATA_LINES
+
+#define H_SPI_HD_PIN_D0                              CONFIG_ESP_SPI_HD_GPIO_D0
+#define H_SPI_HD_PIN_D1                              CONFIG_ESP_SPI_HD_GPIO_D1
+#if (CONFIG_ESP_SPI_HD_INTERFACE_NUM_DATA_LINES == 4)
+#define H_SPI_HD_PIN_D2                              CONFIG_ESP_SPI_HD_GPIO_D2
+#define H_SPI_HD_PIN_D3                              CONFIG_ESP_SPI_HD_GPIO_D3
+#endif
+#define H_SPI_HD_PIN_CS                              CONFIG_ESP_SPI_HD_GPIO_CS
+#define H_SPI_HD_PIN_CLK                             CONFIG_ESP_SPI_HD_GPIO_CLK
+#define H_SPI_HD_GPIO_DATA_READY_Port                NULL
+#define H_SPI_HD_PIN_DATA_READY                      CONFIG_ESP_SPI_HD_GPIO_DATA_READY
+
+#define H_SPI_HD_CLK_MHZ                             CONFIG_ESP_SPI_HD_CLK_FREQ
+#define H_SPI_HD_MODE                                CONFIG_ESP_SPI_HD_MODE
+#define H_SPI_HD_TX_QUEUE_SIZE                       CONFIG_ESP_SPI_HD_TX_Q_SIZE
+#define H_SPI_HD_RX_QUEUE_SIZE                       CONFIG_ESP_SPI_HD_RX_Q_SIZE
+
+#define H_SPI_HD_CHECKSUM                            CONFIG_ESP_SPI_HD_CHECKSUM
+
+#define H_SPI_HD_NUM_COMMAND_BITS                    8
+#define H_SPI_HD_NUM_ADDRESS_BITS                    8
+#define H_SPI_HD_NUM_DUMMY_BITS                      8
+
+/*  -------------------------- SPI_HD Host Config end -------------------------  */
+#else
+#define H_SPI_HD_HOST_INTERFACE 0
+#endif
+
 /* Generic reset pin config */
 #define H_GPIO_PIN_RESET_Port                        NULL
 #define H_GPIO_PIN_RESET_Pin                         CONFIG_ESP_GPIO_SLAVE_RESET_SLAVE
@@ -164,17 +218,17 @@ so feel free to change these if needed.
 /* If Reset pin is Enable, it is Active High.
  * If it is RST, active low */
 #ifdef CONFIG_RESET_GPIO_ACTIVE_LOW
-  #define H_RESET_ACTIVE_HIGH                           0
+  #define H_RESET_ACTIVE_HIGH                        0
 #else
-  #define H_RESET_ACTIVE_HIGH                           1
+  #define H_RESET_ACTIVE_HIGH                        1
 #endif
 
 #ifdef H_RESET_ACTIVE_HIGH
-  #define H_RESET_VAL_ACTIVE                            H_GPIO_HIGH
-  #define H_RESET_VAL_INACTIVE                          H_GPIO_LOW
+  #define H_RESET_VAL_ACTIVE                         H_GPIO_HIGH
+  #define H_RESET_VAL_INACTIVE                       H_GPIO_LOW
 #else
-  #define H_RESET_VAL_ACTIVE                            H_GPIO_LOW
-  #define H_RESET_VAL_INACTIVE                          H_GPIO_HIGH
+  #define H_RESET_VAL_ACTIVE                         H_GPIO_LOW
+  #define H_RESET_VAL_INACTIVE                       H_GPIO_HIGH
 #endif
 
 

@@ -132,5 +132,6 @@
 void deinitialize_bluetooth(void);
 esp_err_t initialise_bluetooth(void);
 uint8_t get_bluetooth_capabilities(void);
+uint32_t get_bluetooth_ext_capabilities(void);
 
 #endif /* __SLAVE_BT_H__ */

@@ -84,6 +84,16 @@ typedef struct {
 /* 49 */ int (*_h_sdio_write_block)(uint32_t reg, uint8_t *data, uint16_t size, bool lock_required);
 /* 50 */ int (*_h_sdio_wait_slave_intr)(uint32_t ticks_to_wait);
 #endif
+
+#ifdef CONFIG_ESP_SPI_HD_HOST_INTERFACE
+          /* Transport - SPI HD */
+/* 51 */ int (*_h_spi_hd_read_reg)(uint32_t reg, uint32_t *data, int poll, bool lock_required);
+/* 52 */ int (*_h_spi_hd_write_reg)(uint32_t reg, uint32_t *data, bool lock_required);
+/* 53 */ int (*_h_spi_hd_read_dma)(uint8_t *data, uint16_t size, bool lock_required);
+/* 54 */ int (*_h_spi_hd_write_dma)(uint8_t *data, uint16_t size, bool lock_required);
+/* 55 */ int (*_h_spi_hd_set_data_lines)(uint32_t data_lines);
+/* 56 */ int (*_h_spi_hd_send_cmd9)(void);
+#endif
 } hosted_osi_funcs_t;
 
 struct hosted_config_t {

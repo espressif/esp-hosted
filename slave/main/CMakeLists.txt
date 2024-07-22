@@ -9,8 +9,10 @@ set(COMPONENT_ADD_INCLUDEDIRS "." "${common_dir}/include" "${common_dir}/proto")
 
 if(CONFIG_ESP_SDIO_HOST_INTERFACE)
     list(APPEND COMPONENT_SRCS sdio_slave_api.c)
-else(CONFIG_ESP_SPI_HOST_INTERFACE)
+elseif(CONFIG_ESP_SPI_HOST_INTERFACE)
     list(APPEND COMPONENT_SRCS spi_slave_api.c)
+else(CONFIG_ESP_SPI_HD_MODE)
+    list(APPEND COMPONENT_SRCS spi_hd_slave_api.c)
 endif()
 
 

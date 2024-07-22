@@ -287,7 +287,7 @@ int hosted_sdio_card_init(void *ctx)
 		config.flags = SDMMC_HOST_FLAG_4BIT;
 	else
 		config.flags = SDMMC_HOST_FLAG_1BIT;
-	config.max_freq_khz = H_SDIO_CLOCK_FREQ;
+	config.max_freq_khz = H_SDIO_CLOCK_FREQ_KHZ;
 
 #ifdef CONFIG_IDF_TARGET_ESP32P4
 	// Set this flag to allocate aligned buffer of 512 bytes to meet

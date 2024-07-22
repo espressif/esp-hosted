@@ -14,6 +14,8 @@
 // limitations under the License.
 
 /** Includes **/
+#include <inttypes.h>
+
 #include "esp_wifi.h"
 #include "transport_drv.h"
 #include "adapter.h"
@@ -157,11 +159,11 @@ esp_err_t transport_drv_remove_channel(transport_channel_t *channel)
 
 	assert(chan_arr[channel->if_type] == channel);
 
-    mempool_destroy(channel->memp);
+	mempool_destroy(channel->memp);
 	chan_arr[channel->if_type] = NULL;
 	HOSTED_FREE(channel);
 
-    return ESP_OK;
+	return ESP_OK;
 }
 
 #if 0
@@ -237,7 +239,7 @@ static esp_err_t transport_drv_ap_tx(void *h, void *buffer, size_t len)
 	void * copy_buff = NULL;
 
 	if (!buffer || !len)
-    return ESP_OK;
+		return ESP_OK;
 
 	assert(h && h==chan_arr[ESP_AP_IF]->api_chan);
 
@@ -324,6 +326,20 @@ void process_capabilities(uint8_t cap)
 	ESP_LOGI(TAG, "capabilities: 0x%x",cap);
 }
 
+static uint32_t process_ext_capabilities(uint8_t * ptr)
+{
+	// ptr address may be not be 32-bit aligned
+	uint32_t cap;
+
+	cap = (uint32_t)ptr[0] +
+		((uint32_t)ptr[1] << 8) +
+		((uint32_t)ptr[2] << 16) +
+		((uint32_t)ptr[3] << 24);
+	ESP_LOGI(TAG, "extended capabilities: 0x%"PRIx32,cap);
+
+	return cap;
+}
+
 void process_priv_communication(interface_buffer_handle_t *buf_handle)
 {
 	if (!buf_handle || !buf_handle->payload || !buf_handle->payload_len)
@@ -337,19 +353,42 @@ void print_capabilities(uint32_t cap)
 	ESP_LOGI(TAG, "Features supported are:");
 	if (cap & ESP_WLAN_SDIO_SUPPORT)
 		ESP_LOGI(TAG, "\t * WLAN");
-	if ((cap & ESP_BT_UART_SUPPORT) || (cap & ESP_BT_SDIO_SUPPORT)) {
+	if (cap & ESP_BT_UART_SUPPORT)
+		ESP_LOGI(TAG, "\t   - HCI over UART");
+	if (cap & ESP_BT_SDIO_SUPPORT)
+		ESP_LOGI(TAG, "\t   - HCI over SDIO");
+	if (cap & ESP_BT_SPI_SUPPORT)
+		ESP_LOGI(TAG, "\t   - HCI over SPI");
+	if ((cap & ESP_BLE_ONLY_SUPPORT) && (cap & ESP_BR_EDR_ONLY_SUPPORT))
+		ESP_LOGI(TAG, "\t   - BT/BLE dual mode");
+	else if (cap & ESP_BLE_ONLY_SUPPORT)
+		ESP_LOGI(TAG, "\t   - BLE only");
+	else if (cap & ESP_BR_EDR_ONLY_SUPPORT)
+		ESP_LOGI(TAG, "\t   - BR EDR only");
+}
+
+static void print_ext_capabilities(uint8_t * ptr)
+{
+	// currently only applies to SPI HD interface
+#if H_SPI_HD_HOST_INTERFACE
+	// ptr address may be not be 32-bit aligned
+	uint32_t cap;
+
+	cap = (uint32_t)ptr[0] +
+		((uint32_t)ptr[1] << 8) +
+		((uint32_t)ptr[2] << 16) +
+		((uint32_t)ptr[3] << 24);
+
+	ESP_LOGI(TAG, "Extended Features supported:");
+	if (cap & ESP_SPI_HD_INTERFACE_SUPPORT_2_DATA_LINES)
+		ESP_LOGI(TAG, "\t * SPI HD 2 data lines interface");
+	if (cap & ESP_SPI_HD_INTERFACE_SUPPORT_4_DATA_LINES)
+		ESP_LOGI(TAG, "\t * SPI HD 4 data lines interface");
+	if (cap & ESP_WLAN_SUPPORT)
+		ESP_LOGI(TAG, "\t * WLAN");
+	if (cap & ESP_BT_INTERFACE_SUPPORT)
 		ESP_LOGI(TAG, "\t * BT/BLE");
-		if (cap & ESP_BT_UART_SUPPORT)
-			ESP_LOGI(TAG, "\t   - HCI over UART");
-		if (cap & ESP_BT_SDIO_SUPPORT)
-			ESP_LOGI(TAG, "\t   - HCI over SDIO");
-		if ((cap & ESP_BLE_ONLY_SUPPORT) && (cap & ESP_BR_EDR_ONLY_SUPPORT))
-			ESP_LOGI(TAG, "\t   - BT/BLE dual mode");
-		else if (cap & ESP_BLE_ONLY_SUPPORT)
-			ESP_LOGI(TAG, "\t   - BLE only");
-		else if (cap & ESP_BR_EDR_ONLY_SUPPORT)
-			ESP_LOGI(TAG, "\t   - BR EDR only");
-	}
+#endif
 }
 
 static void process_event(uint8_t *evt_buf, uint16_t len)
@@ -505,6 +544,7 @@ int process_init_event(uint8_t *evt_buf, uint16_t len)
 	uint8_t len_left = len, tag_len;
 	uint8_t *pos;
 	uint8_t raw_tp_config = H_TEST_RAW_TP_DIR;
+	uint32_t ext_cap = 0;
 
 	if (!evt_buf)
 		return ESP_FAIL;
@@ -526,6 +566,10 @@ int process_init_event(uint8_t *evt_buf, uint16_t len)
 			ESP_LOGI(TAG, "EVENT: %2x", *pos);
 			process_capabilities(*(pos + 2));
 			print_capabilities(*(pos + 2));
+		} else if (*pos == ESP_PRIV_CAP_EXT) {
+			ESP_LOGI(TAG, "EVENT: %2x", *pos);
+			ext_cap = process_ext_capabilities(pos + 2);
+			print_ext_capabilities(pos + 2);
 		} else if (*pos == ESP_PRIV_FIRMWARE_CHIP_ID) {
 			ESP_LOGI(TAG, "EVENT: %2x", *pos);
 			chip_type = *(pos+2);
@@ -560,6 +604,35 @@ int process_init_event(uint8_t *evt_buf, uint16_t len)
 		return -1;
 	} else {
 		ESP_LOGI(TAG, "ESP board type is : %d \n\r", chip_type);
+	}
+
+	if (ext_cap) {
+#if H_SPI_HD_HOST_INTERFACE
+		// reconfigure SPI_HD interface based on host and slave capabilities
+		if (H_SPI_HD_HOST_NUM_DATA_LINES == 4) {
+			// SPI_HD on host is configured to use 4 data bits
+			if (ext_cap & ESP_SPI_HD_INTERFACE_SUPPORT_4_DATA_LINES) {
+				// slave configured to use 4 bits
+				ESP_LOGI(TAG, "configure SPI_HD interface to use 4 data lines");
+				g_h.funcs->_h_spi_hd_set_data_lines(H_SPI_HD_CONFIG_4_DATA_LINES);
+			} else {
+				// slave configured to use 2 bits
+				ESP_LOGI(TAG, "configure SPI_HD interface to use 2 data lines");
+				g_h.funcs->_h_spi_hd_set_data_lines(H_SPI_HD_CONFIG_2_DATA_LINES);
+			}
+		} else {
+			// SPI_HD on host is configured to use 2 data bits
+			if (ext_cap & ESP_SPI_HD_INTERFACE_SUPPORT_4_DATA_LINES) {
+				// slave configured to use 4 bits
+				ESP_LOGI(TAG, "SPI_HD on slave uses 4 data lines but Host is configure to use 2 data lines");
+				g_h.funcs->_h_spi_hd_set_data_lines(H_SPI_HD_CONFIG_2_DATA_LINES);
+			} else {
+				// slave configured to use 2 bits
+				ESP_LOGI(TAG, "configure SPI_HD interface to use 2 data lines");
+				g_h.funcs->_h_spi_hd_set_data_lines(H_SPI_HD_CONFIG_2_DATA_LINES);
+			}
+		}
+#endif
 	}
 
 	transport_driver_event_handler(TRANSPORT_TX_ACTIVE);

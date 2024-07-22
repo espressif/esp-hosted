@@ -27,7 +27,7 @@
 #if ESP_PKT_STATS
 struct pkt_stats_t pkt_stats;
 void *pkt_stats_thread = NULL;
-extern uint8_t wifi_tx_throttling;
+extern volatile uint8_t wifi_tx_throttling;
 #endif
 
 #if ESP_PKT_STATS || TEST_RAW_TP
