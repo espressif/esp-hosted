@@ -25,6 +25,18 @@ VENDOR_OUI_1 = 2
 VENDOR_OUI_2 = 3
 VENDOR_OUI_TYPE = 22
 
+### Enable WiFi Feature needs to get the Mac Addr to configure the interface
+### So we store it here after getting the Mac Addr
+global_mac_addr_str = ""
+
+def get_mac_addr_str():
+	global global_mac_addr_str
+	return global_mac_addr_str
+
+def store_mac_addr_str(mac_addr_str):
+	global global_mac_addr_str
+	global_mac_addr_str = mac_addr_str
+
 def get_timestamp():
 	tm = gmtime()
 	tm_data = "{}-{}-{} {}:{}:{} > ".format(tm.tm_year,
@@ -387,7 +399,9 @@ def ctrl_app_resp_callback(app_resp):
 
 
 	if (app_resp.contents.msg_id == CTRL_MSGID.CTRL_RESP_GET_MAC_ADDR.value) :
-		print("mac address is "+ get_str(app_resp.contents.control_data.wifi_mac.mac))
+		mac_str = get_str(app_resp.contents.control_data.wifi_mac.mac)
+		print("mac address is " + mac_str)
+		store_mac_addr_str(mac_str)
 
 	elif (app_resp.contents.msg_id == CTRL_MSGID.CTRL_RESP_SET_MAC_ADDRESS.value) :
 		print("MAC address is set")
@@ -530,6 +544,13 @@ def ctrl_app_resp_callback(app_resp):
 
 	elif (app_resp.contents.msg_id == CTRL_MSGID.CTRL_RESP_CONFIG_HEARTBEAT.value) :
 		print("Heartbeat operation successful")
+
+	elif (app_resp.contents.msg_id == CTRL_MSGID.CTRL_RESP_GET_FW_VERSION.value) :
+		version_string = app_resp.contents.control_data.fw_version.project_name.decode('utf-8') + "-" + str(app_resp.contents.control_data.fw_version.major_1) + "." + str(app_resp.contents.control_data.fw_version.major_2) + "." + str(app_resp.contents.control_data.fw_version.minor) + "." + str(app_resp.contents.control_data.fw_version.revision_patch_1) + "." + str(app_resp.contents.control_data.fw_version.revision_patch_2)
+		print("FW Version:", version_string)
+
+	elif (app_resp.contents.msg_id == CTRL_MSGID.CTRL_RESP_ENABLE_DISABLE.value) :
+		pass
 
 	else :
 		print("Invalid Response "+ str(app_resp.contents.msg_id) +" to parse")
@@ -936,7 +957,35 @@ def test_sync_wifi_get_curr_tx_power():
 	resp = commands_map_py_to_c.wifi_get_curr_tx_power(req)
 	return ctrl_app_resp_callback(resp)
 
+def test_feature_config(feature, enable):
+	req = CONTROL_COMMAND()
+	CTRL_CMD_DEFAULT_REQ(req)
+	resp = POINTER(CONTROL_COMMAND)
+	resp = None
+	req.control_data.feature_config.feature = feature
+	req.control_data.feature_config.enable = enable
+	resp = commands_map_py_to_c.feature_config(req)
+	return ctrl_app_resp_callback(resp)
 
+def test_feature_enable_wifi():
+	return test_feature_config(HOSTED_FEATURE.HOSTED_FEATURE_WIFI.value, YES)
+
+def test_feature_disable_wifi():
+	return test_feature_config(HOSTED_FEATURE.HOSTED_FEATURE_WIFI.value, NO)
+
+def test_feature_enable_bt():
+	return test_feature_config(HOSTED_FEATURE.HOSTED_FEATURE_BLUETOOTH.value, YES)
+
+def test_feature_disable_bt():
+	return test_feature_config(HOSTED_FEATURE.HOSTED_FEATURE_BLUETOOTH.value, NO)
+
+def test_get_fw_version():
+	req = CONTROL_COMMAND()
+	CTRL_CMD_DEFAULT_REQ(req)
+	resp = POINTER(CONTROL_COMMAND)
+	resp = None
+	resp = commands_map_py_to_c.get_fw_version(req)
+	return ctrl_app_resp_callback(resp)
 
 def test_sync_ota_begin():
 	req = CONTROL_COMMAND()

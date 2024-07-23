@@ -46,6 +46,7 @@
 #include "slave_control.h"
 #include "slave_bt.c"
 #include "stats.h"
+#include "esp_fw_version.h"
 
 static const char TAG[] = "NETWORK_ADAPTER";
 
@@ -104,8 +105,8 @@ uint8_t ap_mac[MAC_LEN] = {0};
 static void print_firmware_version()
 {
 	ESP_LOGI(TAG, "*********************************************************************");
-	ESP_LOGI(TAG, "                ESP-Hosted-FG Firmware version :: %d.%d.%d                        ",
-			PROJECT_VERSION_MAJOR_1, PROJECT_VERSION_MAJOR_2, PROJECT_VERSION_MINOR);
+	ESP_LOGI(TAG, "                ESP-Hosted Firmware version :: %s-%d.%d.%d.%d.%d",
+			PROJECT_NAME, PROJECT_VERSION_MAJOR_1, PROJECT_VERSION_MAJOR_2, PROJECT_VERSION_MINOR, PROJECT_REVISION_PATCH_1, PROJECT_REVISION_PATCH_2);
 #if CONFIG_ESP_SPI_HOST_INTERFACE
   #if BLUETOOTH_UART
 	ESP_LOGI(TAG, "                Transport used :: SPI + UART                    ");

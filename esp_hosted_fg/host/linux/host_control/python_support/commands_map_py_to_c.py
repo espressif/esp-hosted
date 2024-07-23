@@ -83,6 +83,12 @@ wifi_set_max_tx_power.restype = POINTER(CONTROL_COMMAND)
 wifi_get_curr_tx_power = commands_lib.wifi_get_curr_tx_power
 wifi_get_curr_tx_power.restype = POINTER(CONTROL_COMMAND)
 
+feature_config = commands_lib.feature_config
+feature_config.restype = POINTER(CONTROL_COMMAND)
+
+get_fw_version = commands_lib.get_fw_version
+get_fw_version.restype = POINTER(CONTROL_COMMAND)
+
 config_heartbeat = commands_lib.config_heartbeat
 config_heartbeat.restype = POINTER(CONTROL_COMMAND)
 

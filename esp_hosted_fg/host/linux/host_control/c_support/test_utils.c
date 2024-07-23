@@ -597,6 +597,9 @@ int ctrl_app_resp_callback(ctrl_cmd_t * app_resp)
 		} case CTRL_RESP_ENABLE_DISABLE: {
 			printf("Feature config change successful\n");
 			break;
+		} case CTRL_RESP_GET_FW_VERSION: {
+			printf("Get Firmware Version successful\n");
+			break;
 		} default: {
 			printf("Invalid Response[%u] to parse\n", app_resp->msg_id);
 			break;
@@ -1160,6 +1163,26 @@ int test_disable_bt(void)
 
 	if (resp->resp_event_status == SUCCESS)
 		down_hci_instance();
+
+	return ctrl_app_resp_callback(resp);
+}
+
+int test_get_fw_version(void)
+{
+	/* implemented synchronous */
+	ctrl_cmd_t *resp = NULL;
+	ctrl_cmd_t req = CTRL_CMD_DEFAULT_REQ();
+	resp = get_fw_version(req);
+
+	if (resp->resp_event_status == SUCCESS) {
+		printf("FW Version Info: %s-%d.%d.%d.%d.%d\n",
+				resp->u.fw_version.project_name,
+				resp->u.fw_version.major_1,
+				resp->u.fw_version.major_2,
+				resp->u.fw_version.minor,
+				resp->u.fw_version.revision_patch_1,
+				resp->u.fw_version.revision_patch_2);
+	}
 
 	return ctrl_app_resp_callback(resp);
 }

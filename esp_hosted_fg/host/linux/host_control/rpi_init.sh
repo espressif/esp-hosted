@@ -127,7 +127,7 @@ build_c_demo_app() {
     log_enter
     cd $SCRIPT_DIR/c_support/
     make clean
-    make -j8
+    make -j8 test
     if [ $? -ne 0 ]; then
         log "Failed to build test app"
         exit 1

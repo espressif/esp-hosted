@@ -89,6 +89,10 @@ class WIFI_VND_IE_ID(Enum):
 	WIFI_VND_IE_ID_0 = 0
 	WIFI_VND_IE_ID_1 = 1
 
+class HOSTED_FEATURE(Enum):
+	HOSTED_FEATURE_INVALID = 0
+	HOSTED_FEATURE_WIFI = 1
+	HOSTED_FEATURE_BLUETOOTH = 2
 
 class CTRL_ERR(Enum):
 	CTRL_ERR_NOT_CONNECTED = 1
@@ -140,7 +144,9 @@ class CTRL_MSGID(Enum):
 	CTRL_REQ_SET_WIFI_MAX_TX_POWER = 119
 	CTRL_REQ_GET_WIFI_CURR_TX_POWER = 120
 	CTRL_REQ_CONFIG_HEARTBEAT = 121
-	CTRL_REQ_MAX = 122
+	CTRL_REQ_ENABLE_DISABLE = 122
+	CTRL_REQ_GET_FW_VERSION = 123
+	CTRL_REQ_MAX = 124
 	CTRL_RESP_BASE = 200
 	CTRL_RESP_GET_MAC_ADDR = 201
 	CTRL_RESP_SET_MAC_ADDRESS = 202
@@ -163,7 +169,9 @@ class CTRL_MSGID(Enum):
 	CTRL_RESP_SET_WIFI_MAX_TX_POWER = 219
 	CTRL_RESP_GET_WIFI_CURR_TX_POWER = 220
 	CTRL_RESP_CONFIG_HEARTBEAT = 221
-	CTRL_RESP_MAX = 222
+	CTRL_RESP_ENABLE_DISABLE = 222
+	CTRL_RESP_GET_FW_VERSION = 223
+	CTRL_RESP_MAX = 224
 	CTRL_EVENT_BASE = 300
 	CTRL_EVENT_ESP_INIT = 301
 	CTRL_EVENT_HEARTBEAT = 302
@@ -252,6 +260,17 @@ class WIFI_SOFTAP_VENDOR_IE(Structure):
 				("idx", c_int),
 				("vnd_ie", VENDOR_IE_DATA)]
 
+class FEATURE_CONFIG(Structure):
+	_fields_ = [("feature", c_int), # represents 'enum HostedFeature'
+				("enable", c_uint8)]
+
+class FW_VERSION(Structure):
+	_fields_ = [("project_name", c_char * 3),
+				("major_1", c_uint8),
+				("major_2", c_uint8),
+				("minor", c_uint8),
+				("revision_patch_1", c_uint8),
+				("revision_patch_2", c_uint8)]
 
 class OTA_WRITE(Structure):
 	_fields_ = [("ota_data", c_char_p),
@@ -284,6 +303,8 @@ class CONTROL_DATA(Union):
 				("wifi_ps", WIFI_POWER_SAVE_MODE),
 				("ota_write", OTA_WRITE),
 				("wifi_tx_power", WIFI_TX_POWER),
+				("feature_config", FEATURE_CONFIG),
+				("fw_version", FW_VERSION),
 				("e_heartbeat", EVENT_HEARTBEAT),
 				("e_sta_disconnected", EVENT_STATION_DISCONN)]
 
@@ -298,6 +319,7 @@ FREE_BUFFFER_FUNC = CFUNCTYPE(None, c_void_p)
 
 CONTROL_COMMAND._fields_ = [("msg_type", c_char),
 							("msg_id", c_ushort),
+							("uid", c_int),
 							("resp_event_status", c_char),
 							("control_data", CONTROL_DATA),
 							("ctrl_resp_cb", CTRL_CB),

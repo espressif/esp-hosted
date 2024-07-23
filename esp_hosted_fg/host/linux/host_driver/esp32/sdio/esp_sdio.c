@@ -34,6 +34,7 @@
 #include <linux/kthread.h>
 #include <linux/printk.h>
 #include "esp_stats.h"
+#include "esp_fw_verify.h"
 
 #define MAX_WRITE_RETRIES       2
 #define TX_MAX_PENDING_COUNT    200
@@ -801,6 +802,8 @@ int process_init_event(u8 *evt_buf, u8 len)
 	u8 *pos;
 	int ret = 0;
 	struct esp_adapter *adapter = esp_get_adapter();
+	struct fw_version *fw_p;
+	int fw_version_checked = 0;
 
 	if (!evt_buf || !adapter)
 		return -1;
@@ -825,11 +828,24 @@ int process_init_event(u8 *evt_buf, u8 len)
 				*(pos+2) == ESP_FIRMWARE_CHIP_ESP32 ? "esp32" :
 				*(pos+2) == ESP_FIRMWARE_CHIP_ESP32C6 ? "esp32-c6" :
 				"unknown/unsupported ESP chiset");
+		} else if (*pos == ESP_PRIV_FW_DATA) {
+			fw_p = (struct fw_version *)(pos + 2);
+			ret = process_fw_data(fw_p, tag_len);
+			if (ret) {
+				esp_err("Incompatible ESP Firmware detected\n");
+				return -1;
+			}
+			fw_version_checked = 1;
 		} else {
 			esp_warn("Unsupported tag (0x%X) in event\n", *(pos + 2));
 		}
 		pos += (tag_len+2);
 		len_left -= (tag_len+2);
+	}
+
+	/* TODO: abort if strict firmware check is not performed */
+	if ((get_fw_check_type() == FW_CHECK_STRICT) && !fw_version_checked) {
+		esp_warn("ESP Firmware version was not checked");
 	}
 
 	sdio_context.adapter->state = ESP_CONTEXT_READY;
