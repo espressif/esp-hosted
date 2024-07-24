@@ -1,5 +1,6 @@
 stages:
   - pre_check
+  - build
   - deploy
 
 variables:
@@ -14,11 +15,104 @@ before_script:
   - chmod 600 ~/.ssh/id_rsa
   - echo -e "Host gitlab.espressif.cn\n\tStrictHostKeyChecking no\n" > ~/.ssh/config
 
+# always run it so that pipeline is created
 check_version:
   stage: pre_check
+  image: ${CI_DOCKER_REGISTRY}/esp-env-v5.4:1
   script:
     - export HOSTED_NG_PATH=$PWD/esp_hosted_ng
-    - ci/check_hosted_ng_version.sh
+    - .gitlab/ci/check_hosted_ng_version.sh
+  #only:
+     #changes:
+     # - esp_hosted_ng/**/*
+
+build_fw_esp32_sdio:
+  stage: build
+  image: $CI_DOCKER_REGISTRY/esp-env-v5.1:1
+  variables:
+    IDF_TARGET: esp32
+  script:
+    - .gitlab/ci/build_firmware.sh $IDF_TARGET
+  only:
+    changes:
+      - esp_hosted_ng/esp/esp_driver/network_adapter/**/*
+
+build_fw_esp32_spi:
+  stage: build
+  image: $CI_DOCKER_REGISTRY/esp-env-v5.1:1
+  variables:
+    IDF_TARGET: esp32
+  script:
+    - .gitlab/ci/build_firmware.sh $IDF_TARGET spi
+  only:
+    changes:
+      - esp_hosted_ng/esp/esp_driver/network_adapter/**/*
+
+build_fw_esp32s2_spi:
+  stage: build
+  image: $CI_DOCKER_REGISTRY/esp-env-v5.1:1
+  variables:
+    IDF_TARGET: esp32s2
+  script:
+    - .gitlab/ci/build_firmware.sh $IDF_TARGET
+  only:
+    changes:
+      - esp_hosted_ng/esp/esp_driver/network_adapter/**/*
+
+build_fw_esp32s3_spi:
+  stage: build
+  image: $CI_DOCKER_REGISTRY/esp-env-v5.1:1
+  variables:
+    IDF_TARGET: esp32s3
+  script:
+    - .gitlab/ci/build_firmware.sh $IDF_TARGET
+  only:
+    changes:
+      - esp_hosted_ng/esp/esp_driver/network_adapter/**/*
+
+build_fw_esp32c2_spi:
+  stage: build
+  image: $CI_DOCKER_REGISTRY/esp-env-v5.1:1
+  variables:
+    IDF_TARGET: esp32c2
+  script:
+    - .gitlab/ci/build_firmware.sh $IDF_TARGET
+  only:
+    changes:
+      - esp_hosted_ng/esp/esp_driver/network_adapter/**/*
+
+build_fw_esp32c3_spi:
+  stage: build
+  image: $CI_DOCKER_REGISTRY/esp-env-v5.1:1
+  variables:
+    IDF_TARGET: esp32c3
+  script:
+    - .gitlab/ci/build_firmware.sh $IDF_TARGET
+  only:
+    changes:
+      - esp_hosted_ng/esp/esp_driver/network_adapter/**/*
+
+build_fw_esp32c6_sdio:
+  stage: build
+  image: $CI_DOCKER_REGISTRY/esp-env-v5.1:1
+  variables:
+    IDF_TARGET: esp32c6
+  script:
+    - .gitlab/ci/build_firmware.sh $IDF_TARGET
+  only:
+    changes:
+      - esp_hosted_ng/esp/esp_driver/network_adapter/**/*
+
+build_fw_esp32c6_spi:
+  stage: build
+  image: $CI_DOCKER_REGISTRY/esp-env-v5.1:1
+  variables:
+    IDF_TARGET: esp32c6
+  script:
+    - .gitlab/ci/build_firmware.sh $IDF_TARGET spi
+  only:
+    changes:
+      - esp_hosted_ng/esp/esp_driver/network_adapter/**/*
 
 deploy_master_github:
   stage: deploy
