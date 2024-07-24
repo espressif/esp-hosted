@@ -82,7 +82,9 @@ static void esp_handle_isr(struct sdio_func *func)
 
 	context = sdio_get_drvdata(func);
 
-	if (!context) {
+	if (!(context) ||
+	    !(context->adapter) ||
+	    (atomic_read(&context->adapter->state) < ESP_CONTEXT_RX_READY)) {
 		return;
 	}
 
@@ -107,11 +109,12 @@ static void esp_handle_isr(struct sdio_func *func)
 	kfree(int_status);
 }
 
-int generate_slave_intr(struct esp_sdio_context *context, u8 data)
+int generate_slave_intr(void *context, u8 data)
 {
 	u8 *val;
 	int ret = 0;
 
+	context = (struct esp_sdio_context*) context;
 	if (!context)
 		return -EINVAL;
 
@@ -133,13 +136,13 @@ int generate_slave_intr(struct esp_sdio_context *context, u8 data)
 
 static void deinit_sdio_func(struct sdio_func *func)
 {
+	sdio_set_drvdata(func, NULL);
 	sdio_claim_host(func);
 	/* Release IRQ */
 	sdio_release_irq(func);
 	/* Disable sdio function */
 	sdio_disable_func(func);
 	sdio_release_host(func);
-	sdio_set_drvdata(func, NULL);
 }
 
 static int esp_slave_get_tx_buffer_num(struct esp_sdio_context *context, u32 *tx_num, u8 is_lock_needed)
@@ -249,12 +252,14 @@ static void esp_remove(struct sdio_func *func)
 
 	context = sdio_get_drvdata(func);
 
+	if (func->num != 1) {
+		return;
+	}
 #ifdef CONFIG_ENABLE_MONITOR_PROCESS
 	if (monitor_thread)
 		kthread_stop(monitor_thread);
 #endif
 	if (context) {
-		context->state = ESP_CONTEXT_INIT;
 		for (prio_q_idx = 0; prio_q_idx < MAX_PRIORITY_QUEUES; prio_q_idx++)
 			skb_queue_purge(&(sdio_context.tx_q[prio_q_idx]));
 	}
@@ -265,8 +270,6 @@ static void esp_remove(struct sdio_func *func)
 	if (context) {
 		generate_slave_intr(context, BIT(ESP_CLOSE_DATA_PATH));
 		msleep(100);
-
-		context->state = ESP_CONTEXT_DISABLED;
 
 		if (context->adapter) {
 			esp_remove_card(context->adapter);
@@ -280,6 +283,7 @@ static void esp_remove(struct sdio_func *func)
 		if (context->func) {
 			deinit_sdio_func(context->func);
 			context->func = NULL;
+			context->adapter->dev = NULL;
 		}
 		memset(context, 0, sizeof(struct esp_sdio_context));
 	}
@@ -379,7 +383,7 @@ static struct sk_buff *read_packet(struct esp_adapter *adapter)
 
 	context = adapter->if_context;
 
-	if (!context ||  (context->state != ESP_CONTEXT_READY) || !context->func) {
+	if (!context || !context->func) {
 		esp_err("Invalid context/state\n");
 		return NULL;
 	}
@@ -439,6 +443,7 @@ static struct sk_buff *read_packet(struct esp_adapter *adapter)
 
 		if (ret) {
 			esp_err("Failed to read data - %d [%u - %d]\n", ret, num_blocks, len_to_read);
+			atomic_set(&context->adapter->state, ESP_CONTEXT_DISABLED);
 			dev_kfree_skb(skb);
 			skb = NULL;
 			sdio_release_host(context->func);
@@ -564,7 +569,7 @@ static int tx_process(void *data)
 
 	while (!kthread_should_stop()) {
 
-		if (context->state != ESP_CONTEXT_READY) {
+		if (atomic_read(&context->adapter->state) < ESP_CONTEXT_READY) {
 			msleep(10);
 			esp_err("not ready");
 			continue;
@@ -710,8 +715,6 @@ static struct esp_sdio_context *init_sdio_func(struct sdio_func *func, int *sdio
 	/* Set private data */
 	sdio_set_drvdata(func, context);
 
-	context->state = ESP_CONTEXT_INIT;
-
 	sdio_release_host(func);
 
 	return context;
@@ -785,6 +788,7 @@ static int esp_probe(struct sdio_func *func,
 	esp_info("ESP network device detected\n");
 
 	context = init_sdio_func(func, &ret);;
+	atomic_set(&tx_pending, 0);
 
 	if (!context) {
 		if (ret)
@@ -805,8 +809,6 @@ static int esp_probe(struct sdio_func *func,
 		host->ops->set_ios(host, &host->ios);
 	}
 
-	context->state = ESP_CONTEXT_READY;
-	atomic_set(&tx_pending, 0);
 	ret = init_context(context);
 	if (ret) {
 		deinit_sdio_func(func);
@@ -819,6 +821,7 @@ static int esp_probe(struct sdio_func *func,
 		esp_err("Failed to create esp_sdio TX thread\n");
 
 	context->adapter->dev = &func->dev;
+	atomic_set(&context->adapter->state, ESP_CONTEXT_RX_READY);
 	generate_slave_intr(context, BIT(ESP_OPEN_DATA_PATH));
 
 
@@ -945,13 +948,14 @@ int esp_init_interface_layer(struct esp_adapter *adapter, u32 speed)
 
 int esp_validate_chipset(struct esp_adapter *adapter, u8 chipset)
 {
-	int ret = 0;
+	int ret = -1;
 
 	switch(chipset) {
 	case ESP_FIRMWARE_CHIP_ESP32:
 	case ESP_FIRMWARE_CHIP_ESP32C6:
 		adapter->chipset = chipset;
 		esp_info("Chipset=%s ID=%02x detected over SDIO\n", esp_chipname_from_id(chipset), chipset);
+		ret = 0;
 		break;
 	case ESP_FIRMWARE_CHIP_ESP32S2:
 	case ESP_FIRMWARE_CHIP_ESP32S3:

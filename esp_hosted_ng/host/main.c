@@ -337,7 +337,16 @@ int process_event_esp_bootup(struct esp_adapter *adapter, u8 *evt_buf, u8 len)
 		len_left -= (tag_len + 2);
 	}
 
+	if (adapter->capabilities & ESP_WLAN_SDIO_SUPPORT ||
+		adapter->capabilities & ESP_BT_SDIO_SUPPORT) {
+			atomic_set(&adapter->state, ESP_CONTEXT_READY);
+	}
 	if (esp_add_card(adapter)) {
+		if (adapter->capabilities & ESP_WLAN_SDIO_SUPPORT ||
+		    adapter->capabilities & ESP_BT_SDIO_SUPPORT) {
+			atomic_set(&adapter->state, ESP_CONTEXT_DISABLED);
+			generate_slave_intr(&adapter->if_context, BIT(ESP_CLOSE_DATA_PATH));
+		}
 		esp_err("network iterface init failed\n");
 		return -1;
 	}
@@ -581,6 +590,10 @@ int esp_remove_card(struct esp_adapter *adapter)
 	esp_cfg_cleanup(adapter);
 	/* BT may have been initialized after fw bootup event, deinit it */
 	esp_deinit_bt(adapter);
+
+	if (adapter->if_rx_workqueue) {
+		flush_workqueue(adapter->if_rx_workqueue);
+	}
 	esp_commands_teardown(adapter);
 	esp_remove_network_ifaces(adapter);
 	esp_remove_wiphy(adapter);
@@ -930,7 +943,9 @@ static void esp_events_work(struct work_struct *work)
 	if (!skb)
 		return;
 
-	process_internal_event(&adapter, skb);
+	if (skb->data) {
+		process_internal_event(&adapter, skb);
+	}
 	dev_kfree_skb_any(skb);
 }
 
@@ -966,6 +981,9 @@ static struct esp_adapter *init_adapter(void)
 
 static void deinit_adapter(void)
 {
+	if (adapter.if_context)
+		atomic_set(&adapter.state, ESP_CONTEXT_DISABLED);
+
 	skb_queue_purge(&adapter.events_skb_q);
 
 	if (adapter.events_wq)
