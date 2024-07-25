@@ -1657,7 +1657,7 @@ int process_set_ie(uint8_t if_type, uint8_t *payload, uint16_t payload_len)
 	struct cmd_config_ie *ie = (struct cmd_config_ie *) payload;
 	int type = 0;
 
-	ESP_LOGI(TAG, "Setting %d IEs len=%d\n", ie->ie_type, ie->ie_len);
+	ESP_LOGI(TAG, "Setting IE type=%d len=%d\n", ie->ie_type, ie->ie_len);
 
 	if (if_type != ESP_AP_IF) {
 		cmd_status = CMD_RESPONSE_INVALID;
@@ -1715,9 +1715,11 @@ static void mgmt_txcb(void *eb)
 	uint32_t len = esp_wifi_get_eb_data_len(eb);
 
 	ieee80211_tx_mgt_cb(eb);
+	if (!IS_BROADCAST_ADDR(data + 4)) {
+		send_mgmt_tx_done(cmd_status, WIFI_IF_AP, data, len);
+	}
 	//printf("tx cb status=%d data_len=%ld\n", cmd_status, len);
 	//ESP_LOG_BUFFER_HEXDUMP(TAG, data, len, ESP_LOG_INFO);
-	send_mgmt_tx_done(cmd_status, WIFI_IF_AP, data, len);
 }
 
 typedef enum {
