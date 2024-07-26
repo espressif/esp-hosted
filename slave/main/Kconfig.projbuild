@@ -1,16 +1,20 @@
 menu "Example Configuration"
 
-	 config C6_SPI_WITH_P4
+	choice ESP_HOST_DEV_BOARD
+		bool "Configure GPIOs based on an ESP Development Board"
 		depends on IDF_TARGET_ESP32C6
-		bool "Warn_SC: Use SPI for onboard P4 to C6 communication over P4 evaluation board"
+		default ESP_HOST_DEV_BOARD_NONE
 		help
-			"SC Static Conf: change sdkconfig.default.<esp> for using this conf, then fullclean and menuconfig again"
+			"Preconfigures GPIOs to use based on an ESP Development Board"
 
-	 config C6_SPI_HD_WITH_P4
-		depends on IDF_TARGET_ESP32C6
-		bool "Warn_SC: Use SPI HD for onboard P4 to C6 communication over P4 evaluation board"
-		help
-			"SC Static Conf: change sdkconfig.default.<esp> for using this conf, then fullclean and menuconfig again"
+		config ESP_HOST_DEV_BOARD_NONE
+			bool "No specific development board"
+
+		config ESP_HOST_DEV_BOARD_P4_FUNC_BOARD
+			bool "ESP32-P4-Function-EV-Board"
+			depends on IDF_TARGET_ESP32C6
+
+	endchoice
 
 	choice ESP_HOST_INTERFACE
 		bool "Transport layer"
@@ -19,8 +23,6 @@ menu "Example Configuration"
 		default ESP_SPI_HOST_INTERFACE if IDF_TARGET_ESP32S3
 		default ESP_SPI_HOST_INTERFACE if IDF_TARGET_ESP32C2
 		default ESP_SPI_HOST_INTERFACE if IDF_TARGET_ESP32C3
-		default ESP_SPI_HOST_INTERFACE if C6_SPI_WITH_P4
-		default	ESP_SPI_HD_HOST_INTERFACE if C6_SPI_HD_WITH_P4
 		default ESP_SDIO_HOST_INTERFACE if IDF_TARGET_ESP32C6
 		help
 			Bus interface to be used for communication with the host
@@ -100,9 +102,9 @@ menu "Example Configuration"
 			config ESP_SPI_HSPI_GPIO_MOSI
 				depends on SPI_HSPI
 				int "Slave GPIO pin for Host MOSI"
+				default 20 if ESP_HOST_DEV_BOARD_P4_FUNC_BOARD
 				default 13 if IDF_TARGET_ESP32
 				default 11 if IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32S3
-				default 20 if C6_SPI_WITH_P4
 				default 7
 				help
 					SPI controller Host MOSI
@@ -110,9 +112,9 @@ menu "Example Configuration"
 			config ESP_SPI_HSPI_GPIO_MISO
 				depends on SPI_HSPI
 				int "Slave GPIO pin for Host MISO"
+				default 21 if ESP_HOST_DEV_BOARD_P4_FUNC_BOARD
 				default 12 if IDF_TARGET_ESP32
 				default 13 if IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32S3
-				default 21 if C6_SPI_WITH_P4
 				default 2
 				help
 					SPI controller Host MISO
@@ -120,9 +122,9 @@ menu "Example Configuration"
 			config ESP_SPI_HSPI_GPIO_CLK
 				depends on SPI_HSPI
 				int "Slave GPIO pin for Host CLK"
+				default 19 if ESP_HOST_DEV_BOARD_P4_FUNC_BOARD
 				default 14 if IDF_TARGET_ESP32
 				default 12 if IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32S3
-				default 19 if C6_SPI_WITH_P4
 				default 6
 				help
 					SPI controller Host CLK
@@ -130,9 +132,9 @@ menu "Example Configuration"
 			config ESP_SPI_HSPI_GPIO_CS
 				depends on SPI_HSPI
 				int "Slave GPIO pin for Host  CS"
+				default 18 if ESP_HOST_DEV_BOARD_P4_FUNC_BOARD
 				default 15 if IDF_TARGET_ESP32
 				default 10 if IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32S3
-				default 18 if C6_SPI_WITH_P4
 				default 10
 				help
 					SPI controller Host CS
@@ -187,7 +189,7 @@ menu "Example Configuration"
 
 			config ESP_SPI_GPIO_HANDSHAKE
 				int "Slave GPIO pin for handshake"
-				default 22 if C6_SPI_WITH_P4
+				default 22 if ESP_HOST_DEV_BOARD_P4_FUNC_BOARD
 				default 3 if IDF_TARGET_ESP32C2 || IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32C6
 				default 17 if IDF_TARGET_ESP32S3
 				default 26
@@ -196,7 +198,7 @@ menu "Example Configuration"
 
 			config ESP_SPI_GPIO_DATA_READY
 				int "Slave GPIO pin for data ready interrupt"
-				default 23 if C6_SPI_WITH_P4
+				default 23 if ESP_HOST_DEV_BOARD_P4_FUNC_BOARD
 				default 4
 				help
 					Slave GPIO pin for indicating host that SPI slave has data to be read by host
@@ -397,64 +399,52 @@ menu "Example Configuration"
 
 			config ESP_SPI_HD_GPIO_CS
 				int "Slave GPIO pin for Host CS"
-				default 18 if C6_SPI_HD_WITH_P4
-				default 18 if IDF_TARGET_ESP32C6
-				default 3 if IDF_TARGET_ESP32C2
-				default 19
+				default 18 if ESP_HOST_DEV_BOARD_P4_FUNC_BOARD
+				default 10
 				help
 					SPI HD controller Host CS
 
 			config ESP_SPI_HD_GPIO_CLK
 				int "Slave GPIO pin for Host CLK"
-				default 19 if C6_SPI_HD_WITH_P4
-				default 19 if IDF_TARGET_ESP32C6
-				default 6 if IDF_TARGET_ESP32C2
-				default 6
+				default 19 if ESP_HOST_DEV_BOARD_P4_FUNC_BOARD
+				default 12
 				help
 					SPI HD controller Host CS
 
 			config ESP_SPI_HD_GPIO_D0
 				int "Slave GPIO pin for Host D0"
-				default 20 if C6_SPI_HD_WITH_P4
-				default 20 if IDF_TARGET_ESP32C6
-				default 7 if IDF_TARGET_ESP32C2
-				default 7
+				default 20 if ESP_HOST_DEV_BOARD_P4_FUNC_BOARD
+				default 11
 				help
 					SPI HD controller Host D0
 
 			config ESP_SPI_HD_GPIO_D1
 				int "Slave GPIO pin for Host D1"
-				default 21 if C6_SPI_HD_WITH_P4
-				default 21 if IDF_TARGET_ESP32C6
-				default 2 if IDF_TARGET_ESP32C2
-				default 2
+				default 21 if ESP_HOST_DEV_BOARD_P4_FUNC_BOARD
+				default 13
 				help
 					SPI HD controller Host D1
 
 			config ESP_SPI_HD_GPIO_D2
 				depends on ESP_SPI_HD_PRIV_INTERFACE_4_DATA_LINES
 				int "Slave GPIO pin for Host D2"
-				default 22 if IDF_TARGET_ESP32C6
-				default 5 if IDF_TARGET_ESP32C2
-				default 5
+				default 22 if ESP_HOST_DEV_BOARD_P4_FUNC_BOARD
+				default 14
 				help
 					SPI HD controller Host D2
 
 			config ESP_SPI_HD_GPIO_D3
 				depends on ESP_SPI_HD_PRIV_INTERFACE_4_DATA_LINES
 				int "Slave GPIO pin for Host D3"
-				default 23 if IDF_TARGET_ESP32C6
-				default 4 if IDF_TARGET_ESP32C2
-				default 4
+				default 23 if ESP_HOST_DEV_BOARD_P4_FUNC_BOARD
+				default 9
 				help
 					SPI HD controller Host D3
 
 			config ESP_SPI_HD_GPIO_DATA_READY
 				int "Slave GPIO pin for Data Ready"
-				default 2 if C6_SPI_HD_WITH_P4
-				default 5 if IDF_TARGET_ESP32C6
-				default 10 if IDF_TARGET_ESP32C2
-				default 11
+				default 2 if ESP_HOST_DEV_BOARD_P4_FUNC_BOARD
+				default 8
 				help
 					Slave GPIO pin for indicating host that SPI slave has data to be read by host
 
