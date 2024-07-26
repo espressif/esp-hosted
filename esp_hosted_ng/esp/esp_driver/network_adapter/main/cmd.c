@@ -858,7 +858,7 @@ static int handle_wpa_ap_rx_mgmt(void *pkt, uint32_t pkt_len, uint8_t chan, int 
 	event->nf = nf;
 
 	if (event->frame[0] != 0x40) {
-		ESP_LOGE(TAG, "%s: Got packet type as %x \n", __func__, event->frame[0]);
+		ESP_LOGI(TAG, "%s: Got packet type as %x \n", __func__, event->frame[0]);
 	}
 
 	/*ESP_LOG_BUFFER_HEXDUMP(TAG, event->frame, event->frame_len, ESP_LOG_INFO);*/
