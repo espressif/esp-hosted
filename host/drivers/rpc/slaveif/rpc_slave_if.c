@@ -12,7 +12,7 @@
 DEFINE_LOG_TAG(rpc_api);
 
 #define RPC_SEND_REQ(msGiD) do {                                                \
-	assert(req);                                                                \
+    assert(req);                                                                \
     req->msg_id = msGiD;                                                        \
     if(SUCCESS != rpc_send_req(req)) {                                          \
         ESP_LOGE(TAG,"Failed to send control req 0x%x\n", req->msg_id);         \

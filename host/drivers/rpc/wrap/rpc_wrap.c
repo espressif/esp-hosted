@@ -1066,7 +1066,9 @@ int rpc_wifi_get_max_tx_power(int8_t *power)
 	ctrl_cmd_t *resp = NULL;
 
 	resp = wifi_get_max_tx_power(req);
-	*power = resp->u.wifi_tx_power.power;
+	if (resp && resp->resp_event_status == SUCCESS) {
+		*power = resp->u.wifi_tx_power.power;
+	}
 	return rpc_rsp_callback(resp);
 }
 
@@ -1136,7 +1138,9 @@ int rpc_wifi_get_mode(wifi_mode_t* mode)
 
 	resp = wifi_get_mode(req);
 
-	*mode = resp->u.wifi_mode.mode;
+	if (resp && resp->resp_event_status == SUCCESS) {
+		*mode = resp->u.wifi_mode.mode;
+	}
 
 	return SUCCESS;
 }
@@ -1272,7 +1276,9 @@ int rpc_wifi_scan_get_ap_num(uint16_t *number)
 
 	resp = wifi_scan_get_ap_num(req);
 
-	*number = resp->u.wifi_scan_ap_list.number;
+	if (resp && resp->resp_event_status == SUCCESS) {
+		*number = resp->u.wifi_scan_ap_list.number;
+	}
 	return rpc_rsp_callback(resp);
 }
 
