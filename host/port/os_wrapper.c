@@ -204,6 +204,12 @@ unsigned int hosted_msleep(unsigned int mseconds)
    return 0;
 }
 
+unsigned int hosted_usleep(unsigned int useconds)
+{
+   usleep(useconds);
+   return 0;
+}
+
 unsigned int hosted_sleep(unsigned int seconds)
 {
    //osDelay(seconds * 1000);
@@ -760,6 +766,7 @@ hosted_osi_funcs_t g_hosted_osi_funcs = {
 	._h_thread_create            =  hosted_thread_create           ,
 	._h_thread_cancel            =  hosted_thread_cancel           ,
 	._h_msleep                   =  hosted_msleep                  ,
+	._h_usleep                   =  hosted_usleep                  ,
 	._h_sleep                    =  hosted_sleep                   ,
 	._h_blocking_delay           =  hosted_for_loop_delay          ,
 	._h_queue_item               =  hosted_queue_item              ,

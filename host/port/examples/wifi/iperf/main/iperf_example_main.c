@@ -59,7 +59,4 @@ void app_main(void)
 
     // start console REPL
     ESP_ERROR_CHECK(esp_console_start_repl(repl));
-
-	ESP_LOGI(TAG, "Try OTA");
-	esp_hosted_ota("http://192.168.50.2:8000/network_adapter.bin");
 }

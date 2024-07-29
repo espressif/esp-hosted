@@ -185,6 +185,4 @@ struct serial_drv_handle_t;
 struct timer_handle_t;
 extern struct mempool * nw_mp_g;
 
-ESP_EVENT_DECLARE_BASE(WIFI_EVENT);
-
 #endif /*__OS_WRAPPER_H*/

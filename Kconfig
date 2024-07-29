@@ -359,7 +359,7 @@ ESP32XX_SPI_CLK_FREQ_RANGE_MAX := 40
 
 			choice ESP_SDIO_RX_OPTIMIZATION
 				bool "SDIO Receive Optimization"
-				default ESP_SDIO_OPTIMIZATION_RX_STREAMING_MODE
+				default ESP_SDIO_OPTIMIZATION_RX_NONE
 
 				config ESP_SDIO_OPTIMIZATION_RX_NONE
 					bool "No optimization"
