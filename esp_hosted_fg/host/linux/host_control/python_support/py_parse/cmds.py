@@ -296,6 +296,66 @@ class ctrl_cmd(object):
 		self.out = process_wifi_curr_tx_power()
 		return self
 
+	def enable_wifi(self):
+		"""Enable Wi-Fi
+
+		Args:
+			no_arg(str,optional): O | Dummy arg
+
+		Returns:
+			ctrl_cmd: ctrl_cmd object
+		"""
+		self.out = process_enable_wifi()
+		return self
+
+	def disable_wifi(self):
+		"""Disable Wi-Fi
+
+		Args:
+			no_arg(str,optional): O | Dummy arg
+
+		Returns:
+			ctrl_cmd: ctrl_cmd object
+		"""
+		self.out = process_disable_wifi()
+		return self
+
+	def enable_bt(self):
+		"""Enable Bluetooth
+
+		Args:
+			no_arg(str,optional): O | Dummy arg
+
+		Returns:
+			ctrl_cmd: ctrl_cmd object
+		"""
+		self.out = process_enable_bluetooth()
+		return self
+
+	def disable_bt(self):
+		"""Disable Bluetooth
+
+		Args:
+			no_arg(str,optional): O | Dummy arg
+
+		Returns:
+			ctrl_cmd: ctrl_cmd object
+		"""
+		self.out = process_disable_bluetooth()
+		return self
+
+	def get_fw_version(self):
+		"""Get Firmware Version
+
+		Args:
+			no_arg(str,optional): O | Dummy arg
+
+		Returns:
+			ctrl_cmd: ctrl_cmd object
+		"""
+		self.out = process_get_fw_version()
+		return self
+
 
 	def ota_update(self, url : str = ""):
 		"""OTA update with HTTP link

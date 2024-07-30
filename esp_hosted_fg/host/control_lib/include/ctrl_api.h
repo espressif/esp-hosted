@@ -106,6 +106,8 @@ typedef enum {
 
 	CTRL_REQ_CONFIG_HEARTBEAT          = CTRL_MSG_ID__Req_ConfigHeartbeat,    //0x79
 	CTRL_REQ_ENABLE_DISABLE            = CTRL_MSG_ID__Req_EnableDisable,      //0x7a
+	
+	CTRL_REQ_GET_FW_VERSION            = CTRL_MSG_ID__Req_GetFwVersion,       //0x7b
 	/*
 	 * Add new control path command response before Req_Max
 	 * and update Req_Max
@@ -143,6 +145,8 @@ typedef enum {
 
 	CTRL_RESP_CONFIG_HEARTBEAT          = CTRL_MSG_ID__Resp_ConfigHeartbeat,    //0x79 -> 0xdd
 	CTRL_RESP_ENABLE_DISABLE            = CTRL_MSG_ID__Resp_EnableDisable,      //0x7a -> 0xde
+	
+	CTRL_RESP_GET_FW_VERSION            = CTRL_MSG_ID__Resp_GetFwVersion,       //0x7b -> 0xdf
 	/*
 	 * Add new control path comm       and response before Resp_Max
 	 * and update Resp_Max
@@ -310,6 +314,14 @@ typedef struct {
 	int power;
 } wifi_tx_power_t;
 
+typedef struct {
+	char project_name[3];
+	uint8_t major_1;
+	uint8_t major_2;
+	uint8_t minor;
+	uint8_t revision_patch_1;
+	uint8_t revision_patch_2;
+} fw_version_t;
 
 typedef struct {
 	HostedFeature feature;
@@ -360,6 +372,8 @@ typedef struct Ctrl_cmd_t {
 		feature_enable_disable_t    feat_ena_disable;
 
 		wifi_tx_power_t             wifi_tx_power;
+
+		fw_version_t                fw_version;
 
 		event_heartbeat_t           e_heartbeat;
 
@@ -543,6 +557,9 @@ ctrl_cmd_t * ota_end(ctrl_cmd_t req);
 
 /* Enable or disable specific feautures from hosted_features_t */
 ctrl_cmd_t * feature_config(ctrl_cmd_t req);
+
+/* Get FW Version */
+ctrl_cmd_t * get_fw_version(ctrl_cmd_t req);
 
 /* Get the interface up for interface `iface` */
 int interface_up(int sockfd, char* iface);

@@ -85,7 +85,8 @@ typedef enum {
 	ESP_PRIV_CAPABILITY,
 	ESP_PRIV_SPI_CLK_MHZ,
 	ESP_PRIV_FIRMWARE_CHIP_ID,
-	ESP_PRIV_TEST_RAW_TP
+	ESP_PRIV_TEST_RAW_TP,
+	ESP_PRIV_FW_DATA,
 } ESP_PRIV_TAG_TYPE;
 
 struct esp_priv_event {
@@ -94,6 +95,14 @@ struct esp_priv_event {
 	uint8_t		event_data[0];
 }__attribute__((packed));
 
+struct fw_version {
+	char		project_name[3];
+	uint8_t		major1;
+	uint8_t		major2;
+	uint8_t		minor;
+	uint8_t		revision_patch_1;
+	uint8_t		revision_patch_2;
+}__attribute__((packed));
 
 static inline uint16_t compute_checksum(uint8_t *buf, uint16_t len)
 {

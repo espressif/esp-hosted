@@ -602,6 +602,18 @@ static int ctrl_app_parse_resp(CtrlMsg *ctrl_msg, ctrl_cmd_t *app_resp)
 			CHECK_CTRL_MSG_NON_NULL(resp_enable_disable_feat);
 			CHECK_CTRL_MSG_FAILED(resp_enable_disable_feat);
 			break;
+		} case CTRL_RESP_GET_FW_VERSION: {
+			CHECK_CTRL_MSG_NON_NULL(resp_get_fw_version);
+			
+			strncpy(app_resp->u.fw_version.project_name,
+					ctrl_msg->resp_get_fw_version->name,
+					sizeof(app_resp->u.fw_version.project_name) - 1);
+			app_resp->u.fw_version.major_1 = ctrl_msg->resp_get_fw_version->major1;
+			app_resp->u.fw_version.major_2 = ctrl_msg->resp_get_fw_version->major2;
+			app_resp->u.fw_version.minor = ctrl_msg->resp_get_fw_version->minor;
+			app_resp->u.fw_version.revision_patch_1 = ctrl_msg->resp_get_fw_version->rev_patch1;
+			app_resp->u.fw_version.revision_patch_2 = ctrl_msg->resp_get_fw_version->rev_patch2;
+			break;
 		} default: {
 			command_log("Unsupported Control Resp[%u]\n", ctrl_msg->msg_id);
 			goto fail_parse_ctrl_msg;
@@ -1195,7 +1207,8 @@ int ctrl_app_send_req(ctrl_cmd_t *app_req)
 		case CTRL_REQ_GET_PS_MODE:
 		case CTRL_REQ_OTA_BEGIN:
 		case CTRL_REQ_OTA_END:
-		case CTRL_REQ_GET_WIFI_CURR_TX_POWER: {
+		case CTRL_REQ_GET_WIFI_CURR_TX_POWER:
+		case CTRL_REQ_GET_FW_VERSION: {
 			/* Intentional fallthrough & empty */
 			break;
 		} case CTRL_REQ_GET_AP_SCAN_LIST: {

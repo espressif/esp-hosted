@@ -167,3 +167,9 @@ ctrl_cmd_t * feature_config(ctrl_cmd_t req)
 	CTRL_SEND_REQ(CTRL_REQ_ENABLE_DISABLE);
 	CTRL_DECODE_RESP_IF_NOT_ASYNC();
 }
+
+ctrl_cmd_t * get_fw_version(ctrl_cmd_t req)
+{
+	CTRL_SEND_REQ(CTRL_REQ_GET_FW_VERSION);
+	CTRL_DECODE_RESP_IF_NOT_ASYNC();
+}

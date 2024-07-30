@@ -30,6 +30,7 @@
 #include "esp_serial.h"
 #include "esp_kernel_port.h"
 #include "esp_stats.h"
+#include "esp_fw_verify.h"
 
 #define SPI_INITIAL_CLK_MHZ     10
 #define NUMBER_1M               1000000
@@ -187,6 +188,8 @@ int process_init_event(u8 *evt_buf, u8 len)
 	struct esp_adapter *adapter = esp_get_adapter();
 	uint8_t prio_q_idx = 0;
 	int ret = 0;
+	struct fw_version *fw_p;
+	int fw_version_checked = 0;
 
 	if (!evt_buf)
 		return -1;
@@ -202,12 +205,26 @@ int process_init_event(u8 *evt_buf, u8 len)
 			hardware_type = *(pos+2);
 		} else if (*pos == ESP_PRIV_TEST_RAW_TP) {
 			process_test_capabilities(*(pos + 2));
+		} else if (*pos == ESP_PRIV_FW_DATA) {
+			fw_p = (struct fw_version *)(pos + 2);
+			ret = process_fw_data(fw_p, tag_len);
+			if (ret) {
+				esp_err("Incompatible ESP Firmware detected\n");
+				return -1;
+			}
+			fw_version_checked = 1;
 		} else {
 			esp_warn("Unsupported tag in event\n");
 		}
 		pos += (tag_len+2);
 		len_left -= (tag_len+2);
 	}
+
+	/* TODO: abort if strict firmware check is not performed */
+	if ((get_fw_check_type() == FW_CHECK_STRICT) && !fw_version_checked) {
+		esp_warn("ESP Firmware version was not checked");
+	}
+
 	if ((hardware_type != ESP_PRIV_FIRMWARE_CHIP_ESP32) &&
 	    (hardware_type != ESP_PRIV_FIRMWARE_CHIP_ESP32S2) &&
 	    (hardware_type != ESP_PRIV_FIRMWARE_CHIP_ESP32C2) &&

@@ -107,6 +107,11 @@ process_init_control_lib()
 try:
 	cmd = ctrl_cmd()
 	
+	# Display FW Version
+	print("===== Current ESP FW Version =====")
+	cmd.get_fw_version()
+	print("==================================")
+	
 	# Config heartbeat
 	if (STRESS_TEST & TEST_EVENTS):
 		for i in (range(STRESS_TEST_COUNT)):

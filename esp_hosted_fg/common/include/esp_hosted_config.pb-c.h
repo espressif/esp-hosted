@@ -56,6 +56,8 @@ typedef struct CtrlMsgReqConfigHeartbeat CtrlMsgReqConfigHeartbeat;
 typedef struct CtrlMsgRespConfigHeartbeat CtrlMsgRespConfigHeartbeat;
 typedef struct CtrlMsgReqEnableDisable CtrlMsgReqEnableDisable;
 typedef struct CtrlMsgRespEnableDisable CtrlMsgRespEnableDisable;
+typedef struct CtrlMsgReqGetFwVersion CtrlMsgReqGetFwVersion;
+typedef struct CtrlMsgRespGetFwVersion CtrlMsgRespGetFwVersion;
 typedef struct CtrlMsgEventESPInit CtrlMsgEventESPInit;
 typedef struct CtrlMsgEventHeartbeat CtrlMsgEventHeartbeat;
 typedef struct CtrlMsgEventStationDisconnectFromAP CtrlMsgEventStationDisconnectFromAP;
@@ -159,11 +161,12 @@ typedef enum _CtrlMsgId {
   CTRL_MSG_ID__Req_GetWifiCurrTxPower = 120,
   CTRL_MSG_ID__Req_ConfigHeartbeat = 121,
   CTRL_MSG_ID__Req_EnableDisable = 122,
+  CTRL_MSG_ID__Req_GetFwVersion = 123,
   /*
    * Add new control path command response before Req_Max
    * and update Req_Max 
    */
-  CTRL_MSG_ID__Req_Max = 123,
+  CTRL_MSG_ID__Req_Max = 124,
   /*
    ** Response Msgs *
    */
@@ -190,11 +193,12 @@ typedef enum _CtrlMsgId {
   CTRL_MSG_ID__Resp_GetWifiCurrTxPower = 220,
   CTRL_MSG_ID__Resp_ConfigHeartbeat = 221,
   CTRL_MSG_ID__Resp_EnableDisable = 222,
+  CTRL_MSG_ID__Resp_GetFwVersion = 223,
   /*
    * Add new control path command response before Resp_Max
    * and update Resp_Max 
    */
-  CTRL_MSG_ID__Resp_Max = 223,
+  CTRL_MSG_ID__Resp_Max = 224,
   /*
    ** Event Msgs *
    */
@@ -674,6 +678,31 @@ struct  CtrlMsgRespEnableDisable
     , 0 }
 
 
+struct  CtrlMsgReqGetFwVersion
+{
+  ProtobufCMessage base;
+};
+#define CTRL_MSG__REQ__GET_FW_VERSION__INIT \
+ { PROTOBUF_C_MESSAGE_INIT (&ctrl_msg__req__get_fw_version__descriptor) \
+     }
+
+
+struct  CtrlMsgRespGetFwVersion
+{
+  ProtobufCMessage base;
+  int32_t resp;
+  char *name;
+  uint32_t major1;
+  uint32_t major2;
+  uint32_t minor;
+  uint32_t rev_patch1;
+  uint32_t rev_patch2;
+};
+#define CTRL_MSG__RESP__GET_FW_VERSION__INIT \
+ { PROTOBUF_C_MESSAGE_INIT (&ctrl_msg__resp__get_fw_version__descriptor) \
+    , 0, (char *)protobuf_c_empty_string, 0, 0, 0, 0, 0 }
+
+
 /*
  ** Event structure *
  */
@@ -742,6 +771,7 @@ typedef enum {
   CTRL_MSG__PAYLOAD_REQ_GET_WIFI_CURR_TX_POWER = 120,
   CTRL_MSG__PAYLOAD_REQ_CONFIG_HEARTBEAT = 121,
   CTRL_MSG__PAYLOAD_REQ_ENABLE_DISABLE_FEAT = 122,
+  CTRL_MSG__PAYLOAD_REQ_GET_FW_VERSION = 123,
   CTRL_MSG__PAYLOAD_RESP_GET_MAC_ADDRESS = 201,
   CTRL_MSG__PAYLOAD_RESP_SET_MAC_ADDRESS = 202,
   CTRL_MSG__PAYLOAD_RESP_GET_WIFI_MODE = 203,
@@ -764,6 +794,7 @@ typedef enum {
   CTRL_MSG__PAYLOAD_RESP_GET_WIFI_CURR_TX_POWER = 220,
   CTRL_MSG__PAYLOAD_RESP_CONFIG_HEARTBEAT = 221,
   CTRL_MSG__PAYLOAD_RESP_ENABLE_DISABLE_FEAT = 222,
+  CTRL_MSG__PAYLOAD_RESP_GET_FW_VERSION = 223,
   CTRL_MSG__PAYLOAD_EVENT_ESP_INIT = 301,
   CTRL_MSG__PAYLOAD_EVENT_HEARTBEAT = 302,
   CTRL_MSG__PAYLOAD_EVENT_STATION_DISCONNECT_FROM__AP = 303,
@@ -817,6 +848,7 @@ struct  CtrlMsg
     CtrlMsgReqGetWifiCurrTxPower *req_get_wifi_curr_tx_power;
     CtrlMsgReqConfigHeartbeat *req_config_heartbeat;
     CtrlMsgReqEnableDisable *req_enable_disable_feat;
+    CtrlMsgReqGetFwVersion *req_get_fw_version;
     /*
      ** Responses *
      */
@@ -842,6 +874,7 @@ struct  CtrlMsg
     CtrlMsgRespGetWifiCurrTxPower *resp_get_wifi_curr_tx_power;
     CtrlMsgRespConfigHeartbeat *resp_config_heartbeat;
     CtrlMsgRespEnableDisable *resp_enable_disable_feat;
+    CtrlMsgRespGetFwVersion *resp_get_fw_version;
     /*
      ** Notifications *
      */
@@ -1635,6 +1668,44 @@ CtrlMsgRespEnableDisable *
 void   ctrl_msg__resp__enable_disable__free_unpacked
                      (CtrlMsgRespEnableDisable *message,
                       ProtobufCAllocator *allocator);
+/* CtrlMsgReqGetFwVersion methods */
+void   ctrl_msg__req__get_fw_version__init
+                     (CtrlMsgReqGetFwVersion         *message);
+size_t ctrl_msg__req__get_fw_version__get_packed_size
+                     (const CtrlMsgReqGetFwVersion   *message);
+size_t ctrl_msg__req__get_fw_version__pack
+                     (const CtrlMsgReqGetFwVersion   *message,
+                      uint8_t             *out);
+size_t ctrl_msg__req__get_fw_version__pack_to_buffer
+                     (const CtrlMsgReqGetFwVersion   *message,
+                      ProtobufCBuffer     *buffer);
+CtrlMsgReqGetFwVersion *
+       ctrl_msg__req__get_fw_version__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data);
+void   ctrl_msg__req__get_fw_version__free_unpacked
+                     (CtrlMsgReqGetFwVersion *message,
+                      ProtobufCAllocator *allocator);
+/* CtrlMsgRespGetFwVersion methods */
+void   ctrl_msg__resp__get_fw_version__init
+                     (CtrlMsgRespGetFwVersion         *message);
+size_t ctrl_msg__resp__get_fw_version__get_packed_size
+                     (const CtrlMsgRespGetFwVersion   *message);
+size_t ctrl_msg__resp__get_fw_version__pack
+                     (const CtrlMsgRespGetFwVersion   *message,
+                      uint8_t             *out);
+size_t ctrl_msg__resp__get_fw_version__pack_to_buffer
+                     (const CtrlMsgRespGetFwVersion   *message,
+                      ProtobufCBuffer     *buffer);
+CtrlMsgRespGetFwVersion *
+       ctrl_msg__resp__get_fw_version__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data);
+void   ctrl_msg__resp__get_fw_version__free_unpacked
+                     (CtrlMsgRespGetFwVersion *message,
+                      ProtobufCAllocator *allocator);
 /* CtrlMsgEventESPInit methods */
 void   ctrl_msg__event__espinit__init
                      (CtrlMsgEventESPInit         *message);
@@ -1855,6 +1926,12 @@ typedef void (*CtrlMsgReqEnableDisable_Closure)
 typedef void (*CtrlMsgRespEnableDisable_Closure)
                  (const CtrlMsgRespEnableDisable *message,
                   void *closure_data);
+typedef void (*CtrlMsgReqGetFwVersion_Closure)
+                 (const CtrlMsgReqGetFwVersion *message,
+                  void *closure_data);
+typedef void (*CtrlMsgRespGetFwVersion_Closure)
+                 (const CtrlMsgRespGetFwVersion *message,
+                  void *closure_data);
 typedef void (*CtrlMsgEventESPInit_Closure)
                  (const CtrlMsgEventESPInit *message,
                   void *closure_data);
@@ -1927,6 +2004,8 @@ extern const ProtobufCMessageDescriptor ctrl_msg__req__config_heartbeat__descrip
 extern const ProtobufCMessageDescriptor ctrl_msg__resp__config_heartbeat__descriptor;
 extern const ProtobufCMessageDescriptor ctrl_msg__req__enable_disable__descriptor;
 extern const ProtobufCMessageDescriptor ctrl_msg__resp__enable_disable__descriptor;
+extern const ProtobufCMessageDescriptor ctrl_msg__req__get_fw_version__descriptor;
+extern const ProtobufCMessageDescriptor ctrl_msg__resp__get_fw_version__descriptor;
 extern const ProtobufCMessageDescriptor ctrl_msg__event__espinit__descriptor;
 extern const ProtobufCMessageDescriptor ctrl_msg__event__heartbeat__descriptor;
 extern const ProtobufCMessageDescriptor ctrl_msg__event__station_disconnect_from_ap__descriptor;

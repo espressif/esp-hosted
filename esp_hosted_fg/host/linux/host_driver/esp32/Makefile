@@ -78,7 +78,7 @@ PWD := $(shell pwd)
 
 obj-m := $(MODULE_NAME).o
 $(MODULE_NAME)-y := main.o esp_stats.o $(module_objects)
-$(MODULE_NAME)-y += esp_serial.o esp_rb.o
+$(MODULE_NAME)-y += esp_serial.o esp_rb.o esp_fw_verify.o
 
 all: clean
 	make ARCH=$(ARCH) CROSS_COMPILE=$(CROSS_COMPILE) -C $(KERNEL) M=$(PWD) modules

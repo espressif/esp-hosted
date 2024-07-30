@@ -54,6 +54,7 @@
 #define ENABLE_BT                          "enable_bt"
 #define DISABLE_BT                         "disable_bt"
 
+#define GET_FW_VERSION                     "get_fw_version"
 
 #define SSID_LENGTH                         32
 #define PWD_LENGTH                          64

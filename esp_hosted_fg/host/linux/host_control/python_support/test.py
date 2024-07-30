@@ -120,10 +120,17 @@ class CustomCompleter(Completer):
 					method_name, start_position=-len(word), display_meta=meta,
 				)
 
-
+# exit_wrap() may be called multiple times
+# make sure process_deinit_control_lib is only triggered once
+deinit_control_lib_called = False
 
 def exit_wrap():
-	process_deinit_control_lib(True)
+	global deinit_control_lib_called
+
+	if deinit_control_lib_called is not True:
+		process_deinit_control_lib(True)
+		deinit_control_lib_called = True
+
 	raise SystemExit('Exit')
 
 
@@ -159,6 +166,12 @@ def main():
 
 	process_init_control_lib()
 
+	# Display FW Version
+	print("===== Current ESP FW Version =====")
+	cmd = ctrl_cmd()
+	cmd.get_fw_version()
+	print("==================================")
+	
 	argumentList = sys.argv[1:]
 	if argumentList and len(argumentList):
 		try:

@@ -29,6 +29,7 @@
 #include "mempool.h"
 #include "stats.h"
 #include "esp_timer.h"
+#include "esp_fw_version.h"
 
 static const char TAG[] = "SPI_DRIVER";
 /* SPI settings */
@@ -260,6 +261,7 @@ void generate_startup_event(uint8_t cap)
 	uint16_t len = 0;
 	uint8_t raw_tp_cap = 0;
 	uint32_t total_len = 0;
+	struct fw_version fw_ver = { 0 };
 
 	buf_handle.payload = spi_buffer_tx_alloc(MEMSET_REQUIRED);
 
@@ -296,6 +298,22 @@ void generate_startup_event(uint8_t cap)
 	*pos = ESP_PRIV_TEST_RAW_TP;        pos++;len++;
 	*pos = LENGTH_1_BYTE;               pos++;len++;
 	*pos = raw_tp_cap;                  pos++;len++;
+
+	/* fill structure with fw info */
+	strncpy(fw_ver.project_name, PROJECT_NAME, sizeof(fw_ver.project_name) - 1);
+	fw_ver.project_name[sizeof(fw_ver.project_name) - 1] = '\0';
+	fw_ver.major1 = PROJECT_VERSION_MAJOR_1;
+	fw_ver.major2 = PROJECT_VERSION_MAJOR_2;
+	fw_ver.minor  = PROJECT_VERSION_MINOR;
+	fw_ver.revision_patch_1 = PROJECT_REVISION_PATCH_1;
+	fw_ver.revision_patch_2 = PROJECT_REVISION_PATCH_2;
+
+	/* TLV - Firmware Version */
+	*pos = ESP_PRIV_FW_DATA;            pos++;len++;
+	*pos = sizeof(fw_ver);              pos++;len++;
+	memcpy(pos, &fw_ver, sizeof(fw_ver));
+	pos += sizeof(fw_ver);
+	len += sizeof(fw_ver);
 
 	/* TLVs end */
 
@@ -531,21 +549,21 @@ static void IRAM_ATTR gpio_disable_hs_isr_handler(void* arg)
 
 static void register_hs_disable_pin(uint32_t gpio_num)
 {
-    if (gpio_num != -1) {
-    gpio_reset_pin(gpio_num);
+	if (gpio_num != -1) {
+		gpio_reset_pin(gpio_num);
 
-    gpio_config_t slave_disable_hs_pin_conf={
-        .intr_type=GPIO_INTR_DISABLE,
-        .mode=GPIO_MODE_INPUT,
-        .pull_up_en=1,
-        .pin_bit_mask=(1<<gpio_num)
-    };
+		gpio_config_t slave_disable_hs_pin_conf={
+			.intr_type=GPIO_INTR_DISABLE,
+			.mode=GPIO_MODE_INPUT,
+			.pull_up_en=1,
+			.pin_bit_mask=(1<<gpio_num)
+		};
 
-    gpio_config(&slave_disable_hs_pin_conf);
-    gpio_set_intr_type(gpio_num, GPIO_INTR_NEGEDGE);
-    gpio_install_isr_service(0);
-    gpio_isr_handler_add(gpio_num, gpio_disable_hs_isr_handler, NULL);
-    }
+		gpio_config(&slave_disable_hs_pin_conf);
+		gpio_set_intr_type(gpio_num, GPIO_INTR_NEGEDGE);
+		gpio_install_isr_service(0);
+		gpio_isr_handler_add(gpio_num, gpio_disable_hs_isr_handler, NULL);
+	}
 }
 
 static interface_handle_t * esp_spi_init(void)

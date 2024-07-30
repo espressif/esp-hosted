@@ -76,5 +76,6 @@ int test_disable_bt(void);
 int test_enable_bt(void);
 int test_disable_wifi(void);
 int test_enable_wifi(void);
+int test_get_fw_version(void);
 
 #endif

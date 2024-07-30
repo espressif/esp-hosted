@@ -22,6 +22,7 @@
 #include "esp_hosted_config.pb-c.h"
 #include "esp_ota_ops.h"
 #include "slave_bt.h"
+#include "esp_fw_version.h"
 
 #define MAC_STR_LEN                 17
 #define MAC2STR(a)                  (a)[0], (a)[1], (a)[2], (a)[3], (a)[4], (a)[5]
@@ -1782,6 +1783,39 @@ err:
 	return ESP_OK;
 }
 
+/* Function to return Firmware Version */
+static esp_err_t req_get_fw_version_handler (CtrlMsg *req,
+		CtrlMsg *resp, void *priv_data)
+{
+	CtrlMsgRespGetFwVersion *resp_payload = NULL;
+
+	if (!req || !resp) {
+		ESP_LOGE(TAG, "Invalid parameters");
+		return ESP_FAIL;
+	}
+
+	resp_payload = (CtrlMsgRespGetFwVersion *)
+		calloc(1,sizeof(CtrlMsgRespGetFwVersion));
+	if (!resp_payload) {
+		ESP_LOGE(TAG,"Failed to allocate memory");
+		return ESP_ERR_NO_MEM;
+	}
+
+	ctrl_msg__resp__get_fw_version__init(resp_payload);
+	resp->payload_case = CTRL_MSG__PAYLOAD_RESP_GET_FW_VERSION;
+	resp->resp_get_fw_version = resp_payload;
+
+	resp_payload->name = PROJECT_NAME;
+	resp_payload->major1 = PROJECT_VERSION_MAJOR_1;
+	resp_payload->major2 = PROJECT_VERSION_MAJOR_2;
+	resp_payload->minor = PROJECT_VERSION_MINOR;
+	resp_payload->rev_patch1 = PROJECT_REVISION_PATCH_1;
+	resp_payload->rev_patch2 = PROJECT_REVISION_PATCH_2;
+
+	resp_payload->resp = SUCCESS;
+	return ESP_OK;
+}
+
 static void heartbeat_timer_cb(TimerHandle_t xTimer)
 {
 	send_event_to_host(CTRL_MSG_ID__Event_Heartbeat);
@@ -2052,6 +2086,10 @@ static esp_ctrl_msg_req_t req_table[] = {
 		.req_num = CTRL_MSG_ID__Req_EnableDisable,
 		.command_handler = req_enable_disable
 	},
+	{
+		.req_num = CTRL_MSG_ID__Req_GetFwVersion,
+		.command_handler = req_get_fw_version_handler
+	},
 };
 
 
@@ -2215,6 +2253,9 @@ static void esp_ctrl_msg_cleanup(CtrlMsg *resp)
 			break;
 		} case (CTRL_MSG_ID__Resp_EnableDisable) : {
 			mem_free(resp->resp_enable_disable_feat);
+			break;
+		} case (CTRL_MSG_ID__Resp_GetFwVersion) : {
+			mem_free(resp->resp_get_fw_version);
 			break;
 		} case (CTRL_MSG_ID__Event_ESPInit) : {
 			mem_free(resp->event_esp_init);

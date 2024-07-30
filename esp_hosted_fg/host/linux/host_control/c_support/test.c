@@ -33,12 +33,12 @@
 
 static void inline usage(char *argv[])
 {
-	printf("sudo %s \n[\n %s\t\t||\n %s\t\t||\n %s\t\t||\n %s\t\t||\n %s\t\t||\n %s\t\t\t||\n %s\t\t\t||\n %s\t\t\t||\n %s\t\t\t||\n %s\t\t\t||\n %s\t\t||\n %s\t\t||\n %s\t\t\t||\n %s\t\t||\n %s\t||\n %s\t\t\t||\n %s\t||\n %s\t||\n %s\t\t||\n %s\t\t||\n %s <ESP 'network_adapter.bin' path> ||\n %s\t\t\t||\n %s\t\t\t||\n %s\t\t\t||\n %s\t\t\n]\n",
+	printf("sudo %s \n[\n %s\t\t||\n %s\t\t||\n %s\t\t||\n %s\t\t||\n %s\t\t||\n %s\t\t\t||\n %s\t\t\t||\n %s\t\t\t||\n %s\t\t\t||\n %s\t\t\t||\n %s\t\t||\n %s\t\t||\n %s\t\t\t||\n %s\t\t||\n %s\t||\n %s\t\t\t||\n %s\t||\n %s\t||\n %s\t\t||\n %s\t\t||\n %s <ESP 'network_adapter.bin' path> ||\n %s\t\t\t||\n %s\t\t\t||\n %s\t\t\t||\n %s\t\t\t||\n %s\t\t\t||\n]\n",
 		argv[0], SET_STA_MAC_ADDR, GET_STA_MAC_ADDR, SET_SOFTAP_MAC_ADDR, GET_SOFTAP_MAC_ADDR, GET_AP_SCAN_LIST,
 		STA_CONNECT, GET_STA_CONFIG, STA_DISCONNECT, SET_WIFI_MODE, GET_WIFI_MODE,
 		RESET_SOFTAP_VENDOR_IE, SET_SOFTAP_VENDOR_IE, SOFTAP_START, GET_SOFTAP_CONFIG, SOFTAP_CONNECTED_STA_LIST,
 		SOFTAP_STOP, SET_WIFI_POWERSAVE_MODE, GET_WIFI_POWERSAVE_MODE, SET_WIFI_MAX_TX_POWER, GET_WIFI_CURR_TX_POWER,
-		OTA, ENABLE_WIFI, DISABLE_WIFI, ENABLE_BT, DISABLE_BT);
+		OTA, ENABLE_WIFI, DISABLE_WIFI, ENABLE_BT, DISABLE_BT, GET_FW_VERSION);
 	printf("\n\nFor example, \nsudo %s %s\n",
 		argv[0], SET_STA_MAC_ADDR);
 }
@@ -71,6 +71,7 @@ static int parse_cli_cmd(char *in_cmd, char *args[])
 	EXEC_IF_CMD_EQUALS(DISABLE_WIFI, test_disable_wifi());
 	EXEC_IF_CMD_EQUALS(ENABLE_BT, test_enable_bt());
 	EXEC_IF_CMD_EQUALS(DISABLE_BT, test_disable_bt());
+	EXEC_IF_CMD_EQUALS(GET_FW_VERSION, test_get_fw_version());
 	EXEC_IF_CMD_EQUALS(OTA, test_ota(args[0]));
 
 	return SUCCESS;
@@ -140,6 +141,11 @@ int main(int argc, char *argv[])
 		printf("Err Exit\n");
 		return -1;
 	}
+
+	/* Print FW Version by Default */
+	printf("===== Current ESP FW Version =====\n");
+	test_get_fw_version();
+	printf("==================================\n");
 
 	cli_cmd = argv[1];
 	parse_cli_cmd(cli_cmd, &argv[2]);

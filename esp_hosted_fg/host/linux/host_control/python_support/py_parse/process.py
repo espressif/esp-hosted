@@ -16,6 +16,7 @@ import os
 from commands_lib import *
 from hosted_py_header import *
 import re
+import subprocess
 
 os_dhcp_down = "sudo dhclient ethsta0 -r"
 os_ifdown_cmd = "sudo ifconfig ethsta0 down"
@@ -23,9 +24,45 @@ os_set_mac = "sudo ifconfig ethsta0 hw ether "
 os_ifup_cmd = "sudo ifconfig ethsta0 up"
 os_dhcp_up = "sudo dhclient ethsta0 -v"
 
+sta_interface = "ethsta0"
+softap_interface = "ethap0"
+
+down_hci_instance_cmd = "sudo hciconfig | grep  'Bus: SDIO\\| Bus: UART\\| Bus: SPI' | awk -F: '{print $1}' | xargs -I{} sudo hciconfig {} down"
+reset_hci_instance_cmd = "sudo hciconfig | grep  'Bus: SDIO\\| Bus: UART\\| Bus: SPI' | awk -F: '{print $1}' | xargs -I{} sudo hciconfig {} reset"
+
 heartbeat_started = False
 
+def down_net_interface(interface):
+	result = subprocess.run(["ifconfig", interface, "down"])
+	if (result.returncode):
+		print("ifconfig " + interface + " down FAILED");
 
+def up_net_interface(interface, mac_addr_str):
+	result = subprocess.run(["ifconfig", interface, "down"])
+	if (result.returncode):
+		print("ifconfig " + interface + " down FAILED");
+
+	result = subprocess.run(["ifconfig", interface, "hw", "ether", mac_addr_str])
+	if (result.returncode):
+		print("ifconfig " + interface + " hw ether " + mac_addr_str + " FAILED");
+
+	result = subprocess.run(["ifconfig", interface, "up"])
+	if (result.returncode):
+		print("ifconfig " + interface + " up FAILED");
+
+def down_hci_instance():
+	result = subprocess.run(down_hci_instance_cmd, shell=True)
+	if (result.returncode):
+		print("Failed to bring Bluetooth interface down")
+	else:
+		print("Bluetooth interface set down successfully")
+
+def reset_hci_instance():
+	result = subprocess.run(reset_hci_instance_cmd, shell=True)
+	if (result.returncode):
+		print("Failed to reset Bluetooth interface")
+	else:
+		print("Bluetooth interface reset successfully")
 
 def process_is_param_missing(x):
 	if not x:
@@ -239,6 +276,42 @@ def process_wifi_curr_tx_power():
 	test_sync_wifi_get_curr_tx_power()
 	return ""
 
+def process_enable_wifi():
+	global sta_interface
+	global softap_interface
+
+	test_feature_enable_wifi()
+	test_sync_station_mode_get_mac_addr()
+	sta_mac_addr = get_mac_addr_str()
+	up_net_interface(sta_interface, sta_mac_addr)
+
+	test_sync_softap_mode_get_mac_addr()
+	softap_mac_addr = get_mac_addr_str()
+	up_net_interface(softap_interface, softap_mac_addr)
+	return ""
+
+def process_disable_wifi():
+	global sta_interface
+	global softap_interface
+
+	test_feature_disable_wifi()
+	down_net_interface(sta_interface);
+	down_net_interface(softap_interface);
+	return ""
+
+def process_enable_bluetooth():
+	test_feature_enable_bt()
+	reset_hci_instance()
+	return ""
+
+def process_disable_bluetooth():
+	test_feature_disable_bt()
+	down_hci_instance()
+	return ""
+
+def process_get_fw_version():
+	test_get_fw_version()
+	return ""
 
 def process_ota_update(url):
 	return test_sync_ota(url)
