@@ -89,7 +89,7 @@ static uint32_t sdio_rx_byte_count = 0;
 // one-time trigger to start write thread
 static bool sdio_start_write_thread = false;
 
-#if H_SDIO_HOST_STREAMING_MODE
+#if H_SDIO_HOST_RX_MODE == H_SDIO_HOST_STREAMING_MODE
 static uint32_t recv_buf_size = 0;
 static uint8_t * recv_buf = NULL;
 #endif
@@ -175,7 +175,7 @@ static int sdio_get_tx_buffer_num(uint32_t *tx_num, bool is_lock_needed)
 	return ret;
 }
 
-#if !H_SDIO_ALWAYS_HOST_RX_MAX_TRANSPORT_SIZE
+#if H_SDIO_HOST_RX_MODE != H_SDIO_ALWAYS_HOST_RX_MAX_TRANSPORT_SIZE
 
 static int sdio_get_len_from_slave(uint32_t *rx_size, bool is_lock_needed)
 {
@@ -204,7 +204,7 @@ static int sdio_get_len_from_slave(uint32_t *rx_size, bool is_lock_needed)
 		temp = ESP_RX_BYTE_MAX - sdio_rx_byte_count;
 		len = temp + len;
 
-#if !H_SDIO_HOST_STREAMING_MODE // in streaming mode we may get very large buffer sizes
+#if H_SDIO_HOST_RX_MODE != H_SDIO_HOST_STREAMING_MODE
 		if (len > ESP_RX_BUFFER_SIZE) {
 			ESP_LOGI(TAG, "%s: Len from slave[%ld] exceeds max [%d]",
 					__func__, len, ESP_RX_BUFFER_SIZE);
@@ -489,7 +489,7 @@ static esp_err_t sdio_push_pkt_to_queue(uint8_t * rxbuff, uint16_t len, uint16_t
  * These function definitions depend on whether we are in SDIO
  * streaming mode or not.
  */
-#if !H_SDIO_HOST_STREAMING_MODE
+#if H_SDIO_HOST_RX_MODE != H_SDIO_HOST_STREAMING_MODE
 // SDIO packet mode
 // return a buffer big enough to contain the data
 static uint8_t * sdio_rx_get_buffer(uint32_t len)
@@ -626,7 +626,7 @@ static void sdio_read_task(void const* pvParameters)
 	create_debugging_tasks();
 
 	// display which SDIO mode we are operating in
-#if H_SDIO_HOST_STREAMING_MODE
+#if H_SDIO_HOST_RX_MODE == H_SDIO_HOST_STREAMING_MODE
 	ESP_LOGI(TAG, "SDIO Host operating in STREAMING MODE");
 #else
 	ESP_LOGI(TAG, "SDIO Host operating in PACKET MODE");
@@ -674,7 +674,7 @@ static void sdio_read_task(void const* pvParameters)
 			continue;
 		}
 
-#if H_SDIO_ALWAYS_HOST_RX_MAX_TRANSPORT_SIZE
+#if H_SDIO_HOST_RX_MODE == H_SDIO_ALWAYS_HOST_RX_MAX_TRANSPORT_SIZE
 		/* Bypass the check to find the bytes to be read from slave to host
 		 * always assume max transport size to be read.
 		 * slave sdio driver will automatically pad the remaining bytes after

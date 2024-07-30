@@ -54,7 +54,7 @@ ESP_EVENT_DECLARE_BASE(WIFI_EVENT);
 #define HOSTED_BLOCK_MAX                             portMAX_DELAY
 
 #define RPC_TASK_STACK_SIZE                          (5*1024)
-#define RPC_TASK_PRIO                                (ESP_TASK_PRIO_MIN + 5)
+#define RPC_TASK_PRIO                                23
 #define DFLT_TASK_STACK_SIZE                         (5*1024)
 #define DFLT_TASK_PRIO                               23
 
@@ -184,7 +184,5 @@ struct serial_drv_handle_t;
 /* Timer handle */
 struct timer_handle_t;
 extern struct mempool * nw_mp_g;
-
-ESP_EVENT_DECLARE_BASE(WIFI_EVENT);
 
 #endif /*__OS_WRAPPER_H*/

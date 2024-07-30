@@ -288,6 +288,16 @@ int hosted_sdio_card_init(void *ctx)
 	else
 		config.flags = SDMMC_HOST_FLAG_1BIT;
 	config.max_freq_khz = H_SDIO_CLOCK_FREQ_KHZ;
+	ESP_LOGI(TAG, "SDIO master: Data-Lines: %d-bit Freq(KHz)[%u KHz]", H_SDIO_BUS_WIDTH==4? 4:1,
+			config.max_freq_khz);
+	ESP_LOGI(TAG, "GPIOs: CLK[%u] CMD[%u] D0[%u] D1[%u] D2[%u] D3[%u] Slave_Reset[%u]",
+			CONFIG_ESP_SDIO_PIN_CLK, CONFIG_ESP_SDIO_PIN_CMD,
+			CONFIG_ESP_SDIO_PIN_D0, CONFIG_ESP_SDIO_PIN_D1,
+			CONFIG_ESP_SDIO_PIN_D2, CONFIG_ESP_SDIO_PIN_D3,
+			CONFIG_ESP_GPIO_SLAVE_RESET_SLAVE);
+	ESP_LOGI(TAG, "Queues: Tx[%u] Rx[%u] SDIO-Rx-Mode[%u]",
+			CONFIG_ESP_SDIO_TX_Q_SIZE, CONFIG_ESP_SDIO_RX_Q_SIZE,
+			H_SDIO_HOST_RX_MODE);
 
 #ifdef CONFIG_IDF_TARGET_ESP32P4
 	// Set this flag to allocate aligned buffer of 512 bytes to meet

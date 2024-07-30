@@ -47,12 +47,18 @@ uint8_t restart_after_slave_ota = 0;
 #define OTA_FROM_WEB_URL                                  1
 
 
-#define RPC_DEFAULT_REQ() {                              \
-  .msg_type = RPC_TYPE__Req,                             \
-  .rpc_rsp_cb = NULL,                                    \
-  .rsp_timeout_sec = DEFAULT_RPC_RSP_TIMEOUT, /* 5 sec*/ \
-  /*.wait_prev_cmd_completion = WAIT_TIME_B2B_RPC_REQ,*/     \
+
+static ctrl_cmd_t * RPC_DEFAULT_REQ(void)
+{
+  ctrl_cmd_t *new_req = (ctrl_cmd_t*)g_h.funcs->_h_calloc(1, sizeof(ctrl_cmd_t));
+  assert(new_req);
+  new_req->msg_type = RPC_TYPE__Req;
+  new_req->rpc_rsp_cb = NULL;
+  new_req->rsp_timeout_sec = DEFAULT_RPC_RSP_TIMEOUT; /* 5 sec */
+  /* new_req->wait_prev_cmd_completion = WAIT_TIME_B2B_RPC_REQ; */
+  return new_req;
 }
+
 
 #define CLEANUP_RPC(msg) do {                            \
   if (msg) {                                             \
@@ -108,13 +114,13 @@ static int rpc_event_callback(ctrl_cmd_t * app_event)
 	ESP_LOGV(TAG, "%u",app_event->msg_id);
 	if (!app_event || (app_event->msg_type != RPC_TYPE__Event)) {
 		if (app_event)
-			ESP_LOGE(TAG, "Msg type is not event[%u]",app_event->msg_type);
+			ESP_LOGE(TAG, "Recvd msg [0x%x] is not event",app_event->msg_type);
 		goto fail_parsing;
 	}
 
 	if ((app_event->msg_id <= RPC_ID__Event_Base) ||
 	    (app_event->msg_id >= RPC_ID__Event_Max)) {
-		ESP_LOGE(TAG, "Event Msg ID[%u] is not correct",app_event->msg_id);
+		ESP_LOGE(TAG, "Event Msg ID[0x%x] is not correct",app_event->msg_id);
 		goto fail_parsing;
 	}
 
@@ -200,7 +206,7 @@ static int rpc_event_callback(ctrl_cmd_t * app_event)
 				p_e, sizeof(wifi_event_sta_scan_done_t), HOSTED_BLOCK_MAX);
 			break;
 		} default: {
-			ESP_LOGW(TAG, "%s Invalid event[%u] to parse\n\r",
+			ESP_LOGW(TAG, "%s Invalid event[0x%x] to parse\n\r",
 				get_timestamp(ts, MIN_TIMESTAMP_STR_SIZE), app_event->msg_id);
 			break;
 		}
@@ -327,12 +333,12 @@ int rpc_rsp_callback(ctrl_cmd_t * app_resp)
 	uint16_t i = 0;
 	if (!app_resp || (app_resp->msg_type != RPC_TYPE__Resp)) {
 		if (app_resp)
-			ESP_LOGE(TAG, "Msg type is not response[%u]",app_resp->msg_type);
+			ESP_LOGE(TAG, "Recvd Msg[0x%x] is not response",app_resp->msg_type);
 		goto fail_resp;
 	}
 
 	if ((app_resp->msg_id <= RPC_ID__Resp_Base) || (app_resp->msg_id >= RPC_ID__Resp_Max)) {
-		ESP_LOGE(TAG, "Response Msg ID[%x] is not correct",app_resp->msg_id);
+		ESP_LOGE(TAG, "Response Msg ID[0x%x] is not correct",app_resp->msg_id);
 		goto fail_resp;
 	}
 
@@ -459,7 +465,7 @@ int rpc_rsp_callback(ctrl_cmd_t * app_resp)
 		/* Intended fallthrough */
 		break;
 	} default: {
-		ESP_LOGE(TAG, "Invalid Response[%u] to parse", app_resp->msg_id);
+		ESP_LOGE(TAG, "Invalid Response[0x%x] to parse", app_resp->msg_id);
 		goto fail_resp;
 	}
 
@@ -479,10 +485,10 @@ fail_resp:
 int rpc_get_wifi_mode(void)
 {
 	/* implemented Asynchronous */
-	ctrl_cmd_t req = RPC_DEFAULT_REQ();
+	ctrl_cmd_t *req = RPC_DEFAULT_REQ();
 
 	/* register callback for reply */
-	req.rpc_rsp_cb = rpc_rsp_callback;
+	req->rpc_rsp_cb = rpc_rsp_callback;
 
 	wifi_get_mode(req);
 
@@ -493,10 +499,10 @@ int rpc_get_wifi_mode(void)
 int rpc_set_wifi_mode(wifi_mode_t mode)
 {
 	/* implemented synchronous */
-	ctrl_cmd_t req = RPC_DEFAULT_REQ();
+	ctrl_cmd_t *req = RPC_DEFAULT_REQ();
 	ctrl_cmd_t *resp = NULL;
 
-	req.u.wifi_mode.mode = mode;
+	req->u.wifi_mode.mode = mode;
 	resp = wifi_set_mode(req);
 
 	return rpc_rsp_callback(resp);
@@ -527,9 +533,9 @@ int rpc_wifi_get_mac(wifi_interface_t mode, uint8_t out_mac[6])
 	ctrl_cmd_t *resp = NULL;
 
 	/* implemented synchronous */
-	ctrl_cmd_t req = RPC_DEFAULT_REQ();
+	ctrl_cmd_t *req = RPC_DEFAULT_REQ();
 
-	req.u.wifi_mac.mode = mode;
+	req->u.wifi_mac.mode = mode;
 	resp = wifi_get_mac(req);
 
 	if (resp && resp->resp_event_status == SUCCESS) {
@@ -548,11 +554,11 @@ int rpc_station_mode_get_mac(uint8_t mac[6])
 int rpc_wifi_set_mac(wifi_interface_t mode, const uint8_t mac[6])
 {
 	/* implemented synchronous */
-	ctrl_cmd_t req = RPC_DEFAULT_REQ();
+	ctrl_cmd_t *req = RPC_DEFAULT_REQ();
 	ctrl_cmd_t *resp = NULL;
 
-	req.u.wifi_mac.mode = mode;
-	g_h.funcs->_h_memcpy(req.u.wifi_mac.mac, mac, BSSID_BYTES_SIZE);
+	req->u.wifi_mac.mode = mode;
+	g_h.funcs->_h_memcpy(req->u.wifi_mac.mac, mac, BSSID_BYTES_SIZE);
 
 	resp = wifi_set_mac(req);
 	return rpc_rsp_callback(resp);
@@ -568,16 +574,16 @@ int rpc_softap_mode_get_mac_addr(uint8_t mac[6])
 //		int is_wpa3_supported, int listen_interval)
 //{
 //	/* implemented Asynchronous */
-//	ctrl_cmd_t req = RPC_DEFAULT_REQ();
+//	ctrl_cmd_t *req = RPC_DEFAULT_REQ();
 //
-//	strcpy((char *)&req.u.hosted_ap_config.ssid, ssid);
-//	strcpy((char *)&req.u.hosted_ap_config.pwd, pwd);
-//	strcpy((char *)&req.u.hosted_ap_config.bssid, bssid);
-//	req.u.hosted_ap_config.is_wpa3_supported = is_wpa3_supported;
-//	req.u.hosted_ap_config.listen_interval = listen_interval;
+//	strcpy((char *)&req->u.hosted_ap_config.ssid, ssid);
+//	strcpy((char *)&req->u.hosted_ap_config.pwd, pwd);
+//	strcpy((char *)&req->u.hosted_ap_config.bssid, bssid);
+//	req->u.hosted_ap_config.is_wpa3_supported = is_wpa3_supported;
+//	req->u.hosted_ap_config.listen_interval = listen_interval;
 //
 //	/* register callback for handling reply asynch-ly */
-//	req.rpc_rsp_cb = rpc_rsp_callback;
+//	req->rpc_rsp_cb = rpc_rsp_callback;
 //
 //	wifi_connect_ap(req);
 //
@@ -588,14 +594,14 @@ int rpc_softap_mode_get_mac_addr(uint8_t mac[6])
 //		int is_wpa3_supported, int listen_interval)
 //{
 //	/* implemented Asynchronous */
-//	ctrl_cmd_t req = RPC_DEFAULT_REQ();
+//	ctrl_cmd_t *req = RPC_DEFAULT_REQ();
 //	ctrl_cmd_t *resp = NULL;
 //
-//	strcpy((char *)&req.u.hosted_ap_config.ssid, ssid);
-//	strcpy((char *)&req.u.hosted_ap_config.pwd, pwd);
-//	strcpy((char *)&req.u.hosted_ap_config.bssid, bssid);
-//	req.u.hosted_ap_config.is_wpa3_supported = is_wpa3_supported;
-//	req.u.hosted_ap_config.listen_interval = listen_interval;
+//	strcpy((char *)&req->u.hosted_ap_config.ssid, ssid);
+//	strcpy((char *)&req->u.hosted_ap_config.pwd, pwd);
+//	strcpy((char *)&req->u.hosted_ap_config.bssid, bssid);
+//	req->u.hosted_ap_config.is_wpa3_supported = is_wpa3_supported;
+//	req->u.hosted_ap_config.listen_interval = listen_interval;
 //
 //	resp = wifi_connect_ap(req);
 //
@@ -605,7 +611,7 @@ int rpc_softap_mode_get_mac_addr(uint8_t mac[6])
 //int rpc_station_mode_get_info(void)
 //{
 //	/* implemented synchronous */
-//	ctrl_cmd_t req = RPC_DEFAULT_REQ();
+//	ctrl_cmd_t *req = RPC_DEFAULT_REQ();
 //	ctrl_cmd_t *resp = NULL;
 //
 //	resp = wifi_get_ap_config(req);
@@ -616,8 +622,8 @@ int rpc_softap_mode_get_mac_addr(uint8_t mac[6])
 //int rpc_get_available_wifi(void)
 //{
 //	/* implemented synchronous */
-//	ctrl_cmd_t req = RPC_DEFAULT_REQ();
-//	req.rsp_timeout_sec = 300;
+//	ctrl_cmd_t *req = RPC_DEFAULT_REQ();
+//	req->rsp_timeout_sec = 300;
 //
 //	ctrl_cmd_t *resp = NULL;
 //
@@ -629,7 +635,7 @@ int rpc_softap_mode_get_mac_addr(uint8_t mac[6])
 //int rpc_station_mode_disconnect(void)
 //{
 //	/* implemented synchronous */
-//	ctrl_cmd_t req = RPC_DEFAULT_REQ();
+//	ctrl_cmd_t *req = RPC_DEFAULT_REQ();
 //	ctrl_cmd_t *resp = NULL;
 //
 //	resp = wifi_disconnect_ap(req);
@@ -641,18 +647,18 @@ int rpc_softap_mode_get_mac_addr(uint8_t mac[6])
 //		int encryption_mode, int max_conn, int ssid_hidden, int bw)
 //{
 //	/* implemented synchronous */
-//	ctrl_cmd_t req = RPC_DEFAULT_REQ();
+//	ctrl_cmd_t *req = RPC_DEFAULT_REQ();
 //	ctrl_cmd_t *resp = NULL;
 //
-//	strncpy((char *)&req.u.wifi_softap_config.ssid,
+//	strncpy((char *)&req->u.wifi_softap_config.ssid,
 //			ssid, MAX_MAC_STR_LEN-1);
-//	strncpy((char *)&req.u.wifi_softap_config.pwd,
+//	strncpy((char *)&req->u.wifi_softap_config.pwd,
 //			pwd, MAX_MAC_STR_LEN-1);
-//	req.u.wifi_softap_config.channel = channel;
-//	req.u.wifi_softap_config.encryption_mode = encryption_mode;
-//	req.u.wifi_softap_config.max_connections = max_conn;
-//	req.u.wifi_softap_config.ssid_hidden = ssid_hidden;
-//	req.u.wifi_softap_config.bandwidth = bw;
+//	req->u.wifi_softap_config.channel = channel;
+//	req->u.wifi_softap_config.encryption_mode = encryption_mode;
+//	req->u.wifi_softap_config.max_connections = max_conn;
+//	req->u.wifi_softap_config.ssid_hidden = ssid_hidden;
+//	req->u.wifi_softap_config.bandwidth = bw;
 //
 //	resp = wifi_start_softap(req);
 //
@@ -662,7 +668,7 @@ int rpc_softap_mode_get_mac_addr(uint8_t mac[6])
 //int rpc_softap_mode_get_info(void)
 //{
 //	/* implemented synchronous */
-//	ctrl_cmd_t req = RPC_DEFAULT_REQ();
+//	ctrl_cmd_t *req = RPC_DEFAULT_REQ();
 //	ctrl_cmd_t *resp = NULL;
 //
 //	resp = wifi_get_softap_config(req);
@@ -673,7 +679,7 @@ int rpc_softap_mode_get_mac_addr(uint8_t mac[6])
 //int rpc_softap_mode_connected_clients_info(void)
 //{
 //	/* implemented synchronous */
-//	ctrl_cmd_t req = RPC_DEFAULT_REQ();
+//	ctrl_cmd_t *req = RPC_DEFAULT_REQ();
 //	ctrl_cmd_t *resp = NULL;
 //
 //	resp = wifi_get_softap_connected_station_list(req);
@@ -684,7 +690,7 @@ int rpc_softap_mode_get_mac_addr(uint8_t mac[6])
 //int rpc_softap_mode_stop(void)
 //{
 //	/* implemented synchronous */
-//	ctrl_cmd_t req = RPC_DEFAULT_REQ();
+//	ctrl_cmd_t *req = RPC_DEFAULT_REQ();
 //	ctrl_cmd_t *resp = NULL;
 //
 //	resp = wifi_stop_softap(req);
@@ -695,10 +701,10 @@ int rpc_softap_mode_get_mac_addr(uint8_t mac[6])
 int rpc_set_wifi_power_save_mode(int psmode)
 {
 	/* implemented synchronous */
-	ctrl_cmd_t req = RPC_DEFAULT_REQ();
+	ctrl_cmd_t *req = RPC_DEFAULT_REQ();
 	ctrl_cmd_t *resp = NULL;
 
-	req.u.wifi_ps.ps_mode = psmode;
+	req->u.wifi_ps.ps_mode = psmode;
 	resp = wifi_set_power_save_mode(req);
 
 	return rpc_rsp_callback(resp);
@@ -717,7 +723,7 @@ int rpc_set_wifi_power_save_mode_min(void)
 int rpc_get_wifi_power_save_mode(void)
 {
 	/* implemented synchronous */
-	ctrl_cmd_t req = RPC_DEFAULT_REQ();
+	ctrl_cmd_t *req = RPC_DEFAULT_REQ();
 	ctrl_cmd_t *resp = NULL;
 
 	resp = wifi_get_power_save_mode(req);
@@ -728,7 +734,7 @@ int rpc_get_wifi_power_save_mode(void)
 //int rpc_reset_vendor_specific_ie(void)
 //{
 //	/* implemented synchronous */
-//	ctrl_cmd_t req = RPC_DEFAULT_REQ();
+//	ctrl_cmd_t *req = RPC_DEFAULT_REQ();
 //	ctrl_cmd_t *resp = NULL;
 //	char *data = "Example vendor IE data";
 //
@@ -739,20 +745,20 @@ int rpc_get_wifi_power_save_mode(void)
 //	}
 //	g_h.funcs->_h_memcpy(v_data, data, strlen(data));
 //
-//	req.u.wifi_softap_vendor_ie.enable = false;
-//	req.u.wifi_softap_vendor_ie.type   = WIFI_VND_IE_TYPE_BEACON;
-//	req.u.wifi_softap_vendor_ie.idx    = WIFI_VND_IE_ID_0;
-//	req.u.wifi_softap_vendor_ie.vnd_ie.element_id = WIFI_VENDOR_IE_ELEMENT_ID;
-//	req.u.wifi_softap_vendor_ie.vnd_ie.length = strlen(data)+OFFSET;
-//	req.u.wifi_softap_vendor_ie.vnd_ie.vendor_oui[0] = VENDOR_OUI_0;
-//	req.u.wifi_softap_vendor_ie.vnd_ie.vendor_oui[1] = VENDOR_OUI_1;
-//	req.u.wifi_softap_vendor_ie.vnd_ie.vendor_oui[2] = VENDOR_OUI_2;
-//	req.u.wifi_softap_vendor_ie.vnd_ie.vendor_oui_type = VENDOR_OUI_TYPE;
-//	req.u.wifi_softap_vendor_ie.vnd_ie.payload = (uint8_t *)v_data;
-//	//req.u.wifi_softap_vendor_ie.vnd_ie.payload_len = strlen(data);
+//	req->u.wifi_softap_vendor_ie.enable = false;
+//	req->u.wifi_softap_vendor_ie.type   = WIFI_VND_IE_TYPE_BEACON;
+//	req->u.wifi_softap_vendor_ie.idx    = WIFI_VND_IE_ID_0;
+//	req->u.wifi_softap_vendor_ie.vnd_ie.element_id = WIFI_VENDOR_IE_ELEMENT_ID;
+//	req->u.wifi_softap_vendor_ie.vnd_ie.length = strlen(data)+OFFSET;
+//	req->u.wifi_softap_vendor_ie.vnd_ie.vendor_oui[0] = VENDOR_OUI_0;
+//	req->u.wifi_softap_vendor_ie.vnd_ie.vendor_oui[1] = VENDOR_OUI_1;
+//	req->u.wifi_softap_vendor_ie.vnd_ie.vendor_oui[2] = VENDOR_OUI_2;
+//	req->u.wifi_softap_vendor_ie.vnd_ie.vendor_oui_type = VENDOR_OUI_TYPE;
+//	req->u.wifi_softap_vendor_ie.vnd_ie.payload = (uint8_t *)v_data;
+//	//req->u.wifi_softap_vendor_ie.vnd_ie.payload_len = strlen(data);
 //
-//	req.app_free_buff_func = g_h.funcs->_h_free;
-//	req.app_free_buff_hdl = v_data;
+//	req->app_free_buff_func = g_h.funcs->_h_free;
+//	req->app_free_buff_hdl = v_data;
 //
 //	resp = wifi_set_vendor_specific_ie(req);
 //
@@ -762,7 +768,7 @@ int rpc_get_wifi_power_save_mode(void)
 //int rpc_set_vendor_specific_ie(void)
 //{
 //	/* implemented synchronous */
-//	ctrl_cmd_t req = RPC_DEFAULT_REQ();
+//	ctrl_cmd_t *req = RPC_DEFAULT_REQ();
 //	ctrl_cmd_t *resp = NULL;
 //	char *data = "Example vendor IE data";
 //
@@ -773,20 +779,20 @@ int rpc_get_wifi_power_save_mode(void)
 //	}
 //	g_h.funcs->_h_memcpy(v_data, data, strlen(data));
 //
-//	req.u.wifi_softap_vendor_ie.enable = true;
-//	req.u.wifi_softap_vendor_ie.type   = WIFI_VND_IE_TYPE_BEACON;
-//	req.u.wifi_softap_vendor_ie.idx    = WIFI_VND_IE_ID_0;
-//	req.u.wifi_softap_vendor_ie.vnd_ie.element_id = WIFI_VENDOR_IE_ELEMENT_ID;
-//	req.u.wifi_softap_vendor_ie.vnd_ie.length = strlen(data)+OFFSET;
-//	req.u.wifi_softap_vendor_ie.vnd_ie.vendor_oui[0] = VENDOR_OUI_0;
-//	req.u.wifi_softap_vendor_ie.vnd_ie.vendor_oui[1] = VENDOR_OUI_1;
-//	req.u.wifi_softap_vendor_ie.vnd_ie.vendor_oui[2] = VENDOR_OUI_2;
-//	req.u.wifi_softap_vendor_ie.vnd_ie.vendor_oui_type = VENDOR_OUI_TYPE;
-//	req.u.wifi_softap_vendor_ie.vnd_ie.payload = (uint8_t *)v_data;
-//	//req.u.wifi_softap_vendor_ie.vnd_ie.payload_len = strlen(data);
+//	req->u.wifi_softap_vendor_ie.enable = true;
+//	req->u.wifi_softap_vendor_ie.type   = WIFI_VND_IE_TYPE_BEACON;
+//	req->u.wifi_softap_vendor_ie.idx    = WIFI_VND_IE_ID_0;
+//	req->u.wifi_softap_vendor_ie.vnd_ie.element_id = WIFI_VENDOR_IE_ELEMENT_ID;
+//	req->u.wifi_softap_vendor_ie.vnd_ie.length = strlen(data)+OFFSET;
+//	req->u.wifi_softap_vendor_ie.vnd_ie.vendor_oui[0] = VENDOR_OUI_0;
+//	req->u.wifi_softap_vendor_ie.vnd_ie.vendor_oui[1] = VENDOR_OUI_1;
+//	req->u.wifi_softap_vendor_ie.vnd_ie.vendor_oui[2] = VENDOR_OUI_2;
+//	req->u.wifi_softap_vendor_ie.vnd_ie.vendor_oui_type = VENDOR_OUI_TYPE;
+//	req->u.wifi_softap_vendor_ie.vnd_ie.payload = (uint8_t *)v_data;
+//	//req->u.wifi_softap_vendor_ie.vnd_ie.payload_len = strlen(data);
 //
-//	req.app_free_buff_func = g_h.funcs->_h_free;
-//	req.app_free_buff_hdl = v_data;
+//	req->app_free_buff_func = g_h.funcs->_h_free;
+//	req->app_free_buff_hdl = v_data;
 //
 //	resp = wifi_set_vendor_specific_ie(req);
 //
@@ -796,11 +802,11 @@ int rpc_get_wifi_power_save_mode(void)
 int rpc_ota_begin(void)
 {
 	/* implemented synchronous */
-	ctrl_cmd_t req = RPC_DEFAULT_REQ();
+	ctrl_cmd_t *req = RPC_DEFAULT_REQ();
 	ctrl_cmd_t *resp = NULL;
 
 	/* OTA begin takes some time to clear the partition */
-	req.rsp_timeout_sec = OTA_BEGIN_RSP_TIMEOUT_SEC;
+	req->rsp_timeout_sec = OTA_BEGIN_RSP_TIMEOUT_SEC;
 
 	resp = ota_begin(req);
 
@@ -810,11 +816,11 @@ int rpc_ota_begin(void)
 int rpc_ota_write(uint8_t* ota_data, uint32_t ota_data_len)
 {
 	/* implemented synchronous */
-	ctrl_cmd_t req = RPC_DEFAULT_REQ();
+	ctrl_cmd_t *req = RPC_DEFAULT_REQ();
 	ctrl_cmd_t *resp = NULL;
 
-	req.u.ota_write.ota_data = ota_data;
-	req.u.ota_write.ota_data_len = ota_data_len;
+	req->u.ota_write.ota_data = ota_data;
+	req->u.ota_write.ota_data_len = ota_data_len;
 
 	resp = ota_write(req);
 
@@ -824,7 +830,7 @@ int rpc_ota_write(uint8_t* ota_data, uint32_t ota_data_len)
 int rpc_ota_end(void)
 {
 	/* implemented synchronous */
-	ctrl_cmd_t req = RPC_DEFAULT_REQ();
+	ctrl_cmd_t *req = RPC_DEFAULT_REQ();
 	ctrl_cmd_t *resp = NULL;
 
 	resp = ota_end(req);
@@ -1044,10 +1050,10 @@ esp_err_t rpc_ota(const char* image_url)
 int rpc_wifi_set_max_tx_power(int8_t in_power)
 {
 	/* implemented synchronous */
-	ctrl_cmd_t req = RPC_DEFAULT_REQ();
+	ctrl_cmd_t *req = RPC_DEFAULT_REQ();
 	ctrl_cmd_t *resp = NULL;
 
-	req.u.wifi_tx_power.power = in_power;
+	req->u.wifi_tx_power.power = in_power;
 	resp = wifi_set_max_tx_power(req);
 
 	return rpc_rsp_callback(resp);
@@ -1056,11 +1062,13 @@ int rpc_wifi_set_max_tx_power(int8_t in_power)
 int rpc_wifi_get_max_tx_power(int8_t *power)
 {
 	/* implemented synchronous */
-	ctrl_cmd_t req = RPC_DEFAULT_REQ();
+	ctrl_cmd_t *req = RPC_DEFAULT_REQ();
 	ctrl_cmd_t *resp = NULL;
 
 	resp = wifi_get_max_tx_power(req);
-	*power = resp->u.wifi_tx_power.power;
+	if (resp && resp->resp_event_status == SUCCESS) {
+		*power = resp->u.wifi_tx_power.power;
+	}
 	return rpc_rsp_callback(resp);
 }
 
@@ -1068,9 +1076,9 @@ int rpc_config_heartbeat(void)
 {
 	/* implemented synchronous */
 	ctrl_cmd_t *resp = NULL;
-	ctrl_cmd_t req = RPC_DEFAULT_REQ();
-	req.u.e_heartbeat.enable = YES;
-	req.u.e_heartbeat.duration = HEARTBEAT_DURATION_SEC;
+	ctrl_cmd_t *req = RPC_DEFAULT_REQ();
+	req->u.e_heartbeat.enable = YES;
+	req->u.e_heartbeat.duration = HEARTBEAT_DURATION_SEC;
 
 	resp = config_heartbeat(req);
 
@@ -1081,8 +1089,8 @@ int rpc_disable_heartbeat(void)
 {
 	/* implemented synchronous */
 	ctrl_cmd_t *resp = NULL;
-	ctrl_cmd_t req = RPC_DEFAULT_REQ();
-	req.u.e_heartbeat.enable = NO;
+	ctrl_cmd_t *req = RPC_DEFAULT_REQ();
+	req->u.e_heartbeat.enable = NO;
 
 	resp = config_heartbeat(req);
 
@@ -1092,13 +1100,13 @@ int rpc_disable_heartbeat(void)
 int rpc_wifi_init(const wifi_init_config_t *arg)
 {
 	/* implemented synchronous */
-	ctrl_cmd_t req = RPC_DEFAULT_REQ();
+	ctrl_cmd_t *req = RPC_DEFAULT_REQ();
 	ctrl_cmd_t *resp = NULL;
 
 	if (!arg)
 		return FAILURE;
 
-	g_h.funcs->_h_memcpy(&req.u.wifi_init_config, (void*)arg, sizeof(wifi_init_config_t));
+	g_h.funcs->_h_memcpy(&req->u.wifi_init_config, (void*)arg, sizeof(wifi_init_config_t));
 	resp = wifi_init(req);
 
 	return rpc_rsp_callback(resp);
@@ -1107,7 +1115,7 @@ int rpc_wifi_init(const wifi_init_config_t *arg)
 int rpc_wifi_deinit(void)
 {
 	/* implemented synchronous */
-	ctrl_cmd_t req = RPC_DEFAULT_REQ();
+	ctrl_cmd_t *req = RPC_DEFAULT_REQ();
 	ctrl_cmd_t *resp = NULL;
 
 	resp = wifi_deinit(req);
@@ -1122,7 +1130,7 @@ int rpc_wifi_set_mode(wifi_mode_t mode)
 int rpc_wifi_get_mode(wifi_mode_t* mode)
 {
 	/* implemented synchronous */
-	ctrl_cmd_t req = RPC_DEFAULT_REQ();
+	ctrl_cmd_t *req = RPC_DEFAULT_REQ();
 	ctrl_cmd_t *resp = NULL;
 
 	if (!mode)
@@ -1130,7 +1138,9 @@ int rpc_wifi_get_mode(wifi_mode_t* mode)
 
 	resp = wifi_get_mode(req);
 
-	*mode = resp->u.wifi_mode.mode;
+	if (resp && resp->resp_event_status == SUCCESS) {
+		*mode = resp->u.wifi_mode.mode;
+	}
 
 	return SUCCESS;
 }
@@ -1138,7 +1148,7 @@ int rpc_wifi_get_mode(wifi_mode_t* mode)
 int rpc_wifi_start(void)
 {
 	/* implemented synchronous */
-	ctrl_cmd_t req = RPC_DEFAULT_REQ();
+	ctrl_cmd_t *req = RPC_DEFAULT_REQ();
 	ctrl_cmd_t *resp = NULL;
 
 	resp = wifi_start(req);
@@ -1151,7 +1161,7 @@ int rpc_wifi_stop(void)
 		return 0;
 
 	/* implemented synchronous */
-	ctrl_cmd_t req = RPC_DEFAULT_REQ();
+	ctrl_cmd_t *req = RPC_DEFAULT_REQ();
 	ctrl_cmd_t *resp = NULL;
 
 	resp = wifi_stop(req);
@@ -1162,7 +1172,7 @@ int rpc_wifi_connect(void)
 {
 #if 1
 	/* implemented synchronous */
-	ctrl_cmd_t req = RPC_DEFAULT_REQ();
+	ctrl_cmd_t *req = RPC_DEFAULT_REQ();
 	ctrl_cmd_t *resp = NULL;
 
 	resp = wifi_connect(req);
@@ -1170,10 +1180,10 @@ int rpc_wifi_connect(void)
 	return 0;
 #else
 	/* implemented asynchronous */
-	ctrl_cmd_t req = RPC_DEFAULT_REQ();
+	ctrl_cmd_t *req = RPC_DEFAULT_REQ();
 	ctrl_cmd_t *resp = NULL;
 
-	req.rpc_rsp_cb = rpc_rsp_callback;
+	req->rpc_rsp_cb = rpc_rsp_callback;
 	ESP_LOGE(TAG, "Async call registerd: %p", rpc_rsp_callback);
 
 	wifi_connect(req);
@@ -1185,7 +1195,7 @@ int rpc_wifi_connect(void)
 int rpc_wifi_disconnect(void)
 {
 	/* implemented synchronous */
-	ctrl_cmd_t req = RPC_DEFAULT_REQ();
+	ctrl_cmd_t *req = RPC_DEFAULT_REQ();
 	ctrl_cmd_t *resp = NULL;
 
 	resp = wifi_disconnect(req);
@@ -1195,15 +1205,15 @@ int rpc_wifi_disconnect(void)
 int rpc_wifi_set_config(wifi_interface_t interface, wifi_config_t *conf)
 {
 	/* implemented synchronous */
-	ctrl_cmd_t req = RPC_DEFAULT_REQ();
+	ctrl_cmd_t *req = RPC_DEFAULT_REQ();
 	ctrl_cmd_t *resp = NULL;
 
 	if (!conf)
 		return FAILURE;
 
-	g_h.funcs->_h_memcpy(&req.u.wifi_config.u, conf, sizeof(wifi_config_t));
+	g_h.funcs->_h_memcpy(&req->u.wifi_config.u, conf, sizeof(wifi_config_t));
 
-	req.u.wifi_config.iface = interface;
+	req->u.wifi_config.iface = interface;
 	resp = wifi_set_config(req);
 	return rpc_rsp_callback(resp);
 }
@@ -1211,13 +1221,13 @@ int rpc_wifi_set_config(wifi_interface_t interface, wifi_config_t *conf)
 int rpc_wifi_get_config(wifi_interface_t interface, wifi_config_t *conf)
 {
 	/* implemented synchronous */
-	ctrl_cmd_t req = RPC_DEFAULT_REQ();
+	ctrl_cmd_t *req = RPC_DEFAULT_REQ();
 	ctrl_cmd_t *resp = NULL;
 
 	if (!conf)
 		return FAILURE;
 
-	req.u.wifi_config.iface = interface;
+	req->u.wifi_config.iface = interface;
 
 	resp = wifi_get_config(req);
 
@@ -1229,15 +1239,15 @@ int rpc_wifi_get_config(wifi_interface_t interface, wifi_config_t *conf)
 int rpc_wifi_scan_start(const wifi_scan_config_t *config, bool block)
 {
 	/* implemented synchronous */
-	ctrl_cmd_t req = RPC_DEFAULT_REQ();
+	ctrl_cmd_t *req = RPC_DEFAULT_REQ();
 	ctrl_cmd_t *resp = NULL;
 
 	if (config) {
-		g_h.funcs->_h_memcpy(&req.u.wifi_scan_config.cfg, config, sizeof(wifi_scan_config_t));
-		req.u.wifi_scan_config.cfg_set = 1;
+		g_h.funcs->_h_memcpy(&req->u.wifi_scan_config.cfg, config, sizeof(wifi_scan_config_t));
+		req->u.wifi_scan_config.cfg_set = 1;
 	}
 
-	req.u.wifi_scan_config.block = block;
+	req->u.wifi_scan_config.block = block;
 
 	resp = wifi_scan_start(req);
 
@@ -1247,7 +1257,7 @@ int rpc_wifi_scan_start(const wifi_scan_config_t *config, bool block)
 int rpc_wifi_scan_stop(void)
 {
 	/* implemented synchronous */
-	ctrl_cmd_t req = RPC_DEFAULT_REQ();
+	ctrl_cmd_t *req = RPC_DEFAULT_REQ();
 	ctrl_cmd_t *resp = NULL;
 	ESP_LOGV(TAG, "scan stop");
 
@@ -1258,7 +1268,7 @@ int rpc_wifi_scan_stop(void)
 int rpc_wifi_scan_get_ap_num(uint16_t *number)
 {
 	/* implemented synchronous */
-	ctrl_cmd_t req = RPC_DEFAULT_REQ();
+	ctrl_cmd_t *req = RPC_DEFAULT_REQ();
 	ctrl_cmd_t *resp = NULL;
 
 	if (!number)
@@ -1266,14 +1276,16 @@ int rpc_wifi_scan_get_ap_num(uint16_t *number)
 
 	resp = wifi_scan_get_ap_num(req);
 
-	*number = resp->u.wifi_scan_ap_list.number;
+	if (resp && resp->resp_event_status == SUCCESS) {
+		*number = resp->u.wifi_scan_ap_list.number;
+	}
 	return rpc_rsp_callback(resp);
 }
 
 int rpc_wifi_scan_get_ap_records(uint16_t *number, wifi_ap_record_t *ap_records)
 {
 	/* implemented synchronous */
-	ctrl_cmd_t req = RPC_DEFAULT_REQ();
+	ctrl_cmd_t *req = RPC_DEFAULT_REQ();
 	ctrl_cmd_t *resp = NULL;
 
 	if (!number || !*number || !ap_records)
@@ -1281,7 +1293,7 @@ int rpc_wifi_scan_get_ap_records(uint16_t *number, wifi_ap_record_t *ap_records)
 
 	g_h.funcs->_h_memset(ap_records, 0, (*number)*sizeof(wifi_ap_record_t));
 
-	req.u.wifi_scan_ap_list.number = *number;
+	req->u.wifi_scan_ap_list.number = *number;
 	resp = wifi_scan_get_ap_records(req);
 	if (resp && resp->resp_event_status == SUCCESS) {
 		ESP_LOGV(TAG, "num: %u",resp->u.wifi_scan_ap_list.number);
@@ -1295,7 +1307,7 @@ int rpc_wifi_scan_get_ap_records(uint16_t *number, wifi_ap_record_t *ap_records)
 int rpc_wifi_clear_ap_list(void)
 {
 	/* implemented synchronous */
-	ctrl_cmd_t req = RPC_DEFAULT_REQ();
+	ctrl_cmd_t *req = RPC_DEFAULT_REQ();
 	ctrl_cmd_t *resp = NULL;
 
 	resp = wifi_clear_ap_list(req);
@@ -1306,7 +1318,7 @@ int rpc_wifi_clear_ap_list(void)
 int rpc_wifi_restore(void)
 {
 	/* implemented synchronous */
-	ctrl_cmd_t req = RPC_DEFAULT_REQ();
+	ctrl_cmd_t *req = RPC_DEFAULT_REQ();
 	ctrl_cmd_t *resp = NULL;
 
 	resp = wifi_restore(req);
@@ -1316,7 +1328,7 @@ int rpc_wifi_restore(void)
 int rpc_wifi_clear_fast_connect(void)
 {
 	/* implemented synchronous */
-	ctrl_cmd_t req = RPC_DEFAULT_REQ();
+	ctrl_cmd_t *req = RPC_DEFAULT_REQ();
 	ctrl_cmd_t *resp = NULL;
 
 	resp = wifi_clear_fast_connect(req);
@@ -1326,10 +1338,10 @@ int rpc_wifi_clear_fast_connect(void)
 int rpc_wifi_deauth_sta(uint16_t aid)
 {
 	/* implemented synchronous */
-	ctrl_cmd_t req = RPC_DEFAULT_REQ();
+	ctrl_cmd_t *req = RPC_DEFAULT_REQ();
 	ctrl_cmd_t *resp = NULL;
 
-	req.u.wifi_deauth_sta.aid = aid;
+	req->u.wifi_deauth_sta.aid = aid;
 	resp = wifi_deauth_sta(req);
 	return rpc_rsp_callback(resp);
 }
@@ -1337,7 +1349,7 @@ int rpc_wifi_deauth_sta(uint16_t aid)
 int rpc_wifi_sta_get_ap_info(wifi_ap_record_t *ap_info)
 {
 	/* implemented synchronous */
-	ctrl_cmd_t req = RPC_DEFAULT_REQ();
+	ctrl_cmd_t *req = RPC_DEFAULT_REQ();
 	ctrl_cmd_t *resp = NULL;
 
 	if (!ap_info)
@@ -1355,13 +1367,13 @@ int rpc_wifi_sta_get_ap_info(wifi_ap_record_t *ap_info)
 int rpc_wifi_set_ps(wifi_ps_type_t type)
 {
 	/* implemented synchronous */
-	ctrl_cmd_t req = RPC_DEFAULT_REQ();
+	ctrl_cmd_t *req = RPC_DEFAULT_REQ();
 	ctrl_cmd_t *resp = NULL;
 
 	if (type > WIFI_PS_MAX_MODEM)
 		return FAILURE;
 
-	req.u.wifi_ps.ps_mode = type;
+	req->u.wifi_ps.ps_mode = type;
 
 	resp = wifi_set_ps(req);
 
@@ -1374,7 +1386,7 @@ int rpc_wifi_get_ps(wifi_ps_type_t *type)
 		return FAILURE;
 
 	/* implemented synchronous */
-	ctrl_cmd_t req = RPC_DEFAULT_REQ();
+	ctrl_cmd_t *req = RPC_DEFAULT_REQ();
 	ctrl_cmd_t *resp = NULL;
 
 	if (!type)
@@ -1390,10 +1402,10 @@ int rpc_wifi_get_ps(wifi_ps_type_t *type)
 int rpc_wifi_set_storage(wifi_storage_t storage)
 {
 	/* implemented synchronous */
-	ctrl_cmd_t req = RPC_DEFAULT_REQ();
+	ctrl_cmd_t *req = RPC_DEFAULT_REQ();
 	ctrl_cmd_t *resp = NULL;
 
-	req.u.wifi_storage = storage;
+	req->u.wifi_storage = storage;
 	resp = wifi_set_storage(req);
 	return rpc_rsp_callback(resp);
 }
@@ -1401,11 +1413,11 @@ int rpc_wifi_set_storage(wifi_storage_t storage)
 int rpc_wifi_set_bandwidth(wifi_interface_t ifx, wifi_bandwidth_t bw)
 {
 	/* implemented synchronous */
-	ctrl_cmd_t req = RPC_DEFAULT_REQ();
+	ctrl_cmd_t *req = RPC_DEFAULT_REQ();
 	ctrl_cmd_t *resp = NULL;
 
-	req.u.wifi_bandwidth.ifx = ifx;
-	req.u.wifi_bandwidth.bw = bw;
+	req->u.wifi_bandwidth.ifx = ifx;
+	req->u.wifi_bandwidth.bw = bw;
 	resp = wifi_set_bandwidth(req);
 	return rpc_rsp_callback(resp);
 }
@@ -1413,13 +1425,13 @@ int rpc_wifi_set_bandwidth(wifi_interface_t ifx, wifi_bandwidth_t bw)
 int rpc_wifi_get_bandwidth(wifi_interface_t ifx, wifi_bandwidth_t *bw)
 {
 	/* implemented synchronous */
-	ctrl_cmd_t req = RPC_DEFAULT_REQ();
+	ctrl_cmd_t *req = RPC_DEFAULT_REQ();
 	ctrl_cmd_t *resp = NULL;
 
 	if (!bw)
 		return FAILURE;
 
-	req.u.wifi_bandwidth.ifx = ifx;
+	req->u.wifi_bandwidth.ifx = ifx;
 	resp = wifi_get_bandwidth(req);
 
 	if (resp && resp->resp_event_status == SUCCESS) {
@@ -1431,11 +1443,11 @@ int rpc_wifi_get_bandwidth(wifi_interface_t ifx, wifi_bandwidth_t *bw)
 int rpc_wifi_set_channel(uint8_t primary, wifi_second_chan_t second)
 {
 	/* implemented synchronous */
-	ctrl_cmd_t req = RPC_DEFAULT_REQ();
+	ctrl_cmd_t *req = RPC_DEFAULT_REQ();
 	ctrl_cmd_t *resp = NULL;
 
-	req.u.wifi_channel.primary = primary;
-	req.u.wifi_channel.second = second;
+	req->u.wifi_channel.primary = primary;
+	req->u.wifi_channel.second = second;
 	resp = wifi_set_channel(req);
 	return rpc_rsp_callback(resp);
 }
@@ -1443,7 +1455,7 @@ int rpc_wifi_set_channel(uint8_t primary, wifi_second_chan_t second)
 int rpc_wifi_get_channel(uint8_t *primary, wifi_second_chan_t *second)
 {
 	/* implemented synchronous */
-	ctrl_cmd_t req = RPC_DEFAULT_REQ();
+	ctrl_cmd_t *req = RPC_DEFAULT_REQ();
 	ctrl_cmd_t *resp = NULL;
 
 	if ((!primary) || (!second))
@@ -1461,14 +1473,14 @@ int rpc_wifi_get_channel(uint8_t *primary, wifi_second_chan_t *second)
 int rpc_wifi_set_country_code(const char *country, bool ieee80211d_enabled)
 {
 	/* implemented synchronous */
-	ctrl_cmd_t req = RPC_DEFAULT_REQ();
+	ctrl_cmd_t *req = RPC_DEFAULT_REQ();
 	ctrl_cmd_t *resp = NULL;
 
 	if (!country)
 		return FAILURE;
 
-	memcpy(&req.u.wifi_country_code.cc[0], country, sizeof(req.u.wifi_country_code.cc));
-	req.u.wifi_country_code.ieee80211d_enabled = ieee80211d_enabled;
+	memcpy(&req->u.wifi_country_code.cc[0], country, sizeof(req->u.wifi_country_code.cc));
+	req->u.wifi_country_code.ieee80211d_enabled = ieee80211d_enabled;
 	resp = wifi_set_country_code(req);
 	return rpc_rsp_callback(resp);
 }
@@ -1476,7 +1488,7 @@ int rpc_wifi_set_country_code(const char *country, bool ieee80211d_enabled)
 int rpc_wifi_get_country_code(char *country)
 {
 	/* implemented synchronous */
-	ctrl_cmd_t req = RPC_DEFAULT_REQ();
+	ctrl_cmd_t *req = RPC_DEFAULT_REQ();
 	ctrl_cmd_t *resp = NULL;
 
 	if (!country)
@@ -1493,17 +1505,17 @@ int rpc_wifi_get_country_code(char *country)
 int rpc_wifi_set_country(const wifi_country_t *country)
 {
 	/* implemented synchronous */
-	ctrl_cmd_t req = RPC_DEFAULT_REQ();
+	ctrl_cmd_t *req = RPC_DEFAULT_REQ();
 	ctrl_cmd_t *resp = NULL;
 
 	if (!country)
 		return FAILURE;
 
-	memcpy(&req.u.wifi_country.cc[0], &country->cc[0], sizeof(country->cc));
-	req.u.wifi_country.schan        = country->schan;
-	req.u.wifi_country.nchan        = country->nchan;
-	req.u.wifi_country.max_tx_power = country->max_tx_power;
-	req.u.wifi_country.policy       = country->policy;
+	memcpy(&req->u.wifi_country.cc[0], &country->cc[0], sizeof(country->cc));
+	req->u.wifi_country.schan        = country->schan;
+	req->u.wifi_country.nchan        = country->nchan;
+	req->u.wifi_country.max_tx_power = country->max_tx_power;
+	req->u.wifi_country.policy       = country->policy;
 
 	resp = wifi_set_country(req);
 	return rpc_rsp_callback(resp);
@@ -1512,7 +1524,7 @@ int rpc_wifi_set_country(const wifi_country_t *country)
 int rpc_wifi_get_country(wifi_country_t *country)
 {
 	/* implemented synchronous */
-	ctrl_cmd_t req = RPC_DEFAULT_REQ();
+	ctrl_cmd_t *req = RPC_DEFAULT_REQ();
 	ctrl_cmd_t *resp = NULL;
 
 	if (!country)
@@ -1532,7 +1544,7 @@ int rpc_wifi_get_country(wifi_country_t *country)
 int rpc_wifi_ap_get_sta_list(wifi_sta_list_t *sta)
 {
 	/* implemented synchronous */
-	ctrl_cmd_t req = RPC_DEFAULT_REQ();
+	ctrl_cmd_t *req = RPC_DEFAULT_REQ();
 	ctrl_cmd_t *resp = NULL;
 
 	if (!sta)
@@ -1561,13 +1573,13 @@ int rpc_wifi_ap_get_sta_list(wifi_sta_list_t *sta)
 int rpc_wifi_ap_get_sta_aid(const uint8_t mac[6], uint16_t *aid)
 {
 	/* implemented synchronous */
-	ctrl_cmd_t req = RPC_DEFAULT_REQ();
+	ctrl_cmd_t *req = RPC_DEFAULT_REQ();
 	ctrl_cmd_t *resp = NULL;
 
 	if (!mac || !aid)
 		return FAILURE;
 
-	memcpy(&req.u.wifi_ap_get_sta_aid.mac[0], &mac[0], MAC_SIZE_BYTES);
+	memcpy(&req->u.wifi_ap_get_sta_aid.mac[0], &mac[0], MAC_SIZE_BYTES);
 
 	resp = wifi_ap_get_sta_aid(req);
 	if (resp && resp->resp_event_status == SUCCESS) {
@@ -1580,7 +1592,7 @@ int rpc_wifi_ap_get_sta_aid(const uint8_t mac[6], uint16_t *aid)
 int rpc_wifi_sta_get_rssi(int *rssi)
 {
 	/* implemented synchronous */
-	ctrl_cmd_t req = RPC_DEFAULT_REQ();
+	ctrl_cmd_t *req = RPC_DEFAULT_REQ();
 	ctrl_cmd_t *resp = NULL;
 
 	if (!rssi)
@@ -1597,11 +1609,11 @@ int rpc_wifi_sta_get_rssi(int *rssi)
 int rpc_wifi_set_protocol(wifi_interface_t ifx, uint8_t protocol_bitmap)
 {
 	/* implemented synchronous */
-	ctrl_cmd_t req = RPC_DEFAULT_REQ();
+	ctrl_cmd_t *req = RPC_DEFAULT_REQ();
 	ctrl_cmd_t *resp = NULL;
 
-	req.u.wifi_protocol.ifx = ifx;
-	req.u.wifi_protocol.protocol_bitmap = protocol_bitmap;
+	req->u.wifi_protocol.ifx = ifx;
+	req->u.wifi_protocol.protocol_bitmap = protocol_bitmap;
 
 	resp = wifi_set_protocol(req);
 	return rpc_rsp_callback(resp);
@@ -1613,7 +1625,7 @@ int rpc_wifi_get_protocol(wifi_interface_t ifx, uint8_t *protocol_bitmap)
 	if (!protocol_bitmap)
 		return FAILURE;
 
-	ctrl_cmd_t req = RPC_DEFAULT_REQ();
+	ctrl_cmd_t *req = RPC_DEFAULT_REQ();
 	ctrl_cmd_t *resp = NULL;
 
 	resp = wifi_get_protocol(req);
