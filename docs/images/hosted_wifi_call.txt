@@ -1,0 +1,49 @@
+@startuml
+
+skinparam BoxPadding 20
+
+box "Host with ESP-Hosted" #LightBlue
+participant Application as app
+participant "Wi-Fi Remote" as remote
+participant "ESP Hosted" as hostedh
+participant "Host Transport" as transporth
+end box
+
+box "Slave ESP-Hosted" #LightGrey
+participant "Slave Transport" as transports
+participant "Slave Hosted" as hosteds
+participant "ESP-IDF Wi-Fi Library" as api
+participant "Wi-Fi Hardware" as wifi
+end box
+
+skinparam ArrowThickness 1
+
+app -> remote : esp_wifi_xxx()
+remote -> hostedh : esp_wifi_remote_xxx()
+hostedh -> transporth
+
+skinparam ArrowThickness 5
+
+transporth -> transports : SPI/SDIO
+
+skinparam ArrowThickness 1
+
+transports -> hosteds
+hosteds -> api : esp_wifi_xxx()
+api -> wifi
+wifi -> wifi : Wi-Fi action
+wifi --> api : response
+api --> hosteds : return value +\ndata (if any)
+hosteds --> transports
+
+skinparam ArrowThickness 5
+
+transports --> transporth : SPI/SDIO
+
+skinparam ArrowThickness 1
+
+transporth --> hostedh
+hostedh --> remote
+remote --> app : return value +\ndata (if any)
+
+@enduml

@@ -1,136 +1,259 @@
 # ESP-Hosted
 
+**Table of Contents**
+
+- [1. Introduction](#1-introduction)
+  - [1.1. ESP as MCU Host branch](#11-esp-as-mcu-host-branch)
+  - [1.2. ESP-Hosted Architecture](#12-esp-hosted-architecture)
+    - [1.2.1. ESP-Hosted Features](#121-esp-hosted-features)
+    - [1.2.2. ESP-Hosted Bluetooth Support](#122-esp-hosted-bluetooth-support)
+  - [1.3. Hosted on ESP32s with Native Wi-Fi](#13-hosted-on-esp32s-with-native-wi-fi)
+- [2. Getting Started](#2-getting-started)
+  - [2.1. DevKit Specific Information](#21-devkit-specific-information)
+- [3. Preparing the Host to use ESP-Hosted](#3-preparing-the-host-to-use-esp-hosted)
+  - [3.1. Adding required components to your ESP-IDF Project](#31-adding-required-components-to-your-esp-idf-project)
+  - [3.2. Disabling Native Wi-Fi Support](#32-disabling-native-wi-fi-support)
+- [4. Getting the ESP-Hosted Slave Project](#4-getting-the-esp-hosted-slave-project)
+- [5. Selecting the Hardware Interface for Host and Slave](#5-selecting-the-hardware-interface-for-host-and-slave)
+  - [5.1. Evaluating ESP-Hosted Hardware Interface](#51-evaluating-esp-hosted-hardware-interface)
+- [6. Configuring the ESP-Hosted Components](#6-configuring-the-esp-hosted-components)
+  - [6.1. Configuring the Hosted Host](#61-configuring-the-hosted-host)
+  - [6.2. Configuring the Hosted Slave](#62-configuring-the-hosted-slave)
+  - [6.3. Flashing and Running ESP-Hosted](#63-flashing-and-running-esp-hosted)
+- [7. Verifying that ESP-Hosted is Running](#7-verifying-that-esp-hosted-is-running)
+  - [7.1. Checking the Console Output](#71-checking-the-console-output)
+- [8. Troubleshooting](#8-troubleshooting)
+- [9. References](#9-references)
+
+## 1. Introduction
+
 ESP-Hosted is an open source solution that provides a way to use
-Espressif SoCs and modules as a communication co-processor. This
-solution provides wireless connectivity (Wi-Fi and BT/BLE) to the host
-microprocessor or microcontroller, allowing it to communicate with
-other devices.
+Espressif SoCs and modules as a communication (slave)
+co-processor. This solution provides wireless connectivity (Wi-Fi and
+Bluetooth) to the host microprocessor or microcontroller, allowing it
+to communicate with other devices.
 
-## ESP as MCU Host branch
+This high-level block diagram shows ESP-Hosted's relationship with the
+host MCU and slave co-processor.
 
-This branch provides ESP-Hosted functionality to any generic MCU
-host. The purpose is to allow the [ESP Wi-Fi api
-calls](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/network/esp_wifi.html)
-to be used on hosts that don't have native Wi-Fi.
+![ESP-Hosted Block Dragram](docs/images/hosted_diagram-ditaa.svg)
 
-This branch showcases ESP chipsets to use as MCU hosts. For other
-MCUs, a port layer is required to adapt Hosted to your MCU and OS.
+*ESP-Hosted Block Dragram*
 
-## Getting started
+### 1.1. ESP as MCU Host branch
 
-Two extra components are required to intergrate ESP-Hosted into the
-host code. Both are available in the [ESP
-Registry](https://components.espressif.com/):
-- WiFi Remote ([https://components.espressif.com/components/espressif/esp_wifi_remote](https://components.espressif.com/components/espressif/esp_wifi_remote))
-- ESP-Hosted ([https://components.espressif.com/components/espressif/esp_hosted](https://components.espressif.com/components/espressif/esp_hosted))
+This branch uses ESP chipsets as the host processor. This allows the
+ESP Wi-Fi api calls to be used on ESP chipsets that don't have native
+Wi-Fi. ESP-IDF applications like the ESP-IDF Iperf Example can be
+built and run on the ESP32-P4 without changes, using Hosted and a
+ESP32 co-processor to provide the Wi-Fi connection.
 
-WiFi Remote is an API layer that provides the standard ESP-IDF Wi-Fi
-calls to the application (`esp_wifi_init()`, etc.). WiFi Remote
-forwards the Wi-Fi calls to ESP-Hosted, which transports the incoming
-Wi-Fi calls as remote requests to the slave.
+### 1.2. ESP-Hosted Architecture
 
-Responses are received by ESP-Hosted and returned to WiFi Remote,
-which returns the reponses to the calling app. To the calling app, it
-is as if it made a standard ESP-IDF Wi-Fi api call.
+There are two parts in the ESP-Hosted solution, the Hosted slave,
+which is an ESP chip, and a host MCU, which can be a generic MCU. The
+ESP-Hosted Slave provides the Wi-Fi, Bluetooth and other capabilities,
+which the host MCU uses through Hosted.
 
-Wi-Fi events are received by Hosted and send to the standard ESP-IDF
-event loop on the host.
+ESP-Hosted is an open-source and modular code, and uses RPC (Remote
+Procedure Calls) for passing commands from the host to the slave. This
+RPC mechanism allows the slave capabilities to be provided to the
+host. These RPC calls are sent through a reliable bus communication,
+such as SPI or SDIO or UART.
 
-## Selecting hardware interface
+Data (network or Bluetooth) is encapsulated at the transport layer by
+Hosted and passed through the interface, minimising overhead and
+delays.
 
-Hosted can currently use the SPI or SDIO (on selected ESP chips)
-interfaces. For testing Hosted, it is recommended to use the SPI
-interface as it is easier to evaluate using jumper cables. SDIO and
-UART are also supported. Among the interfaces, SDIO provides the
-highest throughput.
+#### 1.2.1. ESP-Hosted Features
 
-### Using the SPI interface
+- **any MCU can be set-up as the host**. An ESP chipset is used here
+  as an example. For other MCUs, you can evaluate ESP-Hosted using an
+  ESP chip as the host first, and then follow-up by porting ESP-Hosted
+  to your desired MCU.
+- **any ESP chip with Wi-Fi and/or Bluetooth capabilities can be used
+  as the Hosted slave**. Pick the desired slave device, depending on
+  your product requirements. The ESP Product Selector can guide you on
+  the proper ESP slave selection.
+- **the RCP calls used by ESP-Hosted can be extended to provide any
+  function required by the Host**. As long as the slave can support
+  it. At present, the essential ESP-IDF Wi-Fi functions have been
+  implemented.
+- **example of ESP-Hosted in action**. It runs on the
+  ESP32-P4-Function-EV-Board (see [DevKit Specific
+  Information](#21-devkit-specific-information)), running the standard
+  ESP-IDF Iperf example.
 
-The SPI interface can use almost any GPIO pins. But for maximum speed
-and minimal delays, it is recommended to select the default SPI pins
-configuration that use the dedicated `IO_MUX` pins. See these documents
-for [SPI
-host](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/peripherals/spi_master.html#gpio-matrix-and-io-mux)
-and [SPI
-slave](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/peripherals/spi_slave.html#gpio-matrix-and-io-mux)
-for more information.
+#### 1.2.2. ESP-Hosted Bluetooth Support
 
-This table summarises the recommended SPI GPIO pins for various ESP SoCs:
+See [Bluetooth Implementation](docs/bluetooth_implementation.md) for
+details on Bluetooth support by ESP-Hosted.
 
-| GPIO | ESP-32 | ESP32-C2/C3/C6 | ESP32-S2/S3 |
-| :--: |    --: |            --: |         --: |
-|------|--------|----------------|-------------|
-| MOSI |     13 |              7 |          11 |
-| MISO |     12 |              2 |          13 |
-| CLK  |     14 |              6 |          12 |
-| CS   |     15 |             10 |          10 |
+<details>
 
-Besides the standard SPI `CS`, `CLK`, `MOSI` and `MISO`
-signals, additional GPIOs are required. These are for `Handshake` and
-`Data Ready` and can be assigned to any GPIOs.
+<summary>Sequence Diagrams for Hosted System</summary>
 
-For prototyping, it is recommended to use short wires (5 to 10 cm in
-length, shorter is better) to minimise propagation delay and noise.
+**Sequence Diagram for Wi-Fi on a Hosted System**
 
-### Using the SDIO interface
+On a ESP chipset with native Wi-Fi, a Wi-Fi api call or network data
+from the application is processed internally on the chip and a Wi-Fi
+response is returned to the application.
 
-The SDIO interface has the same pull-up requirements as the SD
-interface (10 kOhm resistors are recommended). See the [SD Pull-up
-Requirements](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/peripherals/sd_pullup_requirements.html)
-documentation for more details. Because of the pull-up requirements,
-using jumper cables for SDIO is not recommended.
+```mermaid
+sequenceDiagram
+    box Grey Host With Native WI-Fi
+    participant app as Application
+    participant api as ESP-IDF Wi-Fi Library
+    participant wifi as Wi-Fi Hardware
+    end
 
-If you use the ESP32 as the SDIO slave, fixing the SDIO pin voltage may
-be required by buring the eFuses, depending on the ESP32 module used. See
-the ["Overview of
-Compatability"](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/peripherals/sd_pullup_requirements.html#compatibility-overview-espressif-hw-sdio)
-documentation.
+    app ->> api : esp_wifi_xxx() or Network Data
+    api ->> wifi : 
+    Note over wifi : Do Wi-Fi action
+    wifi -->> api : Wi-Fi response or Data
+    api -->> app : Response or Network Data
+```
 
-Only the ESP32-C6 and ESP32 can be used as the SDIO slave, while the
-ESP32 and ESP32-S3 can be used as the SDIO host.
+*Native Wi-Fi Call*
 
-On the ESP32 / ESP32-C6, the SDIO pins are fixed:
+Using Wi-Remote and ESP-Hosted, the Wi-Fi api call from the
+application is converted into a Hosted Call and transported to the
+slave. The slave converts the Hosted Call back into an Wi-Fi api
+call. The response (optionally with data) is converted into a Hosted
+Response and transported back to the host. On the host, the Hosted
+Response is converted back into a Wi-Fi response (optionally with
+data) is returned to the application.
 
-|        | ESP32 | ESP32-C6 |
-| :--    |   --: |      --: |
-| Signal |  GPIO |     GPIO |
-|--------|-------|----------|
-| CLK    |    14 |       19 |
-| CMD    |    15 |       18 |
-| DAT0   |     2 |       20 |
-| DAT1   |     4 |       21 |
-| DAT2   |    12 |       22 |
-| DAT3   |    13 |       23 |
+For Network Data, Hosted does not do data conversion and only
+encapsulates the data for transport.
 
-On the ESP32-S3 the GPIO pin assignments are flexible.
+```mermaid
+sequenceDiagram
+    box Grey Host with ESP-Hosted
+    participant app as Application
+    participant remote as Wi-Fi Remote
+    participant hostedh as ESP-Hosted
+    participant transporth as Host Transport
+    end
 
-To summarize, **for SDIO**:
+    box SlateGrey Slave ESP-Hosted
+    participant transports as Slave Transport
+    participant hosteds as Slave Hosted
+    participant api as ESP-IDF Wi-Fi Library
+    participant wifi as Wi-Fi Hardware
+    end
 
----
+    app ->> remote : esp_wifi_xxx()
+    remote ->> hostedh : esp_wifi_remote_xxx()
+    app ->> hostedh : Network Data
+    Note over hostedh : add Hosted header
+    hostedh ->> transporth : 
 
-> - using jumper cables is not recommended.
-> - external pull-up are required. 10 kOhm resistors are recommended.
-> - for ESP32, check if eFuse burning is required
+    transporth ->> transports : SPI/SDIO
 
----
+    transports ->> hosteds : 
+    Note over hosteds : remove Hosted header
+    hosteds ->> api : esp_wifi_xxx()
+    api ->> wifi : Wi-Fi command
+    hosteds ->> wifi : Network Data
+    Note over wifi: Do Wi-Fi action
+    wifi -->> hosteds : Network Data
+    wifi -->> api : Wi-Fi response
+    api -->> hosteds : Response
+    Note over hosteds : add Hosted header
+    hosteds -->> transports : 
 
-### Reset signal for the slave
+    transports -->> transporth : SPI/SDIO
 
-The host also needs a signal to reset the slave during
-initialization. This can be any GPIO on the host. This signal can be
-connected to the `RST` / `EN` pin or to a GPIO pin on the slave.
+    transporth -->> hostedh : 
+    Note over hostedh : remove Hosted header
+    hostedh -->> app : Network Data
+    hostedh -->> remote : Wi-Fi Command response
+    remote -->> app : Response
+```
 
-This is required for any hardware interface used.
+*Hosted Wi-Fi Call*
 
-## Preparing Host to use ESP-Hosted
+</details>
 
-### Disabling native Wi-Fi support
+<details>
 
-Hosts with native Wi-Fi support (ESP32 series, for example) need to
-disable it before ESP Hosted can be enabled and used on the system.
+<summary>Hosted on ESP32s with Native Wi-Fi</summary>
+
+### 1.3. Hosted on ESP32s with Native Wi-Fi
+
+You can also use Hosted on ESP chipsets that have native Wi-Fi. This
+is useful for evaluating Hosted using current ESP chipsets before
+migrating to ESP chipsets without native Wi-Fi as a host. This is
+covered in more detail in the section [Disabling Native Wi-Fi
+Support](#32-disabling-native-wi-fi-support).
+
+</details>
+
+## 2. Getting Started
+
+> [!NOTE]
+> See [References](#9-references) for the links to ESP-IDF and
+> ESP Registry Components
+
+**Set up ESP-IDF before trying Hosted**: see the *ESP-IDF Get Started
+Guide* on getting and installing ESP-IDF on your operating system
+(Linux, macOS, Windows).
+
+**Getting extra IDF components**: extra ESP Components are required to
+integrate ESP-Hosted into your ESP-IDF project. Both are available in
+the ESP Registry:
+
+- `esp_wifi_remote` (Wi-Fi Remote)
+- `esp_hosted` (ESP-Hosted)
+
+Wi-Fi Remote is an API layer that provides the standard ESP-IDF Wi-Fi
+calls to the application (`esp_wifi_init()`, etc.). Wi-Fi Remote
+forwards the Wi-Fi calls to ESP-Hosted, which transports the calls as
+remote requests to the slave.
+
+Responses are received from the slave by ESP-Hosted and returned to
+Wi-Fi Remote, which returns the reponses to the calling app. To the
+app, it is as if it made a standard ESP-IDF Wi-Fi API call.
+
+Wi-Fi events are received by ESP-Hosted from the slave and sent to the
+standard ESP-IDF event loop on the host.
+
+Steps to integrate these components into your ESP-IDF project can be
+found in the section [Preparing the Host to use
+ESP-Hosted](#3-preparing-the-host-to-use-esp-hosted).
+
+### 2.1. DevKit Specific Information
+
+ESP-Hosted comes with a default configuration that can be directly
+used with the following ESP DevKits:
+
+- [ESP32-P4-Function-EV-Board](docs/esp32_p4_function_ev_board.md)
+
+## 3. Preparing the Host to use ESP-Hosted
+
+### 3.1. Adding required components to your ESP-IDF Project
+
+Check your project's `idf_component.yml` file. If it does not contain
+`espressif/esp_wifi_remote` or `espressif/esp_hosted` as dependencies,
+you can add them to your project:
+
+```
+idf.py add-dependency "espressif/esp_wifi_remote"
+idf.py add-dependency "espressif/esp_hosted"
+```
+
+<details>
+
+<summary>3.2. Disabling Native Wi-Fi Support</summary>
+
+### 3.2. Disabling Native Wi-Fi Support
+
+For ESP Chipsets with native Wi-Fi support (the ESP32 series, for
+example), you also have to disable native Wi-Fi before ESP-Hosted can used.
 
 To do this, edit the ESP-IDF
-`components/soc/<host soc>/include/soc/Kconfig.soc_caps.in` file and change
+`components/soc/<soc>/include/soc/Kconfig.soc_caps.in` file and change
 all `WIFI` related configs to `n`. For example:
 
 ```
@@ -140,56 +263,156 @@ config SOC_WIFI_SUPPORTED
     default n
 ```
 
-This should be done for all `config SOC_WIFI_xxx` found in the file.
+This should be done for all `SOC_WIFI_xxx` configs found in the file.
 
-This is not required for ESP32-P4 as it has no native Wi-Fi and its
-`Kconfig.soc_caps.in` reflects this configuration.
+For ESP Chipsets without native Wi-FI, `SOC_WIFI_xxx` configs will be
+`n` by default.
 
-### Adding required components
+</details>
 
-To integrate the required components into the host code, add the
-following dependencies to your host application `idf_component.yml`
-file:
+## 4. Getting the ESP-Hosted Slave Project
+
+The ESP-Hosted slave project can be checked out from the ESP-Hosted
+Component's example project:
 
 ```
-  espressif/esp_hosted:
-    version: "*"
-    pre_release: true
-  espressif/esp_wifi_remote:
-    version: "*"
+idf.py create-project-from-example "espressif/esp_hosted:slave"
 ```
 
-ESP-Hosted is currently in pre-release, so the `pre_release: true`
-line is required. Once ESP-Hosted is out of pre-release, it will not
-be needed.
+## 5. Selecting the Hardware Interface for Host and Slave
 
-## Preparing Slave for ESP-Hosted
+ESP-Hosted can currently use the SPI or SDIO (on selected ESP chips)
+interfaces. See the following pages for more information on these
+interfaces:
 
-To build ESP-Hosted on the Slave, check out the slave as example code
-from the [ESP-Hosted ESP
-Registry](https://components.espressif.com/components/espressif/esp_hosted)
-into an empty directory:
+- [SPI Full Duplex interface](docs/spi_full_duplex.md)
+- [SDIO interface](docs/sdio.md)
+- [SPI Half Duplex interface](docs/spi_half_duplex.md)
 
-`idf.py create-project-from-example "espressif/esp_hosted:slave"`
+### 5.1. Evaluating ESP-Hosted Hardware Interface
 
-## Configuring the Host and Slave
+For evaluating ESP-Hosted, it is recommended to use the SPI interface
+as it is easier to prototype using jumper cables. SDIO provides the
+highest throughput but has tighter hardware requirements and requires
+using the Host and Slave on a PCB to work correctly.
 
-To configure the host and slave, run `idf.py set-target <soc>` and
-`idf.py menuconfig`.
+## 6. Configuring the ESP-Hosted Components
 
-The configuration for the Host can be found at `Component config
----> ESP-Hosted config`.
+Ensure that both Host and Slave are configured to use the same
+interface (SPI, SDIO) and GPIOs have been selected to match the
+hardware connections.
 
-The configuration for the Slave can be found at `Example
-Configuration`.
+> [!NOTE]
+> You can use a lower clock speed to verify the connections. For SPI,
+> you can try 10 MHz. For SDIO you can use a clock speed between 400
+> kHz to 20 MHz. The actual clock used is determined by the
+> hardware. Use an oscilloscope to check the actual clock frequency
+> used.
 
-Ensure that both are configured to use the same interface (SPI, SDIO)
-and GPIOs have been selected to match the hardware connections. The
-clock speed can be set to a lower speed (10 MHz for SPI, 20 MHz for
-SDIO) first to verify the connections.
+> [!NOTE]
+> For SDIO testing, you can set the SDIO Bus Width to 1-Bit. In 1-Bit
+> mode, only `DAT0` and `DAT1` signals are used for data and are less
+> affected by noise on the signal lines.
 
-## Building and running
+### 6.1. Configuring the Hosted Host
 
-You can now run `idf.py build` to build both the host and slave,
-`idf.py -p <uart port> flash monitor` to flash the firmware and run
-the terminal monitor.
+To configure the host, go to the directory where your ESP-IDF project
+is located and execute:
+
+```sh
+idf.py set-target <soc>
+idf.py menuconfig
+```
+
+The configuration options for Hosted Host can be found under **Component
+config** ---> **ESP-Hosted config**.
+
+### 6.2. Configuring the Hosted Slave
+
+To configure the slave, go to the directory where you have checked out
+the Hosted slave example project and execute:
+
+```sh
+idf.py set-target <soc>
+idf.py menuconfig
+```
+The configuration options for the Hosted Slave can be found under **Example Configuration**.
+
+### 6.3. Flashing and Running ESP-Hosted
+
+Use the standard ESP-IDF `idf.py` to build, flash and (optionally)
+monitor the debug output from the console on both the host and slave:
+
+```sh
+idf.py build
+idf.py -p <Serial Port> flash monitor
+```
+
+## 7. Verifying that ESP-Hosted is Running
+
+> [!NOTE]
+> If you are building and connecting the ESP-Hosted Host and Slave
+> on the same development system, make sure to verify which
+> Serial Port refers to the Host and Slave.
+
+### 7.1. Checking the Console Output
+
+Once both systems have been flashed and running, you should see output
+similar to the following output on the console after start-up. For
+example, if you are using the SPI Interface:
+
+For ESP-Hosted Master:
+
+```
+I (522) transport: Attempt connection with slave: retry[0]
+I (525) transport: Reset slave using GPIO[54]
+I (530) os_wrapper_esp: GPIO [54] configured
+I (535) gpio: GPIO[54]| InputEn: 0| OutputEn: 1| OpenDrain: 0| Pullup: 0| Pulldown: 0| Intr:0
+I (1712) transport: Received INIT event from ESP32 peripheral
+I (1712) transport: EVENT: 12
+I (1712) transport: EVENT: 11
+I (1715) transport: capabilities: 0xe8
+I (1719) transport: Features supported are:
+I (1724) transport:        - HCI over SPI
+I (1728) transport:        - BLE only
+I (1732) transport: EVENT: 13
+I (1736) transport: ESP board type is : 13
+
+I (1741) transport: Base transport is set-up
+```
+
+For ESP-Hosted Slave:
+
+```
+I (492) fg_mcu_slave: *********************************************************************
+I (501) fg_mcu_slave:                 ESP-Hosted-MCU Slave FW version :: 0.0.6
+
+I (511) fg_mcu_slave:                 Transport used :: SPI only
+I (520) fg_mcu_slave: *********************************************************************
+I (529) fg_mcu_slave: Supported features are:
+I (534) fg_mcu_slave: - WLAN over SPI
+I (538) h_bt: - BT/BLE
+I (541) h_bt:    - HCI Over SPI
+I (545) h_bt:    - BLE only
+```
+
+## 8. Troubleshooting
+
+If you encounter issues with using ESP-Hosted, see the following guide:
+
+- [Troubleshooting Guide](docs/troubleshooting.md)
+
+## 9. References
+
+- ESP Product Selector: https://products.espressif.com/
+- ESP-IDF Get Started Guide:
+https://docs.espressif.com/projects/esp-idf/en/latest/esp32/get-started/
+- ESP-IDF Wi-Fi API:
+  https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/network/esp_wifi.html
+- ESP-IDF Iperf Example:
+  https://github.com/espressif/esp-idf/tree/master/examples/wifi/iperf
+- ESP-IDF NimBLE: https://github.com/espressif/esp-nimble
+- ESP Registry: https://components.espressif.com/
+- `esp_wifi_remote` Component:
+  https://components.espressif.com/components/espressif/esp_wifi_remote
+- esp_hosted` Component: https://components.espressif.com/components/espressif/esp_hosted
