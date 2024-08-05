@@ -27,7 +27,7 @@ This feature is tested on imx8 mini board (imx8mm-lpddr4-evk). Other Linux board
   - Many Linux distributions may have different commands to put host into sleep mode
 
 ## 2. Additional GPIO
-- IO05 is connected to pin 38 on J1003 GPIO header on imx8 mini board
+- IO04 if target is ESP32C6 or IO22 if target is ESP32 is connected to pin 38 on J1003 GPIO header on imx8 mini board
 - This GPIO is customizable
 
 ## 3. ESP side setup
