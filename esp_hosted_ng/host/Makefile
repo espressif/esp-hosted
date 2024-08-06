@@ -13,6 +13,10 @@ MODULE_NAME=esp32_sdio
 #enable logging by default
 CONFIG_DEBUG_LOGS := y
 
+ifeq ($(CONFIG_AP_SUPPORT), y)
+	EXTRA_CFLAGS += -DCONFIG_AP_MODE
+endif
+
 #Targets passed overrrides default value
 ifeq ($(target), sdio)
 	MODULE_NAME=esp32_sdio
