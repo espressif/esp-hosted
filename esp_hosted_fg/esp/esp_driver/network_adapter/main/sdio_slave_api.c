@@ -30,7 +30,7 @@
 
 #define SDIO_SLAVE_QUEUE_SIZE   20
 #define BUFFER_SIZE     	1536 /* 512*3 */
-#define BUFFER_NUM      	10
+
 static uint8_t sdio_slave_rx_buffer[BUFFER_NUM][BUFFER_SIZE];
 
 #define SDIO_MEMPOOL_NUM_BLOCKS     40
@@ -43,7 +43,7 @@ static const char TAG[] = "SDIO_SLAVE";
 
 static interface_handle_t * sdio_init(void);
 static int32_t sdio_write(interface_handle_t *handle, interface_buffer_handle_t *buf_handle);
-static int sdio_read(interface_handle_t *if_handle, interface_buffer_handle_t *buf_handle);
+static int sdio_read(interface_handle_t *if_handle, interface_buffer_handle_t *buf_handle, TickType_t wait);
 static esp_err_t sdio_reset(interface_handle_t *handle);
 static void sdio_deinit(interface_handle_t *handle);
 
@@ -339,7 +339,7 @@ static int32_t sdio_write(interface_handle_t *handle, interface_buffer_handle_t 
 	return buf_handle->payload_len;
 }
 
-static int sdio_read(interface_handle_t *if_handle, interface_buffer_handle_t *buf_handle)
+static int sdio_read(interface_handle_t *if_handle, interface_buffer_handle_t *buf_handle, TickType_t wait)
 {
 	esp_err_t ret = ESP_OK;
 	struct esp_payload_header *header = NULL;
@@ -359,7 +359,7 @@ static int sdio_read(interface_handle_t *if_handle, interface_buffer_handle_t *b
 		return ESP_FAIL;
 
 	ret = sdio_slave_recv(&(buf_handle->sdio_buf_handle), &(buf_handle->payload),
-			&(sdio_read_len), portMAX_DELAY);
+			&(sdio_read_len), wait);
 	if (ret) {
 		ESP_LOGD(TAG, "sdio_slave_recv returned failure");
 		return ESP_FAIL;
