@@ -1107,8 +1107,11 @@ int cmd_auth_request(struct esp_wifi_device *priv,
 	struct cmd_sta_auth *cmd;
 	struct cfg80211_bss *bss;
 	/*struct cfg80211_bss *bss1;*/
+	const u8 *ssid_eid = NULL;
+	uint8_t ssid_len;
 	struct esp_adapter *adapter = NULL;
 	u16 cmd_len;
+	const struct cfg80211_bss_ies *ies;
 	/* u8 retry = 2; */
 
 	if (!priv || !req || !req->bss || !priv->adapter) {
@@ -1125,6 +1128,22 @@ int cmd_auth_request(struct esp_wifi_device *priv,
 
 	priv->bss = req->bss;
 
+	if (bss->proberesp_ies)
+		ies = bss->proberesp_ies;
+	else if (bss->beacon_ies)
+		ies = bss->beacon_ies;
+	else
+		ies = bss->ies;
+
+	ssid_eid = cfg80211_find_ie(WLAN_EID_SSID, ies->data, ies->len);
+	if (!ssid_eid) {
+		esp_err("\n ssid NULL in proberesp");
+		return -EINVAL;
+	} else {
+		ssid_len = *(ssid_eid + 1);
+		ssid_eid = ssid_eid + 2;
+	}
+
 	adapter = priv->adapter;
 
 	cmd_len = sizeof(struct cmd_sta_auth) + req->auth_data_len;
@@ -1137,6 +1156,7 @@ int cmd_auth_request(struct esp_wifi_device *priv,
 	}
 	cmd = (struct cmd_sta_auth *) (cmd_node->cmd_skb->data + sizeof(struct esp_payload_header));
 
+	memcpy(cmd->ssid, ssid_eid, ssid_len);
 	memcpy(cmd->bssid, bss->bssid, MAC_ADDR_LEN);
 	cmd->channel = bss->channel->hw_value;
 	cmd->auth_type = req->auth_type;

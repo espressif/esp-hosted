@@ -1038,7 +1038,7 @@ int process_rssi(uint8_t if_type, uint8_t *payload, uint16_t payload_len)
         wifi_ap_record_t ap_info;
         esp_wifi_sta_get_ap_info(&ap_info);
 
-	ret = send_command_resp(if_type, cmd, CMD_RESPONSE_SUCCESS, &ap_info.rssi, sizeof(int8_t), 0);
+	ret = send_command_resp(if_type, CMD_STA_RSSI, CMD_RESPONSE_SUCCESS,(uint8_t *) &ap_info.rssi, sizeof(int8_t), 0);
 
 	return ret;
 }
@@ -1145,7 +1145,6 @@ int process_auth_request(uint8_t if_type, uint8_t *payload, uint16_t payload_len
 
 	cmd_auth = (struct cmd_sta_auth *) payload;
 
-
 	esp_wifi_unset_appie_internal(WIFI_APPIE_RAM_STA_AUTH);
 	/* Auth data generally present in WPA3 frame */
 	if (cmd_auth->auth_data_len) {
@@ -1172,6 +1171,7 @@ int process_auth_request(uint8_t if_type, uint8_t *payload, uint16_t payload_len
 
 		memcpy(params.bssid, cmd_auth->bssid, sizeof(cmd_auth->bssid));
 		params.scan_type = 1;
+		params.show_hidden = true;
 
 		if (cmd_auth->channel) {
 			params.channel = cmd_auth->channel;
@@ -1202,7 +1202,6 @@ int process_auth_request(uint8_t if_type, uint8_t *payload, uint16_t payload_len
 			/*ESP_LOG_BUFFER_HEXDUMP("Next BSSID", ap_info[i].bssid, MAC_ADDR_LEN, ESP_LOG_INFO);
 			  ESP_LOGI(TAG, "ssid: %s, authmode: %u", ap_info[i].ssid, ap_info[i].authmode);*/
 			if (memcmp(ap_info[i].bssid, cmd_auth->bssid, MAC_ADDR_LEN) == 0) {
-				memcpy(wifi_config.sta.ssid, ap_info[i].ssid, MAX_SSID_LEN);
 				auth_type = ap_info[i].authmode;
 				found_ssid = 1;
 				break;
@@ -1215,6 +1214,7 @@ int process_auth_request(uint8_t if_type, uint8_t *payload, uint16_t payload_len
 			goto send_resp;
 		}
 
+		memcpy(wifi_config.sta.ssid, cmd_auth->ssid, MAX_SSID_LEN);
 		/* ESP_LOGI(TAG, "ssid_found:%u Auth type scanned[%u], exp[%u] for ssid %s", found_ssid, auth_type, cmd_auth->auth_type, wifi_config.sta.ssid); */
 
 		ESP_LOGI(TAG, "Connecting to %s, channel: %u [%d]", wifi_config.sta.ssid, cmd_auth->channel, auth_type);

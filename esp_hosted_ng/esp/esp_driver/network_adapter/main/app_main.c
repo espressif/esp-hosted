@@ -450,9 +450,10 @@ void process_priv_commamd(uint8_t if_type, uint8_t *payload, uint16_t payload_le
 			process_tx_power(if_type, payload, payload_len, header->cmd_code);
 			break;
 
-                case CMD_STA_RSSI:
+		case CMD_STA_RSSI:
 			ESP_LOGI(TAG, "RSSI command\n");
 			process_rssi(if_type, payload, payload_len);
+			break;
 		case CMD_SET_MODE:
 			ESP_LOGI(TAG, "Set MODE command\n");
 			process_set_mode(if_type, payload, payload_len);
