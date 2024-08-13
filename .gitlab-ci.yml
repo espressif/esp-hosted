@@ -22,8 +22,9 @@ check_version:
   script:
     - export HOSTED_NG_PATH=$PWD/esp_hosted_ng
     - .gitlab/ci/check_hosted_ng_version.sh
-  #only:
-     #changes:
+  rules:
+    - when: always
+     #- changes:
      # - esp_hosted_ng/**/*
 
 build_fw_esp32_sdio:
@@ -33,8 +34,8 @@ build_fw_esp32_sdio:
     IDF_TARGET: esp32
   script:
     - .gitlab/ci/build_firmware.sh $IDF_TARGET
-  only:
-    changes:
+  rules:
+    - changes:
       - esp_hosted_ng/esp/esp_driver/network_adapter/**/*
 
 build_fw_esp32_spi:
@@ -44,8 +45,8 @@ build_fw_esp32_spi:
     IDF_TARGET: esp32
   script:
     - .gitlab/ci/build_firmware.sh $IDF_TARGET spi
-  only:
-    changes:
+  rules:
+    - changes:
       - esp_hosted_ng/esp/esp_driver/network_adapter/**/*
 
 build_fw_esp32s2_spi:
@@ -55,8 +56,8 @@ build_fw_esp32s2_spi:
     IDF_TARGET: esp32s2
   script:
     - .gitlab/ci/build_firmware.sh $IDF_TARGET
-  only:
-    changes:
+  rules:
+    - changes:
       - esp_hosted_ng/esp/esp_driver/network_adapter/**/*
 
 build_fw_esp32s3_spi:
@@ -66,8 +67,8 @@ build_fw_esp32s3_spi:
     IDF_TARGET: esp32s3
   script:
     - .gitlab/ci/build_firmware.sh $IDF_TARGET
-  only:
-    changes:
+  rules:
+    - changes:
       - esp_hosted_ng/esp/esp_driver/network_adapter/**/*
 
 build_fw_esp32c2_spi:
@@ -77,8 +78,8 @@ build_fw_esp32c2_spi:
     IDF_TARGET: esp32c2
   script:
     - .gitlab/ci/build_firmware.sh $IDF_TARGET
-  only:
-    changes:
+  rules:
+    - changes:
       - esp_hosted_ng/esp/esp_driver/network_adapter/**/*
 
 build_fw_esp32c3_spi:
@@ -88,8 +89,8 @@ build_fw_esp32c3_spi:
     IDF_TARGET: esp32c3
   script:
     - .gitlab/ci/build_firmware.sh $IDF_TARGET
-  only:
-    changes:
+  rules:
+    - changes:
       - esp_hosted_ng/esp/esp_driver/network_adapter/**/*
 
 build_fw_esp32c6_sdio:
@@ -99,8 +100,8 @@ build_fw_esp32c6_sdio:
     IDF_TARGET: esp32c6
   script:
     - .gitlab/ci/build_firmware.sh $IDF_TARGET
-  only:
-    changes:
+  rules:
+    - changes:
       - esp_hosted_ng/esp/esp_driver/network_adapter/**/*
 
 build_fw_esp32c6_spi:
@@ -110,8 +111,8 @@ build_fw_esp32c6_spi:
     IDF_TARGET: esp32c6
   script:
     - .gitlab/ci/build_firmware.sh $IDF_TARGET spi
-  only:
-    changes:
+  rules:
+    - changes:
       - esp_hosted_ng/esp/esp_driver/network_adapter/**/*
 
 deploy_master_github:
