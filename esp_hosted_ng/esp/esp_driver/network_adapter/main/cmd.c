@@ -1029,6 +1029,20 @@ int process_tx_power(uint8_t if_type, uint8_t *payload, uint16_t payload_len, ui
 	return ret;
 }
 
+int process_rssi(uint8_t if_type, uint8_t *payload, uint16_t payload_len)
+{
+	esp_err_t ret = ESP_OK;
+	struct cmd_set_get_val *val;
+	uint8_t max_tx_power;
+
+        wifi_ap_record_t ap_info;
+        esp_wifi_sta_get_ap_info(&ap_info);
+
+	ret = send_command_resp(if_type, cmd, CMD_RESPONSE_SUCCESS, &ap_info.rssi, sizeof(int8_t), 0);
+
+	return ret;
+}
+
 int process_set_ip(uint8_t if_type, uint8_t *payload, uint16_t payload_len)
 {
 	esp_err_t ret = ESP_OK;

@@ -709,6 +709,7 @@ static int esp_cfg80211_get_station(struct wiphy *wiphy, struct net_device *ndev
 	if (wireless_dev_current_bss_exists(&priv->wdev)) {
 
 		sinfo->filled |= BIT(NL80211_STA_INFO_SIGNAL);
+		cmd_get_rssi(priv);
 		sinfo->signal = priv->rssi;
 
 		sinfo->filled |= BIT(NL80211_STA_INFO_RX_BYTES);
