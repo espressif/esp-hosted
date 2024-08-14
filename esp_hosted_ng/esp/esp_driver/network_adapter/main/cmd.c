@@ -1035,10 +1035,10 @@ int process_rssi(uint8_t if_type, uint8_t *payload, uint16_t payload_len)
 	struct cmd_set_get_val *val;
 	uint8_t max_tx_power;
 
-        wifi_ap_record_t ap_info;
-        esp_wifi_sta_get_ap_info(&ap_info);
+	wifi_ap_record_t ap_info;
+	esp_wifi_sta_get_ap_info(&ap_info);
 
-	ret = send_command_resp(if_type, CMD_STA_RSSI, CMD_RESPONSE_SUCCESS,(uint8_t *) &ap_info.rssi, sizeof(int8_t), 0);
+	ret = send_command_resp(if_type, CMD_STA_RSSI, CMD_RESPONSE_SUCCESS,(uint8_t *) &ap_info.rssi, sizeof(int8_t), sizeof(struct command_header));
 
 	return ret;
 }
