@@ -1232,6 +1232,7 @@ int process_auth_request(uint8_t if_type, uint8_t *payload, uint16_t payload_len
 
 		ESP_LOGD(TAG, "AUTH type=%d password used=%s\n", auth_type, wifi_config.sta.password);
 		memcpy(wifi_config.sta.bssid, cmd_auth->bssid, MAC_ADDR_LEN);
+		wifi_config.sta.bssid_set = 1;
 
 		wifi_config.sta.channel = cmd_auth->channel;
 
