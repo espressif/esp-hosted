@@ -96,6 +96,7 @@ enum {
 #define RET_INVALID                                  -2
 #define RET_FAIL_MEM                                 -3
 #define RET_FAIL4                                    -4
+#define RET_FAIL_TIMEOUT                             -5
 
 /* without alignment */
 #define MALLOC(x)                        malloc(x)

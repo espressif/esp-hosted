@@ -587,8 +587,8 @@ static ctrl_cmd_t * get_response(int *read_len, ctrl_cmd_t *app_req)
 	/* Wait for response */
 	ret = wait_for_sync_response(app_req);
 	if (ret) {
-		if (errno == ETIMEDOUT)
-			ESP_LOGW(TAG, "Resp timedout for req[0x%x]", app_req->msg_id);
+		if (ret == RET_FAIL_TIMEOUT)
+			ESP_LOGW(TAG, "Timeout waiting for Resp for Req[0x%x]", app_req->msg_id);
 		else
 			ESP_LOGE(TAG, "ERR [%u] ret[%d] for Req[0x%x]", errno, ret, app_req->msg_id);
 		return NULL;

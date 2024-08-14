@@ -535,7 +535,7 @@ int hosted_get_semaphore(void * semaphore_handle, int timeout)
 	if (sem_acquired == pdTRUE)
 		return 0;
 
-	return RET_FAIL;
+	return RET_FAIL_TIMEOUT;
 }
 
 int hosted_destroy_semaphore(void * semaphore_handle)

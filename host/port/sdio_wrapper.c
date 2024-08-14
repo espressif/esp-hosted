@@ -290,11 +290,18 @@ int hosted_sdio_card_init(void *ctx)
 	config.max_freq_khz = H_SDIO_CLOCK_FREQ_KHZ;
 	ESP_LOGI(TAG, "SDIO master: Data-Lines: %d-bit Freq(KHz)[%u KHz]", H_SDIO_BUS_WIDTH==4? 4:1,
 			config.max_freq_khz);
+#if (H_SDIO_BUS_WIDTH == 4)
 	ESP_LOGI(TAG, "GPIOs: CLK[%u] CMD[%u] D0[%u] D1[%u] D2[%u] D3[%u] Slave_Reset[%u]",
 			CONFIG_ESP_SDIO_PIN_CLK, CONFIG_ESP_SDIO_PIN_CMD,
 			CONFIG_ESP_SDIO_PIN_D0, CONFIG_ESP_SDIO_PIN_D1,
 			CONFIG_ESP_SDIO_PIN_D2, CONFIG_ESP_SDIO_PIN_D3,
 			CONFIG_ESP_GPIO_SLAVE_RESET_SLAVE);
+#else
+	ESP_LOGI(TAG, "GPIOs: CLK[%u] CMD[%u] D0[%u] D1[%u] Slave_Reset[%u]",
+			CONFIG_ESP_SDIO_PIN_CLK, CONFIG_ESP_SDIO_PIN_CMD,
+			CONFIG_ESP_SDIO_PIN_D0, CONFIG_ESP_SDIO_PIN_D1,
+			CONFIG_ESP_GPIO_SLAVE_RESET_SLAVE);
+#endif
 	ESP_LOGI(TAG, "Queues: Tx[%u] Rx[%u] SDIO-Rx-Mode[%u]",
 			CONFIG_ESP_SDIO_TX_Q_SIZE, CONFIG_ESP_SDIO_RX_Q_SIZE,
 			H_SDIO_HOST_RX_MODE);
