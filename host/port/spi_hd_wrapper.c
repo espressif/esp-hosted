@@ -25,6 +25,26 @@
 #include "os_wrapper.h"
 #include "spi_hd_wrapper.h"
 
+#if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
+/* Use DMA Aligned Buffers for reg reads, buf read / writes */
+#define USE_DMA_ALIGNED_BUF (1)
+#else
+#define USE_DMA_ALIGNED_BUF (0)
+#endif
+
+#ifdef CONFIG_IDF_TARGET_ESP32P4
+#include "esp_cache.h"
+/* Workaround for caching issues currently found for SPI */
+#define SPI_WORKAROUND (1)
+#else
+#define SPI_WORKAROUND (0)
+#endif
+
+/* SPI_WORKAROUND requires DMA Aligned Buffers to be used */
+#if SPI_WORKAROUND && !USE_DMA_ALIGNED_BUF
+#error SPI_WORKAROUND and USE_DMA_ALIGNED_BUF must be enabled together
+#endif
+
 #include "esp_log.h"
 static const char TAG[] = "spi_hd_wrapper";
 
@@ -64,6 +84,13 @@ typedef struct spi_hd_ctx_t {
 
 static spi_hd_ctx_t * ctx = NULL;
 static void * spi_hd_bus_lock;
+
+#if USE_DMA_ALIGNED_BUF
+/* we use 64-bit DMA aligned buffer for reading register data */
+
+#define DMA_ALIGNED_BUF_LEN 64 // ESP32-P4 requires 64 byte aligned buffers
+DRAM_DMA_ALIGNED_ATTR static uint8_t dma_data_buf[DMA_ALIGNED_BUF_LEN];
+#endif
 
 // initially we start off using 2 data lines
 static uint32_t spi_hd_rx_tx_flags = SPI_DUAL_FLAGS;
@@ -126,14 +153,26 @@ static esp_err_t spi_hd_read_reg(uint32_t addr, uint8_t *out_data, int len, uint
 		.dummy_bits = spi_hd_get_hd_dummy_bits(flags),
 	};
 
+#if USE_DMA_ALIGNED_BUF
+	/* tell lower layer that we have manually aligned buffer for dma */
+	t.base.flags |= SPI_TRANS_DMA_BUFFER_ALIGN_MANUAL;
+#endif
+
 	return spi_device_transmit(ctx->handle, (spi_transaction_t *)&t);
+}
+
+static esp_err_t spi_hd_wrcmd9(uint32_t flags)
+{
+	spi_transaction_t t = {
+		.cmd = spi_hd_get_hd_command(SPI_CMD_HD_INT1, flags),
+		.flags = flags,
+	};
+
+	return spi_device_transmit(ctx->handle, &t);
 }
 
 static esp_err_t spi_hd_write_reg(const uint8_t *data, int addr, int len, uint32_t flags)
 {
-	spi_hd_ctx_t * qsp_ctx;
-	spi_device_handle_t handle;
-
 	spi_transaction_ext_t t = {
 		.base = {
 			.cmd = spi_hd_get_hd_command(SPI_CMD_HD_WRBUF, flags),
@@ -145,23 +184,40 @@ static esp_err_t spi_hd_write_reg(const uint8_t *data, int addr, int len, uint32
 		.dummy_bits = spi_hd_get_hd_dummy_bits(flags),
 	};
 
-	qsp_ctx = (spi_hd_ctx_t *)ctx;
-	handle  = qsp_ctx->handle;
-
-	return spi_device_transmit(handle, (spi_transaction_t *)&t);
+	return spi_device_transmit(ctx->handle, (spi_transaction_t *)&t);
 }
 
 static esp_err_t spi_hd_rddma_seg(uint8_t *out_data, int seg_len, uint32_t flags)
 {
+#if USE_DMA_ALIGNED_BUF
+	/* Note: this only works if data is read in one segment, which is
+	 * what is currently done
+	 * incoming mempool allocated buffer's actual size is MAX_SPI_HD_BUFFER_SIZE,
+	 * so this padded length should be okay */
+	uint32_t padded_len = ((seg_len + DMA_ALIGNED_BUF_LEN - 1) / DMA_ALIGNED_BUF_LEN) * DMA_ALIGNED_BUF_LEN;
+#endif
+
+#if SPI_WORKAROUND
+	/* this ensures RX DMA data in cache is sync to memory */
+	assert(ESP_OK == esp_cache_msync((void *)out_data, padded_len, ESP_CACHE_MSYNC_FLAG_DIR_C2M));
+#endif
+
 	spi_transaction_ext_t t = {
 		.base = {
 			.cmd = spi_hd_get_hd_command(SPI_CMD_HD_RDDMA, flags),
+#if USE_DMA_ALIGNED_BUF
+			.rxlength = padded_len * 8,
+			/* tell lower layer that we have manually aligned buffer for dma */
+			.flags = flags | (SPI_TRANS_VARIABLE_DUMMY | SPI_TRANS_DMA_BUFFER_ALIGN_MANUAL),
+#else
 			.rxlength = seg_len * 8,
-			.rx_buffer = out_data,
 			.flags = flags | SPI_TRANS_VARIABLE_DUMMY,
+#endif
+			.rx_buffer = out_data,
 		},
 		.dummy_bits = spi_hd_get_hd_dummy_bits(flags),
 	};
+
 	return spi_device_transmit(ctx->handle, (spi_transaction_t *)&t);
 }
 
@@ -199,12 +255,26 @@ static esp_err_t spi_hd_rddma(uint8_t *out_data, int len, int seg_len, uint32_t 
 
 static esp_err_t spi_hd_wrdma_seg(const uint8_t *data, int seg_len, uint32_t flags)
 {
+#if USE_DMA_ALIGNED_BUF
+	/* Note: this only works if data is written in one segment, which is
+	 * what is currently done
+	 * incoming mempool allocated buffer's actual size is MAX_SPI_HD_BUFFER_SIZE,
+	 * so this padded length should be okay */
+	uint32_t padded_len = ((seg_len + DMA_ALIGNED_BUF_LEN - 1) / DMA_ALIGNED_BUF_LEN) * DMA_ALIGNED_BUF_LEN;
+#endif
+
 	spi_transaction_ext_t t = {
 		.base = {
 			.cmd = spi_hd_get_hd_command(SPI_CMD_HD_WRDMA, flags),
+#if USE_DMA_ALIGNED_BUF
+			.length = padded_len * 8,
+			/* tell lower layer that we have manually aligned buffer for dma */
+			.flags = flags | (SPI_TRANS_VARIABLE_DUMMY | SPI_TRANS_DMA_BUFFER_ALIGN_MANUAL),
+#else
 			.length = seg_len * 8,
-			.tx_buffer = data,
 			.flags = flags | SPI_TRANS_VARIABLE_DUMMY,
+#endif
+			.tx_buffer = data,
 		},
 		.dummy_bits = spi_hd_get_hd_dummy_bits(flags),
 	};
@@ -266,6 +336,9 @@ void * hosted_spi_hd_init(void)
 	};
 
 	spi_device_interface_config_t devcfg = {
+#ifdef CONFIG_IDF_TARGET_ESP32P4
+		.clock_source = SPI_CLK_SRC_SPLL,
+#endif
 		.clock_speed_hz = H_SPI_HD_CLK_MHZ * 1000 * 1000,
 		.mode = H_SPI_HD_MODE,
 		.spics_io_num = H_SPI_HD_PIN_CS,
@@ -350,15 +423,34 @@ int hosted_spi_hd_read_reg(uint32_t reg, uint32_t *data, int poll, bool lock_req
 
 	SPI_HD_LOCK(lock_required);
 
+#if SPI_WORKAROUND
+	/* this ensures RX DMA data in cache is sync to memory */
+	assert(ESP_OK == esp_cache_msync((void *)dma_data_buf, DMA_ALIGNED_BUF_LEN, ESP_CACHE_MSYNC_FLAG_DIR_C2M));
+#endif
+
+#if USE_DMA_ALIGNED_BUF
+	/* use aligned buffer to read data */
+	res = spi_hd_read_reg(reg, (uint8_t *)dma_data_buf, DMA_ALIGNED_BUF_LEN, spi_hd_rx_tx_flags);
+	read_data = *(uint32_t *)dma_data_buf;
+#else
 	res = spi_hd_read_reg(reg, (uint8_t *)&read_data, sizeof(uint32_t), spi_hd_rx_tx_flags);
+#endif
+
 	if (res != ESP_OK)
-		return res;
+		goto err;
 
 	// reread until value is stable
 	for (i = 0; i < poll; i++) {
+#if USE_DMA_ALIGNED_BUF
+		/* use aligned buffer to read data */
+		res = spi_hd_read_reg(reg, (uint8_t *)dma_data_buf, DMA_ALIGNED_BUF_LEN, spi_hd_rx_tx_flags);
+		temp_data = *(uint32_t *)dma_data_buf;
+#else
 		res = spi_hd_read_reg(reg, (uint8_t *)&temp_data, sizeof(uint32_t), spi_hd_rx_tx_flags);
+#endif
+
 		if (res != ESP_OK)
-			return res;
+			goto err;
 
 		if (temp_data == read_data) {
 			break;
@@ -366,14 +458,16 @@ int hosted_spi_hd_read_reg(uint32_t reg, uint32_t *data, int poll, bool lock_req
 		read_data = temp_data;
 	}
 
-	SPI_HD_UNLOCK(lock_required);
-
 	if (i && (i == poll)) {
 		// we didn't get a stable value at the end
-		return ESP_FAIL;
+		res = ESP_FAIL;
+		goto err;
 	}
 
 	*data = read_data;
+
+ err:
+	SPI_HD_UNLOCK(lock_required);
 
 	return res;
 }
@@ -435,14 +529,17 @@ int hosted_spi_hd_set_data_lines(uint32_t data_lines)
 	} else {
 		return ESP_FAIL;
 	}
+
 	return ESP_OK;
 }
 
 int hosted_spi_hd_send_cmd9(void)
 {
-	spi_transaction_t end_t = {
-		.cmd = spi_hd_get_hd_command(SPI_CMD_HD_INT1, spi_hd_rx_tx_flags),
-		.flags = spi_hd_rx_tx_flags,
-	};
-	return spi_device_transmit(ctx->handle, &end_t);
+	int res = 0;
+
+	SPI_HD_FAIL_IF_NULL(ctx);
+
+	res = spi_hd_wrcmd9(spi_hd_rx_tx_flags);
+
+	return res;
 }

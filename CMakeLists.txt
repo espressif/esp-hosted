@@ -54,8 +54,17 @@ else()
 endif()
 
 idf_component_register(SRCS ${COMPONENT_SRCS}
-	REQUIRES soc esp_event esp_netif esp_timer driver esp_wifi sdmmc bt esp_http_client
+	REQUIRES soc esp_event esp_netif esp_timer driver esp_wifi bt esp_http_client
 	EXCLUDE_SRCS ${EXCLUDE_COMPONENT_SRCS}
 	INCLUDE_DIRS ${COMPONENT_ADD_INCLUDEDIRS})
 
 idf_component_set_property(${COMPONENT_NAME} WHOLE_ARCHIVE TRUE)
+
+if(CONFIG_ESP_SDIO_HOST_INTERFACE)
+	idf_component_optional_requires(PRIVATE sdmmc)
+endif()
+
+if(CONFIG_IDF_TARGET_ESP32P4 AND (CONFIG_ESP_SPI_HOST_INTERFACE OR CONFIG_ESP_SPI_HD_HOST_INTERFACE))
+	# used to workaround SPI transfer issue
+	idf_component_optional_requires(PRIVATE esp_mm)
+endif()

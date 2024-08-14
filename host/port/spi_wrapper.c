@@ -23,6 +23,17 @@
 #include "spi_wrapper.h"
 #include "driver/gpio.h"
 
+#ifdef CONFIG_IDF_TARGET_ESP32P4
+/* Workaround for caching issues currently found for SPI on ESP32-P4 */
+#define SPI_WORKAROUND (1)
+#else
+#define SPI_WORKAROUND (0)
+#endif
+
+#if SPI_WORKAROUND
+#include "esp_cache.h"
+#endif
+
 DEFINE_LOG_TAG(spi_wrapper);
 
 extern void * spi_handle;
@@ -40,11 +51,11 @@ void * hosted_spi_init(void)
 
 
     esp_err_t ret;
-	ESP_LOGI(TAG, "Transport: SPI, Mode:%u Freq:%uMHz TxQ:%u RxQ:%u\n GPIOs: MOSI:%u MISO:%u CLK:%u CS:%u HS:%u DR:%u SlaveReset:%u",
-			H_SPI_MODE, H_SPI_INIT_CLK_MHZ, H_SPI_TX_Q, H_SPI_RX_Q,
-			H_GPIO_MOSI_Pin, H_GPIO_MISO_Pin, H_GPIO_SCLK_Pin,
-			H_GPIO_CS_Pin, H_GPIO_HANDSHAKE_Pin, H_GPIO_DATA_READY_Pin,
-			H_GPIO_PIN_RESET_Pin);
+    ESP_LOGI(TAG, "Transport: SPI, Mode:%u Freq:%uMHz TxQ:%u RxQ:%u\n GPIOs: MOSI:%u MISO:%u CLK:%u CS:%u HS:%u DR:%u SlaveReset:%u",
+            H_SPI_MODE, H_SPI_INIT_CLK_MHZ, H_SPI_TX_Q, H_SPI_RX_Q,
+            H_GPIO_MOSI_Pin, H_GPIO_MISO_Pin, H_GPIO_SCLK_Pin,
+            H_GPIO_CS_Pin, H_GPIO_HANDSHAKE_Pin, H_GPIO_DATA_READY_Pin,
+            H_GPIO_PIN_RESET_Pin);
 
     HOSTED_CREATE_HANDLE(spi_device_handle_t, spi_handle);
     assert(spi_handle);
@@ -64,6 +75,9 @@ void * hosted_spi_init(void)
         .command_bits=0,
         .address_bits=0,
         .dummy_bits=0,
+#ifdef CONFIG_IDF_TARGET_ESP32P4
+        .clock_source = SPI_CLK_SRC_SPLL,
+#endif
         .clock_speed_hz=MHZ_TO_HZ(H_SPI_INIT_CLK_MHZ),
         .duty_cycle_pos=128,        //50% duty cycle
         .mode=H_SPI_MODE,
@@ -80,19 +94,26 @@ void * hosted_spi_init(void)
 
     //Assume the slave is ready for the first transmission: if the slave started up before us, we will not detect
     //positive edge on the handshake line.
-	gpio_set_drive_capability(H_GPIO_CS_Pin, GPIO_DRIVE_CAP_3);
-	gpio_set_drive_capability(H_GPIO_SCLK_Pin, GPIO_DRIVE_CAP_3);
+    gpio_set_drive_capability(H_GPIO_CS_Pin, GPIO_DRIVE_CAP_3);
+    gpio_set_drive_capability(H_GPIO_SCLK_Pin, GPIO_DRIVE_CAP_3);
     return spi_handle;
 }
 
 int hosted_do_spi_transfer(void *trans)
 {
     spi_transaction_t t = {0};
-	struct hosted_transport_context_t * spi_trans = trans;
+    struct hosted_transport_context_t * spi_trans = trans;
+
+#if SPI_WORKAROUND
+    /* this ensures RX DMA data in cache is sync to memory */
+    assert(ESP_OK == esp_cache_msync((void *)spi_trans->rx_buf, spi_trans->tx_buf_size, ESP_CACHE_MSYNC_FLAG_DIR_C2M));
+#endif
 
     t.length=spi_trans->tx_buf_size*8;
     t.tx_buffer=spi_trans->tx_buf;
     t.rx_buffer=spi_trans->rx_buf;
+    /* tell lower layer that we have manually aligned buffers for dma */
+    t.flags |= SPI_TRANS_DMA_BUFFER_ALIGN_MANUAL;
 
     return spi_device_transmit(*((spi_device_handle_t *)spi_handle), &t);
 }
