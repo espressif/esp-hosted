@@ -24,6 +24,9 @@
 #endif
 #include "esp_log.h"
 
+// use mempool and zero copy for Tx
+#include "mempool.h"
+
 #if ESP_PKT_STATS
 struct pkt_stats_t pkt_stats;
 void *pkt_stats_thread = NULL;
@@ -51,6 +54,13 @@ void *hosted_timer_handler = NULL;
 static void * raw_tp_tx_task_id = 0;
 static uint64_t test_raw_tx_len = 0;
 static uint64_t test_raw_rx_len = 0;
+
+static struct mempool * buf_mp_g = NULL;
+
+void stats_mempool_free(void* ptr)
+{
+	mempool_free(buf_mp_g, ptr);
+}
 
 void test_raw_tp_cleanup(void)
 {
@@ -102,6 +112,11 @@ static void raw_tp_tx_task(void const* pvParameters)
 	uint32_t i = 0;
 	g_h.funcs->_h_sleep(5);
 
+	buf_mp_g = mempool_create(MAX_TRANSPORT_BUFFER_SIZE);
+#ifdef CONFIG_ESP_CACHE_MALLOC
+	assert(channel->memp);
+#endif
+
 	while (1) {
 
 #if CONFIG_H_LOWER_MEMCOPY
@@ -109,18 +124,18 @@ static void raw_tp_tx_task(void const* pvParameters)
 
 		ptr = (uint32_t*) raw_tp_tx_buf;
 		for (i=0; i<(TEST_RAW_TP__BUF_SIZE/4-1); i++, ptr++)
-            *ptr = 0xBAADF00D;
+			*ptr = 0xBAADF00D;
 
 		ret = esp_hosted_tx(ESP_TEST_IF, 0, raw_tp_tx_buf, TEST_RAW_TP__BUF_SIZE, H_BUFF_ZEROCOPY, H_DEFLT_FREE_FUNC);
 
 #else
-		raw_tp_tx_buf = (uint8_t*)g_h.funcs->_h_calloc(1, TEST_RAW_TP__BUF_SIZE);
+		raw_tp_tx_buf = mempool_alloc(buf_mp_g, MAX_TRANSPORT_BUFFER_SIZE, true);
 
-		ptr = (uint32_t*) raw_tp_tx_buf;
+		ptr = (uint32_t*) (raw_tp_tx_buf + H_ESP_PAYLOAD_HEADER_OFFSET);
 		for (i=0; i<(TEST_RAW_TP__BUF_SIZE/4-1); i++, ptr++)
-            *ptr = 0xBAADF00D;
+			*ptr = 0xBAADF00D;
 
-		ret = esp_hosted_tx(ESP_TEST_IF, 0, raw_tp_tx_buf, TEST_RAW_TP__BUF_SIZE, H_BUFF_NO_ZEROCOPY, H_DEFLT_FREE_FUNC);
+		ret = esp_hosted_tx(ESP_TEST_IF, 0, raw_tp_tx_buf, TEST_RAW_TP__BUF_SIZE, H_BUFF_ZEROCOPY, stats_mempool_free);
 #endif
 		if (ret != STM_OK) {
 			ESP_LOGE(TAG, "Failed to send to queue\n");
