@@ -1,0 +1,13 @@
+@startuml
+
+participant Application as app
+participant "ESP-IDF Wi-Fi Library" as api
+participant "Wi-Fi Hardware" as wifi
+
+app -> api : esp_wifi_xxx()
+api -> wifi
+wifi -> wifi : Wi-Fi action
+wifi --> api : response
+api --> app : return value +\ndata (if any)
+
+@enduml
