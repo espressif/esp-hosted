@@ -926,7 +926,7 @@ void app_main()
 
 	while (1) {
 		MEM_DUMP("mem_dump");
-		sleep(2);
+		sleep(10);
 	}
 
 }
