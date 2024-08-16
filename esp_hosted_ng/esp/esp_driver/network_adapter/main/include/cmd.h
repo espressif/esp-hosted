@@ -56,7 +56,7 @@ int process_set_ie(uint8_t if_type, uint8_t *payload, uint16_t payload_len);
 int process_set_ap_config(uint8_t if_type, uint8_t *payload, uint16_t payload_len);
 int process_mgmt_tx(uint8_t if_type, uint8_t *payload, uint16_t payload_len);
 int process_ap_station(uint8_t if_type, uint8_t *payload, uint16_t payload_len);
-int process_tx_power(uint8_t if_type, uint8_t *payload, uint16_t payload_len, uint8_t cmd);
+int process_rssi(uint8_t if_type, uint8_t *payload, uint16_t payload_len);
 
 esp_err_t initialise_wifi(void);
 

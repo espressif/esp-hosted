@@ -115,6 +115,34 @@ static int decode_mac_addr(struct esp_wifi_device *priv,
 	return ret;
 }
 
+static int decode_rssi(struct esp_wifi_device *priv,
+		struct command_node *cmd_node)
+{
+	int ret = 0;
+	struct cmd_set_get_val *header;
+
+	if (!priv || !cmd_node ||
+	    !cmd_node->resp_skb ||
+	    !cmd_node->resp_skb->data) {
+		esp_info("Invalid arg\n");
+		return -1;
+	}
+
+	header = (struct cmd_set_get_val *) (cmd_node->resp_skb->data);
+
+	if (header->header.cmd_status != CMD_RESPONSE_SUCCESS) {
+		esp_info("Command failed\n");
+		ret = -1;
+	}
+
+	if (priv)
+		priv->rssi = header->value;
+	else
+		esp_err("priv not updated\n");
+
+	return ret;
+}
+
 static int decode_tx_power(struct esp_wifi_device *priv,
 		struct command_node *cmd_node)
 {
@@ -296,6 +324,10 @@ static int wait_and_decode_cmd_resp(struct esp_wifi_device *priv,
 	case CMD_SET_TXPOWER:
 		if (ret == 0)
 			ret = decode_tx_power(priv, cmd_node);
+		break;
+        case CMD_STA_RSSI:
+		if (ret == 0)
+			ret = decode_rssi(priv, cmd_node);
 		break;
 	case CMD_MGMT_TX:
 		if (ret == 0)
@@ -1075,8 +1107,11 @@ int cmd_auth_request(struct esp_wifi_device *priv,
 	struct cmd_sta_auth *cmd;
 	struct cfg80211_bss *bss;
 	/*struct cfg80211_bss *bss1;*/
+	const u8 *ssid_eid = NULL;
+	uint8_t ssid_len;
 	struct esp_adapter *adapter = NULL;
 	u16 cmd_len;
+	const struct cfg80211_bss_ies *ies;
 	/* u8 retry = 2; */
 
 	if (!priv || !req || !req->bss || !priv->adapter) {
@@ -1093,6 +1128,22 @@ int cmd_auth_request(struct esp_wifi_device *priv,
 
 	priv->bss = req->bss;
 
+	if (bss->proberesp_ies)
+		ies = bss->proberesp_ies;
+	else if (bss->beacon_ies)
+		ies = bss->beacon_ies;
+	else
+		ies = bss->ies;
+
+	ssid_eid = cfg80211_find_ie(WLAN_EID_SSID, ies->data, ies->len);
+	if (!ssid_eid) {
+		esp_err("\n ssid NULL in proberesp");
+		return -EINVAL;
+	} else {
+		ssid_len = *(ssid_eid + 1);
+		ssid_eid = ssid_eid + 2;
+	}
+
 	adapter = priv->adapter;
 
 	cmd_len = sizeof(struct cmd_sta_auth) + req->auth_data_len;
@@ -1105,6 +1156,7 @@ int cmd_auth_request(struct esp_wifi_device *priv,
 	}
 	cmd = (struct cmd_sta_auth *) (cmd_node->cmd_skb->data + sizeof(struct esp_payload_header));
 
+	memcpy(cmd->ssid, ssid_eid, ssid_len);
 	memcpy(cmd->bssid, bss->bssid, MAC_ADDR_LEN);
 	cmd->channel = bss->channel->hw_value;
 	cmd->auth_type = req->auth_type;
@@ -1590,6 +1642,33 @@ int cmd_init_raw_tp_task_timer(struct esp_wifi_device *priv)
 	} else if (raw_tp_mode == ESP_TEST_RAW_TP_HOST_TO_ESP) {
 		cmd_node = prepare_command_request(priv->adapter, CMD_RAW_TP_HOST_TO_ESP, cmd_len);
 	}
+
+	if (!cmd_node) {
+		esp_err("Failed to get command node\n");
+		return -ENOMEM;
+	}
+
+	queue_cmd_node(priv->adapter, cmd_node, ESP_CMD_DFLT_PRIO);
+	queue_work(priv->adapter->cmd_wq, &priv->adapter->cmd_work);
+
+	RET_ON_FAIL(wait_and_decode_cmd_resp(priv, cmd_node));
+
+	return 0;
+}
+
+int cmd_get_rssi(struct esp_wifi_device *priv)
+{
+	u16 cmd_len;
+	struct command_node *cmd_node = NULL;
+
+	if (!priv || !priv->adapter) {
+		esp_err("Invalid argument\n");
+		return -EINVAL;
+	}
+
+	cmd_len = sizeof(struct command_header) + sizeof(int32_t);
+
+	cmd_node = prepare_command_request(priv->adapter, CMD_STA_RSSI, cmd_len);
 
 	if (!cmd_node) {
 		esp_err("Failed to get command node\n");
