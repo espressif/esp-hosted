@@ -363,8 +363,20 @@ static void sdio_write_task(void const* pvParameters)
 		do {
 			len_to_send = data_left;
 
+#if H_SDIO_TX_BLOCK_ONLY_XFER
+			/* Extend the transfer length to do block only transfers.
+			 * This is safe as slave only reads up to data_left, which
+			 * is not changed here. Rest of data is discarded by
+			 * slave.
+			 */
+			uint32_t block_send_len = ((len_to_send + ESP_BLOCK_SIZE - 1) / ESP_BLOCK_SIZE) * ESP_BLOCK_SIZE;
+
+			ret = g_h.funcs->_h_sdio_write_block(ESP_SLAVE_CMD53_END_ADDR - data_left,
+				pos, block_send_len, ACQUIRE_LOCK);
+#else
 			ret = g_h.funcs->_h_sdio_write_block(ESP_SLAVE_CMD53_END_ADDR - data_left,
 				pos, len_to_send, ACQUIRE_LOCK);
+#endif
 			if (ret) {
 				ESP_LOGE(TAG, "%s: %d: Failed to send data: %d %ld %ld", __func__,
 					retries, ret, len_to_send, data_left);
@@ -535,6 +547,11 @@ static esp_err_t sdio_push_data_to_queue(uint8_t * buf, uint32_t buf_len)
 // return a buffer big enough to contain the data
 static uint8_t * sdio_rx_get_buffer(uint32_t len)
 {
+#if H_SDIO_RX_BLOCK_ONLY_XFER
+	// we need to allocate enough memory to hold the padded data
+	len = ((len + ESP_BLOCK_SIZE - 1) / ESP_BLOCK_SIZE) * ESP_BLOCK_SIZE;
+#endif
+
 	// (re)allocate a buffer big enough to contain the data stream
 	if (len > recv_buf_size) {
 		if (recv_buf) {
@@ -703,9 +720,20 @@ static void sdio_read_task(void const* pvParameters)
 		do {
 			len_to_read = data_left;
 
+#if H_SDIO_RX_BLOCK_ONLY_XFER
+			/* Extend the transfer length to do block only transfers.
+			 * This is safe as slave will pad data with 0, which we
+			 * will ignore.
+			 */
+			uint32_t block_read_len = ((len_to_read + ESP_BLOCK_SIZE - 1) / ESP_BLOCK_SIZE) * ESP_BLOCK_SIZE;
+			ret = g_h.funcs->_h_sdio_read_block(
+					ESP_SLAVE_CMD53_END_ADDR - data_left,
+					pos, block_read_len, ACQUIRE_LOCK);
+#else
 			ret = g_h.funcs->_h_sdio_read_block(
 					ESP_SLAVE_CMD53_END_ADDR - data_left,
 					pos, len_to_read, ACQUIRE_LOCK);
+#endif
 			if (ret) {
 				ESP_LOGE(TAG, "%s: Failed to read data - %d %ld %ld",
 					__func__, ret, len_to_read, data_left);

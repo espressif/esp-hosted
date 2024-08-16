@@ -142,6 +142,18 @@ so feel free to change these if needed.
 #define H_SDIO_TX_LEN_TO_TRANSFER(x) ((x + 3) & (~3))
 #define H_SDIO_RX_LEN_TO_TRANSFER(x) ((x + 3) & (~3))
 
+/* Do Block Mode only transfers
+ *
+ * When enabled, SDIO only uses block mode transfers for higher
+ * throughput. Data lengths are padded to multiples of ESP_BLOCK_SIZE.
+ *
+ * This is safe for the SDIO slave:
+ * - for Host Tx: slave will ignore extra data sent by Host
+ * - for Host Rx: slave will send extra 0 data, ignored by Host
+ */
+#define H_SDIO_TX_BLOCK_ONLY_XFER (1)
+#define H_SDIO_RX_BLOCK_ONLY_XFER (1)
+
 // workarounds for some SDIO transfer errors that may occur
 #if 0
 /* Below workarounds could be enabled for non-ESP MCUs to test first

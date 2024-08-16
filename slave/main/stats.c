@@ -196,14 +196,14 @@ static void stats_timer_func(void* arg)
 	double actual_bandwidth_tx = 0;
 	int32_t div = 1024;
 
-	actual_bandwidth_tx = (test_raw_tp_tx_len*8);
-	actual_bandwidth_rx = (test_raw_tp_rx_len*8);
+	actual_bandwidth_tx = (test_raw_tp_tx_len*8)/TEST_RAW_TP__TIMEOUT;
+	actual_bandwidth_rx = (test_raw_tp_rx_len*8)/TEST_RAW_TP__TIMEOUT;
 #if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 0, 0)
-	ESP_LOGI(TAG,"%lu-%lu sec       Rx: %.2f Tx: %.2f kbps", cur, cur + 1, actual_bandwidth_rx/div, actual_bandwidth_tx/div);
+	ESP_LOGI(TAG,"%lu-%lu sec       Rx: %.2f Tx: %.2f kbps", cur, cur + TEST_RAW_TP__TIMEOUT, actual_bandwidth_rx/div, actual_bandwidth_tx/div);
 #else
-	ESP_LOGI(TAG,"%u-%u sec       Rx: %.2f Tx: %.2f kbps", cur, cur + 1, actual_bandwidth_rx/div, actual_bandwidth_tx/div);
+	ESP_LOGI(TAG,"%u-%u sec       Rx: %.2f Tx: %.2f kbps", cur, cur + TEST_RAW_TP__TIMEOUT, actual_bandwidth_rx/div, actual_bandwidth_tx/div);
 #endif
-	cur++;
+	cur += TEST_RAW_TP__TIMEOUT;
 	test_raw_tp_rx_len = test_raw_tp_tx_len = 0;
 #endif
 #if ESP_PKT_STATS
@@ -239,7 +239,6 @@ static void start_timer_to_display_stats(int periodic_time_sec)
 void process_test_capabilities(uint8_t capabilities)
 {
 	ESP_LOGD(TAG, "capabilites: %d", capabilities);
-	start_timer_to_display_stats(TEST_RAW_TP__TIMEOUT);
 	if ((capabilities & ESP_TEST_RAW_TP__ESP_TO_HOST) ||
 		(capabilities & ESP_TEST_RAW_TP__BIDIRECTIONAL)) {
 		assert(xTaskCreate(raw_tp_tx_task , "raw_tp_tx_task",
@@ -257,7 +256,7 @@ void create_debugging_tasks(void)
 				CONFIG_ESP_DEFAULT_TASK_PRIO, NULL) == pdTRUE);
 #endif
 
-#if ESP_PKT_STATS
+#if TEST_RAW_TP || ESP_PKT_STATS
 	start_timer_to_display_stats(ESP_PKT_STATS_REPORT_INTERVAL);
 #endif
 }
