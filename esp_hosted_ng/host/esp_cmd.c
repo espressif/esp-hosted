@@ -1156,10 +1156,21 @@ int cmd_auth_request(struct esp_wifi_device *priv,
 	}
 	cmd = (struct cmd_sta_auth *) (cmd_node->cmd_skb->data + sizeof(struct esp_payload_header));
 
+#define WLAN_AUTH_OPEN 0
+#define WLAN_AUTH_FT 2
+#define WLAN_AUTH_SAE 3
+	if (req->auth_type == NL80211_AUTHTYPE_FT) {
+		cmd->auth_type = WLAN_AUTH_FT;
+	} else if (req->auth_type == NL80211_AUTHTYPE_SAE) {
+		cmd->auth_type = WLAN_AUTH_SAE;
+	} else if (req->auth_type == NL80211_AUTHTYPE_OPEN_SYSTEM) {
+		cmd->auth_type = WLAN_AUTH_OPEN;
+	} else {
+		cmd->auth_type = req->auth_type;
+	}
 	memcpy(cmd->ssid, ssid_eid, ssid_len);
 	memcpy(cmd->bssid, bss->bssid, MAC_ADDR_LEN);
 	cmd->channel = bss->channel->hw_value;
-	cmd->auth_type = req->auth_type;
 	cmd->auth_data_len = req->auth_data_len;
 	memcpy(cmd->auth_data, req->auth_data, req->auth_data_len);
 

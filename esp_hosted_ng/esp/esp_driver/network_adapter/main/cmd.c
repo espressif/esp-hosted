@@ -1032,8 +1032,6 @@ int process_tx_power(uint8_t if_type, uint8_t *payload, uint16_t payload_len, ui
 int process_rssi(uint8_t if_type, uint8_t *payload, uint16_t payload_len)
 {
 	esp_err_t ret = ESP_OK;
-	struct cmd_set_get_val *val;
-	uint8_t max_tx_power;
 
 	wifi_ap_record_t ap_info;
 	esp_wifi_sta_get_ap_info(&ap_info);
@@ -1158,10 +1156,9 @@ int process_auth_request(uint8_t if_type, uint8_t *payload, uint16_t payload_len
 	}
 
 	if (msg_type == 2) {
-#define WLAN_AUTH_FT 2
 		/* WPA3 specific */
 		ESP_LOGI(TAG, "AUTH Confirm\n");
-		esp_wifi_send_auth_internal(0, cmd_auth->bssid, WLAN_AUTH_FT, 2, 0);
+		esp_wifi_send_auth_internal(0, cmd_auth->bssid, cmd_auth->auth_type, 2, 0);
 
 	} else {
 		wifi_scan_config_t params = {0};
