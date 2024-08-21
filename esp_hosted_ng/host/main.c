@@ -374,6 +374,13 @@ static int esp_open(struct net_device *ndev)
 
 static int esp_stop(struct net_device *ndev)
 {
+	struct esp_wifi_device *priv = netdev_priv(ndev);
+
+	if (!priv)
+		return 0;
+
+	esp_mark_scan_done_and_disconnect(priv, false);
+	esp_port_close(priv);
 	return 0;
 }
 

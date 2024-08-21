@@ -294,7 +294,6 @@ static int wait_and_decode_cmd_resp(struct esp_wifi_device *priv,
 	case CMD_STA_AUTH:
 	case CMD_STA_ASSOC:
 	case CMD_STA_CONNECT:
-	case CMD_DISCONNECT:
 	case CMD_ADD_KEY:
 	case CMD_DEL_KEY:
 	case CMD_SET_MODE:
@@ -319,7 +318,10 @@ static int wait_and_decode_cmd_resp(struct esp_wifi_device *priv,
 		if (ret == 0)
 			ret = decode_mac_addr(priv, cmd_node);
 		break;
-
+	case CMD_DISCONNECT:
+		if (ret == 0)
+			ret = decode_disconnect_resp(priv, cmd_node);
+		break;
 	case CMD_GET_TXPOWER:
 	case CMD_SET_TXPOWER:
 		if (ret == 0)

@@ -26,6 +26,9 @@
 
 #define TAG "FW_CMD"
 
+static uint8_t broadcast_mac[ETH_ALEN] = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };
+#define IS_BROADCAST_ADDR(addr) (memcmp(addr, broadcast_mac, ETH_ALEN) == 0)
+
 /* This is limitation of ESP WiFi lib.
  * It needs the password field updated to understand
  * we are triggering non-open connection */
@@ -855,7 +858,7 @@ static int handle_wpa_ap_rx_mgmt(void *pkt, uint32_t pkt_len, uint8_t chan, int 
 	event->nf = nf;
 
 	if (event->frame[0] != 0x40) {
-		ESP_LOGE(TAG, "%s: Got packet type as %x \n", __func__, event->frame[0]);
+		ESP_LOGI(TAG, "%s: Got packet type as %x \n", __func__, event->frame[0]);
 	}
 
 	/*ESP_LOG_BUFFER_HEXDUMP(TAG, event->frame, event->frame_len, ESP_LOG_INFO);*/
@@ -1016,7 +1019,8 @@ int process_tx_power(uint8_t if_type, uint8_t *payload, uint16_t payload_len, ui
 {
 	esp_err_t ret = ESP_OK;
 	struct cmd_set_get_val *val;
-	uint8_t max_tx_power;
+	int8_t max_tx_power;
+	uint32_t value;
 
 	if (cmd == CMD_SET_TXPOWER) {
 		val = (struct cmd_set_get_val *)payload;
@@ -1024,7 +1028,10 @@ int process_tx_power(uint8_t if_type, uint8_t *payload, uint16_t payload_len, ui
 		esp_wifi_set_max_tx_power(max_tx_power);
 	}
 
-	ret = send_command_resp(if_type, cmd, CMD_RESPONSE_SUCCESS, &max_tx_power, sizeof(int8_t), 0);
+	esp_wifi_get_max_tx_power((int8_t *)&max_tx_power);
+	value = max_tx_power;
+	ret = send_command_resp(if_type, cmd, CMD_RESPONSE_SUCCESS, (uint8_t *)&value,
+				sizeof(uint32_t), sizeof(struct command_header));
 
 	return ret;
 }
@@ -1657,7 +1664,7 @@ int process_set_ie(uint8_t if_type, uint8_t *payload, uint16_t payload_len)
 	struct cmd_config_ie *ie = (struct cmd_config_ie *) payload;
 	int type = 0;
 
-	ESP_LOGI(TAG, "Setting %d IEs len=%d\n", ie->ie_type, ie->ie_len);
+	ESP_LOGI(TAG, "Setting IE type=%d len=%d\n", ie->ie_type, ie->ie_len);
 
 	if (if_type != ESP_AP_IF) {
 		cmd_status = CMD_RESPONSE_INVALID;
@@ -1715,9 +1722,11 @@ static void mgmt_txcb(void *eb)
 	uint32_t len = esp_wifi_get_eb_data_len(eb);
 
 	ieee80211_tx_mgt_cb(eb);
-	//printf("tx cb status=%d data_len=%ld\n", cmd_status, len);
-	//ESP_LOG_BUFFER_HEXDUMP(TAG, data, len, ESP_LOG_INFO);
-	send_mgmt_tx_done(cmd_status, WIFI_IF_AP, data, len);
+	if (!IS_BROADCAST_ADDR(data + 4)) {
+		send_mgmt_tx_done(cmd_status, WIFI_IF_AP, data, len);
+	}
+	ESP_LOGD(TAG, "tx cb status=%d data_len=%ld\n", cmd_status, len);
+	/* ESP_LOG_BUFFER_HEXDUMP(TAG, data, len, ESP_LOG_INFO); */
 }
 
 typedef enum {
@@ -1832,9 +1841,6 @@ DONE:
 }
 
 int ieee80211_send_mgmt_internal(wifi_interface_t wifi_if_type, uint8_t *buf, size_t len);
-
-static uint8_t broadcast_mac[ETH_ALEN] = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };
-#define IS_BROADCAST_ADDR(addr) (memcmp(addr, broadcast_mac, ETH_ALEN) == 0)
 
 int process_mgmt_tx(uint8_t if_type, uint8_t *payload, uint16_t payload_len)
 {
