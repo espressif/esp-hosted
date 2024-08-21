@@ -115,15 +115,34 @@ static int ctrl_app_event_callback(ctrl_cmd_t * app_event)
 				get_timestamp(ts, MIN_TIMESTAMP_STR_SIZE),
 					app_event->u.e_heartbeat.hb_num);
 			break;
+		} case CTRL_EVENT_STATION_CONNECTED_TO_AP: {
+			event_sta_conn_t *p_e = &app_event->u.e_sta_conn;
+			printf("%s App EVENT: STA-Connected ssid[%s] bssid[%s] channel[%d] auth[%d] aid[%d]\n",
+				get_timestamp(ts, MIN_TIMESTAMP_STR_SIZE), p_e->ssid,
+				p_e->bssid, p_e->channel, p_e->authmode, p_e->aid);
+			break;
 		} case CTRL_EVENT_STATION_DISCONNECT_FROM_AP: {
-			printf("%s App EVENT: Station mode: Disconnect Reason[%u]\n",
-				get_timestamp(ts, MIN_TIMESTAMP_STR_SIZE), app_event->resp_event_status);
+			event_sta_disconn_t *p_e =  &app_event->u.e_sta_disconn;
+			printf("%s App EVENT: STA-Disconnected reason[%d] ssid[%s] bssid[%s] rssi[%d]\n",
+				get_timestamp(ts, MIN_TIMESTAMP_STR_SIZE), p_e->reason, p_e->ssid,
+				p_e->bssid, p_e->rssi);
+			break;
+		} case CTRL_EVENT_STATION_CONNECTED_TO_ESP_SOFTAP: {
+			event_softap_sta_conn_t *p_e = &app_event->u.e_softap_sta_conn;
+			char *p = (char *)p_e->mac;
+			if (p && strlen(p)) {
+				printf("%s App EVENT: SoftAP mode: Connected MAC[%s] aid[%d] is_mesh_child[%d]\n",
+					get_timestamp(ts, MIN_TIMESTAMP_STR_SIZE),
+					p, p_e->aid, p_e->is_mesh_child);
+			}
 			break;
 		} case CTRL_EVENT_STATION_DISCONNECT_FROM_ESP_SOFTAP: {
-			char *p = app_event->u.e_sta_disconnected.mac;
+			event_softap_sta_disconn_t *p_e = &app_event->u.e_softap_sta_disconn;
+			char *p = (char *)p_e->mac;
 			if (p && strlen(p)) {
-				printf("%s App EVENT: SoftAP mode: Disconnect MAC[%s]\n",
-					get_timestamp(ts, MIN_TIMESTAMP_STR_SIZE), p);
+				printf("%s App EVENT: SoftAP mode: Disconnect MAC[%s] reason[%d] aid[%d] is_mesh_child[%d]\n",
+					get_timestamp(ts, MIN_TIMESTAMP_STR_SIZE),
+					p, p_e->reason, p_e->aid, p_e->is_mesh_child);
 			}
 			break;
 		} default: {
@@ -413,7 +432,9 @@ int register_event_callbacks(void)
 	event_callback_table_t events[] = {
 		{ CTRL_EVENT_ESP_INIT,                           ctrl_app_event_callback },
 		{ CTRL_EVENT_HEARTBEAT,                          ctrl_app_event_callback },
+		{ CTRL_EVENT_STATION_CONNECTED_TO_AP,            ctrl_app_event_callback },
 		{ CTRL_EVENT_STATION_DISCONNECT_FROM_AP,         ctrl_app_event_callback },
+		{ CTRL_EVENT_STATION_CONNECTED_TO_ESP_SOFTAP,    ctrl_app_event_callback },
 		{ CTRL_EVENT_STATION_DISCONNECT_FROM_ESP_SOFTAP, ctrl_app_event_callback },
 	};
 
@@ -695,8 +716,8 @@ int test_set_mac_addr(int mode, char *mac)
 	int ret = test_set_wifi_mode(mode);
 	if (ret == SUCCESS) {
 		req.u.wifi_mac.mode = mode;
-		strncpy(req.u.wifi_mac.mac, mac, MAX_MAC_STR_LEN);
-		req.u.wifi_mac.mac[MAX_MAC_STR_LEN-1] = '\0';
+		strncpy(req.u.wifi_mac.mac, mac, MAX_MAC_STR_SIZE);
+		req.u.wifi_mac.mac[MAX_MAC_STR_SIZE-1] = '\0';
 
 		resp = wifi_set_mac(req);
 		return ctrl_app_resp_callback(resp);
@@ -1167,15 +1188,25 @@ int test_disable_bt(void)
 	return ctrl_app_resp_callback(resp);
 }
 
-int test_get_fw_version(void)
+char * test_get_fw_version(char *version)
 {
 	/* implemented synchronous */
 	ctrl_cmd_t *resp = NULL;
 	ctrl_cmd_t req = CTRL_CMD_DEFAULT_REQ();
 	resp = get_fw_version(req);
 
+	if (!version)
+		return NULL;
+
 	if (resp->resp_event_status == SUCCESS) {
-		printf("FW Version Info: %s-%d.%d.%d.%d.%d\n",
+		/*printf("FW Version Info: %s-%d.%d.%d.%d.%d\n",
+				resp->u.fw_version.project_name,
+				resp->u.fw_version.major_1,
+				resp->u.fw_version.major_2,
+				resp->u.fw_version.minor,
+				resp->u.fw_version.revision_patch_1,
+				resp->u.fw_version.revision_patch_2);*/
+		snprintf(version, sizeof("XX-111.222.333.444.555"), "%s-%d.%d.%d.%d.%d",
 				resp->u.fw_version.project_name,
 				resp->u.fw_version.major_1,
 				resp->u.fw_version.major_2,
@@ -1184,5 +1215,17 @@ int test_get_fw_version(void)
 				resp->u.fw_version.revision_patch_2);
 	}
 
-	return ctrl_app_resp_callback(resp);
+	CLEANUP_CTRL_MSG(resp);
+
+	return version;
 }
+
+int test_print_fw_version(char *version, uint16_t version_size)
+{
+	char vers[30] = {'\0'};
+
+	printf("Hosted Slave FW Version [%s]\n", test_get_fw_version(vers));
+
+	return 0;
+}
+

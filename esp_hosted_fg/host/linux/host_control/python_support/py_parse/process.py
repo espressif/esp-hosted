@@ -24,6 +24,10 @@ os_set_mac = "sudo ifconfig ethsta0 hw ether "
 os_ifup_cmd = "sudo ifconfig ethsta0 up"
 os_dhcp_up = "sudo dhclient ethsta0 -v"
 
+os_run_dhcp_server='sudo bash ./run_dhcp_server.sh'
+os_ifup_softap_cmd = "sudo ifconfig ethap0 up 192.168.4.5"
+os_ifdown_softap_cmd = "sudo ifconfig ethap0 down"
+
 sta_interface = "ethsta0"
 softap_interface = "ethap0"
 
@@ -86,11 +90,6 @@ def _get_bool(x):
 def process_init_control_lib():
 	if (init_hosted_control_lib()):
 		print("init hosted control lib failed")
-		quit()
-
-	if (commands_map_py_to_c.control_path_platform_init()):
-		print("Failed to read serial driver file")
-		commands_map_py_to_c.deinit_hosted_control_lib()
 		quit()
 
 
@@ -163,13 +162,17 @@ def process_connect_ap(ssid, pwd, bssid, use_wpa3, listen_interval, set_dhcp):
 	print("\n")
 
 	if set_dhcp:
-		print(os_dhcp_down)
-		os.system(os_dhcp_down)
-		print("\n")
+		try:
+			print(os_dhcp_down)
+			os.system(os_dhcp_down)
+			print("\n")
 
-		print(os_dhcp_up)
-		os.system(os_dhcp_up)
-		print("\n")
+			print(os_dhcp_up)
+			os.system(os_dhcp_up)
+			print("\n")
+		except Exception as e:
+			ret_str = f"Failed during DHCP operations: {e}"
+			return ret_str
 
 	ret_str = "\nConnected to " + ssid
 	return ret_str
@@ -204,7 +207,7 @@ def process_softap_vendor_ie(enable, data):
 	return ""
 
 
-def process_start_softap(ssid, pwd, channel, sec_prot, max_conn, hide_ssid, bw):
+def process_start_softap(ssid, pwd, channel, sec_prot, max_conn, hide_ssid, bw, start_dhcp_server):
 	if sec_prot != "open" and pwd == "":
 		return "password mandatory for security protocol"
 
@@ -233,8 +236,22 @@ def process_start_softap(ssid, pwd, channel, sec_prot, max_conn, hide_ssid, bw):
 	if max_conn < 1 or max_conn > 10:
 		return "max connections should be 1 to 10(hardware_max)"
 
-	test_sync_softap_mode_start(ssid, pwd, channel, encr, max_conn, hide_ssid, bw_l)
-	return ""
+	if test_sync_softap_mode_start(ssid, pwd, channel, encr, max_conn, hide_ssid, bw_l) != SUCCESS:
+		ret_str = "Failed to start ESP softap"
+		return ret_str
+	print("\n")
+
+	if start_dhcp_server:
+		print("Running " + os_run_dhcp_server)
+		exit_code = os.system(os_run_dhcp_server)
+		if exit_code != 0:
+			print("DHCP server (dnsmasq) not configured/running")
+			print("\033[91m Please review/edit and run 'bash -x run_dhcp_server.sh for your platform' \033[0m")
+		print("Running " + os_ifup_softap_cmd)
+		os.system(os_ifup_softap_cmd)
+
+	ret_str = "\nSoftAP started"
+	return ret_str
 
 
 def process_get_softap_info():
@@ -248,8 +265,17 @@ def process_softap_connected_clients_info():
 
 
 def process_stop_softap():
-	test_sync_softap_mode_stop()
-	return ""
+	if test_sync_softap_mode_stop() != SUCCESS:
+		ret_str = "Failed to stop SoftAP"
+		return ret_str
+	print()
+
+	print(os_ifdown_softap_cmd)
+	os.system(os_ifdown_softap_cmd)
+	print()
+
+	ret_str = "SoftAP stopped"
+	return ret_str
 
 
 def process_set_power_save(mode):
@@ -344,10 +370,16 @@ def process_subscribe_event(event):
 		subscribe_event_esp_init()
 	elif event == 'heartbeat':
 		subscribe_event_heartbeat()
+	elif event == 'sta_connected_to_ap':
+		subscribe_event_sta_connected_to_ap()
 	elif event == 'sta_disconnect_from_ap':
 		subscribe_event_sta_disconnect_from_ap()
+	elif event == 'sta_connected_to_softap':
+		subscribe_event_sta_connected_to_softap()
 	elif event == 'sta_disconnect_from_softap':
 		subscribe_event_sta_disconnect_from_softap()
+	elif event == 'all':
+		register_all_event_callbacks()
 	else:
 		return "Unsupported event " + event
 	return ""
@@ -358,10 +390,16 @@ def process_unsubscribe_event(event):
 		unsubscribe_event_esp_init()
 	elif event == 'heartbeat':
 		unsubscribe_event_heartbeat()
+	elif event == 'sta_connected_to_ap':
+		unsubscribe_event_sta_connected_to_ap()
 	elif event == 'sta_disconnect_from_ap':
 		unsubscribe_event_sta_disconnect_from_ap()
+	elif event == 'sta_connected_to_softap':
+		unsubscribe_event_sta_connected_to_softap()
 	elif event == 'sta_disconnect_from_softap':
 		unsubscribe_event_sta_disconnect_from_softap()
+	elif event == 'all':
+		unregister_all_event_callbacks()
 	else:
 		return "Unsupported event " + event
 	return ""

@@ -61,7 +61,9 @@ typedef struct CtrlMsgRespGetFwVersion CtrlMsgRespGetFwVersion;
 typedef struct CtrlMsgEventESPInit CtrlMsgEventESPInit;
 typedef struct CtrlMsgEventHeartbeat CtrlMsgEventHeartbeat;
 typedef struct CtrlMsgEventStationDisconnectFromAP CtrlMsgEventStationDisconnectFromAP;
+typedef struct CtrlMsgEventStationConnectedToAP CtrlMsgEventStationConnectedToAP;
 typedef struct CtrlMsgEventStationDisconnectFromESPSoftAP CtrlMsgEventStationDisconnectFromESPSoftAP;
+typedef struct CtrlMsgEventStationConnectedToESPSoftAP CtrlMsgEventStationConnectedToESPSoftAP;
 typedef struct CtrlMsg CtrlMsg;
 
 
@@ -207,11 +209,13 @@ typedef enum _CtrlMsgId {
   CTRL_MSG_ID__Event_Heartbeat = 302,
   CTRL_MSG_ID__Event_StationDisconnectFromAP = 303,
   CTRL_MSG_ID__Event_StationDisconnectFromESPSoftAP = 304,
+  CTRL_MSG_ID__Event_StationConnectedToAP = 305,
+  CTRL_MSG_ID__Event_StationConnectedToESPSoftAP = 306,
   /*
    * Add new control path command notification before Event_Max
    * and update Event_Max 
    */
-  CTRL_MSG_ID__Event_Max = 305
+  CTRL_MSG_ID__Event_Max = 307
     PROTOBUF_C__FORCE_ENUM_TO_BE_INT_SIZE(CTRL_MSG_ID)
 } CtrlMsgId;
 typedef enum _HostedFeature {
@@ -730,10 +734,31 @@ struct  CtrlMsgEventStationDisconnectFromAP
 {
   ProtobufCMessage base;
   int32_t resp;
+  ProtobufCBinaryData ssid;
+  uint32_t ssid_len;
+  ProtobufCBinaryData bssid;
+  uint32_t reason;
+  int32_t rssi;
 };
 #define CTRL_MSG__EVENT__STATION_DISCONNECT_FROM_AP__INIT \
  { PROTOBUF_C_MESSAGE_INIT (&ctrl_msg__event__station_disconnect_from_ap__descriptor) \
-    , 0 }
+    , 0, {0,NULL}, 0, {0,NULL}, 0, 0 }
+
+
+struct  CtrlMsgEventStationConnectedToAP
+{
+  ProtobufCMessage base;
+  int32_t resp;
+  ProtobufCBinaryData ssid;
+  uint32_t ssid_len;
+  ProtobufCBinaryData bssid;
+  uint32_t channel;
+  int32_t authmode;
+  int32_t aid;
+};
+#define CTRL_MSG__EVENT__STATION_CONNECTED_TO_AP__INIT \
+ { PROTOBUF_C_MESSAGE_INIT (&ctrl_msg__event__station_connected_to_ap__descriptor) \
+    , 0, {0,NULL}, 0, {0,NULL}, 0, 0, 0 }
 
 
 struct  CtrlMsgEventStationDisconnectFromESPSoftAP
@@ -741,10 +766,26 @@ struct  CtrlMsgEventStationDisconnectFromESPSoftAP
   ProtobufCMessage base;
   int32_t resp;
   ProtobufCBinaryData mac;
+  uint32_t aid;
+  protobuf_c_boolean is_mesh_child;
+  uint32_t reason;
 };
 #define CTRL_MSG__EVENT__STATION_DISCONNECT_FROM_ESPSOFT_AP__INIT \
  { PROTOBUF_C_MESSAGE_INIT (&ctrl_msg__event__station_disconnect_from_espsoft_ap__descriptor) \
-    , 0, {0,NULL} }
+    , 0, {0,NULL}, 0, 0, 0 }
+
+
+struct  CtrlMsgEventStationConnectedToESPSoftAP
+{
+  ProtobufCMessage base;
+  int32_t resp;
+  ProtobufCBinaryData mac;
+  uint32_t aid;
+  protobuf_c_boolean is_mesh_child;
+};
+#define CTRL_MSG__EVENT__STATION_CONNECTED_TO_ESPSOFT_AP__INIT \
+ { PROTOBUF_C_MESSAGE_INIT (&ctrl_msg__event__station_connected_to_espsoft_ap__descriptor) \
+    , 0, {0,NULL}, 0, 0 }
 
 
 typedef enum {
@@ -798,7 +839,9 @@ typedef enum {
   CTRL_MSG__PAYLOAD_EVENT_ESP_INIT = 301,
   CTRL_MSG__PAYLOAD_EVENT_HEARTBEAT = 302,
   CTRL_MSG__PAYLOAD_EVENT_STATION_DISCONNECT_FROM__AP = 303,
-  CTRL_MSG__PAYLOAD_EVENT_STATION_DISCONNECT_FROM__ESP__SOFT_AP = 304
+  CTRL_MSG__PAYLOAD_EVENT_STATION_DISCONNECT_FROM__ESP__SOFT_AP = 304,
+  CTRL_MSG__PAYLOAD_EVENT_STATION_CONNECTED_TO__AP = 305,
+  CTRL_MSG__PAYLOAD_EVENT_STATION_CONNECTED_TO__ESP__SOFT_AP = 306
     PROTOBUF_C__FORCE_ENUM_TO_BE_INT_SIZE(CTRL_MSG__PAYLOAD__CASE)
 } CtrlMsg__PayloadCase;
 
@@ -882,6 +925,8 @@ struct  CtrlMsg
     CtrlMsgEventHeartbeat *event_heartbeat;
     CtrlMsgEventStationDisconnectFromAP *event_station_disconnect_from_ap;
     CtrlMsgEventStationDisconnectFromESPSoftAP *event_station_disconnect_from_esp_softap;
+    CtrlMsgEventStationConnectedToAP *event_station_connected_to_ap;
+    CtrlMsgEventStationConnectedToESPSoftAP *event_station_connected_to_esp_softap;
   };
 };
 #define CTRL_MSG__INIT \
@@ -1763,6 +1808,25 @@ CtrlMsgEventStationDisconnectFromAP *
 void   ctrl_msg__event__station_disconnect_from_ap__free_unpacked
                      (CtrlMsgEventStationDisconnectFromAP *message,
                       ProtobufCAllocator *allocator);
+/* CtrlMsgEventStationConnectedToAP methods */
+void   ctrl_msg__event__station_connected_to_ap__init
+                     (CtrlMsgEventStationConnectedToAP         *message);
+size_t ctrl_msg__event__station_connected_to_ap__get_packed_size
+                     (const CtrlMsgEventStationConnectedToAP   *message);
+size_t ctrl_msg__event__station_connected_to_ap__pack
+                     (const CtrlMsgEventStationConnectedToAP   *message,
+                      uint8_t             *out);
+size_t ctrl_msg__event__station_connected_to_ap__pack_to_buffer
+                     (const CtrlMsgEventStationConnectedToAP   *message,
+                      ProtobufCBuffer     *buffer);
+CtrlMsgEventStationConnectedToAP *
+       ctrl_msg__event__station_connected_to_ap__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data);
+void   ctrl_msg__event__station_connected_to_ap__free_unpacked
+                     (CtrlMsgEventStationConnectedToAP *message,
+                      ProtobufCAllocator *allocator);
 /* CtrlMsgEventStationDisconnectFromESPSoftAP methods */
 void   ctrl_msg__event__station_disconnect_from_espsoft_ap__init
                      (CtrlMsgEventStationDisconnectFromESPSoftAP         *message);
@@ -1781,6 +1845,25 @@ CtrlMsgEventStationDisconnectFromESPSoftAP *
                       const uint8_t       *data);
 void   ctrl_msg__event__station_disconnect_from_espsoft_ap__free_unpacked
                      (CtrlMsgEventStationDisconnectFromESPSoftAP *message,
+                      ProtobufCAllocator *allocator);
+/* CtrlMsgEventStationConnectedToESPSoftAP methods */
+void   ctrl_msg__event__station_connected_to_espsoft_ap__init
+                     (CtrlMsgEventStationConnectedToESPSoftAP         *message);
+size_t ctrl_msg__event__station_connected_to_espsoft_ap__get_packed_size
+                     (const CtrlMsgEventStationConnectedToESPSoftAP   *message);
+size_t ctrl_msg__event__station_connected_to_espsoft_ap__pack
+                     (const CtrlMsgEventStationConnectedToESPSoftAP   *message,
+                      uint8_t             *out);
+size_t ctrl_msg__event__station_connected_to_espsoft_ap__pack_to_buffer
+                     (const CtrlMsgEventStationConnectedToESPSoftAP   *message,
+                      ProtobufCBuffer     *buffer);
+CtrlMsgEventStationConnectedToESPSoftAP *
+       ctrl_msg__event__station_connected_to_espsoft_ap__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data);
+void   ctrl_msg__event__station_connected_to_espsoft_ap__free_unpacked
+                     (CtrlMsgEventStationConnectedToESPSoftAP *message,
                       ProtobufCAllocator *allocator);
 /* CtrlMsg methods */
 void   ctrl_msg__init
@@ -1941,8 +2024,14 @@ typedef void (*CtrlMsgEventHeartbeat_Closure)
 typedef void (*CtrlMsgEventStationDisconnectFromAP_Closure)
                  (const CtrlMsgEventStationDisconnectFromAP *message,
                   void *closure_data);
+typedef void (*CtrlMsgEventStationConnectedToAP_Closure)
+                 (const CtrlMsgEventStationConnectedToAP *message,
+                  void *closure_data);
 typedef void (*CtrlMsgEventStationDisconnectFromESPSoftAP_Closure)
                  (const CtrlMsgEventStationDisconnectFromESPSoftAP *message,
+                  void *closure_data);
+typedef void (*CtrlMsgEventStationConnectedToESPSoftAP_Closure)
+                 (const CtrlMsgEventStationConnectedToESPSoftAP *message,
                   void *closure_data);
 typedef void (*CtrlMsg_Closure)
                  (const CtrlMsg *message,
@@ -2009,7 +2098,9 @@ extern const ProtobufCMessageDescriptor ctrl_msg__resp__get_fw_version__descript
 extern const ProtobufCMessageDescriptor ctrl_msg__event__espinit__descriptor;
 extern const ProtobufCMessageDescriptor ctrl_msg__event__heartbeat__descriptor;
 extern const ProtobufCMessageDescriptor ctrl_msg__event__station_disconnect_from_ap__descriptor;
+extern const ProtobufCMessageDescriptor ctrl_msg__event__station_connected_to_ap__descriptor;
 extern const ProtobufCMessageDescriptor ctrl_msg__event__station_disconnect_from_espsoft_ap__descriptor;
+extern const ProtobufCMessageDescriptor ctrl_msg__event__station_connected_to_espsoft_ap__descriptor;
 extern const ProtobufCMessageDescriptor ctrl_msg__descriptor;
 
 PROTOBUF_C__END_DECLS

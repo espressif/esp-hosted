@@ -38,6 +38,9 @@ from py_parse.cmds import ctrl_cmd
 from py_parse.process import process_init_control_lib, process_deinit_control_lib, process_heartbeat
 
 import traceback
+import faulthandler
+
+faulthandler.enable()
 
 DEBUG = 0
 
@@ -167,11 +170,11 @@ def main():
 	process_init_control_lib()
 
 	# Display FW Version
-	print("===== Current ESP FW Version =====")
+	print("------- ESP-Hosted slave FW [", end='')
 	cmd = ctrl_cmd()
 	cmd.get_fw_version()
-	print("==================================")
-	
+	print("] --------")
+
 	argumentList = sys.argv[1:]
 	if argumentList and len(argumentList):
 		try:

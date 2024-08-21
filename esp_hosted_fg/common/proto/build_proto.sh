@@ -14,3 +14,5 @@ fi
 
 mv esp_hosted_config.pb-c.h ../include/esp_hosted_config.pb-c.h
 mv esp_hosted_config.pb-c.c ../esp_hosted_config.pb-c.c
+
+echo "Generated protobuf definitions successfully"

@@ -46,6 +46,7 @@ int main(int argc, char *argv[])
 	/* Below APIs could be used by demo application */
 	int stress_test_count = 0;
 	int str_args_start = 2;
+	char version[30] = {'\0'};
 
 	if(getuid()) {
 		printf("Please re-run program with superuser access\n");
@@ -85,9 +86,7 @@ int main(int argc, char *argv[])
 	test_config_heartbeat();
 
 	/* Print FW Version by Default */
-	printf("===== Current ESP FW Version =====\n");
-	test_get_fw_version();
-	printf("==================================\n");
+	printf("------ ESP-Hosted FW [%s] ------\n", test_get_fw_version(version));
 
 	for (int test_count=0; test_count<stress_test_count; test_count++) {
 		printf("\n\nIteration %u:\n",test_count+1);
@@ -162,7 +161,7 @@ int main(int argc, char *argv[])
 				test_wifi_get_curr_tx_power();
 			} else if (0 == strncasecmp(GET_FW_VERSION, argv[i],
 						sizeof(GET_FW_VERSION))) {
-				test_get_fw_version();
+				test_print_fw_version();
 			} else if (0 == strncasecmp(OTA, argv[i], sizeof(OTA))) {
 				/* OTA ESP flashing */
 				printf("OTA binary path:%s\n",argv[i+1]);

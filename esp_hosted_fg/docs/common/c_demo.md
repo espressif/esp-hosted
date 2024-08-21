@@ -42,6 +42,13 @@
 | get_wifi_curr_tx_power | Get Wi-Fi current transmitting power |
 |||
 | ota </path/to/ota_image.bin> | performs OTA operation using local OTA binary file |
+|||
+| get_fw_version | Get firmware version |
+| enable_wifi | Enable Wi-Fi driver |
+| disable_wifi | Disable Wi-Fi driver |
+| enable_bt | Enable Bluetooth driver |
+| disable_bt | Disable Bluetooth driver |
+
 
 
 ### How to run
@@ -59,7 +66,8 @@ $ sudo ./test.out \
 	  softap_start          || get_softap_config       || softap_connected_sta_list || \
 	  softap_stop           || set_wifi_powersave_mode || get_wifi_powersave_mode   || \
 	  set_wifi_max_tx_power || get_wifi_curr_tx_power  || \
-	  ota </path/to/esp_firmware_network_adapter.bin> \
+	  ota </path/to/esp_firmware_network_adapter.bin> || \
+      enable_wifi || disable_wifi || enable_bt || disable_bt || get_fw_version
 	]
 ```
 For example,

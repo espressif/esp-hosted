@@ -88,8 +88,9 @@ static int local_pthread_cancel(pthread_t thread) {
 static int set_read_access_nonblocking(struct serial_drv_handle_t* handle, bool enable)
 {
 	int flags;
+	int ret = 0;
 
-	// get the current file access mode
+	/* get the current file access mode */
 	flags = fcntl(handle->file_desc, F_GETFL);
 	if (flags < 0) {
 		printf("%s: Error: fcntl(F_GETFL) failed\n", __func__);
@@ -101,11 +102,17 @@ static int set_read_access_nonblocking(struct serial_drv_handle_t* handle, bool 
 	} else {
 		flags &= ~O_NONBLOCK;
 	}
-	// set the new file access mode
-	fcntl(handle->file_desc, F_SETFL, flags);
+	/* set the new file access mode */
+	ret = fcntl(handle->file_desc, F_SETFL, flags);
+
+	if (ret) {
+		perror("Err while set/reset blocking mode\n");
+		return ret;
+	}
 
 	return SUCCESS;
 }
+
 
 int control_path_platform_init(struct serial_drv_handle_t* serial_drv_handle)
 {
@@ -117,19 +124,19 @@ int control_path_platform_init(struct serial_drv_handle_t* serial_drv_handle)
 	uint8_t *buf = NULL;
 
 	if (!serial_drv_handle) {
-		printf("%s: Error: serial_drv_handle not initialised\n", __func__);
+		printf("%s:%u: Error: serial_drv_handle not initialised\n", __func__, __LINE__);
 		return FAILURE;
 	}
 
 	buf = (uint8_t *)hosted_calloc(1, DUMMY_READ_BUF_LEN);
 	if (!buf) {
-		printf("%s, Failed to allocate memory \n", __func__);
+		printf("%s:%u, Failed to allocate memory \n", __func__, __LINE__);
 		goto close1;
 	}
 
 	/* set to non-blocking to flush stale messages */
 	if (SUCCESS != set_read_access_nonblocking(serial_drv_handle, true)) {
-		printf("%s: failed to set_read_access to nonblocking\n", __func__);
+		printf("%s:%u: failed to set_read_access to nonblocking\n", __func__, __LINE__);
 		goto close;
 	}
 
@@ -139,6 +146,7 @@ int control_path_platform_init(struct serial_drv_handle_t* serial_drv_handle)
 				(buf), (DUMMY_READ_BUF_LEN));
 		if (count < 0) {
 			if (-errno != -EAGAIN) {
+				printf("%s:%u read failed[%d]\n", __func__, __LINE__, errno);
 				perror("Failed to read ringbuffer:\n");
 				goto close;
 			}
@@ -150,15 +158,17 @@ int control_path_platform_init(struct serial_drv_handle_t* serial_drv_handle)
 
 	/* set to blocking: expected behaviour of read() in the rx thread */
 	if (SUCCESS != set_read_access_nonblocking(serial_drv_handle, false)) {
-		printf("%s: failed to set_read_access back to blocking\n", __func__);
+		printf("%s:%u: failed to set_read_access back to blocking\n", __func__, __LINE__);
 		goto close1;
 	}
 
 	return SUCCESS;
 
 close:
+	printf("%s:%u FAILED\n",__func__,__LINE__);
 	mem_free(buf);
 close1:
+	printf("%s:%u FAILED\n",__func__,__LINE__);
 	/* switch back to blocking mode before failure exit */
 	set_read_access_nonblocking(serial_drv_handle, false);
 	return FAILURE;

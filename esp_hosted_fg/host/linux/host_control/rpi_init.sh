@@ -27,6 +27,9 @@ spi_handshake="534"
 # Module param, spi_dataready: spi dataready GPIO to use
 spi_dataready="539"
 
+##################  Local params for host ######################
+cpu_perf="on"
+
 # Old Raspberry Pi config
 #resetpin="6"
 #spi_handshake="22"
@@ -357,6 +360,10 @@ parse_arguments() {
 				spi_dataready=${1#*=}
 				log "SPI dataready gpio: $spi_dataready"
 				;;
+			cpu_perf=*)
+				cpu_perf=${1#*=}
+				log "Set CPU performance: $cpu_perf"
+				;;
             *)
                 log "$1 : unknown option"
                 usage
@@ -444,7 +451,8 @@ usage() {
     echo "  spi_mode=<num>               Use this SPI mode"
     echo "  spi_handshake=<gpio_num>     SPI Handshake GPIO"
     echo "  spi_dataready=<gpio_num>     SPI DataReady GPIO"
-    echo "  rawtp                 Test RAW TP"
+    echo "  rawtp                        Test RAW TP"
+    echo "  cpu_perf=<on/off>            Change cpu performance level(may need porting)"
     echo ""
 }
 
@@ -464,6 +472,24 @@ populate_module_params()
 	fi
 }
 
+port_populate_local_params()
+{
+	if [ "$cpu_perf" = "on" ] ; then
+		for cpu in /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor; do
+			sudo sh -c "echo performance > $cpu"
+		done
+	elif [ "$cpu_perf" = "off" ] ; then
+		for cpu in /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor; do
+			sudo sh -c "echo ondemand > $cpu"
+		done
+	fi
+
+	echo "Current CPU governor settings:"
+	for cpu in /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor; do
+		echo "$cpu: $(cat $cpu)"
+	done
+}
+
 
 ######## Script ##########
 SCRIPT_DIR=$PWD
@@ -476,6 +502,7 @@ log "Building for $IF_TYPE protocol"
 MODULE_NAME=esp32_${IF_TYPE}.ko
 
 populate_module_params
+port_populate_local_params
 
 build_user_space_apps
 

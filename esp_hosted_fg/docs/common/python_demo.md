@@ -138,6 +138,17 @@
     - Subscribe event to get notifications
   - `unsubscribe_event`
     - Unsubscribe event to get notifications
+  - `disable_wifi`
+    - Deinit Wi-Fi driver in slave
+  - `enable_wifi`
+    - Init and start Wi-Fi driver in slave
+  - `disable_bt`
+    - Deinit Bluetooth driver in slave
+  - `enable_bt`
+    - Init and start Bluetooth driver in slave
+  - `get_fw_version`
+    - Fetch firmware version at slave
+
 - Note:
   - Positional arguments are supported in case of `Shell mode`
   - In both, `CLI mode` and `Shell mode`, a single command is supported at a time.
