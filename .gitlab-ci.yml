@@ -23,9 +23,8 @@ check_version:
     - export HOSTED_NG_PATH=$PWD/esp_hosted_ng
     - .gitlab/ci/check_hosted_ng_version.sh
   rules:
-    - when: always
-     #- changes:
-     # - esp_hosted_ng/**/*
+    - changes:
+      - esp_hosted_ng/esp/esp_driver/network_adapter/**/*
 
 build_fw_esp32_sdio:
   stage: build
