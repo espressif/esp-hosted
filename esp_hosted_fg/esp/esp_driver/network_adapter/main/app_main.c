@@ -90,6 +90,10 @@ interface_handle_t *if_handle = NULL;
 static QueueHandle_t meta_to_host_queue = NULL;
 static QueueHandle_t to_host_queue[MAX_PRIORITY_QUEUES] = {NULL};
 
+#ifdef CONFIG_ESP_SDIO_HOST_INTERFACE
+static interface_buffer_handle_t s_wifi_tx_buffer_handle[BUFFER_NUM];
+#endif
+
 
 static protocomm_t *pc_pserial;
 
@@ -369,7 +373,7 @@ void process_serial_rx_pkt(uint8_t *buf)
 	}
 }
 
-void process_rx_pkt(interface_buffer_handle_t *buf_handle)
+int process_rx_pkt(interface_buffer_handle_t *buf_handle)
 {
 	struct esp_payload_header *header = NULL;
 	uint8_t *payload = NULL;
@@ -385,6 +389,11 @@ void process_rx_pkt(interface_buffer_handle_t *buf_handle)
 
 	if ((buf_handle->if_type == ESP_STA_IF) && station_connected) {
 		/* Forward data to wlan driver */
+#ifdef CONFIG_ESP_SDIO_HOST_INTERFACE
+		if (esp_wifi_internal_tx(ESP_IF_WIFI_STA, payload, payload_len) == ESP_ERR_NO_MEM) {
+			ret = ESP_FAIL;
+		}
+#else
 		int retry = 6;
 
 		do {
@@ -399,10 +408,17 @@ void process_rx_pkt(interface_buffer_handle_t *buf_handle)
 			}
 
 		} while (ret && retry);
+#endif
 		/*ESP_LOG_BUFFER_HEXDUMP("spi_sta_rx", payload, payload_len, ESP_LOG_INFO);*/
 	} else if (buf_handle->if_type == ESP_AP_IF && softap_started) {
 		/* Forward data to wlan driver */
+#ifdef CONFIG_ESP_SDIO_HOST_INTERFACE
+		if (esp_wifi_internal_tx(ESP_IF_WIFI_AP, payload, payload_len) == ESP_ERR_NO_MEM) {
+			ret = ESP_FAIL;
+		}
+#else
 		esp_wifi_internal_tx(ESP_IF_WIFI_AP, payload, payload_len);
+#endif
 	} else if (buf_handle->if_type == ESP_SERIAL_IF) {
 		process_serial_rx_pkt(buf_handle->payload);
 	}
@@ -418,16 +434,31 @@ void process_rx_pkt(interface_buffer_handle_t *buf_handle)
 #endif
 
 	/* Free buffer handle */
+#ifdef CONFIG_ESP_SDIO_HOST_INTERFACE
+	if (ret == ESP_OK && buf_handle->free_buf_handle && buf_handle->priv_buffer_handle) {
+		buf_handle->free_buf_handle(buf_handle->priv_buffer_handle);
+		buf_handle->priv_buffer_handle = NULL;
+	}
+	return ret;
+#else
 	if (buf_handle->free_buf_handle && buf_handle->priv_buffer_handle) {
 		buf_handle->free_buf_handle(buf_handle->priv_buffer_handle);
 		buf_handle->priv_buffer_handle = NULL;
 	}
+	return 0;
+#endif
 }
 
 /* Get data from host */
 void recv_task(void* pvParameters)
 {
 	interface_buffer_handle_t buf_handle = {0};
+
+#ifdef CONFIG_ESP_SDIO_HOST_INTERFACE
+	memset(s_wifi_tx_buffer_handle, 0, sizeof(s_wifi_tx_buffer_handle));
+	uint32_t start_index = 0;
+	uint32_t store_num = 0;
+#endif
 
 	for (;;) {
 
@@ -439,14 +470,39 @@ void recv_task(void* pvParameters)
 
 		/* receive data from transport layer */
 		if (if_context && if_context->if_ops && if_context->if_ops->read) {
+#ifdef CONFIG_ESP_SDIO_HOST_INTERFACE
+			TickType_t wait_tick = store_num ? 1 : portMAX_DELAY;
+			int len = if_context->if_ops->read(if_handle, &buf_handle, wait_tick);
+			while (store_num) {
+				if (process_rx_pkt(&s_wifi_tx_buffer_handle[start_index]) != ESP_OK) {
+					break;
+				}
+				start_index++;
+				store_num--;
+				if (start_index >= BUFFER_NUM) {
+					start_index = 0;
+				}
+			}
+#else
 			int len = if_context->if_ops->read(if_handle, &buf_handle);
+#endif
 			if (len <= 0) {
 				usleep(10*1000);
 				continue;
 			}
 		}
-
+#ifdef CONFIG_ESP_SDIO_HOST_INTERFACE
+		if (process_rx_pkt(&buf_handle) != ESP_OK) {
+			uint32_t end_index = start_index + store_num;
+			if (end_index >= BUFFER_NUM) {
+				end_index -= BUFFER_NUM;
+			}
+			s_wifi_tx_buffer_handle[end_index] = buf_handle;
+			store_num++;
+		}
+#else
 		process_rx_pkt(&buf_handle);
+#endif
 	}
 }
 

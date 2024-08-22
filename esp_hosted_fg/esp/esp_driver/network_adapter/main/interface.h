@@ -26,6 +26,8 @@
 	#error "SDIO is not supported for this chipset"
 #endif
 
+#include "sdio_slave_api.h"
+
 #endif
 
 typedef enum {
@@ -78,7 +80,11 @@ typedef struct {
 typedef struct {
 	interface_handle_t * (*init)(void);
 	int32_t (*write)(interface_handle_t *handle, interface_buffer_handle_t *buf_handle);
+#ifdef CONFIG_ESP_SDIO_HOST_INTERFACE
+	int (*read)(interface_handle_t *handle, interface_buffer_handle_t *buf_handle, TickType_t wait);
+#else
 	int (*read)(interface_handle_t *handle, interface_buffer_handle_t *buf_handle);
+#endif
 	esp_err_t (*reset)(interface_handle_t *handle);
 	void (*deinit)(interface_handle_t *handle);
 } if_ops_t;

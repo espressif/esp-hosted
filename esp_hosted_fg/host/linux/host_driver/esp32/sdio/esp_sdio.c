@@ -37,8 +37,10 @@
 #include "esp_fw_verify.h"
 
 #define MAX_WRITE_RETRIES       2
-#define TX_MAX_PENDING_COUNT    200
-#define TX_RESUME_THRESHOLD     (TX_MAX_PENDING_COUNT/5)
+/* Pause  wifi tx if pending skb > this */
+#define FLOW_CTL_PAUSE_THRES    100
+/* Resume wifi tx if pending skb < this */
+#define FLOW_CTL_RESUME_THRES   (FLOW_CTL_PAUSE_THRES * 4 / 5)
 
 #define CHECK_SDIO_RW_ERROR(ret) do {			\
 	if (ret)						\
@@ -58,7 +60,6 @@
 #endif
 
 struct esp_sdio_context sdio_context;
-static atomic_t tx_pending;
 static atomic_t queue_items[MAX_PRIORITY_QUEUES];
 
 struct task_struct *tx_thread;
@@ -509,15 +510,6 @@ static int write_packet(struct esp_adapter *adapter, struct sk_buff *skb)
 		return -EPERM;
 	}
 
-	if (atomic_read(&tx_pending) >= TX_MAX_PENDING_COUNT) {
-		esp_tx_pause();
-		dev_kfree_skb(skb);
-		return -EBUSY;
-	}
-
-	/* Enqueue SKB in tx_q */
-	atomic_inc(&tx_pending);
-
 	/* Notify to process queue */
 	if (payload_header->if_type == ESP_SERIAL_IF) {
 		atomic_inc(&queue_items[PRIO_Q_SERIAL]);
@@ -526,6 +518,11 @@ static int write_packet(struct esp_adapter *adapter, struct sk_buff *skb)
 		atomic_inc(&queue_items[PRIO_Q_BT]);
 		skb_queue_tail(&(sdio_context.tx_q[PRIO_Q_BT]), skb);
 	} else {
+		if (atomic_read(&queue_items[PRIO_Q_OTHERS]) >= FLOW_CTL_PAUSE_THRES) {
+			esp_tx_pause();
+			dev_kfree_skb(skb);
+			return -EBUSY;
+		}
 		atomic_inc(&queue_items[PRIO_Q_OTHERS]);
 		skb_queue_tail(&(sdio_context.tx_q[PRIO_Q_OTHERS]), skb);
 	}
@@ -533,55 +530,14 @@ static int write_packet(struct esp_adapter *adapter, struct sk_buff *skb)
 	return 0;
 }
 
-static int is_sdio_write_buffer_available(u32 buf_needed)
-{
-#define BUFFER_AVAILABLE        1
-#define BUFFER_UNAVAILABLE      0
-
-	int ret = 0;
-	static u32 buf_available = 0;
-	struct esp_sdio_context *context = &sdio_context;
-	u8 retry = MAX_WRITE_RETRIES;
-
-	/*If buffer needed are less than buffer available
-	  then only read for available buffer number from slave*/
-	if (buf_available < buf_needed) {
-		while (retry) {
-			ret = esp_slave_get_tx_buffer_num(context, &buf_available, ACQUIRE_LOCK);
-
-			if (buf_available < buf_needed) {
-
-				/* Release SDIO and retry after delay*/
-				retry--;
-				usleep_range(10,50);
-				continue;
-			}
-
-			break;
-		}
-	}
-
-	if (buf_available >= buf_needed)
-		buf_available -= buf_needed;
-
-	if (!retry) {
-		esp_verbose("slave buffer unavailable\n");
-		/* No buffer available at slave */
-		return BUFFER_UNAVAILABLE;
-	}
-
-	return BUFFER_AVAILABLE;
-}
-
 static int tx_process(void *data)
 {
 	int ret = 0;
-	u32 block_cnt = 0;
-	u32 buf_needed = 0;
-	u8 *pos = NULL;
-	u32 data_left, len_to_send, pad;
+	u32 len_to_send;
 	struct sk_buff *tx_skb = NULL;
 	struct esp_sdio_context *context = &sdio_context;
+	u32 buf_available = 0;
+	u8 retry;
 
 	while (!kthread_should_stop()) {
 
@@ -589,6 +545,23 @@ static int tx_process(void *data)
 			esp_verbose("Tx process not ready yet\n");
 			msleep(1);
 			continue;
+		}
+
+		if (buf_available < 2) {
+			retry = MAX_WRITE_RETRIES;
+			while (1) {
+				ret = esp_slave_get_tx_buffer_num(context, &buf_available, ACQUIRE_LOCK);
+				if (buf_available > 0 && retry <= 1) {
+					break;
+				}
+				retry--;
+				usleep_range(10, 50);
+			}
+
+			if (buf_available < 1) {
+				msleep(1);
+				continue;
+			}
 		}
 
 		if (atomic_read(&queue_items[PRIO_Q_SERIAL]) > 0) {
@@ -603,7 +576,7 @@ static int tx_process(void *data)
 				continue;
 			}
 			atomic_dec(&queue_items[PRIO_Q_BT]);
-		} else if (atomic_read(&queue_items[PRIO_Q_OTHERS]) > 0) {
+		} else if (buf_available >= 2 && atomic_read(&queue_items[PRIO_Q_OTHERS]) > 0) {
 			tx_skb = skb_dequeue(&(context->tx_q[PRIO_Q_OTHERS]));
 			if (!tx_skb) {
 				continue;
@@ -614,50 +587,26 @@ static int tx_process(void *data)
 			continue;
 		}
 
-		if (atomic_read(&tx_pending))
-			atomic_dec(&tx_pending);
-
 		/* resume network tx queue if bearable load */
-		if (atomic_read(&tx_pending) < TX_RESUME_THRESHOLD) {
+		if (atomic_read(&queue_items[PRIO_Q_OTHERS]) < FLOW_CTL_RESUME_THRES) {
 			esp_tx_resume();
 			#if TEST_RAW_TP
 				esp_raw_tp_queue_resume();
 			#endif
 		}
 
-		buf_needed = (tx_skb->len + ESP_RX_BUFFER_SIZE - 1) / ESP_RX_BUFFER_SIZE;
-
-		/*If SDIO slave buffer is available to write then only write data
-		else wait till buffer is available*/
-		ret = is_sdio_write_buffer_available(buf_needed);
-		if(!ret) {
-			dev_kfree_skb(tx_skb);
-			continue;
-		}
-
-		pos = tx_skb->data;
-		data_left = len_to_send = 0;
-
-		data_left = tx_skb->len;
-		pad = ESP_BLOCK_SIZE - (data_left % ESP_BLOCK_SIZE);
-		data_left += pad;
+		/*write_packet limits the maximum length of data sent to ESP_RX_BUFFER_SIZE,
+		 so a buffer is always required.*/
+		buf_available--;
 
 		esp_hex_dump_dbg("sdio_tx: ", tx_skb->data, 32);
 
-		do {
-			block_cnt = data_left / ESP_BLOCK_SIZE;
-			len_to_send = data_left;
-			ret = esp_write_block(context, ESP_SLAVE_CMD53_END_ADDR - len_to_send,
-					pos, (len_to_send + 3) & (~3), ACQUIRE_LOCK);
-
-			if (ret) {
-				esp_err("Failed to send data: %d %d %d\n", ret, len_to_send, data_left);
-				break;
-			}
-
-			data_left -= len_to_send;
-			pos += len_to_send;
-		} while (data_left);
+		len_to_send = tx_skb->len;
+		if (len_to_send % ESP_BLOCK_SIZE > 0) {
+			len_to_send += (ESP_BLOCK_SIZE - (len_to_send % ESP_BLOCK_SIZE));
+		}
+		ret = esp_write_block(context, ESP_SLAVE_CMD53_END_ADDR - len_to_send,
+			tx_skb->data, (len_to_send + 3) & (~3), ACQUIRE_LOCK);
 
 		if (ret) {
 			/* drop the packet */
@@ -665,7 +614,7 @@ static int tx_process(void *data)
 			continue;
 		}
 
-		context->tx_buffer_count += buf_needed;
+		context->tx_buffer_count ++;
 		context->tx_buffer_count = context->tx_buffer_count % ESP_TX_BUFFER_MAX;
 
 		dev_kfree_skb(tx_skb);
@@ -732,7 +681,6 @@ static int esp_probe(struct sdio_func *func,
 	esp_info("ESP network device detected\n");
 
 	context = init_sdio_func(func, &ret);
-	atomic_set(&tx_pending, 0);
 
 	if (!context) {
 		if (ret)

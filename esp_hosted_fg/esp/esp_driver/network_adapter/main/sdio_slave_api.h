@@ -22,4 +22,6 @@
     #error "SDIO is not supported for ESP32S2. Please use SPI"
 #endif
 
+#define BUFFER_NUM      	10
+
 #endif
