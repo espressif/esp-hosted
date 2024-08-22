@@ -56,8 +56,12 @@
 
 #define GET_FW_VERSION                     "get_fw_version"
 
-#define SSID_LENGTH                         32
-#define PWD_LENGTH                          64
+#ifndef SSID_LENGTH
+#define SSID_LENGTH                         33
+#endif
+#ifndef PWD_LENGTH
+#define PWD_LENGTH                          65
+#endif
 #define CHUNK_SIZE                          4000
 
 /* station mode */

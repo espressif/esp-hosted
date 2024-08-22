@@ -319,7 +319,7 @@ void send_event_to_host(int event_id)
 	protocomm_pserial_data_ready(pc_pserial, NULL, 0, event_id);
 }
 
-void send_event_data_to_host(int event_id, uint8_t *data, int size)
+void send_event_data_to_host(int event_id, void *data, int size)
 {
 	protocomm_pserial_data_ready(pc_pserial, data, size, event_id);
 }
@@ -401,8 +401,20 @@ void process_rx_pkt(interface_buffer_handle_t *buf_handle)
 		} while (ret && retry);
 		/*ESP_LOG_BUFFER_HEXDUMP("spi_sta_rx", payload, payload_len, ESP_LOG_INFO);*/
 	} else if (buf_handle->if_type == ESP_AP_IF && softap_started) {
+		int retry = 6;
 		/* Forward data to wlan driver */
-		esp_wifi_internal_tx(ESP_IF_WIFI_AP, payload, payload_len);
+		do {
+			ret = esp_wifi_internal_tx(ESP_IF_WIFI_AP, payload, payload_len);
+			retry--;
+
+			if (ret) {
+				if (retry % 3)
+					usleep(600);
+				else
+					vTaskDelay(1);
+			}
+
+		} while (ret && retry);
 	} else if (buf_handle->if_type == ESP_SERIAL_IF) {
 		process_serial_rx_pkt(buf_handle->payload);
 	}

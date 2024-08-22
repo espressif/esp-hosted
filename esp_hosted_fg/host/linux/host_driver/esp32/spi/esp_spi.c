@@ -744,6 +744,21 @@ int esp_init_interface_layer(struct esp_adapter *adapter)
 	spi_context.handshake_gpio = adapter->mod_param.spi_handshake;
 	spi_context.dataready_gpio = adapter->mod_param.spi_dataready;
 
+	if(!gpio_is_valid(spi_context.handshake_gpio)) {
+		esp_err("Couldn't configure Handshake GPIO[%u]\n", spi_context.handshake_gpio);
+		return -EINVAL;
+	}
+
+	if(!gpio_is_valid(spi_context.dataready_gpio)) {
+		esp_err("Couldn't configure Data_Ready GPIO[%u]\n", spi_context.dataready_gpio);
+		return -EINVAL;
+	}
+
+	if(!gpio_is_valid(adapter->mod_param.resetpin)) {
+		esp_err("Couldn't configure Resetpin GPIO[%u]\n", adapter->mod_param.resetpin);
+		return -EINVAL;
+	}
+
 	return spi_init();
 }
 

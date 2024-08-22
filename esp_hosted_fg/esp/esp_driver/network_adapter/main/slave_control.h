@@ -18,16 +18,16 @@
 #include <esp_err.h>
 #define min(X, Y)               (((X) < (Y)) ? (X) : (Y))
 
-#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 0, 0) 
+#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 0, 0)
   #define TIMEOUT_IN_SEC          (1000 / portTICK_PERIOD_MS)
 #else
   #define TIMEOUT_IN_SEC          (1000 / portTICK_RATE_MS)
 #endif
 
 
-#define SSID_LENGTH             32
+#define SSID_LENGTH             33
 #define PASSWORD_LENGTH         64
-#define BSSID_LENGTH            19
+#define BSSID_LENGTH            18
 #define MAC_LEN                 6
 #define VENDOR_OUI_BUF          3
 
@@ -49,6 +49,6 @@ esp_err_t data_transfer_handler(uint32_t session_id,const uint8_t *inbuf,
 esp_err_t ctrl_notify_handler(uint32_t session_id,const uint8_t *inbuf,
 		ssize_t inlen, uint8_t **outbuf, ssize_t *outlen, void *priv_data);
 void send_event_to_host(int event_id);
-void send_event_data_to_host(int event_id, uint8_t *data, int size);
+void send_event_data_to_host(int event_id, void *data, int size);
 
 #endif /*__SLAVE_CONTROL__H__*/

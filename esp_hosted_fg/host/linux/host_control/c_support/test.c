@@ -71,7 +71,7 @@ static int parse_cli_cmd(char *in_cmd, char *args[])
 	EXEC_IF_CMD_EQUALS(DISABLE_WIFI, test_disable_wifi());
 	EXEC_IF_CMD_EQUALS(ENABLE_BT, test_enable_bt());
 	EXEC_IF_CMD_EQUALS(DISABLE_BT, test_disable_bt());
-	EXEC_IF_CMD_EQUALS(GET_FW_VERSION, test_get_fw_version());
+	EXEC_IF_CMD_EQUALS(GET_FW_VERSION, test_print_fw_version());
 	EXEC_IF_CMD_EQUALS(OTA, test_ota(args[0]));
 
 	return SUCCESS;
@@ -113,6 +113,7 @@ static void sig_handler(int signum)
 int main(int argc, char *argv[])
 {
 	char * cli_cmd = NULL;
+	char version[30] = {0};
 
 	/* Some functionalities require sudo access */
 	if(getuid()) {
@@ -143,9 +144,7 @@ int main(int argc, char *argv[])
 	}
 
 	/* Print FW Version by Default */
-	printf("===== Current ESP FW Version =====\n");
-	test_get_fw_version();
-	printf("==================================\n");
+	printf("------ ESP-Hosted FW [%s] ------\n", test_get_fw_version(version));
 
 	cli_cmd = argv[1];
 	parse_cli_cmd(cli_cmd, &argv[2]);
