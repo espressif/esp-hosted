@@ -37,6 +37,9 @@ extern u8 ap_bssid[MAC_ADDR_LEN];
 extern volatile u8 host_sleep;
 u32 raw_tp_mode = 0;
 int log_level = ESP_INFO;
+#define VERSION_BUFFER_SIZE 50
+char version_str[VERSION_BUFFER_SIZE];
+
 
 module_param(resetpin, int, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
 MODULE_PARM_DESC(resetpin, "Host's GPIO pin number which is connected to ESP32's EN to reset ESP32 device");
@@ -231,12 +234,8 @@ void init_bt(struct esp_adapter *adapter)
 	}
 }
 
-#define VERSION_BUFFER_SIZE 50
-
 static int check_esp_version(struct fw_version *ver)
 {
-	char version_str[VERSION_BUFFER_SIZE] = {0};
-
 	snprintf(version_str, VERSION_BUFFER_SIZE, "%s-%u.%u.%u.%u.%u",
 		ver->project_name, ver->major1, ver->major2, ver->minor, ver->revision_patch_1, ver->revision_patch_2);
 
