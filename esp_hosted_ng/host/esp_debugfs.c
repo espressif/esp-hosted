@@ -6,6 +6,7 @@
 
 #define DEBUGFS_DIR_NAME "esp32"
 #define LOG_LEVEL "log_level"
+#define VERSION "version"
 
 #define DEBUGFS_TODO 0
 
@@ -21,7 +22,7 @@
 struct esp32_debugfs {
 	struct dentry *debugfs_dir;
 	struct dentry *log_level_file; /* log level for host dmesg */
-
+	struct dentry *version;
 #if DEBUGFS_TODO
 	struct dentry *host_log_level_file; /* log level for host logs in debugfs logger */
 	struct dentry *host_log_file; /* debugfs host logger */
@@ -43,7 +44,10 @@ static char log_buffer[LOG_BUFFER_SIZE] = "";
 static size_t log_length = 0;
 static size_t write_pos = 0;
 #endif
-
+#ifndef VERSION_BUFFER_SIZE
+#define VERSION_BUFFER_SIZE 50
+#endif
+extern char version_str[VERSION_BUFFER_SIZE];
 
 // Read operation for the debugfs file
 static ssize_t log_level_read(struct file *file, char __user *buf, size_t count, loff_t *ppos)
@@ -54,6 +58,11 @@ static ssize_t log_level_read(struct file *file, char __user *buf, size_t count,
 
 	// Copy the string to userspace
 	return simple_read_from_buffer(buf, count, ppos, level_str, strlen(level_str));
+}
+
+static ssize_t version_read(struct file *file, char __user *buf, size_t count, loff_t *ppos)
+{
+	return simple_read_from_buffer(buf, count, ppos, version_str, strlen(version_str));
 }
 
 // Write operation for the debugfs file
@@ -187,6 +196,10 @@ static const struct file_operations log_level_ops = {
 	.write = log_level_write,
 };
 
+static const struct file_operations version_ops = {
+	.read = version_read,
+};
+
 // Module initialization function
 int debugfs_init(void)
 {
@@ -204,6 +217,12 @@ int debugfs_init(void)
 	debugfs->log_level_file = debugfs_create_file(LOG_LEVEL, 0644, debugfs->debugfs_dir, NULL, &log_level_ops);
 	if (!debugfs->log_level_file) {
 		esp_err("Failed to create debugfs %s file\n", LOG_LEVEL);
+		goto cleanup;
+	}
+
+	debugfs->version = debugfs_create_file(VERSION, 0644, debugfs->debugfs_dir, NULL, &version_ops);
+	if (!debugfs->version) {
+		esp_err("Failed to create debugfs %s file\n", VERSION);
 		goto cleanup;
 	}
 
