@@ -1,4 +1,4 @@
-# ESP-Hosted SPI HD (Full Duplex) Operation
+# ESP-Hosted SPI FD (Full Duplex) Operation
 
 **Table of Contents**
 
