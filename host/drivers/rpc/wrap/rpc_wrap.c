@@ -461,7 +461,16 @@ int rpc_rsp_callback(ctrl_cmd_t * app_resp)
 	case RPC_ID__Resp_WifiApGetStaAid:
 	case RPC_ID__Resp_WifiStaGetRssi:
 	case RPC_ID__Resp_WifiSetProtocol:
-	case RPC_ID__Resp_WifiGetProtocol: {
+	case RPC_ID__Resp_WifiGetProtocol:
+	case RPC_ID__Resp_WifiStaGetAid:
+	case RPC_ID__Resp_WifiSetProtocols:
+	case RPC_ID__Resp_WifiGetProtocols:
+	case RPC_ID__Resp_WifiSetBandwidths:
+	case RPC_ID__Resp_WifiGetBandwidths:
+	case RPC_ID__Resp_WifiSetBand:
+	case RPC_ID__Resp_WifiGetBand:
+	case RPC_ID__Resp_WifiSetBandMode:
+	case RPC_ID__Resp_WifiGetBandMode: {
 		/* Intended fallthrough */
 		break;
 	} default: {
@@ -1071,6 +1080,132 @@ int rpc_wifi_get_max_tx_power(int8_t *power)
 	}
 	return rpc_rsp_callback(resp);
 }
+
+esp_err_t rpc_wifi_sta_get_aid(uint16_t *aid)
+{
+	/* implemented synchronous */
+	ctrl_cmd_t *req = RPC_DEFAULT_REQ();
+	ctrl_cmd_t *resp = NULL;
+
+	resp = wifi_sta_get_aid(req);
+	if (resp && resp->resp_event_status == SUCCESS) {
+		*aid = resp->u.wifi_sta_get_aid.aid;
+	}
+	return rpc_rsp_callback(resp);
+}
+
+esp_err_t rpc_wifi_set_band(wifi_band_t band)
+{
+	/* implemented synchronous */
+	ctrl_cmd_t *req = RPC_DEFAULT_REQ();
+	ctrl_cmd_t *resp = NULL;
+
+	req->u.wifi_band = band;
+	resp = wifi_set_band(req);
+
+	return rpc_rsp_callback(resp);
+}
+
+esp_err_t rpc_wifi_get_band(wifi_band_t *band)
+{
+	/* implemented synchronous */
+	ctrl_cmd_t *req = RPC_DEFAULT_REQ();
+	ctrl_cmd_t *resp = NULL;
+
+	resp = wifi_get_band(req);
+	if (resp && resp->resp_event_status == SUCCESS) {
+		*band = resp->u.wifi_band;
+	}
+	return rpc_rsp_callback(resp);
+}
+
+esp_err_t rpc_wifi_set_band_mode(wifi_band_mode_t band_mode)
+{
+	/* implemented synchronous */
+	ctrl_cmd_t *req = RPC_DEFAULT_REQ();
+	ctrl_cmd_t *resp = NULL;
+
+	req->u.wifi_band_mode = band_mode;
+	resp = wifi_set_band_mode(req);
+
+	return rpc_rsp_callback(resp);
+}
+
+esp_err_t rpc_wifi_get_band_mode(wifi_band_mode_t *band_mode)
+{
+	/* implemented synchronous */
+	ctrl_cmd_t *req = RPC_DEFAULT_REQ();
+	ctrl_cmd_t *resp = NULL;
+
+	resp = wifi_get_band_mode(req);
+	if (resp && resp->resp_event_status == SUCCESS) {
+		*band_mode = resp->u.wifi_band_mode;
+	}
+	return rpc_rsp_callback(resp);
+}
+
+#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 4, 0)
+esp_err_t rpc_wifi_set_protocols(wifi_interface_t ifx, wifi_protocols_t *protocols)
+{
+	/* implemented synchronous */
+	ctrl_cmd_t *req = RPC_DEFAULT_REQ();
+	ctrl_cmd_t *resp = NULL;
+
+	req->u.wifi_protocols.ifx = ifx;
+	req->u.wifi_protocols.ghz_2g = protocols->ghz_2g;
+	req->u.wifi_protocols.ghz_5g = protocols->ghz_5g;
+
+	resp = wifi_set_protocols(req);
+	return rpc_rsp_callback(resp);
+}
+
+esp_err_t rpc_wifi_get_protocols(wifi_interface_t ifx, wifi_protocols_t *protocols)
+{
+	/* implemented synchronous */
+	ctrl_cmd_t *req = RPC_DEFAULT_REQ();
+	ctrl_cmd_t *resp = NULL;
+
+	req->u.wifi_protocols.ifx = ifx;
+
+	resp = wifi_get_protocols(req);
+	if (resp && resp->resp_event_status == SUCCESS) {
+		protocols->ghz_2g = resp->u.wifi_protocols.ghz_2g;
+		protocols->ghz_5g = resp->u.wifi_protocols.ghz_5g;
+	}
+	return rpc_rsp_callback(resp);
+}
+
+esp_err_t rpc_wifi_set_bandwidths(wifi_interface_t ifx, wifi_bandwidths_t *bw)
+{
+	/* implemented synchronous */
+	ctrl_cmd_t *req = RPC_DEFAULT_REQ();
+	ctrl_cmd_t *resp = NULL;
+
+	req->u.wifi_bandwidths.ifx = ifx;
+	req->u.wifi_bandwidths.ghz_2g = bw->ghz_2g;
+	req->u.wifi_bandwidths.ghz_5g = bw->ghz_5g;
+
+	resp = wifi_set_bandwidths(req);
+	return rpc_rsp_callback(resp);
+}
+
+esp_err_t rpc_wifi_get_bandwidths(wifi_interface_t ifx, wifi_bandwidths_t *bw)
+{
+
+	/* implemented synchronous */
+	ctrl_cmd_t *req = RPC_DEFAULT_REQ();
+	ctrl_cmd_t *resp = NULL;
+
+	req->u.wifi_bandwidths.ifx = ifx;
+
+	resp = wifi_get_bandwidths(req);
+	if (resp && resp->resp_event_status == SUCCESS) {
+		bw->ghz_2g = resp->u.wifi_bandwidths.ghz_2g;
+		bw->ghz_5g = resp->u.wifi_bandwidths.ghz_5g;
+	}
+	return rpc_rsp_callback(resp);
+}
+#endif
 
 int rpc_config_heartbeat(void)
 {

@@ -441,6 +441,11 @@ int hosted_spi_hd_read_reg(uint32_t reg, uint32_t *data, int poll, bool lock_req
 
 	// reread until value is stable
 	for (i = 0; i < poll; i++) {
+#if SPI_WORKAROUND
+		/* this ensures RX DMA data in cache is sync to memory */
+		assert(ESP_OK == esp_cache_msync((void *)dma_data_buf, DMA_ALIGNED_BUF_LEN, ESP_CACHE_MSYNC_FLAG_DIR_C2M));
+#endif
+
 #if USE_DMA_ALIGNED_BUF
 		/* use aligned buffer to read data */
 		res = spi_hd_read_reg(reg, (uint8_t *)dma_data_buf, DMA_ALIGNED_BUF_LEN, spi_hd_rx_tx_flags);

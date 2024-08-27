@@ -89,11 +89,23 @@ esp_err_t esp_wifi_remote_get_country(wifi_country_t *country);
 esp_err_t esp_wifi_remote_ap_get_sta_list(wifi_sta_list_t *sta);
 esp_err_t esp_wifi_remote_ap_get_sta_aid(const uint8_t mac[6], uint16_t *aid);
 esp_err_t esp_wifi_remote_sta_get_rssi(int *rssi);
+esp_err_t esp_wifi_remote_set_band(wifi_band_t band);
+esp_err_t esp_wifi_remote_get_band(wifi_band_t *band);
+esp_err_t esp_wifi_remote_set_band_mode(wifi_band_mode_t band_mode);
+esp_err_t esp_wifi_remote_get_band_mode(wifi_band_mode_t *band_mode);
 esp_err_t esp_wifi_remote_set_protocol(wifi_interface_t ifx, uint8_t protocol_bitmap);
 esp_err_t esp_wifi_remote_get_protocol(wifi_interface_t ifx, uint8_t *protocol_bitmap);
 esp_err_t esp_wifi_remote_set_max_tx_power(int8_t power);
 esp_err_t esp_wifi_remote_get_max_tx_power(int8_t *power);
+esp_err_t esp_wifi_remote_sta_get_aid(uint16_t *aid);
 esp_err_t esp_hosted_ota(const char* image_url);
+
+#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 4, 0)
+esp_err_t esp_wifi_remote_set_protocols(wifi_interface_t ifx, wifi_protocols_t *protocols);
+esp_err_t esp_wifi_remote_get_protocols(wifi_interface_t ifx, wifi_protocols_t *protocols);
+esp_err_t esp_wifi_remote_set_bandwidths(wifi_interface_t ifx, wifi_bandwidths_t *bw);
+esp_err_t esp_wifi_remote_get_bandwidths(wifi_interface_t ifx, wifi_bandwidths_t *bw);
+#endif
 
 #ifdef __cplusplus
 }

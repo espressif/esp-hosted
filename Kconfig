@@ -61,6 +61,10 @@ menu "ESP-Hosted config"
 		config SLAVE_CHIPSET_ESP32C6
 			depends on ESP_SPI_HOST_INTERFACE || ESP_SDIO_HOST_INTERFACE || ESP_SPI_HD_HOST_INTERFACE
 			bool "Slave as ESP32C6"
+
+		config SLAVE_CHIPSET_ESP32C5
+			depends on ESP_SPI_HOST_INTERFACE || ESP_SPI_HD_HOST_INTERFACE
+			bool "Slave as ESP32C5"
 	endchoice
 
 	config IDF_SLAVE_TARGET
@@ -71,6 +75,7 @@ menu "ESP-Hosted config"
 		default "esp32c2" if SLAVE_CHIPSET_ESP32C2
 		default "esp32c3" if SLAVE_CHIPSET_ESP32C3
 		default "esp32c6" if SLAVE_CHIPSET_ESP32C6
+		default "esp32c5" if SLAVE_CHIPSET_ESP32C5
 		default "invalid"
 
 	menu "Task defaults"
@@ -312,9 +317,9 @@ ESP32XX_SPI_CLK_FREQ_RANGE_MAX := 40
 			"Optimize SPI CLK by increasing till host practically can support"
 
 	config ESP_SPI_FREQ_ESP32XX
-		depends on SLAVE_CHIPSET_ESP32C2 || SLAVE_CHIPSET_ESP32C3 || SLAVE_CHIPSET_ESP32S2 || SLAVE_CHIPSET_ESP32S3
-		int "SPI Clock Freq (MHz)"
-		default 30 if SLAVE_CHIPSET_ESP32C2 || SLAVE_CHIPSET_ESP32C3 || SLAVE_CHIPSET_ESP32S2 || SLAVE_CHIPSET_ESP32S3
+		depends on SLAVE_CHIPSET_ESP32C2 || SLAVE_CHIPSET_ESP32C3 || SLAVE_CHIPSET_ESP32S2 || SLAVE_CHIPSET_ESP32S3 || SLAVE_CHIPSET_ESP32C5
+		int "SPI Clock Freq"
+		default 30 if SLAVE_CHIPSET_ESP32C2 || SLAVE_CHIPSET_ESP32C3 || SLAVE_CHIPSET_ESP32S2 || SLAVE_CHIPSET_ESP32S3 || SLAVE_CHIPSET_ESP32C5
 		range $(ESP32XX_SPI_CLK_FREQ_RANGE_MIN) $(ESP32XX_SPI_CLK_FREQ_RANGE_MAX)
 		help
 			"Optimize SPI CLK by increasing till host practically can support"
@@ -323,7 +328,7 @@ ESP32XX_SPI_CLK_FREQ_RANGE_MAX := 40
 		int
 		default ESP_SPI_FREQ_ESP32 if SLAVE_CHIPSET_ESP32
 		default ESP_SPI_FREQ_ESP32C6 if SLAVE_CHIPSET_ESP32C6
-		default ESP_SPI_FREQ_ESP32XX if SLAVE_CHIPSET_ESP32C2 || SLAVE_CHIPSET_ESP32C3 || SLAVE_CHIPSET_ESP32S2 || SLAVE_CHIPSET_ESP32S3
+		default ESP_SPI_FREQ_ESP32XX if SLAVE_CHIPSET_ESP32C2 || SLAVE_CHIPSET_ESP32C3 || SLAVE_CHIPSET_ESP32S2 || SLAVE_CHIPSET_ESP32S3 || SLAVE_CHIPSET_ESP32C5
 		help
 			"Optimize SPI CLK by increasing till host practically can support"
 
@@ -547,7 +552,7 @@ ESP32XX_SDIO_CLK_FREQ_KHZ_RANGE_MAX := 80000
 		menu "Host GPIOs Config"
 			config ESP_SPI_HD_GPIO_CS
 				int "GPIO pin for Host CS"
-				default 47 if IDF_TARGET_ESP32S3
+				default 10 if IDF_TARGET_ESP32S3
 				default 19 if IDF_TARGET_ESP32P4
 				default 15
 				help
@@ -555,7 +560,7 @@ ESP32XX_SDIO_CLK_FREQ_KHZ_RANGE_MAX := 80000
 
 			config ESP_SPI_HD_GPIO_CLK
 				int "GPIO pin for Host CLK"
-				default 19 if IDF_TARGET_ESP32S3
+				default 12 if IDF_TARGET_ESP32S3
 				default 18 if IDF_TARGET_ESP32P4
 				default 18
 				help
@@ -563,7 +568,7 @@ ESP32XX_SDIO_CLK_FREQ_KHZ_RANGE_MAX := 80000
 
 			config ESP_SPI_HD_GPIO_D0
 				int "GPIO pin for Host D0"
-				default 13 if IDF_TARGET_ESP32S3
+				default 11 if IDF_TARGET_ESP32S3
 				default 14 if IDF_TARGET_ESP32P4
 				default 2
 				help
@@ -571,7 +576,7 @@ ESP32XX_SDIO_CLK_FREQ_KHZ_RANGE_MAX := 80000
 
 			config ESP_SPI_HD_GPIO_D1
 				int "GPIO pin for Host D1"
-				default 35 if IDF_TARGET_ESP32S3
+				default 13 if IDF_TARGET_ESP32S3
 				default 15 if IDF_TARGET_ESP32P4
 				default 4
 				help
@@ -580,7 +585,7 @@ ESP32XX_SDIO_CLK_FREQ_KHZ_RANGE_MAX := 80000
 			config ESP_SPI_HD_GPIO_D2
 				depends on ESP_SPI_HD_PRIV_INTERFACE_4_DATA_LINES
 				int "GPIO pin for Host D2"
-				default 20 if IDF_TARGET_ESP32S3
+				default 14 if IDF_TARGET_ESP32S3
 				default 16 if IDF_TARGET_ESP32P4
 				default 12
 				help
@@ -597,7 +602,7 @@ ESP32XX_SDIO_CLK_FREQ_KHZ_RANGE_MAX := 80000
 
 			config ESP_SPI_HD_GPIO_DATA_READY
 				int "GPIO pin for data ready interrupt"
-				default 12 if IDF_TARGET_ESP32S3
+				default 4 if IDF_TARGET_ESP32S3
 				default 6 if IDF_TARGET_ESP32P4
 				default 8
 				help
@@ -605,7 +610,7 @@ ESP32XX_SDIO_CLK_FREQ_KHZ_RANGE_MAX := 80000
 
 			config ESP_SPI_HD_GPIO_RESET_SLAVE
 				int "GPIO pin for Reseting slave ESP"
-				default 42 if IDF_TARGET_ESP32S3
+				default 5 if IDF_TARGET_ESP32S3
 				default 54 if IDF_TARGET_ESP32P4 && SLAVE_CHIPSET_ESP32C6
 				default 5
 				help
@@ -626,9 +631,9 @@ ESP32XX_SPI_HD_CLK_FREQ_RANGE_MAX := 40
 				"Optimize CLK by increasing till host practically can support"
 
 		config ESP_SPI_HD_FREQ_ESP32XX
-			depends on SLAVE_CHIPSET_ESP32C2 || SLAVE_CHIPSET_ESP32C3 || SLAVE_CHIPSET_ESP32S2 || SLAVE_CHIPSET_ESP32S3
+			depends on SLAVE_CHIPSET_ESP32C2 || SLAVE_CHIPSET_ESP32C3 || SLAVE_CHIPSET_ESP32S2 || SLAVE_CHIPSET_ESP32S3 || SLAVE_CHIPSET_ESP32C5
 			int "SPI HD Clock Freq (MHz)"
-			default 10 if SLAVE_CHIPSET_ESP32C2 || SLAVE_CHIPSET_ESP32C3 || SLAVE_CHIPSET_ESP32S2 || SLAVE_CHIPSET_ESP32S3
+			default 10 if SLAVE_CHIPSET_ESP32C2 || SLAVE_CHIPSET_ESP32C3 || SLAVE_CHIPSET_ESP32S2 || SLAVE_CHIPSET_ESP32S3 || SLAVE_CHIPSET_ESP32C5
 			range $(ESP32XX_SPI_HD_CLK_FREQ_RANGE_MIN) $(ESP32XX_SPI_HD_CLK_FREQ_RANGE_MAX)
 			help
 				"Optimize CLK by increasing till host practically can support"
@@ -636,7 +641,7 @@ ESP32XX_SPI_HD_CLK_FREQ_RANGE_MAX := 40
 		config ESP_SPI_HD_CLK_FREQ
 			int
 			default ESP_SPI_HD_FREQ_ESP32C6 if SLAVE_CHIPSET_ESP32C6
-			default ESP_SPI_HD_FREQ_ESP32XX if SLAVE_CHIPSET_ESP32C2 || SLAVE_CHIPSET_ESP32C3 || SLAVE_CHIPSET_ESP32S2 || SLAVE_CHIPSET_ESP32S3
+			default ESP_SPI_HD_FREQ_ESP32XX if SLAVE_CHIPSET_ESP32C2 || SLAVE_CHIPSET_ESP32C3 || SLAVE_CHIPSET_ESP32S2 || SLAVE_CHIPSET_ESP32S3 || SLAVE_CHIPSET_ESP32C5
 			help
 				"Optimize CLK by increasing till host practically can support"
 
@@ -772,7 +777,7 @@ ESP32XX_SPI_HD_CLK_FREQ_RANGE_MAX := 40
 		config ESP_RAW_TP_REPORT_INTERVAL
 			depends on ESP_RAW_THROUGHPUT_TRANSPORT
 			int "RawTP: periodic duration to report stats accumulated"
-			default 30
+			default 5
 
 		config ESP_PKT_STATS
 			bool "Transport level packet stats"

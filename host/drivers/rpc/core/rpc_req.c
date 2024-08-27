@@ -79,7 +79,10 @@ int compose_rpc_req(Rpc *req, ctrl_cmd_t *app_req, int32_t *failure_status)
 	case RPC_ID__Req_WifiGetCountryCode:
 	case RPC_ID__Req_WifiGetCountry:
 	case RPC_ID__Req_WifiApGetStaList:
-	case RPC_ID__Req_WifiStaGetRssi: {
+	case RPC_ID__Req_WifiStaGetRssi:
+	case RPC_ID__Req_WifiStaGetAid:
+	case RPC_ID__Req_WifiGetBand:
+	case RPC_ID__Req_WifiGetBandMode: {
 		/* Intentional fallthrough & empty */
 		break;
 	} case RPC_ID__Req_GetMACAddress: {
@@ -411,6 +414,44 @@ int compose_rpc_req(Rpc *req, ctrl_cmd_t *app_req, int32_t *failure_status)
 		RPC_ALLOC_ASSIGN(RpcReqWifiGetProtocol, req_wifi_get_protocol,
 				rpc__req__wifi_get_protocol__init);
 		req_payload->ifx = app_req->u.wifi_protocol.ifx;
+		break;
+	} case RPC_ID__Req_WifiSetProtocols: {
+		RPC_ALLOC_ASSIGN(RpcReqWifiSetProtocols, req_wifi_set_protocols,
+				rpc__req__wifi_set_protocols__init);
+		req_payload->ifx = app_req->u.wifi_protocols.ifx;
+
+		RPC_ALLOC_ELEMENT(WifiProtocols, req_payload->protocols, wifi_protocols__init);
+		req_payload->protocols->ghz_2g = app_req->u.wifi_protocols.ghz_2g;
+		req_payload->protocols->ghz_5g = app_req->u.wifi_protocols.ghz_5g;
+		break;
+	} case RPC_ID__Req_WifiGetProtocols: {
+		RPC_ALLOC_ASSIGN(RpcReqWifiGetProtocols, req_wifi_get_protocols,
+				rpc__req__wifi_get_protocols__init);
+		req_payload->ifx = app_req->u.wifi_protocols.ifx;
+		break;
+	} case RPC_ID__Req_WifiSetBandwidths: {
+		RPC_ALLOC_ASSIGN(RpcReqWifiSetBandwidths, req_wifi_set_bandwidths,
+				rpc__req__wifi_set_bandwidths__init);
+		req_payload->ifx = app_req->u.wifi_bandwidths.ifx;
+
+		RPC_ALLOC_ELEMENT(WifiBandwidths, req_payload->bandwidths, wifi_bandwidths__init);
+		req_payload->bandwidths->ghz_2g = app_req->u.wifi_bandwidths.ghz_2g;
+		req_payload->bandwidths->ghz_5g = app_req->u.wifi_bandwidths.ghz_5g;
+		break;
+	} case RPC_ID__Req_WifiGetBandwidths: {
+		RPC_ALLOC_ASSIGN(RpcReqWifiGetBandwidths, req_wifi_get_bandwidths,
+				rpc__req__wifi_get_bandwidths__init);
+		req_payload->ifx = app_req->u.wifi_bandwidths.ifx;
+		break;
+	} case RPC_ID__Req_WifiSetBand: {
+		RPC_ALLOC_ASSIGN(RpcReqWifiSetBand, req_wifi_set_band,
+				rpc__req__wifi_set_band__init);
+		req_payload->band = app_req->u.wifi_band;
+		break;
+	} case RPC_ID__Req_WifiSetBandMode: {
+		RPC_ALLOC_ASSIGN(RpcReqWifiSetBandMode, req_wifi_set_bandmode,
+				rpc__req__wifi_set_band_mode__init);
+		req_payload->bandmode = app_req->u.wifi_band_mode;
 		break;
 	} default: {
 		*failure_status = RPC_ERR_UNSUPPORTED_MSG;

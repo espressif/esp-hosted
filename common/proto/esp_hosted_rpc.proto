@@ -400,9 +400,19 @@ enum RpcId {
 	Req_WifiSetDynamicCs              = 340; //0x154
 	Req_WifiStaGetRssi                = 341; //0x155
 
+	Req_WifiSetProtocols              = 342; //0x156
+	Req_WifiGetProtocols              = 343; //0x157
+	Req_WifiSetBandwidths             = 344; //0x158
+	Req_WifiGetBandwidths             = 345; //0x159
+
+	Req_WifiSetBand                   = 346; //0x15a
+	Req_WifiGetBand                   = 347; //0x15b
+	Req_WifiSetBandMode               = 348; //0x15c
+	Req_WifiGetBandMode               = 349; //0x15d
+
 	/* Add new control path command response before Req_Max
 	 * and update Req_Max */
-	Req_Max = 342; //0x156
+	Req_Max = 350; //0x15e
 
 	/** Response Msgs **/
 	Resp_Base                         = 512;
@@ -512,9 +522,19 @@ enum RpcId {
 	Resp_WifiSetDynamicCs             = 596;
 	Resp_WifiStaGetRssi               = 597;
 
+	Resp_WifiSetProtocols             = 598;
+	Resp_WifiGetProtocols             = 599;
+	Resp_WifiSetBandwidths            = 600;
+	Resp_WifiGetBandwidths            = 601;
+
+	Resp_WifiSetBand                  = 602;
+	Resp_WifiGetBand                  = 603;
+	Resp_WifiSetBandMode              = 604;
+	Resp_WifiGetBandMode              = 605;
+
 	/* Add new control path command response before Resp_Max
 	 * and update Resp_Max */
-	Resp_Max = 598;
+	Resp_Max = 606;
 
 	/** Event Msgs **/
 	Event_Base = 768;
@@ -914,6 +934,15 @@ message wifi_event_ap_wps_rg_success {
 	bytes      peer_macaddr = 1;                /**< 6bytes Enrollee mac address */
 }
 
+message wifi_protocols {
+	uint32 ghz_2g = 1;                          /**< Represents 2.4 GHz protocol, support 802.11b or 802.11g or 802.11n or 802.11ax or LR mode */
+	uint32 ghz_5g = 2;                          /**< Represents 5 GHz protocol, support 802.11a or 802.11n or 802.11ac or 802.11ax */
+}
+
+message wifi_bandwidths {
+	uint32 ghz_2g = 1;                          /* Represents 2.4 GHz bandwidth */
+	uint32 ghz_5g = 2;                          /* Represents 5 GHz bandwidth */
+}
 
 /* internal supporting structures for Rpc */
 //message ScanResult {
@@ -1378,6 +1407,86 @@ message Rpc_Resp_WifiStaGetRssi {
 	int32 rssi = 2;
 }
 
+message Rpc_Req_WifiStaGetAid {
+}
+
+message Rpc_Resp_WifiStaGetAid {
+	int32 resp = 1;
+	uint32 aid = 2;
+}
+
+message Rpc_Req_WifiSetProtocols {
+	int32 ifx = 1;
+	wifi_protocols protocols = 2;
+}
+
+message Rpc_Resp_WifiSetProtocols {
+	int32 resp = 1;
+	uint32 ifx = 2;
+}
+
+message Rpc_Req_WifiGetProtocols {
+	int32 ifx = 1;
+}
+
+message Rpc_Resp_WifiGetProtocols {
+	int32 resp = 1;
+	int32 ifx = 2;
+	wifi_protocols protocols = 3;
+}
+
+message Rpc_Req_WifiSetBandwidths {
+	int32 ifx = 1;
+	wifi_bandwidths bandwidths = 2;
+}
+
+message Rpc_Resp_WifiSetBandwidths {
+	int32 resp = 1;
+	int32 ifx = 2;
+}
+
+message Rpc_Req_WifiGetBandwidths {
+	int32 ifx = 1;
+}
+
+message Rpc_Resp_WifiGetBandwidths {
+	int32 resp = 1;
+	int32 ifx = 2;
+	wifi_bandwidths bandwidths = 3;
+}
+
+message Rpc_Req_WifiSetBand {
+	uint32 band = 1;
+}
+
+message Rpc_Resp_WifiSetBand {
+	int32 resp = 1;
+}
+
+message Rpc_Req_WifiGetBand {
+}
+
+message Rpc_Resp_WifiGetBand {
+	int32 resp = 1;
+	uint32 band = 2;
+}
+
+message Rpc_Req_WifiSetBandMode {
+	uint32 bandmode = 1;
+}
+
+message Rpc_Resp_WifiSetBandMode {
+	int32 resp = 1;
+}
+
+message Rpc_Req_WifiGetBandMode {
+}
+
+message Rpc_Resp_WifiGetBandMode {
+	int32 resp = 1;
+	uint32 bandmode = 2;
+}
+
 /** Event structure **/
 
 message Rpc_Event_WifiEventNoArgs {
@@ -1498,8 +1607,19 @@ message Rpc {
 
 		Rpc_Req_WifiSetCountryCode          req_wifi_set_country_code         = 334;
 		Rpc_Req_WifiGetCountryCode          req_wifi_get_country_code         = 335;
+		Rpc_Req_WifiStaGetAid               req_wifi_sta_get_aid              = 338;
 
 		Rpc_Req_WifiStaGetRssi              req_wifi_sta_get_rssi             = 341;
+
+		Rpc_Req_WifiSetProtocols            req_wifi_set_protocols            = 342;
+		Rpc_Req_WifiGetProtocols            req_wifi_get_protocols            = 343;
+		Rpc_Req_WifiSetBandwidths           req_wifi_set_bandwidths           = 344;
+		Rpc_Req_WifiGetBandwidths           req_wifi_get_bandwidths           = 345;
+
+		Rpc_Req_WifiSetBand                 req_wifi_set_band                 = 346;
+		Rpc_Req_WifiGetBand                 req_wifi_get_band                 = 347;
+		Rpc_Req_WifiSetBandMode             req_wifi_set_bandmode             = 348;
+		Rpc_Req_WifiGetBandMode             req_wifi_get_bandmode             = 349;
 
 		/** Responses **/
 		Rpc_Resp_GetMacAddress              resp_get_mac_address               = 513;
@@ -1563,8 +1683,19 @@ message Rpc {
 
 		Rpc_Resp_WifiSetCountryCode         resp_wifi_set_country_code         = 590;
 		Rpc_Resp_WifiGetCountryCode         resp_wifi_get_country_code         = 591;
+		Rpc_Resp_WifiStaGetAid              resp_wifi_sta_get_aid              = 594;
 
 		Rpc_Resp_WifiStaGetRssi             resp_wifi_sta_get_rssi             = 597;
+
+		Rpc_Resp_WifiSetProtocols           resp_wifi_set_protocols            = 598;
+		Rpc_Resp_WifiGetProtocols           resp_wifi_get_protocols            = 599;
+		Rpc_Resp_WifiSetBandwidths          resp_wifi_set_bandwidths           = 600;
+		Rpc_Resp_WifiGetBandwidths          resp_wifi_get_bandwidths           = 601;
+
+		Rpc_Resp_WifiSetBand                resp_wifi_set_band                 = 602;
+		Rpc_Resp_WifiGetBand                resp_wifi_get_band                 = 603;
+		Rpc_Resp_WifiSetBandMode            resp_wifi_set_bandmode             = 604;
+		Rpc_Resp_WifiGetBandMode            resp_wifi_get_bandmode             = 605;
 
 		/** Notifications **/
 		Rpc_Event_ESPInit                   event_esp_init                     = 769;

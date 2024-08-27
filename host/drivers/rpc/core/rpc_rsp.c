@@ -516,6 +516,64 @@ int rpc_parse_rsp(Rpc *rpc_msg, ctrl_cmd_t *app_resp)
 		app_resp->u.wifi_protocol.protocol_bitmap =
 			rpc_msg->resp_wifi_get_protocol->protocol_bitmap;
 		break;
+	} case RPC_ID__Resp_WifiStaGetAid: {
+		RPC_FAIL_ON_NULL(resp_wifi_sta_get_aid);
+		RPC_ERR_IN_RESP(resp_wifi_sta_get_aid);
+		app_resp->u.wifi_sta_get_aid.aid =
+			rpc_msg->resp_wifi_sta_get_aid->aid;
+		break;
+	} case RPC_ID__Resp_WifiSetProtocols: {
+		RPC_FAIL_ON_NULL(resp_wifi_set_protocols);
+		RPC_ERR_IN_RESP(resp_wifi_set_protocols);
+		app_resp->u.wifi_protocols.ifx =
+			rpc_msg->resp_wifi_set_protocols->ifx;
+		break;
+	} case RPC_ID__Resp_WifiGetProtocols: {
+		RPC_FAIL_ON_NULL(resp_wifi_get_protocols);
+		RPC_ERR_IN_RESP(resp_wifi_get_protocols);
+		app_resp->u.wifi_protocols.ifx =
+			rpc_msg->resp_wifi_get_protocols->ifx;
+		app_resp->u.wifi_protocols.ghz_2g =
+			rpc_msg->resp_wifi_get_protocols->protocols->ghz_2g;
+		app_resp->u.wifi_protocols.ghz_5g =
+			rpc_msg->resp_wifi_get_protocols->protocols->ghz_5g;
+		break;
+	} case RPC_ID__Resp_WifiSetBandwidths: {
+		RPC_FAIL_ON_NULL(resp_wifi_set_bandwidths);
+		RPC_ERR_IN_RESP(resp_wifi_set_bandwidths);
+		app_resp->u.wifi_bandwidths.ifx =
+			rpc_msg->resp_wifi_set_bandwidths->ifx;
+		break;
+	} case RPC_ID__Resp_WifiGetBandwidths: {
+		RPC_FAIL_ON_NULL(resp_wifi_get_bandwidths);
+		RPC_ERR_IN_RESP(resp_wifi_get_bandwidths);
+		app_resp->u.wifi_bandwidths.ifx =
+			rpc_msg->resp_wifi_get_bandwidths->ifx;
+		app_resp->u.wifi_bandwidths.ghz_2g =
+			rpc_msg->resp_wifi_get_bandwidths->bandwidths->ghz_2g;
+		app_resp->u.wifi_bandwidths.ghz_5g =
+			rpc_msg->resp_wifi_get_bandwidths->bandwidths->ghz_5g;
+		break;
+	} case RPC_ID__Resp_WifiSetBand: {
+		RPC_FAIL_ON_NULL(resp_wifi_set_country_code);
+		RPC_ERR_IN_RESP(resp_wifi_set_country_code);
+		break;
+	} case RPC_ID__Resp_WifiGetBand: {
+		RPC_FAIL_ON_NULL(resp_wifi_get_band);
+		RPC_ERR_IN_RESP(resp_wifi_get_band);
+		app_resp->u.wifi_band =
+			rpc_msg->resp_wifi_get_band->band;
+		break;
+	} case RPC_ID__Resp_WifiSetBandMode: {
+		RPC_FAIL_ON_NULL(resp_wifi_set_country_code);
+		RPC_ERR_IN_RESP(resp_wifi_set_country_code);
+		break;
+	} case RPC_ID__Resp_WifiGetBandMode: {
+		RPC_FAIL_ON_NULL(resp_wifi_get_bandmode);
+		RPC_ERR_IN_RESP(resp_wifi_get_bandmode);
+		app_resp->u.wifi_band_mode =
+			rpc_msg->resp_wifi_get_bandmode->bandmode;
+		break;
 	} default: {
 		ESP_LOGE(TAG, "Unsupported rpc Resp[%u]", rpc_msg->msg_id);
 		goto fail_parse_rpc_msg;

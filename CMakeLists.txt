@@ -6,7 +6,7 @@ else()
 	set(host_dir "${FG_root_dir}/host")
 
 	set(COMPONENT_ADD_INCLUDEDIRS "${host_dir}" "${host_dir}/port" "${host_dir}/api")
-	set(COMPONENT_SRCS "${host_dir}/esp_hosted_host_init.c" "${host_dir}/api/esp_hosted_api.c" "${host_dir}/drivers/transport/transport_drv.c" "${host_dir}/drivers/serial/serial_ll_if.c" "${host_dir}/utils/common.c" "${host_dir}/utils/util.c" "${host_dir}/utils/stats.c" "${host_dir}/port/os_wrapper.c" "${host_dir}/drivers/serial/serial_drv.c")
+	set(COMPONENT_SRCS "${host_dir}/esp_hosted_host_init.c" "${host_dir}/api/esp_wifi_weak.c" "${host_dir}/api/esp_hosted_api.c" "${host_dir}/drivers/transport/transport_drv.c" "${host_dir}/drivers/serial/serial_ll_if.c" "${host_dir}/utils/common.c" "${host_dir}/utils/util.c" "${host_dir}/utils/stats.c" "${host_dir}/port/os_wrapper.c" "${host_dir}/drivers/serial/serial_drv.c")
 
 	list(APPEND COMPONENT_ADD_INCLUDEDIRS "." "${host_dir}/api" "${host_dir}/drivers/transport" "${host_dir}/drivers/transport/spi" "${host_dir}/drivers/transport/sdio" "${host_dir}/drivers/serial" "${host_dir}/utils")
 

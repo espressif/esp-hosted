@@ -492,7 +492,7 @@ ble_hs_rx_data(struct os_mbuf *om, void *arg)
 
 esp_err_t initialise_bluetooth(void)
 {
-#ifdef CONFIG_BT_ENABLED
+#if CONFIG_BT_ENABLED
 	uint8_t mac[BSSID_BYTES_SIZE] = {0};
 	esp_bt_controller_config_t bt_cfg = BT_CONTROLLER_INIT_CONFIG_DEFAULT();
 

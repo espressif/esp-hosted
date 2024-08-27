@@ -22,7 +22,7 @@
 static const char TAG[] = "stats";
 #endif
 
-#if ESP_PKT_STATS
+#if ESP_PKT_STATS || TEST_RAW_TP
 #define ESP_PKT_STATS_REPORT_INTERVAL  10
 struct pkt_stats_t pkt_stats;
 #endif
