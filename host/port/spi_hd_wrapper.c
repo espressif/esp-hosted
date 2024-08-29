@@ -34,8 +34,8 @@
 
 #ifdef CONFIG_IDF_TARGET_ESP32P4
 #include "esp_cache.h"
-/* Workaround for caching issues currently found for SPI */
-#define SPI_WORKAROUND (1)
+/* Enable workaround if got SPI Read Errors on ESP32-P4 due to caching */
+#define SPI_WORKAROUND (0)
 #else
 #define SPI_WORKAROUND (0)
 #endif
