@@ -107,10 +107,30 @@ static uint32_t sdio_rx_byte_count = 0;
 // one-time trigger to start write thread
 static bool sdio_start_write_thread = false;
 
-#if H_SDIO_HOST_RX_MODE == H_SDIO_HOST_STREAMING_MODE
-static uint32_t recv_buf_size = 0;
-static uint8_t * recv_buf = NULL;
-#endif
+/** structs to do double buffering
+ * sdio_read_task() writes Rx SDIO data to one buffer while
+ * sdio_data_to_rx_buf_task() transfers previously received data
+ * to the rx queue
+ */
+typedef struct {
+	uint8_t * buf;
+	uint32_t buf_size;
+} buf_info_t;
+
+typedef struct {
+	buf_info_t buffer[2];
+	int read_index; // -1 means not in use
+	uint32_t read_data_len;
+	int write_index;
+} double_buf_t;
+
+static double_buf_t double_buf;
+
+// sem to trigger sdio_data_to_rx_buf_task()
+static semaphore_handle_t sem_double_buf_xfer_data;
+
+static void * sdio_rx_buf_thread;
+static void sdio_data_to_rx_buf_task(void const* pvParameters);
 
 static esp_err_t sdio_generate_slave_intr(uint8_t intr_no);
 
@@ -568,10 +588,15 @@ static esp_err_t sdio_push_pkt_to_queue(uint8_t * rxbuff, uint16_t len, uint16_t
 #if H_SDIO_HOST_RX_MODE != H_SDIO_HOST_STREAMING_MODE
 // SDIO packet mode
 // return a buffer big enough to contain the data
-static uint8_t * sdio_rx_get_buffer(uint32_t len)
+static inline uint8_t * sdio_rx_get_buffer(uint32_t len)
 {
-	// return mempool allocated buffer
-	return sdio_buffer_alloc(MEMSET_REQUIRED);
+	int index = double_buf.write_index;
+	uint8_t ** buf = &double_buf.buffer[index].buf;
+
+	*buf = (uint8_t *)sdio_buffer_alloc(MEMSET_REQUIRED);
+	double_buf.buffer[index].buf_size = len;
+
+	return *buf;
 }
 
 // this frees the buffer *before* it is queued
@@ -616,18 +641,21 @@ static uint8_t * sdio_rx_get_buffer(uint32_t len)
 	len = ((len + ESP_BLOCK_SIZE - 1) / ESP_BLOCK_SIZE) * ESP_BLOCK_SIZE;
 #endif
 
-	// (re)allocate a buffer big enough to contain the data stream
-	if (len > recv_buf_size) {
-		if (recv_buf) {
+	// (re)allocate a write buffer big enough to contain the data stream
+	int index = double_buf.write_index;
+	uint8_t ** buf = &double_buf.buffer[index].buf;
+
+	if (len > double_buf.buffer[index].buf_size) {
+		if (*buf) {
 			// free already allocated memory
-			g_h.funcs->_h_free(recv_buf);
+			g_h.funcs->_h_free(*buf);
 		}
-		recv_buf = (uint8_t *)MEM_ALLOC(len);
-		assert(recv_buf);
-		recv_buf_size = len;
-		ESP_LOGD(TAG, "recv_buf_size %ld", recv_buf_size);
+		*buf = (uint8_t *)MEM_ALLOC(len);
+		assert(*buf);
+		double_buf.buffer[index].buf_size = len;
+		ESP_LOGD(TAG, "buf %d size: %ld", index, double_buf.buffer[index].buf_size);
 	}
-	return recv_buf;
+	return *buf;
 }
 
 // this frees the buffer *before* it is queued
@@ -675,6 +703,31 @@ static esp_err_t sdio_push_data_to_queue(uint8_t * buf, uint32_t buf_len)
 	return ESP_OK;
 }
 #endif
+
+// double buffer task to transfer data from the current buffer to the queue
+static void sdio_data_to_rx_buf_task(void const* pvParameters)
+{
+	uint8_t * buf;
+	uint32_t len;
+
+	while (1) {
+		g_h.funcs->_h_get_semaphore(sem_double_buf_xfer_data, HOSTED_BLOCK_MAX);
+
+		if (double_buf.read_index < 0) {
+			ESP_LOGE(TAG, "invalid double buf read_index");
+			continue;
+		}
+
+		buf = double_buf.buffer[double_buf.read_index].buf;
+		len = double_buf.read_data_len;
+
+		if (sdio_push_data_to_queue(buf, len))
+			ESP_LOGE(TAG, "Failed to push data to rx queue");
+
+		// finished sending data: reset read_index
+		double_buf.read_index = -1;
+	}
+}
 
 static void sdio_read_task(void const* pvParameters)
 {
@@ -843,11 +896,20 @@ static void sdio_read_task(void const* pvParameters)
 		sdio_rx_byte_count += len_from_slave;
 		sdio_rx_byte_count = sdio_rx_byte_count % ESP_RX_BYTE_MAX;
 
-		if (ret)
+		if (unlikely(ret))
 			continue;
 
-		if (sdio_push_data_to_queue(rxbuff, len_from_slave))
-			ESP_LOGE(TAG, "Failed to push data to rx queue");
+		if (double_buf.read_index < 0) {
+			double_buf.read_index = double_buf.write_index;
+			double_buf.read_data_len = len_from_slave;
+			double_buf.write_index = (double_buf.write_index) ? 0 : 1;
+			// trigger task to copy data to queue
+			g_h.funcs->_h_post_semaphore(sem_double_buf_xfer_data);
+		} else {
+			// error: task to copy data to queue still running
+			ESP_LOGE(TAG, "task still writing Rx data to queue!");
+			// don't send data to task, or update write_index
+		}
 	}
 }
 
@@ -983,6 +1045,18 @@ void transport_init_internal(void)
 		ESP_LOGE(TAG, "could not create sdio handle, exiting\n");
 		assert(sdio_handle);
 	}
+
+	// initialise double buffering structs
+	memset(&double_buf, 0, sizeof(double_buf_t));
+	double_buf.read_index = -1; // indicates we are not reading anything
+	double_buf.write_index = 0; // we will write into the first buffer
+
+	sem_double_buf_xfer_data = g_h.funcs->_h_create_semaphore(1);
+	assert(sem_double_buf_xfer_data);
+	g_h.funcs->_h_get_semaphore(sem_double_buf_xfer_data, HOSTED_BLOCK_MAX);
+
+	sdio_rx_buf_thread = g_h.funcs->_h_thread_create("sdio_rx_buf",
+		DFLT_TASK_PRIO, DFLT_TASK_STACK_SIZE, sdio_data_to_rx_buf_task, NULL);
 
 	sdio_read_thread = g_h.funcs->_h_thread_create("sdio_read",
 		DFLT_TASK_PRIO, DFLT_TASK_STACK_SIZE, sdio_read_task, NULL);
