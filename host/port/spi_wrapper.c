@@ -24,8 +24,8 @@
 #include "driver/gpio.h"
 
 #ifdef CONFIG_IDF_TARGET_ESP32P4
-/* Workaround for caching issues currently found for SPI on ESP32-P4 */
-#define SPI_WORKAROUND (1)
+/* Enable workaround if got SPI Read Errors on ESP32-P4 due to caching */
+#define SPI_WORKAROUND (0)
 #else
 #define SPI_WORKAROUND (0)
 #endif
