@@ -223,6 +223,7 @@ WEAK esp_err_t esp_wifi_sta_get_rssi(int *rssi)
 	return esp_wifi_remote_sta_get_rssi(rssi);
 }
 
+#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 4, 0)
 WEAK esp_err_t esp_wifi_set_band(wifi_band_t band)
 {
 	return esp_wifi_remote_set_band(band);
@@ -243,7 +244,6 @@ WEAK esp_err_t esp_wifi_get_band_mode(wifi_band_mode_t *band_mode)
 	return esp_wifi_remote_get_band_mode(band_mode);
 }
 
-#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 4, 0)
 WEAK esp_err_t esp_wifi_set_protocols(wifi_interface_t ifx, wifi_protocols_t *protocols)
 {
 	return esp_wifi_remote_set_protocols(ifx, protocols);

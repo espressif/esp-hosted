@@ -379,6 +379,7 @@ esp_err_t esp_wifi_remote_sta_get_aid(uint16_t *aid)
 	return rpc_wifi_sta_get_aid(aid);
 }
 
+#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 4, 0)
 esp_err_t esp_wifi_remote_set_band(wifi_band_t band)
 {
 	return rpc_wifi_set_band(band);
@@ -399,7 +400,6 @@ esp_err_t esp_wifi_remote_get_band_mode(wifi_band_mode_t *band_mode)
 	return rpc_wifi_get_band_mode(band_mode);
 }
 
-#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 4, 0)
 esp_err_t esp_wifi_remote_set_protocols(wifi_interface_t ifx, wifi_protocols_t *protocols)
 {
 	return rpc_wifi_set_protocols(ifx, protocols);

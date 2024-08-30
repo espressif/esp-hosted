@@ -364,6 +364,7 @@ ctrl_cmd_t * wifi_set_protocols(ctrl_cmd_t *req)
 	RPC_DECODE_RSP_IF_NOT_ASYNC();
 }
 
+#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 4, 0)
 ctrl_cmd_t * wifi_get_protocols(ctrl_cmd_t *req)
 {
 	RPC_SEND_REQ(RPC_ID__Req_WifiGetProtocols);
@@ -405,3 +406,4 @@ ctrl_cmd_t * wifi_get_band_mode(ctrl_cmd_t *req)
 	RPC_SEND_REQ(RPC_ID__Req_WifiGetBandMode);
 	RPC_DECODE_RSP_IF_NOT_ASYNC();
 }
+#endif
