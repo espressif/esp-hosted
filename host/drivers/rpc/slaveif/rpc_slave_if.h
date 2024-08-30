@@ -223,6 +223,7 @@ typedef struct Ctrl_cmd_t {
 
 		rpc_wifi_sta_get_aid_t      wifi_sta_get_aid;
 
+#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 4, 0)
 		rpc_wifi_protocols_t        wifi_protocols;
 
 		rpc_wifi_bandwidths_t       wifi_bandwidths;
@@ -230,6 +231,7 @@ typedef struct Ctrl_cmd_t {
 		wifi_band_t                 wifi_band;
 
 		wifi_band_mode_t            wifi_band_mode;
+#endif
 
 		event_heartbeat_t           e_heartbeat;
 

@@ -522,6 +522,7 @@ int rpc_parse_rsp(Rpc *rpc_msg, ctrl_cmd_t *app_resp)
 		app_resp->u.wifi_sta_get_aid.aid =
 			rpc_msg->resp_wifi_sta_get_aid->aid;
 		break;
+#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 4, 0)
 	} case RPC_ID__Resp_WifiSetProtocols: {
 		RPC_FAIL_ON_NULL(resp_wifi_set_protocols);
 		RPC_ERR_IN_RESP(resp_wifi_set_protocols);
@@ -574,6 +575,7 @@ int rpc_parse_rsp(Rpc *rpc_msg, ctrl_cmd_t *app_resp)
 		app_resp->u.wifi_band_mode =
 			rpc_msg->resp_wifi_get_bandmode->bandmode;
 		break;
+#endif
 	} default: {
 		ESP_LOGE(TAG, "Unsupported rpc Resp[%u]", rpc_msg->msg_id);
 		goto fail_parse_rpc_msg;
