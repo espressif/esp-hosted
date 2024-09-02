@@ -13,6 +13,7 @@
 #include "esp_hosted_rpc.pb-c.h"
 #include "esp_wifi.h"
 #include "esp_wifi_types.h"
+#include "esp_hosted_wifi_config.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -223,7 +224,7 @@ typedef struct Ctrl_cmd_t {
 
 		rpc_wifi_sta_get_aid_t      wifi_sta_get_aid;
 
-#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 4, 0)
+#if H_WIFI_DUALBAND_SUPPORT
 		rpc_wifi_protocols_t        wifi_protocols;
 
 		rpc_wifi_bandwidths_t       wifi_bandwidths;

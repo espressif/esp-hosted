@@ -19,6 +19,7 @@ extern "C" {
 
 /** Includes **/
 #include "esp_wifi_remote.h"
+#include "esp_hosted_wifi_config.h"
 #include "esp_hosted_api.h"
 #include "esp_check.h"
 #include "transport_drv.h"
@@ -379,7 +380,7 @@ esp_err_t esp_wifi_remote_sta_get_aid(uint16_t *aid)
 	return rpc_wifi_sta_get_aid(aid);
 }
 
-#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 4, 0)
+#if H_WIFI_DUALBAND_SUPPORT
 esp_err_t esp_wifi_remote_set_band(wifi_band_t band)
 {
 	return rpc_wifi_set_band(band);
