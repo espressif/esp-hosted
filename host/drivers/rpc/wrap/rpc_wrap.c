@@ -30,6 +30,7 @@
 #include "rpc_common.h"
 #include "esp_log.h"
 #include "esp_http_client.h"
+#include "esp_hosted_wifi_config.h"
 
 DEFINE_LOG_TAG(rpc_wrap);
 static char* OTA_TAG = "h_ota";
@@ -1094,7 +1095,7 @@ esp_err_t rpc_wifi_sta_get_aid(uint16_t *aid)
 	return rpc_rsp_callback(resp);
 }
 
-#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 4, 0)
+#if H_WIFI_DUALBAND_SUPPORT
 esp_err_t rpc_wifi_set_band(wifi_band_t band)
 {
 	/* implemented synchronous */

@@ -121,7 +121,7 @@ void hci_drv_show_configuration(void)
  * - HCI_H4_xxx type should be set in esp_payload_header.hci_pkt_type
  */
 
-#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 3, 0)
+#if H_BT_ENABLE_LL_INIT
 void ble_transport_ll_init(void)
 {
 }

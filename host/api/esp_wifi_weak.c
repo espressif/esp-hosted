@@ -20,6 +20,7 @@
  */
 
 #include "esp_hosted_api.h"
+#include "esp_hosted_wifi_config.h"
 
 #define WEAK __attribute__((weak))
 
@@ -223,7 +224,7 @@ WEAK esp_err_t esp_wifi_sta_get_rssi(int *rssi)
 	return esp_wifi_remote_sta_get_rssi(rssi);
 }
 
-#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 4, 0)
+#if H_WIFI_DUALBAND_SUPPORT
 WEAK esp_err_t esp_wifi_set_band(wifi_band_t band)
 {
 	return esp_wifi_remote_set_band(band);

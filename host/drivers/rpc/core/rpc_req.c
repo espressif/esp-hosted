@@ -6,6 +6,7 @@
 #include "rpc_common.h"
 #include "adapter.h"
 #include "esp_log.h"
+#include "esp_hosted_wifi_config.h"
 
 DEFINE_LOG_TAG(rpc_req);
 
@@ -415,7 +416,7 @@ int compose_rpc_req(Rpc *req, ctrl_cmd_t *app_req, int32_t *failure_status)
 				rpc__req__wifi_get_protocol__init);
 		req_payload->ifx = app_req->u.wifi_protocol.ifx;
 		break;
-#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 4, 0)
+#if H_WIFI_DUALBAND_SUPPORT
 	} case RPC_ID__Req_WifiSetProtocols: {
 		RPC_ALLOC_ASSIGN(RpcReqWifiSetProtocols, req_wifi_set_protocols,
 				rpc__req__wifi_set_protocols__init);

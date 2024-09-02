@@ -6,7 +6,7 @@
  */
 #include "rpc_slave_if.h"
 #include "rpc_core.h"
-
+#include "esp_hosted_wifi_config.h"
 #include "esp_log.h"
 
 DEFINE_LOG_TAG(rpc_api);
@@ -364,7 +364,7 @@ ctrl_cmd_t * wifi_set_protocols(ctrl_cmd_t *req)
 	RPC_DECODE_RSP_IF_NOT_ASYNC();
 }
 
-#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 4, 0)
+#if H_WIFI_DUALBAND_SUPPORT
 ctrl_cmd_t * wifi_get_protocols(ctrl_cmd_t *req)
 {
 	RPC_SEND_REQ(RPC_ID__Req_WifiGetProtocols);

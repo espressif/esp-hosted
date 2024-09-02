@@ -25,4 +25,11 @@
 #define H_BT_USE_VHCI 0
 #endif
 
+#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 3, 0)
+// ll_init required
+#define H_BT_ENABLE_LL_INIT 1
+#else
+#define H_BT_ENABLE_LL_INIT 0
+#endif
+
 #endif
