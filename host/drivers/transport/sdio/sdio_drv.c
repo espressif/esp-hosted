@@ -203,14 +203,16 @@ static int sdio_get_len_from_slave(uint32_t *rx_size, bool is_lock_needed)
 		/* Handle a case of roll over */
 		temp = ESP_RX_BYTE_MAX - sdio_rx_byte_count;
 		len = temp + len;
+	}
 
 #if H_SDIO_HOST_RX_MODE != H_SDIO_HOST_STREAMING_MODE
-		if (len > ESP_RX_BUFFER_SIZE) {
-			ESP_LOGI(TAG, "%s: Len from slave[%ld] exceeds max [%d]",
-					__func__, len, ESP_RX_BUFFER_SIZE);
-		}
-#endif
+	if (len > ESP_RX_BUFFER_SIZE) {
+		ESP_LOGE(TAG, "%s: Len from slave[%ld] exceeds max [%d]",
+				__func__, len, ESP_RX_BUFFER_SIZE);
+		return ESP_FAIL;
 	}
+#endif
+
 	*rx_size = len;
 
 	return 0;
