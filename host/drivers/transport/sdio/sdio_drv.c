@@ -25,6 +25,12 @@
 
 static const char TAG[] = "H_SDIO_DRV";
 
+/* when enabled, read all required SDIO slave registers in a single
+ * read into a buffer, instead of reading individual SDIO slave
+ * registers
+ */
+#define DO_COMBINED_REG_READ (1)
+
 /** Constants/Macros **/
 #define TO_SLAVE_QUEUE_SIZE               CONFIG_ESP_SDIO_TX_Q_SIZE
 #define FROM_SLAVE_QUEUE_SIZE             CONFIG_ESP_SDIO_RX_Q_SIZE
@@ -61,6 +67,18 @@ static void * sdio_bus_lock;
 #else
 #define SDIO_DRV_LOCK()
 #define SDIO_DRV_UNLOCK()
+#endif
+
+#if DO_COMBINED_REG_READ
+// read data from ESP_SLAVE_INT_RAW_REG to ESP_SLAVE_PACKET_LEN_REG
+// plus 4 for the len of the register
+#define REG_BUF_LEN (ESP_SLAVE_PACKET_LEN_REG - ESP_SLAVE_INT_RAW_REG + 4)
+
+// byte index into the buffer to locate the register
+#define INT_RAW_INDEX (0)
+#define PACKET_LEN_INDEX (ESP_SLAVE_PACKET_LEN_REG - ESP_SLAVE_INT_RAW_REG)
+
+static uint8_t *reg_buf = NULL;
 #endif
 
 /* Create mempool for cache mallocs */
@@ -175,8 +193,50 @@ static int sdio_get_tx_buffer_num(uint32_t *tx_num, bool is_lock_needed)
 	return ret;
 }
 
+#if DO_COMBINED_REG_READ
+static int sdio_read_regs(uint8_t * buf)
+{
+	return g_h.funcs->_h_sdio_read_reg(ESP_SLAVE_INT_RAW_REG, buf, REG_BUF_LEN, ACQUIRE_LOCK);
+}
+#endif
+
 #if H_SDIO_HOST_RX_MODE != H_SDIO_ALWAYS_HOST_RX_MAX_TRANSPORT_SIZE
 
+#if DO_COMBINED_REG_READ
+// get the length from the provided register value
+static int sdio_get_len_from_slave(uint32_t *rx_size, uint32_t reg_val, bool is_lock_needed)
+{
+	uint32_t len = reg_val;
+	uint32_t temp;
+
+	if (!rx_size)
+		return ESP_FAIL;
+	*rx_size = 0;
+
+	len &= ESP_SLAVE_LEN_MASK;
+
+	if (len >= sdio_rx_byte_count)
+		len = (len + ESP_RX_BYTE_MAX - sdio_rx_byte_count) % ESP_RX_BYTE_MAX;
+	else {
+		/* Handle a case of roll over */
+		temp = ESP_RX_BYTE_MAX - sdio_rx_byte_count;
+		len = temp + len;
+	}
+
+#if H_SDIO_HOST_RX_MODE != H_SDIO_HOST_STREAMING_MODE
+	if (len > ESP_RX_BUFFER_SIZE) {
+		ESP_LOGE(TAG, "%s: Len from slave[%ld] exceeds max [%d]",
+				__func__, len, ESP_RX_BUFFER_SIZE);
+		return ESP_FAIL;
+	}
+#endif
+
+	*rx_size = len;
+
+	return 0;
+}
+#else
+// get the length by reading the register
 static int sdio_get_len_from_slave(uint32_t *rx_size, bool is_lock_needed)
 {
 	uint32_t len;
@@ -217,6 +277,8 @@ static int sdio_get_len_from_slave(uint32_t *rx_size, bool is_lock_needed)
 
 	return 0;
 }
+#endif
+
 #endif
 
 static int sdio_is_write_buffer_available(uint32_t buf_needed)
@@ -626,6 +688,11 @@ static void sdio_read_task(void const* pvParameters)
 	uint8_t *pos;
 	uint32_t interrupts;
 
+#if DO_COMBINED_REG_READ
+	uint32_t *intr_index = NULL;
+	uint32_t *read_len_index = NULL;
+#endif
+
 	assert(sdio_handle);
 
 	// wait for transport to be in reset state
@@ -643,6 +710,11 @@ static void sdio_read_task(void const* pvParameters)
 	}
 
 	create_debugging_tasks();
+
+#if DO_COMBINED_REG_READ
+	reg_buf = MEM_ALLOC(REG_BUF_LEN);
+	assert(reg_buf);
+#endif
 
 	// display which SDIO mode we are operating in
 #if H_SDIO_HOST_RX_MODE == H_SDIO_HOST_STREAMING_MODE
@@ -669,6 +741,19 @@ static void sdio_read_task(void const* pvParameters)
 
 		SDIO_DRV_LOCK();
 
+#if DO_COMBINED_REG_READ
+		if (sdio_read_regs(reg_buf)) {
+			ESP_LOGE(TAG, "failed to read registers");
+
+			SDIO_DRV_UNLOCK();
+			continue;
+		}
+
+		intr_index = (uint32_t *)&reg_buf[INT_RAW_INDEX];
+		read_len_index = (uint32_t *)&reg_buf[PACKET_LEN_INDEX];
+
+		interrupts = *intr_index;
+#else
 		// clear slave interrupts
 		if (sdio_get_intr(&interrupts)) {
 			ESP_LOGE(TAG, "failed to read interrupt register");
@@ -676,6 +761,7 @@ static void sdio_read_task(void const* pvParameters)
 			SDIO_DRV_UNLOCK();
 			continue;
 		}
+#endif
 		sdio_clear_intr(interrupts);
 
 		ESP_LOGV(TAG, "Intr: %08"PRIX32, interrupts);
@@ -702,8 +788,12 @@ static void sdio_read_task(void const* pvParameters)
 		 **/
 		len_from_slave = MAX_TRANSPORT_BUFFER_SIZE;
 #else
-		/* check the bytes to be read */
+		/* check the length to be read */
+#if DO_COMBINED_REG_READ
+		ret = sdio_get_len_from_slave(&len_from_slave, *read_len_index, ACQUIRE_LOCK);
+#else
 		ret = sdio_get_len_from_slave(&len_from_slave, ACQUIRE_LOCK);
+#endif
 		if (ret || !len_from_slave) {
 			ESP_LOGD(TAG, "invalid ret or len_from_slave: %d %ld", ret, len_from_slave);
 
