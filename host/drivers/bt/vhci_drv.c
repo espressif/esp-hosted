@@ -124,6 +124,7 @@ void hci_drv_show_configuration(void)
 #if H_BT_ENABLE_LL_INIT
 void ble_transport_ll_init(void)
 {
+	ESP_ERROR_CHECK(transport_drv_reconfigure());
 }
 #endif
 
