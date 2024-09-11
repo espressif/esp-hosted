@@ -222,7 +222,11 @@ bleprph_gap_event(struct ble_gap_event *event, void *arg)
     int rc;
 
     switch (event->type) {
+#if defined(BLE_GAP_EVENT_LINK_ESTAB)
     case BLE_GAP_EVENT_LINK_ESTAB:
+#else
+    case BLE_GAP_EVENT_CONNECT:
+#endif
         /* A new connection was established or a connection attempt failed. */
         MODLOG_DFLT(INFO, "connection %s; status=%d ",
                     event->connect.status == 0 ? "established" : "failed",
