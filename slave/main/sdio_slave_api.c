@@ -42,8 +42,12 @@ interface_handle_t if_handle_g;
 static const char TAG[] = "SDIO_SLAVE";
 
 #define SDIO_RX_QUEUE_SIZE           CONFIG_ESP_SDIO_RX_Q_SIZE
+
+#if !SIMPLIFIED_SDIO_SLAVE
 static SemaphoreHandle_t sdio_rx_sem;
 static QueueHandle_t sdio_rx_queue[MAX_PRIORITY_QUEUES];
+static SemaphoreHandle_t sdio_send_queue_sem = NULL; // to count number of Tx bufs in IDF SDIO driver
+#endif
 
 #define SDIO_SLAVE_TO_HOST_INT_BIT7     7
 #define SDIO_SLAVE_TO_HOST_INT_BIT6     6
@@ -71,8 +75,10 @@ static int32_t sdio_write(interface_handle_t *handle, interface_buffer_handle_t 
 static int sdio_read(interface_handle_t *if_handle, interface_buffer_handle_t *buf_handle);
 static esp_err_t sdio_reset(interface_handle_t *handle);
 static void sdio_deinit(interface_handle_t *handle);
+#if !SIMPLIFIED_SDIO_SLAVE
 static void sdio_rx_task(void* pvParameters);
 static void sdio_tx_done_task(void* pvParameters);
+#endif
 
 if_ops_t if_ops = {
 	.init = sdio_init,
@@ -108,6 +114,7 @@ static inline void sdio_buffer_tx_free(void *buf)
 	hosted_mempool_free(buf_mp_tx_g, buf);
 }
 
+#if !SIMPLIFIED_SDIO_SLAVE
 static void start_rx_data_throttling_if_needed(void)
 {
 	uint32_t queue_load;
@@ -154,6 +161,7 @@ static void stop_rx_data_throttling_if_needed(void)
 		}
 	}
 }
+#endif
 
 interface_context_t *interface_insert_driver(int (*event_handler)(uint8_t val))
 {
@@ -252,6 +260,7 @@ void generate_startup_event(uint8_t cap, uint32_t ext_cap)
 	ESP_HEXLOGD("sdio_tx_init", buf_handle.payload, buf_handle.payload_len);
 
 #if !SIMPLIFIED_SDIO_SLAVE
+	xSemaphoreTake(sdio_send_queue_sem, portMAX_DELAY);
 	ret = sdio_slave_send_queue(buf_handle.payload, buf_handle.payload_len,
 			buf_handle.payload, portMAX_DELAY);
 #else
@@ -275,8 +284,10 @@ static void sdio_read_done(void *handle)
 
 static interface_handle_t * sdio_init(void)
 {
-	esp_err_t ret = ESP_OK;
+#if !SIMPLIFIED_SDIO_SLAVE
 	uint16_t prio_q_idx = 0;
+#endif
+	esp_err_t ret = ESP_OK;
 	sdio_slave_buf_handle_t handle = {0};
 	sdio_slave_config_t config = {
 #if CONFIG_ESP_SDIO_STREAMING_MODE
@@ -317,6 +328,9 @@ static interface_handle_t * sdio_init(void)
 #endif
 
 #if !SIMPLIFIED_SDIO_SLAVE
+	sdio_send_queue_sem = xSemaphoreCreateCounting(SDIO_SLAVE_QUEUE_SIZE, SDIO_SLAVE_QUEUE_SIZE);
+	assert(sdio_send_queue_sem);
+
 	sdio_rx_sem = xSemaphoreCreateCounting(SDIO_RX_QUEUE_SIZE*3, 0);
 	assert(sdio_rx_sem != NULL);
 
@@ -391,6 +405,7 @@ static void sdio_tx_done_task(void* pvParameters)
 			ESP_LOGE(TAG, "sdio_slave_send_get_finished() error");
 			continue;
 		}
+		xSemaphoreGive(sdio_send_queue_sem);
 		sdio_buffer_tx_free(sendbuf_p);
 	}
 }
@@ -448,6 +463,7 @@ static int32_t sdio_write(interface_handle_t *handle, interface_buffer_handle_t 
 	ESP_HEXLOGD("sdio_tx", sendbuf, min(32,total_len));
 
 #if !SIMPLIFIED_SDIO_SLAVE
+	xSemaphoreTake(sdio_send_queue_sem, portMAX_DELAY);
 	ret = sdio_slave_send_queue(sendbuf, total_len, sendbuf, portMAX_DELAY);
 #else
 	ret = sdio_slave_transmit(sendbuf, total_len);
@@ -656,6 +672,9 @@ static esp_err_t sdio_reset(interface_handle_t *handle)
 		ret = sdio_slave_send_get_finished(&handle, 0);
 		if (ret != ESP_OK)
 			break;
+#if !SIMPLIFIED_SDIO_SLAVE
+		xSemaphoreGive(sdio_send_queue_sem);
+#endif
 
 		if (handle) {
 			ret = sdio_slave_recv_load_buf(handle);
