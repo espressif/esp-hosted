@@ -1174,7 +1174,7 @@ int process_auth_request(uint8_t if_type, uint8_t *payload, uint16_t payload_len
 		assert(params.bssid);
 
 		memcpy(params.bssid, cmd_auth->bssid, sizeof(cmd_auth->bssid));
-		params.scan_type = 1;
+		params.scan_type = 0;
 		params.show_hidden = true;
 
 		if (cmd_auth->channel) {
