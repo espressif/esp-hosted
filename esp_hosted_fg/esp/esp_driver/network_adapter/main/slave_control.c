@@ -2599,7 +2599,9 @@ static esp_err_t ctrl_ntfy_StationDisconnectFromESPSoftAP(CtrlMsg *ntfy,
 	ntfy_payload->resp = FAILURE;
 	ntfy_payload->aid = evt->aid;
 	ntfy_payload->is_mesh_child = evt->is_mesh_child;
+#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 1, 1)
 	ntfy_payload->reason = evt->reason;
+#endif
 
 	snprintf(mac_str, BSSID_LENGTH, MACSTR, MAC2STR(evt->mac));
 	ntfy_payload->mac.len = strnlen(mac_str, BSSID_LENGTH);
