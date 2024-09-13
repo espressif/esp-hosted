@@ -992,6 +992,10 @@ int process_start_scan(uint8_t if_type, uint8_t *payload, uint16_t payload_len)
 		esp_wifi_register_mgmt_frame_internal(0, 0);
 	}
 
+	if (params.ssid) {
+		free(params.ssid);
+	}
+
 	ret = send_command_resp(if_type, CMD_SCAN_REQUEST, cmd_status, NULL, 0, 0);
 
 	return ret;
