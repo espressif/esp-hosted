@@ -58,14 +58,27 @@ connected together. Verify that the correct GPIOs are set-up in
 > under Hosted. Check the ESP datasheet to verify the GPIOs you select
 > can be used as a Hosted interface.
 
-### 2.2. Using SPI insted of SDIO
+### 2.2. Evaluate with jumpers first
 
-In general, SPI imposes fewer hardware requirements compared to
+It is flexible to evaluate with jumper cables or bread board than full-fledged PCB.
+In general, SPI (Standard & Dual SPI) imposes fewer hardware requirements compared to
 SDIO. SPI is easier to prototype, and available on more ESP chips and
 MCUs compared to SDIO.
+Before going to SDIO 4 bit mode PCB, it's better to evaluate SDIO 1-Bit mode.
 
-However, if you need a high-speed interface, SDIO should be
-considered.
+Once you evaluate the solution on jumper cables, you can move to PCB solutions with same or high performance transport.
+
+###### Jumper cable considerations
+- Use high quality jumper cables
+- Use jumper cables as small as possible. you can cut and solder the joints if need be.
+- Use equal length jumper cables for all the connections
+- Grounds: Connect as many grounds as possible, this lowers the interference.
+- Jumper cable lengths
+  - Standard SPI: At max 10cm, lower the better
+  - Dual SPI: At max 10cm, lower the better
+  - SDIO 1 Bit: At max 5cm, lower the better
+  - Quad SPI : jumpers not supported, only PCB
+  - SDIO 4 Bit: Jumpers not supported, only PCB
 
 ### 2.3. Whenever possible, Use `IO_MUX` GPIOs.
 
@@ -102,7 +115,7 @@ For jumper cables, you can try surrounding the signals, especially the
 
 > [!NOTE]
 > For SDIO, external pull-up resistors (recommended value: 51 kOhms)
-> are required. Using jumper cable are not recommended for SDIO. You
+> are required. Using jumper cable are **not** recommended for SDIO. You
 > may be able to get SDIO working with jumper cables by using a lower
 > `CLK` frequency and using 1-bit SDIO mode.
 
@@ -130,7 +143,7 @@ be used to light a LED or trigger a capture on an oscilloscope or
 logic analyzer, for example. This is useful for capturing rare or
 intermittent conditions while testing Hosted.
 
-In the future, Hosted may also offer more features, like controlling
+In the future, Hosted may also offer newer transport options or more features, like controlling
 power modes on the Host and Slave. These may require additional GPIOs
 for control, so it would be good to keep some additional GPIOs
 available and accesable for future use.
