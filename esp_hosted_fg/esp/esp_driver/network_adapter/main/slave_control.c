@@ -2489,9 +2489,7 @@ static esp_err_t ctrl_ntfy_StationDisconnectFromAP(CtrlMsg *ntfy,
 	ntfy->payload_case = CTRL_MSG__PAYLOAD_EVENT_STATION_DISCONNECT_FROM__AP;
 	ntfy->event_station_disconnect_from_ap = ntfy_payload;
 
-#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 1, 1)
 	ntfy_payload->reason = evt->reason;
-#endif
 	ntfy_payload->rssi = evt->rssi;
 
 	/* ssid */
