@@ -274,7 +274,7 @@ menu "ESP-Hosted config"
 				int "GPIO pin for handshake"
 				default 16 if IDF_TARGET_ESP32P4 && SLAVE_CHIPSET_ESP32C6
 				default 3 if IDF_TARGET_ESP32C2 || IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32C6
-				default 17 if IDF_TARGET_ESP32S3
+				default 17 if IDF_TARGET_ESP32S3 || IDF_TARGET_ESP32S2
 				default 26
 				help
 					GPIO pin to use for handshake with other spi controller
