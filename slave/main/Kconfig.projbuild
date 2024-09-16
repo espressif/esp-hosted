@@ -192,7 +192,7 @@ menu "Example Configuration"
 				int "Slave GPIO pin for handshake"
 				default 22 if ESP_HOST_DEV_BOARD_P4_FUNC_BOARD
 				default 3 if IDF_TARGET_ESP32C2 || IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32C6
-				default 17 if IDF_TARGET_ESP32S3
+				default 17 if IDF_TARGET_ESP32S3 || IDF_TARGET_ESP32S2
 				default 26
 				help
 					Slave GPIO pin to use for handshake with other spi controller
