@@ -2795,7 +2795,7 @@ const ProtobufCMessageDescriptor ctrl_msg__req__get_apconfig__descriptor =
   (ProtobufCMessageInit) ctrl_msg__req__get_apconfig__init,
   NULL,NULL,NULL    /* reserved[123] */
 };
-static const ProtobufCFieldDescriptor ctrl_msg__resp__get_apconfig__field_descriptors[6] =
+static const ProtobufCFieldDescriptor ctrl_msg__resp__get_apconfig__field_descriptors[7] =
 {
   {
     "ssid",
@@ -2869,8 +2869,21 @@ static const ProtobufCFieldDescriptor ctrl_msg__resp__get_apconfig__field_descri
     0,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
+  {
+    "band_mode",
+    7,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_INT32,
+    0,   /* quantifier_offset */
+    offsetof(CtrlMsgRespGetAPConfig, band_mode),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
 };
 static const unsigned ctrl_msg__resp__get_apconfig__field_indices_by_name[] = {
+  6,   /* field[6] = band_mode */
   1,   /* field[1] = bssid */
   3,   /* field[3] = chnl */
   5,   /* field[5] = resp */
@@ -2881,7 +2894,7 @@ static const unsigned ctrl_msg__resp__get_apconfig__field_indices_by_name[] = {
 static const ProtobufCIntRange ctrl_msg__resp__get_apconfig__number_ranges[1 + 1] =
 {
   { 1, 0 },
-  { 0, 6 }
+  { 0, 7 }
 };
 const ProtobufCMessageDescriptor ctrl_msg__resp__get_apconfig__descriptor =
 {
@@ -2891,14 +2904,14 @@ const ProtobufCMessageDescriptor ctrl_msg__resp__get_apconfig__descriptor =
   "CtrlMsgRespGetAPConfig",
   "",
   sizeof(CtrlMsgRespGetAPConfig),
-  6,
+  7,
   ctrl_msg__resp__get_apconfig__field_descriptors,
   ctrl_msg__resp__get_apconfig__field_indices_by_name,
   1,  ctrl_msg__resp__get_apconfig__number_ranges,
   (ProtobufCMessageInit) ctrl_msg__resp__get_apconfig__init,
   NULL,NULL,NULL    /* reserved[123] */
 };
-static const ProtobufCFieldDescriptor ctrl_msg__req__connect_ap__field_descriptors[5] =
+static const ProtobufCFieldDescriptor ctrl_msg__req__connect_ap__field_descriptors[6] =
 {
   {
     "ssid",
@@ -2960,8 +2973,21 @@ static const ProtobufCFieldDescriptor ctrl_msg__req__connect_ap__field_descripto
     0,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
+  {
+    "band_mode",
+    6,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_INT32,
+    0,   /* quantifier_offset */
+    offsetof(CtrlMsgReqConnectAP, band_mode),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
 };
 static const unsigned ctrl_msg__req__connect_ap__field_indices_by_name[] = {
+  5,   /* field[5] = band_mode */
   2,   /* field[2] = bssid */
   3,   /* field[3] = is_wpa3_supported */
   4,   /* field[4] = listen_interval */
@@ -2971,7 +2997,7 @@ static const unsigned ctrl_msg__req__connect_ap__field_indices_by_name[] = {
 static const ProtobufCIntRange ctrl_msg__req__connect_ap__number_ranges[1 + 1] =
 {
   { 1, 0 },
-  { 0, 5 }
+  { 0, 6 }
 };
 const ProtobufCMessageDescriptor ctrl_msg__req__connect_ap__descriptor =
 {
@@ -2981,14 +3007,14 @@ const ProtobufCMessageDescriptor ctrl_msg__req__connect_ap__descriptor =
   "CtrlMsgReqConnectAP",
   "",
   sizeof(CtrlMsgReqConnectAP),
-  5,
+  6,
   ctrl_msg__req__connect_ap__field_descriptors,
   ctrl_msg__req__connect_ap__field_indices_by_name,
   1,  ctrl_msg__req__connect_ap__number_ranges,
   (ProtobufCMessageInit) ctrl_msg__req__connect_ap__init,
   NULL,NULL,NULL    /* reserved[123] */
 };
-static const ProtobufCFieldDescriptor ctrl_msg__resp__connect_ap__field_descriptors[2] =
+static const ProtobufCFieldDescriptor ctrl_msg__resp__connect_ap__field_descriptors[3] =
 {
   {
     "resp",
@@ -3014,15 +3040,28 @@ static const ProtobufCFieldDescriptor ctrl_msg__resp__connect_ap__field_descript
     0,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
+  {
+    "band_mode",
+    3,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_INT32,
+    0,   /* quantifier_offset */
+    offsetof(CtrlMsgRespConnectAP, band_mode),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
 };
 static const unsigned ctrl_msg__resp__connect_ap__field_indices_by_name[] = {
+  2,   /* field[2] = band_mode */
   1,   /* field[1] = mac */
   0,   /* field[0] = resp */
 };
 static const ProtobufCIntRange ctrl_msg__resp__connect_ap__number_ranges[1 + 1] =
 {
   { 1, 0 },
-  { 0, 2 }
+  { 0, 3 }
 };
 const ProtobufCMessageDescriptor ctrl_msg__resp__connect_ap__descriptor =
 {
@@ -3032,7 +3071,7 @@ const ProtobufCMessageDescriptor ctrl_msg__resp__connect_ap__descriptor =
   "CtrlMsgRespConnectAP",
   "",
   sizeof(CtrlMsgRespConnectAP),
-  2,
+  3,
   ctrl_msg__resp__connect_ap__field_descriptors,
   ctrl_msg__resp__connect_ap__field_indices_by_name,
   1,  ctrl_msg__resp__connect_ap__number_ranges,
@@ -3057,7 +3096,7 @@ const ProtobufCMessageDescriptor ctrl_msg__req__get_soft_apconfig__descriptor =
   (ProtobufCMessageInit) ctrl_msg__req__get_soft_apconfig__init,
   NULL,NULL,NULL    /* reserved[123] */
 };
-static const ProtobufCFieldDescriptor ctrl_msg__resp__get_soft_apconfig__field_descriptors[8] =
+static const ProtobufCFieldDescriptor ctrl_msg__resp__get_soft_apconfig__field_descriptors[9] =
 {
   {
     "ssid",
@@ -3155,8 +3194,21 @@ static const ProtobufCFieldDescriptor ctrl_msg__resp__get_soft_apconfig__field_d
     0,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
+  {
+    "band_mode",
+    9,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_INT32,
+    0,   /* quantifier_offset */
+    offsetof(CtrlMsgRespGetSoftAPConfig, band_mode),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
 };
 static const unsigned ctrl_msg__resp__get_soft_apconfig__field_indices_by_name[] = {
+  8,   /* field[8] = band_mode */
   6,   /* field[6] = bw */
   2,   /* field[2] = chnl */
   4,   /* field[4] = max_conn */
@@ -3169,7 +3221,7 @@ static const unsigned ctrl_msg__resp__get_soft_apconfig__field_indices_by_name[]
 static const ProtobufCIntRange ctrl_msg__resp__get_soft_apconfig__number_ranges[1 + 1] =
 {
   { 1, 0 },
-  { 0, 8 }
+  { 0, 9 }
 };
 const ProtobufCMessageDescriptor ctrl_msg__resp__get_soft_apconfig__descriptor =
 {
@@ -3179,14 +3231,14 @@ const ProtobufCMessageDescriptor ctrl_msg__resp__get_soft_apconfig__descriptor =
   "CtrlMsgRespGetSoftAPConfig",
   "",
   sizeof(CtrlMsgRespGetSoftAPConfig),
-  8,
+  9,
   ctrl_msg__resp__get_soft_apconfig__field_descriptors,
   ctrl_msg__resp__get_soft_apconfig__field_indices_by_name,
   1,  ctrl_msg__resp__get_soft_apconfig__number_ranges,
   (ProtobufCMessageInit) ctrl_msg__resp__get_soft_apconfig__init,
   NULL,NULL,NULL    /* reserved[123] */
 };
-static const ProtobufCFieldDescriptor ctrl_msg__req__start_soft_ap__field_descriptors[7] =
+static const ProtobufCFieldDescriptor ctrl_msg__req__start_soft_ap__field_descriptors[8] =
 {
   {
     "ssid",
@@ -3272,8 +3324,21 @@ static const ProtobufCFieldDescriptor ctrl_msg__req__start_soft_ap__field_descri
     0,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
+  {
+    "band_mode",
+    8,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_INT32,
+    0,   /* quantifier_offset */
+    offsetof(CtrlMsgReqStartSoftAP, band_mode),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
 };
 static const unsigned ctrl_msg__req__start_soft_ap__field_indices_by_name[] = {
+  7,   /* field[7] = band_mode */
   6,   /* field[6] = bw */
   2,   /* field[2] = chnl */
   4,   /* field[4] = max_conn */
@@ -3285,7 +3350,7 @@ static const unsigned ctrl_msg__req__start_soft_ap__field_indices_by_name[] = {
 static const ProtobufCIntRange ctrl_msg__req__start_soft_ap__number_ranges[1 + 1] =
 {
   { 1, 0 },
-  { 0, 7 }
+  { 0, 8 }
 };
 const ProtobufCMessageDescriptor ctrl_msg__req__start_soft_ap__descriptor =
 {
@@ -3295,14 +3360,14 @@ const ProtobufCMessageDescriptor ctrl_msg__req__start_soft_ap__descriptor =
   "CtrlMsgReqStartSoftAP",
   "",
   sizeof(CtrlMsgReqStartSoftAP),
-  7,
+  8,
   ctrl_msg__req__start_soft_ap__field_descriptors,
   ctrl_msg__req__start_soft_ap__field_indices_by_name,
   1,  ctrl_msg__req__start_soft_ap__number_ranges,
   (ProtobufCMessageInit) ctrl_msg__req__start_soft_ap__init,
   NULL,NULL,NULL    /* reserved[123] */
 };
-static const ProtobufCFieldDescriptor ctrl_msg__resp__start_soft_ap__field_descriptors[2] =
+static const ProtobufCFieldDescriptor ctrl_msg__resp__start_soft_ap__field_descriptors[3] =
 {
   {
     "resp",
@@ -3328,15 +3393,28 @@ static const ProtobufCFieldDescriptor ctrl_msg__resp__start_soft_ap__field_descr
     0,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
+  {
+    "band_mode",
+    3,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_INT32,
+    0,   /* quantifier_offset */
+    offsetof(CtrlMsgRespStartSoftAP, band_mode),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
 };
 static const unsigned ctrl_msg__resp__start_soft_ap__field_indices_by_name[] = {
+  2,   /* field[2] = band_mode */
   1,   /* field[1] = mac */
   0,   /* field[0] = resp */
 };
 static const ProtobufCIntRange ctrl_msg__resp__start_soft_ap__number_ranges[1 + 1] =
 {
   { 1, 0 },
-  { 0, 2 }
+  { 0, 3 }
 };
 const ProtobufCMessageDescriptor ctrl_msg__resp__start_soft_ap__descriptor =
 {
@@ -3346,7 +3424,7 @@ const ProtobufCMessageDescriptor ctrl_msg__resp__start_soft_ap__descriptor =
   "CtrlMsgRespStartSoftAP",
   "",
   sizeof(CtrlMsgRespStartSoftAP),
-  2,
+  3,
   ctrl_msg__resp__start_soft_ap__field_descriptors,
   ctrl_msg__resp__start_soft_ap__field_indices_by_name,
   1,  ctrl_msg__resp__start_soft_ap__number_ranges,

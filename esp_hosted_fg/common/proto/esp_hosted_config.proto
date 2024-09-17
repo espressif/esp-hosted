@@ -1,4 +1,4 @@
-/* Copyright (C) 2015-2023 Espressif Systems (Shanghai) PTE LTD */
+/* Copyright (C) 2015-2024 Espressif Systems (Shanghai) PTE LTD */
 /* SPDX-License-Identifier: GPL-2.0-only OR Apache-2.0 */
 
 syntax = "proto3";
@@ -230,6 +230,7 @@ message CtrlMsg_Resp_GetAPConfig {
 	int32 chnl = 4;
 	Ctrl_WifiSecProt sec_prot = 5;
 	int32 resp = 6;
+	int32 band_mode = 7;
 }
 
 message CtrlMsg_Req_ConnectAP {
@@ -238,11 +239,13 @@ message CtrlMsg_Req_ConnectAP {
 	string bssid = 3;
 	bool is_wpa3_supported = 4;
 	int32 listen_interval = 5;
+	int32 band_mode = 6;
 }
 
 message  CtrlMsg_Resp_ConnectAP {
 	int32 resp = 1;
 	bytes mac = 2;
+	int32 band_mode = 3;
 }
 
 message CtrlMsg_Req_GetSoftAPConfig {
@@ -257,6 +260,7 @@ message CtrlMsg_Resp_GetSoftAPConfig {
 	bool ssid_hidden = 6;
 	int32 bw = 7;
 	int32 resp = 8;
+	int32 band_mode = 9;
 }
 
 message CtrlMsg_Req_StartSoftAP {
@@ -267,11 +271,13 @@ message CtrlMsg_Req_StartSoftAP {
 	int32 max_conn = 5;
 	bool ssid_hidden = 6;
 	int32 bw = 7;
+	int32 band_mode = 8;
 }
 
 message CtrlMsg_Resp_StartSoftAP {
 	int32 resp = 1;
 	bytes mac = 2;
+	int32 band_mode = 3;
 }
 
 message CtrlMsg_Req_ScanResult {

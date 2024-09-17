@@ -377,10 +377,11 @@ struct  CtrlMsgRespGetAPConfig
   int32_t chnl;
   CtrlWifiSecProt sec_prot;
   int32_t resp;
+  int32_t band_mode;
 };
 #define CTRL_MSG__RESP__GET_APCONFIG__INIT \
  { PROTOBUF_C_MESSAGE_INIT (&ctrl_msg__resp__get_apconfig__descriptor) \
-    , {0,NULL}, {0,NULL}, 0, 0, CTRL__WIFI_SEC_PROT__Open, 0 }
+    , {0,NULL}, {0,NULL}, 0, 0, CTRL__WIFI_SEC_PROT__Open, 0, 0 }
 
 
 struct  CtrlMsgReqConnectAP
@@ -391,10 +392,11 @@ struct  CtrlMsgReqConnectAP
   char *bssid;
   protobuf_c_boolean is_wpa3_supported;
   int32_t listen_interval;
+  int32_t band_mode;
 };
 #define CTRL_MSG__REQ__CONNECT_AP__INIT \
  { PROTOBUF_C_MESSAGE_INIT (&ctrl_msg__req__connect_ap__descriptor) \
-    , (char *)protobuf_c_empty_string, (char *)protobuf_c_empty_string, (char *)protobuf_c_empty_string, 0, 0 }
+    , (char *)protobuf_c_empty_string, (char *)protobuf_c_empty_string, (char *)protobuf_c_empty_string, 0, 0, 0 }
 
 
 struct  CtrlMsgRespConnectAP
@@ -402,10 +404,11 @@ struct  CtrlMsgRespConnectAP
   ProtobufCMessage base;
   int32_t resp;
   ProtobufCBinaryData mac;
+  int32_t band_mode;
 };
 #define CTRL_MSG__RESP__CONNECT_AP__INIT \
  { PROTOBUF_C_MESSAGE_INIT (&ctrl_msg__resp__connect_ap__descriptor) \
-    , 0, {0,NULL} }
+    , 0, {0,NULL}, 0 }
 
 
 struct  CtrlMsgReqGetSoftAPConfig
@@ -428,10 +431,11 @@ struct  CtrlMsgRespGetSoftAPConfig
   protobuf_c_boolean ssid_hidden;
   int32_t bw;
   int32_t resp;
+  int32_t band_mode;
 };
 #define CTRL_MSG__RESP__GET_SOFT_APCONFIG__INIT \
  { PROTOBUF_C_MESSAGE_INIT (&ctrl_msg__resp__get_soft_apconfig__descriptor) \
-    , {0,NULL}, {0,NULL}, 0, CTRL__WIFI_SEC_PROT__Open, 0, 0, 0, 0 }
+    , {0,NULL}, {0,NULL}, 0, CTRL__WIFI_SEC_PROT__Open, 0, 0, 0, 0, 0 }
 
 
 struct  CtrlMsgReqStartSoftAP
@@ -444,10 +448,11 @@ struct  CtrlMsgReqStartSoftAP
   int32_t max_conn;
   protobuf_c_boolean ssid_hidden;
   int32_t bw;
+  int32_t band_mode;
 };
 #define CTRL_MSG__REQ__START_SOFT_AP__INIT \
  { PROTOBUF_C_MESSAGE_INIT (&ctrl_msg__req__start_soft_ap__descriptor) \
-    , (char *)protobuf_c_empty_string, (char *)protobuf_c_empty_string, 0, CTRL__WIFI_SEC_PROT__Open, 0, 0, 0 }
+    , (char *)protobuf_c_empty_string, (char *)protobuf_c_empty_string, 0, CTRL__WIFI_SEC_PROT__Open, 0, 0, 0, 0 }
 
 
 struct  CtrlMsgRespStartSoftAP
@@ -455,10 +460,11 @@ struct  CtrlMsgRespStartSoftAP
   ProtobufCMessage base;
   int32_t resp;
   ProtobufCBinaryData mac;
+  int32_t band_mode;
 };
 #define CTRL_MSG__RESP__START_SOFT_AP__INIT \
  { PROTOBUF_C_MESSAGE_INIT (&ctrl_msg__resp__start_soft_ap__descriptor) \
-    , 0, {0,NULL} }
+    , 0, {0,NULL}, 0 }
 
 
 struct  CtrlMsgReqScanResult
