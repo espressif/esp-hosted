@@ -346,7 +346,7 @@ int process_event_esp_bootup(struct esp_adapter *adapter, u8 *evt_buf, u8 len)
 			atomic_set(&adapter->state, ESP_CONTEXT_DISABLED);
 			generate_slave_intr(&adapter->if_context, BIT(ESP_CLOSE_DATA_PATH));
 		}
-		esp_err("network iterface init failed\n");
+		esp_err("network interface init failed\n");
 		return -1;
 	}
 	init_bt(adapter);
