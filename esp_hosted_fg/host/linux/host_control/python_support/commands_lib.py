@@ -489,6 +489,7 @@ def ctrl_app_resp_callback(app_resp):
 			print("AP's channel number \""+str(ap_config_p.contents.channel)+"\"")
 			print("AP's rssi \""+str(ap_config_p.contents.rssi)+"\"")
 			print("AP's encryption mode \""+str(ap_config_p.contents.encryption_mode)+"\"")
+			print("AP's band mode \""+str(ap_config_p.contents.band_mode)+"\"")
 		else:
 			print("Station mode status: "+get_str(ap_config_p.contents.status))
 
@@ -499,7 +500,7 @@ def ctrl_app_resp_callback(app_resp):
 			return FAILURE
 
 	elif (app_resp.contents.msg_id == CTRL_MSGID.CTRL_RESP_START_SOFTAP.value) :
-		print("esp32 softAP started")
+		print("esp32 softAP started with band_mode "+str(app_resp.contents.control_data.wifi_softap_config.band_mode))
 		if (process_resp_start_softap(app_resp)):
 			fail_resp(app_resp)
 			return FAILURE
@@ -514,6 +515,7 @@ def ctrl_app_resp_callback(app_resp):
 		print("softAP max connections \""+str(softap_config_p.contents.max_connections)+"\"")
 		print("softAP hide ssid \""+str(softap_config_p.contents.ssid_hidden)+"\"")
 		print("softAP bandwidth \""+str(softap_config_p.contents.bandwidth)+"\"")
+		print("softAP band mode \""+str(softap_config_p.contents.band_mode)+"\"")
 
 	elif (app_resp.contents.msg_id == CTRL_MSGID.CTRL_RESP_GET_SOFTAP_CONN_STA_LIST.value) :
 		count = app_resp.contents.control_data.wifi_softap_con_sta.count
@@ -822,7 +824,7 @@ def test_sync_get_available_wifi():
 
 
 
-def test_async_station_mode_connect(ssid,pwd,bssid,use_wpa3,listen_interval):
+def test_async_station_mode_connect(ssid,pwd,bssid,use_wpa3,listen_interval,band_mode):
 	req = CONTROL_COMMAND()
 	CTRL_CMD_DEFAULT_REQ(req)
 
@@ -831,6 +833,7 @@ def test_async_station_mode_connect(ssid,pwd,bssid,use_wpa3,listen_interval):
 	req.control_data.wifi_ap_config.bssid = set_str(bssid)
 	req.control_data.wifi_ap_config.is_wpa3_supported =  use_wpa3
 	req.control_data.wifi_ap_config.listen_interval = listen_interval
+	req.control_data.wifi_ap_config.band_mode = band_mode
 	req.ctrl_resp_cb = ctrl_app_resp_cb
 
 	commands_map_py_to_c.wifi_connect_ap(req)
@@ -838,7 +841,7 @@ def test_async_station_mode_connect(ssid,pwd,bssid,use_wpa3,listen_interval):
 
 
 
-def test_sync_station_mode_connect(ssid,pwd,bssid,use_wpa3,listen_interval):
+def test_sync_station_mode_connect(ssid,pwd,bssid,use_wpa3,listen_interval,band_mode):
 	req = CONTROL_COMMAND()
 	CTRL_CMD_DEFAULT_REQ(req)
 	req.control_data.wifi_ap_config.ssid = set_str(str(ssid))
@@ -846,6 +849,7 @@ def test_sync_station_mode_connect(ssid,pwd,bssid,use_wpa3,listen_interval):
 	req.control_data.wifi_ap_config.bssid = set_str(bssid)
 	req.control_data.wifi_ap_config.is_wpa3_supported =  use_wpa3
 	req.control_data.wifi_ap_config.listen_interval = listen_interval
+	req.control_data.wifi_ap_config.band_mode = band_mode
 
 	resp = POINTER(CONTROL_COMMAND)
 	resp = None
@@ -875,7 +879,7 @@ def test_sync_station_mode_disconnect():
 
 
 
-def test_sync_softap_mode_start(ssid, pwd, channel, sec_prot, max_conn, hide_ssid, bw):
+def test_sync_softap_mode_start(ssid, pwd, channel, sec_prot, max_conn, hide_ssid, bw, band_mode):
 	req = CONTROL_COMMAND()
 	CTRL_CMD_DEFAULT_REQ(req)
 	resp = POINTER(CONTROL_COMMAND)
@@ -887,6 +891,7 @@ def test_sync_softap_mode_start(ssid, pwd, channel, sec_prot, max_conn, hide_ssi
 	req.control_data.wifi_softap_config.max_connections = max_conn
 	req.control_data.wifi_softap_config.ssid_hidden = hide_ssid
 	req.control_data.wifi_softap_config.bandwidth = bw
+	req.control_data.wifi_softap_config.band_mode = band_mode
 	resp = commands_map_py_to_c.wifi_start_softap(req)
 	return ctrl_app_resp_callback(resp)
 

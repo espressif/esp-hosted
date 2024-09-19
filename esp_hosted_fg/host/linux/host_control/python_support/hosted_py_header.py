@@ -48,6 +48,9 @@ CALLBACK_AVAILABLE = 0
 CALLBACK_NOT_REGISTERED = -1
 MSG_ID_OUT_OF_ORDER = -2
 
+WIFI_BAND_MODE_2G_ONLY = 1
+WIFI_BAND_MODE_5G_ONLY = 2
+WIFI_BAND_MODE_AUTO = 3
 
 class WIFI_MODE_E(Enum):
 	WIFI_MODE_NONE = 0
@@ -195,7 +198,8 @@ class STA_CONFIG(Structure):
 			("encryption_mode", c_uint),
 			("listen_interval", c_ushort),
 			("status", c_char * STATUS_LENGTH),
-			("out_mac", c_char * MAX_MAC_STR_LEN)]
+			("out_mac", c_char * MAX_MAC_STR_LEN),
+			("band_mode", c_int)]
 
 
 class SOFTAP_CONFIG(Structure):
@@ -206,7 +210,8 @@ class SOFTAP_CONFIG(Structure):
 			("max_connections", c_int),
 			("ssid_hidden", c_bool),
 			("bandwidth", c_uint),
-			("out_mac", c_char * MAX_MAC_STR_LEN)]
+			("out_mac", c_char * MAX_MAC_STR_LEN),
+			("band_mode", c_int)]
 
 
 class CONTROL_CONFIG(Union):

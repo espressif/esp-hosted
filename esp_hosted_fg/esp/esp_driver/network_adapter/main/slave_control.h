@@ -24,6 +24,18 @@
   #define TIMEOUT_IN_SEC          (1000 / portTICK_RATE_MS)
 #endif
 
+#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 4, 0)
+// 5G band support only available in ESP-IDF 5.4 or later
+
+#if CONFIG_SOC_WIFI_HE_SUPPORT_5G
+  #define WIFI_DUALBAND_SUPPORT 1
+#else
+  #define WIFI_DUALBAND_SUPPORT 0
+#endif // CONFIG_SOC_WIFI_HE_SUPPORT_5G
+
+#else
+  #define WIFI_DUALBAND_SUPPORT 0
+#endif
 
 #define SSID_LENGTH             33
 #define PASSWORD_LENGTH         64

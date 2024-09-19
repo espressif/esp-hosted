@@ -45,6 +45,7 @@
 #define ESP_PRIV_FIRMWARE_CHIP_ESP32C3      (0x5)
 #define ESP_PRIV_FIRMWARE_CHIP_ESP32S3      (0x9)
 #define ESP_PRIV_FIRMWARE_CHIP_ESP32C2      (0xC)
+#define ESP_PRIV_FIRMWARE_CHIP_ESP32C5      (0x17)
 #define ESP_PRIV_FIRMWARE_CHIP_ESP32C6      (0xD)
 
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 4, 0))
@@ -226,11 +227,12 @@ int process_init_event(u8 *evt_buf, u8 len)
 	}
 
 	if ((hardware_type != ESP_PRIV_FIRMWARE_CHIP_ESP32) &&
-	    (hardware_type != ESP_PRIV_FIRMWARE_CHIP_ESP32S2) &&
-	    (hardware_type != ESP_PRIV_FIRMWARE_CHIP_ESP32C2) &&
-	    (hardware_type != ESP_PRIV_FIRMWARE_CHIP_ESP32C3) &&
-	    (hardware_type != ESP_PRIV_FIRMWARE_CHIP_ESP32C6) &&
-	    (hardware_type != ESP_PRIV_FIRMWARE_CHIP_ESP32S3)) {
+		(hardware_type != ESP_PRIV_FIRMWARE_CHIP_ESP32S2) &&
+		(hardware_type != ESP_PRIV_FIRMWARE_CHIP_ESP32C2) &&
+		(hardware_type != ESP_PRIV_FIRMWARE_CHIP_ESP32C3) &&
+		(hardware_type != ESP_PRIV_FIRMWARE_CHIP_ESP32C5) &&
+		(hardware_type != ESP_PRIV_FIRMWARE_CHIP_ESP32C6) &&
+		(hardware_type != ESP_PRIV_FIRMWARE_CHIP_ESP32S3)) {
 		esp_err("ESP board type [%d] is not recognized: aborting\n", hardware_type);
 		hardware_type = ESP_PRIV_FIRMWARE_CHIP_UNRECOGNIZED;
 		return -1;

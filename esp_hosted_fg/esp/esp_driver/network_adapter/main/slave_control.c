@@ -43,7 +43,11 @@
 
 #define TIMEOUT_IN_MIN              (60*TIMEOUT_IN_SEC)
 #define TIMEOUT_IN_HOUR             (60*TIMEOUT_IN_MIN)
+#if WIFI_DUALBAND_SUPPORT
+#define STA_MODE_TIMEOUT            (15*TIMEOUT_IN_SEC)
+#else
 #define STA_MODE_TIMEOUT            (5*TIMEOUT_IN_SEC)
+#endif
 #define RESTART_TIMEOUT             (5*TIMEOUT_IN_SEC)
 
 #if CONFIG_ESP_OTA_WORKAROUND
@@ -425,6 +429,10 @@ static esp_err_t req_connect_ap_handler (CtrlMsg *req,
 	CtrlMsgRespConnectAP *resp_payload = NULL;
 	EventBits_t bits = {0};
 	int retry = 0;
+#if WIFI_DUALBAND_SUPPORT
+	wifi_band_mode_t band_mode = 0; // 0 is currently an invalid value
+	wifi_band_mode_t requested_band_mode = 0; // 0 is currently an invalid value
+#endif
 
 	if (!req || !resp || !req->req_connect_ap) {
 		ESP_LOGE(TAG, "Invalid parameters");
@@ -518,6 +526,32 @@ static esp_err_t req_connect_ap_handler (CtrlMsg *req,
 	if (req->req_connect_ap->listen_interval >= 0) {
 		wifi_cfg->sta.listen_interval = req->req_connect_ap->listen_interval;
 	}
+#if WIFI_DUALBAND_SUPPORT
+	// get current band_mode
+	ret = esp_wifi_get_band_mode(&band_mode);
+	if (ret != ESP_OK) {
+		ESP_LOGW(TAG, "failed to get band mode, defaulting to AUTO");
+		band_mode = WIFI_BAND_MODE_AUTO;
+	}
+
+	// get requested band mode
+	if (req->req_connect_ap->band_mode) {
+		requested_band_mode = req->req_connect_ap->band_mode;
+	} else {
+		// requested band mode not set: default to auto
+		requested_band_mode = WIFI_BAND_MODE_AUTO;
+	}
+
+	// compare and update current band mode, if needed
+	if (band_mode != requested_band_mode) {
+		ret = esp_wifi_set_band_mode(requested_band_mode);
+		if (ret) {
+			ESP_LOGE(TAG, "failed to set band mode");
+			goto err;
+		}
+		band_mode = requested_band_mode;
+	}
+#endif
 
 	/* Make sure that we connect to strongest signal, when multiple SSID with
 	 * the same name. This should take a small extra time to search for all SSIDs,
@@ -613,6 +647,9 @@ static esp_err_t req_connect_ap_handler (CtrlMsg *req,
 
 err:
 	if (station_connected) {
+#if WIFI_DUALBAND_SUPPORT
+		resp_payload->band_mode = band_mode;
+#endif
 		ESP_LOGI(TAG, "%s:%u Set resp to Success",__func__,__LINE__);
 		resp_payload->resp = SUCCESS;
 	} else {
@@ -637,6 +674,9 @@ static esp_err_t req_get_ap_config_handler (CtrlMsg *req,
 	credentials_t credentials = {0};
 	wifi_ap_record_t *ap_info = NULL;
 	CtrlMsgRespGetAPConfig *resp_payload = NULL;
+#if WIFI_DUALBAND_SUPPORT
+	wifi_band_mode_t band_mode = 0; // 0 is currently an invalid value
+#endif
 	if (!req || !resp) {
 		ESP_LOGE(TAG, "Invalid parameters");
 		return ESP_FAIL;
@@ -713,6 +753,15 @@ static esp_err_t req_get_ap_config_handler (CtrlMsg *req,
 	resp_payload->rssi = credentials.rssi;
 	resp_payload->chnl = credentials.chnl;
 	resp_payload->sec_prot = credentials.ecn;
+#if WIFI_DUALBAND_SUPPORT
+	// get current band_mode
+	ret = esp_wifi_get_band_mode(&band_mode);
+	if (ret != ESP_OK) {
+		ESP_LOGW(TAG, "failed to get band mode, defaulting to AUTO");
+		band_mode = WIFI_BAND_MODE_AUTO;
+	}
+	resp_payload->band_mode = band_mode;
+#endif
 	resp_payload->resp = SUCCESS;
 
 err:
@@ -787,10 +836,15 @@ static esp_err_t req_get_softap_config_handler (CtrlMsg *req,
 		CtrlMsg *resp, void *priv_data)
 {
 	esp_err_t ret = ESP_OK;
-	wifi_bandwidth_t get_bw = 0;
 	credentials_t credentials = {0};
 	wifi_config_t get_conf = {0};
 	CtrlMsgRespGetSoftAPConfig *resp_payload = NULL;
+#if WIFI_DUALBAND_SUPPORT
+	wifi_bandwidths_t bandwidths = { 0 };
+	wifi_band_mode_t band_mode = 0; // 0 is currently an invalid value
+#else
+	wifi_bandwidth_t get_bw = 0;
+#endif
 
 	if (!req || !resp) {
 		ESP_LOGE(TAG, "Invalid parameters");
@@ -818,11 +872,19 @@ static esp_err_t req_get_softap_config_handler (CtrlMsg *req,
 		goto err;
 	}
 
+#if WIFI_DUALBAND_SUPPORT
+	ret = esp_wifi_get_bandwidths(ESP_IF_WIFI_AP,&bandwidths);
+	if (ret) {
+		ESP_LOGE(TAG,"Failed to get bandwidths");
+		goto err;
+	}
+#else
 	ret = esp_wifi_get_bandwidth(ESP_IF_WIFI_AP,&get_bw);
 	if (ret) {
 		ESP_LOGE(TAG,"Failed to get bandwidth");
 		goto err;
 	}
+#endif
 
 	if (strlen((char *)get_conf.ap.ssid)) {
 		strncpy((char *)credentials.ssid,(char *)&get_conf.ap.ssid,
@@ -869,7 +931,26 @@ static esp_err_t req_get_softap_config_handler (CtrlMsg *req,
 	resp_payload->sec_prot = credentials.ecn;
 	resp_payload->max_conn = credentials.max_conn;
 	resp_payload->ssid_hidden = credentials.ssid_hidden;
+#if WIFI_DUALBAND_SUPPORT
+	// return the 2.4/5G band bandwidth based on the channel we are on
+	// if channel > 14, assume we are on 5G band
+	if (credentials.chnl <= 14) {
+		resp_payload->bw = bandwidths.ghz_2g;
+	} else {
+		resp_payload->bw = bandwidths.ghz_5g;
+	}
+	// return band mode
+	ret = esp_wifi_get_band_mode(&band_mode);
+	if (ret) {
+		ESP_LOGE(TAG,"Failed to get current band_mode");
+		// force band mode value
+		band_mode = WIFI_BAND_MODE_AUTO;
+	}
+	resp_payload->band_mode = band_mode;
+#else
 	resp_payload->bw = get_bw;
+#endif
+
 	resp_payload->resp = SUCCESS;
 	return ESP_OK;
 
@@ -887,6 +968,10 @@ static esp_err_t req_start_softap_handler (CtrlMsg *req,
 	uint8_t mac[MAC_LEN] = {0};
 	wifi_config_t *wifi_config = NULL;
 	CtrlMsgRespStartSoftAP *resp_payload = NULL;
+#if WIFI_DUALBAND_SUPPORT
+	wifi_bandwidths_t bandwidths = { 0 };
+	wifi_band_mode_t band_mode = 0; // 0 is currently an invalid value
+#endif
 
 	if (!req || !resp || !req->req_start_softap) {
 		ESP_LOGE(TAG, "Invalid parameters");
@@ -974,11 +1059,47 @@ static esp_err_t req_start_softap_handler (CtrlMsg *req,
 		goto err;
 	}
 
+#if WIFI_DUALBAND_SUPPORT
+	// set band mode
+	band_mode = req->req_start_softap->band_mode;
+
+	if (!band_mode)  {
+		// incoming band mode is 0: make it auto
+		band_mode = WIFI_BAND_MODE_AUTO;
+	}
+	ret = esp_wifi_set_band_mode(band_mode);
+	if (ret) {
+		ESP_LOGE(TAG, "failed to set band_mode");
+		goto err;
+	}
+
+	// set bandwidth, based on band mode
+	switch (band_mode) {
+    case WIFI_BAND_MODE_2G_ONLY:
+		bandwidths.ghz_2g = req->req_start_softap->bw;
+		break;
+    case WIFI_BAND_MODE_5G_ONLY:
+		bandwidths.ghz_5g = req->req_start_softap->bw;
+		break;
+	// auto and default have the same settings
+    case WIFI_BAND_MODE_AUTO:
+	default:
+		bandwidths.ghz_2g = req->req_start_softap->bw;
+		bandwidths.ghz_5g = req->req_start_softap->bw;
+		break;
+	}
+	ret = esp_wifi_set_bandwidths(ESP_IF_WIFI_AP, &bandwidths);
+	if (ret) {
+		ESP_LOGE(TAG,"Failed to set bandwidth");
+		goto err;
+	}
+#else
 	ret = esp_wifi_set_bandwidth(ESP_IF_WIFI_AP,req->req_start_softap->bw);
 	if (ret) {
 		ESP_LOGE(TAG,"Failed to set bandwidth");
 		goto err;
 	}
+#endif
 
 	ESP_LOGI(TAG, MACSTR, MAC2STR(mac));
 
@@ -1000,6 +1121,9 @@ static esp_err_t req_start_softap_handler (CtrlMsg *req,
 			wifi_config->ap.authmode, wifi_config->ap.ssid_hidden,
 			wifi_config->ap.max_connection,wifi_config->ap.channel);
 	ESP_LOGI(TAG,"ESP32 SoftAP is avaliable ");
+#if WIFI_DUALBAND_SUPPORT
+	resp_payload->band_mode = band_mode;
+#endif
 	resp_payload->resp = SUCCESS;
 	mem_free(wifi_config);
 	return ESP_OK;
@@ -1028,6 +1152,9 @@ static esp_err_t req_get_ap_scan_list_handler (CtrlMsg *req,
 	wifi_scan_config_t scanConf = {
 		.show_hidden = true
 	};
+#if WIFI_DUALBAND_SUPPORT
+	wifi_band_mode_t band_mode = 0; // 0 is currently an invalid value
+#endif
 
 	if (!req || !resp) {
 		ESP_LOGE(TAG, "Invalid parameters");
@@ -1060,6 +1187,22 @@ static esp_err_t req_get_ap_scan_list_handler (CtrlMsg *req,
 		ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
 		ESP_LOGI(TAG,"Station mode set in scan handler");
 	}
+
+#if WIFI_DUALBAND_SUPPORT
+	// ensure wifi band is set to auto to get all scan results (2.4G and 5G bands)
+	ret = esp_wifi_get_band_mode(&band_mode);
+	if (ret == ESP_OK) {
+		if (band_mode != WIFI_BAND_MODE_AUTO) {
+			ESP_LOGI(TAG, "Setting band_mode to AUTO");
+			ret = esp_wifi_set_band_mode(WIFI_BAND_MODE_AUTO);
+			if (ret) {
+				ESP_LOGE(TAG, "Failed to set band_mode to AUTO");
+			}
+		}
+	} else {
+		ESP_LOGE(TAG,"Failed to get current band_mode");
+	}
+#endif
 
 	ret = esp_wifi_scan_start(&scanConf, true);
 	if (ret) {

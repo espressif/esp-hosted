@@ -117,7 +117,7 @@ Following table summarizes this entire discussion.
   </tr>
   <tr>
     <td>Chipsets supported</td>
-    <td>ESP32, <span>ESP32-C2/C3/C6/S2/S3</span></td>
+    <td>ESP32, <span>ESP32-C2/C3/C5/C6/S2/S3</span></td>
     <td>ESP32, <span>ESP32-C2/C3/C6/S2/S3</span></td>
   </tr>
 </table>

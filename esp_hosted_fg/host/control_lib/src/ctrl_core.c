@@ -468,6 +468,7 @@ static int ctrl_app_parse_resp(CtrlMsg *ctrl_msg, ctrl_cmd_t *app_resp)
 					p->channel = ctrl_msg->resp_get_ap_config->chnl;
 					p->rssi = ctrl_msg->resp_get_ap_config->rssi;
 					p->encryption_mode = ctrl_msg->resp_get_ap_config->sec_prot;
+					p->band_mode = ctrl_msg->resp_get_ap_config->band_mode;
 					break;
 
 				case FAILURE:
@@ -486,7 +487,9 @@ static int ctrl_app_parse_resp(CtrlMsg *ctrl_msg, ctrl_cmd_t *app_resp)
 
 			app_resp->resp_event_status = ctrl_msg->resp_connect_ap->resp;
 
-			command_log("Connect AP failed, Reason[%d]\n", ctrl_msg->resp_connect_ap->resp);
+			if (ctrl_msg->resp_connect_ap->resp) {
+				command_log("Connect AP failed, Reason[%d]\n", ctrl_msg->resp_connect_ap->resp);
+			}
 			switch(ctrl_msg->resp_connect_ap->resp) {
 				case CTRL_ERR_INVALID_PASSWORD:
 					command_log("Invalid password for SSID\n");
@@ -497,6 +500,7 @@ static int ctrl_app_parse_resp(CtrlMsg *ctrl_msg, ctrl_cmd_t *app_resp)
 					goto fail_parse_ctrl_msg;
 					break;
 				case SUCCESS:
+					command_log("Info: Connect band_mode is %d\n", ctrl_msg->resp_connect_ap->band_mode);
 					CHECK_CTRL_MSG_NON_NULL(resp_connect_ap->mac.data);
 					CHECK_CTRL_MSG_FAILED(resp_connect_ap);
 					break;
@@ -548,6 +552,8 @@ static int ctrl_app_parse_resp(CtrlMsg *ctrl_msg, ctrl_cmd_t *app_resp)
 				ctrl_msg->resp_get_softap_config->ssid_hidden;
 			app_resp->u.wifi_softap_config.bandwidth =
 				ctrl_msg->resp_get_softap_config->bw;
+			app_resp->u.wifi_softap_config.band_mode =
+				ctrl_msg->resp_get_softap_config->band_mode;
 
 			break;
 		} case CTRL_RESP_SET_SOFTAP_VND_IE : {
@@ -564,6 +570,7 @@ static int ctrl_app_parse_resp(CtrlMsg *ctrl_msg, ctrl_cmd_t *app_resp)
 			strncpy(app_resp->u.wifi_softap_config.out_mac,
 					(char *)ctrl_msg->resp_connect_ap->mac.data, len_l);
 			app_resp->u.wifi_softap_config.out_mac[len_l] = '\0';
+			app_resp->u.wifi_softap_config.band_mode = ctrl_msg->resp_connect_ap->band_mode;
 			break;
 		} case CTRL_RESP_GET_SOFTAP_CONN_STA_LIST : {
 			CHECK_CTRL_MSG_NON_NULL(resp_softap_connected_stas_list);
@@ -1316,6 +1323,9 @@ int ctrl_app_send_req(ctrl_cmd_t *app_req)
 			req_payload->mode = p->mode;
 			break;
 		} case CTRL_REQ_CONNECT_AP: {
+			if (app_req->cmd_timeout_sec < DEFAULT_CTRL_RESP_CONNECT_AP_TIMEOUT)
+				app_req->cmd_timeout_sec = DEFAULT_CTRL_RESP_CONNECT_AP_TIMEOUT;
+
 			wifi_ap_config_t * p = &app_req->u.wifi_ap_config;
 			CTRL_ALLOC_ASSIGN(CtrlMsgReqConnectAP,req_connect_ap);
 
@@ -1344,6 +1354,7 @@ int ctrl_app_send_req(ctrl_cmd_t *app_req)
 			req_payload->bssid = (char *)&p->bssid;
 			req_payload->is_wpa3_supported = p->is_wpa3_supported;
 			req_payload->listen_interval = p->listen_interval;
+			req_payload->band_mode = p->band_mode;
 			break;
 		} case CTRL_REQ_SET_SOFTAP_VND_IE: {
 			wifi_softap_vendor_ie_t *p = &app_req->u.wifi_softap_vendor_ie;
@@ -1411,13 +1422,6 @@ int ctrl_app_send_req(ctrl_cmd_t *app_req)
 				goto fail_req;
 			}
 
-			if ((p->channel < MIN_CHNL_NO) ||
-			    (p->channel > MAX_CHNL_NO)) {
-				command_log("Invalid softap channel\n");
-				failure_status = CTRL_ERR_INCORRECT_ARG;
-				goto fail_req;
-			}
-
 			if ((p->encryption_mode < WIFI_AUTH_OPEN) ||
 			    (p->encryption_mode == WIFI_AUTH_WEP) ||
 			    (p->encryption_mode > WIFI_AUTH_WPA_WPA2_PSK)) {
@@ -1449,6 +1453,7 @@ int ctrl_app_send_req(ctrl_cmd_t *app_req)
 			req_payload->max_conn = p->max_connections;
 			req_payload->ssid_hidden = p->ssid_hidden;
 			req_payload->bw = p->bandwidth;
+			req_payload->band_mode = p->band_mode;
 			break;
 		} case CTRL_REQ_SET_PS_MODE: {
 			wifi_power_save_t * p = &app_req->u.wifi_ps;

@@ -1,7 +1,7 @@
 # Wi-Fi and BT/BLE connectivity Setup over SPI
 
-| Supported Targets | ESP32 | ESP32-S2 | ESP32-S3 | ESP32-C2 | ESP32-C3 | ESP32-C6 |
-| ----------------- | ----- | -------- | -------- | -------- | -------- | -------- |
+| Supported Targets | ESP32 | ESP32-S2 | ESP32-S3 | ESP32-C2 | ESP32-C3 | ESP32-C5 | ESP32-C6 |
+| ----------------- | ----- | -------- | -------- | -------- | -------- | -------- | -------- |
 
 ## 1. Setup
 ### 1.1 Hardware Setup
@@ -13,7 +13,7 @@ ESP can be powered through PC using micro-USB/USB-C cable.
 Raspberry-Pi pinout can be found [here!](https://pinout.xyz/pinout/spi)
 
 #### 1.1.1 Pin connections
-| Raspberry-Pi Pin | ESP32 | ESP32-S2/S3 | ESP32-C2/C3/C6 | Function |
+| Raspberry-Pi Pin | ESP32 | ESP32-S2/S3 | ESP32-C2/C3/C5/C6 | Function |
 |:-------:|:---------:|:--------:|:--------:|:--------:|
 | 24 | IO15 | IO10 | IO10 | CS0 |
 | 23 | IO14 | IO12 | IO6 | SCLK |

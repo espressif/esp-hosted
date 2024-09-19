@@ -35,6 +35,7 @@
 #define WAIT_TIME_B2B_CTRL_REQ               5
 #define DEFAULT_CTRL_RESP_TIMEOUT            30
 #define DEFAULT_CTRL_RESP_AP_SCAN_TIMEOUT    (60*3)
+#define DEFAULT_CTRL_RESP_CONNECT_AP_TIMEOUT (15*3)
 
 #ifndef MAC2STR
 #define MAC2STR(a) (a)[0], (a)[1], (a)[2], (a)[3], (a)[4], (a)[5]
@@ -278,6 +279,7 @@ typedef struct {
 	uint16_t listen_interval;
 	char status[STATUS_LENGTH];
 	char out_mac[MAX_MAC_STR_SIZE];
+	int band_mode;
 } wifi_ap_config_t;
 
 typedef struct {
@@ -289,6 +291,7 @@ typedef struct {
 	bool ssid_hidden;
 	wifi_bandwidth_e bandwidth;
 	char out_mac[MAX_MAC_STR_SIZE];
+	int band_mode;
 } softap_config_t;
 
 typedef struct {

@@ -153,10 +153,13 @@ def process_get_available_wifi():
 	return ""
 
 
-def process_connect_ap(ssid, pwd, bssid, use_wpa3, listen_interval, set_dhcp):
+def process_connect_ap(ssid, pwd, bssid, use_wpa3, listen_interval, set_dhcp, band_mode):
 	ret_str = ""
 
-	if test_sync_station_mode_connect(ssid, pwd, bssid, use_wpa3, listen_interval) != SUCCESS:
+	if band_mode < WIFI_BAND_MODE_2G_ONLY or band_mode > WIFI_BAND_MODE_AUTO:
+		return "Invalid band_mode parameter " + get_str(band_mode)
+
+	if test_sync_station_mode_connect(ssid, pwd, bssid, use_wpa3, listen_interval, band_mode) != SUCCESS:
 		ret_str = "Failed to connect AP"
 		return ret_str
 	print("\n")
@@ -207,7 +210,7 @@ def process_softap_vendor_ie(enable, data):
 	return ""
 
 
-def process_start_softap(ssid, pwd, channel, sec_prot, max_conn, hide_ssid, bw, start_dhcp_server):
+def process_start_softap(ssid, pwd, channel, sec_prot, max_conn, hide_ssid, bw, start_dhcp_server, band_mode):
 	if sec_prot != "open" and pwd == "":
 		return "password mandatory for security protocol"
 
@@ -229,14 +232,13 @@ def process_start_softap(ssid, pwd, channel, sec_prot, max_conn, hide_ssid, bw, 
 	else:
 		return "Unsupported bandwidth " + get_str(bw)
 
-	if channel < 1 or channel > 11:
-		return "Channel supported from 1 to 11"
-
-
 	if max_conn < 1 or max_conn > 10:
 		return "max connections should be 1 to 10(hardware_max)"
 
-	if test_sync_softap_mode_start(ssid, pwd, channel, encr, max_conn, hide_ssid, bw_l) != SUCCESS:
+	if band_mode < WIFI_BAND_MODE_2G_ONLY or band_mode > WIFI_BAND_MODE_AUTO:
+		return "Invalid band_mode parameter " + str(band_mode) + ": value should be from " + str(WIFI_BAND_MODE_2G_ONLY) + " to " + str(WIFI_BAND_MODE_AUTO)
+
+	if test_sync_softap_mode_start(ssid, pwd, channel, encr, max_conn, hide_ssid, bw_l, band_mode) != SUCCESS:
 		ret_str = "Failed to start ESP softap"
 		return ret_str
 	print("\n")

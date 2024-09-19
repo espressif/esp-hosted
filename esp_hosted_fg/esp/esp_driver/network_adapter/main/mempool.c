@@ -53,8 +53,8 @@ struct hosted_mempool * hosted_mempool_create(void *pre_allocated_mem,
 		}
 	}
 
-	new = (struct hosted_mempool*)CALLOC(sizeof(struct hosted_mempool), 1);
-	pool = (struct os_mempool *)CALLOC(sizeof(struct os_mempool), 1);
+	new = (struct hosted_mempool*)CALLOC(1, sizeof(struct hosted_mempool));
+	pool = (struct os_mempool *)CALLOC(1, sizeof(struct os_mempool));
 
 	if(!new || !pool) {
 		goto free_buffs;

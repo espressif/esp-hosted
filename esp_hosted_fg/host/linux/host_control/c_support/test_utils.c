@@ -520,6 +520,7 @@ int ctrl_app_resp_callback(ctrl_cmd_t * app_resp)
 				printf("AP's channel number %d\n", p->channel);
 				printf("AP's rssi %d\n", p->rssi);
 				printf("AP's encryption mode %d\n", p->encryption_mode);
+				printf("AP's band mode %d\n", p->band_mode);
 			} else {
 				printf("Station mode status: %s\n",p->status);
 			}
@@ -543,13 +544,14 @@ int ctrl_app_resp_callback(ctrl_cmd_t * app_resp)
 			printf("softAP max connections %d \n", resp_p->max_connections);
 			printf("softAP ssid broadcast status %d \n", resp_p->ssid_hidden);
 			printf("softAP bandwidth mode %d \n", resp_p->bandwidth);
+			printf("softAP band mode %d \n", resp_p->band_mode);
 
 			break;
 		} case CTRL_RESP_SET_SOFTAP_VND_IE : {
 			printf("Success in set vendor specific ie\n");
 			break;
 		} case CTRL_RESP_START_SOFTAP : {
-			printf("esp32 softAP started \n");
+			printf("esp32 softAP started with band_mode %d\n", app_resp->u.wifi_softap_config.band_mode);
 			if (up_softap_netdev(app_resp->u.wifi_softap_config.out_mac))
 				goto fail_resp;
 			break;
@@ -751,6 +753,7 @@ int test_station_mode_connect(void)
 	strcpy((char *)&req.u.wifi_ap_config.bssid, STATION_MODE_BSSID);
 	req.u.wifi_ap_config.is_wpa3_supported = STATION_MODE_IS_WPA3_SUPPORTED;
 	req.u.wifi_ap_config.listen_interval = STATION_MODE_LISTEN_INTERVAL;
+	req.u.wifi_ap_config.band_mode = STATION_BAND_MODE;
 
 	/* register callback for handling asynch reply */
 	req.ctrl_resp_cb = ctrl_app_resp_callback;
@@ -808,6 +811,7 @@ int test_softap_mode_start(void)
 	req.u.wifi_softap_config.max_connections = SOFTAP_MODE_MAX_ALLOWED_CLIENTS;
 	req.u.wifi_softap_config.ssid_hidden = SOFTAP_MODE_SSID_HIDDEN;
 	req.u.wifi_softap_config.bandwidth = SOFTAP_MODE_BANDWIDTH;
+	req.u.wifi_softap_config.band_mode = SOFTAP_BAND_MODE;
 
 	resp = wifi_start_softap(req);
 
