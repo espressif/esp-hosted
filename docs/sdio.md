@@ -7,7 +7,7 @@ Section 4 to 8 covers the complete step-wise setup co-processor and host with SD
 If you wish to skip the theory, you can refer the [Quick Start Guide](#1-quick-start-guide) below. For quick navigation, please unfold the Table of Contents below.
 
 <details>
-<summary>**Table of Contents**</summary>
+<summary>Table of Contents</summary>
 1. [Quick Start Guide](#1-quick-start-guide)
 
 2. [Introduction](#2-introduction)
@@ -28,7 +28,7 @@ If you wish to skip the theory, you can refer the [Quick Start Guide](#1-quick-s
 
 </details>
 
-## 1. Quick Start Guide
+## 1 Quick Start Guide
 
 This section provides a brief overview of how to get started with ESP-Hosted using SDIO mode. For detailed instructions on each step, please refer to the following sections:
 
@@ -38,20 +38,20 @@ This section provides a brief overview of how to get started with ESP-Hosted usi
 - [7. Flashing the Host](#7-flashing-the-host)
 - [8. Testing and Troubleshooting](#8-testing-and-troubleshooting)
 
-These sections will guide you through the process of flashing both the slave and host devices, setting up the hardware connections, and verifying successful communication.
+These sections will guide you through the process of flashing both the co-processor and host devices, setting up the hardware connections, and verifying successful communication.
 
-## 2. Introduction
+## 2 Introduction
 
 SDIO is a high-speed bus that uses the same SDMMC hardware protocol used for SD Cards, but with its own set of commands for communicating with SDIO aware peripherals.
 
 > [!NOTE]
 > Only some ESP32 chips support the SDIO Protocol:
 >
-> - SDIO as Slave: ESP32, ESP32-C6
-> - SDIO as Master: ESP32, ESP32-S3, ESP32-P4
+> A. SDIO as Slave (Co-processor): ESP32, ESP32-C6 \
+> B. SDIO as Master: ESP32, ESP32-S3, ESP32-P4
 
 
-## 3. Hardware Considerations
+## 3 Hardware Considerations
 
 ### 3.1 GPIO Configuration for SDIO
 
@@ -62,12 +62,12 @@ ESP32 only supports `IO_MUX` pins for SDIO. other chips may support other flexib
 
 Extra GPIO signals are required for SDIO on Hosted and can be assigned to any free GPIO pins:
 
-- `Reset` signal: an output signal from the host to the slave. When asserted, the host resets the slave. This is done when ESP-Hosted is started on the host, to synchronise the state of the host and slave.
+- `Reset` signal: an output signal from the host to the co-processor. When asserted, the host resets the co-processor. This is done when ESP-Hosted is started on the host, to synchronise the state of the host and co-processor.
 
 > [!NOTE]
-> The `Reset` signal suggested to connect to the `EN` or `RST` pin on the slave, It is however configurable to use another GPIO pin.
+> The `Reset` signal suggested to connect to the `EN` or `RST` pin on the co-processor, It is however configurable to use another GPIO pin.
 >
-> To configure this, use `idf.py menuconfig` on the Slave: **Example configuration** ---> **SDIO Configuration** ---> **Host SDIO GPIOs** and set **Slave GPIO pin to reset itself**.
+> To configure this, use `idf.py menuconfig` on the co-processor: **Example configuration** ---> **SDIO Configuration** ---> **Host SDIO GPIOs** and set **Slave GPIO pin to reset itself**.
 
 
 ### 3.3 General Hardware Considerations
@@ -77,12 +77,12 @@ Extra GPIO signals are required for SDIO on Hosted and can be assigned to any fr
 - If you wish, you can test SDIO 1-Bit mode using jumper cables, only for initial testing and prototyping. Pull-Ups are still mandatory for all, [CMD, DAT0, DAT1, DAT2, DAT3] irrespective how do you connect, using jumpers or PCB.
 - Ensure equal trace lengths for all SDIO connections, whether using jumper wires or PCB traces.
 - Very strict requirement, to keep wires as short as possible, under 5 cm. Smaller the better.
-- Use the lower clock frequency like 5 MHz for evaluation. Once solution verified, optimise the clock frequency in increasing steps to max possible value. Max SDIO slave clock frequency for all SDIO slaves is 50 MHz.
+- Use the lower clock frequency like 5 MHz for evaluation. Once solution verified, optimise the clock frequency in increasing steps to max possible value. Max SDIO host clock frequency that all SDIO co-processors can work is upto 50 MHz.
 - Provide proper power supply for both host and co-processor devices. Lower or incorrect power supplies can cause communication issues & suboptimal performance.
 
 ### 3.4 Pull-up Resistors
 - SDIO requires external pull-up resistor (51 kOhm recommended) and clean signals for proper operation.
-- For this reason, it is not recommended to use jumper cables. Use PCB traces to connect between a Hosted Master and Slave.
+- For this reason, it is not recommended to use jumper cables. Use PCB traces to connect between a Hosted Master and Co-processor.
 - For full requirements, refer to ESP-IDF SDIO pull-up resistor requirements at [Pull-Up Requirements](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/peripherals/sd_pullup_requirements.html).
 
 ### 3.5 Voltage Levels & eFuse burning
@@ -112,20 +112,20 @@ For optimal performance and reliability in production designs:
 - Ensure equal trace lengths for all SDIO signals (CLK, CMD, DAT0, DAT1, DAT2, DAT3) as much as possible. This practice, known as length matching, is crucial for maintaining signal integrity and reducing timing skew, especially at higher frequencies.
 - If perfect length matching is not possible, prioritize matching the clock (CLK) trace length with the data lines.
 - Use controlled impedance traces for high-speed signals.
-- Place bypass capacitors close to the power pins of both the host and slave devices.
+- Place bypass capacitors close to the power pins of both the host and co-processor devices.
 - Consider using series termination resistors on the clock and data lines to reduce reflections.
 - For high-speed designs, use a 4-layer PCB with dedicated power and ground planes.
 
 ### 3.8 Advanced Considerations
 
 - Calculate the maximum allowed trace length based on your clock frequency and PCB material.
-- Consider the capacitive load on the SDIO bus, especially for longer traces or when using multiple slave devices.
+- Consider the capacitive load on the SDIO bus, especially for longer traces
 - For very high-speed designs, consider using differential signaling techniques.
 - Implement proper EMI/EMC design techniques to minimize electromagnetic interference.
 
-## 4. Hardware Setup
+## 4 Hardware Setup
 
-Setting up the hardware involves connecting the master and slave devices via the SDIO pins and ensuring all extra GPIO signals are properly connected. Below is the table of connections for the SDIO setup between a host ESP chipset and another ESP chipset as co-processor:
+Setting up the hardware involves connecting the master and co-processor devices via the SDIO pins and ensuring all extra GPIO signals are properly connected. Below is the table of connections for the SDIO setup between a host ESP chipset and another ESP chipset as co-processor:
 
 
 
@@ -142,7 +142,7 @@ Setting up the hardware involves connecting the master and slave devices via the
 
 
 
-### Slave connections
+### Co-processor connections
 
 | Signal      | ESP32 | ESP32-C6 |
 |-------------|-------|----------|
@@ -157,13 +157,13 @@ Setting up the hardware involves connecting the master and slave devices via the
 
 > [!NOTE]
 > 
-> - 1. Try to use IO_MUX pins from the datasheet for optimal performance on both sides.
-> - 2. These GPIO assignments are based on default Kconfig configurations. You can modify these in the menuconfig for both host and slave if needed.
-> - 3. Once ported, any other host with standard SDIO can be used.
-> - 4. ESP32, ESP32-S3, and ESP32-P4 can be used as hosts; ESP32 and ESP32-C6 can be used as slaves in SDIO mode.
-> - 5. External pull-ups are mandatory
+> A. Try to use IO_MUX pins from the datasheet for optimal performance on both sides. \
+> B. These GPIO assignments are based on default Kconfig configurations. You can modify these in the menuconfig for both host and co-processor if needed. \
+> C. Once ported, any other host with standard SDIO can be used. \
+> D. ESP32, ESP32-S3, and ESP32-P4 can be used as hosts; ESP32 and ESP32-C6 can be used as co-processors in SDIO mode. \
+> E. External pull-ups are mandatory
 
-## 5. Set-Up ESP-IDF
+## 5 Set-Up ESP-IDF
 
 Before setting up the ESP-Hosted co-processor & host for SDIO mode, ensure that ESP-IDF is properly installed and set up on your system.
 
@@ -192,7 +192,7 @@ Please follow the [ESP-IDF Get Started Guide](https://docs.espressif.com/project
 | Supported Co-processor Targets | ESP32 | ESP32-C6 |
 | ------------------------------ | ----- | -------- |
 
-There are four steps to flash the ESP-Hosted slave firmware:
+There are four steps to flash the ESP-Hosted co-processor firmware:
 
 ### 6.1 Create Co-processor Project
 
@@ -238,7 +238,7 @@ There are four steps to flash the ESP-Hosted slave firmware:
 
 ### 6.4 Co-processor Flashing
 
-There are two methods to flash the ESP-Hosted slave firmware:
+There are two methods to flash the ESP-Hosted co-processor firmware:
 
 #### 6.4.1 Serial Flashing (Initial Setup)
 
@@ -264,7 +264,7 @@ Monitor the output (optional):
 idf.py -p <PORT> monitor
 ```
 
-##### 6.4.2. Co-processor OTA Flashing (Subsequent Updates)
+##### 6.4.2 Co-processor OTA Flashing (Subsequent Updates)
 
 For subsequent updates, you can re-use ESP-Hosted-MCU transport, as it should be already working. While doing OTA, Complete co-processor firmware image is not needed and only co-processor application partition, 'network_adapter.bin' need to be re-flashed remotely from host.
 
@@ -305,11 +305,11 @@ You can re-use your existing web server or create a new locally for testing. Bel
 
 > [!NOTE]
 >
-> - The `esp_hosted_ota` function is part of the ESP-Hosted-MCU API and handles the OTA process through the transport layer.
-> - Ensure that your host application has web server connectivity to download the firmware file.
-> - The co-processor device doesn't need to be connected to the web server for this OTA method.
+> A. The `esp_hosted_ota` function is part of the ESP-Hosted-MCU API and handles the OTA process through the transport layer. \
+> B. Ensure that your host application has web server connectivity to download the firmware file. \
+> C. The co-processor device doesn't need to be connected to the web server for this OTA method.
 
-## 7. Flashing the Host
+## 7 Flashing the Host
 
 | Supported Host Targets  | Any ESP chipset | Any Non-ESP chipset |
 | ----------------------- | --------------- | ------------------- |
@@ -359,7 +359,7 @@ Now that ESP-IDF is set up, follow these steps to prepare the host:
 ###### 4. Disable native Wi-Fi if available
    If your host ESP chip already has native Wi-Fi support, disable it by editing the `components/soc/<soc>/include/soc/Kconfig.soc_caps.in` file and changing all `WIFI` related configs to `n`.
      
-    If you happen to have both, host and slave as same ESP chipset type (for example two ESP32-C2), note an [additional step](docs/troubleshooting/#1-esp-host-to-evaluate-already-has-native-wi-fi)
+    If you happen to have both, host and co-processor as same ESP chipset type (for example two ESP32-C2), note an [additional step](docs/troubleshooting/#1-esp-host-to-evaluate-already-has-native-wi-fi)
     
 
 ### 7.3 Menuconfig, Build and Flash Host
@@ -404,7 +404,7 @@ Now that ESP-IDF is set up, follow these steps to prepare the host:
    ```
    ESP-Hosted-MCU host configurations are available under "Component config" -> "ESP-Hosted config"
    1. Select "SDIO" as the transport layer
-   2. Change Slave chipset to connect to under "Slave chipset to be used"
+   2. Change co-processor chipset currently in-use under, "Slave chipset to be used"
    3. Change SDIO Bus Width to 1-bit or 4-bit based on the co-processor using "Hosted SDIO Configuration" -> "SDIO Bus Width"
    4. Optionally, configure SDIO-specific settings like:
 
@@ -424,7 +424,7 @@ Now that ESP-IDF is set up, follow these steps to prepare the host:
      To configure this, use `Menuconfig` on the Host: **Component config** ---> **ESP-Hosted config** ---> **Hosted SDIO Configuration** ---> **SDIO Bus Width** to **1 Bit**.
 
    - SDIO Mode
-     Packet or Streaming mode could be used, but slave has to use same SDIO mode used.
+     Packet or Streaming mode could be used, but co-processor has to use same SDIO mode used.
 
 > [!NOTE]
 
@@ -450,7 +450,7 @@ After confirming the functionality of the 1-Bit SDIO mode, you can revert to the
     ```
     - If host was put into bootloader mode earlier, it may need manual reset
 
-## 8. Testing and Troubleshooting
+## 8 Testing and Troubleshooting
 
 After flashing both the co-processor and host devices, follow these steps to connect and test your ESP-Hosted SDIO setup:
 
@@ -534,7 +534,7 @@ After flashing both the co-processor and host devices, follow these steps to con
    - Use a logic analyzer or oscilloscope to verify the SDIO signals.
    - Ensure that the power supply to both devices is stable and within the required voltage levels.
 
-## 9. References
+## 9 References
 
 - [ESP-IDF Programming Guide](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/)
 - [ESP32 Hardware Design Guidelines](https://www.espressif.com/en/products/hardware/esp32/resources)

@@ -17,15 +17,16 @@ This branch, `feature/esp_as_mcu_host` is dedicated for any host as MCU support.
 
 ## 2 Architecture
 
-##### Hosted Slave
-This is an ESP chip that provides Wi-Fi, Bluetooth, and other capabilities.
+##### Hosted Co-Processor
+This is an ESP chip that provides Wi-Fi, Bluetooth, and other capabilities. It is also referred as `hosted-slave` interchangeably.
 
 ##### Host MCU
-This can be any generic microcontroller (MCU). It uses the capabilities of the Hosted Slave through Remote Procedure Calls (RPCs). The Host MCU sends these RPC commands to the Hosted Slave using a reliable communication bus, like SPI, SDIO, or UART. The Hosted Slave then handles the RPC and provides the requested functionality to the Host MCU.
+This can be any generic microcontroller (MCU). We demonstrate any ESP as host. Using port layer, any host can act as host MCU.
 
-The data (network or Bluetooth) is packaged efficiently at the transport layer to minimize overhead and delays when passing between the Host and Slave.
-
-This modular design allows any MCU to be used as the Host, and any ESP chip with Wi-Fi and/or Bluetooth to be used as the Hosted Slave. The RPC calls can also be extended to provide any function required by the Host, as long as the Slave can support it.
+##### Communication
+- Host extends the capabilities of the Hosted co-processor through Remote Procedure Calls (RPCs). The Host MCU sends these RPC commands to the Hosted co-processor using a reliable communication bus, like SPI, SDIO, or UART. The Hosted co-processor then handles the RPC and provides the requested functionality to the Host MCU.
+- The data (network or Bluetooth) is packaged efficiently at the transport layer to minimize overhead and delays when passing between the Host and co-processor.
+- This modular design allows any MCU to be used as the Host, and any ESP chip with Wi-Fi and/or Bluetooth to be used as the Hosted co-processor. The RPC calls can also be extended to provide any function required by the Host, as long as the co-processor can support it.
 
 ## 3 Solution Flexibility
 
@@ -81,9 +82,8 @@ No worries if you don't have an ESP32-P4. In fact, most users don't. You can cho
   - Reason: [ESP component manager](https://docs.espressif.com/projects/esp-idf/en/stable/esp32/api-guides/tools/idf-component-manager.html) automatically clones esp-hosted component while building.
 - However, For non-ESP host development, you can clone the repo using command:
 ```bash
-git clone --recurse-submodules \
---branch feature/esp_as_mcu_host --depth 1 \
-https://github.com/espressif/esp-hosted \ esp_hosted_mcu
+git clone --recurse-submodules --branch feature/esp_as_mcu_host --depth 1 \
+https://github.com/espressif/esp-hosted esp_hosted_mcu
 ```
 
 ### 5.2 Dependencies
@@ -120,7 +120,7 @@ ESP-Hosted-MCU Solution is dependent on `ESP-IDF`, `esp_wifi_remote` and `protob
 - Please note, Only RPC i.e. control packets are serialised. Data Packets are never serialised as they do not need endien conversion.
 
 
-## 6. Decide the communication bus in between host and slave
+## 6 Decide the communication bus in between host and slave
 
 The communication bus is required to be setup correctly between host and slave.
 We refer this as `transport medium` or simply `transport`.
@@ -258,10 +258,4 @@ If you encounter issues with using ESP-Hosted, see the following guide:
 - [ESP Component Registry](https://components.espressif.com)
 - [Registry Component: esp\_wifi\_remote](https://components.espressif.com/components/espressif/esp_wifi_remote)
 - [Registry Component: esp\_hosted](https://components.espressif.com/components/espressif/esp_hosted)
-
-
-
-
-
-
 
