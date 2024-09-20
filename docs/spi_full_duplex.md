@@ -7,7 +7,7 @@ Section 5 to 9 covers the complete step-wise setup co-processor and host with SP
 If you wish to skip the theory, you can refer the [Quick Start Guide](#1-quick-start-guide) below. For quick navigation, please unfold the Table of Contents below.
 
 <details>
-<summary>**Table of Contents**</summary>
+<summary>Table of Contents</summary>
 
 1. [Quick Start Guide](#1-quick-start-guide)
 
@@ -23,7 +23,7 @@ If you wish to skip the theory, you can refer the [Quick Start Guide](#1-quick-s
 
 7. [Flashing the Co-processor](#7-flashing-the-co-processor) || [7.1 Create Co-processor Project](#71-create-co-processor-project) || [7.2 Co-processor Config](#72-co-processor-config) || [7.3 Co-processor Build](#73-co-processor-build) || [7.4 Co-processor Flashing](#74-co-processor-flashing) || [7.4.1 Serial Flashing (Initial Setup)](#741-serial-flashing-initial-setup) || [7.4.2 Co-processor OTA Flashing (Subsequent Updates)](#742-co-processor-ota-flashing-subsequent-updates)
 
-8. [Preparing the Host](#8-preparing-the-host) || [8.1 Select Example to Run in Hosted Mode](#81-select-example-to-run-in-hosted-mode) || [8.2 Host Project Component Configuration](#82-host-project-component-configuration) || [8.3 Menuconfig, Build and Flash Host](#83-menuconfig-build-and-flash-host)
+8. [Flashing the Host](#8-flashing-the-host) || [8.1 Select Example to Run in Hosted Mode](#81-select-example-to-run-in-hosted-mode) || [8.2 Host Project Component Configuration](#82-host-project-component-configuration) || [8.3 Menuconfig, Build and Flash Host](#83-menuconfig-build-and-flash-host)
 
 9. [Testing and Troubleshooting](#9-testing-and-troubleshooting)
 
@@ -31,23 +31,23 @@ If you wish to skip the theory, you can refer the [Quick Start Guide](#1-quick-s
 
 </details>
 
-## 1. Quick Start Guide
+## 1 Quick Start Guide
 
 This section provides a brief overview of how to get started with ESP-Hosted using SPI FD mode. For detailed instructions on each step, please refer to the following sections:
 
 - [5. Hardware Setup](#5-hardware-setup)
 - [6. Set-Up ESP-IDF](#6-set-up-esp-idf)
 - [7. Flashing the Co-processor](#7-flashing-the-co-processor)
-- [8. Preparing the Host](#8-preparing-the-host)
+- [8. Flashing the Host](#8-flashing-the-host)
 - [9. Testing and Troubleshooting](#9-testing-and-troubleshooting)
 
 These sections will guide you through the process of flashing both the co-processor and host devices, setting up the hardware connections, and verifying successful communication.
 
-## 2. Introduction
+## 2 Introduction
 
 The ESP32 family of chips supports the standard SPI FD (Full Duplex) Mode Protocol. In this mode, SPI uses two data lines (MISO and MOSI) to transfer data to and from the co-processor simultaneously during an SPI transaction.
 
-## 3. High Level Design and Implementation
+## 3 High Level Design and Implementation
 
 SPI Full duplex mode is the simplest mode of operation in ESP-Hosted. It can be easily tested with jumper wires. It doesn't require much complex hardware setup. For any non ESP chipsets as host also can prefer this mode for testing. This can also served as stepping stone before moving on to more complex modes of operations, like Dual SPI, Quad SPI and SDIO.
 
@@ -127,7 +127,7 @@ For a detailed implementation of SPI full duplex communication using the ESP-Hos
 - **Co-processor SPI Communication Code**:
   - [spi_slave_apis.c](https://github.com/espressif/esp-hosted/blob/feature/esp_as_mcu_host/firmware/components/esp_slave/spi_slave_apis.c): Includes the setup and transaction handling for the SPI co-processor, detailing how the co-processor should configure its SPI interface and handle incoming and outgoing data.
 
-## 4. Hardware Considerations
+## 4 Hardware Considerations
 
 ### 4.1 General Considerations
 
@@ -173,7 +173,7 @@ For optimal performance and reliability in production designs:
 - If using multiple power supplies, ensure they share a common ground.
 - Consider using level shifters if the host and co-processor operate at different voltage levels.
 
-## 5. Hardware Setup
+## 5 Hardware Setup
 
 Setting up the hardware involves connecting the master and co-processor devices via the SPI pins and ensuring all extra GPIO signals are properly connected. Below is the table of connections for the SPI full duplex setup between an host ESP chipset and another ESP chipset as co-processor:
 
@@ -215,7 +215,7 @@ Setting up the hardware involves connecting the master and co-processor devices 
 > - Use short, high-quality cables for connections.
 > - For production designs, consider using a properly designed PCB with controlled impedance traces.
 
-## 6. Set-Up ESP-IDF
+## 6 Set-Up ESP-IDF
 
 Before setting up the ESP-Hosted host & co-processor for SPI Full Duplex mode, ensure that ESP-IDF is properly installed and set up on your system.
 
@@ -239,7 +239,7 @@ Before setting up the ESP-Hosted host & co-processor for SPI Full Duplex mode, e
 
 Please follow the [ESP-IDF Get Started Guide](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/get-started/index.html) for manual installation.
 
-## 7. Flashing the Co-processor
+## 7 Flashing the Co-processor
 
 | Supported Co-processor Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-C5 | ESP32-C6 | ESP32-C61 | ESP32-S2 | ESP32-S3 |
 | ------------------------------ | ----- | -------- | -------- | -------- | -------- | --------- | -------- | -------- |
@@ -312,15 +312,15 @@ idf.py -p <co-processor_serial_port> flash
 > Put host in bootloader mode using following command and then retry flashing the co-processor
 > 
 > ```bash
-> esptool.py -p **<host_serial_port>** --before default_reset --after no_reset run
+> esptool.py -p <host_serial_port> --before default_reset --after no_reset run
 > ```
 
 Monitor the output (optional):
 ```
-idf.py -p <PORT> monitor
+idf.py -p <co-processor_serial_port> monitor
 ```
 
-##### 7.4.2. Co-processor OTA Flashing (Subsequent Updates)
+##### 7.4.2 Co-processor OTA Flashing (Subsequent Updates)
 
 For subsequent updates, you can re-use ESP-Hosted-MCU transport, as it should be already working. While doing OTA, Complete co-processor firmware image is not needed and only co-processor application partition, 'network_adapter.bin' need to be re-flashed remotely from host.
 
@@ -328,19 +328,19 @@ For subsequent updates, you can re-use ESP-Hosted-MCU transport, as it should be
 
 2. Create a web server
 You can re-use your existing web server or create a new locally for testing. Below is example to do it.
-  - Make a new directory so that web server can be run into it and navigate into it
-  - Create simple local web server using python3
+    - Make a new directory so that web server can be run into it and navigate into it
+    - Create simple local web server using python3
 
      ```bash
      python3 -m http.server 8080
      ```
 3. Copy the co-processor app partition `network_adapter.bin` in the directory where you created the web server.
-  - The `network_adapter.bin` can be found in your co-processor project build at `<co-processor_project>/build/network_adapter.bin`
+    - The `network_adapter.bin` can be found in your co-processor project build at `<co-processor_project>/build/network_adapter.bin`
 
 4. Verify if web server is set-up correctly
-  - Open link `http://127.0.0.1:8080` in the browser and check if network_adapter.bin is available.
-  - Right click and copy the complete URL of this network_adapter.bin and note somewhere.
- 
+    - Open link `http://127.0.0.1:8080` in the browser and check if network_adapter.bin is available.
+    - Right click and copy the complete URL of this network_adapter.bin and note somewhere.
+
 5. On the **host side**, use the `esp_hosted_ota` function to initiate the OTA update:
 
    ```c
@@ -355,17 +355,17 @@ You can re-use your existing web server or create a new locally for testing. Bel
 
    This function will download the firmware in chunk by chunk as http client from the specified URL and flash it to the co-processor device through the established transport.
    In above web server example, You can paste the copied url earlier.
-   
+
 
 6. Monitor the OTA progress through the console output on both the host and co-processor devices.
 
 > [!NOTE]
 >
-> - The `esp_hosted_ota` function is part of the ESP-Hosted-MCU API and handles the OTA process through the transport layer.
-> - Ensure that your host application has web server connectivity to download the firmware file.
-> - The co-processor device doesn't need to be connected to the web server for this OTA method.
+>   A. The `esp_hosted_ota` function is part of the ESP-Hosted-MCU API and handles the OTA process through the transport layer. \
+>   B. Ensure that your host application has web server connectivity to download the firmware file. \
+>   C. The co-processor device doesn't need to be connected to the web server for this OTA method.
 
-## 8. Flashing the Host
+## 8 Flashing the Host
 
 | Supported Host Targets  | Any ESP chipset | Any Non-ESP chipset |
 | ----------------------- | --------------- | ------------------- |
@@ -449,16 +449,16 @@ Now that ESP-IDF is set up, follow these steps to prepare the host:
    ```
    ESP-Hosted-MCU host configurations are available under "Component config" -> "ESP-Hosted config"
    1. Select "SPI Full-duplex" as the transport layer
-   2. Change co chipset to connect to under "slave chipset to be used"  
+   2. Change co chipset to connect to under "slave chipset to be used"
    3. Optionally, configure SPI-specific settings like
    - SPI Clock Freq (MHz)
    - SPI Mode
    - SPI Pins
    - SPI Checksum Enable/Disable (Checksum is recommended to be enabled as spi hardware doesn't have any error detection)
-   
-    > [!NOTE]
-    > 
-    > The actual clock frequency used is determined by the hardware. Use an oscilloscope or logic analyzer to check the clock frequency.
+
+> [!NOTE]
+> 
+> The actual clock frequency used is determined by the hardware. Use an oscilloscope or logic analyzer to check the clock frequency.
 
 ###### 4. Build the project:
    ```
@@ -471,12 +471,14 @@ Now that ESP-IDF is set up, follow these steps to prepare the host:
    ```
 
 ###### 6. Monitor the output:
+
     ```
     idf.py -p <host_serial_port> monitor
     ```
+
     - If host was put into bootloader mode earlier, it may need manual reset
 
-## 9. Testing and Troubleshooting
+## 9 Testing and Troubleshooting
 
 After flashing both the co-processor and host devices, follow these steps to connect and test your ESP-Hosted SPI Full Duplex setup:
 
@@ -559,7 +561,7 @@ After flashing both the co-processor and host devices, follow these steps to con
    - Use the serial monitor on both devices to observe the communication between the host and co-processor.
    - For more detailed debugging, consider using a logic analyzer to examine the SPI signals.
    
-## 10. References
+## 10 References
 - [ESP-IDF Programming Guide](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/)
 - [ESP32 Hardware Design Guidelines](https://www.espressif.com/en/products/hardware/esp32/resources)
 - [SPI Protocol Basics](https://en.wikipedia.org/wiki/Serial_Peripheral_Interface)

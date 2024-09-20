@@ -28,7 +28,7 @@ If you wish to skip the theory, you can refer the [Quick Start Guide](#1-quick-s
 
 - [9. Flashing the Co-processor](#9-flashing-the-co-processor) => [1 Create Co-processor Project](#91-create-co-processor-project) || [2 Co-processor Config](#92-co-processor-config) || [3 Co-processor Build](#93-co-processor-build) || [4 Co-processor Flashing](#94-co-processor-flashing)
 
-- [10. Flashing the Host](#10-flashing-the-host) => [1 Select Example to Run in Hosted Mode](#101-select-example-to-run-in-hosted-mode) || [2 Set Up the Host for SPI Half Duplex Mode](#102-set-up-the-host-for-spi-half-duplex-mode)
+- [10. Flashing the Host](#10-flashing-the-host) => [1 Select Example to Run in Hosted Mode](#101-select-example-to-run-in-hosted-mode) || [2 Host Project Component Configuration](#102-host-project-component-configuration) || [3 Menuconfig, Build and Flash Host](#103-menuconfig-build-and-flash-host)
 
 - [11. Testing and Troubleshooting](#11-testing-and-troubleshooting)
 
@@ -36,7 +36,7 @@ If you wish to skip the theory, you can refer the [Quick Start Guide](#1-quick-s
 
 </details>
 
-## 1. Quick Start Guide
+## 1 Quick Start Guide
 
 This section provides a brief overview of how to get started with ESP-Hosted using SPI HD mode, bypassing the theory and explanation. Please refer to the following sections to quickly set-up demo.
 
@@ -48,24 +48,24 @@ This section provides a brief overview of how to get started with ESP-Hosted usi
 
 These sections will guide you through the process of configuring and flashing both the co-processor and host devices, setting up the hardware connections, and verifying successful communication.
 
-## 2. Introduction
+## 2 Introduction
 
 The ESP32 family of chips (except the ESP32) support the SPI co-processor HD (Half Duplex) Mode Protocol.
 
-In this mode of operation, SPI supports 2 to 4 data lines to transfer data to the co-processor or from the co-processor (half duplex) during an SPI transaction. This is different from 'standard' SPI mode which transfers data bidirectionally (full duplex) over two data lines (one for host to co-processor data [MOSI], one for co-processor to host data [MISO]) during an SPI transaction.
+In this mode of operation, SPI supports 2 or 4 data lines to transfer data to the co-processor or from the co-processor (half duplex) during an SPI transaction. This is different from 'standard' SPI mode which transfers data bidirectionally (full duplex) over two data lines (one for host to co-processor data [MOSI], one for co-processor to host data [MISO]) during an SPI transaction.
 
 > [!NOTE]
 > 
-> SPI Half Duplex mode is not supported on the classic ESP32
+> SPI Half Duplex mode is not supported on the classic ESP32. Other all chipsets support half duplex.
+> Please use SPI full duplex for classic ESP32
 
 > [!IMPORTANT]
 > 
 > SPI Half Duplex is not an industry standard and has multiple
 > implementations. Make sure your host processor supports the SPI HD
-> protocol implemented by the Hosted co-processor before proceeding. See [SPI
-> HD protocol used by Hosted](#4-spi-hd-protocol).
+> protocol implemented by the Hosted co-processor before proceeding. See [SPI HD protocol used by Hosted](#4-spi-hd-protocol).
 
-## 3. SPI HD Configuration
+## 3 SPI HD Configuration
 
 To enable SPI HD on the Host and co-processor using `idf.py menuconfig`:
 
@@ -74,16 +74,16 @@ To enable SPI HD on the Host and co-processor using `idf.py menuconfig`:
 2. On Co-processor: **Example configuration** ---> **Transport layer** and
    choose **SPI Half-duplex**.
 
-### 3.1. Clock and Phase
+### 3.1 Clock and Phase
 
 The standard SPI CPOL clock and CPHA phase must be configured
 correctly on both the host and co-processor for the protocol to work.
 
-### 3.2. Data Lines
+### 3.2 Data Lines
 
 Both the host and co-processor can support two or four data lines. Four data lines will be used to transfer data if configured on both the host and co-processor. If the host is configured to use two data lines, only two lines will be used to transfer data even if the co-processor is configured to use four data lines.
 
-### 3.3. Extra GPIO Signals
+### 3.3 Extra GPIO Signals
 
 Extra GPIO signals are required for SPI HD on Hosted and can be
 assigned to any free GPIO pins:
@@ -99,7 +99,7 @@ assigned to any free GPIO pins:
 > configuration** ---> **SPI Half-duplex Configuration** --->
 > **GPIOs** and set **Slave GPIO pin to reset itself**.
 
-### 3.4. Pin Assignments
+### 3.4 Pin Assignments
 
 Using the pins already assigned to SPI signals (dedicated `IO_MUX` pins) is recommended to minimise propagation delays. Using other GPIO pins for SPI signals will route the signals through the GPIO matrix which may limit the maximum clock frequency that can be used.
 
@@ -116,7 +116,7 @@ their SPI HD Function:
 
 The SPI HD CS signal and `Data_Ready` can be assigned to any GPIO pin on the host and co-processor.
 
-## 4. SPI HD Protocol
+## 4 SPI HD Protocol
 
 Hosted uses the ESP SPI co-processor HD (Half Duplex) Mode Protocol (see [References](#11-references)) with some modifications.
 
@@ -192,11 +192,11 @@ The following diagrams summarize the SPI transactions as used by Hosted:
 *SPI Transaction using 2 data lines*
 
 
-## 5. SPI HD Operation
+## 5 SPI HD Operation
 
-### 5.1. Initialization
+### 5.1 Initialization
 
-#### 5.1.1. Co-processor and Host Initialization
+#### 5.1.1 Co-processor and Host Initialization
 
 The co-processor starts up and initialises the SPI HD transport. When the co-processor is ready it writes the value `COPROCESSOR_IS_READY` (0xEE) to the COPROCESSOR\_READY register.
 
@@ -245,14 +245,14 @@ sequenceDiagram
 
 *SPI HD Initialization Sequence*
 
-#### 5.1.2. Number of Data Lines Used
+#### 5.1.2 Number of Data Lines Used
 
 After initialization, the host initially communicates with the co-processor using two data lines. If the co-processor is capable of supporting four data
 lines (from the Capabilities Packet sent by the co-processor), and the host is configured to also use four data lines, then four data lines will be used for subsequent data transfers.
 
 If neither the host or co-processor is capable of transferring data using four data lines, then only two data lines will be used.
 
-### 5.2. Co-processor to Host Transfer
+### 5.2 Co-processor to Host Transfer
 
 Co-processor asserts `Data_Ready` to tell the host it has data to send.
 
@@ -293,7 +293,7 @@ sequenceDiagram
 
 *SPI HD Read Sequence*
 
-### 5.3. Host to Co-processor Transfer
+### 5.3 Host to Co-processor Transfer
 
 Host reads the RX\_BUF\_LEN register to discover how many buffers are
 available on the co-processor (each buffer is of size MAX\_RX\_BUF\_LEN). If
@@ -324,22 +324,22 @@ sequenceDiagram
 
 *SPI HD Write Sequence*
 
-### 5.4. Code Reference
+### 5.4 Code Reference
 
 - [`slave/main/spi_hd_slave_api.c`](https://github.com/espressif/esp-hosted/blob/feature/esp_as_mcu_host/slave/main/spi_hd_slave_api.c) implements the code to run the SPI HD driver on the co-processor
 - [`host/drivers/transport/spi_hd/spi_hd_drv.c`](https://github.com/espressif/esp-hosted/blob/feature/esp_as_mcu_host/host/drivers/transport/spi_hd/spi_hd_drv.c) implements the generic code to run the SPI HD driver on the host
 - [`host/port/spi_hd_wrapper.c`](https://github.com/espressif/esp-hosted/blob/feature/esp_as_mcu_host/host/port/spi_hd_wrapper.c) implements the ESP-IDF specific code used by the generic SPI HD driver on the host
 
-## 6. Hardware Considerations
+## 6 Hardware Considerations
 
-### 6.1. General Considerations
+### 6.1 General Considerations
 
 - Ensure equal trace lengths for all SPI connections, whether using jumper wires or PCB traces.
 - Use the lower clock frequency like 5 MHz for evaluation. Once solution verified, optimise the clock frequency in increasing steps to max possible value. To find out practical maximum SPI co-processor frequency for your co-processor, check `IDF_PERFORMANCE_MAX_SPI_CLK_FREQ` in [ESP-IDF co-processor SPI clock benchmark](https://github.com/espressif/esp-idf/blob/master/components/esp_driver_spi/test_apps/components/spi_bench_mark/include/spi_performance.h) 
 - Verify voltage compatibility between host and co-processor devices.
 - Provide proper power supply decoupling for both host and co-processor devices.
 
-### 6.2. Jumper Wires
+### 6.2 Jumper Wires
 
 - Jumper wires are suitable for initial testing and prototyping.
 - Use high-quality, low-capacitance jumper wires.
@@ -353,7 +353,7 @@ sequenceDiagram
 > 
 > Quad SPI (QSPI) should not be used with jumper cables due to signal integrity issues. Use Dual SPI for evaluation with jumper cables.
 
-### 6.3. PCB Design
+### 6.3 PCB Design
 
 For optimal performance and reliability in production designs:
 
@@ -366,7 +366,7 @@ For optimal performance and reliability in production designs:
 - Quad SPI (QSPI) should only be implemented on a properly designed PCB.
 
 
-### 6.4. Advanced Considerations
+### 6.4 Advanced Considerations
 
 - Calculate the maximum allowed trace length based on your clock frequency and PCB material.
 - Consider the capacitive load on the SPI bus, especially for longer traces or when using multiple co-processor devices.
@@ -378,7 +378,7 @@ For optimal performance and reliability in production designs:
 - If using multiple power supplies, ensure they share a common ground.
 - Consider using level shifters if the host and co-processor operate at different voltage levels.
 
-## 7. Hardware Setup
+## 7 Hardware Setup
 
 > [!IMPORTANT]
 > 
@@ -402,12 +402,12 @@ Before flashing the co-processor and host, ensure that you have made the correct
 | Reset Out  | 42          | 54       |
 | GND        | GND         | GND      |
 
-- GPIOs can be re-configured to any other GPIOs, while co-processor configuration is done.
+- Host GPIOs can be re-configured to any other GPIOs, while co-processor configuration is done.
   - Make sure the configuration and hardware connections match.
 - Classic ESP32
-  - Not supported as host
+  - Not supported as host or co-processor
   - Rest all chipsets are supported as host
-- ESP32-S2/C2/C3/C5/C6
+- ESP32-S2/C2/C3/C5/C6/C61
   - Pins for SPI Half Duplex Host need to be figured out yet.
 - ESP32-P4
   - For ESP32-P4-Function-EV-Board, the SDIO onboard pins are re-used for SPI Half Duplex Host.
@@ -427,30 +427,30 @@ Before flashing the co-processor and host, ensure that you have made the correct
 | Reset In    | EN/RST                                | EN/RST   | EN/RST   |
 | GND         | GND                                   | GND      | GND      |
 
-- GPIOs can be re-configured to any other GPIOs, while co-processor configuration is done.
+- Co-processor GPIOs can be re-configured to any other GPIOs, while co-processor configuration is done.
   - Make sure the configuration and hardware connections match.
-- ESP32, ESP32-C2/C3/C5/C6/S2/S3
+- ESP32-C2/C3/C5/C6/C61/S2/S3
   - All supported as SPI Half Duplex co-processor
   - Pins for SPI Half Duplex co-processor need to be figured out yet for other boards
 
 > [!NOTE]
 > 
-> **QSPI Testing:**
+> A. QSPI Testing
 > - Tested on ESP32-P4-Function-EV-Board
 > - ESP32-P4 as host, ESP32-C6/C3 as QSPI co-processor
 > - Reused existing SDIO connections for QSPI on C6 and P4
 >
-> **Dual SPI Testing:**
+> B. Dual SPI Testing
 > - ESP32-S3 host with ESP32-C5 co-processor
 > - Tested using jumper cables
 >
-> **Performance Optimization:**
+> C. Performance Optimization
 > - Always prefer to use IO_MUX pins from datasheet for optimal performance on both sides
 >
-> **Portability:**
+> D. Portability
 > - Once ported, any other non ESP host with Dual SPI or QSPI can be used
 
-## 8. Set-Up ESP-IDF
+## 8 Set-Up ESP-IDF
 
 Before setting up the ESP-Hosted co-processor & host for SPI Half Duplex mode, ensure that ESP-IDF is properly installed and set up on your system.
 
@@ -474,7 +474,7 @@ Before setting up the ESP-Hosted co-processor & host for SPI Half Duplex mode, e
 
 Please follow the [ESP-IDF Get Started Guide](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/get-started/index.html) for manual installation.
 
-## 9. Flashing the Co-processor
+## 9 Flashing the Co-processor
 
 | Supported Co-processor Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-C5 | ESP32-C6 | ESP32-C61 | ESP32-S2 | ESP32-S3 |
 | ------------------------------ | ----- | -------- | -------- | -------- | -------- | --------- | -------- | -------- |
@@ -548,10 +548,10 @@ idf.py -p <co-processor_serial_port> flash
 
 Monitor the output (optional):
 ```
-idf.py -p <PORT> monitor
+idf.py -p <coprocessor_serial_port> monitor
 ```
 
-##### 9.4.2. Co-processor OTA Flashing (Subsequent Updates)
+##### 9.4.2 Co-processor OTA Flashing (Subsequent Updates)
 
 For subsequent updates, you can re-use ESP-Hosted-MCU transport, as it should be already working. While doing OTA, Complete co-processor firmware image is not needed and only co-processor application partition, 'network_adapter.bin' need to be re-flashed remotely from host.
 
@@ -596,7 +596,7 @@ You can re-use your existing web server or create a new locally for testing. Bel
 > - Ensure that your host application has web server connectivity to download the firmware file.
 > - The co-processor device doesn't need to be connected to the web server for this OTA method.
 
-## 10. Flashing the Host
+## 10 Flashing the Host
 
 Host are required to support 2 data line SPI (dual SPI) or 4 line SPI (quad SPI or QSPI) in their hardware. All ESP chipsets hardware support dual, quad SPI.
 
@@ -646,14 +646,14 @@ Now that ESP-IDF is set up, follow these steps to prepare the host:
     If you happen to have both, host and co-processor as same ESP chipset type (for example two ESP32-C2), note an [additional step](docs/troubleshooting/#1-esp-host-to-evaluate-already-has-native-wi-fi)
     
 
-### 8.3 Menuconfig, Build and Flash Host
+### 10.3 Menuconfig, Build and Flash Host
 
-##### 1. High performance configurations
+###### 1. High performance configurations
    This is optional step, suggested for high performance applications.
 
    If using ESP32-P4 as host:
-   - Remove the default `sdkconfig.defaults.esp32p4` file.
-   - Create a new `sdkconfig.defaults.esp32p4` file with the following content:
+     - Remove the default `sdkconfig.defaults.esp32p4` file.
+     - Create a new `sdkconfig.defaults.esp32p4` file with the following content:
      ```
      CONFIG_ESP_WIFI_STATIC_RX_BUFFER_NUM=16
      CONFIG_ESP_WIFI_DYNAMIC_RX_BUFFER_NUM=64
@@ -690,15 +690,15 @@ Now that ESP-IDF is set up, follow these steps to prepare the host:
    1. Select "SPI Half-duplex" as the transport layer
    2. Change co-processor chipset to connect to under "Slave chipset to be used" 
    3. Change Number of data lines to 2 or 4 based on the co-processor using "SPI Half-duplex Configuration" -> "Num Data Lines to use"
-   3. Opttionally, Configure SPI-specific settings like
-   - SPI Clock Freq (MHz)
-   - SPI Mode
-   - SPI Host GPIO Pins
-   - SPI Checksum Enable/Disable (Checksum is recommended to be enabled as spi hardware doesn't have any error detection)
-   
-    > [!NOTE]
-    > 
-    > The actual clock frequency used is determined by the hardware. Use an oscilloscope or logic analyzer to check the clock frequency.
+   4. Optionally, Configure SPI-specific settings like
+     - SPI Clock Freq (MHz)
+     - SPI Mode
+     - SPI Host GPIO Pins
+     - SPI Checksum Enable/Disable (Checksum is recommended to be enabled as spi hardware doesn't have any error detection)
+
+  > [!NOTE]
+  >
+  > The actual clock frequency used is determined by the hardware. Use an oscilloscope or logic analyzer to check the clock frequency.
 
 ###### 4. Build the project:
    ```
@@ -716,7 +716,7 @@ Now that ESP-IDF is set up, follow these steps to prepare the host:
     ```
     - If host was put into bootloader mode earlier, it may need manual reset
 
-## 11. Testing and Troubleshooting
+## 11 Testing and Troubleshooting
 
 After flashing both the co-processor and host devices, follow these steps to connect and test your ESP-Hosted SPI Half Duplex setup:
 
@@ -799,7 +799,7 @@ After flashing both the co-processor and host devices, follow these steps to con
    - Use the serial monitor on both devices to observe the communication between the host and co-processor.
    - For more detailed debugging, consider using a logic analyzer to examine the SPI signals.
 
-## 12. References
+## 12 References
 
 - ESP SPI co-processor HD (Half Duplex) Mode Protocol: https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/protocols/esp_spi_slave_protocol.html
 

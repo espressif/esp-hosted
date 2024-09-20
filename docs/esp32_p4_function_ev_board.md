@@ -1,7 +1,7 @@
 # ESP-Hosted on the ESP32-P4-Function-EV-Board DevKit
 
 <details>
-<summary>**Table of Contents**</summary>
+<summary>Table of Contents</summary>
 
 - [Introduction](#1-introduction)
 - [Set-Up ESP-IDF](#2-set-up-esp-idf)

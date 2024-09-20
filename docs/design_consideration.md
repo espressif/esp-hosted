@@ -3,7 +3,7 @@
 **Table of Contents**
 
 - [1. Choosing the Correct ESP chip as Slave](#1-choosing-the-correct-esp-chip-as-slave)
-- [1.1 Using ESP chip as Hosted Master](#11-using-esp-chip-as-hosted-master)
+- [1.1. Using ESP chip as Hosted Master](#11-using-esp-chip-as-hosted-master)
 - [2. General Hardware Considerations](#2-general-hardware-considerations)
   - [2.1. GPIOs used for interface](#21-gpios-used-for-interface)
   - [2.2. Using SPI insted of SDIO](#22-using-spi-insted-of-sdio)
@@ -12,14 +12,14 @@
 - [3. General Debugging Guidelines](#3-general-debugging-guidelines)
   - [3.1. Add tapping points to your PCB prototype](#31-add-tapping-points-to-your-pcb-prototype)
   - [3.2. Tap out additional GPIO signals as testing points and future expansion](#32-tap-out-additional-gpio-signals-as-testing-points-and-future-expansion)
-  - [3.3 Verifying Hosted Interface with Raw Throughput](#33-verifying-hosted-interface-with-raw-throughput)
+  - [3.3. Verifying Hosted Interface with Raw Throughput](#33-verifying-hosted-interface-with-raw-throughput)
 - [4. Others](#4-others)
 - [5. References](#5-references)
 
 There are several considerations that need to be taken into account
 when implementing ESP-Hosted for your system.
 
-## 1. Choosing the Correct ESP chip as Slave
+## 1 Choosing the Correct ESP chip as Slave
 
 For prototyping, any ESP32 chip can be used as the slave, provided it
 has the required interface (SPI, SDIO). But when creating an actual
@@ -44,9 +44,9 @@ The project defaults to using an ESP chip as the Hosted Master. This
 is to act as a reference platform and make it easier to evaluate and
 test Hosted before porting it to your MCU of choice.
 
-## 2. General Hardware Considerations
+## 2 General Hardware Considerations
 
-### 2.1. GPIOs used for interface
+### 2.1 GPIOs used for interface
 
 Make sure the correct GPIOs pins on the Hosted Slave and Master are
 connected together. Verify that the correct GPIOs are set-up in
@@ -58,7 +58,7 @@ connected together. Verify that the correct GPIOs are set-up in
 > under Hosted. Check the ESP datasheet to verify the GPIOs you select
 > can be used as a Hosted interface.
 
-### 2.2. Evaluate with jumpers first
+### 2.2 Evaluate with jumpers first
 
 It is flexible to evaluate with jumper cables or bread board than full-fledged PCB.
 In general, SPI (Standard & Dual SPI) imposes fewer hardware requirements compared to
@@ -80,7 +80,7 @@ Once you evaluate the solution on jumper cables, you can move to PCB solutions w
   - Quad SPI : jumpers not supported, only PCB
   - SDIO 4 Bit: Jumpers not supported, only PCB
 
-### 2.3. Whenever possible, Use `IO_MUX` GPIOs.
+### 2.3 Whenever possible, Use `IO_MUX` GPIOs.
 
 In general, ESP peripheral interfaces can be assigned to any available
 GPIO through a multiplexer. But some ESPs have dedicated GPIOs for
@@ -93,7 +93,7 @@ interface for Hosted.
 > The SDIO interface on the ESP32 and ESP32-C6 have fixed GPIO
 > assignments and cannot be changed.
 
-### 2.4. Signal Length and Noise Reduction
+### 2.4 Signal Length and Noise Reduction
 
 For best performance, a PCB with traces should be used to connect the
 Hosted Slave and Master. For prototyping, jumper cables can be used,
@@ -123,15 +123,15 @@ For jumper cables, you can try surrounding the signals, especially the
 > Also check the Hosted documentation for SPI and SDIO for more
 > information and guidelines on the interfaces.
 
-## 3. General Debugging Guidelines
+## 3 General Debugging Guidelines
 
-### 3.1. Add tapping points to your prototype
+### 3.1 Add tapping points to your prototype
 
 Adding tapping points or headers to the Hosted interface signals on
 your prototype will make it easier to check whether the Hosted
 interface is working as expected.
 
-### 3.2. Tap out additional GPIO signals as testing points and future expansion
+### 3.2 Tap out additional GPIO signals as testing points and future expansion
 
 Add tapping points to some unused GPIOs on both the Hosted Slave and
 Host on your prototype PCB. This can later be use for debugging or
@@ -169,7 +169,7 @@ on Host, enter `Menuconfig` and enable **Component config** --->
 the data transfer direction: **Host to Slave**, **Slave to Host** or
 **Bidirectional**.
 
-## 4. Others
+## 4 Others
 
 Check the References below for links to the Product Selector, and more
 detailed information on the interfaces used in Hosted. If you have
@@ -179,7 +179,7 @@ You can also raise an Issue on the ESP-Hosted Github repository. Check
 that the issue has not already been raised before submitting. The
 solution to your problem may have already been provided.
 
-## 5. References
+## 5 References
 
 **External Links**
 
