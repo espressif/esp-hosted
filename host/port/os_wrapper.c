@@ -39,6 +39,10 @@
 #include "spi_hd_wrapper.h"
 #endif
 
+#ifdef CONFIG_ESP_UART_HOST_INTERFACE
+#include "uart_wrapper.h"
+#endif
+
 DEFINE_LOG_TAG(os_wrapper_esp);
 
 struct mempool * nw_mp_g = NULL;
@@ -819,5 +823,11 @@ hosted_osi_funcs_t g_hosted_osi_funcs = {
 	._h_spi_hd_write_dma         =  hosted_spi_hd_write_dma          ,
 	._h_spi_hd_set_data_lines    =  hosted_spi_hd_set_data_lines     ,
 	._h_spi_hd_send_cmd9         =  hosted_spi_hd_send_cmd9          ,
+#endif
+#ifdef CONFIG_ESP_UART_HOST_INTERFACE
+	._h_bus_init                 = hosted_uart_init                ,
+	._h_uart_read                = hosted_uart_read                ,
+	._h_uart_write               = hosted_uart_write               ,
+	._h_uart_wait_rx_data        = hosted_wait_rx_data             ,
 #endif
 };

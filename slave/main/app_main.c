@@ -89,6 +89,10 @@ static struct rx_data {
 
 uint8_t ap_mac[BSSID_BYTES_SIZE] = {0};
 
+#if CONFIG_ESP_UART_HOST_INTERFACE && BLUETOOTH_UART
+#error "Hosted UART Interface cannot be used with Bluetooth HCI over UART"
+#endif
+
 static void print_firmware_version()
 {
 	ESP_LOGI(TAG, "*********************************************************************");
@@ -106,6 +110,8 @@ static void print_firmware_version()
   #else
 	ESP_LOGI(TAG, "                Transport used :: SPI HD only                   ");
   #endif
+#elif CONFIG_ESP_UART_HOST_INTERFACE
+	ESP_LOGI(TAG, "                Transport used :: UART only                     ");
 #else
   #if BLUETOOTH_UART
 	ESP_LOGI(TAG, "                Transport used :: SDIO + UART                   ");
@@ -129,7 +135,7 @@ static uint8_t get_capabilities(void)
 	cap |= ESP_WLAN_SDIO_SUPPORT;
 #endif
 
-#if CONFIG_ESP_SPI_CHECKSUM || CONFIG_ESP_SDIO_CHECKSUM || CONFIG_ESP_SPI_HD_CHECKSUM
+#if CONFIG_ESP_SPI_CHECKSUM || CONFIG_ESP_SDIO_CHECKSUM || CONFIG_ESP_SPI_HD_CHECKSUM || CONFIG_ESP_UART_CHECKSUM
 	cap |= ESP_CHECKSUM_ENABLED;
 #endif
 
@@ -158,6 +164,11 @@ static uint32_t get_capabilities_ext(void)
 
 	ESP_LOGI(TAG, "- WLAN over SPI HD");
 	ext_cap |= ESP_WLAN_SUPPORT;
+#endif
+
+#if CONFIG_ESP_UART_HOST_INTERFACE
+	ESP_LOGI(TAG, "- WLAN over UART");
+	ext_cap |= ESP_WLAN_UART_SUPPORT;
 #endif
 
 #ifdef CONFIG_BT_ENABLED

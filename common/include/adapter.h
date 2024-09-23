@@ -164,7 +164,7 @@ typedef enum {
 
 typedef enum {
 	ESP_WLAN_SDIO_SUPPORT = (1 << 0),
-	ESP_BT_UART_SUPPORT = (1 << 1),
+	ESP_BT_UART_SUPPORT = (1 << 1), // HCI over UART
 	ESP_BT_SDIO_SUPPORT = (1 << 2),
 	ESP_BLE_ONLY_SUPPORT = (1 << 3),
 	ESP_BR_EDR_ONLY_SUPPORT = (1 << 4),
@@ -182,6 +182,11 @@ typedef enum {
 	// features supported
 	ESP_WLAN_SUPPORT         = (1 << 4),
 	ESP_BT_INTERFACE_SUPPORT = (1 << 5), // bt supported over current interface
+	// leave a gap for future expansion
+
+	// Hosted UART interface
+	ESP_WLAN_UART_SUPPORT = (1 << 8),
+	ESP_BT_VHCI_UART_SUPPORT = (1 << 9), // VHCI over UART
 } ESP_EXTENDED_CAPABILITIES;
 
 typedef enum {

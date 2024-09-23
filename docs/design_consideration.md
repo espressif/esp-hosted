@@ -191,4 +191,5 @@ solution to your problem may have already been provided.
 - SPI Full Duplex interface documentation: [spi_full_duplex.md](spi_full_duplex.md)
 - SDIO interface documentation: [sdio.md](sdio.md)
 - SPI Half Duplex interface documentation: [spi_half_duplex.md](spi_half_duplex.md)
+- UART documentation: [uart.md](uart.md)
 - Troubleshooting Guide: [troubleshooting.md](troubleshooting.md)

@@ -605,6 +605,10 @@ uint32_t get_bluetooth_ext_capabilities(void)
 	ESP_LOGI(TAG, "   - HCI Over SPI HD");
 	ext_cap |= ESP_BT_INTERFACE_SUPPORT;
 #endif
+#if CONFIG_ESP_UART_HOST_INTERFACE
+	ESP_LOGI(TAG, "   - HCI Over UART (VHCI)");
+	ext_cap |= ESP_BT_INTERFACE_SUPPORT;
+#endif
 #endif
 #endif
 	return ext_cap;

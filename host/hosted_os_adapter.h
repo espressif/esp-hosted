@@ -95,6 +95,13 @@ typedef struct {
 /* 55 */ int (*_h_spi_hd_set_data_lines)(uint32_t data_lines);
 /* 56 */ int (*_h_spi_hd_send_cmd9)(void);
 #endif
+
+#ifdef CONFIG_ESP_UART_HOST_INTERFACE
+          /* Transport - UART */
+/* 51 */ int (*_h_uart_read)(uint8_t *data, uint16_t size);
+/* 52 */ int (*_h_uart_write)(uint8_t *data, uint16_t size);
+/* 53 */ int (*_h_uart_wait_rx_data)(uint32_t ticks_to_wait);
+#endif
 } hosted_osi_funcs_t;
 
 struct hosted_config_t {

@@ -233,6 +233,33 @@ enum {
 #define H_SPI_HD_HOST_INTERFACE 0
 #endif
 
+#ifdef CONFIG_ESP_UART_HOST_INTERFACE
+/*  -------------------------- UART Host Config start -------------------------  */
+
+#define H_UART_HOST_TRANSPORT 1
+
+#define H_UART_PORT                                  CONFIG_ESP_UART_PORT
+#define H_UART_NUM_DATA_BITS                         CONFIG_ESP_UART_NUM_DATA_BITS
+#define H_UART_PARITY                                CONFIG_ESP_UART_PARITY
+#define H_UART_START_BITS                            1
+#define H_UART_STOP_BITS                             CONFIG_ESP_UART_STOP_BITS
+#define H_UART_FLOWCTRL                              UART_HW_FLOWCTRL_DISABLE
+#define H_UART_CLK_SRC                               UART_SCLK_DEFAULT
+
+#define H_UART_EVENT_QUEUE_SIZE                      100
+
+#define H_UART_CHECKSUM                              CONFIG_ESP_UART_CHECKSUM
+#define H_UART_BAUD_RATE                             CONFIG_ESP_UART_BAUDRATE
+#define H_UART_TX_PIN                                CONFIG_ESP_UART_PIN_TX
+#define H_UART_RX_PIN                                CONFIG_ESP_UART_PIN_RX
+#define H_UART_TX_QUEUE_SIZE                         CONFIG_ESP_UART_TX_Q_SIZE
+#define H_UART_RX_QUEUE_SIZE                         CONFIG_ESP_UART_RX_Q_SIZE
+
+/*  -------------------------- UART Host Config end -------------------------  */
+#else
+#define H_UART_HOST_TRANSPORT 0
+#endif
+
 /* Generic reset pin config */
 #define H_GPIO_PIN_RESET_Port                        NULL
 #define H_GPIO_PIN_RESET_Pin                         CONFIG_ESP_GPIO_SLAVE_RESET_SLAVE

@@ -159,12 +159,18 @@ Legends:
 | Transport | Type | Num of GPIOs | Setup with | Co-processor supported | Host Tx iperf | Host Rx iperf | Remarks |
 |:---------------:|:-----:|:------------:|:----------------:|:--------------:|:------------:|:-----------:|:--------------------------:|
 | Standard SPI | FD | 6 | jumper or PCB | Any_Slave | udp: 24 tcp: 22 | udp: 25 tcp: 22| Simplest solution for quick test |
-| Dual SPI | HD | 5 | jumper or PCB | Any_Slave | udp: 32 tcp: 26 (O) | udp: 33 tcp: 25 (O) | Better throughput, but half duplex |
-| Quad SPI | HD | 7 | PCB only | Any_Slave | udp: 41 tcp: 29 (O) | udp: 42 tcp: 28 (O) | Due to signal integrity, PCB is mandatory |
+| Dual SPI | HD | 5 | jumper or PCB | Any_Slave [1] | udp: 32 tcp: 26 (O) | udp: 33 tcp: 25 (O) | Better throughput, but half duplex |
+| Quad SPI | HD | 7 | PCB only | Any_Slave [1] | udp: 41 tcp: 29 (O) | udp: 42 tcp: 28 (O) | Due to signal integrity, PCB is mandatory |
 | SDIO 1-Bit | HD | 4  | jumper or PCB | ESP32, ESP32-C6 | TBD | TBD | Stepping stone for PCB based SDIO 4-bit |
 | SDIO 4-Bit | HD | 6 | PCB only | ESP32, ESP32-C6 | udp: 79.5 tcp: 53.4 (S) | udp: 68.1 tcp: 44 (S) | Highest performance |
 | Only BT over UART | FD | 2 or 4 | jumper or PCB | Any_Slave | NA | NA | Dedicated Bluetooth over UART pins |
+| UART | FD | 2 | jumper or PCB | Any_Slave | udp: 0.68 tcp: 0.67 (O) | udp: 0.68 tcp: 0.60 (O) | UART dedicated for BT & Wi-Fi [2] |
 | Dedicated platforms | FD | Extra 2 or 4 | jumper or PCB | Any_Slave | NA | NA | UART dedicated for BT & Wi-Fi on any other transport |
+
+> [!NOTE]
+> - [1] Dual/Quad SPI is not supported on ESP32
+>
+> - [2] UART is only suitable for low throughput environments
 
 With jumper cables, 'Standard SPI' and 'Dual SPI' solutions are easiest to evaluate, without much of hardware dependencies. SDIO 1-Bit can be tested with jumper cables, but it needs some additional hardware config, such as installation of external pull-up registers.
 
@@ -235,7 +241,7 @@ Irrespective of transport chosen, following steps are needed, which are step-wis
 
 - [**SDIO (1-Bit / 4-Bit)**](docs/sdio.md)
 
-- [**UART**](docs/uart.md)
+- [**UART for Wi-Fi and Bluetooth**](docs/uart.md)
 
 ## 9 Examples
 Check [examples](./examples) directory for sample applications using ESP-Hosted.
