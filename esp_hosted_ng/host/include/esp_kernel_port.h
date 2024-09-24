@@ -142,12 +142,6 @@ enum ieee80211_privacy {
 
 #endif
 
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 12, 0))
-    #define ESP_CANCEL_SCHED_SCAN() cfg80211_sched_scan_stopped(priv->wdev.wiphy, 0);
-#else
-    #define ESP_CANCEL_SCHED_SCAN() cfg80211_sched_scan_stopped(priv->wdev.wiphy);
-#endif
-
 #if LINUX_VERSION_CODE < KERNEL_VERSION(4, 13, 0)
 static inline void *skb_put_data(struct sk_buff *skb, const void *data,
 				 unsigned int len)
@@ -223,7 +217,7 @@ static inline bool wireless_dev_current_bss_exists(struct wireless_dev *wdev)
 #define ZERO_LINK_ID
 #endif
 
-#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 15, 0))
+#ifndef eth_hw_addr_set
 static inline void eth_hw_addr_set(struct net_device *dev, const u8 *addr)
 {
 	ether_addr_copy(dev->dev_addr, addr);
