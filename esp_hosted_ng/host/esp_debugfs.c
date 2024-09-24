@@ -272,8 +272,16 @@ void debugfs_exit(void)
 	if (debugfs->host_log_level_file)
 		debugfs_remove(debugfs->host_log_level_file);
 #endif
-	if (debugfs->log_level_file)
+	if (debugfs->log_level_file) {
 		debugfs_remove(debugfs->log_level_file);
-	if (debugfs->debugfs_dir)
+		debugfs->log_level_file = NULL;
+	}
+	if (debugfs->version) {
+		debugfs_remove(debugfs->version);
+		debugfs->version = NULL;
+	}
+	if (debugfs->debugfs_dir) {
 		debugfs_remove(debugfs->debugfs_dir);
+		debugfs->debugfs_dir = NULL;
+	}
 }
