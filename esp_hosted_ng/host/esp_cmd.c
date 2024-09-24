@@ -1373,7 +1373,12 @@ int cmd_add_key(struct esp_wifi_device *priv, u8 key_index, bool pairwise,
                      "params->seq_len:%u params->mode: 0x%x\n"
                      "params->cipher: 0x%x\n",
                      key_index, pairwise, params->key_len, params->seq_len,
-                     params->mode, params->cipher);
+#if (LINUX_VERSION_CODE > KERNEL_VERSION(5, 1, 21))
+		     params->mode,
+#else
+		     0,
+#endif
+		     params->cipher);
 	if (!priv || !priv->adapter || !params ||
 	    !params->key || !params->key_len) {
 		esp_err("Invalid argument\n");
