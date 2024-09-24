@@ -1603,6 +1603,7 @@ static esp_err_t req_wifi_sta_get_aid(Rpc *req, Rpc *resp, void *priv_data)
 
 static esp_err_t req_wifi_set_protocols(Rpc *req, Rpc *resp, void *priv_data)
 {
+#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 4, 0)
 	RPC_TEMPLATE(RpcRespWifiSetProtocols, resp_wifi_set_protocols,
 			RpcReqWifiSetProtocols, req_wifi_set_protocols,
 			rpc__resp__wifi_set_protocols__init);
@@ -1613,7 +1614,6 @@ static esp_err_t req_wifi_set_protocols(Rpc *req, Rpc *resp, void *priv_data)
 	ifx = req_payload->ifx;
 	resp_payload->ifx = ifx;
 
-#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 4, 0)
 	wifi_protocols_t protocols;
 	protocols.ghz_2g = req_payload->protocols->ghz_2g;
 	protocols.ghz_5g = req_payload->protocols->ghz_5g;
@@ -1621,16 +1621,16 @@ static esp_err_t req_wifi_set_protocols(Rpc *req, Rpc *resp, void *priv_data)
 	ESP_LOGI(TAG, "set protocols: ghz_2g %d, ghz_5g %d", protocols.ghz_2g, protocols.ghz_5g);
 
 	RPC_RET_FAIL_IF(esp_wifi_set_protocols(ifx, &protocols));
-#else
-	// not implemented
-	resp_payload->resp = ESP_FAIL;
-#endif
 
 	return ESP_OK;
+#else
+	return ESP_FAIL;
+#endif
 }
 
 static esp_err_t req_wifi_get_protocols(Rpc *req, Rpc *resp, void *priv_data)
 {
+#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 4, 0)
 	RPC_TEMPLATE(RpcRespWifiGetProtocols, resp_wifi_get_protocols,
 			RpcReqWifiGetProtocols, req_wifi_get_protocols,
 			rpc__resp__wifi_get_protocols__init);
@@ -1639,7 +1639,6 @@ static esp_err_t req_wifi_get_protocols(Rpc *req, Rpc *resp, void *priv_data)
 	ifx = req_payload->ifx;
 	resp_payload->ifx = ifx;
 
-#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 4, 0)
 	wifi_protocols_t protocols;
 
 	RPC_RET_FAIL_IF(esp_wifi_get_protocols(ifx, &protocols));
@@ -1649,17 +1648,17 @@ static esp_err_t req_wifi_get_protocols(Rpc *req, Rpc *resp, void *priv_data)
 	resp_payload->protocols->ghz_5g = protocols.ghz_5g;
 
 	ESP_LOGI(TAG, "get protocols: ghz_2g %d, ghz_5g %d", protocols.ghz_2g, protocols.ghz_5g);
-#else
-	// not implemented
-	resp_payload->resp = ESP_FAIL;
-#endif
-
 err:
 	return ESP_OK;
+#else
+	return ESP_FAIL;
+#endif
+
 }
 
 static esp_err_t req_wifi_set_bandwidths(Rpc *req, Rpc *resp, void *priv_data)
 {
+#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 4, 0)
 	RPC_TEMPLATE(RpcRespWifiSetBandwidths, resp_wifi_set_bandwidths,
 			RpcReqWifiSetBandwidths, req_wifi_set_bandwidths,
 			rpc__resp__wifi_set_bandwidths__init);
@@ -1670,7 +1669,6 @@ static esp_err_t req_wifi_set_bandwidths(Rpc *req, Rpc *resp, void *priv_data)
 	ifx = req_payload->ifx;
 	resp_payload->ifx = ifx;
 
-#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 4, 0)
 	wifi_bandwidths_t bw;
 
 	bw.ghz_2g = req_payload->bandwidths->ghz_2g;
@@ -1679,16 +1677,16 @@ static esp_err_t req_wifi_set_bandwidths(Rpc *req, Rpc *resp, void *priv_data)
 	ESP_LOGI(TAG, "set bandwidths: ghz_2g %d, ghz_5g %d", bw.ghz_2g, bw.ghz_5g);
 
 	RPC_RET_FAIL_IF(esp_wifi_set_bandwidths(ifx, &bw));
-#else
-	// not implemented
-	resp_payload->resp = ESP_FAIL;
-#endif
 
 	return ESP_OK;
+#else
+	return ESP_FAIL;
+#endif
 }
 
 static esp_err_t req_wifi_get_bandwidths(Rpc *req, Rpc *resp, void *priv_data)
 {
+#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 4, 0)
 	RPC_TEMPLATE(RpcRespWifiGetBandwidths, resp_wifi_get_bandwidths,
 			RpcReqWifiGetBandwidths, req_wifi_get_bandwidths,
 			rpc__resp__wifi_get_bandwidths__init);
@@ -1697,7 +1695,6 @@ static esp_err_t req_wifi_get_bandwidths(Rpc *req, Rpc *resp, void *priv_data)
 	ifx = req_payload->ifx;
 	resp_payload->ifx = ifx;
 
-#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 4, 0)
 	wifi_bandwidths_t bw;
 
 	RPC_RET_FAIL_IF(esp_wifi_get_bandwidths(ifx, &bw));
@@ -1708,17 +1705,16 @@ static esp_err_t req_wifi_get_bandwidths(Rpc *req, Rpc *resp, void *priv_data)
 	resp_payload->bandwidths->ghz_5g = bw.ghz_5g;
 
 	ESP_LOGI(TAG, "get bandwidths: ghz_2g %d, ghz_5g %d", bw.ghz_2g, bw.ghz_5g);
-#else
-	// not implemented
-	resp_payload->resp = ESP_FAIL;
-#endif
-
 err:
 	return ESP_OK;
+#else
+	return ESP_FAIL;
+#endif
 }
 
 static esp_err_t req_wifi_set_band(Rpc *req, Rpc *resp, void *priv_data)
 {
+#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 4, 0)
 	RPC_TEMPLATE(RpcRespWifiSetBand, resp_wifi_set_band,
 			RpcReqWifiSetBand, req_wifi_set_band,
 			rpc__resp__wifi_set_band__init);
@@ -1731,10 +1727,14 @@ static esp_err_t req_wifi_set_band(Rpc *req, Rpc *resp, void *priv_data)
 	RPC_RET_FAIL_IF(esp_wifi_set_band(band));
 
 	return ESP_OK;
+#else
+	return ESP_FAIL;
+#endif
 }
 
 static esp_err_t req_wifi_get_band(Rpc *req, Rpc *resp, void *priv_data)
 {
+#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 4, 0)
 	RPC_TEMPLATE_SIMPLE(RpcRespWifiGetBand, resp_wifi_get_band,
 			RpcReqWifiGetBand, req_wifi_get_band,
 			rpc__resp__wifi_get_band__init);
@@ -1747,10 +1747,14 @@ static esp_err_t req_wifi_get_band(Rpc *req, Rpc *resp, void *priv_data)
 	ESP_LOGW(TAG, "get band: %d", band);
 
 	return ESP_OK;
+#else
+	return ESP_FAIL;
+#endif
 }
 
 static esp_err_t req_wifi_set_band_mode(Rpc *req, Rpc *resp, void *priv_data)
 {
+#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 4, 0)
 	RPC_TEMPLATE(RpcRespWifiSetBandMode, resp_wifi_set_bandmode,
 			RpcReqWifiSetBandMode, req_wifi_set_bandmode,
 			rpc__resp__wifi_set_band_mode__init);
@@ -1763,10 +1767,14 @@ static esp_err_t req_wifi_set_band_mode(Rpc *req, Rpc *resp, void *priv_data)
 	RPC_RET_FAIL_IF(esp_wifi_set_band_mode(band_mode));
 
 	return ESP_OK;
+#else
+	return ESP_FAIL;
+#endif
 }
 
 static esp_err_t req_wifi_get_band_mode(Rpc *req, Rpc *resp, void *priv_data)
 {
+#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 4, 0)
 	RPC_TEMPLATE_SIMPLE(RpcRespWifiGetBandMode, resp_wifi_get_bandmode,
 			RpcReqWifiGetBandMode, req_wifi_get_bandmode,
 			rpc__resp__wifi_get_band_mode__init);
@@ -1779,6 +1787,9 @@ static esp_err_t req_wifi_get_band_mode(Rpc *req, Rpc *resp, void *priv_data)
 	ESP_LOGW(TAG, "get band_mode: %d", band_mode);
 
 	return ESP_OK;
+#else
+	return ESP_FAIL;
+#endif
 }
 
 #if 0
