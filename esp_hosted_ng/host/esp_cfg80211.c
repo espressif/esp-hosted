@@ -1224,5 +1224,6 @@ int esp_mark_scan_done_and_disconnect(struct esp_wifi_device *priv, uint8_t loca
 		return 0;
 
 	ESP_MARK_SCAN_DONE(priv, true);
+	ESP_CANCEL_SCHED_SCAN();
 	return esp_mark_disconnect(priv, 0, locally_disconnect);
 }
