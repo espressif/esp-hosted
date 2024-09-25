@@ -407,7 +407,7 @@ static int esp_set_mac_address(struct net_device *ndev, void *data)
 	ret = cmd_set_mac(priv, sa->sa_data);
 
 	if (ret == 0)
-		eth_hw_addr_set(ndev, priv->mac_address/*mac_addr->sa_data*/);
+		ETH_HW_ADDR_SET(ndev, priv->mac_address/*mac_addr->sa_data*/);
 
 	return ret;
 }

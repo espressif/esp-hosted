@@ -217,11 +217,18 @@ static inline bool wireless_dev_current_bss_exists(struct wireless_dev *wdev)
 #define ZERO_LINK_ID
 #endif
 
-#ifndef eth_hw_addr_set
-static inline void eth_hw_addr_set(struct net_device *dev, const u8 *addr)
-{
-	ether_addr_copy(dev->dev_addr, addr);
-}
+/* In kernel version 5.15 and later, eth_hw_addr_set() is provided by the kernel.
+ * However, in LTS kernels, this function has been backported in later releases.
+ * To maintain compatibility with older kernels (pre-5.15), we define a macro
+ * ETH_HW_ADDR_SET that either uses ether_addr_copy function equivalent (ether_addr_copy)
+ * for kernels < 5.15 or the kernel-provided eth_hw_addr_set() for 5.15 and above.
+ */
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 15, 0))
+/* For kernel versions < 5.15, use ether_addr_copy() to set the hardware address. */
+#define ETH_HW_ADDR_SET(dev, addr) ether_addr_copy((dev)->dev_addr, (addr))
+#else
+/* For kernel versions >= 5.15, use the kernel-provided eth_hw_addr_set(). */
+#define ETH_HW_ADDR_SET(dev, addr) eth_hw_addr_set(dev, addr)
 #endif
 
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 9, 0))

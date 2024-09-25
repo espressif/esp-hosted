@@ -158,9 +158,18 @@ static int esp_inetaddr_event(struct notifier_block *nb,
 {
 	struct in_ifaddr *ifa = data;
 	struct net_device *netdev = ifa->ifa_dev ? ifa->ifa_dev->dev : NULL;
-	struct esp_wifi_device *priv = netdev_priv(netdev);
+	struct esp_wifi_device *priv;
+	struct esp_adapter *adapter = esp_get_adapter();
+	struct esp_wifi_device *esp_priv = adapter->priv[0];
 
-	esp_verbose("------- IP event -------\n");
+	if (!netdev)
+		return 0;
+
+	esp_verbose("------- IP event for interface %s -------\n", netdev->name);
+
+	priv = netdev_priv(netdev);
+	if (esp_priv != priv)
+		return 0;
 
 	switch (event) {
 
@@ -174,7 +183,7 @@ static int esp_inetaddr_event(struct notifier_block *nb,
 	case NETDEV_DOWN:
 		if (priv && (priv->if_type == ESP_STA_IF)) {
 			cmd_set_ip_address(priv, 0);
-			esp_info("Interface Down: %d\n", priv->if_type);
+			esp_info("Interface %s Down: %d\n", netdev->name, priv->if_type);
 		}
 		break;
 	}
@@ -249,7 +258,7 @@ struct wireless_dev *esp_cfg80211_add_iface(struct wiphy *wiphy,
 	if (cmd_get_mac(esp_wdev))
 		goto free_and_return;
 
-	eth_hw_addr_set(ndev, esp_wdev->mac_address);
+	ETH_HW_ADDR_SET(ndev, esp_wdev->mac_address);
 
 	esp_init_priv(ndev);
 
@@ -339,7 +348,7 @@ static int esp_cfg80211_change_iface(struct wiphy *wiphy,
 		priv->wdev.iftype = type;
 		/* update Mac address of interface */
 		cmd_get_mac(priv);
-		eth_hw_addr_set(dev, priv->mac_address/*mac_addr->sa_data*/);
+		ETH_HW_ADDR_SET(dev, priv->mac_address/*mac_addr->sa_data*/);
 	}
 
 	esp_info("wdev iftype=%d, ret=%d\n", priv->wdev.iftype, ret);
