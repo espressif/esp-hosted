@@ -42,9 +42,6 @@ extern "C" {
 
 #define MAX_SUPPORTED_SDIO_CLOCK_MHZ      40
 
-#define htole16(x)                        ((uint16_t)(x))
-#define le16toh(x)                        ((uint16_t)(x))
-
 #define IP_ADDR_LEN                       4
 #define MAC_LEN                           6
 #define MIN_MAC_STRING_LEN                17
