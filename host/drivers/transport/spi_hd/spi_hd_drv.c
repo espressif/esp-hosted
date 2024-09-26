@@ -19,6 +19,7 @@
 
 #include "drivers/bt/hci_drv.h"
 
+#include "endian.h"
 #include "adapter.h"
 #include "stats.h"
 #include "transport_drv.h"

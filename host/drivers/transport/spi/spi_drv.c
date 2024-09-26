@@ -25,6 +25,7 @@
 #include "esp_hosted_log.h"
 #include "stats.h"
 #include "hci_drv.h"
+#include "endian.h"
 
 DEFINE_LOG_TAG(spi);
 
