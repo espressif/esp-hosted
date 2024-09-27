@@ -46,6 +46,7 @@ typedef enum {
 	SDIO   = 0,
 	SPI    = 1,
 	SPI_HD = 2,
+	UART   = 3,
 } transport_layer;
 
 typedef enum {
@@ -72,8 +73,8 @@ typedef struct {
 	uint8_t flag;
 	uint16_t payload_len;
 	uint16_t seq_num;
-#ifdef CONFIG_ESP_SPI_HD_HOST_INTERFACE
-	uint8_t flow_ctrl_en;
+#if CONFIG_ESP_SPI_HD_HOST_INTERFACE || CONFIG_ESP_UART_HOST_INTERFACE
+	uint8_t wifi_flow_ctrl_en;
 #endif
 
 	void (*free_buf_handle)(void *buf_handle);
@@ -92,6 +93,8 @@ typedef struct {
 #elif CONFIG_ESP_SDIO_HOST_INTERFACE
 #define MAX_TRANSPORT_BUF_SIZE 1536
 #elif CONFIG_ESP_SPI_HD_HOST_INTERFACE
+#define MAX_TRANSPORT_BUF_SIZE 1600
+#elif CONFIG_ESP_UART_HOST_INTERFACE
 #define MAX_TRANSPORT_BUF_SIZE 1600
 #endif
 

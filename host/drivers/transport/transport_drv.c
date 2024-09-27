@@ -369,8 +369,6 @@ void print_capabilities(uint32_t cap)
 
 static void print_ext_capabilities(uint8_t * ptr)
 {
-	// currently only applies to SPI HD interface
-#if H_SPI_HD_HOST_INTERFACE
 	// ptr address may be not be 32-bit aligned
 	uint32_t cap;
 
@@ -380,6 +378,7 @@ static void print_ext_capabilities(uint8_t * ptr)
 		((uint32_t)ptr[3] << 24);
 
 	ESP_LOGI(TAG, "Extended Features supported:");
+#if H_SPI_HD_HOST_INTERFACE
 	if (cap & ESP_SPI_HD_INTERFACE_SUPPORT_2_DATA_LINES)
 		ESP_LOGI(TAG, "\t * SPI HD 2 data lines interface");
 	if (cap & ESP_SPI_HD_INTERFACE_SUPPORT_4_DATA_LINES)
@@ -388,6 +387,13 @@ static void print_ext_capabilities(uint8_t * ptr)
 		ESP_LOGI(TAG, "\t * WLAN");
 	if (cap & ESP_BT_INTERFACE_SUPPORT)
 		ESP_LOGI(TAG, "\t * BT/BLE");
+#elif H_UART_HOST_TRANSPORT
+	if (cap & ESP_WLAN_UART_SUPPORT)
+		ESP_LOGI(TAG, "\t * WLAN over UART");
+	if (cap & ESP_BT_VHCI_UART_SUPPORT)
+		ESP_LOGI(TAG, "\t * BT over UART (VHCI)");
+#else
+	ESP_LOGI(TAG, "\t No extended features");
 #endif
 }
 

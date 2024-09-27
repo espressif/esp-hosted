@@ -45,6 +45,11 @@ menu "Example Configuration"
 			depends on !IDF_TARGET_ESP32
 			help
 				Enable/Disable SPI Half-duplex host interface
+
+		config ESP_UART_HOST_INTERFACE
+			bool "UART"
+			help
+				Enable/Disable UART host interface
 	endchoice
 
 	menu "SPI Full-duplex Configuration"
@@ -493,11 +498,123 @@ menu "Example Configuration"
 
 	endmenu
 
+	menu "UART Configuration"
+		depends on ESP_UART_HOST_INTERFACE
+
+		config ESP_UART_PORT
+			int "UART Port to Use"
+			default 1
+			range 0 2 if IDF_TARGET_ESP32
+			range 0 1 if IDF_TARGET_ESP32C2 || IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32C5 || IDF_TARGET_ESP32C6
+			range 0 2 if IDF_TARGET_ESP32C61
+			range 0 1 if IDF_TARGET_ESP32S2
+			range 0 2 if IDF_TARGET_ESP32S3
+			help
+				Select UART Port to Use. Do not select the UART Port used for console output (if enabled)
+
+		config ESP_UART_PIN_TX
+			int "TX GPIO number"
+			default 13 if IDF_TARGET_ESP32
+			default 5 if IDF_TARGET_ESP32C2 || IDF_TARGET_ESP32C3
+			default 14 if IDF_TARGET_ESP32C5
+			default 21 if IDF_TARGET_ESP32C6
+			default 5 if IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32S3
+			help
+				GPIO used for UART TX
+
+		config ESP_UART_PIN_RX
+			int "RX GPIO number"
+			default 12 if IDF_TARGET_ESP32
+			default 4 if IDF_TARGET_ESP32C2 || IDF_TARGET_ESP32C3
+			default 13 if IDF_TARGET_ESP32C5
+			default 20 if IDF_TARGET_ESP32C6
+			default 4 if IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32S3
+			help
+				GPIO used for UART RX
+
+		config ESP_UART_BAUDRATE
+			int "Baud Rate"
+			default 921600
+			range 9600 3500000
+			help
+				Baud Rate to Use. Make sure Hardware supports the rate. Standard rates are 9600, 19200, 38400, 57600, 115200, 460800, 921600
+
+		config ESP_UART_NUM_DATA_BITS
+			int "Number of Data Bits"
+			default 8
+			range 5 8
+			help
+				Number of Data Bits to use
+
+		choice ESP_UART_PRIV_PARITY
+			bool "Parity"
+
+			config ESP_UART_PRIV_PARITY_NONE
+				bool "None"
+
+			config ESP_UART_PRIV_PARITY_EVEN
+				bool "Even"
+
+			config ESP_UART_PRIV_PARITY_ODD
+				bool "Odd"
+		endchoice
+
+		config ESP_UART_PARITY
+			int
+			default 0 if ESP_UART_PRIV_PARITY_NONE
+			default 1 if ESP_UART_PRIV_PARITY_EVEN
+			default 2 if ESP_UART_PRIV_PARITY_ODD
+
+		choice ESP_UART_PRIV_STOP_BITS
+			bool "Number of Stop Bits"
+
+			config ESP_UART_PRIV_STOP_BITS_1
+				bool "1"
+
+			config ESP_UART_PRIV_STOP_BITS_1_5
+				bool "1.5"
+
+			config ESP_UART_PRIV_STOP_BITS_2
+				bool "2"
+		endchoice
+
+		config ESP_UART_STOP_BITS
+			int
+			default 0 if ESP_UART_PRIV_STOP_BITS_1
+			default 1 if ESP_UART_PRIV_STOP_BITS_1_5
+			default 2 if ESP_UART_PRIV_STOP_BITS_2
+
+		config ESP_UART_GPIO_RESET
+			int "Slave GPIO pin to reset itself"
+			default -1
+			help
+				Host uses this pin to reset the slave ESP. To re-use ESP 'RST' or 'EN' GPIO, set value to -1
+
+		config ESP_UART_TX_Q_SIZE
+			int "Tx Queue Size"
+			default 5
+			help
+				Very small RX queue will lower ESP -- UART --> Host data rate
+
+		config ESP_UART_RX_Q_SIZE
+			int "Rx Queue Size"
+			default 5
+			help
+				Very small RX queue will lower ESP <-- UART -- Host data rate
+
+		config ESP_UART_CHECKSUM
+			bool "UART checksum ENABLE/DISABLE"
+			default y
+			help
+				ENABLE/DISABLE software UART checksum
+	endmenu
+
 	config ESP_GPIO_SLAVE_RESET
 		int
 		default ESP_SPI_GPIO_RESET if ESP_SPI_HOST_INTERFACE
 		default ESP_SDIO_GPIO_RESET if ESP_SDIO_HOST_INTERFACE
 		default ESP_SPI_HD_GPIO_RESET if ESP_SPI_HD_HOST_INTERFACE
+		default ESP_UART_GPIO_RESET if ESP_UART_HOST_INTERFACE
 
 	config EXAMPLE_HCI_UART_BAUDRATE
 		int "UART Baudrate for HCI: Only applicable for ESP32-C3/ESP32-S3"

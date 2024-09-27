@@ -32,6 +32,11 @@ menu "ESP-Hosted config"
 			bool "SPI Half-duplex"
 			help
 				Enable/Disable SPI Half-duplex host interface
+
+		config ESP_UART_HOST_INTERFACE
+			bool "UART"
+			help
+				Enable/Disable UART host interface
 	endchoice
 
 	choice ESP_HOSTED_SLAVE_CHIPSET_USED
@@ -39,31 +44,31 @@ menu "ESP-Hosted config"
 		default SLAVE_CHIPSET_ESP32C6
 
 		config SLAVE_CHIPSET_ESP32
-			depends on ESP_SPI_HOST_INTERFACE || ESP_SDIO_HOST_INTERFACE
+			depends on ESP_SPI_HOST_INTERFACE || ESP_SDIO_HOST_INTERFACE || ESP_UART_HOST_INTERFACE
 			bool "Slave as ESP32"
 
 		config SLAVE_CHIPSET_ESP32S2
-			depends on ESP_SPI_HOST_INTERFACE || ESP_SPI_HD_HOST_INTERFACE
+			depends on ESP_SPI_HOST_INTERFACE || ESP_SPI_HD_HOST_INTERFACE || ESP_UART_HOST_INTERFACE
 			bool "Slave as ESP32S2"
 
 		config SLAVE_CHIPSET_ESP32S3
-			depends on ESP_SPI_HOST_INTERFACE || ESP_SPI_HD_HOST_INTERFACE
+			depends on ESP_SPI_HOST_INTERFACE || ESP_SPI_HD_HOST_INTERFACE || ESP_UART_HOST_INTERFACE
 			bool "Slave as ESP32S3"
 
 		config SLAVE_CHIPSET_ESP32C2
-			depends on ESP_SPI_HOST_INTERFACE || ESP_SPI_HD_HOST_INTERFACE
+			depends on ESP_SPI_HOST_INTERFACE || ESP_SPI_HD_HOST_INTERFACE || ESP_UART_HOST_INTERFACE
 			bool "Slave as ESP32C2"
 
 		config SLAVE_CHIPSET_ESP32C3
-			depends on ESP_SPI_HOST_INTERFACE || ESP_SPI_HD_HOST_INTERFACE
+			depends on ESP_SPI_HOST_INTERFACE || ESP_SPI_HD_HOST_INTERFACE || ESP_UART_HOST_INTERFACE
 			bool "Slave as ESP32C3"
 
 		config SLAVE_CHIPSET_ESP32C6
-			depends on ESP_SPI_HOST_INTERFACE || ESP_SDIO_HOST_INTERFACE || ESP_SPI_HD_HOST_INTERFACE
+			depends on ESP_SPI_HOST_INTERFACE || ESP_SDIO_HOST_INTERFACE || ESP_SPI_HD_HOST_INTERFACE || ESP_UART_HOST_INTERFACE
 			bool "Slave as ESP32C6"
 
 		config SLAVE_CHIPSET_ESP32C5
-			depends on ESP_SPI_HOST_INTERFACE || ESP_SPI_HD_HOST_INTERFACE
+			depends on ESP_SPI_HOST_INTERFACE || ESP_SPI_HD_HOST_INTERFACE || ESP_UART_HOST_INTERFACE
 			bool "Slave as ESP32C5"
 	endchoice
 
@@ -664,16 +669,146 @@ ESP32XX_SPI_HD_CLK_FREQ_RANGE_MAX := 40
 					ENABLE/DISABLE software checksum
 	endmenu
 
+	menu "UART Configuration"
+		depends on ESP_UART_HOST_INTERFACE
+
+		choice ESP_UART_RESET_GPIO_CONFIG
+			bool "RESET GPIO Config"
+			default ESP_UART_RESET_ACTIVE_HIGH
+			help
+				"If Active High, High->Low->High will trigger reset (Low will trigger reset)
+				 If Active Low, Low->High->Low will trigger reset (High will trigger reset)"
+
+			config ESP_UART_RESET_ACTIVE_HIGH
+				bool "RESET: Active High"
+			config ESP_UART_RESET_ACTIVE_LOW
+				bool "RESET: Active Low"
+		endchoice
+
+		config ESP_UART_PORT
+			int "UART Port to Use"
+			default 1
+			range 0 2 if IDF_TARGET_ESP32
+			range 0 1 if IDF_TARGET_ESP32C2 || IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32C5 || IDF_TARGET_ESP32C6
+			range 0 2 if IDF_TARGET_ESP32C61
+			range 0 1 if IDF_TARGET_ESP32S2
+			range 0 2 if IDF_TARGET_ESP32S3
+			range 0 4 if IDF_TARGET_ESP32P4
+			help
+				Select UART Port to Use. Do not select the UART Port used for console output (if enabled)
+
+		config ESP_UART_PIN_TX
+			int "TX GPIO number"
+			default 13 if IDF_TARGET_ESP32
+			default 5 if IDF_TARGET_ESP32C2 || IDF_TARGET_ESP32C3
+			default 14 if IDF_TARGET_ESP32C5
+			default 21 if IDF_TARGET_ESP32C6
+			default 5 if IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32S3
+			default 14 if IDF_TARGET_ESP32P4
+			help
+				GPIO used for UART TX
+
+		config ESP_UART_PIN_RX
+			int "RX GPIO number"
+			default 12 if IDF_TARGET_ESP32
+			default 4 if IDF_TARGET_ESP32C2 || IDF_TARGET_ESP32C3
+			default 13 if IDF_TARGET_ESP32C5
+			default 20 if IDF_TARGET_ESP32C6
+			default 4 if IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32S3
+			default 15 if IDF_TARGET_ESP32P4
+			help
+				GPIO used for UART RX
+
+		config ESP_UART_BAUDRATE
+			int "Baud Rate"
+			default 921600
+			range 9600 3500000
+			help
+				Baud Rate to Use. Make sure Hardware supports the rate. Standard rates are 9600, 19200, 38400, 57600, 115200, 460800, 921600
+
+		config ESP_UART_NUM_DATA_BITS
+			int "Number of Data Bits"
+			default 8
+			range 5 8
+			help
+				Number of Data Bits to use
+
+		choice ESP_UART_PRIV_PARITY
+			bool "Parity"
+
+			config ESP_UART_PRIV_PARITY_NONE
+				bool "None"
+
+			config ESP_UART_PRIV_PARITY_EVEN
+				bool "Even"
+
+			config ESP_UART_PRIV_PARITY_ODD
+				bool "Odd"
+		endchoice
+
+		config ESP_UART_PARITY
+			int
+			default 0 if ESP_UART_PRIV_PARITY_NONE
+			default 1 if ESP_UART_PRIV_PARITY_EVEN
+			default 2 if ESP_UART_PRIV_PARITY_ODD
+
+		choice ESP_UART_PRIV_STOP_BITS
+			bool "Number of Stop Bits"
+
+			config ESP_UART_PRIV_STOP_BITS_1
+				bool "1"
+
+			config ESP_UART_PRIV_STOP_BITS_1_5
+				bool "1.5"
+
+			config ESP_UART_PRIV_STOP_BITS_2
+				bool "2"
+		endchoice
+
+		config ESP_UART_STOP_BITS
+			int
+			default 0 if ESP_UART_PRIV_STOP_BITS_1
+			default 1 if ESP_UART_PRIV_STOP_BITS_1_5
+			default 2 if ESP_UART_PRIV_STOP_BITS_2
+
+		config ESP_UART_GPIO_RESET_SLAVE
+			int "GPIO pin for Reseting slave ESP"
+			default 54 if IDF_TARGET_ESP32P4
+			default 42 if IDF_TARGET_ESP32S3
+			default 5
+			help
+				GPIO pin for Resetting ESP SDIO slave device. Should be connected to RST/EN of ESP SDIO slave device.
+
+		config ESP_UART_TX_Q_SIZE
+			int "Tx Queue Size"
+			default 5
+			help
+				Very small RX queue will lower ESP -- UART --> Host data rate
+
+		config ESP_UART_RX_Q_SIZE
+			int "Rx Queue Size"
+			default 5
+			help
+				Very small RX queue will lower ESP <-- UART -- Host data rate
+
+		config ESP_UART_CHECKSUM
+			bool "UART checksum ENABLE/DISABLE"
+			default y
+			help
+				ENABLE/DISABLE software UART checksum
+	endmenu
+
 		config ESP_GPIO_SLAVE_RESET_SLAVE
 			int
 			default ESP_SPI_GPIO_RESET_SLAVE if ESP_SPI_HOST_INTERFACE
 			default ESP_SDIO_GPIO_RESET_SLAVE if ESP_SDIO_HOST_INTERFACE
 			default ESP_SPI_HD_GPIO_RESET_SLAVE if ESP_SPI_HD_HOST_INTERFACE
+			default ESP_UART_GPIO_RESET_SLAVE if ESP_UART_HOST_INTERFACE
 
 		config RESET_GPIO_ACTIVE_LOW
 			bool
-			default n if SDIO_RESET_ACTIVE_HIGH || SPI_RESET_ACTIVE_HIGH || SPI_HD_RESET_ACTIVE_HIGH
-			default y if SDIO_RESET_ACTIVE_LOW || SPI_RESET_ACTIVE_LOW || SPI_HD_RESET_ACTIVE_LOW
+			default n if SDIO_RESET_ACTIVE_HIGH || SPI_RESET_ACTIVE_HIGH || SPI_HD_RESET_ACTIVE_HIGH || ESP_UART_RESET_ACTIVE_HIGH
+			default y if SDIO_RESET_ACTIVE_LOW || SPI_RESET_ACTIVE_LOW || SPI_HD_RESET_ACTIVE_LOW || ESP_UART_RESET_ACTIVE_LOW
 
 	menu "Bluetooth Support"
 
@@ -824,12 +959,22 @@ ESP32XX_SPI_HD_CLK_FREQ_RANGE_MAX := 40
 				Host will throttle incoming data if the slave datapath Rx load goes beyond this threshold
 				0 value will disable this function
 
+		config PRIV_WIFI_TX_UART_HIGH_THRESHOLD
+			depends on HOST_TO_ESP_WIFI_DATA_THROTTLE && ESP_UART_HOST_INTERFACE
+			int "High threshold to report host to drop data when wifi highly loaded"
+			range 0 100
+			default 80
+			help
+				Host will throttle incoming data if the slave datapath Rx load goes beyond this threshold
+				0 value will disable this function
+
 		config TO_WIFI_DATA_THROTTLE_HIGH_THRESHOLD
 			depends on HOST_TO_ESP_WIFI_DATA_THROTTLE
 			int
 			default PRIV_WIFI_TX_SPI_HIGH_THRESHOLD if ESP_SPI_HOST_INTERFACE
 			default PRIV_WIFI_TX_SDIO_HIGH_THRESHOLD if ESP_SDIO_HOST_INTERFACE
 			default PRIV_WIFI_TX_SPI_HD_HIGH_THRESHOLD if ESP_SPI_HD_HOST_INTERFACE
+			default PRIV_WIFI_TX_UART_HIGH_THRESHOLD if ESP_UART_HOST_INTERFACE
 
 		config TO_WIFI_DATA_THROTTLE_LOW_THRESHOLD
 			depends on HOST_TO_ESP_WIFI_DATA_THROTTLE

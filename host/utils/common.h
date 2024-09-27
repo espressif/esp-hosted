@@ -39,6 +39,7 @@ extern "C" {
 /* TODO: SDIO buffers to be set same at both, ESP and host side */
 #define MAX_SDIO_BUFFER_SIZE              1536
 #define MAX_SPI_HD_BUFFER_SIZE            1600
+#define MAX_UART_BUFFER_SIZE              1600
 
 #define MAX_SUPPORTED_SDIO_CLOCK_MHZ      40
 
