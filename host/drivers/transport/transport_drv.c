@@ -393,7 +393,7 @@ static void print_ext_capabilities(uint8_t * ptr)
 	if (cap & ESP_BT_VHCI_UART_SUPPORT)
 		ESP_LOGI(TAG, "\t * BT over UART (VHCI)");
 #else
-	ESP_LOGI(TAG, "\t No extended features");
+	ESP_LOGI(TAG, "\t No extended features. capabilities[%" PRIu32 "]", cap);
 #endif
 }
 
