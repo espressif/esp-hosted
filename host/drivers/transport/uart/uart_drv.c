@@ -370,7 +370,7 @@ static esp_err_t h_uart_push_data_to_queue(uint8_t * buf, uint32_t buf_len)
 	if (update_flow_ctrl(buf)) {
 		// detected and updated flow control
 		// no need to further process the packet
-		HOSTED_FREE(buf);
+		h_uart_buffer_free(buf);
 		return ESP_OK;
 	}
 
@@ -383,12 +383,13 @@ static esp_err_t h_uart_push_data_to_queue(uint8_t * buf, uint32_t buf_len)
 		 * wrong header/bit packing?
 		 * */
 		ESP_LOGE(TAG, "Dropping packet");
-		HOSTED_FREE(buf);
+		h_uart_buffer_free(buf);
 		return ESP_FAIL;
 	}
 
 	if (h_uart_push_pkt_to_queue(buf, len, offset)) {
 		ESP_LOGE(TAG, "Failed to push Rx packet to queue");
+		h_uart_buffer_free(buf);
 		return ESP_FAIL;
 	}
 
@@ -448,7 +449,6 @@ static int process_uart_rx_data(size_t size)
 
 		if (h_uart_push_data_to_queue(rxbuff, expected_pkt_len)) {
 			ESP_LOGE(TAG, "Failed to push data to rx queue");
-			HOSTED_FREE(rxbuff);
 		}
 
 		// clean up the scratch buffer
@@ -490,7 +490,8 @@ static void h_uart_read_task(void const* pvParameters)
 			ESP_LOGE(TAG, "error waiting for uart data");
 			continue;
 		}
-		process_uart_rx_data(rx_len);
+		if (rx_len)
+			process_uart_rx_data(rx_len);
 	}
 }
 

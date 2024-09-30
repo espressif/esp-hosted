@@ -83,6 +83,7 @@ int hosted_wait_rx_data(uint32_t ticks_to_wait)
 			break;
 		case UART_BREAK:
 			ESP_LOGW(TAG, "uart rx break");
+			res = 0;
 			break;
 		case UART_PARITY_ERR:
 			ESP_LOGE(TAG, "uart parity error");
