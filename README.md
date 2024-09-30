@@ -10,8 +10,8 @@ This high-level block diagram shows ESP-Hosted's relationship with the host MCU 
 
 For detailed design diagrams in Wi-Fi and Bluetooth, refer to the following design documents:
 
-- [WiFi Design](docs/wifi_design.md)
-- [Bluetooth Design](docs/bluetooth_design.md)
+- [WiFi Design](https://github.com/espressif/esp-hosted/blob/feature/esp_as_mcu_host/docs/wifi_design.md)
+- [Bluetooth Design](https://github.com/espressif/esp-hosted/blob/feature/esp_as_mcu_host/docs/bluetooth_design.md)
 
 This branch, `feature/esp_as_mcu_host` is dedicated for any host as MCU support. If you are interested in Linux as host, please refer to [`master`](https://github.com/espressif/esp-hosted/blob/master) branch.
 
@@ -48,6 +48,9 @@ This can be any generic microcontroller (MCU). We demonstrate any ESP as host. U
 Impatient to test? We've got you covered!
 The [ESP32-P4-Function-EV-Board](https://www.espressif.com/en/products/socs/esp32-p4) can be used as a host MCU with an on-board [ESP32-C6](https://www.espressif.com/en/products/socs/esp32-c6) as co-processor, already connected via SDIO as transport.
 Prerequisite: You need to have an ESP32-P4-Function-EV-Board`
+
+> [!NOTE]
+> If you have already set up ESP-IDF (version 5.3 or later), you can skip to [5 Source Code and Dependencies](#5-source-code-and-dependencies).
 
 ### 4.1 Set-Up ESP-IDF
 
@@ -99,7 +102,6 @@ ESP-Hosted-MCU Solution is dependent on `ESP-IDF`, `esp_wifi_remote` and `protob
   - [`esp_wifi_remote`](https://components.espressif.com/components/espressif/esp_wifi_remote) i.e. 'Wi-Fi Remote' is very thin interface made up of ESP-IDF Wi-Fi APIs with empty weak definitions. Real definitions for these APIs are provided by ESP-Hosted-MCU
   - Wi-Fi Remote Code can be found at either [GitHub Repo](https://github.com/espressif/esp-protocols/tree/master/components/esp_wifi_remote) or [Espressif Registry Component](https://components.espressif.com/components/espressif/esp_wifi_remote)
 
-
 ###### Protobuf
   - [`protobuf-c`](https://github.com/protobuf-c/protobuf-c) is data serialization framework provided by Google. RPC messages communicated in host and slave are protobuf encoded.
   - It helps to avoid manual serialization or endien-ness conversion.
@@ -118,7 +120,6 @@ ESP-Hosted-MCU Solution is dependent on `ESP-IDF`, `esp_wifi_remote` and `protob
   - Asynchronous Wi-Fi events when subscribed, are sent by slave to host.
   - These events terminate in standard ESP-IDF event loop on the host
 - Please note, Only RPC i.e. control packets are serialised. Data Packets are never serialised as they do not need endien conversion.
-
 
 ## 6 Decide the communication bus in between host and slave
 
@@ -218,7 +219,7 @@ Once you decided the transport to use, this section should guide how to set this
 
 > [!IMPORTANT]
 >
-> [Design Considerations](docs/design_consideration.md) that could be reffered to, before you stick to any transport option. Referring to these consideration would help to get you faster to solution, make your design stable and less error-prone.
+> [Design Considerations](https://github.com/espressif/esp-hosted/blob/feature/esp_as_mcu_host/docs/design_consideration.md) that could be reffered to, before you stick to any transport option. Referring to these consideration would help to get you faster to solution, make your design stable and less error-prone.
 
 
 Irrespective of transport chosen, following steps are needed, which are step-wise explained in each transport.
@@ -235,16 +236,16 @@ Irrespective of transport chosen, following steps are needed, which are step-wis
   - Host flashing
   - Host logs
 
-- [**Standard SPI (Full duplex)**](docs/spi_full_duplex.md)
+- [**Standard SPI (Full duplex)**](https://github.com/espressif/esp-hosted/blob/feature/esp_as_mcu_host/docs/spi_full_duplex.md)
 
-- [**SPI - Dual / Quad Half Duplex**](docs/spi_half_duplex.md)
+- [**SPI - Dual / Quad Half Duplex**](https://github.com/espressif/esp-hosted/blob/feature/esp_as_mcu_host/docs/spi_half_duplex.md)
 
-- [**SDIO (1-Bit / 4-Bit)**](docs/sdio.md)
+- [**SDIO (1-Bit / 4-Bit)**](https://github.com/espressif/esp-hosted/blob/feature/esp_as_mcu_host/docs/sdio.md)
 
-- [**UART for Wi-Fi and Bluetooth**](docs/uart.md)
+- [**UART for Wi-Fi and Bluetooth**](https://github.com/espressif/esp-hosted/blob/feature/esp_as_mcu_host/docs/uart.md)
 
 ## 9 Examples
-Check [examples](./examples) directory for sample applications using ESP-Hosted.
+Check [examples](https://github.com/espressif/esp-hosted/blob/feature/esp_as_mcu_host/examples) directory for sample applications using ESP-Hosted.
  - `examples/bleprph_host_only_vhci`
    - Bluetooth without needing extra GPIOs
 
@@ -252,7 +253,7 @@ Check [examples](./examples) directory for sample applications using ESP-Hosted.
 
 If you encounter issues with using ESP-Hosted, see the following guide:
 
-- [Troubleshooting Guide](docs/troubleshooting.md)
+- [Troubleshooting Guide](https://github.com/espressif/esp-hosted/blob/feature/esp_as_mcu_host/docs/troubleshooting.md)
 
 ## 11 References
 
@@ -264,4 +265,3 @@ If you encounter issues with using ESP-Hosted, see the following guide:
 - [ESP Component Registry](https://components.espressif.com)
 - [Registry Component: esp\_wifi\_remote](https://components.espressif.com/components/espressif/esp_wifi_remote)
 - [Registry Component: esp\_hosted](https://components.espressif.com/components/espressif/esp_hosted)
-
