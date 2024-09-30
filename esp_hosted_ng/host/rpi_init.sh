@@ -55,6 +55,11 @@ wlan_init()
     # make -j8 target=$IF_TYPE CROSS_COMPILE=/usr/bin/arm-linux-gnueabihf- KERNEL="/lib/modules/$(uname -r)/build" \
     # ARCH=arm64
 
+    if [ "$AP_SUPPORT" = "1" ]; then
+        echo "Setting CONFIG_AP_SUPPORT to y"
+        CUSTOM_OPTS="${CUSTOM_OPTS} CONFIG_AP_SUPPORT=y"
+    fi
+
     # Populate your arch if not populated correctly.
     arch_num_bits=$(getconf LONG_BIT)
     if [ "$arch_num_bits" = "32" ] ; then arch_found="arm"; else arch_found="arm64"; fi
@@ -90,30 +95,33 @@ bt_init()
 
 usage()
 {
-    echo "This script prepares RPI for wlan and bt/ble operation over esp32 device"
+    echo "This script prepares RPI for WLAN and BT/BLE operation over ESP32 device."
     echo "\nUsage: ./rpi_init.sh [arguments]"
-    echo "\nArguments are optional and are as below"
-    echo "  spi:    sets ESP32<->RPi communication over SPI"
-    echo "  sdio:   sets ESP32<->RPi communication over SDIO"
-    echo "  btuart: Set GPIO pins on RPi for HCI UART operations with TX, RX, CTS, RTS (defaulted to option btuart_4pins)"
-    echo "  btuart_2pins: Set GPIO pins on RPi for HCI UART operations with only TX & RX pins configured (only for ESP32-C2/C6)"
-    echo "  resetpin=6:     Set GPIO pins on RPi connected to EN pin of ESP32, used to reset ESP32 (default:6 for BCM6)"
+    echo "\nArguments are optional and are as below:"
+    echo "  spi:           sets ESP32<->RPI communication over SPI"
+    echo "  sdio:          sets ESP32<->RPI communication over SDIO"
+    echo "  btuart:        Set GPIO pins on RPI for HCI UART operations with TX, RX, CTS, RTS (defaulted to option btuart_4pins)"
+    echo "  btuart_2pins:  Set GPIO pins on RPI for HCI UART operations with only TX & RX pins configured (only for ESP32-C2/C6)"
+    echo "  resetpin=6:   Set GPIO pins on RPI connected to EN pin of ESP32, used to reset ESP32 (default: 6 for BCM6)"
+    echo "  ap_support:     Enable access point support"
     echo "\nExample:"
-    echo "  - Prepare RPi for WLAN operation on SDIO. sdio is default if no interface mentioned"
-    echo "   # ./rpi_init.sh or ./rpi_init.sh sdio"
-    echo "\n  - Use spi for host<->ESP32 communication. sdio is default if no interface mentioned"
-    echo "   # ./rpi_init.sh spi"
-    echo "\n  - Prepare RPi for bt/ble operation over UART and WLAN over SDIO/SPI"
-    echo "   # ./rpi_init.sh sdio btuart or ./rpi_init.sh spi btuart"
-    echo "\n  - use GPIO pin BCM5 (GPIO29) for reset"
-    echo "   # ./rpi_init.sh resetpin=5"
-    echo "\n  - do btuart, use GPIO pin BCM5 (GPIO29) for reset over SDIO/SPI"
-    echo "   # ./rpi_init.sh sdio btuart resetpin=5 or ./rpi_init.sh spi btuart resetpin=5"
+    echo "  - Prepare RPi for WLAN operation on SDIO. SDIO is default if no interface mentioned."
+    echo "    # ./rpi_init.sh or ./rpi_init.sh sdio"
+    echo "\n  - Use SPI for host<->ESP32 communication. SDIO is default if no interface mentioned."
+    echo "    # ./rpi_init.sh spi"
+    echo "\n  - Prepare RPi for BT/BLE operation over UART and WLAN over SDIO/SPI."
+    echo "    # ./rpi_init.sh sdio btuart or ./rpi_init.sh spi btuart"
+    echo "\n  - Use GPIO pin BCM5 (GPIO29) for reset."
+    echo "    # ./rpi_init.sh resetpin=5"
+    echo "\n  - Enable access point support."
+    echo "    # ./rpi_init.sh <transport> ap_support"
+    echo "\n  - Do btuart, using GPIO pin BCM5 (GPIO29) for reset over SDIO/SPI."
+    echo "    # ./rpi_init.sh sdio btuart resetpin=5 or ./rpi_init.sh spi btuart resetpin=5"
 }
 
 parse_arguments()
 {
-    while [ "$1" != "" ] ; do
+    while [ "$1" != "" ]; do
         case $1 in
             --help | -h )
                 usage
@@ -126,7 +134,7 @@ parse_arguments()
                 IF_TYPE=$1
                 ;;
             resetpin=*)
-                echo "Recvd Option: $1"
+                echo "Received Option: $1"
                 RESETPIN=$1
                 ;;
             btuart | btuart_4pins | btuart_4pin)
@@ -145,12 +153,16 @@ parse_arguments()
                 echo "Test RAW TP ESP to HOST"
                 RAW_TP_MODE="2"
                 ;;
+            ap_support)
+                echo "Enabling AP support"
+                AP_SUPPORT="1"
+                ;;
             *)
                 echo "$1 : unknown option"
                 usage
                 exit 1
                 ;;
-                esac
+        esac
         shift
     done
 }

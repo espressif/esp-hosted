@@ -10,9 +10,13 @@
 - [3. Get Started](#3-get-started)
   * [3.1 User Guide](#31-user-guide)
     + [3.1.1 Wi-Fi](#311-wi-fi)
-      - [**Scanning**](#scanning)
-      - [**Connect to AP**](#connect-to-ap)
-      - [**Disconnect from AP**](#disconnect-from-ap)
+      - [**Interface as station**](#station)
+        - [**Scanning**](#scanning)
+        - [**Connect to AP**](#connect-to-ap)
+        - [**Disconnect from AP**](#disconnect-from-ap)
+      - [**Interface as AP**](#access_point)
+        - [**Configuring AP with hostapd**](#configuring_ap_with_hostapd)
+        - [**Setting up DHCP and DNS**](#setting_up_dhcp_and_dns)
     + [3.1.2 Bluetooth/BLE](#312-bluetoothble)
 - [4. Design](#4-design)
     + [4.1 System Architecture](#41-system-architecture)
@@ -28,7 +32,7 @@
 
 # 1. Introduction
 
-This is a Next-Generation ESP-Hosted specifically designed for a sophisticated hosts that run Linux operating system. This flavour of the solution takes more standard approach while providing a network interface to the host. User space applications such as wpa_supplicant, iw etc, can be used with this interface.
+This is a Next-Generation ESP-Hosted specifically designed for a sophisticated hosts that run Linux operating system. This flavour of the solution takes more standard approach while providing a network interface to the host. User space applications such as hostapd, wpa_supplicant, iw etc, can be used with this interface.
 
 This solution offers following:
 
@@ -66,9 +70,9 @@ Looking for other chipset? Please do check [Coming Soon](#5-coming-soon) section
 ### 1.3 Supported Hosts
 
 - ESP-Hosted-NG solution showcase examples for following Linux based hosts out of the box.
-	- Raspberry-Pi 3 Model B
-	- Raspberry-Pi 3 Model B+
-	- Raspberry-Pi 4 Model B
+  - Raspberry-Pi 3 Model B
+  - Raspberry-Pi 3 Model B+
+  - Raspberry-Pi 4 Model B
 - This solution is aimed for Linux based hosts only. For microcontroller(MCU) based hosts (like STM32 etc), [ESP-Hosted-FG](../esp_hosted_fg) flavour should be used.
 - Although we try to help in porting, We expect users to get the transport interfaces like SDIO/SPI/UART configured on your Linux platform. Device tree configuration and device drivers could be some times tricky as every Linux platform has it different.
 - It is relatively easy to port this solution to other Linux based platforms. Please refer [Porting Guide](docs/porting_guide.md) for the common steps.
@@ -232,9 +236,14 @@ This section explains how to setup and use Wi-Fi and BT/BLE. This section assume
 
 ### 3.1.1 Wi-Fi
 
-User space tool such as wpa_supplicant/iw is used to setup Wi-Fi.
+User space tool such as hostapd/wpa_supplicant/iw is used to setup Wi-Fi.
 
-Following operations supported as of now:
+`wlan0` interface can be used either as `Station(sta)` or `Access Point(AP)`.
+
+> wlan0 can't function as both an AP (Access Point) and a Station at the same time, and there are no current plans to add that capability
+
+##### Station
+Following operations for station are supported as of now:
 
 * Scanning
 * Connect to AP
@@ -484,12 +493,109 @@ Following operations supported as of now:
   ```sh
   $ iwconfig wlan0
   ```
+##### Access Point
 
+#### Following operations for softAP are supported as of now:
+
+hostapd (Host Access Point Daemon) is a user-space daemon that enables a Linux-based machine to act as a wireless access point. When combined with dnsmasq, a lightweight DHCP and DNS server, it provides a complete solution for managing Wi-Fi networks, including IP address assignment and name resolution.
+
+> make sure you have enabled `ap_supprt` with rpi_init.sh to user interface as Acess point. Read [Hardware and Software Setup](docs/setup.md)
+
+Supported Operations
+
+- Configuring the AP with hostapd
+- Managing connections (connect/disconnect)
+- Setting up DHCP and DNS with dnsmasq
+
+##### Configuring AP with hostapd
+- Create a Configuration File for hostapd
+```sh
+$ nano ~/hostapd.conf
+```
+
+- Here’s a sample configuration:
+```sh
+interface=wlan0
+driver=nl80211
+ssid=MY_SSID
+hw_mode=g
+channel=6
+wmm_enabled=0
+macaddr_acl=0
+auth_algs=1
+ignore_broadcast_ssid=0
+wpa=2
+wpa_key_mgmt=SAE
+wpa_passphrase=MY_PASSPHRASE
+rsn_pairwise=CCMP
+``` 
+>  Change `MY_SSID` to AP's SSID and `MY_PASSPHRASE` to Passphrase to connect
+> Security can configured by keeping the values of `wpa_key_mgmt` to `SAE/WPA-PSK`.
+###### Start hostapd
+
+To start the access point, run:
+```sh
+    $ sudo hostapd ~/hostapd.conf
+```
+
+##### Setting up DHCP and DNS
+
+To set up DHCP and DNS with dnsmasq, follow these steps:
+- Installation
+
+If dnsmasq is not already installed, you can install it using:
+
+
+```sh
+$ sudo apt-get install dnsmasq
+```
+
+- Configuration
+
+Create a Configuration File for dnsmasq
+Edit or create the dnsmasq configuration file:
+
+```sh
+$ sudo nano /etc/dnsmasq.conf
+```
+
+Sample configuration:
+
+```sh
+interface=wlan0          # Use the wireless interface
+dhcp-range=192.168.1.2,192.168.1.100,255.255.255.0,24h  # DHCP range
+domain-needed             # Don't forward short names
+bogus-priv                # Never forward addresses in the non-routed address spaces
+expand-hosts              # Use the expanded hostname
+```
+> Adjust the dhcp-range to fit your network needs.
+
+Restart dnsmasq
+
+After saving the configuration, restart the dnsmasq service:
+
+```sh
+    $ sudo systemctl restart dnsmasq
+```
+
+###### Assign an IP Address
+
+With dnsmasq running, clients will automatically receive an IP address when they connect.
+
+###### Test Connectivity
+
+Test the connection to ensure it is working:
+```sh
+    $ ping <ip address of station>
+```
+
+This documentation provides a comprehensive guide for setting up hostapd and dnsmasq to create a wireless access point with DHCP and DNS capabilities. Adjust configurations as necessary for your network environment.
 ### 3.1.2 Bluetooth/BLE
 
 * Refer [Bluetooth/BLE Guide](docs/bluetooth.md) which explains how one can setup and use Bluetooth/BLE.
 ---
 
+Following operations for station are supported as of now:
 # 4. Design
 
 ### 4.1 System Architecture
@@ -628,7 +734,7 @@ Tremendous work to be done ahead! Below is glimpse of upcoming release:
 ---
 
 - Functionality
-	- cfg802.11 support for ESP as SoftAP
+	- esp32c5 support
 
 ---
 

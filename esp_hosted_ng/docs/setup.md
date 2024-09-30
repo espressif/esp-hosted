@@ -148,8 +148,9 @@ Make sure that host machine is equipped with following:
         * Execute following commands in root directory of cloned ESP-Hosted repository on Raspberry-Pi
             ```sh
             $ cd esp_hosted/esp_hosted_ng/host/
-            $ bash rpi_init.sh spi
+            $ bash rpi_init.sh spi <ap_support>
             ```
+         - add `ap_support` if you want to use interface as access point.
         * This script compiles and loads host driver on Raspberry-Pi. It also creates network interface `wlanX` which is used as a control interface for Wi-Fi on ESP peripheral
 
     * For esp firmware if you are using [ESP Quick start guide](#12-esp-quick-start-guide)
@@ -236,8 +237,9 @@ Make sure that host machine is equipped with following:
         * Execute following commands in root directory of cloned ESP-Hosted repository on Raspberry-Pi
             ```sh
             $ cd esp_hosted/esp_hosted_ng/host/
-            $ bash rpi_init.sh sdio
+            $ bash rpi_init.sh sdio <ap_support>
             ```
+        - add `ap_support` if you want to use interface as access point.
         * This script compiles and loads host driver on Raspberry-Pi. It also creates network interface `wlanX` which is used for Wi-Fi in host.
 
     * For esp firmware if you are using [ESP Quick start guide](#12-esp-quick-start-guide)
@@ -348,13 +350,14 @@ Make sure that host machine is equipped with following:
         * Execute following commands in root directory of cloned ESP-Hosted repository on Raspberry-Pi
             ```sh
             $ cd esp_hosted/esp_hosted_ng/host/
-            $ bash rpi_init.sh <transport> <bt_over_uart>
+            $ bash rpi_init.sh <transport> <bt_over_uart> <ap_support>
             ```
         - `transport` can take value `sdio` or `spi`. Defaults to `sdio`
         - `bt_over_uart` can take value `btuart` or `btuart_2pins`.
-	    - :warning: Note:
-	    - For ESP32-C2, 2 pin UART (TX & RX only) is supported. So `btuart_2pins` should be used for ESP32-C2.
-		- For other chipsets, `btuart` should be used, where 4 pin UART (TX, RX, CTS, RTS) is used.
+        - add `ap_support` if you want to use interface as access point.
+        - :warning: Note:
+        - For ESP32-C2, 2 pin UART (TX & RX only) is supported. So `btuart_2pins` should be used for ESP32-C2.
+        - For other chipsets, `btuart` should be used, where 4 pin UART (TX, RX, CTS, RTS) is used.
     * For esp firmware if you are using [ESP Quick start guide](#12-esp-quick-start-guide)
         * Please flash the required binaries using with command mentioned in `flashing_cmd.txt` within desired transport configuration folder as explained in [ESP Quick start guide](#12-esp-quick-start-guide).  
         * Use minicom or any similar terminal emulator with baud rate 115200 to fetch esp side logs on UART
