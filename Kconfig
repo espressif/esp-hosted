@@ -1,7 +1,6 @@
 config ESP_HOSTED_ENABLED
 	bool
-	default y if ESP_WIFI_REMOTE_ENABLED
-	default y if !SOC_WIFI_SUPPORTED
+	default y if ESP_WIFI_REMOTE_ENABLED && ESP_WIFI_REMOTE_LIBRARY_HOSTED
 	default n
 
 menu "ESP-Hosted config"
