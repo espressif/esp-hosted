@@ -1,6 +1,4 @@
-if(CONFIG_SOC_WIFI_SUPPORTED)
-	message(STATUS "Not using Hosted Wi-Fi")
-else()
+if(CONFIG_ESP_HOSTED_ENABLED)
 	message(STATUS "Using Hosted Wi-Fi")
 	set(FG_root_dir ".")
 	set(host_dir "${FG_root_dir}/host")
@@ -66,7 +64,9 @@ if(CONFIG_ESP_SDIO_HOST_INTERFACE)
 	idf_component_optional_requires(PRIVATE sdmmc)
 endif()
 
-if(CONFIG_IDF_TARGET_ESP32P4 AND (CONFIG_ESP_SPI_HOST_INTERFACE OR CONFIG_ESP_SPI_HD_HOST_INTERFACE))
-	# used to workaround SPI transfer issue
-	idf_component_optional_requires(PRIVATE esp_mm)
-endif()
+# Required if using ESP-IDF without commit 6b6065de509b5de39e4655fd425bf96f43b365f7:
+# fix(driver_spi): fix p4 cache auto writeback during spi(dma) rx
+# if(CONFIG_IDF_TARGET_ESP32P4 AND (CONFIG_ESP_SPI_HOST_INTERFACE OR CONFIG_ESP_SPI_HD_HOST_INTERFACE))
+# 	# used to workaround SPI transfer issue
+# 	idf_component_optional_requires(PRIVATE esp_mm)
+# endif()
