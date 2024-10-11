@@ -15,7 +15,8 @@
   - [OTA Updates](#52-ota-updates)
 - [Troubleshooting](#6-troubleshooting)
 - [Flashing the On-board ESP32-P4 through the ESP-Prog](#7-flashing-esp32-p4)
-- [References](#8-references)
+- [Testing ESP-Hosted with SPI-FD with other MCUs](#8-testing-esp-hosted-with-spi-fd-with-other-mcus)
+- [References](#9-references)
 
 </details>
 
@@ -307,8 +308,6 @@ output):
 idf.py -p <Serial Port> flash monitor
 ```
 
-
-
 ## 6. Troubleshooting
 
 If you encounter issues with using ESP-Hosted, see the following guide:
@@ -358,7 +357,23 @@ on the board.
 
 </details>
 
-## 8. References
+## 8. Testing ESP-Hosted with SPI-FD with other MCUs
+
+You can use SPI-FD (Full Duplex) on the ESP32-P4 to test ESP-Hosted with other ESP32s. Do this by connecting the ESP32 to the P4 through the J1 GPIO header on the ESP32-P4 DevKit.
+
+Use GPIOs 36 or lower on the P4 DevKit to avoid LDO power issues with high numbered GPIOs. Here is one combination on GPIOs that can be used on the P4:
+
+| Function   | GPIO |
+|------------|------|
+| MOSI       | 4    |
+| MISO       | 5    |
+| CLK        | 26   |
+| CS         | 6    |
+| Handshake  | 20   |
+| Data Ready | 36   |
+| Reset      | 2    |
+
+## 9. References
 
 - ESP32-P4-Function-EV-Board: https://docs.espressif.com/projects/esp-dev-kits/en/latest/esp32p4/esp32-p4-function-ev-board/
 - ESP-Prog: https://docs.espressif.com/projects/esp-iot-solution/en/latest/hw-reference/ESP-Prog_guide.html
