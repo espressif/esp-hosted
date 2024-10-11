@@ -33,11 +33,14 @@
 #endif
 
 #ifdef CONFIG_IDF_TARGET_ESP32P4
-#include "esp_cache.h"
 /* Enable workaround if got SPI Read Errors on ESP32-P4 due to caching */
 #define SPI_WORKAROUND (0)
 #else
 #define SPI_WORKAROUND (0)
+#endif
+
+#if SPI_WORKAROUND
+#include "esp_cache.h"
 #endif
 
 /* SPI_WORKAROUND requires DMA Aligned Buffers to be used */
