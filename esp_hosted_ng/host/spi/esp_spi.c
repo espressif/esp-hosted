@@ -581,7 +581,8 @@ static void cleanup_spi_gpio(void)
 static void spi_exit(void)
 {
 	uint8_t prio_q_idx = 0;
-	atomic_set(&spi_context.adapter->state, ESP_CONTEXT_DISABLED);
+	if (spi_context.adapter)
+		atomic_set(&spi_context.adapter->state, ESP_CONTEXT_DISABLED);
 
 	if (test_bit(ESP_SPI_GPIO_HS_IRQ_DONE, &spi_context.spi_flags)) {
 		disable_irq(SPI_IRQ);
@@ -600,7 +601,7 @@ static void spi_exit(void)
 	}
 
 	if (spi_context.spi_workqueue) {
-		flush_scheduled_work();
+		flush_workqueue(spi_context.spi_workqueue);
 		destroy_workqueue(spi_context.spi_workqueue);
 		spi_context.spi_workqueue = NULL;
 	}
@@ -609,7 +610,7 @@ static void spi_exit(void)
 
 	cleanup_spi_gpio();
 
-	if (spi_context.adapter->hcidev)
+	if (spi_context.adapter && spi_context.adapter->hcidev)
 		esp_deinit_bt(spi_context.adapter);
 
 	spi_context.adapter->dev = NULL;

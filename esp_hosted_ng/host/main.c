@@ -1043,6 +1043,7 @@ static int __init esp_init(void)
 
 	if (ret != 0) {
 		deinit_adapter();
+		return ret;
 	}
 
 	ret = debugfs_init();
