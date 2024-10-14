@@ -106,15 +106,21 @@ Using the pins already assigned to SPI signals (dedicated `IO_MUX` pins) is reco
 The following table shows the mapping between the SPI bus signals and
 their SPI HD Function:
 
-| SPI Bus Signal | SPI HD Function |
-| :------------- | :-------------- |
-| SPID           | Data Bit 0      |
-| SPIQ           | Data Bit 1      |
-| SPIWP          | Data Bit 2      |
-| SPIHD          | Data Bit 3      |
-| SPICLK         | Clk             |
+| SPI Bus Signal | SPI HD Function | Applicable      |
+| :-------------: | :--------------: | :--------------: |
+| SPI_CS         | Chip Select     | Dual, Quad SPI |
+| SPICLK         | Clock           | Dual, Quad SPI |
+| SPID           | Data Bit 0      | Dual, Quad SPI |
+| SPIQ           | Data Bit 1      | Dual, Quad SPI |
+| SPIWP          | Data Bit 2      | Quad SPI        |
+| SPIHD          | Data Bit 3      | Quad SPI        |
+| Data_Ready     | Extra GPIO\*    | Dual, Quad SPI |
+| Reset          | Extra GPIO\*    | Dual, Quad SPI |
 
-The SPI HD CS signal and `Data_Ready` can be assigned to any GPIO pin on the host and co-processor.
+- Extra GPIOs `Data_Ready`, `Reset` are explained above in [3.3 Extra GPIO Signals](#33-extra-gpio-signals)
+- The `SPI HD CS signal`, `Data_Ready` and `Reset` can be assigned to any GPIO pin on the host and co-processor.
+- By default, the SPI bus would idle (no CS, no clock, no data) when no transaction needed from either side, co-processor or host.
+- `Data_Ready` could be made optional with some code changes, but it would mean that the SPI bus would not be idled out when no transaction needed. This would be lower number of GPIOs used, but the power consumption would be higher. We are adding this feature soon.
 
 ## 4 SPI HD Protocol
 
@@ -139,7 +145,7 @@ When communicating with the co-processor, the master uses the Command, Address, 
 Hosted uses the following SPI HD commands when communicating with the co-processor:
 
 | Command | OpCode | Purpose                                         |
-| :---    | :---   | :---                                            |
+| :---:    | :---:   | :---                                            |
 | WRBUF   | 0x01   | Write to a 32-bit buffer register on the co-processor  |
 | RDBUF   | 0x02   | Read from a 32-bit buffer register on the co-processor |
 | WRDMA   | 0x03   | Write data to the co-processor using DMA               |
@@ -153,7 +159,7 @@ Hosted uses the following SPI HD commands when communicating with the co-process
 The Commands are masked with a command mask to tell the co-processor the correct number of data lines to use during the transaction (2 or 4 data lines). Hosted uses the following masks, which are bit ORed with the command during a SPI transactions:
 
 | Mode   | Mask |
-| :---   | :--- |
+| :---:   | :---: |
 | 2-bits | 0x50 |
 | 4-bits | 0xA0 |
 
@@ -171,7 +177,7 @@ The Command Mask determines the number of data lines used for the transaction. E
 The ESP SPI Co-processor HD Mode Protocol defines a number of registers on the co-processor. These registers are used in Hosted as follows:
 
 | Register | Name              | Purpose                                       |
-| :---     | :---              | :---                                          |
+| :---:     | :---:              | :---                                          |
 | 0x00     | COPROCESSOR\_READY      | Indicates if co-processor is ready                   |
 | 0x04     | MAX\_TX\_BUF\_LEN | Maximum length of DMA data co-processor can transmit |
 | 0x08     | MAX\_RX\_BUF\_LEN | Maximum length of DMA data co-processor can receive  |
@@ -389,18 +395,17 @@ Before flashing the co-processor and host, ensure that you have made the correct
 
 
 ### Host connections
-| Signal     | ESP32-S3 | ESP32-P4-Function-EV-Board |
-|------------|-------------|----------|
-| CLK        | 19          | 18       |
-| D0         | 13          | 14       |
-| D1         | 35          | 15       |
-| D2         | 20          | 16       |
-| D3         | 9           | 17       |
-| CS         | 47          | 19       |
-| Handshake  | 17          | 16       |
-| Data Ready | 12          | 6        |
-| Reset Out  | 42          | 54       |
-| GND        | GND         | GND      |
+| Signal     | ESP32-S3 | ESP32-P4-Function-EV-Board | Applicable     |
+| :--------: | :------: | :------------------------: | :------------: |
+| CLK        | 19       | 18                         | Dual, Quad SPI |
+| D0         | 13       | 14                         | Dual, Quad SPI |
+| D1         | 35       | 15                         | Dual, Quad SPI |
+| CS         | 47       | 19                         | Dual, Quad SPI |
+| Data Ready | 12       | 6                          | Dual, Quad SPI |
+| Reset Out  | 42       | 54                         | Dual, Quad SPI |
+| GND        | GND      | GND                        | Dual, Quad SPI |
+| D2         | 20       | 16                         | Quad SPI only  |
+| D3         | 9        | 17                         | Quad SPI only  |
 
 - Host GPIOs can be re-configured to any other GPIOs, while co-processor configuration is done.
   - Make sure the configuration and hardware connections match.
@@ -415,17 +420,17 @@ Before flashing the co-processor and host, ensure that you have made the correct
 
 ### Co-processor connections
 
-| Signal     | ESP32-C6 on ESP32-P4-Function-EV-Board | ESP32-C2/C3/C6 | ESP32-C5 |
-|-------------|---------------------------------------|----------|----------|
-| CLK         | 19                                    | 6        | 6        |
-| D0          | 20                                    | 7        | 7        |
-| D1          | 21                                    | 2        | 2        |
-| D2          | 22                                    | 5        | 5        |
-| D3          | 23                                    | 4        | 4        |
-| CS          | 18                                    | 10       | 10       |
-| Data Ready  | 2                                     | 0        | 13       |
-| Reset In    | EN/RST                                | EN/RST   | EN/RST   |
-| GND         | GND                                   | GND      | GND      |
+| Signal     | ESP32-C6 on ESP32-P4-Function-EV-Board | ESP32-C2/C3/C6 | ESP32-C5 | Applicable     |
+| :---------: | :-----------------------------------: | :------------: | :------: | :------------: |
+| CLK         | 19                                    | 6              | 6        | Dual, Quad SPI |
+| D0          | 20                                    | 7              | 7        | Dual, Quad SPI |
+| D1          | 21                                    | 2              | 2        | Dual, Quad SPI |
+| CS          | 18                                    | 10             | 10       | Dual, Quad SPI |
+| Data Ready  | 2                                     | 0              | 13       | Dual, Quad SPI |
+| Reset In    | EN/RST                                | EN/RST         | EN/RST   | Dual, Quad SPI |
+| GND         | GND                                   | GND      | GND      | Dual, Quad SPI |
+| D2          | 22                                    | 5        | 5        | Quad SPI only |
+| D3          | 23                                    | 4        | 4        | Quad SPI only |
 
 - Co-processor GPIOs can be re-configured to any other GPIOs, while co-processor configuration is done.
   - Make sure the configuration and hardware connections match.
@@ -782,7 +787,7 @@ After flashing both the co-processor and host devices, follow these steps to con
    Once connected, you can run iperf tests:
 
    | Test Case | Host Command | External STA Command |
-   |-----------|--------------|----------------------|
+   | :-------: | :----------: | :------------------: |
    | UDP Host TX | `iperf -u -c <STA_IP> -t 60 -i 3` | `iperf -u -s -i 3` |
    | UDP Host RX | `iperf -u -s -i 3` | `iperf -u -c <HOST_IP> -t 60 -i 3` |
    | TCP Host TX | `iperf -c <STA_IP> -t 60 -i 3` | `iperf -s -i 3` |
