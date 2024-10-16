@@ -23,6 +23,7 @@
 #define TX_RESUME_THRESHOLD     (TX_MAX_PENDING_COUNT/5)
 
 extern u32 raw_tp_mode;
+uint8_t g_spi_mode = SPI_MODE_2;
 static struct sk_buff *read_packet(struct esp_adapter *adapter);
 static int write_packet(struct esp_adapter *adapter, struct sk_buff *skb);
 static void spi_exit(void);
@@ -420,11 +421,12 @@ static int spi_dev_init(int spi_clk_mhz)
 	struct spi_master *master = NULL;
 
 	strscpy(esp_board.modalias, "esp_spi", sizeof(esp_board.modalias));
-	esp_board.mode = SPI_MODE_2;
+	esp_board.mode = g_spi_mode;
 	esp_board.max_speed_hz = spi_clk_mhz * NUMBER_1M;
 	esp_board.bus_num = 0;
 	esp_board.chip_select = 0;
 
+	esp_info("Using SPI MODE %d\n",g_spi_mode);
 	master = spi_busnum_to_master(esp_board.bus_num);
 	if (!master) {
 		esp_err("Failed to obtain SPI master handle\n");
@@ -581,7 +583,8 @@ static void cleanup_spi_gpio(void)
 static void spi_exit(void)
 {
 	uint8_t prio_q_idx = 0;
-	atomic_set(&spi_context.adapter->state, ESP_CONTEXT_DISABLED);
+	if (spi_context.adapter)
+		atomic_set(&spi_context.adapter->state, ESP_CONTEXT_DISABLED);
 
 	if (test_bit(ESP_SPI_GPIO_HS_IRQ_DONE, &spi_context.spi_flags)) {
 		disable_irq(SPI_IRQ);
@@ -600,7 +603,7 @@ static void spi_exit(void)
 	}
 
 	if (spi_context.spi_workqueue) {
-		flush_scheduled_work();
+		flush_workqueue(spi_context.spi_workqueue);
 		destroy_workqueue(spi_context.spi_workqueue);
 		spi_context.spi_workqueue = NULL;
 	}
@@ -609,7 +612,7 @@ static void spi_exit(void)
 
 	cleanup_spi_gpio();
 
-	if (spi_context.adapter->hcidev)
+	if (spi_context.adapter && spi_context.adapter->hcidev)
 		esp_deinit_bt(spi_context.adapter);
 
 	spi_context.adapter->dev = NULL;
