@@ -43,6 +43,8 @@ static const char TAG[] = "FW_SPI";
 #define MAKE_SPI_DMA_ALIGNED(VAL)  (VAL += SPI_DMA_ALIGNMENT_BYTES - \
 				((VAL)& SPI_DMA_ALIGNMENT_MASK))
 
+uint8_t g_spi_mode = SPI_MODE_2;
+
 /* Chipset specific configurations */
 #ifdef CONFIG_IDF_TARGET_ESP32
 
@@ -510,9 +512,10 @@ static interface_handle_t * esp_spi_init(void)
 #endif
 	};
 
+	ESP_LOGI(TAG,"Using SPI MODE %d",g_spi_mode);
 	/* Configuration for the SPI slave interface */
 	spi_slave_interface_config_t slvcfg={
-		.mode=SPI_MODE_2,
+		.mode=g_spi_mode,
 		.spics_io_num=GPIO_CS,
 		.queue_size=SPI_QUEUE_SIZE,
 		.flags=0,
