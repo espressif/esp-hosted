@@ -391,35 +391,27 @@ static void process_priv_communication(struct sk_buff *skb)
 	u8 *payload;
 	u16 len;
 
-	if (!skb)
-		return;
-
-	if (!skb->data) {
-		dev_kfree_skb_any(skb);
-		return;
-	}
-
 	header = (struct esp_payload_header *) skb->data;
-
 	payload = skb->data + le16_to_cpu(header->offset);
 	len = le16_to_cpu(header->len);
 
 	if (header->priv_pkt_type == ESP_PACKET_TYPE_EVENT) {
 		process_event(payload, len);
+	} else {
+		esp_info("%u unhandled priv event[%u]\n", __LINE__, header->priv_pkt_type);
 	}
-
-	dev_kfree_skb_any(skb);
 }
 
 static void esp_events_work(struct work_struct *work)
 {
 	struct sk_buff *skb = NULL;
 
-	skb = skb_dequeue(&adapter.events_skb_q);
-	if (!skb)
-		return;
-
-	process_priv_communication(skb);
+	while ((skb = skb_dequeue(&adapter.events_skb_q)) != NULL) {
+		if (skb->data) {
+			process_priv_communication(skb);
+		}
+		dev_kfree_skb_any(skb);
+	}
 }
 
 static void process_rx_packet(struct sk_buff *skb)

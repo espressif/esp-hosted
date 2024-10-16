@@ -945,14 +945,12 @@ static void esp_events_work(struct work_struct *work)
 {
 	struct sk_buff *skb = NULL;
 
-	skb = skb_dequeue(&adapter.events_skb_q);
-	if (!skb)
-		return;
-
-	if (skb->data) {
-		process_internal_event(&adapter, skb);
+	while ((skb = skb_dequeue(&adapter.events_skb_q)) != NULL) {
+		if (skb->data) {
+			process_internal_event(&adapter, skb);
+		}
+		dev_kfree_skb_any(skb);
 	}
-	dev_kfree_skb_any(skb);
 }
 
 static struct esp_adapter *init_adapter(void)
