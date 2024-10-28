@@ -135,8 +135,8 @@ menu "Example Configuration"
 			default n
 			help
 				ENABLE/DISABLE software SDIO checksum
-		endmenu
-	endchoice
+		endchoice
+	endmenu
 
 
 	config EXAMPLE_HCI_UART_BAUDRATE
