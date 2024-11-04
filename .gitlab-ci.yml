@@ -40,7 +40,8 @@ build_fw_esp32_sdio:
     - changes:
       - esp_hosted_ng/esp/esp_driver/network_adapter/**/*
   tags:
-    - linux510
+    - build
+#    - linux510
 
 build_fw_esp32_spi:
   stage: build
@@ -52,6 +53,8 @@ build_fw_esp32_spi:
   rules:
     - changes:
       - esp_hosted_ng/esp/esp_driver/network_adapter/**/*
+  tags:
+    - build
 
 build_fw_esp32s2_spi:
   stage: build
@@ -63,6 +66,8 @@ build_fw_esp32s2_spi:
   rules:
     - changes:
       - esp_hosted_ng/esp/esp_driver/network_adapter/**/*
+  tags:
+    - build
 
 build_fw_esp32s3_spi:
   stage: build
@@ -74,6 +79,8 @@ build_fw_esp32s3_spi:
   rules:
     - changes:
       - esp_hosted_ng/esp/esp_driver/network_adapter/**/*
+  tags:
+    - build
 
 build_fw_esp32c2_spi:
   stage: build
@@ -85,6 +92,8 @@ build_fw_esp32c2_spi:
   rules:
     - changes:
       - esp_hosted_ng/esp/esp_driver/network_adapter/**/*
+  tags:
+    - build
 
 build_fw_esp32c3_spi:
   stage: build
@@ -96,6 +105,8 @@ build_fw_esp32c3_spi:
   rules:
     - changes:
       - esp_hosted_ng/esp/esp_driver/network_adapter/**/*
+  tags:
+    - build
 
 build_fw_esp32c6_sdio:
   stage: build
@@ -107,6 +118,8 @@ build_fw_esp32c6_sdio:
   rules:
     - changes:
       - esp_hosted_ng/esp/esp_driver/network_adapter/**/*
+  tags:
+    - build
 
 build_fw_esp32c6_spi:
   stage: build
@@ -118,7 +131,9 @@ build_fw_esp32c6_spi:
   rules:
     - changes:
       - esp_hosted_ng/esp/esp_driver/network_adapter/**/*
-
+  tags:
+    - build
+    
 deploy_master_github:
   stage: deploy
   image: $CI_DOCKER_REGISTRY/esp32-ci-env
