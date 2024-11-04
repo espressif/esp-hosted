@@ -1175,39 +1175,40 @@ static void ctrl_async_timeout_handler(void const *arg)
 	ctrl_resp_cb_t func = arg;
 	if (!func) {
 		printf("NULL func, failed to call callback\n");
-	}
-	else {
-		ctrl_cmd_t *app_resp = NULL;
-		app_resp = (ctrl_cmd_t *)hosted_calloc(1, sizeof(ctrl_cmd_t));
-		if (!app_resp) {
-			printf("Failed to allocate app_resp\n");
-			return;
-		}
-		app_resp->msg_type = CTRL_RESP;
-		app_resp->resp_event_status = CTRL_ERR_REQUEST_TIMEOUT;
-
-		/* call func pointer to notify failure */
-		func(app_resp);
-
-		/* only one async timer at a time is handled
-		 * therefore, only one wifi request can be sent at a time
-		 */
-		if (async_timer_handle) {
-			/* async_timer_handle will be cleaned in hosted_timer_stop */
-			hosted_timer_stop(async_timer_handle);
-			async_timer_handle = NULL;
-		}
-
-		/* Response timeout
-		 * Reset the response uid to an invalid value as we no longer
-		 * expect a response until the next request
-		 * If a response arrives after this, it will be flagged
-		 * as an invalid response */
-		expected_resp_uid = -1;
-
-		/* Unlock semaphore in negative case */
 		hosted_post_semaphore(ctrl_req_sem);
+		return;
 	}
+	ctrl_cmd_t *app_resp = NULL;
+	app_resp = (ctrl_cmd_t *)hosted_calloc(1, sizeof(ctrl_cmd_t));
+	if (!app_resp) {
+		printf("Failed to allocate app_resp\n");
+		hosted_post_semaphore(ctrl_req_sem);
+		return;
+	}
+	app_resp->msg_type = CTRL_RESP;
+	app_resp->resp_event_status = CTRL_ERR_REQUEST_TIMEOUT;
+
+	/* call func pointer to notify failure */
+	func(app_resp);
+
+	/* only one async timer at a time is handled
+	 * therefore, only one wifi request can be sent at a time
+	 */
+	if (async_timer_handle) {
+		/* async_timer_handle will be cleaned in hosted_timer_stop */
+		hosted_timer_stop(async_timer_handle);
+		async_timer_handle = NULL;
+	}
+
+	/* Response timeout
+	 * Reset the response uid to an invalid value as we no longer
+	 * expect a response until the next request
+	 * If a response arrives after this, it will be flagged
+	 * as an invalid response */
+	expected_resp_uid = -1;
+
+	/* Unlock semaphore in negative case */
+	hosted_post_semaphore(ctrl_req_sem);
 }
 
 /* This is entry level function when control request APIs are used
@@ -1224,6 +1225,7 @@ int ctrl_app_send_req(ctrl_cmd_t *app_req)
 	uint8_t  *buff_to_free1 = NULL;
 	void     *buff_to_free2 = NULL;
 	uint8_t   failure_status = 0;
+	uint8_t   got_ctrl_req_sem = 0;
 
 	if (!app_req) {
 		failure_status = CTRL_ERR_INCORRECT_ARG;
@@ -1236,6 +1238,8 @@ int ctrl_app_send_req(ctrl_cmd_t *app_req)
 	if (ret) {
 		failure_status = CTRL_ERR_REQ_IN_PROG;
 		goto fail_req;
+	} else {
+		got_ctrl_req_sem = 1;
 	}
 
 	app_req->msg_type = CTRL_REQ;
@@ -1555,6 +1559,8 @@ int ctrl_app_send_req(ctrl_cmd_t *app_req)
 			printf("Failed to start async resp timer\n");
 			goto fail_req;
 		}
+		/* For async, clearing semaphore on failed cases done on above timer expiry */
+		got_ctrl_req_sem = 0;
 	}
 
 	/* 8. Pack in protobuf and send the request */
@@ -1582,7 +1588,12 @@ int ctrl_app_send_req(ctrl_cmd_t *app_req)
 
 fail_req:
 
+	if (got_ctrl_req_sem) {
+		hosted_post_semaphore(ctrl_req_sem);
+	}
 
+	//TODO: need to test below and possibly remove redundant code
+	// if(!async_timer_handle && app_req->ctrl_resp_cb) {
 	if (app_req->ctrl_resp_cb) {
 		/* 11. In case of async procedure,
 		 * Let application know of failure using callback itself
