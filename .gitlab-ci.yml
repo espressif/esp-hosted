@@ -39,6 +39,8 @@ build_fw_esp32_sdio:
   rules:
     - changes:
       - esp_hosted_ng/esp/esp_driver/network_adapter/**/*
+  tags:
+    - linux510
 
 build_fw_esp32_spi:
   stage: build
