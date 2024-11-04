@@ -105,7 +105,7 @@ Following table summarizes this entire discussion.
   <tr>
     <td>Wi-Fi Mode</td>
     <td>Station, <span style="font-weight:bold">SoftAP</span></td>
-    <td>Station</td>
+    <td>Station, SoftAP</td>
   </tr>
   <tr>
     <td>Wi-Fi Security Protocols</td>

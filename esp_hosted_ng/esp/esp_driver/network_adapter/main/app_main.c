@@ -736,5 +736,6 @@ void app_main()
 	if (datapath || xSemaphoreTake(init_sem, portMAX_DELAY))
 		send_bootup_event_to_host(capa);
 
+	debug_set_wifi_logging();
 	ESP_LOGI(TAG,"Initial set up done");
 }
