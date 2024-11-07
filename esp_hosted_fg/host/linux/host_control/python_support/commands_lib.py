@@ -467,7 +467,7 @@ def ctrl_app_resp_callback(app_resp):
 		else:
 			print("Number of available APs is "+str(w_scan_p.contents.count))
 			for i in range (0, w_scan_p.contents.count) :
-				print(str(i)+") ssid \""+get_str(list[i].ssid)+"\""+
+				print(str(i+1)+") ssid \""+get_str(list[i].ssid)+"\""+
 						" bssid \""+get_str(list[i].bssid)+"\""+
 						" rssi \""+str(list[i].rssi)+"\""+
 						" channel \""+str(list[i].channel)+"\""+
