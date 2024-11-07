@@ -1108,7 +1108,7 @@ int process_reg_get(uint8_t if_type, uint8_t *payload, uint16_t payload_len)
 	return send_command_resp(if_type, CMD_SET_REG_DOMAIN, CMD_RESPONSE_SUCCESS, (uint8_t *)country_code, sizeof(country_code), 0);
 }
 
-
+int ieee80211_delete_node(uint8_t *mac);
 int process_disconnect(uint8_t if_type, uint8_t *payload, uint16_t payload_len)
 {
 	esp_err_t ret = ESP_OK;
@@ -1129,7 +1129,7 @@ int process_disconnect(uint8_t if_type, uint8_t *payload, uint16_t payload_len)
 			esp_wifi_deauthenticate_internal(cmd_disconnect->reason_code);
 	} else if (if_type == ESP_AP_IF) {
 		if (softap_started && wifi_mode == WIFI_MODE_AP)
-		esp_wifi_ap_deauth_internal(cmd_disconnect->mac, cmd_disconnect->reason_code);
+			ieee80211_delete_node(cmd_disconnect->mac);
 	}
 
 resp:
