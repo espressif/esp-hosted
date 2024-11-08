@@ -619,13 +619,19 @@ struct esp_wifi_device *get_priv_from_payload_header(
 	for (i = 0; i < ESP_MAX_INTERFACE; i++) {
 		priv = adapter.priv[i];
 
-		if (!priv)
+		if (!priv) {
+			esp_err("dropping pkt, driver not initialized\n");
 			continue;
+                }
 
 		if (priv->if_type == header->if_type &&
-				priv->if_num == header->if_num) {
+		    priv->if_num == header->if_num) {
 			return priv;
-		}
+		} else if (priv->if_type == header->if_type) {
+			esp_err("dropping pkt, priv ifnum=%d, header ifnum=%d\n", priv->if_num, header->if_num);
+                } else {
+			esp_err("dropping pkt, priv iftype=%d, header iftype=%d\n", priv->if_type, header->if_type);
+                }
 	}
 	return NULL;
 }
@@ -718,7 +724,6 @@ static void process_rx_packet(struct esp_adapter *adapter, struct sk_buff *skb)
 		priv = get_priv_from_payload_header(payload_header);
 
 		if (!priv) {
-			esp_err("Empty priv\n");
 			dev_kfree_skb_any(skb);
 			return;
 		}

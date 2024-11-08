@@ -252,6 +252,9 @@ struct wireless_dev *esp_cfg80211_add_iface(struct wiphy *wiphy,
 	esp_wdev->stop_data = 1;
 	esp_wdev->port_open = 0;
 
+	if (cmd_update_fw_time(esp_wdev))
+		goto free_and_return;
+
 	if (cmd_init_interface(esp_wdev))
 		goto free_and_return;
 

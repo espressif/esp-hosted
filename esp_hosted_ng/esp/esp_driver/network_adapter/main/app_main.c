@@ -500,6 +500,11 @@ void process_priv_commamd(uint8_t if_type, uint8_t *payload, uint16_t payload_le
 			process_raw_tp(if_type, payload, payload_len);
 			break;
 
+		case CMD_SET_TIME:
+			ESP_LOGI(TAG, "INIT Interface command\n");
+			process_set_time(if_type, payload, payload_len);
+			break;
+
 		default:
 			ESP_LOGI(TAG, "Unsupported cmd[0x%x] received\n", header->cmd_code);
 			break;

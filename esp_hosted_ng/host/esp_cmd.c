@@ -308,6 +308,7 @@ static int wait_and_decode_cmd_resp(struct esp_wifi_device *priv,
 	case CMD_RAW_TP_ESP_TO_HOST:
 	case CMD_RAW_TP_HOST_TO_ESP:
 	case CMD_SET_WOW_CONFIG:
+	case CMD_SET_TIME:
 		/* intentional fallthrough */
 		if (ret == 0)
 			ret = decode_common_resp(cmd_node);
@@ -1470,6 +1471,43 @@ int cmd_add_key(struct esp_wifi_device *priv, u8 key_index, bool pairwise,
 	esp_hex_dump_verbose("mac", key->mac_addr, 6);
 	esp_hex_dump_verbose("seq", key->seq, key->seq_len);
 	esp_hex_dump_verbose("key_data", key->data, key->len);
+
+	queue_cmd_node(priv->adapter, cmd_node, ESP_CMD_DFLT_PRIO);
+	queue_work(priv->adapter->cmd_wq, &priv->adapter->cmd_work);
+
+	RET_ON_FAIL(wait_and_decode_cmd_resp(priv, cmd_node));
+
+	return 0;
+}
+
+int cmd_update_fw_time(struct esp_wifi_device *priv)
+{
+	u16 cmd_len;
+        struct timespec64 ts;
+	struct command_node *cmd_node = NULL;
+	struct cmd_set_time *val;
+
+	if (!priv || !priv->adapter) {
+		esp_err("Invalid argument\n");
+		return -EINVAL;
+	}
+	if (test_bit(ESP_CLEANUP_IN_PROGRESS, &priv->adapter->state_flags))
+		return 0;
+
+
+        ktime_get_real_ts64(&ts);
+	cmd_len = sizeof(struct cmd_set_time);
+
+	cmd_node = prepare_command_request(priv->adapter, CMD_SET_TIME, cmd_len);
+	if (!cmd_node) {
+		esp_err("Failed to get command node\n");
+		return -ENOMEM;
+	}
+	val = (struct cmd_set_time *) (cmd_node->cmd_skb->data +
+				sizeof(struct esp_payload_header));
+
+	val->sec = ts.tv_sec;
+        val->usec = ts.tv_nsec / 1000;
 
 	queue_cmd_node(priv->adapter, cmd_node, ESP_CMD_DFLT_PRIO);
 	queue_work(priv->adapter->cmd_wq, &priv->adapter->cmd_work);

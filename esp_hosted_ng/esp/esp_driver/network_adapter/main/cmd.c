@@ -23,6 +23,8 @@
 #include "esp_event.h"
 #include "esp_mac.h"
 #include "wifi_defs.h"
+#include <time.h>
+#include <sys/time.h>
 
 #define TAG "FW_CMD"
 
@@ -1088,7 +1090,20 @@ int process_wow_set(uint8_t if_type, uint8_t *payload, uint16_t payload_len)
 	return send_command_resp(if_type, CMD_SET_WOW_CONFIG, CMD_RESPONSE_SUCCESS, NULL, 0, 0);
 }
 
+int process_set_time(uint8_t if_type, uint8_t *payload, uint16_t payload_len)
+{
+    struct cmd_set_time *cmd;
+    struct timeval tv;
 
+    cmd = (struct cmd_set_time *)payload;
+    tv.tv_sec = cmd->sec;
+    tv.tv_usec = cmd->usec;
+
+    settimeofday(&tv, NULL); // Set time
+    ESP_LOGI(TAG, "Updated firmware time");
+
+    return send_command_resp(if_type, CMD_SET_TIME, CMD_RESPONSE_SUCCESS, NULL, 0, 0);
+}
 
 int process_reg_set(uint8_t if_type, uint8_t *payload, uint16_t payload_len)
 {
