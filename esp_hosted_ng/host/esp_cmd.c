@@ -1054,6 +1054,11 @@ int cmd_assoc_request(struct esp_wifi_device *priv,
 		return -EINVAL;
 	}
 
+	if (priv->if_type != ESP_STA_IF) {
+		esp_err("Invalid interface\n");
+		return -EINVAL;
+	}
+
 	if (test_bit(ESP_CLEANUP_IN_PROGRESS, &priv->adapter->state_flags)) {
 		esp_err("%u cleanup in progress, return failure", __LINE__);
 		return -EFAULT;
@@ -1118,6 +1123,11 @@ int cmd_auth_request(struct esp_wifi_device *priv,
 
 	if (!priv || !req || !req->bss || !priv->adapter) {
 		esp_err("Invalid argument\n");
+		return -EINVAL;
+	}
+
+	if (priv->if_type != ESP_STA_IF) {
+		esp_err("Invalid interface\n");
 		return -EINVAL;
 	}
 
@@ -1544,6 +1554,11 @@ int internal_scan_request(struct esp_wifi_device *priv, char *ssid,
 		return -EBUSY;
 	}
 
+	if (priv->if_type != ESP_STA_IF) {
+		esp_err("Invalid interface\n");
+		return -EINVAL;
+	}
+
 	if (test_bit(ESP_CLEANUP_IN_PROGRESS, &priv->adapter->state_flags)) {
 		esp_err("%u cleanup in progress, return", __LINE__);
 		return -EBUSY;
@@ -1595,6 +1610,11 @@ int cmd_scan_request(struct esp_wifi_device *priv, struct cfg80211_scan_request 
 
 	if (!priv || !priv->adapter || !request) {
 		esp_err("Invalid argument\n");
+		return -EINVAL;
+	}
+
+	if (priv->if_type != ESP_STA_IF) {
+		esp_err("Invalid interface\n");
 		return -EINVAL;
 	}
 
@@ -1681,6 +1701,11 @@ int cmd_get_rssi(struct esp_wifi_device *priv)
 
 	if (!priv || !priv->adapter) {
 		esp_err("Invalid argument\n");
+		return -EINVAL;
+	}
+
+	if (priv->if_type != ESP_STA_IF) {
+		esp_err("Invalid interface\n");
 		return -EINVAL;
 	}
 
@@ -1832,6 +1857,11 @@ int cmd_set_ap_config(struct esp_wifi_device *priv, struct esp_ap_config *ap_con
 
 	if (!priv || !priv->adapter) {
 		esp_err("Invalid argument\n");
+		return -EINVAL;
+	}
+
+	if (priv->if_type != ESP_AP_IF) {
+		esp_err("Invalid interface\n");
 		return -EINVAL;
 	}
 
@@ -2003,6 +2033,11 @@ int cmd_add_station(struct esp_wifi_device *priv, const uint8_t *mac,
 
 	if (!priv || !priv->adapter) {
 		esp_err("Invalid argument\n");
+		return -EINVAL;
+	}
+
+	if (priv->if_type != ESP_AP_IF) {
+		esp_err("Invalid interface\n");
 		return -EINVAL;
 	}
 
