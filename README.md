@@ -151,7 +151,7 @@ Legends:
 - (S) : Sheild box reading
 - (O) : Over the air reading
 - TBD : To be determined
-- iperf : iperf2 with test resukts in mbps
+- iperf : iperf2 with test results in mbps
 
 **Host can be any ESP chipset or any non-ESP MCU.**
 
