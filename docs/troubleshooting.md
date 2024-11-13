@@ -37,6 +37,30 @@ For ESP Chipsets without native Wi-FI, `SOC_WIFI_xxx` configs will be
 There is possibility that you have two chipsets to evaluate, but both are exactly same chipset type. For example, two ESP32-C3. In this case, it is a two step build, first for host and second for slave.
 While building for host ESP chipset, follow above (1) and flash, monitor. Once host is flashed fine, revert all the changes and flash the slave ESP chipset.
 
+Or you can create a another branch for host using `git`
+```
+git checkout -b host-disable-native-wifi
+```
+make changes for disabling native wifi and then commit the changes to the branch.
+```
+git add <esp-idf-directory>/components/soc/<soc>/include/soc/Kconfig.soc_caps.in
+git commit -m "disabled native wifi on the host soc"
+```
+Check the branch status 
+```
+git branch
+```
+```
+* host-disable-native-wifi
+  release/v5.4
+```
+Here the `release/v5.4` is the branch for slave and `host-disable-native-wifi` is the branch for host.
+Now we can switch between the two branches using  using
+```
+git checkout <branch_name>
+```
+and flash either host or slave accordingly.
+
 ## 2 Raw Throughput Testing
 
 While aiming the high performance and even while assessing the solution correctness, It is crucial to understand the bottlenecks in the system.
