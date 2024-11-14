@@ -344,6 +344,7 @@ static int esp_cfg80211_change_iface(struct wiphy *wiphy,
 		esp_info("%u operating in same mode\n", __LINE__);
 		return 0;
 	}
+
 	ret = cmd_set_mode(priv, esp_get_mode_from_iface_type(esp_if_type));
 
 	if (ret == 0) {

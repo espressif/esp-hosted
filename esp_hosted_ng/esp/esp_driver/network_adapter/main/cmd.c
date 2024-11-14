@@ -47,9 +47,10 @@ static uint8_t *ap_bssid;
 
 extern uint32_t ip_address;
 extern struct macfilter_list mac_list;
-extern uint8_t sta_mac[MAC_ADDR_LEN];
-extern uint8_t ap_mac[MAC_ADDR_LEN];
+extern uint8_t dev_mac[MAC_ADDR_LEN];
 
+uint8_t dummy_mac[] = {0x00, 0x11, 0x22, 0x33, 0x44, 0x55};
+uint8_t dummy_mac2[] = {0x00, 0x11, 0x22, 0x33, 0x44, 0x66};
 uint8_t *ap_rsn_ie;
 uint8_t ap_rsn_ie_len;
 
@@ -1100,7 +1101,7 @@ int process_set_time(uint8_t if_type, uint8_t *payload, uint16_t payload_len)
     tv.tv_usec = cmd->usec;
 
     settimeofday(&tv, NULL); // Set time
-    ESP_LOGI(TAG, "Updated firmware time");
+    ESP_LOGI(TAG, "Updated firmware time sec=%lld, usec=%ld", tv.tv_sec, tv.tv_usec);
 
     return send_command_resp(if_type, CMD_SET_TIME, CMD_RESPONSE_SUCCESS, NULL, 0, 0);
 }
@@ -1392,31 +1393,28 @@ int process_deinit_interface(uint8_t if_type, uint8_t *payload, uint16_t payload
 int process_init_interface(uint8_t if_type, uint8_t *payload, uint16_t payload_len)
 {
 	esp_err_t ret = ESP_OK;
-	wifi_mode_t mode = 0;
+	wifi_mode_t mode = WIFI_MODE_STA;
 	uint16_t cmd_status = CMD_RESPONSE_FAIL;
 
 	if (!sta_init_flag) {
 
 		/* Register to get events from wifi driver */
 		esp_create_wifi_event_loop();
-		ret = esp_wifi_get_mode(&mode);
-		if (ret) {
-			ESP_LOGE(TAG,"Failed to get wifi mode");
-			goto DONE;
-		}
 
+                /* we will use this mac for both ap and station mode */
+                esp_read_mac(dev_mac, ESP_MAC_WIFI_STA);
 		if (if_type == ESP_STA_IF) {
-			mode |= WIFI_MODE_STA;
+			mode = WIFI_MODE_STA;
 		} else {
-			mode |= WIFI_MODE_AP;
+			mode = WIFI_MODE_AP;
 		}
 
 		ret = esp_wifi_set_mode(mode);
+
 		if (ret) {
 			ESP_LOGE(TAG, "Failed to set wifi mode\n");
 			goto DONE;
 		}
-
 		ret = esp_wifi_start();
 		if (ret) {
 			ESP_LOGE(TAG, "Failed to start wifi\n");
@@ -1437,32 +1435,10 @@ DONE:
 int process_get_mac(uint8_t if_type)
 {
 	esp_err_t ret = ESP_OK;
-	wifi_interface_t wifi_if_type = 0;
 	uint8_t cmd_status = CMD_RESPONSE_SUCCESS;
-	uint8_t mac[MAC_ADDR_LEN];
-
-	if (if_type == ESP_STA_IF) {
-		wifi_if_type = WIFI_IF_STA;
-
-	} else {
-		wifi_if_type = WIFI_IF_AP;
-	}
-
-	ret = esp_wifi_get_mac(wifi_if_type, mac);
-
-	if (ret) {
-		ESP_LOGE(TAG, "Failed to get mac address\n");
-		cmd_status = CMD_RESPONSE_FAIL;
-	}
-	if (if_type == ESP_STA_IF) {
-		memcpy(sta_mac, mac, MAC_ADDR_LEN);
-	} else {
-		memcpy(ap_mac, mac, MAC_ADDR_LEN);
-	}
-
 
 	/*ESP_LOG_BUFFER_HEXDUMP(TAG, mac, MAC_ADDR_LEN, ESP_LOG_INFO);*/
-	ret = send_command_resp(if_type, CMD_GET_MAC, cmd_status, (uint8_t *)mac,
+	ret = send_command_resp(if_type, CMD_GET_MAC, cmd_status, dev_mac,
 				MAC_ADDR_LEN, sizeof(struct command_header));
 	return ret;
 }
@@ -1476,11 +1452,10 @@ int process_set_mac(uint8_t if_type, uint8_t *payload, uint16_t payload_len)
 
 	if (if_type == ESP_STA_IF) {
 		wifi_if_type = WIFI_IF_STA;
-		memcpy(sta_mac, mac->mac_addr, MAC_ADDR_LEN);
 	} else {
 		wifi_if_type = WIFI_IF_AP;
-		memcpy(ap_mac, mac->mac_addr, MAC_ADDR_LEN);
 	}
+	memcpy(dev_mac, mac->mac_addr, MAC_ADDR_LEN);
 
 	ESP_LOGI(TAG, "Setting mac address \n");
 	ret = esp_wifi_set_mac(wifi_if_type, mac->mac_addr);
@@ -1654,26 +1629,53 @@ SEND_CMD:
 
 int process_set_mode(uint8_t if_type, uint8_t *payload, uint16_t payload_len)
 {
-	esp_err_t ret = ESP_OK;
-	uint8_t cmd_status = CMD_RESPONSE_SUCCESS;
-	struct cmd_config_mode *mode = (struct cmd_config_mode *) payload;
+    esp_err_t ret = ESP_OK;
+    uint8_t cmd_status = CMD_RESPONSE_SUCCESS;
+    struct cmd_config_mode *mode = (struct cmd_config_mode *) payload;
+    wifi_mode_t old_mode;
 
-	ESP_LOGE(TAG, "Setting mode=%d \n", mode->mode);
-	ret = esp_wifi_stop();
-	ret = esp_wifi_set_mode(mode->mode);
-	ESP_ERROR_CHECK(esp_wifi_start());
 
-	if (ret) {
-		ESP_LOGE(TAG, "Failed to set mode\n");
-		cmd_status = CMD_RESPONSE_FAIL;
-		goto send_resp;
-	}
+    ret = esp_wifi_get_mode(&old_mode);
+    if (ret) {
+        ESP_LOGE(TAG, "Failed to get mode");
+    }
+
+    if (old_mode == mode->mode) {
+        ESP_LOGI(TAG, "old mode and new modes are same, return");
+        goto send_resp;
+    }
+    ret = esp_wifi_stop();
+    if (ret) {
+        ESP_LOGE(TAG, "Failed to stop wifi\n");
+    }
+
+    if (mode->mode == WIFI_MODE_AP) {
+        ret = esp_wifi_set_mac(WIFI_IF_STA, dummy_mac);
+    } else if (mode->mode == WIFI_MODE_STA){
+        ret = esp_wifi_set_mac(WIFI_IF_AP, dummy_mac2);
+    }
+
+    ESP_LOGI(TAG, "Setting mode=%d \n", mode->mode);
+    ret = esp_wifi_set_mode(mode->mode);
+    if (mode->mode == WIFI_MODE_AP) {
+        ret = esp_wifi_set_mac(WIFI_IF_AP, dev_mac);
+    } else if (mode->mode == WIFI_MODE_STA){
+        ret = esp_wifi_set_mac(WIFI_IF_STA, dev_mac);
+    }
+
+    ESP_ERROR_CHECK(esp_wifi_start());
+
+    if (ret) {
+        ESP_LOGE(TAG, "Failed to set mode\n");
+        cmd_status = CMD_RESPONSE_FAIL;
+        goto send_resp;
+    }
 
 send_resp:
-	ret = send_command_resp(if_type, CMD_SET_MODE, cmd_status, (uint8_t *)&mode->mode,
-				sizeof(uint16_t), sizeof(struct command_header));
+    ret = send_command_resp(if_type, CMD_SET_MODE, cmd_status, (uint8_t *)&mode->mode,
+            sizeof(uint16_t), sizeof(struct command_header));
 
-	return ret;
+    return ret;
 }
 
 int process_set_ie(uint8_t if_type, uint8_t *payload, uint16_t payload_len)
