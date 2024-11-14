@@ -1,6 +1,7 @@
 stages:
   - pre_check
-  - build
+  - build_host
+  - build_firmware
   - deploy
 
 variables:
@@ -25,12 +26,12 @@ check_version:
   rules:
     - when: always
   tags:
-    - linux510
+    - build
      #- changes:
      # - esp_hosted_ng/**/*
 
 build_fw_esp32_sdio:
-  stage: build
+  stage: build_firmware
   image: $CI_DOCKER_REGISTRY/esp-env-v5.1:1
   variables:
     IDF_TARGET: esp32
@@ -44,7 +45,7 @@ build_fw_esp32_sdio:
 #    - linux510
 
 build_fw_esp32_spi:
-  stage: build
+  stage: build_firmware
   image: $CI_DOCKER_REGISTRY/esp-env-v5.1:1
   variables:
     IDF_TARGET: esp32
@@ -57,7 +58,7 @@ build_fw_esp32_spi:
     - build
 
 build_fw_esp32s2_spi:
-  stage: build
+  stage: build_firmware
   image: $CI_DOCKER_REGISTRY/esp-env-v5.1:1
   variables:
     IDF_TARGET: esp32s2
@@ -70,7 +71,7 @@ build_fw_esp32s2_spi:
     - build
 
 build_fw_esp32s3_spi:
-  stage: build
+  stage: build_firmware
   image: $CI_DOCKER_REGISTRY/esp-env-v5.1:1
   variables:
     IDF_TARGET: esp32s3
@@ -83,7 +84,7 @@ build_fw_esp32s3_spi:
     - build
 
 build_fw_esp32c2_spi:
-  stage: build
+  stage: build_firmware
   image: $CI_DOCKER_REGISTRY/esp-env-v5.1:1
   variables:
     IDF_TARGET: esp32c2
@@ -96,7 +97,7 @@ build_fw_esp32c2_spi:
     - build
 
 build_fw_esp32c3_spi:
-  stage: build
+  stage: build_firmware
   image: $CI_DOCKER_REGISTRY/esp-env-v5.1:1
   variables:
     IDF_TARGET: esp32c3
@@ -109,7 +110,7 @@ build_fw_esp32c3_spi:
     - build
 
 build_fw_esp32c6_sdio:
-  stage: build
+  stage: build_firmware
   image: $CI_DOCKER_REGISTRY/esp-env-v5.1:1
   variables:
     IDF_TARGET: esp32c6
@@ -122,7 +123,7 @@ build_fw_esp32c6_sdio:
     - build
 
 build_fw_esp32c6_spi:
-  stage: build
+  stage: build_firmware
   image: $CI_DOCKER_REGISTRY/esp-env-v5.1:1
   variables:
     IDF_TARGET: esp32c6
@@ -133,7 +134,73 @@ build_fw_esp32c6_spi:
       - esp_hosted_ng/esp/esp_driver/network_adapter/**/*
   tags:
     - build
-    
+
+build_host_sdio_linux_6.8.0:
+  stage: build_host
+  script:
+    - cd esp_hosted_ng/host
+    - make
+  rules:
+    - changes:
+      - esp_hosted_ng/host/**/*
+  tags:
+    - hosted_runner_4
+
+build_host_sdio_linux_5.15.0:
+  stage: build_host
+  script:
+    - cd esp_hosted_ng/host
+    - make check
+  rules:
+    - changes:
+      - esp_hosted_ng/host/**/*
+  tags:
+    - hosted_runner_3
+
+build_host_sdio_linux_5.4.0:
+  stage: build_host
+  script:
+    - cd esp_hosted_ng/host
+    - make check
+  rules:
+    - changes:
+      - esp_hosted_ng/host/**/*
+  tags:
+    - hosted_runner_2
+
+build_host_spi_linux_6.8.0:
+  stage: build_host
+  script:
+    - cd esp_hosted_ng/host
+    - make target=spi
+  rules:
+    - changes:
+      - esp_hosted_ng/host/**/*
+  tags:
+    - hosted_runner_4
+
+build_host_spi_linux_5.15.0:
+  stage: build_host
+  script:
+    - cd esp_hosted_ng/host
+    - make check target=spi
+  rules:
+    - changes:
+      - esp_hosted_ng/host/**/*
+  tags:
+    - hosted_runner_3
+
+build_host_spi_linux_5.4.0:
+  stage: build_host
+  script:
+    - cd esp_hosted_ng/host
+    - make check target=spi
+  rules:
+    - changes:
+      - esp_hosted_ng/host/**/*
+  tags:
+    - hosted_runner_2
+
 deploy_master_github:
   stage: deploy
   image: $CI_DOCKER_REGISTRY/esp32-ci-env

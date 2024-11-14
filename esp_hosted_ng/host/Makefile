@@ -5,7 +5,16 @@ CROSS_COMPILE :=
 # Linux Kernel header
 KERNEL := /lib/modules/$(shell uname -r)/build
 # Architecture
-ARCH := arm64
+ARCH := $(shell uname -m)
+
+# Check and adjust ARCH for specific cases
+ifeq ($(ARCH), x86_64)
+    ARCH := x86
+endif
+
+ifeq ($(ARCH), aarch64)
+    ARCH := arm64
+endif
 
 #Default interface is sdio
 MODULE_NAME=esp32_sdio
@@ -59,3 +68,6 @@ all: clean
 clean:
 	rm -rf *.o sdio/*.o spi/*.o *.ko
 	make ARCH=$(ARCH) CROSS_COMPILE=$(CROSS_COMPILE) -C $(KERNEL) M=$(PWD) clean
+
+check:
+	make ARCH=$(ARCH) CROSS_COMPILE=$(CROSS_COMPILE) -C $(KERNEL) M=$(PWD) $(module_objects)
