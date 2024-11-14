@@ -848,8 +848,9 @@ static const uint8_t *esp_get_rsn_ie(struct cfg80211_beacon_data *beacon, size_t
 
 static const uint8_t *esp_get_rsnx_ie(struct cfg80211_beacon_data *beacon, size_t *rsnx_ie_len)
 {
-        const u8 *rsnx_ie;
+        const u8 *rsnx_ie = NULL;
 
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 7, 0))
         if (!beacon->tail)
                 return NULL;
 
@@ -859,6 +860,7 @@ static const uint8_t *esp_get_rsnx_ie(struct cfg80211_beacon_data *beacon, size_
 
         *rsnx_ie_len = *(rsnx_ie + 1);
 	*rsnx_ie_len += 2;
+#endif
 
         return rsnx_ie;
 }
