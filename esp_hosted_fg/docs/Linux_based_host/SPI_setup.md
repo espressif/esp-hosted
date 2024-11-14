@@ -106,7 +106,7 @@ $ rm -rf sdkconfig build
 $ idf.py set-target <esp_chipset>
 ```
 
-For SPI, <esp_chipset> could be onr of `esp32`, `esp32s2`, `esp32s3`, `esp32c2`, `esp32c3`, `esp32c6`
+For SPI, <esp_chipset> could be one of `esp32`, `esp32s2`, `esp32s3`, `esp32c2`, `esp32c3`, `esp32c6`
 * Execute following command to configure the project
 ```
 $ idf.py menuconfig
