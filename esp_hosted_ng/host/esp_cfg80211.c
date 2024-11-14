@@ -404,13 +404,13 @@ static int esp_cfg80211_connect(struct wiphy *wiphy, struct net_device *dev,
 }
 #endif
 
-int esp_cfg80211_mgmt_tx(struct wiphy *wiphy, struct wireless_dev *wdev,
+static int esp_cfg80211_mgmt_tx(struct wiphy *wiphy, struct wireless_dev *wdev,
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(3, 14, 0))
-		struct ieee80211_channel *chan,
-		bool offchan, unsigned int wait, const u8 *buf, size_t len,
-		bool no_cck, bool dont_wait_for_ack,
+				struct ieee80211_channel *chan,
+				bool offchan, unsigned int wait, const u8 *buf, size_t len,
+				bool no_cck, bool dont_wait_for_ack,
 #else
-		struct cfg80211_mgmt_tx_params *params,
+				struct cfg80211_mgmt_tx_params *params,
 #endif
 		u64 *cookie)
 {

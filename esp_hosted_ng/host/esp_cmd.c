@@ -504,7 +504,7 @@ static void destroy_cmd_wq(struct esp_adapter *adapter)
 
 }
 
-struct command_node *prepare_command_request(struct esp_adapter *adapter, u8 cmd_code, u16 len)
+static struct command_node *prepare_command_request(struct esp_adapter *adapter, u8 cmd_code, u16 len)
 {
 	struct command_header *cmd;
 	struct esp_payload_header *payload_header;
