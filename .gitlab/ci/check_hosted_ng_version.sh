@@ -34,7 +34,7 @@ function check_version_update() {
     local version_file="${HOSTED_NG_PATH}/esp/esp_driver/network_adapter/main/include/esp_fw_version.h"
 
     # Determine the base commit for the MR
-    local target_branch="${CI_MERGE_REQUEST_TARGET_BRANCH_NAME:-main}"
+    local target_branch="${CI_MERGE_REQUEST_TARGET_BRANCH_NAME:-master}"
     local base_commit
     base_commit=$(git merge-base HEAD "origin/$target_branch")
 
