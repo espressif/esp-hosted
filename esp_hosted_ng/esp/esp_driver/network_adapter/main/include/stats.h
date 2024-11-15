@@ -79,4 +79,5 @@ void create_debugging_tasks(void);
 void debug_get_raw_tp_conf(uint32_t raw_tp_type);
 void debug_set_wifi_logging(void);
 int process_raw_tp(uint8_t if_type, uint8_t *payload, uint16_t payload_len);
+int process_set_time(uint8_t if_type, uint8_t *payload, uint16_t payload_len);
 #endif  /*__STATS__H__*/

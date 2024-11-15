@@ -65,4 +65,5 @@ int cmd_mgmt_request(struct esp_wifi_device *priv,
 		     struct cfg80211_mgmt_tx_params *req);
 int cmd_sta_change(struct esp_wifi_device *priv,
 		     struct station_parameters *sta_info);
+int cmd_update_fw_time(struct esp_wifi_device *priv);
 #endif

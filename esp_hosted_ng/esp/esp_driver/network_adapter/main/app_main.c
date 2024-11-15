@@ -95,8 +95,7 @@ QueueHandle_t to_host_queue[MAX_PRIORITY_QUEUES] = {NULL};
 
 #define ETH_DATA_LEN			1500
 
-uint8_t ap_mac[MAC_ADDR_LEN] = {0};
-uint8_t sta_mac[MAC_ADDR_LEN] = {0};
+uint8_t dev_mac[MAC_ADDR_LEN] = {0};
 
 #if CONFIG_ESP_SDIO_HOST_INTERFACE
 extern void wake_host();
@@ -199,7 +198,7 @@ uint8_t is_wakeup_needed(interface_buffer_handle_t *buf_handle)
 		return 0;
 	}
 
-	if (memcmp(sta_mac, pos, MAC_ADDR_LEN) == 0) {
+	if (memcmp(dev_mac, pos, MAC_ADDR_LEN) == 0) {
 		ESP_LOG_BUFFER_HEXDUMP("Frame", pos, 32, ESP_LOG_DEBUG);
 		ESP_LOGD(TAG, "Unicast addr matched, wakup host");
 		return 1;
@@ -209,16 +208,6 @@ uint8_t is_wakeup_needed(interface_buffer_handle_t *buf_handle)
 	return 0;
 }
 #endif
-
-void esp_update_ap_mac(void)
-{
-	esp_err_t ret = ESP_OK;
-
-	ret = esp_wifi_get_mac(ESP_IF_WIFI_AP, ap_mac);
-	if (ret) {
-		ESP_LOGE(TAG,"Error in getting MAC of ESP softap %d", ret);
-	}
-}
 
 esp_err_t wlan_ap_rx_callback(void *buffer, uint16_t len, void *eb)
 {
@@ -375,52 +364,52 @@ void process_priv_commamd(uint8_t if_type, uint8_t *payload, uint16_t payload_le
 	switch (header->cmd_code) {
 
 		case CMD_INIT_INTERFACE:
-			ESP_LOGI(TAG, "INIT Interface command\n");
+			ESP_LOGI(TAG, "INIT Interface command");
 			process_init_interface(if_type, payload, payload_len);
 			break;
 
 		case CMD_DEINIT_INTERFACE:
-			ESP_LOGI(TAG, "DEINIT Interface command\n");
+			ESP_LOGI(TAG, "DEINIT Interface command");
 			process_deinit_interface(if_type, payload, payload_len);
 			break;
 
 		case CMD_GET_MAC:
-			ESP_LOGI(TAG, "Get MAC command\n");
+			ESP_LOGI(TAG, "Get MAC command");
 			process_get_mac(if_type);
 			break;
 
 		case CMD_SET_MAC:
-			ESP_LOGI(TAG, "Set MAC command\n");
+			ESP_LOGI(TAG, "Set MAC command");
 			process_set_mac(if_type, payload, payload_len);
 			break;
 
 		case CMD_SCAN_REQUEST:
-			ESP_LOGI(TAG, "Scan request\n");
+			ESP_LOGI(TAG, "Scan request");
 			process_start_scan(if_type, payload, payload_len);
 			break;
 
 		case CMD_STA_AUTH:
-			ESP_LOGI(TAG, "Auth request\n");
+			ESP_LOGI(TAG, "Auth request");
 			process_auth_request(if_type, payload, payload_len);
 			break;
 
 		case CMD_STA_ASSOC:
-			ESP_LOGI(TAG, "Assoc request\n");
+			ESP_LOGI(TAG, "Assoc request");
 			process_assoc_request(if_type, payload, payload_len);
 			break;
 
 		case CMD_STA_CONNECT:
-			ESP_LOGI(TAG, "STA connect request\n");
+			ESP_LOGI(TAG, "STA connect request");
 			process_sta_connect(if_type, payload, payload_len);
 			break;
 
 		case CMD_DISCONNECT:
-			ESP_LOGI(TAG, "disconnect request\n");
+			ESP_LOGI(TAG, "disconnect request");
 			process_disconnect(if_type, payload, payload_len);
 			break;
 
 		case CMD_ADD_KEY:
-			ESP_LOGI(TAG, "Add key request\n");
+			ESP_LOGI(TAG, "Add key request");
 			process_add_key(if_type, payload, payload_len);
 			break;
 
@@ -430,53 +419,53 @@ void process_priv_commamd(uint8_t if_type, uint8_t *payload, uint16_t payload_le
 			break;
 
 		case CMD_SET_DEFAULT_KEY:
-			ESP_LOGI(TAG, "Set default key request\n");
+			ESP_LOGI(TAG, "Set default key request");
 			process_set_default_key(if_type, payload, payload_len);
 			break;
 
 		case CMD_SET_IP_ADDR:
-			ESP_LOGI(TAG, "Set IP Address\n");
+			ESP_LOGI(TAG, "Set IP Address");
 			process_set_ip(if_type, payload, payload_len);
 			break;
 
 		case CMD_SET_MCAST_MAC_ADDR:
-			ESP_LOGI(TAG, "Set multicast mac address list\n");
+			ESP_LOGI(TAG, "Set multicast mac address list");
 			process_set_mcast_mac_list(if_type, payload, payload_len);
 			break;
 
 		case CMD_GET_TXPOWER:
 		case CMD_SET_TXPOWER:
-			ESP_LOGI(TAG, "%s Tx power command\n", header->cmd_code == CMD_GET_TXPOWER ? "Get" : "Set");
+			ESP_LOGI(TAG, "%s Tx power command", header->cmd_code == CMD_GET_TXPOWER ? "Get" : "Set");
 			process_tx_power(if_type, payload, payload_len, header->cmd_code);
 			break;
 
 		case CMD_STA_RSSI:
-			ESP_LOGI(TAG, "RSSI command\n");
+			ESP_LOGI(TAG, "RSSI command");
 			process_rssi(if_type, payload, payload_len);
 			break;
 
 		case CMD_SET_MODE:
-			ESP_LOGI(TAG, "Set MODE command\n");
+			ESP_LOGI(TAG, "Set MODE command");
 			process_set_mode(if_type, payload, payload_len);
 			break;
 
 		case CMD_SET_IE:
-			ESP_LOGI(TAG, "Set IE command\n");
+			ESP_LOGI(TAG, "Set IE command");
 			process_set_ie(if_type, payload, payload_len);
 			break;
 
 		case CMD_AP_CONFIG:
-			ESP_LOGI(TAG, "Set AP config command\n");
+			ESP_LOGI(TAG, "Set AP config command");
 			process_set_ap_config(if_type, payload, payload_len);
 			break;
 
 		case CMD_MGMT_TX:
-			//ESP_LOGI(TAG, "Send mgmt tx command\n");
+			//ESP_LOGI(TAG, "Send mgmt tx command");
 			process_mgmt_tx(if_type, payload, payload_len);
 			break;
 
 		case CMD_AP_STATION:
-			ESP_LOGI(TAG, "AP station command\n");
+			ESP_LOGI(TAG, "AP station command");
 			process_ap_station(if_type, payload, payload_len);
 			break;
 
@@ -500,8 +489,13 @@ void process_priv_commamd(uint8_t if_type, uint8_t *payload, uint16_t payload_le
 			process_raw_tp(if_type, payload, payload_len);
 			break;
 
+		case CMD_SET_TIME:
+			ESP_LOGI(TAG, "Set time command");
+			process_set_time(if_type, payload, payload_len);
+			break;
+
 		default:
-			ESP_LOGI(TAG, "Unsupported cmd[0x%x] received\n", header->cmd_code);
+			ESP_LOGI(TAG, "Unsupported cmd[0x%x] received", header->cmd_code);
 			break;
 	}
 }
@@ -528,10 +522,10 @@ void process_rx_pkt(interface_buffer_handle_t *buf_handle)
 
 	} else if (header->packet_type == PACKET_TYPE_DATA) {
 
-		/* ESP_LOGI(TAG, "Data packet on iface=%d\n", buf_handle->if_type); */
+		/* ESP_LOGI(TAG, "Data packet on iface=%d", buf_handle->if_type); */
 		/* Data Path */
 		if (buf_handle->if_type == ESP_STA_IF) {
-			/*ESP_LOGI(TAG, "Station IF\n");*/
+			/*ESP_LOGI(TAG, "Station IF");*/
 
 			/* Forward packet over station interface */
 			if (station_connected || association_ongoing) {

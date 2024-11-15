@@ -252,6 +252,11 @@ struct wireless_dev *esp_cfg80211_add_iface(struct wiphy *wiphy,
 	esp_wdev->stop_data = 1;
 	esp_wdev->port_open = 0;
 
+#ifdef TODO
+	if (cmd_update_fw_time(esp_wdev))
+		goto free_and_return;
+#endif
+
 	if (cmd_init_interface(esp_wdev))
 		goto free_and_return;
 
@@ -341,6 +346,7 @@ static int esp_cfg80211_change_iface(struct wiphy *wiphy,
 		esp_info("%u operating in same mode\n", __LINE__);
 		return 0;
 	}
+
 	ret = cmd_set_mode(priv, esp_get_mode_from_iface_type(esp_if_type));
 
 	if (ret == 0) {
@@ -398,13 +404,13 @@ static int esp_cfg80211_connect(struct wiphy *wiphy, struct net_device *dev,
 }
 #endif
 
-int esp_cfg80211_mgmt_tx(struct wiphy *wiphy, struct wireless_dev *wdev,
+static int esp_cfg80211_mgmt_tx(struct wiphy *wiphy, struct wireless_dev *wdev,
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(3, 14, 0))
-		struct ieee80211_channel *chan,
-		bool offchan, unsigned int wait, const u8 *buf, size_t len,
-		bool no_cck, bool dont_wait_for_ack,
+				struct ieee80211_channel *chan,
+				bool offchan, unsigned int wait, const u8 *buf, size_t len,
+				bool no_cck, bool dont_wait_for_ack,
 #else
-		struct cfg80211_mgmt_tx_params *params,
+				struct cfg80211_mgmt_tx_params *params,
 #endif
 		u64 *cookie)
 {
@@ -840,6 +846,25 @@ static const uint8_t *esp_get_rsn_ie(struct cfg80211_beacon_data *beacon, size_t
         return rsn_ie;
 }
 
+static const uint8_t *esp_get_rsnx_ie(struct cfg80211_beacon_data *beacon, size_t *rsnx_ie_len)
+{
+        const u8 *rsnx_ie = NULL;
+
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 7, 0))
+        if (!beacon->tail)
+                return NULL;
+
+        rsnx_ie = cfg80211_find_ie(WLAN_EID_RSNX, beacon->tail, beacon->tail_len);
+        if (!rsnx_ie)
+                return NULL;
+
+        *rsnx_ie_len = *(rsnx_ie + 1);
+	*rsnx_ie_len += 2;
+#endif
+
+        return rsnx_ie;
+}
+
 static int esp_cfg80211_start_ap(struct wiphy *wiphy, struct net_device *dev,
 				 struct cfg80211_ap_settings *info)
 {
@@ -850,7 +875,9 @@ static int esp_cfg80211_start_ap(struct wiphy *wiphy, struct net_device *dev,
 	int res;
 	int i;
 	size_t rsn_ie_len = 0;
+	size_t rsnx_ie_len = 0;
 	const uint8_t *rsn_ie;
+	const uint8_t *rsnx_ie;
 
 	if (!wiphy || !dev) {
 		esp_err("%u invalid params\n", __LINE__);
@@ -907,8 +934,21 @@ static int esp_cfg80211_start_ap(struct wiphy *wiphy, struct net_device *dev,
 
 	//TODO ht and vht caps
 	rsn_ie = esp_get_rsn_ie(&info->beacon, &rsn_ie_len);
-	if (rsn_ie && (rsn_ie_len != 0)) {
-		res = cmd_set_ie(priv, IE_RSN, rsn_ie, rsn_ie_len);
+	rsnx_ie = esp_get_rsnx_ie(&info->beacon, &rsnx_ie_len);
+	if (rsn_ie_len || rsnx_ie_len) {
+		size_t rsn_len = rsn_ie_len + rsnx_ie_len;
+		uint8_t *rsn = kmalloc(rsn_ie_len + rsnx_ie_len, GFP_KERNEL);
+		if (!rsn) {
+			return -1;
+		}
+		if (rsn_ie_len)
+			memcpy(rsn, rsn_ie, rsn_ie_len);
+		if (rsnx_ie_len)
+			memcpy(rsn + rsn_ie_len, rsnx_ie, rsnx_ie_len);
+
+		res = cmd_set_ie(priv, IE_RSN, rsn, rsn_len);
+
+		kfree(rsn);
 		/* Dummy mode set set security */
 #define WPA2_PSK_MODE 3
 		ap_config.authmode = WPA2_PSK_MODE;

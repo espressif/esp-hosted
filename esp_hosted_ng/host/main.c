@@ -223,7 +223,7 @@ void print_capabilities(u32 cap)
 	}
 }
 
-void init_bt(struct esp_adapter *adapter)
+static void init_bt(struct esp_adapter *adapter)
 {
 
 	if ((adapter->capabilities & ESP_BT_SPI_SUPPORT) ||
@@ -284,7 +284,7 @@ static int process_fw_data(struct fw_data *fw_p, int tag_len)
 	return check_esp_version(&fw_p->version);
 }
 
-int process_event_esp_bootup(struct esp_adapter *adapter, u8 *evt_buf, u8 len)
+static int process_event_esp_bootup(struct esp_adapter *adapter, u8 *evt_buf, u8 len)
 {
 	int len_left = len, tag_len, ret = 0;
 	u8 *pos;
@@ -569,7 +569,7 @@ static int stop_network_iface(struct esp_wifi_device *priv)
 	return 0;
 }
 
-int esp_stop_network_ifaces(struct esp_adapter *adapter)
+static int esp_stop_network_ifaces(struct esp_adapter *adapter)
 {
 	uint8_t iface_idx = 0;
 
@@ -619,13 +619,19 @@ struct esp_wifi_device *get_priv_from_payload_header(
 	for (i = 0; i < ESP_MAX_INTERFACE; i++) {
 		priv = adapter.priv[i];
 
-		if (!priv)
+		if (!priv) {
+			esp_err("dropping pkt, driver not initialized\n");
 			continue;
+                }
 
 		if (priv->if_type == header->if_type &&
-				priv->if_num == header->if_num) {
+		    priv->if_num == header->if_num) {
 			return priv;
-		}
+		} else if (priv->if_type == header->if_type) {
+			esp_err("dropping pkt, priv ifnum=%d, header ifnum=%d\n", priv->if_num, header->if_num);
+                } else {
+			esp_err("dropping pkt, priv iftype=%d, header iftype=%d\n", priv->if_type, header->if_type);
+                }
 	}
 	return NULL;
 }
@@ -718,7 +724,6 @@ static void process_rx_packet(struct esp_adapter *adapter, struct sk_buff *skb)
 		priv = get_priv_from_payload_header(payload_header);
 
 		if (!priv) {
-			esp_err("Empty priv\n");
 			dev_kfree_skb_any(skb);
 			return;
 		}
