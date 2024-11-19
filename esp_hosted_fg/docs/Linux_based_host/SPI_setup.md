@@ -60,9 +60,45 @@ Every packet would be passed through the ESP-Hosted Wi-Fi interface and not the 
 * Execute following commands in root directory of cloned ESP-Hosted repository on Raspberry-Pi
 ```sh
 $ cd esp_hosted_fg/host/linux/host_control/
-$ ./rpi_init.sh spi
+$ ./rpi_init.sh wifi=spi
 ```
 * This script compiles and loads host driver on Raspberry-Pi. It also creates virtual serial interface `/dev/esps0` which is used as a control interface for Wi-Fi on ESP peripheral
+* There are other parameters that we can control by this script like clockspeed. For if we want to reduce the SPI clockspeed to 1MHz we can do this by passing 1MHz to `clockspeed` parameter as shown below
+```sh
+$ ./rpi_init.sh wifi=spi clockspeed=1
+```
+You can explore other parameters available using the inbuilt `-h` option
+```sh
+$ ./rpi_init.sh -h
+```
+```
+2024-11-19 11:51:57] Entering parse_arguments
+Usage: ./rpi_init.sh [options]
+Options:
+  --help, -h                   Show this help message
+  wifi=<value>                 Set bluetooth transport
+     > 'sdio'                       <Use Wi-Fi over SDIO>
+     > 'spi'                        <Use Wi-Fi over SPI>
+     > '-'                          <Disable Wi-Fi>
+  resetpin=<gpio>              Set the reset pin GPIO
+  bt=<value>                   Set bluetooth transport
+     > 'spi'                        <Use bluetooth over SPI>
+     > 'sdio'                       <Use bluetooth over SDIO>
+     > 'uart_2pins'                 <Use bluetooth over UART Tx,Rx>
+     > 'uart_4pins'                 <Use bluetooth over UART Tx,Rx,CTS,RTS>
+     > '-'                          <Disable bluetooth>
+  clockspeed=<freq_in_mhz>     Set SPI/SDIO clock frequency to be used
+                                     SPI Default: 10MHz
+                                     SDIO Default: As per Device Tree (25 or 50MHz)
+  spi_bus=<num>                Use this SPI bus instance
+  spi_cs=<num>                 Use this ChipSelect instance
+  spi_mode=<num>               Use this SPI mode
+  spi_handshake=<gpio_num>     SPI Handshake GPIO
+  spi_dataready=<gpio_num>     SPI DataReady GPIO
+  rawtp                        Test RAW TP
+  cpu_perf=<on/off>            Change cpu performance level(may need porting)
+
+```
 
 ### 2.2 ESP Peripheral Firmware
 One can load pre-built release binaries on ESP peripheral or compile those from source. Below subsection explains both these methods.
@@ -106,7 +142,7 @@ $ rm -rf sdkconfig build
 $ idf.py set-target <esp_chipset>
 ```
 
-For SPI, <esp_chipset> could be onr of `esp32`, `esp32s2`, `esp32s3`, `esp32c2`, `esp32c3`, `esp32c6`
+For SPI, <esp_chipset> could be one of `esp32`, `esp32s2`, `esp32s3`, `esp32c2`, `esp32c3`, `esp32c6`
 * Execute following command to configure the project
 ```
 $ idf.py menuconfig
