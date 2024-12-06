@@ -488,6 +488,19 @@ void process_priv_commamd(uint8_t if_type, uint8_t *payload, uint16_t payload_le
 			ESP_LOGI(TAG, "RAW TP init command %s", CMD_RAW_TP_ESP_TO_HOST ? "slave to host" : "host to slave");
 			process_raw_tp(if_type, payload, payload_len);
 			break;
+		case CMD_START_OTA_UPDATE:
+			ESP_LOGI(TAG, "OTA update command");
+			process_ota_start(if_type, payload, payload_len);
+			break;
+
+		case CMD_START_OTA_WRITE:
+			process_ota_write(if_type, payload, payload_len);
+			break;
+
+		case CMD_START_OTA_END:
+			ESP_LOGI(TAG, "OTA end command");
+			process_ota_end(if_type, payload, payload_len);
+			break;
 
 		case CMD_SET_TIME:
 			ESP_LOGI(TAG, "Set time command");

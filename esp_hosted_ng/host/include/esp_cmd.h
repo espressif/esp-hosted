@@ -66,4 +66,7 @@ int cmd_mgmt_request(struct esp_wifi_device *priv,
 int cmd_sta_change(struct esp_wifi_device *priv,
 		     struct station_parameters *sta_info);
 int cmd_update_fw_time(struct esp_wifi_device *priv);
+int cmd_process_ota_start(struct esp_wifi_device *priv);
+int cmd_process_ota_write(struct esp_wifi_device *priv, char *ota_chunk, ssize_t nread);
+int cmd_process_ota_end(struct esp_wifi_device *priv);
 #endif
