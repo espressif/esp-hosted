@@ -309,6 +309,9 @@ static int wait_and_decode_cmd_resp(struct esp_wifi_device *priv,
 	case CMD_RAW_TP_HOST_TO_ESP:
 	case CMD_SET_WOW_CONFIG:
 	case CMD_SET_TIME:
+	case CMD_START_OTA_UPDATE:
+	case CMD_START_OTA_WRITE:
+	case CMD_START_OTA_END:
 		/* intentional fallthrough */
 		if (ret == 0)
 			ret = decode_common_resp(cmd_node);
@@ -523,6 +526,15 @@ static struct command_node *prepare_command_request(struct esp_adapter *adapter,
 	if (!test_bit(ESP_CMD_INIT_DONE, &adapter->state_flags)) {
 		esp_err("command queue init is not done yet\n");
 		return NULL;
+	}
+
+	if (test_bit(ESP_OTA_IN_PROGRESS, &adapter->state_flags)) {
+		if (cmd_code != CMD_START_OTA_UPDATE &&
+			cmd_code != CMD_START_OTA_WRITE &&
+			cmd_code != CMD_START_OTA_END) {
+			esp_err("OTA in progress discarding other commands\n");
+			return NULL;
+		}
 	}
 
 	node = get_free_cmd_node(adapter);
@@ -1699,6 +1711,98 @@ int cmd_scan_request(struct esp_wifi_device *priv, struct cfg80211_scan_request 
 	RET_ON_FAIL(wait_and_decode_cmd_resp(priv, cmd_node));
 
 	return 0;
+}
+
+int cmd_process_ota_start(struct esp_wifi_device *priv)
+{
+	u16 cmd_len;
+	struct command_node *cmd_node = NULL;
+
+	if (!priv || !priv->adapter) {
+		esp_err("Invalid argument\n");
+		return -EINVAL;
+	}
+
+	cmd_len = sizeof(struct command_header);
+
+	cmd_node = prepare_command_request(priv->adapter, CMD_START_OTA_UPDATE, cmd_len);
+
+	if (!cmd_node) {
+		esp_err("Failed to get command node\n");
+		return -ENOMEM;
+	}
+
+	queue_cmd_node(priv->adapter, cmd_node, ESP_CMD_DFLT_PRIO);
+	queue_work(priv->adapter->cmd_wq, &priv->adapter->cmd_work);
+
+	RET_ON_FAIL(wait_and_decode_cmd_resp(priv, cmd_node));
+
+	return 0;
+
+}
+
+int cmd_process_ota_write(struct esp_wifi_device *priv, char *ota_chunk, ssize_t nread)
+{
+	u16 cmd_len;
+	struct command_node *cmd_node = NULL;
+	struct cmd_ota_update_request * cmd_ota_req = NULL;
+
+
+	if (!priv || !priv->adapter) {
+		esp_err("Invalid argument\n");
+		return -EINVAL;
+	}
+
+	cmd_len = sizeof(struct cmd_ota_update_request) + nread;
+
+	cmd_node = prepare_command_request(priv->adapter, CMD_START_OTA_WRITE, cmd_len);
+
+	if (!cmd_node) {
+		esp_err("Failed to get command node\n");
+		return -ENOMEM;
+	}
+
+	cmd_ota_req = (struct cmd_ota_update_request *) (cmd_node->cmd_skb->data +
+			sizeof(struct esp_payload_header));
+
+	cmd_ota_req->ota_binary_len = nread;
+	memcpy(cmd_ota_req->ota_binary, ota_chunk, nread);
+
+	queue_cmd_node(priv->adapter, cmd_node, ESP_CMD_DFLT_PRIO);
+	queue_work(priv->adapter->cmd_wq, &priv->adapter->cmd_work);
+
+	RET_ON_FAIL(wait_and_decode_cmd_resp(priv, cmd_node));
+
+	return 0;
+
+}
+
+int cmd_process_ota_end(struct esp_wifi_device *priv)
+{
+	u16 cmd_len;
+	struct command_node *cmd_node = NULL;
+
+	if (!priv || !priv->adapter) {
+		esp_err("Invalid argument\n");
+		return -EINVAL;
+	}
+
+	cmd_len = sizeof(struct command_header);
+
+	cmd_node = prepare_command_request(priv->adapter, CMD_START_OTA_END, cmd_len);
+
+	if (!cmd_node) {
+		esp_err("Failed to get command node\n");
+		return -ENOMEM;
+	}
+
+	queue_cmd_node(priv->adapter, cmd_node, ESP_CMD_DFLT_PRIO);
+	queue_work(priv->adapter->cmd_wq, &priv->adapter->cmd_work);
+
+	RET_ON_FAIL(wait_and_decode_cmd_resp(priv, cmd_node));
+
+	return 0;
+
 }
 
 int cmd_init_raw_tp_task_timer(struct esp_wifi_device *priv)

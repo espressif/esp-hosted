@@ -20,6 +20,7 @@
 /* ESP Payload Header Flags */
 #define MORE_FRAGMENT                   (1 << 0)
 #define MAX_SSID_LEN                    32
+#define OTA_CHUNK_SIZE                  1016
 
 #define MAX_MULTICAST_ADDR_COUNT        8
 
@@ -142,6 +143,9 @@ enum COMMAND_CODE {
 	CMD_AP_STATION = 26,
 	CMD_STA_RSSI = 27,
 	CMD_SET_TIME = 28,
+	CMD_START_OTA_UPDATE = 29,
+	CMD_START_OTA_WRITE = 30,
+	CMD_START_OTA_END = 31,
 	CMD_MAX,
 };
 
@@ -170,6 +174,12 @@ struct command_header {
 	uint16_t   seq_num;
 	uint8_t    reserved1;
 	uint8_t    reserved2;
+} __packed;
+
+struct cmd_ota_update_request {
+	struct command_header header;
+	uint16_t   ota_binary_len;
+	char       ota_binary[];
 } __packed;
 
 struct scan_request {

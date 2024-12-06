@@ -31,6 +31,7 @@
 
 #define RELEASE_VERSION PROJECT_NAME "-" STRINGIFY(PROJECT_VERSION_MAJOR_1) "." STRINGIFY(PROJECT_VERSION_MAJOR_2) "." STRINGIFY(PROJECT_VERSION_MINOR) "." STRINGIFY(PROJECT_REVISION_PATCH_1) "." STRINGIFY(PROJECT_REVISION_PATCH_2)
 
+static char *ota_file = NULL;
 static int resetpin = HOST_GPIO_PIN_INVALID;
 static u32 clockspeed = 0;
 extern u8 ap_bssid[MAC_ADDR_LEN];
@@ -49,6 +50,9 @@ MODULE_PARM_DESC(clockspeed, "Hosts clock speed in MHz");
 
 module_param(raw_tp_mode, uint, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
 MODULE_PARM_DESC(raw_tp_mode, "Mode choosed to test raw throughput");
+
+module_param(ota_file, charp, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
+MODULE_PARM_DESC(ota_file, "Mode choosed to test raw throughput");
 
 static void deinit_adapter(void);
 
@@ -351,6 +355,13 @@ static int process_event_esp_bootup(struct esp_adapter *adapter, u8 *evt_buf, u8
 	}
 	init_bt(adapter);
 
+	if (ota_file && strlen(ota_file) != 0) {
+		esp_info("OTA update requested: bin(%s)\n", ota_file);
+		esp_start_ota(adapter, ota_file);
+		ota_file = NULL;
+		return 0;
+	}
+
 	if (raw_tp_mode !=0) {
 #if TEST_RAW_TP
 		process_test_capabilities(raw_tp_mode);
@@ -489,6 +500,56 @@ static int esp_add_network_ifaces(struct esp_adapter *adapter)
 		return 0;
 
 	return -1;
+}
+
+int esp_start_ota(struct esp_adapter *adapter, char *ota_file)
+{
+	char ota_chunk[OTA_CHUNK_SIZE] = {0};
+	struct file *file;
+	ssize_t nread;
+	int ret = 0;
+
+	file = filp_open(ota_file, O_RDONLY, 0);
+
+	if (IS_ERR(file)) {
+		esp_err("Error reading ota bin, or ota bin not found at %s \n", ota_file);
+		return -EINVAL;
+	}
+
+	set_bit(ESP_OTA_IN_PROGRESS, &adapter->state_flags);
+	if (cmd_process_ota_start(adapter->priv[ESP_STA_NW_IF]) != 0) {
+		esp_err("OTA Start failed\n");
+		ret = EINVAL;
+		goto done;
+    }
+
+	while ((nread = kernel_read(file, ota_chunk, OTA_CHUNK_SIZE, &file->f_pos)) > 0) {
+		if (cmd_process_ota_write(adapter->priv[ESP_STA_NW_IF], ota_chunk, nread) !=0) {
+			esp_err("OTA Write failed\n");
+			ret = EINVAL;
+			goto done;
+		}
+		if (nread < OTA_CHUNK_SIZE) {
+			break;
+		}
+	}
+
+	if (nread < 0) {
+		esp_err("Failed to read ota binary file %s \n", ota_file);
+		ret = EINVAL;
+		goto done;
+	}
+
+
+	ret = cmd_process_ota_end(adapter->priv[ESP_STA_NW_IF]);
+	if (ret != 0) {
+		esp_err("cmd_process_ota_end failed %d \n", ret);
+	}
+
+done:
+	filp_close(file, NULL);
+	clear_bit(ESP_OTA_IN_PROGRESS, &adapter->state_flags);
+	return ret;
 }
 
 int esp_init_raw_tp(struct esp_adapter *adapter)

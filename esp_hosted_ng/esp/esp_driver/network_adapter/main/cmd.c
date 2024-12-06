@@ -11,6 +11,7 @@
 #include <inttypes.h>
 #include "esp_log.h"
 #include "interface.h"
+#include "esp_log.h"
 #include "esp.h"
 #include "cmd.h"
 #include "adapter.h"
@@ -25,9 +26,13 @@
 #include "wifi_defs.h"
 #include <time.h>
 #include <sys/time.h>
+#include "esp_ota_ops.h"
+#include "esp_app_format.h"
+#include "freertos/event_groups.h"
 
 #define TAG "FW_CMD"
 
+static bool verify_ota = false;
 static uint8_t broadcast_mac[ETH_ALEN] = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };
 #define IS_BROADCAST_ADDR(addr) (memcmp(addr, broadcast_mac, ETH_ALEN) == 0)
 
@@ -35,6 +40,8 @@ static uint8_t broadcast_mac[ETH_ALEN] = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };
  * It needs the password field updated to understand
  * we are triggering non-open connection */
 #define DUMMY_PASSPHRASE            "12345678"
+
+#define RESET_TIMEOUT             (5*1000)
 extern volatile uint8_t station_connected;
 extern volatile uint8_t association_ongoing;
 extern volatile uint8_t softap_started;
@@ -66,6 +73,8 @@ extern struct wow_config wow;
 #else
 	#define TX_DONE_PREFIX 0
 #endif
+static const esp_partition_t* update_partition = NULL;
+static esp_ota_handle_t handle;
 
 extern int wpa_parse_wpa_ie(const u8 *wpa_ie, size_t wpa_ie_len, wifi_wpa_ie_t *data);
 static inline void WPA_PUT_LE16(u8 *a, u16 val)
@@ -1114,6 +1123,130 @@ int process_reg_set(uint8_t if_type, uint8_t *payload, uint16_t payload_len)
 	esp_wifi_set_country_code(cmd->country_code, false);
 
 	return send_command_resp(if_type, CMD_SET_REG_DOMAIN, CMD_RESPONSE_SUCCESS, (uint8_t *)cmd->country_code, sizeof(cmd->country_code), 0);
+}
+
+int process_ota_start(uint8_t if_type, uint8_t *payload, uint16_t payload_len)
+{
+	uint16_t cmd_status = CMD_RESPONSE_SUCCESS;
+	esp_err_t ret = ESP_OK;
+
+	update_partition = esp_ota_get_next_update_partition(NULL);
+	if (update_partition == NULL) {
+		ESP_LOGE(TAG, "Failed to get next update partition");
+		cmd_status = CMD_RESPONSE_FAIL;
+		goto send_resp;
+	}
+
+	ret = esp_ota_begin(update_partition, OTA_WITH_SEQUENTIAL_WRITES, &handle);
+	if (ret) {
+		ESP_LOGE(TAG, "OTA update failed in OTA begin");
+		cmd_status = CMD_RESPONSE_FAIL;
+		goto send_resp;
+	}
+
+	ESP_LOGI(TAG, "ESP OTA begin start");
+
+send_resp:
+	ret = send_command_resp(if_type, CMD_START_OTA_UPDATE, cmd_status, NULL, 0, 0);
+	return ret;
+
+}
+
+int verify_ota_image_header(char *binary_image)
+{
+	esp_image_header_t *img_header = (esp_image_header_t *)binary_image;
+
+	//verify image CHIP ID
+	if (img_header->chip_id != CONFIG_IDF_FIRMWARE_CHIP_ID) {
+		ESP_LOGE(TAG, "Firmware provided for ota has different chip id %x expected chip id %x", img_header->chip_id, CONFIG_IDF_FIRMWARE_CHIP_ID);
+		return -1;
+	}
+
+	verify_ota = true;
+	return 0;
+}
+
+int process_ota_write(uint8_t if_type, uint8_t *payload, uint16_t payload_len)
+{
+	esp_err_t ret = ESP_OK;
+	struct cmd_ota_update_request *cmd;
+	uint8_t cmd_status = CMD_RESPONSE_SUCCESS;
+
+	cmd = (struct cmd_ota_update_request *)(payload);
+
+	if (!verify_ota) {
+		ret = verify_ota_image_header(cmd->ota_binary);
+		if (ret != 0) {
+			goto fail;
+		}
+	}
+
+	ret = esp_ota_write(handle, (const void *)cmd->ota_binary,
+			cmd->ota_binary_len);
+
+fail:
+	if (ret) {
+		esp_ota_abort(handle);
+		ESP_LOGE(TAG, "OTA update failed in OTA Write");
+		cmd_status = CMD_RESPONSE_FAIL;
+	}
+
+	ret = send_command_resp(if_type, CMD_START_OTA_WRITE, cmd_status, NULL, 0, 0);
+	return ret;
+}
+
+static void esp_reset_callback(TimerHandle_t xTimer)
+{
+	xTimerDelete(xTimer, 0);
+	esp_restart();
+}
+
+int process_ota_end(uint8_t if_type, uint8_t *payload, uint16_t payload_len)
+{
+	esp_err_t ret = ESP_OK;
+	uint8_t cmd_status = CMD_RESPONSE_SUCCESS;
+	TimerHandle_t xTimer = NULL;
+
+	ret = esp_ota_end(handle);
+	if (ret != ESP_OK) {
+		if (ret == ESP_ERR_OTA_VALIDATE_FAILED) {
+			ESP_LOGE(TAG, "Image validation failed, image is corrupted");
+		} else {
+			ESP_LOGE(TAG, "OTA update failed in end (%s)!", esp_err_to_name(ret));
+		}
+		cmd_status = CMD_RESPONSE_FAIL;
+		goto fail;
+	}
+
+	/* set OTA partition for next boot */
+	ret = esp_ota_set_boot_partition(update_partition);
+	if (ret != ESP_OK) {
+		ESP_LOGE(TAG, "esp_ota_set_boot_partition failed (%s)!", esp_err_to_name(ret));
+		cmd_status = CMD_RESPONSE_FAIL;
+		goto fail;
+	}
+
+	xTimer = xTimerCreate("Reset Timer", RESET_TIMEOUT , pdFALSE, 0, esp_reset_callback);
+	if (xTimer == NULL) {
+		ESP_LOGE(TAG, "Failed to create timer to restart system");
+		cmd_status = CMD_RESPONSE_FAIL;
+		goto fail;
+	}
+
+	ret = xTimerStart(xTimer, 0);
+	if (ret != pdPASS) {
+		ESP_LOGE(TAG, "Failed to start timer to restart system");
+		cmd_status = CMD_RESPONSE_FAIL;
+		goto fail;
+	}
+
+	ESP_LOGE(TAG, "**** OTA updated successful, ESP will reboot in 5 sec ****");
+fail:
+	ESP_LOGI(TAG, "ESP OTA end");
+
+	ret = send_command_resp(if_type, CMD_START_OTA_END, cmd_status, NULL, 0, 0);
+
+	return ret;
 }
 
 int process_reg_get(uint8_t if_type, uint8_t *payload, uint16_t payload_len)

@@ -21,6 +21,7 @@ RAW_TP_MODE="0"
 IF_TYPE="sdio"
 MODULE_NAME="esp32_${IF_TYPE}.ko"
 RPI_RESETPIN=6
+OTA_FILE=""
 
 bringup_network_interface()
 {
@@ -68,10 +69,10 @@ wlan_init()
 
     if [ "$RESETPIN" = "" ] ; then
         #By Default, BCM6 is GPIO on host. use resetpin=6
-        sudo insmod $MODULE_NAME resetpin=$RPI_RESETPIN raw_tp_mode=$RAW_TP_MODE
+        sudo insmod $MODULE_NAME resetpin=$RPI_RESETPIN raw_tp_mode=$RAW_TP_MODE ota_file=$OTA_FILE
     else
         #Use resetpin value from argument
-        sudo insmod $MODULE_NAME $RESETPIN raw_tp_mode=$RAW_TP_MODE
+        sudo insmod $MODULE_NAME $RESETPIN raw_tp_mode=$RAW_TP_MODE ota_file=$OTA_FILE
     fi
 
     if [ `lsmod | grep esp32 | wc -l` != "0" ]; then
@@ -117,6 +118,8 @@ usage()
     echo "    # ./rpi_init.sh <transport> ap_support"
     echo "\n  - Do btuart, using GPIO pin BCM5 (GPIO29) for reset over SDIO/SPI."
     echo "    # ./rpi_init.sh sdio btuart resetpin=5 or ./rpi_init.sh spi btuart resetpin=5"
+    echo "\n  - set the OTA file path"
+    echo "   # ./rpi_init.sh spi ota_file=/path/to/ota_file"
 }
 
 parse_arguments()
@@ -156,6 +159,10 @@ parse_arguments()
             ap_support)
                 echo "Enabling AP support"
                 AP_SUPPORT="1"
+                ;;
+            ota_file=*)
+                echo "Recvd Option: $1"
+                OTA_FILE=${1#*=}
                 ;;
             *)
                 echo "$1 : unknown option"
