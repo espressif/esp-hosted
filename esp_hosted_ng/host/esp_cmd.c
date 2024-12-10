@@ -574,6 +574,13 @@ int process_cmd_resp(struct esp_adapter *adapter, struct sk_buff *skb)
 		return -1;
 	}
 
+	if (!test_bit(ESP_CMD_INIT_DONE, &adapter->state_flags)) {
+		esp_err("CMD resp: cmd init is not done yet\n");
+		if (skb)
+			dev_kfree_skb_any(skb);
+		return -1;
+	}
+
 	spin_lock_bh(&adapter->cmd_lock);
 	if (!adapter->cur_cmd) {
 		struct command_header *header = (struct command_header *) skb->data;
