@@ -1712,7 +1712,6 @@ static int set_key_internal(void *data)
 		if (iface == WIFI_IF_AP) {
 			ret = esp_wifi_set_ap_key_internal(key->algo, key->mac_addr, key->index,
 						key->data, key->len);
-			esp_wifi_wpa_ptk_init_done_internal(key->mac_addr);
 		} else {
 			ret = esp_wifi_set_sta_key_internal(key->algo, key->mac_addr, key->index,
 				1, key->seq, key->seq_len, key->data, key->len, 
@@ -2044,10 +2043,17 @@ int add_station_node_ap(void *data)
 	ESP_LOG_BUFFER_HEXDUMP("ht_rates", sta->sta_param.ht_caps, 28, ESP_LOG_INFO);
 	ESP_LOG_BUFFER_HEXDUMP("vht_rates", sta->sta_param.vht_caps, 14, ESP_LOG_INFO);
 	ESP_LOG_BUFFER_HEXDUMP("he_rates", sta->sta_param.he_caps, 27, ESP_LOG_INFO);
+
+#define STA_FLAG_AUTHORIZED 1
 	if (sta->sta_param.cmd != ADD_STA) {
-		ESP_LOGI(TAG, "%s: not station add cmd, handle later\n", __func__);
-		return 0;
-	}
+	    ESP_LOGD(TAG,"sta_flags_set=%ld, sta_flags_mask=%ld sta_modify_mask=%ld\n", sta->sta_param.sta_flags_set, sta->sta_param.sta_flags_mask, sta->sta_param.sta_modify_mask);
+            if (sta->sta_param.sta_flags_set & BIT(STA_FLAG_AUTHORIZED)) {
+		ESP_LOGI(TAG, "%s: authrizing station\n", __func__);
+		esp_wifi_wpa_ptk_init_done_internal(sta->sta_param.mac);
+            }
+	    ESP_LOGI(TAG, "%s: not station add cmd, handle later\n", __func__);
+	    return 0;
+        }
 	return ieee80211_add_node(WIFI_IF_AP, sta->sta_param.mac, sta->sta_param.aid,
 			sta->sta_param.supported_rates[0] ? sta->sta_param.supported_rates : NULL,
 			sta->sta_param.ht_caps[0] ? sta->sta_param.ht_caps : NULL,
