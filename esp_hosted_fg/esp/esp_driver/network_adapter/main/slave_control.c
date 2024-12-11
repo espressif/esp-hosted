@@ -711,7 +711,7 @@ static esp_err_t req_get_ap_config_handler (CtrlMsg *req,
 		resp_payload->resp = CTRL__STATUS__Not_Connected;
 		goto err;
 	} else if (ret) {
-		ESP_LOGE(TAG,"Failed to get AP config %d \n", ret);
+		ESP_LOGE(TAG,"Failed to get AP config %d ", ret);
 		resp_payload->resp = FAILURE;
 		goto err;
 	}
@@ -1292,9 +1292,9 @@ static esp_err_t req_get_ap_scan_list_handler (CtrlMsg *req,
 		credentials.ecn = ap_info[i].authmode;
 		results[i]->sec_prot = credentials.ecn;
 #if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 0, 0) 
-		ESP_LOGI(TAG, "SSID      \t\t%s\nRSSI      \t\t%ld\nChannel   \t\t%lu\nBSSID     \t\t%s\nAuth mode \t\t%d\n",
+		ESP_LOGI(TAG, "\nSSID      \t\t%s\nRSSI      \t\t%ld\nChannel   \t\t%lu\nBSSID     \t\t%s\nAuth mode \t\t%d",
 #else
-		ESP_LOGI(TAG,"\nSSID      \t\t%s\nRSSI      \t\t%d\nChannel   \t\t%d\nBSSID     \t\t%s\nAuth mode \t\t%d\n",
+		ESP_LOGI(TAG,"\nSSID      \t\t%s\nRSSI      \t\t%d\nChannel   \t\t%d\nBSSID     \t\t%s\nAuth mode \t\t%d",
 #endif
 				results[i]->ssid.data, results[i]->rssi, results[i]->chnl,
 				results[i]->bssid.data, results[i]->sec_prot);
@@ -1655,7 +1655,7 @@ static esp_err_t req_ota_begin_handler (CtrlMsg *req,
 		goto err;
 	}
 
-	ESP_LOGI(TAG, "Prepare partition for OTA\n");
+	ESP_LOGI(TAG, "Prepare partition for OTA");
 	ota_ongoing=1;
 #if CONFIG_ESP_OTA_WORKAROUND
 	vTaskDelay(OTA_SLEEP_TIME_MS/portTICK_PERIOD_MS);
@@ -1696,7 +1696,7 @@ static esp_err_t req_ota_write_handler (CtrlMsg *req,
 	}
 
 	if (ota_msg) {
-		ESP_LOGI(TAG, "Flashing image\n");
+		ESP_LOGI(TAG, "Flashing image");
 		ota_msg = 0;
 	}
 	ctrl_msg__resp__otawrite__init(resp_payload);
@@ -1804,11 +1804,11 @@ static esp_err_t req_set_softap_vender_specific_ie_handler (CtrlMsg *req,
 
 	if (!p_vsi->enable) {
 
-		ESP_LOGI(TAG,"Disable softap vendor IE\n");
+		ESP_LOGI(TAG,"Disable softap vendor IE");
 
 	} else {
 
-		ESP_LOGI(TAG,"Enable softap vendor IE\n");
+		ESP_LOGI(TAG,"Enable softap vendor IE");
 
 		if (!p_vid ||
 		    !p_vid->payload.len ||
@@ -1819,7 +1819,7 @@ static esp_err_t req_set_softap_vender_specific_ie_handler (CtrlMsg *req,
 
 		v_data = (vendor_ie_data_t*)calloc(1,sizeof(vendor_ie_data_t)+p_vid->payload.len);
 		if (!v_data) {
-			ESP_LOGE(TAG, "Malloc failed at %s:%u\n", __func__, __LINE__);
+			ESP_LOGE(TAG, "Malloc failed at %s:%u", __func__, __LINE__);
 			return ESP_FAIL;
 		}
 
@@ -1858,7 +1858,7 @@ static esp_err_t req_set_softap_vender_specific_ie_handler (CtrlMsg *req,
 		mem_free(v_data);
 
 	if (ret != ESP_OK) {
-		ESP_LOGE(TAG, "Failed to set vendor information element %d \n", ret);
+		ESP_LOGE(TAG, "Failed to set vendor information element %d", ret);
 		resp_payload->resp = FAILURE;
 		return ESP_OK;
 	}
@@ -1892,7 +1892,7 @@ static esp_err_t req_set_wifi_max_tx_power_handler (CtrlMsg *req,
 			|| (req->req_set_wifi_max_tx_power->wifi_max_tx_power < MIN_TX_POWER)) {
 		ESP_LOGE(TAG, "Invalid maximum transmitting power value");
 		ESP_LOGE(TAG, "Value lies between [8,84]");
-		ESP_LOGE(TAG, "Please refer `wifi_set_max_tx_power` API documentation \n");
+		ESP_LOGE(TAG, "Please refer `wifi_set_max_tx_power` API documentation");
 		resp_payload->resp = CTRL__STATUS__Out_Of_Range;
 		return ESP_OK;
 	}
@@ -2013,7 +2013,7 @@ static esp_err_t start_heartbeat(int duration)
 		ESP_LOGE(TAG, "Failed to start Heartbeat");
 		return ESP_FAIL;
 	}
-	ESP_LOGI(TAG, "HB timer started for %u sec\n", duration);
+	ESP_LOGI(TAG, "HB timer started for %u sec", duration);
 
 	return ESP_OK;
 }
@@ -2699,7 +2699,7 @@ static esp_err_t ctrl_ntfy_StationConnectedToESPSoftAP(CtrlMsg *ntfy,
 
 	snprintf(mac_str, BSSID_LENGTH, MACSTR, MAC2STR(evt->mac));
 	ntfy_payload->mac.len = strnlen(mac_str, BSSID_LENGTH);
-	ESP_LOGI(TAG,"mac [%s]\n", mac_str);
+	ESP_LOGI(TAG,"mac [%s]", mac_str);
 
 	ntfy_payload->mac.data = (uint8_t *)strndup(mac_str, ntfy_payload->mac.len);
 	if (!ntfy_payload->mac.data) {
@@ -2746,7 +2746,7 @@ static esp_err_t ctrl_ntfy_StationDisconnectFromESPSoftAP(CtrlMsg *ntfy,
 
 	snprintf(mac_str, BSSID_LENGTH, MACSTR, MAC2STR(evt->mac));
 	ntfy_payload->mac.len = strnlen(mac_str, BSSID_LENGTH);
-	ESP_LOGI(TAG,"mac [%s]\n", mac_str);
+	ESP_LOGI(TAG,"mac [%s]", mac_str);
 
 	ntfy_payload->mac.data = (uint8_t *)strndup(mac_str, ntfy_payload->mac.len);
 	if (!ntfy_payload->mac.data) {
@@ -2797,14 +2797,14 @@ esp_err_t ctrl_notify_handler(uint32_t session_id,const uint8_t *inbuf,
 			ret = ctrl_ntfy_StationConnectedToESPSoftAP(&ntfy, inbuf, inlen);
 			break;
 		} default: {
-			ESP_LOGE(TAG, "Incorrect/unsupported Ctrl Notification[%u]\n",ntfy.msg_id);
+			ESP_LOGE(TAG, "Incorrect/unsupported Ctrl Notification[%u]", ntfy.msg_id);
 			goto err;
 			break;
 		}
 	}
 
 	if (ret) {
-		ESP_LOGI(TAG, "notification[%u] not sent\n", ntfy.msg_id);
+		ESP_LOGI(TAG, "notification[%u] not sent", ntfy.msg_id);
 		goto err;
 	}
 

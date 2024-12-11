@@ -400,7 +400,7 @@ static void queue_next_transaction(void)
 	tx_buffer = get_next_tx_buffer(&len);
 	if (!tx_buffer) {
 		/* Queue next transaction failed */
-		ESP_LOGE(TAG , "Failed to queue new transaction\r\n");
+		ESP_LOGE(TAG , "Failed to queue new transaction");
 		return;
 	}
 
@@ -423,7 +423,7 @@ static void queue_next_transaction(void)
 	ret = spi_slave_queue_trans(ESP_SPI_CONTROLLER, spi_trans, portMAX_DELAY);
 
 	if (ret != ESP_OK) {
-		ESP_LOGI(TAG, "Failed to queue next SPI transfer\n");
+		ESP_LOGI(TAG, "Failed to queue next SPI transfer");
 		free(spi_trans->rx_buffer);
 		spi_trans->rx_buffer = NULL;
 		free((void *)spi_trans->tx_buffer);
@@ -453,12 +453,12 @@ static void spi_transaction_post_process_task(void* pvParameters)
 		queue_next_transaction();
 
 		if (ret != ESP_OK) {
-			ESP_LOGE(TAG , "spi transmit error, ret : 0x%x\r\n", ret);
+			ESP_LOGE(TAG , "spi transmit error, ret : 0x%x", ret);
 			continue;
 		}
 
 		if (!spi_trans) {
-			ESP_LOGW(TAG , "spi_trans fetched NULL\n");
+			ESP_LOGW(TAG , "spi_trans fetched NULL");
 			continue;
 		}
 
@@ -582,12 +582,12 @@ static int32_t esp_spi_write(interface_handle_t *handle, interface_buffer_handle
 	interface_buffer_handle_t tx_buf_handle = {0};
 
 	if (!handle || !buf_handle) {
-		ESP_LOGE(TAG , "Invalid arguments\n");
+		ESP_LOGE(TAG , "Invalid arguments");
 		return ESP_FAIL;
 	}
 
 	if (!buf_handle->payload_len || !buf_handle->payload) {
-		ESP_LOGE(TAG , "Invalid arguments, len:%d\n", buf_handle->payload_len);
+		ESP_LOGE(TAG , "Invalid arguments, len:%d", buf_handle->payload_len);
 		return ESP_FAIL;
 	}
 
@@ -599,7 +599,7 @@ static int32_t esp_spi_write(interface_handle_t *handle, interface_buffer_handle
 	}
 
 	if (total_len > RX_BUF_SIZE) {
-		ESP_LOGE(TAG, "Max frame length exceeded %ld.. drop it\n", total_len);
+		ESP_LOGE(TAG, "Max frame length exceeded %ld.. drop it", total_len);
 		return ESP_FAIL;
 	}
 
@@ -663,7 +663,7 @@ static int esp_spi_read(interface_handle_t *if_handle, interface_buffer_handle_t
 	esp_err_t ret = ESP_OK;
 
 	if (!if_handle) {
-		ESP_LOGE(TAG, "Invalid arguments to esp_spi_read\n");
+		ESP_LOGE(TAG, "Invalid arguments to esp_spi_read");
 		return ESP_FAIL;
 	}
 
@@ -693,7 +693,7 @@ static esp_err_t esp_spi_reset(interface_handle_t *handle)
 	esp_err_t ret = ESP_OK;
 	ret = spi_slave_free(ESP_SPI_CONTROLLER);
 	if (ESP_OK != ret) {
-		ESP_LOGE(TAG, "spi slave bus free failed\n");
+		ESP_LOGE(TAG, "spi slave bus free failed");
 	}
 	return ret;
 }
@@ -704,13 +704,13 @@ static void esp_spi_deinit(interface_handle_t *handle)
 
 	ret = spi_slave_free(ESP_SPI_CONTROLLER);
 	if (ESP_OK != ret) {
-		ESP_LOGE(TAG, "spi slave bus free failed\n");
+		ESP_LOGE(TAG, "spi slave bus free failed");
 		return;
 	}
 
 	ret = spi_bus_free(ESP_SPI_CONTROLLER);
 	if (ESP_OK != ret) {
-		ESP_LOGE(TAG, "spi all bus free failed\n");
+		ESP_LOGE(TAG, "spi all bus free failed");
 		return;
 	}
 }

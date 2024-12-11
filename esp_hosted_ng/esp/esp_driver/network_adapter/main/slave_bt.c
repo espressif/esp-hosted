@@ -75,7 +75,7 @@ static int host_rcv_pkt(uint8_t *data, uint16_t len)
 	ret = xQueueSend(to_host_queue[PRIO_Q_MID], &buf_handle, portMAX_DELAY);
 
 	if (ret != pdTRUE) {
-		ESP_LOGE(BT_TAG, "HCI send packet: Failed to send buffer\n");
+		ESP_LOGE(BT_TAG, "HCI send packet: Failed to send buffer");
 		free(buf);
 		return ESP_FAIL;
 	}
@@ -297,7 +297,7 @@ static void init_uart(void)
 			BT_TX_PIN, BT_RX_PIN, BT_RTS_PIN, BT_CTS_PIN);
 
 	// configure UART1
-	ESP_LOGI(BT_TAG, "baud rate for HCI uart :: %d\n",
+	ESP_LOGI(BT_TAG, "baud rate for HCI uart :: %d",
 					CONFIG_EXAMPLE_HCI_UART_BAUDRATE);
 
 	uart_config_t uart_config = {

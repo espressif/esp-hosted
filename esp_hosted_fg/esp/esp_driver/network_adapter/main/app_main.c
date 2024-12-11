@@ -342,7 +342,7 @@ void process_serial_rx_pkt(uint8_t *buf)
 
 	while (r.valid)
 	{
-		ESP_LOGI(TAG,"More segment: %u curr seq: %u header seq: %u\n",
+		ESP_LOGI(TAG,"More segment: %u curr seq: %u header seq: %u",
 			header->flags & MORE_FRAGMENT, r.cur_seq_no, header->seq_num);
 		vTaskDelay(10);
 	}
@@ -380,7 +380,7 @@ void process_rx_pkt(interface_buffer_handle_t *buf_handle)
 	payload = buf_handle->payload + le16toh(header->offset);
 	payload_len = le16toh(header->len);
 
-	ESP_LOGV(TAG, "Rx pkt: type:%u\n",buf_handle->if_type);
+	ESP_LOGV(TAG, "Rx pkt: type:%u",buf_handle->if_type);
 	ESP_LOG_BUFFER_HEXDUMP(TAG, payload, payload_len, ESP_LOG_VERBOSE);
 
 	if ((buf_handle->if_type == ESP_STA_IF) && station_connected) {
@@ -484,7 +484,7 @@ int send_to_host_queue(interface_buffer_handle_t *buf_handle, uint8_t queue_type
 #else
 	int ret = xQueueSend(to_host_queue[queue_type], buf_handle, portMAX_DELAY);
 	if (ret != pdTRUE) {
-		ESP_LOGE(TAG, "Failed to send buffer into queue[%u]\n",queue_type);
+		ESP_LOGE(TAG, "Failed to send buffer into queue[%u]",queue_type);
 		return ESP_FAIL;
 	}
 
@@ -494,7 +494,7 @@ int send_to_host_queue(interface_buffer_handle_t *buf_handle, uint8_t queue_type
 		ret = xQueueSend(meta_to_host_queue, &queue_type, portMAX_DELAY);
 
 	if (ret != pdTRUE) {
-		ESP_LOGE(TAG, "Failed to send buffer into meta queue[%u]\n",queue_type);
+		ESP_LOGE(TAG, "Failed to send buffer into meta queue[%u]",queue_type);
 		return ESP_FAIL;
 	}
 #endif
@@ -730,7 +730,7 @@ void app_main()
 
 	ret = esp_read_mac(mac, ESP_MAC_BT);
 	if (ret) {
-		ESP_LOGE(TAG,"Failed to read BT Mac addr\n");
+		ESP_LOGE(TAG,"Failed to read BT Mac addr");
 	} else {
 		ESP_LOGI(TAG, "ESP Bluetooth MAC addr: %2x:%2x:%2x:%2x:%2x:%2x",
 				mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
@@ -766,14 +766,14 @@ void app_main()
 #endif
 
 	if (!if_context || !if_context->if_ops) {
-		ESP_LOGE(TAG, "Failed to insert driver\n");
+		ESP_LOGE(TAG, "Failed to insert driver");
 		return;
 	}
 
 	if_handle = if_context->if_ops->init();
 
 	if (!if_handle) {
-		ESP_LOGE(TAG, "Failed to initialize driver\n");
+		ESP_LOGE(TAG, "Failed to initialize driver");
 		return;
 	}
 
