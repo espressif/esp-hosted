@@ -229,12 +229,12 @@ esp_err_t wlan_ap_rx_callback(void *buffer, uint16_t len, void *eb)
 	buf_handle.free_buf_handle = esp_wifi_internal_free_rx_buffer;
 	buf_handle.pkt_type = PACKET_TYPE_DATA;
 
-	/* ESP_LOGI(TAG, "Slave -> Host: AP data packet\n"); */
+	/* ESP_LOGI(TAG, "Slave -> Host: AP data packet"); */
 	/* ESP_LOG_BUFFER_HEXDUMP("RX", buffer, len, ESP_LOG_INFO); */
 	ret = xQueueSend(to_host_queue[PRIO_Q_LOW], &buf_handle, portMAX_DELAY);
 
 	if (ret != pdTRUE) {
-		ESP_LOGE(TAG, "Slave -> Host: Failed to send buffer\n");
+		ESP_LOGE(TAG, "Slave -> Host: Failed to send buffer");
 		goto DONE;
 	}
 
@@ -272,7 +272,7 @@ esp_err_t wlan_sta_rx_callback(void *buffer, uint16_t len, void *eb)
 	ret = xQueueSend(to_host_queue[PRIO_Q_LOW], &buf_handle, portMAX_DELAY);
 
 	if (ret != pdTRUE) {
-		ESP_LOGE(TAG, "Slave -> Host: Failed to send buffer\n");
+		ESP_LOGE(TAG, "Slave -> Host: Failed to send buffer");
 		goto DONE;
 	}
 
@@ -414,7 +414,7 @@ void process_priv_commamd(uint8_t if_type, uint8_t *payload, uint16_t payload_le
 			break;
 
 		case CMD_DEL_KEY:
-			/* ESP_LOGI(TAG, "Delete key request\n"); */
+			/* ESP_LOGI(TAG, "Delete key request"); */
 			process_del_key(if_type, payload, payload_len);
 			break;
 
@@ -542,17 +542,17 @@ void process_rx_pkt(interface_buffer_handle_t *buf_handle)
 
 			/* Forward packet over station interface */
 			if (station_connected || association_ongoing) {
-				/*ESP_LOGI(TAG, "Send wlan\n");*/
+				/*ESP_LOGI(TAG, "Send wlan");*/
 				esp_wifi_internal_tx(ESP_IF_WIFI_STA, payload, payload_len);
 			}
 
 		} else if (buf_handle->if_type == ESP_AP_IF && softap_started) {
 
 			/* Forward packet over soft AP interface */
-			/* ESP_LOGI(TAG, "Send data pkt over wlan\n"); */
+			/* ESP_LOGI(TAG, "Send data pkt over wlan"); */
 			int ret = esp_wifi_internal_tx(ESP_IF_WIFI_AP, payload, payload_len);
 			if (ret)
-				ESP_LOGE(TAG, "Sending data failed=%d\n", ret);
+				ESP_LOGE(TAG, "Sending data failed=%d", ret);
 		}
 #if defined(CONFIG_BT_ENABLED) && BLUETOOTH_HCI
 		else if (buf_handle->if_type == ESP_HCI_IF) {
@@ -692,7 +692,7 @@ void app_main()
 
 	init_sem = xSemaphoreCreateBinary();
 	if (init_sem == NULL) {
-		ESP_LOGE(TAG, "Failed to create init semaphore\n");
+		ESP_LOGE(TAG, "Failed to create init semaphore");
 		return;
 	}
 
@@ -701,9 +701,9 @@ void app_main()
 
 	ret = esp_read_mac(mac, ESP_MAC_BT);
 	if (ret) {
-		ESP_LOGE(TAG,"Failed to read BT Mac addr\n");
+		ESP_LOGE(TAG,"Failed to read BT Mac addr");
 	} else {
-		ESP_LOGI(TAG, "ESP Bluetooth MAC addr: %2x-%2x-%2x-%2x-%2x-%2x\n",
+		ESP_LOGI(TAG, "ESP Bluetooth MAC addr: %2x-%2x-%2x-%2x-%2x-%2x",
 				mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
 	}
 #endif
@@ -714,14 +714,14 @@ void app_main()
 #endif
 
 	if (!if_context || !if_context->if_ops) {
-		ESP_LOGE(TAG, "Failed to insert driver\n");
+		ESP_LOGE(TAG, "Failed to insert driver");
 		return;
 	}
 
 	if_handle = if_context->if_ops->init();
 
 	if (!if_handle) {
-		ESP_LOGE(TAG, "Failed to initialize driver\n");
+		ESP_LOGE(TAG, "Failed to initialize driver");
 		return;
 	}
 

@@ -36,19 +36,19 @@ struct hosted_mempool * hosted_mempool_create(void *pre_allocated_mem,
 		heap = (uint8_t *)CALLOC( MEMPOOL_ALIGNED(OS_MEMPOOL_BYTES(
 						num_blocks,block_size)), 1);
 		if (!heap) {
-			ESP_LOGE(TAG, "mempool create failed, no mem\n");
+			ESP_LOGE(TAG, "mempool create failed, no mem");
 			return NULL;
 		}
 	} else {
 		/* preallocated memory for mem pool */
 		heap = pre_allocated_mem;
 		if (pre_allocated_mem_size < num_blocks*block_size) {
-			ESP_LOGE(TAG, "mempool create failed, insufficient mem\n");
+			ESP_LOGE(TAG, "mempool create failed, insufficient mem");
 			return NULL;
 		}
 
 		if (!IS_MEMPOOL_ALIGNED((unsigned long)pre_allocated_mem)) {
-			ESP_LOGE(TAG, "mempool create failed, mempool start addr unaligned\n");
+			ESP_LOGE(TAG, "mempool create failed, mempool start addr unaligned");
 			return NULL;
 		}
 	}
@@ -63,7 +63,7 @@ struct hosted_mempool * hosted_mempool_create(void *pre_allocated_mem,
 	snprintf(str, MEMPOOL_NAME_STR_SIZE, "hosted_%p", pool);
 
 	if (os_mempool_init(pool, num_blocks, block_size, heap, str)) {
-		ESP_LOGE(TAG, "os_mempool_init failed\n");
+		ESP_LOGE(TAG, "os_mempool_init failed");
 		goto free_buffs;
 	}
 
@@ -124,7 +124,7 @@ void * hosted_mempool_alloc(struct hosted_mempool *mempool,
 	assert(mempool->pool);
 
 	if(nbytes > mempool->block_size) {
-		ESP_LOGE(TAG, "Exp alloc bytes[%u] > mempool block size[%u]\n",
+		ESP_LOGE(TAG, "Exp alloc bytes[%u] > mempool block size[%u]",
 				nbytes, mempool->block_size);
 		return NULL;
 	}

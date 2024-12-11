@@ -311,7 +311,7 @@ static void init_uart_c3_s3(void)
 			BT_TX_PIN, BT_RX_PIN, BT_RTS_PIN, BT_CTS_PIN);
 
     // configure UART1
-    ESP_LOGI(BT_TAG, "baud rate for HCI uart :: %d \n",
+    ESP_LOGI(BT_TAG, "baud rate for HCI uart :: %d",
 			CONFIG_EXAMPLE_HCI_UART_BAUDRATE);
 
     uart_config_t uart_config = {

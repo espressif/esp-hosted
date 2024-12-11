@@ -234,9 +234,9 @@ uint8_t debug_get_raw_tp_conf(void) {
 	raw_tp_cap |= ESP_TEST_RAW_TP__ESP_TO_HOST;
   #endif
 	if ((raw_tp_cap & ESP_TEST_RAW_TP__ESP_TO_HOST) == ESP_TEST_RAW_TP__ESP_TO_HOST)
-		ESP_LOGI(TAG, "\n\n*** Raw Throughput testing: ESP --> Host started ***\n");
+		ESP_LOGI(TAG, "\n\n*** Raw Throughput testing: ESP --> Host started ***");
 	else
-		ESP_LOGI(TAG, "\n\n*** Raw Throughput testing: Host --> ESP started ***\n");
+		ESP_LOGI(TAG, "\n\n*** Raw Throughput testing: Host --> ESP started ***");
 #endif
 	return raw_tp_cap;
 }
