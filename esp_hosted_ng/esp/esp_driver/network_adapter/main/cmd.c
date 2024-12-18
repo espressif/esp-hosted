@@ -58,8 +58,6 @@ extern uint8_t dev_mac[MAC_ADDR_LEN];
 
 uint8_t dummy_mac[] = {0x00, 0x11, 0x22, 0x33, 0x44, 0x55};
 uint8_t dummy_mac2[] = {0x00, 0x11, 0x22, 0x33, 0x44, 0x66};
-uint8_t *ap_rsn_ie;
-uint8_t ap_rsn_ie_len;
 
 int esp_wifi_register_wpa_cb_internal(struct wpa_funcs *cb);
 int esp_wifi_unregister_wpa_cb_internal(void);
@@ -542,6 +540,11 @@ static void wifi_event_handler(void* arg, esp_event_base_t event_base,
 		softap_started = 0;
 		break;
 
+	case WIFI_EVENT_STA_STOP:
+		ESP_LOGI(TAG, "Station stop");
+		sta_init_flag = 0;
+		break;
+
 	default:
 		ESP_LOGI(TAG, "Unregistered event: %lu\n", event_id);
 	}
@@ -762,13 +765,7 @@ static int wpa_ap_remove(uint8_t* bssid)
 
 static uint8_t  *wpa_ap_get_wpa_ie(uint8_t *ie_len)
 {
-	if (ap_rsn_ie) {
-		*ie_len = ap_rsn_ie_len;
-		return ap_rsn_ie;
-	}
-
 	*ie_len = 0;
-
 	return NULL;
 }
 
@@ -1826,26 +1823,24 @@ int process_set_ie(uint8_t if_type, uint8_t *payload, uint16_t payload_len)
 	if (ie->ie_type == IE_BEACON) {
 		type = WIFI_APPIE_RAM_BEACON;
 		ESP_LOG_BUFFER_HEXDUMP("BEACON", (uint8_t *) ie->ie, ie->ie_len, ESP_LOG_INFO);
+	} else if (ie->ie_type == IE_BEACON_PROBE_HEAD) {
+		type = WIFI_APPIE_RAM_BEACON_PROBE_HEAD;
+		ESP_LOG_BUFFER_HEXDUMP("BEACON_PROBE_HEAD", (uint8_t *) ie->ie, ie->ie_len, ESP_LOG_INFO);
+	} else if (ie->ie_type == IE_BEACON_PROBE_TAIL) {
+		type = WIFI_APPIE_RAM_BEACON_PROBE_TAIL;
+		ESP_LOG_BUFFER_HEXDUMP("BEACON_PROBE_TAIL", (uint8_t *) ie->ie, ie->ie_len, ESP_LOG_INFO);
 	} else if (ie->ie_type == IE_PROBE_RESP) {
 		type = WIFI_APPIE_RAM_PROBE_RSP;
 		ESP_LOG_BUFFER_HEXDUMP("PROBE", (uint8_t *) ie->ie, ie->ie_len, ESP_LOG_INFO);
 	} else if (ie->ie_type == IE_ASSOC_RESP) {
 		type = WIFI_APPIE_ASSOC_RESP;
-	} else if (ie->ie_type == IE_RSN) {
-		if (ap_rsn_ie)
-			free(ap_rsn_ie);
-		ap_rsn_ie = malloc(ie->ie_len);
-		memcpy(ap_rsn_ie, ie->ie, ie->ie_len);
-		ap_rsn_ie_len = ie->ie_len;
-		/* ESP_LOG_BUFFER_HEXDUMP("RSN IE", (uint8_t *) ie->ie, ie->ie_len, ESP_LOG_INFO); */
 	} else {
 		cmd_status = CMD_RESPONSE_INVALID;
 		goto send_resp;
 	}
 
-	if (ie->ie_type != IE_RSN) {
-		ret = esp_wifi_set_appie_internal(type, ie->ie, ie->ie_len, 0);
-	}
+	ret = esp_wifi_set_appie_internal(type, ie->ie, ie->ie_len, 0);
+
 	if (ret) {
 		cmd_status = CMD_RESPONSE_INVALID;
 	}
@@ -1912,15 +1907,6 @@ int process_set_ap_config(uint8_t if_type, uint8_t *payload, uint16_t payload_le
 	wifi_config.ap.ssid_hidden = ap_config->ap_config.ssid_hidden;
 	wifi_config.ap.beacon_interval = ap_config->ap_config.beacon_interval;
 //	wifi_config.ap.pairwise_cipher = ap_config->ap_config.pairwise_cipher;
-	if (ap_config->ap_config.authmode != WIFI_AUTH_OPEN) {
-		strcpy((char *)wifi_config.ap.password, "1234567890");
-	} else {
-		ap_rsn_ie_len = 0;
-		if (ap_rsn_ie) {
-			free(ap_rsn_ie);
-			ap_rsn_ie = NULL;
-		}
-	}
 
 	ESP_LOGI(TAG, "ap config ssid=%s ssid_len=%d, pass=%s channel=%d authmode=%d hidden=%d bi=%d cipher=%d\n",
 			wifi_config.ap.ssid, wifi_config.ap.ssid_len,
