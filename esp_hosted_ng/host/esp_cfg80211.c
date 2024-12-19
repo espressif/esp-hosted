@@ -94,7 +94,10 @@ static struct ieee80211_supported_band esp_wifi_bands = {
 	.n_channels = ARRAY_SIZE(esp_channels_2ghz),
 	.bitrates = esp_rates,
 	.n_bitrates = ARRAY_SIZE(esp_rates),
-	.ht_cap.cap = IEEE80211_HT_CAP_SGI_20,
+	.ht_cap.cap = IEEE80211_HT_CAP_SUP_WIDTH_20_40 | IEEE80211_HT_CAP_SGI_20 |
+			IEEE80211_HT_CAP_RX_STBC | IEEE80211_HT_CAP_DSSSCCK40,
+	.ht_cap.mcs.rx_mask[0] = 0xff,
+	.ht_cap.mcs.tx_params = IEEE80211_HT_MCS_TX_DEFINED,
 	.ht_cap.ht_supported = true,
 };
 
@@ -787,7 +790,16 @@ static int esp_set_ies(struct esp_wifi_device *priv, struct cfg80211_beacon_data
 {
 	int ret;
 
-	ret = cmd_set_ie(priv, IE_BEACON, info->beacon_ies, info->beacon_ies_len);
+#define FIXED_PARAM_LEN 34
+
+	if (info->head_len > FIXED_PARAM_LEN)
+		ret = cmd_set_ie(priv, IE_BEACON_PROBE_HEAD, info->head + FIXED_PARAM_LEN, info->head_len - FIXED_PARAM_LEN);
+
+	if (!ret)
+		ret = cmd_set_ie(priv, IE_BEACON_PROBE_TAIL, info->tail, info->tail_len);
+
+	if (!ret)
+		ret = cmd_set_ie(priv, IE_BEACON, info->beacon_ies, info->beacon_ies_len);
 
 	if (!ret)
 		ret = cmd_set_ie(priv, IE_PROBE_RESP, info->proberesp_ies, info->proberesp_ies_len);
@@ -829,42 +841,6 @@ static int esp_cfg80211_change_beacon(struct wiphy *wiphy, struct net_device *nd
 	return esp_set_ies(priv, info);
 }
 
-static const uint8_t *esp_get_rsn_ie(struct cfg80211_beacon_data *beacon, size_t *rsn_ie_len)
-{
-        const u8 *rsn_ie;
-
-        if (!beacon->tail)
-                return NULL;
-
-        rsn_ie = cfg80211_find_ie(WLAN_EID_RSN, beacon->tail, beacon->tail_len);
-        if (!rsn_ie)
-                return NULL;
-
-        *rsn_ie_len = *(rsn_ie + 1);
-	*rsn_ie_len += 2;
-
-        return rsn_ie;
-}
-
-static const uint8_t *esp_get_rsnx_ie(struct cfg80211_beacon_data *beacon, size_t *rsnx_ie_len)
-{
-        const u8 *rsnx_ie = NULL;
-
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 7, 0))
-        if (!beacon->tail)
-                return NULL;
-
-        rsnx_ie = cfg80211_find_ie(WLAN_EID_RSNX, beacon->tail, beacon->tail_len);
-        if (!rsnx_ie)
-                return NULL;
-
-        *rsnx_ie_len = *(rsnx_ie + 1);
-	*rsnx_ie_len += 2;
-#endif
-
-        return rsnx_ie;
-}
-
 static int esp_cfg80211_start_ap(struct wiphy *wiphy, struct net_device *dev,
 				 struct cfg80211_ap_settings *info)
 {
@@ -874,10 +850,7 @@ static int esp_cfg80211_start_ap(struct wiphy *wiphy, struct net_device *dev,
 	struct esp_ap_config ap_config = {0};
 	int res;
 	int i;
-	size_t rsn_ie_len = 0;
-	size_t rsnx_ie_len = 0;
 	const uint8_t *rsn_ie;
-	const uint8_t *rsnx_ie;
 
 	if (!wiphy || !dev) {
 		esp_err("%u invalid params\n", __LINE__);
@@ -932,30 +905,6 @@ static int esp_cfg80211_start_ap(struct wiphy *wiphy, struct net_device *dev,
 	if (!ap_config.channel)
 		ap_config.channel = 6;
 
-	//TODO ht and vht caps
-	rsn_ie = esp_get_rsn_ie(&info->beacon, &rsn_ie_len);
-	rsnx_ie = esp_get_rsnx_ie(&info->beacon, &rsnx_ie_len);
-	if (rsn_ie_len || rsnx_ie_len) {
-		size_t rsn_len = rsn_ie_len + rsnx_ie_len;
-		uint8_t *rsn = kmalloc(rsn_ie_len + rsnx_ie_len, GFP_KERNEL);
-		if (!rsn) {
-			return -1;
-		}
-		if (rsn_ie_len)
-			memcpy(rsn, rsn_ie, rsn_ie_len);
-		if (rsnx_ie_len)
-			memcpy(rsn + rsn_ie_len, rsnx_ie, rsnx_ie_len);
-
-		res = cmd_set_ie(priv, IE_RSN, rsn, rsn_len);
-
-		kfree(rsn);
-		/* Dummy mode set set security */
-#define WPA2_PSK_MODE 3
-		ap_config.authmode = WPA2_PSK_MODE;
-#undef WPA2_PSK_MODE
-		if (res < 0)
-			return res;
-	}
 	res = cmd_set_ap_config(priv, &ap_config);
 	if (res < 0)
 		return res;
