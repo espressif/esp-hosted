@@ -187,7 +187,7 @@ void generate_startup_event(uint8_t cap)
 
 	ret = sdio_slave_transmit(buf_handle.payload, buf_handle.payload_len);
 	if (ret != ESP_OK) {
-		ESP_LOGE(TAG , "sdio slave tx error, ret : 0x%x\r\n", ret);
+		ESP_LOGE(TAG , "sdio slave tx error, ret : 0x%x", ret);
 		sdio_buffer_tx_free(buf_handle.payload);
 		return;
 	}
@@ -235,9 +235,9 @@ static interface_handle_t * sdio_init(void)
 #endif
 
 #if defined(CONFIG_IDF_TARGET_ESP32C6)
-	ESP_LOGI(TAG, "%s: ESP32-C6 SDIO timing: %u\n", __func__, config.timing);
+	ESP_LOGI(TAG, "%s: ESP32-C6 SDIO timing: %u", __func__, config.timing);
 #else
-	ESP_LOGI(TAG, "%s: ESP32 SDIO timing: %u\n", __func__, config.timing);
+	ESP_LOGI(TAG, "%s: ESP32 SDIO timing: %u", __func__, config.timing);
 #endif
 	ret = sdio_slave_initialize(&config);
 	if (ret != ESP_OK) {
@@ -329,7 +329,7 @@ static int32_t sdio_write(interface_handle_t *handle, interface_buffer_handle_t 
 
 	ret = sdio_slave_transmit(sendbuf, total_len);
 	if (ret != ESP_OK) {
-		ESP_LOGE(TAG , "sdio slave transmit error, ret : 0x%x\r\n", ret);
+		ESP_LOGE(TAG , "sdio slave transmit error, ret : 0x%x", ret);
 		sdio_buffer_tx_free(sendbuf);
 		return ESP_FAIL;
 	}

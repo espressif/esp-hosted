@@ -215,9 +215,9 @@ void init_raw_tp_timer(void)
 
 void debug_get_raw_tp_conf(uint32_t raw_tp_type) {
 	if (raw_tp_type == CMD_RAW_TP_ESP_TO_HOST) {
-		ESP_LOGI(TAG, "\n\n*** Raw Throughput testing: ESP --> Host started ***\n");
+		ESP_LOGI(TAG, "\n\n*** Raw Throughput testing: ESP --> Host started ***");
 	} else if (raw_tp_type == CMD_RAW_TP_HOST_TO_ESP) {
-		ESP_LOGI(TAG, "\n\n*** Raw Throughput testing: Host --> ESP started ***\n");
+		ESP_LOGI(TAG, "\n\n*** Raw Throughput testing: Host --> ESP started ***");
 	}
 }
 
@@ -295,7 +295,7 @@ int process_raw_tp(uint8_t if_type, uint8_t *payload, uint16_t payload_len)
 
 	ret = send_command_response(&buf_handle);
 	if (ret != pdTRUE) {
-		ESP_LOGE(TAG, "Slave -> Host: Failed to send command response\n");
+		ESP_LOGE(TAG, "Slave -> Host: Failed to send command response");
 		goto DONE;
 	}
 

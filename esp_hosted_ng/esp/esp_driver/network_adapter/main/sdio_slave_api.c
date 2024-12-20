@@ -139,7 +139,7 @@ static interface_handle_t * sdio_init(void)
 
 	wakeup_sem = xSemaphoreCreateBinary();
 	if (wakeup_sem == NULL) {
-		ESP_LOGE(TAG, "Failed to create semaphore\n");
+		ESP_LOGE(TAG, "Failed to create semaphore");
 		return NULL;
 	}
 
@@ -197,7 +197,7 @@ void wake_host()
 	esp_err_t ret = ESP_OK;
 	uint8_t retry = 1;
 
-	ESP_LOGI(TAG, "WAKE UP Host!!!!!\n");
+	ESP_LOGI(TAG, "WAKE UP Host!!!!!");
 
 	while (retry) {
 		WRITE_PERI_REG(GPIO_OUT_W1TS_REG, (1 << gpio_oob));
@@ -281,12 +281,12 @@ static int32_t sdio_write(interface_handle_t *handle, interface_buffer_handle_t 
 
 	ret = sdio_slave_transmit(sendbuf, total_len);
 	if (ret != ESP_OK) {
-		ESP_LOGE(TAG , "sdio slave transmit error, ret : 0x%x\r\n", ret);
+		ESP_LOGE(TAG , "sdio slave transmit error, ret : 0x%x", ret);
 		free(sendbuf);
 		return ESP_FAIL;
 	}
 #if 0
-	ESP_LOGE(TAG, "\nTo Host");
+	ESP_LOGE(TAG, "To Host");
 	ESP_LOG_BUFFER_HEXDUMP("s->h", buf_handle->payload,
 	  buf_handle->payload_len, ESP_LOG_INFO);
 #endif
@@ -369,7 +369,7 @@ esp_err_t send_bootup_event_to_host(uint8_t cap)
 
 	ret = sdio_slave_transmit(buf_handle.payload, buf_handle.payload_len);
 	if (ret != ESP_OK) {
-		ESP_LOGE(TAG , "sdio slave tx error, ret : 0x%x\r\n", ret);
+		ESP_LOGE(TAG , "sdio slave tx error, ret : 0x%x", ret);
 		free(buf_handle.payload);
 		return ESP_FAIL;
 	}
@@ -422,7 +422,7 @@ static int sdio_read(interface_handle_t *if_handle, interface_buffer_handle_t *b
 	buf_handle->if_num = header->if_num;
 	buf_handle->free_buf_handle = sdio_read_done;
 #if 0
-	ESP_LOGE(TAG, "\nFrom Host");
+	ESP_LOGE(TAG, "From Host");
 	ESP_LOG_BUFFER_HEXDUMP("h->s", buf_handle->payload, len, ESP_LOG_INFO);
 #endif
 	return len;
