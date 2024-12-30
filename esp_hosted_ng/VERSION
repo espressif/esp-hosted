@@ -1,0 +1,13 @@
+Version
+- Project: NG
+- Current Version: 1.0.4.0.0
+
+Format
+- <MAJOR_1>.<MAJOR_2>.<MINOR>.<PATCH_1>.<PATCH_2>
+
+Description
+- MAJOR_1: Primary major version – significant changes
+- MAJOR_2: Secondary major version – product branch or protocol variant
+- MINOR: Minor version: feature updates
+- PATCH_1: Small revisions
+- PATCH_2: Bug fixes
