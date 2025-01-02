@@ -146,8 +146,10 @@ static int write_packet(struct esp_adapter *adapter, struct sk_buff *skb)
 	/* Enqueue SKB in tx_q */
 	if (payload_header->if_type == ESP_INTERNAL_IF) {
 		skb_queue_tail(&spi_context.tx_q[PRIO_Q_HIGH], skb);
+#ifdef CONFIG_BT
 	} else if (payload_header->if_type == ESP_HCI_IF) {
 		skb_queue_tail(&spi_context.tx_q[PRIO_Q_MID], skb);
+#endif
 	} else {
 		skb_queue_tail(&spi_context.tx_q[PRIO_Q_LOW], skb);
 		atomic_inc(&tx_pending);
@@ -257,8 +259,10 @@ static int process_rx_buf(struct sk_buff *skb)
 	/* enqueue skb for read_packet to pick it */
 	if (header->if_type == ESP_INTERNAL_IF)
 		skb_queue_tail(&spi_context.rx_q[PRIO_Q_HIGH], skb);
+#ifdef CONFIG_BT
 	else if (header->if_type == ESP_HCI_IF)
 		skb_queue_tail(&spi_context.rx_q[PRIO_Q_MID], skb);
+#endif
 	else
 		skb_queue_tail(&spi_context.rx_q[PRIO_Q_LOW], skb);
 
@@ -612,8 +616,10 @@ static void spi_exit(void)
 
 	cleanup_spi_gpio();
 
+#ifdef CONFIG_BT
 	if (spi_context.adapter && spi_context.adapter->hcidev)
 		esp_deinit_bt(spi_context.adapter);
+#endif
 
 	spi_context.adapter->dev = NULL;
 
