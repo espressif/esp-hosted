@@ -98,7 +98,7 @@ menu "Example Configuration"
             support for that extra signal. GPIO pin number can be configured using SDIO_CD_PIN_GPIO.
 
     config SDIO_CD_PIN_GPIO
-        int "CD Pin GPIO "
+        int "CD Pin GPIO"
         depends on ESP_SDIO_HOST_INTERFACE
         depends on SDIO_CARD_DETECTION_PIN_SUPPORT
         default 6
