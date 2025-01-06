@@ -671,9 +671,11 @@ void app_main()
 {
 	esp_err_t ret;
 	uint8_t prio_q_idx = 0;
-	uint8_t mac[MAC_ADDR_LEN] = {0};
 	uint8_t capa = 0;
 
+#ifdef CONFIG_BT_ENABLED
+	uint8_t mac[MAC_ADDR_LEN] = {0};
+#endif
 	debug_log_firmware_version();
 
 	capa = get_capabilities();
