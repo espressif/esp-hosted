@@ -1279,7 +1279,7 @@ int process_disconnect(uint8_t if_type, uint8_t *payload, uint16_t payload_len)
             esp_wifi_deauthenticate_internal(cmd_disconnect->reason_code);
         }
     } else if (if_type == ESP_AP_IF) {
-        if (softap_started && wifi_mode == WIFI_MODE_AP) {
+        if (softap_started && (wifi_mode == WIFI_MODE_AP || wifi_mode == WIFI_MODE_APSTA)) {
             ieee80211_delete_node(cmd_disconnect->mac);
         }
     }
