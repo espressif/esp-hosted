@@ -1539,7 +1539,7 @@ int process_init_interface(uint8_t if_type, uint8_t *payload, uint16_t payload_l
         if (if_type == ESP_STA_IF) {
             mode = WIFI_MODE_STA;
         } else {
-            mode = WIFI_MODE_AP;
+            mode = WIFI_MODE_APSTA;
         }
 
         ret = esp_wifi_set_mode(mode);
