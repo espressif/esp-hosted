@@ -979,7 +979,7 @@ int process_start_scan(uint8_t if_type, uint8_t *payload, uint16_t payload_len)
 		config_present = true;
 	}
 
-	if (sta_init_flag) {
+	if (sta_init_flag || softap_started) {
 		/* Trigger scan */
 		if (config_present)
 		    ret = esp_wifi_scan_start(&params, false);
