@@ -485,8 +485,7 @@ static void wifi_event_handler(void* arg, esp_event_base_t event_base,
 	switch(event_id) {
 
 	case WIFI_EVENT_STA_START:
-		ESP_LOGI(TAG, "station started and disabled softap mode");
-		softap_started = 0;
+		ESP_LOGI(TAG, "station started");
 		sta_init_flag = 1;
 		break;
 
@@ -527,16 +526,17 @@ static void wifi_event_handler(void* arg, esp_event_base_t event_base,
 		break;
 
 	case WIFI_EVENT_SCAN_DONE:
+		ESP_LOGI(TAG, "wifi scanning done");
 		handle_scan_event();
 		break;
 
 	case WIFI_EVENT_AP_START:
-		ESP_LOGI(TAG, "softap started and disabled station mode");
-		sta_init_flag = 0;
+		ESP_LOGI(TAG, "softap started");
 		softap_started = 1;
 		break;
 
 	case WIFI_EVENT_AP_STOP:
+		ESP_LOGI(TAG, "softap stopped");
 		softap_started = 0;
 		break;
 
