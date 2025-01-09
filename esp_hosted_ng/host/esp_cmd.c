@@ -1611,11 +1611,6 @@ int internal_scan_request(struct esp_wifi_device *priv, char *ssid,
 		return -EBUSY;
 	}
 
-	if (priv->if_type != ESP_STA_IF) {
-		esp_err("Invalid interface\n");
-		return -EINVAL;
-	}
-
 	if (test_bit(ESP_CLEANUP_IN_PROGRESS, &priv->adapter->state_flags)) {
 		esp_err("%u cleanup in progress, return", __LINE__);
 		return -EBUSY;
@@ -1667,11 +1662,6 @@ int cmd_scan_request(struct esp_wifi_device *priv, struct cfg80211_scan_request 
 
 	if (!priv || !priv->adapter || !request) {
 		esp_err("Invalid argument\n");
-		return -EINVAL;
-	}
-
-	if (priv->if_type != ESP_STA_IF) {
-		esp_err("Invalid interface\n");
 		return -EINVAL;
 	}
 
