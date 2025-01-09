@@ -23,6 +23,7 @@
 #include "esp_wifi_driver.h"
 #include "esp_event.h"
 #include "esp_mac.h"
+#include "esp_check.h"
 #include "wifi_defs.h"
 #include <time.h>
 #include <sys/time.h>
@@ -1759,7 +1760,7 @@ SEND_CMD:
 int process_set_mode(uint8_t if_type, uint8_t *payload, uint16_t payload_len)
 {
     esp_err_t ret = ESP_OK;
-    uint8_t cmd_status = CMD_RESPONSE_SUCCESS;
+    uint8_t cmd_status = CMD_RESPONSE_FAIL;
     struct cmd_config_mode *mode = (struct cmd_config_mode *) payload;
     wifi_mode_t old_mode;
 
@@ -1771,40 +1772,32 @@ int process_set_mode(uint8_t if_type, uint8_t *payload, uint16_t payload_len)
 
     if (old_mode == mode->mode) {
         ESP_LOGI(TAG, "old mode and new modes are same, return");
-        goto send_resp;
+        goto send_ok;
     }
     ret = esp_wifi_stop();
     if (ret) {
         ESP_LOGE(TAG, "Failed to stop wifi\n");
     }
 
-    if (mode->mode == WIFI_MODE_AP) {
-        ret = esp_wifi_set_mac(WIFI_IF_STA, dummy_mac);
+    if (mode->mode == WIFI_MODE_AP  || mode->mode == WIFI_MODE_APSTA) {
+        ESP_LOGI(TAG, "Setting APSTA mode");
+        ESP_GOTO_ON_ERROR(esp_wifi_set_mac(WIFI_IF_STA, dummy_mac), send_err, TAG, "Setting MAC on STA failed");
+        ESP_GOTO_ON_ERROR(esp_wifi_set_mode(WIFI_MODE_APSTA), send_err, TAG, "Setting mode to APSTA failed");
+        ESP_GOTO_ON_ERROR(esp_wifi_set_mac(WIFI_IF_AP, dev_mac), send_err, TAG, "Setting MAC on AP failed");
     } else if (mode->mode == WIFI_MODE_STA){
-        ret = esp_wifi_set_mac(WIFI_IF_AP, dummy_mac2);
+        ESP_LOGI(TAG, "Setting STA mode");
+        ESP_GOTO_ON_ERROR(esp_wifi_set_mac(WIFI_IF_AP, dummy_mac2), send_err, TAG, "Setting MAC on AP failed");
+        ESP_GOTO_ON_ERROR(esp_wifi_set_mode(WIFI_MODE_STA), send_err, TAG, "Setting mode to STA failed");
+        ESP_GOTO_ON_ERROR(esp_wifi_set_mac(WIFI_IF_STA, dev_mac), send_err, TAG, "Setting MAC on STA failed");
     }
 
-    ESP_LOGI(TAG, "Setting mode=%d \n", mode->mode);
-    ret = esp_wifi_set_mode(mode->mode);
-    if (mode->mode == WIFI_MODE_AP) {
-        ret = esp_wifi_set_mac(WIFI_IF_AP, dev_mac);
-    } else if (mode->mode == WIFI_MODE_STA){
-        ret = esp_wifi_set_mac(WIFI_IF_STA, dev_mac);
-    }
+    ESP_GOTO_ON_ERROR(esp_wifi_start(), send_err, TAG, "Cannot start wifi");
 
-    ESP_ERROR_CHECK(esp_wifi_start());
-
-    if (ret) {
-        ESP_LOGE(TAG, "Failed to set mode\n");
-        cmd_status = CMD_RESPONSE_FAIL;
-        goto send_resp;
-    }
-
-send_resp:
-    ret = send_command_resp(if_type, CMD_SET_MODE, cmd_status, (uint8_t *)&mode->mode,
+send_ok:
+    cmd_status = CMD_RESPONSE_SUCCESS;
+send_err:
+    return send_command_resp(if_type, CMD_SET_MODE, cmd_status, (uint8_t *)&mode->mode,
             sizeof(uint16_t), sizeof(struct command_header));
-
-    return ret;
 }
 
 int process_set_ie(uint8_t if_type, uint8_t *payload, uint16_t payload_len)
