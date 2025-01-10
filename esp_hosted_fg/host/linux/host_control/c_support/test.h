@@ -78,5 +78,8 @@ int test_disable_wifi(void);
 int test_enable_wifi(void);
 char * test_get_fw_version(char *);
 int test_print_fw_version(void);
+int test_set_country_code_enabled();
+int test_set_country_code();
+int test_get_country_code();
 
 #endif

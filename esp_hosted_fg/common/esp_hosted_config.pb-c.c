@@ -1942,6 +1942,186 @@ void   ctrl_msg__resp__get_fw_version__free_unpacked
   assert(message->base.descriptor == &ctrl_msg__resp__get_fw_version__descriptor);
   protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
 }
+void   ctrl_msg__req__set_country_code__init
+                     (CtrlMsgReqSetCountryCode         *message)
+{
+  static const CtrlMsgReqSetCountryCode init_value = CTRL_MSG__REQ__SET_COUNTRY_CODE__INIT;
+  *message = init_value;
+}
+size_t ctrl_msg__req__set_country_code__get_packed_size
+                     (const CtrlMsgReqSetCountryCode *message)
+{
+  assert(message->base.descriptor == &ctrl_msg__req__set_country_code__descriptor);
+  return protobuf_c_message_get_packed_size ((const ProtobufCMessage*)(message));
+}
+size_t ctrl_msg__req__set_country_code__pack
+                     (const CtrlMsgReqSetCountryCode *message,
+                      uint8_t       *out)
+{
+  assert(message->base.descriptor == &ctrl_msg__req__set_country_code__descriptor);
+  return protobuf_c_message_pack ((const ProtobufCMessage*)message, out);
+}
+size_t ctrl_msg__req__set_country_code__pack_to_buffer
+                     (const CtrlMsgReqSetCountryCode *message,
+                      ProtobufCBuffer *buffer)
+{
+  assert(message->base.descriptor == &ctrl_msg__req__set_country_code__descriptor);
+  return protobuf_c_message_pack_to_buffer ((const ProtobufCMessage*)message, buffer);
+}
+CtrlMsgReqSetCountryCode *
+       ctrl_msg__req__set_country_code__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data)
+{
+  return (CtrlMsgReqSetCountryCode *)
+     protobuf_c_message_unpack (&ctrl_msg__req__set_country_code__descriptor,
+                                allocator, len, data);
+}
+void   ctrl_msg__req__set_country_code__free_unpacked
+                     (CtrlMsgReqSetCountryCode *message,
+                      ProtobufCAllocator *allocator)
+{
+  if(!message)
+    return;
+  assert(message->base.descriptor == &ctrl_msg__req__set_country_code__descriptor);
+  protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
+}
+void   ctrl_msg__resp__set_country_code__init
+                     (CtrlMsgRespSetCountryCode         *message)
+{
+  static const CtrlMsgRespSetCountryCode init_value = CTRL_MSG__RESP__SET_COUNTRY_CODE__INIT;
+  *message = init_value;
+}
+size_t ctrl_msg__resp__set_country_code__get_packed_size
+                     (const CtrlMsgRespSetCountryCode *message)
+{
+  assert(message->base.descriptor == &ctrl_msg__resp__set_country_code__descriptor);
+  return protobuf_c_message_get_packed_size ((const ProtobufCMessage*)(message));
+}
+size_t ctrl_msg__resp__set_country_code__pack
+                     (const CtrlMsgRespSetCountryCode *message,
+                      uint8_t       *out)
+{
+  assert(message->base.descriptor == &ctrl_msg__resp__set_country_code__descriptor);
+  return protobuf_c_message_pack ((const ProtobufCMessage*)message, out);
+}
+size_t ctrl_msg__resp__set_country_code__pack_to_buffer
+                     (const CtrlMsgRespSetCountryCode *message,
+                      ProtobufCBuffer *buffer)
+{
+  assert(message->base.descriptor == &ctrl_msg__resp__set_country_code__descriptor);
+  return protobuf_c_message_pack_to_buffer ((const ProtobufCMessage*)message, buffer);
+}
+CtrlMsgRespSetCountryCode *
+       ctrl_msg__resp__set_country_code__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data)
+{
+  return (CtrlMsgRespSetCountryCode *)
+     protobuf_c_message_unpack (&ctrl_msg__resp__set_country_code__descriptor,
+                                allocator, len, data);
+}
+void   ctrl_msg__resp__set_country_code__free_unpacked
+                     (CtrlMsgRespSetCountryCode *message,
+                      ProtobufCAllocator *allocator)
+{
+  if(!message)
+    return;
+  assert(message->base.descriptor == &ctrl_msg__resp__set_country_code__descriptor);
+  protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
+}
+void   ctrl_msg__req__get_country_code__init
+                     (CtrlMsgReqGetCountryCode         *message)
+{
+  static const CtrlMsgReqGetCountryCode init_value = CTRL_MSG__REQ__GET_COUNTRY_CODE__INIT;
+  *message = init_value;
+}
+size_t ctrl_msg__req__get_country_code__get_packed_size
+                     (const CtrlMsgReqGetCountryCode *message)
+{
+  assert(message->base.descriptor == &ctrl_msg__req__get_country_code__descriptor);
+  return protobuf_c_message_get_packed_size ((const ProtobufCMessage*)(message));
+}
+size_t ctrl_msg__req__get_country_code__pack
+                     (const CtrlMsgReqGetCountryCode *message,
+                      uint8_t       *out)
+{
+  assert(message->base.descriptor == &ctrl_msg__req__get_country_code__descriptor);
+  return protobuf_c_message_pack ((const ProtobufCMessage*)message, out);
+}
+size_t ctrl_msg__req__get_country_code__pack_to_buffer
+                     (const CtrlMsgReqGetCountryCode *message,
+                      ProtobufCBuffer *buffer)
+{
+  assert(message->base.descriptor == &ctrl_msg__req__get_country_code__descriptor);
+  return protobuf_c_message_pack_to_buffer ((const ProtobufCMessage*)message, buffer);
+}
+CtrlMsgReqGetCountryCode *
+       ctrl_msg__req__get_country_code__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data)
+{
+  return (CtrlMsgReqGetCountryCode *)
+     protobuf_c_message_unpack (&ctrl_msg__req__get_country_code__descriptor,
+                                allocator, len, data);
+}
+void   ctrl_msg__req__get_country_code__free_unpacked
+                     (CtrlMsgReqGetCountryCode *message,
+                      ProtobufCAllocator *allocator)
+{
+  if(!message)
+    return;
+  assert(message->base.descriptor == &ctrl_msg__req__get_country_code__descriptor);
+  protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
+}
+void   ctrl_msg__resp__get_country_code__init
+                     (CtrlMsgRespGetCountryCode         *message)
+{
+  static const CtrlMsgRespGetCountryCode init_value = CTRL_MSG__RESP__GET_COUNTRY_CODE__INIT;
+  *message = init_value;
+}
+size_t ctrl_msg__resp__get_country_code__get_packed_size
+                     (const CtrlMsgRespGetCountryCode *message)
+{
+  assert(message->base.descriptor == &ctrl_msg__resp__get_country_code__descriptor);
+  return protobuf_c_message_get_packed_size ((const ProtobufCMessage*)(message));
+}
+size_t ctrl_msg__resp__get_country_code__pack
+                     (const CtrlMsgRespGetCountryCode *message,
+                      uint8_t       *out)
+{
+  assert(message->base.descriptor == &ctrl_msg__resp__get_country_code__descriptor);
+  return protobuf_c_message_pack ((const ProtobufCMessage*)message, out);
+}
+size_t ctrl_msg__resp__get_country_code__pack_to_buffer
+                     (const CtrlMsgRespGetCountryCode *message,
+                      ProtobufCBuffer *buffer)
+{
+  assert(message->base.descriptor == &ctrl_msg__resp__get_country_code__descriptor);
+  return protobuf_c_message_pack_to_buffer ((const ProtobufCMessage*)message, buffer);
+}
+CtrlMsgRespGetCountryCode *
+       ctrl_msg__resp__get_country_code__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data)
+{
+  return (CtrlMsgRespGetCountryCode *)
+     protobuf_c_message_unpack (&ctrl_msg__resp__get_country_code__descriptor,
+                                allocator, len, data);
+}
+void   ctrl_msg__resp__get_country_code__free_unpacked
+                     (CtrlMsgRespGetCountryCode *message,
+                      ProtobufCAllocator *allocator)
+{
+  if(!message)
+    return;
+  assert(message->base.descriptor == &ctrl_msg__resp__get_country_code__descriptor);
+  protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
+}
 void   ctrl_msg__event__espinit__init
                      (CtrlMsgEventESPInit         *message)
 {
@@ -4445,6 +4625,164 @@ const ProtobufCMessageDescriptor ctrl_msg__resp__get_fw_version__descriptor =
   (ProtobufCMessageInit) ctrl_msg__resp__get_fw_version__init,
   NULL,NULL,NULL    /* reserved[123] */
 };
+static const ProtobufCFieldDescriptor ctrl_msg__req__set_country_code__field_descriptors[2] =
+{
+  {
+    "country",
+    1,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_BYTES,
+    0,   /* quantifier_offset */
+    offsetof(CtrlMsgReqSetCountryCode, country),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "ieee80211d_enabled",
+    2,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_BOOL,
+    0,   /* quantifier_offset */
+    offsetof(CtrlMsgReqSetCountryCode, ieee80211d_enabled),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+};
+static const unsigned ctrl_msg__req__set_country_code__field_indices_by_name[] = {
+  0,   /* field[0] = country */
+  1,   /* field[1] = ieee80211d_enabled */
+};
+static const ProtobufCIntRange ctrl_msg__req__set_country_code__number_ranges[1 + 1] =
+{
+  { 1, 0 },
+  { 0, 2 }
+};
+const ProtobufCMessageDescriptor ctrl_msg__req__set_country_code__descriptor =
+{
+  PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
+  "CtrlMsg_Req_SetCountryCode",
+  "CtrlMsgReqSetCountryCode",
+  "CtrlMsgReqSetCountryCode",
+  "",
+  sizeof(CtrlMsgReqSetCountryCode),
+  2,
+  ctrl_msg__req__set_country_code__field_descriptors,
+  ctrl_msg__req__set_country_code__field_indices_by_name,
+  1,  ctrl_msg__req__set_country_code__number_ranges,
+  (ProtobufCMessageInit) ctrl_msg__req__set_country_code__init,
+  NULL,NULL,NULL    /* reserved[123] */
+};
+static const ProtobufCFieldDescriptor ctrl_msg__resp__set_country_code__field_descriptors[1] =
+{
+  {
+    "resp",
+    1,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_INT32,
+    0,   /* quantifier_offset */
+    offsetof(CtrlMsgRespSetCountryCode, resp),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+};
+static const unsigned ctrl_msg__resp__set_country_code__field_indices_by_name[] = {
+  0,   /* field[0] = resp */
+};
+static const ProtobufCIntRange ctrl_msg__resp__set_country_code__number_ranges[1 + 1] =
+{
+  { 1, 0 },
+  { 0, 1 }
+};
+const ProtobufCMessageDescriptor ctrl_msg__resp__set_country_code__descriptor =
+{
+  PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
+  "CtrlMsg_Resp_SetCountryCode",
+  "CtrlMsgRespSetCountryCode",
+  "CtrlMsgRespSetCountryCode",
+  "",
+  sizeof(CtrlMsgRespSetCountryCode),
+  1,
+  ctrl_msg__resp__set_country_code__field_descriptors,
+  ctrl_msg__resp__set_country_code__field_indices_by_name,
+  1,  ctrl_msg__resp__set_country_code__number_ranges,
+  (ProtobufCMessageInit) ctrl_msg__resp__set_country_code__init,
+  NULL,NULL,NULL    /* reserved[123] */
+};
+#define ctrl_msg__req__get_country_code__field_descriptors NULL
+#define ctrl_msg__req__get_country_code__field_indices_by_name NULL
+#define ctrl_msg__req__get_country_code__number_ranges NULL
+const ProtobufCMessageDescriptor ctrl_msg__req__get_country_code__descriptor =
+{
+  PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
+  "CtrlMsg_Req_GetCountryCode",
+  "CtrlMsgReqGetCountryCode",
+  "CtrlMsgReqGetCountryCode",
+  "",
+  sizeof(CtrlMsgReqGetCountryCode),
+  0,
+  ctrl_msg__req__get_country_code__field_descriptors,
+  ctrl_msg__req__get_country_code__field_indices_by_name,
+  0,  ctrl_msg__req__get_country_code__number_ranges,
+  (ProtobufCMessageInit) ctrl_msg__req__get_country_code__init,
+  NULL,NULL,NULL    /* reserved[123] */
+};
+static const ProtobufCFieldDescriptor ctrl_msg__resp__get_country_code__field_descriptors[2] =
+{
+  {
+    "resp",
+    1,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_INT32,
+    0,   /* quantifier_offset */
+    offsetof(CtrlMsgRespGetCountryCode, resp),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "country",
+    2,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_BYTES,
+    0,   /* quantifier_offset */
+    offsetof(CtrlMsgRespGetCountryCode, country),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+};
+static const unsigned ctrl_msg__resp__get_country_code__field_indices_by_name[] = {
+  1,   /* field[1] = country */
+  0,   /* field[0] = resp */
+};
+static const ProtobufCIntRange ctrl_msg__resp__get_country_code__number_ranges[1 + 1] =
+{
+  { 1, 0 },
+  { 0, 2 }
+};
+const ProtobufCMessageDescriptor ctrl_msg__resp__get_country_code__descriptor =
+{
+  PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
+  "CtrlMsg_Resp_GetCountryCode",
+  "CtrlMsgRespGetCountryCode",
+  "CtrlMsgRespGetCountryCode",
+  "",
+  sizeof(CtrlMsgRespGetCountryCode),
+  2,
+  ctrl_msg__resp__get_country_code__field_descriptors,
+  ctrl_msg__resp__get_country_code__field_indices_by_name,
+  1,  ctrl_msg__resp__get_country_code__number_ranges,
+  (ProtobufCMessageInit) ctrl_msg__resp__get_country_code__init,
+  NULL,NULL,NULL    /* reserved[123] */
+};
 static const ProtobufCFieldDescriptor ctrl_msg__event__espinit__field_descriptors[1] =
 {
   {
@@ -4907,7 +5245,7 @@ const ProtobufCMessageDescriptor ctrl_msg__event__station_connected_to_espsoft_a
   (ProtobufCMessageInit) ctrl_msg__event__station_connected_to_espsoft_ap__init,
   NULL,NULL,NULL    /* reserved[123] */
 };
-static const ProtobufCFieldDescriptor ctrl_msg__field_descriptors[56] =
+static const ProtobufCFieldDescriptor ctrl_msg__field_descriptors[60] =
 {
   {
     "msg_type",
@@ -5234,6 +5572,30 @@ static const ProtobufCFieldDescriptor ctrl_msg__field_descriptors[56] =
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
   {
+    "req_set_country_code",
+    124,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_MESSAGE,
+    offsetof(CtrlMsg, payload_case),
+    offsetof(CtrlMsg, req_set_country_code),
+    &ctrl_msg__req__set_country_code__descriptor,
+    NULL,
+    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "req_get_country_code",
+    125,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_MESSAGE,
+    offsetof(CtrlMsg, payload_case),
+    offsetof(CtrlMsg, req_get_country_code),
+    &ctrl_msg__req__get_country_code__descriptor,
+    NULL,
+    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
     "resp_get_mac_address",
     201,
     PROTOBUF_C_LABEL_NONE,
@@ -5510,6 +5872,30 @@ static const ProtobufCFieldDescriptor ctrl_msg__field_descriptors[56] =
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
   {
+    "resp_set_country_code",
+    224,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_MESSAGE,
+    offsetof(CtrlMsg, payload_case),
+    offsetof(CtrlMsg, resp_set_country_code),
+    &ctrl_msg__resp__set_country_code__descriptor,
+    NULL,
+    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "resp_get_country_code",
+    225,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_MESSAGE,
+    offsetof(CtrlMsg, payload_case),
+    offsetof(CtrlMsg, resp_get_country_code),
+    &ctrl_msg__resp__get_country_code__descriptor,
+    NULL,
+    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
     "event_esp_init",
     301,
     PROTOBUF_C_LABEL_NONE,
@@ -5583,12 +5969,12 @@ static const ProtobufCFieldDescriptor ctrl_msg__field_descriptors[56] =
   },
 };
 static const unsigned ctrl_msg__field_indices_by_name[] = {
-  50,   /* field[50] = event_esp_init */
-  51,   /* field[51] = event_heartbeat */
-  54,   /* field[54] = event_station_connected_to_AP */
-  55,   /* field[55] = event_station_connected_to_ESP_SoftAP */
-  52,   /* field[52] = event_station_disconnect_from_AP */
-  53,   /* field[53] = event_station_disconnect_from_ESP_SoftAP */
+  54,   /* field[54] = event_esp_init */
+  55,   /* field[55] = event_heartbeat */
+  58,   /* field[58] = event_station_connected_to_AP */
+  59,   /* field[59] = event_station_connected_to_ESP_SoftAP */
+  56,   /* field[56] = event_station_disconnect_from_AP */
+  57,   /* field[57] = event_station_disconnect_from_ESP_SoftAP */
   1,   /* field[1] = msg_id */
   0,   /* field[0] = msg_type */
   24,   /* field[24] = req_config_heartbeat */
@@ -5596,6 +5982,7 @@ static const unsigned ctrl_msg__field_indices_by_name[] = {
   11,   /* field[11] = req_disconnect_ap */
   25,   /* field[25] = req_enable_disable_feat */
   9,   /* field[9] = req_get_ap_config */
+  28,   /* field[28] = req_get_country_code */
   26,   /* field[26] = req_get_fw_version */
   4,   /* field[4] = req_get_mac_address */
   18,   /* field[18] = req_get_power_save_mode */
@@ -5607,6 +5994,7 @@ static const unsigned ctrl_msg__field_indices_by_name[] = {
   20,   /* field[20] = req_ota_write */
   3,   /* field[3] = req_resp_type */
   8,   /* field[8] = req_scan_ap_list */
+  27,   /* field[27] = req_set_country_code */
   5,   /* field[5] = req_set_mac_address */
   17,   /* field[17] = req_set_power_save_mode */
   13,   /* field[13] = req_set_softap_vendor_specific_ie */
@@ -5615,38 +6003,40 @@ static const unsigned ctrl_msg__field_indices_by_name[] = {
   15,   /* field[15] = req_softap_connected_stas_list */
   14,   /* field[14] = req_start_softap */
   16,   /* field[16] = req_stop_softap */
-  47,   /* field[47] = resp_config_heartbeat */
-  33,   /* field[33] = resp_connect_ap */
-  34,   /* field[34] = resp_disconnect_ap */
-  48,   /* field[48] = resp_enable_disable_feat */
-  32,   /* field[32] = resp_get_ap_config */
-  49,   /* field[49] = resp_get_fw_version */
-  27,   /* field[27] = resp_get_mac_address */
-  41,   /* field[41] = resp_get_power_save_mode */
-  35,   /* field[35] = resp_get_softap_config */
-  46,   /* field[46] = resp_get_wifi_curr_tx_power */
-  29,   /* field[29] = resp_get_wifi_mode */
-  42,   /* field[42] = resp_ota_begin */
-  44,   /* field[44] = resp_ota_end */
-  43,   /* field[43] = resp_ota_write */
-  31,   /* field[31] = resp_scan_ap_list */
-  28,   /* field[28] = resp_set_mac_address */
-  40,   /* field[40] = resp_set_power_save_mode */
-  36,   /* field[36] = resp_set_softap_vendor_specific_ie */
-  45,   /* field[45] = resp_set_wifi_max_tx_power */
-  30,   /* field[30] = resp_set_wifi_mode */
-  38,   /* field[38] = resp_softap_connected_stas_list */
-  37,   /* field[37] = resp_start_softap */
-  39,   /* field[39] = resp_stop_softap */
+  49,   /* field[49] = resp_config_heartbeat */
+  35,   /* field[35] = resp_connect_ap */
+  36,   /* field[36] = resp_disconnect_ap */
+  50,   /* field[50] = resp_enable_disable_feat */
+  34,   /* field[34] = resp_get_ap_config */
+  53,   /* field[53] = resp_get_country_code */
+  51,   /* field[51] = resp_get_fw_version */
+  29,   /* field[29] = resp_get_mac_address */
+  43,   /* field[43] = resp_get_power_save_mode */
+  37,   /* field[37] = resp_get_softap_config */
+  48,   /* field[48] = resp_get_wifi_curr_tx_power */
+  31,   /* field[31] = resp_get_wifi_mode */
+  44,   /* field[44] = resp_ota_begin */
+  46,   /* field[46] = resp_ota_end */
+  45,   /* field[45] = resp_ota_write */
+  33,   /* field[33] = resp_scan_ap_list */
+  52,   /* field[52] = resp_set_country_code */
+  30,   /* field[30] = resp_set_mac_address */
+  42,   /* field[42] = resp_set_power_save_mode */
+  38,   /* field[38] = resp_set_softap_vendor_specific_ie */
+  47,   /* field[47] = resp_set_wifi_max_tx_power */
+  32,   /* field[32] = resp_set_wifi_mode */
+  40,   /* field[40] = resp_softap_connected_stas_list */
+  39,   /* field[39] = resp_start_softap */
+  41,   /* field[41] = resp_stop_softap */
   2,   /* field[2] = uid */
 };
 static const ProtobufCIntRange ctrl_msg__number_ranges[4 + 1] =
 {
   { 1, 0 },
   { 101, 4 },
-  { 201, 27 },
-  { 301, 50 },
-  { 0, 56 }
+  { 201, 29 },
+  { 301, 54 },
+  { 0, 60 }
 };
 const ProtobufCMessageDescriptor ctrl_msg__descriptor =
 {
@@ -5656,7 +6046,7 @@ const ProtobufCMessageDescriptor ctrl_msg__descriptor =
   "CtrlMsg",
   "",
   sizeof(CtrlMsg),
-  56,
+  60,
   ctrl_msg__field_descriptors,
   ctrl_msg__field_indices_by_name,
   4,  ctrl_msg__number_ranges,
@@ -5927,7 +6317,7 @@ const ProtobufCEnumDescriptor ctrl_msg_type__descriptor =
   ctrl_msg_type__value_ranges,
   NULL,NULL,NULL,NULL   /* reserved[1234] */
 };
-static const ProtobufCEnumValue ctrl_msg_id__enum_values_by_number[59] =
+static const ProtobufCEnumValue ctrl_msg_id__enum_values_by_number[63] =
 {
   { "MsgId_Invalid", "CTRL_MSG_ID__MsgId_Invalid", 0 },
   { "Req_Base", "CTRL_MSG_ID__Req_Base", 100 },
@@ -5954,7 +6344,9 @@ static const ProtobufCEnumValue ctrl_msg_id__enum_values_by_number[59] =
   { "Req_ConfigHeartbeat", "CTRL_MSG_ID__Req_ConfigHeartbeat", 121 },
   { "Req_EnableDisable", "CTRL_MSG_ID__Req_EnableDisable", 122 },
   { "Req_GetFwVersion", "CTRL_MSG_ID__Req_GetFwVersion", 123 },
-  { "Req_Max", "CTRL_MSG_ID__Req_Max", 124 },
+  { "Req_SetCountryCode", "CTRL_MSG_ID__Req_SetCountryCode", 124 },
+  { "Req_GetCountryCode", "CTRL_MSG_ID__Req_GetCountryCode", 125 },
+  { "Req_Max", "CTRL_MSG_ID__Req_Max", 126 },
   { "Resp_Base", "CTRL_MSG_ID__Resp_Base", 200 },
   { "Resp_GetMACAddress", "CTRL_MSG_ID__Resp_GetMACAddress", 201 },
   { "Resp_SetMacAddress", "CTRL_MSG_ID__Resp_SetMacAddress", 202 },
@@ -5979,7 +6371,9 @@ static const ProtobufCEnumValue ctrl_msg_id__enum_values_by_number[59] =
   { "Resp_ConfigHeartbeat", "CTRL_MSG_ID__Resp_ConfigHeartbeat", 221 },
   { "Resp_EnableDisable", "CTRL_MSG_ID__Resp_EnableDisable", 222 },
   { "Resp_GetFwVersion", "CTRL_MSG_ID__Resp_GetFwVersion", 223 },
-  { "Resp_Max", "CTRL_MSG_ID__Resp_Max", 224 },
+  { "Resp_SetCountryCode", "CTRL_MSG_ID__Resp_SetCountryCode", 224 },
+  { "Resp_GetCountryCode", "CTRL_MSG_ID__Resp_GetCountryCode", 225 },
+  { "Resp_Max", "CTRL_MSG_ID__Resp_Max", 226 },
   { "Event_Base", "CTRL_MSG_ID__Event_Base", 300 },
   { "Event_ESPInit", "CTRL_MSG_ID__Event_ESPInit", 301 },
   { "Event_Heartbeat", "CTRL_MSG_ID__Event_Heartbeat", 302 },
@@ -5990,18 +6384,18 @@ static const ProtobufCEnumValue ctrl_msg_id__enum_values_by_number[59] =
   { "Event_Max", "CTRL_MSG_ID__Event_Max", 307 },
 };
 static const ProtobufCIntRange ctrl_msg_id__value_ranges[] = {
-{0, 0},{100, 1},{200, 26},{300, 51},{0, 59}
+{0, 0},{100, 1},{200, 28},{300, 55},{0, 63}
 };
-static const ProtobufCEnumValueIndex ctrl_msg_id__enum_values_by_name[59] =
+static const ProtobufCEnumValueIndex ctrl_msg_id__enum_values_by_name[63] =
 {
-  { "Event_Base", 51 },
-  { "Event_ESPInit", 52 },
-  { "Event_Heartbeat", 53 },
-  { "Event_Max", 58 },
-  { "Event_StationConnectedToAP", 56 },
-  { "Event_StationConnectedToESPSoftAP", 57 },
-  { "Event_StationDisconnectFromAP", 54 },
-  { "Event_StationDisconnectFromESPSoftAP", 55 },
+  { "Event_Base", 55 },
+  { "Event_ESPInit", 56 },
+  { "Event_Heartbeat", 57 },
+  { "Event_Max", 62 },
+  { "Event_StationConnectedToAP", 60 },
+  { "Event_StationConnectedToESPSoftAP", 61 },
+  { "Event_StationDisconnectFromAP", 58 },
+  { "Event_StationDisconnectFromESPSoftAP", 59 },
   { "MsgId_Invalid", 0 },
   { "Req_Base", 1 },
   { "Req_ConfigHeartbeat", 22 },
@@ -6010,6 +6404,7 @@ static const ProtobufCEnumValueIndex ctrl_msg_id__enum_values_by_name[59] =
   { "Req_EnableDisable", 23 },
   { "Req_GetAPConfig", 7 },
   { "Req_GetAPScanList", 6 },
+  { "Req_GetCountryCode", 26 },
   { "Req_GetFwVersion", 24 },
   { "Req_GetMACAddress", 2 },
   { "Req_GetPowerSaveMode", 16 },
@@ -6017,10 +6412,11 @@ static const ProtobufCEnumValueIndex ctrl_msg_id__enum_values_by_name[59] =
   { "Req_GetSoftAPConnectedSTAList", 13 },
   { "Req_GetWifiCurrTxPower", 21 },
   { "Req_GetWifiMode", 4 },
-  { "Req_Max", 25 },
+  { "Req_Max", 27 },
   { "Req_OTABegin", 17 },
   { "Req_OTAEnd", 19 },
   { "Req_OTAWrite", 18 },
+  { "Req_SetCountryCode", 25 },
   { "Req_SetMacAddress", 3 },
   { "Req_SetPowerSaveMode", 15 },
   { "Req_SetSoftAPVendorSpecificIE", 11 },
@@ -6028,31 +6424,33 @@ static const ProtobufCEnumValueIndex ctrl_msg_id__enum_values_by_name[59] =
   { "Req_SetWifiMode", 5 },
   { "Req_StartSoftAP", 12 },
   { "Req_StopSoftAP", 14 },
-  { "Resp_Base", 26 },
-  { "Resp_ConfigHeartbeat", 47 },
-  { "Resp_ConnectAP", 33 },
-  { "Resp_DisconnectAP", 34 },
-  { "Resp_EnableDisable", 48 },
-  { "Resp_GetAPConfig", 32 },
-  { "Resp_GetAPScanList", 31 },
-  { "Resp_GetFwVersion", 49 },
-  { "Resp_GetMACAddress", 27 },
-  { "Resp_GetPowerSaveMode", 41 },
-  { "Resp_GetSoftAPConfig", 35 },
-  { "Resp_GetSoftAPConnectedSTAList", 38 },
-  { "Resp_GetWifiCurrTxPower", 46 },
-  { "Resp_GetWifiMode", 29 },
-  { "Resp_Max", 50 },
-  { "Resp_OTABegin", 42 },
-  { "Resp_OTAEnd", 44 },
-  { "Resp_OTAWrite", 43 },
-  { "Resp_SetMacAddress", 28 },
-  { "Resp_SetPowerSaveMode", 40 },
-  { "Resp_SetSoftAPVendorSpecificIE", 36 },
-  { "Resp_SetWifiMaxTxPower", 45 },
-  { "Resp_SetWifiMode", 30 },
-  { "Resp_StartSoftAP", 37 },
-  { "Resp_StopSoftAP", 39 },
+  { "Resp_Base", 28 },
+  { "Resp_ConfigHeartbeat", 49 },
+  { "Resp_ConnectAP", 35 },
+  { "Resp_DisconnectAP", 36 },
+  { "Resp_EnableDisable", 50 },
+  { "Resp_GetAPConfig", 34 },
+  { "Resp_GetAPScanList", 33 },
+  { "Resp_GetCountryCode", 53 },
+  { "Resp_GetFwVersion", 51 },
+  { "Resp_GetMACAddress", 29 },
+  { "Resp_GetPowerSaveMode", 43 },
+  { "Resp_GetSoftAPConfig", 37 },
+  { "Resp_GetSoftAPConnectedSTAList", 40 },
+  { "Resp_GetWifiCurrTxPower", 48 },
+  { "Resp_GetWifiMode", 31 },
+  { "Resp_Max", 54 },
+  { "Resp_OTABegin", 44 },
+  { "Resp_OTAEnd", 46 },
+  { "Resp_OTAWrite", 45 },
+  { "Resp_SetCountryCode", 52 },
+  { "Resp_SetMacAddress", 30 },
+  { "Resp_SetPowerSaveMode", 42 },
+  { "Resp_SetSoftAPVendorSpecificIE", 38 },
+  { "Resp_SetWifiMaxTxPower", 47 },
+  { "Resp_SetWifiMode", 32 },
+  { "Resp_StartSoftAP", 39 },
+  { "Resp_StopSoftAP", 41 },
 };
 const ProtobufCEnumDescriptor ctrl_msg_id__descriptor =
 {
@@ -6061,9 +6459,9 @@ const ProtobufCEnumDescriptor ctrl_msg_id__descriptor =
   "CtrlMsgId",
   "CtrlMsgId",
   "",
-  59,
+  63,
   ctrl_msg_id__enum_values_by_number,
-  59,
+  63,
   ctrl_msg_id__enum_values_by_name,
   4,
   ctrl_msg_id__value_ranges,

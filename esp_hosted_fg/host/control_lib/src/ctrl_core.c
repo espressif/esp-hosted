@@ -654,6 +654,17 @@ static int ctrl_app_parse_resp(CtrlMsg *ctrl_msg, ctrl_cmd_t *app_resp)
 			app_resp->u.wifi_tx_power.power =
 				ctrl_msg->resp_get_wifi_curr_tx_power->wifi_curr_tx_power;
 			break;
+		} case CTRL_RESP_SET_COUNTRY_CODE: {
+			CHECK_CTRL_MSG_NON_NULL(resp_set_country_code);
+			CHECK_CTRL_MSG_FAILED(resp_set_country_code);
+			break;
+		} case CTRL_RESP_GET_COUNTRY_CODE: {
+			CHECK_CTRL_MSG_NON_NULL(resp_get_country_code);
+			CHECK_CTRL_MSG_FAILED(resp_get_country_code);
+			memcpy(app_resp->u.country_code.country,
+				ctrl_msg->resp_get_country_code->country.data,
+				ctrl_msg->resp_get_country_code->country.len);
+			break;
 		} case CTRL_RESP_CONFIG_HEARTBEAT: {
 			CHECK_CTRL_MSG_NON_NULL(resp_config_heartbeat);
 			CHECK_CTRL_MSG_FAILED(resp_config_heartbeat);
@@ -1275,7 +1286,8 @@ int ctrl_app_send_req(ctrl_cmd_t *app_req)
 		case CTRL_REQ_OTA_BEGIN:
 		case CTRL_REQ_OTA_END:
 		case CTRL_REQ_GET_WIFI_CURR_TX_POWER:
-		case CTRL_REQ_GET_FW_VERSION: {
+		case CTRL_REQ_GET_FW_VERSION:
+		case CTRL_REQ_GET_COUNTRY_CODE: {
 			/* Intentional fallthrough & empty */
 			break;
 		} case CTRL_REQ_GET_AP_SCAN_LIST: {
@@ -1492,6 +1504,17 @@ int ctrl_app_send_req(ctrl_cmd_t *app_req)
 					req_set_wifi_max_tx_power);
 			ctrl_msg__req__set_wifi_max_tx_power__init(req_payload);
 			req_payload->wifi_max_tx_power = app_req->u.wifi_tx_power.power;
+			break;
+		} case CTRL_REQ_SET_COUNTRY_CODE: {
+			country_code_t * p = &app_req->u.country_code;
+
+			CTRL_ALLOC_ASSIGN(CtrlMsgReqSetCountryCode,
+					req_set_country_code);
+			ctrl_msg__req__set_country_code__init(req_payload);
+
+			req_payload->country.data = (uint8_t *)&p->country;
+			req_payload->country.len = COUNTRY_CODE_LEN;
+			req_payload->ieee80211d_enabled = p->ieee80211d_enabled;
 			break;
 		} case CTRL_REQ_CONFIG_HEARTBEAT: {
 			CTRL_ALLOC_ASSIGN(CtrlMsgReqConfigHeartbeat, req_config_heartbeat);

@@ -1030,7 +1030,151 @@ dynamically allocated response pointer of type struct `ctrl_cmd_t *`
 
 ---
 
-### 1.22 [ctrl_cmd_t](#416-struct-ctrl_cmd_t) * config_heartbeat([ctrl_cmd_t](#416-struct-ctrl_cmd_t) req)
+### 1.22 [ctrl_cmd_t](#416-struct-ctrl_cmd_t) * get_fw_version([ctrl_cmd_t](#416-struct-ctrl_cmd_t) req)
+
+Function gets the Firmware Version of the Co-processor
+
+  - `req.ctrl_resp_cb` : optional
+    - `NULL` :
+      - Treat as synchronous procedure
+      - Application would be blocked till response is received from hosted control library
+    - `Non-NULL` :
+      - Treat as asynchronous procedure
+      - Callback function of type [ctrl_resp_cb_t](#31-typedef-int-ctrl_resp_cb_t-ctrl_cmd_t-resp) is registered
+      - Application would be will **not** be blocked for response and API is returned immediately
+      - Response from ESP when received by hosted control library, this callback would be called
+  - `req.cmd_timeout_sec` : optional
+    - Timeout duration to wait for response in sync or async procedure
+    - Default value is 30 sec
+    - In case of async procedure, response callback function with error control response would be called to wait for response
+
+#### Return
+
+#### Parameters
+- `ctrl_cmd_t req` :
+dynamically allocated response pointer of type struct `ctrl_cmd_t *`
+  - **`resp->resp_event_status`** :
+    - 0 : `SUCCESS`
+    - != 0 : `FAILURE`
+  - **`resp->fw_version.project_name`** :
+    - two letter code identifying the Firmware (default is `FG`)
+  - **`resp->fw_version.major_1`** :
+    - `major_1` revision of the firmware
+  - **`resp->fw_version.major_2`** :
+    - `major_2` revision of the firmware
+  - **`resp->fw_version.minor`** :
+    - `minor` revision of the firmware
+  - **`resp->fw_version.revision_patch_1`** :
+    - `patch_1` revision of the firmware
+  - **`resp->fw_version.revision_patch_2`** :
+    - `patch_2` revision of the firmware
+- `NULL` :
+  - Synchronous procedure: Failure
+  - Asynchronous procedure:
+    - Expected as NULL return value as response is processed in callback function
+    - In callback function, parameter `ctrl_cmd_t *app_resp` behaves same as above
+
+#### Note
+- Application is expected to free
+  - `ctrl_cmd_t *app_resp`
+
+---
+
+### 1.23 [ctrl_cmd_t](#416-struct-ctrl_cmd_t) * wifi_set_country_code([ctrl_cmd_t](#416-struct-ctrl_cmd_t) req)
+
+Function sets the Wi-Fi Country Code
+
+#### Note
+- Supported country codes are "01"(world safe mode) "AT","AU","BE","BG","BR", "CA","CH","CN","CY","CZ","DE","DK","EE","ES","FI","FR","GB","GR","HK","HR","HU", "IE","IN","IS","IT","JP","KR","LI","LT","LU","LV","MT","MX","NL","NO","NZ","PL","PT", "RO","SE","SI","SK","TW","US"
+- The third octet of country code string is one of the following: ' ', 'O', 'I', 'X', otherwise it is considered as ' '
+  - ' ' means the regulations under which the station/AP is operating encompass all environments for the current frequency band in the country.
+  - 'O' means the regulations under which the station/AP is operating are for an outdoor environment only
+  - 'I' means the regulations under which the station/AP is operating are for an indoor environment only.
+  - 'X' means the station/AP is operating under a noncountry entity. The first two octets of the noncountry entity is two ASCII 'XX' characters
+- When country code "01" (world safe mode) is set, SoftAP mode won't contain country IE
+- When ieee80211d_enabled is `true`, the country info of the AP to which the station is connected is used. E.g. if the configured country is US and the country info of the AP to which the station is connected is JP then the country info that will be used is JP. If the station disconnected from the AP the country info is set back to the country info of the station automatically, US in the example.
+- When ieee80211d_enabled is `false`, then the configured country info is used always
+
+#### Parameters
+- `ctrl_cmd_t req` :
+Control request as input with following
+  - **`req.u.country_code.country`** :
+  Country code to set
+  - **`req.u.country_code.ieee80211d_enabled`** :
+  Enable (`true`) or disable (`false`) IEEE802.11d "additional regulatory domains" support
+  - `req.ctrl_resp_cb` : optional
+    - `NULL` :
+      - Treat as synchronous procedure
+      - Application would be blocked till response is received from hosted control library
+    - `Non-NULL` :
+      - Treat as asynchronous procedure
+      - Callback function of type [ctrl_resp_cb_t](#31-typedef-int-ctrl_resp_cb_t-ctrl_cmd_t-resp) is registered
+      - Application would be will **not** be blocked for response and API is returned immediately
+      - Response from ESP when received by hosted control library, this callback would be called
+  - `req.cmd_timeout_sec` : optional
+    - Timeout duration to wait for response in sync or async procedure
+    - Default value is 30 sec
+    - In case of async procedure, response callback function with error control response would be called to wait for response
+
+#### Return
+
+- `ctrl_cmd_t *app_resp` :
+dynamically allocated response pointer of type struct `ctrl_cmd_t *`
+  - **`resp->resp_event_status`** :
+    - 0 : `SUCCESS`
+    - -1 : `FAILURE`
+    - 258 : `ESP_ERR_INVALID_ARG`. Provided Country Code is invalid
+- `NULL` :
+  - Synchronous procedure: Failure
+  - Asynchronous procedure:
+    - Expected as NULL return value as response is processed in callback function
+    - In callback function, parameter `ctrl_cmd_t *app_resp` behaves same as above
+
+#### Note
+- Application is expected to free
+  - `ctrl_cmd_t *app_resp`
+
+---
+
+### 1.24 [ctrl_cmd_t](#416-struct-ctrl_cmd_t) * wifi_get_country_code([ctrl_cmd_t](#416-struct-ctrl_cmd_t) req)
+
+Function gets the Wi-Fi Country Code
+
+#### Parameters
+- `ctrl_cmd_t req` :
+Control request as input with following
+  - `req.ctrl_resp_cb` : optional
+    - `NULL` :
+      - Treat as synchronous procedure
+      - Application would be blocked till response is received from hosted control library
+    - `Non-NULL` :
+      - Treat as asynchronous procedure
+      - Callback function of type [ctrl_resp_cb_t](#31-typedef-int-ctrl_resp_cb_t-ctrl_cmd_t-resp) is registered
+      - Application would be will **not** be blocked for response and API is returned immediately
+      - Response from ESP when received by hosted control library, this callback would be called
+  - `req.cmd_timeout_sec` : optional
+    - Timeout duration to wait for response in sync or async procedure
+    - Default value is 30 sec
+    - In case of async procedure, response callback function with error control response would be called to wait for response
+
+#### Return
+
+- `ctrl_cmd_t *app_resp` :
+dynamically allocated response pointer of type struct `ctrl_cmd_t *`
+  - **`resp->resp_event_status`** :
+    - 0 : `SUCCESS`
+    - != 0 : `FAILURE`
+  - **`resp->u.country_code.country`** :
+  Current Country code
+- `NULL` :
+  - Synchronous procedure: Failure
+  - Asynchronous procedure:
+    - Expected as NULL return value as response is processed in callback function
+    - In callback function, parameter `ctrl_cmd_t *app_resp` behaves same as above
+
+---
+
+### 1.25 [ctrl_cmd_t](#416-struct-ctrl_cmd_t) * config_heartbeat([ctrl_cmd_t](#416-struct-ctrl_cmd_t) req)
 
 This is used to configure heartbeat event. Be default heartbeat is not enabled
 To enable heartbeats, user need to use this API in addition to setting event callback for heartbeat event
@@ -1078,7 +1222,7 @@ dynamically allocated response pointer of type struct `ctrl_cmd_t *`
 
 ---
 
-### 1.23 [ctrl_cmd_t](#416-struct-ctrl_cmd_t) * ota_begin([ctrl_cmd_t](#416-struct-ctrl_cmd_t) req)
+### 1.26 [ctrl_cmd_t](#416-struct-ctrl_cmd_t) * ota_begin([ctrl_cmd_t](#416-struct-ctrl_cmd_t) req)
 
 - OTA begin function performs an OTA begin operation for ESP, which erases and prepares existing flash partition for new flash writing
 - Although asynchronous procedure is supported, This is typically used as synchronous procedure, OTA begin success is expected before OTA write
@@ -1118,7 +1262,7 @@ dynamically allocated response pointer of type struct `ctrl_cmd_t *`
 
 ---
 
-### 1.24 [ctrl_cmd_t](#416-struct-ctrl_cmd_t) * ota_write([ctrl_cmd_t](#416-struct-ctrl_cmd_t) req)
+### 1.27 [ctrl_cmd_t](#416-struct-ctrl_cmd_t) * ota_write([ctrl_cmd_t](#416-struct-ctrl_cmd_t) req)
 
 - OTA write function performs an OTA write operation for ESP, It writes bytes from `ota_data` buffer with `ota_data_len` number of bytes to OTA partition in flash
 - The number of bytes can be smaller than the size of the complete binary to be flashed
@@ -1166,7 +1310,7 @@ dynamically allocated response pointer of type struct `ctrl_cmd_t *`
 
 ---
 
-### 1.25 [ctrl_cmd_t](#416-struct-ctrl_cmd_t) * ota_end([ctrl_cmd_t](#416-struct-ctrl_cmd_t) req)
+### 1.28 [ctrl_cmd_t](#416-struct-ctrl_cmd_t) * ota_end([ctrl_cmd_t](#416-struct-ctrl_cmd_t) req)
 
 OTA end function performs an OTA end operation for ESP, It validates written OTA image, sets newly written OTA partition as boot partition for next boot, creates timer, which reset ESP after 5 sec
 
@@ -1206,7 +1350,7 @@ dynamically allocated response pointer of type struct `ctrl_cmd_t *`
 ---
 
 
-### 1.26 int create_socket(int domain, int type, int protocol, int *sock)
+### 1.29 int create_socket(int domain, int type, int protocol, int *sock)
 
 - This API is only applicable in Unix based systems
 - This is used to create an endpoint for communication
@@ -1229,7 +1373,7 @@ This will return a file descriptor (integer number) that refers to that endpoint
 
 ---
 
-### 1.27 int close_socket(int sock)
+### 1.30 int close_socket(int sock)
 
 - This API is only applicable in Unix based systems
 - This is used to close an endpoint of the communication
@@ -1246,14 +1390,14 @@ This specifies the file descriptor of the endpoint/socket to be closed
 
 ---
 
-### 1.28 int set_hw_addr(int sockfd, char* iface, char* mac)
+### 1.31 int set_hw_addr(int sockfd, char* iface, char* mac)
 
 - This API is only applicable in Unix based systems
 - Set ethernet interface MAC address `mac` to interface `iface`
 
 ---
 
-### 1.29 [ctrl_cmd_t](#416-struct-ctrl_cmd_t) * feature_config([ctrl_cmd_t](#416-struct-ctrl_cmd_t) req)
+### 1.32 [ctrl_cmd_t](#416-struct-ctrl_cmd_t) * feature_config([ctrl_cmd_t](#416-struct-ctrl_cmd_t) req)
 
 - Enable or Disable the feature
 - feature is integer as per `feature_t`
@@ -1316,7 +1460,7 @@ MAC address to be set
 
 ---
 
-### 1.29 int interface_up(int sockfd, char* iface)
+### 1.33 int interface_up(int sockfd, char* iface)
 
 - This API is only applicable in Unix based systems
 - Get the interface up for interface `iface`
@@ -1335,7 +1479,7 @@ Ethernet interface name
 
 ---
 
-### 1.30 int interface_down(int sockfd, char* iface)
+### 1.34 int interface_down(int sockfd, char* iface)
 
 - This API is only applicable in Unix based systems
 - Get the interface down for interface `iface`

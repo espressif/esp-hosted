@@ -359,6 +359,42 @@ class ctrl_cmd(object):
 		self.out = process_get_fw_version()
 		return self
 
+	def set_country_code(self, country : str = "01 ", ieee80211d_enabled : bool = True):
+		"""Set Country Code
+
+		Sets the Wi-Fi Country Code
+
+		"country" is three octets, consisting of a two octet country code and a regulatory octet
+
+		Supported country codes are "01"(world safe mode) "AT","AU","BE","BG","BR", "CA","CH","CN","CY","CZ","DE","DK","EE","ES","FI","FR","GB","GR","HK","HR","HU", "IE","IN","IS","IT","JP","KR","LI","LT","LU","LV","MT","MX","NL","NO","NZ","PL","PT", "RO","SE","SI","SK","TW","US"
+
+		The third octet is one of the following:
+		- an ASCII space character, which means the regulations under which the station/AP is operating encompass all environments for the current frequency band in the country.
+		- an ASCII 'O' character, which means the regulations under which the station/AP is operating are for an outdoor environment only.
+		- an ASCII 'I' character, which means the regulations under which the station/AP is operating are for an indoor environment only.
+		- an ASCII 'X' character, which means the station/AP is operating under a noncountry entity. The first two octets of the noncountry entity is two ASCII 'XX' characters.
+
+		Args:
+			country (str, mandatory): M | Country Code to set
+			ieee80211d_enabled (bool, optional): O | Use Country Code of AP when station is connected | Default: True
+
+		Returns:
+			ctrl_cmd: ctrl_cmd object
+		"""
+		self.out = process_set_country_code(country, ieee80211d_enabled)
+		return self
+
+	def get_country_code(self):
+		"""Get Country Code
+
+		Args:
+			no_arg(str,optional): O | Dummy arg
+
+		Returns:
+			ctrl_cmd: ctrl_cmd object
+		"""
+		self.out = process_get_country_code()
+		return self
 
 	def ota_update(self, url : str = ""):
 		"""OTA update with HTTP link

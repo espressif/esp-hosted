@@ -56,6 +56,12 @@
 
 #define GET_FW_VERSION                     "get_fw_version"
 
+#define SET_COUNTRY_CODE                   "set_country_code"
+/* ENABLED means ieee80211d ("additional regulatory domains") enabled */
+#define SET_COUNTRY_CODE_ENABLED           "set_country_code_enabled"
+
+#define GET_COUNTRY_CODE                   "get_country_code"
+
 #ifndef SSID_LENGTH
 #define SSID_LENGTH                         33
 #endif
@@ -92,6 +98,21 @@
 #define SOFTAP_MODE_SSID_HIDDEN             false
 #define SOFTAP_MODE_BANDWIDTH               2
 #define SOFTAP_BAND_MODE                    BAND_MODE_AUTO
+
+/* COUNTRY_CODE is expected to be three octets. */
+/* From documentation for esp_wifi_set_country_code():
+ *
+ * Supported country codes are "01"(world safe mode) "AT","AU","BE","BG","BR", "CA","CH","CN","CY","CZ","DE","DK","EE","ES","FI","FR","GB","GR","HK","HR","HU", "IE","IN","IS","IT","JP","KR","LI","LT","LU","LV","MT","MX","NL","NO","NZ","PL","PT", "RO","SE","SI","SK","TW","US"
+ *
+ * The third octet of country code string is one of the following: ' ', 'O', 'I', 'X', otherwise it is considered as ' '.
+ *
+ * From ESP-IDF Wi-Fi API documentation on country code:
+ * - an ASCII space character, which means the regulations under which the station/AP is operating encompass all environments for the current frequency band in the country.
+ * - an ASCII ‘O’ character, which means the regulations under which the station/AP is operating are for an outdoor environment only.
+ * - an ASCII ‘I’ character, which means the regulations under which the station/AP is operating are for an indoor environment only.
+ * - an ASCII ‘X’ character, which means the station/AP is operating under a noncountry entity. The first two octets of the noncountry entity is two ASCII ‘XX’ characters.
+ */
+#define COUNTRY_CODE                        "01 " // 01 is 'world-safe'
 
 #define INPUT_WIFI_TX_POWER                 20
 

@@ -25,26 +25,31 @@
 
 #define DEMO_SLEEP_DURATION_SEC 50
 #define EXEC_IF_CMD_EQUALS(cmd,func) \
-	if (0 == strncasecmp(cmd, in_cmd, sizeof(cmd))) \
-		func
+	if (0 == strncasecmp(cmd, in_cmd, sizeof(cmd))) { \
+		func; \
+		cmd_executed = true; \
+	}
 
 /***** Please Read *****/
 /* Before use : User must enter user configuration parameter in "ctrl_config.h" file */
 
 static void inline usage(char *argv[])
 {
-	printf("sudo %s \n[\n %s\t\t||\n %s\t\t||\n %s\t\t||\n %s\t\t||\n %s\t\t||\n %s\t\t\t||\n %s\t\t\t||\n %s\t\t\t||\n %s\t\t\t||\n %s\t\t\t||\n %s\t\t||\n %s\t\t||\n %s\t\t\t||\n %s\t\t||\n %s\t||\n %s\t\t\t||\n %s\t||\n %s\t||\n %s\t\t||\n %s\t\t||\n %s <ESP 'network_adapter.bin' path> ||\n %s\t\t\t||\n %s\t\t\t||\n %s\t\t\t||\n %s\t\t\t||\n %s\t\t\t||\n]\n",
+	printf("sudo %s \n[\n %s\t\t||\n %s\t\t||\n %s\t\t||\n %s\t\t||\n %s\t\t||\n %s\t\t\t||\n %s\t\t\t||\n %s\t\t\t||\n %s\t\t\t||\n %s\t\t\t||\n %s\t\t||\n %s\t\t||\n %s\t\t\t||\n %s\t\t||\n %s\t||\n %s\t\t\t||\n %s\t||\n %s\t||\n %s\t\t||\n %s\t\t||\n %s <ESP 'network_adapter.bin' path> ||\n %s\t\t\t||\n %s\t\t\t||\n %s\t\t\t||\n %s\t\t\t||\n %s\t\t\t||\n %s\t\t||\n %s\t||\n %s\t\t||\n]\n",
 		argv[0], SET_STA_MAC_ADDR, GET_STA_MAC_ADDR, SET_SOFTAP_MAC_ADDR, GET_SOFTAP_MAC_ADDR, GET_AP_SCAN_LIST,
 		STA_CONNECT, GET_STA_CONFIG, STA_DISCONNECT, SET_WIFI_MODE, GET_WIFI_MODE,
 		RESET_SOFTAP_VENDOR_IE, SET_SOFTAP_VENDOR_IE, SOFTAP_START, GET_SOFTAP_CONFIG, SOFTAP_CONNECTED_STA_LIST,
 		SOFTAP_STOP, SET_WIFI_POWERSAVE_MODE, GET_WIFI_POWERSAVE_MODE, SET_WIFI_MAX_TX_POWER, GET_WIFI_CURR_TX_POWER,
-		OTA, ENABLE_WIFI, DISABLE_WIFI, ENABLE_BT, DISABLE_BT, GET_FW_VERSION);
+		OTA, ENABLE_WIFI, DISABLE_WIFI, ENABLE_BT, DISABLE_BT, GET_FW_VERSION, SET_COUNTRY_CODE, SET_COUNTRY_CODE_ENABLED,
+		GET_COUNTRY_CODE);
 	printf("\n\nFor example, \nsudo %s %s\n",
 		argv[0], SET_STA_MAC_ADDR);
 }
 
 static int parse_cli_cmd(char *in_cmd, char *args[])
 {
+	bool cmd_executed = false;
+
 	/* TODO: create commands and handler map later */
 	/* Get and set mac address */
 	EXEC_IF_CMD_EQUALS(SET_STA_MAC_ADDR, test_station_mode_set_mac_addr_of_esp());
@@ -73,8 +78,16 @@ static int parse_cli_cmd(char *in_cmd, char *args[])
 	EXEC_IF_CMD_EQUALS(DISABLE_BT, test_disable_bt());
 	EXEC_IF_CMD_EQUALS(GET_FW_VERSION, test_print_fw_version());
 	EXEC_IF_CMD_EQUALS(OTA, test_ota(args[0]));
+	EXEC_IF_CMD_EQUALS(SET_COUNTRY_CODE, test_set_country_code());
+	EXEC_IF_CMD_EQUALS(SET_COUNTRY_CODE_ENABLED, test_set_country_code_enabled());
+	EXEC_IF_CMD_EQUALS(GET_COUNTRY_CODE, test_get_country_code());
 
-	return SUCCESS;
+	if (cmd_executed)
+		return SUCCESS;
+	else {
+		printf("Invalid cmd: %s\n", in_cmd);
+		return FAILURE;
+	}
 }
 
 static int init_app(void)
@@ -147,12 +160,12 @@ int main(int argc, char *argv[])
 	printf("------ ESP-Hosted FW [%s] ------\n", test_get_fw_version(version));
 
 	cli_cmd = argv[1];
-	parse_cli_cmd(cli_cmd, &argv[2]);
-
-	sleep(2);
-	printf("\n\n\nRequested operation complete\n");
-	printf("Sleeping for some time just to showcase heartbeat\n");
-	sleep(DEMO_SLEEP_DURATION_SEC);
+	if (SUCCESS == parse_cli_cmd(cli_cmd, &argv[2])) {
+		sleep(2);
+		printf("\n\n\nRequested operation complete\n");
+		printf("Sleeping for some time just to showcase heartbeat\n");
+		sleep(DEMO_SLEEP_DURATION_SEC);
+	}
 
 	cleanup_app();
 	printf("Exiting..");

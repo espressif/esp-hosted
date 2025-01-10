@@ -1,4 +1,4 @@
-/* Copyright (C) 2015-2024 Espressif Systems (Shanghai) PTE LTD */
+/* Copyright (C) 2015-2025 Espressif Systems (Shanghai) PTE LTD */
 /* SPDX-License-Identifier: GPL-2.0-only OR Apache-2.0 */
 
 syntax = "proto3";
@@ -101,9 +101,11 @@ enum CtrlMsgId {
 	Req_ConfigHeartbeat = 121;
 	Req_EnableDisable = 122;
 	Req_GetFwVersion = 123;
+	Req_SetCountryCode = 124;
+	Req_GetCountryCode = 125;
 	/* Add new control path command response before Req_Max
 	 * and update Req_Max */
-	Req_Max = 124;
+	Req_Max = 126;
 
 	/** Response Msgs **/
 	Resp_Base = 200;
@@ -137,9 +139,11 @@ enum CtrlMsgId {
 	Resp_ConfigHeartbeat = 221;
 	Resp_EnableDisable = 222;
 	Resp_GetFwVersion = 223;
+	Resp_SetCountryCode = 224;
+	Resp_GetCountryCode = 225;
 	/* Add new control path command response before Resp_Max
 	 * and update Resp_Max */
-	Resp_Max = 224;
+	Resp_Max = 226;
 
 	/** Event Msgs **/
 	Event_Base = 300;
@@ -386,6 +390,23 @@ message CtrlMsg_Resp_GetFwVersion {
 	uint32 rev_patch2 = 7;
 }
 
+message CtrlMsg_Req_SetCountryCode {
+	bytes country = 1;
+	bool ieee80211d_enabled = 2;
+}
+
+message CtrlMsg_Resp_SetCountryCode {
+	int32 resp = 1;
+}
+
+message CtrlMsg_Req_GetCountryCode {
+}
+
+message CtrlMsg_Resp_GetCountryCode {
+	int32 resp = 1;
+	bytes country = 2;
+}
+
 /** Event structure **/
 message CtrlMsg_Event_ESPInit {
 	bytes init_data = 1;
@@ -474,6 +495,8 @@ message CtrlMsg {
 		CtrlMsg_Req_ConfigHeartbeat req_config_heartbeat = 121;
 		CtrlMsg_Req_EnableDisable req_enable_disable_feat = 122;
 		CtrlMsg_Req_GetFwVersion req_get_fw_version = 123;
+		CtrlMsg_Req_SetCountryCode req_set_country_code = 124;
+		CtrlMsg_Req_GetCountryCode req_get_country_code = 125;
 
 		/** Responses **/
 		CtrlMsg_Resp_GetMacAddress resp_get_mac_address = 201;
@@ -503,6 +526,8 @@ message CtrlMsg {
 		CtrlMsg_Resp_ConfigHeartbeat resp_config_heartbeat = 221;
 		CtrlMsg_Resp_EnableDisable resp_enable_disable_feat = 222;
 		CtrlMsg_Resp_GetFwVersion resp_get_fw_version = 223;
+		CtrlMsg_Resp_SetCountryCode resp_set_country_code = 224;
+		CtrlMsg_Resp_GetCountryCode resp_get_country_code = 225;
 
 		/** Notifications **/
 		CtrlMsg_Event_ESPInit event_esp_init = 301;

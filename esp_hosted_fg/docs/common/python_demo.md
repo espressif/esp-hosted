@@ -148,6 +148,10 @@
     - Init and start Bluetooth driver in slave
   - `get_fw_version`
     - Fetch firmware version at slave
+  - `set_country_code`
+    - Set the Wi-Fi Country Code
+  - `get_country_code`
+    - Get the current Wi-Fi Country Code
 
 - Note:
   - Positional arguments are supported in case of `Shell mode`

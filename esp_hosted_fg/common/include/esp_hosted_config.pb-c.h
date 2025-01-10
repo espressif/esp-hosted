@@ -58,6 +58,10 @@ typedef struct CtrlMsgReqEnableDisable CtrlMsgReqEnableDisable;
 typedef struct CtrlMsgRespEnableDisable CtrlMsgRespEnableDisable;
 typedef struct CtrlMsgReqGetFwVersion CtrlMsgReqGetFwVersion;
 typedef struct CtrlMsgRespGetFwVersion CtrlMsgRespGetFwVersion;
+typedef struct CtrlMsgReqSetCountryCode CtrlMsgReqSetCountryCode;
+typedef struct CtrlMsgRespSetCountryCode CtrlMsgRespSetCountryCode;
+typedef struct CtrlMsgReqGetCountryCode CtrlMsgReqGetCountryCode;
+typedef struct CtrlMsgRespGetCountryCode CtrlMsgRespGetCountryCode;
 typedef struct CtrlMsgEventESPInit CtrlMsgEventESPInit;
 typedef struct CtrlMsgEventHeartbeat CtrlMsgEventHeartbeat;
 typedef struct CtrlMsgEventStationDisconnectFromAP CtrlMsgEventStationDisconnectFromAP;
@@ -164,11 +168,13 @@ typedef enum _CtrlMsgId {
   CTRL_MSG_ID__Req_ConfigHeartbeat = 121,
   CTRL_MSG_ID__Req_EnableDisable = 122,
   CTRL_MSG_ID__Req_GetFwVersion = 123,
+  CTRL_MSG_ID__Req_SetCountryCode = 124,
+  CTRL_MSG_ID__Req_GetCountryCode = 125,
   /*
    * Add new control path command response before Req_Max
    * and update Req_Max 
    */
-  CTRL_MSG_ID__Req_Max = 124,
+  CTRL_MSG_ID__Req_Max = 126,
   /*
    ** Response Msgs *
    */
@@ -196,11 +202,13 @@ typedef enum _CtrlMsgId {
   CTRL_MSG_ID__Resp_ConfigHeartbeat = 221,
   CTRL_MSG_ID__Resp_EnableDisable = 222,
   CTRL_MSG_ID__Resp_GetFwVersion = 223,
+  CTRL_MSG_ID__Resp_SetCountryCode = 224,
+  CTRL_MSG_ID__Resp_GetCountryCode = 225,
   /*
    * Add new control path command response before Resp_Max
    * and update Resp_Max 
    */
-  CTRL_MSG_ID__Resp_Max = 224,
+  CTRL_MSG_ID__Resp_Max = 226,
   /*
    ** Event Msgs *
    */
@@ -713,6 +721,47 @@ struct  CtrlMsgRespGetFwVersion
     , 0, (char *)protobuf_c_empty_string, 0, 0, 0, 0, 0 }
 
 
+struct  CtrlMsgReqSetCountryCode
+{
+  ProtobufCMessage base;
+  ProtobufCBinaryData country;
+  protobuf_c_boolean ieee80211d_enabled;
+};
+#define CTRL_MSG__REQ__SET_COUNTRY_CODE__INIT \
+ { PROTOBUF_C_MESSAGE_INIT (&ctrl_msg__req__set_country_code__descriptor) \
+    , {0,NULL}, 0 }
+
+
+struct  CtrlMsgRespSetCountryCode
+{
+  ProtobufCMessage base;
+  int32_t resp;
+};
+#define CTRL_MSG__RESP__SET_COUNTRY_CODE__INIT \
+ { PROTOBUF_C_MESSAGE_INIT (&ctrl_msg__resp__set_country_code__descriptor) \
+    , 0 }
+
+
+struct  CtrlMsgReqGetCountryCode
+{
+  ProtobufCMessage base;
+};
+#define CTRL_MSG__REQ__GET_COUNTRY_CODE__INIT \
+ { PROTOBUF_C_MESSAGE_INIT (&ctrl_msg__req__get_country_code__descriptor) \
+     }
+
+
+struct  CtrlMsgRespGetCountryCode
+{
+  ProtobufCMessage base;
+  int32_t resp;
+  ProtobufCBinaryData country;
+};
+#define CTRL_MSG__RESP__GET_COUNTRY_CODE__INIT \
+ { PROTOBUF_C_MESSAGE_INIT (&ctrl_msg__resp__get_country_code__descriptor) \
+    , 0, {0,NULL} }
+
+
 /*
  ** Event structure *
  */
@@ -819,6 +868,8 @@ typedef enum {
   CTRL_MSG__PAYLOAD_REQ_CONFIG_HEARTBEAT = 121,
   CTRL_MSG__PAYLOAD_REQ_ENABLE_DISABLE_FEAT = 122,
   CTRL_MSG__PAYLOAD_REQ_GET_FW_VERSION = 123,
+  CTRL_MSG__PAYLOAD_REQ_SET_COUNTRY_CODE = 124,
+  CTRL_MSG__PAYLOAD_REQ_GET_COUNTRY_CODE = 125,
   CTRL_MSG__PAYLOAD_RESP_GET_MAC_ADDRESS = 201,
   CTRL_MSG__PAYLOAD_RESP_SET_MAC_ADDRESS = 202,
   CTRL_MSG__PAYLOAD_RESP_GET_WIFI_MODE = 203,
@@ -842,6 +893,8 @@ typedef enum {
   CTRL_MSG__PAYLOAD_RESP_CONFIG_HEARTBEAT = 221,
   CTRL_MSG__PAYLOAD_RESP_ENABLE_DISABLE_FEAT = 222,
   CTRL_MSG__PAYLOAD_RESP_GET_FW_VERSION = 223,
+  CTRL_MSG__PAYLOAD_RESP_SET_COUNTRY_CODE = 224,
+  CTRL_MSG__PAYLOAD_RESP_GET_COUNTRY_CODE = 225,
   CTRL_MSG__PAYLOAD_EVENT_ESP_INIT = 301,
   CTRL_MSG__PAYLOAD_EVENT_HEARTBEAT = 302,
   CTRL_MSG__PAYLOAD_EVENT_STATION_DISCONNECT_FROM__AP = 303,
@@ -898,6 +951,8 @@ struct  CtrlMsg
     CtrlMsgReqConfigHeartbeat *req_config_heartbeat;
     CtrlMsgReqEnableDisable *req_enable_disable_feat;
     CtrlMsgReqGetFwVersion *req_get_fw_version;
+    CtrlMsgReqSetCountryCode *req_set_country_code;
+    CtrlMsgReqGetCountryCode *req_get_country_code;
     /*
      ** Responses *
      */
@@ -924,6 +979,8 @@ struct  CtrlMsg
     CtrlMsgRespConfigHeartbeat *resp_config_heartbeat;
     CtrlMsgRespEnableDisable *resp_enable_disable_feat;
     CtrlMsgRespGetFwVersion *resp_get_fw_version;
+    CtrlMsgRespSetCountryCode *resp_set_country_code;
+    CtrlMsgRespGetCountryCode *resp_get_country_code;
     /*
      ** Notifications *
      */
@@ -1757,6 +1814,82 @@ CtrlMsgRespGetFwVersion *
 void   ctrl_msg__resp__get_fw_version__free_unpacked
                      (CtrlMsgRespGetFwVersion *message,
                       ProtobufCAllocator *allocator);
+/* CtrlMsgReqSetCountryCode methods */
+void   ctrl_msg__req__set_country_code__init
+                     (CtrlMsgReqSetCountryCode         *message);
+size_t ctrl_msg__req__set_country_code__get_packed_size
+                     (const CtrlMsgReqSetCountryCode   *message);
+size_t ctrl_msg__req__set_country_code__pack
+                     (const CtrlMsgReqSetCountryCode   *message,
+                      uint8_t             *out);
+size_t ctrl_msg__req__set_country_code__pack_to_buffer
+                     (const CtrlMsgReqSetCountryCode   *message,
+                      ProtobufCBuffer     *buffer);
+CtrlMsgReqSetCountryCode *
+       ctrl_msg__req__set_country_code__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data);
+void   ctrl_msg__req__set_country_code__free_unpacked
+                     (CtrlMsgReqSetCountryCode *message,
+                      ProtobufCAllocator *allocator);
+/* CtrlMsgRespSetCountryCode methods */
+void   ctrl_msg__resp__set_country_code__init
+                     (CtrlMsgRespSetCountryCode         *message);
+size_t ctrl_msg__resp__set_country_code__get_packed_size
+                     (const CtrlMsgRespSetCountryCode   *message);
+size_t ctrl_msg__resp__set_country_code__pack
+                     (const CtrlMsgRespSetCountryCode   *message,
+                      uint8_t             *out);
+size_t ctrl_msg__resp__set_country_code__pack_to_buffer
+                     (const CtrlMsgRespSetCountryCode   *message,
+                      ProtobufCBuffer     *buffer);
+CtrlMsgRespSetCountryCode *
+       ctrl_msg__resp__set_country_code__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data);
+void   ctrl_msg__resp__set_country_code__free_unpacked
+                     (CtrlMsgRespSetCountryCode *message,
+                      ProtobufCAllocator *allocator);
+/* CtrlMsgReqGetCountryCode methods */
+void   ctrl_msg__req__get_country_code__init
+                     (CtrlMsgReqGetCountryCode         *message);
+size_t ctrl_msg__req__get_country_code__get_packed_size
+                     (const CtrlMsgReqGetCountryCode   *message);
+size_t ctrl_msg__req__get_country_code__pack
+                     (const CtrlMsgReqGetCountryCode   *message,
+                      uint8_t             *out);
+size_t ctrl_msg__req__get_country_code__pack_to_buffer
+                     (const CtrlMsgReqGetCountryCode   *message,
+                      ProtobufCBuffer     *buffer);
+CtrlMsgReqGetCountryCode *
+       ctrl_msg__req__get_country_code__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data);
+void   ctrl_msg__req__get_country_code__free_unpacked
+                     (CtrlMsgReqGetCountryCode *message,
+                      ProtobufCAllocator *allocator);
+/* CtrlMsgRespGetCountryCode methods */
+void   ctrl_msg__resp__get_country_code__init
+                     (CtrlMsgRespGetCountryCode         *message);
+size_t ctrl_msg__resp__get_country_code__get_packed_size
+                     (const CtrlMsgRespGetCountryCode   *message);
+size_t ctrl_msg__resp__get_country_code__pack
+                     (const CtrlMsgRespGetCountryCode   *message,
+                      uint8_t             *out);
+size_t ctrl_msg__resp__get_country_code__pack_to_buffer
+                     (const CtrlMsgRespGetCountryCode   *message,
+                      ProtobufCBuffer     *buffer);
+CtrlMsgRespGetCountryCode *
+       ctrl_msg__resp__get_country_code__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data);
+void   ctrl_msg__resp__get_country_code__free_unpacked
+                     (CtrlMsgRespGetCountryCode *message,
+                      ProtobufCAllocator *allocator);
 /* CtrlMsgEventESPInit methods */
 void   ctrl_msg__event__espinit__init
                      (CtrlMsgEventESPInit         *message);
@@ -2021,6 +2154,18 @@ typedef void (*CtrlMsgReqGetFwVersion_Closure)
 typedef void (*CtrlMsgRespGetFwVersion_Closure)
                  (const CtrlMsgRespGetFwVersion *message,
                   void *closure_data);
+typedef void (*CtrlMsgReqSetCountryCode_Closure)
+                 (const CtrlMsgReqSetCountryCode *message,
+                  void *closure_data);
+typedef void (*CtrlMsgRespSetCountryCode_Closure)
+                 (const CtrlMsgRespSetCountryCode *message,
+                  void *closure_data);
+typedef void (*CtrlMsgReqGetCountryCode_Closure)
+                 (const CtrlMsgReqGetCountryCode *message,
+                  void *closure_data);
+typedef void (*CtrlMsgRespGetCountryCode_Closure)
+                 (const CtrlMsgRespGetCountryCode *message,
+                  void *closure_data);
 typedef void (*CtrlMsgEventESPInit_Closure)
                  (const CtrlMsgEventESPInit *message,
                   void *closure_data);
@@ -2101,6 +2246,10 @@ extern const ProtobufCMessageDescriptor ctrl_msg__req__enable_disable__descripto
 extern const ProtobufCMessageDescriptor ctrl_msg__resp__enable_disable__descriptor;
 extern const ProtobufCMessageDescriptor ctrl_msg__req__get_fw_version__descriptor;
 extern const ProtobufCMessageDescriptor ctrl_msg__resp__get_fw_version__descriptor;
+extern const ProtobufCMessageDescriptor ctrl_msg__req__set_country_code__descriptor;
+extern const ProtobufCMessageDescriptor ctrl_msg__resp__set_country_code__descriptor;
+extern const ProtobufCMessageDescriptor ctrl_msg__req__get_country_code__descriptor;
+extern const ProtobufCMessageDescriptor ctrl_msg__resp__get_country_code__descriptor;
 extern const ProtobufCMessageDescriptor ctrl_msg__event__espinit__descriptor;
 extern const ProtobufCMessageDescriptor ctrl_msg__event__heartbeat__descriptor;
 extern const ProtobufCMessageDescriptor ctrl_msg__event__station_disconnect_from_ap__descriptor;

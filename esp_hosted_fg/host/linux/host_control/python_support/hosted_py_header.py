@@ -152,7 +152,9 @@ class CTRL_MSGID(Enum):
 	CTRL_REQ_CONFIG_HEARTBEAT = 121
 	CTRL_REQ_ENABLE_DISABLE = 122
 	CTRL_REQ_GET_FW_VERSION = 123
-	CTRL_REQ_MAX = 124
+	CTRL_REQ_SET_COUNTRY_CODE = 124
+	CTRL_REQ_GET_COUNTRY_CODE = 125
+	CTRL_REQ_MAX = 126
 	CTRL_RESP_BASE = 200
 	CTRL_RESP_GET_MAC_ADDR = 201
 	CTRL_RESP_SET_MAC_ADDRESS = 202
@@ -177,7 +179,9 @@ class CTRL_MSGID(Enum):
 	CTRL_RESP_CONFIG_HEARTBEAT = 221
 	CTRL_RESP_ENABLE_DISABLE = 222
 	CTRL_RESP_GET_FW_VERSION = 223
-	CTRL_RESP_MAX = 224
+	CTRL_RESP_SET_COUNTRY_CODE = 224
+	CTRL_RESP_GET_COUNTRY_CODE = 225
+	CTRL_RESP_MAX = 226
 	CTRL_EVENT_BASE = 300
 	CTRL_EVENT_ESP_INIT = 301
 	CTRL_EVENT_HEARTBEAT = 302
@@ -282,6 +286,10 @@ class FW_VERSION(Structure):
 			("revision_patch_1", c_uint8),
 			("revision_patch_2", c_uint8)]
 
+class COUNTRY_CODE(Structure):
+	_fields_ = [("country", c_char * 3),
+			("ieee80211d_enabled", c_bool)]
+
 class OTA_WRITE(Structure):
 	_fields_ = [("ota_data", c_char_p),
 			("ota_data_len", c_uint)]
@@ -341,6 +349,7 @@ class CONTROL_DATA(Union):
 			("feat_ena_disable", FEATURE_CONFIG),
 			("wifi_tx_power", WIFI_TX_POWER),
 			("fw_version", FW_VERSION),
+			("country_code", COUNTRY_CODE),
 			("e_heartbeat", EVENT_HEARTBEAT),
 			("e_sta_conn", EVENT_STATION_CONN_TO_AP),
 			("e_sta_disconn", EVENT_STATION_DISCONN_FROM_AP),

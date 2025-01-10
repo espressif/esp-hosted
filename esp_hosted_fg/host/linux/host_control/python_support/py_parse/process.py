@@ -341,6 +341,14 @@ def process_get_fw_version():
 	test_get_fw_version()
 	return ""
 
+def process_get_country_code():
+	test_get_country_code()
+	return ""
+
+def process_set_country_code(country, ieee80211d_enabled):
+	test_set_country_code(country, ieee80211d_enabled)
+	return ""
+
 def process_ota_update(url):
 	return test_sync_ota(url)
 
