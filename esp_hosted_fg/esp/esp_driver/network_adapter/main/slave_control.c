@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// Copyright 2015-2021 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2015-2025 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -56,6 +56,10 @@
 
 #define MIN_HEARTBEAT_INTERVAL      (10)
 #define MAX_HEARTBEAT_INTERVAL      (60*60)
+
+#define COUNTRY_CODE_LEN            (3)
+#define MIN_COUNTRY_CODE_LEN        (2)
+#define MAX_COUNTRY_CODE_LEN        (3)
 
 #define mem_free(x)                 \
         {                           \
@@ -1979,6 +1983,109 @@ static esp_err_t req_get_fw_version_handler (CtrlMsg *req,
 	return ESP_OK;
 }
 
+/* Function to set Country Code */
+static esp_err_t req_set_country_code_handler (CtrlMsg *req,
+		CtrlMsg *resp, void *priv_data)
+{
+	CtrlMsgRespSetCountryCode *resp_payload = NULL;
+
+	char country_code[COUNTRY_CODE_LEN] = { 0 };
+	/* incoming country code may be 2/3 octets in length,
+	   by default, we set the default third octet to be ' '
+	*/
+	country_code[2] = ' ';
+
+	esp_err_t ret = ESP_OK;
+
+	if (!req || !resp) {
+		ESP_LOGE(TAG, "Invalid parameters");
+		return ESP_FAIL;
+	}
+
+	resp_payload = (CtrlMsgRespSetCountryCode *)
+		calloc(1,sizeof(CtrlMsgRespSetCountryCode));
+	if (!resp_payload) {
+		ESP_LOGE(TAG,"Failed to allocate memory");
+		return ESP_ERR_NO_MEM;
+	}
+
+	ctrl_msg__resp__set_country_code__init(resp_payload);
+	resp->payload_case = CTRL_MSG__PAYLOAD_RESP_SET_COUNTRY_CODE;
+	resp->resp_set_country_code = resp_payload;
+
+	// App may not care about third octet, so we accept two or three octet country code
+	if ((req->req_set_country_code->country.len < MIN_COUNTRY_CODE_LEN) ||
+		(req->req_set_country_code->country.len > MAX_COUNTRY_CODE_LEN)) {
+		ESP_LOGE(TAG, "Invalid Country Code Len");
+		resp_payload->resp = ESP_ERR_INVALID_ARG;
+		goto err;
+	}
+
+	memcpy(country_code, req->req_set_country_code->country.data,
+		req->req_set_country_code->country.len);
+
+	ret = esp_wifi_set_country_code(country_code,
+			req->req_set_country_code->ieee80211d_enabled);
+	if (ret != ESP_OK) {
+		if (ret == ESP_ERR_INVALID_ARG) {
+			ESP_LOGE(TAG, "Invalid country code");
+		} else {
+			ESP_LOGE(TAG, "Failed to set country code");
+		}
+		resp_payload->resp = ret;
+	} else {
+		resp_payload->resp = SUCCESS;
+	}
+
+err:
+	return ESP_OK;
+}
+
+/* Function to get Country Code */
+static esp_err_t req_get_country_code_handler (CtrlMsg *req,
+		CtrlMsg *resp, void *priv_data)
+{
+	CtrlMsgRespGetCountryCode *resp_payload = NULL;
+	char * country_code = NULL;
+	esp_err_t ret = ESP_OK;
+
+	if (!req || !resp) {
+		ESP_LOGE(TAG, "Invalid parameters");
+		return ESP_FAIL;
+	}
+
+	resp_payload = (CtrlMsgRespGetCountryCode *)
+		calloc(1,sizeof(CtrlMsgRespGetCountryCode));
+	if (!resp_payload) {
+		ESP_LOGE(TAG,"Failed to allocate memory");
+		return ESP_ERR_NO_MEM;
+	}
+
+	country_code = (char *)calloc(1, COUNTRY_CODE_LEN);
+	if (!country_code) {
+		ESP_LOGE(TAG,"Failed to allocate memory for country code");
+		if (resp_payload)
+			free(resp_payload);
+		return ESP_ERR_NO_MEM;
+	}
+
+	ctrl_msg__resp__get_country_code__init(resp_payload);
+	resp->payload_case = CTRL_MSG__PAYLOAD_RESP_GET_COUNTRY_CODE;
+	resp->resp_get_country_code = resp_payload;
+
+	ret = esp_wifi_get_country_code(country_code);
+	if (ret == ESP_OK) {
+		resp_payload->country.data = (uint8_t *)country_code;
+		resp_payload->country.len = COUNTRY_CODE_LEN;
+		resp_payload->resp = SUCCESS;
+	} else {
+		ESP_LOGE(TAG,"Failed to get country code");
+		resp_payload->resp = ret;
+	}
+
+	return ESP_OK;
+}
+
 static void heartbeat_timer_cb(TimerHandle_t xTimer)
 {
 	send_event_to_host(CTRL_MSG_ID__Event_Heartbeat);
@@ -2253,6 +2360,14 @@ static esp_ctrl_msg_req_t req_table[] = {
 		.req_num = CTRL_MSG_ID__Req_GetFwVersion,
 		.command_handler = req_get_fw_version_handler
 	},
+	{
+		.req_num = CTRL_MSG_ID__Req_SetCountryCode,
+		.command_handler = req_set_country_code_handler
+	},
+	{
+		.req_num = CTRL_MSG_ID__Req_GetCountryCode,
+		.command_handler = req_get_country_code_handler
+	},
 };
 
 
@@ -2419,6 +2534,15 @@ static void esp_ctrl_msg_cleanup(CtrlMsg *resp)
 			break;
 		} case (CTRL_MSG_ID__Resp_GetFwVersion) : {
 			mem_free(resp->resp_get_fw_version);
+			break;
+		} case (CTRL_MSG_ID__Resp_SetCountryCode) : {
+			mem_free(resp->resp_set_country_code);
+			break;
+		} case (CTRL_MSG_ID__Resp_GetCountryCode) : {
+			if (resp->resp_get_country_code->country.data) {
+				mem_free(resp->resp_get_country_code->country.data);
+			}
+			mem_free(resp->resp_get_country_code);
 			break;
 		} case (CTRL_MSG_ID__Event_ESPInit) : {
 			mem_free(resp->event_esp_init);

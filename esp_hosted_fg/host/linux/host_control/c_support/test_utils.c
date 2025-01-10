@@ -623,6 +623,12 @@ int ctrl_app_resp_callback(ctrl_cmd_t * app_resp)
 		} case CTRL_RESP_GET_FW_VERSION: {
 			printf("Get Firmware Version successful\n");
 			break;
+		} case CTRL_RESP_SET_COUNTRY_CODE: {
+			printf("Set Country Code successful\n");
+			break;
+		} case CTRL_RESP_GET_COUNTRY_CODE: {
+			printf("Current Country code is %s\n", app_resp->u.country_code.country);
+			break;
 		} default: {
 			printf("Invalid Response[%u] to parse\n", app_resp->msg_id);
 			break;
@@ -1055,6 +1061,43 @@ int test_wifi_get_curr_tx_power()
 	ctrl_cmd_t *resp = NULL;
 
 	resp = wifi_get_curr_tx_power(req);
+
+	return ctrl_app_resp_callback(resp);
+}
+
+static int test_set_country_code_with_domain(bool enabled)
+{
+	/* implemented synchronous */
+	ctrl_cmd_t req = CTRL_CMD_DEFAULT_REQ();
+	ctrl_cmd_t *resp = NULL;
+
+	memcpy(req.u.country_code.country, COUNTRY_CODE, COUNTRY_CODE_LEN);
+	req.u.country_code.ieee80211d_enabled = enabled;
+
+	resp = wifi_set_country_code(req);
+
+	return ctrl_app_resp_callback(resp);
+}
+
+int test_set_country_code_enabled()
+{
+	/* implemented synchronous */
+	return test_set_country_code_with_domain(true);
+}
+
+int test_set_country_code()
+{
+	/* implemented synchronous */
+	return test_set_country_code_with_domain(false);
+}
+
+int test_get_country_code()
+{
+	/* implemented synchronous */
+	ctrl_cmd_t req = CTRL_CMD_DEFAULT_REQ();
+	ctrl_cmd_t *resp = NULL;
+
+	resp = wifi_get_country_code(req);
 
 	return ctrl_app_resp_callback(resp);
 }

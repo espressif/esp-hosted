@@ -467,7 +467,7 @@ def ctrl_app_resp_callback(app_resp):
 		else:
 			print("Number of available APs is "+str(w_scan_p.contents.count))
 			for i in range (0, w_scan_p.contents.count) :
-				print(str(i)+") ssid \""+get_str(list[i].ssid)+"\""+
+				print(str(i)+") ssid \""+list[i].ssid.decode('utf-8')+"\""+
 						" bssid \""+get_str(list[i].bssid)+"\""+
 						" rssi \""+str(list[i].rssi)+"\""+
 						" channel \""+str(list[i].channel)+"\""+
@@ -576,6 +576,13 @@ def ctrl_app_resp_callback(app_resp):
 	elif (app_resp.contents.msg_id == CTRL_MSGID.CTRL_RESP_GET_FW_VERSION.value) :
 		version_string = app_resp.contents.control_data.fw_version.project_name.decode('utf-8') + "-" + str(app_resp.contents.control_data.fw_version.major_1) + "." + str(app_resp.contents.control_data.fw_version.major_2) + "." + str(app_resp.contents.control_data.fw_version.minor) + "." + str(app_resp.contents.control_data.fw_version.revision_patch_1) + "." + str(app_resp.contents.control_data.fw_version.revision_patch_2)
 		print(version_string, end='')
+
+	elif (app_resp.contents.msg_id == CTRL_MSGID.CTRL_RESP_SET_COUNTRY_CODE.value) :
+		pass
+
+	elif (app_resp.contents.msg_id == CTRL_MSGID.CTRL_RESP_GET_COUNTRY_CODE.value) :
+		country_code = app_resp.contents.control_data.country_code.country.decode('utf-8')
+		print(country_code, end='')
 
 	elif (app_resp.contents.msg_id == CTRL_MSGID.CTRL_RESP_ENABLE_DISABLE.value) :
 		pass
@@ -1035,6 +1042,24 @@ def test_get_fw_version():
 	resp = POINTER(CONTROL_COMMAND)
 	resp = None
 	resp = commands_map_py_to_c.get_fw_version(req)
+	return ctrl_app_resp_callback(resp)
+
+def test_set_country_code(country, ieee80211d_enabled):
+	req = CONTROL_COMMAND()
+	CTRL_CMD_DEFAULT_REQ(req)
+	resp = POINTER(CONTROL_COMMAND)
+	resp = None
+	req.control_data.country_code.country = country.encode('utf-8')
+	req.control_data.country_code.ieee80211d_enabled = ieee80211d_enabled
+	resp = commands_map_py_to_c.set_country_code(req)
+	return ctrl_app_resp_callback(resp)
+
+def test_get_country_code():
+	req = CONTROL_COMMAND()
+	CTRL_CMD_DEFAULT_REQ(req)
+	resp = POINTER(CONTROL_COMMAND)
+	resp = None
+	resp = commands_map_py_to_c.get_country_code(req)
 	return ctrl_app_resp_callback(resp)
 
 def test_sync_ota_begin():

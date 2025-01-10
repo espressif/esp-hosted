@@ -89,6 +89,12 @@ feature_config.restype = POINTER(CONTROL_COMMAND)
 get_fw_version = commands_lib.get_fw_version
 get_fw_version.restype = POINTER(CONTROL_COMMAND)
 
+set_country_code = commands_lib.wifi_set_country_code
+set_country_code.restype = POINTER(CONTROL_COMMAND)
+
+get_country_code = commands_lib.wifi_get_country_code
+get_country_code.restype = POINTER(CONTROL_COMMAND)
+
 config_heartbeat = commands_lib.config_heartbeat
 config_heartbeat.restype = POINTER(CONTROL_COMMAND)
 

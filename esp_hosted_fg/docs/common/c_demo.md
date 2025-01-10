@@ -48,8 +48,17 @@
 | disable_wifi | Disable Wi-Fi driver |
 | enable_bt | Enable Bluetooth driver |
 | disable_bt | Disable Bluetooth driver |
+|||
+| get_fw_version | Get Firmware Version |
+|||
+| set_country_code | Set Country Code with IEEE802.11d disabled |
+| set_country_code_enabled | Set Country Code with IEEE802.11d enabled |
+| get_country_code | Get the current Country Code|
 
-
+> [!NOTE]
+> 1. With IEEE802.11d enabled, the country info of the AP to which the station is connected is used. E.g. if the configured country is US and the country info of the AP to which the station is connected is JP then the country info that will be used is JP. If the station disconnected from the AP the country info is set back to the country info of the station automatically, US in the example.
+> 2. With IEEE802.11d disabled, then the configured country info is used always.
+> 3. When the country info is changed because of configuration or because the station connects to a different external AP, the country IE in probe response/beacon of the soft-AP is also changed.
 
 ### How to run
 It uses APIs present in [ctrl_api.h](../../host/control_lib/include/ctrl_api.h). User should first modify configuration parameters in [ctrl_config.h](../../host/linux/host_control/c_support/ctrl_config.h). Then run `make` in [c_support/](../../host/linux/host_control/c_support) to compile `test.c`.
@@ -67,7 +76,8 @@ $ sudo ./test.out \
 	  softap_stop           || set_wifi_powersave_mode || get_wifi_powersave_mode   || \
 	  set_wifi_max_tx_power || get_wifi_curr_tx_power  || \
 	  ota </path/to/esp_firmware_network_adapter.bin> || \
-      enable_wifi || disable_wifi || enable_bt || disable_bt || get_fw_version
+	  enable_wifi || disable_wifi || enable_bt || disable_bt || get_fw_version || \
+	  set_country_code || set_country_code_enabled || get_country_code
 	]
 ```
 For example,
@@ -140,7 +150,8 @@ $ sudo ./stress.out <Number of test iterations> [get_sta_mac_addr] [get_softap_m
 		[set_softap_vendor_ie] [reset_softap_vendor_ie] [softap_start] \
 		[get_softap_config] [softap_connected_sta_list] [softap_stop] \
 		[set_wifi_powersave_mode] [get_wifi_powersave_mode] [set_wifi_max_tx_power] \
-		[get_wifi_curr_tx_power] [ota </path/to/esp_firmware_network_adaptor.bin>]
+		[get_wifi_curr_tx_power] [set_country_code] [set_country_code_enabled] [get_country_code] \
+		[ota </path/to/esp_firmware_network_adaptor.bin>]
 
 For example:
 $ sudo ./stress.out 10 scan sta_connect sta_disconnect ap_start sta_list ap_stop wifi_tx_power

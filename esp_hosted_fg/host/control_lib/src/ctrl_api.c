@@ -138,6 +138,18 @@ ctrl_cmd_t * wifi_get_curr_tx_power(ctrl_cmd_t req)
 	CTRL_DECODE_RESP_IF_NOT_ASYNC();
 }
 
+ctrl_cmd_t * wifi_set_country_code(ctrl_cmd_t req)
+{
+	CTRL_SEND_REQ(CTRL_REQ_SET_COUNTRY_CODE);
+	CTRL_DECODE_RESP_IF_NOT_ASYNC();
+}
+
+ctrl_cmd_t * wifi_get_country_code(ctrl_cmd_t req)
+{
+	CTRL_SEND_REQ(CTRL_REQ_GET_COUNTRY_CODE);
+	CTRL_DECODE_RESP_IF_NOT_ASYNC();
+}
+
 ctrl_cmd_t * config_heartbeat(ctrl_cmd_t req)
 {
 	CTRL_SEND_REQ(CTRL_REQ_CONFIG_HEARTBEAT);

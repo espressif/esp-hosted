@@ -28,6 +28,8 @@
 #define CALLBACK_NOT_REGISTERED              -1
 #define MSG_ID_OUT_OF_ORDER                  -2
 
+#define COUNTRY_CODE_LEN                     3
+
 /* If request is already being served and
  * another request is pending, time period for
  * which new request will wait in seconds
@@ -114,6 +116,10 @@ typedef enum {
 	CTRL_REQ_ENABLE_DISABLE            = CTRL_MSG_ID__Req_EnableDisable,      //0x7a
 
 	CTRL_REQ_GET_FW_VERSION            = CTRL_MSG_ID__Req_GetFwVersion,       //0x7b
+
+	CTRL_REQ_SET_COUNTRY_CODE          = CTRL_MSG_ID__Req_SetCountryCode,     //0x7c
+	CTRL_REQ_GET_COUNTRY_CODE          = CTRL_MSG_ID__Req_GetCountryCode,     //0x7d
+
 	/*
 	 * Add new control path command response before Req_Max
 	 * and update Req_Max
@@ -153,6 +159,9 @@ typedef enum {
 	CTRL_RESP_ENABLE_DISABLE            = CTRL_MSG_ID__Resp_EnableDisable,      //0x7a -> 0xde
 
 	CTRL_RESP_GET_FW_VERSION            = CTRL_MSG_ID__Resp_GetFwVersion,       //0x7b -> 0xdf
+
+	CTRL_RESP_SET_COUNTRY_CODE          = CTRL_MSG_ID__Resp_SetCountryCode,     //0x7c -> 0xe0
+	CTRL_RESP_GET_COUNTRY_CODE          = CTRL_MSG_ID__Resp_GetCountryCode,     //0x7d -> 0xe1
 	/*
 	 * Add new control path comm       and response before Resp_Max
 	 * and update Resp_Max
@@ -336,6 +345,11 @@ typedef struct {
 } fw_version_t;
 
 typedef struct {
+	char country[COUNTRY_CODE_LEN];
+	bool ieee80211d_enabled;
+} country_code_t;
+
+typedef struct {
 	HostedFeature feature;
 	uint8_t enable;
 } feature_enable_disable_t;
@@ -411,6 +425,8 @@ typedef struct Ctrl_cmd_t {
 		wifi_tx_power_t             wifi_tx_power;
 
 		fw_version_t                fw_version;
+
+		country_code_t              country_code;
 
 		event_heartbeat_t           e_heartbeat;
 
@@ -573,6 +589,12 @@ ctrl_cmd_t * wifi_set_max_tx_power(ctrl_cmd_t req);
 
 /* Gets current WiFi transmiting power at ESP32 */
 ctrl_cmd_t * wifi_get_curr_tx_power(ctrl_cmd_t req);
+
+/* Sets the Country Code */
+ctrl_cmd_t * wifi_set_country_code(ctrl_cmd_t req);
+
+/* Gets the Country Code */
+ctrl_cmd_t * wifi_get_country_code(ctrl_cmd_t req);
 
 /* Configure heartbeat event. Be default heartbeat is not enabled.
  * To enable heartbeats, user need to use this API in addition
