@@ -850,7 +850,6 @@ static int esp_cfg80211_start_ap(struct wiphy *wiphy, struct net_device *dev,
 	struct esp_ap_config ap_config = {0};
 	int res;
 	int i;
-	const uint8_t *rsn_ie;
 
 	if (!wiphy || !dev) {
 		esp_err("%u invalid params\n", __LINE__);
