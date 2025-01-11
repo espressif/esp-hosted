@@ -13,7 +13,7 @@ git submodule update --init --depth=1
 
 echo "ESP hosted: initializing submodule for esp-idf"
 cd esp-idf
-git submodule update --init --depth=1
+git submodule update --init --depth=1 -f
 
 echo "ESP hosted: installing prerequisites for $TGT_NAME"
 ./install.sh $TGT_NAME
