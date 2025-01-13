@@ -103,9 +103,10 @@ enum CtrlMsgId {
 	Req_GetFwVersion = 123;
 	Req_SetCountryCode = 124;
 	Req_GetCountryCode = 125;
+	Req_SetDhcpDnsStatus = 126;
 	/* Add new control path command response before Req_Max
 	 * and update Req_Max */
-	Req_Max = 126;
+	Req_Max = 127;
 
 	/** Response Msgs **/
 	Resp_Base = 200;
@@ -141,9 +142,10 @@ enum CtrlMsgId {
 	Resp_GetFwVersion = 223;
 	Resp_SetCountryCode = 224;
 	Resp_GetCountryCode = 225;
+	Resp_SetDhcpDnsStatus = 226;
 	/* Add new control path command response before Resp_Max
 	 * and update Resp_Max */
-	Resp_Max = 226;
+	Resp_Max = 227;
 
 	/** Event Msgs **/
 	Event_Base = 300;
@@ -153,9 +155,10 @@ enum CtrlMsgId {
 	Event_StationDisconnectFromESPSoftAP = 304;
 	Event_StationConnectedToAP = 305;
 	Event_StationConnectedToESPSoftAP = 306;
+	Event_SetDhcpDnsStatus = 307;
 	/* Add new control path command notification before Event_Max
 	 * and update Event_Max */
-	Event_Max = 307;
+	Event_Max = 308;
 }
 
 enum HostedFeature {
@@ -407,6 +410,24 @@ message CtrlMsg_Resp_GetCountryCode {
 	bytes country = 2;
 }
 
+message CtrlMsg_Req_SetDhcpDnsStatus {
+      int32 iface = 1;
+      int32 net_link_up = 2;
+
+      int32 dhcp_up = 3;
+      bytes dhcp_ip = 4;
+      bytes dhcp_nm = 5;
+      bytes dhcp_gw = 6;
+
+      int32 dns_up = 7;
+      bytes dns_ip = 8;
+      int32 dns_type = 9;
+}
+
+message CtrlMsg_Resp_SetDhcpDnsStatus {
+      int32 resp = 1;
+}
+
 /** Event structure **/
 message CtrlMsg_Event_ESPInit {
 	bytes init_data = 1;
@@ -449,6 +470,21 @@ message CtrlMsg_Event_StationConnectedToESPSoftAP {
 	bytes mac = 2;
 	uint32 aid = 3;
 	bool is_mesh_child = 4;
+}
+
+message CtrlMsg_Event_SetDhcpDnsStatus {
+      int32 iface = 1;
+      int32 net_link_up = 2;
+
+      int32 dhcp_up = 3;
+      bytes dhcp_ip = 4;
+      bytes dhcp_nm = 5;
+      bytes dhcp_gw = 6;
+
+      int32 dns_up = 7;
+      bytes dns_ip = 8;
+      int32 dns_type = 9;
+      int32 resp = 10;
 }
 
 message CtrlMsg {
@@ -497,6 +533,7 @@ message CtrlMsg {
 		CtrlMsg_Req_GetFwVersion req_get_fw_version = 123;
 		CtrlMsg_Req_SetCountryCode req_set_country_code = 124;
 		CtrlMsg_Req_GetCountryCode req_get_country_code = 125;
+		CtrlMsg_Req_SetDhcpDnsStatus req_set_dhcp_dns_status = 126;
 
 		/** Responses **/
 		CtrlMsg_Resp_GetMacAddress resp_get_mac_address = 201;
@@ -528,6 +565,7 @@ message CtrlMsg {
 		CtrlMsg_Resp_GetFwVersion resp_get_fw_version = 223;
 		CtrlMsg_Resp_SetCountryCode resp_set_country_code = 224;
 		CtrlMsg_Resp_GetCountryCode resp_get_country_code = 225;
+		CtrlMsg_Resp_SetDhcpDnsStatus resp_set_dhcp_dns_status = 226;
 
 		/** Notifications **/
 		CtrlMsg_Event_ESPInit event_esp_init = 301;
@@ -536,5 +574,6 @@ message CtrlMsg {
 		CtrlMsg_Event_StationDisconnectFromESPSoftAP event_station_disconnect_from_ESP_SoftAP = 304;
 		CtrlMsg_Event_StationConnectedToAP event_station_connected_to_AP = 305;
 		CtrlMsg_Event_StationConnectedToESPSoftAP event_station_connected_to_ESP_SoftAP = 306;
+		CtrlMsg_Event_SetDhcpDnsStatus event_set_dhcp_dns_status = 307;
 	}
 }

@@ -4,6 +4,8 @@
 #ifndef __ESP_NETWORK_ADAPTER__H
 #define __ESP_NETWORK_ADAPTER__H
 
+#define ESP_PKT_NUM_DEBUG                         1
+
 #define PRIO_Q_SERIAL                             0
 #define PRIO_Q_BT                                 1
 #define PRIO_Q_OTHERS                             2
@@ -11,6 +13,9 @@
 
 /* ESP Payload Header Flags */
 #define MORE_FRAGMENT                             (1 << 0)
+#define FLAG_WAKEUP_PKT                           (1 << 1)
+#define FLAG_POWER_SAVE_STARTED                   (1 << 2)
+#define FLAG_POWER_SAVE_STOPPED                   (1 << 3)
 
 /* Serial interface */
 #define SERIAL_IF_FILE                            "/dev/esps0"
@@ -29,6 +34,9 @@ struct esp_payload_header {
 	uint16_t         checksum;
 	uint16_t		 seq_num;
 	uint8_t          reserved2;
+	#ifdef ESP_PKT_NUM_DEBUG
+	uint16_t         pkt_num;
+	#endif
 	/* Position of union field has to always be last,
 	 * this is required for hci_pkt_type */
 	union {
@@ -38,6 +46,8 @@ struct esp_payload_header {
 	};
 	/* Do no add anything here */
 } __attribute__((packed));
+
+#define H_ESP_PAYLOAD_HEADER_OFFSET sizeof(struct esp_payload_header)
 
 typedef enum {
 	ESP_STA_IF,
@@ -53,6 +63,8 @@ typedef enum {
 	ESP_OPEN_DATA_PATH,
 	ESP_CLOSE_DATA_PATH,
 	ESP_RESET,
+	ESP_POWER_SAVE_ON,
+	ESP_POWER_SAVE_OFF,
 	ESP_MAX_HOST_INTERRUPT,
 } ESP_HOST_INTERRUPT;
 
