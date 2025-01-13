@@ -174,7 +174,7 @@ typedef enum _CtrlMsgId {
    * Add new control path command response before Req_Max
    * and update Req_Max 
    */
-  CTRL_MSG_ID__Req_Max = 126,
+  CTRL_MSG_ID__Req_Max = 127,
   /*
    ** Response Msgs *
    */
@@ -208,7 +208,7 @@ typedef enum _CtrlMsgId {
    * Add new control path command response before Resp_Max
    * and update Resp_Max 
    */
-  CTRL_MSG_ID__Resp_Max = 226,
+  CTRL_MSG_ID__Resp_Max = 227,
   /*
    ** Event Msgs *
    */
@@ -223,7 +223,7 @@ typedef enum _CtrlMsgId {
    * Add new control path command notification before Event_Max
    * and update Event_Max 
    */
-  CTRL_MSG_ID__Event_Max = 307
+  CTRL_MSG_ID__Event_Max = 308
     PROTOBUF_C__FORCE_ENUM_TO_BE_INT_SIZE(CTRL_MSG_ID)
 } CtrlMsgId;
 typedef enum _HostedFeature {

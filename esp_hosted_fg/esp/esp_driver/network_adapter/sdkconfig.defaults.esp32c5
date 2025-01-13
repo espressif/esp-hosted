@@ -1,6 +1,6 @@
 # 1. CPU
 #--------
-CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ_160=y
+CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ_240=y
 
 # 2. BT Configuration
 #---------------------
@@ -27,11 +27,12 @@ CONFIG_BT_LE_HCI_INTERFACE_USE_RAM=y
 # 4. Partition Table
 #--------------------
 CONFIG_PARTITION_TABLE_CUSTOM=y
-CONFIG_PARTITION_TABLE_CUSTOM_FILENAME="partitions.esp32c3.csv"
+CONFIG_PARTITION_TABLE_CUSTOM_FILENAME="partitions.esp32c5.csv"
 
 # 5. Mempool
 #------------
 CONFIG_ESP_CACHE_MALLOC=y
+
 
 
 # 6. Power save
@@ -72,7 +73,6 @@ CONFIG_LWIP_TCPIP_RECVMBOX_SIZE=32
 CONFIG_LWIP_TCP_SACK_OUT=y
 CONFIG_LWIP_TCPIP_CORE_LOCKING=y
 CONFIG_LWIP_TCPIP_CORE_LOCKING_INPUT=y
-
 
 # 10. Optimizations
 #-------------------

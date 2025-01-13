@@ -64,21 +64,58 @@ WIFI_CONFIG="wifi_on"
 #WIFI_CONFIG="wifi_off"
 
 ############  Cross compilation options ########################
-CROSS_COMPILE="/bin/arm-linux-gnueabihf-"
+CROSS_COMPILE=""
 KERNEL_BUILD_DIR="/lib/modules/$(uname -r)/build"
 ARCH=""
 
+############  Script control options ###########################
 TEST_RAW_TP="0"
+DRY_RUN="0"
+SKIP_BUILD_APPS="0"
+SKIP_MODULE_BUILD="0"
+USE_COLOR="1"
+
 IF_TYPE=""
 MODULE_NAME="esp32_${IF_TYPE}.ko"
+
+############  Color definitions ################################
+if [ "$USE_COLOR" = "1" ] && [ -t 1 ]; then
+    RED='\033[0;31m'
+    GREEN='\033[0;32m'
+    YELLOW='\033[1;33m'
+    BLUE='\033[0;34m'
+    CYAN='\033[0;36m'
+    BOLD='\033[1m'
+    NC='\033[0m' # No Color
+else
+    RED=''
+    GREEN=''
+    YELLOW=''
+    BLUE=''
+    CYAN=''
+    BOLD=''
+    NC=''
+fi
 
 
 log() {
     echo "[$(date +'%Y-%m-%d %H:%M:%S')] $1"
 }
 
+info() {
+    echo "[$(date +'%Y-%m-%d %H:%M:%S')] $1"
+}
+
 warn() {
-    echo "[$(date +'%Y-%m-%d %H:%M:%S')] **Warn** $1"
+    echo -e "${YELLOW}[$(date +'%Y-%m-%d %H:%M:%S')] Warning:${NC} $1"
+}
+
+error() {
+    echo -e "${RED}[$(date +'%Y-%m-%d %H:%M:%S')] Error:${NC} $1"
+}
+
+success() {
+    echo -e "${GREEN}[$(date +'%Y-%m-%d %H:%M:%S')]${NC} $1"
 }
 
 log_enter() {
@@ -132,13 +169,13 @@ build_c_demo_app() {
     make clean
     make -j8 test
     if [ $? -ne 0 ]; then
-        log "Failed to build test app"
+        error "Failed to build C test app"
         exit 1
     fi
 
     make -j8 stress
     if [ $? -ne 0 ]; then
-        log "Failed to build stress app"
+        error "Failed to build C stress app"
         exit 1
     fi
     cd ..
@@ -151,7 +188,7 @@ build_python_demo_app() {
     make clean
     make -j8
     if [ $? -ne 0 ]; then
-        log "Failed to build python demo app"
+        error "Failed to build Python demo app"
         exit 1
     fi
     cd ..
@@ -174,10 +211,12 @@ remove_module() {
             sudo rmmod esp32_spi &> /dev/null
         fi
         if [ $? -ne 0 ]; then
-            log "Failed to remove esp kernel module"
+            error "Failed to remove esp kernel module"
             exit 1
         fi
-        log "esp module removed using script"
+        success "Removed existing esp32 kernel module"
+    else
+        info "No existing esp32 module loaded"
     fi
     log_exit
 }
@@ -223,9 +262,10 @@ build_module()
 
     # Check the exit status of make
     if [ $? -ne 0 ] ; then
-        log "Failed to build the esp kernel module"
-        exit -1
+        error "Failed to build the esp kernel module"
+        exit 1
     fi
+    success "Kernel module built successfully"
 }
 
 load_bluetooth_module()
@@ -233,9 +273,11 @@ load_bluetooth_module()
 	sudo modprobe bluetooth
 
 	if [ `lsmod | grep bluetooth | wc -l` = "0" ]; then
-		log "Failed to insert bluetooth module, comment if bluetooth is configured directly in kernel"
-		exit -1
+		error "Failed to load bluetooth kernel module"
+		info "If bluetooth is built directly into kernel, this can be ignored"
+		exit 1
 	fi
+	success "Bluetooth module loaded"
 }
 
 insert_module() {
@@ -245,15 +287,15 @@ insert_module() {
         load_bluetooth_module
 
         if [ "$BT_CONFIG" = "bt_using_uart_2pins" ]; then
-			log "Wi-Fi ($IF_TYPE) + Bluetooth (UART-2pins)"
+			info "Wi-Fi ($IF_TYPE) + Bluetooth (UART-2pins)"
             device_tree_dependency_uart_2pins
         elif [ "$BT_CONFIG" = "bt_using_uart_4pins" ]; then
-			log "Wi-Fi ($IF_TYPE) + Bluetooth (UART-4pins)"
+			info "Wi-Fi ($IF_TYPE) + Bluetooth (UART-4pins)"
             device_tree_dependency_uart_4pins
         elif [ "$BT_CONFIG" = "bt_using_hci" ]; then
-			log "$IF_TYPE only setup: Wi-Fi+Bluetooth both over $IF_TYPE"
+			info "$IF_TYPE setup: Wi-Fi+Bluetooth both over $IF_TYPE"
 		else
-            log "Incorrect bluetooth config"
+            error "Incorrect bluetooth config: $BT_CONFIG"
             exit 1
         fi
     fi
@@ -264,17 +306,19 @@ insert_module() {
     fi
 
 	# Insert module with parameters
+	info "Inserting module: $MODULE_NAME $XTRA_MODULE_PARAMS"
 	sudo insmod $MODULE_NAME $XTRA_MODULE_PARAMS
 
     if [ $? -ne 0 ]; then
-        log "Failed to insert module"
+        error "Failed to insert module $MODULE_NAME"
+        info "Check dmesg for details"
         exit 1
     fi
 
     if [ "$(lsmod | grep esp32 | wc -l)" != "0" ]; then
-        log "esp32 module inserted using script"
+        success "ESP32 kernel module inserted successfully"
     else
-        log "Failed to insert esp32 module"
+        error "Module insertion reported success but not found in lsmod"
         exit 1
     fi
     log_exit
@@ -283,13 +327,19 @@ insert_module() {
 parse_arguments() {
     log_enter
     while [ "$1" != "" ]; do
-        case $1 in
-            --help | -h )
+		# Strip leading -- to make it optional and normalize _ to - for compatibility
+		arg="$1"
+		arg="${arg#--}"
+		# Support both dashes and underscores for backward compatibility
+		arg="${arg//_/-}"
+
+        case $arg in
+            help | -h )
                 usage
                 exit 0
                 ;;
-			wifi=*)
-                WIFI_TP=${1#*=}
+			wifi=* | wifi-transport=*)
+                WIFI_TP=${arg#*=}
 				if [ "$WIFI_TP" = "spi" ]; then
 					log "Wi-Fi on SPI"
 				elif [ "$WIFI_TP" = "sdio" ]; then
@@ -298,28 +348,28 @@ parse_arguments() {
 					log "****** Disable Wi-Fi ******"
 					WIFI_TP=""
 				else
-					log "****** Unsupported Wi-Fi transport[$WIFI_TP] ******"
-					log "Possible transport values: 'spi' / 'sdio' / '-'"
+					error "Unsupported Wi-Fi transport[$WIFI_TP]"
+					info "Possible transport values: 'spi' / 'sdio' / '-'"
 					exit 1
 				fi
                 ;;
             resetpin=*)
                 log "Recvd Option: $1"
-                resetpin=${1#*=}
+                resetpin=${arg#*=}
                 ;;
-			bt=*)
+			bt=* | bt-transport=*)
                 log "Recvd Option: $1"
-				BT_TP=${1#*=}
+				BT_TP=${arg#*=}
 				if [ "$BT_TP" = "spi" ]; then
 					BT_CONFIG="bt_using_hci"
 					log "BT on SPI"
 				elif [ "$BT_TP" = "sdio" ]; then
 					BT_CONFIG="bt_using_hci"
 					log "BT on SDIO"
-				elif [ "$BT_TP" = "uart_2pins" ]; then
+				elif [ "$BT_TP" = "uart-2pins" ] || [ "$BT_TP" = "uart_2pins" ]; then
 					BT_CONFIG="bt_using_uart_2pins"
 					log "BT on UART (Tx, RX)"
-				elif [ "$BT_TP" = "uart_4pins" ]; then
+				elif [ "$BT_TP" = "uart-4pins" ] || [ "$BT_TP" = "uart_4pins" ]; then
 					BT_CONFIG="bt_using_uart_4pins"
 					log "BT on UART (Tx, RX, CTS, RTS)"
 				elif [ "$BT_TP" = "-" ]; then
@@ -327,8 +377,9 @@ parse_arguments() {
 					log "****** Disable BT ******"
 					BT_TP=""
 				else
-					log "****** Unsupported BT transport[$BT_TP] ******"
-					log "Possible transport values: 'spi' / 'sdio' / 'uart_2pins' / 'uart_4pins' / '-'"
+					error "Unsupported BT transport[$BT_TP]"
+					info "Possible values: 'spi' / 'sdio' / 'uart-2pins' / 'uart-4pins' / '-'"
+					info "Note: Both 'uart-2pins' and 'uart_2pins' formats are accepted"
 					exit 1
 				fi
                 ;;
@@ -337,35 +388,66 @@ parse_arguments() {
                 TEST_RAW_TP="1"
                 ;;
             clockspeed=*)
-                clockspeed=${1#*=}
+                clockspeed=${arg#*=}
                 log "Clock freq: $clockspeed MHz"
                 ;;
-			spi_bus=*)
-				spi_bus=${1#*=}
+			spi-bus=*)
+				spi_bus=${arg#*=}
 				log "SPI bus: $spi_bus"
 				;;
-			spi_cs=*)
-				spi_cs=${1#*=}
+			spi-cs=*)
+				spi_cs=${arg#*=}
 				log "SPI CS: $spi_cs"
 				;;
-			spi_mode=*)
-				spi_mode=${1#*=}
+			spi-mode=*)
+				spi_mode=${arg#*=}
 				log "SPI Mode: $spi_mode"
 				;;
-			spi_handshake=*)
-				spi_handshake=${1#*=}
+			spi-handshake=*)
+				spi_handshake=${arg#*=}
 				log "SPI handshake gpio: $spi_handshake"
 				;;
-			spi_dataready=*)
-				spi_dataready=${1#*=}
+			spi-dataready=*)
+				spi_dataready=${arg#*=}
 				log "SPI dataready gpio: $spi_dataready"
 				;;
-			cpu_perf=*)
-				cpu_perf=${1#*=}
+			cpu-perf=*)
+				cpu_perf=${arg#*=}
 				log "Set CPU performance: $cpu_perf"
 				;;
+			cross-compile=*)
+				CROSS_COMPILE=${arg#*=}
+				log "Cross compile toolchain: $CROSS_COMPILE"
+				;;
+			kernel=*)
+				KERNEL_BUILD_DIR=${arg#*=}
+				log "Kernel build directory: $KERNEL_BUILD_DIR"
+				;;
+			arch=*)
+				ARCH=${arg#*=}
+				log "Architecture: $ARCH"
+				;;
+			dry-run)
+				DRY_RUN="1"
+				info "Dry-run mode enabled (no actual changes)"
+				;;
+			skip-build-apps)
+				SKIP_BUILD_APPS="1"
+				log "Skipping user-space app builds"
+				;;
+			skip-module-build)
+				SKIP_MODULE_BUILD="1"
+				log "Skipping kernel module build"
+				;;
+			no-color)
+				USE_COLOR="0"
+				RED=''
+				GREEN=''
+				YELLOW=''
+				NC=''
+				;;
             *)
-                log "$1 : unknown option"
+                error "$1 : unknown option"
                 usage
                 exit 1
                 ;;
@@ -387,7 +469,8 @@ verify_transport_combination()
 	if [ "$BT_TP" != "" ]; then
 		if [ "$BT_TP" != "uart_2pins" ] && [ "$BT_TP" != "uart_4pins" ]; then
 			if [ "$WIFI_TP" != "" ] && [ "$BT_TP" != "$WIFI_TP" ]; then
-				log "Transport combination unsupported: Wifi[$WIFI_TP] BT[$BT_TP]"
+				error "Transport combination unsupported: Wi-Fi[$WIFI_TP] BT[$BT_TP]"
+				info "BT and Wi-Fi must use same transport (spi/sdio) unless BT uses UART"
 				exit 1
 			fi
 			IF_TYPE=$BT_TP
@@ -396,7 +479,8 @@ verify_transport_combination()
 
 	if [ "$IF_TYPE" = "" ] ; then
 		echo ""
-		log "transport combination unsupported. At least, Wi-Fi or BT need to run over SPI/SDIO"
+		error "No valid transport configured"
+		info "At least Wi-Fi or BT must run over SPI/SDIO"
 		echo ""
 		usage
 		exit 1
@@ -407,10 +491,10 @@ verify_clock_freq()
 {
 	if [ "$clockspeed" != "" ]; then
 		if [ "$IF_TYPE" = "spi" ] && [ $clockspeed -gt 40 ]; then
-			log "SPI slave clock freq [$clockspeed]  not supported"
+			error "SPI clock frequency [$clockspeed MHz] exceeds maximum (40 MHz)"
 			exit 1
 		elif [ "$IF_TYPE" = "sdio" ] && [ $clockspeed -gt 50 ]; then
-			log "SDIO slave clock [$clockspeed] not supported"
+			error "SDIO clock frequency [$clockspeed MHz] exceeds maximum (50 MHz)"
 			exit 1
 		fi
 	fi
@@ -429,30 +513,86 @@ add_module_param()
 
 # Example usage function
 usage() {
+    echo ""
+    echo "ESP-Hosted Driver Initialization Script"
+    echo "========================================"
+    echo ""
     echo "Usage: $0 [options]"
-    echo "Options:"
-    echo "  --help, -h                   Show this help message"
-    echo "  wifi=<value>                 Set bluetooth transport"
-    echo "     > 'sdio'                       <Use Wi-Fi over SDIO>"
-    echo "     > 'spi'                        <Use Wi-Fi over SPI>"
-    echo "     > '-'                          <Disable Wi-Fi>"
-    echo "  resetpin=<gpio>              Set the reset pin GPIO"
-    echo "  bt=<value>                   Set bluetooth transport"
-    echo "     > 'spi'                        <Use bluetooth over SPI>"
-    echo "     > 'sdio'                       <Use bluetooth over SDIO>"
-    echo "     > 'uart_2pins'                 <Use bluetooth over UART Tx,Rx>"
-    echo "     > 'uart_4pins'                 <Use bluetooth over UART Tx,Rx,CTS,RTS>"
-    echo "     > '-'                          <Disable bluetooth>"
-    echo "  clockspeed=<freq_in_mhz>     Set SPI/SDIO clock frequency to be used"
-    echo "                                     SPI Default: 10MHz"
-    echo "                                     SDIO Default: As per Device Tree (25 or 50MHz)"
-    echo "  spi_bus=<num>                Use this SPI bus instance"
-    echo "  spi_cs=<num>                 Use this ChipSelect instance"
-    echo "  spi_mode=<num>               Use this SPI mode"
-    echo "  spi_handshake=<gpio_num>     SPI Handshake GPIO"
-    echo "  spi_dataready=<gpio_num>     SPI DataReady GPIO"
-    echo "  rawtp                        Test RAW TP"
-    echo "  cpu_perf=<on/off>            Change cpu performance level(may need porting)"
+    echo ""
+    echo "Note: All options can be used with or without '--' prefix"
+    echo "      Both dashes and underscores are supported (e.g., 'spi-bus' or 'spi_bus')"
+    echo ""
+    echo "Transport Configuration:"
+    echo "  wifi=<value>                 Set Wi-Fi transport"
+    echo "  wifi-transport=<value>       (alias for wifi=)"
+    echo "     'sdio'                      Use Wi-Fi over SDIO"
+    echo "     'spi'                       Use Wi-Fi over SPI"
+    echo "     '-'                         Disable Wi-Fi"
+    echo ""
+    echo "  bt=<value>                   Set Bluetooth transport"
+    echo "  bt-transport=<value>         (alias for bt=)"
+    echo "     'spi'                       Use Bluetooth over SPI"
+    echo "     'sdio'                      Use Bluetooth over SDIO"
+    echo "     'uart-2pins'                Use Bluetooth over UART (Tx,Rx)"
+    echo "     'uart-4pins'                Use Bluetooth over UART (Tx,Rx,CTS,RTS)"
+    echo "     '-'                         Disable Bluetooth"
+    echo ""
+    echo "GPIO Configuration:"
+    echo "  resetpin=<gpio>              Reset pin GPIO number"
+    echo "  spi-handshake=<gpio>         SPI Handshake GPIO"
+    echo "  spi-dataready=<gpio>         SPI DataReady GPIO"
+    echo ""
+    echo "SPI Configuration:"
+    echo "  spi-bus=<num>                SPI bus instance (default: 0)"
+    echo "  spi-cs=<num>                 SPI ChipSelect instance (default: 0)"
+    echo "  spi-mode=<num>               SPI mode 1/2/3 (default: 2)"
+    echo "  clockspeed=<freq_mhz>        Clock frequency in MHz"
+    echo "                                 SPI default: 10MHz"
+    echo "                                 SDIO default: As per Device Tree (25/50MHz)"
+    echo ""
+    echo "Build Configuration:"
+    echo "  cross-compile=<path>         Cross-compilation toolchain path"
+    echo "  kernel=<path>                Kernel build directory"
+    echo "                                 Default: /lib/modules/\$(uname -r)/build"
+    echo "  arch=<value>                 Architecture (arm/arm64)"
+    echo "                                 Default: auto-detected"
+    echo ""
+    echo "Test & Performance:"
+    echo "  rawtp                        Enable RAW throughput test mode"
+    echo "  cpu-perf=<on/off>            Set CPU performance mode (default: on)"
+    echo ""
+    echo "Script Control:"
+    echo "  dry-run                      Show what would be done without executing"
+    echo "  skip-build-apps              Skip building user-space applications"
+    echo "  skip-module-build            Skip building kernel module (use existing)"
+    echo "  no-color                     Disable colored output"
+    echo "  help, -h                     Show this help message"
+    echo ""
+    echo "Examples:"
+    echo "  # Basic SPI setup with Wi-Fi and Bluetooth"
+    echo "  $0 wifi=spi bt=spi resetpin=6"
+    echo ""
+    echo "  # Using alternative argument names (all equivalent)"
+    echo "  $0 wifi-transport=sdio bt-transport=sdio"
+    echo "  $0 --wifi-transport=sdio --bt-transport=sdio"
+    echo "  $0 wifi_transport=sdio bt_transport=sdio"
+    echo ""
+    echo "  # SDIO with custom clock speed"
+    echo "  $0 wifi=sdio bt=sdio clockspeed=40"
+    echo ""
+    echo "  # Wi-Fi over SPI, Bluetooth over UART"
+    echo "  $0 wifi=spi bt=uart-4pins resetpin=6"
+    echo ""
+    echo "  # Cross-compilation for different platform"
+    echo "  $0 wifi=spi cross-compile=/opt/toolchain/bin/arm-linux-gnueabihf- \\"
+    echo "     kernel=/lib/modules/5.15.0-161-generic/build/ arch=arm64"
+    echo ""
+    echo "  # Quick test without rebuilding (dashes preferred but underscores work too)"
+    echo "  $0 wifi=spi skip-build-apps skip-module-build"
+    echo "  $0 wifi=spi --skip-build-apps --skip-module-build"
+    echo ""
+    echo "  # Preview changes without executing"
+    echo "  $0 wifi=spi bt=spi dry-run"
     echo ""
 }
 
@@ -490,6 +630,65 @@ port_populate_local_params()
 	done
 }
 
+display_configuration_summary()
+{
+	echo ""
+	echo "========================================"
+	echo "Configuration Summary"
+	echo "========================================"
+	echo "Transport:"
+	echo "  Interface Type       : ${IF_TYPE:-Not Set}"
+	[ -n "$WIFI_TP" ] && echo "  Wi-Fi Transport      : $WIFI_TP"
+	[ -n "$BT_TP" ] && echo "  Bluetooth Transport  : $BT_TP"
+	[ -n "$BT_CONFIG" ] && echo "  BT Config Mode       : $BT_CONFIG"
+
+	echo ""
+	echo "Build Configuration:"
+	echo "  Module Name          : $MODULE_NAME"
+	echo "  Architecture         : ${ARCH:-auto-detect}"
+	echo "  Kernel Build Dir     : $KERNEL_BUILD_DIR"
+	echo "  Cross Compile        : ${CROSS_COMPILE:-Not Set}"
+	echo "  RAW TP Test          : $([ "$TEST_RAW_TP" = "1" ] && echo "Enabled" || echo "Disabled")"
+
+	# Display transport-specific configuration
+	if [ "$IF_TYPE" = "spi" ]; then
+		echo ""
+		echo "SPI Configuration:"
+		[ -n "$resetpin" ] && echo "  Reset Pin            : $resetpin"
+		echo "  Clock Speed          : ${clockspeed:-10} MHz"
+		echo "  SPI Bus              : ${spi_bus:-0}"
+		echo "  SPI CS               : ${spi_cs:-0}"
+		echo "  SPI Mode             : ${spi_mode:-2}"
+		echo "  SPI Handshake GPIO   : ${spi_handshake}"
+		echo "  SPI DataReady GPIO   : ${spi_dataready}"
+	elif [ "$IF_TYPE" = "sdio" ]; then
+		echo ""
+		echo "SDIO Configuration:"
+		[ -n "$resetpin" ] && echo "  Reset Pin            : $resetpin"
+		echo "  Clock Speed          : ${clockspeed:-As per Device Tree} MHz"
+	fi
+
+	# Show UART config if bluetooth uses UART
+	if [ "$BT_CONFIG" = "bt_using_uart_2pins" ] || [ "$BT_CONFIG" = "bt_using_uart_4pins" ]; then
+		echo ""
+		echo "UART Configuration:"
+		echo "  BT UART Mode         : $BT_CONFIG"
+	fi
+
+	echo ""
+	echo "Performance:"
+	echo "  CPU Performance      : ${cpu_perf:-default}"
+
+	echo ""
+	echo "Script Options:"
+	echo "  Dry Run              : $([ "$DRY_RUN" = "1" ] && echo "Yes (no changes will be made)" || echo "No")"
+	echo "  Skip Build Apps      : $([ "$SKIP_BUILD_APPS" = "1" ] && echo "Yes" || echo "No")"
+	echo "  Skip Module Build    : $([ "$SKIP_MODULE_BUILD" = "1" ] && echo "Yes" || echo "No")"
+	echo "  Module Parameters    : ${XTRA_MODULE_PARAMS:-None}"
+	echo "========================================"
+	echo ""
+}
+
 
 ######## Script ##########
 SCRIPT_DIR=$PWD
@@ -502,13 +701,44 @@ log "Building for $IF_TYPE protocol"
 MODULE_NAME=esp32_${IF_TYPE}.ko
 
 populate_module_params
+display_configuration_summary
+
+if [ "$DRY_RUN" = "1" ]; then
+	warn "Dry-run mode: No actual changes will be made"
+	info "Would execute the following steps:"
+	info "  1. Set CPU performance mode: $cpu_perf"
+	[ "$SKIP_BUILD_APPS" != "1" ] && info "  2. Build user-space applications (C & Python)"
+	info "  3. Remove existing module (if loaded)"
+	[ "$SKIP_MODULE_BUILD" != "1" ] && info "  4. Build kernel module: $MODULE_NAME"
+	info "  5. Insert module with params: $XTRA_MODULE_PARAMS"
+	info ""
+	info "To execute for real, run without --dry-run"
+	exit 0
+fi
+
 port_populate_local_params
 
-build_user_space_apps
+if [ "$SKIP_BUILD_APPS" != "1" ]; then
+	build_user_space_apps
+else
+	info "Skipping user-space app builds (--skip-build-apps)"
+fi
 
 remove_module
-build_module
+
+if [ "$SKIP_MODULE_BUILD" != "1" ]; then
+	build_module
+else
+	info "Skipping module build (--skip-module-build)"
+	if [ ! -f "$MODULE_NAME" ]; then
+		error "Module file $MODULE_NAME not found!"
+		error "Cannot skip build when module doesn't exist"
+		exit 1
+	fi
+	info "Using existing module: $MODULE_NAME"
+fi
+
 insert_module
 
-
+success "ESP-Hosted driver initialization completed successfully!"
 log "--- finished ---"

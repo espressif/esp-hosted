@@ -6346,7 +6346,7 @@ static const ProtobufCEnumValue ctrl_msg_id__enum_values_by_number[63] =
   { "Req_GetFwVersion", "CTRL_MSG_ID__Req_GetFwVersion", 123 },
   { "Req_SetCountryCode", "CTRL_MSG_ID__Req_SetCountryCode", 124 },
   { "Req_GetCountryCode", "CTRL_MSG_ID__Req_GetCountryCode", 125 },
-  { "Req_Max", "CTRL_MSG_ID__Req_Max", 126 },
+  { "Req_Max", "CTRL_MSG_ID__Req_Max", 127 },
   { "Resp_Base", "CTRL_MSG_ID__Resp_Base", 200 },
   { "Resp_GetMACAddress", "CTRL_MSG_ID__Resp_GetMACAddress", 201 },
   { "Resp_SetMacAddress", "CTRL_MSG_ID__Resp_SetMacAddress", 202 },
@@ -6373,7 +6373,7 @@ static const ProtobufCEnumValue ctrl_msg_id__enum_values_by_number[63] =
   { "Resp_GetFwVersion", "CTRL_MSG_ID__Resp_GetFwVersion", 223 },
   { "Resp_SetCountryCode", "CTRL_MSG_ID__Resp_SetCountryCode", 224 },
   { "Resp_GetCountryCode", "CTRL_MSG_ID__Resp_GetCountryCode", 225 },
-  { "Resp_Max", "CTRL_MSG_ID__Resp_Max", 226 },
+  { "Resp_Max", "CTRL_MSG_ID__Resp_Max", 227 },
   { "Event_Base", "CTRL_MSG_ID__Event_Base", 300 },
   { "Event_ESPInit", "CTRL_MSG_ID__Event_ESPInit", 301 },
   { "Event_Heartbeat", "CTRL_MSG_ID__Event_Heartbeat", 302 },
@@ -6381,10 +6381,10 @@ static const ProtobufCEnumValue ctrl_msg_id__enum_values_by_number[63] =
   { "Event_StationDisconnectFromESPSoftAP", "CTRL_MSG_ID__Event_StationDisconnectFromESPSoftAP", 304 },
   { "Event_StationConnectedToAP", "CTRL_MSG_ID__Event_StationConnectedToAP", 305 },
   { "Event_StationConnectedToESPSoftAP", "CTRL_MSG_ID__Event_StationConnectedToESPSoftAP", 306 },
-  { "Event_Max", "CTRL_MSG_ID__Event_Max", 307 },
+  { "Event_Max", "CTRL_MSG_ID__Event_Max", 308 },
 };
 static const ProtobufCIntRange ctrl_msg_id__value_ranges[] = {
-{0, 0},{100, 1},{200, 28},{300, 55},{0, 63}
+{0, 0},{100, 1},{127, 27},{200, 28},{227, 54},{300, 55},{308, 62},{0, 63}
 };
 static const ProtobufCEnumValueIndex ctrl_msg_id__enum_values_by_name[63] =
 {
@@ -6463,7 +6463,7 @@ const ProtobufCEnumDescriptor ctrl_msg_id__descriptor =
   ctrl_msg_id__enum_values_by_number,
   63,
   ctrl_msg_id__enum_values_by_name,
-  4,
+  7,
   ctrl_msg_id__value_ranges,
   NULL,NULL,NULL,NULL   /* reserved[1234] */
 };

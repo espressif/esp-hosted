@@ -76,7 +76,7 @@ struct hosted_mempool * hosted_mempool_create(void *pre_allocated_mem,
 	new->block_size = block_size;
 
 #if MEMPOOL_DEBUG
-	ESP_LOGI(MEM_TAG, "Create mempool %p with num_blk[%lu] blk_size:[%lu]", new->pool, new->num_blocks, new->block_size);
+	ESP_LOGI(TAG, "Create mempool %p with num_blk[%u] blk_size:[%u]", new->pool, (unsigned int)new->num_blocks, (unsigned int)new->block_size);
 #endif
 
 	return new;
@@ -97,9 +97,8 @@ void hosted_mempool_destroy(struct hosted_mempool *mempool)
 #ifdef CONFIG_ESP_CACHE_MALLOC
 	if (!mempool)
 		return;
-#if MEMPOOL_DEBUG
-	ESP_LOGI(MEM_TAG, "Destroy mempool %p num_blk[%lu] blk_size:[%lu]", mempool->pool, mempool->num_blocks, mempool->block_size);
-#endif
+
+	ESP_LOGI(TAG, "Destroy mempool %p num_blk[%u] blk_size:[%u]", mempool->pool, (unsigned int)mempool->num_blocks, (unsigned int)mempool->block_size);
 
 	FREE(mempool->pool);
 
@@ -125,7 +124,7 @@ void * hosted_mempool_alloc(struct hosted_mempool *mempool,
 
 	if(nbytes > mempool->block_size) {
 		ESP_LOGE(TAG, "Exp alloc bytes[%u] > mempool block size[%u]\n",
-				nbytes, mempool->block_size);
+				(unsigned int)nbytes, (unsigned int)mempool->block_size);
 		return NULL;
 	}
 #endif

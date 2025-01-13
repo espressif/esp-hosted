@@ -34,10 +34,15 @@
 static const char TAG[] = "SPI_DRIVER";
 /* SPI settings */
 #define SPI_BITS_PER_WORD          8
-#define SPI_MODE_0                 0
-#define SPI_MODE_1                 1
-#define SPI_MODE_2                 2
-#define SPI_MODE_3                 3
+#define ESP_SPI_MODE               CONFIG_ESP_SPI_MODE
+#define GPIO_MOSI                  CONFIG_ESP_SPI_GPIO_MOSI
+#define GPIO_MISO                  CONFIG_ESP_SPI_GPIO_MISO
+#define GPIO_SCLK                  CONFIG_ESP_SPI_GPIO_CLK
+#define GPIO_CS                    CONFIG_ESP_SPI_GPIO_CS
+#define GPIO_DATA_READY            CONFIG_ESP_SPI_GPIO_DATA_READY
+#define GPIO_HANDSHAKE             CONFIG_ESP_SPI_GPIO_HANDSHAKE
+
+#define ESP_SPI_CONTROLLER         CONFIG_ESP_SPI_CONTROLLER
 
 /* SPI-DMA settings */
 #define SPI_DMA_ALIGNMENT_BYTES    4
@@ -46,120 +51,53 @@ static const char TAG[] = "SPI_DRIVER";
 #define MAKE_SPI_DMA_ALIGNED(VAL)  (VAL += SPI_DMA_ALIGNMENT_BYTES - \
 				((VAL)& SPI_DMA_ALIGNMENT_MASK))
 
-/* Chipset specific configurations */
-#ifdef CONFIG_IDF_TARGET_ESP32
-
-    #if (CONFIG_ESP_SPI_CONTROLLER == 3)
-        #define ESP_SPI_CONTROLLER 2
-        #define GPIO_MOSI          23
-        #define GPIO_MISO          19
-        #define GPIO_SCLK          18
-        #define GPIO_CS            5
-    #elif (CONFIG_ESP_SPI_CONTROLLER == 2)
-        #define ESP_SPI_CONTROLLER 1
-        #define GPIO_MISO          12
-        #define GPIO_MOSI          13
-        #define GPIO_SCLK          14
-        #define GPIO_CS            15
-    #else
-        #error "Please choose correct SPI controller"
-    #endif
-
+#if defined(CONFIG_IDF_TARGET_ESP32) || defined(CONFIG_IDF_TARGET_ESP32S2)
     #define DMA_CHAN               ESP_SPI_CONTROLLER
-
-#elif defined CONFIG_IDF_TARGET_ESP32S2
-
-    #define ESP_SPI_CONTROLLER     1
-    #define GPIO_MOSI              11
-    #define GPIO_MISO              13
-    #define GPIO_SCLK              12
-    #define GPIO_CS                10
-    #define DMA_CHAN               ESP_SPI_CONTROLLER
-
-#elif defined CONFIG_IDF_TARGET_ESP32C2
-
-    #define ESP_SPI_CONTROLLER     1
-    #define GPIO_MOSI              7
-    #define GPIO_MISO              2
-    #define GPIO_SCLK              6
-    #define GPIO_CS                10
+#else
     #define DMA_CHAN               SPI_DMA_CH_AUTO
-
-#elif defined CONFIG_IDF_TARGET_ESP32C3
-
-    #define ESP_SPI_CONTROLLER     1
-    #define GPIO_MOSI              7
-    #define GPIO_MISO              2
-    #define GPIO_SCLK              6
-    #define GPIO_CS                10
-    #define DMA_CHAN               SPI_DMA_CH_AUTO
-
-#elif defined CONFIG_IDF_TARGET_ESP32S3
-
-    #define ESP_SPI_CONTROLLER     1
-    #define GPIO_MOSI              11
-    #define GPIO_MISO              13
-    #define GPIO_SCLK              12
-    #define GPIO_CS                10
-    #define DMA_CHAN               SPI_DMA_CH_AUTO
-
-#elif defined CONFIG_IDF_TARGET_ESP32C5
-
-    #define ESP_SPI_CONTROLLER     1
-    #define GPIO_MOSI              7
-    #define GPIO_MISO              2
-    #define GPIO_SCLK              6
-    #define GPIO_CS                10
-    #define DMA_CHAN               SPI_DMA_CH_AUTO
-
-#elif defined CONFIG_IDF_TARGET_ESP32C6
-
-    #define ESP_SPI_CONTROLLER     1
-    #define GPIO_MOSI              7
-    #define GPIO_MISO              2
-    #define GPIO_SCLK              6
-    #define GPIO_CS                10
-    #define DMA_CHAN               SPI_DMA_CH_AUTO
-
 #endif
+
+#if ESP_SPI_MODE==0
+#  error "SPI mode 0 at SLAVE is NOT supported"
+#endif
+/* SPI internal configs */
+#define SPI_BUFFER_SIZE            MAX_TRANSPORT_BUF_SIZE
+
+#define GPIO_MASK_DATA_READY (1ULL << GPIO_DATA_READY)
+#define GPIO_MASK_HANDSHAKE (1ULL << GPIO_HANDSHAKE)
+
+#define H_CS_INTR_TO_CLEAR_HS                        GPIO_INTR_NEGEDGE
+
 /* Max SPI slave CLK in IO_MUX tested in IDF:
  * ESP32: 10MHz
  * ESP32-C2/C3/S2/S3: 40MHz
  * ESP32-C6: 26MHz
  */
 
-#define GPIO_HS                    CONFIG_ESP_SPI_GPIO_HANDSHAKE
-#define GPIO_DR                    CONFIG_ESP_SPI_GPIO_DATA_READY
+#define H_HS_PULL_REGISTER                         GPIO_PULLDOWN_ONLY
+#define H_DR_PULL_REGISTER                         GPIO_PULLDOWN_ONLY
 
-
-#define GPIO_MASK_DATA_READY (1 << GPIO_DR)
-#define GPIO_MASK_HANDSHAKE (1 << GPIO_HS)
-
-
-/* SPI internal configs */
-#define SPI_BUFFER_SIZE            1600
 #define SPI_DRIVER_QUEUE_SIZE      3
 
 #ifdef CONFIG_ESP_ENABLE_TX_PRIORITY_QUEUES
-    #define SPI_TX_WIFI_QUEUE_SIZE     CONFIG_ESP_SPI_TX_WIFI_Q_SIZE
-    #define SPI_TX_BT_QUEUE_SIZE       CONFIG_ESP_SPI_TX_BT_Q_SIZE
-    #define SPI_TX_SERIAL_QUEUE_SIZE   CONFIG_ESP_SPI_TX_SERIAL_Q_SIZE
+    #define SPI_TX_WIFI_QUEUE_SIZE     CONFIG_ESP_TX_WIFI_Q_SIZE
+    #define SPI_TX_BT_QUEUE_SIZE       CONFIG_ESP_TX_BT_Q_SIZE
+    #define SPI_TX_SERIAL_QUEUE_SIZE   CONFIG_ESP_TX_SERIAL_Q_SIZE
     #define SPI_TX_TOTAL_QUEUE_SIZE (SPI_TX_WIFI_QUEUE_SIZE+SPI_TX_BT_QUEUE_SIZE+SPI_TX_SERIAL_QUEUE_SIZE)
 #else
-    #define SPI_TX_QUEUE_SIZE          CONFIG_ESP_SPI_TX_Q_SIZE
+    #define SPI_TX_QUEUE_SIZE          CONFIG_ESP_TX_Q_SIZE
     #define SPI_TX_TOTAL_QUEUE_SIZE    SPI_TX_QUEUE_SIZE
 #endif
 
 #ifdef CONFIG_ESP_ENABLE_RX_PRIORITY_QUEUES
-    #define SPI_RX_WIFI_QUEUE_SIZE     CONFIG_ESP_SPI_RX_WIFI_Q_SIZE
-    #define SPI_RX_BT_QUEUE_SIZE       CONFIG_ESP_SPI_RX_BT_Q_SIZE
-    #define SPI_RX_SERIAL_QUEUE_SIZE   CONFIG_ESP_SPI_RX_SERIAL_Q_SIZE
+    #define SPI_RX_WIFI_QUEUE_SIZE     CONFIG_ESP_RX_WIFI_Q_SIZE
+    #define SPI_RX_BT_QUEUE_SIZE       CONFIG_ESP_RX_BT_Q_SIZE
+    #define SPI_RX_SERIAL_QUEUE_SIZE   CONFIG_ESP_RX_SERIAL_Q_SIZE
     #define SPI_RX_TOTAL_QUEUE_SIZE (SPI_RX_WIFI_QUEUE_SIZE+SPI_RX_BT_QUEUE_SIZE+SPI_RX_SERIAL_QUEUE_SIZE)
 #else
-    #define SPI_RX_QUEUE_SIZE          CONFIG_ESP_SPI_RX_Q_SIZE
+    #define SPI_RX_QUEUE_SIZE          CONFIG_ESP_RX_Q_SIZE
     #define SPI_RX_TOTAL_QUEUE_SIZE    SPI_RX_QUEUE_SIZE
 #endif
-
 
 static interface_context_t context;
 static interface_handle_t if_handle_g;
@@ -195,81 +133,125 @@ if_ops_t if_ops = {
 	.deinit = esp_spi_deinit,
 };
 
-#define SPI_MEMPOOL_NUM_BLOCKS     ((SPI_TX_TOTAL_QUEUE_SIZE+SPI_DRIVER_QUEUE_SIZE*2+SPI_RX_TOTAL_QUEUE_SIZE))
+#define SPI_MEMPOOL_NUM_BLOCKS     (SPI_TX_TOTAL_QUEUE_SIZE + \
+                                   SPI_RX_TOTAL_QUEUE_SIZE + \
+                                   (SPI_DRIVER_QUEUE_SIZE * 2))
+
 static struct hosted_mempool * buf_mp_tx_g;
 static struct hosted_mempool * buf_mp_rx_g;
 static struct hosted_mempool * trans_mp_g;
 
+/* Full size dummy buffer for no-data transactions */
+static DRAM_ATTR uint8_t dummy_buffer[SPI_BUFFER_SIZE] __attribute__((aligned(4)));
+
+#if 0
+/* Static transaction buffers */
+static DRAM_ATTR spi_slave_transaction_t static_trans[SPI_DRIVER_QUEUE_SIZE];
+#endif
+
 static inline void spi_mempool_create()
 {
+#ifdef CONFIG_ESP_CACHE_MALLOC
+	/* Create separate pools for TX and RX with optimized sizes */
 	buf_mp_tx_g = hosted_mempool_create(NULL, 0,
-			SPI_MEMPOOL_NUM_BLOCKS, SPI_BUFFER_SIZE);
-	/* re-use the mempool, as same size, can be seperate, if needed */
-	buf_mp_rx_g = buf_mp_tx_g;
+			(SPI_TX_TOTAL_QUEUE_SIZE + 1), SPI_BUFFER_SIZE);
+
+	buf_mp_rx_g = hosted_mempool_create(NULL, 0,
+			(SPI_RX_TOTAL_QUEUE_SIZE + SPI_DRIVER_QUEUE_SIZE), SPI_BUFFER_SIZE);
+
 	trans_mp_g = hosted_mempool_create(NULL, 0,
-			SPI_MEMPOOL_NUM_BLOCKS, sizeof(spi_slave_transaction_t));
-#if CONFIG_ESP_CACHE_MALLOC
+			SPI_DRIVER_QUEUE_SIZE, sizeof(spi_slave_transaction_t));
+
+
 	assert(buf_mp_tx_g);
 	assert(buf_mp_rx_g);
 	assert(trans_mp_g);
+#else
+	ESP_LOGI(TAG, "Using dynamic heap for mem alloc");
 #endif
 }
 
 static inline void spi_mempool_destroy()
 {
+#ifdef CONFIG_ESP_CACHE_MALLOC
 	hosted_mempool_destroy(buf_mp_tx_g);
+	if (buf_mp_tx_g!=buf_mp_rx_g) {
+		hosted_mempool_destroy(buf_mp_rx_g);
+	}
 	hosted_mempool_destroy(trans_mp_g);
+#endif
 }
 
 static inline void *spi_buffer_tx_alloc(uint need_memset)
 {
+#ifdef CONFIG_ESP_CACHE_MALLOC
 	return hosted_mempool_alloc(buf_mp_tx_g, SPI_BUFFER_SIZE, need_memset);
+#else
+	void *buf = MEM_ALLOC(SPI_BUFFER_SIZE);
+	if (buf && need_memset) {
+		memset(buf, 0, SPI_BUFFER_SIZE);
+	}
+	return buf;
+#endif
 }
 
 static inline void *spi_buffer_rx_alloc(uint need_memset)
 {
+#ifdef CONFIG_ESP_CACHE_MALLOC
 	return hosted_mempool_alloc(buf_mp_rx_g, SPI_BUFFER_SIZE, need_memset);
+#else
+	void *buf = MEM_ALLOC(SPI_BUFFER_SIZE);
+	if (buf && need_memset) {
+		memset(buf, 0, SPI_BUFFER_SIZE);
+	}
+	return buf;
+#endif
 }
 
 static inline spi_slave_transaction_t *spi_trans_alloc(uint need_memset)
 {
+#ifdef CONFIG_ESP_CACHE_MALLOC
 	return hosted_mempool_alloc(trans_mp_g, sizeof(spi_slave_transaction_t), need_memset);
+#else
+	spi_slave_transaction_t *trans = MEM_ALLOC(sizeof(spi_slave_transaction_t));
+	if (trans && need_memset) {
+		memset(trans, 0, sizeof(spi_slave_transaction_t));
+	}
+	return trans;
+#endif
 }
 
 static inline void spi_buffer_tx_free(void *buf)
 {
+#ifdef CONFIG_ESP_CACHE_MALLOC
 	hosted_mempool_free(buf_mp_tx_g, buf);
+#else
+	FREE(buf);
+#endif
 }
 
 static inline void spi_buffer_rx_free(void *buf)
 {
+#ifdef CONFIG_ESP_CACHE_MALLOC
 	hosted_mempool_free(buf_mp_rx_g, buf);
+#else
+	FREE(buf);
+#endif
 }
 
 static inline void spi_trans_free(spi_slave_transaction_t *trans)
 {
+#ifdef CONFIG_ESP_CACHE_MALLOC
 	hosted_mempool_free(trans_mp_g, trans);
+#else
+	FREE(trans);
+#endif
 }
 
-static inline void set_handshake_gpio(void)
-{
-	WRITE_PERI_REG(GPIO_OUT_W1TS_REG, GPIO_MASK_HANDSHAKE);
-}
-
-static inline void reset_handshake_gpio(void)
-{
-	WRITE_PERI_REG(GPIO_OUT_W1TC_REG, GPIO_MASK_HANDSHAKE);
-}
-
-static inline void set_dataready_gpio(void)
-{
-	WRITE_PERI_REG(GPIO_OUT_W1TS_REG, GPIO_MASK_DATA_READY);
-}
-
-static inline void reset_dataready_gpio(void)
-{
-	WRITE_PERI_REG(GPIO_OUT_W1TC_REG, GPIO_MASK_DATA_READY);
-}
+#define set_handshake_gpio()     gpio_set_level(GPIO_HANDSHAKE, 1);
+#define reset_handshake_gpio()   gpio_set_level(GPIO_HANDSHAKE, 0);
+#define set_dataready_gpio()     gpio_set_level(GPIO_DATA_READY, 1);
+#define reset_dataready_gpio()   gpio_set_level(GPIO_DATA_READY, 0);
 
 interface_context_t *interface_insert_driver(int (*event_handler)(uint8_t val))
 {
@@ -323,6 +305,7 @@ void generate_startup_event(uint8_t cap)
 	/* TLVs start */
 
 	/* TLV - Board type */
+	ESP_LOGI(TAG, "Slave chip Id[%x]", ESP_PRIV_FIRMWARE_CHIP_ID);
 	*pos = ESP_PRIV_FIRMWARE_CHIP_ID;   pos++;len++;
 	*pos = LENGTH_1_BYTE;               pos++;len++;
 	*pos = CONFIG_IDF_FIRMWARE_CHIP_ID; pos++;len++;
@@ -403,7 +386,6 @@ static uint8_t * get_next_tx_buffer(uint32_t *len)
 {
 	interface_buffer_handle_t buf_handle = {0};
 	esp_err_t ret = ESP_OK;
-	uint8_t *sendbuf = NULL;
 	struct esp_payload_header *header = NULL;
 
 	/* Get or create new tx_buffer
@@ -423,8 +405,13 @@ static uint8_t * get_next_tx_buffer(uint32_t *len)
 #endif
 
 	if (ret == pdTRUE && buf_handle.payload) {
-		if (len)
+		if (len) {
+#if ESP_PKT_STATS
+			if (buf_handle.if_type == ESP_SERIAL_IF)
+				pkt_stats.serial_tx_total++;
+#endif
 			*len = buf_handle.payload_len;
+		}
 		/* Return real data buffer from queue */
 		return buf_handle.payload;
 	}
@@ -432,17 +419,9 @@ static uint8_t * get_next_tx_buffer(uint32_t *len)
 	/* No real data pending, clear ready line and indicate host an idle state */
 	reset_dataready_gpio();
 
-	/* Create empty dummy buffer */
-	sendbuf = spi_buffer_tx_alloc(MEMSET_REQUIRED);
-	if (!sendbuf) {
-		ESP_LOGE(TAG, "Failed to allocate memory for dummy transaction");
-		if (len)
-			*len = 0;
-		return NULL;
-	}
-
-	/* Initialize header */
-	header = (struct esp_payload_header *) sendbuf;
+	/* Use dummy buffer for no-data transaction */
+	header = (struct esp_payload_header *) dummy_buffer;
+	memset(dummy_buffer, 0, sizeof(struct esp_payload_header));
 
 	/* Populate header to indicate it as a dummy buffer */
 	header->if_type = ESP_MAX_IF;
@@ -452,13 +431,14 @@ static uint8_t * get_next_tx_buffer(uint32_t *len)
 	if (len)
 		*len = 0;
 
-	return sendbuf;
+	return dummy_buffer;
 }
 
 static int process_spi_rx(interface_buffer_handle_t *buf_handle)
 {
 	struct esp_payload_header *header = NULL;
 	uint16_t len = 0, offset = 0;
+	uint8_t flags = 0;
 #if CONFIG_ESP_SPI_CHECKSUM
 	uint16_t rx_checksum = 0, checksum = 0;
 #endif
@@ -473,12 +453,25 @@ static int process_spi_rx(interface_buffer_handle_t *buf_handle)
 	header = (struct esp_payload_header *) buf_handle->payload;
 	len = le16toh(header->len);
 	offset = le16toh(header->offset);
+	flags = header->flags;
+	if (flags & FLAG_POWER_SAVE_STARTED) {
+		ESP_LOGI(TAG, "Host informed starting to power sleep");
+		if (context.event_handler) {
+			context.event_handler(ESP_POWER_SAVE_ON);
+		}
+	} else if (flags & FLAG_POWER_SAVE_STOPPED) {
+		ESP_LOGI(TAG, "Host informed that it waken up");
+		if (context.event_handler) {
+			context.event_handler(ESP_POWER_SAVE_OFF);
+		}
+	}
 
 	if (!len)
 		return -1;
 
-	if (len+offset > SPI_BUFFER_SIZE) {
+	if ((len+offset) > SPI_BUFFER_SIZE) {
 		ESP_LOGE(TAG, "rx_pkt len+offset[%u]>max[%u], dropping it", len+offset, SPI_BUFFER_SIZE);
+
 		return -1;
 	}
 
@@ -499,12 +492,12 @@ static int process_spi_rx(interface_buffer_handle_t *buf_handle)
 	buf_handle->if_type = header->if_type;
 	buf_handle->if_num = header->if_num;
 	buf_handle->free_buf_handle = esp_spi_read_done;
-	buf_handle->payload_len = le16toh(header->len) + offset;
+	buf_handle->payload_len = len + offset;
 	buf_handle->priv_buffer_handle = buf_handle->payload;
 
 #if ESP_PKT_STATS
 	if (buf_handle->if_type == ESP_STA_IF)
-		pkt_stats.sta_rx_in++;
+		pkt_stats.hs_bus_sta_in++;
 #endif
 #ifdef CONFIG_ESP_ENABLE_RX_PRIORITY_QUEUES
 	if (header->if_type == ESP_SERIAL_IF) {
@@ -536,14 +529,12 @@ static void queue_next_transaction(void)
 	spi_trans = spi_trans_alloc(MEMSET_REQUIRED);
 	assert(spi_trans);
 
-	/* Attach Rx Buffer */
-	spi_trans->rx_buffer = spi_buffer_rx_alloc(MEMSET_REQUIRED);
-	assert(spi_trans->rx_buffer);
+	/* Use RX mempool instead of direct heap allocation */
+	uint8_t *rx_buffer = spi_buffer_rx_alloc(MEMSET_REQUIRED);
+	assert(rx_buffer);
 
-	/* Attach Tx Buffer */
+	spi_trans->rx_buffer = rx_buffer;
 	spi_trans->tx_buffer = tx_buffer;
-
-	/* Transaction len */
 	spi_trans->length = SPI_BUFFER_SIZE * SPI_BITS_PER_WORD;
 
 	spi_slave_queue_trans(ESP_SPI_CONTROLLER, spi_trans, portMAX_DELAY);
@@ -561,14 +552,24 @@ static void spi_transaction_post_process_task(void* pvParameters)
 		/* Await transmission result, after any kind of transmission a new packet
 		 * (dummy or real) must be placed in SPI slave
 		 */
-		spi_slave_get_trans_result(ESP_SPI_CONTROLLER, &spi_trans,
-				portMAX_DELAY);
-		/* Queue new transaction to get ready as soon as possible */
-		queue_next_transaction();
+		spi_slave_get_trans_result(ESP_SPI_CONTROLLER, &spi_trans, portMAX_DELAY);
 		assert(spi_trans);
 
-		/* Free any tx buffer, data is not relevant anymore */
-		spi_buffer_tx_free((void *)spi_trans->tx_buffer);
+		/* Queue new transaction to get ready as soon as possible */
+		queue_next_transaction();
+
+		/* Free tx buffer if it's not the static dummy buffer */
+		if (spi_trans->tx_buffer != dummy_buffer) {
+			spi_buffer_tx_free((void *)spi_trans->tx_buffer);
+		}
+
+
+#if ESP_PKT_STATS
+		struct esp_payload_header *header =
+			(struct esp_payload_header *)spi_trans->tx_buffer;
+		if (header->if_type == ESP_STA_IF)
+			pkt_stats.sta_sh_out++;
+#endif
 
 		/* Process received data */
 		if (spi_trans->rx_buffer) {
@@ -576,7 +577,7 @@ static void spi_transaction_post_process_task(void* pvParameters)
 
 			ret = process_spi_rx(&rx_buf_handle);
 
-			/* free rx_buffer if process_spi_rx returns an error
+			/* Free rx_buffer if process_spi_rx returns an error
 			 * In success case it will be freed later */
 			if (ret != ESP_OK) {
 				spi_buffer_rx_free((void *)spi_trans->rx_buffer);
@@ -603,12 +604,11 @@ static void register_hs_disable_pin(uint32_t gpio_num)
 		gpio_config_t slave_disable_hs_pin_conf={
 			.intr_type=GPIO_INTR_DISABLE,
 			.mode=GPIO_MODE_INPUT,
-			.pull_up_en=1,
-			.pin_bit_mask=(1<<gpio_num)
+			.pin_bit_mask=(1ULL<<gpio_num)
 		};
-
+		slave_disable_hs_pin_conf.pull_up_en = 1;
 		gpio_config(&slave_disable_hs_pin_conf);
-		gpio_set_intr_type(gpio_num, GPIO_INTR_NEGEDGE);
+		gpio_set_intr_type(gpio_num, H_CS_INTR_TO_CLEAR_HS);
 		gpio_install_isr_service(0);
 		gpio_isr_handler_add(gpio_num, gpio_disable_hs_isr_handler, NULL);
 	}
@@ -637,7 +637,7 @@ static interface_handle_t * esp_spi_init(void)
 
 	/* Configuration for the SPI slave interface */
 	spi_slave_interface_config_t slvcfg={
-		.mode=SPI_MODE_2,
+		.mode=ESP_SPI_MODE,
 		.spics_io_num=GPIO_CS,
 		.queue_size=SPI_DRIVER_QUEUE_SIZE,
 		.flags=0,
@@ -670,28 +670,31 @@ static interface_handle_t * esp_spi_init(void)
 	/* Enable pull-ups on SPI lines
 	 * so that no rogue pulses when no master is connected
 	 */
-	gpio_set_pull_mode(CONFIG_ESP_SPI_GPIO_HANDSHAKE, GPIO_PULLDOWN_ONLY);
-	gpio_set_pull_mode(CONFIG_ESP_SPI_GPIO_DATA_READY, GPIO_PULLDOWN_ONLY);
+	gpio_set_pull_mode(CONFIG_ESP_SPI_GPIO_HANDSHAKE, H_HS_PULL_REGISTER);
+	gpio_set_pull_mode(CONFIG_ESP_SPI_GPIO_DATA_READY, H_DR_PULL_REGISTER);
 	gpio_set_pull_mode(GPIO_MOSI, GPIO_PULLUP_ONLY);
 	gpio_set_pull_mode(GPIO_SCLK, GPIO_PULLUP_ONLY);
 	gpio_set_pull_mode(GPIO_CS, GPIO_PULLUP_ONLY);
 
-	ESP_LOGI(TAG, "SPI Ctrl:%u mode: %u, GPIOs: MOSI: %u, MISO: %u, CS: %u, CLK: %u HS: %u DR: %u\n",
+	ESP_LOGI(TAG, "SPI Ctrl:%u mode: %u, Freq:ConfigAtHost\nGPIOs: MOSI: %u, MISO: %u, CS: %u, CLK: %u HS: %u DR: %u\n",
 			ESP_SPI_CONTROLLER, slvcfg.mode,
-			GPIO_MOSI, GPIO_MISO, GPIO_CS, GPIO_SCLK, GPIO_HS, GPIO_DR);
+			GPIO_MOSI, GPIO_MISO, GPIO_CS, GPIO_SCLK,
+			GPIO_HANDSHAKE, GPIO_DATA_READY);
 
 #ifdef CONFIG_ESP_ENABLE_TX_PRIORITY_QUEUES
-	ESP_LOGI(TAG, "TX Queues :Wifi[%u] bt[%u] serial[%u]",
-			SPI_TX_WIFI_QUEUE_SIZE, SPI_TX_BT_QUEUE_SIZE, SPI_TX_SERIAL_QUEUE_SIZE);
+	ESP_LOGI(TAG, "TX Queues :Wifi[%u]+bt[%u]+serial[%u] = %u",
+			SPI_TX_WIFI_QUEUE_SIZE, SPI_TX_BT_QUEUE_SIZE, SPI_TX_SERIAL_QUEUE_SIZE,
+			SPI_TX_TOTAL_QUEUE_SIZE);
 #else
-	ESP_LOGI(TAG, "TX Queues:%u", SPI_TX_QUEUE_SIZE);
+	ESP_LOGI(TAG, "TX Queues:%u", SPI_TX_TOTAL_QUEUE_SIZE);
 #endif
 
 #ifdef CONFIG_ESP_ENABLE_RX_PRIORITY_QUEUES
-	ESP_LOGI(TAG, "RX Queues :Wifi[%u] bt[%u] serial[%u]",
-			SPI_RX_WIFI_QUEUE_SIZE, SPI_RX_BT_QUEUE_SIZE, SPI_RX_SERIAL_QUEUE_SIZE);
+	ESP_LOGI(TAG, "RX Queues :Wifi[%u]+bt[%u]+serial[%u] = %u",
+			SPI_RX_WIFI_QUEUE_SIZE, SPI_RX_BT_QUEUE_SIZE, SPI_RX_SERIAL_QUEUE_SIZE,
+			SPI_RX_TOTAL_QUEUE_SIZE);
 #else
-	ESP_LOGI(TAG, "RX Queues:%u", SPI_RX_QUEUE_SIZE);
+	ESP_LOGI(TAG, "RX Queues:%u", SPI_RX_TOTAL_QUEUE_SIZE);
 #endif
 	register_hs_disable_pin(GPIO_CS);
 

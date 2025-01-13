@@ -16,7 +16,7 @@
 #ifndef __SLAVE_CONTROL__H__
 #define __SLAVE_CONTROL__H__
 #include <esp_err.h>
-#define min(X, Y)               (((X) < (Y)) ? (X) : (Y))
+#include <interface.h>
 
 #if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 0, 0)
   #define TIMEOUT_IN_SEC          (1000 / portTICK_PERIOD_MS)
@@ -56,11 +56,33 @@ typedef struct {
 	uint16_t count;
 } credentials_t;
 
+#define RPC_RET_FAIL_IF(ConDiTiOn) do { \
+  int rEt = (ConDiTiOn); \
+  if (rEt) { \
+    resp_payload->resp = rEt; \
+    ESP_LOGE(TAG, "%s:%u failed [%s] = [%d]", __func__,__LINE__,#ConDiTiOn, rEt); \
+    return ESP_OK; \
+  } \
+} while(0);
+
+#define RPC_REQ_COPY_BYTES(dest, src, num_bytes) \
+  if (src.len && src.data) \
+    memcpy((char*)dest, src.data, min(min(sizeof(dest), num_bytes), src.len));
+
+
 esp_err_t data_transfer_handler(uint32_t session_id,const uint8_t *inbuf,
 		ssize_t inlen,uint8_t **outbuf, ssize_t *outlen, void *priv_data);
 esp_err_t ctrl_notify_handler(uint32_t session_id,const uint8_t *inbuf,
 		ssize_t inlen, uint8_t **outbuf, ssize_t *outlen, void *priv_data);
 void send_event_to_host(int event_id);
 void send_event_data_to_host(int event_id, void *data, int size);
+
+#if CONFIG_SLAVE_MANAGES_WIFI
+#include "esp_wifi.h"
+esp_err_t esp_hosted_wifi_init(wifi_init_config_t *cfg);
+esp_err_t esp_hosted_set_sta_config(wifi_interface_t iface, wifi_config_t *cfg);
+//esp_err_t esp_hosted_register_wifi_event_handlers(void);
+int esp_hosted_app_init_wifi(void);
+#endif
 
 #endif /*__SLAVE_CONTROL__H__*/

@@ -105,7 +105,7 @@ enum CtrlMsgId {
 	Req_GetCountryCode = 125;
 	/* Add new control path command response before Req_Max
 	 * and update Req_Max */
-	Req_Max = 126;
+	Req_Max = 127;
 
 	/** Response Msgs **/
 	Resp_Base = 200;
@@ -143,7 +143,7 @@ enum CtrlMsgId {
 	Resp_GetCountryCode = 225;
 	/* Add new control path command response before Resp_Max
 	 * and update Resp_Max */
-	Resp_Max = 226;
+	Resp_Max = 227;
 
 	/** Event Msgs **/
 	Event_Base = 300;
@@ -155,7 +155,7 @@ enum CtrlMsgId {
 	Event_StationConnectedToESPSoftAP = 306;
 	/* Add new control path command notification before Event_Max
 	 * and update Event_Max */
-	Event_Max = 307;
+	Event_Max = 308;
 }
 
 enum HostedFeature {

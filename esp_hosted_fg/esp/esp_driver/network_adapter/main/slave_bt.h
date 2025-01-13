@@ -17,7 +17,9 @@
 #ifndef __SLAVE_BT_H__
 #define __SLAVE_BT_H__
 
+#include "esp_err.h"
 #ifdef CONFIG_BT_ENABLED
+#include "esp_bt.h"
 
 #if ESP_IDF_VERSION < ESP_IDF_VERSION_VAL(5, 0, 0)
   #include "driver/periph_ctrl.h"
