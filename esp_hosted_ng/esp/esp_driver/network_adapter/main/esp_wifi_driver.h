@@ -140,7 +140,7 @@ struct wpa_funcs {
     void (*wpa_config_done)(void);
     uint8_t *(*owe_build_dhie)(uint16_t group);
     int (*owe_process_assoc_resp)(const uint8_t *rsn_ie, size_t rsn_len, const uint8_t *dh_ie, size_t dh_len);
-    int (*wpa_sta_set_ap_rsnxe)(const uint8_t *rsnxe, size_t rsnxe_ie_len);
+    void (*wpa_sta_clear_curr_pmksa)(void);
     int (*wpa_ap_rx_mgmt)(void *pkt, uint32_t pkt_len, uint8_t chan, int rssi, int nf);
 };
 

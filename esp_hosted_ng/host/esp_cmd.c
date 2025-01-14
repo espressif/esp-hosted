@@ -676,7 +676,11 @@ static void process_scan_result_event(struct esp_wifi_device *priv,
 	beacon_interval = le16_to_cpu(fixed_params->beacon_interval);
 	cap_info = le16_to_cpu(fixed_params->cap_info);
 
-	freq = ieee80211_channel_to_frequency(scan_evt->channel, NL80211_BAND_2GHZ);
+	if (scan_evt->channel > 14) {
+		freq = ieee80211_channel_to_frequency(scan_evt->channel, NL80211_BAND_5GHZ);
+	} else {
+		freq = ieee80211_channel_to_frequency(scan_evt->channel, NL80211_BAND_2GHZ);
+	}
 	chan = ieee80211_get_channel(priv->adapter->wiphy, freq);
 
 	ie_buf += sizeof(struct beacon_probe_fixed_params);
@@ -732,18 +736,21 @@ static void process_deauth_event(struct esp_wifi_device *priv, struct disconnect
 	cfg80211_rx_mlme_mgmt(priv->ndev, frame_buf, IEEE80211_DEAUTH_FRAME_LEN);
 }
 
-static int chan_to_freq_24ghz(u8 chan)
+static int chan_to_freq(u8 chan)
 {
-	if (chan > 1 && chan < 15)
-		return (2407 + 5 * chan) * 1000;
-	else
+	if (chan >= 1 && chan <= 14) {
+		return (2407 + 5 * chan);
+	} else if (chan >= 32 && chan <= 177) {
+		return (5000 + 5 * chan);
+	} else {
 		return -1;
+	}
 }
 
 static void process_mgmt_tx_status(struct esp_wifi_device * priv,
 				   int ack, uint8_t *data, uint32_t len)
 {
-        u64 cookie = 0;
+	u64 cookie = 0;
 
 	cfg80211_mgmt_tx_status(&priv->wdev, cookie, data, len,
 				ack, GFP_ATOMIC);
@@ -751,7 +758,7 @@ static void process_mgmt_tx_status(struct esp_wifi_device * priv,
 
 static void process_ap_mgmt_rx(struct esp_wifi_device * priv, struct mgmt_event *event)
 {
-        cfg80211_rx_mgmt(&priv->wdev, chan_to_freq_24ghz(event->chan),
+        cfg80211_rx_mgmt(&priv->wdev, chan_to_freq(event->chan),
                 event->rssi, event->frame, event->frame_len, 0);
 }
 

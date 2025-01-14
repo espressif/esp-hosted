@@ -112,13 +112,13 @@ Make sure that host machine is equipped with following:
 ### 2.1 SPI configuration
 **Wi-Fi and Bluetooth over SPI**
 
-| Supported Targets | ESP32 | ESP32-S2 | ESP32-S3 | ESP32-C2 | ESP32-C3 | ESP32-C6 |
-| ----------------- | ----- | -------- | -------- |--------- |--------- |--------- |
+| Supported Targets | ESP32 | ESP32-S2 | ESP32-S3 | ESP32-C2 | ESP32-C3 | ESP32-C5 | ESP32-C6 |
+| ----------------- | ----- | -------- | -------- |--------- |--------- |--------- |--------- |
 * Hardware setup
     * In this setup, ESP board acts as a SPI peripheral and provides Wi-Fi capabilities to host. Please connect ESP board to Raspberry-Pi with jumper cables as mentioned below. Please use short jumper cables to ensure signal integrity. Raspberry Pi should be powered with correct incoming power rating. ESP can be powered through PC using micro-USB/USB-C cable.
     * **Pin Connections**
 
-        | Raspberry-Pi Pin | ESP32 | ESP32-S2/S3 | ESP32-C2/C3/C6 | Function |
+        | Raspberry-Pi Pin | ESP32 | ESP32-S2/S3 | ESP32-C2/C3/C5/C6 | Function |
         |:-------:|:---------:|:--------:|:--------:|:--------:|
         | 24 | IO15 | IO10 | IO10 | CS0 |
         | 23 | IO14 | IO12 | IO6 | SCLK |

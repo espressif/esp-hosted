@@ -89,9 +89,52 @@ static struct ieee80211_channel esp_channels_2ghz[] = {
 	{.center_freq = 2484, .hw_value = 14, },
 };
 
-static struct ieee80211_supported_band esp_wifi_bands = {
+static struct ieee80211_channel esp_channels_5ghz[] = {
+	{.center_freq = 5180, .hw_value = 36, },
+	{.center_freq = 5200, .hw_value = 40, },
+	{.center_freq = 5220, .hw_value = 44, },
+	{.center_freq = 5240, .hw_value = 48, },
+	{.center_freq = 5260, .hw_value = 52, },
+	{.center_freq = 5280, .hw_value = 56, },
+	{.center_freq = 5300, .hw_value = 60, },
+	{.center_freq = 5320, .hw_value = 64, },
+	{.center_freq = 5500, .hw_value = 100, },
+	{.center_freq = 5520, .hw_value = 104, },
+	{.center_freq = 5540, .hw_value = 108, },
+	{.center_freq = 5560, .hw_value = 112, },
+	{.center_freq = 5580, .hw_value = 116, },
+	{.center_freq = 5600, .hw_value = 120, },
+	{.center_freq = 5620, .hw_value = 124, },
+	{.center_freq = 5640, .hw_value = 128, },
+	{.center_freq = 5660, .hw_value = 132, },
+	{.center_freq = 5680, .hw_value = 136, },
+	{.center_freq = 5700, .hw_value = 140, },
+	{.center_freq = 5720, .hw_value = 144, },
+	{.center_freq = 5745, .hw_value = 149, },
+	{.center_freq = 5765, .hw_value = 153, },
+	{.center_freq = 5785, .hw_value = 157, },
+	{.center_freq = 5805, .hw_value = 161, },
+	{.center_freq = 5825, .hw_value = 165, },
+	{.center_freq = 5845, .hw_value = 169, },
+	{.center_freq = 5865, .hw_value = 173, },
+	{.center_freq = 5885, .hw_value = 177, },
+};
+
+static struct ieee80211_supported_band esp_wifi_bands_2ghz = {
 	.channels = esp_channels_2ghz,
 	.n_channels = ARRAY_SIZE(esp_channels_2ghz),
+	.bitrates = esp_rates,
+	.n_bitrates = ARRAY_SIZE(esp_rates),
+	.ht_cap.cap = IEEE80211_HT_CAP_SUP_WIDTH_20_40 | IEEE80211_HT_CAP_SGI_20 |
+			IEEE80211_HT_CAP_RX_STBC | IEEE80211_HT_CAP_DSSSCCK40,
+	.ht_cap.mcs.rx_mask[0] = 0xff,
+	.ht_cap.mcs.tx_params = IEEE80211_HT_MCS_TX_DEFINED,
+	.ht_cap.ht_supported = true,
+};
+
+static struct ieee80211_supported_band esp_wifi_bands_5ghz = {
+	.channels = esp_channels_5ghz,
+	.n_channels = ARRAY_SIZE(esp_channels_5ghz),
 	.bitrates = esp_rates,
 	.n_bitrates = ARRAY_SIZE(esp_rates),
 	.ht_cap.cap = IEEE80211_HT_CAP_SUP_WIDTH_20_40 | IEEE80211_HT_CAP_SGI_20 |
@@ -900,6 +943,14 @@ static int esp_cfg80211_start_ap(struct wiphy *wiphy, struct net_device *dev,
 				break;
 			}
 		}
+		if (!ap_config.channel && (wiphy->bands[NL80211_BAND_5GHZ] != NULL)) {
+				for (i = 0; i < ARRAY_SIZE(esp_channels_5ghz); i++) {
+					if (esp_channels_5ghz[i].center_freq == info->chandef.chan->center_freq) {
+						ap_config.channel = esp_channels_5ghz[i].hw_value;
+						break;
+					}
+				}
+		}
 	}
 	if (!ap_config.channel)
 		ap_config.channel = 6;
@@ -1152,8 +1203,10 @@ int esp_add_wiphy(struct esp_adapter *adapter)
 #ifdef CONFIG_AP_MODE
 	wiphy->interface_modes |= BIT(NL80211_IFTYPE_AP);
 #endif
-	wiphy->bands[NL80211_BAND_2GHZ] = &esp_wifi_bands;
-
+	wiphy->bands[NL80211_BAND_2GHZ] = &esp_wifi_bands_2ghz;
+	if (adapter->chipset == ESP_FIRMWARE_CHIP_ESP32C5) {
+		wiphy->bands[NL80211_BAND_5GHZ] = &esp_wifi_bands_5ghz;
+	}
 	/* Initialize cipher suits */
 	if (adapter->chipset == ESP_FIRMWARE_CHIP_ESP32C3 ||
 	    adapter->chipset == ESP_FIRMWARE_CHIP_ESP32S3 ||

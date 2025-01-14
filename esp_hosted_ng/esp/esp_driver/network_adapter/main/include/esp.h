@@ -18,7 +18,6 @@
 #define __ESP__H
 
 #include "adapter.h"
-
 #define TASK_DEFAULT_STACK_SIZE	 4096
 #define TASK_DEFAULT_PRIO        22
 
