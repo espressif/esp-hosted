@@ -504,15 +504,23 @@ static int esp_add_network_ifaces(struct esp_adapter *adapter)
 
 int esp_start_ota(struct esp_adapter *adapter, char *ota_file)
 {
-	char ota_chunk[OTA_CHUNK_SIZE] = {0};
 	struct file *file;
 	ssize_t nread;
 	int ret = 0;
+	char *ota_chunk = kmalloc(OTA_CHUNK_SIZE, GFP_KERNEL);;
+
+	if (!ota_chunk) {
+		esp_err("Failed to allocate buffer for ota_chunk\n");
+		return -ENOMEM;
+	}
+
+	memset(ota_chunk, 0, OTA_CHUNK_SIZE);
 
 	file = filp_open(ota_file, O_RDONLY, 0);
 
 	if (IS_ERR(file)) {
 		esp_err("Error reading ota bin, or ota bin not found at %s \n", ota_file);
+		kfree(ota_chunk);
 		return -EINVAL;
 	}
 
@@ -521,7 +529,7 @@ int esp_start_ota(struct esp_adapter *adapter, char *ota_file)
 		esp_err("OTA Start failed\n");
 		ret = EINVAL;
 		goto done;
-    }
+	}
 
 	while ((nread = kernel_read(file, ota_chunk, OTA_CHUNK_SIZE, &file->f_pos)) > 0) {
 		if (cmd_process_ota_write(adapter->priv[ESP_STA_NW_IF], ota_chunk, nread) !=0) {
@@ -547,6 +555,7 @@ int esp_start_ota(struct esp_adapter *adapter, char *ota_file)
 	}
 
 done:
+	kfree(ota_chunk);
 	filp_close(file, NULL);
 	clear_bit(ESP_OTA_IN_PROGRESS, &adapter->state_flags);
 	return ret;
