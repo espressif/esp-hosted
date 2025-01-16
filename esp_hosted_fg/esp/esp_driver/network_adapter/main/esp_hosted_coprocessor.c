@@ -41,24 +41,10 @@
 #include "esp_fw_version.h"
 
 #if CONFIG_SLAVE_LWIP_ENABLED
-#include "lwip/err.h"
-#include "lwip/sys.h"
-//#include "lwip/ip_addr.h"
-#include "lwip/etharp.h"
-#include "lwip/prot/iana.h"
-#include "lwip/prot/ip.h"
-#include "lwip/prot/tcp.h"
-#include "lwip/prot/udp.h"
-#include "lwip/prot/icmp.h"
-
 #include "host_power_save.h"
 #include "esp_hosted_config.pb-c.h"
 #include "esp_hosted_cli.h"
 
-#include "lwip/tcp.h"
-#include "lwip/udp.h"
-#include "lwip/priv/tcp_priv.h"
-#include "lwip/sys.h"
 
 
 volatile uint8_t station_got_ip = 0;
@@ -227,7 +213,7 @@ esp_err_t wlan_sta_rx_callback(void *buffer, uint16_t len, void *eb)
 		return ESP_OK;
 	}
 
-	ESP_HEXLOGV("STA_Get", buffer, len, 32);
+	ESP_HEXLOGV("STA_Get", buffer, len, 64);
 
 #if ESP_PKT_STATS
 	pkt_stats.sta_lwip_in++;
@@ -454,7 +440,7 @@ static void process_rx_pkt(interface_buffer_handle_t *buf_handle)
     payload = buf_handle->payload + le16toh(header->offset);
     payload_len = le16toh(header->len);
 
-    ESP_HEXLOGV("bus_RX", buf_handle->payload, buf_handle->payload_len, 32);
+    ESP_HEXLOGD("bus_RX", payload, payload_len, 64);
 
 
     if (buf_handle->if_type == ESP_STA_IF && station_connected) {

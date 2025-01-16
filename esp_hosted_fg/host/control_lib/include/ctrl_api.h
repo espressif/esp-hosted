@@ -34,10 +34,10 @@
  * another request is pending, time period for
  * which new request will wait in seconds
  * */
-#define WAIT_TIME_B2B_CTRL_REQ               5
-#define DEFAULT_CTRL_RESP_TIMEOUT            30
+#define WAIT_TIME_B2B_CTRL_REQ               3
+#define DEFAULT_CTRL_RESP_TIMEOUT            5
 #define DEFAULT_CTRL_RESP_AP_SCAN_TIMEOUT    (60*3)
-#define DEFAULT_CTRL_RESP_CONNECT_AP_TIMEOUT (15*3)
+#define DEFAULT_CTRL_RESP_CONNECT_AP_TIMEOUT (10)
 
 #ifndef MAC2STR
 #define MAC2STR(a) (a)[0], (a)[1], (a)[2], (a)[3], (a)[4], (a)[5]
@@ -120,6 +120,10 @@ typedef enum {
 	CTRL_REQ_SET_COUNTRY_CODE          = CTRL_MSG_ID__Req_SetCountryCode,     //0x7c
 	CTRL_REQ_GET_COUNTRY_CODE          = CTRL_MSG_ID__Req_GetCountryCode,     //0x7d
 
+	CTRL_REQ_SET_DHCP_DNS_STATUS       = CTRL_MSG_ID__Req_SetDhcpDnsStatus,
+	CTRL_REQ_GET_DHCP_DNS_STATUS       = CTRL_MSG_ID__Req_GetDhcpDnsStatus,
+
+
 	/*
 	 * Add new control path command response before Req_Max
 	 * and update Req_Max
@@ -162,8 +166,12 @@ typedef enum {
 
 	CTRL_RESP_SET_COUNTRY_CODE          = CTRL_MSG_ID__Resp_SetCountryCode,     //0x7c -> 0xe0
 	CTRL_RESP_GET_COUNTRY_CODE          = CTRL_MSG_ID__Resp_GetCountryCode,     //0x7d -> 0xe1
+
+	CTRL_RESP_SET_DHCP_DNS_STATUS       = CTRL_MSG_ID__Resp_SetDhcpDnsStatus,
+	CTRL_RESP_GET_DHCP_DNS_STATUS       = CTRL_MSG_ID__Resp_GetDhcpDnsStatus,
+
 	/*
-	 * Add new control path comm       and response before Resp_Max
+	 * Add new control path command and response before Resp_Max
 	 * and update Resp_Max
 	 */
 	CTRL_RESP_MAX = CTRL_MSG_ID__Resp_Max,
@@ -181,6 +189,8 @@ typedef enum {
 		CTRL_MSG_ID__Event_StationConnectedToAP,
 	CTRL_EVENT_STATION_CONNECTED_TO_ESP_SOFTAP =
 		CTRL_MSG_ID__Event_StationConnectedToESPSoftAP,
+	CTRL_EVENT_DHCP_DNS_STATUS =
+		CTRL_MSG_ID__Event_SetDhcpDnsStatus,
 	/*
 	 * Add new control path command notification before Event_Max
 	 * and update Event_Max
@@ -392,6 +402,18 @@ typedef struct {
 	uint32_t reason;
 } event_softap_sta_disconn_t;
 
+typedef struct {
+    int iface;
+    int net_link_up;
+    int dhcp_up;
+    uint8_t dhcp_ip[64];
+    uint8_t dhcp_nm[64];
+    uint8_t dhcp_gw[64];
+    int dns_up;
+    uint8_t dns_ip[64];
+    int dns_type;
+} dhcp_dns_status_t;
+
 typedef struct Ctrl_cmd_t {
 	/* msg type could be 1. req 2. resp 3. notification */
 	uint8_t msg_type;
@@ -434,6 +456,7 @@ typedef struct Ctrl_cmd_t {
 		event_sta_disconn_t         e_sta_disconn;
 		event_softap_sta_conn_t     e_softap_sta_conn;
 		event_softap_sta_disconn_t  e_softap_sta_disconn;
+		dhcp_dns_status_t           dhcp_dns_status;
 	}u;
 
 	/* By default this callback is set to NULL.
@@ -623,6 +646,12 @@ ctrl_cmd_t * feature_config(ctrl_cmd_t req);
 /* Get FW Version */
 ctrl_cmd_t * get_fw_version(ctrl_cmd_t req);
 
+/* Get DHCP DNS status */
+ctrl_cmd_t * get_dhcp_dns_status(ctrl_cmd_t req);
+
+/* Set DHCP DNS status */
+ctrl_cmd_t * set_dhcp_dns_status(ctrl_cmd_t req);
+
 /* Get the interface up for interface `iface` */
 int interface_up(int sockfd, char* iface);
 
@@ -632,6 +661,21 @@ int interface_down(int sockfd, char* iface);
 /* Set ethernet interface MAC address `mac` to interface `iface` */
 int set_hw_addr(int sockfd, char* iface, char* mac);
 
+/* Set static IP address for interface `iface` */
+int set_network_static_ip(int sockfd, char* iface, char* ip, char* netmask, char* gateway);
+
+/* Set static DNS server */
+int add_dns(char* dns);
+
+/* Remove static DNS server */
+int remove_dns(char* dns);
+
+/* Add default gateway */
+int add_default_gateway(char* gateway);
+
+/* Remove default gateway */
+int remove_default_gateway(char* gateway);
+
 /* Create an endpoint for communication */
 int create_socket(int domain, int type, int protocol, int *sock);
 
@@ -639,3 +683,4 @@ int create_socket(int domain, int type, int protocol, int *sock);
 int close_socket(int sock);
 
 #endif
+

@@ -30,7 +30,7 @@
 #include "esp_fw_version.h"
 #include "host_power_save.h"
 
-//#define SIMPLIFIED_SDIO_SLAVE            1
+#define SIMPLIFIED_SDIO_SLAVE            1
 #define SDIO_DRIVER_TX_QUEUE_SIZE        10
 #define SDIO_RX_BUFFER_SIZE              MAX_TRANSPORT_BUF_SIZE
 #define SDIO_RX_BUFFER_NUM               20
@@ -63,6 +63,9 @@ static SemaphoreHandle_t sdio_send_queue_sem = NULL;
 #else
     static QueueHandle_t sdio_rx_queue;
 #endif
+#else
+    #define SDIO_RX_QUEUE_SIZE          CONFIG_ESP_RX_Q_SIZE
+    #define SDIO_RX_TOTAL_QUEUE_SIZE    SDIO_RX_QUEUE_SIZE
 #endif
 
 #if !SIMPLIFIED_SDIO_SLAVE

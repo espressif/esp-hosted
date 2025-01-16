@@ -4,7 +4,7 @@
 #ifndef __ESP_NETWORK_ADAPTER__H
 #define __ESP_NETWORK_ADAPTER__H
 
-#define ESP_PKT_NUM_DEBUG                         1
+//#define ESP_PKT_NUM_DEBUG                         1
 
 #define PRIO_Q_SERIAL                             0
 #define PRIO_Q_BT                                 1
@@ -128,5 +128,39 @@ static inline uint16_t compute_checksum(uint8_t *buf, uint16_t len)
 
 	return checksum;
 }
+
+#ifdef ESP_PKT_NUM_DEBUG
+struct dbg_stats_t {
+	uint16_t tx_pkt_num;
+	uint16_t exp_rx_pkt_num;
+};
+
+#ifdef __KERNEL__
+#define le16toh(x) le16_to_cpu(x)
+#define htole16(x) cpu_to_le16(x)
+#define debug(fmt, ...) printk(KERN_INFO fmt, ##__VA_ARGS__)
+#else
+#define debug(fmt, ...) printf(fmt, ##__VA_ARGS__)
+#endif
+
+extern struct dbg_stats_t dbg_stats;
+#define UPDATE_HEADER_TX_PKT_NO(h) h->pkt_num = htole16(dbg_stats.tx_pkt_num++)
+#define UPDATE_HEADER_RX_PKT_NO(h)                                              \
+    do {                                                                        \
+        uint16_t rcvd_pkt_num = le16toh(h->pkt_num);                            \
+        if (dbg_stats.exp_rx_pkt_num != rcvd_pkt_num) {                         \
+            debug("exp_pkt_num[%u], rx_pkt_num[%u]\n",                         \
+                    dbg_stats.exp_rx_pkt_num, rcvd_pkt_num);                    \
+            dbg_stats.exp_rx_pkt_num = rcvd_pkt_num;                            \
+        }                                                                       \
+        dbg_stats.exp_rx_pkt_num++;                                             \
+    } while(0);
+
+#else /*ESP_PKT_NUM_DEBUG*/
+
+  #define UPDATE_HEADER_TX_PKT_NO(h)
+  #define UPDATE_HEADER_RX_PKT_NO(h)
+
+#endif /*ESP_PKT_NUM_DEBUG*/
 
 #endif

@@ -55,6 +55,7 @@
 #define DISABLE_BT                         "disable_bt"
 
 #define GET_FW_VERSION                     "get_fw_version"
+#define GET_DHCP_DNS_STATUS                "get_dhcp_dns_status"
 
 #define SET_COUNTRY_CODE                   "set_country_code"
 /* ENABLED means ieee80211d ("additional regulatory domains") enabled */

@@ -4,11 +4,15 @@
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
+#include <net/route.h>
 #include "ctrl_core.h"
 #include "serial_if.h"
 #include "platform_wrapper.h"
 #include "esp_queue.h"
 #include <unistd.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
 
 #ifdef MCU_SYS
 #include "common.h"
@@ -322,6 +326,33 @@ static int ctrl_app_parse_event(CtrlMsg *ctrl_msg, ctrl_cmd_t *app_ntfy)
 					ctrl_msg->event_station_disconnect_from_esp_softap->reason;
 			}
 			break;
+		} case CTRL_EVENT_DHCP_DNS_STATUS: {
+			CHECK_CTRL_MSG_NON_NULL(event_set_dhcp_dns_status);
+			app_ntfy->resp_event_status = ctrl_msg->event_set_dhcp_dns_status->resp;
+			app_ntfy->u.dhcp_dns_status.iface = ctrl_msg->event_set_dhcp_dns_status->iface;
+			app_ntfy->u.dhcp_dns_status.dhcp_up = ctrl_msg->event_set_dhcp_dns_status->dhcp_up;
+			app_ntfy->u.dhcp_dns_status.dns_up = ctrl_msg->event_set_dhcp_dns_status->dns_up;
+			app_ntfy->u.dhcp_dns_status.dns_type = ctrl_msg->event_set_dhcp_dns_status->dns_type;
+			app_ntfy->u.dhcp_dns_status.net_link_up = ctrl_msg->event_set_dhcp_dns_status->net_link_up;
+
+			if (ctrl_msg->event_set_dhcp_dns_status->dhcp_up) {
+				memcpy(app_ntfy->u.dhcp_dns_status.dhcp_ip,
+						ctrl_msg->event_set_dhcp_dns_status->dhcp_ip.data,
+						ctrl_msg->event_set_dhcp_dns_status->dhcp_ip.len);
+				memcpy(app_ntfy->u.dhcp_dns_status.dhcp_nm,
+						ctrl_msg->event_set_dhcp_dns_status->dhcp_nm.data,
+						ctrl_msg->event_set_dhcp_dns_status->dhcp_nm.len);
+				memcpy(app_ntfy->u.dhcp_dns_status.dhcp_gw,
+						ctrl_msg->event_set_dhcp_dns_status->dhcp_gw.data,
+						ctrl_msg->event_set_dhcp_dns_status->dhcp_gw.len);
+			}
+
+			if (ctrl_msg->event_set_dhcp_dns_status->dns_up) {
+				memcpy(app_ntfy->u.dhcp_dns_status.dns_ip,
+						ctrl_msg->event_set_dhcp_dns_status->dns_ip.data,
+						ctrl_msg->event_set_dhcp_dns_status->dns_ip.len);
+			}
+          break;
 		} default: {
 			printf("Invalid/unsupported event[%u] received\n",ctrl_msg->msg_id);
 			goto fail_parse_ctrl_msg;
@@ -685,6 +716,42 @@ static int ctrl_app_parse_resp(CtrlMsg *ctrl_msg, ctrl_cmd_t *app_resp)
 			app_resp->u.fw_version.minor = ctrl_msg->resp_get_fw_version->minor;
 			app_resp->u.fw_version.revision_patch_1 = ctrl_msg->resp_get_fw_version->rev_patch1;
 			app_resp->u.fw_version.revision_patch_2 = ctrl_msg->resp_get_fw_version->rev_patch2;
+			break;
+		} case CTRL_RESP_SET_DHCP_DNS_STATUS: {
+			CHECK_CTRL_MSG_NON_NULL(resp_set_dhcp_dns_status);
+			CHECK_CTRL_MSG_FAILED(resp_set_dhcp_dns_status);
+			break;
+		} case CTRL_RESP_GET_DHCP_DNS_STATUS: {
+			CtrlMsgRespGetDhcpDnsStatus *p_c = ctrl_msg->resp_get_dhcp_dns_status;
+			dhcp_dns_status_t *p_a = &app_resp->u.dhcp_dns_status;
+			CHECK_CTRL_MSG_NON_NULL(resp_get_dhcp_dns_status);
+			CHECK_CTRL_MSG_FAILED(resp_get_dhcp_dns_status);
+			p_a->dhcp_up = p_c->dhcp_up;
+			p_a->dns_up = p_c->dns_up;
+			p_a->net_link_up = p_c->net_link_up;
+			p_a->dns_type = p_c->dns_type;
+
+			if (p_c->dhcp_up) {
+				if (p_c->dhcp_ip.data) {
+					strncpy((char *)p_a->dhcp_ip, (char *)p_c->dhcp_ip.data, sizeof(p_a->dhcp_ip));
+					p_a->dhcp_ip[sizeof(p_a->dhcp_ip)-1] = '\0';
+				}
+				if (p_c->dhcp_nm.data) {
+					strncpy((char *)p_a->dhcp_nm, (char *)p_c->dhcp_nm.data, sizeof(p_a->dhcp_nm));
+					p_a->dhcp_nm[sizeof(p_a->dhcp_nm)-1] = '\0';
+				}
+				if (p_c->dhcp_gw.data) {
+					strncpy((char *)p_a->dhcp_gw, (char *)p_c->dhcp_gw.data, sizeof(p_a->dhcp_gw));
+					p_a->dhcp_gw[sizeof(p_a->dhcp_gw)-1] = '\0';
+				}
+			}
+
+			if (p_c->dns_up) {
+				if (p_c->dns_ip.data) {
+					strncpy((char *)p_a->dns_ip, (char *)p_c->dns_ip.data, sizeof(p_a->dns_ip));
+					p_a->dns_ip[sizeof(p_a->dns_ip)-1] = '\0';
+				}
+			}
 			break;
 		} default: {
 			command_log("Unsupported Control Resp[%u]\n", ctrl_msg->msg_id);
@@ -1288,6 +1355,7 @@ int ctrl_app_send_req(ctrl_cmd_t *app_req)
 		case CTRL_REQ_GET_WIFI_CURR_TX_POWER:
 		case CTRL_REQ_GET_FW_VERSION:
 		case CTRL_REQ_GET_COUNTRY_CODE: {
+		case CTRL_REQ_GET_DHCP_DNS_STATUS: {
 			/* Intentional fallthrough & empty */
 			break;
 		} case CTRL_REQ_GET_AP_SCAN_LIST: {
@@ -1680,7 +1748,7 @@ int deinit_hosted_control_lib_internal(void)
 
 	if (serial_deinit()) {
 		ret = FAILURE;
-		printf("Serial de-init failed\n");
+		//printf("Serial de-init failed\n");
 	}
 
 	if (ctrl_rx_thread_handle && cancel_ctrl_rx_thread()) {
@@ -1712,7 +1780,7 @@ int init_hosted_control_lib_internal(void)
 
 	/* serial init */
 	if (serial_init()) {
-		printf("Failed to serial_init\n");
+		//printf("Failed to serial_init\n");
 		goto free_bufs;
 	}
 
@@ -1772,6 +1840,262 @@ int interface_up(int sockfd, char* iface)
 	}
 	return SUCCESS;
 }
+
+/* Function to add default gateway */
+int add_default_gateway(char* gateway)
+{
+	int ret = SUCCESS;
+	struct rtentry route = {0};
+	int sockfd = 0;
+
+	if (!gateway) {
+		command_log("Invalid parameter\n");
+		return FAILURE;
+	}
+
+	/* Create socket */
+	sockfd = socket(AF_INET, SOCK_DGRAM, 0);
+	if (sockfd < 0) {
+		perror("socket creation failed:");
+		return FAILURE;
+	}
+
+	/* Setup route entry */
+	struct sockaddr_in *addr = (struct sockaddr_in*) &route.rt_gateway;
+	addr->sin_family = AF_INET;
+	addr->sin_addr.s_addr = inet_addr(gateway);
+
+	addr = (struct sockaddr_in*) &route.rt_dst;
+	addr->sin_family = AF_INET;
+	addr->sin_addr.s_addr = INADDR_ANY;
+
+	addr = (struct sockaddr_in*) &route.rt_genmask;
+	addr->sin_family = AF_INET;
+	addr->sin_addr.s_addr = INADDR_ANY;
+
+	route.rt_flags = RTF_UP | RTF_GATEWAY;
+	route.rt_metric = 0;
+
+	/* Add the route */
+	ret = ioctl(sockfd, SIOCADDRT, &route);
+	if (ret < 0) {
+		perror("add route failed:");
+		close(sockfd);
+		return FAILURE;
+	}
+
+	close(sockfd);
+	return SUCCESS;
+}
+
+/* Function to remove default gateway */
+int remove_default_gateway(char* gateway)
+{
+	int ret = SUCCESS;
+	struct rtentry route = {0};
+	int sockfd = 0;
+
+	if (!gateway) {
+		command_log("Invalid parameter\n");
+		return FAILURE;
+	}
+
+	/* Create socket */
+	sockfd = socket(AF_INET, SOCK_DGRAM, 0);
+	if (sockfd < 0) {
+		perror("socket creation failed:");
+		return FAILURE;
+	}
+
+	/* Setup route entry */
+	struct sockaddr_in *addr = (struct sockaddr_in*) &route.rt_gateway;
+	addr->sin_family = AF_INET;
+	addr->sin_addr.s_addr = inet_addr(gateway);
+
+	addr = (struct sockaddr_in*) &route.rt_dst;
+	addr->sin_family = AF_INET;
+	addr->sin_addr.s_addr = INADDR_ANY;
+
+	addr = (struct sockaddr_in*) &route.rt_genmask;
+	addr->sin_family = AF_INET;
+	addr->sin_addr.s_addr = INADDR_ANY;
+
+	route.rt_flags = RTF_UP | RTF_GATEWAY;
+	route.rt_metric = 0;
+
+	/* Remove the route */
+	ret = ioctl(sockfd, SIOCDELRT, &route);
+	if (ret < 0) {
+		perror("remove route failed:");
+		close(sockfd);
+		return FAILURE;
+	}
+
+	close(sockfd);
+	return SUCCESS;
+}
+
+
+int set_network_static_ip(int sockfd, char* iface, char* ip, char* netmask, char* gateway)
+{
+	int ret = SUCCESS;
+	struct ifreq req = {0};
+	struct sockaddr_in* addr = NULL;
+	size_t if_name_len = strnlen(iface, MAX_INTERFACE_LEN-1);
+
+	if (!iface || !ip || !netmask || !gateway) {
+		command_log("Invalid parameter\n");
+		return FAILURE;
+	}
+
+	if (if_name_len < sizeof(req.ifr_name)) {
+		memcpy(req.ifr_name, iface, if_name_len);
+		req.ifr_name[if_name_len] = '\0';
+	} else {
+		printf("Failed: Max interface len allowed: %zu \n", sizeof(req.ifr_name)-1);
+		return FAILURE;
+	}
+
+	/* Set IP address */
+	addr = (struct sockaddr_in*)&req.ifr_addr;
+	addr->sin_family = AF_INET;
+	addr->sin_addr.s_addr = inet_addr(ip);
+	ret = ioctl(sockfd, SIOCSIFADDR, &req);
+	if (ret < 0) {
+		perror("set ip address:");
+		return FAILURE;
+	}
+
+	/* Set netmask */
+	addr = (struct sockaddr_in*)&req.ifr_netmask;
+	addr->sin_family = AF_INET;
+	addr->sin_addr.s_addr = inet_addr(netmask);
+	ret = ioctl(sockfd, SIOCSIFNETMASK, &req);
+	if (ret < 0) {
+		perror("set netmask:");
+		return FAILURE;
+	}
+
+	/* Set gateway */
+	addr = (struct sockaddr_in*)&req.ifr_dstaddr;
+	addr->sin_family = AF_INET;
+	addr->sin_addr.s_addr = inet_addr(gateway);
+	ret = ioctl(sockfd, SIOCSIFDSTADDR, &req);
+	if (ret < 0) {
+		perror("set gateway:");
+		return FAILURE;
+	}
+
+	return SUCCESS;
+}
+
+/* Function sets static DNS server */
+int add_dns(char* dns)
+{
+	int ret = SUCCESS;
+	FILE *resolv = NULL;
+	char line[256];
+	char dns_entry[256];
+	int dns_exists = 0;
+
+	if (!dns) {
+		command_log("Invalid parameter\n");
+		return FAILURE;
+	}
+
+	/* Format DNS entry string */
+	snprintf(dns_entry, sizeof(dns_entry), "nameserver %s", dns);
+
+	/* First check if DNS entry already exists */
+	resolv = fopen("/etc/resolv.conf", "r");
+	if (resolv) {
+		while (fgets(line, sizeof(line), resolv)) {
+			/* Remove newline */
+			line[strcspn(line, "\n")] = 0;
+			if (strcmp(line, dns_entry) == 0) {
+				dns_exists = 1;
+				break;
+			}
+		}
+		fclose(resolv);
+	}
+
+	if (!dns_exists) {
+		/* Append new DNS entry */
+		resolv = fopen("/etc/resolv.conf", "a");
+		if (!resolv) {
+			perror("open resolv.conf:");
+			return FAILURE;
+		}
+
+		ret = fprintf(resolv, "%s\n", dns_entry);
+		if (ret < 0) {
+			perror("write dns server:");
+			fclose(resolv);
+			return FAILURE;
+		}
+		fclose(resolv);
+	}
+
+	return SUCCESS;
+}
+
+
+/* Function removes DNS entry from resolv.conf */
+int remove_dns(char *dns)
+{
+	int ret = SUCCESS;
+	FILE *resolv = NULL, *tmp = NULL;
+	char line[256];
+	char dns_entry[256];
+
+	if (!dns) {
+		command_log("Invalid parameter\n");
+		return FAILURE;
+	}
+
+	/* Format DNS entry string */
+	snprintf(dns_entry, sizeof(dns_entry), "nameserver %s", dns);
+
+	/* Open original file for reading and temp file for writing */
+	resolv = fopen("/etc/resolv.conf", "r");
+	if (!resolv) {
+		perror("open resolv.conf:");
+		return FAILURE;
+	}
+
+	tmp = fopen("/etc/resolv.conf.tmp", "w");
+	if (!tmp) {
+		perror("open resolv.conf.tmp:");
+		fclose(resolv);
+		return FAILURE;
+	}
+
+	/* Copy all lines except matching DNS entry */
+	while (fgets(line, sizeof(line), resolv)) {
+		/* Remove newline */
+		line[strcspn(line, "\n")] = 0;
+		if (strcmp(line, dns_entry) != 0) {
+			fprintf(tmp, "%s\n", line);
+		}
+	}
+
+	fclose(resolv);
+	fclose(tmp);
+
+	/* Replace original with temp file */
+	ret = rename("/etc/resolv.conf.tmp", "/etc/resolv.conf");
+	if (ret < 0) {
+		perror("rename resolv.conf:");
+		return FAILURE;
+	}
+
+	return SUCCESS;
+}
+
+
+
+
 
  /* Function downs in given interface */
 int interface_down(int sockfd, char* iface)

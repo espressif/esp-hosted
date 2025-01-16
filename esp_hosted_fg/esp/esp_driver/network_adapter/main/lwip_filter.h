@@ -6,9 +6,9 @@
 
 typedef enum {
     SLAVE_LWIP_BRIDGE,
-    HOST_LWIP_BRIDGE, 
+    HOST_LWIP_BRIDGE,
     BOTH_LWIP_BRIDGE,
     INVALID_BRIDGE,
 } hosted_l2_bridge;
 
-hosted_l2_bridge find_destination_bridge(void *frame_data, uint16_t frame_length); 
+hosted_l2_bridge find_destination_bridge(void *frame_data, uint16_t frame_length);

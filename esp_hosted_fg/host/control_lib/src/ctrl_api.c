@@ -185,3 +185,15 @@ ctrl_cmd_t * get_fw_version(ctrl_cmd_t req)
 	CTRL_SEND_REQ(CTRL_REQ_GET_FW_VERSION);
 	CTRL_DECODE_RESP_IF_NOT_ASYNC();
 }
+
+ctrl_cmd_t * get_dhcp_dns_status(ctrl_cmd_t req)
+{
+	CTRL_SEND_REQ(CTRL_REQ_GET_DHCP_DNS_STATUS);
+	CTRL_DECODE_RESP_IF_NOT_ASYNC();
+}
+
+ctrl_cmd_t * set_dhcp_dns_status(ctrl_cmd_t req)
+{
+	CTRL_SEND_REQ(CTRL_REQ_SET_DHCP_DNS_STATUS);
+	CTRL_DECODE_RESP_IF_NOT_ASYNC();
+}

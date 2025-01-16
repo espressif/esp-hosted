@@ -104,9 +104,10 @@ enum CtrlMsgId {
 	Req_SetCountryCode = 124;
 	Req_GetCountryCode = 125;
 	Req_SetDhcpDnsStatus = 126;
+	Req_GetDhcpDnsStatus = 127;
 	/* Add new control path command response before Req_Max
 	 * and update Req_Max */
-	Req_Max = 127;
+	Req_Max = 128;
 
 	/** Response Msgs **/
 	Resp_Base = 200;
@@ -143,9 +144,10 @@ enum CtrlMsgId {
 	Resp_SetCountryCode = 224;
 	Resp_GetCountryCode = 225;
 	Resp_SetDhcpDnsStatus = 226;
+	Resp_GetDhcpDnsStatus = 227;
 	/* Add new control path command response before Resp_Max
 	 * and update Resp_Max */
-	Resp_Max = 227;
+	Resp_Max = 228;
 
 	/** Event Msgs **/
 	Event_Base = 300;
@@ -428,6 +430,24 @@ message CtrlMsg_Resp_SetDhcpDnsStatus {
       int32 resp = 1;
 }
 
+message CtrlMsg_Req_GetDhcpDnsStatus {
+}
+
+message CtrlMsg_Resp_GetDhcpDnsStatus {
+      int32 resp = 1;
+      int32 iface = 2;
+      int32 net_link_up = 3;
+
+      int32 dhcp_up = 4;
+      bytes dhcp_ip = 5;
+      bytes dhcp_nm = 6;
+      bytes dhcp_gw = 7;
+
+      int32 dns_up = 8;
+      bytes dns_ip = 9;
+      int32 dns_type = 10;
+}
+
 /** Event structure **/
 message CtrlMsg_Event_ESPInit {
 	bytes init_data = 1;
@@ -534,6 +554,7 @@ message CtrlMsg {
 		CtrlMsg_Req_SetCountryCode req_set_country_code = 124;
 		CtrlMsg_Req_GetCountryCode req_get_country_code = 125;
 		CtrlMsg_Req_SetDhcpDnsStatus req_set_dhcp_dns_status = 126;
+		CtrlMsg_Req_GetDhcpDnsStatus req_get_dhcp_dns_status = 127;
 
 		/** Responses **/
 		CtrlMsg_Resp_GetMacAddress resp_get_mac_address = 201;
@@ -566,6 +587,7 @@ message CtrlMsg {
 		CtrlMsg_Resp_SetCountryCode resp_set_country_code = 224;
 		CtrlMsg_Resp_GetCountryCode resp_get_country_code = 225;
 		CtrlMsg_Resp_SetDhcpDnsStatus resp_set_dhcp_dns_status = 226;
+		CtrlMsg_Resp_GetDhcpDnsStatus resp_get_dhcp_dns_status = 227;
 
 		/** Notifications **/
 		CtrlMsg_Event_ESPInit event_esp_init = 301;

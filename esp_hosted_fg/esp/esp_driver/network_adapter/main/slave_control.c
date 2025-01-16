@@ -171,13 +171,19 @@ esp_err_t esp_hosted_set_sta_config(wifi_interface_t iface, wifi_config_t *cfg)
 
 void send_dhcp_dns_info_to_host(uint8_t send_wifi_connected)
 {
+	ctrl_msg_set_dhcp_dns_status_t s2h_dhcp_dns_DOWN = {0};
+	ctrl_msg_set_dhcp_dns_status_t *evnt_to_send = &s2h_dhcp_dns_DOWN;
+
 	if (is_host_power_saving()) {
 		ESP_LOGI(TAG, "Host in power save, suppress network update");
 		return;
 	}
 	ESP_EARLY_LOGI(TAG, "Send DHCP-DNS status to Host");
+	if (s2h_dhcp_dns.dhcp_up && s2h_dhcp_dns.net_link_up && s2h_dhcp_dns.dns_up) {
+		evnt_to_send = &s2h_dhcp_dns;
+	}
 	send_event_data_to_host(CTRL_MSG_ID__Event_SetDhcpDnsStatus,
-			&s2h_dhcp_dns, sizeof(ctrl_msg_set_dhcp_dns_status_t));
+			evnt_to_send, sizeof(ctrl_msg_set_dhcp_dns_status_t));
 
 	if (send_wifi_connected && station_connected) {
 			send_wifi_event_data_to_host(CTRL_MSG_ID__Event_StationConnectedToAP,
@@ -272,6 +278,66 @@ static esp_err_t set_slave_static_ip(wifi_interface_t iface, char *ip, char *nm,
 	return ESP_OK;
 }
 
+
+static esp_err_t get_slave_static_ip(wifi_interface_t iface, esp_netif_ip_info_t *ip_info, uint8_t *netlink_up)
+{
+#ifdef CONFIG_SLAVE_MANAGES_WIFI
+	if (!ip_info || !netlink_up) {
+		ESP_LOGE(TAG, "Invalid parameters");
+		return ESP_FAIL;
+	}
+
+	esp_netif_t * slave_sta_netif = NULL;
+    if (iface==WIFI_IF_STA) {
+        slave_sta_netif = esp_netif_get_handle_from_ifkey("WIFI_STA_DEF");
+		ESP_LOGI(TAG, "Sta netif: %p", slave_sta_netif);
+    } else if (iface==WIFI_IF_AP) {
+        slave_sta_netif = esp_netif_get_handle_from_ifkey("WIFI_AP_DEF");
+    } else {
+        ESP_LOGE(TAG, "unsupported wifi interface yet");
+        return ESP_FAIL;
+    }
+
+	if (!slave_sta_netif) {
+		ESP_LOGE(TAG, "station netif not available");
+		return ESP_FAIL;
+	}
+
+	ESP_ERROR_CHECK(esp_netif_get_ip_info(slave_sta_netif, ip_info));
+	*netlink_up = esp_netif_is_netif_up(slave_sta_netif);
+#endif
+
+	return ESP_OK;
+}
+
+esp_err_t get_slave_dns(wifi_interface_t iface, esp_netif_dns_info_t *dns)
+{
+#ifdef CONFIG_SLAVE_MANAGES_WIFI
+	if (!dns) {
+		ESP_LOGE(TAG, "Invalid parameters");
+		return ESP_FAIL;
+	}
+
+	esp_netif_t * slave_sta_netif = NULL;
+    if (iface==WIFI_IF_STA) {
+        slave_sta_netif = esp_netif_get_handle_from_ifkey("WIFI_STA_DEF");
+    } else if (iface==WIFI_IF_AP) {
+        slave_sta_netif = esp_netif_get_handle_from_ifkey("WIFI_AP_DEF");
+    } else {
+        ESP_LOGE(TAG, "unsupported wifi interface yet");
+		return ESP_FAIL;
+    }
+
+	if (!slave_sta_netif) {
+		ESP_LOGE(TAG, "station netif not available");
+		return ESP_FAIL;
+	}
+
+	ESP_ERROR_CHECK(esp_netif_get_dns_info(slave_sta_netif, ESP_NETIF_DNS_MAIN, dns));
+#endif
+	return ESP_OK;
+}
+
 esp_err_t set_slave_dns(wifi_interface_t iface, char *ip, uint8_t type)
 {
 #ifndef CONFIG_SLAVE_MANAGES_WIFI
@@ -316,9 +382,11 @@ static void station_event_handler(void *arg, esp_event_base_t event_base,
 			ESP_LOGI(TAG, "Manual Wi-Fi disconnected, no event raised");
 		}
 
-		ctrl_msg_set_dhcp_dns_status_t s2h_dhcp_dns = {0};
-		send_wifi_event_data_to_host(CTRL_MSG_ID__Event_SetDhcpDnsStatus,
-				&s2h_dhcp_dns, sizeof(ctrl_msg_set_dhcp_dns_status_t));
+		s2h_dhcp_dns.dhcp_up = s2h_dhcp_dns.dns_up = s2h_dhcp_dns.net_link_up = 0;
+		station_got_ip = 0;
+#ifdef CONFIG_SLAVE_MANAGES_WIFI
+		send_dhcp_dns_info_to_host(0);
+#endif
 
 		ESP_LOGI(TAG, "Sta mode disconnect, retry[%u]", sta_connect_retry);
 		sta_connect_retry++;
@@ -351,6 +419,10 @@ static void station_event_handler(void *arg, esp_event_base_t event_base,
 
 		// Store successful connection event details
 		memcpy(&lkg_sta_connected_event, event_data, sizeof(wifi_event_sta_connected_t));
+
+		/*Overwrite our handler*/
+		esp_wifi_internal_reg_rxcb(ESP_IF_WIFI_STA, (wifi_rxcb_t) wlan_sta_rx_callback);
+		station_connected = true;
 
 #ifdef CONFIG_SLAVE_MANAGES_WIFI
 	} else if (event_id == WIFI_EVENT_STA_START) {
@@ -887,7 +959,7 @@ static esp_err_t req_connect_ap_handler (CtrlMsg *req,
     }
     snprintf(mac_str, BSSID_LENGTH, MACSTR, MAC2STR(mac));
     ESP_LOGI(TAG,"mac [%s] ", mac_str);
-    
+
     /* Fill response with MAC - do this only once */
     resp_payload->mac.len = strnlen(mac_str, BSSID_LENGTH);
     if (!resp_payload->mac.len) {
@@ -910,10 +982,12 @@ static esp_err_t req_connect_ap_handler (CtrlMsg *req,
             resp_payload->resp = SUCCESS;
             mem_free(wifi_cfg);
 
+#if 0
 			/* TODO: To handle manual or auto disconnection */
 			send_wifi_event_data_to_host(CTRL_MSG_ID__Event_StationConnectedToAP,
                   &lkg_sta_connected_event, sizeof(wifi_event_sta_connected_t));
 			ESP_LOGI(TAG, "Already connected");
+#endif
 			/* as already connected, send the dhcp dns status event */
 #ifdef CONFIG_SLAVE_MANAGES_WIFI
 			send_dhcp_dns_info_to_host(1);
@@ -2389,11 +2463,6 @@ static esp_err_t req_set_country_code_handler (CtrlMsg *req,
 
 	esp_err_t ret = ESP_OK;
 
-	if (!req || !resp) {
-		ESP_LOGE(TAG, "Invalid parameters");
-		return ESP_FAIL;
-	}
-
 	resp_payload = (CtrlMsgRespSetCountryCode *)
 		calloc(1,sizeof(CtrlMsgRespSetCountryCode));
 	if (!resp_payload) {
@@ -2475,6 +2544,88 @@ static esp_err_t req_get_country_code_handler (CtrlMsg *req,
 		resp_payload->resp = ret;
 	}
 
+	if (!req || !resp) {
+		ESP_LOGE(TAG, "Invalid parameters");
+		return ESP_FAIL;
+	}
+
+	return ESP_OK;
+}
+
+
+#define COPY_AS_RESP_IP(dest, src, max_len)                                     \
+{                                                                               \
+    dest.data = (uint8_t*)strndup((char*)src, max_len);                         \
+    if (!dest.data) {                                                           \
+      ESP_LOGE(TAG, "%s:%u Failed to duplicate bytes\n",__func__,__LINE__);     \
+      resp_payload->resp = FAILURE;                                             \
+      return ESP_OK;                                                            \
+    }                                                                           \
+    dest.len = min(max_len,strlen((char*)src)+1);                               \
+}
+
+static esp_err_t req_get_dhcp_dns_status(CtrlMsg *req, CtrlMsg *resp, void *priv_data)
+{
+	int ret1, ret2;
+	CtrlMsgRespGetDhcpDnsStatus *resp_payload = NULL;
+
+	if (!req || !resp) {
+		ESP_LOGE(TAG, "Invalid parameters");
+		return ESP_FAIL;
+	}
+
+	resp_payload = (CtrlMsgRespGetDhcpDnsStatus *)calloc(1,sizeof(CtrlMsgRespGetDhcpDnsStatus));
+	if (!resp_payload) {
+		ESP_LOGE(TAG, "Failed to allocate memory");
+		return ESP_ERR_NO_MEM;
+	}
+
+	ctrl_msg__resp__get_dhcp_dns_status__init(resp_payload);
+	resp->payload_case = CTRL_MSG__PAYLOAD_RESP_GET_DHCP_DNS_STATUS;
+	resp->resp_get_dhcp_dns_status = resp_payload;
+
+	esp_netif_ip_info_t ip_info = {0};
+	esp_netif_dns_info_t dns = {0};
+	uint8_t netlink_up = 0;
+
+	ret1 = get_slave_static_ip(resp_payload->iface, &ip_info, &netlink_up);
+	ret2 = get_slave_dns(resp_payload->iface, &dns);
+
+	if (ret1 || ret2) {
+		ESP_LOGE(TAG, "Failed to get DHCP/DNS status");
+		resp_payload->dhcp_up = 0;
+		resp_payload->dns_up = 0;
+		resp_payload->net_link_up = 0;
+		resp_payload->resp = ESP_FAIL;
+		return ESP_OK;
+	}
+	ESP_LOGI(TAG, "static_ip_ret: %d dns_ret: %d", ret1, ret2);
+
+	resp_payload->net_link_up = netlink_up;
+	resp_payload->dhcp_up = netlink_up;
+	resp_payload->dns_up = netlink_up;
+
+	resp_payload->dns_type = dns.ip.type;
+
+	char sta_ip[64] = {0};
+	char sta_nm[64] = {0};
+	char sta_gw[64] = {0};
+	char sta_dns_ip[64] = {0};
+
+
+	if (esp_ip4addr_ntoa(&ip_info.ip, sta_ip, sizeof(sta_ip)))
+		COPY_AS_RESP_IP(resp_payload->dhcp_ip, sta_ip, strlen((char *)sta_ip) + 1);
+	if (esp_ip4addr_ntoa(&ip_info.netmask, sta_nm, sizeof(sta_nm)))
+		COPY_AS_RESP_IP(resp_payload->dhcp_nm, sta_nm, strlen((char *)sta_nm) + 1);
+	if (esp_ip4addr_ntoa(&ip_info.gw, sta_gw, sizeof(sta_gw)))
+		COPY_AS_RESP_IP(resp_payload->dhcp_gw, sta_gw, strlen((char *)sta_gw) + 1);
+	if (esp_ip4addr_ntoa(&dns.ip.u_addr.ip4, sta_dns_ip, sizeof(sta_dns_ip)))
+		COPY_AS_RESP_IP(resp_payload->dns_ip, sta_dns_ip, strlen((char *)sta_dns_ip) + 1);
+
+	ESP_LOGI(TAG, "Fetched IP: %s, NM: %s, GW: %s, DNS IP: %s, Type: %u",
+			sta_ip, sta_nm, sta_gw, sta_dns_ip, resp_payload->dns_type);
+
+	resp_payload->resp = SUCCESS;
 	return ESP_OK;
 }
 
@@ -2844,6 +2995,10 @@ static esp_ctrl_msg_req_t req_table[] = {
 		.req_num = CTRL_MSG_ID__Req_SetDhcpDnsStatus,
 		.command_handler = req_set_dhcp_dns_status
 	},
+	{
+		.req_num = CTRL_MSG_ID__Req_GetDhcpDnsStatus,
+		.command_handler = req_get_dhcp_dns_status
+	},
 };
 
 
@@ -3022,6 +3177,13 @@ static void esp_ctrl_msg_cleanup(CtrlMsg *resp)
 			break;
 		} case (CTRL_MSG_ID__Resp_SetDhcpDnsStatus) : {
 			mem_free(resp->resp_set_dhcp_dns_status);
+			break;
+		} case (CTRL_MSG_ID__Resp_GetDhcpDnsStatus): {
+			mem_free(resp->resp_get_dhcp_dns_status->dhcp_ip.data);
+			mem_free(resp->resp_get_dhcp_dns_status->dhcp_nm.data);
+			mem_free(resp->resp_get_dhcp_dns_status->dhcp_gw.data);
+			mem_free(resp->resp_get_dhcp_dns_status->dns_ip.data);
+			mem_free(resp->resp_get_dhcp_dns_status);
 			break;
 		} case (CTRL_MSG_ID__Event_ESPInit) : {
 			mem_free(resp->event_esp_init);
@@ -3400,6 +3562,9 @@ static esp_err_t ctrl_ntfy_SetDhcpDnsStatus(CtrlMsg *ntfy,
 	p_c->dns_ip.data = p_a->dns_ip;
 	p_c->dns_ip.len = sizeof(p_a->dns_ip);
 
+	ESP_LOGI(TAG, "DHCP IP: %s, NM: %s, GW: %s, DNS IP: %s, Type: %u",
+			p_c->dhcp_ip.data, p_c->dhcp_nm.data, p_c->dhcp_gw.data,
+			p_c->dns_ip.data, p_c->dns_type);
 	p_c->resp = SUCCESS;
 	return ESP_OK;
 }

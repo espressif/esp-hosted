@@ -55,7 +55,7 @@ static struct {
 /* Cache for UDP port checks */
 static struct {
     uint64_t last_check_time;
-    int last_result; 
+    int last_result;
     uint16_t last_port;
 } udp_cache = {0};
 
@@ -104,7 +104,7 @@ static int is_local_tcp_port_open(uint16_t port)
     return found;
 }
 
-static int is_local_udp_port_open(uint16_t port) 
+static int is_local_udp_port_open(uint16_t port)
 {
     uint64_t current_time = esp_timer_get_time() >> 10; /* Approx ms */
 
@@ -255,7 +255,7 @@ hosted_l2_bridge find_destination_bridge(void *frame_data, uint16_t frame_length
                     return result;
                 } else {
                     /* ping response */
-                    ESP_LOGV(TAG, "Wakeup host: ICMP reply pkt");
+					ESP_HEXLOGV("icmp_er", frame_data, frame_length, 64);
                     result = BOTH_LWIP_BRIDGE;
                     return result;
                 }
@@ -274,6 +274,7 @@ hosted_l2_bridge find_destination_bridge(void *frame_data, uint16_t frame_length
                 result = SLAVE_LWIP_BRIDGE;
                 return result;
             } else {
+				ESP_HEXLOGV("arp_reply", frame_data, frame_length, 64);
                 result = BOTH_LWIP_BRIDGE;
                 return result;
             }
