@@ -174,7 +174,7 @@ typedef enum _CtrlMsgId {
    * Add new control path command response before Req_Max
    * and update Req_Max 
    */
-  CTRL_MSG_ID__Req_Max = 127,
+  CTRL_MSG_ID__Req_Max = 126,
   /*
    ** Response Msgs *
    */
@@ -208,7 +208,7 @@ typedef enum _CtrlMsgId {
    * Add new control path command response before Resp_Max
    * and update Resp_Max 
    */
-  CTRL_MSG_ID__Resp_Max = 227,
+  CTRL_MSG_ID__Resp_Max = 226,
   /*
    ** Event Msgs *
    */

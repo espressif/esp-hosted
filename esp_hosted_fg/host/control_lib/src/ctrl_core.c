@@ -1680,7 +1680,7 @@ int deinit_hosted_control_lib_internal(void)
 
 	if (serial_deinit()) {
 		ret = FAILURE;
-		printf("Serial de-init failed\n");
+		//printf("Serial de-init failed\n");
 	}
 
 	if (ctrl_rx_thread_handle && cancel_ctrl_rx_thread()) {
@@ -1712,7 +1712,7 @@ int init_hosted_control_lib_internal(void)
 
 	/* serial init */
 	if (serial_init()) {
-		printf("Failed to serial_init\n");
+		//printf("Failed to serial_init\n");
 		goto free_bufs;
 	}
 

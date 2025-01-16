@@ -138,7 +138,6 @@ esp_err_t esp_hosted_set_sta_config(wifi_interface_t iface, wifi_config_t *cfg)
 	return ESP_OK;
 }
 
-
 /* event handler for station connect/disconnect to/from AP */
 static void station_event_handler(void *arg, esp_event_base_t event_base,
 		int32_t event_id, void *event_data)
@@ -203,6 +202,9 @@ static void station_event_handler(void *arg, esp_event_base_t event_base,
 
 		// Store successful connection event details
 		memcpy(&lkg_sta_connected_event, event_data, sizeof(wifi_event_sta_connected_t));
+
+		esp_wifi_internal_reg_rxcb(WIFI_IF_STA, (wifi_rxcb_t) wlan_sta_rx_callback);
+		station_connected = true;
 
 #ifdef CONFIG_SLAVE_MANAGES_WIFI
 	} else if (event_id == WIFI_EVENT_STA_START) {
@@ -750,11 +752,12 @@ static esp_err_t req_connect_ap_handler (CtrlMsg *req,
             resp_payload->resp = SUCCESS;
             mem_free(wifi_cfg);
 
+#if 0
 			/* TODO: To handle manual or auto disconnection */
 			send_wifi_event_data_to_host(CTRL_MSG_ID__Event_StationConnectedToAP,
                   &lkg_sta_connected_event, sizeof(wifi_event_sta_connected_t));
 			ESP_LOGI(TAG, "Already connected");
-			/* as already connected, send the dhcp dns status event */
+#endif
             return ESP_OK;
         }
     }
@@ -2226,11 +2229,6 @@ static esp_err_t req_set_country_code_handler (CtrlMsg *req,
 
 	esp_err_t ret = ESP_OK;
 
-	if (!req || !resp) {
-		ESP_LOGE(TAG, "Invalid parameters");
-		return ESP_FAIL;
-	}
-
 	resp_payload = (CtrlMsgRespSetCountryCode *)
 		calloc(1,sizeof(CtrlMsgRespSetCountryCode));
 	if (!resp_payload) {
@@ -2312,7 +2310,24 @@ static esp_err_t req_get_country_code_handler (CtrlMsg *req,
 		resp_payload->resp = ret;
 	}
 
+	if (!req || !resp) {
+		ESP_LOGE(TAG, "Invalid parameters");
+		return ESP_FAIL;
+	}
+
 	return ESP_OK;
+}
+
+
+#define COPY_AS_RESP_IP(dest, src, max_len)                                     \
+{                                                                               \
+    dest.data = (uint8_t*)strndup((char*)src, max_len);                         \
+    if (!dest.data) {                                                           \
+      ESP_LOGE(TAG, "%s:%u Failed to duplicate bytes\n",__func__,__LINE__);     \
+      resp_payload->resp = FAILURE;                                             \
+      return ESP_OK;                                                            \
+    }                                                                           \
+    dest.len = min(max_len,strlen((char*)src)+1);                               \
 }
 
 static void heartbeat_timer_cb(TimerHandle_t xTimer)

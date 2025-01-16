@@ -34,10 +34,10 @@
  * another request is pending, time period for
  * which new request will wait in seconds
  * */
-#define WAIT_TIME_B2B_CTRL_REQ               5
-#define DEFAULT_CTRL_RESP_TIMEOUT            30
+#define WAIT_TIME_B2B_CTRL_REQ               3
+#define DEFAULT_CTRL_RESP_TIMEOUT            5
 #define DEFAULT_CTRL_RESP_AP_SCAN_TIMEOUT    (60*3)
-#define DEFAULT_CTRL_RESP_CONNECT_AP_TIMEOUT (15*3)
+#define DEFAULT_CTRL_RESP_CONNECT_AP_TIMEOUT (10)
 
 #ifndef MAC2STR
 #define MAC2STR(a) (a)[0], (a)[1], (a)[2], (a)[3], (a)[4], (a)[5]
@@ -163,7 +163,7 @@ typedef enum {
 	CTRL_RESP_SET_COUNTRY_CODE          = CTRL_MSG_ID__Resp_SetCountryCode,     //0x7c -> 0xe0
 	CTRL_RESP_GET_COUNTRY_CODE          = CTRL_MSG_ID__Resp_GetCountryCode,     //0x7d -> 0xe1
 	/*
-	 * Add new control path comm       and response before Resp_Max
+	 * Add new control path command and response before Resp_Max
 	 * and update Resp_Max
 	 */
 	CTRL_RESP_MAX = CTRL_MSG_ID__Resp_Max,

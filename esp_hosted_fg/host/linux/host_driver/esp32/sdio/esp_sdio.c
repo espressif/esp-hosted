@@ -36,9 +36,55 @@
 #include "esp_stats.h"
 #include "esp_fw_verify.h"
 
+#ifdef ESP_PKT_NUM_DEBUG
+struct dbg_stats_t dbg_stats;
+#endif
 #define MAX_WRITE_RETRIES       2
 #define TX_MAX_PENDING_COUNT    200
 #define TX_RESUME_THRESHOLD     (TX_MAX_PENDING_COUNT/5)
+
+/* combined register read for interrupt status and packet length */
+#define DO_COMBINED_REG_READ (1)
+
+/* Add streaming mode config */
+#define H_SDIO_RX_MODE_STREAMING 1
+#define H_SDIO_RX_MODE_ALWAYS_MAX_TRANSPORT_SIZE 2
+#define H_SDIO_RX_MODE_NONE 3
+
+/* Use streaming mode for SDIO host rx */
+#define H_SDIO_HOST_RX_MODE H_SDIO_RX_MODE_NONE
+
+/* Do Block Mode only transfers
+ *
+ * When enabled, SDIO only uses block mode transfers for higher
+ * throughput. Data lengths are padded to multiples of ESP_BLOCK_SIZE.
+ *
+ * This is safe for the SDIO slave:
+ * - for Host Tx: slave will ignore extra data sent by Host
+ * - for Host Rx: slave will send extra 0 data, ignored by Host
+ */
+#define H_SDIO_TX_BLOCK_ONLY_XFER (1)
+//#define H_SDIO_RX_BLOCK_ONLY_XFER (1)
+
+#if DO_COMBINED_REG_READ
+/* Read data from ESP_SLAVE_INT_RAW_REG to ESP_SLAVE_PACKET_LEN_REG
+ * plus 4 for the len of the register */
+#define REG_BUF_LEN (ESP_SLAVE_PACKET_LEN_REG - ESP_SLAVE_INT_RAW_REG + 4)
+
+/* Byte index into the buffer to locate the register */
+#define INT_RAW_INDEX (0)
+#define PACKET_LEN_INDEX (ESP_SLAVE_PACKET_LEN_REG - ESP_SLAVE_INT_RAW_REG)
+
+static uint8_t *reg_buf = NULL;
+#endif
+
+#if H_SDIO_HOST_RX_MODE == H_SDIO_RX_MODE_STREAMING
+/* Stream buffer management */
+static u8 *stream_buffer;
+static size_t stream_buffer_size;
+static size_t stream_data_len;
+static size_t stream_offset;
+#endif
 
 #define CHECK_SDIO_RW_ERROR(ret) do {			\
 	if (ret)						\
@@ -66,7 +112,7 @@ struct task_struct *tx_thread;
 static int init_context(struct esp_sdio_context *context);
 static struct sk_buff * read_packet(struct esp_adapter *adapter);
 static int write_packet(struct esp_adapter *adapter, struct sk_buff *skb);
-/*int deinit_context(struct esp_adapter *adapter);*/
+void deinit_context(struct esp_sdio_context *context);
 
 static const struct sdio_device_id esp_devices[] = {
 	{ SDIO_DEVICE(ESP_VENDOR_ID_1, ESP_DEVICE_ID_ESP32_1) },
@@ -107,7 +153,6 @@ static void esp_process_interrupt(struct esp_sdio_context *context, u32 int_stat
 		esp_process_new_packet_intr(context->adapter);
 	}
 }
-
 static void esp_handle_isr(struct sdio_func *func)
 {
 	struct esp_sdio_context *context = NULL;
@@ -126,6 +171,14 @@ static void esp_handle_isr(struct sdio_func *func)
 		return;
 	}
 
+#if DO_COMBINED_REG_READ
+	/* Read all registers in one operation */
+	ret = esp_read_reg(context, ESP_SLAVE_INT_RAW_REG,
+			reg_buf, REG_BUF_LEN, ACQUIRE_LOCK);
+	CHECK_SDIO_RW_ERROR(ret);
+
+	int_status = (u32 *)&reg_buf[INT_RAW_INDEX];
+#else
 	int_status = kmalloc(sizeof(u32), GFP_ATOMIC);
 
 	if (!int_status) {
@@ -134,17 +187,20 @@ static void esp_handle_isr(struct sdio_func *func)
 
 	/* Read interrupt status register */
 	ret = esp_read_reg(context, ESP_SLAVE_INT_ST_REG,
-			(u8 *) int_status, sizeof(* int_status), ACQUIRE_LOCK);
+			(u8 *) int_status, sizeof(*int_status), ACQUIRE_LOCK);
 	CHECK_SDIO_RW_ERROR(ret);
+#endif
 
 	esp_process_interrupt(context, *int_status);
 
 	/* Clear interrupt status */
 	ret = esp_write_reg(context, ESP_SLAVE_INT_CLR_REG,
-			(u8 *) int_status, sizeof(* int_status), ACQUIRE_LOCK);
+			(u8 *) int_status, sizeof(*int_status), ACQUIRE_LOCK);
 	CHECK_SDIO_RW_ERROR(ret);
 
+#if !DO_COMBINED_REG_READ
 	kfree(int_status);
+#endif
 }
 
 int generate_slave_intr(struct esp_sdio_context *context, u8 data)
@@ -211,12 +267,13 @@ static int esp_slave_get_tx_buffer_num(struct esp_sdio_context *context, u32 *tx
 
 static int esp_get_len_from_slave(struct esp_sdio_context *context, u32 *rx_size, u8 is_lock_needed)
 {
+#if DO_COMBINED_REG_READ
+	u32 *len = (u32 *)&reg_buf[PACKET_LEN_INDEX];
+#else
 	u32 *len;
-	u32 temp;
 	int ret = 0;
 
 	len = kmalloc(sizeof(u32), GFP_KERNEL);
-
 	if (!len) {
 		return -ENOMEM;
 	}
@@ -225,9 +282,10 @@ static int esp_get_len_from_slave(struct esp_sdio_context *context, u32 *rx_size
 			(u8 *) len, sizeof(*len), is_lock_needed);
 
 	if (ret) {
-		kfree (len);
+		kfree(len);
 		return ret;
 	}
+#endif
 
 	*len &= ESP_SLAVE_LEN_MASK;
 
@@ -235,7 +293,7 @@ static int esp_get_len_from_slave(struct esp_sdio_context *context, u32 *rx_size
 		*len = (*len + ESP_RX_BYTE_MAX - context->rx_byte_count) % ESP_RX_BYTE_MAX;
 	else {
 		/* Handle a case of roll over */
-		temp = ESP_RX_BYTE_MAX - context->rx_byte_count;
+		u32 temp = ESP_RX_BYTE_MAX - context->rx_byte_count;
 		*len = temp + *len;
 
 		if (*len > ESP_RX_BUFFER_SIZE) {
@@ -245,7 +303,9 @@ static int esp_get_len_from_slave(struct esp_sdio_context *context, u32 *rx_size
 	}
 	*rx_size = *len;
 
-	kfree (len);
+#if !DO_COMBINED_REG_READ
+	kfree(len);
+#endif
 	return 0;
 }
 
@@ -275,7 +335,6 @@ static void esp_remove(struct sdio_func *func)
 {
 	struct esp_sdio_context *context;
 	uint8_t prio_q_idx = 0;
-	context = sdio_get_drvdata(func);
 
 	if (func->num != 1) {
 		return;
@@ -283,43 +342,65 @@ static void esp_remove(struct sdio_func *func)
 
 	esp_info("-> Remove card\n");
 
+	context = sdio_get_drvdata(func);
+	if (!context) {
+		return;
+	}
 
+	/* Stop TX thread first */
+	if (tx_thread) {
+		kthread_stop(tx_thread);
+		tx_thread = NULL;
+	}
 
-	for (prio_q_idx=0; prio_q_idx<MAX_PRIORITY_QUEUES; prio_q_idx++) {
+	/* Purge all TX queues */
+	for (prio_q_idx = 0; prio_q_idx < MAX_PRIORITY_QUEUES; prio_q_idx++) {
 		skb_queue_purge(&(sdio_context.tx_q[prio_q_idx]));
 	}
 
-
-	if (tx_thread)
-		kthread_stop(tx_thread);
-
-	if (context) {
+	/* Signal close to device before cleaning up */
+	if (context->adapter && context->adapter->state >= ESP_CONTEXT_RX_READY) {
 		generate_slave_intr(context, BIT(ESP_CLOSE_DATA_PATH));
 		msleep(100);
-
-		flush_sdio(context);
-
-		if (context->adapter) {
-			esp_remove_card(context->adapter);
-
-			if (context->adapter->hcidev) {
-				esp_deinit_bt(context->adapter);
-			}
-
-		}
-
-		memset(context, 0, sizeof(struct esp_sdio_context));
 	}
 
+	/* Clean up SDIO function first to prevent new interrupts */
 	if (context->func) {
-		deinit_sdio_func(func);
+		sdio_claim_host(func);
+		sdio_release_irq(func);
+		sdio_disable_func(func);
+		sdio_release_host(func);
 		context->func = NULL;
+	}
+
+	/* Flush any pending packets */
+	flush_sdio(context);
+
+	/* Clean up adapter */
+	if (context->adapter) {
+		if (context->adapter->hcidev) {
+			esp_deinit_bt(context->adapter);
+		}
+		esp_remove_card(context->adapter);
 		context->adapter->dev = NULL;
 	}
+
+	/* Free combined register buffer if allocated */
+	#if DO_COMBINED_REG_READ
+	if (reg_buf) {
+		kfree(reg_buf);
+		reg_buf = NULL;
+	}
+	#endif
+
+	/* Clear driver data */
+	sdio_set_drvdata(func, NULL);
 
 	esp_info("Context deinit %d - %d\n", context->rx_byte_count,
 			context->tx_buffer_count);
 
+	/* Clear context */
+	memset(context, 0, sizeof(struct esp_sdio_context));
 }
 
 static struct esp_if_ops if_ops = {
@@ -388,15 +469,80 @@ static int init_context(struct esp_sdio_context *context)
 	context->adapter->if_type = ESP_IF_TYPE_SDIO;
 
 	kfree(val);
+
+#if DO_COMBINED_REG_READ
+	reg_buf = kmalloc(REG_BUF_LEN, GFP_KERNEL);
+	if (!reg_buf) {
+		esp_err("Failed to allocate register buffer\n");
+		return -ENOMEM;
+	}
+#endif
+
 	return ret;
 }
 
+/* Free buffer in deinit_context */
+void deinit_context(struct esp_sdio_context *context)
+{
+#if DO_COMBINED_REG_READ
+	if (reg_buf) {
+		kfree(reg_buf);
+		reg_buf = NULL;
+	}
+#endif
+}
+
+#if H_SDIO_HOST_RX_MODE == H_SDIO_RX_MODE_STREAMING
+/* Helper function to get next packet from stream */
+static struct sk_buff * get_next_packet_from_stream(struct esp_adapter *adapter)
+{
+	struct sk_buff *skb = NULL;
+	struct esp_payload_header *payload_header;
+
+	if (!adapter)
+		return NULL;
+
+	if (stream_offset >= stream_data_len)
+		return NULL;
+
+	payload_header = (struct esp_payload_header *)(stream_buffer + stream_offset);
+	size_t packet_len = le16_to_cpu(payload_header->len) + le16_to_cpu(payload_header->offset);
+
+	/* Validate packet */
+	if (stream_offset + packet_len > stream_data_len) {
+		esp_err("Invalid packet len %zu in stream at offset %zu\n",
+				packet_len, stream_offset);
+		stream_offset = stream_data_len; // Skip corrupted data
+		return NULL;
+	}
+
+	/* Allocate SKB for this packet */
+	skb = esp_alloc_skb(packet_len);
+	if (!skb) {
+		esp_err("SKB alloc failed\n");
+		return NULL;
+	}
+
+	/* Copy packet from stream buffer */
+	skb_put(skb, packet_len);
+	memcpy(skb->data, stream_buffer + stream_offset, packet_len);
+	stream_offset += packet_len;
+
+	/* If more packets in stream, trigger another interrupt processing */
+	if (stream_offset < stream_data_len) {
+		esp_process_new_packet_intr(adapter);
+	}
+
+	return skb;
+}
+#endif
+
+/* Simplified read_packet using direct allocation */
 static struct sk_buff * read_packet(struct esp_adapter *adapter)
 {
-	u32 len_from_slave, data_left, len_to_read, size, num_blocks;
+	u32 len_from_slave = 0, len_to_read = 0;
 	int ret = 0;
-	struct sk_buff *skb;
-	u8 *pos;
+	struct sk_buff *skb = NULL;
 	struct esp_sdio_context *context;
 	int is_lock_needed = IS_SDIO_HOST_LOCK_NEEDED;
 
@@ -406,34 +552,78 @@ static struct sk_buff * read_packet(struct esp_adapter *adapter)
 	}
 
 	context = adapter->if_context;
+
 	if (!context || !context->func) {
 		esp_err("INVALID args\n");
 		return NULL;
 	}
 
+#if H_SDIO_HOST_RX_MODE == H_SDIO_RX_MODE_STREAMING
+	/* First check for pending packets in stream */
+	skb = get_next_packet_from_stream(adapter);
+	if (skb)
+		return skb;
+
+	/* No pending packets, read new stream */
+#endif
+
 	CLAIM_SDIO_HOST(context);
 
-	data_left = len_to_read = len_from_slave = num_blocks = 0;
-
-	/* Read length */
 	ret = esp_get_len_from_slave(context, &len_from_slave, is_lock_needed);
-
 	if (ret || !len_from_slave) {
 		if (ret)
 			esp_err("esp_get_len_from_slave ret[%d]\n", ret);
-
 		RELEASE_SDIO_HOST(context);
 		return NULL;
 	}
 
-	size = ESP_BLOCK_SIZE * 4;
+#if H_SDIO_HOST_RX_MODE == H_SDIO_RX_MODE_STREAMING
+	
+	/* Align read length to block size */
+	len_to_read = ((len_from_slave + ESP_BLOCK_SIZE - 1) / ESP_BLOCK_SIZE) * ESP_BLOCK_SIZE;
 
-	if (len_from_slave > size) {
+	/* Reallocate stream buffer if needed */
+	if (len_to_read > stream_buffer_size) {
+		if (stream_buffer)
+			kfree(stream_buffer);
+		stream_buffer = kmalloc(len_to_read, GFP_KERNEL);
+		if (!stream_buffer) {
+			esp_err("Failed to allocate stream buffer\n");
+			RELEASE_SDIO_HOST(context);
+			return NULL;
+		}
+		stream_buffer_size = len_to_read;
+	}
+
+	/* Read full stream */
+	ret = esp_read_block(context, ESP_SLAVE_CMD53_END_ADDR - len_from_slave,
+			stream_buffer, len_to_read, is_lock_needed);
+
+	if (ret) {
+		esp_err("Failed to read data - %d\n", ret);
+		context->adapter->state = ESP_CONTEXT_DISABLED;
+		RELEASE_SDIO_HOST(context);
+		return NULL;
+	}
+
+	context->rx_byte_count += len_from_slave;
+	context->rx_byte_count = context->rx_byte_count % ESP_RX_BYTE_MAX;
+
+	RELEASE_SDIO_HOST(context);
+
+	/* Set up stream processing */
+	stream_data_len = len_from_slave;
+	stream_offset = 0;
+
+	/* Get first packet from new stream */
+	return get_next_packet_from_stream(adapter);
+#else
+	/* Original packet mode code */
+	if (len_from_slave > ESP_BLOCK_SIZE * 4) {
 		esp_err("Rx large packet: %d\n", len_from_slave);
 	}
 
 	skb = esp_alloc_skb(len_from_slave);
-
 	if (!skb) {
 		esp_err("SKB alloc failed\n");
 		RELEASE_SDIO_HOST(context);
@@ -441,52 +631,32 @@ static struct sk_buff * read_packet(struct esp_adapter *adapter)
 	}
 
 	skb_put(skb, len_from_slave);
-	pos = skb->data;
 
-	data_left = len_from_slave;
+	len_to_read = ((len_from_slave + ESP_BLOCK_SIZE - 1) / ESP_BLOCK_SIZE) * ESP_BLOCK_SIZE;
 
-	do {
-		num_blocks = data_left/ESP_BLOCK_SIZE;
+	esp_verbose("len_from_slave:%u len_to_read: %u\n",
+			len_from_slave, len_to_read);
 
-#if 0
-		if (!context->rx_byte_count) {
-			start_time = ktime_get_ns();
-		}
-#endif
+	/* block alignment for packet mode */
+	ret = esp_read_block(context, ESP_SLAVE_CMD53_END_ADDR - len_to_read,
+			skb->data, len_to_read, is_lock_needed);
 
-		if (num_blocks) {
-			len_to_read = num_blocks * ESP_BLOCK_SIZE;
-			ret = esp_read_block(context,
-					ESP_SLAVE_CMD53_END_ADDR - len_to_read,
-					pos, len_to_read, is_lock_needed);
-		} else {
-			len_to_read = data_left;
-			/* 4 byte aligned length */
-			ret = esp_read_block(context,
-					ESP_SLAVE_CMD53_END_ADDR - len_to_read,
-					pos, (len_to_read + 3) & (~3), is_lock_needed);
-		}
+	if (ret) {
+		esp_err("Failed to read data: Err[%d] bytes_to_read[%u]u\n", ret, len_to_read);
+		context->adapter->state = ESP_CONTEXT_DISABLED;
+		dev_kfree_skb(skb);
+		RELEASE_SDIO_HOST(context);
+		return NULL;
+	}
 
-		if (ret) {
-			esp_err("Failed to read data - %d [%u - %d]\n", ret, num_blocks, len_to_read);
-			context->adapter->state = ESP_CONTEXT_DISABLED;
-			dev_kfree_skb(skb);
-			RELEASE_SDIO_HOST(context);
-			return NULL;
-		}
+	esp_hex_dump_dbg("sdio_rx: ", skb->data , min(skb->len, 32));
 
-		esp_hex_dump_dbg("sdio_rx: ", skb->data , min(skb->len, 32));
-
-		data_left -= len_to_read;
-		pos += len_to_read;
-		context->rx_byte_count += len_to_read;
-		context->rx_byte_count = context->rx_byte_count % ESP_RX_BYTE_MAX;
-
-	} while (data_left > 0);
+	context->rx_byte_count += len_from_slave;
+	context->rx_byte_count = context->rx_byte_count % ESP_RX_BYTE_MAX;
 
 	RELEASE_SDIO_HOST(context);
-
 	return skb;
+#endif
 }
 
 static int write_packet(struct esp_adapter *adapter, struct sk_buff *skb)
@@ -582,6 +752,7 @@ static int tx_process(void *data)
 	u32 data_left, len_to_send, pad;
 	struct sk_buff *tx_skb = NULL;
 	struct esp_sdio_context *context = &sdio_context;
+	struct esp_payload_header *h;
 
 	while (!kthread_should_stop()) {
 
@@ -635,6 +806,13 @@ static int tx_process(void *data)
 			continue;
 		}
 
+		h = (struct esp_payload_header *) tx_skb->data;
+		UPDATE_HEADER_TX_PKT_NO(h);
+
+		/* update checksum */
+		if (context->adapter->capabilities & ESP_CHECKSUM_ENABLED)
+			h->checksum = cpu_to_le16(compute_checksum(tx_skb->data, le16_to_cpu(h->len) + le16_to_cpu(h->offset)));
+
 		pos = tx_skb->data;
 		data_left = len_to_send = 0;
 
@@ -647,8 +825,17 @@ static int tx_process(void *data)
 		do {
 			block_cnt = data_left / ESP_BLOCK_SIZE;
 			len_to_send = data_left;
+
+#if H_SDIO_TX_BLOCK_ONLY_XFER
+			/* Extend transfer to block size */
+			ret = esp_write_block(context, ESP_SLAVE_CMD53_END_ADDR - len_to_send,
+					pos,
+					(((len_to_send + ESP_BLOCK_SIZE - 1) / ESP_BLOCK_SIZE) * ESP_BLOCK_SIZE),
+					ACQUIRE_LOCK);
+#else
 			ret = esp_write_block(context, ESP_SLAVE_CMD53_END_ADDR - len_to_send,
 					pos, (len_to_send + 3) & (~3), ACQUIRE_LOCK);
+#endif
 
 			if (ret) {
 				esp_err("Failed to send data: %d %d %d\n", ret, len_to_send, data_left);

@@ -69,6 +69,17 @@ typedef struct {
   if (src.len && src.data) \
     memcpy((char*)dest, src.data, min(min(sizeof(dest), num_bytes), src.len));
 
+#define RPC_RESP_COPY_STR(dest, src, max_len)                                  \
+  if (src) {                                                                    \
+    dest.data = (uint8_t*)strndup((char*)src, max_len);                         \
+    if (!dest.data) {                                                           \
+      ESP_LOGE(TAG, "%s:%u Failed to duplicate bytes\n",__func__,__LINE__);     \
+      resp_payload->resp = FAILURE;                                             \
+      return ESP_OK;                                                            \
+    }                                                                           \
+    dest.len = min(max_len,strlen((char*)src)+1);                               \
+  }
+
 
 esp_err_t data_transfer_handler(uint32_t session_id,const uint8_t *inbuf,
 		ssize_t inlen,uint8_t **outbuf, ssize_t *outlen, void *priv_data);

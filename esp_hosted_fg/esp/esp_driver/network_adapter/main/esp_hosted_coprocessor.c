@@ -191,7 +191,7 @@ esp_err_t wlan_sta_rx_callback(void *buffer, uint16_t len, void *eb)
 		return ESP_OK;
 	}
 
-	ESP_HEXLOGV("STA_Get", buffer, len, 32);
+	ESP_HEXLOGV("STA_Get", buffer, len, 64);
 
 	populate_wifi_buffer_handle(&buf_handle, ESP_STA_IF, buffer, len);
 
@@ -362,7 +362,7 @@ static void process_rx_pkt(interface_buffer_handle_t *buf_handle)
     payload = buf_handle->payload + le16toh(header->offset);
     payload_len = le16toh(header->len);
 
-    ESP_HEXLOGV("bus_RX", buf_handle->payload, buf_handle->payload_len, 32);
+    ESP_HEXLOGD("bus_RX", payload, payload_len, 64);
 
 
     if (buf_handle->if_type == ESP_STA_IF && station_connected) {

@@ -510,13 +510,13 @@ struct serial_drv_handle_t* serial_drv_open(const char *transport)
 	serial_drv_handle->file_desc = open(transport, O_RDWR);
 	if (serial_drv_handle->file_desc == -1) {
 		int errsv = errno;
-		printf("%s failed: ", __func__);
+		//printf("%s failed: ", __func__);
 		switch (errsv) {
 			case EBUSY: {
 				printf("it is busy\n");
 				break;
 			} case ENOENT: {
-				printf("driver not loaded\n");
+				//printf("driver not loaded\n");
 				break;
 			} default: {
 				printf("errno %d\n", errsv);

@@ -326,8 +326,10 @@ static int process_tx_packet (struct sk_buff *skb)
 	payload_header->len = cpu_to_le16(len);
 	payload_header->offset = cpu_to_le16(pad_len);
 
+#if 0
 	if (adapter.capabilities & ESP_CHECKSUM_ENABLED)
 		payload_header->checksum = cpu_to_le16(compute_checksum(skb->data, (len + pad_len)));
+#endif
 
 	if (!stop_data) {
 		ret = esp_send_packet(priv->adapter, skb);
@@ -429,6 +431,7 @@ static void process_rx_packet(struct sk_buff *skb)
 	/* get the paload header */
 	payload_header = (struct esp_payload_header *) skb->data;
 
+	UPDATE_HEADER_RX_PKT_NO(payload_header);
 	len = le16_to_cpu(payload_header->len);
 	offset = le16_to_cpu(payload_header->offset);
 
@@ -883,6 +886,7 @@ static int __init esp_init(void)
 
 static void __exit esp_exit(void)
 {
+	esp_info("esp module unload\n");
 #if TEST_RAW_TP
 	test_raw_tp_cleanup();
 #endif

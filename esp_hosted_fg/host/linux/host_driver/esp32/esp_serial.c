@@ -29,6 +29,11 @@
 #include <linux/delay.h>
 #include <linux/slab.h>
 
+#if 0
+#include <linux/fs.h>
+#include <linux/sched/signal.h>
+#endif
+
 #include "esp.h"
 #include "esp_rb.h"
 #include "esp_api.h"
@@ -313,7 +318,7 @@ void esp_serial_cleanup(void)
 	unregister_chrdev_region(dev_first, ESP_SERIAL_MINOR_MAX);
 
 	serial_init_done = 0;
-	esp_info("\n");
+	esp_info("done\n");
 	return;
 }
 
