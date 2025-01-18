@@ -229,6 +229,7 @@ int esp_deinit_bt(struct esp_adapter *adapter)
 	if (!adapter || !adapter->hcidev)
 		return 0;
 
+	esp_info("\n");
 	hdev = adapter->hcidev;
 
 	hci_set_drvdata(hdev, NULL);
@@ -244,6 +245,8 @@ int esp_init_bt(struct esp_adapter *adapter)
 {
 	int ret = 0;
 	struct hci_dev *hdev = NULL;
+
+	esp_info("\n");
 
 	if (!adapter) {
 		esp_err("null adapter\n");

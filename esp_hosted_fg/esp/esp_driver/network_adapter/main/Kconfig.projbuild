@@ -557,6 +557,7 @@ menu "Example Configuration"
 
 		config HOST_WAKEUP_GPIO
 			int "Host wakeup GPIO"
+			default 23 if IDF_TARGET_ESP32 && !SPI_VSPI
 			default 2 if IDF_TARGET_ESP32C6
 			default 1 if IDF_TARGET_ESP32C3
 			default 25 if IDF_TARGET_ESP32C5

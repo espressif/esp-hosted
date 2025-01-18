@@ -78,7 +78,6 @@ struct esp_adapter adapter;
 volatile u8 stop_data = 0;
 
 
-
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(3, 14, 0))
 /**
  * ether_addr_copy - Copy an Ethernet address
@@ -150,14 +149,23 @@ static struct net_device_stats* esp_get_stats(struct net_device *ndev)
 
 static int esp_set_mac_address(struct net_device *ndev, void *data)
 {
-	struct esp_private *priv = netdev_priv(ndev);
-	struct sockaddr *mac_addr = data;
+	struct esp_private *priv;
+	struct sockaddr *mac_addr;
 
-	if (!priv)
+	if (!ndev || !data)
+		return -EINVAL;
+
+	mac_addr = data;
+	if (!mac_addr->sa_data)
+		return -EINVAL;
+
+	priv = netdev_priv(ndev);
+	if (!priv || !priv->mac_address)
 		return -EINVAL;
 
 	ether_addr_copy(priv->mac_address, mac_addr->sa_data);
 	eth_hw_addr_set(ndev, mac_addr->sa_data);
+
 	return 0;
 }
 
@@ -171,8 +179,15 @@ static void esp_set_rx_mode(struct net_device *ndev)
 
 static int esp_hard_start_xmit(struct sk_buff *skb, struct net_device *ndev)
 {
-	struct esp_private *priv = netdev_priv(ndev);
+	struct esp_private *priv = NULL;
 	struct esp_skb_cb *cb = NULL;
+
+	if (!ndev) {
+		dev_kfree_skb(skb);
+		return -EINVAL;
+	}
+
+	priv = netdev_priv(ndev);
 
 	if (!priv) {
 		dev_kfree_skb(skb);
@@ -200,12 +215,14 @@ u8 esp_is_bt_supported_over_sdio(u32 cap)
 __weak int esp_init_bt(struct esp_adapter *adapter)
 {
 	/* weak def if 'bt over hci' is not needed */
+	esp_warn("Ignoring bluetooth api %s\n", __func__);
 	return 0;
 }
 
 __weak int esp_deinit_bt(struct esp_adapter *adapter)
 {
 	/* weak def if 'bt over hci' is not needed */
+	esp_warn("Ignoring bluetooth api %s\n", __func__);
 	return 0;
 }
 
@@ -256,17 +273,25 @@ static int process_tx_packet (struct sk_buff *skb)
 	u16 total_len = 0;
 	u8 *pos = NULL;
 
+	if (unlikely(!skb))
+		return NETDEV_TX_OK;
+
 	/* Get the priv */
 	cb = (struct esp_skb_cb *) skb->cb;
-	priv = cb->priv;
 
-	if (!priv) {
+	if (unlikely(!cb || !cb->priv)) {
 		dev_kfree_skb(skb);
 		return NETDEV_TX_OK;
 	}
 
+	priv = cb->priv;
+
 	if (netif_queue_stopped((const struct net_device *) adapter.priv[0]->ndev) ||
 			netif_queue_stopped((const struct net_device *) adapter.priv[1]->ndev)) {
+		return NETDEV_TX_BUSY;
+	}
+
+	if (is_host_sleeping()) {
 		return NETDEV_TX_BUSY;
 	}
 
@@ -393,6 +418,9 @@ static void process_priv_communication(struct sk_buff *skb)
 	u8 *payload;
 	u16 len;
 
+	if (!skb || !skb->data)
+		return;
+
 	header = (struct esp_payload_header *) skb->data;
 	payload = skb->data + le16_to_cpu(header->offset);
 	len = le16_to_cpu(header->len);
@@ -434,6 +462,10 @@ static void process_rx_packet(struct sk_buff *skb)
 	UPDATE_HEADER_RX_PKT_NO(payload_header);
 	len = le16_to_cpu(payload_header->len);
 	offset = le16_to_cpu(payload_header->offset);
+
+	if ((payload_header->flags & FLAG_WAKEUP_PKT) && (len<1500)) {
+		esp_hex_dump_dbg("Wake up rx: ", skb->data, (len+offset)>64? 64: (len+offset));
+	}
 
 	esp_hex_dump_dbg("rx: ", skb->data , len+offset);
 
@@ -480,11 +512,11 @@ static void process_rx_packet(struct sk_buff *skb)
 		skb->protocol = eth_type_trans(skb, priv->ndev);
 		skb->ip_summed = CHECKSUM_NONE;
 
+		priv->stats.rx_bytes += skb->len;
 		/* Forward skb to kernel */
 		netif_rx_ni(skb);
-
-		priv->stats.rx_bytes += skb->len;
 		priv->stats.rx_packets++;
+
 	} else if (payload_header->if_type == ESP_HCI_IF) {
 		esp_hci_rx(adapter, skb);
 	} else if (payload_header->if_type == ESP_PRIV_IF) {
@@ -657,6 +689,13 @@ static int esp_init_net_dev(struct net_device *ndev, struct esp_private *priv)
 	return ret;
 }
 
+
+static int esp_inetaddr_event(struct notifier_block *nb,
+    unsigned long event, void *data)
+{
+	return 0;
+}
+
 static int esp_add_interface(struct esp_adapter *adapter, u8 if_type, u8 if_num, char *name)
 {
 	struct net_device *ndev = NULL;
@@ -691,6 +730,9 @@ static int esp_add_interface(struct esp_adapter *adapter, u8 if_type, u8 if_num,
 		goto error_exit;
 	}
 
+	priv->nb.notifier_call = esp_inetaddr_event;
+	register_inetaddr_notifier(&priv->nb);
+
 	return ret;
 
 error_exit:
@@ -702,6 +744,7 @@ static void esp_remove_network_interfaces(struct esp_adapter *adapter)
 {
 	if (adapter->priv[0] && adapter->priv[0]->ndev) {
 		netif_stop_queue(adapter->priv[0]->ndev);
+	unregister_inetaddr_notifier(&(adapter->priv[0]->nb));
 		unregister_netdev(adapter->priv[0]->ndev);
 		free_netdev(adapter->priv[0]->ndev);
 		adapter->priv[0] = NULL;
@@ -709,6 +752,7 @@ static void esp_remove_network_interfaces(struct esp_adapter *adapter)
 
 	if (adapter->priv[1] && adapter->priv[1]->ndev) {
 		netif_stop_queue(adapter->priv[1]->ndev);
+	unregister_inetaddr_notifier(&(adapter->priv[1]->nb));
 		unregister_netdev(adapter->priv[1]->ndev);
 		free_netdev(adapter->priv[1]->ndev);
 		adapter->priv[1] = NULL;
@@ -751,6 +795,9 @@ int esp_remove_card(struct esp_adapter *adapter)
 
 	esp_deinit_bt(adapter);
 
+	if (adapter->events_wq)
+		flush_workqueue(adapter->events_wq);
+
 	/* Flush workqueues */
 	if (adapter->if_rx_workqueue)
 		flush_workqueue(adapter->if_rx_workqueue);
@@ -771,15 +818,18 @@ static void esp_if_rx_work (struct work_struct *work)
 static void deinit_adapter(void)
 {
 	if (adapter.if_context)
-		adapter.state = ESP_CONTEXT_DISABLED;
+		atomic_set(&adapter.state, ESP_CONTEXT_DISABLED);
 
 	skb_queue_purge(&adapter.events_skb_q);
 
-	if (adapter.events_wq)
+	if (adapter.events_wq) {
 		destroy_workqueue(adapter.events_wq);
+	}
 
-	if (adapter.if_rx_workqueue)
+	if (adapter.if_rx_workqueue) {
 		destroy_workqueue(adapter.if_rx_workqueue);
+	}
+
 
 	esp_verbose("\n");
 }
@@ -829,7 +879,7 @@ static struct esp_adapter * init_adapter(void)
 	memset(&adapter, 0, sizeof(adapter));
 
 	/* Prepare interface RX work */
-	adapter.if_rx_workqueue = create_workqueue("ESP_IF_RX_WORK_QUEUE");
+	adapter.if_rx_workqueue = alloc_workqueue("ESP_IF_RX_WORK_QUEUE", WQ_FREEZABLE, 0);
 
 	if (!adapter.if_rx_workqueue) {
 		esp_err("failed to create rx workqueue\n");
@@ -846,7 +896,7 @@ static struct esp_adapter * init_adapter(void)
 
 	skb_queue_head_init(&adapter.events_skb_q);
 
-	adapter.events_wq = alloc_workqueue("ESP_EVENTS_WORKQUEUE", WQ_HIGHPRI, 0);
+	adapter.events_wq = alloc_workqueue("ESP_EVENTS_WORKQUEUE", WQ_HIGHPRI|WQ_FREEZABLE, 0);
 
 	if (!adapter.events_wq) {
 		esp_err("failed to create workqueue\n");

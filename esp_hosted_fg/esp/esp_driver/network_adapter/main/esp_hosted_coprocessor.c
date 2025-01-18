@@ -837,13 +837,74 @@ static int connect_sta(void)
 }
 #endif
 
+#if 0
+#if H_HOST_PS_ALLOWED
 
+/* Add at the top with other static variables */
+static TimerHandle_t delayed_dhcp_dns_timer = NULL;
+
+/* Add new timer callback function */
+static void delayed_dhcp_dns_timer_cb(TimerHandle_t xTimer)
+{
+    /* Send DHCP/DNS info with connection status */
+    send_dhcp_dns_info_to_host(1);
+    
+    /* Cleanup timer */
+    if (delayed_dhcp_dns_timer) {
+        xTimerDelete(delayed_dhcp_dns_timer, 0);
+        delayed_dhcp_dns_timer = NULL;
+    }
+}
+
+/* Function to schedule delayed DHCP/DNS info send */
+static void schedule_delayed_dhcp_dns_info(void)
+{
+    const TickType_t delay_ticks = pdMS_TO_TICKS(100); /* 100ms delay */
+    
+    /* Delete existing timer if any */
+    if (delayed_dhcp_dns_timer) {
+        xTimerDelete(delayed_dhcp_dns_timer, 0);
+        delayed_dhcp_dns_timer = NULL;
+    }
+
+    /* Create and start one-shot timer */
+    delayed_dhcp_dns_timer = xTimerCreate("DhcpDns", 
+            delay_ticks,
+            pdFALSE,  /* One-shot timer */
+            0,
+            delayed_dhcp_dns_timer_cb);
+
+    if (delayed_dhcp_dns_timer) {
+        if (xTimerStart(delayed_dhcp_dns_timer, 0) != pdPASS) {
+            ESP_LOGE(TAG, "Failed to start delayed DHCP/DNS timer");
+            xTimerDelete(delayed_dhcp_dns_timer, 0);
+            delayed_dhcp_dns_timer = NULL;
+        }
+    } else {
+        ESP_LOGE(TAG, "Failed to create delayed DHCP/DNS timer");
+    }
+}
+#endif
+/* Modify the host wakeup callback to use delayed send */
+void host_wakeup_callback(void)
+{
+    /* Handle immediate wakeup tasks */
+    host_available = 1;
+#if H_HOST_PS_ALLOWED
+    /* Schedule delayed DHCP/DNS info send */
+    if (station_connected) {
+        schedule_delayed_dhcp_dns_info();
+    }
+#endif
+}
+#else
 static void host_wakeup_callback(void)
 {
 #if H_HOST_PS_ALLOWED
 	send_dhcp_dns_info_to_host(1);
 #endif
 }
+#endif
 
 esp_err_t esp_hosted_coprocessor_init(void)
 {

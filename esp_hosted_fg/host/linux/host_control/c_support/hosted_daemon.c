@@ -485,7 +485,7 @@ static void sig_handler(int signum)
             reload_config();
             break;
         case SIGUSR1:
-			LOG_MSG(LOG_INFO, "SIGUSR1 received, cleaning up application");
+            LOG_MSG(LOG_INFO, "SIGUSR1 received, cleaning up application");
             cleanup_app();
             break;
         case SIGTERM:

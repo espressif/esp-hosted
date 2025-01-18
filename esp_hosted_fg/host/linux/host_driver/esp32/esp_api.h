@@ -36,5 +36,6 @@ void esp_tx_resume(void);
 int process_init_event(u8 *evt_buf, u8 len);
 void process_capabilities(u8 cap);
 void process_test_capabilities(u8 cap);
+int is_host_sleeping(void);
 
 #endif
