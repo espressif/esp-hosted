@@ -1,12 +1,20 @@
 CC = gcc
 
+# IMX8mm
+# SDKTARGETSYSROOT := /opt/fsl-imx-wayland/5.15-kirkstone/sysroots/armv8a-poky-linux
+# CROSS_COMPILE := "/opt/fsl-imx-wayland/5.15-kirkstone/sysroots/x86_64-pokysdk-linux/usr/bin/aarch64-poky-linux/aarch64-poky-linux-"
+# CFLAGS = -C -Wall --sysroot=$(SDKTARGETSYSROOT) -g
+# LINKER = --sysroot=$(SDKTARGETSYSROOT) -lpthread -lrt
+
+SDKTARGETSYSROOT :=
 CROSS_COMPILE :=
+CFLAGS = -C -Wall -g
+LINKER = -lpthread -lrt
 
-CFLAGS = -C -Wall --sysroot=$(SDKTARGETSYSROOT) -g
-
+#If your Linux is very constraint environment, comment below line.
 CFLAGS_SANITIZE = -fsanitize=undefined  -fsanitize-address-use-after-scope -fsanitize-undefined-trap-on-error  -fstack-protector-all -fstack-check -fsanitize=address -fsanitize=pointer-compare -fno-omit-frame-pointer -static-libasan
 
-LINKER = -lpthread -lrt
+
 
 DIR_COMMON = $(PWD)/../../../../common
 DIR_CTRL_LIB = $(PWD)/../../../control_lib

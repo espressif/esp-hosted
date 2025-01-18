@@ -732,7 +732,6 @@ static int connect_sta(void)
 }
 #endif
 
-
 static void host_wakeup_callback(void)
 {
 #if H_HOST_PS_ALLOWED
