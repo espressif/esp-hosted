@@ -139,7 +139,7 @@ static int is_local_udp_port_open(uint16_t port)
     return found;
 }
 
-hosted_l2_bridge find_destination_bridge(void *frame_data, uint16_t frame_length)
+hosted_l2_bridge filter_and_route_packet(void *frame_data, uint16_t frame_length)
 {
     hosted_l2_bridge result = DEFAULT_LWIP_TO_SEND;
 

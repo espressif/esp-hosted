@@ -220,8 +220,8 @@ esp_err_t wlan_sta_rx_callback(void *buffer, uint16_t len, void *eb)
 #endif
 
 #ifdef CONFIG_SLAVE_LWIP_ENABLED
-	/* Filtering based on destination port */
-	bridge_to_use = find_destination_bridge(buffer, len);
+	/* Filter and route the packet based on destination port */
+	bridge_to_use = filter_and_route_packet(buffer, len);
 #else
 	/* default as co-processor mode */
 	bridge_to_use = HOST_LWIP_BRIDGE;

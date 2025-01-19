@@ -11,4 +11,4 @@ typedef enum {
     INVALID_BRIDGE,
 } hosted_l2_bridge;
 
-hosted_l2_bridge find_destination_bridge(void *frame_data, uint16_t frame_length);
+hosted_l2_bridge filter_and_route_packet(void *frame_data, uint16_t frame_length);

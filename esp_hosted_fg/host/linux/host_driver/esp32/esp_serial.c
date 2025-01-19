@@ -151,7 +151,7 @@ static ssize_t esp_serial_write(struct file *file, const char __user *user_buffe
 
 static long esp_serial_ioctl (struct file *file, unsigned int cmd, unsigned long arg)
 {
-	esp_info("IOCTL unsupported %d\n", cmd);
+	esp_info("IOCTL unsupported %lu\n", cmd);
 	return 0;
 }
 
