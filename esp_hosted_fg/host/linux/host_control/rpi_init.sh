@@ -21,7 +21,7 @@ spi_bus="0"
 # Module param, spi_cs: spi cs instance to use
 spi_cs="0"
 # Module param, spi_mode: spi mode to use from (1/2/3)
-spi_mode="2"
+spi_mode="3"
 # Module param, spi_handshake: spi handshake GPIO to use
 spi_handshake="534"
 # Module param, spi_dataready: spi dataready GPIO to use
@@ -176,6 +176,11 @@ build_c_demo_app() {
     make -j8 stress
     if [ $? -ne 0 ]; then
         error "Failed to build C stress app"
+        exit 1
+    fi
+    make -j8 hosted_shell
+    if [ $? -ne 0 ]; then
+        log "Failed to build test app"
         exit 1
     fi
     cd ..

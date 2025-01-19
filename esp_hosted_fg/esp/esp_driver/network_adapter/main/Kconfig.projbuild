@@ -287,10 +287,10 @@ menu "Example Configuration"
 				Select the SDIO Slave Bus Speed. Actual speed in use depends on SDIO bus speed the SDIO Master can support
 
 			config ESP_SDIO_DEFAULT_SPEED
-				bool "Default Speed (20 MHz)"
+				bool "Default Speed (upto 20 MHz)"
 
 			config ESP_SDIO_HIGH_SPEED
-				bool "High Speed (40 MHz)"
+				bool "High Speed (upto 50 MHz)"
 		endchoice
 
 
@@ -389,11 +389,23 @@ menu "Example Configuration"
 		help
 			Default task size of ESP-Hosted tasks
 
-	config ESP_DEFAULT_TASK_PRIO
-		int "ESP-Hosted task priority"
-		default 22
+	config ESP_HOSTED_TASK_PRIORITY_LOW
+		int "ESP-Hosted task priority low"
+		default 5
+		help
+			Low priority of ESP-Hosted tasks
+
+	config ESP_HOSTED_TASK_PRIORITY_DEFAULT
+		int "ESP-Hosted task priority default"
+		default 21
 		help
 			Default task priority of ESP-Hosted tasks
+
+	config ESP_HOSTED_TASK_PRIORITY_HIGH
+		int "ESP-Hosted task priority high"
+		default 22
+		help
+			High priority of ESP-Hosted tasks
 
 	config ESP_CACHE_MALLOC
 		bool "Enable Mempool"

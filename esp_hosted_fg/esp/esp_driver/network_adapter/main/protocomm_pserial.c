@@ -284,7 +284,7 @@ static void pserial_task(void *params)
 		if ((arg.msg_id > CTRL_MSG_ID__Event_Base) &&
 		    (arg.msg_id < CTRL_MSG_ID__Event_Max)) {
 			/* Events */
-			ESP_HEXLOGV("pserial_evt_rx", arg.data, arg.len, 32);			
+			ESP_HEXLOGV("pserial_evt_rx", arg.data, arg.len, 32);
 			ret = protocomm_pserial_ctrl_evnt_handler(pc, arg.data, arg.len, arg.msg_id);
 		} else {
 			/* Request */
@@ -332,7 +332,7 @@ esp_err_t protocomm_pserial_start(protocomm_t *pc,
 	pc->priv = pserial_cfg;
 
 	xTaskCreate(pserial_task, "pserial_task", CONFIG_ESP_DEFAULT_TASK_STACK_SIZE,
-			(void *) pc, CONFIG_ESP_DEFAULT_TASK_PRIO, NULL);
+			(void *) pc, CONFIG_ESP_HOSTED_TASK_PRIORITY_DEFAULT, NULL);
 
 	return ESP_OK;
 }

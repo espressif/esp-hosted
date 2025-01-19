@@ -61,6 +61,13 @@ static ssize_t esp_serial_read(struct file *file, char __user *user_buffer, size
 	struct esp_serial_devs *dev = NULL;
 	int ret_size = 0;
 	dev = (struct esp_serial_devs *) file->private_data;
+
+	/* Check if slave connection is still active */
+	if (!dev || !dev->priv || !atomic_read(&((struct esp_adapter *)dev->priv)->state)) {
+		esp_warn("slave disconnected, read aborted\n");
+		return -ENODEV;
+	}
+
 	ret_size = esp_rb_read_by_user(&dev->rb, user_buffer, size, !(file->f_flags & O_NONBLOCK));
 	if (ret_size == 0) {
 		esp_verbose("%u err: EAGAIN\n", __LINE__);
@@ -74,7 +81,7 @@ static ssize_t esp_serial_write(struct file *file, const char __user *user_buffe
 	struct esp_payload_header *hdr = NULL;
 	u8 *tx_buf = NULL;
 	struct esp_serial_devs *dev = NULL;
-	struct sk_buff * tx_skb = NULL;
+	struct sk_buff *tx_skb = NULL;
 	int ret = 0;
 	size_t total_len = 0;
 	size_t frag_len = 0;
@@ -90,6 +97,13 @@ static ssize_t esp_serial_write(struct file *file, const char __user *user_buffe
 
 	seq_num++;
 	dev = (struct esp_serial_devs *) file->private_data;
+
+	/* Check if slave connection is still active */
+	if (!dev || !dev->priv || !atomic_read(&((struct esp_adapter *)dev->priv)->state)) {
+		esp_warn("slave disconnected, write aborted\n");
+		return -ENODEV;
+	}
+
 	pos = (u8 *) user_buffer;
 
 	do {
@@ -132,8 +146,6 @@ static ssize_t esp_serial_write(struct file *file, const char __user *user_buffe
 			esp_err("Error copying buffer to send serial data\n");
 			return (size - left_len);
 		}
-		hdr->checksum = cpu_to_le16(compute_checksum(tx_skb->data, (frag_len + sizeof(struct esp_payload_header))));
-
 		esp_hex_dump_dbg("esp_serial_tx: ", pos, frag_len);
 
 		ret = esp_send_packet(dev->priv, tx_skb);
@@ -151,7 +163,7 @@ static ssize_t esp_serial_write(struct file *file, const char __user *user_buffe
 
 static long esp_serial_ioctl (struct file *file, unsigned int cmd, unsigned long arg)
 {
-	esp_info("IOCTL unsupported %d\n", cmd);
+	esp_info("IOCTL unsupported %u\n", cmd);
 	return 0;
 }
 

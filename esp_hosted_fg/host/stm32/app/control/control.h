@@ -150,7 +150,7 @@ int test_get_available_wifi(void);
 int test_station_mode_get_mac_addr(char *mac);
 int test_station_mode_connect(char *ssid, char *pwd, char *bssid,
 	int is_wpa3_supported, int listen_interval);
-int test_softap_mode_get_mac_addr(char *mac);
+int test_softap_mode_get_mac_addr(char *mac_str);
 int test_softap_mode_start(char *ssid, char *pwd, int channel,
 	int encryption_mode, int max_conn, int ssid_hidden, int bw);
 int unregister_event_callbacks(void);

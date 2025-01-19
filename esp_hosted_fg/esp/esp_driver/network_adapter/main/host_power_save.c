@@ -29,6 +29,7 @@ static char *TAG = "host_ps";
 
   static void oobTimerCallback( TimerHandle_t xTimer );
   static void (*host_wakeup_cb)(void);
+  int64_t host_wakeup_time = 0;
 #endif
 
 
@@ -37,9 +38,9 @@ int is_host_wakeup_needed(interface_buffer_handle_t *buf_handle)
 	int wakup_needed = 0;
 	char reason[100] = "";
 #if H_HOST_PS_ALLOWED
-    uint8_t *buf_start;
+	uint8_t *buf_start;
 
-    buf_start = buf_handle->payload;
+	buf_start = buf_handle->payload;
 
 #if 0
 	/* Flow conttrol packet cannot miss */
@@ -49,39 +50,39 @@ int is_host_wakeup_needed(interface_buffer_handle_t *buf_handle)
 		goto end;
 	}
 #endif
-    if (!buf_start) {
-        /* Do not wake up */
+	if (!buf_start) {
+		/* Do not wake up */
 		strlcpy(reason, "NULL_TxBuff", sizeof(reason));
 		wakup_needed = 0;
 		goto end;
-    }
+	}
 
 	/* Wake up for serial msg */
 	switch (buf_handle->if_type) {
 
 		case ESP_SERIAL_IF:
-			  strlcpy(reason, "serial tx msg", sizeof(reason));
-			  wakup_needed = 1;
-			  goto end;
-			  break;
+			strlcpy(reason, "serial tx msg", sizeof(reason));
+			wakup_needed = 1;
+			goto end;
+			break;
 
 		case ESP_HCI_IF:
-			  strlcpy(reason, "bt tx msg", sizeof(reason));
-			  wakup_needed = 1;
-			  goto end;
-			  break;
+			strlcpy(reason, "bt tx msg", sizeof(reason));
+			wakup_needed = 1;
+			goto end;
+			break;
 
 		case ESP_PRIV_IF:
-			  strlcpy(reason, "priv tx msg", sizeof(reason));
-			  wakup_needed = 1;
-			  goto end;
-			  break;
+			strlcpy(reason, "priv tx msg", sizeof(reason));
+			wakup_needed = 1;
+			goto end;
+			break;
 
 		case ESP_TEST_IF:
-			  strlcpy(reason, "test tx msg", sizeof(reason));
-			  wakup_needed = 1;
-			  goto end;
-			  break;
+			strlcpy(reason, "test tx msg", sizeof(reason));
+			wakup_needed = 1;
+			goto end;
+			break;
 
 		case ESP_STA_IF:
 			  strlcpy(reason, "sta tx msg", sizeof(reason));
@@ -90,10 +91,10 @@ int is_host_wakeup_needed(interface_buffer_handle_t *buf_handle)
 			  break;
 
 		case ESP_AP_IF:
-			  strlcpy(reason, "ap tx msg", sizeof(reason));
-			  wakup_needed = 1;
-			  goto end;
-			  break;
+			strlcpy(reason, "ap tx msg", sizeof(reason));
+			wakup_needed = 1;
+			goto end;
+			break;
 	}
 
 end:
@@ -214,8 +215,11 @@ void host_power_save_alert(uint32_t ps_evt)
 
 	} else if (ESP_POWER_SAVE_OFF == ps_evt) {
 		ESP_EARLY_LOGI(TAG, "Host Awake");
-
 		power_save_on = 0;
+
+		/* Update wakeup timestamp */
+		host_wakeup_time = esp_timer_get_time() / 1000; /* Convert to ms */
+
 		if (host_wakeup_cb) {
 			host_wakeup_cb();
 		}

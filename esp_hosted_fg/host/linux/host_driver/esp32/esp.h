@@ -39,6 +39,8 @@
 
 #define ESP_MAX_INTERFACE       2
 
+#define TX_MAX_PENDING_COUNT    100
+
 #define ESP_PAYLOAD_HEADER      8
 struct esp_private;
 struct esp_adapter;

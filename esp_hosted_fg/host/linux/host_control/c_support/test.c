@@ -22,6 +22,8 @@
 #include "test.h"
 #include "serial_if.h"
 #include <signal.h>
+#include <linux/if.h>
+#include <linux/if_arp.h>
 
 #define DEMO_SLEEP_DURATION_SEC 50
 #define EXEC_IF_CMD_EQUALS(cmd,func) \
@@ -49,13 +51,14 @@ static void inline usage(char *argv[])
 static int parse_cli_cmd(char *in_cmd, char *args[])
 {
 	bool cmd_executed = false;
+	char *mac_address = NULL;
 
 	/* TODO: create commands and handler map later */
 	/* Get and set mac address */
-	EXEC_IF_CMD_EQUALS(SET_STA_MAC_ADDR, test_station_mode_set_mac_addr_of_esp());
-	EXEC_IF_CMD_EQUALS(GET_STA_MAC_ADDR, test_station_mode_get_mac_addr());
-	EXEC_IF_CMD_EQUALS(SET_SOFTAP_MAC_ADDR, test_softap_mode_set_mac_addr_of_esp());
-	EXEC_IF_CMD_EQUALS(GET_SOFTAP_MAC_ADDR, test_softap_mode_get_mac_addr());
+	EXEC_IF_CMD_EQUALS(SET_STA_MAC_ADDR, test_station_mode_set_mac_addr_of_esp(STATION_MODE_MAC_ADDRESS));
+	EXEC_IF_CMD_EQUALS(GET_STA_MAC_ADDR, test_station_mode_get_mac_addr(mac_address));
+	EXEC_IF_CMD_EQUALS(SET_SOFTAP_MAC_ADDR, test_softap_mode_set_mac_addr_of_esp(SOFTAP_MODE_MAC_ADDRESS));
+	EXEC_IF_CMD_EQUALS(GET_SOFTAP_MAC_ADDR, test_softap_mode_get_mac_addr(mac_address));
 	EXEC_IF_CMD_EQUALS(GET_AP_SCAN_LIST, test_get_available_wifi());
 	EXEC_IF_CMD_EQUALS(STA_CONNECT, test_station_mode_connect());
 	EXEC_IF_CMD_EQUALS(GET_STA_CONFIG, test_station_mode_get_info());
@@ -157,7 +160,7 @@ int main(int argc, char *argv[])
 	}
 
 	/* Print FW Version by Default */
-	printf("------ ESP-Hosted FW [%s] ------\n", test_get_fw_version(version));
+	printf("------ ESP-Hosted FW [%s] ------\n", test_get_fw_version(version, sizeof(version)));
 
 	cli_cmd = argv[1];
 	if (SUCCESS == parse_cli_cmd(cli_cmd, &argv[2])) {

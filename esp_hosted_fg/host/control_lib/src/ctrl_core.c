@@ -14,15 +14,12 @@
 #include "common.h"
 #define command_log(...)             printf(__VA_ARGS__); printf("\r");
 #else
-#define command_log(...)             printf("%s:%u ",__func__,__LINE__);     \
-	                                 printf(__VA_ARGS__);
+#define command_log(...) do { printf("%s:%u ",__func__,__LINE__); printf(__VA_ARGS__); } while(0)
 #define min(X, Y)                    (((X) < (Y)) ? (X) : (Y))
 #endif
 
-#ifndef MCU_SYS
-#define MAX_INTERFACE_LEN            IFNAMSIZ
-#define MAC_SIZE_BYTES               6
-#define MIN_MAC_STR_LEN              17
+#ifndef MIN_MAC_STR_LEN
+#define MIN_MAC_STR_LEN 18  /* Minimum length of a MAC address string (xx:xx:xx:xx:xx:xx) */
 #endif
 
 #define SUCCESS                      0
@@ -168,50 +165,6 @@ static inline int is_ctrl_lib_state(int state)
 }
 
 
-#ifndef MCU_SYS
- /* Function converts mac string to byte stream */
-static int convert_mac_to_bytes(uint8_t *out, size_t out_size, char *s)
-{
-	int mac[MAC_SIZE_BYTES] = {0};
-	int num_bytes = 0;
-	if (!s || (strlen(s) < MIN_MAC_STR_LEN) || (out_size < MAC_SIZE_BYTES))  {
-		if (!s) {
-			command_log("empty input mac str\n");
-		} else if (strlen(s)<MIN_MAC_STR_LEN) {
-			command_log("strlen of in str [%zu]<MIN_MAC_STR_LEN[%u]\n",
-					strlen(s), MIN_MAC_STR_LEN);
-		} else {
-			command_log("out_size[%zu]<MAC_SIZE_BYTES[%u]\n",
-					out_size, MAC_SIZE_BYTES);
-		}
-		return FAILURE;
-	}
-
-	num_bytes =  sscanf(s, "%2x:%2x:%2x:%2x:%2x:%2x",
-			&mac[0],&mac[1], &mac[2], &mac[3], &mac[4], &mac[5]);
-
-	if ((num_bytes < (MAC_SIZE_BYTES - 1))  ||
-	    (mac[0] > 0xFF) ||
-	    (mac[1] > 0xFF) ||
-	    (mac[2] > 0xFF) ||
-	    (mac[3] > 0xFF) ||
-	    (mac[4] > 0xFF) ||
-	    (mac[5] > 0xFF)) {
-		command_log("failed\n");
-		return FAILURE;
-	}
-
-	out[0] = mac[0]&0xff;
-	out[1] = mac[1]&0xff;
-	out[2] = mac[2]&0xff;
-	out[3] = mac[3]&0xff;
-	out[4] = mac[4]&0xff;
-	out[5] = mac[5]&0xff;
-	return SUCCESS;
-}
-#endif
-
-
 
 /* This will copy control event from `CtrlMsg` into
  * application structure `ctrl_cmd_t`
@@ -222,7 +175,7 @@ static int convert_mac_to_bytes(uint8_t *out, size_t out_size, char *s)
 static int ctrl_app_parse_event(CtrlMsg *ctrl_msg, ctrl_cmd_t *app_ntfy)
 {
 	if (!ctrl_msg || !app_ntfy) {
-		printf("NULL Ctrl event or App struct\n");
+		command_log("NULL Ctrl event or App struct\n");
 		goto fail_parse_ctrl_msg;
 	}
 
@@ -233,18 +186,18 @@ static int ctrl_app_parse_event(CtrlMsg *ctrl_msg, ctrl_cmd_t *app_ntfy)
 	switch (ctrl_msg->msg_id) {
 		case CTRL_EVENT_ESP_INIT: {
 			app_ntfy->resp_event_status = SUCCESS;
-			/*printf("EVENT: ESP INIT\n");*/
+			//command_log("EVENT: ESP INIT\n");
 			break;
 		} case CTRL_EVENT_HEARTBEAT: {
-			/*printf("EVENT: Heartbeat\n");*/
+			//command_log("EVENT: Heartbeat\n");
 			app_ntfy->resp_event_status = SUCCESS;
 			CHECK_CTRL_MSG_NON_NULL(event_heartbeat);
 			app_ntfy->u.e_heartbeat.hb_num = ctrl_msg->event_heartbeat->hb_num;
 			break;
 		} case CTRL_EVENT_STATION_CONNECTED_TO_AP: {
 			CHECK_CTRL_MSG_NON_NULL(event_station_connected_to_ap);
-			/*printf("EVENT: Station mode: Disconnect with reason [%u]\n",
-					ctrl_msg->event_station_connected_to_ap->resp);*/
+			//command_log("EVENT: Station mode: Disconnect with reason [%u]\n",
+			//		ctrl_msg->event_station_connected_to_ap->resp);
 			app_ntfy->resp_event_status = ctrl_msg->event_station_connected_to_ap->resp;
 			if(SUCCESS==app_ntfy->resp_event_status) {
 				strncpy((char *)app_ntfy->u.e_sta_conn.ssid,
@@ -263,8 +216,8 @@ static int ctrl_app_parse_event(CtrlMsg *ctrl_msg, ctrl_cmd_t *app_ntfy)
 			break;
 		} case CTRL_EVENT_STATION_DISCONNECT_FROM_AP: {
 			CHECK_CTRL_MSG_NON_NULL(event_station_disconnect_from_ap);
-			/*printf("EVENT: Station mode: Disconnect with reason [%u]\n",
-					ctrl_msg->event_station_disconnect_from_ap->resp);*/
+			//command_log("EVENT: Station mode: Disconnect with reason [%u]\n",
+			//		ctrl_msg->event_station_disconnect_from_ap->resp);
 			app_ntfy->resp_event_status = ctrl_msg->event_station_disconnect_from_ap->resp;
 			if(SUCCESS==app_ntfy->resp_event_status) {
 				strncpy((char *)app_ntfy->u.e_sta_disconn.ssid,
@@ -292,8 +245,8 @@ static int ctrl_app_parse_event(CtrlMsg *ctrl_msg, ctrl_cmd_t *app_ntfy)
 				strncpy((char *)app_ntfy->u.e_softap_sta_conn.mac,
 					(char *)ctrl_msg->event_station_connected_to_esp_softap->mac.data,
 					ctrl_msg->event_station_connected_to_esp_softap->mac.len);
-				/*printf("EVENT: SoftAP mode: Disconnect MAC[%s]\n",
-					app_ntfy->u.e_softap_sta_conn.mac);*/
+				//command_log("EVENT: SoftAP mode: Disconnect MAC[%s]\n",
+				//		app_ntfy->u.e_softap_sta_conn.mac);
 				app_ntfy->u.e_softap_sta_conn.aid =
 					ctrl_msg->event_station_connected_to_esp_softap->aid;
 				app_ntfy->u.e_softap_sta_conn.is_mesh_child =
@@ -312,8 +265,8 @@ static int ctrl_app_parse_event(CtrlMsg *ctrl_msg, ctrl_cmd_t *app_ntfy)
 				strncpy((char *)app_ntfy->u.e_softap_sta_disconn.mac,
 					(char *)ctrl_msg->event_station_disconnect_from_esp_softap->mac.data,
 					ctrl_msg->event_station_disconnect_from_esp_softap->mac.len);
-				/*printf("EVENT: SoftAP mode: Disconnect MAC[%s]\n",
-				  app_ntfy->u.e_softap_sta_disconn.mac);*/
+				//command_log("EVENT: SoftAP mode: Disconnect MAC[%s]\n",
+				//		app_ntfy->u.e_softap_sta_disconn.mac);
 				app_ntfy->u.e_softap_sta_disconn.aid =
 					ctrl_msg->event_station_disconnect_from_esp_softap->aid;
 				app_ntfy->u.e_softap_sta_disconn.is_mesh_child =
@@ -323,7 +276,7 @@ static int ctrl_app_parse_event(CtrlMsg *ctrl_msg, ctrl_cmd_t *app_ntfy)
 			}
 			break;
 		} default: {
-			printf("Invalid/unsupported event[%u] received\n",ctrl_msg->msg_id);
+			command_log("Invalid/unsupported event[%u] received\n",ctrl_msg->msg_id);
 			goto fail_parse_ctrl_msg;
 			break;
 		}
@@ -350,7 +303,7 @@ static int ctrl_app_parse_resp(CtrlMsg *ctrl_msg, ctrl_cmd_t *app_resp)
 
 	/* 1. Check non NULL */
 	if (!ctrl_msg || !app_resp) {
-		printf("NULL Ctrl resp or NULL App Resp\n");
+		command_log("NULL Ctrl resp or NULL App Resp\n");
 		goto fail_parse_ctrl_msg2;
 	}
 
@@ -500,8 +453,8 @@ static int ctrl_app_parse_resp(CtrlMsg *ctrl_msg, ctrl_cmd_t *app_resp)
 					goto fail_parse_ctrl_msg;
 					break;
 				case SUCCESS:
-					command_log("Info: Connect band_mode is %d\n", ctrl_msg->resp_connect_ap->band_mode);
-					CHECK_CTRL_MSG_NON_NULL(resp_connect_ap->mac.data);
+					//command_log("Info: Connect band_mode is %d\n", ctrl_msg->resp_connect_ap->band_mode);
+					//CHECK_CTRL_MSG_NON_NULL(resp_connect_ap->mac.data);
 					CHECK_CTRL_MSG_FAILED(resp_connect_ap);
 					break;
 				default:
@@ -511,8 +464,10 @@ static int ctrl_app_parse_resp(CtrlMsg *ctrl_msg, ctrl_cmd_t *app_resp)
 					break;
 			}
 			len_l = min(ctrl_msg->resp_connect_ap->mac.len, MAX_MAC_STR_SIZE-1);
-			strncpy(app_resp->u.wifi_ap_config.out_mac,
-					(char *)ctrl_msg->resp_connect_ap->mac.data, len_l);
+			if (ctrl_msg->resp_connect_ap->mac.data) {
+				strncpy(app_resp->u.wifi_ap_config.out_mac,
+						(char *)ctrl_msg->resp_connect_ap->mac.data, len_l);
+			}
 			app_resp->u.wifi_ap_config.out_mac[len_l] = '\0';
 			break;
 		} case CTRL_RESP_DISCONNECT_AP : {
@@ -730,7 +685,7 @@ static int is_event_callback_registered(int event)
 	int event_cb_tbl_idx = event - CTRL_EVENT_BASE;
 
 	if ((event<=CTRL_EVENT_BASE) || (event>=CTRL_EVENT_MAX)) {
-		printf("Could not identify event[%u]\n", event);
+		command_log("Could not identify event[%u]\n", event);
 		return MSG_ID_OUT_OF_ORDER;
 	}
 
@@ -770,7 +725,7 @@ static int process_ctrl_rx_msg(CtrlMsg * proto_msg, ctrl_rx_ind_t ctrl_rx_func)
 			/* Allocate app struct for event */
 			app_event = (ctrl_cmd_t *)hosted_malloc(sizeof(ctrl_cmd_t));
 			if (!app_event) {
-				printf("Failed to allocate app_event\n");
+				command_log("Failed to allocate app_event\n");
 				goto free_buffers;
 			}
 			memset(app_event, 0, sizeof(ctrl_cmd_t));
@@ -797,7 +752,7 @@ static int process_ctrl_rx_msg(CtrlMsg * proto_msg, ctrl_rx_ind_t ctrl_rx_func)
 		/* Allocate app struct for response */
 		app_resp = (ctrl_cmd_t *)hosted_malloc(sizeof(ctrl_cmd_t));
 		if (!app_resp) {
-			printf("Failed to allocate app_resp\n");
+			command_log("Failed to allocate app_resp\n");
 			goto free_buffers;
 		}
 		memset(app_resp, 0, sizeof(ctrl_cmd_t));
@@ -830,6 +785,7 @@ static int process_ctrl_rx_msg(CtrlMsg * proto_msg, ctrl_rx_ind_t ctrl_rx_func)
 			 * so call to that function should be done and
 			 * return to select
 			 */
+			//command_log("async_resp_callback for msg_id [%d] available: %p\n", app_resp->msg_id, ctrl_resp_cb_table[app_resp->msg_id-CTRL_RESP_BASE]);
 			call_async_resp_callback(app_resp);
 
 			//CLEANUP_APP_MSG(app_resp);
@@ -841,10 +797,11 @@ static int process_ctrl_rx_msg(CtrlMsg * proto_msg, ctrl_rx_ind_t ctrl_rx_func)
 			 * synchronous response. forward this response to app
 			 * using 'esp_queue' and help of semaphore
 			 **/
+			//command_log("async_resp_callback for msg_id [%d] NOT available\n", app_resp->msg_id);
 
 			elem = (esp_queue_elem_t*)hosted_malloc(sizeof(esp_queue_elem_t));
 			if (!elem) {
-				printf("%s %u: Malloc failed\n",__func__,__LINE__);
+				command_log("%s %u: Malloc failed\n",__func__,__LINE__);
 				goto free_buffers;
 			}
 
@@ -855,7 +812,7 @@ static int process_ctrl_rx_msg(CtrlMsg * proto_msg, ctrl_rx_ind_t ctrl_rx_func)
 			elem->buf = app_resp;
 			elem->buf_len = sizeof(ctrl_cmd_t);
 			if (esp_queue_put(ctrl_msg_Q, (void*)elem)) {
-				printf("%s %u: ctrl Q put fail\n",__func__,__LINE__);
+				command_log("%s %u: ctrl Q put fail\n",__func__,__LINE__);
 				goto free_buffers;
 			}
 
@@ -867,7 +824,7 @@ static int process_ctrl_rx_msg(CtrlMsg * proto_msg, ctrl_rx_ind_t ctrl_rx_func)
 
 	} else {
 		/* 4. some unsupported msg, drop it */
-		printf("Incorrect Ctrl Msg Type[%u]\n",proto_msg->msg_type);
+		command_log("Incorrect Ctrl Msg Type[%u]\n",proto_msg->msg_type);
 		goto free_buffers;
 	}
 	return SUCCESS;
@@ -895,14 +852,14 @@ static void ctrl_rx_thread(void const *arg)
 	/* 1. Get callback for synchronous procedure
 	 * for semaphore post */
 	if (!ctrl_rx_func) {
-		printf("ERROR: NULL rx async cb for esp_queue,sem\n");
+		command_log("ERROR: NULL rx async cb for esp_queue,sem\n");
 		return;
 	}
 
 	/* 2. This queue should already be created
 	 * if NULL, exit here */
 	if (!ctrl_msg_Q) {
-		printf("Ctrl msg Q is not created\n");
+		command_log("Ctrl msg Q is not created\n");
 		return;
 	}
 
@@ -919,7 +876,7 @@ static void ctrl_rx_thread(void const *arg)
 		buf = transport_pserial_read(&buf_len);
 
 		if (!buf_len || !buf) {
-			printf("%s buf_len read = 0\n",__func__);
+			command_log("%s buf_len read = 0\n",__func__);
 			goto free_bufs;
 		}
 
@@ -951,7 +908,7 @@ static int spawn_ctrl_rx_thread(void)
 {
 	ctrl_rx_thread_handle = hosted_thread_create(ctrl_rx_thread, ctrl_rx_ind);
 	if (!ctrl_rx_thread_handle) {
-		printf("Thread creation failed for ctrl_rx_thread\n");
+		command_log("Thread creation failed for ctrl_rx_thread\n");
 		return FAILURE;
 	}
 	return SUCCESS;
@@ -962,7 +919,7 @@ static int cancel_ctrl_rx_thread(void)
 {
 	int s = hosted_thread_cancel(ctrl_rx_thread_handle);
 	if (s != 0) {
-		printf("pthread_cancel failed\n");
+		command_log("pthread_cancel failed\n");
 		return FAILURE;
 	}
 
@@ -985,7 +942,7 @@ static ctrl_cmd_t * get_response(int *read_len, int timeout_sec)
 
 	/* 1. Any problems in response, return NULL */
 	if (!read_len) {
-		printf("Invalid input parameter\n");
+		command_log("Invalid input parameter\n");
 		return NULL;
 	}
 
@@ -997,9 +954,9 @@ static ctrl_cmd_t * get_response(int *read_len, int timeout_sec)
 	ret = hosted_get_semaphore(read_sem, timeout_sec);
 	if (ret) {
 		if (errno == ETIMEDOUT)
-			printf("Control response timed out after %u sec\n", timeout_sec);
+			command_log("Control response timed out after %u sec\n", timeout_sec);
 		else
-			printf("ctrl lib error[%u] in sem of timeout[%u]\n", errno, timeout_sec);
+			command_log("ctrl lib error[%u] in sem of timeout[%u]\n", errno, timeout_sec);
 		/* Unlock semaphore in negative case */
 		hosted_post_semaphore(ctrl_req_sem);
 		return NULL;
@@ -1019,7 +976,7 @@ static ctrl_cmd_t * get_response(int *read_len, int timeout_sec)
 		return (ctrl_cmd_t*)buf;
 
 	} else {
-		printf("Ctrl Q empty or uninitialised\n");
+		command_log("Ctrl Q empty or uninitialised\n");
 		return NULL;
 	}
 
@@ -1058,6 +1015,7 @@ static int call_event_callback(ctrl_cmd_t *app_event)
 	}
 
 	if (ctrl_event_cb_table[app_event->msg_id-CTRL_EVENT_BASE]) {
+		//command_log("Calling event callback for msg_id [%d]\n", app_event->msg_id);
 		return ctrl_event_cb_table[app_event->msg_id-CTRL_EVENT_BASE](app_event);
 	}
 
@@ -1074,7 +1032,7 @@ static int set_async_resp_callback(int req_msg_id, ctrl_resp_cb_t resp_cb)
 	/* Assign(Replace) response callback passed */
 	int exp_resp_msg_id = (req_msg_id - CTRL_REQ_BASE + CTRL_RESP_BASE);
 	if (exp_resp_msg_id >= CTRL_RESP_MAX) {
-		printf("Not able to map new request to resp id\n");
+		command_log("Not able to map new request to resp id\n");
 		return MSG_ID_OUT_OF_ORDER;
 	} else {
 		ctrl_resp_cb_table[exp_resp_msg_id-CTRL_RESP_BASE] = resp_cb;
@@ -1090,7 +1048,7 @@ static int set_async_resp_callback(int req_msg_id, ctrl_resp_cb_t resp_cb)
 static int is_async_resp_callback_registered_by_resp_msg_id(int resp_msg_id)
 {
 	if ((resp_msg_id <= CTRL_RESP_BASE) || (resp_msg_id >= CTRL_RESP_MAX)) {
-		printf("resp id[%u] out of range\n", resp_msg_id);
+		command_log("resp id[%u] out of range\n", resp_msg_id);
 		return MSG_ID_OUT_OF_ORDER;
 	}
 
@@ -1109,11 +1067,16 @@ static int is_async_resp_callback_registered_by_resp_msg_id(int resp_msg_id)
  *     MSG_ID_OUT_OF_ORDER - if request msg id is unsupported
  *     CALLBACK_NOT_REGISTERED - if aync callback is not available
  **/
-int is_async_resp_callback_registered(ctrl_cmd_t req)
+int is_async_resp_callback_registered(ctrl_cmd_t *req)
 {
-	int exp_resp_msg_id = (req.msg_id - CTRL_REQ_BASE + CTRL_RESP_BASE);
+	if (!req) {
+		command_log("Invalid request pointer\n");
+		return MSG_ID_OUT_OF_ORDER;
+	}
+
+	int exp_resp_msg_id = (req->msg_id - CTRL_REQ_BASE + CTRL_RESP_BASE);
 	if (exp_resp_msg_id >= CTRL_RESP_MAX) {
-		printf("Not able to map new request to resp id, using sync path\n");
+		command_log("Not able to map new request to resp id, using sync path\n");
 		return MSG_ID_OUT_OF_ORDER;
 	}
 
@@ -1136,7 +1099,7 @@ int set_event_callback(int event, ctrl_resp_cb_t event_cb)
 	int event_cb_tbl_idx = event - CTRL_EVENT_BASE;
 
 	if ((event<=CTRL_EVENT_BASE) || (event>=CTRL_EVENT_MAX)) {
-		printf("Could not identify event[%u]\n", event);
+		command_log("Could not identify event[%u]\n", event);
 		return MSG_ID_OUT_OF_ORDER;
 	}
 	ctrl_event_cb_table[event_cb_tbl_idx] = event_cb;
@@ -1158,9 +1121,11 @@ ctrl_cmd_t * ctrl_wait_and_parse_sync_resp(ctrl_cmd_t *app_req)
 	ctrl_cmd_t * rx_buf = NULL;
 	int rx_buf_len = 0;
 
+	//command_log("ctrl_wait_and_parse_sync_resp for msg_id [%d]\n", app_req->msg_id);
+
 	rx_buf = get_response(&rx_buf_len, app_req->cmd_timeout_sec);
 	if (!rx_buf || !rx_buf_len) {
-		printf("Response not received\n");
+		command_log("Response not received\n");
 		if (rx_buf) {
 			mem_free(rx_buf);
 		}
@@ -1185,14 +1150,14 @@ static void ctrl_async_timeout_handler(void const *arg)
 {
 	ctrl_resp_cb_t func = arg;
 	if (!func) {
-		printf("NULL func, failed to call callback\n");
+		command_log("NULL func, failed to call callback\n");
 		hosted_post_semaphore(ctrl_req_sem);
 		return;
 	}
 	ctrl_cmd_t *app_resp = NULL;
 	app_resp = (ctrl_cmd_t *)hosted_calloc(1, sizeof(ctrl_cmd_t));
 	if (!app_resp) {
-		printf("Failed to allocate app_resp\n");
+		command_log("Failed to allocate app_resp\n");
 		hosted_post_semaphore(ctrl_req_sem);
 		return;
 	}
@@ -1240,6 +1205,7 @@ int ctrl_app_send_req(ctrl_cmd_t *app_req)
 
 	if (!app_req) {
 		failure_status = CTRL_ERR_INCORRECT_ARG;
+		command_log("Invalid request pointer\n");
 		goto fail_req;
 	}
 
@@ -1248,6 +1214,7 @@ int ctrl_app_send_req(ctrl_cmd_t *app_req)
 	ret = hosted_get_semaphore(ctrl_req_sem, WAIT_TIME_B2B_CTRL_REQ);
 	if (ret) {
 		failure_status = CTRL_ERR_REQ_IN_PROG;
+		command_log("Request already in progress\n");
 		goto fail_req;
 	} else {
 		got_ctrl_req_sem = 1;
@@ -1522,11 +1489,11 @@ int ctrl_app_send_req(ctrl_cmd_t *app_req)
 			req_payload->enable = app_req->u.e_heartbeat.enable;
 			req_payload->duration = app_req->u.e_heartbeat.duration;
 			if (req_payload->enable) {
-				printf("Enable heartbeat with duration %ld\n", (long int)req_payload->duration);
+				command_log("Enable heartbeat with duration %ld\n", (long int)req_payload->duration);
 				if (CALLBACK_AVAILABLE != is_event_callback_registered(CTRL_EVENT_HEARTBEAT))
-					printf("Note: ** Subscribe heartbeat event to get notification **\n");
+					command_log("Note: ** Subscribe heartbeat event to get notification **\n");
 			} else {
-				printf("Disable Heartbeat\n");
+				command_log("Disable Heartbeat\n");
 			}
 			break;
 		} case CTRL_REQ_ENABLE_DISABLE: {
@@ -1534,11 +1501,11 @@ int ctrl_app_send_req(ctrl_cmd_t *app_req)
 			ctrl_msg__req__enable_disable__init(req_payload);
 			req_payload->feature = app_req->u.feat_ena_disable.feature;
 			req_payload->enable = app_req->u.feat_ena_disable.enable;
-			printf("%sable feature [%d]\n", (req_payload->enable)? "en": "dis", req_payload->feature);
+			command_log("%sable feature [%d]\n", (req_payload->enable)? "en": "dis", req_payload->feature);
 			break;
 		} default: {
 			failure_status = CTRL_ERR_UNSUPPORTED_MSG;
-			printf("Unsupported Control Req[%u]",req.msg_id);
+			command_log("RPC Req[%u] unsupported\n",req.msg_id);
 			goto fail_req;
 			break;
 		}
@@ -1567,7 +1534,7 @@ int ctrl_app_send_req(ctrl_cmd_t *app_req)
 	 *    callback to user defined callback function */
 	ret = set_async_resp_callback(app_req->msg_id, app_req->ctrl_resp_cb);
 	if (ret < 0) {
-		printf("could not set callback for req[%u]\n",req.msg_id);
+		command_log("could not set callback for req[%u]\n",req.msg_id);
 		failure_status = CTRL_ERR_SET_ASYNC_CB;
 		goto fail_req;
 	}
@@ -1579,7 +1546,7 @@ int ctrl_app_send_req(ctrl_cmd_t *app_req)
 		async_timer_handle = hosted_timer_start(app_req->cmd_timeout_sec, CTRL__TIMER_ONESHOT,
 				ctrl_async_timeout_handler, app_req->ctrl_resp_cb);
 		if (!async_timer_handle) {
-			printf("Failed to start async resp timer\n");
+			command_log("Failed to start async resp timer\n");
 			goto fail_req;
 		}
 		/* For async, clearing semaphore on failed cases done on above timer expiry */
@@ -1624,7 +1591,7 @@ fail_req:
 		ctrl_cmd_t *app_resp = NULL;
 		app_resp = (ctrl_cmd_t *)hosted_malloc(sizeof(ctrl_cmd_t));
 		if (!app_resp) {
-			printf("Failed to allocate app_resp\n");
+			command_log("Failed to allocate app_resp\n");
 			goto fail_req2;
 		}
 		memset(app_resp, 0, sizeof(ctrl_cmd_t));
@@ -1664,12 +1631,12 @@ int deinit_hosted_control_lib_internal(void)
 
 	if (ctrl_req_sem && hosted_destroy_semaphore(ctrl_req_sem)) {
 		ret = FAILURE;
-		printf("ctrl req sem deinit failed\n");
+		command_log("ctrl req sem deinit failed\n");
 	}
 
 	if (read_sem && hosted_destroy_semaphore(read_sem)) {
 		ret = FAILURE;
-		printf("read sem deinit failed\n");
+		command_log("read sem deinit failed\n");
 	}
 
 	if (async_timer_handle) {
@@ -1680,12 +1647,12 @@ int deinit_hosted_control_lib_internal(void)
 
 	if (serial_deinit()) {
 		ret = FAILURE;
-		//printf("Serial de-init failed\n");
+		//command_log("Serial de-init failed\n");
 	}
 
 	if (ctrl_rx_thread_handle && cancel_ctrl_rx_thread()) {
 		ret = FAILURE;
-		printf("cancel ctrl rx thread failed\n");
+		command_log("cancel ctrl rx thread failed\n");
 	}
 
 	return ret;
@@ -1695,31 +1662,25 @@ int deinit_hosted_control_lib_internal(void)
 int init_hosted_control_lib_internal(void)
 {
 	int ret = SUCCESS;
-#ifndef MCU_SYS
-	if(getuid()) {
-		printf("Please re-run program with superuser access\n");
-		return FAILURE;
-	}
-#endif
 
 	/* semaphore init */
 	read_sem = hosted_create_semaphore(1);
 	ctrl_req_sem = hosted_create_semaphore(1);
 	if (!read_sem || !ctrl_req_sem) {
-		printf("sem init failed, exiting\n");
+		command_log("sem init failed, exiting\n");
 		goto free_bufs;
 	}
 
 	/* serial init */
 	if (serial_init()) {
-		//printf("Failed to serial_init\n");
+		//command_log("Failed to serial_init\n");
 		goto free_bufs;
 	}
 
 	/* queue init */
 	ctrl_msg_Q = create_esp_queue();
 	if (!ctrl_msg_Q) {
-		printf("Failed to create app ctrl msg Q\n");
+		command_log("Failed to create app ctrl msg Q\n");
 		goto free_bufs;
 	}
 
@@ -1740,136 +1701,3 @@ free_bufs:
 	return FAILURE;
 
 }
-
-
-
-#ifndef MCU_SYS
-
- /* Function ups in given interface */
-int interface_up(int sockfd, char* iface)
-{
-	int ret = SUCCESS;
-	struct ifreq req = {0};
-	size_t if_name_len = strnlen(iface, MAX_INTERFACE_LEN-1);
-
-	if (!iface) {
-		command_log("Invalid parameter\n");
-		return FAILURE;
-	}
-
-	if (if_name_len < sizeof(req.ifr_name)) {
-		memcpy(req.ifr_name,iface,if_name_len);
-		req.ifr_name[if_name_len]='\0';
-	} else {
-		printf("Failed: Max interface len allowed: %zu \n", sizeof(req.ifr_name)-1);
-		return FAILURE;
-	}
-
-	req.ifr_flags |= IFF_UP;
-	ret = ioctl(sockfd, SIOCSIFFLAGS, &req);
-	if (ret < 0) {
-		return FAILURE;
-	}
-	return SUCCESS;
-}
-
- /* Function downs in given interface */
-int interface_down(int sockfd, char* iface)
-{
-	int ret = SUCCESS;
-	struct ifreq req = {0};
-	size_t if_name_len = strnlen(iface, MAX_INTERFACE_LEN-1);
-
-	if (!iface) {
-		command_log("Invalid parameter\n");
-		return FAILURE;
-	}
-
-	if (if_name_len < sizeof(req.ifr_name)) {
-		memcpy(req.ifr_name,iface,if_name_len);
-		req.ifr_name[if_name_len]='\0';
-	} else {
-		printf("Failed: Max interface len allowed- %zu \n", sizeof(req.ifr_name)-1);
-		return FAILURE;
-	}
-
-	req.ifr_flags &= ~IFF_UP;
-	ret = ioctl(sockfd, SIOCSIFFLAGS, &req);
-	if (ret < 0) {
-		perror("interface down:");
-		return FAILURE;
-	}
-	return SUCCESS;
-}
-
- /* Function sets mac address to given interface */
-int set_hw_addr(int sockfd, char* iface, char* mac)
-{
-	int ret = SUCCESS;
-	struct ifreq req = {0};
-	char mac_bytes[MAC_SIZE_BYTES] = "";
-	size_t if_name_len = strnlen(iface, MAX_INTERFACE_LEN-1);
-
-	if (!iface || !mac) {
-		command_log("Invalid parameter\n");
-		return FAILURE;
-	}
-
-	if (if_name_len < sizeof(req.ifr_name)) {
-		memcpy(req.ifr_name,iface,if_name_len);
-		req.ifr_name[if_name_len]='\0';
-	} else {
-		printf("Failed: Max interface len allowed: %zu \n", sizeof(req.ifr_name)-1);
-		return FAILURE;
-	}
-
-	memset(mac_bytes, '\0', MAC_SIZE_BYTES);
-	ret = convert_mac_to_bytes((uint8_t *)&mac_bytes, sizeof(mac_bytes), mac);
-
-	if (ret) {
-		printf("Failed to convert mac address \n");
-		return FAILURE;
-	}
-
-	req.ifr_hwaddr.sa_family = ARPHRD_ETHER;
-	memcpy(req.ifr_hwaddr.sa_data, mac_bytes, MAC_SIZE_BYTES);
-	ret = ioctl(sockfd, SIOCSIFHWADDR, &req);
-
-	if (ret < 0) {
-		return FAILURE;
-	}
-	return SUCCESS;
-}
-
- /* Function creates an endpoint for communication and
-  * returns a file descriptor (integer number) that
-  * refers to that endpoint */
-int create_socket(int domain, int type, int protocol, int *sock)
-{
-	if (!sock) {
-		command_log("Invalid parameter\n");
-		return FAILURE;
-	}
-
-	*sock = socket(domain, type, protocol);
-	if (*sock < 0)
-	{
-		printf("Failure to open socket\n");
-		return FAILURE;
-	}
-	return SUCCESS;
-}
-
- /* Function closes an endpoint for communication */
-int close_socket(int sock)
-{
-	int ret;
-	ret = close(sock);
-	if (ret < 0) {
-		printf("Failure to close socket\n");
-		return FAILURE;
-	}
-	return SUCCESS;
-}
-
-#endif

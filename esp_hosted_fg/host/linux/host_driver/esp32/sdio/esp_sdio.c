@@ -39,20 +39,19 @@
 #include <linux/suspend.h>
 #include <linux/netdevice.h>
 
-#ifdef ESP_PKT_NUM_DEBUG
+#if ESP_PKT_NUM_DEBUG
 struct dbg_stats_t dbg_stats;
 #endif
-#define MAX_WRITE_RETRIES       2
-#define TX_MAX_PENDING_COUNT    200
-#define TX_RESUME_THRESHOLD     (TX_MAX_PENDING_COUNT/5)
+#define MAX_BUFF_AVAILABLE_RETRIES               (40)
+#define TX_RESUME_THRESHOLD                      (TX_MAX_PENDING_COUNT/5)
 
 /* combined register read for interrupt status and packet length */
-#define DO_COMBINED_REG_READ (1)
+#define DO_COMBINED_REG_READ                     (1)
 
 /* Add streaming mode config */
-#define H_SDIO_RX_MODE_STREAMING 1
-#define H_SDIO_RX_MODE_ALWAYS_MAX_TRANSPORT_SIZE 2
-#define H_SDIO_RX_MODE_NONE 3
+#define H_SDIO_RX_MODE_STREAMING                 (1)
+#define H_SDIO_RX_MODE_ALWAYS_MAX_TRANSPORT_SIZE (2)
+#define H_SDIO_RX_MODE_NONE                      (3)
 
 /* Use streaming mode for SDIO host rx */
 #define H_SDIO_HOST_RX_MODE H_SDIO_RX_MODE_NONE
@@ -354,6 +353,10 @@ static void esp_remove(struct sdio_func *func)
 		return;
 	}
 
+	if (context->adapter) {
+		atomic_set(&context->adapter->state, ESP_CONTEXT_DISABLED);
+	}
+
 	/* Stop TX thread first */
 	if (tx_thread) {
 		kthread_stop(tx_thread);
@@ -573,14 +576,13 @@ static struct sk_buff * read_packet(struct esp_adapter *adapter)
 	int is_lock_needed = IS_SDIO_HOST_LOCK_NEEDED;
 
 	if (!adapter) {
-		esp_err("INVALID args\n");
 		return NULL;
 	}
 
 	context = adapter->if_context;
 
 	if (!context || !context->func) {
-		esp_err("INVALID args\n");
+		esp_info("inactive sdio\n");
 		return NULL;
 	}
 
@@ -737,7 +739,7 @@ static int is_sdio_write_buffer_available(u32 buf_needed)
 	int ret = 0;
 	static u32 buf_available = 0;
 	struct esp_sdio_context *context = &sdio_context;
-	u8 retry = MAX_WRITE_RETRIES;
+	u8 retry = MAX_BUFF_AVAILABLE_RETRIES;
 
 	/*If buffer needed are less than buffer available
 	  then only read for available buffer number from slave*/
@@ -749,7 +751,7 @@ static int is_sdio_write_buffer_available(u32 buf_needed)
 
 				/* Release SDIO and retry after delay*/
 				retry--;
-				usleep_range(10,50);
+				msleep(1);
 				continue;
 			}
 
@@ -842,9 +844,10 @@ static int tx_process(void *data)
 		UPDATE_HEADER_TX_PKT_NO(h);
 
 		/* update checksum */
-		if (context->adapter->capabilities & ESP_CHECKSUM_ENABLED)
+		if (context->adapter->capabilities & ESP_CHECKSUM_ENABLED) {
+			h->checksum = 0;
 			h->checksum = cpu_to_le16(compute_checksum(tx_skb->data, le16_to_cpu(h->len) + le16_to_cpu(h->offset)));
-
+		}
 		pos = tx_skb->data;
 		data_left = len_to_send = 0;
 

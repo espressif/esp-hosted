@@ -17,7 +17,7 @@
 #define __SLAVE_CONTROL__H__
 #include <esp_err.h>
 #include <interface.h>
-
+#include "host_power_save.h"
 #if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 0, 0)
   #define TIMEOUT_IN_SEC          (1000 / portTICK_PERIOD_MS)
 #else
@@ -94,6 +94,10 @@ esp_err_t esp_hosted_wifi_init(wifi_init_config_t *cfg);
 esp_err_t esp_hosted_set_sta_config(wifi_interface_t iface, wifi_config_t *cfg);
 //esp_err_t esp_hosted_register_wifi_event_handlers(void);
 int esp_hosted_app_init_wifi(void);
+#endif
+
+#if H_HOST_PS_ALLOWED
+bool has_host_fetched_auto_ip(void);
 #endif
 
 #endif /*__SLAVE_CONTROL__H__*/
