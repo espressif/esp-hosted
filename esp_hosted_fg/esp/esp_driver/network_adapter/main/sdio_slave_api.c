@@ -324,18 +324,18 @@ static interface_handle_t * sdio_init(void)
 
   #ifdef CONFIG_ESP_ENABLE_RX_PRIORITY_QUEUES
 
-    sdio_rx_sem = xSemaphoreCreateCounting(SDIO_RX_TOTAL_QUEUE_SIZE, 0);
-    assert(sdio_rx_sem);
+	sdio_rx_sem = xSemaphoreCreateCounting(SDIO_RX_TOTAL_QUEUE_SIZE, 0);
+	assert(sdio_rx_sem);
 
-    sdio_rx_queue[PRIO_Q_OTHERS] = xQueueCreate(SDIO_RX_WIFI_QUEUE_SIZE, sizeof(interface_buffer_handle_t));
-    assert(sdio_rx_queue[PRIO_Q_OTHERS]);
-    sdio_rx_queue[PRIO_Q_BT] = xQueueCreate(SDIO_RX_BT_QUEUE_SIZE, sizeof(interface_buffer_handle_t));
-    assert(sdio_rx_queue[PRIO_Q_BT]);
-    sdio_rx_queue[PRIO_Q_SERIAL] = xQueueCreate(SDIO_RX_SERIAL_QUEUE_SIZE, sizeof(interface_buffer_handle_t));
-    assert(sdio_rx_queue[PRIO_Q_SERIAL]);
+	sdio_rx_queue[PRIO_Q_OTHERS] = xQueueCreate(SDIO_RX_WIFI_QUEUE_SIZE, sizeof(interface_buffer_handle_t));
+	assert(sdio_rx_queue[PRIO_Q_OTHERS]);
+	sdio_rx_queue[PRIO_Q_BT] = xQueueCreate(SDIO_RX_BT_QUEUE_SIZE, sizeof(interface_buffer_handle_t));
+	assert(sdio_rx_queue[PRIO_Q_BT]);
+	sdio_rx_queue[PRIO_Q_SERIAL] = xQueueCreate(SDIO_RX_SERIAL_QUEUE_SIZE, sizeof(interface_buffer_handle_t));
+	assert(sdio_rx_queue[PRIO_Q_SERIAL]);
   #else
-    sdio_rx_queue = xQueueCreate(SDIO_RX_QUEUE_SIZE, sizeof(interface_buffer_handle_t));
-    assert(sdio_rx_queue);
+	sdio_rx_queue = xQueueCreate(SDIO_RX_QUEUE_SIZE, sizeof(interface_buffer_handle_t));
+	assert(sdio_rx_queue);
   #endif
 #endif
 
@@ -529,16 +529,16 @@ static int sdio_read(interface_handle_t *if_handle, interface_buffer_handle_t *b
 
 
   #ifdef CONFIG_ESP_ENABLE_RX_PRIORITY_QUEUES
-    xSemaphoreTake(sdio_rx_sem, portMAX_DELAY);
+	xSemaphoreTake(sdio_rx_sem, portMAX_DELAY);
 
-    if (pdFALSE == xQueueReceive(sdio_rx_queue[PRIO_Q_SERIAL], buf_handle, 0))
-        if (pdFALSE == xQueueReceive(sdio_rx_queue[PRIO_Q_BT], buf_handle, 0))
-            if (pdFALSE == xQueueReceive(sdio_rx_queue[PRIO_Q_OTHERS], buf_handle, 0)) {
-                ESP_LOGE(TAG, "%s No element in rx queue", __func__);
-                return ESP_FAIL;
-            }
+	if (pdFALSE == xQueueReceive(sdio_rx_queue[PRIO_Q_SERIAL], buf_handle, 0))
+		if (pdFALSE == xQueueReceive(sdio_rx_queue[PRIO_Q_BT], buf_handle, 0))
+			if (pdFALSE == xQueueReceive(sdio_rx_queue[PRIO_Q_OTHERS], buf_handle, 0)) {
+				ESP_LOGE(TAG, "%s No element in rx queue", __func__);
+				return ESP_FAIL;
+			}
   #else
-    xQueueReceive(sdio_rx_queue, buf_handle, portMAX_DELAY);
+	xQueueReceive(sdio_rx_queue, buf_handle, portMAX_DELAY);
   #endif
 
 	return buf_handle->payload_len;
@@ -621,16 +621,16 @@ static void sdio_rx_task(void* pvParameters)
 
 
   #ifdef CONFIG_ESP_ENABLE_RX_PRIORITY_QUEUES
-    if (header->if_type == ESP_SERIAL_IF) {
-        xQueueSend(sdio_rx_queue[PRIO_Q_SERIAL], &buf_handle, portMAX_DELAY);
-    } else if (header->if_type == ESP_HCI_IF) {
-        xQueueSend(sdio_rx_queue[PRIO_Q_BT], &buf_handle, portMAX_DELAY);
-    } else {
-        xQueueSend(sdio_rx_queue[PRIO_Q_OTHERS], &buf_handle, portMAX_DELAY);
-    }
-    xSemaphoreGive(sdio_rx_sem);
+		if (header->if_type == ESP_SERIAL_IF) {
+			xQueueSend(sdio_rx_queue[PRIO_Q_SERIAL], &buf_handle, portMAX_DELAY);
+		} else if (header->if_type == ESP_HCI_IF) {
+			xQueueSend(sdio_rx_queue[PRIO_Q_BT], &buf_handle, portMAX_DELAY);
+		} else {
+			xQueueSend(sdio_rx_queue[PRIO_Q_OTHERS], &buf_handle, portMAX_DELAY);
+		}
+		xSemaphoreGive(sdio_rx_sem);
   #else
-    xQueueSend(sdio_rx_queue, &buf_handle, portMAX_DELAY);
+		xQueueSend(sdio_rx_queue, &buf_handle, portMAX_DELAY);
   #endif
 	}
 }

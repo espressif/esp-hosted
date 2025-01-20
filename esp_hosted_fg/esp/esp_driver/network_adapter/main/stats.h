@@ -130,24 +130,24 @@ uint8_t debug_get_raw_tp_conf(void);
 
 /* Timing measurement stats */
 struct timing_measure {
-    uint32_t start_time;
-    uint32_t end_time;
-    uint32_t total_time;
-    uint32_t count;
+	uint32_t start_time;
+	uint32_t end_time;
+	uint32_t total_time;
+	uint32_t count;
 };
 
 struct timing_stats {
-    uint32_t min_time;
-    uint32_t max_time;
-    uint32_t avg_time;
+	uint32_t min_time;
+	uint32_t max_time;
+	uint32_t avg_time;
 };
 
 /* Move struct definition to header file */
 struct timing_stats_entry {
-    const char *name;
-    struct timing_measure measure;
-    struct timing_stats stats;
-    bool active;
+	const char *name;
+	struct timing_measure measure;
+	struct timing_stats stats;
+	bool active;
 };
 
 

@@ -284,7 +284,7 @@ static void pserial_task(void *params)
 		if ((arg.msg_id > CTRL_MSG_ID__Event_Base) &&
 		    (arg.msg_id < CTRL_MSG_ID__Event_Max)) {
 			/* Events */
-			ESP_HEXLOGV("pserial_evt_rx", arg.data, arg.len, 32);			
+			ESP_HEXLOGV("pserial_evt_rx", arg.data, arg.len, 32);
 			ret = protocomm_pserial_ctrl_evnt_handler(pc, arg.data, arg.len, arg.msg_id);
 		} else {
 			/* Request */

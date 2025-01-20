@@ -37,9 +37,9 @@ int is_host_wakeup_needed(interface_buffer_handle_t *buf_handle)
 	int wakup_needed = 0;
 	char reason[100] = "";
 #if H_HOST_PS_ALLOWED
-    uint8_t *buf_start;
+	uint8_t *buf_start;
 
-    buf_start = buf_handle->payload;
+	buf_start = buf_handle->payload;
 
 #if 0
 	/* Flow conttrol packet cannot miss */
@@ -49,55 +49,55 @@ int is_host_wakeup_needed(interface_buffer_handle_t *buf_handle)
 		goto end;
 	}
 #endif
-    if (!buf_start) {
-        /* Do not wake up */
+	if (!buf_start) {
+		/* Do not wake up */
 		strlcpy(reason, "NULL_TxBuff", sizeof(reason));
 		wakup_needed = 0;
 		goto end;
-    }
+	}
 
 	/* Wake up for serial msg */
 	switch (buf_handle->if_type) {
 
 		case ESP_SERIAL_IF:
-			  strlcpy(reason, "serial tx msg", sizeof(reason));
-			  wakup_needed = 1;
-			  goto end;
-			  break;
+			strlcpy(reason, "serial tx msg", sizeof(reason));
+			wakup_needed = 1;
+			goto end;
+			break;
 
 		case ESP_HCI_IF:
-			  strlcpy(reason, "bt tx msg", sizeof(reason));
-			  wakup_needed = 1;
-			  goto end;
-			  break;
+			strlcpy(reason, "bt tx msg", sizeof(reason));
+			wakup_needed = 1;
+			goto end;
+			break;
 
 		case ESP_PRIV_IF:
-			  strlcpy(reason, "priv tx msg", sizeof(reason));
-			  wakup_needed = 1;
-			  goto end;
-			  break;
+			strlcpy(reason, "priv tx msg", sizeof(reason));
+			wakup_needed = 1;
+			goto end;
+			break;
 
 		case ESP_TEST_IF:
-			  strlcpy(reason, "test tx msg", sizeof(reason));
-			  wakup_needed = 1;
-			  goto end;
-			  break;
+			strlcpy(reason, "test tx msg", sizeof(reason));
+			wakup_needed = 1;
+			goto end;
+			break;
 
 		case ESP_STA_IF:
 
-			  /* TODO: parse packet if lwip split not configured.
-			   * Decide if packets need to reach to host or not
-			   **/
-			  strlcpy(reason, "sta tx msg", sizeof(reason));
-			  wakup_needed = 1;
-			  goto end;
-			  break;
+			/* TODO: parse packet if lwip split not configured.
+			 * Decide if packets need to reach to host or not
+			 **/
+			strlcpy(reason, "sta tx msg", sizeof(reason));
+			wakup_needed = 1;
+			goto end;
+			break;
 
 		case ESP_AP_IF:
-			  strlcpy(reason, "ap tx msg", sizeof(reason));
-			  wakup_needed = 1;
-			  goto end;
-			  break;
+			strlcpy(reason, "ap tx msg", sizeof(reason));
+			wakup_needed = 1;
+			goto end;
+			break;
 	}
 
 #else
