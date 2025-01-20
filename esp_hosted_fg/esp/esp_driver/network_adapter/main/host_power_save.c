@@ -29,6 +29,7 @@ static char *TAG = "host_ps";
 
   static void oobTimerCallback( TimerHandle_t xTimer );
   static void (*host_wakeup_cb)(void);
+  int64_t host_wakeup_time = 0;
 #endif
 
 
@@ -218,8 +219,11 @@ void host_power_save_alert(uint32_t ps_evt)
 
 	} else if (ESP_POWER_SAVE_OFF == ps_evt) {
 		ESP_EARLY_LOGI(TAG, "Host Awake");
-
 		power_save_on = 0;
+
+		/* Update wakeup timestamp */
+		host_wakeup_time = esp_timer_get_time() / 1000; /* Convert to ms */
+
 		if (host_wakeup_cb) {
 			host_wakeup_cb();
 		}

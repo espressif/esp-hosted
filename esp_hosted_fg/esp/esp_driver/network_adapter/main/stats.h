@@ -59,7 +59,7 @@
 
 #ifdef CONFIG_FREERTOS_GENERATE_RUN_TIME_STATS
   /* Stats to show task wise CPU utilization */
-  #define STATS_TICKS                  pdMS_TO_TICKS(10 * 1000)
+  #define STATS_TICKS                  pdMS_TO_TICKS(4 * 1000)
   #define ARRAY_SIZE_OFFSET            5
 
 void debug_runtime_stats_task(void* pvParameters);

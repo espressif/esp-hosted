@@ -169,7 +169,7 @@ esp_err_t esp_hosted_set_sta_config(wifi_interface_t iface, wifi_config_t *cfg)
 
 #ifdef CONFIG_SLAVE_LWIP_ENABLED
 
-void send_dhcp_dns_info_to_host(uint8_t send_wifi_connected)
+void send_dhcp_dns_info_to_host(uint8_t network_up, uint8_t send_wifi_connected)
 {
 	ctrl_msg_set_dhcp_dns_status_t s2h_dhcp_dns_DOWN = {0};
 	ctrl_msg_set_dhcp_dns_status_t *evnt_to_send = &s2h_dhcp_dns_DOWN;
@@ -179,7 +179,7 @@ void send_dhcp_dns_info_to_host(uint8_t send_wifi_connected)
 		return;
 	}
 	ESP_EARLY_LOGI(TAG, "Send DHCP-DNS status to Host");
-	if (s2h_dhcp_dns.dhcp_up && s2h_dhcp_dns.net_link_up && s2h_dhcp_dns.dns_up) {
+	if (network_up && s2h_dhcp_dns.dhcp_up && s2h_dhcp_dns.net_link_up && s2h_dhcp_dns.dns_up) {
 		evnt_to_send = &s2h_dhcp_dns;
 	}
 	send_event_data_to_host(CTRL_MSG_ID__Event_SetDhcpDnsStatus,
@@ -230,7 +230,7 @@ static void event_handler_ip(void* arg, esp_event_base_t event_base,
 			s2h_dhcp_dns.dns_type = ESP_NETIF_DNS_MAIN;
 
 #ifdef CONFIG_SLAVE_MANAGES_WIFI
-			send_dhcp_dns_info_to_host(0);
+			send_dhcp_dns_info_to_host(1, 0);
 #endif
 			station_got_ip = 1;
 #ifdef CONFIG_ESP_HOSTED_COPROCESSOR_EXAMPLE_MQTT
@@ -245,7 +245,7 @@ static void event_handler_ip(void* arg, esp_event_base_t event_base,
 			station_got_ip = 0;
 			memset(&s2h_dhcp_dns, 0, sizeof(s2h_dhcp_dns));
 #ifdef CONFIG_SLAVE_MANAGES_WIFI
-			send_dhcp_dns_info_to_host(0);
+			send_dhcp_dns_info_to_host(0, 0);
 #endif
 			break;
 		}
@@ -385,7 +385,7 @@ static void station_event_handler(void *arg, esp_event_base_t event_base,
 		s2h_dhcp_dns.dhcp_up = s2h_dhcp_dns.dns_up = s2h_dhcp_dns.net_link_up = 0;
 		station_got_ip = 0;
 #ifdef CONFIG_SLAVE_MANAGES_WIFI
-		send_dhcp_dns_info_to_host(0);
+		send_dhcp_dns_info_to_host(0, 0);
 #endif
 
 		ESP_LOGI(TAG, "Sta mode disconnect, retry[%u]", sta_connect_retry);
@@ -853,7 +853,7 @@ static esp_err_t req_connect_ap_handler (CtrlMsg *req,
 #endif
 			/* as already connected, send the dhcp dns status event */
 #ifdef CONFIG_SLAVE_MANAGES_WIFI
-			send_dhcp_dns_info_to_host(1);
+			send_dhcp_dns_info_to_host(1, 1);
 #endif
 			return ESP_OK;
 		}
@@ -2426,6 +2426,26 @@ static esp_err_t req_get_country_code_handler (CtrlMsg *req,
     }                                                                           \
     dest.len = min(max_len,strlen((char*)src)+1);                               \
 }
+
+#if H_HOST_PS_ALLOWED
+static int64_t host_last_fetched_auto_ip_time = 0;
+
+
+/* Update the has_host_fetched_auto_ip function */
+bool has_host_fetched_auto_ip(void)
+{
+    int64_t current_time = esp_timer_get_time() / 1000; /* Convert to ms */
+
+    /* If host just woke up and last fetch was before sleep, return false */
+    if (host_last_fetched_auto_ip_time < get_last_wakeup_time()) {
+        host_last_fetched_auto_ip_time = current_time;
+        return false;
+    }
+
+    host_last_fetched_auto_ip_time = current_time;
+    return true;
+}
+#endif
 
 static esp_err_t req_get_dhcp_dns_status(CtrlMsg *req, CtrlMsg *resp, void *priv_data)
 {

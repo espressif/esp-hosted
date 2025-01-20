@@ -126,6 +126,6 @@ Note: inet_ntoa is non-reentrant, look at ipaddr_ntoa_r for "real" code */
 
 void slave_http_req_example(void)
 {
-	xTaskCreate(&http_get_task, "http_get_task", 4096, NULL, 5, NULL);
+	xTaskCreate(&http_get_task, "http_get_task", 4096, NULL, CONFIG_ESP_HOSTED_TASK_PRIORITY_LOW, NULL);
 }
 #endif

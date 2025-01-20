@@ -99,6 +99,12 @@ static struct rx_data {
 	uint8_t data[4096];
 } r;
 
+/* Add at the top with other static variables */
+#if H_HOST_PS_ALLOWED
+#define MAX_DHCP_DNS_RETRIES 10
+static int dhcp_dns_retry_count = 0;
+static TimerHandle_t delayed_dhcp_dns_timer = NULL;
+#endif
 
 static void print_firmware_version()
 {
@@ -837,29 +843,37 @@ static int connect_sta(void)
 }
 #endif
 
-#if 0
+#if 1
 #if H_HOST_PS_ALLOWED
 
-/* Add at the top with other static variables */
-static TimerHandle_t delayed_dhcp_dns_timer = NULL;
-
-/* Add new timer callback function */
+/* Update timer callback function */
 static void delayed_dhcp_dns_timer_cb(TimerHandle_t xTimer)
 {
-	/* Send DHCP/DNS info with connection status */
-	send_dhcp_dns_info_to_host(1);
-
-	/* Cleanup timer */
-	if (delayed_dhcp_dns_timer) {
-		xTimerDelete(delayed_dhcp_dns_timer, 0);
-		delayed_dhcp_dns_timer = NULL;
+	/* Check if host has fetched IP or max retries reached */
+	if (has_host_fetched_auto_ip() || dhcp_dns_retry_count >= MAX_DHCP_DNS_RETRIES) {
+		/* Stop retrying */
+		if (delayed_dhcp_dns_timer) {
+			xTimerDelete(delayed_dhcp_dns_timer, 0);
+			delayed_dhcp_dns_timer = NULL;
+		}
+		dhcp_dns_retry_count = 0;
+		return;
 	}
+
+	send_dhcp_dns_info_to_host(0, 0);
+	dhcp_dns_retry_count++;
+
+#if 0
+	vTaskDelay(pdMS_TO_TICKS(50));
+	s2h_dhcp_dns.dhcp_up = 1;
+	send_dhcp_dns_info_to_host(1, 0);
+#endif
 }
 
 /* Function to schedule delayed DHCP/DNS info send */
 static void schedule_delayed_dhcp_dns_info(void)
 {
-	const TickType_t delay_ticks = pdMS_TO_TICKS(100); /* 100ms delay */
+	const TickType_t delay_ticks = pdMS_TO_TICKS(500); /* 500ms delay */
 
 	/* Delete existing timer if any */
 	if (delayed_dhcp_dns_timer) {
@@ -885,12 +899,15 @@ static void schedule_delayed_dhcp_dns_info(void)
 	}
 }
 #endif
-/* Modify the host wakeup callback to use delayed send */
+/* Update host wakeup callback */
 void host_wakeup_callback(void)
 {
 	/* Handle immediate wakeup tasks */
 	host_available = 1;
 #if H_HOST_PS_ALLOWED
+	/* Reset retry count on new wakeup */
+	dhcp_dns_retry_count = 0;
+
 	/* Schedule delayed DHCP/DNS info send */
 	if (station_connected) {
 		schedule_delayed_dhcp_dns_info();
@@ -901,7 +918,7 @@ void host_wakeup_callback(void)
 static void host_wakeup_callback(void)
 {
 #if H_HOST_PS_ALLOWED
-	send_dhcp_dns_info_to_host(1);
+	send_dhcp_dns_info_to_host(1, 0);
 #endif
 }
 #endif
@@ -968,7 +985,7 @@ esp_err_t esp_hosted_coprocessor_init(void)
 
 	assert(xTaskCreate(recv_task , "recv_task" ,
 			CONFIG_ESP_DEFAULT_TASK_STACK_SIZE, NULL ,
-			CONFIG_ESP_DEFAULT_TASK_PRIO, NULL) == pdTRUE);
+			CONFIG_ESP_HOSTED_TASK_PRIORITY_DEFAULT, NULL) == pdTRUE);
 #if !BYPASS_TX_PRIORITY_Q
 	meta_to_host_queue = xQueueCreate(TO_HOST_QUEUE_SIZE*3, sizeof(uint8_t));
 	assert(meta_to_host_queue);
@@ -979,7 +996,7 @@ esp_err_t esp_hosted_coprocessor_init(void)
 	}
 	assert(xTaskCreate(send_task , "send_task" ,
 			CONFIG_ESP_DEFAULT_TASK_STACK_SIZE, NULL ,
-			CONFIG_ESP_DEFAULT_TASK_PRIO, NULL) == pdTRUE);
+			CONFIG_ESP_HOSTED_TASK_PRIORITY_DEFAULT, NULL) == pdTRUE);
 #endif
 	create_debugging_tasks();
 
@@ -1024,7 +1041,7 @@ esp_err_t esp_hosted_coprocessor_init(void)
 	host_power_save_init(host_wakeup_callback);
 
 #ifdef CONFIG_SLAVE_MANAGES_WIFI
-	send_dhcp_dns_info_to_host(1);
+	send_dhcp_dns_info_to_host(1, 0);
 #endif
 
 	return ESP_OK;

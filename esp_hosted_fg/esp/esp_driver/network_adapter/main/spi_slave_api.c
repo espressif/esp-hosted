@@ -745,7 +745,7 @@ static interface_handle_t * esp_spi_init(void)
 
 	assert(xTaskCreate(spi_transaction_post_process_task , "spi_post_process_task" ,
 			CONFIG_ESP_DEFAULT_TASK_STACK_SIZE, NULL,
-			CONFIG_ESP_DEFAULT_TASK_PRIO, NULL) == pdTRUE);
+			CONFIG_ESP_HOSTED_TASK_PRIORITY_HIGH, NULL) == pdTRUE);
 
 	usleep(500);
 

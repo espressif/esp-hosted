@@ -573,14 +573,13 @@ static struct sk_buff * read_packet(struct esp_adapter *adapter)
 	int is_lock_needed = IS_SDIO_HOST_LOCK_NEEDED;
 
 	if (!adapter) {
-		esp_err("INVALID args\n");
 		return NULL;
 	}
 
 	context = adapter->if_context;
 
 	if (!context || !context->func) {
-		esp_err("INVALID args\n");
+		esp_info("inactive sdio\n");
 		return NULL;
 	}
 

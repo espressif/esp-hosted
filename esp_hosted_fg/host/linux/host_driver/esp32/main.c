@@ -156,11 +156,9 @@ static int esp_set_mac_address(struct net_device *ndev, void *data)
 		return -EINVAL;
 
 	mac_addr = data;
-	if (!mac_addr->sa_data)
-		return -EINVAL;
 
 	priv = netdev_priv(ndev);
-	if (!priv || !priv->mac_address)
+	if (!priv)
 		return -EINVAL;
 
 	ether_addr_copy(priv->mac_address, mac_addr->sa_data);

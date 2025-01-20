@@ -389,11 +389,23 @@ menu "Example Configuration"
 		help
 			Default task size of ESP-Hosted tasks
 
-	config ESP_DEFAULT_TASK_PRIO
-		int "ESP-Hosted task priority"
-		default 22
+	config ESP_HOSTED_TASK_PRIORITY_LOW
+		int "ESP-Hosted task priority low"
+		default 5
+		help
+			Low priority of ESP-Hosted tasks
+
+	config ESP_HOSTED_TASK_PRIORITY_DEFAULT
+		int "ESP-Hosted task priority default"
+		default 21
 		help
 			Default task priority of ESP-Hosted tasks
+
+	config ESP_HOSTED_TASK_PRIORITY_HIGH
+		int "ESP-Hosted task priority high"
+		default 22
+		help
+			High priority of ESP-Hosted tasks
 
 	config ESP_CACHE_MALLOC
 		bool "Enable Mempool"

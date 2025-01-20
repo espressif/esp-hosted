@@ -380,12 +380,12 @@ static interface_handle_t * sdio_init(void)
 #if !SIMPLIFIED_SDIO_SLAVE
 	assert(xTaskCreate(sdio_rx_task, "sdio_rx_task" ,
 			CONFIG_ESP_DEFAULT_TASK_STACK_SIZE, NULL,
-			CONFIG_ESP_DEFAULT_TASK_PRIO, NULL) == pdTRUE);
+			CONFIG_ESP_HOSTED_TASK_PRIORITY_HIGH, NULL) == pdTRUE);
 
 	// task to clean up after doing sdio tx
 	assert(xTaskCreate(sdio_tx_done_task, "sdio_tx_done_task" ,
 			CONFIG_ESP_DEFAULT_TASK_STACK_SIZE, NULL,
-			CONFIG_ESP_DEFAULT_TASK_PRIO, NULL) == pdTRUE);
+			CONFIG_ESP_HOSTED_TASK_PRIORITY_HIGH, NULL) == pdTRUE);
 #endif
 	return &if_handle_g;
 }

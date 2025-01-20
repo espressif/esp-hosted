@@ -372,7 +372,7 @@ void create_debugging_tasks(void)
 #ifdef CONFIG_FREERTOS_GENERATE_RUN_TIME_STATS
 	assert(xTaskCreate(log_runtime_stats_task, "log_runtime_stats_task",
 				CONFIG_ESP_DEFAULT_TASK_STACK_SIZE, NULL,
-				1, NULL) == pdTRUE);
+				CONFIG_ESP_HOSTED_TASK_PRIORITY_LOW, NULL) == pdTRUE);
 #endif /* CONFIG_FREERTOS_GENERATE_RUN_TIME_STATS */
 
 #if TEST_RAW_TP
@@ -380,7 +380,7 @@ void create_debugging_tasks(void)
   #if TEST_RAW_TP__ESP_TO_HOST
 	assert(xTaskCreate(raw_tp_tx_task , "raw_tp_tx_task",
 				CONFIG_ESP_DEFAULT_TASK_STACK_SIZE, NULL ,
-				CONFIG_ESP_DEFAULT_TASK_PRIO, NULL) == pdTRUE);
+				CONFIG_ESP_HOSTED_TASK_PRIORITY_LOW, NULL) == pdTRUE);
   #endif
 #endif
 #if ESP_PKT_STATS

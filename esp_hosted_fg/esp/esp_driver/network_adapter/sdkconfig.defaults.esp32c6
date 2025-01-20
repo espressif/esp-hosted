@@ -48,7 +48,7 @@ CONFIG_ESP_DEFAULT_LWIP_SLAVE=y
 
 # 6.2 LWIP split examples
 #-------------------------
-CONFIG_ESP_HOSTED_COPROCESSOR_EXAMPLE_MQTT=n
+CONFIG_ESP_HOSTED_COPROCESSOR_EXAMPLE_MQTT=y
 
 
 # 7. Transport config

@@ -332,7 +332,7 @@ esp_err_t protocomm_pserial_start(protocomm_t *pc,
 	pc->priv = pserial_cfg;
 
 	xTaskCreate(pserial_task, "pserial_task", CONFIG_ESP_DEFAULT_TASK_STACK_SIZE,
-			(void *) pc, CONFIG_ESP_DEFAULT_TASK_PRIO, NULL);
+			(void *) pc, CONFIG_ESP_HOSTED_TASK_PRIORITY_DEFAULT, NULL);
 
 	return ESP_OK;
 }
