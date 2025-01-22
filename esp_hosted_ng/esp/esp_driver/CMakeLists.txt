@@ -15,7 +15,7 @@ execute_process(
 
 # Initialize submodule for esp-idf in esp-idf directory
 execute_process(
-    COMMAND git submodule update --init --depth=1
+    COMMAND git submodule update --init --depth=1 -f
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/esp-idf
 )
 
