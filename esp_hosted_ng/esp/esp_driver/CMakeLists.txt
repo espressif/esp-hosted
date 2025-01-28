@@ -15,7 +15,7 @@ execute_process(
 
 # Initialize submodule for esp-idf in esp-idf directory
 execute_process(
-    COMMAND git submodule update --init --depth=1
+    COMMAND git submodule update --init --depth=1 -f
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/esp-idf
 )
 
@@ -63,6 +63,7 @@ file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/lib/esp32s2/ DESTINATION ${CMAKE_CURRENT_S
 file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/lib/esp32s3/ DESTINATION ${CMAKE_CURRENT_SOURCE_DIR}/esp-idf/components/esp_wifi/lib/esp32s3/)
 file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/lib/esp32c2/ DESTINATION ${CMAKE_CURRENT_SOURCE_DIR}/esp-idf/components/esp_wifi/lib/esp32c2/)
 file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/lib/esp32c6/ DESTINATION ${CMAKE_CURRENT_SOURCE_DIR}/esp-idf/components/esp_wifi/lib/esp32c6/)
+file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/lib/esp32c5/ DESTINATION ${CMAKE_CURRENT_SOURCE_DIR}/esp-idf/components/esp_wifi/lib/esp32c5/)
 
 # Output message
 message("###### Setup Done ######")

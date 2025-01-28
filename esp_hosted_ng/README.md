@@ -211,6 +211,12 @@ The below table explains which feature is supported on which transport interface
       <td style="text-align:center;">&#10003;</td>
       <td style="text-align:center;">&#10003;</td>
     </tr>
+    <tr>
+      <td rowspan="3" style="text-align:center;">ESP32-C5</td>
+      <td style="text-align:center;">SPI</td>
+      <td style="text-align:center;">&#10003;</td>
+      <td style="text-align:center;">&#10003;</td>
+    </tr>
   </tbody>
 </table>
 
@@ -525,11 +531,30 @@ macaddr_acl=0
 auth_algs=1
 ignore_broadcast_ssid=0
 wpa=2
-wpa_key_mgmt=SAE
+wpa_key_mgmt=WPA-PSK SAE
 wpa_passphrase=MY_PASSPHRASE
 rsn_pairwise=CCMP
+sae_pwe=2
 ieee80211w=2
 ``` 
+Sample Configuration for AP on 5GHZ channel (ESP32C5)
+```sh
+interface=wlan0
+driver=nl80211
+ssid=MY_SSID
+hw_mode=a
+channel=36
+wmm_enabled=0
+macaddr_acl=0
+auth_algs=1
+ignore_broadcast_ssid=0
+wpa=2
+wpa_key_mgmt=WPA-PSK SAE
+wpa_passphrase=MY_PASSPHRASE
+rsn_pairwise=CCMP
+sae_pwe=2
+ieee80211w=2
+```
 >  Change `MY_SSID` to AP's SSID and `MY_PASSPHRASE` to Passphrase to connect
 > Security can configured by keeping the values of `wpa_key_mgmt` to `SAE/WPA-PSK`.
 ###### Start hostapd

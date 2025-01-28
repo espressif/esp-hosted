@@ -66,7 +66,7 @@ extern volatile uint8_t power_save_on;
 extern void wake_host();
 extern struct wow_config wow;
 
-#ifdef CONFIG_IDF_TARGET_ESP32C6
+#if defined(CONFIG_SOC_WIFI_HE_SUPPORT)
 	#define TX_DONE_PREFIX 8
 #else
 	#define TX_DONE_PREFIX 0
@@ -314,6 +314,10 @@ static int prepare_event(uint8_t if_type, interface_buffer_handle_t *buf_handle,
 }
 
 void config_done(void)
+{
+}
+
+void (wpa_sta_clear_current_pmksa)(void)
 {
 }
 
@@ -927,6 +931,7 @@ esp_err_t initialise_wifi(void)
 	wpa_cb.wpa_michael_mic_failure = sta_michael_mic_failure;
 	wpa_cb.wpa_config_done = config_done;
 	wpa_cb.wpa_config_parse_string  = wpa_config_parse_string;
+	wpa_cb.wpa_sta_clear_curr_pmksa = wpa_sta_clear_current_pmksa;
 
 	wpa_cb.wpa_ap_join       = hostap_sta_join;
 	wpa_cb.wpa_ap_remove     = wpa_ap_remove;
@@ -1291,7 +1296,6 @@ int process_auth_request(uint8_t if_type, uint8_t *payload, uint16_t payload_len
 	wifi_config_t wifi_config = {0};
 	uint32_t type = 0;
 	uint16_t number = DEFAULT_SCAN_LIST_SIZE;
-	uint16_t ap_count = 0;
 	wifi_ap_record_t ap_info[DEFAULT_SCAN_LIST_SIZE]= {0};
 	uint8_t auth_type = 0;
 	uint8_t msg_type = 0, *pos;
@@ -1338,9 +1342,6 @@ int process_auth_request(uint8_t if_type, uint8_t *payload, uint16_t payload_len
 		if (ret)
 			ESP_LOGI (TAG, "Err: esp_wifi_scan_get_ap_records: %d\n", ret);
 
-		ret = esp_wifi_scan_get_ap_num(&ap_count);
-		if (ret)
-			ESP_LOGI (TAG, "Err: esp_wifi_scan_get_ap_num: %d\n", ret);
 
 		/* Register the Management frames */
 		type = (1 << WLAN_FC_STYPE_ASSOC_RESP)
@@ -1352,7 +1353,7 @@ int process_auth_request(uint8_t if_type, uint8_t *payload, uint16_t payload_len
 		esp_wifi_register_mgmt_frame_internal(type, 0);
 
 		/* ESP_LOG_BUFFER_HEXDUMP("BSSID", cmd_auth->bssid, MAC_ADDR_LEN, ESP_LOG_INFO); */
-		for (int i = 0; (i < DEFAULT_SCAN_LIST_SIZE) && (i < ap_count); i++) {
+		for (int i = 0; (i < DEFAULT_SCAN_LIST_SIZE) && (i < number); i++) {
 			/*ESP_LOG_BUFFER_HEXDUMP("Next BSSID", ap_info[i].bssid, MAC_ADDR_LEN, ESP_LOG_INFO);
 			  ESP_LOGI(TAG, "ssid: %s, authmode: %u", ap_info[i].ssid, ap_info[i].authmode);*/
 			if (memcmp(ap_info[i].bssid, cmd_auth->bssid, MAC_ADDR_LEN) == 0) {
@@ -1957,8 +1958,13 @@ static int send_mgmt_tx_done(uint8_t cmd_status, wifi_interface_t wifi_if_type, 
 	header->header.cmd_code = CMD_MGMT_TX;
 	header->header.len = 0;
 	header->header.cmd_status = cmd_status;
-	header->len = len - TX_DONE_PREFIX;
-	memcpy(header->buf, data + TX_DONE_PREFIX, header->len);
+	if (len > TX_DONE_PREFIX) {
+		header->len = len - TX_DONE_PREFIX;
+		memcpy(header->buf, data + TX_DONE_PREFIX, header->len);
+	} else {
+		header->len = len;
+		memcpy(header->buf, data, header->len);
+	}
 
 	buf_handle.priv_buffer_handle = buf_handle.payload;
 	buf_handle.free_buf_handle = free;

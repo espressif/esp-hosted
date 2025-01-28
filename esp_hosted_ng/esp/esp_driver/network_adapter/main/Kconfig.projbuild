@@ -8,6 +8,7 @@ menu "Example Configuration"
         default ESP_SPI_HOST_INTERFACE if IDF_TARGET_ESP32C2
         default ESP_SPI_HOST_INTERFACE if IDF_TARGET_ESP32C3
         default ESP_SDIO_HOST_INTERFACE if IDF_TARGET_ESP32C6
+        default ESP_SPI_HOST_INTERFACE if IDF_TARGET_ESP32C5
         help
             Bus interface to be used for communication with the host
 
@@ -39,6 +40,7 @@ menu "Example Configuration"
         default 3 if IDF_TARGET_ESP32C2
         default 3 if IDF_TARGET_ESP32C3
         default 3 if IDF_TARGET_ESP32C6
+        default 3 if IDF_TARGET_ESP32C5
         default 2
         help
             GPIO pin to use for handshake with other spi controller

@@ -387,77 +387,6 @@ static void init_uart(void)
 #endif
 #endif
 
-#if BLUETOOTH_HCI
-#if SOC_ESP_NIMBLE_CONTROLLER
-#include "nimble/ble_hci_trans.h"
-
-typedef enum {
-    DATA_TYPE_COMMAND = 1,
-    DATA_TYPE_ACL     = 2,
-    DATA_TYPE_SCO     = 3,
-    DATA_TYPE_EVENT   = 4
-} serial_data_type_t;
-
-/* Host-to-controller command. */
-#define BLE_HCI_TRANS_BUF_CMD       3
-
-/* ACL_DATA_MBUF_LEADINGSPCAE: The leadingspace in user info header for ACL data */
-#define ACL_DATA_MBUF_LEADINGSPCAE    4
-
-void esp_vhci_host_send_packet(uint8_t *data, uint16_t len)
-{
-    if (*(data) == DATA_TYPE_COMMAND) {
-        struct ble_hci_cmd *cmd = NULL;
-        cmd = (struct ble_hci_cmd *) ble_hci_trans_buf_alloc(BLE_HCI_TRANS_BUF_CMD);
-	if (!cmd) {
-		ESP_LOGE(BT_TAG, "Failed to allocate memory for HCI transport buffer");
-		return;
-	}
-        memcpy((uint8_t *)cmd, data + 1, len - 1);
-        ble_hci_trans_hs_cmd_tx((uint8_t *)cmd);
-    }
-
-    if (*(data) == DATA_TYPE_ACL) {
-        struct os_mbuf *om = os_msys_get_pkthdr(len, ACL_DATA_MBUF_LEADINGSPCAE);
-        assert(om);
-        os_mbuf_append(om, &data[1], len - 1);
-        ble_hci_trans_hs_acl_tx(om);
-    }
-}
-
-bool esp_vhci_host_check_send_available() {
-    // not need to check in esp new controller
-    return true;
-}
-
-int ble_hs_hci_rx_evt(uint8_t *hci_ev, void *arg)
-{
-    uint16_t len = hci_ev[1] + 3;
-    uint8_t *data = (uint8_t *)malloc(len);
-    data[0] = 0x04;
-    memcpy(&data[1], hci_ev, len - 1);
-    ble_hci_trans_buf_free(hci_ev);
-    vhci_host_cb.notify_host_recv(data, len);
-    free(data);
-    return 0;
-}
-
-
-int ble_hs_rx_data(struct os_mbuf *om, void *arg)
-{
-    uint16_t len = om->om_len + 1;
-    uint8_t *data = (uint8_t *)malloc(len);
-    data[0] = 0x02;
-    os_mbuf_copydata(om, 0, len - 1, &data[1]);
-    vhci_host_cb.notify_host_recv(data, len);
-    free(data);
-    os_mbuf_free_chain(om);
-    return 0;
-}
-
-#endif
-#endif
-
 esp_err_t initialise_bluetooth(void)
 {
 	esp_bt_controller_config_t bt_cfg = BT_CONTROLLER_INIT_CONFIG_DEFAULT();
@@ -482,12 +411,7 @@ esp_err_t initialise_bluetooth(void)
 #if BLUETOOTH_HCI
 	esp_err_t ret = ESP_OK;
 
-#if SOC_ESP_NIMBLE_CONTROLLER
-	ble_hci_trans_cfg_hs((ble_hci_trans_rx_cmd_fn *)ble_hs_hci_rx_evt,NULL,
-				(ble_hci_trans_rx_acl_fn *)ble_hs_rx_data,NULL);
-#else
 	ret = esp_vhci_host_register_callback(&vhci_host_cb);
-#endif
 
 	if (ret != ESP_OK) {
 		ESP_LOGE(BT_TAG, "Failed to register VHCI callback");
