@@ -14,9 +14,9 @@
         - [**Scanning**](#scanning)
         - [**Connect to AP**](#connect-to-ap)
         - [**Disconnect from AP**](#disconnect-from-ap)
-      - [**Interface as AP**](#access_point)
-        - [**Configuring AP with hostapd**](#configuring_ap_with_hostapd)
-        - [**Setting up DHCP and DNS**](#setting_up_dhcp_and_dns)
+      - [**Interface as AP**](#access-point)
+        - [**Configuring AP with hostapd**](#configuring-ap-with-hostapd)
+        - [**Setting up DHCP and DNS**](#setting-up-dhcp-and-dns)
     + [3.1.2 Bluetooth/BLE](#312-bluetoothble)
 - [4. Design](#4-design)
     + [4.1 System Architecture](#41-system-architecture)
@@ -60,8 +60,8 @@ This solution provides following WLAN and BT/BLE features to the host:
 
 ESP-Hosted-NG solution is supported on following ESP boards:
 
-| Supported Targets | ESP32 | ESP32-S2 | ESP32-S3 | ESP32-C2 | ESP32-C3 | ESP32-C6 |
-| ----------------- | ----- | -------- | -------- | -------- | -------- | -------- |
+| Supported Targets | ESP32 | ESP32-S2 | ESP32-S3 | ESP32-C2 | ESP32-C3 | ESP32-C6 | ESP32-C5 |
+| ----------------- | ----- | -------- | -------- | -------- | -------- | -------- | -------- |
 
 Looking for other chipset? Please do check [Coming Soon](#5-coming-soon) section.
 
@@ -214,6 +214,16 @@ The below table explains which feature is supported on which transport interface
     <tr>
       <td rowspan="3" style="text-align:center;">ESP32-C5</td>
       <td style="text-align:center;">SPI</td>
+      <td style="text-align:center;">&#10003;</td>
+      <td style="text-align:center;">&#10003;</td>
+    </tr>
+    <tr>
+      <td style="text-align:center;">UART</td>
+      <td style="text-align:center;">&#10005;</td>
+      <td style="text-align:center;">&#10003;</td>
+    </tr>
+    <tr>
+      <td style="text-align:center;">SPI(WiFi) + UART(BT)</td>
       <td style="text-align:center;">&#10003;</td>
       <td style="text-align:center;">&#10003;</td>
     </tr>
@@ -760,7 +770,7 @@ Tremendous work to be done ahead! Below is glimpse of upcoming release:
 ---
 
 - Functionality
-	- esp32c5 support
+	- esp32c61 support
 
 ---
 
