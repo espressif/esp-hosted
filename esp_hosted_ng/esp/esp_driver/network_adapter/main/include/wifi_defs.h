@@ -27,7 +27,7 @@
 
 #define IEEE_HEADER_SIZE            24
 
-#define DEFAULT_SCAN_LIST_SIZE      20
+#define DEFAULT_SCAN_LIST_SIZE      1
 
 
 
