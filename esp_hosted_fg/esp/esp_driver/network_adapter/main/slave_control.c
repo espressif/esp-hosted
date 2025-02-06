@@ -29,6 +29,7 @@
 #include "host_power_save.h"
 #include "mqtt_example.h"
 #endif
+#include "esp_timer.h"
 
 #define MAC_STR_LEN                 17
 #define MAC2STR(a)                  (a)[0], (a)[1], (a)[2], (a)[3], (a)[4], (a)[5]
@@ -2505,8 +2506,12 @@ static esp_err_t req_get_dhcp_dns_status(CtrlMsg *req, CtrlMsg *resp, void *priv
 	if (esp_ip4addr_ntoa(&dns.ip.u_addr.ip4, sta_dns_ip, sizeof(sta_dns_ip)))
 		COPY_AS_RESP_IP(resp_payload->dns_ip, sta_dns_ip, strlen((char *)sta_dns_ip) + 1);
 
-	ESP_LOGI(TAG, "Fetched IP: %s, NM: %s, GW: %s, DNS IP: %s, Type: %u",
-			sta_ip, sta_nm, sta_gw, sta_dns_ip, resp_payload->dns_type);
+	ESP_LOGI(TAG, "Fetched IP: %s, NM: %s, GW: %s, DNS IP: %s, Type: %"PRId32,
+			(char *)resp_payload->dhcp_ip.data,
+			(char *)resp_payload->dhcp_nm.data,
+			(char *)resp_payload->dhcp_gw.data,
+			(char *)resp_payload->dns_ip.data,
+			resp_payload->dns_type);
 
 	resp_payload->resp = SUCCESS;
 	return ESP_OK;
@@ -2549,13 +2554,13 @@ static esp_err_t req_set_dhcp_dns_status(CtrlMsg *req, CtrlMsg *resp, void *priv
 			iface, net_link_up, dhcp_up, dns_up, dns_type);
 
 	if (req_payload->dhcp_ip.len)
-		ESP_LOGI(TAG, "dhcp ip: %s" , req_payload->dhcp_ip.data);
+		ESP_LOGI(TAG, "dhcp ip: %s" , (char *)req_payload->dhcp_ip.data);
 	if (req_payload->dhcp_nm.len)
-		ESP_LOGI(TAG, "dhcp nm: %s" , req_payload->dhcp_nm.data);
+		ESP_LOGI(TAG, "dhcp nm: %s" , (char *)req_payload->dhcp_nm.data);
 	if (req_payload->dhcp_gw.len)
-		ESP_LOGI(TAG, "dhcp gw: %s" , req_payload->dhcp_gw.data);
+		ESP_LOGI(TAG, "dhcp gw: %s" , (char *)req_payload->dhcp_gw.data);
 	if (req_payload->dns_ip.len)
-		ESP_LOGI(TAG, "dns ip: %s" , req_payload->dns_ip.data);
+		ESP_LOGI(TAG, "dns ip: %s" , (char *)req_payload->dns_ip.data);
 
 	RPC_REQ_COPY_BYTES(dhcp_ip, req_payload->dhcp_ip, sizeof(dhcp_ip));
 	RPC_REQ_COPY_BYTES(dhcp_nm, req_payload->dhcp_nm, sizeof(dhcp_nm));
@@ -3445,9 +3450,12 @@ static esp_err_t ctrl_ntfy_SetDhcpDnsStatus(CtrlMsg *ntfy,
 	p_c->dns_ip.data = p_a->dns_ip;
 	p_c->dns_ip.len = sizeof(p_a->dns_ip);
 
-	ESP_LOGI(TAG, "DHCP IP: %s, NM: %s, GW: %s, DNS IP: %s, Type: %u",
-			p_c->dhcp_ip.data, p_c->dhcp_nm.data, p_c->dhcp_gw.data,
-			p_c->dns_ip.data, p_c->dns_type);
+	ESP_LOGI(TAG, "DHCP IP: %s, NM: %s, GW: %s, DNS IP: %s, Type: %"PRId32,
+			p_c->dhcp_ip.data,
+			p_c->dhcp_nm.data,
+			p_c->dhcp_gw.data,
+			p_c->dns_ip.data,
+			p_c->dns_type);
 	p_c->resp = SUCCESS;
 	return ESP_OK;
 }
