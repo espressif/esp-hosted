@@ -12,6 +12,7 @@
 #include "esp_cfg80211.h"
 #include "esp_cmd.h"
 #include "esp_kernel_port.h"
+#include "esp_utils.h"
 
 /**
   * @brief WiFi PHY rate encodings
@@ -353,16 +354,13 @@ static int esp_nl_mode_to_esp_iface(enum nl80211_iftype type)
 	return ESP_MAX_IF;
 }
 
-static int8_t esp_get_mode_from_iface_type(int iface_type) {
-	// Numbers returned bellow have the following meaning
-	// 3 => WIFI_MODE_APSTA
-	// 1 => WIFI_MODE_STA
-
+static int8_t esp_get_mode_from_iface_type(int iface_type)
+{
 	if (iface_type == ESP_AP_IF) {
-		return 3;
+		return WIFI_MODE_APSTA;
 	}
 
-	return 1;
+	return WIFI_MODE_STA;
 }
 
 static int esp_cfg80211_change_iface(struct wiphy *wiphy,
