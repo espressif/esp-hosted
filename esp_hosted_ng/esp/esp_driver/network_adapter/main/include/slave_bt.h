@@ -46,7 +46,7 @@
         #define BLUETOOTH_UART   CONFIG_BTDM_CTRL_HCI_UART_NO
     #endif
 
-#elif (defined(CONFIG_IDF_TARGET_ESP32C2) || defined(CONFIG_IDF_TARGET_ESP32C6))
+#elif (defined(CONFIG_IDF_TARGET_ESP32C2) || defined(CONFIG_IDF_TARGET_ESP32C6) || defined(CONFIG_IDF_TARGET_ESP32C5))
 
     #define BLUETOOTH_BLE      1
 
@@ -102,6 +102,13 @@
 
 		#define BT_TX_PIN		5
 		#define BT_RX_PIN		12
+		//#define BT_RTS_PIN		9
+		//#define BT_CTS_PIN		13
+
+	#elif defined(CONFIG_IDF_TARGET_ESP32C5)
+
+		#define BT_TX_PIN		5
+		#define BT_RX_PIN		13
 		//#define BT_RTS_PIN		9
 		//#define BT_CTS_PIN		13
 

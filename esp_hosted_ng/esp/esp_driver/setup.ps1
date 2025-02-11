@@ -23,4 +23,5 @@ xcopy /q /y .\lib\esp32c3\ .\esp-idf\components\esp_wifi\lib\esp32c3\
 xcopy /q /y .\lib\esp32c6\ .\esp-idf\components\esp_wifi\lib\esp32c6\
 xcopy /q /y .\lib\esp32s2\ .\esp-idf\components\esp_wifi\lib\esp32s2\
 xcopy /q /y .\lib\esp32s3\ .\esp-idf\components\esp_wifi\lib\esp32s3\
+xcopy /q /y .\lib\esp32c5\ .\esp-idf\components\esp_wifi\lib\esp32c5\
 echo "###### Setup Done ######"

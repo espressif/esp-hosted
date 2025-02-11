@@ -831,7 +831,7 @@ static int esp_cfg80211_set_txq_params(struct wiphy *wiphy, struct net_device *n
 
 static int esp_set_ies(struct esp_wifi_device *priv, struct cfg80211_beacon_data *info)
 {
-	int ret;
+	int ret = 0;
 
 #define FIXED_PARAM_LEN 34
 
