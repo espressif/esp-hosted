@@ -792,6 +792,9 @@ static int esp_cfg80211_get_station(struct wiphy *wiphy, struct net_device *ndev
 
 static int esp_cfg80211_get_tx_power(struct wiphy *wiphy,
 				     struct wireless_dev *wdev,
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 14, 0))
+				     unsigned int link_id,
+#endif
 				     int *dbm)
 {
 	struct esp_wifi_device *priv = NULL;
