@@ -694,14 +694,11 @@ struct esp_wifi_device *get_priv_from_payload_header(
 			continue;
                 }
 
-		if (priv->if_type == header->if_type &&
-		    priv->if_num == header->if_num) {
+		if (priv->if_num == header->if_num) {
 			return priv;
-		} else if (priv->if_type == header->if_type) {
-			esp_err("dropping pkt, priv ifnum=%d, header ifnum=%d\n", priv->if_num, header->if_num);
-                } else {
-			esp_err("dropping pkt, priv iftype=%d, header iftype=%d\n", priv->if_type, header->if_type);
-                }
+		} else {
+			esp_err("dropping pkt, priv iftype=%d ifnum=%d, header iftype=%d ifnum=%d\n", priv->if_type, priv->if_num, header->if_type, header->if_num);
+		}
 	}
 	return NULL;
 }

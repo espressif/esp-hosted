@@ -354,8 +354,12 @@ static int esp_nl_mode_to_esp_iface(enum nl80211_iftype type)
 }
 
 static int8_t esp_get_mode_from_iface_type(int iface_type) {
+	// Numbers returned bellow have the following meaning
+	// 3 => WIFI_MODE_APSTA
+	// 1 => WIFI_MODE_STA
+
 	if (iface_type == ESP_AP_IF) {
-		return 2;
+		return 3;
 	}
 
 	return 1;
