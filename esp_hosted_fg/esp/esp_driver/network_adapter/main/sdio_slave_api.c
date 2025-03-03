@@ -155,8 +155,7 @@ void generate_startup_event(uint8_t cap)
 	*pos = raw_tp_cap;                  pos++;len++;
 
 	/* fill structure with fw info */
-	strncpy(fw_ver.project_name, PROJECT_NAME, sizeof(fw_ver.project_name) - 1);
-	fw_ver.project_name[sizeof(fw_ver.project_name) - 1] = '\0';
+	strlcpy(fw_ver.project_name, PROJECT_NAME, sizeof(fw_ver.project_name));
 	fw_ver.major1 = PROJECT_VERSION_MAJOR_1;
 	fw_ver.major2 = PROJECT_VERSION_MAJOR_2;
 	fw_ver.minor  = PROJECT_VERSION_MINOR;

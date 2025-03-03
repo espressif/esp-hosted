@@ -504,14 +504,12 @@ static esp_err_t req_connect_ap_handler (CtrlMsg *req,
 	}
 
 	if (req->req_connect_ap->ssid) {
-		strncpy((char *)wifi_cfg->sta.ssid, req->req_connect_ap->ssid,
-				min(sizeof(wifi_cfg->sta.ssid),
-					strlen(req->req_connect_ap->ssid)+1));
+		strlcpy((char *)wifi_cfg->sta.ssid, req->req_connect_ap->ssid,
+				sizeof(wifi_cfg->sta.ssid));
 	}
 	if (req->req_connect_ap->pwd) {
-		strncpy((char *)wifi_cfg->sta.password, req->req_connect_ap->pwd,
-				min(sizeof(wifi_cfg->sta.password),
-					strlen((char *)req->req_connect_ap->pwd)+1));
+		strlcpy((char *)wifi_cfg->sta.password, req->req_connect_ap->pwd,
+				sizeof(wifi_cfg->sta.password));
 	}
 	if ((req->req_connect_ap->bssid) &&
 	    (strlen((char *)req->req_connect_ap->bssid))) {
@@ -722,8 +720,8 @@ static esp_err_t req_get_ap_config_handler (CtrlMsg *req,
 
 	snprintf((char *)credentials.bssid,BSSID_LENGTH,MACSTR,MAC2STR(ap_info->bssid));
 	if (strlen((char *)ap_info->ssid)) {
-		strncpy((char *)credentials.ssid, (char *)ap_info->ssid,
-				min(sizeof(credentials.ssid), strlen((char *)ap_info->ssid)+1));
+		strlcpy((char *)credentials.ssid, (char *)ap_info->ssid,
+				sizeof(credentials.ssid));
 	}
 	credentials.rssi = ap_info->rssi;
 	credentials.chnl = ap_info->primary;
@@ -891,12 +889,12 @@ static esp_err_t req_get_softap_config_handler (CtrlMsg *req,
 #endif
 
 	if (strlen((char *)get_conf.ap.ssid)) {
-		strncpy((char *)credentials.ssid,(char *)&get_conf.ap.ssid,
-				min(sizeof(credentials.ssid), strlen((char *)&get_conf.ap.ssid)+1));
+		strlcpy((char *)credentials.ssid,(char *)&get_conf.ap.ssid,
+				sizeof(credentials.ssid));
 	}
 	if (strlen((char *)get_conf.ap.password)) {
-		strncpy((char *)credentials.pwd,(char *)&get_conf.ap.password,
-				min(sizeof(credentials.pwd), strlen((char *)&get_conf.ap.password)+1));
+		strlcpy((char *)credentials.pwd,(char *)&get_conf.ap.password,
+				sizeof(credentials.pwd));
 	}
 	credentials.chnl = get_conf.ap.channel;
 	credentials.max_conn = get_conf.ap.max_connection;
@@ -1025,17 +1023,15 @@ static esp_err_t req_start_softap_handler (CtrlMsg *req,
 	wifi_config->ap.authmode = req->req_start_softap->sec_prot;
 	if (wifi_config->ap.authmode != WIFI_AUTH_OPEN) {
 		if (req->req_start_softap->pwd) {
-			strncpy((char *)wifi_config->ap.password,
+			strlcpy((char *)wifi_config->ap.password,
 					req->req_start_softap->pwd,
-					min(sizeof(wifi_config->ap.password),
-						strlen(req->req_start_softap->pwd)+1));
+					sizeof(wifi_config->ap.password));
 		}
 	}
 	if (req->req_start_softap->ssid) {
-		strncpy((char *)wifi_config->ap.ssid,
+		strlcpy((char *)wifi_config->ap.ssid,
 				req->req_start_softap->ssid,
-				min(sizeof(wifi_config->ap.ssid),
-					strlen(req->req_start_softap->ssid)+1));
+				sizeof(wifi_config->ap.ssid));
 		wifi_config->ap.ssid_len = strlen(req->req_start_softap->ssid);
 	}
 
@@ -1295,7 +1291,7 @@ static esp_err_t req_get_ap_scan_list_handler (CtrlMsg *req,
 
 		credentials.ecn = ap_info[i].authmode;
 		results[i]->sec_prot = credentials.ecn;
-#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 0, 0) 
+#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 0, 0)
 		ESP_LOGI(TAG, "SSID      \t\t%s\nRSSI      \t\t%ld\nChannel   \t\t%lu\nBSSID     \t\t%s\nAuth mode \t\t%d\n",
 #else
 		ESP_LOGI(TAG,"\nSSID      \t\t%s\nRSSI      \t\t%d\nChannel   \t\t%d\nBSSID     \t\t%s\nAuth mode \t\t%d\n",
