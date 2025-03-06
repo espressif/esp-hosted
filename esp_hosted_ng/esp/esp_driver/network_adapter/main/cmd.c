@@ -870,12 +870,13 @@ static int handle_wpa_ap_rx_mgmt(void *pkt, uint32_t pkt_len, uint8_t chan, int 
 	event->rssi = rssi;
 	event->nf = nf;
 
+#if 0
 	if (event->frame[0] != 0x40) {
-		ESP_LOGI(TAG, "%s: Got packet type as %x \n", __func__, event->frame[0]);
+		ESP_LOGD(TAG, "%s: Got packet type as %x \n", __func__, event->frame[0]);
 	}
 
-	/*ESP_LOG_BUFFER_HEXDUMP(TAG, event->frame, event->frame_len, ESP_LOG_INFO);*/
-
+	ESP_LOG_BUFFER_HEXDUMP(TAG, event->frame, event->frame_len, ESP_LOG_INFO);
+#endif
 	ret = send_command_event(&buf_handle);
 	if (ret != pdTRUE) {
 		ESP_LOGE(TAG, "Slave -> Host: Failed to send mgmt frames\n");
@@ -1655,6 +1656,23 @@ send_resp:
 	return ret;
 }
 
+// hw_index = 8 for AP aid = 0
+void esp_wifi_get_and_print_key(u8 hw_index)
+{
+	u8 idx;
+	int algo;
+	u8 addr[6];
+	int keyindex;
+	u8 key1[32];
+
+	int ic_get_key(u8 *idx, int *algo, int *keyindex, u8 *addr, u8 hw_index, u8 *key, u8 key_len);
+	ic_get_key(&idx, &algo, &keyindex, addr, hw_index, key1, 32);
+
+	ESP_LOGI(TAG, "index=%d, algo=%d, keyindex=%d", idx, algo, keyindex);
+	ESP_LOG_BUFFER_HEXDUMP("mac", addr, 6, ESP_LOG_INFO);
+	ESP_LOG_BUFFER_HEXDUMP("key", key1, 32, ESP_LOG_INFO);
+}
+
 static int set_key_internal(void *data)
 {
 	wifi_interface_t iface = WIFI_IF_STA;
@@ -1680,7 +1698,7 @@ static int set_key_internal(void *data)
 
 	if (key->algo == WIFI_WPA_ALG_WEP40 || key->algo == WIFI_WPA_ALG_WEP104) {
 	    return 0;
-    }
+	}
 	if (key->index) {
 		if (key->algo == WIFI_WPA_ALG_IGTK) {
 			wifi_wpa_igtk_t igtk = {0};
@@ -1706,19 +1724,24 @@ static int set_key_internal(void *data)
 		}
 	} else {
 		/* PTK */
-		ESP_LOGI(TAG, "Setting PTK \n");
+		ESP_LOGI(TAG, "Setting PTK algo=%ld index=%ld", key->algo, key->index);
+		ESP_LOG_BUFFER_HEXDUMP("mac", key->mac_addr, 6, ESP_LOG_DEBUG);
+		ESP_LOG_BUFFER_HEXDUMP("key", key->data, key->len, ESP_LOG_DEBUG);
 		if (iface == WIFI_IF_AP) {
 			ret = esp_wifi_set_ap_key_internal(key->algo, key->mac_addr, key->index,
-						key->data, key->len);
+					key->data, key->len);
 		} else {
 			ret = esp_wifi_set_sta_key_internal(key->algo, key->mac_addr, key->index,
 				1, key->seq, key->seq_len, key->data, key->len, 
 				KEY_FLAG_PAIRWISE | KEY_FLAG_RX | KEY_FLAG_TX);
 		}
 	}
+
 	if (ret) {
-		ESP_LOGE(TAG, "%s:%u driver key set failed\n", __func__, __LINE__);
+		ESP_LOGE(TAG, "%s:%u driver key set ret=%d\n", __func__, __LINE__, ret);
 	}
+
+	free(cmd);
 
 	return ret;
 }
@@ -1739,12 +1762,16 @@ int process_add_key(uint8_t if_type, uint8_t *payload, uint16_t payload_len)
 	struct cmd_key_operation *cmd = NULL;
 	uint8_t cmd_status;
 
-	cmd = (struct cmd_key_operation *) payload;
+	cmd = malloc(sizeof(*cmd));
+
 	if (!cmd) {
-		ESP_LOGE(TAG, "%s:%u command failed\n", __func__, __LINE__);
+	}
+	if (!cmd) {
+		ESP_LOGE(TAG, "%s:%u memory allocation failed\n", __func__, __LINE__);
 		cmd_status = CMD_RESPONSE_FAIL;
 		goto SEND_CMD;
 	}
+	memcpy(cmd, payload, sizeof(*cmd));
 	cmd->header.reserved1 = if_type;
 
 	cmd_status = CMD_RESPONSE_SUCCESS;
@@ -1764,7 +1791,6 @@ int process_set_mode(uint8_t if_type, uint8_t *payload, uint16_t payload_len)
     struct cmd_config_mode *mode = (struct cmd_config_mode *) payload;
     wifi_mode_t old_mode;
 
-
     ret = esp_wifi_get_mode(&old_mode);
     if (ret) {
         ESP_LOGE(TAG, "Failed to get mode");
@@ -1778,7 +1804,6 @@ int process_set_mode(uint8_t if_type, uint8_t *payload, uint16_t payload_len)
     if (ret) {
         ESP_LOGE(TAG, "Failed to stop wifi\n");
     }
-
     if (mode->mode == WIFI_MODE_AP) {
         ret = esp_wifi_set_mac(WIFI_IF_STA, dummy_mac);
     } else if (mode->mode == WIFI_MODE_STA){
@@ -1787,16 +1812,22 @@ int process_set_mode(uint8_t if_type, uint8_t *payload, uint16_t payload_len)
 
     ESP_LOGI(TAG, "Setting mode=%d \n", mode->mode);
     ret = esp_wifi_set_mode(mode->mode);
+    if (ret) {
+        ESP_LOGE(TAG, "Failed to set mode\n");
+        cmd_status = CMD_RESPONSE_FAIL;
+        goto send_resp;
+    }
     if (mode->mode == WIFI_MODE_AP) {
         ret = esp_wifi_set_mac(WIFI_IF_AP, dev_mac);
     } else if (mode->mode == WIFI_MODE_STA){
         ret = esp_wifi_set_mac(WIFI_IF_STA, dev_mac);
     }
+    ESP_LOGI(TAG, "Set mac ret=%d\n", ret);
 
     ESP_ERROR_CHECK(esp_wifi_start());
 
     if (ret) {
-        ESP_LOGE(TAG, "Failed to set mode\n");
+        ESP_LOGE(TAG, "Failed to set mac\n");
         cmd_status = CMD_RESPONSE_FAIL;
         goto send_resp;
     }
@@ -1902,12 +1933,15 @@ int process_set_ap_config(uint8_t if_type, uint8_t *payload, uint16_t payload_le
 	wifi_config_t wifi_config = {0};
 
 	memcpy(wifi_config.ap.ssid, ap_config->ap_config.ssid, ap_config->ap_config.ssid_len);
+	/* set dummy config for data path */
+	if (ap_config->ap_config.privacy) {
+		memcpy(wifi_config.ap.password, "12345678", 8);
+		wifi_config.ap.authmode = WIFI_AUTH_WPA2_WPA3_PSK;
+	}
 	wifi_config.ap.ssid_len = ap_config->ap_config.ssid_len;
 	wifi_config.ap.channel = ap_config->ap_config.channel;
-	wifi_config.ap.authmode = ap_config->ap_config.authmode;
 	wifi_config.ap.ssid_hidden = ap_config->ap_config.ssid_hidden;
 	wifi_config.ap.beacon_interval = ap_config->ap_config.beacon_interval;
-//	wifi_config.ap.pairwise_cipher = ap_config->ap_config.pairwise_cipher;
 
 	ESP_LOGI(TAG, "ap config ssid=%s ssid_len=%d, pass=%s channel=%d authmode=%d hidden=%d bi=%d cipher=%d\n",
 			wifi_config.ap.ssid, wifi_config.ap.ssid_len,
@@ -1917,9 +1951,25 @@ int process_set_ap_config(uint8_t if_type, uint8_t *payload, uint16_t payload_le
 			wifi_config.ap.pairwise_cipher);
 
 	wifi_config.ap.max_connection = 8;
+
+	wifi_mode_t old_mode;
+
+	ret = esp_wifi_get_mode(&old_mode);
+	if (ret) {
+		ESP_LOGE(TAG, "Failed to get mode");
+	}
+
 	ret = esp_wifi_stop();
+
+	if (old_mode != WIFI_MODE_AP) {
+		ret = esp_wifi_set_mode(WIFI_MODE_AP);
+	}
 	esp_wifi_set_config(WIFI_IF_AP, &wifi_config);
 
+	if (ap_config->ap_config.inactivity_timeout) {
+		ESP_LOGI(TAG, "inactivity_timeout=%d\n", ap_config->ap_config.inactivity_timeout);
+		esp_wifi_set_inactive_time(WIFI_IF_AP, ap_config->ap_config.inactivity_timeout);
+	}
 #define WIFI_TXCB_MGMT_ID 2
 	/* register for mgmt tx done */
 	ret = pp_unregister_tx_cb(WIFI_TXCB_MGMT_ID);
@@ -2031,10 +2081,6 @@ int add_station_node_ap(void *data)
 	ESP_LOG_BUFFER_HEXDUMP("mac", sta->sta_param.mac, 6, ESP_LOG_INFO);
 	ESP_LOGI(TAG,"aid=%d\n", sta->sta_param.aid);
 
-	ESP_LOG_BUFFER_HEXDUMP("supported_rates", sta->sta_param.supported_rates, 12, ESP_LOG_INFO);
-	ESP_LOG_BUFFER_HEXDUMP("ht_rates", sta->sta_param.ht_caps, 28, ESP_LOG_INFO);
-	ESP_LOG_BUFFER_HEXDUMP("vht_rates", sta->sta_param.vht_caps, 14, ESP_LOG_INFO);
-	ESP_LOG_BUFFER_HEXDUMP("he_rates", sta->sta_param.he_caps, 27, ESP_LOG_INFO);
 
 #define STA_FLAG_AUTHORIZED 1
 	if (sta->sta_param.cmd != ADD_STA) {
@@ -2045,7 +2091,12 @@ int add_station_node_ap(void *data)
             }
 	    ESP_LOGI(TAG, "%s: not station add cmd, handle later\n", __func__);
 	    return 0;
-        }
+        } else {
+		ESP_LOG_BUFFER_HEXDUMP("supported_rates", sta->sta_param.supported_rates, 12, ESP_LOG_INFO);
+		ESP_LOG_BUFFER_HEXDUMP("ht_rates", sta->sta_param.ht_caps, 28, ESP_LOG_INFO);
+		ESP_LOG_BUFFER_HEXDUMP("vht_rates", sta->sta_param.vht_caps, 14, ESP_LOG_INFO);
+		ESP_LOG_BUFFER_HEXDUMP("he_rates", sta->sta_param.he_caps, 27, ESP_LOG_INFO);
+	}
 	return ieee80211_add_node(WIFI_IF_AP, sta->sta_param.mac, sta->sta_param.aid,
 			sta->sta_param.supported_rates[0] ? sta->sta_param.supported_rates : NULL,
 			sta->sta_param.ht_caps[0] ? sta->sta_param.ht_caps : NULL,
