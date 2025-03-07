@@ -19,7 +19,7 @@
 #define WPA2_TASK_STACK_SIZE  (6144 + TASK_STACK_SIZE_ADD)
 #define WPS_TASK_STACK_SIZE  (12288 + TASK_STACK_SIZE_ADD)
 
-enum wpa_alg{
+enum wpa_alg {
     WIFI_WPA_ALG_NONE   = 0,
     WIFI_WPA_ALG_WEP40  = 1,
     WIFI_WPA_ALG_TKIP   = 2,
@@ -66,9 +66,9 @@ enum {
     WPA2_AUTH_PSK       = 0x05,
     WPA_AUTH_CCKM       = 0x06,
     WPA2_AUTH_CCKM      = 0x07,
-    WPA2_AUTH_PSK_SHA256= 0x08,
+    WPA2_AUTH_PSK_SHA256 = 0x08,
     WPA3_AUTH_PSK       = 0x09,
-    WPA2_AUTH_ENT_SHA256= 0x0a,
+    WPA2_AUTH_ENT_SHA256 = 0x0a,
     WAPI_AUTH_PSK       = 0x0b,
     WAPI_AUTH_CERT      = 0x0c,
     WPA2_AUTH_ENT_SHA384_SUITE_B = 0x0d,
@@ -145,18 +145,18 @@ struct wpa_funcs {
 };
 
 struct wpa2_funcs {
-    int  (*wpa2_sm_rx_eapol)(uint8_t *src_addr, uint8_t *buf, uint32_t len, uint8_t *bssid);
-    int  (*wpa2_start)(void);
-    uint8_t   (*wpa2_get_state)(void);
-    int  (*wpa2_init)(void);
+    int (*wpa2_sm_rx_eapol)(uint8_t *src_addr, uint8_t *buf, uint32_t len, uint8_t *bssid);
+    int (*wpa2_start)(void);
+    uint8_t (*wpa2_get_state)(void);
+    int (*wpa2_init)(void);
     void (*wpa2_deinit)(void);
 };
 
 struct wps_funcs {
     bool (*wps_parse_scan_result)(struct wps_scan_ie *scan);
-    int  (*wifi_station_wps_start)(void);
-    int  (*wps_sm_rx_eapol)(uint8_t *src_addr, uint8_t *buf, uint32_t len);
-    int  (*wps_start_pending)(void);
+    int (*wifi_station_wps_start)(void);
+    int (*wps_sm_rx_eapol)(uint8_t *src_addr, uint8_t *buf, uint32_t len);
+    int (*wps_start_pending)(void);
 };
 
 typedef esp_err_t (*wifi_wpa2_fn_t)(void *);

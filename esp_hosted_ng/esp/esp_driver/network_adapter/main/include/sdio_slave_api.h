@@ -19,7 +19,7 @@
 
 #ifdef CONFIG_IDF_TARGET_ESP32
 #elif defined CONFIG_IDF_TARGET_ESP32S2
-    #error "SDIO is not supported for ESP32S2. Please use SPI"
+#error "SDIO is not supported for ESP32S2. Please use SPI"
 #endif
 
 #endif

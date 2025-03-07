@@ -18,7 +18,7 @@
 #define __ESP__H
 
 #include "adapter.h"
-#define TASK_DEFAULT_STACK_SIZE	 4096
+#define TASK_DEFAULT_STACK_SIZE  4096
 #define TASK_DEFAULT_PRIO        22
 
 #define u8        uint8_t
@@ -27,15 +27,15 @@
 #define u64       uint64_t
 
 #if defined CONFIG_ESP_SDIO_HOST_INTERFACE
-  #define SDIO_SLAVE_QUEUE_SIZE    20
-  #define RX_BUF_SIZE              2048
-  #define RX_BUF_NUM               20
+#define SDIO_SLAVE_QUEUE_SIZE    20
+#define RX_BUF_SIZE              2048
+#define RX_BUF_NUM               20
 
 #elif defined CONFIG_ESP_SPI_HOST_INTERFACE
-  #define RX_BUF_SIZE              1600
+#define RX_BUF_SIZE              1600
 
 #else
-  #error "Undefined transport"
+#error "Undefined transport"
 #endif
 
 #define MAX_ALLOWED_BUF_PAYLOAD_LEN (RX_BUF_SIZE-sizeof(struct esp_payload_header))
