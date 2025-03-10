@@ -20,15 +20,15 @@
 #include "adapter.h"
 
 typedef struct {
-	interface_context_t *context;
+    interface_context_t *context;
 } adapter;
 
 struct wow_config {
-	uint8_t any;
-	uint8_t disconnect;
-	uint8_t magic_pkt;
-	uint8_t four_way_handshake;
-	uint8_t eap_identity_req;
+    uint8_t any;
+    uint8_t disconnect;
+    uint8_t magic_pkt;
+    uint8_t four_way_handshake;
+    uint8_t eap_identity_req;
 };
 
 #endif
