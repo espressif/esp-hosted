@@ -35,7 +35,8 @@
 #define SPI_INITIAL_CLK_MHZ     10
 #define NUMBER_1M               1000000
 #define TX_MAX_PENDING_COUNT    100
-#define TX_RESUME_THRESHOLD     (TX_MAX_PENDING_COUNT/5)
+#define TX_RESUME_THRESHOLD     (TX_MAX_PENDING_COUNT/2)
+#define MAX_TX_QUEUE_LEN       (TX_MAX_PENDING_COUNT)
 
 /* ESP in sdkconfig has CONFIG_IDF_FIRMWARE_CHIP_ID entry.
  * supported values of CONFIG_IDF_FIRMWARE_CHIP_ID are - */
@@ -162,6 +163,12 @@ static int write_packet(struct esp_adapter *adapter, struct sk_buff *skb)
 		return -EPERM;
 	}
 
+	/* Check queue length before enqueueing */
+	if (skb_queue_len(&spi_context.tx_q[PRIO_Q_OTHERS]) >= MAX_TX_QUEUE_LEN) {
+		esp_err("TX queue full, dropping packet\n");
+		dev_kfree_skb(skb);
+		return -EBUSY;
+	}
 
 	/* Enqueue SKB in tx_q */
 	if (payload_header->if_type == ESP_SERIAL_IF) {
@@ -171,6 +178,8 @@ static int write_packet(struct esp_adapter *adapter, struct sk_buff *skb)
 	} else {
 		if (atomic_read(&tx_pending) >= TX_MAX_PENDING_COUNT) {
 			esp_tx_pause();
+			dev_kfree_skb(skb);
+			return -EBUSY;
 		}
 		skb_queue_tail(&spi_context.tx_q[PRIO_Q_OTHERS], skb);
 		atomic_inc(&tx_pending);
@@ -182,12 +191,45 @@ static int write_packet(struct esp_adapter *adapter, struct sk_buff *skb)
 }
 
 
+/* New: Handle device reinit in separate work function */
+static void esp_spi_reinit_work(struct work_struct *work)
+{
+	struct esp_spi_context *context = container_of(work, struct esp_spi_context, reinit_work);
+	uint8_t prio_q_idx = 0;
+
+	/* Already resetting or invalid state */
+	if (atomic_read(&context->device_state) != SPI_DEVICE_RUNNING)
+		return;
+
+	atomic_set(&context->device_state, SPI_DEVICE_RESETTING);
+
+	/* Purge all queues */
+	for (prio_q_idx = 0; prio_q_idx < MAX_PRIORITY_QUEUES; prio_q_idx++) {
+		skb_queue_purge(&context->tx_q[prio_q_idx]);
+		skb_queue_purge(&context->rx_q[prio_q_idx]);
+	}
+
+	/* Re-init queues */
+	for (prio_q_idx = 0; prio_q_idx < MAX_PRIORITY_QUEUES; prio_q_idx++) {
+		skb_queue_head_init(&context->tx_q[prio_q_idx]);
+		skb_queue_head_init(&context->rx_q[prio_q_idx]);
+	}
+
+	/* Remove and re-add card */
+	esp_remove_card(context->adapter);
+	if (esp_add_card(context->adapter)) {
+		esp_err("Failed to reinit card\n");
+		/* Continue anyway - device will retry */
+	}
+
+	atomic_set(&context->device_state, SPI_DEVICE_RUNNING);
+}
+
 int process_init_event(u8 *evt_buf, u8 len)
 {
 	u8 len_left = len, tag_len;
 	u8 *pos;
 	struct esp_adapter *adapter = esp_get_adapter();
-	uint8_t prio_q_idx = 0;
 	int ret = 0;
 	struct fw_version *fw_p;
 	int fw_version_checked = 0;
@@ -221,11 +263,6 @@ int process_init_event(u8 *evt_buf, u8 len)
 		len_left -= (tag_len+2);
 	}
 
-	/* TODO: abort if strict firmware check is not performed */
-	if ((get_fw_check_type() == FW_CHECK_STRICT) && !fw_version_checked) {
-		esp_warn("ESP Firmware version was not checked");
-	}
-
 	if ((hardware_type != ESP_PRIV_FIRMWARE_CHIP_ESP32) &&
 		(hardware_type != ESP_PRIV_FIRMWARE_CHIP_ESP32S2) &&
 		(hardware_type != ESP_PRIV_FIRMWARE_CHIP_ESP32C2) &&
@@ -239,19 +276,12 @@ int process_init_event(u8 *evt_buf, u8 len)
 	}
 
 	if (first_esp_bootup_over) {
-		for (prio_q_idx=0; prio_q_idx<MAX_PRIORITY_QUEUES; prio_q_idx++) {
-			skb_queue_purge(&spi_context.tx_q[prio_q_idx]);
-			skb_queue_purge(&spi_context.rx_q[prio_q_idx]);
-		}
-
-		esp_remove_card(spi_context.adapter);
-
-		for (prio_q_idx=0; prio_q_idx<MAX_PRIORITY_QUEUES; prio_q_idx++) {
-			skb_queue_head_init(&spi_context.tx_q[prio_q_idx]);
-			skb_queue_head_init(&spi_context.rx_q[prio_q_idx]);
-		}
+		/* Schedule reinit work instead of doing it here */
+		schedule_work(&spi_context.reinit_work);
+		return 0;
 	}
 
+	/* First bootup - do direct init */
 	ret = esp_add_card(spi_context.adapter);
 	if (ret) {
 		spi_exit();
@@ -377,14 +407,29 @@ static void esp_spi_transaction(void)
 			 * */
 
 			/* Configure TX buffer if available */
-
 			if (tx_skb) {
 				trans.tx_buf = tx_skb->data;
+				struct esp_payload_header *h = (struct esp_payload_header *) trans.tx_buf;
+				UPDATE_HEADER_TX_PKT_NO(h);
+
+				/* update checksum - only over actual data */
+				if (spi_context.adapter->capabilities & ESP_CHECKSUM_ENABLED) {
+					uint16_t len = le16_to_cpu(h->len);
+					uint16_t offset = le16_to_cpu(h->offset);
+					h->checksum = 0;
+					h->checksum = cpu_to_le16(compute_checksum(trans.tx_buf, len + offset));
+				}
 				esp_hex_dump_dbg("spi_tx: ", trans.tx_buf, 32);
 			} else {
 				tx_skb = esp_alloc_skb(SPI_BUF_SIZE);
 				trans.tx_buf = skb_put(tx_skb, SPI_BUF_SIZE);
 				memset((void*)trans.tx_buf, 0, SPI_BUF_SIZE);
+
+#if ESP_PKT_NUM_DEBUG
+				struct esp_payload_header *h = (struct esp_payload_header *) trans.tx_buf;
+				UPDATE_HEADER_TX_PKT_NO(h);
+				esp_hex_dump_dbg("spi_tx: ", trans.tx_buf, 32);
+#endif
 			}
 
 			/* Configure RX buffer */
@@ -593,7 +638,7 @@ static int esp_spi_thread(void *data)
 			continue;
 		}
 
-		if (context->adapter->state != ESP_CONTEXT_READY) {
+		if (atomic_read(&context->adapter->state) != ESP_CONTEXT_READY) {
 			msleep(10);
 			continue;
 		}
@@ -611,6 +656,12 @@ static int spi_init(void)
 	uint8_t prio_q_idx = 0;
 
 	sema_init(&spi_sem, 0);
+
+	/* Initialize device state */
+	atomic_set(&spi_context.device_state, SPI_DEVICE_RUNNING);
+
+	/* Init reinit work */
+	INIT_WORK(&spi_context.reinit_work, esp_spi_reinit_work);
 
 	spi_thread = kthread_run(esp_spi_thread, spi_context.adapter, "esp32_spi");
 	if (!spi_thread) {
@@ -641,7 +692,7 @@ static int spi_init(void)
 		return status;
 	}
 
-	spi_context.adapter->state = ESP_CONTEXT_READY;
+	atomic_set(&spi_context.adapter->state, ESP_CONTEXT_READY);
 
 	msleep(200);
 
@@ -652,7 +703,7 @@ static void spi_exit(void)
 {
 	uint8_t prio_q_idx = 0;
 
-	spi_context.adapter->state = ESP_CONTEXT_DISABLED;
+	atomic_set(&spi_context.adapter->state, ESP_CONTEXT_DISABLED);
 
 	if (test_bit(ESP_SPI_GPIO_HS_IRQ_DONE, &spi_context.spi_flags)) {
 		disable_irq(gpio_to_irq(spi_context.handshake_gpio));
@@ -767,4 +818,9 @@ int esp_init_interface_layer(struct esp_adapter *adapter)
 void esp_deinit_interface_layer(void)
 {
 	spi_exit();
+}
+
+int is_host_sleeping(void)
+{
+	return 0;
 }

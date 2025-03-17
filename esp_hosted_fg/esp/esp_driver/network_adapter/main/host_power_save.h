@@ -12,7 +12,7 @@
 
 #if defined(CONFIG_HOST_DEEP_SLEEP_ALLOWED)
 #if CONFIG_HOST_WAKEUP_GPIO == -1
-#error "CONFIG_HOST_WAKEUP_GPIO is not configured. Either disable host power save or configure the host wakeup GPIO pin"
+#error "CONFIG_HOST_WAKEUP_GPIO is not configured. Either disable host power save or configure the host wakeup GPIO pin using 'idf.py menuconfig'"
 #endif
   #define H_HOST_PS_ALLOWED 1
   extern uint8_t power_save_on;

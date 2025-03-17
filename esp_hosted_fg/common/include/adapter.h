@@ -4,7 +4,9 @@
 #ifndef __ESP_NETWORK_ADAPTER__H
 #define __ESP_NETWORK_ADAPTER__H
 
-//#define ESP_PKT_NUM_DEBUG                         1
+#include <stdint.h>
+
+#define ESP_PKT_NUM_DEBUG                         (0)
 
 #define PRIO_Q_SERIAL                             0
 #define PRIO_Q_BT                                 1
@@ -34,7 +36,7 @@ struct esp_payload_header {
 	uint16_t         checksum;
 	uint16_t		 seq_num;
 	uint8_t          reserved2;
-	#ifdef ESP_PKT_NUM_DEBUG
+	#if ESP_PKT_NUM_DEBUG
 	uint16_t         pkt_num;
 	#endif
 	/* Position of union field has to always be last,
@@ -129,7 +131,7 @@ static inline uint16_t compute_checksum(uint8_t *buf, uint16_t len)
 	return checksum;
 }
 
-#ifdef ESP_PKT_NUM_DEBUG
+#if ESP_PKT_NUM_DEBUG
 struct dbg_stats_t {
 	uint16_t tx_pkt_num;
 	uint16_t exp_rx_pkt_num;

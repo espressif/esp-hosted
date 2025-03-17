@@ -133,10 +133,6 @@ if_ops_t if_ops = {
 	.deinit = esp_spi_deinit,
 };
 
-#define SPI_MEMPOOL_NUM_BLOCKS     (SPI_TX_TOTAL_QUEUE_SIZE + \
-                                   SPI_RX_TOTAL_QUEUE_SIZE + \
-                                   (SPI_DRIVER_QUEUE_SIZE * 2))
-
 static struct hosted_mempool * buf_mp_tx_g;
 static struct hosted_mempool * buf_mp_rx_g;
 static struct hosted_mempool * trans_mp_g;
@@ -154,10 +150,10 @@ static inline void spi_mempool_create()
 #ifdef CONFIG_ESP_CACHE_MALLOC
 	/* Create separate pools for TX and RX with optimized sizes */
 	buf_mp_tx_g = hosted_mempool_create(NULL, 0,
-			(SPI_TX_TOTAL_QUEUE_SIZE + 1), SPI_BUFFER_SIZE);
+			(SPI_TX_TOTAL_QUEUE_SIZE + SPI_DRIVER_QUEUE_SIZE + 1), SPI_BUFFER_SIZE);
 
 	buf_mp_rx_g = hosted_mempool_create(NULL, 0,
-			(SPI_RX_TOTAL_QUEUE_SIZE + SPI_DRIVER_QUEUE_SIZE), SPI_BUFFER_SIZE);
+			(SPI_RX_TOTAL_QUEUE_SIZE + SPI_DRIVER_QUEUE_SIZE + SPI_DRIVER_QUEUE_SIZE), SPI_BUFFER_SIZE);
 
 	trans_mp_g = hosted_mempool_create(NULL, 0,
 			SPI_DRIVER_QUEUE_SIZE, sizeof(spi_slave_transaction_t));
@@ -444,16 +440,29 @@ static int process_spi_rx(interface_buffer_handle_t *buf_handle)
 #endif
 
 	/* Validate received buffer. Drop invalid buffer. */
-
 	if (!buf_handle || !buf_handle->payload) {
 		ESP_LOGE(TAG, "%s: Invalid params", __func__);
 		return -1;
 	}
 
+	/* Check DMA alignment of received buffer */
+	if (!IS_SPI_DMA_ALIGNED((uintptr_t)buf_handle->payload)) {
+		ESP_LOGW(TAG, "Received buffer not DMA aligned: %p", buf_handle->payload);
+	}
+
 	header = (struct esp_payload_header *) buf_handle->payload;
+
+	UPDATE_HEADER_RX_PKT_NO(header);
+
+    ESP_HEXLOGI("spi_rx:", header, 16, 16);
+
 	len = le16toh(header->len);
 	offset = le16toh(header->offset);
 	flags = header->flags;
+
+	ESP_LOGV(TAG, "RX: len=%u offset=%u flags=0x%x payload_addr=%p",
+		len, offset, flags, buf_handle->payload);
+
 	if (flags & FLAG_POWER_SAVE_STARTED) {
 		ESP_LOGI(TAG, "Host informed starting to power sleep");
 		if (context.event_handler) {
@@ -466,20 +475,25 @@ static int process_spi_rx(interface_buffer_handle_t *buf_handle)
 		}
 	}
 
-	if (!len)
+	if (!len) {
+		ESP_LOGV(TAG, "Rx pkt len:0, drop");
 		return -1;
+	}
+
+	if (!offset) {
+		ESP_LOGD(TAG, "Rx pkt offset:0, drop");
+		return -1;
+	}
 
 	if ((len+offset) > SPI_BUFFER_SIZE) {
 		ESP_LOGE(TAG, "rx_pkt len+offset[%u]>max[%u], dropping it", len+offset, SPI_BUFFER_SIZE);
-
 		return -1;
 	}
 
 #if CONFIG_ESP_SPI_CHECKSUM
 	rx_checksum = le16toh(header->checksum);
 	header->checksum = 0;
-
-	checksum = compute_checksum(buf_handle->payload, len+offset);
+	checksum = compute_checksum(buf_handle->payload, (len + offset));
 
 	if (checksum != rx_checksum) {
 		ESP_LOGE(TAG, "%s: cal_chksum[%u] != exp_chksum[%u], drop len[%u] offset[%u]",
@@ -547,6 +561,10 @@ static void spi_transaction_post_process_task(void* pvParameters)
 	interface_buffer_handle_t rx_buf_handle;
 
 	for (;;) {
+
+		/* Queue new transaction to get ready as soon as possible */
+		queue_next_transaction();
+
 		memset(&rx_buf_handle, 0, sizeof(rx_buf_handle));
 
 		/* Await transmission result, after any kind of transmission a new packet
@@ -554,9 +572,6 @@ static void spi_transaction_post_process_task(void* pvParameters)
 		 */
 		spi_slave_get_trans_result(ESP_SPI_CONTROLLER, &spi_trans, portMAX_DELAY);
 		assert(spi_trans);
-
-		/* Queue new transaction to get ready as soon as possible */
-		queue_next_transaction();
 
 		/* Free tx buffer if it's not the static dummy buffer */
 		if (spi_trans->tx_buffer != dummy_buffer) {
@@ -745,7 +760,7 @@ static interface_handle_t * esp_spi_init(void)
 
 	assert(xTaskCreate(spi_transaction_post_process_task , "spi_post_process_task" ,
 			CONFIG_ESP_DEFAULT_TASK_STACK_SIZE, NULL,
-			CONFIG_ESP_HOSTED_TASK_PRIORITY_HIGH, NULL) == pdTRUE);
+			CONFIG_ESP_HOSTED_TASK_PRIORITY_DEFAULT, NULL) == pdTRUE);
 
 	usleep(500);
 
@@ -789,8 +804,11 @@ static int32_t esp_spi_write(interface_handle_t *handle, interface_buffer_handle
 	tx_buf_handle.if_num = buf_handle->if_num;
 	tx_buf_handle.payload_len = total_len;
 
-	tx_buf_handle.payload = spi_buffer_tx_alloc(MEMSET_REQUIRED);
+	tx_buf_handle.payload = spi_buffer_tx_alloc(MEMSET_NOT_REQUIRED);
 	assert(tx_buf_handle.payload);
+
+	/* indicate waiting data on ready pin */
+	set_dataready_gpio();
 
 	header = (struct esp_payload_header *) tx_buf_handle.payload;
 
@@ -826,9 +844,6 @@ static int32_t esp_spi_write(interface_handle_t *handle, interface_buffer_handle
 #else
 	xQueueSend(spi_tx_queue, &tx_buf_handle, portMAX_DELAY);
 #endif
-
-	/* indicate waiting data on ready pin */
-	set_dataready_gpio();
 
 	return buf_handle->payload_len;
 }

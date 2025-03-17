@@ -132,8 +132,6 @@ static ssize_t esp_serial_write(struct file *file, const char __user *user_buffe
 			esp_err("Error copying buffer to send serial data\n");
 			return (size - left_len);
 		}
-		hdr->checksum = cpu_to_le16(compute_checksum(tx_skb->data, (frag_len + sizeof(struct esp_payload_header))));
-
 		esp_hex_dump_dbg("esp_serial_tx: ", pos, frag_len);
 
 		ret = esp_send_packet(dev->priv, tx_skb);

@@ -669,6 +669,11 @@ int update_host_network_port_range(uint16_t port_start, uint16_t port_end)
 
 int main(int argc, char *argv[])
 {
+	if(getuid()) {
+		printf("Please re-run program with superuser access. Exiting\n");
+		return FAILURE;
+	}
+
 	/* Parse arguments first */
 	if (argc > 1) {
 		if (strcmp(argv[1], "-f") == 0) {

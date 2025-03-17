@@ -200,11 +200,13 @@ hosted_l2_bridge filter_and_route_packet(void *frame_data, uint16_t frame_length
 						} else {
 							/* drop any other host destined mqtt packet */
 							result = INVALID_BRIDGE;
+							ESP_LOGW(TAG, "mqtt pkt DROPPED dst %u src %u => lwip %u", dst_port, src_port, result);
 							return result;
 						}
 					} else {
 						ESP_LOGV(TAG, "Wakeup host: TCP pkt");
-						result = HOST_LWIP_BRIDGE;
+						result = INVALID_BRIDGE;
+						ESP_LOGW(TAG, "host pkt dropped in power save (dst %u src %u)", dst_port, src_port);
 						return result;
 					}
 				} else {
@@ -212,6 +214,9 @@ hosted_l2_bridge filter_and_route_packet(void *frame_data, uint16_t frame_length
 					result = HOST_LWIP_BRIDGE;
 					return result;
 				}
+			} else if (IS_LOCAL_TCP_PORT(dst_port)) {
+				result = SLAVE_LWIP_BRIDGE;
+				return result;
 			}
 
 		} else if (proto == IP_PROTO_UDP) {
@@ -237,8 +242,16 @@ hosted_l2_bridge filter_and_route_packet(void *frame_data, uint16_t frame_length
 			}
 
 			if (IS_REMOTE_UDP_PORT(dst_port)) {
-				ESP_LOGV(TAG, "Wakeup host: UDP pkt");
-				result = HOST_LWIP_BRIDGE;
+				if (is_host_power_saving()) {
+					ESP_LOGW(TAG, "host pkt dropped in power save (dst %u src %u)", dst_port, src_port);
+					result = INVALID_BRIDGE;
+					return result;
+				} else {
+					result = HOST_LWIP_BRIDGE;
+					return result;
+				}
+			} else if (IS_LOCAL_UDP_PORT(dst_port)) {
+				result = SLAVE_LWIP_BRIDGE;
 				return result;
 			}
 

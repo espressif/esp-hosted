@@ -131,13 +131,31 @@ struct esp_adapter * esp_get_adapter(void)
 
 static int esp_open(struct net_device *ndev)
 {
+	struct esp_private *priv = netdev_priv(ndev);
+
+	if (!priv)
+		return -EINVAL;
+
+	/* Reset stats */
+	memset(&priv->stats, 0, sizeof(priv->stats));
+
+	/* Start with queue stopped until we're ready */
+	netif_stop_queue(ndev);
+
+	/* Now we can start */
 	netif_start_queue(ndev);
+
 	return 0;
 }
 
 static int esp_stop(struct net_device *ndev)
 {
+	if (!ndev)
+		return -EINVAL;
+
 	netif_stop_queue(ndev);
+	netif_carrier_off(ndev);
+
 	return 0;
 }
 
@@ -536,44 +554,46 @@ static void process_rx_packet(struct sk_buff *skb)
 
 int esp_is_tx_queue_paused(void)
 {
-	if ((adapter.priv[0]->ndev &&
+	if ((adapter.priv[0] && adapter.priv[0]->ndev &&
 			!netif_queue_stopped((const struct net_device *)
 				adapter.priv[0]->ndev)) ||
-	    (adapter.priv[1]->ndev &&
+	    (adapter.priv[1] && adapter.priv[1]->ndev &&
 			!netif_queue_stopped((const struct net_device *)
 				adapter.priv[1]->ndev)))
 		return 1;
 	return 0;
 }
 
+
 void esp_tx_pause(void)
 {
-	if (adapter.priv[0]->ndev &&
-			!netif_queue_stopped((const struct net_device *)
-				adapter.priv[0]->ndev)) {
-		netif_stop_queue(adapter.priv[0]->ndev);
-	}
+    struct esp_private *priv;
+    int i;
 
-	if (adapter.priv[1]->ndev &&
-			!netif_queue_stopped((const struct net_device *)
-				adapter.priv[1]->ndev)) {
-		netif_stop_queue(adapter.priv[1]->ndev);
-	}
+    for (i = 0; i < ESP_MAX_INTERFACE; i++) {
+        priv = adapter.priv[i];
+        if (priv && priv->ndev && !netif_queue_stopped(priv->ndev)) {
+            netif_stop_queue(priv->ndev);
+        }
+    }
 }
 
-void esp_tx_resume(void)
+static void esp_tx_resume(void)
 {
-	if (adapter.priv[0]->ndev &&
-			netif_queue_stopped((const struct net_device *)
-				adapter.priv[0]->ndev)) {
-		netif_wake_queue(adapter.priv[0]->ndev);
-	}
+    struct esp_private *priv;
+    int i;
 
-	if (adapter.priv[1]->ndev &&
-			netif_queue_stopped((const struct net_device *)
-				adapter.priv[1]->ndev)) {
-		netif_wake_queue(adapter.priv[1]->ndev);
-	}
+    /* Only resume if we're below threshold */
+    if (atomic_read(&tx_pending) >= TX_RESUME_THRESHOLD)
+        return;
+
+    for (i = 0; i < ESP_MAX_INTERFACE; i++) {
+        priv = adapter.priv[i];
+        if (priv && priv->ndev && netif_queue_stopped(priv->ndev)) {
+            netif_wake_queue(priv->ndev);
+            esp_info("TX queue resumed on interface %d\n", i);
+        }
+    }
 }
 
 struct sk_buff * esp_alloc_skb(u32 len)
@@ -663,26 +683,26 @@ static int esp_init_priv(struct esp_private *priv, struct net_device *dev,
 static int esp_init_net_dev(struct net_device *ndev, struct esp_private *priv)
 {
 	int ret = 0;
-	/* Set netdev */
-/*	SET_NETDEV_DEV(ndev, &adapter->context.func->dev);*/
 
-	/* set net dev ops */
+	/* Set netdev */
 	ndev->netdev_ops = &esp_netdev_ops;
 
+	/* Set MTU to account for our headers */
+	ndev->mtu = ETH_DATA_LEN - sizeof(struct esp_payload_header);
+
+	/* Set TX queue length */
+	ndev->tx_queue_len = TX_MAX_PENDING_COUNT;
+
 	eth_hw_addr_set(ndev, priv->mac_address);
-	/* set ethtool ops */
 
-	/* update features supported */
-
-	/* min mtu */
-
-	/* register netdev */
+	/* Register netdev */
 	ret = register_netdev(ndev);
+	if (ret) {
+		esp_err("Failed to register netdev\n");
+		return ret;
+	}
 
-/*	netif_start_queue(ndev);*/
-	/* ndev->needs_free_netdev = true; */
-
-	/* set watchdog timeout */
+	netif_carrier_off(ndev);
 
 	return ret;
 }

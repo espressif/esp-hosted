@@ -24,7 +24,7 @@
 static const char TAG[] = "stats";
 #endif /* TEST_RAW_TP || ESP_PKT_STATS || CONFIG_FREERTOS_GENERATE_RUN_TIME_STATS || ESP_PKT_NUM_DEBUG */
 
-#ifdef ESP_PKT_NUM_DEBUG
+#if ESP_PKT_NUM_DEBUG
 struct dbg_stats_t dbg_stats;
 #endif /* ESP_PKT_NUM_DEBUG */
 

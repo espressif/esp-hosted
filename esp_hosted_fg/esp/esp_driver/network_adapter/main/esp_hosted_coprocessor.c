@@ -64,7 +64,6 @@ volatile uint8_t station_got_ip = 0;
 
 static const char TAG[] = "fg_slave";
 
-#define BYPASS_TX_PRIORITY_Q 1
 
 #define UNKNOWN_CTRL_MSG_ID              0
 
@@ -82,11 +81,6 @@ uint8_t host_available = 0;
 
 interface_context_t *if_context = NULL;
 interface_handle_t *if_handle = NULL;
-
-#if !BYPASS_TX_PRIORITY_Q
-static QueueHandle_t meta_to_host_queue = NULL;
-static QueueHandle_t to_host_queue[MAX_PRIORITY_QUEUES] = {NULL};
-#endif
 
 esp_netif_t *slave_sta_netif = NULL;
 
@@ -211,7 +205,7 @@ esp_err_t wlan_sta_rx_callback(void *buffer, uint16_t len, void *eb)
 	interface_buffer_handle_t buf_handle = {0};
 	hosted_l2_bridge bridge_to_use = HOST_LWIP_BRIDGE;
 
-	if (!buffer || !eb) {
+	if (!buffer || !eb || !datapath) {
 		if (eb) {
 			ESP_LOGW(TAG, "free packet");
 			esp_wifi_internal_free_rx_buffer(eb);
@@ -330,27 +324,6 @@ static void process_tx_pkt(interface_buffer_handle_t *buf_handle)
 	}
 }
 
-#if !BYPASS_TX_PRIORITY_Q
-/* Send data to host */
-static void send_task(void* pvParameters)
-{
-	uint8_t queue_type = 0;
-	interface_buffer_handle_t buf_handle = {0};
-
-	while (1) {
-
-		if (!datapath) {
-			usleep(100*1000);
-			continue;
-		}
-
-		if (xQueueReceive(meta_to_host_queue, &queue_type, portMAX_DELAY))
-			if (xQueueReceive(to_host_queue[queue_type], &buf_handle, portMAX_DELAY))
-				process_tx_pkt(&buf_handle);
-	}
-}
-#endif
-
 static void parse_protobuf_req(void)
 {
 	protocomm_pserial_data_ready(pc_pserial, r.data,
@@ -446,7 +419,7 @@ static void process_rx_pkt(interface_buffer_handle_t *buf_handle)
     payload = buf_handle->payload + le16toh(header->offset);
     payload_len = le16toh(header->len);
 
-    ESP_HEXLOGD("bus_RX", payload, payload_len, 64);
+    ESP_HEXLOGI("bus_RX", payload, payload_len, 16);
 
 
     if (buf_handle->if_type == ESP_STA_IF && station_connected) {
@@ -539,28 +512,8 @@ static ssize_t serial_read_data(uint8_t *data, ssize_t len)
 
 int send_to_host_queue(interface_buffer_handle_t *buf_handle, uint8_t queue_type)
 {
-#if BYPASS_TX_PRIORITY_Q
 	process_tx_pkt(buf_handle);
 	return ESP_OK;
-#else
-	int ret = xQueueSend(to_host_queue[queue_type], buf_handle, portMAX_DELAY);
-	if (ret != pdTRUE) {
-		ESP_LOGE(TAG, "Failed to send buffer into queue[%u]\n",queue_type);
-		return ESP_FAIL;
-	}
-
-	if (queue_type == PRIO_Q_SERIAL)
-		ret = xQueueSendToFront(meta_to_host_queue, &queue_type, portMAX_DELAY);
-	else
-		ret = xQueueSend(meta_to_host_queue, &queue_type, portMAX_DELAY);
-
-	if (ret != pdTRUE) {
-		ESP_LOGE(TAG, "Failed to send buffer into meta queue[%u]\n",queue_type);
-		return ESP_FAIL;
-	}
-
-	return ESP_OK;
-#endif
 }
 
 static esp_err_t serial_write_data(uint8_t* data, ssize_t len)
@@ -986,18 +939,6 @@ esp_err_t esp_hosted_coprocessor_init(void)
 	assert(xTaskCreate(recv_task , "recv_task" ,
 			CONFIG_ESP_DEFAULT_TASK_STACK_SIZE, NULL ,
 			CONFIG_ESP_HOSTED_TASK_PRIORITY_DEFAULT, NULL) == pdTRUE);
-#if !BYPASS_TX_PRIORITY_Q
-	meta_to_host_queue = xQueueCreate(TO_HOST_QUEUE_SIZE*3, sizeof(uint8_t));
-	assert(meta_to_host_queue);
-	for (uint8_t prio_q_idx=0; prio_q_idx<MAX_PRIORITY_QUEUES; prio_q_idx++) {
-		to_host_queue[prio_q_idx] = xQueueCreate(TO_HOST_QUEUE_SIZE,
-				sizeof(interface_buffer_handle_t));
-		assert(to_host_queue[prio_q_idx]);
-	}
-	assert(xTaskCreate(send_task , "send_task" ,
-			CONFIG_ESP_DEFAULT_TASK_STACK_SIZE, NULL ,
-			CONFIG_ESP_HOSTED_TASK_PRIORITY_DEFAULT, NULL) == pdTRUE);
-#endif
 	create_debugging_tasks();
 
 

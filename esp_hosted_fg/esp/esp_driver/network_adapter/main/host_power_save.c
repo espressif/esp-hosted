@@ -101,12 +101,12 @@ int is_host_wakeup_needed(interface_buffer_handle_t *buf_handle)
 			break;
 	}
 
+end:
 #else
 	strlcpy(reason, "host_ps_disabled", sizeof(reason));
 	wakup_needed = 0;
 #endif
 
-end:
 	if (wakup_needed) {
 		ESP_LOGI(TAG, "Wakeup needed, reason %s", reason);
 	} else {
@@ -206,9 +206,9 @@ int wakeup_host(uint32_t timeout_ms)
 
 void host_power_save_alert(uint32_t ps_evt)
 {
+#if H_HOST_PS_ALLOWED
 	BaseType_t do_yeild = pdFALSE;
 
-#if H_HOST_PS_ALLOWED
 	if (ESP_POWER_SAVE_ON == ps_evt) {
 		ESP_EARLY_LOGI(TAG, "Host Sleep");
 		if (wakeup_sem) {
