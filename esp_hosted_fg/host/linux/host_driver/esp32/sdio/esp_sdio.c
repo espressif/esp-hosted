@@ -39,7 +39,7 @@
 #include <linux/suspend.h>
 #include <linux/netdevice.h>
 
-#ifdef ESP_PKT_NUM_DEBUG
+#if ESP_PKT_NUM_DEBUG
 struct dbg_stats_t dbg_stats;
 #endif
 #define MAX_WRITE_RETRIES       2

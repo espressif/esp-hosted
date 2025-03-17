@@ -303,7 +303,7 @@ static int process_tx_packet (struct sk_buff *skb)
 	priv = cb->priv;
 
 	if (netif_queue_stopped((const struct net_device *) adapter.priv[0]->ndev) ||
-			netif_queue_stopped((const struct net_device *) adapter.priv[1]->ndev)) {
+	    netif_queue_stopped((const struct net_device *) adapter.priv[1]->ndev)) {
 		return NETDEV_TX_BUSY;
 	}
 
@@ -701,8 +701,7 @@ static int esp_init_net_dev(struct net_device *ndev, struct esp_private *priv)
 		esp_err("Failed to register netdev\n");
 		return ret;
 	}
-
-	netif_carrier_off(ndev);
+	//netif_carrier_off(ndev);
 
 	return ret;
 }

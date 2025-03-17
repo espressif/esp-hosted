@@ -34,7 +34,6 @@
 
 #define SPI_INITIAL_CLK_MHZ     10
 #define NUMBER_1M               1000000
-#define TX_MAX_PENDING_COUNT    100
 #define TX_RESUME_THRESHOLD     (TX_MAX_PENDING_COUNT/2)
 #define MAX_TX_QUEUE_LEN       (TX_MAX_PENDING_COUNT)
 
@@ -69,9 +68,12 @@ volatile u8 data_path = 0;
 static struct esp_spi_context spi_context;
 static char hardware_type = ESP_PRIV_FIRMWARE_CHIP_UNRECOGNIZED;
 static atomic_t tx_pending;
+u8 first_esp_bootup_over;
+
+#if !CONFIG_ESP_HOSTED_USE_WORKQUEUE
 struct task_struct *spi_thread;
 struct semaphore spi_sem;
-u8 first_esp_bootup_over;
+#endif
 
 static struct esp_if_ops if_ops = {
 	.read		= read_packet,
@@ -96,14 +98,24 @@ static void close_data_path(void)
 
 static irqreturn_t spi_data_ready_interrupt_handler(int irq, void * dev)
 {
+#if CONFIG_ESP_HOSTED_USE_WORKQUEUE
+	if (spi_context.spi_workqueue)
+		queue_work(spi_context.spi_workqueue, &spi_context.spi_work);
+#else
 	up(&spi_sem);
+#endif
 	esp_verbose("\n");
  	return IRQ_HANDLED;
  }
 
 static irqreturn_t spi_interrupt_handler(int irq, void * dev)
 {
+#if CONFIG_ESP_HOSTED_USE_WORKQUEUE
+	if (spi_context.spi_workqueue)
+		queue_work(spi_context.spi_workqueue, &spi_context.spi_work);
+#else
 	up(&spi_sem);
+#endif
 	esp_verbose("\n");
 	return IRQ_HANDLED;
 }
@@ -161,13 +173,6 @@ static int write_packet(struct esp_adapter *adapter, struct sk_buff *skb)
 		esp_verbose("datapath not yet open\n");
 		dev_kfree_skb(skb);
 		return -EPERM;
-	}
-
-	/* Check queue length before enqueueing */
-	if (skb_queue_len(&spi_context.tx_q[PRIO_Q_OTHERS]) >= MAX_TX_QUEUE_LEN) {
-		esp_err("TX queue full, dropping packet\n");
-		dev_kfree_skb(skb);
-		return -EBUSY;
 	}
 
 	/* Enqueue SKB in tx_q */
@@ -412,23 +417,22 @@ static void esp_spi_transaction(void)
 				struct esp_payload_header *h = (struct esp_payload_header *) trans.tx_buf;
 				UPDATE_HEADER_TX_PKT_NO(h);
 
-				/* update checksum - only over actual data */
+				/* update checksum */
 				if (spi_context.adapter->capabilities & ESP_CHECKSUM_ENABLED) {
 					uint16_t len = le16_to_cpu(h->len);
 					uint16_t offset = le16_to_cpu(h->offset);
 					h->checksum = 0;
-					h->checksum = cpu_to_le16(compute_checksum(trans.tx_buf, len + offset));
+					h->checksum = cpu_to_le16(compute_checksum((uint8_t*)trans.tx_buf, len + offset));
+					esp_hex_dump_dbg("spi_tx: ", trans.tx_buf, min(len, 64));
 				}
-				esp_hex_dump_dbg("spi_tx: ", trans.tx_buf, 32);
 			} else {
 				tx_skb = esp_alloc_skb(SPI_BUF_SIZE);
 				trans.tx_buf = skb_put(tx_skb, SPI_BUF_SIZE);
 				memset((void*)trans.tx_buf, 0, SPI_BUF_SIZE);
 
 #if ESP_PKT_NUM_DEBUG
-				struct esp_payload_header *h = (struct esp_payload_header *) trans.tx_buf;
-				UPDATE_HEADER_TX_PKT_NO(h);
-				esp_hex_dump_dbg("spi_tx: ", trans.tx_buf, 32);
+				UPDATE_HEADER_TX_PKT_NO((struct esp_payload_header *) trans.tx_buf);
+				esp_hex_dump_dbg("spi_tx: ", trans.tx_buf, 12);
 #endif
 			}
 
@@ -462,8 +466,10 @@ static void esp_spi_transaction(void)
 					dev_kfree_skb(tx_skb);
 			}
 		}
+#if !CONFIG_ESP_HOSTED_USE_WORKQUEUE
 	} else {
 		up(&spi_sem);
+#endif
 	}
 
 	mutex_unlock(&spi_lock);
@@ -623,7 +629,12 @@ static int spi_dev_init(struct esp_spi_context *context)
 
 	return 0;
 }
-
+#if CONFIG_ESP_HOSTED_USE_WORKQUEUE
+static void esp_spi_work(struct work_struct *work)
+{
+		esp_spi_transaction();
+}
+#else
 static int esp_spi_thread(void *data)
 {
 	struct esp_spi_context *context = &spi_context;
@@ -649,25 +660,40 @@ static int esp_spi_thread(void *data)
 	do_exit(0);
 	return 0;
 }
+#endif
 
 static int spi_init(void)
 {
 	int status = 0;
 	uint8_t prio_q_idx = 0;
 
-	sema_init(&spi_sem, 0);
+
 
 	/* Initialize device state */
 	atomic_set(&spi_context.device_state, SPI_DEVICE_RUNNING);
 
 	/* Init reinit work */
 	INIT_WORK(&spi_context.reinit_work, esp_spi_reinit_work);
+#if CONFIG_ESP_HOSTED_USE_WORKQUEUE
+	//spi_context.spi_workqueue = create_workqueue("ESP_SPI_WORK_QUEUE");
+	spi_context.spi_workqueue = alloc_workqueue("ESP_SPI_WORK_QUEUE", WQ_UNBOUND, 0);
 
+	if (!spi_context.spi_workqueue) {
+		esp_err("spi workqueue failed to create\n");
+		spi_exit();
+		return -EFAULT;
+	}
+
+	INIT_WORK(&spi_context.spi_work, esp_spi_work);
+
+#else
+	sema_init(&spi_sem, 0);
 	spi_thread = kthread_run(esp_spi_thread, spi_context.adapter, "esp32_spi");
 	if (!spi_thread) {
 		esp_err("Failed to create esp32_spi thread\n");
 		return -EFAULT;
 	}
+#endif
 
 	esp_info("ESP: SPI host config: GPIOs: Handshake[%u] DataReady[%u]\n",
 			spi_context.handshake_gpio, spi_context.dataready_gpio);
@@ -720,12 +746,19 @@ static void spi_exit(void)
 		skb_queue_purge(&spi_context.tx_q[prio_q_idx]);
 		skb_queue_purge(&spi_context.rx_q[prio_q_idx]);
 	}
-
+#if CONFIG_ESP_HOSTED_USE_WORKQUEUE
+	if (spi_context.spi_workqueue) {
+		flush_workqueue(spi_context.spi_workqueue);
+		destroy_workqueue(spi_context.spi_workqueue);
+		spi_context.spi_workqueue = NULL;
+	}
+#else
 	up(&spi_sem);
 	if (spi_thread) {
 		kthread_stop(spi_thread);
 		spi_thread = NULL;
 	}
+#endif
 
 	esp_remove_card(spi_context.adapter);
 

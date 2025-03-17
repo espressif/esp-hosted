@@ -562,9 +562,6 @@ static void spi_transaction_post_process_task(void* pvParameters)
 
 	for (;;) {
 
-		/* Queue new transaction to get ready as soon as possible */
-		queue_next_transaction();
-
 		memset(&rx_buf_handle, 0, sizeof(rx_buf_handle));
 
 		/* Await transmission result, after any kind of transmission a new packet
@@ -573,6 +570,10 @@ static void spi_transaction_post_process_task(void* pvParameters)
 		spi_slave_get_trans_result(ESP_SPI_CONTROLLER, &spi_trans, portMAX_DELAY);
 		assert(spi_trans);
 
+		/* Queue new transaction to get ready as soon as possible */
+		queue_next_transaction();
+
+		ESP_HEXLOGI("spi_tx:", (uint8_t*)spi_trans->tx_buffer, 16, 16);
 		/* Free tx buffer if it's not the static dummy buffer */
 		if (spi_trans->tx_buffer != dummy_buffer) {
 			spi_buffer_tx_free((void *)spi_trans->tx_buffer);
@@ -807,9 +808,6 @@ static int32_t esp_spi_write(interface_handle_t *handle, interface_buffer_handle
 	tx_buf_handle.payload = spi_buffer_tx_alloc(MEMSET_NOT_REQUIRED);
 	assert(tx_buf_handle.payload);
 
-	/* indicate waiting data on ready pin */
-	set_dataready_gpio();
-
 	header = (struct esp_payload_header *) tx_buf_handle.payload;
 
 	memset (header, 0, sizeof(struct esp_payload_header));
@@ -826,6 +824,7 @@ static int32_t esp_spi_write(interface_handle_t *handle, interface_buffer_handle
 	/* copy the data from caller */
 	memcpy(tx_buf_handle.payload + offset, buf_handle->payload, buf_handle->payload_len);
 
+	ESP_HEXLOGI("spi_tx_trigger:", tx_buf_handle.payload, 16, 16);
 
 #if CONFIG_ESP_SPI_CHECKSUM
 	header->checksum = htole16(compute_checksum(tx_buf_handle.payload,
@@ -844,6 +843,9 @@ static int32_t esp_spi_write(interface_handle_t *handle, interface_buffer_handle
 #else
 	xQueueSend(spi_tx_queue, &tx_buf_handle, portMAX_DELAY);
 #endif
+
+	/* indicate waiting data on ready pin */
+	set_dataready_gpio();
 
 	return buf_handle->payload_len;
 }

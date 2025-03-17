@@ -426,9 +426,9 @@ static void process_rx_pkt(interface_buffer_handle_t *buf_handle)
         /* Forward data to wlan driver */
         do {
             ret = esp_wifi_internal_tx(ESP_IF_WIFI_STA, payload, payload_len);
-            if (ret) {
-                vTaskDelay(pdMS_TO_TICKS(1));
-            }
+            //if (ret) {
+            //    vTaskDelay(pdMS_TO_TICKS(1));
+            //}
 
             retry_wifi_tx--;
         } while (ret && retry_wifi_tx);
@@ -487,7 +487,6 @@ static void recv_task(void* pvParameters)
 		if (if_context && if_context->if_ops && if_context->if_ops->read) {
 			int len = if_context->if_ops->read(if_handle, &buf_handle);
 			if (len <= 0) {
-				usleep(10*1000);
 				continue;
 			}
 		}
