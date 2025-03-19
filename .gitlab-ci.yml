@@ -31,7 +31,7 @@ check_version:
      # - esp_hosted_ng/**/*
 
 build_fw_esp32_sdio:
-  stage: build_firmware
+  stage: pre_check
   image: $CI_DOCKER_REGISTRY/esp-env-v5.4:1
   variables:
     IDF_TARGET: esp32
@@ -58,7 +58,7 @@ build_fw_esp32_spi:
     - build
 
 build_fw_esp32s2_spi:
-  stage: build_firmware
+  stage: pre_check
   image: $CI_DOCKER_REGISTRY/esp-env-v5.4:1
   variables:
     IDF_TARGET: esp32s2
