@@ -37,9 +37,6 @@ build_fw_esp32_sdio:
     IDF_TARGET: esp32
   script:
     - .gitlab/ci/build_firmware.sh $IDF_TARGET
-  rules:
-    - changes:
-      - esp_hosted_ng/esp/esp_driver/network_adapter/**/*
   tags:
     - build
 #    - linux510
@@ -51,9 +48,7 @@ build_fw_esp32_spi:
     IDF_TARGET: esp32
   script:
     - .gitlab/ci/build_firmware.sh $IDF_TARGET spi
-  rules:
-    - changes:
-      - esp_hosted_ng/esp/esp_driver/network_adapter/**/*
+
   tags:
     - build
 
