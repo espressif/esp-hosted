@@ -7,7 +7,6 @@ stages:
 variables:
   GIT_SUBMODULE_STRATEGY: none
 
-# always run it so that pipeline is created
 check_version:
   stage: pre_check
   image: ${CI_DOCKER_REGISTRY}/esp-env-v5.4:1
@@ -206,3 +205,4 @@ deploy_master_github:
       - git remote remove github &>/dev/null || true
       - git remote add github git@github.com:espressif/esp-hosted.git
       - git push github "${CI_COMMIT_SHA}:refs/heads/${CI_COMMIT_REF_NAME}"
+
