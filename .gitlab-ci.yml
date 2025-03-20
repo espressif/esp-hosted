@@ -7,7 +7,6 @@ stages:
 variables:
   GIT_SUBMODULE_STRATEGY: none
 
-# always run it so that pipeline is created
 check_version:
   stage: pre_check
   image: ${CI_DOCKER_REGISTRY}/esp-env-v5.4:1
@@ -205,23 +204,5 @@ deploy_master_github:
       - echo -e "Host github.com\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config
       - git remote remove github &>/dev/null || true
       - git remote add github git@github.com:espressif/esp-hosted.git
-      - git push -f github "${CI_COMMIT_SHA}:refs/heads/${CI_COMMIT_REF_NAME}"
+      - git push github "${CI_COMMIT_SHA}:refs/heads/${CI_COMMIT_REF_NAME}"
 
-.deploy_force_master_github:
-  stage: deploy
-  image: $CI_DOCKER_REGISTRY/esp32-ci-env
-  tags:
-    - deploy
-  when: manual
-  only:
-    - master
-  script:
-      - mkdir -p ~/.ssh
-      - chmod 700 ~/.ssh
-      - echo -n $GH_KEY > ~/.ssh/id_rsa_base64
-      - base64 --decode --ignore-garbage ~/.ssh/id_rsa_base64 > ~/.ssh/id_rsa
-      - chmod 600 ~/.ssh/id_rsa
-      - echo -e "Host github.com\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config
-      - git remote remove github &>/dev/null || true
-      - git remote add github git@github.com:espressif/esp-hosted.git
-      - git push -f github "${CI_COMMIT_SHA}:refs/heads/${CI_COMMIT_REF_NAME}"
