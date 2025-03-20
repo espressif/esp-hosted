@@ -7,15 +7,6 @@ stages:
 variables:
   GIT_SUBMODULE_STRATEGY: none
 
-#before_script:
-#  # add gitlab ssh key
-#  - mkdir -p ~/.ssh
-#  - chmod 700 ~/.ssh
-#  - echo -n $GITLAB_KEY > ~/.ssh/id_rsa_base64
-#  - base64 --decode --ignore-garbage ~/.ssh/id_rsa_base64 > ~/.ssh/id_rsa
-#  - chmod 600 ~/.ssh/id_rsa
-#  - echo -e "Host gitlab.espressif.cn\n\tStrictHostKeyChecking no\n" > ~/.ssh/config
-
 # always run it so that pipeline is created
 check_version:
   stage: pre_check
@@ -27,19 +18,19 @@ check_version:
     - when: always
   tags:
     - build
-     #- changes:
-     # - esp_hosted_ng/**/*
 
 build_fw_esp32_sdio:
-  stage: pre_check
+  stage: build_firmware
   image: $CI_DOCKER_REGISTRY/esp-env-v5.4:1
   variables:
     IDF_TARGET: esp32
   script:
     - .gitlab/ci/build_firmware.sh $IDF_TARGET
+  rules:
+    - changes:
+      - esp_hosted_ng/esp/esp_driver/network_adapter/**/*
   tags:
     - build
-#    - linux510
 
 build_fw_esp32_spi:
   stage: build_firmware
@@ -48,12 +39,14 @@ build_fw_esp32_spi:
     IDF_TARGET: esp32
   script:
     - .gitlab/ci/build_firmware.sh $IDF_TARGET spi
-
+  rules:
+    - changes:
+      - esp_hosted_ng/esp/esp_driver/network_adapter/**/*
   tags:
     - build
 
 build_fw_esp32s2_spi:
-  stage: pre_check
+  stage: build_firmware
   image: $CI_DOCKER_REGISTRY/esp-env-v5.4:1
   variables:
     IDF_TARGET: esp32s2
@@ -232,60 +225,3 @@ deploy_master_github:
       - git remote remove github &>/dev/null || true
       - git remote add github git@github.com:espressif/esp-hosted.git
       - git push -f github "${CI_COMMIT_SHA}:refs/heads/${CI_COMMIT_REF_NAME}"
-
-
-deploy_esp32p4_github:
-  stage: deploy
-  image: $CI_DOCKER_REGISTRY/esp32-ci-env
-  tags:
-    - deploy
-  when: manual
-  only:
-    - feature/esp_as_mcu_host
-  script:
-      - mkdir -p ~/.ssh
-      - chmod 700 ~/.ssh
-      - echo -n $GH_KEY > ~/.ssh/id_rsa_base64
-      - base64 --decode --ignore-garbage ~/.ssh/id_rsa_base64 > ~/.ssh/id_rsa
-      - chmod 600 ~/.ssh/id_rsa
-      - echo -e "Host github.com\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config
-      - git remote remove github &>/dev/null || true
-      - git remote add github git@github.com:espressif/esp-hosted.git
-      - git push github "${CI_COMMIT_SHA}:refs/heads/${CI_COMMIT_REF_NAME}"
-
-.deploy_force_esp32p4_github:
-  stage: deploy
-  image: $CI_DOCKER_REGISTRY/esp32-ci-env
-  tags:
-    - deploy
-  when: manual
-  only:
-    - feature/esp_as_mcu_host
-  script:
-      - mkdir -p ~/.ssh
-      - chmod 700 ~/.ssh
-      - echo -n $GH_KEY > ~/.ssh/id_rsa_base64
-      - base64 --decode --ignore-garbage ~/.ssh/id_rsa_base64 > ~/.ssh/id_rsa
-      - chmod 600 ~/.ssh/id_rsa
-      - echo -e "Host github.com\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config
-      - git remote remove github &>/dev/null || true
-      - git remote add github git@github.com:espressif/esp-hosted.git
-      - git push -f github "${CI_COMMIT_SHA}:refs/heads/${CI_COMMIT_REF_NAME}"
-
-#.deploy_esp_hosted_master_comp:
-#  stage: deploy
-#  image: $CI_DOCKER_REGISTRY/esp32-ci-env
-#  tags:
-#    - deploy
-#  when: manual
-#  only:
-#    - feature/ext_component_host
-#  script:
-#    - export IDF_COMPONENT_API_TOKEN=${ESP_HOSTED_API_KEY}
-#    - pip install idf-component-manager
-#    - cp -r common host/
-#    - cp -r common slave/
-#    - cd host
-#    - compote component upload --allow-existing --name esp_hosted_master --namespace mantriyogesh --project-dir ./
-#    - cd ../slave
-#    - compote component upload --allow-existing --name esp_hosted_slave --namespace mantriyogesh --project-dir ./
