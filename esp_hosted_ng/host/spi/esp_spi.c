@@ -450,9 +450,12 @@ static int spi_dev_init(int spi_clk_mhz)
 		return status;
 	}
 
-	esp_info("ESP32 peripheral is registered to SPI bus [%d],chip select [%d], SPI Clock [%d]\n",
-			esp_board.bus_num,
-			esp_board.chip_select, spi_clk_mhz);
+	esp_info("Config - SPI GPIOs: Handshake[%d] Dataready[%d]\n",
+		HANDSHAKE_PIN, SPI_DATA_READY_PIN);
+
+	esp_info("Config - SPI clock[%dMHz] bus[%d] cs[%d] mode[%d]\n",
+		spi_context.spi_clk_mhz, esp_board.bus_num,
+		esp_board.chip_select, esp_board.mode);
 
 	set_bit(ESP_SPI_BUS_SET, &spi_context.spi_flags);
 

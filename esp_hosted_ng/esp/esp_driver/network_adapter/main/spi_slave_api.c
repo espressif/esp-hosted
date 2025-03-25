@@ -566,6 +566,11 @@ static interface_handle_t * esp_spi_init(void)
     gpio_set_pull_mode(GPIO_SCLK, GPIO_PULLUP_ONLY);
     gpio_set_pull_mode(GPIO_CS, GPIO_PULLUP_ONLY);
 
+
+    ESP_LOGI(TAG, "SPI Ctrl:%u mode: %u, GPIOs: MOSI: %u, MISO: %u, CS: %u, CLK: %u HS: %u DR: %u\n",
+        ESP_SPI_CONTROLLER, slvcfg.mode,
+        GPIO_MOSI, GPIO_MISO, GPIO_CS, GPIO_SCLK, gpio_handshake, gpio_data_ready);
+    ESP_LOGI(TAG, "Hosted SPI queue size: Tx:%u Rx:%u", SPI_TX_QUEUE_SIZE, SPI_RX_QUEUE_SIZE);
     /* Initialize SPI slave interface */
     ret = spi_slave_initialize(ESP_SPI_CONTROLLER, &buscfg, &slvcfg, DMA_CHAN);
     assert(ret == ESP_OK);
