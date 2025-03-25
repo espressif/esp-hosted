@@ -29,7 +29,7 @@ build_fw_esp32_sdio:
     - changes:
       - esp_hosted_ng/esp/esp_driver/network_adapter/**/*
   tags:
-    - build
+    - build_fw
 
 build_fw_esp32_spi:
   stage: build_firmware
@@ -55,7 +55,7 @@ build_fw_esp32s2_spi:
     - changes:
       - esp_hosted_ng/esp/esp_driver/network_adapter/**/*
   tags:
-    - build
+    - build_fw
 
 build_fw_esp32s3_spi:
   stage: build_firmware
@@ -68,7 +68,7 @@ build_fw_esp32s3_spi:
     - changes:
       - esp_hosted_ng/esp/esp_driver/network_adapter/**/*
   tags:
-    - build
+    - build_fw
 
 build_fw_esp32c2_spi:
   stage: build_firmware
@@ -81,7 +81,7 @@ build_fw_esp32c2_spi:
     - changes:
       - esp_hosted_ng/esp/esp_driver/network_adapter/**/*
   tags:
-    - build
+    - build_fw
 
 build_fw_esp32c3_spi:
   stage: build_firmware
@@ -94,7 +94,7 @@ build_fw_esp32c3_spi:
     - changes:
       - esp_hosted_ng/esp/esp_driver/network_adapter/**/*
   tags:
-    - build
+    - build_fw
 
 build_fw_esp32c6_sdio:
   stage: build_firmware
@@ -107,7 +107,7 @@ build_fw_esp32c6_sdio:
     - changes:
       - esp_hosted_ng/esp/esp_driver/network_adapter/**/*
   tags:
-    - build
+    - build_fw
 
 build_fw_esp32c6_spi:
   stage: build_firmware
@@ -120,7 +120,7 @@ build_fw_esp32c6_spi:
     - changes:
       - esp_hosted_ng/esp/esp_driver/network_adapter/**/*
   tags:
-    - build
+    - build_fw
 
 build_host_sdio_linux_6.8.0:
   stage: build_host

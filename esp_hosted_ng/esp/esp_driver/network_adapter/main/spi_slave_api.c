@@ -267,7 +267,7 @@ esp_err_t send_bootup_event_to_host(uint8_t cap)
     xQueueSend(spi_tx_queue[PRIO_Q_HIGH], &buf_handle, portMAX_DELAY);
 
     /* indicate waiting data on ready pin */
-    WRITE_PERI_REG(GPIO_OUT_W1TS_REG, (1 << gpio_data_ready));
+    WRITE_PERI_REG(GPIO_OUT_W1TS_REG, (1ULL << gpio_data_ready));
     /* process first data packet here to start transactions */
     queue_next_transaction();
 
@@ -278,7 +278,7 @@ esp_err_t send_bootup_event_to_host(uint8_t cap)
 static void IRAM_ATTR spi_post_setup_cb(spi_slave_transaction_t *trans)
 {
     /* ESP peripheral ready for spi transaction. Set hadnshake line high. */
-    WRITE_PERI_REG(GPIO_OUT_W1TS_REG, (1 << gpio_handshake));
+    WRITE_PERI_REG(GPIO_OUT_W1TS_REG, (1ULL << gpio_handshake));
 }
 
 /* Invoked after transaction is sent/received.
@@ -286,7 +286,7 @@ static void IRAM_ATTR spi_post_setup_cb(spi_slave_transaction_t *trans)
 static void IRAM_ATTR spi_post_trans_cb(spi_slave_transaction_t *trans)
 {
     /* Clear handshake line */
-    WRITE_PERI_REG(GPIO_OUT_W1TC_REG, (1 << gpio_handshake));
+    WRITE_PERI_REG(GPIO_OUT_W1TC_REG, (1ULL << gpio_handshake));
 }
 
 static uint8_t * get_next_tx_buffer(uint32_t *len)
@@ -320,7 +320,7 @@ static uint8_t * get_next_tx_buffer(uint32_t *len)
     }
 
     /* No real data pending, clear ready line and indicate host an idle state */
-    WRITE_PERI_REG(GPIO_OUT_W1TC_REG, (1 << gpio_data_ready));
+    WRITE_PERI_REG(GPIO_OUT_W1TC_REG, (1ULL << gpio_data_ready));
 
     /* Create empty dummy buffer */
     sendbuf = heap_caps_malloc(RX_BUF_SIZE, MALLOC_CAP_DMA);
@@ -543,21 +543,21 @@ static interface_handle_t * esp_spi_init(void)
     gpio_config_t io_conf = {
         .intr_type = GPIO_INTR_DISABLE,
         .mode = GPIO_MODE_OUTPUT,
-        .pin_bit_mask = (1 << gpio_handshake)
+        .pin_bit_mask = (1ULL << gpio_handshake)
     };
 
     /* Configuration for data_ready line */
     gpio_config_t io_data_ready_conf = {
         .intr_type = GPIO_INTR_DISABLE,
         .mode = GPIO_MODE_OUTPUT,
-        .pin_bit_mask = (1 << gpio_data_ready)
+        .pin_bit_mask = (1ULL << gpio_data_ready)
     };
 
     /* Configure handshake and data_ready lines as output */
     gpio_config(&io_conf);
     gpio_config(&io_data_ready_conf);
-    WRITE_PERI_REG(GPIO_OUT_W1TC_REG, (1 << gpio_handshake));
-    WRITE_PERI_REG(GPIO_OUT_W1TC_REG, (1 << gpio_data_ready));
+    WRITE_PERI_REG(GPIO_OUT_W1TC_REG, (1ULL << gpio_handshake));
+    WRITE_PERI_REG(GPIO_OUT_W1TC_REG, (1ULL << gpio_data_ready));
 
     /* Enable pull-ups on SPI lines
      * so that no rogue pulses when no master is connected
@@ -662,7 +662,7 @@ static int32_t esp_spi_write(interface_handle_t *handle, interface_buffer_handle
     }
 
     /* indicate waiting data on ready pin */
-    WRITE_PERI_REG(GPIO_OUT_W1TS_REG, (1 << gpio_data_ready));
+    WRITE_PERI_REG(GPIO_OUT_W1TS_REG, (1ULL << gpio_data_ready));
 
     return buf_handle->payload_len;
 }
