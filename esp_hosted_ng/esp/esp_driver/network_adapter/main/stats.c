@@ -23,6 +23,7 @@
 #include "esp_fw_version.h"
 #include <string.h>
 #include "esp_private/wifi.h"
+#include <inttypes.h>
 
 static const char TAG[] = "stats";
 
@@ -30,7 +31,8 @@ static const char TAG[] = "stats";
 /* These functions are only for debugging purpose
  * Please do not enable in production environments
  */
-static esp_err_t log_real_time_stats(TickType_t xTicksToWait) {
+static esp_err_t log_real_time_stats(TickType_t xTicksToWait)
+{
     TaskStatus_t *start_array = NULL, *end_array = NULL;
     UBaseType_t start_array_size, end_array_size;
     uint32_t start_run_time, end_run_time;
@@ -90,7 +92,7 @@ static esp_err_t log_real_time_stats(TickType_t xTicksToWait) {
         if (k >= 0) {
             uint32_t task_elapsed_time = end_array[k].ulRunTimeCounter - start_array[i].ulRunTimeCounter;
             uint32_t percentage_time = (task_elapsed_time * 100UL) / (total_elapsed_time * portNUM_PROCESSORS);
-            ESP_LOGI(TAG, "| %s | %d | %d%%", start_array[i].pcTaskName, task_elapsed_time, percentage_time);
+            ESP_LOGI(TAG, "| %s | %"PRIu32" | %"PRIu32"%%", start_array[i].pcTaskName, task_elapsed_time, percentage_time);
         }
     }
 
@@ -108,22 +110,25 @@ static esp_err_t log_real_time_stats(TickType_t xTicksToWait) {
     ret = ESP_OK;
 
 exit:    /*Common return path*/
-	if (start_array)
-		free(start_array);
-	if (end_array)
-		free(end_array);
+    if (start_array) {
+        free(start_array);
+    }
+    if (end_array) {
+        free(end_array);
+    }
     return ret;
 }
 
-static void log_runtime_stats_task(void* pvParameters) {
+static void log_runtime_stats_task(void* pvParameters)
+{
     while (1) {
-        ESP_LOGI(TAG, "\n\nGetting real time stats over %d ticks", STATS_TICKS);
+        ESP_LOGI(TAG, "\n\nGetting real time stats over %"PRIu32" ticks", STATS_TICKS);
         if (log_real_time_stats(STATS_TICKS) == ESP_OK) {
             ESP_LOGI(TAG, "Real time stats obtained");
         } else {
             ESP_LOGE(TAG, "Error getting real time stats");
         }
-        vTaskDelay(pdMS_TO_TICKS(1000*2));
+        vTaskDelay(pdMS_TO_TICKS(1000 * 2));
     }
 }
 #endif
@@ -133,95 +138,97 @@ uint64_t test_raw_tp_rx_len;
 
 void debug_update_raw_tp_rx_count(uint16_t len)
 {
-	test_raw_tp_rx_len += len;
+    test_raw_tp_rx_len += len;
 }
 
 static void raw_tp_timer_func(void* arg)
 {
-	static int32_t cur = 0;
-	double actual_bandwidth = 0;
-	int32_t div = 1024;
+    static int32_t cur = 0;
+    double actual_bandwidth = 0;
+    int32_t div = 1024;
 
-	actual_bandwidth = (test_raw_tp_rx_len*8);
-	ESP_LOGI(TAG, "%ld-%ld sec       %.2f kbits/sec", cur, cur + 1, actual_bandwidth/div);
-	cur++;
-	test_raw_tp_rx_len = 0;
+    actual_bandwidth = (test_raw_tp_rx_len * 8);
+    ESP_LOGI(TAG, "%ld-%ld sec       %.2f kbits/sec", cur, cur + 1, actual_bandwidth / div);
+    cur++;
+    test_raw_tp_rx_len = 0;
 }
 
 extern volatile uint8_t datapath;
 static void raw_tp_tx_task(void* pvParameters)
 {
-	int ret;
-	interface_buffer_handle_t buf_handle = {0};
+    int ret;
+    interface_buffer_handle_t buf_handle = {0};
 
-	for (;;) {
+    for (;;) {
 
-		if (!datapath) {
-			sleep(1);
-			continue;
-		}
+        if (!datapath) {
+            sleep(1);
+            continue;
+        }
 
-		buf_handle.if_type = ESP_TEST_IF;
-		buf_handle.if_num = 0;
+        buf_handle.if_type = ESP_TEST_IF;
+        buf_handle.if_num = 0;
 
-		buf_handle.payload = raw_tp_tx_buf;
-		buf_handle.payload_len = TEST_RAW_TP__BUF_SIZE;
+        buf_handle.payload = raw_tp_tx_buf;
+        buf_handle.payload_len = TEST_RAW_TP__BUF_SIZE;
 
-		ret = send_to_host(PRIO_Q_LOW, &buf_handle);
+        ret = send_to_host(PRIO_Q_LOW, &buf_handle);
 
-		if (!ret) {
-			ESP_LOGE(TAG, "Failed to send to queue");
-			continue;
-		}
-		test_raw_tp_rx_len += (TEST_RAW_TP__BUF_SIZE+sizeof(struct esp_payload_header));
-	}
+        if (!ret) {
+            ESP_LOGE(TAG, "Failed to send to queue");
+            continue;
+        }
+        test_raw_tp_rx_len += (TEST_RAW_TP__BUF_SIZE + sizeof(struct esp_payload_header));
+    }
 }
 
 static void start_timer_to_display_raw_tp(void)
 {
-	test_args_t args = {0};
-	esp_timer_handle_t raw_tp_timer = {0};
-	esp_timer_create_args_t create_args = {
-			.callback = &raw_tp_timer_func,
-			.arg = &args,
-			.name = "raw_tp_timer",
-	};
+    test_args_t args = {0};
+    esp_timer_handle_t raw_tp_timer = {0};
+    esp_timer_create_args_t create_args = {
+        .callback = &raw_tp_timer_func,
+        .arg = &args,
+        .name = "raw_tp_timer",
+    };
 
-	ESP_ERROR_CHECK(esp_timer_create(&create_args, &raw_tp_timer));
+    ESP_ERROR_CHECK(esp_timer_create(&create_args, &raw_tp_timer));
 
-	args.timer = raw_tp_timer;
+    args.timer = raw_tp_timer;
 
-	ESP_ERROR_CHECK(esp_timer_start_periodic(raw_tp_timer, TEST_RAW_TP__TIMEOUT));
+    ESP_ERROR_CHECK(esp_timer_start_periodic(raw_tp_timer, TEST_RAW_TP__TIMEOUT));
 }
 
 void create_debugging_tasks(void)
 {
 #ifdef CONFIG_FREERTOS_GENERATE_RUN_TIME_STATS
-	assert(xTaskCreate(log_runtime_stats_task, "log_runtime_stats_task",
-				TASK_DEFAULT_STACK_SIZE, NULL, TASK_DEFAULT_PRIO, NULL) == pdTRUE);
+    assert(xTaskCreate(log_runtime_stats_task, "log_runtime_stats_task",
+                       TASK_DEFAULT_STACK_SIZE, NULL, TASK_DEFAULT_PRIO, NULL) == pdTRUE);
 #endif
 }
 
 void init_raw_tp_test_task(void)
 {
-	assert(xTaskCreate(raw_tp_tx_task , "raw_tp_tx_task",
-				TASK_DEFAULT_STACK_SIZE, NULL , TASK_DEFAULT_PRIO, NULL) == pdTRUE);
+    assert(xTaskCreate(raw_tp_tx_task, "raw_tp_tx_task",
+                       TASK_DEFAULT_STACK_SIZE, NULL, TASK_DEFAULT_PRIO, NULL) == pdTRUE);
 }
 
 void init_raw_tp_timer(void)
 {
-	start_timer_to_display_raw_tp();
+    start_timer_to_display_raw_tp();
 }
 
-void debug_get_raw_tp_conf(uint32_t raw_tp_type) {
-	if (raw_tp_type == CMD_RAW_TP_ESP_TO_HOST) {
-		ESP_LOGI(TAG, "\n\n*** Raw Throughput testing: ESP --> Host started ***\n");
-	} else if (raw_tp_type == CMD_RAW_TP_HOST_TO_ESP) {
-		ESP_LOGI(TAG, "\n\n*** Raw Throughput testing: Host --> ESP started ***\n");
-	}
+void debug_get_raw_tp_conf(uint32_t raw_tp_type)
+{
+    if (raw_tp_type == CMD_RAW_TP_ESP_TO_HOST) {
+        ESP_LOGI(TAG, "\n\n*** Raw Throughput testing: ESP --> Host started ***\n");
+    } else if (raw_tp_type == CMD_RAW_TP_HOST_TO_ESP) {
+        ESP_LOGI(TAG, "\n\n*** Raw Throughput testing: Host --> ESP started ***\n");
+    }
 }
 
-void debug_set_wifi_logging(void) {
+void debug_set_wifi_logging(void)
+{
     /* set WiFi log level and module */
     uint32_t wifi_log_level = WIFI_LOG_INFO;
 #if CONFIG_LOG_MAXIMUM_LEVEL == 0
@@ -242,68 +249,69 @@ void debug_set_wifi_logging(void) {
 
 void debug_log_firmware_version(void)
 {
-	ESP_LOGI(TAG, "*********************************************************************");
-	ESP_LOGI(TAG, "                ESP-Hosted Firmware version :: %s-%d.%d.%d.%d.%d                        ",
-			PROJECT_NAME, PROJECT_VERSION_MAJOR_1, PROJECT_VERSION_MAJOR_2, PROJECT_VERSION_MINOR, PROJECT_REVISION_PATCH_1, PROJECT_REVISION_PATCH_2);
+    ESP_LOGI(TAG, "*********************************************************************");
+    ESP_LOGI(TAG, "                ESP-Hosted Firmware version :: %s-%d.%d.%d.%d.%d                        ",
+             PROJECT_NAME, PROJECT_VERSION_MAJOR_1, PROJECT_VERSION_MAJOR_2, PROJECT_VERSION_MINOR, PROJECT_REVISION_PATCH_1, PROJECT_REVISION_PATCH_2);
 
 #if CONFIG_ESP_SPI_HOST_INTERFACE
-  #if BLUETOOTH_UART
-	ESP_LOGI(TAG, "                Transport used :: SPI + UART                    ");
-  #else
-	ESP_LOGI(TAG, "                Transport used :: SPI only                      ");
-  #endif
+#if BLUETOOTH_UART
+    ESP_LOGI(TAG, "                Transport used :: SPI + UART                    ");
 #else
-  #if BLUETOOTH_UART
-	ESP_LOGI(TAG, "                Transport used :: SDIO + UART                   ");
-  #else
-	ESP_LOGI(TAG, "                Transport used :: SDIO only                     ");
-  #endif
+    ESP_LOGI(TAG, "                Transport used :: SPI only                      ");
 #endif
-	ESP_LOGI(TAG, "*********************************************************************");
+#else
+#if BLUETOOTH_UART
+    ESP_LOGI(TAG, "                Transport used :: SDIO + UART                   ");
+#else
+    ESP_LOGI(TAG, "                Transport used :: SDIO only                     ");
+#endif
+#endif
+    ESP_LOGI(TAG, "*********************************************************************");
 }
 
 int process_raw_tp(uint8_t if_type, uint8_t *payload, uint16_t payload_len)
 {
-	interface_buffer_handle_t buf_handle = {0};
-	esp_err_t ret = ESP_OK;
-	struct command_header *header = (struct command_header *) payload;
-	struct command_header *resp_header;
+    interface_buffer_handle_t buf_handle = {0};
+    esp_err_t ret = ESP_OK;
+    struct command_header *header = (struct command_header *) payload;
+    struct command_header *resp_header;
 
-	buf_handle.if_type = if_type;
-	buf_handle.if_num = 0;
-	buf_handle.payload_len = sizeof(struct command_header);
-	buf_handle.pkt_type = PACKET_TYPE_COMMAND_RESPONSE;
+    buf_handle.if_type = if_type;
+    buf_handle.if_num = 0;
+    buf_handle.payload_len = sizeof(struct command_header);
+    buf_handle.pkt_type = PACKET_TYPE_COMMAND_RESPONSE;
 
-	buf_handle.payload = heap_caps_malloc(buf_handle.payload_len, MALLOC_CAP_DMA);
-	assert(buf_handle.payload);
-	memset(buf_handle.payload, 0, buf_handle.payload_len);
+    buf_handle.payload = heap_caps_malloc(buf_handle.payload_len, MALLOC_CAP_DMA);
+    assert(buf_handle.payload);
+    memset(buf_handle.payload, 0, buf_handle.payload_len);
     resp_header = (struct command_header *) buf_handle.payload;
 
-	debug_get_raw_tp_conf(header->cmd_code);
-	init_raw_tp_timer();
+    debug_get_raw_tp_conf(header->cmd_code);
+    init_raw_tp_timer();
 
-	if (header->cmd_code == CMD_RAW_TP_ESP_TO_HOST) {
-		init_raw_tp_test_task();
-	}
+    if (header->cmd_code == CMD_RAW_TP_ESP_TO_HOST) {
+        init_raw_tp_test_task();
+    }
 
     resp_header->cmd_code = header->cmd_code;
-	resp_header->len = 0;
-	resp_header->cmd_status = CMD_RESPONSE_SUCCESS;
+    resp_header->len = 0;
+    resp_header->cmd_status = CMD_RESPONSE_SUCCESS;
 
-	buf_handle.priv_buffer_handle = buf_handle.payload;
-	buf_handle.free_buf_handle = free;
+    buf_handle.priv_buffer_handle = buf_handle.payload;
+    buf_handle.free_buf_handle = free;
 
-	ret = send_command_response(&buf_handle);
-	if (ret != pdTRUE) {
-		ESP_LOGE(TAG, "Slave -> Host: Failed to send command response\n");
-		goto DONE;
-	}
+    ret = send_command_response(&buf_handle);
+    if (ret != pdTRUE) {
+        ESP_LOGE(TAG, "Slave -> Host: Failed to send command response\n");
+        goto DONE;
+    }
 
-	return ESP_OK;
+    return ESP_OK;
 
 DONE:
-	if (buf_handle.payload)
-		free(buf_handle.payload);
+    if (buf_handle.payload) {
+        free(buf_handle.payload);
+    }
 
-	return ret;
+    return ret;
 }

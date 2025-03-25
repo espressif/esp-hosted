@@ -218,6 +218,7 @@ struct esp_ap_config {
     uint8_t sae_pwe_h2e;
     uint16_t beacon_interval;
     uint16_t inactivity_timeout;
+    uint8_t privacy;
 } __packed;
 
 struct cmd_ap_config {

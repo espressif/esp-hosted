@@ -934,7 +934,6 @@ static int esp_cfg80211_start_ap(struct wiphy *wiphy, struct net_device *dev,
 	if (info->hidden_ssid != NL80211_HIDDEN_SSID_NOT_IN_USE)
 		ap_config.ssid_hidden = 1;
 
-	//TODO set in vnc
 	if (info->inactivity_timeout) {
 		ap_config.inactivity_timeout = info->inactivity_timeout;
 	}
@@ -958,6 +957,7 @@ static int esp_cfg80211_start_ap(struct wiphy *wiphy, struct net_device *dev,
 	if (!ap_config.channel)
 		ap_config.channel = 6;
 
+	ap_config.privacy = info->privacy;
 	res = cmd_set_ap_config(priv, &ap_config);
 	if (res < 0)
 		return res;

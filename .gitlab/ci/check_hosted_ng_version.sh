@@ -36,6 +36,7 @@ function check_version_update() {
     # Determine the base commit for the MR
     local target_branch="${CI_MERGE_REQUEST_TARGET_BRANCH_NAME:-master}"
     local base_commit
+    git fetch origin master --depth=1
     base_commit=$(git merge-base HEAD "origin/$target_branch")
 
     # Check if there are changes in network_adapter_dir in the MR range

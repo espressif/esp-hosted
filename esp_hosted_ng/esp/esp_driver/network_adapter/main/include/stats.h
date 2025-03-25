@@ -27,7 +27,6 @@
 #define MSEC_TO_USEC(x)                (x*1000)
 #define SEC_TO_USEC(x)                 (x*1000*1000)
 
-
 /* Stats CONFIG:
  *
  * 1. CONFIG_FREERTOS_GENERATE_RUN_TIME_STATS
@@ -36,9 +35,9 @@
  */
 
 #ifdef CONFIG_FREERTOS_GENERATE_RUN_TIME_STATS
-  /* Stats to show task wise CPU utilization */
-  #define STATS_TICKS                  pdMS_TO_TICKS(1000*2)
-  #define ARRAY_SIZE_OFFSET            5
+/* Stats to show task wise CPU utilization */
+#define STATS_TICKS                  pdMS_TO_TICKS(1000*2)
+#define ARRAY_SIZE_OFFSET            5
 
 void debug_runtime_stats_task(void* pvParameters);
 #endif
@@ -50,7 +49,6 @@ void debug_runtime_stats_task(void* pvParameters);
  * Currently this testing is possible on one direction
  * at a time
  */
-
 
 #include "esp_timer.h"
 #include "interface.h"
@@ -65,14 +63,13 @@ void debug_runtime_stats_task(void* pvParameters);
 #define TEST_RAW_TP__TIMEOUT         SEC_TO_USEC(1)
 
 typedef struct {
-	esp_timer_handle_t timer;
-	size_t cur_interval;
-	int64_t t_start;
-	SemaphoreHandle_t done;
+    esp_timer_handle_t timer;
+    size_t cur_interval;
+    int64_t t_start;
+    SemaphoreHandle_t done;
 } test_args_t;
 
 void debug_update_raw_tp_rx_count(uint16_t len);
-
 
 void debug_log_firmware_version(void);
 void create_debugging_tasks(void);
