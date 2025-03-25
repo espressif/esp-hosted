@@ -23,6 +23,7 @@
 #include "esp_fw_version.h"
 #include <string.h>
 #include "esp_private/wifi.h"
+#include <inttypes.h>
 
 static const char TAG[] = "stats";
 
@@ -91,7 +92,7 @@ static esp_err_t log_real_time_stats(TickType_t xTicksToWait)
         if (k >= 0) {
             uint32_t task_elapsed_time = end_array[k].ulRunTimeCounter - start_array[i].ulRunTimeCounter;
             uint32_t percentage_time = (task_elapsed_time * 100UL) / (total_elapsed_time * portNUM_PROCESSORS);
-            ESP_LOGI(TAG, "| %s | %d | %d%%", start_array[i].pcTaskName, task_elapsed_time, percentage_time);
+            ESP_LOGI(TAG, "| %s | %"PRIu32" | %"PRIu32"%%", start_array[i].pcTaskName, task_elapsed_time, percentage_time);
         }
     }
 
@@ -121,7 +122,7 @@ exit:    /*Common return path*/
 static void log_runtime_stats_task(void* pvParameters)
 {
     while (1) {
-        ESP_LOGI(TAG, "\n\nGetting real time stats over %d ticks", STATS_TICKS);
+        ESP_LOGI(TAG, "\n\nGetting real time stats over %"PRIu32" ticks", STATS_TICKS);
         if (log_real_time_stats(STATS_TICKS) == ESP_OK) {
             ESP_LOGI(TAG, "Real time stats obtained");
         } else {
