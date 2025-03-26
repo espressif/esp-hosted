@@ -1,5 +1,3 @@
-CONFIG_ENABLE_MONITOR_PROCESS = n
-
 # Toolchain Path
 CROSS_COMPILE :=
 # Linux Kernel header
@@ -33,10 +31,6 @@ endif
 
 ifeq ($(target), spi)
 	MODULE_NAME=esp32_spi
-endif
-
-ifeq ($(CONFIG_ENABLE_MONITOR_PROCESS), y)
-	EXTRA_CFLAGS += -DCONFIG_ENABLE_MONITOR_PROCESS
 endif
 
 #debug_flags := -DDEBUG

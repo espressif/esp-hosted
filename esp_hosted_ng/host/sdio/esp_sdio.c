@@ -35,12 +35,7 @@ extern u32 raw_tp_mode;
 struct esp_sdio_context sdio_context;
 static atomic_t tx_pending;
 static atomic_t queue_items[MAX_PRIORITY_QUEUES];
-
-#ifdef CONFIG_ENABLE_MONITOR_PROCESS
-struct task_struct *monitor_thread;
-#endif
 struct task_struct *tx_thread;
-
 volatile u8 host_sleep;
 
 static int init_context(struct esp_sdio_context *context);
@@ -255,10 +250,7 @@ static void esp_remove(struct sdio_func *func)
 	if (func->num != 1) {
 		return;
 	}
-#ifdef CONFIG_ENABLE_MONITOR_PROCESS
-	if (monitor_thread)
-		kthread_stop(monitor_thread);
-#endif
+
 	if (context) {
 		for (prio_q_idx = 0; prio_q_idx < MAX_PRIORITY_QUEUES; prio_q_idx++)
 			skb_queue_purge(&(sdio_context.tx_q[prio_q_idx]));
@@ -720,61 +712,6 @@ static struct esp_sdio_context *init_sdio_func(struct sdio_func *func, int *sdio
 	return context;
 }
 
-#ifdef CONFIG_ENABLE_MONITOR_PROCESS
-static int monitor_process(void *data)
-{
-	u32 val, intr, len_reg, rdata, old_len = 0;
-	struct esp_sdio_context *context = (struct esp_sdio_context *) data;
-	struct sk_buff *skb;
-
-	while (!kthread_should_stop()) {
-		msleep(5000);
-
-		val = intr = len_reg = rdata = 0;
-
-		esp_read_reg(context, ESP_SLAVE_PACKET_LEN_REG,
-				(u8 *) &val, sizeof(val), ACQUIRE_LOCK);
-
-		len_reg = val & ESP_SLAVE_LEN_MASK;
-
-		val = 0;
-		esp_read_reg(context, ESP_SLAVE_TOKEN_RDATA, (u8 *) &val,
-				sizeof(val), ACQUIRE_LOCK);
-
-		rdata = ((val >> 16) & ESP_TX_BUFFER_MASK);
-
-		esp_read_reg(context, ESP_SLAVE_INT_ST_REG,
-				(u8 *) &intr, sizeof(intr), ACQUIRE_LOCK);
-
-
-		if (len_reg > context->rx_byte_count) {
-			if (old_len && (context->rx_byte_count == old_len)) {
-				esp_dbg("Monitor thread ----> [%d - %d] [%d - %d] %d\n",
-						len_reg, context->rx_byte_count,
-						rdata, context->tx_buffer_count, intr);
-
-				skb = read_packet(context->adapter);
-
-				if (!skb)
-					continue;
-
-				if (skb->len)
-					esp_dbg("Flushed %d bytes\n", skb->len);
-
-				/* drop the packet */
-				dev_kfree_skb(skb);
-				skb = NULL;
-			}
-		}
-
-		old_len = context->rx_byte_count;
-	}
-
-	do_exit(0);
-	return 0;
-}
-#endif
-
 static int esp_probe(struct sdio_func *func,
 				  const struct sdio_device_id *id)
 {
@@ -824,13 +761,6 @@ static int esp_probe(struct sdio_func *func,
 	atomic_set(&context->adapter->state, ESP_CONTEXT_RX_READY);
 	generate_slave_intr(context, BIT(ESP_OPEN_DATA_PATH));
 
-
-#ifdef CONFIG_ENABLE_MONITOR_PROCESS
-	monitor_thread = kthread_run(monitor_process, context, "Monitor process");
-
-	if (!monitor_thread)
-		esp_err("Failed to create monitor thread\n");
-#endif
 
 	esp_dbg("ESP SDIO probe completed\n");
 
