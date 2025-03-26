@@ -571,7 +571,7 @@ static int tx_process(void *data)
 
 		if (atomic_read(&context->adapter->state) < ESP_CONTEXT_READY) {
 			msleep(10);
-			esp_err("not ready");
+			esp_dbg("not ready\n");
 			continue;
 		}
 
