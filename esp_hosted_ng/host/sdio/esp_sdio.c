@@ -266,9 +266,11 @@ static void esp_remove(struct sdio_func *func)
 		if (context->adapter) {
 			esp_remove_card(context->adapter);
 
+#ifdef CONFIG_BT
 			if (context->adapter->hcidev) {
 				esp_deinit_bt(context->adapter);
 			}
+#endif
 		}
 
 
@@ -494,8 +496,10 @@ static int write_packet(struct esp_adapter *adapter, struct sk_buff *skb)
 	/* Notify to process queue */
 	if (payload_header->if_type == ESP_INTERNAL_IF)
 		prio = PRIO_Q_HIGH;
+#ifdef CONFIG_BT
 	else if (payload_header->if_type == ESP_HCI_IF)
 		prio = PRIO_Q_MID;
+#endif
 	else
 		prio = PRIO_Q_LOW;
 
