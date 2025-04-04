@@ -394,7 +394,11 @@ static struct spi_controller *spi_busnum_to_master(u16 bus_num)
 	pdev->num_resources = 0;
 	platform_device_add(pdev);
 
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 1, 91))
+	master = spi_alloc_host(&pdev->dev, sizeof(void *));
+#else
 	master = spi_alloc_master(&pdev->dev, sizeof(void *));
+#endif
 	if (!master) {
 		pr_err("Error: failed to allocate SPI master device\n");
 		platform_device_del(pdev);
