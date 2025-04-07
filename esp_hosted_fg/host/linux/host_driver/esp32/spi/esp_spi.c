@@ -451,7 +451,7 @@ static struct spi_controller *spi_busnum_to_master(u16 bus_num)
 	pdev->num_resources = 0;
 	platform_device_add(pdev);
 
-	master = spi_alloc_master(&pdev->dev, sizeof(void *));
+	master = spi_alloc_host(&pdev->dev, sizeof(void *));
 	if (!master) {
 		pr_err("Error: failed to allocate SPI master device\n");
 		platform_device_del(pdev);

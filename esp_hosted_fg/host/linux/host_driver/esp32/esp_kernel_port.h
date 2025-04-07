@@ -115,4 +115,8 @@ static inline void eth_hw_addr_set(struct net_device *dev, const u8 *addr)
 #define CLASS_CREATE(x)	class_create(x);
 #endif
 
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(6, 1, 91))
+#define spi_alloc_host(x,y) spi_alloc_master(x,y)
+#endif
+
 #endif
