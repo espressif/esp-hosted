@@ -1176,9 +1176,9 @@ static int is_async_resp_callback_registered_by_resp_msg_id(int resp_msg_id)
  *     MSG_ID_OUT_OF_ORDER - if request msg id is unsupported
  *     CALLBACK_NOT_REGISTERED - if aync callback is not available
  **/
-int is_async_resp_callback_registered(ctrl_cmd_t req)
+int is_async_resp_callback_registered(ctrl_cmd_t *req)
 {
-	int exp_resp_msg_id = (req.msg_id - CTRL_REQ_BASE + CTRL_RESP_BASE);
+	int exp_resp_msg_id = (req->msg_id - CTRL_REQ_BASE + CTRL_RESP_BASE);
 	if (exp_resp_msg_id >= CTRL_RESP_MAX) {
 		printf("Not able to map new request to resp id, using sync path\n");
 		return MSG_ID_OUT_OF_ORDER;
@@ -1602,11 +1602,11 @@ int ctrl_app_send_req(ctrl_cmd_t *app_req)
 			ctrl_msg__req__enable_disable__init(req_payload);
 			req_payload->feature = app_req->u.feat_ena_disable.feature;
 			req_payload->enable = app_req->u.feat_ena_disable.enable;
-			printf("%sable feature [%d]\n", (req_payload->enable)? "en": "dis", req_payload->feature);
+			printf("%able feature [%d]\n", (req_payload->enable)? "en": "dis", req_payload->feature);
 			break;
 		} default: {
 			failure_status = CTRL_ERR_UNSUPPORTED_MSG;
-			printf("Unsupported Control Req[%u]",req.msg_id);
+			printf("RPC Req[%u] unsupported\n",req.msg_id);
 			goto fail_req;
 			break;
 		}
@@ -1675,6 +1675,7 @@ int ctrl_app_send_req(ctrl_cmd_t *app_req)
 	mem_free(tx_data);
 	mem_free(buff_to_free2);
 	mem_free(buff_to_free1);
+	mem_free(app_req);
 	return SUCCESS;
 
 fail_req:
@@ -1926,7 +1927,7 @@ int remove_default_gateway(char* gateway)
 	/* Remove the route */
 	ret = ioctl(sockfd, SIOCDELRT, &route);
 	if (ret < 0) {
-		perror("remove route failed:");
+		//perror("remove route failed:");
 		close(sockfd);
 		return FAILURE;
 	}

@@ -49,15 +49,15 @@
 
 volatile uint8_t station_got_ip = 0;
 
-#ifdef CONFIG_SLAVE_MANAGES_WIFI
+//#ifdef CONFIG_SLAVE_MANAGES_WIFI
 #include "wifi_cmd.h"
 
 /* Perform DHCP at slave & send IP info at host */
 #define H_SLAVE_LWIP_DHCP_AT_SLAVE       1
 
-#else
-#define H_SLAVE_LWIP_DHCP_AT_SLAVE       0
-#endif
+//#else
+//#define H_SLAVE_LWIP_DHCP_AT_SLAVE       0
+//#endif
 #endif
 
 #include "lwip_filter.h"
@@ -205,7 +205,7 @@ esp_err_t wlan_sta_rx_callback(void *buffer, uint16_t len, void *eb)
 	interface_buffer_handle_t buf_handle = {0};
 	hosted_l2_bridge bridge_to_use = HOST_LWIP_BRIDGE;
 
-	if (!buffer || !eb || !datapath) {
+	if (!buffer || !eb) {
 		if (eb) {
 			ESP_LOGD(TAG, "drop wifi packet. datapath: %u", datapath);
 			esp_wifi_internal_free_rx_buffer(eb);
@@ -229,6 +229,10 @@ esp_err_t wlan_sta_rx_callback(void *buffer, uint16_t len, void *eb)
 
 	switch (bridge_to_use) {
 		case HOST_LWIP_BRIDGE:
+			if (!datapath) {
+				ESP_LOGV(TAG, "datapath closed, drop packet");
+				goto DONE;
+			}
 			/* Send to Host */
 			ESP_LOGV(TAG, "host packet");
 			populate_wifi_buffer_handle(&buf_handle, ESP_STA_IF, buffer, len);
@@ -262,16 +266,22 @@ esp_err_t wlan_sta_rx_callback(void *buffer, uint16_t len, void *eb)
 			esp_netif_receive(slave_sta_netif, buffer, len, eb);
 
 			ESP_LOGV(TAG, "slave & host packet");
+			if (datapath) {
+				/* Host LWIP, free up wifi buffers */
+				populate_buff_handle(&buf_handle, ESP_STA_IF, copy_buff, len, free, copy_buff, 0, 0, 0);
+				if (unlikely(send_to_host_queue(&buf_handle, PRIO_Q_OTHERS)))
+					goto DONE;
 
-			/* Host LWIP, free up wifi buffers */
-			populate_buff_handle(&buf_handle, ESP_STA_IF, copy_buff, len, free, copy_buff, 0, 0, 0);
-			if (unlikely(send_to_host_queue(&buf_handle, PRIO_Q_OTHERS)))
-				goto DONE;
+			#if ESP_PKT_STATS
+				pkt_stats.sta_sh_in++;
+				pkt_stats.sta_both_lwip_out++;
+			#endif
+			} else {
+			#if ESP_PKT_STATS
+				pkt_stats.sta_slave_lwip_out++;
+			#endif	
+			}
 
-#if ESP_PKT_STATS
-			pkt_stats.sta_sh_in++;
-			pkt_stats.sta_both_lwip_out++;
-#endif
 			break;
 
 		default:
@@ -479,7 +489,7 @@ static void recv_task(void* pvParameters)
 
 		if (!datapath) {
 			/* Datapath is not enabled by host yet*/
-			usleep(100*1000);
+			vTaskDelay(pdMS_TO_TICKS(1));
 			continue;
 		}
 
@@ -487,6 +497,7 @@ static void recv_task(void* pvParameters)
 		if (if_context && if_context->if_ops && if_context->if_ops->read) {
 			int len = if_context->if_ops->read(if_handle, &buf_handle);
 			if (len <= 0) {
+				vTaskDelay(2);
 				continue;
 			}
 		}
@@ -969,7 +980,7 @@ esp_err_t esp_hosted_coprocessor_init(void)
 #endif
 
 	while(!datapath) {
-		vTaskDelay(10);
+		vTaskDelay(50);
 	}
 
 	/* send capabilities to host */

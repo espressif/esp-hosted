@@ -29,6 +29,7 @@ INCLUDE += -I$(DIR_CTRL_LIB)/src/include
 INCLUDE += -I$(DIR_SERIAL)/include
 INCLUDE += -I$(DIR_COMPONENTS)/include
 INCLUDE += -I$(DIR_LINUX_PORT)/include
+INCLUDE += -I/usr/local/include
 INCLUDE += -I.
 
 SRC = $(DIR_COMMON)/protobuf-c/protobuf-c/protobuf-c.c
@@ -51,6 +52,9 @@ stress: stress.c test_utils.c
 
 hosted_daemon: hosted_daemon.c
 	$(CROSS_COMPILE)$(CC) $(CFLAGS) $(CFLAGS_SANITIZE) $(INCLUDE) $(SRC) $(LINKER) $< -o $(@).out -ggdb3 -g
+
+hosted_shell: hosted_shell.c test_utils.c auto_ip_restore.c
+	$(CROSS_COMPILE)$(CC) $(CFLAGS) $(INCLUDE) $(SRC) test_utils.c hosted_shell.c -o $(@).out $(LINKER) -lreplxx -lpthread -lstdc++
 
 clean:
 	rm -f *.out *.o

@@ -457,18 +457,18 @@ static int32_t sdio_write(interface_handle_t *handle, interface_buffer_handle_t 
 	}
 
 	if (handle->state != ACTIVE) {
-		ESP_LOGI(TAG, "Driver state not active, drop");
+		ESP_LOGD(TAG, "%s: Driver state not active, drop", __func__);
 		return ESP_FAIL;
 	}
 
 	if (is_host_power_saving()) {
-		ESP_LOGI(TAG, "Host sleeping, drop");
+		ESP_LOGD(TAG, "%s: Host sleeping, drop", __func__);
 		return ESP_FAIL;
 	}
 
 #ifndef CONFIG_SLAVE_MANAGES_WIFI
 	if (buf_handle->payload_len || buf_handle->payload) {
-		ESP_LOGE(TAG , "Invalid arguments, len:%d", buf_handle->payload_len);
+		ESP_LOGD(TAG, "%s: Invalid arguments, len:%d", __func__, buf_handle->payload_len);
 		return ESP_FAIL;
 	}
 #endif

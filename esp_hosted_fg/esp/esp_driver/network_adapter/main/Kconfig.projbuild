@@ -287,10 +287,10 @@ menu "Example Configuration"
 				Select the SDIO Slave Bus Speed. Actual speed in use depends on SDIO bus speed the SDIO Master can support
 
 			config ESP_SDIO_DEFAULT_SPEED
-				bool "Default Speed (20 MHz)"
+				bool "Default Speed (upto 20 MHz)"
 
 			config ESP_SDIO_HIGH_SPEED
-				bool "High Speed (40 MHz)"
+				bool "High Speed (upto 50 MHz)"
 		endchoice
 
 

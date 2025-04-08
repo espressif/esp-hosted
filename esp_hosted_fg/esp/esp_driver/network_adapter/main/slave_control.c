@@ -425,6 +425,11 @@ static void station_event_handler(void *arg, esp_event_base_t event_base,
 		station_connected = true;
 		ESP_LOGI(TAG, "Station connected");
 
+		//if (slave_sta_netif) {
+		//	esp_netif_dhcpc_stop(slave_sta_netif);  // Stop first to ensure clean state
+		//	esp_netif_dhcpc_start(slave_sta_netif);  // Restart DHCP client
+		//	ESP_LOGI(TAG, "DHCP client restarted after connection");
+		//}
 #ifdef CONFIG_SLAVE_MANAGES_WIFI
 	} else if (event_id == WIFI_EVENT_STA_START) {
 		if (station_connected) {

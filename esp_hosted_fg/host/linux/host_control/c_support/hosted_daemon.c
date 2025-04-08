@@ -15,14 +15,11 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <errno.h>
+#include <pthread.h>
+
 
 #define STA_INTERFACE                                     "ethsta0"
 
-#define CTRL_CMD_DEFAULT_REQ() {                          \
-  .msg_type = CTRL_REQ,                                   \
-  .ctrl_resp_cb = NULL,                                   \
-  .cmd_timeout_sec = DEFAULT_CTRL_RESP_TIMEOUT /*5 sec*/ \
-}
 
 #define CLEANUP_CTRL_MSG(msg) do {                        \
   if (msg) {                                              \
@@ -78,7 +75,14 @@ static uint8_t local_network_up = 0;
 static int run_in_foreground = 0;
 static const char *config_file = CONFIG_FILE;
 
-
+static inline ctrl_cmd_t * CTRL_CMD_DEFAULT_REQ()
+{
+	ctrl_cmd_t *req = (ctrl_cmd_t *)malloc(sizeof(ctrl_cmd_t));
+	req->msg_type = CTRL_REQ;
+	req->ctrl_resp_cb = NULL;
+	req->cmd_timeout_sec = DEFAULT_CTRL_RESP_TIMEOUT /*5 sec*/;
+	return req;
+}
 
 static char * get_timestamp(char *str, uint16_t str_size)
 {
@@ -299,6 +303,8 @@ static int event_cb(ctrl_cmd_t * app_event)
 				local_network_up = 0;
 			}
 
+
+
 			break;
 		} default: {
 			LOG_MSG(LOG_ERR, "%s Invalid event[%u] to parse",
@@ -409,10 +415,10 @@ static int unsubscribe_events(void)
 static int fetch_mac_addr_from_slave(void)
 {
 	/* implemented synchronous */
-	ctrl_cmd_t req = CTRL_CMD_DEFAULT_REQ();
+	ctrl_cmd_t *req = CTRL_CMD_DEFAULT_REQ();
 	ctrl_cmd_t *resp = NULL;
 
-	req.u.wifi_mac.mode = WIFI_MODE_STA;
+	req->u.wifi_mac.mode = WIFI_MODE_STA;
 	resp = wifi_get_mac(req);
 
 	if (resp->resp_event_status == SUCCESS) {
@@ -425,8 +431,8 @@ static int fetch_mac_addr_from_slave(void)
 static int fetch_ip_addr_from_slave(void)
 {
 	ctrl_cmd_t *resp = NULL;
-	ctrl_cmd_t req = CTRL_CMD_DEFAULT_REQ();
-	req.cmd_timeout_sec = 1;
+	ctrl_cmd_t *req = CTRL_CMD_DEFAULT_REQ();
+	req->cmd_timeout_sec = 1;
 
 	resp = get_dhcp_dns_status(req);
 	return resp_cb(resp);

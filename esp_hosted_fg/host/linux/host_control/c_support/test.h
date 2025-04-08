@@ -28,12 +28,29 @@
 #include <sys/socket.h>
 #include <sys/ioctl.h>
 #include <netdb.h>
-#include <linux/if.h>
-#include <linux/if_arp.h>
 #include <errno.h>
 #include "ctrl_api.h"
 #include "ctrl_config.h"
 #include <time.h>
+
+
+#define STA_INTERFACE     "ethsta0"
+#define AP_INTERFACE      "ethap0"
+#define MAC_ADDR_LENGTH   18
+
+/* Network state structure */
+typedef struct {
+	char mac_addr[MAC_ADDR_LENGTH];
+	char ip_addr[MAC_ADDR_LENGTH];
+	char netmask[MAC_ADDR_LENGTH];
+	char gateway[MAC_ADDR_LENGTH];
+	char dns_addr[MAC_ADDR_LENGTH];
+	char default_route[MAC_ADDR_LENGTH];
+	uint8_t ip_valid;
+	uint8_t dns_valid;
+	uint8_t network_up;
+} network_info_t;
+
 
 int test_get_wifi_mode(void);
 int test_set_wifi_mode(int mode);
@@ -41,12 +58,12 @@ int test_set_wifi_mode_station(void);
 int test_set_wifi_mode_softap(void);
 int test_set_wifi_mode_station_softap(void);
 int test_set_wifi_mode_none(void);
-int test_get_wifi_mac_addr(int mode);
-int test_station_mode_get_mac_addr(void);
+int test_get_wifi_mac_addr(int mode, char *mac_str);
+int test_station_mode_get_mac_addr(char *mac_str);
 int test_set_mac_addr(int mode, char *mac);
-int test_station_mode_set_mac_addr_of_esp(void);
-int test_softap_mode_set_mac_addr_of_esp(void);
-int test_softap_mode_get_mac_addr(void);
+int test_station_mode_set_mac_addr_of_esp(char *mac_str);
+int test_softap_mode_set_mac_addr_of_esp(char *mac_str);
+int test_softap_mode_get_mac_addr(char *mac_str);
 int test_station_mode_connect(void);
 int test_station_mode_get_info(void);
 int test_get_available_wifi(void);
@@ -76,10 +93,12 @@ int test_disable_bt(void);
 int test_enable_bt(void);
 int test_disable_wifi(void);
 int test_enable_wifi(void);
-char * test_get_fw_version(char *);
+char * test_get_fw_version(char *, uint16_t);
 int test_print_fw_version(void);
 int test_set_country_code_enabled();
 int test_set_country_code();
 int test_get_country_code();
+int test_fetch_ip_addr_from_slave(void);
+int test_set_dhcp_dns_status(char *sta_ip, char *sta_nm, char *sta_gw, char *sta_dns);
 
 #endif
