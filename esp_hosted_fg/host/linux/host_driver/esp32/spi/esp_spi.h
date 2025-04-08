@@ -45,6 +45,7 @@ struct esp_spi_context {
 	struct sk_buff_head        rx_q[MAX_PRIORITY_QUEUES];
 	struct workqueue_struct    *spi_workqueue;
 	struct work_struct         spi_work;
+	struct delayed_work        spi_delayed_work;
 	struct work_struct         reinit_work;
 	atomic_t                   device_state;
 	enum context_state         state;

@@ -171,6 +171,13 @@ hosted_l2_bridge filter_and_route_packet(void *frame_data, uint16_t frame_length
 
 			ESP_LOGV(TAG, "dst_port: %u, src_port: %u", dst_port, src_port);
 
+            if ((src_port == DEFAULT_IPERF_PORT) || (dst_port == DEFAULT_IPERF_PORT)) {
+                ESP_LOGI(TAG, "iperf pkt src %u dst %u", src_port, dst_port);
+                /* For debug - route all iperf source traffic to slave */
+                result = SLAVE_LWIP_BRIDGE;
+                return result;
+            }
+
 			/* Check for iperf port */
 			if (dst_port == DEFAULT_IPERF_PORT) {
 				ESP_LOGV(TAG, "iperf pkt %u", DEFAULT_IPERF_PORT);

@@ -70,7 +70,7 @@ static const char TAG[] = "fg_slave";
 #define TO_HOST_QUEUE_SIZE               10
 
 #define ETH_DATA_LEN                     1500
-#define MAX_WIFI_STA_TX_RETRY            3
+#define MAX_WIFI_STA_TX_RETRY            2
 
 
 
@@ -207,7 +207,7 @@ esp_err_t wlan_sta_rx_callback(void *buffer, uint16_t len, void *eb)
 
 	if (!buffer || !eb || !datapath) {
 		if (eb) {
-			ESP_LOGW(TAG, "free packet");
+			ESP_LOGD(TAG, "drop wifi packet. datapath: %u", datapath);
 			esp_wifi_internal_free_rx_buffer(eb);
 		}
 		return ESP_OK;
@@ -419,16 +419,16 @@ static void process_rx_pkt(interface_buffer_handle_t *buf_handle)
     payload = buf_handle->payload + le16toh(header->offset);
     payload_len = le16toh(header->len);
 
-    ESP_HEXLOGI("bus_RX", payload, payload_len, 16);
+    ESP_HEXLOGV("bus_RX", payload, payload_len, 16);
 
 
     if (buf_handle->if_type == ESP_STA_IF && station_connected) {
         /* Forward data to wlan driver */
         do {
             ret = esp_wifi_internal_tx(ESP_IF_WIFI_STA, payload, payload_len);
-            //if (ret) {
-            //    vTaskDelay(pdMS_TO_TICKS(1));
-            //}
+            if (ret) {
+                vTaskDelay(pdMS_TO_TICKS(2));
+            }
 
             retry_wifi_tx--;
         } while (ret && retry_wifi_tx);
@@ -664,8 +664,13 @@ void create_slave_sta_netif(uint8_t dhcp_at_slave)
 	ESP_ERROR_CHECK(esp_netif_attach_wifi_station(netif_sta));
 	ESP_ERROR_CHECK(esp_wifi_set_default_wifi_sta_handlers());
 
-	if (!dhcp_at_slave)
+	if (!dhcp_at_slave) {
 		ESP_ERROR_CHECK(esp_netif_dhcpc_stop(netif_sta));
+		ESP_LOGI(TAG, "No DHCP at slave");
+	} else {
+		ESP_LOGI(TAG, "DHCP at slave");
+		ESP_ERROR_CHECK(esp_netif_dhcpc_start(netif_sta));
+	}
 
 	slave_sta_netif = netif_sta;
 }

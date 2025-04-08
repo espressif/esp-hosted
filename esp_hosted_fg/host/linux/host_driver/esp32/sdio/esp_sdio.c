@@ -841,9 +841,10 @@ static int tx_process(void *data)
 		UPDATE_HEADER_TX_PKT_NO(h);
 
 		/* update checksum */
-		if (context->adapter->capabilities & ESP_CHECKSUM_ENABLED)
+		if (context->adapter->capabilities & ESP_CHECKSUM_ENABLED) {
+			h->checksum = 0;
 			h->checksum = cpu_to_le16(compute_checksum(tx_skb->data, le16_to_cpu(h->len) + le16_to_cpu(h->offset)));
-
+		}
 		pos = tx_skb->data;
 		data_left = len_to_send = 0;
 

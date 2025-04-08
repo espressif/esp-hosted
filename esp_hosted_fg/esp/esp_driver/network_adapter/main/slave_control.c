@@ -256,9 +256,8 @@ static void event_handler_ip(void* arg, esp_event_base_t event_base,
 }
 #endif
 
-#ifndef CONFIG_SLAVE_MANAGES_WIFI
+
 extern esp_netif_t *slave_sta_netif;
-#endif
 
 static esp_err_t set_slave_static_ip(wifi_interface_t iface, char *ip, char *nm, char *gw)
 {
@@ -424,6 +423,7 @@ static void station_event_handler(void *arg, esp_event_base_t event_base,
 		/*Overwrite our handler*/
 		esp_wifi_internal_reg_rxcb(ESP_IF_WIFI_STA, (wifi_rxcb_t) wlan_sta_rx_callback);
 		station_connected = true;
+		ESP_LOGI(TAG, "Station connected");
 
 #ifdef CONFIG_SLAVE_MANAGES_WIFI
 	} else if (event_id == WIFI_EVENT_STA_START) {
@@ -483,6 +483,7 @@ static void station_event_register(void)
 				WIFI_EVENT_STA_START, &station_event_handler, NULL));
 
 #ifdef CONFIG_SLAVE_LWIP_ENABLED
+	ESP_LOGI(TAG, "Registering IP event handler");
 	ESP_ERROR_CHECK(esp_event_handler_instance_register(IP_EVENT,
 				IP_EVENT_STA_GOT_IP,
 				&event_handler_ip,

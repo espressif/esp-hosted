@@ -70,7 +70,7 @@ static char hardware_type = ESP_PRIV_FIRMWARE_CHIP_UNRECOGNIZED;
 static atomic_t tx_pending;
 u8 first_esp_bootup_over;
 
-#if !CONFIG_ESP_HOSTED_USE_WORKQUEUE
+#if !defined(CONFIG_ESP_HOSTED_USE_WORKQUEUE)
 struct task_struct *spi_thread;
 struct semaphore spi_sem;
 #endif
@@ -98,7 +98,7 @@ static void close_data_path(void)
 
 static irqreturn_t spi_data_ready_interrupt_handler(int irq, void * dev)
 {
-#if CONFIG_ESP_HOSTED_USE_WORKQUEUE
+#if defined(CONFIG_ESP_HOSTED_USE_WORKQUEUE)
 	if (spi_context.spi_workqueue)
 		queue_work(spi_context.spi_workqueue, &spi_context.spi_work);
 #else
@@ -110,7 +110,7 @@ static irqreturn_t spi_data_ready_interrupt_handler(int irq, void * dev)
 
 static irqreturn_t spi_interrupt_handler(int irq, void * dev)
 {
-#if CONFIG_ESP_HOSTED_USE_WORKQUEUE
+#if defined(CONFIG_ESP_HOSTED_USE_WORKQUEUE)
 	if (spi_context.spi_workqueue)
 		queue_work(spi_context.spi_workqueue, &spi_context.spi_work);
 #else
@@ -181,13 +181,11 @@ static int write_packet(struct esp_adapter *adapter, struct sk_buff *skb)
 	} else if (payload_header->if_type == ESP_HCI_IF) {
 		skb_queue_tail(&spi_context.tx_q[PRIO_Q_BT], skb);
 	} else {
-		if (atomic_read(&tx_pending) >= TX_MAX_PENDING_COUNT) {
-			esp_tx_pause();
-			dev_kfree_skb(skb);
-			return -EBUSY;
-		}
 		skb_queue_tail(&spi_context.tx_q[PRIO_Q_OTHERS], skb);
 		atomic_inc(&tx_pending);
+		if (atomic_read(&tx_pending) >= TX_MAX_PENDING_COUNT) {
+			esp_tx_pause();
+		}
 	}
 
 	up(&spi_sem);
@@ -371,108 +369,100 @@ static void esp_spi_transaction(void)
 	struct sk_buff *tx_skb = NULL, *rx_skb = NULL;
 	u8 *rx_buf;
 	int ret = 0;
-	volatile int slave_ready, rx_pending;
 
-	mutex_lock(&spi_lock);
+	if (!mutex_trylock(&spi_lock)) {
+		if (spi_context.spi_workqueue)
+			queue_work(spi_context.spi_workqueue, &spi_context.spi_work);
+		return;
+	}
 
-	slave_ready = gpio_get_value(spi_context.handshake_gpio);
-	rx_pending = gpio_get_value(spi_context.dataready_gpio);
-
-	if (slave_ready) {
-		if (data_path) {
-			tx_skb = skb_dequeue(&spi_context.tx_q[PRIO_Q_SERIAL]);
-			if (!tx_skb)
-				tx_skb = skb_dequeue(&spi_context.tx_q[PRIO_Q_BT]);
-			if (!tx_skb)
-				tx_skb = skb_dequeue(&spi_context.tx_q[PRIO_Q_OTHERS]);
-			if (tx_skb) {
-				if (atomic_read(&tx_pending))
-					atomic_dec(&tx_pending);
-
-				if (atomic_read(&tx_pending) < TX_RESUME_THRESHOLD) {
-					esp_tx_resume();
-#if TEST_RAW_TP
-					esp_raw_tp_queue_resume();
-#endif
-				}
-			}
+	/* Check slave readiness */
+	if (!gpio_get_value(spi_context.handshake_gpio)) {
+		mutex_unlock(&spi_lock);
+		/* Schedule delayed work to retry after 1ms */
+		if (spi_context.spi_workqueue) {
+			mod_delayed_work(spi_context.spi_workqueue,
+						   &spi_context.spi_delayed_work,
+						   msecs_to_jiffies(10));
 		}
+		return;
+	}
 
-		if (rx_pending || tx_skb) {
-			memset(&trans, 0, sizeof(trans));
-			trans.speed_hz = spi_context.spi_clk_mhz * NUMBER_1M;
+	if (data_path) {
+		tx_skb = skb_dequeue(&spi_context.tx_q[PRIO_Q_SERIAL]);
+		if (!tx_skb)
+			tx_skb = skb_dequeue(&spi_context.tx_q[PRIO_Q_BT]);
+		if (!tx_skb)
+			tx_skb = skb_dequeue(&spi_context.tx_q[PRIO_Q_OTHERS]);
 
-			/* Setup and execute SPI transaction
-			 * 	Tx_buf: Check if tx_q has valid buffer for transmission,
-			 * 		else keep it blank
-			 *
-			 * 	Rx_buf: Allocate memory for incoming data. This will be freed
-			 *		immediately if received buffer is invalid.
-			 *		If it is a valid buffer, upper layer will free it.
-			 * */
+		if (tx_skb && atomic_read(&tx_pending)) {
+			atomic_dec(&tx_pending);
+			if (atomic_read(&tx_pending) < TX_RESUME_THRESHOLD)
+				esp_tx_resume();
+			#if TEST_RAW_TP
+				esp_raw_tp_queue_resume();
+			#endif
+		}
+	}
 
-			/* Configure TX buffer if available */
-			if (tx_skb) {
-				trans.tx_buf = tx_skb->data;
-				struct esp_payload_header *h = (struct esp_payload_header *) trans.tx_buf;
-				UPDATE_HEADER_TX_PKT_NO(h);
+	memset(&trans, 0, sizeof(trans));
+	trans.speed_hz = spi_context.spi_clk_mhz * NUMBER_1M;
 
-				/* update checksum */
-				if (spi_context.adapter->capabilities & ESP_CHECKSUM_ENABLED) {
-					uint16_t len = le16_to_cpu(h->len);
-					uint16_t offset = le16_to_cpu(h->offset);
-					h->checksum = 0;
-					h->checksum = cpu_to_le16(compute_checksum((uint8_t*)trans.tx_buf, len + offset));
-					esp_hex_dump_dbg("spi_tx: ", trans.tx_buf, min(len, 64));
-				}
-			} else {
-				tx_skb = esp_alloc_skb(SPI_BUF_SIZE);
-				trans.tx_buf = skb_put(tx_skb, SPI_BUF_SIZE);
-				memset((void*)trans.tx_buf, 0, SPI_BUF_SIZE);
+	if (tx_skb) {
+		trans.tx_buf = tx_skb->data;
+		struct esp_payload_header *h = (struct esp_payload_header *) trans.tx_buf;
+		UPDATE_HEADER_TX_PKT_NO(h);
 
-#if ESP_PKT_NUM_DEBUG
-				UPDATE_HEADER_TX_PKT_NO((struct esp_payload_header *) trans.tx_buf);
-				esp_hex_dump_dbg("spi_tx: ", trans.tx_buf, 12);
-#endif
-			}
+		if (spi_context.adapter->capabilities & ESP_CHECKSUM_ENABLED) {
+			uint16_t len = le16_to_cpu(h->len);
+			uint16_t offset = le16_to_cpu(h->offset);
+			h->checksum = 0;
+			h->checksum = cpu_to_le16(compute_checksum((uint8_t*)trans.tx_buf, len + offset));
+		}
+	} else {
+		tx_skb = esp_alloc_skb(SPI_BUF_SIZE);
+		trans.tx_buf = skb_put(tx_skb, SPI_BUF_SIZE);
+		memset((void*)trans.tx_buf, 0, SPI_BUF_SIZE);
+	}
 
-			/* Configure RX buffer */
-			rx_skb = esp_alloc_skb(SPI_BUF_SIZE);
-			rx_buf = skb_put(rx_skb, SPI_BUF_SIZE);
-
-			memset(rx_buf, 0, SPI_BUF_SIZE);
-
-			trans.rx_buf = rx_buf;
-			trans.len = SPI_BUF_SIZE;
+	rx_skb = esp_alloc_skb(SPI_BUF_SIZE);
+	rx_buf = skb_put(rx_skb, SPI_BUF_SIZE);
+	memset(rx_buf, 0, SPI_BUF_SIZE);
+	trans.rx_buf = rx_buf;
+	trans.len = SPI_BUF_SIZE;
 
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 15, 0))
-			if (hardware_type == ESP_PRIV_FIRMWARE_CHIP_ESP32) {
-				trans.cs_change = 1;
-			}
+	if (hardware_type == ESP_PRIV_FIRMWARE_CHIP_ESP32) {
+		trans.cs_change = 1;
+	}
 #endif
-			ret = spi_sync_transfer(spi_context.esp_spi_dev, &trans, 1);
-			if (ret) {
-				esp_err("SPI Transaction failed: %d\n", ret);
-				dev_kfree_skb(rx_skb);
-				dev_kfree_skb(tx_skb);
-			} else {
 
-				/* Free rx_skb if received data is not valid */
-				if (process_rx_buf(rx_skb)) {
-					dev_kfree_skb(rx_skb);
-				}
+	ret = spi_sync_transfer(spi_context.esp_spi_dev, &trans, 1);
+	if (ret) {
+		dev_kfree_skb(rx_skb);
+		dev_kfree_skb(tx_skb);
+		mutex_unlock(&spi_lock);
+		return;
+	}
 
-				if (tx_skb)
-					dev_kfree_skb(tx_skb);
-			}
-		}
-#if !CONFIG_ESP_HOSTED_USE_WORKQUEUE
-	} else {
-		up(&spi_sem);
-#endif
+	if (process_rx_buf(rx_skb)) {
+		dev_kfree_skb(rx_skb);
+	}
+
+	if (tx_skb) {
+		dev_kfree_skb(tx_skb);
 	}
 
 	mutex_unlock(&spi_lock);
+
+	/* Queue next work only if there's data or slave is ready */
+	if (gpio_get_value(spi_context.dataready_gpio) ||
+		!skb_queue_empty(&spi_context.tx_q[PRIO_Q_SERIAL]) ||
+		!skb_queue_empty(&spi_context.tx_q[PRIO_Q_BT]) ||
+		!skb_queue_empty(&spi_context.tx_q[PRIO_Q_OTHERS])) {
+		if (spi_context.spi_workqueue)
+			queue_work(spi_context.spi_workqueue, &spi_context.spi_work);
+	}
 }
 
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 16, 0))
@@ -629,10 +619,10 @@ static int spi_dev_init(struct esp_spi_context *context)
 
 	return 0;
 }
-#if CONFIG_ESP_HOSTED_USE_WORKQUEUE
-static void esp_spi_work(struct work_struct *work)
+#if defined(CONFIG_ESP_HOSTED_USE_WORKQUEUE)
+static inline void esp_spi_work(struct work_struct *work)
 {
-		esp_spi_transaction();
+	esp_spi_transaction();
 }
 #else
 static int esp_spi_thread(void *data)
@@ -674,9 +664,9 @@ static int spi_init(void)
 
 	/* Init reinit work */
 	INIT_WORK(&spi_context.reinit_work, esp_spi_reinit_work);
-#if CONFIG_ESP_HOSTED_USE_WORKQUEUE
-	//spi_context.spi_workqueue = create_workqueue("ESP_SPI_WORK_QUEUE");
-	spi_context.spi_workqueue = alloc_workqueue("ESP_SPI_WORK_QUEUE", WQ_UNBOUND, 0);
+#if defined(CONFIG_ESP_HOSTED_USE_WORKQUEUE)
+	spi_context.spi_workqueue = alloc_workqueue("ESP_SPI_WORK_QUEUE",
+											   WQ_UNBOUND | WQ_HIGHPRI, 0);
 
 	if (!spi_context.spi_workqueue) {
 		esp_err("spi workqueue failed to create\n");
@@ -685,6 +675,7 @@ static int spi_init(void)
 	}
 
 	INIT_WORK(&spi_context.spi_work, esp_spi_work);
+	INIT_DELAYED_WORK(&spi_context.spi_delayed_work, esp_spi_work);
 
 #else
 	sema_init(&spi_sem, 0);
@@ -746,7 +737,7 @@ static void spi_exit(void)
 		skb_queue_purge(&spi_context.tx_q[prio_q_idx]);
 		skb_queue_purge(&spi_context.rx_q[prio_q_idx]);
 	}
-#if CONFIG_ESP_HOSTED_USE_WORKQUEUE
+#if defined(CONFIG_ESP_HOSTED_USE_WORKQUEUE)
 	if (spi_context.spi_workqueue) {
 		flush_workqueue(spi_context.spi_workqueue);
 		destroy_workqueue(spi_context.spi_workqueue);
