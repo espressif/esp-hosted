@@ -16,6 +16,7 @@
 #include <fcntl.h>
 #include <errno.h>
 #include <pthread.h>
+#include "nw_helper_func.h"
 
 
 #define STA_INTERFACE                                     "ethsta0"
@@ -59,16 +60,7 @@
 static int lock_fd = -1;
 
 
-
-static char sta_mac_str[MAC_ADDR_LENGTH];
-
-static uint8_t sta_ip_valid = 0;
-static uint8_t sta_dns_ip_valid = 0;
-static char sta_ip_str[MAC_ADDR_LENGTH];
-static char sta_nm_str[MAC_ADDR_LENGTH];
-static char sta_gw_str[MAC_ADDR_LENGTH];
-static char sta_dns_ip_str[MAC_ADDR_LENGTH];
-static char default_route_ip_str[MAC_ADDR_LENGTH];
+static network_info_t sta_network;
 
 static uint8_t local_network_up = 0;
 
@@ -77,7 +69,7 @@ static const char *config_file = CONFIG_FILE;
 
 static inline ctrl_cmd_t * CTRL_CMD_DEFAULT_REQ()
 {
-	ctrl_cmd_t *req = (ctrl_cmd_t *)malloc(sizeof(ctrl_cmd_t));
+	ctrl_cmd_t *req = (ctrl_cmd_t *)calloc(1, sizeof(ctrl_cmd_t));
 	req->msg_type = CTRL_REQ;
 	req->ctrl_resp_cb = NULL;
 	req->cmd_timeout_sec = DEFAULT_CTRL_RESP_TIMEOUT /*5 sec*/;
@@ -95,120 +87,6 @@ static char * get_timestamp(char *str, uint16_t str_size)
 	return NULL;
 }
 
-
-static int up_sta_netdev(char *sta_mac, char *ip, char *netmask, char *gateway)
-{
-	int ret = SUCCESS, sockfd = 0;
-
-	if (!sta_mac || !strlen(sta_mac)) {
-		LOG_MSG(LOG_ERR, "Failure: station mac is empty");
-		return FAILURE;
-	}
-
-	if (!ip || !netmask || !gateway || strlen(ip) == 0 || strlen(netmask) == 0 || strlen(gateway) == 0 || (strcmp(ip, "0.0.0.0") == 0 || 
-			strcmp(netmask, "0.0.0.0") == 0 || 
-			strcmp(gateway, "0.0.0.0") == 0)) {
-		LOG_MSG(LOG_ERR, "Invalid network conf to set");
-		return FAILURE;
-	}
-
-	ret = create_socket(AF_INET, SOCK_DGRAM, IPPROTO_IP, &sockfd);
-	if (ret < 0) {
-		LOG_MSG(LOG_ERR, "Failure to open socket");
-		return FAILURE;
-	}
-
-	ret = interface_down(sockfd, STA_INTERFACE);
-	if (ret == SUCCESS) {
-		LOG_MSG(LOG_INFO, "%s interface down", STA_INTERFACE);
-	} else {
-		LOG_MSG(LOG_ERR, "Unable to down %s interface", STA_INTERFACE);
-		goto close_sock;
-	}
-
-	ret = set_hw_addr(sockfd, STA_INTERFACE, sta_mac);
-	if (ret == SUCCESS) {
-		LOG_MSG(LOG_INFO, "MAC address %s set to %s interface", sta_mac, STA_INTERFACE);
-	} else {
-		LOG_MSG(LOG_ERR, "Unable to set MAC address to %s interface", STA_INTERFACE);
-		goto close_sock;
-	}
-
-	ret = interface_up(sockfd, STA_INTERFACE);
-	if (ret == SUCCESS) {
-		LOG_MSG(LOG_INFO, "%s interface up", STA_INTERFACE);
-	} else {
-		LOG_MSG(LOG_ERR, "Unable to up %s interface", STA_INTERFACE);
-		goto close_sock;
-	}
-
-	ret = set_network_static_ip(sockfd, STA_INTERFACE, ip, netmask, gateway);
-	if (ret == SUCCESS) {
-		LOG_MSG(LOG_INFO, "Static IP set: IP=%s, Netmask=%s, Gateway=%s", ip, netmask, gateway);
-	} else {
-		LOG_MSG(LOG_ERR, "Failed to set static IP");
-		goto close_sock;
-	}
-
-	ret = add_default_gateway(gateway);
-	if (ret == SUCCESS) {
-		LOG_MSG(LOG_INFO, "Default gateway added: Gateway=%s", gateway);
-	} else {
-		LOG_MSG(LOG_ERR, "Failed to add default gateway");
-		goto close_sock;
-	}
-
-	ret = close_socket(sockfd);
-	if (ret < 0) {
-		LOG_MSG(LOG_ERR, "Failure to close socket");
-		return FAILURE;
-	}
-	return SUCCESS;
-
-close_sock:
-	close_socket(sockfd);
-	return FAILURE;
-}
-
-static int down_sta_netdev(void)
-{
-	int ret = SUCCESS, sockfd = 0;
-
-	ret = create_socket(AF_INET, SOCK_DGRAM, IPPROTO_IP, &sockfd);
-	if (ret < 0) {
-		LOG_MSG(LOG_ERR, "Failure to open socket");
-		return FAILURE;
-	}
-
-	ret = interface_down(sockfd, STA_INTERFACE);
-	if (ret == SUCCESS) {
-		LOG_MSG(LOG_INFO, "%s interface down", STA_INTERFACE);
-	} else {
-		LOG_MSG(LOG_ERR, "Unable to down %s interface", STA_INTERFACE);
-		goto close_sock;
-	}
-
-	ret = remove_default_gateway(default_route_ip_str);
-	if (ret == SUCCESS) {
-		LOG_MSG(LOG_INFO, "Default gateway removed: Gateway=%s", default_route_ip_str);
-	} else {
-		LOG_MSG(LOG_ERR, "Failed to remove default gateway");
-		goto close_sock;
-	}
-
-	ret = close_socket(sockfd);
-	if (ret < 0) {
-		LOG_MSG(LOG_ERR, "Failure to close socket");
-	}
-	return SUCCESS;
-
-close_sock:
-	ret = close_socket(sockfd);
-	if (ret < 0) {
-		LOG_MSG(LOG_ERR, "Failure to close socket");
-	}
-	return FAILURE;
-}
 
 
 static int validate_event(ctrl_cmd_t * app_event)
@@ -275,31 +153,31 @@ static int event_cb(ctrl_cmd_t * app_event)
 			LOG_MSG(LOG_INFO, "%s App EVENT: DHCP DNS status: iface[%d] dhcp_up[%d] dns_up[%d]",
 				get_timestamp(ts, MIN_TIMESTAMP_STR_SIZE), p_e->iface, p_e->dhcp_up, p_e->dns_up);
 			if (p_e->dhcp_up) {
-				strncpy(sta_ip_str, (const char *)p_e->dhcp_ip, MAC_ADDR_LENGTH);
-				strncpy(sta_nm_str, (const char *)p_e->dhcp_nm, MAC_ADDR_LENGTH);
-				strncpy(sta_gw_str, (const char *)p_e->dhcp_gw, MAC_ADDR_LENGTH);
-				strncpy(default_route_ip_str, (const char *)p_e->dhcp_gw, MAC_ADDR_LENGTH);
-				sta_ip_valid = 1;
+				strncpy(sta_network.ip_addr, (const char *)p_e->dhcp_ip, MAC_ADDR_LENGTH);
+				strncpy(sta_network.netmask, (const char *)p_e->dhcp_nm, MAC_ADDR_LENGTH);
+				strncpy(sta_network.gateway, (const char *)p_e->dhcp_gw, MAC_ADDR_LENGTH);
+				strncpy(sta_network.default_route, (const char *)p_e->dhcp_gw, MAC_ADDR_LENGTH);
+				sta_network.ip_valid = 1;
 			} else {
 				local_network_up = 0;
-				sta_ip_valid = 0;
+				sta_network.ip_valid = 0;
 			}
 			if (p_e->dns_up) {
-				strncpy(sta_dns_ip_str, (const char *)p_e->dns_ip, MAC_ADDR_LENGTH);
-				sta_dns_ip_valid = 1;
+				strncpy(sta_network.dns_addr, (const char *)p_e->dns_ip, MAC_ADDR_LENGTH);
+				sta_network.dns_valid = 1;
 			} else {
-				sta_dns_ip_valid = 0;
+				sta_network.dns_valid = 0;
 			}
 
-			if (sta_dns_ip_valid && sta_ip_valid) {
+			if (sta_network.dns_valid && sta_network.ip_valid) {
 				LOG_MSG(LOG_INFO, "Network identified as up");
-				up_sta_netdev(sta_mac_str, sta_ip_str, sta_nm_str, sta_gw_str);
-				add_dns(sta_dns_ip_str);
+				up_sta_netdev(&sta_network);
+				add_dns(sta_network.dns_addr);
 				local_network_up = 1;
 			} else {
 				LOG_MSG(LOG_INFO, "Network identified as down");
-				down_sta_netdev();
-				remove_dns(sta_dns_ip_str);
+				down_sta_netdev(&sta_network);
+				remove_dns(sta_network.dns_addr);
 				local_network_up = 0;
 			}
 
@@ -336,21 +214,21 @@ int resp_cb(ctrl_cmd_t * app_resp)
 				LOG_MSG(LOG_INFO, "DHCP IP: %s", p->dhcp_ip);
 				LOG_MSG(LOG_INFO, "DHCP NM: %s", p->dhcp_nm);
 				LOG_MSG(LOG_INFO, "DHCP GW: %s", p->dhcp_gw);
-				strncpy(sta_ip_str, (const char *)p->dhcp_ip, MAC_ADDR_LENGTH);
-				strncpy(sta_nm_str, (const char *)p->dhcp_nm, MAC_ADDR_LENGTH);
-				strncpy(sta_gw_str, (const char *)p->dhcp_gw, MAC_ADDR_LENGTH);
-				sta_ip_valid = 1;
+				strncpy(sta_network.ip_addr, (const char *)p->dhcp_ip, MAC_ADDR_LENGTH);
+				strncpy(sta_network.netmask, (const char *)p->dhcp_nm, MAC_ADDR_LENGTH);
+				strncpy(sta_network.gateway, (const char *)p->dhcp_gw, MAC_ADDR_LENGTH);
+				sta_network.ip_valid = 1;
 			} else {
 				LOG_MSG(LOG_INFO, "DHCP is not up");
-				sta_ip_valid = 0;
+				sta_network.ip_valid = 0;
 			}
 			if (p->dns_up) {
 				LOG_MSG(LOG_INFO, "DNS IP: %s", p->dns_ip);
-				strncpy(sta_dns_ip_str, (const char *)p->dns_ip, MAC_ADDR_LENGTH);
-				sta_dns_ip_valid = 1;
+				strncpy(sta_network.dns_addr, (const char *)p->dns_ip, MAC_ADDR_LENGTH);
+				sta_network.dns_valid = 1;
 			} else {
 				LOG_MSG(LOG_INFO, "DNS is not up");
-				sta_dns_ip_valid = 0;
+				sta_network.dns_valid = 0;
 			}
 			
 			break;
@@ -421,9 +299,10 @@ static int fetch_mac_addr_from_slave(void)
 	req->u.wifi_mac.mode = WIFI_MODE_STA;
 	resp = wifi_get_mac(req);
 
-	if (resp->resp_event_status == SUCCESS) {
-		strncpy(sta_mac_str, resp->u.wifi_mac.mac, MAC_ADDR_LENGTH);
+	if (resp && resp->resp_event_status == SUCCESS) {
+		strncpy(sta_network.mac_addr, resp->u.wifi_mac.mac, MAC_ADDR_LENGTH);
 	}
+	free(req);
 
 	return resp_cb(resp);
 }
@@ -435,6 +314,7 @@ static int fetch_ip_addr_from_slave(void)
 	req->cmd_timeout_sec = 1;
 
 	resp = get_dhcp_dns_status(req);
+	free(req);
 	return resp_cb(resp);
 }
 
@@ -591,88 +471,6 @@ static int ensure_single_instance(void)
     return SUCCESS;
 }
 
-int update_host_network_port_range(uint16_t port_start, uint16_t port_end)
-{
-	FILE *fp = NULL;
-	char line[256];
-	int found = 0;
-	char temp_file[] = "/tmp/sysctl.conf.XXXXXX";
-	int temp_fd;
-	FILE *temp_fp = NULL;
-	char current_start[16], current_end[16];
-	
-	/* Open sysctl.conf file */
-	fp = fopen("/etc/sysctl.conf", "r");
-	if (!fp) {
-		LOG_MSG(LOG_ERR, "Failed to open /etc/sysctl.conf");
-		return FAILURE;
-	}
-
-	/* Check if entry exists with same values */
-	while (fgets(line, sizeof(line), fp)) {
-		if (strstr(line, "net.ipv4.ip_local_port_range")) {
-			if (sscanf(line, "net.ipv4.ip_local_port_range = %s %s", current_start, current_end) == 2) {
-				if (atoi(current_start) == port_start && atoi(current_end) == port_end) {
-					/* Values already match, no change needed */
-					fclose(fp);
-					return SUCCESS;
-				}
-			}
-			break;
-		}
-	}
-	rewind(fp);
-
-	/* Create temp file */
-	temp_fd = mkstemp(temp_file);
-	if (temp_fd < 0) {
-		LOG_MSG(LOG_ERR, "Failed to create temp file");
-		fclose(fp);
-		return FAILURE;
-	}
-
-	temp_fp = fdopen(temp_fd, "w");
-	if (!temp_fp) {
-		LOG_MSG(LOG_ERR, "Failed to open temp file");
-		close(temp_fd);
-		fclose(fp);
-		return FAILURE;
-	}
-
-	/* Update file contents */
-	while (fgets(line, sizeof(line), fp)) {
-		if (strstr(line, "net.ipv4.ip_local_port_range")) {
-			fprintf(temp_fp, "net.ipv4.ip_local_port_range = %u %u\n", port_start, port_end);
-			found = 1;
-		} else {
-			fputs(line, temp_fp);
-		}
-	}
-
-	/* Add entry if not found */
-	if (!found) {
-		fprintf(temp_fp, "net.ipv4.ip_local_port_range = %u %u\n", port_start, port_end);
-	}
-
-	fclose(fp);
-	fclose(temp_fp);
-
-	/* Replace original with temp file */
-	if (rename(temp_file, "/etc/sysctl.conf") != 0) {
-		LOG_MSG(LOG_ERR, "Failed to update sysctl.conf");
-		unlink(temp_file);
-		return FAILURE;
-	}
-
-	/* Apply changes */
-	if (system("sysctl -p") != 0) {
-		LOG_MSG(LOG_ERR, "Failed to apply sysctl changes");
-		return FAILURE;
-	}
-
-	return SUCCESS;
-}
-
 int main(int argc, char *argv[])
 {
 	if(getuid()) {
@@ -742,7 +540,7 @@ int main(int argc, char *argv[])
 			/* fetch MAC address */
 			fetch_mac_addr_from_slave();
 
-			if (strlen(sta_mac_str)==0) {
+			if (strlen(sta_network.mac_addr)==0) {
 				LOG_MSG(LOG_ERR, "Failed to retrive the MAC address");
 				sleep(1);
 				continue;
@@ -750,15 +548,15 @@ int main(int argc, char *argv[])
 
 			fetch_ip_addr_from_slave();
 
-			if (sta_dns_ip_valid && sta_ip_valid) {
+			if (sta_network.dns_valid && sta_network.ip_valid) {
 				LOG_MSG(LOG_INFO, "Network identified as up");
-				up_sta_netdev(sta_mac_str, sta_ip_str, sta_nm_str, sta_gw_str);
-				add_dns(sta_dns_ip_str);
+				up_sta_netdev(&sta_network);
+				add_dns(sta_network.dns_addr);
 				local_network_up = 1;
 			} else {
 				LOG_MSG(LOG_INFO, "Network identified as down");
-				down_sta_netdev();
-				remove_dns(sta_dns_ip_str);
+				down_sta_netdev(&sta_network);
+				remove_dns(sta_network.dns_addr);
 				local_network_up = 0;
 			}
 		}

@@ -6,6 +6,7 @@
  */
 #include "ctrl_api.h"
 #include "ctrl_core.h"
+#include <stdlib.h>
 
 #define CTRL_SEND_REQ(msGiD) do {                                     \
     req->msg_id = msGiD;                                              \
@@ -16,8 +17,10 @@
 } while(0);
 
 #define CTRL_DECODE_RESP_IF_NOT_ASYNC() do {                          \
-  if (CALLBACK_AVAILABLE == is_async_resp_callback_registered(req))   \
+  if (CALLBACK_AVAILABLE == is_async_resp_callback_registered(req)) { \
+	free(req);  req=NULL;                                             \
     return NULL;                                                      \
+  }                                                                   \
   return ctrl_wait_and_parse_sync_resp(req);                          \
 } while(0);
 

@@ -32,6 +32,7 @@
 #include "ctrl_config.h"
 #include <time.h>
 #include "test.h"
+#include "nw_helper_func.h"
 
 /***** Please Read *****/
 /* Before use : User must enter user configuration parameter in "ctrl_config.h" file */
@@ -74,11 +75,6 @@ typedef struct {
 	ctrl_resp_cb_t fun;
 } event_callback_table_t;
 
-/* Forward declarations */
-static int up_sta_netdev(const network_info_t *info);
-static int down_sta_netdev(void);
-static int up_softap_netdev(const network_info_t *info);
-static int down_softap_netdev(void);
 
 static inline bool successful_response(ctrl_cmd_t *resp)
 {
@@ -91,6 +87,7 @@ static ctrl_cmd_t * CTRL_CMD_DEFAULT_REQ(void)
 	assert(new_req);
 	new_req->msg_type = CTRL_REQ;
 	new_req->ctrl_resp_cb = NULL;
+	new_req->cmd_timeout_sec = 5;
 	return new_req;
 }
 
@@ -192,8 +189,7 @@ static int ctrl_app_event_callback(ctrl_cmd_t *app_event) {
 			break;
 		} case CTRL_EVENT_DHCP_DNS_STATUS: {
 			dhcp_dns_status_t *p_e = &app_event->u.dhcp_dns_status;
-			printf("%s App EVENT: DHCP DNS status: iface[%d] dhcp_up[%d] dns_up[%d]",
-				get_timestamp(ts, MIN_TIMESTAMP_STR_SIZE), p_e->iface, p_e->dhcp_up, p_e->dns_up);
+
 			if (p_e->dhcp_up) {
 				strncpy(sta_network.ip_addr, (const char *)p_e->dhcp_ip, MAC_ADDR_LENGTH);
 				strncpy(sta_network.netmask, (const char *)p_e->dhcp_nm, MAC_ADDR_LENGTH);
@@ -211,14 +207,22 @@ static int ctrl_app_event_callback(ctrl_cmd_t *app_event) {
 				sta_network.dns_valid = 0;
 			}
 
+			printf("%s event network %s dhcp %s (%s %s %s) dns %s (%s)\n",
+				get_timestamp(ts, MIN_TIMESTAMP_STR_SIZE),
+				p_e->net_link_up ? "up" : "down",
+				p_e->dhcp_up ? "up" : "down",
+				p_e->dhcp_ip, p_e->dhcp_nm, p_e->dhcp_gw,
+				p_e->dns_up ? "up" : "down",
+				p_e->dns_ip);
+
 			if (sta_network.dns_valid && sta_network.ip_valid) {
-				printf("Network identified as up");
+				//printf("Network identified as up\n");
 				up_sta_netdev(&sta_network);
 				add_dns(sta_network.dns_addr);
 				sta_network.network_up = 1;
 			} else {
-				printf("Network identified as down");
-				down_sta_netdev();
+				//printf("Network identified as down");
+				down_sta_netdev(&sta_network);
 				remove_dns(sta_network.dns_addr);
 				sta_network.network_up = 0;
 			}
@@ -315,232 +319,6 @@ static void process_failed_responses(ctrl_cmd_t *app_msg)
 	}
 }
 
-static int down_sta_netdev(void) {
-    int ret = SUCCESS, sockfd = 0;
-
-    ret = create_socket(AF_INET, SOCK_DGRAM, IPPROTO_IP, &sockfd);
-    if (ret < 0) {
-        printf("Failure to open socket\n");
-        return FAILURE;
-    }
-
-    ret = interface_down(sockfd, STA_INTERFACE);
-    if (ret == SUCCESS) {
-        printf("%s interface down\n", STA_INTERFACE);
-    } else {
-        printf("Unable to down %s interface\n", STA_INTERFACE);
-        goto close_sock;
-    }
-
-    ret = remove_default_gateway(sta_network.default_route);
-    if (ret == SUCCESS) {
-        printf("Default gateway removed: Gateway=%s\n", sta_network.default_route);
-    } else {
-        goto close_sock;
-    }
-
-    ret = close_socket(sockfd);
-    if (ret < 0) {
-        printf("Failure to close socket\n");
-        return FAILURE;
-    }
-    return SUCCESS;
-
-close_sock:
-    ret = close_socket(sockfd);
-    if (ret < 0) {
-        printf("Failure to close socket\n");
-    }
-    return FAILURE;
-}
-
-static int up_sta_netdev(const network_info_t *info)
-{
-    int ret = SUCCESS, sockfd = 0;
-    char mac_copy[MAC_ADDR_LENGTH];
-    char ip_copy[MAC_ADDR_LENGTH];
-    char nm_copy[MAC_ADDR_LENGTH];
-    char gw_copy[MAC_ADDR_LENGTH];
-
-    if (!info || info->mac_addr[0] == '\0') {
-        printf("Failure: station mac is empty\n");
-        return FAILURE;
-    }
-
-    if (info->ip_addr[0] == '\0' || info->netmask[0] == '\0' || info->gateway[0] == '\0' ||
-        strcmp(info->ip_addr, "0.0.0.0") == 0 || strcmp(info->netmask, "0.0.0.0") == 0 || 
-        strcmp(info->gateway, "0.0.0.0") == 0) {
-        printf("Invalid network conf to set\n");
-        return FAILURE;
-    }
-
-    /* Create local copies to handle const qualifiers */
-    strncpy(mac_copy, info->mac_addr, MAC_ADDR_LENGTH);
-    strncpy(ip_copy, info->ip_addr, MAC_ADDR_LENGTH);
-    strncpy(nm_copy, info->netmask, MAC_ADDR_LENGTH);
-    strncpy(gw_copy, info->gateway, MAC_ADDR_LENGTH);
-
-    ret = create_socket(AF_INET, SOCK_DGRAM, IPPROTO_IP, &sockfd);
-    if (ret < 0) {
-        printf("Failure to open socket\n");
-        return FAILURE;
-    }
-
-    ret = interface_down(sockfd, STA_INTERFACE);
-    if (ret == SUCCESS) {
-        printf("%s interface down\n", STA_INTERFACE);
-    } else {
-        printf("Unable to down %s interface\n", STA_INTERFACE);
-        goto close_sock;
-    }
-
-    ret = set_hw_addr(sockfd, STA_INTERFACE, mac_copy);
-    if (ret == SUCCESS) {
-        printf("MAC address %s set to %s interface\n", mac_copy, STA_INTERFACE);
-    } else {
-        printf("Unable to set MAC address to %s interface\n", STA_INTERFACE);
-        goto close_sock;
-    }
-
-    ret = interface_up(sockfd, STA_INTERFACE);
-    if (ret == SUCCESS) {
-        printf("%s interface up\n", STA_INTERFACE);
-    } else {
-        printf("Unable to up %s interface\n", STA_INTERFACE);
-        goto close_sock;
-    }
-
-    ret = set_network_static_ip(sockfd, STA_INTERFACE, ip_copy, nm_copy, gw_copy);
-    if (ret == SUCCESS) {
-        printf("Static IP set: IP=%s, Netmask=%s, Gateway=%s\n", ip_copy, nm_copy, gw_copy);
-    } else {
-        printf("Failed to set static IP\n");
-        goto close_sock;
-    }
-
-    ret = add_default_gateway(gw_copy);
-    if (ret == SUCCESS) {
-        printf("Default gateway added: Gateway=%s\n", gw_copy);
-    } else {
-        printf("Failed to add default gateway\n");
-        goto close_sock;
-    }
-
-    ret = close_socket(sockfd);
-    if (ret < 0) {
-        printf("Failure to close socket\n");
-        return FAILURE;
-    }
-    return SUCCESS;
-
-close_sock:
-    ret = close_socket(sockfd);
-    if (ret < 0) {
-        printf("Failure to close socket\n");
-    }
-    return FAILURE;
-}
-
-static int down_softap_netdev(void)
-{
-	int ret = SUCCESS, sockfd = 0;
-
-	ret = create_socket(AF_INET, SOCK_DGRAM, IPPROTO_IP, &sockfd);
-	if (ret < 0) {
-		printf("Failure to open socket\n");
-		return FAILURE;
-	}
-
-	ret = interface_down(sockfd, AP_INTERFACE);
-	if (ret == SUCCESS) {
-		printf("%s interface down\n", AP_INTERFACE);
-	} else {
-		printf("Unable to down %s interface\n", AP_INTERFACE);
-		goto close_sock;
-	}
-
-	ret = remove_default_gateway(ap_network.default_route);
-	if (ret == SUCCESS) {
-		printf("Default gateway removed: Gateway=%s", ap_network.default_route);
-	} else {
-		printf("Failed to remove default gateway");
-		goto close_sock;
-	}
-
-
-	ret = close_socket(sockfd);
-	if (ret < 0) {
-		printf("Failure to close socket\n");
-		return FAILURE;
-	}
-	return SUCCESS;
-
-close_sock:
-	ret = close_socket(sockfd);
-	if (ret < 0) {
-		printf("Failure to close socket\n");
-	}
-	return FAILURE;
-}
-
-static int up_softap_netdev(const network_info_t *info)
-{
-    int ret = SUCCESS, sockfd = 0;
-    char mac_copy[MAC_ADDR_LENGTH];
-
-    if (!info || info->mac_addr[0] == '\0') {
-        printf("Failure: softap mac is empty\n");
-        return FAILURE;
-    }
-
-    /* Create local copy to handle const qualifier */
-    strncpy(mac_copy, info->mac_addr, MAC_ADDR_LENGTH);
-
-    ret = create_socket(AF_INET, SOCK_DGRAM, IPPROTO_IP, &sockfd);
-    if (ret < 0) {
-        printf("Failure to open socket\n");
-        return FAILURE;
-    }
-
-    ret = interface_down(sockfd, AP_INTERFACE);
-    if (ret == SUCCESS) {
-        printf("%s interface down\n", AP_INTERFACE);
-    } else {
-        printf("Unable to down %s interface\n", AP_INTERFACE);
-        goto close_sock;
-    }
-
-    ret = set_hw_addr(sockfd, AP_INTERFACE, mac_copy);
-    if (ret == SUCCESS) {
-        printf("MAC address %s set to %s interface\n", mac_copy, AP_INTERFACE);
-    } else {
-        printf("Unable to set MAC address to %s interface\n", AP_INTERFACE);
-        goto close_sock;
-    }
-
-    ret = interface_up(sockfd, AP_INTERFACE);
-    if (ret == SUCCESS) {
-        printf("%s interface up\n", AP_INTERFACE);
-    } else {
-        printf("Unable to up %s interface\n", AP_INTERFACE);
-        goto close_sock;
-    }
-
-    ret = close_socket(sockfd);
-    if (ret < 0) {
-        printf("Failure to close socket\n");
-        return FAILURE;
-    }
-    return SUCCESS;
-
-close_sock:
-    ret = close_socket(sockfd);
-    if (ret < 0) {
-        printf("Failure to close socket\n");
-    }
-    return FAILURE;
-}
-
 
 int unregister_event_callbacks(void)
 {
@@ -579,7 +357,47 @@ int register_event_callbacks(void)
 	}
 	return ret;
 }
+static int get_event_id(const char *event)
+{
+	int event_id = 0;
+	if (strcmp(event, "esp_init") == 0) {
+		event_id = CTRL_EVENT_ESP_INIT;
+	} else if (strcmp(event, "heartbeat") == 0) {
+		event_id = CTRL_EVENT_HEARTBEAT;
+	} else if (strcmp(event, "sta_connected") == 0) {
+		event_id = CTRL_EVENT_STATION_CONNECTED_TO_AP;
+	} else if (strcmp(event, "sta_disconnected") == 0) {
+		event_id = CTRL_EVENT_STATION_DISCONNECT_FROM_AP;
+	} else if (strcmp(event, "softap_sta_connected") == 0) {
+		event_id = CTRL_EVENT_STATION_CONNECTED_TO_ESP_SOFTAP;
+	} else if (strcmp(event, "softap_sta_disconnected") == 0) {
+		event_id = CTRL_EVENT_STATION_DISCONNECT_FROM_ESP_SOFTAP;
+	} else if (strcmp(event, "dhcp_dns_status") == 0) {
+		event_id = CTRL_EVENT_DHCP_DNS_STATUS;
+	} else {
+		printf("Invalid event: %s\n", event);
+		return FAILURE;
+	}
+	return event_id;
+}
 
+int test_subscribe_event(const char *event)
+{
+	int event_id = get_event_id(event);
+	if (event_id == FAILURE) {
+		return FAILURE;
+	}
+	return set_event_callback(event_id, ctrl_app_event_callback);
+}
+
+int test_unsubscribe_event(const char *event)
+{
+	int event_id = get_event_id(event);
+	if (event_id == FAILURE) {
+		return FAILURE;
+	}
+	return reset_event_callback(event_id);
+}
 
 int ctrl_app_resp_callback(ctrl_cmd_t * app_resp)
 {
@@ -652,12 +470,13 @@ int ctrl_app_resp_callback(ctrl_cmd_t * app_resp)
 			}
 			break;
 		} case CTRL_RESP_CONNECT_AP : {
-			if (up_sta_netdev(&sta_network))
-				goto fail_resp;
+			//printf("connect ap response received\n");
+			//if (up_sta_netdev(&sta_network))
+			//	goto fail_resp;
 			break;
 		} case CTRL_RESP_DISCONNECT_AP : {
 			printf("Disconnected from AP \n");
-			if (down_sta_netdev())
+			if (down_sta_netdev(&sta_network))
 				goto fail_resp;
 			break;
 		} case CTRL_RESP_GET_SOFTAP_CONFIG : {
@@ -703,7 +522,7 @@ int ctrl_app_resp_callback(ctrl_cmd_t * app_resp)
 			break;
 		} case CTRL_RESP_STOP_SOFTAP : {
 			printf("esp32 softAP stopped\n");
-			if (down_softap_netdev())
+			if (down_softap_netdev(&ap_network))
 				goto fail_resp;
 			break;
 		} case CTRL_RESP_SET_PS_MODE : {
@@ -728,7 +547,7 @@ int ctrl_app_resp_callback(ctrl_cmd_t * app_resp)
 			printf("OTA begin success\n");
 			break;
 		} case CTRL_RESP_OTA_WRITE : {
-			printf("OTA write success\n");
+			//printf("OTA write success\n");
 			break;
 		} case CTRL_RESP_OTA_END : {
 			printf("OTA end success\n");
@@ -747,7 +566,7 @@ int ctrl_app_resp_callback(ctrl_cmd_t * app_resp)
 			printf("Feature config change successful\n");
 			break;
 		} case CTRL_RESP_GET_FW_VERSION: {
-			printf("Get Firmware Version successful\n");
+			//printf("Get Firmware Version successful\n");
 			break;
 		} case CTRL_RESP_SET_COUNTRY_CODE: {
 			printf("Set Country Code successful\n");
@@ -756,41 +575,7 @@ int ctrl_app_resp_callback(ctrl_cmd_t * app_resp)
 			printf("Current Country code is %s\n", app_resp->u.country_code.country);
 			break;
 		} case CTRL_RESP_GET_DHCP_DNS_STATUS: {
-			dhcp_dns_status_t *p = &app_resp->u.dhcp_dns_status;
-			if (p->dhcp_up) {
-				printf("DHCP IP: %s", p->dhcp_ip);
-				printf("DHCP NM: %s", p->dhcp_nm); 
-				printf("DHCP GW: %s", p->dhcp_gw);
-				strncpy(sta_network.ip_addr, (const char *)p->dhcp_ip, MAC_ADDR_LENGTH);
-				strncpy(sta_network.netmask, (const char *)p->dhcp_nm, MAC_ADDR_LENGTH);
-				strncpy(sta_network.gateway, (const char *)p->dhcp_gw, MAC_ADDR_LENGTH);
-				strncpy(sta_network.default_route, (const char *)p->dhcp_gw, MAC_ADDR_LENGTH);
-				sta_network.ip_valid = 1;
-			} else {
-				printf("DHCP is not up");
-				sta_network.network_up = 0;
-				sta_network.ip_valid = 0;
-			}
-			if (p->dns_up) {
-				printf("DNS IP: %s", p->dns_ip);
-				strncpy(sta_network.dns_addr, (const char *)p->dns_ip, MAC_ADDR_LENGTH);
-				sta_network.dns_valid = 1;
-			} else {
-				printf("DNS is not up");
-				sta_network.dns_valid = 0;
-			}
-
-			if (sta_network.dns_valid && sta_network.ip_valid) {
-				printf("Network identified as up");
-				up_sta_netdev(&sta_network);
-				add_dns(sta_network.dns_addr);
-				sta_network.network_up = 1;
-			} else {
-				printf("Network identified as down");
-				down_sta_netdev();
-				remove_dns(sta_network.dns_addr);
-				sta_network.network_up = 0;
-			}
+			//printf("Response for Get DHCP DNS Status received\n");
 			break;
 		} default: {
 			printf("Invalid Response[%u] to parse\n", app_resp->msg_id);
@@ -886,6 +671,7 @@ int test_get_wifi_mac_addr(int mode, char *mac_str)
 		}
 	}
 
+	CLEANUP_CTRL_MSG(req);
 	CLEANUP_CTRL_MSG(resp);
 	return SUCCESS;
 }
@@ -910,6 +696,7 @@ int test_set_mac_addr(int mode, char *mac)
 		resp = wifi_set_mac(req);
 		return ctrl_app_resp_callback(resp);
 	}
+	CLEANUP_CTRL_MSG(req);
 	return ret;
 }
 
@@ -950,6 +737,7 @@ int test_station_mode_connect(void)
 
 	wifi_connect_ap(req);
 
+	CLEANUP_CTRL_MSG(req);
 	return SUCCESS;
 }
 
@@ -961,6 +749,7 @@ int test_station_mode_get_info(void)
 
 	resp = wifi_get_ap_config(req);
 
+	CLEANUP_CTRL_MSG(req);
 	return ctrl_app_resp_callback(resp);
 }
 
@@ -972,6 +761,7 @@ int test_get_available_wifi(void)
 
 	resp = wifi_ap_scan_list(req);
 
+	CLEANUP_CTRL_MSG(req);
 	return ctrl_app_resp_callback(resp);
 }
 
@@ -983,6 +773,7 @@ int test_station_mode_disconnect(void)
 
 	resp = wifi_disconnect_ap(req);
 
+	CLEANUP_CTRL_MSG(req);
 	return ctrl_app_resp_callback(resp);
 }
 
@@ -1005,6 +796,7 @@ int test_softap_mode_start(void)
 
 	resp = wifi_start_softap(req);
 
+	CLEANUP_CTRL_MSG(req);
 	return ctrl_app_resp_callback(resp);
 }
 
@@ -1016,6 +808,7 @@ int test_softap_mode_get_info(void)
 
 	resp = wifi_get_softap_config(req);
 
+	CLEANUP_CTRL_MSG(req);
 	return ctrl_app_resp_callback(resp);
 }
 
@@ -1027,6 +820,7 @@ int test_softap_mode_connected_clients_info(void)
 
 	resp = wifi_get_softap_connected_station_list(req);
 
+	CLEANUP_CTRL_MSG(req);
 	return ctrl_app_resp_callback(resp);
 }
 
@@ -1038,6 +832,7 @@ int test_softap_mode_stop(void)
 
 	resp = wifi_stop_softap(req);
 
+	CLEANUP_CTRL_MSG(req);
 	return ctrl_app_resp_callback(resp);
 }
 
@@ -1050,6 +845,7 @@ int test_set_wifi_power_save_mode(int psmode)
 	req->u.wifi_ps.ps_mode = psmode;
 	resp = wifi_set_power_save_mode(req);
 
+	CLEANUP_CTRL_MSG(req);
 	return ctrl_app_resp_callback(resp);
 }
 
@@ -1071,6 +867,7 @@ int test_get_wifi_power_save_mode(void)
 
 	resp = wifi_get_power_save_mode(req);
 
+	CLEANUP_CTRL_MSG(req);
 	return ctrl_app_resp_callback(resp);
 }
 
@@ -1105,6 +902,7 @@ int test_reset_vendor_specific_ie(void)
 
 	resp = wifi_set_vendor_specific_ie(req);
 
+	CLEANUP_CTRL_MSG(req);
 	return ctrl_app_resp_callback(resp);
 }
 void free_hook(void *ptr)
@@ -1147,6 +945,7 @@ int test_set_vendor_specific_ie(void)
 
 	resp = wifi_set_vendor_specific_ie(req);
 
+	CLEANUP_CTRL_MSG(req);
 	return ctrl_app_resp_callback(resp);
 }
 
@@ -1158,6 +957,7 @@ int test_ota_begin(void)
 
 	resp = ota_begin(req);
 
+	CLEANUP_CTRL_MSG(req);
 	return ctrl_app_resp_callback(resp);
 }
 
@@ -1172,6 +972,7 @@ int test_ota_write(uint8_t* ota_data, uint32_t ota_data_len)
 
 	resp = ota_write(req);
 
+	CLEANUP_CTRL_MSG(req);
 	return ctrl_app_resp_callback(resp);
 }
 
@@ -1183,6 +984,7 @@ int test_ota_end(void)
 
 	resp = ota_end(req);
 
+	CLEANUP_CTRL_MSG(req);
 	return ctrl_app_resp_callback(resp);
 }
 
@@ -1235,6 +1037,7 @@ int test_wifi_set_max_tx_power(int in_power)
 	req->u.wifi_tx_power.power = in_power;
 	resp = wifi_set_max_tx_power(req);
 
+	CLEANUP_CTRL_MSG(req);
 	return ctrl_app_resp_callback(resp);
 }
 
@@ -1246,6 +1049,7 @@ int test_wifi_get_curr_tx_power()
 
 	resp = wifi_get_curr_tx_power(req);
 
+	CLEANUP_CTRL_MSG(req);
 	return ctrl_app_resp_callback(resp);
 }
 
@@ -1296,6 +1100,7 @@ int test_config_heartbeat(void)
 
 	resp = config_heartbeat(req);
 
+	CLEANUP_CTRL_MSG(req);
 	return ctrl_app_resp_callback(resp);
 }
 
@@ -1308,6 +1113,7 @@ int test_disable_heartbeat(void)
 
 	resp = config_heartbeat(req);
 
+	CLEANUP_CTRL_MSG(req);
 	return ctrl_app_resp_callback(resp);
 }
 
@@ -1322,6 +1128,7 @@ int test_disable_heartbeat_async(void)
 
 	config_heartbeat(req);
 
+	CLEANUP_CTRL_MSG(req);
 	return SUCCESS;
 }
 
@@ -1330,7 +1137,7 @@ int test_enable_wifi(void) {
     ctrl_cmd_t *resp = NULL;
     ctrl_cmd_t *req = CTRL_CMD_DEFAULT_REQ();
     int ret = FAILURE;
-    
+
     req->u.feat_ena_disable.feature = HOSTED_WIFI;
     req->u.feat_ena_disable.enable = YES;
 
@@ -1343,16 +1150,16 @@ int test_enable_wifi(void) {
             ret = FAILURE;
             goto cleanup;
         }
-        
+
         if (test_softap_mode_get_mac_addr(ap_network.mac_addr) != SUCCESS) {
             printf("Failed to get softAP MAC address\n");
             ret = FAILURE;
             goto cleanup;
         }
-        
+
         printf("Station MAC address: %s\n", sta_network.mac_addr);
         printf("SoftAP MAC address: %s\n", ap_network.mac_addr);
-        
+
         /* Set default values for IP-related fields if they're not already set */
         if (!sta_network.ip_valid) {
             strncpy(sta_network.ip_addr, "0.0.0.0", MAC_ADDR_LENGTH);
@@ -1360,16 +1167,16 @@ int test_enable_wifi(void) {
             strncpy(sta_network.gateway, "0.0.0.0", MAC_ADDR_LENGTH);
             strncpy(sta_network.default_route, "0.0.0.0", MAC_ADDR_LENGTH);
         }
-        
+
         /* Now bring up the interfaces with the MAC addresses */
         if (sta_network.mac_addr[0] != '\0') {
             up_sta_netdev(&sta_network);
         }
-        
+
         if (ap_network.mac_addr[0] != '\0') {
             up_softap_netdev(&ap_network);
         }
-        
+
         ret = SUCCESS;
     } else {
         printf("Failed to enable WiFi\n");
@@ -1377,6 +1184,7 @@ int test_enable_wifi(void) {
     }
 
 cleanup:
+	CLEANUP_CTRL_MSG(req);
     if (resp) {
         CLEANUP_CTRL_MSG(resp);
     }
@@ -1393,10 +1201,10 @@ int test_disable_wifi(void)
 
 	resp = feature_config(req);
 	if (successful_response(resp)) {
-		down_sta_netdev();
-		down_softap_netdev();
+		down_sta_netdev(&sta_network);
+		down_softap_netdev(&ap_network);
 	}
-
+	CLEANUP_CTRL_MSG(req);
 	return ctrl_app_resp_callback(resp);
 }
 
@@ -1438,6 +1246,7 @@ int test_enable_bt(void)
 	if (successful_response(resp))
 		reset_hci_instance();
 
+	CLEANUP_CTRL_MSG(req);
 	return ctrl_app_resp_callback(resp);
 }
 
@@ -1454,6 +1263,7 @@ int test_disable_bt(void)
 	if (successful_response(resp))
 		down_hci_instance();
 
+	CLEANUP_CTRL_MSG(req);
 	return ctrl_app_resp_callback(resp);
 }
 
@@ -1487,6 +1297,7 @@ char * test_get_fw_version(char *version, uint16_t version_size)
 				resp->u.fw_version.revision_patch_2);
 	}
 
+	CLEANUP_CTRL_MSG(req);
 	CLEANUP_CTRL_MSG(resp);
 
 	return version;
@@ -1505,9 +1316,46 @@ int test_fetch_ip_addr_from_slave(void)
 {
     ctrl_cmd_t *resp = NULL;
     ctrl_cmd_t *req = CTRL_CMD_DEFAULT_REQ();
-    req->cmd_timeout_sec = 2;
+    req->cmd_timeout_sec = 5;
 
     resp = get_dhcp_dns_status(req);
+
+	if (successful_response(resp)) {
+		dhcp_dns_status_t *p = &resp->u.dhcp_dns_status;
+		if (p->dhcp_up) {
+			printf("%s -> IP: %s NM: %s GW: %s", STA_INTERFACE, p->dhcp_ip, p->dhcp_nm, p->dhcp_gw);
+			strncpy(sta_network.ip_addr, (const char *)p->dhcp_ip, MAC_ADDR_LENGTH);
+			strncpy(sta_network.netmask, (const char *)p->dhcp_nm, MAC_ADDR_LENGTH);
+			strncpy(sta_network.gateway, (const char *)p->dhcp_gw, MAC_ADDR_LENGTH);
+			strncpy(sta_network.default_route, (const char *)p->dhcp_gw, MAC_ADDR_LENGTH);
+			sta_network.ip_valid = 1;
+		} else {
+			printf("%s -> Network reported as down\n", STA_INTERFACE);
+			sta_network.network_up = 0;
+			sta_network.ip_valid = 0;
+		}
+		if (p->dns_up) {
+			printf(" DNS: %s\n", p->dns_ip);
+			strncpy(sta_network.dns_addr, (const char *)p->dns_ip, MAC_ADDR_LENGTH);
+			sta_network.dns_valid = 1;
+		} else {
+			//printf("DNS is not up");
+			sta_network.dns_valid = 0;
+		}
+
+		if (resp->u.dhcp_dns_status.dns_up && resp->u.dhcp_dns_status.dhcp_up) {
+			//printf("Network identified as up");
+			up_sta_netdev(&sta_network);
+			add_dns(sta_network.dns_addr);
+			sta_network.network_up = 1;
+		} else {
+			//printf("Network identified as down");
+			down_sta_netdev(&sta_network);
+			remove_dns(sta_network.dns_addr);
+			sta_network.network_up = 0;
+		}
+	}
+	CLEANUP_CTRL_MSG(req);
     return ctrl_app_resp_callback(resp);
 }
 
@@ -1521,7 +1369,7 @@ int test_set_dhcp_dns_status(char *sta_ip, char *sta_nm, char *sta_gw, char *sta
 	}
 
 	ctrl_cmd_t *req = CTRL_CMD_DEFAULT_REQ();
-	req->cmd_timeout_sec = 2;
+	req->cmd_timeout_sec = 5;
 
 	req->u.dhcp_dns_status.iface = 0;
 	req->u.dhcp_dns_status.dhcp_up = 1;
@@ -1533,5 +1381,311 @@ int test_set_dhcp_dns_status(char *sta_ip, char *sta_nm, char *sta_gw, char *sta
 	strncpy((char *)req->u.dhcp_dns_status.dns_ip, sta_dns, MAC_ADDR_LENGTH);
 
 	resp = set_dhcp_dns_status(req);
+	CLEANUP_CTRL_MSG(req);
 	return ctrl_app_resp_callback(resp);
+}
+
+int test_softap_mode_set_vendor_ie(bool enable, const char *data) {
+    /* implemented synchronous */
+    ctrl_cmd_t *req = CTRL_CMD_DEFAULT_REQ();
+    ctrl_cmd_t *resp = NULL;
+    char *v_data = NULL;
+
+    if (data && strlen(data) > 0) {
+        v_data = (char*)calloc(1, strlen(data));
+        if (!v_data) {
+            printf("Failed to allocate memory\n");
+            return FAILURE;
+        }
+        memcpy(v_data, data, strlen(data));
+    }
+
+    req->u.wifi_softap_vendor_ie.enable = enable;
+    req->u.wifi_softap_vendor_ie.type   = WIFI_VND_IE_TYPE_BEACON;
+    req->u.wifi_softap_vendor_ie.idx    = WIFI_VND_IE_ID_0;
+    req->u.wifi_softap_vendor_ie.vnd_ie.element_id = WIFI_VENDOR_IE_ELEMENT_ID;
+
+    if (v_data) {
+        req->u.wifi_softap_vendor_ie.vnd_ie.length = strlen(data) + OFFSET;
+        req->u.wifi_softap_vendor_ie.vnd_ie.vendor_oui[0] = VENDOR_OUI_0;
+        req->u.wifi_softap_vendor_ie.vnd_ie.vendor_oui[1] = VENDOR_OUI_1;
+        req->u.wifi_softap_vendor_ie.vnd_ie.vendor_oui[2] = VENDOR_OUI_2;
+        req->u.wifi_softap_vendor_ie.vnd_ie.vendor_oui_type = VENDOR_OUI_TYPE;
+        req->u.wifi_softap_vendor_ie.vnd_ie.payload = (uint8_t *)v_data;
+        req->u.wifi_softap_vendor_ie.vnd_ie.payload_len = strlen(data);
+
+        req->free_buffer_func = free;
+        req->free_buffer_handle = v_data;
+    }
+
+    resp = wifi_set_vendor_specific_ie(req);
+	CLEANUP_CTRL_MSG(req);
+    return ctrl_app_resp_callback(resp);
+}
+
+/* Updated connect function with parameters */
+int test_station_mode_connect_with_params(const char *ssid, const char *pwd, const char *bssid,
+                                         bool use_wpa3, int listen_interval, int band_mode)
+{
+    ctrl_cmd_t *req = CTRL_CMD_DEFAULT_REQ();
+	ctrl_cmd_t *resp = NULL;
+
+    printf("Connect to AP[%s]\n", ssid ? ssid : STATION_MODE_SSID);
+
+    /* Use provided parameters or defaults */
+    strcpy((char *)&req->u.wifi_ap_config.ssid, ssid ? ssid : STATION_MODE_SSID);
+    strcpy((char *)&req->u.wifi_ap_config.pwd, pwd ? pwd : STATION_MODE_PWD);
+    strcpy((char *)&req->u.wifi_ap_config.bssid, bssid ? bssid : STATION_MODE_BSSID);
+    req->u.wifi_ap_config.is_wpa3_supported = use_wpa3 ? 1 : STATION_MODE_IS_WPA3_SUPPORTED;
+    req->u.wifi_ap_config.listen_interval = listen_interval ? listen_interval : STATION_MODE_LISTEN_INTERVAL;
+    req->u.wifi_ap_config.band_mode = band_mode ? band_mode : STATION_BAND_MODE;
+
+	resp = wifi_connect_ap(req);
+	CLEANUP_CTRL_MSG(req);
+    return ctrl_app_resp_callback(resp);
+}
+
+/* Updated disconnect function with parameters */
+int test_station_mode_disconnect_with_params(bool reset_dhcp)
+{
+    /* implemented synchronous */
+    ctrl_cmd_t *req = CTRL_CMD_DEFAULT_REQ();
+    ctrl_cmd_t *resp = NULL;
+
+    resp = wifi_disconnect_ap(req);
+
+    /* If reset_dhcp is true, we should clear the network settings */
+    if (reset_dhcp && resp && resp->resp_event_status == SUCCESS) {
+        memset(&sta_network.ip_addr, 0, MAC_ADDR_LENGTH);
+        memset(&sta_network.netmask, 0, MAC_ADDR_LENGTH);
+        memset(&sta_network.gateway, 0, MAC_ADDR_LENGTH);
+        memset(&sta_network.dns_addr, 0, MAC_ADDR_LENGTH);
+        sta_network.ip_valid = 0;
+        sta_network.dns_valid = 0;
+        sta_network.network_up = 0;
+    }
+	CLEANUP_CTRL_MSG(req);
+    return ctrl_app_resp_callback(resp);
+}
+
+/* Updated softap start function with parameters */
+int test_softap_mode_start_with_params(const char *ssid, const char *pwd, int channel,
+                                      const char *sec_prot, int max_conn, bool hide_ssid,
+                                      int bw, int band_mode)
+{
+    /* implemented synchronous */
+    ctrl_cmd_t *req = CTRL_CMD_DEFAULT_REQ();
+    ctrl_cmd_t *resp = NULL;
+
+    /* Use provided parameters or defaults */
+    strncpy((char *)&req->u.wifi_softap_config.ssid,
+            ssid ? ssid : SOFTAP_MODE_SSID, SSID_LENGTH - 1);
+    strncpy((char *)&req->u.wifi_softap_config.pwd,
+            pwd ? pwd : SOFTAP_MODE_PWD, PASSWORD_LENGTH - 1);
+
+    req->u.wifi_softap_config.channel = channel ? channel : SOFTAP_MODE_CHANNEL;
+
+    /* Set encryption mode based on sec_prot parameter */
+    if (sec_prot) {
+        if (strcmp(sec_prot, "open") == 0) {
+            req->u.wifi_softap_config.encryption_mode = 0; /* WIFI_AUTH_OPEN */
+        } else if (strcmp(sec_prot, "wpa_psk") == 0) {
+            req->u.wifi_softap_config.encryption_mode = 2; /* WIFI_AUTH_WPA_PSK */
+        } else if (strcmp(sec_prot, "wpa2_psk") == 0) {
+            req->u.wifi_softap_config.encryption_mode = 3; /* WIFI_AUTH_WPA2_PSK */
+        } else if (strcmp(sec_prot, "wpa_wpa2_psk") == 0) {
+            req->u.wifi_softap_config.encryption_mode = 4; /* WIFI_AUTH_WPA_WPA2_PSK */
+        } else {
+            req->u.wifi_softap_config.encryption_mode = SOFTAP_MODE_ENCRYPTION_MODE;
+        }
+    } else {
+        req->u.wifi_softap_config.encryption_mode = SOFTAP_MODE_ENCRYPTION_MODE;
+    }
+
+    req->u.wifi_softap_config.max_connections = max_conn ? max_conn : SOFTAP_MODE_MAX_ALLOWED_CLIENTS;
+    req->u.wifi_softap_config.ssid_hidden = hide_ssid ? 1 : SOFTAP_MODE_SSID_HIDDEN;
+    req->u.wifi_softap_config.bandwidth = bw ? bw : SOFTAP_MODE_BANDWIDTH;
+    req->u.wifi_softap_config.band_mode = band_mode ? band_mode : SOFTAP_BAND_MODE;
+
+    resp = wifi_start_softap(req);
+	CLEANUP_CTRL_MSG(req);
+    return ctrl_app_resp_callback(resp);
+}
+
+/* Power save mode with params */
+int test_wifi_set_power_save_mode_with_params(int psmode)
+{
+    /* implemented synchronous */
+    ctrl_cmd_t *req = CTRL_CMD_DEFAULT_REQ();
+    ctrl_cmd_t *resp = NULL;
+
+    req->u.wifi_ps.ps_mode = psmode;
+    req->cmd_timeout_sec = 2;
+    resp = wifi_set_power_save_mode(req);
+	CLEANUP_CTRL_MSG(req);
+    return ctrl_app_resp_callback(resp);
+}
+
+/* Get firmware version with params */
+int test_get_fw_version_with_params(char *version, uint16_t version_size)
+{
+    if (!version || version_size == 0) {
+        printf("Invalid buffer for version\n");
+        return FAILURE;
+    }
+
+    if (version_size < sizeof("XX-111.222.333.444.555")) {
+        printf("size of version is too small\n");
+        return FAILURE;
+    }
+
+    /* implemented synchronous */
+    ctrl_cmd_t *req = CTRL_CMD_DEFAULT_REQ();
+    ctrl_cmd_t *resp = NULL;
+
+    resp = get_fw_version(req);
+
+    if (resp && resp->resp_event_status == SUCCESS) {
+		snprintf(version, version_size, "%s-%d.%d.%d.%d.%d",
+				resp->u.fw_version.project_name,
+				resp->u.fw_version.major_1,
+				resp->u.fw_version.major_2,
+				resp->u.fw_version.minor,
+				resp->u.fw_version.revision_patch_1,
+				resp->u.fw_version.revision_patch_2);
+        return SUCCESS;
+    }
+	CLEANUP_CTRL_MSG(req);
+	CLEANUP_CTRL_MSG(resp);
+    return FAILURE;
+}
+
+/* OTA update with params */
+int test_ota_update_with_params(const char *url)
+{
+    if (!url || strlen(url) == 0) {
+        printf("Invalid URL for OTA update\n");
+        return FAILURE;
+    }
+
+    printf("Starting OTA update from URL: %s\n", url);
+
+    /* Make a non-const copy for test_ota */
+    char* url_copy = strdup(url);
+    if (!url_copy) {
+        printf("Memory allocation failed\n");
+        return FAILURE;
+    }
+
+    int result = test_ota(url_copy);
+    free(url_copy);
+    return result;
+}
+
+/* Heartbeat configuration with params */
+int test_heartbeat_with_params(bool enable, int duration)
+{
+    ctrl_cmd_t *req = CTRL_CMD_DEFAULT_REQ();
+    ctrl_cmd_t *resp = NULL;
+
+    if (enable) {
+        /* Configure heartbeat */
+        req->u.e_heartbeat.enable = 1;
+        req->u.e_heartbeat.duration = duration > 0 ? duration : 30; /* Default 30 seconds */
+        resp = config_heartbeat(req);
+    } else {
+        /* Disable heartbeat */
+        req->u.e_heartbeat.enable = 0;
+        req->u.e_heartbeat.duration = 0;
+        resp = config_heartbeat(req);
+    }
+	CLEANUP_CTRL_MSG(req);
+    return ctrl_app_resp_callback(resp);
+}
+
+int test_set_mac_addr_with_params(int mode, const char *mac) {
+    /* implemented synchronous */
+    ctrl_cmd_t *req = CTRL_CMD_DEFAULT_REQ();
+    ctrl_cmd_t *resp = NULL;
+
+    req->u.wifi_mac.mode = mode;
+    strncpy((char *)req->u.wifi_mac.mac, mac, MAC_ADDR_LENGTH);
+
+    resp = wifi_set_mac(req);
+	CLEANUP_CTRL_MSG(req);
+    return ctrl_app_resp_callback(resp);
+}
+
+int test_set_dhcp_dns_status_with_params(char *sta_ip, char *sta_nm, char *sta_gw, char *sta_dns) {
+    /* implemented synchronous */
+    ctrl_cmd_t *req = CTRL_CMD_DEFAULT_REQ();
+    ctrl_cmd_t *resp = NULL;
+
+    if (!sta_ip || !sta_nm || !sta_gw || !sta_dns) {
+        printf("Invalid parameters\n");
+        return FAILURE;
+    }
+
+    req->u.dhcp_dns_status.iface = 0;
+    req->u.dhcp_dns_status.dhcp_up = 1;
+    req->u.dhcp_dns_status.dns_up = 1;
+
+    strncpy((char *)req->u.dhcp_dns_status.dhcp_ip, sta_ip, MAC_ADDR_LENGTH);
+    strncpy((char *)req->u.dhcp_dns_status.dhcp_nm, sta_nm, MAC_ADDR_LENGTH);
+    strncpy((char *)req->u.dhcp_dns_status.dhcp_gw, sta_gw, MAC_ADDR_LENGTH);
+    strncpy((char *)req->u.dhcp_dns_status.dns_ip, sta_dns, MAC_ADDR_LENGTH);
+
+    resp = set_dhcp_dns_status(req);
+	CLEANUP_CTRL_MSG(req);
+    return ctrl_app_resp_callback(resp);
+}
+
+int test_set_vendor_specific_ie_with_params(bool enable, const char *data) {
+    /* implemented synchronous */
+    ctrl_cmd_t *req = CTRL_CMD_DEFAULT_REQ();
+    ctrl_cmd_t *resp = NULL;
+    char *v_data = NULL;
+
+    if (data && strlen(data) > 0) {
+        v_data = (char*)calloc(1, strlen(data));
+        if (!v_data) {
+            printf("Failed to allocate memory\n");
+            return FAILURE;
+        }
+        memcpy(v_data, data, strlen(data));
+    }
+
+    req->u.wifi_softap_vendor_ie.enable = enable;
+    req->u.wifi_softap_vendor_ie.type   = WIFI_VND_IE_TYPE_BEACON;
+    req->u.wifi_softap_vendor_ie.idx    = WIFI_VND_IE_ID_0;
+    req->u.wifi_softap_vendor_ie.vnd_ie.element_id = WIFI_VENDOR_IE_ELEMENT_ID;
+
+    if (v_data) {
+        req->u.wifi_softap_vendor_ie.vnd_ie.length = strlen(data) + OFFSET;
+        req->u.wifi_softap_vendor_ie.vnd_ie.vendor_oui[0] = VENDOR_OUI_0;
+        req->u.wifi_softap_vendor_ie.vnd_ie.vendor_oui[1] = VENDOR_OUI_1;
+        req->u.wifi_softap_vendor_ie.vnd_ie.vendor_oui[2] = VENDOR_OUI_2;
+        req->u.wifi_softap_vendor_ie.vnd_ie.vendor_oui_type = VENDOR_OUI_TYPE;
+        req->u.wifi_softap_vendor_ie.vnd_ie.payload = (uint8_t *)v_data;
+        req->u.wifi_softap_vendor_ie.vnd_ie.payload_len = strlen(data);
+
+        req->free_buffer_func = free;
+        req->free_buffer_handle = v_data;
+    }
+
+    resp = wifi_set_vendor_specific_ie(req);
+	CLEANUP_CTRL_MSG(req);
+    return ctrl_app_resp_callback(resp);
+}
+
+int test_set_wifi_power_save_mode_with_params(int psmode) {
+    /* implemented synchronous */
+    ctrl_cmd_t *req = CTRL_CMD_DEFAULT_REQ();
+    ctrl_cmd_t *resp = NULL;
+
+    req->u.wifi_ps.ps_mode = psmode;
+    req->cmd_timeout_sec = 2;
+    resp = wifi_set_power_save_mode(req);
+	CLEANUP_CTRL_MSG(req);
+    return ctrl_app_resp_callback(resp);
 }

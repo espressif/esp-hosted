@@ -652,35 +652,6 @@ ctrl_cmd_t * get_dhcp_dns_status(ctrl_cmd_t *req);
 /* Set DHCP DNS status */
 ctrl_cmd_t * set_dhcp_dns_status(ctrl_cmd_t *req);
 
-/* Get the interface up for interface `iface` */
-int interface_up(int sockfd, char* iface);
-
-/* Get the interface down for interface `iface` */
-int interface_down(int sockfd, char* iface);
-
-/* Set ethernet interface MAC address `mac` to interface `iface` */
-int set_hw_addr(int sockfd, char* iface, char* mac);
-
-/* Set static IP address for interface `iface` */
-int set_network_static_ip(int sockfd, char* iface, char* ip, char* netmask, char* gateway);
-
-/* Set static DNS server */
-int add_dns(char* dns);
-
-/* Remove static DNS server */
-int remove_dns(char* dns);
-
-/* Add default gateway */
-int add_default_gateway(char* gateway);
-
-/* Remove default gateway */
-int remove_default_gateway(char* gateway);
-
-/* Create an endpoint for communication */
-int create_socket(int domain, int type, int protocol, int *sock);
-
-/* Close an endpoint of the communication */
-int close_socket(int sock);
 
 #endif
 

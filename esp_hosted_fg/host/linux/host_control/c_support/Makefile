@@ -39,22 +39,23 @@ SRC += $(DIR_CTRL_LIB)/src/ctrl_api.c
 SRC += $(DIR_SERIAL)/src/serial_if.c
 SRC += $(DIR_COMPONENTS)/src/esp_queue.c
 SRC += $(DIR_LINUX_PORT)/src/platform_wrapper.c
+SRC += nw_helper_func.c test_utils.c
 
 PWD := $(shell pwd)
 
-all: test stress hosted_daemon
+all: test stress hosted_daemon hosted_shell
 
-test: test.c test_utils.c
-	$(CROSS_COMPILE)$(CC) $(CFLAGS) $(INCLUDE) $(SRC) test_utils.c $(LINKER) $< -o $(@).out
+test: test.c $(SRC)
+	$(CROSS_COMPILE)$(CC) $(CFLAGS) $(INCLUDE) $(SRC)  $(LINKER) $< -o $(@).out
 
-stress: stress.c test_utils.c
-	$(CROSS_COMPILE)$(CC) $(CFLAGS) $(CFLAGS_SANITIZE) $(INCLUDE) $(SRC) test_utils.c $(LINKER) $< -o $(@).out -ggdb3 -g
-
-hosted_daemon: hosted_daemon.c
+stress: stress.c $(SRC)
 	$(CROSS_COMPILE)$(CC) $(CFLAGS) $(CFLAGS_SANITIZE) $(INCLUDE) $(SRC) $(LINKER) $< -o $(@).out -ggdb3 -g
 
-hosted_shell: hosted_shell.c test_utils.c auto_ip_restore.c
-	$(CROSS_COMPILE)$(CC) $(CFLAGS) $(INCLUDE) $(SRC) test_utils.c hosted_shell.c -o $(@).out $(LINKER) -lreplxx -lpthread -lstdc++
+hosted_daemon: hosted_daemon.c $(SRC)
+	$(CROSS_COMPILE)$(CC) $(CFLAGS) $(CFLAGS_SANITIZE) $(INCLUDE) $(SRC) $(LINKER) $< -o $(@).out -ggdb3 -g
+
+hosted_shell: hosted_shell.c $(SRC)
+	$(CROSS_COMPILE)$(CC) $(CFLAGS) $(CFLAGS_SANITIZE) $(INCLUDE) -o $(@).out $^ $(LINKER) -lreplxx -lstdc++
 
 clean:
 	rm -f *.out *.o

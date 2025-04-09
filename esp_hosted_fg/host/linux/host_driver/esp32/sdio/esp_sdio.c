@@ -42,17 +42,17 @@
 #if ESP_PKT_NUM_DEBUG
 struct dbg_stats_t dbg_stats;
 #endif
-#define MAX_WRITE_RETRIES       2
-#define TX_MAX_PENDING_COUNT    200
-#define TX_RESUME_THRESHOLD     (TX_MAX_PENDING_COUNT/5)
+#define MAX_BUFF_AVAILABLE_RETRIES               (40)
+#define TX_MAX_PENDING_COUNT                     (200)
+#define TX_RESUME_THRESHOLD                      (TX_MAX_PENDING_COUNT/5)
 
 /* combined register read for interrupt status and packet length */
-#define DO_COMBINED_REG_READ (1)
+#define DO_COMBINED_REG_READ                     (1)
 
 /* Add streaming mode config */
-#define H_SDIO_RX_MODE_STREAMING 1
-#define H_SDIO_RX_MODE_ALWAYS_MAX_TRANSPORT_SIZE 2
-#define H_SDIO_RX_MODE_NONE 3
+#define H_SDIO_RX_MODE_STREAMING                 (1)
+#define H_SDIO_RX_MODE_ALWAYS_MAX_TRANSPORT_SIZE (2)
+#define H_SDIO_RX_MODE_NONE                      (3)
 
 /* Use streaming mode for SDIO host rx */
 #define H_SDIO_HOST_RX_MODE H_SDIO_RX_MODE_NONE
@@ -736,7 +736,7 @@ static int is_sdio_write_buffer_available(u32 buf_needed)
 	int ret = 0;
 	static u32 buf_available = 0;
 	struct esp_sdio_context *context = &sdio_context;
-	u8 retry = MAX_WRITE_RETRIES;
+	u8 retry = MAX_BUFF_AVAILABLE_RETRIES;
 
 	/*If buffer needed are less than buffer available
 	  then only read for available buffer number from slave*/
@@ -748,7 +748,7 @@ static int is_sdio_write_buffer_available(u32 buf_needed)
 
 				/* Release SDIO and retry after delay*/
 				retry--;
-				usleep_range(10,50);
+				msleep(1);
 				continue;
 			}
 

@@ -23,10 +23,8 @@
 #define min(X, Y)                    (((X) < (Y)) ? (X) : (Y))
 #endif
 
-#ifndef MCU_SYS
-#define MAX_INTERFACE_LEN            IFNAMSIZ
-#define MAC_SIZE_BYTES               6
-#define MIN_MAC_STR_LEN              17
+#ifndef MIN_MAC_STR_LEN
+#define MIN_MAC_STR_LEN 18  /* Minimum length of a MAC address string (xx:xx:xx:xx:xx:xx) */
 #endif
 
 #define SUCCESS                      0
@@ -170,50 +168,6 @@ static inline int is_ctrl_lib_state(int state)
 		return 1;
 	return 0;
 }
-
-
-#ifndef MCU_SYS
- /* Function converts mac string to byte stream */
-static int convert_mac_to_bytes(uint8_t *out, size_t out_size, char *s)
-{
-	int mac[MAC_SIZE_BYTES] = {0};
-	int num_bytes = 0;
-	if (!s || (strlen(s) < MIN_MAC_STR_LEN) || (out_size < MAC_SIZE_BYTES))  {
-		if (!s) {
-			command_log("empty input mac str\n");
-		} else if (strlen(s)<MIN_MAC_STR_LEN) {
-			command_log("strlen of in str [%zu]<MIN_MAC_STR_LEN[%u]\n",
-					strlen(s), MIN_MAC_STR_LEN);
-		} else {
-			command_log("out_size[%zu]<MAC_SIZE_BYTES[%u]\n",
-					out_size, MAC_SIZE_BYTES);
-		}
-		return FAILURE;
-	}
-
-	num_bytes =  sscanf(s, "%2x:%2x:%2x:%2x:%2x:%2x",
-			&mac[0],&mac[1], &mac[2], &mac[3], &mac[4], &mac[5]);
-
-	if ((num_bytes < (MAC_SIZE_BYTES - 1))  ||
-	    (mac[0] > 0xFF) ||
-	    (mac[1] > 0xFF) ||
-	    (mac[2] > 0xFF) ||
-	    (mac[3] > 0xFF) ||
-	    (mac[4] > 0xFF) ||
-	    (mac[5] > 0xFF)) {
-		command_log("failed\n");
-		return FAILURE;
-	}
-
-	out[0] = mac[0]&0xff;
-	out[1] = mac[1]&0xff;
-	out[2] = mac[2]&0xff;
-	out[3] = mac[3]&0xff;
-	out[4] = mac[4]&0xff;
-	out[5] = mac[5]&0xff;
-	return SUCCESS;
-}
-#endif
 
 
 
@@ -531,7 +485,7 @@ static int ctrl_app_parse_resp(CtrlMsg *ctrl_msg, ctrl_cmd_t *app_resp)
 					goto fail_parse_ctrl_msg;
 					break;
 				case SUCCESS:
-					command_log("Info: Connect band_mode is %d\n", ctrl_msg->resp_connect_ap->band_mode);
+					//command_log("Info: Connect band_mode is %d\n", ctrl_msg->resp_connect_ap->band_mode);
 					CHECK_CTRL_MSG_NON_NULL(resp_connect_ap->mac.data);
 					CHECK_CTRL_MSG_FAILED(resp_connect_ap);
 					break;
@@ -897,6 +851,7 @@ static int process_ctrl_rx_msg(CtrlMsg * proto_msg, ctrl_rx_ind_t ctrl_rx_func)
 			 * so call to that function should be done and
 			 * return to select
 			 */
+			//printf("async_resp_callback for msg_id [%d] available: %p\n", app_resp->msg_id, ctrl_resp_cb_table[app_resp->msg_id-CTRL_RESP_BASE]);
 			call_async_resp_callback(app_resp);
 
 			//CLEANUP_APP_MSG(app_resp);
@@ -908,6 +863,7 @@ static int process_ctrl_rx_msg(CtrlMsg * proto_msg, ctrl_rx_ind_t ctrl_rx_func)
 			 * synchronous response. forward this response to app
 			 * using 'esp_queue' and help of semaphore
 			 **/
+			//printf("async_resp_callback for msg_id [%d] NOT available\n", app_resp->msg_id);
 
 			elem = (esp_queue_elem_t*)hosted_malloc(sizeof(esp_queue_elem_t));
 			if (!elem) {
@@ -1125,6 +1081,7 @@ static int call_event_callback(ctrl_cmd_t *app_event)
 	}
 
 	if (ctrl_event_cb_table[app_event->msg_id-CTRL_EVENT_BASE]) {
+		//printf("Calling event callback for msg_id [%d]\n", app_event->msg_id);
 		return ctrl_event_cb_table[app_event->msg_id-CTRL_EVENT_BASE](app_event);
 	}
 
@@ -1178,6 +1135,11 @@ static int is_async_resp_callback_registered_by_resp_msg_id(int resp_msg_id)
  **/
 int is_async_resp_callback_registered(ctrl_cmd_t *req)
 {
+	if (!req) {
+		printf("Invalid request pointer\n");
+		return MSG_ID_OUT_OF_ORDER;
+	}
+
 	int exp_resp_msg_id = (req->msg_id - CTRL_REQ_BASE + CTRL_RESP_BASE);
 	if (exp_resp_msg_id >= CTRL_RESP_MAX) {
 		printf("Not able to map new request to resp id, using sync path\n");
@@ -1224,6 +1186,8 @@ ctrl_cmd_t * ctrl_wait_and_parse_sync_resp(ctrl_cmd_t *app_req)
 {
 	ctrl_cmd_t * rx_buf = NULL;
 	int rx_buf_len = 0;
+
+	//printf("ctrl_wait_and_parse_sync_resp for msg_id [%d]\n", app_req->msg_id);
 
 	rx_buf = get_response(&rx_buf_len, app_req->cmd_timeout_sec);
 	if (!rx_buf || !rx_buf_len) {
@@ -1602,7 +1566,7 @@ int ctrl_app_send_req(ctrl_cmd_t *app_req)
 			ctrl_msg__req__enable_disable__init(req_payload);
 			req_payload->feature = app_req->u.feat_ena_disable.feature;
 			req_payload->enable = app_req->u.feat_ena_disable.enable;
-			printf("%able feature [%d]\n", (req_payload->enable)? "en": "dis", req_payload->feature);
+			printf("%sable feature [%d]\n", (req_payload->enable)? "en": "dis", req_payload->feature);
 			break;
 		} default: {
 			failure_status = CTRL_ERR_UNSUPPORTED_MSG;
@@ -1675,7 +1639,6 @@ int ctrl_app_send_req(ctrl_cmd_t *app_req)
 	mem_free(tx_data);
 	mem_free(buff_to_free2);
 	mem_free(buff_to_free1);
-	mem_free(app_req);
 	return SUCCESS;
 
 fail_req:
@@ -1764,12 +1727,6 @@ int deinit_hosted_control_lib_internal(void)
 int init_hosted_control_lib_internal(void)
 {
 	int ret = SUCCESS;
-#ifndef MCU_SYS
-	if(getuid()) {
-		printf("Please re-run program with superuser access\n");
-		return FAILURE;
-	}
-#endif
 
 	/* semaphore init */
 	read_sem = hosted_create_semaphore(1);
@@ -1809,392 +1766,3 @@ free_bufs:
 	return FAILURE;
 
 }
-
-
-
-#ifndef MCU_SYS
-
- /* Function ups in given interface */
-int interface_up(int sockfd, char* iface)
-{
-	int ret = SUCCESS;
-	struct ifreq req = {0};
-	size_t if_name_len = strnlen(iface, MAX_INTERFACE_LEN-1);
-
-	if (!iface) {
-		command_log("Invalid parameter\n");
-		return FAILURE;
-	}
-
-	if (if_name_len < sizeof(req.ifr_name)) {
-		memcpy(req.ifr_name,iface,if_name_len);
-		req.ifr_name[if_name_len]='\0';
-	} else {
-		printf("Failed: Max interface len allowed: %zu \n", sizeof(req.ifr_name)-1);
-		return FAILURE;
-	}
-
-	req.ifr_flags |= IFF_UP;
-	ret = ioctl(sockfd, SIOCSIFFLAGS, &req);
-	if (ret < 0) {
-		return FAILURE;
-	}
-	return SUCCESS;
-}
-
-/* Function to add default gateway */
-int add_default_gateway(char* gateway)
-{
-	int ret = SUCCESS;
-	struct rtentry route = {0};
-	int sockfd = 0;
-
-	if (!gateway) {
-		command_log("Invalid parameter\n");
-		return FAILURE;
-	}
-
-	/* Create socket */
-	sockfd = socket(AF_INET, SOCK_DGRAM, 0);
-	if (sockfd < 0) {
-		perror("socket creation failed:");
-		return FAILURE;
-	}
-
-	/* Setup route entry */
-	struct sockaddr_in *addr = (struct sockaddr_in*) &route.rt_gateway;
-	addr->sin_family = AF_INET;
-	addr->sin_addr.s_addr = inet_addr(gateway);
-
-	addr = (struct sockaddr_in*) &route.rt_dst;
-	addr->sin_family = AF_INET;
-	addr->sin_addr.s_addr = INADDR_ANY;
-
-	addr = (struct sockaddr_in*) &route.rt_genmask;
-	addr->sin_family = AF_INET;
-	addr->sin_addr.s_addr = INADDR_ANY;
-
-	route.rt_flags = RTF_UP | RTF_GATEWAY;
-	route.rt_metric = 0;
-
-	/* Add the route */
-	ret = ioctl(sockfd, SIOCADDRT, &route);
-	if (ret < 0) {
-		perror("add route failed:");
-		close(sockfd);
-		return FAILURE;
-	}
-
-	close(sockfd);
-	return SUCCESS;
-}
-
-/* Function to remove default gateway */
-int remove_default_gateway(char* gateway)
-{
-	int ret = SUCCESS;
-	struct rtentry route = {0};
-	int sockfd = 0;
-
-	if (!gateway) {
-		command_log("Invalid parameter\n");
-		return FAILURE;
-	}
-
-	/* Create socket */
-	sockfd = socket(AF_INET, SOCK_DGRAM, 0);
-	if (sockfd < 0) {
-		perror("socket creation failed:");
-		return FAILURE;
-	}
-
-	/* Setup route entry */
-	struct sockaddr_in *addr = (struct sockaddr_in*) &route.rt_gateway;
-	addr->sin_family = AF_INET;
-	addr->sin_addr.s_addr = inet_addr(gateway);
-
-	addr = (struct sockaddr_in*) &route.rt_dst;
-	addr->sin_family = AF_INET;
-	addr->sin_addr.s_addr = INADDR_ANY;
-
-	addr = (struct sockaddr_in*) &route.rt_genmask;
-	addr->sin_family = AF_INET;
-	addr->sin_addr.s_addr = INADDR_ANY;
-
-	route.rt_flags = RTF_UP | RTF_GATEWAY;
-	route.rt_metric = 0;
-
-	/* Remove the route */
-	ret = ioctl(sockfd, SIOCDELRT, &route);
-	if (ret < 0) {
-		//perror("remove route failed:");
-		close(sockfd);
-		return FAILURE;
-	}
-
-	close(sockfd);
-	return SUCCESS;
-}
-
-
-int set_network_static_ip(int sockfd, char* iface, char* ip, char* netmask, char* gateway)
-{
-	int ret = SUCCESS;
-	struct ifreq req = {0};
-	struct sockaddr_in* addr = NULL;
-	size_t if_name_len = strnlen(iface, MAX_INTERFACE_LEN-1);
-
-	if (!iface || !ip || !netmask || !gateway) {
-		command_log("Invalid parameter\n");
-		return FAILURE;
-	}
-
-	if (if_name_len < sizeof(req.ifr_name)) {
-		memcpy(req.ifr_name, iface, if_name_len);
-		req.ifr_name[if_name_len] = '\0';
-	} else {
-		printf("Failed: Max interface len allowed: %zu \n", sizeof(req.ifr_name)-1);
-		return FAILURE;
-	}
-
-	/* Set IP address */
-	addr = (struct sockaddr_in*)&req.ifr_addr;
-	addr->sin_family = AF_INET;
-	addr->sin_addr.s_addr = inet_addr(ip);
-	ret = ioctl(sockfd, SIOCSIFADDR, &req);
-	if (ret < 0) {
-		perror("set ip address:");
-		return FAILURE;
-	}
-
-	/* Set netmask */
-	addr = (struct sockaddr_in*)&req.ifr_netmask;
-	addr->sin_family = AF_INET;
-	addr->sin_addr.s_addr = inet_addr(netmask);
-	ret = ioctl(sockfd, SIOCSIFNETMASK, &req);
-	if (ret < 0) {
-		perror("set netmask:");
-		return FAILURE;
-	}
-
-	/* Set gateway */
-	addr = (struct sockaddr_in*)&req.ifr_dstaddr;
-	addr->sin_family = AF_INET;
-	addr->sin_addr.s_addr = inet_addr(gateway);
-	ret = ioctl(sockfd, SIOCSIFDSTADDR, &req);
-	if (ret < 0) {
-		perror("set gateway:");
-		return FAILURE;
-	}
-
-	return SUCCESS;
-}
-
-/* Function sets static DNS server */
-int add_dns(char* dns)
-{
-	int ret = SUCCESS;
-	FILE *resolv = NULL;
-	char line[256];
-	char dns_entry[256];
-	int dns_exists = 0;
-
-	if (!dns) {
-		command_log("Invalid parameter\n");
-		return FAILURE;
-	}
-
-	/* Format DNS entry string */
-	snprintf(dns_entry, sizeof(dns_entry), "nameserver %s", dns);
-
-	/* First check if DNS entry already exists */
-	resolv = fopen("/etc/resolv.conf", "r");
-	if (resolv) {
-		while (fgets(line, sizeof(line), resolv)) {
-			/* Remove newline */
-			line[strcspn(line, "\n")] = 0;
-			if (strcmp(line, dns_entry) == 0) {
-				dns_exists = 1;
-				break;
-			}
-		}
-		fclose(resolv);
-	}
-
-	if (!dns_exists) {
-		/* Append new DNS entry */
-		resolv = fopen("/etc/resolv.conf", "a");
-		if (!resolv) {
-			perror("open resolv.conf:");
-			return FAILURE;
-		}
-
-		ret = fprintf(resolv, "%s\n", dns_entry);
-		if (ret < 0) {
-			perror("write dns server:");
-			fclose(resolv);
-			return FAILURE;
-		}
-		fclose(resolv);
-	}
-
-	return SUCCESS;
-}
-
-
-/* Function removes DNS entry from resolv.conf */
-int remove_dns(char *dns)
-{
-	int ret = SUCCESS;
-	FILE *resolv = NULL, *tmp = NULL;
-	char line[256];
-	char dns_entry[256];
-
-	if (!dns) {
-		command_log("Invalid parameter\n");
-		return FAILURE;
-	}
-
-	/* Format DNS entry string */
-	snprintf(dns_entry, sizeof(dns_entry), "nameserver %s", dns);
-
-	/* Open original file for reading and temp file for writing */
-	resolv = fopen("/etc/resolv.conf", "r");
-	if (!resolv) {
-		perror("open resolv.conf:");
-		return FAILURE;
-	}
-
-	tmp = fopen("/etc/resolv.conf.tmp", "w");
-	if (!tmp) {
-		perror("open resolv.conf.tmp:");
-		fclose(resolv);
-		return FAILURE;
-	}
-
-	/* Copy all lines except matching DNS entry */
-	while (fgets(line, sizeof(line), resolv)) {
-		/* Remove newline */
-		line[strcspn(line, "\n")] = 0;
-		if (strcmp(line, dns_entry) != 0) {
-			fprintf(tmp, "%s\n", line);
-		}
-	}
-
-	fclose(resolv);
-	fclose(tmp);
-
-	/* Replace original with temp file */
-	ret = rename("/etc/resolv.conf.tmp", "/etc/resolv.conf");
-	if (ret < 0) {
-		perror("rename resolv.conf:");
-		return FAILURE;
-	}
-
-	return SUCCESS;
-}
-
-
-
-
-
- /* Function downs in given interface */
-int interface_down(int sockfd, char* iface)
-{
-	int ret = SUCCESS;
-	struct ifreq req = {0};
-	size_t if_name_len = strnlen(iface, MAX_INTERFACE_LEN-1);
-
-	if (!iface) {
-		command_log("Invalid parameter\n");
-		return FAILURE;
-	}
-
-	if (if_name_len < sizeof(req.ifr_name)) {
-		memcpy(req.ifr_name,iface,if_name_len);
-		req.ifr_name[if_name_len]='\0';
-	} else {
-		printf("Failed: Max interface len allowed- %zu \n", sizeof(req.ifr_name)-1);
-		return FAILURE;
-	}
-
-	req.ifr_flags &= ~IFF_UP;
-	ret = ioctl(sockfd, SIOCSIFFLAGS, &req);
-	if (ret < 0) {
-		perror("interface down:");
-		return FAILURE;
-	}
-	return SUCCESS;
-}
-
- /* Function sets mac address to given interface */
-int set_hw_addr(int sockfd, char* iface, char* mac)
-{
-	int ret = SUCCESS;
-	struct ifreq req = {0};
-	char mac_bytes[MAC_SIZE_BYTES] = "";
-	size_t if_name_len = strnlen(iface, MAX_INTERFACE_LEN-1);
-
-	if (!iface || !mac) {
-		command_log("Invalid parameter\n");
-		return FAILURE;
-	}
-
-	if (if_name_len < sizeof(req.ifr_name)) {
-		memcpy(req.ifr_name,iface,if_name_len);
-		req.ifr_name[if_name_len]='\0';
-	} else {
-		printf("Failed: Max interface len allowed: %zu \n", sizeof(req.ifr_name)-1);
-		return FAILURE;
-	}
-
-	memset(mac_bytes, '\0', MAC_SIZE_BYTES);
-	ret = convert_mac_to_bytes((uint8_t *)&mac_bytes, sizeof(mac_bytes), mac);
-
-	if (ret) {
-		printf("Failed to convert mac address \n");
-		return FAILURE;
-	}
-
-	req.ifr_hwaddr.sa_family = ARPHRD_ETHER;
-	memcpy(req.ifr_hwaddr.sa_data, mac_bytes, MAC_SIZE_BYTES);
-	ret = ioctl(sockfd, SIOCSIFHWADDR, &req);
-
-	if (ret < 0) {
-		return FAILURE;
-	}
-	return SUCCESS;
-}
-
- /* Function creates an endpoint for communication and
-  * returns a file descriptor (integer number) that
-  * refers to that endpoint */
-int create_socket(int domain, int type, int protocol, int *sock)
-{
-	if (!sock) {
-		command_log("Invalid parameter\n");
-		return FAILURE;
-	}
-
-	*sock = socket(domain, type, protocol);
-	if (*sock < 0)
-	{
-		printf("Failure to open socket\n");
-		return FAILURE;
-	}
-	return SUCCESS;
-}
-
- /* Function closes an endpoint for communication */
-int close_socket(int sock)
-{
-	int ret;
-	ret = close(sock);
-	if (ret < 0) {
-		printf("Failure to close socket\n");
-		return FAILURE;
-	}
-	return SUCCESS;
-}
-
-#endif

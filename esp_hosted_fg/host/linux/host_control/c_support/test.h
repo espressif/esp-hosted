@@ -100,5 +100,24 @@ int test_set_country_code();
 int test_get_country_code();
 int test_fetch_ip_addr_from_slave(void);
 int test_set_dhcp_dns_status(char *sta_ip, char *sta_nm, char *sta_gw, char *sta_dns);
+int test_softap_mode_set_vendor_ie(bool enable, const char *data);
+int test_station_mode_connect_with_params(const char *ssid, const char *pwd, const char *bssid, 
+                                         bool use_wpa3, int listen_interval, int band_mode);
+int test_station_mode_disconnect_with_params(bool reset_dhcp);
+int test_softap_mode_start_with_params(const char *ssid, const char *pwd, int channel, 
+                                      const char *sec_prot, int max_conn, bool hide_ssid,
+                                      int bw, int band_mode);
+int test_wifi_set_power_save_mode_with_params(int psmode);
+int test_get_fw_version_with_params(char *version, uint16_t version_size);
+int test_ota_update_with_params(const char *url);
+int test_heartbeat_with_params(bool enable, int duration);
+int test_set_mac_addr_with_params(int mode, const char *mac);
+int test_set_dhcp_dns_status_with_params(char *sta_ip, char *sta_nm, char *sta_gw, char *sta_dns);
+int test_set_vendor_specific_ie_with_params(bool enable, const char *data);
+int test_set_wifi_power_save_mode_with_params(int psmode);
+int test_get_fw_version_with_params(char *version, uint16_t version_size);
+int test_subscribe_event(const char *event);
+int test_unsubscribe_event(const char *event);
+
 
 #endif
