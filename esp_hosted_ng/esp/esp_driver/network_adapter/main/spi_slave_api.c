@@ -377,6 +377,9 @@ static int process_spi_rx(interface_buffer_handle_t *buf_handle)
     rx_checksum = le16toh(header->checksum);
     header->checksum = 0;
 
+    if (len + offset > RX_BUF_SIZE) {
+        return -1;
+    }
     checksum = compute_checksum(buf_handle->payload, len + offset);
 
     if (checksum != rx_checksum) {
