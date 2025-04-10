@@ -170,6 +170,11 @@ static int esp_set_mac_address(struct net_device *ndev, void *data)
 	if (!priv)
 		return -EINVAL;
 
+	if (!is_valid_ether_addr(mac_addr->sa_data)) {
+		esp_err("Invalid MAC address\n");
+		return -EINVAL;
+	}
+
 	ether_addr_copy(priv->mac_address, mac_addr->sa_data);
 	eth_hw_addr_set(ndev, mac_addr->sa_data);
 
@@ -222,14 +227,14 @@ u8 esp_is_bt_supported_over_sdio(u32 cap)
 __weak int esp_init_bt(struct esp_adapter *adapter)
 {
 	/* weak def if 'bt over hci' is not needed */
-	esp_warn("Ignoring bluetooth api %s\n", __func__);
+	esp_info("Ignore bluetooth api %s\n", __func__);
 	return 0;
 }
 
 __weak int esp_deinit_bt(struct esp_adapter *adapter)
 {
 	/* weak def if 'bt over hci' is not needed */
-	esp_warn("Ignoring bluetooth api %s\n", __func__);
+	esp_info("Ignore bluetooth api %s\n", __func__);
 	return 0;
 }
 
@@ -358,11 +363,6 @@ static int process_tx_packet (struct sk_buff *skb)
 	payload_header->len = cpu_to_le16(len);
 	payload_header->offset = cpu_to_le16(pad_len);
 
-#if 0
-	if (adapter.capabilities & ESP_CHECKSUM_ENABLED)
-		payload_header->checksum = cpu_to_le16(compute_checksum(skb->data, (len + pad_len)));
-#endif
-
 	if (!stop_data) {
 		ret = esp_send_packet(priv->adapter, skb);
 
@@ -382,15 +382,27 @@ static int process_tx_packet (struct sk_buff *skb)
 void process_capabilities(u8 cap)
 {
 	struct esp_adapter *adapter = esp_get_adapter();
+	int ret;
+
+	if (!adapter) {
+		esp_err("NULL adapter\n");
+		return;
+	}
+
 	esp_info("ESP peripheral capabilities: 0x%x\n", cap);
 	adapter->capabilities = cap;
 
 	/* Reset BT */
-	esp_deinit_bt(esp_get_adapter());
+	esp_deinit_bt(adapter);
+	msleep(200);
 
 	if ((cap & ESP_BT_SPI_SUPPORT) || (cap & ESP_BT_SDIO_SUPPORT)) {
-		msleep(200);
-		esp_init_bt(esp_get_adapter());
+		ret = esp_init_bt(adapter);
+		if (ret) {
+			esp_err("Failed to init BT: %d\n", ret);
+		}
+	} else {
+		esp_info("No BT support in capabilities (0x%x)\n", cap);
 	}
 }
 
@@ -406,7 +418,7 @@ static void process_event(u8 *evt_buf, u16 len)
 
 	if (event->event_type == ESP_PRIV_EVENT_INIT) {
 
-		esp_info("INIT event rcvd from ESP\n");
+		esp_info("Slave up event rcvd from ESP\n");
 
 		ret = esp_serial_reinit(esp_get_adapter());
 		if (ret)
@@ -565,6 +577,7 @@ void esp_tx_pause(void)
         priv = adapter.priv[i];
         if (priv && priv->ndev && !netif_queue_stopped(priv->ndev)) {
             netif_stop_queue(priv->ndev);
+			esp_verbose("TX queue paused on interface %d\n", i);
         }
     }
 }
@@ -578,7 +591,7 @@ void esp_tx_resume(void)
         priv = adapter.priv[i];
         if (priv && priv->ndev && netif_queue_stopped(priv->ndev)) {
             netif_wake_queue(priv->ndev);
-            esp_info("TX queue resumed on interface %d\n", i);
+            esp_verbose("TX queue resumed on interface %d\n", i);
         }
     }
 }
@@ -674,11 +687,13 @@ static int esp_init_net_dev(struct net_device *ndev, struct esp_private *priv)
 	/* Set netdev */
 	ndev->netdev_ops = &esp_netdev_ops;
 
+#if 0
 	/* Set MTU to account for our headers */
 	ndev->mtu = ETH_DATA_LEN - sizeof(struct esp_payload_header);
 
 	/* Set TX queue length */
 	ndev->tx_queue_len = TX_MAX_PENDING_COUNT;
+#endif
 
 	eth_hw_addr_set(ndev, priv->mac_address);
 
@@ -688,7 +703,6 @@ static int esp_init_net_dev(struct net_device *ndev, struct esp_private *priv)
 		esp_err("Failed to register netdev\n");
 		return ret;
 	}
-	//netif_carrier_off(ndev);
 
 	return ret;
 }
@@ -882,7 +896,7 @@ static struct esp_adapter * init_adapter(void)
 	memset(&adapter, 0, sizeof(adapter));
 
 	/* Prepare interface RX work */
-	adapter.if_rx_workqueue = alloc_workqueue("ESP_IF_RX_WORK_QUEUE", WQ_FREEZABLE, 0);
+	adapter.if_rx_workqueue = alloc_workqueue("ESP_IF_RX_WORK_QUEUE", WQ_HIGHPRI|WQ_FREEZABLE, 0);
 
 	if (!adapter.if_rx_workqueue) {
 		esp_err("failed to create rx workqueue\n");
@@ -939,17 +953,28 @@ static int __init esp_init(void)
 
 static void __exit esp_exit(void)
 {
-	esp_info("esp module unload\n");
+	esp_info("esp module unload starting\n");
+
+	stop_data = 1;
+
+	esp_serial_cleanup();
+
+	esp_deinit_bt(&adapter);
+	msleep(200);
+
 #if TEST_RAW_TP
 	test_raw_tp_cleanup();
 #endif
-	esp_serial_cleanup();
+
 	esp_deinit_interface_layer();
+
 	deinit_adapter();
 
 	if (resetpin != MOD_PARAM_UNINITIALISED) {
 		gpio_free(resetpin);
 	}
+
+	esp_info("esp module unload complete\n");
 }
 
 module_init(esp_init);

@@ -12,9 +12,6 @@ CONFIG_ESP_WIFI_NVS_ENABLED=y
 
 # Linux Host Deep Sleep allowed?
 #-------------------------------
-# Please only enable this if your Linux host allows power saving.
-# Raspberry Pi doesn't yet support the power saving.
-# We had imx8mm board to test this. Every Linux may or may not support this feature.
-# Check your SoC document if it supports power saving and how to enable or disable it
+# Linux host power save is not yet supported on FG
 CONFIG_HOST_DEEP_SLEEP_ALLOWED=n
 CONFIG_HOST_WAKEUP_GPIO=-1

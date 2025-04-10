@@ -48,6 +48,20 @@
 #define FAILURE_STR                          "failure"
 #define NOT_CONNECTED_STR                    "not_connected"
 
+
+#define CLEANUP_CTRL_MSG(msg) do {                        \
+  if (msg) {                                              \
+    if (msg->free_buffer_handle) {                        \
+      if (msg->free_buffer_func) {                        \
+        msg->free_buffer_func(msg->free_buffer_handle);   \
+        msg->free_buffer_handle = NULL;                   \
+      }                                                   \
+    }                                                     \
+    free(msg);                                            \
+    msg = NULL;                                           \
+  }                                                       \
+} while(0);
+
 /*---- Control structures ----*/
 
 enum {
@@ -120,6 +134,8 @@ typedef enum {
 	CTRL_REQ_SET_COUNTRY_CODE          = CTRL_MSG_ID__Req_SetCountryCode,     //0x7c
 	CTRL_REQ_GET_COUNTRY_CODE          = CTRL_MSG_ID__Req_GetCountryCode,     //0x7d
 
+	CTRL_REQ_CUSTOM_RPC_UNSERIALISED_MSG = CTRL_MSG_ID__Req_Custom_RPC_Unserialised_Msg,
+
 	/*
 	 * Add new control path command response before Req_Max
 	 * and update Req_Max
@@ -162,6 +178,8 @@ typedef enum {
 
 	CTRL_RESP_SET_COUNTRY_CODE          = CTRL_MSG_ID__Resp_SetCountryCode,     //0x7c -> 0xe0
 	CTRL_RESP_GET_COUNTRY_CODE          = CTRL_MSG_ID__Resp_GetCountryCode,     //0x7d -> 0xe1
+
+	CTRL_RESP_CUSTOM_RPC_UNSERIALISED_MSG = CTRL_MSG_ID__Resp_Custom_RPC_Unserialised_Msg,
 	/*
 	 * Add new control path command and response before Resp_Max
 	 * and update Resp_Max
@@ -181,6 +199,8 @@ typedef enum {
 		CTRL_MSG_ID__Event_StationConnectedToAP,
 	CTRL_EVENT_STATION_CONNECTED_TO_ESP_SOFTAP =
 		CTRL_MSG_ID__Event_StationConnectedToESPSoftAP,
+	CTRL_EVENT_CUSTOM_RPC_UNSERIALISED_MSG =
+		CTRL_MSG_ID__Event_Custom_RPC_Unserialised_Msg,
 	/*
 	 * Add new control path command notification before Event_Max
 	 * and update Event_Max
@@ -392,6 +412,15 @@ typedef struct {
 	uint32_t reason;
 } event_softap_sta_disconn_t;
 
+typedef void (*custom_data_free_func_t)(void *data);
+
+typedef struct {
+	uint32_t custom_msg_id;
+	uint16_t data_len;
+	custom_data_free_func_t free_func;
+	uint8_t *data;
+} custom_rpc_unserialised_data_t;
+
 typedef struct Ctrl_cmd_t {
 	/* msg type could be 1. req 2. resp 3. notification */
 	uint8_t msg_type;
@@ -434,6 +463,7 @@ typedef struct Ctrl_cmd_t {
 		event_sta_disconn_t         e_sta_disconn;
 		event_softap_sta_conn_t     e_softap_sta_conn;
 		event_softap_sta_disconn_t  e_softap_sta_disconn;
+		custom_rpc_unserialised_data_t custom_rpc_unserialised_data;
 	}u;
 
 	/* By default this callback is set to NULL.
@@ -498,6 +528,15 @@ typedef int (*ctrl_event_cb_t) (ctrl_cmd_t * event);
  * > CALLBACK_SET_SUCCESS - Callback is set successful
  **/
 int set_event_callback(int event, ctrl_resp_cb_t event_cb);
+
+
+/* Get control event callback
+ *
+ * Returns:
+ * > NULL - If event is not registered with hosted control lib
+ * > Function pointer - Returns the registered event callback
+ **/
+ctrl_resp_cb_t get_event_callback(int event);
 
 /* Reset control event callback
  *
@@ -622,5 +661,8 @@ ctrl_cmd_t * feature_config(ctrl_cmd_t *req);
 
 /* Get FW Version */
 ctrl_cmd_t * get_fw_version(ctrl_cmd_t *req);
+
+/* Send custom RPC unserialised message */
+ctrl_cmd_t * send_custom_rpc_unserialised_req_to_slave(ctrl_cmd_t *req);
 
 #endif

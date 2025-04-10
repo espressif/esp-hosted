@@ -11,6 +11,7 @@
 #include "interface.h"
 
 #if defined(CONFIG_HOST_DEEP_SLEEP_ALLOWED)
+#error "Host power save is not supported, yet. will be supported in future releases"
 #if CONFIG_HOST_WAKEUP_GPIO == -1
 #error "CONFIG_HOST_WAKEUP_GPIO is not configured. Either disable host power save or configure the host wakeup GPIO pin using 'idf.py menuconfig'"
 #endif

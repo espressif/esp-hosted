@@ -29,11 +29,6 @@
 #include <linux/delay.h>
 #include <linux/slab.h>
 
-#if 0
-#include <linux/fs.h>
-#include <linux/sched/signal.h>
-#endif
-
 #include "esp.h"
 #include "esp_rb.h"
 #include "esp_api.h"
@@ -99,7 +94,7 @@ static ssize_t esp_serial_write(struct file *file, const char __user *user_buffe
 	dev = (struct esp_serial_devs *) file->private_data;
 
 	/* Check if slave connection is still active */
-	if (!dev || !dev->priv || !atomic_read(&((struct esp_adapter *)dev->priv)->state)) {
+	if (!dev || !dev->priv) {
 		esp_warn("slave disconnected, write aborted\n");
 		return -ENODEV;
 	}
@@ -111,6 +106,16 @@ static ssize_t esp_serial_write(struct file *file, const char __user *user_buffe
 		 *  - Fragment large packets into multiple 1500 byte packets
 		 *  - MORE_FRAGMENT bit in flag tells if there are more fragments expected
 		 **/
+
+
+		if (atomic_read(&((struct esp_adapter *)dev->priv)->state) < ESP_CONTEXT_READY) {
+			esp_warn("slave disconnected, write aborted\n");
+			if (atomic_read(&ref_count_open)) {
+				atomic_dec(&ref_count_open);
+			}
+			return -ENODEV;
+		}
+
 		if (left_len > ETH_DATA_LEN) {
 			frag_len = ETH_DATA_LEN;
 			flag = MORE_FRAGMENT;

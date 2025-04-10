@@ -537,20 +537,16 @@ int serial_drv_write (struct serial_drv_handle_t *serial_drv_handle,
 	    serial_drv_handle->file_desc < 0 ||
 	    !buf || !in_count || !out_count) {
 		printf("%s:%u Invalid arguments\n", __func__, __LINE__);
-		goto free_bufs;
+		return FAILURE;
 	}
 
 	*out_count = write(serial_drv_handle->file_desc, buf, in_count);
 	if (*out_count <= 0) {
 		perror("write: ");
-		goto free_bufs;
+		return FAILURE;
 	}
-	mem_free(buf);
-	return SUCCESS;
 
-free_bufs:
-	mem_free(buf);
-	return FAILURE;
+	return SUCCESS;
 }
 
 int serial_drv_close(struct serial_drv_handle_t **serial_drv_handle)

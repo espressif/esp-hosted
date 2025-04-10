@@ -13,7 +13,6 @@
     if(SUCCESS != ctrl_app_send_req(req)) {                                 \
         printf("RPC req [%u] Failed to send\n", req->msg_id);               \
         if (CALLBACK_AVAILABLE == is_async_resp_callback_registered(req)) { \
-	        free(req);  req=NULL;                                           \
             return NULL;                                                    \
         }                                                                   \
     }                                                                       \
@@ -21,7 +20,6 @@
 
 #define CTRL_DECODE_RESP_IF_NOT_ASYNC() do {                          \
   if (CALLBACK_AVAILABLE == is_async_resp_callback_registered(req)) { \
-	free(req);  req=NULL;                                             \
     return NULL;                                                      \
   }                                                                   \
   return ctrl_wait_and_parse_sync_resp(req);                          \
@@ -189,5 +187,11 @@ ctrl_cmd_t * feature_config(ctrl_cmd_t *req)
 ctrl_cmd_t * get_fw_version(ctrl_cmd_t *req)
 {
 	CTRL_SEND_REQ(CTRL_REQ_GET_FW_VERSION);
+	CTRL_DECODE_RESP_IF_NOT_ASYNC();
+}
+
+ctrl_cmd_t * send_custom_rpc_unserialised_req_to_slave(ctrl_cmd_t *req)
+{
+	CTRL_SEND_REQ(CTRL_REQ_CUSTOM_RPC_UNSERIALISED_MSG);
 	CTRL_DECODE_RESP_IF_NOT_ASYNC();
 }

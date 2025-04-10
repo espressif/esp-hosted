@@ -34,9 +34,8 @@ CONFIG_PARTITION_TABLE_CUSTOM_FILENAME="partitions.esp32c5.csv"
 CONFIG_ESP_CACHE_MALLOC=y
 
 
-
 # 6. Power save
----------------
+# ---------------
 
 # 7. Transport config
 #---------------------

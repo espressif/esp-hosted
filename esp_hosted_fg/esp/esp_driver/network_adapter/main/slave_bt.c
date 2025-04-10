@@ -440,6 +440,12 @@ typedef enum {
 /* ACL_DATA_MBUF_LEADINGSPACE: The leadingspace in user info header for ACL data */
 #define ACL_DATA_MBUF_LEADINGSPACE    4
 
+#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 3, 0)
+void ble_transport_ll_init(void)
+{
+}
+#endif
+
 void esp_vhci_host_send_packet(uint8_t *data, uint16_t len)
 {
 	if (*(data) == DATA_TYPE_COMMAND) {

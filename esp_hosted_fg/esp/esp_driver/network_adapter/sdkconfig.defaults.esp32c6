@@ -36,7 +36,7 @@ CONFIG_ESP_CACHE_MALLOC=y
 
 
 # 6. Power save
----------------
+# ---------------
 
 # 7. Transport config
 #---------------------

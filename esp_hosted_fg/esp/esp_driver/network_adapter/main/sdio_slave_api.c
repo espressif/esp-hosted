@@ -69,9 +69,9 @@ static SemaphoreHandle_t sdio_send_queue_sem = NULL;
 #endif
 
 #if !SIMPLIFIED_SDIO_SLAVE
-#define SDIO_MEMPOOL_NUM_BLOCKS     ((SDIO_RX_TOTAL_QUEUE_SIZE + SDIO_DRIVER_TX_QUEUE_SIZE + SDIO_RX_BUFFER_NUM + 10))
+  #define SDIO_MEMPOOL_NUM_BLOCKS     ((SDIO_RX_TOTAL_QUEUE_SIZE + SDIO_DRIVER_TX_QUEUE_SIZE + SDIO_RX_BUFFER_NUM + 10))
 #else
-#define SDIO_MEMPOOL_NUM_BLOCKS     (SDIO_DRIVER_TX_QUEUE_SIZE + SDIO_RX_BUFFER_NUM)
+  #define SDIO_MEMPOOL_NUM_BLOCKS     (SDIO_DRIVER_TX_QUEUE_SIZE + SDIO_RX_BUFFER_NUM)
 #endif
 
 /* Note: Sometimes the SDIO card is detected but gets problem in
@@ -79,15 +79,15 @@ static SemaphoreHandle_t sdio_send_queue_sem = NULL;
  * In these cases, Please tune timing below via Menuconfig
  * */
 #if CONFIG_ESP_SDIO_PSEND_PSAMPLE
-#define SDIO_SLAVE_TIMING SDIO_SLAVE_TIMING_PSEND_PSAMPLE
+  #define SDIO_SLAVE_TIMING SDIO_SLAVE_TIMING_PSEND_PSAMPLE
 #elif CONFIG_ESP_SDIO_NSEND_PSAMPLE
-#define SDIO_SLAVE_TIMING SDIO_SLAVE_TIMING_NSEND_PSAMPLE
+  #define SDIO_SLAVE_TIMING SDIO_SLAVE_TIMING_NSEND_PSAMPLE
 #elif CONFIG_ESP_SDIO_PSEND_NSAMPLE
-#define SDIO_SLAVE_TIMING SDIO_SLAVE_TIMING_PSEND_NSAMPLE
+  #define SDIO_SLAVE_TIMING SDIO_SLAVE_TIMING_PSEND_NSAMPLE
 #elif CONFIG_ESP_SDIO_NSEND_NSAMPLE
-#define SDIO_SLAVE_TIMING SDIO_SLAVE_TIMING_NSEND_NSAMPLE
+  #define SDIO_SLAVE_TIMING SDIO_SLAVE_TIMING_NSEND_NSAMPLE
 #else
-#error No SDIO Slave Timing configured
+  #error No SDIO Slave Timing configured
 #endif
 
 static interface_handle_t * sdio_init(void);
@@ -465,14 +465,6 @@ static int32_t sdio_write(interface_handle_t *handle, interface_buffer_handle_t 
 		ESP_LOGD(TAG, "%s: Host sleeping, drop", __func__);
 		return ESP_FAIL;
 	}
-
-#ifndef CONFIG_SLAVE_MANAGES_WIFI
-	if (buf_handle->payload_len || buf_handle->payload) {
-		ESP_LOGD(TAG, "%s: Invalid arguments, len:%d", __func__, buf_handle->payload_len);
-		return ESP_FAIL;
-	}
-#endif
-
 
 	total_len = buf_handle->payload_len + offset;
 

@@ -34,8 +34,7 @@
 
 #define SPI_INITIAL_CLK_MHZ     10
 #define NUMBER_1M               1000000
-#define TX_RESUME_THRESHOLD     (TX_MAX_PENDING_COUNT/2)
-#define MAX_TX_QUEUE_LEN       (TX_MAX_PENDING_COUNT)
+#define TX_RESUME_THRESHOLD     (TX_MAX_PENDING_COUNT/5)
 
 /* ESP in sdkconfig has CONFIG_IDF_FIRMWARE_CHIP_ID entry.
  * supported values of CONFIG_IDF_FIRMWARE_CHIP_ID are - */
@@ -157,7 +156,7 @@ static struct sk_buff * read_packet(struct esp_adapter *adapter)
 static int write_packet(struct esp_adapter *adapter, struct sk_buff *skb)
 {
 	u32 max_pkt_size = SPI_BUF_SIZE;
-	struct esp_payload_header *payload_header = (struct esp_payload_header *) skb->data;
+	struct esp_payload_header *h = (struct esp_payload_header *) skb->data;
 
 	if (!adapter || !adapter->if_context || !skb || !skb->data || !skb->len) {
 		esp_err("Invalid args\n");
@@ -178,10 +177,17 @@ static int write_packet(struct esp_adapter *adapter, struct sk_buff *skb)
 		return -EPERM;
 	}
 
+	if (spi_context.adapter->capabilities & ESP_CHECKSUM_ENABLED) {
+		uint16_t len = le16_to_cpu(h->len);
+		uint16_t offset = le16_to_cpu(h->offset);
+		h->checksum = 0;
+		h->checksum = cpu_to_le16(compute_checksum((uint8_t*)h, len + offset));
+	}
+
 	/* Enqueue SKB in tx_q */
-	if (payload_header->if_type == ESP_SERIAL_IF) {
+	if (h->if_type == ESP_SERIAL_IF) {
 		skb_queue_tail(&spi_context.tx_q[PRIO_Q_SERIAL], skb);
-	} else if (payload_header->if_type == ESP_HCI_IF) {
+	} else if (h->if_type == ESP_HCI_IF) {
 		skb_queue_tail(&spi_context.tx_q[PRIO_Q_BT], skb);
 	} else {
 		skb_queue_tail(&spi_context.tx_q[PRIO_Q_OTHERS], skb);
@@ -271,6 +277,11 @@ int process_init_event(u8 *evt_buf, u8 len)
 		len_left -= (tag_len+2);
 	}
 
+	/* TODO: abort if strict firmware check is not performed */
+	if ((get_fw_check_type() == FW_CHECK_STRICT) && !fw_version_checked) {
+		esp_warn("ESP Firmware version was not checked");
+	}
+
 	if ((hardware_type != ESP_PRIV_FIRMWARE_CHIP_ESP32) &&
 		(hardware_type != ESP_PRIV_FIRMWARE_CHIP_ESP32S2) &&
 		(hardware_type != ESP_PRIV_FIRMWARE_CHIP_ESP32C2) &&
@@ -299,7 +310,7 @@ int process_init_event(u8 *evt_buf, u8 len)
 	first_esp_bootup_over = 1;
 
 	process_capabilities(adapter->capabilities);
-	esp_info("esp boot-up event processed\n");
+	esp_info("Slave up event processed\n");
 
 	return 0;
 }
@@ -374,7 +385,9 @@ static void esp_spi_transaction(void)
 	struct sk_buff *tx_skb = NULL, *rx_skb = NULL;
 	u8 *rx_buf;
 	int ret = 0;
+	volatile int rx_pending = 0;
 
+#if defined(CONFIG_ESP_HOSTED_USE_WORKQUEUE)
 	if (!mutex_trylock(&spi_lock)) {
 		if (spi_context.spi_workqueue)
 			queue_work(spi_context.spi_workqueue, &spi_context.spi_work);
@@ -392,6 +405,15 @@ static void esp_spi_transaction(void)
 		}
 		return;
 	}
+#else
+	mutex_lock(&spi_lock);
+	if (!gpio_get_value(spi_context.handshake_gpio)) {
+		mutex_unlock(&spi_lock);
+		return;
+	}
+
+	rx_pending = gpio_get_value(spi_context.dataready_gpio);
+#endif
 
 	if (data_path) {
 		tx_skb = skb_dequeue(&spi_context.tx_q[PRIO_Q_SERIAL]);
@@ -408,6 +430,11 @@ static void esp_spi_transaction(void)
 				esp_raw_tp_queue_resume();
 			#endif
 		}
+	}
+
+	if (!rx_pending && !tx_skb) {
+		mutex_unlock(&spi_lock);
+		return;
 	}
 
 	memset(&trans, 0, sizeof(trans));
@@ -474,6 +501,7 @@ static void esp_spi_transaction(void)
 
 	mutex_unlock(&spi_lock);
 
+#if defined(CONFIG_ESP_HOSTED_USE_WORKQUEUE)
 	/* Queue next work only if there's data or slave is ready */
 	if (gpio_get_value(spi_context.dataready_gpio) ||
 		!skb_queue_empty(&spi_context.tx_q[PRIO_Q_SERIAL]) ||
@@ -482,6 +510,7 @@ static void esp_spi_transaction(void)
 		if (spi_context.spi_workqueue)
 			queue_work(spi_context.spi_workqueue, &spi_context.spi_work);
 	}
+#endif
 }
 
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 16, 0))
@@ -683,10 +712,12 @@ static int spi_init(void)
 
 	/* Init reinit work */
 	INIT_WORK(&spi_context.reinit_work, esp_spi_reinit_work);
+
 #if CONFIG_ESP_HOSTED_USE_WORKQUEUE
+	esp_info("ESP: Using SPI Workqueue solution\n");
+
 	spi_context.spi_workqueue = alloc_workqueue("ESP_SPI_WORK_QUEUE",
-											   WQ_UNBOUND | WQ_HIGHPRI, 0);
-	esp_info("SPI workqueue solution\n");
+			WQ_UNBOUND | WQ_HIGHPRI, 0);
 
 	if (!spi_context.spi_workqueue) {
 		esp_err("spi workqueue failed to create\n");
@@ -696,8 +727,8 @@ static int spi_init(void)
 
 	INIT_WORK(&spi_context.spi_work, esp_spi_work);
 	INIT_DELAYED_WORK(&spi_context.spi_delayed_work, esp_spi_work);
-
 #else
+	esp_info("ESP: Using SPI semaphore solution\n");
 	sema_init(&spi_sem, 0);
 	spi_thread = kthread_run(esp_spi_thread, spi_context.adapter, "esp32_spi");
 	if (!spi_thread) {
@@ -867,5 +898,6 @@ void esp_deinit_interface_layer(void)
 
 int is_host_sleeping(void)
 {
+	/* TODO: host sleep unsupported for spi yet */
 	return 0;
 }

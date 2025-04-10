@@ -175,7 +175,7 @@ static esp_err_t protocomm_pserial_ctrl_req_handler(protocomm_t *pc,
 		return ESP_FAIL;
 	}
 
-	/*ESP_LOG_BUFFER_HEXDUMP("serial_tx", out, outlen<16?outlen:16, ESP_LOG_INFO); */
+	ESP_HEXLOGV("serial_tx", out, outlen, 32);
 	ret = (pserial_cfg->xmit)(out, (ssize_t) outlen);
 
 	if (ret != ESP_OK) {

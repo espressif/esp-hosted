@@ -11,8 +11,29 @@ CROSS_COMPILE :=
 CFLAGS = -C -Wall -g
 LINKER = -lpthread -lrt
 
-#If your Linux is very constraint environment, comment below line.
-CFLAGS_SANITIZE = -fsanitize=undefined  -fsanitize-address-use-after-scope -fsanitize-undefined-trap-on-error  -fstack-protector-all -fsanitize=address -fsanitize=pointer-compare -fno-omit-frame-pointer -static-libasan
+# Library search path for replxx - can be customized:
+#   Default:              make
+#   Custom path:          make REPLXX_LIB_PATH=/custom/path
+#   Multiple paths:       make REPLXX_LIB_PATH=/path1:/path2
+#   Disable RPATH:        make RPATH_FLAGS=
+REPLXX_LIB_PATH ?= /usr/local/lib
+RPATH_FLAGS = -Wl,-rpath,$(REPLXX_LIB_PATH)
+
+# Sanitizer options - can be customized:
+#   Basic (default):      make SANITIZE=basic
+#   Full debugging:       make SANITIZE=full
+#   Disabled:             make SANITIZE=none
+SANITIZE ?= none
+
+ifeq ($(SANITIZE),full)
+    CFLAGS_SANITIZE = -fsanitize=undefined -fsanitize-address-use-after-scope -fsanitize-undefined-trap-on-error -fstack-protector-all -fstack-check -fsanitize=address -fsanitize=pointer-compare -fno-omit-frame-pointer -static-libasan
+else ifeq ($(SANITIZE),basic)
+    CFLAGS_SANITIZE = -fstack-protector-all -fno-omit-frame-pointer
+else ifeq ($(SANITIZE),none)
+    CFLAGS_SANITIZE =
+else
+    CFLAGS_SANITIZE = -fstack-protector-all -fno-omit-frame-pointer
+endif
 
 
 
@@ -39,11 +60,23 @@ SRC += $(DIR_CTRL_LIB)/src/ctrl_api.c
 SRC += $(DIR_SERIAL)/src/serial_if.c
 SRC += $(DIR_COMPONENTS)/src/esp_queue.c
 SRC += $(DIR_LINUX_PORT)/src/platform_wrapper.c
-SRC += nw_helper_func.c test_utils.c
+SRC += nw_helper_func.c test_utils.c app_custom_rpc.c
 
 PWD := $(shell pwd)
 
-all: test stress hosted_shell
+# Check if replxx is installed by looking for the header file
+REPLXX_INSTALLED := $(shell if [ -f /usr/include/replxx.h ] || [ -f /usr/local/include/replxx.h ]; then echo "yes"; else echo "no"; fi)
+
+ifeq ($(REPLXX_INSTALLED), yes)
+    BUILD_SHELL := hosted_shell
+else
+    BUILD_SHELL :=
+    $(warning "replxx library not found. hosted_shell will not be built.")
+    $(warning "You can install it from https://github.com/AmokHuginnsson/replxx")
+    $(warning "Retry building using 'make hosted_shell' in folder 'host/linux/host_control/c_support'")
+endif
+
+all: test stress $(BUILD_SHELL)
 
 test: test.c $(SRC)
 	$(CROSS_COMPILE)$(CC) $(CFLAGS) $(INCLUDE) $(SRC)  $(LINKER) $< -o $(@).out
@@ -52,7 +85,7 @@ stress: stress.c $(SRC)
 	$(CROSS_COMPILE)$(CC) $(CFLAGS) $(CFLAGS_SANITIZE) $(INCLUDE) $(SRC) $(LINKER) $< -o $(@).out -ggdb3 -g
 
 hosted_shell: hosted_shell.c $(SRC)
-	$(CROSS_COMPILE)$(CC) $(CFLAGS) $(CFLAGS_SANITIZE) $(INCLUDE) -o $(@).out $^ $(LINKER) -lreplxx -lstdc++
+	$(CROSS_COMPILE)$(CC) $(CFLAGS) $(CFLAGS_SANITIZE) $(INCLUDE) -o $(@).out $^ $(LINKER) -lreplxx -lstdc++ $(RPATH_FLAGS)
 
 clean:
 	rm -f *.out *.o

@@ -26,6 +26,7 @@
 #include "host_power_save.h"
 #include "esp_timer.h"
 
+
 #define MAC_STR_LEN                 17
 #define MAC2STR(a)                  (a)[0], (a)[1], (a)[2], (a)[3], (a)[4], (a)[5]
 #define MACSTR                      "%02x:%02x:%02x:%02x:%02x:%02x"
@@ -34,7 +35,6 @@
 #define MIN_TX_POWER                8
 #define MAX_TX_POWER                84
 
-#define MAX_STA_CONNECT_ATTEMPTS    3
 
 #define TIMEOUT_IN_MIN              (60*TIMEOUT_IN_SEC)
 #define TIMEOUT_IN_HOUR             (60*TIMEOUT_IN_MIN)
@@ -60,10 +60,9 @@
             }                       \
         }
 
-
 static wifi_config_t new_wifi_config;
 static bool new_config_recvd;
-static bool prev_wifi_config_valid = false;
+static bool prev_wifi_config_valid;
 
 typedef struct esp_ctrl_msg_cmd {
 	int req_num;
@@ -104,6 +103,10 @@ extern esp_err_t wlan_ap_rx_callback(void *buffer, uint16_t len, void *eb);
 extern volatile uint8_t station_connected;
 extern volatile uint8_t softap_started;
 
+
+/* Callback storage */
+static custom_rpc_unserialised_req_handler_t custom_rpc_unserialised_req_handler = NULL;
+
 /* OTA end timer callback */
 void vTimerCallback( TimerHandle_t xTimer )
 {
@@ -141,7 +144,6 @@ static bool wifi_is_provisioned(wifi_config_t *wifi_cfg)
 
 esp_err_t esp_hosted_set_sta_config(wifi_interface_t iface, wifi_config_t *cfg)
 {
-
 	wifi_config_t current_config = {0};
 	if (!wifi_is_provisioned(&current_config)) {
 		if (esp_wifi_set_config(WIFI_IF_STA, cfg) != ESP_OK) {
@@ -547,7 +549,6 @@ err:
 	return ESP_OK;
 }
 
-/* Function connects to received AP configuration. */
 static esp_err_t req_connect_ap_handler (CtrlMsg *req,
 		CtrlMsg *resp, void *priv_data)
 {
@@ -2342,6 +2343,69 @@ static esp_err_t req_enable_disable(CtrlMsg *req,
 	return ESP_OK;
 }
 
+static esp_err_t req_custom_unserialised_rpc_msg_handler(CtrlMsg *req, CtrlMsg *resp, void *priv_data)
+{
+	if (!req || !resp) {
+		ESP_LOGE(TAG, "Invalid parameters");
+		return ESP_FAIL;
+	}
+
+	/* Prepare response */
+	resp->resp_custom_rpc_unserialised_msg = (CtrlMsgRespCustomRpcUnserialisedMsg *)calloc(1, sizeof(CtrlMsgRespCustomRpcUnserialisedMsg));
+	if (!resp->resp_custom_rpc_unserialised_msg) {
+		ESP_LOGE(TAG, "Failed to allocate memory for response");
+		return ESP_FAIL;
+	}
+	ctrl_msg__resp__custom_rpc_unserialised_msg__init(resp->resp_custom_rpc_unserialised_msg);
+
+	/* Default values */
+	resp->resp_custom_rpc_unserialised_msg->resp = FAILURE;
+	resp->payload_case = CTRL_MSG__PAYLOAD_RESP_CUSTOM_RPC_UNSERIALISED_MSG;
+	resp->msg_id = CTRL_MSG_ID__Resp_Custom_RPC_Unserialised_Msg;
+
+	/* Check if handler is registered */
+	if (custom_rpc_unserialised_req_handler) {
+		custom_rpc_unserialised_data_t req_data = {0};
+		custom_rpc_unserialised_data_t resp_data = {0};
+
+		/* Set up request data if available */
+		if (req->req_custom_rpc_unserialised_msg && req->req_custom_rpc_unserialised_msg->data.data && req->req_custom_rpc_unserialised_msg->data.len > 0) {
+			req_data.data = req->req_custom_rpc_unserialised_msg->data.data;
+			req_data.data_len = req->req_custom_rpc_unserialised_msg->data.len;
+		}
+		req_data.custom_msg_id = req->req_custom_rpc_unserialised_msg->custom_msg_id;
+
+		/* Call the callback function */
+		esp_err_t ret = custom_rpc_unserialised_req_handler(&req_data, &resp_data);
+
+		if (ret == ESP_OK) {
+			resp->resp_custom_rpc_unserialised_msg->resp = SUCCESS;
+			resp->resp_custom_rpc_unserialised_msg->data.len = resp_data.data_len;
+			resp->resp_custom_rpc_unserialised_msg->custom_msg_id = resp_data.custom_msg_id;
+			if (resp_data.data && resp_data.data_len > 0) {
+				/* Allocate and copy response data */
+				resp->resp_custom_rpc_unserialised_msg->data.data = malloc(resp_data.data_len);
+				if (resp->resp_custom_rpc_unserialised_msg->data.data) {
+					memcpy(resp->resp_custom_rpc_unserialised_msg->data.data, resp_data.data, resp_data.data_len);
+					resp->resp_custom_rpc_unserialised_msg->data.len = resp_data.data_len;
+				} else {
+					ESP_LOGE(TAG, "Failed to allocate memory in %s", __func__);
+				}
+			}
+		}
+
+		/* Free memory if a free function was provided */
+		if (resp_data.free_func && resp_data.data && resp_data.data_len > 0) {
+			resp_data.free_func(resp_data.data);
+		}
+	} else {
+		ESP_LOGE(TAG, "No handler registered for USR1");
+		resp->resp_custom_rpc_unserialised_msg->resp = FAILURE;
+	}
+
+	return ESP_OK;
+}
+
 static esp_ctrl_msg_req_t req_table[] = {
 	{
 		.req_num = CTRL_MSG_ID__Req_GetMACAddress ,
@@ -2442,6 +2506,10 @@ static esp_ctrl_msg_req_t req_table[] = {
 	{
 		.req_num = CTRL_MSG_ID__Req_GetCountryCode,
 		.command_handler = req_get_country_code_handler
+	},
+	{
+		.req_num = CTRL_MSG_ID__Req_Custom_RPC_Unserialised_Msg,
+		.command_handler = req_custom_unserialised_rpc_msg_handler
 	},
 };
 
@@ -2619,6 +2687,10 @@ static void esp_ctrl_msg_cleanup(CtrlMsg *resp)
 			}
 			mem_free(resp->resp_get_country_code);
 			break;
+		} case (CTRL_MSG_ID__Resp_Custom_RPC_Unserialised_Msg): {
+			mem_free(resp->resp_custom_rpc_unserialised_msg->data.data);
+			mem_free(resp->resp_custom_rpc_unserialised_msg);
+			break;
 		} case (CTRL_MSG_ID__Event_ESPInit) : {
 			mem_free(resp->event_esp_init);
 			break;
@@ -2642,6 +2714,14 @@ static void esp_ctrl_msg_cleanup(CtrlMsg *resp)
 		} case (CTRL_MSG_ID__Event_StationConnectedToESPSoftAP) : {
 			mem_free(resp->event_station_connected_to_esp_softap->mac.data);
 			mem_free(resp->event_station_connected_to_esp_softap);
+			break;
+		} case (CTRL_MSG_ID__Event_Custom_RPC_Unserialised_Msg): {
+			if (resp->event_custom_rpc_unserialised_msg) {
+				if (resp->event_custom_rpc_unserialised_msg->data.data) {
+					mem_free(resp->event_custom_rpc_unserialised_msg->data.data);
+				}
+				mem_free(resp->event_custom_rpc_unserialised_msg);
+			}
 			break;
 		} default: {
 			ESP_LOGE(TAG, "Unsupported CtrlMsg type[%u]",resp->msg_id);
@@ -2963,6 +3043,63 @@ err:
 	return ESP_OK;
 }
 
+static esp_err_t ctrl_ntfy_Custom_RPC_Unserialised_Msg(CtrlMsg *ntfy, const uint8_t *data, ssize_t struct_size)
+{
+	if (!data || struct_size <= 0) {
+		/* len is only struct size, not data length */
+		ESP_LOGE(TAG, "Invalid data or length");
+		return ESP_FAIL;
+	}
+	custom_rpc_unserialised_data_t *event_data = (custom_rpc_unserialised_data_t *)data;
+	uint16_t data_len = event_data->data_len;
+	uint32_t custom_event_id = event_data->custom_msg_id;
+	custom_data_free_func_t free_func = event_data->free_func;
+
+
+	ntfy->msg_id = CTRL_MSG_ID__Event_Custom_RPC_Unserialised_Msg;
+	ntfy->payload_case = CTRL_MSG__PAYLOAD_EVENT_CUSTOM_RPC_UNSERIALISED_MSG;
+	ntfy->event_custom_rpc_unserialised_msg = (CtrlMsgEventCustomRpcUnserialisedMsg *)calloc(1, sizeof(CtrlMsgEventCustomRpcUnserialisedMsg));
+	if (!ntfy->event_custom_rpc_unserialised_msg) {
+		ESP_LOGE(TAG, "Failed to allocate memory for Custom RPC Unserialised Msg");
+		if (free_func && event_data->data) {
+			free_func(event_data->data);
+		}
+		return ESP_FAIL;
+	}
+	ctrl_msg__event__custom_rpc_unserialised_msg__init(ntfy->event_custom_rpc_unserialised_msg);
+
+	ntfy->event_custom_rpc_unserialised_msg->custom_evt_id = custom_event_id;
+
+	if (data_len > 0) {
+		ntfy->event_custom_rpc_unserialised_msg->data.data = (uint8_t *)malloc(data_len);
+		if (!ntfy->event_custom_rpc_unserialised_msg->data.data) {
+			ESP_LOGE(TAG, "Failed to allocate memory for Custom RPC Unserialised Msg data");
+			free(ntfy->event_custom_rpc_unserialised_msg);
+			ntfy->event_custom_rpc_unserialised_msg = NULL;
+			ntfy->payload_case = CTRL_MSG__PAYLOAD__NOT_SET;
+			if (free_func && event_data->data) {
+				free_func(event_data->data);
+			}
+			return ESP_FAIL;
+		}
+		memcpy(ntfy->event_custom_rpc_unserialised_msg->data.data, event_data->data, data_len);
+		ntfy->event_custom_rpc_unserialised_msg->data.len = data_len;
+	} else {
+		ntfy->event_custom_rpc_unserialised_msg->data.data = NULL;
+		ntfy->event_custom_rpc_unserialised_msg->data.len = 0;
+	}
+
+	/* Set event data here */
+	ntfy->event_custom_rpc_unserialised_msg->resp = SUCCESS;
+
+	if (free_func && event_data->data) {
+		/* clear the data from user */
+		free_func(event_data->data);
+	}
+	return ESP_OK;
+}
+
+
 esp_err_t ctrl_notify_handler(uint32_t session_id,const uint8_t *inbuf,
 		ssize_t inlen, uint8_t **outbuf, ssize_t *outlen, void *priv_data)
 {
@@ -2996,6 +3133,9 @@ esp_err_t ctrl_notify_handler(uint32_t session_id,const uint8_t *inbuf,
 			break;
 		} case (CTRL_MSG_ID__Event_StationConnectedToESPSoftAP) : {
 			ret = ctrl_ntfy_StationConnectedToESPSoftAP(&ntfy, inbuf, inlen);
+			break;
+		} case (CTRL_MSG_ID__Event_Custom_RPC_Unserialised_Msg): {
+			ret = ctrl_ntfy_Custom_RPC_Unserialised_Msg(&ntfy, inbuf, inlen);
 			break;
 		} default: {
 			ESP_LOGE(TAG, "Incorrect/unsupported Ctrl Notification[%u]\n",ntfy.msg_id);
@@ -3073,3 +3213,36 @@ static bool is_wifi_config_equal(const wifi_config_t *cfg1, const wifi_config_t 
 
 	return true;
 }
+
+/* Registration functions */
+esp_err_t register_custom_rpc_unserialised_req_handler(custom_rpc_unserialised_req_handler_t handler) {
+	if (handler) {
+		ESP_LOGI(TAG, "Registering handler %p for custom packed RPC request", handler);
+		custom_rpc_unserialised_req_handler = handler;
+		return ESP_OK;
+	}
+	return ESP_FAIL;
+}
+
+esp_err_t unregister_custom_rpc_unserialised_req_handler(void) {
+	if (custom_rpc_unserialised_req_handler) {
+		custom_rpc_unserialised_req_handler = NULL;
+		return ESP_OK;
+	}
+	return ESP_FAIL;
+}
+
+/* Event sending functions */
+esp_err_t send_custom_rpc_unserialised_event(custom_rpc_unserialised_data_t *event_data) {
+	if (!event_data) {
+		ESP_LOGE(TAG, "Invalid event data");
+		return ESP_FAIL;
+	}
+
+	ESP_LOGI(TAG, "Sending custom RPC unserialised Event[%" PRIu32 "], len: %" PRIu32,
+			event_data->custom_msg_id, (uint32_t) event_data->data_len);
+
+	/* Send event to host */
+	return send_event_data_to_host(CTRL_MSG_ID__Event_Custom_RPC_Unserialised_Msg, event_data, sizeof(custom_rpc_unserialised_data_t));
+}
+

@@ -187,14 +187,14 @@ int transport_pserial_send(uint8_t* data, uint16_t data_length)
 	ret = serial_drv_write(serial_handle, write_buf, count, &count);
 	if (ret != SUCCESS) {
 		command_log("Failed to write TX data\n");
-		goto free_bufs2;
+		goto free_bufs;
 	}
+
+	mem_free(write_buf);
 	return SUCCESS;
 
 free_bufs:
 	mem_free(write_buf);
-
-free_bufs2:
 	return FAILURE;
 }
 

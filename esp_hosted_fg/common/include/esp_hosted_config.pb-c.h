@@ -68,6 +68,9 @@ typedef struct CtrlMsgEventStationDisconnectFromAP CtrlMsgEventStationDisconnect
 typedef struct CtrlMsgEventStationConnectedToAP CtrlMsgEventStationConnectedToAP;
 typedef struct CtrlMsgEventStationDisconnectFromESPSoftAP CtrlMsgEventStationDisconnectFromESPSoftAP;
 typedef struct CtrlMsgEventStationConnectedToESPSoftAP CtrlMsgEventStationConnectedToESPSoftAP;
+typedef struct CtrlMsgReqCustomRpcUnserialisedMsg CtrlMsgReqCustomRpcUnserialisedMsg;
+typedef struct CtrlMsgRespCustomRpcUnserialisedMsg CtrlMsgRespCustomRpcUnserialisedMsg;
+typedef struct CtrlMsgEventCustomRpcUnserialisedMsg CtrlMsgEventCustomRpcUnserialisedMsg;
 typedef struct CtrlMsg CtrlMsg;
 
 
@@ -170,11 +173,12 @@ typedef enum _CtrlMsgId {
   CTRL_MSG_ID__Req_GetFwVersion = 123,
   CTRL_MSG_ID__Req_SetCountryCode = 124,
   CTRL_MSG_ID__Req_GetCountryCode = 125,
+  CTRL_MSG_ID__Req_Custom_RPC_Unserialised_Msg = 126,
   /*
    * Add new control path command response before Req_Max
    * and update Req_Max 
    */
-  CTRL_MSG_ID__Req_Max = 126,
+  CTRL_MSG_ID__Req_Max = 127,
   /*
    ** Response Msgs *
    */
@@ -204,11 +208,12 @@ typedef enum _CtrlMsgId {
   CTRL_MSG_ID__Resp_GetFwVersion = 223,
   CTRL_MSG_ID__Resp_SetCountryCode = 224,
   CTRL_MSG_ID__Resp_GetCountryCode = 225,
+  CTRL_MSG_ID__Resp_Custom_RPC_Unserialised_Msg = 226,
   /*
    * Add new control path command response before Resp_Max
    * and update Resp_Max 
    */
-  CTRL_MSG_ID__Resp_Max = 226,
+  CTRL_MSG_ID__Resp_Max = 227,
   /*
    ** Event Msgs *
    */
@@ -219,6 +224,7 @@ typedef enum _CtrlMsgId {
   CTRL_MSG_ID__Event_StationDisconnectFromESPSoftAP = 304,
   CTRL_MSG_ID__Event_StationConnectedToAP = 305,
   CTRL_MSG_ID__Event_StationConnectedToESPSoftAP = 306,
+  CTRL_MSG_ID__Event_Custom_RPC_Unserialised_Msg = 307,
   /*
    * Add new control path command notification before Event_Max
    * and update Event_Max 
@@ -843,6 +849,44 @@ struct  CtrlMsgEventStationConnectedToESPSoftAP
     , 0, {0,NULL}, 0, 0 }
 
 
+/*
+ * Add Custom RPC message structures after existing message structures to make it easily notice 
+ */
+struct  CtrlMsgReqCustomRpcUnserialisedMsg
+{
+  ProtobufCMessage base;
+  uint32_t custom_msg_id;
+  ProtobufCBinaryData data;
+};
+#define CTRL_MSG__REQ__CUSTOM_RPC_UNSERIALISED_MSG__INIT \
+ { PROTOBUF_C_MESSAGE_INIT (&ctrl_msg__req__custom_rpc_unserialised_msg__descriptor) \
+    , 0, {0,NULL} }
+
+
+struct  CtrlMsgRespCustomRpcUnserialisedMsg
+{
+  ProtobufCMessage base;
+  int32_t resp;
+  uint32_t custom_msg_id;
+  ProtobufCBinaryData data;
+};
+#define CTRL_MSG__RESP__CUSTOM_RPC_UNSERIALISED_MSG__INIT \
+ { PROTOBUF_C_MESSAGE_INIT (&ctrl_msg__resp__custom_rpc_unserialised_msg__descriptor) \
+    , 0, 0, {0,NULL} }
+
+
+struct  CtrlMsgEventCustomRpcUnserialisedMsg
+{
+  ProtobufCMessage base;
+  int32_t resp;
+  uint32_t custom_evt_id;
+  ProtobufCBinaryData data;
+};
+#define CTRL_MSG__EVENT__CUSTOM_RPC_UNSERIALISED_MSG__INIT \
+ { PROTOBUF_C_MESSAGE_INIT (&ctrl_msg__event__custom_rpc_unserialised_msg__descriptor) \
+    , 0, 0, {0,NULL} }
+
+
 typedef enum {
   CTRL_MSG__PAYLOAD__NOT_SET = 0,
   CTRL_MSG__PAYLOAD_REQ_GET_MAC_ADDRESS = 101,
@@ -870,6 +914,7 @@ typedef enum {
   CTRL_MSG__PAYLOAD_REQ_GET_FW_VERSION = 123,
   CTRL_MSG__PAYLOAD_REQ_SET_COUNTRY_CODE = 124,
   CTRL_MSG__PAYLOAD_REQ_GET_COUNTRY_CODE = 125,
+  CTRL_MSG__PAYLOAD_REQ_CUSTOM_RPC_UNSERIALISED_MSG = 126,
   CTRL_MSG__PAYLOAD_RESP_GET_MAC_ADDRESS = 201,
   CTRL_MSG__PAYLOAD_RESP_SET_MAC_ADDRESS = 202,
   CTRL_MSG__PAYLOAD_RESP_GET_WIFI_MODE = 203,
@@ -895,12 +940,14 @@ typedef enum {
   CTRL_MSG__PAYLOAD_RESP_GET_FW_VERSION = 223,
   CTRL_MSG__PAYLOAD_RESP_SET_COUNTRY_CODE = 224,
   CTRL_MSG__PAYLOAD_RESP_GET_COUNTRY_CODE = 225,
+  CTRL_MSG__PAYLOAD_RESP_CUSTOM_RPC_UNSERIALISED_MSG = 226,
   CTRL_MSG__PAYLOAD_EVENT_ESP_INIT = 301,
   CTRL_MSG__PAYLOAD_EVENT_HEARTBEAT = 302,
   CTRL_MSG__PAYLOAD_EVENT_STATION_DISCONNECT_FROM__AP = 303,
   CTRL_MSG__PAYLOAD_EVENT_STATION_DISCONNECT_FROM__ESP__SOFT_AP = 304,
   CTRL_MSG__PAYLOAD_EVENT_STATION_CONNECTED_TO__AP = 305,
-  CTRL_MSG__PAYLOAD_EVENT_STATION_CONNECTED_TO__ESP__SOFT_AP = 306
+  CTRL_MSG__PAYLOAD_EVENT_STATION_CONNECTED_TO__ESP__SOFT_AP = 306,
+  CTRL_MSG__PAYLOAD_EVENT_CUSTOM_RPC_UNSERIALISED_MSG = 307
     PROTOBUF_C__FORCE_ENUM_TO_BE_INT_SIZE(CTRL_MSG__PAYLOAD__CASE)
 } CtrlMsg__PayloadCase;
 
@@ -953,6 +1000,7 @@ struct  CtrlMsg
     CtrlMsgReqGetFwVersion *req_get_fw_version;
     CtrlMsgReqSetCountryCode *req_set_country_code;
     CtrlMsgReqGetCountryCode *req_get_country_code;
+    CtrlMsgReqCustomRpcUnserialisedMsg *req_custom_rpc_unserialised_msg;
     /*
      ** Responses *
      */
@@ -981,6 +1029,7 @@ struct  CtrlMsg
     CtrlMsgRespGetFwVersion *resp_get_fw_version;
     CtrlMsgRespSetCountryCode *resp_set_country_code;
     CtrlMsgRespGetCountryCode *resp_get_country_code;
+    CtrlMsgRespCustomRpcUnserialisedMsg *resp_custom_rpc_unserialised_msg;
     /*
      ** Notifications *
      */
@@ -990,6 +1039,7 @@ struct  CtrlMsg
     CtrlMsgEventStationDisconnectFromESPSoftAP *event_station_disconnect_from_esp_softap;
     CtrlMsgEventStationConnectedToAP *event_station_connected_to_ap;
     CtrlMsgEventStationConnectedToESPSoftAP *event_station_connected_to_esp_softap;
+    CtrlMsgEventCustomRpcUnserialisedMsg *event_custom_rpc_unserialised_msg;
   };
 };
 #define CTRL_MSG__INIT \
@@ -2004,6 +2054,63 @@ CtrlMsgEventStationConnectedToESPSoftAP *
 void   ctrl_msg__event__station_connected_to_espsoft_ap__free_unpacked
                      (CtrlMsgEventStationConnectedToESPSoftAP *message,
                       ProtobufCAllocator *allocator);
+/* CtrlMsgReqCustomRpcUnserialisedMsg methods */
+void   ctrl_msg__req__custom_rpc_unserialised_msg__init
+                     (CtrlMsgReqCustomRpcUnserialisedMsg         *message);
+size_t ctrl_msg__req__custom_rpc_unserialised_msg__get_packed_size
+                     (const CtrlMsgReqCustomRpcUnserialisedMsg   *message);
+size_t ctrl_msg__req__custom_rpc_unserialised_msg__pack
+                     (const CtrlMsgReqCustomRpcUnserialisedMsg   *message,
+                      uint8_t             *out);
+size_t ctrl_msg__req__custom_rpc_unserialised_msg__pack_to_buffer
+                     (const CtrlMsgReqCustomRpcUnserialisedMsg   *message,
+                      ProtobufCBuffer     *buffer);
+CtrlMsgReqCustomRpcUnserialisedMsg *
+       ctrl_msg__req__custom_rpc_unserialised_msg__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data);
+void   ctrl_msg__req__custom_rpc_unserialised_msg__free_unpacked
+                     (CtrlMsgReqCustomRpcUnserialisedMsg *message,
+                      ProtobufCAllocator *allocator);
+/* CtrlMsgRespCustomRpcUnserialisedMsg methods */
+void   ctrl_msg__resp__custom_rpc_unserialised_msg__init
+                     (CtrlMsgRespCustomRpcUnserialisedMsg         *message);
+size_t ctrl_msg__resp__custom_rpc_unserialised_msg__get_packed_size
+                     (const CtrlMsgRespCustomRpcUnserialisedMsg   *message);
+size_t ctrl_msg__resp__custom_rpc_unserialised_msg__pack
+                     (const CtrlMsgRespCustomRpcUnserialisedMsg   *message,
+                      uint8_t             *out);
+size_t ctrl_msg__resp__custom_rpc_unserialised_msg__pack_to_buffer
+                     (const CtrlMsgRespCustomRpcUnserialisedMsg   *message,
+                      ProtobufCBuffer     *buffer);
+CtrlMsgRespCustomRpcUnserialisedMsg *
+       ctrl_msg__resp__custom_rpc_unserialised_msg__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data);
+void   ctrl_msg__resp__custom_rpc_unserialised_msg__free_unpacked
+                     (CtrlMsgRespCustomRpcUnserialisedMsg *message,
+                      ProtobufCAllocator *allocator);
+/* CtrlMsgEventCustomRpcUnserialisedMsg methods */
+void   ctrl_msg__event__custom_rpc_unserialised_msg__init
+                     (CtrlMsgEventCustomRpcUnserialisedMsg         *message);
+size_t ctrl_msg__event__custom_rpc_unserialised_msg__get_packed_size
+                     (const CtrlMsgEventCustomRpcUnserialisedMsg   *message);
+size_t ctrl_msg__event__custom_rpc_unserialised_msg__pack
+                     (const CtrlMsgEventCustomRpcUnserialisedMsg   *message,
+                      uint8_t             *out);
+size_t ctrl_msg__event__custom_rpc_unserialised_msg__pack_to_buffer
+                     (const CtrlMsgEventCustomRpcUnserialisedMsg   *message,
+                      ProtobufCBuffer     *buffer);
+CtrlMsgEventCustomRpcUnserialisedMsg *
+       ctrl_msg__event__custom_rpc_unserialised_msg__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data);
+void   ctrl_msg__event__custom_rpc_unserialised_msg__free_unpacked
+                     (CtrlMsgEventCustomRpcUnserialisedMsg *message,
+                      ProtobufCAllocator *allocator);
 /* CtrlMsg methods */
 void   ctrl_msg__init
                      (CtrlMsg         *message);
@@ -2184,6 +2291,15 @@ typedef void (*CtrlMsgEventStationDisconnectFromESPSoftAP_Closure)
 typedef void (*CtrlMsgEventStationConnectedToESPSoftAP_Closure)
                  (const CtrlMsgEventStationConnectedToESPSoftAP *message,
                   void *closure_data);
+typedef void (*CtrlMsgReqCustomRpcUnserialisedMsg_Closure)
+                 (const CtrlMsgReqCustomRpcUnserialisedMsg *message,
+                  void *closure_data);
+typedef void (*CtrlMsgRespCustomRpcUnserialisedMsg_Closure)
+                 (const CtrlMsgRespCustomRpcUnserialisedMsg *message,
+                  void *closure_data);
+typedef void (*CtrlMsgEventCustomRpcUnserialisedMsg_Closure)
+                 (const CtrlMsgEventCustomRpcUnserialisedMsg *message,
+                  void *closure_data);
 typedef void (*CtrlMsg_Closure)
                  (const CtrlMsg *message,
                   void *closure_data);
@@ -2256,6 +2372,9 @@ extern const ProtobufCMessageDescriptor ctrl_msg__event__station_disconnect_from
 extern const ProtobufCMessageDescriptor ctrl_msg__event__station_connected_to_ap__descriptor;
 extern const ProtobufCMessageDescriptor ctrl_msg__event__station_disconnect_from_espsoft_ap__descriptor;
 extern const ProtobufCMessageDescriptor ctrl_msg__event__station_connected_to_espsoft_ap__descriptor;
+extern const ProtobufCMessageDescriptor ctrl_msg__req__custom_rpc_unserialised_msg__descriptor;
+extern const ProtobufCMessageDescriptor ctrl_msg__resp__custom_rpc_unserialised_msg__descriptor;
+extern const ProtobufCMessageDescriptor ctrl_msg__event__custom_rpc_unserialised_msg__descriptor;
 extern const ProtobufCMessageDescriptor ctrl_msg__descriptor;
 
 PROTOBUF_C__END_DECLS

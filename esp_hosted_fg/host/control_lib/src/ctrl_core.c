@@ -65,11 +65,13 @@
     }
 
 #define CHECK_CTRL_MSG_FAILED(msGparaM)                                       \
-	app_resp->resp_event_status = ctrl_msg->msGparaM->resp;                   \
+    app_resp->resp_event_status = ctrl_msg->msGparaM->resp;                   \
     if (ctrl_msg->msGparaM->resp) {                                           \
-        command_log("Failure[%d] resp/event: possibly precondition not met\n", (int)app_resp->resp_event_status);   \
+        command_log("Failed resp/event id[%d]: err[%d]\n",                    \
+            (int)ctrl_msg->msg_id, (int)ctrl_msg->msGparaM->resp);            \
         goto fail_parse_ctrl_msg;                                             \
     }
+
 
 #define CTRL_ALLOC_ASSIGN(TyPe,MsG_StRuCt)                                    \
     TyPe *req_payload = (TyPe *)                                              \
@@ -200,14 +202,18 @@ static int ctrl_app_parse_event(CtrlMsg *ctrl_msg, ctrl_cmd_t *app_ntfy)
 			//		ctrl_msg->event_station_connected_to_ap->resp);
 			app_ntfy->resp_event_status = ctrl_msg->event_station_connected_to_ap->resp;
 			if(SUCCESS==app_ntfy->resp_event_status) {
-				strncpy((char *)app_ntfy->u.e_sta_conn.ssid,
+				if (ctrl_msg->event_station_connected_to_ap->ssid.len && ctrl_msg->event_station_connected_to_ap->ssid.data) {
+					strncpy((char *)app_ntfy->u.e_sta_conn.ssid,
 						(char *)ctrl_msg->event_station_connected_to_ap->ssid.data,
 						ctrl_msg->event_station_connected_to_ap->ssid.len);
+				}
 				app_ntfy->u.e_sta_conn.ssid_len = ctrl_msg->event_station_connected_to_ap->ssid_len;
 
-				strncpy((char *)app_ntfy->u.e_sta_conn.bssid,
-						(char *)ctrl_msg->event_station_connected_to_ap->bssid.data,
-						ctrl_msg->event_station_connected_to_ap->bssid.len);
+				if (ctrl_msg->event_station_connected_to_ap->bssid.len && ctrl_msg->event_station_connected_to_ap->bssid.data) {
+					strncpy((char *)app_ntfy->u.e_sta_conn.bssid,
+							(char *)ctrl_msg->event_station_connected_to_ap->bssid.data,
+							ctrl_msg->event_station_connected_to_ap->bssid.len);
+				}
 
 				app_ntfy->u.e_sta_conn.channel = ctrl_msg->event_station_connected_to_ap->channel;
 				app_ntfy->u.e_sta_conn.authmode = ctrl_msg->event_station_connected_to_ap->authmode;
@@ -220,14 +226,18 @@ static int ctrl_app_parse_event(CtrlMsg *ctrl_msg, ctrl_cmd_t *app_ntfy)
 			//		ctrl_msg->event_station_disconnect_from_ap->resp);
 			app_ntfy->resp_event_status = ctrl_msg->event_station_disconnect_from_ap->resp;
 			if(SUCCESS==app_ntfy->resp_event_status) {
-				strncpy((char *)app_ntfy->u.e_sta_disconn.ssid,
-						(char *)ctrl_msg->event_station_disconnect_from_ap->ssid.data,
-						ctrl_msg->event_station_disconnect_from_ap->ssid.len);
+				if (ctrl_msg->event_station_disconnect_from_ap->ssid.len && ctrl_msg->event_station_disconnect_from_ap->ssid.data) {
+					strncpy((char *)app_ntfy->u.e_sta_disconn.ssid,
+							(char *)ctrl_msg->event_station_disconnect_from_ap->ssid.data,
+							ctrl_msg->event_station_disconnect_from_ap->ssid.len);
+				}
 				app_ntfy->u.e_sta_disconn.ssid_len = ctrl_msg->event_station_disconnect_from_ap->ssid_len;
 
-				strncpy((char *)app_ntfy->u.e_sta_disconn.bssid,
-						(char *)ctrl_msg->event_station_disconnect_from_ap->bssid.data,
-						ctrl_msg->event_station_disconnect_from_ap->bssid.len);
+				if (ctrl_msg->event_station_disconnect_from_ap->bssid.len && ctrl_msg->event_station_disconnect_from_ap->bssid.data) {
+					strncpy((char *)app_ntfy->u.e_sta_disconn.bssid,
+							(char *)ctrl_msg->event_station_disconnect_from_ap->bssid.data,
+							ctrl_msg->event_station_disconnect_from_ap->bssid.len);
+				}
 
 				app_ntfy->u.e_sta_disconn.reason = ctrl_msg->event_station_disconnect_from_ap->reason;
 				app_ntfy->u.e_sta_disconn.rssi = ctrl_msg->event_station_disconnect_from_ap->rssi;
@@ -242,9 +252,11 @@ static int ctrl_app_parse_event(CtrlMsg *ctrl_msg, ctrl_cmd_t *app_ntfy)
 				CHECK_CTRL_MSG_NON_NULL_VAL(
 					ctrl_msg->event_station_connected_to_esp_softap->mac.data,
 					"NULL mac");
-				strncpy((char *)app_ntfy->u.e_softap_sta_conn.mac,
-					(char *)ctrl_msg->event_station_connected_to_esp_softap->mac.data,
-					ctrl_msg->event_station_connected_to_esp_softap->mac.len);
+				if (ctrl_msg->event_station_connected_to_esp_softap->mac.len && ctrl_msg->event_station_connected_to_esp_softap->mac.data) {
+					strncpy((char *)app_ntfy->u.e_softap_sta_conn.mac,
+						(char *)ctrl_msg->event_station_connected_to_esp_softap->mac.data,
+						ctrl_msg->event_station_connected_to_esp_softap->mac.len);
+				}
 				//command_log("EVENT: SoftAP mode: Disconnect MAC[%s]\n",
 				//		app_ntfy->u.e_softap_sta_conn.mac);
 				app_ntfy->u.e_softap_sta_conn.aid =
@@ -262,9 +274,11 @@ static int ctrl_app_parse_event(CtrlMsg *ctrl_msg, ctrl_cmd_t *app_ntfy)
 				CHECK_CTRL_MSG_NON_NULL_VAL(
 					ctrl_msg->event_station_disconnect_from_esp_softap->mac.data,
 					"NULL mac");
-				strncpy((char *)app_ntfy->u.e_softap_sta_disconn.mac,
-					(char *)ctrl_msg->event_station_disconnect_from_esp_softap->mac.data,
-					ctrl_msg->event_station_disconnect_from_esp_softap->mac.len);
+				if (ctrl_msg->event_station_disconnect_from_esp_softap->mac.len && ctrl_msg->event_station_disconnect_from_esp_softap->mac.data) {
+					strncpy((char *)app_ntfy->u.e_softap_sta_disconn.mac,
+						(char *)ctrl_msg->event_station_disconnect_from_esp_softap->mac.data,
+						ctrl_msg->event_station_disconnect_from_esp_softap->mac.len);
+				}
 				//command_log("EVENT: SoftAP mode: Disconnect MAC[%s]\n",
 				//		app_ntfy->u.e_softap_sta_disconn.mac);
 				app_ntfy->u.e_softap_sta_disconn.aid =
@@ -273,6 +287,34 @@ static int ctrl_app_parse_event(CtrlMsg *ctrl_msg, ctrl_cmd_t *app_ntfy)
 					ctrl_msg->event_station_disconnect_from_esp_softap->is_mesh_child;
 				app_ntfy->u.e_softap_sta_disconn.reason =
 					ctrl_msg->event_station_disconnect_from_esp_softap->reason;
+			}
+			break;
+		} case CTRL_EVENT_CUSTOM_RPC_UNSERIALISED_MSG: {
+			CHECK_CTRL_MSG_NON_NULL(event_custom_rpc_unserialised_msg);
+			app_ntfy->resp_event_status = ctrl_msg->event_custom_rpc_unserialised_msg->resp;
+			app_ntfy->u.custom_rpc_unserialised_data.custom_msg_id = ctrl_msg->event_custom_rpc_unserialised_msg->custom_evt_id;
+			app_ntfy->u.custom_rpc_unserialised_data.data_len = ctrl_msg->event_custom_rpc_unserialised_msg->data.len;
+
+			/* Properly allocate memory and copy data */
+			if (ctrl_msg->event_custom_rpc_unserialised_msg->data.data &&
+				ctrl_msg->event_custom_rpc_unserialised_msg->data.len > 0) {
+
+				app_ntfy->u.custom_rpc_unserialised_data.data = hosted_malloc(ctrl_msg->event_custom_rpc_unserialised_msg->data.len);
+				if (!app_ntfy->u.custom_rpc_unserialised_data.data) {
+					command_log("Failed to allocate memory for custom RPC event data\n");
+					app_ntfy->resp_event_status = CTRL_ERR_MEMORY_FAILURE;
+					goto fail_parse_ctrl_msg;
+				}
+
+				memcpy(app_ntfy->u.custom_rpc_unserialised_data.data,
+					ctrl_msg->event_custom_rpc_unserialised_msg->data.data,
+					ctrl_msg->event_custom_rpc_unserialised_msg->data.len);
+
+				/* Set free function to handle memory cleanup */
+				app_ntfy->free_buffer_func = hosted_free;
+				app_ntfy->free_buffer_handle = app_ntfy->u.custom_rpc_unserialised_data.data;
+			} else {
+				app_ntfy->u.custom_rpc_unserialised_data.data = NULL;
 			}
 			break;
 		} default: {
@@ -328,9 +370,11 @@ static int ctrl_app_parse_resp(CtrlMsg *ctrl_msg, ctrl_cmd_t *app_resp)
 			CHECK_CTRL_MSG_NON_NULL(resp_get_mac_address->mac.data);
 			CHECK_CTRL_MSG_FAILED(resp_get_mac_address);
 
-			strncpy(app_resp->u.wifi_mac.mac,
-				(char *)ctrl_msg->resp_get_mac_address->mac.data, len_l);
-			app_resp->u.wifi_mac.mac[len_l] = '\0';
+			if (ctrl_msg->resp_get_mac_address->mac.len && ctrl_msg->resp_get_mac_address->mac.data) {
+				strncpy(app_resp->u.wifi_mac.mac,
+					(char *)ctrl_msg->resp_get_mac_address->mac.data, len_l);
+				app_resp->u.wifi_mac.mac[len_l] = '\0';
+			}
 			break;
 		} case CTRL_RESP_SET_MAC_ADDRESS : {
 			CHECK_CTRL_MSG_NON_NULL(resp_set_mac_address);
@@ -401,13 +445,13 @@ static int ctrl_app_parse_resp(CtrlMsg *ctrl_msg, ctrl_cmd_t *app_resp)
 				case SUCCESS:
 					strncpy(p->status, SUCCESS_STR, STATUS_LENGTH);
 					p->status[STATUS_LENGTH-1] = '\0';
-					if (ctrl_msg->resp_get_ap_config->ssid.data) {
+					if (ctrl_msg->resp_get_ap_config->ssid.data && ctrl_msg->resp_get_ap_config->ssid.len) {
 						strncpy((char *)p->ssid,
 								(char *)ctrl_msg->resp_get_ap_config->ssid.data,
 								MAX_SSID_LENGTH-1);
 						p->ssid[MAX_SSID_LENGTH-1] ='\0';
 					}
-					if (ctrl_msg->resp_get_ap_config->bssid.data) {
+					if (ctrl_msg->resp_get_ap_config->bssid.data && ctrl_msg->resp_get_ap_config->bssid.len) {
 						uint8_t len_l = 0;
 
 						len_l = min(ctrl_msg->resp_get_ap_config->bssid.len,
@@ -441,7 +485,7 @@ static int ctrl_app_parse_resp(CtrlMsg *ctrl_msg, ctrl_cmd_t *app_resp)
 			app_resp->resp_event_status = ctrl_msg->resp_connect_ap->resp;
 
 			if (ctrl_msg->resp_connect_ap->resp) {
-				command_log("Connect AP failed, Reason[%d]\n", ctrl_msg->resp_connect_ap->resp);
+				//command_log("Connect AP Req failed, Reason[%d]\n", ctrl_msg->resp_connect_ap->resp);
 			}
 			switch(ctrl_msg->resp_connect_ap->resp) {
 				case CTRL_ERR_INVALID_PASSWORD:
@@ -458,17 +502,16 @@ static int ctrl_app_parse_resp(CtrlMsg *ctrl_msg, ctrl_cmd_t *app_resp)
 					CHECK_CTRL_MSG_FAILED(resp_connect_ap);
 					break;
 				default:
-					command_log("Connect AP failed, Reason[%u]\n", ctrl_msg->resp_connect_ap->resp);
 					CHECK_CTRL_MSG_FAILED(resp_connect_ap);
 					goto fail_parse_ctrl_msg;
 					break;
 			}
 			len_l = min(ctrl_msg->resp_connect_ap->mac.len, MAX_MAC_STR_SIZE-1);
-			if (ctrl_msg->resp_connect_ap->mac.data) {
+			if (ctrl_msg->resp_connect_ap->mac.data && ctrl_msg->resp_connect_ap->mac.len) {
 				strncpy(app_resp->u.wifi_ap_config.out_mac,
 						(char *)ctrl_msg->resp_connect_ap->mac.data, len_l);
+				app_resp->u.wifi_ap_config.out_mac[len_l] = '\0';
 			}
-			app_resp->u.wifi_ap_config.out_mac[len_l] = '\0';
 			break;
 		} case CTRL_RESP_DISCONNECT_AP : {
 			CHECK_CTRL_MSG_NON_NULL(resp_disconnect_ap);
@@ -522,9 +565,11 @@ static int ctrl_app_parse_resp(CtrlMsg *ctrl_msg, ctrl_cmd_t *app_resp)
 			CHECK_CTRL_MSG_NON_NULL(resp_start_softap->mac.data);
 
 			len_l = min(ctrl_msg->resp_connect_ap->mac.len, MAX_MAC_STR_SIZE-1);
-			strncpy(app_resp->u.wifi_softap_config.out_mac,
-					(char *)ctrl_msg->resp_connect_ap->mac.data, len_l);
-			app_resp->u.wifi_softap_config.out_mac[len_l] = '\0';
+			if (ctrl_msg->resp_connect_ap->mac.data && ctrl_msg->resp_connect_ap->mac.len) {
+				strncpy(app_resp->u.wifi_softap_config.out_mac,
+						(char *)ctrl_msg->resp_connect_ap->mac.data, len_l);
+				app_resp->u.wifi_softap_config.out_mac[len_l] = '\0';
+			}
 			app_resp->u.wifi_softap_config.band_mode = ctrl_msg->resp_connect_ap->band_mode;
 			break;
 		} case CTRL_RESP_GET_SOFTAP_CONN_STA_LIST : {
@@ -632,14 +677,34 @@ static int ctrl_app_parse_resp(CtrlMsg *ctrl_msg, ctrl_cmd_t *app_resp)
 			CHECK_CTRL_MSG_NON_NULL(resp_get_fw_version);
 			CHECK_CTRL_MSG_FAILED(resp_get_fw_version);
 
-			strncpy(app_resp->u.fw_version.project_name,
-					ctrl_msg->resp_get_fw_version->name,
-					sizeof(app_resp->u.fw_version.project_name) - 1);
+			if (ctrl_msg->resp_get_fw_version->name) {
+				strncpy(app_resp->u.fw_version.project_name,
+						ctrl_msg->resp_get_fw_version->name,
+						sizeof(app_resp->u.fw_version.project_name) - 1);
+			}
 			app_resp->u.fw_version.major_1 = ctrl_msg->resp_get_fw_version->major1;
 			app_resp->u.fw_version.major_2 = ctrl_msg->resp_get_fw_version->major2;
 			app_resp->u.fw_version.minor = ctrl_msg->resp_get_fw_version->minor;
 			app_resp->u.fw_version.revision_patch_1 = ctrl_msg->resp_get_fw_version->rev_patch1;
 			app_resp->u.fw_version.revision_patch_2 = ctrl_msg->resp_get_fw_version->rev_patch2;
+			break;
+		} case CTRL_RESP_CUSTOM_RPC_UNSERIALISED_MSG: {
+			CtrlMsgRespCustomRpcUnserialisedMsg *p_c = ctrl_msg->resp_custom_rpc_unserialised_msg;
+			custom_rpc_unserialised_data_t *p_a = &app_resp->u.custom_rpc_unserialised_data;
+			CHECK_CTRL_MSG_NON_NULL(resp_custom_rpc_unserialised_msg);
+			CHECK_CTRL_MSG_FAILED(resp_custom_rpc_unserialised_msg);
+			p_a->custom_msg_id = p_c->custom_msg_id;
+			p_a->data_len = p_c->data.len;
+			if (p_a->data_len && p_c->data.data) {
+				p_a->data = hosted_malloc(p_a->data_len);
+				if (!p_a->data) {
+					command_log("Failed to allocate data for custom RPC unserialised message\n");
+					goto fail_parse_ctrl_msg;
+				}
+				memcpy(p_a->data, p_c->data.data, p_a->data_len);
+				app_resp->free_buffer_func = hosted_free;
+				app_resp->free_buffer_handle = p_a->data;
+			}
 			break;
 		} default: {
 			command_log("Unsupported Control Resp[%u]\n", ctrl_msg->msg_id);
@@ -768,12 +833,7 @@ static int process_ctrl_rx_msg(CtrlMsg * proto_msg, ctrl_rx_ind_t ctrl_rx_func)
 
 		/* Decode protobuf buffer of response and
 		 * copy into app structures */
-		if (ctrl_app_parse_resp(proto_msg, app_resp)) {
-			// failed to parse response into app_resp
-			if (app_resp)
-				mem_free(app_resp);
-			return FAILURE;
-		}
+		ctrl_app_parse_resp(proto_msg, app_resp);
 
 		/* Is callback is available,
 		 * progress as async response */
@@ -1105,6 +1165,22 @@ int set_event_callback(int event, ctrl_resp_cb_t event_cb)
 	ctrl_event_cb_table[event_cb_tbl_idx] = event_cb;
 	return CALLBACK_SET_SUCCESS;
 }
+
+/* Get control event callback
+ * Returns:
+ * > NULL - If event is not registered with hosted control lib
+ * > Function pointer - Returns the registered event callback
+ **/
+ctrl_resp_cb_t get_event_callback(int event)
+{
+	int event_cb_tbl_idx = event - CTRL_EVENT_BASE;
+	if ((event<=CTRL_EVENT_BASE) || (event>=CTRL_EVENT_MAX)) {
+		command_log("Could not identify event[%u]\n", event);
+		return NULL;
+	}
+	return ctrl_event_cb_table[event_cb_tbl_idx];
+}
+
 
 /* Assign NULL event callback */
 int reset_event_callback(int event)
@@ -1503,6 +1579,13 @@ int ctrl_app_send_req(ctrl_cmd_t *app_req)
 			req_payload->enable = app_req->u.feat_ena_disable.enable;
 			command_log("%sable feature [%d]\n", (req_payload->enable)? "en": "dis", req_payload->feature);
 			break;
+		} case CTRL_REQ_CUSTOM_RPC_UNSERIALISED_MSG: {
+			CTRL_ALLOC_ASSIGN(CtrlMsgReqCustomRpcUnserialisedMsg, req_custom_rpc_unserialised_msg);
+			ctrl_msg__req__custom_rpc_unserialised_msg__init(req_payload);
+			req_payload->custom_msg_id = app_req->u.custom_rpc_unserialised_data.custom_msg_id;
+			req_payload->data.data = app_req->u.custom_rpc_unserialised_data.data;
+			req_payload->data.len = app_req->u.custom_rpc_unserialised_data.data_len;
+			break;
 		} default: {
 			failure_status = CTRL_ERR_UNSUPPORTED_MSG;
 			command_log("RPC Req[%u] unsupported\n",req.msg_id);
@@ -1562,15 +1645,7 @@ int ctrl_app_send_req(ctrl_cmd_t *app_req)
 	}
 
 
-
-	/* 9. Free hook for application */
-	if (app_req->free_buffer_handle) {
-		if (app_req->free_buffer_func) {
-			app_req->free_buffer_func(app_req->free_buffer_handle);
-		}
-	}
-
-	/* 10. Cleanup */
+	/* 9. Cleanup */
 	mem_free(tx_data);
 	mem_free(buff_to_free2);
 	mem_free(buff_to_free1);
@@ -1585,7 +1660,7 @@ fail_req:
 	//TODO: need to test below and possibly remove redundant code
 	// if(!async_timer_handle && app_req->ctrl_resp_cb) {
 	if (app_req->ctrl_resp_cb) {
-		/* 11. In case of async procedure,
+		/* 10. In case of async procedure,
 		 * Let application know of failure using callback itself
 		 **/
 		ctrl_cmd_t *app_resp = NULL;
@@ -1599,19 +1674,13 @@ fail_req:
 		app_resp->msg_id = (app_req->msg_id - CTRL_REQ_BASE + CTRL_RESP_BASE);
 		app_resp->resp_event_status = failure_status;
 
-		/* 12. In async procedure, it is important to get
+		/* 11. In async procedure, it is important to get
 		 * some kind of acknowledgement to user */
 		app_req->ctrl_resp_cb(app_resp);
 	}
 
 fail_req2:
-	/* 13. Cleanup */
-	if (app_req->free_buffer_handle) {
-		if (app_req->free_buffer_func) {
-			app_req->free_buffer_func(app_req->free_buffer_handle);
-		}
-	}
-
+	/* 12. Cleanup */
 	mem_free(tx_data);
 	mem_free(buff_to_free2);
 	mem_free(buff_to_free1);
@@ -1699,5 +1768,4 @@ int init_hosted_control_lib_internal(void)
 free_bufs:
 	deinit_hosted_control_lib_internal();
 	return FAILURE;
-
 }
