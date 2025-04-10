@@ -139,12 +139,6 @@ static int esp_open(struct net_device *ndev)
 	/* Reset stats */
 	memset(&priv->stats, 0, sizeof(priv->stats));
 
-	/* Start with queue stopped until we're ready */
-	netif_stop_queue(ndev);
-
-	/* Now we can start */
-	netif_start_queue(ndev);
-
 	return 0;
 }
 
@@ -152,9 +146,6 @@ static int esp_stop(struct net_device *ndev)
 {
 	if (!ndev)
 		return -EINVAL;
-
-	netif_stop_queue(ndev);
-	netif_carrier_off(ndev);
 
 	return 0;
 }
@@ -578,14 +569,16 @@ void esp_tx_pause(void)
     }
 }
 
-static void esp_tx_resume(void)
+void esp_tx_resume(void)
 {
     struct esp_private *priv;
     int i;
 
+#if 0
     /* Only resume if we're below threshold */
     if (atomic_read(&tx_pending) >= TX_RESUME_THRESHOLD)
         return;
+#endif
 
     for (i = 0; i < ESP_MAX_INTERFACE; i++) {
         priv = adapter.priv[i];

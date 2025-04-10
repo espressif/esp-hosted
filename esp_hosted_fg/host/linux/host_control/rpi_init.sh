@@ -146,6 +146,11 @@ build_c_demo_app() {
         log "Failed to build test app"
         exit 1
     fi
+    make -j8 hosted_shell
+    if [ $? -ne 0 ]; then
+        log "Failed to build test app"
+        exit 1
+    fi
 
     cd ..
     log_exit

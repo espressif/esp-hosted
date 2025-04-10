@@ -25,6 +25,8 @@
 #define NETWORK_CHECK_INTERVAL_MS 1000
 #define RPC_RETRY_INTERVAL_MS     1000
 
+#define POLL_FOR_IP_RESTORE  (0)
+
 /* Define WiFi band mode constants */
 #define WIFI_BAND_MODE_AUTO 3
 #define WIFI_BAND_MODE_24G  1
@@ -617,18 +619,20 @@ static int handle_connect(int argc, char **argv) {
                                          "--band_mode");
 
     /* Use default values from ctrl_config.h if arguments are not provided */
-    if (!ssid) {
-        ssid = STATION_MODE_SSID;
-        printf("Using pre-configured SSID: %s\n", ssid);
+    if (!ssid || strlen(ssid)==0) {
+        printf("SSID is mandatory\n");
+        return FAILURE;
     }
+#if 0
     if (!pwd) {
         pwd = STATION_MODE_PWD;
         printf("Using pre-configured password: %s\n", pwd);
     }
+#endif
 
     if (!bssid) {
         bssid = STATION_MODE_BSSID;
-        printf("Using pre-configured BSSID: %s\n", bssid);
+        //printf("Using pre-configured BSSID: %s\n", bssid);
     }
 
     bool use_wpa3_value = use_wpa3 ? is_arg_true(use_wpa3) : STATION_MODE_IS_WPA3_SUPPORTED;
@@ -995,11 +999,13 @@ static void shell_cleanup(shell_context_t *ctx) {
 static void *auto_ip_restore_thread_handler(void *arg) {
     shell_context_t *ctx = (shell_context_t *)arg;
 
+#if POLL_FOR_IP_RESTORE
 /* Also add the IP variables needed */
 #define MAX_IP_FETCH_RETRIES 5         /* Maximum retries for fetching IP */
 static int ip_fetch_retry_count = 0;   /* Counter for IP fetch retries */
 
     #define IP_FETCH_RETRY_DELAY_MS 500    /* 500ms */
+#endif
 
     (void)ctx;
 
@@ -1043,6 +1049,8 @@ static int ip_fetch_retry_count = 0;   /* Counter for IP fetch retries */
 
         /* Main monitoring loop */
         while (!exit_auto_ip_restore && rpc_state == RPC_STATE_ACTIVE) {
+
+#if POLL_FOR_IP_RESTORE
             /* Refresh MAC addresses if they're empty */
             if (sta_network.mac_addr[0] == '\0') {
                 test_station_mode_get_mac_addr(sta_network.mac_addr);
@@ -1090,7 +1098,7 @@ static int ip_fetch_retry_count = 0;   /* Counter for IP fetch retries */
                     }
                 }
             }
-
+#endif
             usleep(NETWORK_CHECK_INTERVAL_MS * 1000);
         }
 

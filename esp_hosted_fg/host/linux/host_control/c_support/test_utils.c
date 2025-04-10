@@ -153,8 +153,8 @@ static int ctrl_app_event_callback(ctrl_cmd_t *app_event) {
 
     switch(app_event->msg_id) {
 		case CTRL_EVENT_ESP_INIT: {
-			printf("%s App EVENT: ESP INIT\n",
-				get_timestamp(ts, MIN_TIMESTAMP_STR_SIZE));
+			/*printf("%s App EVENT: ESP INIT\n",
+				get_timestamp(ts, MIN_TIMESTAMP_STR_SIZE));*/
 			break;
 		} case CTRL_EVENT_HEARTBEAT: {
 			printf("%s App EVENT: Heartbeat event [%d]\n",
@@ -245,7 +245,7 @@ static int ctrl_app_event_callback(ctrl_cmd_t *app_event) {
 				//printf("Network identified as down");
 				/* Only print interface down message if we haven't already */
 				if (!interface_down_printed) {
-					printf("%s interface down\n", STA_INTERFACE);
+					//printf("%s interface down\n", STA_INTERFACE);
 					interface_down_printed = true;
 				}
 
@@ -1469,13 +1469,13 @@ int test_station_mode_connect_with_params(const char *ssid, const char *pwd, con
     ctrl_cmd_t *req = CTRL_CMD_DEFAULT_REQ();
 	ctrl_cmd_t *resp = NULL;
 
-    printf("Connect to AP[%s] with password[%s] and BSSID[%s] use_wpa3[%d] listen_interval[%d] band_mode[%d]\n",
+    /*printf("Connect to AP[%s] with password[%s] and BSSID[%s] use_wpa3[%d] listen_interval[%d] band_mode[%d]\n",
            ssid ? ssid : STATION_MODE_SSID,
            pwd ? pwd : STATION_MODE_PWD,
            bssid ? bssid : STATION_MODE_BSSID,
            use_wpa3 ? 1 : 0,
            listen_interval,
-           band_mode);
+           band_mode);*/
 
     /* Use provided parameters or defaults */
     strcpy((char *)&req->u.wifi_ap_config.ssid, ssid ? ssid : STATION_MODE_SSID);

@@ -43,7 +43,7 @@
 struct dbg_stats_t dbg_stats;
 #endif
 #define MAX_BUFF_AVAILABLE_RETRIES               (40)
-#define TX_MAX_PENDING_COUNT                     (200)
+//#define TX_MAX_PENDING_COUNT                     (200)
 #define TX_RESUME_THRESHOLD                      (TX_MAX_PENDING_COUNT/5)
 
 /* combined register read for interrupt status and packet length */
@@ -352,6 +352,10 @@ static void esp_remove(struct sdio_func *func)
 	context = sdio_get_drvdata(func);
 	if (!context) {
 		return;
+	}
+
+	if (context->adapter) {
+		atomic_set(&context->adapter->state, ESP_CONTEXT_DISABLED);
 	}
 
 	/* Stop TX thread first */

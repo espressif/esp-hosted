@@ -4,7 +4,11 @@
 #ifndef __ESP_NETWORK_ADAPTER__H
 #define __ESP_NETWORK_ADAPTER__H
 
-#include <stdint.h>
+#ifdef __KERNEL__
+  #include <linux/types.h>
+#else
+  #include <stdint.h>
+#endif
 
 #define ESP_PKT_NUM_DEBUG                         (0)
 

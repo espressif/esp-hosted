@@ -88,6 +88,7 @@ typedef struct {
 
 static ctrl_msg_set_dhcp_dns_status_t s2h_dhcp_dns;
 static wifi_config_t prev_wifi_config = {0};
+static bool prev_wifi_config_valid = false;
 
 #endif
 
@@ -134,6 +135,7 @@ static void softap_event_unregister(void);
 static void ap_scan_list_event_register(void);
 static void ap_scan_list_event_unregister(void);
 static esp_err_t convert_mac_to_bytes(uint8_t *out, char *s);
+static bool is_wifi_config_equal(const wifi_config_t *cfg1, const wifi_config_t *cfg2);
 
 extern esp_err_t wlan_sta_rx_callback(void *buffer, uint16_t len, void *eb);
 extern esp_err_t wlan_ap_rx_callback(void *buffer, uint16_t len, void *eb);
@@ -158,11 +160,19 @@ static void send_wifi_event_data_to_host(int event, void *event_data, int event_
 
 esp_err_t esp_hosted_set_sta_config(wifi_interface_t iface, wifi_config_t *cfg)
 {
-	if (0 != memcmp(cfg, &prev_wifi_config, sizeof(wifi_config_t))) {
-		ESP_LOGI(TAG, "set wifi new config cfg: %s %s prev_wifi_config: %s %s", cfg->sta.ssid, cfg->sta.password, prev_wifi_config.sta.ssid, prev_wifi_config.sta.password);
-		ESP_ERROR_CHECK_WITHOUT_ABORT(esp_wifi_set_config(iface, cfg));
+	int ret = 0;
+    esp_wifi_set_storage(WIFI_STORAGE_RAM);
+	if (!prev_wifi_config_valid || !is_wifi_config_equal(cfg, &prev_wifi_config)) {
+		ESP_LOGI(TAG, "Setting new WiFi config SSID: %s", cfg->sta.ssid);
+		ret = esp_wifi_set_config(iface, cfg);
 
-		memcpy(&prev_wifi_config, cfg, sizeof(wifi_config_t));
+		if (ret) {
+			ESP_LOGE(TAG, "Error while setting the wifi config");
+			return ret;
+		}
+
+	} else {
+		ESP_LOGI(TAG, "WiFi config unchanged, keeping current connection");
 	}
 
 	return ESP_OK;
@@ -430,11 +440,17 @@ static void station_event_handler(void *arg, esp_event_base_t event_base,
 		station_connected = true;
 		ESP_LOGI(TAG, "Station connected");
 
-		//if (slave_sta_netif) {
-		//	esp_netif_dhcpc_stop(slave_sta_netif);  // Stop first to ensure clean state
-		//	esp_netif_dhcpc_start(slave_sta_netif);  // Restart DHCP client
-		//	ESP_LOGI(TAG, "DHCP client restarted after connection");
-		//}
+		/* Update configuration valid flag to ensure we know this is the active configuration */
+		/* This is important to capture changes made via slave-side CLI as well as host commands */
+		wifi_config_t current_config;
+		if (esp_wifi_get_config(WIFI_IF_STA, &current_config) == ESP_OK) {
+			ESP_LOGI(TAG, "Updating cached WiFi config with SSID: %s", current_config.sta.ssid);
+			memcpy(&prev_wifi_config, &current_config, sizeof(wifi_config_t));
+			prev_wifi_config_valid = true;
+		} else {
+			ESP_LOGW(TAG, "Failed to get current WiFi configuration after connection");
+		}
+
 #ifdef CONFIG_SLAVE_MANAGES_WIFI
 	} else if (event_id == WIFI_EVENT_STA_START) {
 		if (station_connected) {
@@ -680,21 +696,21 @@ static esp_err_t req_set_wifi_mode_handler (CtrlMsg *req,
 		CtrlMsg *resp, void *priv_data)
 {
 	esp_err_t ret = ESP_OK;
-	wifi_mode_t num = 0;
+	wifi_mode_t mode = 0, curr_mode = 0;
 	CtrlMsgRespSetMode *resp_payload = NULL;
-	wifi_mode_t cur_mode = WIFI_MODE_NULL;
 
-	if (!req || !resp || !req->req_set_wifi_mode) {
+	if (!req || !resp) {
 		ESP_LOGE(TAG, "Invalid parameters");
 		return ESP_FAIL;
 	}
 
-	if (req->req_set_wifi_mode->mode >= WIFI_MODE_MAX) {
-		ESP_LOGE(TAG, "Invalid wifi mode");
+	if(!req->req_set_wifi_mode) {
+		ESP_LOGE(TAG, "Invalid payload");
 		return ESP_FAIL;
 	}
 
-	resp_payload = (CtrlMsgRespSetMode *)calloc(1,sizeof(CtrlMsgRespSetMode));
+	resp_payload = (CtrlMsgRespSetMode *)
+		calloc(1, sizeof(CtrlMsgRespSetMode));
 	if (!resp_payload) {
 		ESP_LOGE(TAG,"Failed to allocate memory");
 		return ESP_ERR_NO_MEM;
@@ -703,23 +719,51 @@ static esp_err_t req_set_wifi_mode_handler (CtrlMsg *req,
 	resp->payload_case = CTRL_MSG__PAYLOAD_RESP_SET_WIFI_MODE;
 	resp->resp_set_wifi_mode = resp_payload;
 
-	num = req->req_set_wifi_mode->mode;
+	ret = esp_wifi_get_mode(&curr_mode);
+	if (ret) {
+		ESP_LOGE(TAG, "Failed to get current WiFi mode %d", ret);
+		goto err;
+	}
 
-	RPC_RET_FAIL_IF(esp_wifi_get_mode(&cur_mode));
-	if (cur_mode == num) {
+	if (req->req_set_wifi_mode->mode < WIFI_MODE_NULL ||
+			req->req_set_wifi_mode->mode >= WIFI_MODE_MAX) {
+		ESP_LOGE(TAG,"Invalid WiFi mode");
+		goto err;
+	}
+
+	mode = req->req_set_wifi_mode->mode;
+	if (curr_mode == mode) {
+		ESP_LOGI(TAG,"WiFi mode unchanged");
 		resp_payload->resp = SUCCESS;
 		return ESP_OK;
 	}
 
-	ret = esp_wifi_set_mode(num);
+	if (mode != WIFI_MODE_STA && station_connected) {
+		/* Station is connected to AP, and the user is trying to change
+		 * mode to either AP or APSTA, we must disconnect the station from AP, to initiate new mode
+		 */
+		ESP_LOGI(TAG,"Station connected, disconnecting it before reconfiguring WiFi");
+		esp_wifi_disconnect();
+		station_connected = false;
+	}
+
+	ret = esp_wifi_set_mode(mode);
 	if (ret) {
-		ESP_LOGE(TAG,"Failed to set mode");
+		ESP_LOGE(TAG, "Failed to set WiFi mode %d", ret);
 		goto err;
 	}
-	ESP_LOGI(TAG,"Set wifi mode %d ", num);
 
+	if (curr_mode == WIFI_MODE_STA || curr_mode == WIFI_MODE_APSTA) {
+		/* WiFi mode changed from STA/APSTA to something else, so invalidate cached WiFi config */
+		ESP_LOGI(TAG, "WiFi mode changed from %d to %d, invalidating cached config", curr_mode, mode);
+		prev_wifi_config_valid = false;
+		memset(&prev_wifi_config, 0, sizeof(wifi_config_t));
+	}
+
+	ESP_LOGI(TAG, "Set WiFi mode to %d", mode);
 	resp_payload->resp = SUCCESS;
 	return ESP_OK;
+
 err:
 	resp_payload->resp = FAILURE;
 	return ESP_OK;
@@ -734,7 +778,7 @@ static esp_err_t req_connect_ap_handler (CtrlMsg *req,
 	esp_err_t ret = ESP_OK;
 	wifi_config_t *wifi_cfg = NULL;
 	CtrlMsgRespConnectAP *resp_payload = NULL;
-	EventBits_t bits = {0};
+	//EventBits_t bits = {0};
 	int retry = 0;
 	bool wifi_changed = false;
 #if WIFI_DUALBAND_SUPPORT
@@ -768,7 +812,7 @@ static esp_err_t req_connect_ap_handler (CtrlMsg *req,
 
 	/* Make sure that we connect to strongest signal, when multiple SSID with
 	 * the same name. This should take a small extra time to search for all SSIDs,
-	 * but with this, there will be hige performace gain on data throughput
+	 * but with this, there will be high performance gain on data throughput
 	 */
 	wifi_cfg->sta.scan_method = WIFI_ALL_CHANNEL_SCAN;
 	wifi_cfg->sta.sort_method = WIFI_CONNECT_AP_BY_SIGNAL;
@@ -847,10 +891,9 @@ static esp_err_t req_connect_ap_handler (CtrlMsg *req,
 		goto err;
 	}
 
-	/* Check if config is same and station already connected */
-	if (station_connected && !wifi_changed) {
-		if (memcmp(wifi_cfg, &prev_wifi_config, sizeof(wifi_config_t)) == 0)  {
-			ESP_LOGI(TAG, "wifi_cfg: %s %s prev_wifi_config: %s %s", wifi_cfg->sta.ssid, wifi_cfg->sta.password, prev_wifi_config.sta.ssid, prev_wifi_config.sta.password);
+	/* Check if station already connected with the same configuration */
+	if (station_connected && prev_wifi_config_valid) {
+		if (is_wifi_config_equal(wifi_cfg, &prev_wifi_config)) {
 			ESP_LOGI(TAG, "Same WiFi config as previous, station already connected");
 #if WIFI_DUALBAND_SUPPORT
 			resp_payload->band_mode = band_mode;
@@ -858,51 +901,36 @@ static esp_err_t req_connect_ap_handler (CtrlMsg *req,
 			resp_payload->resp = SUCCESS;
 			mem_free(wifi_cfg);
 
-#if 0
-			/* TODO: To handle manual or auto disconnection */
-			send_wifi_event_data_to_host(CTRL_MSG_ID__Event_StationConnectedToAP,
-					&lkg_sta_connected_event, sizeof(wifi_event_sta_connected_t));
-			ESP_LOGI(TAG, "Already connected");
-#endif
-			/* as already connected, send the dhcp dns status event */
+			/* As already connected, send the current status */
 #ifdef CONFIG_SLAVE_MANAGES_WIFI
 			send_dhcp_dns_info_to_host(1, 1);
 #endif
 			return ESP_OK;
+		} else {
+			ESP_LOGI(TAG, "Different WiFi config from the current connection, reconnecting");
+			ESP_LOGI(TAG, "New config - SSID: %s", wifi_cfg->sta.ssid);
+			ESP_LOGI(TAG, "Current config - SSID: %s", prev_wifi_config.sta.ssid);
+			wifi_changed = true;
+			esp_wifi_set_storage(WIFI_STORAGE_RAM);
+			/* Force a disconnect and reconnect when the config changes */
+			esp_wifi_disconnect();
+			station_connected = false;
+			
 		}
+	} else {
+		/* Station not yet connected, so cache this configuration for future reference */
+		//ESP_LOGI(TAG, "New WiFi connection config, storing for future comparisons");
+		//memcpy(&prev_wifi_config, wifi_cfg, sizeof(wifi_config_t));
+		//prev_wifi_config_valid = true;
 	}
 
-	/* Store new config for future comparison */
-	//memcpy(&prev_wifi_config, wifi_cfg, sizeof(wifi_config_t));
+	/* Note: At this point, we've already updated prev_wifi_config if needed */
 
-	if (!event_registered) {
-		wifi_event_group = xEventGroupCreate();
-		event_registered = true;
-		station_event_register();
-	}
-	xEventGroupSetBits(wifi_event_group, WIFI_HOST_REQUEST_BIT);
-
-	if (station_connected) {
-		/* As station is already connected, disconnect from the AP
-		 * before connecting to requested AP */
-		ret = esp_wifi_disconnect();
-		if (ret) {
-			ESP_LOGE(TAG, "Failed to disconnect");
-			resp_payload->resp = ret;
-			goto err;
-		}
-		xEventGroupWaitBits(wifi_event_group,
-				(WIFI_FAIL_BIT),
-				pdFALSE,
-				pdFALSE,
-				STA_MODE_TIMEOUT);
-		ESP_LOGI(TAG, "Disconnected from previously connected AP");
-		esp_wifi_internal_reg_rxcb(ESP_IF_WIFI_STA, NULL);
-		xEventGroupClearBits(wifi_event_group,
-				(WIFI_CONNECTED_BIT | WIFI_FAIL_BIT |
-				 WIFI_NO_AP_FOUND_BIT | WIFI_WRONG_PASSWORD_BIT));
-		station_connected = false;
-	}
+	/* 
+	 * No need to store configuration again here - it's either:
+	 * 1. Already updated above in the comparison block if configs were different
+	 * 2. Remains the same if configs were identical
+	 */
 
 	if (softap_started) {
 		ret = esp_wifi_set_mode(WIFI_MODE_APSTA);
@@ -917,32 +945,9 @@ static esp_err_t req_connect_ap_handler (CtrlMsg *req,
 		goto err;
 	}
 
-#if 0
-	ret = esp_wifi_get_mac(ESP_IF_WIFI_STA , mac);
-	ESP_LOGI(TAG,"Get station mac address");
-	if (ret) {
-		ESP_LOGE(TAG,"Error in getting MAC of ESP Station %d", ret);
-		resp_payload->resp = ret;
-		goto err;
-	}
-	snprintf(mac_str,BSSID_LENGTH,MACSTR,MAC2STR(mac));
-	ESP_LOGI(TAG,"mac [%s] ", mac_str);
-
-	resp_payload->mac.len = strnlen(mac_str, BSSID_LENGTH);
-	if (!resp_payload->mac.len) {
-		ESP_LOGE(TAG, "Invalid MAC address length");
-		resp_payload->resp = FAILURE;
-		goto err;
-	}
-	resp_payload->mac.data = (uint8_t *)strndup(mac_str, BSSID_LENGTH);
-	if (!resp_payload->mac.data) {
-		ESP_LOGE(TAG, "Failed to allocate memory for MAC address");
-		resp_payload->resp = FAILURE;
-		goto err;
-	}
-#endif
-
 	do {
+		esp_wifi_disconnect();
+		
 		ESP_LOGI(TAG, "Setting station config");
 		ret = esp_hosted_set_sta_config(ESP_IF_WIFI_STA, wifi_cfg);
 		if (ret == ESP_ERR_WIFI_PASSWORD) {
@@ -955,56 +960,14 @@ static esp_err_t req_connect_ap_handler (CtrlMsg *req,
 			goto err;
 		}
 
-		ESP_LOGI(TAG, "Connecting to AP %s %s", wifi_cfg->sta.ssid, wifi_cfg->sta.password);
+		/* Force a connect attempt to validate the new credentials */
 		ret = esp_wifi_connect();
 		if (ret) {
-			ESP_LOGI(TAG, "Failed to connect to SSID:'%s', password:'%s'",
-					req->req_connect_ap->ssid ? req->req_connect_ap->ssid : "(null)",
-					req->req_connect_ap->pwd ? req->req_connect_ap->pwd : "(null)");
+			ESP_LOGE(TAG, "Failed to connect to AP: %d", ret);
+			resp_payload->resp = ret;
+			vTaskDelay(50);
 		}
-
-		if (event_registered)
-			bits = xEventGroupWaitBits(wifi_event_group,
-					(WIFI_CONNECTED_BIT | WIFI_FAIL_BIT |
-					 WIFI_NO_AP_FOUND_BIT | WIFI_WRONG_PASSWORD_BIT),
-					pdFALSE,
-					pdFALSE,
-					STA_MODE_TIMEOUT);
-		if (bits & WIFI_CONNECTED_BIT) {
-			ESP_LOGI(TAG, "connected to ap SSID:'%s', password:'%s'",
-					req->req_connect_ap->ssid ? req->req_connect_ap->ssid :"(null)",
-					req->req_connect_ap->pwd ? req->req_connect_ap->pwd :"(null)");
-			station_connected = true;
-			sta_connect_retry = 0;
-			esp_wifi_internal_reg_rxcb(ESP_IF_WIFI_STA, (wifi_rxcb_t) wlan_sta_rx_callback);
-			ret = SUCCESS;
-			break;
-		} else {
-			if (bits & WIFI_NO_AP_FOUND_BIT) {
-				ESP_LOGI(TAG, "No AP available as SSID:'%s'",
-						req->req_connect_ap->ssid ? req->req_connect_ap->ssid : "(null)");
-				resp_payload->resp = CTRL__STATUS__No_AP_Found;
-			} else if (bits & WIFI_WRONG_PASSWORD_BIT) {
-				ESP_LOGI(TAG, "Password incorrect for SSID:'%s', password:'%s'",
-						req->req_connect_ap->ssid ? req->req_connect_ap->ssid : "(null)",
-						req->req_connect_ap->pwd ? req->req_connect_ap->pwd :"(null)");
-				resp_payload->resp = CTRL__STATUS__Connection_Fail;
-			} else if (bits & WIFI_FAIL_BIT) {
-				ESP_LOGI(TAG, "Failed to connect to SSID:'%s', password:'%s'",
-						req->req_connect_ap->ssid ? req->req_connect_ap->ssid : "(null)",
-						req->req_connect_ap->pwd ? req->req_connect_ap->pwd : "(null)");
-			} else {
-				ESP_LOGE(TAG, "STA_MODE_TIMEOUT occured");
-			}
-			esp_wifi_internal_reg_rxcb(ESP_IF_WIFI_STA, NULL);
-		}
-
-		if (event_registered)
-			xEventGroupClearBits(wifi_event_group,
-					(WIFI_CONNECTED_BIT | WIFI_FAIL_BIT |
-					 WIFI_NO_AP_FOUND_BIT | WIFI_WRONG_PASSWORD_BIT));
 		retry++;
-
 	} while(retry < MAX_STA_CONNECT_ATTEMPTS);
 
 err:
@@ -1181,6 +1144,7 @@ static esp_err_t req_disconnect_ap_handler (CtrlMsg *req,
 	ESP_LOGI(TAG,"Disconnected from AP");
 	resp_payload->resp = SUCCESS;
 	station_connected = false;
+	prev_wifi_config_valid = false; /* Mark config as invalid after disconnection */
 
 	if (event_registered) {
 		xEventGroupClearBits(wifi_event_group,
@@ -3547,4 +3511,43 @@ err:
 	}
 	esp_ctrl_msg_cleanup(&ntfy);
 	return ESP_FAIL;
+}
+
+/* Helper function to compare WiFi configurations */
+static bool is_wifi_config_equal(const wifi_config_t *cfg1, const wifi_config_t *cfg2)
+{
+	/* Compare SSID */
+	if (strcmp((char *)cfg1->sta.ssid, (char *)cfg2->sta.ssid) != 0) {
+		ESP_LOGD(TAG, "SSID different: '%s' vs '%s'", cfg1->sta.ssid, cfg2->sta.ssid);
+		return false;
+	}
+	
+	/* Compare password */
+	if (strcmp((char *)cfg1->sta.password, (char *)cfg2->sta.password) != 0) {
+		ESP_LOGD(TAG, "Password different");
+		return false;
+	}
+	
+	/* Compare BSSID if set */
+	if (cfg1->sta.bssid_set && cfg2->sta.bssid_set) {
+		if (memcmp(cfg1->sta.bssid, cfg2->sta.bssid, MAC_LEN) != 0) {
+			ESP_LOGD(TAG, "BSSID different");
+			return false;
+		}
+	} else if (cfg1->sta.bssid_set != cfg2->sta.bssid_set) {
+		ESP_LOGD(TAG, "BSSID set status different: %d vs %d", 
+			cfg1->sta.bssid_set, cfg2->sta.bssid_set);
+		return false;
+	}
+	
+	/* Compare channel if set */
+	if (cfg1->sta.channel != 0 && cfg2->sta.channel != 0) {
+		if (cfg1->sta.channel != cfg2->sta.channel) {
+			ESP_LOGD(TAG, "Channel different: %d vs %d", 
+				cfg1->sta.channel, cfg2->sta.channel);
+			return false;
+		}
+	}
+	
+	return true;
 }
