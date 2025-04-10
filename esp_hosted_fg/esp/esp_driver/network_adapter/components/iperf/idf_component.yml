@@ -1,0 +1,16 @@
+dependencies:
+  idf: '>=4.3'
+description: Iperf Core Engine
+documentation: https://iperf.fr/iperf-doc.php
+files:
+  exclude:
+  - doxygen/**/*
+  - doxygen
+issues: https://github.com/espressif/iperf-cmd/issues
+license: Apache-2.0
+repository: git://github.com/espressif/iperf-cmd.git
+repository_info:
+  commit_sha: 5755dceceacd2ef8584e697647ecd19dd3d42d31
+  path: iperf
+url: https://github.com/espressif/iperf-cmd/tree/master/iperf
+version: 0.1.3
