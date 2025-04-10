@@ -5,10 +5,10 @@
    1.1. [Feature Description](#11-feature-description) | 1.2. [Auto IP Recovery Process](#12-auto-ip-recovery-process)
 
 2. [Network Architecture](#2-network-architecture) \
-   2.1. [Network Split](#21-network-split) | 2.2. [Deep Sleep Support](#22-deep-sleep-support) | 2.3. [Traffic Routing](#23-traffic-routing) ([Port Configuration](#231-port-configuration) | [Packet Filtering Logic](#232-packet-filtering-logic))
+   2.1. [Network Split](#21-network-split) | 2.2. [Traffic Routing](#22-traffic-routing) ([Port Configuration](#221-port-configuration) | [Packet Filtering Logic](#222-packet-filtering-logic))
 
 3. [Implementation](#3-implementation) \
-   3.1. [Network Split Implementation](#31-network-split-implementation) | 3.2. [Deep Sleep Management](#32-deep-sleep-management) | 3.3. [Recovery Process](#33-recovery-process)
+   3.1. [Network Split Implementation](#31-network-split-implementation) 3.2. [IP Recovery Process](#32-ip-recovery-process)
 
 4. [Components](#4-components) \
    4.1. [Host - Kernel Module](#41-host---kernel-module-esp_hosted_fghostlinuxhost_driver) | 4.2. [Host - Hosted Daemon](#42-host---hosted-daemon-esp_hosted_fghostlinuxhost_control) | 4.3. [Slave - Network Configuration](#43-slave---network-configuration) | 4.4. [Host system wide configuration](#44-host-system-wide-configuration)
@@ -17,7 +17,7 @@
    5.1. [Kernel Module Auto-loading](#51-kernel-module-auto-loading) | 5.2. [Daemon Service Setup](#52-daemon-service-setup)
 
 6. [Brief Overview](#6-brief-overview-of-auto-ip-restore) \
-   6.1. [Host System Behavior](#61-host-system-behavior) | 6.2. [Slave System Behavior](#62-slave-system-behavior) | 6.3. [Deep Sleep Integration](#63-deep-sleep-integration-with-auto-ip-restore)
+   6.1. [Host System Behavior](#61-host-system-behavior) | 6.2. [Slave System Behavior](#62-slave-system-behavior) 
 
 7. [Troubleshooting](#7-troubleshooting) \
    7.1. [Common Issues](#71-common-issues) | 7.2. [Debug Support](#72-debug-support)
@@ -29,12 +29,11 @@
 ## 1. Overview
 
 ### 1.1. Feature Description
-The Auto IP Restore feature enables seamless network connectivity management between a host system and ESP device (slave) in a co-processor setup. It allows network state persistence across host reboots and sleep/wake cycles and provides intelligent network traffic handling between host and slave.
+The Auto IP Restore feature enables seamless network connectivity management between a host system and ESP device (slave) in a co-processor setup. It allows network state persistence across host reboots and provides intelligent network traffic handling between host and slave.
 
 Key features include:
 - Automatic IP configuration restoration after host wakeup
 - Split network handling between host and slave
-- Deep sleep support with automatic recovery
 - Intelligent network traffic distribution using port-based routing
 - Seamless DHCP/DNS state management
 
@@ -73,43 +72,6 @@ sequenceDiagram
     ESP->>ESP: Start Packet Filtering
 ```
 
-For systems supporting deep sleep, the recovery process includes additional steps:
-
-```mermaid
-sequenceDiagram
-    box Host System
-        participant Host
-        participant KMod as Kernel Module
-        participant Daemon
-    end
-    box Co-Processor
-        participant ESP as ESP Slave
-    end
-    participant Router as WiFi Router
-
-    Note over Host,Router: Pre-Sleep State
-    Host->>KMod: Enter Deep Sleep
-    KMod->>ESP: Sleep Notification
-    ESP->>ESP: Take Network Control
-    
-    Note over Host,Router: During Sleep
-    ESP->>Router: Maintain Connection
-    Router-->>ESP: Keep-alive/Traffic
-    
-    Note over Host,Router: Wake-up Sequence
-    ESP->>Host: GPIO Wake Signal
-    Host->>KMod: Resume
-    KMod->>ESP: Resume Notification
-    
-    Note over Host,Router: IP Recovery
-    Daemon->>ESP: Query IP State
-    ESP-->>Daemon: Return Cached IP/DNS
-    Daemon->>KMod: Restore Network Config
-    Daemon->>Host: Update resolv.conf
-    
-    Note over Host,Router: Network Restored
-    Host->>Router: Resume Network Traffic
-```
 
 Key Recovery Steps:
 1. **Initial Connection**: 
@@ -136,23 +98,12 @@ Key Recovery Steps:
 - Network traffic is split based on destination port ranges:
   - Host handles ports 49152-61439
   - Slave handles ports 61440-65535
-- This allows slave to handle lightweight network tasks while host is asleep
+- This allows slave to handle lightweight network tasks while host is off or unavailable
 - Port-based routing is transparent to remote endpoints
 
-### 2.2. Deep Sleep Support
-- Host can enter deep sleep while slave remains active
-- Slave maintains network connectivity and handles keep-alive packets
-- Slave can wake up host when specific network events occur
-- Network state is automatically restored upon host wakeup
+### 2.2. Traffic Routing
 
-> Note:
-> 1. The Auto IP Restore feature works irrespective of host deep sleep feature.
-> 2. Power save mode or Host deep sleep may or may not be supported by your host SoC.
->    - For example, We could not test the deep sleep feature on Raspberry Pi, however, We tested it using imx 8mm SoC.
-
-### 2.3. Traffic Routing
-
-#### 2.3.1. Port Configuration
+#### 2.2.1. Port Configuration
 
 In slave side, the port range is configured in the Kconfig.projbuild file.
    ```c
@@ -170,7 +121,7 @@ In slave side, the port range is configured in the Kconfig.projbuild file.
    ```
 This configuration is used to set the port range for the slave and host. `LOCAL_PORT_RANGE` is the port range for the slave, and `REMOTE_PORT_RANGE` is the port range for the host.
 
-#### 2.3.2. Packet Filtering Logic
+#### 2.2.2. Packet Filtering Logic
 
 The traffic routing logic is implemented in the `lwip_filter.c` file at slave.
 Once packet is received from the wifi router, slave passes the packet to the `filter_and_route_packet()` function.
@@ -203,13 +154,13 @@ flowchart TD
     G[TCP Packet] --> G1{Dest Port == iPerf<br/>5001?}
     G1 -->|Yes| G2{Local TCP Port<br/>Open?}
     G2 -->|Yes| C[Send to Slave Network]
-    G2 -->|No| G3{Host Sleeping?}
+    G2 -->|No| G3{Host datapath open?}
     G3 -->|No| K[Send to Host Network]
     G3 -->|Yes| C
     
     G1 -->|No| G4{Source Port == MQTT<br/>1883?}
-    G4 -->|Yes| G5{Host Sleeping?}
-    G5 -->|Yes| G6{Contains<br/>'wake-up-host'?}
+    G4 -->|Yes| G5{Host datapath open?}
+    G5 -->|Yes| G6{Contains<br/>'start-up-host'?}
     G6 -->|Yes| K
     G6 -->|No| L[Drop Packet]
     G5 -->|No| K
@@ -289,65 +240,7 @@ The feature is controlled by
 ```
 option at slave main/Kconfig.projbuild file.
 
-### 3.2. Deep Sleep Management
-
-Not all the SoC supports deep sleep. Check your SoC's datasheet to see if it supports deep sleep and the procedure to enter deep sleep. We tested this feature on imx 8mm SoC.
-
-1. **Wake up from slave configuration**
-
-Slave in main/Kconfig.projbuild file has the option to enable deep sleep.
-```c
-config HOST_DEEP_SLEEP_ALLOWED
-	bool "Allow host to enter deep sleep. Slave will wakeup host using GPIO"
-	default y
-
-config HOST_WAKEUP_GPIO
-	int "Host wakeup GPIO"
-	default 23 if IDF_TARGET_ESP32 && !SPI_VSPI
-	default 2 if IDF_TARGET_ESP32C6
-	default 1 if IDF_TARGET_ESP32C3
-	default 25 if IDF_TARGET_ESP32C5
-	default 6 if IDF_TARGET_ESP32C2 && C2_C5_MODULE_SUB_BOARD
-	default -1
-```
-
-You can configure the GPIO pin that the slave will use to wakeup the host. Please ensure that you use unused GPIO pin for this purpose. This GPIO should be connected to the GPIO pin of the host, where the GPIO is configured as wake up source.
-
-> Note:
-> The GPIO pin should be configured as wake up source in the host using the device tree configuration.
-
-To refer how to configure the GPIO pin as wake up source in the host, please refer [../../../esp_hosted_ng/docs/host_sleep.md](../../../esp_hosted_ng/docs/host_sleep.md)
-
-2. **Host Sleep Entry**
-In IMX 8mm SoC, we use the
-   ```sh
-   # Sleep the Linux host
-   echo s2idle > /sys/power/mem_sleep
-   echo mem > /sys/power/state
-   ```
-command to enter deep sleep.
-This internally calls the `esp_suspend()` function registered in esp-hosted kernel module.
-
-   ```c
-   // In esp_sdio.c
-   static int esp_suspend(struct device *dev) {
-       ...
-   }
-   ```
-
-2. **Host Wakeup**
-
-In slave side, the `wakeup_host()` function is called to wakeup the host.
-   ```c
-   // In host_power_save.c
-   int wakeup_host(uint32_t timeout_ms) {
-      ...
-   }
-   ```
-
-This would trigger the GPIO pin to be high, which would be detected by the host and the host would wakeup from deep sleep.
-
-### 3.3. Recovery Process
+### 3.2. IP Recovery Process
 
 1. **Slave Handling**
 The slave handles the wifi connection and ip address handling. The wifi SSID and password are handled in slave only and never travel to the host, if `CONFIG_SLAVE_MANAGES_WIFI` is enabled.
@@ -437,10 +330,6 @@ The slave control components handle network management on the ESP side:
    - `CONFIG_LWIP_UDP_LOCAL_PORT_RANGE_END`: Configure UDP port ranges
    - Special ports (MQTT, iPerf) handling
 
-4. Deep Sleep & Wakeup Management:
-   - `CONFIG_HOST_DEEP_SLEEP_ALLOWED`: Enable deep sleep
-   - `CONFIG_HOST_WAKEUP_GPIO`: Configure wake-up GPIO
-   - Wake-up trigger configuration
 
 ### 4.4 - Host system wide configuration
 - /etc/sysctl.conf
@@ -528,6 +417,7 @@ sudo systemctl start hosted-daemon
    ```
 
 ###### **Sleep Recovery**
+Deep Sleep and Wake-up would be supported in upcoming release
    ```
    Host Wakeup → GPIO Event → Daemon Notification →
    IP State Query → Network Restore
@@ -541,28 +431,6 @@ sudo systemctl start hosted-daemon
    Bridge Creation → Network Ready
    ```
 
-### 6.3. Deep Sleep Integration with Auto IP Restore
-
-###### **Sleep Entry Process**
-1. Host signals sleep intent via power management
-2. Kernel module notifies ESP
-3. ESP acknowledges and takes over network maintenance
-4. Host enters sleep state
-
-###### **During Sleep**
-- ESP maintains network connectivity
-- Handles keep-alive packets
-- Buffers important packets
-- Monitors for wake conditions
-- Manages lightweight network tasks
-
-###### **Wake-up Process**
-1. ESP detects wake condition (configurable triggers)
-2. Triggers GPIO to wake host
-3. Host resumes and acknowledges
-4. Hosted daemon restores network state
-5. Normal operation resumes
-
 ## 7. Troubleshooting
 
 ### 7.1. Common Issues
@@ -573,13 +441,7 @@ sudo systemctl start hosted-daemon
    - Monitor packet flow
    - Test with different protocols
 
-2. **Deep Sleep Problems**
-   - Verify GPIO connections
-   - Check power management settings
-   - Test wake-up scenarios
-   - Monitor system logs
-
-3. **IP Restoration Failures**
+2. **IP Restoration Failures**
    - Check daemon logs
    - Verify network configuration
    - Test recovery process

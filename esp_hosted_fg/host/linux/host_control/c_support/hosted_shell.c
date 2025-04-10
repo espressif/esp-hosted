@@ -110,8 +110,8 @@ static int ensure_single_instance(void) {
 /* Helper function to parse arguments */
 static bool is_arg_true(const char *value) {
     if (!value) return false;
-    return (strcasecmp(value, "true") == 0 || 
-            strcasecmp(value, "yes") == 0 || 
+    return (strcasecmp(value, "true") == 0 ||
+            strcasecmp(value, "yes") == 0 ||
             strcasecmp(value, "1") == 0);
 }
 
@@ -128,7 +128,7 @@ static const char *get_arg_value(int argc, char **argv, const cmd_arg_t *args, i
 /* Helper function to parse and validate arguments */
 static bool parse_arguments(int argc, char **argv, const cmd_arg_t *args, int arg_count) {
     bool result = true;
-    
+
     /* Check for required arguments */
     for (int i = 0; i < arg_count; i++) {
         if (args[i].required) {
@@ -139,20 +139,20 @@ static bool parse_arguments(int argc, char **argv, const cmd_arg_t *args, int ar
                     break;
                 }
             }
-            
+
             if (!found) {
                 printf("Missing required argument: %s\n", args[i].name);
                 result = false;
             }
         }
     }
-    
+
     /* Check argument values */
     for (int i = 1; i < argc; i++) {
         if (argv[i][0] == '-' && argv[i][1] == '-') {
             bool valid_arg = false;
             int arg_idx = -1;
-            
+
             /* Find the argument in our definition */
             for (int j = 0; j < arg_count; j++) {
                 if (strcmp(argv[i], args[j].name) == 0) {
@@ -161,23 +161,23 @@ static bool parse_arguments(int argc, char **argv, const cmd_arg_t *args, int ar
                     break;
                 }
             }
-            
+
             if (!valid_arg) {
                 printf("Unknown argument: %s\n", argv[i]);
                 result = false;
                 continue;
             }
-            
+
             /* Skip if no value provided */
             if (i + 1 >= argc || argv[i + 1][0] == '-') {
                 printf("No value provided for argument: %s\n", argv[i]);
                 result = false;
                 continue;
             }
-            
+
             /* Validate value based on type */
             const char *value = argv[i + 1];
-            
+
             switch (args[arg_idx].type) {
                 case ARG_TYPE_INT: {
                     char *endptr;
@@ -189,11 +189,11 @@ static bool parse_arguments(int argc, char **argv, const cmd_arg_t *args, int ar
                     break;
                 }
                 case ARG_TYPE_BOOL: {
-                    if (strcasecmp(value, "true") != 0 && 
+                    if (strcasecmp(value, "true") != 0 &&
                         strcasecmp(value, "false") != 0 &&
-                        strcasecmp(value, "yes") != 0 && 
+                        strcasecmp(value, "yes") != 0 &&
                         strcasecmp(value, "no") != 0 &&
-                        strcasecmp(value, "1") != 0 && 
+                        strcasecmp(value, "1") != 0 &&
                         strcasecmp(value, "0") != 0) {
                         printf("Invalid boolean value for %s: %s\n", argv[i], value);
                         printf("Use true/false, yes/no, or 1/0\n");
@@ -227,12 +227,12 @@ static bool parse_arguments(int argc, char **argv, const cmd_arg_t *args, int ar
                     /* No validation for string type */
                     break;
             }
-            
+
             /* Skip the value in the next iteration */
             i++;
         }
     }
-    
+
     return result;
 }
 
@@ -255,7 +255,7 @@ static const cmd_arg_t wifi_set_mac_args[] = {
 
 static const cmd_arg_t connect_ap_args[] = {
     {"--ssid", "SSID of AP", ARG_TYPE_STRING, true, NULL},
-    {"--password", "Password of AP", ARG_TYPE_STRING, false, NULL},
+    {"--password", "Password of AP", ARG_TYPE_STRING, true, NULL},
     {"--bssid", "MAC address of AP", ARG_TYPE_STRING, false, NULL},
     {"--use_wpa3", "Use WPA3 security protocol", ARG_TYPE_BOOL, false, NULL},
     {"--listen_interval", "Number of AP beacons station will sleep", ARG_TYPE_INT, false, NULL},
@@ -303,12 +303,12 @@ static const cmd_arg_t heartbeat_args[] = {
 
 
 static const char *event_choices[] = {
-    "esp_init", 
-    "heartbeat", 
-    "sta_connected", 
-    "sta_disconnected", 
-    "softap_sta_connected", 
-    "softap_sta_disconnected", 
+    "esp_init",
+    "heartbeat",
+    "sta_connected",
+    "sta_disconnected",
+    "softap_sta_connected",
+    "softap_sta_disconnected",
     "dhcp_dns_status",
     NULL
 };
@@ -399,22 +399,22 @@ static int handle_exit(int argc, char **argv) {
 
 static int handle_help(int argc, char **argv) {
     const shell_command_t *cmd;
-    
+
     if (argc > 1) {
         /* Detailed help for a specific command */
         for (cmd = commands; cmd->name; cmd++) {
             if (strcmp(cmd->name, argv[1]) == 0) {
                 printf("\nCommand: %s\n", cmd->name);
                 printf("Description: %s\n\n", cmd->help);
-                
+
                 if (cmd->args && cmd->arg_count > 0) {
                     printf("Arguments:\n");
                     for (int i = 0; i < cmd->arg_count; i++) {
-                        printf("  %-20s %-10s %s\n", 
+                        printf("  %-20s %-10s %s\n",
                                cmd->args[i].name,
                                cmd->args[i].required ? "[Required]" : "[Optional]",
                                cmd->args[i].help);
-                        
+
                         if (cmd->args[i].type == ARG_TYPE_CHOICE && cmd->args[i].choices) {
                             printf("    Choices: ");
                             for (int j = 0; cmd->args[i].choices[j]; j++) {
@@ -426,7 +426,7 @@ static int handle_help(int argc, char **argv) {
                             printf("\n");
                         }
                     }
-                    
+
                     /* Show default values from ctrl_config.h */
                     if (strcmp(cmd->name, "connect_ap") == 0) {
                         printf("\nDefault values:\n");
@@ -453,17 +453,17 @@ static int handle_help(int argc, char **argv) {
         printf("Unknown command: %s\n", argv[1]);
         return -1;
     }
-    
+
     /* General help - list all commands */
     printf("\nAvailable commands:\n");
     for (cmd = commands; cmd->name; cmd++) {
-        if (strcmp(cmd->name, "q") == 0 || 
-            strcmp(cmd->name, "exit") == 0 || 
+        if (strcmp(cmd->name, "q") == 0 ||
+            strcmp(cmd->name, "exit") == 0 ||
             strcmp(cmd->name, "quit") == 0) {
             continue;
         }
         printf("  %-30s %s\n", cmd->name, cmd->help);
-        
+
         /* Show required args inline for important commands */
         if (cmd->args && cmd->arg_count > 0) {
             int req_count = 0;
@@ -472,7 +472,7 @@ static int handle_help(int argc, char **argv) {
                     req_count++;
                 }
             }
-            
+
             if (req_count > 0) {
                 printf("    Required args: ");
                 int printed = 0;
@@ -484,7 +484,7 @@ static int handle_help(int argc, char **argv) {
                 }
                 printf("\n");
             }
-            
+
             /* Always show that there are optional args if present */
             int opt_count = cmd->arg_count - req_count;
             if (opt_count > 0) {
@@ -492,7 +492,7 @@ static int handle_help(int argc, char **argv) {
             }
         }
     }
-    
+
     printf("\nUse 'help <command>' for detailed information about a command\n");
     return 0;
 }
@@ -529,18 +529,18 @@ static int handle_get_mac(int argc, char **argv) {
 
 static int handle_wifi_set_mac(int argc, char **argv) {
     CHECK_RPC_ACTIVE();
-    
+
     if (!parse_arguments(argc, argv, wifi_set_mac_args, sizeof(wifi_set_mac_args)/sizeof(cmd_arg_t))) {
         return FAILURE;
     }
-    
-    const char *mode_str = get_arg_value(argc, argv, wifi_set_mac_args, 
-                                        sizeof(wifi_set_mac_args)/sizeof(cmd_arg_t), 
+
+    const char *mode_str = get_arg_value(argc, argv, wifi_set_mac_args,
+                                        sizeof(wifi_set_mac_args)/sizeof(cmd_arg_t),
                                         "--mode");
-    const char *mac = get_arg_value(argc, argv, wifi_set_mac_args, 
-                                    sizeof(wifi_set_mac_args)/sizeof(cmd_arg_t), 
+    const char *mac = get_arg_value(argc, argv, wifi_set_mac_args,
+                                    sizeof(wifi_set_mac_args)/sizeof(cmd_arg_t),
                                     "--mac");
-    
+
     int mode;
     if (strcmp(mode_str, "station") == 0) {
         mode = WIFI_MODE_STA;
@@ -550,7 +550,7 @@ static int handle_wifi_set_mac(int argc, char **argv) {
         printf("Invalid mode. Use 'station' or 'softap'\n");
         return FAILURE;
     }
-    
+
     return test_set_mac_addr_with_params(mode, (char *)mac);
 }
 
@@ -561,15 +561,15 @@ static int handle_wifi_get_mode(int argc, char **argv) {
 
 static int handle_wifi_set_mode(int argc, char **argv) {
     CHECK_RPC_ACTIVE();
-    
+
     if (!parse_arguments(argc, argv, wifi_set_mode_args, sizeof(wifi_set_mode_args)/sizeof(cmd_arg_t))) {
         return FAILURE;
     }
-    
-    const char *mode_str = get_arg_value(argc, argv, wifi_set_mode_args, 
-                                         sizeof(wifi_set_mode_args)/sizeof(cmd_arg_t), 
+
+    const char *mode_str = get_arg_value(argc, argv, wifi_set_mode_args,
+                                         sizeof(wifi_set_mode_args)/sizeof(cmd_arg_t),
                                          "--mode");
-    
+
     int mode;
     if (strcmp(mode_str, "station") == 0) {
         mode = WIFI_MODE_STA;
@@ -581,7 +581,7 @@ static int handle_wifi_set_mode(int argc, char **argv) {
         printf("Invalid mode. Use 'station', 'softap', or 'station+softap'\n");
         return FAILURE;
     }
-    
+
     return test_set_wifi_mode(mode);
 }
 
@@ -592,48 +592,48 @@ static int handle_get_available_ap(int argc, char **argv) {
 
 static int handle_connect(int argc, char **argv) {
     CHECK_RPC_ACTIVE();
-    
+
     if (!parse_arguments(argc, argv, connect_ap_args, sizeof(connect_ap_args)/sizeof(cmd_arg_t))) {
         return FAILURE;
     }
-    
-    const char *ssid = get_arg_value(argc, argv, connect_ap_args, 
-                                    sizeof(connect_ap_args)/sizeof(cmd_arg_t), 
+
+    const char *ssid = get_arg_value(argc, argv, connect_ap_args,
+                                    sizeof(connect_ap_args)/sizeof(cmd_arg_t),
                                     "--ssid");
-    const char *pwd = get_arg_value(argc, argv, connect_ap_args, 
-                                   sizeof(connect_ap_args)/sizeof(cmd_arg_t), 
-                                   "--pwd");
-    const char *bssid = get_arg_value(argc, argv, connect_ap_args, 
-                                     sizeof(connect_ap_args)/sizeof(cmd_arg_t), 
+    const char *pwd = get_arg_value(argc, argv, connect_ap_args,
+                                   sizeof(connect_ap_args)/sizeof(cmd_arg_t),
+                                   "--password");
+    const char *bssid = get_arg_value(argc, argv, connect_ap_args,
+                                     sizeof(connect_ap_args)/sizeof(cmd_arg_t),
                                      "--bssid");
-    const char *use_wpa3 = get_arg_value(argc, argv, connect_ap_args, 
-                                         sizeof(connect_ap_args)/sizeof(cmd_arg_t), 
+    const char *use_wpa3 = get_arg_value(argc, argv, connect_ap_args,
+                                         sizeof(connect_ap_args)/sizeof(cmd_arg_t),
                                          "--use_wpa3");
-    const char *listen_interval = get_arg_value(argc, argv, connect_ap_args, 
-                                               sizeof(connect_ap_args)/sizeof(cmd_arg_t), 
+    const char *listen_interval = get_arg_value(argc, argv, connect_ap_args,
+                                               sizeof(connect_ap_args)/sizeof(cmd_arg_t),
                                                "--listen_interval");
-    const char *band_mode = get_arg_value(argc, argv, connect_ap_args, 
-                                         sizeof(connect_ap_args)/sizeof(cmd_arg_t), 
+    const char *band_mode = get_arg_value(argc, argv, connect_ap_args,
+                                         sizeof(connect_ap_args)/sizeof(cmd_arg_t),
                                          "--band_mode");
-    
+
     /* Use default values from ctrl_config.h if arguments are not provided */
     if (!ssid) {
         ssid = STATION_MODE_SSID;
-        printf("Using default SSID: %s\n", ssid);
+        printf("Using pre-configured SSID: %s\n", ssid);
     }
-    
     if (!pwd) {
         pwd = STATION_MODE_PWD;
-        printf("Using default password\n");
+        printf("Using pre-configured password: %s\n", pwd);
     }
-    
+
     if (!bssid) {
         bssid = STATION_MODE_BSSID;
+        printf("Using pre-configured BSSID: %s\n", bssid);
     }
-    
+
     bool use_wpa3_value = use_wpa3 ? is_arg_true(use_wpa3) : STATION_MODE_IS_WPA3_SUPPORTED;
     int listen_interval_value = listen_interval ? atoi(listen_interval) : STATION_MODE_LISTEN_INTERVAL;
-    
+
     int band_mode_value = STATION_BAND_MODE;
     if (band_mode) {
         if (strcmp(band_mode, "2.4G") == 0) {
@@ -644,7 +644,10 @@ static int handle_connect(int argc, char **argv) {
             band_mode_value = WIFI_BAND_MODE_AUTO;
         }
     }
-    
+
+    /*printf("ssid: %s pwd: %s bssid: %s use_wpa3: %s listen_interval: %s band_mode: %s\n",
+           ssid, pwd, bssid, use_wpa3, listen_interval, band_mode);*/
+
     return test_station_mode_connect_with_params(
         ssid,
         pwd,
@@ -662,84 +665,84 @@ static int handle_get_connected_ap_info(int argc, char **argv) {
 
 static int handle_disconnect_ap(int argc, char **argv) {
     CHECK_RPC_ACTIVE();
-    
+
     if (!parse_arguments(argc, argv, disconnect_ap_args, sizeof(disconnect_ap_args)/sizeof(cmd_arg_t))) {
         return FAILURE;
     }
-    
-    const char *reset_dhcp = get_arg_value(argc, argv, disconnect_ap_args, 
-                                           sizeof(disconnect_ap_args)/sizeof(cmd_arg_t), 
+
+    const char *reset_dhcp = get_arg_value(argc, argv, disconnect_ap_args,
+                                           sizeof(disconnect_ap_args)/sizeof(cmd_arg_t),
                                            "--reset_dhcp");
-    
+
     return test_station_mode_disconnect_with_params(reset_dhcp ? is_arg_true(reset_dhcp) : false);
 }
 
 static int handle_softap_vendor_ie(int argc, char **argv) {
     CHECK_RPC_ACTIVE();
-    
+
     if (!parse_arguments(argc, argv, softap_vendor_ie_args, sizeof(softap_vendor_ie_args)/sizeof(cmd_arg_t))) {
         return FAILURE;
     }
-    
-    const char *enable = get_arg_value(argc, argv, softap_vendor_ie_args, 
-                                      sizeof(softap_vendor_ie_args)/sizeof(cmd_arg_t), 
+
+    const char *enable = get_arg_value(argc, argv, softap_vendor_ie_args,
+                                      sizeof(softap_vendor_ie_args)/sizeof(cmd_arg_t),
                                       "--enable");
-    const char *data = get_arg_value(argc, argv, softap_vendor_ie_args, 
-                                    sizeof(softap_vendor_ie_args)/sizeof(cmd_arg_t), 
+    const char *data = get_arg_value(argc, argv, softap_vendor_ie_args,
+                                    sizeof(softap_vendor_ie_args)/sizeof(cmd_arg_t),
                                     "--data");
-    
+
     return test_softap_mode_set_vendor_ie(enable ? is_arg_true(enable) : true, data ? data : "");
 }
 
 static int handle_start_softap(int argc, char **argv) {
     CHECK_RPC_ACTIVE();
-    
+
     if (!parse_arguments(argc, argv, start_softap_args, sizeof(start_softap_args)/sizeof(cmd_arg_t))) {
         return FAILURE;
     }
-    
-    const char *ssid = get_arg_value(argc, argv, start_softap_args, 
-                                    sizeof(start_softap_args)/sizeof(cmd_arg_t), 
+
+    const char *ssid = get_arg_value(argc, argv, start_softap_args,
+                                    sizeof(start_softap_args)/sizeof(cmd_arg_t),
                                     "--ssid");
-    const char *pwd = get_arg_value(argc, argv, start_softap_args, 
-                                   sizeof(start_softap_args)/sizeof(cmd_arg_t), 
+    const char *pwd = get_arg_value(argc, argv, start_softap_args,
+                                   sizeof(start_softap_args)/sizeof(cmd_arg_t),
                                    "--pwd");
-    const char *channel = get_arg_value(argc, argv, start_softap_args, 
-                                       sizeof(start_softap_args)/sizeof(cmd_arg_t), 
+    const char *channel = get_arg_value(argc, argv, start_softap_args,
+                                       sizeof(start_softap_args)/sizeof(cmd_arg_t),
                                        "--channel");
-    const char *sec_prot = get_arg_value(argc, argv, start_softap_args, 
-                                        sizeof(start_softap_args)/sizeof(cmd_arg_t), 
+    const char *sec_prot = get_arg_value(argc, argv, start_softap_args,
+                                        sizeof(start_softap_args)/sizeof(cmd_arg_t),
                                         "--sec_prot");
-    const char *max_conn = get_arg_value(argc, argv, start_softap_args, 
-                                         sizeof(start_softap_args)/sizeof(cmd_arg_t), 
+    const char *max_conn = get_arg_value(argc, argv, start_softap_args,
+                                         sizeof(start_softap_args)/sizeof(cmd_arg_t),
                                          "--max_conn");
-    const char *hide_ssid = get_arg_value(argc, argv, start_softap_args, 
-                                         sizeof(start_softap_args)/sizeof(cmd_arg_t), 
+    const char *hide_ssid = get_arg_value(argc, argv, start_softap_args,
+                                         sizeof(start_softap_args)/sizeof(cmd_arg_t),
                                          "--hide_ssid");
-    const char *bw = get_arg_value(argc, argv, start_softap_args, 
-                                   sizeof(start_softap_args)/sizeof(cmd_arg_t), 
+    const char *bw = get_arg_value(argc, argv, start_softap_args,
+                                   sizeof(start_softap_args)/sizeof(cmd_arg_t),
                                    "--bw");
-    const char *band_mode = get_arg_value(argc, argv, start_softap_args, 
-                                         sizeof(start_softap_args)/sizeof(cmd_arg_t), 
+    const char *band_mode = get_arg_value(argc, argv, start_softap_args,
+                                         sizeof(start_softap_args)/sizeof(cmd_arg_t),
                                          "--band_mode");
-    
+
     /* Use default values from ctrl_config.h if arguments are not provided */
     if (!ssid) {
         ssid = SOFTAP_MODE_SSID;
         printf("Using default SSID: %s\n", ssid);
     }
-    
+
     if (!pwd) {
         pwd = SOFTAP_MODE_PWD;
         printf("Using default password\n");
     }
-    
+
     int channel_value = channel ? atoi(channel) : SOFTAP_MODE_CHANNEL;
     const char *encryption_mode = sec_prot ? sec_prot : "wpa2_psk"; // Default to WPA2
     int max_conn_value = max_conn ? atoi(max_conn) : SOFTAP_MODE_MAX_ALLOWED_CLIENTS;
     bool hide_ssid_value = hide_ssid ? is_arg_true(hide_ssid) : SOFTAP_MODE_SSID_HIDDEN;
     int bw_value = bw ? atoi(bw) : SOFTAP_MODE_BANDWIDTH;
-    
+
     int band_mode_value = SOFTAP_BAND_MODE;
     if (band_mode) {
         if (strcmp(band_mode, "2.4G") == 0) {
@@ -750,7 +753,7 @@ static int handle_start_softap(int argc, char **argv) {
             band_mode_value = WIFI_BAND_MODE_AUTO;
         }
     }
-    
+
     return test_softap_mode_start_with_params(
         ssid,
         pwd,
@@ -780,15 +783,15 @@ static int handle_stop_softap(int argc, char **argv) {
 
 static int handle_set_wifi_power_save(int argc, char **argv) {
     CHECK_RPC_ACTIVE();
-    
+
     if (!parse_arguments(argc, argv, set_wifi_power_save_args, sizeof(set_wifi_power_save_args)/sizeof(cmd_arg_t))) {
         return FAILURE;
     }
-    
-    const char *mode = get_arg_value(argc, argv, set_wifi_power_save_args, 
-                                    sizeof(set_wifi_power_save_args)/sizeof(cmd_arg_t), 
+
+    const char *mode = get_arg_value(argc, argv, set_wifi_power_save_args,
+                                    sizeof(set_wifi_power_save_args)/sizeof(cmd_arg_t),
                                     "--mode");
-    
+
     return test_set_wifi_power_save_mode(mode ? (strcmp(mode, "max") == 0 ? WIFI_POWER_SAVE_MODE_MAX : WIFI_POWER_SAVE_MODE_MIN) : WIFI_POWER_SAVE_MODE_MAX);
 }
 
@@ -799,15 +802,15 @@ static int handle_get_wifi_power_save(int argc, char **argv) {
 
 static int handle_set_wifi_max_tx_power(int argc, char **argv) {
     CHECK_RPC_ACTIVE();
-    
+
     if (!parse_arguments(argc, argv, set_wifi_max_tx_power_args, sizeof(set_wifi_max_tx_power_args)/sizeof(cmd_arg_t))) {
         return FAILURE;
     }
-    
-    const char *map_val = get_arg_value(argc, argv, set_wifi_max_tx_power_args, 
-                                       sizeof(set_wifi_max_tx_power_args)/sizeof(cmd_arg_t), 
+
+    const char *map_val = get_arg_value(argc, argv, set_wifi_max_tx_power_args,
+                                       sizeof(set_wifi_max_tx_power_args)/sizeof(cmd_arg_t),
                                        "--map_val");
-    
+
     int map_value = atoi(map_val);
     return test_wifi_set_max_tx_power(map_value);
 }
@@ -853,15 +856,15 @@ static int handle_get_fw_version(int argc, char **argv) {
 
 static int handle_ota_update(int argc, char **argv) {
     CHECK_RPC_ACTIVE();
-    
+
     if (!parse_arguments(argc, argv, ota_update_args, sizeof(ota_update_args)/sizeof(cmd_arg_t))) {
         return FAILURE;
     }
-    
-    const char *url = get_arg_value(argc, argv, ota_update_args, 
-                                   sizeof(ota_update_args)/sizeof(cmd_arg_t), 
+
+    const char *url = get_arg_value(argc, argv, ota_update_args,
+                                   sizeof(ota_update_args)/sizeof(cmd_arg_t),
                                    "--url");
-    
+
     printf("Starting OTA update from URL: %s\n", url);
 
     return test_ota_update_with_params(url);
@@ -869,21 +872,21 @@ static int handle_ota_update(int argc, char **argv) {
 
 static int handle_heartbeat(int argc, char **argv) {
     CHECK_RPC_ACTIVE();
-    
+
     if (!parse_arguments(argc, argv, heartbeat_args, sizeof(heartbeat_args)/sizeof(cmd_arg_t))) {
         return FAILURE;
     }
-    
-    const char *enable = get_arg_value(argc, argv, heartbeat_args, 
-                                      sizeof(heartbeat_args)/sizeof(cmd_arg_t), 
+
+    const char *enable = get_arg_value(argc, argv, heartbeat_args,
+                                      sizeof(heartbeat_args)/sizeof(cmd_arg_t),
                                       "--enable");
-    const char *duration = get_arg_value(argc, argv, heartbeat_args, 
-                                         sizeof(heartbeat_args)/sizeof(cmd_arg_t), 
+    const char *duration = get_arg_value(argc, argv, heartbeat_args,
+                                         sizeof(heartbeat_args)/sizeof(cmd_arg_t),
                                          "--duration");
-    
+
     bool enable_value = enable ? is_arg_true(enable) : true;
     int duration_value = duration ? atoi(duration) : 30;
-    
+
     if (enable_value) {
         printf("Enabling heartbeat with duration %d seconds\n", duration_value);
         return test_config_heartbeat();
@@ -895,33 +898,33 @@ static int handle_heartbeat(int argc, char **argv) {
 
 static int handle_subscribe_event(int argc, char **argv) {
     CHECK_RPC_ACTIVE();
-    
+
     if (!parse_arguments(argc, argv, subscribe_event_args, sizeof(subscribe_event_args)/sizeof(cmd_arg_t))) {
         return FAILURE;
     }
-    
-    const char *event = get_arg_value(argc, argv, subscribe_event_args, 
-                                     sizeof(subscribe_event_args)/sizeof(cmd_arg_t), 
+
+    const char *event = get_arg_value(argc, argv, subscribe_event_args,
+                                     sizeof(subscribe_event_args)/sizeof(cmd_arg_t),
                                      "--event");
-    
+
     printf("Subscribing to event: %s\n", event);
-    
+
     return test_subscribe_event(event);
 }
 
 static int handle_unsubscribe_event(int argc, char **argv) {
     CHECK_RPC_ACTIVE();
-    
+
     if (!parse_arguments(argc, argv, unsubscribe_event_args, sizeof(unsubscribe_event_args)/sizeof(cmd_arg_t))) {
         return FAILURE;
     }
-    
-    const char *event = get_arg_value(argc, argv, unsubscribe_event_args, 
-                                     sizeof(unsubscribe_event_args)/sizeof(cmd_arg_t), 
+
+    const char *event = get_arg_value(argc, argv, unsubscribe_event_args,
+                                     sizeof(unsubscribe_event_args)/sizeof(cmd_arg_t),
                                      "--event");
-    
+
     printf("Unsubscribing from event: %s\n", event);
-    
+
     return test_unsubscribe_event(event);
 }
 
@@ -962,7 +965,7 @@ static int shell_init(shell_context_t *ctx) {
     /* Set up completion and hints */
     replxx_set_completion_callback(ctx->shell_handle, shell_completion_callback, ctx->shell_handle);
     replxx_set_hint_callback(ctx->shell_handle, shell_hint_callback, ctx->shell_handle);
-    
+
     /* Load history */
     replxx_history_load(ctx->shell_handle, ".esp_hosted_history");
 
@@ -1003,7 +1006,7 @@ static int ip_fetch_retry_count = 0;   /* Counter for IP fetch retries */
     while (!exit_auto_ip_restore) {
         /* Initialize RPC */
         rpc_state = RPC_STATE_INIT;
-        
+
         if (init_hosted_control_lib()) {
             //printf("rpc lib init failed, retry\n");
             usleep(RPC_RETRY_INTERVAL_MS * 1000);
@@ -1044,7 +1047,7 @@ static int ip_fetch_retry_count = 0;   /* Counter for IP fetch retries */
             if (sta_network.mac_addr[0] == '\0') {
                 test_station_mode_get_mac_addr(sta_network.mac_addr);
             }
-            
+
             if (ap_network.mac_addr[0] == '\0') {
                 test_softap_mode_get_mac_addr(ap_network.mac_addr);
             }
@@ -1055,12 +1058,12 @@ static int ip_fetch_retry_count = 0;   /* Counter for IP fetch retries */
                     printf("Failed to fetch IP status, reinitializing RPC\n");
                     break;
                 }
-                
+
                 /* If IP is still all zeros after fetch, retry a few times */
                 if (sta_network.ip_valid && strcmp(sta_network.ip_addr, "0.0.0.0") == 0) {
                     if (ip_fetch_retry_count < MAX_IP_FETCH_RETRIES) {
                         ip_fetch_retry_count++;
-                        printf("Got zeroed IP, retrying fetch (%d/%d)...\n", 
+                        printf("Got zeroed IP, retrying fetch (%d/%d)...\n",
                                ip_fetch_retry_count, MAX_IP_FETCH_RETRIES);
                         usleep(IP_FETCH_RETRY_DELAY_MS * 1000);
                         continue;
@@ -1070,11 +1073,11 @@ static int ip_fetch_retry_count = 0;   /* Counter for IP fetch retries */
                 } else {
                     ip_fetch_retry_count = 0;
                 }
-                
+
                 /* If we got valid IP and have a valid MAC, ensure the network is up */
-                if (sta_network.ip_valid && strcmp(sta_network.ip_addr, "0.0.0.0") != 0 && 
+                if (sta_network.ip_valid && strcmp(sta_network.ip_addr, "0.0.0.0") != 0 &&
                     sta_network.dns_valid && sta_network.mac_addr[0] != '\0') {
-                    
+
                     if (!sta_network.network_up) {
                         printf("Setting up station network interface with IP %s\n", sta_network.ip_addr);
                         if (up_sta_netdev(&sta_network) == SUCCESS) {
@@ -1087,7 +1090,7 @@ static int ip_fetch_retry_count = 0;   /* Counter for IP fetch retries */
                     }
                 }
             }
-            
+
             usleep(NETWORK_CHECK_INTERVAL_MS * 1000);
         }
 
@@ -1125,25 +1128,25 @@ static int start_rpc_auto_ip_restore(void) {
 /* Simpler rpc_cleanup function */
 static void stop_rpc_auto_ip_restore(void) {
     static int cleanup_in_progress = 0;
-    
+
     // Prevent multiple cleanups
     if (cleanup_in_progress) {
         printf("RPC cleanup already in progress\n");
         return;
     }
-    
+
     cleanup_in_progress = 1;
-    
+
     // Set exit flag and notify threads
     exit_auto_ip_restore = 1;
     rpc_state = RPC_STATE_INACTIVE;
-    
+
     printf("Cleaning up RPC resources...\n");
-    
+
     // Give app thread a chance to notice exit flag
     printf("Waiting for background threads to terminate...\n");
     sleep(1);  // Brief pause
-    
+
     // Join the app thread if it exists
     if (auto_ip_restore_thread) {
         if (pthread_join(auto_ip_restore_thread, NULL) == 0) {
@@ -1153,15 +1156,15 @@ static void stop_rpc_auto_ip_restore(void) {
         }
         auto_ip_restore_thread = 0;
     }
-    
+
     // Clean up resources
     unregister_event_callbacks();
-    
+
     if (rpc_initialized) {
         deinit_hosted_control_lib();
         rpc_initialized = 0;
     }
-    
+
     cleanup_in_progress = 0;
     printf("RPC cleanup complete\n");
 }
@@ -1212,8 +1215,8 @@ static int shell_run(shell_context_t *ctx) {
         args[argc] = NULL;
 
         /* Handle special commands */
-        if (strcmp(args[0], "exit") == 0 || 
-            strcmp(args[0], "quit") == 0 || 
+        if (strcmp(args[0], "exit") == 0 ||
+            strcmp(args[0], "quit") == 0 ||
             strcmp(args[0], "q") == 0) {
             printf("Exiting shell\n");
             free(line_copy);
@@ -1268,13 +1271,13 @@ static void sig_handler(int signum) {
         case SIGINT:
             // Just set the exit flag
             exit_auto_ip_restore = 1;
-            
+
             // Signal the shell to exit if it's still running
             shell_context_t *ctx = get_shell_context();
             if (ctx && ctx->running) {
                 ctx->running = 0;
             }
-            
+
             printf("Exit requested, cleaning up...\n");
             break;
     }
@@ -1304,23 +1307,23 @@ int main(int argc, char *argv[]) {
 
     /* Store context for signal handler */
     set_shell_context(&ctx);
-    
+
     /* Initialize RPC first - this creates the app thread */
     if (start_rpc_auto_ip_restore() != 0) {
         printf("Failed to initialize RPC\n");
         return -1;
     }
-    
+
     /* Run the shell directly in the main thread */
     ret = shell_run(&ctx);
-    
+
     /* The shell has exited - initiate cleanup */
     printf("Shell exited, initiating cleanup\n");
     exit_auto_ip_restore = 1;
-    
+
     /* Clean up resources */
     stop_rpc_auto_ip_restore();
-    
+
     printf("Cleanup complete, exiting\n");
     return ret;
 }
@@ -1332,18 +1335,18 @@ void shell_completion_callback(const char *line, replxx_completions *completions
     char *tokens[MAX_CMD_ARGS] = {0};
     int token_count = 0;
     char *saveptr = NULL;
-    
+
     if (!line_copy) {
         return;
     }
-    
+
     /* Parse the current line into tokens */
     tokens[token_count] = strtok_r(line_copy, " \t", &saveptr);
     while (tokens[token_count] && token_count < MAX_CMD_ARGS - 1) {
         token_count++;
         tokens[token_count] = strtok_r(NULL, " \t", &saveptr);
     }
-    
+
     if (DEBUG_COMPLETION) {
         printf("\nDEBUG: Completion for line '%s'\n", line);
         printf("DEBUG: Token count: %d\n", token_count);
@@ -1351,15 +1354,15 @@ void shell_completion_callback(const char *line, replxx_completions *completions
             printf("DEBUG: Token %d: '%s'\n", i, tokens[i]);
         }
     }
-    
+
     /* Complete command name if we're at the first token */
     if (token_count == 0 || (token_count == 1 && line[strlen(line) - 1] != ' ')) {
         const shell_command_t *cmd;
-        
+
         /* Get prefix to match against */
         const char *prefix = tokens[0] ? tokens[0] : "";
         size_t prefix_len = strlen(prefix);
-        
+
         /* Set context length to length of current token for proper replacement */
         if (context_len) {
             *context_len = prefix_len;
@@ -1367,7 +1370,7 @@ void shell_completion_callback(const char *line, replxx_completions *completions
                 printf("DEBUG: Context length: %d\n", *context_len);
             }
         }
-        
+
         /* Add matching commands */
         for (cmd = commands; cmd->name; cmd++) {
             if (strncmp(cmd->name, prefix, prefix_len) == 0) {
@@ -1383,16 +1386,16 @@ void shell_completion_callback(const char *line, replxx_completions *completions
                 break;
             }
         }
-        
+
         if (cmd && cmd->args) {
             /* Are we typing an argument name or value? */
             bool is_arg_value = false;
             const cmd_arg_t *current_arg = NULL;
-            
+
             /* Check if the previous token was an argument name */
             if (token_count >= 2 && tokens[token_count-2][0] == '-' && tokens[token_count-2][1] == '-') {
                 is_arg_value = true;
-                
+
                 /* Find the current argument */
                 for (int i = 0; i < cmd->arg_count; i++) {
                     if (strcmp(cmd->args[i].name, tokens[token_count-2]) == 0) {
@@ -1401,12 +1404,12 @@ void shell_completion_callback(const char *line, replxx_completions *completions
                     }
                 }
             }
-            
+
             /* Current token or empty string if at a space */
-            const char *current_token = (token_count > 0 && tokens[token_count-1]) ? 
+            const char *current_token = (token_count > 0 && tokens[token_count-1]) ?
                                          tokens[token_count-1] : "";
             size_t current_token_len = strlen(current_token);
-            
+
             /* Set context length for proper replacement */
             if (context_len) {
                 /* If we're at a space, context length should be 0 */
@@ -1415,17 +1418,17 @@ void shell_completion_callback(const char *line, replxx_completions *completions
                 } else {
                     *context_len = current_token_len;
                 }
-                
+
                 if (DEBUG_COMPLETION) {
                     printf("DEBUG: Context length: %d\n", *context_len);
                 }
             }
-            
+
             if (is_arg_value && current_arg && current_arg->type == ARG_TYPE_CHOICE) {
                 /* Complete choice values */
                 const char *prefix = tokens[token_count-1] ? tokens[token_count-1] : "";
                 size_t prefix_len = strlen(prefix);
-                
+
                 for (int i = 0; current_arg->choices[i]; i++) {
                     if (strncmp(current_arg->choices[i], prefix, prefix_len) == 0) {
                         replxx_add_completion(completions, current_arg->choices[i]);
@@ -1444,7 +1447,7 @@ void shell_completion_callback(const char *line, replxx_completions *completions
                                 break;
                             }
                         }
-                        
+
                         if (!already_provided && strncmp(cmd->args[i].name, current_token, current_token_len) == 0) {
                             replxx_add_completion(completions, cmd->args[i].name);
                         }
@@ -1460,7 +1463,7 @@ void shell_completion_callback(const char *line, replxx_completions *completions
                                 break;
                             }
                         }
-                        
+
                         if (!already_provided) {
                             replxx_add_completion(completions, cmd->args[i].name);
                         }
@@ -1469,7 +1472,7 @@ void shell_completion_callback(const char *line, replxx_completions *completions
             }
         }
     }
-    
+
     free(line_copy);
 }
 
@@ -1478,18 +1481,18 @@ void shell_hint_callback(const char *line, replxx_hints *hints, int *context_len
     char *tokens[MAX_CMD_ARGS] = {0};
     int token_count = 0;
     char *saveptr = NULL;
-    
+
     if (!line_copy) {
         return;
     }
-    
+
     /* Parse the current line into tokens */
     tokens[token_count] = strtok_r(line_copy, " \t", &saveptr);
     while (tokens[token_count] && token_count < MAX_CMD_ARGS - 1) {
         token_count++;
         tokens[token_count] = strtok_r(NULL, " \t", &saveptr);
     }
-    
+
     /* Provide hints for commands */
     if (token_count == 0 || (token_count == 1 && line[strlen(line) - 1] != ' ')) {
         const shell_command_t *cmd;
@@ -1513,17 +1516,17 @@ void shell_hint_callback(const char *line, replxx_hints *hints, int *context_len
                 break;
             }
         }
-        
+
         if (cmd && cmd->args) {
             /* Are we typing an argument name or value? */
             bool is_arg_value = false;
             const cmd_arg_t *current_arg = NULL;
-            
+
             /* Check if the previous token was an argument name */
-            if (token_count >= 2 && tokens[token_count-2] && 
+            if (token_count >= 2 && tokens[token_count-2] &&
                 tokens[token_count-2][0] == '-' && tokens[token_count-2][1] == '-') {
                 is_arg_value = true;
-                
+
                 /* Find the current argument */
                 for (int i = 0; i < cmd->arg_count; i++) {
                     if (strcmp(cmd->args[i].name, tokens[token_count-2]) == 0) {
@@ -1532,12 +1535,12 @@ void shell_hint_callback(const char *line, replxx_hints *hints, int *context_len
                     }
                 }
             }
-            
+
             if (is_arg_value && current_arg) {
                 /* Provide hint for argument value */
                 char hint_text[256] = {0};
                 snprintf(hint_text, sizeof(hint_text), "%*s", 12, "");
-                
+
                 switch (current_arg->type) {
                     case ARG_TYPE_STRING:
                         strcat(hint_text, "<string> ");
@@ -1561,7 +1564,7 @@ void shell_hint_callback(const char *line, replxx_hints *hints, int *context_len
                         *color = REPLXX_COLOR_CYAN;
                         return;
                 }
-                
+
                 strcat(hint_text, current_arg->help);
                 replxx_add_hint(hints, hint_text);
             } else if (!is_arg_value && line[strlen(line) - 1] == ' ') {
@@ -1576,10 +1579,10 @@ void shell_hint_callback(const char *line, replxx_hints *hints, int *context_len
                             break;
                         }
                     }
-                    
+
                     if (!already_provided) {
                         char hint_text[256];
-                        snprintf(hint_text, sizeof(hint_text), "%*s%s  %s", 
+                        snprintf(hint_text, sizeof(hint_text), "%*s%s  %s",
                                 12, "",
                                 cmd->args[i].name,
                                 cmd->args[i].help);
@@ -1590,9 +1593,9 @@ void shell_hint_callback(const char *line, replxx_hints *hints, int *context_len
             }
         }
     }
-    
+
     free(line_copy);
-    
+
     /* Set color to cyan */
     *color = REPLXX_COLOR_CYAN;
 }

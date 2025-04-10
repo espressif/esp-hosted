@@ -85,6 +85,7 @@ interface_handle_t *if_handle = NULL;
 esp_netif_t *slave_sta_netif = NULL;
 
 static protocomm_t *pc_pserial;
+SemaphoreHandle_t host_reset_sem;
 
 static struct rx_data {
 	uint8_t valid;
@@ -580,6 +581,9 @@ int event_handler(uint8_t val)
 				if_handle->state = ACTIVE;
 				datapath = 1;
 				ESP_EARLY_LOGI(TAG, "Start Data Path");
+				if (host_reset_sem) {
+					xSemaphoreGive(host_reset_sem);
+				}
 			} else {
 				ESP_EARLY_LOGI(TAG, "Failed to Start Data Path");
 			}
@@ -602,6 +606,9 @@ int event_handler(uint8_t val)
 
 		case ESP_POWER_SAVE_OFF:
 			if_handle->state = ACTIVE;
+			if (host_reset_sem) {
+				xSemaphoreGive(host_reset_sem);
+			}
 			host_power_save_alert(ESP_POWER_SAVE_OFF);
 			break;
 	}
@@ -891,9 +898,41 @@ static void host_wakeup_callback(void)
 }
 #endif
 
-esp_err_t esp_hosted_coprocessor_init(void)
+static void host_reset_task(void* pvParameters)
 {
 	uint8_t capa = 0;
+
+	ESP_LOGI(TAG, "host reset handler task started");
+
+	while (1) {
+
+		if (host_reset_sem) {
+			xSemaphoreTake(host_reset_sem, portMAX_DELAY);
+		} else {
+			vTaskDelay(pdMS_TO_TICKS(100));
+			continue;
+		}
+
+		capa = get_capabilities();
+		/* send capabilities to host */
+		ESP_LOGI(TAG,"host reconfig event");
+		generate_startup_event(capa);
+		send_event_to_host(CTRL_MSG_ID__Event_ESPInit);
+
+#ifdef CONFIG_SLAVE_LWIP_ENABLED
+		ESP_LOGI(TAG,"--- Wait for IP ---");
+		while (!station_got_ip) {
+			vTaskDelay(pdMS_TO_TICKS(50));
+		}
+		send_dhcp_dns_info_to_host(1, 1);
+#endif
+	}
+}
+
+
+esp_err_t esp_hosted_coprocessor_init(void)
+{
+	assert(host_reset_sem = xSemaphoreCreateBinary());
 
 	print_firmware_version();
 
@@ -904,7 +943,7 @@ esp_err_t esp_hosted_coprocessor_init(void)
 
 	register_reset_pin(CONFIG_ESP_GPIO_SLAVE_RESET);
 
-	capa = get_capabilities();
+	host_power_save_init(host_wakeup_callback);
 
 #ifdef CONFIG_BT_ENABLED
 	initialise_bluetooth();
@@ -980,25 +1019,18 @@ esp_err_t esp_hosted_coprocessor_init(void)
 #endif
 
 	while(!datapath) {
-		vTaskDelay(50);
+		vTaskDelay(10);
 	}
 
-	/* send capabilities to host */
-	generate_startup_event(capa);
-	ESP_LOGI(TAG,"Initial set up done");
+	assert(xTaskCreate(host_reset_task, "host_reset_task" ,
+			CONFIG_ESP_DEFAULT_TASK_STACK_SIZE, NULL ,
+			CONFIG_ESP_HOSTED_TASK_PRIORITY_DEFAULT, NULL) == pdTRUE);
 
-	send_event_to_host(CTRL_MSG_ID__Event_ESPInit);
 
   #ifdef CONFIG_SLAVE_LWIP_ENABLED
 	while (!station_got_ip)
 		sleep(1);
   #endif
-
-	host_power_save_init(host_wakeup_callback);
-
-#ifdef CONFIG_SLAVE_MANAGES_WIFI
-	send_dhcp_dns_info_to_host(1, 0);
-#endif
 
 	return ESP_OK;
 }

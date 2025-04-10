@@ -21,7 +21,7 @@ int down_sta_netdev(const network_info_t *info) {
 
     ret = interface_down(sockfd, STA_INTERFACE);
     if (ret == SUCCESS) {
-        printf("%s interface down\n", STA_INTERFACE);
+        //printf("%s interface down\n", STA_INTERFACE);
     } else {
         printf("Unable to down %s interface\n", STA_INTERFACE);
         goto close_sock;
@@ -29,7 +29,7 @@ int down_sta_netdev(const network_info_t *info) {
 
     ret = remove_default_gateway(info->default_route);
     if (ret == SUCCESS) {
-        printf("Default gateway removed: Gateway=%s\n", info->default_route);
+        //printf("Default gateway removed: Gateway=%s\n", info->default_route);
     } else {
         goto close_sock;
     }
@@ -148,7 +148,7 @@ int down_softap_netdev(const network_info_t *info)
 
 	ret = interface_down(sockfd, AP_INTERFACE);
 	if (ret == SUCCESS) {
-		printf("%s interface down\n", AP_INTERFACE);
+		//printf("%s interface down\n", AP_INTERFACE);
 	} else {
 		printf("Unable to down %s interface\n", AP_INTERFACE);
 		goto close_sock;
@@ -156,7 +156,7 @@ int down_softap_netdev(const network_info_t *info)
 
 	ret = remove_default_gateway(info->default_route);
 	if (ret == SUCCESS) {
-		printf("Default gateway removed: Gateway=%s", info->default_route);
+		//printf("Default gateway removed: Gateway=%s", info->default_route);
 	} else {
 		printf("Failed to remove default gateway");
 		goto close_sock;
@@ -199,7 +199,7 @@ int up_softap_netdev(const network_info_t *info)
 
     ret = interface_down(sockfd, AP_INTERFACE);
     if (ret == SUCCESS) {
-        printf("%s interface down\n", AP_INTERFACE);
+        //printf("%s interface down\n", AP_INTERFACE);
     } else {
         printf("Unable to down %s interface\n", AP_INTERFACE);
         goto close_sock;
@@ -207,7 +207,7 @@ int up_softap_netdev(const network_info_t *info)
 
     ret = set_hw_addr(sockfd, AP_INTERFACE, mac_copy);
     if (ret == SUCCESS) {
-        printf("MAC address %s set to %s interface\n", mac_copy, AP_INTERFACE);
+        //printf("MAC address %s set to %s interface\n", mac_copy, AP_INTERFACE);
     } else {
         printf("Unable to set MAC address to %s interface\n", AP_INTERFACE);
         goto close_sock;
@@ -215,7 +215,7 @@ int up_softap_netdev(const network_info_t *info)
 
     ret = interface_up(sockfd, AP_INTERFACE);
     if (ret == SUCCESS) {
-        printf("%s interface up\n", AP_INTERFACE);
+        //printf("%s interface up\n", AP_INTERFACE);
     } else {
         printf("Unable to up %s interface\n", AP_INTERFACE);
         goto close_sock;

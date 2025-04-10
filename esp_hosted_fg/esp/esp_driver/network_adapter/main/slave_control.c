@@ -46,7 +46,7 @@
 #define WIFI_WRONG_PASSWORD_BIT     BIT3
 #define WIFI_HOST_REQUEST_BIT       BIT4
 
-#define MAX_STA_CONNECT_ATTEMPTS    2
+#define MAX_STA_CONNECT_ATTEMPTS    3
 
 #define TIMEOUT_IN_MIN              (60*TIMEOUT_IN_SEC)
 #define TIMEOUT_IN_HOUR             (60*TIMEOUT_IN_MIN)
@@ -159,7 +159,7 @@ static void send_wifi_event_data_to_host(int event, void *event_data, int event_
 esp_err_t esp_hosted_set_sta_config(wifi_interface_t iface, wifi_config_t *cfg)
 {
 	if (0 != memcmp(cfg, &prev_wifi_config, sizeof(wifi_config_t))) {
-		ESP_LOGI(TAG, "set wifi new config..");
+		ESP_LOGI(TAG, "set wifi new config cfg: %s %s prev_wifi_config: %s %s", cfg->sta.ssid, cfg->sta.password, prev_wifi_config.sta.ssid, prev_wifi_config.sta.password);
 		ESP_ERROR_CHECK_WITHOUT_ABORT(esp_wifi_set_config(iface, cfg));
 
 		memcpy(&prev_wifi_config, cfg, sizeof(wifi_config_t));
@@ -368,6 +368,8 @@ static void station_event_handler(void *arg, esp_event_base_t event_base,
 
 		/* Mark as station disconnected */
 		station_connected = false;
+		s2h_dhcp_dns.dhcp_up = s2h_dhcp_dns.dns_up = s2h_dhcp_dns.net_link_up = 0;
+		station_got_ip = 0;
 
 		if ((WIFI_HOST_REQUEST_BIT & xEventGroupGetBits(wifi_event_group)) != WIFI_HOST_REQUEST_BIT) {
 			/* Event should not be triggered if event handler is
@@ -379,11 +381,12 @@ static void station_event_handler(void *arg, esp_event_base_t event_base,
 			ESP_LOGI(TAG, "Station disconnected, reason[%u]",
 					disconnected_event->reason);
 		} else {
-			ESP_LOGI(TAG, "Manual Wi-Fi disconnected, no event raised");
+			send_wifi_event_data_to_host(CTRL_MSG_ID__Event_StationDisconnectFromAP,
+					disconnected_event, sizeof(wifi_event_sta_disconnected_t));
+			ESP_LOGI(TAG, "Manual Wi-Fi disconnected");
 		}
 
-		s2h_dhcp_dns.dhcp_up = s2h_dhcp_dns.dns_up = s2h_dhcp_dns.net_link_up = 0;
-		station_got_ip = 0;
+
 #ifdef CONFIG_SLAVE_MANAGES_WIFI
 		send_dhcp_dns_info_to_host(0, 0);
 #endif
@@ -413,7 +416,9 @@ static void station_event_handler(void *arg, esp_event_base_t event_base,
 			send_wifi_event_data_to_host(CTRL_MSG_ID__Event_StationConnectedToAP,
 					event_data, sizeof(wifi_event_sta_connected_t));
 		} else {
-			ESP_LOGI(TAG, "Manual Wi-Fi connected, no event raised");
+			ESP_LOGI(TAG, "Manual Wi-Fi connected");
+			send_wifi_event_data_to_host(CTRL_MSG_ID__Event_StationConnectedToAP,
+					event_data, sizeof(wifi_event_sta_connected_t));
 		}
 		xEventGroupSetBits(wifi_event_group, WIFI_CONNECTED_BIT);
 
@@ -844,7 +849,8 @@ static esp_err_t req_connect_ap_handler (CtrlMsg *req,
 
 	/* Check if config is same and station already connected */
 	if (station_connected && !wifi_changed) {
-		if (memcmp(wifi_cfg, &prev_wifi_config, sizeof(wifi_config_t)) == 0) {
+		if (memcmp(wifi_cfg, &prev_wifi_config, sizeof(wifi_config_t)) == 0)  {
+			ESP_LOGI(TAG, "wifi_cfg: %s %s prev_wifi_config: %s %s", wifi_cfg->sta.ssid, wifi_cfg->sta.password, prev_wifi_config.sta.ssid, prev_wifi_config.sta.password);
 			ESP_LOGI(TAG, "Same WiFi config as previous, station already connected");
 #if WIFI_DUALBAND_SUPPORT
 			resp_payload->band_mode = band_mode;
@@ -937,6 +943,7 @@ static esp_err_t req_connect_ap_handler (CtrlMsg *req,
 #endif
 
 	do {
+		ESP_LOGI(TAG, "Setting station config");
 		ret = esp_hosted_set_sta_config(ESP_IF_WIFI_STA, wifi_cfg);
 		if (ret == ESP_ERR_WIFI_PASSWORD) {
 			ESP_LOGE(TAG,"Invalid password");
@@ -948,6 +955,7 @@ static esp_err_t req_connect_ap_handler (CtrlMsg *req,
 			goto err;
 		}
 
+		ESP_LOGI(TAG, "Connecting to AP %s %s", wifi_cfg->sta.ssid, wifi_cfg->sta.password);
 		ret = esp_wifi_connect();
 		if (ret) {
 			ESP_LOGI(TAG, "Failed to connect to SSID:'%s', password:'%s'",

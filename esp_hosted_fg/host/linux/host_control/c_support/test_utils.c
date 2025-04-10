@@ -44,6 +44,10 @@
 network_info_t sta_network = {0};
 network_info_t ap_network = {0};
 
+/* Global network status tracking */
+static bool prev_network_down = false;
+static bool interface_down_printed = false;
+
 #define WIFI_VENDOR_IE_ELEMENT_ID                         0xDD
 #define OFFSET                                            4
 #define VENDOR_OUI_0                                      1
@@ -162,12 +166,16 @@ static int ctrl_app_event_callback(ctrl_cmd_t *app_event) {
 			printf("%s App EVENT: STA-Connected ssid[%s] bssid[%s] channel[%d] auth[%d] aid[%d]\n",
 				get_timestamp(ts, MIN_TIMESTAMP_STR_SIZE), p_e->ssid,
 				p_e->bssid, p_e->channel, p_e->authmode, p_e->aid);
+			prev_network_down = false;
+			interface_down_printed = false;
 			break;
 		} case CTRL_EVENT_STATION_DISCONNECT_FROM_AP: {
 			event_sta_disconn_t *p_e =  &app_event->u.e_sta_disconn;
 			printf("%s App EVENT: STA-Disconnected reason[%d] ssid[%s] bssid[%s] rssi[%d]\n",
 				get_timestamp(ts, MIN_TIMESTAMP_STR_SIZE), p_e->reason, p_e->ssid,
 				p_e->bssid, p_e->rssi);
+			prev_network_down = false; /* Reset to allow network down message */
+			interface_down_printed = false;
 			break;
 		} case CTRL_EVENT_STATION_CONNECTED_TO_ESP_SOFTAP: {
 			event_softap_sta_conn_t *p_e = &app_event->u.e_softap_sta_conn;
@@ -196,6 +204,7 @@ static int ctrl_app_event_callback(ctrl_cmd_t *app_event) {
 				strncpy(sta_network.gateway, (const char *)p_e->dhcp_gw, MAC_ADDR_LENGTH);
 				strncpy(sta_network.default_route, (const char *)p_e->dhcp_gw, MAC_ADDR_LENGTH);
 				sta_network.ip_valid = 1;
+				prev_network_down = false;
 			} else {
 				sta_network.network_up = 0;
 				sta_network.ip_valid = 0;
@@ -207,13 +216,25 @@ static int ctrl_app_event_callback(ctrl_cmd_t *app_event) {
 				sta_network.dns_valid = 0;
 			}
 
-			printf("%s event network %s dhcp %s (%s %s %s) dns %s (%s)\n",
-				get_timestamp(ts, MIN_TIMESTAMP_STR_SIZE),
-				p_e->net_link_up ? "up" : "down",
-				p_e->dhcp_up ? "up" : "down",
-				p_e->dhcp_ip, p_e->dhcp_nm, p_e->dhcp_gw,
-				p_e->dns_up ? "up" : "down",
-				p_e->dns_ip);
+			if (p_e->net_link_up) {
+				/*printf("%s  network event %s dhcp %s (%s %s %s) dns %s (%s)\n",
+					get_timestamp(ts, MIN_TIMESTAMP_STR_SIZE),
+					p_e->net_link_up ? "up" : "down",
+					p_e->dhcp_up ? "up" : "down",
+					p_e->dhcp_ip, p_e->dhcp_nm, p_e->dhcp_gw,
+					p_e->dns_up ? "up" : "down",
+					p_e->dns_ip);*/
+				prev_network_down = false;
+				interface_down_printed = false;
+			} else {
+				/* Only print network down message if we haven't already */
+				if (!prev_network_down) {
+					/*printf("%s  network event %s\n",
+						get_timestamp(ts, MIN_TIMESTAMP_STR_SIZE),
+						p_e->net_link_up ? "up" : "down");*/
+					prev_network_down = true;
+				}
+			}
 
 			if (sta_network.dns_valid && sta_network.ip_valid) {
 				//printf("Network identified as up\n");
@@ -222,6 +243,12 @@ static int ctrl_app_event_callback(ctrl_cmd_t *app_event) {
 				sta_network.network_up = 1;
 			} else {
 				//printf("Network identified as down");
+				/* Only print interface down message if we haven't already */
+				if (!interface_down_printed) {
+					printf("%s interface down\n", STA_INTERFACE);
+					interface_down_printed = true;
+				}
+
 				down_sta_netdev(&sta_network);
 				remove_dns(sta_network.dns_addr);
 				sta_network.network_up = 0;
@@ -1329,8 +1356,14 @@ int test_fetch_ip_addr_from_slave(void)
 			strncpy(sta_network.gateway, (const char *)p->dhcp_gw, MAC_ADDR_LENGTH);
 			strncpy(sta_network.default_route, (const char *)p->dhcp_gw, MAC_ADDR_LENGTH);
 			sta_network.ip_valid = 1;
+			prev_network_down = false;
+			interface_down_printed = false;
 		} else {
-			printf("%s -> Network reported as down\n", STA_INTERFACE);
+			/* Only print message if this is the first time we're reporting network down */
+			if (!prev_network_down) {
+				printf("%s -> Network reported as down\n", STA_INTERFACE);
+				prev_network_down = true;
+			}
 			sta_network.network_up = 0;
 			sta_network.ip_valid = 0;
 		}
@@ -1350,6 +1383,12 @@ int test_fetch_ip_addr_from_slave(void)
 			sta_network.network_up = 1;
 		} else {
 			//printf("Network identified as down");
+			/* Only print message if this is the first time we're bringing down the interface */
+			if (!interface_down_printed) {
+				printf("%s interface down\n", STA_INTERFACE);
+				interface_down_printed = true;
+			}
+
 			down_sta_netdev(&sta_network);
 			remove_dns(sta_network.dns_addr);
 			sta_network.network_up = 0;
@@ -1430,7 +1469,13 @@ int test_station_mode_connect_with_params(const char *ssid, const char *pwd, con
     ctrl_cmd_t *req = CTRL_CMD_DEFAULT_REQ();
 	ctrl_cmd_t *resp = NULL;
 
-    printf("Connect to AP[%s]\n", ssid ? ssid : STATION_MODE_SSID);
+    printf("Connect to AP[%s] with password[%s] and BSSID[%s] use_wpa3[%d] listen_interval[%d] band_mode[%d]\n",
+           ssid ? ssid : STATION_MODE_SSID,
+           pwd ? pwd : STATION_MODE_PWD,
+           bssid ? bssid : STATION_MODE_BSSID,
+           use_wpa3 ? 1 : 0,
+           listen_interval,
+           band_mode);
 
     /* Use provided parameters or defaults */
     strcpy((char *)&req->u.wifi_ap_config.ssid, ssid ? ssid : STATION_MODE_SSID);

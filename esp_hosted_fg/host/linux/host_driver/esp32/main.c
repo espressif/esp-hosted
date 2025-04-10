@@ -858,8 +858,7 @@ static void esp_reset(void)
 		if (!gpio_is_valid(resetpin)) {
 			esp_warn("host resetpin (%d) configured is invalid GPIO\n", resetpin);
 			resetpin = MOD_PARAM_UNINITIALISED;
-		}
-		else {
+		} else {
 			esp_info("Resetpin of Host is %d\n", resetpin);
 			gpio_request(resetpin, "sysfs");
 
@@ -933,7 +932,7 @@ static int __init esp_init(void)
 	struct esp_adapter	*adapter = NULL;
 
 	/* Reset ESP, Clean start ESP */
-	esp_reset();
+	//esp_reset();
 
 	/* Init adapter */
 	adapter = init_adapter();
