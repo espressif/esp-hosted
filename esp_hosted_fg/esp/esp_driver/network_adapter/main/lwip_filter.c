@@ -1,6 +1,9 @@
 /* LWIP packet filtering implementation */
 
 #include <string.h>
+#include <stdlib.h>
+#include <ctype.h>
+
 #include "esp_log.h"
 #include "esp_timer.h"
 #include "lwip/opt.h"
@@ -38,7 +41,7 @@ static const char *TAG = "lwip_filter";
 #if defined(CONFIG_ESP_DEFAULT_LWIP_SLAVE)
   #define DEFAULT_LWIP_TO_SEND SLAVE_LWIP_BRIDGE
 #elif defined(CONFIG_ESP_DEFAULT_LWIP_HOST)
-  #define DEFAULT_LWIP_TO_SEND BOTH_LWIP_BRIDGE
+  #define DEFAULT_LWIP_TO_SEND HOST_LWIP_BRIDGE
 #elif defined(CONFIG_ESP_DEFAULT_LWIP_BOTH)
   #define DEFAULT_LWIP_TO_SEND BOTH_LWIP_BRIDGE
 #else
@@ -58,6 +61,205 @@ static struct {
 	int last_result;
 	uint16_t last_port;
 } udp_cache = {0};
+
+#define MAX_ALLOWED_TCP_SRC_PORTS 10
+#define MAX_ALLOWED_UDP_SRC_PORTS 10
+#define MAX_ALLOWED_TCP_DST_PORTS 10
+#define MAX_ALLOWED_UDP_DST_PORTS 10
+
+/* In the file-scope variables section */
+static uint16_t allowed_tcp_src_ports[MAX_ALLOWED_TCP_SRC_PORTS] = {0};
+static uint16_t allowed_udp_src_ports[MAX_ALLOWED_UDP_SRC_PORTS] = {0};
+static uint16_t allowed_tcp_dst_ports[MAX_ALLOWED_TCP_DST_PORTS] = {0};
+static uint16_t allowed_udp_dst_ports[MAX_ALLOWED_UDP_DST_PORTS] = {0};
+static int allowed_tcp_src_ports_count = 0;
+static int allowed_udp_src_ports_count = 0;
+static int allowed_tcp_dst_ports_count = 0;
+static int allowed_udp_dst_ports_count = 0;
+
+/* Parse a comma-separated list of ports into an array */
+static int init_allowed_ports(const char *ports_str, int *ports_count, uint16_t *ports_array, int max_ports, const char *port_type) {
+    /* Only initialize once */
+    static bool tcp_src_initialized = false;
+    static bool tcp_dst_initialized = false;
+    static bool udp_src_initialized = false;
+    static bool udp_dst_initialized = false;
+
+    /* Check if already initialized for this port type */
+    if ((strcmp(port_type, "tcp_src") == 0 && tcp_src_initialized) ||
+        (strcmp(port_type, "tcp_dst") == 0 && tcp_dst_initialized) ||
+        (strcmp(port_type, "udp_src") == 0 && udp_src_initialized) ||
+        (strcmp(port_type, "udp_dst") == 0 && udp_dst_initialized)) {
+        return 0;
+    }
+
+    /* Reset counter */
+    *ports_count = 0;
+
+    /* If no ports string provided, return */
+    if (!ports_str || !ports_str[0]) {
+        ESP_LOGI(TAG, "No %s ports configured", port_type);
+        return 0;
+    }
+
+    char port_buf[6]; /* Max 5 digits for a port + null terminator */
+    int port_buf_idx = 0;
+
+    for (int i = 0; ports_str[i] != '\0' && *ports_count < max_ports; i++) {
+        if (isdigit((unsigned char)ports_str[i])) {  /* Fix: cast to unsigned char */
+            port_buf[port_buf_idx++] = ports_str[i];
+            if (port_buf_idx >= sizeof(port_buf) - 1) {
+                port_buf_idx = sizeof(port_buf) - 2; /* Prevent overflow */
+            }
+        } else if (ports_str[i] == ',') {
+            if (port_buf_idx > 0) {
+                port_buf[port_buf_idx] = '\0';
+                ports_array[(*ports_count)++] = atoi(port_buf);
+                port_buf_idx = 0;
+            }
+        }
+    }
+
+    /* Process the last port if there's no trailing comma */
+    if (port_buf_idx > 0) {
+        port_buf[port_buf_idx] = '\0';
+        ports_array[(*ports_count)++] = atoi(port_buf);
+    }
+
+    /* Log the results */
+    ESP_LOGI(TAG, "Initialized %d allowed %s ports:", *ports_count, port_type);
+    for (int i = 0; i < *ports_count; i++) {
+        ESP_LOGI(TAG, "  - Port %d", ports_array[i]);
+    }
+
+    /* Mark as initialized */
+    if (strcmp(port_type, "tcp_src") == 0) {
+        tcp_src_initialized = true;
+    } else if (strcmp(port_type, "tcp_dst") == 0) {
+        tcp_dst_initialized = true;
+    } else if (strcmp(port_type, "udp_src") == 0) {
+        udp_src_initialized = true;
+    } else if (strcmp(port_type, "udp_dst") == 0) {
+        udp_dst_initialized = true;
+    }
+
+    return 0;
+}
+
+
+static int init_allowed_tcp_ports(const char *ports_str_src, const char *ports_str_dst) {
+    int ret1 = 0, ret2 = 0;
+
+    if (ports_str_src && strlen(ports_str_src) > 0) {
+        ESP_LOGI(TAG, "Host reserved TCP src ports: %s", ports_str_src);
+        ret1 = init_allowed_ports(ports_str_src, &allowed_tcp_src_ports_count,
+                                 allowed_tcp_src_ports, MAX_ALLOWED_TCP_SRC_PORTS, "tcp_src");
+    }
+
+    if (ports_str_dst && strlen(ports_str_dst) > 0) {
+        ESP_LOGI(TAG, "Host reserved TCP dst ports: %s", ports_str_dst);
+        ret2 = init_allowed_ports(ports_str_dst, &allowed_tcp_dst_ports_count,
+                                 allowed_tcp_dst_ports, MAX_ALLOWED_TCP_DST_PORTS, "tcp_dst");
+    }
+
+    if (ret1) {
+        ESP_LOGE(TAG, "Failed to initialize allowed TCP src ports");
+        return ret1;
+    }
+    if (ret2) {
+        ESP_LOGE(TAG, "Failed to initialize allowed TCP dst ports");
+        return ret2;
+    }
+    return 0;
+}
+
+static int init_allowed_udp_ports(const char *ports_str_src, const char *ports_str_dst) {
+    int ret1=0, ret2=0;
+	if (ports_str_src && strlen(ports_str_src) > 0) {
+		ESP_LOGI(TAG, "host reserved udp src ports: %s", ports_str_src);
+		ret1 = init_allowed_ports(ports_str_src, &allowed_udp_src_ports_count, allowed_udp_src_ports, MAX_ALLOWED_UDP_SRC_PORTS, "udp_src");
+	}
+	if (ports_str_dst && strlen(ports_str_dst) > 0) {
+		ESP_LOGI(TAG, "host reserved udp dst ports: %s", ports_str_dst);
+		ret2 = init_allowed_ports(ports_str_dst, &allowed_udp_dst_ports_count, allowed_udp_dst_ports, MAX_ALLOWED_UDP_DST_PORTS, "udp_dst");
+	}
+
+	if (ret1) {
+		ESP_LOGE(TAG, "Failed to initialize allowed udp src ports");
+		return ret1;
+	}
+	if (ret2) {
+		ESP_LOGE(TAG, "Failed to initialize allowed udp dst ports");
+		return ret2;
+	}
+    return 0;
+}
+
+static int punch_hole_for_host_ports_from_config(const char *ports_str_tcp_src,
+                                                const char *ports_str_tcp_dst,
+                                                const char *ports_str_udp_src,
+                                                const char *ports_str_udp_dst) {
+    int ret1 = 0, ret2 = 0;
+
+    ESP_LOGI(TAG, "Host reserved TCP src ports: %s",
+             ports_str_tcp_src && strlen(ports_str_tcp_src) > 0 ? ports_str_tcp_src : "none");
+    ESP_LOGI(TAG, "Host reserved TCP dst ports: %s",
+             ports_str_tcp_dst && strlen(ports_str_tcp_dst) > 0 ? ports_str_tcp_dst : "none");
+    ret1 = init_allowed_tcp_ports(ports_str_tcp_src, ports_str_tcp_dst);
+
+    ESP_LOGI(TAG, "Host reserved UDP src ports: %s",
+             ports_str_udp_src && strlen(ports_str_udp_src) > 0 ? ports_str_udp_src : "none");
+    ESP_LOGI(TAG, "Host reserved UDP dst ports: %s",
+             ports_str_udp_dst && strlen(ports_str_udp_dst) > 0 ? ports_str_udp_dst : "none");
+    ret2 = init_allowed_udp_ports(ports_str_udp_src, ports_str_udp_dst);
+
+    if (ret1) {
+        ESP_LOGE(TAG, "Failed to initialize allowed TCP ports");
+        return ret1;
+    }
+    if (ret2) {
+        ESP_LOGE(TAG, "Failed to initialize allowed UDP ports");
+        return ret2;
+    }
+    return 0;
+}
+
+/* Add this function to check if a port is allowed */
+static inline bool is_tcp_src_port_allowed(uint16_t port) {
+    for (int i = 0; i < allowed_tcp_src_ports_count; i++) {
+        if (port == allowed_tcp_src_ports[i]) {
+            return true;
+        }
+    }
+    return false;
+}
+
+static inline bool is_tcp_dst_port_allowed(uint16_t port) {
+    for (int i = 0; i < allowed_tcp_dst_ports_count; i++) {
+        if (port == allowed_tcp_dst_ports[i]) {
+            return true;
+        }
+    }
+    return false;
+}
+
+static inline bool is_udp_src_port_allowed(uint16_t port) {
+    for (int i = 0; i < allowed_udp_src_ports_count; i++) {
+        if (port == allowed_udp_src_ports[i]) {
+            return true;
+        }
+    }
+    return false;
+}
+
+static inline bool is_udp_dst_port_allowed(uint16_t port) {
+    for (int i = 0; i < allowed_udp_dst_ports_count; i++) {
+        if (port == allowed_udp_dst_ports[i]) {
+            return true;
+        }
+    }
+    return false;
+}
 
 static bool host_mqtt_wakeup_triggered(const void *payload, uint16_t payload_length)
 {
@@ -171,12 +373,12 @@ hosted_l2_bridge filter_and_route_packet(void *frame_data, uint16_t frame_length
 
 			ESP_LOGV(TAG, "dst_port: %u, src_port: %u", dst_port, src_port);
 
-            if ((src_port == DEFAULT_IPERF_PORT) || (dst_port == DEFAULT_IPERF_PORT)) {
-                ESP_LOGI(TAG, "iperf pkt src %u dst %u", src_port, dst_port);
-                /* For debug - route all iperf source traffic to slave */
-                result = SLAVE_LWIP_BRIDGE;
-                return result;
-            }
+			/* Check for allowed ports (SSH, RTSP, etc.) */
+			if (is_tcp_src_port_allowed(src_port) || is_tcp_dst_port_allowed(dst_port)) {
+				ESP_LOGV(TAG, "Priority tcp port traffic detected, forwarding to host");
+				result = HOST_LWIP_BRIDGE;
+				return result;
+			}
 
 			/* Check for iperf port */
 			if (dst_port == DEFAULT_IPERF_PORT) {
@@ -230,6 +432,16 @@ hosted_l2_bridge filter_and_route_packet(void *frame_data, uint16_t frame_length
 			ESP_LOGV(TAG, "new udp packet");
 			struct udp_hdr *udphdr = (struct udp_hdr *)((u8_t *)iphdr + IPH_HL(iphdr) * 4);
 			dst_port = lwip_ntohs(udphdr->dest);
+			src_port = lwip_ntohs(udphdr->src);
+
+			ESP_LOGV(TAG, "UDP dst_port: %u, src_port: %u", dst_port, src_port);
+
+			/* Check for allowed ports */
+			if (is_udp_src_port_allowed(src_port) || is_udp_dst_port_allowed(dst_port)) {
+				ESP_LOGV(TAG, "Priority udp port traffic detected, forwarding to host");
+				result = HOST_LWIP_BRIDGE;
+				return result;
+			}
 
 			/* Check for iperf UDP port */
 			if (dst_port == DEFAULT_IPERF_PORT) {
@@ -302,4 +514,8 @@ hosted_l2_bridge filter_and_route_packet(void *frame_data, uint16_t frame_length
 	}
 
 	return result;
+}
+
+int configure_host_static_port_forwarding_rules(const char *ports_str_tcp_src, const char *ports_str_tcp_dst, const char *ports_str_udp_src, const char *ports_str_udp_dst) {
+    return punch_hole_for_host_ports_from_config(ports_str_tcp_src, ports_str_tcp_dst, ports_str_udp_src, ports_str_udp_dst);
 }

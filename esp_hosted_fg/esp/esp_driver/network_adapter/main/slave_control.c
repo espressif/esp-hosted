@@ -780,7 +780,7 @@ static esp_err_t req_connect_ap_handler (CtrlMsg *req,
 	CtrlMsgRespConnectAP *resp_payload = NULL;
 	//EventBits_t bits = {0};
 	int retry = 0;
-	bool wifi_changed = false;
+	//bool wifi_changed = false;
 #if WIFI_DUALBAND_SUPPORT
 	wifi_band_mode_t band_mode = 0;
 	wifi_band_mode_t requested_band_mode = 0;
@@ -865,7 +865,7 @@ static esp_err_t req_connect_ap_handler (CtrlMsg *req,
 		band_mode = requested_band_mode;
 		ESP_LOGI(TAG, "Set band mode to new value %d", band_mode);
 		resp_payload->band_mode = band_mode;
-		wifi_changed = true;
+		//wifi_changed = true;
 	}
 #endif
 
@@ -910,12 +910,12 @@ static esp_err_t req_connect_ap_handler (CtrlMsg *req,
 			ESP_LOGI(TAG, "Different WiFi config from the current connection, reconnecting");
 			ESP_LOGI(TAG, "New config - SSID: %s", wifi_cfg->sta.ssid);
 			ESP_LOGI(TAG, "Current config - SSID: %s", prev_wifi_config.sta.ssid);
-			wifi_changed = true;
+			//wifi_changed = true;
 			esp_wifi_set_storage(WIFI_STORAGE_RAM);
 			/* Force a disconnect and reconnect when the config changes */
 			esp_wifi_disconnect();
 			station_connected = false;
-			
+
 		}
 	} else {
 		/* Station not yet connected, so cache this configuration for future reference */
@@ -926,7 +926,7 @@ static esp_err_t req_connect_ap_handler (CtrlMsg *req,
 
 	/* Note: At this point, we've already updated prev_wifi_config if needed */
 
-	/* 
+	/*
 	 * No need to store configuration again here - it's either:
 	 * 1. Already updated above in the comparison block if configs were different
 	 * 2. Remains the same if configs were identical
@@ -947,7 +947,7 @@ static esp_err_t req_connect_ap_handler (CtrlMsg *req,
 
 	do {
 		esp_wifi_disconnect();
-		
+
 		ESP_LOGI(TAG, "Setting station config");
 		ret = esp_hosted_set_sta_config(ESP_IF_WIFI_STA, wifi_cfg);
 		if (ret == ESP_ERR_WIFI_PASSWORD) {
@@ -3521,13 +3521,13 @@ static bool is_wifi_config_equal(const wifi_config_t *cfg1, const wifi_config_t 
 		ESP_LOGD(TAG, "SSID different: '%s' vs '%s'", cfg1->sta.ssid, cfg2->sta.ssid);
 		return false;
 	}
-	
+
 	/* Compare password */
 	if (strcmp((char *)cfg1->sta.password, (char *)cfg2->sta.password) != 0) {
 		ESP_LOGD(TAG, "Password different");
 		return false;
 	}
-	
+
 	/* Compare BSSID if set */
 	if (cfg1->sta.bssid_set && cfg2->sta.bssid_set) {
 		if (memcmp(cfg1->sta.bssid, cfg2->sta.bssid, MAC_LEN) != 0) {
@@ -3535,19 +3535,19 @@ static bool is_wifi_config_equal(const wifi_config_t *cfg1, const wifi_config_t 
 			return false;
 		}
 	} else if (cfg1->sta.bssid_set != cfg2->sta.bssid_set) {
-		ESP_LOGD(TAG, "BSSID set status different: %d vs %d", 
+		ESP_LOGD(TAG, "BSSID set status different: %d vs %d",
 			cfg1->sta.bssid_set, cfg2->sta.bssid_set);
 		return false;
 	}
-	
+
 	/* Compare channel if set */
 	if (cfg1->sta.channel != 0 && cfg2->sta.channel != 0) {
 		if (cfg1->sta.channel != cfg2->sta.channel) {
-			ESP_LOGD(TAG, "Channel different: %d vs %d", 
+			ESP_LOGD(TAG, "Channel different: %d vs %d",
 				cfg1->sta.channel, cfg2->sta.channel);
 			return false;
 		}
 	}
-	
+
 	return true;
 }

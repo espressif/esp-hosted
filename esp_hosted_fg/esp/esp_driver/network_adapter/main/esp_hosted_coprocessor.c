@@ -943,6 +943,16 @@ esp_err_t esp_hosted_coprocessor_init(void)
 
 	register_reset_pin(CONFIG_ESP_GPIO_SLAVE_RESET);
 
+
+#ifdef CONFIG_ESP_HOSTED_HOST_RESERVED_PORTS_CONFIGURED
+	ESP_LOGI(TAG, "Configuring host static port forwarding rules from slave kconfig");
+	configure_host_static_port_forwarding_rules(CONFIG_ESP_HOSTED_HOST_RESERVED_TCP_SRC_PORTS,
+												CONFIG_ESP_HOSTED_HOST_RESERVED_TCP_DEST_PORTS,
+												CONFIG_ESP_HOSTED_HOST_RESERVED_UDP_SRC_PORTS,
+												CONFIG_ESP_HOSTED_HOST_RESERVED_UDP_DEST_PORTS);
+#endif
+
+
 	host_power_save_init(host_wakeup_callback);
 
 #ifdef CONFIG_BT_ENABLED

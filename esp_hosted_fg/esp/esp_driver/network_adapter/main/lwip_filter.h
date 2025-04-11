@@ -12,3 +12,6 @@ typedef enum {
 } hosted_l2_bridge;
 
 hosted_l2_bridge filter_and_route_packet(void *frame_data, uint16_t frame_length);
+
+int configure_host_static_port_forwarding_rules(const char *ports_str_tcp_src, const char *ports_str_tcp_dst,
+                                                const char *ports_str_udp_src, const char *ports_str_udp_dst);

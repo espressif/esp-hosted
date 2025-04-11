@@ -1047,6 +1047,11 @@ static int ip_fetch_retry_count = 0;   /* Counter for IP fetch retries */
             printf("Failed to get SoftAP MAC address, will retry later\n");
         }
 
+        /* Fetch IP address from slave on bootup */
+        if (test_fetch_ip_addr_from_slave() != SUCCESS) {
+            printf("Failed to fetch IP status, reinitializing RPC\n");
+        }
+
         /* Main monitoring loop */
         while (!exit_auto_ip_restore && rpc_state == RPC_STATE_ACTIVE) {
 
