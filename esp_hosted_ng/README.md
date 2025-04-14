@@ -6,7 +6,7 @@
     + [1.3 Supported Hosts](#13-supported-hosts)
     + [1.4 Supported Transports](#14-supported-transports)
     + [1.5 Feature Matrix](#15-feature-matrix)
-- [2. Hardware and Software setup](#2-hardware-and-software-setup)
+- [2. Hardware and Software setup and OTA](#2-hardware-and-software-setup-and-ota)
 - [3. Get Started](#3-get-started)
   * [3.1 User Guide](#31-user-guide)
     + [3.1.1 Wi-Fi](#311-wi-fi)
@@ -238,9 +238,9 @@ Apart from these features, following features are supported.
 ---
 
 
-# 2. Hardware and Software setup
+# 2. Hardware and Software setup and OTA
 This section describes how to set up and use ESP-Hosted-NG solution.
-Please check [Hardware and Software Setup](docs/setup.md).
+Please check [Hardware and Software setup and OTA](docs/setup.md).
 
 ---
 
@@ -515,7 +515,7 @@ Following operations for station are supported as of now:
 
 hostapd (Host Access Point Daemon) is a user-space daemon that enables a Linux-based machine to act as a wireless access point. When combined with dnsmasq, a lightweight DHCP and DNS server, it provides a complete solution for managing Wi-Fi networks, including IP address assignment and name resolution.
 
-> make sure you have enabled `ap_support` with rpi_init.sh to user interface as Acess point. Read [Hardware and Software Setup](docs/setup.md)
+> make sure you have enabled `ap_support` with rpi_init.sh to user interface as Acess point. Read [Hardware and Software Setup and OTA](docs/setup.md)
 
 Supported Operations
 

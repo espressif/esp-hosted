@@ -14,6 +14,7 @@
     + [2.3 SDIO or SPI + Uart configuration](#23-sdio-or-spi-and-uart-configuration) Wi-Fi over SDIO/SPI and Bluetooth over UART
 - [3. Troubleshoot Setup Problems](#3-troubleshoot-setup-problems)
 - [4. Points to note](#4-points-to-note)
+- [5. Ota Support](#5-ota-support)
 
 # 1. Software setup
 * This section briefly explains software setup required for esp hosted device and host. Esp hosted device setup is divided into two parts 
@@ -82,9 +83,9 @@ Make sure that host machine is equipped with following:
 * Follow these steps to setup required configurations for desired transport layer [Transport layer configuration](#2-transport-layer-configuration)
 
 ### 1.3 ESP Comprehensive guide
-- **Note on Windows 11**: you can follow [these instructions](/esp_hosted_ng/esp/esp_driver/README.md#building-on-windows-11-using-command-prompt) to setup ESP-IDF to build the esp firmware.
-- :warning: **Following command is dangerous. It will revert all your local changes. Stash if need to keep them**.
+- **FOR linux based systems**.
 - Install the ESP-IDF using script
+- :warning: **Following command is dangerous. It will revert all your local changes. Stash if need to keep them**.
     ```sh
     $ cd esp_hosted/esp_hosted_ng/esp/esp_driver
     $ cmake .
@@ -92,9 +93,37 @@ Make sure that host machine is equipped with following:
 * This will clone the required esp-idf repository and will setup it up for esp hosted firmware
 * Set-Up the esp firmware build environment using 
     ```sh
+    $ cd esp_hosted/esp_hosted_ng/esp/esp_driver/esp-idf
     $ . ./esp-idf/export.sh
     # Optionally, You can add alias for this command in ~/.bashrc for later use
     ``` 
+* To build, flash and monitor firmware
+    ```sh
+    $ cd esp_hosted/esp_hosted_ng/esp/esp_driver/network_adapter
+    $ `idf.py set-target <chip_name>` to set target
+    $ `idf.py build` to compile new firmware
+    $ `idf.py monitor` to monitor serial output
+    ```
+
+- **FOR Windows based systems**
+- Install and setup ESP-IDF on Windows as documented in the [Standard Setup of Toolchain for
+Windows](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/get-started/windows-setup.html).
+
+- Use the ESP-IDF [Powershell Command
+Prompt](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/get-started/windows-setup.html#using-the-command-prompt) to execute `esp_hosted/esp_hosted_ng/esp/esp_driver/setup.ps1`. It will setup `esp-idf` as a submodule to be used by `network_adapter`.
+:warning: **This command is dangerous. It will revert all your local changes. Stash if need to keep them**.
+
+- Setup compiling environment by running `export.ps1` in `esp_hosted/esp_hosted_ng/esp/esp_driver/esp-idf`
+directory
+
+* To build, flash and monitor firmware
+    ```sh
+    $ cd esp_hosted/esp_hosted_ng/esp/esp_driver/network_adapter
+    $ `idf.py set-target <chip_name>` to set target
+    $ `idf.py build` to compile new firmware
+    $ `idf.py monitor` to monitor serial output
+    ```
+
 * Once the environment is ready for esp firmware to be built follow these steps to setup required configurations for desired transport layer [Transport layer configuration](#2-transport-layer-configuration)
 
 # 2. Transport layer configuration
@@ -456,3 +485,10 @@ If Bootup event is not recieved in host `dmesg` as sample log above, please try 
 - We suggest to use the latest stable BlueZ release.
 <!--- TODO Whereas BLE 5.0 functionalities are tested with bluez 5.45+ -->
 
+### 5. Ota support
+- Over-The-Air (OTA) allows hosts to transport the new firmware to ESP device and update the device.
+- To update the firmware using the OTA please follow the commands on host.
+    ```sh
+    $ cd /esp_hosted/esp_hosted_ng/host
+    $ ./rpi_init.sh <transport> ota_file="/path/to/ota_file"
+    ```
