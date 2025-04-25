@@ -4,7 +4,7 @@
 
 This project is used to build firmware for esp-hosted-ng solution
 
-## Update build firmware for esp-hosted-ng solution
+## Building on Linux using Command Prompt
 
 1. run `cmake .` to setup environment, it will setup esp-idf as submodule to be used by `network_adapter`
 
