@@ -820,7 +820,7 @@ static int32_t esp_spi_write(interface_handle_t *handle, interface_buffer_handle
 	}
 
 	if (total_len > SPI_BUFFER_SIZE) {
-		ESP_LOGE(TAG, "Total length %d exceeds max %d", total_len, SPI_BUFFER_SIZE);
+		ESP_LOGE(TAG, "Total length %" PRId32 " exceeds max %" PRIu32, total_len, SPI_BUFFER_SIZE);
 		return ESP_FAIL;
 	}
 
@@ -858,7 +858,7 @@ static int32_t esp_spi_write(interface_handle_t *handle, interface_buffer_handle
 	header->checksum = htole16(checksum);
 #endif
 
-	ESP_LOGI(TAG, "[TX] Packet - type:%d len:%d total:%d",
+	ESP_LOGI(TAG, "[TX] Packet - type:%u len:%" PRIu32 " total:% " PRIu32,
 			header->if_type, buf_handle->payload_len, total_len);
 
 #ifdef CONFIG_ESP_ENABLE_TX_PRIORITY_QUEUES

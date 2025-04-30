@@ -3358,7 +3358,7 @@ static esp_err_t ctrl_ntfy_StationDisconnectFromAP(CtrlMsg *ntfy,
 	ntfy_payload->ssid.data = (uint8_t *)strndup((const char*)evt->ssid, ntfy_payload->ssid.len);
 	if (!ntfy_payload->ssid.data) {
 		ESP_LOGE(TAG, "%s: mem allocate failed for[%"PRIu32"] bytes",
-				__func__, ntfy_payload->ssid.len);
+				__func__, (uint32_t)ntfy_payload->ssid.len);
 		ntfy_payload->ssid.len = 0;
 		ntfy_payload->resp = ESP_ERR_NO_MEM;
 		goto err;
@@ -3372,8 +3372,8 @@ static esp_err_t ctrl_ntfy_StationDisconnectFromAP(CtrlMsg *ntfy,
 	} else {
 		ntfy_payload->bssid.data = (uint8_t *)strndup(bssid_l, BSSID_LENGTH);
 		if (!ntfy_payload->bssid.data) {
-			ESP_LOGE(TAG, "%s: allocate failed for [%d] bytes",
-					__func__, ntfy_payload->bssid.len);
+			ESP_LOGE(TAG, "%s: allocate failed for [%"PRIu32"] bytes",
+					__func__, (uint32_t)ntfy_payload->bssid.len);
 			ntfy_payload->bssid.len = 0;
 			ntfy_payload->resp = ESP_ERR_NO_MEM;
 			goto err;
@@ -3721,7 +3721,8 @@ esp_err_t send_custom_rpc_unserialised_event(custom_rpc_unserialised_data_t *eve
 		return ESP_FAIL;
 	}
 
-	ESP_LOGI(TAG, "Sending custom RPC unserialised Event[%u], len: %d", event_data->custom_msg_id, event_data->data_len);
+	ESP_LOGI(TAG, "Sending custom RPC unserialised Event[%" PRIu32 "], len: %" PRIu32,
+			event_data->custom_msg_id, (uint32_t) event_data->data_len);
 
 	/* Send event to host */
 	return send_event_data_to_host(CTRL_MSG_ID__Event_Custom_RPC_Unserialised_Msg, event_data, sizeof(custom_rpc_unserialised_data_t));
