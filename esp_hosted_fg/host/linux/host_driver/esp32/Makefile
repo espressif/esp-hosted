@@ -3,7 +3,7 @@ CONFIG_TEST_RAW_TP := n
 CONFIG_INFO_LOGS=y
 CONFIG_DEBUG_LOGS=n
 CONFIG_VERBOSE_LOGS=n
-CONFIG_ESP_HOSTED_USE_WORKQUEUE=y # If set 'n', would semaphore based solution
+#CONFIG_ESP_HOSTED_USE_WORKQUEUE=y # If set 'n', would semaphore based solution
 
 # In case of SDIO as transport, one of slave chipset used,
 # CONFIG_TARGET_ESP32  OR

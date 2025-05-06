@@ -925,7 +925,7 @@ static int __init esp_init(void)
 	struct esp_adapter	*adapter = NULL;
 
 	/* Reset ESP, Clean start ESP */
-	//esp_reset();
+	esp_reset();
 
 	/* Init adapter */
 	adapter = init_adapter();

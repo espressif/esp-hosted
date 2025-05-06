@@ -22,19 +22,6 @@
 #define STA_INTERFACE                                     "ethsta0"
 
 
-#define CLEANUP_CTRL_MSG(msg) do {                        \
-  if (msg) {                                              \
-    if (msg->free_buffer_handle) {                        \
-      if (msg->free_buffer_func) {                        \
-        msg->free_buffer_func(msg->free_buffer_handle);   \
-        msg->free_buffer_handle = NULL;                   \
-      }                                                   \
-    }                                                     \
-    free(msg);                                            \
-    msg = NULL;                                           \
-  }                                                       \
-} while(0);
-
 #define YES 1
 #define NO  0
 #define MIN_TIMESTAMP_STR_SIZE 30
@@ -87,49 +74,6 @@ static char * get_timestamp(char *str, uint16_t str_size)
 	return NULL;
 }
 
-
-
-static int validate_event(ctrl_cmd_t * app_event)
-{
-	if (!app_event || (app_event->msg_type != CTRL_EVENT)) {
-		if (app_event)
-			LOG_MSG(LOG_ERR, "Msg type is not event[%u]",app_event->msg_type);
-		return FAILURE;
-	}
-
-	if ((app_event->msg_id <= CTRL_EVENT_BASE) ||
-	    (app_event->msg_id >= CTRL_EVENT_MAX)) {
-		LOG_MSG(LOG_ERR, "Event Msg ID[%u] is not correct",app_event->msg_id);
-		return FAILURE;
-	}
-	return SUCCESS;
-}
-
-static int validate_resp(ctrl_cmd_t * app_resp)
-{
-	int ret = SUCCESS;
-
-	if (!app_resp || (app_resp->msg_type != CTRL_RESP)) {
-		if (app_resp)
-			LOG_MSG(LOG_ERR, "Msg type is not response[%u]",app_resp->msg_type);
-		ret = FAILURE;
-	}
-
-	/* a timeout doesn't have a response id
-	 * process failed responses before checking for incorrect response id */
-	if (!ret && (app_resp->resp_event_status != SUCCESS)) {
-		//printf("Received Response as error\n");
-		ret = FAILURE;
-	}
-
-	if (!ret && ((app_resp->msg_id <= CTRL_RESP_BASE) || (app_resp->msg_id >= CTRL_RESP_MAX))) {
-		//printf("Response Msg ID[%u] is not correct\n",app_resp->msg_id);
-		ret = FAILURE;
-	}
-
-	return ret;
-}
-	
 static int event_cb(ctrl_cmd_t * app_event)
 {
 	/* Note: event_cb is callback run by rx-thread
@@ -137,7 +81,7 @@ static int event_cb(ctrl_cmd_t * app_event)
 	 * */
 	char ts[MIN_TIMESTAMP_STR_SIZE] = {'\0'};
 
-	if (validate_event(app_event)) {
+	if (test_validate_ctrl_event(app_event)) {
 		CLEANUP_CTRL_MSG(app_event);
 		return FAILURE;
 	}
@@ -197,7 +141,7 @@ static int event_cb(ctrl_cmd_t * app_event)
 int resp_cb(ctrl_cmd_t * app_resp)
 {
 
-	if (validate_resp(app_resp)) {
+	if (test_validate_ctrl_resp(app_resp)) {
 		CLEANUP_CTRL_MSG(app_resp);
 		return FAILURE;
 	}
@@ -230,7 +174,7 @@ int resp_cb(ctrl_cmd_t * app_resp)
 				LOG_MSG(LOG_INFO, "DNS is not up");
 				sta_network.dns_valid = 0;
 			}
-			
+
 			break;
 		} default: {
 			LOG_MSG(LOG_ERR, "Unsupported Response[%u] to parse", app_resp->msg_id);
@@ -360,31 +304,31 @@ static void cleanup_app(void)
 
 static void reload_config(void)
 {
-    /* Add any configuration reload logic here */
-    LOG_MSG(LOG_INFO, "Configuration reloaded");
+	/* Add any configuration reload logic here */
+	LOG_MSG(LOG_INFO, "Configuration reloaded");
 }
 
 static void sig_handler(int signum)
 {
-    switch (signum) {
-        case SIGHUP:
-            reload_config();
-            break;
-        case SIGUSR1:
-            LOG_MSG(LOG_INFO, "SIGUSR1 received, cleaning up application");
-            cleanup_app();
-            break;
-        case SIGTERM:
-        case SIGINT:
-            LOG_MSG(LOG_INFO, "Clean-up and exit");
-            cleanup_app();
-            if (!run_in_foreground) {
-                closelog();
-            }
-            unlink("/var/run/hosted_daemon.pid");
-            exit(0);
-            break;
-    }
+	switch (signum) {
+		case SIGHUP:
+			reload_config();
+			break;
+		case SIGUSR1:
+			LOG_MSG(LOG_INFO, "SIGUSR1 received, cleaning up application");
+			cleanup_app();
+			break;
+		case SIGTERM:
+		case SIGINT:
+			LOG_MSG(LOG_INFO, "Clean-up and exit");
+			cleanup_app();
+			if (!run_in_foreground) {
+				closelog();
+			}
+			unlink("/var/run/hosted_daemon.pid");
+			exit(0);
+			break;
+	}
 }
 
 static void daemonize(void)
@@ -438,37 +382,37 @@ static void daemonize(void)
 }
 
 static void print_usage(void) {
-    printf("Usage: hosted_daemon [-f] [-c config_file]\n");
-    printf("  -f            Run in foreground (don't daemonize)\n");
-    printf("  -c <file>    Use alternate config file\n");
+	printf("Usage: hosted_daemon [-f] [-c config_file]\n");
+	printf("  -f            Run in foreground (don't daemonize)\n");
+	printf("  -c <file>    Use alternate config file\n");
 }
 
 static int ensure_single_instance(void)
 {
-    struct flock fl = {
-        .l_type = F_WRLCK,
-        .l_whence = SEEK_SET,
-        .l_start = 0,
-        .l_len = 0
-    };
+	struct flock fl = {
+		.l_type = F_WRLCK,
+		.l_whence = SEEK_SET,
+		.l_start = 0,
+		.l_len = 0
+	};
 
-    lock_fd = open(LOCK_FILE, O_RDWR | O_CREAT, 0640);
-    if (lock_fd < 0) {
-        LOG_MSG(LOG_ERR, "Cannot open lock file: %s", strerror(errno));
-        return FAILURE;
-    }
+	lock_fd = open(LOCK_FILE, O_RDWR | O_CREAT, 0640);
+	if (lock_fd < 0) {
+		LOG_MSG(LOG_ERR, "Cannot open lock file: %s", strerror(errno));
+		return FAILURE;
+	}
 
-    if (fcntl(lock_fd, F_SETLK, &fl) < 0) {
-        if (errno == EACCES || errno == EAGAIN) {
-            LOG_MSG(LOG_ERR, "Another instance is already running");
-        } else {
-            LOG_MSG(LOG_ERR, "Cannot lock file: %s", strerror(errno));
-        }
-        close(lock_fd);
-        return FAILURE;
-    }
+	if (fcntl(lock_fd, F_SETLK, &fl) < 0) {
+		if (errno == EACCES || errno == EAGAIN) {
+			LOG_MSG(LOG_ERR, "Another instance is already running");
+		} else {
+			LOG_MSG(LOG_ERR, "Cannot lock file: %s", strerror(errno));
+		}
+		close(lock_fd);
+		return FAILURE;
+	}
 
-    return SUCCESS;
+	return SUCCESS;
 }
 
 int main(int argc, char *argv[])

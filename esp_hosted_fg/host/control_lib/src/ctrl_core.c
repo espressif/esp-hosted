@@ -305,7 +305,35 @@ static int ctrl_app_parse_event(CtrlMsg *ctrl_msg, ctrl_cmd_t *app_ntfy)
 						ctrl_msg->event_set_dhcp_dns_status->dns_ip.data,
 						ctrl_msg->event_set_dhcp_dns_status->dns_ip.len);
 			}
-          break;
+			break;
+		} case CTRL_EVENT_CUSTOM_RPC_UNSERIALISED_MSG: {
+			CHECK_CTRL_MSG_NON_NULL(event_custom_rpc_unserialised_msg);
+			app_ntfy->resp_event_status = ctrl_msg->event_custom_rpc_unserialised_msg->resp;
+			app_ntfy->u.custom_rpc_unserialised_data.custom_msg_id = ctrl_msg->event_custom_rpc_unserialised_msg->custom_evt_id;
+			app_ntfy->u.custom_rpc_unserialised_data.data_len = ctrl_msg->event_custom_rpc_unserialised_msg->data.len;
+
+			/* Properly allocate memory and copy data */
+			if (ctrl_msg->event_custom_rpc_unserialised_msg->data.data &&
+				ctrl_msg->event_custom_rpc_unserialised_msg->data.len > 0) {
+
+				app_ntfy->u.custom_rpc_unserialised_data.data = hosted_malloc(ctrl_msg->event_custom_rpc_unserialised_msg->data.len);
+				if (!app_ntfy->u.custom_rpc_unserialised_data.data) {
+					command_log("Failed to allocate memory for custom RPC event data\n");
+					app_ntfy->resp_event_status = CTRL_ERR_MEMORY_FAILURE;
+					goto fail_parse_ctrl_msg;
+				}
+
+				memcpy(app_ntfy->u.custom_rpc_unserialised_data.data,
+					ctrl_msg->event_custom_rpc_unserialised_msg->data.data,
+					ctrl_msg->event_custom_rpc_unserialised_msg->data.len);
+
+				/* Set free function to handle memory cleanup */
+				app_ntfy->free_buffer_func = hosted_free;
+				app_ntfy->free_buffer_handle = app_ntfy->u.custom_rpc_unserialised_data.data;
+			} else {
+				app_ntfy->u.custom_rpc_unserialised_data.data = NULL;
+			}
+			break;
 		} default: {
 			command_log("Invalid/unsupported event[%u] received\n",ctrl_msg->msg_id);
 			goto fail_parse_ctrl_msg;
@@ -706,6 +734,24 @@ static int ctrl_app_parse_resp(CtrlMsg *ctrl_msg, ctrl_cmd_t *app_resp)
 					strncpy((char *)p_a->dns_ip, (char *)p_c->dns_ip.data, sizeof(p_a->dns_ip));
 					p_a->dns_ip[sizeof(p_a->dns_ip)-1] = '\0';
 				}
+			}
+			break;
+		} case CTRL_RESP_CUSTOM_RPC_UNSERIALISED_MSG: {
+			CtrlMsgRespCustomRpcUnserialisedMsg *p_c = ctrl_msg->resp_custom_rpc_unserialised_msg;
+			custom_rpc_unserialised_data_t *p_a = &app_resp->u.custom_rpc_unserialised_data;
+			CHECK_CTRL_MSG_NON_NULL(resp_custom_rpc_unserialised_msg);
+			CHECK_CTRL_MSG_FAILED(resp_custom_rpc_unserialised_msg);
+			p_a->custom_msg_id = p_c->custom_msg_id;
+			p_a->data_len = p_c->data.len;
+			if (p_a->data_len && p_c->data.data) {
+				p_a->data = hosted_malloc(p_a->data_len);
+				if (!p_a->data) {
+					command_log("Failed to allocate data for custom RPC unserialised message\n");
+					goto fail_parse_ctrl_msg;
+				}
+				memcpy(p_a->data, p_c->data.data, p_a->data_len);
+				app_resp->free_buffer_func = hosted_free;
+				app_resp->free_buffer_handle = p_a->data;
 			}
 			break;
 		} default: {
@@ -1173,6 +1219,22 @@ int set_event_callback(int event, ctrl_resp_cb_t event_cb)
 	return CALLBACK_SET_SUCCESS;
 }
 
+/* Get control event callback
+ * Returns:
+ * > NULL - If event is not registered with hosted control lib
+ * > Function pointer - Returns the registered event callback
+ **/
+ctrl_resp_cb_t get_event_callback(int event)
+{
+	int event_cb_tbl_idx = event - CTRL_EVENT_BASE;
+	if ((event<=CTRL_EVENT_BASE) || (event>=CTRL_EVENT_MAX)) {
+		command_log("Could not identify event[%u]\n", event);
+		return NULL;
+	}
+	return ctrl_event_cb_table[event_cb_tbl_idx];
+}
+
+
 /* Assign NULL event callback */
 int reset_event_callback(int event)
 {
@@ -1571,6 +1633,13 @@ int ctrl_app_send_req(ctrl_cmd_t *app_req)
 			req_payload->enable = app_req->u.feat_ena_disable.enable;
 			command_log("%sable feature [%d]\n", (req_payload->enable)? "en": "dis", req_payload->feature);
 			break;
+		} case CTRL_REQ_CUSTOM_RPC_UNSERIALISED_MSG: {
+			CTRL_ALLOC_ASSIGN(CtrlMsgReqCustomRpcUnserialisedMsg, req_custom_rpc_unserialised_msg);
+			ctrl_msg__req__custom_rpc_unserialised_msg__init(req_payload);
+			req_payload->custom_msg_id = app_req->u.custom_rpc_unserialised_data.custom_msg_id;
+			req_payload->data.data = app_req->u.custom_rpc_unserialised_data.data;
+			req_payload->data.len = app_req->u.custom_rpc_unserialised_data.data_len;
+			break;
 		} default: {
 			failure_status = CTRL_ERR_UNSUPPORTED_MSG;
 			command_log("RPC Req[%u] unsupported\n",req.msg_id);
@@ -1630,15 +1699,7 @@ int ctrl_app_send_req(ctrl_cmd_t *app_req)
 	}
 
 
-
-	/* 9. Free hook for application */
-	if (app_req->free_buffer_handle) {
-		if (app_req->free_buffer_func) {
-			app_req->free_buffer_func(app_req->free_buffer_handle);
-		}
-	}
-
-	/* 10. Cleanup */
+	/* 9. Cleanup */
 	mem_free(tx_data);
 	mem_free(buff_to_free2);
 	mem_free(buff_to_free1);
@@ -1653,7 +1714,7 @@ fail_req:
 	//TODO: need to test below and possibly remove redundant code
 	// if(!async_timer_handle && app_req->ctrl_resp_cb) {
 	if (app_req->ctrl_resp_cb) {
-		/* 11. In case of async procedure,
+		/* 10. In case of async procedure,
 		 * Let application know of failure using callback itself
 		 **/
 		ctrl_cmd_t *app_resp = NULL;
@@ -1667,19 +1728,13 @@ fail_req:
 		app_resp->msg_id = (app_req->msg_id - CTRL_REQ_BASE + CTRL_RESP_BASE);
 		app_resp->resp_event_status = failure_status;
 
-		/* 12. In async procedure, it is important to get
+		/* 11. In async procedure, it is important to get
 		 * some kind of acknowledgement to user */
 		app_req->ctrl_resp_cb(app_resp);
 	}
 
 fail_req2:
-	/* 13. Cleanup */
-	if (app_req->free_buffer_handle) {
-		if (app_req->free_buffer_func) {
-			app_req->free_buffer_func(app_req->free_buffer_handle);
-		}
-	}
-
+	/* 12. Cleanup */
 	mem_free(tx_data);
 	mem_free(buff_to_free2);
 	mem_free(buff_to_free1);

@@ -39,7 +39,7 @@ SRC += $(DIR_CTRL_LIB)/src/ctrl_api.c
 SRC += $(DIR_SERIAL)/src/serial_if.c
 SRC += $(DIR_COMPONENTS)/src/esp_queue.c
 SRC += $(DIR_LINUX_PORT)/src/platform_wrapper.c
-SRC += nw_helper_func.c test_utils.c
+SRC += nw_helper_func.c test_utils.c app_custom_rpc.c
 
 PWD := $(shell pwd)
 

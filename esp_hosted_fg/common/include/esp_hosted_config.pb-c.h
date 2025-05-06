@@ -73,6 +73,9 @@ typedef struct CtrlMsgEventStationConnectedToAP CtrlMsgEventStationConnectedToAP
 typedef struct CtrlMsgEventStationDisconnectFromESPSoftAP CtrlMsgEventStationDisconnectFromESPSoftAP;
 typedef struct CtrlMsgEventStationConnectedToESPSoftAP CtrlMsgEventStationConnectedToESPSoftAP;
 typedef struct CtrlMsgEventSetDhcpDnsStatus CtrlMsgEventSetDhcpDnsStatus;
+typedef struct CtrlMsgReqCustomRpcUnserialisedMsg CtrlMsgReqCustomRpcUnserialisedMsg;
+typedef struct CtrlMsgRespCustomRpcUnserialisedMsg CtrlMsgRespCustomRpcUnserialisedMsg;
+typedef struct CtrlMsgEventCustomRpcUnserialisedMsg CtrlMsgEventCustomRpcUnserialisedMsg;
 typedef struct CtrlMsg CtrlMsg;
 
 
@@ -177,11 +180,12 @@ typedef enum _CtrlMsgId {
   CTRL_MSG_ID__Req_GetCountryCode = 125,
   CTRL_MSG_ID__Req_SetDhcpDnsStatus = 126,
   CTRL_MSG_ID__Req_GetDhcpDnsStatus = 127,
+  CTRL_MSG_ID__Req_Custom_RPC_Unserialised_Msg = 128,
   /*
    * Add new control path command response before Req_Max
    * and update Req_Max 
    */
-  CTRL_MSG_ID__Req_Max = 128,
+  CTRL_MSG_ID__Req_Max = 129,
   /*
    ** Response Msgs *
    */
@@ -213,11 +217,12 @@ typedef enum _CtrlMsgId {
   CTRL_MSG_ID__Resp_GetCountryCode = 225,
   CTRL_MSG_ID__Resp_SetDhcpDnsStatus = 226,
   CTRL_MSG_ID__Resp_GetDhcpDnsStatus = 227,
+  CTRL_MSG_ID__Resp_Custom_RPC_Unserialised_Msg = 228,
   /*
    * Add new control path command response before Resp_Max
    * and update Resp_Max 
    */
-  CTRL_MSG_ID__Resp_Max = 228,
+  CTRL_MSG_ID__Resp_Max = 229,
   /*
    ** Event Msgs *
    */
@@ -229,11 +234,12 @@ typedef enum _CtrlMsgId {
   CTRL_MSG_ID__Event_StationConnectedToAP = 305,
   CTRL_MSG_ID__Event_StationConnectedToESPSoftAP = 306,
   CTRL_MSG_ID__Event_SetDhcpDnsStatus = 307,
+  CTRL_MSG_ID__Event_Custom_RPC_Unserialised_Msg = 308,
   /*
    * Add new control path command notification before Event_Max
    * and update Event_Max 
    */
-  CTRL_MSG_ID__Event_Max = 308
+  CTRL_MSG_ID__Event_Max = 309
     PROTOBUF_C__FORCE_ENUM_TO_BE_INT_SIZE(CTRL_MSG_ID)
 } CtrlMsgId;
 typedef enum _HostedFeature {
@@ -928,6 +934,44 @@ struct  CtrlMsgEventSetDhcpDnsStatus
     , 0, 0, 0, {0,NULL}, {0,NULL}, {0,NULL}, 0, {0,NULL}, 0, 0 }
 
 
+/*
+ * Add Custom RPC message structures after existing message structures to make it easily notice 
+ */
+struct  CtrlMsgReqCustomRpcUnserialisedMsg
+{
+  ProtobufCMessage base;
+  uint32_t custom_msg_id;
+  ProtobufCBinaryData data;
+};
+#define CTRL_MSG__REQ__CUSTOM_RPC_UNSERIALISED_MSG__INIT \
+ { PROTOBUF_C_MESSAGE_INIT (&ctrl_msg__req__custom_rpc_unserialised_msg__descriptor) \
+    , 0, {0,NULL} }
+
+
+struct  CtrlMsgRespCustomRpcUnserialisedMsg
+{
+  ProtobufCMessage base;
+  int32_t resp;
+  uint32_t custom_msg_id;
+  ProtobufCBinaryData data;
+};
+#define CTRL_MSG__RESP__CUSTOM_RPC_UNSERIALISED_MSG__INIT \
+ { PROTOBUF_C_MESSAGE_INIT (&ctrl_msg__resp__custom_rpc_unserialised_msg__descriptor) \
+    , 0, 0, {0,NULL} }
+
+
+struct  CtrlMsgEventCustomRpcUnserialisedMsg
+{
+  ProtobufCMessage base;
+  int32_t resp;
+  uint32_t custom_evt_id;
+  ProtobufCBinaryData data;
+};
+#define CTRL_MSG__EVENT__CUSTOM_RPC_UNSERIALISED_MSG__INIT \
+ { PROTOBUF_C_MESSAGE_INIT (&ctrl_msg__event__custom_rpc_unserialised_msg__descriptor) \
+    , 0, 0, {0,NULL} }
+
+
 typedef enum {
   CTRL_MSG__PAYLOAD__NOT_SET = 0,
   CTRL_MSG__PAYLOAD_REQ_GET_MAC_ADDRESS = 101,
@@ -957,6 +1001,7 @@ typedef enum {
   CTRL_MSG__PAYLOAD_REQ_GET_COUNTRY_CODE = 125,
   CTRL_MSG__PAYLOAD_REQ_SET_DHCP_DNS_STATUS = 126,
   CTRL_MSG__PAYLOAD_REQ_GET_DHCP_DNS_STATUS = 127,
+  CTRL_MSG__PAYLOAD_REQ_CUSTOM_RPC_UNSERIALISED_MSG = 128,
   CTRL_MSG__PAYLOAD_RESP_GET_MAC_ADDRESS = 201,
   CTRL_MSG__PAYLOAD_RESP_SET_MAC_ADDRESS = 202,
   CTRL_MSG__PAYLOAD_RESP_GET_WIFI_MODE = 203,
@@ -984,13 +1029,15 @@ typedef enum {
   CTRL_MSG__PAYLOAD_RESP_GET_COUNTRY_CODE = 225,
   CTRL_MSG__PAYLOAD_RESP_SET_DHCP_DNS_STATUS = 226,
   CTRL_MSG__PAYLOAD_RESP_GET_DHCP_DNS_STATUS = 227,
+  CTRL_MSG__PAYLOAD_RESP_CUSTOM_RPC_UNSERIALISED_MSG = 228,
   CTRL_MSG__PAYLOAD_EVENT_ESP_INIT = 301,
   CTRL_MSG__PAYLOAD_EVENT_HEARTBEAT = 302,
   CTRL_MSG__PAYLOAD_EVENT_STATION_DISCONNECT_FROM__AP = 303,
   CTRL_MSG__PAYLOAD_EVENT_STATION_DISCONNECT_FROM__ESP__SOFT_AP = 304,
   CTRL_MSG__PAYLOAD_EVENT_STATION_CONNECTED_TO__AP = 305,
   CTRL_MSG__PAYLOAD_EVENT_STATION_CONNECTED_TO__ESP__SOFT_AP = 306,
-  CTRL_MSG__PAYLOAD_EVENT_SET_DHCP_DNS_STATUS = 307
+  CTRL_MSG__PAYLOAD_EVENT_SET_DHCP_DNS_STATUS = 307,
+  CTRL_MSG__PAYLOAD_EVENT_CUSTOM_RPC_UNSERIALISED_MSG = 308
     PROTOBUF_C__FORCE_ENUM_TO_BE_INT_SIZE(CTRL_MSG__PAYLOAD__CASE)
 } CtrlMsg__PayloadCase;
 
@@ -1045,6 +1092,7 @@ struct  CtrlMsg
     CtrlMsgReqGetCountryCode *req_get_country_code;
     CtrlMsgReqSetDhcpDnsStatus *req_set_dhcp_dns_status;
     CtrlMsgReqGetDhcpDnsStatus *req_get_dhcp_dns_status;
+    CtrlMsgReqCustomRpcUnserialisedMsg *req_custom_rpc_unserialised_msg;
     /*
      ** Responses *
      */
@@ -1075,6 +1123,7 @@ struct  CtrlMsg
     CtrlMsgRespGetCountryCode *resp_get_country_code;
     CtrlMsgRespSetDhcpDnsStatus *resp_set_dhcp_dns_status;
     CtrlMsgRespGetDhcpDnsStatus *resp_get_dhcp_dns_status;
+    CtrlMsgRespCustomRpcUnserialisedMsg *resp_custom_rpc_unserialised_msg;
     /*
      ** Notifications *
      */
@@ -1085,6 +1134,7 @@ struct  CtrlMsg
     CtrlMsgEventStationConnectedToAP *event_station_connected_to_ap;
     CtrlMsgEventStationConnectedToESPSoftAP *event_station_connected_to_esp_softap;
     CtrlMsgEventSetDhcpDnsStatus *event_set_dhcp_dns_status;
+    CtrlMsgEventCustomRpcUnserialisedMsg *event_custom_rpc_unserialised_msg;
   };
 };
 #define CTRL_MSG__INIT \
@@ -2194,6 +2244,63 @@ CtrlMsgEventSetDhcpDnsStatus *
 void   ctrl_msg__event__set_dhcp_dns_status__free_unpacked
                      (CtrlMsgEventSetDhcpDnsStatus *message,
                       ProtobufCAllocator *allocator);
+/* CtrlMsgReqCustomRpcUnserialisedMsg methods */
+void   ctrl_msg__req__custom_rpc_unserialised_msg__init
+                     (CtrlMsgReqCustomRpcUnserialisedMsg         *message);
+size_t ctrl_msg__req__custom_rpc_unserialised_msg__get_packed_size
+                     (const CtrlMsgReqCustomRpcUnserialisedMsg   *message);
+size_t ctrl_msg__req__custom_rpc_unserialised_msg__pack
+                     (const CtrlMsgReqCustomRpcUnserialisedMsg   *message,
+                      uint8_t             *out);
+size_t ctrl_msg__req__custom_rpc_unserialised_msg__pack_to_buffer
+                     (const CtrlMsgReqCustomRpcUnserialisedMsg   *message,
+                      ProtobufCBuffer     *buffer);
+CtrlMsgReqCustomRpcUnserialisedMsg *
+       ctrl_msg__req__custom_rpc_unserialised_msg__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data);
+void   ctrl_msg__req__custom_rpc_unserialised_msg__free_unpacked
+                     (CtrlMsgReqCustomRpcUnserialisedMsg *message,
+                      ProtobufCAllocator *allocator);
+/* CtrlMsgRespCustomRpcUnserialisedMsg methods */
+void   ctrl_msg__resp__custom_rpc_unserialised_msg__init
+                     (CtrlMsgRespCustomRpcUnserialisedMsg         *message);
+size_t ctrl_msg__resp__custom_rpc_unserialised_msg__get_packed_size
+                     (const CtrlMsgRespCustomRpcUnserialisedMsg   *message);
+size_t ctrl_msg__resp__custom_rpc_unserialised_msg__pack
+                     (const CtrlMsgRespCustomRpcUnserialisedMsg   *message,
+                      uint8_t             *out);
+size_t ctrl_msg__resp__custom_rpc_unserialised_msg__pack_to_buffer
+                     (const CtrlMsgRespCustomRpcUnserialisedMsg   *message,
+                      ProtobufCBuffer     *buffer);
+CtrlMsgRespCustomRpcUnserialisedMsg *
+       ctrl_msg__resp__custom_rpc_unserialised_msg__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data);
+void   ctrl_msg__resp__custom_rpc_unserialised_msg__free_unpacked
+                     (CtrlMsgRespCustomRpcUnserialisedMsg *message,
+                      ProtobufCAllocator *allocator);
+/* CtrlMsgEventCustomRpcUnserialisedMsg methods */
+void   ctrl_msg__event__custom_rpc_unserialised_msg__init
+                     (CtrlMsgEventCustomRpcUnserialisedMsg         *message);
+size_t ctrl_msg__event__custom_rpc_unserialised_msg__get_packed_size
+                     (const CtrlMsgEventCustomRpcUnserialisedMsg   *message);
+size_t ctrl_msg__event__custom_rpc_unserialised_msg__pack
+                     (const CtrlMsgEventCustomRpcUnserialisedMsg   *message,
+                      uint8_t             *out);
+size_t ctrl_msg__event__custom_rpc_unserialised_msg__pack_to_buffer
+                     (const CtrlMsgEventCustomRpcUnserialisedMsg   *message,
+                      ProtobufCBuffer     *buffer);
+CtrlMsgEventCustomRpcUnserialisedMsg *
+       ctrl_msg__event__custom_rpc_unserialised_msg__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data);
+void   ctrl_msg__event__custom_rpc_unserialised_msg__free_unpacked
+                     (CtrlMsgEventCustomRpcUnserialisedMsg *message,
+                      ProtobufCAllocator *allocator);
 /* CtrlMsg methods */
 void   ctrl_msg__init
                      (CtrlMsg         *message);
@@ -2389,6 +2496,15 @@ typedef void (*CtrlMsgEventStationConnectedToESPSoftAP_Closure)
 typedef void (*CtrlMsgEventSetDhcpDnsStatus_Closure)
                  (const CtrlMsgEventSetDhcpDnsStatus *message,
                   void *closure_data);
+typedef void (*CtrlMsgReqCustomRpcUnserialisedMsg_Closure)
+                 (const CtrlMsgReqCustomRpcUnserialisedMsg *message,
+                  void *closure_data);
+typedef void (*CtrlMsgRespCustomRpcUnserialisedMsg_Closure)
+                 (const CtrlMsgRespCustomRpcUnserialisedMsg *message,
+                  void *closure_data);
+typedef void (*CtrlMsgEventCustomRpcUnserialisedMsg_Closure)
+                 (const CtrlMsgEventCustomRpcUnserialisedMsg *message,
+                  void *closure_data);
 typedef void (*CtrlMsg_Closure)
                  (const CtrlMsg *message,
                   void *closure_data);
@@ -2466,6 +2582,9 @@ extern const ProtobufCMessageDescriptor ctrl_msg__event__station_connected_to_ap
 extern const ProtobufCMessageDescriptor ctrl_msg__event__station_disconnect_from_espsoft_ap__descriptor;
 extern const ProtobufCMessageDescriptor ctrl_msg__event__station_connected_to_espsoft_ap__descriptor;
 extern const ProtobufCMessageDescriptor ctrl_msg__event__set_dhcp_dns_status__descriptor;
+extern const ProtobufCMessageDescriptor ctrl_msg__req__custom_rpc_unserialised_msg__descriptor;
+extern const ProtobufCMessageDescriptor ctrl_msg__resp__custom_rpc_unserialised_msg__descriptor;
+extern const ProtobufCMessageDescriptor ctrl_msg__event__custom_rpc_unserialised_msg__descriptor;
 extern const ProtobufCMessageDescriptor ctrl_msg__descriptor;
 
 PROTOBUF_C__END_DECLS

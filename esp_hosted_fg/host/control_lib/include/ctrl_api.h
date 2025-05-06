@@ -48,6 +48,20 @@
 #define FAILURE_STR                          "failure"
 #define NOT_CONNECTED_STR                    "not_connected"
 
+
+#define CLEANUP_CTRL_MSG(msg) do {                        \
+  if (msg) {                                              \
+    if (msg->free_buffer_handle) {                        \
+      if (msg->free_buffer_func) {                        \
+        msg->free_buffer_func(msg->free_buffer_handle);   \
+        msg->free_buffer_handle = NULL;                   \
+      }                                                   \
+    }                                                     \
+    free(msg);                                            \
+    msg = NULL;                                           \
+  }                                                       \
+} while(0);
+
 /*---- Control structures ----*/
 
 enum {
@@ -123,6 +137,7 @@ typedef enum {
 	CTRL_REQ_SET_DHCP_DNS_STATUS       = CTRL_MSG_ID__Req_SetDhcpDnsStatus,
 	CTRL_REQ_GET_DHCP_DNS_STATUS       = CTRL_MSG_ID__Req_GetDhcpDnsStatus,
 
+	CTRL_REQ_CUSTOM_RPC_UNSERIALISED_MSG = CTRL_MSG_ID__Req_Custom_RPC_Unserialised_Msg,
 
 	/*
 	 * Add new control path command response before Req_Max
@@ -170,6 +185,7 @@ typedef enum {
 	CTRL_RESP_SET_DHCP_DNS_STATUS       = CTRL_MSG_ID__Resp_SetDhcpDnsStatus,
 	CTRL_RESP_GET_DHCP_DNS_STATUS       = CTRL_MSG_ID__Resp_GetDhcpDnsStatus,
 
+	CTRL_RESP_CUSTOM_RPC_UNSERIALISED_MSG = CTRL_MSG_ID__Resp_Custom_RPC_Unserialised_Msg,
 	/*
 	 * Add new control path command and response before Resp_Max
 	 * and update Resp_Max
@@ -191,6 +207,8 @@ typedef enum {
 		CTRL_MSG_ID__Event_StationConnectedToESPSoftAP,
 	CTRL_EVENT_DHCP_DNS_STATUS =
 		CTRL_MSG_ID__Event_SetDhcpDnsStatus,
+	CTRL_EVENT_CUSTOM_RPC_UNSERIALISED_MSG =
+		CTRL_MSG_ID__Event_Custom_RPC_Unserialised_Msg,
 	/*
 	 * Add new control path command notification before Event_Max
 	 * and update Event_Max
@@ -403,16 +421,25 @@ typedef struct {
 } event_softap_sta_disconn_t;
 
 typedef struct {
-    int iface;
-    int net_link_up;
-    int dhcp_up;
-    uint8_t dhcp_ip[64];
-    uint8_t dhcp_nm[64];
-    uint8_t dhcp_gw[64];
-    int dns_up;
-    uint8_t dns_ip[64];
-    int dns_type;
+	int iface;
+	int net_link_up;
+	int dhcp_up;
+	uint8_t dhcp_ip[64];
+	uint8_t dhcp_nm[64];
+	uint8_t dhcp_gw[64];
+	int dns_up;
+	uint8_t dns_ip[64];
+	int dns_type;
 } dhcp_dns_status_t;
+
+typedef void (*custom_data_free_func_t)(void *data);
+
+typedef struct {
+	uint32_t custom_msg_id;
+	uint16_t data_len;
+	custom_data_free_func_t free_func;
+	uint8_t *data;
+} custom_rpc_unserialised_data_t;
 
 typedef struct Ctrl_cmd_t {
 	/* msg type could be 1. req 2. resp 3. notification */
@@ -457,6 +484,7 @@ typedef struct Ctrl_cmd_t {
 		event_softap_sta_conn_t     e_softap_sta_conn;
 		event_softap_sta_disconn_t  e_softap_sta_disconn;
 		dhcp_dns_status_t           dhcp_dns_status;
+		custom_rpc_unserialised_data_t custom_rpc_unserialised_data;
 	}u;
 
 	/* By default this callback is set to NULL.
@@ -521,6 +549,15 @@ typedef int (*ctrl_event_cb_t) (ctrl_cmd_t * event);
  * > CALLBACK_SET_SUCCESS - Callback is set successful
  **/
 int set_event_callback(int event, ctrl_resp_cb_t event_cb);
+
+
+/* Get control event callback
+ *
+ * Returns:
+ * > NULL - If event is not registered with hosted control lib
+ * > Function pointer - Returns the registered event callback
+ **/
+ctrl_resp_cb_t get_event_callback(int event);
 
 /* Reset control event callback
  *
@@ -652,6 +689,8 @@ ctrl_cmd_t * get_dhcp_dns_status(ctrl_cmd_t *req);
 /* Set DHCP DNS status */
 ctrl_cmd_t * set_dhcp_dns_status(ctrl_cmd_t *req);
 
+/* Send custom RPC unserialised message */
+ctrl_cmd_t * send_custom_rpc_unserialised_req_to_slave(ctrl_cmd_t *req);
 
 #endif
 

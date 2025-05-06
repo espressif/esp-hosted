@@ -411,8 +411,8 @@ static uint8_t * get_next_tx_buffer(uint32_t *len)
 		g_last_tx_time = now;
 		if (len) {
 #if ESP_PKT_STATS
-            if (buf_handle.if_type == ESP_SERIAL_IF)
-                pkt_stats.serial_tx_total++;
+			if (buf_handle.if_type == ESP_SERIAL_IF)
+				pkt_stats.serial_tx_total++;
 #endif
 			*len = buf_handle.payload_len;
 		}
@@ -446,7 +446,7 @@ static int process_spi_rx(interface_buffer_handle_t *buf_handle)
 
 	UPDATE_HEADER_RX_PKT_NO(header);
 
-    ESP_HEXLOGV("spi_rx:", header, 16, 16);
+	ESP_HEXLOGV("spi_rx:", header, 16, 16);
 
 	uint16_t len = le16toh(header->len);
 	uint16_t offset = le16toh(header->offset);
@@ -594,10 +594,10 @@ static void spi_transaction_post_process_task(void* pvParameters)
 		}
 
 #if ESP_PKT_STATS
-        struct esp_payload_header *header =
-            (struct esp_payload_header *)spi_trans->tx_buffer;
-        if (header->if_type == ESP_STA_IF)
-            pkt_stats.sta_sh_out++;
+		struct esp_payload_header *header =
+			(struct esp_payload_header *)spi_trans->tx_buffer;
+		if (header->if_type == ESP_STA_IF)
+			pkt_stats.sta_sh_out++;
 #endif
 		if (ret != ESP_OK && spi_trans->rx_buffer) {
 			spi_buffer_rx_free((void *)spi_trans->rx_buffer);
@@ -748,7 +748,8 @@ static interface_handle_t * esp_spi_init(void)
 
 	wait_cs_deassert_sem = xSemaphoreCreateBinary();
 	assert(wait_cs_deassert_sem!= NULL);
-	ret = xSemaphoreTake(wait_cs_deassert_sem, 0);
+	/* Clear the semaphore */
+	xSemaphoreTake(wait_cs_deassert_sem, 0);
 
 #ifdef CONFIG_ESP_ENABLE_TX_PRIORITY_QUEUES
 	spi_tx_sem = xSemaphoreCreateCounting(SPI_TX_TOTAL_QUEUE_SIZE, 0);
@@ -792,92 +793,92 @@ static interface_handle_t * esp_spi_init(void)
 
 static int32_t esp_spi_write(interface_handle_t *handle, interface_buffer_handle_t *buf_handle)
 {
-    int64_t start = esp_timer_get_time();
-    int32_t total_len = 0;
-    struct esp_payload_header *header;
-    interface_buffer_handle_t tx_buf_handle = {0};
+	int64_t start = esp_timer_get_time();
+	int32_t total_len = 0;
+	struct esp_payload_header *header;
+	interface_buffer_handle_t tx_buf_handle = {0};
 
-    /* Basic validation */
-    if (!handle || !buf_handle || !buf_handle->payload) {
-        ESP_LOGE(TAG, "Invalid args - handle:%p buf:%p payload:%p", 
-            handle, buf_handle, buf_handle ? buf_handle->payload : NULL);
-        return ESP_FAIL;
-    }
+	/* Basic validation */
+	if (!handle || !buf_handle || !buf_handle->payload) {
+		ESP_LOGE(TAG, "Invalid args - handle:%p buf:%p payload:%p",
+				handle, buf_handle, buf_handle ? buf_handle->payload : NULL);
+		return ESP_FAIL;
+	}
 
-    /* Length validation */
-    if (!buf_handle->payload_len || buf_handle->payload_len > (SPI_BUFFER_SIZE-sizeof(struct esp_payload_header))) {
-        ESP_LOGE(TAG, "Invalid payload length:%d", buf_handle->payload_len);
-        return ESP_FAIL;
-    }
+	/* Length validation */
+	if (!buf_handle->payload_len || buf_handle->payload_len > (SPI_BUFFER_SIZE-sizeof(struct esp_payload_header))) {
+		ESP_LOGE(TAG, "Invalid payload length:%d", buf_handle->payload_len);
+		return ESP_FAIL;
+	}
 
-    /* Calculate total length */
-    total_len = buf_handle->payload_len + sizeof(struct esp_payload_header);
+	/* Calculate total length */
+	total_len = buf_handle->payload_len + sizeof(struct esp_payload_header);
 
-    /* DMA alignment check */
-    if (!IS_SPI_DMA_ALIGNED(total_len)) {
-        MAKE_SPI_DMA_ALIGNED(total_len);
-    }
+	/* DMA alignment check */
+	if (!IS_SPI_DMA_ALIGNED(total_len)) {
+		MAKE_SPI_DMA_ALIGNED(total_len);
+	}
 
-    if (total_len > SPI_BUFFER_SIZE) {
-        ESP_LOGE(TAG, "Total length %d exceeds max %d", total_len, SPI_BUFFER_SIZE);
-        return ESP_FAIL;
-    }
+	if (total_len > SPI_BUFFER_SIZE) {
+		ESP_LOGE(TAG, "Total length %d exceeds max %d", total_len, SPI_BUFFER_SIZE);
+		return ESP_FAIL;
+	}
 
-    /* Allocate and validate TX buffer */
-    tx_buf_handle.payload = spi_buffer_tx_alloc(MEMSET_NOT_REQUIRED);
-    if (!tx_buf_handle.payload) {
-        ESP_LOGE(TAG, "TX buffer allocation failed");
-        return ESP_FAIL;
-    }
+	/* Allocate and validate TX buffer */
+	tx_buf_handle.payload = spi_buffer_tx_alloc(MEMSET_NOT_REQUIRED);
+	if (!tx_buf_handle.payload) {
+		ESP_LOGE(TAG, "TX buffer allocation failed");
+		return ESP_FAIL;
+	}
 
-    /* Setup header */
-    header = (struct esp_payload_header *)tx_buf_handle.payload;
-    memset(header, 0, sizeof(struct esp_payload_header));
+	/* Setup header */
+	header = (struct esp_payload_header *)tx_buf_handle.payload;
+	memset(header, 0, sizeof(struct esp_payload_header));
 
-    header->if_type = buf_handle->if_type;
-    header->if_num = buf_handle->if_num;
-    header->len = htole16(buf_handle->payload_len);
-    header->offset = htole16(sizeof(struct esp_payload_header));
-    header->seq_num = htole16(buf_handle->seq_num);
-    header->flags = buf_handle->flag;
+	header->if_type = buf_handle->if_type;
+	header->if_num = buf_handle->if_num;
+	header->len = htole16(buf_handle->payload_len);
+	header->offset = htole16(sizeof(struct esp_payload_header));
+	header->seq_num = htole16(buf_handle->seq_num);
+	header->flags = buf_handle->flag;
 
-    /* Copy payload data */
-    memcpy(tx_buf_handle.payload + sizeof(struct esp_payload_header),
-           buf_handle->payload, buf_handle->payload_len);
+	/* Copy payload data */
+	memcpy(tx_buf_handle.payload + sizeof(struct esp_payload_header),
+			buf_handle->payload, buf_handle->payload_len);
 
-    tx_buf_handle.if_type = buf_handle->if_type;
-    tx_buf_handle.if_num = buf_handle->if_num;
-    tx_buf_handle.payload_len = total_len;
+	tx_buf_handle.if_type = buf_handle->if_type;
+	tx_buf_handle.if_num = buf_handle->if_num;
+	tx_buf_handle.payload_len = total_len;
 
 #if CONFIG_ESP_SPI_CHECKSUM
-    /* Calculate checksum with header checksum field zeroed */
-    header->checksum = 0;
-    uint16_t checksum = compute_checksum(tx_buf_handle.payload,
-				sizeof(struct esp_payload_header)+buf_handle->payload_len);
-    header->checksum = htole16(checksum);
+	/* Calculate checksum with header checksum field zeroed */
+	header->checksum = 0;
+	uint16_t checksum = compute_checksum(tx_buf_handle.payload,
+			sizeof(struct esp_payload_header)+buf_handle->payload_len);
+	header->checksum = htole16(checksum);
 #endif
 
-    ESP_LOGI(TAG, "[TX] Packet - type:%d len:%d total:%d", 
-        header->if_type, buf_handle->payload_len, total_len);
+	ESP_LOGI(TAG, "[TX] Packet - type:%d len:%d total:%d",
+			header->if_type, buf_handle->payload_len, total_len);
 
 #ifdef CONFIG_ESP_ENABLE_TX_PRIORITY_QUEUES
-    if (header->if_type == ESP_SERIAL_IF)
-        xQueueSend(spi_tx_queue[PRIO_Q_SERIAL], &tx_buf_handle, portMAX_DELAY);
-    else if (header->if_type == ESP_HCI_IF)
-        xQueueSend(spi_tx_queue[PRIO_Q_BT], &tx_buf_handle, portMAX_DELAY);
-    else
-        xQueueSend(spi_tx_queue[PRIO_Q_OTHERS], &tx_buf_handle, portMAX_DELAY);
+	if (header->if_type == ESP_SERIAL_IF)
+		xQueueSend(spi_tx_queue[PRIO_Q_SERIAL], &tx_buf_handle, portMAX_DELAY);
+	else if (header->if_type == ESP_HCI_IF)
+		xQueueSend(spi_tx_queue[PRIO_Q_BT], &tx_buf_handle, portMAX_DELAY);
+	else
+		xQueueSend(spi_tx_queue[PRIO_Q_OTHERS], &tx_buf_handle, portMAX_DELAY);
 
-    xSemaphoreGive(spi_tx_sem);
+	xSemaphoreGive(spi_tx_sem);
 #else
-    xQueueSend(spi_tx_queue, &tx_buf_handle, portMAX_DELAY);
+	xQueueSend(spi_tx_queue, &tx_buf_handle, portMAX_DELAY);
 #endif
 
-    set_dataready_gpio();
+	set_dataready_gpio();
 
-    int64_t end = esp_timer_get_time();
-    ESP_LOGI(TAG, "[TIMING] Write operation completed in: %lld us", end - start);
-    return tx_buf_handle.payload_len;
+	int64_t end = esp_timer_get_time();
+	ESP_LOGI(TAG, "[TIMING] Write operation completed in: %lld us", end - start);
+	return tx_buf_handle.payload_len;
 }
 
 static void IRAM_ATTR esp_spi_read_done(void *handle)

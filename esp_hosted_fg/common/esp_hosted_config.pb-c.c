@@ -2617,6 +2617,141 @@ void   ctrl_msg__event__set_dhcp_dns_status__free_unpacked
   assert(message->base.descriptor == &ctrl_msg__event__set_dhcp_dns_status__descriptor);
   protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
 }
+void   ctrl_msg__req__custom_rpc_unserialised_msg__init
+                     (CtrlMsgReqCustomRpcUnserialisedMsg         *message)
+{
+  static const CtrlMsgReqCustomRpcUnserialisedMsg init_value = CTRL_MSG__REQ__CUSTOM_RPC_UNSERIALISED_MSG__INIT;
+  *message = init_value;
+}
+size_t ctrl_msg__req__custom_rpc_unserialised_msg__get_packed_size
+                     (const CtrlMsgReqCustomRpcUnserialisedMsg *message)
+{
+  assert(message->base.descriptor == &ctrl_msg__req__custom_rpc_unserialised_msg__descriptor);
+  return protobuf_c_message_get_packed_size ((const ProtobufCMessage*)(message));
+}
+size_t ctrl_msg__req__custom_rpc_unserialised_msg__pack
+                     (const CtrlMsgReqCustomRpcUnserialisedMsg *message,
+                      uint8_t       *out)
+{
+  assert(message->base.descriptor == &ctrl_msg__req__custom_rpc_unserialised_msg__descriptor);
+  return protobuf_c_message_pack ((const ProtobufCMessage*)message, out);
+}
+size_t ctrl_msg__req__custom_rpc_unserialised_msg__pack_to_buffer
+                     (const CtrlMsgReqCustomRpcUnserialisedMsg *message,
+                      ProtobufCBuffer *buffer)
+{
+  assert(message->base.descriptor == &ctrl_msg__req__custom_rpc_unserialised_msg__descriptor);
+  return protobuf_c_message_pack_to_buffer ((const ProtobufCMessage*)message, buffer);
+}
+CtrlMsgReqCustomRpcUnserialisedMsg *
+       ctrl_msg__req__custom_rpc_unserialised_msg__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data)
+{
+  return (CtrlMsgReqCustomRpcUnserialisedMsg *)
+     protobuf_c_message_unpack (&ctrl_msg__req__custom_rpc_unserialised_msg__descriptor,
+                                allocator, len, data);
+}
+void   ctrl_msg__req__custom_rpc_unserialised_msg__free_unpacked
+                     (CtrlMsgReqCustomRpcUnserialisedMsg *message,
+                      ProtobufCAllocator *allocator)
+{
+  if(!message)
+    return;
+  assert(message->base.descriptor == &ctrl_msg__req__custom_rpc_unserialised_msg__descriptor);
+  protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
+}
+void   ctrl_msg__resp__custom_rpc_unserialised_msg__init
+                     (CtrlMsgRespCustomRpcUnserialisedMsg         *message)
+{
+  static const CtrlMsgRespCustomRpcUnserialisedMsg init_value = CTRL_MSG__RESP__CUSTOM_RPC_UNSERIALISED_MSG__INIT;
+  *message = init_value;
+}
+size_t ctrl_msg__resp__custom_rpc_unserialised_msg__get_packed_size
+                     (const CtrlMsgRespCustomRpcUnserialisedMsg *message)
+{
+  assert(message->base.descriptor == &ctrl_msg__resp__custom_rpc_unserialised_msg__descriptor);
+  return protobuf_c_message_get_packed_size ((const ProtobufCMessage*)(message));
+}
+size_t ctrl_msg__resp__custom_rpc_unserialised_msg__pack
+                     (const CtrlMsgRespCustomRpcUnserialisedMsg *message,
+                      uint8_t       *out)
+{
+  assert(message->base.descriptor == &ctrl_msg__resp__custom_rpc_unserialised_msg__descriptor);
+  return protobuf_c_message_pack ((const ProtobufCMessage*)message, out);
+}
+size_t ctrl_msg__resp__custom_rpc_unserialised_msg__pack_to_buffer
+                     (const CtrlMsgRespCustomRpcUnserialisedMsg *message,
+                      ProtobufCBuffer *buffer)
+{
+  assert(message->base.descriptor == &ctrl_msg__resp__custom_rpc_unserialised_msg__descriptor);
+  return protobuf_c_message_pack_to_buffer ((const ProtobufCMessage*)message, buffer);
+}
+CtrlMsgRespCustomRpcUnserialisedMsg *
+       ctrl_msg__resp__custom_rpc_unserialised_msg__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data)
+{
+  return (CtrlMsgRespCustomRpcUnserialisedMsg *)
+     protobuf_c_message_unpack (&ctrl_msg__resp__custom_rpc_unserialised_msg__descriptor,
+                                allocator, len, data);
+}
+void   ctrl_msg__resp__custom_rpc_unserialised_msg__free_unpacked
+                     (CtrlMsgRespCustomRpcUnserialisedMsg *message,
+                      ProtobufCAllocator *allocator)
+{
+  if(!message)
+    return;
+  assert(message->base.descriptor == &ctrl_msg__resp__custom_rpc_unserialised_msg__descriptor);
+  protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
+}
+void   ctrl_msg__event__custom_rpc_unserialised_msg__init
+                     (CtrlMsgEventCustomRpcUnserialisedMsg         *message)
+{
+  static const CtrlMsgEventCustomRpcUnserialisedMsg init_value = CTRL_MSG__EVENT__CUSTOM_RPC_UNSERIALISED_MSG__INIT;
+  *message = init_value;
+}
+size_t ctrl_msg__event__custom_rpc_unserialised_msg__get_packed_size
+                     (const CtrlMsgEventCustomRpcUnserialisedMsg *message)
+{
+  assert(message->base.descriptor == &ctrl_msg__event__custom_rpc_unserialised_msg__descriptor);
+  return protobuf_c_message_get_packed_size ((const ProtobufCMessage*)(message));
+}
+size_t ctrl_msg__event__custom_rpc_unserialised_msg__pack
+                     (const CtrlMsgEventCustomRpcUnserialisedMsg *message,
+                      uint8_t       *out)
+{
+  assert(message->base.descriptor == &ctrl_msg__event__custom_rpc_unserialised_msg__descriptor);
+  return protobuf_c_message_pack ((const ProtobufCMessage*)message, out);
+}
+size_t ctrl_msg__event__custom_rpc_unserialised_msg__pack_to_buffer
+                     (const CtrlMsgEventCustomRpcUnserialisedMsg *message,
+                      ProtobufCBuffer *buffer)
+{
+  assert(message->base.descriptor == &ctrl_msg__event__custom_rpc_unserialised_msg__descriptor);
+  return protobuf_c_message_pack_to_buffer ((const ProtobufCMessage*)message, buffer);
+}
+CtrlMsgEventCustomRpcUnserialisedMsg *
+       ctrl_msg__event__custom_rpc_unserialised_msg__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data)
+{
+  return (CtrlMsgEventCustomRpcUnserialisedMsg *)
+     protobuf_c_message_unpack (&ctrl_msg__event__custom_rpc_unserialised_msg__descriptor,
+                                allocator, len, data);
+}
+void   ctrl_msg__event__custom_rpc_unserialised_msg__free_unpacked
+                     (CtrlMsgEventCustomRpcUnserialisedMsg *message,
+                      ProtobufCAllocator *allocator)
+{
+  if(!message)
+    return;
+  assert(message->base.descriptor == &ctrl_msg__event__custom_rpc_unserialised_msg__descriptor);
+  protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
+}
 void   ctrl_msg__init
                      (CtrlMsg         *message)
 {
@@ -5978,7 +6113,186 @@ const ProtobufCMessageDescriptor ctrl_msg__event__set_dhcp_dns_status__descripto
   (ProtobufCMessageInit) ctrl_msg__event__set_dhcp_dns_status__init,
   NULL,NULL,NULL    /* reserved[123] */
 };
-static const ProtobufCFieldDescriptor ctrl_msg__field_descriptors[65] =
+static const ProtobufCFieldDescriptor ctrl_msg__req__custom_rpc_unserialised_msg__field_descriptors[2] =
+{
+  {
+    "custom_msg_id",
+    1,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_UINT32,
+    0,   /* quantifier_offset */
+    offsetof(CtrlMsgReqCustomRpcUnserialisedMsg, custom_msg_id),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "data",
+    2,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_BYTES,
+    0,   /* quantifier_offset */
+    offsetof(CtrlMsgReqCustomRpcUnserialisedMsg, data),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+};
+static const unsigned ctrl_msg__req__custom_rpc_unserialised_msg__field_indices_by_name[] = {
+  0,   /* field[0] = custom_msg_id */
+  1,   /* field[1] = data */
+};
+static const ProtobufCIntRange ctrl_msg__req__custom_rpc_unserialised_msg__number_ranges[1 + 1] =
+{
+  { 1, 0 },
+  { 0, 2 }
+};
+const ProtobufCMessageDescriptor ctrl_msg__req__custom_rpc_unserialised_msg__descriptor =
+{
+  PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
+  "CtrlMsg_Req_CustomRpcUnserialisedMsg",
+  "CtrlMsgReqCustomRpcUnserialisedMsg",
+  "CtrlMsgReqCustomRpcUnserialisedMsg",
+  "",
+  sizeof(CtrlMsgReqCustomRpcUnserialisedMsg),
+  2,
+  ctrl_msg__req__custom_rpc_unserialised_msg__field_descriptors,
+  ctrl_msg__req__custom_rpc_unserialised_msg__field_indices_by_name,
+  1,  ctrl_msg__req__custom_rpc_unserialised_msg__number_ranges,
+  (ProtobufCMessageInit) ctrl_msg__req__custom_rpc_unserialised_msg__init,
+  NULL,NULL,NULL    /* reserved[123] */
+};
+static const ProtobufCFieldDescriptor ctrl_msg__resp__custom_rpc_unserialised_msg__field_descriptors[3] =
+{
+  {
+    "resp",
+    1,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_INT32,
+    0,   /* quantifier_offset */
+    offsetof(CtrlMsgRespCustomRpcUnserialisedMsg, resp),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "custom_msg_id",
+    2,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_UINT32,
+    0,   /* quantifier_offset */
+    offsetof(CtrlMsgRespCustomRpcUnserialisedMsg, custom_msg_id),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "data",
+    3,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_BYTES,
+    0,   /* quantifier_offset */
+    offsetof(CtrlMsgRespCustomRpcUnserialisedMsg, data),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+};
+static const unsigned ctrl_msg__resp__custom_rpc_unserialised_msg__field_indices_by_name[] = {
+  1,   /* field[1] = custom_msg_id */
+  2,   /* field[2] = data */
+  0,   /* field[0] = resp */
+};
+static const ProtobufCIntRange ctrl_msg__resp__custom_rpc_unserialised_msg__number_ranges[1 + 1] =
+{
+  { 1, 0 },
+  { 0, 3 }
+};
+const ProtobufCMessageDescriptor ctrl_msg__resp__custom_rpc_unserialised_msg__descriptor =
+{
+  PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
+  "CtrlMsg_Resp_CustomRpcUnserialisedMsg",
+  "CtrlMsgRespCustomRpcUnserialisedMsg",
+  "CtrlMsgRespCustomRpcUnserialisedMsg",
+  "",
+  sizeof(CtrlMsgRespCustomRpcUnserialisedMsg),
+  3,
+  ctrl_msg__resp__custom_rpc_unserialised_msg__field_descriptors,
+  ctrl_msg__resp__custom_rpc_unserialised_msg__field_indices_by_name,
+  1,  ctrl_msg__resp__custom_rpc_unserialised_msg__number_ranges,
+  (ProtobufCMessageInit) ctrl_msg__resp__custom_rpc_unserialised_msg__init,
+  NULL,NULL,NULL    /* reserved[123] */
+};
+static const ProtobufCFieldDescriptor ctrl_msg__event__custom_rpc_unserialised_msg__field_descriptors[3] =
+{
+  {
+    "resp",
+    1,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_INT32,
+    0,   /* quantifier_offset */
+    offsetof(CtrlMsgEventCustomRpcUnserialisedMsg, resp),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "custom_evt_id",
+    2,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_UINT32,
+    0,   /* quantifier_offset */
+    offsetof(CtrlMsgEventCustomRpcUnserialisedMsg, custom_evt_id),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "data",
+    3,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_BYTES,
+    0,   /* quantifier_offset */
+    offsetof(CtrlMsgEventCustomRpcUnserialisedMsg, data),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+};
+static const unsigned ctrl_msg__event__custom_rpc_unserialised_msg__field_indices_by_name[] = {
+  1,   /* field[1] = custom_evt_id */
+  2,   /* field[2] = data */
+  0,   /* field[0] = resp */
+};
+static const ProtobufCIntRange ctrl_msg__event__custom_rpc_unserialised_msg__number_ranges[1 + 1] =
+{
+  { 1, 0 },
+  { 0, 3 }
+};
+const ProtobufCMessageDescriptor ctrl_msg__event__custom_rpc_unserialised_msg__descriptor =
+{
+  PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
+  "CtrlMsg_Event_CustomRpcUnserialisedMsg",
+  "CtrlMsgEventCustomRpcUnserialisedMsg",
+  "CtrlMsgEventCustomRpcUnserialisedMsg",
+  "",
+  sizeof(CtrlMsgEventCustomRpcUnserialisedMsg),
+  3,
+  ctrl_msg__event__custom_rpc_unserialised_msg__field_descriptors,
+  ctrl_msg__event__custom_rpc_unserialised_msg__field_indices_by_name,
+  1,  ctrl_msg__event__custom_rpc_unserialised_msg__number_ranges,
+  (ProtobufCMessageInit) ctrl_msg__event__custom_rpc_unserialised_msg__init,
+  NULL,NULL,NULL    /* reserved[123] */
+};
+static const ProtobufCFieldDescriptor ctrl_msg__field_descriptors[68] =
 {
   {
     "msg_type",
@@ -6353,6 +6667,18 @@ static const ProtobufCFieldDescriptor ctrl_msg__field_descriptors[65] =
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
   {
+    "req_custom_rpc_unserialised_msg",
+    128,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_MESSAGE,
+    offsetof(CtrlMsg, payload_case),
+    offsetof(CtrlMsg, req_custom_rpc_unserialised_msg),
+    &ctrl_msg__req__custom_rpc_unserialised_msg__descriptor,
+    NULL,
+    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
     "resp_get_mac_address",
     201,
     PROTOBUF_C_LABEL_NONE,
@@ -6677,6 +7003,18 @@ static const ProtobufCFieldDescriptor ctrl_msg__field_descriptors[65] =
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
   {
+    "resp_custom_rpc_unserialised_msg",
+    228,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_MESSAGE,
+    offsetof(CtrlMsg, payload_case),
+    offsetof(CtrlMsg, resp_custom_rpc_unserialised_msg),
+    &ctrl_msg__resp__custom_rpc_unserialised_msg__descriptor,
+    NULL,
+    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
     "event_esp_init",
     301,
     PROTOBUF_C_LABEL_NONE,
@@ -6760,19 +7098,33 @@ static const ProtobufCFieldDescriptor ctrl_msg__field_descriptors[65] =
     0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
+  {
+    "event_custom_rpc_unserialised_msg",
+    308,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_MESSAGE,
+    offsetof(CtrlMsg, payload_case),
+    offsetof(CtrlMsg, event_custom_rpc_unserialised_msg),
+    &ctrl_msg__event__custom_rpc_unserialised_msg__descriptor,
+    NULL,
+    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
 };
 static const unsigned ctrl_msg__field_indices_by_name[] = {
-  58,   /* field[58] = event_esp_init */
-  59,   /* field[59] = event_heartbeat */
-  64,   /* field[64] = event_set_dhcp_dns_status */
-  62,   /* field[62] = event_station_connected_to_AP */
-  63,   /* field[63] = event_station_connected_to_ESP_SoftAP */
-  60,   /* field[60] = event_station_disconnect_from_AP */
-  61,   /* field[61] = event_station_disconnect_from_ESP_SoftAP */
+  67,   /* field[67] = event_custom_rpc_unserialised_msg */
+  60,   /* field[60] = event_esp_init */
+  61,   /* field[61] = event_heartbeat */
+  66,   /* field[66] = event_set_dhcp_dns_status */
+  64,   /* field[64] = event_station_connected_to_AP */
+  65,   /* field[65] = event_station_connected_to_ESP_SoftAP */
+  62,   /* field[62] = event_station_disconnect_from_AP */
+  63,   /* field[63] = event_station_disconnect_from_ESP_SoftAP */
   1,   /* field[1] = msg_id */
   0,   /* field[0] = msg_type */
   24,   /* field[24] = req_config_heartbeat */
   10,   /* field[10] = req_connect_ap */
+  31,   /* field[31] = req_custom_rpc_unserialised_msg */
   11,   /* field[11] = req_disconnect_ap */
   25,   /* field[25] = req_enable_disable_feat */
   9,   /* field[9] = req_get_ap_config */
@@ -6799,42 +7151,43 @@ static const unsigned ctrl_msg__field_indices_by_name[] = {
   15,   /* field[15] = req_softap_connected_stas_list */
   14,   /* field[14] = req_start_softap */
   16,   /* field[16] = req_stop_softap */
-  51,   /* field[51] = resp_config_heartbeat */
-  37,   /* field[37] = resp_connect_ap */
-  38,   /* field[38] = resp_disconnect_ap */
-  52,   /* field[52] = resp_enable_disable_feat */
-  36,   /* field[36] = resp_get_ap_config */
-  55,   /* field[55] = resp_get_country_code */
-  57,   /* field[57] = resp_get_dhcp_dns_status */
-  53,   /* field[53] = resp_get_fw_version */
-  31,   /* field[31] = resp_get_mac_address */
-  45,   /* field[45] = resp_get_power_save_mode */
-  39,   /* field[39] = resp_get_softap_config */
-  50,   /* field[50] = resp_get_wifi_curr_tx_power */
-  33,   /* field[33] = resp_get_wifi_mode */
-  46,   /* field[46] = resp_ota_begin */
-  48,   /* field[48] = resp_ota_end */
-  47,   /* field[47] = resp_ota_write */
-  35,   /* field[35] = resp_scan_ap_list */
-  54,   /* field[54] = resp_set_country_code */
-  56,   /* field[56] = resp_set_dhcp_dns_status */
-  32,   /* field[32] = resp_set_mac_address */
-  44,   /* field[44] = resp_set_power_save_mode */
-  40,   /* field[40] = resp_set_softap_vendor_specific_ie */
-  49,   /* field[49] = resp_set_wifi_max_tx_power */
-  34,   /* field[34] = resp_set_wifi_mode */
-  42,   /* field[42] = resp_softap_connected_stas_list */
-  41,   /* field[41] = resp_start_softap */
-  43,   /* field[43] = resp_stop_softap */
+  52,   /* field[52] = resp_config_heartbeat */
+  38,   /* field[38] = resp_connect_ap */
+  59,   /* field[59] = resp_custom_rpc_unserialised_msg */
+  39,   /* field[39] = resp_disconnect_ap */
+  53,   /* field[53] = resp_enable_disable_feat */
+  37,   /* field[37] = resp_get_ap_config */
+  56,   /* field[56] = resp_get_country_code */
+  58,   /* field[58] = resp_get_dhcp_dns_status */
+  54,   /* field[54] = resp_get_fw_version */
+  32,   /* field[32] = resp_get_mac_address */
+  46,   /* field[46] = resp_get_power_save_mode */
+  40,   /* field[40] = resp_get_softap_config */
+  51,   /* field[51] = resp_get_wifi_curr_tx_power */
+  34,   /* field[34] = resp_get_wifi_mode */
+  47,   /* field[47] = resp_ota_begin */
+  49,   /* field[49] = resp_ota_end */
+  48,   /* field[48] = resp_ota_write */
+  36,   /* field[36] = resp_scan_ap_list */
+  55,   /* field[55] = resp_set_country_code */
+  57,   /* field[57] = resp_set_dhcp_dns_status */
+  33,   /* field[33] = resp_set_mac_address */
+  45,   /* field[45] = resp_set_power_save_mode */
+  41,   /* field[41] = resp_set_softap_vendor_specific_ie */
+  50,   /* field[50] = resp_set_wifi_max_tx_power */
+  35,   /* field[35] = resp_set_wifi_mode */
+  43,   /* field[43] = resp_softap_connected_stas_list */
+  42,   /* field[42] = resp_start_softap */
+  44,   /* field[44] = resp_stop_softap */
   2,   /* field[2] = uid */
 };
 static const ProtobufCIntRange ctrl_msg__number_ranges[4 + 1] =
 {
   { 1, 0 },
   { 101, 4 },
-  { 201, 31 },
-  { 301, 58 },
-  { 0, 65 }
+  { 201, 32 },
+  { 301, 60 },
+  { 0, 68 }
 };
 const ProtobufCMessageDescriptor ctrl_msg__descriptor =
 {
@@ -6844,7 +7197,7 @@ const ProtobufCMessageDescriptor ctrl_msg__descriptor =
   "CtrlMsg",
   "",
   sizeof(CtrlMsg),
-  65,
+  68,
   ctrl_msg__field_descriptors,
   ctrl_msg__field_indices_by_name,
   4,  ctrl_msg__number_ranges,
@@ -7115,7 +7468,7 @@ const ProtobufCEnumDescriptor ctrl_msg_type__descriptor =
   ctrl_msg_type__value_ranges,
   NULL,NULL,NULL,NULL   /* reserved[1234] */
 };
-static const ProtobufCEnumValue ctrl_msg_id__enum_values_by_number[68] =
+static const ProtobufCEnumValue ctrl_msg_id__enum_values_by_number[71] =
 {
   { "MsgId_Invalid", "CTRL_MSG_ID__MsgId_Invalid", 0 },
   { "Req_Base", "CTRL_MSG_ID__Req_Base", 100 },
@@ -7146,7 +7499,8 @@ static const ProtobufCEnumValue ctrl_msg_id__enum_values_by_number[68] =
   { "Req_GetCountryCode", "CTRL_MSG_ID__Req_GetCountryCode", 125 },
   { "Req_SetDhcpDnsStatus", "CTRL_MSG_ID__Req_SetDhcpDnsStatus", 126 },
   { "Req_GetDhcpDnsStatus", "CTRL_MSG_ID__Req_GetDhcpDnsStatus", 127 },
-  { "Req_Max", "CTRL_MSG_ID__Req_Max", 128 },
+  { "Req_Custom_RPC_Unserialised_Msg", "CTRL_MSG_ID__Req_Custom_RPC_Unserialised_Msg", 128 },
+  { "Req_Max", "CTRL_MSG_ID__Req_Max", 129 },
   { "Resp_Base", "CTRL_MSG_ID__Resp_Base", 200 },
   { "Resp_GetMACAddress", "CTRL_MSG_ID__Resp_GetMACAddress", 201 },
   { "Resp_SetMacAddress", "CTRL_MSG_ID__Resp_SetMacAddress", 202 },
@@ -7175,7 +7529,8 @@ static const ProtobufCEnumValue ctrl_msg_id__enum_values_by_number[68] =
   { "Resp_GetCountryCode", "CTRL_MSG_ID__Resp_GetCountryCode", 225 },
   { "Resp_SetDhcpDnsStatus", "CTRL_MSG_ID__Resp_SetDhcpDnsStatus", 226 },
   { "Resp_GetDhcpDnsStatus", "CTRL_MSG_ID__Resp_GetDhcpDnsStatus", 227 },
-  { "Resp_Max", "CTRL_MSG_ID__Resp_Max", 228 },
+  { "Resp_Custom_RPC_Unserialised_Msg", "CTRL_MSG_ID__Resp_Custom_RPC_Unserialised_Msg", 228 },
+  { "Resp_Max", "CTRL_MSG_ID__Resp_Max", 229 },
   { "Event_Base", "CTRL_MSG_ID__Event_Base", 300 },
   { "Event_ESPInit", "CTRL_MSG_ID__Event_ESPInit", 301 },
   { "Event_Heartbeat", "CTRL_MSG_ID__Event_Heartbeat", 302 },
@@ -7184,26 +7539,29 @@ static const ProtobufCEnumValue ctrl_msg_id__enum_values_by_number[68] =
   { "Event_StationConnectedToAP", "CTRL_MSG_ID__Event_StationConnectedToAP", 305 },
   { "Event_StationConnectedToESPSoftAP", "CTRL_MSG_ID__Event_StationConnectedToESPSoftAP", 306 },
   { "Event_SetDhcpDnsStatus", "CTRL_MSG_ID__Event_SetDhcpDnsStatus", 307 },
-  { "Event_Max", "CTRL_MSG_ID__Event_Max", 308 },
+  { "Event_Custom_RPC_Unserialised_Msg", "CTRL_MSG_ID__Event_Custom_RPC_Unserialised_Msg", 308 },
+  { "Event_Max", "CTRL_MSG_ID__Event_Max", 309 },
 };
 static const ProtobufCIntRange ctrl_msg_id__value_ranges[] = {
-{0, 0},{100, 1},{200, 30},{300, 59},{0, 68}
+{0, 0},{100, 1},{200, 31},{300, 61},{0, 71}
 };
-static const ProtobufCEnumValueIndex ctrl_msg_id__enum_values_by_name[68] =
+static const ProtobufCEnumValueIndex ctrl_msg_id__enum_values_by_name[71] =
 {
-  { "Event_Base", 59 },
-  { "Event_ESPInit", 60 },
-  { "Event_Heartbeat", 61 },
-  { "Event_Max", 67 },
-  { "Event_SetDhcpDnsStatus", 66 },
-  { "Event_StationConnectedToAP", 64 },
-  { "Event_StationConnectedToESPSoftAP", 65 },
-  { "Event_StationDisconnectFromAP", 62 },
-  { "Event_StationDisconnectFromESPSoftAP", 63 },
+  { "Event_Base", 61 },
+  { "Event_Custom_RPC_Unserialised_Msg", 69 },
+  { "Event_ESPInit", 62 },
+  { "Event_Heartbeat", 63 },
+  { "Event_Max", 70 },
+  { "Event_SetDhcpDnsStatus", 68 },
+  { "Event_StationConnectedToAP", 66 },
+  { "Event_StationConnectedToESPSoftAP", 67 },
+  { "Event_StationDisconnectFromAP", 64 },
+  { "Event_StationDisconnectFromESPSoftAP", 65 },
   { "MsgId_Invalid", 0 },
   { "Req_Base", 1 },
   { "Req_ConfigHeartbeat", 22 },
   { "Req_ConnectAP", 8 },
+  { "Req_Custom_RPC_Unserialised_Msg", 29 },
   { "Req_DisconnectAP", 9 },
   { "Req_EnableDisable", 23 },
   { "Req_GetAPConfig", 7 },
@@ -7217,7 +7575,7 @@ static const ProtobufCEnumValueIndex ctrl_msg_id__enum_values_by_name[68] =
   { "Req_GetSoftAPConnectedSTAList", 13 },
   { "Req_GetWifiCurrTxPower", 21 },
   { "Req_GetWifiMode", 4 },
-  { "Req_Max", 29 },
+  { "Req_Max", 30 },
   { "Req_OTABegin", 17 },
   { "Req_OTAEnd", 19 },
   { "Req_OTAWrite", 18 },
@@ -7230,35 +7588,36 @@ static const ProtobufCEnumValueIndex ctrl_msg_id__enum_values_by_name[68] =
   { "Req_SetWifiMode", 5 },
   { "Req_StartSoftAP", 12 },
   { "Req_StopSoftAP", 14 },
-  { "Resp_Base", 30 },
-  { "Resp_ConfigHeartbeat", 51 },
-  { "Resp_ConnectAP", 37 },
-  { "Resp_DisconnectAP", 38 },
-  { "Resp_EnableDisable", 52 },
-  { "Resp_GetAPConfig", 36 },
-  { "Resp_GetAPScanList", 35 },
-  { "Resp_GetCountryCode", 55 },
-  { "Resp_GetDhcpDnsStatus", 57 },
-  { "Resp_GetFwVersion", 53 },
-  { "Resp_GetMACAddress", 31 },
-  { "Resp_GetPowerSaveMode", 45 },
-  { "Resp_GetSoftAPConfig", 39 },
-  { "Resp_GetSoftAPConnectedSTAList", 42 },
-  { "Resp_GetWifiCurrTxPower", 50 },
-  { "Resp_GetWifiMode", 33 },
-  { "Resp_Max", 58 },
-  { "Resp_OTABegin", 46 },
-  { "Resp_OTAEnd", 48 },
-  { "Resp_OTAWrite", 47 },
-  { "Resp_SetCountryCode", 54 },
-  { "Resp_SetDhcpDnsStatus", 56 },
-  { "Resp_SetMacAddress", 32 },
-  { "Resp_SetPowerSaveMode", 44 },
-  { "Resp_SetSoftAPVendorSpecificIE", 40 },
-  { "Resp_SetWifiMaxTxPower", 49 },
-  { "Resp_SetWifiMode", 34 },
-  { "Resp_StartSoftAP", 41 },
-  { "Resp_StopSoftAP", 43 },
+  { "Resp_Base", 31 },
+  { "Resp_ConfigHeartbeat", 52 },
+  { "Resp_ConnectAP", 38 },
+  { "Resp_Custom_RPC_Unserialised_Msg", 59 },
+  { "Resp_DisconnectAP", 39 },
+  { "Resp_EnableDisable", 53 },
+  { "Resp_GetAPConfig", 37 },
+  { "Resp_GetAPScanList", 36 },
+  { "Resp_GetCountryCode", 56 },
+  { "Resp_GetDhcpDnsStatus", 58 },
+  { "Resp_GetFwVersion", 54 },
+  { "Resp_GetMACAddress", 32 },
+  { "Resp_GetPowerSaveMode", 46 },
+  { "Resp_GetSoftAPConfig", 40 },
+  { "Resp_GetSoftAPConnectedSTAList", 43 },
+  { "Resp_GetWifiCurrTxPower", 51 },
+  { "Resp_GetWifiMode", 34 },
+  { "Resp_Max", 60 },
+  { "Resp_OTABegin", 47 },
+  { "Resp_OTAEnd", 49 },
+  { "Resp_OTAWrite", 48 },
+  { "Resp_SetCountryCode", 55 },
+  { "Resp_SetDhcpDnsStatus", 57 },
+  { "Resp_SetMacAddress", 33 },
+  { "Resp_SetPowerSaveMode", 45 },
+  { "Resp_SetSoftAPVendorSpecificIE", 41 },
+  { "Resp_SetWifiMaxTxPower", 50 },
+  { "Resp_SetWifiMode", 35 },
+  { "Resp_StartSoftAP", 42 },
+  { "Resp_StopSoftAP", 44 },
 };
 const ProtobufCEnumDescriptor ctrl_msg_id__descriptor =
 {
@@ -7267,9 +7626,9 @@ const ProtobufCEnumDescriptor ctrl_msg_id__descriptor =
   "CtrlMsgId",
   "CtrlMsgId",
   "",
-  68,
+  71,
   ctrl_msg_id__enum_values_by_number,
-  68,
+  71,
   ctrl_msg_id__enum_values_by_name,
   4,
   ctrl_msg_id__value_ranges,

@@ -27,13 +27,14 @@ int down_sta_netdev(const network_info_t *info) {
         goto close_sock;
     }
 
+#if 0
     ret = remove_default_gateway(info->default_route);
     if (ret == SUCCESS) {
         //printf("Default gateway removed: Gateway=%s\n", info->default_route);
     } else {
         goto close_sock;
     }
-
+#endif
     ret = close_socket(sockfd);
     if (ret < 0) {
         printf("Failure to close socket\n");
@@ -113,6 +114,7 @@ int up_sta_netdev(const network_info_t *info)
         goto close_sock;
     }
 
+#if 0
     ret = add_default_gateway(gw_copy);
     if (ret == SUCCESS) {
         //printf("Default gateway added: Gateway=%s\n", gw_copy);
@@ -120,6 +122,7 @@ int up_sta_netdev(const network_info_t *info)
         printf("Failed to add default gateway\n");
         goto close_sock;
     }
+#endif
 
     ret = close_socket(sockfd);
     if (ret < 0) {
@@ -154,6 +157,7 @@ int down_softap_netdev(const network_info_t *info)
 		goto close_sock;
 	}
 
+#if 0
 	ret = remove_default_gateway(info->default_route);
 	if (ret == SUCCESS) {
 		//printf("Default gateway removed: Gateway=%s", info->default_route);
@@ -161,7 +165,7 @@ int down_softap_netdev(const network_info_t *info)
 		printf("Failed to remove default gateway");
 		goto close_sock;
 	}
-
+#endif
 
 	ret = close_socket(sockfd);
 	if (ret < 0) {

@@ -74,149 +74,149 @@ MODULE_NAME="esp32_${IF_TYPE}.ko"
 
 
 log() {
-    echo "[$(date +'%Y-%m-%d %H:%M:%S')] $1"
+	echo "[$(date +'%Y-%m-%d %H:%M:%S')] $1"
 }
 
 warn() {
-    echo "[$(date +'%Y-%m-%d %H:%M:%S')] **Warn** $1"
+	echo "[$(date +'%Y-%m-%d %H:%M:%S')] **Warn** $1"
 }
 
 log_enter() {
-    log "Entering ${FUNCNAME[1]}"
+	log "Entering ${FUNCNAME[1]}"
 }
 
 log_exit() {
-    log "Exiting ${FUNCNAME[1]}"
+	log "Exiting ${FUNCNAME[1]}"
 }
 
 device_tree_dependency_spi() {
-    log_enter
+	log_enter
 	cd $SCRIPT_DIR
 	log "Current dir: $PWD"
-    rm spidev_disabler.dtbo > /dev/null
-    dtc spidev_disabler.dts -O dtb > spidev_disabler.dtbo
-    sudo dtoverlay -d . spidev_disabler
+	rm spidev_disabler.dtbo > /dev/null
+	dtc spidev_disabler.dts -O dtb > spidev_disabler.dtbo
+	sudo dtoverlay -d . spidev_disabler
 	cd $MAKE_DIR
-    log_exit
+	log_exit
 }
 
 device_tree_dependency_uart_2pins() {
-    log_enter
+	log_enter
 	gpio_pin_ctl=pinctrl
 	$gpio_pin_ctl 2> /dev/null
 	if [ $? -ne 0 ]; then
 		gpio_pin_ctl=raspi-gpio
 	fi
-    sudo $gpio_pin_ctl set 15 a0 pu
-    sudo $gpio_pin_ctl set 14 a0 pu
-    log_exit
+	sudo $gpio_pin_ctl set 15 a0 pu
+	sudo $gpio_pin_ctl set 14 a0 pu
+	log_exit
 }
 
 device_tree_dependency_uart_4pins() {
-    log_enter
+	log_enter
 	gpio_pin_ctl=pinctrl
 	$gpio_pin_ctl 2> /dev/null
 	if [ $? -ne 0 ]; then
 		gpio_pin_ctl=raspi-gpio
 	fi
-    sudo $gpio_pin_ctl set 15 a0 pu
-    sudo $gpio_pin_ctl set 14 a0 pu
-    sudo $gpio_pin_ctl set 16 a3 pu
-    sudo $gpio_pin_ctl set 17 a3 pu
-    log_exit
+	sudo $gpio_pin_ctl set 15 a0 pu
+	sudo $gpio_pin_ctl set 14 a0 pu
+	sudo $gpio_pin_ctl set 16 a3 pu
+	sudo $gpio_pin_ctl set 17 a3 pu
+	log_exit
 }
 
 build_c_demo_app() {
-    log_enter
-    cd $SCRIPT_DIR/c_support/
-    make clean
-    make -j8 test
-    if [ $? -ne 0 ]; then
-        log "Failed to build test app"
-        exit 1
-    fi
+	log_enter
+	cd $SCRIPT_DIR/c_support/
+	make clean
+	make -j8 test
+	if [ $? -ne 0 ]; then
+		log "Failed to build test app"
+		exit 1
+	fi
 
-    make -j8 stress
-    if [ $? -ne 0 ]; then
-        log "Failed to build stress app"
-        exit 1
-    fi
-    make -j8 hosted_daemon
-    if [ $? -ne 0 ]; then
-        log "Failed to build test app"
-        exit 1
-    fi
-    make -j8 hosted_shell
-    if [ $? -ne 0 ]; then
-        log "Failed to build test app"
-        exit 1
-    fi
+	make -j8 stress
+	if [ $? -ne 0 ]; then
+		log "Failed to build stress app"
+		exit 1
+	fi
+	make -j8 hosted_daemon
+	if [ $? -ne 0 ]; then
+		log "Failed to build test app"
+		exit 1
+	fi
+	make -j8 hosted_shell
+	if [ $? -ne 0 ]; then
+		log "Failed to build test app"
+		exit 1
+	fi
 
-    cd ..
-    log_exit
+	cd ..
+	log_exit
 }
 
 build_python_demo_app() {
-    log_enter
-    cd $SCRIPT_DIR/python_support/
-    make clean
-    make -j8
-    if [ $? -ne 0 ]; then
-        log "Failed to build python demo app"
-        exit 1
-    fi
-    cd ..
-    log_exit
+	log_enter
+	cd $SCRIPT_DIR/python_support/
+	make clean
+	make -j8
+	if [ $? -ne 0 ]; then
+		log "Failed to build python demo app"
+		exit 1
+	fi
+	cd ..
+	log_exit
 }
 
 build_user_space_apps() {
-    log_enter
-    build_c_demo_app
-    build_python_demo_app
-    log_exit
+	log_enter
+	build_c_demo_app
+	build_python_demo_app
+	log_exit
 }
 
 remove_module() {
-    log_enter
-    if [ "$(lsmod | grep esp32 | wc -l)" != "0" ]; then
-        if [ "$(lsmod | grep esp32_sdio | wc -l)" != "0" ]; then
-            sudo rmmod esp32_sdio &> /dev/null
-            else
-            sudo rmmod esp32_spi &> /dev/null
-        fi
-        if [ $? -ne 0 ]; then
-            log "Failed to remove esp kernel module"
-            exit 1
-        fi
-        log "esp module removed using script"
-    fi
-    log_exit
+	log_enter
+	if [ "$(lsmod | grep esp32 | wc -l)" != "0" ]; then
+		if [ "$(lsmod | grep esp32_sdio | wc -l)" != "0" ]; then
+			sudo rmmod esp32_sdio &> /dev/null
+		else
+			sudo rmmod esp32_spi &> /dev/null
+		fi
+		if [ $? -ne 0 ]; then
+			log "Failed to remove esp kernel module"
+			exit 1
+		fi
+		log "esp module removed using script"
+	fi
+	log_exit
 }
 
 build_module()
 {
-    if [ "$TEST_RAW_TP" = "0" ] ; then
-        VAL_CONFIG_TEST_RAW_TP=n
-    else
-        VAL_CONFIG_TEST_RAW_TP=y
-    fi
+	if [ "$TEST_RAW_TP" = "0" ] ; then
+		VAL_CONFIG_TEST_RAW_TP=n
+	else
+		VAL_CONFIG_TEST_RAW_TP=y
+	fi
 
-    if [ "$BT_CONFIG" != "" ] ; then
-        VAL_BT_ENABLED=y
-    else
-        VAL_BT_ENABLED=n
-    fi
+	if [ "$BT_CONFIG" != "" ] ; then
+		VAL_BT_ENABLED=y
+	else
+		VAL_BT_ENABLED=n
+	fi
 
-    # For Linux other than Raspberry Pi, Please uncomment below 'make' line and provide:
-    # <CROSS_COMPILE> -> <Toolchain-Path>/bin/arm-linux-gnueabihf-
-    # <KERNEL>        -> Place where kernel is checked out and built. For Example, "/lib/modules/$(uname -r)/build"
-    # <ARCH>          -> Architecture. for example, arm64
+	# For Linux other than Raspberry Pi, Please uncomment below 'make' line and provide:
+	# <CROSS_COMPILE> -> <Toolchain-Path>/bin/arm-linux-gnueabihf-
+	# <KERNEL>        -> Place where kernel is checked out and built. For Example, "/lib/modules/$(uname -r)/build"
+	# <ARCH>          -> Architecture. for example, arm64
 
-    #make -j8 target=$IF_TYPE CROSS_COMPILE=<CROSS_COMPILE> KERNEL=<KERNEL> ARCH=<ARCH> CONFIG_TEST_RAW_TP="$VAL_CONFIG_TEST_RAW_TP"
+	#make -j8 target=$IF_TYPE CROSS_COMPILE=<CROSS_COMPILE> KERNEL=<KERNEL> ARCH=<ARCH> CONFIG_TEST_RAW_TP="$VAL_CONFIG_TEST_RAW_TP"
 
-    # Also, Check detailed doc, esp_hosted_fg/docs/Linux_based_host/porting_guide.md for more details.
+	# Also, Check detailed doc, esp_hosted_fg/docs/Linux_based_host/porting_guide.md for more details.
 
-    # Populate your arch if not populated correctly.
+	# Populate your arch if not populated correctly.
 	if [ "$ARCH" = "" ]; then
 		arch_num_bits=$(getconf LONG_BIT)
 		if [ "$arch_num_bits" = "32" ] ; then arch_found="arm"; else arch_found="arm64"; fi
@@ -230,13 +230,13 @@ build_module()
 	log "Using KERNEL as $KERNEL_BUILD_DIR"
 	log "Using CONFIG_TEST_RAW_TP as $CONFIG_TEST_RAW_TP"
 
-    make -j8 target="$IF_TYPE" KERNEL="$KERNEL_BUILD_DIR" ARCH="$ARCH" CONFIG_TEST_RAW_TP="$VAL_CONFIG_TEST_RAW_TP" CONFIG_BT_ENABLED="$VAL_BT_ENABLED"
+	make -j8 target="$IF_TYPE" KERNEL="$KERNEL_BUILD_DIR" ARCH="$ARCH" CONFIG_TEST_RAW_TP="$VAL_CONFIG_TEST_RAW_TP" CONFIG_BT_ENABLED="$VAL_BT_ENABLED"
 
-    # Check the exit status of make
-    if [ $? -ne 0 ] ; then
-        log "Failed to build the esp kernel module"
-        exit -1
-    fi
+	# Check the exit status of make
+	if [ $? -ne 0 ] ; then
+		log "Failed to build the esp kernel module"
+		exit -1
+	fi
 }
 
 load_bluetooth_module()
@@ -250,57 +250,57 @@ load_bluetooth_module()
 }
 
 insert_module() {
-    log_enter
-    # Check and apply bluetooth config
-    if [ "$BT_CONFIG" != "" ]; then
-        load_bluetooth_module
+	log_enter
+	# Check and apply bluetooth config
+	if [ "$BT_CONFIG" != "" ]; then
+		load_bluetooth_module
 
-        if [ "$BT_CONFIG" = "bt_using_uart_2pins" ]; then
+		if [ "$BT_CONFIG" = "bt_using_uart_2pins" ]; then
 			log "Wi-Fi ($IF_TYPE) + Bluetooth (UART-2pins)"
-            device_tree_dependency_uart_2pins
-        elif [ "$BT_CONFIG" = "bt_using_uart_4pins" ]; then
+			device_tree_dependency_uart_2pins
+		elif [ "$BT_CONFIG" = "bt_using_uart_4pins" ]; then
 			log "Wi-Fi ($IF_TYPE) + Bluetooth (UART-4pins)"
-            device_tree_dependency_uart_4pins
-        elif [ "$BT_CONFIG" = "bt_using_hci" ]; then
+			device_tree_dependency_uart_4pins
+		elif [ "$BT_CONFIG" = "bt_using_hci" ]; then
 			log "$IF_TYPE only setup: Wi-Fi+Bluetooth both over $IF_TYPE"
 		else
-            log "Incorrect bluetooth config"
-            exit 1
-        fi
-    fi
+			log "Incorrect bluetooth config"
+			exit 1
+		fi
+	fi
 
-    # Additional dependency for SPI
-    if [ "$IF_TYPE" = "spi" ]; then
-        device_tree_dependency_spi
-    fi
+	# Additional dependency for SPI
+	if [ "$IF_TYPE" = "spi" ]; then
+		device_tree_dependency_spi
+	fi
 
 	# Insert module with parameters
 	sudo insmod $MODULE_NAME $XTRA_MODULE_PARAMS
 
-    if [ $? -ne 0 ]; then
-        log "Failed to insert module"
-        exit 1
-    fi
+	if [ $? -ne 0 ]; then
+		log "Failed to insert module"
+		exit 1
+	fi
 
-    if [ "$(lsmod | grep esp32 | wc -l)" != "0" ]; then
-        log "esp32 module inserted using script"
-    else
-        log "Failed to insert esp32 module"
-        exit 1
-    fi
-    log_exit
+	if [ "$(lsmod | grep esp32 | wc -l)" != "0" ]; then
+		log "esp32 module inserted using script"
+	else
+		log "Failed to insert esp32 module"
+		exit 1
+	fi
+	log_exit
 }
 
 parse_arguments() {
-    log_enter
-    while [ "$1" != "" ]; do
-        case $1 in
-            --help | -h )
-                usage
-                exit 0
-                ;;
+	log_enter
+	while [ "$1" != "" ]; do
+		case $1 in
+			--help | -h )
+				usage
+				exit 0
+				;;
 			wifi=*)
-                WIFI_TP=${1#*=}
+				WIFI_TP=${1#*=}
 				if [ "$WIFI_TP" = "spi" ]; then
 					log "Wi-Fi on SPI"
 				elif [ "$WIFI_TP" = "sdio" ]; then
@@ -313,13 +313,13 @@ parse_arguments() {
 					log "Possible transport values: 'spi' / 'sdio' / '-'"
 					exit 1
 				fi
-                ;;
-            resetpin=*)
-                log "Recvd Option: $1"
-                resetpin=${1#*=}
-                ;;
+				;;
+			resetpin=*)
+				log "Recvd Option: $1"
+				resetpin=${1#*=}
+				;;
 			bt=*)
-                log "Recvd Option: $1"
+				log "Recvd Option: $1"
 				BT_TP=${1#*=}
 				if [ "$BT_TP" = "spi" ]; then
 					BT_CONFIG="bt_using_hci"
@@ -342,15 +342,15 @@ parse_arguments() {
 					log "Possible transport values: 'spi' / 'sdio' / 'uart_2pins' / 'uart_4pins' / '-'"
 					exit 1
 				fi
-                ;;
-            rawtp)
-                log "Test RAW TP"
-                TEST_RAW_TP="1"
-                ;;
-            clockspeed=*)
-                clockspeed=${1#*=}
-                log "Clock freq: $clockspeed MHz"
-                ;;
+				;;
+			rawtp)
+				log "Test RAW TP"
+				TEST_RAW_TP="1"
+				;;
+			clockspeed=*)
+				clockspeed=${1#*=}
+				log "Clock freq: $clockspeed MHz"
+				;;
 			spi_bus=*)
 				spi_bus=${1#*=}
 				log "SPI bus: $spi_bus"
@@ -375,18 +375,18 @@ parse_arguments() {
 				cpu_perf=${1#*=}
 				log "Set CPU performance: $cpu_perf"
 				;;
-            *)
-                log "$1 : unknown option"
-                usage
-                exit 1
-                ;;
-        esac
-        shift
-    done
+			*)
+				log "$1 : unknown option"
+				usage
+				exit 1
+				;;
+		esac
+		shift
+	done
 
 	verify_transport_combination
 	verify_clock_freq
-    log_exit
+	log_exit
 }
 
 verify_transport_combination()
@@ -440,31 +440,31 @@ add_module_param()
 
 # Example usage function
 usage() {
-    echo "Usage: $0 [options]"
-    echo "Options:"
-    echo "  --help, -h                   Show this help message"
-    echo "  wifi=<value>                 Set bluetooth transport"
-    echo "     > 'sdio'                       <Use Wi-Fi over SDIO>"
-    echo "     > 'spi'                        <Use Wi-Fi over SPI>"
-    echo "     > '-'                          <Disable Wi-Fi>"
-    echo "  resetpin=<gpio>              Set the reset pin GPIO"
-    echo "  bt=<value>                   Set bluetooth transport"
-    echo "     > 'spi'                        <Use bluetooth over SPI>"
-    echo "     > 'sdio'                       <Use bluetooth over SDIO>"
-    echo "     > 'uart_2pins'                 <Use bluetooth over UART Tx,Rx>"
-    echo "     > 'uart_4pins'                 <Use bluetooth over UART Tx,Rx,CTS,RTS>"
-    echo "     > '-'                          <Disable bluetooth>"
-    echo "  clockspeed=<freq_in_mhz>     Set SPI/SDIO clock frequency to be used"
-    echo "                                     SPI Default: 10MHz"
-    echo "                                     SDIO Default: As per Device Tree (25 or 50MHz)"
-    echo "  spi_bus=<num>                Use this SPI bus instance"
-    echo "  spi_cs=<num>                 Use this ChipSelect instance"
-    echo "  spi_mode=<num>               Use this SPI mode"
-    echo "  spi_handshake=<gpio_num>     SPI Handshake GPIO"
-    echo "  spi_dataready=<gpio_num>     SPI DataReady GPIO"
-    echo "  rawtp                        Test RAW TP"
-    echo "  cpu_perf=<on/off>            Change cpu performance level(may need porting)"
-    echo ""
+	echo "Usage: $0 [options]"
+	echo "Options:"
+	echo "  --help, -h                   Show this help message"
+	echo "  wifi=<value>                 Set bluetooth transport"
+	echo "     > 'sdio'                       <Use Wi-Fi over SDIO>"
+	echo "     > 'spi'                        <Use Wi-Fi over SPI>"
+	echo "     > '-'                          <Disable Wi-Fi>"
+	echo "  resetpin=<gpio>              Set the reset pin GPIO"
+	echo "  bt=<value>                   Set bluetooth transport"
+	echo "     > 'spi'                        <Use bluetooth over SPI>"
+	echo "     > 'sdio'                       <Use bluetooth over SDIO>"
+	echo "     > 'uart_2pins'                 <Use bluetooth over UART Tx,Rx>"
+	echo "     > 'uart_4pins'                 <Use bluetooth over UART Tx,Rx,CTS,RTS>"
+	echo "     > '-'                          <Disable bluetooth>"
+	echo "  clockspeed=<freq_in_mhz>     Set SPI/SDIO clock frequency to be used"
+	echo "                                     SPI Default: 10MHz"
+	echo "                                     SDIO Default: As per Device Tree (25 or 50MHz)"
+	echo "  spi_bus=<num>                Use this SPI bus instance"
+	echo "  spi_cs=<num>                 Use this ChipSelect instance"
+	echo "  spi_mode=<num>               Use this SPI mode"
+	echo "  spi_handshake=<gpio_num>     SPI Handshake GPIO"
+	echo "  spi_dataready=<gpio_num>     SPI DataReady GPIO"
+	echo "  rawtp                        Test RAW TP"
+	echo "  cpu_perf=<on/off>            Change cpu performance level(may need porting)"
+	echo ""
 }
 
 
@@ -474,7 +474,7 @@ populate_module_params()
 	add_module_param "resetpin"
 	add_module_param "clockspeed"
 
-    if [ "$IF_TYPE" = "spi" ]; then
+	if [ "$IF_TYPE" = "spi" ]; then
 		add_module_param "spi_bus"
 		add_module_param "spi_cs"
 		add_module_param "spi_mode"

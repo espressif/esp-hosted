@@ -369,7 +369,9 @@ static void esp_spi_transaction(void)
 	struct sk_buff *tx_skb = NULL, *rx_skb = NULL;
 	u8 *rx_buf;
 	int ret = 0;
+	volatile int rx_pending = 0;
 
+#if defined(CONFIG_ESP_HOSTED_USE_WORKQUEUE)
 	if (!mutex_trylock(&spi_lock)) {
 		if (spi_context.spi_workqueue)
 			queue_work(spi_context.spi_workqueue, &spi_context.spi_work);
@@ -387,6 +389,15 @@ static void esp_spi_transaction(void)
 		}
 		return;
 	}
+#else
+	mutex_lock(&spi_lock);
+	if (!gpio_get_value(spi_context.handshake_gpio)) {
+		mutex_unlock(&spi_lock);
+		return;
+	}
+
+	rx_pending = gpio_get_value(spi_context.dataready_gpio);
+#endif
 
 	if (data_path) {
 		tx_skb = skb_dequeue(&spi_context.tx_q[PRIO_Q_SERIAL]);
@@ -403,6 +414,11 @@ static void esp_spi_transaction(void)
 				esp_raw_tp_queue_resume();
 			#endif
 		}
+	}
+
+	if (!rx_pending && !tx_skb) {
+		mutex_unlock(&spi_lock);
+		return;
 	}
 
 	memset(&trans, 0, sizeof(trans));
@@ -455,6 +471,7 @@ static void esp_spi_transaction(void)
 
 	mutex_unlock(&spi_lock);
 
+#if defined(CONFIG_ESP_HOSTED_USE_WORKQUEUE)
 	/* Queue next work only if there's data or slave is ready */
 	if (gpio_get_value(spi_context.dataready_gpio) ||
 		!skb_queue_empty(&spi_context.tx_q[PRIO_Q_SERIAL]) ||
@@ -463,6 +480,7 @@ static void esp_spi_transaction(void)
 		if (spi_context.spi_workqueue)
 			queue_work(spi_context.spi_workqueue, &spi_context.spi_work);
 	}
+#endif
 }
 
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 16, 0))
@@ -665,8 +683,10 @@ static int spi_init(void)
 	/* Init reinit work */
 	INIT_WORK(&spi_context.reinit_work, esp_spi_reinit_work);
 #if defined(CONFIG_ESP_HOSTED_USE_WORKQUEUE)
+	esp_info("ESP: Using SPI Workqueue solution\n");
+
 	spi_context.spi_workqueue = alloc_workqueue("ESP_SPI_WORK_QUEUE",
-											   WQ_UNBOUND | WQ_HIGHPRI, 0);
+			WQ_UNBOUND | WQ_HIGHPRI, 0);
 
 	if (!spi_context.spi_workqueue) {
 		esp_err("spi workqueue failed to create\n");
@@ -676,8 +696,8 @@ static int spi_init(void)
 
 	INIT_WORK(&spi_context.spi_work, esp_spi_work);
 	INIT_DELAYED_WORK(&spi_context.spi_delayed_work, esp_spi_work);
-
 #else
+	esp_info("ESP: Using SPI semaphore solution\n");
 	sema_init(&spi_sem, 0);
 	spi_thread = kthread_run(esp_spi_thread, spi_context.adapter, "esp32_spi");
 	if (!spi_thread) {
