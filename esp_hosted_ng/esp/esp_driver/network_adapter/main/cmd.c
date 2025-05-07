@@ -324,6 +324,16 @@ void (wpa_sta_clear_current_pmksa)(void)
 {
 }
 
+uint8_t *owe_build_dh_ie(uint16_t group)
+{
+    return NULL;
+}
+
+int process_owe_assoc_resp(const u8 *rsn_ie, size_t rsn_len, const uint8_t *dh_ie, size_t dh_len)
+{
+    return 0;
+}
+
 static void handle_scan_event(void)
 {
     //uint32_t type = 0;
@@ -933,6 +943,8 @@ esp_err_t initialise_wifi(void)
     wpa_cb.wpa_config_done = config_done;
     wpa_cb.wpa_config_parse_string  = wpa_config_parse_string;
     wpa_cb.wpa_sta_clear_curr_pmksa = wpa_sta_clear_current_pmksa;
+    wpa_cb.owe_build_dhie = owe_build_dh_ie;
+    wpa_cb.owe_process_assoc_resp = process_owe_assoc_resp;
 
     wpa_cb.wpa_ap_join       = hostap_sta_join;
     wpa_cb.wpa_ap_remove     = wpa_ap_remove;
@@ -1383,6 +1395,8 @@ int process_auth_request(uint8_t if_type, uint8_t *payload, uint16_t payload_len
             }
             memcpy(wifi_config.sta.password, cmd_auth->key, 27);
             wifi_config.sta.threshold.authmode = WIFI_AUTH_WEP;
+        } else if (auth_type == WIFI_AUTH_OWE) {
+            wifi_config.sta.owe_enabled = 1;
         } else if (auth_type != WIFI_AUTH_OPEN) {
             memcpy(wifi_config.sta.password, DUMMY_PASSPHRASE, sizeof(DUMMY_PASSPHRASE));
             wifi_config.sta.threshold.authmode = WIFI_AUTH_WPA_PSK;;
