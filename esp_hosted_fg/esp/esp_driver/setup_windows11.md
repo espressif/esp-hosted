@@ -7,12 +7,13 @@ ESP-IDF configured Windows Powershell Command Line tool.
 Windows](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/get-started/windows-setup.html).
 
 2. Use the ESP-IDF [Powershell Command
-Prompt](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/get-started/windows-setup.html#using-the-command-prompt) to execute `setup.ps1` in the `esp_hosted_fg/esp/esp_driver`
-directory. It will setup `esp-idf` as a submodule to be used by
-`network_adapter`. :warning: **This command is dangerous. It will
-revert all your local changes. Stash if need to keep them**.
+Prompt](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/get-started/windows-setup.html#using-the-command-prompt) to execute `setup-idf.ps1` in the `esp_hosted_fg/esp/esp_driver`
+directory. It will setup ESP-IDF in the `esp-idf` directory to be used by
+`network_adapter`. Run `setup-idf.ps1 -h` for supported options. To
+remove the ESP-IDF installed by `setup-idf.ps1`, you can run the
+`remove-idf.ps1` script.
 
-3. Setup compiling environment by running `export.ps1` in `esp-idf`
+3. Setup ESP-IDF environment by running `export.ps1` in `esp-idf`
 directory
 
 4. In the `network_adapter` directory of this project, input command

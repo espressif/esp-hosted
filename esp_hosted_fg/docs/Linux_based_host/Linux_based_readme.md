@@ -193,19 +193,18 @@ This section identifies Raspberry-Pi specific setup requirements.
 ### 2.2 ESP-IDF Setup
 - If you are going to use released firmware binaries, ESP-IDF setup is not required, please continue with `2.3 ESP-Hosted Code Repository` below.
 - Follow steps hereon on your **native machine** (your Windows/Linux/Mac desktop/laptop)
-- **Note on Windows 11**: you can follow [these instructions](/esp_hosted_fg/esp/esp_driver/setup_windows11.md),
-instead of the following, to setup ESP-IDF and build the esp firmware.
-- :warning: Following command is dangerous. It will revert all your local changes. Stash if need to keep them.
-- Install the ESP-IDF using script
+- **Note on Windows 11**: follow [these instructions](/esp_hosted_fg/esp/esp_driver/setup_windows11.md) to setup ESP-IDF and build the esp firmware.
+- You can install the ESP-IDF using the `setup-idf.sh` script (run `./setup-idf.sh -h` for supported options):
 ```sh
 $ cd esp_hosted_fg/esp/esp_driver
-$ cmake .
+$ ./setup-idf.sh
 ```
-- Set-Up the build environment using
+- Once ESP-IDF has been installed, set-up the build environment using
 ```sh
 $ . ./esp-idf/export.sh
-# Optionally, You can add alias for this command in ~/.bashrc for later use
 ```
+
+To remove the ESP-IDF installed by `setup-idf.sh`, you can run the `./remove-idf.sh` script.
 
 ### 2.3 ESP-Hosted Code Repository
 Clone esp-hosted repository on Linux host.
