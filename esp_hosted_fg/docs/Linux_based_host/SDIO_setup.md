@@ -76,20 +76,18 @@ serial_port is device where ESP chipset is detected. For example, /dev/ttyUSB0
 Make sure that same code base (same git commit) is checked-out/copied at both, ESP and Host
 
 ##### Set-up ESP-IDF
-- **Note on Windows 11**: you can follow [these instructions](/esp_hosted_fg/esp/esp_driver/setup_windows11.md),
-instead of the following, to setup ESP-IDF and build the esp firmware.
-- :warning: Following command is dangerous. It will revert all your local changes. Stash if need to keep them.
-- Install the ESP-IDF using script
+- **Note on Windows 11**: follow [these instructions](/esp_hosted_fg/esp/esp_driver/setup_windows11.md) to setup ESP-IDF and build the esp firmware.
+- You can install the ESP-IDF using the `setup-idf.sh` script (run `./setup-idf.sh -h` for supported options):
 ```sh
 $ cd esp_hosted_fg/esp/esp_driver
-$ cmake .
+$ ./setup-idf.sh
 ```
-- Set-Up the build environment using
+- Once ESP-IDF has been installed, set-up the build environment using
 ```sh
 $ . ./esp-idf/export.sh
-# Optionally, You can add alias for this command in ~/.bashrc for later use
 ```
 
+To remove the ESP-IDF installed by `setup-idf.sh`, you can run the `./remove-idf.sh` script.
 
 ##### Configure, Build & Flash SDIO ESP firmware
 * Set slave chipset environment
