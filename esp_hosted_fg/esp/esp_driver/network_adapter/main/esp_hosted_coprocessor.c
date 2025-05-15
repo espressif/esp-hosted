@@ -40,24 +40,22 @@
 #include "stats.h"
 #include "esp_fw_version.h"
 
-#if CONFIG_SLAVE_LWIP_ENABLED
-#include "host_power_save.h"
-#include "esp_hosted_config.pb-c.h"
-#include "esp_hosted_cli.h"
+#if CONFIG_NETWORK_SPLIT_ENABLED
+	#include "host_power_save.h"
+	#include "esp_hosted_config.pb-c.h"
+	#include "esp_hosted_cli.h"
 
+	volatile uint8_t station_got_ip = 0;
 
+	//#ifdef CONFIG_SLAVE_MANAGES_WIFI
+	#include "wifi_cmd.h"
 
-volatile uint8_t station_got_ip = 0;
+	/* Perform DHCP at slave & send IP info at host */
+	#define H_SLAVE_LWIP_DHCP_AT_SLAVE       1
 
-//#ifdef CONFIG_SLAVE_MANAGES_WIFI
-#include "wifi_cmd.h"
-
-/* Perform DHCP at slave & send IP info at host */
-#define H_SLAVE_LWIP_DHCP_AT_SLAVE       1
-
-//#else
-//#define H_SLAVE_LWIP_DHCP_AT_SLAVE       0
-//#endif
+	//#else
+	//#define H_SLAVE_LWIP_DHCP_AT_SLAVE       0
+	//#endif
 #endif
 
 #include "lwip_filter.h"
@@ -224,7 +222,7 @@ esp_err_t wlan_sta_rx_callback(void *buffer, uint16_t len, void *eb)
 	pkt_stats.sta_lwip_in++;
 #endif
 
-#ifdef CONFIG_SLAVE_LWIP_ENABLED
+#ifdef CONFIG_NETWORK_SPLIT_ENABLED
 	/* Filter and route the packet based on destination port */
 	bridge_to_use = filter_and_route_packet(buffer, len);
 #else
@@ -619,7 +617,7 @@ int event_handler(uint8_t val)
 	return 0;
 }
 
-
+#if defined(CONFIG_ESP_GPIO_SLAVE_RESET) && (CONFIG_ESP_GPIO_SLAVE_RESET != -1)
 static void IRAM_ATTR gpio_resetpin_isr_handler(void* arg)
 {
 
@@ -665,8 +663,8 @@ static void register_reset_pin(uint32_t gpio_num)
 		gpio_isr_handler_add(gpio_num, gpio_resetpin_isr_handler, NULL);
 	}
 }
-
-#ifdef CONFIG_SLAVE_LWIP_ENABLED
+#endif
+#ifdef CONFIG_NETWORK_SPLIT_ENABLED
 void create_slave_sta_netif(uint8_t dhcp_at_slave)
 {
 	/* Create "almost" default station, but with un-flagged DHCP client */
@@ -698,7 +696,7 @@ void create_slave_sta_netif(uint8_t dhcp_at_slave)
 }
 #endif
 
-#ifdef CONFIG_SLAVE_MANAGES_WIFI
+#if 1
 
 #define EXAMPLE_ESP_WIFI_SSID      CONFIG_ESP_WIFI_SSID
 #define EXAMPLE_ESP_WIFI_PASS      CONFIG_ESP_WIFI_PASSWORD
@@ -747,6 +745,9 @@ static int fallback_to_sdkconfig_wifi_config(void)
 			.threshold.authmode = ESP_WIFI_SCAN_AUTH_MODE_THRESHOLD,
 			.sae_pwe_h2e = ESP_WIFI_SAE_MODE,
 			.sae_h2e_identifier = EXAMPLE_H2E_IDENTIFIER,
+			.scan_method = WIFI_ALL_CHANNEL_SCAN,
+			.sort_method = WIFI_CONNECT_AP_BY_SIGNAL,
+
 		},
 	};
 
@@ -923,7 +924,7 @@ static void host_reset_task(void* pvParameters)
 		generate_startup_event(capa);
 		send_event_to_host(CTRL_MSG_ID__Event_ESPInit);
 
-#ifdef CONFIG_SLAVE_LWIP_ENABLED
+#ifdef CONFIG_NETWORK_SPLIT_ENABLED
 		ESP_LOGI(TAG,"--- Wait for IP ---");
 		while (!station_got_ip) {
 			vTaskDelay(pdMS_TO_TICKS(50));
@@ -940,12 +941,14 @@ esp_err_t esp_hosted_coprocessor_init(void)
 
 	print_firmware_version();
 
-#if CONFIG_SLAVE_LWIP_ENABLED
+#if CONFIG_NETWORK_SPLIT_ENABLED
 	ESP_ERROR_CHECK(esp_netif_init());
 #endif
 	ESP_ERROR_CHECK(esp_event_loop_create_default());
 
+#if defined(CONFIG_ESP_GPIO_SLAVE_RESET) && (CONFIG_ESP_GPIO_SLAVE_RESET != -1)
 	register_reset_pin(CONFIG_ESP_GPIO_SLAVE_RESET);
+#endif
 
 
 #ifdef CONFIG_ESP_HOSTED_HOST_RESERVED_PORTS_CONFIGURED
@@ -1016,12 +1019,9 @@ esp_err_t esp_hosted_coprocessor_init(void)
 	esp_hosted_cli_start();
 #endif
 
-#ifdef CONFIG_SLAVE_LWIP_ENABLED
+#ifdef CONFIG_NETWORK_SPLIT_ENABLED
 
 	create_slave_sta_netif(H_SLAVE_LWIP_DHCP_AT_SLAVE);
-#ifdef CONFIG_SLAVE_MANAGES_WIFI
-	connect_sta();
-#endif
 
 	ESP_LOGI(TAG, "Default LWIP post filtering packets to send: %s",
 #if defined(CONFIG_ESP_DEFAULT_LWIP_SLAVE)
@@ -1034,17 +1034,23 @@ esp_err_t esp_hosted_coprocessor_init(void)
 			);
 #endif
 
+#if 1
+	connect_sta();
+#endif
+
+	ESP_LOGI(TAG, "Wait for host transport readiness");
+
 	while(!datapath) {
 		vTaskDelay(10);
-		ESP_LOGI(TAG, "Wait for host transport");
 	}
+	ESP_LOGI(TAG, "Host transport ready");
 
 	assert(xTaskCreate(host_reset_task, "host_reset_task" ,
 			CONFIG_ESP_DEFAULT_TASK_STACK_SIZE, NULL ,
 			CONFIG_ESP_HOSTED_TASK_PRIORITY_DEFAULT, NULL) == pdTRUE);
 
 
-  #ifdef CONFIG_SLAVE_LWIP_ENABLED
+  #ifdef CONFIG_NETWORK_SPLIT_ENABLED
 	while (!station_got_ip)
 		sleep(1);
   #endif
@@ -1069,16 +1075,14 @@ void app_main(void)
 	ESP_ERROR_CHECK( ret );
 
 	esp_hosted_coprocessor_init();
-#ifdef CONFIG_SLAVE_LWIP_ENABLED
+#ifdef CONFIG_NETWORK_SPLIT_ENABLED
 
 
 #ifdef ESP_HOSTED_COPROCESSOR_EXAMPLE_HTTP_CLIENT
 	extern void slave_http_req_example(void);
 	slave_http_req_example();
 #endif
-#ifdef CONFIG_ESP_HOSTED_COPROCESSOR_EXAMPLE_RPC_DEMO
-	custom_rpc_events_demo();
-#endif
+
 #endif
 
 }

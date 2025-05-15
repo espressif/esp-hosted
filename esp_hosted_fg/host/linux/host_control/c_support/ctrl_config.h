@@ -126,4 +126,6 @@
 
 #define TEST_DEBUG_PRINTS                   1
 
+#define DEFAULT_NETWORK_SPLIT_ENABLED       1
+
 #endif

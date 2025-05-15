@@ -658,28 +658,22 @@ static int esp_stop_network_ifaces(struct esp_adapter *adapter)
 
 int esp_remove_card(struct esp_adapter *adapter)
 {
-	if (!adapter)
+	if (!adapter) {
 		return 0;
-
-	/* Set cleanup in progress flag */
-	set_bit(ESP_CLEANUP_IN_PROGRESS, &adapter->state_flags);
+	}
 
 	esp_stop_network_ifaces(adapter);
 	esp_cfg_cleanup(adapter);
+	/* BT may have been initialized after fw bootup event, deinit it */
 	esp_deinit_bt(adapter);
+
+	if (adapter->if_rx_workqueue) {
+		flush_workqueue(adapter->if_rx_workqueue);
+	}
 	esp_commands_teardown(adapter);
 	esp_remove_network_ifaces(adapter);
 	esp_remove_wiphy(adapter);
 
-	/* Only flush workqueues if not in cleanup */
-	if (!test_bit(ESP_CLEANUP_IN_PROGRESS, &adapter->state_flags)) {
-		if (adapter->events_wq)
-			flush_workqueue(adapter->events_wq);
-		if (adapter->if_rx_workqueue)
-			flush_workqueue(adapter->if_rx_workqueue);
-	}
-
-	clear_bit(ESP_CLEANUP_IN_PROGRESS, &adapter->state_flags);
 	return 0;
 }
 
@@ -911,30 +905,24 @@ int esp_is_tx_queue_paused(struct esp_wifi_device *priv)
     return 0;
 }
 
-void esp_tx_pause(void)
+void esp_tx_pause(struct esp_wifi_device *priv)
 {
-    struct esp_private *priv;
-    int i;
+	if (!priv || !priv->ndev)
+		return;
 
-    for (i = 0; i < ESP_MAX_INTERFACE; i++) {
-        priv = adapter.priv[i];
-        if (priv && priv->ndev && !netif_queue_stopped(priv->ndev)) {
-            netif_stop_queue(priv->ndev);
-        }
-    }
+	if (!netif_queue_stopped((const struct net_device *)priv->ndev)) {
+		netif_stop_queue(priv->ndev);
+	}
 }
 
-void esp_tx_resume(void)
+void esp_tx_resume(struct esp_wifi_device *priv)
 {
-    struct esp_private *priv;
-    int i;
+	if (!priv || !priv->ndev)
+		return;
 
-    for (i = 0; i < ESP_MAX_INTERFACE; i++) {
-        priv = adapter.priv[i];
-        if (priv && priv->ndev && netif_queue_stopped(priv->ndev)) {
-            netif_wake_queue(priv->ndev);
-        }
-    }
+	if (netif_queue_stopped((const struct net_device *)priv->ndev)) {
+		netif_wake_queue(priv->ndev);
+	}
 }
 
 struct sk_buff *esp_alloc_skb(u32 len)

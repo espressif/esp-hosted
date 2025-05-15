@@ -322,7 +322,7 @@ static void stats_timer_func(void* arg)
 		ESP_LOGI(TAG, "[%s] Stats - Count: %" PRIu32 ", Min: %" PRIu32 ", Max: %" PRIu32 ", Avg: %" PRIu32 " us, Rate: %" PRIu32 "/s",
 				timing_entries[i].name,
 				t->count,
-				s->min_time, 
+				s->min_time,
 				s->max_time,
 				s->avg_time,
 				rate);

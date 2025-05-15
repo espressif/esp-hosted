@@ -15,6 +15,7 @@ int remove_dns(const char *dns);
 int add_dns(const char *dns);
 int set_network_static_ip(int sockfd, const char* iface, const char* ip, const char* netmask, const char* gateway);
 int update_host_network_port_range(uint16_t port_start, uint16_t port_end);
+int clear_host_network_port_range(void);
 int create_socket(int domain, int type, int protocol, int *sock);
 int close_socket(int sock);
 int interface_up(int sockfd, const char* iface);

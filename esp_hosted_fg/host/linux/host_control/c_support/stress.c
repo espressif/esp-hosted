@@ -48,7 +48,7 @@ int main(int argc, char *argv[])
 	int str_args_start = 2;
 	char version[30] = {'\0'};
 	char mac_address[30] = {'\0'};
-	
+
 	if(getuid()) {
 		printf("Please re-run program with superuser access\n");
 		usage(argv);

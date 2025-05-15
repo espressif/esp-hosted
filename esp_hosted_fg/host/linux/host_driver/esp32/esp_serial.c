@@ -29,11 +29,6 @@
 #include <linux/delay.h>
 #include <linux/slab.h>
 
-#if 0
-#include <linux/fs.h>
-#include <linux/sched/signal.h>
-#endif
-
 #include "esp.h"
 #include "esp_rb.h"
 #include "esp_api.h"
@@ -99,7 +94,7 @@ static ssize_t esp_serial_write(struct file *file, const char __user *user_buffe
 	dev = (struct esp_serial_devs *) file->private_data;
 
 	/* Check if slave connection is still active */
-	if (!dev || !dev->priv || !atomic_read(&((struct esp_adapter *)dev->priv)->state)) {
+	if (!dev || !dev->priv) {
 		esp_warn("slave disconnected, write aborted\n");
 		return -ENODEV;
 	}
@@ -111,6 +106,16 @@ static ssize_t esp_serial_write(struct file *file, const char __user *user_buffe
 		 *  - Fragment large packets into multiple 1500 byte packets
 		 *  - MORE_FRAGMENT bit in flag tells if there are more fragments expected
 		 **/
+
+
+		if (atomic_read(&((struct esp_adapter *)dev->priv)->state) < ESP_CONTEXT_READY) {
+			esp_warn("slave disconnected, write aborted\n");
+			if (atomic_read(&ref_count_open)) {
+				atomic_dec(&ref_count_open);
+			}
+			return -ENODEV;
+		}
+
 		if (left_len > ETH_DATA_LEN) {
 			frag_len = ETH_DATA_LEN;
 			flag = MORE_FRAGMENT;
@@ -311,90 +316,6 @@ err_class_create:
 err:
 	return err;
 }
-
-#if 0
-#define PID_FILE_PATH "/var/run/hosted_daemon.pid"
-
-static int read_pid_from_file(const char *path)
-{
-    struct file *file;
-    char buf[16];
-    ssize_t bytes_read;
-    loff_t pos = 0;
-    int pid = -1;
-    int ret;
-
-    file = filp_open(path, O_RDONLY, 0);
-    if (IS_ERR(file)) {
-        esp_info("Failed to open file: %s\n", path);
-        return -ENOENT;
-    }
-
-    esp_info("Killing hosted daemon app\n");
-
-    bytes_read = kernel_read(file, buf, sizeof(buf) - 1, &pos);
-    filp_close(file, NULL); // Close the file immediately after reading
-
-    if (bytes_read < 0) {
-        esp_err("Failed to read from file: %s\n", path);
-        return -EIO;
-    }
-
-    buf[bytes_read] = '\0'; // Null-terminate the buffer
-
-    // Convert string to integer
-    ret = kstrtoint(buf, 10, &pid);
-    if (ret < 0) {
-        esp_err("Failed to convert PID from string: %s\n", buf);
-        return ret;
-    }
-
-    return pid;
-}
-
-
-static int send_signal_to_user_space(int pid, int signal)
-{
-    struct pid *proc_pid;
-    struct task_struct *task;
-
-    proc_pid = find_get_pid(pid);
-    if (!proc_pid) {
-        pr_err("Failed to find PID %d\n", pid);
-        return -ESRCH;
-    }
-
-    task = pid_task(proc_pid, PIDTYPE_PID);
-    if (!task) {
-        pr_err("Failed to find task for PID %d\n", pid);
-        put_pid(proc_pid);
-        return -ESRCH;
-    }
-
-    if (send_sig(signal, task, 0) < 0) {
-        pr_err("Failed to send signal %d to PID %d\n", signal, pid);
-        put_pid(proc_pid);
-        return -EINVAL;
-    }
-
-    put_pid(proc_pid);
-    return 0;
-}
-
-
-static int signal_user_space_to_release(void) {
-    int pid;
-
-    esp_info("Check hosted daemon running\n");
-    pid = read_pid_from_file(PID_FILE_PATH);
-
-    if (pid > 0) {
-        send_signal_to_user_space(pid, SIGUSR1);
-    }
-
-    return 0;
-}
-#endif
 
 void esp_serial_cleanup(void)
 {

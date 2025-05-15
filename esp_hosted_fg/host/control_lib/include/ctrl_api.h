@@ -651,10 +651,10 @@ ctrl_cmd_t * wifi_set_max_tx_power(ctrl_cmd_t *req);
 ctrl_cmd_t * wifi_get_curr_tx_power(ctrl_cmd_t *req);
 
 /* Sets the Country Code */
-ctrl_cmd_t * wifi_set_country_code(ctrl_cmd_t req);
+ctrl_cmd_t * wifi_set_country_code(ctrl_cmd_t *req);
 
 /* Gets the Country Code */
-ctrl_cmd_t * wifi_get_country_code(ctrl_cmd_t req);
+ctrl_cmd_t * wifi_get_country_code(ctrl_cmd_t *req);
 
 /* Configure heartbeat event. Be default heartbeat is not enabled.
  * To enable heartbeats, user need to use this API in addition
@@ -693,4 +693,3 @@ ctrl_cmd_t * set_dhcp_dns_status(ctrl_cmd_t *req);
 ctrl_cmd_t * send_custom_rpc_unserialised_req_to_slave(ctrl_cmd_t *req);
 
 #endif
-

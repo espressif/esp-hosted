@@ -23,6 +23,7 @@
 #include "esp_hosted_custom_rpc.h"
 #include "app_custom_rpc.h"
 
+
 #define MAC_ADDR_LENGTH 18
 #define NETWORK_CHECK_INTERVAL_MS 1000
 #define RPC_RETRY_INTERVAL_MS     1000
@@ -54,8 +55,9 @@ static int lock_fd = -1;
 
 /* Thread handling */
 static pthread_t auto_ip_restore_thread;
-static int exit_auto_ip_restore = 0;
+static int exit_thread_auto_ip_restore = 0;
 static uint8_t rpc_initialized = 0;
+
 
 /* RPC state management */
 typedef enum {
@@ -185,52 +187,52 @@ static bool parse_arguments(int argc, char **argv, const cmd_arg_t *args, int ar
 
 			switch (args[arg_idx].type) {
 				case ARG_TYPE_INT: {
-									   char *endptr;
-									   strtol(value, &endptr, 10);
-									   if (*endptr != '\0') {
-										   printf("Invalid integer value for %s: %s\n", argv[i], value);
-										   result = false;
-									   }
-									   break;
-								   }
+					char *endptr;
+					strtol(value, &endptr, 10);
+					if (*endptr != '\0') {
+						printf("Invalid integer value for %s: %s\n", argv[i], value);
+						result = false;
+					}
+					break;
+				}
 				case ARG_TYPE_BOOL: {
-										if (strcasecmp(value, "true") != 0 &&
-												strcasecmp(value, "false") != 0 &&
-												strcasecmp(value, "yes") != 0 &&
-												strcasecmp(value, "no") != 0 &&
-												strcasecmp(value, "1") != 0 &&
-												strcasecmp(value, "0") != 0) {
-											printf("Invalid boolean value for %s: %s\n", argv[i], value);
-											printf("Use true/false, yes/no, or 1/0\n");
-											result = false;
-										}
-										break;
-									}
+					if (strcasecmp(value, "true") != 0 &&
+							strcasecmp(value, "false") != 0 &&
+							strcasecmp(value, "yes") != 0 &&
+							strcasecmp(value, "no") != 0 &&
+							strcasecmp(value, "1") != 0 &&
+							strcasecmp(value, "0") != 0) {
+						printf("Invalid boolean value for %s: %s\n", argv[i], value);
+						printf("Use true/false, yes/no, or 1/0\n");
+						result = false;
+					}
+					break;
+				}
 				case ARG_TYPE_CHOICE: {
-										  bool valid_choice = false;
-										  for (int j = 0; args[arg_idx].choices[j]; j++) {
-											  if (strcasecmp(value, args[arg_idx].choices[j]) == 0) {
-												  valid_choice = true;
-												  break;
-											  }
-										  }
-										  if (!valid_choice) {
-											  printf("Invalid choice for %s: %s\n", argv[i], value);
-											  printf("Valid choices are: ");
-											  for (int j = 0; args[arg_idx].choices[j]; j++) {
-												  printf("%s", args[arg_idx].choices[j]);
-												  if (args[arg_idx].choices[j+1]) {
-													  printf(", ");
-												  }
-											  }
-											  printf("\n");
-											  result = false;
-										  }
-										  break;
-									  }
+					bool valid_choice = false;
+					for (int j = 0; args[arg_idx].choices[j]; j++) {
+						if (strcasecmp(value, args[arg_idx].choices[j]) == 0) {
+							valid_choice = true;
+							break;
+						}
+					}
+					if (!valid_choice) {
+						printf("Invalid choice for %s: %s\n", argv[i], value);
+						printf("Valid choices are: ");
+						for (int j = 0; args[arg_idx].choices[j]; j++) {
+							printf("%s", args[arg_idx].choices[j]);
+							if (args[arg_idx].choices[j+1]) {
+								printf(", ");
+							}
+						}
+						printf("\n");
+						result = false;
+					}
+					break;
+				}
 				default:
-									  /* No validation for string type */
-									  break;
+					/* No validation for string type */
+					break;
 			}
 
 			/* Skip the value in the next iteration */
@@ -331,6 +333,10 @@ static const cmd_arg_t custom_rpc_request_args[] = {
 	{"--demo", "Demo number (1, 2, or 3)", ARG_TYPE_INT, true, NULL}
 };
 
+static const cmd_arg_t config_network_split_args[] = {
+	{"--enable", "Enable or disable network split", ARG_TYPE_BOOL, true, NULL}
+};
+
 /* Forward declarations for command handlers */
 static int handle_exit(int argc, char **argv);
 static int handle_help(int argc, char **argv);
@@ -362,6 +368,8 @@ static int handle_subscribe_event(int argc, char **argv);
 static int handle_unsubscribe_event(int argc, char **argv);
 static int handle_set_host_port_range(int argc, char **argv);
 static int handle_custom_demo_rpc_request(int argc, char **argv);
+static int handle_config_network_split(int argc, char **argv);
+
 
 /* Command table */
 static const shell_command_t commands[] = {
@@ -394,6 +402,7 @@ static const shell_command_t commands[] = {
 	{"unsubscribe_event", "Unsubscribe from events", handle_unsubscribe_event, unsubscribe_event_args, sizeof(unsubscribe_event_args)/sizeof(cmd_arg_t)},
 	{"custom_demo_rpc_request", "Send custom RPC demo request and wait for response", handle_custom_demo_rpc_request, custom_rpc_request_args, sizeof(custom_rpc_request_args)/sizeof(cmd_arg_t)},
 	{"cli_set_host_port_range", "Set host port range", handle_set_host_port_range, NULL, 0},
+	{"config_network_split_locally", "Enable or disable network split", handle_config_network_split, config_network_split_args, sizeof(config_network_split_args)/sizeof(cmd_arg_t)},
 	{"exit", "Exit the shell", handle_exit, NULL, 0},
 	{"quit", "Exit the shell", handle_exit, NULL, 0},
 	{"q", "Exit the shell", handle_exit, NULL, 0},
@@ -403,7 +412,7 @@ static const shell_command_t commands[] = {
 /* Command handler implementations */
 static int handle_exit(int argc, char **argv) {
 	printf("Exiting shell\n");
-	exit_auto_ip_restore = 1;
+	exit_thread_auto_ip_restore = 1;
 	return 0;
 }
 
@@ -716,9 +725,9 @@ static int handle_start_softap(int argc, char **argv) {
 	const char *ssid = get_arg_value(argc, argv, start_softap_args,
 			sizeof(start_softap_args)/sizeof(cmd_arg_t),
 			"--ssid");
-	const char *pwd = get_arg_value(argc, argv, start_softap_args,
+	const char *password = get_arg_value(argc, argv, start_softap_args,
 			sizeof(start_softap_args)/sizeof(cmd_arg_t),
-			"--pwd");
+			"--password");
 	const char *channel = get_arg_value(argc, argv, start_softap_args,
 			sizeof(start_softap_args)/sizeof(cmd_arg_t),
 			"--channel");
@@ -744,8 +753,8 @@ static int handle_start_softap(int argc, char **argv) {
 		printf("Using default SSID: %s\n", ssid);
 	}
 
-	if (!pwd) {
-		pwd = SOFTAP_MODE_PWD;
+	if (!password) {
+		password = SOFTAP_MODE_PWD;
 		printf("Using default password\n");
 	}
 
@@ -768,7 +777,7 @@ static int handle_start_softap(int argc, char **argv) {
 
 	return test_softap_mode_start_with_params(
 			ssid,
-			pwd,
+			password,
 			channel_value,
 			encryption_mode,
 			max_conn_value,
@@ -962,6 +971,40 @@ static int handle_set_host_port_range(int argc, char **argv) {
 	return update_host_network_port_range(start_port, end_port);
 }
 
+static int handle_config_network_split(int argc, char **argv)
+{
+	int network_split_enabled = 0;
+	if (!parse_arguments(argc, argv, config_network_split_args,
+			sizeof(config_network_split_args)/sizeof(cmd_arg_t))) {
+		return FAILURE;
+	}
+
+	const char *enable = get_arg_value(argc, argv, config_network_split_args,
+			sizeof(config_network_split_args)/sizeof(cmd_arg_t),
+			"--enable");
+
+	network_split_enabled = is_arg_true(enable);
+
+	if (network_split_enabled) {
+		test_set_network_split_enabled_at_host(network_split_enabled);
+		printf("Network split enabled locally (This would not be translated to slave)\n");
+		/* Update host network port range when enabling */
+		if (update_host_network_port_range(49152, 61439) != SUCCESS) {
+			printf("Warning: Failed to update host network port range\n");
+		}
+	} else {
+		test_set_network_split_enabled_at_host(network_split_enabled);
+		printf("Network split disabled locally (This would not be translated to slave)\n");
+		/* Clear host network port range when disabling */
+		if (clear_host_network_port_range() != SUCCESS) {
+			printf("Warning: Failed to clear host network port range\n");
+		}
+	}
+
+	return SUCCESS;
+}
+
+
 /* Shell initialization */
 static int shell_init(shell_context_t *ctx) {
 	if (!ctx) {
@@ -1045,7 +1088,7 @@ static void *auto_ip_restore_thread_handler(void *arg) {
 
 	(void)ctx;
 
-	while (!exit_auto_ip_restore) {
+	while (!exit_thread_auto_ip_restore) {
 		/* Initialize RPC */
 		rpc_state = RPC_STATE_INIT;
 
@@ -1084,57 +1127,60 @@ static void *auto_ip_restore_thread_handler(void *arg) {
 		}
 
 		/* Fetch IP address from slave on bootup */
-		if (test_fetch_ip_addr_from_slave() != SUCCESS) {
-			printf("Failed to fetch IP status, reinitializing RPC\n");
+		if (is_network_split_enabled_at_host()) {
+			if (test_fetch_ip_addr_from_slave() != SUCCESS) {
+				//printf("Failed to fetch IP status\n");
+			}
 		}
-
 		/* Main monitoring loop */
-		while (!exit_auto_ip_restore && rpc_state == RPC_STATE_ACTIVE) {
+		while (!exit_thread_auto_ip_restore && rpc_state == RPC_STATE_ACTIVE) {
 
 #if POLL_FOR_IP_RESTORE
-			/* Refresh MAC addresses if they're empty */
-			if (sta_network.mac_addr[0] == '\0') {
-				test_station_mode_get_mac_addr(sta_network.mac_addr);
-			}
-
-			if (ap_network.mac_addr[0] == '\0') {
-				test_softap_mode_get_mac_addr(ap_network.mac_addr);
-			}
-
-			/* Check network status */
-			if (!sta_network.ip_valid || !sta_network.dns_valid) {
-				if (test_fetch_ip_addr_from_slave() != SUCCESS) {
-					printf("Failed to fetch IP status, reinitializing RPC\n");
-					break;
+			if (is_network_split_enabled_at_host()) {
+				/* Refresh MAC addresses if they're empty */
+				if (sta_network.mac_addr[0] == '\0') {
+					test_station_mode_get_mac_addr(sta_network.mac_addr);
 				}
 
-				/* If IP is still all zeros after fetch, retry a few times */
-				if (sta_network.ip_valid && strcmp(sta_network.ip_addr, "0.0.0.0") == 0) {
-					if (ip_fetch_retry_count < MAX_IP_FETCH_RETRIES) {
-						ip_fetch_retry_count++;
-						printf("Got zeroed IP, retrying fetch (%d/%d)...\n",
-								ip_fetch_retry_count, MAX_IP_FETCH_RETRIES);
-						usleep(IP_FETCH_RETRY_DELAY_MS * 1000);
-						continue;
+				if (ap_network.mac_addr[0] == '\0') {
+					test_softap_mode_get_mac_addr(ap_network.mac_addr);
+				}
+
+				/* Check network status */
+				if (!sta_network.ip_valid || !sta_network.dns_valid) {
+					if (test_fetch_ip_addr_from_slave() != SUCCESS) {
+						printf("Failed to fetch IP status, reinitializing RPC\n");
+						break;
+					}
+
+					/* If IP is still all zeros after fetch, retry a few times */
+					if (sta_network.ip_valid && strcmp(sta_network.ip_addr, "0.0.0.0") == 0) {
+						if (ip_fetch_retry_count < MAX_IP_FETCH_RETRIES) {
+							ip_fetch_retry_count++;
+							printf("Got zeroed IP, retrying fetch (%d/%d)...\n",
+									ip_fetch_retry_count, MAX_IP_FETCH_RETRIES);
+							usleep(IP_FETCH_RETRY_DELAY_MS * 1000);
+							continue;
+						} else {
+							ip_fetch_retry_count = 0;
+						}
 					} else {
 						ip_fetch_retry_count = 0;
 					}
-				} else {
-					ip_fetch_retry_count = 0;
-				}
 
-				/* If we got valid IP and have a valid MAC, ensure the network is up */
-				if (sta_network.ip_valid && strcmp(sta_network.ip_addr, "0.0.0.0") != 0 &&
-						sta_network.dns_valid && sta_network.mac_addr[0] != '\0') {
+					/* If we got valid IP and have a valid MAC, ensure the network is up */
+					if (sta_network.ip_valid && strcmp(sta_network.ip_addr, "0.0.0.0") != 0 &&
+							sta_network.dns_valid && sta_network.mac_addr[0] != '\0') {
 
-					if (!sta_network.network_up) {
-						printf("Setting up station network interface with IP %s\n", sta_network.ip_addr);
-						if (up_sta_netdev(&sta_network) == SUCCESS) {
-							add_dns(sta_network.dns_addr);
-							sta_network.network_up = 1;
-							printf("Station network interface is now up\n");
-						} else {
-							printf("Failed to set up network interface\n");
+						if (!sta_network.network_up) {
+							printf("Setting up station network interface with IP %s\n", sta_network.ip_addr);
+							if (up_sta_netdev(&sta_network) == SUCCESS) {
+								add_dns(sta_network.dns_addr);
+								sta_network.network_up = 1;
+								printf("Station network interface is now up\n");
+							} else {
+								printf("Failed to set up network interface\n");
+							}
 						}
 					}
 				}
@@ -1159,12 +1205,15 @@ static void *auto_ip_restore_thread_handler(void *arg) {
 static int start_rpc_auto_ip_restore(void) {
 	printf("Trying to establish connection with Slave\n");
 
-	/* Update host network port range */
-	if (update_host_network_port_range(49152, 61439) != SUCCESS) {
-		printf("Failed to update host network port range\n");
-		rpc_state = RPC_STATE_ERROR;
-		return -1;
+	if (is_network_split_enabled_at_host()) {
+		/* Update host network port range */
+		if (update_host_network_port_range(49152, 61439) != SUCCESS) {
+			printf("Failed to update host network port range\n");
+			rpc_state = RPC_STATE_ERROR;
+			return -1;
+		}
 	}
+
 	/* Create app thread */
 	if (pthread_create(&auto_ip_restore_thread, NULL, auto_ip_restore_thread_handler, NULL) != 0) {
 		printf("Failed to create app thread\n");
@@ -1187,7 +1236,7 @@ static void stop_rpc_auto_ip_restore(void) {
 	cleanup_in_progress = 1;
 
 	// Set exit flag and notify threads
-	exit_auto_ip_restore = 1;
+	exit_thread_auto_ip_restore = 1;
 	rpc_state = RPC_STATE_INACTIVE;
 
 	printf("Cleaning up RPC resources...\n");
@@ -1230,7 +1279,7 @@ static int shell_run(shell_context_t *ctx) {
 		return -1;
 	}
 
-	while (ctx->running && !exit_auto_ip_restore) {
+	while (ctx->running && !exit_thread_auto_ip_restore) {
 		/* Read line using the correct replxx function */
 		line = replxx_input(ctx->shell_handle, "esp-hosted> ");
 		if (!line) {
@@ -1314,12 +1363,12 @@ static void sig_handler(int signum) {
 			break;
 		case SIGUSR1:
 			printf("Cleanup requested\n");
-			exit_auto_ip_restore = 1;
+			exit_thread_auto_ip_restore = 1;
 			break;
 		case SIGTERM:
 		case SIGINT:
 			// Just set the exit flag
-			exit_auto_ip_restore = 1;
+			exit_thread_auto_ip_restore = 1;
 
 			// Signal the shell to exit if it's still running
 			shell_context_t *ctx = get_shell_context();
@@ -1368,7 +1417,7 @@ int main(int argc, char *argv[]) {
 
 	/* The shell has exited - initiate cleanup */
 	printf("Shell exited, initiating cleanup\n");
-	exit_auto_ip_restore = 1;
+	exit_thread_auto_ip_restore = 1;
 
 	/* Clean up resources */
 	stop_rpc_auto_ip_restore();
@@ -1677,4 +1726,3 @@ static int handle_custom_demo_rpc_request(int argc, char **argv) {
 			return FAILURE;
 	}
 }
-

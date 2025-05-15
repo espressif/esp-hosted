@@ -32,35 +32,35 @@
 
 /* Define command argument types */
 typedef enum {
-    ARG_TYPE_STRING,
-    ARG_TYPE_INT,
-    ARG_TYPE_BOOL,
-    ARG_TYPE_CHOICE
+	ARG_TYPE_STRING,
+	ARG_TYPE_INT,
+	ARG_TYPE_BOOL,
+	ARG_TYPE_CHOICE
 } arg_type_t;
 
 /* Define command argument structure */
 typedef struct {
-    const char *name;           /* Argument name with -- prefix */
-    const char *help;           /* Help text */
-    arg_type_t type;            /* Argument type */
-    bool required;              /* Whether argument is required */
-    const char **choices;       /* Valid choices for ARG_TYPE_CHOICE */
+	const char *name;           /* Argument name with -- prefix */
+	const char *help;           /* Help text */
+	arg_type_t type;            /* Argument type */
+	bool required;              /* Whether argument is required */
+	const char **choices;       /* Valid choices for ARG_TYPE_CHOICE */
 } cmd_arg_t;
 
 /* Command structure */
 typedef struct {
-    const char *name;
-    const char *help;
-    int (*handler)(int argc, char **argv);
-    const cmd_arg_t *args;
-    int arg_count;
+	const char *name;
+	const char *help;
+	int (*handler)(int argc, char **argv);
+	const cmd_arg_t *args;
+	int arg_count;
 } shell_command_t;
 
 /* Shell context */
 typedef struct {
-    Replxx *shell_handle;
-    int running;
-    pthread_t ip_restore_thread;
+	Replxx *shell_handle;
+	int running;
+	pthread_t ip_restore_thread;
 } shell_context_t;
 
 /* Command completion callback */
@@ -72,4 +72,4 @@ void shell_hint_callback(const char *text, replxx_hints *hints, int *context_len
 /* Get shell context */
 shell_context_t *get_shell_context(void);
 
-#endif /* HOSTED_SHELL_H */ 
+#endif /* HOSTED_SHELL_H */

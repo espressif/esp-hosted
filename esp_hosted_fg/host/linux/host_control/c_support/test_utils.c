@@ -67,6 +67,9 @@ typedef struct {
 } event_callback_table_t;
 
 
+static uint8_t network_split_enabled = DEFAULT_NETWORK_SPLIT_ENABLED;
+
+
 static inline bool successful_response(ctrl_cmd_t *resp)
 {
 	return resp && resp->resp_event_status == SUCCESS;
@@ -190,65 +193,78 @@ static int ctrl_app_event_callback(ctrl_cmd_t *app_event) {
 		} case CTRL_EVENT_DHCP_DNS_STATUS: {
 			dhcp_dns_status_t *p_e = &app_event->u.dhcp_dns_status;
 
-			if (p_e->dhcp_up) {
-				strncpy(sta_network.ip_addr, (const char *)p_e->dhcp_ip, MAC_ADDR_LENGTH);
-				strncpy(sta_network.netmask, (const char *)p_e->dhcp_nm, MAC_ADDR_LENGTH);
-				strncpy(sta_network.gateway, (const char *)p_e->dhcp_gw, MAC_ADDR_LENGTH);
-				strncpy(sta_network.default_route, (const char *)p_e->dhcp_gw, MAC_ADDR_LENGTH);
-				sta_network.ip_valid = 1;
-				prev_network_down = false;
-			} else {
-				sta_network.network_up = 0;
-				sta_network.ip_valid = 0;
-			}
-			if (p_e->dns_up) {
-				strncpy(sta_network.dns_addr, (const char *)p_e->dns_ip, MAC_ADDR_LENGTH);
-				sta_network.dns_valid = 1;
-			} else {
-				sta_network.dns_valid = 0;
-			}
+			if (network_split_enabled) {
 
-			if (p_e->net_link_up) {
-				printf("%s  network event %s dhcp %s (%s %s %s) dns %s (%s)\n",
-					get_timestamp(ts, MIN_TIMESTAMP_STR_SIZE),
-					p_e->net_link_up ? "up" : "down",
-					p_e->dhcp_up ? "up" : "down",
-					p_e->dhcp_ip, p_e->dhcp_nm, p_e->dhcp_gw,
-					p_e->dns_up ? "up" : "down",
-					p_e->dns_ip);
-				prev_network_down = false;
-				interface_down_printed = false;
-			} else {
-				/* Only print network down message if we haven't already */
-				if (!prev_network_down) {
-					printf("%s  network event %s\n",
-						get_timestamp(ts, MIN_TIMESTAMP_STR_SIZE),
-						p_e->net_link_up ? "up" : "down");
-					prev_network_down = true;
+				if (!successful_response(app_event)) {
+					printf("Slave firmware not compiled with network split. Ignore (DHCP_DNS event)\n");
+					CLEANUP_CTRL_MSG(app_event);
+					return FAILURE;
 				}
-			}
 
-			if (sta_network.dns_valid && sta_network.ip_valid) {
-				//printf("Network identified as up\n");
-				if (sta_network.mac_addr[0] != '\0') {
-					up_sta_netdev(&sta_network);
-					add_dns(sta_network.dns_addr);
-					sta_network.network_up = 1;
+				if (p_e->dhcp_up) {
+					strncpy(sta_network.ip_addr, (const char *)p_e->dhcp_ip, MAC_ADDR_LENGTH);
+					strncpy(sta_network.netmask, (const char *)p_e->dhcp_nm, MAC_ADDR_LENGTH);
+					strncpy(sta_network.gateway, (const char *)p_e->dhcp_gw, MAC_ADDR_LENGTH);
+					strncpy(sta_network.default_route, (const char *)p_e->dhcp_gw, MAC_ADDR_LENGTH);
+					sta_network.ip_valid = 1;
+					prev_network_down = false;
 				} else {
-					printf("Event ignored as 'ethsta0' yet not assigned MAC\n");
-					printf("You may consider calling 'test_station_mode_get_mac_addr(sta_network.mac_addr);' to set the STA MAC before\n");
+					sta_network.network_up = 0;
+					sta_network.ip_valid = 0;
 				}
-			} else {
-				//printf("Network identified as down");
-				/* Only print interface down message if we haven't already */
-				if (!interface_down_printed) {
-					//printf("%s interface down\n", STA_INTERFACE);
-					interface_down_printed = true;
+				if (p_e->dns_up) {
+					strncpy(sta_network.dns_addr, (const char *)p_e->dns_ip, MAC_ADDR_LENGTH);
+					sta_network.dns_valid = 1;
+				} else {
+					sta_network.dns_valid = 0;
 				}
 
-				down_sta_netdev(&sta_network);
-				remove_dns(sta_network.dns_addr);
-				sta_network.network_up = 0;
+				if (p_e->net_link_up) {
+					printf("%s  network event %s dhcp %s (%s %s %s) dns %s (%s) ===> This would set as static IP\n",
+						get_timestamp(ts, MIN_TIMESTAMP_STR_SIZE),
+						p_e->net_link_up ? "up" : "down",
+						p_e->dhcp_up ? "up" : "down",
+						p_e->dhcp_ip, p_e->dhcp_nm, p_e->dhcp_gw,
+						p_e->dns_up ? "up" : "down",
+						p_e->dns_ip);
+					prev_network_down = false;
+					interface_down_printed = false;
+				} else {
+					/* Only print network down message if we haven't already */
+					if (!prev_network_down) {
+						printf("%s  network event %s ===> Interface would be brought down\n",
+							get_timestamp(ts, MIN_TIMESTAMP_STR_SIZE),
+							p_e->net_link_up ? "up" : "down");
+						prev_network_down = true;
+					}
+				}
+
+				if (sta_network.dns_valid && sta_network.ip_valid) {
+					//printf("Network identified as up\n");
+					if (sta_network.mac_addr[0] != '\0') {
+						up_sta_netdev(&sta_network);
+						add_dns(sta_network.dns_addr);
+						sta_network.network_up = 1;
+					} else {
+						printf("Event ignored as 'ethsta0' yet not assigned MAC\n");
+						printf("You may consider calling 'test_station_mode_get_mac_addr(sta_network.mac_addr);' to set the STA MAC before\n");
+					}
+				} else {
+					//printf("Network identified as down");
+					/* Only print interface down message if we haven't already */
+					if (!interface_down_printed) {
+						//printf("%s interface down\n", STA_INTERFACE);
+						interface_down_printed = true;
+					}
+
+					down_sta_netdev(&sta_network);
+					remove_dns(sta_network.dns_addr);
+					sta_network.network_up = 0;
+				}
+
+			} else {
+				printf("Network split[%d] is disabled at host. So ignoring the DHCP_DNS event\n",
+					is_network_split_enabled_at_host());
 			}
 			break;
 		} case CTRL_EVENT_CUSTOM_RPC_UNSERIALISED_MSG: {
@@ -521,7 +537,7 @@ int ctrl_app_resp_callback(ctrl_cmd_t * app_resp)
 			break;
 		} case CTRL_RESP_CONNECT_AP : {
 
-			printf("connected to AP\n");
+			printf("AP connect req submitted\n");
 			//if (up_sta_netdev(&sta_network))
 			//	goto fail_resp;
 			break;
@@ -665,6 +681,7 @@ int test_get_wifi_mode(void)
 	req->ctrl_resp_cb = ctrl_app_resp_callback;
 
 	wifi_get_mode(req);
+	CLEANUP_CTRL_MSG(req);
 
 	return SUCCESS;
 }
@@ -678,6 +695,7 @@ int test_set_wifi_mode(int mode)
 
 	req->u.wifi_mode.mode = mode;
 	resp = wifi_set_mode(req);
+	CLEANUP_CTRL_MSG(req);
 
 	return ctrl_app_resp_callback(resp);
 }
@@ -787,6 +805,14 @@ int test_softap_mode_get_mac_addr(char *mac_str)
 
 int test_station_mode_connect(void)
 {
+
+	if (sta_network.mac_addr[0] == '\0') {
+		/* sync procedure to get sta mac first */
+		if (test_station_mode_get_mac_addr(sta_network.mac_addr) != SUCCESS) {
+			printf("Failed to get and set 'ethsta0' MAC address\n");
+		}
+	}
+
 	/* implemented Asynchronous */
 	ctrl_cmd_t *req = CTRL_CMD_DEFAULT_REQ();
 
@@ -845,6 +871,13 @@ int test_station_mode_disconnect(void)
 
 int test_softap_mode_start(void)
 {
+
+	if (ap_network.mac_addr[0] == '\0') {
+		/* sync procedure to get softap mac first */
+		if (test_softap_mode_get_mac_addr(ap_network.mac_addr) != SUCCESS) {
+			printf("Failed to get and set 'ethap0' MAC address\n");
+		}
+	}
 	/* implemented synchronous */
 	ctrl_cmd_t *req = CTRL_CMD_DEFAULT_REQ();
 	ctrl_cmd_t *resp = NULL;
@@ -946,6 +979,7 @@ int test_reset_vendor_specific_ie(void)
 
 	char *v_data = (char*)calloc(1, strlen(data));
 	if (!v_data) {
+		CLEANUP_CTRL_MSG(req);
 		printf("Failed to allocate memory \n");
 		return FAILURE;
 	}
@@ -1123,14 +1157,15 @@ int test_wifi_get_curr_tx_power()
 static int test_set_country_code_with_domain(bool enabled)
 {
 	/* implemented synchronous */
-	ctrl_cmd_t req = CTRL_CMD_DEFAULT_REQ();
+	ctrl_cmd_t *req = CTRL_CMD_DEFAULT_REQ();
 	ctrl_cmd_t *resp = NULL;
 
-	memcpy(req.u.country_code.country, COUNTRY_CODE, COUNTRY_CODE_LEN);
-	req.u.country_code.ieee80211d_enabled = enabled;
+	memcpy(req->u.country_code.country, COUNTRY_CODE, COUNTRY_CODE_LEN);
+	req->u.country_code.ieee80211d_enabled = enabled;
 
 	resp = wifi_set_country_code(req);
 
+	CLEANUP_CTRL_MSG(req);
 	return ctrl_app_resp_callback(resp);
 }
 
@@ -1149,11 +1184,12 @@ int test_set_country_code()
 int test_get_country_code()
 {
 	/* implemented synchronous */
-	ctrl_cmd_t req = CTRL_CMD_DEFAULT_REQ();
+	ctrl_cmd_t *req = CTRL_CMD_DEFAULT_REQ();
 	ctrl_cmd_t *resp = NULL;
 
 	resp = wifi_get_country_code(req);
 
+	CLEANUP_CTRL_MSG(req);
 	return ctrl_app_resp_callback(resp);
 }
 
@@ -1380,87 +1416,110 @@ int test_print_fw_version(void)
 
 int test_fetch_ip_addr_from_slave(void)
 {
-	ctrl_cmd_t *resp = NULL;
-	ctrl_cmd_t *req = CTRL_CMD_DEFAULT_REQ();
-	req->cmd_timeout_sec = 5;
+	if (network_split_enabled) {
+		ctrl_cmd_t *resp = NULL;
+		ctrl_cmd_t *req = CTRL_CMD_DEFAULT_REQ();
+		req->cmd_timeout_sec = 5;
 
-	resp = get_dhcp_dns_status(req);
+		resp = get_dhcp_dns_status(req);
 
-	if (successful_response(resp)) {
-		dhcp_dns_status_t *p = &resp->u.dhcp_dns_status;
-		if (p->dhcp_up) {
-			printf("%s -> IP: %s NM: %s GW: %s", STA_INTERFACE, p->dhcp_ip, p->dhcp_nm, p->dhcp_gw);
-			strncpy(sta_network.ip_addr, (const char *)p->dhcp_ip, MAC_ADDR_LENGTH);
-			strncpy(sta_network.netmask, (const char *)p->dhcp_nm, MAC_ADDR_LENGTH);
-			strncpy(sta_network.gateway, (const char *)p->dhcp_gw, MAC_ADDR_LENGTH);
-			strncpy(sta_network.default_route, (const char *)p->dhcp_gw, MAC_ADDR_LENGTH);
-			sta_network.ip_valid = 1;
-			prev_network_down = false;
-			interface_down_printed = false;
-		} else {
-			/* Only print message if this is the first time we're reporting network down */
-			if (!prev_network_down) {
-				printf("%s -> Network reported as down\n", STA_INTERFACE);
-				prev_network_down = true;
+		CLEANUP_CTRL_MSG(req);
+		if (successful_response(resp)) {
+			dhcp_dns_status_t *p = &resp->u.dhcp_dns_status;
+			if (p->dhcp_up) {
+				printf("%s -> IP: %s NM: %s GW: %s", STA_INTERFACE, p->dhcp_ip, p->dhcp_nm, p->dhcp_gw);
+				strncpy(sta_network.ip_addr, (const char *)p->dhcp_ip, MAC_ADDR_LENGTH);
+				strncpy(sta_network.netmask, (const char *)p->dhcp_nm, MAC_ADDR_LENGTH);
+				strncpy(sta_network.gateway, (const char *)p->dhcp_gw, MAC_ADDR_LENGTH);
+				strncpy(sta_network.default_route, (const char *)p->dhcp_gw, MAC_ADDR_LENGTH);
+				sta_network.ip_valid = 1;
+				prev_network_down = false;
+				interface_down_printed = false;
+			} else {
+				/* Only print message if this is the first time we're reporting network down */
+				if (!prev_network_down) {
+					printf("%s -> Network reported as down\n", STA_INTERFACE);
+					prev_network_down = true;
+				}
+				sta_network.network_up = 0;
+				sta_network.ip_valid = 0;
 			}
-			sta_network.network_up = 0;
-			sta_network.ip_valid = 0;
-		}
-		if (p->dns_up) {
-			printf(" DNS: %s\n", p->dns_ip);
-			strncpy(sta_network.dns_addr, (const char *)p->dns_ip, MAC_ADDR_LENGTH);
-			sta_network.dns_valid = 1;
-		} else {
-			//printf("DNS is not up");
-			sta_network.dns_valid = 0;
-		}
-
-		if (resp->u.dhcp_dns_status.dns_up && resp->u.dhcp_dns_status.dhcp_up) {
-			//printf("Network identified as up");
-			up_sta_netdev(&sta_network);
-			add_dns(sta_network.dns_addr);
-			sta_network.network_up = 1;
-		} else {
-			//printf("Network identified as down");
-			/* Only print message if this is the first time we're bringing down the interface */
-			if (!interface_down_printed) {
-				printf("%s interface down\n", STA_INTERFACE);
-				interface_down_printed = true;
+			if (p->dns_up) {
+				printf(" DNS: %s\n", p->dns_ip);
+				strncpy(sta_network.dns_addr, (const char *)p->dns_ip, MAC_ADDR_LENGTH);
+				sta_network.dns_valid = 1;
+			} else {
+				//printf("DNS is not up");
+				sta_network.dns_valid = 0;
 			}
 
-			down_sta_netdev(&sta_network);
-			remove_dns(sta_network.dns_addr);
-			sta_network.network_up = 0;
+			if (resp->u.dhcp_dns_status.dns_up && resp->u.dhcp_dns_status.dhcp_up) {
+				//printf("Network identified as up");
+				up_sta_netdev(&sta_network);
+				add_dns(sta_network.dns_addr);
+				sta_network.network_up = 1;
+			} else {
+				//printf("Network identified as down");
+				/* Only print message if this is the first time we're bringing down the interface */
+				if (!interface_down_printed) {
+					printf("%s interface down\n", STA_INTERFACE);
+					interface_down_printed = true;
+				}
+
+				down_sta_netdev(&sta_network);
+				remove_dns(sta_network.dns_addr);
+				sta_network.network_up = 0;
+			}
+		} else {
+			//printf("Slave not built with network split\n");
+			CLEANUP_CTRL_MSG(resp);
+			return FAILURE;
 		}
+
+		return ctrl_app_resp_callback(resp);
+	} else {
+		printf("Network split is disabled at host. So not fetching IP address from slave\n");
+		return FAILURE;
 	}
-	CLEANUP_CTRL_MSG(req);
-	return ctrl_app_resp_callback(resp);
 }
 
 int test_set_dhcp_dns_status(char *sta_ip, char *sta_nm, char *sta_gw, char *sta_dns)
 {
-	ctrl_cmd_t *resp = NULL;
+	if (network_split_enabled) {
+		ctrl_cmd_t *resp = NULL;
 
-	if (!sta_ip || !sta_nm || !sta_gw || !sta_dns) {
-		printf("Invalid parameters\n");
+		if (!sta_ip || !sta_nm || !sta_gw || !sta_dns) {
+			printf("Invalid parameters\n");
+			return FAILURE;
+		}
+
+		ctrl_cmd_t *req = CTRL_CMD_DEFAULT_REQ();
+		req->cmd_timeout_sec = 5;
+
+		req->u.dhcp_dns_status.iface = 0;
+		req->u.dhcp_dns_status.dhcp_up = 1;
+		req->u.dhcp_dns_status.dns_up = 1;
+
+		strncpy((char *)req->u.dhcp_dns_status.dhcp_ip, sta_ip, MAC_ADDR_LENGTH);
+		strncpy((char *)req->u.dhcp_dns_status.dhcp_nm, sta_nm, MAC_ADDR_LENGTH);
+		strncpy((char *)req->u.dhcp_dns_status.dhcp_gw, sta_gw, MAC_ADDR_LENGTH);
+		strncpy((char *)req->u.dhcp_dns_status.dns_ip, sta_dns, MAC_ADDR_LENGTH);
+
+		resp = set_dhcp_dns_status(req);
+
+		CLEANUP_CTRL_MSG(req);
+
+		if (!successful_response(resp)) {
+			//printf("Slave not built with network split\n");
+			CLEANUP_CTRL_MSG(resp);
+			return FAILURE;
+		}
+
+		return ctrl_app_resp_callback(resp);
+	} else {
+		printf("Network split is disabled at host. So not setting DHCP/DNS status\n");
 		return FAILURE;
 	}
-
-	ctrl_cmd_t *req = CTRL_CMD_DEFAULT_REQ();
-	req->cmd_timeout_sec = 5;
-
-	req->u.dhcp_dns_status.iface = 0;
-	req->u.dhcp_dns_status.dhcp_up = 1;
-	req->u.dhcp_dns_status.dns_up = 1;
-
-	strncpy((char *)req->u.dhcp_dns_status.dhcp_ip, sta_ip, MAC_ADDR_LENGTH);
-	strncpy((char *)req->u.dhcp_dns_status.dhcp_nm, sta_nm, MAC_ADDR_LENGTH);
-	strncpy((char *)req->u.dhcp_dns_status.dhcp_gw, sta_gw, MAC_ADDR_LENGTH);
-	strncpy((char *)req->u.dhcp_dns_status.dns_ip, sta_dns, MAC_ADDR_LENGTH);
-
-	resp = set_dhcp_dns_status(req);
-	CLEANUP_CTRL_MSG(req);
-	return ctrl_app_resp_callback(resp);
 }
 
 int test_softap_mode_set_vendor_ie(bool enable, const char *data) {
@@ -1613,6 +1672,7 @@ int test_wifi_set_power_save_mode_with_params(int psmode)
 /* Get firmware version with params */
 int test_get_fw_version_with_params(char *version, uint16_t version_size)
 {
+	int ret = FAILURE;
 	if (!version || version_size == 0) {
 		printf("Invalid buffer for version\n");
 		return FAILURE;
@@ -1637,11 +1697,11 @@ int test_get_fw_version_with_params(char *version, uint16_t version_size)
 				resp->u.fw_version.minor,
 				resp->u.fw_version.revision_patch_1,
 				resp->u.fw_version.revision_patch_2);
-		return SUCCESS;
+		ret = SUCCESS;
 	}
 	CLEANUP_CTRL_MSG(req);
 	CLEANUP_CTRL_MSG(resp);
-	return FAILURE;
+	return ret;
 }
 
 /* OTA update with params */
@@ -1701,27 +1761,40 @@ int test_set_mac_addr_with_params(int mode, const char *mac) {
 }
 
 int test_set_dhcp_dns_status_with_params(char *sta_ip, char *sta_nm, char *sta_gw, char *sta_dns) {
-	/* implemented synchronous */
-	ctrl_cmd_t *req = CTRL_CMD_DEFAULT_REQ();
-	ctrl_cmd_t *resp = NULL;
+	if (network_split_enabled) {
+		/* implemented synchronous */
+		ctrl_cmd_t *req = CTRL_CMD_DEFAULT_REQ();
+		ctrl_cmd_t *resp = NULL;
 
-	if (!sta_ip || !sta_nm || !sta_gw || !sta_dns) {
-		printf("Invalid parameters\n");
+		if (!sta_ip || !sta_nm || !sta_gw || !sta_dns) {
+			printf("Invalid parameters\n");
+			return FAILURE;
+		}
+
+		req->u.dhcp_dns_status.iface = 0;
+		req->u.dhcp_dns_status.dhcp_up = 1;
+		req->u.dhcp_dns_status.dns_up = 1;
+
+		strncpy((char *)req->u.dhcp_dns_status.dhcp_ip, sta_ip, MAC_ADDR_LENGTH);
+		strncpy((char *)req->u.dhcp_dns_status.dhcp_nm, sta_nm, MAC_ADDR_LENGTH);
+		strncpy((char *)req->u.dhcp_dns_status.dhcp_gw, sta_gw, MAC_ADDR_LENGTH);
+		strncpy((char *)req->u.dhcp_dns_status.dns_ip, sta_dns, MAC_ADDR_LENGTH);
+
+		resp = set_dhcp_dns_status(req);
+
+		CLEANUP_CTRL_MSG(req);
+
+		if (!successful_response(resp)) {
+			//printf("Slave not built with network split\n");
+			CLEANUP_CTRL_MSG(resp);
+			return FAILURE;
+		}
+
+		return ctrl_app_resp_callback(resp);
+	} else {
+		printf("Network split is disabled at host. So not setting DHCP/DNS status\n");
 		return FAILURE;
 	}
-
-	req->u.dhcp_dns_status.iface = 0;
-	req->u.dhcp_dns_status.dhcp_up = 1;
-	req->u.dhcp_dns_status.dns_up = 1;
-
-	strncpy((char *)req->u.dhcp_dns_status.dhcp_ip, sta_ip, MAC_ADDR_LENGTH);
-	strncpy((char *)req->u.dhcp_dns_status.dhcp_nm, sta_nm, MAC_ADDR_LENGTH);
-	strncpy((char *)req->u.dhcp_dns_status.dhcp_gw, sta_gw, MAC_ADDR_LENGTH);
-	strncpy((char *)req->u.dhcp_dns_status.dns_ip, sta_dns, MAC_ADDR_LENGTH);
-
-	resp = set_dhcp_dns_status(req);
-	CLEANUP_CTRL_MSG(req);
-	return ctrl_app_resp_callback(resp);
 }
 
 int test_set_vendor_specific_ie_with_params(bool enable, const char *data) {
@@ -1905,4 +1978,13 @@ int test_custom_rpc_unserialised_request(uint32_t custom_msg_id, const uint8_t *
 	*recv_data_free_func = usr_resp.free_func;
 
 	return SUCCESS;
+}
+
+int test_set_network_split_enabled_at_host(int enabled) {
+    network_split_enabled = enabled;
+    return SUCCESS;
+}
+
+int is_network_split_enabled_at_host(void) {
+    return network_split_enabled == 1;
 }

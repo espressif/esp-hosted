@@ -10,133 +10,143 @@
 
 #include "nw_helper_func.h"
 
-int down_sta_netdev(const network_info_t *info) {
-    int ret = SUCCESS, sockfd = 0;
+#define ENABLE_DEBUG_LOGS 0
+#define ALLOW_ROUTE_UPDATE 1
 
-    ret = create_socket(AF_INET, SOCK_DGRAM, IPPROTO_IP, &sockfd);
-    if (ret < 0) {
-        printf("Failure to open socket\n");
-        return FAILURE;
-    }
-
-    ret = interface_down(sockfd, STA_INTERFACE);
-    if (ret == SUCCESS) {
-        //printf("%s interface down\n", STA_INTERFACE);
-    } else {
-        printf("Unable to down %s interface\n", STA_INTERFACE);
-        goto close_sock;
-    }
-
-#if 0
-    ret = remove_default_gateway(info->default_route);
-    if (ret == SUCCESS) {
-        //printf("Default gateway removed: Gateway=%s\n", info->default_route);
-    } else {
-        goto close_sock;
-    }
+#if ENABLE_DEBUG_LOGS
+  #define DEBUG_LOG_VERBOSE(fmt, ...) printf(fmt, ##__VA_ARGS__)
+#else
+  #define DEBUG_LOG_VERBOSE(fmt, ...)
 #endif
-    ret = close_socket(sockfd);
-    if (ret < 0) {
-        printf("Failure to close socket\n");
-        return FAILURE;
-    }
-    return SUCCESS;
+
+int down_sta_netdev(const network_info_t *info) {
+	int ret = SUCCESS, sockfd = 0;
+
+	ret = create_socket(AF_INET, SOCK_DGRAM, IPPROTO_IP, &sockfd);
+	if (ret < 0) {
+		printf("Failure to open socket\n");
+		return FAILURE;
+	}
+
+	ret = interface_down(sockfd, STA_INTERFACE);
+	if (ret == SUCCESS) {
+		DEBUG_LOG_VERBOSE("%s interface down\n", STA_INTERFACE);
+	} else {
+		printf("Unable to down %s interface\n", STA_INTERFACE);
+		goto close_sock;
+	}
+
+#if ALLOW_ROUTE_UPDATE
+	ret = remove_default_gateway(info->default_route);
+	if (ret == SUCCESS) {
+		DEBUG_LOG_VERBOSE("Default gateway removed: Gateway=%s\n", info->default_route);
+	} else {
+		DEBUG_LOG_VERBOSE("Failed to remove default gateway\n");
+		goto close_sock;
+	}
+#endif
+	ret = close_socket(sockfd);
+	if (ret < 0) {
+		printf("Failure to close socket\n");
+		return FAILURE;
+	}
+	return SUCCESS;
 
 close_sock:
-    ret = close_socket(sockfd);
-    if (ret < 0) {
-        printf("Failure to close socket\n");
-    }
-    return FAILURE;
+	ret = close_socket(sockfd);
+	if (ret < 0) {
+		printf("Failure to close socket\n");
+	}
+	return FAILURE;
 }
 
 int up_sta_netdev(const network_info_t *info)
 {
-    int ret = SUCCESS, sockfd = 0;
-    char mac_copy[MAC_ADDR_LENGTH];
-    char ip_copy[MAC_ADDR_LENGTH];
-    char nm_copy[MAC_ADDR_LENGTH];
-    char gw_copy[MAC_ADDR_LENGTH];
+	int ret = SUCCESS, sockfd = 0;
+	char mac_copy[MAC_ADDR_LENGTH];
+	char ip_copy[MAC_ADDR_LENGTH];
+	char nm_copy[MAC_ADDR_LENGTH];
+	char gw_copy[MAC_ADDR_LENGTH];
 
-    if (!info || info->mac_addr[0] == '\0') {
-        printf("Failure: station mac is empty\n");
-        return FAILURE;
-    }
+	if (!info || info->mac_addr[0] == '\0') {
+		printf("Failure: station mac is empty\n");
+		return FAILURE;
+	}
 
-    if (info->ip_addr[0] == '\0' || info->netmask[0] == '\0' || info->gateway[0] == '\0' ||
-        strcmp(info->ip_addr, "0.0.0.0") == 0 || strcmp(info->netmask, "0.0.0.0") == 0 || 
-        strcmp(info->gateway, "0.0.0.0") == 0) {
-        printf("Invalid network conf to set\n");
-        return FAILURE;
-    }
+	if (info->ip_addr[0] == '\0' || info->netmask[0] == '\0' || info->gateway[0] == '\0' ||
+		strcmp(info->ip_addr, "0.0.0.0") == 0 || strcmp(info->netmask, "0.0.0.0") == 0 ||
+		strcmp(info->gateway, "0.0.0.0") == 0) {
+		printf("Invalid network conf to set\n");
+		return FAILURE;
+	}
 
-    /* Create local copies to handle const qualifiers */
-    strncpy(mac_copy, info->mac_addr, MAC_ADDR_LENGTH);
-    strncpy(ip_copy, info->ip_addr, MAC_ADDR_LENGTH);
-    strncpy(nm_copy, info->netmask, MAC_ADDR_LENGTH);
-    strncpy(gw_copy, info->gateway, MAC_ADDR_LENGTH);
+	/* Create local copies to handle const qualifiers */
+	strncpy(mac_copy, info->mac_addr, MAC_ADDR_LENGTH);
+	strncpy(ip_copy, info->ip_addr, MAC_ADDR_LENGTH);
+	strncpy(nm_copy, info->netmask, MAC_ADDR_LENGTH);
+	strncpy(gw_copy, info->gateway, MAC_ADDR_LENGTH);
 
-    ret = create_socket(AF_INET, SOCK_DGRAM, IPPROTO_IP, &sockfd);
-    if (ret < 0) {
-        printf("Failure to open socket\n");
-        return FAILURE;
-    }
+	ret = create_socket(AF_INET, SOCK_DGRAM, IPPROTO_IP, &sockfd);
+	if (ret < 0) {
+		printf("Failure to open socket\n");
+		return FAILURE;
+	}
 
-    ret = interface_down(sockfd, STA_INTERFACE);
-    if (ret == SUCCESS) {
-        //printf("%s interface down\n", STA_INTERFACE);
-    } else {
-        printf("Unable to down %s interface\n", STA_INTERFACE);
-        goto close_sock;
-    }
+	ret = interface_down(sockfd, STA_INTERFACE);
+	if (ret == SUCCESS) {
+		DEBUG_LOG_VERBOSE("%s interface down\n", STA_INTERFACE);
+	} else {
+		printf("Unable to down %s interface\n", STA_INTERFACE);
+		goto close_sock;
+	}
 
-    ret = set_hw_addr(sockfd, STA_INTERFACE, mac_copy);
-    if (ret == SUCCESS) {
-        //printf("MAC address %s set to %s interface\n", mac_copy, STA_INTERFACE);
-    } else {
-        printf("Unable to set MAC address to %s interface\n", STA_INTERFACE);
-        goto close_sock;
-    }
+	ret = set_hw_addr(sockfd, STA_INTERFACE, mac_copy);
+	if (ret == SUCCESS) {
+		DEBUG_LOG_VERBOSE("MAC address %s set to %s interface\n", mac_copy, STA_INTERFACE);
+	} else {
+		printf("Unable to set MAC address to %s interface\n", STA_INTERFACE);
+		goto close_sock;
+	}
 
-    ret = interface_up(sockfd, STA_INTERFACE);
-    if (ret == SUCCESS) {
-        //printf("%s interface up\n", STA_INTERFACE);
-    } else {
-        printf("Unable to up %s interface\n", STA_INTERFACE);
-        goto close_sock;
-    }
+	ret = interface_up(sockfd, STA_INTERFACE);
+	if (ret == SUCCESS) {
+		DEBUG_LOG_VERBOSE("%s interface up\n", STA_INTERFACE);
+	} else {
+		printf("Unable to up %s interface\n", STA_INTERFACE);
+		goto close_sock;
+	}
 
-    ret = set_network_static_ip(sockfd, STA_INTERFACE, ip_copy, nm_copy, gw_copy);
-    if (ret == SUCCESS) {
-        //printf("Static IP set: IP=%s, Netmask=%s, Gateway=%s\n", ip_copy, nm_copy, gw_copy);
-    } else {
-        printf("Failed to set static IP\n");
-        goto close_sock;
-    }
+	ret = set_network_static_ip(sockfd, STA_INTERFACE, ip_copy, nm_copy, gw_copy);
+	if (ret == SUCCESS) {
+		DEBUG_LOG_VERBOSE("Static IP set: IP=%s, Netmask=%s, Gateway=%s\n", ip_copy, nm_copy, gw_copy);
+	} else {
+		printf("Failed to set static IP\n");
+		goto close_sock;
+	}
 
-#if 0
-    ret = add_default_gateway(gw_copy);
-    if (ret == SUCCESS) {
-        //printf("Default gateway added: Gateway=%s\n", gw_copy);
-    } else {
-        printf("Failed to add default gateway\n");
-        goto close_sock;
-    }
+#if ALLOW_ROUTE_UPDATE
+	ret = add_default_gateway(gw_copy);
+	if (ret == SUCCESS) {
+		DEBUG_LOG_VERBOSE("Default gateway added: Gateway=%s\n", gw_copy);
+	} else {
+		printf("Failed to add default gateway\n");
+		goto close_sock;
+	}
 #endif
 
-    ret = close_socket(sockfd);
-    if (ret < 0) {
-        printf("Failure to close socket\n");
-        return FAILURE;
-    }
-    return SUCCESS;
+	ret = close_socket(sockfd);
+	if (ret < 0) {
+		printf("Failure to close socket\n");
+		return FAILURE;
+	}
+	return SUCCESS;
 
 close_sock:
-    ret = close_socket(sockfd);
-    if (ret < 0) {
-        printf("Failure to close socket\n");
-    }
-    return FAILURE;
+	ret = close_socket(sockfd);
+	if (ret < 0) {
+		printf("Failure to close socket\n");
+	}
+	return FAILURE;
 }
 
 int down_softap_netdev(const network_info_t *info)
@@ -151,18 +161,18 @@ int down_softap_netdev(const network_info_t *info)
 
 	ret = interface_down(sockfd, AP_INTERFACE);
 	if (ret == SUCCESS) {
-		//printf("%s interface down\n", AP_INTERFACE);
+		DEBUG_LOG_VERBOSE("%s interface down\n", AP_INTERFACE);
 	} else {
 		printf("Unable to down %s interface\n", AP_INTERFACE);
 		goto close_sock;
 	}
 
-#if 0
+#if ALLOW_ROUTE_UPDATE
 	ret = remove_default_gateway(info->default_route);
 	if (ret == SUCCESS) {
-		//printf("Default gateway removed: Gateway=%s", info->default_route);
+		DEBUG_LOG_VERBOSE("Default gateway removed: Gateway=%s", info->default_route);
 	} else {
-		printf("Failed to remove default gateway");
+		DEBUG_LOG_VERBOSE("Failed to remove default gateway");
 		goto close_sock;
 	}
 #endif
@@ -184,66 +194,66 @@ close_sock:
 
 int up_softap_netdev(const network_info_t *info)
 {
-    int ret = SUCCESS, sockfd = 0;
-    char mac_copy[MAC_ADDR_LENGTH];
+	int ret = SUCCESS, sockfd = 0;
+	char mac_copy[MAC_ADDR_LENGTH];
 
-    if (!info || info->mac_addr[0] == '\0') {
-        printf("Failure: softap mac is empty\n");
-        return FAILURE;
-    }
+	if (!info || info->mac_addr[0] == '\0') {
+		printf("Failure: softap mac is empty\n");
+		return FAILURE;
+	}
 
-    /* Create local copy to handle const qualifier */
-    strncpy(mac_copy, info->mac_addr, MAC_ADDR_LENGTH);
+	/* Create local copy to handle const qualifier */
+	strncpy(mac_copy, info->mac_addr, MAC_ADDR_LENGTH);
 
-    ret = create_socket(AF_INET, SOCK_DGRAM, IPPROTO_IP, &sockfd);
-    if (ret < 0) {
-        printf("Failure to open socket\n");
-        return FAILURE;
-    }
+	ret = create_socket(AF_INET, SOCK_DGRAM, IPPROTO_IP, &sockfd);
+	if (ret < 0) {
+		printf("Failure to open socket\n");
+		return FAILURE;
+	}
 
-    ret = interface_down(sockfd, AP_INTERFACE);
-    if (ret == SUCCESS) {
-        //printf("%s interface down\n", AP_INTERFACE);
-    } else {
-        printf("Unable to down %s interface\n", AP_INTERFACE);
-        goto close_sock;
-    }
+	ret = interface_down(sockfd, AP_INTERFACE);
+	if (ret == SUCCESS) {
+		DEBUG_LOG_VERBOSE("%s interface down\n", AP_INTERFACE);
+	} else {
+		printf("Unable to down %s interface\n", AP_INTERFACE);
+		goto close_sock;
+	}
 
-    ret = set_hw_addr(sockfd, AP_INTERFACE, mac_copy);
-    if (ret == SUCCESS) {
-        //printf("MAC address %s set to %s interface\n", mac_copy, AP_INTERFACE);
-    } else {
-        printf("Unable to set MAC address to %s interface\n", AP_INTERFACE);
-        goto close_sock;
-    }
+	ret = set_hw_addr(sockfd, AP_INTERFACE, mac_copy);
+	if (ret == SUCCESS) {
+		DEBUG_LOG_VERBOSE("MAC address %s set to %s interface\n", mac_copy, AP_INTERFACE);
+	} else {
+		printf("Unable to set MAC address to %s interface\n", AP_INTERFACE);
+		goto close_sock;
+	}
 
-    ret = interface_up(sockfd, AP_INTERFACE);
-    if (ret == SUCCESS) {
-        //printf("%s interface up\n", AP_INTERFACE);
-    } else {
-        printf("Unable to up %s interface\n", AP_INTERFACE);
-        goto close_sock;
-    }
+	ret = interface_up(sockfd, AP_INTERFACE);
+	if (ret == SUCCESS) {
+		DEBUG_LOG_VERBOSE("%s interface up\n", AP_INTERFACE);
+	} else {
+		printf("Unable to up %s interface\n", AP_INTERFACE);
+		goto close_sock;
+	}
 
-    ret = close_socket(sockfd);
-    if (ret < 0) {
-        printf("Failure to close socket\n");
-        return FAILURE;
-    }
-    return SUCCESS;
+	ret = close_socket(sockfd);
+	if (ret < 0) {
+		printf("Failure to close socket\n");
+		return FAILURE;
+	}
+	return SUCCESS;
 
 close_sock:
-    ret = close_socket(sockfd);
-    if (ret < 0) {
-        printf("Failure to close socket\n");
-    }
-    return FAILURE;
+	ret = close_socket(sockfd);
+	if (ret < 0) {
+		printf("Failure to close socket\n");
+	}
+	return FAILURE;
 }
 
 
-#define MAX_INTERFACE_LEN            IFNAMSIZ
-#define MAC_SIZE_BYTES               6
-#define MIN_MAC_STR_LEN              17
+#define MAX_INTERFACE_LEN			 IFNAMSIZ
+#define MAC_SIZE_BYTES				 6
+#define MIN_MAC_STR_LEN				 17
 
  /* Function ups in given interface */
 int interface_up(int sockfd, const char* iface)
@@ -313,7 +323,9 @@ int add_default_gateway(const char* gateway)
 	/* Add the route */
 	ret = ioctl(sockfd, SIOCADDRT, &route);
 	if (ret < 0) {
-		perror("add route failed:");
+		#if ENABLE_DEBUG_LOGS
+			perror("add route failed:");
+		#endif
 		close(sockfd);
 		return FAILURE;
 	}
@@ -360,7 +372,9 @@ int remove_default_gateway(const char* gateway)
 	/* Remove the route */
 	ret = ioctl(sockfd, SIOCDELRT, &route);
 	if (ret < 0) {
-		//perror("remove route failed:");
+		#if ENABLE_DEBUG_LOGS
+			perror("remove route failed:");
+		#endif
 		close(sockfd);
 		return FAILURE;
 	}
@@ -416,7 +430,9 @@ int set_network_static_ip(int sockfd, const char* iface, const char* ip, const c
 	addr->sin_addr.s_addr = inet_addr(gateway);
 	ret = ioctl(sockfd, SIOCSIFDSTADDR, &req);
 	if (ret < 0) {
-		perror("set gateway:");
+		#if ENABLE_DEBUG_LOGS
+			perror("set gateway:");
+		#endif
 		return FAILURE;
 	}
 
@@ -551,7 +567,9 @@ int interface_down(int sockfd, const char* iface)
 	req.ifr_flags &= ~IFF_UP;
 	ret = ioctl(sockfd, SIOCSIFFLAGS, &req);
 	if (ret < 0) {
-		perror("interface down:");
+		#if ENABLE_DEBUG_LOGS
+			perror("interface down:");
+		#endif
 		return FAILURE;
 	}
 	return SUCCESS;
@@ -580,13 +598,13 @@ int convert_mac_to_bytes(uint8_t *out, size_t out_size, const char *s)
 	num_bytes =  sscanf(s, "%2x:%2x:%2x:%2x:%2x:%2x",
 			&mac[0],&mac[1], &mac[2], &mac[3], &mac[4], &mac[5]);
 
-	if ((num_bytes < (MAC_SIZE_BYTES - 1))  ||
-	    (mac[0] > 0xFF) ||
-	    (mac[1] > 0xFF) ||
-	    (mac[2] > 0xFF) ||
-	    (mac[3] > 0xFF) ||
-	    (mac[4] > 0xFF) ||
-	    (mac[5] > 0xFF)) {
+	if ((num_bytes < (MAC_SIZE_BYTES - 1))	||
+		(mac[0] > 0xFF) ||
+		(mac[1] > 0xFF) ||
+		(mac[2] > 0xFF) ||
+		(mac[3] > 0xFF) ||
+		(mac[4] > 0xFF) ||
+		(mac[5] > 0xFF)) {
 		printf("failed\n");
 		return FAILURE;
 	}
@@ -673,82 +691,151 @@ int close_socket(int sock)
 
 int update_host_network_port_range(uint16_t port_start, uint16_t port_end)
 {
-    FILE *fp = NULL;
-    char line[256];
-    int found = 0;
-    char temp_file[] = "/tmp/sysctl.conf.XXXXXX";
-    int temp_fd;
-    FILE *temp_fp = NULL;
-    char current_start[16], current_end[16];
-    
-    /* Open sysctl.conf file */
-    fp = fopen("/etc/sysctl.conf", "r");
-    if (!fp) {
-        printf("Failed to open /etc/sysctl.conf: %s\n", strerror(errno));
-        return FAILURE;
-    }
+	FILE *fp = NULL;
+	char line[256];
+	int found = 0;
+	char temp_file[] = "/tmp/sysctl.conf.XXXXXX";
+	int temp_fd;
+	FILE *temp_fp = NULL;
+	char current_start[16], current_end[16];
 
-    /* Check if entry exists with same values */
-    while (fgets(line, sizeof(line), fp)) {
-        if (strstr(line, "net.ipv4.ip_local_port_range")) {
-            if (sscanf(line, "net.ipv4.ip_local_port_range = %s %s", current_start, current_end) == 2) {
-                if (atoi(current_start) == port_start && atoi(current_end) == port_end) {
-                    printf("Port range already set to %u-%u\n", port_start, port_end);
-                    fclose(fp);
-                    return SUCCESS;
-                }
-            }
-        }
-    }
-    rewind(fp);
+	/* Open sysctl.conf file */
+	fp = fopen("/etc/sysctl.conf", "r");
+	if (!fp) {
+		printf("Failed to open /etc/sysctl.conf: %s\n", strerror(errno));
+		return FAILURE;
+	}
 
-    /* Create temp file */
-    temp_fd = mkstemp(temp_file);
-    if (temp_fd < 0) {
-        printf("Failed to create temp file: %s\n", strerror(errno));
-        fclose(fp);
-        return FAILURE;
-    }
+	/* Check if entry exists with same values */
+	while (fgets(line, sizeof(line), fp)) {
+		if (strstr(line, "net.ipv4.ip_local_port_range")) {
+			if (sscanf(line, "net.ipv4.ip_local_port_range = %s %s", current_start, current_end) == 2) {
+				if (atoi(current_start) == port_start && atoi(current_end) == port_end) {
+					printf("Port range already set to %u-%u\n", port_start, port_end);
+					fclose(fp);
+					return SUCCESS;
+				}
+			}
+		}
+	}
+	rewind(fp);
 
-    temp_fp = fdopen(temp_fd, "w");
-    if (!temp_fp) {
-        printf("Failed to open temp file: %s\n", strerror(errno));
-        close(temp_fd);
-        fclose(fp);
-        return FAILURE;
-    }
+	/* Create temp file */
+	temp_fd = mkstemp(temp_file);
+	if (temp_fd < 0) {
+		printf("Failed to create temp file: %s\n", strerror(errno));
+		fclose(fp);
+		return FAILURE;
+	}
 
-    /* Update file contents */
-    while (fgets(line, sizeof(line), fp)) {
-        if (strstr(line, "net.ipv4.ip_local_port_range")) {
-            fprintf(temp_fp, "net.ipv4.ip_local_port_range = %u %u\n", port_start, port_end);
-            found = 1;
-        } else {
-            fputs(line, temp_fp);
-        }
-    }
+	temp_fp = fdopen(temp_fd, "w");
+	if (!temp_fp) {
+		printf("Failed to open temp file: %s\n", strerror(errno));
+		close(temp_fd);
+		fclose(fp);
+		return FAILURE;
+	}
 
-    /* Add entry if not found */
-    if (!found) {
-        fprintf(temp_fp, "net.ipv4.ip_local_port_range = %u %u\n", port_start, port_end);
-    }
+	/* Update file contents */
+	while (fgets(line, sizeof(line), fp)) {
+		if (strstr(line, "net.ipv4.ip_local_port_range")) {
+			fprintf(temp_fp, "net.ipv4.ip_local_port_range = %u %u\n", port_start, port_end);
+			found = 1;
+		} else {
+			fputs(line, temp_fp);
+		}
+	}
 
-    fclose(fp);
-    fclose(temp_fp);
+	/* Add entry if not found */
+	if (!found) {
+		fprintf(temp_fp, "net.ipv4.ip_local_port_range = %u %u\n", port_start, port_end);
+	}
 
-    /* Replace original with temp file */
-    if (rename(temp_file, "/etc/sysctl.conf") != 0) {
-        printf("Failed to update sysctl.conf: %s\n", strerror(errno));
-        unlink(temp_file);
-        return FAILURE;
-    }
+	fclose(fp);
+	fclose(temp_fp);
 
-    /* Apply changes */
-    if (system("sysctl -p") != 0) {
-        printf("Failed to apply sysctl changes\n");
-        return FAILURE;
-    }
+	/* Replace original with temp file */
+	if (rename(temp_file, "/etc/sysctl.conf") != 0) {
+		printf("Failed to update sysctl.conf: %s\n", strerror(errno));
+		unlink(temp_file);
+		return FAILURE;
+	}
 
-    printf("Port range updated successfully to %u-%u\n", port_start, port_end);
-    return SUCCESS;
+	/* Apply changes */
+	if (system("sysctl -p") != 0) {
+		printf("Failed to apply sysctl changes\n");
+		return FAILURE;
+	}
+
+	printf("Port range updated successfully to %u-%u\n", port_start, port_end);
+	return SUCCESS;
 }
+
+int clear_host_network_port_range(void)
+{
+	FILE *fp = NULL;
+	char line[256];
+	int found = 0;
+	char temp_file[] = "/tmp/sysctl.conf.XXXXXX";
+	int temp_fd;
+	FILE *temp_fp = NULL;
+
+	/* Open sysctl.conf file */
+	fp = fopen("/etc/sysctl.conf", "r");
+	if (!fp) {
+		printf("Failed to open /etc/sysctl.conf: %s\n", strerror(errno));
+		return FAILURE;
+	}
+
+	/* Create temp file */
+	temp_fd = mkstemp(temp_file);
+	if (temp_fd < 0) {
+		printf("Failed to create temp file: %s\n", strerror(errno));
+		fclose(fp);
+		return FAILURE;
+	}
+
+	temp_fp = fdopen(temp_fd, "w");
+	if (!temp_fp) {
+		printf("Failed to open temp file: %s\n", strerror(errno));
+		close(temp_fd);
+		fclose(fp);
+		return FAILURE;
+	}
+
+	/* Copy all lines except port range setting */
+	while (fgets(line, sizeof(line), fp)) {
+		if (strstr(line, "net.ipv4.ip_local_port_range")) {
+			found = 1;
+		} else {
+			fputs(line, temp_fp);
+		}
+	}
+
+	fclose(fp);
+	fclose(temp_fp);
+
+	/* Replace original with temp file only if we found and removed an entry */
+	if (found) {
+		if (rename(temp_file, "/etc/sysctl.conf") != 0) {
+			printf("Failed to update sysctl.conf: %s\n", strerror(errno));
+			unlink(temp_file);
+			return FAILURE;
+		}
+
+		/* Apply changes */
+		if (system("sysctl -p") != 0) {
+			printf("Failed to apply sysctl changes\n");
+			return FAILURE;
+		}
+
+		printf("Host network port range configuration cleared successfully\n");
+	} else {
+		/* No entry found, just remove the temp file */
+		unlink(temp_file);
+		printf("No port range configuration found to clear\n");
+	}
+
+	return SUCCESS;
+}
+

@@ -3,7 +3,6 @@ dependencies:
     path: ${IDF_PATH}/examples/system/console/advanced/components/cmd_system
   espressif/iperf:
     version: "*"
-    path: ../components/iperf
   espressif/iperf-cmd:
     version: "~0.1.1"
   esp-qa/wifi-cmd:

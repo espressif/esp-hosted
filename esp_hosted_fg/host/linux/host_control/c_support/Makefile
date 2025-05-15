@@ -43,7 +43,19 @@ SRC += nw_helper_func.c test_utils.c app_custom_rpc.c
 
 PWD := $(shell pwd)
 
-all: test stress hosted_daemon hosted_shell
+# Check if replxx is installed by looking for the header file
+REPLXX_INSTALLED := $(shell if [ -f /usr/include/replxx.h ] || [ -f /usr/local/include/replxx.h ]; then echo "yes"; else echo "no"; fi)
+
+ifeq ($(REPLXX_INSTALLED), yes)
+    BUILD_SHELL := hosted_shell
+else
+    BUILD_SHELL :=
+    $(warning "replxx library not found. hosted_shell will not be built.")
+    $(warning "You can install it from https://github.com/AmokHuginnsson/replxx")
+    $(warning "Retry building using 'make hosted_shell' in folder 'host/linux/host_control/c_support'")
+endif
+
+all: test stress hosted_daemon $(BUILD_SHELL)
 
 test: test.c $(SRC)
 	$(CROSS_COMPILE)$(CC) $(CFLAGS) $(INCLUDE) $(SRC)  $(LINKER) $< -o $(@).out

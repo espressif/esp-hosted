@@ -146,10 +146,18 @@ build_c_demo_app() {
 		log "Failed to build test app"
 		exit 1
 	fi
-	make -j8 hosted_shell
-	if [ $? -ne 0 ]; then
-		log "Failed to build test app"
-		exit 1
+
+	# Check if replxx library is available by looking for the header file
+	if [ -f /usr/include/replxx.h ] || [ -f /usr/local/include/replxx.h ]; then
+		make -j8 hosted_shell
+		if [ $? -ne 0 ]; then
+			log "Failed to build hosted_shell app"
+			exit 1
+		fi
+	else
+		warn "replxx library not found. Skipping hosted_shell build."
+		warn "To install replxx: sudo apt-get install replxx"
+		warn "After installing, run 'make -j8 hosted_shell' in 'host/linux/host_control/c_support' directory"
 	fi
 
 	cd ..

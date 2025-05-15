@@ -170,6 +170,11 @@ static int esp_set_mac_address(struct net_device *ndev, void *data)
 	if (!priv)
 		return -EINVAL;
 
+	if (!is_valid_ether_addr(mac_addr->sa_data)) {
+		esp_err("Invalid MAC address\n");
+		return -EINVAL;
+	}
+
 	ether_addr_copy(priv->mac_address, mac_addr->sa_data);
 	eth_hw_addr_set(ndev, mac_addr->sa_data);
 
@@ -222,14 +227,14 @@ u8 esp_is_bt_supported_over_sdio(u32 cap)
 __weak int esp_init_bt(struct esp_adapter *adapter)
 {
 	/* weak def if 'bt over hci' is not needed */
-	esp_warn("Ignoring bluetooth api %s\n", __func__);
+	esp_info("Ignore bluetooth api %s\n", __func__);
 	return 0;
 }
 
 __weak int esp_deinit_bt(struct esp_adapter *adapter)
 {
 	/* weak def if 'bt over hci' is not needed */
-	esp_warn("Ignoring bluetooth api %s\n", __func__);
+	esp_info("Ignore bluetooth api %s\n", __func__);
 	return 0;
 }
 
@@ -382,15 +387,27 @@ static int process_tx_packet (struct sk_buff *skb)
 void process_capabilities(u8 cap)
 {
 	struct esp_adapter *adapter = esp_get_adapter();
+	int ret;
+
+	if (!adapter) {
+		esp_err("NULL adapter\n");
+		return;
+	}
+
 	esp_info("ESP peripheral capabilities: 0x%x\n", cap);
 	adapter->capabilities = cap;
 
 	/* Reset BT */
-	esp_deinit_bt(esp_get_adapter());
+	esp_deinit_bt(adapter);
+	msleep(200);
 
 	if ((cap & ESP_BT_SPI_SUPPORT) || (cap & ESP_BT_SDIO_SUPPORT)) {
-		msleep(200);
-		esp_init_bt(esp_get_adapter());
+		ret = esp_init_bt(adapter);
+		if (ret) {
+			esp_err("Failed to init BT: %d\n", ret);
+		}
+	} else {
+		esp_info("No BT support in capabilities (0x%x)\n", cap);
 	}
 }
 
@@ -565,6 +582,7 @@ void esp_tx_pause(void)
         priv = adapter.priv[i];
         if (priv && priv->ndev && !netif_queue_stopped(priv->ndev)) {
             netif_stop_queue(priv->ndev);
+			esp_verbose("TX queue paused on interface %d\n", i);
         }
     }
 }
@@ -574,17 +592,11 @@ void esp_tx_resume(void)
     struct esp_private *priv;
     int i;
 
-#if 0
-    /* Only resume if we're below threshold */
-    if (atomic_read(&tx_pending) >= TX_RESUME_THRESHOLD)
-        return;
-#endif
-
     for (i = 0; i < ESP_MAX_INTERFACE; i++) {
         priv = adapter.priv[i];
         if (priv && priv->ndev && netif_queue_stopped(priv->ndev)) {
             netif_wake_queue(priv->ndev);
-            esp_info("TX queue resumed on interface %d\n", i);
+            esp_verbose("TX queue resumed on interface %d\n", i);
         }
     }
 }
@@ -694,7 +706,6 @@ static int esp_init_net_dev(struct net_device *ndev, struct esp_private *priv)
 		esp_err("Failed to register netdev\n");
 		return ret;
 	}
-	//netif_carrier_off(ndev);
 
 	return ret;
 }
@@ -945,17 +956,28 @@ static int __init esp_init(void)
 
 static void __exit esp_exit(void)
 {
-	esp_info("esp module unload\n");
+	esp_info("esp module unload starting\n");
+
+	stop_data = 1;
+
+	esp_serial_cleanup();
+
+	esp_deinit_bt(&adapter);
+	msleep(200);
+
 #if TEST_RAW_TP
 	test_raw_tp_cleanup();
 #endif
-	esp_serial_cleanup();
+
 	esp_deinit_interface_layer();
+
 	deinit_adapter();
 
 	if (resetpin != MOD_PARAM_UNINITIALISED) {
 		gpio_free(resetpin);
 	}
+
+	esp_info("esp module unload complete\n");
 }
 
 module_init(esp_init);

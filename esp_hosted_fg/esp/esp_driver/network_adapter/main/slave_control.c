@@ -23,7 +23,7 @@
 #include "esp_ota_ops.h"
 #include "slave_bt.h"
 #include "esp_fw_version.h"
-#ifdef CONFIG_SLAVE_LWIP_ENABLED
+#ifdef CONFIG_NETWORK_SPLIT_ENABLED
 #include "esp_check.h"
 #include "lwip/inet.h"
 #include "host_power_save.h"
@@ -73,7 +73,7 @@
             }                       \
         }
 
-#ifdef CONFIG_SLAVE_LWIP_ENABLED
+#ifdef CONFIG_NETWORK_SPLIT_ENABLED
 
 typedef struct {
 	int iface;
@@ -88,10 +88,11 @@ typedef struct {
 } ctrl_msg_set_dhcp_dns_status_t;
 
 static ctrl_msg_set_dhcp_dns_status_t s2h_dhcp_dns;
-static wifi_config_t prev_wifi_config = {0};
-static bool prev_wifi_config_valid = false;
 
 #endif
+
+static wifi_config_t prev_wifi_config = {0};
+static bool prev_wifi_config_valid = false;
 
 typedef struct esp_ctrl_msg_cmd {
 	int req_num;
@@ -107,17 +108,15 @@ static bool event_registered = false;
 /* FreeRTOS event group to signal when we are connected*/
 static EventGroupHandle_t wifi_event_group;
 
-#ifdef CONFIG_SLAVE_LWIP_ENABLED
+#ifdef CONFIG_NETWORK_SPLIT_ENABLED
 static esp_event_handler_instance_t instance_ip;
 extern volatile uint8_t station_got_ip;
-
-
-uint16_t sta_connect_retry;
 static wifi_event_sta_connected_t lkg_sta_connected_event = {0};
-extern uint8_t host_available;
-
 //static ip_event_got_ip_t lkg_sta_got_ip_event = {0};
 #endif
+uint16_t sta_connect_retry;
+
+extern uint8_t host_available;
 
 static bool scan_done = false;
 static esp_ota_handle_t handle;
@@ -166,7 +165,7 @@ static void send_wifi_event_data_to_host(int event, void *event_data, int event_
 esp_err_t esp_hosted_set_sta_config(wifi_interface_t iface, wifi_config_t *cfg)
 {
 	int ret = 0;
-	esp_wifi_set_storage(WIFI_STORAGE_RAM);
+	//esp_wifi_set_storage(WIFI_STORAGE_RAM);
 	if (!prev_wifi_config_valid || !is_wifi_config_equal(cfg, &prev_wifi_config)) {
 		ESP_LOGI(TAG, "Setting new WiFi config SSID: %s", cfg->sta.ssid);
 		ret = esp_wifi_set_config(iface, cfg);
@@ -183,7 +182,7 @@ esp_err_t esp_hosted_set_sta_config(wifi_interface_t iface, wifi_config_t *cfg)
 	return ESP_OK;
 }
 
-#ifdef CONFIG_SLAVE_LWIP_ENABLED
+#ifdef CONFIG_NETWORK_SPLIT_ENABLED
 
 void send_dhcp_dns_info_to_host(uint8_t network_up, uint8_t send_wifi_connected)
 {
@@ -272,31 +271,12 @@ static void event_handler_ip(void* arg, esp_event_base_t event_base,
 #endif
 
 
-extern esp_netif_t *slave_sta_netif;
-
-static esp_err_t set_slave_static_ip(wifi_interface_t iface, char *ip, char *nm, char *gw)
-{
-#ifndef CONFIG_SLAVE_MANAGES_WIFI
-	esp_netif_ip_info_t ip_info = {0};
-
-	ESP_RETURN_ON_FALSE(iface == WIFI_IF_STA, ESP_FAIL, TAG, "only sta iface supported yet");
-
-	ip_info.ip.addr = ipaddr_addr(ip);
-	ip_info.netmask.addr = ipaddr_addr(nm);
-	ip_info.gw.addr = ipaddr_addr(gw);
-
-	ESP_LOGI(TAG, "Set static IP addr ip:%s nm:%s gw:%s", ip, nm, gw);
-	ESP_ERROR_CHECK(esp_netif_set_ip_info(slave_sta_netif, &ip_info));
-	esp_wifi_internal_reg_rxcb(ESP_IF_WIFI_STA, (wifi_rxcb_t) wlan_sta_rx_callback);
-#endif
-
-	return ESP_OK;
-}
 
 
+#if defined(CONFIG_NETWORK_SPLIT_ENABLED) && defined(CONFIG_SLAVE_MANAGES_WIFI)
 static esp_err_t get_slave_static_ip(wifi_interface_t iface, esp_netif_ip_info_t *ip_info, uint8_t *netlink_up)
 {
-#ifdef CONFIG_SLAVE_MANAGES_WIFI
+
 	if (!ip_info || !netlink_up) {
 		ESP_LOGE(TAG, "Invalid parameters");
 		return ESP_FAIL;
@@ -320,14 +300,14 @@ static esp_err_t get_slave_static_ip(wifi_interface_t iface, esp_netif_ip_info_t
 
 	ESP_ERROR_CHECK(esp_netif_get_ip_info(slave_sta_netif, ip_info));
 	*netlink_up = esp_netif_is_netif_up(slave_sta_netif);
-#endif
+
 
 	return ESP_OK;
 }
 
 esp_err_t get_slave_dns(wifi_interface_t iface, esp_netif_dns_info_t *dns)
 {
-#ifdef CONFIG_SLAVE_MANAGES_WIFI
+
 	if (!dns) {
 		ESP_LOGE(TAG, "Invalid parameters");
 		return ESP_FAIL;
@@ -349,13 +329,35 @@ esp_err_t get_slave_dns(wifi_interface_t iface, esp_netif_dns_info_t *dns)
 	}
 
 	ESP_ERROR_CHECK(esp_netif_get_dns_info(slave_sta_netif, ESP_NETIF_DNS_MAIN, dns));
+
+	return ESP_OK;
+}
 #endif
+
+#if defined(CONFIG_NETWORK_SPLIT_ENABLED) && !defined(CONFIG_SLAVE_MANAGES_WIFI)
+extern esp_netif_t *slave_sta_netif;
+
+static esp_err_t set_slave_static_ip(wifi_interface_t iface, char *ip, char *nm, char *gw)
+{
+
+	esp_netif_ip_info_t ip_info = {0};
+
+	ESP_RETURN_ON_FALSE(iface == WIFI_IF_STA, ESP_FAIL, TAG, "only sta iface supported yet");
+
+	ip_info.ip.addr = ipaddr_addr(ip);
+	ip_info.netmask.addr = ipaddr_addr(nm);
+	ip_info.gw.addr = ipaddr_addr(gw);
+
+	ESP_LOGI(TAG, "Set static IP addr ip:%s nm:%s gw:%s", ip, nm, gw);
+	ESP_ERROR_CHECK(esp_netif_set_ip_info(slave_sta_netif, &ip_info));
+	esp_wifi_internal_reg_rxcb(ESP_IF_WIFI_STA, (wifi_rxcb_t) wlan_sta_rx_callback);
+
+
 	return ESP_OK;
 }
 
 esp_err_t set_slave_dns(wifi_interface_t iface, char *ip, uint8_t type)
 {
-#ifndef CONFIG_SLAVE_MANAGES_WIFI
 	esp_netif_dns_info_t dns = {0};
 
 	ESP_RETURN_ON_FALSE(iface == WIFI_IF_STA, ESP_FAIL, TAG, "only sta iface supported yet");
@@ -365,10 +367,10 @@ esp_err_t set_slave_dns(wifi_interface_t iface, char *ip, uint8_t type)
 
 	ESP_LOGI(TAG, "Set DNS ip:%s type:%u", ip, type);
 	ESP_ERROR_CHECK(esp_netif_set_dns_info(slave_sta_netif, ESP_NETIF_DNS_MAIN, &dns));
-#endif
 
 	return ESP_OK;
 }
+#endif
 
 /* event handler for station connect/disconnect to/from AP */
 static void station_event_handler(void *arg, esp_event_base_t event_base,
@@ -383,8 +385,10 @@ static void station_event_handler(void *arg, esp_event_base_t event_base,
 
 		/* Mark as station disconnected */
 		station_connected = false;
+	#ifdef CONFIG_NETWORK_SPLIT_ENABLED
 		s2h_dhcp_dns.dhcp_up = s2h_dhcp_dns.dns_up = s2h_dhcp_dns.net_link_up = 0;
 		station_got_ip = 0;
+	#endif
 
 		if ((WIFI_HOST_REQUEST_BIT & xEventGroupGetBits(wifi_event_group)) != WIFI_HOST_REQUEST_BIT) {
 			/* Event should not be triggered if event handler is
@@ -402,10 +406,11 @@ static void station_event_handler(void *arg, esp_event_base_t event_base,
 		}
 
 
-#ifdef CONFIG_SLAVE_MANAGES_WIFI
+#ifdef CONFIG_NETWORK_SPLIT_ENABLED
 		send_dhcp_dns_info_to_host(0, 0);
 #endif
 
+		vTaskDelay(10);
 		ESP_LOGI(TAG, "Sta mode disconnect, retry[%u]", sta_connect_retry);
 		sta_connect_retry++;
 
@@ -418,7 +423,7 @@ static void station_event_handler(void *arg, esp_event_base_t event_base,
 			xEventGroupSetBits(wifi_event_group, WIFI_WRONG_PASSWORD_BIT);
 		else
 			xEventGroupSetBits(wifi_event_group, WIFI_FAIL_BIT);
-#ifdef CONFIG_SLAVE_MANAGES_WIFI
+#if 1
 			esp_wifi_connect();
 #endif
 	} else if (event_id == WIFI_EVENT_STA_CONNECTED) {
@@ -437,9 +442,10 @@ static void station_event_handler(void *arg, esp_event_base_t event_base,
 		}
 		xEventGroupSetBits(wifi_event_group, WIFI_CONNECTED_BIT);
 
+#ifdef CONFIG_NETWORK_SPLIT_ENABLED
 		// Store successful connection event details
 		memcpy(&lkg_sta_connected_event, event_data, sizeof(wifi_event_sta_connected_t));
-
+#endif
 		/*Overwrite our handler*/
 		esp_wifi_internal_reg_rxcb(ESP_IF_WIFI_STA, (wifi_rxcb_t) wlan_sta_rx_callback);
 		station_connected = true;
@@ -456,7 +462,7 @@ static void station_event_handler(void *arg, esp_event_base_t event_base,
 			ESP_LOGW(TAG, "Failed to get current WiFi configuration after connection");
 		}
 
-#ifdef CONFIG_SLAVE_MANAGES_WIFI
+#if 1
 	} else if (event_id == WIFI_EVENT_STA_START) {
 		if (station_connected) {
 			ESP_LOGI(TAG, "Wifi already connected");
@@ -513,7 +519,7 @@ static void station_event_register(void)
 	ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT,
 				WIFI_EVENT_STA_START, &station_event_handler, NULL));
 
-#ifdef CONFIG_SLAVE_LWIP_ENABLED
+#ifdef CONFIG_NETWORK_SPLIT_ENABLED
 	ESP_LOGI(TAG, "Registering IP event handler");
 	ESP_ERROR_CHECK(esp_event_handler_instance_register(IP_EVENT,
 				IP_EVENT_STA_GOT_IP,
@@ -907,7 +913,7 @@ static esp_err_t req_connect_ap_handler (CtrlMsg *req,
 			mem_free(wifi_cfg);
 
 			/* As already connected, send the current status */
-#ifdef CONFIG_SLAVE_MANAGES_WIFI
+#ifdef CONFIG_NETWORK_SPLIT_ENABLED
 			send_dhcp_dns_info_to_host(1, 1);
 #endif
 			return ESP_OK;
@@ -926,7 +932,7 @@ static esp_err_t req_connect_ap_handler (CtrlMsg *req,
 		/* Station not yet connected, so cache this configuration for future reference */
 		//ESP_LOGI(TAG, "New WiFi connection config, storing for future comparisons");
 		//memcpy(&prev_wifi_config, wifi_cfg, sizeof(wifi_config_t));
-		//prev_wifi_config_valid = true;
+		prev_wifi_config_valid = false;
 	}
 
 	/* Note: At this point, we've already updated prev_wifi_config if needed */
@@ -951,8 +957,6 @@ static esp_err_t req_connect_ap_handler (CtrlMsg *req,
 	}
 
 	do {
-		esp_wifi_disconnect();
-
 		ESP_LOGI(TAG, "Setting station config");
 		ret = esp_hosted_set_sta_config(ESP_IF_WIFI_STA, wifi_cfg);
 		if (ret == ESP_ERR_WIFI_PASSWORD) {
@@ -965,15 +969,20 @@ static esp_err_t req_connect_ap_handler (CtrlMsg *req,
 			goto err;
 		}
 
+		esp_wifi_disconnect();
+
+#ifndef CONFIG_NETWORK_SPLIT_ENABLED
+
 		/* Force a connect attempt to validate the new credentials */
 		ret = esp_wifi_connect();
 		if (ret) {
 			ESP_LOGE(TAG, "Failed to connect to AP: %d", ret);
 			resp_payload->resp = ret;
-			vTaskDelay(50);
+			vTaskDelay(pdMS_TO_TICKS(500));
 		}
+#endif
 		retry++;
-	} while(retry < MAX_STA_CONNECT_ATTEMPTS);
+	} while(ret && (retry < MAX_STA_CONNECT_ATTEMPTS));
 
 err:
 	if (station_connected) {
@@ -2433,7 +2442,7 @@ bool has_host_fetched_auto_ip(void)
 
 static esp_err_t req_get_dhcp_dns_status(CtrlMsg *req, CtrlMsg *resp, void *priv_data)
 {
-	int ret1, ret2;
+
 	CtrlMsgRespGetDhcpDnsStatus *resp_payload = NULL;
 
 	if (!req || !resp) {
@@ -2451,6 +2460,9 @@ static esp_err_t req_get_dhcp_dns_status(CtrlMsg *req, CtrlMsg *resp, void *priv
 	resp->payload_case = CTRL_MSG__PAYLOAD_RESP_GET_DHCP_DNS_STATUS;
 	resp->resp_get_dhcp_dns_status = resp_payload;
 
+
+#if defined(CONFIG_NETWORK_SPLIT_ENABLED) && defined(CONFIG_SLAVE_MANAGES_WIFI)
+	int ret1, ret2;
 	esp_netif_ip_info_t ip_info = {0};
 	esp_netif_dns_info_t dns = {0};
 	uint8_t netlink_up = 0;
@@ -2497,20 +2509,20 @@ static esp_err_t req_get_dhcp_dns_status(CtrlMsg *req, CtrlMsg *resp, void *priv
 			resp_payload->dns_type);
 
 	resp_payload->resp = SUCCESS;
+#else
+	resp_payload->resp = FAILURE;
+#endif
 	return ESP_OK;
 }
 
 static esp_err_t req_set_dhcp_dns_status(CtrlMsg *req, CtrlMsg *resp, void *priv_data)
 {
 	CtrlMsgRespSetDhcpDnsStatus *resp_set_dhcp_dns = NULL;
-	CtrlMsgReqSetDhcpDnsStatus *req_payload = NULL;
 
 	if (!req || !resp) {
 		ESP_LOGE(TAG, "Invalid parameters");
 		return ESP_FAIL;
 	}
-
-	req_payload = req->req_set_dhcp_dns_status;
 
 	resp_set_dhcp_dns = (CtrlMsgRespSetDhcpDnsStatus *)calloc(1,sizeof(CtrlMsgRespSetDhcpDnsStatus));
 	if (!resp_set_dhcp_dns) {
@@ -2521,6 +2533,12 @@ static esp_err_t req_set_dhcp_dns_status(CtrlMsg *req, CtrlMsg *resp, void *priv
 	ctrl_msg__resp__set_dhcp_dns_status__init(resp_set_dhcp_dns);
 	resp->payload_case = CTRL_MSG__PAYLOAD_RESP_SET_DHCP_DNS_STATUS;
 	resp->resp_set_dhcp_dns_status = resp_set_dhcp_dns;
+
+#if defined(CONFIG_NETWORK_SPLIT_ENABLED) && !defined(CONFIG_SLAVE_MANAGES_WIFI)
+
+	CtrlMsgReqSetDhcpDnsStatus *req_payload = NULL;
+
+	req_payload = req->req_set_dhcp_dns_status;
 
 	uint8_t iface = req_payload->iface;
 	uint8_t net_link_up = req_payload->net_link_up;
@@ -2557,6 +2575,9 @@ static esp_err_t req_set_dhcp_dns_status(CtrlMsg *req, CtrlMsg *resp, void *priv
 		set_slave_dns(iface, dns_ip, dns_type);
 
 	resp_set_dhcp_dns->resp = SUCCESS;
+#else
+	resp_set_dhcp_dns->resp = FAILURE;
+#endif
 	return ESP_OK;
 }
 
@@ -3484,18 +3505,22 @@ static esp_err_t ctrl_ntfy_SetDhcpDnsStatus(CtrlMsg *ntfy,
 		const uint8_t *data, ssize_t len)
 {
 	CtrlMsgEventSetDhcpDnsStatus *p_c = NULL;
-	ctrl_msg_set_dhcp_dns_status_t * p_a = (ctrl_msg_set_dhcp_dns_status_t*)data;
+
 	p_c = (CtrlMsgEventSetDhcpDnsStatus*)
 		calloc(1,sizeof(CtrlMsgEventSetDhcpDnsStatus));
 	if (!p_c) {
 		ESP_LOGE(TAG,"Failed to allocate memory");
 		return ESP_ERR_NO_MEM;
 	}
-
 	ctrl_msg__event__set_dhcp_dns_status__init(p_c);
 
 	ntfy->payload_case = CTRL_MSG__PAYLOAD_EVENT_SET_DHCP_DNS_STATUS;
 	ntfy->event_set_dhcp_dns_status = p_c;
+
+#ifdef CONFIG_NETWORK_SPLIT_ENABLED
+	ctrl_msg_set_dhcp_dns_status_t * p_a = (ctrl_msg_set_dhcp_dns_status_t*)data;
+
+
 
 	p_c->iface = p_a->iface;
 	p_c->net_link_up = p_a->net_link_up;
@@ -3519,6 +3544,9 @@ static esp_err_t ctrl_ntfy_SetDhcpDnsStatus(CtrlMsg *ntfy,
 			p_c->dns_ip.data,
 			p_c->dns_type);
 	p_c->resp = SUCCESS;
+#else
+	p_c->resp = FAILURE;
+#endif
 	return ESP_OK;
 }
 

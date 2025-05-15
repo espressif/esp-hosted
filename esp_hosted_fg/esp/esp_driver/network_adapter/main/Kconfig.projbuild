@@ -383,29 +383,31 @@ menu "Example Configuration"
 		help
 			UART Baudrate for HCI over ESP32-C2/C3/C6/S3. Please use standard baudrate.
 
-	config ESP_DEFAULT_TASK_STACK_SIZE
-		int "ESP-Hosted task stack size"
-		default 4096
-		help
-			Default task size of ESP-Hosted tasks
+	menu "ESP-Hosted Task config"
+		config ESP_DEFAULT_TASK_STACK_SIZE
+			int "ESP-Hosted task stack size"
+			default 4096
+			help
+				Default task size of ESP-Hosted tasks
 
-	config ESP_HOSTED_TASK_PRIORITY_LOW
-		int "ESP-Hosted task priority low"
-		default 5
-		help
-			Low priority of ESP-Hosted tasks
+		config ESP_HOSTED_TASK_PRIORITY_LOW
+			int "ESP-Hosted task priority low"
+			default 5
+			help
+				Low priority of ESP-Hosted tasks
 
-	config ESP_HOSTED_TASK_PRIORITY_DEFAULT
-		int "ESP-Hosted task priority default"
-		default 21
-		help
-			Default task priority of ESP-Hosted tasks
+		config ESP_HOSTED_TASK_PRIORITY_DEFAULT
+			int "ESP-Hosted task priority default"
+			default 21
+			help
+				Default task priority of ESP-Hosted tasks
 
-	config ESP_HOSTED_TASK_PRIORITY_HIGH
-		int "ESP-Hosted task priority high"
-		default 22
-		help
-			High priority of ESP-Hosted tasks
+		config ESP_HOSTED_TASK_PRIORITY_HIGH
+			int "ESP-Hosted task priority high"
+			default 22
+			help
+				High priority of ESP-Hosted tasks
+	endmenu
 
 	config ESP_CACHE_MALLOC
 		bool "Enable Mempool"
@@ -462,142 +464,143 @@ menu "Example Configuration"
 				available memory.
 	endmenu
 
-	config SLAVE_LWIP_ENABLED
-		bool "Enable the LWIP at slave"
+	config NETWORK_SPLIT_ENABLED
+		bool "Allow Network Split using packet port number"
 		default y
 		help
-			Enable the LWIP at slave, additionally to host LWIP
+			Enable the LWIP at slave, additionally to host network stack
 
-	menu "Slave side (local) LWIP port config"
-		depends on SLAVE_LWIP_ENABLED
-		config LWIP_TCP_LOCAL_PORT_RANGE_START
-			int "Slave TCP start port"
-			default 61440
-			help
-				Slave side TCP start port. Host defaults to 49152
-				Slave range: 61440-65535
-				Host range: 49152-61439
+	menu "Network split mode configuration"
+		depends on NETWORK_SPLIT_ENABLED
 
-		config LWIP_TCP_LOCAL_PORT_RANGE_END
-			int "Slave TCP end port"
-			default 65535
-			help
-				Slave side TCP end port. Host defaults to 61439
-				Slave range: 61440-65535
-				Host range: 49152-61439
+		menu "Slave side (local) LWIP port range (static)"
+			config LWIP_TCP_LOCAL_PORT_RANGE_START
+				int "Slave TCP start port"
+				default 61440
+				help
+					Slave side TCP start port. Host defaults to 49152
+					Slave range: 61440-65535
+					Host range: 49152-61439
 
-		config LWIP_UDP_LOCAL_PORT_RANGE_START
-			int "Slave UDP start port"
-			default 61440
-			help
-				Slave side UDP start port. Host defaults to 49152
-				Slave range: 61440-65535
-				Host range: 49152-61439
+			config LWIP_TCP_LOCAL_PORT_RANGE_END
+				int "Slave TCP end port"
+				default 65535
+				help
+					Slave side TCP end port. Host defaults to 61439
+					Slave range: 61440-65535
+					Host range: 49152-61439
 
-		config LWIP_UDP_LOCAL_PORT_RANGE_END
-			int "Slave UDP end port"
-			default 65535
+			config LWIP_UDP_LOCAL_PORT_RANGE_START
+				int "Slave UDP start port"
+				default 61440
+				help
+					Slave side UDP start port. Host defaults to 49152
+					Slave range: 61440-65535
+					Host range: 49152-61439
+
+			config LWIP_UDP_LOCAL_PORT_RANGE_END
+				int "Slave UDP end port"
+				default 65535
+				help
+					Slave side UDP end port. Host defaults to 61439
+					Slave range: 61440-65535
+					Host range: 49152-61439
+		endmenu
+
+		menu "Host side (remote) LWIP port range (static)"
+			config LWIP_TCP_REMOTE_PORT_RANGE_START
+				int "Host TCP start port"
+				default 49152
+				help
+					Host side TCP start port. Slave defaults to 61440
+					Slave range: 61440-65535
+					Host range: 49152-61439
+
+			config LWIP_TCP_REMOTE_PORT_RANGE_END
+				int "Host TCP end port"
+				default 61439
+				help
+					Host side TCP end port. Slave defaults to 65535
+					Slave range: 61440-65535
+					Host range: 49152-61439
+
+			config LWIP_UDP_REMOTE_PORT_RANGE_START
+				int "Host UDP start port"
+				default 49152
+				help
+					Host side UDP start port. Slave defaults to 61440
+					Slave range: 61440-65535
+					Host range: 49152-61439
+
+			config LWIP_UDP_REMOTE_PORT_RANGE_END
+				int "Host UDP end port"
+				default 61439
+				help
+					Host side UDP end port. Slave defaults to 65535
+					Slave range: 61440-65535
+					Host range: 49152-61439
+		endmenu
+
+		config ESP_HOSTED_HOST_RESERVED_PORTS_CONFIGURED
+			bool "Extra port forwarding to host (static)"
+			default y
 			help
-				Slave side UDP end port. Host defaults to 61439
-				Slave range: 61440-65535
-				Host range: 49152-61439
+				Enable static port forwarding to host for specific ports
+
+		menu "Host Static Port Forwarding"
+			depends on ESP_HOSTED_HOST_RESERVED_PORTS_CONFIGURED
+
+			config ESP_HOSTED_HOST_RESERVED_TCP_SRC_PORTS
+				string "TCP source ports to forward to host (comma separated)"
+				default "22,8554"
+				help
+					Comma separated list of TCP source ports that will be allowed from host (Max 10)
+
+			config ESP_HOSTED_HOST_RESERVED_TCP_DEST_PORTS
+				string "TCP destination ports to forward to host (comma separated)"
+				default "22,80,443,8080,8554"
+				help
+					Comma separated list of TCP destination ports that will be forwarded to host (Max 10)
+
+			config ESP_HOSTED_HOST_RESERVED_UDP_SRC_PORTS
+				string "UDP source ports to allowed from host (comma separated)"
+				default ""
+				help
+					Comma separated list of UDP source ports that will be forwarded to host (Max 10)
+
+			config ESP_HOSTED_HOST_RESERVED_UDP_DEST_PORTS
+				string "UDP destination ports to forward to host (comma separated)"
+				default "53,123"
+				help
+					Comma separated list of UDP destination ports that will be forwarded to host (Max 10)
+		endmenu
+
+		choice
+			prompt "Destination LWIP for unfiltered packet"
+			default ESP_DEFAULT_LWIP_SLAVE
+			help
+				Packets having destination port within 'remote' port range are forwarded to host. Rest unfiltered packets, are to be sent to this LWIP. Please note:
+				(1) These settings are only for IP packets, yet.
+				(2) Extra filtering may be in effect to respond some packets locally by slave LWIP.
+
+			config ESP_DEFAULT_LWIP_SLAVE
+				bool "Send packet to slave LWIP"
+
+			config ESP_DEFAULT_LWIP_HOST
+				bool "Send packet to host LWIP"
+
+			config ESP_DEFAULT_LWIP_BOTH
+				bool "Send packet to both LWIPs"
+		endchoice
+
 	endmenu
-
-	menu "Host side (remote) LWIP port config"
-		depends on SLAVE_LWIP_ENABLED
-		config LWIP_TCP_REMOTE_PORT_RANGE_START
-			depends on SLAVE_LWIP_ENABLED
-			int "Host TCP start port"
-			default 49152
-			help
-				Host side TCP start port. Slave defaults to 61440
-				Slave range: 61440-65535
-				Host range: 49152-61439
-
-		config LWIP_TCP_REMOTE_PORT_RANGE_END
-			depends on SLAVE_LWIP_ENABLED
-			int "Host TCP end port"
-			default 61439
-			help
-				Host side TCP end port. Slave defaults to 65535
-				Slave range: 61440-65535
-				Host range: 49152-61439
-
-		config LWIP_UDP_REMOTE_PORT_RANGE_START
-			depends on SLAVE_LWIP_ENABLED
-			int "Host UDP start port"
-			default 49152
-			help
-				Host side UDP start port. Slave defaults to 61440
-				Slave range: 61440-65535
-				Host range: 49152-61439
-
-		config LWIP_UDP_REMOTE_PORT_RANGE_END
-			depends on SLAVE_LWIP_ENABLED
-			int "Host UDP end port"
-			default 61439
-			help
-				Host side UDP end port. Slave defaults to 65535
-				Slave range: 61440-65535
-				Host range: 49152-61439
-	endmenu
-
-	config ESP_HOSTED_HOST_RESERVED_PORTS_CONFIGURED
-		depends on SLAVE_LWIP_ENABLED
-		bool "Enable static port forwarding to host"
-		default y
-		help
-			Enable static port forwarding to host for specific ports
-
-	menu "Host Static Port Forwarding"
-		depends on ESP_HOSTED_HOST_RESERVED_PORTS_CONFIGURED
-
-		config ESP_HOSTED_HOST_RESERVED_TCP_SRC_PORTS
-			string "TCP source ports to forward to host (comma separated)"
-			default "22,8554"
-			help
-				Comma separated list of TCP source ports that will be allowed from host (Max 10)
-
-		config ESP_HOSTED_HOST_RESERVED_TCP_DEST_PORTS
-			string "TCP destination ports to forward to host (comma separated)"
-			default "22,80,443,8080,8554"
-			help
-				Comma separated list of TCP destination ports that will be forwarded to host (Max 10)
-
-		config ESP_HOSTED_HOST_RESERVED_UDP_SRC_PORTS
-			string "UDP source ports to allowed from host (comma separated)"
-			default ""
-			help
-				Comma separated list of UDP source ports that will be forwarded to host (Max 10)
-
-		config ESP_HOSTED_HOST_RESERVED_UDP_DEST_PORTS
-			string "UDP destination ports to forward to host (comma separated)"
-			default "53,123"
-			help
-				Comma separated list of UDP destination ports that will be forwarded to host (Max 10)
-	endmenu
-
-	choice
-		prompt "Destination LWIP for unfiltered packet"
-		default ESP_DEFAULT_LWIP_HOST
-		help
-			Packets having destination port within 'remote' port range are forwarded to host. Rest unfiltered packets, are to be sent to this LWIP. Please note:
-			(1) These settings are only for IP packets, yet.
-			(2) Extra filtering may be in effect to respond some packets locally by slave LWIP.
-
-		config ESP_DEFAULT_LWIP_SLAVE
-			bool "Send packet to slave LWIP"
-
-		config ESP_DEFAULT_LWIP_HOST
-			bool "Send packet to host LWIP"
-
-		config ESP_DEFAULT_LWIP_BOTH
-			bool "Send packet to both LWIPs"
-	endchoice
 
 	config HOST_DEEP_SLEEP_ALLOWED
 		bool "Allow host to enter deep sleep. Slave will wakeup host using GPIO"
-		default y
+		default n
+		help
+			Allow host to power save.
+			Please note: This is not yet supported, would be added in upcoming releases
 
 	menu "Host deep sleep config"
 		depends on HOST_DEEP_SLEEP_ALLOWED
@@ -610,14 +613,6 @@ menu "Example Configuration"
 			default 25 if IDF_TARGET_ESP32C5
 			default 6 if IDF_TARGET_ESP32C2 && C2_C5_MODULE_SUB_BOARD
 			default -1
-
-		config PRINT_HOST_WAKEUP_PACKET_PORT
-			bool "Print the wakeup packet port"
-			default y
-
-		config PRINT_HOST_WAKEUP_PACKET_FULL_PKT
-			bool "Print the full wakeup packet"
-			default y
 	endmenu
 
 	config ESP_HOSTED_CLI_ENABLED
@@ -649,87 +644,86 @@ menu "Example Configuration"
 				If true, both host and slave will manage Wi-Fi.
 	endchoice
 
-	menu "Wi-Fi example config"
-		depends on SLAVE_MANAGES_WIFI
+	menu "Wi-Fi Default Example config"
 
 		config ESP_WIFI_SSID
-    	    string "WiFi SSID"
-    	    default "myssid"
-    	    help
-    	        SSID (network name) for the example to connect to.
+			string "WiFi SSID"
+			default "myssid"
+			help
+				SSID (network name) for the example to connect to.
 
-    	config ESP_WIFI_PASSWORD
-    	    string "WiFi Password"
-    	    default "mypassword"
-    	    help
-    	        WiFi password (WPA or WPA2) for the example to use.
+		config ESP_WIFI_PASSWORD
+			string "WiFi Password"
+			default "mypassword"
+			help
+				WiFi password (WPA or WPA2) for the example to use.
 
-    	choice ESP_WIFI_SAE_MODE
-    	    prompt "WPA3 SAE mode selection"
-    	    default ESP_WPA3_SAE_PWE_BOTH
-    	    help
-    	        Select mode for SAE as Hunt and Peck, H2E or both.
-    	    config ESP_WPA3_SAE_PWE_HUNT_AND_PECK
-    	        bool "HUNT AND PECK"
-    	    config ESP_WPA3_SAE_PWE_HASH_TO_ELEMENT
-    	        bool "H2E"
-    	    config ESP_WPA3_SAE_PWE_BOTH
-    	        bool "BOTH"
-    	endchoice
+		choice ESP_WIFI_SAE_MODE
+			prompt "WPA3 SAE mode selection"
+			default ESP_WPA3_SAE_PWE_BOTH
+			help
+				Select mode for SAE as Hunt and Peck, H2E or both.
+			config ESP_WPA3_SAE_PWE_HUNT_AND_PECK
+				bool "HUNT AND PECK"
+			config ESP_WPA3_SAE_PWE_HASH_TO_ELEMENT
+				bool "H2E"
+			config ESP_WPA3_SAE_PWE_BOTH
+				bool "BOTH"
+		endchoice
 
-    	config ESP_WIFI_PW_ID
-    	    string "PASSWORD IDENTIFIER"
-    	    depends on  ESP_WPA3_SAE_PWE_HASH_TO_ELEMENT|| ESP_WPA3_SAE_PWE_BOTH
-    	    default ""
-    	    help
-    	        password identifier for SAE H2E
+		config ESP_WIFI_PW_ID
+			string "PASSWORD IDENTIFIER"
+			depends on  ESP_WPA3_SAE_PWE_HASH_TO_ELEMENT|| ESP_WPA3_SAE_PWE_BOTH
+			default ""
+			help
+				password identifier for SAE H2E
 
-    	config ESP_MAXIMUM_RETRY
-    	    int "Maximum retry"
-    	    default 5
-    	    help
-    	        Set the Maximum retry to avoid station reconnecting to the AP unlimited when the AP is really inexistent.
+		config ESP_MAXIMUM_RETRY
+			int "Maximum retry"
+			default 5
+			help
+				Set the Maximum retry to avoid station reconnecting to the AP unlimited when the AP is really inexistent.
 
-    	choice ESP_WIFI_SCAN_AUTH_MODE_THRESHOLD
-    	    prompt "WiFi Scan auth mode threshold"
-    	    default ESP_WIFI_AUTH_WPA2_PSK
-    	    help
-    	        The weakest authmode to accept in the scan mode.
-    	        This value defaults to ESP_WIFI_AUTH_WPA2_PSK incase password is present and ESP_WIFI_AUTH_OPEN is used.
-    	        Please select ESP_WIFI_AUTH_WEP/ESP_WIFI_AUTH_WPA_PSK incase AP is operating in WEP/WPA mode.
+		choice ESP_WIFI_SCAN_AUTH_MODE_THRESHOLD
+			prompt "WiFi Scan auth mode threshold"
+			default ESP_WIFI_AUTH_WPA2_PSK
+			help
+				The weakest authmode to accept in the scan mode.
+				This value defaults to ESP_WIFI_AUTH_WPA2_PSK incase password is present and ESP_WIFI_AUTH_OPEN is used.
+				Please select ESP_WIFI_AUTH_WEP/ESP_WIFI_AUTH_WPA_PSK incase AP is operating in WEP/WPA mode.
 
-    	    config ESP_WIFI_AUTH_OPEN
-    	        bool "OPEN"
-    	    config ESP_WIFI_AUTH_WEP
-    	        bool "WEP"
-    	    config ESP_WIFI_AUTH_WPA_PSK
-    	        bool "WPA PSK"
-    	    config ESP_WIFI_AUTH_WPA2_PSK
-    	        bool "WPA2 PSK"
-    	    config ESP_WIFI_AUTH_WPA_WPA2_PSK
-    	        bool "WPA/WPA2 PSK"
-    	    config ESP_WIFI_AUTH_WPA3_PSK
-    	        bool "WPA3 PSK"
-    	    config ESP_WIFI_AUTH_WPA2_WPA3_PSK
-    	        bool "WPA2/WPA3 PSK"
-    	    config ESP_WIFI_AUTH_WAPI_PSK
-    	        bool "WAPI PSK"
-    	endchoice
+			config ESP_WIFI_AUTH_OPEN
+				bool "OPEN"
+			config ESP_WIFI_AUTH_WEP
+				bool "WEP"
+			config ESP_WIFI_AUTH_WPA_PSK
+				bool "WPA PSK"
+			config ESP_WIFI_AUTH_WPA2_PSK
+				bool "WPA2 PSK"
+			config ESP_WIFI_AUTH_WPA_WPA2_PSK
+				bool "WPA/WPA2 PSK"
+			config ESP_WIFI_AUTH_WPA3_PSK
+				bool "WPA3 PSK"
+			config ESP_WIFI_AUTH_WPA2_WPA3_PSK
+				bool "WPA2/WPA3 PSK"
+			config ESP_WIFI_AUTH_WAPI_PSK
+				bool "WAPI PSK"
+		endchoice
 
 #		choice WIFI_CMD_DEFAULT_COUNTRY
-#    	    prompt "Set default country during initialize wifi"
-#    	    default WIFI_CMD_DEFAULT_COUNTRY_CN
-#    	    help
-#    	        Set default wifi country during initialize wifi
+#			prompt "Set default country during initialize wifi"
+#			default WIFI_CMD_DEFAULT_COUNTRY_CN
+#			help
+#				Set default wifi country during initialize wifi
 #
-#    	    config WIFI_CMD_DEFAULT_COUNTRY_NONE
-#    	        bool
-#    	        prompt "Do not set country code"
+#			config WIFI_CMD_DEFAULT_COUNTRY_NONE
+#				bool
+#				prompt "Do not set country code"
 #
-#    	    config WIFI_CMD_DEFAULT_COUNTRY_CN
-#    	        bool
-#    	        prompt "Set country code to CN (1-13)"
-#    	endchoice
+#			config WIFI_CMD_DEFAULT_COUNTRY_CN
+#				bool
+#				prompt "Set country code to CN (1-13)"
+#		endchoice
 	endmenu
 
 
@@ -740,15 +734,15 @@ menu "Example Configuration"
 
 		menu "MQTT client config"
 			depends on ESP_HOSTED_COPROCESSOR_EXAMPLE_MQTT
-		    config BROKER_URL
-		        string "Broker URL"
-		        default "mqtt://mqtt.eclipseprojects.io"
-		        help
-		            URL of the broker to connect to
+			config BROKER_URL
+				string "Broker URL"
+				default "mqtt://mqtt.eclipseprojects.io"
+				help
+					URL of the broker to connect to
 
-		    config BROKER_URL_FROM_STDIN
-		        bool
-		        default y if BROKER_URL = "FROM_STDIN"
+			config BROKER_URL_FROM_STDIN
+				bool
+				default y if BROKER_URL = "FROM_STDIN"
 
 		endmenu
 
@@ -760,26 +754,21 @@ menu "Example Configuration"
 			depends on ESP_HOSTED_COPROCESSOR_EXAMPLE_HTTP_CLIENT
 
 			config HTTP_WEBSERVER
-		        string "HTTP webserver to send req"
-		        default "example.com"
+				string "HTTP webserver to send req"
+				default "example.com"
 
 			config HTTP_WEBSERVER_PORT
-		        string "HTTP webserver port"
-		        default "80"
+				string "HTTP webserver port"
+				default "80"
 
 			config HTTP_WEBSERVER_PATH
-		        string "HTTP webserver path"
-		        default "/"
+				string "HTTP webserver path"
+				default "/"
 
 			config HTTP_REQ_DELAY
 				int "Delay after every http request (seconds)"
 				default 10
 
 		endmenu
-
-		config ESP_HOSTED_COPROCESSOR_EXAMPLE_RPC_DEMO
-			bool "Hosted RPC events demo example"
-			default n
-
 	endmenu
 endmenu

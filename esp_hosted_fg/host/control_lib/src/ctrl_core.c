@@ -69,11 +69,13 @@
     }
 
 #define CHECK_CTRL_MSG_FAILED(msGparaM)                                       \
-	app_resp->resp_event_status = ctrl_msg->msGparaM->resp;                   \
+    app_resp->resp_event_status = ctrl_msg->msGparaM->resp;                   \
     if (ctrl_msg->msGparaM->resp) {                                           \
-        command_log("Failure[%d] resp/event: possibly precondition not met\n", (int)app_resp->resp_event_status);   \
+        command_log("Failed resp/event id[%d]: err[%d]\n",                    \
+            (int)ctrl_msg->msg_id, (int)ctrl_msg->msGparaM->resp);            \
         goto fail_parse_ctrl_msg;                                             \
     }
+
 
 #define CTRL_ALLOC_ASSIGN(TyPe,MsG_StRuCt)                                    \
     TyPe *req_payload = (TyPe *)                                              \
@@ -204,14 +206,18 @@ static int ctrl_app_parse_event(CtrlMsg *ctrl_msg, ctrl_cmd_t *app_ntfy)
 			//		ctrl_msg->event_station_connected_to_ap->resp);
 			app_ntfy->resp_event_status = ctrl_msg->event_station_connected_to_ap->resp;
 			if(SUCCESS==app_ntfy->resp_event_status) {
-				strncpy((char *)app_ntfy->u.e_sta_conn.ssid,
+				if (ctrl_msg->event_station_connected_to_ap->ssid.len && ctrl_msg->event_station_connected_to_ap->ssid.data) {
+					strncpy((char *)app_ntfy->u.e_sta_conn.ssid,
 						(char *)ctrl_msg->event_station_connected_to_ap->ssid.data,
 						ctrl_msg->event_station_connected_to_ap->ssid.len);
+				}
 				app_ntfy->u.e_sta_conn.ssid_len = ctrl_msg->event_station_connected_to_ap->ssid_len;
 
-				strncpy((char *)app_ntfy->u.e_sta_conn.bssid,
-						(char *)ctrl_msg->event_station_connected_to_ap->bssid.data,
-						ctrl_msg->event_station_connected_to_ap->bssid.len);
+				if (ctrl_msg->event_station_connected_to_ap->bssid.len && ctrl_msg->event_station_connected_to_ap->bssid.data) {
+					strncpy((char *)app_ntfy->u.e_sta_conn.bssid,
+							(char *)ctrl_msg->event_station_connected_to_ap->bssid.data,
+							ctrl_msg->event_station_connected_to_ap->bssid.len);
+				}
 
 				app_ntfy->u.e_sta_conn.channel = ctrl_msg->event_station_connected_to_ap->channel;
 				app_ntfy->u.e_sta_conn.authmode = ctrl_msg->event_station_connected_to_ap->authmode;
@@ -224,14 +230,18 @@ static int ctrl_app_parse_event(CtrlMsg *ctrl_msg, ctrl_cmd_t *app_ntfy)
 			//		ctrl_msg->event_station_disconnect_from_ap->resp);
 			app_ntfy->resp_event_status = ctrl_msg->event_station_disconnect_from_ap->resp;
 			if(SUCCESS==app_ntfy->resp_event_status) {
-				strncpy((char *)app_ntfy->u.e_sta_disconn.ssid,
-						(char *)ctrl_msg->event_station_disconnect_from_ap->ssid.data,
-						ctrl_msg->event_station_disconnect_from_ap->ssid.len);
+				if (ctrl_msg->event_station_disconnect_from_ap->ssid.len && ctrl_msg->event_station_disconnect_from_ap->ssid.data) {
+					strncpy((char *)app_ntfy->u.e_sta_disconn.ssid,
+							(char *)ctrl_msg->event_station_disconnect_from_ap->ssid.data,
+							ctrl_msg->event_station_disconnect_from_ap->ssid.len);
+				}
 				app_ntfy->u.e_sta_disconn.ssid_len = ctrl_msg->event_station_disconnect_from_ap->ssid_len;
 
-				strncpy((char *)app_ntfy->u.e_sta_disconn.bssid,
-						(char *)ctrl_msg->event_station_disconnect_from_ap->bssid.data,
-						ctrl_msg->event_station_disconnect_from_ap->bssid.len);
+				if (ctrl_msg->event_station_disconnect_from_ap->bssid.len && ctrl_msg->event_station_disconnect_from_ap->bssid.data) {
+					strncpy((char *)app_ntfy->u.e_sta_disconn.bssid,
+							(char *)ctrl_msg->event_station_disconnect_from_ap->bssid.data,
+							ctrl_msg->event_station_disconnect_from_ap->bssid.len);
+				}
 
 				app_ntfy->u.e_sta_disconn.reason = ctrl_msg->event_station_disconnect_from_ap->reason;
 				app_ntfy->u.e_sta_disconn.rssi = ctrl_msg->event_station_disconnect_from_ap->rssi;
@@ -246,9 +256,11 @@ static int ctrl_app_parse_event(CtrlMsg *ctrl_msg, ctrl_cmd_t *app_ntfy)
 				CHECK_CTRL_MSG_NON_NULL_VAL(
 					ctrl_msg->event_station_connected_to_esp_softap->mac.data,
 					"NULL mac");
-				strncpy((char *)app_ntfy->u.e_softap_sta_conn.mac,
-					(char *)ctrl_msg->event_station_connected_to_esp_softap->mac.data,
-					ctrl_msg->event_station_connected_to_esp_softap->mac.len);
+				if (ctrl_msg->event_station_connected_to_esp_softap->mac.len && ctrl_msg->event_station_connected_to_esp_softap->mac.data) {
+					strncpy((char *)app_ntfy->u.e_softap_sta_conn.mac,
+						(char *)ctrl_msg->event_station_connected_to_esp_softap->mac.data,
+						ctrl_msg->event_station_connected_to_esp_softap->mac.len);
+				}
 				//command_log("EVENT: SoftAP mode: Disconnect MAC[%s]\n",
 				//		app_ntfy->u.e_softap_sta_conn.mac);
 				app_ntfy->u.e_softap_sta_conn.aid =
@@ -266,9 +278,11 @@ static int ctrl_app_parse_event(CtrlMsg *ctrl_msg, ctrl_cmd_t *app_ntfy)
 				CHECK_CTRL_MSG_NON_NULL_VAL(
 					ctrl_msg->event_station_disconnect_from_esp_softap->mac.data,
 					"NULL mac");
-				strncpy((char *)app_ntfy->u.e_softap_sta_disconn.mac,
-					(char *)ctrl_msg->event_station_disconnect_from_esp_softap->mac.data,
-					ctrl_msg->event_station_disconnect_from_esp_softap->mac.len);
+				if (ctrl_msg->event_station_disconnect_from_esp_softap->mac.len && ctrl_msg->event_station_disconnect_from_esp_softap->mac.data) {
+					strncpy((char *)app_ntfy->u.e_softap_sta_disconn.mac,
+						(char *)ctrl_msg->event_station_disconnect_from_esp_softap->mac.data,
+						ctrl_msg->event_station_disconnect_from_esp_softap->mac.len);
+				}
 				//command_log("EVENT: SoftAP mode: Disconnect MAC[%s]\n",
 				//		app_ntfy->u.e_softap_sta_disconn.mac);
 				app_ntfy->u.e_softap_sta_disconn.aid =
@@ -387,9 +401,11 @@ static int ctrl_app_parse_resp(CtrlMsg *ctrl_msg, ctrl_cmd_t *app_resp)
 			CHECK_CTRL_MSG_NON_NULL(resp_get_mac_address->mac.data);
 			CHECK_CTRL_MSG_FAILED(resp_get_mac_address);
 
-			strncpy(app_resp->u.wifi_mac.mac,
-				(char *)ctrl_msg->resp_get_mac_address->mac.data, len_l);
-			app_resp->u.wifi_mac.mac[len_l] = '\0';
+			if (ctrl_msg->resp_get_mac_address->mac.len && ctrl_msg->resp_get_mac_address->mac.data) {
+				strncpy(app_resp->u.wifi_mac.mac,
+					(char *)ctrl_msg->resp_get_mac_address->mac.data, len_l);
+				app_resp->u.wifi_mac.mac[len_l] = '\0';
+			}
 			break;
 		} case CTRL_RESP_SET_MAC_ADDRESS : {
 			CHECK_CTRL_MSG_NON_NULL(resp_set_mac_address);
@@ -460,13 +476,13 @@ static int ctrl_app_parse_resp(CtrlMsg *ctrl_msg, ctrl_cmd_t *app_resp)
 				case SUCCESS:
 					strncpy(p->status, SUCCESS_STR, STATUS_LENGTH);
 					p->status[STATUS_LENGTH-1] = '\0';
-					if (ctrl_msg->resp_get_ap_config->ssid.data) {
+					if (ctrl_msg->resp_get_ap_config->ssid.data && ctrl_msg->resp_get_ap_config->ssid.len) {
 						strncpy((char *)p->ssid,
 								(char *)ctrl_msg->resp_get_ap_config->ssid.data,
 								MAX_SSID_LENGTH-1);
 						p->ssid[MAX_SSID_LENGTH-1] ='\0';
 					}
-					if (ctrl_msg->resp_get_ap_config->bssid.data) {
+					if (ctrl_msg->resp_get_ap_config->bssid.data && ctrl_msg->resp_get_ap_config->bssid.len) {
 						uint8_t len_l = 0;
 
 						len_l = min(ctrl_msg->resp_get_ap_config->bssid.len,
@@ -500,7 +516,7 @@ static int ctrl_app_parse_resp(CtrlMsg *ctrl_msg, ctrl_cmd_t *app_resp)
 			app_resp->resp_event_status = ctrl_msg->resp_connect_ap->resp;
 
 			if (ctrl_msg->resp_connect_ap->resp) {
-				command_log("Connect AP failed, Reason[%d]\n", ctrl_msg->resp_connect_ap->resp);
+				//command_log("Connect AP Req failed, Reason[%d]\n", ctrl_msg->resp_connect_ap->resp);
 			}
 			switch(ctrl_msg->resp_connect_ap->resp) {
 				case CTRL_ERR_INVALID_PASSWORD:
@@ -517,17 +533,16 @@ static int ctrl_app_parse_resp(CtrlMsg *ctrl_msg, ctrl_cmd_t *app_resp)
 					CHECK_CTRL_MSG_FAILED(resp_connect_ap);
 					break;
 				default:
-					command_log("Connect AP failed, Reason[%u]\n", ctrl_msg->resp_connect_ap->resp);
 					CHECK_CTRL_MSG_FAILED(resp_connect_ap);
 					goto fail_parse_ctrl_msg;
 					break;
 			}
 			len_l = min(ctrl_msg->resp_connect_ap->mac.len, MAX_MAC_STR_SIZE-1);
-			if (ctrl_msg->resp_connect_ap->mac.data) {
+			if (ctrl_msg->resp_connect_ap->mac.data && ctrl_msg->resp_connect_ap->mac.len) {
 				strncpy(app_resp->u.wifi_ap_config.out_mac,
 						(char *)ctrl_msg->resp_connect_ap->mac.data, len_l);
+				app_resp->u.wifi_ap_config.out_mac[len_l] = '\0';
 			}
-			app_resp->u.wifi_ap_config.out_mac[len_l] = '\0';
 			break;
 		} case CTRL_RESP_DISCONNECT_AP : {
 			CHECK_CTRL_MSG_NON_NULL(resp_disconnect_ap);
@@ -581,9 +596,11 @@ static int ctrl_app_parse_resp(CtrlMsg *ctrl_msg, ctrl_cmd_t *app_resp)
 			CHECK_CTRL_MSG_NON_NULL(resp_start_softap->mac.data);
 
 			len_l = min(ctrl_msg->resp_connect_ap->mac.len, MAX_MAC_STR_SIZE-1);
-			strncpy(app_resp->u.wifi_softap_config.out_mac,
-					(char *)ctrl_msg->resp_connect_ap->mac.data, len_l);
-			app_resp->u.wifi_softap_config.out_mac[len_l] = '\0';
+			if (ctrl_msg->resp_connect_ap->mac.data && ctrl_msg->resp_connect_ap->mac.len) {
+				strncpy(app_resp->u.wifi_softap_config.out_mac,
+						(char *)ctrl_msg->resp_connect_ap->mac.data, len_l);
+				app_resp->u.wifi_softap_config.out_mac[len_l] = '\0';
+			}
 			app_resp->u.wifi_softap_config.band_mode = ctrl_msg->resp_connect_ap->band_mode;
 			break;
 		} case CTRL_RESP_GET_SOFTAP_CONN_STA_LIST : {
@@ -691,9 +708,11 @@ static int ctrl_app_parse_resp(CtrlMsg *ctrl_msg, ctrl_cmd_t *app_resp)
 			CHECK_CTRL_MSG_NON_NULL(resp_get_fw_version);
 			CHECK_CTRL_MSG_FAILED(resp_get_fw_version);
 
-			strncpy(app_resp->u.fw_version.project_name,
-					ctrl_msg->resp_get_fw_version->name,
-					sizeof(app_resp->u.fw_version.project_name) - 1);
+			if (ctrl_msg->resp_get_fw_version->name) {
+				strncpy(app_resp->u.fw_version.project_name,
+						ctrl_msg->resp_get_fw_version->name,
+						sizeof(app_resp->u.fw_version.project_name) - 1);
+			}
 			app_resp->u.fw_version.major_1 = ctrl_msg->resp_get_fw_version->major1;
 			app_resp->u.fw_version.major_2 = ctrl_msg->resp_get_fw_version->major2;
 			app_resp->u.fw_version.minor = ctrl_msg->resp_get_fw_version->minor;
@@ -708,7 +727,13 @@ static int ctrl_app_parse_resp(CtrlMsg *ctrl_msg, ctrl_cmd_t *app_resp)
 			CtrlMsgRespGetDhcpDnsStatus *p_c = ctrl_msg->resp_get_dhcp_dns_status;
 			dhcp_dns_status_t *p_a = &app_resp->u.dhcp_dns_status;
 			CHECK_CTRL_MSG_NON_NULL(resp_get_dhcp_dns_status);
-			CHECK_CTRL_MSG_FAILED(resp_get_dhcp_dns_status);
+
+			app_resp->resp_event_status = ctrl_msg->resp_get_dhcp_dns_status->resp;
+
+			if (app_resp->resp_event_status != SUCCESS) {
+				/* Do not print error, as slave may be built without network split, just escape */
+				break;
+			}
 			p_a->dhcp_up = p_c->dhcp_up;
 			p_a->dns_up = p_c->dns_up;
 			p_a->net_link_up = p_c->net_link_up;
@@ -881,12 +906,7 @@ static int process_ctrl_rx_msg(CtrlMsg * proto_msg, ctrl_rx_ind_t ctrl_rx_func)
 
 		/* Decode protobuf buffer of response and
 		 * copy into app structures */
-		if (ctrl_app_parse_resp(proto_msg, app_resp)) {
-			// failed to parse response into app_resp
-			if (app_resp)
-				mem_free(app_resp);
-			return FAILURE;
-		}
+		ctrl_app_parse_resp(proto_msg, app_resp);
 
 		/* Is callback is available,
 		 * progress as async response */
@@ -1383,7 +1403,7 @@ int ctrl_app_send_req(ctrl_cmd_t *app_req)
 		case CTRL_REQ_OTA_END:
 		case CTRL_REQ_GET_WIFI_CURR_TX_POWER:
 		case CTRL_REQ_GET_FW_VERSION:
-		case CTRL_REQ_GET_COUNTRY_CODE: {
+		case CTRL_REQ_GET_COUNTRY_CODE:
 		case CTRL_REQ_GET_DHCP_DNS_STATUS: {
 			/* Intentional fallthrough & empty */
 			break;
@@ -1822,5 +1842,4 @@ int init_hosted_control_lib_internal(void)
 free_bufs:
 	deinit_hosted_control_lib_internal();
 	return FAILURE;
-
 }

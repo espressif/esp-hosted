@@ -120,19 +120,6 @@ static int ctrl_app_event_callback(ctrl_cmd_t * app_event)
 					get_timestamp(ts, MIN_TIMESTAMP_STR_SIZE), p);
 			}
 			break;
-		} case CTRL_EVENT_DHCP_DNS_STATUS: {
-			dhcp_dns_status_t *p_e = &app_event->u.dhcp_dns_status;
-			printf("%s App EVENT: DHCP DNS status: iface[%d] dhcp_up[%d] dns_up[%d]\n",
-				get_timestamp(ts, MIN_TIMESTAMP_STR_SIZE), p_e->iface, p_e->dhcp_up, p_e->dns_up);
-			if (p_e->dhcp_up) {
-				printf("DHCP IP: %s\n", p_e->dhcp_ip);
-				printf("DHCP NM: %s\n", p_e->dhcp_nm);
-				printf("DHCP GW: %s\n", p_e->dhcp_gw);
-			}
-			if (p_e->dns_up) {
-				printf("DNS IP: %s\n", p_e->dns_ip);
-			}
-			break;
 		} default: {
 			printf("%s Invalid event[%u] to parse\n\r",
 				get_timestamp(ts, MIN_TIMESTAMP_STR_SIZE), app_event->msg_id);
@@ -247,7 +234,6 @@ int register_event_callbacks(void)
 		{ CTRL_EVENT_HEARTBEAT,                          ctrl_app_event_callback },
 		{ CTRL_EVENT_STATION_DISCONNECT_FROM_AP,         ctrl_app_event_callback },
 		{ CTRL_EVENT_STATION_DISCONNECT_FROM_ESP_SOFTAP, ctrl_app_event_callback },
-		{ CTRL_EVENT_DHCP_DNS_STATUS,                    ctrl_app_event_callback },
 	};
 
 	for (evt=0; evt<sizeof(events)/sizeof(event_callback_table_t); evt++) {
@@ -418,18 +404,6 @@ int ctrl_app_resp_callback(ctrl_cmd_t * app_resp)
 			break;
 		} case CTRL_RESP_CONFIG_HEARTBEAT: {
 			printf("Heartbeat operation successful\n\r");
-			break;
-		} case CTRL_RESP_GET_DHCP_DNS_STATUS: {
-			printf("DHCP DNS status: iface[%d] dhcp_up[%d] dns_up[%d]\n",
-				app_resp->u.dhcp_dns_status.iface, app_resp->u.dhcp_dns_status.dhcp_up, app_resp->u.dhcp_dns_status.dns_up);
-			if (app_resp->u.dhcp_dns_status.dhcp_up) {
-				printf("DHCP IP: %s\n", app_resp->u.dhcp_dns_status.dhcp_ip);
-				printf("DHCP NM: %s\n", app_resp->u.dhcp_dns_status.dhcp_nm);
-				printf("DHCP GW: %s\n", app_resp->u.dhcp_dns_status.dhcp_gw);
-			}
-			if (app_resp->u.dhcp_dns_status.dns_up) {
-				printf("DNS IP: %s\n", app_resp->u.dhcp_dns_status.dns_ip);
-			}
 			break;
 		} default: {
 			printf("Invalid Response[%u] to parse\n\r", app_resp->msg_id);
@@ -895,16 +869,6 @@ int test_disable_heartbeat(void)
 	req.u.e_heartbeat.enable = NO;
 
 	resp = config_heartbeat(req);
-
-	return ctrl_app_resp_callback(resp);
-}
-
-int test_get_dhcp_dns_status(void)
-{
-	ctrl_cmd_t req = CTRL_CMD_DEFAULT_REQ();
-	ctrl_cmd_t *resp = NULL;
-
-	resp = get_dhcp_dns_status(req);
 
 	return ctrl_app_resp_callback(resp);
 }

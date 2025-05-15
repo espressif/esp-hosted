@@ -6,6 +6,10 @@
 
 #include "esp_log.h"
 #include "esp_timer.h"
+#include "host_power_save.h"
+#include "lwip_filter.h"
+
+#ifdef CONFIG_NETWORK_SPLIT_ENABLED
 #include "lwip/opt.h"
 #include "lwip/err.h"
 #include "lwip/sys.h"
@@ -19,8 +23,7 @@
 #include "lwip/udp.h"
 #include "lwip/priv/tcp_priv.h"
 
-#include "host_power_save.h"
-#include "lwip_filter.h"
+
 
 static const char *TAG = "lwip_filter";
 
@@ -519,3 +522,4 @@ hosted_l2_bridge filter_and_route_packet(void *frame_data, uint16_t frame_length
 int configure_host_static_port_forwarding_rules(const char *ports_str_tcp_src, const char *ports_str_tcp_dst, const char *ports_str_udp_src, const char *ports_str_udp_dst) {
     return punch_hole_for_host_ports_from_config(ports_str_tcp_src, ports_str_tcp_dst, ports_str_udp_src, ports_str_udp_dst);
 }
+#endif

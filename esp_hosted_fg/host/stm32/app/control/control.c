@@ -158,7 +158,7 @@ void control_path_init(void(*control_path_evt_handler)(uint8_t))
 	mode = WIFI_MODE_NONE;
 
 	if (init_hosted_control_lib()) {
-		//printf("init hosted control lib failed\n\r");
+		printf("init hosted control lib failed\n\r");
 		return;
 	}
 

@@ -266,6 +266,11 @@ int process_init_event(u8 *evt_buf, u8 len)
 		len_left -= (tag_len+2);
 	}
 
+	/* TODO: abort if strict firmware check is not performed */
+	if ((get_fw_check_type() == FW_CHECK_STRICT) && !fw_version_checked) {
+		esp_warn("ESP Firmware version was not checked");
+	}
+
 	if ((hardware_type != ESP_PRIV_FIRMWARE_CHIP_ESP32) &&
 		(hardware_type != ESP_PRIV_FIRMWARE_CHIP_ESP32S2) &&
 		(hardware_type != ESP_PRIV_FIRMWARE_CHIP_ESP32C2) &&
@@ -866,5 +871,6 @@ void esp_deinit_interface_layer(void)
 
 int is_host_sleeping(void)
 {
+	/* TODO: host sleep unsupported for spi yet */
 	return 0;
 }

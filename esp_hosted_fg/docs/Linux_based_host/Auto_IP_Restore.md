@@ -17,7 +17,7 @@
    5.1. [Kernel Module Auto-loading](#51-kernel-module-auto-loading) | 5.2. [Daemon Service Setup](#52-daemon-service-setup)
 
 6. [Brief Overview](#6-brief-overview-of-auto-ip-restore) \
-   6.1. [Host System Behavior](#61-host-system-behavior) | 6.2. [Slave System Behavior](#62-slave-system-behavior) 
+   6.1. [Host System Behavior](#61-host-system-behavior) | 6.2. [Slave System Behavior](#62-slave-system-behavior)
 
 7. [Troubleshooting](#7-troubleshooting) \
    7.1. [Common Issues](#71-common-issues) | 7.2. [Debug Support](#72-debug-support)
@@ -58,7 +58,7 @@ sequenceDiagram
     KMod->>ESP: Load Driver
     ESP->>Router: Connect WiFi (if configured)
     Router-->>ESP: IP Assignment
-    
+
     Note over Host,Router: IP Recovery
     Daemon->>ESP: Query MAC Address
     ESP-->>Daemon: Return MAC
@@ -66,7 +66,7 @@ sequenceDiagram
     ESP-->>Daemon: Return IP/DNS Info
     Daemon->>KMod: Configure Network Interface
     Daemon->>Host: Update resolv.conf
-    
+
     Note over Host,Router: Network Ready
     Host->>Router: Network Traffic Begins
     ESP->>ESP: Start Packet Filtering
@@ -74,7 +74,7 @@ sequenceDiagram
 
 
 Key Recovery Steps:
-1. **Initial Connection**: 
+1. **Initial Connection**:
    - ESP slave connects to WiFi and obtains IP configuration
    - Configuration is stored in slave's flash memory
    - Host retrieves and applies this configuration
@@ -143,7 +143,7 @@ flowchart TD
     B -->|No| D{IP Packet?}
     D -->|Yes| E[Protocol Processing]
     D -->|No| F[ARP Processing]
-    
+
     classDef note fill:#fff,stroke:#333,stroke-dasharray: 5 5;
     class C note;
 ```
@@ -157,20 +157,20 @@ flowchart TD
     G2 -->|No| G3{Host datapath open?}
     G3 -->|No| K[Send to Host Network]
     G3 -->|Yes| C
-    
+
     G1 -->|No| G4{Source Port == MQTT<br/>1883?}
     G4 -->|Yes| G5{Host datapath open?}
     G5 -->|Yes| G6{Contains<br/>'start-up-host'?}
     G6 -->|Yes| K
     G6 -->|No| L[Drop Packet]
     G5 -->|No| K
-    
+
     G4 -->|No| G7{Is Remote TCP Port?}
     G7 -->|Yes| G8{Host Sleeping?}
     G8 -->|Yes| K
     G8 -->|No| K
     G7 -->|No| C
-    
+
     classDef note fill:#fff,stroke:#333,stroke-dasharray: 5 5;
     class K,C,L note;
 ```
@@ -184,13 +184,13 @@ flowchart TD
     H2 -->|No| H3{Host Sleeping?}
     H3 -->|No| K[Send to Host Network]
     H3 -->|Yes| C
-    
+
     H1 -->|No| H4{DHCP Client Port?}
     H4 -->|Yes| M[Send to DHCP Handler]
     H4 -->|No| H5{Is Remote UDP Port?}
     H5 -->|Yes| K
     H5 -->|No| C
-    
+
     classDef note fill:#fff,stroke:#333,stroke-dasharray: 5 5;
     class K,C,M note;
 ```
@@ -206,7 +206,7 @@ flowchart TD
     I3 -->|Yes| C
     I3 -->|No| N[Send to Both Networks]
     end
-    
+
     subgraph ARP
     F[ARP Packet] --> F1{ARP Request?}
     F1 -->|Yes| C
@@ -214,7 +214,7 @@ flowchart TD
     F2 -->|Yes| C
     F2 -->|No| N
     end
-    
+
     classDef note fill:#fff,stroke:#333,stroke-dasharray: 5 5;
     class N,C note;
 ```
@@ -232,10 +232,10 @@ This routing involves:
 
 To enable both slave and host to handle network traffic (re-using same IP address) we need to configure the port range and traffic routing logic.
 
-The feature is controlled by 
+The feature is controlled by
 ```
-	config SLAVE_LWIP_ENABLED
-		bool "Enable the LWIP at slave"
+	config NETWORK_SPLIT_ENABLED
+		bool "Enable the LWIP at slave, in addition to host network stack"
 		default y
 ```
 option at slave main/Kconfig.projbuild file.
@@ -243,7 +243,7 @@ option at slave main/Kconfig.projbuild file.
 ### 3.2. IP Recovery Process
 
 1. **Slave Handling**
-The slave handles the wifi connection and ip address handling. The wifi SSID and password are handled in slave only and never travel to the host, if `CONFIG_SLAVE_MANAGES_WIFI` is enabled.
+The slave handles the wifi connection and ip address handling. The wifi SSID and password are handled in slave only and never travel to the host, if `CONFIG_NETWORK_SPLIT_ENABLED` is enabled.
 
 Slave on boot up, could be configured to connect to wifi using a command,
 
@@ -300,7 +300,7 @@ If the ip address is available, it would configure the host's network interface 
   └── ctrl_api.c       // Control interface
   ```
 
-### 4.3. Slave - Network configuration 
+### 4.3. Slave - Network configuration
 
 The slave control components handle network management on the ESP side:
 
@@ -317,13 +317,11 @@ The slave control components handle network management on the ESP side:
 
 2. **Configuration** (`Kconfig.projbuild`):
 
-1. WiFi Management:
-   - `CONFIG_SLAVE_MANAGES_WIFI`: Enable autonomous WiFi handling
 
-2. Network Split
-   - `CONFIG_SLAVE_LWIP_ENABLED`: Enable the LWIP at slave, basically, host and slave both have network interfaces, with same IP address, but different port ranges.
+2.1 Network Split
+   - `CONFIG_NETWORK_SPLIT_ENABLED`: Enable the LWIP at slave, basically, host and slave both have network interfaces, with same IP address, but different port ranges.
 
-3. Network Filtering:
+2.2 Network Filtering:
    - `CONFIG_LWIP_TCP_LOCAL_PORT_RANGE_START`: Configure TCP port ranges
    - `CONFIG_LWIP_TCP_LOCAL_PORT_RANGE_END`: Configure TCP port ranges
    - `CONFIG_LWIP_UDP_LOCAL_PORT_RANGE_START`: Configure UDP port ranges
