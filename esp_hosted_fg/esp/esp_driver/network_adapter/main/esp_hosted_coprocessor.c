@@ -39,6 +39,7 @@
 #include "slave_bt.h"
 #include "stats.h"
 #include "esp_fw_version.h"
+#include "esp_hosted_cli.h"
 
 #include "host_power_save.h"
 
@@ -790,7 +791,6 @@ esp_err_t esp_hosted_coprocessor_init(void)
 			CONFIG_ESP_DEFAULT_TASK_STACK_SIZE, NULL ,
 			CONFIG_ESP_HOSTED_TASK_PRIORITY_DEFAULT, NULL) == pdTRUE);
 	create_debugging_tasks();
-
 
 #ifdef H_ESP_HOSTED_CLI_ENABLED
 	esp_hosted_cli_start();

@@ -235,6 +235,9 @@ typedef enum _CtrlMsgId {
 typedef enum _HostedFeature {
   HOSTED_FEATURE__Hosted_InvalidFeature = 0,
   HOSTED_FEATURE__Hosted_Wifi = 1,
+  /*
+   * Add your new features here and re-build prot using build_proto.sh 
+   */
   HOSTED_FEATURE__Hosted_Bluetooth = 2
     PROTOBUF_C__FORCE_ENUM_TO_BE_INT_SIZE(HOSTED_FEATURE)
 } HostedFeature;

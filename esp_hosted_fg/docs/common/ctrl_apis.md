@@ -1498,6 +1498,60 @@ Ethernet interface name
 
 ---
 
+### 1.35 [ctrl_cmd_t](#416-struct-ctrl_cmd_t) * send_custom_rpc_unserialised_req_to_slave([ctrl_cmd_t](#416-struct-ctrl_cmd_t) req)
+
+This is used to send custom RPC messages directly to the ESP in an unserialised format.
+
+#### Parameters
+- `ctrl_cmd_t req` :
+Control request as input with following
+  - **`req.u.custom_rpc_unserialised_data.custom_msg_id`** :
+    - Custom message ID to identify the RPC request
+  - **`req.u.custom_rpc_unserialised_data.data`** :
+    - Binary data buffer containing the unserialised message
+  - **`req.u.custom_rpc_unserialised_data.data_len`** :
+    - Size of the data buffer in bytes
+  - **`req.u.custom_rpc_unserialised_data.free_func`** :
+    - Function to free the data buffer when no longer needed
+  - `req.ctrl_resp_cb` : optional
+    - `NULL` :
+      - Treat as synchronous procedure
+      - Application would be blocked till response is received from hosted control library
+    - `Non-NULL` :
+      - Treat as asynchronous procedure
+      - Callback function of type [ctrl_resp_cb_t](#31-typedef-int-ctrl_resp_cb_t-ctrl_cmd_t-resp) is registered
+      - Application would be will **not** be blocked for response and API is returned immediately
+      - Response from ESP when received by hosted control library, this callback would be called
+  - `req.cmd_timeout_sec` : optional
+    - Timeout duration to wait for response in sync or async procedure
+    - Default value is 30 sec
+    - In case of async procedure, response callback function with error control response would be called to wait for response
+
+#### Return
+
+- `ctrl_cmd_t *app_resp` :
+dynamically allocated response pointer of type struct `ctrl_cmd_t *`
+  - **`resp->resp_event_status`** :
+    - 0 : `SUCCESS`
+    - != 0 : `FAILURE`
+  - **`app_resp->u.custom_rpc_unserialised_data.custom_msg_id`** :
+    - Custom message ID from the response, which should match the request
+  - **`app_resp->u.custom_rpc_unserialised_data.data`** :
+    - Binary data buffer containing the unserialised response message
+  - **`app_resp->u.custom_rpc_unserialised_data.data_len`** :
+    - Size of the response data buffer in bytes
+- `NULL` :
+  - Synchronous procedure: Failure
+  - Asynchronous procedure:
+    - Expected as NULL return value as response is processed in callback function
+    - In callback function, parameter `ctrl_cmd_t *app_resp` behaves same as above
+
+#### Note
+- Application is expected to properly allocate and free the data buffer for both request and response
+- Application is expected to free `ctrl_cmd_t *app_resp`
+
+---
+
 ## 2. Control path events
 - Event are something that the application would subscribe to and get notification when some condition occurs. This way application doesnot have to poll for that condition
 - Event subscribe
@@ -1513,8 +1567,8 @@ Ethernet interface name
 
 ### 2.2 Heartbeat
 - Application need to subscribe heartbeat event to get liveliness status of ESP
-- Application need to configure heartbeat using API [config_heartbeat()](#122-ctrl_cmd_t-config_heartbeatctrl_cmd_t-req)
-- This event notification will occur every duration seconds as mentioned in [config_heartbeat()](#122-ctrl_cmd_t-config_heartbeatctrl_cmd_t-req)
+- Application need to configure heartbeat using API [config_heartbeat()](#125-ctrl_cmd_t-config_heartbeatctrl_cmd_t-req)
+- This event notification will occur every duration seconds as mentioned in [config_heartbeat()](#125-ctrl_cmd_t-config_heartbeatctrl_cmd_t-req)
 - Events are only notified if application subscribes this event **and** have configured heartbeat
 
 ### 2.3 Station disconnected from AP
@@ -1524,6 +1578,16 @@ Ethernet interface name
 ### 2.4 Station disconnected from ESP SoftAP
 - This event is useful to understand if any station disconnection with ESP softAP
 - MAC address of station disconnecting is given to application
+
+### 2.5 Station connected to AP
+- This event notifies when the ESP station successfully connects to an external AP
+- Provides information about the connected AP including SSID, BSSID, channel, and authentication mode
+- Application can use this to know when the connection is established without polling
+
+### 2.6 Station connected to ESP SoftAP
+- This event notifies when an external station connects to the ESP SoftAP
+- Provides information about the connected station including MAC address and association ID
+- Application can use this to track connected clients and perform any necessary setup
 
 ## 3. Function callbacks
 
@@ -1768,7 +1832,7 @@ This contains the Wi-Fi power map value to be set or get using API [wifi_set_max
 
 - `int power` :
 - The value set by this API will be mapped to the max_tx_power of the structure wifi_country_t variable in Wi-Fi driver
-  - Mapping Table {wifi_max_tx_power, max_tx_power} = {{8,   2}, {20,  5}, {28,  7}, {34,  8}, {44, 11}, {52, 13}, {56, 14}, {60, 15}, {66, 16}, {72, 18}, {80, 20}}
+  - Mapping Table {`wifi_max_tx_power`, `max_tx_power`} = {{8,   2}, {20,  5}, {28,  7}, {34,  8}, {44, 11}, {52, 13}, {56, 14}, {60, 15}, {66, 16}, {72, 18}, {80, 20}}
   - Input parameter `wifi_max_tx_power` unit is 0.25dBm, range is [8, 84] corresponding to `2dBm to 20dBm`
   - Relationship between set value and actual value. As follows: {set value range, actual value} = {{[8,  19],8}, {[20, 27],20}, {[28, 33],28}, {[34, 43],34}, {[44, 51],44}, {[52, 55],52}, {[56, 59],56}, {[60, 65],60}, {[66, 71],66}, {[72, 79],72}, {[80, 84],80}}
 
@@ -1832,6 +1896,121 @@ Union of some of the control message, which need extra data to be passed/parsed 
   - In case of control response - This handle is set to valid function pointer in association with Non-NULL 'free_buffer_handle' by hosted control library so that when application is finished with processing, will clean up this handle using this function at the end
   - In case of control request - This handle is set to valid function pointer in association with Non-NULL 'free_buffer_handle' by the application so that when hosted control library is finished with processing, will clean up this handle using this function at the end
   - Ignored if assigned as NULL, assuming there is no data expected to be free
+
+---
+
+### 4.17 _struct_ `fw_version_t`:
+
+- Used for firmware version information returned by [get_fw_version()](#122-ctrl_cmd_t-get_fw_versionctrl_cmd_t-req)
+
+- `char project_name[3]` :
+  - Two-letter code identifying the firmware (default is "FG")
+- `uint32_t major_1` :
+  - First major version number component
+- `uint32_t major_2` :
+  - Second major version number component
+- `uint32_t minor` :
+  - Minor version number
+- `uint32_t rev_patch_1` :
+  - First revision patch number
+- `uint32_t rev_patch_2` :
+  - Second revision patch number
+
+---
+
+### 4.18 _struct_ `country_code_t`:
+
+- Used for Wi-Fi country code settings in [wifi_set_country_code()](#123-ctrl_cmd_t-wifi_set_country_codectrl_cmd_t-req) and [wifi_get_country_code()](#124-ctrl_cmd_t-wifi_get_country_codectrl_cmd_t-req)
+
+- `char country[COUNTRY_CODE_LEN]` :
+  - Country code string, typically 2 characters for country code + 1 character for environment indicator
+- `bool ieee80211d_enabled` :
+  - Enable/disable IEEE 802.11d support
+
+---
+
+### 4.19 _struct_ `custom_rpc_unserialised_data_t`:
+
+- Used for custom RPC communication in [send_custom_rpc_unserialised_req_to_slave()](#135-ctrl_cmd_t-send_custom_rpc_unserialised_req_to_slavectrl_cmd_t-req)
+
+- `uint32_t custom_msg_id` :
+  - Custom message ID to identify the RPC request/response
+- `uint16_t data_len` :
+  - Size of the data buffer in bytes
+- `custom_data_free_func_t free_func` :
+  - Function to free the data buffer
+- `uint8_t *data` :
+  - Binary data buffer for the unserialised message
+
+---
+
+### 4.20 _struct_ `event_sta_conn_t`:
+
+- Used in the station connection event structure when station connects to an AP
+- Member of the union in control command structure
+
+- `int32_t resp` :
+  - Response status of the event
+- `uint8_t ssid[SSID_LENGTH]` :
+  - SSID of the AP that station connected to
+- `uint32_t ssid_len` :
+  - Length of the SSID
+- `uint8_t bssid[BSSID_LENGTH]` :
+  - BSSID (MAC address) of the AP
+- `uint32_t channel` :
+  - Channel on which the connection was established
+- `int32_t authmode` :
+  - Authentication mode used for the connection
+- `int32_t aid` :
+  - Association ID assigned by the AP
+
+---
+
+### 4.21 _struct_ `event_softap_sta_conn_t`:
+
+- Used in the station connection event structure when a station connects to ESP SoftAP
+- Member of the union in control command structure
+
+- `int32_t resp` :
+  - Response status of the event
+- `uint8_t mac[BSSID_LENGTH]` :
+  - MAC address of the station that connected
+- `uint32_t aid` :
+  - Association ID assigned to the station
+- `bool is_mesh_child` :
+  - Indicates if the station is a mesh child node (ESP mesh networking feature)
+
+---
+
+### 4.22 _struct_ `event_softap_sta_disconn_t`:
+
+- Used in the station disconnection event structure when a station disconnects from ESP SoftAP
+- Member of the union in control command structure
+
+- `int32_t resp` :
+  - Response status of the event
+- `uint8_t mac[BSSID_LENGTH]` :
+  - MAC address of the station that disconnected
+- `uint32_t aid` :
+  - Association ID that was assigned to the station
+- `bool is_mesh_child` :
+  - Indicates if the station was a mesh child node
+- `uint32_t reason` :
+  - Reason code for the disconnection
+
+---
+
+### 4.23 _struct_ `feature_enable_disable_t`:
+
+- Used for enabling or disabling specific features in [feature_config()](#132-ctrl_cmd_t-feature_configctrl_cmd_t-req)
+
+- `uint32_t feature` :
+  - Feature identifier from the `hosted_features_t` enum
+    - 1 : `HOSTED_WIFI` - Wi-Fi functionality
+    - 2 : `HOSTED_BT` - Bluetooth functionality
+- `bool enable` :
+  - 1: Enable the feature
+  - 0: Disable the feature
 
 ---
 
@@ -1919,10 +2098,21 @@ _Values_:
 #### Note
 This structure is map to `CtrlMsgType` from `esp_hosted_config.pb-c.h`
 
-### 5.8 _enum_ `AppMsgId_e` :
+### 5.8 _enum_ `HostedFeature` :
+Enumeration for available features that can be enabled or disabled with feature_config() API
+_Values_:
+- `HOSTED_FEATURE__Hosted_InvalidFeature` = 0 :
+Invalid feature identifier
+- `HOSTED_FEATURE__Hosted_Wifi` = 1 :
+Wi-Fi functionality
+- `HOSTED_FEATURE__Hosted_Bluetooth` = 2 :
+Bluetooth functionality
+---
+
+### 5.9 _enum_ `AppMsgId_e` :
 The message id of control msg. This could be one of request, response or event appmsgid_e \
 _Values_:
-#### 5.8.1 Requests
+#### 5.9.1 Requests
 - `CTRL_REQ_BASE`                      = 100
 - `CTRL_REQ_GET_MAC_ADDR`              = 101
 - `CTRL_REQ_SET_MAC_ADDR`              = 102
@@ -1957,9 +2147,14 @@ _Values_:
 
 
 - `CTRL_REQ_CONFIG_HEARTBEAT`          = 121
-- `CTRL_REQ_MAX` = 122
+- `CTRL_REQ_ENABLE_DISABLE`            = 122
+- `CTRL_REQ_GET_FW_VERSION`            = 123
+- `CTRL_REQ_SET_COUNTRY_CODE`          = 124
+- `CTRL_REQ_GET_COUNTRY_CODE`          = 125
+- `CTRL_REQ_CUSTOM_RPC_UNSERIALISED_MSG` = 126
+- `CTRL_REQ_MAX`                       = 127
 
-#### 5.8.2 Responses
+#### 5.9.2 Responses
 - `CTRL_RESP_BASE`                     = 200
 - `CTRL_RESP_GET_MAC_ADDR`             = 201
 - `CTRL_RESP_SET_MAC_ADDRESS`          = 202
@@ -1989,20 +2184,28 @@ _Values_:
 - `CTRL_RESP_OTA_END`                  = 218
 
 
-- `CTRL_RESP_SET_WIFI_MAX_TX_POWER`     = 219
-- `CTRL_RESP_GET_WIFI_CURR_TX_POWER`    = 220
+- `CTRL_RESP_SET_WIFI_MAX_TX_POWER`    = 219
+- `CTRL_RESP_GET_WIFI_CURR_TX_POWER`   = 220
 
 
-- `CTRL_RESP_CONFIG_HEARTBEAT`          = 221
-- `CTRL_RESP_MAX` = 222
+- `CTRL_RESP_CONFIG_HEARTBEAT`         = 221
+- `CTRL_RESP_ENABLE_DISABLE`           = 222
+- `CTRL_RESP_GET_FW_VERSION`           = 223
+- `CTRL_RESP_SET_COUNTRY_CODE`         = 224
+- `CTRL_RESP_GET_COUNTRY_CODE`         = 225
+- `CTRL_RESP_CUSTOM_RPC_UNSERIALISED_MSG` = 226
+- `CTRL_RESP_MAX`                      = 227
 
-#### 5.8.3 Events
+#### 5.9.3 Events
 - `CTRL_EVENT_BASE`            = 300
 - `CTRL_EVENT_ESP_INIT`        = 301
 - `CTRL_EVENT_HEARTBEAT`       = 302
 - `CTRL_EVENT_STATION_DISCONNECT_FROM_AP` = 303
 - `CTRL_EVENT_STATION_DISCONNECT_FROM_ESP_SOFTAP` = 304
-- `CTRL_EVENT_MAX` = 305
+- `CTRL_EVENT_STATION_CONNECTED_TO_AP` = 305
+- `CTRL_EVENT_STATION_CONNECTED_TO_ESP_SOFTAP` = 306
+- `CTRL_EVENT_CUSTOM_RPC_UNSERIALISED_MSG` = 307
+- `CTRL_EVENT_MAX` = 308
 
 #### Note
   This enum is mapping to `CtrlMsgId` from `esp_hosted_config.pb-c.h`

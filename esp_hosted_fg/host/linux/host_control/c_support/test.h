@@ -124,5 +124,4 @@ int default_rpc_resp_handler(ctrl_cmd_t *app_resp);
 int test_validate_ctrl_event(ctrl_cmd_t *app_event);
 int test_validate_ctrl_resp(ctrl_cmd_t *app_resp);
 
-
 #endif

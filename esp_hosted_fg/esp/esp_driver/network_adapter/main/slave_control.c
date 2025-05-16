@@ -35,7 +35,6 @@
 #define MIN_TX_POWER                8
 #define MAX_TX_POWER                84
 
-
 #define TIMEOUT_IN_MIN              (60*TIMEOUT_IN_SEC)
 #define TIMEOUT_IN_HOUR             (60*TIMEOUT_IN_MIN)
 #if WIFI_DUALBAND_SUPPORT
@@ -153,6 +152,7 @@ esp_err_t esp_hosted_set_sta_config(wifi_interface_t iface, wifi_config_t *cfg)
 			prev_wifi_config_valid = false;
 		}
 	}
+	prev_wifi_config_valid = false;
 
 	if (!is_wifi_config_equal(cfg, &current_config)) {
 		new_config_recvd = 1;

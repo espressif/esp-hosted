@@ -1033,7 +1033,7 @@ static void *auto_ip_restore_thread_handler(void *arg) {
 		}
 
 		rpc_state = RPC_STATE_ACTIVE;
-		printf("Communication with slave is ready\n");
+		printf("RPC at host is ready\n");
 
 		/* Initialize the network structure fields */
 		memset(&sta_network, 0, sizeof(network_info_t));

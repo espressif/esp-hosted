@@ -66,7 +66,6 @@ typedef struct {
 	ctrl_resp_cb_t fun;
 } event_callback_table_t;
 
-
 static inline bool successful_response(ctrl_cmd_t *resp)
 {
 	return resp && resp->resp_event_status == SUCCESS;
@@ -158,16 +157,27 @@ static int ctrl_app_event_callback(ctrl_cmd_t *app_event) {
 			printf("%s App EVENT: STA-Connected ssid[%s] bssid[%s] channel[%d] auth[%d] aid[%d]\n",
 				get_timestamp(ts, MIN_TIMESTAMP_STR_SIZE), p_e->ssid,
 				p_e->bssid, p_e->channel, p_e->authmode, p_e->aid);
+
 			prev_network_down = false;
 			interface_down_printed = false;
+
+			if (sta_network.mac_addr[0] != '\0') {
+				up_sta_netdev(&sta_network);
+			} else {
+				printf("Interface ethsta0 not made up, as MAC is not set\n");
+				printf("You may consider calling 'test_station_mode_get_mac_addr(sta_network.mac_addr);' to set the STA MAC before\n");
+			}
 			break;
 		} case CTRL_EVENT_STATION_DISCONNECT_FROM_AP: {
 			event_sta_disconn_t *p_e =  &app_event->u.e_sta_disconn;
 			printf("%s App EVENT: STA-Disconnected reason[%d] ssid[%s] bssid[%s] rssi[%d]\n",
 				get_timestamp(ts, MIN_TIMESTAMP_STR_SIZE), p_e->reason, p_e->ssid,
 				p_e->bssid, p_e->rssi);
+
 			prev_network_down = false; /* Reset to allow network down message */
 			interface_down_printed = false;
+
+			down_sta_netdev(&sta_network);
 			break;
 		} case CTRL_EVENT_STATION_CONNECTED_TO_ESP_SOFTAP: {
 			event_softap_sta_conn_t *p_e = &app_event->u.e_softap_sta_conn;
@@ -1181,7 +1191,7 @@ int test_enable_wifi(void) {
 
 		/* Now bring up the interfaces with the MAC addresses */
 		if (sta_network.mac_addr[0] != '\0') {
-			up_sta_netdev(&sta_network);
+			up_sta_netdev__with_static_ip_dns_route(&sta_network);
 		}
 
 		if (ap_network.mac_addr[0] != '\0') {

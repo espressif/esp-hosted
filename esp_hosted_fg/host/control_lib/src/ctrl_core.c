@@ -198,8 +198,6 @@ static int ctrl_app_parse_event(CtrlMsg *ctrl_msg, ctrl_cmd_t *app_ntfy)
 			break;
 		} case CTRL_EVENT_STATION_CONNECTED_TO_AP: {
 			CHECK_CTRL_MSG_NON_NULL(event_station_connected_to_ap);
-			//command_log("EVENT: Station mode: Disconnect with reason [%u]\n",
-			//		ctrl_msg->event_station_connected_to_ap->resp);
 			app_ntfy->resp_event_status = ctrl_msg->event_station_connected_to_ap->resp;
 			if(SUCCESS==app_ntfy->resp_event_status) {
 				if (ctrl_msg->event_station_connected_to_ap->ssid.len && ctrl_msg->event_station_connected_to_ap->ssid.data) {
@@ -208,6 +206,7 @@ static int ctrl_app_parse_event(CtrlMsg *ctrl_msg, ctrl_cmd_t *app_ntfy)
 						ctrl_msg->event_station_connected_to_ap->ssid.len);
 				}
 				app_ntfy->u.e_sta_conn.ssid_len = ctrl_msg->event_station_connected_to_ap->ssid_len;
+				//command_log("EVENT: Station mode: Connected to AP SSID[%s] len[%d]\n", app_ntfy->u.e_sta_conn.ssid, app_ntfy->u.e_sta_conn.ssid_len);
 
 				if (ctrl_msg->event_station_connected_to_ap->bssid.len && ctrl_msg->event_station_connected_to_ap->bssid.data) {
 					strncpy((char *)app_ntfy->u.e_sta_conn.bssid,
@@ -671,7 +670,8 @@ static int ctrl_app_parse_resp(CtrlMsg *ctrl_msg, ctrl_cmd_t *app_resp)
 			break;
 		} case CTRL_RESP_ENABLE_DISABLE: {
 			CHECK_CTRL_MSG_NON_NULL(resp_enable_disable_feat);
-			CHECK_CTRL_MSG_FAILED(resp_enable_disable_feat);
+			//CHECK_CTRL_MSG_FAILED(resp_enable_disable_feat);
+			app_resp->resp_event_status = ctrl_msg->resp_enable_disable_feat->resp;
 			break;
 		} case CTRL_RESP_GET_FW_VERSION: {
 			CHECK_CTRL_MSG_NON_NULL(resp_get_fw_version);
@@ -1577,7 +1577,7 @@ int ctrl_app_send_req(ctrl_cmd_t *app_req)
 			ctrl_msg__req__enable_disable__init(req_payload);
 			req_payload->feature = app_req->u.feat_ena_disable.feature;
 			req_payload->enable = app_req->u.feat_ena_disable.enable;
-			command_log("%sable feature [%d]\n", (req_payload->enable)? "en": "dis", req_payload->feature);
+			//command_log("%sable feature [%d]\n", (req_payload->enable)? "en": "dis", req_payload->feature);
 			break;
 		} case CTRL_REQ_CUSTOM_RPC_UNSERIALISED_MSG: {
 			CTRL_ALLOC_ASSIGN(CtrlMsgReqCustomRpcUnserialisedMsg, req_custom_rpc_unserialised_msg);
