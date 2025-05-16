@@ -170,6 +170,7 @@ enum HostedFeature {
 	Hosted_InvalidFeature = 0;
 	Hosted_Wifi = 1;
 	Hosted_Bluetooth = 2;
+	Hosted_Is_Network_Split_On = 3;
 
 	/* Add your new features here and re-build prot using build_proto.sh */
 }

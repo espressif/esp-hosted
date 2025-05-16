@@ -93,6 +93,7 @@ int test_disable_bt(void);
 int test_enable_bt(void);
 int test_disable_wifi(void);
 int test_enable_wifi(void);
+int test_is_network_split_on(void);
 char * test_get_fw_version(char *, uint16_t);
 int test_print_fw_version(void);
 int test_set_country_code_enabled();
@@ -126,8 +127,5 @@ int default_rpc_resp_handler(ctrl_cmd_t *app_resp);
 int test_validate_ctrl_event(ctrl_cmd_t *app_event);
 int test_validate_ctrl_resp(ctrl_cmd_t *app_resp);
 
-
-int test_set_network_split_enabled_at_host(int enabled);
-int is_network_split_enabled_at_host(void);
-
+int test_is_network_split_on(void);
 #endif

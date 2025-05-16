@@ -333,10 +333,6 @@ static const cmd_arg_t custom_rpc_request_args[] = {
 	{"--demo", "Demo number (1, 2, or 3)", ARG_TYPE_INT, true, NULL}
 };
 
-static const cmd_arg_t config_network_split_args[] = {
-	{"--enable", "Enable or disable network split", ARG_TYPE_BOOL, true, NULL}
-};
-
 /* Forward declarations for command handlers */
 static int handle_exit(int argc, char **argv);
 static int handle_help(int argc, char **argv);
@@ -368,7 +364,6 @@ static int handle_subscribe_event(int argc, char **argv);
 static int handle_unsubscribe_event(int argc, char **argv);
 static int handle_set_host_port_range(int argc, char **argv);
 static int handle_custom_demo_rpc_request(int argc, char **argv);
-static int handle_config_network_split(int argc, char **argv);
 
 
 /* Command table */
@@ -402,7 +397,6 @@ static const shell_command_t commands[] = {
 	{"unsubscribe_event", "Unsubscribe from events", handle_unsubscribe_event, unsubscribe_event_args, sizeof(unsubscribe_event_args)/sizeof(cmd_arg_t)},
 	{"custom_demo_rpc_request", "Send custom RPC demo request and wait for response", handle_custom_demo_rpc_request, custom_rpc_request_args, sizeof(custom_rpc_request_args)/sizeof(cmd_arg_t)},
 	{"cli_set_host_port_range", "Set host port range", handle_set_host_port_range, NULL, 0},
-	{"config_network_split_locally", "Enable or disable network split", handle_config_network_split, config_network_split_args, sizeof(config_network_split_args)/sizeof(cmd_arg_t)},
 	{"exit", "Exit the shell", handle_exit, NULL, 0},
 	{"quit", "Exit the shell", handle_exit, NULL, 0},
 	{"q", "Exit the shell", handle_exit, NULL, 0},
@@ -971,39 +965,6 @@ static int handle_set_host_port_range(int argc, char **argv) {
 	return update_host_network_port_range(start_port, end_port);
 }
 
-static int handle_config_network_split(int argc, char **argv)
-{
-	int network_split_enabled = 0;
-	if (!parse_arguments(argc, argv, config_network_split_args,
-			sizeof(config_network_split_args)/sizeof(cmd_arg_t))) {
-		return FAILURE;
-	}
-
-	const char *enable = get_arg_value(argc, argv, config_network_split_args,
-			sizeof(config_network_split_args)/sizeof(cmd_arg_t),
-			"--enable");
-
-	network_split_enabled = is_arg_true(enable);
-
-	if (network_split_enabled) {
-		test_set_network_split_enabled_at_host(network_split_enabled);
-		printf("Network split enabled locally (This would not be translated to slave)\n");
-		/* Update host network port range when enabling */
-		if (update_host_network_port_range(49152, 61439) != SUCCESS) {
-			printf("Warning: Failed to update host network port range\n");
-		}
-	} else {
-		test_set_network_split_enabled_at_host(network_split_enabled);
-		printf("Network split disabled locally (This would not be translated to slave)\n");
-		/* Clear host network port range when disabling */
-		if (clear_host_network_port_range() != SUCCESS) {
-			printf("Warning: Failed to clear host network port range\n");
-		}
-	}
-
-	return SUCCESS;
-}
-
 
 /* Shell initialization */
 static int shell_init(shell_context_t *ctx) {
@@ -1111,7 +1072,7 @@ static void *auto_ip_restore_thread_handler(void *arg) {
 		}
 
 		rpc_state = RPC_STATE_ACTIVE;
-		printf("Communication with slave is ready\n");
+		printf("RPC at host is ready\n");
 
 		/* Initialize the network structure fields */
 		memset(&sta_network, 0, sizeof(network_info_t));
@@ -1127,7 +1088,10 @@ static void *auto_ip_restore_thread_handler(void *arg) {
 		}
 
 		/* Fetch IP address from slave on bootup */
-		if (is_network_split_enabled_at_host()) {
+		if (test_is_network_split_on()) {
+			if (update_host_network_port_range(49152, 61439) != SUCCESS) {
+				printf("Failed to update host network port range\n");
+			}
 			if (test_fetch_ip_addr_from_slave() != SUCCESS) {
 				//printf("Failed to fetch IP status\n");
 			}
@@ -1136,7 +1100,7 @@ static void *auto_ip_restore_thread_handler(void *arg) {
 		while (!exit_thread_auto_ip_restore && rpc_state == RPC_STATE_ACTIVE) {
 
 #if POLL_FOR_IP_RESTORE
-			if (is_network_split_enabled_at_host()) {
+			if (test_is_network_split_on()) {
 				/* Refresh MAC addresses if they're empty */
 				if (sta_network.mac_addr[0] == '\0') {
 					test_station_mode_get_mac_addr(sta_network.mac_addr);
@@ -1174,7 +1138,7 @@ static void *auto_ip_restore_thread_handler(void *arg) {
 
 						if (!sta_network.network_up) {
 							printf("Setting up station network interface with IP %s\n", sta_network.ip_addr);
-							if (up_sta_netdev(&sta_network) == SUCCESS) {
+							if (up_sta_netdev__with_static_ip_dns_route(&sta_network) == SUCCESS) {
 								add_dns(sta_network.dns_addr);
 								sta_network.network_up = 1;
 								printf("Station network interface is now up\n");
@@ -1203,16 +1167,7 @@ static void *auto_ip_restore_thread_handler(void *arg) {
 
 /* RPC initialization */
 static int start_rpc_auto_ip_restore(void) {
-	printf("Trying to establish connection with Slave\n");
-
-	if (is_network_split_enabled_at_host()) {
-		/* Update host network port range */
-		if (update_host_network_port_range(49152, 61439) != SUCCESS) {
-			printf("Failed to update host network port range\n");
-			rpc_state = RPC_STATE_ERROR;
-			return -1;
-		}
-	}
+	printf("Waiting local RPC to be ready\n");
 
 	/* Create app thread */
 	if (pthread_create(&auto_ip_restore_thread, NULL, auto_ip_restore_thread_handler, NULL) != 0) {

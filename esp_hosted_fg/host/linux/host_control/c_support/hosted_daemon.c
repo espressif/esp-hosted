@@ -115,7 +115,7 @@ static int event_cb(ctrl_cmd_t * app_event)
 
 			if (sta_network.dns_valid && sta_network.ip_valid) {
 				LOG_MSG(LOG_INFO, "Network identified as up");
-				up_sta_netdev(&sta_network);
+				up_sta_netdev__with_static_ip_dns_route(&sta_network);
 				add_dns(sta_network.dns_addr);
 				local_network_up = 1;
 			} else {
@@ -274,10 +274,12 @@ static int init_app(void)
 		return FAILURE;
 	}
 
+	test_is_network_split_on();
+
 	subscribe_events();
 
 	app_init_done = 1;
-	LOG_MSG(LOG_INFO, "Communication with slave is ready");
+	LOG_MSG(LOG_INFO, "RPC at host is ready");
 	return 0;
 }
 
@@ -468,7 +470,7 @@ int main(int argc, char *argv[])
 	signal(SIGTERM, sig_handler);
 	signal(SIGUSR1, sig_handler);
 
-	LOG_MSG(LOG_INFO, "Waiting for slave communication");
+	LOG_MSG(LOG_INFO, "Waiting for slave RPC");
 
 	update_host_network_port_range(49152, 61439);
 
@@ -494,7 +496,7 @@ int main(int argc, char *argv[])
 
 			if (sta_network.dns_valid && sta_network.ip_valid) {
 				LOG_MSG(LOG_INFO, "Network identified as up");
-				up_sta_netdev(&sta_network);
+				up_sta_netdev__with_static_ip_dns_route(&sta_network);
 				add_dns(sta_network.dns_addr);
 				local_network_up = 1;
 			} else {

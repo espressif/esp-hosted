@@ -7,6 +7,7 @@
 
 int down_sta_netdev(const network_info_t *info);
 int up_sta_netdev(const network_info_t *info);
+int up_sta_netdev__with_static_ip_dns_route(const network_info_t *info);
 int down_softap_netdev(const network_info_t *info);
 int up_softap_netdev(const network_info_t *info);
 int remove_default_gateway(const char *gateway);

@@ -264,6 +264,7 @@ typedef enum {
 enum hosted_features_t {
 	HOSTED_WIFI = HOSTED_FEATURE__Hosted_Wifi,
 	HOSTED_BT = HOSTED_FEATURE__Hosted_Bluetooth,
+	HOSTED_IS_NETWORK_SPLIT_ON = HOSTED_FEATURE__Hosted_Is_Network_Split_On,
 };
 
 typedef struct {

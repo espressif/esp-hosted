@@ -7634,19 +7634,21 @@ const ProtobufCEnumDescriptor ctrl_msg_id__descriptor =
   ctrl_msg_id__value_ranges,
   NULL,NULL,NULL,NULL   /* reserved[1234] */
 };
-static const ProtobufCEnumValue hosted_feature__enum_values_by_number[3] =
+static const ProtobufCEnumValue hosted_feature__enum_values_by_number[4] =
 {
   { "Hosted_InvalidFeature", "HOSTED_FEATURE__Hosted_InvalidFeature", 0 },
   { "Hosted_Wifi", "HOSTED_FEATURE__Hosted_Wifi", 1 },
   { "Hosted_Bluetooth", "HOSTED_FEATURE__Hosted_Bluetooth", 2 },
+  { "Hosted_Is_Network_Split_On", "HOSTED_FEATURE__Hosted_Is_Network_Split_On", 3 },
 };
 static const ProtobufCIntRange hosted_feature__value_ranges[] = {
-{0, 0},{0, 3}
+{0, 0},{0, 4}
 };
-static const ProtobufCEnumValueIndex hosted_feature__enum_values_by_name[3] =
+static const ProtobufCEnumValueIndex hosted_feature__enum_values_by_name[4] =
 {
   { "Hosted_Bluetooth", 2 },
   { "Hosted_InvalidFeature", 0 },
+  { "Hosted_Is_Network_Split_On", 3 },
   { "Hosted_Wifi", 1 },
 };
 const ProtobufCEnumDescriptor hosted_feature__descriptor =
@@ -7656,9 +7658,9 @@ const ProtobufCEnumDescriptor hosted_feature__descriptor =
   "HostedFeature",
   "HostedFeature",
   "",
-  3,
+  4,
   hosted_feature__enum_values_by_number,
-  3,
+  4,
   hosted_feature__enum_values_by_name,
   1,
   hosted_feature__value_ranges,

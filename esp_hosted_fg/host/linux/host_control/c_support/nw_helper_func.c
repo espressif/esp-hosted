@@ -64,6 +64,64 @@ int up_sta_netdev(const network_info_t *info)
 {
 	int ret = SUCCESS, sockfd = 0;
 	char mac_copy[MAC_ADDR_LENGTH];
+
+	if (!info || info->mac_addr[0] == '\0') {
+		printf("Failure: station mac is empty\n");
+		return FAILURE;
+	}
+
+	/* Create local copy to handle const qualifier */
+	strncpy(mac_copy, info->mac_addr, MAC_ADDR_LENGTH);
+
+	ret = create_socket(AF_INET, SOCK_DGRAM, IPPROTO_IP, &sockfd);
+	if (ret < 0) {
+		printf("Failure to open socket\n");
+		return FAILURE;
+	}
+
+	ret = interface_down(sockfd, STA_INTERFACE);
+	if (ret == SUCCESS) {
+		DEBUG_LOG_VERBOSE("%s interface down\n", STA_INTERFACE);
+	} else {
+		printf("Unable to down %s interface\n", STA_INTERFACE);
+		goto close_sock;
+	}
+
+	ret = set_hw_addr(sockfd, STA_INTERFACE, mac_copy);
+	if (ret == SUCCESS) {
+		DEBUG_LOG_VERBOSE("MAC address %s set to %s interface\n", mac_copy, STA_INTERFACE);
+	} else {
+		printf("Unable to set MAC address to %s interface\n", STA_INTERFACE);
+		goto close_sock;
+	}
+
+	ret = interface_up(sockfd, STA_INTERFACE);
+	if (ret == SUCCESS) {
+		DEBUG_LOG_VERBOSE("%s interface up\n", STA_INTERFACE);
+	} else {
+		printf("Unable to up %s interface\n", STA_INTERFACE);
+		goto close_sock;
+	}
+
+	ret = close_socket(sockfd);
+	if (ret < 0) {
+		printf("Failure to close socket\n");
+		return FAILURE;
+	}
+	return SUCCESS;
+
+close_sock:
+	ret = close_socket(sockfd);
+	if (ret < 0) {
+		printf("Failure to close socket\n");
+	}
+	return FAILURE;
+}
+
+int up_sta_netdev__with_static_ip_dns_route(const network_info_t *info)
+{
+	int ret = SUCCESS, sockfd = 0;
+	char mac_copy[MAC_ADDR_LENGTH];
 	char ip_copy[MAC_ADDR_LENGTH];
 	char nm_copy[MAC_ADDR_LENGTH];
 	char gw_copy[MAC_ADDR_LENGTH];
