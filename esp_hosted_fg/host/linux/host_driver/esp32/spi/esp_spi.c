@@ -81,6 +81,26 @@ static struct esp_if_ops if_ops = {
 
 static DEFINE_MUTEX(spi_lock);
 
+static void print_capabilities(u32 cap)
+{
+	esp_info("Features supported are:\n");
+	if (cap & ESP_WLAN_SPI_SUPPORT)
+		esp_info("\t * WLAN\n");
+	if ((cap & ESP_BT_UART_SUPPORT) || (cap & ESP_BT_SPI_SUPPORT)) {
+		esp_info("\t * BT/BLE\n");
+		if (cap & ESP_BT_UART_SUPPORT)
+			esp_info("\t   - HCI over UART\n");
+		if (cap & ESP_BT_SPI_SUPPORT)
+			esp_info("\t   - HCI over SPI\n");
+
+		if ((cap & ESP_BLE_ONLY_SUPPORT) && (cap & ESP_BR_EDR_ONLY_SUPPORT))
+			esp_info("\t   - BT/BLE dual mode\n");
+		else if (cap & ESP_BLE_ONLY_SUPPORT)
+			esp_info("\t   - BLE only\n");
+		else if (cap & ESP_BR_EDR_ONLY_SUPPORT)
+			esp_info("\t   - BR EDR only\n");
+	}
+}
 
 static void open_data_path(void)
 {
@@ -254,6 +274,7 @@ int process_init_event(u8 *evt_buf, u8 len)
 		esp_info("EVENT: %d\n", *pos);
 		if (*pos == ESP_PRIV_CAPABILITY) {
 			adapter->capabilities = *(pos + 2);
+			print_capabilities(*(pos + 2));
 		} else if (*pos == ESP_PRIV_FIRMWARE_CHIP_ID){
 			hardware_type = *(pos+2);
 		} else if (*pos == ESP_PRIV_TEST_RAW_TP) {
