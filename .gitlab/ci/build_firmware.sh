@@ -9,7 +9,7 @@ TGT_NAME=$1
 cd esp_hosted_ng/esp/esp_driver/
 
 # Setup IDF and required libraries
-./setup.sh -f
+yes | ./setup.sh -f
 
 cd esp-idf
 echo "Exporting variables"
