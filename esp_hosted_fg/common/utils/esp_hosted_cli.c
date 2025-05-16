@@ -32,6 +32,8 @@
 #include "wifi_cmd.h"
 #include "iperf_cmd.h"
 #include "ping_cmd.h"
+
+#define CLI_NEW_INSTANCE 1
 #endif
 
 static const char *TAG = "esp_cli";
@@ -462,7 +464,7 @@ int esp_cli_register_cmds()
 }
 
 
-#ifdef CONFIG_ESP_HOSTED_CLI_NEW_INSTANCE
+#if defined(CLI_NEW_INSTANCE) && CLI_NEW_INSTANCE
 int esp_hosted_cli_start()
 {
 	static int cli_started;
@@ -470,6 +472,7 @@ int esp_hosted_cli_start()
 		return 0;
 	}
 
+	ESP_LOGI(TAG, "Starting CLI at slave");
 	esp_console_repl_t *repl = NULL;
 	esp_console_repl_config_t repl_config = ESP_CONSOLE_REPL_CONFIG_DEFAULT();
 #ifdef CONFIG_ESP_HOSTED_COPROCESSOR

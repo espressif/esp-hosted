@@ -102,12 +102,6 @@ static ssize_t esp_serial_write(struct file *file, const char __user *user_buffe
 	pos = (u8 *) user_buffer;
 
 	do {
-		/* Fragmentation support
-		 *  - Fragment large packets into multiple 1500 byte packets
-		 *  - MORE_FRAGMENT bit in flag tells if there are more fragments expected
-		 **/
-
-
 		if (atomic_read(&((struct esp_adapter *)dev->priv)->state) < ESP_CONTEXT_READY) {
 			esp_warn("slave disconnected, write aborted\n");
 			if (atomic_read(&ref_count_open)) {
@@ -116,6 +110,10 @@ static ssize_t esp_serial_write(struct file *file, const char __user *user_buffe
 			return -ENODEV;
 		}
 
+		/* Fragmentation support
+		 *  - Fragment large packets into multiple 1500 byte packets
+		 *  - MORE_FRAGMENT bit in flag tells if there are more fragments expected
+		 **/
 		if (left_len > ETH_DATA_LEN) {
 			frag_len = ETH_DATA_LEN;
 			flag = MORE_FRAGMENT;

@@ -616,12 +616,7 @@ menu "Example Configuration"
 	endmenu
 
 	config ESP_HOSTED_CLI_ENABLED
-		bool "Enable CLI Shell"
-		default y
-
-	config ESP_HOSTED_CLI_NEW_INSTANCE
-		depends on ESP_HOSTED_CLI_ENABLED
-		bool "Create new instance & do not re-use existing session if any"
+		bool "Start CLI at slave"
 		default y
 
 	choice "Wi-Fi control"

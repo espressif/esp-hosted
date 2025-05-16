@@ -40,13 +40,6 @@
 #define MIN_TX_POWER                8
 #define MAX_TX_POWER                84
 
-/* Bits for wifi connect event */
-#define WIFI_CONNECTED_BIT          BIT0
-#define WIFI_FAIL_BIT               BIT1
-#define WIFI_NO_AP_FOUND_BIT        BIT2
-#define WIFI_WRONG_PASSWORD_BIT     BIT3
-#define WIFI_HOST_REQUEST_BIT       BIT4
-
 #define MAX_STA_CONNECT_ATTEMPTS    3
 
 #define TIMEOUT_IN_MIN              (60*TIMEOUT_IN_SEC)
@@ -91,8 +84,9 @@ static ctrl_msg_set_dhcp_dns_status_t s2h_dhcp_dns;
 
 #endif
 
-static wifi_config_t prev_wifi_config = {0};
-static bool prev_wifi_config_valid = false;
+static wifi_config_t new_wifi_config;
+static bool new_config_recvd;
+static bool prev_wifi_config_valid;
 
 typedef struct esp_ctrl_msg_cmd {
 	int req_num;
@@ -103,20 +97,15 @@ typedef struct esp_ctrl_msg_cmd {
 static const char* TAG = "slave_ctrl";
 static TimerHandle_t handle_heartbeat_task;
 static uint32_t hb_num;
-static bool event_registered = false;
-
-/* FreeRTOS event group to signal when we are connected*/
-static EventGroupHandle_t wifi_event_group;
 
 #ifdef CONFIG_NETWORK_SPLIT_ENABLED
 static esp_event_handler_instance_t instance_ip;
 extern volatile uint8_t station_got_ip;
-static wifi_event_sta_connected_t lkg_sta_connected_event = {0};
 //static ip_event_got_ip_t lkg_sta_got_ip_event = {0};
 #endif
-uint16_t sta_connect_retry;
+static wifi_event_sta_connected_t lkg_sta_connected_event = {0};
 
-extern uint8_t host_available;
+uint16_t sta_connect_retry;
 
 static bool scan_done = false;
 static esp_ota_handle_t handle;
@@ -157,23 +146,26 @@ void vTimerCallback( TimerHandle_t xTimer )
 static void send_wifi_event_data_to_host(int event, void *event_data, int event_size)
 {
 #ifndef CONFIG_SLAVE_MANAGES_WIFI
-	if (host_available)
 		send_event_data_to_host(event, event_data, event_size);
 #endif
 }
 
 esp_err_t esp_hosted_set_sta_config(wifi_interface_t iface, wifi_config_t *cfg)
 {
-	int ret = 0;
-	//esp_wifi_set_storage(WIFI_STORAGE_RAM);
-	if (!prev_wifi_config_valid || !is_wifi_config_equal(cfg, &prev_wifi_config)) {
-		ESP_LOGI(TAG, "Setting new WiFi config SSID: %s", cfg->sta.ssid);
-		ret = esp_wifi_set_config(iface, cfg);
 
-		if (ret) {
-			ESP_LOGE(TAG, "Error while setting the wifi config");
-			return ret;
-		}
+	wifi_config_t current_config = {0};
+	if (esp_wifi_get_config(WIFI_IF_STA, &current_config) == ESP_OK) {
+	} else {
+		ESP_LOGW(TAG, "Failed to get current WiFi configuration");
+		prev_wifi_config_valid = false;
+	}
+
+	if (!is_wifi_config_equal(cfg, &current_config)) {
+		new_config_recvd = 1;
+		ESP_LOGI(TAG, "Setting new WiFi config SSID: %s", cfg->sta.ssid);
+
+		prev_wifi_config_valid = false;
+		memcpy(&new_wifi_config, cfg, sizeof(wifi_config_t));
 
 	} else {
 		ESP_LOGI(TAG, "WiFi config unchanged, keeping current connection");
@@ -376,12 +368,11 @@ esp_err_t set_slave_dns(wifi_interface_t iface, char *ip, uint8_t type)
 static void station_event_handler(void *arg, esp_event_base_t event_base,
 		int32_t event_id, void *event_data)
 {
+	int ret = 0;
 	/* Event handlers are called from event loop callbacks.
 	 * Please make sure that this callback function is as small as possible to avoid stack overflow */
 
 	if (event_id == WIFI_EVENT_STA_DISCONNECTED) {
-		wifi_event_sta_disconnected_t * disconnected_event =
-			(wifi_event_sta_disconnected_t *) event_data;
 
 		/* Mark as station disconnected */
 		station_connected = false;
@@ -390,85 +381,85 @@ static void station_event_handler(void *arg, esp_event_base_t event_base,
 		station_got_ip = 0;
 	#endif
 
-		if ((WIFI_HOST_REQUEST_BIT & xEventGroupGetBits(wifi_event_group)) != WIFI_HOST_REQUEST_BIT) {
-			/* Event should not be triggered if event handler is
-			 * called as part of host triggered procedure like sta_disconnect etc
-			 **/
+	#ifndef CONFIG_SLAVE_MANAGES_WIFI
+		wifi_event_sta_disconnected_t * disconnected_event =
+			(wifi_event_sta_disconnected_t *) event_data;
 
-			send_wifi_event_data_to_host(CTRL_MSG_ID__Event_StationDisconnectFromAP,
-					disconnected_event, sizeof(wifi_event_sta_disconnected_t));
-			ESP_LOGI(TAG, "Station disconnected, reason[%u]",
-					disconnected_event->reason);
-		} else {
-			send_wifi_event_data_to_host(CTRL_MSG_ID__Event_StationDisconnectFromAP,
-					disconnected_event, sizeof(wifi_event_sta_disconnected_t));
-			ESP_LOGI(TAG, "Manual Wi-Fi disconnected");
-		}
-
+		send_wifi_event_data_to_host(CTRL_MSG_ID__Event_StationDisconnectFromAP,
+				disconnected_event, sizeof(wifi_event_sta_disconnected_t));
+		ESP_LOGI(TAG, "Station disconnected, reason[%u]",
+				disconnected_event->reason);
+	#endif
 
 #ifdef CONFIG_NETWORK_SPLIT_ENABLED
 		send_dhcp_dns_info_to_host(0, 0);
 #endif
 
-		vTaskDelay(10);
 		ESP_LOGI(TAG, "Sta mode disconnect, retry[%u]", sta_connect_retry);
 		sta_connect_retry++;
 
-		/* find out reason for failure and
-		 * set corresponding event bit */
-		if (disconnected_event->reason == WIFI_REASON_NO_AP_FOUND)
-			xEventGroupSetBits(wifi_event_group, WIFI_NO_AP_FOUND_BIT);
-		else if ((disconnected_event->reason == WIFI_REASON_CONNECTION_FAIL) ||
-				(disconnected_event->reason == WIFI_REASON_NOT_AUTHED))
-			xEventGroupSetBits(wifi_event_group, WIFI_WRONG_PASSWORD_BIT);
-		else
-			xEventGroupSetBits(wifi_event_group, WIFI_FAIL_BIT);
+		/* Refresh from saved config, if not done already */
+		if (!prev_wifi_config_valid || new_config_recvd) {
+			if (new_config_recvd) {
+				ret = esp_wifi_set_config(WIFI_IF_STA, &new_wifi_config);
+				if (ret) {
+					ESP_LOGE(TAG, "Error[0x%x] while setting the wifi config", ret);
+					if (!softap_started) {
+						esp_wifi_stop();
+						esp_wifi_set_mode(WIFI_MODE_STA);
+						esp_wifi_start();
+					}
+				} else {
+					ESP_LOGW(TAG, "Successfully set new wifi config");
+					new_config_recvd = 0;
+				}
+			} else {
+				ESP_LOGI(TAG, "use wifi params from flash");
+			}
+		}
 #if 1
-			esp_wifi_connect();
+		esp_wifi_connect();
 #endif
 	} else if (event_id == WIFI_EVENT_STA_CONNECTED) {
+		wifi_event_sta_connected_t * connected_event =
+			(wifi_event_sta_connected_t *) event_data;
+
+		if (new_config_recvd) {
+			ESP_LOGI(TAG, "New wifi config still unapplied, applying it");
+			/* Still not applied new config, so apply it */
+			ret = esp_wifi_set_config(WIFI_IF_STA, &new_wifi_config);
+			if (ret) {
+				ESP_LOGE(TAG, "Error[0x%x] while setting the wifi config", ret);
+			} else {
+				new_config_recvd = 0;
+			}
+			esp_wifi_disconnect();
+			return;
+		}
 		sta_connect_retry = 0;
-		if ((WIFI_HOST_REQUEST_BIT & xEventGroupGetBits(wifi_event_group)) != WIFI_HOST_REQUEST_BIT) {
+		prev_wifi_config_valid = true;
+		#ifndef CONFIG_SLAVE_MANAGES_WIFI
 			/* Event should not be triggered if event handler is
 			 * called as part of host triggered procedure like sta_disconnect etc
 			 **/
-			ESP_LOGI(TAG, "Wifi Connected");
 			send_wifi_event_data_to_host(CTRL_MSG_ID__Event_StationConnectedToAP,
-					event_data, sizeof(wifi_event_sta_connected_t));
-		} else {
-			ESP_LOGI(TAG, "Manual Wi-Fi connected");
-			send_wifi_event_data_to_host(CTRL_MSG_ID__Event_StationConnectedToAP,
-					event_data, sizeof(wifi_event_sta_connected_t));
-		}
-		xEventGroupSetBits(wifi_event_group, WIFI_CONNECTED_BIT);
+					connected_event, sizeof(wifi_event_sta_connected_t));
+		#endif
 
-#ifdef CONFIG_NETWORK_SPLIT_ENABLED
-		// Store successful connection event details
-		memcpy(&lkg_sta_connected_event, event_data, sizeof(wifi_event_sta_connected_t));
-#endif
-		/*Overwrite our handler*/
+		memcpy(&lkg_sta_connected_event, connected_event, sizeof(wifi_event_sta_connected_t));
+
 		esp_wifi_internal_reg_rxcb(ESP_IF_WIFI_STA, (wifi_rxcb_t) wlan_sta_rx_callback);
 		station_connected = true;
-		ESP_LOGI(TAG, "Station connected");
-
-		/* Update configuration valid flag to ensure we know this is the active configuration */
-		/* This is important to capture changes made via slave-side CLI as well as host commands */
-		wifi_config_t current_config;
-		if (esp_wifi_get_config(WIFI_IF_STA, &current_config) == ESP_OK) {
-			ESP_LOGI(TAG, "Updating cached WiFi config with SSID: %s", current_config.sta.ssid);
-			memcpy(&prev_wifi_config, &current_config, sizeof(wifi_config_t));
-			prev_wifi_config_valid = true;
-		} else {
-			ESP_LOGW(TAG, "Failed to get current WiFi configuration after connection");
-		}
+		ESP_LOGI(TAG, "--- Station connected %s ---", connected_event->ssid);
 
 #if 1
 	} else if (event_id == WIFI_EVENT_STA_START) {
 		if (station_connected) {
 			ESP_LOGI(TAG, "Wifi already connected");
 			return;
+		} else {
+			esp_wifi_connect();
 		}
-		esp_wifi_connect();
 #endif
 	}
 }
@@ -716,7 +707,7 @@ static esp_err_t req_set_wifi_mode_handler (CtrlMsg *req,
 	}
 
 	if(!req->req_set_wifi_mode) {
-		ESP_LOGE(TAG, "Invalid payload");
+		ESP_LOGE(TAG, "Invalid wifi mode payload");
 		return ESP_FAIL;
 	}
 
@@ -755,7 +746,6 @@ static esp_err_t req_set_wifi_mode_handler (CtrlMsg *req,
 		 */
 		ESP_LOGI(TAG,"Station connected, disconnecting it before reconfiguring WiFi");
 		esp_wifi_disconnect();
-		station_connected = false;
 	}
 
 	ret = esp_wifi_set_mode(mode);
@@ -765,10 +755,9 @@ static esp_err_t req_set_wifi_mode_handler (CtrlMsg *req,
 	}
 
 	if (curr_mode == WIFI_MODE_STA || curr_mode == WIFI_MODE_APSTA) {
-		/* WiFi mode changed from STA/APSTA to something else, so invalidate cached WiFi config */
 		ESP_LOGI(TAG, "WiFi mode changed from %d to %d, invalidating cached config", curr_mode, mode);
 		prev_wifi_config_valid = false;
-		memset(&prev_wifi_config, 0, sizeof(wifi_config_t));
+		memset(&new_wifi_config, 0, sizeof(wifi_config_t));
 	}
 
 	ESP_LOGI(TAG, "Set WiFi mode to %d", mode);
@@ -789,13 +778,12 @@ static esp_err_t req_connect_ap_handler (CtrlMsg *req,
 	esp_err_t ret = ESP_OK;
 	wifi_config_t *wifi_cfg = NULL;
 	CtrlMsgRespConnectAP *resp_payload = NULL;
-	//EventBits_t bits = {0};
-	int retry = 0;
-	//bool wifi_changed = false;
+	bool wifi_changed = false;
 #if WIFI_DUALBAND_SUPPORT
 	wifi_band_mode_t band_mode = 0;
 	wifi_band_mode_t requested_band_mode = 0;
 #endif
+	wifi_mode_t mode = 0;
 
 	if (!req || !resp || !req->req_connect_ap) {
 		ESP_LOGE(TAG, "Invalid parameters");
@@ -813,7 +801,31 @@ static esp_err_t req_connect_ap_handler (CtrlMsg *req,
 	resp->resp_connect_ap = resp_payload;
 	resp_payload->resp = SUCCESS;
 
-	/* First create temporary wifi_config to compare with previous */
+	ret = esp_wifi_get_mode(&mode);
+	if (ret) {
+		ESP_LOGE(TAG,"Failed to get wifi mode[0x%x]", ret);
+		resp_payload->resp = ret;
+		goto err;
+	}
+
+	if ( (mode != WIFI_MODE_STA) && (mode != WIFI_MODE_APSTA) ) {
+		ESP_LOGI(TAG, "Existing mode: %u", mode);
+		if (softap_started) {
+			ret = esp_wifi_set_mode(WIFI_MODE_APSTA);
+			ESP_LOGI(TAG,"softap+station mode set");
+		} else {
+			ret = esp_wifi_set_mode(WIFI_MODE_STA);
+			ESP_LOGI(TAG,"station mode set");
+		}
+
+		if (ret) {
+			ESP_LOGE(TAG,"Failed to set mode[0x%x]", ret);
+			resp_payload->resp = ret;
+			goto err;
+		}
+		wifi_changed = true;
+	}
+
 	wifi_cfg = (wifi_config_t *)calloc(1,sizeof(wifi_config_t));
 	if (!wifi_cfg) {
 		ESP_LOGE(TAG,"Failed to allocate memory");
@@ -861,153 +873,119 @@ static esp_err_t req_connect_ap_handler (CtrlMsg *req,
 		// requested band mode not set: default to auto
 		requested_band_mode = WIFI_BAND_MODE_AUTO;
 	}
-	// get current band_mode
+
 	ret = esp_wifi_get_band_mode(&band_mode);
 	if (ret != ESP_OK) {
-		ESP_LOGW(TAG, "failed to get band mode, defaulting to AUTO");
+		ESP_LOGW(TAG, "failed to get band mode [0x%x], defaulting to AUTO", ret);
 		band_mode = WIFI_BAND_MODE_AUTO;
 	}
 	if (band_mode != requested_band_mode) {
 		ret = esp_wifi_set_band_mode(requested_band_mode);
 		if (ret) {
-			ESP_LOGE(TAG, "failed to set band mode");
+			ESP_LOGE(TAG, "failed to set band mode 0x%x", ret);
+			resp_payload->resp = ret;
 			goto err;
 		}
 		band_mode = requested_band_mode;
-		ESP_LOGI(TAG, "Set band mode to new value %d", band_mode);
+		ESP_LOGI(TAG, "Set band mode to new value 0x%x", band_mode);
 		resp_payload->band_mode = band_mode;
-		//wifi_changed = true;
+		wifi_changed = true;
 	}
 #endif
 
-	/* Get current MAC address for response - do this only once */
 	ret = esp_wifi_get_mac(ESP_IF_WIFI_STA, mac);
 	if (ret) {
-		ESP_LOGE(TAG,"Error in getting MAC of ESP Station %d", ret);
+		ESP_LOGE(TAG,"Error in getting MAC of ESP Station 0x%x", ret);
 		resp_payload->resp = ret;
 		goto err;
 	}
 	snprintf(mac_str, BSSID_LENGTH, MACSTR, MAC2STR(mac));
 	ESP_LOGI(TAG,"mac [%s] ", mac_str);
 
-	/* Fill response with MAC - do this only once */
 	resp_payload->mac.len = strnlen(mac_str, BSSID_LENGTH);
 	if (!resp_payload->mac.len) {
 		ESP_LOGE(TAG, "Invalid MAC address length");
+		resp_payload->resp = FAILURE;
 		goto err;
 	}
 	resp_payload->mac.data = (uint8_t *)strndup(mac_str, BSSID_LENGTH);
 	if (!resp_payload->mac.data) {
 		ESP_LOGE(TAG, "Failed to allocate memory for MAC address");
+		resp_payload->resp = FAILURE;
 		goto err;
 	}
 
-	/* Check if station already connected with the same configuration */
-	if (station_connected && prev_wifi_config_valid) {
-		if (is_wifi_config_equal(wifi_cfg, &prev_wifi_config)) {
-			ESP_LOGI(TAG, "Same WiFi config as previous, station already connected");
-#if WIFI_DUALBAND_SUPPORT
-			resp_payload->band_mode = band_mode;
-#endif
-			resp_payload->resp = SUCCESS;
-			mem_free(wifi_cfg);
-
-			/* As already connected, send the current status */
-#ifdef CONFIG_NETWORK_SPLIT_ENABLED
-			send_dhcp_dns_info_to_host(1, 1);
-#endif
-			return ESP_OK;
-		} else {
-			ESP_LOGI(TAG, "Different WiFi config from the current connection, reconnecting");
-			ESP_LOGI(TAG, "New config - SSID: %s", wifi_cfg->sta.ssid);
-			ESP_LOGI(TAG, "Current config - SSID: %s", prev_wifi_config.sta.ssid);
-			//wifi_changed = true;
-			esp_wifi_set_storage(WIFI_STORAGE_RAM);
-			/* Force a disconnect and reconnect when the config changes */
-			esp_wifi_disconnect();
-			station_connected = false;
-
-		}
-	} else {
-		/* Station not yet connected, so cache this configuration for future reference */
-		//ESP_LOGI(TAG, "New WiFi connection config, storing for future comparisons");
-		//memcpy(&prev_wifi_config, wifi_cfg, sizeof(wifi_config_t));
-		prev_wifi_config_valid = false;
-	}
-
-	/* Note: At this point, we've already updated prev_wifi_config if needed */
-
-	/*
-	 * No need to store configuration again here - it's either:
-	 * 1. Already updated above in the comparison block if configs were different
-	 * 2. Remains the same if configs were identical
-	 */
-
-	if (softap_started) {
-		ret = esp_wifi_set_mode(WIFI_MODE_APSTA);
-		ESP_LOGI(TAG,"softap+station mode set");
-	} else {
-		ret = esp_wifi_set_mode(WIFI_MODE_STA);
-		ESP_LOGI(TAG,"station mode set");
-	}
+	ret = esp_hosted_set_sta_config(WIFI_IF_STA, wifi_cfg);
 	if (ret) {
-		ESP_LOGE(TAG,"Failed to set mode");
 		resp_payload->resp = ret;
+		ESP_LOGE(TAG, "esp_hosted_set_sta_config failed with ret[0x%x]", ret);
 		goto err;
 	}
 
-	do {
-		ESP_LOGI(TAG, "Setting station config");
-		ret = esp_hosted_set_sta_config(ESP_IF_WIFI_STA, wifi_cfg);
-		if (ret == ESP_ERR_WIFI_PASSWORD) {
-			ESP_LOGE(TAG,"Invalid password");
-			resp_payload->resp = ret;
-			goto err;
-		} else if (ret) {
-			resp_payload->resp = ret;
-			ESP_LOGE(TAG, "Failed to set AP config");
-			goto err;
-		}
-
-		esp_wifi_disconnect();
-
-#ifndef CONFIG_NETWORK_SPLIT_ENABLED
-
-		/* Force a connect attempt to validate the new credentials */
-		ret = esp_wifi_connect();
-		if (ret) {
-			ESP_LOGE(TAG, "Failed to connect to AP: %d", ret);
-			resp_payload->resp = ret;
-			vTaskDelay(pdMS_TO_TICKS(500));
-		}
-#endif
-		retry++;
-	} while(ret && (retry < MAX_STA_CONNECT_ATTEMPTS));
-
-err:
-	if (station_connected) {
+	if (!wifi_changed && station_connected && prev_wifi_config_valid) {
 #if WIFI_DUALBAND_SUPPORT
 		resp_payload->band_mode = band_mode;
 #endif
-		ESP_LOGI(TAG, "%s:%u Set resp to Success",__func__,__LINE__);
 		resp_payload->resp = SUCCESS;
+		mem_free(wifi_cfg);
 
-	} else {
-		ESP_LOGI(TAG, "%s:%u Set resp[%"PRId32"]",__func__,__LINE__, resp_payload->resp);
-		if (resp_payload->mac.data) {
-			mem_free(resp_payload->mac.data);
-			resp_payload->mac.len = 0;
+#ifdef CONFIG_NETWORK_SPLIT_ENABLED
+		send_dhcp_dns_info_to_host(1, 1);
+#else
+		ESP_LOGI(TAG, "No change in Wi-Fi config. Send connected event to host");
+		send_wifi_event_data_to_host(CTRL_MSG_ID__Event_StationConnectedToAP,
+				&lkg_sta_connected_event, sizeof(wifi_event_sta_connected_t));
+#endif
+		return ESP_OK;
+	}
+
+	if (wifi_changed || !prev_wifi_config_valid) {
+
+		if (station_connected) {
+			/* Disconnect if band or any wifi config changed
+			 * This would auto trigger connect with new config */
+			ESP_LOGI(TAG, "---Triggering station mode stop ---");
+
+			if (!softap_started) {
+				/* Take leverage of softap not started, to make faster transitions */
+				esp_wifi_stop();
+				esp_wifi_set_mode(WIFI_MODE_STA);
+				esp_wifi_start();
+			} else {
+				ret = esp_wifi_disconnect();
+			}
+		} else {
+			/* No Prior connection, trigger new */
+			ESP_LOGI(TAG, "---Triggering connect---");
+			if (!softap_started) {
+				/* Take leverage of softap not started, to make faster transitions */
+				esp_wifi_stop();
+				esp_wifi_set_mode(WIFI_MODE_STA);
+				esp_wifi_start();
+			} else {
+				ret = esp_wifi_connect();
+			}
+
+		}
+		if (ret) {
+			resp_payload->resp = ret;
+			ESP_LOGE(TAG, "failed with ret[0x%x]", ret);
+			goto err;
 		}
 	}
+
+
+err:
+#if WIFI_DUALBAND_SUPPORT
+	resp_payload->band_mode = band_mode;
+#endif
+	ESP_LOGI(TAG, "%s:%u Set resp to Success",__func__,__LINE__);
+	resp_payload->resp = SUCCESS;
+
 	if (wifi_cfg) {
 		mem_free(wifi_cfg);
 	}
 
-	if (event_registered) {
-		xEventGroupClearBits(wifi_event_group,
-				(WIFI_CONNECTED_BIT | WIFI_FAIL_BIT | WIFI_HOST_REQUEST_BIT |
-				 WIFI_NO_AP_FOUND_BIT | WIFI_WRONG_PASSWORD_BIT));
-	}
 	return ESP_OK;
 }
 
@@ -1140,39 +1118,19 @@ static esp_err_t req_disconnect_ap_handler (CtrlMsg *req,
 		goto err;
 	}
 
-	if (event_registered) {
-		xEventGroupSetBits(wifi_event_group, WIFI_HOST_REQUEST_BIT);
-	}
 	ret = esp_wifi_disconnect();
 	if (ret) {
 		ESP_LOGE(TAG,"Failed to disconnect");
 		goto err;
 	}
-	if (event_registered)
-		xEventGroupWaitBits(wifi_event_group,
-			(WIFI_FAIL_BIT),
-			pdFALSE,
-			pdFALSE,
-			STA_MODE_TIMEOUT);
-
 	ESP_LOGI(TAG,"Disconnected from AP");
 	resp_payload->resp = SUCCESS;
 	station_connected = false;
 	prev_wifi_config_valid = false; /* Mark config as invalid after disconnection */
 
-	if (event_registered) {
-		xEventGroupClearBits(wifi_event_group,
-			(WIFI_CONNECTED_BIT | WIFI_FAIL_BIT | WIFI_HOST_REQUEST_BIT |
-			 WIFI_NO_AP_FOUND_BIT | WIFI_WRONG_PASSWORD_BIT));
-	}
 	return ESP_OK;
 
 err:
-	if (event_registered) {
-		xEventGroupClearBits(wifi_event_group,
-			(WIFI_CONNECTED_BIT | WIFI_FAIL_BIT | WIFI_HOST_REQUEST_BIT |
-			 WIFI_NO_AP_FOUND_BIT | WIFI_WRONG_PASSWORD_BIT));
-	}
 	resp_payload->resp = FAILURE;
 	return ESP_OK;
 }
@@ -2630,11 +2588,7 @@ esp_err_t esp_hosted_wifi_init(wifi_init_config_t *cfg)
 
 	ESP_ERROR_CHECK(esp_wifi_set_storage(WIFI_STORAGE_FLASH));
 
-	if (!event_registered) {
-		wifi_event_group = xEventGroupCreate();
-		event_registered = true;
-		station_event_register();
-	}
+	station_event_register();
 
 	return ESP_OK;
 }
@@ -2650,8 +2604,8 @@ static esp_err_t enable_disable_feature(HostedFeature feature, bool enable)
 	switch(feature) {
 
 	case HOSTED_FEATURE__Hosted_Wifi:
+		val = esp_wifi_get_mode(&mode);
 		if (enable) {
-			val = esp_wifi_get_mode(&mode);
 			if (val == ESP_ERR_WIFI_NOT_INIT) {
 				esp_wifi_init(&cfg);
 				esp_wifi_set_storage(WIFI_STORAGE_FLASH);
@@ -2662,9 +2616,13 @@ static esp_err_t enable_disable_feature(HostedFeature feature, bool enable)
 				ESP_LOGI(TAG, "Wifi already configured earlier, ignore");
 			}
 		} else {
-			esp_wifi_stop();
-			esp_wifi_deinit();
-			ESP_LOGI(TAG, "Destroy Wifi instance");
+			if (val != ESP_ERR_WIFI_NOT_INIT) {
+				esp_wifi_stop();
+				esp_wifi_deinit();
+				ESP_LOGI(TAG, "Destroy Wifi instance");
+			} else {
+				ESP_LOGI(TAG, "Wifi already destroyed, ignore");
+			}
 		}
 		break;
 
@@ -2680,6 +2638,16 @@ static esp_err_t enable_disable_feature(HostedFeature feature, bool enable)
 		if (enable)
 			ret = ESP_FAIL;
 #endif
+		break;
+
+	case HOSTED_FEATURE__Hosted_Is_Network_Split_On:
+	#if CONFIG_NETWORK_SPLIT_ENABLED
+		ESP_LOGI(TAG, "Network split enabled: true");
+		return ESP_OK;
+	#else
+		ESP_LOGI(TAG, "Network split enabled: false");
+		return ESP_FAIL;
+	#endif
 		break;
 
 	default:
@@ -2776,7 +2744,9 @@ static esp_err_t req_enable_disable(CtrlMsg *req,
 		ESP_LOGI(TAG, "Request successful");
 	} else {
 		resp_payload->resp = FAILURE;
-		ESP_LOGI(TAG, "Request Failed");
+		if (req->req_enable_disable_feat->feature != HOSTED_FEATURE__Hosted_Is_Network_Split_On) {
+			ESP_LOGI(TAG, "Request Failed");
+		}
 	}
 
 	return ESP_OK;
@@ -3311,8 +3281,10 @@ static esp_err_t ctrl_ntfy_StationConnectedToAP(CtrlMsg *ntfy,
 	ntfy_payload->channel = evt->channel;
 	ntfy_payload->resp = FAILURE;
 
+	ESP_LOGD(TAG, "--- Station connected %s len[%d]---", evt->ssid, evt->ssid_len);
 	/* ssid */
 	ntfy_payload->ssid_len = evt->ssid_len;
+	ntfy_payload->ssid.len = evt->ssid_len;
 	ntfy_payload->ssid.data = (uint8_t *)strndup((const char*)evt->ssid, ntfy_payload->ssid.len);
 	if (!ntfy_payload->ssid.data) {
 		ESP_LOGE(TAG, "%s: mem allocate failed for[%" PRIu32 "] bytes",
