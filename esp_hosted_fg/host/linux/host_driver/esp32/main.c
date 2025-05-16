@@ -401,6 +401,8 @@ void process_capabilities(u8 cap)
 		if (ret) {
 			esp_err("Failed to init BT: %d\n", ret);
 		}
+	} else if (cap & ESP_BT_UART_SUPPORT) {
+		// do nothing
 	} else {
 		esp_info("No BT support in capabilities (0x%x)\n", cap);
 	}
