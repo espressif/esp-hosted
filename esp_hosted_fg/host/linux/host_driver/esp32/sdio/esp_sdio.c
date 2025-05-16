@@ -830,7 +830,7 @@ int process_init_event(u8 *evt_buf, u8 len)
 	pos = evt_buf;
 
 	if (len_left >= 64) {
-		esp_warn("ESP init event len looks unexpected: %u (>=64)\n", len_left);
+		esp_warn("Slave up event len looks unexpected: %u (>=64)\n", len_left);
 		esp_warn("You probably facing timing mismatch at transport layer\n");
 	}
 

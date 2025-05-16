@@ -363,11 +363,6 @@ static int process_tx_packet (struct sk_buff *skb)
 	payload_header->len = cpu_to_le16(len);
 	payload_header->offset = cpu_to_le16(pad_len);
 
-#if 0
-	if (adapter.capabilities & ESP_CHECKSUM_ENABLED)
-		payload_header->checksum = cpu_to_le16(compute_checksum(skb->data, (len + pad_len)));
-#endif
-
 	if (!stop_data) {
 		ret = esp_send_packet(priv->adapter, skb);
 
@@ -423,7 +418,7 @@ static void process_event(u8 *evt_buf, u16 len)
 
 	if (event->event_type == ESP_PRIV_EVENT_INIT) {
 
-		esp_info("INIT event rcvd from ESP\n");
+		esp_info("Slave up event rcvd from ESP\n");
 
 		ret = esp_serial_reinit(esp_get_adapter());
 		if (ret)
@@ -692,11 +687,13 @@ static int esp_init_net_dev(struct net_device *ndev, struct esp_private *priv)
 	/* Set netdev */
 	ndev->netdev_ops = &esp_netdev_ops;
 
+#if 0
 	/* Set MTU to account for our headers */
 	ndev->mtu = ETH_DATA_LEN - sizeof(struct esp_payload_header);
 
 	/* Set TX queue length */
 	ndev->tx_queue_len = TX_MAX_PENDING_COUNT;
+#endif
 
 	eth_hw_addr_set(ndev, priv->mac_address);
 
@@ -899,7 +896,7 @@ static struct esp_adapter * init_adapter(void)
 	memset(&adapter, 0, sizeof(adapter));
 
 	/* Prepare interface RX work */
-	adapter.if_rx_workqueue = alloc_workqueue("ESP_IF_RX_WORK_QUEUE", WQ_FREEZABLE, 0);
+	adapter.if_rx_workqueue = alloc_workqueue("ESP_IF_RX_WORK_QUEUE", WQ_HIGHPRI|WQ_FREEZABLE, 0);
 
 	if (!adapter.if_rx_workqueue) {
 		esp_err("failed to create rx workqueue\n");

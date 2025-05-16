@@ -76,7 +76,6 @@ static const char TAG[] = "fg_slave";
 volatile uint8_t datapath = 0;
 volatile uint8_t station_connected = 0;
 volatile uint8_t softap_started = 0;
-uint8_t host_available = 0;
 
 interface_context_t *if_context = NULL;
 interface_handle_t *if_handle = NULL;
@@ -410,9 +409,6 @@ static void process_priv_pkt(uint8_t *payload, uint16_t payload_len)
 	event = (struct esp_priv_event *) payload;
 
 	if (event->event_type == ESP_PRIV_EVENT_INIT) {
-
-		host_available = 1;
-		ESP_LOGI(TAG, "Slave init_config received from host");
 		ESP_HEXLOGD("init_config", event->event_data, event->event_len, 32);
 	} else {
 		ESP_LOGW(TAG, "Drop unknown event\n\r");
@@ -883,7 +879,6 @@ static void schedule_delayed_dhcp_dns_info(void)
 void host_wakeup_callback(void)
 {
 	/* Handle immediate wakeup tasks */
-	host_available = 1;
 #if H_HOST_PS_ALLOWED
 	/* Reset retry count on new wakeup */
 	dhcp_dns_retry_count = 0;
@@ -920,7 +915,7 @@ static void host_reset_task(void* pvParameters)
 
 		capa = get_capabilities();
 		/* send capabilities to host */
-		ESP_LOGI(TAG,"host reconfig event");
+		ESP_LOGI(TAG,"Send slave up event");
 		generate_startup_event(capa);
 		send_event_to_host(CTRL_MSG_ID__Event_ESPInit);
 
@@ -1038,12 +1033,12 @@ esp_err_t esp_hosted_coprocessor_init(void)
 	connect_sta();
 #endif
 
-	ESP_LOGI(TAG, "Wait for host transport readiness");
+	ESP_LOGI(TAG, "bus tx locked on slave bootup");
 
 	while(!datapath) {
 		vTaskDelay(10);
 	}
-	ESP_LOGI(TAG, "Host transport ready");
+	ESP_LOGI(TAG, "bus tx unlocked");
 
 	assert(xTaskCreate(host_reset_task, "host_reset_task" ,
 			CONFIG_ESP_DEFAULT_TASK_STACK_SIZE, NULL ,

@@ -466,14 +466,6 @@ static int32_t sdio_write(interface_handle_t *handle, interface_buffer_handle_t 
 		return ESP_FAIL;
 	}
 
-#if 0
-	if (buf_handle->payload_len || buf_handle->payload) {
-		ESP_LOGD(TAG, "%s: Invalid arguments, len:%d", __func__, buf_handle->payload_len);
-		return ESP_FAIL;
-	}
-#endif
-
-
 	total_len = buf_handle->payload_len + offset;
 
 	sendbuf = sdio_buffer_tx_alloc(total_len, MEMSET_REQUIRED);

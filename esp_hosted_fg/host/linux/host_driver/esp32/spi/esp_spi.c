@@ -34,8 +34,7 @@
 
 #define SPI_INITIAL_CLK_MHZ     10
 #define NUMBER_1M               1000000
-#define TX_RESUME_THRESHOLD     (TX_MAX_PENDING_COUNT/2)
-#define MAX_TX_QUEUE_LEN       (TX_MAX_PENDING_COUNT)
+#define TX_RESUME_THRESHOLD     (TX_MAX_PENDING_COUNT/5)
 
 /* ESP in sdkconfig has CONFIG_IDF_FIRMWARE_CHIP_ID entry.
  * supported values of CONFIG_IDF_FIRMWARE_CHIP_ID are - */
@@ -154,7 +153,7 @@ static struct sk_buff * read_packet(struct esp_adapter *adapter)
 static int write_packet(struct esp_adapter *adapter, struct sk_buff *skb)
 {
 	u32 max_pkt_size = SPI_BUF_SIZE;
-	struct esp_payload_header *payload_header = (struct esp_payload_header *) skb->data;
+	struct esp_payload_header *h = (struct esp_payload_header *) skb->data;
 
 	if (!adapter || !adapter->if_context || !skb || !skb->data || !skb->len) {
 		esp_err("Invalid args\n");
@@ -175,10 +174,18 @@ static int write_packet(struct esp_adapter *adapter, struct sk_buff *skb)
 		return -EPERM;
 	}
 
+	UPDATE_HEADER_TX_PKT_NO(h);
+	if (spi_context.adapter->capabilities & ESP_CHECKSUM_ENABLED) {
+		uint16_t len = le16_to_cpu(h->len);
+		uint16_t offset = le16_to_cpu(h->offset);
+		h->checksum = 0;
+		h->checksum = cpu_to_le16(compute_checksum((uint8_t*)h, len + offset));
+	}
+
 	/* Enqueue SKB in tx_q */
-	if (payload_header->if_type == ESP_SERIAL_IF) {
+	if (h->if_type == ESP_SERIAL_IF) {
 		skb_queue_tail(&spi_context.tx_q[PRIO_Q_SERIAL], skb);
-	} else if (payload_header->if_type == ESP_HCI_IF) {
+	} else if (h->if_type == ESP_HCI_IF) {
 		skb_queue_tail(&spi_context.tx_q[PRIO_Q_BT], skb);
 	} else {
 		skb_queue_tail(&spi_context.tx_q[PRIO_Q_OTHERS], skb);
@@ -299,7 +306,7 @@ int process_init_event(u8 *evt_buf, u8 len)
 	first_esp_bootup_over = 1;
 
 	process_capabilities(adapter->capabilities);
-	esp_info("esp boot-up event processed\n");
+	esp_info("Slave up event processed\n");
 
 	return 0;
 }
@@ -431,15 +438,6 @@ static void esp_spi_transaction(void)
 
 	if (tx_skb) {
 		trans.tx_buf = tx_skb->data;
-		struct esp_payload_header *h = (struct esp_payload_header *) trans.tx_buf;
-		UPDATE_HEADER_TX_PKT_NO(h);
-
-		if (spi_context.adapter->capabilities & ESP_CHECKSUM_ENABLED) {
-			uint16_t len = le16_to_cpu(h->len);
-			uint16_t offset = le16_to_cpu(h->offset);
-			h->checksum = 0;
-			h->checksum = cpu_to_le16(compute_checksum((uint8_t*)trans.tx_buf, len + offset));
-		}
 	} else {
 		tx_skb = esp_alloc_skb(SPI_BUF_SIZE);
 		trans.tx_buf = skb_put(tx_skb, SPI_BUF_SIZE);

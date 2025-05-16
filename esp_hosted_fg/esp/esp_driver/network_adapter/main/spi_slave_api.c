@@ -535,7 +535,6 @@ static void queue_next_transaction(void)
 static void spi_transaction_post_process_task(void* pvParameters)
 {
 	spi_slave_transaction_t *spi_trans = NULL;
-	int64_t trans_start, trans_end, wait_sem_start, wait_sem_stop, process_start, process_end;
 	esp_err_t ret = ESP_OK;
 	interface_buffer_handle_t rx_buf_handle;
 
