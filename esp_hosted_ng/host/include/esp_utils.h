@@ -39,4 +39,12 @@ int wpa_cipher_to_alg(int cipher);
 
 char * esp_chipname_from_id(int chipset_id);
 
+typedef enum {
+    WIFI_MODE_NULL = 0,  /**< Null mode */
+    WIFI_MODE_STA,       /**< Wi-Fi station mode */
+    WIFI_MODE_AP,        /**< Wi-Fi soft-AP mode */
+    WIFI_MODE_APSTA,     /**< Wi-Fi station + soft-AP mode */
+    WIFI_MODE_MAX
+} esp_wifi_mode_t;
+
 #endif

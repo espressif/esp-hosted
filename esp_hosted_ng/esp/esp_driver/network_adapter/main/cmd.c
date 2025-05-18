@@ -23,6 +23,7 @@
 #include "esp_wifi_driver.h"
 #include "esp_event.h"
 #include "esp_mac.h"
+#include "esp_check.h"
 #include "wifi_defs.h"
 #include <time.h>
 #include <sys/time.h>
@@ -491,8 +492,7 @@ static void wifi_event_handler(void* arg, esp_event_base_t event_base,
     switch (event_id) {
 
     case WIFI_EVENT_STA_START:
-        ESP_LOGI(TAG, "station started and disabled softap mode");
-        softap_started = 0;
+        ESP_LOGI(TAG, "station started");
         sta_init_flag = 1;
         break;
 
@@ -533,16 +533,17 @@ static void wifi_event_handler(void* arg, esp_event_base_t event_base,
         break;
 
     case WIFI_EVENT_SCAN_DONE:
+        ESP_LOGI(TAG, "wifi scanning done");
         handle_scan_event();
         break;
 
     case WIFI_EVENT_AP_START:
-        ESP_LOGI(TAG, "softap started and disabled station mode");
-        sta_init_flag = 0;
+        ESP_LOGI(TAG, "softap started");
         softap_started = 1;
         break;
 
     case WIFI_EVENT_AP_STOP:
+        ESP_LOGI(TAG, "softap stopped");
         softap_started = 0;
         break;
 
@@ -982,7 +983,7 @@ int process_start_scan(uint8_t if_type, uint8_t *payload, uint16_t payload_len)
         config_present = true;
     }
 
-    if (sta_init_flag) {
+    if (sta_init_flag || softap_started) {
         /* Trigger scan */
         if (config_present) {
             ret = esp_wifi_scan_start(&params, false);
@@ -1279,7 +1280,8 @@ int process_disconnect(uint8_t if_type, uint8_t *payload, uint16_t payload_len)
             esp_wifi_deauthenticate_internal(cmd_disconnect->reason_code);
         }
     } else if (if_type == ESP_AP_IF) {
-        if (softap_started && wifi_mode == WIFI_MODE_AP) {
+        if (softap_started &&
+            (wifi_mode == WIFI_MODE_AP || wifi_mode == WIFI_MODE_APSTA)) {
             ieee80211_delete_node(cmd_disconnect->mac);
         }
     }
@@ -1526,43 +1528,40 @@ int process_deinit_interface(uint8_t if_type, uint8_t *payload, uint16_t payload
 int process_init_interface(uint8_t if_type, uint8_t *payload, uint16_t payload_len)
 {
     esp_err_t ret = ESP_OK;
-    wifi_mode_t mode = WIFI_MODE_STA;
     uint16_t cmd_status = CMD_RESPONSE_FAIL;
 
-    if (!sta_init_flag) {
-
+    if (!sta_init_flag || (if_type == ESP_AP_IF && !softap_started)) {
         /* Register to get events from wifi driver */
         esp_create_wifi_event_loop();
 
-        /* we will use this mac for both ap and station mode */
+        /* Use same MAC for AP and STA */
         esp_read_mac(dev_mac, ESP_MAC_WIFI_STA);
-        if (if_type == ESP_STA_IF) {
-            mode = WIFI_MODE_STA;
+
+        if (if_type == ESP_AP_IF) {
+            ESP_GOTO_ON_ERROR(esp_wifi_disconnect(), done, TAG, "Station Disconnect failed");
+            ESP_GOTO_ON_ERROR(esp_wifi_set_mode(WIFI_MODE_APSTA), done, TAG, "Setting mode to APSTA failed");
+            ESP_LOGI(TAG, "Setting APSTA mode");
+            wifi_config_t wifi_config = {0};
+            ESP_GOTO_ON_ERROR(esp_wifi_set_config(WIFI_IF_STA, &wifi_config), done, TAG, "Set config for sta failed");
+        } else if (if_type == ESP_STA_IF) {
+            ESP_LOGI(TAG, "Setting STA mode");
+            ESP_GOTO_ON_ERROR(esp_wifi_set_mode(WIFI_MODE_STA), done, TAG, "Setting mode to STA failed");
         } else {
-            mode = WIFI_MODE_AP;
+            ESP_LOGE(TAG, "Invalid interface type");
+            goto done;
         }
 
-        ret = esp_wifi_set_mode(mode);
+        ESP_GOTO_ON_ERROR(esp_wifi_start(), done, TAG, "Failed to start Wi-Fi");
 
-        if (ret) {
-            ESP_LOGE(TAG, "Failed to set wifi mode\n");
-            goto DONE;
-        }
-        ret = esp_wifi_start();
-        if (ret) {
-            ESP_LOGE(TAG, "Failed to start wifi\n");
-            goto DONE;
-        }
     }
     cmd_status = CMD_RESPONSE_SUCCESS;
-DONE:
+done:
     ret = send_command_resp(if_type, CMD_INIT_INTERFACE, cmd_status, NULL, 0, 0);
-    if (ret) {
+    if (ret != ESP_OK) {
         deinitialize_wifi();
     }
 
     return ret;
-
 }
 
 int process_get_mac(uint8_t if_type)
@@ -1787,7 +1786,7 @@ SEND_CMD:
 int process_set_mode(uint8_t if_type, uint8_t *payload, uint16_t payload_len)
 {
     esp_err_t ret = ESP_OK;
-    uint8_t cmd_status = CMD_RESPONSE_SUCCESS;
+    uint8_t cmd_status = CMD_RESPONSE_FAIL;
     struct cmd_config_mode *mode = (struct cmd_config_mode *) payload;
     wifi_mode_t old_mode;
 
@@ -1798,45 +1797,34 @@ int process_set_mode(uint8_t if_type, uint8_t *payload, uint16_t payload_len)
 
     if (old_mode == mode->mode) {
         ESP_LOGI(TAG, "old mode and new modes are same, return");
-        goto send_resp;
+        goto send_ok;
     }
     ret = esp_wifi_stop();
     if (ret) {
         ESP_LOGE(TAG, "Failed to stop wifi\n");
     }
-    if (mode->mode == WIFI_MODE_AP) {
-        ret = esp_wifi_set_mac(WIFI_IF_STA, dummy_mac);
+    
+    if (mode->mode == WIFI_MODE_AP  || mode->mode == WIFI_MODE_APSTA) {
+        ESP_LOGI(TAG, "Setting APSTA mode");
+        ESP_GOTO_ON_ERROR(esp_wifi_set_mac(WIFI_IF_STA, dummy_mac), send_err, TAG, "Setting MAC on STA failed");
+        ESP_GOTO_ON_ERROR(esp_wifi_set_mode(WIFI_MODE_APSTA), send_err, TAG, "Setting mode to APSTA failed");
+        ESP_GOTO_ON_ERROR(esp_wifi_set_mac(WIFI_IF_AP, dev_mac), send_err, TAG, "Setting MAC on AP failed");
+        wifi_config_t wifi_config = {0};
+        ESP_GOTO_ON_ERROR(esp_wifi_set_config(WIFI_IF_STA, &wifi_config), send_err, TAG, "Set config for sta failed");
     } else if (mode->mode == WIFI_MODE_STA) {
-        ret = esp_wifi_set_mac(WIFI_IF_AP, dummy_mac2);
+        ESP_LOGI(TAG, "Setting STA mode");
+        ESP_GOTO_ON_ERROR(esp_wifi_set_mac(WIFI_IF_AP, dummy_mac2), send_err, TAG, "Setting MAC on AP failed");
+        ESP_GOTO_ON_ERROR(esp_wifi_set_mode(WIFI_MODE_STA), send_err, TAG, "Setting mode to STA failed");
+        ESP_ERROR_CHECK(esp_wifi_set_mac(WIFI_IF_STA, dev_mac));
     }
 
-    ESP_LOGI(TAG, "Setting mode=%d \n", mode->mode);
-    ret = esp_wifi_set_mode(mode->mode);
-    if (ret) {
-        ESP_LOGE(TAG, "Failed to set mode\n");
-        cmd_status = CMD_RESPONSE_FAIL;
-        goto send_resp;
-    }
-    if (mode->mode == WIFI_MODE_AP) {
-        ret = esp_wifi_set_mac(WIFI_IF_AP, dev_mac);
-    } else if (mode->mode == WIFI_MODE_STA) {
-        ret = esp_wifi_set_mac(WIFI_IF_STA, dev_mac);
-    }
-    ESP_LOGI(TAG, "Set mac ret=%d\n", ret);
+    ESP_GOTO_ON_ERROR(esp_wifi_start(), send_err, TAG, "Cannot start wifi");
 
-    ESP_ERROR_CHECK(esp_wifi_start());
-
-    if (ret) {
-        ESP_LOGE(TAG, "Failed to set mac\n");
-        cmd_status = CMD_RESPONSE_FAIL;
-        goto send_resp;
-    }
-
-send_resp:
-    ret = send_command_resp(if_type, CMD_SET_MODE, cmd_status, (uint8_t *)&mode->mode,
+send_ok:
+    cmd_status = CMD_RESPONSE_SUCCESS;
+send_err:
+    return send_command_resp(if_type, CMD_SET_MODE, cmd_status, (uint8_t *)&mode->mode,
                             sizeof(uint16_t), sizeof(struct command_header));
-
-    return ret;
 }
 
 int process_set_ie(uint8_t if_type, uint8_t *payload, uint16_t payload_len)
@@ -1960,8 +1948,8 @@ int process_set_ap_config(uint8_t if_type, uint8_t *payload, uint16_t payload_le
 
     ret = esp_wifi_stop();
 
-    if (old_mode != WIFI_MODE_AP) {
-        ret = esp_wifi_set_mode(WIFI_MODE_AP);
+    if (old_mode != WIFI_MODE_APSTA) {
+        ret = esp_wifi_set_mode(WIFI_MODE_APSTA);
     }
     esp_wifi_set_config(WIFI_IF_AP, &wifi_config);
 
