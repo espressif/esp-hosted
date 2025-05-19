@@ -150,15 +150,37 @@ static void send_wifi_event_data_to_host(int event, void *event_data, int event_
 #endif
 }
 
+static bool wifi_is_provisioned(void)
+{
+	wifi_config_t wifi_cfg = {0};
+
+	if (esp_wifi_get_config(WIFI_IF_STA, &wifi_cfg) != ESP_OK) {
+		ESP_LOGI(TAG, "Wifi get config failed");
+		return false;
+	}
+
+	ESP_LOGI(TAG, "SSID: %s", wifi_cfg.sta.ssid);
+
+	if (strlen((const char *) wifi_cfg.sta.ssid)) {
+		ESP_LOGI(TAG, "Wifi provisioned");
+		return true;
+	}
+	ESP_LOGI(TAG, "Wifi not provisioned, Fallback to example config");
+
+	return false;
+}
+
 esp_err_t esp_hosted_set_sta_config(wifi_interface_t iface, wifi_config_t *cfg)
 {
 
 	wifi_config_t current_config = {0};
-	if (esp_wifi_get_config(WIFI_IF_STA, &current_config) == ESP_OK) {
-	} else {
-		ESP_LOGW(TAG, "Failed to get current WiFi configuration");
-		prev_wifi_config_valid = false;
+	if (!wifi_is_provisioned()) {
+		ESP_LOGI(TAG, "Provisoning new Wi-Fi config");
+		if (esp_wifi_set_config(WIFI_IF_STA, cfg) != ESP_OK) {
+			ESP_LOGW(TAG, "not provisioned and failed to set wifi config");
+		}
 	}
+	prev_wifi_config_valid = false;
 
 	if (!is_wifi_config_equal(cfg, &current_config)) {
 		new_config_recvd = 1;
@@ -962,6 +984,7 @@ static esp_err_t req_connect_ap_handler (CtrlMsg *req,
 				esp_wifi_stop();
 				esp_wifi_set_mode(WIFI_MODE_STA);
 				esp_wifi_start();
+				ret = esp_wifi_connect();
 			} else {
 				ret = esp_wifi_connect();
 			}

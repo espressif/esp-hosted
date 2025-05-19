@@ -236,7 +236,7 @@ static int ctrl_app_event_callback(ctrl_cmd_t *app_event) {
 				}
 
 				if (p_e->net_link_up) {
-					printf("%s  network event %s dhcp %s (%s %s %s) dns %s (%s) ===> Configuring this as static IP\n",
+					printf("%s  network event %s dhcp %s (%s %s %s) dns %s (%s) ===> Configured as static IP\n",
 						get_timestamp(ts, MIN_TIMESTAMP_STR_SIZE),
 						p_e->net_link_up ? "up" : "down",
 						p_e->dhcp_up ? "up" : "down",
