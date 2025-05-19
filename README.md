@@ -2,7 +2,8 @@
 
 **ESP-Hosted** is an open-source solution that enables Espressif SoCs/modules (like ESP32) to act as **wireless communication co-processors** for external host systems.
 
-It allows **host devices**—whether running Linux or microcontrollers (MCUs)—to add Wi-Fi and Bluetooth/BLE capabilities via **standard interfaces** like SPI, SDIO, or UART.
+It allows **host devices** (Linux-based systems or microcontrollers, MCUs) to add Wi-Fi and Bluetooth/BLE capabilities via **standard interfaces** like SPI, SDIO, or UART.
+
 
 ### 🔑 Key Features
 
