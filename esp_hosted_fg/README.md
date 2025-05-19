@@ -89,17 +89,24 @@ The below table explains which feature is supported on which transport interface
 | -------: | :-------: | :-------: |
 | <a>![ESP32](docs/icons/esp32.svg)</a> | <a>![sdio_only](docs/icons/sdio_only.svg)</a><br/><a>![sdio_uart](docs/icons/sdio_uart.svg)</a><br/><a>![spi_only](docs/icons/spi_only.svg)</a><br/><a>![spi_uart](docs/icons/spi_uart.svg)</a> | <a>![Wi-Fi](docs/icons/wifi.svg)</a><br/><a>![Classic_BT](docs/icons/ClassicBT.svg)</a><br/><a>![BLE4.2](docs/icons/BLE4.2.svg)</a> |
 | <a>![ESP32-C6](docs/icons/esp32c6.svg)</a> | <a>![sdio_only](docs/icons/sdio_only.svg)</a><br/><a>![sdio_uart](docs/icons/sdio_uart.svg)</a><br/><a>![spi_only](docs/icons/spi_only.svg)</a><br/><a>![spi_uart](docs/icons/spi_uart.svg)</a> | <a>![Wi-Fi-6](docs/icons/wifi_6.svg)</a><br/><a>![BLE5.0](docs/icons/BLE5.3.svg)</a> |
+| <a>![ESP32-C5](docs/icons/esp32c5.svg)</a> | <a>![spi_only](docs/icons/spi_only.svg)</a><br/><a>![spi_uart](docs/icons/spi_uart.svg)</a><br/> | <a>![Wi-Fi-6](docs/icons/wifi_6.svg)</a><br/><a>![Wi-Fi Dual band](docs/icons/wifi_dual_band.svg)</a><br/><a>![BLE5.0](docs/icons/BLE5.3.svg)</a> |
 | <a>![ESP32-S2](docs/icons/esp32s2.svg)</a> | <a>![spi_only](docs/icons/spi_only.svg)</a> | <a>![Wi-Fi](docs/icons/wifi.svg)</a> |
 | <a>![ESP32-C3](docs/icons/esp32c3.svg)</a><br/><a>![ESP32-C2](docs/icons/esp32c2.svg)</a><br/><a>![ESP32-S3](docs/icons/esp32s3.svg)</a> | <a>![spi_only](docs/icons/spi_only.svg)</a><br/><a>![spi_uart](docs/icons/spi_uart.svg)</a> | <a>![Wi-Fi](docs/icons/wifi.svg)</a><br/><a>![BLE5.0](docs/icons/BLE5.0.svg)</a> |
 
 
-Note:
-- ESP-Hosted-FG related BR/EDR 4.2 and BLE 4.2 functionalities are tested with bluez 5.43+. Whereas, BLE 5.0 functionalities are tested with bluez 5.45+.
-- We suggest the latest stable bluez version to be used. Any other Bluetooth stack instead of bluez also could be used.
-- bluez 5.45 on-wards BLE 5.0 HCI commands are supported.
-- BLE 5.0 has backward compatibility of BLE 4.2.
+> [!NOTE]
+> - ESP-Hosted-FG related BR/EDR 4.2 and BLE 4.2 functionalities are tested with bluez 5.43+. Whereas, BLE 5.0 functionalities are tested with bluez 5.45+.
+> - Suggested to use latest stable bluez version.
+> - bluez 5.45 on-wards BLE 5.0 HCI commands are supported.
+> - BLE 5.0 has backward compatibility of BLE 4.2.
+> - ESP32-C5 SDIO and SDIO+UART support is coming soon!
 
 ##### 1.5.2 MCU Host
+
+> [!CAUTION]
+>
+> MCU support in ESP-Hosted-FG is now deprecated. For all MCU-based applications, please use the dedicated [ESP-Hosted-MCU repository](https://github.com/espressif/esp-hosted-mcu) instead. The information below is kept for backward compatibility only.
+
 The below table explains which feature is supported on which transport interface for MCU based host.
 
 | ESP Chipset | Transport options | MCU Features supported |
@@ -130,12 +137,6 @@ Note:
   - Linux hosts support OTA update (Over The Air ESP firmware update) in C and python
   - MCU hosts can refer to the same for their development
   - For detailed documentation, please read [ota_update.md](docs/Linux_based_host/ota_update.md).
-- Features awaiting:
-  - ESP32-C6 support for MCU
-  - SDIO support with MCU host
-  - LWIP integration at MCU host
-  - Bluetooth stack at MCU host
-  - ESP chipsets acting as MCU host (ESP as slave <----> ESP as host)
 
 
 ---
@@ -147,6 +148,11 @@ This section describes how to set up and use ESP-Hosted-FG solution. Since ESP-H
 Please refer to the [Setup Guide](docs/Linux_based_host/Linux_based_readme.md) for Linux host.
 
 ### 2.2 Setup With MCU Host
+
+> [!CAUTION]
+>
+> MCU support in ESP-Hosted-FG is now deprecated. For all MCU-based applications, please use the dedicated [ESP-Hosted-MCU repository](https://github.com/espressif/esp-hosted-mcu) instead. The information below is kept for reference purposes only.
+
 Please refer to the [Setup Guide](docs/MCU_based_host/MCU_based_readme.md) for MCU host.
 In addition to [Control path APIs](#31-control-path-apis) listed below, APIs for MCU specific solution are explained [here](docs/MCU_based_host/mcu_api.md)
 

@@ -19,7 +19,7 @@
 
 ### 1.1 Hardware Requirements
 * Raspberry-Pi model 3 Model B/B+ or Raspberry-Pi 4 model B
-* ESP32/ESP32-S2/S3/C2/C3/C6 board
+* ESP32/ESP32-S2/S3/C2/C3/C5/C6 board
 * 8-12 jumper wires of length < 10cm
 
 ### 1.2 Host Setup
@@ -88,6 +88,7 @@ Prepare connections based on interface requirements and setup host as below.
 		* After loading ESP firmware, execute below command to create `hci0` interface
 			```sh
 			$ sudo hciattach -s 921600 /dev/serial0 any 921600 flow
+			```
 
 * **Wi-Fi over SPI and Bluetooth over UART**
 	* Connection Setup

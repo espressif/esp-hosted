@@ -3,6 +3,8 @@
 | Supported Targets | ESP32 | ESP32-C6 |
 | ----------------- | ----- | -------- |
 
+ESP32-C5 support is coming soon.
+
 ## 1. Setup
 ### 1.1 Hardware Setup
 In this setup, ESP board acts as a SDIO peripheral and provides Wi-Fi capabilities to host. Please connect ESP board to Raspberry-Pi with jumper cables as mentioned below.

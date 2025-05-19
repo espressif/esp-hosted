@@ -1,17 +1,45 @@
 # User Guide for ESP-Hosted with Linux Host (Raspberry-Pi)
 
-This section elaborates about setting up control path, Wi-Fi and Bluetooth/BLE connectivity on Linux host using ESP-Hosted solution.
+<details>
+<summary>Index</summary>
+
+- [1. Control Path](#1-control-path)
+- [2. Wi-Fi Connectivity](#2-wi-fi-connectivity)
+  - [2.1 Control/Configure Wi-Fi Interface](#21-controlconfigure-wi-fi-interface)
+    - [2.1.1 Wi-Fi Station Mode Operations](#211-wi-fi-station-mode-operations)
+    - [2.1.2 Wi-Fi softAP Mode Operations](#212-wi-fi-softap-mode-operations)
+    - [2.1.3 Other Wi-Fi commands](#213-other-wi-fi-commands)
+- [3. Bluetooth/BLE Connectivity](#3-bluetoothble-connectivity)
+  - [3.1 BT/BLE Test procedure](#31-btble-test-procedure)
+    - [3.1.1 GATT server](#311-gatt-server)
+    - [3.1.2 GATT Client](#312-gatt-client)
+    - [3.1.3 BT scan](#313-bt-scan)
+    - [3.1.4 BLE scan](#314-ble-scan)
+  - [3.2 BLE 5.X testing](#32-ble-5x-testing)
+    - [3.2.1 Basic scan, pair, connect](#321-basic-scan-pair-connect)
+    - [3.2.2 GATT Server](#322-gatt-server)
+    - [3.2.3 GATT client](#323-gatt-client)
+    - [3.2.4 1M, 2M, CODED phy for LE](#324-1m-2m-coded-phy-for-le)
+- [4. OTA operation](#4-ota-operation)
+- [5. Troubleshoot Instructions](#5-troubleshoot-instructions)
+- [6. Network Split](#6-network-split)
+- [7. Auto Network Setup](#7-auto-network-setup)
+</details>
+
+\
+This section elaborates how to get you onboard to establish Wi-Fi and Bluetooth/BLE connectivity on Linux host using ESP-Hosted solution.
 
 ## 1. Control Path
 
-* Control path is intended to setup all configurations at ESP side. These configurations could be related to services like
-  - Connect host with external AP (Wi-Fi router)
-  - Get configurations of external AP which host is connected
-  - Set maximum Wi-Fi transmit power of ESP
-  - Find out current Wi-Fi power of ESP
-* Control path command could be considered as first step before you can establish data path
-* It is way to verify if ESP-Hosted transport like SPI,SDIO is setup correctly
-* Overall [control path design](../common/contrl_path.md#3-design) and easy setup of control path using [demo application](../common/contrl_path.md#5-kick-start-using-control-path) is explained in [Control Path documentation](../common/contrl_path.md)
+* Control path is a lightweight RPC (Remote Procedure Call) user space library that uses Google Protobuf to configure the ESP device
+* It allows you to:
+  - Connect to Wi-Fi networks
+  - Get information about connected networks
+  - Configure Wi-Fi transmit power
+  - And other ESP settings
+* You need to use control path before establishing data connections
+* It's a good way to verify your SPI/SDIO transport is working correctly
+* The [Control Path documentation](../common/contrl_path.md) explains the [design architecture](../common/contrl_path.md#3-design) and provides a [quick start guide](../common/contrl_path.md#5-kick-start-using-control-path) with demo applications
 
 ## 2. Wi-Fi Connectivity
 
@@ -30,10 +58,10 @@ Wi-Fi can be configured as either as `STATION` mode or `SOFTAP` mode or `STATION
 - This section explains how one can configure and control Wi-Fi interface using provided [python demo app](../common/python_demo.md)
 - Python demo app can be used in two modes, shell mode *i.e.* command line mode and CLI mode. In following sections, only shell mode is detailed, just to enough to kick-start
 - User can make use of easy and intuitive mode by referring [here](../common/python_demo.md#modes-supported)
-- C based solution also could be used from [C based demo app](../common/c_demo.md). For simplicity, 
+- C based demo user space apps could be used from [C based demo app](../common/c_demo.md).
+- Python based demo user space app could be used from [Python based demo app](../common/python_demo.md)
 
-
-Python App is placed in [esp_hosted_fg/host/linux/host_control/python_support/](../../host/linux/host_control/python_support/) directory. Use below command to navigate to this directory.
+For simplicity, python app is used here.
 ```sh
 $ cd esp_hosted_fg/host/linux/host_control/python_support/
 ```
@@ -295,3 +323,26 @@ Please follow [OTA update documentation](ota_update.md) for further details.
 Please refer following for troubleshoot instructions if something goes wrong.
 
 * [Troubleshooting Guide](./Troubleshoot.md)
+
+
+## 6. Network Split
+
+Network Split enables host and ESP to share an IP address while handling traffic based on port ranges. Users benefit from continued ESP connectivity during host sleep/power-down and can customize network configuration between slave and host.
+
+Key features:
+- Port-based traffic splitting (host: 49152-61439, ESP: 61440-65535)
+- Intelligent packet filtering with Deep Packet Inspection
+- Special handling for wake-up events
+
+For details, see [Network Split documentation](Network_Split.md).
+
+## 7. Auto Network Setup
+
+Auto Network Setup automatically retrieves and applies network settings from ESP to host, eliminating manual reconfiguration after reboots or sleep cycles and saving users time with seamless connectivity.
+
+Key benefits:
+- No manual IP setup required
+- Fast connectivity on boot or wake-up
+- Background daemon support
+
+For details, see [Auto Network Setup documentation](Auto_Network_Setup.md).
