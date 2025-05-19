@@ -3,6 +3,7 @@ CONFIG_TEST_RAW_TP := n
 CONFIG_INFO_LOGS=y
 CONFIG_DEBUG_LOGS=n
 CONFIG_VERBOSE_LOGS=n
+#CONFIG_ESP_HOSTED_USE_WORKQUEUE=y # If set 'n', would semaphore based solution
 
 # In case of SDIO as transport, one of slave chipset used,
 # CONFIG_TARGET_ESP32  OR
@@ -11,11 +12,12 @@ CONFIG_VERBOSE_LOGS=n
 # rpi_init.sh will add that flag using ESP_SLAVE
 ESP_SLAVE := ""
 
-# Toolchain Path
+# Imx8mm
+# CROSS_COMPILE := "/opt/fsl-imx-wayland/5.15-kirkstone/sysroots/x86_64-pokysdk-linux/usr/bin/aarch64-poky-linux/aarch64-poky-linux-"
+# KERNEL := "/home/u64/imx8_dev_board/imx-yocto-bsp/build/tmp/work/imx8mm_lpddr4_evk-poky-linux/linux-imx/5.15.52+gitAUTOINC+36363d8623-r0/build"
+
 CROSS_COMPILE :=
-# Linux Kernel header
 KERNEL := /lib/modules/$(shell uname -r)/build
-# Architecture
 ARCH := arm64
 
 #Default interface is sdio

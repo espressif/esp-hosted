@@ -47,6 +47,7 @@ int main(int argc, char *argv[])
 	int stress_test_count = 0;
 	int str_args_start = 2;
 	char version[30] = {'\0'};
+	char mac_address[30] = {'\0'};
 
 	if(getuid()) {
 		printf("Please re-run program with superuser access\n");
@@ -82,11 +83,12 @@ int main(int argc, char *argv[])
 		str_args_start = 1;
 	}
 
+	test_is_network_split_on();
 	register_event_callbacks();
 	test_config_heartbeat();
 
 	/* Print FW Version by Default */
-	printf("------ ESP-Hosted FW [%s] ------\n", test_get_fw_version(version));
+	printf("------ ESP-Hosted FW [%s] ------\n", test_get_fw_version(version, sizeof(version)));
 
 	for (int test_count=0; test_count<stress_test_count; test_count++) {
 		printf("\n\nIteration %u:\n",test_count+1);
@@ -95,16 +97,16 @@ int main(int argc, char *argv[])
 
 			if (0 == strncasecmp(SET_STA_MAC_ADDR, argv[i],
 						sizeof(SET_STA_MAC_ADDR))) {
-				test_station_mode_set_mac_addr_of_esp();
+				test_station_mode_set_mac_addr_of_esp(STATION_MODE_MAC_ADDRESS);
 			} else if (0 == strncasecmp(GET_STA_MAC_ADDR, argv[i],
 						sizeof(GET_STA_MAC_ADDR))) {
-				test_station_mode_get_mac_addr();
+				test_station_mode_get_mac_addr(mac_address);
 			} else if (0 == strncasecmp(SET_SOFTAP_MAC_ADDR, argv[i],
 						sizeof(SET_SOFTAP_MAC_ADDR))) {
-				test_softap_mode_set_mac_addr_of_esp();
+				test_softap_mode_set_mac_addr_of_esp(SOFTAP_MODE_MAC_ADDRESS);
 			} else if (0 == strncasecmp(GET_SOFTAP_MAC_ADDR, argv[i],
 						sizeof(GET_SOFTAP_MAC_ADDR))) {
-				test_softap_mode_get_mac_addr();
+				test_softap_mode_get_mac_addr(mac_address);
 
 			} else if (0 == strncasecmp(GET_AP_SCAN_LIST, argv[i],
 						sizeof(GET_AP_SCAN_LIST))) {

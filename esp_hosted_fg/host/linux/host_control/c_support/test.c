@@ -22,6 +22,10 @@
 #include "test.h"
 #include "serial_if.h"
 #include <signal.h>
+#include <linux/if.h>
+#include <linux/if_arp.h>
+#include "esp_hosted_custom_rpc.h"
+#include "app_custom_rpc.h"
 
 #define DEMO_SLEEP_DURATION_SEC 50
 #define EXEC_IF_CMD_EQUALS(cmd,func) \
@@ -35,27 +39,32 @@
 
 static void inline usage(char *argv[])
 {
-	printf("sudo %s \n[\n %s\t\t||\n %s\t\t||\n %s\t\t||\n %s\t\t||\n %s\t\t||\n %s\t\t\t||\n %s\t\t\t||\n %s\t\t\t||\n %s\t\t\t||\n %s\t\t\t||\n %s\t\t||\n %s\t\t||\n %s\t\t\t||\n %s\t\t||\n %s\t||\n %s\t\t\t||\n %s\t||\n %s\t||\n %s\t\t||\n %s\t\t||\n %s <ESP 'network_adapter.bin' path> ||\n %s\t\t\t||\n %s\t\t\t||\n %s\t\t\t||\n %s\t\t\t||\n %s\t\t\t||\n %s\t\t||\n %s\t||\n %s\t\t||\n]\n",
+	printf("sudo %s \n[\n %s\t\t||\n %s\t\t||\n %s\t\t||\n %s\t\t||\n %s\t\t||\n %s\t\t\t||\n %s\t\t\t||\n %s\t\t\t||\n %s\t\t\t||\n %s\t\t\t||\n %s\t\t||\n %s\t\t||\n %s\t\t\t||\n %s\t\t||\n %s\t||\n %s\t\t\t||\n %s\t||\n %s\t||\n %s\t\t||\n %s\t\t||\n %s <ESP 'network_adapter.bin' path> ||\n %s\t\t\t||\n %s\t\t\t||\n %s\t\t\t||\n %s\t\t\t||\n %s\t\t\t||\n %s\t\t||\n %s\t||\n %s\t\t||\n]\n||\n %s\t||\n %s\t||\n %s\t]\n",
 		argv[0], SET_STA_MAC_ADDR, GET_STA_MAC_ADDR, SET_SOFTAP_MAC_ADDR, GET_SOFTAP_MAC_ADDR, GET_AP_SCAN_LIST,
 		STA_CONNECT, GET_STA_CONFIG, STA_DISCONNECT, SET_WIFI_MODE, GET_WIFI_MODE,
 		RESET_SOFTAP_VENDOR_IE, SET_SOFTAP_VENDOR_IE, SOFTAP_START, GET_SOFTAP_CONFIG, SOFTAP_CONNECTED_STA_LIST,
 		SOFTAP_STOP, SET_WIFI_POWERSAVE_MODE, GET_WIFI_POWERSAVE_MODE, SET_WIFI_MAX_TX_POWER, GET_WIFI_CURR_TX_POWER,
 		OTA, ENABLE_WIFI, DISABLE_WIFI, ENABLE_BT, DISABLE_BT, GET_FW_VERSION, SET_COUNTRY_CODE, SET_COUNTRY_CODE_ENABLED,
-		GET_COUNTRY_CODE);
+		GET_COUNTRY_CODE,  CUSTOM_RPC_DEMO1, CUSTOM_RPC_DEMO2, CUSTOM_RPC_DEMO3);
 	printf("\n\nFor example, \nsudo %s %s\n",
 		argv[0], SET_STA_MAC_ADDR);
 }
+/* forward declaration of functions used */
+static int demo1_custom_rpc_unserialised_request_only_ack(void);
+static int demo2_custom_rpc_unserialised_request_and_slave_echo_back_as_response(void);
+static int demo3_custom_rpc_unserialised_request_and_slave_echo_back_as_event(void);
 
 static int parse_cli_cmd(char *in_cmd, char *args[])
 {
 	bool cmd_executed = false;
+	char *mac_address = NULL;
 
 	/* TODO: create commands and handler map later */
 	/* Get and set mac address */
-	EXEC_IF_CMD_EQUALS(SET_STA_MAC_ADDR, test_station_mode_set_mac_addr_of_esp());
-	EXEC_IF_CMD_EQUALS(GET_STA_MAC_ADDR, test_station_mode_get_mac_addr());
-	EXEC_IF_CMD_EQUALS(SET_SOFTAP_MAC_ADDR, test_softap_mode_set_mac_addr_of_esp());
-	EXEC_IF_CMD_EQUALS(GET_SOFTAP_MAC_ADDR, test_softap_mode_get_mac_addr());
+	EXEC_IF_CMD_EQUALS(SET_STA_MAC_ADDR, test_station_mode_set_mac_addr_of_esp(STATION_MODE_MAC_ADDRESS));
+	EXEC_IF_CMD_EQUALS(GET_STA_MAC_ADDR, test_station_mode_get_mac_addr(mac_address));
+	EXEC_IF_CMD_EQUALS(SET_SOFTAP_MAC_ADDR, test_softap_mode_set_mac_addr_of_esp(SOFTAP_MODE_MAC_ADDRESS));
+	EXEC_IF_CMD_EQUALS(GET_SOFTAP_MAC_ADDR, test_softap_mode_get_mac_addr(mac_address));
 	EXEC_IF_CMD_EQUALS(GET_AP_SCAN_LIST, test_get_available_wifi());
 	EXEC_IF_CMD_EQUALS(STA_CONNECT, test_station_mode_connect());
 	EXEC_IF_CMD_EQUALS(GET_STA_CONFIG, test_station_mode_get_info());
@@ -81,6 +90,9 @@ static int parse_cli_cmd(char *in_cmd, char *args[])
 	EXEC_IF_CMD_EQUALS(SET_COUNTRY_CODE, test_set_country_code());
 	EXEC_IF_CMD_EQUALS(SET_COUNTRY_CODE_ENABLED, test_set_country_code_enabled());
 	EXEC_IF_CMD_EQUALS(GET_COUNTRY_CODE, test_get_country_code());
+	EXEC_IF_CMD_EQUALS(CUSTOM_RPC_DEMO1, demo1_custom_rpc_unserialised_request_only_ack());
+	EXEC_IF_CMD_EQUALS(CUSTOM_RPC_DEMO2, demo2_custom_rpc_unserialised_request_and_slave_echo_back_as_response());
+	EXEC_IF_CMD_EQUALS(CUSTOM_RPC_DEMO3, demo3_custom_rpc_unserialised_request_and_slave_echo_back_as_event());
 
 	if (cmd_executed)
 		return SUCCESS;
@@ -96,6 +108,8 @@ static int init_app(void)
 		printf("init hosted control lib failed\n");
 		return FAILURE;
 	}
+
+	test_is_network_split_on();
 
 	register_event_callbacks();
 
@@ -157,7 +171,7 @@ int main(int argc, char *argv[])
 	}
 
 	/* Print FW Version by Default */
-	printf("------ ESP-Hosted FW [%s] ------\n", test_get_fw_version(version));
+	printf("------ ESP-Hosted FW [%s] ------\n", test_get_fw_version(version, sizeof(version)));
 
 	cli_cmd = argv[1];
 	if (SUCCESS == parse_cli_cmd(cli_cmd, &argv[2])) {
@@ -170,4 +184,39 @@ int main(int argc, char *argv[])
 	cleanup_app();
 	printf("Exiting..");
 	return 0;
+}
+
+
+/* ------------------- Custom RPC Packed Data DEMO 1 ------------------- */
+/* This demo shows how to send a custom RPC request with packed data
+ * and receive an echo back response.
+ * The response is not verified in this demo (as it is not expected)
+ */
+/* Implementation of demo_custom_rpc_unserialised_request_no_echo_back */
+static int demo1_custom_rpc_unserialised_request_only_ack(void) {
+	/* Call the shared implementation */
+	return custom_rpc_demo1_request_only_ack();
+}
+
+/* ------------------- Custom RPC Packed Data DEMO 2 ------------------- */
+/* This demo shows how to send a custom RPC request with packed data
+ * and receive an echo back response.
+ * The response is verified in this demo to be the same as the sent data.
+ */
+static int demo2_custom_rpc_unserialised_request_and_slave_echo_back_as_response(void) {
+	/* Call the shared implementation */
+	return custom_rpc_demo2_request_echo_back_as_response();
+}
+
+/* ------------------- Custom RPC Packed Data DEMO 3 ------------------- */
+/* This demo shows how to send a custom RPC request with packed data
+ * and receive an echo back the sent data as an event.
+ * The event is verified in this demo to be the same as the sent data.
+ * The response is not verified in this demo (as it is not expected)
+ */
+
+/* Implementation of demo_custom_rpc_unserialised_request_and_slave_echo_back_as_event */
+static int demo3_custom_rpc_unserialised_request_and_slave_echo_back_as_event(void) {
+	/* Call the shared implementation */
+	return custom_rpc_demo3_request_echo_back_as_event();
 }

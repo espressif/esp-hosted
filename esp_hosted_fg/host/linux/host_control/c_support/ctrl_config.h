@@ -55,12 +55,17 @@
 #define DISABLE_BT                         "disable_bt"
 
 #define GET_FW_VERSION                     "get_fw_version"
+#define GET_DHCP_DNS_STATUS                "get_dhcp_dns_status"
 
 #define SET_COUNTRY_CODE                   "set_country_code"
 /* ENABLED means ieee80211d ("additional regulatory domains") enabled */
 #define SET_COUNTRY_CODE_ENABLED           "set_country_code_enabled"
 
 #define GET_COUNTRY_CODE                   "get_country_code"
+
+#define CUSTOM_RPC_DEMO1                   "send_packed_data__only_ack"
+#define CUSTOM_RPC_DEMO2                   "send_packed_data__echo_back_as_response"
+#define CUSTOM_RPC_DEMO3                   "send_packed_data__echo_back_as_event"
 
 #ifndef SSID_LENGTH
 #define SSID_LENGTH                         33

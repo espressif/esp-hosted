@@ -17,6 +17,7 @@
 #ifndef __TRANSPORT_LAYER_INTERFACE_H
 #define __TRANSPORT_LAYER_INTERFACE_H
 #include "esp_err.h"
+#include "esp_hosted_log.h"
 
 #ifdef CONFIG_ESP_SDIO_HOST_INTERFACE
 
@@ -75,6 +76,14 @@ typedef struct {
 	INTERFACE_STATE state;
 }interface_handle_t;
 
+#if CONFIG_ESP_SPI_HOST_INTERFACE
+#define MAX_TRANSPORT_BUF_SIZE 1600
+#elif CONFIG_ESP_SDIO_HOST_INTERFACE
+#define MAX_TRANSPORT_BUF_SIZE 1536
+#endif
+
+#define BSSID_BYTES_SIZE       6
+
 typedef struct {
 	interface_handle_t * (*init)(void);
 	int32_t (*write)(interface_handle_t *handle, interface_buffer_handle_t *buf_handle);
@@ -94,4 +103,11 @@ interface_context_t * interface_insert_driver(int (*callback)(uint8_t val));
 int interface_remove_driver();
 void generate_startup_event(uint8_t cap);
 int send_to_host_queue(interface_buffer_handle_t *buf_handle, uint8_t queue_type);
+
+void send_dhcp_dns_info_to_host(uint8_t network_up, uint8_t send_wifi_connected);
+
+#ifndef min
+#define min(a, b) ((a) < (b) ? (a) : (b))
+#endif
+
 #endif

@@ -1,133 +1,114 @@
 # ESP-Hosted
 
-ESP-Hosted is an open source solution that provides a way to use Espressif SoCs and modules as a communication co-processor. This solution provides wireless connectivity (Wi-Fi and BT/BLE) to the host microprocessor or microcontroller, allowing it to communicate with other devices.
+**ESP-Hosted** is an open-source solution that enables Espressif SoCs/modules (like ESP32) to act as **wireless communication co-processors** for external host systems.
 
-Following is the high level block diagram for ESP-Hosted. Detailed block diagram is available in subsequent sections. 
-
-![alt text](basic_block_diagram.jpg "Basic Block Diagram")
+It allows **host devices** (Linux-based systems or microcontrollers, MCUs) to add Wi-Fi and Bluetooth/BLE capabilities via **standard interfaces** like SPI, SDIO, or UART.
 
 
+### 🔑 Key Features
 
-## 1. ESP-Hosted Flavours
+* **Flexible Connectivity**: Wi-Fi + Bluetooth/BLE
+* **Broad Host Support**: Works with Linux and MCU-based systems
+* **Multiple Interfaces**: SPI, SDIO, UART
+* **Shared Networking**: ESP and host can share the same IP address
+* **Power Efficient**: Low power modes for battery-powered use cases
 
-The ESP-Hosted solution is available in two flavours as mentioned below. The differentiation factor here is the type of network interface presented to host and the way Wi-Fi on ESP SoC/module is configured/controlled. Both the flavours have their respective host and firmware software.
+### 📦 High-Level Architecture
 
+<img src="basic_block_diagram.jpg" alt="Basic Block Diagram" width="600"/>
 
-### 1.1 ESP-Hosted-NG
+---
 
-This is the Next-Generation ESP-Hosted solution specifically designed for hosts that run Linux operating system. This flavour of the solution takes a standard approach while providing a network interface to the host. This allows usage of standard Wi-Fi applications such as wpa_supplicant to be used with ESP SoCs/modules.
+## 🧩 ESP-Hosted Variants
 
-This solution offers following:
+ESP-Hosted is available in three main variants:
 
-* 802.11 network interface which is a standard Wi-Fi interface on Linux host
-* Configuration of Wi-Fi is supported through standard cfg80211 interface of Linux
-* A standard HCI interface
+### 🔹 [ESP-Hosted-NG (Next Gen)](esp_hosted_ng/README.md)
 
-This flavour is available in [esp_hosted_ng](esp_hosted_ng)
+Best for **Linux hosts** needing standard Wi-Fi and Bluetooth integration:
 
-Please proceed with the [detailed documentation](esp_hosted_ng/README.md) for setup and usage instructions.
+* Acts as a native 802.11 wireless device
+* Configurable via `cfg80211` / `wpa_supplicant`
+* Supports `NetworkManager`
+* Bluetooth via standard HCI interface
 
+---
 
+### 🔹 [ESP-Hosted-FG (First Gen)](esp_hosted_fg/README.md)
 
-### 1.2 ESP-Hosted-FG
+Designed for **Linux hosts**, with custom lightweight RPC-based control:
 
-This is a first generation ESP-Hosted solution. This is a flavour, which provides a standard 802.3 (Ethernet) network interface to the host. Thought process behind this solution is to keep the host software simple while providing suite of connectivity features.
+* Ethernet 802.3 interface
+* Wi-Fi configuration via protobuf-based RPC
+* Fully customizable APIs
+* Bluetooth via standard HCI
+* Python or C integration
+* ESP maintains network when the host is powered off
 
-In order to achieve this, the host is presented with following:
+---
 
-* A standard 802.3 network interface which essentially is an Ethernet interface
-* A light weight control interface to configure Wi-Fi on ESP board
-* A standard HCI interface
+### 🔹 [ESP-Hosted-MCU](https://github.com/espressif/esp-hosted-mcu)
 
-Although this flavour supports Linux host, the nature of this solution makes it ideal to be used with MCU hosts which do not have complex communication interfaces such as Ethernet, Wi-Fi, BT/BLE etc.
+Optimized for **resource-constrained MCUs**:
 
-This flavour is available in [esp_hosted_fg](esp_hosted_fg)
-
-Please proceed with the [detailed documentation](esp_hosted_fg/README.md) for setup and usage instructions.
-
-
-## 2. ESP-Hosted-FG vs ESP-Hosted-NG
-
-Now that we offer two flavours of this solution, it could cause a little confusion. This section will try to explains similarities and differences in both the flavours and help you make a choice.
-
-### 2.1 Similarities
-
-- Both the flavours share the same aim, to conveniently use ESP's Wi-Fi and Bluetooth/BLE capabilities from host
-- Both the flavours aim to support same set of ESP SoCs/modules and same set of transports like SPI/SDIO/UART for connectivity needs
-
-### 2.2 Key Differences
-
-- ESP-Hosted-FG supports both Linux and MCU hosts. ESP-Hosted-NG supports only Linux host.
-- ESP-Hosted-FG exposes 802.3 network interface (Ethernet) to the host. Where as, ESP-Hosted-NG exposes 802.11 interface (Wi-Fi).
-- ESP-Hosted-FG uses custom control path to configure Wi-Fi as opposed to ESP-Hosted-NG which uses standard nl80211/cfg80211 configuration.
+* Minimal memory footprint
+* Wi-Fi configuration via protobuf-based RPC
+* Power-efficient operation
+* Ready port of ESP and STM32 as host
+* Bluetooth via standard HCI
+* ESP stays connected even when the host is in deep sleep or powered off
 
 
-Following table summarizes this entire discussion.
+---
 
-<table>
-  <tr>
-    <th>Features</th>
-    <th>ESP-Hosted</br>First</br>Generation </th>
-    <th>ESP-Hosted</br>Next</br>Generation </th>
-  </tr>
-  <tr>
-    <td>Supported platforms</td>
-    <td>MCU &amp; Linux host</td>
-    <td>Linux only host</td>
-  </tr>
-  <tr>
-    <td>Wi-Fi Configuration mechanism</td>
-    <td>Custom control interface</td>
-    <td>nl80211 / cfg80211</td>
-  </tr>
-  <tr>
-    <td>Network Interface available</td>
-    <td>802.3 Ethernet Interface</td>
-    <td>802.11 Wi-Fi interface</td>
-  </tr>
-  <tr>
-    <td>Recommended Host Type</td>
-    <td><span style="font-weight:bold">MCU Host</span></td>
-    <td><span style="font-weight:bold">Linux Host</span></td>
-  </tr>
-  <tr>
-    <td>Wi-Fi features</td>
-    <td colspan="2" style="text-align:center">802.11 b/g/n</td>
-  </tr>
-  <tr>
-    <td>Transport Layer</td>
-    <td colspan="2"  style="text-align:center">SDIO, SPI, UART</td>
-  </tr>
-  <tr>
-    <td>Usable transport combinations</td>
-    <td colspan="2"  style="text-align:center">SPI only, SPI+UART, SDIO only, SDIO+UART</td>
-  </tr>
-  <tr>
-    <td>Wi-Fi Mode</td>
-    <td>Station, <span style="font-weight:bold">SoftAP</span></td>
-    <td>Station, SoftAP</td>
-  </tr>
-  <tr>
-    <td>Wi-Fi Security Protocols</td>
-    <td colspan="2"  style="text-align:center">Open / WPA / WPA2 / WPA3</td>
-  </tr>
-  <tr>
-    <td>Bluetooth features</td>
-    <td colspan="2"  style="text-align:center">BLE 4.2, BLE 5.0, BLE 5.3</td>
-  </tr>
-  <tr>
-    <td>Chipsets supported</td>
-    <td>ESP32, <span>ESP32-C2/C3/C5/C6/S2/S3</span></td>
-    <td>ESP32, <span>ESP32-C2/C3/C5/C6/S2/S3</span></td>
-  </tr>
-</table>
+## 📊 Variant Comparison
 
-- **Iperf Throughput**
-  - [ESP-Hosted-FG](esp_hosted_fg/README.md#5-throughput-performance)
-  - [ESP-Hosted-NG](esp_hosted_ng/README.md#4-throughput-performance)
+| Feature                    |           ESP-Hosted-NG          |  ESP-Hosted-FG  |  ESP-Hosted-MCU  |
+| :-------------------------------- | :------------------------------: | :-------------: | :--------------: |
+| **Target Host**            |               Linux              |   Linux / MCU   |        MCU       |
+| **Wi-Fi Configuration**    |            `cfg80211`            |  RPC (protobuf) | RPC (protobuf) |
+| **Network Interface**      |           802.11 Wi-Fi           |  802.3 Ethernet |  802.3 Ethernet  |
+| **Same IP for ESP & Host** |                 ❌                |        ✅        |         ✅        |
+| **Power Management**       |                 ✅                |    :hourglass: Planned  |         ✅        |
+| **Wi-Fi Modes**            |              STA, AP             | STA, AP, STA+AP |  STA, AP, STA+AP |
+| **Bus Interfaces**         |   SPI, SDIO, UART (and combos)   |       Same      |       Same       |
+| **Wi-Fi Security**         |       WPA, WPA2, WPA3, Open      |       Same      |       Same       |
+| **Standards**              | 802.11 b/g/n/ax, BLE 4.2/5.0/5.3 |       Same      |       Same       |
+| **Supported ESP Chips**    |     ESP32, C2/C3/C5/C6, S2/S3    |       Same      |       Same       |
 
-## 3. Our Recommendation
+---
 
-* If you are using MCU host, you do not have choice but to use ESP-Hosted-FG
-* If you are using Linux host, we recommend ESP-Hosted-NG since it takes a standard approach which makes it compatible with widely used user space applications/services such as wpa_supplicant, Network Manager etc.
+## 🤔 Choosing the Right Variant
 
+| Use Case                                                         | Recommended Variant |
+| ---------------------------------------------------------------- | ------------------- |
+| Standard Linux Wi-Fi config (`NetworkManager`, `wpa_supplicant`) | **ESP-Hosted-NG**   |
+| Linux with custom/proprietary control over Wi-Fi                 | **ESP-Hosted-FG**   |
+| Embedded Linux platforms (e.g. Raspberry Pi, BeagleBone)         | **NG** or **FG**    |
+| Minimal resource devices (low RAM/CPU MCUs)                      | **ESP-Hosted-MCU**  |
+| Custom networking or duplicate stack (same IP on host & ESP)     | **FG** or **MCU**   |
+| IoT use cases requiring both BLE and Wi-Fi                       | **Any**             |
+| Need for protocol customization / Deep Packet Inspection         | **FG** or **MCU**   |
+| Classic Bluetooth support                                        | **All Variants**    |
+
+---
+
+## 📚 Documentation & Resources
+
+### ESP-Hosted-NG
+
+* 📄 [Documentation](https://github.com/espressif/esp-hosted/blob/master/esp_hosted_ng/README.md)
+* 🐞 [Issues](https://github.com/espressif/esp-hosted/issues)
+* 📈 [Throughput Benchmarks](https://github.com/espressif/esp-hosted/blob/master/esp_hosted_ng/README.md#5-throughput-performance)
+
+### ESP-Hosted-FG
+
+* 📄 [Documentation](https://github.com/espressif/esp-hosted/blob/master/esp_hosted_fg/README.md)
+* 🐞 [Issues](https://github.com/espressif/esp-hosted/issues)
+* 📈 [Throughput Benchmarks](https://github.com/espressif/esp-hosted/blob/master/esp_hosted_fg/README.md#5-throughput-performance)
+
+### ESP-Hosted-MCU
+
+* 📄 [Documentation](https://github.com/espressif/esp-hosted-mcu/blob/main/README.md)
+* 🐞 [Issues](https://github.com/espressif/esp-hosted-mcu/issues)
+* 📈 [Throughput Benchmarks](https://github.com/espressif/esp-hosted-mcu/tree/main?tab=readme-ov-file#hosted-transports-table)

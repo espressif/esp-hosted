@@ -26,3 +26,8 @@ set(PROJECT_VER "${PROJECT_VER}")
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
 project(network_adapter)
 idf_build_set_property(COMPILE_OPTIONS "-fdiagnostics-color=always" APPEND)
+
+
+idf_component_get_property(lwip lwip COMPONENT_LIB)
+target_compile_options(${lwip} PRIVATE "-I${PROJECT_DIR}/main")
+target_compile_definitions(${lwip} PRIVATE "-DESP_IDF_LWIP_HOOK_FILENAME=\"esp_hosted_lwip_src_port_hook.h\"")

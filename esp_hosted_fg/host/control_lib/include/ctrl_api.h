@@ -34,10 +34,10 @@
  * another request is pending, time period for
  * which new request will wait in seconds
  * */
-#define WAIT_TIME_B2B_CTRL_REQ               5
-#define DEFAULT_CTRL_RESP_TIMEOUT            30
+#define WAIT_TIME_B2B_CTRL_REQ               3
+#define DEFAULT_CTRL_RESP_TIMEOUT            5
 #define DEFAULT_CTRL_RESP_AP_SCAN_TIMEOUT    (60*3)
-#define DEFAULT_CTRL_RESP_CONNECT_AP_TIMEOUT (15*3)
+#define DEFAULT_CTRL_RESP_CONNECT_AP_TIMEOUT (10)
 
 #ifndef MAC2STR
 #define MAC2STR(a) (a)[0], (a)[1], (a)[2], (a)[3], (a)[4], (a)[5]
@@ -47,6 +47,20 @@
 #define SUCCESS_STR                          "success"
 #define FAILURE_STR                          "failure"
 #define NOT_CONNECTED_STR                    "not_connected"
+
+
+#define CLEANUP_CTRL_MSG(msg) do {                        \
+  if (msg) {                                              \
+    if (msg->free_buffer_handle) {                        \
+      if (msg->free_buffer_func) {                        \
+        msg->free_buffer_func(msg->free_buffer_handle);   \
+        msg->free_buffer_handle = NULL;                   \
+      }                                                   \
+    }                                                     \
+    free(msg);                                            \
+    msg = NULL;                                           \
+  }                                                       \
+} while(0);
 
 /*---- Control structures ----*/
 
@@ -120,6 +134,11 @@ typedef enum {
 	CTRL_REQ_SET_COUNTRY_CODE          = CTRL_MSG_ID__Req_SetCountryCode,     //0x7c
 	CTRL_REQ_GET_COUNTRY_CODE          = CTRL_MSG_ID__Req_GetCountryCode,     //0x7d
 
+	CTRL_REQ_SET_DHCP_DNS_STATUS       = CTRL_MSG_ID__Req_SetDhcpDnsStatus,
+	CTRL_REQ_GET_DHCP_DNS_STATUS       = CTRL_MSG_ID__Req_GetDhcpDnsStatus,
+
+	CTRL_REQ_CUSTOM_RPC_UNSERIALISED_MSG = CTRL_MSG_ID__Req_Custom_RPC_Unserialised_Msg,
+
 	/*
 	 * Add new control path command response before Req_Max
 	 * and update Req_Max
@@ -162,8 +181,13 @@ typedef enum {
 
 	CTRL_RESP_SET_COUNTRY_CODE          = CTRL_MSG_ID__Resp_SetCountryCode,     //0x7c -> 0xe0
 	CTRL_RESP_GET_COUNTRY_CODE          = CTRL_MSG_ID__Resp_GetCountryCode,     //0x7d -> 0xe1
+
+	CTRL_RESP_SET_DHCP_DNS_STATUS       = CTRL_MSG_ID__Resp_SetDhcpDnsStatus,
+	CTRL_RESP_GET_DHCP_DNS_STATUS       = CTRL_MSG_ID__Resp_GetDhcpDnsStatus,
+
+	CTRL_RESP_CUSTOM_RPC_UNSERIALISED_MSG = CTRL_MSG_ID__Resp_Custom_RPC_Unserialised_Msg,
 	/*
-	 * Add new control path comm       and response before Resp_Max
+	 * Add new control path command and response before Resp_Max
 	 * and update Resp_Max
 	 */
 	CTRL_RESP_MAX = CTRL_MSG_ID__Resp_Max,
@@ -181,6 +205,10 @@ typedef enum {
 		CTRL_MSG_ID__Event_StationConnectedToAP,
 	CTRL_EVENT_STATION_CONNECTED_TO_ESP_SOFTAP =
 		CTRL_MSG_ID__Event_StationConnectedToESPSoftAP,
+	CTRL_EVENT_DHCP_DNS_STATUS =
+		CTRL_MSG_ID__Event_SetDhcpDnsStatus,
+	CTRL_EVENT_CUSTOM_RPC_UNSERIALISED_MSG =
+		CTRL_MSG_ID__Event_Custom_RPC_Unserialised_Msg,
 	/*
 	 * Add new control path command notification before Event_Max
 	 * and update Event_Max
@@ -236,6 +264,7 @@ typedef enum {
 enum hosted_features_t {
 	HOSTED_WIFI = HOSTED_FEATURE__Hosted_Wifi,
 	HOSTED_BT = HOSTED_FEATURE__Hosted_Bluetooth,
+	HOSTED_IS_NETWORK_SPLIT_ON = HOSTED_FEATURE__Hosted_Is_Network_Split_On,
 };
 
 typedef struct {
@@ -392,6 +421,27 @@ typedef struct {
 	uint32_t reason;
 } event_softap_sta_disconn_t;
 
+typedef struct {
+	int iface;
+	int net_link_up;
+	int dhcp_up;
+	uint8_t dhcp_ip[64];
+	uint8_t dhcp_nm[64];
+	uint8_t dhcp_gw[64];
+	int dns_up;
+	uint8_t dns_ip[64];
+	int dns_type;
+} dhcp_dns_status_t;
+
+typedef void (*custom_data_free_func_t)(void *data);
+
+typedef struct {
+	uint32_t custom_msg_id;
+	uint16_t data_len;
+	custom_data_free_func_t free_func;
+	uint8_t *data;
+} custom_rpc_unserialised_data_t;
+
 typedef struct Ctrl_cmd_t {
 	/* msg type could be 1. req 2. resp 3. notification */
 	uint8_t msg_type;
@@ -434,6 +484,8 @@ typedef struct Ctrl_cmd_t {
 		event_sta_disconn_t         e_sta_disconn;
 		event_softap_sta_conn_t     e_softap_sta_conn;
 		event_softap_sta_disconn_t  e_softap_sta_disconn;
+		dhcp_dns_status_t           dhcp_dns_status;
+		custom_rpc_unserialised_data_t custom_rpc_unserialised_data;
 	}u;
 
 	/* By default this callback is set to NULL.
@@ -499,6 +551,15 @@ typedef int (*ctrl_event_cb_t) (ctrl_cmd_t * event);
  **/
 int set_event_callback(int event, ctrl_resp_cb_t event_cb);
 
+
+/* Get control event callback
+ *
+ * Returns:
+ * > NULL - If event is not registered with hosted control lib
+ * > Function pointer - Returns the registered event callback
+ **/
+ctrl_resp_cb_t get_event_callback(int event);
+
 /* Reset control event callback
  *
  * when user sets event callback, user provided function pointer
@@ -539,103 +600,97 @@ int init_hosted_control_lib(void);
 int deinit_hosted_control_lib(void);
 
 /* Get the MAC address of station or softAP interface of ESP32 */
-ctrl_cmd_t * wifi_get_mac(ctrl_cmd_t req);
+ctrl_cmd_t * wifi_get_mac(ctrl_cmd_t *req);
 
 /* Set MAC address of ESP32 interface for given wifi mode */
-ctrl_cmd_t * wifi_set_mac(ctrl_cmd_t req);
+ctrl_cmd_t * wifi_set_mac(ctrl_cmd_t *req);
 
 /* Get Wi-Fi mode of ESP32 */
-ctrl_cmd_t * wifi_get_mode(ctrl_cmd_t req);
+ctrl_cmd_t * wifi_get_mode(ctrl_cmd_t *req);
 
 /* Set the Wi-Fi mode of ESP32 */
-ctrl_cmd_t * wifi_set_mode(ctrl_cmd_t req);
+ctrl_cmd_t * wifi_set_mode(ctrl_cmd_t *req);
 
 /* Set Wi-Fi power save mode of ESP32 */
-ctrl_cmd_t * wifi_set_power_save_mode(ctrl_cmd_t req);
+ctrl_cmd_t * wifi_set_power_save_mode(ctrl_cmd_t *req);
 
 /* Get the Wi-Fi power save mode of ESP32 */
-ctrl_cmd_t * wifi_get_power_save_mode(ctrl_cmd_t req);
+ctrl_cmd_t * wifi_get_power_save_mode(ctrl_cmd_t *req);
 
 /* Get list of available neighboring APs of ESP32 */
-ctrl_cmd_t * wifi_ap_scan_list(ctrl_cmd_t req);
+ctrl_cmd_t * wifi_ap_scan_list(ctrl_cmd_t *req);
 
 /* Get the AP config to which ESP32 station is connected */
-ctrl_cmd_t * wifi_get_ap_config(ctrl_cmd_t req);
+ctrl_cmd_t * wifi_get_ap_config(ctrl_cmd_t *req);
 
 /* Set the AP config to which ESP32 station should connect to */
-ctrl_cmd_t * wifi_connect_ap(ctrl_cmd_t req);
+ctrl_cmd_t * wifi_connect_ap(ctrl_cmd_t *req);
 
 /* Disconnect ESP32 station from AP */
-ctrl_cmd_t * wifi_disconnect_ap(ctrl_cmd_t req);
+ctrl_cmd_t * wifi_disconnect_ap(ctrl_cmd_t *req);
 
 /* Set configuration of ESP32 softAP and start broadcasting */
-ctrl_cmd_t * wifi_start_softap(ctrl_cmd_t req);
+ctrl_cmd_t * wifi_start_softap(ctrl_cmd_t *req);
 
 /* Get configuration of ESP32 softAP */
-ctrl_cmd_t * wifi_get_softap_config(ctrl_cmd_t req);
+ctrl_cmd_t * wifi_get_softap_config(ctrl_cmd_t *req);
 
 /* Stop ESP32 softAP */
-ctrl_cmd_t * wifi_stop_softap(ctrl_cmd_t req);
+ctrl_cmd_t * wifi_stop_softap(ctrl_cmd_t *req);
 
 /* Get list of connected stations to ESP32 softAP */
-ctrl_cmd_t * wifi_get_softap_connected_station_list(ctrl_cmd_t req);
+ctrl_cmd_t * wifi_get_softap_connected_station_list(ctrl_cmd_t *req);
 
 /* Function set 802.11 Vendor-Specific Information Element.
  * It needs to get called before starting of ESP32 softAP */
-ctrl_cmd_t * wifi_set_vendor_specific_ie(ctrl_cmd_t req);
+ctrl_cmd_t * wifi_set_vendor_specific_ie(ctrl_cmd_t *req);
 
 /* Sets maximum WiFi transmitting power at ESP32 */
-ctrl_cmd_t * wifi_set_max_tx_power(ctrl_cmd_t req);
+ctrl_cmd_t * wifi_set_max_tx_power(ctrl_cmd_t *req);
 
 /* Gets current WiFi transmiting power at ESP32 */
-ctrl_cmd_t * wifi_get_curr_tx_power(ctrl_cmd_t req);
+ctrl_cmd_t * wifi_get_curr_tx_power(ctrl_cmd_t *req);
 
 /* Sets the Country Code */
-ctrl_cmd_t * wifi_set_country_code(ctrl_cmd_t req);
+ctrl_cmd_t * wifi_set_country_code(ctrl_cmd_t *req);
 
 /* Gets the Country Code */
-ctrl_cmd_t * wifi_get_country_code(ctrl_cmd_t req);
+ctrl_cmd_t * wifi_get_country_code(ctrl_cmd_t *req);
 
 /* Configure heartbeat event. Be default heartbeat is not enabled.
  * To enable heartbeats, user need to use this API in addition
  * to setting event callback for heartbeat event */
-ctrl_cmd_t * config_heartbeat(ctrl_cmd_t req);
+ctrl_cmd_t * config_heartbeat(ctrl_cmd_t *req);
 
 /* Performs an OTA begin operation for ESP32 which erases and
  * prepares existing flash partition for new flash writing */
-ctrl_cmd_t * ota_begin(ctrl_cmd_t req);
+ctrl_cmd_t * ota_begin(ctrl_cmd_t *req);
 
 /* Performs an OTA write operation for ESP32, It writes bytes from `ota_data`
  * buffer with `ota_data_len` number of bytes to OTA partition in flash. Number
  * of bytes can be small than size of complete binary to be flashed. In that
  * case, this caller is expected to repeatedly call this function till
- * total size written equals size of complete binary */
-ctrl_cmd_t * ota_write(ctrl_cmd_t req);
+ * total size written equals size of complete binary to be flashed */
+ctrl_cmd_t * ota_write(ctrl_cmd_t *req);
 
 /* Performs an OTA end operation for ESP32, It validates written OTA image,
  * sets newly written OTA partition as boot partition for next boot,
  * Creates timer which reset ESP32 after 5 sec */
-ctrl_cmd_t * ota_end(ctrl_cmd_t req);
+ctrl_cmd_t * ota_end(ctrl_cmd_t *req);
 
 /* Enable or disable specific feautures from hosted_features_t */
-ctrl_cmd_t * feature_config(ctrl_cmd_t req);
+ctrl_cmd_t * feature_config(ctrl_cmd_t *req);
 
 /* Get FW Version */
-ctrl_cmd_t * get_fw_version(ctrl_cmd_t req);
+ctrl_cmd_t * get_fw_version(ctrl_cmd_t *req);
 
-/* Get the interface up for interface `iface` */
-int interface_up(int sockfd, char* iface);
+/* Get DHCP DNS status */
+ctrl_cmd_t * get_dhcp_dns_status(ctrl_cmd_t *req);
 
-/* Get the interface down for interface `iface` */
-int interface_down(int sockfd, char* iface);
+/* Set DHCP DNS status */
+ctrl_cmd_t * set_dhcp_dns_status(ctrl_cmd_t *req);
 
-/* Set ethernet interface MAC address `mac` to interface `iface` */
-int set_hw_addr(int sockfd, char* iface, char* mac);
-
-/* Create an endpoint for communication */
-int create_socket(int domain, int type, int protocol, int *sock);
-
-/* Close an endpoint of the communication */
-int close_socket(int sock);
+/* Send custom RPC unserialised message */
+ctrl_cmd_t * send_custom_rpc_unserialised_req_to_slave(ctrl_cmd_t *req);
 
 #endif

@@ -64,19 +64,42 @@ void esp_hci_rx(struct esp_adapter *adapter, struct sk_buff *skb)
 	u16 offset = 0;
 	u16 len = 0;
 	u8 *type = NULL;
+	int ret = 0;
 
-	if (unlikely(!adapter || !skb || !skb->data)) {
+	if (unlikely(!adapter || !skb || !skb->data || !skb->len)) {
+		esp_err("Invalid args: adapter=%p, skb=%p\n", adapter, skb);
 		if (skb)
 			dev_kfree_skb_any(skb);
 		return;
 	}
 
+	if (unlikely(atomic_read(&adapter->state) < ESP_CONTEXT_RX_READY)) {
+		esp_err("Adapter being removed, dropping packet\n");
+		dev_kfree_skb_any(skb);
+		return;
+	}
+
 	h = (struct esp_payload_header *)skb->data;
 	hdev = adapter->hcidev;
+
+	if (unlikely(!hdev)) {
+		esp_err("NULL hcidev, dropping packet\n");
+		dev_kfree_skb_any(skb);
+		return;
+	}
+
 	offset = le16_to_cpu(h->offset);
 	len = le16_to_cpu(h->len);
 
-	if (unlikely(!hdev || !offset || !len)) {
+	if (unlikely(!offset || !len || len > (skb->len - offset))) {
+		esp_err("Invalid packet parameters: offset=%u, len=%u, skb->len=%u\n",
+				offset, len, skb->len);
+		dev_kfree_skb_any(skb);
+		return;
+	}
+
+	if (unlikely(skb->len < offset + 1)) {
+		esp_err("SKB too short: skb->len=%u, offset=%u\n", skb->len, offset);
 		dev_kfree_skb_any(skb);
 		return;
 	}
@@ -86,16 +109,26 @@ void esp_hci_rx(struct esp_adapter *adapter, struct sk_buff *skb)
 
 	type = skb->data;
 	esp_hex_dump_dbg("bt_rx: ", skb->data, len);
+
+	if (unlikely(skb->len <= 1)) {
+		esp_err("No data after packet type byte\n");
+		dev_kfree_skb_any(skb);
+		return;
+	}
 	hci_skb_pkt_type(skb) = *type;
+
 	skb_pull(skb, 1);
 
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 13, 0))
-	if (hci_recv_frame(hdev, skb))
+	ret = hci_recv_frame(hdev, skb);
 #else
-	if (hci_recv_frame(skb))
+	ret = hci_recv_frame(skb);
 #endif
-	{
+
+	if (ret) {
+		esp_err("Failed to process HCI frame: %d\n", ret);
 		hdev->stat.err_rx++;
+		dev_kfree_skb_any(skb);
 	} else {
 		esp_hci_update_rx_counter(hdev, *type, skb->len);
 	}
@@ -119,21 +152,36 @@ static int esp_bt_flush(struct hci_dev *hdev)
 static ESP_BT_SEND_FRAME_PROTOTYPE()
 {
 	struct esp_payload_header *hdr;
-	size_t total_len, len = skb->len;
+	size_t total_len, len;
 	int ret = 0;
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(3, 13, 0))
     struct hci_dev * hdev = (struct hci_dev *)(skb->dev);
 #endif
-	struct esp_adapter *adapter = hci_get_drvdata(hdev);
+	struct esp_adapter *adapter;
 	struct sk_buff *new_skb;
 	u8 pad_len = 0, realloc_skb = 0;
 	u8 *pos = NULL;
 	u8 pkt_type;
 
-	if (!adapter) {
-		esp_err("invalid args\n");
+	if (!hdev || !skb) {
+		esp_err("Invalid args: hdev=%p, skb=%p\n", hdev, skb);
 		return -EINVAL;
 	}
+
+	adapter = hci_get_drvdata(hdev);
+
+	if (!adapter) {
+		esp_err("Invalid adapter\n");
+		return -EINVAL;
+	}
+
+	len = skb->len;
+
+	if (len == 0) {
+		esp_err("Zero length SKB\n");
+		return -EINVAL;
+	}
+
 	esp_hex_dump_dbg("bt_tx: ", skb->data, len);
 
 	/* Create space for payload header */
@@ -153,6 +201,7 @@ static ESP_BT_SEND_FRAME_PROTOTYPE()
 	if (realloc_skb || !IS_ALIGNED((unsigned long) skb->data, SKB_DATA_ADDR_ALIGNMENT)) {
 		/* Realloc SKB */
 		if (skb_linearize(skb)) {
+			esp_err("Failed to linearize skb\n");
 			hdev->stat.err_tx++;
 			return -EINVAL;
 		}
@@ -194,11 +243,10 @@ static ESP_BT_SEND_FRAME_PROTOTYPE()
 	/* set HCI packet type */
 	*(pos + pad_len - 1) = pkt_type;
 
-	hdr->checksum = cpu_to_le16(compute_checksum(skb->data, (len + pad_len)));
-
 	ret = esp_send_packet(adapter, skb);
 
 	if (ret) {
+		esp_err("Failed to send packet, error: %d\n", ret);
 		hdev->stat.err_tx++;
 		return ret;
 	} else {
@@ -226,17 +274,31 @@ int esp_deinit_bt(struct esp_adapter *adapter)
 {
 	struct hci_dev *hdev = NULL;
 
-	if (!adapter || !adapter->hcidev)
+	if (!adapter) {
 		return 0;
+	}
+
+	if (!adapter->hcidev) {
+		esp_info("No HCI device to deinit\n");
+		return 0;
+	}
 
 	hdev = adapter->hcidev;
 
-	hci_set_drvdata(hdev, NULL);
-	hci_unregister_dev(hdev);
-	hci_free_dev(hdev);
+	if (!hdev) {
+		esp_info("HCI device is NULL, nothing to deinit\n");
+		return 0;
+	}
 
 	adapter->hcidev = NULL;
+	hci_set_drvdata(hdev, NULL);
 
+	hci_unregister_dev(hdev);
+	msleep(50);
+
+	hci_free_dev(hdev);
+
+	esp_info("Bluetooth deinit success\n");
 	return 0;
 }
 
@@ -245,14 +307,16 @@ int esp_init_bt(struct esp_adapter *adapter)
 	int ret = 0;
 	struct hci_dev *hdev = NULL;
 
+	esp_info("Init Bluetooth\n");
+
 	if (!adapter) {
 		esp_err("null adapter\n");
 		return -EINVAL;
 	}
 
 	if (adapter->hcidev) {
-		esp_err("hcidev already exists\n");
-		return -EEXIST;
+		esp_info("hcidev already exists, deinitializing first\n");
+		esp_deinit_bt(adapter);
 	}
 
 	hdev = hci_alloc_dev();
@@ -267,15 +331,18 @@ int esp_init_bt(struct esp_adapter *adapter)
 
 	hdev->bus = INVALID_HDEV_BUS;
 
-	if (adapter->if_type == ESP_IF_TYPE_SDIO)
-		hdev->bus   = HCI_SDIO;
+	if (adapter->if_type == ESP_IF_TYPE_SDIO) {
+		esp_info("Setting up BT over SDIO\n");
+		hdev->bus = HCI_SDIO;
+	}
     #if (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 7, 0))
-	else if (adapter->if_type == ESP_IF_TYPE_SPI)
-		hdev->bus   = HCI_SPI;
+	else if (adapter->if_type == ESP_IF_TYPE_SPI) {
+		esp_info("Setting up BT over SPI\n");
+		hdev->bus = HCI_SPI;
+	}
     #endif
 
 	if (hdev->bus == INVALID_HDEV_BUS) {
-
 		if (adapter->if_type == ESP_IF_TYPE_SDIO) {
 			esp_err("Kernel version does not support HCI over SDIO BUS\n");
 		} else if (adapter->if_type == ESP_IF_TYPE_SPI) {
@@ -310,10 +377,12 @@ int esp_init_bt(struct esp_adapter *adapter)
 
 	ret = hci_register_dev(hdev);
 	if (ret < 0) {
-		esp_err("Can not register HCI device\n");
+		esp_err("Can not register HCI device, error: %d\n", ret);
 		hci_free_dev(hdev);
-		return -ENOMEM;
+		adapter->hcidev = NULL;
+		return ret;
 	}
 
+	esp_info("Bluetooth init success\n");
 	return 0;
 }

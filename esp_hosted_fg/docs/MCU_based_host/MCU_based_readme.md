@@ -2,6 +2,12 @@
 - Directory structure for microprocessor based host is explained [here](directory_structure.md)
 - Below diagram shows hardware and software block diagram for a typical MCU based system built with ESP-Hosted.
 
+
+> [!CAUTION]
+>
+> MCU support in ESP-Hosted-FG is now deprecated. For all MCU-based applications, please use the dedicated [ESP-Hosted-MCU repository](https://github.com/espressif/esp-hosted-mcu) instead. The information below is kept for backward compatibility only.
+
+
 ![ESP-Hosted Block Diagram](./MCU_based_design.png)
 
 # 1. Development Environment Setup

@@ -25,11 +25,16 @@
 #include <protocomm_priv.h>
 #include "protocomm_pserial.h"
 #include "adapter.h"
+#include "esp_hosted_log.h"
 
 static const char TAG[] = "protocomm_pserial";
 
 #define EPNAME_MAX                   16
-#define REQ_Q_MAX                    10
+#if defined(CONFIG_IDF_TARGET_ESP32C2)
+  #define REQ_Q_MAX                  3
+#else
+  #define REQ_Q_MAX                  10
+#endif
 
 #define SIZE_OF_TYPE                  1
 #define SIZE_OF_LENGTH                2
@@ -88,7 +93,7 @@ static esp_err_t compose_tlv(char *epname, uint8_t **out, size_t *outlen)
 		ep_len + SIZE_OF_TYPE + SIZE_OF_LENGTH + *outlen;
 	uint8_t *buf = (uint8_t *)calloc(1, buf_len);
 	if (buf == NULL) {
-		ESP_LOGE(TAG,"%s Failed to allocate memory", __func__);
+		ESP_LOGE(TAG,"%s Mem Alloc Failed [%d]bytes", __func__, (int)buf_len);
 		return ESP_FAIL;
 	}
 	buf[len] = PROTO_PSER_TLV_T_EPNAME;
@@ -170,7 +175,7 @@ static esp_err_t protocomm_pserial_ctrl_req_handler(protocomm_t *pc,
 		return ESP_FAIL;
 	}
 
-	/*ESP_LOG_BUFFER_HEXDUMP("serial_tx", out, outlen<16?outlen:16, ESP_LOG_INFO); */
+	ESP_HEXLOGV("serial_tx", out, outlen, 32);
 	ret = (pserial_cfg->xmit)(out, (ssize_t) outlen);
 
 	if (ret != ESP_OK) {
@@ -228,12 +233,12 @@ esp_err_t protocomm_pserial_data_ready(protocomm_t *pc,
 	}
 
 	if (len) {
-			buf = (uint8_t *)malloc(len);
-			if (buf == NULL) {
-					ESP_LOGE(TAG,"%s Failed to allocate memory", __func__);
-					return ESP_FAIL;
-			}
-			memcpy(buf, in, len);
+		buf = (uint8_t *)malloc(len);
+		if (buf == NULL) {
+			ESP_LOGE(TAG,"%s Failed to allocate memory", __func__);
+			return ESP_FAIL;
+		}
+		memcpy(buf, in, len);
 	}
 
 	arg.msg_id = msg_id;
@@ -279,6 +284,7 @@ static void pserial_task(void *params)
 		if ((arg.msg_id > CTRL_MSG_ID__Event_Base) &&
 		    (arg.msg_id < CTRL_MSG_ID__Event_Max)) {
 			/* Events */
+			ESP_HEXLOGV("pserial_evt_rx", arg.data, arg.len, 32);
 			ret = protocomm_pserial_ctrl_evnt_handler(pc, arg.data, arg.len, arg.msg_id);
 		} else {
 			/* Request */
@@ -326,7 +332,7 @@ esp_err_t protocomm_pserial_start(protocomm_t *pc,
 	pc->priv = pserial_cfg;
 
 	xTaskCreate(pserial_task, "pserial_task", CONFIG_ESP_DEFAULT_TASK_STACK_SIZE,
-			(void *) pc, CONFIG_ESP_DEFAULT_TASK_PRIO, NULL);
+			(void *) pc, CONFIG_ESP_HOSTED_TASK_PRIORITY_DEFAULT, NULL);
 
 	return ESP_OK;
 }

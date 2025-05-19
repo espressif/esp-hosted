@@ -37,7 +37,6 @@
 #include "esp_fw_verify.h"
 
 #define MAX_WRITE_RETRIES       2
-#define TX_MAX_PENDING_COUNT    200
 #define TX_RESUME_THRESHOLD     (TX_MAX_PENDING_COUNT/5)
 
 #define CHECK_SDIO_RW_ERROR(ret) do {			\
@@ -122,7 +121,7 @@ static void esp_handle_isr(struct sdio_func *func)
 
 	if (!(context) ||
 	    !(context->adapter) ||
-	    (context->adapter->state < ESP_CONTEXT_RX_READY)) {
+	    (atomic_read(&context->adapter->state) < ESP_CONTEXT_RX_READY)) {
 		return;
 	}
 
@@ -282,16 +281,19 @@ static void esp_remove(struct sdio_func *func)
 	}
 
 	esp_info("-> Remove card\n");
-
-
+	
+	atomic_set(&context->adapter->state, ESP_CONTEXT_DISABLED);
 
 	for (prio_q_idx=0; prio_q_idx<MAX_PRIORITY_QUEUES; prio_q_idx++) {
 		skb_queue_purge(&(sdio_context.tx_q[prio_q_idx]));
+		atomic_set(&queue_items[prio_q_idx], 0);
 	}
 
 
-	if (tx_thread)
+	if (tx_thread) {
 		kthread_stop(tx_thread);
+		tx_thread = NULL;
+	}
 
 	if (context) {
 		generate_slave_intr(context, BIT(ESP_CLOSE_DATA_PATH));
@@ -308,18 +310,21 @@ static void esp_remove(struct sdio_func *func)
 
 		}
 
-		memset(context, 0, sizeof(struct esp_sdio_context));
-	}
+		/* Clean up the SDIO function */
+		if (context->func) {
+			deinit_sdio_func(func);
+			context->func = NULL;
+			if (context->adapter) {
+				context->adapter->dev = NULL;
+			}
+		}
 
-	if (context->func) {
-		deinit_sdio_func(func);
-		context->func = NULL;
-		context->adapter->dev = NULL;
-	}
-
-	esp_info("Context deinit %d - %d\n", context->rx_byte_count,
+		esp_info("Context deinit %d - %d\n", context->rx_byte_count,
 			context->tx_buffer_count);
 
+		/* Reset context after cleaning up all resources */
+		memset(context, 0, sizeof(struct esp_sdio_context));
+	}
 }
 
 static struct esp_if_ops if_ops = {
@@ -469,7 +474,7 @@ static struct sk_buff * read_packet(struct esp_adapter *adapter)
 
 		if (ret) {
 			esp_err("Failed to read data - %d [%u - %d]\n", ret, num_blocks, len_to_read);
-			context->adapter->state = ESP_CONTEXT_DISABLED;
+			atomic_set(&context->adapter->state, ESP_CONTEXT_DISABLED);
 			dev_kfree_skb(skb);
 			RELEASE_SDIO_HOST(context);
 			return NULL;
@@ -585,8 +590,9 @@ static int tx_process(void *data)
 
 	while (!kthread_should_stop()) {
 
-		if (context->adapter->state < ESP_CONTEXT_READY) {
-			esp_verbose("Tx process not ready yet\n");
+		if (!context || !context->adapter ||
+		    atomic_read(&context->adapter->state) < ESP_CONTEXT_READY) {
+
 			msleep(1);
 			continue;
 		}
@@ -625,13 +631,19 @@ static int tx_process(void *data)
 			#endif
 		}
 
+		if (!tx_skb || !tx_skb->data || !tx_skb->len) {
+			if (tx_skb)
+				dev_kfree_skb_any(tx_skb);
+			continue;
+		}
+
 		buf_needed = (tx_skb->len + ESP_RX_BUFFER_SIZE - 1) / ESP_RX_BUFFER_SIZE;
 
 		/*If SDIO slave buffer is available to write then only write data
 		else wait till buffer is available*/
 		ret = is_sdio_write_buffer_available(buf_needed);
-		if(!ret) {
-			dev_kfree_skb(tx_skb);
+		if (!ret) {
+			dev_kfree_skb_any(tx_skb);
 			continue;
 		}
 
@@ -647,6 +659,13 @@ static int tx_process(void *data)
 		do {
 			block_cnt = data_left / ESP_BLOCK_SIZE;
 			len_to_send = data_left;
+			
+			if (!context || !context->func ||
+			    atomic_read(&context->adapter->state) < ESP_CONTEXT_READY) {
+				ret = -ENODEV;
+				break;
+			}
+			
 			ret = esp_write_block(context, ESP_SLAVE_CMD53_END_ADDR - len_to_send,
 					pos, (len_to_send + 3) & (~3), ACQUIRE_LOCK);
 
@@ -661,14 +680,14 @@ static int tx_process(void *data)
 
 		if (ret) {
 			/* drop the packet */
-			dev_kfree_skb(tx_skb);
+			dev_kfree_skb_any(tx_skb);
 			continue;
 		}
 
 		context->tx_buffer_count += buf_needed;
 		context->tx_buffer_count = context->tx_buffer_count % ESP_TX_BUFFER_MAX;
 
-		dev_kfree_skb(tx_skb);
+		dev_kfree_skb_any(tx_skb);
 	}
 
 	do_exit(0);
@@ -769,7 +788,7 @@ static int esp_probe(struct sdio_func *func,
 
 	context->adapter->dev = &func->dev;
 
-	context->adapter->state = ESP_CONTEXT_RX_READY;
+	atomic_set(&context->adapter->state, ESP_CONTEXT_RX_READY);
 	generate_slave_intr(context, BIT(ESP_OPEN_DATA_PATH));
 	return ret;
 }
@@ -811,7 +830,7 @@ int process_init_event(u8 *evt_buf, u8 len)
 	pos = evt_buf;
 
 	if (len_left >= 64) {
-		esp_warn("ESP init event len looks unexpected: %u (>=64)\n", len_left);
+		esp_warn("Slave up event len looks unexpected: %u (>=64)\n", len_left);
 		esp_warn("You probably facing timing mismatch at transport layer\n");
 	}
 
@@ -848,12 +867,12 @@ int process_init_event(u8 *evt_buf, u8 len)
 		esp_warn("ESP Firmware version was not checked");
 	}
 
-	sdio_context.adapter->state = ESP_CONTEXT_READY;
+	atomic_set(&sdio_context.adapter->state, ESP_CONTEXT_READY);
 	ret = esp_add_card(sdio_context.adapter);
 	if (ret) {
 		esp_err("network interface init failed\n");
 		generate_slave_intr(&sdio_context, BIT(ESP_CLOSE_DATA_PATH));
-		sdio_context.adapter->state = ESP_CONTEXT_DISABLED;
+		atomic_set(&sdio_context.adapter->state, ESP_CONTEXT_DISABLED);
 		return ret;
 	}
 
@@ -865,4 +884,8 @@ int process_init_event(u8 *evt_buf, u8 len)
 void esp_deinit_interface_layer(void)
 {
 	sdio_unregister_driver(&esp_sdio_driver);
+}
+int is_host_sleeping(void)
+{
+	return 0;
 }

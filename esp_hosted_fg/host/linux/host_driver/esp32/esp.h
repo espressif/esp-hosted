@@ -24,6 +24,7 @@
 #include <linux/workqueue.h>
 #include <linux/interrupt.h>
 #include <linux/netdevice.h>
+#include <linux/inetdevice.h>
 #include <net/bluetooth/bluetooth.h>
 #include <net/bluetooth/hci_core.h>
 #include "esp_kernel_port.h"
@@ -47,6 +48,8 @@ struct esp_adapter;
 
 #define SKB_DATA_ADDR_ALIGNMENT 4
 #define INTERFACE_HEADER_PADDING (SKB_DATA_ADDR_ALIGNMENT*3)
+
+#define TX_MAX_PENDING_COUNT    100
 
 enum context_state {
 	ESP_CONTEXT_DISABLED = 0,
@@ -82,7 +85,7 @@ struct esp_adapter {
 	struct hci_dev          *hcidev;
 	struct device           *dev;
 	u8                      if_type;
-	enum context_state      state;
+	atomic_t                state;
 	u32                     capabilities;
 
 	/* Possible types:
@@ -116,6 +119,7 @@ struct esp_private {
 	u8                      mac_address[6];
 	u8                      if_type;
 	u8                      if_num;
+	struct notifier_block   nb;
 };
 
 struct esp_skb_cb {

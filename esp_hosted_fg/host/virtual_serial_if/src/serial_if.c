@@ -117,7 +117,7 @@ int transport_pserial_close(void)
 {
 	int ret = serial_drv_close(&serial_handle);
 	if (ret) {
-		command_log("Failed to close driver interface\n");
+		//command_log("Failed to close driver interface\n");
 		return FAILURE;
 	}
 	serial_handle = NULL;
@@ -136,7 +136,7 @@ int transport_pserial_open(void)
 
 	serial_handle = serial_drv_open(transport);
 	if (!serial_handle) {
-		printf("serial interface open failed, Is the driver loaded?\n");
+		//printf("serial interface open failed, Is the driver loaded?\n");
 		return FAILURE;
 	}
 
@@ -189,12 +189,12 @@ int transport_pserial_send(uint8_t* data, uint16_t data_length)
 		command_log("Failed to write TX data\n");
 		goto free_bufs;
 	}
-	return SUCCESS;
-free_bufs:
-	if (write_buf) {
-		mem_free(write_buf);
-	}
 
+	mem_free(write_buf);
+	return SUCCESS;
+
+free_bufs:
+	mem_free(write_buf);
 	return FAILURE;
 }
 

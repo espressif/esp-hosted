@@ -22,6 +22,12 @@
 
 #define SPI_BUF_SIZE            1600
 
+/* SPI device states */
+enum spi_device_state {
+	SPI_DEVICE_RUNNING,
+	SPI_DEVICE_RESETTING
+};
+
 enum spi_flags_e {
 	ESP_SPI_BUS_CLAIMED,
 	ESP_SPI_BUS_SET,
@@ -34,22 +40,24 @@ enum spi_flags_e {
 
 struct esp_spi_context {
 	struct esp_adapter          *adapter;
-	struct spi_device           *esp_spi_dev;
-	struct sk_buff_head         tx_q[MAX_PRIORITY_QUEUES];
-	struct sk_buff_head         rx_q[MAX_PRIORITY_QUEUES];
-	struct workqueue_struct     *spi_workqueue;
-	struct work_struct          spi_work;
-	enum context_state          state;
-	uint8_t                     spi_clk_mhz;
-	unsigned long               spi_flags;
-	int                         handshake_gpio;
-	int                         dataready_gpio;
+	struct spi_device          *esp_spi_dev;
+	struct sk_buff_head        tx_q[MAX_PRIORITY_QUEUES];
+	struct sk_buff_head        rx_q[MAX_PRIORITY_QUEUES];
+	struct workqueue_struct    *spi_workqueue;
+	struct work_struct         spi_work;
+	struct delayed_work        spi_delayed_work;
+	struct work_struct         reinit_work;
+	atomic_t                   device_state;
+	enum context_state         state;
+	uint8_t                    spi_clk_mhz;
+	unsigned long              spi_flags;
+	int                        handshake_gpio;
+	int                        dataready_gpio;
 };
 
 enum {
 	CLOSE_DATAPATH,
 	OPEN_DATAPATH,
 };
-
 
 #endif

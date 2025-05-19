@@ -78,7 +78,6 @@ struct esp_adapter adapter;
 volatile u8 stop_data = 0;
 
 
-
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(3, 14, 0))
 /**
  * ether_addr_copy - Copy an Ethernet address
@@ -132,13 +131,22 @@ struct esp_adapter * esp_get_adapter(void)
 
 static int esp_open(struct net_device *ndev)
 {
-	netif_start_queue(ndev);
+	struct esp_private *priv = netdev_priv(ndev);
+
+	if (!priv)
+		return -EINVAL;
+
+	/* Reset stats */
+	memset(&priv->stats, 0, sizeof(priv->stats));
+
 	return 0;
 }
 
 static int esp_stop(struct net_device *ndev)
 {
-	netif_stop_queue(ndev);
+	if (!ndev)
+		return -EINVAL;
+
 	return 0;
 }
 
@@ -150,14 +158,26 @@ static struct net_device_stats* esp_get_stats(struct net_device *ndev)
 
 static int esp_set_mac_address(struct net_device *ndev, void *data)
 {
-	struct esp_private *priv = netdev_priv(ndev);
-	struct sockaddr *mac_addr = data;
+	struct esp_private *priv;
+	struct sockaddr *mac_addr;
 
+	if (!ndev || !data)
+		return -EINVAL;
+
+	mac_addr = data;
+
+	priv = netdev_priv(ndev);
 	if (!priv)
 		return -EINVAL;
 
+	if (!is_valid_ether_addr(mac_addr->sa_data)) {
+		esp_err("Invalid MAC address\n");
+		return -EINVAL;
+	}
+
 	ether_addr_copy(priv->mac_address, mac_addr->sa_data);
 	eth_hw_addr_set(ndev, mac_addr->sa_data);
+
 	return 0;
 }
 
@@ -171,8 +191,15 @@ static void esp_set_rx_mode(struct net_device *ndev)
 
 static int esp_hard_start_xmit(struct sk_buff *skb, struct net_device *ndev)
 {
-	struct esp_private *priv = netdev_priv(ndev);
+	struct esp_private *priv = NULL;
 	struct esp_skb_cb *cb = NULL;
+
+	if (!ndev) {
+		dev_kfree_skb(skb);
+		return -EINVAL;
+	}
+
+	priv = netdev_priv(ndev);
 
 	if (!priv) {
 		dev_kfree_skb(skb);
@@ -200,12 +227,14 @@ u8 esp_is_bt_supported_over_sdio(u32 cap)
 __weak int esp_init_bt(struct esp_adapter *adapter)
 {
 	/* weak def if 'bt over hci' is not needed */
+	esp_info("Ignore bluetooth api %s\n", __func__);
 	return 0;
 }
 
 __weak int esp_deinit_bt(struct esp_adapter *adapter)
 {
 	/* weak def if 'bt over hci' is not needed */
+	esp_info("Ignore bluetooth api %s\n", __func__);
 	return 0;
 }
 
@@ -256,17 +285,25 @@ static int process_tx_packet (struct sk_buff *skb)
 	u16 total_len = 0;
 	u8 *pos = NULL;
 
+	if (unlikely(!skb))
+		return NETDEV_TX_OK;
+
 	/* Get the priv */
 	cb = (struct esp_skb_cb *) skb->cb;
-	priv = cb->priv;
 
-	if (!priv) {
+	if (unlikely(!cb || !cb->priv)) {
 		dev_kfree_skb(skb);
 		return NETDEV_TX_OK;
 	}
 
+	priv = cb->priv;
+
 	if (netif_queue_stopped((const struct net_device *) adapter.priv[0]->ndev) ||
-			netif_queue_stopped((const struct net_device *) adapter.priv[1]->ndev)) {
+	    netif_queue_stopped((const struct net_device *) adapter.priv[1]->ndev)) {
+		return NETDEV_TX_BUSY;
+	}
+
+	if (is_host_sleeping()) {
 		return NETDEV_TX_BUSY;
 	}
 
@@ -326,9 +363,6 @@ static int process_tx_packet (struct sk_buff *skb)
 	payload_header->len = cpu_to_le16(len);
 	payload_header->offset = cpu_to_le16(pad_len);
 
-	if (adapter.capabilities & ESP_CHECKSUM_ENABLED)
-		payload_header->checksum = cpu_to_le16(compute_checksum(skb->data, (len + pad_len)));
-
 	if (!stop_data) {
 		ret = esp_send_packet(priv->adapter, skb);
 
@@ -348,15 +382,29 @@ static int process_tx_packet (struct sk_buff *skb)
 void process_capabilities(u8 cap)
 {
 	struct esp_adapter *adapter = esp_get_adapter();
+	int ret;
+
+	if (!adapter) {
+		esp_err("NULL adapter\n");
+		return;
+	}
+
 	esp_info("ESP peripheral capabilities: 0x%x\n", cap);
 	adapter->capabilities = cap;
 
 	/* Reset BT */
-	esp_deinit_bt(esp_get_adapter());
+	esp_deinit_bt(adapter);
+	msleep(200);
 
 	if ((cap & ESP_BT_SPI_SUPPORT) || (cap & ESP_BT_SDIO_SUPPORT)) {
-		msleep(200);
-		esp_init_bt(esp_get_adapter());
+		ret = esp_init_bt(adapter);
+		if (ret) {
+			esp_err("Failed to init BT: %d\n", ret);
+		}
+	} else if (cap & ESP_BT_UART_SUPPORT) {
+		// do nothing
+	} else {
+		esp_info("No BT support in capabilities (0x%x)\n", cap);
 	}
 }
 
@@ -372,7 +420,7 @@ static void process_event(u8 *evt_buf, u16 len)
 
 	if (event->event_type == ESP_PRIV_EVENT_INIT) {
 
-		esp_info("INIT event rcvd from ESP\n");
+		esp_info("Slave up event rcvd from ESP\n");
 
 		ret = esp_serial_reinit(esp_get_adapter());
 		if (ret)
@@ -390,6 +438,9 @@ static void process_priv_communication(struct sk_buff *skb)
 	struct esp_payload_header *header;
 	u8 *payload;
 	u16 len;
+
+	if (!skb || !skb->data)
+		return;
 
 	header = (struct esp_payload_header *) skb->data;
 	payload = skb->data + le16_to_cpu(header->offset);
@@ -429,8 +480,13 @@ static void process_rx_packet(struct sk_buff *skb)
 	/* get the paload header */
 	payload_header = (struct esp_payload_header *) skb->data;
 
+	UPDATE_HEADER_RX_PKT_NO(payload_header);
 	len = le16_to_cpu(payload_header->len);
 	offset = le16_to_cpu(payload_header->offset);
+
+	if ((payload_header->flags & FLAG_WAKEUP_PKT) && (len<1500)) {
+		esp_hex_dump_dbg("Wake up rx: ", skb->data, (len+offset)>64? 64: (len+offset));
+	}
 
 	esp_hex_dump_dbg("rx: ", skb->data , len+offset);
 
@@ -477,11 +533,11 @@ static void process_rx_packet(struct sk_buff *skb)
 		skb->protocol = eth_type_trans(skb, priv->ndev);
 		skb->ip_summed = CHECKSUM_NONE;
 
+		priv->stats.rx_bytes += skb->len;
 		/* Forward skb to kernel */
 		netif_rx_ni(skb);
-
-		priv->stats.rx_bytes += skb->len;
 		priv->stats.rx_packets++;
+
 	} else if (payload_header->if_type == ESP_HCI_IF) {
 		esp_hci_rx(adapter, skb);
 	} else if (payload_header->if_type == ESP_PRIV_IF) {
@@ -503,44 +559,43 @@ static void process_rx_packet(struct sk_buff *skb)
 
 int esp_is_tx_queue_paused(void)
 {
-	if ((adapter.priv[0]->ndev &&
+	if ((adapter.priv[0] && adapter.priv[0]->ndev &&
 			!netif_queue_stopped((const struct net_device *)
 				adapter.priv[0]->ndev)) ||
-	    (adapter.priv[1]->ndev &&
+	    (adapter.priv[1] && adapter.priv[1]->ndev &&
 			!netif_queue_stopped((const struct net_device *)
 				adapter.priv[1]->ndev)))
 		return 1;
 	return 0;
 }
 
+
 void esp_tx_pause(void)
 {
-	if (adapter.priv[0]->ndev &&
-			!netif_queue_stopped((const struct net_device *)
-				adapter.priv[0]->ndev)) {
-		netif_stop_queue(adapter.priv[0]->ndev);
-	}
+    struct esp_private *priv;
+    int i;
 
-	if (adapter.priv[1]->ndev &&
-			!netif_queue_stopped((const struct net_device *)
-				adapter.priv[1]->ndev)) {
-		netif_stop_queue(adapter.priv[1]->ndev);
-	}
+    for (i = 0; i < ESP_MAX_INTERFACE; i++) {
+        priv = adapter.priv[i];
+        if (priv && priv->ndev && !netif_queue_stopped(priv->ndev)) {
+            netif_stop_queue(priv->ndev);
+			esp_verbose("TX queue paused on interface %d\n", i);
+        }
+    }
 }
 
 void esp_tx_resume(void)
 {
-	if (adapter.priv[0]->ndev &&
-			netif_queue_stopped((const struct net_device *)
-				adapter.priv[0]->ndev)) {
-		netif_wake_queue(adapter.priv[0]->ndev);
-	}
+    struct esp_private *priv;
+    int i;
 
-	if (adapter.priv[1]->ndev &&
-			netif_queue_stopped((const struct net_device *)
-				adapter.priv[1]->ndev)) {
-		netif_wake_queue(adapter.priv[1]->ndev);
-	}
+    for (i = 0; i < ESP_MAX_INTERFACE; i++) {
+        priv = adapter.priv[i];
+        if (priv && priv->ndev && netif_queue_stopped(priv->ndev)) {
+            netif_wake_queue(priv->ndev);
+            esp_verbose("TX queue resumed on interface %d\n", i);
+        }
+    }
 }
 
 struct sk_buff * esp_alloc_skb(u32 len)
@@ -630,28 +685,35 @@ static int esp_init_priv(struct esp_private *priv, struct net_device *dev,
 static int esp_init_net_dev(struct net_device *ndev, struct esp_private *priv)
 {
 	int ret = 0;
-	/* Set netdev */
-/*	SET_NETDEV_DEV(ndev, &adapter->context.func->dev);*/
 
-	/* set net dev ops */
+	/* Set netdev */
 	ndev->netdev_ops = &esp_netdev_ops;
 
+#if 0
+	/* Set MTU to account for our headers */
+	ndev->mtu = ETH_DATA_LEN - sizeof(struct esp_payload_header);
+
+	/* Set TX queue length */
+	ndev->tx_queue_len = TX_MAX_PENDING_COUNT;
+#endif
+
 	eth_hw_addr_set(ndev, priv->mac_address);
-	/* set ethtool ops */
 
-	/* update features supported */
-
-	/* min mtu */
-
-	/* register netdev */
+	/* Register netdev */
 	ret = register_netdev(ndev);
-
-/*	netif_start_queue(ndev);*/
-	/* ndev->needs_free_netdev = true; */
-
-	/* set watchdog timeout */
+	if (ret) {
+		esp_err("Failed to register netdev\n");
+		return ret;
+	}
 
 	return ret;
+}
+
+
+static int esp_inetaddr_event(struct notifier_block *nb,
+    unsigned long event, void *data)
+{
+	return 0;
 }
 
 static int esp_add_interface(struct esp_adapter *adapter, u8 if_type, u8 if_num, char *name)
@@ -688,6 +750,9 @@ static int esp_add_interface(struct esp_adapter *adapter, u8 if_type, u8 if_num,
 		goto error_exit;
 	}
 
+	priv->nb.notifier_call = esp_inetaddr_event;
+	register_inetaddr_notifier(&priv->nb);
+
 	return ret;
 
 error_exit:
@@ -699,6 +764,7 @@ static void esp_remove_network_interfaces(struct esp_adapter *adapter)
 {
 	if (adapter->priv[0] && adapter->priv[0]->ndev) {
 		netif_stop_queue(adapter->priv[0]->ndev);
+	unregister_inetaddr_notifier(&(adapter->priv[0]->nb));
 		unregister_netdev(adapter->priv[0]->ndev);
 		free_netdev(adapter->priv[0]->ndev);
 		adapter->priv[0] = NULL;
@@ -706,6 +772,7 @@ static void esp_remove_network_interfaces(struct esp_adapter *adapter)
 
 	if (adapter->priv[1] && adapter->priv[1]->ndev) {
 		netif_stop_queue(adapter->priv[1]->ndev);
+	unregister_inetaddr_notifier(&(adapter->priv[1]->nb));
 		unregister_netdev(adapter->priv[1]->ndev);
 		free_netdev(adapter->priv[1]->ndev);
 		adapter->priv[1] = NULL;
@@ -748,6 +815,9 @@ int esp_remove_card(struct esp_adapter *adapter)
 
 	esp_deinit_bt(adapter);
 
+	if (adapter->events_wq)
+		flush_workqueue(adapter->events_wq);
+
 	/* Flush workqueues */
 	if (adapter->if_rx_workqueue)
 		flush_workqueue(adapter->if_rx_workqueue);
@@ -768,15 +838,18 @@ static void esp_if_rx_work (struct work_struct *work)
 static void deinit_adapter(void)
 {
 	if (adapter.if_context)
-		adapter.state = ESP_CONTEXT_DISABLED;
+		atomic_set(&adapter.state, ESP_CONTEXT_DISABLED);
 
 	skb_queue_purge(&adapter.events_skb_q);
 
-	if (adapter.events_wq)
+	if (adapter.events_wq) {
 		destroy_workqueue(adapter.events_wq);
+	}
 
-	if (adapter.if_rx_workqueue)
+	if (adapter.if_rx_workqueue) {
 		destroy_workqueue(adapter.if_rx_workqueue);
+	}
+
 
 	esp_verbose("\n");
 }
@@ -788,8 +861,7 @@ static void esp_reset(void)
 		if (!gpio_is_valid(resetpin)) {
 			esp_warn("host resetpin (%d) configured is invalid GPIO\n", resetpin);
 			resetpin = MOD_PARAM_UNINITIALISED;
-		}
-		else {
+		} else {
 			esp_info("Resetpin of Host is %d\n", resetpin);
 			gpio_request(resetpin, "sysfs");
 
@@ -826,7 +898,7 @@ static struct esp_adapter * init_adapter(void)
 	memset(&adapter, 0, sizeof(adapter));
 
 	/* Prepare interface RX work */
-	adapter.if_rx_workqueue = create_workqueue("ESP_IF_RX_WORK_QUEUE");
+	adapter.if_rx_workqueue = alloc_workqueue("ESP_IF_RX_WORK_QUEUE", WQ_HIGHPRI|WQ_FREEZABLE, 0);
 
 	if (!adapter.if_rx_workqueue) {
 		esp_err("failed to create rx workqueue\n");
@@ -843,7 +915,7 @@ static struct esp_adapter * init_adapter(void)
 
 	skb_queue_head_init(&adapter.events_skb_q);
 
-	adapter.events_wq = alloc_workqueue("ESP_EVENTS_WORKQUEUE", WQ_HIGHPRI, 0);
+	adapter.events_wq = alloc_workqueue("ESP_EVENTS_WORKQUEUE", WQ_HIGHPRI|WQ_FREEZABLE, 0);
 
 	if (!adapter.events_wq) {
 		esp_err("failed to create workqueue\n");
@@ -883,16 +955,28 @@ static int __init esp_init(void)
 
 static void __exit esp_exit(void)
 {
+	esp_info("esp module unload starting\n");
+
+	stop_data = 1;
+
+	esp_serial_cleanup();
+
+	esp_deinit_bt(&adapter);
+	msleep(200);
+
 #if TEST_RAW_TP
 	test_raw_tp_cleanup();
 #endif
-	esp_serial_cleanup();
+
 	esp_deinit_interface_layer();
+
 	deinit_adapter();
 
 	if (resetpin != MOD_PARAM_UNINITIALISED) {
 		gpio_free(resetpin);
 	}
+
+	esp_info("esp module unload complete\n");
 }
 
 module_init(esp_init);

@@ -89,11 +89,6 @@ static int raw_tp_tx_process(void *data)
 			payload_header->len = cpu_to_le16(TEST_RAW_TP__BUF_SIZE);
 			payload_header->offset = cpu_to_le16(pad_len);
 
-			if (adapter->capabilities & ESP_CHECKSUM_ENABLED) {
-				payload_header->checksum =
-					cpu_to_le16(compute_checksum(tx_skb->data,
-								(TEST_RAW_TP__BUF_SIZE + pad_len)));
-			}
 			ret = esp_send_packet(esp_get_adapter(), tx_skb);
 			if(!ret)
 				test_raw_tp_len += TEST_RAW_TP__BUF_SIZE;
