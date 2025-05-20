@@ -227,6 +227,7 @@ void print_capabilities(u32 cap)
 	}
 }
 
+#ifdef CONFIG_BT
 static void init_bt(struct esp_adapter *adapter)
 {
 
@@ -237,6 +238,7 @@ static void init_bt(struct esp_adapter *adapter)
 		esp_init_bt(adapter);
 	}
 }
+#endif
 
 static int check_esp_version(struct fw_version *ver)
 {
@@ -353,7 +355,9 @@ static int process_event_esp_bootup(struct esp_adapter *adapter, u8 *evt_buf, u8
 		esp_err("network interface init failed\n");
 		return -1;
 	}
+#ifdef CONFIG_BT
 	init_bt(adapter);
+#endif
 
 	if (ota_file && strlen(ota_file) != 0) {
 		esp_info("OTA update requested: bin(%s)\n", ota_file);
@@ -664,8 +668,10 @@ int esp_remove_card(struct esp_adapter *adapter)
 
 	esp_stop_network_ifaces(adapter);
 	esp_cfg_cleanup(adapter);
+#ifdef CONFIG_BT
 	/* BT may have been initialized after fw bootup event, deinit it */
 	esp_deinit_bt(adapter);
+#endif
 
 	if (adapter->if_rx_workqueue) {
 		flush_workqueue(adapter->if_rx_workqueue);
@@ -754,8 +760,10 @@ static void process_rx_packet(struct esp_adapter *adapter, struct sk_buff *skb)
 	struct esp_payload_header *payload_header = NULL;
 	u16 len = 0, offset = 0;
 	u16 rx_checksum = 0, checksum = 0;
+#ifdef CONFIG_BT
 	struct hci_dev *hdev = adapter->hcidev;
 	u8 *type = NULL;
+#endif
 
 	if (!skb)
 		return;
@@ -819,6 +827,7 @@ static void process_rx_packet(struct esp_adapter *adapter, struct sk_buff *skb)
 			dev_kfree_skb_any(skb);
 		}
 
+#ifdef CONFIG_BT
 	} else if (payload_header->if_type == ESP_HCI_IF) {
 		if (hdev) {
 
@@ -836,6 +845,7 @@ static void process_rx_packet(struct esp_adapter *adapter, struct sk_buff *skb)
 				esp_hci_update_rx_counter(hdev, *type, skb->len);
 			}
 		}
+#endif
 	} else if (payload_header->if_type == ESP_INTERNAL_IF) {
 
 		/* Queue event skb for processing in events workqueue */
