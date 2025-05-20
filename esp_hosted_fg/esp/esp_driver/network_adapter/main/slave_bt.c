@@ -28,6 +28,8 @@
 #include "soc/lldesc.h"
 #include "esp_mac.h"
 
+#include "esp_idf_version.h"
+
 #if BT_OVER_C3_S3
 
   #include "esp_private/gdma.h"
@@ -361,7 +363,11 @@ static void init_uart_c3_s3(void)
 
 	// configure UHCI
 	uhci_ll_init(s_uhci_hw);
+#if ESP_IDF_VERSION < ESP_IDF_VERSION_VAL(5, 5, 0)
 	uhci_ll_set_eof_mode(s_uhci_hw, UHCI_RX_LEN_EOF);
+#else
+	uhci_ll_rx_set_eof_mode(s_uhci_hw, UHCI_RX_LEN_EOF);
+#endif
 	// disable software flow control
 	s_uhci_hw->escape_conf.val = 0;
 	uhci_ll_attach_uart_port(s_uhci_hw, 1);
