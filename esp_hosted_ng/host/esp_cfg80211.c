@@ -74,51 +74,51 @@ static struct ieee80211_rate esp_rates[] = {
 
 /* Channel definitions to be advertised to cfg80211 */
 static struct ieee80211_channel esp_channels_2ghz[] = {
-	{.center_freq = 2412, .hw_value = 1, },
-	{.center_freq = 2417, .hw_value = 2, },
-	{.center_freq = 2422, .hw_value = 3, },
-	{.center_freq = 2427, .hw_value = 4, },
-	{.center_freq = 2432, .hw_value = 5, },
-	{.center_freq = 2437, .hw_value = 6, },
-	{.center_freq = 2442, .hw_value = 7, },
-	{.center_freq = 2447, .hw_value = 8, },
-	{.center_freq = 2452, .hw_value = 9, },
-	{.center_freq = 2457, .hw_value = 10, },
-	{.center_freq = 2462, .hw_value = 11, },
-	{.center_freq = 2467, .hw_value = 12, },
-	{.center_freq = 2472, .hw_value = 13, },
-	{.center_freq = 2484, .hw_value = 14, },
+	{.center_freq = 2412, .hw_value = 1, .max_power = 20, },
+	{.center_freq = 2417, .hw_value = 2, .max_power = 20, },
+	{.center_freq = 2422, .hw_value = 3, .max_power = 20, },
+	{.center_freq = 2427, .hw_value = 4, .max_power = 20, },
+	{.center_freq = 2432, .hw_value = 5, .max_power = 20, },
+	{.center_freq = 2437, .hw_value = 6, .max_power = 20, },
+	{.center_freq = 2442, .hw_value = 7, .max_power = 20, },
+	{.center_freq = 2447, .hw_value = 8, .max_power = 20, },
+	{.center_freq = 2452, .hw_value = 9, .max_power = 20, },
+	{.center_freq = 2457, .hw_value = 10, .max_power = 20, },
+	{.center_freq = 2462, .hw_value = 11, .max_power = 20, },
+	{.center_freq = 2467, .hw_value = 12, .max_power = 20, },
+	{.center_freq = 2472, .hw_value = 13, .max_power = 20, },
+	{.center_freq = 2484, .hw_value = 14, .max_power = 20, },
 };
 
 static struct ieee80211_channel esp_channels_5ghz[] = {
-	{.center_freq = 5180, .hw_value = 36, },
-	{.center_freq = 5200, .hw_value = 40, },
-	{.center_freq = 5220, .hw_value = 44, },
-	{.center_freq = 5240, .hw_value = 48, },
-	{.center_freq = 5260, .hw_value = 52, },
-	{.center_freq = 5280, .hw_value = 56, },
-	{.center_freq = 5300, .hw_value = 60, },
-	{.center_freq = 5320, .hw_value = 64, },
-	{.center_freq = 5500, .hw_value = 100, },
-	{.center_freq = 5520, .hw_value = 104, },
-	{.center_freq = 5540, .hw_value = 108, },
-	{.center_freq = 5560, .hw_value = 112, },
-	{.center_freq = 5580, .hw_value = 116, },
-	{.center_freq = 5600, .hw_value = 120, },
-	{.center_freq = 5620, .hw_value = 124, },
-	{.center_freq = 5640, .hw_value = 128, },
-	{.center_freq = 5660, .hw_value = 132, },
-	{.center_freq = 5680, .hw_value = 136, },
-	{.center_freq = 5700, .hw_value = 140, },
-	{.center_freq = 5720, .hw_value = 144, },
-	{.center_freq = 5745, .hw_value = 149, },
-	{.center_freq = 5765, .hw_value = 153, },
-	{.center_freq = 5785, .hw_value = 157, },
-	{.center_freq = 5805, .hw_value = 161, },
-	{.center_freq = 5825, .hw_value = 165, },
-	{.center_freq = 5845, .hw_value = 169, },
-	{.center_freq = 5865, .hw_value = 173, },
-	{.center_freq = 5885, .hw_value = 177, },
+	{.center_freq = 5180, .hw_value = 36, .max_power = 20, },
+	{.center_freq = 5200, .hw_value = 40, .max_power = 20, },
+	{.center_freq = 5220, .hw_value = 44, .max_power = 20, },
+	{.center_freq = 5240, .hw_value = 48, .max_power = 20, },
+	{.center_freq = 5260, .hw_value = 52, .max_power = 20, },
+	{.center_freq = 5280, .hw_value = 56, .max_power = 20, },
+	{.center_freq = 5300, .hw_value = 60, .max_power = 20, },
+	{.center_freq = 5320, .hw_value = 64, .max_power = 20, },
+	{.center_freq = 5500, .hw_value = 100, .max_power = 20, },
+	{.center_freq = 5520, .hw_value = 104, .max_power = 20, },
+	{.center_freq = 5540, .hw_value = 108, .max_power = 20, },
+	{.center_freq = 5560, .hw_value = 112, .max_power = 20, },
+	{.center_freq = 5580, .hw_value = 116, .max_power = 20, },
+	{.center_freq = 5600, .hw_value = 120, .max_power = 20, },
+	{.center_freq = 5620, .hw_value = 124, .max_power = 20, },
+	{.center_freq = 5640, .hw_value = 128, .max_power = 20, },
+	{.center_freq = 5660, .hw_value = 132, .max_power = 20, },
+	{.center_freq = 5680, .hw_value = 136, .max_power = 20, },
+	{.center_freq = 5700, .hw_value = 140, .max_power = 20, },
+	{.center_freq = 5720, .hw_value = 144, .max_power = 20, },
+	{.center_freq = 5745, .hw_value = 149, .max_power = 20, },
+	{.center_freq = 5765, .hw_value = 153, .max_power = 20, },
+	{.center_freq = 5785, .hw_value = 157, .max_power = 20, },
+	{.center_freq = 5805, .hw_value = 161, .max_power = 20, },
+	{.center_freq = 5825, .hw_value = 165, .max_power = 20, },
+	{.center_freq = 5845, .hw_value = 169, .max_power = 20, },
+	{.center_freq = 5865, .hw_value = 173, .max_power = 20, },
+	{.center_freq = 5885, .hw_value = 177, .max_power = 20, },
 };
 
 static struct ieee80211_supported_band esp_wifi_bands_2ghz = {
@@ -136,13 +136,34 @@ static struct ieee80211_supported_band esp_wifi_bands_2ghz = {
 static struct ieee80211_supported_band esp_wifi_bands_5ghz = {
 	.channels = esp_channels_5ghz,
 	.n_channels = ARRAY_SIZE(esp_channels_5ghz),
-	.bitrates = esp_rates,
-	.n_bitrates = ARRAY_SIZE(esp_rates),
+	.bitrates = esp_rates + 4,
+	.n_bitrates = ARRAY_SIZE(esp_rates) - 4,
 	.ht_cap.cap = IEEE80211_HT_CAP_SUP_WIDTH_20_40 | IEEE80211_HT_CAP_SGI_20 |
 			IEEE80211_HT_CAP_RX_STBC | IEEE80211_HT_CAP_DSSSCCK40,
 	.ht_cap.mcs.rx_mask[0] = 0xff,
 	.ht_cap.mcs.tx_params = IEEE80211_HT_MCS_TX_DEFINED,
 	.ht_cap.ht_supported = true,
+	.vht_cap.vht_supported = true,
+	.vht_cap.cap = (IEEE80211_VHT_MAX_AMPDU_16K << IEEE80211_VHT_CAP_MAX_A_MPDU_LENGTH_EXPONENT_SHIFT) |
+			IEEE80211_VHT_CAP_MAX_MPDU_LENGTH_3895 | IEEE80211_VHT_CAP_RXSTBC_1,
+	.vht_cap.vht_mcs.rx_mcs_map = cpu_to_le16(IEEE80211_VHT_MCS_SUPPORT_0_7 << 0  |
+			IEEE80211_VHT_MCS_NOT_SUPPORTED << 2  |
+			IEEE80211_VHT_MCS_NOT_SUPPORTED << 4  |
+			IEEE80211_VHT_MCS_NOT_SUPPORTED << 6  |
+			IEEE80211_VHT_MCS_NOT_SUPPORTED << 8  |
+			IEEE80211_VHT_MCS_NOT_SUPPORTED << 10 |
+			IEEE80211_VHT_MCS_NOT_SUPPORTED << 12 |
+			IEEE80211_VHT_MCS_NOT_SUPPORTED << 14),
+	.vht_cap.vht_mcs.rx_highest = 0x0,
+	.vht_cap.vht_mcs.tx_mcs_map = cpu_to_le16(IEEE80211_VHT_MCS_SUPPORT_0_7 << 0  |
+			IEEE80211_VHT_MCS_NOT_SUPPORTED << 2  |
+			IEEE80211_VHT_MCS_NOT_SUPPORTED << 4  |
+			IEEE80211_VHT_MCS_NOT_SUPPORTED << 6  |
+			IEEE80211_VHT_MCS_NOT_SUPPORTED << 8  |
+			IEEE80211_VHT_MCS_NOT_SUPPORTED << 10 |
+			IEEE80211_VHT_MCS_NOT_SUPPORTED << 12 |
+			IEEE80211_VHT_MCS_NOT_SUPPORTED << 14),
+	.vht_cap.vht_mcs.tx_highest = 0x0,
 };
 
 /* Supported crypto cipher suits to be advertised to cfg80211 */
@@ -1215,6 +1236,7 @@ int esp_add_wiphy(struct esp_adapter *adapter)
 	/* Initialize cipher suits */
 	if (adapter->chipset == ESP_FIRMWARE_CHIP_ESP32C3 ||
 	    adapter->chipset == ESP_FIRMWARE_CHIP_ESP32S3 ||
+	    adapter->chipset == ESP_FIRMWARE_CHIP_ESP32C5 ||
 	    adapter->chipset == ESP_FIRMWARE_CHIP_ESP32C6) {
 		wiphy->cipher_suites = esp_cipher_suites_new;
 		wiphy->n_cipher_suites = ARRAY_SIZE(esp_cipher_suites_new);
