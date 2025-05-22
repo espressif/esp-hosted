@@ -31,6 +31,13 @@
 #include "esp_timer.h"
 #include "esp_fw_version.h"
 
+// de-assert HS signal on CS, instead of at end of transaction
+#if defined(CONFIG_ESP_SPI_DEASSERT_HS_ON_CS)
+#define HS_DEASSERT_ON_CS (1)
+#else
+#define HS_DEASSERT_ON_CS (0)
+#endif
+
 static const char TAG[] = "SPI_DRIVER";
 /* SPI settings */
 #define SPI_BITS_PER_WORD          8
@@ -66,7 +73,11 @@ static const char TAG[] = "SPI_DRIVER";
 #define GPIO_MASK_DATA_READY (1ULL << GPIO_DATA_READY)
 #define GPIO_MASK_HANDSHAKE (1ULL << GPIO_HANDSHAKE)
 
+#if HS_DEASSERT_ON_CS
+#define H_CS_INTR_TO_CLEAR_HS                        GPIO_INTR_ANYEDGE
+#else
 #define H_CS_INTR_TO_CLEAR_HS                        GPIO_INTR_NEGEDGE
+#endif
 
 /* Max SPI slave CLK in IO_MUX tested in IDF:
  * ESP32: 10MHz
@@ -116,8 +127,9 @@ static interface_handle_t if_handle_g;
   static QueueHandle_t spi_rx_queue;
 #endif
 
+#if HS_DEASSERT_ON_CS
 static SemaphoreHandle_t wait_cs_deassert_sem;
-
+#endif
 static interface_handle_t * esp_spi_init(void);
 static int32_t esp_spi_write(interface_handle_t *handle,
 				interface_buffer_handle_t *buf_handle);
@@ -371,8 +383,10 @@ static void IRAM_ATTR spi_post_setup_cb(spi_slave_transaction_t *trans)
  * Use this to set the handshake line low */
 static void IRAM_ATTR spi_post_trans_cb(spi_slave_transaction_t *trans)
 {
+#if !HS_DEASSERT_ON_CS
 	/* Clear handshake line */
 	reset_handshake_gpio();
+#endif
 }
 
 static uint8_t * get_next_tx_buffer(uint32_t *len)
@@ -437,21 +451,6 @@ static int process_spi_rx(interface_buffer_handle_t *buf_handle)
 	uint16_t offset = le16toh(header->offset);
 	uint8_t flags = header->flags;
 
-	ESP_LOGV(TAG, "RX: len=%u offset=%u flags=0x%x payload_addr=%p",
-		len, offset, flags, buf_handle->payload);
-
-	if (flags & FLAG_POWER_SAVE_STARTED) {
-		ESP_LOGI(TAG, "Host informed starting to power sleep");
-		if (context.event_handler) {
-			context.event_handler(ESP_POWER_SAVE_ON);
-		}
-	} else if (flags & FLAG_POWER_SAVE_STOPPED) {
-		ESP_LOGI(TAG, "Host informed that it waken up");
-		if (context.event_handler) {
-			context.event_handler(ESP_POWER_SAVE_OFF);
-		}
-	}
-
 	if (!len) {
 		ESP_LOGV(TAG, "Rx pkt len:0, drop");
 		return -1;
@@ -465,6 +464,21 @@ static int process_spi_rx(interface_buffer_handle_t *buf_handle)
 	if ((len+offset) > SPI_BUFFER_SIZE) {
 		ESP_LOGE(TAG, "rx_pkt len+offset[%u]>max[%u], dropping it", len+offset, SPI_BUFFER_SIZE);
 		return -1;
+	}
+
+	ESP_LOGV(TAG, "RX: len=%u offset=%u flags=0x%x payload_addr=%p",
+		len, offset, flags, buf_handle->payload);
+
+	if (flags & FLAG_POWER_SAVE_STARTED) {
+		ESP_LOGI(TAG, "Host informed starting to power sleep");
+		if (context.event_handler) {
+			context.event_handler(ESP_POWER_SAVE_ON);
+		}
+	} else if (flags & FLAG_POWER_SAVE_STOPPED) {
+		ESP_LOGI(TAG, "Host informed that it waken up");
+		if (context.event_handler) {
+			context.event_handler(ESP_POWER_SAVE_OFF);
+		}
 	}
 
 #if CONFIG_ESP_SPI_CHECKSUM
@@ -539,15 +553,22 @@ static void spi_transaction_post_process_task(void* pvParameters)
 	interface_buffer_handle_t rx_buf_handle;
 
 	for (;;) {
-
-		xSemaphoreTake(wait_cs_deassert_sem, portMAX_DELAY);
-
-		queue_next_transaction();
-
-
 		memset(&rx_buf_handle, 0, sizeof(rx_buf_handle));
 		/* Wait for transaction completion */
 		ESP_ERROR_CHECK(spi_slave_get_trans_result(ESP_SPI_CONTROLLER, &spi_trans, portMAX_DELAY));
+
+#if HS_DEASSERT_ON_CS
+		/* Wait until CS has been deasserted before we queue a new transaction.
+		 *
+		 * Some MCUs delay deasserting CS at the end of a transaction.
+		 * If we queue a new transaction without waiting for CS to deassert,
+		 * the slave SPI can start (since CS is still asserted), and data is lost
+		 * as host is not expecting any data.
+		 */
+		xSemaphoreTake(wait_cs_deassert_sem, portMAX_DELAY);
+#endif
+		/* Queue new transaction to get ready as soon as possible */
+		queue_next_transaction();
 
 		/* Process received data */
 		if (spi_trans->rx_buffer) {
@@ -577,6 +598,7 @@ static void spi_transaction_post_process_task(void* pvParameters)
 
 static void IRAM_ATTR gpio_disable_hs_isr_handler(void* arg)
 {
+#if HS_DEASSERT_ON_CS
 	int level = gpio_get_level(GPIO_CS);
 	if (level == 0) {
 		/* CS is asserted, disable HS */
@@ -586,6 +608,9 @@ static void IRAM_ATTR gpio_disable_hs_isr_handler(void* arg)
 		if (wait_cs_deassert_sem)
 			xSemaphoreGive(wait_cs_deassert_sem);
 	}
+#else
+	reset_handshake_gpio();
+#endif
 }
 
 static void register_hs_disable_pin(uint32_t gpio_num)
@@ -600,7 +625,7 @@ static void register_hs_disable_pin(uint32_t gpio_num)
 		};
 		slave_disable_hs_pin_conf.pull_up_en = 1;
 		gpio_config(&slave_disable_hs_pin_conf);
-		gpio_set_intr_type(gpio_num, GPIO_INTR_ANYEDGE);
+		gpio_set_intr_type(gpio_num, H_CS_INTR_TO_CLEAR_HS);
 		gpio_install_isr_service(0);
 		gpio_isr_handler_add(gpio_num, gpio_disable_hs_isr_handler, NULL);
 	}
@@ -714,10 +739,12 @@ static interface_handle_t * esp_spi_init(void)
 	memset(&if_handle_g, 0, sizeof(if_handle_g));
 	if_handle_g.state = INIT;
 
+#if HS_DEASSERT_ON_CS
 	wait_cs_deassert_sem = xSemaphoreCreateBinary();
 	assert(wait_cs_deassert_sem!= NULL);
 	/* Clear the semaphore */
 	xSemaphoreTake(wait_cs_deassert_sem, 0);
+#endif
 
 #ifdef CONFIG_ESP_ENABLE_TX_PRIORITY_QUEUES
 	spi_tx_sem = xSemaphoreCreateCounting(SPI_TX_TOTAL_QUEUE_SIZE, 0);

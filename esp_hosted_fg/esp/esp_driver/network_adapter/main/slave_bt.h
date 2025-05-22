@@ -18,7 +18,9 @@
 #define __SLAVE_BT_H__
 
 #include "esp_err.h"
-#ifdef CONFIG_BT_ENABLED
+
+// include only if BT component enabled and soc supports BT
+#if defined(CONFIG_BT_ENABLED) && defined(CONFIG_SOC_BT_SUPPORTED)
 #include "esp_bt.h"
 
 #if ESP_IDF_VERSION < ESP_IDF_VERSION_VAL(5, 0, 0)
@@ -135,6 +137,6 @@ void deinitialize_bluetooth(void);
 esp_err_t initialise_bluetooth(void);
 uint8_t get_bluetooth_capabilities(void);
 
-#endif /* CONFIG_BT_ENABLED */
+#endif /* CONFIG_BT_ENABLED && CONFIG_SOC_BT_SUPPORTED */
 
 #endif /* __SLAVE_BT_H__ */

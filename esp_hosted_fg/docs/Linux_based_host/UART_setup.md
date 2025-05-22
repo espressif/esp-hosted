@@ -1,9 +1,11 @@
 # Bluetooth/BLE connectivity Setup over UART
 
-| Supported Chipsets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-S3 | ESP32-C6 |
-| ------------------ | ----- | -------- | -------- | -------- | -------- |
-| 4 line UART supported | yes | no | yes | yes | no |
-| 2 line UART supported | yes | yes | yes | yes | yes |
+| Supported Chipsets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-S3 | ESP32-C6 | ESP32-C5 | ESP32-S2 |
+| ------------------ | :---: | :------: | :------: | :------: | :------: | :------: | :------: |
+| 4 line UART        | Y     | N        | Y        | Y        | N        | N        | Y        |
+| 2 line UART        | N     | Y        | N        | N        | Y        | Y        | N        |
+
+Y - **Tested**, N - **Not Tested**
 
 In this section, ESP chipset provides a way to run Bluetooth/BLE over UART interface.
 Please connect ESP peripheral to Raspberry-Pi with jumper cables (preferably PCB) as mentioned below.
@@ -40,10 +42,10 @@ Sample SPI+UART setup image looks like:
 #### Two Line UART setup
 
 
-| Raspberry-Pi Pin Function | Raspberry-Pi Pin | ESP32-C2 | ESP32-C6 | ESP Function |
-|:-------:|:--------:|:---------:|:--------:|:--------:|
-| RX | 10 | IO5 | IO5 | TX |
-| TX | 8 | IO18 | IO12 | RX |
+| Raspberry-Pi Pin Function | Raspberry-Pi Pin | ESP32-C2 | ESP32-C5 | ESP32-C6 | ESP Function |
+|:-------:|:--------:|:---------:|:--------:|:--------:|:--------:|
+| TX | 8  | IO5  | IO5  | IO5  | TX |
+| RX | 10 | IO18 | IO23 | IO12 | RX |
 
 Note:
 - ESP32-C2 only
@@ -150,7 +152,7 @@ $ idf.py menuconfig
 - Set Bluetooth over UART
 	- ESP32 / ESP32-C3/S3
 		- navigate to `Component config -> Bluetooth -> Bluetooth controller -> HCI mode`, select `UART(H4)`
-	- ESP32-C2/C6
+	- ESP32-C2/C5/C6
 		- Navigate to `Component config -> Bluetooth -> Bluetooth -> Controller`, select `Enabled` (Should be enabled by default)
 		- Navigate to `Component config -> Bluetooth -> Controller Options -> HCI Config -> Select HCI interface`, select `uart`
 		- Navigate to `Component config > Bluetooth > Controller Options > HCI Config`
@@ -158,6 +160,9 @@ $ idf.py menuconfig
 		- ESP32-C2
           - Change `HCI uart Tx gpio` to `5`
           - Change `HCI uart Rx gpio` to `18`
+		- ESP32-C2
+          - Change `HCI uart Tx gpio` to `5`
+          - Change `HCI uart Rx gpio` to `23`
 		- ESP32-C6
           - Change `HCI uart Tx gpio` to `5`
           - Change `HCI uart Rx gpio` to `12`
