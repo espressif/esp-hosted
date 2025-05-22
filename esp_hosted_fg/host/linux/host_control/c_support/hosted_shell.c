@@ -34,6 +34,7 @@
 #define WIFI_BAND_MODE_5G   2
 
 /* Define WiFi power save mode constants */
+#define WIFI_POWER_SAVE_MODE_NONE 0
 #define WIFI_POWER_SAVE_MODE_MIN 1
 #define WIFI_POWER_SAVE_MODE_MAX 2
 
@@ -243,7 +244,7 @@ static bool parse_arguments(int argc, char **argv, const cmd_arg_t *args, int ar
 
 /* Define choices for command arguments */
 static const char *wifi_mode_choices[] = {"station", "softap", "station+softap", NULL};
-static const char *wifi_powersave_choices[] = {"min", "max", NULL};
+static const char *wifi_powersave_choices[] = {"none", "min", "max", NULL};
 static const char *wifi_interface_choices[] = {"station", "softap", NULL};
 static const char *wifi_band_mode_choices[] = {"2.4G", "5G", "auto", NULL};
 static const char *wifi_sec_prot_choices[] = {"open", "wpa_psk", "wpa2_psk", "wpa_wpa2_psk", NULL};
@@ -290,7 +291,7 @@ static const cmd_arg_t start_softap_args[] = {
 };
 
 static const cmd_arg_t set_wifi_power_save_args[] = {
-	{"--mode", "Power save mode [min, max]", ARG_TYPE_CHOICE, false, wifi_powersave_choices}
+	{"--mode", "Power save mode [none, min, max]", ARG_TYPE_CHOICE, false, wifi_powersave_choices}
 };
 
 static const cmd_arg_t set_wifi_max_tx_power_args[] = {
@@ -365,10 +366,10 @@ static int handle_custom_demo_rpc_request(int argc, char **argv);
 /* Command table */
 static const shell_command_t commands[] = {
 	{"help", "Show this help message", handle_help, NULL, 0},
-	{"wifi_get_mode", "Get Wi-Fi mode", handle_wifi_get_mode, NULL, 0},
-	{"wifi_set_mode", "Set Wi-Fi mode", handle_wifi_set_mode, wifi_set_mode_args, sizeof(wifi_set_mode_args)/sizeof(cmd_arg_t)},
-	{"wifi_get_mac", "Get MAC address", handle_get_mac, NULL, 0},
-	{"wifi_set_mac", "Set MAC address", handle_wifi_set_mac, wifi_set_mac_args, sizeof(wifi_set_mac_args)/sizeof(cmd_arg_t)},
+	{"get_wifi_mode", "Get Wi-Fi mode", handle_wifi_get_mode, NULL, 0},
+	{"set_wifi_mode", "Set Wi-Fi mode", handle_wifi_set_mode, wifi_set_mode_args, sizeof(wifi_set_mode_args)/sizeof(cmd_arg_t)},
+	{"get_wifi_mac", "Get MAC address", handle_get_mac, NULL, 0},
+	{"set_wifi_mac", "Set MAC address", handle_wifi_set_mac, wifi_set_mac_args, sizeof(wifi_set_mac_args)/sizeof(cmd_arg_t)},
 	{"get_available_ap", "Scan for available networks", handle_get_available_ap, NULL, 0},
 	{"connect_ap", "Connect to a network", handle_connect, connect_ap_args, sizeof(connect_ap_args)/sizeof(cmd_arg_t)},
 	{"get_connected_ap_info", "Get info about connected AP", handle_get_connected_ap_info, NULL, 0},
@@ -800,7 +801,15 @@ static int handle_set_wifi_power_save(int argc, char **argv) {
 			sizeof(set_wifi_power_save_args)/sizeof(cmd_arg_t),
 			"--mode");
 
-	return test_set_wifi_power_save_mode(mode ? (strcmp(mode, "max") == 0 ? WIFI_POWER_SAVE_MODE_MAX : WIFI_POWER_SAVE_MODE_MIN) : WIFI_POWER_SAVE_MODE_MAX);
+	if (strcmp(mode, "none") == 0) {
+		return test_set_wifi_power_save_mode(WIFI_POWER_SAVE_MODE_NONE);
+	} else if (strcmp(mode, "min") == 0) {
+		return test_set_wifi_power_save_mode(WIFI_POWER_SAVE_MODE_MIN);
+	} else if (strcmp(mode, "max") == 0) {
+		return test_set_wifi_power_save_mode(WIFI_POWER_SAVE_MODE_MAX);
+	}
+
+	return FAILURE;
 }
 
 static int handle_get_wifi_power_save(int argc, char **argv) {

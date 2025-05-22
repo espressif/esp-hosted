@@ -3,7 +3,25 @@
 #ifndef NW_HELPER_FUNC_H
 #define NW_HELPER_FUNC_H
 
-#include "test.h"
+#define STA_INTERFACE     "ethsta0"
+#define AP_INTERFACE      "ethap0"
+#define MAC_ADDR_LENGTH   18
+
+#define SUCCESS                      0
+#define FAILURE                      -1
+
+/* Network state structure */
+typedef struct {
+	char mac_addr[MAC_ADDR_LENGTH];
+	char ip_addr[MAC_ADDR_LENGTH];
+	char netmask[MAC_ADDR_LENGTH];
+	char gateway[MAC_ADDR_LENGTH];
+	char dns_addr[MAC_ADDR_LENGTH];
+	char default_route[MAC_ADDR_LENGTH];
+	uint8_t ip_valid;
+	uint8_t dns_valid;
+	uint8_t network_up;
+} network_info_t;
 
 int down_sta_netdev(const network_info_t *info);
 int up_sta_netdev(const network_info_t *info);

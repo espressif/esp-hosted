@@ -17,7 +17,17 @@
 #include <interface.h>
 #include <esp_err.h>
 #include "adapter.h"
-#ifdef CONFIG_BT_ENABLED
+
+// check: abort if BT Host is enabled
+#if defined(CONFIG_BT_ENABLED) && !defined(CONFIG_BT_CONTROLLER_ONLY)
+#error "BT Host is enabled. This takes up extra memory and is not used by ESP-Hosted."
+#error "Disable it by selecting idf.py menuconfig -> Component config -> Bluetooth -> Host -> Disabled"
+#error "If you want to enable BT Host, disable the errors in esp_hosted_fg/esp/esp_driver/network_adapter/main/slave_bt.c"
+#endif
+
+// enable only if BT component enabled and soc supports BT
+#if defined(CONFIG_BT_ENABLED) && defined(CONFIG_SOC_BT_SUPPORTED)
+
 #include <string.h>
 
 #include "driver/gpio.h"
@@ -618,4 +628,4 @@ uint8_t get_bluetooth_capabilities(void)
 	return cap;
 }
 
-#endif /* CONFIG_BT_ENABLED */
+#endif /* CONFIG_BT_ENABLED && CONFIG_SOC_BT_SUPPORTED */

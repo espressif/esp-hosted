@@ -17,56 +17,13 @@ from commands_lib import *
 from hosted_py_header import *
 import re
 import subprocess
-
-os_dhcp_down = "sudo dhclient ethsta0 -r"
-os_ifdown_cmd = "sudo ifconfig ethsta0 down"
-os_set_mac = "sudo ifconfig ethsta0 hw ether "
-os_ifup_cmd = "sudo ifconfig ethsta0 up"
-os_dhcp_up = "sudo dhclient ethsta0 -v"
-
-os_run_dhcp_server='sudo bash ./run_dhcp_server.sh'
-os_ifup_softap_cmd = "sudo ifconfig ethap0 up 192.168.4.5"
+#from ctypes import byref
+from py_parse import nw_helper_func
+import traceback
 os_ifdown_softap_cmd = "sudo ifconfig ethap0 down"
-
-sta_interface = "ethsta0"
-softap_interface = "ethap0"
-
-down_hci_instance_cmd = "sudo hciconfig | grep  'Bus: SDIO\\| Bus: UART\\| Bus: SPI' | awk -F: '{print $1}' | xargs -I{} sudo hciconfig {} down"
-reset_hci_instance_cmd = "sudo hciconfig | grep  'Bus: SDIO\\| Bus: UART\\| Bus: SPI' | awk -F: '{print $1}' | xargs -I{} sudo hciconfig {} reset"
 
 heartbeat_started = False
 
-def down_net_interface(interface):
-	result = subprocess.run(["ifconfig", interface, "down"])
-	if (result.returncode):
-		print("ifconfig " + interface + " down FAILED");
-
-def up_net_interface(interface, mac_addr_str):
-	result = subprocess.run(["ifconfig", interface, "down"])
-	if (result.returncode):
-		print("ifconfig " + interface + " down FAILED");
-
-	result = subprocess.run(["ifconfig", interface, "hw", "ether", mac_addr_str])
-	if (result.returncode):
-		print("ifconfig " + interface + " hw ether " + mac_addr_str + " FAILED");
-
-	result = subprocess.run(["ifconfig", interface, "up"])
-	if (result.returncode):
-		print("ifconfig " + interface + " up FAILED");
-
-def down_hci_instance():
-	result = subprocess.run(down_hci_instance_cmd, shell=True)
-	if (result.returncode):
-		print("Failed to bring Bluetooth interface down")
-	else:
-		print("Bluetooth interface set down successfully")
-
-def reset_hci_instance():
-	result = subprocess.run(reset_hci_instance_cmd, shell=True)
-	if (result.returncode):
-		print("Failed to reset Bluetooth interface")
-	else:
-		print("Bluetooth interface reset successfully")
 
 def process_is_param_missing(x):
 	if not x:
@@ -91,6 +48,13 @@ def process_init_control_lib():
 	if (init_hosted_control_lib()):
 		print("init hosted control lib failed")
 		quit()
+
+	print("------- ESP-Hosted slave FW [", end='')
+	test_get_fw_version()
+	print("] --------")
+	process_get_mac_addr("station")
+	process_get_mac_addr("softap")
+	register_all_event_callbacks()
 
 
 def process_deinit_control_lib(stop_heartbeat = False):
@@ -122,12 +86,18 @@ def process_get_mac_addr(mode):
 	if mode == "station":
 		if test_sync_station_mode_get_mac_addr():
 			return "\nfailed to get station mac addr"
+
 	elif mode == "softap":
 		if test_sync_softap_mode_get_mac_addr():
 			return "\nfailed to get softap mac addr"
 	else:
 		return "\nIncorrect Wi-Fi mode"
-	return ""
+
+	mac = nw_helper_func.get_printable_mac_addr(mode)
+	if mac:
+		return mac
+	else:
+		return ""
 
 
 def process_set_mac_addr(mode, mac):
@@ -153,31 +123,17 @@ def process_get_available_wifi():
 	return ""
 
 
-def process_connect_ap(ssid, pwd, bssid, use_wpa3, listen_interval, set_dhcp, band_mode):
+def process_connect_ap(ssid, pwd, bssid, use_wpa3, listen_interval, band_mode):
 	ret_str = ""
 
 	if band_mode < WIFI_BAND_MODE_2G_ONLY or band_mode > WIFI_BAND_MODE_AUTO:
 		return "Invalid band_mode parameter " + get_str(band_mode)
 
 	if test_sync_station_mode_connect(ssid, pwd, bssid, use_wpa3, listen_interval, band_mode) != SUCCESS:
-		ret_str = "Failed to connect AP"
+		ret_str = "Failed to submit connect AP request"
 		return ret_str
-	print("\n")
 
-	if set_dhcp:
-		try:
-			print(os_dhcp_down)
-			os.system(os_dhcp_down)
-			print("\n")
-
-			print(os_dhcp_up)
-			os.system(os_dhcp_up)
-			print("\n")
-		except Exception as e:
-			ret_str = f"Failed during DHCP operations: {e}"
-			return ret_str
-
-	ret_str = "\nConnected to " + ssid
+	ret_str = ""
 	return ret_str
 
 
@@ -191,9 +147,7 @@ def process_disconnect_ap(reset_dhcp):
 	test_sync_station_mode_disconnect()
 	print("\n")
 
-	if reset_dhcp:
-		print(os_dhcp_down)
-		os.system(os_dhcp_down)
+	down_sta_netdev(network_info)
 	return ""
 
 
@@ -243,15 +197,6 @@ def process_start_softap(ssid, pwd, channel, sec_prot, max_conn, hide_ssid, bw, 
 		return ret_str
 	print("\n")
 
-	if start_dhcp_server:
-		print("Running " + os_run_dhcp_server)
-		exit_code = os.system(os_run_dhcp_server)
-		if exit_code != 0:
-			print("DHCP server (dnsmasq) not configured/running")
-			print("\033[91m Please review/edit and run 'bash -x run_dhcp_server.sh for your platform' \033[0m")
-		print("Running " + os_ifup_softap_cmd)
-		os.system(os_ifup_softap_cmd)
-
 	ret_str = "\nSoftAP started"
 	return ret_str
 
@@ -281,17 +226,25 @@ def process_stop_softap():
 
 
 def process_set_power_save(mode):
-	if mode =="max":
-		test_sync_set_wifi_power_save_mode_max()
-	elif mode =="min":
-		test_sync_set_wifi_power_save_mode_min()
-	else:
-		return "Unsupported power save mode " + mode
+	try:
+		if mode == "none":
+			test_sync_set_wifi_power_save_mode_none()
+		elif mode =="max":
+			test_sync_set_wifi_power_save_mode_max()
+		elif mode =="min":
+			test_sync_set_wifi_power_save_mode_min()
+		else:
+			return "Unsupported power save mode " + mode
+	except:
+		traceback.print_exc()
 	return ""
 
 
 def process_get_power_save():
-	test_sync_get_wifi_power_save_mode()
+	try:
+		test_sync_get_wifi_power_save_mode()
+	except:
+		traceback.print_exc()
 	return ""
 
 
@@ -305,27 +258,24 @@ def process_wifi_curr_tx_power():
 	return ""
 
 def process_enable_wifi():
-	global sta_interface
-	global softap_interface
 
-	test_feature_enable_wifi()
-	test_sync_station_mode_get_mac_addr()
-	sta_mac_addr = get_mac_addr_str()
-	up_net_interface(sta_interface, sta_mac_addr)
+	if test_feature_enable_wifi() != SUCCESS:
+		return "Failed to enable Wi-Fi"
 
-	test_sync_softap_mode_get_mac_addr()
-	softap_mac_addr = get_mac_addr_str()
-	up_net_interface(softap_interface, softap_mac_addr)
-	return ""
+	if test_sync_station_mode_get_mac_addr() != SUCCESS:
+		return "Failed to get station MAC address"
+
+	if test_sync_softap_mode_get_mac_addr() != SUCCESS:
+		return "Failed to get softap MAC address"
+
+	return "\nSuccess. connect_ap now"
 
 def process_disable_wifi():
-	global sta_interface
-	global softap_interface
 
 	test_feature_disable_wifi()
-	down_net_interface(sta_interface);
-	down_net_interface(softap_interface);
-	return ""
+	down_sta_netdev()
+	down_softap_netdev()
+	return "\nSuccess"
 
 def process_enable_bluetooth():
 	test_feature_enable_bt()
@@ -378,18 +328,28 @@ def process_heartbeat(enable, duration = 30):
 def process_subscribe_event(event):
 	if event == 'esp_init':
 		subscribe_event_esp_init()
+		print("notifications enabled for esp_init")
 	elif event == 'heartbeat':
 		subscribe_event_heartbeat()
-	elif event == 'sta_connected_to_ap':
-		subscribe_event_sta_connected_to_ap()
-	elif event == 'sta_disconnect_from_ap':
-		subscribe_event_sta_disconnect_from_ap()
-	elif event == 'sta_connected_to_softap':
-		subscribe_event_sta_connected_to_softap()
-	elif event == 'sta_disconnect_from_softap':
-		subscribe_event_sta_disconnect_from_softap()
+		print("notifications enabled for heartbeat")
+	elif event == 'sta_connected':
+		subscribe_event_sta_connected()
+		print("notifications enabled for station connected to AP")
+	elif event == 'sta_disconnected':
+		subscribe_event_sta_disconnected()
+		print("notifications enabled for station disconnection from AP")
+	elif event == 'softap_sta_connected':
+		subscribe_event_softap_sta_connected()
+		print("notifications enabled for station connected to ESP softAP")
+	elif event == 'softap_sta_disconnected':
+		subscribe_event_softap_sta_disconnected()
+		print("notifications enabled for station disconnection from ESP softAP")
+	elif event == 'custom_packed_event':
+		subscribe_event_custom_packed_event()
+		print("notifications enabled for custom RPC unserialised msg")
 	elif event == 'all':
 		register_all_event_callbacks()
+		print("notifications enabled for all possible events")
 	else:
 		return "Unsupported event " + event
 	return ""
@@ -398,18 +358,41 @@ def process_subscribe_event(event):
 def process_unsubscribe_event(event):
 	if event == 'esp_init':
 		unsubscribe_event_esp_init()
+		print("notifications disabled for esp_init")
 	elif event == 'heartbeat':
 		unsubscribe_event_heartbeat()
-	elif event == 'sta_connected_to_ap':
-		unsubscribe_event_sta_connected_to_ap()
-	elif event == 'sta_disconnect_from_ap':
-		unsubscribe_event_sta_disconnect_from_ap()
-	elif event == 'sta_connected_to_softap':
-		unsubscribe_event_sta_connected_to_softap()
-	elif event == 'sta_disconnect_from_softap':
-		unsubscribe_event_sta_disconnect_from_softap()
+		print("notifications disabled for heartbeat")
+	elif event == 'sta_connected':
+		unsubscribe_event_sta_connected()
+		print("notifications disabled for station connected to AP (Although, not recommended)")
+	elif event == 'sta_disconnected':
+		unsubscribe_event_sta_disconnected()
+		print("notifications disabled for station disconnection from AP (Although, not recommended)")
+	elif event == 'softap_sta_connected':
+		unsubscribe_event_softap_sta_connected()
+		print("notifications disabled for station connected to ESP softAP")
+	elif event == 'softap_sta_disconnected':
+		unsubscribe_event_softap_sta_disconnected()
+		print("notifications disabled for station disconnection from ESP softAP")
+	elif event == 'custom_packed_event':
+		unsubscribe_event_custom_packed_event()
+		print("notifications disabled for custom RPC unserialised msg")
 	elif event == 'all':
 		unregister_all_event_callbacks()
+		print("notifications disabled for all possible events")
+		print("Although, we suggest enabling notifications for at least 'sta_connected', 'sta_disconnected'")
 	else:
 		return "Unsupported event " + event
+	return ""
+
+def process_custom_rpc_demo1():
+	test_custom_rpc_demo1_request_only_ack()
+	return ""
+
+def process_custom_rpc_demo2():
+	test_custom_rpc_demo2_request_echo_back_as_response()
+	return ""
+
+def process_custom_rpc_demo3():
+	test_custom_rpc_demo3_request_echo_back_as_event()
 	return ""

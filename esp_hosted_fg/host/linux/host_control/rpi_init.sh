@@ -164,33 +164,37 @@ device_tree_dependency_uart_4pins() {
 	log_exit
 }
 
+build_esp_hosted_rpc_lib() {
+	log_enter
+	cd $RPC_LIB_DIR
+	make -j8
+	LIB_PATH="$RPC_LIB_DIR/libesp_hosted_rpc.a"
+	if [ ! -f "$LIB_PATH" ]; then
+		log "ERROR: Failed to build libesp_hosted_rpc.a, exiting"
+		exit 1
+	fi
+	cd $SCRIPT_DIR
+	log_exit
+}
+
 build_c_demo_app() {
 	log_enter
-	cd $SCRIPT_DIR/c_support/
-	make clean
-	make -j8 test
-	if [ $? -ne 0 ]; then
-		error "Failed to build test app"
-		exit 1
-	fi
 
-	make -j8 stress
-	if [ $? -ne 0 ]; then
-		error "Failed to build stress app"
-		exit 1
-	fi
-
-	# Check if replxx library is available by looking for the header file
-	if [ -f /usr/include/replxx.h ] || [ -f /usr/local/include/replxx.h ]; then
-		make -j8 hosted_shell
-		if [ $? -ne 0 ]; then
-			error "Failed to build hosted_shell app"
-			exit 1
-		fi
-	else
+	# Check if replxx library is available using compiler check (more flexible than hardcoded paths)
+	# This works with system paths, custom include paths, and cross-compilation toolchains
+	if ! echo '#include <replxx.h>' | ${CROSS_COMPILE}gcc -E - -I/usr/local/include >/dev/null 2>&1; then
 		warn "replxx library not found. Skipping hosted_shell build."
-		warn "To install replxx: sudo apt-get install replxx"
-		warn "After installing, run 'make -j8 hosted_shell' in 'host/linux/host_control/c_support' directory"
+		warn "Install replxx from https://github.com/AmokHuginnsson/replxx"
+		warn "  - Ubuntu/Debian: Build from source (no apt package available)"
+		warn "  - macOS: brew install replxx"
+		warn "After installing, run 'make -j8' in 'host/linux/host_control/c_support' directory"
+	fi
+
+	cd $SCRIPT_DIR/c_support/
+	make -j8
+	if [ $? -ne 0 ]; then
+		error "Failed to build C demo apps"
+		exit 1
 	fi
 
 	cd ..
@@ -200,7 +204,6 @@ build_c_demo_app() {
 build_python_demo_app() {
 	log_enter
 	cd $SCRIPT_DIR/python_support/
-	make clean
 	make -j8
 	if [ $? -ne 0 ]; then
 		error "Failed to build python demo app"
@@ -212,6 +215,7 @@ build_python_demo_app() {
 
 build_user_space_apps() {
 	log_enter
+	build_esp_hosted_rpc_lib
 	build_c_demo_app
 	build_python_demo_app
 	log_exit
@@ -719,6 +723,7 @@ display_configuration_summary()
 ######## Script ##########
 SCRIPT_DIR=$PWD
 MAKE_DIR=$SCRIPT_DIR/../host_driver/esp32/
+RPC_LIB_DIR=$SCRIPT_DIR/../../control_lib
 
 cd $MAKE_DIR
 parse_arguments "$@"
@@ -768,3 +773,6 @@ insert_module
 
 success "ESP-Hosted driver initialization completed successfully!"
 log "--- finished ---"
+log ""
+log "Please proceed to choose desired 'C' or 'Python' demo app"
+log "Refer for detailed setup: https://github.com/espressif/esp-hosted/blob/master/esp_hosted_fg/docs/Linux_based_host/Getting_started.md"

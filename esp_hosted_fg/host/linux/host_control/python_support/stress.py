@@ -50,10 +50,11 @@ country_code = '01'
 
 event1 = 'esp_init'
 event2 = 'heartbeat'
-event3 = 'sta_connected_to_ap'
-event4 = 'sta_disconnect_from_ap'
-event5 = 'sta_connected_to_softap'
-event6 = 'sta_disconnect_from_softap'
+event3 = 'sta_connected'
+event4 = 'sta_disconnected'
+event5 = 'softap_sta_connected'
+event6 = 'softap_sta_disconnected'
+event7 = 'custom_packed_event'
 
 argumentList = sys.argv[1:]
 if argumentList and len(argumentList):
@@ -141,6 +142,8 @@ try:
 			cmd.subscribe_event(event5)
 			cmd.unsubscribe_event(event6)
 			cmd.subscribe_event(event6)
+			cmd.unsubscribe_event(event7)
+			cmd.subscribe_event(event7)
 
 	if (STRESS_TEST & TEST_HEARTBEAT):
 		for i in (range(STRESS_TEST_COUNT)):

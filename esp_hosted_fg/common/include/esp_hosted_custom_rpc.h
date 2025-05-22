@@ -25,7 +25,4 @@ enum custom_rpc_event_id {
 	/* Add more event IDs as needed */
 };
 
-/* Maximum size for RPC data */
-#define RPC_USER_SPECIFIC_EVENT_DATA_SIZE                1024
-
 #endif /* __ESP_HOSTED_RPC_H__ */

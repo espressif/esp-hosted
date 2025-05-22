@@ -58,10 +58,12 @@ menu "Example Configuration"
 				Size of TX queue for Serial packets
 
 		config ESP_TX_Q_SIZE
-			int "Host to ESP transport queue size"
+			int "ESP to Host transport queue size"
 			depends on !ESP_ENABLE_TX_PRIORITY_QUEUES
 			default 6 if IDF_TARGET_ESP32C2
 			default 10
+			help
+				Size of Tx queue for packets
 
 		config ESP_ENABLE_RX_PRIORITY_QUEUES
 			bool "Enable RX priority queues"
@@ -96,6 +98,8 @@ menu "Example Configuration"
 			depends on !ESP_ENABLE_RX_PRIORITY_QUEUES
 			default 6 if IDF_TARGET_ESP32C2
 			default 10
+			help
+				Size of Rx queue for packets
 	endmenu
 
 	menu "SPI Full-duplex Configuration"
@@ -254,6 +258,17 @@ menu "Example Configuration"
 				help
 					Host uses this pin to reset the slave ESP. To re-use ESP 'RST' or 'EN' GPIO, set value to -1
 		endmenu
+
+		config ESP_SPI_DEASSERT_HS_ON_CS
+			bool "Deassert Handshake when SPI CS is deasserted"
+			default n if IDF_TARGET_ESP32
+			default y
+			help
+				Deassert Handshake and prepare a new SPI transaction only after
+				CS has been deasserted. This helps prevent data loss with MCUs
+				that delay deasserting CS after the end of a SPI transaction
+				by prematurely starting a new slave SPI transaction
+				since CS is detected by the slave as still asserted.
 
 		config ESP_SPI_CHECKSUM
 			bool "SPI checksum ENABLE/DISABLE"
@@ -485,6 +500,7 @@ menu "Example Configuration"
 	endmenu
 
 	config ESP_HOSTED_CLI_ENABLED
+		depends on !IDF_TARGET_ESP32C2 && !IDF_TARGET_ESP32C3
 		bool "Start CLI at slave"
 		default y
 

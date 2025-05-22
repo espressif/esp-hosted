@@ -31,9 +31,10 @@ enum Ctrl_WifiBw {
 }
 
 enum Ctrl_WifiPowerSave {
-	PS_Invalid = 0;
+	NO_PS = 0;
 	MIN_MODEM = 1;
 	MAX_MODEM = 2;
+	PS_Invalid = 3;
 }
 
 enum Ctrl_WifiSecProt {

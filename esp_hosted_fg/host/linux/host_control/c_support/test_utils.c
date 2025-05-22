@@ -18,7 +18,6 @@
  * this warranty disclaimer.
  */
 
-
 #include <stdio.h>
 #include <sys/types.h>
 #include <string.h>
@@ -520,11 +519,17 @@ int ctrl_app_resp_callback(ctrl_cmd_t * app_resp)
 			printf("Wifi power save mode is: ");
 
 			switch(app_resp->u.wifi_ps.ps_mode) {
+				case WIFI_PS_NONE:
+					printf("None\n");
+					break;
 				case WIFI_PS_MIN_MODEM:
 					printf("Min\n");
 					break;
 				case WIFI_PS_MAX_MODEM:
 					printf("Max\n");
+					break;
+				case WIFI_PS_INVALID:
+					printf("Invalid\n");
 					break;
 				default:
 					printf("Invalid\n");

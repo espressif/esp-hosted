@@ -50,12 +50,40 @@ Also, it is recommended to download (any) software needed (like iperf etc) befor
 
 ## 2. Load ESP-Hosted Solution
 ### 2.1 Host Software
-* Execute following commands in root directory of cloned ESP-Hosted repository on Raspberry-Pi
+* Execute following commands in root directory of cloned ESP-Hosted repository on Raspberry-Pi:
+
 ```sh
 $ cd esp_hosted_fg/host/linux/host_control/
-$ ./rpi_init.sh sdio
+$ ./rpi_init.sh wifi=sdio bt=sdio
 ```
+
 * This script compiles and loads host driver on Raspberry-Pi. It also creates virtual serial interface `/dev/esps0` which is used as a control interface for Wi-Fi on ESP peripheral
+
+Execute `./rpi_init.sh --help` to see the list of options.
+
+> [!NOTE]
+> For SDIO+UART, use `bt=uart_2pins` or `bt=uart_4pins` for 2/4 pin UART. For wifi only support, exclude the `bt` parameter.
+
+#### 2.1.1 Manually loading and unloading the Kernel Module
+
+Once built, the kernel module `esp32_sdio.ko` can be found in `esp_hosted_fg/host/linux/host_driver/esp32`. You can manualy load/unload the module as needed.
+
+To add the module:
+
+`$ sudo insmod esp_hosted_fg/host/linux/host_driver/esp32/esp32_sdio.ko resetpin=518 clockspeed=50`
+
+##### Module Parameters
+
+| Parameter | Meaning |
+| --- | --- |
+| `resetpin` | GPIO to reset the ESP peripheral |
+| `clockspeed` | SDIO CLK frequency (in MHz: maximum 50) |
+
+Note: `clockspeed` is optional. Default is to use the default SDIO clock speed.
+
+To remove the module:
+
+`$ sudo rmmod esp32_sdio`
 
 ### 2.2 ESP Peripheral Firmware
 One can load pre-built release binaries on ESP peripheral or compile those from source. Below subsection explains both these methods.

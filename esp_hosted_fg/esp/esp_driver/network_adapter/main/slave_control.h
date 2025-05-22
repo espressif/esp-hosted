@@ -44,20 +44,6 @@
 #define MAC_LEN                 6
 #define VENDOR_OUI_BUF          3
 
-/* Define max allowed bytes for the user RPC event data */
-#define RPC_USER_SPECIFIC_EVENT_DATA_SIZE 1024
-
-/* Structure for the user-specific RPC events */
-struct rpc_user_specific_event_t {
-	int32_t resp;
-	int32_t int_1;
-	int32_t int_2;
-	uint32_t uint_1;
-	uint32_t uint_2;
-	uint16_t data_len;
-	uint8_t data[RPC_USER_SPECIFIC_EVENT_DATA_SIZE];
-};
-
 typedef struct {
 	uint8_t ssid[SSID_LENGTH];
 	uint8_t pwd[PASSWORD_LENGTH];

@@ -7,6 +7,10 @@
 #include <net/route.h>
 #include <net/if.h>
 #include <linux/if_arp.h>
+#include <sys/ioctl.h>
+#include <errno.h>
+#include <stdlib.h>
+
 
 #include "nw_helper_func.h"
 

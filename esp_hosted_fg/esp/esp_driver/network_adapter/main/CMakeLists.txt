@@ -13,6 +13,14 @@ set(COMPONENT_SRCS
     "host_power_save.c"
 )
 
+if(CONFIG_ESP_HOSTED_COPROCESSOR_EXAMPLE_MQTT)
+    list(APPEND COMPONENT_SRCS mqtt_example.c)
+endif()
+
+if(CONFIG_ESP_HOSTED_COPROCESSOR_EXAMPLE_HTTP_CLIENT)
+    list(APPEND COMPONENT_SRCS http_req.c)
+endif()
+
 set(COMPONENT_ADD_INCLUDEDIRS
     "."
     "${common_dir}/include"
