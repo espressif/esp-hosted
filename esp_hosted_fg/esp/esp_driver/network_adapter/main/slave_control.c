@@ -150,18 +150,21 @@ static void send_wifi_event_data_to_host(int event, void *event_data, int event_
 #endif
 }
 
-static bool wifi_is_provisioned(void)
+static bool wifi_is_provisioned(wifi_config_t *wifi_cfg)
 {
-	wifi_config_t wifi_cfg = {0};
+	if (!wifi_cfg) {
+		ESP_LOGI(TAG, "NULL wifi cfg passed, ignore");
+		return false;
+	}
 
-	if (esp_wifi_get_config(WIFI_IF_STA, &wifi_cfg) != ESP_OK) {
+	if (esp_wifi_get_config(WIFI_IF_STA, wifi_cfg) != ESP_OK) {
 		ESP_LOGI(TAG, "Wifi get config failed");
 		return false;
 	}
 
-	ESP_LOGI(TAG, "SSID: %s", wifi_cfg.sta.ssid);
+	ESP_LOGI(TAG, "SSID: %s", wifi_cfg->sta.ssid);
 
-	if (strlen((const char *) wifi_cfg.sta.ssid)) {
+	if (strlen((const char *) wifi_cfg->sta.ssid)) {
 		ESP_LOGI(TAG, "Wifi provisioned");
 		return true;
 	}
@@ -174,13 +177,14 @@ esp_err_t esp_hosted_set_sta_config(wifi_interface_t iface, wifi_config_t *cfg)
 {
 
 	wifi_config_t current_config = {0};
-	if (!wifi_is_provisioned()) {
-		ESP_LOGI(TAG, "Provisoning new Wi-Fi config");
+	if (!wifi_is_provisioned(&current_config)) {
 		if (esp_wifi_set_config(WIFI_IF_STA, cfg) != ESP_OK) {
 			ESP_LOGW(TAG, "not provisioned and failed to set wifi config");
+		} else {
+			ESP_LOGI(TAG, "Provisioned new Wi-Fi config");
+			prev_wifi_config_valid = false;
 		}
 	}
-	prev_wifi_config_valid = false;
 
 	if (!is_wifi_config_equal(cfg, &current_config)) {
 		new_config_recvd = 1;
@@ -1890,11 +1894,8 @@ static esp_err_t req_set_power_save_mode_handler (CtrlMsg *req,
 	resp->payload_case = CTRL_MSG__PAYLOAD_RESP_SET_POWER_SAVE_MODE;
 	resp->resp_set_power_save_mode = resp_payload;
 
-	/*
-	 * WIFI_PS_NONE mode can not use in case of coex i.e. Wi-Fi+BT/BLE.
-	 * By default ESP has WIFI_PS_MIN_MODEM power save mode
-	 */
-	if ((req->req_set_power_save_mode->mode == WIFI_PS_MIN_MODEM) ||
+	if ((req->req_set_power_save_mode->mode == WIFI_PS_NONE) ||
+	    (req->req_set_power_save_mode->mode == WIFI_PS_MIN_MODEM) ||
 	    (req->req_set_power_save_mode->mode == WIFI_PS_MAX_MODEM)) {
 		ret = esp_wifi_set_ps(req->req_set_power_save_mode->mode);
 		if (ret) {
@@ -2373,7 +2374,9 @@ static esp_err_t req_get_country_code_handler (CtrlMsg *req,
 
 	ret = esp_wifi_get_country_code(country_code);
 	if (ret == ESP_OK) {
+		country_code[COUNTRY_CODE_LEN-1] = '\0';
 		resp_payload->country.data = (uint8_t *)country_code;
+		ESP_LOGI(TAG,"Returning %s", country_code);
 		resp_payload->country.len = COUNTRY_CODE_LEN;
 		resp_payload->resp = SUCCESS;
 	} else {

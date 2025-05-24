@@ -52,6 +52,17 @@ WIFI_BAND_MODE_2G_ONLY = 1
 WIFI_BAND_MODE_5G_ONLY = 2
 WIFI_BAND_MODE_AUTO = 3
 
+# Custom RPC request IDs
+class CUSTOM_RPC_REQ_ID(Enum):
+	ONLY_ACK = 1
+	ECHO_BACK_RESPONSE = 2
+	ECHO_BACK_AS_EVENT = 3
+
+# Custom RPC event IDs
+class CUSTOM_RPC_EVENT_ID(Enum):
+	DEMO_ECHO_BACK_REQUEST = 100
+	DEMO_SIMPLE_EVENT = 101
+
 class WIFI_MODE_E(Enum):
 	WIFI_MODE_NONE = 0
 	WIFI_MODE_STA = 1
@@ -78,6 +89,7 @@ class WIFI_BW(Enum):
 
 
 class WIFI_PS_MODE(Enum):
+	WIFI_PS_MODE_NONE = 0
 	WIFI_PS_MIN_MODEM = 1
 	WIFI_PS_MAX_MODEM = 2
 	WIFI_PS_INVALID = 3
@@ -99,6 +111,7 @@ class HOSTED_FEATURE(Enum):
 	HOSTED_FEATURE_INVALID = 0
 	HOSTED_FEATURE_WIFI = 1
 	HOSTED_FEATURE_BLUETOOTH = 2
+	HOSTED_FEATURE_NETWORK_SPLIT = 3
 
 class CTRL_ERR(Enum):
 	CTRL_ERR_NOT_CONNECTED = 1
@@ -154,7 +167,10 @@ class CTRL_MSGID(Enum):
 	CTRL_REQ_GET_FW_VERSION = 123
 	CTRL_REQ_SET_COUNTRY_CODE = 124
 	CTRL_REQ_GET_COUNTRY_CODE = 125
-	CTRL_REQ_MAX = 126
+	CTRL_REQ_SET_DhcpDnsStatus = 126
+	CTRL_REQ_GET_DhcpDnsStatus = 127
+	CTRL_REQ_CUSTOM_RPC_UNSERIALISED = 128
+	CTRL_REQ_MAX = 129
 	CTRL_RESP_BASE = 200
 	CTRL_RESP_GET_MAC_ADDR = 201
 	CTRL_RESP_SET_MAC_ADDRESS = 202
@@ -181,7 +197,10 @@ class CTRL_MSGID(Enum):
 	CTRL_RESP_GET_FW_VERSION = 223
 	CTRL_RESP_SET_COUNTRY_CODE = 224
 	CTRL_RESP_GET_COUNTRY_CODE = 225
-	CTRL_RESP_MAX = 226
+	CTRL_RESP_SET_DHCP_DNS_STATUS = 226
+	CTRL_RESP_GET_DHCP_DNS_STATUS = 227
+	CTRL_RESP_CUSTOM_RPC_UNSERIALISED = 228
+	CTRL_RESP_MAX = 229
 	CTRL_EVENT_BASE = 300
 	CTRL_EVENT_ESP_INIT = 301
 	CTRL_EVENT_HEARTBEAT = 302
@@ -189,7 +208,9 @@ class CTRL_MSGID(Enum):
 	CTRL_EVENT_STATION_DISCONNECT_FROM_ESP_SOFTAP = 304
 	CTRL_EVENT_STATION_CONNECTED_TO_AP = 305
 	CTRL_EVENT_STATION_CONNECTED_TO_ESP_SOFTAP = 306
-	CTRL_EVENT_MAX =  307
+	CTRL_EVENT_DHCP_DNS_STATUS = 307
+	CTRL_EVENT_CUSTOM_RPC_UNSERIALISED_MSG = 308
+	CTRL_EVENT_MAX = 309
 
 
 class STA_CONFIG(Structure):
@@ -334,27 +355,45 @@ class EVENT_STATION_DISCONN_FROM_SOFTAP(Structure):
 			("is_mesh_child", c_int),
 			("reason", c_uint)]
 
+class EVENT_DHCP_DNS_STATUS(Structure):
+	_fields_ = [("iface", c_int),
+			("net_link_up", c_int),
+			("dhcp_up", c_int),
+			("dhcp_ip", c_char * 64),
+			("dhcp_nm", c_char * 64),
+			("dhcp_gw", c_char * 64),
+			("dns_up", c_int),
+			("dns_ip", c_char * 64),
+			("dns_type", c_int)]
+
+class CUSTOM_RPC_UNSERIALISED_MSG(Structure):
+	_fields_ = [("custom_msg_id", c_uint32),
+			 ("data_len", c_uint16),
+			 ("free_func", c_void_p),
+			 ("data", c_void_p)]
 
 class CONTROL_DATA(Union):
 	_fields_ = [("resp_event_status", c_int),
 			("wifi_mac", WIFI_MAC),
 			("wifi_mode", WIFI_MODE),
-			("wifi_ap_scan", WIFI_AP_SCAN_LIST),
+			("wifi_ap_scan_list", WIFI_AP_SCAN_LIST),
 			("wifi_ap_config", STA_CONFIG),
 			("wifi_softap_config", SOFTAP_CONFIG),
 			("wifi_softap_vendor_ie", WIFI_SOFTAP_VENDOR_IE),
-			("wifi_softap_con_sta", WIFI_CONNECTED_STATIONS_LIST),
-			("wifi_ps", WIFI_POWER_SAVE_MODE),
+			("wifi_connected_stations_list", WIFI_CONNECTED_STATIONS_LIST),
+			("wifi_power_save_mode", WIFI_POWER_SAVE_MODE),
 			("ota_write", OTA_WRITE),
-			("feat_ena_disable", FEATURE_CONFIG),
 			("wifi_tx_power", WIFI_TX_POWER),
+			("feature_config", FEATURE_CONFIG),
 			("fw_version", FW_VERSION),
 			("country_code", COUNTRY_CODE),
 			("e_heartbeat", EVENT_HEARTBEAT),
 			("e_sta_conn", EVENT_STATION_CONN_TO_AP),
 			("e_sta_disconn", EVENT_STATION_DISCONN_FROM_AP),
 			("e_softap_sta_conn", EVENT_STATION_CONN_TO_SOFTAP),
-			("e_softap_sta_disconn", EVENT_STATION_DISCONN_FROM_SOFTAP)]
+			("e_softap_sta_disconn", EVENT_STATION_DISCONN_FROM_SOFTAP),
+			("e_dhcp_dns_status", EVENT_DHCP_DNS_STATUS),
+			("custom_rpc_unserialised_data", CUSTOM_RPC_UNSERIALISED_MSG)]
 
 
 class CONTROL_COMMAND(Structure):

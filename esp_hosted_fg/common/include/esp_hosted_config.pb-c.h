@@ -111,9 +111,10 @@ typedef enum _CtrlWifiBw {
     PROTOBUF_C__FORCE_ENUM_TO_BE_INT_SIZE(CTRL__WIFI_BW)
 } CtrlWifiBw;
 typedef enum _CtrlWifiPowerSave {
-  CTRL__WIFI_POWER_SAVE__PS_Invalid = 0,
+  CTRL__WIFI_POWER_SAVE__NO_PS = 0,
   CTRL__WIFI_POWER_SAVE__MIN_MODEM = 1,
-  CTRL__WIFI_POWER_SAVE__MAX_MODEM = 2
+  CTRL__WIFI_POWER_SAVE__MAX_MODEM = 2,
+  CTRL__WIFI_POWER_SAVE__PS_Invalid = 3
     PROTOBUF_C__FORCE_ENUM_TO_BE_INT_SIZE(CTRL__WIFI_POWER_SAVE)
 } CtrlWifiPowerSave;
 typedef enum _CtrlWifiSecProt {

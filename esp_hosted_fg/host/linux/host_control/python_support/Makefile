@@ -1,16 +1,20 @@
 CC = gcc
 
+CFLAGS = -Wall -fPIC
 CROSS_COMPILE :=
 
-CFLAGS = -C -Wall
+SRCS = $(wildcard *.c)
+OBJS = $(SRCS:.c=.o)
 
-PWD := $(shell pwd)
+DIR_ROOT = $(CURDIR)/../../../../
+LIB_DIR = $(DIR_ROOT)/host/control_lib
+CONTROL_LIB = $(LIB_DIR)/libesp_hosted_rpc.a
 
-DIR_COMMON = $(PWD)/../../../../common
-DIR_CTRL_LIB = $(PWD)/../../../control_lib
-DIR_SERIAL = $(PWD)/../../../virtual_serial_if
-DIR_COMPONENTS = $(PWD)/../../../components
-DIR_LINUX_PORT = $(PWD)/../../port
+DIR_COMMON = $(DIR_ROOT)/common
+DIR_CTRL_LIB = $(DIR_ROOT)/host/control_lib
+DIR_SERIAL = $(DIR_ROOT)/host/virtual_serial_if
+DIR_COMPONENTS = $(DIR_ROOT)/host/components
+DIR_LINUX_PORT = $(DIR_ROOT)/host/linux/port
 
 INCLUDE += -I$(DIR_COMMON)/protobuf-c
 INCLUDE += -I$(DIR_COMMON)/include
@@ -21,20 +25,27 @@ INCLUDE += -I$(DIR_COMPONENTS)/include
 INCLUDE += -I$(DIR_LINUX_PORT)/include
 INCLUDE += -I.
 
-SRC += $(DIR_COMMON)/protobuf-c/protobuf-c/protobuf-c.c
-SRC += $(DIR_COMMON)/esp_hosted_config.pb-c.c
-SRC += $(DIR_CTRL_LIB)/src/ctrl_core.c
-SRC += $(DIR_CTRL_LIB)/src/ctrl_api.c
-SRC += $(DIR_SERIAL)/src/serial_if.c
-SRC += $(DIR_COMPONENTS)/src/esp_queue.c
-SRC += $(DIR_LINUX_PORT)/src/platform_wrapper.c
-
+LIBPATH = -L$(LIB_DIR)
+LIBS = -Wl,--whole-archive $(CONTROL_LIB) -Wl,--no-whole-archive
 LINKER = -lrt -lpthread
 
 TARGET = commands.so
 
-commands.so:
-	$(CROSS_COMPILE)$(CC) $(CFLAGS) $(INCLUDE) $(SRC) $(LINKER) -o $(TARGET) -shared -fPIC
+.PHONY: all clean ensure_libs
+
+all: ensure_libs $(TARGET)
+
+ensure_libs:
+	@if [ ! -f $(CONTROL_LIB) ]; then \
+		echo "Building control library first..."; \
+		$(MAKE) -C $(DIR_CTRL_LIB) install; \
+	fi
+
+%.o: %.c
+	$(CC) $(CFLAGS) $(INCLUDE) -c $< -o $@
+
+$(TARGET): $(OBJS)
+	$(CC) $(CFLAGS) -shared -o $@ $^ $(LIBPATH) $(LIBS) $(LINKER)
 
 clean:
 	rm -f $(TARGET) *.o

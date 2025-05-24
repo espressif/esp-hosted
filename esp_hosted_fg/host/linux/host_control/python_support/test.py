@@ -174,12 +174,6 @@ def main():
 
 	process_init_control_lib()
 
-	# Display FW Version
-	print("------- ESP-Hosted slave FW [", end='')
-	cmd = ctrl_cmd()
-	cmd.get_fw_version()
-	print("] --------")
-
 	argumentList = sys.argv[1:]
 	if argumentList and len(argumentList):
 		try:

@@ -12,9 +12,7 @@
     req->msg_id = msGiD;                                                    \
     if(SUCCESS != ctrl_app_send_req(req)) {                                 \
         printf("RPC req [%u] Failed to send\n", req->msg_id);               \
-        if (CALLBACK_AVAILABLE == is_async_resp_callback_registered(req)) { \
-            return NULL;                                                    \
-        }                                                                   \
+        return NULL;                                                        \
     }                                                                       \
 } while(0);
 

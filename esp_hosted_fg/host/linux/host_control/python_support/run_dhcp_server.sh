@@ -5,9 +5,11 @@
 # If your platform doesn't work with dnsmasq, or you use some other DHCP server
 # software, you can skip running this script.
 
+echo "[run_dhcp_server.sh] Starting DHCP server setup..."
+
 # Check if the script is run as root
 if [ "$EUID" -ne 0 ]; then
-  echo "This script must be run as root. Exiting."
+  echo "[run_dhcp_server.sh] This script must be run as root. Exiting."
   exit 1
 fi
 
@@ -18,51 +20,60 @@ fi
 # Any dnsmasq or DHCP client-server software is out-of-scope for ESP-Hosted but is showcased anyway for user ease.
 install_dnsmasq()
 {
-    # Install if not installed
+    echo "[run_dhcp_server.sh] Checking if dnsmasq is installed..."
     which dnsmasq &>/dev/null
     if [ "$?" != "0" ] ; then
-        echo "> Installing dnsmasq"
+        echo "[run_dhcp_server.sh] > Installing dnsmasq"
         sudo apt install dnsmasq &> /dev/null
+    else
+        echo "[run_dhcp_server.sh] dnsmasq already installed"
     fi
 
-    # Verify installation
     which dnsmasq &>/dev/null
     if [ "$?" != "0" ] ; then
-        echo "ERROR: Failed to install dnsmasq, exiting"
+        echo "[run_dhcp_server.sh] ERROR: Failed to install dnsmasq, exiting"
         exit 1
+    else
+        echo "[run_dhcp_server.sh] dnsmasq installation verified"
     fi
 }
 
 is_dnsmasq_running_in_custom_way()
 {
-    if ps -eaf | grep -i "dnsmasq" | grep -- "--port=40000" &>/dev/null ; then
-        return 0  # Running in custom way
+    echo "[run_dhcp_server.sh] Checking if dnsmasq is running in custom way (port 55000)..."
+    if ps -eaf | grep -i "dnsmasq" | grep -- "--port=55000" &>/dev/null ; then
+        echo "[run_dhcp_server.sh] dnsmasq is running in custom way"
+        return 0
     else
-        return 1  # Not running in custom way
+        echo "[run_dhcp_server.sh] dnsmasq is NOT running in custom way"
+        return 1
     fi
 }
 
 run_dnsmasq_in_custom_way()
 {
-    echo "> Killing existing dnsmasq instance"
-    # Kill default dnsmasq
-    sudo systemctl disable dnsmasq
+    echo "[run_dhcp_server.sh] > Killing existing dnsmasq instance"
+    if systemctl list-unit-files | grep -q '^dnsmasq\.service'; then
+        echo "[run_dhcp_server.sh] Disabling dnsmasq systemd service"
+        sudo systemctl disable dnsmasq
+    fi
     sudo killall dnsmasq
-
-    echo "> Running dnsmasq in custom way"
-    # Run manually in the background
-    nohup sudo dnsmasq --port=40000 --no-daemon --no-resolv --no-poll --dhcp-script=/system/bin/dhcp_announce --dhcp-range=192.168.4.1,192.168.4.20,1h &> /dev/null &
+    echo "[run_dhcp_server.sh] > Running dnsmasq in custom way"
+    nohup sudo dnsmasq --port=55000 --no-daemon --no-resolv --no-poll --dhcp-script=/system/bin/dhcp_announce --dhcp-range=192.168.4.1,192.168.4.20,1h &> /dev/null &
+    echo "[run_dhcp_server.sh] dnsmasq started in background with custom options"
 }
 
 install_dnsmasq
 
 if ! is_dnsmasq_running_in_custom_way ; then
+    echo "[run_dhcp_server.sh] Attempting to start dnsmasq in custom way..."
     run_dnsmasq_in_custom_way
 fi
 
 if ! is_dnsmasq_running_in_custom_way ; then
-    echo "Failed to run dnsmasq"
+    echo "[run_dhcp_server.sh] Failed to run dnsmasq"
     exit 1
 fi
 
+echo "[run_dhcp_server.sh] DHCP server setup complete."
 exit 0
