@@ -2650,7 +2650,8 @@ static esp_err_t enable_disable_feature(HostedFeature feature, bool enable)
 		break;
 
 	case HOSTED_FEATURE__Hosted_Bluetooth:
-#ifdef CONFIG_BT_ENABLED
+// enable only if BT component enabled and soc supports BT
+#if defined(CONFIG_BT_ENABLED) && defined(CONFIG_SOC_BT_SUPPORTED)
 		if (enable) {
 			initialise_bluetooth();
 		} else {

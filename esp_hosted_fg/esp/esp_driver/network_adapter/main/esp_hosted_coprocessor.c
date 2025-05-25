@@ -25,12 +25,15 @@
 
 #include "freertos/task.h"
 #include "freertos/queue.h"
-#ifdef CONFIG_BT_ENABLED
+
+// enable only if BT component enabled and soc supports BT
+#if defined(CONFIG_BT_ENABLED) && defined(CONFIG_SOC_BT_SUPPORTED)
 #include "esp_bt.h"
 #ifdef CONFIG_BT_HCI_UART_NO
 #include "driver/uart.h"
 #endif
 #endif
+
 #include "endian.h"
 
 #include <protocomm.h>
@@ -141,7 +144,7 @@ static uint8_t get_capabilities(void)
 	cap |= ESP_CHECKSUM_ENABLED;
 #endif
 
-#ifdef CONFIG_BT_ENABLED
+#if defined(CONFIG_BT_ENABLED) && defined(CONFIG_SOC_BT_SUPPORTED)
 	cap |= get_bluetooth_capabilities();
 #endif
 	ESP_LOGI(TAG, "capabilities: 0x%x", cap);
@@ -958,7 +961,7 @@ esp_err_t esp_hosted_coprocessor_init(void)
 
 	host_power_save_init(host_wakeup_callback);
 
-#ifdef CONFIG_BT_ENABLED
+#if defined(CONFIG_BT_ENABLED) && defined(CONFIG_SOC_BT_SUPPORTED)
 	initialise_bluetooth();
 #endif
 

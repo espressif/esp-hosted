@@ -57,12 +57,46 @@ Every packet would be passed through the ESP-Hosted Wi-Fi interface and not the 
 
 ## 2. Load ESP-Hosted Solution
 ### 2.1 Host Software
-* Execute following commands in root directory of cloned ESP-Hosted repository on Raspberry-Pi
+* Execute following commands in root directory of cloned ESP-Hosted repository on Raspberry-Pi.
+
 ```sh
 $ cd esp_hosted_fg/host/linux/host_control/
-$ ./rpi_init.sh spi
+$ ./rpi_init.sh wifi=spi bt=spi spi_mode=3
 ```
+
 * This script compiles and loads host driver on Raspberry-Pi. It also creates virtual serial interface `/dev/esps0` which is used as a control interface for Wi-Fi on ESP peripheral
+
+Execute `./rpi_init.sh --help` to see the list of options.
+
+> [!NOTE]
+> For SPI+UART, use `bt=uart_2pins` or `bt=uart_4pins` for 2/4 pin UART. For wifi only support, exclude the `bt` parameter.
+
+> [!NOTE]
+> For ESP32 peripheral, use `spi_mode=2`. For other ESP SOCs, use `spi_mode=3`.
+
+#### 2.1.1 Manually loading and unloading the Kernel Module
+
+Once built, the kernel module `esp32_spi.ko` can be found in `esp_hosted_fg/host/linux/host_driver/esp32`. You can manualy load/unload the module as needed.
+
+To add the module:
+
+`$ sudo insmod esp_hosted_fg/host/linux/host_driver/esp32/esp32_spi.ko resetpin=518 clockspeed=10 spi_bus=0 spi_cs=0 spi_mode=3 spi_handshake=517 spi_dataready=524`
+
+##### Module Parameters
+
+| Parameter | Meaning |
+| --- | --- |
+| `resetpin` | GPIO to reset the ESP peripheral |
+| `clockspeed` | SPI CLK frequency (in MHz) |
+| `spi_bus` | SPI bus to use |
+| `spi_cs` | SPI CS/CEx to use |
+| `spi_mode` | SPI mode to use (2 for ESP32, 3 for all other SOCS) |
+| `spi_handshake` | GPIO for Handshake signal |
+| `spi_dataready` | GPIO of Data Ready signal |
+
+To remove the module:
+
+`$ sudo rmmod esp32_spi`
 
 ### 2.2 ESP Peripheral Firmware
 One can load pre-built release binaries on ESP peripheral or compile those from source. Below subsection explains both these methods.
@@ -105,7 +139,7 @@ $ rm -rf sdkconfig build
 $ idf.py set-target <esp_chipset>
 ```
 
-For SPI, <esp_chipset> could be onr of `esp32`, `esp32s2`, `esp32s3`, `esp32c2`, `esp32c3`, `esp32c6`
+For SPI, <esp_chipset> could be one of `esp32`, `esp32s2`, `esp32s3`, `esp32c2`, `esp32c3`, `esp32c6`, `esp32c5`
 * Execute following command to configure the project
 ```
 $ idf.py menuconfig
@@ -122,6 +156,18 @@ $ idf.py -p <serial_port> build flash
 ```
 $ idf.py -p <serial_port> monitor
 ```
+
+> [!NOTE}
+> For `esp32c2`, the standard configuration (which runs Wi-Fi and Bluetooth) disables the [Network Split Feature](Network_Split.md) due to lack of memory. There is a customized configuration for `esp32c2`, for wifi-only operation with Network Split enabled. This configuration disables Bluetooth to save memory.
+>
+> To use this configuration, execute
+>
+> ```sh
+> rm sdkconfig
+> idf.py -D SDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.defaults.esp32c2.wifionly" menuconfig
+> ```
+>
+> Save the configuration. You can now run `idf.py` with the `build`, `flash` and `monitor` options as per normal.
 
 ## 3. Checking the Setup
 
