@@ -455,10 +455,10 @@ int esp_cli_register_cmds()
 #ifdef CONFIG_ESP_HOSTED_COPROCESSOR
 #ifdef CONFIG_SLAVE_MANAGES_WIFI
 	app_register_all_wifi_commands();
-#endif
 	app_register_iperf_commands();
 	app_register_ping_commands();
 	app_register_iperf_hook_func(iperf_hook_show_wifi_stats);
+#endif
 #endif
 	return 0;
 }

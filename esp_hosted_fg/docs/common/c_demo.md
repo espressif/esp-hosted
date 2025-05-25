@@ -248,6 +248,7 @@ $ sudo ./hosted_daemon.out -f
 - Shows how to handle custom responses and events
 
 > [!NOTE]
+>
 > 1. Provides APIs for sending packed data between host and ESP device.
 > 2. User is responsible for serializing data before sending and deserializing after receiving.
 
@@ -288,10 +289,12 @@ It uses underlying control path API for reliable communication.
 - Host
   - Add your custom `requests` or `events` in [app_custom_rpc.c](../../host/linux/host_control/c_support/app_custom_rpc.c) and [app_custom_rpc.h](../../host/linux/host_control/c_support/app_custom_rpc.h).
   - Optionally, add your own Request and Message ID handling functions similar to the existing demo functions
-  > [!CAUTION]
+
+  > [!CAUTION] Custom RPC Request - Response
   >
   > 1. The handlers in these requests should be as concise as possible.
   > 2. Although it is not interrupt context, try not to have blocking calls in the response handler, as this function is called as callback.
+
 - Slave
   - In [slave_control.c](../../esp/esp_driver/network_adapter/main/slave_control.c), the default response handler for underlying RPC request handler is called with:
   ```c
@@ -302,9 +305,13 @@ It uses underlying control path API for reliable communication.
   register_custom_rpc_unserialised_req_handler(handle_custom_unserialised_rpc_request);
   ```
   - For your own message IDs, add cases in `handle_custom_unserialised_rpc_request()`
-  > [!CAUTION]
+
+  > [!CAUTION] Custom RPC events
   >
   > 1. The handlers in these requests should be as concise as possible.
   > 2. Although it is not interrupt context, try not to have blocking calls in the response handler, as this function is called as callback.
+  > 3. Refrain sending any synchronous RPC request as this would make it dead block (RPC Request `without` a response function callback registered - > `Sync RPC Req`)
+  > 4. Sending any 'asynchronous' RPC request is supported (RPC Request `with` a response function callback registered - > `Async RPC Req`)
+
   - You can also trigger events instead of immediate responses as demonstrated in `CUSTOM_RPC_REQ_ID__ECHO_BACK_AS_EVENT`
   - To add your own event, you can re-use `create_and_send_custom_rpc_unserialised_event()`

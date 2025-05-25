@@ -1592,7 +1592,8 @@ int ctrl_app_send_req(ctrl_cmd_t *app_req)
 			wifi_power_save_t * p = &app_req->u.wifi_ps;
 			CTRL_ALLOC_ASSIGN(CtrlMsgReqSetMode, req_set_power_save_mode);
 
-			if ((p->ps_mode < WIFI_PS_MIN_MODEM) ||
+			if ((p->ps_mode < WIFI_PS_NONE) ||
+			    (p->ps_mode < WIFI_PS_MIN_MODEM) ||
 			    (p->ps_mode >= WIFI_PS_INVALID)) {
 				command_log("Invalid power save mode\n");
 				failure_status = CTRL_ERR_INCORRECT_ARG;

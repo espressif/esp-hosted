@@ -34,24 +34,6 @@
 #include <time.h>
 
 
-#define STA_INTERFACE     "ethsta0"
-#define AP_INTERFACE      "ethap0"
-#define MAC_ADDR_LENGTH   18
-
-/* Network state structure */
-typedef struct {
-	char mac_addr[MAC_ADDR_LENGTH];
-	char ip_addr[MAC_ADDR_LENGTH];
-	char netmask[MAC_ADDR_LENGTH];
-	char gateway[MAC_ADDR_LENGTH];
-	char dns_addr[MAC_ADDR_LENGTH];
-	char default_route[MAC_ADDR_LENGTH];
-	uint8_t ip_valid;
-	uint8_t dns_valid;
-	uint8_t network_up;
-} network_info_t;
-
-
 int test_get_wifi_mode(void);
 int test_set_wifi_mode(int mode);
 int test_set_wifi_mode_station(void);

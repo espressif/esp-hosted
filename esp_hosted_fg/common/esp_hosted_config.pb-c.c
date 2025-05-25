@@ -7328,20 +7328,22 @@ const ProtobufCEnumDescriptor ctrl__wifi_bw__descriptor =
   ctrl__wifi_bw__value_ranges,
   NULL,NULL,NULL,NULL   /* reserved[1234] */
 };
-static const ProtobufCEnumValue ctrl__wifi_power_save__enum_values_by_number[3] =
+static const ProtobufCEnumValue ctrl__wifi_power_save__enum_values_by_number[4] =
 {
-  { "PS_Invalid", "CTRL__WIFI_POWER_SAVE__PS_Invalid", 0 },
+  { "NO_PS", "CTRL__WIFI_POWER_SAVE__NO_PS", 0 },
   { "MIN_MODEM", "CTRL__WIFI_POWER_SAVE__MIN_MODEM", 1 },
   { "MAX_MODEM", "CTRL__WIFI_POWER_SAVE__MAX_MODEM", 2 },
+  { "PS_Invalid", "CTRL__WIFI_POWER_SAVE__PS_Invalid", 3 },
 };
 static const ProtobufCIntRange ctrl__wifi_power_save__value_ranges[] = {
-{0, 0},{0, 3}
+{0, 0},{0, 4}
 };
-static const ProtobufCEnumValueIndex ctrl__wifi_power_save__enum_values_by_name[3] =
+static const ProtobufCEnumValueIndex ctrl__wifi_power_save__enum_values_by_name[4] =
 {
   { "MAX_MODEM", 2 },
   { "MIN_MODEM", 1 },
-  { "PS_Invalid", 0 },
+  { "NO_PS", 0 },
+  { "PS_Invalid", 3 },
 };
 const ProtobufCEnumDescriptor ctrl__wifi_power_save__descriptor =
 {
@@ -7350,9 +7352,9 @@ const ProtobufCEnumDescriptor ctrl__wifi_power_save__descriptor =
   "Ctrl_WifiPowerSave",
   "CtrlWifiPowerSave",
   "",
-  3,
+  4,
   ctrl__wifi_power_save__enum_values_by_number,
-  3,
+  4,
   ctrl__wifi_power_save__enum_values_by_name,
   1,
   ctrl__wifi_power_save__value_ranges,
