@@ -11,7 +11,7 @@ typedef enum {
 	INVALID_BRIDGE,
 } hosted_l2_bridge;
 
-#ifdef CONFIG_NETWORK_SPLIT_ENABLED
+#if defined(CONFIG_NETWORK_SPLIT_ENABLED) && defined(CONFIG_LWIP_ENABLE)
 #include "esp_hosted_lwip_src_port_hook.h"
 
 hosted_l2_bridge filter_and_route_packet(void *frame_data, uint16_t frame_length);

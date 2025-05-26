@@ -9,7 +9,7 @@
 #include "host_power_save.h"
 #include "lwip_filter.h"
 
-#ifdef CONFIG_NETWORK_SPLIT_ENABLED
+#if defined(CONFIG_NETWORK_SPLIT_ENABLED) && defined(CONFIG_LWIP_ENABLE)
 #include "lwip/opt.h"
 #include "lwip/err.h"
 #include "lwip/sys.h"
