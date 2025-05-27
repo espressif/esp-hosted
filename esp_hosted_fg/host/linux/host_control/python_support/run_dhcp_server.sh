@@ -9,8 +9,8 @@ echo "[run_dhcp_server.sh] Starting DHCP server setup..."
 
 # Check if the script is run as root
 if [ "$EUID" -ne 0 ]; then
-  echo "[run_dhcp_server.sh] This script must be run as root. Exiting."
-  exit 1
+    echo "[run_dhcp_server.sh] This script must be run as root. Exiting."
+    exit 1
 fi
 
 # Install dnsmasq for DHCP server.

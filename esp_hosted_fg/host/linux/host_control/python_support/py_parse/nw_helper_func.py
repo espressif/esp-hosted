@@ -389,14 +389,14 @@ def run_dhcp_on_connected():
     # Kill existing DHCP client
     os.system(f"nohup killall dhclient > /dev/null 2>&1 &")
 
-    print("Starting `dhclient` hook. Check `ifconfig ethsta0` in new terminal for IP")
+    #print("Starting `dhclient` hook. Check `ifconfig ethsta0` in new terminal for IP")
     # Run DHCP
     ret = os.system(f"nohup dhclient -v {STA_INTERFACE} > /dev/null 2>&1 &")
 
     return SUCCESS if ret == 0 else FAILURE
 
 def stop_dhclient_on_disconnected():
-    print("Stopping `dhclient` hook")
+    #print("Stopping `dhclient` hook")
     if not g_stop_dhclient_on_disconnected:
         return SUCCESS
 

@@ -114,3 +114,4 @@ hosted_shell.out: hosted_shell.o $(COMMON_OBJS)
 
 clean:
 	rm -f *.out *.o
+	$(MAKE) -C $(DIR_CTRL_LIB) clean

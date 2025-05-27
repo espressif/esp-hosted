@@ -2,10 +2,10 @@
 
 | Supported Chipsets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-S3 | ESP32-C6 | ESP32-C5 | ESP32-S2 |
 | ------------------ | :---: | :------: | :------: | :------: | :------: | :------: | :------: |
-| 4 line UART        | Y     | N        | Y        | Y        | N        | N        | Y        |
-| 2 line UART        | N     | Y        | N        | N        | Y        | Y        | N        |
+| 4 line UART        | T     | NT        | T        | T        | NT        | NT        | T        |
+| 2 line UART        | NT     | T        | NT        | NT        | T        | T        | NT        |
 
-Y - **Tested**, N - **Not Tested**
+T - **Tested**, NT - **Not Tested**
 
 In this section, ESP chipset provides a way to run Bluetooth/BLE over UART interface.
 Please connect ESP peripheral to Raspberry-Pi with jumper cables (preferably PCB) as mentioned below.
@@ -28,6 +28,12 @@ Raspberry-Pi pinout can be found [here!](https://pinout.xyz/pinout/uart)
 
 #### Four Line UART setup
 
+> [!NOTE]
+>
+> For UART protocol
+> - Host TX is to be connected to slave RX & vice versa.
+> - Host CTS is to be connected to slave RTS & vice versa.
+
 | Raspberry-Pi Pin Function | Raspberry-Pi Pin | ESP32 | ESP32-S3 | ESP32-C3 | ESP32 Pin Function |
 |:-------:|:--------:|:---------:|:--------:|:--------:|:--------:|
 | RX | 10 | IO5 | IO17 | IO5 | TX |
@@ -41,15 +47,21 @@ Sample SPI+UART setup image looks like:
 
 #### Two Line UART setup
 
+> [!NOTE]
+>
+> For UART protocol, Host TX is connected to slave RX & vice versa.
 
 | Raspberry-Pi Pin Function | Raspberry-Pi Pin | ESP32-C2 | ESP32-C5 | ESP32-C6 | ESP Function |
 |:-------:|:--------:|:---------:|:--------:|:--------:|:--------:|
-| TX | 8  | IO5  | IO5  | IO5  | TX |
-| RX | 10 | IO18 | IO23 | IO12 | RX |
+| RX | 10 | IO5  | IO5  | IO5  | TX |
+| TX | 8 | IO1 | IO23 | IO12 | RX |
 
-Note:
-- ESP32-C2 only
-	- Although, `HCI with UART` is supported on `ESP32-C2`, `Wi-Fi + Bluetooth` (together) when used with `SPI+UART` setup, Bluetooth on UART works fine but Wi-Fi on SPI faces low throughput problem. By the time this is rectified, please use 'SPI only' i.e. `HCI over SPI` and `Wi-Fi over SPI` transport combination. In `SPI only` setup, there is no such limitation.
+> [ !CAUTION ]
+> - ESP32-C2 only
+>	- ESP32-C2 has much less IRAM, without PSRAM support.
+>	- With `SPI+UART` mode, i.e. Wi-Fi on SPI & BLE over UART mode, Wi-Fi on SPI faces low throughput problem when uart is loaded.
+>	- With `SPI only` mode, i.e. Wi-Fi & BLE, both, running over SPI, both, Wi-Fi and Bluetooth work smooth.
+>	- Conclusion, For `ESP32-C2`, prefer using `SPI only` mode.
 
 
 ### 1.2 Raspberry-Pi Software Setup

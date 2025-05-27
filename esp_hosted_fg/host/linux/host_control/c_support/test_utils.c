@@ -45,8 +45,17 @@ network_info_t sta_network = {0};
 network_info_t ap_network = {0};
 
 /* Global network status tracking */
-static bool prev_network_down = false;
 static bool interface_down_printed = false;
+static bool interface_up_printed = false;
+static bool connected_printed = false;
+static bool disconnected_printed = false;
+
+#define PRINT_IF(cond, ...) \
+    do { \
+        if (cond) { \
+            printf(__VA_ARGS__); \
+        } \
+    } while (0)
 
 #define WIFI_VENDOR_IE_ELEMENT_ID                         0xDD
 #define OFFSET                                            4
@@ -145,6 +154,10 @@ static int ctrl_app_event_callback(ctrl_cmd_t *app_event) {
 		case CTRL_EVENT_ESP_INIT: {
 			printf("%s App EVENT: ESP INIT\n",
 				get_timestamp(ts, MIN_TIMESTAMP_STR_SIZE));
+			    connected_printed = false;
+				disconnected_printed = false;
+				interface_up_printed = false;
+				interface_down_printed = false;
 			break;
 		} case CTRL_EVENT_HEARTBEAT: {
 			printf("%s App EVENT: Heartbeat event [%d]\n",
@@ -153,13 +166,12 @@ static int ctrl_app_event_callback(ctrl_cmd_t *app_event) {
 			break;
 		} case CTRL_EVENT_STATION_CONNECTED_TO_AP: {
 			event_sta_conn_t *p_e = &app_event->u.e_sta_conn;
-			printf("%s App EVENT: STA-Connected ssid[%s] bssid[%s] channel[%d] auth[%d] aid[%d]\n",
+			PRINT_IF(!connected_printed, "Station interface is up/connected\n");
+			PRINT_IF(!connected_printed, "%s App EVENT: STA-Connected ssid[%s] bssid[%s] channel[%d] auth[%d] aid[%d]\n",
 				get_timestamp(ts, MIN_TIMESTAMP_STR_SIZE), p_e->ssid,
 				p_e->bssid, p_e->channel, p_e->authmode, p_e->aid);
-
-			prev_network_down = false;
-			interface_down_printed = false;
-
+			disconnected_printed = false;
+			connected_printed = true;
 			if (sta_network.mac_addr[0] != '\0') {
 				up_sta_netdev(&sta_network);
 			} else {
@@ -169,13 +181,12 @@ static int ctrl_app_event_callback(ctrl_cmd_t *app_event) {
 			break;
 		} case CTRL_EVENT_STATION_DISCONNECT_FROM_AP: {
 			event_sta_disconn_t *p_e =  &app_event->u.e_sta_disconn;
-			printf("%s App EVENT: STA-Disconnected reason[%d] ssid[%s] bssid[%s] rssi[%d]\n",
+			PRINT_IF(!disconnected_printed, "Station interface is down/disconnected\n");
+			PRINT_IF(!disconnected_printed, "%s App EVENT: STA-Disconnected reason[%d] ssid[%s] bssid[%s] rssi[%d]\n",
 				get_timestamp(ts, MIN_TIMESTAMP_STR_SIZE), p_e->reason, p_e->ssid,
 				p_e->bssid, p_e->rssi);
-
-			prev_network_down = false; /* Reset to allow network down message */
-			interface_down_printed = false;
-
+			disconnected_printed = true;
+			connected_printed = false;
 			down_sta_netdev(&sta_network);
 			break;
 		} case CTRL_EVENT_STATION_CONNECTED_TO_ESP_SOFTAP: {
@@ -595,7 +606,7 @@ fail_resp:
 	return FAILURE;
 }
 
-int test_get_wifi_mode(void)
+int test_async_get_wifi_mode(void)
 {
 	/* implemented Asynchronous */
 	ctrl_cmd_t *req = CTRL_CMD_DEFAULT_REQ();
@@ -607,6 +618,18 @@ int test_get_wifi_mode(void)
 	CLEANUP_CTRL_MSG(req);
 
 	return SUCCESS;
+}
+
+int test_get_wifi_mode(void)
+{
+	/* implemented synchronous */
+	ctrl_cmd_t *req = CTRL_CMD_DEFAULT_REQ();
+	ctrl_cmd_t *resp = NULL;
+
+	resp = wifi_get_mode(req);
+	CLEANUP_CTRL_MSG(req);
+
+	return ctrl_app_resp_callback(resp);
 }
 
 
@@ -726,7 +749,7 @@ int test_softap_mode_get_mac_addr(char *mac_str)
 	return test_get_wifi_mac_addr(WIFI_MODE_AP, mac_str);
 }
 
-int test_station_mode_connect(void)
+int test_async_station_mode_connect(void)
 {
 
 	if (sta_network.mac_addr[0] == '\0') {
@@ -750,10 +773,47 @@ int test_station_mode_connect(void)
 	/* register callback for handling asynch reply */
 	req->ctrl_resp_cb = ctrl_app_resp_callback;
 
+	connected_printed = false;
+    disconnected_printed = false;
+    interface_up_printed = false;
+    interface_down_printed = false;
 	wifi_connect_ap(req);
 
 	CLEANUP_CTRL_MSG(req);
 	return SUCCESS;
+}
+
+int test_station_mode_connect(void)
+{
+	if (sta_network.mac_addr[0] == '\0') {
+		/* sync procedure to get sta mac first */
+		if (test_station_mode_get_mac_addr(sta_network.mac_addr) != SUCCESS) {
+			printf("Failed to get and set 'ethsta0' MAC address\n");
+		}
+	}
+
+	/* implemented synchronous */
+	ctrl_cmd_t *req = CTRL_CMD_DEFAULT_REQ();
+	ctrl_cmd_t *resp = NULL;
+
+	printf("Connect to AP[%s]", STATION_MODE_SSID);
+
+	strcpy((char *)req->u.wifi_ap_config.ssid, STATION_MODE_SSID);
+	strcpy((char *)req->u.wifi_ap_config.pwd, STATION_MODE_PWD);
+	strcpy((char *)req->u.wifi_ap_config.bssid, STATION_MODE_BSSID);
+	req->u.wifi_ap_config.is_wpa3_supported = STATION_MODE_IS_WPA3_SUPPORTED;
+	req->u.wifi_ap_config.listen_interval = STATION_MODE_LISTEN_INTERVAL;
+	req->u.wifi_ap_config.band_mode = STATION_BAND_MODE;
+
+	connected_printed = false;
+	disconnected_printed = false;
+	interface_up_printed = false;
+	interface_down_printed = false;
+
+	resp = wifi_connect_ap(req);
+
+	CLEANUP_CTRL_MSG(req);
+	return ctrl_app_resp_callback(resp);
 }
 
 int test_station_mode_get_info(void)
@@ -785,6 +845,11 @@ int test_station_mode_disconnect(void)
 	/* implemented synchronous */
 	ctrl_cmd_t *req = CTRL_CMD_DEFAULT_REQ();
 	ctrl_cmd_t *resp = NULL;
+
+    connected_printed = false;
+    disconnected_printed = false;
+    interface_up_printed = false;
+    interface_down_printed = false;
 
 	resp = wifi_disconnect_ap(req);
 
@@ -1092,7 +1157,7 @@ static int test_set_country_code_with_domain(bool enabled)
 	return ctrl_app_resp_callback(resp);
 }
 
-int test_set_country_code_enabled()
+int test_set_country_code_with_ieee80211d_on()
 {
 	/* implemented synchronous */
 	return test_set_country_code_with_domain(true);
@@ -1397,6 +1462,12 @@ int test_station_mode_connect_with_params(const char *ssid, const char *pwd, con
 	req->u.wifi_ap_config.is_wpa3_supported = use_wpa3 ? 1 : STATION_MODE_IS_WPA3_SUPPORTED;
 	req->u.wifi_ap_config.listen_interval = listen_interval ? listen_interval : STATION_MODE_LISTEN_INTERVAL;
 	req->u.wifi_ap_config.band_mode = band_mode ? band_mode : STATION_BAND_MODE;
+
+    connected_printed = false;
+    disconnected_printed = false;
+    interface_up_printed = false;
+    interface_down_printed = false;
+
 
 	resp = wifi_connect_ap(req);
 	CLEANUP_CTRL_MSG(req);
@@ -1756,4 +1827,24 @@ int test_custom_rpc_unserialised_request(uint32_t custom_msg_id, const uint8_t *
 	*recv_data_free_func = usr_resp.free_func;
 
 	return SUCCESS;
+}
+
+int test_set_country_code_with_params(const char *code)
+{
+	if (!code || strlen(code) < 2) {
+		printf("Invalid country code\n");
+		return FAILURE;
+	}
+	/* implemented synchronous */
+	ctrl_cmd_t *req = CTRL_CMD_DEFAULT_REQ();
+	ctrl_cmd_t *resp = NULL;
+
+	memset(req->u.country_code.country, 0, COUNTRY_CODE_LEN);
+	strncpy(req->u.country_code.country, code, COUNTRY_CODE_LEN - 1);
+	req->u.country_code.ieee80211d_enabled = false;
+
+	resp = wifi_set_country_code(req);
+
+	CLEANUP_CTRL_MSG(req);
+	return ctrl_app_resp_callback(resp);
 }

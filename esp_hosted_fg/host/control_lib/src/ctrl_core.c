@@ -1692,6 +1692,10 @@ int deinit_hosted_control_lib_internal(void)
 {
 	int ret = SUCCESS;
 
+	if (is_ctrl_lib_state(CTRL_LIB_STATE_INACTIVE)) {
+		return SUCCESS;
+	}
+
 	set_ctrl_lib_state(CTRL_LIB_STATE_INACTIVE);
 
 	if (ctrl_msg_Q) {
