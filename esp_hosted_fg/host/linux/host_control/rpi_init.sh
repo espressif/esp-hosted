@@ -528,3 +528,6 @@ insert_module
 
 
 log "--- finished ---"
+log ""
+log "Please proceed to choose desired 'C' or 'Python' demo app"
+log "Refer for detailed setup: https://github.com/espressif/esp-hosted/blob/master/esp_hosted_fg/docs/Linux_based_host/Getting_started.md"

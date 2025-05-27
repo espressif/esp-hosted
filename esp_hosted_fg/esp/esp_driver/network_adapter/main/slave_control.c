@@ -145,9 +145,7 @@ void vTimerCallback( TimerHandle_t xTimer )
 
 static void send_wifi_event_data_to_host(int event, void *event_data, int event_size)
 {
-#ifndef CONFIG_SLAVE_MANAGES_WIFI
-		send_event_data_to_host(event, event_data, event_size);
-#endif
+	send_event_data_to_host(event, event_data, event_size);
 }
 
 static bool wifi_is_provisioned(wifi_config_t *wifi_cfg)
@@ -407,15 +405,13 @@ static void station_event_handler(void *arg, esp_event_base_t event_base,
 		station_got_ip = 0;
 	#endif
 
-	#ifndef CONFIG_SLAVE_MANAGES_WIFI
-		wifi_event_sta_disconnected_t * disconnected_event =
-			(wifi_event_sta_disconnected_t *) event_data;
+	wifi_event_sta_disconnected_t * disconnected_event =
+		(wifi_event_sta_disconnected_t *) event_data;
 
-		send_wifi_event_data_to_host(CTRL_MSG_ID__Event_StationDisconnectFromAP,
-				disconnected_event, sizeof(wifi_event_sta_disconnected_t));
-		ESP_LOGI(TAG, "Station disconnected, reason[%u]",
-				disconnected_event->reason);
-	#endif
+	send_wifi_event_data_to_host(CTRL_MSG_ID__Event_StationDisconnectFromAP,
+			disconnected_event, sizeof(wifi_event_sta_disconnected_t));
+	ESP_LOGI(TAG, "Station disconnected, reason[%u]",
+			disconnected_event->reason);
 
 #ifdef CONFIG_NETWORK_SPLIT_ENABLED
 		send_dhcp_dns_info_to_host(0, 0);
@@ -464,13 +460,12 @@ static void station_event_handler(void *arg, esp_event_base_t event_base,
 		}
 		sta_connect_retry = 0;
 		prev_wifi_config_valid = true;
-		#ifndef CONFIG_SLAVE_MANAGES_WIFI
-			/* Event should not be triggered if event handler is
-			 * called as part of host triggered procedure like sta_disconnect etc
-			 **/
-			send_wifi_event_data_to_host(CTRL_MSG_ID__Event_StationConnectedToAP,
-					connected_event, sizeof(wifi_event_sta_connected_t));
-		#endif
+
+		/* Event should not be triggered if event handler is
+		 * called as part of host triggered procedure like sta_disconnect etc
+		 **/
+		send_wifi_event_data_to_host(CTRL_MSG_ID__Event_StationConnectedToAP,
+				connected_event, sizeof(wifi_event_sta_connected_t));
 
 		memcpy(&lkg_sta_connected_event, connected_event, sizeof(wifi_event_sta_connected_t));
 

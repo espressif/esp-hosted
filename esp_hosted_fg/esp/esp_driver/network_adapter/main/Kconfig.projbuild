@@ -638,7 +638,7 @@ menu "Example Configuration"
 
 	choice "Wi-Fi control"
 		prompt "Wi-Fi control"
-		default BOTH_MANAGES_WIFI
+		default SLAVE_MANAGES_WIFI
 
 		config SLAVE_MANAGES_WIFI
 			bool "Slave manages Wi-Fi"

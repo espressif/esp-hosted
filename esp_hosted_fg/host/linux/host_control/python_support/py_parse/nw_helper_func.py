@@ -69,10 +69,10 @@ os_softap_static_ip = "192.168.4.5"
 os_softap_netmask = "255.255.255.0"
 os_softap_gateway = "192.168.4.1"
 
-run_dhcp_on_station_connected = True
-stop_dhclient_on_disconnected = True
-run_dhcp_server_after_softap_up = True
-stop_dhcp_server_after_softap_down = True
+g_run_dhcp_on_station_connected = True
+g_stop_dhclient_on_disconnected = True
+g_run_dhcp_server_after_softap_up = True
+g_stop_dhcp_server_after_softap_down = True
 
 # HCI commands
 down_hci_instance_cmd = "sudo hciconfig | grep  'Bus: SDIO\\| Bus: UART\\| Bus: SPI' | awk -F: '{print $1}' | xargs -I{} sudo hciconfig {} down"
@@ -409,7 +409,7 @@ def down_softap_netdev():
 
 def run_dhcp_on_connected():
 
-    if not run_dhcp_on_station_connected:
+    if not g_run_dhcp_on_station_connected:
         print("Not running DHCP on connected, as requested in nw_helper_func.py")
         return SUCCESS
 
@@ -421,31 +421,30 @@ def run_dhcp_on_connected():
         print("Network is not up" + g_sta_network_info.network_up)
         return FAILURE
 
-    if not g_sta_network_info.ip_valid:
-        print("IP is not valid" + g_sta_network_info.ip_addr)
-        return FAILURE
-
     if not g_sta_network_info.mac_addr:
         print("MAC address is not valid" + g_sta_network_info.mac_addr)
         return FAILURE
 
     # Kill existing DHCP client
-    os.system(f"killall dhclient")
+    os.system(f"nohup killall dhclient > /dev/null 2>&1 &")
 
+    print("Starting `dhclient` hook. Check `ifconfig ethsta0` in new terminal for IP")
     # Run DHCP
-    ret = os.system(f"dhclient -v {STA_INTERFACE}")
+    ret = os.system(f"nohup dhclient -v {STA_INTERFACE} > /dev/null 2>&1 &")
+
     return SUCCESS if ret == 0 else FAILURE
 
 def stop_dhclient_on_disconnected():
-    if not stop_dhclient_on_disconnected:
+    print("Stopping `dhclient` hook")
+    if not g_stop_dhclient_on_disconnected:
         return SUCCESS
 
-    os.system(f"killall dhclient")
+    os.system(f"nohup killall dhclient > /dev/null 2>&1 &")
     return SUCCESS
 
 
 def run_dhcp_server():
-    if not run_dhcp_server_after_softap_up:
+    if not g_run_dhcp_server_after_softap_up:
         print("Not running DHCP server, as requested in nw_helper_func.py")
         return SUCCESS
 
@@ -465,7 +464,7 @@ def run_dhcp_server():
     return SUCCESS
 
 def stop_dhcp_server():
-    if not stop_dhcp_server_after_softap_down:
+    if not g_stop_dhcp_server_after_softap_down:
         print("Not stopping DHCP server, as requested in nw_helper_func.py")
         return SUCCESS
 

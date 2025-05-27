@@ -19,6 +19,7 @@ import re
 import subprocess
 #from ctypes import byref
 from py_parse import nw_helper_func
+import traceback
 os_ifdown_softap_cmd = "sudo ifconfig ethap0 down"
 
 heartbeat_started = False
@@ -231,19 +232,25 @@ def process_stop_softap():
 
 
 def process_set_power_save(mode):
-	if mode == "none":
-		test_sync_set_wifi_power_save_mode_none()
-	elif mode =="max":
-		test_sync_set_wifi_power_save_mode_max()
-	elif mode =="min":
-		test_sync_set_wifi_power_save_mode_min()
-	else:
-		return "Unsupported power save mode " + mode
+	try:
+		if mode == "none":
+			test_sync_set_wifi_power_save_mode_none()
+		elif mode =="max":
+			test_sync_set_wifi_power_save_mode_max()
+		elif mode =="min":
+			test_sync_set_wifi_power_save_mode_min()
+		else:
+			return "Unsupported power save mode " + mode
+	except:
+		traceback.print_exc()
 	return ""
 
 
 def process_get_power_save():
-	test_sync_get_wifi_power_save_mode()
+	try:
+		test_sync_get_wifi_power_save_mode()
+	except:
+		traceback.print_exc()
 	return ""
 
 
