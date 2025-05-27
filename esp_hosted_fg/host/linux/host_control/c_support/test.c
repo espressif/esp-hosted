@@ -28,6 +28,13 @@
 #include "app_custom_rpc.h"
 
 #define DEMO_SLEEP_DURATION_SEC 50
+
+ /* Heartbeat demo needs to wait for events
+  * For simplicity, we disable heartbeat demo
+  * Anyway fullfledged cli demo is already available in hosted_shell.c
+  */
+#define ENABLE_HEARTBEAT 0
+
 #define EXEC_IF_CMD_EQUALS(cmd,func) \
 	if (0 == strncasecmp(cmd, in_cmd, sizeof(cmd))) { \
 		func; \
@@ -88,7 +95,7 @@ static int parse_cli_cmd(char *in_cmd, char *args[])
 	EXEC_IF_CMD_EQUALS(GET_FW_VERSION, test_print_fw_version());
 	EXEC_IF_CMD_EQUALS(OTA, test_ota(args[0]));
 	EXEC_IF_CMD_EQUALS(SET_COUNTRY_CODE, test_set_country_code());
-	EXEC_IF_CMD_EQUALS(SET_COUNTRY_CODE_ENABLED, test_set_country_code_enabled());
+	EXEC_IF_CMD_EQUALS(SET_COUNTRY_CODE_ENABLED, test_set_country_code_with_ieee80211d_on());
 	EXEC_IF_CMD_EQUALS(GET_COUNTRY_CODE, test_get_country_code());
 	EXEC_IF_CMD_EQUALS(CUSTOM_RPC_DEMO1, demo1_custom_rpc_unserialised_request_only_ack());
 	EXEC_IF_CMD_EQUALS(CUSTOM_RPC_DEMO2, demo2_custom_rpc_unserialised_request_and_slave_echo_back_as_response());
@@ -113,17 +120,20 @@ static int init_app(void)
 
 	register_event_callbacks();
 
+	#if ENABLE_HEARTBEAT
 	test_config_heartbeat();
+	#endif
 
 	return 0;
 }
 
 static void cleanup_app(void)
 {
-	// TODO properly disable heartbeat
+	#if ENABLE_HEARTBEAT
 	test_disable_heartbeat_async();
-	// wait for async to complete
+	/* wait for async to complete */
 	sleep(1);
+	#endif
 	unregister_event_callbacks();
 
 	control_path_platform_deinit();
@@ -175,10 +185,13 @@ int main(int argc, char *argv[])
 
 	cli_cmd = argv[1];
 	if (SUCCESS == parse_cli_cmd(cli_cmd, &argv[2])) {
+
+#if ENABLE_HEARTBEAT
 		sleep(2);
 		printf("\n\n\nRequested operation complete\n");
 		printf("Sleeping for some time just to showcase heartbeat\n");
 		sleep(DEMO_SLEEP_DURATION_SEC);
+#endif
 	}
 
 	cleanup_app();

@@ -35,6 +35,7 @@
 
 
 int test_get_wifi_mode(void);
+int test_async_get_wifi_mode(void);
 int test_set_wifi_mode(int mode);
 int test_set_wifi_mode_station(void);
 int test_set_wifi_mode_softap(void);
@@ -47,6 +48,7 @@ int test_station_mode_set_mac_addr_of_esp(char *mac_str);
 int test_softap_mode_set_mac_addr_of_esp(char *mac_str);
 int test_softap_mode_get_mac_addr(char *mac_str);
 int test_station_mode_connect(void);
+int test_async_station_mode_connect(void);
 int test_station_mode_get_info(void);
 int test_get_available_wifi(void);
 int test_station_mode_disconnect(void);
@@ -78,8 +80,9 @@ int test_enable_wifi(void);
 int test_is_network_split_on(void);
 char * test_get_fw_version(char *, uint16_t);
 int test_print_fw_version(void);
-int test_set_country_code_enabled();
+int test_set_country_code_with_ieee80211d_on();
 int test_set_country_code();
+int test_set_country_code_with_params(const char *code);
 int test_get_country_code();
 int test_fetch_ip_addr_from_slave(void);
 int test_set_dhcp_dns_status(char *sta_ip, char *sta_nm, char *sta_gw, char *sta_dns);
