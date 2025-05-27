@@ -89,14 +89,7 @@
     #define BT_RTS_PIN         19
     #define BT_CTS_PIN         23
 
-  #elif defined(CONFIG_IDF_TARGET_ESP32C2)
-
-      #define BT_TX_PIN         5
-      #define BT_RX_PIN         18
-      //#define BT_RTS_PIN        9
-      //#define BT_CTS_PIN        8
-
-  #elif defined(CONFIG_IDF_TARGET_ESP32C6) || defined(CONFIG_IDF_TARGET_ESP32C5)
+  #elif defined(CONFIG_IDF_TARGET_ESP32C2) || defined(CONFIG_IDF_TARGET_ESP32C6) || defined(CONFIG_IDF_TARGET_ESP32C5)
 
       #define BT_TX_PIN         CONFIG_BT_LE_HCI_UART_TX_PIN
       #define BT_RX_PIN         CONFIG_BT_LE_HCI_UART_RX_PIN

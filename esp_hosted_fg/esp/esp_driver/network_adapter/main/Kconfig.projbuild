@@ -480,6 +480,7 @@ menu "Example Configuration"
 	endmenu
 
 	config NETWORK_SPLIT_ENABLED
+		depends on !IDF_TARGET_ESP32C2 && !IDF_TARGET_ESP32C3
 		bool "Allow Network Split using packet port number"
 		default y
 		help
@@ -631,6 +632,7 @@ menu "Example Configuration"
 	endmenu
 
 	config ESP_HOSTED_CLI_ENABLED
+		depends on !IDF_TARGET_ESP32C2 && !IDF_TARGET_ESP32C3
 		bool "Start CLI at slave"
 		default y
 
@@ -738,6 +740,8 @@ menu "Example Configuration"
 
 
 	menu "Example to run"
+		depends on NETWORK_SPLIT_ENABLED
+
 		config ESP_HOSTED_COPROCESSOR_EXAMPLE_MQTT
 			bool "MQTT client example"
 			default y

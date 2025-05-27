@@ -413,9 +413,7 @@ static void init_uart_c2_c6_c5(void)
 {
 	ESP_LOGD(TAG, "Set-up BLE for ESP32-C2/C6/C5");
 
-#if defined(CONFIG_IDF_TARGET_ESP32C2)
-	ESP_LOGI(TAG, "UART Pins: Tx:%u Rx:%u", BT_TX_PIN, BT_RX_PIN);
-#elif defined(CONFIG_IDF_TARGET_ESP32C6) || defined(CONFIG_IDF_TARGET_ESP32C5)
+#if defined(CONFIG_IDF_TARGET_ESP32C2) || defined(CONFIG_IDF_TARGET_ESP32C6) || defined(CONFIG_IDF_TARGET_ESP32C5)
 	//ESP_ERROR_CHECK( uart_set_pin(BLUETOOTH_UART, BT_TX_PIN,
 	//  BT_RX_PIN, BT_RTS_PIN, BT_CTS_PIN) );
 	ESP_LOGI(TAG, "UART Pins: Tx:%u Rx:%u", BT_TX_PIN, BT_RX_PIN);

@@ -11,10 +11,16 @@ set(COMPONENT_SRCS
     "stats.c"
     "mempool_ll.c"
     "host_power_save.c"
-    "mqtt_example.c"
-    "http_req.c"
     "lwip_filter.c"
 )
+
+if(CONFIG_ESP_HOSTED_COPROCESSOR_EXAMPLE_MQTT)
+    list(APPEND COMPONENT_SRCS mqtt_example.c)
+endif()
+
+if(CONFIG_ESP_HOSTED_COPROCESSOR_EXAMPLE_HTTP_CLIENT)
+    list(APPEND COMPONENT_SRCS http_req.c)
+endif()
 
 set(COMPONENT_ADD_INCLUDEDIRS
     "."

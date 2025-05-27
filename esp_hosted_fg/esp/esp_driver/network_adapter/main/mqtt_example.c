@@ -11,6 +11,10 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <string.h>
+#include "sdkconfig.h"
+
+#ifdef CONFIG_ESP_HOSTED_COPROCESSOR_EXAMPLE_MQTT
+
 #include "esp_wifi.h"
 #include "esp_system.h"
 #include "nvs_flash.h"
@@ -23,15 +27,15 @@
 #include "freertos/semphr.h"
 #include "freertos/queue.h"
 
-#include "lwip/sockets.h"
-#include "lwip/dns.h"
-#include "lwip/netdb.h"
 
 #include "esp_log.h"
 #include "mqtt_client.h"
 #include "host_power_save.h"
 
-#ifdef CONFIG_ESP_HOSTED_COPROCESSOR_EXAMPLE_MQTT
+#include "lwip/sockets.h"
+#include "lwip/dns.h"
+#include "lwip/netdb.h"
+
 static const char *TAG = "mqtt_example";
 static esp_mqtt_client_handle_t client;
 static uint8_t client_started;

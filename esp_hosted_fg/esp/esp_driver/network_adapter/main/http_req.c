@@ -7,6 +7,9 @@
    CONDITIONS OF ANY KIND, either express or implied.
 */
 #include <string.h>
+#include "sdkconfig.h"
+
+#ifdef CONFIG_ESP_HOSTED_COPROCESSOR_EXAMPLE_HTTP_CLIENT
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "esp_system.h"
@@ -17,9 +20,9 @@
 #include "lwip/sys.h"
 #include "lwip/netdb.h"
 #include "lwip/dns.h"
-#include "sdkconfig.h"
 
-#ifdef ESP_HOSTED_COPROCESSOR_EXAMPLE_HTTP_CLIENT
+
+
 extern volatile uint8_t station_connected;
 /* Constants that aren't configurable in menuconfig */
 #define WEB_SERVER CONFIG_HTTP_WEBSERVER
