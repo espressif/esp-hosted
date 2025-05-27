@@ -181,18 +181,21 @@ def ctrl_app_event_callback(app_event):
 			g_network_down_printed = False
 
 		if not is_network_split_on():
-			print(" Network " + STA_INTERFACE + " is up. starting dhclient")
+			print("Network " + STA_INTERFACE + " is up -> Start dhcp client -> Check `ifconfig ethsta0` in new terminal")
 			nw_helper_func.run_dhcp_on_connected()
 
 
 	elif app_event.contents.msg_id == CTRL_MSGID.CTRL_EVENT_STATION_DISCONNECT_FROM_AP.value:
 		ssid = app_event.contents.control_data.e_sta_disconn.ssid
+
+		if not is_network_split_on():
+			if not g_network_down_printed:
+				print("Network " + STA_INTERFACE + " down -> Stop dhcp client")
+			nw_helper_func.stop_dhclient_on_disconnected()
+
 		if not g_network_down_printed:
 			print(" Station disconnected from AP: ssid[" + get_str(ssid) + "]")
 			g_network_down_printed = True
-
-		if not is_network_split_on():
-			nw_helper_func.stop_dhclient_on_disconnected()
 
 		nw_helper_func.down_sta_netdev();
 

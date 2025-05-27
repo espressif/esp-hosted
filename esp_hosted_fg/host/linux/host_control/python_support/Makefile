@@ -49,3 +49,4 @@ $(TARGET): $(OBJS)
 
 clean:
 	rm -f $(TARGET) *.o
+	$(MAKE) -C $(DIR_CTRL_LIB) clean

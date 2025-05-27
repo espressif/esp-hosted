@@ -22,10 +22,11 @@
 #include "nw_helper_func.h"
 #include "esp_hosted_custom_rpc.h"
 #include "app_custom_rpc.h"
+#include <stdint.h>
 
 
 #define MAC_ADDR_LENGTH 18
-#define NETWORK_CHECK_INTERVAL_MS 1000
+#define NETWORK_CHECK_INTERVAL_MS 100
 #define RPC_RETRY_INTERVAL_MS     1000
 
 #define POLL_FOR_IP_RESTORE  (0)
@@ -334,6 +335,10 @@ static const cmd_arg_t custom_rpc_request_args[] = {
 	{"--demo", "Demo number (1, 2, or 3)", ARG_TYPE_INT, true, NULL}
 };
 
+static const cmd_arg_t set_country_code_args[] = {
+	{"--code", "Country code (e.g. US, IN, CN)", ARG_TYPE_STRING, true, NULL}
+};
+
 /* Forward declarations for command handlers */
 static int handle_exit(int argc, char **argv);
 static int handle_help(int argc, char **argv);
@@ -365,6 +370,10 @@ static int handle_subscribe_event(int argc, char **argv);
 static int handle_unsubscribe_event(int argc, char **argv);
 static int handle_set_host_port_range(int argc, char **argv);
 static int handle_custom_demo_rpc_request(int argc, char **argv);
+static int handle_set_country_code(int argc, char **argv);
+static int handle_set_country_code_with_ieee80211d_on(int argc, char **argv);
+static int handle_get_country_code(int argc, char **argv);
+
 
 
 /* Command table */
@@ -401,6 +410,9 @@ static const shell_command_t commands[] = {
 	{"exit", "Exit the shell", handle_exit, NULL, 0},
 	{"quit", "Exit the shell", handle_exit, NULL, 0},
 	{"q", "Exit the shell", handle_exit, NULL, 0},
+	{"set_country_code", "Set Wi-Fi country code", handle_set_country_code, set_country_code_args, sizeof(set_country_code_args)/sizeof(cmd_arg_t)},
+	{"set_country_code_with_ieee80211d_on", "Set Wi-Fi country code with ieee80211d enabled", handle_set_country_code_with_ieee80211d_on, NULL, 0},
+	{"get_country_code", "Get Wi-Fi country code", handle_get_country_code, NULL, 0},
 	{NULL, NULL, NULL, NULL, 0}
 };
 
@@ -1203,11 +1215,10 @@ static void stop_rpc_auto_ip_restore(void) {
 	exit_thread_auto_ip_restore = 1;
 	rpc_state = RPC_STATE_INACTIVE;
 
-	printf("Cleaning up RPC resources...\n");
+	//printf("Cleaning up RPC resources...\n");
 
 	// Give app thread a chance to notice exit flag
-	printf("Waiting for background threads to terminate...\n");
-	sleep(1);  // Brief pause
+	//sleep(1);  // Brief pause (removed for faster exit)
 
 	// Join the app thread if it exists
 	if (auto_ip_restore_thread) {
@@ -1228,7 +1239,7 @@ static void stop_rpc_auto_ip_restore(void) {
 	}
 
 	cleanup_in_progress = 0;
-	printf("RPC cleanup complete\n");
+	//printf("Cleanup complete\n");
 }
 
 /* Shell main loop */
@@ -1380,7 +1391,7 @@ int main(int argc, char *argv[]) {
 	ret = shell_run(&ctx);
 
 	/* The shell has exited - initiate cleanup */
-	printf("Shell exited, initiating cleanup\n");
+	//printf("Shell exited, initiating cleanup\n");
 	exit_thread_auto_ip_restore = 1;
 
 	/* Clean up resources */
@@ -1689,4 +1700,29 @@ static int handle_custom_demo_rpc_request(int argc, char **argv) {
 			printf("Invalid demo number. Use 1, 2, or 3.\n");
 			return FAILURE;
 	}
+}
+
+static int handle_set_country_code(int argc, char **argv) {
+	CHECK_RPC_ACTIVE();
+	if (!parse_arguments(argc, argv, set_country_code_args, sizeof(set_country_code_args)/sizeof(cmd_arg_t))) {
+		return FAILURE;
+	}
+	const char *code = get_arg_value(argc, argv, set_country_code_args,
+		sizeof(set_country_code_args)/sizeof(cmd_arg_t),
+		"--code");
+	if (!code || strlen(code) < 2) {
+		printf("Invalid or missing country code\n");
+		return FAILURE;
+	}
+	return test_set_country_code_with_params(code);
+}
+
+static int handle_set_country_code_with_ieee80211d_on(int argc, char **argv) {
+	CHECK_RPC_ACTIVE();
+	return test_set_country_code_with_ieee80211d_on();
+}
+
+static int handle_get_country_code(int argc, char **argv) {
+	CHECK_RPC_ACTIVE();
+	return test_get_country_code();
 }

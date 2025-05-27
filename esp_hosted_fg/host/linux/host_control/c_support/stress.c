@@ -169,7 +169,7 @@ int main(int argc, char *argv[])
 				test_set_country_code();
 			} else if (0 == strncasecmp(SET_COUNTRY_CODE_ENABLED, argv[i],
 						sizeof(SET_COUNTRY_CODE_ENABLED))) {
-				test_set_country_code_enabled();
+				test_set_country_code_with_ieee80211d_on();
 			} else if (0 == strncasecmp(GET_COUNTRY_CODE, argv[i],
 						sizeof(GET_COUNTRY_CODE))) {
 				test_get_country_code();

@@ -11,8 +11,8 @@ CROSS_COMPILE :=
 CFLAGS = -Wall -g
 LINKER = -lpthread -lrt
 
-# If your Linux is very constraint environment, comment below line.
-CFLAGS_SANITIZE = -fsanitize=undefined -fsanitize-address-use-after-scope -fsanitize-undefined-trap-on-error -fstack-protector-all -fstack-check -fsanitize=address -fsanitize=pointer-compare -fno-omit-frame-pointer -static-libasan
+# Enable only when memory check (like valgrind) need to perform. This slows down the application and cleanup
+#CFLAGS_SANITIZE = -fsanitize=undefined -fsanitize-address-use-after-scope -fsanitize-undefined-trap-on-error -fstack-protector-all -fstack-check -fsanitize=address -fsanitize=pointer-compare -fno-omit-frame-pointer -static-libasan
 
 # Root directory
 DIR_ROOT = $(CURDIR)/../../../../
@@ -96,3 +96,4 @@ hosted_shell.out: hosted_shell.o $(COMMON_OBJS)
 
 clean:
 	rm -f *.out *.o
+	$(MAKE) -C $(DIR_CTRL_LIB) clean
