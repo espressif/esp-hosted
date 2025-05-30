@@ -5,8 +5,8 @@ This section explains the SDIO communication protocol between a host and ESP per
 
 ### 1.1 SDIO transport layer
 
-| Supported Targets | ESP32 | ESP32-C6 |
-| ----------------- | ----- | -------- |
+| Supported Targets | ESP32 | ESP32-C6 | ESP32-C5 |
+| ----------------- | ----- | -------- | -------- |
 
 ESP peripheral advertises 2 SDIO functions. ESP-Hosted solution is implemented on function 1. Though function 2 is advertised, it is not in use.
 
@@ -60,4 +60,3 @@ bit 4: BT mode - BR/EDR only mode
 
 #### 1.1.4 Deinit peripheral device
 Host sets bit 1 of 0x3FF5508C interrupt register. This tells ESP peripheral to stop the data path.
-
