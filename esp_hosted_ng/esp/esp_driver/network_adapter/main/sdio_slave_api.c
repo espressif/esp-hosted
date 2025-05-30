@@ -407,7 +407,7 @@ static int sdio_read(interface_handle_t *if_handle, interface_buffer_handle_t *b
     rx_checksum = le16toh(header->checksum);
     header->checksum = 0;
 
-    if (len + offset > RX_BUF_SIZE) {
+    if (len > RX_BUF_SIZE) {
         return -1;
     }
 
