@@ -314,10 +314,10 @@ directory
 ### 2.3 SDIO or SPI and Uart configuration
 **Wi-Fi over SDIO/SPI and Bluetooth over UART**
 
-| Supported Chipsets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-S3 | ESP32-C6 |
-| ------------------ | ----- | -------- | -------- | -------- | -------- |
-| 4 line UART supported | yes | no | yes | yes | no |
-| 2 line UART supported | yes | yes | yes | yes | yes |
+| Supported Chipsets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-S3 | ESP32-C6 | ESP32-C5 |
+| ------------------ | ----- | -------- | -------- | -------- | -------- | -------- |
+| 4 line UART supported | yes | no | yes | yes | no | no |
+| 2 line UART supported | yes | yes | yes | yes | yes | yes |
 * In this section, ESP chipset provides a way to run Bluetooth/BLE over UART interface.
 
 * This section is divided in two parts 
@@ -339,10 +339,10 @@ directory
         | RTS | 11 | IO23 | IO20 | IO8 | CTS |
 
     * Two line setup
-        | Raspberry-Pi Pin Function | Raspberry-Pi Pin | ESP32-C2 | ESP32-C6 | ESP Function |
-        |:-------:|:--------:|:---------:|:---------:|:--------:|
-        | RX | 10 | IO5 | IO5 | TX |
-        | TX | 8 | IO18 | IO12 | RX |
+        | Raspberry-Pi Pin Function | Raspberry-Pi Pin | ESP32-C2 | ESP32-C6 | ESP32-C5 | ESP Function |
+        |:-------:|:--------:|:---------:|:---------:|:---------:|:--------:|
+        | RX | 10 | IO5 | IO5 | IO5 | TX |
+        | TX | 8 | IO18 | IO12 | IO13 | RX |
 
     * Raspberry-Pi pinout can be found [here!](https://pinout.xyz/pinout/uart)
     * In case you wish to reduce number of hardware lines, you may consider SPI_only or SDIO_only transports, where Wi-Fi and Bluetooth traffic is multiplexed on same bus and no need of extra UART pins. UART pin numbers are configurable. If you want to switch from 4 line UART mode to 2 lines, hardware flow control need to be turned off.
