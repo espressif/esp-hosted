@@ -72,6 +72,8 @@ static const struct sdio_device_id esp_devices[] = {
 	{ SDIO_DEVICE(ESP_VENDOR_ID_1, ESP_DEVICE_ID_ESP32_2) },
 	{ SDIO_DEVICE(ESP_VENDOR_ID_2, ESP_DEVICE_ID_ESP32C6_1) },
 	{ SDIO_DEVICE(ESP_VENDOR_ID_2, ESP_DEVICE_ID_ESP32C6_2) },
+	{ SDIO_DEVICE(ESP_VENDOR_ID_3, ESP_DEVICE_ID_ESP32C5_1) },
+	{ SDIO_DEVICE(ESP_VENDOR_ID_3, ESP_DEVICE_ID_ESP32C5_2) },
 	{}
 };
 
@@ -846,6 +848,7 @@ int process_init_event(u8 *evt_buf, u8 len)
 			esp_info("ESP chipset detected [%s]\n",
 				*(pos+2) == ESP_FIRMWARE_CHIP_ESP32 ? "esp32" :
 				*(pos+2) == ESP_FIRMWARE_CHIP_ESP32C6 ? "esp32-c6" :
+				*(pos+2) == ESP_FIRMWARE_CHIP_ESP32C5 ? "esp32-c5" :
 				"unknown/unsupported ESP chiset");
 		} else if (*pos == ESP_PRIV_FW_DATA) {
 			fw_p = (struct fw_version *)(pos + 2);

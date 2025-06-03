@@ -3,21 +3,25 @@ menu "Example Configuration"
 		bool
 		default y
 
+	# set this to y to use the ESP32-C5 RaspPi Mating Board in SPI mode
+	config ESP_ESP32C5_SPI_RASPI_MATING_BOARD
+		bool
+		default n
+
+	comment "SPI Configuration set for ESP32-C5 RaspPi Mating Board"
+		depends on ESP_ESP32C5_SPI_RASPI_MATING_BOARD
+
 	choice ESP_HOST_INTERFACE
 		bool "Transport layer"
-		default ESP_SDIO_HOST_INTERFACE if IDF_TARGET_ESP32
-		default ESP_SPI_HOST_INTERFACE  if IDF_TARGET_ESP32S2
-		default ESP_SPI_HOST_INTERFACE  if IDF_TARGET_ESP32S3
-		default ESP_SPI_HOST_INTERFACE  if IDF_TARGET_ESP32C2
-		default ESP_SPI_HOST_INTERFACE  if IDF_TARGET_ESP32C3
-		default ESP_SPI_HOST_INTERFACE  if IDF_TARGET_ESP32C5
-		default ESP_SDIO_HOST_INTERFACE if IDF_TARGET_ESP32C6
+		default ESP_SPI_HOST_INTERFACE if ESP_ESP32C5_SPI_RASPI_MATING_BOARD
+		default ESP_SDIO_HOST_INTERFACE if SOC_SDIO_SLAVE_SUPPORTED
+		default ESP_SPI_HOST_INTERFACE
 		help
 			Bus interface to be used for communication with the host
 
 		config ESP_SDIO_HOST_INTERFACE
 			bool "SDIO interface"
-			depends on IDF_TARGET_ESP32 || IDF_TARGET_ESP32C6
+			depends on SOC_SDIO_SLAVE_SUPPORTED
 			help
 				Enable/Disable SDIO host interface
 
@@ -160,6 +164,7 @@ menu "Example Configuration"
 				int "Slave GPIO pin for Host MOSI"
 				default 13 if IDF_TARGET_ESP32
 				default 11 if IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32S3
+				default 1 if IDF_TARGET_ESP32C5 && ESP_ESP32C5_SPI_RASPI_MATING_BOARD
 				default 7
 				help
 					SPI controller Host MOSI
@@ -169,6 +174,7 @@ menu "Example Configuration"
 				int "Slave GPIO pin for Host MISO"
 				default 12 if IDF_TARGET_ESP32
 				default 13 if IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32S3
+				default 6 if IDF_TARGET_ESP32C5 && ESP_ESP32C5_SPI_RASPI_MATING_BOARD
 				default 2
 				help
 					SPI controller Host MISO
@@ -178,6 +184,7 @@ menu "Example Configuration"
 				int "Slave GPIO pin for Host CLK"
 				default 14 if IDF_TARGET_ESP32
 				default 12 if IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32S3
+				default 27 if IDF_TARGET_ESP32C5 && ESP_ESP32C5_SPI_RASPI_MATING_BOARD
 				default 6
 				help
 					SPI controller Host CLK
@@ -187,6 +194,7 @@ menu "Example Configuration"
 				int "Slave GPIO pin for Host  CS"
 				default 15 if IDF_TARGET_ESP32
 				default 10 if IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32S3
+				default 4 if IDF_TARGET_ESP32C5  && ESP_ESP32C5_SPI_RASPI_MATING_BOARD
 				default 10
 				help
 					SPI controller Host CS
@@ -241,13 +249,15 @@ menu "Example Configuration"
 
 			config ESP_SPI_GPIO_HANDSHAKE
 				int "Slave GPIO pin for handshake"
-				default 3 if IDF_TARGET_ESP32C2 || IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32C5 ||IDF_TARGET_ESP32C6
+				default 25 if IDF_TARGET_ESP32C5 && ESP_ESP32C5_SPI_RASPI_MATING_BOARD
+				default 3 if IDF_TARGET_ESP32C2 || IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32C5 || IDF_TARGET_ESP32C6
 				default 2
 				help
 					Slave GPIO pin to use for handshake with other spi controller
 
 			config ESP_SPI_GPIO_DATA_READY
 				int "Slave GPIO pin for data ready interrupt"
+				default 2 if IDF_TARGET_ESP32C5 && ESP_ESP32C5_SPI_RASPI_MATING_BOARD
 				default 4
 				help
 					Slave GPIO pin for indicating host that SPI slave has data to be read by host
@@ -314,6 +324,7 @@ menu "Example Configuration"
 				int "CMD GPIO number"
 				range 15 15 if IDF_TARGET_ESP32
 				range 18 18 if IDF_TARGET_ESP32C6
+				range 10 10 if IDF_TARGET_ESP32C5
 				help
 					"Value cannot be configured. Displayed for reference."
 
@@ -321,6 +332,7 @@ menu "Example Configuration"
 				int "CLK GPIO number"
 				range 14 14 if IDF_TARGET_ESP32
 				range 19 19 if IDF_TARGET_ESP32C6
+				range 9 9 if IDF_TARGET_ESP32C5
 				help
 					"Value cannot be configured. Displayed for reference."
 
@@ -328,6 +340,7 @@ menu "Example Configuration"
 				int "D0 GPIO number"
 				range 2 2 if IDF_TARGET_ESP32
 				range 20 20 if IDF_TARGET_ESP32C6
+				range 8 8 if IDF_TARGET_ESP32C5
 				help
 					"Value cannot be configured. Displayed for reference."
 
@@ -335,6 +348,7 @@ menu "Example Configuration"
 				int "D1 GPIO number"
 				range 4 4 if IDF_TARGET_ESP32
 				range 21 21 if IDF_TARGET_ESP32C6
+				range 7 7 if IDF_TARGET_ESP32C5
 				help
 					"Value cannot be configured. Displayed for reference."
 
@@ -342,6 +356,7 @@ menu "Example Configuration"
 				int "D2 GPIO number"
 				range 12 12 if IDF_TARGET_ESP32
 				range 22 22 if IDF_TARGET_ESP32C6
+				range 14 14 if IDF_TARGET_ESP32C5
 				help
 					"Value cannot be configured. Displayed for reference."
 
@@ -349,6 +364,7 @@ menu "Example Configuration"
 				int "D3 GPIO number"
 				range 13 13 if IDF_TARGET_ESP32
 				range 23 23 if IDF_TARGET_ESP32C6
+				range 13 13 if IDF_TARGET_ESP32C5
 				help
 					"Value cannot be configured. Displayed for reference."
 		endmenu
