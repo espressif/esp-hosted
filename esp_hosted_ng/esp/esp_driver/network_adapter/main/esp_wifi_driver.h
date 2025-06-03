@@ -310,6 +310,7 @@ void esp_wifi_enable_sae_pk_only_mode_internal(void);
 uint8_t esp_wifi_ap_get_transition_disable_internal(void);
 int esp_wifi_softap_set_obss_overlap(bool overlap);
 void esp_wifi_set_sigma_internal(bool flag);
+void esp_wifi_ap_set_group_mgmt_cipher_internal(wifi_cipher_type_t cipher);
 void esp_wifi_sta_toggle_wpa3_security(bool disable);
 esp_err_t esp_wifi_send_auth_internal(uint8_t ifx, uint8_t *bssid, uint8_t algo, uint8_t seq, uint32_t status);
 esp_err_t esp_wifi_send_assoc_internal(uint8_t ifx, uint8_t *bssid, uint8_t type, uint8_t status);

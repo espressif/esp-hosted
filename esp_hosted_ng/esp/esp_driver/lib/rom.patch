@@ -1,0 +1,52 @@
+diff --git a/components/esp_rom/esp32c2/ld/esp32c2.rom.eco4.ld b/components/esp_rom/esp32c2/ld/esp32c2.rom.eco4.ld
+index d02528a7c..2ff3be643 100644
+--- a/components/esp_rom/esp32c2/ld/esp32c2.rom.eco4.ld
++++ b/components/esp_rom/esp32c2/ld/esp32c2.rom.eco4.ld
+@@ -155,7 +155,7 @@ systimer_hal_set_tick_rate_ops = 0x40002eac;
+ /* Functions */
+ sta_reset_beacon_timeout = 0x40003024;
+ ieee80211_post_hmac_tx = 0x40003028;
+-sta_rx_eapol = 0x4000302c;
++//sta_rx_eapol = 0x4000302c;
+ /* Data (.data, .bss, .rodata) */
+ len_dh_ie_ptr = 0x3fcdfa6c;
+ g_authmode_threshold_failure_ptr = 0x3fcdfa68;
+diff --git a/components/esp_rom/esp32c2/ld/esp32c2.rom.ld b/components/esp_rom/esp32c2/ld/esp32c2.rom.ld
+index 876e8c029..fda19a740 100644
+--- a/components/esp_rom/esp32c2/ld/esp32c2.rom.ld
++++ b/components/esp_rom/esp32c2/ld/esp32c2.rom.ld
+@@ -915,7 +915,7 @@ wifi_get_init_state = 0x40002088;
+ /* sta_recv_mgmt = 0x40002094;*/
+ ieee80211_send_setup = 0x40002098;
+ //ieee80211_send_probereq = 0x4000209c;
+-sta_auth_shared = 0x400020a4;
++//sta_auth_shared = 0x400020a4;
+ /* cnx_coexist_timeout_process = 0x400020ac; */
+ ieee80211_alloc_challenge = 0x400020b0;
+ cnx_assoc_timeout = 0x400020b4;
+diff --git a/components/esp_rom/esp32c5/ld/esp32c5.rom.net80211.ld b/components/esp_rom/esp32c5/ld/esp32c5.rom.net80211.ld
+index 1a862d099..a23eafe6f 100644
+--- a/components/esp_rom/esp32c5/ld/esp32c5.rom.net80211.ld
++++ b/components/esp_rom/esp32c5/ld/esp32c5.rom.net80211.ld
+@@ -66,7 +66,7 @@ wifi_rf_phy_disable = 0x40000bc8;
+ wifi_rf_phy_enable = 0x40000bcc;
+ wifi_is_started = 0x40000bd0;
+ /*sta_input = 0x40000bd4;*/
+-sta_rx_eapol = 0x40000bd8;
++/*sta_rx_eapol = 0x40000bd8;*/
+ sta_reset_beacon_timeout = 0x40000bdc;
+ sta_get_beacon_timeout = 0x40000be0;
+ ampdu_process_multicast_address_qos_frame = 0x40000be4;
+diff --git a/components/esp_rom/esp32c61/ld/esp32c61.rom.net80211.ld b/components/esp_rom/esp32c61/ld/esp32c61.rom.net80211.ld
+index a86418919..f40f98623 100644
+--- a/components/esp_rom/esp32c61/ld/esp32c61.rom.net80211.ld
++++ b/components/esp_rom/esp32c61/ld/esp32c61.rom.net80211.ld
+@@ -66,7 +66,7 @@ wifi_rf_phy_disable = 0x40000b30;
+ wifi_rf_phy_enable = 0x40000b34;
+ wifi_is_started = 0x40000b38;
+ /*sta_input = 0x40000b3c;*/
+-sta_rx_eapol = 0x40000b40;
++//sta_rx_eapol = 0x40000b40;
+ sta_reset_beacon_timeout = 0x40000b44;
+ sta_get_beacon_timeout = 0x40000b48;
+ ampdu_process_multicast_address_qos_frame = 0x40000b4c;
