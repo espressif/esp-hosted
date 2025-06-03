@@ -89,6 +89,8 @@ if [ ! -d "$ESP_IDF_DIR" ]; then
     git clone --branch "$IDF_TAG" --depth 100 https://github.com/espressif/esp-idf.git "$ESP_IDF_DIR"
     cd "$ESP_IDF_DIR"
     git checkout -f "$IDF_COMMIT"
+    echo "ESP hosted: applying rom patch"
+    git apply ../lib/rom.patch
     echo "ESP hosted: initializing submodules"
     git submodule update --init --depth 1 --recursive
     echo "ESP hosted: installing prerequisites for esp-idf"
@@ -116,6 +118,8 @@ if [ $UPDATE_IDF -eq 1 ]; then
     cd "$ESP_IDF_DIR"
     git fetch --depth 100 origin "$IDF_TAG"
     git reset --hard "$IDF_COMMIT"
+    echo "ESP hosted: applying rom patch"
+    git apply ../lib/rom.patch
     git clean -fdx
     echo "ESP hosted: updating submodules"
     git submodule update --init --depth 1 --recursive
@@ -134,4 +138,3 @@ rm -rf "$ESP_IDF_DIR/components/esp_wifi/lib/"*
 cp -r lib/* "$ESP_IDF_DIR/components/esp_wifi/lib/"
 
 echo "###### Setup Done ######"
-
