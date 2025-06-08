@@ -8,6 +8,7 @@
 
 #include "utils.h"
 #include "esp_stats.h"
+#include "esp_kernel_port.h"
 
 #if TEST_RAW_TP
 

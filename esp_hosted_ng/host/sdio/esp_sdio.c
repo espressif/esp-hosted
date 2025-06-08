@@ -20,7 +20,7 @@
 #include <linux/kthread.h>
 #include "esp_stats.h"
 #include "esp_utils.h"
-#include "include/esp_kernel_port.h"
+#include "esp_kernel_port.h"
 
 extern u32 raw_tp_mode;
 #define MAX_WRITE_RETRIES       2
