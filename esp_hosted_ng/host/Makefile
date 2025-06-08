@@ -1,67 +1,60 @@
-# Toolchain Path
+# Toolchain and kernel
 CROSS_COMPILE :=
-# Linux Kernel header
 KERNEL := /lib/modules/$(shell uname -r)/build
-# Architecture
 ARCH := $(shell uname -m)
 
-# Check and adjust ARCH for specific cases
+# Normalize ARCH
 ifeq ($(ARCH), x86_64)
     ARCH := x86
 endif
-
 ifeq ($(ARCH), aarch64)
     ARCH := arm64
 endif
 
-#Default interface is sdio
-MODULE_NAME=esp32_sdio
+# Module name (default: sdio)
+target ?= sdio
+MODULE_NAME := esp32_$(target)
 
-#enable logging by default
-CONFIG_DEBUG_LOGS := y
-
+# Debug and AP support
+CONFIG_DEBUG_LOGS ?= y
 ifeq ($(CONFIG_AP_SUPPORT), y)
-	EXTRA_CFLAGS += -DCONFIG_AP_MODE
+    EXTRA_CFLAGS += -DCONFIG_AP_MODE
 endif
 
-#Targets passed overrrides default value
+# Source and include paths
+PWD := $(shell pwd)
+ccflags-y += -I$(src) -I$(src)/include -I$(CURDIR) -I$(CURDIR)/include
+EXTRA_CFLAGS += -I$(M) -I$(M)/include
+
+# Interface-specific sources
 ifeq ($(target), sdio)
-	MODULE_NAME=esp32_sdio
+    ccflags-y += -I$(src)/sdio -I$(CURDIR)/sdio
+    EXTRA_CFLAGS += -I$(M)/sdio
+    module_objects += sdio/esp_sdio.o sdio/esp_sdio_api.o
 endif
 
 ifeq ($(target), spi)
-	MODULE_NAME=esp32_spi
+    ccflags-y += -I$(src)/spi -I$(CURDIR)/spi
+    EXTRA_CFLAGS += -I$(M)/spi
+    module_objects += spi/esp_spi.o
 endif
 
-#debug_flags := -DDEBUG
-
-EXTRA_CFLAGS += -I$(PWD)/include -I$(PWD)
-
-ifeq ($(MODULE_NAME), esp32_sdio)
-	EXTRA_CFLAGS += -I$(PWD)/sdio
-	module_objects += sdio/esp_sdio.o sdio/esp_sdio_api.o
-endif
-
-ifeq ($(MODULE_NAME), esp32_spi)
-	EXTRA_CFLAGS += -I$(PWD)/spi
-	module_objects += spi/esp_spi.o
-endif
-
+# Common source files
 module_objects += esp_bt.o main.o esp_cmd.o esp_utils.o esp_cfg80211.o esp_stats.o esp_debugfs.o esp_log.o
-#$(foreach obj,$(module_objects),$(eval CFLAGS_$(obj:.o=).o := $(debug_flags)))
 CFLAGS_esp_log.o = -DDEBUG
 
-PWD := $(shell pwd)
-
+# Module build rules
 obj-m := $(MODULE_NAME).o
 $(MODULE_NAME)-y := $(module_objects)
 
+# Build targets
 all: clean
-	make ARCH=$(ARCH) CROSS_COMPILE=$(CROSS_COMPILE) -C $(KERNEL) M=$(PWD) modules
+	$(MAKE) ARCH=$(ARCH) CROSS_COMPILE=$(CROSS_COMPILE) -C $(KERNEL) M=$(PWD) modules
 
 clean:
-	rm -rf *.o sdio/*.o spi/*.o *.ko
-	make ARCH=$(ARCH) CROSS_COMPILE=$(CROSS_COMPILE) -C $(KERNEL) M=$(PWD) clean
+	rm -rf *.o */*.o *.ko *.mod.c *.symvers *.order .*.cmd .tmp_versions
+	$(MAKE) ARCH=$(ARCH) CROSS_COMPILE=$(CROSS_COMPILE) -C $(KERNEL) M=$(PWD) clean
 
 check:
-	make ARCH=$(ARCH) CROSS_COMPILE=$(CROSS_COMPILE) -C $(KERNEL) M=$(PWD) $(module_objects)
+	$(MAKE) ARCH=$(ARCH) CROSS_COMPILE=$(CROSS_COMPILE) -C $(KERNEL) M=$(PWD) $(module_objects)
+
