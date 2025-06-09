@@ -222,4 +222,9 @@ static inline bool wireless_dev_current_bss_exists(struct wireless_dev *wdev)
 #define spi_master_put(_ctlr)		spi_controller_put(_ctlr)
 #endif
 
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 15, 0)
+  #define del_timer timer_delete_sync
+#endif
+
 #endif
