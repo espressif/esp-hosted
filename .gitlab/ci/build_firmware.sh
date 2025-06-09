@@ -31,7 +31,7 @@ if [ "$2" = "spi" ]; then
 fi
 
 echo "Setting target as $TGT_NAME"
-idf.py set-target $TGT_NAME
+idf.py --preview set-target $TGT_NAME
 idf.py build
 
 # Check if the build was successful
