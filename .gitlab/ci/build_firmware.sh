@@ -31,7 +31,11 @@ if [ "$2" = "spi" ]; then
 fi
 
 echo "Setting target as $TGT_NAME"
-idf.py --preview set-target $TGT_NAME
+if [ "$TGT_NAME" = "esp32c5" ]; then
+    idf.py --preview set-target "$TGT_NAME"
+else
+    idf.py set-target "$TGT_NAME"
+fi
 idf.py build
 
 # Check if the build was successful
