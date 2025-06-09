@@ -149,7 +149,6 @@ build_fw_esp32c5_sdio:
   tags:
     - build_fw
 
-
 build_host_sdio_linux_6.8.0:
   stage: build_host
   script:
@@ -160,6 +159,17 @@ build_host_sdio_linux_6.8.0:
       - esp_hosted_ng/host/**/*
   tags:
     - hosted_runner_4
+
+build_host_sdio_linux_6.14.0:
+  stage: build_host
+  script:
+    - cd esp_hosted_ng/host
+    - make
+  rules:
+    - changes:
+      - esp_hosted_ng/host/**/*
+  tags:
+    - hosted_runner6
 
 build_host_sdio_linux_5.15.0:
   stage: build_host
