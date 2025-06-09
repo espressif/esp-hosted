@@ -758,7 +758,7 @@ static int handle_wpa_sta_rx_mgmt(uint8_t type, uint8_t *frame, size_t len, uint
 }
 
 static int hostap_sta_join(uint8_t *bssid, uint8_t *wpa_ie, uint8_t wpa_ie_len,
-                           uint8_t* rsnxe, uint8_t rsnxe_len, bool *pmf_enable, int subtype)
+                           uint8_t* rsnxe, uint16_t rsnxe_len, bool *pmf_enable, int subtype, uint8_t *pairwise_cipher)
 {
     return true;
 }
@@ -774,7 +774,7 @@ static uint8_t  *wpa_ap_get_wpa_ie(uint8_t *ie_len)
     return NULL;
 }
 
-static int wpa_ap_rx_eapol(uint8_t *addr, uint8_t *buf, size_t len)
+static bool wpa_ap_rx_eapol(uint8_t *addr, uint8_t *buf, size_t len)
 {
     esp_err_t ret = ESP_OK;
     interface_buffer_handle_t buf_handle = {0};
@@ -826,9 +826,9 @@ DONE:
     return false;
 }
 
-static int wpa_ap_get_peer_spp_msg(void *sm_data, bool *spp_cap, bool *spp_req)
+static void wpa_ap_get_peer_spp_msg(void *sm_data, bool *spp_cap, bool *spp_req)
 {
-    return 0;
+    return;
 }
 
 char hostapd;

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -53,12 +53,17 @@ typedef enum {
     WIFI_APPIE_RAM_PROBE_RSP,
     WIFI_APPIE_RAM_STA_AUTH,
     WIFI_APPIE_RAM_AP_AUTH,
-    WIFI_APPIE_RAM_BEACON_PROBE_HEAD,
-    WIFI_APPIE_RAM_BEACON_PROBE_TAIL,
     WIFI_APPIE_RAM_MAX
 } wifi_appie_ram_t;
 
+typedef enum {
+    WIFI_APPIE_RAM_BEACON_PROBE_HEAD = WIFI_APPIE_RAM_MAX,
+    WIFI_APPIE_RAM_BEACON_PROBE_TAIL,
+    WIFI_APPIE_RAM_HOSTED_MAX
+} wifi_appie_ram_hosted_t;
+
 enum {
+    /* this enum is in C2 ROM, do not change before WPA3_AUTH_PSK_EXT_KEY */
     NONE_AUTH           = 0x01,
     WPA_AUTH_UNSPEC     = 0x02,
     WPA_AUTH_PSK        = 0x03,
@@ -74,6 +79,9 @@ enum {
     WPA2_AUTH_ENT_SHA384_SUITE_B = 0x0d,
     WPA2_AUTH_FT_PSK    = 0x0e,
     WPA3_AUTH_OWE       = 0x0f,
+    WPA3_AUTH_PSK_EXT_KEY = 0x10,
+    /* this enum is in C2 ROM, do not change before WPA3_AUTH_PSK_EXT_KEY */
+    WPA3_AUTH_DPP       = 0x11,
     WPA2_AUTH_INVALID
 };
 
@@ -126,11 +134,11 @@ struct wpa_funcs {
     bool (*wpa_sta_in_4way_handshake)(void);
     int *(*wpa_ap_init)(void);
     int (*wpa_ap_deinit)(void *data);
-    int (*wpa_ap_join)(uint8_t *bssid, uint8_t *wpa_ie, uint8_t wpa_ie_len, uint8_t* rsnxe, uint8_t rsnxe_len, bool *pmf_enable, int subtype);
+    int (*wpa_ap_join)(uint8_t *bssid, uint8_t *wpa_ie, uint8_t wpa_ie_len, uint8_t* rsnxe, uint16_t rsnxe_len, bool *pmf_enable, int subtype, uint8_t *pairwise_cipher);
     int (*wpa_ap_remove)(uint8_t *addr);
     uint8_t *(*wpa_ap_get_wpa_ie)(uint8_t *len);
-    int (*wpa_ap_rx_eapol)(uint8_t *addr, uint8_t *data, size_t data_len);
-    int (*wpa_ap_get_peer_spp_msg)(void *sm, bool *spp_cap, bool *spp_req);
+    bool (*wpa_ap_rx_eapol)(uint8_t *addr, uint8_t *data, size_t data_len);
+    void (*wpa_ap_get_peer_spp_msg)(void *sm, bool *spp_cap, bool *spp_req);
     char *(*wpa_config_parse_string)(const char *value, size_t *len);
     int (*wpa_parse_wpa_ie)(const uint8_t *wpa_ie, size_t wpa_ie_len, wifi_wpa_ie_t *data);
     int (*wpa_config_bss)(uint8_t *bssid);
@@ -141,22 +149,23 @@ struct wpa_funcs {
     uint8_t *(*owe_build_dhie)(uint16_t group);
     int (*owe_process_assoc_resp)(const uint8_t *rsn_ie, size_t rsn_len, const uint8_t *dh_ie, size_t dh_len);
     void (*wpa_sta_clear_curr_pmksa)(void);
+    void (*wpa_config_reload)(void);
     int (*wpa_ap_rx_mgmt)(void *pkt, uint32_t pkt_len, uint8_t chan, int rssi, int nf);
 };
 
 struct wpa2_funcs {
-    int (*wpa2_sm_rx_eapol)(uint8_t *src_addr, uint8_t *buf, uint32_t len, uint8_t *bssid);
-    int (*wpa2_start)(void);
-    uint8_t (*wpa2_get_state)(void);
-    int (*wpa2_init)(void);
+    int  (*wpa2_sm_rx_eapol)(uint8_t *src_addr, uint8_t *buf, uint32_t len, uint8_t *bssid);
+    int  (*wpa2_start)(void);
+    uint8_t   (*wpa2_get_state)(void);
+    int  (*wpa2_init)(void);
     void (*wpa2_deinit)(void);
 };
 
 struct wps_funcs {
     bool (*wps_parse_scan_result)(struct wps_scan_ie *scan);
-    int (*wifi_station_wps_start)(void);
-    int (*wps_sm_rx_eapol)(uint8_t *src_addr, uint8_t *buf, uint32_t len);
-    int (*wps_start_pending)(void);
+    int  (*wifi_station_wps_start)(void);
+    int  (*wps_sm_rx_eapol)(uint8_t *src_addr, uint8_t *buf, uint32_t len);
+    int  (*wps_start_pending)(void);
 };
 
 typedef esp_err_t (*wifi_wpa2_fn_t)(void *);
@@ -219,7 +228,7 @@ uint8_t esp_wifi_ap_get_prof_authmode_internal(void);
 uint8_t esp_wifi_sta_get_prof_authmode_internal(void);
 uint8_t *esp_wifi_ap_get_prof_password_internal(void);
 struct wifi_ssid *esp_wifi_sta_get_prof_ssid_internal(void);
-uint8_t esp_wifi_sta_get_reset_param_internal(void);
+uint8_t esp_wifi_sta_get_reset_nvs_pmk_internal(void);
 uint8_t esp_wifi_sta_get_pairwise_cipher_internal(void);
 uint8_t esp_wifi_sta_get_group_cipher_internal(void);
 bool esp_wifi_sta_prof_is_wpa_internal(void);
@@ -239,7 +248,7 @@ int esp_wifi_set_sta_key_internal(int alg, u8 *addr, int key_idx, int set_tx,
 int  esp_wifi_get_sta_key_internal(uint8_t *ifx, int *alg, u8 *addr, int *key_idx,
                                    u8 *key, size_t key_len, enum key_flag key_flag);
 bool esp_wifi_wpa_ptk_init_done_internal(uint8_t *mac);
-uint8_t esp_wifi_sta_set_reset_param_internal(uint8_t reset_flag);
+uint8_t esp_wifi_sta_set_reset_nvs_pmk_internal(uint8_t reset_flag);
 uint8_t esp_wifi_get_sta_gtk_index_internal(void);
 int esp_wifi_register_tx_cb_internal(wifi_tx_cb_t fn, u8 id);
 int esp_wifi_register_eapol_txdonecb_internal(eapol_txcb_t fn);
@@ -280,25 +289,28 @@ bool esp_wifi_is_btm_enabled_internal(uint8_t if_index);
 esp_err_t esp_wifi_register_mgmt_frame_internal(uint32_t type, uint32_t subtype);
 esp_err_t esp_wifi_send_mgmt_frm_internal(const wifi_mgmt_frm_req_t *req);
 uint8_t esp_wifi_ap_get_prof_pairwise_cipher_internal(void);
-esp_err_t esp_wifi_action_tx_req(uint8_t type, uint8_t channel,
-                                 uint32_t wait_time_ms, const wifi_action_tx_req_t *req);
-esp_err_t esp_wifi_remain_on_channel(uint8_t ifx, uint8_t type, uint8_t channel,
-                                     uint32_t wait_time_ms, wifi_action_rx_cb_t rx_cb);
+uint8_t esp_wifi_ap_get_sae_ext_config_internal(void);
+uint16_t esp_wifi_ap_get_gtk_rekeying_config_internal(void);
 bool esp_wifi_is_mbo_enabled_internal(uint8_t if_index);
 void esp_wifi_get_pmf_config_internal(wifi_pmf_config_t *pmf_cfg, uint8_t ifx);
 bool esp_wifi_is_ft_enabled_internal(uint8_t if_index);
-uint8_t esp_wifi_sta_get_use_h2e_internal(void);
 uint8_t esp_wifi_sta_get_config_sae_pk_internal(void);
 void esp_wifi_sta_disable_sae_pk_internal(void);
 void esp_wifi_sta_disable_wpa2_authmode_internal(void);
+void esp_wifi_sta_disable_owe_trans_internal(void);
 uint8_t esp_wifi_ap_get_max_sta_conn(void);
 uint8_t esp_wifi_get_config_sae_pwe_h2e_internal(uint8_t ifx);
 bool esp_wifi_ap_notify_node_sae_auth_done(uint8_t *mac);
 bool esp_wifi_ap_is_sta_sae_reauth_node(uint8_t *mac);
 uint8_t* esp_wifi_sta_get_sae_identifier_internal(void);
 bool esp_wifi_eb_tx_status_success_internal(void *eb);
-void esp_wifi_sta_toggle_wpa3_security(bool disable);
+uint8_t* esp_wifi_sta_get_rsnxe(u8 *bssid);
 esp_err_t esp_wifi_sta_connect_internal(const uint8_t *bssid);
+void esp_wifi_enable_sae_pk_only_mode_internal(void);
+uint8_t esp_wifi_ap_get_transition_disable_internal(void);
+int esp_wifi_softap_set_obss_overlap(bool overlap);
+void esp_wifi_set_sigma_internal(bool flag);
+void esp_wifi_sta_toggle_wpa3_security(bool disable);
 esp_err_t esp_wifi_send_auth_internal(uint8_t ifx, uint8_t *bssid, uint8_t algo, uint8_t seq, uint32_t status);
 esp_err_t esp_wifi_send_assoc_internal(uint8_t ifx, uint8_t *bssid, uint8_t type, uint8_t status);
 

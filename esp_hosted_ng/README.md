@@ -60,8 +60,8 @@ This solution provides following WLAN and BT/BLE features to the host:
 
 ESP-Hosted-NG solution is supported on following ESP boards:
 
-| Supported Targets | ESP32 | ESP32-S2 | ESP32-S3 | ESP32-C2 | ESP32-C3 | ESP32-C6 |
-| ----------------- | ----- | -------- | -------- | -------- | -------- | -------- |
+| Supported Targets | ESP32 | ESP32-S2 | ESP32-S3 | ESP32-C2 | ESP32-C3 | ESP32-C6 | ESP32-C5 |
+| ----------------- | ----- | -------- | -------- | -------- | -------- | -------- | -------- |
 
 Looking for other chipset? Please do check [Coming Soon](#5-coming-soon) section.
 
@@ -204,6 +204,22 @@ The below table explains which feature is supported on which transport interface
     <tr>
       <td style="text-align:center;">SDIO(WiFi) + UART(BT)</td>
       <td style="text-align:center;">&#10003;</td>
+      <td style="text-align:center;">&#10003;</td>
+    </tr>
+    <tr>
+      <td style="text-align:center;">SPI(WiFi) + UART(BT)</td>
+      <td style="text-align:center;">&#10003;</td>
+      <td style="text-align:center;">&#10003;</td>
+    </tr>
+    <tr>
+      <td rowspan="3" style="text-align:center;">ESP32-C5</td>
+      <td style="text-align:center;">SPI</td>
+      <td style="text-align:center;">&#10003;</td>
+      <td style="text-align:center;">&#10003;</td>
+    </tr>
+    <tr>
+      <td style="text-align:center;">UART</td>
+      <td style="text-align:center;">&#10005;</td>
       <td style="text-align:center;">&#10003;</td>
     </tr>
     <tr>
@@ -531,6 +547,24 @@ rsn_pairwise=CCMP
 sae_pwe=2
 ieee80211w=2
 ``` 
+Sample Configuration for AP on 5GHZ channel (ESP32C5)
+```sh
+interface=wlan0
+driver=nl80211
+ssid=MY_SSID
+hw_mode=a
+channel=36
+wmm_enabled=0
+macaddr_acl=0
+auth_algs=1
+ignore_broadcast_ssid=0
+wpa=2
+wpa_key_mgmt=WPA-PSK SAE
+wpa_passphrase=MY_PASSPHRASE
+rsn_pairwise=CCMP
+sae_pwe=2
+ieee80211w=2
+```
 >  Change `MY_SSID` to AP's SSID and `MY_PASSPHRASE` to Passphrase to connect
 > Security can configured by keeping the values of `wpa_key_mgmt` to `SAE/WPA-PSK`.
 ###### Start hostapd
@@ -736,7 +770,7 @@ Tremendous work to be done ahead! Below is glimpse of upcoming release:
 ---
 
 - Functionality
-	- esp32c5 support
+	- esp32c61 support
 
 ---
 
