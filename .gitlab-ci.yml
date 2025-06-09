@@ -115,6 +115,19 @@ build_fw_esp32c6_spi:
   variables:
     IDF_TARGET: esp32c6
   script:
+    - .gitlab/ci/build_firmware.sh $IDF_TARGET
+  rules:
+    - changes:
+      - esp_hosted_ng/esp/esp_driver/network_adapter/**/*
+  tags:
+    - build_fw
+
+build_fw_esp32c5_spi:
+  stage: build_firmware
+  image: $CI_DOCKER_REGISTRY/esp-env-v6.0:1
+  variables:
+    IDF_TARGET: esp32c5
+  script:
     - .gitlab/ci/build_firmware.sh $IDF_TARGET spi
   rules:
     - changes:
