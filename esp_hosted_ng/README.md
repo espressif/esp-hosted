@@ -63,6 +63,9 @@ ESP-Hosted-NG solution is supported on following ESP boards:
 | Supported Targets | ESP32 | ESP32-S2 | ESP32-S3 | ESP32-C2 | ESP32-C3 | ESP32-C6 |
 | ----------------- | ----- | -------- | -------- | -------- | -------- | -------- |
 
+
+:warning: Note:
+[ESP32-C5 beta](https://github.com/espressif/esp-hosted/tree/feat/esp32c5_ng_beta_support) support has been added please click on link for more info
 Looking for other chipset? Please do check [Coming Soon](#5-coming-soon) section.
 
 
