@@ -74,9 +74,11 @@ Optimized for **resource-constrained MCUs**:
 | **Bus Interfaces**         |   SPI, SDIO, UART (and combos)   |       Same      |       Same       |
 | **Wi-Fi Security**         |       WPA, WPA2, WPA3, Open      |       Same      |       Same       |
 | **Standards**              | 802.11 b/g/n/ax, BLE 4.2/5.0/5.3 |       Same      |       Same       |
-| **Supported ESP Chips**    |     ESP32, C2/C3/C5/C6, S2/S3    |       Same      |       Same       |
+| **Supported ESP Chips**    |     ESP32, C2/C3/C6, S2/S3    |   ESP32, C2/C3/C5/C6, S2/S3      |    ESP32, C2/C5/C3/C6, S2/S3   |
 
 ---
+:warning: Note:
+[ESP32-C5 beta](https://github.com/espressif/esp-hosted/tree/feat/esp32c5_ng_beta_support) support has been added please click on link for more info
 
 ## 🤔 Choosing the Right Variant
 

@@ -9,7 +9,7 @@ variables:
 
 check_version:
   stage: pre_check
-  image: ${CI_DOCKER_REGISTRY}/esp-env-v6.0:1
+  image: ${CI_DOCKER_REGISTRY}/esp-env-v5.4:1
   script:
     - export HOSTED_NG_PATH=$PWD/esp_hosted_ng
     - .gitlab/ci/check_hosted_ng_version.sh
@@ -20,7 +20,7 @@ check_version:
 
 build_fw_esp32_sdio:
   stage: build_firmware
-  image: $CI_DOCKER_REGISTRY/esp-env-v6.0:1
+  image: $CI_DOCKER_REGISTRY/esp-env-v5.4:1
   variables:
     IDF_TARGET: esp32
   script:
@@ -33,7 +33,7 @@ build_fw_esp32_sdio:
 
 build_fw_esp32_spi:
   stage: build_firmware
-  image: $CI_DOCKER_REGISTRY/esp-env-v6.0:1
+  image: $CI_DOCKER_REGISTRY/esp-env-v5.4:1
   variables:
     IDF_TARGET: esp32
   script:
@@ -46,7 +46,7 @@ build_fw_esp32_spi:
 
 build_fw_esp32s2_spi:
   stage: build_firmware
-  image: $CI_DOCKER_REGISTRY/esp-env-v6.0:1
+  image: $CI_DOCKER_REGISTRY/esp-env-v5.4:1
   variables:
     IDF_TARGET: esp32s2
   script:
@@ -59,7 +59,7 @@ build_fw_esp32s2_spi:
 
 build_fw_esp32s3_spi:
   stage: build_firmware
-  image: $CI_DOCKER_REGISTRY/esp-env-v6.0:1
+  image: $CI_DOCKER_REGISTRY/esp-env-v5.4:1
   variables:
     IDF_TARGET: esp32s3
   script:
@@ -72,7 +72,7 @@ build_fw_esp32s3_spi:
 
 build_fw_esp32c2_spi:
   stage: build_firmware
-  image: $CI_DOCKER_REGISTRY/esp-env-v6.0:1
+  image: $CI_DOCKER_REGISTRY/esp-env-v5.4:1
   variables:
     IDF_TARGET: esp32c2
   script:
@@ -85,7 +85,7 @@ build_fw_esp32c2_spi:
 
 build_fw_esp32c3_spi:
   stage: build_firmware
-  image: $CI_DOCKER_REGISTRY/esp-env-v6.0:1
+  image: $CI_DOCKER_REGISTRY/esp-env-v5.4:1
   variables:
     IDF_TARGET: esp32c3
   script:
@@ -98,7 +98,7 @@ build_fw_esp32c3_spi:
 
 build_fw_esp32c6_sdio:
   stage: build_firmware
-  image: $CI_DOCKER_REGISTRY/esp-env-v6.0:1
+  image: $CI_DOCKER_REGISTRY/esp-env-v5.4:1
   variables:
     IDF_TARGET: esp32c6
   script:
@@ -111,38 +111,11 @@ build_fw_esp32c6_sdio:
 
 build_fw_esp32c6_spi:
   stage: build_firmware
-  image: $CI_DOCKER_REGISTRY/esp-env-v6.0:1
+  image: $CI_DOCKER_REGISTRY/esp-env-v5.4:1
   variables:
     IDF_TARGET: esp32c6
   script:
-    - .gitlab/ci/build_firmware.sh $IDF_TARGET
-  rules:
-    - changes:
-      - esp_hosted_ng/esp/esp_driver/network_adapter/**/*
-  tags:
-    - build_fw
-
-build_fw_esp32c5_spi:
-  stage: build_firmware
-  image: $CI_DOCKER_REGISTRY/esp-env-v6.0:1
-  variables:
-    IDF_TARGET: esp32c5
-  script:
     - .gitlab/ci/build_firmware.sh $IDF_TARGET spi
-  rules:
-    - changes:
-      - esp_hosted_ng/esp/esp_driver/network_adapter/**/*
-  tags:
-    - build_fw
-
-build_fw_esp32c5_sdio:
-  stage: build_firmware
-  image: $CI_DOCKER_REGISTRY/esp-env-v6.0:1
-  allow_failure: true
-  variables:
-    IDF_TARGET: esp32c5
-  script:
-    - .gitlab/ci/build_firmware.sh $IDF_TARGET sdio
   rules:
     - changes:
       - esp_hosted_ng/esp/esp_driver/network_adapter/**/*
@@ -243,3 +216,4 @@ deploy_master_github:
       - git remote remove github &>/dev/null || true
       - git remote add github git@github.com:espressif/esp-hosted.git
       - git push github "${CI_COMMIT_SHA}:refs/heads/${CI_COMMIT_REF_NAME}"
+
