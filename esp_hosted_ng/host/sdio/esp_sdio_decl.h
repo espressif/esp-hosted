@@ -73,6 +73,10 @@
 #define ESP_DEVICE_ID_ESP32C6_1     0x6666
 #define ESP_DEVICE_ID_ESP32C6_2     0x7777
 
+#define ESP_VENDOR_ID_3             0x0092
+#define ESP_DEVICE_ID_ESP32C5_1     0x6666
+#define ESP_DEVICE_ID_ESP32C5_2     0x7777
+
 struct esp_sdio_context {
 	struct esp_adapter     *adapter;
 	struct sdio_func       *func;

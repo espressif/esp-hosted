@@ -2,19 +2,14 @@ menu "Example Configuration"
 
     choice ESP_HOST_INTERFACE
         bool "Transport layer"
-        default ESP_SDIO_HOST_INTERFACE if IDF_TARGET_ESP32
-        default ESP_SPI_HOST_INTERFACE if IDF_TARGET_ESP32S2
-        default ESP_SPI_HOST_INTERFACE if IDF_TARGET_ESP32S3
-        default ESP_SPI_HOST_INTERFACE if IDF_TARGET_ESP32C2
-        default ESP_SPI_HOST_INTERFACE if IDF_TARGET_ESP32C3
-        default ESP_SDIO_HOST_INTERFACE if IDF_TARGET_ESP32C6
-        default ESP_SPI_HOST_INTERFACE if IDF_TARGET_ESP32C5
+        default ESP_SDIO_HOST_INTERFACE if SOC_SDIO_SLAVE_SUPPORTED
+        default ESP_SPI_HOST_INTERFACE
         help
             Bus interface to be used for communication with the host
 
         config ESP_SDIO_HOST_INTERFACE
             bool "SDIO interface"
-            depends on IDF_TARGET_ESP32 || IDF_TARGET_ESP32C6
+            depends on SOC_SDIO_SLAVE_SUPPORTED
             help
                 Enable/Disable SDIO host interface
 
@@ -88,6 +83,7 @@ menu "Example Configuration"
         depends on ESP_SDIO_HOST_INTERFACE
         default 22 if IDF_TARGET_ESP32
         default 4 if IDF_TARGET_ESP32C6
+        default 5 if IDF_TARGET_ESP32C5
         help
             GPIO pin used to wake-up host
 
