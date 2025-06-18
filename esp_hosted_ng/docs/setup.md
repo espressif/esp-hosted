@@ -15,6 +15,7 @@
 - [3. Troubleshoot Setup Problems](#3-troubleshoot-setup-problems)
 - [4. Points to note](#4-points-to-note)
 - [5. Ota Support](#5-ota-support)
+- [6. Manually loading and unloading the Kernel Module](#6-manually-loading-and-unloading-the-kernel-module)
 
 # 1. Software setup
 * This section briefly explains software setup required for esp hosted device and host. Esp hosted device setup is divided into two parts 
@@ -182,6 +183,7 @@ directory
          - add `ap_support` if you want to use interface as access point.
         * This script compiles and loads host driver on Raspberry-Pi. It also creates network interface `wlanX` which is used as a control interface for Wi-Fi on ESP peripheral
 
+        * Follow these steps to [Manually load the Kernel Module](6-manually-loading-and-unloading-the-kernel-module)
     * For esp firmware if you are using [ESP Quick start guide](#12-esp-quick-start-guide)
         * Please flash the required binaries using with command mentioned in `flashing_cmd.txt` within desired transport configuration folder as explained in [ESP Quick start guide](#12-esp-quick-start-guide).  
         * Use minicom or any similar terminal emulator with baud rate 115200 to fetch esp side logs on UART
@@ -271,6 +273,7 @@ directory
         - add `ap_support` if you want to use interface as access point.
         * This script compiles and loads host driver on Raspberry-Pi. It also creates network interface `wlanX` which is used for Wi-Fi in host.
 
+        * Follow these steps to [Manually load the Kernel Module](6-manually-loading-and-unloading-the-kernel-module)
     * For esp firmware if you are using [ESP Quick start guide](#12-esp-quick-start-guide)
         * Please flash the required binaries using with command mentioned in `flashing_cmd.txt` within desired transport configuration folder as explained in [ESP Quick start guide](#12-esp-quick-start-guide).  
         * Use minicom or any similar terminal emulator with baud rate 115200 to fetch esp side logs on UART
@@ -492,3 +495,70 @@ If Bootup event is not recieved in host `dmesg` as sample log above, please try 
     $ cd /esp_hosted/esp_hosted_ng/host
     $ ./rpi_init.sh <transport> ota_file="/path/to/ota_file"
     ```
+
+### 6. Manually loading and unloading the Kernel Module
+
+Once the kernel modules `esp32_sdio.ko` or `esp32_spi.ko` are built, they can be found in `esp_hosted/esp_hosted_ng/host/`. You may manually load or unload these modules as needed.
+
+---
+
+### **Module Parameters**
+
+| Parameter     | Description                                                  |
+| ------------- | ------------------------------------------------------------ |
+| `resetpin`    | GPIO pin used to reset the ESP peripheral                    |
+| `clockspeed`  | Clock frequency in MHz (max 50 for SDIO, 40 for SPI)         |
+| `raw_tp_mode` | Enables raw throughput mode to measure transport performance |
+| `ota_file`    | Path to the firmware binary for updating the ESP             |
+
+**Notes:**
+
+* `resetpin` is **mandatory**.
+* `clockspeed` is **optional**. If omitted:
+
+  * SDIO defaults to 25–50 MHz as per device tree.
+  * SPI defaults to 10 MHz.
+  * Ensure value is ≤50 MHz for SDIO, and does not exceed the device tree setting.
+* `raw_tp_mode` is **optional** and intended **only for testing the transport layer throughput**. It bypasses the protocol stack and sends raw DAPA frames directly between the host and ESP. Useful for stress testing or evaluating performance limits:
+
+  * `rawtp_host_to_esp`: Sends frames from Host → ESP.
+  * `rawtp_esp_to_host`: Sends frames from ESP → Host.
+* `ota_file` is **optional**. When specified, it triggers a firmware update on the ESP. After a successful update, the ESP reboots and reconnects automatically.
+
+---
+
+### **Loading the Module**
+
+**For SDIO:**
+
+```bash
+$ sudo insmod esp_hosted/esp_hosted_ng/host/esp32_sdio.ko resetpin=6
+```
+
+**For SPI:**
+
+```bash
+$ sudo insmod esp_hosted/esp_hosted_ng/host/esp32_spi.ko resetpin=6
+```
+
+You can also pass optional parameters:
+
+```bash
+$ sudo insmod esp32_sdio.ko resetpin=6 clockspeed=40 ota_file=/path/to/firmware.bin
+```
+
+---
+
+### **Unloading the Module**
+
+**For SDIO:**
+
+```bash
+$ sudo rmmod esp32_sdio
+```
+
+**For SPI:**
+
+```bash
+$ sudo rmmod esp32_spi
+```
