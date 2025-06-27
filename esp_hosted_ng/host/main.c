@@ -52,7 +52,7 @@ module_param(raw_tp_mode, uint, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
 MODULE_PARM_DESC(raw_tp_mode, "Mode choosed to test raw throughput");
 
 module_param(ota_file, charp, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
-MODULE_PARM_DESC(ota_file, "Mode choosed to test raw throughput");
+MODULE_PARM_DESC(ota_file, "Ota file to update ESP firmware");
 
 static void deinit_adapter(void);
 
