@@ -363,7 +363,7 @@ static void start_timer_to_display_raw_tp(void)
 
 	args.timer = raw_tp_timer;
 
-	ESP_ERROR_CHECK(esp_timer_start_periodic(raw_tp_timer, TEST_RAW_TP__TIMEOUT));
+	ESP_ERROR_CHECK(esp_timer_start_periodic(raw_tp_timer, SEC_TO_USEC(TEST_RAW_TP__TIMEOUT)));
 }
 #endif /* TEST_RAW_TP */
 
