@@ -12,7 +12,7 @@
         - e.g if you are setting Wi-Fi over SDIO and you want to test raw TP over SDIO interface, then compile and load host driver as below:
         ```sh
         $ cd esp_hosted_fg/host/linux/host_control/
-        $ ./rpi_init.sh sdio rawtp
+        $ ./rpi_init.sh wifi=sdio rawtp
         ```
 
 - On ESP side:
@@ -23,5 +23,34 @@
 	    - Host to ESP : For this, make `TEST_RAW_TP__ESP_TO_HOST` value to 0
 	4. Build and flash ESP firmware again.
 
-**Note**
-Please revert these configurations once raw throughput testing is done
+> [!Note]
+> Please revert these configurations once raw throughput testing is done
+
+## Raw Throughput Benchmarks
+
+### For SDIO with ESP32-C6 or C5
+
+Before starting the test, check your SDMMC CLK frequency and bus width. On a Raspberry Pi, this is done via `/sys/kernel/debug/mmc1/ios`:
+
+```sh
+$ sudo cat /sys/kernel/debug/mmc1/ios
+clock            50000000 Hz
+actual clock:    41666667 Hz
+[...]
+bus width:       2 (4 bits)
+```
+
+This shows the SDMMC clock is running at 41 MHz and SDIO is using 4 data lines. For other linux based SOCs, check your documentation on how to display similar SDMMC info.
+
+To change the clock frequency, add the `clockspeed` parameter when running `rpi_init.sh`:
+
+```sh
+$ ./rpi_init.sh wifi=sdio clockspeed=50 rawtp
+```
+
+With the SDMMC clock at 41 MHz, here are the raw throughput numbers:
+
+| Data Transfer | Throughput (Mbits/s) |
+| ------------- | -------------------: |
+| C6/C5 to RPi  | 40 |
+| RPi to C6/C5  | 60 |
