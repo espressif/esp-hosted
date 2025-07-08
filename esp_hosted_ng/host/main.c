@@ -952,12 +952,8 @@ static int esp_get_packets(struct esp_adapter *adapter)
 	if (!adapter || !adapter->if_ops || !adapter->if_ops->read)
 		return -EINVAL;
 
-	skb = adapter->if_ops->read(adapter);
-
-	if (!skb)
-		return -EFAULT;
-
-	process_rx_packet(adapter, skb);
+	while ((skb = adapter->if_ops->read(adapter)))
+		process_rx_packet(adapter, skb);
 
 	return 0;
 }
