@@ -754,12 +754,20 @@ Refer [RAW throughput guide](docs/Raw_TP_Testing.md) for verifying connection as
 <td align="center">7.32 Mbps</td>
 </tr>
 <tr>
-<td rowspan=2 align="center">ESP32-C3</td>
+<td rowspan=1 align="center">ESP32-C3</td>
 <td rowspan=1 align="center">SPI</td>
 <td align="center">15.8 Mbps</td>
 <td align="center">15.2 Mbps</td>
 <td align="center">17.1 Mbps</td>
 <td align="center">14.9 Mbps</td>
+</tr>
+<tr>
+<td rowspan=1 align="center">ESP32-C5</td>
+<td rowspan=1 align="center">SDIO</td>
+<td align="center">11.2 Mbps</td>
+<td align="center">19.4 Mbps</td>
+<td align="center">37.8 Mbps</td>
+<td align="center">25.9 Mbps</td>
 </tr>
 </tbody>
 </table>
