@@ -234,16 +234,16 @@ directory
     * In this setup, ESP board acts as a SDIO peripheral and provides Wi-Fi capabilities to host. Please connect ESP board to Raspberry-Pi with jumper cables as mentioned below. Raspberry Pi should be powered with correct incoming power rating. ESP can be powered through PC using micro-USB/USB-C cable.
     * **Pin connections**
 
-        | Raspberry-Pi Pin | ESP32 Pin | ESP32-C6 Pin | Function |
-        |:-------:|:---------:|:--------:|:--------:|
-        | 13 | IO13+[pull-up](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/peripherals/sd_pullup_requirements.html)| IO23+[pull-up](https://docs.espressif.com/projects/esp-idf/en/latest/esp32c6/api-reference/peripherals/sd_pullup_requirements.html) | DAT3 |
-        | 15 | IO14 | IO19 | CLK |
-        | 16 | IO15+[pull-up](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/peripherals/sd_pullup_requirements.html) | IO18+[pull-up](https://docs.espressif.com/projects/esp-idf/en/latest/esp32c6/api-reference/peripherals/sd_pullup_requirements.html) | CMD |
-        | 18 | IO2+[pull-up](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/peripherals/sd_pullup_requirements.html)| IO20+[pull-up](https://docs.espressif.com/projects/esp-idf/en/latest/esp32c6/api-reference/peripherals/sd_pullup_requirements.html) | DAT0 |
-        | 22 | IO4+[pull-up](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/peripherals/sd_pullup_requirements.html)| IO21+[pull-up](https://docs.espressif.com/projects/esp-idf/en/latest/esp32c6/api-reference/peripherals/sd_pullup_requirements.html) | DAT1 |
-        | 31 | EN  | ESP Reset |
-        | 37 | IO12+[pull-up](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/peripherals/sd_pullup_requirements.html)| IO22+[pull-up](https://docs.espressif.com/projects/esp-idf/en/latest/esp32c6/api-reference/peripherals/sd_pullup_requirements.html) | DAT2 |
-        | 39 | GND | GND | GND|
+        | Raspberry-Pi Pin | ESP32 Pin | ESP32-C6 Pin | ESP32-C5 | Function |
+        | :--------------: | :-------: | :----------: | :------: | :------: |
+        | 13 | IO13+[pull-up](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/peripherals/sd_pullup_requirements.html) | IO23+[pull-up](https://docs.espressif.com/projects/esp-idf/en/latest/esp32c6/api-reference/peripherals/sd_pullup_requirements.html) | IO13+[pull-up](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/peripherals/sd_pullup_requirements.html) | DAT3 |
+        | 15 | IO14 | IO19 | IO9 | CLK |
+        | 16 | IO15+[pull-up](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/peripherals/sd_pullup_requirements.html) | IO18+[pull-up](https://docs.espressif.com/projects/esp-idf/en/latest/esp32c6/api-reference/peripherals/sd_pullup_requirements.html) | IO10+[pull-up](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/peripherals/sd_pullup_requirements.html) | CMD |
+        | 18 | IO2+[pull-up](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/peripherals/sd_pullup_requirements.html) | IO20+[pull-up](https://docs.espressif.com/projects/esp-idf/en/latest/esp32c6/api-reference/peripherals/sd_pullup_requirements.html) | IO8+[pull-up](https://docs.espressif.com/projects/esp-idf/en/latest/esp32c6/api-reference/peripherals/sd_pullup_requirements.html) | DAT0 |
+        | 22 | IO4+[pull-up](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/peripherals/sd_pullup_requirements.html) | IO21+[pull-up](https://docs.espressif.com/projects/esp-idf/en/latest/esp32c6/api-reference/peripherals/sd_pullup_requirements.html) | IO7+[pull-up](https://docs.espressif.com/projects/esp-idf/en/latest/esp32c6/api-reference/peripherals/sd_pullup_requirements.html) | DAT1 |
+        | 31 | EN  | ESP Reset | ESP Reset | Reset |
+        | 37 | IO12+[pull-up](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/peripherals/sd_pullup_requirements.html)| IO22+[pull-up](https://docs.espressif.com/projects/esp-idf/en/latest/esp32c6/api-reference/peripherals/sd_pullup_requirements.html) | IO14+[pull-up](https://docs.espressif.com/projects/esp-idf/en/latest/esp32c6/api-reference/peripherals/sd_pullup_requirements.html) | DAT2 |
+        | 39 | GND | GND | GND | GND |
     * Raspberry-Pi pinout can be found [here!](https://pinout.xyz/pinout/sdio)
     * As SDIO faces signal integrity issues over jumper wires, we strongly recommend to **Design PCB boards with above connections**. If that is not possible. Use good quality extremely small (smaller than 5cm) jumper wires, all equal length. Join all possible grounds interconnected to lower noise. Add at least, 10k Ohm external pull-up resistors on 5 lines: CMD, DAT0-4. We use 51k Ohm resistors in our set-up.
 
@@ -317,10 +317,10 @@ directory
 ### 2.3 SDIO or SPI and Uart configuration
 **Wi-Fi over SDIO/SPI and Bluetooth over UART**
 
-| Supported Chipsets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-S3 | ESP32-C6 |
-| ------------------ | ----- | -------- | -------- | -------- | -------- |
-| 4 line UART supported | yes | no | yes | yes | no |
-| 2 line UART supported | yes | yes | yes | yes | yes |
+| Supported Chipsets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-S3 | ESP32-C6 | ESP32-C5 |
+| ------------------ | ----- | -------- | -------- | -------- | -------- | -------- |
+| 4 line UART supported | yes | no | yes | yes | no | no |
+| 2 line UART supported | yes | yes | yes | yes | yes | yes |
 * In this section, ESP chipset provides a way to run Bluetooth/BLE over UART interface.
 
 * This section is divided in two parts 
@@ -342,10 +342,10 @@ directory
         | RTS | 11 | IO23 | IO20 | IO8 | CTS |
 
     * Two line setup
-        | Raspberry-Pi Pin Function | Raspberry-Pi Pin | ESP32-C2 | ESP32-C6 | ESP Function |
-        |:-------:|:--------:|:---------:|:---------:|:--------:|
-        | RX | 10 | IO5 | IO5 | TX |
-        | TX | 8 | IO18 | IO12 | RX |
+        | Raspberry-Pi Pin Function | Raspberry-Pi Pin | ESP32-C2 | ESP32-C6 | ESP32-C5 | ESP Function |
+        |:-------:|:--------:|:---------:|:---------:|:---------:|:--------:|
+        | RX | 10 | IO5 | IO5 | IO5 | TX |
+        | TX | 8 | IO18 | IO12 | IO13 | RX |
 
     * Raspberry-Pi pinout can be found [here!](https://pinout.xyz/pinout/uart)
     * In case you wish to reduce number of hardware lines, you may consider SPI_only or SDIO_only transports, where Wi-Fi and Bluetooth traffic is multiplexed on same bus and no need of extra UART pins. UART pin numbers are configurable. If you want to switch from 4 line UART mode to 2 lines, hardware flow control need to be turned off.
