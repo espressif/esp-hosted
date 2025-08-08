@@ -319,12 +319,12 @@ static void init_uart(void)
         .flags.reserve_sibling = 1,
         .direction = GDMA_CHANNEL_DIRECTION_TX,
     };
-    ESP_ERROR_CHECK(gdma_new_channel(&tx_channel_config, &s_tx_channel));
+    ESP_ERROR_CHECK(gdma_new_ahb_channel(&tx_channel_config, &s_tx_channel));
     gdma_channel_alloc_config_t rx_channel_config = {
         .direction = GDMA_CHANNEL_DIRECTION_RX,
         .sibling_chan = s_tx_channel,
     };
-    ESP_ERROR_CHECK(gdma_new_channel(&rx_channel_config, &s_rx_channel));
+    ESP_ERROR_CHECK(gdma_new_ahb_channel(&rx_channel_config, &s_rx_channel));
 
     gdma_connect(s_tx_channel, GDMA_MAKE_TRIGGER(GDMA_TRIG_PERIPH_UHCI, 0));
     gdma_connect(s_rx_channel, GDMA_MAKE_TRIGGER(GDMA_TRIG_PERIPH_UHCI, 0));
@@ -347,11 +347,11 @@ static void init_uart(void)
     gdma_register_tx_event_callbacks(s_tx_channel, &tx_cbs, NULL);
 
     // configure UHCI
-    uhci_ll_init(s_uhci_hw);
-    uhci_ll_set_eof_mode(s_uhci_hw, UHCI_RX_LEN_EOF);
+    uhci_ll_init((uhci_dev_t *)s_uhci_hw);
+    uhci_ll_rx_set_eof_mode((uhci_dev_t *)s_uhci_hw, UHCI_RX_LEN_EOF);
     // disable software flow control
     s_uhci_hw->escape_conf.val = 0;
-    uhci_ll_attach_uart_port(s_uhci_hw, 1);
+    uhci_ll_attach_uart_port((uhci_dev_t *)s_uhci_hw, 1);
 }
 #elif CONFIG_IDF_TARGET_ESP32
 static void init_uart(void)
