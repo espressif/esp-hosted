@@ -86,10 +86,12 @@ Make sure that host machine is equipped with following:
 ### 1.3 ESP Comprehensive guide
 - **FOR linux based systems**.
 - Install the ESP-IDF using script
-- :warning: **Following command is dangerous. It will revert all your local changes. Stash if need to keep them**.
+> [!CAUTION]
+> This command will revert all your local changes. Stash the changes if still needed.
+
     ```sh
     $ cd esp_hosted/esp_hosted_ng/esp/esp_driver
-    $ cmake .
+    $ ./setup.sh
     ```
 * This will clone the required esp-idf repository and will setup it up for esp hosted firmware
 * Set-Up the esp firmware build environment using 
@@ -112,7 +114,10 @@ Windows](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/get-started
 
 - Use the ESP-IDF [Powershell Command
 Prompt](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/get-started/windows-setup.html#using-the-command-prompt) to execute `esp_hosted/esp_hosted_ng/esp/esp_driver/setup.ps1`. It will setup `esp-idf` as a submodule to be used by `network_adapter`.
-:warning: **This command is dangerous. It will revert all your local changes. Stash if need to keep them**.
+
+> [!CAUTION]
+> 
+> This command will revert all your local changes. Stash the changes if still needed.
 
 - Setup compiling environment by running `export.ps1` in `esp_hosted/esp_hosted_ng/esp/esp_driver/esp-idf`
 directory
