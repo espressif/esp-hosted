@@ -30,6 +30,13 @@
 #include "soc/gpio_reg.h"
 #include "esp_fw_version.h"
 
+// de-assert HS signal on CS, instead of at end of transaction
+#if defined(CONFIG_ESP_SPI_DEASSERT_HS_ON_CS)
+#define HS_DEASSERT_ON_CS (1)
+#else
+#define HS_DEASSERT_ON_CS (0)
+#endif
+
 static const char TAG[] = "FW_SPI";
 #define SPI_BITS_PER_WORD           8
 #define SPI_MODE_0              0
@@ -153,6 +160,10 @@ static uint8_t gpio_data_ready = CONFIG_ESP_SPI_GPIO_DATA_READY;
 static QueueHandle_t spi_rx_queue[MAX_PRIORITY_QUEUES] = {NULL};
 static QueueHandle_t spi_tx_queue[MAX_PRIORITY_QUEUES] = {NULL};
 
+#if HS_DEASSERT_ON_CS
+static SemaphoreHandle_t wait_cs_deassert_sem;
+#endif
+
 static interface_handle_t * esp_spi_init(void);
 static int32_t esp_spi_write(interface_handle_t *handle,
                              interface_buffer_handle_t *buf_handle);
@@ -187,6 +198,39 @@ int interface_remove_driver()
     memset(&context, 0, sizeof(context));
     return 0;
 }
+
+#if HS_DEASSERT_ON_CS
+static void IRAM_ATTR gpio_disable_hs_isr_handler(void* arg)
+{
+    int level = gpio_get_level(GPIO_CS);
+    if (level == 0) {
+        /* CS is asserted, disable HS */
+        WRITE_PERI_REG(GPIO_OUT_W1TC_REG, (1ULL << gpio_handshake));
+    } else {
+        /* Last transaction complete, populate next one */
+        if (wait_cs_deassert_sem)
+            xSemaphoreGive(wait_cs_deassert_sem);
+    }
+}
+
+static void register_hs_disable_pin(uint32_t gpio_num)
+{
+    if (gpio_num != -1) {
+        gpio_reset_pin(gpio_num);
+
+        gpio_config_t slave_disable_hs_pin_conf={
+            .intr_type=GPIO_INTR_DISABLE,
+            .mode=GPIO_MODE_INPUT,
+            .pin_bit_mask=(1ULL<<gpio_num)
+        };
+        slave_disable_hs_pin_conf.pull_up_en = 1;
+        gpio_config(&slave_disable_hs_pin_conf);
+        gpio_set_intr_type(gpio_num, GPIO_INTR_ANYEDGE);
+        gpio_install_isr_service(0);
+        gpio_isr_handler_add(gpio_num, gpio_disable_hs_isr_handler, NULL);
+    }
+}
+#endif
 
 esp_err_t send_bootup_event_to_host(uint8_t cap)
 {
@@ -285,8 +329,10 @@ static void IRAM_ATTR spi_post_setup_cb(spi_slave_transaction_t *trans)
  * Use this to set the handshake line low */
 static void IRAM_ATTR spi_post_trans_cb(spi_slave_transaction_t *trans)
 {
+#if !HS_DEASSERT_ON_CS
     /* Clear handshake line */
     WRITE_PERI_REG(GPIO_OUT_W1TC_REG, (1ULL << gpio_handshake));
+#endif
 }
 
 static uint8_t * get_next_tx_buffer(uint32_t *len)
@@ -468,6 +514,18 @@ static void spi_transaction_post_process_task(void* pvParameters)
         ret = spi_slave_get_trans_result(ESP_SPI_CONTROLLER, &spi_trans,
                                          portMAX_DELAY);
 
+#if HS_DEASSERT_ON_CS
+        /* Wait until CS has been deasserted before we queue a new transaction.
+         *
+         * Some MCUs delay deasserting CS at the end of a transaction.
+         * If we queue a new transaction without waiting for CS to deassert,
+         * the slave SPI can start (since CS is still asserted), and data is lost
+         * as host is not expecting any data.
+         */
+        if (wait_cs_deassert_sem) {
+            xSemaphoreTake(wait_cs_deassert_sem, portMAX_DELAY);
+        }
+#endif
         /* Queue new transaction to get ready as soon as possible */
         queue_next_transaction();
 
@@ -574,12 +632,24 @@ static interface_handle_t * esp_spi_init(void)
         ESP_SPI_CONTROLLER, slvcfg.mode,
         GPIO_MOSI, GPIO_MISO, GPIO_CS, GPIO_SCLK, gpio_handshake, gpio_data_ready);
     ESP_LOGI(TAG, "Hosted SPI queue size: Tx:%u Rx:%u", SPI_TX_QUEUE_SIZE, SPI_RX_QUEUE_SIZE);
+
+#if HS_DEASSERT_ON_CS
+    register_hs_disable_pin(GPIO_CS);
+#endif
+
     /* Initialize SPI slave interface */
     ret = spi_slave_initialize(ESP_SPI_CONTROLLER, &buscfg, &slvcfg, DMA_CHAN);
     assert(ret == ESP_OK);
 
     memset(&if_handle_g, 0, sizeof(if_handle_g));
     if_handle_g.state = INIT;
+
+#if HS_DEASSERT_ON_CS
+    wait_cs_deassert_sem = xSemaphoreCreateBinary();
+    assert(wait_cs_deassert_sem!= NULL);
+    /* Clear the semaphore */
+    xSemaphoreTake(wait_cs_deassert_sem, 0);
+#endif
 
     for (prio_q_idx = 0; prio_q_idx < MAX_PRIORITY_QUEUES; prio_q_idx++) {
         spi_rx_queue[prio_q_idx] = xQueueCreate(SPI_RX_QUEUE_SIZE, sizeof(interface_buffer_handle_t));

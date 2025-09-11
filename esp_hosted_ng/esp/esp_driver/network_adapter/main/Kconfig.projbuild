@@ -65,6 +65,13 @@ menu "Example Configuration"
         default y
         help
             ENABLE/DISABLE software SPI checksum
+
+    config ESP_SPI_DEASSERT_HS_ON_CS
+        bool "De-assert HS on CS"
+        default n
+        help
+            De-assert HS signal on CS, instead of at end of transaction.
+            This is useful for some hosts that have a delay in de-asserting CS.
     endmenu
 
     menu "SDIO Configuration"
