@@ -23,11 +23,12 @@
     + [4.2 Transport Layer Protocol](#42-transport-layer-protocol)
     + [4.3 Porting Guide](#43-porting-guide)
 - [5. Throughput Performance ](#5-throughput-performance)
-- [6. Coming soon](#6-coming-soon)
-- [7. Want to support?](#7-want-to-support)
+- [6. Miscellaneous](#6-miscellaneous)
+    + [6.1 Deassert CS for SPI](#61-deassert-cs-for-spi)
+- [7. Coming soon](#7-coming-soon)
+- [8. Want to support?](#8-want-to-support)
 
 ---
-
 
 
 # 1. Introduction
@@ -41,7 +42,6 @@ This solution offers following:
 * A standard HCI interface 
 
 
-
 ### 1.1 Connectivity Features
 
 This solution provides following WLAN and BT/BLE features to the host:
@@ -53,7 +53,6 @@ This solution provides following WLAN and BT/BLE features to the host:
   - Classic Bluetooth
   - BLE 4.2
   - BLE 5.0
-
 
 
 ### 1.2 Supported ESP boards
@@ -77,7 +76,7 @@ Looking for other chipset? Please do check [Coming Soon](#5-coming-soon) section
   - Raspberry-Pi 4 Model B
 - This solution is aimed for Linux based hosts only. For microcontroller(MCU) based hosts (like STM32 etc), [ESP-Hosted-FG](../esp_hosted_fg) flavour should be used.
 - Although we try to help in porting, We expect users to get the transport interfaces like SDIO/SPI/UART configured on your Linux platform. Device tree configuration and device drivers could be some times tricky as every Linux platform has it different.
-- It is relatively easy to port this solution to other Linux based platforms. Please refer [Porting Guide](docs/porting_guide.md) for the common steps.
+- It is relatively easy to port this solution to other Linux based platforms. Please refer [Porting Guide](docs/porting_guide.md) for the common steps. 
 
 
 
@@ -357,7 +356,7 @@ Following operations for station are supported as of now:
 > ```sh
 > $ ping <ip address of AP>
 > ```
-</p></details>
+></p></details>
 <details><summary>WPA/WPA2</summary>
 <p>
 
@@ -436,7 +435,7 @@ Following operations for station are supported as of now:
 > ```sh
 > $ ping <ip address of AP>
 > ```
-</p></details>
+></p></details>
 <details><summary>WPA3</summary>
 <p>
 
@@ -507,7 +506,7 @@ Following operations for station are supported as of now:
 > ```sh
 > $ ping <ip address of AP>
 > ```
-</p></details>
+></p></details>
 
 
 #### Disconnect from AP
@@ -790,7 +789,44 @@ Refer [RAW throughput guide](docs/Raw_TP_Testing.md) for verifying connection as
 
 ---
 
-# 6. Coming soon
+# 6. Miscellaneous
+
+## 6.1 Deassert CS for SPI
+
+**Problem:** Some hosts, after completing an SPI transaction, introduce a delay before de-asserting the Chip Select (CS) line. The ESP SPI slave, seeing that the CS is still asserted, might start the next transaction prematurely, leading to data loss or corruption because the host is not ready.
+
+**Solution:** To address this, the ESP firmware provides a Kconfig option, `ESP_SPI_DEASSERT_HS_ON_CS`. When this option is enabled, the firmware changes its behavior. Instead of de-asserting the Handshake (HS) signal at the end of a transaction, it waits for the CS line to be de-asserted by the host. This ensures that a new transaction doesn't start until the host has properly finished the previous one.
+
+**How to Enable:**
+
+You can enable this option using the `idf.py menuconfig` tool within the `esp_hosted_ng` project.
+
+1.  Navigate to the ESP firmware directory:
+    ```sh
+    cd esp_hosted_ng/esp/esp_driver/network_adapter
+    ```
+
+2.  Launch the configuration menu:
+    ```sh
+    idf.py menuconfig
+    ```
+
+3.  In the menu, navigate to the following path:
+    `Example Configuration` -> `SPI Configuration`
+
+4.  Inside the `SPI Configuration` menu, you will find the option `De-assert HS on CS`.
+
+5.  Select this option to enable it (set it to `true`).
+
+6.  Save the configuration and exit `menuconfig`.
+
+7.  Rebuild the firmware for the changes to take effect.
+
+This option is defined in the Kconfig file located at `main/Kconfig.projbuild` within the `network_adapter` directory.
+
+---
+
+# 7. Coming soon
 
 Tremendous work to be done ahead! Below is glimpse of upcoming release:
 
@@ -801,5 +837,5 @@ Tremendous work to be done ahead! Below is glimpse of upcoming release:
 
 ---
 
-# 7. Want to support?
+# 8. Want to support?
 That's right. Being open source, we really appreciate the pull requests. Already raised pull request? Please be patient. We will review and merge your commit into the master.
