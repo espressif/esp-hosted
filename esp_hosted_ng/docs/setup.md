@@ -262,14 +262,6 @@ directory
     * Please reboot Raspberry-Pi after changing this file.
 * Setting up the environment and getting started
     * Host environment setup  
-        * As ESP32 & ESP32C6, both support SDIO, Let host know which slave chipset is being used by changing `ESP_SLAVE_CHIPSET` in `esp_hosted_ng/host/rpi_init.sh` as:
-            ```sh
-            ESP_SLAVE_CHIPSET="esp32"
-            ```
-            or
-            ```sh
-            ESP_SLAVE_CHIPSET="esp32c6"
-            ```
         * Execute following commands in root directory of cloned ESP-Hosted repository on Raspberry-Pi
             ```sh
             $ cd esp_hosted/esp_hosted_ng/host/
