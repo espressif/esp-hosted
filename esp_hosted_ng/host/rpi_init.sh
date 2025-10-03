@@ -42,9 +42,6 @@ wlan_init()
         fi
     fi
 
-    if [ "$ESP_SLAVE" != "" ] ; then
-        CUSTOM_OPTS=${CUSTOM_OPTS}" ESP_SLAVE=\"$ESP_SLAVE"\"
-    fi
     if [ "$CUSTOM_OPTS" != "" ] ; then
         echo "Adding $CUSTOM_OPTS"
     fi
