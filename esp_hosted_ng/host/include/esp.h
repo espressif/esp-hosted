@@ -73,6 +73,7 @@ enum adapter_flags_e {
 
 enum priv_flags_e {
 	ESP_NETWORK_UP,
+	ESP_INTERFACE_INITIALIZED,
 };
 
 struct command_node {

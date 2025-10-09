@@ -340,6 +340,7 @@ struct wireless_dev *esp_cfg80211_add_iface(struct wiphy *wiphy,
 
 
 	set_bit(ESP_NETWORK_UP, &esp_wdev->priv_flags);
+	set_bit(ESP_INTERFACE_INITIALIZED, &esp_wdev->priv_flags);
 
 	esp_wdev->nb.notifier_call = esp_inetaddr_event;
 	register_inetaddr_notifier(&esp_wdev->nb);
