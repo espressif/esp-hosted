@@ -147,22 +147,22 @@ directory
 ### 2.1 SPI configuration
 **Wi-Fi and Bluetooth over SPI**
 
-| Supported Targets | ESP32 | ESP32-S2 | ESP32-S3 | ESP32-C2 | ESP32-C3 | ESP32-C5 | ESP32-C6 |
+| Supported Targets | ESP32 | ESP32-S2 | ESP32-S3 | ESP32-C2 | ESP32-C3 | ESP32-C5 | ESP32-C6/C61 |
 | ----------------- | ----- | -------- | -------- |--------- |--------- |--------- |--------- |
 * Hardware setup
     * In this setup, ESP board acts as a SPI peripheral and provides Wi-Fi capabilities to host. Please connect ESP board to Raspberry-Pi with jumper cables as mentioned below. Please use short jumper cables to ensure signal integrity. Raspberry Pi should be powered with correct incoming power rating. ESP can be powered through PC using micro-USB/USB-C cable.
     * **Pin Connections**
 
-        | Raspberry-Pi Pin | ESP32 | ESP32-S2/S3 | ESP32-C2/C3/C5/C6 | Function |
-        |:-------:|:---------:|:--------:|:--------:|:--------:|
-        | 24 | IO15 | IO10 | IO10 | CS0 |
-        | 23 | IO14 | IO12 | IO6 | SCLK |
-        | 21 | IO12 | IO13 | IO2 | MISO |
-        | 19 | IO13 | IO11 | IO7 | MOSI |
-        | 25 | GND | GND | GND | Ground |
-        | 15 | IO2 | IO2 | IO3 | Handshake |
-        | 13 | IO4 | IO4 | IO4 | Data Ready |
-        | 31 | EN  | RST | RST | ESP32 Reset |
+        | Raspberry-Pi Pin | ESP32 | ESP32-S2/S3 | ESP32-C2/C3/C5/C6 | ESP32-C61 | Function |
+        |:-------:|:---------:|:--------:|:--------:|:--------:|:--------:|
+        | 24 | IO15 | IO10 | IO10 | IO8 | CS0 |
+        | 23 | IO14 | IO12 | IO6 | IO6 | SCLK |
+        | 21 | IO12 | IO13 | IO2 | IO2 | MISO |
+        | 19 | IO13 | IO11 | IO7 | IO7 | MOSI |
+        | 25 | GND | GND | GND | GND | Ground |
+        | 15 | IO2 | IO2 | IO3 | IO3 | Handshake |
+        | 13 | IO4 | IO4 | IO4 | IO4 | Data Ready |
+        | 31 | EN  | RST | RST | RST | ESP32 Reset |
     * Raspberry-Pi pinout can be found [here!](https://pinout.xyz/pinout/spi)
     * Optionally, Add external pull-up of min 10k Ohm on CS line just to prevent bus floating
     * In case of ESP32-S3, For avoidance of doubt, You can power using [UART port](https://docs.espressif.com/projects/esp-idf/en/latest/esp32s3/hw-reference/esp32s3/user-guide-devkitc-1.html#description-of-components)
@@ -204,7 +204,7 @@ directory
             $ rm -rf sdkconfig build
             $ idf.py set-target <esp_chipset>
             ```
-        * For SPI, <esp_chipset> could be one of `esp32`, `esp32s2`, `esp32s3`, `esp32c2`, `esp32c3`, `esp32c6`.
+        * For SPI, <esp_chipset> could be one of `esp32`, `esp32s2`, `esp32s3`, `esp32c2`, `esp32c3`, `esp32c6`, `esp32c61`.
         * Execute following command to configure the project
             ```
             $ idf.py menuconfig
@@ -233,22 +233,22 @@ directory
 ### 2.2 SDIO configuration
 **Wi-Fi and Bluetooth over SDIO**
 
-| Supported Targets | ESP32 | ESP32-C6 |
-| ----------------- | ----- | -------- |
+| Supported Targets | ESP32 | ESP32-C5 | ESP32-C6/C61 |
+| ----------------- | ----- | -------- | ---------|
 * Hardware setup
     * In this setup, ESP board acts as a SDIO peripheral and provides Wi-Fi capabilities to host. Please connect ESP board to Raspberry-Pi with jumper cables as mentioned below. Raspberry Pi should be powered with correct incoming power rating. ESP can be powered through PC using micro-USB/USB-C cable.
     * **Pin connections**
 
-        | Raspberry-Pi Pin | ESP32 Pin | ESP32-C6 Pin | ESP32-C5 | Function |
-        | :--------------: | :-------: | :----------: | :------: | :------: |
-        | 13 | IO13+[pull-up](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/peripherals/sd_pullup_requirements.html) | IO23+[pull-up](https://docs.espressif.com/projects/esp-idf/en/latest/esp32c6/api-reference/peripherals/sd_pullup_requirements.html) | IO13+[pull-up](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/peripherals/sd_pullup_requirements.html) | DAT3 |
-        | 15 | IO14 | IO19 | IO9 | CLK |
-        | 16 | IO15+[pull-up](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/peripherals/sd_pullup_requirements.html) | IO18+[pull-up](https://docs.espressif.com/projects/esp-idf/en/latest/esp32c6/api-reference/peripherals/sd_pullup_requirements.html) | IO10+[pull-up](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/peripherals/sd_pullup_requirements.html) | CMD |
-        | 18 | IO2+[pull-up](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/peripherals/sd_pullup_requirements.html) | IO20+[pull-up](https://docs.espressif.com/projects/esp-idf/en/latest/esp32c6/api-reference/peripherals/sd_pullup_requirements.html) | IO8+[pull-up](https://docs.espressif.com/projects/esp-idf/en/latest/esp32c6/api-reference/peripherals/sd_pullup_requirements.html) | DAT0 |
-        | 22 | IO4+[pull-up](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/peripherals/sd_pullup_requirements.html) | IO21+[pull-up](https://docs.espressif.com/projects/esp-idf/en/latest/esp32c6/api-reference/peripherals/sd_pullup_requirements.html) | IO7+[pull-up](https://docs.espressif.com/projects/esp-idf/en/latest/esp32c6/api-reference/peripherals/sd_pullup_requirements.html) | DAT1 |
-        | 31 | EN  | ESP Reset | ESP Reset | Reset |
-        | 37 | IO12+[pull-up](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/peripherals/sd_pullup_requirements.html)| IO22+[pull-up](https://docs.espressif.com/projects/esp-idf/en/latest/esp32c6/api-reference/peripherals/sd_pullup_requirements.html) | IO14+[pull-up](https://docs.espressif.com/projects/esp-idf/en/latest/esp32c6/api-reference/peripherals/sd_pullup_requirements.html) | DAT2 |
-        | 39 | GND | GND | GND | GND |
+        | Raspberry-Pi Pin | ESP32 Pin | ESP32-C6 Pin | ESP32-C5 | ESP32-C61 Pin | Function |
+        | :--------------: | :-------: | :----------: | :------: | :-----------: | :------: |
+        | 13 | IO13+[pull-up](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/peripherals/sd_pullup_requirements.html) | IO23+[pull-up](https://docs.espressif.com/projects/esp-idf/en/latest/esp32c6/api-reference/peripherals/sd_pullup_requirements.html) | IO13+[pull-up](https://docs.espressif.com/projects/esp-idf/en/latest/esp32c5/api-reference/peripherals/sd_pullup_requirements.html) | IO23+[pull-up](https://docs.espressif.com/projects/esp-idf/en/latest/esp32c61/api-reference/peripherals/sd_pullup_requirements.html) | DAT3 |
+        | 15 | IO14 | IO19 | IO9 | IO26 | CLK |
+        | 16 | IO15+[pull-up](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/peripherals/sd_pullup_requirements.html) | IO18+[pull-up](https://docs.espressif.com/projects/esp-idf/en/latest/esp32c6/api-reference/peripherals/sd_pullup_requirements.html) | IO10+[pull-up](https://docs.espressif.com/projects/esp-idf/en/latest/esp32c5/api-reference/peripherals/sd_pullup_requirements.html) | IO25+[pull-up](https://docs.espressif.com/projects/esp-idf/en/latest/esp32c61/api-reference/peripherals/sd_pullup_requirements.html) | CMD |
+        | 18 | IO2+[pull-up](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/peripherals/sd_pullup_requirements.html) | IO20+[pull-up](https://docs.espressif.com/projects/esp-idf/en/latest/esp32c6/api-reference/peripherals/sd_pullup_requirements.html) | IO8+[pull-up](https://docs.espressif.com/projects/esp-idf/en/latest/esp32c5/api-reference/peripherals/sd_pullup_requirements.html) | IO27+[pull-up](https://docs.espressif.com/projects/esp-idf/en/latest/esp32c61/api-reference/peripherals/sd_pullup_requirements.html) | DAT0 |
+        | 22 | IO4+[pull-up](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/peripherals/sd_pullup_requirements.html) | IO21+[pull-up](https://docs.espressif.com/projects/esp-idf/en/latest/esp32c6/api-reference/peripherals/sd_pullup_requirements.html) | IO7+[pull-up](https://docs.espressif.com/projects/esp-idf/en/latest/esp32c5/api-reference/peripherals/sd_pullup_requirements.html) | IO28+[pull-up](https://docs.espressif.com/projects/esp-idf/en/latest/esp32c61/api-reference/peripherals/sd_pullup_requirements.html) | DAT1 |
+        | 31 | EN  | ESP Reset | ESP Reset | ESP Reset | Reset |
+        | 37 | IO12+[pull-up](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/peripherals/sd_pullup_requirements.html)| IO22+[pull-up](https://docs.espressif.com/projects/esp-idf/en/latest/esp32c6/api-reference/peripherals/sd_pullup_requirements.html) | IO14+[pull-up](https://docs.espressif.com/projects/esp-idf/en/latest/esp32c5/api-reference/peripherals/sd_pullup_requirements.html) | IO22+[pull-up](https://docs.espressif.com/projects/esp-idf/en/latest/esp32c61/api-reference/peripherals/sd_pullup_requirements.html) | DAT2 |
+        | 39 | GND | GND | GND | GND | GND |
     * Raspberry-Pi pinout can be found [here!](https://pinout.xyz/pinout/sdio)
     * As SDIO faces signal integrity issues over jumper wires, we strongly recommend to **Design PCB boards with above connections**. If that is not possible. Use good quality extremely small (smaller than 5cm) jumper wires, all equal length. Join all possible grounds interconnected to lower noise. Add at least, 10k Ohm external pull-up resistors on 5 lines: CMD, DAT0-4. We use 51k Ohm resistors in our set-up.
 

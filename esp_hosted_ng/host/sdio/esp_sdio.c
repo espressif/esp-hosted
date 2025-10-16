@@ -46,10 +46,8 @@ static int write_packet(struct esp_adapter *adapter, struct sk_buff *skb);
 static const struct sdio_device_id esp_devices[] = {
 	{ SDIO_DEVICE(ESP_VENDOR_ID_1, ESP_DEVICE_ID_ESP32_1) },
 	{ SDIO_DEVICE(ESP_VENDOR_ID_1, ESP_DEVICE_ID_ESP32_2) },
-	{ SDIO_DEVICE(ESP_VENDOR_ID_2, ESP_DEVICE_ID_ESP32C6_1) },
-	{ SDIO_DEVICE(ESP_VENDOR_ID_2, ESP_DEVICE_ID_ESP32C6_2) },
-	{ SDIO_DEVICE(ESP_VENDOR_ID_3, ESP_DEVICE_ID_ESP32C5_1) },
-	{ SDIO_DEVICE(ESP_VENDOR_ID_3, ESP_DEVICE_ID_ESP32C5_2) },
+	{ SDIO_DEVICE(ESP_VENDOR_ID_2, ESP_DEVICE_ID_C5_C6_C61_1) },
+	{ SDIO_DEVICE(ESP_VENDOR_ID_2, ESP_DEVICE_ID_C5_C6_C61_2) },
 	{}
 };
 
@@ -885,6 +883,7 @@ int esp_validate_chipset(struct esp_adapter *adapter, u8 chipset)
 	switch(chipset) {
 	case ESP_FIRMWARE_CHIP_ESP32:
 	case ESP_FIRMWARE_CHIP_ESP32C6:
+	case ESP_FIRMWARE_CHIP_ESP32C61:
 	case ESP_FIRMWARE_CHIP_ESP32C5:
 		adapter->chipset = chipset;
 		esp_info("Chipset=%s ID=%02x detected over SDIO\n", esp_chipname_from_id(chipset), chipset);

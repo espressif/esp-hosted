@@ -141,6 +141,17 @@ uint8_t g_spi_mode = SPI_MODE_2;
 
 #define SPI_CLK_MHZ         26
 
+#elif defined CONFIG_IDF_TARGET_ESP32C61
+
+#define ESP_SPI_CONTROLLER      1
+#define GPIO_MOSI           7
+#define GPIO_MISO           2
+#define GPIO_SCLK           6
+#define GPIO_CS             8
+#define DMA_CHAN            SPI_DMA_CH_AUTO
+
+#define SPI_CLK_MHZ         26
+
 #endif
 /* Max SPI slave CLK in IO_MUX tested in IDF:
  * ESP32: 10MHz

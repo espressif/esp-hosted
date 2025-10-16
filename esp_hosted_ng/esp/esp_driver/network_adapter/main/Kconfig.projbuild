@@ -35,6 +35,7 @@ menu "Example Configuration"
         default 3 if IDF_TARGET_ESP32C2
         default 3 if IDF_TARGET_ESP32C3
         default 3 if IDF_TARGET_ESP32C6
+        default 3 if IDF_TARGET_ESP32C61
         default 3 if IDF_TARGET_ESP32C5
         default 2
         help
@@ -91,6 +92,7 @@ menu "Example Configuration"
         default 22 if IDF_TARGET_ESP32
         default 4 if IDF_TARGET_ESP32C6
         default 5 if IDF_TARGET_ESP32C5
+        default 5 if IDF_TARGET_ESP32C61
         help
             GPIO pin used to wake-up host
 

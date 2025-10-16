@@ -891,6 +891,8 @@ char *esp_get_hardware_name(int hardware_id)
 		return "ESP32C2";
 	else if(hardware_id == ESP_FIRMWARE_CHIP_ESP32C6)
 		return "ESP32C6";
+	else if(hardware_id == ESP_FIRMWARE_CHIP_ESP32C61)
+		return "ESP32C61";
 	else if(hardware_id == ESP_FIRMWARE_CHIP_ESP32C5)
 		return "ESP32C5";
 	else
@@ -906,6 +908,7 @@ bool esp_is_valid_hardware_id(int hardware_id)
 	case ESP_FIRMWARE_CHIP_ESP32S3:
 	case ESP_FIRMWARE_CHIP_ESP32C2:
 	case ESP_FIRMWARE_CHIP_ESP32C6:
+	case ESP_FIRMWARE_CHIP_ESP32C61:
 	case ESP_FIRMWARE_CHIP_ESP32C5:
 		return true;
 	default:
