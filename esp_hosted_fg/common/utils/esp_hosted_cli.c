@@ -194,7 +194,7 @@ static int crash_device_handler(int argc, char** argv)
 	printf("Crashing the device now...\n");
 
 	// Writing at invalid address
-	*(int *) (0x0) = 0;
+	*(volatile int *) (0x0) = 0;
 	return ESP_OK;
 }
 
