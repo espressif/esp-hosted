@@ -738,6 +738,9 @@ static void esp_cfg80211_set_wakeup(struct wiphy *wiphy,
 
 static int esp_cfg80211_set_tx_power(struct wiphy *wiphy,
 				     struct wireless_dev *wdev,
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 17, 0))
+				     int radio_idx,
+#endif
 				     enum nl80211_tx_power_setting type, int mbm)
 {
 	struct esp_adapter *adapter = esp_get_adapter();
@@ -815,6 +818,9 @@ static int esp_cfg80211_get_station(struct wiphy *wiphy, struct net_device *ndev
 
 static int esp_cfg80211_get_tx_power(struct wiphy *wiphy,
 				     struct wireless_dev *wdev,
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 17, 0))
+				     int radio_idx,
+#endif
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 14, 0))
 				     unsigned int link_id,
 #endif
@@ -842,7 +848,11 @@ static int esp_cfg80211_get_tx_power(struct wiphy *wiphy,
 	return 0;
 }
 
-static int esp_cfg80211_set_wiphy_params(struct wiphy *wiphy, u32 changed)
+static int esp_cfg80211_set_wiphy_params(struct wiphy *wiphy,
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 17, 0))
+					 int radio_idx,
+#endif
+					 u32 changed)
 {
 	esp_dbg("\n");
 	return 0;
