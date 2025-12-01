@@ -2,6 +2,7 @@
 CROSS_COMPILE :=
 KERNEL := /lib/modules/$(shell uname -r)/build
 ARCH := $(shell uname -m)
+M ?= $(PWD)
 
 # Normalize ARCH
 ifeq ($(ARCH), x86_64)
@@ -58,3 +59,5 @@ clean:
 check:
 	$(MAKE) ARCH=$(ARCH) CROSS_COMPILE=$(CROSS_COMPILE) -C $(KERNEL) M=$(PWD) $(module_objects)
 
+modules_install:
+	$(MAKE) -C $(KERNEL_SRC) M=$(M) modules_install
