@@ -507,6 +507,101 @@ Following operations for station are supported as of now:
 > $ ping <ip address of AP>
 > ```
 ></p></details>
+<details><summary>WPA2/WPA3 Enterprise</summary>
+<p>
+
+>
+> ## WPA2/WPA3 Enterprise mode connect
+> Note the SSID, username, and password of the WPA2/WPA3 enterprise AP to connect.
+>
+> The ESP-Hosted-NG solution supports both WPA2 Enterprise and WPA3 Enterprise authentication modes through EAP (Extensible Authentication Protocol) when operating in Station mode.
+> 
+> ### Create config & Trigger connection
+> * `wpa_supplicant` already running on host operating system can interfere in testing. Execute following commands to prevent this.
+> ```sh
+> $ sudo killall wpa_supplicant
+> ```
+>
+> * Generate wpa_supplicant config using below template for PEAP/MSCHAPv2
+> ```sh
+> $ cat ~/wpa2_ent.conf
+> ctrl_interface=/var/run/wpa_supplicant
+> ap_scan=0
+> network={
+>     ssid="MY_ENTERPRISE_SSID"
+>     key_mgmt=WPA-EAP
+>     eap=PEAP
+>     identity="user@domain.com"
+>     password="user_password"
+>     ca_cert="/path/to/ca-cert.pem"
+>     phase2="auth=MSCHAPV2"
+> }
+> ```
+> 
+> * Alternative template for EAP-TLS
+> ```sh
+> $ cat ~/wpa2_tls.conf
+> ctrl_interface=/var/run/wpa_supplicant
+> ap_scan=0
+> network={
+>     ssid="MY_ENTERPRISE_SSID"
+>     key_mgmt=WPA-EAP
+>     eap=TLS
+>     identity="user@domain.com"
+>     client_cert="/path/to/client-cert.pem"
+>     private_key="/path/to/private-key.pem"
+>     ca_cert="/path/to/ca-cert.pem"
+> }
+> ```
+> 
+> * Change `MY_ENTERPRISE_SSID` to AP's SSID, `user@domain.com` to your username, and `user_password` to your password
+> * Update certificate paths to match your enterprise environment
+> 
+> * Start the wpa supplicant for connection
+> ```sh
+> $ sudo wpa_supplicant -D nl80211 -i wlan0 -c ~/wpa2_ent.conf
+> ```
+>
+> ---
+> ### Verify connection
+> * Verify the connection status using following command and verify `ESSID:<ssid>` in output
+> ```sh
+> $ iwconfig wlan0
+>   wlan0     IEEE 802.11  ESSID:"MY_ENTERPRISE_SSID"
+>             Mode:Managed  Frequency:2.412 GHz  Access Point: C4:41:1E:BE:F0:B2
+>             Retry short limit:7   RTS thr:off   Fragment thr:off
+>             Power Management:on
+> ```
+>
+> ---
+> ### Assign IP address
+> * Use dhclient command to get IP. Please note, `dhclient` command may not be available on all Linux. Use DHCP client command supported on your Linux.
+> ```sh
+> $ sudo dhclient -v wlan0
+> Internet Systems Consortium DHCP Client 4.4.1
+> Copyright 2004-2018 Internet Systems Consortium.
+> All rights reserved.
+> For info, please visit https://www.isc.org/software/dhcp/
+> Listening on LPF/wlan0/24:6f:28:80:2c:34
+> Sending on   LPF/wlan0/24:6f:28:80:2c:34
+> Sending on   Socket/fallback
+> .
+> DHCPDISCOVER on wlan0 to 255.255.255.255 port 67 interval 7
+> DHCPOFFER of 192.168.43.32 from 192.168.43.1
+> DHCPREQUEST for 192.168.43.32 on wlan0 to 255.255.255.255 port 67
+> DHCPACK of 192.168.43.32 from 192.168.43.1
+> bound to 192.168.43.32 -- renewal in 1482 seconds.
+>
+> ```
+>
+> ---
+>
+> ### Ping
+>
+> ```sh
+> $ ping <ip address of AP>
+> ```
+></p></details>
 
 
 #### Disconnect from AP
