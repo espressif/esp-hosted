@@ -243,3 +243,6 @@ deploy_master_github:
       - git remote remove github &>/dev/null || true
       - git remote add github git@github.com:espressif/esp-hosted.git
       - git push -f github "${CI_COMMIT_SHA}:refs/heads/${CI_COMMIT_REF_NAME}"
+
+include:
+  - '.gitlab/ci/pre_commit.yml'
