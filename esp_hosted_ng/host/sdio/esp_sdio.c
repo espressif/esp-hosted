@@ -171,7 +171,7 @@ static int esp_slave_get_tx_buffer_num(struct esp_sdio_context *context, u32 *tx
 
 int esp_deinit_module(struct esp_adapter *adapter)
 {
-	/* Second & onward bootup cleanup is not required for SDIO:
+	/* Second & onward boot-up cleanup is not required for SDIO:
 	 * As Removal of SDIO triggers complete Deinit and SDIO insertion/
 	 * detection, triggers probing which does initialization.
 	 */
@@ -739,7 +739,7 @@ static int esp_probe(struct sdio_func *func,
 	if (sdio_context.sdio_clk_mhz) {
 		struct mmc_host *host = func->card->host;
 		u32 hz = sdio_context.sdio_clk_mhz * NUMBER_1M;
-		/* Expansion of mmc_set_clock that isnt exported */
+		/* Expansion of mmc_set_clock that isn't exported */
 		if (hz < host->f_min)
 			hz = host->f_min;
 		if (hz > host->f_max)

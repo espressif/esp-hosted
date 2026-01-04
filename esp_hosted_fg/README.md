@@ -78,7 +78,7 @@ ESP-Hosted-FG solution is supported on following ESP boards:
     * Wi-Fi runs over SPI and Bluetooth runs over UART
 
 Different ESP chipset support different set of peripherals. Below is features supported matrix for Linux & MCU.
-In this matrix, Each feature is by default enabled & supported with every trasport in left.
+In this matrix, Each feature is by default enabled & supported with every transport in left.
 Any Unwanted feature can be turned off with config change.
 
 ### 1.5 Feature Matrix
@@ -272,7 +272,7 @@ Below document explains the APIs provided for MCU based ESP-Hosted-FG solution
 
 # 5. Throughput performance
 * Station & Soft-AP both the Wi-Fi modes support both, 20 MHz & 40 MHz bandwidth
-* Throughput performace is measured with iperf inside the RF shielded box
+* Throughput performance is measured with iperf inside the RF shielded box
 * Following are ESP-Hosted-FG iperf throughput numbers for Wi-Fi (station mode - 20MHz), considering common use-case
 
 ![alt text](docs/esp_hosted_performance.png "ESP Hosted performance matrix")

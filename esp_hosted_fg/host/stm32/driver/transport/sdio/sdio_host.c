@@ -43,7 +43,7 @@ static stm_ret_t esp_slave_init_io(void);
 static uint32_t esp_sdio_host_get_buffer_size(void);
 static stm_ret_t esp_sdio_slave_get_rx_data_size(uint32_t* rx_size);
 
-/** Functions Defination **/
+/** Functions Definition **/
 
 /**
  * @brief  SDIO slave initialization
@@ -405,7 +405,7 @@ stm_ret_t sdio_host_send_packet(const void* start, uint32_t length)
 	do {
 		/* Though the driver supports to split packet of unaligned size into
 		 * length of 4x and 1~3, we still send aligned size of data to get
-		 * higher effeciency. The length is determined by the SDIO address, and
+		 * higher efficiency. The length is determined by the SDIO address, and
 		 * the remainning will be discard by the slave hardware
 		 */
 		block_n = len_remain / ESP_BLOCK_SIZE;

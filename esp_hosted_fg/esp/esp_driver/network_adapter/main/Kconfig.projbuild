@@ -266,7 +266,7 @@ menu "Example Configuration"
 				int "Slave GPIO pin to reset itself"
 				default -1
 				help
-					Host uses this pin to reset the slave ESP. To re-use ESP 'RST' or 'EN' GPIO, set value to -1
+					Host uses this pin to reset the slave ESP. To reuse ESP 'RST' or 'EN' GPIO, set value to -1
 		endmenu
 
 		config ESP_SPI_DEASSERT_HS_ON_CS
@@ -303,7 +303,7 @@ menu "Example Configuration"
 			int "Slave GPIO pin to reset itself"
 			default -1
 			help
-				Host uses this pin to reset the slave ESP. To re-use ESP 'RST' or 'EN' GPIO, set value to -1
+				Host uses this pin to reset the slave ESP. To reuse ESP 'RST' or 'EN' GPIO, set value to -1
 
 		choice
 			prompt "SDIO Bus Speed"
@@ -585,8 +585,8 @@ menu "Example Configuration"
 			default ESP_WIFI_AUTH_WPA2_PSK
 			help
 				The weakest authmode to accept in the scan mode.
-				This value defaults to ESP_WIFI_AUTH_WPA2_PSK incase password is present and ESP_WIFI_AUTH_OPEN is used.
-				Please select ESP_WIFI_AUTH_WEP/ESP_WIFI_AUTH_WPA_PSK incase AP is operating in WEP/WPA mode.
+				This value defaults to ESP_WIFI_AUTH_WPA2_PSK in case password is present and ESP_WIFI_AUTH_OPEN is used.
+				Please select ESP_WIFI_AUTH_WEP/ESP_WIFI_AUTH_WPA_PSK in case AP is operating in WEP/WPA mode.
 
 			config ESP_WIFI_AUTH_OPEN
 				bool "OPEN"

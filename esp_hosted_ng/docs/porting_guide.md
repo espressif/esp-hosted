@@ -15,7 +15,7 @@ As mentioned in earlier sections, Linux based ESP-Hosted solution supports Raspb
 
 ###### Host side
 - ResetPin GPIO
-	- You need to choose any unused GPIO for reseting ESP and configure in your SoC's Device Tree Config
+	- You need to choose any unused GPIO for resetting ESP and configure in your SoC's Device Tree Config
 - Peripheral GPIOs
 	- Check the pincontrol device tree blobs and verify if the correct GPIOs are in place for your expected SDIO hardware instance.
 	- SDIO GPIOs
@@ -28,7 +28,7 @@ As mentioned in earlier sections, Linux based ESP-Hosted solution supports Raspb
 - Changing GPIOs
 	- SPI GPIOs
 		- MISO, MOSI, CLK & CS are mapped to IO_MUX. They allowed to be changed with little overhead of GPIO Matrix routing.
-		- Data Ready & Handshake could be chosed from any free GPIOs
+		- Data Ready & Handshake could be chosen from any free GPIOs
 	- SDIO GPIOs
 		- Non changeable
 	- UART GPIOs
@@ -48,7 +48,7 @@ As mentioned in earlier sections, Linux based ESP-Hosted solution supports Raspb
 
 - [Device Tree (DT)](https://www.raspberrypi.org/documentation/configuration/device-tree.md) and dtoverlay are way to express hardware and hardware configurations of them. While porting, It is important to understand and create device tree configuration for peripheral you use (SPI/SDIO/UART) for your Linux platform.
 - Please note that every Linux platform or Soc vary in terms of device instances, their configurations. You might want to check the datasheet and GPIOs supported for the expected peripherals to be used.
-- Please spare some time and Cross-check the parameters for peripherals, for example min or max frequncy of peripheral, peripheral config wrt timing phases of SPI protocol
+- Please spare some time and Cross-check the parameters for peripherals, for example min or max frequency of peripheral, peripheral config wrt timing phases of SPI protocol
 - For SDIO, We suggest `broken-cd;` argument to be added/enabled DT which allows the ESP chipset hot-pluggable
 - Please understand all the SoCs have different drivers and do not exactly follow one rule to make them work. Host Device Tree is user's responsibility to configure
 - ESP-Hosted expects/assumes the platform with correct Device Tree or configuration is up. Although we try to help, but unfortunately, most of the bugs we received generally end up in host platform issues, which are in fact not ESP-Hosted software bugs.
@@ -122,7 +122,7 @@ KERNEL=/home/user1/arm64_kernel
 		- Alter `HANDSHAKE_PIN` and `SPI_DATA_READY_PIN` in [esp_spi.h](../host/spi/esp_spi.h).
 		- Additional pins functionality details mentioned in [1.1.1 additional pin setup](../spi_protocol.md#111-additional-pin-setup) of [spi protocol documentation](../spi_protocol.md).
 * cs_change
-		- Reason why this setting was enabled is, SPI transfer was loosing first byte in transfer. Although this issue is only observed while testing with Raspberry Pi. Enabling cs_change=1 makes CS always de-assert after each transfer request. While porting, you may want to remove line, `trans.cs_change = 1;`.
+		- Reason why this setting was enabled is, SPI transfer was losing first byte in transfer. Although this issue is only observed while testing with Raspberry Pi. Enabling cs_change=1 makes CS always de-assert after each transfer request. While porting, you may want to remove line, `trans.cs_change = 1;`.
 * Tune the SPI slave clock
 		- Maximum SPI slave clock supported by ESP chipsets are:
 			- ESP32 : 10MHZ
@@ -159,7 +159,7 @@ KERNEL=/home/user1/arm64_kernel
 User verified things like:
 
 * Reset Pin
-	* On host reload of driver, ESP is reseting
+	* On host reload of driver, ESP is resetting
 * Data_Ready / Handshake
 	* Debug logs in ISR are getting printed on manual logic change on GPIOs
 * spidev is correctly disabled
@@ -203,7 +203,7 @@ you can suspect SPI timings mismatch. In such case, tuning might be required
 * Raw throughput testing
 	* To test the transport is correctly ported and working fine, please run [Raw throughput](Raw_TP_Testing.md) tests in `ESP-> Host` and `Host->ESP` direction.
 	* Reboot/Reset both ESP and Host on raw throughput direction change
-	* In this testing, frames are pumped continously and throughput at transport is measured.
+	* In this testing, frames are pumped continuously and throughput at transport is measured.
 	* Reasonable speed in comparison to the Clock used should be deduced (no standard figure)
 	* If the speed is very less, this could mean that the transport is not correctly ported
 

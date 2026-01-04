@@ -200,7 +200,7 @@ $ sudo ./stress.out 10 scan sta_connect sta_disconnect ap_start sta_list ap_stop
 ### How to build and run
 
 ###### replxx
-`replxx` is used as command line processor which is shell handler. You are free to change to your preffered shell handler.
+`replxx` is used as command line processor which is shell handler. You are free to change to your preferred shell handler.
 
 You need to install replxx by following GitHub page, https://github.com/AmokHuginnsson/replxx.
 
@@ -289,4 +289,4 @@ It uses underlying control path API for reliable communication.
   > 4. Sending any 'asynchronous' RPC request is supported (RPC Request `with` a response function callback registered - > `Async RPC Req`)
 
   - You can also trigger events instead of immediate responses as demonstrated in `CUSTOM_RPC_REQ_ID__ECHO_BACK_AS_EVENT`
-  - To add your own event, you can re-use `create_and_send_custom_rpc_unserialised_event()`
+  - To add your own event, you can reuse `create_and_send_custom_rpc_unserialised_event()`

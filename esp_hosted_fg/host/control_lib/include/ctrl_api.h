@@ -627,7 +627,7 @@ ctrl_cmd_t * wifi_set_vendor_specific_ie(ctrl_cmd_t *req);
 /* Sets maximum WiFi transmitting power at ESP32 */
 ctrl_cmd_t * wifi_set_max_tx_power(ctrl_cmd_t *req);
 
-/* Gets current WiFi transmiting power at ESP32 */
+/* Gets current WiFi transmitting power at ESP32 */
 ctrl_cmd_t * wifi_get_curr_tx_power(ctrl_cmd_t *req);
 
 /* Sets the Country Code */
@@ -657,7 +657,7 @@ ctrl_cmd_t * ota_write(ctrl_cmd_t *req);
  * Creates timer which reset ESP32 after 5 sec */
 ctrl_cmd_t * ota_end(ctrl_cmd_t *req);
 
-/* Enable or disable specific feautures from hosted_features_t */
+/* Enable or disable specific features from hosted_features_t */
 ctrl_cmd_t * feature_config(ctrl_cmd_t *req);
 
 /* Get FW Version */

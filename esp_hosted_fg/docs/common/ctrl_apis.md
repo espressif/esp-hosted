@@ -1553,7 +1553,7 @@ dynamically allocated response pointer of type struct `ctrl_cmd_t *`
 ---
 
 ## 2. Control path events
-- Event are something that the application would subscribe to and get notification when some condition occurs. This way application doesnot have to poll for that condition
+- Event are something that the application would subscribe to and get notification when some condition occurs. This way application does not have to poll for that condition
 - Event subscribe
   - API [set_event_callback()](#13-int-set_event_callbackint-event-ctrl_event_cb_t-event_cb) is called with `event` and `callback function`
 - Event unsubscribe

@@ -118,7 +118,7 @@ void process_hci_rx_pkt(uint8_t *payload, uint16_t payload_len) {
 		return;
 
 	/* VHCI needs one extra byte at the start of payload */
-	/* that is accomodated in esp_payload_header */
+	/* that is accommodated in esp_payload_header */
 	ESP_HEXLOGV("bt_rx", payload, payload_len, 32);
 
 	payload--;

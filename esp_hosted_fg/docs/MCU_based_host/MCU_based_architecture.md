@@ -10,8 +10,8 @@ The host software mainly consists of following building blocks.
 ### 1.1 SPI/SDIO Host Driver
 
 * ESP-Hosted solution provides thin SPI/SDIO host interface layer which transmits/receives data from SPI/SDIO hardware driver and makes it available to serial or network interface
-* Asynchrounous in nature, higher layers have flexibility to transmit and/or receive data as needed
-* Currently, Maximum bytes of data trasmitted in single transmit or receive transaction is as follows:
+* Asynchronous in nature, higher layers have flexibility to transmit and/or receive data as needed
+* Currently, Maximum bytes of data transmitted in single transmit or receive transaction is as follows:
 	* SPI - 1600 bytes
 	* SDIO - 4096 bytes
   
@@ -31,7 +31,7 @@ The host software mainly consists of following building blocks.
 * As mentioned above, this interface is implemented over virtual serial interface.
 * This interface is used for sending control commands to control and configure Wi-Fi functionality of attached ESP peripheral.
 * This is an optional interface and in case virtual serial interface is not used, the control path or BT functionality can be used on physical UART interface connected to ESP peripheral.
-* Control path design and implemetation details explained in [Control Path](../common/contrl_path.md) documentation
+* Control path design and implementation details explained in [Control Path](../common/contrl_path.md) documentation
   
 ---
 

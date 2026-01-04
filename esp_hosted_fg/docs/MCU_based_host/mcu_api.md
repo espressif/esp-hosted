@@ -80,7 +80,7 @@ This API can be used by higher layer to setup a serial interface. A serial inter
 
 #### Parameters
 - `void(*rx_data_ind)(void)`:
-Call back function in higher layer. This is used to indicate availibility of Rx data to higher layer. Higher layer can perform read operation to get this data.
+Call back function in higher layer. This is used to indicate availability of Rx data to higher layer. Higher layer can perform read operation to get this data.
 
 #### Return
 - NULL: failure

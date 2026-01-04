@@ -756,14 +756,14 @@ esp_err_t esp_hosted_coprocessor_init(void)
 	/* Endpoint for control command responses */
 	if (protocomm_add_endpoint(pc_pserial, CTRL_EP_NAME_RESP,
 				data_transfer_handler, NULL) != ESP_OK) {
-		ESP_LOGE(TAG, "Failed to add enpoint");
+		ESP_LOGE(TAG, "Failed to add endpoint");
 		return ESP_FAIL;
 	}
 
 	/* Endpoint for control notifications for events subscribed by user */
 	if (protocomm_add_endpoint(pc_pserial, CTRL_EP_NAME_EVENT,
 				ctrl_notify_handler, NULL) != ESP_OK) {
-		ESP_LOGE(TAG, "Failed to add enpoint");
+		ESP_LOGE(TAG, "Failed to add endpoint");
 		return ESP_FAIL;
 	}
 
@@ -803,7 +803,7 @@ esp_err_t esp_hosted_coprocessor_init(void)
 	connect_sta();
 #endif
 
-	ESP_LOGI(TAG, "bus tx locked on slave bootup");
+	ESP_LOGI(TAG, "bus tx locked on slave boot-up");
 
 	while(!datapath) {
 		vTaskDelay(10);

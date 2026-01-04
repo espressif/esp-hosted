@@ -173,7 +173,7 @@ uint8_t is_wakeup_needed(interface_buffer_handle_t *buf_handle)
 
             if (memcmp(target_ip, &ip_address, 4) == 0) {
                 /* Wake up host for self IP ARP request */
-                ESP_LOGD(TAG, "IP matched, Wakup host");
+                ESP_LOGD(TAG, "IP matched, Wake up host");
                 return 1;
             } else {
                 ESP_LOGD(TAG, "IP not matched, noop");
@@ -200,7 +200,7 @@ uint8_t is_wakeup_needed(interface_buffer_handle_t *buf_handle)
 
     if (memcmp(dev_mac, pos, MAC_ADDR_LEN) == 0) {
         ESP_LOG_BUFFER_HEXDUMP("Frame", pos, 32, ESP_LOG_DEBUG);
-        ESP_LOGD(TAG, "Unicast addr matched, wakup host");
+        ESP_LOGD(TAG, "Unicast addr matched, wake up host");
         return 1;
     }
 

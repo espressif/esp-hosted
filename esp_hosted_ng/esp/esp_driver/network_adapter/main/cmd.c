@@ -1011,7 +1011,7 @@ int process_start_scan(uint8_t if_type, uint8_t *payload, uint16_t payload_len)
             esp_wifi_register_mgmt_frame_internal(0, 0);
         }
     } else {
-        ESP_LOGI(TAG, "Scan not permited as WiFi is not yet up");
+        ESP_LOGI(TAG, "Scan not permitted as WiFi is not yet up");
         cmd_status = CMD_RESPONSE_FAIL;
 
         /* Reset frame registration */
@@ -2066,7 +2066,7 @@ int process_mgmt_tx(uint8_t if_type, uint8_t *payload, uint16_t payload_len)
         ESP_LOGI(TAG, "%s: broadcast address, sending response immediately\n", __func__);
         goto send_resp;
     }
-    /* send response in seperate ctx once done */
+    /* send response in separate ctx once done */
     return 0;
 send_resp:
     return send_mgmt_tx_done(cmd_status, wifi_if_type, NULL, 0);

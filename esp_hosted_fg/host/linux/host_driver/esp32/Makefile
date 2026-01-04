@@ -25,7 +25,7 @@ ARCH := arm64
 #Default interface is sdio
 MODULE_NAME=esp32_sdio
 
-#Targets passed overrrides default value
+#Targets passed overrides default value
 ifeq ($(target), sdio)
 	MODULE_NAME=esp32_sdio
 endif

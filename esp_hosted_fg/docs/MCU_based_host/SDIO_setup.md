@@ -6,7 +6,7 @@
 ## 1. Setup
 ### 1.1 Hardware Setup/Connections
 * In this setup, ESP board acts as a SDIO peripheral and provides Wi-Fi capabilities to host. Please connect ESP peripheral to STM32F412ZGT6-Nucleo 144 board's CN8 Extension connecter as mentioned below.
-* STM32F412ZGT6-Nucleo 144 should be powered with correct incoming power rating. ESP peripheral and STM32 can be powered through USB-Hub using micro-USB/USB-C cable. It is also used as USART connection for debug logs from host. Serial port communicaton program like tera term or minicom used to print the logs.
+* STM32F412ZGT6-Nucleo 144 should be powered with correct incoming power rating. ESP peripheral and STM32 can be powered through USB-Hub using micro-USB/USB-C cable. It is also used as USART connection for debug logs from host. Serial port communication program like tera term or minicom used to print the logs.
 * Upcoming releases are expected to have:
     * BT/BLE stack integration at MCU side
     * ESP32-C6 support for MCU

@@ -470,9 +470,9 @@ directory
 
 ### 3. Troubleshoot Setup Problems
 
-After following above steps, the host software should be loaded fine. Bootup event from ESP should already would have sent and Host should have received it.
+After following above steps, the host software should be loaded fine. Boot-up event from ESP should already would have sent and Host should have received it.
 
-If Bootup event is not recieved in host `dmesg` as sample log above, please try following:
+If Boot-up event is not received in host `dmesg` as sample log above, please try following:
 
 - Please check your connections to be firm
 - Try with smaller wires

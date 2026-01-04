@@ -258,7 +258,7 @@ static int CheckError(const char *msg_title, uint32_t line)
 }
 
 /**
- * @brief This function checks if response recieved
+ * @brief This function checks if response received
  * It retries till SDIO_CMD_SEND_RETRY times to send command for getting response
  *
  * @param  SDIOx - SDIO peripheral
@@ -288,7 +288,7 @@ static int WaitForResponse(const char *msg_title, uint32_t line)
 		while (__SDIO_GET_FLAG(SDIO, SDIO_FLAG_CMDACT) != RESET);
 		err = CheckError(msg_title, line);
 
-		/* Check untill no response condition */
+		/* Check until no response condition */
 	} while (__SDIO_GET_FLAG(SDIO, SDIO_FLAG_CMDREND) == RESET);
 	__SDIO_CLEAR_FLAG(SDIO, SDIO_STATIC_CMD_FLAGS);
 
@@ -637,7 +637,7 @@ int STM32WriteData(uint8_t func, uint32_t addr, const void *data, uint32_t len)
 		/* Write 4 bytes */
 		SDIO_WriteFIFO(SDIO, (uint32_t *)p);
 		p++;
-		/* Wait untill there is space in FIFO */
+		/* Wait until there is space in FIFO */
 		err += CheckError(__FUNCTION__,__LINE__);
 		if (err) {
 #if DEBUG_TRANSPORT
@@ -744,7 +744,7 @@ uint8_t STM32ReadReg(uint8_t func, uint32_t addr)
  * This function checks how many bytes to be read first,
  * followed by read in ESP_BLOCK_SIZE steps
  * Note : Slave should take care if data greater than 4 bytes, it is expected to
- *        write in ESP_BLOCK_SIZE alignement
+ *        write in ESP_BLOCK_SIZE alignment
  *
  * @param  func - SDIO function
  *         addr - SDIO address

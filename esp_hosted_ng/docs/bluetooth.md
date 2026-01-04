@@ -1,6 +1,6 @@
 ## Bluetooth/BLE Setup and Test Procedure
 
-* Ensure that BlueZ and related dependency softwares (listed in setup document earlier) are installed on the host
+* Ensure that BlueZ and related dependency software (listed in setup document earlier) are installed on the host
 * BlueZ is example Bluetooth stack used, as it is generally available in Linux. Any other Bluetooth stack can also be used.
 * In following test, Android device was used as a BT/BLE test device. For BLE testing, [nRF connect for mobile APP](https://play.google.com/store/apps/details?id=no.nordicsemi.android.mcp&hl=en_IN) was used.
 * Ensure that `hci0` interface is visible. To check that, run `hciconfig`.
@@ -32,7 +32,7 @@ Perform below steps on Mobile Phone:
 6. Turn on mobile phone's bluetooth. Open nRF connect application, ESP's MAC address will be displayed under `SCANNER` tab as a result of scan.
 7. Click on connect. Client tab will be open. Click on `Generic Attribute` option.
 8. Perform read/write on listed characteristics fields in `Generic Attribute` service.
-To disconnet:
+To disconnect:
 9. Run `disconnect <MAC_ADDRESS_of_gatt_client>` on linux host's `bluetoothctrl` OR click on `DISCONNECT` in nRF connect application's `GATT client` screen.
 
 ##### GATT Client
