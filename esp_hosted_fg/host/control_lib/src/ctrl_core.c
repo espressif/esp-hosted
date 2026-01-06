@@ -115,7 +115,7 @@ static int32_t expected_resp_uid = -1;
  * 1. If application wants to use synchrounous, i.e. Wait till the response received
  *    after current control request is sent or timeout occurs,
  *    application will pass this callback in request as NULL.
- * 2. If application wants to use `asynchrounous`, i.e. Just send the request and
+ * 2. If application wants to use `asynchronous`, i.e. Just send the request and
  *    unblock for next processing, application will assign function pointer in
  *    control request, which will be registered here.
  *    When the response comes, the this registered callback function will be called
@@ -356,7 +356,7 @@ static int ctrl_app_parse_resp(CtrlMsg *ctrl_msg, ctrl_cmd_t *app_resp)
 	/* if app_resp->uid is 0, slave fw is not updated to return uid
 	 * so we skip this check */
 	if (app_resp->uid && (expected_resp_uid != app_resp->uid)) {
-		// response uid mis-match: ignore this response
+		// response uid mismatch: ignore this response
 		goto fail_parse_ctrl_msg2;
 	}
 
@@ -1122,7 +1122,7 @@ static int is_async_resp_callback_registered_by_resp_msg_id(int resp_msg_id)
 
 
 /* Check if async control response callback is available
- * Returns CALLBACK_AVAILABLE if a non NULL asynchrounous control response
+ * Returns CALLBACK_AVAILABLE if a non NULL asynchronous control response
  * callback is available. It will return failure -
  *     MSG_ID_OUT_OF_ORDER - if request msg id is unsupported
  *     CALLBACK_NOT_REGISTERED - if aync callback is not available

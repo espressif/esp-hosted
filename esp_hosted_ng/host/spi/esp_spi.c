@@ -185,10 +185,10 @@ int esp_validate_chipset(struct esp_adapter *adapter, u8 chipset)
 
 int esp_deinit_module(struct esp_adapter *adapter)
 {
-	/* Second & onward bootup cleanup:
+	/* Second & onward boot-up cleanup:
 	 *
 	 * SPI is software and not a hardware based module.
-	 * When bootup event is received, we should discard all prior commands,
+	 * When boot-up event is received, we should discard all prior commands,
 	 * old messages pending at network and re-initialize everything.
 	 */
 	uint8_t prio_q_idx, iface_idx;

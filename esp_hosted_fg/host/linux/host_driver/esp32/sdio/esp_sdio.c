@@ -814,7 +814,7 @@ static int esp_probe(struct sdio_func *func,
 	if (sdio_context.sdio_clk_mhz) {
 		struct mmc_host *host = func->card->host;
 		u32 hz = sdio_context.sdio_clk_mhz * 1000000;
-		/* Expantion of mmc_set_clock that isnt exported */
+		/* Expantion of mmc_set_clock that isn't exported */
 		if (hz < host->f_min)
 			hz = host->f_min;
 		if (hz > host->f_max)

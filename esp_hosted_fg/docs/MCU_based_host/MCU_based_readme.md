@@ -40,7 +40,7 @@ We recommend the latest version of STM32CubeIDE from STMicroelectronics on PC. U
 	This solution can be checked for easy porting to non-STM32 based MCUs. Port layer is much simplified here. Formal support is coming soon in upcoming releases.
 
 * **Network stack integration**
-	Although currently network stack is kept open to port for user, in the upcoming releaes, we plan to showcase lwip as example network stack.
+	Although currently network stack is kept open to port for user, in the upcoming releases, we plan to showcase lwip as example network stack.
 	Sample example of porting done by [Dror Gluska](https://github.com/drorgl) can be referred at https://github.com/drorgl/stm32-lwip-esp-hosted
 
 * **Clock considerations for STM32**
@@ -71,5 +71,5 @@ Prepare connections based on interface requirements and setup ESP peripheral as 
 		* ESP peripheral setup as per section [2.2 ESP peripheral setup](SPI_setup.md#22-setup) of [SPI setup document](SPI_setup.md)
 
 # 3. ESP-Hosted Usage Guide
-Following guide explains how to use ESP-Hosted soultion with MCU based platform.
+Following guide explains how to use ESP-Hosted solution with MCU based platform.
 * [User Guide for MCU based Host](./Getting_started.md)

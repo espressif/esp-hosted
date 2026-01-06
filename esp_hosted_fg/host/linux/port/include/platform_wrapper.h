@@ -118,14 +118,14 @@ int hosted_thread_cancel(void *thread_handle);
 void * hosted_create_semaphore(int init_value);
 
 
-/* hosted_get_semaphore to aquire semaphore
+/* hosted_get_semaphore to acquire semaphore
  * Input parameter
  *        sem_handle : valid semaphore handle
  *        timeout    : 0  -> non_blocking
  *                     -1 -> blocking
  *                     >0 -> Timeout to wait in seconds
  * Returns
- *     0 on sempahore aquired or !=0 on Failure
+ *     0 on semaphore acquired or !=0 on Failure
  */
 int hosted_get_semaphore(void * semaphore_handle, int timeout);
 
@@ -137,7 +137,7 @@ int hosted_get_semaphore(void * semaphore_handle, int timeout);
  *                     -1 -> blocking
  *                     >0 -> Timeout to wait in seconds
  * Returns
- *     0 on sempahore aquired or !=0 on Failure
+ *     0 on semaphore acquired or !=0 on Failure
  */
 int hosted_post_semaphore(void * semaphore_handle);
 
@@ -145,7 +145,7 @@ int hosted_post_semaphore(void * semaphore_handle);
  * Input parameter
  *        sem_handle : valid semaphore handle
  * Returns
- *     0 on sempahore aquired or !=0 on Failure
+ *     0 on semaphore acquired or !=0 on Failure
  */
 int hosted_destroy_semaphore(void * semaphore_handle);
 

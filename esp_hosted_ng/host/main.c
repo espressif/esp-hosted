@@ -49,7 +49,7 @@ module_param(clockspeed, uint, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
 MODULE_PARM_DESC(clockspeed, "Hosts clock speed in MHz");
 
 module_param(raw_tp_mode, uint, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
-MODULE_PARM_DESC(raw_tp_mode, "Mode choosed to test raw throughput");
+MODULE_PARM_DESC(raw_tp_mode, "Mode chosen to test raw throughput");
 
 module_param(ota_file, charp, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
 MODULE_PARM_DESC(ota_file, "Ota file to update ESP firmware");
@@ -268,7 +268,7 @@ static void print_reset_reason(uint32_t reason)
 		case 11: esp_info("TGWDT_CPU_RESET\n"); break;       /**<11, Time Group reset CPU*/
 		case 12: esp_info("SW_CPU_RESET\n"); break;          /**<12, Software reset CPU*/
 		case 13: esp_info("RTCWDT_CPU_RESET\n"); break;      /**<13, RTC Watch dog Reset CPU*/
-		case 14: esp_info("EXT_CPU_RESET\n"); break;         /**<14, for APP CPU, reseted by PRO CPU*/
+		case 14: esp_info("EXT_CPU_RESET\n"); break;         /**<14, for APP CPU, reset by PRO CPU*/
 		case 15: esp_info("RTCWDT_BROWN_OUT_RESET\n"); break;/**<15, Reset when the vdd voltage is not stable*/
 		case 16: esp_info("RTCWDT_RTC_RESET\n"); break;      /**<16, RTC Watch dog reset digital core and rtc module*/
 		default: esp_info("Unknown[%u]\n", reason); break;
@@ -312,7 +312,7 @@ static int process_event_esp_bootup(struct esp_adapter *adapter, u8 *evt_buf, u8
 	while (len_left > 0) {
 		tag_len = *(pos + 1);
 
-		esp_info("Bootup Event tag: %d\n", *pos);
+		esp_info("Boot-up Event tag: %d\n", *pos);
 
 		switch (*pos) {
 		case ESP_BOOTUP_CAPABILITY:
@@ -329,11 +329,11 @@ static int process_event_esp_bootup(struct esp_adapter *adapter, u8 *evt_buf, u8
 			ret = esp_adjust_spi_clock(adapter, *(pos + 2));
 			break;
 		default:
-			esp_warn("Unsupported tag=%x in bootup event\n", *pos);
+			esp_warn("Unsupported tag=%x in boot-up event\n", *pos);
 		}
 
 		if (ret < 0) {
-			esp_err("failed to process tag=%x in bootup event\n", *pos);
+			esp_err("failed to process tag=%x in boot-up event\n", *pos);
 			return -1;
 		}
 		pos += (tag_len + 2);
@@ -664,7 +664,7 @@ int esp_remove_card(struct esp_adapter *adapter)
 
 	esp_stop_network_ifaces(adapter);
 	esp_cfg_cleanup(adapter);
-	/* BT may have been initialized after fw bootup event, deinit it */
+	/* BT may have been initialized after fw boot-up event, deinit it */
 	esp_deinit_bt(adapter);
 
 	if (adapter->if_rx_workqueue) {
@@ -712,11 +712,11 @@ static void process_esp_bootup_event(struct esp_adapter *adapter,
 	}
 
 	if (evt->header.status) {
-		esp_err("Incorrect ESP bootup event\n");
+		esp_err("Incorrect ESP boot-up event\n");
 		return;
 	}
 
-	esp_info("Received ESP bootup event\n");
+	esp_info("Received ESP boot-up event\n");
 	process_event_esp_bootup(adapter, evt->data, evt->len);
 }
 

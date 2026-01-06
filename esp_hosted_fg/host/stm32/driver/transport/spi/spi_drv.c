@@ -415,7 +415,7 @@ static stm_ret_t spi_transaction_v1(uint8_t * txbuff)
 
 	if(!txbuff) {
 		/* Even though, there is nothing to send,
-		 * valid resetted txbuff is needed for SPI driver
+		 * valid reset txbuff is needed for SPI driver
 		 */
 		txbuff = (uint8_t *)malloc(MAX_SPI_BUFFER_SIZE);
 		assert(txbuff);
@@ -542,7 +542,7 @@ static stm_ret_t spi_transaction_v2(uint8_t * txbuff)
 
 	if(!txbuff) {
 		/* Even though, there is nothing to send,
-		 * valid reseted txbuff is needed for SPI driver
+		 * valid reset txbuff is needed for SPI driver
 		 */
 		txbuff = (uint8_t *)malloc(MAX_SPI_BUFFER_SIZE);
 		assert(txbuff);
@@ -753,7 +753,7 @@ static void process_rx_task(void const* pvParameters)
 					spi_drv_evt_handler_fp(TRANSPORT_ACTIVE);
 				}
 			} else {
-				/* User can re-use this type of transaction */
+				/* User can reuse this type of transaction */
 			}
 		} else if (buf_handle.if_type == ESP_TEST_IF) {
 #if TEST_RAW_TP

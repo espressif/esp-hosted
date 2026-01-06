@@ -233,7 +233,7 @@ void *hosted_thread_create(void (*start_routine)(void const *), void *arg)
 			sizeof(thread_handle_t));
 
 	if (!thread_arg || !thread_handle) {
-		printf("Falied to allocate thread handle\n");
+		printf("Failed to allocate thread handle\n");
 		return NULL;
 	}
 

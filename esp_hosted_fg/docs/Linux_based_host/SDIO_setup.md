@@ -67,7 +67,7 @@ Execute `./rpi_init.sh --help` to see the list of options.
 
 #### 2.1.1 Manually loading and unloading the Kernel Module
 
-Once built, the kernel module `esp32_sdio.ko` can be found in `esp_hosted_fg/host/linux/host_driver/esp32`. You can manualy load/unload the module as needed.
+Once built, the kernel module `esp32_sdio.ko` can be found in `esp_hosted_fg/host/linux/host_driver/esp32`. You can manually load/unload the module as needed.
 
 To add the module:
 

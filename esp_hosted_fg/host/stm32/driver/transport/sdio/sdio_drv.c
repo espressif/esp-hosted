@@ -269,7 +269,7 @@ static stm_ret_t sdio_rx_esp32(void)
 		}
 
 #if DEBUG_TRANSPORT
-		/* Read buffer is easily accesible here, before processing */
+		/* Read buffer is easily accessible here, before processing */
 		//printf("data: %s size %u\n\r", (char*)(rxbuff), size_read);
 #endif
 
@@ -461,12 +461,12 @@ static void process_rx_task(void const* pvParameters)
 			printf("Received INIT event\n\r");
 			event = (struct esp_priv_event *) (payload);
 			if (event->event_type == ESP_PRIV_EVENT_INIT) {
-				/* User can re-use this type of transaction */
+				/* User can reuse this type of transaction */
 				if (sdio_drv_evt_handler_fp) {
 					sdio_drv_evt_handler_fp(TRANSPORT_ACTIVE);
 				}
 			} else {
-				/* User can re-use this type of transaction */
+				/* User can reuse this type of transaction */
 			}
 		} else if (buf_handle.if_type == ESP_TEST_IF) {
 #if TEST_RAW_TP

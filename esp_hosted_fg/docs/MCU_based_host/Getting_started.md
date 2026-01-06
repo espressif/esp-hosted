@@ -16,7 +16,7 @@ This section elaborates about setting up the control path, Wi-Fi connectivity an
 - Underlying [Hosted control path library](../common/contrl_path.md#3-design) is agnostic of platform and common for MPU or MCU based solution.
   - This empowers user to implement/mimic all control path APIs just similar to [Linux demo application in C](../common/c_demo.md)
   - Few sample [control path APIs](../common/ctrl_apis.md) like connecting to station, starting softap are demonstrated as part of [esp_hosted_fg/host/stm32/app/control/control.c](../../host/stm32/app/control/control.c)
-  - Rest APIs could be implemeted just similar to ones implemented in Linux demo application 
+  - Rest APIs could be implemented just similar to ones implemented in Linux demo application 
 
 ## 2. Wi-Fi Connectivity
 
@@ -157,9 +157,9 @@ Host firmware has basic user configuration parameters. User needs to manually co
 
 Build Variables are as follows:
 
-| Sr. No. | Parameters | Type | Decription |
+| Sr. No. | Parameters | Type | Description |
 |:-------:|:----------|:----:|:----------|
-|1| CODE_BASE | Directory Path | Absolute Path to `ESP-Hosted` clonned directory. |
+|1| CODE_BASE | Directory Path | Absolute Path to `ESP-Hosted` cloned directory. |
 |2| INPUT__OPERATING_MODE | String | Operating mode as `STATION`, `SOFTAP` or `STATION+SOFTAP`.|
 |3| INPUT_GET_AP_SCAN_LIST | String | Get list of available APs. ("yes" or "no") |
 |4| INPUT_SOFTAP__SSID | String | SSID of softAP. For example. "ESPWifi" |

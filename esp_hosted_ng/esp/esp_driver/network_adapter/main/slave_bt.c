@@ -92,7 +92,7 @@ static esp_vhci_host_callback_t vhci_host_cb = {
 void process_hci_rx_pkt(uint8_t *payload, uint16_t payload_len)
 {
     /* VHCI needs one extra byte at the start of payload */
-    /* that is accomodated in esp_payload_header */
+    /* that is accommodated in esp_payload_header */
 #if CONFIG_ESP_BT_DEBUG
     ESP_LOG_BUFFER_HEXDUMP("bt_rx", payload, payload_len, ESP_LOG_INFO);
 #endif

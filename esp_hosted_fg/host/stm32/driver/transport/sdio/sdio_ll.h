@@ -94,7 +94,7 @@ int STM32WriteData(uint8_t func, uint32_t addr, const void *data, uint32_t size)
  * This function checks how many bytes to be read first,
  * followed by read in ESP_BLOCK_SIZE steps
  * Note : Slave should take care if data greater than 4 bytes, it is expected to
- *        write in ESP_BLOCK_SIZE alignement
+ *        write in ESP_BLOCK_SIZE alignment
  *
  * @param  func - SDIO function
  *         addr - SDIO address

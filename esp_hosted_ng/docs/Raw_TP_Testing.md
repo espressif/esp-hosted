@@ -14,6 +14,6 @@
         $ cd esp_hosted_ng/host/
         $ ./rpi_init.sh sdio rawtp_esp_to_host
         ```
-    2. RAW throught is enabled by default for host, to disable it set the value of `TEST_RAW_TP` to 0 in `esp_hosted/esp_hosted_ng/host/include/stats.h`
+    2. RAW throughput is enabled by default for host, to disable it set the value of `TEST_RAW_TP` to 0 in `esp_hosted/esp_hosted_ng/host/include/stats.h`
 
 

@@ -49,7 +49,7 @@ ctrl_cmd_t * ctrl_wait_and_parse_sync_resp(ctrl_cmd_t *req);
  * > req - control request from user
  *
  * Returns:
- * > CALLBACK_AVAILABLE - if a non NULL asynchrounous control response
+ * > CALLBACK_AVAILABLE - if a non NULL asynchronous control response
  *                      callback is available
  * In case of failures -
  * > MSG_ID_OUT_OF_ORDER - if request msg id is unsupported

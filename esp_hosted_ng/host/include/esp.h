@@ -64,7 +64,7 @@ struct esp_adapter;
 #define MAX_COUNTRY_LEN 3
 
 enum adapter_flags_e {
-	ESP_CLEANUP_IN_PROGRESS,    /* Driver unloading or ESP reseted */
+	ESP_CLEANUP_IN_PROGRESS,    /* Driver unloading or ESP reset */
 	ESP_CMD_INIT_DONE,          /* Cmd component is initialized with esp_commands_setup() */
 	ESP_DRIVER_ACTIVE,          /* kernel module __exit is not yet invoked */
 	ESP_INIT_DONE,              /* Driver init done */

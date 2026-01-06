@@ -152,7 +152,7 @@ $ cd esp_hosted_fg/host/linux/host_control/python_support/
 
 ## 3. Bluetooth/BLE Connectivity
 
-* Ensure that BlueZ and related dependency softwares (mentioned [earlier](Linux_based_readme.md#12-host-setup)) are installed on the host
+* Ensure that BlueZ and related dependency software (mentioned [earlier](Linux_based_readme.md#12-host-setup)) are installed on the host
 * BlueZ is example Bluetooth stack used, as it is generally available in Linux. Any other Bluetooth stack can also be used.
 * In following test, Android device was used as a BT/BLE test device. For BLE testing, [nRF connect for mobile APP](https://play.google.com/store/apps/details?id=no.nordicsemi.android.mcp&hl=en_IN) was used.
 * Ensure that `hci0` interface is visible. To check that, run `hciconfig`.
@@ -183,7 +183,7 @@ Perform below steps on Mobile Phone:
 6. Turn on mobile phone's bluetooth. Open nRF connect application, ESP's MAC address will be displayed under `SCANNER` tab as a result of scan.
 7. Click on connect. Client tab will be open. Click on `Generic Attribute` option.
 8. Perform read/write on listed characteristics fields in `Generic Attribute` service.
-To disconnet:
+To disconnect:
 9. Run `disconnect <MAC_ADDRESS_of_gatt_client>` on linux host's `bluetoothctrl` OR click on `DISCONNECT` in nRF connect application's `GATT client` screen.
 
 #### 3.1.2 GATT Client
@@ -256,14 +256,14 @@ Steps:
 
 #### 3.2.2 GATT Server
 
-BLE 5.X has backword compability. It can connect with BLE4.2 devices.
+BLE 5.X has backward compatibility. It can connect with BLE4.2 devices.
 Below example demonstrate linux host as GATT server and mobile phone as GATT client. We are using `nRF connect` application for GATT client operartion.
 
 Follow section [3.1.1](#311-gatt-server) for GATT server connections.
 
 #### 3.2.3 GATT client
 
-BLE 5.X has backword compability. It can connect with BLE4.2 devices.
+BLE 5.X has backward compatibility. It can connect with BLE4.2 devices.
 Below example demonstrate linux host as GATT client and mobile phone as GATT server. We are using `nRF connect` application for GATT server operartion.
 
 Follow section [3.1.2](#312-gatt-client) for GATT client connections.

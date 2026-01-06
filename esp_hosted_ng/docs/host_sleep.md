@@ -17,7 +17,7 @@ The crux of this feature is to optimize the host power by putting the host into 
 Possible ways to wake-up host:
 1. Data packet is destined for Host IP (ESP wakes up Host by triggering host GPIO)
 2. Some GPIO triggered (Host waken up because of peripheral)
-3. Touchsceen is pressed (Host waken up because of peripheral)
+3. Touchscreen is pressed (Host waken up because of peripheral)
 
 This feature focuses on point (1) only, as point (2) & (3) would be handled at host level and requires no additional setting.
 This feature is tested on imx8 mini board (imx8mm-lpddr4-evk). Other Linux board also should be able to port easily.
@@ -105,7 +105,7 @@ cat /proc/interrupts  | grep esp
 
 Please note:
 1. `wakeup-source` is the configuration what makes this GPIO as wakeup compatible GPIO
-2. imx8nm boards also should be compitible with similar configuration
+2. imx8nm boards also should be compatible with similar configuration
 3. For other recent Linux boards like imx8qxp, [pad gpio](https://community.nxp.com/t5/i-MX-Processors-Knowledge-Base/How-to-add-iMX8QXP-PAD-GPIO-Wakeup/ta-p/1120559?attachment-id=32640) may be required
 
 References: \
@@ -196,7 +196,7 @@ D (1414058) SDIO_HAL: restart new send: 0x3ffe1c60->0x3ffe1c60, pkt_len: 54
 Where,
 1. `I (147170) FW_MAIN: Set IP Address` is printed when the IP address is assigned to wlanX
 2. `I (170236) FW_MAIN: Host Sleep` is printed when Host is put to sleep
-3. `E (1413238) FW_SDIO_SLAVE: WAKE UP Host!!!!!` is printed when we have pinged to wlanX IP adress (e.g. from PC connected to AP, where ESP is connected to)
+3. `E (1413238) FW_SDIO_SLAVE: WAKE UP Host!!!!!` is printed when we have pinged to wlanX IP address (e.g. from PC connected to AP, where ESP is connected to)
 4. `WAKE UP Host` is printed when ESP triggers high output on `gpio_esp_to_host_wakeup`.
 5. If it is printed **repeatedly** without host getting wakeup, please check your GPIO is connected correctly from ESP to host & Device tree is correctly configured on host.
 

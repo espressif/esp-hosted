@@ -109,7 +109,7 @@ typedef struct {
 	size_t data_len;
 	custom_data_free_func_t free_func;
 
-	/* Please note, this byte to byte would be trasferred, without any serialization/deserialization
+	/* Please note, this byte to byte would be transferred, without any serialization/deserialization
 	 *
 	 * To perform serialised operation:
 	 *   Alternative 1. To have serialised data, ensure you handle endienness manually at user space level

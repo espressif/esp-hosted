@@ -1197,7 +1197,7 @@ static esp_err_t req_start_softap_handler (CtrlMsg *req,
 			wifi_config->ap.ssid, wifi_config->ap.password,
 			wifi_config->ap.authmode, wifi_config->ap.ssid_hidden,
 			wifi_config->ap.max_connection,wifi_config->ap.channel);
-	ESP_LOGI(TAG,"ESP32 SoftAP is avaliable ");
+	ESP_LOGI(TAG,"ESP32 SoftAP is available ");
 #if WIFI_DUALBAND_SUPPORT
 	resp_payload->band_mode = band_mode;
 #endif
@@ -1489,11 +1489,11 @@ static esp_err_t get_connected_sta_list_handler (CtrlMsg *req,
 	}
 
 	if ((mode == WIFI_MODE_STA) || (mode == WIFI_MODE_NULL)) {
-		ESP_LOGE(TAG,"Currnet mode is %d", mode);
+		ESP_LOGE(TAG,"Current mode is %d", mode);
 		goto err;
 	}
 	if (!softap_started) {
-		ESP_LOGE(TAG,"softap is not started, cant get connected stations List");
+		ESP_LOGE(TAG,"softap is not started, can't get connected stations List");
 		goto err;
 	}
 
@@ -2257,7 +2257,7 @@ static esp_err_t configure_heartbeat(bool enable, int hb_duration)
 	int duration = hb_duration ;
 
 	if (!enable) {
-		ESP_LOGI(TAG, "Stop Heatbeat");
+		ESP_LOGI(TAG, "Stop Heartbeat");
 		stop_heartbeat();
 
 	} else {

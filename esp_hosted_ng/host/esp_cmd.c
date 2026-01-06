@@ -645,7 +645,7 @@ static void process_scan_result_event(struct esp_wifi_device *priv,
 	u16 cap_info;
 	u32 ie_len;
 	int freq;
-	int frame_type = CFG80211_BSS_FTYPE_UNKNOWN; /* int type for older compatibilty */
+	int frame_type = CFG80211_BSS_FTYPE_UNKNOWN; /* int type for older compatibility */
 
 	if (!priv || !scan_evt) {
 		esp_err("Invalid arguments\n");

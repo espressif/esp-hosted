@@ -172,7 +172,7 @@ Write to the serial driver. On write, it invokes write method provided by ESP-Ho
 ---
 
 ### 2.5 `int control_path_platform_deinit(void)`
-Cleans up the resoiurces used by serial driver. It should be called before before closing serial driver
+Cleans up the resources used by serial driver. It should be called before before closing serial driver
 
 #### Returns
 - 0 : SUCCESS

@@ -159,7 +159,7 @@ int process_init_event(uint8_t *evt_buf, uint8_t len)
 		tag_len = *(pos + 1);
 		printf("EVENT: %d\n\r", *pos);
 		if (*pos == ESP_PRIV_CAPABILITY) {
-			printf("priv capabilty \n\r");
+			printf("priv capability \n\r");
 			process_capabilities(*(pos + 2));
 			print_capabilities(*(pos + 2));
 		} else if (*pos == ESP_PRIV_SPI_CLK_MHZ) {

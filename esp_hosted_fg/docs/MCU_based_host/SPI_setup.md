@@ -6,7 +6,7 @@
 
 ### 1.1 Hardware Setup/Connections
 * In this setup, ESP board acts as a SPI peripheral and provides Wi-Fi capabilities to host. Please connect ESP board to STM32F469I board's CN12 Extension connecter with jumper cables as mentioned below. It may be good to use small length cables to ensure signal integrity.
-* STM32F469I should be powered with correct incoming power rating. ESP peripheral can be powered through PC using micro-USB/USB-C cable. STM32 can be powered with mini-B cable. It is also used as USART connection for debug logs from host. Serial port communicaton program like tera term or minicom used to print the logs.
+* STM32F469I should be powered with correct incoming power rating. ESP peripheral can be powered through PC using micro-USB/USB-C cable. STM32 can be powered with mini-B cable. It is also used as USART connection for debug logs from host. Serial port communication program like tera term or minicom used to print the logs.
 * BT/BLE support will be added in upcoming release.
 
 #### Hardware connections for ESP32

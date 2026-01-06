@@ -22,7 +22,7 @@ This is a input pin for ESP peripheral. This pin resets ESP peripheral and is ma
 
 ## 1.2 Initialization of peripheral device
 * Connection of 'EN'/Reset pin to host is mandatory in case of SPI communication. Once driver is loaded on host, it resets ESP peripheral through this pin.
-* Firmware on ESP peripheral then initializes itself and prepares itself for communication over SPI interface. Once it is ready for communication, it generates BOOTUP event for host.
+* Firmware on ESP peripheral then initializes itself and prepares itself for communication over SPI interface. Once it is ready for communication, it generates BOOT-UP event for host.
 * Host driver, on receiving this event, opens up data path for higher layers.
 
 ---

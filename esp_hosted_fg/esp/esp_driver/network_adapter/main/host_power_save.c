@@ -23,7 +23,7 @@ static char *TAG = "host_ps";
   uint8_t power_save_on;
   #define GPIO_HOST_WAKEUP (CONFIG_HOST_WAKEUP_GPIO)
 
-  /* Assuming wakup gpio neg 'level' interrupt */
+  /* Assuming wake-up gpio neg 'level' interrupt */
   #define set_host_wakeup_gpio() gpio_set_level(GPIO_HOST_WAKEUP, 1)
   #define reset_host_wakeup_gpio() gpio_set_level(GPIO_HOST_WAKEUP, 0)
 

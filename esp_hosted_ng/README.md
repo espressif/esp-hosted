@@ -526,7 +526,7 @@ Following operations for station are supported as of now:
 
 hostapd (Host Access Point Daemon) is a user-space daemon that enables a Linux-based machine to act as a wireless access point. When combined with dnsmasq, a lightweight DHCP and DNS server, it provides a complete solution for managing Wi-Fi networks, including IP address assignment and name resolution.
 
-> make sure you have enabled `ap_support` with rpi_init.sh to user interface as Acess point. Read [Hardware and Software Setup and OTA](docs/setup.md)
+> make sure you have enabled `ap_support` with rpi_init.sh to user interface as Access point. Read [Hardware and Software Setup and OTA](docs/setup.md)
 
 Supported Operations
 

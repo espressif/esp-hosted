@@ -321,7 +321,7 @@ int process_init_event(u8 *evt_buf, u8 len)
 		return 0;
 	}
 
-	/* First bootup - do direct init */
+	/* First boot-up - do direct init */
 	ret = esp_add_card(spi_context.adapter);
 	if (ret) {
 		spi_exit();
@@ -874,7 +874,7 @@ int esp_init_interface_layer(struct esp_adapter *adapter)
 	    (adapter->mod_param.spi_mode      == MOD_PARAM_UNINITIALISED) ||
 	    (adapter->mod_param.spi_handshake == MOD_PARAM_UNINITIALISED) ||
 	    (adapter->mod_param.spi_dataready == MOD_PARAM_UNINITIALISED)) {
-		esp_err("Incorrect/Uncomplete SPI config.\n\n");
+		esp_err("Incorrect/Incomplete SPI config.\n\n");
 		esp_err("You can use one of methods:\n[A] Use module params to pass:\n\t\t1) spi_bus=<bus_instance> \n\t\t2) spi_cs=<CS_instance> \n\t\t3) spi_mode=<1/2/3> \n\t\t4) spi_handshake=<gpio_val> \n\t\t5) spi_dataready=<gpio_val> \n\t\t6) resetpin=<gpio_val>\n[B] hardcode above params in start of main.c\n");
 		return -EINVAL;
 	}

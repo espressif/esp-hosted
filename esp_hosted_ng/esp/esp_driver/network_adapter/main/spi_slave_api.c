@@ -687,7 +687,7 @@ static int32_t esp_spi_write(interface_handle_t *handle, interface_buffer_handle
 
     total_len = buf_handle->payload_len + sizeof(struct esp_payload_header);
 
-    /* make the adresses dma aligned */
+    /* make the addresses dma aligned */
     if (!IS_SPI_DMA_ALIGNED(total_len)) {
         MAKE_SPI_DMA_ALIGNED(total_len);
     }

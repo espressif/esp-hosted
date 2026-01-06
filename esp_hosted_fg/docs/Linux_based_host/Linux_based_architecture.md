@@ -44,4 +44,4 @@ This registers HCI interface with Linux kernel. This interface is implemented ov
 	* C based implementation
 	* Python based implementation - It uses C based implementation using `ctypes` package.
 * API's are described in subsequent section
-* Control path design and implemetation details explained in [Control Path](../common/contrl_path.md) documentation
+* Control path design and implementation details explained in [Control Path](../common/contrl_path.md) documentation
