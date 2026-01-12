@@ -28,6 +28,10 @@
 
 #endif
 
+#define IS_WIFI_DATA_PACKET(buf) \
+    ((buf)->pkt_type == PACKET_TYPE_DATA && \
+    ((buf)->if_type == ESP_STA_IF || (buf)->if_type == ESP_AP_IF))
+
 typedef enum {
     LENGTH_1_BYTE  = 1,
     LENGTH_2_BYTE  = 2,

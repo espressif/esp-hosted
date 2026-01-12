@@ -33,6 +33,10 @@
 #include "soc/gpio_reg.h"
 #include "esp_fw_version.h"
 
+#define SDIO_DMA_ALIGNMENT_BYTES    4
+#define SDIO_DMA_ALIGNMENT_MASK     (SDIO_DMA_ALIGNMENT_BYTES - 1)
+#define IS_SDIO_DMA_ALIGNED(val)    (!((uint32_t)(val) & SDIO_DMA_ALIGNMENT_MASK))
+
 static uint8_t sdio_slave_rx_buffer[RX_BUF_NUM][RX_BUF_SIZE];
 
 static interface_context_t context;
@@ -250,16 +254,30 @@ static int32_t sdio_write(interface_handle_t *handle, interface_buffer_handle_t 
         return ESP_FAIL;
     }
 
-    total_len = buf_handle->payload_len + sizeof(struct esp_payload_header);
 
-    sendbuf = heap_caps_malloc(total_len, MALLOC_CAP_DMA);
-    if (sendbuf == NULL) {
-        ESP_LOGE(TAG, "Malloc send buffer fail!");
-        return ESP_FAIL;
+
+    if (IS_WIFI_DATA_PACKET(buf_handle)) {
+        uint32_t payload_addr = (uint32_t)buf_handle->payload;
+        uint32_t align_padding = (SDIO_DMA_ALIGNMENT_BYTES - (payload_addr % SDIO_DMA_ALIGNMENT_BYTES)) % SDIO_DMA_ALIGNMENT_BYTES;
+        uint32_t headroom = sizeof(struct esp_payload_header) + align_padding;
+        sendbuf = (uint8_t *)buf_handle->payload - headroom;
+        offset = headroom;
+        total_len = buf_handle->payload_len + offset;
+    } else {
+        offset = sizeof(struct esp_payload_header);
+        total_len = buf_handle->payload_len + offset;
+
+        sendbuf = heap_caps_malloc(total_len, MALLOC_CAP_DMA);
+        if (sendbuf == NULL) {
+            ESP_LOGE(TAG, "Malloc send buffer fail!");
+            return ESP_FAIL;
+        }
+
+        buf_handle->priv_buffer_handle = sendbuf;
+        buf_handle->free_buf_handle = heap_caps_free;
     }
 
-    header = (struct esp_payload_header *) sendbuf;
-
+    header = (struct esp_payload_header *)sendbuf;
     memset(header, 0, sizeof(struct esp_payload_header));
 
     /* Initialize header */
@@ -267,11 +285,12 @@ static int32_t sdio_write(interface_handle_t *handle, interface_buffer_handle_t 
     header->if_num = buf_handle->if_num;
     header->len = htole16(buf_handle->payload_len);
     header->reserved2 = buf_handle->flag;
-    offset = sizeof(struct esp_payload_header);
     header->offset = htole16(offset);
     header->packet_type = buf_handle->pkt_type;
 
-    memcpy(sendbuf + offset, buf_handle->payload, buf_handle->payload_len);
+    if (!IS_WIFI_DATA_PACKET(buf_handle)) {
+        memcpy(sendbuf + offset, buf_handle->payload, buf_handle->payload_len);
+    }
 
 #if CONFIG_ESP_SDIO_CHECKSUM
     header->checksum = htole16(compute_checksum(sendbuf,
@@ -281,17 +300,22 @@ static int32_t sdio_write(interface_handle_t *handle, interface_buffer_handle_t 
     ret = sdio_slave_transmit(sendbuf, total_len);
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "sdio slave transmit error, ret : 0x%x\r\n", ret);
-        free(sendbuf);
-        return ESP_FAIL;
+        ret = ESP_FAIL;
+        goto done;
     }
 #if 0
     ESP_LOGE(TAG, "\nTo Host");
     ESP_LOG_BUFFER_HEXDUMP("s->h", buf_handle->payload,
                            buf_handle->payload_len, ESP_LOG_INFO);
 #endif
-    free(sendbuf);
 
-    return buf_handle->payload_len;
+done:
+    if (buf_handle->free_buf_handle && buf_handle->priv_buffer_handle) {
+        buf_handle->free_buf_handle(buf_handle->priv_buffer_handle);
+        buf_handle->priv_buffer_handle = NULL;
+    }
+
+    return (ret == ESP_OK) ? buf_handle->payload_len : ESP_FAIL;
 }
 
 esp_err_t send_bootup_event_to_host(uint8_t cap)
