@@ -24,10 +24,12 @@
 #include "slave_bt.h"
 #include "esp_fw_version.h"
 #ifdef CONFIG_NETWORK_SPLIT_ENABLED
-#include "esp_check.h"
-#include "lwip/inet.h"
-#include "host_power_save.h"
-#include "mqtt_example.h"
+  #include "esp_check.h"
+  #include "lwip/inet.h"
+  #include "host_power_save.h"
+  #ifdef CONFIG_ESP_HOSTED_COPROCESSOR_EXAMPLE_MQTT
+    #include "example_mqtt_client.h"
+  #endif
 #endif
 #include "esp_timer.h"
 
@@ -366,7 +368,7 @@ static esp_err_t set_slave_static_ip(wifi_interface_t iface, char *ip, char *nm,
 
 	ESP_LOGI(TAG, "Set static IP addr ip:%s nm:%s gw:%s", ip, nm, gw);
 	ESP_ERROR_CHECK(esp_netif_set_ip_info(slave_sta_netif, &ip_info));
-	esp_wifi_internal_reg_rxcb(ESP_IF_WIFI_STA, (wifi_rxcb_t) wlan_sta_rx_callback);
+	esp_wifi_internal_reg_rxcb(WIFI_IF_STA, (wifi_rxcb_t) wlan_sta_rx_callback);
 
 
 	return ESP_OK;
@@ -469,7 +471,7 @@ static void station_event_handler(void *arg, esp_event_base_t event_base,
 
 		memcpy(&lkg_sta_connected_event, connected_event, sizeof(wifi_event_sta_connected_t));
 
-		esp_wifi_internal_reg_rxcb(ESP_IF_WIFI_STA, (wifi_rxcb_t) wlan_sta_rx_callback);
+		esp_wifi_internal_reg_rxcb(WIFI_IF_STA, (wifi_rxcb_t) wlan_sta_rx_callback);
 		station_connected = true;
 		ESP_LOGI(TAG, "--- Station connected %s ---", connected_event->ssid);
 
@@ -504,10 +506,10 @@ static void softap_event_handler(void *arg, esp_event_base_t event_base,
 		send_wifi_event_data_to_host(CTRL_MSG_ID__Event_StationDisconnectFromESPSoftAP,
 				event, sizeof(wifi_event_ap_stadisconnected_t));
 	} else if (event_id == WIFI_EVENT_AP_START) {
-		esp_wifi_internal_reg_rxcb(ESP_IF_WIFI_AP, (wifi_rxcb_t) wlan_ap_rx_callback);
+		esp_wifi_internal_reg_rxcb(WIFI_IF_AP, (wifi_rxcb_t) wlan_ap_rx_callback);
 	} else if (event_id == WIFI_EVENT_AP_STOP) {
 		ESP_LOGI(TAG,"softap stop handler stop");
-		esp_wifi_internal_reg_rxcb(ESP_IF_WIFI_AP,NULL);
+		esp_wifi_internal_reg_rxcb(WIFI_IF_AP,NULL);
 	}
 }
 
@@ -639,14 +641,14 @@ static esp_err_t req_get_mac_address_handler(CtrlMsg *req,
 	resp->resp_get_mac_address = resp_payload;
 
 	if (req->req_get_mac_address->mode == WIFI_MODE_STA) {
-		ret = esp_wifi_get_mac(ESP_IF_WIFI_STA , mac);
+		ret = esp_wifi_get_mac(WIFI_IF_STA , mac);
 		ESP_LOGI(TAG,"Get station mac address");
 		if (ret) {
 			ESP_LOGE(TAG,"Error in getting MAC of ESP Station %d", ret);
 			goto err;
 		}
 	} else if (req->req_get_mac_address->mode == WIFI_MODE_AP) {
-		ret = esp_wifi_get_mac(ESP_IF_WIFI_AP, mac);
+		ret = esp_wifi_get_mac(WIFI_IF_AP, mac);
 		ESP_LOGI(TAG,"Get softap mac address");
 		if (ret) {
 			ESP_LOGE(TAG,"Error in getting MAC of ESP softap %d", ret);
@@ -914,7 +916,7 @@ static esp_err_t req_connect_ap_handler (CtrlMsg *req,
 	}
 #endif
 
-	ret = esp_wifi_get_mac(ESP_IF_WIFI_STA, mac);
+	ret = esp_wifi_get_mac(WIFI_IF_STA, mac);
 	if (ret) {
 		ESP_LOGE(TAG,"Error in getting MAC of ESP Station 0x%x", ret);
 		resp_payload->resp = ret;
@@ -1192,20 +1194,20 @@ static esp_err_t req_get_softap_config_handler (CtrlMsg *req,
 		goto err;
 	}
 
-	ret = esp_wifi_get_config(ESP_IF_WIFI_AP, &get_conf);
+	ret = esp_wifi_get_config(WIFI_IF_AP, &get_conf);
 	if (ret) {
 		ESP_LOGE(TAG,"Failed to get SoftAP config");
 		goto err;
 	}
 
 #if WIFI_DUALBAND_SUPPORT
-	ret = esp_wifi_get_bandwidths(ESP_IF_WIFI_AP,&bandwidths);
+	ret = esp_wifi_get_bandwidths(WIFI_IF_AP,&bandwidths);
 	if (ret) {
 		ESP_LOGE(TAG,"Failed to get bandwidths");
 		goto err;
 	}
 #else
-	ret = esp_wifi_get_bandwidth(ESP_IF_WIFI_AP,&get_bw);
+	ret = esp_wifi_get_bandwidth(WIFI_IF_AP,&get_bw);
 	if (ret) {
 		ESP_LOGE(TAG,"Failed to get bandwidth");
 		goto err;
@@ -1412,13 +1414,13 @@ static esp_err_t req_start_softap_handler (CtrlMsg *req,
 		bandwidths.ghz_5g = req->req_start_softap->bw;
 		break;
 	}
-	ret = esp_wifi_set_bandwidths(ESP_IF_WIFI_AP, &bandwidths);
+	ret = esp_wifi_set_bandwidths(WIFI_IF_AP, &bandwidths);
 	if (ret) {
 		ESP_LOGE(TAG,"Failed to set bandwidth");
 		goto err;
 	}
 #else
-	ret = esp_wifi_set_bandwidth(ESP_IF_WIFI_AP,req->req_start_softap->bw);
+	ret = esp_wifi_set_bandwidth(WIFI_IF_AP,req->req_start_softap->bw);
 	if (ret) {
 		ESP_LOGE(TAG,"Failed to set bandwidth");
 		goto err;
@@ -1434,7 +1436,7 @@ static esp_err_t req_start_softap_handler (CtrlMsg *req,
 	softap_event_register();
 	softap_started = true;
 
-	ret = esp_wifi_set_config(ESP_IF_WIFI_AP, wifi_config);
+	ret = esp_wifi_set_config(WIFI_IF_AP, wifi_config);
 	if (ret) {
 		ESP_LOGE(TAG,"Failed to set softap config");
 		goto err;
@@ -2516,6 +2518,7 @@ static esp_err_t req_set_dhcp_dns_status(CtrlMsg *req, CtrlMsg *resp, void *priv
 #if defined(CONFIG_NETWORK_SPLIT_ENABLED) && !defined(CONFIG_SLAVE_MANAGES_WIFI)
 
 	CtrlMsgReqSetDhcpDnsStatus *req_payload = NULL;
+	int ret = ESP_FAIL;
 
 	req_payload = req->req_set_dhcp_dns_status;
 
@@ -2547,11 +2550,38 @@ static esp_err_t req_set_dhcp_dns_status(CtrlMsg *req, CtrlMsg *resp, void *priv
 	RPC_REQ_COPY_BYTES(dhcp_gw, req_payload->dhcp_gw, sizeof(dhcp_gw));
 	RPC_REQ_COPY_BYTES(dns_ip, req_payload->dns_ip, sizeof(dns_ip));
 
-	if (dhcp_up)
-		set_slave_static_ip(iface, dhcp_ip, dhcp_nm, dhcp_gw);
+	if (req_payload->iface == WIFI_IF_STA) {
+		if (dhcp_up) {
+			ret = set_slave_static_ip(iface, dhcp_ip, dhcp_nm, dhcp_gw);
+			if (ret) {
+				ESP_LOGW(TAG, "set_slave_static_ip failed with %d", ret);
+			}
+		} else {
+			ret = set_slave_static_ip(req_payload->iface, "0.0.0.0", "0.0.0.0", "0.0.0.0");
+			if (ret) {
+				ESP_LOGW(TAG, "set_slave_static_ip (null) failed with %d", ret);
+			}
+		}
 
-	if (dns_up)
-		set_slave_dns(iface, dns_ip, dns_type);
+		if (dns_up) {
+			ret = set_slave_dns(iface, dns_ip, dns_type);
+			if (ret) {
+				ESP_LOGW(TAG, "set_slave_dns failed with %d", ret);
+			}
+		} else {
+			ret = set_slave_dns(req_payload->iface, "0.0.0.0", 0);
+			if (ret) {
+				ESP_LOGW(TAG, "set_slave_dns failed with %d", ret);
+			}
+		}
+
+		if (net_link_up) {
+			esp_netif_up(slave_sta_netif);
+		} else {
+			esp_netif_down(slave_sta_netif);
+		}
+	}
+
 
 	resp_set_dhcp_dns->resp = SUCCESS;
 #else

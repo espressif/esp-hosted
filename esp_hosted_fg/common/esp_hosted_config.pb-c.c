@@ -6643,8 +6643,20 @@ static const ProtobufCFieldDescriptor ctrl_msg__field_descriptors[68] =
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
   {
-    "req_set_dhcp_dns_status",
+    "req_custom_rpc_unserialised_msg",
     126,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_MESSAGE,
+    offsetof(CtrlMsg, payload_case),
+    offsetof(CtrlMsg, req_custom_rpc_unserialised_msg),
+    &ctrl_msg__req__custom_rpc_unserialised_msg__descriptor,
+    NULL,
+    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "req_set_dhcp_dns_status",
+    127,
     PROTOBUF_C_LABEL_NONE,
     PROTOBUF_C_TYPE_MESSAGE,
     offsetof(CtrlMsg, payload_case),
@@ -6656,24 +6668,12 @@ static const ProtobufCFieldDescriptor ctrl_msg__field_descriptors[68] =
   },
   {
     "req_get_dhcp_dns_status",
-    127,
+    128,
     PROTOBUF_C_LABEL_NONE,
     PROTOBUF_C_TYPE_MESSAGE,
     offsetof(CtrlMsg, payload_case),
     offsetof(CtrlMsg, req_get_dhcp_dns_status),
     &ctrl_msg__req__get_dhcp_dns_status__descriptor,
-    NULL,
-    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
-    0,NULL,NULL    /* reserved1,reserved2, etc */
-  },
-  {
-    "req_custom_rpc_unserialised_msg",
-    128,
-    PROTOBUF_C_LABEL_NONE,
-    PROTOBUF_C_TYPE_MESSAGE,
-    offsetof(CtrlMsg, payload_case),
-    offsetof(CtrlMsg, req_custom_rpc_unserialised_msg),
-    &ctrl_msg__req__custom_rpc_unserialised_msg__descriptor,
     NULL,
     0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
@@ -6979,8 +6979,20 @@ static const ProtobufCFieldDescriptor ctrl_msg__field_descriptors[68] =
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
   {
-    "resp_set_dhcp_dns_status",
+    "resp_custom_rpc_unserialised_msg",
     226,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_MESSAGE,
+    offsetof(CtrlMsg, payload_case),
+    offsetof(CtrlMsg, resp_custom_rpc_unserialised_msg),
+    &ctrl_msg__resp__custom_rpc_unserialised_msg__descriptor,
+    NULL,
+    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "resp_set_dhcp_dns_status",
+    227,
     PROTOBUF_C_LABEL_NONE,
     PROTOBUF_C_TYPE_MESSAGE,
     offsetof(CtrlMsg, payload_case),
@@ -6992,24 +7004,12 @@ static const ProtobufCFieldDescriptor ctrl_msg__field_descriptors[68] =
   },
   {
     "resp_get_dhcp_dns_status",
-    227,
+    228,
     PROTOBUF_C_LABEL_NONE,
     PROTOBUF_C_TYPE_MESSAGE,
     offsetof(CtrlMsg, payload_case),
     offsetof(CtrlMsg, resp_get_dhcp_dns_status),
     &ctrl_msg__resp__get_dhcp_dns_status__descriptor,
-    NULL,
-    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
-    0,NULL,NULL    /* reserved1,reserved2, etc */
-  },
-  {
-    "resp_custom_rpc_unserialised_msg",
-    228,
-    PROTOBUF_C_LABEL_NONE,
-    PROTOBUF_C_TYPE_MESSAGE,
-    offsetof(CtrlMsg, payload_case),
-    offsetof(CtrlMsg, resp_custom_rpc_unserialised_msg),
-    &ctrl_msg__resp__custom_rpc_unserialised_msg__descriptor,
     NULL,
     0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
@@ -7087,20 +7087,8 @@ static const ProtobufCFieldDescriptor ctrl_msg__field_descriptors[68] =
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
   {
-    "event_set_dhcp_dns_status",
-    307,
-    PROTOBUF_C_LABEL_NONE,
-    PROTOBUF_C_TYPE_MESSAGE,
-    offsetof(CtrlMsg, payload_case),
-    offsetof(CtrlMsg, event_set_dhcp_dns_status),
-    &ctrl_msg__event__set_dhcp_dns_status__descriptor,
-    NULL,
-    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
-    0,NULL,NULL    /* reserved1,reserved2, etc */
-  },
-  {
     "event_custom_rpc_unserialised_msg",
-    308,
+    307,
     PROTOBUF_C_LABEL_NONE,
     PROTOBUF_C_TYPE_MESSAGE,
     offsetof(CtrlMsg, payload_case),
@@ -7110,12 +7098,24 @@ static const ProtobufCFieldDescriptor ctrl_msg__field_descriptors[68] =
     0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
+  {
+    "event_set_dhcp_dns_status",
+    308,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_MESSAGE,
+    offsetof(CtrlMsg, payload_case),
+    offsetof(CtrlMsg, event_set_dhcp_dns_status),
+    &ctrl_msg__event__set_dhcp_dns_status__descriptor,
+    NULL,
+    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
 };
 static const unsigned ctrl_msg__field_indices_by_name[] = {
-  67,   /* field[67] = event_custom_rpc_unserialised_msg */
+  66,   /* field[66] = event_custom_rpc_unserialised_msg */
   60,   /* field[60] = event_esp_init */
   61,   /* field[61] = event_heartbeat */
-  66,   /* field[66] = event_set_dhcp_dns_status */
+  67,   /* field[67] = event_set_dhcp_dns_status */
   64,   /* field[64] = event_station_connected_to_AP */
   65,   /* field[65] = event_station_connected_to_ESP_SoftAP */
   62,   /* field[62] = event_station_disconnect_from_AP */
@@ -7124,12 +7124,12 @@ static const unsigned ctrl_msg__field_indices_by_name[] = {
   0,   /* field[0] = msg_type */
   24,   /* field[24] = req_config_heartbeat */
   10,   /* field[10] = req_connect_ap */
-  31,   /* field[31] = req_custom_rpc_unserialised_msg */
+  29,   /* field[29] = req_custom_rpc_unserialised_msg */
   11,   /* field[11] = req_disconnect_ap */
   25,   /* field[25] = req_enable_disable_feat */
   9,   /* field[9] = req_get_ap_config */
   28,   /* field[28] = req_get_country_code */
-  30,   /* field[30] = req_get_dhcp_dns_status */
+  31,   /* field[31] = req_get_dhcp_dns_status */
   26,   /* field[26] = req_get_fw_version */
   4,   /* field[4] = req_get_mac_address */
   18,   /* field[18] = req_get_power_save_mode */
@@ -7142,7 +7142,7 @@ static const unsigned ctrl_msg__field_indices_by_name[] = {
   3,   /* field[3] = req_resp_type */
   8,   /* field[8] = req_scan_ap_list */
   27,   /* field[27] = req_set_country_code */
-  29,   /* field[29] = req_set_dhcp_dns_status */
+  30,   /* field[30] = req_set_dhcp_dns_status */
   5,   /* field[5] = req_set_mac_address */
   17,   /* field[17] = req_set_power_save_mode */
   13,   /* field[13] = req_set_softap_vendor_specific_ie */
@@ -7153,12 +7153,12 @@ static const unsigned ctrl_msg__field_indices_by_name[] = {
   16,   /* field[16] = req_stop_softap */
   52,   /* field[52] = resp_config_heartbeat */
   38,   /* field[38] = resp_connect_ap */
-  59,   /* field[59] = resp_custom_rpc_unserialised_msg */
+  57,   /* field[57] = resp_custom_rpc_unserialised_msg */
   39,   /* field[39] = resp_disconnect_ap */
   53,   /* field[53] = resp_enable_disable_feat */
   37,   /* field[37] = resp_get_ap_config */
   56,   /* field[56] = resp_get_country_code */
-  58,   /* field[58] = resp_get_dhcp_dns_status */
+  59,   /* field[59] = resp_get_dhcp_dns_status */
   54,   /* field[54] = resp_get_fw_version */
   32,   /* field[32] = resp_get_mac_address */
   46,   /* field[46] = resp_get_power_save_mode */
@@ -7170,7 +7170,7 @@ static const unsigned ctrl_msg__field_indices_by_name[] = {
   48,   /* field[48] = resp_ota_write */
   36,   /* field[36] = resp_scan_ap_list */
   55,   /* field[55] = resp_set_country_code */
-  57,   /* field[57] = resp_set_dhcp_dns_status */
+  58,   /* field[58] = resp_set_dhcp_dns_status */
   33,   /* field[33] = resp_set_mac_address */
   45,   /* field[45] = resp_set_power_save_mode */
   41,   /* field[41] = resp_set_softap_vendor_specific_ie */
@@ -7499,9 +7499,9 @@ static const ProtobufCEnumValue ctrl_msg_id__enum_values_by_number[71] =
   { "Req_GetFwVersion", "CTRL_MSG_ID__Req_GetFwVersion", 123 },
   { "Req_SetCountryCode", "CTRL_MSG_ID__Req_SetCountryCode", 124 },
   { "Req_GetCountryCode", "CTRL_MSG_ID__Req_GetCountryCode", 125 },
-  { "Req_SetDhcpDnsStatus", "CTRL_MSG_ID__Req_SetDhcpDnsStatus", 126 },
-  { "Req_GetDhcpDnsStatus", "CTRL_MSG_ID__Req_GetDhcpDnsStatus", 127 },
-  { "Req_Custom_RPC_Unserialised_Msg", "CTRL_MSG_ID__Req_Custom_RPC_Unserialised_Msg", 128 },
+  { "Req_Custom_RPC_Unserialised_Msg", "CTRL_MSG_ID__Req_Custom_RPC_Unserialised_Msg", 126 },
+  { "Req_SetDhcpDnsStatus", "CTRL_MSG_ID__Req_SetDhcpDnsStatus", 127 },
+  { "Req_GetDhcpDnsStatus", "CTRL_MSG_ID__Req_GetDhcpDnsStatus", 128 },
   { "Req_Max", "CTRL_MSG_ID__Req_Max", 129 },
   { "Resp_Base", "CTRL_MSG_ID__Resp_Base", 200 },
   { "Resp_GetMACAddress", "CTRL_MSG_ID__Resp_GetMACAddress", 201 },
@@ -7529,9 +7529,9 @@ static const ProtobufCEnumValue ctrl_msg_id__enum_values_by_number[71] =
   { "Resp_GetFwVersion", "CTRL_MSG_ID__Resp_GetFwVersion", 223 },
   { "Resp_SetCountryCode", "CTRL_MSG_ID__Resp_SetCountryCode", 224 },
   { "Resp_GetCountryCode", "CTRL_MSG_ID__Resp_GetCountryCode", 225 },
-  { "Resp_SetDhcpDnsStatus", "CTRL_MSG_ID__Resp_SetDhcpDnsStatus", 226 },
-  { "Resp_GetDhcpDnsStatus", "CTRL_MSG_ID__Resp_GetDhcpDnsStatus", 227 },
-  { "Resp_Custom_RPC_Unserialised_Msg", "CTRL_MSG_ID__Resp_Custom_RPC_Unserialised_Msg", 228 },
+  { "Resp_Custom_RPC_Unserialised_Msg", "CTRL_MSG_ID__Resp_Custom_RPC_Unserialised_Msg", 226 },
+  { "Resp_SetDhcpDnsStatus", "CTRL_MSG_ID__Resp_SetDhcpDnsStatus", 227 },
+  { "Resp_GetDhcpDnsStatus", "CTRL_MSG_ID__Resp_GetDhcpDnsStatus", 228 },
   { "Resp_Max", "CTRL_MSG_ID__Resp_Max", 229 },
   { "Event_Base", "CTRL_MSG_ID__Event_Base", 300 },
   { "Event_ESPInit", "CTRL_MSG_ID__Event_ESPInit", 301 },
@@ -7540,8 +7540,8 @@ static const ProtobufCEnumValue ctrl_msg_id__enum_values_by_number[71] =
   { "Event_StationDisconnectFromESPSoftAP", "CTRL_MSG_ID__Event_StationDisconnectFromESPSoftAP", 304 },
   { "Event_StationConnectedToAP", "CTRL_MSG_ID__Event_StationConnectedToAP", 305 },
   { "Event_StationConnectedToESPSoftAP", "CTRL_MSG_ID__Event_StationConnectedToESPSoftAP", 306 },
-  { "Event_SetDhcpDnsStatus", "CTRL_MSG_ID__Event_SetDhcpDnsStatus", 307 },
-  { "Event_Custom_RPC_Unserialised_Msg", "CTRL_MSG_ID__Event_Custom_RPC_Unserialised_Msg", 308 },
+  { "Event_Custom_RPC_Unserialised_Msg", "CTRL_MSG_ID__Event_Custom_RPC_Unserialised_Msg", 307 },
+  { "Event_SetDhcpDnsStatus", "CTRL_MSG_ID__Event_SetDhcpDnsStatus", 308 },
   { "Event_Max", "CTRL_MSG_ID__Event_Max", 309 },
 };
 static const ProtobufCIntRange ctrl_msg_id__value_ranges[] = {
@@ -7550,11 +7550,11 @@ static const ProtobufCIntRange ctrl_msg_id__value_ranges[] = {
 static const ProtobufCEnumValueIndex ctrl_msg_id__enum_values_by_name[71] =
 {
   { "Event_Base", 61 },
-  { "Event_Custom_RPC_Unserialised_Msg", 69 },
+  { "Event_Custom_RPC_Unserialised_Msg", 68 },
   { "Event_ESPInit", 62 },
   { "Event_Heartbeat", 63 },
   { "Event_Max", 70 },
-  { "Event_SetDhcpDnsStatus", 68 },
+  { "Event_SetDhcpDnsStatus", 69 },
   { "Event_StationConnectedToAP", 66 },
   { "Event_StationConnectedToESPSoftAP", 67 },
   { "Event_StationDisconnectFromAP", 64 },
@@ -7563,13 +7563,13 @@ static const ProtobufCEnumValueIndex ctrl_msg_id__enum_values_by_name[71] =
   { "Req_Base", 1 },
   { "Req_ConfigHeartbeat", 22 },
   { "Req_ConnectAP", 8 },
-  { "Req_Custom_RPC_Unserialised_Msg", 29 },
+  { "Req_Custom_RPC_Unserialised_Msg", 27 },
   { "Req_DisconnectAP", 9 },
   { "Req_EnableDisable", 23 },
   { "Req_GetAPConfig", 7 },
   { "Req_GetAPScanList", 6 },
   { "Req_GetCountryCode", 26 },
-  { "Req_GetDhcpDnsStatus", 28 },
+  { "Req_GetDhcpDnsStatus", 29 },
   { "Req_GetFwVersion", 24 },
   { "Req_GetMACAddress", 2 },
   { "Req_GetPowerSaveMode", 16 },
@@ -7582,7 +7582,7 @@ static const ProtobufCEnumValueIndex ctrl_msg_id__enum_values_by_name[71] =
   { "Req_OTAEnd", 19 },
   { "Req_OTAWrite", 18 },
   { "Req_SetCountryCode", 25 },
-  { "Req_SetDhcpDnsStatus", 27 },
+  { "Req_SetDhcpDnsStatus", 28 },
   { "Req_SetMacAddress", 3 },
   { "Req_SetPowerSaveMode", 15 },
   { "Req_SetSoftAPVendorSpecificIE", 11 },
@@ -7593,13 +7593,13 @@ static const ProtobufCEnumValueIndex ctrl_msg_id__enum_values_by_name[71] =
   { "Resp_Base", 31 },
   { "Resp_ConfigHeartbeat", 52 },
   { "Resp_ConnectAP", 38 },
-  { "Resp_Custom_RPC_Unserialised_Msg", 59 },
+  { "Resp_Custom_RPC_Unserialised_Msg", 57 },
   { "Resp_DisconnectAP", 39 },
   { "Resp_EnableDisable", 53 },
   { "Resp_GetAPConfig", 37 },
   { "Resp_GetAPScanList", 36 },
   { "Resp_GetCountryCode", 56 },
-  { "Resp_GetDhcpDnsStatus", 58 },
+  { "Resp_GetDhcpDnsStatus", 59 },
   { "Resp_GetFwVersion", 54 },
   { "Resp_GetMACAddress", 32 },
   { "Resp_GetPowerSaveMode", 46 },
@@ -7612,7 +7612,7 @@ static const ProtobufCEnumValueIndex ctrl_msg_id__enum_values_by_name[71] =
   { "Resp_OTAEnd", 49 },
   { "Resp_OTAWrite", 48 },
   { "Resp_SetCountryCode", 55 },
-  { "Resp_SetDhcpDnsStatus", 57 },
+  { "Resp_SetDhcpDnsStatus", 58 },
   { "Resp_SetMacAddress", 33 },
   { "Resp_SetPowerSaveMode", 45 },
   { "Resp_SetSoftAPVendorSpecificIE", 41 },

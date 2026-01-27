@@ -268,7 +268,7 @@ The Linux host code is located at: [esp\_hosted\_fg/host/linux](https://www.goog
 
 ##### Sysctl Configuration
 
-Edit `/etc/sysctl.conf`:
+Edit `/etc/sysctl.conf` or create a new file in `/etc/sysctl.d/` (e.g., `/etc/sysctl.d/99-esp_hosted_nw_split.conf`):
 
 ```bash
 net.ipv4.ip_local_port_range = 49152 61439
@@ -277,9 +277,11 @@ net.ipv4.ip_local_port_range = 49152 61439
 Apply the changes:
 
 ```bash
-sudo sysctl -p
+sudo sysctl --system
 ```
 
+> [!NOTE]
+> `sysctl --system` is used to load settings from all system config files, including in `/etc/sysctl.d/` directory.
 > [!TIP]
 > The port ranges configured on the host and slave **must match exactly** to avoid routing issues.
 

@@ -8,6 +8,7 @@
 */
 #include <string.h>
 #include "sdkconfig.h"
+#include "example_http_client.h"
 
 #ifdef CONFIG_ESP_HOSTED_COPROCESSOR_EXAMPLE_HTTP_CLIENT
 #include "freertos/FreeRTOS.h"
@@ -29,7 +30,7 @@ extern volatile uint8_t station_connected;
 #define WEB_PORT CONFIG_HTTP_WEBSERVER_PORT
 #define WEB_PATH CONFIG_HTTP_WEBSERVER_PATH
 
-static const char *TAG = "http_req";
+static const char *TAG = "example_http_client";
 
 static const char *REQUEST = "GET " WEB_PATH " HTTP/1.0\r\n"
     "Host: "WEB_SERVER":"WEB_PORT"\r\n"
@@ -124,7 +125,7 @@ Note: inet_ntoa is non-reentrant, look at ipaddr_ntoa_r for "real" code */
 	}
 }
 
-void slave_http_req_example(void)
+void example_http_client_start(void)
 {
 	xTaskCreate(&http_get_task, "http_get_task", 4096, NULL, CONFIG_ESP_HOSTED_TASK_PRIORITY_LOW, NULL);
 }

@@ -53,12 +53,12 @@ sequenceDiagram
     participant ESP
 
     participant Router as WiFi Router
-    Note over Host,Router: System Bootup
-    Note over ESP: ESP Bootup
+    Note over Host,Router: System Boot-up
+    Note over ESP: ESP Boot-up
     ESP->>Router: Auto-connect to Wi-Fi
     Router-->>ESP: DHCP IP assigned
 
-    Note over Host,Daemon: Host Bootup
+    Note over Host,Daemon: Host Boot-up
     Host->>KMod: Load Kernel Module
     KMod->>ESP: Set-up ESP-Hosted transport
     ESP-->>KMod: Transport Up

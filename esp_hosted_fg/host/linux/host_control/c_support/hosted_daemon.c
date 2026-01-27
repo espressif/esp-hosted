@@ -77,7 +77,7 @@ static char * get_timestamp(char *str, uint16_t str_size)
 static int event_cb(ctrl_cmd_t * app_event)
 {
 	/* Note: event_cb is callback run by rx-thread
-	 * Do not trigger any blocking or time consuming opearations
+	 * Do not trigger any blocking or time consuming operations
 	 * */
 	char ts[MIN_TIMESTAMP_STR_SIZE] = {'\0'};
 
@@ -190,7 +190,7 @@ int resp_cb(ctrl_cmd_t * app_resp)
 
 static int subscribe_events(void)
 {
-	/* Please note, the event_cb would be called asyncronously by underlying rx-thread
+	/* Please note, the event_cb would be called asynchronously by underlying rx-thread
 	 * 1. Do not do any blocking operation in event_cb.
 	 * 2. Do not trigger any 'sync' rpc control request, as they are blocking in nature.
 	 * 3. 'async' rpc control requests are allowed.
@@ -487,7 +487,7 @@ int main(int argc, char *argv[])
 			fetch_mac_addr_from_slave();
 
 			if (strlen(sta_network.mac_addr)==0) {
-				LOG_MSG(LOG_ERR, "Failed to retrive the MAC address");
+				LOG_MSG(LOG_ERR, "Failed to retrieve the MAC address");
 				sleep(1);
 				continue;
 			}

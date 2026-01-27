@@ -755,18 +755,36 @@ menu "Example Configuration"
 	endmenu
 
 
-	menu "Example to run"
-		depends on NETWORK_SPLIT_ENABLED
+	config ESP_HOSTED_EXTRA_EXAMPLES
+		bool "Additional higher layer examples to run"
+		depends on NETWORK_SPLIT_ENABLED # as if now, only examples dependent upon network split. in future this line may be deleted
+		default n
+		help
+			Extra set of optional examples to run at slave
+
+	menu "Select Examples to run"
+		depends on ESP_HOSTED_EXTRA_EXAMPLES && NETWORK_SPLIT_ENABLED
 
 		config ESP_HOSTED_COPROCESSOR_EXAMPLE_MQTT
 			bool "MQTT client example"
-			default y
+			default n
 
 		menu "MQTT client config"
 			depends on ESP_HOSTED_COPROCESSOR_EXAMPLE_MQTT
+			choice BROKER_CHOICE
+				prompt "MQTT Broker"
+				default BROKER_HIVEMQ
+
+				config BROKER_ECLIPSEPROJECTS
+					bool "mqtt.eclipseprojects.io"
+				config BROKER_HIVEMQ
+					bool "broker.hivemq.com"
+			endchoice
+
 			config BROKER_URL
-				string "Broker URL"
-				default "mqtt://mqtt.eclipseprojects.io"
+				string
+				default "mqtt://mqtt.eclipseprojects.io" if BROKER_ECLIPSEPROJECTS
+				default "mqtt://broker.hivemq.com" if BROKER_HIVEMQ
 				help
 					URL of the broker to connect to
 
@@ -778,7 +796,7 @@ menu "Example Configuration"
 
 		config ESP_HOSTED_COPROCESSOR_EXAMPLE_HTTP_CLIENT
 			bool "HTTP client example"
-			default y
+			default n
 
 		menu "HTTP client config"
 			depends on ESP_HOSTED_COPROCESSOR_EXAMPLE_HTTP_CLIENT

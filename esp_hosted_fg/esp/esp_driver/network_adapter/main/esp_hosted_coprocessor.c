@@ -43,6 +43,9 @@
 #include "stats.h"
 #include "esp_fw_version.h"
 #include "esp_hosted_cli.h"
+#ifdef ESP_HOSTED_COPROCESSOR_EXAMPLE_HTTP_CLIENT
+#include "example_http_client.h"
+#endif
 #include "esp_wifi.h"
 
 #if CONFIG_NETWORK_SPLIT_ENABLED
@@ -435,7 +438,7 @@ static void process_rx_pkt(interface_buffer_handle_t *buf_handle)
 	if (buf_handle->if_type == ESP_STA_IF && station_connected) {
 		/* Forward data to wlan driver */
 		do {
-			ret = esp_wifi_internal_tx(ESP_IF_WIFI_STA, payload, payload_len);
+			ret = esp_wifi_internal_tx(WIFI_IF_STA, payload, payload_len);
 			if (ret) {
 				vTaskDelay(pdMS_TO_TICKS(1));
 			}
@@ -451,7 +454,7 @@ static void process_rx_pkt(interface_buffer_handle_t *buf_handle)
 #endif
 	} else if (buf_handle->if_type == ESP_AP_IF && softap_started) {
 		/* Forward data to wlan driver */
-		esp_wifi_internal_tx(ESP_IF_WIFI_AP, payload, payload_len);
+		esp_wifi_internal_tx(WIFI_IF_AP, payload, payload_len);
 		ESP_HEXLOGV("AP_Put", payload, payload_len, 32);
 	} else if (buf_handle->if_type == ESP_SERIAL_IF) {
 #if ESP_PKT_STATS
@@ -1059,8 +1062,7 @@ void app_main(void)
 #ifdef CONFIG_NETWORK_SPLIT_ENABLED
 
 #ifdef ESP_HOSTED_COPROCESSOR_EXAMPLE_HTTP_CLIENT
-	extern void slave_http_req_example(void);
-	slave_http_req_example();
+	example_http_client_start();
 #endif
 
 #endif

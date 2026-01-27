@@ -15,11 +15,11 @@ set(COMPONENT_SRCS
 )
 
 if(CONFIG_ESP_HOSTED_COPROCESSOR_EXAMPLE_MQTT)
-    list(APPEND COMPONENT_SRCS mqtt_example.c)
+    list(APPEND COMPONENT_SRCS example_mqtt_client.c)
 endif()
 
 if(CONFIG_ESP_HOSTED_COPROCESSOR_EXAMPLE_HTTP_CLIENT)
-    list(APPEND COMPONENT_SRCS http_req.c)
+    list(APPEND COMPONENT_SRCS example_http_client.c)
 endif()
 
 set(COMPONENT_ADD_INCLUDEDIRS

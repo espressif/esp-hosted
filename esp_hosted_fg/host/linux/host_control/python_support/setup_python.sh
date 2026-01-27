@@ -1,10 +1,26 @@
 #!/usr/bin/env bash
+set -e
 
+# Install system Python and venv support
+sudo apt update
+sudo apt install -y python3 python3-venv python3-pip
 
-# Install python3
-sudo apt install python3
+# Create virtual environment if it doesn't exist
+if [ ! -d "hosted_venv" ]; then
+    python3 -m venv hosted_venv
+fi
 
-# Python virtual environment steps are explained in documentation at
-# https://github.com/espressif/esp-hosted/blob/master/esp_hosted_fg/docs/common/python_demo.md#demo-app-in-python
-# Current setup assumes python venv is not needed.
-sudo python3 -m pip install prompt_toolkit fire argparse docstring_parser requests
+# Activate venv
+source hosted_venv/bin/activate
+
+# Upgrade pip inside venv
+pip install --upgrade pip
+
+# Install Python dependencies
+pip install -r requirements.txt
+
+echo
+echo "✅Python environment ready"
+echo "Activate it with:"
+echo "  source hosted_venv/bin/activate"
+

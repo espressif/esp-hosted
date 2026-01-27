@@ -179,9 +179,9 @@ typedef enum _CtrlMsgId {
   CTRL_MSG_ID__Req_GetFwVersion = 123,
   CTRL_MSG_ID__Req_SetCountryCode = 124,
   CTRL_MSG_ID__Req_GetCountryCode = 125,
-  CTRL_MSG_ID__Req_SetDhcpDnsStatus = 126,
-  CTRL_MSG_ID__Req_GetDhcpDnsStatus = 127,
-  CTRL_MSG_ID__Req_Custom_RPC_Unserialised_Msg = 128,
+  CTRL_MSG_ID__Req_Custom_RPC_Unserialised_Msg = 126,
+  CTRL_MSG_ID__Req_SetDhcpDnsStatus = 127,
+  CTRL_MSG_ID__Req_GetDhcpDnsStatus = 128,
   /*
    * Add new control path command response before Req_Max
    * and update Req_Max 
@@ -216,9 +216,9 @@ typedef enum _CtrlMsgId {
   CTRL_MSG_ID__Resp_GetFwVersion = 223,
   CTRL_MSG_ID__Resp_SetCountryCode = 224,
   CTRL_MSG_ID__Resp_GetCountryCode = 225,
-  CTRL_MSG_ID__Resp_SetDhcpDnsStatus = 226,
-  CTRL_MSG_ID__Resp_GetDhcpDnsStatus = 227,
-  CTRL_MSG_ID__Resp_Custom_RPC_Unserialised_Msg = 228,
+  CTRL_MSG_ID__Resp_Custom_RPC_Unserialised_Msg = 226,
+  CTRL_MSG_ID__Resp_SetDhcpDnsStatus = 227,
+  CTRL_MSG_ID__Resp_GetDhcpDnsStatus = 228,
   /*
    * Add new control path command response before Resp_Max
    * and update Resp_Max 
@@ -234,8 +234,8 @@ typedef enum _CtrlMsgId {
   CTRL_MSG_ID__Event_StationDisconnectFromESPSoftAP = 304,
   CTRL_MSG_ID__Event_StationConnectedToAP = 305,
   CTRL_MSG_ID__Event_StationConnectedToESPSoftAP = 306,
-  CTRL_MSG_ID__Event_SetDhcpDnsStatus = 307,
-  CTRL_MSG_ID__Event_Custom_RPC_Unserialised_Msg = 308,
+  CTRL_MSG_ID__Event_Custom_RPC_Unserialised_Msg = 307,
+  CTRL_MSG_ID__Event_SetDhcpDnsStatus = 308,
   /*
    * Add new control path command notification before Event_Max
    * and update Event_Max 
@@ -1001,9 +1001,9 @@ typedef enum {
   CTRL_MSG__PAYLOAD_REQ_GET_FW_VERSION = 123,
   CTRL_MSG__PAYLOAD_REQ_SET_COUNTRY_CODE = 124,
   CTRL_MSG__PAYLOAD_REQ_GET_COUNTRY_CODE = 125,
-  CTRL_MSG__PAYLOAD_REQ_SET_DHCP_DNS_STATUS = 126,
-  CTRL_MSG__PAYLOAD_REQ_GET_DHCP_DNS_STATUS = 127,
-  CTRL_MSG__PAYLOAD_REQ_CUSTOM_RPC_UNSERIALISED_MSG = 128,
+  CTRL_MSG__PAYLOAD_REQ_CUSTOM_RPC_UNSERIALISED_MSG = 126,
+  CTRL_MSG__PAYLOAD_REQ_SET_DHCP_DNS_STATUS = 127,
+  CTRL_MSG__PAYLOAD_REQ_GET_DHCP_DNS_STATUS = 128,
   CTRL_MSG__PAYLOAD_RESP_GET_MAC_ADDRESS = 201,
   CTRL_MSG__PAYLOAD_RESP_SET_MAC_ADDRESS = 202,
   CTRL_MSG__PAYLOAD_RESP_GET_WIFI_MODE = 203,
@@ -1029,17 +1029,17 @@ typedef enum {
   CTRL_MSG__PAYLOAD_RESP_GET_FW_VERSION = 223,
   CTRL_MSG__PAYLOAD_RESP_SET_COUNTRY_CODE = 224,
   CTRL_MSG__PAYLOAD_RESP_GET_COUNTRY_CODE = 225,
-  CTRL_MSG__PAYLOAD_RESP_SET_DHCP_DNS_STATUS = 226,
-  CTRL_MSG__PAYLOAD_RESP_GET_DHCP_DNS_STATUS = 227,
-  CTRL_MSG__PAYLOAD_RESP_CUSTOM_RPC_UNSERIALISED_MSG = 228,
+  CTRL_MSG__PAYLOAD_RESP_CUSTOM_RPC_UNSERIALISED_MSG = 226,
+  CTRL_MSG__PAYLOAD_RESP_SET_DHCP_DNS_STATUS = 227,
+  CTRL_MSG__PAYLOAD_RESP_GET_DHCP_DNS_STATUS = 228,
   CTRL_MSG__PAYLOAD_EVENT_ESP_INIT = 301,
   CTRL_MSG__PAYLOAD_EVENT_HEARTBEAT = 302,
   CTRL_MSG__PAYLOAD_EVENT_STATION_DISCONNECT_FROM__AP = 303,
   CTRL_MSG__PAYLOAD_EVENT_STATION_DISCONNECT_FROM__ESP__SOFT_AP = 304,
   CTRL_MSG__PAYLOAD_EVENT_STATION_CONNECTED_TO__AP = 305,
   CTRL_MSG__PAYLOAD_EVENT_STATION_CONNECTED_TO__ESP__SOFT_AP = 306,
-  CTRL_MSG__PAYLOAD_EVENT_SET_DHCP_DNS_STATUS = 307,
-  CTRL_MSG__PAYLOAD_EVENT_CUSTOM_RPC_UNSERIALISED_MSG = 308
+  CTRL_MSG__PAYLOAD_EVENT_CUSTOM_RPC_UNSERIALISED_MSG = 307,
+  CTRL_MSG__PAYLOAD_EVENT_SET_DHCP_DNS_STATUS = 308
     PROTOBUF_C__FORCE_ENUM_TO_BE_INT_SIZE(CTRL_MSG__PAYLOAD__CASE)
 } CtrlMsg__PayloadCase;
 
@@ -1092,9 +1092,9 @@ struct  CtrlMsg
     CtrlMsgReqGetFwVersion *req_get_fw_version;
     CtrlMsgReqSetCountryCode *req_set_country_code;
     CtrlMsgReqGetCountryCode *req_get_country_code;
+    CtrlMsgReqCustomRpcUnserialisedMsg *req_custom_rpc_unserialised_msg;
     CtrlMsgReqSetDhcpDnsStatus *req_set_dhcp_dns_status;
     CtrlMsgReqGetDhcpDnsStatus *req_get_dhcp_dns_status;
-    CtrlMsgReqCustomRpcUnserialisedMsg *req_custom_rpc_unserialised_msg;
     /*
      ** Responses *
      */
@@ -1123,9 +1123,9 @@ struct  CtrlMsg
     CtrlMsgRespGetFwVersion *resp_get_fw_version;
     CtrlMsgRespSetCountryCode *resp_set_country_code;
     CtrlMsgRespGetCountryCode *resp_get_country_code;
+    CtrlMsgRespCustomRpcUnserialisedMsg *resp_custom_rpc_unserialised_msg;
     CtrlMsgRespSetDhcpDnsStatus *resp_set_dhcp_dns_status;
     CtrlMsgRespGetDhcpDnsStatus *resp_get_dhcp_dns_status;
-    CtrlMsgRespCustomRpcUnserialisedMsg *resp_custom_rpc_unserialised_msg;
     /*
      ** Notifications *
      */
@@ -1135,8 +1135,8 @@ struct  CtrlMsg
     CtrlMsgEventStationDisconnectFromESPSoftAP *event_station_disconnect_from_esp_softap;
     CtrlMsgEventStationConnectedToAP *event_station_connected_to_ap;
     CtrlMsgEventStationConnectedToESPSoftAP *event_station_connected_to_esp_softap;
-    CtrlMsgEventSetDhcpDnsStatus *event_set_dhcp_dns_status;
     CtrlMsgEventCustomRpcUnserialisedMsg *event_custom_rpc_unserialised_msg;
+    CtrlMsgEventSetDhcpDnsStatus *event_set_dhcp_dns_status;
   };
 };
 #define CTRL_MSG__INIT \

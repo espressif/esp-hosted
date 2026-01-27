@@ -36,7 +36,7 @@
 #include "lwip/dns.h"
 #include "lwip/netdb.h"
 
-static const char *TAG = "mqtt_example";
+static const char *TAG = "example_mqtt_client";
 static esp_mqtt_client_handle_t client;
 static uint8_t client_started;
 
@@ -221,7 +221,7 @@ esp_err_t example_mqtt_init(void)
 
 	esp_log_level_set("*", ESP_LOG_INFO);
 	esp_log_level_set("mqtt_client", ESP_LOG_VERBOSE);
-	esp_log_level_set("mqtt_example", ESP_LOG_VERBOSE);
+	esp_log_level_set("example_mqtt_client", ESP_LOG_VERBOSE);
 	esp_log_level_set("transport_base", ESP_LOG_VERBOSE);
 	esp_log_level_set("esp-tls", ESP_LOG_VERBOSE);
 	esp_log_level_set("transport", ESP_LOG_VERBOSE);

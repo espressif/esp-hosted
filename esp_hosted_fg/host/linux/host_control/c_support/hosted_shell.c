@@ -1108,7 +1108,7 @@ static void *auto_ip_restore_thread_handler(void *arg) {
 			printf("Failed to get SoftAP MAC address, will retry later\n");
 		}
 
-		/* Fetch IP address from slave on bootup */
+		/* Fetch IP address from slave on boot-up */
 		if (test_is_network_split_on()) {
 			if (update_host_network_port_range(49152, 61439) != SUCCESS) {
 				printf("Failed to update host network port range\n");

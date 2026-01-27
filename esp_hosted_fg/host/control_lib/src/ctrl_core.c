@@ -4,15 +4,11 @@
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
-#include <net/route.h>
 #include "ctrl_core.h"
 #include "serial_if.h"
 #include "platform_wrapper.h"
 #include "esp_queue.h"
 #include <unistd.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
 
 #ifdef MCU_SYS
 #include "common.h"
@@ -1654,18 +1650,43 @@ int ctrl_app_send_req(ctrl_cmd_t *app_req)
 			//command_log("%sable feature [%d]\n", (req_payload->enable)? "en": "dis", req_payload->feature);
 			break;
 		} case CTRL_REQ_CUSTOM_RPC_UNSERIALISED_MSG: {
-			CTRL_ALLOC_ASSIGN(CtrlMsgReqCustomRpcUnserialisedMsg, req_custom_rpc_unserialised_msg);
-			ctrl_msg__req__custom_rpc_unserialised_msg__init(req_payload);
-			req_payload->custom_msg_id = app_req->u.custom_rpc_unserialised_data.custom_msg_id;
-			req_payload->data.data = app_req->u.custom_rpc_unserialised_data.data;
-			req_payload->data.len = app_req->u.custom_rpc_unserialised_data.data_len;
-			break;
-		} default: {
-			failure_status = CTRL_ERR_UNSUPPORTED_MSG;
-			command_log("RPC Req[%u] unsupported\n",req.msg_id);
-			goto fail_req;
-			break;
-		}
+            CTRL_ALLOC_ASSIGN(CtrlMsgReqCustomRpcUnserialisedMsg, req_custom_rpc_unserialised_msg);
+            ctrl_msg__req__custom_rpc_unserialised_msg__init(req_payload);
+            req_payload->custom_msg_id = app_req->u.custom_rpc_unserialised_data.custom_msg_id;
+            req_payload->data.data = app_req->u.custom_rpc_unserialised_data.data;
+            req_payload->data.len = app_req->u.custom_rpc_unserialised_data.data_len;
+            break;
+        } case CTRL_REQ_SET_DHCP_DNS_STATUS: {
+            dhcp_dns_status_t *p = &app_req->u.dhcp_dns_status;
+            CTRL_ALLOC_ASSIGN(CtrlMsgReqSetDhcpDnsStatus, req_set_dhcp_dns_status);
+            ctrl_msg__req__set_dhcp_dns_status__init(req_payload);
+
+            req_payload->iface = p->iface;
+            req_payload->dhcp_up = p->dhcp_up;
+            req_payload->dns_up = p->dns_up;
+            req_payload->dns_type = p->dns_type;
+            req_payload->net_link_up = p->net_link_up;
+
+            if (p->dhcp_up) {
+                req_payload->dhcp_ip.data = (uint8_t *)p->dhcp_ip;
+				req_payload->dhcp_ip.len = strlen((char *)p->dhcp_ip) + 1;
+				req_payload->dhcp_nm.data = (uint8_t *)p->dhcp_nm;
+				req_payload->dhcp_nm.len = strlen((char *)p->dhcp_nm) + 1;
+				req_payload->dhcp_gw.data = (uint8_t *)p->dhcp_gw;
+				req_payload->dhcp_gw.len = strlen((char *)p->dhcp_gw) + 1;
+			}
+
+			if (p->dns_up) {
+				req_payload->dns_ip.data = (uint8_t *)p->dns_ip;
+				req_payload->dns_ip.len = strlen((char *)p->dns_ip) + 1;
+			}
+            break;
+        } default: {
+            failure_status = CTRL_ERR_UNSUPPORTED_MSG;
+            command_log("RPC Req[%u] unsupported\n",req.msg_id);
+            goto fail_req;
+            break;
+        }
 	}
 
 	/* 4. Protobuf msg size */
