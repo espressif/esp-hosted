@@ -19,6 +19,9 @@ Uses **stress.c**: Internal stress testing for control path APIs
 - 3. `hosted_shell.out` \
 **hosted_shell.c**: Interactive shell interface extended over test
 
+- 4. `hosted_daemon.out` \
+**hosted_daemon.c**: Background daemon for network management
+
 These apps work over [Hosted Control Library](../../host/control_lib/) as base.\
 These apps also use **app_custom_rpc.c**, which provides simple Custom RPC implementation for application-specific communication
 
@@ -69,6 +72,8 @@ These apps also use **app_custom_rpc.c**, which provides simple Custom RPC imple
 |||
 | get_fw_version | Get Firmware Version |
 |||
+| get_dhcp_dns_status | Get DHCP and DNS status (Works if Network Split is enabled) |
+|||
 | set_country_code | Set Country Code with IEEE802.11d disabled |
 | set_country_code_enabled | Set Country Code with IEEE802.11d enabled |
 | get_country_code | Get the current Country Code|
@@ -103,7 +108,7 @@ $ sudo ./test.out \
 	  ota </path/to/esp_firmware_network_adapter.bin> || \
 	  enable_wifi || disable_wifi || enable_bt || disable_bt || get_fw_version || \
 	  set_country_code || set_country_code_enabled || get_country_code || \
-	  send_packed_data__only_ack || \
+	  get_dhcp_dns_status || send_packed_data__only_ack || \
 	  send_packed_data__echo_back_as_response || send_packed_data__echo_back_as_event
 	]
 ```
@@ -212,6 +217,26 @@ $ sudo ./hosted_shell.out
 
 In the shell, you can type double tab to see all available commands
 
+## 4. Network Management Daemon (hosted_daemon.c)
+
+[hosted_daemon.c](../../host/linux/host_control/c_support/hosted_daemon.c) implements a background daemon that manages network interfaces for ESP device. It handles network events and automatically configures interfaces based on events from the ESP device.
+
+### Features
+- Runs as a daemon in the background
+- Automatically manages network interfaces
+- Handles DHCP and DNS configuration
+- Responds to network state changes from ESP device
+
+### How to build and run
+```sh
+$ make hosted_daemon
+$ sudo ./hosted_daemon.out
+```
+
+To run in foreground mode (for debugging):
+```sh
+$ sudo ./hosted_daemon.out -f
+```
 
 # Custom RPC Communication (app_custom_rpc.c)
 

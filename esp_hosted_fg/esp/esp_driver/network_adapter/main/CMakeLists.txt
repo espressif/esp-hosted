@@ -11,6 +11,7 @@ set(COMPONENT_SRCS
     "stats.c"
     "mempool_ll.c"
     "host_power_save.c"
+    "nw_split_router.c"
 )
 
 if(CONFIG_ESP_HOSTED_COPROCESSOR_EXAMPLE_MQTT)

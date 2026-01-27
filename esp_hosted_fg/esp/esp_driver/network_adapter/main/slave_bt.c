@@ -436,9 +436,8 @@ void init_uart(void)
 #endif
 
 #if BLUETOOTH_HCI
-#if SOC_ESP_NIMBLE_CONTROLLER
+#if SOC_ESP_NIMBLE_CONTROLLER && (ESP_IDF_VERSION < ESP_IDF_VERSION_VAL(5, 3, 0))
 
-#if ESP_IDF_VERSION < ESP_IDF_VERSION_VAL(5, 3, 0)
 #include "nimble/ble_hci_trans.h"
 
 typedef enum {
@@ -453,12 +452,6 @@ typedef enum {
 
 /* ACL_DATA_MBUF_LEADINGSPACE: The leadingspace in user info header for ACL data */
 #define ACL_DATA_MBUF_LEADINGSPACE    4
-
-#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 3, 0)
-void ble_transport_ll_init(void)
-{
-}
-#endif
 
 void esp_vhci_host_send_packet(uint8_t *data, uint16_t len)
 {
@@ -514,9 +507,8 @@ ble_hs_rx_data(struct os_mbuf *om, void *arg)
 	os_mbuf_free_chain(om);
 	return 0;
 }
-#endif /* ESP_IDF_VERSION < ESP_IDF_VERSION_VAL(5, 3, 0) */
 
-#endif /* SOC_ESP_NIMBLE_CONTROLLER */
+#endif /* SOC_ESP_NIMBLE_CONTROLLER && (ESP_IDF_VERSION < ESP_IDF_VERSION_VAL(5, 3, 0)) */
 #endif /* BLUETOOTH_HCI */
 
 esp_err_t initialise_bluetooth(void)
@@ -556,12 +548,11 @@ esp_err_t initialise_bluetooth(void)
 			(ble_hci_trans_rx_acl_fn *)ble_hs_rx_data,NULL);
 #else
 	ret = esp_vhci_host_register_callback(&vhci_host_cb);
-#endif /* SOC_ESP_NIMBLE_CONTROLLER */
-
 	if (ret != ESP_OK) {
 		ESP_LOGE(TAG, "Failed to register VHCI callback");
 		return ret;
 	}
+#endif /* SOC_ESP_NIMBLE_CONTROLLER && (ESP_IDF_VERSION < ESP_IDF_VERSION_VAL(5, 3, 0)) */
 
 	vhci_send_sem = xSemaphoreCreateBinary();
 	if (vhci_send_sem == NULL) {

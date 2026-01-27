@@ -157,15 +157,19 @@ $ idf.py -p <serial_port> build flash
 $ idf.py -p <serial_port> monitor
 ```
 
-> [!NOTE}
-> For `esp32c2`, To use this configuration, execute
+> [!NOTE]
+> For `esp32c2`,
+> 1. Because of lower RAM availability, Network Split feature is not supported.
+> 2. Further, if you wish to use avoid Bluetooth and use Wi-Fi only on esp32c2,
 >
-> ```sh
-> rm sdkconfig
-> idf.py -D SDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.defaults.esp32c2.wifionly" menuconfig
-> ```
+> To use this configuration, execute
 >
-> Save the configuration. You can now run `idf.py` with the `build`, `flash` and `monitor` options as per normal.
+
+```sh
+$ rm sdkconfig
+$ idf.py -D SDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.defaults.esp32c2.wifionly" menuconfig
+$ idf.py -p <serial_port> build flash monitor
+```
 
 ## 3. Checking the Setup
 

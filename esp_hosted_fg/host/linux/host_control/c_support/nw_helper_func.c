@@ -750,3 +750,154 @@ int close_socket(int sock)
 	}
 	return SUCCESS;
 }
+
+int update_host_network_port_range(uint16_t port_start, uint16_t port_end)
+{
+	FILE *fp = NULL;
+	char line[256];
+	int found = 0;
+	char temp_file[] = "/tmp/sysctl.conf.XXXXXX";
+	int temp_fd;
+	FILE *temp_fp = NULL;
+	char current_start[16], current_end[16];
+
+	/* Open sysctl.conf file */
+	fp = fopen("/etc/sysctl.conf", "r");
+	if (!fp) {
+		printf("Failed to open /etc/sysctl.conf: %s\n", strerror(errno));
+		return FAILURE;
+	}
+
+	/* Check if entry exists with same values */
+	while (fgets(line, sizeof(line), fp)) {
+		if (strstr(line, "net.ipv4.ip_local_port_range")) {
+			if (sscanf(line, "net.ipv4.ip_local_port_range = %s %s", current_start, current_end) == 2) {
+				if (atoi(current_start) == port_start && atoi(current_end) == port_end) {
+					printf("Port range already set to %u-%u\n", port_start, port_end);
+					fclose(fp);
+					return SUCCESS;
+				}
+			}
+		}
+	}
+	rewind(fp);
+
+	/* Create temp file */
+	temp_fd = mkstemp(temp_file);
+	if (temp_fd < 0) {
+		printf("Failed to create temp file: %s\n", strerror(errno));
+		fclose(fp);
+		return FAILURE;
+	}
+
+	temp_fp = fdopen(temp_fd, "w");
+	if (!temp_fp) {
+		printf("Failed to open temp file: %s\n", strerror(errno));
+		close(temp_fd);
+		fclose(fp);
+		return FAILURE;
+	}
+
+	/* Update file contents */
+	while (fgets(line, sizeof(line), fp)) {
+		if (strstr(line, "net.ipv4.ip_local_port_range")) {
+			fprintf(temp_fp, "net.ipv4.ip_local_port_range = %u %u\n", port_start, port_end);
+			found = 1;
+		} else {
+			fputs(line, temp_fp);
+		}
+	}
+
+	/* Add entry if not found */
+	if (!found) {
+		fprintf(temp_fp, "net.ipv4.ip_local_port_range = %u %u\n", port_start, port_end);
+	}
+
+	fclose(fp);
+	fclose(temp_fp);
+
+	/* Replace original with temp file */
+	if (rename(temp_file, "/etc/sysctl.conf") != 0) {
+		printf("Failed to update sysctl.conf: %s\n", strerror(errno));
+		unlink(temp_file);
+		return FAILURE;
+	}
+
+	/* Apply changes */
+	if (system("sysctl -p") != 0) {
+		printf("Failed to apply sysctl changes\n");
+		return FAILURE;
+	}
+
+	printf("Port range updated successfully to %u-%u\n", port_start, port_end);
+	return SUCCESS;
+}
+
+int clear_host_network_port_range(void)
+{
+	FILE *fp = NULL;
+	char line[256];
+	int found = 0;
+	char temp_file[] = "/tmp/sysctl.conf.XXXXXX";
+	int temp_fd;
+	FILE *temp_fp = NULL;
+
+	/* Open sysctl.conf file */
+	fp = fopen("/etc/sysctl.conf", "r");
+	if (!fp) {
+		printf("Failed to open /etc/sysctl.conf: %s\n", strerror(errno));
+		return FAILURE;
+	}
+
+	/* Create temp file */
+	temp_fd = mkstemp(temp_file);
+	if (temp_fd < 0) {
+		printf("Failed to create temp file: %s\n", strerror(errno));
+		fclose(fp);
+		return FAILURE;
+	}
+
+	temp_fp = fdopen(temp_fd, "w");
+	if (!temp_fp) {
+		printf("Failed to open temp file: %s\n", strerror(errno));
+		close(temp_fd);
+		fclose(fp);
+		return FAILURE;
+	}
+
+	/* Copy all lines except port range setting */
+	while (fgets(line, sizeof(line), fp)) {
+		if (strstr(line, "net.ipv4.ip_local_port_range")) {
+			found = 1;
+		} else {
+			fputs(line, temp_fp);
+		}
+	}
+
+	fclose(fp);
+	fclose(temp_fp);
+
+	/* Replace original with temp file only if we found and removed an entry */
+	if (found) {
+		if (rename(temp_file, "/etc/sysctl.conf") != 0) {
+			printf("Failed to update sysctl.conf: %s\n", strerror(errno));
+			unlink(temp_file);
+			return FAILURE;
+		}
+
+		/* Apply changes */
+		if (system("sysctl -p") != 0) {
+			printf("Failed to apply sysctl changes\n");
+			return FAILURE;
+		}
+
+		printf("Host network port range configuration cleared successfully\n");
+	} else {
+		/* No entry found, just remove the temp file */
+		unlink(temp_file);
+		printf("No port range configuration found to clear\n");
+	}
+
+	return SUCCESS;
+}
+

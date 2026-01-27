@@ -1550,6 +1550,126 @@ dynamically allocated response pointer of type struct `ctrl_cmd_t *`
 - Application is expected to properly allocate and free the data buffer for both request and response
 - Application is expected to free `ctrl_cmd_t *app_resp`
 
+### 1.36 [ctrl_cmd_t](#416-struct-ctrl_cmd_t) * get_dhcp_dns_status([ctrl_cmd_t](#416-struct-ctrl_cmd_t) req)
+
+This is used to get the DHCP and DNS status for the specified interface
+
+#### Parameters
+- `ctrl_cmd_t req` :
+Control request as input with following
+  - `req.ctrl_resp_cb` : optional
+    - `NULL` :
+      - Treat as synchronous procedure
+      - Application would be blocked till response is received from hosted control library
+    - `Non-NULL` :
+      - Treat as asynchronous procedure
+      - Callback function of type [ctrl_resp_cb_t](#31-typedef-int-ctrl_resp_cb_t-ctrl_cmd_t-resp) is registered
+      - Application would be will **not** be blocked for response and API is returned immediately
+      - Response from ESP when received by hosted control library, this callback would be called
+  - `req.cmd_timeout_sec` : optional
+    - Timeout duration to wait for response in sync or async procedure
+    - Default value is 30 sec
+    - In case of async procedure, response callback function with error control response would be called to wait for response
+
+#### Return
+
+- `ctrl_cmd_t *app_resp` :
+dynamically allocated response pointer of type struct `ctrl_cmd_t *`
+  - **`resp->resp_event_status`** :
+    - 0 : `SUCCESS`
+    - != 0 : `FAILURE`
+  - **`app_resp->u.dhcp_dns_status.iface`** :
+    - Interface type for which status is returned
+  - **`app_resp->u.dhcp_dns_status.net_link_up`** :
+    - 1: Network link is up
+    - 0: Network link is down
+  - **`app_resp->u.dhcp_dns_status.dhcp_up`** :
+    - 1: DHCP is up
+    - 0: DHCP is down
+  - **`app_resp->u.dhcp_dns_status.dhcp_ip`** :
+    - IP address assigned via DHCP
+  - **`app_resp->u.dhcp_dns_status.dhcp_nm`** :
+    - Network mask
+  - **`app_resp->u.dhcp_dns_status.dhcp_gw`** :
+    - Gateway address
+  - **`app_resp->u.dhcp_dns_status.dns_up`** :
+    - 1: DNS is up
+    - 0: DNS is down
+  - **`app_resp->u.dhcp_dns_status.dns_ip`** :
+    - DNS server IP address
+  - **`app_resp->u.dhcp_dns_status.dns_type`** :
+    - Type of DNS server configuration
+- `NULL` :
+  - Synchronous procedure: Failure
+  - Asynchronous procedure:
+    - Expected as NULL return value as response is processed in callback function
+    - In callback function, parameter `ctrl_cmd_t *app_resp` behaves same as above
+
+#### Note
+- Application is expected to free `ctrl_cmd_t *app_resp`
+
+---
+
+### 1.37 [ctrl_cmd_t](#416-struct-ctrl_cmd_t) * set_dhcp_dns_status([ctrl_cmd_t](#416-struct-ctrl_cmd_t) req)
+
+This is used to set the DHCP and DNS status for the specified interface
+
+#### Parameters
+- `ctrl_cmd_t req` :
+Control request as input with following
+  - **`req.u.dhcp_dns_status.iface`** :
+    - Interface type for which to set status
+  - **`req.u.dhcp_dns_status.net_link_up`** :
+    - 1: Set network link up
+    - 0: Set network link down
+  - **`req.u.dhcp_dns_status.dhcp_up`** :
+    - 1: Enable DHCP
+    - 0: Disable DHCP
+  - **`req.u.dhcp_dns_status.dhcp_ip`** :
+    - IP address to assign
+  - **`req.u.dhcp_dns_status.dhcp_nm`** :
+    - Network mask to set
+  - **`req.u.dhcp_dns_status.dhcp_gw`** :
+    - Gateway address to set
+  - **`req.u.dhcp_dns_status.dns_up`** :
+    - 1: Enable DNS
+    - 0: Disable DNS
+  - **`req.u.dhcp_dns_status.dns_ip`** :
+    - DNS server IP address to use
+  - **`req.u.dhcp_dns_status.dns_type`** :
+    - Type of DNS server configuration to use
+  - `req.ctrl_resp_cb` : optional
+    - `NULL` :
+      - Treat as synchronous procedure
+      - Application would be blocked till response is received from hosted control library
+    - `Non-NULL` :
+      - Treat as asynchronous procedure
+      - Callback function of type [ctrl_resp_cb_t](#31-typedef-int-ctrl_resp_cb_t-ctrl_cmd_t-resp) is registered
+      - Application would be will **not** be blocked for response and API is returned immediately
+      - Response from ESP when received by hosted control library, this callback would be called
+  - `req.cmd_timeout_sec` : optional
+    - Timeout duration to wait for response in sync or async procedure
+    - Default value is 30 sec
+    - In case of async procedure, response callback function with error control response would be called to wait for response
+
+#### Return
+
+- `ctrl_cmd_t *app_resp` :
+dynamically allocated response pointer of type struct `ctrl_cmd_t *`
+  - **`resp->resp_event_status`** :
+    - 0 : `SUCCESS`
+    - != 0 : `FAILURE`
+- `NULL` :
+  - Synchronous procedure: Failure
+  - Asynchronous procedure:
+    - Expected as NULL return value as response is processed in callback function
+    - In callback function, parameter `ctrl_cmd_t *app_resp` behaves same as above
+
+#### Note
+- Application is expected to free `ctrl_cmd_t *app_resp`
+
+---
+
 ---
 
 ## 2. Control path events
@@ -1944,7 +2064,33 @@ Union of some of the control message, which need extra data to be passed/parsed 
 
 ---
 
-### 4.20 _struct_ `event_sta_conn_t`:
+### 4.20 _struct_ `dhcp_dns_status_t`:
+
+- Used for DHCP and DNS status in [set_dhcp_dns_status()](#134-ctrl_cmd_t-set_dhcp_dns_statusctrl_cmd_t-req) and [get_dhcp_dns_status()](#133-ctrl_cmd_t-get_dhcp_dns_statusctrl_cmd_t-req)
+
+- `int32_t iface` :
+  - Interface identifier
+- `int32_t net_link_up` :
+  - 1: Network link is up, 0: Network link is down
+- `int32_t dhcp_up` :
+  - 1: DHCP is up, 0: DHCP is down
+- `char dhcp_ip[IP_STR_LEN]` :
+  - IP address assigned via DHCP as a string
+- `char dhcp_nm[IP_STR_LEN]` :
+  - Network mask as a string
+- `char dhcp_gw[IP_STR_LEN]` :
+  - Gateway address as a string
+- `int32_t dns_up` :
+  - 1: DNS is up, 0: DNS is down
+- `char dns_ip[IP_STR_LEN]` :
+  - DNS server IP address as a string
+- `int32_t dns_type` :
+  - Type of DNS server configuration
+
+---
+
+
+### 4.21 _struct_ `event_sta_conn_t`:
 
 - Used in the station connection event structure when station connects to an AP
 - Member of the union in control command structure
@@ -1966,7 +2112,7 @@ Union of some of the control message, which need extra data to be passed/parsed 
 
 ---
 
-### 4.21 _struct_ `event_softap_sta_conn_t`:
+### 4.22 _struct_ `event_softap_sta_conn_t`:
 
 - Used in the station connection event structure when a station connects to ESP SoftAP
 - Member of the union in control command structure
@@ -1982,7 +2128,7 @@ Union of some of the control message, which need extra data to be passed/parsed 
 
 ---
 
-### 4.22 _struct_ `event_softap_sta_disconn_t`:
+### 4.23 _struct_ `event_softap_sta_disconn_t`:
 
 - Used in the station disconnection event structure when a station disconnects from ESP SoftAP
 - Member of the union in control command structure
@@ -2000,7 +2146,7 @@ Union of some of the control message, which need extra data to be passed/parsed 
 
 ---
 
-### 4.23 _struct_ `feature_enable_disable_t`:
+### 4.24 _struct_ `feature_enable_disable_t`:
 
 - Used for enabling or disabling specific features in [feature_config()](#132-ctrl_cmd_t-feature_configctrl_cmd_t-req)
 
@@ -2008,6 +2154,7 @@ Union of some of the control message, which need extra data to be passed/parsed 
   - Feature identifier from the `hosted_features_t` enum
     - 1 : `HOSTED_WIFI` - Wi-Fi functionality
     - 2 : `HOSTED_BT` - Bluetooth functionality
+    - 3 : `HOSTED_IS_NETWORK_SPLIT_ON` - Network split functionality
 - `bool enable` :
   - 1: Enable the feature
   - 0: Disable the feature
@@ -2107,6 +2254,8 @@ Invalid feature identifier
 Wi-Fi functionality
 - `HOSTED_FEATURE__Hosted_Bluetooth` = 2 :
 Bluetooth functionality
+- `HOSTED_FEATURE__Hosted_Is_Network_Split_On` = 3 :
+Network split functionality
 ---
 
 ### 5.9 _enum_ `AppMsgId_e` :
@@ -2152,7 +2301,9 @@ _Values_:
 - `CTRL_REQ_SET_COUNTRY_CODE`          = 124
 - `CTRL_REQ_GET_COUNTRY_CODE`          = 125
 - `CTRL_REQ_CUSTOM_RPC_UNSERIALISED_MSG` = 126
-- `CTRL_REQ_MAX`                       = 127
+- `CTRL_REQ_SET_DHCP_DNS_STATUS`       = 127
+- `CTRL_REQ_GET_DHCP_DNS_STATUS`       = 128
+- `CTRL_REQ_MAX`                       = 129
 
 #### 5.9.2 Responses
 - `CTRL_RESP_BASE`                     = 200
@@ -2194,7 +2345,9 @@ _Values_:
 - `CTRL_RESP_SET_COUNTRY_CODE`         = 224
 - `CTRL_RESP_GET_COUNTRY_CODE`         = 225
 - `CTRL_RESP_CUSTOM_RPC_UNSERIALISED_MSG` = 226
-- `CTRL_RESP_MAX`                      = 227
+- `CTRL_RESP_SET_DHCP_DNS_STATUS`      = 227
+- `CTRL_RESP_GET_DHCP_DNS_STATUS`      = 228
+- `CTRL_RESP_MAX`                      = 229
 
 #### 5.9.3 Events
 - `CTRL_EVENT_BASE`            = 300
@@ -2205,7 +2358,8 @@ _Values_:
 - `CTRL_EVENT_STATION_CONNECTED_TO_AP` = 305
 - `CTRL_EVENT_STATION_CONNECTED_TO_ESP_SOFTAP` = 306
 - `CTRL_EVENT_CUSTOM_RPC_UNSERIALISED_MSG` = 307
-- `CTRL_EVENT_MAX` = 308
+- `CTRL_EVENT_DHCP_DNS_STATUS` = 308
+- `CTRL_EVENT_MAX` = 309
 
 #### Note
   This enum is mapping to `CtrlMsgId` from `esp_hosted_config.pb-c.h`

@@ -36,56 +36,8 @@
 #include "esp_stats.h"
 #include "esp_fw_verify.h"
 
-#if ESP_PKT_NUM_DEBUG
-struct dbg_stats_t dbg_stats;
-#endif
-#define MAX_BUFF_AVAILABLE_RETRIES               (40)
-#define TX_RESUME_THRESHOLD                      (TX_MAX_PENDING_COUNT/5)
-
-/* combined register read for interrupt status and packet length */
-#define DO_COMBINED_REG_READ                     (1)
-
-/* Add streaming mode config */
-#define H_SDIO_RX_MODE_STREAMING                 (1)
-#define H_SDIO_RX_MODE_ALWAYS_MAX_TRANSPORT_SIZE (2)
-#define H_SDIO_RX_MODE_NONE                      (3)
-
-/* Use streaming mode for SDIO host rx */
-#define H_SDIO_HOST_RX_MODE H_SDIO_RX_MODE_NONE
-
-/* Do Block Mode only transfers
- *
- * When enabled, SDIO only uses block mode transfers for higher
- * throughput. Data lengths are padded to multiples of ESP_BLOCK_SIZE.
- *
- * This is safe for the SDIO slave:
- * - for Host Tx: slave will ignore extra data sent by Host
- * - for Host Rx: slave will send extra 0 data, ignored by Host
- */
-#define H_SDIO_TX_BLOCK_ONLY_XFER (1)
-//#define H_SDIO_RX_BLOCK_ONLY_XFER (1)
-
-#if DO_COMBINED_REG_READ
-/* Read data from ESP_SLAVE_INT_RAW_REG to ESP_SLAVE_PACKET_LEN_REG
- * plus 4 for the len of the register */
-#define REG_BUF_LEN (ESP_SLAVE_PACKET_LEN_REG - ESP_SLAVE_INT_RAW_REG + 4)
-
-/* Byte index into the buffer to locate the register */
-#define INT_RAW_INDEX (0)
-#define PACKET_LEN_INDEX (ESP_SLAVE_PACKET_LEN_REG - ESP_SLAVE_INT_RAW_REG)
-
-//static uint8_t *reg_buf = NULL;
-#endif
-
-#if H_SDIO_HOST_RX_MODE == H_SDIO_RX_MODE_STREAMING
-/* Stream buffer management */
-static u8 *stream_buffer;
-static size_t stream_buffer_size;
-static size_t stream_data_len;
-static size_t stream_offset;
-#endif
-volatile u8 host_sleep;
 #define MAX_WRITE_RETRIES       2
+#define TX_RESUME_THRESHOLD     (TX_MAX_PENDING_COUNT/5)
 
 #define CHECK_SDIO_RW_ERROR(ret) do {			\
 	if (ret)						\

@@ -54,7 +54,8 @@ event3 = 'sta_connected'
 event4 = 'sta_disconnected'
 event5 = 'softap_sta_connected'
 event6 = 'softap_sta_disconnected'
-event7 = 'custom_packed_event'
+event7 = 'dhcp_dns_status'
+event8 = 'custom_packed_event'
 
 argumentList = sys.argv[1:]
 if argumentList and len(argumentList):
@@ -144,6 +145,8 @@ try:
 			cmd.subscribe_event(event6)
 			cmd.unsubscribe_event(event7)
 			cmd.subscribe_event(event7)
+			cmd.unsubscribe_event(event8)
+			cmd.subscribe_event(event8)
 
 	if (STRESS_TEST & TEST_HEARTBEAT):
 		for i in (range(STRESS_TEST_COUNT)):

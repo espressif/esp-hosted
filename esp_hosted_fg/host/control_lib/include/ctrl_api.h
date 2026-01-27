@@ -134,6 +134,9 @@ typedef enum {
 	CTRL_REQ_SET_COUNTRY_CODE          = CTRL_MSG_ID__Req_SetCountryCode,     //0x7c
 	CTRL_REQ_GET_COUNTRY_CODE          = CTRL_MSG_ID__Req_GetCountryCode,     //0x7d
 
+	CTRL_REQ_SET_DHCP_DNS_STATUS       = CTRL_MSG_ID__Req_SetDhcpDnsStatus,
+	CTRL_REQ_GET_DHCP_DNS_STATUS       = CTRL_MSG_ID__Req_GetDhcpDnsStatus,
+
 	CTRL_REQ_CUSTOM_RPC_UNSERIALISED_MSG = CTRL_MSG_ID__Req_Custom_RPC_Unserialised_Msg,
 
 	/*
@@ -179,6 +182,9 @@ typedef enum {
 	CTRL_RESP_SET_COUNTRY_CODE          = CTRL_MSG_ID__Resp_SetCountryCode,     //0x7c -> 0xe0
 	CTRL_RESP_GET_COUNTRY_CODE          = CTRL_MSG_ID__Resp_GetCountryCode,     //0x7d -> 0xe1
 
+	CTRL_RESP_SET_DHCP_DNS_STATUS       = CTRL_MSG_ID__Resp_SetDhcpDnsStatus,
+	CTRL_RESP_GET_DHCP_DNS_STATUS       = CTRL_MSG_ID__Resp_GetDhcpDnsStatus,
+
 	CTRL_RESP_CUSTOM_RPC_UNSERIALISED_MSG = CTRL_MSG_ID__Resp_Custom_RPC_Unserialised_Msg,
 	/*
 	 * Add new control path command and response before Resp_Max
@@ -199,6 +205,8 @@ typedef enum {
 		CTRL_MSG_ID__Event_StationConnectedToAP,
 	CTRL_EVENT_STATION_CONNECTED_TO_ESP_SOFTAP =
 		CTRL_MSG_ID__Event_StationConnectedToESPSoftAP,
+	CTRL_EVENT_DHCP_DNS_STATUS =
+		CTRL_MSG_ID__Event_SetDhcpDnsStatus,
 	CTRL_EVENT_CUSTOM_RPC_UNSERIALISED_MSG =
 		CTRL_MSG_ID__Event_Custom_RPC_Unserialised_Msg,
 	/*
@@ -257,6 +265,7 @@ typedef enum {
 enum hosted_features_t {
 	HOSTED_WIFI = HOSTED_FEATURE__Hosted_Wifi,
 	HOSTED_BT = HOSTED_FEATURE__Hosted_Bluetooth,
+	HOSTED_IS_NETWORK_SPLIT_ON = HOSTED_FEATURE__Hosted_Is_Network_Split_On,
 };
 
 typedef struct {
@@ -413,6 +422,18 @@ typedef struct {
 	uint32_t reason;
 } event_softap_sta_disconn_t;
 
+typedef struct {
+	int iface;
+	int net_link_up;
+	int dhcp_up;
+	uint8_t dhcp_ip[64];
+	uint8_t dhcp_nm[64];
+	uint8_t dhcp_gw[64];
+	int dns_up;
+	uint8_t dns_ip[64];
+	int dns_type;
+} dhcp_dns_status_t;
+
 typedef void (*custom_data_free_func_t)(void *data);
 
 typedef struct {
@@ -464,6 +485,7 @@ typedef struct Ctrl_cmd_t {
 		event_sta_disconn_t         e_sta_disconn;
 		event_softap_sta_conn_t     e_softap_sta_conn;
 		event_softap_sta_disconn_t  e_softap_sta_disconn;
+		dhcp_dns_status_t           dhcp_dns_status;
 		custom_rpc_unserialised_data_t custom_rpc_unserialised_data;
 	}u;
 
@@ -662,6 +684,12 @@ ctrl_cmd_t * feature_config(ctrl_cmd_t *req);
 
 /* Get FW Version */
 ctrl_cmd_t * get_fw_version(ctrl_cmd_t *req);
+
+/* Get DHCP DNS status */
+ctrl_cmd_t * get_dhcp_dns_status(ctrl_cmd_t *req);
+
+/* Set DHCP DNS status */
+ctrl_cmd_t * set_dhcp_dns_status(ctrl_cmd_t *req);
 
 /* Send custom RPC unserialised message */
 ctrl_cmd_t * send_custom_rpc_unserialised_req_to_slave(ctrl_cmd_t *req);

@@ -110,6 +110,12 @@ ota_end.restype = POINTER(CONTROL_COMMAND)
 hosted_free = commands_lib.hosted_free
 hosted_free.restype = None
 
+get_dhcp_dns_status = commands_lib.get_dhcp_dns_status
+get_dhcp_dns_status.restype = POINTER(CONTROL_COMMAND)
+
+set_dhcp_dns_status = commands_lib.set_dhcp_dns_status
+set_dhcp_dns_status.restype = POINTER(CONTROL_COMMAND)
+
 send_custom_rpc_unserialised_req_to_slave = commands_lib.send_custom_rpc_unserialised_req_to_slave
 send_custom_rpc_unserialised_req_to_slave.restype = POINTER(CONTROL_COMMAND)
 

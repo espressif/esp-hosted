@@ -29,6 +29,8 @@
 #define NETWORK_CHECK_INTERVAL_MS 100
 #define RPC_RETRY_INTERVAL_MS     1000
 
+#define POLL_FOR_IP_RESTORE  (0)
+
 /* Define WiFi band mode constants */
 #define WIFI_BAND_MODE_AUTO 3
 #define WIFI_BAND_MODE_24G  1
@@ -310,14 +312,15 @@ static const cmd_arg_t heartbeat_args[] = {
 
 
 static const char *event_choices[] = {
-    "esp_init",
-    "heartbeat",
-    "sta_connected",
-    "sta_disconnected",
-    "softap_sta_connected",
-    "softap_sta_disconnected",
+	"esp_init",
+	"heartbeat",
+	"sta_connected",
+	"sta_disconnected",
+	"softap_sta_connected",
+	"softap_sta_disconnected",
+	"dhcp_dns_status",
 	"custom_packed_event",
-    NULL
+	NULL
 };
 
 static const cmd_arg_t subscribe_event_args[] = {
@@ -365,6 +368,7 @@ static int handle_ota_update(int argc, char **argv);
 static int handle_heartbeat(int argc, char **argv);
 static int handle_subscribe_event(int argc, char **argv);
 static int handle_unsubscribe_event(int argc, char **argv);
+static int handle_set_host_port_range(int argc, char **argv);
 static int handle_custom_demo_rpc_request(int argc, char **argv);
 static int handle_set_country_code(int argc, char **argv);
 static int handle_set_country_code_with_ieee80211d_on(int argc, char **argv);
@@ -402,6 +406,7 @@ static const shell_command_t commands[] = {
 	{"subscribe_event", "Subscribe to events", handle_subscribe_event, subscribe_event_args, sizeof(subscribe_event_args)/sizeof(cmd_arg_t)},
 	{"unsubscribe_event", "Unsubscribe from events", handle_unsubscribe_event, unsubscribe_event_args, sizeof(unsubscribe_event_args)/sizeof(cmd_arg_t)},
 	{"custom_demo_rpc_request", "Send custom RPC demo request and wait for response", handle_custom_demo_rpc_request, custom_rpc_request_args, sizeof(custom_rpc_request_args)/sizeof(cmd_arg_t)},
+	{"cli_set_host_port_range", "Set host port range", handle_set_host_port_range, NULL, 0},
 	{"exit", "Exit the shell", handle_exit, NULL, 0},
 	{"quit", "Exit the shell", handle_exit, NULL, 0},
 	{"q", "Exit the shell", handle_exit, NULL, 0},
@@ -642,10 +647,12 @@ static int handle_connect(int argc, char **argv) {
 		printf("SSID is mandatory\n");
 		return FAILURE;
 	}
+#if 0
 	if (!pwd) {
 		pwd = STATION_MODE_PWD;
-		printf("Using password: ******\n");
+		printf("Using pre-configured password: %s\n", pwd);
 	}
+#endif
 
 	if (!bssid) {
 		bssid = STATION_MODE_BSSID;
@@ -957,6 +964,29 @@ static int handle_unsubscribe_event(int argc, char **argv) {
 	return test_unsubscribe_event(event);
 }
 
+static int handle_set_host_port_range(int argc, char **argv) {
+	if (argc != 3) {
+		printf("Usage: cli_set_host_port_range <start_port> <end_port>\n");
+		return -1;
+	}
+
+	int start_port = atoi(argv[1]);
+	int end_port = atoi(argv[2]);
+
+	if (start_port < 0 || start_port > 65535 || end_port < 0 || end_port > 65535) {
+		printf("Ports must be between 0 and 65535\n");
+		return -1;
+	}
+
+	if (start_port >= end_port) {
+		printf("Start port must be less than end port\n");
+		return -1;
+	}
+
+	return update_host_network_port_range(start_port, end_port);
+}
+
+
 /* Shell initialization */
 static int shell_init(shell_context_t *ctx) {
 	if (!ctx) {
@@ -1022,6 +1052,7 @@ static int register_needed_event_callbacks(void) {
 	REGISTER_EVENT_CALLBACK(CTRL_EVENT_STATION_DISCONNECT_FROM_AP, default_rpc_events_handler);
 	REGISTER_EVENT_CALLBACK(CTRL_EVENT_STATION_CONNECTED_TO_ESP_SOFTAP, default_rpc_events_handler);
 	REGISTER_EVENT_CALLBACK(CTRL_EVENT_STATION_DISCONNECT_FROM_ESP_SOFTAP, default_rpc_events_handler);
+	REGISTER_EVENT_CALLBACK(CTRL_EVENT_DHCP_DNS_STATUS, default_rpc_events_handler);
 	REGISTER_EVENT_CALLBACK(CTRL_EVENT_CUSTOM_RPC_UNSERIALISED_MSG, custom_rpc_event_handler_with_packed_data);
 	return ret;
 }
@@ -1029,7 +1060,15 @@ static int register_needed_event_callbacks(void) {
 static void *auto_ip_restore_thread_handler(void *arg) {
 	shell_context_t *ctx = (shell_context_t *)arg;
 
-    (void)ctx;
+#if POLL_FOR_IP_RESTORE
+	/* Also add the IP variables needed */
+#define MAX_IP_FETCH_RETRIES 5         /* Maximum retries for fetching IP */
+	static int ip_fetch_retry_count = 0;   /* Counter for IP fetch retries */
+
+#define IP_FETCH_RETRY_DELAY_MS 500    /* 500ms */
+#endif
+
+	(void)ctx;
 
 	while (!exit_thread_auto_ip_restore) {
 		/* Initialize RPC */
@@ -1069,10 +1108,71 @@ static void *auto_ip_restore_thread_handler(void *arg) {
 			printf("Failed to get SoftAP MAC address, will retry later\n");
 		}
 
-        /* Main monitoring loop */
-        while (!exit_thread_auto_ip_restore && rpc_state == RPC_STATE_ACTIVE) {
-            usleep(NETWORK_CHECK_INTERVAL_MS * 1000);
-        }
+		/* Fetch IP address from slave on bootup */
+		if (test_is_network_split_on()) {
+			if (update_host_network_port_range(49152, 61439) != SUCCESS) {
+				printf("Failed to update host network port range\n");
+			}
+			if (test_fetch_ip_addr_from_slave() != SUCCESS) {
+				//printf("Failed to fetch IP status\n");
+			}
+		}
+		/* Main monitoring loop */
+		while (!exit_thread_auto_ip_restore && rpc_state == RPC_STATE_ACTIVE) {
+
+#if POLL_FOR_IP_RESTORE
+			if (test_is_network_split_on()) {
+				/* Refresh MAC addresses if they're empty */
+				if (sta_network.mac_addr[0] == '\0') {
+					test_station_mode_get_mac_addr(sta_network.mac_addr);
+				}
+
+				if (ap_network.mac_addr[0] == '\0') {
+					test_softap_mode_get_mac_addr(ap_network.mac_addr);
+				}
+
+				/* Check network status */
+				if (!sta_network.ip_valid || !sta_network.dns_valid) {
+					if (test_fetch_ip_addr_from_slave() != SUCCESS) {
+						printf("Failed to fetch IP status, reinitializing RPC\n");
+						break;
+					}
+
+					/* If IP is still all zeros after fetch, retry a few times */
+					if (sta_network.ip_valid && strcmp(sta_network.ip_addr, "0.0.0.0") == 0) {
+						if (ip_fetch_retry_count < MAX_IP_FETCH_RETRIES) {
+							ip_fetch_retry_count++;
+							printf("Got zeroed IP, retrying fetch (%d/%d)...\n",
+									ip_fetch_retry_count, MAX_IP_FETCH_RETRIES);
+							usleep(IP_FETCH_RETRY_DELAY_MS * 1000);
+							continue;
+						} else {
+							ip_fetch_retry_count = 0;
+						}
+					} else {
+						ip_fetch_retry_count = 0;
+					}
+
+					/* If we got valid IP and have a valid MAC, ensure the network is up */
+					if (sta_network.ip_valid && strcmp(sta_network.ip_addr, "0.0.0.0") != 0 &&
+							sta_network.dns_valid && sta_network.mac_addr[0] != '\0') {
+
+						if (!sta_network.network_up) {
+							printf("Setting up station network interface with IP %s\n", sta_network.ip_addr);
+							if (up_sta_netdev__with_static_ip_dns_route(&sta_network) == SUCCESS) {
+								add_dns(sta_network.dns_addr);
+								sta_network.network_up = 1;
+								printf("Station network interface is now up\n");
+							} else {
+								printf("Failed to set up network interface\n");
+							}
+						}
+					}
+				}
+			}
+#endif
+			usleep(NETWORK_CHECK_INTERVAL_MS * 1000);
+		}
 
 		/* Clean up before potential reinitialization */
 		unregister_event_callbacks();
@@ -1088,13 +1188,13 @@ static void *auto_ip_restore_thread_handler(void *arg) {
 
 /* RPC initialization */
 static int start_rpc_auto_ip_restore(void) {
-	printf("Trying to establish connection with Slave\n");
+	printf("Waiting local RPC to be ready\n");
 
-    /* Create app thread */
-    if (pthread_create(&auto_ip_restore_thread, NULL, auto_ip_restore_thread_handler, NULL) != 0) {
-        printf("Failed to create app thread\n");
-        return -1;
-    }
+	/* Create app thread */
+	if (pthread_create(&auto_ip_restore_thread, NULL, auto_ip_restore_thread_handler, NULL) != 0) {
+		printf("Failed to create app thread\n");
+		return -1;
+	}
 
 	return 0;
 }

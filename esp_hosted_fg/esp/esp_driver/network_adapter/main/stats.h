@@ -110,6 +110,10 @@ struct pkt_stats_t {
 	uint32_t serial_tx_evt;
 	uint32_t sta_flowctrl_on;
 	uint32_t sta_flowctrl_off;
+	uint32_t sta_lwip_in;
+	uint32_t sta_slave_lwip_out;
+	uint32_t sta_host_lwip_out;
+	uint32_t sta_both_lwip_out;
 };
 
 extern struct pkt_stats_t pkt_stats;

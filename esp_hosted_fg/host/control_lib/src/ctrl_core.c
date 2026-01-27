@@ -4,11 +4,15 @@
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
+#include <net/route.h>
 #include "ctrl_core.h"
 #include "serial_if.h"
 #include "platform_wrapper.h"
 #include "esp_queue.h"
 #include <unistd.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
 
 #ifdef MCU_SYS
 #include "common.h"
@@ -286,6 +290,33 @@ static int ctrl_app_parse_event(CtrlMsg *ctrl_msg, ctrl_cmd_t *app_ntfy)
 					ctrl_msg->event_station_disconnect_from_esp_softap->is_mesh_child;
 				app_ntfy->u.e_softap_sta_disconn.reason =
 					ctrl_msg->event_station_disconnect_from_esp_softap->reason;
+			}
+			break;
+		} case CTRL_EVENT_DHCP_DNS_STATUS: {
+			CHECK_CTRL_MSG_NON_NULL(event_set_dhcp_dns_status);
+			app_ntfy->resp_event_status = ctrl_msg->event_set_dhcp_dns_status->resp;
+			app_ntfy->u.dhcp_dns_status.iface = ctrl_msg->event_set_dhcp_dns_status->iface;
+			app_ntfy->u.dhcp_dns_status.dhcp_up = ctrl_msg->event_set_dhcp_dns_status->dhcp_up;
+			app_ntfy->u.dhcp_dns_status.dns_up = ctrl_msg->event_set_dhcp_dns_status->dns_up;
+			app_ntfy->u.dhcp_dns_status.dns_type = ctrl_msg->event_set_dhcp_dns_status->dns_type;
+			app_ntfy->u.dhcp_dns_status.net_link_up = ctrl_msg->event_set_dhcp_dns_status->net_link_up;
+
+			if (ctrl_msg->event_set_dhcp_dns_status->dhcp_up) {
+				memcpy(app_ntfy->u.dhcp_dns_status.dhcp_ip,
+						ctrl_msg->event_set_dhcp_dns_status->dhcp_ip.data,
+						ctrl_msg->event_set_dhcp_dns_status->dhcp_ip.len);
+				memcpy(app_ntfy->u.dhcp_dns_status.dhcp_nm,
+						ctrl_msg->event_set_dhcp_dns_status->dhcp_nm.data,
+						ctrl_msg->event_set_dhcp_dns_status->dhcp_nm.len);
+				memcpy(app_ntfy->u.dhcp_dns_status.dhcp_gw,
+						ctrl_msg->event_set_dhcp_dns_status->dhcp_gw.data,
+						ctrl_msg->event_set_dhcp_dns_status->dhcp_gw.len);
+			}
+
+			if (ctrl_msg->event_set_dhcp_dns_status->dns_up) {
+				memcpy(app_ntfy->u.dhcp_dns_status.dns_ip,
+						ctrl_msg->event_set_dhcp_dns_status->dns_ip.data,
+						ctrl_msg->event_set_dhcp_dns_status->dns_ip.len);
 			}
 			break;
 		} case CTRL_EVENT_CUSTOM_RPC_UNSERIALISED_MSG: {
@@ -687,6 +718,48 @@ static int ctrl_app_parse_resp(CtrlMsg *ctrl_msg, ctrl_cmd_t *app_resp)
 			app_resp->u.fw_version.minor = ctrl_msg->resp_get_fw_version->minor;
 			app_resp->u.fw_version.revision_patch_1 = ctrl_msg->resp_get_fw_version->rev_patch1;
 			app_resp->u.fw_version.revision_patch_2 = ctrl_msg->resp_get_fw_version->rev_patch2;
+			break;
+		} case CTRL_RESP_SET_DHCP_DNS_STATUS: {
+			CHECK_CTRL_MSG_NON_NULL(resp_set_dhcp_dns_status);
+			CHECK_CTRL_MSG_FAILED(resp_set_dhcp_dns_status);
+			break;
+		} case CTRL_RESP_GET_DHCP_DNS_STATUS: {
+			CtrlMsgRespGetDhcpDnsStatus *p_c = ctrl_msg->resp_get_dhcp_dns_status;
+			dhcp_dns_status_t *p_a = &app_resp->u.dhcp_dns_status;
+			CHECK_CTRL_MSG_NON_NULL(resp_get_dhcp_dns_status);
+
+			app_resp->resp_event_status = ctrl_msg->resp_get_dhcp_dns_status->resp;
+
+			if (app_resp->resp_event_status != SUCCESS) {
+				/* Do not print error, as slave may be built without network split, just escape */
+				break;
+			}
+			p_a->dhcp_up = p_c->dhcp_up;
+			p_a->dns_up = p_c->dns_up;
+			p_a->net_link_up = p_c->net_link_up;
+			p_a->dns_type = p_c->dns_type;
+
+			if (p_c->dhcp_up) {
+				if (p_c->dhcp_ip.data) {
+					strncpy((char *)p_a->dhcp_ip, (char *)p_c->dhcp_ip.data, sizeof(p_a->dhcp_ip));
+					p_a->dhcp_ip[sizeof(p_a->dhcp_ip)-1] = '\0';
+				}
+				if (p_c->dhcp_nm.data) {
+					strncpy((char *)p_a->dhcp_nm, (char *)p_c->dhcp_nm.data, sizeof(p_a->dhcp_nm));
+					p_a->dhcp_nm[sizeof(p_a->dhcp_nm)-1] = '\0';
+				}
+				if (p_c->dhcp_gw.data) {
+					strncpy((char *)p_a->dhcp_gw, (char *)p_c->dhcp_gw.data, sizeof(p_a->dhcp_gw));
+					p_a->dhcp_gw[sizeof(p_a->dhcp_gw)-1] = '\0';
+				}
+			}
+
+			if (p_c->dns_up) {
+				if (p_c->dns_ip.data) {
+					strncpy((char *)p_a->dns_ip, (char *)p_c->dns_ip.data, sizeof(p_a->dns_ip));
+					p_a->dns_ip[sizeof(p_a->dns_ip)-1] = '\0';
+				}
+			}
 			break;
 		} case CTRL_RESP_CUSTOM_RPC_UNSERIALISED_MSG: {
 			CtrlMsgRespCustomRpcUnserialisedMsg *p_c = ctrl_msg->resp_custom_rpc_unserialised_msg;
@@ -1330,7 +1403,8 @@ int ctrl_app_send_req(ctrl_cmd_t *app_req)
 		case CTRL_REQ_OTA_END:
 		case CTRL_REQ_GET_WIFI_CURR_TX_POWER:
 		case CTRL_REQ_GET_FW_VERSION:
-		case CTRL_REQ_GET_COUNTRY_CODE: {
+		case CTRL_REQ_GET_COUNTRY_CODE:
+		case CTRL_REQ_GET_DHCP_DNS_STATUS: {
 			/* Intentional fallthrough & empty */
 			break;
 		} case CTRL_REQ_GET_AP_SCAN_LIST: {

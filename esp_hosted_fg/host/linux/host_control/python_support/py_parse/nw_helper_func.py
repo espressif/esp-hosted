@@ -1,6 +1,7 @@
 import os
 import socket
 import re
+import glob
 from hosted_py_header import *
 
 STA_INTERFACE = "ethsta0"
@@ -212,6 +213,141 @@ def remove_dns(iface):
     except Exception:
         return FAILURE
 
+
+
+def update_host_network_port_range(port_start, port_end):
+    """Update host network port range, trying /etc/sysctl.conf first, then /etc/sysctl.d/"""
+    try:
+        # Try traditional sysctl.conf first
+        if os.path.exists("/etc/sysctl.conf"):
+            if _update_sysctl_conf(port_start, port_end):
+                os.system("sysctl -p")
+                return SUCCESS
+
+        # Fall back to /etc/sysctl.d/ directory
+        if _update_sysctl_d(port_start, port_end):
+            os.system("sysctl -p")
+            return SUCCESS
+
+        return FAILURE
+    except Exception:
+        return FAILURE
+
+
+def clear_host_network_port_range():
+    """Clear host network port range, trying /etc/sysctl.conf first, then /etc/sysctl.d/"""
+    try:
+        cleared = False
+
+        # Try traditional sysctl.conf first
+        if os.path.exists("/etc/sysctl.conf"):
+            if _clear_sysctl_conf():
+                cleared = True
+
+        # Also check /etc/sysctl.d/ for any entries
+        if _clear_sysctl_d():
+            cleared = True
+
+        if cleared:
+            os.system("sysctl -p")
+
+        return SUCCESS
+    except Exception:
+        return FAILURE
+
+
+def _update_sysctl_conf(port_start, port_end):
+    """Update /etc/sysctl.conf if it exists. Returns True if successful."""
+    try:
+        found = False
+        lines = []
+        with open("/etc/sysctl.conf", "r") as f:
+            for line in f:
+                if "net.ipv4.ip_local_port_range" in line:
+                    found = True
+                    lines.append(f"net.ipv4.ip_local_port_range = {port_start} {port_end}\n")
+                else:
+                    lines.append(line)
+
+        if not found:
+            lines.append(f"net.ipv4.ip_local_port_range = {port_start} {port_end}\n")
+
+        with open("/etc/sysctl.conf", "w") as f:
+            f.writelines(lines)
+        return True
+    except Exception:
+        return False
+
+
+def _update_sysctl_d(port_start, port_end):
+    """Update /etc/sysctl.d/ directory with port range config. Returns True if successful."""
+    try:
+        sysctl_d_dir = "/etc/sysctl.d"
+        if not os.path.exists(sysctl_d_dir):
+            os.makedirs(sysctl_d_dir, exist_ok=True)
+
+        # Create a config file in /etc/sysctl.d/
+        config_file = os.path.join(sysctl_d_dir, "99-port-range.conf")
+
+        with open(config_file, "w") as f:
+            f.write(f"net.ipv4.ip_local_port_range = {port_start} {port_end}\n")
+
+        return True
+    except Exception:
+        return False
+
+
+def _clear_sysctl_conf():
+    """Remove port range entry from /etc/sysctl.conf. Returns True if found and removed."""
+    try:
+        found = False
+        lines = []
+        with open("/etc/sysctl.conf", "r") as f:
+            for line in f:
+                if "net.ipv4.ip_local_port_range" in line:
+                    found = True
+                else:
+                    lines.append(line)
+
+        if found:
+            with open("/etc/sysctl.conf", "w") as f:
+                f.writelines(lines)
+
+        return found
+    except Exception:
+        return False
+
+
+def _clear_sysctl_d():
+    """Remove port range entries from /etc/sysctl.d/. Returns True if any found and removed."""
+    try:
+        sysctl_d_dir = "/etc/sysctl.d"
+        if not os.path.exists(sysctl_d_dir):
+            return False
+
+        found = False
+        config_files = glob.glob(os.path.join(sysctl_d_dir, "*.conf"))
+
+        for config_file in config_files:
+            lines = []
+            file_has_port_range = False
+
+            with open(config_file, "r") as f:
+                for line in f:
+                    if "net.ipv4.ip_local_port_range" in line:
+                        file_has_port_range = True
+                        found = True
+                    else:
+                        lines.append(line)
+
+            # Update file if entry was found
+            if file_has_port_range:
+                with open(config_file, "w") as f:
+                    f.writelines(lines)
+
+        return found
+    except Exception:
+        return False
 
 def up_sta_netdev__with_static_ip_dns_route(static_ip, netmask, gateway, dns):
     g_sta_network_info.ip_addr = static_ip

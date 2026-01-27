@@ -35,6 +35,8 @@ VENDOR_OUI_TYPE = 22
 
 ### Enable WiFi Feature needs to get the Mac Addr to configure the interface
 ### So we store it here after getting the Mac Addr
+g_is_network_split_on = False
+g_is_network_split_queried = False
 
 # Define needed memmove function
 def memmove(dest, src, count):
@@ -178,26 +180,85 @@ def ctrl_app_event_callback(app_event):
 		if g_network_down_printed:
 			g_network_down_printed = False
 
-		print(" Network " + STA_INTERFACE + " is up. starting dhclient")
-		nw_helper_func.run_dhclient_on_connected()
+		if not is_network_split_on():
+			print("Network " + STA_INTERFACE + " is up -> Start dhcp client -> Check `ifconfig ethsta0` in new terminal")
+			nw_helper_func.run_dhcp_on_connected()
 
 
 	elif app_event.contents.msg_id == CTRL_MSGID.CTRL_EVENT_STATION_DISCONNECT_FROM_AP.value:
 		ssid = app_event.contents.control_data.e_sta_disconn.ssid
 
-		if not g_network_down_printed:
-			print("Network " + STA_INTERFACE + " down -> Stop dhcp client")
-		nw_helper_func.stop_dhclient_on_disconnected()
+		if not is_network_split_on():
+			if not g_network_down_printed:
+				print("Network " + STA_INTERFACE + " down -> Stop dhcp client")
+			nw_helper_func.stop_dhclient_on_disconnected()
 
 		if not g_network_down_printed:
 			print(" Station disconnected from AP: ssid[" + get_str(ssid) + "]")
 			g_network_down_printed = True
 
-		if not g_network_down_printed:
-			print(" Network " + STA_INTERFACE + " is down. stopping dhclient")
-			g_network_down_printed = True
-		nw_helper_func.stop_dhclient_on_disconnected()
 		nw_helper_func.down_sta_netdev();
+
+	elif app_event.contents.msg_id == CTRL_MSGID.CTRL_EVENT_DHCP_DNS_STATUS.value:
+		ip_addr = app_event.contents.control_data.e_dhcp_dns_status.dhcp_ip.decode('utf-8').rstrip('\x00')
+		subnet_mask = app_event.contents.control_data.e_dhcp_dns_status.dhcp_nm.decode('utf-8').rstrip('\x00')
+		gateway = app_event.contents.control_data.e_dhcp_dns_status.dhcp_gw.decode('utf-8').rstrip('\x00')
+		dns_server = app_event.contents.control_data.e_dhcp_dns_status.dns_ip.decode('utf-8').rstrip('\x00')
+		ifa = app_event.contents.control_data.e_dhcp_dns_status.iface
+		net_link_up = app_event.contents.control_data.e_dhcp_dns_status.net_link_up
+		dhcp_up = app_event.contents.control_data.e_dhcp_dns_status.dhcp_up
+		dns_up = app_event.contents.control_data.e_dhcp_dns_status.dns_up
+		dns_type = app_event.contents.control_data.e_dhcp_dns_status.dns_type
+
+		#print("APP EVENT: DHCP DNS status: Network link [" + str(net_link_up) + "] IP [" +
+		#	ip_addr + "] Subnet mask [" + subnet_mask + "] Gateway [" +
+		#	gateway + "] DNS server [" + dns_server + "]" +
+		#	" DHCP [" + str(dhcp_up) + "] DNS [" + str(dns_up) + "] DNS type [" + str(dns_type) + "]")
+
+		if dhcp_up:
+			g_sta_network_info.ip_addr = ip_addr
+			g_sta_network_info.netmask = subnet_mask
+			g_sta_network_info.gateway = gateway
+			g_sta_network_info.ip_valid = 1
+		else:
+			g_sta_network_info.ip_valid = 0
+			g_sta_network_info.dns_valid = 0
+
+		if dns_up:
+			g_sta_network_info.dns_addr = dns_server
+			g_sta_network_info.dns_valid = 1
+		else:
+			g_sta_network_info.dns_valid = 0
+
+		if net_link_up:
+			g_sta_network_info.network_up = 1
+		else:
+			g_sta_network_info.network_up = 0
+
+
+		if is_network_split_on():
+			if not successful_response(app_event):
+				print(" Slave firmware not compiled with network split, skip dhcp/dns event")
+				cleanup_ctrl_msg(app_event)
+				return FAILURE
+
+			if nw_helper_func.is_valid_mac_bytes(g_sta_network_info.mac_addr):
+				if g_sta_network_info.ip_valid and g_sta_network_info.network_up and g_sta_network_info.dns_valid:
+					if nw_helper_func.up_sta_netdev__with_static_ip_dns_route(ip_addr, subnet_mask, gateway, dns_server) == FAILURE:
+						print(" Failed to up static IP, gateway, DNS from event.")
+					else:
+						print(STA_INTERFACE +" up: IP [" + ip_addr + "] Subnet mask [" +
+							subnet_mask + "] Gateway [" +gateway + "] DNS server [" + dns_server + "]")
+				else:
+					nw_helper_func.down_sta_netdev()
+					if not g_network_down_printed:
+						print("Network " + STA_INTERFACE + " brought down!")
+						g_network_down_printed = True
+			else:
+				print("MAC address invalid, skip DHCP/DNS event.")
+				print("consider setting the MAC address using test_sync_set_mac_addr(mode, mac)")
+		else:
+			print("DHCP/DNS event received when network split is off. Use dhclient if needed")
 
 
 	elif app_event.contents.msg_id == CTRL_MSGID.CTRL_EVENT_CUSTOM_RPC_UNSERIALISED_MSG.value:
@@ -520,6 +581,72 @@ def ctrl_app_resp_callback(app_resp):
 
 	elif (app_resp.contents.msg_id == CTRL_MSGID.CTRL_RESP_ENABLE_DISABLE.value) :
 		pass
+	elif (app_resp.contents.msg_id == CTRL_MSGID.CTRL_RESP_SET_DHCP_DNS_STATUS.value) :
+		print("set dhcp dns success")
+
+	elif (app_resp.contents.msg_id == CTRL_MSGID.CTRL_RESP_GET_DHCP_DNS_STATUS.value) :
+		#print("DHCP DNS status:")
+		if app_resp.contents.control_data.e_dhcp_dns_status.iface == 0:
+			iface = STA_INTERFACE
+		else:
+			iface = AP_INTERFACE
+
+
+		ip_addr = app_resp.contents.control_data.e_dhcp_dns_status.dhcp_ip.decode('utf-8').rstrip('\x00')
+		subnet_mask = app_resp.contents.control_data.e_dhcp_dns_status.dhcp_nm.decode('utf-8').rstrip('\x00')
+		gateway = app_resp.contents.control_data.e_dhcp_dns_status.dhcp_gw.decode('utf-8').rstrip('\x00')
+		dns_server = app_resp.contents.control_data.e_dhcp_dns_status.dns_ip.decode('utf-8').rstrip('\x00')
+		ifa = app_resp.contents.control_data.e_dhcp_dns_status.iface
+		net_link_up = app_resp.contents.control_data.e_dhcp_dns_status.net_link_up
+		dhcp_up = app_resp.contents.control_data.e_dhcp_dns_status.dhcp_up
+		dns_up = app_resp.contents.control_data.e_dhcp_dns_status.dns_up
+		dns_type = app_resp.contents.control_data.e_dhcp_dns_status.dns_type
+
+		if dhcp_up:
+			g_sta_network_info.ip_addr = ip_addr
+			g_sta_network_info.netmask = subnet_mask
+			g_sta_network_info.gateway = gateway
+			g_sta_network_info.ip_valid = 1
+		else:
+			g_sta_network_info.ip_valid = 0
+			g_sta_network_info.dns_valid = 0
+
+		if dns_up:
+			g_sta_network_info.dns_addr = dns_server
+			g_sta_network_info.dns_valid = 1
+		else:
+			g_sta_network_info.dns_valid = 0
+
+		if net_link_up:
+			g_sta_network_info.network_up = 1
+		else:
+			g_sta_network_info.network_up = 0
+
+
+		if is_network_split_on():
+			if not successful_response(app_resp):
+				print(" Slave firmware not compiled with network split, skip dhcp/dns event")
+				cleanup_ctrl_msg(app_resp)
+				return FAILURE
+
+			if nw_helper_func.is_valid_mac_bytes(g_sta_network_info.mac_addr):
+				if g_sta_network_info.ip_valid and g_sta_network_info.network_up and g_sta_network_info.dns_valid:
+					if nw_helper_func.up_sta_netdev__with_static_ip_dns_route(ip_addr, subnet_mask, gateway, dns_server) == FAILURE:
+						print(" Failed to up static IP, gateway, DNS from event.")
+					else:
+						print(STA_INTERFACE +" up: IP [" + ip_addr + "] Subnet mask [" +
+							subnet_mask + "] Gateway [" +gateway + "] DNS server [" + dns_server + "]")
+				else:
+					nw_helper_func.down_sta_netdev()
+					if not g_network_down_printed:
+						print("Network " + STA_INTERFACE + " brought down")
+						g_network_down_printed = True
+			else:
+				print("MAC address invalid, skip DHCP/DNS event.")
+				print("consider setting the MAC address using test_sync_set_mac_addr(mode, mac)")
+		else:
+			print("DHCP/DNS event received when network split is off. Use dhclient if needed")
+
 
 	elif (app_resp.contents.msg_id == CTRL_MSGID.CTRL_RESP_CUSTOM_RPC_UNSERIALISED_MSG.value) :
 		custom_rpc_data = app_resp.contents.control_data.custom_rpc_unserialised_msg.data
@@ -586,6 +713,13 @@ def subscribe_event_sta_disconnect_from_softap():
 	if (CALLBACK_SET_SUCCESS != commands_map_py_to_c.set_event_callback(
 		CTRL_MSGID.CTRL_EVENT_STATION_DISCONNECT_FROM_ESP_SOFTAP.value, ctrl_app_event_cb)):
 		print("event not subscribed for station disconnection from ESP softAP")
+		return False
+	return True
+
+def subscribe_event_dhcp_dns_status():
+	if (CALLBACK_SET_SUCCESS != commands_map_py_to_c.set_event_callback(
+		CTRL_MSGID.CTRL_EVENT_DHCP_DNS_STATUS.value, ctrl_app_event_cb)):
+		print("event not subscribed for DHCP DNS status")
 		return False
 	return True
 
@@ -685,6 +819,12 @@ def unsubscribe_event_sta_disconnect_from_softap():
 		return False
 	return True
 
+def unsubscribe_event_dhcp_dns_status():
+	if (CALLBACK_SET_SUCCESS != commands_map_py_to_c.reset_event_callback(
+		CTRL_MSGID.CTRL_EVENT_DHCP_DNS_STATUS.value)):
+		print("stop subscription failed for DHCP DNS status")
+		return False
+	return True
 
 
 def unsubscribe_event_custom_rpc_unserialised_msg():
@@ -703,6 +843,7 @@ def register_all_event_callbacks():
 	subscribe_event_sta_disconnect_from_ap()
 	subscribe_event_sta_connected_to_softap()
 	subscribe_event_sta_disconnect_from_softap()
+	subscribe_event_dhcp_dns_status()
 	subscribe_event_custom_rpc_unserialised_msg()
 
 
@@ -713,6 +854,7 @@ def unregister_all_event_callbacks():
 	unsubscribe_event_sta_disconnect_from_ap()
 	unsubscribe_event_sta_connected_to_softap()
 	unsubscribe_event_sta_disconnect_from_softap()
+	unsubscribe_event_dhcp_dns_status()
 	unsubscribe_event_custom_rpc_unserialised_msg()
 
 
@@ -783,6 +925,19 @@ def test_sync_get_wifi_mode() :
 	resp = POINTER(CONTROL_COMMAND)
 	resp = None
 	resp = commands_map_py_to_c.wifi_get_mode(req)
+
+	cleanup_ctrl_msg(req)
+	return ctrl_app_resp_callback(resp)
+
+def test_sync_get_static_ip_from_slave():
+	req = CTRL_CMD_DEFAULT_REQ()
+	if not req:
+		print("Failed to allocate memory for request")
+		return FAILURE
+
+	resp = POINTER(CONTROL_COMMAND)
+	resp = None
+	resp = commands_map_py_to_c.get_dhcp_dns_status(req)
 
 	cleanup_ctrl_msg(req)
 	return ctrl_app_resp_callback(resp)
@@ -1130,7 +1285,15 @@ def test_feature_config(feature, enable):
 	resp = commands_map_py_to_c.feature_config(req)
 	cleanup_ctrl_msg(req)
 
-	return ctrl_app_resp_callback(resp)
+	if (feature == HOSTED_FEATURE.HOSTED_FEATURE_NETWORK_SPLIT.value):
+		if successful_response(resp):
+			ret = SUCCESS
+		else:
+			ret = FAILURE
+		cleanup_ctrl_msg(resp)
+		return ret
+	else:
+		return ctrl_app_resp_callback(resp)
 
 def test_feature_enable_wifi():
 	return test_feature_config(HOSTED_FEATURE.HOSTED_FEATURE_WIFI.value, YES)
@@ -1143,6 +1306,18 @@ def test_feature_enable_bt():
 
 def test_feature_disable_bt():
 	return test_feature_config(HOSTED_FEATURE.HOSTED_FEATURE_BLUETOOTH.value, NO)
+
+def is_network_split_on():
+	global g_is_network_split_on
+	global g_is_network_split_queried
+	if (g_is_network_split_queried == False):
+		g_is_network_split_on = test_feature_config(HOSTED_FEATURE.HOSTED_FEATURE_NETWORK_SPLIT.value, YES) == SUCCESS
+		g_is_network_split_queried = True
+
+		if g_is_network_split_on == False:
+			print("Network split is off")
+
+	return g_is_network_split_on
 
 def test_get_fw_version():
 	req = CTRL_CMD_DEFAULT_REQ()
