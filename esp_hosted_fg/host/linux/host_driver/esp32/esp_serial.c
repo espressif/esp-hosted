@@ -33,6 +33,8 @@
 #include "esp_rb.h"
 #include "esp_api.h"
 #include "esp_kernel_port.h"
+#include "esp_if.h"
+#include "esp_serial.h"
 
 #define ESP_SERIAL_MAJOR      221
 #define ESP_SERIAL_MINOR_MAX  1
@@ -84,6 +86,7 @@ static ssize_t esp_serial_write(struct file *file, const char __user *user_buffe
 	static u16 seq_num = 0;
 	u8 flag = 0;
 	u8 *pos;
+	struct esp_adapter *adapter = NULL;
 
 	if (size > ESP_SERIAL_MAX_TX) {
 		esp_err("Exceed max tx buffer size [%zu]\n", size);
@@ -99,10 +102,12 @@ static ssize_t esp_serial_write(struct file *file, const char __user *user_buffe
 		return -ENODEV;
 	}
 
+	adapter = dev->priv;
+
 	pos = (u8 *) user_buffer;
 
 	do {
-		if (atomic_read(&((struct esp_adapter *)dev->priv)->state) < ESP_CONTEXT_READY) {
+		if (atomic_read(&(adapter->state)) < ESP_CONTEXT_READY) {
 			esp_warn("slave disconnected, write aborted\n");
 			if (atomic_read(&ref_count_open)) {
 				atomic_dec(&ref_count_open);
@@ -124,7 +129,7 @@ static ssize_t esp_serial_write(struct file *file, const char __user *user_buffe
 
 		total_len = frag_len + sizeof(struct esp_payload_header);
 
-		tx_skb = esp_alloc_skb(total_len);
+		tx_skb = adapter->if_ops->alloc_skb(total_len);
 		if (!tx_skb) {
 			esp_err("SKB alloc failed\n");
 			return (size - left_len);
@@ -151,7 +156,7 @@ static ssize_t esp_serial_write(struct file *file, const char __user *user_buffe
 		}
 		esp_hex_dump_dbg("esp_serial_tx: ", pos, frag_len);
 
-		ret = esp_send_packet(dev->priv, tx_skb);
+		ret = esp_send_packet(adapter, tx_skb);
 		if (ret) {
 			esp_err("Failed to transmit data, error %d\n", ret);
 			return (size - left_len);

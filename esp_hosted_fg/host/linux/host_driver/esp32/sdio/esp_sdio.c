@@ -329,9 +329,28 @@ static void esp_remove(struct sdio_func *func)
 	}
 }
 
+static struct sk_buff * esp_sdio_alloc_skb(u32 len)
+{
+	struct sk_buff *skb = NULL;
+	u8 offset;
+
+	skb = netdev_alloc_skb(NULL, len + INTERFACE_HEADER_PADDING);
+
+	if (skb) {
+		/* Align SKB data pointer */
+		offset = ((unsigned long)skb->data) & (SKB_DATA_ADDR_ALIGNMENT - 1);
+
+		if (offset)
+			skb_reserve(skb, INTERFACE_HEADER_PADDING - offset);
+	}
+
+	return skb;
+}
+
 static struct esp_if_ops if_ops = {
 	.read		= read_packet,
 	.write		= write_packet,
+	.alloc_skb	= esp_sdio_alloc_skb,
 };
 
 static int init_context(struct esp_sdio_context *context)
@@ -391,6 +410,7 @@ static int init_context(struct esp_sdio_context *context)
 		skb_queue_head_init(&(sdio_context.tx_q[prio_q_idx]));
 		atomic_set(&queue_items[prio_q_idx], 0);
 	}
+	init_waitqueue_head(&context->tx_wq);
 
 	context->adapter->if_type = ESP_IF_TYPE_SDIO;
 
@@ -439,7 +459,7 @@ static struct sk_buff * read_packet(struct esp_adapter *adapter)
 		esp_err("Rx large packet: %d\n", len_from_slave);
 	}
 
-	skb = esp_alloc_skb(len_from_slave);
+	skb = adapter->if_ops->alloc_skb(len_from_slave);
 
 	if (!skb) {
 		esp_err("SKB alloc failed\n");
@@ -536,6 +556,7 @@ static int write_packet(struct esp_adapter *adapter, struct sk_buff *skb)
 		atomic_inc(&queue_items[PRIO_Q_OTHERS]);
 		skb_queue_tail(&(sdio_context.tx_q[PRIO_Q_OTHERS]), skb);
 	}
+	wake_up_interruptible(&sdio_context.tx_wq);
 
 	return 0;
 }
@@ -592,10 +613,19 @@ static int tx_process(void *data)
 
 	while (!kthread_should_stop()) {
 
+		wait_event_interruptible(context->tx_wq,
+			(atomic_read(&queue_items[PRIO_Q_SERIAL]) > 0) ||
+			(atomic_read(&queue_items[PRIO_Q_BT]) > 0) ||
+			(atomic_read(&queue_items[PRIO_Q_OTHERS]) > 0) ||
+			kthread_should_stop());
+
+		if (kthread_should_stop()) {
+			break;
+		}
+
 		if (!context || !context->adapter ||
 		    atomic_read(&context->adapter->state) < ESP_CONTEXT_READY) {
-
-			msleep(1);
+			msleep(100);
 			continue;
 		}
 
@@ -618,7 +648,6 @@ static int tx_process(void *data)
 			}
 			atomic_dec(&queue_items[PRIO_Q_OTHERS]);
 		} else {
-			msleep(1);
 			continue;
 		}
 

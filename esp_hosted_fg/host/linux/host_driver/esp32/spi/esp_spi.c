@@ -55,8 +55,10 @@
   #define IS_CS_ASSERTED(sPiDeV) gpiod_get_value(((const struct spi_device*)sPiDeV)->cs_gpiod)
 #endif
 
-#ifndef CONFIG_ESP_HOSTED_USE_WORKQUEUE
-  #define CONFIG_ESP_HOSTED_USE_WORKQUEUE (0)
+#ifdef CONFIG_ESP_HOSTED_USE_WORKQUEUE
+#if CONFIG_ESP_HOSTED_USE_WORKQUEUE != 0
+#error "CONFIG_ESP_HOSTED_USE_WORKQUEUE defined, but set to 0"
+#endif
 #endif
 
 static struct sk_buff * read_packet(struct esp_adapter *adapter);
@@ -72,14 +74,38 @@ static char hardware_type = ESP_PRIV_FIRMWARE_CHIP_UNRECOGNIZED;
 static atomic_t tx_pending;
 u8 first_esp_bootup_over;
 
-#if !CONFIG_ESP_HOSTED_USE_WORKQUEUE
+#ifndef CONFIG_ESP_HOSTED_USE_WORKQUEUE
 struct task_struct *spi_thread;
-struct semaphore spi_sem;
 #endif
+
+static struct sk_buff * esp_spi_alloc_skb(u32 len)
+{
+	struct sk_buff *skb = NULL;
+	u32 alloc_len;
+	u8 offset;
+
+	alloc_len = len + INTERFACE_HEADER_PADDING;
+
+	if (alloc_len < SPI_BUF_SIZE)
+		alloc_len = SPI_BUF_SIZE;
+
+	skb = netdev_alloc_skb(NULL, alloc_len);
+
+	if (skb) {
+		/* Align SKB data pointer */
+		offset = ((unsigned long)skb->data) & (SKB_DATA_ADDR_ALIGNMENT - 1);
+
+		if (offset)
+			skb_reserve(skb, INTERFACE_HEADER_PADDING - offset);
+	}
+
+	return skb;
+}
 
 static struct esp_if_ops if_ops = {
 	.read		= read_packet,
 	.write		= write_packet,
+	.alloc_skb	= esp_spi_alloc_skb,
 };
 
 static DEFINE_MUTEX(spi_lock);
@@ -120,11 +146,11 @@ static void close_data_path(void)
 
 static irqreturn_t spi_data_ready_interrupt_handler(int irq, void * dev)
 {
-#if CONFIG_ESP_HOSTED_USE_WORKQUEUE
+#ifdef CONFIG_ESP_HOSTED_USE_WORKQUEUE
 	if (spi_context.spi_workqueue)
 		queue_work(spi_context.spi_workqueue, &spi_context.spi_work);
 #else
-	up(&spi_sem);
+	wake_up_interruptible(&spi_context.spi_wq);
 #endif
 	esp_verbose("\n");
  	return IRQ_HANDLED;
@@ -132,11 +158,11 @@ static irqreturn_t spi_data_ready_interrupt_handler(int irq, void * dev)
 
 static irqreturn_t spi_interrupt_handler(int irq, void * dev)
 {
-#if CONFIG_ESP_HOSTED_USE_WORKQUEUE
+#ifdef CONFIG_ESP_HOSTED_USE_WORKQUEUE
 	if (spi_context.spi_workqueue)
 		queue_work(spi_context.spi_workqueue, &spi_context.spi_work);
 #else
-	up(&spi_sem);
+	wake_up_interruptible(&spi_context.spi_wq);
 #endif
 	esp_verbose("\n");
 	return IRQ_HANDLED;
@@ -219,8 +245,8 @@ static int write_packet(struct esp_adapter *adapter, struct sk_buff *skb)
 		}
 	}
 
-#if !CONFIG_ESP_HOSTED_USE_WORKQUEUE
-	up(&spi_sem);
+#ifndef CONFIG_ESP_HOSTED_USE_WORKQUEUE
+	wake_up_interruptible(&spi_context.spi_wq);
 #endif
 
 	return 0;
@@ -467,6 +493,17 @@ static void esp_spi_transaction(void)
 		struct esp_payload_header *h;
 		uint16_t len, offset;
 
+		/* SPI requires fixed-size transfers. Pad to SPI_BUF_SIZE if needed.
+		 * skb_put_padto() will use tailroom if available (no realloc) */
+		if (tx_skb->len < SPI_BUF_SIZE) {
+			if (skb_put_padto(tx_skb, SPI_BUF_SIZE)) {
+				/* Failed to pad, skb already freed */
+				esp_err("Failed to pad TX buffer to SPI size\n");
+				tx_skb = NULL;
+				goto out;
+			}
+		}
+
 		trans.tx_buf = tx_skb->data;
 		h = (struct esp_payload_header *) trans.tx_buf;
 		UPDATE_HEADER_TX_PKT_NO(h);
@@ -483,7 +520,7 @@ static void esp_spi_transaction(void)
 #if ESP_PKT_NUM_DEBUG
 		struct esp_payload_header *h;
 #endif
-		tx_skb = esp_alloc_skb(SPI_BUF_SIZE);
+		tx_skb = spi_context.adapter->if_ops->alloc_skb(SPI_BUF_SIZE);
 		trans.tx_buf = skb_put(tx_skb, SPI_BUF_SIZE);
 		memset((void*)trans.tx_buf, 0, SPI_BUF_SIZE);
 
@@ -494,7 +531,7 @@ static void esp_spi_transaction(void)
 #endif
 	}
 
-	rx_skb = esp_alloc_skb(SPI_BUF_SIZE);
+	rx_skb = spi_context.adapter->if_ops->alloc_skb(SPI_BUF_SIZE);
 	rx_buf = skb_put(rx_skb, SPI_BUF_SIZE);
 	memset(rx_buf, 0, SPI_BUF_SIZE);
 	trans.rx_buf = rx_buf;
@@ -522,6 +559,7 @@ static void esp_spi_transaction(void)
 		dev_kfree_skb(tx_skb);
 	}
 
+out:
 	mutex_unlock(&spi_lock);
 
 #if defined(CONFIG_ESP_HOSTED_USE_WORKQUEUE)
@@ -690,7 +728,7 @@ static int spi_dev_init(struct esp_spi_context *context)
 
 	return 0;
 }
-#if CONFIG_ESP_HOSTED_USE_WORKQUEUE
+#ifdef CONFIG_ESP_HOSTED_USE_WORKQUEUE
 static inline void esp_spi_work(struct work_struct *work)
 {
 	esp_spi_transaction();
@@ -704,14 +742,19 @@ static int esp_spi_thread(void *data)
 
 	while (!kthread_should_stop()) {
 
-		if (down_interruptible(&spi_sem)) {
-			esp_verbose("Failed to acquire spi_sem\n");
-			msleep(10);
-			continue;
+		wait_event_interruptible(context->spi_wq,
+			(gpio_get_value(context->dataready_gpio) ||
+			!skb_queue_empty(&context->tx_q[PRIO_Q_SERIAL]) ||
+			!skb_queue_empty(&context->tx_q[PRIO_Q_BT]) ||
+			!skb_queue_empty(&context->tx_q[PRIO_Q_OTHERS])) ||
+			kthread_should_stop());
+
+		if (kthread_should_stop()) {
+			break;
 		}
 
 		if (atomic_read(&context->adapter->state) != ESP_CONTEXT_READY) {
-			msleep(10);
+			msleep(100);
 			continue;
 		}
 
@@ -736,7 +779,7 @@ static int spi_init(void)
 	/* Init reinit work */
 	INIT_WORK(&spi_context.reinit_work, esp_spi_reinit_work);
 
-#if CONFIG_ESP_HOSTED_USE_WORKQUEUE
+#ifdef CONFIG_ESP_HOSTED_USE_WORKQUEUE
 	esp_info("ESP: Using SPI Workqueue solution\n");
 
 	spi_context.spi_workqueue = alloc_workqueue("ESP_SPI_WORK_QUEUE",
@@ -751,8 +794,8 @@ static int spi_init(void)
 	INIT_WORK(&spi_context.spi_work, esp_spi_work);
 	INIT_DELAYED_WORK(&spi_context.spi_delayed_work, esp_spi_work);
 #else
-	esp_info("ESP: Using SPI semaphore solution\n");
-	sema_init(&spi_sem, 0);
+	esp_info("ESP: Using SPI thread solution\n");
+	init_waitqueue_head(&spi_context.spi_wq);
 	spi_thread = kthread_run(esp_spi_thread, spi_context.adapter, "esp32_spi");
 	if (!spi_thread) {
 		esp_err("Failed to create esp32_spi thread\n");
@@ -812,14 +855,13 @@ static void spi_exit(void)
 		skb_queue_purge(&spi_context.tx_q[prio_q_idx]);
 		skb_queue_purge(&spi_context.rx_q[prio_q_idx]);
 	}
-#if CONFIG_ESP_HOSTED_USE_WORKQUEUE
+#ifdef CONFIG_ESP_HOSTED_USE_WORKQUEUE
 	if (spi_context.spi_workqueue) {
 		flush_workqueue(spi_context.spi_workqueue);
 		destroy_workqueue(spi_context.spi_workqueue);
 		spi_context.spi_workqueue = NULL;
 	}
 #else
-	up(&spi_sem);
 	if (spi_thread) {
 		kthread_stop(spi_thread);
 		spi_thread = NULL;

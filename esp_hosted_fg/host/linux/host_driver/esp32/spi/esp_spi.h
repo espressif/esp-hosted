@@ -18,6 +18,7 @@
 #ifndef _ESP_SPI_H_
 #define _ESP_SPI_H_
 
+#include <linux/wait.h>
 #include "esp.h"
 
 #define SPI_BUF_SIZE            1600
@@ -43,6 +44,7 @@ struct esp_spi_context {
 	struct spi_device          *esp_spi_dev;
 	struct sk_buff_head        tx_q[MAX_PRIORITY_QUEUES];
 	struct sk_buff_head        rx_q[MAX_PRIORITY_QUEUES];
+	wait_queue_head_t          spi_wq;
 	struct workqueue_struct    *spi_workqueue;
 	struct work_struct         spi_work;
 	struct delayed_work        spi_delayed_work;

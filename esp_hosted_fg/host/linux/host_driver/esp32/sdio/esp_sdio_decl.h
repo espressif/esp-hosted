@@ -21,6 +21,7 @@
 #ifndef _ESP_DECL_H_
 #define _ESP_DECL_H_
 
+#include <linux/wait.h>
 #include "esp.h"
 
 /* Interrupt Status */
@@ -94,9 +95,11 @@ struct esp_sdio_context {
 	struct esp_adapter     *adapter;
 	struct sdio_func       *func;
 	struct sk_buff_head    tx_q[MAX_PRIORITY_QUEUES];
+	wait_queue_head_t      tx_wq;
 	u32                    rx_byte_count;
 	u32                    tx_buffer_count;
 	u32                    sdio_clk_mhz;
 };
 
+int generate_slave_intr(struct esp_sdio_context *context, u8 data);
 #endif

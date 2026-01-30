@@ -114,7 +114,7 @@ hosted_daemon.out: $(HOSTED_DAEMON_OBJS)
 hosted_shell: ensure_libs hosted_shell.out
 
 hosted_shell.out: hosted_shell.o $(COMMON_OBJS)
-	$(CROSS_COMPILE)$(CC) $(CFLAGS) $(CFLAGS_SANITIZE) $(INCLUDE) $(LIBPATH) -o $(@) $^ $(LINKER) $(LIBS) -lreplxx -lstdc++
+	$(CROSS_COMPILE)$(CC) $(CFLAGS) $(CFLAGS_SANITIZE) $(INCLUDE) $(LIBPATH) -o $(@) $^ $(LINKER) $(LIBS) -lreplxx -lstdc++ $(RPATH_FLAGS)
 
 %.o: %.c
 	$(CROSS_COMPILE)$(CC) $(CFLAGS) $(INCLUDE) -c $< -o $@
