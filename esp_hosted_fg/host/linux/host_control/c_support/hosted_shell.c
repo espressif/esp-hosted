@@ -647,12 +647,10 @@ static int handle_connect(int argc, char **argv) {
 		printf("SSID is mandatory\n");
 		return FAILURE;
 	}
-#if 0
 	if (!pwd) {
 		pwd = STATION_MODE_PWD;
-		printf("Using pre-configured password: %s\n", pwd);
+		printf("Using password: ******\n");
 	}
-#endif
 
 	if (!bssid) {
 		bssid = STATION_MODE_BSSID;
@@ -1188,7 +1186,7 @@ static void *auto_ip_restore_thread_handler(void *arg) {
 
 /* RPC initialization */
 static int start_rpc_auto_ip_restore(void) {
-	printf("Waiting local RPC to be ready\n");
+	printf("Trying to establish connection with Slave\n");
 
 	/* Create app thread */
 	if (pthread_create(&auto_ip_restore_thread, NULL, auto_ip_restore_thread_handler, NULL) != 0) {

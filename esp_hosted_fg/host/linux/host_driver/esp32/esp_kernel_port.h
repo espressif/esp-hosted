@@ -119,4 +119,13 @@ static inline void eth_hw_addr_set(struct net_device *dev, const u8 *addr)
 #define spi_alloc_host(x,y) spi_alloc_master(x,y)
 #endif
 
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 9, 0))
+#define spi_master                      spi_controller
+#define spi_master_put(_ctlr)           spi_controller_put(_ctlr)
+#endif
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 15, 0)
+  #define del_timer timer_delete_sync
+#endif
+
 #endif

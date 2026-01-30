@@ -20,10 +20,10 @@
 
 #include "esp_utils.h"
 #include "esp_stats.h"
+#include "esp_api.h"
 
 #if TEST_RAW_TP
 
-#include "esp_api.h"
 #include <linux/timer.h>
 #include <linux/kthread.h>
 
@@ -72,7 +72,7 @@ static int raw_tp_tx_process(void *data)
 
 		if (esp_is_tx_queue_paused()) {
 
-			tx_skb = esp_alloc_skb(TEST_RAW_TP__BUF_SIZE);
+			tx_skb = adapter->if_ops->alloc_skb(TEST_RAW_TP__BUF_SIZE);
 			if (!tx_skb) {
 				esp_err("%u esp_alloc_skb failed\n", __LINE__);
 				msleep(10);

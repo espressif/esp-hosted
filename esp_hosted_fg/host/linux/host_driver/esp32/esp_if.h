@@ -27,6 +27,7 @@ struct esp_if_ops {
 	int (*init)(struct esp_adapter *adapter);
 	struct sk_buff* (*read)(struct esp_adapter *adapter);
 	int (*write)(struct esp_adapter *adapter, struct sk_buff *skb);
+	struct sk_buff* (*alloc_skb)(u32 len);
 	int (*deinit)(struct esp_adapter *adapter);
 };
 

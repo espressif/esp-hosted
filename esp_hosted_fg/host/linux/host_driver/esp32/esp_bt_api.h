@@ -25,5 +25,6 @@
 
 int esp_init_bt(struct esp_adapter *adapter);
 int esp_deinit_bt(struct esp_adapter *adapter);
+void esp_hci_rx(struct esp_adapter *adapter, struct sk_buff *skb);
 
 #endif

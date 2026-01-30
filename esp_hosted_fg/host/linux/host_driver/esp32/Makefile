@@ -4,8 +4,10 @@ CONFIG_INFO_LOGS=y
 CONFIG_DEBUG_LOGS=n
 CONFIG_VERBOSE_LOGS=n
 
-# If set 'n', would semaphore based solution
-CONFIG_ESP_HOSTED_USE_WORKQUEUE=n
+# Choose one:
+CONFIG_ESP_HOSTED_USE_WORKQUEUE=n    # For thread-based solution
+# OR
+# CONFIG_ESP_HOSTED_USE_WORKQUEUE=y  # For workqueue solution
 
 # In case of SDIO as transport, one of slave chipset used,
 # CONFIG_TARGET_ESP32  OR
@@ -78,7 +80,9 @@ $(info DEBUG: CONFIG_ESP_HOSTED_USE_WORKQUEUE='$(CONFIG_ESP_HOSTED_USE_WORKQUEUE
 $(info DEBUG: EXTRA_CFLAGS before workqueue='$(EXTRA_CFLAGS)')
 
 ifeq ($(CONFIG_ESP_HOSTED_USE_WORKQUEUE), y)
-	EXTRA_CFLAGS += -DCONFIG_ESP_HOSTED_USE_WORKQUEUE
+	EXTRA_CFLAGS += -DCONFIG_ESP_HOSTED_USE_WORKQUEUE=1
+else
+	EXTRA_CFLAGS += -DCONFIG_ESP_HOSTED_USE_THREAD=1
 endif
 
 PWD := $(shell pwd)

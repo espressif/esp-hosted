@@ -111,7 +111,6 @@ static void esp_set_rx_mode(struct net_device *ndev);
 static int process_tx_packet (struct sk_buff *skb);
 static NDO_TX_TIMEOUT_PROTOTYPE();
 int esp_send_packet(struct esp_adapter *adapter, struct sk_buff *skb);
-struct sk_buff * esp_alloc_skb(u32 len);
 
 static const struct net_device_ops esp_netdev_ops = {
 	.ndo_open = esp_open,
@@ -330,7 +329,7 @@ static int process_tx_packet (struct sk_buff *skb)
 			return NETDEV_TX_OK;
 		}
 
-		new_skb = esp_alloc_skb(skb->len + pad_len);
+		new_skb = priv->adapter->if_ops->alloc_skb(skb->len + pad_len);
 
 		if (!new_skb) {
 			esp_err("Failed to allocate SKB\n");
@@ -597,26 +596,6 @@ void esp_tx_resume(void)
         }
     }
 }
-
-struct sk_buff * esp_alloc_skb(u32 len)
-{
-	struct sk_buff *skb = NULL;
-
-	u8 offset;
-
-	skb = netdev_alloc_skb(NULL, len + INTERFACE_HEADER_PADDING);
-
-	if (skb) {
-		/* Align SKB data pointer */
-		offset = ((unsigned long)skb->data) & (SKB_DATA_ADDR_ALIGNMENT - 1);
-
-		if (offset)
-			skb_reserve(skb, INTERFACE_HEADER_PADDING - offset);
-	}
-
-	return skb;
-}
-
 
 static int esp_get_packets(struct esp_adapter *adapter)
 {
