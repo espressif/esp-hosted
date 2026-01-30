@@ -197,12 +197,14 @@ static int write_packet(struct esp_adapter *adapter, struct sk_buff *skb)
 		return -EPERM;
 	}
 
+#if 0
 	if (spi_context.adapter->capabilities & ESP_CHECKSUM_ENABLED) {
 		uint16_t len = le16_to_cpu(h->len);
 		uint16_t offset = le16_to_cpu(h->offset);
 		h->checksum = 0;
 		h->checksum = cpu_to_le16(compute_checksum((uint8_t*)h, len + offset));
 	}
+#endif
 
 	/* Enqueue SKB in tx_q */
 	if (h->if_type == ESP_SERIAL_IF) {

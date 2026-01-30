@@ -10,6 +10,7 @@
 #include <sys/ioctl.h>
 #include <errno.h>
 #include <stdlib.h>
+#include <sys/stat.h>
 
 
 #include "nw_helper_func.h"
@@ -750,3 +751,201 @@ int close_socket(int sock)
 	}
 	return SUCCESS;
 }
+
+static int _update_sysctl_file(const char *file_path, uint16_t port_start, uint16_t port_end) {
+	FILE *fp = NULL;
+	char line[256];
+	int found = 0;
+	char temp_file[512];
+	int temp_fd;
+	FILE *temp_fp = NULL;
+	char current_start_str[16], current_end_str[16];
+	uint16_t current_start, current_end;
+
+	snprintf(temp_file, sizeof(temp_file), "%s.XXXXXX", file_path);
+
+	fp = fopen(file_path, "r");
+	if (fp) {
+		while (fgets(line, sizeof(line), fp)) {
+			if (strstr(line, "net.ipv4.ip_local_port_range")) {
+				if (sscanf(line, "net.ipv4.ip_local_port_range = %s %s", current_start_str, current_end_str) == 2) {
+					current_start = (uint16_t)atoi(current_start_str);
+					current_end = (uint16_t)atoi(current_end_str);
+					if (current_start == port_start && current_end == port_end) {
+						printf("Port range in %s already set to %u-%u\n", file_path, port_start, port_end);
+						fclose(fp);
+						return 0;
+					}
+				}
+			}
+		}
+		rewind(fp);
+	}
+
+	temp_fd = mkstemp(temp_file);
+	if (temp_fd < 0) {
+		printf("Failed to create temp file: %s\n", strerror(errno));
+		if (fp) fclose(fp);
+		return -1;
+	}
+
+	temp_fp = fdopen(temp_fd, "w");
+	if (!temp_fp) {
+		printf("Failed to open temp file: %s\n", strerror(errno));
+		close(temp_fd);
+		unlink(temp_file);
+		if (fp) fclose(fp);
+		return -1;
+	}
+
+	if (fp) {
+		while (fgets(line, sizeof(line), fp)) {
+			if (strstr(line, "net.ipv4.ip_local_port_range")) {
+				fprintf(temp_fp, "net.ipv4.ip_local_port_range = %u %u\n", port_start, port_end);
+				found = 1;
+			} else {
+				fputs(line, temp_fp);
+			}
+		}
+	}
+
+	if (!found) {
+		fprintf(temp_fp, "net.ipv4.ip_local_port_range = %u %u\n", port_start, port_end);
+	}
+
+	if (fp) fclose(fp);
+	fclose(temp_fp);
+
+	if (rename(temp_file, file_path) != 0) {
+		printf("Failed to update %s: %s\n", file_path, strerror(errno));
+		unlink(temp_file);
+		return -1;
+	}
+
+	return 1;
+}
+
+int update_host_network_port_range(uint16_t port_start, uint16_t port_end) {
+	const char *conf_file = "/etc/sysctl.conf";
+	const char *fallback_dir = "/etc/sysctl.d";
+	const char *fallback_conf_file = "/etc/sysctl.d/99-esp_hosted_nw_split.conf";
+	const char *target_file = NULL;
+	int result = 0;
+
+	if (access(conf_file, F_OK) == 0) {
+		target_file = conf_file;
+	} else {
+		struct stat st = {0};
+		if (stat(fallback_dir, &st) == -1) {
+			if (mkdir(fallback_dir, 0755) == -1) {
+				printf("Error: /etc/sysctl.d/ directory does not exist and could not be created: %s\n", strerror(errno));
+				return FAILURE;
+			}
+		}
+		target_file = fallback_conf_file;
+	}
+
+	result = _update_sysctl_file(target_file, port_start, port_end);
+
+	if (result == -1) {
+		return FAILURE;
+	}
+
+	if (result == 1) {
+		printf("Port range updated in %s. Applying changes...\n", target_file);
+		if (system("sysctl --system > /dev/null 2>&1") != 0) {
+			printf("Warning: 'sysctl --system' command failed. The new settings may not be applied.\n");
+		}
+	}
+
+	return SUCCESS;
+}
+
+static int _clear_sysctl_file(const char *file_path) {
+	FILE *fp = NULL;
+	char line[256];
+	int found = 0;
+	char temp_file[512];
+	int temp_fd;
+	FILE *temp_fp = NULL;
+
+	snprintf(temp_file, sizeof(temp_file), "%s.XXXXXX", file_path);
+
+	fp = fopen(file_path, "r");
+	if (!fp) {
+		if (errno == ENOENT) {
+			return 0;
+		}
+		printf("Failed to open %s: %s\n", file_path, strerror(errno));
+		return -1;
+	}
+
+	temp_fd = mkstemp(temp_file);
+	if (temp_fd < 0) {
+		printf("Failed to create temp file: %s\n", strerror(errno));
+		fclose(fp);
+		return -1;
+	}
+
+	temp_fp = fdopen(temp_fd, "w");
+	if (!temp_fp) {
+		printf("Failed to open temp file: %s\n", strerror(errno));
+		close(temp_fd);
+		unlink(temp_file);
+		fclose(fp);
+		return -1;
+	}
+
+	while (fgets(line, sizeof(line), fp)) {
+		if (strstr(line, "net.ipv4.ip_local_port_range")) {
+			found = 1;
+		} else {
+			fputs(line, temp_fp);
+		}
+	}
+
+	fclose(fp);
+	fclose(temp_fp);
+
+	if (found) {
+		if (rename(temp_file, file_path) != 0) {
+			printf("Failed to update %s: %s\n", file_path, strerror(errno));
+			unlink(temp_file);
+			return -1;
+		}
+	} else {
+		unlink(temp_file);
+	}
+
+	return found;
+}
+
+int clear_host_network_port_range(void) {
+	const char *conf_file = "/etc/sysctl.conf";
+	const char *fallback_conf_file = "/etc/sysctl.d/99-esp_hosted_nw_split.conf";
+	int changed1 = 0;
+	int changed2 = 0;
+
+	changed1 = _clear_sysctl_file(conf_file);
+	if (changed1 == -1) {
+		return FAILURE;
+	}
+
+	changed2 = _clear_sysctl_file(fallback_conf_file);
+	if (changed2 == -1) {
+		return FAILURE;
+	}
+
+	if (changed1 || changed2) {
+		printf("Cleared port range setting. Applying changes...\n");
+		if (system("sysctl --system > /dev/null 2>&1") != 0) {
+			printf("Warning: 'sysctl --system' command failed.\n");
+		}
+	}
+	else {
+		printf("Port range setting not found in sysctl configuration.\n");
+	}
+
+	return SUCCESS;
+}
+

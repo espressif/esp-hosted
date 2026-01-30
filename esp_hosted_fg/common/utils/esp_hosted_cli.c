@@ -442,10 +442,12 @@ int esp_cli_register_cmds()
 {
 	int cmds_num = sizeof(diag_cmds) / sizeof(esp_console_cmd_t);
 	int i;
-	const char* remove_cmd = "deep_sleep";
 
+#if ESP_IDF_VERSION > ESP_IDF_VERSION_VAL(5, 3, 0)
+	const char* remove_cmd = "deep_sleep";
 	ESP_LOGI(TAG, "Remove any existing deep_sleep cmd in cli");
 	esp_console_cmd_deregister(remove_cmd);
+#endif
 
 	for (i = 0; i < cmds_num; i++) {
 		ESP_LOGI(TAG, "Registering command: %s", diag_cmds[i].command);

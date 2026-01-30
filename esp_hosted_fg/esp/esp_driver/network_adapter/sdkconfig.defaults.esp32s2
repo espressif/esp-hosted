@@ -12,8 +12,10 @@ CONFIG_PARTITION_TABLE_CUSTOM_FILENAME="partitions.esp32s2.csv"
 CONFIG_ESP_CACHE_MALLOC=y
 
 
-# 4 Power save
-#-------------
+# 4 LWIP split
+#---------------
+
+CONFIG_NETWORK_SPLIT_ENABLED=n
 
 # 5. Transport config
 #---------------------

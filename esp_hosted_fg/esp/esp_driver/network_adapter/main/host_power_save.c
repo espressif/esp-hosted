@@ -85,10 +85,22 @@ int is_host_wakeup_needed(interface_buffer_handle_t *buf_handle)
 			break;
 
 		case ESP_STA_IF:
-			  strlcpy(reason, "sta tx msg", sizeof(reason));
-			  wakup_needed = 1;
-			  goto end;
-			  break;
+
+			/* User can optionally parse frame/packet, to selectively forward this packet to host while in power save, or drop it here.
+			 *
+			 * Additionally, if network split is enabled, nw_split_router.c can also
+			 * *selectively* filter packets on criteria which can decide if packet should be :
+			 * a. consumed locally at coprocessor OR
+			 * b. drop OR
+			 * c. forwarding it to host
+			 *
+			 * Network Split criteria (if enabled) applied before reaching her.
+			 **/
+
+			strlcpy(reason, "sta tx msg", sizeof(reason));
+			wakup_needed = 1;
+			goto end;
+			break;
 
 		case ESP_AP_IF:
 			strlcpy(reason, "ap tx msg", sizeof(reason));

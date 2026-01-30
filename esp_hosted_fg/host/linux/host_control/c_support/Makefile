@@ -82,9 +82,9 @@ USR_CUSTOM_RPC_OBJS = app_custom_rpc.o
 
 COMMON_OBJS = test_utils.o nw_helper_func.o $(USR_CUSTOM_RPC_OBJS)
 
-.PHONY: test stress hosted_shell all clean ensure_libs
+.PHONY: test stress hosted_daemon hosted_shell all clean ensure_libs
 
-all: ensure_libs test stress $(BUILD_SHELL)
+all: ensure_libs test stress hosted_daemon $(BUILD_SHELL)
 
 # Ensure control library is built
 ensure_libs:
@@ -104,10 +104,17 @@ stress: ensure_libs stress.out
 stress.out: $(STRESS_OBJS)
 	$(CROSS_COMPILE)$(CC) $(CFLAGS) $(CFLAGS_SANITIZE) $(INCLUDE) $(LIBPATH) $^ $(LINKER) $(LIBS) -o $(@)
 
+HOSTED_DAEMON_OBJS = hosted_daemon.o $(COMMON_OBJS)
+
+hosted_daemon: ensure_libs hosted_daemon.out
+
+hosted_daemon.out: $(HOSTED_DAEMON_OBJS)
+	$(CROSS_COMPILE)$(CC) $(CFLAGS) $(CFLAGS_SANITIZE) $(INCLUDE) $(LIBPATH) $^ $(LINKER) $(LIBS) -o $(@)
+
 hosted_shell: ensure_libs hosted_shell.out
 
 hosted_shell.out: hosted_shell.o $(COMMON_OBJS)
-	$(CROSS_COMPILE)$(CC) $(CFLAGS) $(CFLAGS_SANITIZE) $(INCLUDE) $(LIBPATH) -o $(@) $^ $(LINKER) $(LIBS) -lreplxx -lstdc++ $(RPATH_FLAGS)
+	$(CROSS_COMPILE)$(CC) $(CFLAGS) $(CFLAGS_SANITIZE) $(INCLUDE) $(LIBPATH) -o $(@) $^ $(LINKER) $(LIBS) -lreplxx -lstdc++
 
 %.o: %.c
 	$(CROSS_COMPILE)$(CC) $(CFLAGS) $(INCLUDE) -c $< -o $@

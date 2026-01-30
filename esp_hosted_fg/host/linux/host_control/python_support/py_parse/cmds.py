@@ -431,7 +431,7 @@ class ctrl_cmd(object):
 		"""Subscribe event to get notifications
 
 		Args:
-			event(str,mandatory): M | Values ['esp_init' | 'heartbeat' | 'sta_connected' | 'sta_disconnected' | 'softap_sta_connected' | 'softap_sta_disconnected' | 'custom_packed_event' | 'all' ]
+			event(str,mandatory): M | Values ['esp_init' | 'heartbeat' | 'sta_connected' | 'sta_disconnected' | 'softap_sta_connected' | 'softap_sta_disconnected' | 'dhcp_dns_status' | 'custom_packed_event' | 'all' ]
 
 		Returns:
 			ctrl_cmd: ctrl_cmd object
@@ -449,7 +449,7 @@ class ctrl_cmd(object):
 		"""Unsubscribe event to get notifications
 
 		Args:
-			event(str,mandatory): M | Values ['esp_init' | 'heartbeat' | 'sta_connected' | 'sta_disconnected' | 'softap_sta_connected' | 'softap_sta_disconnected' | 'custom_packed_event' | 'all' ]
+			event(str,mandatory): M | Values ['esp_init' | 'heartbeat' | 'sta_connected' | 'sta_disconnected' | 'softap_sta_connected' | 'softap_sta_disconnected' | 'dhcp_dns_status' | 'custom_packed_event' | 'all' ]
 
 		Returns:
 			ctrl_cmd: ctrl_cmd object

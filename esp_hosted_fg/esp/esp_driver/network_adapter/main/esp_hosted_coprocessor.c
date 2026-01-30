@@ -43,8 +43,25 @@
 #include "stats.h"
 #include "esp_fw_version.h"
 #include "esp_hosted_cli.h"
+#ifdef ESP_HOSTED_COPROCESSOR_EXAMPLE_HTTP_CLIENT
+#include "example_http_client.h"
+#endif
+#include "esp_wifi.h"
 
-#include "host_power_save.h"
+#if CONFIG_NETWORK_SPLIT_ENABLED
+	#include "host_power_save.h"
+	#include "esp_hosted_config.pb-c.h"
+
+
+	volatile uint8_t station_got_ip = 0;
+
+	#include "wifi_cmd.h"
+
+	/* Perform DHCP at slave & send IP info at host */
+	#define H_SLAVE_LWIP_DHCP_AT_SLAVE       1
+
+#endif
+#include "nw_split_router.h"
 
 #include "esp_hosted_custom_rpc.h"
 
@@ -78,6 +95,13 @@ static struct rx_data {
 	int len;
 	uint8_t data[4096];
 } r;
+
+/* Add at the top with other static variables */
+#if H_HOST_PS_ALLOWED
+#define MAX_DHCP_DNS_RETRIES 10
+static int dhcp_dns_retry_count = 0;
+static TimerHandle_t delayed_dhcp_dns_timer = NULL;
+#endif
 
 static esp_err_t handle_custom_unserialised_rpc_request(const custom_rpc_unserialised_data_t *req, custom_rpc_unserialised_data_t *resp_out);
 esp_err_t create_and_send_custom_rpc_unserialised_event(uint32_t custom_event_id, const void *data, size_t data_len);
@@ -178,9 +202,14 @@ DONE:
 	return ESP_OK;
 }
 
+/* This function would check the incoming packet from AP
+ * to send it to local lwip or host lwip depending upon the
+ * destination port used in the packet
+ */
 esp_err_t wlan_sta_rx_callback(void *buffer, uint16_t len, void *eb)
 {
 	interface_buffer_handle_t buf_handle = {0};
+	hosted_l2_bridge bridge_to_use = HOST_LWIP_BRIDGE;
 
 	if (!buffer || !eb) {
 		if (eb) {
@@ -192,14 +221,80 @@ esp_err_t wlan_sta_rx_callback(void *buffer, uint16_t len, void *eb)
 
 	ESP_HEXLOGV("STA_Get", buffer, len, 64);
 
-	populate_wifi_buffer_handle(&buf_handle, ESP_STA_IF, buffer, len);
+#if ESP_PKT_STATS
+	pkt_stats.sta_lwip_in++;
+#endif
 
-	if (unlikely(send_to_host_queue(&buf_handle, PRIO_Q_OTHERS)))
-		goto DONE;
+#ifdef CONFIG_NETWORK_SPLIT_ENABLED
+	/* Filter and route the packet based on destination port */
+	bridge_to_use = filter_and_route_packet(buffer, len);
+#else
+	/* default as co-processor mode */
+	bridge_to_use = HOST_LWIP_BRIDGE;
+#endif
+
+	switch (bridge_to_use) {
+		case HOST_LWIP_BRIDGE:
+			if (!datapath) {
+				ESP_LOGV(TAG, "datapath closed, drop packet");
+				goto DONE;
+			}
+			/* Send to Host */
+			ESP_LOGV(TAG, "host packet");
+			populate_wifi_buffer_handle(&buf_handle, ESP_STA_IF, buffer, len);
+
+			if (unlikely(send_to_host_queue(&buf_handle, PRIO_Q_OTHERS)))
+				goto DONE;
 
 #if ESP_PKT_STATS
-	pkt_stats.sta_sh_in++;
+			pkt_stats.sta_sh_in++;
+			pkt_stats.sta_host_lwip_out++;
 #endif
+			break;
+
+		case SLAVE_LWIP_BRIDGE:
+			/* Send to local LWIP */
+			ESP_LOGV(TAG, "slave packet");
+			esp_netif_receive(slave_sta_netif, buffer, len, eb);
+#if ESP_PKT_STATS
+			pkt_stats.sta_slave_lwip_out++;
+#endif
+			break;
+
+		case BOTH_LWIP_BRIDGE:
+			ESP_LOGV(TAG, "slave & host packet");
+
+			void * copy_buff = malloc(len);
+			assert(copy_buff);
+			memcpy(copy_buff, buffer, len);
+
+			/* slave LWIP */
+			esp_netif_receive(slave_sta_netif, buffer, len, eb);
+
+			ESP_LOGV(TAG, "slave & host packet");
+			if (datapath) {
+				/* Host LWIP, free up wifi buffers */
+				populate_buff_handle(&buf_handle, ESP_STA_IF, copy_buff, len, free, copy_buff, 0, 0, 0);
+				if (unlikely(send_to_host_queue(&buf_handle, PRIO_Q_OTHERS)))
+					goto DONE;
+
+			#if ESP_PKT_STATS
+				pkt_stats.sta_sh_in++;
+				pkt_stats.sta_both_lwip_out++;
+			#endif
+			} else {
+			#if ESP_PKT_STATS
+				pkt_stats.sta_slave_lwip_out++;
+			#endif
+			}
+
+			break;
+
+		default:
+			ESP_LOGV(TAG, "Packet filtering failed, drop packet");
+			goto DONE;
+	}
+
 	return ESP_OK;
 
 DONE:
@@ -340,13 +435,13 @@ static void process_rx_pkt(interface_buffer_handle_t *buf_handle)
 	ESP_HEXLOGV("bus_RX", payload, payload_len, 16);
 
 
-    if (buf_handle->if_type == ESP_STA_IF && station_connected) {
-        /* Forward data to wlan driver */
-        do {
-            ret = esp_wifi_internal_tx(WIFI_IF_STA, payload, payload_len);
-            if (ret) {
-                vTaskDelay(pdMS_TO_TICKS(1));
-            }
+	if (buf_handle->if_type == ESP_STA_IF && station_connected) {
+		/* Forward data to wlan driver */
+		do {
+			ret = esp_wifi_internal_tx(WIFI_IF_STA, payload, payload_len);
+			if (ret) {
+				vTaskDelay(pdMS_TO_TICKS(1));
+			}
 
 			retry_wifi_tx--;
 		} while (ret && retry_wifi_tx);
@@ -357,11 +452,11 @@ static void process_rx_pkt(interface_buffer_handle_t *buf_handle)
 		else
 			pkt_stats.hs_bus_sta_out++;
 #endif
-    } else if (buf_handle->if_type == ESP_AP_IF && softap_started) {
-        /* Forward data to wlan driver */
-        esp_wifi_internal_tx(WIFI_IF_AP, payload, payload_len);
-        ESP_HEXLOGV("AP_Put", payload, payload_len, 32);
-    } else if (buf_handle->if_type == ESP_SERIAL_IF) {
+	} else if (buf_handle->if_type == ESP_AP_IF && softap_started) {
+		/* Forward data to wlan driver */
+		esp_wifi_internal_tx(WIFI_IF_AP, payload, payload_len);
+		ESP_HEXLOGV("AP_Put", payload, payload_len, 32);
+	} else if (buf_handle->if_type == ESP_SERIAL_IF) {
 #if ESP_PKT_STATS
 		pkt_stats.serial_rx++;
 #endif
@@ -569,6 +664,37 @@ static void register_reset_pin(uint32_t gpio_num)
 	}
 }
 #endif
+#ifdef CONFIG_NETWORK_SPLIT_ENABLED
+void create_slave_sta_netif(uint8_t dhcp_at_slave)
+{
+	/* Create "almost" default station, but with un-flagged DHCP client */
+	esp_netif_inherent_config_t netif_cfg;
+	memcpy(&netif_cfg, ESP_NETIF_BASE_DEFAULT_WIFI_STA, sizeof(netif_cfg));
+
+	if (!dhcp_at_slave)
+		netif_cfg.flags &= ~ESP_NETIF_DHCP_CLIENT;
+
+	esp_netif_config_t cfg_sta = {
+		.base = &netif_cfg,
+		.stack = ESP_NETIF_NETSTACK_DEFAULT_WIFI_STA,
+	};
+	esp_netif_t *netif_sta = esp_netif_new(&cfg_sta);
+	assert(netif_sta);
+
+	ESP_ERROR_CHECK(esp_netif_attach_wifi_station(netif_sta));
+	ESP_ERROR_CHECK(esp_wifi_set_default_wifi_sta_handlers());
+
+	if (!dhcp_at_slave) {
+		ESP_ERROR_CHECK(esp_netif_dhcpc_stop(netif_sta));
+		ESP_LOGI(TAG, "No DHCP at slave");
+	} else {
+		ESP_LOGI(TAG, "DHCP at slave");
+		ESP_ERROR_CHECK(esp_netif_dhcpc_start(netif_sta));
+	}
+
+	slave_sta_netif = netif_sta;
+}
+#endif
 
 #if 1
 
@@ -697,12 +823,68 @@ static int connect_sta(void)
 }
 #endif
 
+#if H_HOST_PS_ALLOWED
+
+/* Update timer callback function */
+static void delayed_dhcp_dns_timer_cb(TimerHandle_t xTimer)
+{
+	/* Check if host has fetched IP or max retries reached */
+	if (has_host_fetched_auto_ip() || dhcp_dns_retry_count >= MAX_DHCP_DNS_RETRIES) {
+		/* Stop retrying */
+		if (delayed_dhcp_dns_timer) {
+			xTimerDelete(delayed_dhcp_dns_timer, 0);
+			delayed_dhcp_dns_timer = NULL;
+		}
+		dhcp_dns_retry_count = 0;
+		return;
+	}
+
+	send_dhcp_dns_info_to_host(0, 0);
+	dhcp_dns_retry_count++;
+
+}
+
+/* Function to schedule delayed DHCP/DNS info send */
+static void schedule_delayed_dhcp_dns_info(void)
+{
+	const TickType_t delay_ticks = pdMS_TO_TICKS(500); /* 500ms delay */
+
+	/* Delete existing timer if any */
+	if (delayed_dhcp_dns_timer) {
+		xTimerDelete(delayed_dhcp_dns_timer, 0);
+		delayed_dhcp_dns_timer = NULL;
+	}
+
+	/* Create and start one-shot timer */
+	delayed_dhcp_dns_timer = xTimerCreate("DhcpDns",
+			delay_ticks,
+			pdFALSE,  /* One-shot timer */
+			0,
+			delayed_dhcp_dns_timer_cb);
+
+	if (delayed_dhcp_dns_timer) {
+		if (xTimerStart(delayed_dhcp_dns_timer, 0) != pdPASS) {
+			ESP_LOGE(TAG, "Failed to start delayed DHCP/DNS timer");
+			xTimerDelete(delayed_dhcp_dns_timer, 0);
+			delayed_dhcp_dns_timer = NULL;
+		}
+	} else {
+		ESP_LOGE(TAG, "Failed to create delayed DHCP/DNS timer");
+	}
+}
+#endif
 /* Update host wakeup callback */
 void host_wakeup_callback(void)
 {
 	/* Handle immediate wakeup tasks */
 #if H_HOST_PS_ALLOWED
-	// user can hook their own non blocking operation
+	/* Reset retry count on new wakeup */
+	dhcp_dns_retry_count = 0;
+
+	/* Schedule delayed DHCP/DNS info send */
+	if (station_connected) {
+		schedule_delayed_dhcp_dns_info();
+	}
 #endif
 }
 
@@ -726,8 +908,17 @@ static void host_reset_task(void* pvParameters)
 		ESP_LOGI(TAG,"Send slave up event");
 		generate_startup_event(capa);
 		send_event_to_host(CTRL_MSG_ID__Event_ESPInit);
+
+#ifdef CONFIG_NETWORK_SPLIT_ENABLED
+		ESP_LOGI(TAG,"--- Wait for IP ---");
+		while (!station_got_ip) {
+			vTaskDelay(pdMS_TO_TICKS(50));
+		}
+		send_dhcp_dns_info_to_host(1, 1);
+#endif
 	}
 }
+
 
 esp_err_t esp_hosted_coprocessor_init(void)
 {
@@ -735,11 +926,24 @@ esp_err_t esp_hosted_coprocessor_init(void)
 
 	print_firmware_version();
 
+#if CONFIG_NETWORK_SPLIT_ENABLED
+	ESP_ERROR_CHECK(esp_netif_init());
+#endif
 	ESP_ERROR_CHECK(esp_event_loop_create_default());
 
 #if defined(CONFIG_ESP_GPIO_SLAVE_RESET) && (CONFIG_ESP_GPIO_SLAVE_RESET != -1)
 	register_reset_pin(CONFIG_ESP_GPIO_SLAVE_RESET);
 #endif
+
+
+#ifdef CONFIG_ESP_HOSTED_HOST_RESERVED_PORTS_CONFIGURED
+	ESP_LOGI(TAG, "Configuring host static port forwarding rules from slave kconfig");
+	configure_host_static_port_forwarding_rules(CONFIG_ESP_HOSTED_HOST_RESERVED_TCP_SRC_PORTS,
+												CONFIG_ESP_HOSTED_HOST_RESERVED_TCP_DEST_PORTS,
+												CONFIG_ESP_HOSTED_HOST_RESERVED_UDP_SRC_PORTS,
+												CONFIG_ESP_HOSTED_HOST_RESERVED_UDP_DEST_PORTS);
+#endif
+
 
 	host_power_save_init(host_wakeup_callback);
 
@@ -799,6 +1003,21 @@ esp_err_t esp_hosted_coprocessor_init(void)
 	esp_hosted_cli_start();
 #endif
 
+#ifdef CONFIG_NETWORK_SPLIT_ENABLED
+
+	create_slave_sta_netif(H_SLAVE_LWIP_DHCP_AT_SLAVE);
+
+	ESP_LOGI(TAG, "Default LWIP post filtering packets to send: %s",
+#if defined(CONFIG_ESP_DEFAULT_LWIP_SLAVE)
+			"slave. Host need to use **static netif** only"
+#elif defined(CONFIG_ESP_DEFAULT_LWIP_HOST)
+			"host"
+#elif defined(CONFIG_ESP_DEFAULT_LWIP_BOTH)
+			"host+slave"
+#endif
+			);
+#endif
+
 #if 1
 	connect_sta();
 #endif
@@ -815,7 +1034,10 @@ esp_err_t esp_hosted_coprocessor_init(void)
 			CONFIG_ESP_HOSTED_TASK_PRIORITY_DEFAULT, NULL) == pdTRUE);
 
 
-	host_power_save_init(host_wakeup_callback);
+  #ifdef CONFIG_NETWORK_SPLIT_ENABLED
+	while (!station_got_ip)
+		sleep(1);
+  #endif
 
 	/* Register how you are going to handle the user defined RPC requests */
 
@@ -837,6 +1059,14 @@ void app_main(void)
 	ESP_ERROR_CHECK( ret );
 
 	esp_hosted_coprocessor_init();
+#ifdef CONFIG_NETWORK_SPLIT_ENABLED
+
+#ifdef ESP_HOSTED_COPROCESSOR_EXAMPLE_HTTP_CLIENT
+	example_http_client_start();
+#endif
+
+#endif
+
 }
 
 /* Example callback functions */

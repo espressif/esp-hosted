@@ -495,6 +495,138 @@ menu "Example Configuration"
 				available memory.
 	endmenu
 
+	config NETWORK_SPLIT_ENABLED
+		depends on !IDF_TARGET_ESP32C2 && !IDF_TARGET_ESP32C3
+		bool "Allow Network Split using packet port number"
+		default n
+		help
+			Enable the LWIP at slave, additionally to host network stack
+
+	menu "Network split mode configuration"
+		depends on NETWORK_SPLIT_ENABLED
+
+		menu "Slave side (local) LWIP port range (static)"
+			config LWIP_TCP_LOCAL_PORT_RANGE_START
+				int "Slave TCP start port"
+				default 61440
+				help
+					Slave side TCP start port. Host defaults to 49152
+					Slave range: 61440-65535
+					Host range: 49152-61439
+
+			config LWIP_TCP_LOCAL_PORT_RANGE_END
+				int "Slave TCP end port"
+				default 65535
+				help
+					Slave side TCP end port. Host defaults to 61439
+					Slave range: 61440-65535
+					Host range: 49152-61439
+
+			config LWIP_UDP_LOCAL_PORT_RANGE_START
+				int "Slave UDP start port"
+				default 61440
+				help
+					Slave side UDP start port. Host defaults to 49152
+					Slave range: 61440-65535
+					Host range: 49152-61439
+
+			config LWIP_UDP_LOCAL_PORT_RANGE_END
+				int "Slave UDP end port"
+				default 65535
+				help
+					Slave side UDP end port. Host defaults to 61439
+					Slave range: 61440-65535
+					Host range: 49152-61439
+		endmenu
+
+		menu "Host side (remote) LWIP port range (static)"
+			config LWIP_TCP_REMOTE_PORT_RANGE_START
+				int "Host TCP start port"
+				default 49152
+				help
+					Host side TCP start port. Slave defaults to 61440
+					Slave range: 61440-65535
+					Host range: 49152-61439
+
+			config LWIP_TCP_REMOTE_PORT_RANGE_END
+				int "Host TCP end port"
+				default 61439
+				help
+					Host side TCP end port. Slave defaults to 65535
+					Slave range: 61440-65535
+					Host range: 49152-61439
+
+			config LWIP_UDP_REMOTE_PORT_RANGE_START
+				int "Host UDP start port"
+				default 49152
+				help
+					Host side UDP start port. Slave defaults to 61440
+					Slave range: 61440-65535
+					Host range: 49152-61439
+
+			config LWIP_UDP_REMOTE_PORT_RANGE_END
+				int "Host UDP end port"
+				default 61439
+				help
+					Host side UDP end port. Slave defaults to 65535
+					Slave range: 61440-65535
+					Host range: 49152-61439
+		endmenu
+
+		config ESP_HOSTED_HOST_RESERVED_PORTS_CONFIGURED
+			bool "Extra port forwarding to host (static)"
+			default y
+			help
+				Enable static port forwarding to host for specific ports
+
+		menu "Host Static Port Forwarding"
+			depends on ESP_HOSTED_HOST_RESERVED_PORTS_CONFIGURED
+
+			config ESP_HOSTED_HOST_RESERVED_TCP_SRC_PORTS
+				string "TCP source ports to forward to host (comma separated)"
+				default "22,8554"
+				help
+					Comma separated list of TCP source ports that will be allowed from host (Max 10)
+
+			config ESP_HOSTED_HOST_RESERVED_TCP_DEST_PORTS
+				string "TCP destination ports to forward to host (comma separated)"
+				default "22,80,443,8080,8554"
+				help
+					Comma separated list of TCP destination ports that will be forwarded to host (Max 10)
+
+			config ESP_HOSTED_HOST_RESERVED_UDP_SRC_PORTS
+				string "UDP source ports to allowed from host (comma separated)"
+				default ""
+				help
+					Comma separated list of UDP source ports that will be forwarded to host (Max 10)
+
+			config ESP_HOSTED_HOST_RESERVED_UDP_DEST_PORTS
+				string "UDP destination ports to forward to host (comma separated)"
+				default "53,123"
+				help
+					Comma separated list of UDP destination ports that will be forwarded to host (Max 10)
+		endmenu
+
+		choice
+			prompt "Destination LWIP for unfiltered packet"
+			default ESP_DEFAULT_LWIP_SLAVE
+			help
+				Packets having destination port within 'remote' port range are forwarded to host. Rest unfiltered packets, are to be sent to this LWIP. Please note:
+				(1) These settings are only for IP packets, yet.
+				(2) Extra filtering may be in effect to respond some packets locally by slave LWIP.
+
+			config ESP_DEFAULT_LWIP_SLAVE
+				bool "Send packet to slave LWIP"
+
+			config ESP_DEFAULT_LWIP_HOST
+				bool "Send packet to host LWIP"
+
+			config ESP_DEFAULT_LWIP_BOTH
+				bool "Send packet to both LWIPs"
+		endchoice
+
+	endmenu
+
 	config HOST_DEEP_SLEEP_ALLOWED
 		bool "Allow host to enter deep sleep. Slave will wakeup host using GPIO"
 		default n
@@ -620,5 +752,71 @@ menu "Example Configuration"
 #				bool
 #				prompt "Set country code to CN (1-13)"
 #		endchoice
+	endmenu
+
+
+	config ESP_HOSTED_EXTRA_EXAMPLES
+		bool "Additional higher layer examples to run"
+		depends on NETWORK_SPLIT_ENABLED # as if now, only examples dependent upon network split. in future this line may be deleted
+		default n
+		help
+			Extra set of optional examples to run at slave
+
+	menu "Select Examples to run"
+		depends on ESP_HOSTED_EXTRA_EXAMPLES && NETWORK_SPLIT_ENABLED
+
+		config ESP_HOSTED_COPROCESSOR_EXAMPLE_MQTT
+			bool "MQTT client example"
+			default n
+
+		menu "MQTT client config"
+			depends on ESP_HOSTED_COPROCESSOR_EXAMPLE_MQTT
+			choice BROKER_CHOICE
+				prompt "MQTT Broker"
+				default BROKER_HIVEMQ
+
+				config BROKER_ECLIPSEPROJECTS
+					bool "mqtt.eclipseprojects.io"
+				config BROKER_HIVEMQ
+					bool "broker.hivemq.com"
+			endchoice
+
+			config BROKER_URL
+				string
+				default "mqtt://mqtt.eclipseprojects.io" if BROKER_ECLIPSEPROJECTS
+				default "mqtt://broker.hivemq.com" if BROKER_HIVEMQ
+				help
+					URL of the broker to connect to
+
+			config BROKER_URL_FROM_STDIN
+				bool
+				default y if BROKER_URL = "FROM_STDIN"
+
+		endmenu
+
+		config ESP_HOSTED_COPROCESSOR_EXAMPLE_HTTP_CLIENT
+			bool "HTTP client example"
+			default n
+
+		menu "HTTP client config"
+			depends on ESP_HOSTED_COPROCESSOR_EXAMPLE_HTTP_CLIENT
+
+			config HTTP_WEBSERVER
+				string "HTTP webserver to send req"
+				default "example.com"
+
+			config HTTP_WEBSERVER_PORT
+				string "HTTP webserver port"
+				default "80"
+
+			config HTTP_WEBSERVER_PATH
+				string "HTTP webserver path"
+				default "/"
+
+			config HTTP_REQ_DELAY
+				int "Delay after every http request (seconds)"
+				default 10
+
+		endmenu
 	endmenu
 endmenu

@@ -22,6 +22,8 @@
     - [3.2.4 1M, 2M, CODED phy for LE](#324-1m-2m-coded-phy-for-le)
 - [4. OTA operation](#4-ota-operation)
 - [5. Troubleshoot Instructions](#5-troubleshoot-instructions)
+- [6. Network Split](#6-network-split)
+- [7. Auto Network Setup](#7-auto-network-setup)
 </details>
 
 \
@@ -321,3 +323,26 @@ Please follow [OTA update documentation](ota_update.md) for further details.
 Please refer following for troubleshoot instructions if something goes wrong.
 
 * [Troubleshooting Guide](./Troubleshoot.md)
+
+
+## 6. Network Split
+
+Network Split enables host and ESP to share an IP address while handling traffic based on port ranges. Users benefit from continued ESP connectivity during host sleep/power-down and can customize network configuration between slave and host.
+
+Key features:
+- Port-based traffic splitting (host: 49152-61439, ESP: 61440-65535)
+- Intelligent packet filtering with Deep Packet Inspection
+- Special handling for wake-up events
+
+For details, see [Network Split documentation](Network_Split.md).
+
+## 7. Auto Network Setup
+
+Auto Network Setup automatically retrieves and applies network settings from ESP to host, eliminating manual reconfiguration after reboots or sleep cycles and saving users time with seamless connectivity.
+
+Key benefits:
+- No manual IP setup required
+- Fast connectivity on boot or wake-up
+- Background daemon support
+
+For details, see [Auto Network Setup documentation](Auto_Network_Setup.md).

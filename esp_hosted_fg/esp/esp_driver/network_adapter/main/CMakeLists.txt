@@ -11,14 +11,15 @@ set(COMPONENT_SRCS
     "stats.c"
     "mempool_ll.c"
     "host_power_save.c"
+    "nw_split_router.c"
 )
 
 if(CONFIG_ESP_HOSTED_COPROCESSOR_EXAMPLE_MQTT)
-    list(APPEND COMPONENT_SRCS mqtt_example.c)
+    list(APPEND COMPONENT_SRCS example_mqtt_client.c)
 endif()
 
 if(CONFIG_ESP_HOSTED_COPROCESSOR_EXAMPLE_HTTP_CLIENT)
-    list(APPEND COMPONENT_SRCS http_req.c)
+    list(APPEND COMPONENT_SRCS example_http_client.c)
 endif()
 
 set(COMPONENT_ADD_INCLUDEDIRS

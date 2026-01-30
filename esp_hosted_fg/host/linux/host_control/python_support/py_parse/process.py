@@ -55,6 +55,12 @@ def process_init_control_lib():
 	process_get_mac_addr("station")
 	process_get_mac_addr("softap")
 	register_all_event_callbacks()
+	if is_network_split_on() == True:
+		if nw_helper_func.update_host_network_port_range(49152, 61439) != SUCCESS:
+			print("Failed to update host network port range")
+		if test_sync_get_static_ip_from_slave() != SUCCESS:
+			print("Failed to fetch IP status")
+
 
 
 def process_deinit_control_lib(stop_heartbeat = False):
@@ -344,6 +350,9 @@ def process_subscribe_event(event):
 	elif event == 'softap_sta_disconnected':
 		subscribe_event_softap_sta_disconnected()
 		print("notifications enabled for station disconnection from ESP softAP")
+	elif event == 'dhcp_dns_status':
+		subscribe_event_dhcp_dns_status()
+		print("notifications enabled for DHCP DNS status")
 	elif event == 'custom_packed_event':
 		subscribe_event_custom_packed_event()
 		print("notifications enabled for custom RPC unserialised msg")
@@ -374,13 +383,16 @@ def process_unsubscribe_event(event):
 	elif event == 'softap_sta_disconnected':
 		unsubscribe_event_softap_sta_disconnected()
 		print("notifications disabled for station disconnection from ESP softAP")
+	elif event == 'dhcp_dns_status':
+		unsubscribe_event_dhcp_dns_status()
+		print("notifications disabled for DHCP DNS status (Although, not recommended)")
 	elif event == 'custom_packed_event':
 		unsubscribe_event_custom_packed_event()
 		print("notifications disabled for custom RPC unserialised msg")
 	elif event == 'all':
 		unregister_all_event_callbacks()
 		print("notifications disabled for all possible events")
-		print("Although, we suggest enabling notifications for at least 'sta_connected', 'sta_disconnected'")
+		print("Although, we suggest enabling notifications for at least 'sta_connected', 'sta_disconnected', 'dhcp_dns_status'")
 	else:
 		return "Unsupported event " + event
 	return ""

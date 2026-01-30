@@ -62,12 +62,17 @@ typedef struct CtrlMsgReqSetCountryCode CtrlMsgReqSetCountryCode;
 typedef struct CtrlMsgRespSetCountryCode CtrlMsgRespSetCountryCode;
 typedef struct CtrlMsgReqGetCountryCode CtrlMsgReqGetCountryCode;
 typedef struct CtrlMsgRespGetCountryCode CtrlMsgRespGetCountryCode;
+typedef struct CtrlMsgReqSetDhcpDnsStatus CtrlMsgReqSetDhcpDnsStatus;
+typedef struct CtrlMsgRespSetDhcpDnsStatus CtrlMsgRespSetDhcpDnsStatus;
+typedef struct CtrlMsgReqGetDhcpDnsStatus CtrlMsgReqGetDhcpDnsStatus;
+typedef struct CtrlMsgRespGetDhcpDnsStatus CtrlMsgRespGetDhcpDnsStatus;
 typedef struct CtrlMsgEventESPInit CtrlMsgEventESPInit;
 typedef struct CtrlMsgEventHeartbeat CtrlMsgEventHeartbeat;
 typedef struct CtrlMsgEventStationDisconnectFromAP CtrlMsgEventStationDisconnectFromAP;
 typedef struct CtrlMsgEventStationConnectedToAP CtrlMsgEventStationConnectedToAP;
 typedef struct CtrlMsgEventStationDisconnectFromESPSoftAP CtrlMsgEventStationDisconnectFromESPSoftAP;
 typedef struct CtrlMsgEventStationConnectedToESPSoftAP CtrlMsgEventStationConnectedToESPSoftAP;
+typedef struct CtrlMsgEventSetDhcpDnsStatus CtrlMsgEventSetDhcpDnsStatus;
 typedef struct CtrlMsgReqCustomRpcUnserialisedMsg CtrlMsgReqCustomRpcUnserialisedMsg;
 typedef struct CtrlMsgRespCustomRpcUnserialisedMsg CtrlMsgRespCustomRpcUnserialisedMsg;
 typedef struct CtrlMsgEventCustomRpcUnserialisedMsg CtrlMsgEventCustomRpcUnserialisedMsg;
@@ -175,11 +180,13 @@ typedef enum _CtrlMsgId {
   CTRL_MSG_ID__Req_SetCountryCode = 124,
   CTRL_MSG_ID__Req_GetCountryCode = 125,
   CTRL_MSG_ID__Req_Custom_RPC_Unserialised_Msg = 126,
+  CTRL_MSG_ID__Req_SetDhcpDnsStatus = 127,
+  CTRL_MSG_ID__Req_GetDhcpDnsStatus = 128,
   /*
    * Add new control path command response before Req_Max
    * and update Req_Max 
    */
-  CTRL_MSG_ID__Req_Max = 127,
+  CTRL_MSG_ID__Req_Max = 129,
   /*
    ** Response Msgs *
    */
@@ -210,11 +217,13 @@ typedef enum _CtrlMsgId {
   CTRL_MSG_ID__Resp_SetCountryCode = 224,
   CTRL_MSG_ID__Resp_GetCountryCode = 225,
   CTRL_MSG_ID__Resp_Custom_RPC_Unserialised_Msg = 226,
+  CTRL_MSG_ID__Resp_SetDhcpDnsStatus = 227,
+  CTRL_MSG_ID__Resp_GetDhcpDnsStatus = 228,
   /*
    * Add new control path command response before Resp_Max
    * and update Resp_Max 
    */
-  CTRL_MSG_ID__Resp_Max = 227,
+  CTRL_MSG_ID__Resp_Max = 229,
   /*
    ** Event Msgs *
    */
@@ -226,20 +235,19 @@ typedef enum _CtrlMsgId {
   CTRL_MSG_ID__Event_StationConnectedToAP = 305,
   CTRL_MSG_ID__Event_StationConnectedToESPSoftAP = 306,
   CTRL_MSG_ID__Event_Custom_RPC_Unserialised_Msg = 307,
+  CTRL_MSG_ID__Event_SetDhcpDnsStatus = 308,
   /*
    * Add new control path command notification before Event_Max
    * and update Event_Max 
    */
-  CTRL_MSG_ID__Event_Max = 308
+  CTRL_MSG_ID__Event_Max = 309
     PROTOBUF_C__FORCE_ENUM_TO_BE_INT_SIZE(CTRL_MSG_ID)
 } CtrlMsgId;
 typedef enum _HostedFeature {
   HOSTED_FEATURE__Hosted_InvalidFeature = 0,
   HOSTED_FEATURE__Hosted_Wifi = 1,
-  /*
-   * Add your new features here and re-build prot using build_proto.sh 
-   */
-  HOSTED_FEATURE__Hosted_Bluetooth = 2
+  HOSTED_FEATURE__Hosted_Bluetooth = 2,
+  HOSTED_FEATURE__Hosted_Is_Network_Split_On = 3
     PROTOBUF_C__FORCE_ENUM_TO_BE_INT_SIZE(HOSTED_FEATURE)
 } HostedFeature;
 
@@ -772,6 +780,62 @@ struct  CtrlMsgRespGetCountryCode
     , 0, {0,NULL} }
 
 
+struct  CtrlMsgReqSetDhcpDnsStatus
+{
+  ProtobufCMessage base;
+  int32_t iface;
+  int32_t net_link_up;
+  int32_t dhcp_up;
+  ProtobufCBinaryData dhcp_ip;
+  ProtobufCBinaryData dhcp_nm;
+  ProtobufCBinaryData dhcp_gw;
+  int32_t dns_up;
+  ProtobufCBinaryData dns_ip;
+  int32_t dns_type;
+};
+#define CTRL_MSG__REQ__SET_DHCP_DNS_STATUS__INIT \
+ { PROTOBUF_C_MESSAGE_INIT (&ctrl_msg__req__set_dhcp_dns_status__descriptor) \
+    , 0, 0, 0, {0,NULL}, {0,NULL}, {0,NULL}, 0, {0,NULL}, 0 }
+
+
+struct  CtrlMsgRespSetDhcpDnsStatus
+{
+  ProtobufCMessage base;
+  int32_t resp;
+};
+#define CTRL_MSG__RESP__SET_DHCP_DNS_STATUS__INIT \
+ { PROTOBUF_C_MESSAGE_INIT (&ctrl_msg__resp__set_dhcp_dns_status__descriptor) \
+    , 0 }
+
+
+struct  CtrlMsgReqGetDhcpDnsStatus
+{
+  ProtobufCMessage base;
+};
+#define CTRL_MSG__REQ__GET_DHCP_DNS_STATUS__INIT \
+ { PROTOBUF_C_MESSAGE_INIT (&ctrl_msg__req__get_dhcp_dns_status__descriptor) \
+     }
+
+
+struct  CtrlMsgRespGetDhcpDnsStatus
+{
+  ProtobufCMessage base;
+  int32_t resp;
+  int32_t iface;
+  int32_t net_link_up;
+  int32_t dhcp_up;
+  ProtobufCBinaryData dhcp_ip;
+  ProtobufCBinaryData dhcp_nm;
+  ProtobufCBinaryData dhcp_gw;
+  int32_t dns_up;
+  ProtobufCBinaryData dns_ip;
+  int32_t dns_type;
+};
+#define CTRL_MSG__RESP__GET_DHCP_DNS_STATUS__INIT \
+ { PROTOBUF_C_MESSAGE_INIT (&ctrl_msg__resp__get_dhcp_dns_status__descriptor) \
+    , 0, 0, 0, 0, {0,NULL}, {0,NULL}, {0,NULL}, 0, {0,NULL}, 0 }
+
+
 /*
  ** Event structure *
  */
@@ -853,6 +917,25 @@ struct  CtrlMsgEventStationConnectedToESPSoftAP
     , 0, {0,NULL}, 0, 0 }
 
 
+struct  CtrlMsgEventSetDhcpDnsStatus
+{
+  ProtobufCMessage base;
+  int32_t iface;
+  int32_t net_link_up;
+  int32_t dhcp_up;
+  ProtobufCBinaryData dhcp_ip;
+  ProtobufCBinaryData dhcp_nm;
+  ProtobufCBinaryData dhcp_gw;
+  int32_t dns_up;
+  ProtobufCBinaryData dns_ip;
+  int32_t dns_type;
+  int32_t resp;
+};
+#define CTRL_MSG__EVENT__SET_DHCP_DNS_STATUS__INIT \
+ { PROTOBUF_C_MESSAGE_INIT (&ctrl_msg__event__set_dhcp_dns_status__descriptor) \
+    , 0, 0, 0, {0,NULL}, {0,NULL}, {0,NULL}, 0, {0,NULL}, 0, 0 }
+
+
 /*
  * Add Custom RPC message structures after existing message structures to make it easily notice 
  */
@@ -919,6 +1002,8 @@ typedef enum {
   CTRL_MSG__PAYLOAD_REQ_SET_COUNTRY_CODE = 124,
   CTRL_MSG__PAYLOAD_REQ_GET_COUNTRY_CODE = 125,
   CTRL_MSG__PAYLOAD_REQ_CUSTOM_RPC_UNSERIALISED_MSG = 126,
+  CTRL_MSG__PAYLOAD_REQ_SET_DHCP_DNS_STATUS = 127,
+  CTRL_MSG__PAYLOAD_REQ_GET_DHCP_DNS_STATUS = 128,
   CTRL_MSG__PAYLOAD_RESP_GET_MAC_ADDRESS = 201,
   CTRL_MSG__PAYLOAD_RESP_SET_MAC_ADDRESS = 202,
   CTRL_MSG__PAYLOAD_RESP_GET_WIFI_MODE = 203,
@@ -945,13 +1030,16 @@ typedef enum {
   CTRL_MSG__PAYLOAD_RESP_SET_COUNTRY_CODE = 224,
   CTRL_MSG__PAYLOAD_RESP_GET_COUNTRY_CODE = 225,
   CTRL_MSG__PAYLOAD_RESP_CUSTOM_RPC_UNSERIALISED_MSG = 226,
+  CTRL_MSG__PAYLOAD_RESP_SET_DHCP_DNS_STATUS = 227,
+  CTRL_MSG__PAYLOAD_RESP_GET_DHCP_DNS_STATUS = 228,
   CTRL_MSG__PAYLOAD_EVENT_ESP_INIT = 301,
   CTRL_MSG__PAYLOAD_EVENT_HEARTBEAT = 302,
   CTRL_MSG__PAYLOAD_EVENT_STATION_DISCONNECT_FROM__AP = 303,
   CTRL_MSG__PAYLOAD_EVENT_STATION_DISCONNECT_FROM__ESP__SOFT_AP = 304,
   CTRL_MSG__PAYLOAD_EVENT_STATION_CONNECTED_TO__AP = 305,
   CTRL_MSG__PAYLOAD_EVENT_STATION_CONNECTED_TO__ESP__SOFT_AP = 306,
-  CTRL_MSG__PAYLOAD_EVENT_CUSTOM_RPC_UNSERIALISED_MSG = 307
+  CTRL_MSG__PAYLOAD_EVENT_CUSTOM_RPC_UNSERIALISED_MSG = 307,
+  CTRL_MSG__PAYLOAD_EVENT_SET_DHCP_DNS_STATUS = 308
     PROTOBUF_C__FORCE_ENUM_TO_BE_INT_SIZE(CTRL_MSG__PAYLOAD__CASE)
 } CtrlMsg__PayloadCase;
 
@@ -1005,6 +1093,8 @@ struct  CtrlMsg
     CtrlMsgReqSetCountryCode *req_set_country_code;
     CtrlMsgReqGetCountryCode *req_get_country_code;
     CtrlMsgReqCustomRpcUnserialisedMsg *req_custom_rpc_unserialised_msg;
+    CtrlMsgReqSetDhcpDnsStatus *req_set_dhcp_dns_status;
+    CtrlMsgReqGetDhcpDnsStatus *req_get_dhcp_dns_status;
     /*
      ** Responses *
      */
@@ -1034,6 +1124,8 @@ struct  CtrlMsg
     CtrlMsgRespSetCountryCode *resp_set_country_code;
     CtrlMsgRespGetCountryCode *resp_get_country_code;
     CtrlMsgRespCustomRpcUnserialisedMsg *resp_custom_rpc_unserialised_msg;
+    CtrlMsgRespSetDhcpDnsStatus *resp_set_dhcp_dns_status;
+    CtrlMsgRespGetDhcpDnsStatus *resp_get_dhcp_dns_status;
     /*
      ** Notifications *
      */
@@ -1044,6 +1136,7 @@ struct  CtrlMsg
     CtrlMsgEventStationConnectedToAP *event_station_connected_to_ap;
     CtrlMsgEventStationConnectedToESPSoftAP *event_station_connected_to_esp_softap;
     CtrlMsgEventCustomRpcUnserialisedMsg *event_custom_rpc_unserialised_msg;
+    CtrlMsgEventSetDhcpDnsStatus *event_set_dhcp_dns_status;
   };
 };
 #define CTRL_MSG__INIT \
@@ -1944,6 +2037,82 @@ CtrlMsgRespGetCountryCode *
 void   ctrl_msg__resp__get_country_code__free_unpacked
                      (CtrlMsgRespGetCountryCode *message,
                       ProtobufCAllocator *allocator);
+/* CtrlMsgReqSetDhcpDnsStatus methods */
+void   ctrl_msg__req__set_dhcp_dns_status__init
+                     (CtrlMsgReqSetDhcpDnsStatus         *message);
+size_t ctrl_msg__req__set_dhcp_dns_status__get_packed_size
+                     (const CtrlMsgReqSetDhcpDnsStatus   *message);
+size_t ctrl_msg__req__set_dhcp_dns_status__pack
+                     (const CtrlMsgReqSetDhcpDnsStatus   *message,
+                      uint8_t             *out);
+size_t ctrl_msg__req__set_dhcp_dns_status__pack_to_buffer
+                     (const CtrlMsgReqSetDhcpDnsStatus   *message,
+                      ProtobufCBuffer     *buffer);
+CtrlMsgReqSetDhcpDnsStatus *
+       ctrl_msg__req__set_dhcp_dns_status__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data);
+void   ctrl_msg__req__set_dhcp_dns_status__free_unpacked
+                     (CtrlMsgReqSetDhcpDnsStatus *message,
+                      ProtobufCAllocator *allocator);
+/* CtrlMsgRespSetDhcpDnsStatus methods */
+void   ctrl_msg__resp__set_dhcp_dns_status__init
+                     (CtrlMsgRespSetDhcpDnsStatus         *message);
+size_t ctrl_msg__resp__set_dhcp_dns_status__get_packed_size
+                     (const CtrlMsgRespSetDhcpDnsStatus   *message);
+size_t ctrl_msg__resp__set_dhcp_dns_status__pack
+                     (const CtrlMsgRespSetDhcpDnsStatus   *message,
+                      uint8_t             *out);
+size_t ctrl_msg__resp__set_dhcp_dns_status__pack_to_buffer
+                     (const CtrlMsgRespSetDhcpDnsStatus   *message,
+                      ProtobufCBuffer     *buffer);
+CtrlMsgRespSetDhcpDnsStatus *
+       ctrl_msg__resp__set_dhcp_dns_status__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data);
+void   ctrl_msg__resp__set_dhcp_dns_status__free_unpacked
+                     (CtrlMsgRespSetDhcpDnsStatus *message,
+                      ProtobufCAllocator *allocator);
+/* CtrlMsgReqGetDhcpDnsStatus methods */
+void   ctrl_msg__req__get_dhcp_dns_status__init
+                     (CtrlMsgReqGetDhcpDnsStatus         *message);
+size_t ctrl_msg__req__get_dhcp_dns_status__get_packed_size
+                     (const CtrlMsgReqGetDhcpDnsStatus   *message);
+size_t ctrl_msg__req__get_dhcp_dns_status__pack
+                     (const CtrlMsgReqGetDhcpDnsStatus   *message,
+                      uint8_t             *out);
+size_t ctrl_msg__req__get_dhcp_dns_status__pack_to_buffer
+                     (const CtrlMsgReqGetDhcpDnsStatus   *message,
+                      ProtobufCBuffer     *buffer);
+CtrlMsgReqGetDhcpDnsStatus *
+       ctrl_msg__req__get_dhcp_dns_status__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data);
+void   ctrl_msg__req__get_dhcp_dns_status__free_unpacked
+                     (CtrlMsgReqGetDhcpDnsStatus *message,
+                      ProtobufCAllocator *allocator);
+/* CtrlMsgRespGetDhcpDnsStatus methods */
+void   ctrl_msg__resp__get_dhcp_dns_status__init
+                     (CtrlMsgRespGetDhcpDnsStatus         *message);
+size_t ctrl_msg__resp__get_dhcp_dns_status__get_packed_size
+                     (const CtrlMsgRespGetDhcpDnsStatus   *message);
+size_t ctrl_msg__resp__get_dhcp_dns_status__pack
+                     (const CtrlMsgRespGetDhcpDnsStatus   *message,
+                      uint8_t             *out);
+size_t ctrl_msg__resp__get_dhcp_dns_status__pack_to_buffer
+                     (const CtrlMsgRespGetDhcpDnsStatus   *message,
+                      ProtobufCBuffer     *buffer);
+CtrlMsgRespGetDhcpDnsStatus *
+       ctrl_msg__resp__get_dhcp_dns_status__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data);
+void   ctrl_msg__resp__get_dhcp_dns_status__free_unpacked
+                     (CtrlMsgRespGetDhcpDnsStatus *message,
+                      ProtobufCAllocator *allocator);
 /* CtrlMsgEventESPInit methods */
 void   ctrl_msg__event__espinit__init
                      (CtrlMsgEventESPInit         *message);
@@ -2057,6 +2226,25 @@ CtrlMsgEventStationConnectedToESPSoftAP *
                       const uint8_t       *data);
 void   ctrl_msg__event__station_connected_to_espsoft_ap__free_unpacked
                      (CtrlMsgEventStationConnectedToESPSoftAP *message,
+                      ProtobufCAllocator *allocator);
+/* CtrlMsgEventSetDhcpDnsStatus methods */
+void   ctrl_msg__event__set_dhcp_dns_status__init
+                     (CtrlMsgEventSetDhcpDnsStatus         *message);
+size_t ctrl_msg__event__set_dhcp_dns_status__get_packed_size
+                     (const CtrlMsgEventSetDhcpDnsStatus   *message);
+size_t ctrl_msg__event__set_dhcp_dns_status__pack
+                     (const CtrlMsgEventSetDhcpDnsStatus   *message,
+                      uint8_t             *out);
+size_t ctrl_msg__event__set_dhcp_dns_status__pack_to_buffer
+                     (const CtrlMsgEventSetDhcpDnsStatus   *message,
+                      ProtobufCBuffer     *buffer);
+CtrlMsgEventSetDhcpDnsStatus *
+       ctrl_msg__event__set_dhcp_dns_status__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data);
+void   ctrl_msg__event__set_dhcp_dns_status__free_unpacked
+                     (CtrlMsgEventSetDhcpDnsStatus *message,
                       ProtobufCAllocator *allocator);
 /* CtrlMsgReqCustomRpcUnserialisedMsg methods */
 void   ctrl_msg__req__custom_rpc_unserialised_msg__init
@@ -2277,6 +2465,18 @@ typedef void (*CtrlMsgReqGetCountryCode_Closure)
 typedef void (*CtrlMsgRespGetCountryCode_Closure)
                  (const CtrlMsgRespGetCountryCode *message,
                   void *closure_data);
+typedef void (*CtrlMsgReqSetDhcpDnsStatus_Closure)
+                 (const CtrlMsgReqSetDhcpDnsStatus *message,
+                  void *closure_data);
+typedef void (*CtrlMsgRespSetDhcpDnsStatus_Closure)
+                 (const CtrlMsgRespSetDhcpDnsStatus *message,
+                  void *closure_data);
+typedef void (*CtrlMsgReqGetDhcpDnsStatus_Closure)
+                 (const CtrlMsgReqGetDhcpDnsStatus *message,
+                  void *closure_data);
+typedef void (*CtrlMsgRespGetDhcpDnsStatus_Closure)
+                 (const CtrlMsgRespGetDhcpDnsStatus *message,
+                  void *closure_data);
 typedef void (*CtrlMsgEventESPInit_Closure)
                  (const CtrlMsgEventESPInit *message,
                   void *closure_data);
@@ -2294,6 +2494,9 @@ typedef void (*CtrlMsgEventStationDisconnectFromESPSoftAP_Closure)
                   void *closure_data);
 typedef void (*CtrlMsgEventStationConnectedToESPSoftAP_Closure)
                  (const CtrlMsgEventStationConnectedToESPSoftAP *message,
+                  void *closure_data);
+typedef void (*CtrlMsgEventSetDhcpDnsStatus_Closure)
+                 (const CtrlMsgEventSetDhcpDnsStatus *message,
                   void *closure_data);
 typedef void (*CtrlMsgReqCustomRpcUnserialisedMsg_Closure)
                  (const CtrlMsgReqCustomRpcUnserialisedMsg *message,
@@ -2370,12 +2573,17 @@ extern const ProtobufCMessageDescriptor ctrl_msg__req__set_country_code__descrip
 extern const ProtobufCMessageDescriptor ctrl_msg__resp__set_country_code__descriptor;
 extern const ProtobufCMessageDescriptor ctrl_msg__req__get_country_code__descriptor;
 extern const ProtobufCMessageDescriptor ctrl_msg__resp__get_country_code__descriptor;
+extern const ProtobufCMessageDescriptor ctrl_msg__req__set_dhcp_dns_status__descriptor;
+extern const ProtobufCMessageDescriptor ctrl_msg__resp__set_dhcp_dns_status__descriptor;
+extern const ProtobufCMessageDescriptor ctrl_msg__req__get_dhcp_dns_status__descriptor;
+extern const ProtobufCMessageDescriptor ctrl_msg__resp__get_dhcp_dns_status__descriptor;
 extern const ProtobufCMessageDescriptor ctrl_msg__event__espinit__descriptor;
 extern const ProtobufCMessageDescriptor ctrl_msg__event__heartbeat__descriptor;
 extern const ProtobufCMessageDescriptor ctrl_msg__event__station_disconnect_from_ap__descriptor;
 extern const ProtobufCMessageDescriptor ctrl_msg__event__station_connected_to_ap__descriptor;
 extern const ProtobufCMessageDescriptor ctrl_msg__event__station_disconnect_from_espsoft_ap__descriptor;
 extern const ProtobufCMessageDescriptor ctrl_msg__event__station_connected_to_espsoft_ap__descriptor;
+extern const ProtobufCMessageDescriptor ctrl_msg__event__set_dhcp_dns_status__descriptor;
 extern const ProtobufCMessageDescriptor ctrl_msg__req__custom_rpc_unserialised_msg__descriptor;
 extern const ProtobufCMessageDescriptor ctrl_msg__resp__custom_rpc_unserialised_msg__descriptor;
 extern const ProtobufCMessageDescriptor ctrl_msg__event__custom_rpc_unserialised_msg__descriptor;

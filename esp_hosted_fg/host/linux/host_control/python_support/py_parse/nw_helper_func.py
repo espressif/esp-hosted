@@ -1,6 +1,7 @@
 import os
 import socket
 import re
+import glob
 from hosted_py_header import *
 
 STA_INTERFACE = "ethsta0"
@@ -212,6 +213,174 @@ def remove_dns(iface):
     except Exception:
         return FAILURE
 
+
+
+def _update_sysctl_file(file_path, key, value):
+    """
+    Updates a sysctl-style file with a key-value pair.
+    - If the key exists with the same value, does nothing.
+    - If the key exists with a different value, it's updated.
+    - If the key does not exist, it's appended.
+    Returns (True, True) if changed, (True, False) if no change needed, (False, False) on error.
+    """
+    try:
+        lines = []
+        found = False
+        changed = False
+
+        if os.path.exists(file_path):
+            with open(file_path, "r") as f:
+                lines = f.readlines()
+
+        new_lines = []
+        for line in lines:
+            # handle comments and whitespace
+            stripped_line = line.strip()
+            if stripped_line.startswith('#') or not stripped_line:
+                new_lines.append(line)
+                continue
+
+            if key in stripped_line:
+                found = True
+                # Check if the value is the same
+                if value in stripped_line:
+                    # It's the same, no change needed for this line
+                    new_lines.append(line)
+                else:
+                    # Value is different, replace it
+                    new_lines.append(f"{key} = {value}\n")
+                    changed = True
+            else:
+                new_lines.append(line)
+
+        if not found:
+            new_lines.append(f"{key} = {value}\n")
+            changed = True
+
+        if changed:
+            # Ensure directory exists before writing
+            dir_name = os.path.dirname(file_path)
+            if not os.path.exists(dir_name):
+                os.makedirs(dir_name, exist_ok=True)
+
+            with open(file_path, "w") as f:
+                f.writelines(new_lines)
+
+        return True, changed
+    except Exception as e:
+        print(f"Error updating {file_path}: {e}")
+        return False, False
+
+def update_host_network_port_range(port_start, port_end):
+    """Update host network port range according to the defined logic."""
+    key = "net.ipv4.ip_local_port_range"
+    value = f"{port_start} {port_end}"
+
+    conf_file = "/etc/sysctl.conf"
+    fallback_conf_file = "/etc/sysctl.d/99-esp_hosted_nw_split.conf"
+
+    target_file = None
+
+    # Step 1 & 2
+    if os.path.exists(conf_file):
+        target_file = conf_file
+    else:
+        # Fallback to sysctl.d
+        # Step 2: "if /etc/sysctl.d/ directory available. if not, error"
+        # We are being more robust and creating it if it doesn't exist.
+        sysctl_d_dir = os.path.dirname(fallback_conf_file)
+        if not os.path.exists(sysctl_d_dir):
+            try:
+                os.makedirs(sysctl_d_dir, exist_ok=True)
+            except Exception as e:
+                print(f"Error: /etc/sysctl.d/ directory does not exist and could not be created: {e}")
+                return FAILURE
+        target_file = fallback_conf_file
+
+    if not target_file:
+         print("Error: Could not determine a target sysctl configuration file.")
+         return FAILURE
+
+    # Steps 3-9 are handled by _update_sysctl_file
+    success, changed = _update_sysctl_file(target_file, key, value)
+
+    if not success:
+        return FAILURE
+
+    # Step 10
+    if changed:
+        print(f"Updated {target_file} with port range. Applying changes...")
+        ret = os.system("sysctl --system > /dev/null 2>&1")
+        if ret != 0:
+            # The error message from sysctl should be on stderr already
+            print("Warning: 'sysctl --system' command failed. The new settings may not be applied.")
+    else:
+        print("Port range setting is already up to date.")
+
+    return SUCCESS
+
+def _clear_sysctl_file(file_path, key):
+    """
+    Removes a key from a sysctl-style file.
+    Returns (True, True) if changed, (True, False) if not found, (False, False) on error.
+    """
+    try:
+        if not os.path.exists(file_path):
+            return True, False # File doesn't exist, so key is not present.
+
+        lines = []
+        found = False
+        with open(file_path, "r") as f:
+            lines = f.readlines()
+
+        new_lines = []
+        for line in lines:
+            stripped_line = line.strip()
+            if stripped_line.startswith('#') or not stripped_line:
+                new_lines.append(line)
+                continue
+
+            if key not in stripped_line:
+                new_lines.append(line)
+            else:
+                found = True
+
+        if found:
+            with open(file_path, "w") as f:
+                f.writelines(new_lines)
+
+        return True, found
+    except Exception as e:
+        print(f"Error clearing {file_path}: {e}")
+        return False, False
+
+def clear_host_network_port_range():
+    """Clear host network port range from system configuration."""
+    key = "net.ipv4.ip_local_port_range"
+    conf_file = "/etc/sysctl.conf"
+    fallback_conf_file = "/etc/sysctl.d/99-esp_hosted_nw_split.conf"
+
+    changed1 = False
+    changed2 = False
+
+    # Clear from /etc/sysctl.conf
+    success1, changed1 = _clear_sysctl_file(conf_file, key)
+
+    # Clear from /etc/sysctl.d/99-esp_hosted_nw_split.conf
+    success2, changed2 = _clear_sysctl_file(fallback_conf_file, key)
+
+    if not success1 or not success2:
+        return FAILURE
+
+    if changed1 or changed2:
+        print("Cleared port range setting. Applying changes...")
+        ret = os.system("sysctl --system > /dev/null 2>&1")
+        if ret != 0:
+            print("Warning: 'sysctl --system' command failed.")
+    else:
+        print("Port range setting not found in sysctl configuration.")
+
+    return SUCCESS
 
 def up_sta_netdev__with_static_ip_dns_route(static_ip, netmask, gateway, dns):
     g_sta_network_info.ip_addr = static_ip
