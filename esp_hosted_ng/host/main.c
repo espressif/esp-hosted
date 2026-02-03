@@ -379,6 +379,18 @@ static int process_event_esp_bootup(struct esp_adapter *adapter, u8 *evt_buf, u8
 
 static int esp_open(struct net_device *ndev)
 {
+	struct esp_wifi_device *priv = netdev_priv(ndev);
+
+	if (!priv)
+		return -EINVAL;
+
+	if (!test_bit(ESP_INTERFACE_INITIALIZED, &priv->priv_flags)) {
+		if (cmd_init_interface(priv) != 0) {
+			return -EINVAL;
+		}
+		set_bit(ESP_INTERFACE_INITIALIZED, &priv->priv_flags);
+	}
+
 	return 0;
 }
 
@@ -391,6 +403,13 @@ static int esp_stop(struct net_device *ndev)
 
 	esp_mark_scan_done_and_disconnect(priv, false);
 	esp_port_close(priv);
+	if (test_bit(ESP_INTERFACE_INITIALIZED, &priv->priv_flags)) {
+		esp_info("Deinitializing interface %s on ESP side\n", ndev->name);
+		if (cmd_deinit_interface(priv) != 0) {
+			esp_err("Failed to deinit interface");
+		}
+		clear_bit(ESP_INTERFACE_INITIALIZED, &priv->priv_flags);
+	}
 	return 0;
 }
 

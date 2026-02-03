@@ -926,6 +926,8 @@ esp_err_t initialise_wifi(void)
 
     esp_wifi_set_debug_log();
 
+    /* Register to get events from wifi driver */
+    esp_create_wifi_event_loop();
     /* Register callback functions with wifi driver */
     memset(&wpa_cb, 0, sizeof(struct wpa_funcs));
 
@@ -1545,8 +1547,6 @@ int process_init_interface(uint8_t if_type, uint8_t *payload, uint16_t payload_l
     uint16_t cmd_status = CMD_RESPONSE_FAIL;
 
     if (!sta_init_flag || (if_type == ESP_AP_IF && !softap_started)) {
-        /* Register to get events from wifi driver */
-        esp_create_wifi_event_loop();
 
         /* Use same MAC for AP and STA */
         esp_read_mac(dev_mac, ESP_MAC_WIFI_STA);
