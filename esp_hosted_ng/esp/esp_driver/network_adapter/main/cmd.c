@@ -49,7 +49,16 @@ extern volatile uint8_t softap_started;
 
 volatile uint8_t sta_init_flag;
 
+/* EAP and IEEE 802.1X constants */
+#define IEEE802_1X_VERSION                  2
+#define IEEE802_1X_TYPE_EAP_PACKET          0
+#define EAP_CODE_REQUEST                    1
+#define EAP_CODE_RESPONSE                   2
+#define EAP_CODE_SUCCESS                    3
+#define EAP_CODE_FAILURE                    4
+
 static struct wpa_funcs wpa_cb;
+static struct wpa2_funcs *wpa2_cb;
 static esp_event_handler_instance_t instance_any_id;
 static uint8_t *ap_bssid;
 
@@ -372,6 +381,91 @@ DONE:
     return;
 }
 
+int wpa2_sm_rx_eapol(uint8_t *src_addr, uint8_t *buf, uint32_t len, uint8_t *bssid)
+{
+    if (len >= 8) {
+        uint8_t eapol_type = buf[1];
+        uint8_t eap_code = buf[5];
+
+        if (eapol_type == IEEE802_1X_TYPE_EAP_PACKET) {
+            if (eap_code == EAP_CODE_SUCCESS) {
+                ESP_LOGI(TAG, "EAP Success received");
+                esp_wifi_set_wpa2_ent_state_internal(WPA2_ENT_EAP_STATE_SUCCESS);
+            } else if (eap_code == EAP_CODE_FAILURE) {
+                ESP_LOGI(TAG, "EAP Failure received");
+                esp_wifi_set_wpa2_ent_state_internal(WPA2_ENT_EAP_STATE_FAIL);
+            }
+        }
+    }
+
+    return station_rx_eapol(src_addr, buf, len);
+}
+
+static int wpa2_start_eapol(void)
+{
+    return ESP_OK;
+}
+
+static int eap_peer_sm_init(void)
+{
+    esp_wifi_set_wpa2_ent_state_internal(WPA2_ENT_EAP_STATE_NOT_START);
+    return 0;
+}
+
+static void eap_peer_sm_deinit(void)
+{
+
+}
+
+static esp_err_t esp_client_enable_fn(void *arg)
+{
+    ESP_LOGI(TAG, "WiFi Enterprise enable for network_adapter");
+
+    return ESP_OK;
+}
+
+static esp_err_t eap_client_disable_fn(void *param)
+{
+    esp_wifi_unregister_wpa2_cb_internal();
+
+    ESP_LOGI(TAG, "EAP disabled for network_adapter");
+    return ESP_OK;
+}
+
+esp_err_t esp_hosted_sta_enterprise_enable(void)
+{
+    wifi_wpa2_param_t param;
+    esp_err_t ret;
+
+    param.fn = (wifi_wpa2_fn_t)esp_client_enable_fn;
+    param.param = NULL;
+
+    ret = esp_wifi_sta_wpa2_ent_enable_internal(&param);
+
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to enable eap for network_adapter, ret=%d", ret);
+    }
+
+    return ret;
+}
+
+esp_err_t esp_hosted_sta_enterprise_disable(void)
+{
+    wifi_wpa2_param_t param;
+    esp_err_t ret;
+
+
+    param.fn = (wifi_wpa2_fn_t)eap_client_disable_fn;
+    param.param = NULL;
+
+    ret = esp_wifi_sta_wpa2_ent_disable_internal(&param);
+
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to disable eap for network_adapter, ret=%d", ret);
+    }
+
+    return ret;
+}
 void handle_sta_disconnected_event(wifi_event_sta_disconnected_t *disconnected, bool wakeup_flag)
 {
     interface_buffer_handle_t buf_handle = {0};
@@ -379,6 +473,9 @@ void handle_sta_disconnected_event(wifi_event_sta_disconnected_t *disconnected, 
     esp_err_t ret = ESP_OK;
 
     ESP_LOGI(TAG, "STA Disconnect event: %d\n", disconnected->reason);
+
+    esp_wifi_unregister_wpa2_cb_internal();
+    wpa2_cb = NULL;
 
     ret = prepare_event(ESP_STA_IF, &buf_handle, sizeof(struct disconnect_event));
     if (ret) {
@@ -417,6 +514,7 @@ DONE:
     cleanup_ap_bssid();
     return;
 }
+
 
 static int sta_rx_assoc(uint8_t type, uint8_t *frame, size_t len, uint8_t *sender,
                         uint32_t rssi, uint8_t channel, uint64_t current_tsf)
@@ -959,6 +1057,8 @@ esp_err_t initialise_wifi(void)
 
     esp_wifi_register_wpa_cb_internal(&wpa_cb);
 
+    esp_hosted_sta_enterprise_enable();
+
     result = esp_wifi_set_mode(WIFI_MODE_NULL);
     if (result) {
         ESP_LOGE(TAG, "Failed to set wifi mode\n");
@@ -1403,6 +1503,19 @@ int process_auth_request(uint8_t if_type, uint8_t *payload, uint16_t payload_len
             memcpy(wifi_config.sta.password, DUMMY_PASSPHRASE, sizeof(DUMMY_PASSPHRASE));
             wifi_config.sta.threshold.authmode = WIFI_AUTH_WPA_PSK;;
         }
+
+	if (auth_type == WIFI_AUTH_WPA2_ENTERPRISE ||
+			auth_type == WIFI_AUTH_WPA3_ENT_192 ||
+			auth_type == WIFI_AUTH_WPA3_ENTERPRISE ||
+			auth_type == WIFI_AUTH_WPA2_WPA3_ENTERPRISE ||
+			auth_type == WIFI_AUTH_WPA_ENTERPRISE) {
+		wpa2_cb = (struct wpa2_funcs*)malloc(sizeof(struct wpa2_funcs));
+		wpa2_cb->wpa2_sm_rx_eapol = wpa2_sm_rx_eapol;
+		wpa2_cb->wpa2_start = wpa2_start_eapol;
+		wpa2_cb->wpa2_init = eap_peer_sm_init;
+		wpa2_cb->wpa2_deinit = eap_peer_sm_deinit;
+		esp_wifi_register_wpa2_cb_internal(wpa2_cb);
+	}
 
         ESP_LOGD(TAG, "AUTH type=%d password used=%s\n", auth_type, wifi_config.sta.password);
         memcpy(wifi_config.sta.bssid, cmd_auth->bssid, MAC_ADDR_LEN);
