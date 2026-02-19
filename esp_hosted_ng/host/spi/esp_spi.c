@@ -170,6 +170,7 @@ int esp_validate_chipset(struct esp_adapter *adapter, u8 chipset)
 	case ESP_FIRMWARE_CHIP_ESP32C2:
 	case ESP_FIRMWARE_CHIP_ESP32C3:
 	case ESP_FIRMWARE_CHIP_ESP32C6:
+	case ESP_FIRMWARE_CHIP_ESP32C61:
 	case ESP_FIRMWARE_CHIP_ESP32C5:
 		adapter->chipset = chipset;
 		esp_info("Chipset=%s ID=%02x detected over SPI\n", esp_chipname_from_id(chipset), chipset);

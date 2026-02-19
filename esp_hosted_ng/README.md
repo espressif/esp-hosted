@@ -59,7 +59,7 @@ This solution provides following WLAN and BT/BLE features to the host:
 
 ESP-Hosted-NG solution is supported on following ESP boards:
 
-| Supported Targets | ESP32 | ESP32-S2 | ESP32-S3 | ESP32-C2 | ESP32-C3 | ESP32-C6 | ESP32-C5 |
+| Supported Targets | ESP32 | ESP32-S2 | ESP32-S3 | ESP32-C2 | ESP32-C3 | ESP32-C5 | ESP32-C6/C61 |
 | ----------------- | ----- | -------- | -------- | -------- | -------- | -------- | -------- |
 
 
@@ -235,6 +235,16 @@ The below table explains which feature is supported on which transport interface
     </tr>
     <tr>
       <td style="text-align:center;">SDIO(WiFi) + UART(BT)</td>
+      <td style="text-align:center;">&#10003;</td>
+      <td style="text-align:center;">&#10003;</td>
+    </tr>
+      <td rowspan="2" style="text-align:center;">ESP32-C61</td>
+      <td style="text-align:center;">SPI</td>
+      <td style="text-align:center;">&#10003;</td>
+      <td style="text-align:center;">&#10003;</td>
+    </tr>
+    <tr>
+      <td style="text-align:center;">SDIO</td>
       <td style="text-align:center;">&#10003;</td>
       <td style="text-align:center;">&#10003;</td>
     </tr>
@@ -879,6 +889,36 @@ Refer [RAW throughput guide](docs/Raw_TP_Testing.md) for verifying connection as
 <td align="center">53.5 Mbps</td>
 <td align="center">30.4 Mbps</td>
 </tr>
+<tr>
+<td rowspan=2 align="center">ESP32-C6</td>
+<td align="center">SDIO</td>
+<td align="center">22.4 Mbps</td>
+<td align="center">25.6 Mbps</td>
+<td align="center">55.1 Mbps</td>
+<td align="center">29.8 Mbps</td>
+</tr>
+<tr>
+<td align="center">SPI</td>
+<td align="center">16.2 Mbps</td>
+<td align="center">16.9 Mbps</td>
+<td align="center">17.5 Mbps</td>
+<td align="center">17.2 Mbps</td>
+</tr>
+<tr>
+<td rowspan=2 align="center">ESP32-C61</td>
+<td align="center">SDIO</td>
+<td align="center">13.6 Mbps</td>
+<td align="center">21.1 Mbps</td>
+<td align="center">52.3 Mbps</td>
+<td align="center">32.9 Mbps</td>
+</tr>
+<tr>
+<td align="center">SPI</td>
+<td align="center">13.3 Mbps</td>
+<td align="center">13.6 Mbps</td>
+<td align="center">13.9 Mbps</td>
+<td align="center">14 Mbps</td>
+</tr>
 </tbody>
 </table>
 
@@ -928,8 +968,7 @@ Tremendous work to be done ahead! Below is glimpse of upcoming release:
 ---
 
 - Functionality
-	- esp32c61 support
-
+	- Wifi Enterprise support
 ---
 
 # 8. Want to support?

@@ -122,6 +122,32 @@ build_fw_esp32c6_spi:
   tags:
     - build_fw
 
+build_fw_esp32c61_sdio:
+  stage: build_firmware
+  image: $CI_DOCKER_REGISTRY/esp-env-v5.5:3
+  variables:
+    IDF_TARGET: esp32c61
+  script:
+    - .gitlab/ci/build_firmware.sh $IDF_TARGET
+  rules:
+    - changes:
+      - esp_hosted_ng/esp/esp_driver/network_adapter/**/*
+  tags:
+    - build_fw
+
+build_fw_esp32c61_spi:
+  stage: build_firmware
+  image: $CI_DOCKER_REGISTRY/esp-env-v5.5:3
+  variables:
+    IDF_TARGET: esp32c61
+  script:
+    - .gitlab/ci/build_firmware.sh $IDF_TARGET
+  rules:
+    - changes:
+      - esp_hosted_ng/esp/esp_driver/network_adapter/**/*
+  tags:
+    - build_fw
+
 build_fw_esp32c5_spi:
   stage: build_firmware
   image: $CI_DOCKER_REGISTRY/esp-env-v5.5:3
