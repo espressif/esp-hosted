@@ -41,8 +41,6 @@ static struct esp_if_ops if_ops = {
 	.write		= write_packet,
 };
 
-static DEFINE_MUTEX(spi_lock);
-
 static void open_data_path(void)
 {
 	atomic_set(&tx_pending, 0);
@@ -279,93 +277,108 @@ static void esp_spi_work(struct work_struct *work)
 	int ret = 0;
 	volatile int trans_ready, rx_pending;
 
-	mutex_lock(&spi_lock);
-
 	trans_ready = gpio_get_value(HANDSHAKE_PIN);
 	rx_pending = gpio_get_value(SPI_DATA_READY_PIN);
 
-	if (trans_ready) {
-		if (data_path) {
-			tx_skb = skb_dequeue(&spi_context.tx_q[PRIO_Q_HIGH]);
-			if (!tx_skb)
-				tx_skb = skb_dequeue(&spi_context.tx_q[PRIO_Q_MID]);
-			if (!tx_skb)
-				tx_skb = skb_dequeue(&spi_context.tx_q[PRIO_Q_LOW]);
-			if (tx_skb) {
-				if (atomic_read(&tx_pending))
-					atomic_dec(&tx_pending);
+	if (!trans_ready) {
+		return;
+	}
 
-				/* resume network tx queue if bearable load */
-				cb = (struct esp_skb_cb *)tx_skb->cb;
-				if (cb && cb->priv && atomic_read(&tx_pending) < TX_RESUME_THRESHOLD) {
-					esp_tx_resume(cb->priv);
+	if (data_path) {
+		tx_skb = skb_dequeue(&spi_context.tx_q[PRIO_Q_HIGH]);
+		if (!tx_skb)
+			tx_skb = skb_dequeue(&spi_context.tx_q[PRIO_Q_MID]);
+		if (!tx_skb)
+			tx_skb = skb_dequeue(&spi_context.tx_q[PRIO_Q_LOW]);
+		if (tx_skb) {
+			if (atomic_read(&tx_pending))
+				atomic_dec(&tx_pending);
+
+			/* resume network tx queue if bearable load */
+			cb = (struct esp_skb_cb *)tx_skb->cb;
+			if (cb && cb->priv && atomic_read(&tx_pending) < TX_RESUME_THRESHOLD) {
+				esp_tx_resume(cb->priv);
 #if TEST_RAW_TP
-					if (raw_tp_mode != 0) {
-						esp_raw_tp_queue_resume();
-					}
-#endif
+				if (raw_tp_mode != 0) {
+					esp_raw_tp_queue_resume();
 				}
-			}
-		}
-
-		if (rx_pending || tx_skb) {
-			memset(&trans, 0, sizeof(trans));
-			trans.speed_hz = spi_context.spi_clk_mhz * NUMBER_1M;
-
-			/* Setup and execute SPI transaction
-			 *	Tx_buf: Check if tx_q has valid buffer for transmission,
-			 *		else keep it blank
-			 *
-			 *	Rx_buf: Allocate memory for incoming data. This will be freed
-			 *		immediately if received buffer is invalid.
-			 *		If it is a valid buffer, upper layer will free it.
-			 * */
-
-			/* Configure TX buffer if available */
-
-			if (tx_skb) {
-				trans.tx_buf = tx_skb->data;
-				esp_hex_dump_verbose("tx: ", trans.tx_buf, 32);
-			} else {
-				tx_skb = esp_alloc_skb(SPI_BUF_SIZE);
-				trans.tx_buf = skb_put(tx_skb, SPI_BUF_SIZE);
-				memset((void *)trans.tx_buf, 0, SPI_BUF_SIZE);
-			}
-
-			/* Configure RX buffer */
-			rx_skb = esp_alloc_skb(SPI_BUF_SIZE);
-			rx_buf = skb_put(rx_skb, SPI_BUF_SIZE);
-
-			memset(rx_buf, 0, SPI_BUF_SIZE);
-
-			trans.rx_buf = rx_buf;
-			trans.len = SPI_BUF_SIZE;
-
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 15, 0))
-			if (hardware_type == ESP_FIRMWARE_CHIP_ESP32) {
-				trans.cs_change = 1;
-			}
 #endif
-
-			ret = spi_sync_transfer(spi_context.esp_spi_dev, &trans, 1);
-			if (ret) {
-				esp_err("SPI Transaction failed: %d", ret);
-				dev_kfree_skb(rx_skb);
-				dev_kfree_skb(tx_skb);
-			} else {
-
-				/* Free rx_skb if received data is not valid */
-				if (process_rx_buf(rx_skb)) {
-					dev_kfree_skb(rx_skb);
-				}
-
-				if (tx_skb)
-					dev_kfree_skb(tx_skb);
 			}
 		}
 	}
 
-	mutex_unlock(&spi_lock);
+	if (!rx_pending && !tx_skb) {
+		return;
+	}
+
+	memset(&trans, 0, sizeof(trans));
+	trans.speed_hz = spi_context.spi_clk_mhz * NUMBER_1M;
+
+	/* Setup and execute SPI transaction
+	 *	Tx_buf: Check if tx_q has valid buffer for transmission,
+	 *		else keep it blank
+	 *
+	 *	Rx_buf: Allocate memory for incoming data. This will be freed
+	 *		immediately if received buffer is invalid.
+	 *		If it is a valid buffer, upper layer will free it.
+	 * */
+
+	/* Configure TX buffer if available */
+
+	if (tx_skb) {
+		if (tx_skb->len < SPI_BUF_SIZE) {
+			struct sk_buff *tx_skb_new = esp_alloc_skb(SPI_BUF_SIZE);
+			if (!tx_skb_new) {
+				dev_kfree_skb(tx_skb);
+				return;
+			}
+
+			skb_put(tx_skb_new, SPI_BUF_SIZE);
+			skb_copy_from_linear_data(tx_skb, tx_skb_new->data, tx_skb->len);
+			dev_kfree_skb(tx_skb);
+			tx_skb = tx_skb_new;
+		}
+		trans.tx_buf = tx_skb->data;
+		esp_hex_dump_verbose("tx: ", trans.tx_buf, 32);
+	} else {
+		tx_skb = esp_alloc_skb(SPI_BUF_SIZE);
+		if (!tx_skb) {
+			return;
+		}
+		trans.tx_buf = skb_put(tx_skb, SPI_BUF_SIZE);
+		memset((void *)trans.tx_buf, 0, SPI_BUF_SIZE);
+	}
+
+	/* Configure RX buffer */
+	rx_skb = esp_alloc_skb(SPI_BUF_SIZE);
+	rx_buf = skb_put(rx_skb, SPI_BUF_SIZE);
+
+	memset(rx_buf, 0, SPI_BUF_SIZE);
+
+	trans.rx_buf = rx_buf;
+	trans.len = SPI_BUF_SIZE;
+
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 15, 0))
+	if (hardware_type == ESP_FIRMWARE_CHIP_ESP32) {
+		trans.cs_change = 1;
+	}
+#endif
+
+	ret = spi_sync_transfer(spi_context.esp_spi_dev, &trans, 1);
+	if (ret) {
+		esp_err("SPI Transaction failed: %d", ret);
+		dev_kfree_skb(rx_skb);
+		dev_kfree_skb(tx_skb);
+	} else {
+
+		/* Free rx_skb if received data is not valid */
+		if (process_rx_buf(rx_skb)) {
+			dev_kfree_skb(rx_skb);
+		}
+
+		if (tx_skb)
+			dev_kfree_skb(tx_skb);
+	}
 }
 
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 16, 0))
@@ -531,7 +544,7 @@ static int spi_init(void)
 	uint8_t prio_q_idx = 0;
 	struct esp_adapter *adapter;
 
-	spi_context.spi_workqueue = create_workqueue("ESP_SPI_WORK_QUEUE");
+	spi_context.spi_workqueue = alloc_ordered_workqueue("ESP_SPI_WORK_QUEUE", 0);
 
 	if (!spi_context.spi_workqueue) {
 		esp_err("spi workqueue failed to create\n");
