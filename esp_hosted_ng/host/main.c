@@ -785,6 +785,15 @@ static void process_rx_packet(struct esp_adapter *adapter, struct sk_buff *skb)
 	len = le16_to_cpu(payload_header->len);
 	offset = le16_to_cpu(payload_header->offset);
 
+	if (len == 0) {
+		return;
+	}
+	if (offset == 0 || offset < sizeof(struct esp_payload_header) || offset > sizeof(struct esp_payload_header) + 16) {
+		esp_err("Drop invalid pkt: len=%d offset=%d\n", len, offset);
+		dev_kfree_skb_any(skb);
+		return;
+	}
+
 	if (payload_header->reserved2 == 0xFF) {
 		esp_hex_dump("Wake up packet: ", skb->data, len+offset);
 	}

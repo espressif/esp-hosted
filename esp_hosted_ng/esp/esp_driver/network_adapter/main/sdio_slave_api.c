@@ -255,53 +255,53 @@ static int32_t sdio_write(interface_handle_t *handle, interface_buffer_handle_t 
     }
 
 
-
+    uint32_t align_padding = 0;
+    offset = sizeof(struct esp_payload_header);
     if (IS_WIFI_DATA_PACKET(buf_handle)) {
+        /* As Wi-Fi esf-buf has headroom of rx_ctrl before Wi-Fi data pointer, we can use that space to store packet header.
+         * This way we do not need to alloc and memcpy again */
         uint32_t payload_addr = (uint32_t)buf_handle->payload;
-        uint32_t align_padding = (SDIO_DMA_ALIGNMENT_BYTES - (payload_addr % SDIO_DMA_ALIGNMENT_BYTES)) % SDIO_DMA_ALIGNMENT_BYTES;
-        uint32_t headroom = sizeof(struct esp_payload_header) + align_padding;
-        sendbuf = (uint8_t *)buf_handle->payload - headroom;
-        offset = headroom;
-        total_len = buf_handle->payload_len + offset;
+        align_padding = (SDIO_DMA_ALIGNMENT_BYTES - (payload_addr % SDIO_DMA_ALIGNMENT_BYTES)) % SDIO_DMA_ALIGNMENT_BYTES;
+        sendbuf = (uint8_t *)buf_handle->payload - sizeof(struct esp_payload_header) - align_padding;
     } else {
-        offset = sizeof(struct esp_payload_header);
-        total_len = buf_handle->payload_len + offset;
 
-        sendbuf = heap_caps_malloc(total_len, MALLOC_CAP_DMA);
+        sendbuf = heap_caps_malloc(buf_handle->payload_len + offset, MALLOC_CAP_DMA);
         if (sendbuf == NULL) {
             ESP_LOGE(TAG, "Malloc send buffer fail!");
-            return ESP_FAIL;
+            return ESP_ERR_NO_MEM;
+        }
+
+        memcpy(sendbuf + offset, buf_handle->payload, buf_handle->payload_len);
+
+        if (buf_handle->free_buf_handle && buf_handle->payload) {
+            buf_handle->free_buf_handle(buf_handle->payload);
         }
 
         buf_handle->priv_buffer_handle = sendbuf;
         buf_handle->free_buf_handle = heap_caps_free;
     }
 
+    total_len = buf_handle->payload_len + offset + align_padding;
     header = (struct esp_payload_header *)sendbuf;
-    memset(header, 0, sizeof(struct esp_payload_header));
+    memset(header, 0, sizeof(struct esp_payload_header) + align_padding);
 
     /* Initialize header */
     header->if_type = buf_handle->if_type;
     header->if_num = buf_handle->if_num;
     header->len = htole16(buf_handle->payload_len);
     header->reserved2 = buf_handle->flag;
-    header->offset = htole16(offset);
+    header->offset = htole16(sizeof(struct esp_payload_header) + align_padding);
     header->packet_type = buf_handle->pkt_type;
-
-    if (!IS_WIFI_DATA_PACKET(buf_handle)) {
-        memcpy(sendbuf + offset, buf_handle->payload, buf_handle->payload_len);
-    }
 
 #if CONFIG_ESP_SDIO_CHECKSUM
     header->checksum = htole16(compute_checksum(sendbuf,
-                                                offset + buf_handle->payload_len));
+                                                total_len));
 #endif
 
     ret = sdio_slave_transmit(sendbuf, total_len);
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "sdio slave transmit error, ret : 0x%x\r\n", ret);
-        ret = ESP_FAIL;
-        goto done;
+        return ret;
     }
 #if 0
     ESP_LOGE(TAG, "\nTo Host");
@@ -309,13 +309,7 @@ static int32_t sdio_write(interface_handle_t *handle, interface_buffer_handle_t 
                            buf_handle->payload_len, ESP_LOG_INFO);
 #endif
 
-done:
-    if (buf_handle->free_buf_handle && buf_handle->priv_buffer_handle) {
-        buf_handle->free_buf_handle(buf_handle->priv_buffer_handle);
-        buf_handle->priv_buffer_handle = NULL;
-    }
-
-    return (ret == ESP_OK) ? buf_handle->payload_len : ESP_FAIL;
+    return buf_handle->payload_len;
 }
 
 esp_err_t send_bootup_event_to_host(uint8_t cap)
@@ -394,7 +388,7 @@ esp_err_t send_bootup_event_to_host(uint8_t cap)
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "sdio slave tx error, ret : 0x%x\r\n", ret);
         free(buf_handle.payload);
-        return ESP_FAIL;
+        return ret;
     }
 
     free(buf_handle.payload);
@@ -407,7 +401,7 @@ static int sdio_read(interface_handle_t *if_handle, interface_buffer_handle_t *b
 #if CONFIG_ESP_SDIO_CHECKSUM
     uint16_t rx_checksum = 0, checksum = 0;
 #endif
-    uint16_t len = 0;
+    uint16_t len = 0, offset = 0;
     size_t sdio_read_len = 0;
 
     if (!if_handle) {
@@ -425,19 +419,27 @@ static int sdio_read(interface_handle_t *if_handle, interface_buffer_handle_t *b
 
     header = (struct esp_payload_header *) buf_handle->payload;
 
-    len = le16toh(header->len) + le16toh(header->offset);
+    offset = le16toh(header->offset);
+    len = le16toh(header->len);
+
+    if (len == 0) {
+        sdio_read_done(buf_handle->sdio_buf_handle);
+        return 0;
+    }
+    if (offset == 0 || offset < sizeof(struct esp_payload_header) || offset > sizeof(struct esp_payload_header) + 16) {
+        ESP_LOGE(TAG, "Drop invalid pkt: len=%d offset=%d", len, offset);
+        sdio_read_done(buf_handle->sdio_buf_handle);
+        return 0;
+    }
 
 #if CONFIG_ESP_SDIO_CHECKSUM
     rx_checksum = le16toh(header->checksum);
     header->checksum = 0;
 
-    if (len > RX_BUF_SIZE) {
-        return -1;
-    }
-
-    checksum = compute_checksum(buf_handle->payload, len);
+    checksum = compute_checksum(buf_handle->payload, len + offset);
 
     if (checksum != rx_checksum) {
+        ESP_LOGD(TAG, "checksum mismatch");
         sdio_read_done(buf_handle->sdio_buf_handle);
         return ESP_FAIL;
     }

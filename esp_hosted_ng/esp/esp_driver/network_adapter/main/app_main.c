@@ -209,11 +209,6 @@ uint8_t is_wakeup_needed(interface_buffer_handle_t *buf_handle)
 }
 #endif
 
-static void free_wlan_buffer(void *buffer)
-{
-    esp_wifi_internal_free_rx_buffer(buffer);
-}
-
 esp_err_t wlan_ap_rx_callback(void *buffer, uint16_t len, void *eb)
 {
     esp_err_t ret = ESP_OK;
@@ -232,7 +227,7 @@ esp_err_t wlan_ap_rx_callback(void *buffer, uint16_t len, void *eb)
     buf_handle.payload = buffer;
     buf_handle.pkt_type = PACKET_TYPE_DATA;
     buf_handle.priv_buffer_handle = eb;
-    buf_handle.free_buf_handle = free_wlan_buffer;
+    buf_handle.free_buf_handle = esp_wifi_internal_free_rx_buffer;
 
     /* ESP_LOGI(TAG, "Slave -> Host: AP data packet\n"); */
     /* ESP_LOG_BUFFER_HEXDUMP("RX", buffer, len, ESP_LOG_INFO); */
@@ -272,7 +267,7 @@ esp_err_t wlan_sta_rx_callback(void *buffer, uint16_t len, void *eb)
     buf_handle.payload = buffer;
     buf_handle.pkt_type = PACKET_TYPE_DATA;
     buf_handle.priv_buffer_handle = eb;
-    buf_handle.free_buf_handle = free_wlan_buffer;
+    buf_handle.free_buf_handle = esp_wifi_internal_free_rx_buffer;
 
     ret = xQueueSend(to_host_queue[PRIO_Q_LOW], &buf_handle, portMAX_DELAY);
 
