@@ -427,7 +427,7 @@ static int process_spi_rx(interface_buffer_handle_t *buf_handle)
     if (len == 0) {
         return -1;
     }
-    if (offset == 0 || offset < sizeof(struct esp_payload_header) || offset > sizeof(struct esp_payload_header) + 16) {
+    if (len > RX_BUF_SIZE || !ESP_OFFSET_VALID(offset)) {
         ESP_LOGE(TAG, "Drop invalid pkt: len=%d offset=%d", len, offset);
         return -1;
     }

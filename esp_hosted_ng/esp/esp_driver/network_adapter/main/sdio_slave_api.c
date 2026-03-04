@@ -426,7 +426,7 @@ static int sdio_read(interface_handle_t *if_handle, interface_buffer_handle_t *b
         sdio_read_done(buf_handle->sdio_buf_handle);
         return 0;
     }
-    if (offset == 0 || offset < sizeof(struct esp_payload_header) || offset > sizeof(struct esp_payload_header) + 16) {
+    if (len > RX_BUF_SIZE || !ESP_OFFSET_VALID(offset)) {
         ESP_LOGE(TAG, "Drop invalid pkt: len=%d offset=%d", len, offset);
         sdio_read_done(buf_handle->sdio_buf_handle);
         return 0;
