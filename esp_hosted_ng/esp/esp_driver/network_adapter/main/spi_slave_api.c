@@ -171,6 +171,11 @@ static uint8_t gpio_data_ready = CONFIG_ESP_SPI_GPIO_DATA_READY;
 static QueueHandle_t spi_rx_queue[MAX_PRIORITY_QUEUES] = {NULL};
 static QueueHandle_t spi_tx_queue[MAX_PRIORITY_QUEUES] = {NULL};
 
+typedef struct {
+    void (*free_buf_handle)(void *priv);
+    void *priv_buffer_handle;
+} spi_trans_ctx_t;
+
 #if HS_DEASSERT_ON_CS
 static SemaphoreHandle_t wait_cs_deassert_sem;
 #endif
@@ -257,6 +262,9 @@ esp_err_t send_bootup_event_to_host(uint8_t cap)
     buf_handle.payload = heap_caps_malloc(RX_BUF_SIZE, MALLOC_CAP_DMA);
     assert(buf_handle.payload);
     memset(buf_handle.payload, 0, RX_BUF_SIZE);
+
+    buf_handle.priv_buffer_handle = buf_handle.payload;
+    buf_handle.free_buf_handle = heap_caps_free;
 
     header = (struct esp_payload_header *) buf_handle.payload;
 
@@ -346,16 +354,12 @@ static void IRAM_ATTR spi_post_trans_cb(spi_slave_transaction_t *trans)
 #endif
 }
 
-static uint8_t * get_next_tx_buffer(uint32_t *len)
+static interface_buffer_handle_t get_next_tx_buffer(void)
 {
     interface_buffer_handle_t buf_handle = {0};
     esp_err_t ret = ESP_OK;
     uint8_t *sendbuf = NULL;
     struct esp_payload_header *header = NULL;
-
-    /* Get or create new tx_buffer
-     *  1. Check if SPI TX queue has pending buffers. Return if valid buffer is obtained.
-     *  2. Create a new empty tx buffer and return */
 
     /* Get buffer from SPI Tx queue */
     if (uxQueueMessagesWaiting(spi_tx_queue[PRIO_Q_HIGH])) {
@@ -369,11 +373,7 @@ static uint8_t * get_next_tx_buffer(uint32_t *len)
     }
 
     if (ret == pdTRUE && buf_handle.payload) {
-        if (len) {
-            *len = buf_handle.payload_len;
-        }
-        /* Return real data buffer from queue */
-        return buf_handle.payload;
+        return buf_handle;
     }
 
     /* No real data pending, clear ready line and indicate host an idle state */
@@ -383,10 +383,7 @@ static uint8_t * get_next_tx_buffer(uint32_t *len)
     sendbuf = heap_caps_malloc(RX_BUF_SIZE, MALLOC_CAP_DMA);
     if (!sendbuf) {
         ESP_LOGE(TAG, "Failed to allocate memory for dummy transaction");
-        if (len) {
-            *len = 0;
-        }
-        return NULL;
+        return (interface_buffer_handle_t){0}; // return empty
     }
 
     memset(sendbuf, 0, RX_BUF_SIZE);
@@ -399,11 +396,12 @@ static uint8_t * get_next_tx_buffer(uint32_t *len)
     header->if_num = 0xF;
     header->len = 0;
 
-    if (len) {
-        *len = 0;
-    }
+    buf_handle.payload = sendbuf;
+    buf_handle.payload_len = 0;
+    buf_handle.priv_buffer_handle = sendbuf;
+    buf_handle.free_buf_handle = heap_caps_free;
 
-    return sendbuf;
+    return buf_handle;
 }
 
 static int process_spi_rx(interface_buffer_handle_t *buf_handle)
@@ -426,7 +424,11 @@ static int process_spi_rx(interface_buffer_handle_t *buf_handle)
     len = le16toh(header->len);
     offset = le16toh(header->offset);
 
-    if (!len || (len > RX_BUF_SIZE)) {
+    if (len == 0) {
+        return -1;
+    }
+    if (len > RX_BUF_SIZE || !ESP_OFFSET_VALID(offset)) {
+        ESP_LOGE(TAG, "Drop invalid pkt: len=%d offset=%d", len, offset);
         return -1;
     }
 
@@ -435,11 +437,13 @@ static int process_spi_rx(interface_buffer_handle_t *buf_handle)
     header->checksum = 0;
 
     if (len + offset > RX_BUF_SIZE) {
+        ESP_LOGD(TAG, "total len too large: %d", len + offset);
         return -1;
     }
     checksum = compute_checksum(buf_handle->payload, len + offset);
 
     if (checksum != rx_checksum) {
+        ESP_LOGD(TAG, "checksum mismatch");
         return -1;
     }
 #endif
@@ -469,29 +473,54 @@ static int process_spi_rx(interface_buffer_handle_t *buf_handle)
 static void queue_next_transaction(void)
 {
     spi_slave_transaction_t *spi_trans = NULL;
+    spi_trans_ctx_t *ctx = NULL;
     esp_err_t ret = ESP_OK;
-    uint32_t len = 0;
-    uint8_t *tx_buffer = NULL;
+    interface_buffer_handle_t buf_handle = get_next_tx_buffer();
 
-    tx_buffer = get_next_tx_buffer(&len);
-    if (!tx_buffer) {
-        /* Queue next transaction failed */
+    if (!buf_handle.payload) {
         ESP_LOGE(TAG, "Failed to queue new transaction\r\n");
         return;
     }
 
-    spi_trans = malloc(sizeof(spi_slave_transaction_t));
-    assert(spi_trans);
+    spi_trans = heap_caps_malloc(sizeof(spi_slave_transaction_t), MALLOC_CAP_DMA);
+    if (!spi_trans) {
+        ESP_LOGE(TAG, "Failed to allocate spi_trans");
+        if (buf_handle.free_buf_handle) {
+            buf_handle.free_buf_handle(buf_handle.priv_buffer_handle);
+        }
+        return;
+    }
+
+    ctx = malloc(sizeof(spi_trans_ctx_t));
+    if (!ctx) {
+        ESP_LOGE(TAG, "Failed to allocate ctx");
+        if (buf_handle.free_buf_handle) {
+            buf_handle.free_buf_handle(buf_handle.priv_buffer_handle);
+        }
+        free(spi_trans);
+        return;
+    }
 
     memset(spi_trans, 0, sizeof(spi_slave_transaction_t));
+    ctx->free_buf_handle = buf_handle.free_buf_handle;
+    ctx->priv_buffer_handle = buf_handle.priv_buffer_handle;
 
     /* Attach Rx Buffer */
     spi_trans->rx_buffer = heap_caps_malloc(RX_BUF_SIZE, MALLOC_CAP_DMA);
-    assert(spi_trans->rx_buffer);
+    if (!spi_trans->rx_buffer) {
+        ESP_LOGE(TAG, "Failed to allocate RX buffer");
+        if (buf_handle.free_buf_handle) {
+            buf_handle.free_buf_handle(buf_handle.priv_buffer_handle);
+        }
+        free(ctx);
+        free(spi_trans);
+        return;
+    }
     memset(spi_trans->rx_buffer, 0, RX_BUF_SIZE);
 
     /* Attach Tx Buffer */
-    spi_trans->tx_buffer = tx_buffer;
+    spi_trans->tx_buffer = buf_handle.payload;
+    spi_trans->user = ctx;
 
     /* Transaction len */
     spi_trans->length = RX_BUF_SIZE * SPI_BITS_PER_WORD;
@@ -502,18 +531,21 @@ static void queue_next_transaction(void)
         ESP_LOGI(TAG, "Failed to queue next SPI transfer\n");
         free(spi_trans->rx_buffer);
         spi_trans->rx_buffer = NULL;
-        free((void *)spi_trans->tx_buffer);
+        if (ctx->free_buf_handle) {
+             ctx->free_buf_handle(ctx->priv_buffer_handle);
+        }
         spi_trans->tx_buffer = NULL;
+        free(ctx);
         free(spi_trans);
-        spi_trans = NULL;
         return;
     }
 }
 
 static void spi_transaction_post_process_task(void* pvParameters)
 {
-    spi_slave_transaction_t *spi_trans = NULL;
     esp_err_t ret = ESP_OK;
+    spi_slave_transaction_t *spi_trans = NULL;
+    spi_trans_ctx_t *ctx = NULL;
     interface_buffer_handle_t rx_buf_handle = {0};
 
     for (;;) {
@@ -550,18 +582,18 @@ static void spi_transaction_post_process_task(void* pvParameters)
             continue;
         }
 
+        ctx = (spi_trans_ctx_t *)spi_trans->user;
+
         /*ESP_LOG_BUFFER_HEXDUMP(TAG, spi_trans->tx_buffer, 32, ESP_LOG_INFO);*/
 
         /* Free any tx buffer, data is not relevant anymore */
-        if (spi_trans->tx_buffer) {
-            free((void *)spi_trans->tx_buffer);
+        if (ctx && ctx->free_buf_handle) {
+            ctx->free_buf_handle(ctx->priv_buffer_handle);
             spi_trans->tx_buffer = NULL;
         }
 
-        /* Process received data */
         if (spi_trans->rx_buffer) {
             rx_buf_handle.payload = spi_trans->rx_buffer;
-
             ret = process_spi_rx(&rx_buf_handle);
 
             /* free rx_buffer if process_spi_rx returns an error
@@ -572,7 +604,10 @@ static void spi_transaction_post_process_task(void* pvParameters)
             }
         }
 
-        /* Free Transfer structure */
+        if (ctx) {
+            free(ctx);
+        }
+
         free(spi_trans);
         spi_trans = NULL;
     }
@@ -714,28 +749,48 @@ static int32_t esp_spi_write(interface_handle_t *handle, interface_buffer_handle
     tx_buf_handle.if_num = buf_handle->if_num;
     tx_buf_handle.payload_len = total_len;
 
-    tx_buf_handle.payload = heap_caps_malloc(total_len, MALLOC_CAP_DMA);
-    assert(tx_buf_handle.payload);
+    uint32_t align_padding = 0;
+    offset = sizeof(struct esp_payload_header);
+    if (IS_WIFI_DATA_PACKET(buf_handle)) {
+        /* As Wi-Fi esf-buf has headroom of rx_ctrl before Wi-Fi data pointer, we can use that space to store packet header.
+         * This way we do not need to alloc and memcpy again */
+        uint32_t payload_addr = (uint32_t)buf_handle->payload;
+        align_padding = (SPI_DMA_ALIGNMENT_BYTES - (payload_addr % SPI_DMA_ALIGNMENT_BYTES)) % SPI_DMA_ALIGNMENT_BYTES;
+        tx_buf_handle.payload = (uint8_t *)buf_handle->payload - sizeof(struct esp_payload_header) - align_padding;
 
+        tx_buf_handle.priv_buffer_handle = buf_handle->priv_buffer_handle;
+        tx_buf_handle.free_buf_handle = buf_handle->free_buf_handle;
+
+        buf_handle->priv_buffer_handle = NULL;
+        buf_handle->free_buf_handle = NULL;
+    } else {
+        tx_buf_handle.payload = heap_caps_malloc(buf_handle->payload_len + offset, MALLOC_CAP_DMA);
+        if (!tx_buf_handle.payload) {
+            return ESP_ERR_NO_MEM;
+        }
+
+        memcpy(tx_buf_handle.payload + offset, buf_handle->payload, buf_handle->payload_len);
+
+        tx_buf_handle.priv_buffer_handle = tx_buf_handle.payload;
+        tx_buf_handle.free_buf_handle = heap_caps_free;
+    }
+
+    total_len = buf_handle->payload_len + offset + align_padding;
     header = (struct esp_payload_header *) tx_buf_handle.payload;
 
-    memset(header, 0, sizeof(struct esp_payload_header));
+    memset(header, 0, sizeof(struct esp_payload_header) + align_padding);
 
     /* Initialize header */
     header->if_type = buf_handle->if_type;
     header->if_num = buf_handle->if_num;
     header->len = htole16(buf_handle->payload_len);
-    offset = sizeof(struct esp_payload_header);
-    header->offset = htole16(offset);
+    header->offset = htole16(sizeof(struct esp_payload_header) + align_padding);
     header->flags = buf_handle->flag;
     header->packet_type = buf_handle->pkt_type;
 
-    /* copy the data from caller */
-    memcpy(tx_buf_handle.payload + offset, buf_handle->payload, buf_handle->payload_len);
-
 #if CONFIG_ESP_SPI_CHECKSUM
     header->checksum = htole16(compute_checksum(tx_buf_handle.payload,
-                                                offset + buf_handle->payload_len));
+                                                total_len));
 #endif
 
     if (header->if_type == ESP_INTERNAL_IF) {
@@ -747,6 +802,11 @@ static int32_t esp_spi_write(interface_handle_t *handle, interface_buffer_handle
     }
 
     if (ret != pdTRUE) {
+        if (tx_buf_handle.payload) {
+            if (tx_buf_handle.free_buf_handle && tx_buf_handle.priv_buffer_handle) {
+                tx_buf_handle.free_buf_handle(tx_buf_handle.priv_buffer_handle);
+            }
+        }
         return ESP_FAIL;
     }
 

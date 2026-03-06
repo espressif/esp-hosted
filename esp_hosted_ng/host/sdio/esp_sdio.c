@@ -367,6 +367,8 @@ static struct sk_buff *read_packet(struct esp_adapter *adapter)
 	struct sk_buff *skb;
 	u8 *pos;
 	struct esp_sdio_context *context;
+	struct esp_payload_header *header;
+	u16 len, offset;
 
 	if (!adapter || !adapter->if_context) {
 		esp_err("INVALID args\n");
@@ -450,6 +452,20 @@ static struct sk_buff *read_packet(struct esp_adapter *adapter)
 	} while (data_left > 0);
 
 	sdio_release_host(context->func);
+
+	header = (struct esp_payload_header *)skb->data;
+	len = le16_to_cpu(header->len);
+	offset = le16_to_cpu(header->offset);
+
+	if (len == 0) {
+		dev_kfree_skb(skb);
+		return NULL;
+	}
+	if (len > ESP_RX_BUFFER_SIZE || !ESP_OFFSET_VALID(offset)) {
+		esp_err("Drop invalid pkt: len=%d offset=%d\n", len, offset);
+		dev_kfree_skb(skb);
+		return NULL;
+	}
 
 	return skb;
 }

@@ -228,24 +228,18 @@ static int process_rx_buf(struct sk_buff *skb)
 	}
 
 	offset = le16_to_cpu(header->offset);
-
-	/* Validate received SKB. Check len and offset fields */
-	if (offset != sizeof(struct esp_payload_header)) {
-		esp_info("offset_rcv[%d] != exp[%d], drop\n",
-				(int)offset, (int)sizeof(struct esp_payload_header));
-		return -EINVAL;
-	}
-
 	len = le16_to_cpu(header->len);
-	if (!len) {
+
+	if (len == 0) {
+		return -EINVAL;
+	}
+	if (len > SPI_BUF_SIZE || !ESP_OFFSET_VALID(offset)) {
+		esp_err("Drop invalid pkt: len=%d offset=%d\n", len, offset);
 		return -EINVAL;
 	}
 
-	len += sizeof(struct esp_payload_header);
-
-	if (len > SPI_BUF_SIZE) {
-		return -EINVAL;
-	}
+	/* Total length = offset (header + padding) + payload */
+	len += offset;
 
 	/* Trim SKB to actual size */
 	skb_trim(skb, len);

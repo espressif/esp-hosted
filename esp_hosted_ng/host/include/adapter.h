@@ -44,6 +44,13 @@ struct esp_payload_header {
 	/* Do no add anything here */
 } __packed;
 
+/* Maximum offset = header size (12) + max DMA alignment padding (4) */
+#define ESP_MAX_OFFSET_SIZE             (sizeof(struct esp_payload_header) + 4)
+
+/* Validate offset: must be >= header size and <= ESP_MAX_OFFSET_SIZE */
+#define ESP_OFFSET_VALID(offset) \
+	((offset) >= sizeof(struct esp_payload_header) && (offset) <= ESP_MAX_OFFSET_SIZE)
+
 struct ieee_mgmt_header {
 	uint16_t   frame_control;
 	uint16_t   dur;
