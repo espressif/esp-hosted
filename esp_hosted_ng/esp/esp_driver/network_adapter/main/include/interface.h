@@ -18,6 +18,25 @@
 #define __TRANSPORT_LAYER_INTERFACE_H
 #include "esp_err.h"
 
+#include "adapter.h"
+
+/*
+ * Ensure payload header + alignment padding fits within 16 bytes.
+ */
+_Static_assert(ESP_MAX_OFFSET_SIZE <= 16,
+    "Payload header + alignment padding must fit within 16 bytes.");
+
+#ifdef CONFIG_SOC_WIFI_SUPPORTED
+#include "esp_private/wifi.h"
+
+/*
+ * Ensure ESP_MAX_OFFSET_SIZE fits within wifi_pkt_rx_ctrl_t headroom.
+ */
+_Static_assert((ESP_MAX_OFFSET_SIZE) <= sizeof(wifi_pkt_rx_ctrl_t),
+    "Max hosted header size exceeds wifi_pkt_rx_ctrl_t size. "
+    "Please contact https://github.com/espressif/esp-hosted/issues");
+#endif
+
 #ifdef CONFIG_ESP_SDIO_HOST_INTERFACE
 
 #if CONFIG_SOC_SDIO_SLAVE_SUPPORTED

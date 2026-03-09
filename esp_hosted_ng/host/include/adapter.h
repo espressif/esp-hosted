@@ -44,8 +44,11 @@ struct esp_payload_header {
 	/* Do no add anything here */
 } __packed;
 
+/* Maximum alignment padding required for DMA */
+#define ESP_MAX_ALIGN_PADDING           4
+
 /* Maximum offset = header size (12) + max DMA alignment padding (4) */
-#define ESP_MAX_OFFSET_SIZE             (sizeof(struct esp_payload_header) + 4)
+#define ESP_MAX_OFFSET_SIZE             (sizeof(struct esp_payload_header) + ESP_MAX_ALIGN_PADDING)
 
 /* Validate offset: must be >= header size and <= ESP_MAX_OFFSET_SIZE */
 #define ESP_OFFSET_VALID(offset) \
