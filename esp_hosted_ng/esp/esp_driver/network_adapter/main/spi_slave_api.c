@@ -354,26 +354,31 @@ static void IRAM_ATTR spi_post_trans_cb(spi_slave_transaction_t *trans)
 #endif
 }
 
-static interface_buffer_handle_t get_next_tx_buffer(void)
+static bool get_next_tx_buffer(interface_buffer_handle_t *buf_handle)
 {
-    interface_buffer_handle_t buf_handle = {0};
     esp_err_t ret = ESP_OK;
     uint8_t *sendbuf = NULL;
     struct esp_payload_header *header = NULL;
 
+    if (!buf_handle) {
+        return false;
+    }
+
+    memset(buf_handle, 0, sizeof(*buf_handle));
+
     /* Get buffer from SPI Tx queue */
     if (uxQueueMessagesWaiting(spi_tx_queue[PRIO_Q_HIGH])) {
-        ret = xQueueReceive(spi_tx_queue[PRIO_Q_HIGH], &buf_handle, portMAX_DELAY);
+        ret = xQueueReceive(spi_tx_queue[PRIO_Q_HIGH], buf_handle, portMAX_DELAY);
     } else if (uxQueueMessagesWaiting(spi_tx_queue[PRIO_Q_MID])) {
-        ret = xQueueReceive(spi_tx_queue[PRIO_Q_MID], &buf_handle, portMAX_DELAY);
+        ret = xQueueReceive(spi_tx_queue[PRIO_Q_MID], buf_handle, portMAX_DELAY);
     } else if (uxQueueMessagesWaiting(spi_tx_queue[PRIO_Q_LOW])) {
-        ret = xQueueReceive(spi_tx_queue[PRIO_Q_LOW], &buf_handle, portMAX_DELAY);
+        ret = xQueueReceive(spi_tx_queue[PRIO_Q_LOW], buf_handle, portMAX_DELAY);
     } else {
         ret = pdFALSE;
     }
 
-    if (ret == pdTRUE && buf_handle.payload) {
-        return buf_handle;
+    if (ret == pdTRUE && buf_handle->payload) {
+        return true;
     }
 
     /* No real data pending, clear ready line and indicate host an idle state */
@@ -383,25 +388,22 @@ static interface_buffer_handle_t get_next_tx_buffer(void)
     sendbuf = heap_caps_malloc(RX_BUF_SIZE, MALLOC_CAP_DMA);
     if (!sendbuf) {
         ESP_LOGE(TAG, "Failed to allocate memory for dummy transaction");
-        return (interface_buffer_handle_t){0}; // return empty
+        return false;
     }
 
     memset(sendbuf, 0, RX_BUF_SIZE);
 
-    /* Initialize header */
     header = (struct esp_payload_header *) sendbuf;
-
-    /* Populate header to indicate it as a dummy buffer */
     header->if_type = 0xF;
-    header->if_num = 0xF;
-    header->len = 0;
+    header->if_num  = 0xF;
+    header->len     = 0;
 
-    buf_handle.payload = sendbuf;
-    buf_handle.payload_len = 0;
-    buf_handle.priv_buffer_handle = sendbuf;
-    buf_handle.free_buf_handle = heap_caps_free;
+    buf_handle->payload            = sendbuf;
+    buf_handle->payload_len        = 0;
+    buf_handle->priv_buffer_handle = sendbuf;
+    buf_handle->free_buf_handle    = heap_caps_free;
 
-    return buf_handle;
+    return true;
 }
 
 static int process_spi_rx(interface_buffer_handle_t *buf_handle)
@@ -475,9 +477,9 @@ static void queue_next_transaction(void)
     spi_slave_transaction_t *spi_trans = NULL;
     spi_trans_ctx_t *ctx = NULL;
     esp_err_t ret = ESP_OK;
-    interface_buffer_handle_t buf_handle = get_next_tx_buffer();
+    interface_buffer_handle_t buf_handle = {0};
 
-    if (!buf_handle.payload) {
+    if (!get_next_tx_buffer(&buf_handle)) {
         ESP_LOGE(TAG, "Failed to queue new transaction\r\n");
         return;
     }
