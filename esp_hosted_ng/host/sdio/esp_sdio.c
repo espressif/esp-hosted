@@ -282,9 +282,28 @@ static void esp_remove(struct sdio_func *func)
 	esp_dbg("ESP SDIO cleanup completed\n");
 }
 
+static struct sk_buff * esp_sdio_alloc_skb(u32 len)
+{
+	struct sk_buff *skb = NULL;
+	u8 offset;
+
+	skb = netdev_alloc_skb(NULL, len + INTERFACE_HEADER_PADDING);
+
+	if (skb) {
+		/* Align SKB data pointer */
+		offset = ((unsigned long)skb->data) & (SKB_DATA_ADDR_ALIGNMENT - 1);
+
+		if (offset)
+			skb_reserve(skb, INTERFACE_HEADER_PADDING - offset);
+	}
+
+	return skb;
+}
+
 static struct esp_if_ops if_ops = {
 	.read		= read_packet,
 	.write		= write_packet,
+	.alloc_skb	= esp_sdio_alloc_skb,
 };
 
 static int get_firmware_data(struct esp_sdio_context *context)
@@ -400,7 +419,7 @@ static struct sk_buff *read_packet(struct esp_adapter *adapter)
 		esp_info("Rx large packet: %d\n", len_from_slave);
 	}
 
-	skb = esp_alloc_skb(len_from_slave);
+	skb = esp_if_alloc_skb(context->adapter, len_from_slave);
 
 	if (!skb) {
 		esp_err("SKB alloc failed\n");

@@ -6,7 +6,6 @@
 #include "utils.h"
 #include <linux/spi/spi.h>
 #include <linux/gpio.h>
-#include <linux/mutex.h>
 #include <linux/delay.h>
 #include <linux/module.h>
 #include "esp_spi.h"
@@ -36,9 +35,31 @@ static struct esp_spi_context spi_context;
 static char hardware_type = ESP_FIRMWARE_CHIP_UNRECOGNIZED;
 static atomic_t tx_pending;
 
+static struct sk_buff *esp_spi_alloc_skb(u32 len)
+{
+	struct sk_buff *skb = NULL;
+	u32 alloc_len;
+	u8 offset;
+
+	alloc_len = max(len, (u32)SPI_BUF_SIZE) + INTERFACE_HEADER_PADDING;
+
+	skb = netdev_alloc_skb(NULL, alloc_len);
+
+	if (skb) {
+		/* Align SKB data pointer */
+		offset = ((unsigned long)skb->data) & (SKB_DATA_ADDR_ALIGNMENT - 1);
+
+		if (offset)
+			skb_reserve(skb, INTERFACE_HEADER_PADDING - offset);
+	}
+
+	return skb;
+}
+
 static struct esp_if_ops if_ops = {
 	.read		= read_packet,
 	.write		= write_packet,
+	.alloc_skb	= esp_spi_alloc_skb,
 };
 
 static void open_data_path(void)
@@ -141,14 +162,14 @@ static int write_packet(struct esp_adapter *adapter, struct sk_buff *skb)
 		return -EBUSY;
 	}
 
-	/* Enqueue SKB in tx_q */
+	atomic_inc(&tx_pending);
+
 	if (payload_header->if_type == ESP_INTERNAL_IF) {
 		skb_queue_tail(&spi_context.tx_q[PRIO_Q_HIGH], skb);
 	} else if (payload_header->if_type == ESP_HCI_IF) {
 		skb_queue_tail(&spi_context.tx_q[PRIO_Q_MID], skb);
 	} else {
 		skb_queue_tail(&spi_context.tx_q[PRIO_Q_LOW], skb);
-		atomic_inc(&tx_pending);
 	}
 
 	if (spi_context.spi_workqueue)
@@ -317,34 +338,33 @@ static void esp_spi_work(struct work_struct *work)
 	 *		If it is a valid buffer, upper layer will free it.
 	 * */
 
-	/* Configure TX buffer if available */
-
 	if (tx_skb) {
 		if (tx_skb->len < SPI_BUF_SIZE) {
-			struct sk_buff *tx_skb_new = esp_alloc_skb(SPI_BUF_SIZE);
-			if (!tx_skb_new) {
+			if (skb_put_padto(tx_skb, SPI_BUF_SIZE)) {
+				esp_err("Failed to pad TX buffer to SPI size\n");
 				dev_kfree_skb(tx_skb);
 				return;
 			}
-
-			skb_put(tx_skb_new, SPI_BUF_SIZE);
-			skb_copy_from_linear_data(tx_skb, tx_skb_new->data, tx_skb->len);
-			dev_kfree_skb(tx_skb);
-			tx_skb = tx_skb_new;
 		}
+
 		trans.tx_buf = tx_skb->data;
 		esp_hex_dump_verbose("tx: ", trans.tx_buf, 32);
 	} else {
-		tx_skb = esp_alloc_skb(SPI_BUF_SIZE);
+		tx_skb = esp_spi_alloc_skb(SPI_BUF_SIZE);
 		if (!tx_skb) {
+			esp_err("Failed to alloc dummy SPI TX skb\n");
 			return;
 		}
 		trans.tx_buf = skb_put(tx_skb, SPI_BUF_SIZE);
 		memset((void *)trans.tx_buf, 0, SPI_BUF_SIZE);
 	}
 
-	/* Configure RX buffer */
-	rx_skb = esp_alloc_skb(SPI_BUF_SIZE);
+	rx_skb = esp_spi_alloc_skb(SPI_BUF_SIZE);
+	if (!rx_skb) {
+		esp_err("Failed to alloc SPI RX skb\n");
+		dev_kfree_skb(tx_skb);
+		return;
+	}
 	rx_buf = skb_put(rx_skb, SPI_BUF_SIZE);
 
 	memset(rx_buf, 0, SPI_BUF_SIZE);
@@ -364,14 +384,11 @@ static void esp_spi_work(struct work_struct *work)
 		dev_kfree_skb(rx_skb);
 		dev_kfree_skb(tx_skb);
 	} else {
-
 		/* Free rx_skb if received data is not valid */
-		if (process_rx_buf(rx_skb)) {
+		if (process_rx_buf(rx_skb))
 			dev_kfree_skb(rx_skb);
-		}
 
-		if (tx_skb)
-			dev_kfree_skb(tx_skb);
+		dev_kfree_skb(tx_skb);
 	}
 }
 
