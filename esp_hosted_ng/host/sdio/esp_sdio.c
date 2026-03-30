@@ -254,6 +254,7 @@ static void esp_remove(struct sdio_func *func)
 	if (context) {
 		for (prio_q_idx = 0; prio_q_idx < MAX_PRIORITY_QUEUES; prio_q_idx++)
 			skb_queue_purge(&(sdio_context.tx_q[prio_q_idx]));
+		atomic_set(&tx_pending, 0);
 	}
 
 	if (tx_thread)

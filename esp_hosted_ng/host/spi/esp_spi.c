@@ -216,6 +216,7 @@ int esp_deinit_module(struct esp_adapter *adapter)
 	for (prio_q_idx = 0; prio_q_idx < MAX_PRIORITY_QUEUES; prio_q_idx++) {
 		skb_queue_purge(&spi_context.tx_q[prio_q_idx]);
 	}
+	atomic_set(&tx_pending, 0);
 
 	for (iface_idx = 0; iface_idx < ESP_MAX_INTERFACE; iface_idx++) {
 		struct esp_wifi_device *priv = adapter->priv[iface_idx];
@@ -634,6 +635,7 @@ static void spi_exit(void)
 		skb_queue_purge(&spi_context.tx_q[prio_q_idx]);
 		skb_queue_purge(&spi_context.rx_q[prio_q_idx]);
 	}
+	atomic_set(&tx_pending, 0);
 
 	if (spi_context.spi_workqueue) {
 		flush_workqueue(spi_context.spi_workqueue);
