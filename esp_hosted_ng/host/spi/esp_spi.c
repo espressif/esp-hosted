@@ -343,7 +343,7 @@ static void esp_spi_work(struct work_struct *work)
 		if (tx_skb->len < SPI_BUF_SIZE) {
 			if (skb_put_padto(tx_skb, SPI_BUF_SIZE)) {
 				esp_err("Failed to pad TX buffer to SPI size\n");
-				dev_kfree_skb(tx_skb);
+				tx_skb = NULL;
 				return;
 			}
 		}

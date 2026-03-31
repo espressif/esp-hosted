@@ -173,8 +173,10 @@ static int process_tx_packet(struct sk_buff *skb)
 			esp_verbose("Failed to send SKB");
 			priv->stats.tx_errors++;
 			if (!priv->adapter->if_ops ||
-			    !priv->adapter->if_ops->write)
-				dev_kfree_skb_any(skb);
+			    !priv->adapter->if_ops->write) {
+				if (skb)
+					dev_kfree_skb_any(skb);
+			}
 		} else {
 			priv->stats.tx_packets++;
 			priv->stats.tx_bytes += skb->len;

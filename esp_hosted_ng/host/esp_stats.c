@@ -57,19 +57,14 @@ static int raw_tp_tx_process(void *data)
 	pad_len += SKB_DATA_ADDR_ALIGNMENT - (total_len % SKB_DATA_ADDR_ALIGNMENT);
 
 	msleep(2000);
-	adapter = esp_get_adapter();
-	if (!adapter) {
-		msleep(10);
-		return 0;
-	}
-	priv = adapter->priv[0];
 
 	while (!kthread_should_stop()) {
-
-		if (!adapter || !priv) {
+		adapter = esp_get_adapter();
+		if (!adapter || !adapter->priv[0]) {
 			msleep(10);
 			continue;
 		}
+		priv = adapter->priv[0];
 
 		if (esp_is_tx_queue_paused(priv)) {
 
@@ -97,8 +92,7 @@ static int raw_tp_tx_process(void *data)
 					cpu_to_le16(compute_checksum(tx_skb->data,
 								(TEST_RAW_TP__BUF_SIZE + pad_len)));
 			}
-			adapter = esp_get_adapter();
-			if (!adapter || !adapter->if_ops || !adapter->if_ops->write) {
+			if (!adapter->if_ops || !adapter->if_ops->write) {
 				dev_kfree_skb_any(tx_skb);
 				msleep(10);
 				continue;
