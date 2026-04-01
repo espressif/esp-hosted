@@ -129,7 +129,7 @@ static int process_tx_packet(struct sk_buff *skb)
 			return NETDEV_TX_OK;
 		}
 
-		new_skb = esp_alloc_skb(skb->len + pad_len);
+		new_skb = esp_if_alloc_skb(priv->adapter, skb->len + pad_len);
 
 		if (!new_skb) {
 			esp_err("Failed to allocate SKB");
@@ -172,6 +172,11 @@ static int process_tx_packet(struct sk_buff *skb)
 		if (ret) {
 			esp_verbose("Failed to send SKB");
 			priv->stats.tx_errors++;
+			if (!priv->adapter->if_ops ||
+			    !priv->adapter->if_ops->write) {
+				if (skb)
+					dev_kfree_skb_any(skb);
+			}
 		} else {
 			priv->stats.tx_packets++;
 			priv->stats.tx_bytes += skb->len;
@@ -946,26 +951,6 @@ void esp_tx_resume(struct esp_wifi_device *priv)
 		netif_wake_queue(priv->ndev);
 	}
 }
-
-struct sk_buff *esp_alloc_skb(u32 len)
-{
-	struct sk_buff *skb = NULL;
-
-	u8 offset;
-
-	skb = netdev_alloc_skb(NULL, len + INTERFACE_HEADER_PADDING);
-
-	if (skb) {
-		/* Align SKB data pointer */
-		offset = ((unsigned long)skb->data) & (SKB_DATA_ADDR_ALIGNMENT - 1);
-
-		if (offset)
-			skb_reserve(skb, INTERFACE_HEADER_PADDING - offset);
-	}
-
-	return skb;
-}
-
 
 static int esp_get_packets(struct esp_adapter *adapter)
 {

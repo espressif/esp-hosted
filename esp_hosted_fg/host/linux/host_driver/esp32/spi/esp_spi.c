@@ -231,7 +231,7 @@ static int write_packet(struct esp_adapter *adapter, struct sk_buff *skb)
 		h->checksum = cpu_to_le16(compute_checksum((uint8_t*)h, len + offset));
 	}
 #endif
-
+	atomic_inc(&tx_pending);
 	/* Enqueue SKB in tx_q */
 	if (h->if_type == ESP_SERIAL_IF) {
 		skb_queue_tail(&spi_context.tx_q[PRIO_Q_SERIAL], skb);
@@ -239,7 +239,6 @@ static int write_packet(struct esp_adapter *adapter, struct sk_buff *skb)
 		skb_queue_tail(&spi_context.tx_q[PRIO_Q_BT], skb);
 	} else {
 		skb_queue_tail(&spi_context.tx_q[PRIO_Q_OTHERS], skb);
-		atomic_inc(&tx_pending);
 		if (atomic_read(&tx_pending) >= TX_MAX_PENDING_COUNT) {
 			esp_tx_pause();
 		}
@@ -270,6 +269,7 @@ static void esp_spi_reinit_work(struct work_struct *work)
 		skb_queue_purge(&context->tx_q[prio_q_idx]);
 		skb_queue_purge(&context->rx_q[prio_q_idx]);
 	}
+	atomic_set(&tx_pending, 0);
 
 	/* Re-init queues */
 	for (prio_q_idx = 0; prio_q_idx < MAX_PRIORITY_QUEUES; prio_q_idx++) {
@@ -855,6 +855,7 @@ static void spi_exit(void)
 		skb_queue_purge(&spi_context.tx_q[prio_q_idx]);
 		skb_queue_purge(&spi_context.rx_q[prio_q_idx]);
 	}
+	atomic_set(&tx_pending, 0);
 #ifdef CONFIG_ESP_HOSTED_USE_WORKQUEUE
 	if (spi_context.spi_workqueue) {
 		flush_workqueue(spi_context.spi_workqueue);

@@ -10,6 +10,7 @@
 #include "esp_api.h"
 #include "esp_utils.h"
 #include "esp.h"
+#include "esp_if.h"
 #include "esp_cfg80211.h"
 #include "esp_kernel_port.h"
 #include "esp_stats.h"
@@ -20,6 +21,8 @@ extern u32 raw_tp_mode;
 
 static int handle_mgmt_tx_done(struct esp_wifi_device *priv,
 				struct command_node *cmd_node);
+static void recycle_cmd_node(struct esp_adapter *adapter,
+		struct command_node *cmd_node);
 
 int internal_scan_request(struct esp_wifi_device *priv, char *ssid,
 		uint8_t channel, uint8_t is_blocking);
@@ -46,9 +49,11 @@ static struct command_node *get_free_cmd_node(struct esp_adapter *adapter)
 	list_del(&cmd_node->list);
 	spin_unlock_bh(&adapter->cmd_free_queue_lock);
 
-	cmd_node->cmd_skb = esp_alloc_skb(ESP_SIZE_OF_CMD_NODE);
+	cmd_node->cmd_skb = esp_if_alloc_skb(adapter, ESP_SIZE_OF_CMD_NODE);
 	if (!cmd_node->cmd_skb) {
 		esp_err("No free cmd node skb found\n");
+		recycle_cmd_node(adapter, cmd_node);
+		return NULL;
 	}
 
 	cmd_node->in_cmd_queue = true;
@@ -67,6 +72,10 @@ static inline void reset_cmd_node(struct esp_adapter *adapter, struct command_no
 		spin_unlock_bh(&adapter->cmd_pending_queue_lock);
 	}
 	cmd_node->cmd_code = 0;
+	if (cmd_node->cmd_skb) {
+		dev_kfree_skb_any(cmd_node->cmd_skb);
+		cmd_node->cmd_skb = NULL;
+	}
 	if (cmd_node->resp_skb) {
 		dev_kfree_skb_any(cmd_node->resp_skb);
 		cmd_node->resp_skb = NULL;
@@ -366,6 +375,10 @@ static void free_esp_cmd_pool(struct esp_adapter *adapter)
 			dev_kfree_skb_any(cmd_pool[i].resp_skb);
 			cmd_pool[i].resp_skb = NULL;
 		}
+		if (cmd_pool[i].cmd_skb) {
+			dev_kfree_skb_any(cmd_pool[i].cmd_skb);
+			cmd_pool[i].cmd_skb = NULL;
+		}
 		spin_unlock_bh(&adapter->cmd_lock);
 	}
 
@@ -448,6 +461,7 @@ static void esp_cmd_work(struct work_struct *work)
 		esp_warn("cmd_node->cmd_skb =%p , cmd_code=[0x%X]\n", cmd_node->cmd_skb, cmd_node->cmd_code);
 		spin_unlock_bh(&adapter->cmd_pending_queue_lock);
 		spin_unlock_bh(&adapter->cmd_lock);
+		recycle_cmd_node(adapter, cmd_node);
 		return;
 	}
 
@@ -465,11 +479,16 @@ static void esp_cmd_work(struct work_struct *work)
 
 	if (ret) {
 		esp_err("Failed to send command [0x%X]\n", cmd_node->cmd_code);
+		if (adapter->if_ops && adapter->if_ops->write)
+			cmd_node->cmd_skb = NULL;
 		adapter->cur_cmd = NULL;
 		spin_unlock_bh(&adapter->cmd_pending_queue_lock);
 		spin_unlock_bh(&adapter->cmd_lock);
+		recycle_cmd_node(adapter, cmd_node);
 		return;
 	}
+
+	cmd_node->cmd_skb = NULL;
 
 	if (!list_empty(&adapter->cmd_pending_queue)) {
 		esp_verbose("Pending cmds, queue work again\n");

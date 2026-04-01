@@ -290,7 +290,7 @@ static void esp_remove(struct sdio_func *func)
 		skb_queue_purge(&(sdio_context.tx_q[prio_q_idx]));
 		atomic_set(&queue_items[prio_q_idx], 0);
 	}
-
+	atomic_set(&tx_pending, 0);
 
 	if (tx_thread) {
 		kthread_stop(tx_thread);

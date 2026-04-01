@@ -8,7 +8,7 @@
 #include "utils.h"
 #include "esp_api.h"
 #include "esp_kernel_port.h"
-#include "esp_bt_api.h"
+#include "esp_if.h"
 
 #define INVALID_HDEV_BUS (0xff)
 
@@ -99,7 +99,7 @@ static ESP_BT_SEND_FRAME_PROTOTYPE()
 			return -EINVAL;
 		}
 
-		new_skb = esp_alloc_skb(skb->len + pad_len);
+		new_skb = esp_if_alloc_skb(adapter, skb->len + pad_len);
 
 		if (!new_skb) {
 			esp_err("Failed to allocate SKB");
@@ -113,7 +113,7 @@ static ESP_BT_SEND_FRAME_PROTOTYPE()
 
 		/* Populate new SKB */
 		skb_copy_from_linear_data(skb, pos, skb->len);
-		skb_put(new_skb, skb->len);
+		skb_put(new_skb, skb->len + pad_len);
 
 		/* Replace old SKB */
 		dev_kfree_skb_any(skb);
@@ -125,7 +125,7 @@ static ESP_BT_SEND_FRAME_PROTOTYPE()
 
 	hdr = (struct esp_payload_header *) skb->data;
 
-	memset(hdr, 0, sizeof(struct esp_payload_header));
+	memset(hdr, 0, pad_len);
 
 	hdr->if_type = ESP_HCI_IF;
 	hdr->if_num = 0;
