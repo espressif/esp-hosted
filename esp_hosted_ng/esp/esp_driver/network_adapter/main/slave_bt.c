@@ -374,10 +374,10 @@ static void init_uart(void)
              BT_TX_PIN, BT_RX_PIN, BT_RTS_PIN, BT_CTS_PIN);
 
 }
-#elif defined(CONFIG_IDF_TARGET_ESP32C2) || defined(CONFIG_IDF_TARGET_ESP32C6) || defined(CONFIG_IDF_TARGET_ESP32C5)
+#elif defined(CONFIG_IDF_TARGET_ESP32C2) || defined(CONFIG_IDF_TARGET_ESP32C6) || defined(CONFIG_IDF_TARGET_ESP32C5) || defined(CONFIG_IDF_TARGET_ESP32C61)
 static void init_uart(void)
 {
-    ESP_LOGD(BT_TAG, "Set-up BLE for ESP32-C2/C5/C6");
+    ESP_LOGD(BT_TAG, "Set-up BLE for ESP32-C2/C5/C6/C61");
 
     ESP_LOGI(BT_TAG, "UART Pins: Tx:%u Rx:%u", BT_TX_PIN, BT_RX_PIN);
 }
