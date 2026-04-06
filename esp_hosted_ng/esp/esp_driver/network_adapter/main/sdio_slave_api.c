@@ -125,7 +125,7 @@ static interface_handle_t * sdio_init(void)
          * In these cases, Please tune timing below using value from
          * https://github.com/espressif/esp-idf/blob/release/v5.0/components/hal/include/hal/sdio_slave_types.h#L26-L38
          * */
-#if defined(CONFIG_IDF_TARGET_ESP32C6)
+#if defined(CONFIG_IDF_TARGET_ESP32C6) || defined(CONFIG_IDF_TARGET_ESP32C61)
         .timing             = SDIO_SLAVE_TIMING_NSEND_PSAMPLE,
 #endif
     };

@@ -286,7 +286,7 @@ directory
             $ rm -rf sdkconfig build
             $ idf.py set-target <esp_chipset>
             ```
-        * For SDIO, <esp_chipset> could is `esp32`, `esp32c6`.
+        * For SDIO, <esp_chipset> could be `esp32`, `esp32c5`, `esp32c6`, `esp32c61`.
         * Execute following command to configure the project
             ```
             $ idf.py menuconfig
@@ -314,18 +314,18 @@ directory
 ### 2.3 SDIO or SPI and Uart configuration
 **Wi-Fi over SDIO/SPI and Bluetooth over UART**
 
-| Supported Chipsets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-S3 | ESP32-C6 | ESP32-C5 |
-| ------------------ | ----- | -------- | -------- | -------- | -------- | -------- |
-| 4 line UART supported | yes | no | yes | yes | no | no |
-| 2 line UART supported | yes | yes | yes | yes | yes | yes |
+| Supported Chipsets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-S3 | ESP32-C5 | ESP32-C6 | ESP32-C61 |
+| ------------------ | ----- | -------- | -------- | -------- | -------- | -------- | --------- |
+| 4 line UART supported | yes | no | yes | yes | no | no | no |
+| 2 line UART supported | yes | yes | yes | yes | yes | yes | yes |
 * In this section, ESP chipset provides a way to run Bluetooth/BLE over UART interface.
 
-* This section is divided in two parts 
+* This section is divided in two parts
 * Wi-fi over SPI and Bluetooth over UART
-    * Supported targets **ESP32, ESP32S3, ESP32C3, ESP32C2, ESP32C6**
+    * Supported targets **ESP32, ESP32S3, ESP32C3, ESP32C2, ESP32C5, ESP32C6, ESP32C61**
     * Please follows these steps first to setup esp device in SPI mode [SPI configuration](#21-spi-configuration)
 * Wi-fi over SDIO and Bluetooth over UART
-    * Supported targets **ESP32, ESP32C6**
+    * Supported targets **ESP32, ESP32C5, ESP32C6, ESP32C61**
     * Please follows these steps first to setup esp device in SDIO mode [SDIO configuration](#22-sdio-configuration)
         
 * Hardware Uart setup
@@ -339,10 +339,10 @@ directory
         | RTS | 11 | IO23 | IO20 | IO8 | CTS |
 
     * Two line setup
-        | Raspberry-Pi Pin Function | Raspberry-Pi Pin | ESP32-C2 | ESP32-C6 | ESP32-C5 | ESP Function |
-        |:-------:|:--------:|:---------:|:---------:|:---------:|:--------:|
-        | RX | 10 | IO5 | IO5 | IO5 | TX |
-        | TX | 8 | IO18 | IO12 | IO13 | RX |
+        | Raspberry-Pi Pin Function | Raspberry-Pi Pin | ESP32-C2 | ESP32-C5 | ESP32-C6 | ESP32-C61 | ESP Function |
+        |:-------:|:--------:|:---------:|:---------:|:---------:|:---------:|:--------:|
+        | RX | 10 | IO5 | IO5 | IO5 | IO5 | TX |
+        | TX | 8 | IO18 | IO13 | IO12 | IO12 | RX |
 
     * Raspberry-Pi pinout can be found [here!](https://pinout.xyz/pinout/uart)
     * In case you wish to reduce number of hardware lines, you may consider SPI_only or SDIO_only transports, where Wi-Fi and Bluetooth traffic is multiplexed on same bus and no need of extra UART pins. UART pin numbers are configurable. If you want to switch from 4 line UART mode to 2 lines, hardware flow control need to be turned off.
@@ -402,7 +402,7 @@ directory
             $ rm -rf sdkconfig build
             $ idf.py set-target <esp_chipset>
             ```
-        * For SDIO, <esp_chipset> could is `esp32`, for SPI it will could be `esp32, esp32s3, esp32c3`.
+        * For SDIO, <esp_chipset> could be `esp32`, `esp32c5`, `esp32c6`, `esp32c61`. For SPI, it could be `esp32`, `esp32s2`, `esp32s3`, `esp32c2`, `esp32c3`, `esp32c5`, `esp32c6`, `esp32c61`.
         * Execute following command to configure the project
             ```
             $ idf.py menuconfig
