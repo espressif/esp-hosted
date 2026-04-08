@@ -341,8 +341,8 @@ directory
     * Two line setup
         | Raspberry-Pi Pin Function | Raspberry-Pi Pin | ESP32-C2 | ESP32-C5 | ESP32-C6 | ESP32-C61 | ESP Function |
         |:-------:|:--------:|:---------:|:---------:|:---------:|:---------:|:--------:|
-        | RX | 10 | IO5 | IO5 | IO5 | IO5 | TX |
-        | TX | 8 | IO18 | IO13 | IO12 | IO12 | RX |
+        | RX | 10 | IO5 | IO23 | IO5 | IO13 | TX |
+        | TX | 8 | IO18 | IO24 | IO12 | IO12 | RX |
 
     * Raspberry-Pi pinout can be found [here!](https://pinout.xyz/pinout/uart)
     * In case you wish to reduce number of hardware lines, you may consider SPI_only or SDIO_only transports, where Wi-Fi and Bluetooth traffic is multiplexed on same bus and no need of extra UART pins. UART pin numbers are configurable. If you want to switch from 4 line UART mode to 2 lines, hardware flow control need to be turned off.
