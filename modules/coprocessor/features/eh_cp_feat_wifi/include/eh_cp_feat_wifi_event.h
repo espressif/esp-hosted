@@ -1,0 +1,25 @@
+/* SPDX-FileCopyrightText: 2026 Espressif Systems (Shanghai) CO LTD */
+/* SPDX-License-Identifier: Apache-2.0 */
+
+#ifndef EH_CP_FEAT_WIFI_EVENT_H
+#define EH_CP_FEAT_WIFI_EVENT_H
+
+#include "esp_event.h"
+
+ESP_EVENT_DECLARE_BASE(EH_CP_FEAT_WIFI_EVENT);
+
+/* WiFi event IDs (extension-local numbering starts at 0) */
+typedef enum {
+    EH_CP_FEAT_WIFI_EVT_WITH_NO_ARGS = 0,
+    EH_CP_FEAT_WIFI_EVT_STA_CONNECTED_TO_AP = 1,
+    EH_CP_FEAT_WIFI_EVT_STA_DISCONNECTED_FROM_AP = 2,
+    EH_CP_FEAT_WIFI_EVT_STA_CONNECTED_TO_ESP_SOFTAP = 3,
+    EH_CP_FEAT_WIFI_EVT_STA_DISCONNECTED_FROM_ESP_SOFTAP = 4,
+    EH_CP_FEAT_WIFI_EVT_SCAN_DONE = 5,
+    EH_CP_FEAT_WIFI_EVT_STA_STARTED = 6,
+    EH_CP_FEAT_WIFI_EVT_STA_STOPPED = 7,
+    EH_CP_FEAT_WIFI_EVT_SOFTAP_STARTED = 8,
+    EH_CP_FEAT_WIFI_EVT_SOFTAP_STOPPED = 9,
+} eh_cp_feat_wifi_evt_t;
+
+#endif /* EH_CP_FEAT_WIFI_EVENT_H */

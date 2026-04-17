@@ -1,0 +1,66 @@
+menuconfig ESP_HOSTED_CP_FEAT_HOST_PS
+	depends on ESP_HOSTED_CP_FOR_MCU
+	bool "Host Power Save"
+	default n
+	help
+		Allow host to enter power save mode.
+		Host will notify slave before entering and exiting the power save
+
+if ESP_HOSTED_CP_FEAT_HOST_PS
+
+	config ESP_HOSTED_CP_FEAT_HOST_PS_READY
+		bool
+		default y if ESP_HOSTED_CP_FOR_MCU
+
+	config ESP_HOSTED_CP_FEAT_HOST_PS_DEEP_SLEEP
+		bool "Allow host to enter deep sleep. Slave will wakeup host using GPIO when needed"
+		default y
+		help
+			Allow host to enter deep sleep mode. Host will notify slave before entering deep sleep.
+
+	menu "Host deep sleep - wakeup config"
+		config ESP_HOSTED_CP_FEAT_HOST_PS_HOST_WAKEUP_GPIO
+			int "Slave out: Host wakeup GPIO"
+			default 23 if IDF_TARGET_ESP32 && !SPI_VSPI
+			default 2 if IDF_TARGET_ESP32C6 && !EH_TRANSPORT_CP_SPI_HD
+			default 9 if IDF_TARGET_ESP32C6 && EH_TRANSPORT_CP_SPI_HD
+			default 1 if IDF_TARGET_ESP32C3
+			default 25 if IDF_TARGET_ESP32C5
+			default 6 if IDF_TARGET_ESP32C2 && C2_C5_MODULE_SUB_BOARD
+			default -1
+		choice ESP_HOSTED_CP_FEAT_HOST_PS_HOST_WAKEUP_GPIO_LEVEL
+			prompt "Host Wakeup GPIO Level"
+			default ESP_HOSTED_CP_FEAT_HOST_PS_HOST_WAKEUP_GPIO_LEVEL_HIGH
+
+			config ESP_HOSTED_CP_FEAT_HOST_PS_HOST_WAKEUP_GPIO_LEVEL_HIGH
+				bool "High"
+			config ESP_HOSTED_CP_FEAT_HOST_PS_HOST_WAKEUP_GPIO_LEVEL_LOW
+				bool "Low"
+		endchoice
+
+		config ESP_HOSTED_CP_FEAT_HOST_PS_HOST_WAKEUP_GPIO_LEVEL
+			int
+			default 1 if ESP_HOSTED_CP_FEAT_HOST_PS_HOST_WAKEUP_GPIO_LEVEL_HIGH
+			default 0 if ESP_HOSTED_CP_FEAT_HOST_PS_HOST_WAKEUP_GPIO_LEVEL_LOW
+			help
+				GPIO level to use for host wakeup from sleep.
+				Set to 0 to use low level, set to 1 to use high level.
+	endmenu
+
+	config ESP_HOSTED_CP_FEAT_HOST_PS_UNLOAD_BUS_WHILE_SLEEPING
+		bool "Unload low level BUS driver during host deep sleep"
+		default n
+
+	config ESP_HOSTED_CP_FEAT_HOST_PS_PRINT_FULL_WAKEUP_PACKET
+		bool "Print the full wakeup packet"
+		default n
+
+	config ESP_HOSTED_CP_FEAT_HOST_PS_AUTO_INIT
+	    bool "Auto-initialize Host Power Save at boot"
+	    default y
+	    depends on ESP_HOSTED_CP_AUTO_FEAT_INIT
+	    help
+	        When enabled, Host Power Save feature auto-initializes during eh_cp_init().
+	        Disable to manually call eh_cp_feat_host_ps_cp__init().
+
+endif # ESP_HOSTED_CP_FEAT_HOST_PS

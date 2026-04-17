@@ -1,0 +1,90 @@
+config ESP_HOSTED_CP_EXT_RPC
+	bool
+	depends on ESP_HOSTED_CP
+	default y if (ESP_HOSTED_CP_FOR_LINUX__802_03 || ESP_HOSTED_CP_FOR_MCU) && !ESP_HOSTED_CP_RPC_DISABLED
+	default n
+
+config ESP_HOSTED_CP_FEAT_RPC_READY
+    bool
+    default y if ESP_HOSTED_CP_EXT_RPC
+
+choice ESP_HOSTED_CP_RPC_MODE
+	prompt "RPC Support"
+	default ESP_HOSTED_CP_RPC_V2 if ESP_HOSTED_CP_FOR_LINUX__802_03 || ESP_HOSTED_CP_FOR_MCU
+	default ESP_HOSTED_CP_RPC_DISABLED
+	help
+		Select which RPC mode this coprocessor uses.
+
+	config ESP_HOSTED_CP_RPC_V2
+		bool "RPC - RPC V2"
+		help
+			Unified V2 RPC for new hosts.
+
+	config ESP_HOSTED_CP_RPC_V1_LINUX
+		bool "RPC - RPC V1 -Compat Linux"
+		depends on ESP_HOSTED_CP_FOR_LINUX__802_03
+		help
+			Imitates old Linux FG slave for testing with a new host.
+
+	config ESP_HOSTED_CP_RPC_V1_MCU
+		bool "RPC - RPC V1 -Compat MCU"
+		depends on ESP_HOSTED_CP_FOR_MCU
+		help
+			Imitates old MCU slave for testing with a new host.
+
+	config ESP_HOSTED_CP_RPC_DISABLED
+		bool "RPC - Disable"
+endchoice
+
+config ESP_HOSTED_CP_FEAT_RPC_AUTO_INIT
+    bool "Auto-initialize RPC at boot"
+    default y
+    depends on ESP_HOSTED_CP_AUTO_FEAT_INIT
+    help
+        When enabled, RPC feature auto-initializes during eh_cp_init().
+
+menu "RPC: Legacy Compatibility (disable to drop old host support)"
+	depends on ESP_HOSTED_CP_RPC_V1_LINUX
+	help
+		Options in this section preserve backward compatibility with older
+		Linux FG host firmware. Each item can be disabled independently
+		once all connected hosts have been updated.
+
+	config ESP_HOSTED_LEGACY_ADD_ENDPOINT_API
+		bool "Legacy eh_cp_protocomm_add_endpoint() API"
+		default n
+		help
+			Preserves the old per-extension direct protocomm endpoint
+			registration API (eh_cp_protocomm_add_endpoint).
+			Extensions should use eh_cp_rpc_req_register() instead.
+
+			Disable when all extensions have migrated to the SLIST registry.
+
+	config ESP_HOSTED_LEGACY_SEND_EVENT_TO_HOST_API
+		bool "Legacy eh_send_event_to_host() API"
+		default n
+		help
+			Preserves the old event-send API that takes an explicit endpoint
+			name string. New code uses eh_cp_rpc_send_event() which
+			routes through the SLIST registry and serialise callback.
+
+			Disable when all callers have migrated to eh_cp_rpc_send_event().
+
+	config ESP_HOSTED_LEGACY_WIRE_INTERFACE_TYPES
+		bool "Legacy wire interface IDs (STA=0, AP=1, SERIAL=2, ...)"
+		default y if ESP_HOSTED_CP_RPC_V1_LINUX
+		default n
+		help
+			Use legacy on-wire interface numbering expected by older Linux FG
+			hosts:
+			  STA=0 AP=1 SERIAL=2 HCI=3 PRIV=4 TEST=5 MAX=6
+
+			When disabled, the new numbering is used:
+			  INVALID=0 STA=1 AP=2 SERIAL=3 HCI=4 PRIV=5 TEST=6 ETH=7
+
+			This only changes wire encode/decode mapping; internal CP code
+			continues to use eh_if_type_t.
+
+	# ESP_HOSTED_LEGACY_BOOT_CAP_TLVS replaced by ESP_HOSTED_TLV_V1_LINUX
+	# (auto-selected in modules/common/eh_tlv/Kconfig.ext)
+endmenu

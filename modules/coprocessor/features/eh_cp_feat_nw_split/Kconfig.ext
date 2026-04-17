@@ -1,0 +1,183 @@
+menuconfig ESP_HOSTED_CP_FEAT_NW_SPLIT
+	bool "Network Split"
+	depends on ESP_HOSTED_CP
+	default n
+
+
+if ESP_HOSTED_CP_FEAT_NW_SPLIT
+
+	comment "⚠️  Enable [✓] ESP_HOSTED_CP_FEAT_WIFI  (Extensions → WiFi feature extension)"
+		depends on !ESP_HOSTED_CP_FEAT_WIFI_READY
+	comment "⚠️  Enable [✓] ESP_HOSTED_CP_WIFI_ENABLED  (Component config → ESP-Hosted CP)"
+		depends on !ESP_HOSTED_CP_WIFI_ENABLED
+	comment "⚠️  Enable [✓] LWIP_ENABLE  (Component config → LWIP => Enable LwIP stack)"
+		depends on !LWIP_ENABLE
+	comment "⚠️  Enable [✓] ESP_NETIF_TCPIP_LWIP  (Component config → LWIP => TCP/IP stack)"
+		depends on !ESP_NETIF_TCPIP_LWIP
+
+	config ESP_HOSTED_CP_FEAT_NW_SPLIT_READY
+    	bool
+    	default y if ESP_HOSTED_CP_FEAT_NW_SPLIT && ESP_HOSTED_CP && ESP_HOSTED_CP_FEAT_WIFI_READY && ESP_HOSTED_CP_WIFI_ENABLED && LWIP_ENABLE && ESP_NETIF_TCPIP_LWIP
+
+	config ESP_HOSTED_CP_FEAT_NW_SPLIT_WIFI_AUTO_CONNECT_ON_STA_START
+		bool "Auto-connect WiFi on STA_START (network split)"
+		default y
+		help
+			Automatically trigger esp_wifi_connect() when STA starts.
+			Disable to keep application control over connection timing.
+
+	choice ESP_HOSTED_DEFAULT_NETWORK_STACK
+		prompt "Default network stack for unfiltered packets"
+		default ESP_HOSTED_DEFAULT_NETWORK_STACK_COPROCESSOR
+		help
+			Select the default network stack for packets that don't match any filter rules.
+
+		config ESP_HOSTED_DEFAULT_NETWORK_STACK_COPROCESSOR
+			bool "Coprocessor network stack"
+			help
+				Route unfiltered packets to the co-processor network stack.
+
+		config ESP_HOSTED_DEFAULT_NETWORK_STACK_HOST
+			bool "Host network stack"
+			help
+				Route unfiltered packets to the host network stack.
+
+		config ESP_HOSTED_DEFAULT_NETWORK_STACK_BOTH
+			bool "Replicate the packet towards both network stacks (Non recommended)"
+			help
+				Route unfiltered packets to both coprocessor and host network stacks.
+	endchoice
+
+	choice ESP_HOSTED_DEFAULT_NETWORK_STACK_DHCP
+		prompt "Default DHCP client location"
+		default ESP_HOSTED_DEFAULT_NETWORK_STACK_DHCP_BOTH
+		help
+			Select where the DHCP client should run.
+
+		config ESP_HOSTED_DEFAULT_NETWORK_STACK_DHCP_COPROCESSOR
+			bool "Use DHCP at co-processor"
+			help
+				Run the DHCP client on the co-processor. Host would simply query the co-processor for IP to be used at its network stack.
+
+		config ESP_HOSTED_DEFAULT_NETWORK_STACK_DHCP_HOST
+			bool "Use DHCP at Host"
+			help
+				Run the DHCP client on the host.
+
+		config ESP_HOSTED_DEFAULT_NETWORK_STACK_DHCP_BOTH
+			bool "Use DHCP at Both sides"
+			help
+				Replicate the DHCP response to both co-processor and host.
+
+	endchoice
+
+	menu "Slave side (local) LWIP port range (static)"
+		config LWIP_TCP_LOCAL_PORT_RANGE_START
+			int "Slave TCP start port"
+			default 61440
+			help
+				Slave side TCP start port. Host defaults to 49152
+				Slave range: 61440-65535
+				Host range: 49152-61439
+
+		config LWIP_TCP_LOCAL_PORT_RANGE_END
+			int "Slave TCP end port"
+			default 65535
+			help
+				Slave side TCP end port. Host defaults to 61439
+				Slave range: 61440-65535
+				Host range: 49152-61439
+
+		config LWIP_UDP_LOCAL_PORT_RANGE_START
+			int "Slave UDP start port"
+			default 61440
+			help
+				Slave side UDP start port. Host defaults to 49152
+				Slave range: 61440-65535
+				Host range: 49152-61439
+
+		config LWIP_UDP_LOCAL_PORT_RANGE_END
+			int "Slave UDP end port"
+			default 65535
+			help
+				Slave side UDP end port. Host defaults to 61439
+				Slave range: 61440-65535
+				Host range: 49152-61439
+	endmenu
+
+	menu "Host side (remote) LWIP port range (static)"
+		config LWIP_TCP_REMOTE_PORT_RANGE_START
+			int "Host TCP start port"
+			default 49152
+			help
+				Host side TCP start port. Slave defaults to 61440
+				Slave range: 61440-65535
+				Host range: 49152-61439
+
+		config LWIP_TCP_REMOTE_PORT_RANGE_END
+			int "Host TCP end port"
+			default 61439
+			help
+				Host side TCP end port. Slave defaults to 65535
+				Slave range: 61440-65535
+				Host range: 49152-61439
+
+		config LWIP_UDP_REMOTE_PORT_RANGE_START
+			int "Host UDP start port"
+			default 49152
+			help
+				Host side TCP start port. Slave defaults to 61440
+				Slave range: 61440-65535
+				Host range: 49152-61439
+
+		config LWIP_UDP_REMOTE_PORT_RANGE_END
+			int "Host UDP end port"
+			default 61439
+			help
+				Host side UDP end port. Slave defaults to 65535
+				Slave range: 61440-65535
+				Host range: 49152-61439
+	endmenu
+
+	config ESP_HOSTED_HOST_ONLY_PORTS_CONFIGURED
+		bool "Configure extra ports dedicated for host network stack"
+		default y
+		help
+			Extra ports to configure to route the packet to host. Each port is compared individually with packet
+
+	menu "Host only ports"
+		depends on ESP_HOSTED_HOST_ONLY_PORTS_CONFIGURED
+
+		config ESP_HOSTED_HOST_TCP_SRC_PORTS
+			string "Host reserved TCP source ports"
+			default ""
+			help
+				Comma-separated list of TCP source ports to be forwarded to the host.
+
+		config ESP_HOSTED_HOST_TCP_DST_PORTS
+			string "Host reserved TCP destination ports"
+			default "22,8554"
+			help
+				Comma-separated list of TCP destination ports to be forwarded to the host.
+
+		config ESP_HOSTED_HOST_UDP_SRC_PORTS
+			string "Host reserved UDP source ports"
+			default ""
+			help
+				Comma-separated list of UDP source ports to be forwarded to the host.
+
+		config ESP_HOSTED_HOST_UDP_DST_PORTS
+			string "Host reserved UDP destination ports"
+			default ""
+			help
+				Comma-separated list of UDP destination ports to be forwarded to the host.
+	endmenu
+	config ESP_HOSTED_CP_FEAT_NW_SPLIT_AUTO_INIT
+	    bool "Auto-initialize Network Split at boot"
+	    default y
+	    depends on ESP_HOSTED_CP_AUTO_FEAT_INIT
+	    help
+	        When enabled, Network Split feature auto-initializes during eh_cp_init().
+	        Disable to manually call eh_cp_feat_nw_split_init().
+
+endif # ESP_HOSTED_CP_FEAT_NW_SPLIT

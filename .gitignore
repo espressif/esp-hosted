@@ -1,3 +1,4 @@
+# ── Old repo paths (retained for history) ────────────────────────
 esp_hosted_fg/esp/esp_driver/CMakeCache.txt
 esp_hosted_fg/esp/esp_driver/CMakeFiles
 esp_hosted_fg/esp/esp_driver/Makefile
@@ -14,3 +15,55 @@ esp_hosted_ng/esp/esp_driver/cmake_install.cmake
 esp_hosted_ng/esp/esp_driver/network_adapter/build
 esp_hosted_ng/esp/esp_driver/network_adapter/sdkconfig
 esp_hosted_ng/esp/esp_driver/network_adapter/sdkconfig.old
+
+# ── Test infra ───────────────────────────────────────────────────
+tests/env.yaml
+tests/env.json
+tests/workspace/
+
+# ── Build artifacts ──────────────────────────────────────────────
+build/
+build_logs/
+build_logs.old/
+**/build/
+**/sdkconfig
+**/sdkconfig.old
+**/managed_components/
+
+# ── IDE / OS / tool ──────────────────────────────────────────────
+.DS_Store
+.claude/
+.vscode/
+*.pyc
+__pycache__/
+
+# ── Temp / scratch (not for checkin) ─────────────────────────────
+esp_hosted.new
+esp_hosted.new_2apr_3.tgz
+esp_hosted_mcu
+esp_hosted_mcu6
+esp_hosted_linux_host_repo
+esp_hosted_poc_descs.ld.del
+esp_hosted_poc.lf.del
+cmake_update_log_*.txt
+root_files_log_*.txt
+orig_files/
+remove/
+test_fix/
+h4
+LICENSES/Apache-2.0.pss_dup
+
+# ── Session brainstorm MDs (kept locally, not checked in) ────────
+COMPLETE_IMPLEMENTATION_JOURNAL.md
+COMPLETE_TEST_FRAMEWORK_DESIGN.md
+COMPLETE_UNIFIED_TRANSPORT_OPS.md
+DOCS_MASTER.md
+ESP_HOSTED_HANDSHAKE_DESIGN.md
+HEADER_V2_FIX_SUMMARY.md
+PEER_DATA_TRANSFER_PROGRESS.md
+PHASES.md
+REVIEW_NOTES.md
+SPEC_CREATION_SUMMARY.md
+STRUCTURE.md
+old_rpc_event_design.md
+versioning/

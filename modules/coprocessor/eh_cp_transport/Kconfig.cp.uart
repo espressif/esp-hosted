@@ -1,0 +1,95 @@
+menu "UART Configuration"
+	depends on EH_TRANSPORT_CP_UART
+
+	config EH_TRANSPORT_CP_UART_PORT
+		int "UART Port to Use"
+		default 1
+		range 0 2 if IDF_TARGET_ESP32
+		range 0 1 if IDF_TARGET_ESP32C2 || IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32C5 || IDF_TARGET_ESP32C6
+		range 0 2 if IDF_TARGET_ESP32C61
+		range 0 1 if IDF_TARGET_ESP32S2
+		range 0 2 if IDF_TARGET_ESP32S3
+
+	config EH_TRANSPORT_CP_UART_PIN_TX
+		int "TX GPIO number"
+		default 13 if IDF_TARGET_ESP32
+		default 5 if IDF_TARGET_ESP32C2 || IDF_TARGET_ESP32C3
+		default 14 if IDF_TARGET_ESP32C5
+		default 21 if IDF_TARGET_ESP32C6
+		default 5 if IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32S3
+
+	config EH_TRANSPORT_CP_UART_PIN_RX
+		int "RX GPIO number"
+		default 12 if IDF_TARGET_ESP32
+		default 4 if IDF_TARGET_ESP32C2 || IDF_TARGET_ESP32C3
+		default 13 if IDF_TARGET_ESP32C5
+		default 20 if IDF_TARGET_ESP32C6
+		default 4 if IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32S3
+
+	config EH_TRANSPORT_CP_UART_BAUDRATE
+		int "Baud Rate"
+		default 921600
+		range 9600 3500000
+
+	config EH_TRANSPORT_CP_UART_NUM_DATA_BITS
+		int "Number of Data Bits"
+		default 8
+		range 5 8
+
+	choice EH_TRANSPORT_CP_UART_PARITY
+		bool "Parity"
+		default EH_TRANSPORT_CP_UART_PARITY_NONE
+
+		config EH_TRANSPORT_CP_UART_PARITY_NONE
+			bool "None"
+
+		config EH_TRANSPORT_CP_UART_PARITY_EVEN
+			bool "Even"
+
+		config EH_TRANSPORT_CP_UART_PARITY_ODD
+			bool "Odd"
+	endchoice
+
+	config EH_TRANSPORT_CP_UART_PARITY_VALUE
+		int
+		default 0 if EH_TRANSPORT_CP_UART_PARITY_NONE
+		default 1 if EH_TRANSPORT_CP_UART_PARITY_EVEN
+		default 2 if EH_TRANSPORT_CP_UART_PARITY_ODD
+
+	choice EH_TRANSPORT_CP_UART_STOP_BITS
+		bool "Number of Stop Bits"
+		default EH_TRANSPORT_CP_UART_STOP_BITS_1
+
+		config EH_TRANSPORT_CP_UART_STOP_BITS_1
+			bool "1"
+
+		config EH_TRANSPORT_CP_UART_STOP_BITS_1_5
+			bool "1.5"
+
+		config EH_TRANSPORT_CP_UART_STOP_BITS_2
+			bool "2"
+	endchoice
+
+	config EH_TRANSPORT_CP_UART_STOP_BITS_VALUE
+		int
+		default 0 if EH_TRANSPORT_CP_UART_STOP_BITS_1
+		default 1 if EH_TRANSPORT_CP_UART_STOP_BITS_1_5
+		default 2 if EH_TRANSPORT_CP_UART_STOP_BITS_2
+
+	config EH_TRANSPORT_CP_UART_GPIO_RESET
+		int "Slave GPIO pin to reset itself"
+		default -1
+
+	config EH_TRANSPORT_CP_UART_TX_Q_SIZE
+		int "Tx Queue Size"
+		default 5
+
+	config EH_TRANSPORT_CP_UART_RX_Q_SIZE
+		int "Rx Queue Size"
+		default 5
+
+	config EH_TRANSPORT_CP_UART_CHECKSUM
+		bool "UART checksum ENABLE/DISABLE"
+		default y
+
+endmenu

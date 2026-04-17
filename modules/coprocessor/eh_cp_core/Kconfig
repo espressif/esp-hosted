@@ -1,0 +1,2 @@
+# Router only — options live in Kconfig.ext
+rsource "Kconfig.ext"

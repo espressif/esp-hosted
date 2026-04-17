@@ -1,0 +1,7 @@
+dependencies:
+    esp_hosted:
+      override_path: ../../../../../../../..
+    espressif/mqtt:
+      version: "*"
+      rules:
+        - if: "idf_version >= 6.0"

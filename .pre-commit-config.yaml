@@ -1,6 +1,10 @@
 repos:
-  - repo: https://github.com/codespell-project/codespell
-    rev: v2.4.1
+  - repo: local
     hooks:
-      - id: codespell
-        args: [--config=.codespellrc]
+    - id: version-checker
+      name: EH Version Checker
+      entry: tools/check_fw_versions.py
+      language: python
+      args: [ "--update" ]
+      always_run: true
+      pass_filenames: false

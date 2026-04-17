@@ -1,0 +1,112 @@
+menu "SPI Half-duplex Configuration"
+	depends on EH_TRANSPORT_CP_SPI_HD
+
+	choice EH_TRANSPORT_CP_SPI_HD_MODE
+		bool "Slave SPI mode"
+		default EH_TRANSPORT_CP_SPI_HD_MODE_3
+
+		config EH_TRANSPORT_CP_SPI_HD_MODE_0
+			bool "Slave SPI mode 0"
+
+		config EH_TRANSPORT_CP_SPI_HD_MODE_1
+			bool "Slave SPI mode 1"
+
+		config EH_TRANSPORT_CP_SPI_HD_MODE_2
+			bool "Slave SPI mode 2"
+
+		config EH_TRANSPORT_CP_SPI_HD_MODE_3
+			bool "Slave SPI mode 3"
+	endchoice
+
+	config EH_TRANSPORT_CP_SPI_HD_MODE_VALUE
+		int
+		default 0 if EH_TRANSPORT_CP_SPI_HD_MODE_0
+		default 1 if EH_TRANSPORT_CP_SPI_HD_MODE_1
+		default 2 if EH_TRANSPORT_CP_SPI_HD_MODE_2
+		default 3 if EH_TRANSPORT_CP_SPI_HD_MODE_3
+
+	choice EH_TRANSPORT_CP_SPI_HD_DATA_LINES
+		bool "Number of Data Lines"
+		default EH_TRANSPORT_CP_SPI_HD_4_DATA_LINES
+
+		config EH_TRANSPORT_CP_SPI_HD_4_DATA_LINES
+			bool "4 data lines"
+
+		config EH_TRANSPORT_CP_SPI_HD_2_DATA_LINES
+			bool "2 data lines"
+	endchoice
+
+	config EH_TRANSPORT_CP_SPI_HD_NUM_DATA_LINES
+		int
+		default 4 if EH_TRANSPORT_CP_SPI_HD_4_DATA_LINES
+		default 2 if EH_TRANSPORT_CP_SPI_HD_2_DATA_LINES
+
+	menu "SPI HD GPIO Configuration"
+		config EH_TRANSPORT_CP_SPI_HD_GPIO_CS
+			int "CS GPIO pin"
+			default 18 if ESP_HOST_DEV_BOARD_P4_FUNC_BOARD
+			default 10
+
+		config EH_TRANSPORT_CP_SPI_HD_GPIO_CLK
+			int "CLK GPIO pin"
+			default 19 if ESP_HOST_DEV_BOARD_P4_FUNC_BOARD
+			default 3 if IDF_TARGET_ESP32C5
+			default 0 if IDF_TARGET_ESP32C2
+			default 6
+
+		config EH_TRANSPORT_CP_SPI_HD_GPIO_D0
+			int "D0 GPIO pin"
+			default 20 if ESP_HOST_DEV_BOARD_P4_FUNC_BOARD
+			default 7
+
+		config EH_TRANSPORT_CP_SPI_HD_GPIO_D1
+			int "D1 GPIO pin"
+			default 21 if ESP_HOST_DEV_BOARD_P4_FUNC_BOARD
+			default 2
+
+		config EH_TRANSPORT_CP_SPI_HD_GPIO_D2
+			depends on EH_TRANSPORT_CP_SPI_HD_4_DATA_LINES
+			int "D2 GPIO pin"
+			default 22 if ESP_HOST_DEV_BOARD_P4_FUNC_BOARD
+			default 5
+
+		config EH_TRANSPORT_CP_SPI_HD_GPIO_D3
+			depends on EH_TRANSPORT_CP_SPI_HD_4_DATA_LINES
+			int "D3 GPIO pin"
+			default 23 if ESP_HOST_DEV_BOARD_P4_FUNC_BOARD
+			default 4
+
+		config EH_TRANSPORT_CP_SPI_HD_GPIO_DATA_READY
+			int "Data Ready GPIO pin"
+			default 2 if ESP_HOST_DEV_BOARD_P4_FUNC_BOARD
+			default 0 if IDF_TARGET_ESP32C5
+			default 1 if IDF_TARGET_ESP32C2
+			default 11
+
+		choice EH_TRANSPORT_CP_SPI_HD_DR_ACTIVE
+			bool "DataReady GPIO Active Level"
+			default EH_TRANSPORT_CP_SPI_HD_DR_ACTIVE_HIGH
+
+			config EH_TRANSPORT_CP_SPI_HD_DR_ACTIVE_HIGH
+				bool "Active High"
+			config EH_TRANSPORT_CP_SPI_HD_DR_ACTIVE_LOW
+				bool "Active Low"
+		endchoice
+
+		config EH_TRANSPORT_CP_SPI_HD_GPIO_RESET
+			int "Reset GPIO pin"
+			default -1
+
+	endmenu
+
+	config EH_TRANSPORT_CP_SPI_HD_Q_SIZE
+		int "Queue size"
+		default 12 if IDF_TARGET_ESP32C2
+		default 10 if IDF_TARGET_ESP32C5
+		default 20
+
+	config EH_TRANSPORT_CP_SPI_HD_CHECKSUM
+		bool "Checksum ENABLE/DISABLE"
+		default y
+
+endmenu

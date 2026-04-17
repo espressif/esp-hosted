@@ -1,0 +1,59 @@
+menuconfig ESP_HOSTED_CP_FEAT_BT
+    bool "Bluetooth"
+    depends on ESP_HOSTED_CP
+    default n
+    help
+        Enables Bluetooth feature on the coprocessor.
+
+if ESP_HOSTED_CP_FEAT_BT
+
+    comment "⚠️  Enable [✓] ESP_HOSTED_CP_BT_ENABLED (Component config → ESP-Hosted CP)"
+        depends on !ESP_HOSTED_CP_BT_ENABLED
+
+    choice ESP_HOSTED_CP_FEAT_BT_HCI_MODE
+        prompt "BT HCI transport"
+        depends on ESP_HOSTED_CP_BT_ENABLED
+        default ESP_HOSTED_CP_FEAT_BT_HCI_VHCI
+        help
+            Select BT HCI transport mode for ESP-Hosted.
+
+        config ESP_HOSTED_CP_FEAT_BT_HCI_VHCI
+            bool "HCI over VHCI (SPI/SDIO/SPI-HD)"
+            help
+                BT HCI packets routed over the host transport interface.
+                Requires IDF BT controller configured for VHCI mode.
+
+        config ESP_HOSTED_CP_FEAT_BT_HCI_UART
+            bool "HCI over UART"
+            help
+                BT HCI packets routed over a dedicated UART.
+                Requires IDF BT controller configured for UART HCI mode.
+    endchoice
+
+    comment "⚠️  IDF BT controller not in VHCI mode — enable VHCI in Component config → Bluetooth → Controller"
+        depends on ESP_HOSTED_CP_FEAT_BT_HCI_VHCI && !(BTDM_CONTROLLER_HCI_MODE_VHCI || BT_CTRL_HCI_MODE_VHCI || BT_LE_HCI_INTERFACE_USE_RAM)
+
+    comment "⚠️  IDF BT controller not in UART mode — enable UART HCI in Component config → Bluetooth → Controller"
+        depends on ESP_HOSTED_CP_FEAT_BT_HCI_UART && !(BT_HCI_UART_NO || BT_CTRL_HCI_MODE_UART_H4 || BT_LE_HCI_INTERFACE_USE_UART)
+
+    config ESP_HOSTED_CP_FEAT_BT_HCI_VHCI_READY
+        bool
+        default y if ESP_HOSTED_CP_FEAT_BT_HCI_VHCI && (BTDM_CONTROLLER_HCI_MODE_VHCI || BT_CTRL_HCI_MODE_VHCI || BT_LE_HCI_INTERFACE_USE_RAM)
+
+    config ESP_HOSTED_CP_FEAT_BT_HCI_UART_READY
+        bool
+        default y if ESP_HOSTED_CP_FEAT_BT_HCI_UART && (BT_HCI_UART_NO || BT_CTRL_HCI_MODE_UART_H4 || BT_LE_HCI_INTERFACE_USE_UART)
+
+    config ESP_HOSTED_CP_FEAT_BT_AUTO_INIT
+        bool "Auto-initialize Bluetooth at boot"
+        default y
+        depends on ESP_HOSTED_CP_AUTO_FEAT_INIT
+        help
+            When enabled, Bluetooth feature auto-initializes during eh_cp_init().
+            Disable to manually call eh_cp_feat_bt_init().
+
+endif # ESP_HOSTED_CP_FEAT_BT
+
+config ESP_HOSTED_CP_FEAT_BT_READY
+    bool
+    default y if ESP_HOSTED_CP_FEAT_BT && ESP_HOSTED_CP_BT_ENABLED && (ESP_HOSTED_CP_FEAT_BT_HCI_VHCI_READY || ESP_HOSTED_CP_FEAT_BT_HCI_UART_READY)

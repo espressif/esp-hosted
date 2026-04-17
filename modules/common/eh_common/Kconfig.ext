@@ -1,0 +1,12 @@
+menu "Common config (Host & Coprocessor)"
+	depends on ESP_HOSTED
+
+	config ESP_HOSTED_COMMON_CHECKSUM_ENABLED
+		bool "Enable packet checksum"
+		default n
+		default y if EH_TRANSPORT_CP_SDIO_CHECKSUM || EH_TRANSPORT_CP_SPI_CHECKSUM || EH_TRANSPORT_CP_SPI_HD_CHECKSUM || EH_TRANSPORT_CP_UART_CHECKSUM
+		help
+			Enable XOR checksum over packet header and payload.
+			Must match the setting on the peer (host or coprocessor).
+
+endmenu

@@ -1,0 +1,187 @@
+menu "SPI Configuration"
+	depends on EH_TRANSPORT_CP_SPI
+
+	# High-level user configurations
+	config EH_TRANSPORT_CP_SPI_CHECKSUM
+		bool "Enable SPI checksum"
+		default y
+		help
+			Enable/disable software SPI checksum for data integrity
+
+	# Internal configurations with sensible defaults
+	choice EH_TRANSPORT_CP_SPI_MODE
+		bool "Slave SPI mode"
+		default EH_TRANSPORT_CP_SPI_MODE_2 if IDF_TARGET_ESP32
+		default EH_TRANSPORT_CP_SPI_MODE_3
+
+		config EH_TRANSPORT_CP_SPI_MODE_0
+			bool "Slave SPI mode 0"
+
+		config EH_TRANSPORT_CP_SPI_MODE_1
+			bool "Slave SPI mode 1"
+
+		config EH_TRANSPORT_CP_SPI_MODE_2
+			bool "Slave SPI mode 2"
+
+		config EH_TRANSPORT_CP_SPI_MODE_3
+			bool "Slave SPI mode 3"
+	endchoice
+
+	config EH_TRANSPORT_CP_SPI_MODE_VALUE
+		int
+		default 0 if EH_TRANSPORT_CP_SPI_MODE_0
+		default 1 if EH_TRANSPORT_CP_SPI_MODE_1
+		default 2 if EH_TRANSPORT_CP_SPI_MODE_2
+		default 3 if EH_TRANSPORT_CP_SPI_MODE_3
+		default 3
+
+	choice EH_TRANSPORT_CP_SPI_CONTROLLER
+		bool "SPI controller to use"
+		default EH_TRANSPORT_CP_SPI_CONTROLLER_HSPI
+
+		config EH_TRANSPORT_CP_SPI_CONTROLLER_HSPI
+			bool "FSPI/HSPI"
+			help
+				HSPI/FSPI: SPI_controller_1
+
+		config EH_TRANSPORT_CP_SPI_CONTROLLER_VSPI
+			depends on IDF_TARGET_ESP32
+			bool "VSPI"
+			help
+				VSPI: SPI_controller_2
+	endchoice
+
+	config EH_TRANSPORT_CP_SPI_CONTROLLER_NUM
+		int
+		default 2 if EH_TRANSPORT_CP_SPI_CONTROLLER_VSPI
+		default 1
+
+	menu "SPI GPIO Configuration"
+		config EH_TRANSPORT_CP_SPI_HSPI_GPIO_MOSI
+			depends on EH_TRANSPORT_CP_SPI_CONTROLLER_HSPI
+			int "Slave GPIO pin for Host MOSI"
+			default 20 if ESP_HOST_DEV_BOARD_P4_FUNC_BOARD
+			default 13 if IDF_TARGET_ESP32
+			default 11 if IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32S3
+			default 1 if IDF_TARGET_ESP32C5 && ESP_ESP32C5_SPI_RASPI_MATING_BOARD
+			default 7
+
+		config EH_TRANSPORT_CP_SPI_HSPI_GPIO_MISO
+			depends on EH_TRANSPORT_CP_SPI_CONTROLLER_HSPI
+			int "Slave GPIO pin for Host MISO"
+			default 21 if ESP_HOST_DEV_BOARD_P4_FUNC_BOARD
+			default 12 if IDF_TARGET_ESP32
+			default 13 if IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32S3
+			default 6 if IDF_TARGET_ESP32C5 && ESP_ESP32C5_SPI_RASPI_MATING_BOARD
+			default 2
+
+		config EH_TRANSPORT_CP_SPI_HSPI_GPIO_CLK
+			depends on EH_TRANSPORT_CP_SPI_CONTROLLER_HSPI
+			int "Slave GPIO pin for Host CLK"
+			default 19 if ESP_HOST_DEV_BOARD_P4_FUNC_BOARD
+			default 3 if IDF_TARGET_ESP32C5 && ESP_HOSTED_CP_FOR_MCU
+			default 0 if IDF_TARGET_ESP32C2 && C2_C5_MODULE_SUB_BOARD
+			default 14 if IDF_TARGET_ESP32
+			default 12 if IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32S3
+			default 27 if IDF_TARGET_ESP32C5 && ESP_ESP32C5_SPI_RASPI_MATING_BOARD
+			default 6
+
+		config EH_TRANSPORT_CP_SPI_HSPI_GPIO_CS
+			depends on EH_TRANSPORT_CP_SPI_CONTROLLER_HSPI
+			int "Slave GPIO pin for Host CS"
+			default 18 if ESP_HOST_DEV_BOARD_P4_FUNC_BOARD
+			default 15 if IDF_TARGET_ESP32
+			default 10 if IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32S3
+			default 4 if IDF_TARGET_ESP32C5 && ESP_ESP32C5_SPI_RASPI_MATING_BOARD
+			default 10
+
+		config EH_TRANSPORT_CP_SPI_VSPI_GPIO_MOSI
+			depends on EH_TRANSPORT_CP_SPI_CONTROLLER_VSPI
+			int "Slave GPIO pin for Host MOSI"
+			default 23
+
+		config EH_TRANSPORT_CP_SPI_VSPI_GPIO_MISO
+			depends on EH_TRANSPORT_CP_SPI_CONTROLLER_VSPI
+			int "Slave GPIO pin for Host MISO"
+			default 19
+
+		config EH_TRANSPORT_CP_SPI_VSPI_GPIO_CLK
+			depends on EH_TRANSPORT_CP_SPI_CONTROLLER_VSPI
+			int "Slave GPIO pin for Host CLK"
+			default 18
+
+		config EH_TRANSPORT_CP_SPI_VSPI_GPIO_CS
+			depends on EH_TRANSPORT_CP_SPI_CONTROLLER_VSPI
+			int "Slave GPIO pin for Host CS"
+			default 5
+
+		config EH_TRANSPORT_CP_SPI_GPIO_MOSI
+			int
+			default EH_TRANSPORT_CP_SPI_VSPI_GPIO_MOSI if EH_TRANSPORT_CP_SPI_CONTROLLER_VSPI
+			default EH_TRANSPORT_CP_SPI_HSPI_GPIO_MOSI
+
+		config EH_TRANSPORT_CP_SPI_GPIO_MISO
+			int
+			default EH_TRANSPORT_CP_SPI_VSPI_GPIO_MISO if EH_TRANSPORT_CP_SPI_CONTROLLER_VSPI
+			default EH_TRANSPORT_CP_SPI_HSPI_GPIO_MISO
+
+		config EH_TRANSPORT_CP_SPI_GPIO_CLK
+			int
+			default EH_TRANSPORT_CP_SPI_VSPI_GPIO_CLK if EH_TRANSPORT_CP_SPI_CONTROLLER_VSPI
+			default EH_TRANSPORT_CP_SPI_HSPI_GPIO_CLK
+
+		config EH_TRANSPORT_CP_SPI_GPIO_CS
+			int
+			default EH_TRANSPORT_CP_SPI_VSPI_GPIO_CS if EH_TRANSPORT_CP_SPI_CONTROLLER_VSPI
+			default EH_TRANSPORT_CP_SPI_HSPI_GPIO_CS
+
+		config EH_TRANSPORT_CP_SPI_GPIO_HANDSHAKE
+			int "Slave GPIO pin for handshake"
+			default 22 if ESP_HOST_DEV_BOARD_P4_FUNC_BOARD
+			default 18 if IDF_TARGET_ESP32C2 && C2_C5_MODULE_SUB_BOARD
+			default 3 if IDF_TARGET_ESP32C2 && !C2_C5_MODULE_SUB_BOARD
+			default 4 if IDF_TARGET_ESP32C5 && C2_C5_MODULE_SUB_BOARD
+			default 1 if IDF_TARGET_ESP32C5 && !C2_C5_MODULE_SUB_BOARD
+			default 25 if IDF_TARGET_ESP32C5 && ESP_ESP32C5_SPI_RASPI_MATING_BOARD
+			default 3 if IDF_TARGET_ESP32C2 || IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32C5 || IDF_TARGET_ESP32C6
+			default 17 if IDF_TARGET_ESP32S3 || IDF_TARGET_ESP32S2
+			default 2 if ESP_HOSTED_CP_FOR_LINUX
+			default 26
+
+		config EH_TRANSPORT_CP_SPI_GPIO_DATA_READY
+			int "Slave GPIO pin for data ready interrupt"
+			default 23 if ESP_HOST_DEV_BOARD_P4_FUNC_BOARD
+			default 1 if IDF_TARGET_ESP32C2 && C2_C5_MODULE_SUB_BOARD
+			default 4 if IDF_TARGET_ESP32C2 && !C2_C5_MODULE_SUB_BOARD
+			default 0 if IDF_TARGET_ESP32C5 && C2_C5_MODULE_SUB_BOARD
+			default 4 if IDF_TARGET_ESP32C5 && !C2_C5_MODULE_SUB_BOARD && ESP_HOSTED_CP_FOR_MCU
+			default 2 if IDF_TARGET_ESP32C5 && ESP_ESP32C5_SPI_RASPI_MATING_BOARD
+			default 4
+
+		config EH_TRANSPORT_CP_SPI_GPIO_RESET
+			int "Slave GPIO pin to reset itself"
+			default -1
+
+	endmenu
+
+	config EH_TRANSPORT_CP_SPI_DEASSERT_HS_ON_CS
+		bool "Deassert Handshake when SPI CS is deasserted"
+		default n if IDF_TARGET_ESP32 && ESP_HOSTED_CP_FOR_LINUX
+		default y if ESP_HOSTED_CP_FOR_MCU
+		default y
+
+	config EH_TRANSPORT_CP_SPI_TX_Q_SIZE
+		int "ESP to Host SPI queue size"
+		default 10 if IDF_TARGET_ESP32
+		default 6 if IDF_TARGET_ESP32C2 && BT_ENABLED
+		default 10 if IDF_TARGET_ESP32C2
+		default 20
+
+	config EH_TRANSPORT_CP_SPI_RX_Q_SIZE
+		int "Host to ESP SPI queue size"
+		default 10 if IDF_TARGET_ESP32
+		default 6 if IDF_TARGET_ESP32C2 && BT_ENABLED
+		default 7 if IDF_TARGET_ESP32C2
+		default 20
+
+endmenu

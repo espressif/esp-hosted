@@ -1,0 +1,77 @@
+#menu "ESP-Hosted MCU Configuration"
+#    depends on ESP_HOSTED_CP_FOR_MCU
+#
+#    config ESP_HOSTED_CP_MCU_RPC_TASK_STACK_SIZE
+#        int "MCU RPC Task Stack Size"
+#        default 4096
+#        range 2048 8192
+#        help
+#            Stack size for the MCU RPC processing task.
+#
+#    config ESP_HOSTED_CP_MCU_RPC_TASK_PRIORITY
+#        int "MCU RPC Task Priority"
+#        default 22
+#        range 1 25
+#        help
+#            Priority for the MCU RPC processing task.
+#
+#    config ESP_HOSTED_CP_MCU_HEARTBEAT_ENABLE
+#        bool "Enable Heartbeat"
+#        default y
+#        help
+#            Enable periodic heartbeat messages to MCU host.
+#
+#    config ESP_HOSTED_CP_MCU_HEARTBEAT_INTERVAL
+#        int "Heartbeat Interval (seconds)"
+#        depends on ESP_HOSTED_CP_MCU_HEARTBEAT_ENABLE
+#        default 30
+#        range 10 3600
+#        help
+#            Interval between heartbeat messages in seconds.
+#
+##    config ESP_HOSTED_CP_MCU_OTA_ENABLE
+##        bool "Enable OTA Updates"
+##        default y
+##        help
+##            Enable Over-The-Air firmware update support for MCU hosts.
+#
+##    config ESP_HOSTED_CP_MCU_POWER_SAVE_ENABLE
+##        bool "Enable Host Power Save"
+##        default n
+##        help
+##            Enable power save coordination with MCU host.
+#
+#    menu "MCU Network Split Configuration"
+#        depends on ESP_HOSTED_CP_FEAT_NW_SPLIT
+#
+#        config ESP_HOSTED_CP_MCU_DHCP_SERVER_ENABLE
+#            bool "Enable DHCP Server"
+#            default y
+#            help
+#                Enable DHCP server functionality in Network Split mode.
+#
+#        config ESP_HOSTED_CP_MCU_DNS_SERVER_ENABLE
+#            bool "Enable DNS Server"
+#            default y
+#            help
+#                Enable DNS server functionality in Network Split mode.
+#
+#    endmenu
+#
+#    menu "MCU Debug Configuration"
+#
+#        config ESP_HOSTED_CP_MCU_DEBUG_STATS
+#            bool "Enable MCU Statistics"
+#            default y
+#            help
+#                Enable collection and reporting of MCU-specific statistics.
+#
+#        config ESP_HOSTED_CP_MCU_DEBUG_VERBOSE
+#            bool "Enable Verbose Debug Logging"
+#            default n
+#            help
+#                Enable verbose debug logging for MCU RPC operations.
+#
+#    endmenu
+#
+#endmenu

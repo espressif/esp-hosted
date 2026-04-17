@@ -1,0 +1,53 @@
+menu "ESP Hosted Transport Host Configuration"
+
+    choice ESP_HOSTED_HOST_PLATFORM
+        prompt "Host Platform Type"
+        default ESP_HOSTED_HOST_PLATFORM_MCU if IDF_TARGET
+        help
+            Select the host platform type for ESP-Hosted transport
+
+        config ESP_HOSTED_HOST_PLATFORM_MCU
+            bool "MCU Platform (ESP-IDF)"
+            help
+                Use MCU platform transport drivers (ESP32, etc. as host)
+
+        config ESP_HOSTED_HOST_PLATFORM_LINUX
+            bool "Linux Kernel Platform"
+            help
+                Use Linux kernel transport drivers (handled via Makefile)
+
+    endchoice
+
+    # MCU platform specific configurations
+    if ESP_HOSTED_HOST_PLATFORM_MCU
+
+        choice ESP_HOSTED_HOST_MCU_TRANSPORT
+            prompt "MCU Transport Type"
+            default ESP_HOSTED_HOST_MCU_TRANSPORT_SPI
+            help
+                Select transport interface for MCU host
+
+            config ESP_HOSTED_HOST_MCU_TRANSPORT_SPI
+                bool "SPI Transport"
+
+            config ESP_HOSTED_HOST_MCU_TRANSPORT_SDIO
+                bool "SDIO Transport"
+
+            config ESP_HOSTED_HOST_MCU_TRANSPORT_SPI_HD
+                bool "SPI Half-Duplex Transport"
+
+            config ESP_HOSTED_HOST_MCU_TRANSPORT_UART
+                bool "UART Transport"
+
+        endchoice
+
+        config ESP_HOSTED_HOST_MCU_MAX_BUFFER_SIZE
+            int "Maximum Buffer Size"
+            default 1600
+            range 512 4096
+            help
+                Maximum buffer size for transport operations
+
+    endif # ESP_HOSTED_HOST_PLATFORM_MCU
+
+endmenu

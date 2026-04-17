@@ -1,0 +1,29 @@
+menuconfig ESP_HOSTED_CP_FEAT_WIFI
+    bool "WiFi"
+    depends on ESP_HOSTED_CP
+    default n
+    help
+        Enables WiFi feature capability reporting on the coprocessor.
+
+if ESP_HOSTED_CP_FEAT_WIFI
+
+    comment "⚠️  Enable [✓] ESP_HOSTED_CP_WIFI_ENABLED (Component config → ESP-Hosted CP)"
+        depends on !ESP_HOSTED_CP_WIFI_ENABLED
+
+    config ESP_HOSTED_CP_FEAT_WIFI_READY
+        bool
+        default y if ESP_HOSTED_CP_WIFI_ENABLED
+
+    config ESP_HOSTED_CP_FEAT_WIFI_AUTO_INIT
+        bool "Auto-initialize WiFi at boot"
+        default y
+        depends on ESP_HOSTED_CP_AUTO_FEAT_INIT
+        help
+            When enabled, WiFi feature auto-initializes during eh_cp_init().
+            Disable to manually call eh_cp_feat_wifi_init().
+
+    orsource "../eh_cp_feat_wifi_ext_ent/Kconfig.ext"
+    orsource "../eh_cp_feat_wifi_ext_itwt/Kconfig.ext"
+    orsource "../eh_cp_feat_wifi_ext_dpp/Kconfig.ext"
+
+endif # ESP_HOSTED_CP_FEAT_WIFI

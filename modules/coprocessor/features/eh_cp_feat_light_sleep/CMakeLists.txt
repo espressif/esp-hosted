@@ -1,0 +1,8 @@
+if(CONFIG_ESP_HOSTED_CP_FEAT_LIGHT_SLEEP_READY)
+    add_library(eh_cp_feat_light_sleep STATIC "src/eh_cp_feat_light_sleep.c")
+    target_include_directories(eh_cp_feat_light_sleep PUBLIC "include")
+    target_link_libraries(eh_cp_feat_light_sleep PUBLIC eh_cp_core eh_common idf::esp_common idf::esp_pm)
+else()
+    add_library(eh_cp_feat_light_sleep INTERFACE)
+    target_include_directories(eh_cp_feat_light_sleep INTERFACE "include")
+endif()

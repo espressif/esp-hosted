@@ -1,0 +1,8 @@
+if(CONFIG_ESP_HOSTED_CP_FEAT_EXT_COEX_READY)
+    add_library(eh_cp_feat_ext_coex STATIC "src/eh_cp_feat_ext_coex.c")
+    target_include_directories(eh_cp_feat_ext_coex PUBLIC "include")
+    target_link_libraries(eh_cp_feat_ext_coex PUBLIC eh_cp_core eh_common idf::esp_common)
+else()
+    add_library(eh_cp_feat_ext_coex INTERFACE)
+    target_include_directories(eh_cp_feat_ext_coex INTERFACE "include")
+endif()

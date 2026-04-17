@@ -1,0 +1,8 @@
+if(CONFIG_ESP_HOSTED_CP_FEAT_MEM_MONITOR_READY)
+    add_library(eh_cp_feat_mem_monitor STATIC "src/eh_cp_feat_mem_monitor.c")
+    target_include_directories(eh_cp_feat_mem_monitor PUBLIC "include")
+    target_link_libraries(eh_cp_feat_mem_monitor PUBLIC eh_cp_core eh_common idf::esp_common)
+else()
+    add_library(eh_cp_feat_mem_monitor INTERFACE)
+    target_include_directories(eh_cp_feat_mem_monitor INTERFACE "include")
+endif()

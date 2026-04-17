@@ -1,0 +1,30 @@
+menuconfig ESP_HOSTED
+	bool "Enable ESP-Hosted"
+	default y
+
+if ESP_HOSTED
+
+	choice ESP_HOSTED_ROLE
+		prompt "Use this device as (co-processor/host)"
+		default ESP_HOSTED_CP
+		help
+			Select whether this build is for the coprocessor or the host.
+
+		config ESP_HOSTED_CP
+			bool "Coprocessor (CP)"
+
+		config ESP_HOSTED_HOST
+			bool "Host"
+	endchoice
+
+	orsource "modules/common/esp_hosted_common/Kconfig.ext"
+
+	if ESP_HOSTED_CP
+		orsource "modules/coprocessor/Kconfig.ext"
+	endif
+
+	if ESP_HOSTED_HOST
+		orsource "modules/host/Kconfig.ext"
+	endif
+
+endif

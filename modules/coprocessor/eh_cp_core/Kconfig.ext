@@ -1,0 +1,403 @@
+menu "CP core"
+	depends on ESP_HOSTED_CP
+	menu "HCI UART Settings"
+		depends on ESP_HOSTED_CP && BT_ENABLED && BT_CTRL_HCI_MODE_UART_H4 && (IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S3)
+
+		config EH_PRIV_BT_UART_PORT_ESP32_S3
+			int "HCI UART Port"
+			depends on IDF_TARGET_ESP32S3
+			default 1
+			range 1 2
+			help
+				UART Port for HCI
+
+		config ESP_HOSTED_BT_UART_PORT_ESP32_C3_S3
+			int
+			default EH_PRIV_BT_UART_PORT_ESP32_S3 if IDF_TARGET_ESP32S3
+			default 1
+
+		config ESP_HOSTED_BT_UART_BAUDRATE_ESP32_C3_S3
+			int "HCI UART Baudrate"
+			range 115200 921600
+			default 921600
+			help
+				UART Baudrate for HCI. Please use standard baudrate.
+
+		config ESP_HOSTED_BT_UART_TX_PIN_ESP32_C3_S3
+			int "HCI UART Tx Pin"
+			default 5 if IDF_TARGET_ESP32C3
+			default 16
+			help
+				UART Tx Pin for HCI
+
+		config ESP_HOSTED_BT_UART_RX_PIN_ESP32_C3_S3
+			int "HCI UART Rx Pin"
+			default 18
+			help
+				UART Rx Pin for HCI
+
+		choice EH_PRIV_BT_UART_FLOWCONTROL_ESP32_C3_S3
+			bool "HCI UART Flow Control"
+			default ESP_HOSTED_BT_UART_FLOWCONTROL_DISABLED
+
+			config ESP_HOSTED_BT_UART_FLOWCONTROL_DISABLED
+				bool "Disabled"
+
+			config ESP_HOSTED_BT_UART_FLOWCONTROL_ENABLED
+				bool "Enabled"
+		endchoice
+
+		config ESP_HOSTED_BT_UART_FLOWCONTROL_ESP32_C3_S3
+			int
+			default 3 if ESP_HOSTED_BT_UART_FLOWCONTROL_ENABLED
+			default 0
+
+		config ESP_HOSTED_BT_UART_RTS_PIN_ESP32_C3_S3
+			depends on ESP_HOSTED_BT_UART_FLOWCONTROL_ENABLED
+			int "HCI UART RTS Pin"
+			default 19
+			help
+				UART RTS Pin for HCI
+
+		config ESP_HOSTED_BT_UART_CTS_PIN_ESP32_C3_S3
+			depends on ESP_HOSTED_BT_UART_FLOWCONTROL_ENABLED
+			int "HCI UART CTS Pin"
+			default 1 if IDF_TARGET_ESP32C3
+			default 20
+			help
+				UART CTS Pin for HCI
+	endmenu
+
+	menu "HCI UART Settings"
+		depends on ESP_HOSTED_CP && BT_ENABLED && BTDM_CTRL_HCI_MODE_UART_H4 && IDF_TARGET_ESP32
+
+		config ESP_HOSTED_BT_UART_TX_PIN_ESP32
+			int "HCI UART Tx Pin"
+			default 5
+			help
+				UART Tx Pin for HCI
+
+		config ESP_HOSTED_BT_UART_RX_PIN_ESP32
+			int "HCI UART Rx Pin"
+			default 18
+			help
+				UART Rx Pin for HCI
+
+		config ESP_HOSTED_BT_UART_RTS_PIN_ESP32
+			depends on BTDM_CTRL_HCI_UART_FLOW_CTRL_EN
+			int "HCI UART RTS Pin"
+			default 19
+			help
+				UART RTS Pin for HCI
+
+		config ESP_HOSTED_BT_UART_CTS_PIN_ESP32
+			depends on BTDM_CTRL_HCI_UART_FLOW_CTRL_EN
+			int "HCI UART CTS Pin"
+			default 23
+			help
+				UART CTS Pin for HCI
+
+		comment "HCI UART Settings from Bluetooth Component"
+		comment "To change Port, Baud Rate, Flow Control, select Component config ---> Bluetooth ---> Controller Options ---> HCI Config"
+
+		config ESP_HOSTED_BT_UART_PORT_ESP32
+			int "HCI UART Port"
+			range BTDM_CTRL_HCI_UART_NO BTDM_CTRL_HCI_UART_NO
+			help
+				UART Port for HCI
+
+		config ESP_HOSTED_BT_UART_BAUDRATE_ESP32
+			int "HCI UART Baudrate"
+			range BTDM_CTRL_HCI_UART_BAUDRATE BTDM_CTRL_HCI_UART_BAUDRATE
+			help
+				UART Baudrate for HCI. Please use standard baudrate.
+	endmenu
+
+	menu "HCI UART Settings"
+		depends on BT_ENABLED && BT_LE_HCI_INTERFACE_USE_UART && !IDF_TARGET_ESP32 && !IDF_TARGET_ESP32C3 && !IDF_TARGET_ESP32S3
+		comment "HCI UART Settings from Bluetooth Component"
+		comment "To change, select Component config ---> Bluetooth ---> Controller Options ---> HCI Config"
+
+		config ESP_HOSTED_BT_UART_PORT
+			int "HCI UART Port"
+			default BT_LE_HCI_UART_PORT if BT_LE_HCI_UART_PORT
+			default 1
+			help
+				UART Port for HCI
+
+		config ESP_HOSTED_BT_UART_TX_PIN
+			int "HCI UART Tx Pin"
+			default BT_LE_HCI_UART_TX_PIN if BT_LE_HCI_UART_TX_PIN
+			default 17
+			help
+				UART Tx Pin for HCI
+
+		config ESP_HOSTED_BT_UART_RX_PIN
+			int "HCI UART Rx Pin"
+			default BT_LE_HCI_UART_RX_PIN if BT_LE_HCI_UART_RX_PIN
+			default 16
+			help
+				UART Rx Pin for HCI
+
+		config ESP_HOSTED_BT_UART_RTS_PIN
+			depends on BT_LE_HCI_UART_FLOWCTRL
+			int "HCI UART RTS Pin"
+			default BT_LE_HCI_UART_RTS_PIN if BT_LE_HCI_UART_RTS_PIN
+			default 15
+			help
+				UART RTS Pin for HCI
+
+		config ESP_HOSTED_BT_UART_CTS_PIN
+			depends on BT_LE_HCI_UART_FLOWCTRL
+			int "HCI UART CTS Pin"
+			default BT_LE_HCI_UART_CTS_PIN if BT_LE_HCI_UART_CTS_PIN
+			default 14
+			help
+				UART CTS Pin for HCI
+
+		config ESP_HOSTED_BT_UART_BAUDRATE
+			int "HCI UART Baudrate"
+			default BT_LE_HCI_UART_BAUD if BT_LE_HCI_UART_BAUD
+			default 921600
+			help
+				UART Baudrate for HCI. Please use standard baudrate.
+	endmenu
+
+	menu "Core: Task & Queue Config"
+		config ESP_HOSTED_DEFAULT_TASK_STACK_SIZE
+			int "ESP-Hosted task stack size"
+			default 4096
+			help
+				Default task size of ESP-Hosted tasks
+
+		config ESP_HOSTED_TASK_PRIORITY_LOW
+			int "ESP-Hosted task priority low"
+			default 5
+			help
+				Low priority of ESP-Hosted tasks
+
+		config ESP_HOSTED_TASK_PRIORITY_DEFAULT
+			int "ESP-Hosted task priority default"
+			default 21
+			help
+				Default task priority of ESP-Hosted tasks
+
+		config ESP_HOSTED_TASK_PRIORITY_HIGH
+			int "ESP-Hosted task priority high"
+			default 22
+			help
+				High priority of ESP-Hosted tasks
+
+		menu "Transport Priority Queue Configuration"
+			config ESP_ENABLE_TX_PRIORITY_QUEUES
+				depends on !EH_TRANSPORT_CP_SDIO
+				bool "Enable TX priority queues"
+				default n
+				help
+					Enable separate priority queues for TX based on interface type (WiFi, BT, Serial)
+
+			config ESP_TX_WIFI_Q_SIZE
+				int "TX WiFi queue size"
+				depends on ESP_ENABLE_TX_PRIORITY_QUEUES
+				default 10 if IDF_TARGET_ESP32C2
+				default 20
+				help
+					Size of TX queue for WiFi packets
+
+			config ESP_TX_BT_Q_SIZE
+				int "TX BT queue size"
+				depends on ESP_ENABLE_TX_PRIORITY_QUEUES
+				default 3
+				help
+					Size of TX queue for BT packets
+
+			config ESP_TX_SERIAL_Q_SIZE
+				int "TX Serial queue size"
+				depends on ESP_ENABLE_TX_PRIORITY_QUEUES
+				default 2
+				help
+					Size of TX queue for Serial packets
+
+			config ESP_TX_Q_SIZE
+				int "ESP to Host transport queue size"
+				depends on !ESP_ENABLE_TX_PRIORITY_QUEUES
+				default 6 if IDF_TARGET_ESP32C2
+				default 10
+				help
+					Size of Tx queue for packets
+
+			config ESP_ENABLE_RX_PRIORITY_QUEUES
+				bool "Enable RX priority queues"
+				default n
+				help
+					Enable separate priority queues for RX based on interface type (WiFi, BT, Serial)
+
+			config ESP_RX_WIFI_Q_SIZE
+				int "RX WiFi queue size"
+				depends on ESP_ENABLE_RX_PRIORITY_QUEUES
+				default 10 if IDF_TARGET_ESP32C2
+				default 20
+				help
+					Size of RX queue for WiFi packets
+
+			config ESP_RX_BT_Q_SIZE
+				int "RX BT queue size"
+				depends on ESP_ENABLE_RX_PRIORITY_QUEUES
+				default 3
+				help
+					Size of RX queue for BT packets
+
+			config ESP_RX_SERIAL_Q_SIZE
+				int "RX Serial queue size"
+				depends on ESP_ENABLE_RX_PRIORITY_QUEUES
+				default 2
+				help
+					Size of RX queue for Serial packets
+
+			config ESP_RX_Q_SIZE
+				int "Host to ESP transport queue size"
+				depends on !ESP_ENABLE_RX_PRIORITY_QUEUES
+				default 6 if IDF_TARGET_ESP32C2
+				default 10
+				help
+					Size of Rx queue for packets
+		endmenu
+	endmenu
+
+	menu "Core: Debug & Misc"
+		config ESP_HOSTED_CP_WIFI_DPP_SUPPORT
+			bool "Enable Wi-Fi Easy Connect (DPP)"
+			default n
+			help
+				Enable Wi-Fi Easy Connect (DPP) support for ESP-Hosted
+
+		menu "ESP-Hosted-CP Debugging"
+
+		#
+		# 1. Transport Test
+		#
+		menu "Transport Test"
+
+			config ESP_RAW_THROUGHPUT_TRANSPORT
+				bool "RawTP: Transport level throughput debug test"
+				default n
+				help
+					Find max transport performance which helps to assess
+					stability of porting done.
+
+			config ESP_RAW_TP_ESP_TO_HOST_PKT_LEN
+				depends on ESP_RAW_THROUGHPUT_TRANSPORT
+				int "RawTP: ESP to Host packet size"
+				range 1 1500
+				default 1460
+
+			config ESP_RAW_TP_REPORT_INTERVAL
+				depends on ESP_RAW_THROUGHPUT_TRANSPORT
+				int "RawTP: periodic duration to report stats accumulated"
+				default 1 if ESP_HOSTED_CP_FOR_LINUX
+				default 10 if ESP_HOSTED_CP_FOR_MCU
+				default 1
+
+		endmenu  # Transport Test
+
+
+		#
+		# 2. Packet Stats
+		#
+		menu "Packet Stats"
+
+			config ESP_PKT_STATS
+				bool "Transport level packet stats"
+				default n
+				help
+					On comparing with slave packet stats helps to understand
+					any packet loss at hosted side.
+
+			config ESP_PKT_STATS_INTERVAL_SEC
+				depends on ESP_PKT_STATS
+				int "Packet stats reporting interval (sec)"
+				default 30
+
+		endmenu  # Packet Stats
+
+
+		#
+		# 3. Function Profiling
+		#
+		menu "Function Profiling"
+
+			config ESP_HOSTED_FUNCTION_PROFILING
+				bool "Enable function execution time profiling"
+				default n
+				help
+					Enable this option to measure and report function execution times.
+					Useful for performance profiling and optimization.
+
+			config ESP_HOSTED_FUNCTION_PROFILING_MAX_ENTRIES
+				depends on ESP_HOSTED_FUNCTION_PROFILING
+				int "Maximum number of functions to profile"
+				default 10
+				range 1 50
+				help
+					Maximum number of unique functions that can be profiled simultaneously.
+					Each entry consumes memory, so keep this value reasonable based on
+					available memory.
+
+		endmenu  # Function Profiling
+
+		config ESP_HOSTED_CP_RPC_NODE_CONTAINS_NAME
+			bool "Include debug names in RPC SLIST nodes"
+			default n
+			help
+				When enabled, each RPC request and event node stores
+				a const char* debug label. Adds ~4 bytes per node and
+				enables richer LOGI output during registration.
+				Disable on flash/RAM-constrained builds.
+
+		endmenu  # ESP-Hosted-CP Debugging
+
+		# Bluetooth stack configuration
+		if ESP_HOSTED_CP && BT_ENABLED && !BT_CONTROLLER_ONLY
+			config ESP_HOSTED_BT_STACK_ENABLED
+				bool "Enable BT stack: Advanced option: Handle bluetooth on your own at slave"
+				default n
+				help
+					Enable this option to handle bluetooth manually at slave.
+					WARN: Host cannot use bluetooth in coprocessor mode, if this is enabled
+		endif
+
+		config ESP_HOSTED_CP_BT_ENABLED
+			bool "Enable Bluetooth on coprocessor"
+			default y if BT_ENABLED && !ESP_HOSTED_BT_STACK_ENABLED && SOC_BT_SUPPORTED
+			default n
+
+		config ESP_HOSTED_CP_AUTO_START_BT_ON_HOSTED_INIT
+			bool "Auto start Bluetooth on hosted init"
+			default n
+			help
+				Enable this option to start Bluetooth on hosted init.
+
+		config ESP_HOSTED_CP_AUTO_STOP_BT_ON_HOSTED_DEINIT
+			bool "Auto stop Bluetooth on hosted deinit"
+			default n
+			help
+				Enable this option to stop Bluetooth on hosted deinit.
+
+			config ESP_HOSTED_CP_WIFI_ENABLED
+				bool "Enable Wi-Fi coprocessor"
+				default y if ESP_WIFI_ENABLED
+				help
+					Enable this option to handle Wi-Fi in coprocessor mode.
+	endmenu
+
+	# ── Communication bus ────────────────────────────────────────────────────
+	# (moved above transport priority queue configuration)
+
+	config ESP_HOSTED_CP_AUTO_FEAT_INIT
+		bool "Auto-initialize features at boot"
+		default y
+		help
+			When enabled, all features registered via EH_CP_FEAT_REGISTER
+			are automatically initialized during eh_cp_init(). Disable to
+			manually control feature initialization order.
+endmenu

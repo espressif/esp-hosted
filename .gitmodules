@@ -1,3 +1,3 @@
-[submodule "esp_hosted_fg/common/protobuf-c"]
-	path = esp_hosted_fg/common/protobuf-c
+[submodule "modules/common/serializers/third_party/msg_codec/protobuf-c"]
+	path = modules/common/serializers/third_party/msg_codec/protobuf-c
 	url = https://github.com/protobuf-c/protobuf-c.git

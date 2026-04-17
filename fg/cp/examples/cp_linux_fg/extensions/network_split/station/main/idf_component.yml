@@ -1,0 +1,7 @@
+dependencies:
+    espressif/esp_hosted:
+      version: "*"
+    espressif/mqtt:
+      version: "*"
+      rules:
+        - if: "idf_version >= 6.0"

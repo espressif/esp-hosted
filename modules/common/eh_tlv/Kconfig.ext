@@ -1,0 +1,15 @@
+# TLV group selection — hidden, auto-selected from RPC version.
+# Sourced by coprocessor (and later host) parent Kconfig.
+# No user-visible options.
+
+config ESP_HOSTED_TLV_V1_LINUX
+    bool
+    default y if ESP_HOSTED_CP_RPC_V1_LINUX
+
+config ESP_HOSTED_TLV_V1_MCU
+    bool
+    default y if ESP_HOSTED_CP_RPC_V1_MCU || ESP_HOSTED_CP_RPC_V2
+
+config ESP_HOSTED_TLV_V2
+    bool
+    default y if ESP_HOSTED_CP_RPC_V2

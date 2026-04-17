@@ -1,0 +1,27 @@
+menuconfig ESP_HOSTED_CP_FEAT_CLI
+	depends on ESP_HOSTED_CP && ESP_HOSTED_CP_FOR_MCU
+	bool "CLI Shell"
+	default y if ESP_HOSTED_CP_FEAT_HOST_PS
+	default n if !ESP_HOSTED_CP_FEAT_HOST_PS
+	help
+		Enable CLI shell for debugging and control purposes.
+
+if ESP_HOSTED_CP_FEAT_CLI
+
+	config ESP_HOSTED_CP_FEAT_CLI_READY
+		bool
+		default y if ESP_HOSTED_CP_FOR_MCU
+
+	config ESP_HOSTED_CP_CLI_NEW_INSTANCE
+		bool "Create new instance & do not re-use existing session if any"
+		default y
+
+	config ESP_HOSTED_CP_FEAT_CLI_AUTO_INIT
+	    bool "Auto-initialize CLI at boot"
+	    default y
+	    depends on ESP_HOSTED_CP_AUTO_FEAT_INIT
+	    help
+	        When enabled, CLI feature auto-initializes during eh_cp_init().
+	        Disable to manually call eh_cp_feat_cli_init().
+
+endif # ESP_HOSTED_CP_FEAT_CLI

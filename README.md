@@ -65,7 +65,7 @@ Optimized for **resource-constrained MCUs**:
 
 | Feature                    |           ESP-Hosted-NG          |  ESP-Hosted-FG  |  ESP-Hosted-MCU  |
 | :-------------------------------- | :------------------------------: | :-------------: | :--------------: |
-| **Target Host**            |               Linux              |      Linux      |        MCU       |
+| **Target Host**            |               Linux              |   Linux / MCU   |        MCU       |
 | **Wi-Fi Configuration**    |            `cfg80211`            |  RPC (protobuf) | RPC (protobuf) |
 | **Network Interface**      |           802.11 Wi-Fi           |  802.3 Ethernet |  802.3 Ethernet  |
 | **Same IP for ESP & Host** |                 ❌                |        ✅        |         ✅        |
@@ -74,9 +74,11 @@ Optimized for **resource-constrained MCUs**:
 | **Bus Interfaces**         |   SPI, SDIO, UART (and combos)   |       Same      |       Same       |
 | **Wi-Fi Security**         |       WPA, WPA2, WPA3, Open      |       Same      |       Same       |
 | **Standards**              | 802.11 b/g/n/ax, BLE 4.2/5.0/5.3 |       Same      |       Same       |
-| **Supported ESP Chips**    |     ESP32, C2/C3/C5/C6/C61, S2/S3    |       Same      |       Same       |
+| **Supported ESP Chips**    |     ESP32, C2/C3/C6, S2/S3    |   ESP32, C2/C3/C5/C6, S2/S3      |    ESP32, C2/C5/C3/C6, S2/S3   |
 
 ---
+:warning: Note:
+[ESP32-C5 beta](https://github.com/espressif/esp-hosted/tree/feat/esp32c5_ng_beta_support) support has been added please click on link for more info
 
 ## 🤔 Choosing the Right Variant
 
@@ -97,15 +99,15 @@ Optimized for **resource-constrained MCUs**:
 
 ### ESP-Hosted-NG
 
-* 📄 [Documentation](https://github.com/espressif/esp-hosted/blob/master/esp_hosted_ng/README.md)
+* 📄 [Documentation](esp_hosted_ng/README.md)
 * 🐞 [Issues](https://github.com/espressif/esp-hosted/issues)
-* 📈 [Throughput Benchmarks](https://github.com/espressif/esp-hosted/blob/master/esp_hosted_ng/README.md#5-throughput-performance)
+* 📈 [Throughput Benchmarks](esp_hosted_ng/README.md#5-throughput-performance)
 
 ### ESP-Hosted-FG
 
-* 📄 [Documentation](https://github.com/espressif/esp-hosted/blob/master/esp_hosted_fg/README.md)
+* 📄 [Documentation](esp_hosted_fg/README.md)
 * 🐞 [Issues](https://github.com/espressif/esp-hosted/issues)
-* 📈 [Throughput Benchmarks](https://github.com/espressif/esp-hosted/blob/master/esp_hosted_fg/README.md#5-throughput-performance)
+* 📈 [Throughput Benchmarks](esp_hosted_fg/README.md#6-throughput-performance)
 
 ### ESP-Hosted-MCU
 

@@ -1,0 +1,60 @@
+menu "ESP-Hosted Example Config"
+	menu "Example to run"
+		depends on ESP_HOSTED_CP_EXT_NW_SPLIT
+
+		config ESP_HOSTED_CP_EXAMPLE_MQTT_CLIENT
+			bool "MQTT client example"
+			default n
+
+		menu "MQTT client config"
+			depends on ESP_HOSTED_CP_EXAMPLE_MQTT_CLIENT
+
+			choice BROKER_CHOICE
+				prompt "MQTT Broker"
+				default BROKER_HIVEMQ
+
+				config BROKER_ECLIPSEPROJECTS
+					bool "mqtt.eclipseprojects.io"
+				config BROKER_HIVEMQ
+					bool "broker.hivemq.com"
+			endchoice
+
+			config BROKER_URL
+				string
+				default "mqtt://mqtt.eclipseprojects.io" if BROKER_ECLIPSEPROJECTS
+				default "mqtt://broker.hivemq.com" if BROKER_HIVEMQ
+				help
+					URL of the broker to connect to
+
+			config BROKER_URL_FROM_STDIN
+				bool
+				default y if BROKER_URL = "FROM_STDIN"
+
+		endmenu
+
+		config ESP_HOSTED_CP_EXAMPLE_HTTP_CLIENT
+			bool "HTTP client example"
+			default n
+
+		menu "HTTP client config"
+			depends on ESP_HOSTED_CP_EXAMPLE_HTTP_CLIENT
+
+			config HTTP_WEBSERVER
+				string "HTTP webserver to send req"
+				default "example.com"
+
+			config HTTP_WEBSERVER_PORT
+				string "HTTP webserver port"
+				default "80"
+
+			config HTTP_WEBSERVER_PATH
+				string "HTTP webserver path"
+				default "/"
+
+			config HTTP_REQ_DELAY
+				int "Delay after every http request (seconds)"
+				default 10
+
+		endmenu
+	endmenu
+endmenu

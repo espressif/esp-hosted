@@ -1,0 +1,30 @@
+name: "esp_hosted"
+version: "3.0.0-rc1"
+description: "ESP-Hosted - Unified coprocessor connectivity (pre-release candidate)"
+url: "https://github.com/espressif/esp-hosted"
+documentation: "https://docs.espressif.com/projects/esp-hosted"
+
+# Pre-release: 3.0.0-rc1 will NOT match wildcard (*) or caret (^3.0.0)
+# in dependents. Users must explicitly pin:
+#   espressif/esp_hosted:
+#     version: "3.0.0-rc1"
+
+dependencies:
+  idf:
+    version: ">=5.5"
+
+targets:
+  - esp32
+  - esp32c2
+  - esp32s2
+  - esp32s3
+  - esp32c3
+  - esp32c5
+  - esp32c6
+  - esp32c61
+  - esp32h2
+  - esp32h4
+
+examples:
+  - path: fg/cp/examples/cp_mcu
+  - path: fg/cp/examples/cp_linux_fg

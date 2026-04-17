@@ -1,0 +1,79 @@
+menu "Configure coprocessor"
+	depends on ESP_HOSTED_CP
+
+	# CP: Host type selection for coprocessor configuration
+	choice ESP_HOSTED_CP_TYPE
+		prompt "Which host this coprocessor connects to?"
+		default ESP_HOSTED_CP_FOR_LINUX__802_03
+		help
+			Select the type of host that will communicate with this coprocessor.
+			This affects GPIO pin assignments, queue sizes, and other configuration defaults.
+
+		config ESP_HOSTED_CP_FOR_LINUX__802_03
+			bool "Linux host based on 802.03 (RPC, Former name - FG)"
+
+		config ESP_HOSTED_CP_FOR_LINUX__802_11
+			bool "Linux host based on 802.11 (wpa_supplicant, Former name - NG)"
+
+		config ESP_HOSTED_CP_FOR_MCU
+			bool "MCU host"
+	endchoice
+
+	config ESP_HOSTED_CP_FOR_LINUX
+		bool
+		default y if ESP_HOSTED_CP_FOR_LINUX__802_03 || ESP_HOSTED_CP_FOR_LINUX__802_11
+
+	choice ESP_HOST_DEV_BOARD
+		depends on ESP_HOSTED_CP && (ESP_HOSTED_CP_FOR_MCU || ESP_HOSTED_CP_FOR_LINUX)
+		prompt "Select for PCB Board (Optional)"
+		default ESP_HOST_DEV_BOARD_NONE
+		help
+			Preconfigures GPIOs to use based on an ESP Development Board
+
+		# Linux FG specific board configurations
+		config ESP_ESP32C5_SPI_RASPI_MATING_BOARD
+			bool "ESP32-C5 RaspPi Mating Board (SPI)"
+			depends on ESP_HOSTED_CP_FOR_LINUX && IDF_TARGET_ESP32C5
+
+		# MCU specific board configurations
+		config ESP_HOST_DEV_BOARD_NONE
+			bool "No specific PCB board"
+
+		config ESP_HOST_DEV_BOARD_P4_FUNC_BOARD
+			bool "ESP32-P4-Function-EV-Board"
+			depends on ESP_HOSTED_CP_FOR_MCU && IDF_TARGET_ESP32C6
+
+		config C2_C5_MODULE_SUB_BOARD
+			bool "ESP32-P4 EV Sub-Board for C2 & C5"
+			depends on ESP_HOSTED_CP_FOR_MCU && (IDF_TARGET_ESP32C2 || IDF_TARGET_ESP32C5)
+
+	endchoice
+
+	orsource "eh_cp_core/Kconfig.ext"
+	orsource "eh_cp_transport/Kconfig.ext"
+
+	# RPC support is its own top-level entry under coprocessor configuration.
+	orsource "features/eh_cp_feat_rpc/Kconfig.ext"
+
+	# TLV group selection (hidden, auto from RPC version)
+	orsource "../common/eh_tlv/Kconfig.ext"
+
+	menu "Features"
+		orsource "features/eh_cp_feat_rpc_ext_linux/Kconfig.ext"
+		orsource "features/eh_cp_feat_rpc_ext_mcu/Kconfig.ext"
+
+		orsource "features/eh_cp_feat_wifi/Kconfig.ext"
+
+		orsource "features/eh_cp_feat_bt/Kconfig.ext"
+		orsource "features/eh_cp_feat_host_ps/Kconfig.ext"
+		orsource "features/eh_cp_feat_system/Kconfig.ext"
+		orsource "features/eh_cp_feat_nw_split/Kconfig.ext"
+		orsource "features/eh_cp_feat_peer_data/Kconfig.ext"
+		orsource "features/eh_cp_feat_gpio_exp/Kconfig.ext"
+		orsource "features/eh_cp_feat_mem_monitor/Kconfig.ext"
+		orsource "features/eh_cp_feat_ext_coex/Kconfig.ext"
+		orsource "features/eh_cp_feat_light_sleep/Kconfig.ext"
+		orsource "features/eh_cp_feat_cli/Kconfig.ext"
+	endmenu
+
+endmenu

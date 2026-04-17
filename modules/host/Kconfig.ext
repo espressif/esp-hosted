@@ -1,0 +1,8 @@
+menuconfig ESP_HOSTED_HOST_SUBTREE
+	bool "Enable host components"
+	default y
+	depends on ESP_HOSTED_HOST
+
+if ESP_HOSTED_HOST_SUBTREE
+	# Host subtree Kconfig routing placeholder
+endif

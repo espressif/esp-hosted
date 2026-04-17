@@ -1,0 +1,158 @@
+menu "SDIO Configuration"
+	depends on EH_TRANSPORT_CP_SDIO
+
+	config EH_TRANSPORT_CP_SDIO_STREAMING_MODE
+		bool "Enable SDIO Streaming Mode"
+		default n if ESP_HOSTED_CP_FOR_LINUX
+		default y if ESP_HOSTED_CP_FOR_MCU
+		help
+			Enable Streaming Mode. Host to receive queued data from slave
+			as one stream instead of individual packets. This can improve
+			host SDIO read performance by doing one large read transaction
+			instead of many smaller read transactions.
+
+	config EH_TRANSPORT_CP_SDIO_CHECKSUM
+		bool "Enable SDIO checksum"
+		default n
+		help
+			ENABLE/DISABLE software SDIO checksum
+
+	config EH_TRANSPORT_CP_SDIO_GPIO_RESET
+		int "Slave GPIO pin to reset itself"
+		default -1
+		help
+			Host uses this pin to reset the slave ESP. To re-use ESP 'RST' or 'EN' GPIO, set value to -1
+
+
+	choice EH_TRANSPORT_CP_SDIO_SPEED
+		prompt "SDIO Bus Speed"
+		default EH_TRANSPORT_CP_SDIO_HIGH_SPEED
+		help
+			Select the SDIO Slave Bus Speed. Actual speed in use depends on SDIO bus speed the SDIO Master can support
+
+		config EH_TRANSPORT_CP_SDIO_DEFAULT_SPEED
+			bool "Default Speed"
+
+		config EH_TRANSPORT_CP_SDIO_HIGH_SPEED
+			bool "High Speed"
+	endchoice
+
+	menu "Hosted SDIO GPIOs"
+		config EH_TRANSPORT_CP_SDIO_PIN_CMD
+			int "CMD GPIO number"
+			range 15 15 if IDF_TARGET_ESP32
+			range 18 18 if IDF_TARGET_ESP32C6
+			range 25 25 if IDF_TARGET_ESP32C61
+			range 10 10 if IDF_TARGET_ESP32C5
+			default 15 if IDF_TARGET_ESP32
+			default 18 if IDF_TARGET_ESP32C6
+			default 25 if IDF_TARGET_ESP32C61
+			default 10 if IDF_TARGET_ESP32C5
+			help
+				Value cannot be configured. Displayed for reference.
+
+		config EH_TRANSPORT_CP_SDIO_PIN_CLK
+			int "CLK GPIO number"
+			range 14 14 if IDF_TARGET_ESP32
+			range 19 19 if IDF_TARGET_ESP32C6
+			range 26 26 if IDF_TARGET_ESP32C61
+			range 9 9 if IDF_TARGET_ESP32C5
+			default 14 if IDF_TARGET_ESP32
+			default 19 if IDF_TARGET_ESP32C6
+			default 26 if IDF_TARGET_ESP32C61
+			default 9 if IDF_TARGET_ESP32C5
+			help
+				Value cannot be configured. Displayed for reference.
+
+		config EH_TRANSPORT_CP_SDIO_PIN_D0
+			int "D0 GPIO number"
+			range 2 2 if IDF_TARGET_ESP32
+			range 20 20 if IDF_TARGET_ESP32C6
+			range 27 27 if IDF_TARGET_ESP32C61
+			range 8 8 if IDF_TARGET_ESP32C5
+			default 2 if IDF_TARGET_ESP32
+			default 20 if IDF_TARGET_ESP32C6
+			default 27 if IDF_TARGET_ESP32C61
+			default 8 if IDF_TARGET_ESP32C5
+			help
+				Value cannot be configured. Displayed for reference.
+
+		config EH_TRANSPORT_CP_SDIO_PIN_D1
+			int "D1 GPIO number"
+			range 4 4 if IDF_TARGET_ESP32
+			range 21 21 if IDF_TARGET_ESP32C6
+			range 28 28 if IDF_TARGET_ESP32C61
+			range 7 7 if IDF_TARGET_ESP32C5
+			default 4 if IDF_TARGET_ESP32
+			default 21 if IDF_TARGET_ESP32C6
+			default 28 if IDF_TARGET_ESP32C61
+			default 7 if IDF_TARGET_ESP32C5
+			help
+				Value cannot be configured. Displayed for reference.
+
+		config EH_TRANSPORT_CP_SDIO_PIN_D2
+			int "D2 GPIO number"
+			range 12 12 if IDF_TARGET_ESP32
+			range 22 22 if IDF_TARGET_ESP32C6
+			range 22 22 if IDF_TARGET_ESP32C61
+			range 14 14 if IDF_TARGET_ESP32C5
+			default 12 if IDF_TARGET_ESP32
+			default 22 if IDF_TARGET_ESP32C6
+			default 22 if IDF_TARGET_ESP32C61
+			default 14 if IDF_TARGET_ESP32C5
+			help
+				Value cannot be configured. Displayed for reference.
+
+		config EH_TRANSPORT_CP_SDIO_PIN_D3
+			int "D3 GPIO number"
+			range 13 13 if IDF_TARGET_ESP32
+			range 23 23 if IDF_TARGET_ESP32C6
+			range 23 23 if IDF_TARGET_ESP32C61
+			range 13 13 if IDF_TARGET_ESP32C5
+			default 13 if IDF_TARGET_ESP32
+			default 23 if IDF_TARGET_ESP32C6
+			default 23 if IDF_TARGET_ESP32C61
+			default 13 if IDF_TARGET_ESP32C5
+			help
+				Value cannot be configured. Displayed for reference.
+	endmenu
+
+	choice EH_TRANSPORT_CP_SDIO_TIMING
+		prompt "SDIO Slave Timing"
+		default EH_TRANSPORT_CP_SDIO_NSEND_PSAMPLE if IDF_TARGET_ESP32C6 && ESP_HOSTED_CP_FOR_LINUX
+		default EH_TRANSPORT_CP_SDIO_PSEND_PSAMPLE
+		help
+			Select the SDIO timing used by slave. Default value works with most
+			SDMMC controllers but if transfer errors are encountered, selecting a
+			different timing may help resolve the errors.
+			See https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/peripherals/sdio_slave.html#_CPPv419sdio_slave_timing_t
+			for more information
+
+		config EH_TRANSPORT_CP_SDIO_PSEND_PSAMPLE
+			bool "Send at positive edge, sample at positive edge"
+
+		config EH_TRANSPORT_CP_SDIO_NSEND_PSAMPLE
+			bool "Send at negative edge, sample at positive edge"
+
+		config EH_TRANSPORT_CP_SDIO_PSEND_NSAMPLE
+			bool "Send at positive edge, sample at negative edge"
+
+		config EH_TRANSPORT_CP_SDIO_NSEND_NSAMPLE
+			bool "Send at negative edge, sample at negative edge"
+	endchoice
+
+	config EH_TRANSPORT_CP_SDIO_TX_Q_SIZE
+		int "SDIO TX queue size"
+		default 10 if IDF_TARGET_ESP32C61
+		default 20
+		help
+			Very small TX queue will lower ESP --> SDIO -- Host data rate
+
+	config EH_TRANSPORT_CP_SDIO_RX_Q_SIZE
+		int "SDIO RX queue size"
+		default 10 if IDF_TARGET_ESP32C61
+		default 20
+		help
+			Very small RX queue will lower ESP <-- SDIO -- Host data rate
+
+endmenu

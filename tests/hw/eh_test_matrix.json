@@ -1,0 +1,109 @@
+{
+  "pairs": {
+    "boot_wifi": {
+      "cp": "minimal/wifi",
+      "host": "host_minimal_test",
+      "tests": ["eh_test_feat_boot/test_boot_handshake.py"],
+      "description": "Boot handshake + FW version + WiFi scan"
+    },
+    "gpio": {
+      "cp": "extensions/gpio_exp",
+      "host": "host_gpio_expander",
+      "tests": ["eh_test_feat_rpc/test_gpio.py"],
+      "description": "GPIO set/get/toggle via RPC"
+    },
+    "peer_data": {
+      "cp": "extensions/peer_data_transfer",
+      "host": "host_peer_data_transfer",
+      "tests": ["eh_test_feat_rpc/test_peer_data.py"],
+      "description": "Custom RPC echo (3 sizes + GHOST)"
+    },
+    "mem_monitor": {
+      "cp": "extensions/mem_monitor",
+      "host": "host_hosted_cp_meminfo",
+      "tests": ["eh_test_feat_rpc/test_mem_monitor.py"],
+      "description": "Heap memory stats via RPC"
+    },
+    "bt_nimble": {
+      "cp": "minimal/bt",
+      "host": "host_nimble_bleprph_host_only_vhci",
+      "tests": ["eh_test_feat_bt/test_bt.py"],
+      "description": "BLE NimBLE VHCI advertising"
+    },
+    "bt_mac": {
+      "cp": "minimal/bt",
+      "host": "host_bt_controller_mac_addr",
+      "tests": ["eh_test_feat_bt/test_bt_mac.py"],
+      "description": "BT MAC address query"
+    },
+    "wifi_connect": {
+      "cp": "minimal/wifi",
+      "host": "host_hosted_events",
+      "tests": ["eh_test_feat_wifi/test_wifi_connect.py", "eh_test_feat_wifi/test_heartbeat.py"],
+      "description": "WiFi connect + heartbeat + events",
+      "requires": ["wifi_ap"],
+      "host_sdkconfig_extra": [
+        "CONFIG_ESP_WIFI_SSID=\"{wifi_ssid}\"",
+        "CONFIG_ESP_WIFI_PASSWORD=\"{wifi_password}\""
+      ]
+    },
+    "ota": {
+      "cp": "minimal/wifi",
+      "host": "host_performs_slave_ota",
+      "tests": ["eh_test_feat_system/test_ota.py"],
+      "description": "Real OTA via partition (992KB)",
+      "pre_flash": [
+        {
+          "action": "write_flash",
+          "port": "host",
+          "address": "0x5F0000",
+          "file": "{cp_build}/eh_cp_mcu_wifi.bin"
+        }
+      ],
+      "host_sdkconfig_extra": [
+        "CONFIG_OTA_METHOD_PARTITION=y",
+        "CONFIG_OTA_PARTITION_LABEL=\"slave_fw\"",
+        "CONFIG_OTA_VERSION_CHECK_SLAVEFW_SLAVE=n"
+      ]
+    },
+    "host_ps": {
+      "cp": "extensions/host_power_save",
+      "host": "host_shuts_down_slave_to_power_save",
+      "tests": ["eh_test_feat_system/test_host_ps.py"],
+      "description": "Host power save shutdown/wake cycle",
+      "requires": ["wifi_ap"],
+      "host_sdkconfig_extra": [
+        "CONFIG_ESP_WIFI_SSID=\"{wifi_ssid}\"",
+        "CONFIG_ESP_WIFI_PASSWORD=\"{wifi_password}\""
+      ]
+    },
+    "nw_split": {
+      "cp": "extensions/network_split/station",
+      "host": "host_network_split__power_save",
+      "tests": ["eh_test_feat_nw_split/test_nw_split.py"],
+      "description": "Network split basic: connect + ping routing",
+      "requires": ["wifi_ap"]
+    },
+    "nw_split_ps": {
+      "cp": "extensions/network_split__host_power_save",
+      "host": "host_network_split__power_save",
+      "tests": ["eh_test_feat_nw_split/test_nw_split_ps.py"],
+      "description": "Network split + host PS: sleep/wake cycle + packet routing",
+      "requires": ["wifi_ap"],
+      "cp_sdkconfig_extra": [
+        "CONFIG_LOG_MAXIMUM_LEVEL=5",
+        "CONFIG_EXAMPLE_WIFI_SSID=\"{wifi_ssid}\"",
+        "CONFIG_EXAMPLE_WIFI_PASSWORD=\"{wifi_password}\""
+      ]
+    },
+    "light_sleep": {
+      "cp": "extensions/light_sleep",
+      "host": "host_network_split__power_save",
+      "tests": ["eh_test_feat_nw_split/test_light_sleep.py"],
+      "description": "CP light sleep + transport + WiFi via CLI",
+      "requires": ["wifi_ap"]
+    }
+  },
+
+  "managed_component_patches": []
+}
