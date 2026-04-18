@@ -25,6 +25,8 @@ RPATH_FLAGS = -Wl,-rpath,$(REPLXX_LIB_PATH)
 #   Disabled:             make SANITIZE=none
 SANITIZE ?= none
 
+MAKEFILE_DIR := $(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
+
 ifeq ($(SANITIZE),full)
     CFLAGS_SANITIZE = -fsanitize=undefined -fsanitize-address-use-after-scope -fsanitize-undefined-trap-on-error -fstack-protector-all -fstack-check -fsanitize=address -fsanitize=pointer-compare -fno-omit-frame-pointer -static-libasan
 else ifeq ($(SANITIZE),basic)
@@ -36,7 +38,7 @@ else
 endif
 
 # Root directory
-DIR_ROOT = $(CURDIR)/../../../../
+DIR_ROOT := $(MAKEFILE_DIR)/../../../..
 LIB_DIR = $(DIR_ROOT)/host/control_lib
 
 # Get the control library path
@@ -50,6 +52,7 @@ DIR_COMPONENTS = $(DIR_ROOT)/host/components
 DIR_LINUX_PORT = $(DIR_ROOT)/host/linux/port
 
 # Include directories
+INCLUDE += -I$(MAKEFILE_DIR)/include
 INCLUDE += -I$(DIR_COMMON)/protobuf-c
 INCLUDE += -I$(DIR_COMMON)/include
 INCLUDE += -I$(DIR_CTRL_LIB)/include
@@ -78,7 +81,7 @@ else
     BUILD_SHELL :=
 endif
 
-USR_CUSTOM_RPC_OBJS = app_custom_rpc.o
+USR_CUSTOM_RPC_OBJS = app_peer_data_transfer.o esp_hosted_host_peer_data_transfer.o
 
 COMMON_OBJS = test_utils.o nw_helper_func.o $(USR_CUSTOM_RPC_OBJS)
 
@@ -114,7 +117,7 @@ hosted_daemon.out: $(HOSTED_DAEMON_OBJS)
 hosted_shell: ensure_libs hosted_shell.out
 
 hosted_shell.out: hosted_shell.o $(COMMON_OBJS)
-	$(CROSS_COMPILE)$(CC) $(CFLAGS) $(CFLAGS_SANITIZE) $(INCLUDE) $(LIBPATH) -o $(@) $^ $(LINKER) $(LIBS) -lreplxx -lstdc++ $(RPATH_FLAGS)
+	$(CROSS_COMPILE)$(CC) $(CFLAGS) $(CFLAGS_SANITIZE) $(INCLUDE) $(LIBPATH) -o $(@) $^ $(LINKER) $(LIBS) -lreplxx -lstdc++
 
 %.o: %.c
 	$(CROSS_COMPILE)$(CC) $(CFLAGS) $(INCLUDE) -c $< -o $@

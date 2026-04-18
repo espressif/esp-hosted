@@ -1296,6 +1296,7 @@ static void ctrl_async_timeout_handler(void const *arg)
 	ctrl_resp_cb_t func = arg;
 	if (!func) {
 		command_log("NULL func, failed to call callback\n");
+		expected_resp_uid = -1;
 		hosted_post_semaphore(ctrl_req_sem);
 		return;
 	}
@@ -1303,6 +1304,7 @@ static void ctrl_async_timeout_handler(void const *arg)
 	app_resp = (ctrl_cmd_t *)hosted_calloc(1, sizeof(ctrl_cmd_t));
 	if (!app_resp) {
 		command_log("Failed to allocate app_resp\n");
+		expected_resp_uid = -1;
 		hosted_post_semaphore(ctrl_req_sem);
 		return;
 	}
@@ -1311,6 +1313,7 @@ static void ctrl_async_timeout_handler(void const *arg)
 
 	/* call func pointer to notify failure */
 	func(app_resp);
+	expected_resp_uid = -1;
 
 	/* only one async timer at a time is handled
 	 * therefore, only one wifi request can be sent at a time
@@ -1747,6 +1750,8 @@ int ctrl_app_send_req(ctrl_cmd_t *app_req)
 	return SUCCESS;
 
 fail_req:
+	/* Ensure expected response state is cleared on any send/compose failure. */
+	expected_resp_uid = -1;
 
 	if (got_ctrl_req_sem) {
 		hosted_post_semaphore(ctrl_req_sem);

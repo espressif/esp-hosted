@@ -63,9 +63,7 @@
 
 #define GET_COUNTRY_CODE                   "get_country_code"
 
-#define CUSTOM_RPC_DEMO1                   "send_packed_data__only_ack"
-#define CUSTOM_RPC_DEMO2                   "send_packed_data__echo_back_as_response"
-#define CUSTOM_RPC_DEMO3                   "send_packed_data__echo_back_as_event"
+#define PEER_DATA_EXAMPLE                  "peer_data_example"
 
 #ifndef SSID_LENGTH
 #define SSID_LENGTH                         33
