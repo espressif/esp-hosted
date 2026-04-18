@@ -3,6 +3,7 @@ version: "3.0.0-rc1"
 description: "ESP-Hosted - Unified coprocessor connectivity (pre-release candidate)"
 url: "https://github.com/espressif/esp-hosted"
 documentation: "https://docs.espressif.com/projects/esp-hosted"
+license: "Apache-2.0"
 
 # Pre-release: 3.0.0-rc1 will NOT match wildcard (*) or caret (^3.0.0)
 # in dependents. Users must explicitly pin:
