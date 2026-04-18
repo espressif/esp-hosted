@@ -20,8 +20,7 @@
 #include <replxx.h>
 #include <stdbool.h>
 #include "nw_helper_func.h"
-#include "esp_hosted_custom_rpc.h"
-#include "app_custom_rpc.h"
+#include "app_peer_data_transfer.h"
 #include <stdint.h>
 
 
@@ -320,6 +319,7 @@ static const char *event_choices[] = {
 	"softap_sta_disconnected",
 	"dhcp_dns_status",
 	"custom_packed_event",
+	"all",
 	NULL
 };
 
@@ -369,7 +369,7 @@ static int handle_heartbeat(int argc, char **argv);
 static int handle_subscribe_event(int argc, char **argv);
 static int handle_unsubscribe_event(int argc, char **argv);
 static int handle_set_host_port_range(int argc, char **argv);
-static int handle_custom_demo_rpc_request(int argc, char **argv);
+static int handle_peer_data_example(int argc, char **argv);
 static int handle_set_country_code(int argc, char **argv);
 static int handle_set_country_code_with_ieee80211d_on(int argc, char **argv);
 static int handle_get_country_code(int argc, char **argv);
@@ -1028,9 +1028,8 @@ static void shell_cleanup(shell_context_t *ctx) {
 }
 
 
-static int custom_rpc_event_handler_with_packed_data(ctrl_cmd_t *app_event) {
-	/* Call the shared implementation from custom_rpc_msg.c */
-	return custom_rpc_event_handler(app_event);
+static int peer_data_event_handler(ctrl_cmd_t *app_event) {
+	return esp_hosted_peer_data_handle_event(app_event);
 }
 
 #define REGISTER_EVENT_CALLBACK(event, callback) \
@@ -1051,7 +1050,7 @@ static int register_needed_event_callbacks(void) {
 	REGISTER_EVENT_CALLBACK(CTRL_EVENT_STATION_CONNECTED_TO_ESP_SOFTAP, default_rpc_events_handler);
 	REGISTER_EVENT_CALLBACK(CTRL_EVENT_STATION_DISCONNECT_FROM_ESP_SOFTAP, default_rpc_events_handler);
 	REGISTER_EVENT_CALLBACK(CTRL_EVENT_DHCP_DNS_STATUS, default_rpc_events_handler);
-	REGISTER_EVENT_CALLBACK(CTRL_EVENT_CUSTOM_RPC_UNSERIALISED_MSG, custom_rpc_event_handler_with_packed_data);
+	REGISTER_EVENT_CALLBACK(CTRL_EVENT_CUSTOM_RPC_UNSERIALISED_MSG, peer_data_event_handler);
 	return ret;
 }
 
@@ -1672,32 +1671,11 @@ void shell_hint_callback(const char *line, replxx_hints *hints, int *context_len
 }
 
 
-static int handle_custom_demo_rpc_request(int argc, char **argv) {
+static int handle_peer_data_example(int argc, char **argv) {
+	(void)argc;
+	(void)argv;
 	CHECK_RPC_ACTIVE();
-
-	if (!parse_arguments(argc, argv, custom_rpc_request_args, sizeof(custom_rpc_request_args)/sizeof(cmd_arg_t))) {
-		return FAILURE;
-	}
-
-	const char *demo_str = get_arg_value(argc, argv, custom_rpc_request_args,
-			sizeof(custom_rpc_request_args)/sizeof(cmd_arg_t),
-			"--demo");
-
-	int demo_num = atoi(demo_str);
-
-	printf("Running custom RPC demo %d\n", demo_num);
-
-	switch(demo_num) {
-		case 1:
-			return custom_rpc_demo1_request_only_ack();
-		case 2:
-			return custom_rpc_demo2_request_echo_back_as_response();
-		case 3:
-			return custom_rpc_demo3_request_echo_back_as_event();
-		default:
-			printf("Invalid demo number. Use 1, 2, or 3.\n");
-			return FAILURE;
-	}
+	return peer_data_example_run();
 }
 
 static int handle_set_country_code(int argc, char **argv) {

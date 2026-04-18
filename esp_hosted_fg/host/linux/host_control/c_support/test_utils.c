@@ -32,7 +32,6 @@
 #include <time.h>
 #include "test.h"
 #include "nw_helper_func.h"
-#include "esp_hosted_custom_rpc.h"
 
 /***** Please Read *****/
 /* Before use : User must enter user configuration parameter in "ctrl_config.h" file */
@@ -117,25 +116,29 @@ int test_validate_ctrl_event(ctrl_cmd_t *app_event) {
 }
 
 int test_validate_ctrl_resp(ctrl_cmd_t *app_resp) {
-	int ret = SUCCESS;
 
 	if (!app_resp || (app_resp->msg_type != CTRL_RESP)) {
 		if (app_resp)
 			printf("Msg type is not response[%u]\n", app_resp->msg_type);
-		ret = FAILURE;
+		return FAILURE;
 	}
 
-	if (!ret && ((app_resp->msg_id <= CTRL_RESP_BASE) || (app_resp->msg_id >= CTRL_RESP_MAX))) {
+	if (app_resp->msg_id == CTRL_RESP_BASE) {
+		printf("RPC req unsupported at coprocessor at this time, ignoring\n");
+		return FAILURE;
+	}
+
+	if ((app_resp->msg_id < CTRL_RESP_BASE) || (app_resp->msg_id >= CTRL_RESP_MAX)) {
 		printf("Response Msg ID[%u] is not correct\n", app_resp->msg_id);
-		ret = FAILURE;
+		return FAILURE;
 	}
 
-	if (!ret && (app_resp->resp_event_status != SUCCESS)) {
-		printf("Received NACK in response\n");
-		ret = FAILURE;
+	if (app_resp->resp_event_status != SUCCESS) {
+		printf("Received NACK in response for req[%u]\n", app_resp->msg_id-CTRL_RESP_BASE+CTRL_REQ_BASE);
+		return FAILURE;
 	}
 
-	return ret;
+	return SUCCESS;
 }
 
 
@@ -202,10 +205,9 @@ static int ctrl_app_event_callback(ctrl_cmd_t *app_event) {
 				printf("%s App EVENT: SoftAP mode: Connected MAC[%s] aid[%d] is_mesh_child[%d]\n",
 					get_timestamp(ts, MIN_TIMESTAMP_STR_SIZE),
 					p, p_e->aid, p_e->is_mesh_child);
+				printf("Ensure DHCP server is running to prevent station disconnection\n");
 			}
-			if (!test_is_network_split_on()) {
-				printf("Network interface ethsta0 brought up. You may run 'dhclient -v ethsta0' to get IP address\n");
-			}
+
 			break;
 		} case CTRL_EVENT_STATION_DISCONNECT_FROM_ESP_SOFTAP: {
 			event_softap_sta_disconn_t *p_e = &app_event->u.e_softap_sta_disconn;
@@ -441,6 +443,7 @@ int register_event_callbacks(void)
 	}
 	return ret;
 }
+
 static int get_event_id(const char *event)
 {
 	int event_id = 0;
@@ -460,11 +463,37 @@ static int get_event_id(const char *event)
 		event_id = CTRL_EVENT_DHCP_DNS_STATUS;
 	} else if (strcmp(event, "custom_rpc_event") == 0) {
 		event_id = CTRL_EVENT_CUSTOM_RPC_UNSERIALISED_MSG;
+	} else if (strcmp(event, "all") == 0) {
+				event_id = -2;   // Special case for "all"
 	} else {
 		printf("Invalid event: %s\n", event);
 		return FAILURE;
 	}
 	return event_id;
+}
+
+static const char *get_event_string(int event_id)
+{
+    switch (event_id) {
+        case CTRL_EVENT_ESP_INIT:
+            return "esp_init";
+        case CTRL_EVENT_HEARTBEAT:
+            return "heartbeat";
+        case CTRL_EVENT_STATION_CONNECTED_TO_AP:
+            return "sta_connected";
+        case CTRL_EVENT_STATION_DISCONNECT_FROM_AP:
+            return "sta_disconnected";
+        case CTRL_EVENT_STATION_CONNECTED_TO_ESP_SOFTAP:
+            return "softap_sta_connected";
+        case CTRL_EVENT_STATION_DISCONNECT_FROM_ESP_SOFTAP:
+            return "softap_sta_disconnected";
+        case CTRL_EVENT_DHCP_DNS_STATUS:
+            return "dhcp_dns_status";
+        case CTRL_EVENT_CUSTOM_RPC_UNSERIALISED_MSG:
+            return "custom_rpc_event";
+        default:
+            return "unknown";
+    }
 }
 
 int test_subscribe_event(const char *event)
@@ -473,6 +502,31 @@ int test_subscribe_event(const char *event)
 	if (event_id == FAILURE) {
 		return FAILURE;
 	}
+
+    if (event_id == -2) { // special case: "all"
+        int ret = SUCCESS;
+        int all_events[] = {
+            CTRL_EVENT_ESP_INIT,
+            CTRL_EVENT_HEARTBEAT,
+            CTRL_EVENT_STATION_CONNECTED_TO_AP,
+            CTRL_EVENT_STATION_DISCONNECT_FROM_AP,
+            CTRL_EVENT_STATION_CONNECTED_TO_ESP_SOFTAP,
+            CTRL_EVENT_STATION_DISCONNECT_FROM_ESP_SOFTAP,
+            CTRL_EVENT_DHCP_DNS_STATUS,
+            CTRL_EVENT_CUSTOM_RPC_UNSERIALISED_MSG,
+        };
+        size_t count = sizeof(all_events) / sizeof(all_events[0]);
+        for (size_t i = 0; i < count; i++) {
+            printf("[SUBSCRIBE] Event: %s (%d)\n", get_event_string(all_events[i]), all_events[i]);
+            if (set_event_callback(all_events[i], ctrl_app_event_callback) != SUCCESS) {
+                printf("  -> Failed to subscribe %s\n", get_event_string(all_events[i]));
+                ret = FAILURE;
+            }
+        }
+        return ret;
+    }
+
+    printf("[SUBSCRIBE] Event: %s (%d)\n", get_event_string(event_id), event_id);
 	return set_event_callback(event_id, ctrl_app_event_callback);
 }
 
@@ -482,6 +536,31 @@ int test_unsubscribe_event(const char *event)
 	if (event_id == FAILURE) {
 		return FAILURE;
 	}
+
+    if (event_id == -2) { // special case: "all"
+        int ret = SUCCESS;
+        int all_events[] = {
+            CTRL_EVENT_ESP_INIT,
+            CTRL_EVENT_HEARTBEAT,
+            CTRL_EVENT_STATION_CONNECTED_TO_AP,
+            CTRL_EVENT_STATION_DISCONNECT_FROM_AP,
+            CTRL_EVENT_STATION_CONNECTED_TO_ESP_SOFTAP,
+            CTRL_EVENT_STATION_DISCONNECT_FROM_ESP_SOFTAP,
+            CTRL_EVENT_DHCP_DNS_STATUS,
+            CTRL_EVENT_CUSTOM_RPC_UNSERIALISED_MSG,
+        };
+        size_t count = sizeof(all_events) / sizeof(all_events[0]);
+        for (size_t i = 0; i < count; i++) {
+            printf("[UNSUBSCRIBE] Event: %s (%d)\n", get_event_string(all_events[i]), all_events[i]);
+            if (reset_event_callback(all_events[i]) != SUCCESS) {
+                printf("  -> Failed to unsubscribe %s\n", get_event_string(all_events[i]));
+                ret = FAILURE;
+            }
+        }
+        return ret;
+    }
+
+    printf("[UNSUBSCRIBE] Event: %s (%d)\n", get_event_string(event_id), event_id);
 	return reset_event_callback(event_id);
 }
 
@@ -1459,8 +1538,19 @@ int test_enable_bt(void)
 
 	resp = feature_config(req);
 
-	if (successful_response(resp))
+	if (successful_response(resp)) {
+		/* BT controller needs ~1s to fully init (PHY cal, etc.)
+		 * before HCI reset will succeed. Retry up to 3 times. */
+		int retry;
+		for (retry = 0; retry < 3; retry++) {
+			usleep(1000 * 1000); /* 1 second */
 		reset_hci_instance();
+			/* Check if HCI came up */
+			if (system("hciconfig hci0 2>/dev/null | grep -q 'UP RUNNING'") == 0)
+				break;
+			printf("HCI not ready yet, retrying... (%d/3)\n", retry + 1);
+		}
+	}
 
 	CLEANUP_CTRL_MSG(req);
 	return ctrl_app_resp_callback(resp);

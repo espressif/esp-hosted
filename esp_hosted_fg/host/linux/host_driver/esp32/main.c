@@ -36,6 +36,30 @@
 #include "esp_kernel_port.h"
 #include "esp_stats.h"
 
+#define SERIAL_REASM_MAX_DEVS 2
+#define SERIAL_REASM_MAX_LEN  12288
+
+struct serial_reasm_state {
+	u8 *buf;
+	size_t len;
+	u16 last_seq;
+	bool active;
+};
+
+static struct serial_reasm_state serial_reasm[SERIAL_REASM_MAX_DEVS];
+
+static void serial_reasm_reset(int if_num)
+{
+	if (if_num < 0 || if_num >= SERIAL_REASM_MAX_DEVS) {
+		return;
+	}
+	kfree(serial_reasm[if_num].buf);
+	serial_reasm[if_num].buf = NULL;
+	serial_reasm[if_num].len = 0;
+	serial_reasm[if_num].last_seq = 0;
+	serial_reasm[if_num].active = false;
+}
+
 /* Module parameters */
 /* You can hardcode the parameters if do not wish to pass them as argument to insmod */
 static int resetpin = MOD_PARAM_UNINITIALISED;
@@ -503,6 +527,11 @@ static void process_rx_packet(struct sk_buff *skb)
 	}
 
 	if (payload_header->if_type == ESP_SERIAL_IF) {
+		u16 seq = le16_to_cpu(payload_header->seq_num);
+		bool more = (payload_header->flags & MORE_FRAGMENT);
+		int if_num = payload_header->if_num;
+
+		if (!more && !serial_reasm[if_num].active) {
 		do {
 			ret = esp_serial_data_received(payload_header->if_num,
 					(skb->data + offset + ret_len), (len - ret_len));
@@ -514,6 +543,68 @@ static void process_rx_packet(struct sk_buff *skb)
 			ret_len += ret;
 		} while (ret_len < len);
 		dev_kfree_skb_any(skb);
+			return;
+		}
+
+		if (if_num >= SERIAL_REASM_MAX_DEVS) {
+			esp_err("serial if_num out of range: %d\n", if_num);
+			dev_kfree_skb_any(skb);
+			return;
+		}
+
+		if (serial_reasm[if_num].active &&
+		    seq != (u16)(serial_reasm[if_num].last_seq + 1)) {
+			esp_err("serial reasm seq mismatch: got %u expected %u, dropping\n",
+					seq, (u16)(serial_reasm[if_num].last_seq + 1));
+			serial_reasm_reset(if_num);
+		}
+
+		if (serial_reasm[if_num].len + len > SERIAL_REASM_MAX_LEN) {
+			esp_err("serial reasm overflow: %zu + %zu > %u, dropping\n",
+					serial_reasm[if_num].len, len, SERIAL_REASM_MAX_LEN);
+			serial_reasm_reset(if_num);
+			dev_kfree_skb_any(skb);
+			return;
+		}
+
+		if (serial_reasm[if_num].buf) {
+			u8 *tmp = krealloc(serial_reasm[if_num].buf,
+						serial_reasm[if_num].len + len, GFP_KERNEL);
+			if (!tmp) {
+				esp_err("serial reasm realloc failed\n");
+				serial_reasm_reset(if_num);
+				dev_kfree_skb_any(skb);
+				return;
+			}
+			serial_reasm[if_num].buf = tmp;
+		} else {
+			serial_reasm[if_num].buf = kmalloc(len, GFP_KERNEL);
+			if (!serial_reasm[if_num].buf) {
+				esp_err("serial reasm alloc failed\n");
+				dev_kfree_skb_any(skb);
+				return;
+			}
+		}
+
+		memcpy(serial_reasm[if_num].buf + serial_reasm[if_num].len,
+		       skb->data + offset, len);
+		serial_reasm[if_num].len += len;
+		serial_reasm[if_num].last_seq = seq;
+		serial_reasm[if_num].active = more;
+
+		if (more) {
+			dev_kfree_skb_any(skb);
+			return;
+		}
+
+		ret = esp_serial_data_received(if_num,
+				serial_reasm[if_num].buf, serial_reasm[if_num].len);
+		if (ret < 0) {
+			esp_err("Failed to process reassembled data for iface %d\n", if_num);
+		}
+		serial_reasm_reset(if_num);
+		dev_kfree_skb_any(skb);
+		return;
 	} else if (payload_header->if_type == ESP_STA_IF ||
 	           payload_header->if_type == ESP_AP_IF) {
 		/* chop off the header from skb */

@@ -38,8 +38,8 @@
 
 #define ESP_SERIAL_MAJOR      221
 #define ESP_SERIAL_MINOR_MAX  1
-#define ESP_RX_RB_SIZE        4096
-#define ESP_SERIAL_MAX_TX     4096
+#define ESP_RX_RB_SIZE        8192
+#define ESP_SERIAL_MAX_TX     (8192-(H_ESP_PAYLOAD_HEADER_OFFSET+8))
 
 static struct esp_serial_devs {
 	struct device* dev;
