@@ -128,10 +128,25 @@ class ProbeState:
     def _worker(self, host_port, slave_port):
         try:
             from infra.hardware import eh_test_hw_probe_device
+            from infra.board_config import generate_board_sdkconfig
             host = eh_test_hw_probe_device(host_port)
             slave = eh_test_hw_probe_device(slave_port)
+
+            # Auto-generate board config from probe results
+            cfg = load_config()
+            board_name = cfg.get('hardware', {}).get('board', '')
+            board_auto = generate_board_sdkconfig(
+                board_name.upper() if board_name else None,
+                slave.get('chip', ''),
+                host.get('chip', ''),
+                host.get('revision'))
+
             with self.lock:
-                self.result = {'host': host, 'slave': slave}
+                self.result = {
+                    'host': host,
+                    'slave': slave,
+                    'board_auto_config': board_auto,
+                }
                 self.status = 'done'
         except Exception as e:
             with self.lock:
@@ -468,6 +483,10 @@ class ConfigUIHandler(http.server.BaseHTTPRequestHandler):
             self._api_get_artifact_file(p)
         elif p == '/api/hardware/probe':
             self._json_response(self.probe_state.get())
+        elif p == '/api/board-auto-config':
+            self._api_get_board_auto_config()
+        elif p == '/api/compatible-boards':
+            self._api_get_compatible_boards()
         elif p == '/api/run/status':
             self._json_response(self.run_state.get_status())
         elif p == '/api/run/state':
@@ -635,11 +654,89 @@ class ConfigUIHandler(http.server.BaseHTTPRequestHandler):
         except OSError as e:
             self._error(500, str(e))
 
+    def _api_get_compatible_boards(self):
+        """Return boards compatible with the detected slave chip (from Kconfig)."""
+        try:
+            from infra.board_config import get_board_options, get_transport_options, get_cp_board_options, get_cp_host_type_options
+            from infra.config import EhTestConfig
+            cfg = EhTestConfig(load_config())
+
+            # Determine slave chip from probe or board name
+            probe = self.probe_state.get()
+            slave_chip = None
+            if probe['status'] == 'done' and probe['result']:
+                slave_chip = (probe['result'].get('slave') or {}).get('chip')
+            if not slave_chip:
+                board = cfg.board
+                if 'c6' in board: slave_chip = 'ESP32-C6'
+                elif 'c5' in board: slave_chip = 'ESP32-C5'
+                elif 'c61' in board: slave_chip = 'ESP32-C61'
+
+            boards = get_board_options(cfg, slave_chip)
+            transports = get_transport_options(cfg)
+            cp_boards = get_cp_board_options(cfg, slave_chip)
+            cp_host_types = get_cp_host_type_options(cfg)
+            self._json_response({
+                'slave_chip': slave_chip,
+                'host_boards': [{'key': b['symbol'], 'name': b['label']} for b in boards],
+                'cp_transports': [{'key': t['symbol'], 'name': t['label']} for t in transports],
+                'cp_boards': [{'key': b['symbol'], 'name': b['label']} for b in cp_boards],
+                'cp_host_types': [{'key': t['symbol'], 'name': t['label']} for t in cp_host_types],
+            })
+        except Exception as e:
+            import traceback; traceback.print_exc()
+            self._json_response({'boards': [], 'transports': [], 'error': str(e)})
+
+    def _api_get_board_auto_config(self):
+        """Return board auto-config lines based on env.json board + last probe."""
+        try:
+            from infra.board_config import generate_board_sdkconfig
+            from infra.config import EhTestConfig
+            cfg_data = load_config()
+            cfg = EhTestConfig(cfg_data)
+            board_name = cfg.board
+
+            # Use last probe result if available
+            probe = self.probe_state.get()
+            if probe['status'] == 'done' and probe['result'] and not probe['result'].get('error'):
+                host_probe = probe['result'].get('host', {})
+                slave_probe = probe['result'].get('slave', {})
+            else:
+                # No probe — infer from board name and config targets
+                host_probe = {'chip': 'ESP32-P4' if 'p4' in board_name else None, 'revision': None}
+                slave_chip = None
+                if 'c6' in board_name: slave_chip = 'ESP32-C6'
+                elif 'c5' in board_name: slave_chip = 'ESP32-C5'
+                elif 'c61' in board_name: slave_chip = 'ESP32-C61'
+                slave_probe = {'chip': slave_chip, 'revision': None}
+
+            auto = generate_board_sdkconfig(
+                board_name.upper() if board_name else None,
+                slave_probe.get('chip', ''),
+                host_probe.get('chip', ''),
+                host_probe.get('revision'))
+            self._json_response({
+                'mode': cfg.host_board_config_mode,
+                'auto_config': auto,
+                'board_sdkconfig': cfg.host_board_sdkconfig,
+                'probed': probe['status'] == 'done',
+            })
+        except Exception as e:
+            self._json_response({'auto_config': [], 'error': str(e)})
+
     def _api_post_probe(self):
-        cfg = load_config()
-        hw = cfg.get('hardware', {})
-        host_port = hw.get('host_port', '')
-        slave_port = hw.get('slave_port', '')
+        # Accept ports from POST body (current UI values) or fall back to saved config
+        try:
+            body = json.loads(self._read_body())
+        except (json.JSONDecodeError, Exception):
+            body = {}
+        host_port = body.get('host_port', '')
+        slave_port = body.get('slave_port', '')
+        if not host_port or not slave_port:
+            cfg = load_config()
+            hw = cfg.get('hardware', {})
+            host_port = host_port or hw.get('host_port', '')
+            slave_port = slave_port or hw.get('slave_port', '')
         if not host_port or not slave_port:
             self._error(400, 'Ports not configured')
             return
@@ -1009,6 +1106,18 @@ td { padding: 6px 8px; border-bottom: 1px solid var(--border); font-family: mono
 .check-row input { accent-color: var(--blue); }
 
 .probe-result { margin-top: 12px; }
+.board-tabs { display: flex; gap: 0; margin-bottom: 12px; border-bottom: 2px solid #e0e0e0; }
+.board-tab {
+  padding: 6px 16px; border: none; background: none; cursor: pointer;
+  font-size: 13px; color: #666; border-bottom: 2px solid transparent; margin-bottom: -2px;
+}
+.board-tab:hover { color: #333; }
+.board-tab.active { color: var(--blue); border-bottom-color: var(--blue); font-weight: 600; }
+.board-pane { min-height: 40px; }
+.board-auto-box {
+  background: #f5f5f5; border: 1px solid #ddd; border-radius: 4px;
+  padding: 10px 12px; color: #333;
+}
 .probe-device {
   display: flex; align-items: center; gap: 8px; padding: 6px 0; font-size: 13px;
 }
@@ -1046,7 +1155,9 @@ td { padding: 6px 8px; border-bottom: 1px solid var(--border); font-family: mono
       <a class="side-link active" onclick="scrollToSection('hardware')">Hardware</a>
       <a class="side-link" onclick="scrollToSection('wifi')">WiFi AP</a>
       <a class="side-link" onclick="scrollToSection('paths')">Paths</a>
-      <a class="side-link" onclick="scrollToSection('build')">Build &amp; Order</a>
+      <a class="side-link" onclick="scrollToSection('build')">Common Build</a>
+      <a class="side-link" onclick="scrollToSection('host-config')">Host Config</a>
+      <a class="side-link" onclick="scrollToSection('slave-config')">Slave Config</a>
       <a class="side-link" onclick="scrollToSection('flash')">Flash</a>
       <a class="side-link" onclick="scrollToSection('suites')">Test Suites</a>
       <a class="side-link" onclick="scrollToSection('artifacts')">Artifacts</a>
@@ -1061,10 +1172,9 @@ td { padding: 6px 8px; border-bottom: 1px solid var(--border); font-family: mono
           <div class="field"><label>Slave Port</label><select id="slave_port" onchange="markDirty()"></select></div>
         </div>
         <div class="row">
-          <div class="field"><label>Board</label>
-            <select id="board" onchange="markDirty()">
-              <option value="p4_c6_core_board">p4_c6_core_board</option>
-              <option value="p4_c5_core_board">p4_c5_core_board</option>
+          <div class="field"><label>Board Combo (Host + Slave)</label>
+            <select id="board" onchange="markDirty(); refreshBoardPreview()">
+              <option value="">Loading boards...</option>
             </select>
           </div>
           <div class="field"><label>Flash Baud</label>
@@ -1101,7 +1211,7 @@ td { padding: 6px 8px; border-bottom: 1px solid var(--border); font-family: mono
       </div>
 
       <div class="card" id="sec-build">
-        <h3>Build &amp; Test Order</h3>
+        <h3>Common Build Settings</h3>
         <div class="field"><label>Build Strategy</label>
           <div class="radio-group">
             <label><input type="radio" name="strategy" value="reuse" onchange="markDirty()"> Reuse (fastest)</label>
@@ -1109,14 +1219,60 @@ td { padding: 6px 8px; border-bottom: 1px solid var(--border); font-family: mono
             <label><input type="radio" name="strategy" value="fallback" onchange="markDirty()"> Fallback</label>
           </div>
         </div>
-        <div class="field"><label>SDKConfig Optimizations (one per line)</label>
-          <textarea id="sdkconfig_opts" rows="3" onchange="markDirty()"></textarea></div>
         <div class="field"><label>Test Order</label>
           <div class="radio-group">
             <label><input type="radio" name="test_order" value="auto" onchange="markDirty()"> Auto (minimize flash transitions)</label>
             <label><input type="radio" name="test_order" value="alphabetical" onchange="markDirty()"> Alphabetical</label>
             <label><input type="radio" name="test_order" value="manual" onchange="markDirty()"> Manual (matrix order)</label>
           </div>
+        </div>
+        <div class="field"><label>Common SDKConfig (applied to both, one per line)</label>
+          <textarea id="sdkconfig_opts" rows="3" onchange="markDirty()" style="font-family:monospace; font-size:12px;"></textarea></div>
+      </div>
+
+      <div class="card" id="sec-host-config">
+        <h3>Host Build Config</h3>
+        <div class="board-tabs">
+          <button class="board-tab active" onclick="switchBoardTab('host','auto')" id="host-tab-auto">Auto</button>
+          <button class="board-tab" onclick="switchBoardTab('host','custom')" id="host-tab-custom">Custom</button>
+          <button class="board-tab" onclick="switchBoardTab('host','none')" id="host-tab-none">None</button>
+          <input type="hidden" id="host_board_config" value="auto">
+        </div>
+        <div id="host-board-auto" class="board-pane">
+          <div class="board-auto-box">
+            <span id="host-auto-lines" style="font-family:monospace; white-space:pre-line; font-size:12px;"></span>
+          </div>
+          <div style="font-size:11px; color:#666; margin-top:4px;">Generated from board selection + hardware probe. Read-only.</div>
+        </div>
+        <div id="host-board-custom" class="board-pane" style="display:none">
+          <textarea id="host_board_sdkconfig" rows="4" onchange="markDirty()" style="font-family:monospace; font-size:12px; width:100%;" placeholder="CONFIG_ESP_HOSTED_P4_C6_CORE_BOARD=y"></textarea>
+          <div style="font-size:11px; color:#666; margin-top:4px;">Override auto-detected config. One CONFIG per line.</div>
+        </div>
+        <div id="host-board-none" class="board-pane" style="display:none">
+          <div style="font-size:12px; color:#999; padding:8px;">No board-specific config will be applied to host builds.</div>
+        </div>
+      </div>
+
+      <div class="card" id="sec-slave-config">
+        <h3>Slave (CP) Build Config</h3>
+        <div class="board-tabs">
+          <button class="board-tab active" onclick="switchBoardTab('slave','auto')" id="slave-tab-auto">Auto</button>
+          <button class="board-tab" onclick="switchBoardTab('slave','custom')" id="slave-tab-custom">Custom</button>
+          <button class="board-tab" onclick="switchBoardTab('slave','none')" id="slave-tab-none">None</button>
+          <input type="hidden" id="slave_board_config" value="auto">
+        </div>
+        <div id="slave-board-auto" class="board-pane">
+          <div class="board-auto-box">
+            <span id="slave-auto-lines" style="font-family:monospace; white-space:pre-line; font-size:12px;"></span>
+          </div>
+          <div style="font-size:11px; color:#666; margin-top:4px;">Derived from board combo + probe. Transport pins match the host board.</div>
+        </div>
+        <div id="slave-board-custom" class="board-pane" style="display:none">
+          <textarea id="slave_board_sdkconfig" rows="4" onchange="markDirty()" style="font-family:monospace; font-size:12px; width:100%;" placeholder="CONFIG_EXAMPLE_WIFI_SSID=&quot;MyNetwork&quot;"></textarea>
+          <div style="font-size:11px; color:#666; margin-top:4px;">Override or add extra config for CP builds. One CONFIG per line.</div>
+        </div>
+        <div id="slave-board-none" class="board-pane" style="display:none">
+          <div style="font-size:12px; color:#999; padding:8px;">No extra config will be applied to CP builds.</div>
         </div>
       </div>
 
@@ -1269,6 +1425,71 @@ async function loadInitialRunState() {
 async function loadConfig() {
   config = await fetchJson('/api/config');
   populateForm();
+  // Load board auto-config preview on page load
+  loadBoardAutoConfig();
+}
+
+async function loadBoardAutoConfig() {
+  // Populate board dropdown from compatible boards API
+  await refreshBoardDropdown();
+  // Generate preview
+  refreshBoardPreview();
+}
+
+async function refreshBoardDropdown() {
+  try {
+    const data = await fetchJson('/api/compatible-boards');
+    const sel = document.getElementById('board');
+    const currentVal = sel.value || (config.hardware || {}).board || '';
+    sel.innerHTML = '';
+    const chip = data.slave_chip || 'unknown';
+    // Host board dropdown
+    const grp = document.createElement('optgroup');
+    grp.label = 'Host boards (compatible with ' + chip + ')';
+    const boards = data.host_boards || [];
+    boards.forEach(b => {
+      const opt = document.createElement('option');
+      opt.value = b.key;
+      opt.textContent = b.name;
+      grp.appendChild(opt);
+    });
+    sel.appendChild(grp);
+    // Select: saved value > FUNC_BOARD default > first option
+    const match = boards.find(b =>
+      b.key === currentVal ||
+      b.key.toLowerCase().includes((currentVal || '').replace(/_/g,'').toLowerCase()));
+    if (match) {
+      sel.value = match.key;
+    } else {
+      const funcBoard = boards.find(b => b.key.includes('FUNC_BOARD'));
+      sel.value = funcBoard ? funcBoard.key : (boards[0]?.key || '');
+    }
+
+    // Slave section: show resolved config for selected board
+    const slaveLines = [];
+    // CP board — map from host board selection
+    const cpBoardMap = {};
+    (data.cp_boards || []).forEach(b => { cpBoardMap[b.key] = b.name; });
+    // Find matching CP board for selected host board
+    const selBoard = sel.value || '';
+    if (selBoard.includes('FUNC_BOARD') && cpBoardMap['ESP_HOST_DEV_BOARD_P4_FUNC_BOARD']) {
+      slaveLines.push('CONFIG_ESP_HOST_DEV_BOARD_P4_FUNC_BOARD=y');
+    } else if (selBoard.includes('C5') && cpBoardMap['C2_C5_MODULE_SUB_BOARD']) {
+      slaveLines.push('CONFIG_C2_C5_MODULE_SUB_BOARD=y');
+    }
+    // Host type — MCU if host is P4, Linux if host is RPi
+    const hostChip = (_lastProbeHost?.chip || '').toUpperCase();
+    if (hostChip.includes('P4')) {
+      slaveLines.push('CONFIG_ESP_HOSTED_CP_FOR_MCU=y');
+    }
+    // Transport — default SDIO for most boards
+    if (data.cp_transports?.length) {
+      const sdio = data.cp_transports.find(t => t.key.includes('SDIO'));
+      if (sdio) slaveLines.push(`CONFIG_${sdio.key}=y`);
+    }
+    document.getElementById('slave-auto-lines').textContent =
+      slaveLines.length ? slaveLines.join('\n') : 'Resolved from board selection after probe';
+  } catch(e) { console.error('refreshBoardDropdown:', e); }
 }
 
 function populateForm() {
@@ -1293,6 +1514,11 @@ function populateForm() {
   document.getElementById('workspace_dir').value = build.workspace_dir || '';
 
   checkRadio('strategy', build.strategy || 'fallback');
+  // Host/Slave board config tabs
+  switchBoardTab('host', build.host_board_config || 'auto');
+  switchBoardTab('slave', build.slave_board_config || 'auto');
+  document.getElementById('host_board_sdkconfig').value = (build.host_board_sdkconfig || []).join('\n');
+  document.getElementById('slave_board_sdkconfig').value = (build.slave_board_sdkconfig || []).join('\n');
   const opts = build.sdkconfig_optimizations ||
     ['CONFIG_SPIRAM_MEMTEST=n', 'CONFIG_BOOTLOADER_SKIP_VALIDATE_ON_POWER_ON=y'];
   document.getElementById('sdkconfig_opts').value = opts.join('\n');
@@ -1342,6 +1568,16 @@ function gatherForm() {
     },
     build: {
       strategy: document.querySelector('input[name="strategy"]:checked')?.value || 'fallback',
+      host_board_config: document.getElementById('host_board_config').value || 'auto',
+      slave_board_config: document.getElementById('slave_board_config').value || 'auto',
+      host_board_sdkconfig: (() => {
+        const t = document.getElementById('host_board_sdkconfig').value.trim();
+        return t ? t.split('\n').map(s => s.trim()).filter(Boolean) : [];
+      })(),
+      slave_board_sdkconfig: (() => {
+        const t = document.getElementById('slave_board_sdkconfig').value.trim();
+        return t ? t.split('\n').map(s => s.trim()).filter(Boolean) : [];
+      })(),
       workspace_dir: document.getElementById('workspace_dir').value || undefined,
       sdkconfig_optimizations: opts.length ? opts : undefined,
     },
@@ -1388,18 +1624,29 @@ function markDirty() {
 // ── Ports ─────────────────────────────────────────────────────────────
 async function loadPorts() {
   const ports = await fetchJson('/api/ports');
+  const portSet = new Set(ports);
   ['host_port', 'slave_port'].forEach(id => {
     const sel = document.getElementById(id);
-    const currentVal = sel.value || (config.hardware || {})[id] || '';
+    const savedVal = (config.hardware || {})[id] || '';
     sel.innerHTML = '';
-    const allPorts = new Set([...ports]);
-    if (currentVal) allPorts.add(currentVal);
-    [...allPorts].sort().forEach(p => {
+    // Only show real system ports
+    ports.forEach(p => {
       const opt = document.createElement('option');
       opt.value = p; opt.textContent = p;
       sel.appendChild(opt);
     });
-    sel.value = currentVal;
+    // Select saved value if it exists, otherwise first port
+    if (savedVal && portSet.has(savedVal)) {
+      sel.value = savedVal;
+    } else if (savedVal) {
+      // Saved port doesn't exist — add it greyed out so user sees the mismatch
+      const opt = document.createElement('option');
+      opt.value = savedVal;
+      opt.textContent = savedVal + ' (not found)';
+      opt.style.color = '#999';
+      sel.prepend(opt);
+      sel.value = savedVal;
+    }
   });
 }
 
@@ -1530,14 +1777,37 @@ async function probeHardware() {
   const res = document.getElementById('probe-result');
   btn.disabled = true; btn.textContent = 'Probing...';
   res.style.display = 'block';
-  res.innerHTML = '<span style="color:var(--dim)">Detecting...</span>';
-  await fetch('/api/hardware/probe', {method: 'POST'});
+  const hp = document.getElementById('host_port').value;
+  const sp = document.getElementById('slave_port').value;
+  if (!hp || !sp) {
+    res.style.display = 'block';
+    res.innerHTML = '<div style="color:#c62828">Select both ports first</div>';
+    btn.disabled = false; btn.textContent = 'Probe Hardware';
+    return;
+  }
+  res.innerHTML = `<span style="color:#666">Probing Host (${hp}) and Slave (${sp})...</span>`;
+  const resp = await fetch('/api/hardware/probe', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ host_port: hp, slave_port: sp })
+  });
+  if (!resp.ok) {
+    res.innerHTML = `<div style="color:#c62828">Probe request failed (${resp.status})</div>`;
+    btn.disabled = false; btn.textContent = 'Probe Hardware';
+    return;
+  }
+  let attempts = 0;
   const poll = setInterval(async () => {
+    attempts++;
     const state = await fetchJson('/api/hardware/probe');
     if (state.status === 'done') {
       clearInterval(poll);
       btn.disabled = false; btn.textContent = 'Probe Hardware';
       renderProbeResult(state.result);
+    } else if (attempts > 20) {
+      clearInterval(poll);
+      btn.disabled = false; btn.textContent = 'Probe Hardware';
+      res.innerHTML = '<div style="color:#c62828">Probe timed out (10s)</div>';
     }
   }, 500);
 }
@@ -1545,14 +1815,77 @@ async function probeHardware() {
 function renderProbeResult(result) {
   const el = document.getElementById('probe-result');
   if (result.error) { el.innerHTML = `<div style="color:var(--red)">${result.error}</div>`; return; }
+
+  // Cache probe results for client-side board config generation
+  _lastProbeHost = result.host;
+  _lastProbeSlave = result.slave;
+
   let html = '';
   for (const [role, dev] of [['Host', result.host], ['Slave', result.slave]]) {
     const ok = dev && dev.connected;
     const color = ok ? 'var(--green)' : 'var(--red)';
-    const text = ok ? dev.chip : (dev?.error || 'Not found');
+    let text = ok ? dev.chip : (dev?.error || 'Not found');
+    if (ok && dev.revision) text += ` (rev v${dev.revision})`;
     html += `<div class="probe-device"><div class="dot" style="background:${color}"></div><strong>${role}:</strong> ${text}</div>`;
   }
   el.innerHTML = html;
+
+  // Refresh board dropdown (new slave chip = new compatible boards)
+  refreshBoardDropdown().then(() => refreshBoardPreview());
+}
+
+let _lastProbeHost = null;
+let _lastProbeSlave = null;
+
+function generateHostAutoConfig() {
+  const boardSym = document.getElementById('board').value;  // Kconfig symbol
+  const lines = [];
+
+  // CP target from probe
+  const slaveChip = (_lastProbeSlave?.chip || '').toUpperCase().replace('-','');
+  if (slaveChip) {
+    // Normalize: ESP32C6FH4 → ESP32C6
+    const known = ['ESP32C61','ESP32C6','ESP32C5','ESP32C3','ESP32C2','ESP32S3','ESP32S2','ESP32H2','ESP32H4','ESP32'];
+    for (const k of known) {
+      if (slaveChip.startsWith(k)) {
+        lines.push('CONFIG_ESP_HOSTED_CP_TARGET_' + k + '=y');
+        break;
+      }
+    }
+  }
+
+  // Board selection (symbol from dropdown)
+  if (boardSym && boardSym !== 'ESP_HOSTED_P4_DEV_BOARD_NONE') {
+    lines.push('CONFIG_' + boardSym + '=y');
+  }
+
+  // Silicon revision
+  const hostChip = (_lastProbeHost?.chip || '').toUpperCase();
+  const hostRev = _lastProbeHost?.revision;
+  if (hostChip.includes('P4') && hostRev && parseFloat(hostRev) < 3.0) {
+    lines.push('CONFIG_ESP32P4_SELECTS_REV_LESS_V3=y');
+  }
+
+  return lines;
+}
+
+function refreshBoardPreview() {
+  const hostLines = generateHostAutoConfig();
+  const hostText = hostLines.join('\n');
+  document.getElementById('host-auto-lines').textContent = hostText || 'Select a board or probe hardware';
+  const hostTa = document.getElementById('host_board_sdkconfig');
+  if (!hostTa.value.trim() && hostText) hostTa.value = hostText;
+  // Slave auto-lines are populated by refreshBoardDropdown from API
+}
+
+function switchBoardTab(target, mode) {
+  // target: 'host' or 'slave'
+  ['auto','custom','none'].forEach(m => {
+    document.getElementById(target + '-tab-' + m).classList.toggle('active', m === mode);
+    document.getElementById(target + '-board-' + m).style.display = (m === mode) ? 'block' : 'none';
+  });
+  document.getElementById(target + '_board_config').value = mode;
+  markDirty();
 }
 
 // ── Tests tab: execution ──────────────────────────────────────────────

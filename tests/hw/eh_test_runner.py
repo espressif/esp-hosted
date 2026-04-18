@@ -263,12 +263,7 @@ def main():
     ensure_idf_env(cfg.idf_path)
 
     matrix = load_matrix()
-    hw_cfg = {
-        'host_port': cfg.host_port,
-        'slave_port': cfg.slave_port,
-        'host_target': cfg.get_host_target(),
-        'slave_target': cfg.get_slave_target(),
-    }
+    # hw_cfg populated after probe (chip names from probe override board-name inference)
 
     os.environ['FLASH_BAUD'] = str(cfg.flash_baud)
 
@@ -337,16 +332,28 @@ def main():
 
     # ── Hardware Probe ───────────────────────────────────────────────
     hw_available = False
+    host_probe = {'connected': False, 'chip': None, 'revision': None}
+    slave_probe = {'connected': False, 'chip': None, 'revision': None}
     if args.skip_flash:
         # Skip probe when --skip-flash: devices are running, can't esptool-connect
         print('\nSkipping HW probe (--skip-flash: devices already running)')
         hw_available = True
     elif args.mode in ('on-target', 'auto'):
         print('\nProbing hardware...')
-        ok, msg, _, _ = eh_test_hw_probe_setup(cfg.host_port, cfg.slave_port)
+        ok, msg, host_probe, slave_probe = eh_test_hw_probe_setup(cfg.host_port, cfg.slave_port)
         if ok:
             print(f'  OK: {msg}')
+            if host_probe.get('revision'):
+                print(f'  Host silicon revision: v{host_probe["revision"]}')
             hw_available = True
+            # Show board auto-config
+            from infra.board_config import get_host_overlay, get_slave_overlay
+            host_auto = get_host_overlay(cfg, host_probe, slave_probe)
+            slave_auto = get_slave_overlay(cfg, host_probe, slave_probe)
+            if host_auto:
+                print(f'  Host board config ({cfg.host_board_config_mode}): {", ".join(host_auto)}')
+            if slave_auto:
+                print(f'  Slave board config ({cfg.slave_board_config_mode}): {", ".join(slave_auto)}')
         else:
             print(f'  NOT FOUND: {msg}')
             if args.mode == 'on-target':
@@ -366,6 +373,31 @@ def main():
         return 0
 
     print(f'  Workspace: {workspace_root}')
+
+    # ── Chip targets (from probe > board name inference) ───────────────
+    def _chip_to_idf_target(chip_str):
+        """'ESP32-C6FH4' → 'esp32c6'"""
+        c = (chip_str or '').upper().replace('-', '')
+        for t in ['esp32c61','esp32c6','esp32c5','esp32c3','esp32c2',
+                   'esp32s3','esp32s2','esp32h2','esp32p4','esp32']:
+            if c.startswith(t.upper()):
+                return t
+        return None
+
+    host_target = _chip_to_idf_target(host_probe.get('chip')) or cfg.get_host_target()
+    slave_target = _chip_to_idf_target(slave_probe.get('chip')) or cfg.get_slave_target()
+
+    hw_cfg = {
+        'host_port': cfg.host_port,
+        'slave_port': cfg.slave_port,
+        'host_target': host_target,
+        'slave_target': slave_target,
+    }
+
+    # ── Board auto-config (computed once, applied to builds) ──────────
+    from infra.board_config import get_host_overlay, get_slave_overlay
+    _host_board_overlay = get_host_overlay(cfg, host_probe, slave_probe)
+    _slave_board_overlay = get_slave_overlay(cfg, host_probe, slave_probe)
 
     # ── Artifacts ────────────────────────────────────────────────────
     artifacts = EhTestArtifactManager(
@@ -401,7 +433,8 @@ def main():
         host_build_dir = os.path.join(host_ws, 'build')
 
         if not args.skip_build:
-            cp_extra = (cfg.build_sdkconfig_optimizations or []) + (subst(pair_cfg.get('cp_sdkconfig_extra')) or [])
+            # Board overlay (host/slave separate) + user prefs + pair-specific
+            cp_extra = _slave_board_overlay + (cfg.build_sdkconfig_optimizations or []) + (subst(pair_cfg.get('cp_sdkconfig_extra')) or [])
             ok, msg, cp_build_dir = eh_test_build_project(
                 cp_path, hw_cfg['slave_target'],
                 sdkconfig_extra=cp_extra,
@@ -413,7 +446,7 @@ def main():
                 continue
             cp_ok = msg
 
-            host_extra = (cfg.build_sdkconfig_optimizations or []) + (subst(pair_cfg.get('host_sdkconfig_extra')) or [])
+            host_extra = _host_board_overlay + (cfg.build_sdkconfig_optimizations or []) + (subst(pair_cfg.get('host_sdkconfig_extra')) or [])
             ok, msg, host_build_dir = eh_test_build_project(
                 host_path, hw_cfg['host_target'],
                 sdkconfig_extra=host_extra,

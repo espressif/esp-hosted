@@ -72,13 +72,17 @@ class EhTestConfig:
         else:
             self.workspace_dir = str(TESTS_DIR / 'workspace')
 
-        # Test-build sdkconfig optimizations — reduce boot time
-        # Note: Don't include COMPILER_OPTIMIZATION_SIZE as it conflicts
-        # with COMPILER_OPTIMIZATION_PERF in many examples
+        # Test-build sdkconfig optimizations — user preferences (Layer 2)
         self.build_sdkconfig_optimizations = build.get('sdkconfig_optimizations', [
             'CONFIG_SPIRAM_MEMTEST=n',
             'CONFIG_BOOTLOADER_SKIP_VALIDATE_ON_POWER_ON=y',
         ])
+
+        # Board auto-config: separate modes for host and slave
+        self.host_board_config_mode = build.get('host_board_config', 'auto')
+        self.slave_board_config_mode = build.get('slave_board_config', 'auto')
+        self.host_board_sdkconfig = build.get('host_board_sdkconfig', [])
+        self.slave_board_sdkconfig = build.get('slave_board_sdkconfig', [])
 
         artifacts = data.get('artifacts', {})
         self.artifact_dir = os.path.expanduser(
@@ -117,15 +121,23 @@ class EhTestConfig:
         return base
 
     def get_host_target(self):
-        if 'p4' in self.board:
+        b = self.board.lower()
+        if 'p4' in b:
             return 'esp32p4'
         return 'esp32'
 
     def get_slave_target(self):
-        if 'c6' in self.board:
+        b = self.board.lower()
+        if 'c61' in b:
+            return 'esp32c61'
+        if 'c6' in b:
             return 'esp32c6'
-        if 'c5' in self.board:
+        if 'c5' in b:
             return 'esp32c5'
+        if 'c3' in b:
+            return 'esp32c3'
+        if 'c2' in b:
+            return 'esp32c2'
         return 'esp32'
 
 

@@ -23,6 +23,7 @@ def eh_test_hw_probe_device(port, expected_chip=None, timeout=5):
         {
             'connected': bool,
             'chip': str or None,       # e.g., 'ESP32-P4', 'ESP32-C6'
+            'revision': str or None,   # e.g., '0.2', '3.0'
             'port': str,
             'error': str or None
         }
@@ -30,6 +31,7 @@ def eh_test_hw_probe_device(port, expected_chip=None, timeout=5):
     result = {
         'connected': False,
         'chip': None,
+        'revision': None,
         'port': port,
         'error': None,
     }
@@ -41,9 +43,18 @@ def eh_test_hw_probe_device(port, expected_chip=None, timeout=5):
 
     # Try esptool read_mac (stable across IDF versions)
     try:
+        # Find a Python with esptool: IDF venv > pip-installed esptool > system
         idf_python = os.path.join(os.environ.get('IDF_PYTHON_ENV_PATH', ''), 'bin', 'python')
         if not os.path.exists(idf_python):
-            idf_python = 'python'
+            # Try common IDF Python venv locations
+            import glob as _glob
+            for pattern in [os.path.expanduser('~/.espressif/python_env/*/bin/python')]:
+                matches = sorted(_glob.glob(pattern), reverse=True)
+                if matches:
+                    idf_python = matches[0]
+                    break
+            else:
+                idf_python = 'python'
         cmd = (f'{idf_python} -m esptool --port {port}'
                f' --before default_reset --after no_reset read_mac')
         r = subprocess.run(
@@ -60,6 +71,13 @@ def eh_test_hw_probe_device(port, expected_chip=None, timeout=5):
         if chip_match:
             result['chip'] = chip_match.group(1)
             result['connected'] = True
+
+            # Extract silicon revision: "Chip is ESP32-P4 (revision v0.2)"
+            rev_match = re.search(
+                r'Chip is\s+\S+\s+\(revision\s+v?(\d+\.\d+)\)', output)
+            if rev_match:
+                result['revision'] = rev_match.group(1)
+
         elif 'Failed to connect' in output:
             result['error'] = 'Device not responding (check boot mode / connections)'
         else:
