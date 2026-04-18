@@ -26,6 +26,7 @@
 #include <linux/mmc/card.h>
 #include <linux/mmc/host.h>
 #include <linux/timer.h>
+#include "eh_transport.h"
 #include "esp_if.h"
 #include "esp_sdio_api.h"
 #include "esp_api.h"
@@ -527,10 +528,10 @@ static int write_packet(struct esp_adapter *adapter, struct sk_buff *skb)
 	atomic_inc(&tx_pending);
 
 	/* Notify to process queue */
-	if (payload_header->if_type == ESP_SERIAL_IF) {
+	if (payload_header->if_type == ESP_LEGACY_SERIAL_IF) {
 		atomic_inc(&queue_items[PRIO_Q_SERIAL]);
 		skb_queue_tail(&(sdio_context.tx_q[PRIO_Q_SERIAL]), skb);
-	} else if (payload_header->if_type == ESP_HCI_IF) {
+	} else if (payload_header->if_type == ESP_LEGACY_HCI_IF) {
 		atomic_inc(&queue_items[PRIO_Q_BT]);
 		skb_queue_tail(&(sdio_context.tx_q[PRIO_Q_BT]), skb);
 	} else {
@@ -947,47 +948,47 @@ int process_init_event(u8 *evt_buf, u8 len)
 				return -1;
 			}
 			fw_version_checked = 1;
-		} else if (*pos == ESP_PRIV_CAPABILITY) {
+		} else if (*pos == EH_PRIV_CAPABILITY) {
 			esp_info("Processing MCU-style basic capability\n");
 			adapter->capabilities = *(pos + 2);
 			print_capabilities(*(pos + 2));
-		} else if (*pos == ESP_PRIV_FIRMWARE_CHIP_ID) {
+		} else if (*pos == EH_PRIV_FIRMWARE_CHIP_ID) {
 			esp_info("ESP chipset detected [%s] (MCU-style)\n",
 				*(pos+2) == ESP_FIRMWARE_CHIP_ESP32 ? "esp32" :
 				*(pos+2) == ESP_FIRMWARE_CHIP_ESP32C6 ? "esp32-c6" :
 				*(pos+2) == ESP_FIRMWARE_CHIP_ESP32C5 ? "esp32-c5" :
 				"unknown/unsupported ESP chipset");
-		} else if (*pos == ESP_PRIV_TEST_RAW_TP) {
+		} else if (*pos == EH_PRIV_TEST_RAW_TP) {
 			esp_info("Processing MCU-style raw TP capability\n");
 			process_test_capabilities(*(pos + 2));
-		} else if (*pos == ESP_PRIV_RX_Q_SIZE) {
+		} else if (*pos == EH_PRIV_RX_Q_SIZE) {
 			esp_info("MCU RX queue size: %d\n", *(pos + 2));
-		} else if (*pos == ESP_PRIV_TX_Q_SIZE) {
+		} else if (*pos == EH_PRIV_TX_Q_SIZE) {
 			esp_info("MCU TX queue size: %d\n", *(pos + 2));
-		} else if (*pos == ESP_PRIV_CAP_EXT) {
+		} else if (*pos == EH_PRIV_CAP_EXT) {
 			u32 ext_cap = *(u32*)(pos + 2);
 			esp_info("MCU extended capabilities: 0x%08X\n", ext_cap);
-			if (ext_cap & ESP_SPI_HD_INTERFACE_SUPPORT_2_DATA_LINES)
+			if (ext_cap & EH_TRANSPORT_CP_SPI_HD_2_DATA_LINES)
 				esp_info("  * SPI HD 2-data-line support\n");
-			if (ext_cap & ESP_SPI_HD_INTERFACE_SUPPORT_4_DATA_LINES)
+			if (ext_cap & EH_TRANSPORT_CP_SPI_HD_4_DATA_LINES)
 				esp_info("  * SPI HD 4-data-line support\n");
 			if (ext_cap & ESP_WLAN_SUPPORT)
 				esp_info("  * WLAN support\n");
-			if (ext_cap & ESP_BT_INTERFACE_SUPPORT)
+			if (ext_cap & ESP_BT_SDIO_SUPPORT)
 				esp_info("  * BT interface support\n");
 			if (ext_cap & ESP_WLAN_UART_SUPPORT)
 				esp_info("  * WLAN UART support\n");
-			if (ext_cap & ESP_BT_VHCI_UART_SUPPORT)
+			if (ext_cap & ESP_BT_UART_SUPPORT)
 				esp_info("  * BT VHCI UART support\n");
-		} else if (*pos == ESP_PRIV_FIRMWARE_VERSION) {
+		} else if (*pos == EH_PRIV_FIRMWARE_VERSION) {
 			u32 fw_ver = *(u32*)(pos + 2);
 			u8 major1 = (fw_ver >> 16) & 0xFF;
 			u8 major2 = (fw_ver >> 8) & 0xFF;
 			u8 minor = fw_ver & 0xFF;
 			esp_info("MCU firmware version: %d.%d.%d\n", major1, major2, minor);
-		} else if (*pos == ESP_PRIV_TRANS_SDIO_MODE) {
+		} else if (*pos == EH_PRIV_TRANS_SDIO_MODE) {
 			esp_info("SDIO transport mode: 0x%02X\n", *(pos + 2));
-		} else if (*pos == ESP_PRIV_FEAT_CAPS) {
+		} else if (*pos == EH_PRIV_FEAT_CAPS) {
 			if (tag_len == 32 && adapter) {
 				u32 *fc = (u32 *)(pos + 2);
 				int i;

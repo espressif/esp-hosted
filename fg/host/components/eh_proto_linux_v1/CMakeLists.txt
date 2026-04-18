@@ -3,15 +3,17 @@ cmake_minimum_required(VERSION 3.16)
 project(eh_proto_linux_v1 C)
 
 # Create the library target with -fPIC for shared library compatibility
+set(PROTOBUF_C_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../../../../modules/common/serializers/third_party/msg_codec/protobuf-c)
+
 add_library(ehrcp_linux_protobuf STATIC
-    src/eh_config.pb-c.c
-    src/protobuf-c/protobuf-c/protobuf-c.c
+    src/esp_hosted_config.pb-c.c
+    ${PROTOBUF_C_DIR}/protobuf-c/protobuf-c.c
 )
 
 target_include_directories(ehrcp_linux_protobuf PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/protobuf-c
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/protobuf-c/protobuf-c
+    ${PROTOBUF_C_DIR}
+    ${PROTOBUF_C_DIR}/protobuf-c
 )
 
 # Enable position-independent code for shared library compatibility

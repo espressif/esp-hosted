@@ -23,7 +23,7 @@
 
 #include <stdint.h>
 #include "ctrl_api.h"
-#include "eh_custom_rpc.h"
+#include "esp_hosted_custom_rpc.h"
 
 #ifdef __cplusplus
 extern "C" {

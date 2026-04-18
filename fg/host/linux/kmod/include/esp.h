@@ -31,16 +31,7 @@
 #include "eh_header.h"
 #include "eh_interface.h"
 #include "eh_caps.h"
-/* Kernel-compatible checksum (plain 16-bit byte accumulation, same algorithm
- * as eh_frame component's internal checksum). */
-static inline uint16_t compute_checksum(const uint8_t *buf, uint16_t len)
-{
-	uint16_t sum = 0;
-	uint16_t i;
-	for (i = 0; i < len; i++)
-		sum += buf[i];
-	return sum;
-}
+/* compute_checksum is defined in eh_transport.h (canonical) */
 
 #define ESP_IF_TYPE_SDIO        1
 #define ESP_IF_TYPE_SPI         2

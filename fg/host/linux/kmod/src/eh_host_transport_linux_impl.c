@@ -15,8 +15,9 @@ eh_host_transport_linux_ops_t *g_linux_transport_ops = NULL;
 
 /* Forward declarations from existing code */
 extern int esp_init_interface_layer(struct esp_adapter *adapter);
-extern int esp_deinit_interface_layer(void);
+extern void esp_deinit_interface_layer(void);
 extern int esp_send_packet(struct esp_adapter *adapter, struct sk_buff *skb);
+extern struct esp_adapter *g_esp_adapter;
 
 /* Global RX ready callback - hooks into existing esp_process_new_packet_intr */
 static void (*g_rx_ready_callback)(struct esp_adapter *adapter) = NULL;
@@ -37,7 +38,8 @@ static int linux_transport_init(struct esp_adapter *adapter)
  */
 static int linux_transport_deinit(struct esp_adapter *adapter)
 {
-    return esp_deinit_interface_layer();
+    esp_deinit_interface_layer();
+    return 0;
 }
 
 /**

@@ -16,10 +16,11 @@ if(NOT TARGET eh_host_rpc_static)
 endif()
 
 # Common sources
-add_library(common OBJECT test_utils.c nw_helper_func.c app_custom_rpc.c)
+add_library(common OBJECT test_utils.c nw_helper_func.c app_custom_rpc.c app_peer_data_transfer.c eh_host_ext_peer_data_transfer.c)
 target_link_libraries(common PRIVATE eh_host_rpc_static)
 target_include_directories(common
     PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/common
+    PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 
 # Build executables

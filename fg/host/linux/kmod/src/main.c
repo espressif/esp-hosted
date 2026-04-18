@@ -35,8 +35,8 @@
 #include "esp_api.h"
 #include "esp_kernel_port.h"
 #include "esp_stats.h"
-#include "eh_host_transport_cp_utils.h"
-#include "eh_host_transport.h"
+#include "eh_cp_transport_utils.h"
+#include "eh_transport.h"
 #include "eh_host_transport_linux_ops.h"
 
 /** Global adapter for direct transport mapping **/
@@ -428,7 +428,8 @@ static void process_event(u8 *evt_buf, u16 len)
 
 	event = (struct esp_priv_event *) evt_buf;
 
-	if (event->event_type == ESP_PRIV_EVENT_INIT) {
+	if (event->event_type == ESP_PRIV_EVENT_INIT ||
+	    event->event_type == ESP_PRIV_EVENT_INIT_LEGACY) {
 
 		esp_info("Slave up event rcvd from ESP\n");
 
@@ -436,12 +437,9 @@ static void process_event(u8 *evt_buf, u16 len)
 		if (ret)
 			esp_err("Failed to init serial interface\n");
 
-		u32 basic_caps = 0, ext_caps = 0;
-		if (eh_host_transport_get_capabilities(&adapter, &basic_caps, &ext_caps) == 0) {
-			process_capabilities(basic_caps);
-		} else {
-			esp_err("Failed to get transport capabilities\n");
-		}
+		ret = process_init_event(event->event_data, event->event_len);
+		if (ret)
+			esp_err("Failed to process init event: %d\n", ret);
 
 	} else {
 		esp_warn("Drop unknown event\n");
@@ -461,7 +459,8 @@ static void process_priv_communication(struct sk_buff *skb)
 	payload = skb->data + le16_to_cpu(header->offset);
 	len = le16_to_cpu(header->len);
 
-	if (header->priv_pkt_type == ESP_PACKET_TYPE_EVENT) {
+	if (header->priv_pkt_type == ESP_PACKET_TYPE_EVENT ||
+	    header->priv_pkt_type == ESP_PACKET_TYPE_EVENT_LEGACY) {
 		process_event(payload, len);
 	} else {
 		esp_info("%u unhandled priv event[%u]\n", __LINE__, header->priv_pkt_type);
@@ -518,7 +517,7 @@ static void process_rx_packet(struct sk_buff *skb)
 		}
 	}
 
-	if (payload_header->if_type == ESP_SERIAL_IF) {
+	if (payload_header->if_type == ESP_LEGACY_SERIAL_IF) {
 		do {
 			ret = esp_serial_data_received(payload_header->if_num,
 					(skb->data + offset + ret_len), (len - ret_len));
@@ -530,8 +529,8 @@ static void process_rx_packet(struct sk_buff *skb)
 			ret_len += ret;
 		} while (ret_len < len);
 		dev_kfree_skb_any(skb);
-	} else if (payload_header->if_type == ESP_STA_IF ||
-	           payload_header->if_type == ESP_AP_IF) {
+	} else if (payload_header->if_type == ESP_LEGACY_STA_IF ||
+	           payload_header->if_type == ESP_LEGACY_AP_IF) {
 		/* chop off the header from skb */
 		skb_pull(skb, offset);
 
@@ -553,9 +552,9 @@ static void process_rx_packet(struct sk_buff *skb)
 		netif_rx_ni(skb);
 		priv->stats.rx_packets++;
 
-	} else if (payload_header->if_type == ESP_HCI_IF) {
+	} else if (payload_header->if_type == ESP_LEGACY_HCI_IF) {
 		esp_hci_rx(adapter, skb);
-	} else if (payload_header->if_type == ESP_PRIV_IF) {
+	} else if (payload_header->if_type == ESP_LEGACY_PRIV_IF) {
 		/* Queue event skb for processing in events workqueue */
 		skb_queue_tail(&adapter->events_skb_q, skb);
 
@@ -693,13 +692,13 @@ int esp_send_host_config(struct esp_adapter *adapter, u8 hdr_ver_ack, u8 rpc_ver
 	skb_put(skb, HOST_CFG_PKT_SIZE);
 
 	hdr = (struct esp_payload_header *)skb->data;
-	hdr->if_type       = ESP_PRIV_IF;
+	hdr->if_type       = ESP_LEGACY_PRIV_IF;
 	hdr->if_num        = 0;
-	hdr->priv_pkt_type = ESP_PACKET_TYPE_EVENT;
+	hdr->priv_pkt_type = ESP_PACKET_TYPE_EVENT_LEGACY;
 	hdr->offset        = cpu_to_le16(sizeof(struct esp_payload_header));
 
 	event = (struct esp_priv_event *)(skb->data + sizeof(struct esp_payload_header));
-	event->event_type = ESP_PRIV_EVENT_INIT;
+	event->event_type = ESP_PRIV_EVENT_INIT_LEGACY;
 	pos = event->event_data;
 
 	*pos++ = HOST_CAPABILITIES;               *pos++ = 1; *pos++ = 0; payload_len += 3;
@@ -873,13 +872,13 @@ int esp_add_card(struct esp_adapter *adapter)
 	stop_data = 0;
 
 	/* Add interface STA and AP */
-	ret = esp_add_interface(adapter, ESP_STA_IF, 0, "ethsta%d");
+	ret = esp_add_interface(adapter, ESP_LEGACY_STA_IF, 0, "ethsta%d");
 	if (ret) {
 		esp_err("Failed to add STA\n");
 		return ret;
 	}
 
-	ret = esp_add_interface(adapter, ESP_AP_IF, 0, "ethap%d");
+	ret = esp_add_interface(adapter, ESP_LEGACY_AP_IF, 0, "ethap%d");
 	if (ret) {
 		esp_err("Failed to add AP\n");
 		esp_remove_network_interfaces(adapter);
@@ -1051,7 +1050,8 @@ static void __exit esp_exit(void)
 	test_raw_tp_cleanup();
 #endif
 
-	eh_host_transport_linux_deinit();
+	/* Unregister SDIO driver — triggers esp_remove() which stops TX thread */
+	esp_deinit_interface_layer();
 
 	/* Deinitialize transport ops */
 	eh_host_transport_linux_ops_deinit();

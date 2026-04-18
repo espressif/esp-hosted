@@ -20,7 +20,7 @@
 #include <replxx.h>
 #include <stdbool.h>
 #include "nw_helper_func.h"
-#include "eh_custom_rpc.h"
+#include "esp_hosted_custom_rpc.h"
 #include "app_custom_rpc.h"
 #include <stdint.h>
 

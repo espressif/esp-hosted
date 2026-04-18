@@ -15,8 +15,7 @@ ESP_SLAVE := ""
 # Compiler and kernel
 CROSS_COMPILE :=
 ARCH := arm64
-#KERNEL := /lib/modules/$(shell uname -r)/build
-KERNEL := /lib/modules/5.15.0-161-generic/build
+KERNEL := /lib/modules/$(shell uname -r)/build
 
 # Default interface is SDIO
 MODULE_NAME := esp32_sdio
@@ -35,17 +34,18 @@ endif
 # Directory of this Makefile
 MAKEFILE_DIR := $(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
 
-# Root of esp_hosted_fg
-TRANSPORT_HEADERS := $(realpath $(MAKEFILE_DIR)/../../../coprocessor/components/esp_hosted_transport_cp)
+# Root of esp_hosted repo
+REPO_ROOT := $(realpath $(MAKEFILE_DIR)/../../../..)
 
-# Host transport component (new architecture)
-TRANSPORT_HOST_HEADERS := $(realpath $(MAKEFILE_DIR)/../../components/esp_hosted_transport_host)
+# CP transport headers (for eh_header.h, eh_caps.h, etc.)
+TRANSPORT_HEADERS := $(REPO_ROOT)/modules/coprocessor/eh_cp_transport
 
-# Main common directory (project-wide common headers)
-COMMON_DIR := $(realpath $(MAKEFILE_DIR)/../../../common)
+# Host transport component
+TRANSPORT_HOST_HEADERS := $(REPO_ROOT)/fg/host/components/eh_host_transport
 
-# Canonical common headers (components/common/esp_hosted_common/include/)
-CANONICAL_COMMON_INC := $(realpath $(MAKEFILE_DIR)/../../../../components/common/esp_hosted_common/include)
+# Common headers
+COMMON_DIR := $(REPO_ROOT)/modules/common
+CANONICAL_COMMON_INC := $(REPO_ROOT)/modules/common/eh_common/include
 
 $(info TRANSPORT_HEADERS = $(TRANSPORT_HEADERS))
 $(info TRANSPORT_HOST_HEADERS = $(TRANSPORT_HOST_HEADERS))
@@ -53,17 +53,18 @@ $(info COMMON_DIR = $(COMMON_DIR))
 
 # Common include folders
 COMMON_TRANSPORT_INC := $(TRANSPORT_HEADERS)/include/common
+COMMON_TLV_INC := $(COMMON_DIR)/eh_tlv/include
 TRANSPORT_HOST_INC := $(TRANSPORT_HOST_HEADERS)/include
 TRANSPORT_HOST_KMOD_INC := $(TRANSPORT_HOST_HEADERS)/private_include/kmod
-#COMMON_INC := $(MAKEFILE_DIR)/include/common/
 
-# Source directories
-TRANSPORT_HOST_SRC := $(TRANSPORT_HOST_HEADERS)/src/kmod
+# Source directories (must be relative to MAKEFILE_DIR for kbuild obj-m)
+TRANSPORT_HOST_SRC_ABS := $(TRANSPORT_HOST_HEADERS)/src/kmod
+TRANSPORT_HOST_SRC := $(shell realpath --relative-to=$(MAKEFILE_DIR) $(TRANSPORT_HOST_SRC_ABS))
 
 # -----------------------------
 # Compiler flags
 # -----------------------------
-EXTRA_CFLAGS += -I$(COMMON_TRANSPORT_INC) -I$(TRANSPORT_HOST_INC) -I$(TRANSPORT_HOST_KMOD_INC) -I$(COMMON_DIR) -I$(CANONICAL_COMMON_INC) -I$(MAKEFILE_DIR)/include -I$(MAKEFILE_DIR)/include/common
+EXTRA_CFLAGS += -I$(COMMON_TRANSPORT_INC) -I$(COMMON_TLV_INC) -I$(TRANSPORT_HOST_INC) -I$(TRANSPORT_HOST_KMOD_INC) -I$(COMMON_DIR) -I$(CANONICAL_COMMON_INC) -I$(MAKEFILE_DIR)/include -I$(MAKEFILE_DIR)/include/common
 #EXTRA_CFLAGS += -I$(COMMON_TRANSPORT_INC) -I$(MAKEFILE_DIR)/include -I$(COMMON_INC)
 
 ifeq ($(CONFIG_TEST_RAW_TP), y)
@@ -104,7 +105,7 @@ endif
 # -----------------------------
 obj-m := $(MODULE_NAME).o
 $(MODULE_NAME)-y := src/main.o src/esp_stats.o $(module_objects)
-$(MODULE_NAME)-y += src/esp_serial.o src/esp_rb.o src/esp_fw_verify.o src/esp_hosted_transport_linux_impl.o
+$(MODULE_NAME)-y += src/esp_serial.o src/esp_rb.o src/esp_fw_verify.o src/eh_host_transport_linux_impl.o
 
 # -----------------------------
 # Build rules

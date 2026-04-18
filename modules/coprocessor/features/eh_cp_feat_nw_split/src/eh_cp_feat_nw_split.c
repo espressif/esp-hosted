@@ -753,7 +753,6 @@ IRAM_ATTR esp_err_t eh_cp_feat_nw_split_wlan_sta_rx_callback(void *buffer, uint1
 		case NW_STACK_HOST:
 			/* Use the default callback to send to host */
 			ESP_LOGV(TAG, "Routing packet to HOST");
-			ESP_LOGW(TAG, "rxcb call: orig=%p", orig_wlan_rx_cb_for_host);
 			return orig_wlan_rx_cb_for_host(buffer, len, eb);
 
 		case NW_STACK_COPROCESSOR: {

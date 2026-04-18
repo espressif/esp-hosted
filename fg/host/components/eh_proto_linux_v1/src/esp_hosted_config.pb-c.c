@@ -6,7 +6,7 @@
 #define PROTOBUF_C__NO_DEPRECATED
 #endif
 
-#include "eh_config.pb-c.h"
+#include "esp_hosted_config.pb-c.h"
 void   scan_result__init
                      (ScanResult         *message)
 {

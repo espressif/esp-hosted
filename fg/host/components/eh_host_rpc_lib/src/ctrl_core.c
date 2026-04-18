@@ -794,7 +794,7 @@ static int ctrl_app_parse_resp(CtrlMsg *ctrl_msg, ctrl_cmd_t *app_resp)
 			}
 			break;
 		} default: {
-			command_log("Unsupported Control Resp[%u]\n", ctrl_msg->msg_id);
+			command_log("RPC resp [0x%x] unsupported\n", ctrl_msg->msg_id);
 			goto fail_parse_ctrl_msg;
 			break;
 		}
@@ -1199,7 +1199,7 @@ static int is_async_resp_callback_registered_by_resp_msg_id(int resp_msg_id)
 	if (resp_msg_id == CTRL_RESP_BASE) {
 		return CALLBACK_NOT_REGISTERED;
 	} else if ((resp_msg_id < CTRL_RESP_BASE) || (resp_msg_id >= CTRL_RESP_MAX)) {
-		command_log("resp id[%u] out of range\n", resp_msg_id);
+		command_log("RPC resp [0x%x] unsupported\n", resp_msg_id);
 		return MSG_ID_OUT_OF_ORDER;
 	}
 

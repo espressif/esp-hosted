@@ -4,7 +4,11 @@
 #ifndef __ESP_HOSTED_COMMON_INTERFACE__H
 #define __ESP_HOSTED_COMMON_INTERFACE__H
 
+#ifdef __KERNEL__
+#include <linux/types.h>
+#else
 #include <stdint.h>
+#endif
 #ifdef ESP_PLATFORM
 #include "sdkconfig.h"
 #endif

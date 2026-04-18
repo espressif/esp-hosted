@@ -12,7 +12,11 @@
 #ifndef __EH_COMMON_FW_VERSION__H
 #define __EH_COMMON_FW_VERSION__H
 
+#ifdef __KERNEL__
+#include <linux/types.h>
+#else
 #include <stdint.h>
+#endif
 
 /*
  * eh_common_fw_version.h --- firmware version definitions (macros + wire struct)

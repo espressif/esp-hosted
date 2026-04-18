@@ -235,7 +235,7 @@ static ESP_BT_SEND_FRAME_PROTOTYPE()
 
 	memset (hdr, 0, sizeof(struct esp_payload_header));
 
-	hdr->if_type = ESP_HCI_IF;
+	hdr->if_type = ESP_LEGACY_HCI_IF;
 	hdr->if_num = 0;
 	hdr->len = cpu_to_le16(len);
 	hdr->offset = cpu_to_le16(pad_len);

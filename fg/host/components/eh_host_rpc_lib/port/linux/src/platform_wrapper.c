@@ -14,7 +14,7 @@
 #include "serial_if.h"
 #include "platform_wrapper.h"
 #include "ctrl_api.h"
-#include "eh_proto_linux_v1.h"
+#include "esp_hosted_cp_lin_fg_pbuf.h"
 #include <pthread.h>
 #include "string.h"
 #include <time.h>

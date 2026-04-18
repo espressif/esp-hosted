@@ -7,6 +7,6 @@
 #ifndef __EH_CP_PROTOBUF_LINUX_H__
 #define __EH_CP_PROTOBUF_LINUX_H__
 
-#include "eh_config.pb-c.h"
+#include "esp_hosted_config.pb-c.h"
 
 #endif /* __EH_CP_PROTOBUF_LINUX_H__ */ 

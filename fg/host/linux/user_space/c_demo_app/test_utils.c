@@ -32,7 +32,7 @@
 #include <time.h>
 #include "test.h"
 #include "nw_helper_func.h"
-#include "eh_custom_rpc.h"
+#include "esp_hosted_custom_rpc.h"
 
 /***** Please Read *****/
 /* Before use : User must enter user configuration parameter in "ctrl_config.h" file */
@@ -1531,8 +1531,19 @@ int test_enable_bt(void)
 
 	resp = feature_config(req);
 
-	if (successful_response(resp))
-		reset_hci_instance();
+	if (successful_response(resp)) {
+		/* BT controller needs ~1s to fully init (PHY cal, etc.)
+		 * before HCI reset will succeed. Retry up to 3 times. */
+		int retry;
+		for (retry = 0; retry < 3; retry++) {
+			usleep(1000 * 1000); /* 1 second */
+			reset_hci_instance();
+			/* Check if HCI came up */
+			if (system("hciconfig hci0 2>/dev/null | grep -q 'UP RUNNING'") == 0)
+				break;
+			printf("HCI not ready yet, retrying... (%d/3)\n", retry + 1);
+		}
+	}
 
 	CLEANUP_CTRL_MSG(req);
 	return ctrl_app_resp_callback(resp);

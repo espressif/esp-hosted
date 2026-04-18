@@ -10,7 +10,7 @@
 #define __CTRL_API_H
 
 #include <stdbool.h>
-#include "eh_config.pb-c.h"
+#include "esp_hosted_config.pb-c.h"
 
 #define SUCCESS                              0
 #define FAILURE                              -1
@@ -137,7 +137,8 @@ typedef enum {
 	CTRL_REQ_SET_DHCP_DNS_STATUS       = CTRL_MSG_ID__Req_SetDhcpDnsStatus,
 	CTRL_REQ_GET_DHCP_DNS_STATUS       = CTRL_MSG_ID__Req_GetDhcpDnsStatus,
 
-	CTRL_REQ_CUSTOM_RPC = CTRL_MSG_ID__Req_CustomRPC,
+	CTRL_REQ_CUSTOM_RPC = CTRL_MSG_ID__Req_Custom_RPC_Unserialised_Msg,
+	CTRL_REQ_CUSTOM_RPC_UNSERIALISED_MSG = CTRL_MSG_ID__Req_Custom_RPC_Unserialised_Msg,
 
 	/*
 	 * Add new control path command response before Req_Max
@@ -185,7 +186,8 @@ typedef enum {
 	CTRL_RESP_SET_DHCP_DNS_STATUS       = CTRL_MSG_ID__Resp_SetDhcpDnsStatus,
 	CTRL_RESP_GET_DHCP_DNS_STATUS       = CTRL_MSG_ID__Resp_GetDhcpDnsStatus,
 
-	CTRL_RESP_CUSTOM_RPC = CTRL_MSG_ID__Resp_CustomRPC,
+	CTRL_RESP_CUSTOM_RPC = CTRL_MSG_ID__Resp_Custom_RPC_Unserialised_Msg,
+	CTRL_RESP_CUSTOM_RPC_UNSERIALISED_MSG = CTRL_MSG_ID__Resp_Custom_RPC_Unserialised_Msg,
 	/*
 	 * Add new control path command and response before Resp_Max
 	 * and update Resp_Max
@@ -208,7 +210,9 @@ typedef enum {
 	CTRL_EVENT_DHCP_DNS_STATUS =
 		CTRL_MSG_ID__Event_SetDhcpDnsStatus,
 	CTRL_EVENT_CUSTOM_RPC =
-		CTRL_MSG_ID__Event_CustomRPC,
+		CTRL_MSG_ID__Event_Custom_RPC_Unserialised_Msg,
+	CTRL_EVENT_CUSTOM_RPC_UNSERIALISED_MSG =
+		CTRL_MSG_ID__Event_Custom_RPC_Unserialised_Msg,
 	/*
 	 * Add new control path command notification before Event_Max
 	 * and update Event_Max

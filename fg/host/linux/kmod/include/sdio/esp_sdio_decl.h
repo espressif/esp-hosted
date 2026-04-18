@@ -22,6 +22,7 @@
 #define _ESP_DECL_H_
 
 #include "esp.h"
+#include "eh_transport.h"
 
 /* Interrupt Status */
 #define ESP_SLAVE_BIT0_INT             BIT(0)

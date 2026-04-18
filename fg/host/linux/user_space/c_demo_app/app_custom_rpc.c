@@ -26,7 +26,7 @@
 #include <time.h>
 #include "test.h"
 #include "ctrl_api.h"
-#include "eh_custom_rpc.h"
+#include "esp_hosted_custom_rpc.h"
 
 /* Global variable for verification results in demo3 */
 static volatile int g_verification_result = 0;
