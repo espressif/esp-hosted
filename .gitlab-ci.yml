@@ -18,6 +18,19 @@ check_version:
   tags:
     - build
 
+check_setup_sync:
+  stage: pre_check
+  image: ${CI_DOCKER_REGISTRY}/esp-env-v5.5:3
+  script:
+    - .gitlab/ci/check_setup_sync.sh
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+    - changes:
+      - esp_hosted_ng/esp/esp_driver/setup.sh
+      - esp_hosted_ng/esp/esp_driver/setup.ps1
+  tags:
+    - build
+
 build_fw_esp32_sdio:
   stage: build_firmware
   image: $CI_DOCKER_REGISTRY/esp-env-v5.5:3
