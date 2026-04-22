@@ -2,13 +2,18 @@
 
 set -euo pipefail
 
+if [ "$#" -ne 2 ]; then
+    echo "Usage: $0 <setup.sh path> <setup.ps1 path>"
+    exit 2
+fi
+
+SETUP_SH="$1"
+SETUP_PS1="$2"
+
 # Determine the base commit for the MR
 TARGET_BRANCH="${CI_MERGE_REQUEST_TARGET_BRANCH_NAME:-master}"
 git fetch origin "$TARGET_BRANCH" --depth=1
 BASE_COMMIT=$(git merge-base HEAD "origin/$TARGET_BRANCH")
-
-SETUP_SH="esp_hosted_ng/esp/esp_driver/setup.sh"
-SETUP_PS1="esp_hosted_ng/esp/esp_driver/setup.ps1"
 
 SH_CHANGED=0
 PS1_CHANGED=0
