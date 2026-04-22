@@ -1,11 +1,14 @@
 param(
-    [switch]$f,
-    [switch]$u,
-    [switch]$h
+    [Alias("f")]
+    [switch]$Force,
+    [Alias("u", "update-idf")]
+    [switch]$UpdateIdf,
+    [Alias("h", "help")]
+    [switch]$Help
 )
 
 function Show-Help {
-    Write-Host "Usage: ./setup.ps1 [-f] [-u] [-h]"
+    Write-Host "Usage: ./setup.ps1 [-f] [-u|--update-idf] [-h|--help]"
     Write-Host ""
     Write-Host "Options:"
     Write-Host "  -f             Force reset and re-clone esp-idf (will delete all local changes)"
@@ -14,7 +17,7 @@ function Show-Help {
     exit 0
 }
 
-if ($h) { Show-Help }
+if ($Help) { Show-Help }
 
 $envFile = ".env"
 if (-not (Test-Path $envFile)) {
@@ -57,13 +60,13 @@ if ($ESP_IDF_PRESENT) {
 }
 
 # Commit mismatch but no -f or -u
-if ($ESP_IDF_PRESENT -and -not $ESP_IDF_CORRECT -and -not $f -and -not $u) {
+if ($ESP_IDF_PRESENT -and -not $ESP_IDF_CORRECT -and -not $Force -and -not $UpdateIdf) {
     Write-Error "esp-idf is at $CURRENT_COMMIT but expected $IDF_COMMIT. Use -f to reset or -u to update."
     exit 1
 }
 
 # Handle -f (full reset)
-if ($f) {
+if ($Force) {
     $response = Read-Host "WARNING: This will reset the repo and delete all local changes. Continue? [y/N]"
     if ($response -ne 'y') { Write-Host "Aborted."; exit 1 }
 
@@ -77,6 +80,8 @@ if (-not (Test-Path $ESP_IDF_DIR)) {
     git clone --branch $IDF_TAG --depth 100 https://github.com/espressif/esp-idf.git $ESP_IDF_DIR
     Push-Location $ESP_IDF_DIR
     git checkout -f $IDF_COMMIT
+    Write-Host "ESP hosted: applying rom patch"
+    git apply ../lib/rom.patch
     Write-Host "ESP hosted: initializing submodules"
     git submodule update --init --depth 1 --recursive
     Write-Host "ESP hosted: installing prerequisites for esp-idf"
@@ -87,7 +92,7 @@ if (-not (Test-Path $ESP_IDF_DIR)) {
 }
 
 # Handle -u (update-only)
-if ($u) {
+if ($UpdateIdf) {
     $response = Read-Host "WARNING: This will reset changes inside esp-idf only. Continue? [y/N]"
     if ($response -ne 'y') { Write-Host "Aborted."; exit 1 }
 
@@ -99,6 +104,8 @@ if ($u) {
     Push-Location $ESP_IDF_DIR
     git fetch --depth 100 origin $IDF_TAG
     git reset --hard $IDF_COMMIT
+    Write-Host "ESP hosted: applying rom patch"
+    git apply ../lib/rom.patch
     git clean -fdx
     Write-Host "ESP hosted: updating submodules"
     git submodule update --init --depth 1 --recursive
@@ -110,14 +117,14 @@ if ($u) {
 # Copy wireless libs (always after valid clone or update)
 Write-Host "ESP hosted: replacing wireless libraries"
 
-$targets = @("esp32", "esp32c2", "esp32c3", "esp32c5", "esp32c6", "esp32s2", "esp32s3")
-
-foreach ($t in $targets) {
-    $dest = ".\esp-idf\components\esp_wifi\lib\$t\"
-    if (-not (Test-Path $dest)) {
-        New-Item -ItemType Directory -Path $dest -Force | Out-Null
-    }
-    Copy-Item ".\lib\$t\*" $dest -Recurse -Force -ErrorAction SilentlyContinue
+$destRoot = ".\esp-idf\components\esp_wifi\lib\"
+if (Test-Path $destRoot) {
+    Remove-Item "$destRoot\*" -Recurse -Force -ErrorAction SilentlyContinue
+} else {
+    New-Item -ItemType Directory -Path $destRoot -Force | Out-Null
 }
 
+Copy-Item ".\lib\*" $destRoot -Recurse -Force -ErrorAction SilentlyContinue
+
 Write-Host "###### Setup Done ######"
+
