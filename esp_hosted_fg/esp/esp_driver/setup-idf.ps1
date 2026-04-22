@@ -19,12 +19,13 @@ param(
 
 $ESP_IDF_DIR="esp-idf"
 
-# IDF branch we are tracking
-$ESP_IDF_BRANCH="release/v5.4"
+# IDF ref we are tracking (branch or tag)
+# Pinned to a stable tag rather than a branch head:
+$ESP_IDF_BRANCH="v5.5.4"
 
 function Show-Help {
-    Write-Host "Setup ESP-IDF ($ESP_IDF_BRANCH branch)."
-    Write-Host "Default is with latest commit in the branch."
+    Write-Host "Setup ESP-IDF at ref $ESP_IDF_BRANCH (branch or tag)."
+    Write-Host "Default pinned ref: $ESP_IDF_BRANCH"
     Write-Host ""
     Write-Host "Usage: .\setup-idf.ps1 [option]"
     Write-Host ""

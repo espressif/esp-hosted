@@ -14,8 +14,9 @@
 
 ESP_IDF_DIR="esp-idf"
 
-# IDF branch we are tracking
-ESP_IDF_BRANCH="release/v5.4"
+# IDF ref we are tracking (branch or tag)
+# Pinned to a stable tag rather than a branch head:
+ESP_IDF_BRANCH="v5.5.4"
 
 # note: commit id should exist on the tracked IDF branch
 COMMIT_ID=0
@@ -23,14 +24,14 @@ COMMIT_ID=0
 FORCE=0
 
 show_help() {
-    echo "Setup ESP-IDF (${ESP_IDF_BRANCH} branch)."
-    echo "Default is with latest commit in the branch."
+    echo "Setup ESP-IDF at ref ${ESP_IDF_BRANCH} (branch or tag)."
+    echo "Default pinned ref: ${ESP_IDF_BRANCH}"
     echo ""
     echo "Usage: ./setup-idf.sh [option]"
     echo ""
     echo "Options:"
     echo "--force                 Force reset ESP-IDF (will delete all local changes)"
-    echo "--use-commit <commitID> Check out ESP-IDF ${ESP_IDF_BRANCH} branch with commitID"
+    echo "--use-commit <commitID> Check out ESP-IDF ${ESP_IDF_BRANCH} with commitID"
     echo " -h, --help             Show this help message"
     exit 0
 }
