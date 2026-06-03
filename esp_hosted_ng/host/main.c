@@ -51,6 +51,9 @@ MODULE_PARM_DESC(clockspeed, "Hosts clock speed in MHz");
 module_param(raw_tp_mode, uint, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
 MODULE_PARM_DESC(raw_tp_mode, "Mode chosen to test raw throughput");
 
+module_param(log_level, int, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
+MODULE_PARM_DESC(log_level, "Log level: 1=ERR, 2=WARNING, 3=INFO, 4=DEBUG, 5=VERBOSE");
+
 module_param(ota_file, charp, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
 MODULE_PARM_DESC(ota_file, "Ota file to update ESP firmware");
 
