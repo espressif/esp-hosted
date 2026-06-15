@@ -128,7 +128,7 @@ uint8_t g_spi_mode = SPI_MODE_2;
 #define GPIO_CS                10
 #define DMA_CHAN               SPI_DMA_CH_AUTO
 
-#define SPI_CLK_MHZ            30
+#define SPI_CLK_MHZ            10
 
 #elif defined CONFIG_IDF_TARGET_ESP32C6
 
