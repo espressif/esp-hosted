@@ -1,0 +1,9 @@
+# ESP-Hosted Transport SDCard Example — host (MCU)
+
+# ── Role: HOST (MCU) ────────────────────────────────────────────────
+CONFIG_ESP_HOSTED=y
+
+# ── Transport: SDIO ─────────────────────────────────────────────────
+
+# FATFS tuning for sdcard sample.
+CONFIG_FATFS_VFS_FSTAT_BLKSIZE=4096

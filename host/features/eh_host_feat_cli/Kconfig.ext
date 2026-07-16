@@ -1,0 +1,29 @@
+menuconfig ESP_HOSTED_HOST_FEAT_CLI
+	bool "host cli"
+	depends on ESP_HOSTED_HOST && ESP_HOSTED_HOST_TYPE_MCU
+	default y if ESP_HOSTED_HOST_FEAT_POWER_SAVE
+	default n
+	help
+	  Enable the host-side CLI feature.  Registers one esp_console
+	  command set per dependent feature compiled in (e.g. host_power_save
+	  commands when EH_HOST_FEAT_POWER_SAVE_READY is true).
+
+	  Mirrors the CP-side eh_cp_feat_cli surface.
+
+if ESP_HOSTED_HOST_FEAT_CLI
+
+	config ESP_HOSTED_HOST_FEAT_CLI_READY
+		bool
+		default y
+
+	config ESP_HOSTED_HOST_FEAT_CLI_AUTO_INIT
+		bool "Auto-init CLI at boot (register commands during eh_host_init)"
+		default y
+		depends on ESP_HOSTED_HOST_AUTO_FEAT_INIT
+		help
+		  When enabled, host CLI feature auto-initializes during the
+		  linker-section feature walk and registers its console commands.
+		  Disable to manually call eh_host_feat_cli_register_commands()
+		  from the app after esp_console_new_repl_* setup.
+
+endif # ESP_HOSTED_HOST_FEAT_CLI

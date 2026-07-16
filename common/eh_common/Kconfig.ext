@@ -1,0 +1,28 @@
+menu "Common config (Host & Coprocessor)"
+	depends on ESP_HOSTED
+
+	config ESP_HOSTED_AUTO_CALL_INIT_BEFORE_APP_MAIN
+		bool "Auto-call esp_hosted_init() before app_main()"
+		default y
+		help
+			When y (default), ESP-Hosted installs an
+			__attribute__((constructor)) wrapper that calls
+			esp_hosted_init() before app_main() / setup(), so apps
+			can use esp_hosted_* APIs without an explicit init.
+			esp_hosted_init() dispatches to eh_host_init() on the
+			host role and eh_cp_init() on the coprocessor role.
+
+			Set to n in apps that need to override Kconfig-default
+			pin assignments or clocks at runtime — call
+			esp_hosted_sdio_set_config() / esp_hosted_spi_set_config()
+			first, then esp_hosted_init() at the desired point.  With
+			the constructor on, runtime *_set_config() calls return
+			ESP_TRANSPORT_ERR_ALREADY_SET because the shadow config
+			is already locked.
+
+			Distinct from the per-feature ESP_HOSTED_*_AUTO_INIT
+			knobs — those gate linker-section descriptors walked by
+			auto_feat_init_task.  This knob gates the top-level
+			esp_hosted_init() call only.
+
+endmenu

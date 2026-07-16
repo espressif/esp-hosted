@@ -1,0 +1,107 @@
+menuconfig ESP_HOSTED_HOST_FEAT_POWER_SAVE
+	bool "Allow host to power save"
+	depends on SOC_LIGHT_SLEEP_SUPPORTED || (SOC_DEEP_SLEEP_SUPPORTED && (SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP || SOC_GPIO_SUPPORT_HP_PERIPH_PD_SLEEP_WAKEUP))
+	default n
+	help
+	  When the host enters power-save (light/deep sleep), this feature
+	  notifies the CP via the bus_inform_slave_host_power_save_*
+	  contract so the CP can adapt buffering / hold reset GPIO across
+	  the host's sleep.
+
+	  On Linux user-space the kmod owns the bus, so the start path is
+	  a no-op (returns ESP_ERR_NOT_SUPPORTED).
+
+if ESP_HOSTED_HOST_FEAT_POWER_SAVE
+
+	config ESP_HOSTED_HOST_FEAT_POWER_SAVE_READY
+		bool
+		default y
+
+	config ESP_HOSTED_HOST_FEAT_POWER_SAVE_AUTO_INIT
+		bool "Auto-initialize Host Power Save feature at boot"
+		default y
+		depends on ESP_HOSTED_HOST_AUTO_FEAT_INIT
+		help
+		  When enabled, eh_host_power_save_init() runs during the
+		  linker-section auto-init walk so the wakeup-reason capture
+		  happens on first boot before any feature uses it.
+
+	menuconfig ESP_HOSTED_HOST_FEAT_POWER_SAVE_DEEP_SLEEP_ALLOWED
+		bool "Allow host to enter deep sleep. Slave will wakeup host using GPIO"
+		depends on (SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP || SOC_GPIO_SUPPORT_HP_PERIPH_PD_SLEEP_WAKEUP) && SOC_DEEP_SLEEP_SUPPORTED
+		default y
+		help
+			Allow host to deep sleep for highest power saving. Only RTC memory and RTC GPIOs remain
+			powered during deep sleep. Slave will wake up host using a GPIO when needed. Host must
+			configure a valid RTC GPIO for wakeup. Deep sleep provides maximum power savings but has
+			longer wakeup time compared to light sleep.
+
+	if ESP_HOSTED_HOST_FEAT_POWER_SAVE_DEEP_SLEEP_ALLOWED
+
+		config ESP_HOSTED_HOST_FEAT_POWER_SAVE_WAKEUP_GPIO_RANGE_MIN
+			int
+			default 6 if ESP_HOSTED_P4_DEV_BOARD_FUNC_BOARD && !ESP_HOSTED_HOST_TRANSPORT_BUS_SPI_HD
+			default 4 if ESP_HOSTED_P4_DEV_BOARD_FUNC_BOARD && ESP_HOSTED_HOST_TRANSPORT_BUS_SPI_HD
+			default 2 if ESP_HOSTED_P4_C5_CORE_BOARD
+			default -1 if IDF_TARGET_ESP32P4
+			default -1
+
+		config ESP_HOSTED_HOST_FEAT_POWER_SAVE_WAKEUP_GPIO_RANGE_MAX
+			int
+			default 6 if ESP_HOSTED_P4_DEV_BOARD_FUNC_BOARD && !ESP_HOSTED_HOST_TRANSPORT_BUS_SPI_HD
+			default 4 if ESP_HOSTED_P4_DEV_BOARD_FUNC_BOARD && ESP_HOSTED_HOST_TRANSPORT_BUS_SPI_HD
+			default 2 if ESP_HOSTED_P4_C5_CORE_BOARD
+			default 15 if IDF_TARGET_ESP32P4
+			default 100
+
+		config ESP_HOSTED_HOST_FEAT_POWER_SAVE_WAKEUP_GPIO
+			int "Host in: Host Wakeup GPIO"
+			default 5 if ESP_HOSTED_C2_C5_MODULE_SUB_BOARD
+			default 6 if ESP_HOSTED_P4_DEV_BOARD_FUNC_BOARD && !ESP_HOSTED_HOST_TRANSPORT_BUS_SPI_HD
+			default 4 if ESP_HOSTED_P4_DEV_BOARD_FUNC_BOARD && ESP_HOSTED_HOST_TRANSPORT_BUS_SPI_HD
+			default -1 if (ESP_HOSTED_P4_C6_CORE_BOARD || ESP_HOSTED_P4_C61_CORE_BOARD || ESP32P4_EYE_C6_BOARD)
+			default 6 if IDF_TARGET_ESP32P4 && ESP_HOSTED_CP_TARGET_ESP32C5 && !ESP_HOSTED_P4_C5_CORE_BOARD
+			default 6 if IDF_TARGET_ESP32P4 && !ESP_HOSTED_CP_TARGET_ESP32C6 && !ESP_HOSTED_CP_TARGET_ESP32C5 && !ESP_HOSTED_CP_TARGET_ESP32C61
+			default 1 if IDF_TARGET_ESP32C3
+			default 2 if ESP_HOSTED_P4_C5_CORE_BOARD
+			default -1 if (ESP_HOSTED_P4_DEV_BOARD_NONE || ESP_HOSTED_P4_C6_CORE_BOARD || ESP_HOSTED_P4_C61_CORE_BOARD)
+			range ESP_HOSTED_HOST_FEAT_POWER_SAVE_WAKEUP_GPIO_RANGE_MIN ESP_HOSTED_HOST_FEAT_POWER_SAVE_WAKEUP_GPIO_RANGE_MAX
+			help
+				GPIO number to use for host wakeup from sleep.
+				Set to -1 to disable GPIO wakeup.
+				Only RTC GPIOs are supported for deep-sleep-wakeup.
+
+		choice
+			prompt "Host Wakeup GPIO Level"
+			default ESP_HOSTED_HOST_FEAT_POWER_SAVE_WAKEUP_GPIO_LEVEL_HIGH
+
+			config ESP_HOSTED_HOST_FEAT_POWER_SAVE_WAKEUP_GPIO_LEVEL_HIGH
+				bool "High"
+			config ESP_HOSTED_HOST_FEAT_POWER_SAVE_WAKEUP_GPIO_LEVEL_LOW
+				bool "Low"
+		endchoice
+
+		config ESP_HOSTED_HOST_FEAT_POWER_SAVE_WAKEUP_GPIO_LEVEL
+			int
+			default 1 if ESP_HOSTED_HOST_FEAT_POWER_SAVE_WAKEUP_GPIO_LEVEL_HIGH
+			default 0 if ESP_HOSTED_HOST_FEAT_POWER_SAVE_WAKEUP_GPIO_LEVEL_LOW
+			help
+				GPIO level to use for host wakeup from sleep.
+				Set to 0 to use low level, set to 1 to use high level.
+
+		# Config Validation
+		if !ESP_HOSTED_HOST_TRANSPORT_BUS_SDIO && ESP_HOSTED_HOST_CP_RESET_STRATEGY_ONLY_IF_NECESSARY
+			comment "Error: Invalid configuration. Slave reset is mandatory for non SDIO transports"
+		endif
+
+		if ESP_HOSTED_HOST_FEAT_POWER_SAVE_WAKEUP_GPIO = -1
+			comment "Error: Host wake-up GPIO is mandatory"
+		endif
+
+		if ESP_HOSTED_HOST_CP_RESET_STRATEGY_ONLY_IF_NECESSARY && !ESP_HOSTED_HOST_TRANSPORT_RESTART_ON_FAILURE
+			comment "Recommended: enable 'Restart host on runtime transport failure' if communication with slave fails"
+		endif
+
+	endif # ESP_HOSTED_HOST_FEAT_POWER_SAVE_DEEP_SLEEP_ALLOWED
+
+endif # ESP_HOSTED_HOST_FEAT_POWER_SAVE

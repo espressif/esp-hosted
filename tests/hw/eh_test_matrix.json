@@ -1,0 +1,139 @@
+{
+  "_schema": {
+    "cp": "this-repo path to CP example dir; relative to repo root.",
+    "host_this_repo": "this-repo host path; mcu_host ↔ esp_host auto-fallback at resolve.",
+    "host_legacy": "external (mcu6) host sub-path; joined with paths.host_base when mode=legacy.",
+    "coverage": "Per-mode parity status. 'ok'=example prints what tests expect. 'incomplete'=example exists but lacks test-required output (build OK, tests fail). 'missing'=no example available. Runner skips non-ok pairs with reason."
+  },
+  "pairs": {
+    "boot_wifi": {
+      "cp": "examples/wifi/sta/cp",
+      "host_this_repo": "examples/wifi/sta/mcu_host",
+      "host_legacy": "host_minimal_test",
+      "coverage": { "this_repo": "incomplete", "legacy": "missing" },
+      "tests": ["eh_test_feat_boot/test_boot_handshake.py"],
+      "description": "Boot handshake + FW version + WiFi scan; needs a test-driver host that emits TEST_PASS markers (not ported yet)."
+    },
+    "gpio": {
+      "cp": "examples/gpio_expander/cp",
+      "host_this_repo": "examples/gpio_expander/mcu_host",
+      "host_legacy": "host_gpio_expander",
+      "coverage": { "this_repo": "ok", "legacy": "ok" },
+      "tests": ["eh_test_feat_rpc/test_gpio.py"],
+      "description": "GPIO set/get/toggle via RPC"
+    },
+    "peer_data": {
+      "cp": "examples/peer_data_transfer/echo/cp",
+      "host_this_repo": "examples/peer_data_transfer/echo/mcu_host",
+      "host_legacy": "host_peer_data_transfer",
+      "coverage": { "this_repo": "ok", "legacy": "ok" },
+      "tests": ["eh_test_feat_rpc/test_peer_data.py"],
+      "description": "Custom RPC echo (3 sizes + GHOST)"
+    },
+    "mem_monitor": {
+      "cp": "examples/mem_monitor/cp",
+      "host_this_repo": "examples/mem_monitor/mcu_host",
+      "host_legacy": "host_hosted_cp_meminfo",
+      "coverage": { "this_repo": "incomplete", "legacy": "ok" },
+      "tests": ["eh_test_feat_rpc/test_mem_monitor.py"],
+      "description": "Heap memory stats via RPC; this-repo example is a 39-line stub (full impl in legacy)."
+    },
+    "bt_nimble": {
+      "cp": "examples/bt/standard_hci/cp",
+      "host_this_repo": "examples/bt/hosted_hci/nimble/host_only/esp_host",
+      "host_legacy": "host_nimble_bleprph_host_only_vhci",
+      "coverage": { "this_repo": "ok", "legacy": "ok" },
+      "tests": ["eh_test_feat_bt/test_bt.py"],
+      "description": "BLE NimBLE VHCI advertising"
+    },
+    "bt_mac": {
+      "cp": "examples/bt/set_mac_addr/cp",
+      "host_this_repo": "examples/bt/set_mac_addr/mcu_host",
+      "host_legacy": "host_bt_controller_mac_addr",
+      "coverage": { "this_repo": "ok", "legacy": "ok" },
+      "tests": ["eh_test_feat_bt/test_bt_mac.py"],
+      "description": "BT MAC address query"
+    },
+    "wifi_connect": {
+      "cp": "examples/wifi/sta/cp",
+      "host_this_repo": "examples/system/hosted_events/mcu_host",
+      "host_legacy": "host_hosted_events",
+      "coverage": { "this_repo": "ok", "legacy": "ok" },
+      "tests": ["eh_test_feat_wifi/test_wifi_connect.py", "eh_test_feat_wifi/test_heartbeat.py"],
+      "description": "WiFi connect + heartbeat + events",
+      "requires": ["wifi_ap"],
+      "host_sdkconfig_extra": [
+        "CONFIG_ESP_WIFI_SSID=\"{wifi_ssid}\"",
+        "CONFIG_ESP_WIFI_PASSWORD=\"{wifi_password}\""
+      ]
+    },
+    "ota": {
+      "cp": "examples/ota/coprocessor_ota/cp",
+      "host_this_repo": "examples/ota/coprocessor_ota/mcu_host",
+      "host_legacy": "host_performs_slave_ota",
+      "coverage": { "this_repo": "ok", "legacy": "ok" },
+      "tests": ["eh_test_feat_system/test_ota.py"],
+      "description": "Real OTA via partition (992KB)",
+      "pre_flash": [
+        {
+          "action": "write_flash",
+          "port": "host",
+          "address": "0x5F0000",
+          "file": "{cp_build}/eh_cp_mcu_wifi.bin"
+        }
+      ],
+      "host_sdkconfig_extra": [
+        "CONFIG_OTA_METHOD_PARTITION=y",
+        "CONFIG_OTA_PARTITION_LABEL=\"slave_fw\"",
+        "CONFIG_OTA_VERSION_CHECK_SLAVEFW_SLAVE=n"
+      ]
+    },
+    "host_ps": {
+      "cp": "examples/power_save/slave/host_shuts_down_slave/cp",
+      "host_this_repo": "examples/power_save/slave/host_shuts_down_slave/mcu_host",
+      "host_legacy": "host_shuts_down_slave_to_power_save",
+      "coverage": { "this_repo": "ok", "legacy": "ok" },
+      "tests": ["eh_test_feat_system/test_host_ps.py"],
+      "description": "Host power save shutdown/wake cycle",
+      "requires": ["wifi_ap"],
+      "host_sdkconfig_extra": [
+        "CONFIG_ESP_WIFI_SSID=\"{wifi_ssid}\"",
+        "CONFIG_ESP_WIFI_PASSWORD=\"{wifi_password}\""
+      ]
+    },
+    "nw_split": {
+      "cp": "examples/network_split/station/cp",
+      "host_this_repo": "examples/network_split/station/mcu_host",
+      "host_legacy": "host_network_split__power_save",
+      "coverage": { "this_repo": "incomplete", "legacy": "ok" },
+      "tests": ["eh_test_feat_nw_split/test_nw_split.py"],
+      "description": "Network split basic: connect + ping routing; this-repo example lacks the iperf CLI prompt the test waits for.",
+      "requires": ["wifi_ap"]
+    },
+    "nw_split_ps": {
+      "cp": "examples/power_save/host/network_split__host_deep_sleep_with_slave/cp",
+      "host_this_repo": "examples/power_save/host/network_split__host_deep_sleep_with_slave/esp_host",
+      "host_legacy": "host_network_split__power_save",
+      "coverage": { "this_repo": "incomplete", "legacy": "incomplete" },
+      "tests": ["eh_test_feat_nw_split/test_nw_split_ps.py"],
+      "description": "Network split + host PS: sleep/wake cycle + packet routing; test expects DEEP_SLEEP/wakeup logs not present in either example.",
+      "requires": ["wifi_ap"],
+      "cp_sdkconfig_extra": [
+        "CONFIG_LOG_MAXIMUM_LEVEL=5",
+        "CONFIG_EXAMPLE_WIFI_SSID=\"{wifi_ssid}\"",
+        "CONFIG_EXAMPLE_WIFI_PASSWORD=\"{wifi_password}\""
+      ]
+    },
+    "light_sleep": {
+      "cp": "examples/light_sleep/host_wakeup/cp",
+      "host_this_repo": "examples/light_sleep/host_wakeup/mcu_host",
+      "host_legacy": "host_network_split__power_save",
+      "coverage": { "this_repo": "ok", "legacy": "ok" },
+      "tests": ["eh_test_feat_nw_split/test_light_sleep.py"],
+      "description": "CP light sleep + transport + WiFi via CLI",
+      "requires": ["wifi_ap"]
+    }
+  },
+
+  "managed_component_patches": []
+}

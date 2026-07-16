@@ -1,0 +1,23 @@
+name: "esp_hosted"
+version: "3.0.0"
+description: "ESP-Hosted - Unified coprocessor connectivity"
+url: "https://github.com/espressif/esp-hosted"
+documentation: "https://docs.espressif.com/projects/esp-hosted"
+license: "Apache-2.0"
+
+dependencies:
+  idf:
+    version: ">=5.5"
+
+targets:
+  - esp32
+  - esp32c2
+  - esp32s2
+  - esp32s3
+  - esp32c3
+  - esp32c5
+  - esp32c6
+  - esp32c61
+  - esp32h2
+  - esp32h4
+  - esp32p4

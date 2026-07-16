@@ -1,0 +1,36 @@
+menu "Example Configuration"
+
+    config EH_USE_LEGACY_API
+        bool "Use legacy esp_hosted_* compat-surface main"
+        default n
+        help
+            Build from legacy/main.c (standard ESP-IDF AP+STA code on the
+            esp_hosted_* compat surface) instead of main/main.c (native
+            eh_host_* API).
+
+    config ESP_WIFI_AP_SSID
+        string "SoftAP SSID"
+        default "myssid_ap"
+
+    config ESP_WIFI_AP_PASSWORD
+        string "SoftAP Password"
+        default "mypassword"
+
+    config ESP_WIFI_AP_CHANNEL
+        int "SoftAP Channel"
+        range 1 13
+        default 1
+
+    config ESP_WIFI_AP_MAX_STA_CONN
+        int "SoftAP max station connections"
+        default 4
+
+    config ESP_WIFI_STA_SSID
+        string "Upstream (STA) SSID"
+        default "myssid"
+
+    config ESP_WIFI_STA_PASSWORD
+        string "Upstream (STA) Password"
+        default "mypassword"
+
+endmenu

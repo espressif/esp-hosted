@@ -1,0 +1,30 @@
+menuconfig ESP_HOSTED_HOST_FEAT_HEARTBEAT
+	bool "Heartbeat"
+	default n
+	depends on ESP_HOSTED_HOST && ESP_HOSTED_HOST_FEAT_RPC
+	depends on ESP_HOSTED_HOST_FEAT_RPC_EXT_V2_READY
+	help
+	  Requires the MCU V1 RPC extension — ConfigHeartbeat IDs live in
+	  the Rpc proto family.  Linux-FG (CtrlMsg) equivalent deferred.
+
+	  Configures a periodic liveness heartbeat with the coprocessor
+	  and subscribes the CP-side heartbeat events.  This is the
+	  control-plane heartbeat only — distinct from CP-side sleep
+	  features (eh_cp_feat_host_ps deep-sleep GPIO wakeup config and
+	  example-scope light-sleep integration via host_ps callbacks).
+
+if ESP_HOSTED_HOST_FEAT_HEARTBEAT
+
+	config ESP_HOSTED_HOST_FEAT_HEARTBEAT_AUTO_INIT
+		bool "Auto-initialize Heartbeat configurator at boot"
+		default y
+		depends on ESP_HOSTED_HOST_AUTO_FEAT_INIT
+		help
+		  When enabled, eh_host_feat_heartbeat_init() runs during the
+		  linker-section auto-init walk.
+
+endif # ESP_HOSTED_HOST_FEAT_HEARTBEAT
+
+config ESP_HOSTED_HOST_FEAT_HEARTBEAT_READY
+	bool
+	default y if ESP_HOSTED_HOST_FEAT_HEARTBEAT && ESP_HOSTED_HOST_FEAT_RPC_READY && ESP_HOSTED_HOST_FEAT_RPC_EXT_V2_READY

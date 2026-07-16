@@ -1,0 +1,11 @@
+menu "Example Configuration"
+
+    config EH_USE_LEGACY_API
+        bool "Use legacy esp_hosted_* compat-surface main"
+        default n
+        help
+            Build the example from main/legacy/main.c (preserves the
+            esp_hosted_* compat surface) instead of main/main.c (which
+            uses native eh_host_* APIs).
+
+endmenu

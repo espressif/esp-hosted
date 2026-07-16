@@ -1,0 +1,13 @@
+config ESP_HOSTED_CP_FEAT_WIFI_EXT_DPP
+    bool "WiFi DPP (Device Provisioning Protocol) feature extension"
+    depends on ESP_HOSTED_CP_FEAT_WIFI
+    default n
+    help
+        Enables WiFi Easy Connect (DPP): supplicant and WiFi DPP event paths.
+
+comment "⚠️  Enable [✓] ESP_WIFI_DPP_SUPPORT  (Component config → Wi-Fi → DPP)"
+    depends on ESP_HOSTED_CP_FEAT_WIFI_EXT_DPP && !ESP_WIFI_DPP_SUPPORT
+
+config ESP_HOSTED_CP_FEAT_WIFI_EXT_DPP_READY
+    bool
+    default y if ESP_HOSTED_CP_FEAT_WIFI_EXT_DPP && ESP_WIFI_DPP_SUPPORT

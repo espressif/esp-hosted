@@ -1,0 +1,16 @@
+## SPDX-License-Identifier: Apache-2.0
+## In-tree override: pulls the umbrella esp_hosted component from this repo.
+## On host-on-MCU targets (esp32p4 — Wi-Fi runs on the CP) pull
+## espressif/esp_wifi_remote so IDF's esp_wifi takes the remote path and the
+## wifi_* types the exerciser marshals resolve.
+dependencies:
+  espressif/esp_hosted:
+    version: "*"
+    override_path: "../../../../.."
+  espressif/esp_wifi_remote:
+    version: ">=1.3.1"
+    rules:
+      - if: "target in [esp32p4, esp32h2]"
+      - if: "idf_version <6.1"
+  idf:
+    version: ">=5.5"

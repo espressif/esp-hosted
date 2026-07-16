@@ -1,0 +1,45 @@
+config ESP_HOSTED_HOST_FEAT_SYSTEM
+	bool
+	default y
+	depends on ESP_HOSTED_HOST && ESP_HOSTED_HOST_FEAT_RPC
+	depends on ESP_HOSTED_HOST_FEAT_RPC_EXT_V2_READY
+	help
+	  Host-side counterpart of the CP system feature: CP FW version,
+	  CP OTA flow, STA/AP MAC get, heartbeat subscription + interval
+	  control. This feature is always enabled.
+
+if ESP_HOSTED_HOST_FEAT_SYSTEM
+
+	config ESP_HOSTED_HOST_FEAT_SYSTEM_AUTO_INIT
+		bool
+		default y
+		depends on ESP_HOSTED_HOST_AUTO_FEAT_INIT
+		help
+		  System (CP FW version, OTA-to-CP, heartbeat) is auto-started
+		  as part of esp_hosted_init(). System is mandatory, so this is
+		  not individually optional — it follows only the global
+		  "Auto-initialize host features at boot" master switch.
+
+	config ESP_HOSTED_HOST_FEAT_OTA
+		bool
+		default y
+		help
+		  Host-initiated OTA update flow is part of System:
+		  begin → write × N → end → activate.
+
+	config ESP_HOSTED_HOST_FEAT_OTA_AUTO_INIT
+		bool
+		default y
+		depends on ESP_HOSTED_HOST_AUTO_FEAT_INIT
+
+	config ESP_HOSTED_HOST_FEAT_OTA_READY
+		bool
+		default y if ESP_HOSTED_HOST_FEAT_OTA && \
+			ESP_HOSTED_HOST_FEAT_RPC_READY && \
+			ESP_HOSTED_HOST_FEAT_RPC_EXT_V2_READY
+
+endif # ESP_HOSTED_HOST_FEAT_SYSTEM
+
+config ESP_HOSTED_HOST_FEAT_SYSTEM_READY
+	bool
+	default y if ESP_HOSTED_HOST_FEAT_SYSTEM && ESP_HOSTED_HOST_FEAT_RPC_READY && ESP_HOSTED_HOST_FEAT_RPC_EXT_V2_READY

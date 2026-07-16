@@ -1,0 +1,20 @@
+# Emulator (esp-emu) host config. (untracked test overlay)
+# Only the genuinely emu-specific bits — NOT the SDIO pins: the emulator's bus
+# uses the generic-P4 default pinout (CMD19/CLK18/D0-3=14-17, reset 54), which
+# is exactly what you get with no board preset selected. Selecting a board
+# (ESP_HOSTED_P4_C6_CORE_BOARD etc.) is the production-flexible way to set pins.
+
+# P4 chip rev must match the emulator's eco5 ROM (rev 3.01) — this IS required.
+CONFIG_ESP32P4_SELECTS_REV_LESS_V3=n
+CONFIG_ESP32P4_REV_MIN_301=y
+
+# Co-processor is ESP32-C6
+CONFIG_ESP_HOSTED_CP_TARGET_ESP32C6=y
+
+# SDIO transport, slot 1, 4-bit, streaming RX
+CONFIG_ESP_HOSTED_HOST_TRANSPORT_BUS_SDIO=y
+CONFIG_ESP_HOSTED_SDIO_SLOT_1=y
+CONFIG_ESP_HOSTED_HOST_SDIO_BUS_WIDTH_4=y
+CONFIG_ESP_HOSTED_HOST_SDIO_RX_STREAMING_MODE=y
+
+CONFIG_BOOTLOADER_SKIP_VALIDATE_ON_POWER_ON=y

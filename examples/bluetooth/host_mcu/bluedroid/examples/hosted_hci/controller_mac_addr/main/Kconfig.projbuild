@@ -1,0 +1,8 @@
+menu "Example Configuration"
+
+    config EXAMPLE_UPDATE_MAC_ADDRESS
+	    bool "Update MAC Address of BT Controller"
+		default y
+		help
+		    Update the MAC Address on the BT Controller
+endmenu

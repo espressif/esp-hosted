@@ -1,0 +1,47 @@
+menuconfig ESP_HOSTED_HOST_FEAT_WIFI
+	bool "WiFi"
+	default y if ESP_WIFI_REMOTE_LIBRARY_HOSTED
+	default n
+	depends on ESP_HOSTED_HOST && ESP_HOSTED_HOST_FEAT_RPC
+	depends on ESP_HOSTED_HOST_FEAT_RPC_EXT_V2_READY
+	help
+	  Host-side driver for the coprocessor's Wi-Fi stack: connect /
+	  scan / AP-mode RPCs + Wi-Fi events on the port event bus.
+
+if ESP_HOSTED_HOST_FEAT_WIFI
+
+	config ESP_HOSTED_HOST_FEAT_WIFI_AUTO_INIT
+		bool "Auto-initialize Wi-Fi feature at boot"
+		default y
+		depends on ESP_HOSTED_HOST_AUTO_FEAT_INIT
+		help
+		  Run eh_host_feat_wifi_init() from the auto-init walk.
+
+	config ESP_HOSTED_HOST_FEAT_WIFI_DECODE_RESERVED_FIELD
+		bool "Decode Wi-Fi reserved fields"
+		default n
+		help
+		  Preserve reserved bit fields for strict wire compatibility.
+
+	config ESP_HOSTED_HOST_FEAT_WIFI_STA_AUTO_CONNECT_ON_START
+		bool "Auto-call esp_wifi_connect() on WIFI_EVENT_STA_START"
+		default n
+		help
+		  Host auto-connects on STA_START.
+
+	config ESP_HOSTED_HOST_FEAT_WIFI_STA_AUTO_RECONNECT_ON_DISCONNECT
+		bool "Auto-call esp_wifi_connect() on WIFI_EVENT_STA_DISCONNECTED"
+		default n
+		help
+		  Host auto-reconnects on STA_DISCONNECTED.
+
+	# Wi-Fi extensions nest here so menuconfig shows them under Wi-Fi.
+	orsource "../eh_host_feat_wifi_ext_ent/Kconfig.ext"
+	orsource "../eh_host_feat_wifi_ext_itwt/Kconfig.ext"
+	orsource "../eh_host_feat_wifi_ext_dpp/Kconfig.ext"
+
+endif # ESP_HOSTED_HOST_FEAT_WIFI
+
+config ESP_HOSTED_HOST_FEAT_WIFI_READY
+	bool
+	default y if ESP_HOSTED_HOST_FEAT_WIFI && ESP_HOSTED_HOST_FEAT_RPC_READY && ESP_HOSTED_HOST_FEAT_RPC_EXT_V2_READY

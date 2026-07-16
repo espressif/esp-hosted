@@ -1,0 +1,23 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "eh_host"
+version = "0.1.0"
+description = "ctypes binding for the ESP-Hosted host library (libeh_host.so)"
+readme = "README.md"
+requires-python = ">=3.8"
+license = { text = "Apache-2.0" }
+authors = [{ name = "Espressif Systems" }]
+classifiers = [
+    "License :: OSI Approved :: Apache Software License",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python :: 3",
+]
+
+[project.urls]
+homepage = "https://github.com/espressif/esp-hosted"
+
+[tool.setuptools.packages.find]
+include = ["eh_host*"]

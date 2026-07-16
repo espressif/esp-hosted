@@ -1,5 +1,0 @@
-prompt_toolkit
-argparse
-docstring_parser
-requests
-fire

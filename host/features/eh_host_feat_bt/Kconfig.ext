@@ -1,0 +1,49 @@
+menuconfig ESP_HOSTED_HOST_FEAT_BT
+	bool "Bluetooth"
+	default n
+	depends on ESP_HOSTED_HOST && ESP_HOSTED_HOST_FEAT_RPC
+	depends on ESP_HOSTED_HOST_FEAT_RPC_EXT_V2_READY
+	help
+	  Stack-agnostic hosted-HCI plumbing: CP controller lifecycle +
+	  HCI byte pass-through. Stack bridges (NimBLE/Bluedroid/BlueZ)
+	  ship as example components under examples/bluetooth/.
+
+if ESP_HOSTED_HOST_FEAT_BT
+
+	config ESP_HOSTED_HOST_FEAT_BT_AUTO_INIT
+		bool "Auto-initialize BT feature at boot"
+		default y
+		depends on ESP_HOSTED_HOST_AUTO_FEAT_INIT
+
+	if ESP_HOSTED_HOST_FEAT_BT_AUTO_INIT
+
+		config ESP_HOSTED_HOST_FEAT_BT_AUTO_CONTROLLER_INIT
+			bool "Auto controller init + enable on BT feature init"
+			default y
+			help
+			  Calls eh_host_bt_controller_init() then
+			  eh_host_bt_controller_enable() during BT feature init so
+			  the app does not have to. ESP_ERR_INVALID_STATE from the
+			  CP (already initialised) is treated as success.
+
+		config ESP_HOSTED_HOST_FEAT_BT_AUTO_SET_MAC
+			bool "Auto-set BT MAC address on init"
+			default n
+			help
+			  Sets the BT interface MAC before controller init. The
+			  value comes from ESP_HOSTED_HOST_FEAT_BT_MAC.
+
+		config ESP_HOSTED_HOST_FEAT_BT_MAC
+			string "BT MAC address (xx:xx:xx:xx:xx:xx)"
+			default ""
+			depends on ESP_HOSTED_HOST_FEAT_BT_AUTO_SET_MAC
+			help
+			  48-bit MAC formatted as six colon-separated hex pairs.
+
+	endif # ESP_HOSTED_HOST_FEAT_BT_AUTO_INIT
+
+endif # ESP_HOSTED_HOST_FEAT_BT
+
+config ESP_HOSTED_HOST_FEAT_BT_READY
+	bool
+	default y if ESP_HOSTED_HOST_FEAT_BT && ESP_HOSTED_HOST_FEAT_RPC_READY && ESP_HOSTED_HOST_FEAT_RPC_EXT_V2_READY

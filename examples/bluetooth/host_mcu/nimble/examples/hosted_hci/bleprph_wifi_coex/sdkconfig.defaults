@@ -1,0 +1,35 @@
+# Role: HOST (MCU)
+CONFIG_ESP_HOSTED=y
+
+# Features: Wi-Fi + BT (NimBLE) concurrent
+CONFIG_ESP_HOSTED_HOST_FEAT_WIFI=y
+CONFIG_ESP_HOSTED_HOST_FEAT_BT=y
+
+# Transport: MCU default
+
+CONFIG_FREERTOS_HZ=1000
+
+# NimBLE host (BLE-only role peripheral) — local controller disabled (CP supplies it).
+CONFIG_BT_ENABLED=y
+CONFIG_BT_CONTROLLER_DISABLED=y
+CONFIG_BT_BLUEDROID_ENABLED=n
+CONFIG_BT_NIMBLE_ENABLED=y
+CONFIG_BT_NIMBLE_TRANSPORT_UART=n
+CONFIG_BT_NIMBLE_42_FEATURE_SUPPORT=y
+CONFIG_BT_NIMBLE_50_FEATURE_SUPPORT=n
+CONFIG_BT_NIMBLE_ROLE_PERIPHERAL=y
+CONFIG_BT_NIMBLE_ROLE_CENTRAL=n
+
+# SMP: LE Secure Connections + NVS-persisted bond store.
+CONFIG_BT_NIMBLE_SECURITY_ENABLE=y
+CONFIG_BT_NIMBLE_SM_SC=y
+CONFIG_BT_NIMBLE_NVS_PERSIST=y
+
+# Wi-Fi via esp_wifi_remote on hosted.
+CONFIG_ESP_WIFI_REMOTE_LIBRARY_HOSTED=y
+
+# Combined wifi+nimble image: larger partition (mirrors upstream IDF default).
+CONFIG_PARTITION_TABLE_SINGLE_APP_LARGE=y
+
+# Upstream WiFi IRAM opt off (matches IDF wifi+coex default).
+CONFIG_ESP_WIFI_IRAM_OPT=n

@@ -1,0 +1,172 @@
+config ESP_HOSTED_HOST_CORE
+	bool
+	default y if ESP_HOSTED_HOST
+	depends on ESP_HOSTED_HOST
+
+config ESP_HOSTED_HOST_CORE_READY
+	bool
+	default y if ESP_HOSTED_HOST_CORE
+
+config ESP_HOSTED_HOST_AUTO_FEAT_INIT
+	bool "Auto-initialize host features at boot (master config)"
+	depends on ESP_HOSTED_HOST_CORE
+	default y
+	help
+	  When enabled, esp_hosted_init() runs every registered host
+	  feature's auto-init descriptor (Wi-Fi, RPC, OTA, power-save, …)
+	  in priority order. Disable to drive feature init manually from
+	  the app; per-feature *_AUTO_INIT child switches still let you
+	  opt-out individual features.
+
+orsource "Kconfig.cp_connection"
+
+menu "Debug"
+	depends on ESP_HOSTED_HOST_CORE
+
+choice ESP_HOSTED_HOST_LOG_LEVEL
+	prompt "Host default log level"
+	default ESP_HOSTED_HOST_LOG_LEVEL_INFO
+	config ESP_HOSTED_HOST_LOG_LEVEL_NONE
+		bool "Silent"
+	config ESP_HOSTED_HOST_LOG_LEVEL_ERROR
+		bool "Error"
+	config ESP_HOSTED_HOST_LOG_LEVEL_WARN
+		bool "Warn"
+	config ESP_HOSTED_HOST_LOG_LEVEL_INFO
+		bool "Info"
+	config ESP_HOSTED_HOST_LOG_LEVEL_DEBUG
+		bool "Debug"
+	config ESP_HOSTED_HOST_LOG_LEVEL_VERBOSE
+		bool "Verbose"
+endchoice
+
+config ESP_HOSTED_HOST_DEBUG_STATS
+	bool "Host transport/RPC stats counters"
+	default n
+
+config ESP_HOSTED_HOST_DEBUG_LOOPBACK
+	bool "RPC loopback test hook"
+	default n
+
+endmenu
+
+menu "Tuning"
+	depends on ESP_HOSTED_HOST_CORE
+
+config ESP_HOSTED_HOST_RPC_TIMEOUT_MS
+	int "Default synchronous RPC call timeout (ms)"
+	default 5000
+	range 100 60000
+
+config ESP_HOSTED_HOST_RPC_MAX_PENDING
+	int "Max in-flight RPC correlations"
+	default 16
+	range 1 256
+
+config ESP_HOSTED_HOST_DEFLT_TASK_STACK_BYTES
+	int "RX worker task stack (bytes)"
+	depends on ESP_HOSTED_HOST_TYPE_MCU
+	default 4096
+	range 1024 16384
+	help
+	  Consumed by MCU SDIO bus worker tasks. Linux user-space
+	  uses pthread default stack sizes — knob hidden there.
+
+config ESP_HOSTED_HOST_DEFLT_TASK_PRIORITY
+	int "RX worker task priority"
+	depends on ESP_HOSTED_HOST_TYPE_MCU
+	default 22
+	range 1 25
+	help
+	  FreeRTOS task priority for MCU bus workers. Linux ignores
+	  the priority field (no real-time default) — knob hidden there.
+
+config ESP_HOSTED_DFLT_TASK_STACK
+	int "Hosted default task stack size (bytes)"
+	depends on ESP_HOSTED_HOST_TYPE_MCU
+	default 4096
+	range 1024 16384
+	help
+	  Default stack size for Hosted-created worker tasks when a caller
+	  does not specify one. Consumed by the FreeRTOS/IDF host port
+	  (eh_host_port_task_create). Linux user-space uses pthread default
+	  stack sizes — knob hidden there.
+
+config ESP_HOSTED_DFLT_TASK_FROM_SPIRAM
+	bool "Place Hosted default task stacks in SPIRAM"
+	depends on ESP_HOSTED_HOST_TYPE_MCU
+	default n
+	help
+	  When enabled, Hosted default worker task stacks are allocated from
+	  external SPIRAM/PSRAM (via xTaskCreateWithCaps) instead of internal
+	  RAM. Enable for memory-heavy hosts (e.g. an ESP32-P4 OpenThread host)
+	  that would otherwise run out of internal RAM at start-up. Requires
+	  CONFIG_SPIRAM=y and a target that can place task stacks in SPIRAM.
+
+endmenu
+
+menu "Traffic Shaping"
+	depends on ESP_HOSTED_HOST_CORE
+
+config ESP_HOSTED_HOST_TO_ESP_WIFI_DATA_THROTTLE
+	bool "Enable host Wi-Fi TX throttling (based on CP Wi-Fi load)"
+	default y
+	help
+	  Protect coprocessor Wi-Fi from burst overload by throttling host
+	  TX traffic when CP Wi-Fi datapath load is high.
+
+config ESP_HOSTED_PRIV_WIFI_TX_SPI_HIGH_THRESHOLD
+	int "Throttle start threshold (%) — SPI"
+	depends on ESP_HOSTED_HOST_TO_ESP_WIFI_DATA_THROTTLE && ESP_HOSTED_HOST_TRANSPORT_BUS_SPI
+	range 0 100
+	default 90
+	help
+	  Throttling starts when CP Wi-Fi RX queue load reaches this %.
+	  Set 0 to disable.
+
+config ESP_HOSTED_PRIV_WIFI_TX_SDIO_HIGH_THRESHOLD
+	int "Throttle start threshold (%) — SDIO"
+	depends on ESP_HOSTED_HOST_TO_ESP_WIFI_DATA_THROTTLE && ESP_HOSTED_HOST_TRANSPORT_BUS_SDIO
+	range 0 100
+	default 80
+	help
+	  Throttling starts when CP Wi-Fi RX queue load reaches this %.
+	  Set 0 to disable.
+
+config ESP_HOSTED_PRIV_WIFI_TX_SPI_HD_HIGH_THRESHOLD
+	int "Throttle start threshold (%) — SPI HD"
+	depends on ESP_HOSTED_HOST_TO_ESP_WIFI_DATA_THROTTLE && ESP_HOSTED_HOST_TRANSPORT_BUS_SPI_HD
+	range 0 100
+	default 80
+	help
+	  Throttling starts when CP Wi-Fi RX queue load reaches this %.
+	  Set 0 to disable.
+
+config ESP_HOSTED_PRIV_WIFI_TX_UART_HIGH_THRESHOLD
+	int "Throttle start threshold (%) — UART"
+	depends on ESP_HOSTED_HOST_TO_ESP_WIFI_DATA_THROTTLE && ESP_HOSTED_HOST_TRANSPORT_BUS_UART
+	range 0 100
+	default 80
+	help
+	  Throttling starts when CP Wi-Fi RX queue load reaches this %.
+	  Set 0 to disable.
+
+config ESP_HOSTED_TO_WIFI_DATA_THROTTLE_HIGH_THRESHOLD
+	int
+	depends on ESP_HOSTED_HOST_TO_ESP_WIFI_DATA_THROTTLE
+	default ESP_HOSTED_PRIV_WIFI_TX_SPI_HIGH_THRESHOLD    if ESP_HOSTED_HOST_TRANSPORT_BUS_SPI
+	default ESP_HOSTED_PRIV_WIFI_TX_SDIO_HIGH_THRESHOLD   if ESP_HOSTED_HOST_TRANSPORT_BUS_SDIO
+	default ESP_HOSTED_PRIV_WIFI_TX_SPI_HD_HIGH_THRESHOLD if ESP_HOSTED_HOST_TRANSPORT_BUS_SPI_HD
+	default ESP_HOSTED_PRIV_WIFI_TX_UART_HIGH_THRESHOLD   if ESP_HOSTED_HOST_TRANSPORT_BUS_UART
+	default 80
+
+config ESP_HOSTED_TO_WIFI_DATA_THROTTLE_LOW_THRESHOLD
+	int "Throttle stop threshold (%)"
+	depends on ESP_HOSTED_HOST_TO_ESP_WIFI_DATA_THROTTLE
+	range 0 ESP_HOSTED_TO_WIFI_DATA_THROTTLE_HIGH_THRESHOLD
+	default 60
+	help
+	  Throttling stops when CP Wi-Fi RX queue load drops below this %.
+	  Capped at the selected bus's start threshold for hysteresis.
+
+endmenu

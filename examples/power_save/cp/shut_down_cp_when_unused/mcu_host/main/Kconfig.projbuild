@@ -1,0 +1,30 @@
+menu "Example Configuration"
+
+    config ESP_WIFI_SSID
+        string "WiFi SSID"
+        default "myssid"
+        help
+            SSID (network name) for the example to connect to.
+
+    config ESP_WIFI_PASSWORD
+        string "WiFi Password"
+        default "mypassword"
+        help
+            WiFi password (WPA or WPA2) for the example to use.
+
+    config ESP_MAXIMUM_RETRY
+        int "Maximum retry"
+        default 5
+        help
+            Set the Maximum retry to avoid station reconnecting to the AP unlimited
+            when the AP is really inexistent.
+
+    config EH_USE_LEGACY_API
+        bool "Use legacy esp_hosted_* compat-surface main"
+        default n
+        help
+            Build the example from main/legacy/main.c (preserves the
+            esp_hosted_* compat surface) instead of main/main.c (which
+            uses native eh_host_* APIs).
+
+endmenu

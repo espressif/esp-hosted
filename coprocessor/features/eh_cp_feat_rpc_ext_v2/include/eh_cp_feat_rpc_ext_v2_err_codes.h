@@ -1,0 +1,33 @@
+// Copyright 2013 Espressif Systems (Shanghai) PTE LTD
+/* SPDX-License-Identifier: GPL-2.0-only OR Apache-2.0 */
+
+/* Shared RPC error codes between Hosted Slave and Master. */
+
+#ifndef __ESP_HOSTED_ERR_CODE_RPC__H
+#define __ESP_HOSTED_ERR_CODE_RPC__H
+
+/* 0x2f00 chosen to avoid IDF esp_err ranges (see esp_err_to_name.c). */
+#define ESP_ERR_HOSTED_BASE (0x2f00)
+
+enum {
+	RPC_ERR_BASE = ESP_ERR_HOSTED_BASE,
+	RPC_ERR_NOT_CONNECTED,
+	RPC_ERR_NO_AP_FOUND,
+	RPC_ERR_INVALID_PASSWORD,
+	RPC_ERR_INVALID_ARGUMENT,
+	RPC_ERR_OUT_OF_RANGE,
+	RPC_ERR_MEMORY_FAILURE,
+	RPC_ERR_UNSUPPORTED_MSG,
+	RPC_ERR_INCORRECT_ARG,
+	RPC_ERR_PROTOBUF_ENCODE,
+	RPC_ERR_PROTOBUF_DECODE,
+	RPC_ERR_SET_ASYNC_CB,
+	RPC_ERR_TRANSPORT_SEND,
+	RPC_ERR_REQUEST_TIMEOUT,
+	RPC_ERR_REQ_IN_PROG,
+	RPC_ERR_SET_SYNC_SEM,
+};
+
+/* TODO(ci-sync): add a CI gate that verifies host/slave copies stay identical. */
+
+#endif

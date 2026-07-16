@@ -1,0 +1,9 @@
+# ESP-Hosted Peer Data Transfer Example Configuration — host (MCU)
+
+# ── Role: HOST (MCU) ────────────────────────────────────────────────
+CONFIG_ESP_HOSTED=y
+
+# ── Features (RPC + SYSTEM are default y; PEER_DATA is opt-in) ──────
+CONFIG_ESP_HOSTED_HOST_FEAT_PEER_DATA=y
+
+# ── Transport: SDIO ─────────────────────────────────────────────────

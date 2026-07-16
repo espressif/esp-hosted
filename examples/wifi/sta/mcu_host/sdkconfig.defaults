@@ -1,0 +1,24 @@
+# SPDX-License-Identifier: Apache-2.0
+
+# Role: HOST (MCU / ESP-IDF)
+CONFIG_ESP_HOSTED=y
+
+# Features
+CONFIG_ESP_HOSTED_HOST_FEAT_RPC=y
+CONFIG_ESP_HOSTED_HOST_FEAT_RPC_EXT_V2=y
+CONFIG_ESP_HOSTED_HOST_FEAT_SYSTEM=y
+CONFIG_ESP_HOSTED_HOST_FEAT_WIFI=y
+
+# Transport: SDIO (Kconfig.host default; no transport override set here)
+
+# Wi-Fi station example knobs (mirror IDF defaults)
+CONFIG_ESP_WIFI_SSID="myssid"
+CONFIG_ESP_WIFI_PASSWORD="mypassword"
+CONFIG_ESP_MAXIMUM_RETRY=5
+CONFIG_ESP_WIFI_AUTH_WPA2_PSK=y
+CONFIG_ESP_STATION_EXAMPLE_WPA3_SAE_PWE_BOTH=y
+
+# Keep softAP=y: eh_port_netif.c references ESP_NETIF_INHERENT_DEFAULT_WIFI_AP
+# unconditionally; tracked in .meta/specs/tasks/todo.md.
+
+CONFIG_FREERTOS_HZ=1000

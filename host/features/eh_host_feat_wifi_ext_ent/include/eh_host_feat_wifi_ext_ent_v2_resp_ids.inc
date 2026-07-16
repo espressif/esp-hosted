@@ -1,0 +1,26 @@
+#if EH_HOST_FEAT_WIFI_EXT_ENT_READY
+case RPC_ID__Resp_WifiStaEnterpriseEnable:
+case RPC_ID__Resp_WifiStaEnterpriseDisable:
+case RPC_ID__Resp_EapSetIdentity:
+case RPC_ID__Resp_EapClearIdentity:
+case RPC_ID__Resp_EapSetUsername:
+case RPC_ID__Resp_EapClearUsername:
+case RPC_ID__Resp_EapSetPassword:
+case RPC_ID__Resp_EapClearPassword:
+case RPC_ID__Resp_EapSetNewPassword:
+case RPC_ID__Resp_EapClearNewPassword:
+case RPC_ID__Resp_EapSetCaCert:
+case RPC_ID__Resp_EapClearCaCert:
+case RPC_ID__Resp_EapSetCertificateAndKey:
+case RPC_ID__Resp_EapClearCertificateAndKey:
+case RPC_ID__Resp_EapGetDisableTimeCheck:
+case RPC_ID__Resp_EapSetTtlsPhase2Method:
+case RPC_ID__Resp_EapSetSuitebCertification:
+case RPC_ID__Resp_EapSetPacFile:
+case RPC_ID__Resp_EapSetFastParams:
+case RPC_ID__Resp_EapUseDefaultCertBundle:
+case RPC_ID__Resp_EapSetDomainName:
+case RPC_ID__Resp_EapSetDisableTimeCheck:
+case RPC_ID__Resp_EapSetEapMethods:
+    return rpc_ext_v2_parse_resp_wifi_ext_ent(rpc, c);
+#endif

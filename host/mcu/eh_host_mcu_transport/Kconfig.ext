@@ -1,0 +1,77 @@
+config ESP_HOSTED_HOST_TRANSPORT_MCU
+	bool
+	default y if ESP_HOSTED_HOST_TYPE_MCU
+	default n
+	depends on ESP_HOSTED_HOST
+
+config ESP_HOSTED_HOST_TRANSPORT_MCU_READY
+	bool
+	default y if ESP_HOSTED_HOST_TRANSPORT_MCU
+
+if ESP_HOSTED_HOST_TRANSPORT_MCU
+	# y if SDIO is available for the (host SoC, CP target) pair.
+	config ESP_HOSTED_HOST_PRIV_SDIO_OPTION
+		bool
+		default y if (IDF_TARGET_ESP32 || IDF_TARGET_ESP32S3 || IDF_TARGET_ESP32P4) && (ESP_HOSTED_CP_TARGET_ESP32 || ESP_HOSTED_CP_TARGET_ESP32C5 || ESP_HOSTED_CP_TARGET_ESP32C6 || ESP_HOSTED_CP_TARGET_ESP32C61)
+		default n
+
+	choice ESP_HOSTED_HOST_TRANSPORT_BUS
+		prompt "Communication bus (co-processor <== bus ==> host)"
+		default ESP_HOSTED_HOST_TRANSPORT_BUS_SDIO if ESP_HOSTED_HOST_PRIV_SDIO_OPTION
+		default ESP_HOSTED_HOST_TRANSPORT_BUS_SPI
+		help
+		  Selects which bus peripheral drives the host→CP link.
+		  Pin / clock / baud defaults for the chosen bus live in the
+		  corresponding Kconfig.host.<bus> sub-file.  SDIO is the
+		  preferred default when both ends support it; falls back to
+		  SPI Full-duplex otherwise.
+
+		config ESP_HOSTED_HOST_TRANSPORT_BUS_SPI
+			bool "SPI Full Duplex"
+		config ESP_HOSTED_HOST_TRANSPORT_BUS_SDIO
+			bool "SDIO"
+			depends on ESP_HOSTED_HOST_PRIV_SDIO_OPTION
+		config ESP_HOSTED_HOST_TRANSPORT_BUS_SPI_HD
+			bool "SPI Half Duplex"
+		config ESP_HOSTED_HOST_TRANSPORT_BUS_UART
+			bool "UART"
+	endchoice
+
+	# _READY = bus selected AND parent transport compiled-in. Gates source pulls.
+	config ESP_HOSTED_HOST_TRANSPORT_BUS_SPI_READY
+		bool
+		default y if ESP_HOSTED_HOST_TRANSPORT_BUS_SPI && ESP_HOSTED_HOST_TRANSPORT_MCU_READY
+	config ESP_HOSTED_HOST_TRANSPORT_BUS_SDIO_READY
+		bool
+		default y if ESP_HOSTED_HOST_TRANSPORT_BUS_SDIO && ESP_HOSTED_HOST_TRANSPORT_MCU_READY
+	config ESP_HOSTED_HOST_TRANSPORT_BUS_SPI_HD_READY
+		bool
+		default y if ESP_HOSTED_HOST_TRANSPORT_BUS_SPI_HD && ESP_HOSTED_HOST_TRANSPORT_MCU_READY
+	config ESP_HOSTED_HOST_TRANSPORT_BUS_UART_READY
+		bool
+		default y if ESP_HOSTED_HOST_TRANSPORT_BUS_UART && ESP_HOSTED_HOST_TRANSPORT_MCU_READY
+
+	orsource "Kconfig.host.spi"
+	orsource "Kconfig.host.sdio"
+	orsource "Kconfig.host.spi_hd"
+	orsource "Kconfig.host.uart"
+
+	menu "Transport Test"
+		config ESP_HOSTED_RAW_THROUGHPUT_TRANSPORT
+			bool
+			default y
+			help
+				RawTP support is always compiled in for MCU hosts. The test
+				remains idle until the host CLI starts it at runtime; there is
+				no boot-time auto-start direction.
+
+		config ESP_HOSTED_RAW_TP_REPORT_INTERVAL
+			int "RawTP: periodic duration to report stats accumulated"
+			default 1
+
+		config ESP_HOSTED_RAW_TP_HOST_TO_ESP_PKT_LEN
+			int "RawTP: Host to ESP packet size"
+			default 1460
+	endmenu
+
+endif

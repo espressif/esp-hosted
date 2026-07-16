@@ -1,0 +1,14 @@
+menu "Classic BT Discovery config"
+
+config EXAMPLE_INQUIRY_DURATION
+    int "Inquiry duration (×1.28 s units)"
+    default 10
+    range 1 48
+    help
+      How long to listen for nearby Classic BT devices. 10 = ~12.8 s.
+
+config EXAMPLE_PRINT_UNNAMED
+    bool "Log devices that don't advertise a friendly name"
+    default y
+
+endmenu

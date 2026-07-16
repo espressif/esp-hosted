@@ -1,0 +1,24 @@
+## IDF Component Manager Manifest File
+dependencies:
+  espressif/esp_ot_cli_extension:
+    version: "~2.0.0"
+  espressif/mdns: "^1.0.3"
+  ## Required IDF version
+  idf:
+    version: ">=5.0"
+  protocol_examples_common:
+    path: ${IDF_PATH}/examples/common_components/protocol_examples_common
+  ot_examples_br:
+    path: ${IDF_PATH}/examples/openthread/ot_common_components/ot_examples_br
+  ot_examples_common:
+    path: ${IDF_PATH}/examples/openthread/ot_common_components/ot_examples_common
+  espressif/esp_wifi_remote:
+    version: ">=1.3.1"
+    rules:
+      - if: "target in [esp32p4, esp32h2]"
+      - if: "idf_version <6.1"
+  espressif/esp_hosted:
+    override_path: "../../../../.."
+    rules:
+      - if: "target in [esp32p4, esp32h2]"
+    version: "*"

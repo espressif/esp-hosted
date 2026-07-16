@@ -1,0 +1,58 @@
+menu "Log"
+
+	choice LOG_DEFAULT_LEVEL
+		bool "Default log verbosity"
+		default LOG_DEFAULT_LEVEL_INFO
+		help
+		    Runtime log level cap.  Mirrors IDF's CONFIG_LOG_DEFAULT_LEVEL.
+
+		config LOG_DEFAULT_LEVEL_NONE
+			bool "No output"
+		config LOG_DEFAULT_LEVEL_ERROR
+			bool "Error"
+		config LOG_DEFAULT_LEVEL_WARN
+			bool "Warning"
+		config LOG_DEFAULT_LEVEL_INFO
+			bool "Info"
+		config LOG_DEFAULT_LEVEL_DEBUG
+			bool "Debug"
+		config LOG_DEFAULT_LEVEL_VERBOSE
+			bool "Verbose"
+	endchoice
+
+	config LOG_DEFAULT_LEVEL
+		int
+		default 0 if LOG_DEFAULT_LEVEL_NONE
+		default 1 if LOG_DEFAULT_LEVEL_ERROR
+		default 2 if LOG_DEFAULT_LEVEL_WARN
+		default 3 if LOG_DEFAULT_LEVEL_INFO
+		default 4 if LOG_DEFAULT_LEVEL_DEBUG
+		default 5 if LOG_DEFAULT_LEVEL_VERBOSE
+
+	choice LOG_MAXIMUM_LEVEL
+		bool "Maximum log verbosity compiled in"
+		default LOG_MAXIMUM_EQUALS_DEFAULT
+		help
+		    Compile-time ceiling.  Anything above is filtered at compile.
+
+		config LOG_MAXIMUM_EQUALS_DEFAULT
+			bool "Same as default"
+		config LOG_MAXIMUM_LEVEL_DEBUG
+			bool "Debug"
+		config LOG_MAXIMUM_LEVEL_VERBOSE
+			bool "Verbose"
+	endchoice
+
+	config LOG_MAXIMUM_LEVEL
+		int
+		default LOG_DEFAULT_LEVEL if LOG_MAXIMUM_EQUALS_DEFAULT
+		default 4 if LOG_MAXIMUM_LEVEL_DEBUG
+		default 5 if LOG_MAXIMUM_LEVEL_VERBOSE
+
+	config LOG_COLORS
+		bool "Use ANSI color escapes"
+		default y
+		help
+		    Adds ANSI color escapes to log output (matches IDF).
+
+endmenu

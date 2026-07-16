@@ -1,0 +1,166 @@
+choice ESP_HOSTED_HOST_PORT_TYPE
+	prompt "Host port-type implementation"
+	depends on ESP_HOSTED_HOST && !ESP_HOSTED_HOST_TYPE_LINUX_KMOD
+	default ESP_HOSTED_HOST_PORT_TYPE_ESP_IDF if ESP_HOSTED_HOST_TYPE_MCU
+	default ESP_HOSTED_HOST_PORT_TYPE_POSIX if ESP_HOSTED_HOST_TYPE_POSIX
+	default ESP_HOSTED_HOST_PORT_TYPE_ESP_IDF
+
+	config ESP_HOSTED_HOST_PORT_TYPE_ESP_IDF
+		bool "ESP-IDF / FreeRTOS"
+		depends on ESP_HOSTED_HOST_TYPE_MCU
+
+	config ESP_HOSTED_HOST_PORT_TYPE_POSIX
+		bool "Linux userspace (pthreads)"
+		depends on ESP_HOSTED_HOST_TYPE_POSIX
+
+	config ESP_HOSTED_HOST_PORT_TYPE_STM32
+		bool "STM32 HAL (Not yet ready)"
+		#depends on ESP_HOSTED_HOST_TYPE_MCU
+		depends on n
+endchoice
+
+menu "Port APIs (EH_HOST_PORT_HAS_*)"
+
+# ── OS primitive groups ───────────────────────────────────────────
+
+config EH_HOST_PORT_HAS_TASK
+	bool "Task API group"
+	default y
+
+config EH_HOST_PORT_HAS_MUTEX
+	bool "Mutex API group"
+	default y
+
+config EH_HOST_PORT_HAS_COND
+	bool "Condition variable API group"
+	default y
+
+config EH_HOST_PORT_HAS_SEM
+	bool "Binary semaphore API group"
+	default y
+
+config EH_HOST_PORT_HAS_SEM_POST_FROM_ISR
+	bool "ISR-safe semaphore post (eh_port_sem_post_from_isr)"
+	depends on EH_HOST_PORT_HAS_SEM && ESP_HOSTED_HOST_TYPE_MCU
+	default y
+	help
+	  FreeRTOS-only. Hidden on Linux user-space (no ISR notion).
+
+config EH_HOST_PORT_HAS_TIMER
+	bool "One-shot timer API group"
+	default y
+
+config EH_HOST_PORT_HAS_TIME
+	bool "Monotonic time API (eh_port_time_ms)"
+	default y
+
+config EH_HOST_PORT_HAS_MEM
+	bool "Heap API group (malloc/calloc/free)"
+	default y
+
+config EH_HOST_PORT_HAS_DMA
+	bool "DMA-capable heap (eh_port_dma_alloc/free)"
+	default y
+	help
+	  Separate allocator surface for DMA-engine buffers (SPI/SDIO/SPI-HD).
+	  IDF: heap_caps_malloc(MALLOC_CAP_DMA). Linux: aligned_alloc.
+
+config EH_HOST_PORT_DMA_PREFER_SPIRAM
+	bool "Prefer SPIRAM for DMA-aligned transport buffer allocations"
+	depends on EH_HOST_PORT_HAS_DMA && ESP_HOSTED_HOST_PORT_TYPE_ESP_IDF && SPIRAM
+	default n
+	help
+	  Try DMA-capable SPIRAM first (preserves internal RAM on P4-class
+	  targets where GDMA reaches PSRAM via cache). Falls back to
+	  internal DMA RAM. Leave off when latency is the priority.
+
+config EH_HOST_PORT_HAS_LOG
+	bool "Logging API group"
+	default y
+
+# ── HAL groups ────────────────────────────────────────────────────
+
+config EH_HOST_PORT_HAS_GPIO
+	bool "GPIO API group"
+	default y
+
+config EH_HOST_PORT_HAS_GPIO_INTR
+	bool "GPIO interrupt API"
+	depends on EH_HOST_PORT_HAS_GPIO
+	default y
+
+config EH_HOST_PORT_HAS_GPIO_HOLD
+	bool "GPIO sleep-hold API"
+	depends on EH_HOST_PORT_HAS_GPIO
+	default y if ESP_HOSTED_HOST_TYPE_MCU
+	default n
+
+config EH_HOST_PORT_HAS_POWER
+	bool "Power / reset API group"
+	default y
+
+config EH_HOST_PORT_HAS_POWER_SAVE
+	bool "Power-save enter API"
+	depends on EH_HOST_PORT_HAS_POWER
+	default y
+
+config EH_HOST_PORT_HAS_WAKEUP_REASON
+	bool "Wakeup-reason API"
+	depends on EH_HOST_PORT_HAS_POWER_SAVE
+	default y
+
+# ── Provider groups ───────────────────────────────────────────────
+
+config EH_HOST_PORT_HAS_NETIF
+	bool "Netif provider API"
+	default y
+
+# ── Event bus ─────────────────────────────────────────────────────
+
+config EH_HOST_PORT_HAS_EVENT_BUS
+	bool "Port event bus core"
+	default y
+
+config EH_HOST_PORT_HAS_TRANSPORT_EVENTS
+	bool "Transport domain events"
+	depends on EH_HOST_PORT_HAS_EVENT_BUS
+	default y
+
+config EH_HOST_PORT_HAS_SYSTEM_EVENTS
+	bool "System / coprocessor domain events"
+	depends on EH_HOST_PORT_HAS_EVENT_BUS
+	default y
+
+config EH_HOST_PORT_HAS_WIFI_EVENTS
+	bool "Wi-Fi domain events"
+	depends on EH_HOST_PORT_HAS_EVENT_BUS
+	default y
+
+config EH_HOST_PORT_HAS_NETIF_EVENTS
+	bool "Netif domain events"
+	depends on EH_HOST_PORT_HAS_EVENT_BUS && EH_HOST_PORT_HAS_NETIF
+	default y
+
+config EH_HOST_PORT_HAS_PEER_DATA_EVENTS
+	bool "Peer-data domain events"
+	depends on EH_HOST_PORT_HAS_EVENT_BUS
+	default y
+
+config EH_HOST_PORT_HAS_OTA_EVENTS
+	bool "OTA domain events"
+	depends on EH_HOST_PORT_HAS_EVENT_BUS
+	default y
+
+config EH_HOST_PORT_HAS_POWER_EVENTS
+	bool "Power domain events"
+	depends on EH_HOST_PORT_HAS_EVENT_BUS && EH_HOST_PORT_HAS_POWER
+	default y
+
+config EH_HOST_PORT_HAS_GPIO_EVENTS
+	bool "GPIO domain events"
+	depends on EH_HOST_PORT_HAS_EVENT_BUS && EH_HOST_PORT_HAS_GPIO_INTR
+	default y
+
+endmenu
+
+osource "$(EH_PORT_SHIM_KCONFIGS_DIR)/port_shims.in"

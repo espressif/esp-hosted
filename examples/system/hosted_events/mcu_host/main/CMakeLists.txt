@@ -1,0 +1,10 @@
+if(CONFIG_EH_USE_LEGACY_API)
+    set(_main_src "legacy/main.c")
+else()
+    set(_main_src "main.c")
+endif()
+
+idf_component_register(SRCS "${_main_src}" "station_example.c"
+                       INCLUDE_DIRS "."
+                       REQUIRES esp_hosted
+                       PRIV_REQUIRES esp_wifi nvs_flash esp_event esp_netif esp_timer)

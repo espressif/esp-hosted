@@ -1,0 +1,23 @@
+# Universal partition table for all OTA methods (HTTPS / LittleFS / Partition).
+# Mirrors upstream esp_hosted/examples/host_performs_slave_ota/partitions.csv.
+#
+# Layout (8 MB flash, host = ESP32-P4):
+#   nvs        16K          — config / Wi-Fi credentials
+#   otadata    8K           — IDF OTA bookkeeping (which slot is active)
+#   phy_init   4K           — RF calibration data
+#   ota_0      2M  @ 0x010000 — host firmware A
+#   ota_1      2M  @ 0x210000 — host firmware B
+#   storage    1920K @ 0x410000 — LittleFS partition (used by OTA_METHOD_LITTLEFS:
+#                                 the host stages the slave .bin into this FS,
+#                                 then streams it over RPC).
+#   slave_fw   2M  @ 0x5F0000  — raw partition (used by OTA_METHOD_PARTITION:
+#                                 host reads slave .bin straight from flash).
+#
+# Name,     Type, SubType,  Offset,    Size,    Flags
+nvs,      data, nvs,      0x9000,    16K,
+otadata,  data, ota,      0xd000,    8K,
+phy_init, data, phy,      0xf000,    4K,
+ota_0,    app,  ota_0,    0x10000,   2M,
+ota_1,    app,  ota_1,    0x210000,  2M,
+storage,  data, littlefs, 0x410000,  0x1E0000,
+slave_fw, data, 0x40,     0x5F0000,  0x200000,

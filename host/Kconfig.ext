@@ -1,0 +1,191 @@
+menu "Configure host"
+	depends on ESP_HOSTED_HOST
+
+	choice ESP_HOSTED_HOST_TYPE
+		prompt "Host Type"
+		default ESP_HOSTED_HOST_TYPE_MCU
+		help
+			Select the host implementation type.
+			This selects default transport and vserial backend wiring.
+
+		config ESP_HOSTED_HOST_TYPE_MCU
+			bool "MCU host"
+
+		config ESP_HOSTED_HOST_TYPE_POSIX
+			bool "Linux host : User Space"
+
+		config ESP_HOSTED_HOST_TYPE_LINUX_KMOD
+			bool "Linux host : Kernel Module"
+	endchoice
+
+	# Paired coprocessor selection — 1:1 mirror of Wi-Fi Remote's
+	# SLAVE_IDF_TARGET choice; matches upstream esp-hosted-mcu.
+	config ESP_HOSTED_CP_TARGET_FROM_WIFI_REMOTE
+		bool
+		default y if SLAVE_IDF_TARGET_ESP32 || SLAVE_IDF_TARGET_ESP32S2 || SLAVE_IDF_TARGET_ESP32S3 || SLAVE_IDF_TARGET_ESP32C2 || SLAVE_IDF_TARGET_ESP32C3 || SLAVE_IDF_TARGET_ESP32C5 || SLAVE_IDF_TARGET_ESP32C6 || SLAVE_IDF_TARGET_ESP32C61
+		default n
+
+	choice ESP_HOSTED_CP_TARGET
+		bool "Paired coprocessor (other side of bus)"
+
+		default ESP_HOSTED_CP_TARGET_ESP32   if SLAVE_IDF_TARGET_ESP32
+		default ESP_HOSTED_CP_TARGET_ESP32S2 if SLAVE_IDF_TARGET_ESP32S2
+		default ESP_HOSTED_CP_TARGET_ESP32S3 if SLAVE_IDF_TARGET_ESP32S3
+		default ESP_HOSTED_CP_TARGET_ESP32C2 if SLAVE_IDF_TARGET_ESP32C2
+		default ESP_HOSTED_CP_TARGET_ESP32C3 if SLAVE_IDF_TARGET_ESP32C3
+		default ESP_HOSTED_CP_TARGET_ESP32C5 if SLAVE_IDF_TARGET_ESP32C5
+		default ESP_HOSTED_CP_TARGET_ESP32C6 if SLAVE_IDF_TARGET_ESP32C6
+		default ESP_HOSTED_CP_TARGET_ESP32C61 if SLAVE_IDF_TARGET_ESP32C61
+		default ESP_HOSTED_CP_TARGET_ESP32C6 if !ESP_HOSTED_CP_TARGET_FROM_WIFI_REMOTE
+
+		config ESP_HOSTED_CP_TARGET_ESP32
+			depends on SLAVE_IDF_TARGET_ESP32 || !ESP_HOSTED_CP_TARGET_FROM_WIFI_REMOTE
+			bool "ESP32"
+		config ESP_HOSTED_CP_TARGET_ESP32S2
+			depends on SLAVE_IDF_TARGET_ESP32S2 || !ESP_HOSTED_CP_TARGET_FROM_WIFI_REMOTE
+			bool "ESP32-S2"
+		config ESP_HOSTED_CP_TARGET_ESP32S3
+			depends on SLAVE_IDF_TARGET_ESP32S3 || !ESP_HOSTED_CP_TARGET_FROM_WIFI_REMOTE
+			bool "ESP32-S3"
+		config ESP_HOSTED_CP_TARGET_ESP32C2
+			depends on SLAVE_IDF_TARGET_ESP32C2 || !ESP_HOSTED_CP_TARGET_FROM_WIFI_REMOTE
+			bool "ESP32-C2"
+		config ESP_HOSTED_CP_TARGET_ESP32C3
+			depends on SLAVE_IDF_TARGET_ESP32C3 || !ESP_HOSTED_CP_TARGET_FROM_WIFI_REMOTE
+			bool "ESP32-C3"
+		config ESP_HOSTED_CP_TARGET_ESP32C5
+			depends on SLAVE_IDF_TARGET_ESP32C5 || !ESP_HOSTED_CP_TARGET_FROM_WIFI_REMOTE
+			bool "ESP32-C5"
+		config ESP_HOSTED_CP_TARGET_ESP32C6
+			depends on SLAVE_IDF_TARGET_ESP32C6 || !ESP_HOSTED_CP_TARGET_FROM_WIFI_REMOTE
+			bool "ESP32-C6"
+		config ESP_HOSTED_CP_TARGET_ESP32C61
+			depends on SLAVE_IDF_TARGET_ESP32C61 || !ESP_HOSTED_CP_TARGET_FROM_WIFI_REMOTE
+			bool "ESP32-C61"
+
+		# BT-only — no Wi-Fi Remote dep.
+		config ESP_HOSTED_CP_TARGET_ESP32H2
+			bool "ESP32-H2"
+		config ESP_HOSTED_CP_TARGET_ESP32H4
+			bool "ESP32-H4"
+	endchoice
+
+	# Show warning only when Wi-Fi Remote target symbols exist and mismatch
+	# the ESP-Hosted CP target selection.
+	comment "Conflict: Wi-Fi Remote SLAVE_IDF_TARGET differs from ESP-Hosted CP target"
+		depends on ESP_HOSTED_CP_TARGET_FROM_WIFI_REMOTE && ( \
+			(ESP_HOSTED_CP_TARGET_ESP32   && !SLAVE_IDF_TARGET_ESP32)   || \
+			(ESP_HOSTED_CP_TARGET_ESP32S2 && !SLAVE_IDF_TARGET_ESP32S2) || \
+			(ESP_HOSTED_CP_TARGET_ESP32S3 && !SLAVE_IDF_TARGET_ESP32S3) || \
+			(ESP_HOSTED_CP_TARGET_ESP32C2 && !SLAVE_IDF_TARGET_ESP32C2) || \
+			(ESP_HOSTED_CP_TARGET_ESP32C3 && !SLAVE_IDF_TARGET_ESP32C3) || \
+			(ESP_HOSTED_CP_TARGET_ESP32C5 && !SLAVE_IDF_TARGET_ESP32C5) || \
+			(ESP_HOSTED_CP_TARGET_ESP32C6 && !SLAVE_IDF_TARGET_ESP32C6) || \
+			(ESP_HOSTED_CP_TARGET_ESP32C61 && !SLAVE_IDF_TARGET_ESP32C61) || \
+			(ESP_HOSTED_CP_TARGET_ESP32H2) || \
+			(ESP_HOSTED_CP_TARGET_ESP32H4) )
+
+	config ESP_HOSTED_IDF_SLAVE_TARGET
+		string
+		default "esp32"   if ESP_HOSTED_CP_TARGET_ESP32
+		default "esp32s2" if ESP_HOSTED_CP_TARGET_ESP32S2
+		default "esp32s3" if ESP_HOSTED_CP_TARGET_ESP32S3
+		default "esp32c2" if ESP_HOSTED_CP_TARGET_ESP32C2
+		default "esp32c3" if ESP_HOSTED_CP_TARGET_ESP32C3
+		default "esp32c5" if ESP_HOSTED_CP_TARGET_ESP32C5
+		default "esp32c6" if ESP_HOSTED_CP_TARGET_ESP32C6
+		default "esp32c61" if ESP_HOSTED_CP_TARGET_ESP32C61
+		default "esp32h2" if ESP_HOSTED_CP_TARGET_ESP32H2
+		default "esp32h4" if ESP_HOSTED_CP_TARGET_ESP32H4
+		default "invalid"
+
+	# H2 / H4 have no Wi-Fi; gate wifi knobs on this symbol.
+	config ESP_HOSTED_PRIV_ENABLE_WIFI_OPTIONS
+		bool
+		default n if ESP_HOSTED_CP_TARGET_ESP32H2 || ESP_HOSTED_CP_TARGET_ESP32H4
+		default y
+
+	choice ESP_HOST_DEV_BOARD
+		prompt "Select PCB Board (Optional)"
+		default ESP_HOSTED_P4_DEV_BOARD_NONE
+
+		config ESP_ESP32C5_SPI_RASPI_MATING_BOARD
+			bool "ESP32-C5 RaspPi Mating Board (SPI)"
+			depends on ESP_HOSTED_HOST_TYPE_POSIX && ESP_HOSTED_CP_TARGET_ESP32C5
+
+		config ESP_HOSTED_P4_DEV_BOARD_NONE
+			bool "No specific PCB board"
+
+		config ESP_HOSTED_P4_DEV_BOARD_FUNC_BOARD
+			bool "ESP32-P4-Function-EV-Board"
+			depends on ESP_HOSTED_HOST_TYPE_MCU && (ESP_HOSTED_CP_TARGET_ESP32C6 || ESP_HOSTED_CP_TARGET_ESP32C5 || ESP_HOSTED_CP_TARGET_ESP32C2)
+
+		config ESP32P4_EYE_C6_BOARD
+			bool "ESP32-P4-EYE Board (C6 CP)"
+			depends on ESP_HOSTED_CP_TARGET_ESP32C6
+
+		config ESP_HOSTED_P4_C5_CORE_BOARD
+			bool "ESP32-P4 + C5 Core Board"
+			depends on ESP_HOSTED_CP_TARGET_ESP32C5
+
+		config ESP_HOSTED_P4_C6_CORE_BOARD
+			bool "ESP32-P4 + C6 Core Board"
+			depends on ESP_HOSTED_CP_TARGET_ESP32C6
+
+		config ESP_HOSTED_P4_C61_CORE_BOARD
+			bool "ESP32-P4 + C61 Core Board"
+			depends on ESP_HOSTED_CP_TARGET_ESP32C61
+
+		config ESP_HOSTED_C2_C5_MODULE_SUB_BOARD
+			bool "ESP32-P4 EV Sub-Board for C2 & C5"
+			depends on ESP_HOSTED_HOST_TYPE_MCU && (ESP_HOSTED_CP_TARGET_ESP32C2 || ESP_HOSTED_CP_TARGET_ESP32C5)
+	endchoice
+
+	menu "Host core"
+		orsource "eh_host_core/Kconfig.ext"
+	endmenu
+
+	menu "Host transport"
+		orsource "mcu/eh_host_mcu_transport/Kconfig.ext"
+		orsource "mcu/eh_host_mcu_vserial/Kconfig.ext"
+		orsource "linux/eh_host_linux_vserial/Kconfig.ext"
+	endmenu
+
+	menu "RPC Support"
+		orsource "features/eh_host_feat_rpc/Kconfig.ext"
+
+	config ESP_HOSTED_HOST_FEAT_RPC_EXT_V2
+		bool
+		default y
+		depends on ESP_HOSTED_HOST_FEAT_RPC
+		help
+			V2 (rpc_v2.proto, msg_id dispatch) is the only supported
+			host RPC ext. The V1 wire (rpc_v1.proto / CtrlMsg) is owned
+			at CP-side for external Linux host clients only; no in-tree
+			host code speaks V1.
+
+		orsource "features/eh_host_feat_rpc_ext_v2/Kconfig.ext"
+	endmenu
+
+	menu "Features"
+		orsource "features/eh_host_feat_system/Kconfig.ext"
+		# Wi-Fi extensions are nested under the wifi feature's Kconfig.
+		orsource "features/eh_host_feat_wifi/Kconfig.ext"
+		orsource "features/eh_host_feat_bt/Kconfig.ext"
+		orsource "features/eh_host_feat_openthread/Kconfig.ext"
+		orsource "features/eh_host_feat_peer_data/Kconfig.ext"
+		orsource "features/eh_host_feat_nw_split/Kconfig.ext"
+		orsource "features/eh_host_feat_gpio_exp/Kconfig.ext"
+		orsource "features/eh_host_feat_cp_ext_coex/Kconfig.ext"
+		orsource "features/eh_host_feat_heartbeat/Kconfig.ext"
+		orsource "features/eh_host_feat_mem_monitor/Kconfig.ext"
+		orsource "features/eh_host_feat_power_save/Kconfig.ext"
+		orsource "features/eh_host_feat_cli/Kconfig.ext"
+	endmenu
+
+	menu "Port"
+		orsource "../port/Kconfig.ext"
+	endmenu
+
+	orsource "compat/Kconfig.ext"
+endmenu

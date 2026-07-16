@@ -1,0 +1,63 @@
+menu "CP transport"
+	depends on ESP_HOSTED_CP
+
+	choice EH_TRANSPORT_CP_INTERFACE
+		depends on ESP_HOSTED_CP
+		prompt "Communication bus (co-processor <== bus ==> host)"
+		default EH_TRANSPORT_CP_SDIO if SOC_SDIO_SLAVE_SUPPORTED
+		default EH_TRANSPORT_CP_SPI if SOC_GPSPI_SUPPORTED
+
+	config EH_TRANSPORT_CP_SPI
+		bool "SPI Full Duplex"
+		depends on SOC_GPSPI_SUPPORTED
+
+	config EH_TRANSPORT_CP_SDIO
+		bool "SDIO"
+		depends on SOC_SDIO_SLAVE_SUPPORTED
+
+	config EH_TRANSPORT_CP_SPI_HD
+		bool "SPI Half Duplex"
+		depends on SOC_GPSPI_SUPPORTED && ESP_HOSTED_CP_FOR_MCU
+
+	config EH_TRANSPORT_CP_UART
+		bool "UART"
+		depends on SOC_UART_SUPPORTED && ESP_HOSTED_CP_FOR_MCU
+	endchoice
+
+# Memory pool configuration
+	config ESP_CACHE_MALLOC
+		depends on ESP_HOSTED_CP
+		bool "Enable Mempool"
+		default n if IDF_TARGET_ESP32C2 && ESP_HOSTED_CP_FOR_LINUX
+		default y if ESP_HOSTED_CP_FOR_MCU
+		default y
+		help
+			Mempool will help to alloc buffer without going to heap for every memory allocation or free
+
+	menu "Transport Test"
+		config ESP_RAW_THROUGHPUT_TRANSPORT
+			bool
+			default y
+			help
+				RawTP support is always compiled in. The slave stays idle
+				until the host selects a direction at runtime.
+
+		config ESP_RAW_TP_ESP_TO_HOST_PKT_LEN
+			depends on ESP_RAW_THROUGHPUT_TRANSPORT
+			int "RawTP: ESP to Host packet size"
+			range 1 1500
+			default 1460
+
+		config ESP_RAW_TP_REPORT_INTERVAL
+			depends on ESP_RAW_THROUGHPUT_TRANSPORT
+			int "RawTP: periodic duration to report stats accumulated"
+			default 1 if ESP_HOSTED_CP_FOR_LINUX_802_3
+			default 10 if ESP_HOSTED_CP_FOR_MCU
+			default 1
+	endmenu
+
+orsource "./Kconfig.cp.spi"
+orsource "./Kconfig.cp.sdio"
+orsource "./Kconfig.cp.spi_hd"
+orsource "./Kconfig.cp.uart"
+endmenu

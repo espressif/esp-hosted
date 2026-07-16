@@ -1,0 +1,72 @@
+# Host ↔ Co-processor connection lifecycle policy.
+
+menu "Co-processor connection"
+	depends on ESP_HOSTED_HOST_CORE
+
+choice ESP_HOSTED_HOST_CP_RESET_STRATEGY
+	prompt "CP reset strategy at startup"
+	default ESP_HOSTED_HOST_CP_RESET_STRATEGY_ALWAYS
+
+config ESP_HOSTED_HOST_CP_RESET_STRATEGY_ALWAYS
+	bool "Always reset CP at startup"
+
+config ESP_HOSTED_HOST_CP_RESET_STRATEGY_ONLY_IF_NECESSARY
+	bool "Reset CP only if bring-up fails"
+	depends on ESP_HOSTED_HOST_TRANSPORT_BUS_SDIO
+	help
+	  SDIO-only — probe bus first, reset only if enumeration fails.
+
+endchoice
+
+config ESP_HOSTED_HOST_CP_RESET_SETTLE_MS
+	int "Delay after CP reset (ms)"
+	default 1500 if ESP_HOSTED_HOST_TRANSPORT_BUS_SDIO
+	default 500
+	range 0 5000
+
+config ESP_HOSTED_HOST_CP_BRINGUP_TIMEOUT_MS
+	int "Bring-up timeout (ms)"
+	default 5000 if ESP_HOSTED_HOST_TYPE_MCU
+	default 0    if ESP_HOSTED_HOST_TYPE_POSIX
+	range 0 60000
+	help
+	  Linux user-space default 0 — kmod owns bus probe; bring-up just
+	  confirms the control path is alive.
+
+choice ESP_HOSTED_HOST_CP_BRINGUP_ON_TIMEOUT
+	prompt "On bring-up timeout"
+	default ESP_HOSTED_HOST_CP_BRINGUP_ON_TIMEOUT_NONE
+
+config ESP_HOSTED_HOST_CP_BRINGUP_ON_TIMEOUT_NONE
+	bool "Do nothing"
+	help
+	  Log + return -EIO; app handles next steps.
+
+config ESP_HOSTED_HOST_CP_BRINGUP_ON_TIMEOUT_REATTEMPT
+	bool "Re-attempt"
+	help
+	  Pulse CP reset, retry bring-up; on persistent failure escalate
+	  to host restart.
+
+config ESP_HOSTED_HOST_CP_BRINGUP_ON_TIMEOUT_RESTART
+	bool "Restart host"
+	help
+	  eh_host_port_restart_host() — MCU: esp_restart();
+	  Linux user-space: abort() (supervisor relaunches).
+
+endchoice
+
+config ESP_HOSTED_HOST_TRANSPORT_RESTART_ON_FAILURE
+	bool "Restart host on runtime transport failure"
+	default y
+	help
+	  When enabled, the host restarts itself on a runtime transport
+	  failure (e.g. persistent SDIO write timeout).  Disable to handle
+	  the failure in the application instead.
+
+	  An ESP_HOSTED_EVENT_TRANSPORT_FAILURE event is ALWAYS emitted
+	  irrespective of this setting — listeners can react before the
+	  restart, or in place of it when disabled.  Matches upstream
+	  ESP_HOSTED_TRANSPORT_RESTART_ON_FAILURE (default y).
+
+endmenu

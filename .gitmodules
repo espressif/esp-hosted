@@ -1,3 +1,9 @@
-[submodule "esp_hosted_fg/common/protobuf-c"]
-	path = esp_hosted_fg/common/protobuf-c
+[submodule "common/serializers/third_party/msg_codec/protobuf-c"]
+	path = common/serializers/third_party/msg_codec/protobuf-c
 	url = https://github.com/protobuf-c/protobuf-c.git
+[submodule "tools/vendor/esp-idf-kconfig"]
+	path = tools/vendor/esp-idf-kconfig
+	url = https://github.com/espressif/esp-idf-kconfig.git
+[submodule "port/idf_components/esp_wifi_remote/esp_wifi_remote"]
+	path = port/idf_components/esp_wifi_remote/esp_wifi_remote
+	url = https://github.com/espressif/esp-wifi-remote

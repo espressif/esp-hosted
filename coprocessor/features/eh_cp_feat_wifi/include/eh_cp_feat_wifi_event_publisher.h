@@ -1,0 +1,20 @@
+/* SPDX-FileCopyrightText: 2026 Espressif Systems (Shanghai) CO LTD */
+/* SPDX-License-Identifier: Apache-2.0 */
+
+#ifndef EH_CP_FEAT_WIFI_EVENT_PUBLISHER_H
+#define EH_CP_FEAT_WIFI_EVENT_PUBLISHER_H
+
+#include "esp_err.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+esp_err_t eh_cp_wifi_event_publisher_init(void);
+esp_err_t eh_cp_wifi_event_publisher_deinit(void);
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif /* EH_CP_FEAT_WIFI_EVENT_PUBLISHER_H */

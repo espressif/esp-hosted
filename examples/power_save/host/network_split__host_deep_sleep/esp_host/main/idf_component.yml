@@ -1,0 +1,35 @@
+## In-tree override.  network_split + host-power-save combo: the host
+## drives Wi-Fi / iperf via the network_split feature on the CP, then
+## puts itself into deep sleep — the CP keeps the link alive and wakes
+## the host on incoming UDP packets (or the user's wake-up GPIO).
+dependencies:
+  cmd_system:
+    path: ${IDF_PATH}/examples/system/console/advanced/components/cmd_system
+  espressif/iperf-cmd:
+    matches:
+      - if: "idf_version >=6.0"
+        version: "~0.1.3"
+      - if: "idf_version <6.0"
+        version: "~0.1.1"
+  esp-qa/wifi-cmd:
+    matches:
+      - if: "idf_version >=6.0"
+        version: "~0.2.0"
+      - if: "idf_version >=5.5,<6.0"
+        version: "~0.2.2"
+      - if: "idf_version >=5.4,<5.5"
+        version: "~0.1.8"
+      - if: "idf_version >=5.3,<5.4"
+        version: "~0.1.0"
+  esp-qa/ping-cmd:
+    version: "~1.0.0"
+  espressif/esp_hosted:
+    version: "*"
+    override_path: "../../../../../.."
+  espressif/esp_wifi_remote:
+    version: ">=1.3.1"
+    rules:
+      - if: "target in [esp32p4, esp32h2]"
+      - if: "idf_version <6.1"
+  idf:
+    version: ">=5.5"

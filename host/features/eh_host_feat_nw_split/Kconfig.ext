@@ -1,0 +1,128 @@
+menuconfig ESP_HOSTED_HOST_FEAT_NW_SPLIT
+	bool "Network Split"
+	default n
+	depends on ESP_HOSTED_HOST && ESP_HOSTED_HOST_FEAT_RPC
+	depends on ESP_HOSTED_HOST_FEAT_RPC_EXT_V2_READY
+	depends on ESP_HOSTED_HOST_FEAT_WIFI_READY
+	help
+	  Host-side counterpart of the CP Network-Split feature:
+	    - Owns the host STA netif lifecycle (ownership configurable
+	      below: APP_EXTERNAL / INTERNAL_DHCP / INTERNAL_STATIC).
+	    - Subscribes to the CP's DHCP/DNS status event and re-emits
+	      it on the host event base (slot
+	      ESP_HOSTED_EVENT_NW_SPLIT_STATUS) for app code to consume.
+	    - In INTERNAL_STATIC mode, applies the CP-supplied IP/DNS
+	      directly to the host netif (faster IP-up than host DHCP).
+	    - Drives Req_SetDhcpDnsStatus / Req_GetDhcpDnsStatus through
+	      the active MCU V1 RPC extension for synchronous lease pushes
+	      and snapshot reads.
+
+	  Wire IDs: Req_SetDhcpDnsStatus = 352, Req_GetDhcpDnsStatus = 353,
+	  Event_DhcpDnsStatus = 777 (gen_v2.h).
+
+if ESP_HOSTED_HOST_FEAT_NW_SPLIT
+
+	config ESP_HOSTED_HOST_FEAT_NW_SPLIT_AUTO_INIT
+		bool "Auto-initialize Network-Split feature at boot"
+		default y
+		depends on ESP_HOSTED_HOST_AUTO_FEAT_INIT
+		help
+		  When enabled, eh_host_feat_nw_split_init() runs during the
+		  linker-section auto-init walk.  Disable to drive lifecycle
+		  manually from the app.
+
+	choice ESP_HOSTED_HOST_FEAT_NW_SPLIT_NETIF
+		prompt "Host-side STA netif ownership + IP source"
+		default ESP_HOSTED_HOST_FEAT_NW_SPLIT_NETIF_APP_EXTERNAL
+		help
+		  Selects who creates the host-side STA netif and how host IP
+		  is sourced.
+
+		config ESP_HOSTED_HOST_FEAT_NW_SPLIT_NETIF_APP_EXTERNAL
+			bool "External: app owns the netif"
+			help
+			  App creates WIFI_STA_DEF (for example,
+			  esp_netif_create_default_wifi_sta) before
+			  esp_hosted_init. nw_split looks it up, uses it, and
+			  applies the CP-supplied IP/DNS to that netif.
+
+		config ESP_HOSTED_HOST_FEAT_NW_SPLIT_NETIF_INTERNAL_DHCP
+			bool "Internal + DHCP: nw_split creates netif, host runs DHCP"
+			help
+			  nw_split creates default STA netif and host DHCP runs via
+			  the normal Wi-Fi/IP event pipeline.
+			  Requires CONFIG_WIFI_CMD_NO_LWIP=y so wifi-cmd/app does not
+			  create WIFI_STA_DEF a second time.
+
+		config ESP_HOSTED_HOST_FEAT_NW_SPLIT_NETIF_INTERNAL_STATIC
+			bool "Internal + static: nw_split creates netif, CP provides IP"
+			help
+			  nw_split creates STA netif with DHCP client disabled and
+			  applies static IP/DNS from CP's Event_DhcpDnsStatus.
+			  Requires CONFIG_WIFI_CMD_NO_LWIP=y so wifi-cmd/app does not
+			  create WIFI_STA_DEF a second time.
+	endchoice
+
+	menu "LWIP port config"
+		help
+		  Host/CP port-range partition for Network Split. Keep host-local
+		  and CP-remote ranges non-overlapping.
+
+		menu "Host side (local) LWIP port config"
+			config LWIP_TCP_LOCAL_PORT_RANGE_START
+				int "Host TCP start port"
+				default 49152
+				help
+				  Host-local TCP range start.
+
+			config LWIP_TCP_LOCAL_PORT_RANGE_END
+				int "Host TCP end port"
+				default 61439
+				help
+				  Host-local TCP range end.
+
+			config LWIP_UDP_LOCAL_PORT_RANGE_START
+				int "Host UDP start port"
+				default 49152
+				help
+				  Host-local UDP range start.
+
+			config LWIP_UDP_LOCAL_PORT_RANGE_END
+				int "Host UDP end port"
+				default 61439
+				help
+				  Host-local UDP range end.
+		endmenu
+
+		menu "CP side (remote) LWIP port config"
+			config LWIP_TCP_REMOTE_PORT_RANGE_START
+				int "CP TCP start port"
+				default 61440
+				help
+				  CP-remote TCP range start.
+
+			config LWIP_TCP_REMOTE_PORT_RANGE_END
+				int "CP TCP end port"
+				default 65535
+				help
+				  CP-remote TCP range end.
+
+			config LWIP_UDP_REMOTE_PORT_RANGE_START
+				int "CP UDP start port"
+				default 61440
+				help
+				  CP-remote UDP range start.
+
+			config LWIP_UDP_REMOTE_PORT_RANGE_END
+				int "CP UDP end port"
+				default 65535
+				help
+				  CP-remote UDP range end.
+		endmenu
+	endmenu
+
+endif # ESP_HOSTED_HOST_FEAT_NW_SPLIT
+
+config ESP_HOSTED_HOST_FEAT_NW_SPLIT_READY
+	bool
+	default y if ESP_HOSTED_HOST_FEAT_NW_SPLIT && ESP_HOSTED_HOST_FEAT_RPC_READY && ESP_HOSTED_HOST_FEAT_RPC_EXT_V2_READY && ESP_HOSTED_HOST_FEAT_WIFI_READY

@@ -1,0 +1,113 @@
+config ESP_HOSTED_CP_FEAT_RPC
+	bool
+	depends on ESP_HOSTED_CP
+	default y if (ESP_HOSTED_CP_FOR_LINUX_802_3 || ESP_HOSTED_CP_FOR_MCU) && !ESP_HOSTED_CP_RPC_DISABLED
+	default n
+
+config ESP_HOSTED_CP_FEAT_RPC_READY
+    bool
+    default y if ESP_HOSTED_CP_FEAT_RPC
+
+menu "RPC Support"
+choice ESP_HOSTED_CP_RPC_MODE
+	prompt "RPC mode"
+	# Default per host type so out-of-box CP + host pair up.  Both host
+	# types default to V2: this repo's host/ (MCU *and* Linux 802.3) speaks
+	# rpc_v2.proto.  V1 stays selectable under Linux only for pairing with
+	# the legacy upstream FG Linux host.
+	default ESP_HOSTED_CP_RPC_V2 if ESP_HOSTED_CP_FOR_MCU
+	# Upstream fg host generations speak RPC V1 (Linux peer-gen choice).
+	default ESP_HOSTED_CP_RPC_V1 if ESP_HOSTED_CP_LINUX_PEER_FG_V1 || ESP_HOSTED_CP_LINUX_PEER_FG_V2
+	default ESP_HOSTED_CP_RPC_V2 if ESP_HOSTED_CP_FOR_LINUX_802_3
+	default ESP_HOSTED_CP_RPC_DISABLED
+	help
+		Select which RPC wire mode this coprocessor uses.
+
+		Default depends on the selected host type:
+		  CP_FOR_MCU            → RPC_V2 (rpc_v2.proto, msg_id dispatch)
+		  CP_FOR_LINUX_802_3    → RPC_V2 (this repo's Linux host)
+
+		Choose RPC_V1 under CP_FOR_LINUX_802_3 only to serve the legacy
+		upstream FG Linux host (esp_hosted_fg / host_control).
+
+	config ESP_HOSTED_CP_RPC_V2
+		bool "Current MCU + Linux host (RPC V2, msg_id)"
+		depends on ESP_HOSTED_CP_FOR_MCU || ESP_HOSTED_CP_FOR_LINUX_802_3
+		help
+			The current wire (rpc_v2.proto, msg_id dispatch).  Serves this
+			repo's host/ tree — both the MCU host and the Linux host
+			(kmod + c_app) — plus the legacy upstream MCU host.  This is
+			the default for both MCU and Linux.
+
+	config ESP_HOSTED_CP_RPC_V1
+		bool "Legacy Linux host, older than 3.0 (RPC V1)"
+		depends on ESP_HOSTED_CP_FOR_LINUX_802_3
+		help
+			The old wire (condensed CtrlMsg surface, 29 reqs / 9 events).
+			Pick this ONLY to pair with a pre-3.0 upstream Linux host
+			(the separate esp_hosted host_control tree).  This repo's own
+			Linux host is V2 and will reject a V1 CP.
+
+	config ESP_HOSTED_CP_RPC_DISABLED
+		bool "RPC - Disable"
+endchoice
+
+# Loud build-time reminder whenever the legacy wire is picked.
+comment "RPC V1 = legacy wire — pairs ONLY with pre-3.0 Linux hosts"
+	depends on ESP_HOSTED_CP_RPC_V1
+
+config ESP_HOSTED_CP_FEAT_RPC_AUTO_INIT
+	bool "Auto-initialise RPC at boot"
+	default y if ESP_HOSTED_CP_FEAT_RPC_READY && ESP_HOSTED_CP_AUTO_FEAT_INIT
+	default n
+	depends on ESP_HOSTED_CP_AUTO_FEAT_INIT
+	help
+		When enabled, RPC auto-initialises during eh_cp_init().
+		Disable to manually call the init from app code.
+endmenu
+
+menu "RPC: Legacy Compatibility (disable to drop old host support)"
+	depends on ESP_HOSTED_CP_RPC_V1
+	help
+		Options in this section preserve backward compatibility with older
+		Linux FG host firmware. Each item can be disabled independently
+		once all connected hosts have been updated.
+
+	config ESP_HOSTED_LEGACY_ADD_ENDPOINT_API
+		bool "Legacy eh_cp_protocomm_add_endpoint() API"
+		default n
+		help
+			Preserves the old per-extension direct protocomm endpoint
+			registration API (eh_cp_protocomm_add_endpoint).
+			Extensions should use eh_cp_rpc_req_register() instead.
+
+			Disable when all extensions have migrated to the SLIST registry.
+
+	config ESP_HOSTED_LEGACY_SEND_EVENT_TO_HOST_API
+		bool "Legacy eh_send_event_to_host() API"
+		default n
+		help
+			Preserves the old event-send API that takes an explicit endpoint
+			name string. New code uses eh_cp_rpc_send_event() which
+			routes through the SLIST registry and serialise callback.
+
+			Disable when all callers have migrated to eh_cp_rpc_send_event().
+
+	config ESP_HOSTED_LEGACY_WIRE_INTERFACE_TYPES
+		bool "Legacy wire interface IDs (STA=0, AP=1, SERIAL=2, ...)"
+		default y if ESP_HOSTED_CP_RPC_V1
+		default n
+		help
+			Use legacy on-wire interface numbering expected by older Linux FG
+			hosts:
+			  STA=0 AP=1 SERIAL=2 HCI=3 PRIV=4 TEST=5 MAX=6
+
+			When disabled, the new numbering is used:
+			  INVALID=0 STA=1 AP=2 SERIAL=3 HCI=4 PRIV=5 TEST=6 ETH=7
+
+			This only changes wire encode/decode mapping; internal CP code
+			continues to use eh_if_type_t.
+
+	# ESP_HOSTED_LEGACY_BOOT_CAP_TLVS replaced by ESP_HOSTED_TLV_V1
+	# (auto-selected in common/eh_tlv/Kconfig.ext)
+endmenu

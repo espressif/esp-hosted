@@ -1,0 +1,33 @@
+menuconfig ESP_HOSTED_HOST_FEAT_WIFI_EXT_ENT
+	bool "WiFi Enterprise"
+	default n
+	depends on ESP_HOSTED_HOST_FEAT_WIFI
+	depends on ESP_HOSTED_HOST_FEAT_RPC_EXT_V2_READY
+	help
+	  Host-side mirror of coprocessor/features/eh_cp_feat_wifi_ext_ent.
+	  Provides typed C wrappers (eh_host_feat_wifi_ext_ent.h) for the
+	  23 RPCs under the Enterprise / EAP umbrella
+	  (gen_v2.h: RpcReqEap* + RpcReqWifiStaEnterprise*):
+
+	    - lifecycle:    eh_host_wifi_sta_enterprise_{enable,disable}
+	    - credentials:  eh_host_wifi_sta_eap_{set,clear}_{identity,
+	                    username,password,new_password,ca_cert}
+	    - cert + key:   eh_host_wifi_sta_eap_{set,clear}_certificate_and_key
+	    - flags:        eh_host_wifi_sta_eap_set_disable_time_check,
+	                    set_ttls_phase2_method,
+	                    set_suiteb_192bit_certification,
+	                    set_pac_file, set_fast_params,
+	                    use_default_cert_bundle,
+	                    set_domain_name, set_eap_methods
+
+	  Each blob-accepting setter copies the caller's buffer
+	  immediately; callers may free/reuse the original on return.
+	  set/clear pairs always release the matching CP-side state.
+
+## Lifecycle is owned by the parent Wi-Fi feature
+## (eh_host_feat_wifi_init/deinit drives this ext's init/deinit).
+## No standalone auto-init knob — the parent's auto-init covers it.
+
+config ESP_HOSTED_HOST_FEAT_WIFI_EXT_ENT_READY
+	bool
+	default y if ESP_HOSTED_HOST_FEAT_WIFI_EXT_ENT && ESP_HOSTED_HOST_FEAT_WIFI_READY

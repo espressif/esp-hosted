@@ -1,0 +1,32 @@
+menuconfig ESP_HOSTED
+	bool "ESP-Hosted"
+	default y
+
+if ESP_HOSTED
+
+	choice ESP_HOSTED_ROLE
+		prompt "Use this device as (Coprocessor/Host)"
+		default ESP_HOSTED_HOST
+		help
+			Select whether this build is for the host or the coprocessor.
+			Hosted IDF apps almost always want the Host role; CP firmware
+			projects set CONFIG_ESP_HOSTED_CP=y in their sdkconfig.defaults.
+
+		config ESP_HOSTED_HOST
+			bool "Host"
+
+		config ESP_HOSTED_CP
+			bool "Coprocessor (CP)"
+	endchoice
+
+	orsource "common/eh_common/Kconfig.ext"
+
+	if ESP_HOSTED_CP
+		orsource "coprocessor/Kconfig.ext"
+	endif
+
+	if ESP_HOSTED_HOST
+		orsource "host/Kconfig.ext"
+	endif
+
+endif

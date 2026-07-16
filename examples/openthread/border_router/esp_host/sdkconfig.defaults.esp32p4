@@ -1,0 +1,16 @@
+# Increase size of bootloader due to frame pointer. Only overflowed on P4.
+CONFIG_PARTITION_TABLE_OFFSET=0x9000
+
+### enable SPIRAM, else application will not start (out of memory)
+CONFIG_SPIRAM=y
+CONFIG_ESP_HOSTED_DFLT_TASK_FROM_SPIRAM=y
+
+### enable Wi-Fi in example, set co-processor target
+CONFIG_EXAMPLE_CONNECT_WIFI=y
+CONFIG_SLAVE_IDF_TARGET_ESP32C6=y
+
+CONFIG_ESP_CONSOLE_UART_DEFAULT=y
+
+### SW coexistence on the co-processor is on, so this option must be
+### disabled on host to keep OpenThread capabilities consistent
+CONFIG_OPENTHREAD_RX_ON_WHEN_IDLE=n

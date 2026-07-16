@@ -1,0 +1,32 @@
+# ── esp_hosted role: Host (not CP) ──────────────────────────────────
+CONFIG_ESP_HOSTED=y
+CONFIG_ESP_HOSTED_HOST=y
+
+# ── Port-type implementation ────────────────────────────────────────
+CONFIG_ESP_HOSTED_HOST_PORT_TYPE_ESP_IDF=y
+
+# ── Transport — SPI full-duplex is the MCU-host canonical bus ───────
+CONFIG_ESP_HOSTED_HOST_TRANSPORT_MCU=y
+
+# ── Host features: base RPC + MCU V1 ext + system ──────────────────
+CONFIG_ESP_HOSTED_HOST_FEAT_RPC_EXT_V2=y
+CONFIG_ESP_HOSTED_HOST_FEAT_SYSTEM=y
+
+# ── Other features: off for the minimal link probe ─────────────────
+CONFIG_ESP_HOSTED_HOST_FEAT_WIFI=n
+CONFIG_ESP_HOSTED_HOST_FEAT_BT=n
+CONFIG_ESP_HOSTED_HOST_FEAT_PEER_DATA=n
+CONFIG_ESP_HOSTED_HOST_FEAT_POWER_SAVE=n
+CONFIG_ESP_HOSTED_HOST_FEAT_GPIO_EXP=n
+CONFIG_ESP_HOSTED_HOST_FEAT_CP_EXT_COEX=n
+
+# ── Compat shim off — strictly eh_port_* / eh_host_feat_* surface ──
+CONFIG_ESP_HOSTED_HOST_COMPAT=n
+
+# ── vserial: MCU uses transport layer directly; the vserial_linux
+#     adapter is Linux-host-only and can't compile on MCU (poll.h) ──
+CONFIG_ESP_HOSTED_HOST_VSERIAL_LINUX=n
+CONFIG_ESP_HOSTED_HOST_VSERIAL_MCU=n
+
+# ── IDF basics ─────────────────────────────────────────────────────
+CONFIG_FREERTOS_HZ=1000

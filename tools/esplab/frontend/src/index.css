@@ -1,0 +1,63 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root { color-scheme: dark; }
+
+html, body, #root { height: 100%; margin: 0; }
+body {
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  /* gradient gives depth without a per-frame backdrop-filter */
+  background: radial-gradient(1100px 700px at 72% -12%, #16223e 0%, #0b1020 60%);
+  color: #e2e8f0;
+}
+.light body, body.light { background: radial-gradient(1100px 700px at 72% -12%, #e2e8f0, #f1f5f9 60%); color: #0f172a; }
+
+@layer components {
+  /* glassy look via translucent solid — NO backdrop-blur (that re-composites
+     every frame over a large area and tanks responsiveness). */
+  .glass {
+    @apply bg-slate-900/70 border border-white/10 rounded-2xl shadow-lg;
+  }
+  .light .glass { @apply bg-white/75 border-black/10; }
+  .chip {
+    @apply px-2.5 py-1 rounded-full text-xs font-medium bg-white/10 border border-white/10;
+  }
+  .btn {
+    @apply px-3 py-1.5 rounded-xl text-sm font-medium border border-white/10 bg-white/5
+           hover:bg-white/10 transition-colors disabled:opacity-40 disabled:cursor-not-allowed;
+  }
+  .btn-primary { @apply bg-emerald-500/20 border-emerald-400/30 hover:bg-emerald-500/30 text-emerald-200; }
+  .light .chip { @apply bg-black/5 border-black/10 text-slate-700; }
+  .light .btn { @apply bg-black/5 border-black/10 text-slate-700 hover:bg-black/10; }
+  .light .btn-primary { @apply bg-emerald-500/15 border-emerald-500/40 text-emerald-700; }
+}
+
+/* light theme: remap the dark-tuned utilities used inline so text/surfaces stay legible */
+.light .text-white { color: #0f172a; }
+.light .text-slate-200, .light .text-slate-300 { color: #334155; }
+.light .text-slate-400, .light .text-slate-500 { color: #475569; }
+.light .text-slate-600 { color: #334155; }
+.light .text-emerald-100, .light .text-emerald-200 { color: #047857; }
+.light .text-sky-100, .light .text-sky-200, .light .text-sky-300 { color: #0369a1; }
+.light .bg-white\/5 { background-color: rgba(15, 23, 42, .04); }
+.light .bg-white\/10 { background-color: rgba(15, 23, 42, .07); }
+.light .border-white\/5 { border-color: rgba(15, 23, 42, .08); }
+.light .border-white\/10 { border-color: rgba(15, 23, 42, .12); }
+.light .border-white\/25 { border-color: rgba(15, 23, 42, .22); }
+.light .hover\:bg-white\/5:hover { background-color: rgba(15, 23, 42, .05); }
+.light .hover\:bg-white\/10:hover { background-color: rgba(15, 23, 42, .08); }
+.light .hover\:border-white\/25:hover { border-color: rgba(15, 23, 42, .25); }
+.light .hover\:border-white\/50:hover { border-color: rgba(15, 23, 42, .4); }
+
+/* React Flow surface: transparent so our gradient shows through */
+.react-flow { background: transparent; }
+.react-flow__attribution { display: none; }
+
+/* honour reduced motion: animations degrade to instant */
+@media (prefers-reduced-motion: reduce) {
+  * { animation: none !important; transition-duration: 0.001ms !important; }
+}
+
+@keyframes flowdash { to { stroke-dashoffset: -16; } }
+@keyframes hbpulse { 0%,100% { transform: scale(1); opacity: .8 } 50% { transform: scale(1.25); opacity: .25 } }

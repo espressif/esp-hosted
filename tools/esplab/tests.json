@@ -1,0 +1,2246 @@
+{
+  "_comment": "ESP-Hosted test catalogue \u2014 vision-first. Every element is an entity with properties; behaviour is defined by props, not by type. A scenario = one emulator run (build cp@C6 + host@P4, launch the bench, drive stimulus, capture serial). Its cases = named assertions on that run: each case must see every `expect` substring and must NOT see any `absent` (crash) marker within `timeout_s`. positive vs negative is just the `kind` property \u2014 the assertion engine is identical (a negative case simply expects the graceful-failure line). `support` gates execution: supported runs; unsupported/tbd are catalogued but skipped with a reason. The example tree seeds the BASE (minimal) scenario set; further scenarios are derived from the codebase's own behaviours and error paths (lifecycle, transport-integrity, rpc, capabilities, security) \u2014 what SHOULD be tested, not only what is runnable today. This file is the single source of truth for both the CLI runner and the UI.",
+  "version": 2,
+  "targets": {
+    "cp": "esp32c6",
+    "host": "esp32p4"
+  },
+  "defaults": {
+    "absent": [
+      "Guru Meditation Error",
+      "abort() was called",
+      "CORRUPT HEAP",
+      "assert failed",
+      "StoreProhibited",
+      "LoadProhibited",
+      "Unrecoverable exception",
+      "Firmware abort",
+      "CPU fault at",
+      "panic_handler entered",
+      "Load access fault",
+      "Store access fault",
+      "Instruction access fault"
+    ],
+    "timeout_s": 150
+  },
+  "setups": {
+    "p4_c6_sdio": {
+      "label": "ESP32-P4 host \u21c4 ESP32-C6 coprocessor (SDIO)",
+      "cp_target": "esp32c6",
+      "host_target": "esp32p4",
+      "bridge": "sdio",
+      "reset_gpio": 54,
+      "wake_gpio": 2,
+      "net": "user",
+      "notes": "The canonical hosted bench: SDIO bridge over a Unix socket, P4\u2192C6 reset on GPIO 54, C6\u2192P4 host-wakeup on GPIO 2, NAT'd networking with a built-in AP (myssid/mypassword)."
+    }
+  },
+  "suites": [
+    {
+      "id": "wifi_sta",
+      "label": "Wi-Fi \u00b7 Station",
+      "scenarios": [
+        {
+          "id": "sta_connect",
+          "label": "STA connects (WPA2) and gets an IP",
+          "kind": "positive",
+          "category": "functional",
+          "support": "supported",
+          "setup": "p4_c6_sdio",
+          "build": {
+            "cp_dir": "examples/wifi/sta/cp",
+            "host_dir": "examples/wifi/sta/mcu_host"
+          },
+          "cases": [
+            {
+              "id": "got_ip",
+              "label": "host obtains a DHCP lease",
+              "assert": {
+                "expect": [
+                  "got ip:"
+                ]
+              }
+            },
+            {
+              "id": "cp_assoc",
+              "label": "coprocessor associates to the AP",
+              "assert": {
+                "expect": [
+                  "connected with myssid"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "sta_wrong_password",
+          "label": "STA with wrong password fails gracefully",
+          "kind": "negative",
+          "category": "functional",
+          "support": "supported",
+          "setup": "p4_c6_sdio",
+          "build": {
+            "cp_dir": "examples/wifi/sta/cp",
+            "host_dir": "examples/wifi/sta/mcu_host",
+            "host_overlay": [
+              "CONFIG_ESP_WIFI_PASSWORD=\"wrongpass12345\""
+            ]
+          },
+          "cases": [
+            {
+              "id": "connect_fails",
+              "label": "host reports connect failure (no IP), no crash",
+              "assert": {
+                "expect": [
+                  "connect to the AP fail"
+                ],
+                "timeout_s": 120
+              }
+            }
+          ]
+        },
+        {
+          "id": "sta_no_ap",
+          "label": "STA with no matching AP fails gracefully",
+          "kind": "negative",
+          "category": "functional",
+          "support": "supported",
+          "setup": "p4_c6_sdio",
+          "build": {
+            "cp_dir": "examples/wifi/sta/cp",
+            "host_dir": "examples/wifi/sta/mcu_host",
+            "host_overlay": [
+              "CONFIG_ESP_WIFI_SSID=\"no_such_ap_xyz\""
+            ]
+          },
+          "cases": [
+            {
+              "id": "connect_fails",
+              "label": "host bounds retries and reports failure",
+              "assert": {
+                "expect": [
+                  "connect to the AP fail"
+                ],
+                "timeout_s": 120
+              }
+            }
+          ]
+        },
+        {
+          "id": "sta_wpa3",
+          "label": "STA connects with WPA3-SAE",
+          "kind": "positive",
+          "category": "functional",
+          "support": "tbd:emulator AP is WPA2-PSK only",
+          "setup": "p4_c6_sdio",
+          "build": {
+            "cp_dir": "examples/wifi/sta/cp",
+            "host_dir": "examples/wifi/sta/mcu_host"
+          },
+          "cases": [
+            {
+              "id": "got_ip",
+              "label": "host obtains an IP over WPA3",
+              "assert": {
+                "expect": [
+                  "got ip:"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "sta_disconnect_reconnect",
+          "label": "STA recovers after the AP goes away mid-session",
+          "kind": "negative",
+          "category": "recovery",
+          "support": "tbd:needs a runtime hook to drop/restore the emulator AP mid-run",
+          "setup": "p4_c6_sdio",
+          "build": {
+            "cp_dir": "examples/wifi/sta/cp",
+            "host_dir": "examples/wifi/sta/mcu_host"
+          },
+          "cases": [
+            {
+              "id": "reconnect",
+              "label": "host retries and re-acquires an IP",
+              "assert": {
+                "expect": [
+                  "got ip:"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "wifi_softap",
+      "label": "Wi-Fi \u00b7 SoftAP",
+      "scenarios": [
+        {
+          "id": "softap_up",
+          "label": "SoftAP starts",
+          "kind": "positive",
+          "category": "functional",
+          "support": "supported",
+          "setup": "p4_c6_sdio",
+          "build": {
+            "cp_dir": "examples/wifi/softap/cp",
+            "host_dir": "examples/wifi/softap/mcu_host"
+          },
+          "cases": [
+            {
+              "id": "ap_up",
+              "label": "AP brought up on the coprocessor",
+              "assert": {
+                "expect": [
+                  "wifi_init_softap finished"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "softap_open_auth",
+          "label": "SoftAP with empty password comes up as OPEN",
+          "kind": "positive",
+          "category": "functional",
+          "support": "supported",
+          "setup": "p4_c6_sdio",
+          "build": {
+            "cp_dir": "examples/wifi/softap/cp",
+            "host_dir": "examples/wifi/softap/mcu_host",
+            "host_overlay": [
+              "CONFIG_ESP_WIFI_PASSWORD=\"\""
+            ]
+          },
+          "cases": [
+            {
+              "id": "ap_up",
+              "label": "AP initialises in open-auth mode",
+              "assert": {
+                "expect": [
+                  "wifi_init_softap finished"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "softap_client_assoc",
+          "label": "A client associates to the SoftAP",
+          "kind": "positive",
+          "category": "functional",
+          "support": "tbd:emulator has no second virtual STA client to associate",
+          "setup": "p4_c6_sdio",
+          "build": {
+            "cp_dir": "examples/wifi/softap/cp",
+            "host_dir": "examples/wifi/softap/mcu_host"
+          },
+          "cases": [
+            {
+              "id": "client_join",
+              "label": "station join event observed",
+              "assert": {
+                "expect": [
+                  "station",
+                  "join"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "softap_client_wrong_password",
+          "label": "A client with the wrong password is rejected",
+          "kind": "negative",
+          "category": "functional",
+          "support": "unsupported:no second virtual STA client in the emulator to attempt a join",
+          "setup": "p4_c6_sdio",
+          "build": {
+            "cp_dir": "examples/wifi/softap/cp",
+            "host_dir": "examples/wifi/softap/mcu_host"
+          },
+          "cases": [
+            {
+              "id": "no_join",
+              "label": "no join event for a bad-credential client",
+              "assert": {
+                "expect": [
+                  "wifi_init_softap finished"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "softap_max_clients",
+          "label": "SoftAP enforces the max-client limit",
+          "kind": "negative",
+          "category": "functional",
+          "support": "unsupported:no virtual STA clients in the emulator to saturate the AP",
+          "setup": "p4_c6_sdio",
+          "build": {
+            "cp_dir": "examples/wifi/softap/cp",
+            "host_dir": "examples/wifi/softap/mcu_host"
+          },
+          "cases": [
+            {
+              "id": "limit",
+              "label": "only N clients admitted",
+              "assert": {
+                "expect": [
+                  "wifi_init_softap finished"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "wifi_apsta",
+      "label": "Wi-Fi \u00b7 AP + STA (concurrent)",
+      "scenarios": [
+        {
+          "id": "apsta_sta_ip",
+          "label": "AP + STA simultaneously; STA half gets an IP",
+          "kind": "positive",
+          "category": "functional",
+          "support": "supported",
+          "setup": "p4_c6_sdio",
+          "build": {
+            "cp_dir": "examples/wifi/apsta/cp",
+            "host_dir": "examples/wifi/apsta/mcu_host"
+          },
+          "cases": [
+            {
+              "id": "sta_ip",
+              "label": "STA half obtains an IP",
+              "assert": {
+                "expect": [
+                  "Got IP:"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "apsta_upstream_fail",
+          "label": "Upstream STA fails but the local SoftAP still comes up",
+          "kind": "negative",
+          "category": "functional",
+          "support": "supported",
+          "setup": "p4_c6_sdio",
+          "build": {
+            "cp_dir": "examples/wifi/apsta/cp",
+            "host_dir": "examples/wifi/apsta/mcu_host",
+            "host_overlay": [
+              "CONFIG_ESP_WIFI_REMOTE_AP_SSID=\"no_such_ap_xyz\""
+            ]
+          },
+          "cases": [
+            {
+              "id": "ap_survives",
+              "label": "SoftAP half initialises despite STA failure",
+              "assert": {
+                "expect": [
+                  "wifi_init_softap finished"
+                ],
+                "timeout_s": 150
+              }
+            }
+          ]
+        },
+        {
+          "id": "apsta_client_join",
+          "label": "A local client joins the SoftAP while STA is up",
+          "kind": "positive",
+          "category": "functional",
+          "support": "tbd:needs a virtual STA client to join the SoftAP half",
+          "setup": "p4_c6_sdio",
+          "build": {
+            "cp_dir": "examples/wifi/apsta/cp",
+            "host_dir": "examples/wifi/apsta/mcu_host"
+          },
+          "cases": [
+            {
+              "id": "join",
+              "label": "station join event observed",
+              "assert": {
+                "expect": [
+                  "join"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "wifi_scan",
+      "label": "Wi-Fi \u00b7 Scan",
+      "scenarios": [
+        {
+          "id": "scan_finds_ap",
+          "label": "Active scan finds the AP",
+          "kind": "positive",
+          "category": "functional",
+          "support": "supported",
+          "setup": "p4_c6_sdio",
+          "build": {
+            "cp_dir": "examples/wifi/scan/cp",
+            "host_dir": "examples/wifi/scan/mcu_host"
+          },
+          "cases": [
+            {
+              "id": "aps",
+              "label": "scan returns at least one AP",
+              "assert": {
+                "expect": [
+                  "Total APs scanned"
+                ],
+                "timeout_s": 120
+              }
+            }
+          ]
+        },
+        {
+          "id": "scan_empty",
+          "label": "Scan with no APs returns empty cleanly",
+          "kind": "negative",
+          "category": "functional",
+          "support": "tbd:emulator AP is always present; cannot present an empty RF environment yet",
+          "setup": "p4_c6_sdio",
+          "build": {
+            "cp_dir": "examples/wifi/scan/cp",
+            "host_dir": "examples/wifi/scan/mcu_host"
+          },
+          "cases": [
+            {
+              "id": "zero_aps",
+              "label": "scan completes reporting zero APs",
+              "assert": {
+                "expect": [
+                  "Total APs scanned = 0"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "scan_buffer_truncation",
+          "label": "Scan truncates to the configured list size",
+          "kind": "negative",
+          "category": "functional",
+          "support": "tbd:emulator cannot present more APs than the list size to force truncation",
+          "setup": "p4_c6_sdio",
+          "build": {
+            "cp_dir": "examples/wifi/scan/cp",
+            "host_dir": "examples/wifi/scan/mcu_host"
+          },
+          "cases": [
+            {
+              "id": "truncated",
+              "label": "result count clamps to the buffer",
+              "assert": {
+                "expect": [
+                  "Total APs scanned"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "wifi_advanced",
+      "label": "Wi-Fi \u00b7 Advanced (DPP / Enterprise / iTWT)",
+      "scenarios": [
+        {
+          "id": "dpp_idle_listen",
+          "label": "DPP enrollee waits for a configurator (none present)",
+          "kind": "negative",
+          "category": "functional",
+          "support": "tbd:esp_supp_dpp_init() fails in the emulated CP environment, so the enrollee never reaches the listening state",
+          "setup": "p4_c6_sdio",
+          "build": {
+            "cp_dir": "examples/wifi/dpp/cp",
+            "host_dir": "examples/wifi/dpp/mcu_host"
+          },
+          "cases": [
+            {
+              "id": "listening",
+              "label": "enrollee enters listening state and stays stable",
+              "assert": {
+                "expect": [
+                  "Started listening for DPP Authentication"
+                ],
+                "timeout_s": 120
+              }
+            }
+          ]
+        },
+        {
+          "id": "sta_dpp",
+          "label": "STA provisions via DPP (full handshake)",
+          "kind": "positive",
+          "category": "functional",
+          "support": "unsupported:needs an external DPP configurator device",
+          "setup": "p4_c6_sdio",
+          "build": {
+            "cp_dir": "examples/wifi/dpp/cp",
+            "host_dir": "examples/wifi/dpp/mcu_host"
+          },
+          "cases": [
+            {
+              "id": "connected",
+              "label": "DPP enrollee connects with provisioned creds",
+              "assert": {
+                "expect": [
+                  "Successfully connected to the AP"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "sta_enterprise",
+          "label": "STA connects to WPA2-Enterprise (EAP)",
+          "kind": "positive",
+          "category": "functional",
+          "support": "unsupported:needs a RADIUS/EAP server + client certs",
+          "setup": "p4_c6_sdio",
+          "build": {
+            "cp_dir": "examples/wifi/enterprise/cp",
+            "host_dir": "examples/wifi/enterprise/mcu_host"
+          },
+          "cases": [
+            {
+              "id": "got_ip",
+              "label": "EAP auth succeeds, host gets IP",
+              "assert": {
+                "expect": [
+                  "got ip:"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "itwt_legacy_ap_rejected",
+          "label": "iTWT setup is refused on a non-11ax AP",
+          "kind": "negative",
+          "category": "functional",
+          "support": "tbd:iTWT example aborts during early HE/TWT setup in the emulated environment before the 11ax-mode check is reached",
+          "setup": "p4_c6_sdio",
+          "build": {
+            "cp_dir": "examples/wifi/itwt/cp",
+            "host_dir": "examples/wifi/itwt/mcu_host"
+          },
+          "cases": [
+            {
+              "id": "needs_he",
+              "label": "firmware reports it must be in 11ax mode for iTWT",
+              "assert": {
+                "expect": [
+                  "11ax mode"
+                ],
+                "timeout_s": 150
+              }
+            }
+          ]
+        },
+        {
+          "id": "sta_itwt",
+          "label": "STA negotiates individual TWT with an HE AP",
+          "kind": "positive",
+          "category": "functional",
+          "support": "unsupported:needs an 802.11ax/HE-capable AP",
+          "setup": "p4_c6_sdio",
+          "build": {
+            "cp_dir": "examples/wifi/itwt/cp",
+            "host_dir": "examples/wifi/itwt/mcu_host"
+          },
+          "cases": [
+            {
+              "id": "twt_setup",
+              "label": "iTWT agreement established",
+              "assert": {
+                "expect": [
+                  "ITWT_SETUP"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "system",
+      "label": "System \u00b7 control & lifecycle",
+      "scenarios": [
+        {
+          "id": "fw_version",
+          "label": "Host reads coprocessor firmware version",
+          "kind": "positive",
+          "category": "functional",
+          "support": "supported",
+          "setup": "p4_c6_sdio",
+          "build": {
+            "cp_dir": "examples/system/get_cp_fw_version/cp",
+            "host_dir": "examples/system/get_cp_fw_version/mcu_host"
+          },
+          "cases": [
+            {
+              "id": "version",
+              "label": "CP firmware version reported",
+              "assert": {
+                "expect": [
+                  "CP firmware"
+                ],
+                "timeout_s": 90
+              }
+            }
+          ]
+        },
+        {
+          "id": "hosted_events",
+          "label": "Init / heartbeat / transport lifecycle events fire",
+          "kind": "positive",
+          "category": "functional",
+          "support": "supported",
+          "setup": "p4_c6_sdio",
+          "build": {
+            "cp_dir": "examples/system/hosted_events/cp",
+            "host_dir": "examples/system/hosted_events/mcu_host"
+          },
+          "cases": [
+            {
+              "id": "ready",
+              "label": "host reports ESP-Hosted ready",
+              "assert": {
+                "expect": [
+                  "ESP-Hosted is ready"
+                ]
+              }
+            },
+            {
+              "id": "heartbeat",
+              "label": "coprocessor heartbeats are received",
+              "assert": {
+                "expect": [
+                  "Heartbeat"
+                ],
+                "timeout_s": 120
+              }
+            }
+          ]
+        },
+        {
+          "id": "transport_config",
+          "label": "Host reads & applies transport configuration",
+          "kind": "positive",
+          "category": "functional",
+          "support": "supported",
+          "setup": "p4_c6_sdio",
+          "build": {
+            "cp_dir": "examples/system/mcu_transport_config/cp",
+            "host_dir": "examples/system/mcu_transport_config/mcu_host"
+          },
+          "cases": [
+            {
+              "id": "cfg",
+              "label": "transport configuration printed",
+              "assert": {
+                "expect": [
+                  "Current transport configuration"
+                ],
+                "timeout_s": 90
+              }
+            }
+          ]
+        },
+        {
+          "id": "fw_version_mismatch",
+          "label": "Host detects a coprocessor firmware-version mismatch",
+          "kind": "negative",
+          "category": "functional",
+          "support": "tbd:needs a CP image built with a deliberately divergent version to compare against",
+          "setup": "p4_c6_sdio",
+          "build": {
+            "cp_dir": "examples/system/get_cp_fw_version/cp",
+            "host_dir": "examples/system/get_cp_fw_version/mcu_host"
+          },
+          "cases": [
+            {
+              "id": "mismatch",
+              "label": "version delta surfaced to the app",
+              "assert": {
+                "expect": [
+                  "version"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "peer_data",
+      "label": "Peer data \u00b7 custom RPC",
+      "scenarios": [
+        {
+          "id": "echo",
+          "label": "Custom RPC echo across payload sizes (+ oversize rejected)",
+          "kind": "positive",
+          "category": "functional",
+          "support": "supported",
+          "setup": "p4_c6_sdio",
+          "build": {
+            "cp_dir": "examples/peer_data_transfer/cp",
+            "host_dir": "examples/peer_data_transfer/mcu_host"
+          },
+          "cases": [
+            {
+              "id": "verified",
+              "label": "echoed payloads verified byte-for-byte",
+              "assert": {
+                "expect": [
+                  "Verified, all OK!"
+                ]
+              }
+            },
+            {
+              "id": "ghost_rejected",
+              "label": "oversize (GHOST) payload rejected gracefully",
+              "kind": "negative",
+              "assert": {
+                "expect": [
+                  "GHOST"
+                ],
+                "timeout_s": 120
+              }
+            }
+          ]
+        },
+        {
+          "id": "peer_unregistered_msgid",
+          "label": "A peer message with no registered handler is dropped, not crashed",
+          "kind": "negative",
+          "category": "functional",
+          "support": "tbd:needs a host variant that sends a msg_id the CP has no callback for",
+          "setup": "p4_c6_sdio",
+          "build": {
+            "cp_dir": "examples/peer_data_transfer/cp",
+            "host_dir": "examples/peer_data_transfer/mcu_host"
+          },
+          "cases": [
+            {
+              "id": "no_crash",
+              "label": "unhandled msg_id is dropped silently",
+              "assert": {
+                "expect": [
+                  "Custom RPC Echo Test"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "power_save",
+      "label": "Power save",
+      "scenarios": [
+        {
+          "id": "host_deep_sleep_cp_wake",
+          "label": "Host deep-sleeps and the coprocessor wakes it",
+          "kind": "positive",
+          "category": "functional",
+          "support": "supported",
+          "setup": "p4_c6_sdio",
+          "build": {
+            "cp_dir": "examples/power_save/host/network_split__host_deep_sleep/cp",
+            "host_dir": "examples/power_save/host/network_split__host_deep_sleep/esp_host"
+          },
+          "stimulus": {
+            "host": [
+              {
+                "on": "iperf>",
+                "inject": "host_power_save\n"
+              }
+            ],
+            "cp": [
+              {
+                "on": "Host Sleep",
+                "inject": "wake-up\n"
+              }
+            ]
+          },
+          "cases": [
+            {
+              "id": "held",
+              "label": "host parks in deep sleep awaiting wake",
+              "assert": {
+                "expect": [
+                  "holding; awaiting external wake"
+                ]
+              }
+            },
+            {
+              "id": "cp_registers",
+              "label": "coprocessor registers the host power-save",
+              "assert": {
+                "expect": [
+                  "Host Sleep"
+                ]
+              }
+            },
+            {
+              "id": "woke",
+              "label": "host wakes on the coprocessor wake",
+              "assert": {
+                "expect": [
+                  "Wake source asserted"
+                ],
+                "timeout_s": 180
+              }
+            },
+            {
+              "id": "wake_reason",
+              "label": "reboot reports a deep-sleep wake",
+              "assert": {
+                "expect": [
+                  "PMU_SYS_PWR_DOWN_RESET"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "cp_shutdown_cycle",
+          "label": "Host powers the coprocessor down when idle, then re-enumerates it",
+          "kind": "positive",
+          "category": "functional",
+          "support": "supported",
+          "setup": "p4_c6_sdio",
+          "build": {
+            "cp_dir": "examples/power_save/cp/shut_down_cp_when_unused/cp",
+            "host_dir": "examples/power_save/cp/shut_down_cp_when_unused/mcu_host"
+          },
+          "cases": [
+            {
+              "id": "ready",
+              "label": "transport comes up initially",
+              "assert": {
+                "expect": [
+                  "Transport is ready"
+                ],
+                "timeout_s": 180
+              }
+            },
+            {
+              "id": "reconnect",
+              "label": "host re-acquires an IP after a shut-down/boot cycle",
+              "assert": {
+                "expect": [
+                  "Got IP address"
+                ],
+                "timeout_s": 220
+              }
+            }
+          ]
+        },
+        {
+          "id": "cp_shutdown_heap_stable",
+          "label": "Heap stays flat across coprocessor shut-down cycles",
+          "kind": "positive",
+          "category": "memory",
+          "support": "tbd:needs heap-trend sampling/parsing across cycles, not just a single reading",
+          "setup": "p4_c6_sdio",
+          "build": {
+            "cp_dir": "examples/power_save/cp/shut_down_cp_when_unused/cp",
+            "host_dir": "examples/power_save/cp/shut_down_cp_when_unused/mcu_host"
+          },
+          "cases": [
+            {
+              "id": "stable",
+              "label": "free heap does not trend down per cycle",
+              "assert": {
+                "expect": [
+                  "Got IP address"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "host_deep_sleep_timer",
+          "label": "Host deep-sleeps and wakes on a timer",
+          "kind": "positive",
+          "category": "functional",
+          "support": "tbd:repo example wakes via CP GPIO, not a self-timer; covered generically by the emulator's own deep_sleep test",
+          "setup": "p4_c6_sdio",
+          "build": {
+            "cp_dir": "examples/power_save/host/network_split__host_deep_sleep/cp",
+            "host_dir": "examples/power_save/host/network_split__host_deep_sleep/esp_host"
+          },
+          "cases": [
+            {
+              "id": "timer_wake",
+              "label": "wakes from timer",
+              "assert": {
+                "expect": [
+                  "Wake up from timer"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "wake_gpio_polarity_mismatch",
+          "label": "Host never wakes if the wake-GPIO polarity is misconfigured",
+          "kind": "negative",
+          "category": "recovery",
+          "support": "tbd:asserting a never-happens wake needs a bounded negative-wait hook in the bench",
+          "setup": "p4_c6_sdio",
+          "build": {
+            "cp_dir": "examples/power_save/host/network_split__host_deep_sleep/cp",
+            "host_dir": "examples/power_save/host/network_split__host_deep_sleep/esp_host",
+            "host_overlay": [
+              "CONFIG_ESP_HOSTED_HOST_FEAT_POWER_SAVE_WAKEUP_GPIO_ACTIVE_LOW=y"
+            ]
+          },
+          "cases": [
+            {
+              "id": "stays_asleep",
+              "label": "host remains parked (no spurious wake)",
+              "assert": {
+                "expect": [
+                  "holding; awaiting external wake"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "cp_light_sleep",
+          "label": "Coprocessor brings up automatic light-sleep (functional)",
+          "kind": "positive",
+          "category": "functional",
+          "support": "supported",
+          "setup": "p4_c6_sdio",
+          "build": {
+            "cp_dir": "examples/power_save/host+cp/network_split__host_deep_sleep_cp_light_sleep/cp",
+            "host_dir": "examples/power_save/host+cp/network_split__host_deep_sleep_cp_light_sleep/esp_host"
+          },
+          "cases": [
+            {
+              "id": "configured",
+              "label": "CP configures auto light-sleep + host-PS integration comes up",
+              "assert": {
+                "expect": [
+                  "Light sleep initialized successfully",
+                  "Integration ready"
+                ],
+                "timeout_s": 150
+              }
+            }
+          ]
+        },
+        {
+          "id": "cp_light_sleep_wake_on_packet",
+          "label": "Host deep-sleeps, CP light-sleeps, an external TCP packet to a host port wakes the host",
+          "kind": "positive",
+          "category": "functional",
+          "support": "supported",
+          "setup": "p4_c6_sdio",
+          "build": {
+            "cp_dir": "examples/power_save/host+cp/network_split__host_deep_sleep_cp_light_sleep/cp",
+            "host_dir": "examples/power_save/host+cp/network_split__host_deep_sleep_cp_light_sleep/esp_host"
+          },
+          "stimulus": {
+            "host": [
+              {
+                "on": "iperf>",
+                "inject": "sta_connect myssid mypassword\n"
+              },
+              {
+                "on": "IP_EVENT_STA_GOT_IP",
+                "inject": "host_power_save\n"
+              }
+            ],
+            "net": [
+              {
+                "after_cp": "Light sleep ENABLED",
+                "proto": "tcp",
+                "ext_port": 2222,
+                "host_port": 22,
+                "payload": "wakeup-host"
+              }
+            ]
+          },
+          "cases": [
+            {
+              "id": "connected",
+              "label": "CP associates and the host gets an IP",
+              "assert": {
+                "expect": [
+                  "IP_EVENT_STA_GOT_IP"
+                ],
+                "timeout_s": 150
+              }
+            },
+            {
+              "id": "cp_sleeps",
+              "label": "host power-save drives the CP into light sleep",
+              "assert": {
+                "expect": [
+                  "Host power save active - entering light sleep",
+                  "Light sleep ENABLED"
+                ]
+              }
+            },
+            {
+              "id": "woke",
+              "label": "the external host-port packet wakes the host",
+              "assert": {
+                "expect": [
+                  "Wakeup needed",
+                  "Light sleep DISABLED",
+                  "Host power save off - device fully ready"
+                ],
+                "timeout_s": 200
+              }
+            }
+          ]
+        },
+        {
+          "id": "cp_light_sleep_non_priority_pkt_no_wake",
+          "label": "A packet to a non-priority host port is dropped and does NOT wake the light-sleeping host",
+          "kind": "negative",
+          "category": "functional",
+          "support": "supported",
+          "setup": "p4_c6_sdio",
+          "build": {
+            "cp_dir": "examples/power_save/host+cp/network_split__host_deep_sleep_cp_light_sleep/cp",
+            "host_dir": "examples/power_save/host+cp/network_split__host_deep_sleep_cp_light_sleep/esp_host"
+          },
+          "stimulus": {
+            "host": [
+              {
+                "on": "iperf>",
+                "inject": "sta_connect myssid mypassword\n"
+              },
+              {
+                "on": "IP_EVENT_STA_GOT_IP",
+                "inject": "host_power_save\n"
+              }
+            ],
+            "net": [
+              {
+                "after_cp": "Light sleep ENABLED",
+                "proto": "udp",
+                "ext_port": 50000,
+                "host_port": 50000,
+                "payload": "nope"
+              }
+            ]
+          },
+          "cases": [
+            {
+              "id": "dropped",
+              "label": "the non-priority packet is dropped in power save and no wake follows",
+              "assert": {
+                "expect": [
+                  "host pkt dropped in power save (dst 50000"
+                ],
+                "absent": [
+                  "Wakeup needed",
+                  "Host power save off"
+                ],
+                "timeout_s": 150
+              }
+            }
+          ]
+        },
+        {
+          "id": "cp_light_sleep_wake_race_cycles",
+          "label": "Repeated wake cycles with a wake pending at re-sleep don't dead-lock the SDIO link",
+          "kind": "negative",
+          "category": "recovery",
+          "support": "supported",
+          "setup": "p4_c6_sdio",
+          "build": {
+            "cp_dir": "examples/power_save/host+cp/network_split__host_deep_sleep_cp_light_sleep/cp",
+            "host_dir": "examples/power_save/host+cp/network_split__host_deep_sleep_cp_light_sleep/esp_host"
+          },
+          "settle_s": 120,
+          "stimulus": {
+            "host": [
+              {
+                "on": "iperf>",
+                "inject": "sta_connect myssid mypassword\n"
+              },
+              {
+                "on": "IP_EVENT_STA_GOT_IP",
+                "inject": "host_power_save\n"
+              }
+            ],
+            "net": [
+              {
+                "after_cp": "Host Sleep",
+                "repeat": true,
+                "burst": 6,
+                "burst_gap_ms": 30,
+                "proto": "tcp",
+                "ext_port": 2222,
+                "host_port": 22,
+                "payload": "w"
+              }
+            ]
+          },
+          "cases": [
+            {
+              "id": "survives_racing_cycles",
+              "label": "many consecutive wake cycles race the CP teardown without leaving SDIO dead",
+              "assert": {
+                "expect": [
+                  "Host power save off - device fully ready"
+                ],
+                "absent": [
+                  "bring-up timed out",
+                  "Guru Meditation Error",
+                  "abort() was called",
+                  "Firmware abort",
+                  "CPU fault at",
+                  "panic_handler entered",
+                  "Instruction access fault"
+                ],
+                "timeout_s": 200
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "network_split",
+      "label": "Network split",
+      "scenarios": [
+        {
+          "id": "nw_split_station",
+          "label": "Split TCP/IP station connects (host+CP share IP)",
+          "kind": "positive",
+          "category": "functional",
+          "support": "supported",
+          "setup": "p4_c6_sdio",
+          "build": {
+            "cp_dir": "examples/network_split/station/cp",
+            "host_dir": "examples/network_split/station/mcu_host"
+          },
+          "cases": [
+            {
+              "id": "got_ip",
+              "label": "split-network host obtains an IP",
+              "assert": {
+                "expect": [
+                  "got ip:"
+                ],
+                "timeout_s": 180
+              }
+            }
+          ]
+        },
+        {
+          "id": "nw_split_iperf_connect",
+          "label": "Network-split iperf example connects (connect phase)",
+          "kind": "positive",
+          "category": "functional",
+          "support": "supported",
+          "setup": "p4_c6_sdio",
+          "build": {
+            "cp_dir": "examples/network_split/iperf/cp",
+            "host_dir": "examples/network_split/iperf/mcu_host"
+          },
+          "cases": [
+            {
+              "id": "got_ip",
+              "label": "iperf host obtains an IP",
+              "assert": {
+                "expect": [
+                  "got ip:"
+                ],
+                "timeout_s": 180
+              }
+            }
+          ]
+        },
+        {
+          "id": "nw_split_no_cp_feature",
+          "label": "Host netif stays down if the CP lacks the network-split feature",
+          "kind": "negative",
+          "category": "functional",
+          "support": "tbd:needs a CP image built with CONFIG_ESP_HOSTED_CP_FEAT_NW_SPLIT disabled",
+          "setup": "p4_c6_sdio",
+          "build": {
+            "cp_dir": "examples/network_split/station/cp",
+            "host_dir": "examples/network_split/station/mcu_host"
+          },
+          "cases": [
+            {
+              "id": "netif_down",
+              "label": "host reports no backend / no IP",
+              "assert": {
+                "expect": [
+                  "ESP-Hosted Network Split Example"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "nw_split_port_routing",
+          "label": "Port-split routing sends host-range vs CP-range traffic correctly",
+          "kind": "positive",
+          "category": "functional",
+          "support": "tbd:needs a traffic generator hitting both port ranges through the bench",
+          "setup": "p4_c6_sdio",
+          "build": {
+            "cp_dir": "examples/network_split/iperf/cp",
+            "host_dir": "examples/network_split/iperf/mcu_host"
+          },
+          "cases": [
+            {
+              "id": "routed",
+              "label": "host-port traffic lands on host, CP-port on CP",
+              "assert": {
+                "expect": [
+                  "got ip:"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "peripherals",
+      "label": "Coexistence & GPIO",
+      "scenarios": [
+        {
+          "id": "ext_coex",
+          "label": "External (Wi-Fi/BT) coexistence configured over RPC",
+          "kind": "positive",
+          "category": "functional",
+          "support": "supported",
+          "setup": "p4_c6_sdio",
+          "build": {
+            "cp_dir": "examples/ext_coex/cp",
+            "host_dir": "examples/ext_coex/mcu_host"
+          },
+          "cases": [
+            {
+              "id": "configured",
+              "label": "coex work-mode configured",
+              "assert": {
+                "expect": [
+                  "successful"
+                ],
+                "timeout_s": 90
+              }
+            }
+          ]
+        },
+        {
+          "id": "ext_coex_invalid_gpio",
+          "label": "External-coex rejects an out-of-range GPIO",
+          "kind": "negative",
+          "category": "functional",
+          "support": "tbd:example uses fixed valid pins; needs an overlay/variant that passes an invalid pin to observe the reject log",
+          "setup": "p4_c6_sdio",
+          "build": {
+            "cp_dir": "examples/ext_coex/cp",
+            "host_dir": "examples/ext_coex/mcu_host"
+          },
+          "cases": [
+            {
+              "id": "rejected",
+              "label": "RPC reports an invalid-arg failure",
+              "assert": {
+                "expect": [
+                  "failed"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "gpio_expander",
+          "label": "Host drives coprocessor GPIOs remotely",
+          "kind": "positive",
+          "category": "functional",
+          "support": "supported",
+          "setup": "p4_c6_sdio",
+          "build": {
+            "cp_dir": "examples/gpio_expander/cp",
+            "host_dir": "examples/gpio_expander/mcu_host"
+          },
+          "cases": [
+            {
+              "id": "demos",
+              "label": "all remote-GPIO demos pass",
+              "assert": {
+                "expect": [
+                  "demos completed successfully"
+                ],
+                "timeout_s": 90
+              }
+            }
+          ]
+        },
+        {
+          "id": "gpio_invalid_pin",
+          "label": "Remote-GPIO config rejects an invalid pin",
+          "kind": "negative",
+          "category": "functional",
+          "support": "tbd:example only drives valid pins; needs a variant passing an out-of-range pin to see 'GPIO config failed'",
+          "setup": "p4_c6_sdio",
+          "build": {
+            "cp_dir": "examples/gpio_expander/cp",
+            "host_dir": "examples/gpio_expander/mcu_host"
+          },
+          "cases": [
+            {
+              "id": "config_fails",
+              "label": "config returns an error for a bad pin",
+              "assert": {
+                "expect": [
+                  "GPIO config failed"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "sdmmc_combined",
+          "label": "SD card on SDMMC slot alongside hosted SDIO",
+          "kind": "positive",
+          "category": "functional",
+          "support": "unsupported:emulator models only the hosted SDIO peer, not a second SD card on the slot",
+          "setup": "p4_c6_sdio",
+          "build": {
+            "cp_dir": "examples/mcu_hosted_sdio_sdmmc_combined/cp",
+            "host_dir": "examples/mcu_hosted_sdio_sdmmc_combined/mcu_host"
+          },
+          "cases": [
+            {
+              "id": "card",
+              "label": "SD card mounts",
+              "assert": {
+                "expect": [
+                  "Card unmounted"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "bluetooth",
+      "label": "Bluetooth (HCI over hosted)",
+      "scenarios": [
+        {
+          "id": "ble_adv_vhci",
+          "label": "BLE advertising via VHCI over the SDIO transport",
+          "kind": "positive",
+          "category": "functional",
+          "support": "tbd:host BLE stack + VHCI bridge over SDIO not yet wired in the bench (emulator has a bumble HCI path to leverage)",
+          "setup": "p4_c6_sdio",
+          "build": {
+            "cp_dir": "examples/bluetooth/cp/hosted_hci",
+            "host_dir": "examples/bluetooth/host_mcu/nimble"
+          },
+          "cases": [
+            {
+              "id": "advertising",
+              "label": "controller comes up and advertising starts",
+              "assert": {
+                "expect": [
+                  "advertising started"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "bt_hci_uart",
+          "label": "BLE controller via standard H4 UART HCI",
+          "kind": "positive",
+          "category": "functional",
+          "support": "unsupported:emulator does not model a separate UART HCI stream independent of the SDIO RPC bridge",
+          "setup": "p4_c6_sdio",
+          "build": {
+            "cp_dir": "examples/bluetooth/cp/standard_hci_uart",
+            "host_dir": "examples/bluetooth/host_mcu/bluedroid"
+          },
+          "cases": [
+            {
+              "id": "hci_up",
+              "label": "HCI over UART comes up",
+              "assert": {
+                "expect": [
+                  "HCI"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "wifi_ble_coex",
+          "label": "Wi-Fi and BLE coexist on the coprocessor (VHCI)",
+          "kind": "positive",
+          "category": "functional",
+          "support": "unsupported:no 2.4GHz radio PHY or SW-coex arbitration modelled in the emulator",
+          "setup": "p4_c6_sdio",
+          "build": {
+            "cp_dir": "examples/bluetooth/cp/wifi_hosted_hci",
+            "host_dir": "examples/bluetooth/host_mcu/nimble"
+          },
+          "cases": [
+            {
+              "id": "both",
+              "label": "BLE advertises while Wi-Fi scans",
+              "assert": {
+                "expect": [
+                  "advertising started"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ota",
+      "label": "OTA",
+      "scenarios": [
+        {
+          "id": "coprocessor_ota",
+          "label": "Host OTA-updates the coprocessor over LittleFS (no network)",
+          "kind": "positive",
+          "category": "functional",
+          "support": "supported",
+          "setup": "p4_c6_sdio",
+          "build": {
+            "cp_dir": "examples/ota/coprocessor_ota/cp",
+            "host_dir": "examples/ota/coprocessor_ota/mcu_host",
+            "host_overlay": [
+              "CONFIG_OTA_METHOD_LITTLEFS=y",
+              "CONFIG_OTA_VERSION_CHECK_HOST_SLAVE=n"
+            ],
+            "embed_cp_app": "components/ota_littlefs/slave_fw_bin/cp_app.bin"
+          },
+          "cases": [
+            {
+              "id": "begun",
+              "label": "coprocessor accepts the OTA and begins flashing",
+              "assert": {
+                "expect": [
+                  "OTA update started"
+                ],
+                "timeout_s": 300
+              }
+            },
+            {
+              "id": "completed",
+              "label": "image streamed from LittleFS and applied",
+              "assert": {
+                "expect": [
+                  "OTA completed successfully"
+                ],
+                "timeout_s": 300
+              }
+            }
+          ]
+        },
+        {
+          "id": "ota_boots_new_image",
+          "label": "Coprocessor reboots into the freshly-flashed image",
+          "kind": "positive",
+          "category": "functional",
+          "support": "tbd:guest bootloader does read otadata/ota_0/ota_1 on the bench, but proving the new slot booted needs a version-distinct CP image + asserting the activate\u2192reboot\u2192new-image cycle",
+          "setup": "p4_c6_sdio",
+          "build": {
+            "cp_dir": "examples/ota/coprocessor_ota/cp",
+            "host_dir": "examples/ota/coprocessor_ota/mcu_host",
+            "host_overlay": [
+              "CONFIG_OTA_METHOD_LITTLEFS=y"
+            ],
+            "embed_cp_app": "components/ota_littlefs/slave_fw_bin/cp_app.bin"
+          },
+          "cases": [
+            {
+              "id": "rebooted",
+              "label": "CP comes back up on the new image after activate",
+              "assert": {
+                "expect": [
+                  "OTA updated successful"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "ota_bad_image",
+          "label": "OTA aborts cleanly on a corrupt image",
+          "kind": "negative",
+          "category": "functional",
+          "support": "tbd:needs a deliberately-corrupted image embedded in a second LittleFS slot to drive the failure path",
+          "setup": "p4_c6_sdio",
+          "build": {
+            "cp_dir": "examples/ota/coprocessor_ota/cp",
+            "host_dir": "examples/ota/coprocessor_ota/mcu_host"
+          },
+          "cases": [
+            {
+              "id": "aborts",
+              "label": "OTA fails without bricking the link",
+              "assert": {
+                "expect": [
+                  "OTA failed"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "openthread",
+      "label": "OpenThread (802.15.4)",
+      "scenarios": [
+        {
+          "id": "ot_cli",
+          "label": "OpenThread CLI over the RCP coprocessor",
+          "kind": "positive",
+          "category": "functional",
+          "support": "unsupported:802.15.4 radio PHY not modelled in the emulator",
+          "setup": "p4_c6_sdio",
+          "build": {
+            "cp_dir": "examples/openthread/cli/cp",
+            "host_dir": "examples/openthread/cli/esp_host"
+          },
+          "cases": [
+            {
+              "id": "cli",
+              "label": "OpenThread CLI responds",
+              "assert": {
+                "expect": [
+                  "OpenThread"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "ot_border_router",
+          "label": "OpenThread border router with Wi-Fi backhaul",
+          "kind": "positive",
+          "category": "functional",
+          "support": "unsupported:802.15.4 radio + external AP backhaul not modelled",
+          "setup": "p4_c6_sdio",
+          "build": {
+            "cp_dir": "examples/openthread/border_router/cp",
+            "host_dir": "examples/openthread/border_router/esp_host"
+          },
+          "cases": [
+            {
+              "id": "br",
+              "label": "border router forms",
+              "assert": {
+                "expect": [
+                  "Border"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "lifecycle",
+      "label": "Framework \u00b7 init/deinit lifecycle",
+      "scenarios": [
+        {
+          "id": "double_init_idempotent",
+          "label": "Calling init twice is idempotent",
+          "kind": "negative",
+          "category": "functional",
+          "support": "tbd:needs a dedicated harness app \u2014 no example calls eh_host_init() twice",
+          "setup": "p4_c6_sdio",
+          "build": {
+            "cp_dir": "examples/system/get_cp_fw_version/cp",
+            "host_dir": "examples/system/get_cp_fw_version/mcu_host"
+          },
+          "cases": [
+            {
+              "id": "ok",
+              "label": "second init returns success, no crash",
+              "assert": {
+                "expect": [
+                  "CP firmware"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "use_before_init_rejected",
+          "label": "connect_to_slave before init returns -EINVAL",
+          "kind": "negative",
+          "category": "functional",
+          "support": "tbd:needs a harness app that calls connect_to_slave() with no prior init",
+          "setup": "p4_c6_sdio",
+          "build": {
+            "cp_dir": "examples/system/get_cp_fw_version/cp",
+            "host_dir": "examples/system/get_cp_fw_version/mcu_host"
+          },
+          "cases": [
+            {
+              "id": "einval",
+              "label": "bring-up rejected before init",
+              "assert": {
+                "expect": [
+                  "INVALID"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "deinit_reinit",
+          "label": "Deinit then reinit comes back clean",
+          "kind": "positive",
+          "category": "recovery",
+          "support": "tbd:needs a harness app exercising a deinit/reinit cycle",
+          "setup": "p4_c6_sdio",
+          "build": {
+            "cp_dir": "examples/system/get_cp_fw_version/cp",
+            "host_dir": "examples/system/get_cp_fw_version/mcu_host"
+          },
+          "cases": [
+            {
+              "id": "back",
+              "label": "fresh init succeeds after teardown",
+              "assert": {
+                "expect": [
+                  "CP firmware"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "bringup_timeout_no_cp",
+          "label": "Bring-up times out gracefully when no coprocessor answers",
+          "kind": "negative",
+          "category": "recovery",
+          "support": "tbd:needs a host-only setup variant that starts the host without the CP slave",
+          "setup": "p4_c6_sdio",
+          "build": {
+            "cp_dir": "examples/system/get_cp_fw_version/cp",
+            "host_dir": "examples/system/get_cp_fw_version/mcu_host"
+          },
+          "cases": [
+            {
+              "id": "timeout",
+              "label": "bring-up returns an error after the timeout, no hang",
+              "assert": {
+                "expect": [
+                  "fail"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "transport_integrity",
+      "label": "Transport \u00b7 frame integrity (negative)",
+      "scenarios": [
+        {
+          "id": "oversized_frame_rejected",
+          "label": "An over-max frame is rejected (TOOBIG)",
+          "kind": "negative",
+          "category": "security",
+          "support": "tbd:needs a raw-frame injection hook on the SDIO bridge",
+          "setup": "p4_c6_sdio",
+          "build": {
+            "cp_dir": "examples/peer_data_transfer/cp",
+            "host_dir": "examples/peer_data_transfer/mcu_host"
+          },
+          "cases": [
+            {
+              "id": "toobig",
+              "label": "decoder rejects payload beyond max_buf_size",
+              "assert": {
+                "expect": [
+                  "Verified, all OK!"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "checksum_mismatch_rejected",
+          "label": "A frame with a bad checksum is dropped (CORRUPT)",
+          "kind": "negative",
+          "category": "security",
+          "support": "tbd:needs a raw-frame injection hook to corrupt the checksum byte",
+          "setup": "p4_c6_sdio",
+          "build": {
+            "cp_dir": "examples/peer_data_transfer/cp",
+            "host_dir": "examples/peer_data_transfer/mcu_host"
+          },
+          "cases": [
+            {
+              "id": "corrupt",
+              "label": "corrupt frame dropped, link survives",
+              "assert": {
+                "expect": [
+                  "Verified, all OK!"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "truncated_frame_rejected",
+          "label": "A sub-header-length frame is rejected (INVALID)",
+          "kind": "negative",
+          "category": "security",
+          "support": "tbd:needs a raw-frame injection hook to send a truncated header",
+          "setup": "p4_c6_sdio",
+          "build": {
+            "cp_dir": "examples/peer_data_transfer/cp",
+            "host_dir": "examples/peer_data_transfer/mcu_host"
+          },
+          "cases": [
+            {
+              "id": "invalid",
+              "label": "truncated frame rejected without crash",
+              "assert": {
+                "expect": [
+                  "Verified, all OK!"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "large_payload_roundtrip",
+          "label": "Max-size payload (~8KB) round-trips intact",
+          "kind": "positive",
+          "category": "functional",
+          "support": "supported",
+          "setup": "p4_c6_sdio",
+          "build": {
+            "cp_dir": "examples/peer_data_transfer/cp",
+            "host_dir": "examples/peer_data_transfer/mcu_host"
+          },
+          "cases": [
+            {
+              "id": "verified",
+              "label": "the largest (HUMAN\u2192HELLO) payloads verify",
+              "assert": {
+                "expect": [
+                  "Verified, all OK!"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "rpc",
+      "label": "RPC \u00b7 request/response",
+      "scenarios": [
+        {
+          "id": "rpc_roundtrip",
+          "label": "Synchronous RPC request/response round-trips",
+          "kind": "positive",
+          "category": "functional",
+          "support": "supported",
+          "setup": "p4_c6_sdio",
+          "build": {
+            "cp_dir": "examples/system/get_cp_fw_version/cp",
+            "host_dir": "examples/system/get_cp_fw_version/mcu_host"
+          },
+          "cases": [
+            {
+              "id": "resp",
+              "label": "request completes with a response",
+              "assert": {
+                "expect": [
+                  "CP firmware"
+                ],
+                "timeout_s": 90
+              }
+            }
+          ]
+        },
+        {
+          "id": "rpc_timeout_cp_hung",
+          "label": "Sync RPC times out if the coprocessor never answers",
+          "kind": "negative",
+          "category": "recovery",
+          "support": "tbd:needs a fault-injection hook to wedge the CP mid-RPC",
+          "setup": "p4_c6_sdio",
+          "build": {
+            "cp_dir": "examples/system/get_cp_fw_version/cp",
+            "host_dir": "examples/system/get_cp_fw_version/mcu_host"
+          },
+          "cases": [
+            {
+              "id": "timeout",
+              "label": "request returns a timeout error, no hang",
+              "assert": {
+                "expect": [
+                  "timeout"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "rpc_concurrent",
+          "label": "Multiple in-flight requests are tracked by uid",
+          "kind": "positive",
+          "category": "functional",
+          "support": "tbd:needs a multi-request harness; emulator threading model to confirm",
+          "setup": "p4_c6_sdio",
+          "build": {
+            "cp_dir": "examples/system/get_cp_fw_version/cp",
+            "host_dir": "examples/system/get_cp_fw_version/mcu_host"
+          },
+          "cases": [
+            {
+              "id": "all",
+              "label": "each request gets its own response",
+              "assert": {
+                "expect": [
+                  "CP firmware"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "rpc_unknown_opcode",
+          "label": "A response with an unknown msg_id is dropped",
+          "kind": "negative",
+          "category": "security",
+          "support": "tbd:needs a raw-frame injection hook to craft an out-of-range msg_id",
+          "setup": "p4_c6_sdio",
+          "build": {
+            "cp_dir": "examples/system/get_cp_fw_version/cp",
+            "host_dir": "examples/system/get_cp_fw_version/mcu_host"
+          },
+          "cases": [
+            {
+              "id": "dropped",
+              "label": "unrecognised response dropped, link survives",
+              "assert": {
+                "expect": [
+                  "CP firmware"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "capabilities",
+      "label": "Capabilities & version negotiation",
+      "scenarios": [
+        {
+          "id": "caps_version_match",
+          "label": "Host and coprocessor agree on the caps version",
+          "kind": "positive",
+          "category": "functional",
+          "support": "tbd:needs an introspection hook to read the negotiated caps version",
+          "setup": "p4_c6_sdio",
+          "build": {
+            "cp_dir": "examples/system/hosted_events/cp",
+            "host_dir": "examples/system/hosted_events/mcu_host"
+          },
+          "cases": [
+            {
+              "id": "agree",
+              "label": "caps negotiated, transport comes up",
+              "assert": {
+                "expect": [
+                  "ESP-Hosted is ready"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "caps_version_mismatch",
+          "label": "Host flags a drifted coprocessor caps version",
+          "kind": "negative",
+          "category": "functional",
+          "support": "tbd:needs a CP image built with a deliberately drifted caps hash",
+          "setup": "p4_c6_sdio",
+          "build": {
+            "cp_dir": "examples/system/hosted_events/cp",
+            "host_dir": "examples/system/hosted_events/mcu_host"
+          },
+          "cases": [
+            {
+              "id": "flagged",
+              "label": "mismatch surfaced without a crash",
+              "assert": {
+                "expect": [
+                  "caps"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "feature_gating_absent_cap",
+          "label": "A feature is gated off when its capability is absent",
+          "kind": "negative",
+          "category": "functional",
+          "support": "tbd:needs a CP image with a specific feature cap compiled out",
+          "setup": "p4_c6_sdio",
+          "build": {
+            "cp_dir": "examples/system/hosted_events/cp",
+            "host_dir": "examples/system/hosted_events/mcu_host"
+          },
+          "cases": [
+            {
+              "id": "gated",
+              "label": "host degrades gracefully, no crash",
+              "assert": {
+                "expect": [
+                  "ESP-Hosted is ready"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "recovery",
+      "label": "Robustness \u00b7 recovery (negative)",
+      "scenarios": [
+        {
+          "id": "cp_reset_recovery",
+          "label": "Coprocessor warm-reboots; host re-enumerates the link",
+          "kind": "negative",
+          "category": "recovery",
+          "support": "tbd:needs a runtime trigger to pulse the CP reset mid-session",
+          "setup": "p4_c6_sdio",
+          "build": {
+            "cp_dir": "examples/wifi/sta/cp",
+            "host_dir": "examples/wifi/sta/mcu_host"
+          },
+          "cases": [
+            {
+              "id": "reenumerate",
+              "label": "host re-detects the card after CP reboot",
+              "assert": {
+                "expect": [
+                  "got ip:"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "bridge_drop",
+          "label": "Transport drop is detected and handled",
+          "kind": "negative",
+          "category": "recovery",
+          "support": "tbd:no fault-injection hook for a mid-session bridge drop yet",
+          "setup": "p4_c6_sdio",
+          "build": {
+            "cp_dir": "examples/system/hosted_events/cp",
+            "host_dir": "examples/system/hosted_events/mcu_host"
+          },
+          "cases": [
+            {
+              "id": "handled",
+              "label": "host surfaces transport loss without crashing",
+              "assert": {
+                "expect": [
+                  "Transport"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "heartbeat_timeout_recovery",
+          "label": "Host recovers when coprocessor heartbeats stop",
+          "kind": "negative",
+          "category": "recovery",
+          "support": "tbd:needs a hook to stall the CP heartbeat mid-session",
+          "setup": "p4_c6_sdio",
+          "build": {
+            "cp_dir": "examples/system/hosted_events/cp",
+            "host_dir": "examples/system/hosted_events/mcu_host"
+          },
+          "cases": [
+            {
+              "id": "reinit",
+              "label": "host triggers a hosted re-init on timeout",
+              "assert": {
+                "expect": [
+                  "Heartbeat"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "memory",
+      "label": "Memory",
+      "scenarios": [
+        {
+          "id": "heap_stable",
+          "label": "Coprocessor heap stays stable across a connect/disconnect cycle",
+          "kind": "positive",
+          "category": "memory",
+          "support": "supported",
+          "setup": "p4_c6_sdio",
+          "build": {
+            "cp_dir": "examples/mem_monitor/cp",
+            "host_dir": "examples/mem_monitor/mcu_host"
+          },
+          "cases": [
+            {
+              "id": "meminfo",
+              "label": "host reads CP heap info before/after",
+              "assert": {
+                "expect": [
+                  "Co-processor Mem Info"
+                ],
+                "timeout_s": 120
+              }
+            }
+          ]
+        },
+        {
+          "id": "no_leak_reconnect",
+          "label": "No host heap leak across N reconnect cycles",
+          "kind": "positive",
+          "category": "memory",
+          "support": "tbd:needs a reconnect-loop stimulus + heap sampling hook",
+          "setup": "p4_c6_sdio",
+          "build": {
+            "cp_dir": "examples/wifi/sta/cp",
+            "host_dir": "examples/wifi/sta/mcu_host"
+          },
+          "cases": [
+            {
+              "id": "stable",
+              "label": "free heap stable across cycles",
+              "assert": {
+                "expect": [
+                  "heap"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "mempool_exhaustion",
+          "label": "Buffer pool exhaustion is handled, not crashed",
+          "kind": "negative",
+          "category": "memory",
+          "support": "tbd:needs a burst stimulus large enough to exhaust the pool on the emulator's heap",
+          "setup": "p4_c6_sdio",
+          "build": {
+            "cp_dir": "examples/peer_data_transfer/cp",
+            "host_dir": "examples/peer_data_transfer/mcu_host"
+          },
+          "cases": [
+            {
+              "id": "graceful",
+              "label": "alloc failure returns an error, link survives",
+              "assert": {
+                "expect": [
+                  "Verified, all OK!"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "performance",
+      "label": "Performance",
+      "scenarios": [
+        {
+          "id": "throughput_iperf",
+          "label": "TCP/UDP throughput via iperf",
+          "kind": "positive",
+          "category": "performance",
+          "support": "unsupported:emulator timing is not cycle-accurate; throughput numbers are not representative",
+          "setup": "p4_c6_sdio",
+          "build": {
+            "cp_dir": "examples/network_split/iperf/cp",
+            "host_dir": "examples/network_split/iperf/mcu_host"
+          },
+          "cases": [
+            {
+              "id": "tput",
+              "label": "iperf reports throughput",
+              "assert": {
+                "expect": [
+                  "Mbits/sec"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "connect_latency",
+          "label": "STA connect latency under budget",
+          "kind": "positive",
+          "category": "performance",
+          "support": "tbd:wall-clock latency in the emulator is not representative of silicon",
+          "setup": "p4_c6_sdio",
+          "build": {
+            "cp_dir": "examples/wifi/sta/cp",
+            "host_dir": "examples/wifi/sta/mcu_host"
+          },
+          "cases": [
+            {
+              "id": "latency",
+              "label": "connect completes within budget",
+              "assert": {
+                "expect": [
+                  "got ip:"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "rpc_latency",
+          "label": "RPC round-trip latency under budget",
+          "kind": "positive",
+          "category": "performance",
+          "support": "tbd:emulator wall-clock RPC latency is not representative of silicon",
+          "setup": "p4_c6_sdio",
+          "build": {
+            "cp_dir": "examples/system/get_cp_fw_version/cp",
+            "host_dir": "examples/system/get_cp_fw_version/mcu_host"
+          },
+          "cases": [
+            {
+              "id": "rtt",
+              "label": "round-trip within budget",
+              "assert": {
+                "expect": [
+                  "CP firmware"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "transport_bus",
+      "label": "Transport bus coverage",
+      "scenarios": [
+        {
+          "id": "sdio_bridge",
+          "label": "SDIO transport (bridged C6\u21c4P4)",
+          "kind": "positive",
+          "category": "functional",
+          "support": "supported",
+          "setup": "p4_c6_sdio",
+          "build": {
+            "cp_dir": "examples/peer_data_transfer/cp",
+            "host_dir": "examples/peer_data_transfer/mcu_host"
+          },
+          "cases": [
+            {
+              "id": "rpc",
+              "label": "RPC round-trips over SDIO",
+              "assert": {
+                "expect": [
+                  "Verified, all OK!"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "spi_transport",
+          "label": "SPI full-duplex transport",
+          "kind": "positive",
+          "category": "functional",
+          "support": "unsupported:emulator models the SDIO bridge between instances, not SPI",
+          "setup": "p4_c6_sdio",
+          "build": {
+            "cp_dir": "examples/peer_data_transfer/cp",
+            "host_dir": "examples/peer_data_transfer/mcu_host"
+          },
+          "cases": [
+            {
+              "id": "rpc",
+              "label": "RPC round-trips over SPI",
+              "assert": {
+                "expect": [
+                  "Verified, all OK!"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "uart_transport",
+          "label": "UART transport",
+          "kind": "positive",
+          "category": "functional",
+          "support": "unsupported:emulator models the SDIO bridge between instances, not UART",
+          "setup": "p4_c6_sdio",
+          "build": {
+            "cp_dir": "examples/peer_data_transfer/cp",
+            "host_dir": "examples/peer_data_transfer/mcu_host"
+          },
+          "cases": [
+            {
+              "id": "rpc",
+              "label": "RPC round-trips over UART",
+              "assert": {
+                "expect": [
+                  "Verified, all OK!"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

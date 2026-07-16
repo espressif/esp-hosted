@@ -1,0 +1,7 @@
+lab.json
+runs/
+.work/
+coverage.md
+frontend/dist/
+frontend/node_modules/
+nohup.out

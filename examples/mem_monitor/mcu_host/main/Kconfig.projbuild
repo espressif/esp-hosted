@@ -1,0 +1,130 @@
+menu "Example Configuration"
+
+	config EH_USE_LEGACY_API
+		bool "Use legacy esp_hosted_* compat-surface main"
+		default n
+		help
+			Build the example from main/legacy/main.c (preserves the
+			esp_hosted_* compat surface) instead of main/main.c (which
+			uses native eh_host_* APIs).
+
+	config EXAMPLE_MEM_MONITOR_QUERY_ONLY_ONCE
+		bool "Query Memory Info only once"
+		default n
+		help
+			Query the memory on the co-processor only once.
+
+	if !EXAMPLE_MEM_MONITOR_QUERY_ONLY_ONCE
+
+	config EXAMPLE_MEM_MONITOR_INTERVAL_SEC
+		int "Memory Monitor Interval (in seconds)"
+		default 10
+		help
+			Set the interval for doing memory checks on the co-processor.
+
+	config EXAMPLE_MEM_MONITOR_REPORT_ALWAYS
+		bool "Always send a memory report"
+		default y
+		help
+			When enabled, the co-processor sends a memory report every interval.
+			When disabled, the co-processor sends a memory report only when free
+			memory drops below a configured threshold.
+
+	config EXAMPLE_MEM_MONITOR_INTERNAL_DMA_THRESHOLD
+		depends on !EXAMPLE_MEM_MONITOR_REPORT_ALWAYS
+		int "Threshold for internal DMA Heap Memory (in bytes)"
+		default 8192
+		help
+			Memory threshold that triggers a report. 0 disables the threshold.
+
+	config EXAMPLE_MEM_MONITOR_INTERNAL_8BIT_THRESHOLD
+		depends on !EXAMPLE_MEM_MONITOR_REPORT_ALWAYS
+		int "Threshold for internal 8-Bit Heap Memory (in bytes)"
+		default 8192
+		help
+			Memory threshold that triggers a report. 0 disables the threshold.
+
+	config EXAMPLE_MEM_MONITOR_EXTERNAL_DMA_THRESHOLD
+		depends on !EXAMPLE_MEM_MONITOR_REPORT_ALWAYS
+		int "Threshold for external DMA Heap Memory (in bytes)"
+		default 8192
+		help
+			Memory threshold that triggers a report. 0 disables the threshold.
+
+	config EXAMPLE_MEM_MONITOR_EXTERNAL_8BIT_THRESHOLD
+		depends on !EXAMPLE_MEM_MONITOR_REPORT_ALWAYS
+		int "Threshold for external 8-Bit Heap Memory (in bytes)"
+		default 8192
+		help
+			Memory threshold that triggers a report. 0 disables the threshold.
+
+	endif
+
+	menu "Wifi Config"
+
+		config ESP_WIFI_SSID
+			string "WiFi SSID"
+			default "myssid"
+			help
+				SSID (network name) for the example to connect to.
+
+		config ESP_WIFI_PASSWORD
+			string "WiFi Password"
+			default "mypassword"
+			help
+				WiFi password (WPA or WPA2) for the example to use.
+
+		choice ESP_WIFI_SAE_MODE
+			prompt "WPA3 SAE mode selection"
+			default ESP_STATION_EXAMPLE_WPA3_SAE_PWE_BOTH
+			help
+				Select mode for SAE as Hunt and Peck, H2E or both.
+			config ESP_STATION_EXAMPLE_WPA3_SAE_PWE_HUNT_AND_PECK
+				bool "HUNT AND PECK"
+			config ESP_STATION_EXAMPLE_WPA3_SAE_PWE_HASH_TO_ELEMENT
+				bool "H2E"
+				depends on ESP_WIFI_ENABLE_SAE_H2E
+			config ESP_STATION_EXAMPLE_WPA3_SAE_PWE_BOTH
+				bool "BOTH"
+				depends on ESP_WIFI_ENABLE_SAE_H2E
+		endchoice
+
+		config ESP_WIFI_PW_ID
+			string "PASSWORD IDENTIFIER"
+			depends on ESP_STATION_EXAMPLE_WPA3_SAE_PWE_HASH_TO_ELEMENT|| ESP_STATION_EXAMPLE_WPA3_SAE_PWE_BOTH
+			default ""
+			help
+				Password identifier for SAE H2E.
+
+		config ESP_MAXIMUM_RETRY
+			int "Maximum retry"
+			default 5
+			help
+				Maximum retry to avoid the station reconnecting unlimited
+				when the AP is unreachable.
+
+		choice ESP_WIFI_SCAN_AUTH_MODE_THRESHOLD
+			prompt "WiFi Scan auth mode threshold"
+			default ESP_WIFI_AUTH_WPA2_PSK
+			help
+				The weakest authmode to accept in scan mode.
+
+			config ESP_WIFI_AUTH_OPEN
+				bool "OPEN"
+			config ESP_WIFI_AUTH_WEP
+				bool "WEP"
+			config ESP_WIFI_AUTH_WPA_PSK
+				bool "WPA PSK"
+			config ESP_WIFI_AUTH_WPA2_PSK
+				bool "WPA2 PSK"
+			config ESP_WIFI_AUTH_WPA_WPA2_PSK
+				bool "WPA/WPA2 PSK"
+			config ESP_WIFI_AUTH_WPA3_PSK
+				bool "WPA3 PSK"
+			config ESP_WIFI_AUTH_WPA2_WPA3_PSK
+				bool "WPA2/WPA3 PSK"
+			config ESP_WIFI_AUTH_WAPI_PSK
+				bool "WAPI PSK"
+		endchoice
+	endmenu
+endmenu

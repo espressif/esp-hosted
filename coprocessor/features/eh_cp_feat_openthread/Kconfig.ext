@@ -1,0 +1,208 @@
+menuconfig ESP_HOSTED_CP_FEAT_OPENTHREAD
+	bool "OpenThread RCP (Radio Co-Processor)"
+	depends on ESP_HOSTED_CP_FOR_MCU
+	default n
+	help
+		Enable OpenThread RCP (Radio Co-Processor) support on this
+		co-processor.  The coprocessor exposes its 802.15.4 radio to
+		the host (typically an ESP32-P4) so the host can run a Thread
+		stack — CLI, Border Router, etc.
+
+		Requires CONFIG_OPENTHREAD_ENABLED, CONFIG_OPENTHREAD_RADIO,
+		and an SoC with IEEE 802.15.4 (C6 / H2 / H4 / C5).  These are
+		checked by ESP_HOSTED_CP_FEAT_OPENTHREAD_READY below; the
+		feature TU only compiles when the gate is satisfied.
+
+if ESP_HOSTED_CP_FEAT_OPENTHREAD
+
+	# Dependency-checked readiness.  The CP feature CMakeLists + every
+	# consumer use *_READY (not the menuconfig symbol) so an opt-in
+	# without the matching IDF OpenThread Kconfig leaves a clear "off"
+	# rather than a half-built feature.
+	config ESP_HOSTED_CP_FEAT_OPENTHREAD_READY
+		bool
+		default y if OPENTHREAD_ENABLED && OPENTHREAD_RADIO && SOC_IEEE802154_SUPPORTED
+
+	comment "⚠  Requires OPENTHREAD_ENABLED + OPENTHREAD_RADIO + SOC_IEEE802154_SUPPORTED"
+		depends on !(OPENTHREAD_ENABLED && OPENTHREAD_RADIO && SOC_IEEE802154_SUPPORTED)
+
+	config ESP_HOSTED_CP_FEAT_OPENTHREAD_AUTO_INIT
+		bool "Auto-initialise OpenThread feature at boot"
+		default y if ESP_HOSTED_CP_FEAT_OPENTHREAD_READY && ESP_HOSTED_CP_AUTO_FEAT_INIT
+		default n
+		depends on ESP_HOSTED_CP_AUTO_FEAT_INIT
+		help
+			When enabled, OpenThread feature advertises its
+			capability bit at boot via eh_cp_init().  Per-RCP
+			init/start happens on demand from host RPC.
+
+	if !OPENTHREAD_RADIO
+		comment "Radio Only Device must be selected:"
+		comment "Component config"
+		comment "└── OpenThread"
+		comment "    └── Thread Core Features"
+		comment "        └── Thread device type ──> Radio Only Device"
+	endif
+	if OPENTHREAD_COMMISSIONER
+		comment "Disable Commissioner:"
+		comment "Component config"
+		comment "└── OpenThread"
+		comment "    └── Thread Core Features"
+		comment "        └── [ ] Enable Commissioner"
+	endif
+	if OPENTHREAD_JOINER
+		comment "Disable Joiner:"
+		comment "Component config"
+		comment "└── OpenThread"
+		comment "    └── Thread Core Features"
+		comment "        └── [ ] Enable Joiner"
+	endif
+	if OPENTHREAD_SRP_CLIENT
+		comment "Disable SRP Client:"
+		comment "Component config"
+		comment "└── OpenThread"
+		comment "    └── Thread Core Features"
+		comment "        └── [ ] Enable SRP Client"
+	endif
+	if OPENTHREAD_DNS_CLIENT
+		comment "Disable DNS Client:"
+		comment "Component config"
+		comment "└── OpenThread"
+		comment "    └── Thread Core Features"
+		comment "        └── [ ] Enable DNS Client"
+	endif
+	comment " :warning: OpenThread UART port and Hosted UART transport port is same — pick a different UART port"
+		depends on ESP_UART_HOST_INTERFACE && ESP_HOSTED_OT_UART_PORT = ESP_UART_PORT
+
+	choice ESP_HOSTED_OT_INTERFACE
+		bool "OpenThread Transport"
+		default ESP_HOSTED_OT_TRANSPORT_UART
+		help
+			Transport used communicate with OpenThread Host
+
+		config ESP_HOSTED_OT_TRANSPORT_HOSTED
+			bool "Use ESP-Hosted Transport"
+			help
+				Use ESP-Hosted transport to communicate with OpenThread Host
+
+		config ESP_HOSTED_OT_TRANSPORT_UART
+			bool "UART"
+			help
+				Use dedicated UART to communicate with OpenThread Host
+	endchoice
+
+	if ESP_HOSTED_OT_TRANSPORT_UART
+
+		config ESP_HOSTED_OT_UART_PORT
+			int "UART Port to Use"
+			default 1
+			range 0 1
+			help
+				Select UART Port to Use. Do not select the UART Port used for console output (if enabled)
+
+		config ESP_HOSTED_OT_UART_PIN_TX
+			int "TX GPIO number"
+			default 14 if IDF_TARGET_ESP32C5
+			default 21 if IDF_TARGET_ESP32C6
+			default 12 if IDF_TARGET_ESP32H2
+			default 17 if IDF_TARGET_ESP32H4
+			help
+				GPIO used for UART TX
+
+		config ESP_HOSTED_OT_UART_PIN_RX
+			int "RX GPIO number"
+			default 13 if IDF_TARGET_ESP32C5
+			default 20 if IDF_TARGET_ESP32C6
+			default 22 if IDF_TARGET_ESP32H2
+			default 18 if IDF_TARGET_ESP32H4
+			help
+				GPIO used for UART RX
+
+		config ESP_HOSTED_OT_UART_BAUDRATE
+			int "Baud Rate"
+			default 460800
+			range 9600 3500000
+			help
+				Baud Rate to Use. Make sure Hardware supports the rate.
+				Standard rates are 9600, 19200, 38400, 57600, 115200, 460800, 921600
+
+		choice ESP_HOSTED_OT_UART_PRIV_NUM_DATA_BITS
+			bool "Number of Data Bits"
+			default ESP_HOSTED_OT_UART_PRIV_NUM_DATA_BITS_8
+			help
+				Number of Data Bits to use
+
+			config ESP_HOSTED_OT_UART_PRIV_NUM_DATA_BITS_5
+				bool "5 Bits"
+
+			config ESP_HOSTED_OT_UART_PRIV_NUM_DATA_BITS_6
+				bool "6 Bits"
+
+			config ESP_HOSTED_OT_UART_PRIV_NUM_DATA_BITS_7
+				bool "7 Bits"
+
+			config ESP_HOSTED_OT_UART_PRIV_NUM_DATA_BITS_8
+				bool "8 Bits"
+		endchoice
+
+		config ESP_HOSTED_OT_UART_NUM_DATA_BITS
+			int
+			default 0 if ESP_HOSTED_OT_UART_PRIV_NUM_DATA_BITS_5
+			default 1 if ESP_HOSTED_OT_UART_PRIV_NUM_DATA_BITS_6
+			default 2 if ESP_HOSTED_OT_UART_PRIV_NUM_DATA_BITS_7
+			default 3 if ESP_HOSTED_OT_UART_PRIV_NUM_DATA_BITS_8
+
+		choice ESP_HOSTED_OT_UART_PRIV_PARITY
+			bool "Parity"
+			default ESP_HOSTED_OT_UART_PRIV_PARITY_NONE
+
+			config ESP_HOSTED_OT_UART_PRIV_PARITY_NONE
+				bool "None"
+
+			config ESP_HOSTED_OT_UART_PRIV_PARITY_EVEN
+				bool "Even"
+
+			config ESP_HOSTED_OT_UART_PRIV_PARITY_ODD
+				bool "Odd"
+		endchoice
+
+		config ESP_HOSTED_OT_UART_PARITY
+			int
+			default 0 if ESP_HOSTED_OT_UART_PRIV_PARITY_NONE
+			default 2 if ESP_HOSTED_OT_UART_PRIV_PARITY_EVEN
+			default 3 if ESP_HOSTED_OT_UART_PRIV_PARITY_ODD
+
+		choice ESP_HOSTED_OT_UART_PRIV_STOP_BITS
+			bool "Number of Stop Bits"
+
+			config ESP_HOSTED_OT_UART_PRIV_STOP_BITS_1
+				bool "1"
+
+			config ESP_HOSTED_OT_UART_PRIV_STOP_BITS_1_5
+				bool "1.5"
+
+			config ESP_HOSTED_OT_UART_PRIV_STOP_BITS_2
+				bool "2"
+		endchoice
+
+		config ESP_HOSTED_OT_UART_STOP_BITS
+			int
+			default 1 if ESP_HOSTED_OT_UART_PRIV_STOP_BITS_1
+			default 2 if ESP_HOSTED_OT_UART_PRIV_STOP_BITS_1_5
+			default 3 if ESP_HOSTED_OT_UART_PRIV_STOP_BITS_2
+
+	endif
+
+	config ESP_HOSTED_OT_NETIF_QUEUE_SIZE
+		int "OpenThread Network Interface Queue Size"
+		default 10
+		help
+			The packet queue size for the OpenThread network interface
+
+	config ESP_HOSTED_OT_TASK_QUEUE_SIZE
+		int "OpenThread Task Queue Size"
+		default 10
+		help
+			The OpenThread task queue size
+
+endif # ESP_HOSTED_CP_FEAT_OPENTHREAD

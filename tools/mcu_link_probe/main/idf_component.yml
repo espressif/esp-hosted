@@ -1,0 +1,5 @@
+dependencies:
+  esp_hosted:
+    override_path: "../../../.."
+  idf:
+    version: ">=5.5"

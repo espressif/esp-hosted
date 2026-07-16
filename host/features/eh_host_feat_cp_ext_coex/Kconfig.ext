@@ -1,0 +1,33 @@
+menuconfig ESP_HOSTED_HOST_FEAT_CP_EXT_COEX
+	bool "External Coexistence"
+	default n
+	depends on ESP_HOSTED_HOST && ESP_HOSTED_HOST_FEAT_RPC
+	depends on ESP_HOSTED_HOST_FEAT_RPC_EXT_V2_READY
+	help
+	  Drives the coprocessor's external PTA (Packet Traffic Arbiter)
+	  lines: grant/request/priority pins, work-mode selection, grant
+	  delay, disable.  Used when a second radio (Wi-Fi / BT) on the
+	  host board needs to share the air with the CP radio.
+
+if ESP_HOSTED_HOST_FEAT_CP_EXT_COEX
+
+	config ESP_HOSTED_HOST_FEAT_CP_EXT_COEX_AUTO_INIT
+		bool "Auto-initialize Ext-Coex feature at boot"
+		default y
+		depends on ESP_HOSTED_HOST_AUTO_FEAT_INIT
+		help
+		  When enabled, eh_host_feat_cp_ext_coex_init() runs during the
+		  linker-section auto-init walk.
+
+	config ESP_HOSTED_HOST_FEAT_CP_EXT_COEX_ADVANCE
+		bool "Enable advanced ext-coex controls"
+		default n
+		help
+		  Enables advanced ext-coex control paths (work mode/grant
+		  delay/validate-high) when supported by coprocessor.
+
+endif # ESP_HOSTED_HOST_FEAT_CP_EXT_COEX
+
+config ESP_HOSTED_HOST_FEAT_CP_EXT_COEX_READY
+	bool
+	default y if ESP_HOSTED_HOST_FEAT_CP_EXT_COEX && ESP_HOSTED_HOST_FEAT_RPC_READY && ESP_HOSTED_HOST_FEAT_RPC_EXT_V2_READY

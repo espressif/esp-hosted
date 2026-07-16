@@ -1,0 +1,77 @@
+menuconfig ESP_HOSTED_CP_FEAT_DEBUG
+	bool "Debug Utilities"
+	depends on ESP_HOSTED_CP
+	default n
+	help
+		CP-side debug utilities.  Heap stats and the RPC-driven
+		memory monitor are toggled as sub-features below.
+
+if ESP_HOSTED_CP_FEAT_DEBUG
+
+	config ESP_HOSTED_CP_FEAT_DEBUG_READY
+		bool
+		default y
+
+	config ESP_HOSTED_CP_FEAT_DEBUG_AUTO_INIT
+		bool "Auto-initialise Debug Utilities at boot"
+		default y if ESP_HOSTED_CP_FEAT_DEBUG_READY && ESP_HOSTED_CP_AUTO_FEAT_INIT
+		default n
+		depends on ESP_HOSTED_CP_AUTO_FEAT_INIT
+		help
+			When enabled, Debug Utilities auto-initialises during
+			eh_cp_init().  Disable to manually call the init from app code.
+
+	menuconfig ESP_HOSTED_CP_FEAT_DEBUG_HEAP_STATS
+		bool "Heap stats and leak tracing"
+		default y
+		help
+			Exposes eh_cp_feat_debug_heap_log() and the
+			heap_cycle_begin/end APIs.  Each call prints free heap
+			and minimum-ever-free heap.
+
+	if ESP_HOSTED_CP_FEAT_DEBUG_HEAP_STATS
+
+		config ESP_HOSTED_CP_FEAT_DEBUG_HEAP_STATS_READY
+			bool
+			default y
+
+		config ESP_HOSTED_CP_FEAT_DEBUG_HEAP_TRACING
+			bool "Heap leak tracing on cycle boundaries"
+			default n
+			depends on HEAP_TRACING_STANDALONE
+			help
+				Starts a HEAP_TRACE_LEAKS session at cycle begin
+				and dumps it at cycle end.  Requires
+				CONFIG_HEAP_TRACING_STANDALONE.
+
+		config ESP_HOSTED_CP_FEAT_DEBUG_HEAP_TRACE_RECORDS
+			int "Heap trace records buffer size"
+			default 200
+			range 10 1000
+			depends on ESP_HOSTED_CP_FEAT_DEBUG_HEAP_TRACING
+
+	endif # HEAP_STATS
+
+	menuconfig ESP_HOSTED_CP_FEAT_DEBUG_MEM_MONITOR
+		bool "Memory monitor"
+		depends on ESP_HOSTED_CP_FEAT_RPC_EXT_V2_READY
+		default n
+		help
+			Periodic multi-region heap sampler configured from the
+			host over RPC (thresholds per heap region, interval,
+			report-always).  Reports back via
+			RPC_ID__Event_MemMonitor.  Used by
+			examples/mem_monitor/.
+
+	if ESP_HOSTED_CP_FEAT_DEBUG_MEM_MONITOR
+
+		config ESP_HOSTED_CP_FEAT_DEBUG_MEM_MONITOR_READY
+			bool
+			default y
+
+	endif # MEM_MONITOR
+
+	comment "⚠  RPC MCU feature required for Memory monitor"
+		depends on !ESP_HOSTED_CP_FEAT_RPC_EXT_V2_READY
+
+endif # ESP_HOSTED_CP_FEAT_DEBUG

@@ -1,0 +1,137 @@
+menu "ESP-Hosted Coprocessor OTA Config"
+
+choice OTA_METHOD
+    prompt "Select OTA Method"
+    default OTA_METHOD_HTTPS
+    help
+        Choose the OTA method for updating slave firmware.
+
+config OTA_METHOD_HTTPS
+    bool "HTTP OTA"
+    help
+        Download firmware from HTTPS URL
+
+config OTA_METHOD_LITTLEFS
+    bool "LittleFS OTA"
+    help
+        Read firmware from LittleFS filesystem
+
+config OTA_METHOD_PARTITION
+    bool "Partition OTA"
+    help
+        Read firmware from dedicated partition
+
+endchoice
+
+########### OTA with Partition ########
+config OTA_PARTITION_LABEL
+    string "Partition Label"
+    depends on OTA_METHOD_PARTITION
+    default "slave_fw"
+    help
+        Label of the partition containing firmware
+
+########### OTA with Littlefs #########
+config OTA_DELETE_FILE_AFTER_FLASH
+    depends on OTA_METHOD_LITTLEFS
+    bool "Delete OTA file from LittleFS/FatFS etc, once finished"
+    default y
+
+########### OTA with HTTPS ############
+menu "WiFi Connection"
+    depends on OTA_METHOD_HTTPS
+    config ESP_WIFI_SSID
+        string "WiFi SSID"
+        default "MyWiFiSSID"
+        help
+            SSID (network name) for the example to connect to.
+
+    config ESP_WIFI_PASSWORD
+        string "WiFi Password"
+        default "MyWiFiPass@123"
+        help
+            WiFi password (WPA or WPA2) for the example to use.
+
+    config ESP_MAXIMUM_RETRY
+        int "Maximum retry"
+        default 5
+        help
+            Set the Maximum retry to avoid station reconnecting to the AP unlimited when the AP is really inexistent.
+
+endmenu
+
+menu "HTTPS OTA Configuration"
+    depends on OTA_METHOD_HTTPS
+
+    config OTA_USE_SELF_SIGNED_CERT
+        bool "Use self-signed certificate (Testing Only)"
+        default n
+        help
+            Enable this ONLY for testing with self-signed certificates.
+            Disable for production use with CA-signed certificates.
+
+            When enabled, the component will use an embedded certificate
+            from certs/server_cert.pem for HTTPS validation.
+
+            When disabled, the component will use the ESP32 CA certificate
+            bundle which supports major CAs like Let's Encrypt, DigiCert, etc.
+
+    config OTA_SKIP_CERT_CN_CHECK
+        bool "Skip certificate Common Name check"
+        depends on OTA_USE_SELF_SIGNED_CERT
+        default n
+        help
+            Skip Common Name validation in self-signed certificates.
+            Only enable if you cannot match the CN with your server IP/hostname.
+
+            WARNING: This reduces security. Use only for testing.
+
+    config OTA_HTTPS_TIMEOUT_MS
+        int "HTTPS connection timeout (milliseconds)"
+        default 30000
+        range 5000 120000
+        help
+            Timeout for HTTPS connection and SSL handshake.
+            Increase if you have slow network or server.
+
+    config OTA_SERVER_URL
+        string "OTA Server URL"
+        default "https://192.168.1.3:8443/firmware.bin"
+        help
+            HTTPS URL of the OTA firmware file.
+            Must start with https://
+
+endmenu
+
+########### OTA Verification Options ############
+menu "OTA Verification Options"
+
+    config OTA_VERSION_CHECK_HOST_SLAVE
+        bool "Host-Slave version compatibility check"
+        default y
+        help
+            Check if host and slave firmware have compatible major.minor versions.
+            If host is X.Y.Z and slave is A.B.C, warn if X.Y != A.B.
+
+            This ensures compatible API versions between host and slave.
+
+    config OTA_VERSION_CHECK_SLAVEFW_SLAVE
+        bool "Skip OTA if slave firmware versions match"
+        default y
+        help
+            Compare current running slave firmware version with new firmware version.
+            Skip OTA if versions are identical to avoid unnecessary updates.
+
+            Disable this to force OTA even when versions match.
+
+endmenu
+
+config EH_USE_LEGACY_API
+    bool "Use legacy esp_hosted_* compat-surface main"
+    default n
+    help
+        Build the example from main/legacy/main.c (preserves the
+        esp_hosted_* compat surface) instead of main/main.c (which
+        uses native eh_host_* APIs).
+
+endmenu

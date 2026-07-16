@@ -1,0 +1,34 @@
+menuconfig ESP_HOSTED_HOST_FEAT_WIFI_EXT_ITWT
+	bool "WiFi iTWT"
+	default n
+	depends on ESP_HOSTED_HOST_FEAT_WIFI
+	depends on ESP_HOSTED_HOST_FEAT_RPC_EXT_V2_READY
+	help
+	  Host-side mirror of coprocessor/features/eh_cp_feat_wifi_ext_itwt.
+	  Provides typed C wrappers (eh_host_feat_wifi_ext_itwt.h) for the
+	  6 iTWT RPCs:
+
+	    - eh_host_wifi_sta_itwt_setup       (TWT agreement setup;
+	                                         packed bitmask_1 carries
+	                                         trigger / flow_type /
+	                                         flow_id / wake_invl_expn /
+	                                         wake_duration_unit)
+	    - eh_host_wifi_sta_itwt_teardown
+	    - eh_host_wifi_sta_itwt_suspend
+	    - eh_host_wifi_sta_itwt_send_probe_req
+	    - eh_host_wifi_sta_itwt_set_target_wake_time_offset
+	    - eh_host_wifi_sta_itwt_get_flow_id_status (active-flow bitmap)
+
+	  Subscribes to the 4 iTWT events (StaItwtSetup / Teardown /
+	  Suspend / Probe; IDs 778-781) and dispatches them via
+	  eh_host_wifi_sta_itwt_on_{setup,teardown,suspend,probe} (single
+	  callback slot per event; passing NULL clears the slot but leaves
+	  the internal handler registered so the RX worker keeps draining).
+
+## Lifecycle is owned by the parent Wi-Fi feature
+## (eh_host_feat_wifi_init/deinit drives this ext's init/deinit).
+## No standalone auto-init knob — the parent's auto-init covers it.
+
+config ESP_HOSTED_HOST_FEAT_WIFI_EXT_ITWT_READY
+	bool
+	default y if ESP_HOSTED_HOST_FEAT_WIFI_EXT_ITWT && ESP_HOSTED_HOST_FEAT_WIFI_READY

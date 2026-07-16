@@ -1,0 +1,19 @@
+## In-tree override for the esp_hosted umbrella.  iTWT requires native
+## Wi-Fi 6 (HE / 802.11ax) support, so this scenario targets esp32c5 /
+## esp32c6 / esp32c61 (chips with native HE MAC).  esp32s3 is Wi-Fi 4
+## only and does not provide `esp_wifi_sta_itwt_setup`.
+dependencies:
+  cmd_system:
+    path: ${IDF_PATH}/examples/system/console/advanced/components/cmd_system
+  cmd_nvs:
+    path: ${IDF_PATH}/examples/system/console/advanced/components/cmd_nvs
+  espressif/esp_hosted:
+    version: "*"
+    override_path: "../../../../.."
+  espressif/esp_wifi_remote:
+    version: ">=1.3.1"
+    rules:
+      - if: "target in [esp32p4, esp32h2]"
+      - if: "idf_version <6.1"
+  idf:
+    version: ">=5.5"

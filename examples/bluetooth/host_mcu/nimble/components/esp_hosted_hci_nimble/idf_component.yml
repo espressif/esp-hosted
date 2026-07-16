@@ -1,0 +1,7 @@
+description: "ESP-Hosted NimBLE HCI bridge — provides strong overrides for NimBLE's weak transport hooks, routing HCI to the ESP-Hosted byte pipe."
+url: "https://github.com/espressif/esp-hosted"
+
+dependencies:
+  idf: ">=5.0"
+  # NimBLE host stack is provided by IDF's `bt` component — pulled
+  # in via CMakeLists REQUIRES; no managed-component entry needed.

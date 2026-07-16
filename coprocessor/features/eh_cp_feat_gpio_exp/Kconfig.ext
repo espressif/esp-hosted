@@ -1,0 +1,23 @@
+menuconfig ESP_HOSTED_CP_FEAT_GPIO_EXP
+	bool "GPIO Expander"
+	depends on ESP_HOSTED_CP
+	default n
+	help
+		Enables remote GPIO control from the host via RPC.
+
+if ESP_HOSTED_CP_FEAT_GPIO_EXP
+
+	config ESP_HOSTED_CP_FEAT_GPIO_EXP_READY
+		bool
+		default y
+
+	config ESP_HOSTED_CP_FEAT_GPIO_EXP_AUTO_INIT
+		bool "Auto-initialise GPIO Expander at boot"
+		default y if ESP_HOSTED_CP_FEAT_GPIO_EXP_READY && ESP_HOSTED_CP_AUTO_FEAT_INIT
+		default n
+		depends on ESP_HOSTED_CP_AUTO_FEAT_INIT
+		help
+			When enabled, GPIO Expander auto-initialises during
+			eh_cp_init().  Disable to manually call the init from app code.
+
+endif # ESP_HOSTED_CP_FEAT_GPIO_EXP

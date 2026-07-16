@@ -1,0 +1,10 @@
+menu "Bluetooth CP wifi_standard_hci_uart"
+
+config EXAMPLE_WIFI_STANDARD_HCI_UART_CP
+    bool "Enable Wi-Fi + BT(UART-H4) CP profile"
+    default y
+    help
+      This example enables Wi-Fi and Bluetooth controller-only mode on CP,
+      with BT HCI on direct UART H4 path.
+
+endmenu

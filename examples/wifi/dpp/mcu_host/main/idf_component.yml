@@ -1,0 +1,15 @@
+## SPDX-License-Identifier: Apache-2.0
+## In-tree override: pulls the umbrella esp_hosted component from this
+## repo's checkout (../../../../.. is the repo root from main/).
+dependencies:
+  espressif/esp_hosted:
+    version: "*"
+    override_path: "../../../../.."
+  qrcode: "^0.1.0"
+  espressif/esp_wifi_remote:
+    version: ">=1.3.1"
+    rules:
+      - if: "target in [esp32p4, esp32h2]"
+      - if: "idf_version <6.1"
+  idf:
+    version: ">=5.5"

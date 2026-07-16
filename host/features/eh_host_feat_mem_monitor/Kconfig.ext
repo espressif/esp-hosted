@@ -1,0 +1,33 @@
+menuconfig ESP_HOSTED_HOST_FEAT_MEM_MONITOR
+	bool "Memory Monitor"
+	default n
+	depends on ESP_HOSTED_HOST && ESP_HOSTED_HOST_FEAT_RPC
+	depends on ESP_HOSTED_HOST_FEAT_RPC_EXT_V2_READY
+	help
+	  Host-side mirror of coprocessor/features/eh_cp_feat_mem_monitor.
+	  Provides eh_host_set_mem_monitor() — the V1 typed wrapper that
+	  mirrors upstream esp_hosted_set_mem_monitor() verbatim: takes an
+	  esp_hosted_config_mem_monitor_t (config = enable / disable /
+	  no-change, report_always flag, and interval_sec) plus an out
+	  esp_hosted_curr_mem_info_t snapshot of the current heap
+	  watermarks (total / min free, internal + external cap classes).
+	  Drives the CP handler for RPC__REQ__MEM_MONITOR
+	  (eh_cp_feat_rpc_ext_v2_handler_req_mem_monitor.c) and
+	  subscribes to inbound Event_MemMonitor — dispatched onto
+	  ESP_HOSTED_EVENT (id = ESP_HOSTED_EVENT_MEM_MONITOR) with
+	  payload esp_hosted_event_mem_info_t.  Enabling this config
+	  plugs init/deinit into the auto-init walk and registers the
+	  event handlers.
+
+if ESP_HOSTED_HOST_FEAT_MEM_MONITOR
+
+	config ESP_HOSTED_HOST_FEAT_MEM_MONITOR_AUTO_INIT
+		bool "Auto-initialize mem-monitor feature at boot"
+		default y
+		depends on ESP_HOSTED_HOST_AUTO_FEAT_INIT
+
+endif # ESP_HOSTED_HOST_FEAT_MEM_MONITOR
+
+config ESP_HOSTED_HOST_FEAT_MEM_MONITOR_READY
+	bool
+	default y if ESP_HOSTED_HOST_FEAT_MEM_MONITOR && ESP_HOSTED_HOST_FEAT_RPC_READY && ESP_HOSTED_HOST_FEAT_RPC_EXT_V2_READY

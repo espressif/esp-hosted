@@ -1,0 +1,12 @@
+menu "Example Configuration"
+
+    config EH_USE_LEGACY_API
+        bool "Use legacy esp_hosted_* compat-surface main"
+        default n
+
+    config EXAMPLE_SCAN_LIST_SIZE
+        int "Max size of scan list"
+        range 0 20
+        default 10
+
+endmenu

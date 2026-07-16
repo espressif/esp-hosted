@@ -1,0 +1,175 @@
+# SPDX-License-Identifier: Apache-2.0
+# UART transport — port, pins, baud.
+#
+# Symbols consumed via host/include/eh_host_config.h as the EH_HOST_UART_*
+# redirector.  Defaults below target UART1 (UART0 is usually the console).
+
+if ESP_HOSTED_HOST_TRANSPORT_BUS_UART
+	menu "UART Configuration"
+
+	menu "GPIO Configuration"
+
+		# ── Reset GPIO ──────────────────────────────────────────────────
+
+		config ESP_HOSTED_HOST_RESET_GPIO
+			int "Slave reset GPIO (RST/EN line)"
+			default 54 if ESP_HOSTED_P4_C5_CORE_BOARD || ESP_HOSTED_P4_C6_CORE_BOARD || ESP_HOSTED_P4_C61_CORE_BOARD
+			default 9  if ESP32P4_EYE_C6_BOARD
+			default 54 if IDF_TARGET_ESP32P4
+			default 42 if IDF_TARGET_ESP32S3
+			default 5
+			range -1 100
+
+		choice ESP_HOSTED_UART_RESET_GPIO_CONFIG
+			prompt "Slave reset active level"
+			default ESP_HOSTED_UART_RESET_ACTIVE_HIGH
+			config ESP_HOSTED_UART_RESET_ACTIVE_HIGH
+				bool "Active high"
+			config ESP_HOSTED_UART_RESET_ACTIVE_LOW
+				bool "Active low"
+		endchoice
+
+		config ESP_HOSTED_HOST_RESET_ACTIVE_LOW
+			bool
+			default y if ESP_HOSTED_UART_RESET_ACTIVE_LOW
+			default n
+
+
+		config ESP_HOSTED_HOST_UART_PORT
+			int "UART port number"
+			default 1
+			range 0 2 if IDF_TARGET_ESP32
+			range 0 1 if IDF_TARGET_ESP32C2 || IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32C5 || IDF_TARGET_ESP32C6
+			range 0 2 if IDF_TARGET_ESP32C61
+			range 0 1 if IDF_TARGET_ESP32S2
+			range 0 2 if IDF_TARGET_ESP32S3
+			range 0 4 if IDF_TARGET_ESP32P4
+			range 0 4
+			help
+			  Which UART controller drives the host→CP link.  UART0 is
+			  typically the serial console on ESP targets; prefer UART1/2.
+
+		config ESP_HOSTED_UART_TX_RANGE_MIN
+			int
+			default 49 if ESP_HOSTED_P4_C5_CORE_BOARD
+			default 50 if ESP_HOSTED_P4_C6_CORE_BOARD || ESP_HOSTED_P4_C61_CORE_BOARD
+			default 31 if ESP32P4_EYE_C6_BOARD
+			default 14 if ESP_HOSTED_P4_DEV_BOARD_FUNC_BOARD && ESP_HOSTED_CP_TARGET_ESP32C6
+			default 0
+
+		config ESP_HOSTED_UART_TX_RANGE_MAX
+			int
+			default 49 if ESP_HOSTED_P4_C5_CORE_BOARD
+			default 50 if ESP_HOSTED_P4_C6_CORE_BOARD || ESP_HOSTED_P4_C61_CORE_BOARD
+			default 31 if ESP32P4_EYE_C6_BOARD
+			default 14 if ESP_HOSTED_P4_DEV_BOARD_FUNC_BOARD && ESP_HOSTED_CP_TARGET_ESP32C6
+			default 100
+
+		config ESP_HOSTED_HOST_UART_TX_GPIO
+			int "UART TX GPIO"
+			default 49 if ESP_HOSTED_P4_C5_CORE_BOARD
+			default 50 if ESP_HOSTED_P4_C6_CORE_BOARD || ESP_HOSTED_P4_C61_CORE_BOARD
+			default 31 if ESP32P4_EYE_C6_BOARD
+			default 14 if ESP_HOSTED_P4_DEV_BOARD_FUNC_BOARD && ESP_HOSTED_CP_TARGET_ESP32C6
+			default 14 if IDF_TARGET_ESP32P4
+			default 5  if IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32S3
+			default 21 if IDF_TARGET_ESP32C6
+			default 14 if IDF_TARGET_ESP32C5
+			default 5  if IDF_TARGET_ESP32C2 || IDF_TARGET_ESP32C3
+			default 12 if ESP_HOSTED_CP_TARGET_ESP32H2
+			default 13 if IDF_TARGET_ESP32
+			default 17
+			range ESP_HOSTED_UART_TX_RANGE_MIN ESP_HOSTED_UART_TX_RANGE_MAX
+
+		config ESP_HOSTED_UART_RX_RANGE_MIN
+			int
+			default 48 if ESP_HOSTED_P4_C5_CORE_BOARD
+			default 49 if ESP_HOSTED_P4_C6_CORE_BOARD || ESP_HOSTED_P4_C61_CORE_BOARD
+			default 32 if ESP32P4_EYE_C6_BOARD
+			default 15 if ESP_HOSTED_P4_DEV_BOARD_FUNC_BOARD && ESP_HOSTED_CP_TARGET_ESP32C6
+			default 0
+
+		config ESP_HOSTED_UART_RX_RANGE_MAX
+			int
+			default 48 if ESP_HOSTED_P4_C5_CORE_BOARD
+			default 49 if ESP_HOSTED_P4_C6_CORE_BOARD || ESP_HOSTED_P4_C61_CORE_BOARD
+			default 32 if ESP32P4_EYE_C6_BOARD
+			default 15 if ESP_HOSTED_P4_DEV_BOARD_FUNC_BOARD && ESP_HOSTED_CP_TARGET_ESP32C6
+			default 100
+
+		config ESP_HOSTED_HOST_UART_RX_GPIO
+			int "UART RX GPIO"
+			default 48 if ESP_HOSTED_P4_C5_CORE_BOARD
+			default 49 if ESP_HOSTED_P4_C6_CORE_BOARD || ESP_HOSTED_P4_C61_CORE_BOARD
+			default 32 if ESP32P4_EYE_C6_BOARD
+			default 15 if ESP_HOSTED_P4_DEV_BOARD_FUNC_BOARD && ESP_HOSTED_CP_TARGET_ESP32C6
+			default 15 if IDF_TARGET_ESP32P4
+			default 4  if IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32S3
+			default 20 if IDF_TARGET_ESP32C6
+			default 13 if IDF_TARGET_ESP32C5
+			default 4  if IDF_TARGET_ESP32C2 || IDF_TARGET_ESP32C3
+			default 22 if ESP_HOSTED_CP_TARGET_ESP32H2
+			default 12 if IDF_TARGET_ESP32
+			default 16
+			range ESP_HOSTED_UART_RX_RANGE_MIN ESP_HOSTED_UART_RX_RANGE_MAX
+
+	endmenu
+
+	config ESP_HOSTED_HOST_UART_BAUD
+		int "UART baud rate"
+		default 921600
+		range 9600 3500000
+		help
+		  Must match the CP-side CONFIG_ESP_HOSTED_BT_UART_BAUDRATE (or
+		  equivalent); mismatch will corrupt framing.
+
+	config ESP_HOSTED_HOST_UART_NUM_DATA_BITS
+		int "UART data bits"
+		default 8
+		range 5 8
+
+	choice ESP_HOSTED_HOST_UART_PARITY_MODE
+		bool "UART parity"
+		default ESP_HOSTED_HOST_UART_PARITY_NONE
+		config ESP_HOSTED_HOST_UART_PARITY_NONE
+			bool "None"
+		config ESP_HOSTED_HOST_UART_PARITY_EVEN
+			bool "Even"
+		config ESP_HOSTED_HOST_UART_PARITY_ODD
+			bool "Odd"
+	endchoice
+
+	config ESP_HOSTED_HOST_UART_PARITY
+		int
+		default 0 if ESP_HOSTED_HOST_UART_PARITY_NONE
+		default 1 if ESP_HOSTED_HOST_UART_PARITY_EVEN
+		default 2 if ESP_HOSTED_HOST_UART_PARITY_ODD
+
+	choice ESP_HOSTED_HOST_UART_STOP_BITS_MODE
+		bool "UART stop bits"
+		default ESP_HOSTED_HOST_UART_STOP_BITS_1
+		config ESP_HOSTED_HOST_UART_STOP_BITS_1
+			bool "1"
+		config ESP_HOSTED_HOST_UART_STOP_BITS_1_5
+			bool "1.5"
+		config ESP_HOSTED_HOST_UART_STOP_BITS_2
+			bool "2"
+	endchoice
+
+	config ESP_HOSTED_HOST_UART_STOP_BITS
+		int
+		default 0 if ESP_HOSTED_HOST_UART_STOP_BITS_1
+		default 1 if ESP_HOSTED_HOST_UART_STOP_BITS_1_5
+		default 2 if ESP_HOSTED_HOST_UART_STOP_BITS_2
+
+	config ESP_HOSTED_HOST_UART_TX_Q_SIZE
+		int "Host UART Tx queue size"
+		default 5
+
+	config ESP_HOSTED_HOST_UART_RX_Q_SIZE
+		int "Host UART Rx queue size"
+		default 5
+
+	endmenu
+
+endif # ESP_HOSTED_HOST_TRANSPORT_BUS_UART

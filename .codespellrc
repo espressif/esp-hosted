@@ -1,4 +1,0 @@
-[codespell]
-skip = build,*.drawio,*.svg,*.pdf
-ignore-words-list = DEACTIVE, sme
-write-changes = true

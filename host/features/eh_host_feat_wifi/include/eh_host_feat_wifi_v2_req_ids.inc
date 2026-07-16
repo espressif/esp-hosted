@@ -1,0 +1,54 @@
+#if EH_HOST_FEAT_WIFI_READY
+    case RPC_ID__Req_GetWifiMode:
+    case RPC_ID__Req_SetWifiMode:
+    case RPC_ID__Req_WifiSetPs:
+    case RPC_ID__Req_WifiGetPs:
+    case RPC_ID__Req_WifiSetMaxTxPower:
+    case RPC_ID__Req_WifiGetMaxTxPower:
+    case RPC_ID__Req_WifiInit:
+    case RPC_ID__Req_WifiDeinit:
+    case RPC_ID__Req_WifiStart:
+    case RPC_ID__Req_WifiStop:
+    case RPC_ID__Req_WifiConnect:
+    case RPC_ID__Req_WifiDisconnect:
+    case RPC_ID__Req_WifiSetConfig:
+    case RPC_ID__Req_WifiGetConfig:
+    case RPC_ID__Req_WifiScanStart:
+    case RPC_ID__Req_WifiScanStop:
+    case RPC_ID__Req_WifiScanGetApNum:
+    case RPC_ID__Req_WifiClearApList:
+    case RPC_ID__Req_WifiRestore:
+    case RPC_ID__Req_WifiStaGetApInfo:
+    case RPC_ID__Req_WifiSetCountryCode:
+    case RPC_ID__Req_WifiGetCountryCode:
+    case RPC_ID__Req_WifiSetCountry:
+    case RPC_ID__Req_WifiGetCountry:
+    case RPC_ID__Req_WifiApGetStaList:
+    case RPC_ID__Req_WifiScanGetApRecords:
+    case RPC_ID__Req_WifiSetProtocols:
+    case RPC_ID__Req_WifiGetProtocols:
+    case RPC_ID__Req_WifiSetBandwidths:
+    case RPC_ID__Req_WifiGetBandwidths:
+    case RPC_ID__Req_WifiStaTwtConfig:
+    case RPC_ID__Req_WifiScanParams:
+    /* Single-op upstream-parity additions (set/get protocol, bandwidth,
+     * channel, inactive_time, band, band_mode + deauth_sta, set_storage,
+     * scan_get_ap_record (singular), ap_get_sta_aid). */
+    case RPC_ID__Req_WifiSetProtocol:
+    case RPC_ID__Req_WifiGetProtocol:
+    case RPC_ID__Req_WifiSetBandwidth:
+    case RPC_ID__Req_WifiGetBandwidth:
+    case RPC_ID__Req_WifiSetChannel:
+    case RPC_ID__Req_WifiGetChannel:
+    case RPC_ID__Req_WifiDeauthSta:
+    case RPC_ID__Req_WifiSetStorage:
+    case RPC_ID__Req_WifiSetInactiveTime:
+    case RPC_ID__Req_WifiGetInactiveTime:
+    case RPC_ID__Req_WifiSetBand:
+    case RPC_ID__Req_WifiGetBand:
+    case RPC_ID__Req_WifiSetBandMode:
+    case RPC_ID__Req_WifiGetBandMode:
+    case RPC_ID__Req_WifiScanGetApRecord:
+    case RPC_ID__Req_WifiApGetStaAid:
+        return rpc_ext_v2_pick_req_wifi(msg_id);
+#endif

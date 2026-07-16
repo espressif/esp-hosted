@@ -1,0 +1,26 @@
+config ESP_HOSTED_CP_FEAT_SYSTEM
+	bool
+	depends on ESP_HOSTED_CP
+	default y
+	help
+	  System (OTA, heartbeat, FW version) on the co-processor. The host
+	  relies on this surface (e.g. OTA-to-CP), so it is always enabled and
+	  intentionally not shown as an editable option in menuconfig.
+
+if ESP_HOSTED_CP_FEAT_SYSTEM
+
+	config ESP_HOSTED_CP_FEAT_SYSTEM_READY
+		bool
+		default y
+
+	config ESP_HOSTED_CP_FEAT_SYSTEM_AUTO_INIT
+		bool "Auto-initialise System at boot"
+		default y if ESP_HOSTED_CP_FEAT_SYSTEM_READY && ESP_HOSTED_CP_AUTO_FEAT_INIT
+		default n
+		depends on ESP_HOSTED_CP_AUTO_FEAT_INIT
+		help
+			When enabled, System (OTA / heartbeat / FW version)
+			auto-initialises during eh_cp_init().  Disable to manually
+			call the init from app code.
+
+endif # ESP_HOSTED_CP_FEAT_SYSTEM

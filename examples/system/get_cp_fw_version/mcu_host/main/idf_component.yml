@@ -1,0 +1,27 @@
+## SPDX-License-Identifier: Apache-2.0
+## In-tree override: pulls the umbrella esp_hosted component from this
+## repo's checkout (../../../../.. is the repo root from main/).
+##
+## On host-on-MCU targets (esp32p4 — Wi-Fi runs on the CP, not on the
+## host MCU), pull `espressif/esp_wifi_remote` so IDF's esp_wifi
+## component takes the `CONFIG_ESP_HOST_WIFI_ENABLED` path: builds the
+## full netif/event glue (defines `WIFI_EVENT`, exposes
+## `ESP_NETIF_INHERENT_DEFAULT_WIFI_*` macros) and routes its
+## `esp_wifi_*` API into the `esp_wifi_remote_*` hooks that
+## esp_hosted (us) implements (see `host/compat/eh_host_extra/
+## esp_wifi_remote_hooks/`).
+##
+## On native-Wi-Fi MCU targets (esp32s3, esp32c5, esp32c6, …) the
+## host MCU itself runs Wi-Fi, so esp_wifi_remote is not pulled —
+## IDF's esp_wifi takes the native path.
+dependencies:
+  espressif/esp_hosted:
+    version: "*"
+    override_path: "../../../../.."
+  espressif/esp_wifi_remote:
+    version: ">=1.3.1"
+    rules:
+      - if: "target in [esp32p4, esp32h2]"
+      - if: "idf_version <6.1"
+  idf:
+    version: ">=5.5"

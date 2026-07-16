@@ -1,0 +1,36 @@
+menuconfig ESP_HOSTED_HOST_FEAT_WIFI_EXT_DPP
+	bool "WiFi DPP"
+	default n
+	depends on ESP_HOSTED_HOST_FEAT_WIFI
+	depends on ESP_HOSTED_HOST_FEAT_RPC_EXT_V2_READY
+	help
+	  Host-side mirror of coprocessor/features/eh_cp_feat_wifi_ext_dpp.
+	  Provides typed C wrappers for the 5 DPP RPCs (Init, Deinit,
+	  BootstrapGen for QR-code bootstrap, StartListen, StopListen);
+	  request entry points live in eh_host_wifi_dpp.h with
+	  upstream-aligned signatures (esp_supp_dpp_event_cb_t,
+	  esp_supp_dpp_bootstrap_t).  Subscribes to the 3 DPP events
+	  (SuppDppUriReady, SuppDppCfgRecvd, SuppDppFail; IDs 782-784) and
+	  fans them out via per-event callback slots:
+	  eh_host_wifi_dpp_on_uri_ready / _on_cfg_recvd / _on_fail
+	  (eh_host_feat_wifi_ext_dpp.h).  Cap-bit + Kconfig wire the
+	  feature into the auto-init walk; init() pre-registers internal
+	  RX handlers so events drain even before user callbacks are
+	  installed.
+
+## Lifecycle is owned by the parent Wi-Fi feature
+## (eh_host_feat_wifi_init/deinit drives this ext's init/deinit).
+## No standalone auto-init knob — the parent's auto-init covers it.
+
+if ESP_HOSTED_HOST_FEAT_WIFI_EXT_DPP
+	config ESP_HOSTED_HOST_FEAT_WIFI_EXT_DPP_URI_LEN_MAX
+		int "Max DPP URI length"
+		default 255
+		range 32 2048
+		help
+		  Maximum URI length accepted for DPP bootstrap QR payloads.
+endif
+
+config ESP_HOSTED_HOST_FEAT_WIFI_EXT_DPP_READY
+	bool
+	default y if ESP_HOSTED_HOST_FEAT_WIFI_EXT_DPP && ESP_HOSTED_HOST_FEAT_WIFI_READY

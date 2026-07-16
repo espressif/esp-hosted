@@ -1,0 +1,14 @@
+# Mirrors $IDF_PATH/tools/requirements/requirements.core.txt subset
+# that drives kconfgen + menuconfig.
+#
+# Install (from repo root):
+#     pip install -r tools/requirements.txt
+# Or:
+#     pip install --user --break-system-packages -r tools/requirements.txt
+#
+# The esp-idf-kconfig package itself is vendored as a git submodule at
+# tools/vendor/esp-idf-kconfig/ and reached via PYTHONPATH, not pip —
+# these are only its runtime dependencies.
+rich
+pyparsing
+textual>=1.0.0

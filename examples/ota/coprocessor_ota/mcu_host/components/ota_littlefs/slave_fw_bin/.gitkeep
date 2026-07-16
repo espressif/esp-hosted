@@ -1,0 +1,3 @@
+# This directory should contain .bin firmware files for LittleFS OTA
+# Place your slave firmware binaries here before building
+# Git tracks this file to ensure the directory exists in the repository

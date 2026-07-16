@@ -1,0 +1,17 @@
+config ESP_HOSTED_HOST_FEAT_RPC
+	bool
+	default y
+	depends on ESP_HOSTED_HOST
+
+config ESP_HOSTED_HOST_FEAT_RPC_READY
+	bool
+	default y if ESP_HOSTED_HOST_FEAT_RPC
+
+config ESP_HOSTED_HOST_RPC_READY_WAIT_MS
+	int "RPC ready wait timeout (ms)"
+	default 5000
+	range 0 60000
+	help
+	  When an RPC API is called before RPC LL reaches READY, the LL
+	  waits up to this timeout for readiness instead of failing
+	  immediately. 0 disables waiting and preserves fail-fast behavior.

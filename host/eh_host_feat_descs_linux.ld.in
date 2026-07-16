@@ -1,0 +1,13 @@
+/* Linux/POSIX linker fragment for EH_HOST_FEAT_REGISTER descriptors.
+ * Defines start/stop symbols expected by eh_host_autoinit.
+ * No fixed MEMORY region is used on host builds. */
+SECTIONS
+{
+    .eh_host_feat_descs : ALIGN(8)
+    {
+        PROVIDE(__start_eh_host_feat_descs = .);
+        KEEP(*(eh_host_feat_descs))
+        PROVIDE(__stop_eh_host_feat_descs = .);
+    }
+}
+INSERT AFTER .data;

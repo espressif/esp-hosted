@@ -1,0 +1,3 @@
+# Component Kconfig is intentionally kept empty.
+# Options are sourced from:
+# components/coprocessor/eh_cp_core/Kconfig

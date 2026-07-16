@@ -1,0 +1,31 @@
+menu "Example Connection Configuration"
+
+    config EH_EXAMPLE_WIFI_SSID
+        string "WiFi SSID"
+        default "myssid"
+
+    config EH_EXAMPLE_WIFI_PASSWORD
+        string "WiFi Password"
+        default "mypassword"
+
+    config EH_EXAMPLE_WIFI_MAXIMUM_RETRY
+        int "Maximum retry"
+        default 6
+
+    choice EH_EXAMPLE_WIFI_BAND
+        prompt "WiFi band (dual-band CP, e.g. ESP32-C5)"
+        default EH_EXAMPLE_WIFI_BAND_2G
+        help
+            Only applies to a dual-band CP (SLAVE_SOC_WIFI_SUPPORT_5G). 2G is the
+            most reliable for a 2.4 GHz AP; AUTO scans both bands but is slow and
+            can stall on the C5; 5G for a 5 GHz AP. A single-band CP (e.g. C6)
+            ignores this.
+        config EH_EXAMPLE_WIFI_BAND_2G
+            bool "2.4 GHz only"
+        config EH_EXAMPLE_WIFI_BAND_5G
+            bool "5 GHz only"
+        config EH_EXAMPLE_WIFI_BAND_AUTO
+            bool "Auto (2.4 + 5 GHz)"
+    endchoice
+
+endmenu

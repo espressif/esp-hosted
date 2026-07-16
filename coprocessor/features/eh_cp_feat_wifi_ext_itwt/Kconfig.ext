@@ -1,0 +1,13 @@
+config ESP_HOSTED_CP_FEAT_WIFI_EXT_ITWT
+    bool "WiFi iTWT (individual Target Wake Time) feature extension"
+    depends on ESP_HOSTED_CP_FEAT_WIFI
+    default n
+    help
+        Enables iTWT (802.11ax Target Wake Time) support.
+
+comment "⚠️  Requires SOC with WiFi HE support (CONFIG_SOC_WIFI_HE_SUPPORT)"
+    depends on ESP_HOSTED_CP_FEAT_WIFI_EXT_ITWT && !SOC_WIFI_HE_SUPPORT
+
+config ESP_HOSTED_CP_FEAT_WIFI_EXT_ITWT_READY
+    bool
+    default y if ESP_HOSTED_CP_FEAT_WIFI_EXT_ITWT && SOC_WIFI_HE_SUPPORT

@@ -1,0 +1,21 @@
+menuconfig ESP_HOSTED_CP_FEAT_PEER_DATA
+	bool "Peer Data Transfer"
+	depends on ESP_HOSTED_CP
+	default n
+
+if ESP_HOSTED_CP_FEAT_PEER_DATA
+
+	config ESP_HOSTED_CP_FEAT_PEER_DATA_READY
+		bool
+		default y if ESP_HOSTED_CP
+
+	config ESP_HOSTED_CP_FEAT_PEER_DATA_AUTO_INIT
+		bool "Auto-initialise Peer Data Transfer at boot"
+		default y if ESP_HOSTED_CP_FEAT_PEER_DATA_READY && ESP_HOSTED_CP_AUTO_FEAT_INIT
+		default n
+		depends on ESP_HOSTED_CP_AUTO_FEAT_INIT
+		help
+			When enabled, Peer Data Transfer auto-initialises during
+			eh_cp_init().  Disable to manually call the init from app code.
+
+endif # ESP_HOSTED_CP_FEAT_PEER_DATA

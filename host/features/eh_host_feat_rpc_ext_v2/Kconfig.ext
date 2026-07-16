@@ -1,0 +1,5 @@
+# Ext selection lives in host/Kconfig.ext (ESP_HOSTED_HOST_FEAT_RPC_EXT).
+# This file only declares the _READY alias.
+config ESP_HOSTED_HOST_FEAT_RPC_EXT_V2_READY
+	bool
+	default y if ESP_HOSTED_HOST_FEAT_RPC_EXT_V2 && ESP_HOSTED_HOST_FEAT_RPC_READY

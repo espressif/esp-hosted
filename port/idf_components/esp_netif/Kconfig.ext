@@ -1,0 +1,96 @@
+menu "ESP NETIF Adapter"
+
+    config ESP_NETIF_IP_LOST_TIMER_INTERVAL
+        int "IP Address lost timer interval (seconds)"
+        range 0 65535
+        default 120
+        help
+            0 disables. Otherwise: starts on IP loss; fires
+            SYSTEM_EVENT_STA_LOST_IP on expiry; cancelled if IP returns first.
+
+    comment "TCP/IP stack: Linux kernel (BSD sockets) — fixed on this host"
+
+    config ESP_NETIF_USES_TCPIP_WITH_BSD_API
+        bool
+        default y
+
+    # esp_netif_defaults.h gates the netif DHCP_CLIENT/DHCP_SERVER flags behind
+    # CONFIG_LWIP_IPV4 (ESP_NETIF_IPV4_ONLY_FLAGS). The Linux observer has no
+    # lwIP, but the kernel stack is always IPv4 — keep the flag, else
+    # esp_netif_action_connected() never starts the DHCP client. Mirrors IDF
+    # (LWIP_IPV4 defaults y).
+    config LWIP_IPV4
+        bool
+        default y
+
+    config ESP_NETIF_RECEIVE_REPORT_ERRORS
+        bool "Use esp_err_t to report errors from esp_netif_receive"
+        default n
+        help
+            Enable if esp_netif_receive() should return error code. This is useful to inform upper layers
+            that packet input to TCP/IP stack failed, so the upper layers could implement flow control.
+
+    menu "Linux host DHCP client backend (STA)"
+        choice ESP_NETIF_LINUX_DHCP_CLIENT_BACKEND
+            prompt "DHCP client backend"
+            default ESP_NETIF_LINUX_DHCP_CLIENT_BACKEND_AUTO
+            help
+                Picks which system DHCP client esp_netif_dhcpc_start spawns.
+
+            config ESP_NETIF_LINUX_DHCP_CLIENT_BACKEND_AUTO
+                bool "auto (probe dhcpcd, dhclient, udhcpc in that order)"
+            config ESP_NETIF_LINUX_DHCP_CLIENT_BACKEND_DHCPCD
+                bool "dhcpcd (modern default; recommended)"
+            config ESP_NETIF_LINUX_DHCP_CLIENT_BACKEND_DHCLIENT
+                bool "isc-dhclient (legacy)"
+            config ESP_NETIF_LINUX_DHCP_CLIENT_BACKEND_UDHCPC
+                bool "udhcpc (busybox)"
+            config ESP_NETIF_LINUX_DHCP_CLIENT_BACKEND_NONE
+                bool "none (esp_netif_dhcpc_start returns ESP_ERR_NOT_SUPPORTED)"
+            config ESP_NETIF_LINUX_DHCP_CLIENT_BACKEND_EXTERNAL
+                bool "external (app/system manages DHCP client independently)"
+        endchoice
+    endmenu
+
+    menu "Linux host DHCP server backend (soft-AP)"
+        choice ESP_NETIF_LINUX_DHCP_SERVER_BACKEND
+            prompt "DHCP server backend"
+            default ESP_NETIF_LINUX_DHCP_SERVER_BACKEND_AUTO
+            help
+                Picks which system DHCP server esp_netif_dhcps_start spawns.
+
+            config ESP_NETIF_LINUX_DHCP_SERVER_BACKEND_AUTO
+                bool "auto (probe dnsmasq, udhcpd, isc-dhcpd in that order)"
+            config ESP_NETIF_LINUX_DHCP_SERVER_BACKEND_DNSMASQ
+                bool "dnsmasq (pure CLI; recommended)"
+            config ESP_NETIF_LINUX_DHCP_SERVER_BACKEND_UDHCPD
+                bool "udhcpd (busybox; generates /run/eh_host_dhcps_<if>.conf)"
+            config ESP_NETIF_LINUX_DHCP_SERVER_BACKEND_ISC_DHCPD
+                bool "isc-dhcpd (legacy; heavier)"
+            config ESP_NETIF_LINUX_DHCP_SERVER_BACKEND_NONE
+                bool "none (esp_netif_dhcps_start returns ESP_ERR_NOT_SUPPORTED)"
+            config ESP_NETIF_LINUX_DHCP_SERVER_BACKEND_EXTERNAL
+                bool "external (app/system manages DHCP server independently)"
+        endchoice
+
+        config ESP_NETIF_LINUX_DHCP_SERVER_DNS
+            bool "Enable DNS forwarder in dnsmasq"
+            depends on ESP_NETIF_LINUX_DHCP_SERVER_BACKEND_DNSMASQ \
+                    || ESP_NETIF_LINUX_DHCP_SERVER_BACKEND_AUTO
+            default n
+            help
+                When y, dnsmasq forwards via host /etc/resolv.conf.
+                Off (--port=0) by default — DHCP-only. No effect on udhcpd/isc-dhcpd.
+
+        config ESP_NETIF_LINUX_DHCP_SERVER_LEASEFILE
+            string "DHCP server lease file path"
+            default "/run/eh_host_dhcps.leases"
+
+        config ESP_NETIF_LINUX_DHCP_PIDFILE_DIR
+            string "Directory for DHCP server pidfiles"
+            default "/run"
+            help
+                Per-interface pidfile: <dir>/eh_host_dhcps_<ifname>.pid.
+                udhcpd / isc-dhcpd also drop eh_host_dhcps_<ifname>.conf here.
+    endmenu
+endmenu

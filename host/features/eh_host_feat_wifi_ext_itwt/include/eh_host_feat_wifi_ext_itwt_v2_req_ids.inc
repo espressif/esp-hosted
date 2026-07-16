@@ -1,0 +1,9 @@
+#if EH_HOST_FEAT_WIFI_EXT_ITWT_READY
+case RPC_ID__Req_WifiStaItwtSetup:
+case RPC_ID__Req_WifiStaItwtTeardown:
+case RPC_ID__Req_WifiStaItwtSuspend:
+case RPC_ID__Req_WifiStaItwtGetFlowIdStatus:
+case RPC_ID__Req_WifiStaItwtSendProbeReq:
+case RPC_ID__Req_WifiStaItwtSetTargetWakeTimeOffset:
+    return rpc_ext_v2_pick_req_wifi_ext_itwt(msg_id);
+#endif

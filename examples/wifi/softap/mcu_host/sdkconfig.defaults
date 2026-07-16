@@ -1,0 +1,14 @@
+# SPDX-License-Identifier: Apache-2.0
+
+# Role: HOST (MCU / ESP-IDF). On esp32p4 Wi-Fi runs on the CP, so the host
+# needs the esp_hosted Wi-Fi feature to route esp_wifi_* into the
+# esp_wifi_remote hooks — without FEAT_WIFI the weak stub wins and
+# esp_wifi_init() returns ESP_ERR_NOT_SUPPORTED.
+CONFIG_ESP_HOSTED=y
+
+CONFIG_ESP_HOSTED_HOST_FEAT_RPC=y
+CONFIG_ESP_HOSTED_HOST_FEAT_RPC_EXT_V2=y
+CONFIG_ESP_HOSTED_HOST_FEAT_SYSTEM=y
+CONFIG_ESP_HOSTED_HOST_FEAT_WIFI=y
+
+CONFIG_FREERTOS_HZ=1000

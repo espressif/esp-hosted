@@ -1,0 +1,114 @@
+menu "Configure coprocessor"
+	depends on ESP_HOSTED_CP
+
+	# CP: Host type selection for coprocessor configuration
+	choice ESP_HOSTED_CP_TYPE
+		prompt "Which host this coprocessor connects to?"
+		default ESP_HOSTED_CP_FOR_MCU
+		help
+			Select the type of host that will communicate with this coprocessor.
+			This affects GPIO pin assignments, queue sizes, default RPC mode,
+			and other configuration defaults.
+
+			Default is MCU so a fresh checkout's CP pairs with the
+			in-tree host (V2 wire) out of the box.  All in-tree hosts
+			(MCU and Linux) are V2; the RPC mode auto-defaults to V2.
+
+			LINUX_802_3   — Linux userspace host with RPC over /dev/esps0
+			                 (byte-stream wire — Ethernet-style framing).
+			                 To pair with a pre-3.0 upstream Linux host,
+			                 also switch RPC mode to V1.  (was "FG")
+			LINUX_802_11  — Linux kernel host with cfg80211 / netdev /
+			                 HCI driver-style integration.  (was "NG")
+			MCU            — ESP-IDF / FreeRTOS host on an ESP target,
+			                 communicating over SPI / SDIO / SPI-HD / UART.
+
+		config ESP_HOSTED_CP_FOR_LINUX_802_3
+			bool "Linux userspace host (802.3 — RPC over /dev/esps0)"
+
+		config ESP_HOSTED_CP_FOR_LINUX_802_11
+			bool "Linux kernel host (802.11 — cfg80211 / netdev)"
+
+		config ESP_HOSTED_CP_FOR_MCU
+			bool "MCU host (ESP-IDF / FreeRTOS)"
+	endchoice
+
+	config ESP_HOSTED_CP_FOR_LINUX
+		bool
+		default y if ESP_HOSTED_CP_FOR_LINUX_802_3 || ESP_HOSTED_CP_FOR_LINUX_802_11
+
+	# Which Linux host generation this CP build serves. Drives RPC mode,
+	# SDIO datapath, TLV scheme, and fw-version advertisement defaults —
+	# never hand-pick those per-symbol for a Linux target.
+	choice ESP_HOSTED_CP_LINUX_PEER_GEN
+		prompt "Linux host generation"
+		depends on ESP_HOSTED_CP_FOR_LINUX_802_3
+		default ESP_HOSTED_CP_LINUX_PEER_OURS_V3
+		help
+			OURS_V3 — this repo's Linux host (kmod + c_app): RPC V2,
+			          MCU-style TLVs. The default.
+			FG_V1   — stock upstream esp-hosted-fg 1.x host: RPC V1,
+			          legacy TLVs, packet-mode SDIO.
+			FG_V2   — stock upstream esp-hosted-fg 2.x host: RPC V1,
+			          legacy TLVs (+rx-buf-config). Full wire support
+			          (SDIO software aggregation) arrives with the
+			          SW_AGGR datapath.
+
+		config ESP_HOSTED_CP_LINUX_PEER_OURS_V3
+			bool "This repo's Linux host (RPC V2) — default"
+
+		config ESP_HOSTED_CP_LINUX_PEER_FG_V1
+			bool "Upstream fg 1.x host (legacy, RPC V1)"
+
+		config ESP_HOSTED_CP_LINUX_PEER_FG_V2
+			bool "Upstream fg 2.x host (RPC V1)"
+	endchoice
+
+	choice ESP_HOST_DEV_BOARD
+		prompt "Select PCB Board (Optional)"
+		default ESP_HOSTED_P4_DEV_BOARD_NONE
+
+		config ESP_ESP32C5_SPI_RASPI_MATING_BOARD
+			bool "ESP32-C5 RaspPi Mating Board (SPI)"
+			depends on ESP_HOSTED_CP_FOR_LINUX && IDF_TARGET_ESP32C5
+
+		config ESP_HOSTED_P4_DEV_BOARD_NONE
+			bool "No specific PCB board"
+
+		config ESP_HOSTED_P4_DEV_BOARD_FUNC_BOARD
+			bool "ESP32-P4-Function-EV-Board"
+			depends on ESP_HOSTED_CP_FOR_MCU && IDF_TARGET_ESP32C6
+
+		config ESP_HOSTED_C2_C5_MODULE_SUB_BOARD
+			bool "ESP32-P4 EV Sub-Board for C2 & C5"
+			depends on ESP_HOSTED_CP_FOR_MCU && (IDF_TARGET_ESP32C2 || IDF_TARGET_ESP32C5)
+	endchoice
+
+	orsource "eh_cp_core/Kconfig.ext"
+	orsource "eh_cp_transport/Kconfig.ext"
+
+	# RPC support is its own top-level entry under coprocessor configuration.
+	orsource "features/eh_cp_feat_rpc/Kconfig.ext"
+
+	# TLV group selection (hidden, auto from RPC version)
+	orsource "../common/eh_tlv/Kconfig.ext"
+
+	menu "Features"
+		orsource "features/eh_cp_feat_rpc_ext_v1/Kconfig.ext"
+		orsource "features/eh_cp_feat_rpc_ext_v2/Kconfig.ext"
+
+		orsource "features/eh_cp_feat_wifi/Kconfig.ext"
+
+		orsource "features/eh_cp_feat_bt/Kconfig.ext"
+		orsource "features/eh_cp_feat_host_ps/Kconfig.ext"
+		orsource "features/eh_cp_feat_system/Kconfig.ext"
+		orsource "features/eh_cp_feat_nw_split/Kconfig.ext"
+		orsource "features/eh_cp_feat_peer_data/Kconfig.ext"
+		orsource "features/eh_cp_feat_gpio_exp/Kconfig.ext"
+		orsource "features/eh_cp_feat_debug/Kconfig.ext"
+		orsource "features/eh_cp_feat_cp_ext_coex/Kconfig.ext"
+		orsource "features/eh_cp_feat_cli/Kconfig.ext"
+		orsource "features/eh_cp_feat_openthread/Kconfig.ext"
+	endmenu
+
+endmenu

@@ -1,0 +1,85 @@
+/*
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Native eh_host_* API; legacy compat under main/legacy/main.c. */
+
+#include <stdio.h>
+#include <string.h>
+#include "esp_log.h"
+#include "nvs_flash.h"
+#include "eh_host.h"
+#include "eh_host_core.h"
+#include "esp_check.h"
+
+static const char *TAG = "ehcp_coex_example";
+
+void app_main(void)
+{
+    esp_err_t ret = nvs_flash_init();
+    if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
+        ESP_ERROR_CHECK(nvs_flash_erase());
+        ret = nvs_flash_init();
+    }
+    ESP_ERROR_CHECK(ret);
+
+    eh_host_init(NULL);
+    eh_host_connect_to_slave();
+
+    ESP_LOGI(TAG, "Configuring External Coexistence on Co-processor...");
+
+#if CONFIG_ESP_HOSTED_HOST_FEAT_CP_EXT_COEX
+
+    ESP_LOGI(TAG, "==> CP EXT_COEX: setting work mode to Leader Role");
+    esp_err_t err = eh_host_cp_ext_coex_set_work_mode(EH_HOST_CP_EXT_COEX_LEADER_ROLE);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "EXT_COEX: work mode to Leader Role failed: %s", esp_err_to_name(err));
+    } else {
+        ESP_LOGI(TAG, "CP EXT_COEX: work mode to Leader Role successful");
+    }
+
+    /* Replace these example GPIOs with actual pins on your co-processor. */
+    eh_host_cp_ext_coex_gpio_set_t gpio_pins_config = {
+        .request  = 11, // GPIO for Request
+        .priority = 4,  // GPIO for Priority
+        .grant    = 16, // GPIO for Grant
+        .tx_line  = 17  // GPIO for Tx Line
+    };
+
+    ESP_LOGI(TAG, "==> CP EXT_COEX: Co-processor GPIO pins: request: %" PRId32 ", priority: %" PRId32 ", grant: %" PRId32 ", tx_line: %" PRId32 "",
+        gpio_pins_config.request, gpio_pins_config.priority, gpio_pins_config.grant, gpio_pins_config.tx_line);
+
+    err = eh_host_cp_ext_coex_set_gpio_pin(EH_HOST_CP_EXT_COEX_WIRE_3, &gpio_pins_config);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "EXT_COEX: GPIO pins setting failed: %s", esp_err_to_name(err));
+    } else {
+        ESP_LOGI(TAG, "CP EXT_COEX: GPIO pins setting successful");
+    }
+
+
+#if CONFIG_ESP_HOSTED_HOST_FEAT_CP_EXT_COEX_ADVANCE
+    ESP_LOGI(TAG, "==> CP EXT_COEX: Advanced: setting grant delay to 10 ms");
+    err = eh_host_cp_ext_coex_set_grant_delay(10);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "EXT_COEX: grant delay setting failed: %s", esp_err_to_name(err));
+    } else {
+        ESP_LOGI(TAG, "CP EXT_COEX: grant delay setting successful");
+    }
+
+    ESP_LOGI(TAG, "==> CP EXT_COEX: Advanced: setting validate high to true");
+    err = eh_host_cp_ext_coex_set_validate_high(true);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "EXT_COEX: validate high setting failed: %s", esp_err_to_name(err));
+    } else {
+        ESP_LOGI(TAG, "CP EXT_COEX: validate high setting successful");
+    }
+#endif
+
+#else
+    ESP_LOGW(TAG, "CONFIG_ESP_HOSTED_HOST_FEAT_CP_EXT_COEX is not enabled.");
+#endif
+
+    ESP_LOGI(TAG, "Co-processor External Coexistence configuration completed.");
+}

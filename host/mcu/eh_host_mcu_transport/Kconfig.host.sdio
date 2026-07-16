@@ -1,0 +1,408 @@
+# SPDX-License-Identifier: Apache-2.0
+# SDIO transport — slot, clock, GPIO pins.
+
+if ESP_HOSTED_HOST_TRANSPORT_BUS_SDIO
+	menu "SDIO Configuration"
+
+	# ── Slot selection ──────────────────────────────────────────────────
+
+	choice ESP_HOSTED_SDIO_SLOT_CHOICE
+		prompt "SDIO slot"
+		default ESP_HOSTED_SDIO_SLOT_1
+		config ESP_HOSTED_SDIO_SLOT_0
+			bool "Slot 0 (IOMUX-fixed pins)"
+		config ESP_HOSTED_SDIO_SLOT_1
+			bool "Slot 1 (configurable pins)"
+	endchoice
+
+	config ESP_HOSTED_HOST_SDIO_SLOT
+		int
+		default 0 if ESP_HOSTED_SDIO_SLOT_0
+		default 1
+
+	# ── LDO power control (P4 only) ─────────────────────────────────────
+
+	config ESP_HOSTED_SD_PWR_CTRL_LDO_INTERNAL_IO
+		bool "Use internal LDO for SDIO power control"
+		depends on SOC_SDMMC_IO_POWER_EXTERNAL
+		default n
+		help
+		  Enable to use the ESP32-P4 internal LDO to power the SDIO
+		  interface.  Requires SOC_SDMMC_IO_POWER_EXTERNAL support.
+
+	config ESP_HOSTED_SD_PWR_CTRL_LDO_IO_ID
+		int "LDO IO channel ID"
+		depends on SOC_SDMMC_IO_POWER_EXTERNAL && ESP_HOSTED_SD_PWR_CTRL_LDO_INTERNAL_IO
+		default 4
+		range 1 5
+
+	# ── SDIO clock ──────────────────────────────────────────────────────
+
+	config ESP_HOSTED_HOST_SDIO_CLK_KHZ
+		int "SDIO clock (kHz)"
+		default 40000
+		range 400 40000 if IDF_TARGET_ESP32
+		range 400 50000
+		help
+		  Initial SDIO bus clock after negotiation.  Raise toward
+		  40–50 MHz for higher throughput once signal integrity is
+		  confirmed.
+
+	choice ESP_HOSTED_HOST_SDIO_BUS_WIDTH_CHOICE
+		prompt "SDIO bus width"
+		default ESP_HOSTED_HOST_SDIO_BUS_WIDTH_4
+		help
+		  Number of SDIO data lines wired to the slave.  Match your
+		  PCB layout — 4 lines (D0..D3) gives 4× throughput at the
+		  same clock; 1 line (D0 only) is the upstream-MCU minimum.
+
+		config ESP_HOSTED_HOST_SDIO_BUS_WIDTH_1
+			bool "1-bit"
+		config ESP_HOSTED_HOST_SDIO_BUS_WIDTH_4
+			bool "4-bit"
+	endchoice
+
+	config ESP_HOSTED_HOST_SDIO_BUS_WIDTH
+		int
+		default 1 if ESP_HOSTED_HOST_SDIO_BUS_WIDTH_1
+		default 4 if ESP_HOSTED_HOST_SDIO_BUS_WIDTH_4
+
+	# ── Per-board GPIO range locks ──────────────────────────────────────
+
+	config ESP_HOSTED_SDIO_CMD_GPIO_RANGE_MIN
+		int
+		default 51 if ESP_HOSTED_P4_C5_CORE_BOARD
+		default 52 if ESP_HOSTED_P4_C6_CORE_BOARD || ESP_HOSTED_P4_C61_CORE_BOARD
+		default 27 if ESP32P4_EYE_C6_BOARD
+		default 19 if ESP_HOSTED_P4_DEV_BOARD_FUNC_BOARD && ESP_HOSTED_CP_TARGET_ESP32C6
+		default 4  if ESP_HOSTED_P4_DEV_BOARD_FUNC_BOARD && ESP_HOSTED_CP_TARGET_ESP32C5
+		default 15 if IDF_TARGET_ESP32
+		default 0
+
+	config ESP_HOSTED_SDIO_CMD_GPIO_RANGE_MAX
+		int
+		default 51 if ESP_HOSTED_P4_C5_CORE_BOARD
+		default 52 if ESP_HOSTED_P4_C6_CORE_BOARD || ESP_HOSTED_P4_C61_CORE_BOARD
+		default 27 if ESP32P4_EYE_C6_BOARD
+		default 19 if ESP_HOSTED_P4_DEV_BOARD_FUNC_BOARD && ESP_HOSTED_CP_TARGET_ESP32C6
+		default 4  if ESP_HOSTED_P4_DEV_BOARD_FUNC_BOARD && ESP_HOSTED_CP_TARGET_ESP32C5
+		default 15 if IDF_TARGET_ESP32
+		default 100
+
+	config ESP_HOSTED_SDIO_CLK_GPIO_RANGE_MIN
+		int
+		default 50 if ESP_HOSTED_P4_C5_CORE_BOARD
+		default 51 if ESP_HOSTED_P4_C6_CORE_BOARD || ESP_HOSTED_P4_C61_CORE_BOARD
+		default 28 if ESP32P4_EYE_C6_BOARD
+		default 18 if ESP_HOSTED_P4_DEV_BOARD_FUNC_BOARD && ESP_HOSTED_CP_TARGET_ESP32C6
+		default 33 if ESP_HOSTED_P4_DEV_BOARD_FUNC_BOARD && ESP_HOSTED_CP_TARGET_ESP32C5
+		default 14 if IDF_TARGET_ESP32
+		default 0
+
+	config ESP_HOSTED_SDIO_CLK_GPIO_RANGE_MAX
+		int
+		default 50 if ESP_HOSTED_P4_C5_CORE_BOARD
+		default 51 if ESP_HOSTED_P4_C6_CORE_BOARD || ESP_HOSTED_P4_C61_CORE_BOARD
+		default 28 if ESP32P4_EYE_C6_BOARD
+		default 18 if ESP_HOSTED_P4_DEV_BOARD_FUNC_BOARD && ESP_HOSTED_CP_TARGET_ESP32C6
+		default 33 if ESP_HOSTED_P4_DEV_BOARD_FUNC_BOARD && ESP_HOSTED_CP_TARGET_ESP32C5
+		default 14 if IDF_TARGET_ESP32
+		default 100
+
+	config ESP_HOSTED_SDIO_D0_GPIO_RANGE_MIN
+		int
+		default 49 if ESP_HOSTED_P4_C5_CORE_BOARD
+		default 50 if ESP_HOSTED_P4_C6_CORE_BOARD || ESP_HOSTED_P4_C61_CORE_BOARD
+		default 29 if ESP32P4_EYE_C6_BOARD
+		default 14 if ESP_HOSTED_P4_DEV_BOARD_FUNC_BOARD && ESP_HOSTED_CP_TARGET_ESP32C6
+		default 20 if ESP_HOSTED_P4_DEV_BOARD_FUNC_BOARD && ESP_HOSTED_CP_TARGET_ESP32C5
+		default 2  if IDF_TARGET_ESP32
+		default 0
+
+	config ESP_HOSTED_SDIO_D0_GPIO_RANGE_MAX
+		int
+		default 49 if ESP_HOSTED_P4_C5_CORE_BOARD
+		default 50 if ESP_HOSTED_P4_C6_CORE_BOARD || ESP_HOSTED_P4_C61_CORE_BOARD
+		default 29 if ESP32P4_EYE_C6_BOARD
+		default 14 if ESP_HOSTED_P4_DEV_BOARD_FUNC_BOARD && ESP_HOSTED_CP_TARGET_ESP32C6
+		default 20 if ESP_HOSTED_P4_DEV_BOARD_FUNC_BOARD && ESP_HOSTED_CP_TARGET_ESP32C5
+		default 2  if IDF_TARGET_ESP32
+		default 100
+
+	config ESP_HOSTED_SDIO_D1_GPIO_RANGE_MIN
+		int
+		default 48 if ESP_HOSTED_P4_C5_CORE_BOARD
+		default 49 if ESP_HOSTED_P4_C6_CORE_BOARD || ESP_HOSTED_P4_C61_CORE_BOARD
+		default 30 if ESP32P4_EYE_C6_BOARD
+		default 15 if ESP_HOSTED_P4_DEV_BOARD_FUNC_BOARD && ESP_HOSTED_CP_TARGET_ESP32C6
+		default 23 if ESP_HOSTED_P4_DEV_BOARD_FUNC_BOARD && ESP_HOSTED_CP_TARGET_ESP32C5
+		default 4  if IDF_TARGET_ESP32
+		default 0
+
+	config ESP_HOSTED_SDIO_D1_GPIO_RANGE_MAX
+		int
+		default 48 if ESP_HOSTED_P4_C5_CORE_BOARD
+		default 49 if ESP_HOSTED_P4_C6_CORE_BOARD || ESP_HOSTED_P4_C61_CORE_BOARD
+		default 30 if ESP32P4_EYE_C6_BOARD
+		default 15 if ESP_HOSTED_P4_DEV_BOARD_FUNC_BOARD && ESP_HOSTED_CP_TARGET_ESP32C6
+		default 23 if ESP_HOSTED_P4_DEV_BOARD_FUNC_BOARD && ESP_HOSTED_CP_TARGET_ESP32C5
+		default 4  if IDF_TARGET_ESP32
+		default 100
+
+	config ESP_HOSTED_SDIO_D2_GPIO_RANGE_MIN
+		int
+		default 53 if ESP_HOSTED_P4_C5_CORE_BOARD
+		default 48 if ESP_HOSTED_P4_C6_CORE_BOARD || ESP_HOSTED_P4_C61_CORE_BOARD
+		default 31 if ESP32P4_EYE_C6_BOARD
+		default 16 if ESP_HOSTED_P4_DEV_BOARD_FUNC_BOARD && ESP_HOSTED_CP_TARGET_ESP32C6
+		default 21 if ESP_HOSTED_P4_DEV_BOARD_FUNC_BOARD && ESP_HOSTED_CP_TARGET_ESP32C5
+		default 12 if IDF_TARGET_ESP32
+		default 0
+
+	config ESP_HOSTED_SDIO_D2_GPIO_RANGE_MAX
+		int
+		default 53 if ESP_HOSTED_P4_C5_CORE_BOARD
+		default 48 if ESP_HOSTED_P4_C6_CORE_BOARD || ESP_HOSTED_P4_C61_CORE_BOARD
+		default 31 if ESP32P4_EYE_C6_BOARD
+		default 16 if ESP_HOSTED_P4_DEV_BOARD_FUNC_BOARD && ESP_HOSTED_CP_TARGET_ESP32C6
+		default 21 if ESP_HOSTED_P4_DEV_BOARD_FUNC_BOARD && ESP_HOSTED_CP_TARGET_ESP32C5
+		default 12 if IDF_TARGET_ESP32
+		default 100
+
+	config ESP_HOSTED_SDIO_D3_GPIO_RANGE_MIN
+		int
+		default 52 if ESP_HOSTED_P4_C5_CORE_BOARD
+		default 47 if ESP_HOSTED_P4_C6_CORE_BOARD || ESP_HOSTED_P4_C61_CORE_BOARD
+		default 32 if ESP32P4_EYE_C6_BOARD
+		default 17 if ESP_HOSTED_P4_DEV_BOARD_FUNC_BOARD && ESP_HOSTED_CP_TARGET_ESP32C6
+		default 22 if ESP_HOSTED_P4_DEV_BOARD_FUNC_BOARD && ESP_HOSTED_CP_TARGET_ESP32C5
+		default 13 if IDF_TARGET_ESP32
+		default 0
+
+	config ESP_HOSTED_SDIO_D3_GPIO_RANGE_MAX
+		int
+		default 52 if ESP_HOSTED_P4_C5_CORE_BOARD
+		default 47 if ESP_HOSTED_P4_C6_CORE_BOARD || ESP_HOSTED_P4_C61_CORE_BOARD
+		default 32 if ESP32P4_EYE_C6_BOARD
+		default 17 if ESP_HOSTED_P4_DEV_BOARD_FUNC_BOARD && ESP_HOSTED_CP_TARGET_ESP32C6
+		default 22 if ESP_HOSTED_P4_DEV_BOARD_FUNC_BOARD && ESP_HOSTED_CP_TARGET_ESP32C5
+		default 13 if IDF_TARGET_ESP32
+		default 100
+
+	menu "GPIO Configuration"
+
+	# ── Reset GPIO ──────────────────────────────────────────────────────
+
+	config ESP_HOSTED_SDIO_RESET_SLAVE_GPIO_MIN
+		int
+		default 54 if ESP_HOSTED_P4_C5_CORE_BOARD || ESP_HOSTED_P4_C6_CORE_BOARD || ESP_HOSTED_P4_C61_CORE_BOARD
+		default 9  if ESP32P4_EYE_C6_BOARD
+		default 54 if ESP_HOSTED_P4_DEV_BOARD_FUNC_BOARD && ESP_HOSTED_CP_TARGET_ESP32C6
+		default 53 if ESP_HOSTED_P4_DEV_BOARD_FUNC_BOARD && ESP_HOSTED_CP_TARGET_ESP32C5
+		default 5  if IDF_TARGET_ESP32
+		default -1
+
+	config ESP_HOSTED_SDIO_RESET_SLAVE_GPIO_MAX
+		int
+		default 54 if ESP_HOSTED_P4_C5_CORE_BOARD || ESP_HOSTED_P4_C6_CORE_BOARD || ESP_HOSTED_P4_C61_CORE_BOARD
+		default 9  if ESP32P4_EYE_C6_BOARD
+		default 54 if ESP_HOSTED_P4_DEV_BOARD_FUNC_BOARD && ESP_HOSTED_CP_TARGET_ESP32C6
+		default 53 if ESP_HOSTED_P4_DEV_BOARD_FUNC_BOARD && ESP_HOSTED_CP_TARGET_ESP32C5
+		default 5  if IDF_TARGET_ESP32
+		default 100
+
+	config ESP_HOSTED_HOST_RESET_GPIO
+		int "Slave reset GPIO (RST/EN line)"
+		default 9  if ESP32P4_EYE_C6_BOARD
+		default 54 if IDF_TARGET_ESP32P4
+		default 42 if IDF_TARGET_ESP32S3
+		default 5  if IDF_TARGET_ESP32
+		default 5
+		range ESP_HOSTED_SDIO_RESET_SLAVE_GPIO_MIN ESP_HOSTED_SDIO_RESET_SLAVE_GPIO_MAX
+
+	choice ESP_HOSTED_SDIO_RESET_GPIO_CONFIG
+		prompt "Slave reset active level"
+		# ESP modules' EN / RST pin is active-low by convention (pull
+		# LOW to assert reset, HIGH to run).  Default reflects that.
+		# Boards with a transistor-buffered EN that inverts polarity
+		# need the explicit "Active high" override here.
+		default ESP_HOSTED_SDIO_RESET_ACTIVE_LOW
+		config ESP_HOSTED_SDIO_RESET_ACTIVE_HIGH
+			bool "Active high"
+		config ESP_HOSTED_SDIO_RESET_ACTIVE_LOW
+			bool "Active low"
+	endchoice
+
+	config ESP_HOSTED_HOST_RESET_ACTIVE_LOW
+		bool
+		default y if ESP_HOSTED_SDIO_RESET_ACTIVE_LOW
+		default n
+
+	# ── SDIO bus pins ───────────────────────────────────────────────────
+
+	# Slot 0: IOMUX-fixed pins (P4: CMD=44, CLK=43, D0=39, D1=40, D2=41, D3=42)
+		if ESP_HOSTED_SDIO_SLOT_0
+			config ESP_HOSTED_HOST_SDIO_PIN_CMD
+				int "CMD GPIO number"
+				default 47 if IDF_TARGET_ESP32S3
+				range 44 44 if IDF_TARGET_ESP32P4
+				range 15 15 if IDF_TARGET_ESP32
+
+			config ESP_HOSTED_HOST_SDIO_PIN_CLK
+				int "CLK GPIO number"
+				default 19 if IDF_TARGET_ESP32S3
+				range 43 43 if IDF_TARGET_ESP32P4
+				range 14 14 if IDF_TARGET_ESP32
+
+			config ESP_HOSTED_HOST_SDIO_PIN_D0
+				int "D0 GPIO number"
+				default 13 if IDF_TARGET_ESP32S3
+				range 39 39 if IDF_TARGET_ESP32P4
+				range 2 2 if IDF_TARGET_ESP32
+
+			if ESP_HOSTED_HOST_SDIO_BUS_WIDTH_4
+				config ESP_HOSTED_HOST_SDIO_PIN_D1
+					int "D1 GPIO number"
+					default 35 if IDF_TARGET_ESP32S3
+					range 40 40 if IDF_TARGET_ESP32P4
+					range 4 4 if IDF_TARGET_ESP32
+
+				config ESP_HOSTED_HOST_SDIO_PIN_D2
+					int "D2 GPIO number"
+					default 20 if IDF_TARGET_ESP32S3
+					range 41 41 if IDF_TARGET_ESP32P4
+					range 12 12 if IDF_TARGET_ESP32
+
+				config ESP_HOSTED_HOST_SDIO_PIN_D3
+					int "D3 GPIO number"
+					default 9 if IDF_TARGET_ESP32S3
+					range 42 42 if IDF_TARGET_ESP32P4
+					range 13 13 if IDF_TARGET_ESP32
+			endif
+		endif
+
+		# Slot 1: configurable pins with per-board range locks
+		if ESP_HOSTED_SDIO_SLOT_1
+			config ESP_HOSTED_HOST_SDIO_PIN_CMD
+				int "CMD GPIO number"
+				default 51 if ESP_HOSTED_P4_C5_CORE_BOARD
+				default 52 if ESP_HOSTED_P4_C6_CORE_BOARD || ESP_HOSTED_P4_C61_CORE_BOARD
+				default 27 if ESP32P4_EYE_C6_BOARD
+				default 47 if IDF_TARGET_ESP32S3
+				default 19 if IDF_TARGET_ESP32P4
+				default 15 if IDF_TARGET_ESP32
+				default 15
+				range ESP_HOSTED_SDIO_CMD_GPIO_RANGE_MIN ESP_HOSTED_SDIO_CMD_GPIO_RANGE_MAX
+
+			config ESP_HOSTED_HOST_SDIO_PIN_CLK
+				int "CLK GPIO number"
+				default 50 if ESP_HOSTED_P4_C5_CORE_BOARD
+				default 51 if ESP_HOSTED_P4_C6_CORE_BOARD || ESP_HOSTED_P4_C61_CORE_BOARD
+				default 28 if ESP32P4_EYE_C6_BOARD
+				default 19 if IDF_TARGET_ESP32S3
+				default 18 if IDF_TARGET_ESP32P4
+				default 14 if IDF_TARGET_ESP32
+				default 14
+				range ESP_HOSTED_SDIO_CLK_GPIO_RANGE_MIN ESP_HOSTED_SDIO_CLK_GPIO_RANGE_MAX
+
+			config ESP_HOSTED_HOST_SDIO_PIN_D0
+				int "D0 GPIO number"
+				default 49 if ESP_HOSTED_P4_C5_CORE_BOARD
+				default 50 if ESP_HOSTED_P4_C6_CORE_BOARD || ESP_HOSTED_P4_C61_CORE_BOARD
+				default 29 if ESP32P4_EYE_C6_BOARD
+				default 13 if IDF_TARGET_ESP32S3
+				default 14 if IDF_TARGET_ESP32P4
+				default 2  if IDF_TARGET_ESP32
+				default 2
+				range ESP_HOSTED_SDIO_D0_GPIO_RANGE_MIN ESP_HOSTED_SDIO_D0_GPIO_RANGE_MAX
+
+			if ESP_HOSTED_HOST_SDIO_BUS_WIDTH_4
+				config ESP_HOSTED_HOST_SDIO_PIN_D1
+					int "D1 GPIO number"
+					default 48 if ESP_HOSTED_P4_C5_CORE_BOARD
+					default 49 if ESP_HOSTED_P4_C6_CORE_BOARD || ESP_HOSTED_P4_C61_CORE_BOARD
+					default 30 if ESP32P4_EYE_C6_BOARD
+					default 35 if IDF_TARGET_ESP32S3
+					default 15 if IDF_TARGET_ESP32P4
+					default 4  if IDF_TARGET_ESP32
+					default 4
+					range ESP_HOSTED_SDIO_D1_GPIO_RANGE_MIN ESP_HOSTED_SDIO_D1_GPIO_RANGE_MAX
+
+				config ESP_HOSTED_HOST_SDIO_PIN_D2
+					int "D2 GPIO number"
+					default 53 if ESP_HOSTED_P4_C5_CORE_BOARD
+					default 48 if ESP_HOSTED_P4_C6_CORE_BOARD || ESP_HOSTED_P4_C61_CORE_BOARD
+					default 31 if ESP32P4_EYE_C6_BOARD
+					default 20 if IDF_TARGET_ESP32S3
+					default 16 if IDF_TARGET_ESP32P4
+					default 12 if IDF_TARGET_ESP32
+					default 12
+					range ESP_HOSTED_SDIO_D2_GPIO_RANGE_MIN ESP_HOSTED_SDIO_D2_GPIO_RANGE_MAX
+
+				config ESP_HOSTED_HOST_SDIO_PIN_D3
+					int "D3 GPIO number"
+					default 52 if ESP_HOSTED_P4_C5_CORE_BOARD
+					default 47 if ESP_HOSTED_P4_C6_CORE_BOARD || ESP_HOSTED_P4_C61_CORE_BOARD
+					default 32 if ESP32P4_EYE_C6_BOARD
+					default 9  if IDF_TARGET_ESP32S3
+					default 17 if IDF_TARGET_ESP32P4
+					default 13 if IDF_TARGET_ESP32
+					default 13
+					range ESP_HOSTED_SDIO_D3_GPIO_RANGE_MIN ESP_HOSTED_SDIO_D3_GPIO_RANGE_MAX
+			endif
+		endif
+	endmenu # "GPIO Configuration"
+
+	# Reset strategy + settle delay moved to host_core's
+	# "Co-processor connection" menu (eh_host_core/Kconfig.cp_connection).
+	# Only bus-mechanism knobs remain in this file.
+
+	# RX intr wait is block-forever; sdio_read_task is force-cancelled at deinit.
+
+	# ── Receive optimization ────────────────────────────────────────────
+
+	choice ESP_HOSTED_HOST_SDIO_RX_OPT
+		bool "SDIO Receive Optimization"
+		default ESP_HOSTED_HOST_SDIO_RX_STREAMING_MODE
+		config ESP_HOSTED_HOST_SDIO_RX_NONE
+			bool "No optimization"
+		config ESP_HOSTED_HOST_SDIO_RX_MAX_SIZE
+			bool "Always Rx max packet size"
+		config ESP_HOSTED_HOST_SDIO_RX_STREAMING_MODE
+			bool "Use streaming mode"
+	endchoice
+
+	config ESP_HOSTED_HOST_SDIO_AGGR_TRACE
+		bool "SDIO SW_AGGR multi-frame trace markers (test/debug only)"
+		default n
+		help
+			Log a marker when one SDIO transfer really carries multiple
+			frames (TX pack + RX walk on the SW_AGGR datapath). Used by
+			the test suite to prove aggregation isn't bypassed. Keep
+			DISABLED in production.
+
+	config ESP_HOSTED_HOST_SDIO_TX_Q_SIZE
+		int "Host SDIO Tx queue size"
+		default 20
+
+	config ESP_HOSTED_HOST_SDIO_RX_Q_SIZE
+		int "Host SDIO Rx queue size"
+		default 20
+
+	config ESP_HOSTED_HOST_SDIO_RX_STAGING_SLOTS
+		int "Host SDIO RX staging slots"
+		range 2 8
+		default 2
+		help
+			DMA staging buffers between the SDIO read task and the
+			de-aggregation task. One slot is always the in-progress read
+			buffer, so the effective queue depth is (slots - 1): the
+			default 2 gives depth 1 (one aggregate staged while the next
+			is read) — identical to the original double-buffer. Raising it
+			(e.g. 4, to match a co-processor advertising 4 receive credits)
+			lets the host absorb RX bursts without stalling the slave, at
+			the cost of slots x max-aggregate DMA RAM. Tune on hardware.
+
+	endmenu
+
+endif # ESP_HOSTED_HOST_TRANSPORT_BUS_SDIO

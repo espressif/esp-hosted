@@ -1,0 +1,33 @@
+# ── Role: COPROCESSOR ────────────────────────────────────────────────
+# ESP-Hosted coprocessor firmware (works with both MCU and Linux hosts
+# via the unified MCU RPC v1 wire).
+CONFIG_ESP_HOSTED=y
+CONFIG_ESP_HOSTED_CP=y
+CONFIG_ESP_HOSTED_CP_FOR_MCU=y
+CONFIG_ESP_HOSTED_CP_RPC_V2=y
+
+#Disable enterprise support by default
+CONFIG_ESP_WIFI_ENTERPRISE_SUPPORT=n
+
+# BT Configuration
+CONFIG_BT_ENABLED=n
+#CONFIG_BT_CONTROLLER_ONLY=y
+
+# OTA
+CONFIG_ESPTOOLPY_FLASHSIZE_4MB=y
+CONFIG_PARTITION_TABLE_CUSTOM=y
+CONFIG_PARTITION_TABLE_CUSTOM_FILENAME="partitions_eh_cp_ota_4m.csv"
+
+# OS
+CONFIG_FREERTOS_HZ=1000
+CONFIG_ESP_WIFI_NVS_ENABLED=y
+
+CONFIG_ESP_HOSTED_CP_FEAT_WIFI=y
+CONFIG_ESP_HOSTED_CP_FEAT_GPIO_EXP=y
+CONFIG_ESP_HOSTED_CP_FEAT_CP_EXT_COEX=y
+# External coex must be enabled for CP_FEAT_CP_EXT_COEX_READY (=y only when this
+# is set) — else the ExtCoex RPC (0x18c) isn't dispatched and the exerciser's
+# coex_* commands come back "Unsupported". Safe here: BT is off and C5/C6 both
+# have SOC_EXTERNAL_COEX_ADVANCE. Lets the coex RPC round-trip (rc from the coex
+# API) even without the physical coex wires — enough to test the RPC path.
+CONFIG_ESP_COEX_EXTERNAL_COEXIST_ENABLE=y

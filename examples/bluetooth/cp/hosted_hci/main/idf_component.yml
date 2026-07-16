@@ -1,0 +1,6 @@
+dependencies:
+  espressif/esp_hosted:
+    override_path: "../../../../.."
+    version: "*"
+  idf:
+    version: ">=5.5"

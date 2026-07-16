@@ -1,0 +1,29 @@
+menuconfig ESP_HOSTED_CP_FEAT_CP_EXT_COEX
+	bool "External Coexistence"
+	depends on ESP_HOSTED_CP
+	default n
+	help
+		Enables external coexistence GPIO wire-type configuration via RPC.
+
+if ESP_HOSTED_CP_FEAT_CP_EXT_COEX
+
+	comment "⚠️  Requires CONFIG_ESP_COEX_EXTERNAL_COEXIST_ENABLE (Component config → Wireless Coexistence → External Coexistence)"
+		depends on !ESP_COEX_EXTERNAL_COEXIST_ENABLE
+
+	comment "⚠️  BT controller conflicts with external coex on this chip — disable BT_CONTROLLER_ENABLED or use a chip with SOC_EXTERNAL_COEX_ADVANCE"
+		depends on BT_CONTROLLER_ENABLED && !SOC_EXTERNAL_COEX_ADVANCE
+
+	config ESP_HOSTED_CP_FEAT_CP_EXT_COEX_READY
+		bool
+		default y if ESP_COEX_EXTERNAL_COEXIST_ENABLE
+
+	config ESP_HOSTED_CP_FEAT_CP_EXT_COEX_AUTO_INIT
+		bool "Auto-initialise External Coexistence at boot"
+		default y if ESP_HOSTED_CP_FEAT_CP_EXT_COEX_READY && ESP_HOSTED_CP_AUTO_FEAT_INIT
+		default n
+		depends on ESP_HOSTED_CP_AUTO_FEAT_INIT
+		help
+			When enabled, External Coexistence auto-initialises during
+			eh_cp_init().  Disable to manually call the init from app code.
+
+endif # ESP_HOSTED_CP_FEAT_CP_EXT_COEX

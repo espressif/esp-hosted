@@ -1,0 +1,24 @@
+menu "BLE Advertise Minimal config"
+
+config EXAMPLE_DEVICE_NAME
+    string "BLE device name (advertised)"
+    default "ESP_HOSTED_BLE"
+
+config EXAMPLE_ADV_INTERVAL_MS
+    int "Advertising interval (ms)"
+    default 100
+    range 20 10240
+    help
+      Advertising interval as seen by Bluedroid's `adv_int_min/max`.
+      Converted to 0.625 ms units internally.
+
+config EXAMPLE_USE_SETUP_HELPER
+    bool "Use one-shot esp_hosted_hci_bluedroid_setup() helper"
+    default y
+    help
+      If y, app_main() calls the helper that does
+      connect+controller_init+enable+bridge_attach in one line.
+      If n, app_main() calls each step individually (useful for
+      learning the sequence or for finer error handling).
+
+endmenu

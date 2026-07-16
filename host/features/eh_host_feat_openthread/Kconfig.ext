@@ -1,0 +1,131 @@
+menuconfig ESP_HOSTED_HOST_FEAT_OPENTHREAD
+	bool "OpenThread (RCP control)"
+	default n
+	depends on ESP_HOSTED_HOST && ESP_HOSTED_HOST_FEAT_RPC
+	depends on ESP_HOSTED_HOST_FEAT_RPC_EXT_V2_READY
+	help
+	  Feature-layer policy for OpenThread RCP lifecycle over
+	  RpcReqFeatureControl.  When enabled, the host can drive
+	  init / deinit / start / stop / query of OpenThread on the
+	  co-processor, and the local port layer publishes the
+	  RCP UART pin / baud config to the host OT stack.
+
+if ESP_HOSTED_HOST_FEAT_OPENTHREAD
+
+	config ESP_HOSTED_HOST_FEAT_OPENTHREAD_AUTO_INIT
+		bool "Auto-initialize OpenThread feature at boot"
+		default y
+		depends on ESP_HOSTED_HOST_AUTO_FEAT_INIT
+
+	config ESP_HOSTED_OT_HOST_ENABLE
+		bool
+		default y
+
+	# HOST_-prefixed to avoid clashing with the CP-side choice in the combined tree.
+	choice ESP_HOSTED_OT_HOST_INTERFACE
+		bool "OpenThread RCP transport (host side)"
+		default ESP_HOSTED_OT_HOST_TRANSPORT_UART
+
+		config ESP_HOSTED_OT_HOST_TRANSPORT_UART
+			bool "Dedicated UART"
+			help
+				Dedicated UART link between this host and the
+				OpenThread RCP.
+
+		config ESP_HOSTED_OT_HOST_TRANSPORT_HOSTED
+			bool "ESP-Hosted transport (not supported yet)"
+			help
+				Tunnel the OpenThread spinel over the shared
+				ESP-Hosted transport.  Not implemented yet.
+	endchoice
+
+	if ESP_HOSTED_OT_HOST_TRANSPORT_UART
+
+		config ESP_HOSTED_OT_HOST_UART_PORT
+			int "UART port"
+			default 1
+			range 0 2
+
+		config ESP_HOSTED_OT_HOST_PIN_TO_RCP_TX
+			int "Host TX pin (to RCP RX)"
+			default 11
+
+		config ESP_HOSTED_OT_HOST_PIN_TO_RCP_RX
+			int "Host RX pin (from RCP TX)"
+			default 10
+
+		config ESP_HOSTED_OT_HOST_UART_BAUDRATE
+			int "Baud rate"
+			default 460800
+			range 9600 3500000
+
+		choice ESP_HOSTED_OT_HOST_UART_PRIV_NUM_DATA_BITS
+			bool "Number of Data Bits"
+			default ESP_HOSTED_OT_HOST_UART_PRIV_NUM_DATA_BITS_8
+
+			config ESP_HOSTED_OT_HOST_UART_PRIV_NUM_DATA_BITS_5
+				bool "5 Bits"
+			config ESP_HOSTED_OT_HOST_UART_PRIV_NUM_DATA_BITS_6
+				bool "6 Bits"
+			config ESP_HOSTED_OT_HOST_UART_PRIV_NUM_DATA_BITS_7
+				bool "7 Bits"
+			config ESP_HOSTED_OT_HOST_UART_PRIV_NUM_DATA_BITS_8
+				bool "8 Bits"
+		endchoice
+
+		config ESP_HOSTED_OT_HOST_UART_NUM_DATA_BITS
+			int
+			default 0 if ESP_HOSTED_OT_HOST_UART_PRIV_NUM_DATA_BITS_5
+			default 1 if ESP_HOSTED_OT_HOST_UART_PRIV_NUM_DATA_BITS_6
+			default 2 if ESP_HOSTED_OT_HOST_UART_PRIV_NUM_DATA_BITS_7
+			default 3 if ESP_HOSTED_OT_HOST_UART_PRIV_NUM_DATA_BITS_8
+
+		choice ESP_HOSTED_OT_HOST_UART_PRIV_PARITY
+			bool "Parity"
+			default ESP_HOSTED_OT_HOST_UART_PRIV_PARITY_NONE
+
+			config ESP_HOSTED_OT_HOST_UART_PRIV_PARITY_NONE
+				bool "None"
+			config ESP_HOSTED_OT_HOST_UART_PRIV_PARITY_EVEN
+				bool "Even"
+			config ESP_HOSTED_OT_HOST_UART_PRIV_PARITY_ODD
+				bool "Odd"
+		endchoice
+
+		config ESP_HOSTED_OT_HOST_UART_PARITY
+			int
+			default 0 if ESP_HOSTED_OT_HOST_UART_PRIV_PARITY_NONE
+			default 2 if ESP_HOSTED_OT_HOST_UART_PRIV_PARITY_EVEN
+			default 3 if ESP_HOSTED_OT_HOST_UART_PRIV_PARITY_ODD
+
+		choice ESP_HOSTED_OT_HOST_UART_PRIV_STOP_BITS
+			bool "Number of Stop Bits"
+			default ESP_HOSTED_OT_HOST_UART_PRIV_STOP_BITS_1
+
+			config ESP_HOSTED_OT_HOST_UART_PRIV_STOP_BITS_1
+				bool "1"
+			config ESP_HOSTED_OT_HOST_UART_PRIV_STOP_BITS_1_5
+				bool "1.5"
+			config ESP_HOSTED_OT_HOST_UART_PRIV_STOP_BITS_2
+				bool "2"
+		endchoice
+
+		config ESP_HOSTED_OT_HOST_UART_STOP_BITS
+			int
+			default 1 if ESP_HOSTED_OT_HOST_UART_PRIV_STOP_BITS_1
+			default 2 if ESP_HOSTED_OT_HOST_UART_PRIV_STOP_BITS_1_5
+			default 3 if ESP_HOSTED_OT_HOST_UART_PRIV_STOP_BITS_2
+
+	endif # ESP_HOSTED_OT_HOST_TRANSPORT_UART
+
+endif # ESP_HOSTED_HOST_FEAT_OPENTHREAD
+
+config ESP_HOSTED_HOST_FEAT_OPENTHREAD_READY
+	bool
+	default y if ESP_HOSTED_HOST_FEAT_OPENTHREAD && \
+	             ESP_HOSTED_HOST_FEAT_RPC_READY && \
+	             ESP_HOSTED_HOST_FEAT_RPC_EXT_V2_READY && \
+	             OPENTHREAD_ENABLED
+
+comment "⚠  Host OpenThread feature requires CONFIG_OPENTHREAD_ENABLED"
+	depends on ESP_HOSTED_HOST_FEAT_OPENTHREAD && !OPENTHREAD_ENABLED

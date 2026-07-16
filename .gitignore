@@ -1,3 +1,4 @@
+# ── Old repo paths (retained for history) ────────────────────────
 esp_hosted_fg/esp/esp_driver/CMakeCache.txt
 esp_hosted_fg/esp/esp_driver/CMakeFiles
 esp_hosted_fg/esp/esp_driver/Makefile
@@ -14,3 +15,160 @@ esp_hosted_ng/esp/esp_driver/cmake_install.cmake
 esp_hosted_ng/esp/esp_driver/network_adapter/build
 esp_hosted_ng/esp/esp_driver/network_adapter/sdkconfig
 esp_hosted_ng/esp/esp_driver/network_adapter/sdkconfig.old
+
+# ── Test infra ───────────────────────────────────────────────────
+tests/env.yaml
+tests/env.json
+tests/workspace/
+
+# ── Build artifacts ──────────────────────────────────────────────
+build/
+build_logs/
+build_logs.old/
+**/build/
+**/bin/
+**/sdkconfig
+**/sdkconfig.old
+**/sdkconfig.defconfig
+**/.eh.target
+**/.nvs/
+**/managed_components/
+dist/
+
+# ── Linux kmod build artifacts (Kbuild outputs) ──────────────────
+host/eh_host_linux_kmod/*.ko
+host/eh_host_linux_kmod/*.mod
+host/eh_host_linux_kmod/*.mod.c
+host/eh_host_linux_kmod/*.mod.o
+host/eh_host_linux_kmod/*.o
+host/eh_host_linux_kmod/.*.cmd
+host/eh_host_linux_kmod/Module.symvers
+host/eh_host_linux_kmod/modules.order
+host/eh_host_linux_kmod/src/*.o
+host/eh_host_linux_kmod/src/.*.cmd
+host/eh_host_linux_kmod/src/.*.o.d
+host/eh_host_linux_kmod/src/.*.d
+
+# ── IDE / OS / tool ──────────────────────────────────────────────
+.DS_Store
+.claude/
+.vscode/
+*.pyc
+__pycache__/
+
+# ── Temp / scratch (not for checkin) ─────────────────────────────
+# Historical: `esp_hosted` and `esp_hosted_mcu` used to name the lineage
+# symlinks; those are now `_upstream_fg` / `_upstream_mcu`.  The umbrella
+# IDF component lives at repo root (CMakeLists.txt + Kconfig +
+# idf_component.yml) per .meta/specs/system/verified/directory_structure.md.
+esp_hosted.new
+esp_hosted.new_2apr_3.tgz
+esp_hosted_mcu6
+esp_hosted_linux_host_repo
+
+# IDF managed-components artifacts
+dependencies.lock
+managed_components/
+esp_hosted_poc_descs.ld.del
+esp_hosted_poc.lf.del
+cmake_update_log_*.txt
+root_files_log_*.txt
+orig_files/
+remove/
+test_fix/
+h4
+LICENSES/Apache-2.0.pss_dup
+
+# ── Session brainstorm MDs (kept locally, not checked in) ────────
+COMPLETE_IMPLEMENTATION_JOURNAL.md
+COMPLETE_TEST_FRAMEWORK_DESIGN.md
+COMPLETE_UNIFIED_TRANSPORT_OPS.md
+DOCS_MASTER.md
+ESP_HOSTED_HANDSHAKE_DESIGN.md
+HEADER_V2_FIX_SUMMARY.md
+PEER_DATA_TRANSFER_PROGRESS.md
+PHASES.md
+REVIEW_NOTES.md
+SPEC_CREATION_SUMMARY.md
+STRUCTURE.md
+old_rpc_event_design.md
+versioning/
+
+# ── Session-scratch diagrams (mermaid) — historical snapshots,
+# update freely without committing ─────────────────────────────
+.meta/
+.meta2/
+coprocessor/stale/
+.meta/brainstorm/mermaid/
+/sdkconfig
+/sdkconfig.defconfig
+/build/config/
+/.eh.target
+
+# IDE / editor state
+/.kiro/
+
+# ── clangd / IDE caches under example trees ─────────────────────
+**/.cache/
+
+# ── Regenerated self-symlink only (idf_component_manager / override_path
+# materialises components/esp_hosted -> repo on first build). First-party
+# example components are tracked; managed_components handled above. ──────
+examples/**/components/esp_hosted
+
+# ── Native binary built by host_wakeup_demo's shell script on the host
+# machine (compile output of the sibling .c file) ────────────────────────
+examples/**/host_wakeup_demo_using_udp_packet/host_wakeup_demo_using_udp_packet
+
+# ── Transient editor / merge / patch artifacts (NEVER track) ─────────────
+*.patch
+# vendored IDF patches ARE tracked (applied by eh.py patch-idf)
+!tools/idf_patches/*.patch
+*.orig
+*.bak
+*.rej
+*.tmp
+*~
+.#*
+\#*\#
+
+# ── Per-dev upstream-source convenience symlinks (NEVER commit) ──────────
+# Create locally pointing to your own checkouts of esp-hosted / esp-hosted-mcu
+# etc. The drift-check + test-infra tools look for these at repo root and
+# gracefully skip if absent.
+/_upstream_fg
+/_upstream_mcu
+/_upstream_mcu_stm32
+/_upstream_posix_port
+
+# ── Linux kmod build artifacts (kbuild outputs — never track) ────────────
+*.mod
+*.mod.c
+*.mod.cmd
+*.ko
+*.o.cmd
+.*.cmd
+modules.order
+Module.symvers
+.tmp_versions/
+
+# eh.py-managed dependencies (esp-idf, esp-emu) — machine-local
+.deps/
+
+# ── Test-lab working state (machine-local, never tracked) ────────────────
+# ONE sandbox-bindable root, split by lifecycle:
+#   tests/.work/cache/     reused build artifacts (COW proj dirs + flash images)
+#   tests/.work/runs/<ts>/ per-run scratch + reports (logs, report.md, live.log)
+#   tests/.work/sock/      emu Unix sockets
+# Shared by the pytest framework AND the esplab runner.
+tests/.work/
+# Legacy esplab output (pre-unification); both now write under tests/.work/.
+tools/esplab/runs/
+# Machine-local HW bench identity (ports/baud for one physical setup).
+tests/lab.local.json
+
+# Local agent instructions — keep out of git.
+CLAUDE.md
+
+# CI compiler cache (persisted via GitLab cache)
+.ccache/
