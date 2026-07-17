@@ -15,4 +15,4 @@ entries:
 archive: *
 entries:
     * (eh_cp_feat_descs_default);
-        eh_cp_feat_descs -> flash_rodata KEEP() SURROUND(eh_cp_feat_descs)
+        eh_cp_feat_descs -> flash_rodata KEEP() ALIGN(4) SURROUND(eh_cp_feat_descs)

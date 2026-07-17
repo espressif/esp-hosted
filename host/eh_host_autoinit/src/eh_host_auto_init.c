@@ -12,7 +12,19 @@
 
 size_t eh_host_auto_init_count(void)
 {
-    return (size_t)(_eh_host_feat_descs_end - _eh_host_feat_descs_start);
+    uintptr_t s = (uintptr_t)_eh_host_feat_descs_start;
+    uintptr_t e = (uintptr_t)_eh_host_feat_descs_end;
+    size_t bytes = (size_t)(e - s);
+    /* Link-collected array: _start must be struct-aligned and the byte span a
+     * whole multiple of the entry size. A linker fill gap before _start would
+     * mis-index the walk and deref garbage names — skip instead of crashing. */
+    if ((s & (_Alignof(eh_host_feat_desc_t) - 1)) != 0 ||
+        (bytes % sizeof(eh_host_feat_desc_t)) != 0) {
+        EH_AUTO_INIT_LOG("auto_init: descriptor section misaligned "
+                   "(start=%p span=%uB) — skipping", (void *)s, (unsigned)bytes);
+        return 0;
+    }
+    return bytes / sizeof(eh_host_feat_desc_t);
 }
 
 static uint8_t *g_inited_flags;
