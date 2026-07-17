@@ -26,6 +26,21 @@ endif()
 
 add_library(eh_cp_transport STATIC ${CP_TRANSPORT_SRCS})
 
+# CP SDIO build constraint
+# ------------------------
+# - SDIO SW_AGGR requires the 4092 B send cap to be lifted.
+# - idf `master` already includes the fix; older versions need `eh.py patch-idf`.
+# - Build-time check ensures we do not fail at runtime, by using incorrect SDIO config
+if(CONFIG_EH_TRANSPORT_CP_SDIO AND CONFIG_EH_TRANSPORT_CP_SDIO_MODE_SW_AGGR)
+    add_custom_target(eh_sdio_cap_check ALL
+        COMMAND ${CMAKE_COMMAND}
+                -D "IDF_PATH=${IDF_PATH}"
+                -D "EH_PY=${EH_PATH}/tools/eh.py"
+                -P "${CMAKE_CURRENT_LIST_DIR}/cmake/check_sdio_cap.cmake"
+        VERBATIM)
+    add_dependencies(eh_cp_transport eh_sdio_cap_check)
+endif()
+
 target_include_directories(eh_cp_transport
     PUBLIC
         "include"
