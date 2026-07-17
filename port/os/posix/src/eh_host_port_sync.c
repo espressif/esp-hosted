@@ -197,14 +197,25 @@ eh_host_port_err_t eh_host_port_sem_wait_ms(eh_host_port_sem_t *s, uint32_t time
     if (!s) return EH_HOST_PORT_ERR_INVAL;
     pthread_mutex_lock(&s->m);
 
-    if (timeout_ms == 0) {
-        /* Forever. */
+    if (timeout_ms == EH_HOST_PORT_WAIT_FOREVER) {
+        /* Block forever. */
         while (s->count == 0) {
             pthread_cond_wait(&s->c, &s->m);
         }
         s->count--;
         pthread_mutex_unlock(&s->m);
         return EH_HOST_PORT_OK;
+    }
+
+    if (timeout_ms == 0) {
+        /* Poll (non-blocking). */
+        eh_host_port_err_t r = EH_HOST_PORT_ERR_TIMEOUT;
+        if (s->count > 0) {
+            s->count--;
+            r = EH_HOST_PORT_OK;
+        }
+        pthread_mutex_unlock(&s->m);
+        return r;
     }
 
     struct timespec deadline;

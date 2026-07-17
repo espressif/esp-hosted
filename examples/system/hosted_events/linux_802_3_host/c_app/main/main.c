@@ -182,7 +182,7 @@ int main(int argc, char **argv)
         ESP_LOGI(TAG, "init ESP-Hosted");
         app_esp_hosted_init();
 
-        eh_host_port_sem_wait_ms(sem_hosted_is_up, 0 /* forever */);
+        eh_host_port_sem_wait_ms(sem_hosted_is_up, EH_HOST_PORT_WAIT_FOREVER);
         ESP_LOGI(TAG, "ESP-Hosted is ready");
 
         bool esp_hosted_is_okay = app_esp_hosted_verify_up();

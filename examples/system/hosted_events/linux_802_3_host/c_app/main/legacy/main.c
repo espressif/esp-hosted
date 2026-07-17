@@ -26,7 +26,7 @@
  * What we replace:
  *   - station_example.c (~240 LOC of WIFI_EVENT / IP_EVENT handler +
  *     retry counter + event group dance) -> single eh_example_connect()
- *     call from eh_example_common.  The eh_example_common
+ *     call from esp_hosted_examples_common.  The esp_hosted_examples_common
  *     library encapsulates the same boilerplate and integrates with the
  *     project's WIFI_SSID/PASSWORD Kconfig.  Matches the wifi/sta
  *     linux_802_3 example.
@@ -67,7 +67,7 @@
 #include "esp_hosted_event.h"
 #include "esp_check.h"
 
-#include "eh_example_common.h"
+#include "esp_hosted_examples_common.h"
 
 /* ── Tunables (upstream uses CONFIG_EXAMPLE_* from Kconfig.projbuild;
  * the per-example sdkconfig pipeline for hosted_events isn't wired yet,
@@ -107,7 +107,7 @@ static void deinit_cp_error_detection(void)
  *
  * Upstream's WIFI_EVENT / IP_EVENT handler (formerly in
  * station_example.c) is now encapsulated inside eh_example_connect()
- * from eh_example_common.
+ * from esp_hosted_examples_common.
  */
 static void esp_hosted_event_handler(void *arg, esp_event_base_t event_base,
                                      int32_t event_id, void *event_data)
@@ -225,7 +225,7 @@ static bool app_esp_hosted_verify_up(void)
 static bool app_do_cp_recovery(void)
 {
 #if DO_HOSTED_RECOVERY
-    /* Tear down the eh_example_common netif so it's ready for
+    /* Tear down the esp_hosted_examples_common netif so it's ready for
      * a fresh connect after the transport comes back. */
     eh_example_disconnect();
     app_esp_hosted_deinit();
@@ -253,7 +253,7 @@ int main(int argc, char **argv)
         app_esp_hosted_init();
 
         /* Wait until ESP-Hosted is up before continuing. */
-        eh_host_port_sem_wait_ms(sem_hosted_is_up, 0 /* forever */);
+        eh_host_port_sem_wait_ms(sem_hosted_is_up, EH_HOST_PORT_WAIT_FOREVER);
         ESP_LOGI(TAG, "ESP-Hosted is ready");
 
         bool esp_hosted_is_okay = app_esp_hosted_verify_up();
@@ -265,7 +265,7 @@ int main(int argc, char **argv)
                 ESP_LOGE(TAG, "failed to set heartbeat");
             }
 
-            /* Connect to the AP using eh_example_common's
+            /* Connect to the AP using esp_hosted_examples_common's
              * encapsulated WIFI_EVENT / IP_EVENT retry loop. */
             ESP_ERROR_CHECK(eh_example_connect());
 

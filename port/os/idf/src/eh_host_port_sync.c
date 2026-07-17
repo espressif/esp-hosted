@@ -197,11 +197,13 @@ eh_host_port_err_t eh_host_port_sem_wait_ms(eh_host_port_sem_t *s, uint32_t time
 {
     if (!s || !s->h) return EH_HOST_PORT_ERR_INVAL;
     TickType_t t;
-    if (timeout_ms == 0) {
-        t = portMAX_DELAY;     /* 0 == block forever */
+    if (timeout_ms == EH_HOST_PORT_WAIT_FOREVER) {
+        t = portMAX_DELAY;     /* block forever */
+    } else if (timeout_ms == 0) {
+        t = 0;                 /* poll (non-blocking) */
     } else {
         t = pdMS_TO_TICKS(timeout_ms);
-        if (t == 0) t = 1;     /* never degrade a positive wait to non-blocking */
+        if (t == 0) t = 1;     /* never degrade a positive wait to a poll */
     }
     return (xSemaphoreTake(s->h, t) == pdTRUE)
            ? EH_HOST_PORT_OK : EH_HOST_PORT_ERR_TIMEOUT;
