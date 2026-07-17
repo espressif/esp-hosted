@@ -115,7 +115,7 @@ cd examples/wifi/sta/linux_802_3_host/kmod
 
 `--reload` builds, unloads, and reloads with the given module params. On SPI, start at `--clock-mhz 10`; once stable, raise it in steps to the co-processor's max SPI clock (see [Performance](../../../docs/design/performance.md)).
 
-**Native C app** — set the AP credentials (the app shares `eh_example_common`, so the options live under the `Example Connection Configuration` menu):
+**Native C app** — set the AP credentials (the app shares `esp_hosted_examples_common`, so the options live under the `Example Connection Configuration` menu):
 
 ```bash
 cd examples/wifi/sta/linux_802_3_host/c_app

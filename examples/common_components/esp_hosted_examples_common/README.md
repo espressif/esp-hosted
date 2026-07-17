@@ -1,6 +1,6 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 
-# eh_example_common
+# esp_hosted_examples_common
 
 Small modular WiFi helper for ESP-Hosted Linux + MCU example apps.
 Maps onto the canonical WiFi state surface (init → mode → start →
@@ -39,7 +39,7 @@ esp_err_t eh_example_softap_stop(void);
 | `sta.c` | STA connect/disconnect + menuconfig shim |
 | `scan.c` | active scan |
 | `ap.c` | SoftAP start/stop |
-| `include/eh_example_common.h` | public surface |
+| `include/esp_hosted_examples_common.h` | public surface |
 | `example_private.h` | shared internal state declarations |
 
 ## Menuconfig

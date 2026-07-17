@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <string.h>
-#include "eh_example_common.h"
+#include "esp_hosted_examples_common.h"
 #include "example_private.h"
 #include "esp_log.h"
 #include "esp_netif.h"

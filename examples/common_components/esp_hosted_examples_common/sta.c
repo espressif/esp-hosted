@@ -2,20 +2,39 @@
  * SPDX-FileCopyrightText: 2026 Espressif Systems (Shanghai) PTE LTD
  * SPDX-License-Identifier: Apache-2.0
  */
+#include "sdkconfig.h"          /* CONFIG_ESP_HOSTED_CP gate below needs this first */
 #include <string.h>
 #include <stdio.h>
-#include "eh_example_common.h"
+#include "esp_hosted_examples_common.h"
 #include "example_private.h"
 #include "esp_event.h"
 #include "esp_log.h"
 #include "esp_netif.h"
 #include "esp_wifi.h"
 #include "esp_check.h"
+
+/* Got-IP handshake. On the host the OS-port layer provides the semaphore; the CP
+ * is always FreeRTOS and doesn't link that layer, so use a native one there. */
+#ifdef CONFIG_ESP_HOSTED_CP
+#include "freertos/FreeRTOS.h"
+#include "freertos/semphr.h"
+typedef SemaphoreHandle_t eh_ex_sem_t;
+#define EH_EX_SEM_CREATE()    xSemaphoreCreateBinary()
+#define EH_EX_SEM_POST(s)     xSemaphoreGive(s)
+#define EH_EX_SEM_WAIT(s)     xSemaphoreTake((s), portMAX_DELAY)
+#define EH_EX_SEM_DESTROY(s)  vSemaphoreDelete(s)
+#else
 #include "eh_host_port_sync.h"
+typedef eh_host_port_sem_t *eh_ex_sem_t;
+#define EH_EX_SEM_CREATE()    eh_host_port_sem_create()
+#define EH_EX_SEM_POST(s)     eh_host_port_sem_post(s)
+#define EH_EX_SEM_WAIT(s)     eh_host_port_sem_wait_ms((s), EH_HOST_PORT_WAIT_FOREVER)
+#define EH_EX_SEM_DESTROY(s)  eh_host_port_sem_destroy(s)
+#endif
 
 static const char *TAG = "eh_example_sta";
 
-static eh_host_port_sem_t *s_got_ip_sem;
+static eh_ex_sem_t         s_got_ip_sem;
 static int                 s_retry_num;
 static bool                s_handlers_registered;
 
@@ -49,7 +68,7 @@ static void on_disconnect(void *arg, esp_event_base_t base,
     if (s_retry_num > CONFIG_EH_EXAMPLE_WIFI_MAXIMUM_RETRY) {
         ESP_LOGE(TAG, "connect FAILED after %d tries — reason %u: %s",
                  CONFIG_EH_EXAMPLE_WIFI_MAXIMUM_RETRY, reason, disc_reason_str(reason));
-        if (s_got_ip_sem) eh_host_port_sem_post(s_got_ip_sem);
+        if (s_got_ip_sem) EH_EX_SEM_POST(s_got_ip_sem);
         return;
     }
     ESP_LOGW(TAG, "disconnected (reason %u: %s) — retry %d/%d",
@@ -79,7 +98,7 @@ static void on_got_ip(void *arg, esp_event_base_t base,
     ip_event_got_ip_t *e = (ip_event_got_ip_t *)event_data;
     ESP_LOGI(TAG, "got IPv4 " IPSTR, IP2STR(&e->ip_info.ip));
     s_retry_num = 0;
-    if (s_got_ip_sem) eh_host_port_sem_post(s_got_ip_sem);
+    if (s_got_ip_sem) EH_EX_SEM_POST(s_got_ip_sem);
 }
 
 /* --- STA PHY knobs: one small setter per concern (each a no-op when its knob
@@ -204,7 +223,7 @@ esp_err_t eh_example_sta_connect(const char *ssid, const char *password)
         if (!eh_ex_sta_netif) return ESP_FAIL;
     }
 
-    s_got_ip_sem = eh_host_port_sem_create();
+    s_got_ip_sem = EH_EX_SEM_CREATE();
     if (!s_got_ip_sem) return ESP_ERR_NO_MEM;
     s_retry_num = 0;
 
@@ -231,10 +250,14 @@ esp_err_t eh_example_sta_connect(const char *ssid, const char *password)
     apply_sta_phy_cfg();
 
     ESP_LOGI(TAG, "connecting to SSID \"%s\"", ssid);
-    ESP_ERROR_CHECK(esp_wifi_connect());
+    /* Tolerate ESP_ERR_WIFI_CONN: an auto-connect-on-STA_START feature may have
+     * already started the connect, in which case this is a harmless no-op. */
+    esp_err_t cerr = esp_wifi_connect();
+    if (cerr != ESP_OK && cerr != ESP_ERR_WIFI_CONN)
+        ESP_ERROR_CHECK(cerr);
 
-    eh_host_port_sem_wait_ms(s_got_ip_sem, 0);
-    eh_host_port_sem_destroy(s_got_ip_sem);
+    EH_EX_SEM_WAIT(s_got_ip_sem);        /* host blocks until got-IP; CP no-op */
+    EH_EX_SEM_DESTROY(s_got_ip_sem);
     s_got_ip_sem = NULL;
 
     return (s_retry_num > CONFIG_EH_EXAMPLE_WIFI_MAXIMUM_RETRY) ? ESP_FAIL : ESP_OK;

@@ -5,21 +5,21 @@
  */
 
 #include "esp_log.h"
-#include "esp_wifi.h"
-#include "esp_event.h"
 #include "nvs_flash.h"
 
-/* Include ESP-Hosted coprocessor support */
+/* ESP-Hosted coprocessor support */
 #include "eh_cp.h"
-#include "esp_check.h"
+
+/* In network split the CP or host (both) can configure the STA */
+#include "esp_hosted_examples_common.h"
 
 #include "host_ps_integration.h"
 
-static const char *TAG = "wifi_mcu_example";
+static const char *TAG = "nwspl_h_deep_sl_cp_light_sl";
 
 void app_main(void)
 {
-    ESP_LOGI(TAG, "ESP-Hosted MCU WiFi Example Starting...");
+    ESP_LOGI(TAG, "ESP-Hosted network_split host-deep-sleep - CP-light-sleep starting...");
 
     /* Initialize NVS */
     esp_err_t ret = nvs_flash_init();
@@ -29,16 +29,9 @@ void app_main(void)
     }
     ESP_ERROR_CHECK(ret);
 
-    /* create default event loop */
-    ESP_ERROR_CHECK(esp_event_loop_create_default());
-
-    wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
-    ESP_ERROR_CHECK(esp_wifi_init(&cfg));
-    ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
-    ESP_ERROR_CHECK(esp_wifi_start());
-
-    /* Initialize ESP-Hosted coprocessor */
     ESP_ERROR_CHECK(eh_cp_init());
+
+    ESP_ERROR_CHECK(eh_example_connect());
 
     /* Wire host-deep-sleep ↔ CP-light-sleep integration */
     ESP_ERROR_CHECK(host_ps_integration_init());

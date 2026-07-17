@@ -13,7 +13,7 @@
 #
 # The component's name is its directory basename (IDF convention); that is the
 # target other code links by name (e.g. `target_link_libraries(app
-# eh_example_common)`).
+# esp_hosted_examples_common)`).
 #
 # REQUIRES / PRIV_REQUIRES are IDF component names. On Linux only some exist as
 # real targets (esp_event, esp_netif, nvs_flash, esp_hosted, ...). We link the
