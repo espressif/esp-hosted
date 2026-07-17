@@ -114,7 +114,7 @@ menu "CP core"
 	endmenu
 
 	menu "HCI UART Settings"
-		depends on BT_ENABLED && BT_LE_HCI_INTERFACE_USE_UART && !IDF_TARGET_ESP32 && !IDF_TARGET_ESP32C3 && !IDF_TARGET_ESP32S3
+		depends on BT_ENABLED && BT_LE_HCI_INTERFACE_USE_UART && !IDF_TARGET_ESP32 && !IDF_TARGET_ESP32C3 && !IDF_TARGET_ESP32S3 && !IDF_TARGET_ESP32P4
 		comment "HCI UART Settings from Bluetooth Component"
 		comment "To change, select Component config ---> Bluetooth ---> Controller Options ---> HCI Config"
 
