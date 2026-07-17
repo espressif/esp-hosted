@@ -55,7 +55,8 @@ if ESP_HOSTED_HOST_TRANSPORT_BUS_SPI
 
 	config ESP_HOSTED_HOST_RESET_ACTIVE_LOW
 		bool "Slave reset is active-low"
-		default n
+		# active-low so the reset pulse ends HIGH and the CP runs (as spi_hd/sdio)
+		default y
 
 	config ESP_HOSTED_SPI_MOSI_RANGE_MIN
 			int
