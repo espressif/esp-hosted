@@ -460,7 +460,6 @@ static uint8_t * get_next_tx_buffer(uint32_t *len)
 {
 	interface_buffer_handle_t buf_handle = {0};
 	esp_err_t ret = ESP_OK;
-	uint8_t *sendbuf = NULL;
 
 
 #ifdef CONFIG_ESP_ENABLE_TX_PRIORITY_QUEUES
@@ -497,7 +496,7 @@ static uint8_t * get_next_tx_buffer(uint32_t *len)
 	eh_frame_encode_dummy(dummy_buffer, (uint8_t)find_wifi_tx_throttling_to_be_set());
 	return dummy_buffer;
 #else
-	sendbuf = spi_buffer_tx_alloc(MEMSET_REQUIRED);
+	uint8_t *sendbuf = spi_buffer_tx_alloc(MEMSET_REQUIRED);
 	if (!sendbuf) {
 		ESP_LOGE(TAG, "Failed to allocate memory for dummy transaction");
 		if (len)
