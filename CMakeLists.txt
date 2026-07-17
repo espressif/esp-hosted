@@ -27,12 +27,22 @@ if(ESP_PLATFORM)
     file(GLOB _eh_feat_incs LIST_DIRECTORIES true RELATIVE "${EH_PATH}"
         "${EH_PATH}/host/features/eh_host_feat_*/include")
 
+    # ldgen places the feature-descriptor section into a declared region (no
+    # "undeclared region" linker warning). Host and CP each map their own section.
+    set(_eh_ldfragments "")
+    if(CONFIG_ESP_HOSTED_HOST)
+        list(APPEND _eh_ldfragments "host/eh_host_feat_descs.lf")
+    elseif(CONFIG_ESP_HOSTED_CP)
+        list(APPEND _eh_ldfragments "coprocessor/eh_cp_feat_descs.lf")
+    endif()
+
     idf_component_register(NAME esp_hosted
         INCLUDE_DIRS host/compat/include ${_eh_feat_incs}
         REQUIRES esp_event esp_timer log esp_common esp_wifi
         PRIV_REQUIRES driver esp_driver_gpio esp_driver_spi esp_driver_sdmmc esp_driver_uart
                       esp_pm nvs_flash
-                      protocomm)  # eh_cp_feat_rpc when CP framework is built
+                      protocomm  # eh_cp_feat_rpc when CP framework is built
+        LDFRAGMENTS ${_eh_ldfragments})
 
     # eh_host  — HOST-side aggregator; every host/ subdir self-attaches.
     # eh_cp    — CP-side aggregator; every coprocessor/ subdir self-attaches.

@@ -1,13 +1,14 @@
 /* Linux/POSIX linker fragment for EH_HOST_FEAT_REGISTER descriptors.
- * Defines start/stop symbols expected by eh_host_autoinit.
+ * Defines the start/end bounds expected by eh_host_autoinit
+ * (same names ldgen's SURROUND() emits on ESP builds).
  * No fixed MEMORY region is used on host builds. */
 SECTIONS
 {
     .eh_host_feat_descs : ALIGN(8)
     {
-        PROVIDE(__start_eh_host_feat_descs = .);
+        PROVIDE(_eh_host_feat_descs_start = .);
         KEEP(*(eh_host_feat_descs))
-        PROVIDE(__stop_eh_host_feat_descs = .);
+        PROVIDE(_eh_host_feat_descs_end = .);
     }
 }
 INSERT AFTER .data;

@@ -31,5 +31,5 @@ endforeach()
 
 add_subdirectory(eh_cp_core ${CMAKE_BINARY_DIR}/eh_cp_core)
 
-target_link_options(eh_cp INTERFACE
-    "-Wl,-T${CMAKE_CURRENT_LIST_DIR}/eh_cp_feat_descs.ld")
+# eh_cp_feat_descs placement is handled by ldgen via coprocessor/eh_cp_feat_descs.lf
+# (LDFRAGMENTS wired in the root CMakeLists) -> declared region, no linker warning.
