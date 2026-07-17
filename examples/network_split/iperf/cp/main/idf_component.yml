@@ -2,5 +2,8 @@ dependencies:
   espressif/esp_hosted:
     override_path: "../../../../.."
     version: "*"
+  esp_hosted_examples_common:
+    override_path: "../../../../common_components/esp_hosted_examples_common"
+    version: "*"
   idf:
     version: ">=5.5"
