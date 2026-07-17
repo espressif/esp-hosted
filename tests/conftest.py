@@ -197,6 +197,31 @@ def wifi_ap(substrate):
     return None
 
 
+@pytest.fixture(scope="session")
+def tap_available():
+    """True if this process can create a TAP interface (needs CAP_NET_ADMIN).
+    The emu models a real AP only with TAP; without it it falls back to --net
+    user (smoltcp NAT), which leases the STA netif an IP at boot — before any
+    Wi-Fi association. Tests whose contract depends on association-gated IP
+    (e.g. 'no IP before connect') must skip when this is False."""
+    import os, fcntl, struct
+    TUNSETIFF, IFF_TAP, IFF_NO_PI = 0x400454ca, 0x0002, 0x1000
+    try:
+        fd = os.open("/dev/net/tun", os.O_RDWR)
+    except OSError:
+        return False
+    try:
+        fcntl.ioctl(fd, TUNSETIFF, struct.pack("16sH", b"ehtapprobe%d", IFF_TAP | IFF_NO_PI))
+        return True
+    except OSError:
+        return False
+    finally:
+        try:
+            os.close(fd)
+        except OSError:
+            pass
+
+
 @pytest.fixture
 def bench_caps(substrate):
     """The substrate's capability set WITHOUT provisioning a bench — so a test can

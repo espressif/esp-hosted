@@ -133,7 +133,7 @@ def test_nw_split_port_routing(bench, wifi_ap, transport):
     'uart',                                          # the wire the boot-race crashed on
 ])
 @pytest.mark.second_chance
-def test_nw_split_iperf_cli_connect(bench, wifi_ap, transport):
+def test_nw_split_iperf_cli_connect(bench, wifi_ap, transport, tap_available, substrate):
     """Console-connect model (iperf example): unlike the station example (pure
     auto-connect, covered by host_ip_via_cp), the iperf example is CLI-driven —
     it must NOT auto-connect at boot and must connect ONLY via `sta_connect`.
@@ -144,6 +144,13 @@ def test_nw_split_iperf_cli_connect(bench, wifi_ap, transport):
       2. `sta_connect` from the CLI brings the split's shared IP to the host."""
     if not wifi_ap:
         pytest.skip(f'[{transport}] bench has no associable AP')
+    # Contract 1b below ("no IP before sta_connect") needs the emu to model a real
+    # AP (association-gated DHCP), which requires TAP networking. Without CAP_NET_ADMIN
+    # the emu falls back to --net user (smoltcp NAT) and leases the netif an IP at
+    # boot, so the negative assertion cannot hold. The positive path is covered by
+    # nw_split_port_routing / iperf_auto_connect.
+    if substrate == 'emu' and not tap_available:
+        pytest.skip(f'[{transport}] needs TAP-modeled AP (emu --net user NAT-leases at boot)')
     b = bench('network_split/iperf', 'mcu_host', transport, timeout='150s', wake=True)
     host = b['host']
 
