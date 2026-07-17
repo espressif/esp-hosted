@@ -38,7 +38,7 @@ set(cp_core_requires
 )
 
 if(CONFIG_ESP_WIFI_ENABLED)
-    list(APPEND cp_core_requires idf::esp_wifi)
+    list(APPEND cp_core_requires idf::esp_wifi idf::esp_netif)
 endif()
 
 target_link_libraries(eh_cp_core
@@ -64,10 +64,19 @@ endif()
 
 target_link_options(eh_cp_core INTERFACE
     "LINKER:--wrap=esp_event_loop_create_default"
-    "LINKER:--wrap=esp_netif_init"
     "LINKER:--undefined=__wrap_esp_event_loop_create_default"
-    "LINKER:--undefined=__wrap_esp_netif_init"
 )
+
+if(CONFIG_ESP_WIFI_ENABLED)
+    target_link_options(eh_cp_core INTERFACE
+        "LINKER:--wrap=esp_netif_init"
+        "LINKER:--wrap=esp_netif_create_default_wifi_sta"
+        "LINKER:--wrap=esp_netif_create_default_wifi_ap"
+        "LINKER:--undefined=__wrap_esp_netif_init"
+        "LINKER:--undefined=__wrap_esp_netif_create_default_wifi_sta"
+        "LINKER:--undefined=__wrap_esp_netif_create_default_wifi_ap"
+    )
+endif()
 
 if(TARGET eh_cp)
     target_link_libraries(eh_cp INTERFACE eh_cp_core)
