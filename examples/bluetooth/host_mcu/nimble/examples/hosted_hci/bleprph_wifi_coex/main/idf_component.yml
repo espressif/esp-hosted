@@ -1,4 +1,10 @@
 dependencies:
+  esp_hosted_hci_nimble:
+    override_path: "../../../../components/esp_hosted_hci_nimble"
+    version: "*"
+  esp_hosted_examples_common:
+    override_path: "../../../../../../../common_components/esp_hosted_examples_common"
+    version: "*"
   espressif/esp_hosted:
     version: "*"
     override_path: "../../../../../../../.."
