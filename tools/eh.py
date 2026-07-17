@@ -1768,6 +1768,18 @@ def _report_idf_patch_status(idf_dir: Path) -> None:
         "To suppress/unsuppress warning, call above command with --suppress/--unsuppress",
     ], _YELLOW)
 
+def _rule(label, color=""):
+    """Full-width, centered rule: '----- label -----' across the terminal."""
+    try:
+        width = min(shutil.get_terminal_size((80, 20)).columns, 80)
+    except Exception:
+        width = 80
+    mid = f" {label} "
+    pad = max(0, width - len(mid))
+    line = ("-" * (pad // 2)) + mid + ("-" * (pad - pad // 2))
+    return f"{color}{line}{_RESET}" if color else line
+
+
 def apply_idf_patches(idf_dir: Path) -> int:
     """Lift the SDIO 4092-byte send cap by rewriting the one guard line in
     sdio_slave.c (exact-line match -> version-agnostic; no context or HAL-header
@@ -1778,23 +1790,30 @@ def apply_idf_patches(idf_dir: Path) -> int:
         text = src.read_text()
     except OSError as e:
         sys.stderr.write(f"{_RED}eh:{_RESET} cannot read {src}: {e}\n")
+        print(_rule("patch failed", _RED))
         return 1
     if _SDIO_CAP_OLD not in text:
-        return 0
+        return 0                      # nothing to do -> stay silent
     try:
         src.write_text(text.replace(_SDIO_CAP_OLD, _SDIO_CAP_NEW))
     except OSError as e:
         sys.stderr.write(f"{_RED}eh:{_RESET} cannot write {src}: {e}\n")
+        print(_rule("patch failed", _RED))
         return 1
-    print(f"{_GREEN}idf patched:{_RESET} lifted the SDIO 4092 send cap in {src}")
+    print(_rule(f"idf: {idf_dir}"))
+    print(f"   file: {_SDIO_SLAVE_SRC}")
     print(f"   {_RED}- {_SDIO_CAP_OLD}{_RESET}")
     print(f"   {_GREEN}+ {_SDIO_CAP_NEW}{_RESET}")
-    print(f"   {_DIM}verify: cd {idf_dir} && git diff{_RESET}")
+    print(_rule("patch successful", _GREEN))
     return 0
 
 
 def cmd_patch_idf(args) -> int:
-    idf = resolve_idf()
+    # --idf-path pins the exact IDF (e.g. the one a build's CMake gate reported);
+    # otherwise auto-resolve (eh.conf -> .deps/esp-idf -> $IDF_PATH). This matters
+    # when .deps exists but the build uses a different $IDF_PATH: without the pin,
+    # resolve_idf() would target .deps and silently no-op the intended IDF.
+    idf = Path(args.idf_path).expanduser() if getattr(args, "idf_path", None) else resolve_idf()
     if idf is None:
         sys.stderr.write(f"{_RED}eh:{_RESET} no ESP-IDF resolved "
                          f"(set IDF_PATH, eh.py set-idf-path, or ./install.sh)\n")
@@ -2314,6 +2333,9 @@ def main() -> int:
                    help="suppress the SDIO send-cap notice for this IDF (no change made)")
     g.add_argument("--unsuppress", action="store_true",
                    help="re-enable the SDIO send-cap notice for this IDF (the default)")
+    sp.add_argument("--idf-path", metavar="DIR",
+                   help="patch THIS ESP-IDF instead of the auto-resolved one "
+                        "(pass the path your build reports; overrides .deps/$IDF_PATH)")
     sp.set_defaults(fn=cmd_patch_idf)
 
     sp = sub.add_parser("set-esp-emu",
