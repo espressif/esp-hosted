@@ -44,9 +44,9 @@ The example can be configured through `sdkconfig.defaults` or menuconfig:
 
 ### WiFi Configuration
 
-- `CONFIG_EXAMPLE_WIFI_SSID`: WiFi SSID
-- `CONFIG_EXAMPLE_WIFI_PASSWORD`: WiFi password
-- `CONFIG_EXAMPLE_WIFI_CONN_MAX_RETRY`: Maximum connection retry attempts
+- `CONFIG_EH_EXAMPLE_WIFI_SSID`: WiFi SSID
+- `CONFIG_EH_EXAMPLE_WIFI_PASSWORD`: WiFi password
+- `CONFIG_EH_EXAMPLE_WIFI_MAXIMUM_RETRY`: Maximum connection retry attempts
 
 ### LWIP Port Range Configuration
 

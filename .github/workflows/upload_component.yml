@@ -30,6 +30,11 @@ jobs:
           cp -r examples/common_components/esp_hosted_examples_common examples/power_save/host/network_split__host_deep_sleep/cp/components/
           mkdir -p examples/power_save/host+cp/network_split__host_deep_sleep_cp_light_sleep/cp/components
           cp -r examples/common_components/esp_hosted_examples_common examples/power_save/host+cp/network_split__host_deep_sleep_cp_light_sleep/cp/components/
+          # esp_hosted_examples_common -> network_split mcu_host examples
+          mkdir -p examples/network_split/station/mcu_host/components
+          cp -r examples/common_components/esp_hosted_examples_common examples/network_split/station/mcu_host/components/
+          mkdir -p examples/network_split/iperf/mcu_host/components
+          cp -r examples/common_components/esp_hosted_examples_common examples/network_split/iperf/mcu_host/components/
           # esp_hosted_examples_common -> BT Wi-Fi coex
           mkdir -p examples/bluetooth/host_mcu/nimble/examples/hosted_hci/bleprph_wifi_coex/components
           cp -r examples/common_components/esp_hosted_examples_common examples/bluetooth/host_mcu/nimble/examples/hosted_hci/bleprph_wifi_coex/components/

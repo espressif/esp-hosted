@@ -11,6 +11,7 @@ endif()
 idf_component_register(SRCS "station_example_main.c" ${additional_srcs}
                     INCLUDE_DIRS "." ${additional_includes}
                     REQUIRES esp_hosted
+						esp_hosted_examples_common
 						lwip
 						mqtt
 						nvs_flash

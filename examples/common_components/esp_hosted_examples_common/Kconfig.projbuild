@@ -81,4 +81,48 @@ menu "Example Connection Configuration"
               HK HR HU IE IN IS IT JP KR LI LT LU LV MT MX NL NO NZ PL PT RO SE
               SI SK TW US
 
+    # STA auth-mode threshold + WPA3 SAE PWE — for examples that drive an
+    # explicit connect (network_split station/iperf). Values mirror IDF's
+    # protocol_examples_common so migrated examples keep identical behaviour.
+    choice EH_EXAMPLE_WIFI_AUTH_MODE
+        prompt "STA scan auth-mode threshold"
+        default EH_EXAMPLE_WIFI_AUTH_OPEN
+        help
+            Weakest auth mode the STA accepts while scanning for the AP.
+        config EH_EXAMPLE_WIFI_AUTH_OPEN
+            bool "OPEN"
+        config EH_EXAMPLE_WIFI_AUTH_WEP
+            bool "WEP"
+        config EH_EXAMPLE_WIFI_AUTH_WPA_PSK
+            bool "WPA PSK"
+        config EH_EXAMPLE_WIFI_AUTH_WPA2_PSK
+            bool "WPA2 PSK"
+        config EH_EXAMPLE_WIFI_AUTH_WPA_WPA2_PSK
+            bool "WPA/WPA2 PSK"
+        config EH_EXAMPLE_WIFI_AUTH_WPA3_PSK
+            bool "WPA3 PSK"
+        config EH_EXAMPLE_WIFI_AUTH_WPA2_WPA3_PSK
+            bool "WPA2/WPA3 PSK"
+        config EH_EXAMPLE_WIFI_AUTH_WAPI_PSK
+            bool "WAPI PSK"
+    endchoice
+
+    choice EH_EXAMPLE_WIFI_SAE_MODE
+        prompt "WPA3 SAE PWE derivation"
+        default EH_EXAMPLE_STATION_WPA3_SAE_PWE_BOTH
+        help
+            WPA3 SAE password-element derivation: hunt-and-peck, H2E, or both.
+        config EH_EXAMPLE_STATION_WPA3_SAE_PWE_HUNT_AND_PECK
+            bool "HUNT AND PECK"
+        config EH_EXAMPLE_STATION_WPA3_SAE_PWE_HASH_TO_ELEMENT
+            bool "H2E"
+        config EH_EXAMPLE_STATION_WPA3_SAE_PWE_BOTH
+            bool "BOTH"
+    endchoice
+
+    config EH_EXAMPLE_WIFI_PW_ID
+        string "WPA3 SAE password identifier (H2E)"
+        depends on EH_EXAMPLE_STATION_WPA3_SAE_PWE_HASH_TO_ELEMENT || EH_EXAMPLE_STATION_WPA3_SAE_PWE_BOTH
+        default ""
+
 endmenu
