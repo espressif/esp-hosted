@@ -242,38 +242,38 @@ if ESP_HOSTED_HOST_TRANSPORT_BUS_SDIO
 
 	# Slot 0: IOMUX-fixed pins (P4: CMD=44, CLK=43, D0=39, D1=40, D2=41, D3=42)
 		if ESP_HOSTED_SDIO_SLOT_0
-			config ESP_HOSTED_HOST_SDIO_PIN_CMD
+			config ESP_HOSTED_HOST_SDIO_PIN_CMD  # ignore: multiple-definition
 				int "CMD GPIO number"
 				default 47 if IDF_TARGET_ESP32S3
 				range 44 44 if IDF_TARGET_ESP32P4
 				range 15 15 if IDF_TARGET_ESP32
 
-			config ESP_HOSTED_HOST_SDIO_PIN_CLK
+			config ESP_HOSTED_HOST_SDIO_PIN_CLK  # ignore: multiple-definition
 				int "CLK GPIO number"
 				default 19 if IDF_TARGET_ESP32S3
 				range 43 43 if IDF_TARGET_ESP32P4
 				range 14 14 if IDF_TARGET_ESP32
 
-			config ESP_HOSTED_HOST_SDIO_PIN_D0
+			config ESP_HOSTED_HOST_SDIO_PIN_D0  # ignore: multiple-definition
 				int "D0 GPIO number"
 				default 13 if IDF_TARGET_ESP32S3
 				range 39 39 if IDF_TARGET_ESP32P4
 				range 2 2 if IDF_TARGET_ESP32
 
 			if ESP_HOSTED_HOST_SDIO_BUS_WIDTH_4
-				config ESP_HOSTED_HOST_SDIO_PIN_D1
+				config ESP_HOSTED_HOST_SDIO_PIN_D1  # ignore: multiple-definition
 					int "D1 GPIO number"
 					default 35 if IDF_TARGET_ESP32S3
 					range 40 40 if IDF_TARGET_ESP32P4
 					range 4 4 if IDF_TARGET_ESP32
 
-				config ESP_HOSTED_HOST_SDIO_PIN_D2
+				config ESP_HOSTED_HOST_SDIO_PIN_D2  # ignore: multiple-definition
 					int "D2 GPIO number"
 					default 20 if IDF_TARGET_ESP32S3
 					range 41 41 if IDF_TARGET_ESP32P4
 					range 12 12 if IDF_TARGET_ESP32
 
-				config ESP_HOSTED_HOST_SDIO_PIN_D3
+				config ESP_HOSTED_HOST_SDIO_PIN_D3  # ignore: multiple-definition
 					int "D3 GPIO number"
 					default 9 if IDF_TARGET_ESP32S3
 					range 42 42 if IDF_TARGET_ESP32P4
@@ -283,7 +283,7 @@ if ESP_HOSTED_HOST_TRANSPORT_BUS_SDIO
 
 		# Slot 1: configurable pins with per-board range locks
 		if ESP_HOSTED_SDIO_SLOT_1
-			config ESP_HOSTED_HOST_SDIO_PIN_CMD
+			config ESP_HOSTED_HOST_SDIO_PIN_CMD  # ignore: multiple-definition
 				int "CMD GPIO number"
 				default 51 if ESP_HOSTED_P4_C5_CORE_BOARD
 				default 52 if ESP_HOSTED_P4_C6_CORE_BOARD || ESP_HOSTED_P4_C61_CORE_BOARD
@@ -294,7 +294,7 @@ if ESP_HOSTED_HOST_TRANSPORT_BUS_SDIO
 				default 15
 				range ESP_HOSTED_SDIO_CMD_GPIO_RANGE_MIN ESP_HOSTED_SDIO_CMD_GPIO_RANGE_MAX
 
-			config ESP_HOSTED_HOST_SDIO_PIN_CLK
+			config ESP_HOSTED_HOST_SDIO_PIN_CLK  # ignore: multiple-definition
 				int "CLK GPIO number"
 				default 50 if ESP_HOSTED_P4_C5_CORE_BOARD
 				default 51 if ESP_HOSTED_P4_C6_CORE_BOARD || ESP_HOSTED_P4_C61_CORE_BOARD
@@ -305,7 +305,7 @@ if ESP_HOSTED_HOST_TRANSPORT_BUS_SDIO
 				default 14
 				range ESP_HOSTED_SDIO_CLK_GPIO_RANGE_MIN ESP_HOSTED_SDIO_CLK_GPIO_RANGE_MAX
 
-			config ESP_HOSTED_HOST_SDIO_PIN_D0
+			config ESP_HOSTED_HOST_SDIO_PIN_D0  # ignore: multiple-definition
 				int "D0 GPIO number"
 				default 49 if ESP_HOSTED_P4_C5_CORE_BOARD
 				default 50 if ESP_HOSTED_P4_C6_CORE_BOARD || ESP_HOSTED_P4_C61_CORE_BOARD
@@ -317,7 +317,7 @@ if ESP_HOSTED_HOST_TRANSPORT_BUS_SDIO
 				range ESP_HOSTED_SDIO_D0_GPIO_RANGE_MIN ESP_HOSTED_SDIO_D0_GPIO_RANGE_MAX
 
 			if ESP_HOSTED_HOST_SDIO_BUS_WIDTH_4
-				config ESP_HOSTED_HOST_SDIO_PIN_D1
+				config ESP_HOSTED_HOST_SDIO_PIN_D1  # ignore: multiple-definition
 					int "D1 GPIO number"
 					default 48 if ESP_HOSTED_P4_C5_CORE_BOARD
 					default 49 if ESP_HOSTED_P4_C6_CORE_BOARD || ESP_HOSTED_P4_C61_CORE_BOARD
@@ -328,7 +328,7 @@ if ESP_HOSTED_HOST_TRANSPORT_BUS_SDIO
 					default 4
 					range ESP_HOSTED_SDIO_D1_GPIO_RANGE_MIN ESP_HOSTED_SDIO_D1_GPIO_RANGE_MAX
 
-				config ESP_HOSTED_HOST_SDIO_PIN_D2
+				config ESP_HOSTED_HOST_SDIO_PIN_D2  # ignore: multiple-definition
 					int "D2 GPIO number"
 					default 53 if ESP_HOSTED_P4_C5_CORE_BOARD
 					default 48 if ESP_HOSTED_P4_C6_CORE_BOARD || ESP_HOSTED_P4_C61_CORE_BOARD
@@ -339,7 +339,7 @@ if ESP_HOSTED_HOST_TRANSPORT_BUS_SDIO
 					default 12
 					range ESP_HOSTED_SDIO_D2_GPIO_RANGE_MIN ESP_HOSTED_SDIO_D2_GPIO_RANGE_MAX
 
-				config ESP_HOSTED_HOST_SDIO_PIN_D3
+				config ESP_HOSTED_HOST_SDIO_PIN_D3  # ignore: multiple-definition
 					int "D3 GPIO number"
 					default 52 if ESP_HOSTED_P4_C5_CORE_BOARD
 					default 47 if ESP_HOSTED_P4_C6_CORE_BOARD || ESP_HOSTED_P4_C61_CORE_BOARD
