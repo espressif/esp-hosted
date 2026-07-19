@@ -172,3 +172,6 @@ CLAUDE.md
 
 # CI compiler cache (persisted via GitLab cache)
 .ccache/
+
+# registry README generator preview output (disposable)
+tmp_registry_readmes/
