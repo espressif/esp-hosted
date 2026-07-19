@@ -8,8 +8,6 @@ license: "Apache-2.0"
 dependencies:
   idf:
     version: ">=5.5"
-  esp_hosted_examples_common:
-    path: examples/common_components/esp_hosted_examples_common
 
 targets:
   - esp32
