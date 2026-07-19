@@ -1,0 +1,4 @@
+[codespell]
+skip = build,.deps,managed_components,vendor,tmp_registry_readmes,*.drawio,*.svg,*.pdf,*.jpg,*.jpeg,*.png,*eh_common_fw_version.h
+ignore-words-list = rsource,INDX,ans,aNULL,aci,DEACTIVE,OT,ot
+write-changes = true
