@@ -105,7 +105,7 @@ menu "Configure host"
 		default n if ESP_HOSTED_CP_TARGET_ESP32H2 || ESP_HOSTED_CP_TARGET_ESP32H4
 		default y
 
-	choice ESP_HOST_DEV_BOARD
+	choice ESP_HOSTED_DEV_BOARD
 		prompt "Select PCB Board (Optional)"
 		default ESP_HOSTED_P4_DEV_BOARD_NONE
 

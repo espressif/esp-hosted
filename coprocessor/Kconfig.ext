@@ -64,7 +64,7 @@ menu "Configure coprocessor"
 			bool "Upstream fg 2.x host (RPC V1)"
 	endchoice
 
-	choice ESP_HOST_DEV_BOARD
+	choice ESP_HOSTED_DEV_BOARD
 		prompt "Select PCB Board (Optional)"
 		default ESP_HOSTED_P4_DEV_BOARD_NONE
 
