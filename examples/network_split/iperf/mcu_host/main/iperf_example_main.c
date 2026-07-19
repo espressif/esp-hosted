@@ -122,7 +122,7 @@ static EventGroupHandle_t s_wifi_event_group;
 #include "eh_echo_server.h"
 #endif
 
-static const char *TAG = "example_nw_split_station";
+static const char *TAG = "example_nw_split_iperf";
 
 static int s_retry_num = 0;
 

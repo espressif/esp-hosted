@@ -70,6 +70,11 @@ extern "C" {
 esp_err_t eh_example_init(void);
 esp_err_t eh_example_deinit(void);
 
+/* STA bring-up WITHOUT connect: init + netif + config + start (raises STA_START).
+ * The core auto-connect-on-STA_START feature connects if enabled; else the STA
+ * stays idle for a host/CLI owner. Use on the network-split CP (feature owns connect). */
+esp_err_t eh_example_sta_start(const char *ssid, const char *password);
+
 /* STA — explicit credentials.  Blocks until IP or MAXIMUM_RETRY.
  * Auth picked from password length (empty → OPEN, else WPA2-PSK).
  * Band auto-selected: works on 2.4 GHz and 5 GHz APs. */

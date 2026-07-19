@@ -9,7 +9,6 @@ CONFIG_PARTITION_TABLE_CUSTOM=y
 CONFIG_PARTITION_TABLE_CUSTOM_FILENAME="partitions_eh_cp_ota_4m.csv"
 
 # 4. Transport — default SDIO for P4 dev board pairing.
-CONFIG_ESP_HOST_DEV_BOARD_P4_FUNC_BOARD=y
 
 # 5. Wi-Fi backhaul tuning (BR needs decent throughput for IPv6 forwarding)
 CONFIG_ESP_WIFI_STATIC_RX_BUFFER_NUM=20

@@ -29,5 +29,6 @@ void app_main(void)
 
     ESP_ERROR_CHECK(eh_cp_init());
 
-    ESP_ERROR_CHECK(eh_example_connect());
+    /* Brings up the STA (init+start); connects only if the core nw_split auto-connect-on-STA_START is enabled — else the host owns the connect. */
+    ESP_ERROR_CHECK(eh_example_sta_start(CONFIG_EH_EXAMPLE_WIFI_SSID, CONFIG_EH_EXAMPLE_WIFI_PASSWORD));
 }

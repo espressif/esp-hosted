@@ -2,7 +2,7 @@
  * SPDX-FileCopyrightText: 2026 Espressif Systems (Shanghai) PTE LTD
  * SPDX-License-Identifier: Apache-2.0
  */
-#include "sdkconfig.h"          /* CONFIG_ESP_HOSTED_CP gate below needs this first */
+#include "sdkconfig.h"
 #include <string.h>
 #include <stdio.h>
 #include "esp_hosted_examples_common.h"
@@ -13,8 +13,6 @@
 #include "esp_wifi.h"
 #include "esp_check.h"
 
-/* Got-IP handshake. On the host the OS-port layer provides the semaphore; the CP
- * is always FreeRTOS and doesn't link that layer, so use a native one there. */
 #ifdef CONFIG_ESP_HOSTED_CP
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
@@ -214,7 +212,10 @@ static void apply_sta_phy_cfg(void)
     sta_report_phy();
 }
 
-esp_err_t eh_example_sta_connect(const char *ssid, const char *password)
+/* Bring up the STA (init + netif + config + start) but do NOT connect. Firing
+ * esp_wifi_start() raises STA_START, on which the core auto-connect-on-STA_START
+ * feature (inside of esp-hosted - not at example) connects IF enabled; otherwise the STA stays idle for a host/CLI owner. */
+esp_err_t eh_example_sta_start(const char *ssid, const char *password)
 {
     ESP_ERROR_CHECK(eh_example_init());
 
@@ -223,8 +224,6 @@ esp_err_t eh_example_sta_connect(const char *ssid, const char *password)
         if (!eh_ex_sta_netif) return ESP_FAIL;
     }
 
-    s_got_ip_sem = EH_EX_SEM_CREATE();
-    if (!s_got_ip_sem) return ESP_ERR_NO_MEM;
     s_retry_num = 0;
 
     if (!s_handlers_registered) {
@@ -248,10 +247,19 @@ esp_err_t eh_example_sta_connect(const char *ssid, const char *password)
     ESP_ERROR_CHECK(esp_wifi_start());
 
     apply_sta_phy_cfg();
+    return ESP_OK;
+}
+
+esp_err_t eh_example_sta_connect(const char *ssid, const char *password)
+{
+    s_got_ip_sem = EH_EX_SEM_CREATE();
+    if (!s_got_ip_sem) return ESP_ERR_NO_MEM;
+
+    ESP_ERROR_CHECK(eh_example_sta_start(ssid, password));
 
     ESP_LOGI(TAG, "connecting to SSID \"%s\"", ssid);
-    /* Tolerate ESP_ERR_WIFI_CONN: an auto-connect-on-STA_START feature may have
-     * already started the connect, in which case this is a harmless no-op. */
+    /* Tolerate ESP_ERR_WIFI_CONN: a core auto-connect-on-STA_START feature may
+     * have already started the connect, in which case this is a harmless no-op. */
     esp_err_t cerr = esp_wifi_connect();
     if (cerr != ESP_OK && cerr != ESP_ERR_WIFI_CONN)
         ESP_ERROR_CHECK(cerr);

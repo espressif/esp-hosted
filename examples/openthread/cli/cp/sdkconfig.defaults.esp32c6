@@ -10,7 +10,6 @@ CONFIG_PARTITION_TABLE_CUSTOM_FILENAME="partitions_eh_cp_ota_4m.csv"
 
 # 4. Transport — default SDIO for P4 dev board pairing.  Override in
 #    sdkconfig.local for SPI / UART / SPI-HD.
-CONFIG_ESP_HOST_DEV_BOARD_P4_FUNC_BOARD=y
 
 # 5. Optimisations
 CONFIG_COMPILER_OPTIMIZATION_PERF=y

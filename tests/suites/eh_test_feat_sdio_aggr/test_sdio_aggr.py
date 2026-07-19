@@ -140,13 +140,17 @@ def test_sdio_raw_tp_cli(bench):
 @pytest.mark.system
 @pytest.mark.second_chance
 def test_sdio_sw_aggr_bulk_really_aggregates(bench):
-    """REAL aggregation proof: bulk peer-data traffic queues multiple frames
-    per transfer, so both ends must log their one-time multi-frame markers —
-    TX 'packed N frames' and RX 'de-aggregated N sub-frames' with N>1 on CP
-    and host. A small ping/RPC would ride the single-frame fast path or the
-    <=256 B latency bypass and prove nothing; this pins the walk/packer for
-    frames that genuinely share one SDIO transfer. (True throughput numbers
-    are a HW-bench gate — emu proves function, not speed.)"""
+    """REAL aggregation proof, CP->host direction: peer-data makes the CP batch
+    its large, fragmented responses, so the CP packs >1 frame per SDIO transfer
+    and the host de-aggregates >1 sub-frame — pinning the packer/walker on frames
+    that genuinely share one transfer (not the single-frame fast path or the
+    <=256 B latency bypass). (Throughput is a HW-bench gate — emu proves function.)
+
+    host->CP is intentionally NOT asserted here: eh_host_peer_data_send() is a
+    SYNCHRONOUS RPC round-trip, so the host never queues >1 frame and host-TX
+    packing simply can't be produced by this example (asserting it made the test
+    flaky). host->CP bulk packing needs an async flood that genuinely queues —
+    see test_sdio_sw_aggr_host_tx_flood (raw_tp TX)."""
     b = bench('peer_data_transfer', 'mcu_host', 'sdio', timeout='180s',
               cp_overlay=AGGR_TRACE_CP_OVL, overlay=AGGR_TRACE_HOST_OVL)
     host, cp = b['host'], b['cp']
@@ -154,15 +158,11 @@ def test_sdio_sw_aggr_bulk_really_aggregates(bench):
     r = eh_test_expect(host, r'SDIO SW_AGGR negotiated', fail=FAIL, timeout=45)
     assert r.ok, f'negotiated: {r.matched}'
 
-    # multi-frame markers, both directions, both ends (one-time INFO logs)
-    r = eh_test_expect(host, r'sdio aggr tx: packed \d+ frames', fail=FAIL, timeout=120)
-    assert r.ok, f'host TX really aggregated (>1 frame/transfer): {r.matched}'
-    r = eh_test_expect(host, r'sdio aggr rx: \d+ sub-frames', fail=FAIL, timeout=120)
-    assert r.ok, f'host RX really de-aggregated: {r.matched}'
+    # CP->host multi-frame markers (one-time INFO logs) — reliably produced.
     r = eh_test_expect(cp, r'sdio aggr tx: packed \d+ frames', fail=FATAL_PATTERNS, timeout=120)
-    assert r.ok, f'CP TX really aggregated: {r.matched}'
-    r = eh_test_expect(cp, r'sdio aggr rx: \d+ sub-frames', fail=FATAL_PATTERNS, timeout=120)
-    assert r.ok, f'CP RX really de-aggregated: {r.matched}'
+    assert r.ok, f'CP TX really aggregated (CP->host >1/transfer): {r.matched}'
+    r = eh_test_expect(host, r'sdio aggr rx: \d+ sub-frames', fail=FAIL, timeout=120)
+    assert r.ok, f'host RX really de-aggregated (CP->host >1/transfer): {r.matched}'
 
     # and the peer-data run itself must pass over the aggregating wire
     r = eh_test_expect(host, r'Test Summary', fail=FAIL, timeout=150)
