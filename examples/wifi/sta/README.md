@@ -1,20 +1,42 @@
 # Wi-Fi sta (`wifi/sta`)
 
+<!-- common-start -->
 Connect to an AP as a Wi-Fi station with the radio on the **coprocessor** and the application on the **host**. The application is the upstream IDF `wifi/getting_started/station` example, byte-for-byte: `mcu_host/main/main.c` and `linux_802_3_host/c_app/main/main.c` are the same source as `~/esp-idf/examples/wifi/getting_started/station/main/station_example_main.c`. Same source, every host shape — that identity is the release bar for this tree.
 
-## Support
+## Supported Platforms and Transports
 
-| Host                              | Folder                       | Status |
-| --------------------------------- | ---------------------------- | :----: |
-| MCU host (ESP-IDF)                | `mcu_host/`                  |   Y    |
-| Linux user-space (C)              | `linux_802_3_host/c_app/`    |   Y    |
-| Linux kmod                        | `linux_802_3_host/kmod/`     |   Y    |
-| Linux user-space (Python ctypes)  | `linux_802_3_host/py_app/`   |   Y    |
+### Supported Coprocessors
 
-| Coprocessor                                       | Status |
-| ------------------------------------------------- | :----: |
-| Any Espressif chip with Wi-Fi (default ESP32-C6)  |   Y    |
-| ESP32-H2 / H4                                     |   N    |
+| Coprocessor | ESP32 | ESP32-C Series | ESP32-S Series |
+| :----------: | :---: | :------------: | :------------: |
+| Support     | Yes   | Yes            | Yes            |
+
+### Supported Host Devices
+
+| Host Device | ESP32-P4 | ESP32-H2 | Other MCUs | Linux |
+| :---------: | :------: | :------: | :--------: | :---: |
+| Support     | Yes | Yes | [Yes](https://github.com/espressif/esp-hosted/blob/master/docs/getting-started-mcu.md) | [Yes](https://github.com/espressif/esp-hosted/blob/master/docs/getting-started-linux.md) |
+
+### Supported Connection buses
+
+| Connection bus | SDIO | SPI Full-Duplex | SPI Half-Duplex | UART |
+| :------------- | :--: | :-------------: | :-------------: | :--: |
+| Linux host     | Yes  | Yes             | No              | No   |
+| MCU host       | Yes  | Yes             | Yes             | Yes  |
+<!-- common-stop -->
+
+## Directory layout
+
+```text
+wifi/sta/
+├── cp/                  ESP coprocessor firmware
+├── mcu_host/            ESP-IDF MCU host app
+├── cp_streaming/        coprocessor firmware (streaming variant)
+└── linux_802_3_host/    Linux host
+     ├── c_app/          native C app
+     ├── kmod/           kernel module
+     └── py_app/         Python (ctypes) app
+```
 
 <table width="100%">
   <tr>
@@ -31,6 +53,7 @@ Connect to an AP as a Wi-Fi station with the radio on the **coprocessor** and th
 
 ---
 
+<!-- common-start -->
 ## Scenario
 
 The host application drives Wi-Fi over the control path (RPC); the radio lives on the co-processor. On success the host's netif obtains an IP.
@@ -47,6 +70,7 @@ sequenceDiagram
     Note over App: DHCP over the hosted netif
     App-->>App: IP_EVENT_STA_GOT_IP (got IP)
 ```
+<!-- common-stop -->
 
 > [!IMPORTANT]
 > **New here? Get a base example working first.** Follow **[Getting Started: Linux](../../../docs/getting-started-linux.md)** or **[Getting Started: MCU](../../../docs/getting-started-mcu.md)** to wire the boards, install tools, choose a transport, and confirm the host↔co-processor handshake. The steps below only add what is specific to this example.
@@ -181,6 +205,7 @@ cd /path/to/esp_hosted
 . ./export.sh     # . ./export.fish for the fish shell
 ```
 
+<!-- coprocessor-start -->
 The Wi-Fi radio runs on the co-processor firmware — no extra option to enable. Select the transport:
 
 ```bash
@@ -209,6 +234,7 @@ Wi-Fi is the default CP feature — no extra dependency config (`CONFIG_ESP_HOST
 ```bash
 eh.py -p <cp_usb_serial_port> flash monitor
 ```
+<!-- coprocessor-stop -->
 
 <h3 id="mcu-host">2. MCU Host</h3>
 
@@ -220,6 +246,7 @@ cd /path/to/esp_hosted
 . ./export.sh     # . ./export.fish for the fish shell
 ```
 
+<!-- esp_host-start -->
 Select the transport (must match the co-processor) and set the AP credentials:
 
 ```bash
@@ -276,6 +303,7 @@ Then flash and monitor:
 ```bash
 eh.py -p <host_usb_serial_port> flash monitor
 ```
+<!-- esp_host-stop -->
 
 ### 3. Verify
 

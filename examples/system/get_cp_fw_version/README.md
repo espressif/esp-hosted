@@ -1,5 +1,6 @@
 # get_cp_fw_version (`examples/system/get_cp_fw_version/`)
 
+<!-- common-start -->
 Smallest end-to-end ESP-Hosted scenario: bring up the host stack, open
 a transport to the coprocessor, fetch the CP firmware version via
 `eh_host_sys_get_cp_fw_version` (RPC `system` feature), print
@@ -7,18 +8,39 @@ a transport to the coprocessor, fetch the CP firmware version via
 the bring-up smoke test for new ports — exercises every layer that
 moves a single RPC round-trip, with no Wi-Fi / BT / OTA moving parts.
 
-## Support
+## Supported Platforms and Transports
 
-| Host                              | Folder                              | Status |
-| --------------------------------- | ----------------------------------- | :----: |
-| MCU host (ESP-IDF)                | `mcu_host/`                         |   Y   |
-| Linux user-space (C)              | `linux_802_3_host/c_app/`           |   Y   |
-| Linux kmod                        | `linux_802_3_host/kmod/`            |   Y   |
-| Linux user-space (Python ctypes)  | `linux_802_3_host/py_app/`          |   Y   |
+### Supported Coprocessors
 
-| Coprocessor                            | Status |
-| -------------------------------------- | :----: |
-| any Espressif chip (default ESP32-C6)  |   Y   |
+| Coprocessor | ESP32 | ESP32-C Series | ESP32-S Series |
+| :----------: | :---: | :------------: | :------------: |
+| Support     | Yes   | Yes            | Yes            |
+
+### Supported Host Devices
+
+| Host Device | ESP32-P4 | ESP32-H2 | Other MCUs | Linux |
+| :---------: | :------: | :------: | :--------: | :---: |
+| Support     | Yes | Yes | [Yes](https://github.com/espressif/esp-hosted/blob/master/docs/getting-started-mcu.md) | [Yes](https://github.com/espressif/esp-hosted/blob/master/docs/getting-started-linux.md) |
+
+### Supported Connection buses
+
+| Connection bus | SDIO | SPI Full-Duplex | SPI Half-Duplex | UART |
+| :------------- | :--: | :-------------: | :-------------: | :--: |
+| Linux host     | Yes  | Yes             | No              | No   |
+| MCU host       | Yes  | Yes             | Yes             | Yes  |
+<!-- common-stop -->
+
+## Directory layout
+
+```text
+system/get_cp_fw_version/
+├── cp/                  ESP coprocessor firmware
+├── mcu_host/            ESP-IDF MCU host app
+└── linux_802_3_host/    Linux host
+     ├── c_app/          native C app
+     ├── kmod/           kernel module
+     └── py_app/         Python (ctypes) app
+```
 
 <table width="100%">
   <tr>
@@ -35,6 +57,7 @@ moves a single RPC round-trip, with no Wi-Fi / BT / OTA moving parts.
 
 ---
 
+<!-- common-start -->
 ## Scenario
 
 The simplest control-path round trip — a single RPC request and its response. It is the transport-health gate: if this works, the link is up.
@@ -46,6 +69,7 @@ sequenceDiagram
     App->>CP: esp_hosted_get_coprocessor_fwversion() (RPC request)
     CP-->>App: version (major.minor.patch)
 ```
+<!-- common-stop -->
 
 > [!IMPORTANT]
 > **New here? Get a base example working first.** Follow **[Getting Started: Linux](../../../docs/getting-started-linux.md)** or **[Getting Started: MCU](../../../docs/getting-started-mcu.md)** to wire the boards, install tools, choose a transport, and confirm the host↔co-processor handshake. The steps below only add what is specific to this example.
@@ -184,6 +208,7 @@ cd /path/to/esp_hosted
 . ./export.sh     # . ./export.fish for the fish shell
 ```
 
+<!-- coprocessor-start -->
 The co-processor firmware needs no example-specific options — just select the transport:
 
 ```bash
@@ -219,6 +244,7 @@ Then flash and monitor:
 ```bash
 eh.py -p <cp_usb_serial_port> flash monitor
 ```
+<!-- coprocessor-stop -->
 
 <h3 id="mcu-host">2. MCU Host</h3>
 
@@ -230,6 +256,7 @@ cd /path/to/esp_hosted
 . ./export.sh     # . ./export.fish for the fish shell
 ```
 
+<!-- esp_host-start -->
 Select the transport (must match the co-processor):
 
 ```bash
@@ -269,6 +296,7 @@ Then flash and monitor:
 ```bash
 eh.py -p <host_usb_serial_port> flash monitor
 ```
+<!-- esp_host-stop -->
 
 ### 3. Verify
 

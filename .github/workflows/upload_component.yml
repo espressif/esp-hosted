@@ -59,6 +59,14 @@ jobs:
           mkdir -p examples/bluetooth/host_mcu/bluedroid/examples/hosted_hci/bt_hid_mouse/components
           cp -r examples/bluetooth/host_mcu/bluedroid/components/esp_hosted_hci_bluedroid examples/bluetooth/host_mcu/bluedroid/examples/hosted_hci/bt_hid_mouse/components/
 
+      # Registry example pages: the registry publishes the cp/ mcu_host/ esp_host/
+      # project dirs (not the top-level example README). Generate their READMEs
+      # from the marker-tagged top README at publish time (see tools/gen_registry_readmes.py
+      # and docs/design/registry-example-readme-generation.md). In-place, CI-only —
+      # never committed. Non-marked examples (e.g. bluetooth) keep their own READMEs.
+      - name: Generate registry example READMEs
+        run: python3 tools/gen_registry_readmes.py
+
       - name: Upload component to the component registry
         uses: espressif/upload-components-ci-action@v2
         with:

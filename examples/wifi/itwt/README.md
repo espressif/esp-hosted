@@ -1,20 +1,39 @@
 # Wi-Fi iTWT (`wifi/itwt`)
 
+<!-- common-start -->
 802.11ax **individual Target Wake Time** — the station negotiates a periodic wake schedule with the AP and sleeps the radio between wake-ups, slashing average power for always-connected devices. Ports the upstream IDF `wifi/itwt` example; the radio runs on the **coprocessor**, the app on the **host**. The CP exposes the `eh_host_feat_wifi_ext_itwt` extension. On boot the host opens a serial console (`itwt>`) so TWT setup / teardown / suspend can be driven interactively.
 
-## Support
+## Supported Platforms and Transports
 
-| Host                              | Folder        | Status |
-| --------------------------------- | ------------- | :----: |
-| MCU host (ESP-IDF)                | `mcu_host/`   |   Y    |
-| Linux user-space (any flavour)    | n/a           |   N    |
+### Supported Coprocessors
 
-| Coprocessor                | Status |
-| -------------------------- | :----: |
-| ESP32-C5 / C6 / C61 (Wi-Fi 6) |   Y    |
-| Any other chip             |   N    |
+iTWT is a Wi-Fi 6 (802.11ax) feature — it requires a Wi-Fi 6 coprocessor.
 
-iTWT is an 802.11ax (Wi-Fi 6) feature — non-AX coprocessors physically cannot run it.
+| Coprocessor | ESP32-C5 | ESP32-C6 | ESP32-C61 |
+| :---------: | :------: | :------: | :-------: |
+| Support     | Yes      | Yes      | Yes       |
+
+### Supported Host Devices
+
+| Host Device | ESP32-P4 | ESP32-H2 | Other MCUs | Linux |
+| :---------: | :------: | :------: | :--------: | :---: |
+| Support     | Yes | Yes | [Yes](https://github.com/espressif/esp-hosted/blob/master/docs/getting-started-mcu.md) | [Yes](https://github.com/espressif/esp-hosted/blob/master/docs/getting-started-linux.md) |
+
+### Supported Connection buses
+
+| Connection bus | SDIO | SPI Full-Duplex | SPI Half-Duplex | UART |
+| :------------- | :--: | :-------------: | :-------------: | :--: |
+| Linux host     | Yes  | Yes             | No              | No   |
+| MCU host       | Yes  | Yes             | Yes             | Yes  |
+<!-- common-stop -->
+
+## Directory layout
+
+```text
+wifi/itwt/
+├── cp/                  ESP coprocessor firmware
+└── mcu_host/            ESP-IDF MCU host app
+```
 
 <table width="100%">
   <tr>
@@ -42,6 +61,7 @@ cd /path/to/esp_hosted
 . ./export.sh     # . ./export.fish for the fish shell
 ```
 
+<!-- coprocessor-start -->
 The iTWT feature gate (`CONFIG_ESP_HOSTED_CP_FEAT_WIFI_EXT_ITWT`) is preset in `cp/sdkconfig.defaults` and needs a Wi-Fi 6 (HE) capable chip. Select the transport:
 
 ```bash
@@ -78,6 +98,7 @@ Then flash and monitor:
 ```bash
 eh.py -p <cp_usb_serial_port> flash monitor
 ```
+<!-- coprocessor-stop -->
 
 <h3 id="mcu-host">2. MCU Host</h3>
 
@@ -89,6 +110,7 @@ cd /path/to/esp_hosted
 . ./export.sh     # . ./export.fish for the fish shell
 ```
 
+<!-- esp_host-start -->
 Select the transport (must match the co-processor) and set the Wi-Fi / iTWT options:
 
 ```bash
@@ -150,6 +172,7 @@ Then flash and monitor:
 ```bash
 eh.py -p <host_usb_serial_port> flash monitor
 ```
+<!-- esp_host-stop -->
 
 ### 3. Verify
 

@@ -1,5 +1,6 @@
 # ext_coex (`examples/ext_coex/`)
 
+<!-- common-start -->
 Configures the coprocessor's external-coex (PTA) work mode and grant
 pin sequence so the CP's Wi-Fi / BT radio can share the air with a
 third-party radio sitting next to it. The host sends a single RPC
@@ -7,18 +8,39 @@ sequence at boot: pick a role (Leader / Follower / Standalone), point
 the CP at the four PTA GPIOs (request, priority, grant, tx_line), and
 optionally tune the advanced knobs (grant delay, validate-high).
 
-## Support
+## Supported Platforms and Transports
 
-| Host                              | Folder                              | Status |
-| --------------------------------- | ----------------------------------- | :----: |
-| MCU host (ESP-IDF)                | `mcu_host/`                         |   Y   |
-| Linux user-space (C)              | `linux_802_3_host/c_app/`           |   Y   |
-| Linux kmod                        | `linux_802_3_host/kmod/`            |   Y   |
-| Linux user-space (Python ctypes)  | `linux_802_3_host/py_app/`          |   Y   |
+### Supported Coprocessors
 
-| Coprocessor                            | Status |
-| -------------------------------------- | :----: |
-| ESP32-C6 / C61 / C5 / S3               |   Y   |
+| Coprocessor | ESP32 | ESP32-C Series | ESP32-S Series |
+| :----------: | :---: | :------------: | :------------: |
+| Support     | No    | Yes            | Yes            |
+
+### Supported Host Devices
+
+| Host Device | ESP32-P4 | ESP32-H2 | Other MCUs | Linux |
+| :---------: | :------: | :------: | :--------: | :---: |
+| Support     | Yes | Yes | [Yes](https://github.com/espressif/esp-hosted/blob/master/docs/getting-started-mcu.md) | [Yes](https://github.com/espressif/esp-hosted/blob/master/docs/getting-started-linux.md) |
+
+### Supported Connection buses
+
+| Connection bus | SDIO | SPI Full-Duplex | SPI Half-Duplex | UART |
+| :------------- | :--: | :-------------: | :-------------: | :--: |
+| Linux host     | Yes  | Yes             | No              | No   |
+| MCU host       | Yes  | Yes             | Yes             | Yes  |
+<!-- common-stop -->
+
+## Directory layout
+
+```text
+ext_coex/
+├── cp/                  ESP coprocessor firmware
+├── mcu_host/            ESP-IDF MCU host app
+└── linux_802_3_host/    Linux host
+     ├── c_app/          native C app
+     ├── kmod/           kernel module
+     └── py_app/         Python (ctypes) app
+```
 
 > **ESP32 as a co-processor is not supported** for external coexistence.
 > On advanced-coex chips (ESP32-C6 / C61 / C5) Bluetooth/BLE may stay
@@ -203,6 +225,7 @@ cd /path/to/esp_hosted
 . ./export.sh     # . ./export.fish for the fish shell
 ```
 
+<!-- coprocessor-start -->
 External-Coexistence support is enabled by the co-processor's
 `sdkconfig.defaults`. Select the transport via `eh.py menuconfig`:
 
@@ -254,6 +277,7 @@ Then flash and monitor:
 ```bash
 eh.py -p <cp_usb_serial_port> flash monitor
 ```
+<!-- coprocessor-stop -->
 
 <h3 id="mcu-host">2. MCU Host</h3>
 
@@ -265,6 +289,7 @@ cd /path/to/esp_hosted
 . ./export.sh     # . ./export.fish for the fish shell
 ```
 
+<!-- esp_host-start -->
 Select the transport (must match the co-processor):
 
 ```bash
@@ -318,6 +343,7 @@ Then flash and monitor:
 ```bash
 eh.py -p <host_usb_serial_port> flash monitor
 ```
+<!-- esp_host-stop -->
 
 ### 3. Verify
 

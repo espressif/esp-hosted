@@ -1,16 +1,39 @@
 # openthread / cli (`examples/openthread/cli/`)
 
+<!-- common-start -->
 Runs a full OpenThread CLI (`ot ...`) on the host. The co-processor is the 802.15.4 **Radio Co-Processor (RCP)**: the host drives the RCP lifecycle over ESP-Hosted (RPC) and exchanges 802.15.4 (spinel) traffic over a **dedicated UART**. Adapted from `esp-idf/examples/openthread/ot_cli`.
 
-## Support
+## Supported Platforms and Transports
 
-| Host                          | Folder        | Status |
-| ----------------------------- | ------------- | :----: |
-| MCU host (ESP-IDF, ESP32-P4)  | `esp_host/`   |   Y    |
+### Supported Coprocessors
 
-| Coprocessor                                                | Folder    | Status |
-| ---------------------------------------------------------- | --------- | :----: |
-| OpenThread RCP — 802.15.4 SoC (ESP32-C6 / H2 / H4 / C5)    | `cp/`     |   Y    |
+OpenThread uses an 802.15.4 radio co-processor (RCP).
+
+| Coprocessor | ESP32-C6 | ESP32-H2 | ESP32-H4 | ESP32-C5 |
+| :---------: | :------: | :------: | :------: | :------: |
+| Support     | Yes      | Yes      | Yes      | Yes      |
+
+### Supported Host Devices
+
+| Host Device | ESP32-P4 | ESP32-H2 | Other MCUs | Linux |
+| :---------: | :------: | :------: | :--------: | :---: |
+| Support     | Yes | Yes | [Yes](https://github.com/espressif/esp-hosted/blob/master/docs/getting-started-mcu.md) | [Yes](https://github.com/espressif/esp-hosted/blob/master/docs/getting-started-linux.md) |
+
+### Supported Connection buses
+
+| Connection bus | SDIO | SPI Full-Duplex | SPI Half-Duplex | UART |
+| :------------- | :--: | :-------------: | :-------------: | :--: |
+| Linux host     | Yes  | Yes             | No              | No   |
+| MCU host       | Yes  | Yes             | Yes             | Yes  |
+<!-- common-stop -->
+
+## Directory layout
+
+```text
+openthread/cli/
+├── cp/                  ESP coprocessor firmware
+└── esp_host/            ESP-IDF MCU host app
+```
 
 <table width="100%">
   <tr>
@@ -38,6 +61,7 @@ cd /path/to/esp_hosted
 . ./export.sh     # . ./export.fish for the fish shell
 ```
 
+<!-- coprocessor-start -->
 The co-processor runs as the OpenThread **RCP** (Wi-Fi off). Select the ESP-Hosted transport (used for RPC control):
 
 ```bash
@@ -90,6 +114,7 @@ CONFIG_ESP_HOSTED_CP_FEAT_WIFI=n         # Wi-Fi off on the RCP
 ```bash
 eh.py -p <cp_usb_serial_port> flash monitor
 ```
+<!-- coprocessor-stop -->
 
 <h3 id="mcu-host">2. MCU Host</h3>
 
@@ -101,6 +126,7 @@ cd /path/to/esp_hosted
 . ./export.sh     # . ./export.fish for the fish shell
 ```
 
+<!-- esp_host-start -->
 Select the transport (must match the co-processor) and configure the OpenThread RCP UART link:
 
 ```bash
@@ -153,6 +179,7 @@ Then flash and monitor:
 ```bash
 eh.py -p <host_usb_serial_port> flash monitor
 ```
+<!-- esp_host-stop -->
 
 ### 3. Verify
 

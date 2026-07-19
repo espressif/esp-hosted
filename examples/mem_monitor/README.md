@@ -1,5 +1,6 @@
 # mem_monitor (`examples/mem_monitor/`)
 
+<!-- common-start -->
 Subscribes the host to periodic heap / task-stat reports from the
 coprocessor. The CP samples its own internal-DMA, internal-8bit,
 external-DMA, and external-8bit heaps at a configurable interval and
@@ -7,17 +8,37 @@ pushes an event up; the host either logs every report or only the ones
 that cross a low-water threshold. Useful for catching slow leaks or
 sizing buffers without leaving instrumentation in the CP firmware.
 
-## Support
+## Supported Platforms and Transports
 
-| Host                              | Folder                       | Status |
-| --------------------------------- | ---------------------------- | :----: |
-| MCU host (ESP-IDF)                | `mcu_host/`                  |   Y   |
+### Supported Coprocessors
+
+| Coprocessor | ESP32 | ESP32-C Series | ESP32-S Series |
+| :----------: | :---: | :------------: | :------------: |
+| Support     | Yes   | Yes            | Yes            |
+
+### Supported Host Devices
+
+| Host Device | ESP32-P4 | ESP32-H2 | Other MCUs | Linux |
+| :---------: | :------: | :------: | :--------: | :---: |
+| Support     | Yes | Yes | [Yes](https://github.com/espressif/esp-hosted/blob/master/docs/getting-started-mcu.md) | [Yes](https://github.com/espressif/esp-hosted/blob/master/docs/getting-started-linux.md) |
+
+### Supported Connection buses
+
+| Connection bus | SDIO | SPI Full-Duplex | SPI Half-Duplex | UART |
+| :------------- | :--: | :-------------: | :-------------: | :--: |
+| Linux host     | Yes  | Yes             | No              | No   |
+| MCU host       | Yes  | Yes             | Yes             | Yes  |
+<!-- common-stop -->
+
+## Directory layout
+
+```text
+mem_monitor/
+├── cp/                  ESP coprocessor firmware
+└── mcu_host/            ESP-IDF MCU host app
+```
 
 (MCU-only — no Linux host variant.)
-
-| Coprocessor                            | Status |
-| -------------------------------------- | :----: |
-| any Espressif chip (default ESP32-C6)  |   Y   |
 
 <table width="100%">
   <tr>
@@ -45,6 +66,7 @@ cd /path/to/esp_hosted
 . ./export.sh     # . ./export.fish for the fish shell
 ```
 
+<!-- coprocessor-start -->
 The co-processor firmware needs no example-specific options — just select the transport:
 
 ```bash
@@ -82,6 +104,7 @@ Then flash and monitor:
 ```bash
 eh.py -p <cp_usb_serial_port> flash monitor
 ```
+<!-- coprocessor-stop -->
 
 <h3 id="mcu-host">2. MCU Host</h3>
 
@@ -93,6 +116,7 @@ cd /path/to/esp_hosted
 . ./export.sh     # . ./export.fish for the fish shell
 ```
 
+<!-- esp_host-start -->
 Select the transport (must match the co-processor) and set the monitor options:
 
 ```bash
@@ -149,6 +173,7 @@ Then flash and monitor:
 ```bash
 eh.py -p <host_usb_serial_port> flash monitor
 ```
+<!-- esp_host-stop -->
 
 ### 3. Verify
 
