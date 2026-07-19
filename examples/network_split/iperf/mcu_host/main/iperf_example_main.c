@@ -45,7 +45,7 @@
  * Drop the guard — wrong scope for this TU. */
 
 /* Network Split specific */
-#ifdef CONFIG_ESP_HOSTED_CP_FEAT_NW_SPLIT
+#ifdef CONFIG_ESP_HOSTED_HOST_FEAT_NW_SPLIT
 #include "lwip/sockets.h"
 #include "lwip/netdb.h"
 #endif
@@ -231,7 +231,7 @@ void iperf_hook_show_wifi_stats(iperf_traffic_type_t type, iperf_status_t status
 {
 	if (status == IPERF_STARTED) {
 		ESP_LOGI(TAG, "iPerf started - type: %d", type);
-#ifdef CONFIG_ESP_HOSTED_CP_FEAT_NW_SPLIT
+#ifdef CONFIG_ESP_HOSTED_HOST_FEAT_NW_SPLIT
 		ESP_LOGI(TAG, "Network Split: iPerf traffic handled by slave LWIP stack");
 		ESP_LOGI(TAG, "Port 5001 is configured for slave handling in network split mode");
 #endif
@@ -267,7 +267,7 @@ static int network_split_info_cmd(int argc, char **argv)
 {
 	printf("\n=== ESP-Hosted Network Split iPerf Demo ===\n");
 
-#ifdef CONFIG_ESP_HOSTED_CP_FEAT_NW_SPLIT
+#ifdef CONFIG_ESP_HOSTED_HOST_FEAT_NW_SPLIT
 	printf("Network Split: ENABLED\n");
 	printf("\nPort Range Configuration:\n");
 	printf("  Host ports:  %d - %d\n", CONFIG_LWIP_TCP_REMOTE_PORT_RANGE_START, CONFIG_LWIP_TCP_REMOTE_PORT_RANGE_END);
@@ -421,7 +421,7 @@ void app_main(void)
 	esp_wifi_enable_tx_statistics(ESP_WIFI_ACI_BE, true);
 #endif
 
-#if defined(CONFIG_ESP_HOSTED_CP_FEAT_NW_SPLIT)
+#if defined(CONFIG_ESP_HOSTED_HOST_FEAT_NW_SPLIT)
 	ESP_LOGI(TAG, "Network Split is ENABLED");
 	ESP_LOGI(TAG, "Slave will handle ports %d-%d",
 			 CONFIG_LWIP_TCP_LOCAL_PORT_RANGE_START,
