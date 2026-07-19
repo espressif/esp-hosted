@@ -212,6 +212,9 @@ void wifi_init_sta(void)
 				.ssid = EXAMPLE_ESP_WIFI_SSID,
 				.password = EXAMPLE_ESP_WIFI_PASS,
 				.threshold.authmode = ESP_WIFI_SCAN_AUTH_MODE_THRESHOLD,
+				/* All-channel scan so auto-connect finds APs on outer 5 GHz
+				 * channels (e.g. ch149); fast scan stops early and misses them. */
+				.scan_method = WIFI_ALL_CHANNEL_SCAN,
 			},
 		};
 		esp_err_t cerr = esp_wifi_set_config(WIFI_IF_STA, &wifi_config);
