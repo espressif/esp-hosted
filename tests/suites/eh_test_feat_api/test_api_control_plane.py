@@ -89,6 +89,7 @@ def _roundtrip(host, t, get_cmd, field, set_fmt, v1, v2):
     'uart', 'spi_hd', 'spi_fd',
 ])
 @pytest.mark.second_chance
+@pytest.mark.xdist_group("emu_heavy")  # serialize: spi_fd RPC stalls if the emu is CPU-starved under parallel load
 def test_control_plane(bench, transport):
     host, caps = _ready(bench, transport)
     t = transport

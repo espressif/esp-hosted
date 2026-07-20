@@ -61,8 +61,14 @@ def _idf_path_opt():
         return None
 
 
-def _config_hash(example_rel: str, role: str, target: str, overlay) -> str:
+def _config_hash(example_rel: str, role: str, target: str, overlay, inject=None) -> str:
     parts = [example_rel, role, target, *sorted(overlay or [])]
+    # Injected files (e.g. a staged CP OTA image in the host's LittleFS dir) get
+    # their own scratch dir — else a bench that injects and one that doesn't share
+    # a workdir with mismatched fingerprints and thrash-rebuild it in parallel,
+    # racing the emu to a half-written ELF. Stable identity only (dest+src path),
+    # not mtime/size — content changes rebuild in-place via cfg_fp.
+    parts += [f"inject:{dest}={src}" for dest, src in sorted((inject or {}).items())]
     return hashlib.sha1("|".join(parts).encode()).hexdigest()[:8]
 
 
@@ -156,7 +162,7 @@ def build(example_rel: str, role: str, target: str, overlay=None, inject=None) -
     src = _REPO / "examples" / example_rel / role
     if not (src / "CMakeLists.txt").is_file():
         raise FileNotFoundError(f"no such example role: {src}")
-    key = _config_hash(example_rel, role, target, overlay)
+    key = _config_hash(example_rel, role, target, overlay, inject)
     proj = _CACHE / f"{example_rel.replace('/', '__')}__{role}__{key}"
     common_src = _REPO / "examples" / example_rel / "common"
     has_common = common_src.is_dir()
