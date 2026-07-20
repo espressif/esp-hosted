@@ -105,18 +105,18 @@ menu "Configure host"
 		default n if ESP_HOSTED_CP_TARGET_ESP32H2 || ESP_HOSTED_CP_TARGET_ESP32H4
 		default y
 
-	choice ESP_HOST_DEV_BOARD
+	choice ESP_HOSTED_DEV_BOARD  # ignore: multiple-definition
 		prompt "Select PCB Board (Optional)"
 		default ESP_HOSTED_P4_DEV_BOARD_NONE
 
-		config ESP_ESP32C5_SPI_RASPI_MATING_BOARD
+		config ESP_ESP32C5_SPI_RASPI_MATING_BOARD  # ignore: multiple-definition
 			bool "ESP32-C5 RaspPi Mating Board (SPI)"
 			depends on ESP_HOSTED_HOST_TYPE_POSIX && ESP_HOSTED_CP_TARGET_ESP32C5
 
-		config ESP_HOSTED_P4_DEV_BOARD_NONE
+		config ESP_HOSTED_P4_DEV_BOARD_NONE  # ignore: multiple-definition
 			bool "No specific PCB board"
 
-		config ESP_HOSTED_P4_DEV_BOARD_FUNC_BOARD
+		config ESP_HOSTED_P4_DEV_BOARD_FUNC_BOARD  # ignore: multiple-definition
 			bool "ESP32-P4-Function-EV-Board"
 			depends on ESP_HOSTED_HOST_TYPE_MCU && (ESP_HOSTED_CP_TARGET_ESP32C6 || ESP_HOSTED_CP_TARGET_ESP32C5 || ESP_HOSTED_CP_TARGET_ESP32C2)
 
@@ -136,7 +136,7 @@ menu "Configure host"
 			bool "ESP32-P4 + C61 Core Board"
 			depends on ESP_HOSTED_CP_TARGET_ESP32C61
 
-		config ESP_HOSTED_C2_C5_MODULE_SUB_BOARD
+		config ESP_HOSTED_C2_C5_MODULE_SUB_BOARD  # ignore: multiple-definition
 			bool "ESP32-P4 EV Sub-Board for C2 & C5"
 			depends on ESP_HOSTED_HOST_TYPE_MCU && (ESP_HOSTED_CP_TARGET_ESP32C2 || ESP_HOSTED_CP_TARGET_ESP32C5)
 	endchoice

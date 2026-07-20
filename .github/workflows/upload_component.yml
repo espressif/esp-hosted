@@ -13,6 +13,65 @@ jobs:
         with:
           submodules: recursive
 
+      # Registry self-containment: each example resolves its shared component via a
+      # relative override_path in the repo checkout; the registry strips override_path,
+      # so an extracted example must carry the component itself. Copy it into each
+      # example's components/ (IDF auto-discovers it) before upload. Explicit per
+      # example on purpose — no globbing, so placement is exact.
+      - name: Bundle shared example components into examples
+        run: |
+          set -e
+          # esp_hosted_examples_common -> CP examples
+          mkdir -p examples/network_split/station/cp/components
+          cp -r examples/common_components/esp_hosted_examples_common examples/network_split/station/cp/components/
+          mkdir -p examples/network_split/iperf/cp/components
+          cp -r examples/common_components/esp_hosted_examples_common examples/network_split/iperf/cp/components/
+          mkdir -p examples/power_save/host/network_split__host_deep_sleep/cp/components
+          cp -r examples/common_components/esp_hosted_examples_common examples/power_save/host/network_split__host_deep_sleep/cp/components/
+          mkdir -p examples/power_save/host+cp/network_split__host_deep_sleep_cp_light_sleep/cp/components
+          cp -r examples/common_components/esp_hosted_examples_common examples/power_save/host+cp/network_split__host_deep_sleep_cp_light_sleep/cp/components/
+          # esp_hosted_examples_common -> network_split mcu_host examples
+          mkdir -p examples/network_split/station/mcu_host/components
+          cp -r examples/common_components/esp_hosted_examples_common examples/network_split/station/mcu_host/components/
+          mkdir -p examples/network_split/iperf/mcu_host/components
+          cp -r examples/common_components/esp_hosted_examples_common examples/network_split/iperf/mcu_host/components/
+          # esp_hosted_examples_common -> BT Wi-Fi coex
+          mkdir -p examples/bluetooth/host_mcu/nimble/examples/hosted_hci/bleprph_wifi_coex/components
+          cp -r examples/common_components/esp_hosted_examples_common examples/bluetooth/host_mcu/nimble/examples/hosted_hci/bleprph_wifi_coex/components/
+          # esp_hosted_hci_nimble -> NimBLE hosted_hci examples
+          mkdir -p examples/bluetooth/host_mcu/nimble/examples/hosted_hci/bleprph_gatt/components
+          cp -r examples/bluetooth/host_mcu/nimble/components/esp_hosted_hci_nimble examples/bluetooth/host_mcu/nimble/examples/hosted_hci/bleprph_gatt/components/
+          mkdir -p examples/bluetooth/host_mcu/nimble/examples/hosted_hci/bleprph_minimal/components
+          cp -r examples/bluetooth/host_mcu/nimble/components/esp_hosted_hci_nimble examples/bluetooth/host_mcu/nimble/examples/hosted_hci/bleprph_minimal/components/
+          mkdir -p examples/bluetooth/host_mcu/nimble/examples/hosted_hci/bleprph_wifi_coex/components
+          cp -r examples/bluetooth/host_mcu/nimble/components/esp_hosted_hci_nimble examples/bluetooth/host_mcu/nimble/examples/hosted_hci/bleprph_wifi_coex/components/
+          # esp_hosted_hci_bluedroid -> Bluedroid hosted_hci examples
+          mkdir -p examples/bluetooth/host_mcu/bluedroid/examples/hosted_hci/ble_compatibility_test/components
+          cp -r examples/bluetooth/host_mcu/bluedroid/components/esp_hosted_hci_bluedroid examples/bluetooth/host_mcu/bluedroid/examples/hosted_hci/ble_compatibility_test/components/
+          mkdir -p examples/bluetooth/host_mcu/bluedroid/examples/hosted_hci/ble_advertise_minimal/components
+          cp -r examples/bluetooth/host_mcu/bluedroid/components/esp_hosted_hci_bluedroid examples/bluetooth/host_mcu/bluedroid/examples/hosted_hci/ble_advertise_minimal/components/
+          mkdir -p examples/bluetooth/host_mcu/bluedroid/examples/hosted_hci/classic_bt_discovery/components
+          cp -r examples/bluetooth/host_mcu/bluedroid/components/esp_hosted_hci_bluedroid examples/bluetooth/host_mcu/bluedroid/examples/hosted_hci/classic_bt_discovery/components/
+          mkdir -p examples/bluetooth/host_mcu/bluedroid/examples/hosted_hci/ble_gatt_server/components
+          cp -r examples/bluetooth/host_mcu/bluedroid/components/esp_hosted_hci_bluedroid examples/bluetooth/host_mcu/bluedroid/examples/hosted_hci/ble_gatt_server/components/
+          mkdir -p examples/bluetooth/host_mcu/bluedroid/examples/hosted_hci/controller_mac_addr/components
+          cp -r examples/bluetooth/host_mcu/bluedroid/components/esp_hosted_hci_bluedroid examples/bluetooth/host_mcu/bluedroid/examples/hosted_hci/controller_mac_addr/components/
+          mkdir -p examples/bluetooth/host_mcu/bluedroid/examples/hosted_hci/bt_hid_mouse/components
+          cp -r examples/bluetooth/host_mcu/bluedroid/components/esp_hosted_hci_bluedroid examples/bluetooth/host_mcu/bluedroid/examples/hosted_hci/bt_hid_mouse/components/
+
+      # Registry example pages: the registry publishes the cp/ mcu_host/ esp_host/
+      # project dirs (not the top-level example README). Generate their READMEs
+      # from the marker-tagged top README at publish time (see tools/gen_registry_readmes.py
+      # and docs/design/registry-example-readme-generation.md). In-place, CI-only —
+      # never committed. Non-marked examples (e.g. bluetooth) keep their own READMEs.
+      - name: Generate registry example READMEs
+        run: python3 tools/gen_registry_readmes.py
+
+      # The registry renders a CHANGELOG.md at the component root; ours lives at
+      # docs/changelog.md. Stage it at the root for upload (CI-only, not committed).
+      - name: Stage changelog at component root for the registry
+        run: cp docs/changelog.md CHANGELOG.md
+
       - name: Upload component to the component registry
         uses: espressif/upload-components-ci-action@v2
         with:

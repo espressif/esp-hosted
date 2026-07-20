@@ -45,7 +45,7 @@
  * Drop the guard — wrong scope for this TU. */
 
 /* Network Split specific */
-#ifdef CONFIG_ESP_HOSTED_CP_FEAT_NW_SPLIT
+#ifdef CONFIG_ESP_HOSTED_HOST_FEAT_NW_SPLIT
 #include "lwip/sockets.h"
 #include "lwip/netdb.h"
 #endif
@@ -76,36 +76,36 @@ extern int wifi_cmd_clr_rx_statistics(int argc, char **argv);
    If you'd rather not, just change the below entries to strings with
    the config you want - ie #define EXAMPLE_WIFI_SSID "mywifissid"
 */
-#define EXAMPLE_ESP_WIFI_SSID      CONFIG_EXAMPLE_WIFI_SSID
-#define EXAMPLE_ESP_WIFI_PASS      CONFIG_EXAMPLE_WIFI_PASSWORD
-#define EXAMPLE_ESP_MAXIMUM_RETRY  CONFIG_EXAMPLE_WIFI_CONN_MAX_RETRY
+#define EXAMPLE_ESP_WIFI_SSID      CONFIG_EH_EXAMPLE_WIFI_SSID
+#define EXAMPLE_ESP_WIFI_PASS      CONFIG_EH_EXAMPLE_WIFI_PASSWORD
+#define EXAMPLE_ESP_MAXIMUM_RETRY  CONFIG_EH_EXAMPLE_WIFI_MAXIMUM_RETRY
 
-#if CONFIG_EXAMPLE_STATION_EXAMPLE_WPA3_SAE_PWE_HUNT_AND_PECK
+#if CONFIG_EH_EXAMPLE_STATION_WPA3_SAE_PWE_HUNT_AND_PECK
   #define ESP_WIFI_SAE_MODE WPA3_SAE_PWE_HUNT_AND_PECK
   #define EXAMPLE_H2E_IDENTIFIER ""
-#elif CONFIG_EXAMPLE_STATION_EXAMPLE_WPA3_SAE_PWE_HASH_TO_ELEMENT
+#elif CONFIG_EH_EXAMPLE_STATION_WPA3_SAE_PWE_HASH_TO_ELEMENT
   #define ESP_WIFI_SAE_MODE WPA3_SAE_PWE_HASH_TO_ELEMENT
-  #define EXAMPLE_H2E_IDENTIFIER CONFIG_EXAMPLE_WIFI_PW_ID
-#elif CONFIG_EXAMPLE_STATION_EXAMPLE_WPA3_SAE_PWE_BOTH
+  #define EXAMPLE_H2E_IDENTIFIER CONFIG_EH_EXAMPLE_WIFI_PW_ID
+#elif CONFIG_EH_EXAMPLE_STATION_WPA3_SAE_PWE_BOTH
   #define ESP_WIFI_SAE_MODE WPA3_SAE_PWE_BOTH
-  #define EXAMPLE_H2E_IDENTIFIER CONFIG_EXAMPLE_WIFI_PW_ID
+  #define EXAMPLE_H2E_IDENTIFIER CONFIG_EH_EXAMPLE_WIFI_PW_ID
 #endif
 
-#if CONFIG_EXAMPLE_WIFI_AUTH_OPEN
+#if CONFIG_EH_EXAMPLE_WIFI_AUTH_OPEN
   #define ESP_WIFI_SCAN_AUTH_MODE_THRESHOLD WIFI_AUTH_OPEN
-#elif CONFIG_EXAMPLE_WIFI_AUTH_WEP
+#elif CONFIG_EH_EXAMPLE_WIFI_AUTH_WEP
   #define ESP_WIFI_SCAN_AUTH_MODE_THRESHOLD WIFI_AUTH_WEP
-#elif CONFIG_EXAMPLE_WIFI_AUTH_WPA_PSK
+#elif CONFIG_EH_EXAMPLE_WIFI_AUTH_WPA_PSK
   #define ESP_WIFI_SCAN_AUTH_MODE_THRESHOLD WIFI_AUTH_WPA_PSK
-#elif CONFIG_EXAMPLE_WIFI_AUTH_WPA2_PSK
+#elif CONFIG_EH_EXAMPLE_WIFI_AUTH_WPA2_PSK
   #define ESP_WIFI_SCAN_AUTH_MODE_THRESHOLD WIFI_AUTH_WPA2_PSK
-#elif CONFIG_EXAMPLE_WIFI_AUTH_WPA_WPA2_PSK
+#elif CONFIG_EH_EXAMPLE_WIFI_AUTH_WPA_WPA2_PSK
   #define ESP_WIFI_SCAN_AUTH_MODE_THRESHOLD WIFI_AUTH_WPA_WPA2_PSK
-#elif CONFIG_EXAMPLE_WIFI_AUTH_WPA3_PSK
+#elif CONFIG_EH_EXAMPLE_WIFI_AUTH_WPA3_PSK
   #define ESP_WIFI_SCAN_AUTH_MODE_THRESHOLD WIFI_AUTH_WPA3_PSK
-#elif CONFIG_EXAMPLE_WIFI_AUTH_WPA2_WPA3_PSK
+#elif CONFIG_EH_EXAMPLE_WIFI_AUTH_WPA2_WPA3_PSK
   #define ESP_WIFI_SCAN_AUTH_MODE_THRESHOLD WIFI_AUTH_WPA2_WPA3_PSK
-#elif CONFIG_EXAMPLE_WIFI_AUTH_WAPI_PSK
+#elif CONFIG_EH_EXAMPLE_WIFI_AUTH_WAPI_PSK
   #define ESP_WIFI_SCAN_AUTH_MODE_THRESHOLD WIFI_AUTH_WAPI_PSK
 #endif
 
@@ -122,7 +122,7 @@ static EventGroupHandle_t s_wifi_event_group;
 #include "eh_echo_server.h"
 #endif
 
-static const char *TAG = "example_nw_split_station";
+static const char *TAG = "example_nw_split_iperf";
 
 static int s_retry_num = 0;
 
@@ -212,6 +212,9 @@ void wifi_init_sta(void)
 				.ssid = EXAMPLE_ESP_WIFI_SSID,
 				.password = EXAMPLE_ESP_WIFI_PASS,
 				.threshold.authmode = ESP_WIFI_SCAN_AUTH_MODE_THRESHOLD,
+				/* All-channel scan so auto-connect finds APs on outer 5 GHz
+				 * channels (e.g. ch149); fast scan stops early and misses them. */
+				.scan_method = WIFI_ALL_CHANNEL_SCAN,
 			},
 		};
 		esp_err_t cerr = esp_wifi_set_config(WIFI_IF_STA, &wifi_config);
@@ -231,7 +234,7 @@ void iperf_hook_show_wifi_stats(iperf_traffic_type_t type, iperf_status_t status
 {
 	if (status == IPERF_STARTED) {
 		ESP_LOGI(TAG, "iPerf started - type: %d", type);
-#ifdef CONFIG_ESP_HOSTED_CP_FEAT_NW_SPLIT
+#ifdef CONFIG_ESP_HOSTED_HOST_FEAT_NW_SPLIT
 		ESP_LOGI(TAG, "Network Split: iPerf traffic handled by slave LWIP stack");
 		ESP_LOGI(TAG, "Port 5001 is configured for slave handling in network split mode");
 #endif
@@ -267,7 +270,7 @@ static int network_split_info_cmd(int argc, char **argv)
 {
 	printf("\n=== ESP-Hosted Network Split iPerf Demo ===\n");
 
-#ifdef CONFIG_ESP_HOSTED_CP_FEAT_NW_SPLIT
+#ifdef CONFIG_ESP_HOSTED_HOST_FEAT_NW_SPLIT
 	printf("Network Split: ENABLED\n");
 	printf("\nPort Range Configuration:\n");
 	printf("  Host ports:  %d - %d\n", CONFIG_LWIP_TCP_REMOTE_PORT_RANGE_START, CONFIG_LWIP_TCP_REMOTE_PORT_RANGE_END);
@@ -421,7 +424,7 @@ void app_main(void)
 	esp_wifi_enable_tx_statistics(ESP_WIFI_ACI_BE, true);
 #endif
 
-#if defined(CONFIG_ESP_HOSTED_CP_FEAT_NW_SPLIT)
+#if defined(CONFIG_ESP_HOSTED_HOST_FEAT_NW_SPLIT)
 	ESP_LOGI(TAG, "Network Split is ENABLED");
 	ESP_LOGI(TAG, "Slave will handle ports %d-%d",
 			 CONFIG_LWIP_TCP_LOCAL_PORT_RANGE_START,

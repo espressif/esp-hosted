@@ -152,6 +152,8 @@ static void on_nw_split_sta_start(void *arg, esp_event_base_t base, int32_t id, 
                          &s_state.pending, sizeof(s_state.pending), 0);
 }
 
+/* Gate to its only use site (INTERNAL_STATIC); the broader !INTERNAL_DHCP guard left it defined-but-unused in APP_EXTERNAL mode. */
+#if CONFIG_ESP_HOSTED_HOST_FEAT_NW_SPLIT_NETIF_INTERNAL_STATIC
 static esp_netif_t *create_static_sta_netif(void)
 {
     esp_netif_inherent_config_t base = ESP_NETIF_INHERENT_DEFAULT_WIFI_STA();
@@ -182,6 +184,7 @@ static esp_netif_t *create_static_sta_netif(void)
 
     return n;
 }
+#endif /* NETIF_INTERNAL_STATIC */
 #endif
 
 int eh_host_feat_nw_split_init(void)

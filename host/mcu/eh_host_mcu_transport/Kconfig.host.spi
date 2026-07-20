@@ -41,7 +41,7 @@ if ESP_HOSTED_HOST_TRANSPORT_BUS_SPI
 		default 53 if ESP_HOSTED_P4_DEV_BOARD_FUNC_BOARD && (ESP_HOSTED_CP_TARGET_ESP32C5 || ESP_HOSTED_CP_TARGET_ESP32C2)
 		default 100
 
-	config ESP_HOSTED_HOST_RESET_GPIO
+	config ESP_HOSTED_HOST_RESET_GPIO  # ignore: multiple-definition
 		int "Slave reset GPIO (RST/EN line)"
 		default 54 if ESP_HOSTED_P4_C5_CORE_BOARD || ESP_HOSTED_P4_C6_CORE_BOARD || ESP_HOSTED_P4_C61_CORE_BOARD
 		default 9  if ESP32P4_EYE_C6_BOARD
@@ -53,9 +53,10 @@ if ESP_HOSTED_HOST_TRANSPORT_BUS_SPI
 		default 5
 		range ESP_HOSTED_SPI_RESET_RANGE_MIN ESP_HOSTED_SPI_RESET_RANGE_MAX
 
-	config ESP_HOSTED_HOST_RESET_ACTIVE_LOW
+	config ESP_HOSTED_HOST_RESET_ACTIVE_LOW  # ignore: multiple-definition
 		bool "Slave reset is active-low"
-		default n
+		# active-low so the reset pulse ends HIGH and the CP runs (as spi_hd/sdio)
+		default y
 
 	config ESP_HOSTED_SPI_MOSI_RANGE_MIN
 			int

@@ -1,5 +1,6 @@
 # power_save / host+cp / network_split__host_deep_sleep_cp_light_sleep (`examples/power_save/host+cp/network_split__host_deep_sleep_cp_light_sleep/`)
 
+<!-- common-start -->
 Both sides asleep at once: **host in deep sleep**, **CP in light
 sleep**. Network split keeps Wi-Fi alive on the CP and forwards traffic
 into the host netif via the network-split backend; the CP enters light
@@ -10,15 +11,35 @@ back at full clock before the bus comes up.
 The host project lives under `esp_host/` — esp_pm, RTC GPIO wake
 source, iperf REPL, wifi-cmd glue are ESP-IDF-only.
 
-## Support
+## Supported Platforms and Transports
 
-| Host                          | Folder              | Status |
-| ----------------------------- | ------------------- | :----: |
-| MCU host (ESP-IDF, esp32p4)   | `esp_host/`     |   Y    |
+### Supported Coprocessors
 
-| Coprocessor                                       | Folder         | Status |
-| ------------------------------------------------- | -------------- | :----: |
-| any Espressif chip with Wi-Fi (default ESP32-C6)  | `cp/`      |   Y    |
+| Coprocessor | ESP32 | ESP32-C Series | ESP32-S Series |
+| :----------: | :---: | :------------: | :------------: |
+| Support     | Yes   | Yes            | Yes            |
+
+### Supported Host Devices
+
+| Host Device | ESP32-P4 | ESP32-H2 | Other MCUs | Linux |
+| :---------: | :------: | :------: | :--------: | :---: |
+| Support     | Yes | Yes | [Yes](https://github.com/espressif/esp-hosted/blob/master/docs/getting-started-mcu.md) | [Yes](https://github.com/espressif/esp-hosted/blob/master/docs/getting-started-linux.md) |
+
+### Supported Connection buses
+
+| Connection bus | SDIO | SPI Full-Duplex | SPI Half-Duplex | UART |
+| :------------- | :--: | :-------------: | :-------------: | :--: |
+| Linux host     | Yes  | Yes             | No              | No   |
+| MCU host       | Yes  | Yes             | Yes             | Yes  |
+<!-- common-stop -->
+
+## Directory layout
+
+```text
+power_save/host+cp/network_split__host_deep_sleep_cp_light_sleep/
+├── cp/                  ESP coprocessor firmware
+└── esp_host/            ESP-IDF MCU host app
+```
 
 <table width="100%">
   <tr>
@@ -46,6 +67,7 @@ cd /path/to/esp_hosted
 . ./export.sh     # . ./export.fish for the fish shell
 ```
 
+<!-- coprocessor-start -->
 Select the transport, enable CP-side Host Power Save, and pick the CP light-sleep power mode:
 
 ```bash
@@ -113,6 +135,7 @@ Then flash and monitor:
 ```bash
 eh.py -p <cp_usb_serial_port> flash monitor
 ```
+<!-- coprocessor-stop -->
 
 <h3 id="mcu-host">2. MCU Host</h3>
 
@@ -124,6 +147,7 @@ cd /path/to/esp_hosted
 . ./export.sh     # . ./export.fish for the fish shell
 ```
 
+<!-- esp_host-start -->
 Select the transport (must match the co-processor) and enable host power save with deep sleep:
 
 ```bash
@@ -183,6 +207,7 @@ Then flash and monitor:
 ```bash
 eh.py -p <host_usb_serial_port> flash monitor
 ```
+<!-- esp_host-stop -->
 
 ### 3. Verify
 

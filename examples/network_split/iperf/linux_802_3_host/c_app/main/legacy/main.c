@@ -15,7 +15,7 @@
  * On Linux user-space, the realistic flow is:
  *
  *   1. This demo brings up the esp_hosted host stack and connects to
- *      the configured AP via eh_example_common's eh_example_connect().
+ *      the configured AP via esp_hosted_examples_common's eh_example_connect().
  *   2. The Linux kernel netif (managed by the kmod) becomes the IP plane;
  *      `ifconfig esps0` should show the IP after eh_example_connect() lands.
  *   3. To exercise iperf throughput, run a standalone iperf3 binary
@@ -39,7 +39,7 @@
 #include "nvs_flash.h"
 #include "esp_hosted.h"
 #include "esp_check.h"
-#include "eh_example_common.h"
+#include "esp_hosted_examples_common.h"
 
 static const char *TAG = "network_split iperf";
 

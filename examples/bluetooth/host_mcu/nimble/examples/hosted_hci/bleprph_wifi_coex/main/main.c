@@ -38,7 +38,7 @@
 #include "nvs_flash.h"
 #include "ping/ping_sock.h"
 #include "esp_check.h"
-#include "eh_example_common.h"
+#include "esp_hosted_examples_common.h"
 
 #include "lwip/inet.h"
 #include "lwip/netdb.h"

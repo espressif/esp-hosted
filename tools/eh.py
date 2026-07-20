@@ -680,7 +680,7 @@ def _c(code: str) -> str:
 
 
 _RESET  = _c("\033[0m");  _BOLD = _c("\033[1m");  _DIM = _c("\033[2m")
-_CYAN   = _c("\033[36m"); _GREEN = _c("\033[32m")
+_CYAN   = _c("\033[36m"); _GREEN = _c("\033[32m"); _BLUE = _c("\033[94m")
 _YELLOW = _c("\033[33m"); _RED   = _c("\033[31m")
 
 
@@ -694,6 +694,63 @@ def _box(title: str, lines: list[str], color: str = _CYAN) -> None:
     for l in lines:
         print(f"{color}│{_RESET} {l.ljust(width)} {color}│{_RESET}")
     print(f"{color}└{bar}┘{_RESET}")
+
+
+# Grouped top-level help — one light-blue box per intention, one command per row.
+_HELP_GROUPS = [
+    ("Setup & dependencies", [
+        ("install [--enable-test] [--host]", "fetch + build deps into .deps/ (ESP-IDF; --enable-test adds esp-emu)"),
+        ("install --set-idf-path DIR",       "install but use your existing ESP-IDF (no clone)"),
+        ("install --set-emu-path DIR",       "...use your existing esp-emu (implies --enable-test)"),
+        ("install --uninstall",              "remove the managed .deps/"),
+        ("set-idf-path DIR",                 "use an existing ESP-IDF          (eh.conf: idf_path)"),
+        ("get-idf-path",                     "show the ESP-IDF builds resolve to"),
+        ("set-emu-path DIR",                 "use an existing esp-emu          (eh.conf: emu_path)"),
+        ("get-emu-path",                     "show the esp-emu tests resolve to"),
+        ("patch-idf",                        "lift the SDIO send-cap in the resolved IDF"),
+    ]),
+    ("Configure", [
+        ("set-target TARGET", "persist a port-type choice (one-time)"),
+        ("defconfig",         "apply sdkconfig.defaults"),
+        ("menuconfig",        "interactive Kconfig editor"),
+        ("save-defconfig",    "write a minimal sdkconfig.defaults"),
+        ("reconfigure",       "re-run the cmake configure step"),
+        ("show",              "print current state (diagnostic)"),
+    ]),
+    ("Build & flash", [
+        ("build [TARGET]", "cmake configure + build"),
+        ("run",            "build, then run / flash the app"),
+        ("clean",          "drop build artifacts"),
+        ("fullclean",      "remove the whole build dir"),
+    ]),
+    ("Test", [
+        ("test SUBSTRATE", "run the test suite (emu / hw / linux)"),
+        ("manual-test",    "guided manual bring-up"),
+        ("hw",             "hardware-bench runner"),
+    ]),
+]
+
+
+def _group_box(title: str, rows: list) -> None:
+    """One grouped help box: light-blue border, title in the top rule, padded."""
+    cmdw = max(len(c) for c, _ in rows)
+    lines = [f"  {c.ljust(cmdw)}   {d}" for c, d in rows]
+    width = max([len(title) + 4] + [len(l) for l in lines])
+    bar = "─" * (width + 2)
+    dashes = "─" * (width + 2 - 4 - len(title))     # "── " + title + " "
+    print(f"{_BLUE}┌── {_BOLD}{title}{_RESET}{_BLUE} {dashes}┐{_RESET}")
+    print(f"{_BLUE}│{_RESET} {' ' * width} {_BLUE}│{_RESET}")
+    for l in lines:
+        print(f"{_BLUE}│{_RESET} {l.ljust(width)} {_BLUE}│{_RESET}")
+    print(f"{_BLUE}│{_RESET} {' ' * width} {_BLUE}│{_RESET}")
+    print(f"{_BLUE}└{bar}┘{_RESET}")
+
+
+def _grouped_help() -> None:
+    print("eh — orchestrator for esp_hosted (idf.py-subset CLI)\n")
+    print("usage: eh <command> [options]     (eh <command> -h  for command detail)\n")
+    for title, rows in _HELP_GROUPS:
+        _group_box(title, rows)
 
 
 def _confirm(prompt: str, assume_yes: bool = False) -> bool:
@@ -750,8 +807,8 @@ def resolve_emu_dir() -> Path | None:
     point at an external checkout."""
     conf = _read_conf()
     cands: list[Path] = []
-    if conf.get("esp_emu"):
-        cands.append(Path(conf["esp_emu"]).expanduser())
+    if conf.get("emu_path") or conf.get("esp_emu"):
+        cands.append(Path(conf.get("emu_path") or conf["esp_emu"]).expanduser())
     cands.append(DEPS_DIR / "esp-emu")
     for c in cands:
         if c.is_dir():
@@ -777,8 +834,8 @@ def _managed_idf() -> Path | None:
 def _managed_emu() -> Path | None:
     """esp-emu install OWNS: explicit override (set-esp-emu) or .deps/esp-emu."""
     conf = _read_conf()
-    if conf.get("esp_emu"):
-        p = Path(conf["esp_emu"]).expanduser()
+    if conf.get("emu_path") or conf.get("esp_emu"):
+        p = Path(conf.get("emu_path") or conf["esp_emu"]).expanduser()
         if p.is_dir():
             return p.resolve()
     d = DEPS_DIR / "esp-emu"
@@ -839,7 +896,7 @@ def cmd_set_esp_emu(args) -> int:
     if not d.is_dir():
         sys.stderr.write(f"{_RED}eh:{_RESET} not a directory: {d}\n")
         return 2
-    conf = _read_conf(); conf["esp_emu"] = str(d); _write_conf(conf)
+    conf = _read_conf(); conf["emu_path"] = str(d); conf.pop("esp_emu", None); _write_conf(conf)
     note = "" if emu_binary(d).is_file() else \
            f"  {_YELLOW}(binary not built yet){_RESET}"
     print(f"{_GREEN}esp-emu set:{_RESET} {d}{note}")
@@ -955,17 +1012,29 @@ def cmd_test(args) -> int:
     # emus hold inotify instances — on EMFILE hangs raise
     # `sudo sysctl -w fs.inotify.max_user_instances=1024`. `--jobs N` overrides.
     if jobs == "auto" and substrate != "hw":
-        # cores/2 minus one bench of headroom on big hosts (each emu test = 2 emus;
-        # the -1 leaves room for xdist workers / net shims / OS). Only reserve it
-        # when it's a minor fraction (>=10 cores); small hosts keep full cores/2;
-        # floor 1. NOTE: the emu-intensive power-save wake tests can still flake when
-        # co-scheduled with the heavy control_plane sweeps at this concurrency (they
-        # pass isolated) — a wake-path timing fragility under emu starvation, tracked
-        # separately. `--jobs N` overrides.
-        _half = (os.cpu_count() or 4) // 2
-        _cap = max(1, _half - 1 if _half >= 5 else _half)
-        print(f"{_DIM}eh: --jobs auto → {_cap} (emu = 2/test, ~1 emu/core; "
-              f"pass --jobs N to override){_RESET}")
+        # Each emu test spins TWO single-threaded emus (host + CP), each wanting a
+        # full core during active phases, plus its own xdist worker — ~3 busy slots
+        # per test. Size against PHYSICAL cores (an HT sibling gives a CPU-bound emu
+        # no extra throughput) so 3*jobs fits: 2*jobs emus + jobs workers <= physical.
+        # The old formula used LOGICAL cores/2 (=15 here on 24 physical → ~30 emus,
+        # 2x oversubscribed): that starves the CP so it misses the firmware's real
+        # RPC/boot deadlines → spurious timeouts on ANY wire (seen: control_plane,
+        # ota_littlefs, peer_data_transfer, nw_split — transport-agnostic). Floor 1.
+        # `--jobs N` overrides.
+        try:
+            _pairs = set(); _pid = None
+            with open("/proc/cpuinfo") as _f:
+                for _ln in _f:
+                    if _ln.startswith("physical id"):
+                        _pid = _ln.split(":", 1)[1].strip()
+                    elif _ln.startswith("core id"):
+                        _pairs.add((_pid, _ln.split(":", 1)[1].strip()))
+            _phys = len(_pairs) or (os.cpu_count() or 4)
+        except OSError:
+            _phys = os.cpu_count() or 4
+        _cap = max(1, _phys // 3)
+        print(f"{_DIM}eh: --jobs auto → {_cap} ({_phys} physical cores; emu=2/test + "
+              f"worker ≈3 slots/test; pass --jobs N to override){_RESET}")
         jobs = str(_cap)
     # loadgroup (not plain load): tests marked @pytest.mark.xdist_group(...) land on
     # ONE worker and run serially, so a cohort of CPU-heavy emu tests (control_plane's
@@ -1768,6 +1837,18 @@ def _report_idf_patch_status(idf_dir: Path) -> None:
         "To suppress/unsuppress warning, call above command with --suppress/--unsuppress",
     ], _YELLOW)
 
+def _rule(label, color=""):
+    """Full-width, centered rule: '----- label -----' across the terminal."""
+    try:
+        width = min(shutil.get_terminal_size((80, 20)).columns, 80)
+    except Exception:
+        width = 80
+    mid = f" {label} "
+    pad = max(0, width - len(mid))
+    line = ("-" * (pad // 2)) + mid + ("-" * (pad - pad // 2))
+    return f"{color}{line}{_RESET}" if color else line
+
+
 def apply_idf_patches(idf_dir: Path) -> int:
     """Lift the SDIO 4092-byte send cap by rewriting the one guard line in
     sdio_slave.c (exact-line match -> version-agnostic; no context or HAL-header
@@ -1778,23 +1859,30 @@ def apply_idf_patches(idf_dir: Path) -> int:
         text = src.read_text()
     except OSError as e:
         sys.stderr.write(f"{_RED}eh:{_RESET} cannot read {src}: {e}\n")
+        print(_rule("patch failed", _RED))
         return 1
     if _SDIO_CAP_OLD not in text:
-        return 0
+        return 0                      # nothing to do -> stay silent
     try:
         src.write_text(text.replace(_SDIO_CAP_OLD, _SDIO_CAP_NEW))
     except OSError as e:
         sys.stderr.write(f"{_RED}eh:{_RESET} cannot write {src}: {e}\n")
+        print(_rule("patch failed", _RED))
         return 1
-    print(f"{_GREEN}idf patched:{_RESET} lifted the SDIO 4092 send cap in {src}")
+    print(_rule(f"idf: {idf_dir}"))
+    print(f"   file: {_SDIO_SLAVE_SRC}")
     print(f"   {_RED}- {_SDIO_CAP_OLD}{_RESET}")
     print(f"   {_GREEN}+ {_SDIO_CAP_NEW}{_RESET}")
-    print(f"   {_DIM}verify: cd {idf_dir} && git diff{_RESET}")
+    print(_rule("patch successful", _GREEN))
     return 0
 
 
 def cmd_patch_idf(args) -> int:
-    idf = resolve_idf()
+    # --idf-path pins the exact IDF (e.g. the one a build's CMake gate reported);
+    # otherwise auto-resolve (eh.conf -> .deps/esp-idf -> $IDF_PATH). This matters
+    # when .deps exists but the build uses a different $IDF_PATH: without the pin,
+    # resolve_idf() would target .deps and silently no-op the intended IDF.
+    idf = Path(args.idf_path).expanduser() if getattr(args, "idf_path", None) else resolve_idf()
     if idf is None:
         sys.stderr.write(f"{_RED}eh:{_RESET} no ESP-IDF resolved "
                          f"(set IDF_PATH, eh.py set-idf-path, or ./install.sh)\n")
@@ -1899,6 +1987,22 @@ def cmd_install(args) -> int:
     rc = _ensure_repo_submodules()
     if rc:
         return rc
+    # Front-door path overrides: point install at existing checkouts (same eh.conf
+    # write as `eh.py set-idf-path`/`set-emu-path`), then proceed without cloning
+    # that leg. --set-emu-path also opts emu in.
+    if getattr(args, "set_idf_path", None):
+        p = Path(args.set_idf_path).expanduser().resolve()
+        if not (p / "export.sh").is_file():
+            sys.stderr.write(f"{_RED}eh:{_RESET} no export.sh under {p}\n"); return 1
+        conf = _read_conf(); conf["idf_path"] = str(p); _write_conf(conf)
+        print(f"{_GREEN}idf-path set:{_RESET} {p} {_DIM}(overrides .deps){_RESET}")
+    if getattr(args, "set_emu_path", None):
+        d = Path(args.set_emu_path).expanduser().resolve()
+        if not d.is_dir():
+            sys.stderr.write(f"{_RED}eh:{_RESET} not a directory: {d}\n"); return 1
+        conf = _read_conf(); conf["emu_path"] = str(d); conf.pop("esp_emu", None); _write_conf(conf)
+        args.with_emu = True
+        print(f"{_GREEN}emu-path set:{_RESET} {d} {_DIM}(overrides .deps){_RESET}")
     # Two modes: 'full' (ESP-IDF + esp-emu) and 'host' (Linux host, no fetch).
     # No flag -> auto-detect from the machine (ARM Linux host -> 'host').
     mode = getattr(args, "mode", None)
@@ -1961,7 +2065,7 @@ def cmd_install(args) -> int:
         if force_idf:
             conf.pop("idf_path", None)
         if force_emu:
-            conf.pop("esp_emu", None)
+            conf.pop("esp_emu", None); conf.pop("emu_path", None)
         if conf:
             _write_conf(conf)
         elif CONF_FILE.exists():
@@ -2157,8 +2261,8 @@ def _early_dispatch_or_reject(cwd: Path) -> int | None:
         return None
     # Environment/dep commands are project-independent (run from repo root).
     if any(c in argv for c in ("install", "set-idf-path", "get-idf-path", "patch-idf",
-                               "set-esp-emu", "get-esp-emu", "test", "manual-test",
-                               "hw")):
+                               "set-emu-path", "get-emu-path", "set-esp-emu",
+                               "get-esp-emu", "test", "manual-test", "hw")):
         return None
     if _argv_has_flag(argv, "--project-dir"):
         return None
@@ -2197,6 +2301,13 @@ def main() -> int:
     early = _early_dispatch_or_reject(Path.cwd())
     if early is not None:
         return early
+
+    # Top-level help / no command → the grouped command overview (below the
+    # per-command `eh <cmd> -h`, which argparse still handles).
+    _argv = sys.argv[1:]
+    if not _argv or _argv[0] in ("-h", "--help", "help"):
+        _grouped_help()
+        return 0
 
     p = argparse.ArgumentParser(
         prog="eh",
@@ -2274,6 +2385,10 @@ def main() -> int:
     sp.add_argument("--force-emu", action="store_true",
                     help="re-clone + rebuild esp-emu only (leave esp-idf as-is)")
     sp.add_argument("--skip-idf", action="store_true", help="leave esp-idf untouched")
+    sp.add_argument("--set-idf-path", metavar="DIR",
+                    help="use your existing ESP-IDF, no clone (== `eh.py set-idf-path`)")
+    sp.add_argument("--set-emu-path", metavar="DIR",
+                    help="use your existing esp-emu (implies --enable-test; == `eh.py set-emu-path`)")
     sp.add_argument("--with-emu", "--enable-test", dest="with_emu",
                     action="store_true",
                     help="also set up esp-emu, the emulator test harness "
@@ -2314,9 +2429,12 @@ def main() -> int:
                    help="suppress the SDIO send-cap notice for this IDF (no change made)")
     g.add_argument("--unsuppress", action="store_true",
                    help="re-enable the SDIO send-cap notice for this IDF (the default)")
+    sp.add_argument("--idf-path", metavar="DIR",
+                   help="patch THIS ESP-IDF instead of the auto-resolved one "
+                        "(pass the path your build reports; overrides .deps/$IDF_PATH)")
     sp.set_defaults(fn=cmd_patch_idf)
 
-    sp = sub.add_parser("set-esp-emu",
+    sp = sub.add_parser("set-emu-path", aliases=["set-esp-emu"],
                         help="use an existing esp-emu checkout (overrides .deps)")
     sp.add_argument("path")
     sp.set_defaults(fn=cmd_set_esp_emu)
@@ -2370,7 +2488,7 @@ def main() -> int:
     sp.add_argument("args", nargs="*", help="extra args forwarded to esp-emu (after --)")
     sp.set_defaults(fn=cmd_manual_test)
 
-    sp = sub.add_parser("get-esp-emu",
+    sp = sub.add_parser("get-emu-path", aliases=["get-esp-emu"],
                         help="print the esp-emu the runner will use")
     sp.add_argument("--raw", action="store_true", help="print only the binary path")
     sp.set_defaults(fn=cmd_get_esp_emu)
@@ -2407,7 +2525,8 @@ def main() -> int:
     # Environment/dep commands are project-independent — dispatch before the
     # project-dir + kconfig machinery below (which none of them need).
     if args.cmd in ("install", "set-idf-path", "get-idf-path", "patch-idf",
-                    "set-esp-emu", "get-esp-emu", "manual-test", "hw"):
+                    "set-emu-path", "get-emu-path", "set-esp-emu", "get-esp-emu",
+                    "manual-test", "hw"):
         return int(args.fn(args))
 
     # Auto-detect: strict cwd-only check.  cwd's CMakeLists.txt must

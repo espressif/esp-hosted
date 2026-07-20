@@ -1,0 +1,18 @@
+# ESP_PLATFORM: place the EH_HOST_FEAT_REGISTER descriptor array into a declared
+# region via ldgen (no manual MEMORY region → no "undeclared region" warning).
+# Mirrors esp_trace/linker.lf: KEEP survives gc-sections; SURROUND emits the
+# _eh_host_feat_descs_start/_end bounds walked by eh_host_autoinit.
+
+[sections:eh_host_feat_descs]
+entries:
+    eh_host_feat_descs
+
+[scheme:eh_host_feat_descs_default]
+entries:
+    eh_host_feat_descs -> flash_rodata
+
+[mapping:eh_host_feat_descs]
+archive: *
+entries:
+    * (eh_host_feat_descs_default);
+        eh_host_feat_descs -> flash_rodata KEEP() ALIGN(4) SURROUND(eh_host_feat_descs)

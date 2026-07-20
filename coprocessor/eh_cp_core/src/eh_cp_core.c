@@ -1065,7 +1065,16 @@ esp_err_t eh_cp_deinit(void)
 
 static void auto_feat_init_task(void *pvParameters)
 {
-    size_t n = (size_t)(&_eh_cp_feat_descs_end - &_eh_cp_feat_descs_start);
+    uintptr_t _ds = (uintptr_t)&_eh_cp_feat_descs_start;
+    size_t _dbytes = (size_t)((uintptr_t)&_eh_cp_feat_descs_end - _ds);
+    /* Link-collected array: a fill gap before _start would mis-index the walk
+     * and deref garbage names. Require struct alignment + whole-entry span. */
+    size_t n = ((_ds & (_Alignof(eh_cp_feat_desc_t) - 1)) != 0 ||
+                (_dbytes % sizeof(eh_cp_feat_desc_t)) != 0)
+                   ? 0 : _dbytes / sizeof(eh_cp_feat_desc_t);
+    if (n == 0 && _dbytes != 0)
+        ESP_LOGE(TAG, "auto_feat_init_task: descriptor section misaligned "
+                 "(start=%p span=%uB) — skipping", (void *)_ds, (unsigned)_dbytes);
     ESP_LOGI(TAG, "auto_feat_init_task: found %u extension descriptor(s)", (unsigned)n);
 
     for (size_t i = 0; i < n; i++) {

@@ -5,4 +5,4 @@ else()
     add_executable(network_split_iperf_c_app main.c)
 endif()
 target_link_libraries(network_split_iperf_c_app
-    PRIVATE esp_hosted eh_example_common)
+    PRIVATE esp_hosted esp_hosted_examples_common)

@@ -1,5 +1,6 @@
 # openthread / border_router (`examples/openthread/border_router/`)
 
+<!-- common-start -->
 OpenThread Border Router on the host, driving a **single** ESP-Hosted
 co-processor that provides **both** the 802.15.4 **Radio Co-Processor
 (RCP)** and the Wi-Fi backhaul. The host drives the RCP lifecycle over
@@ -11,15 +12,28 @@ one radio on the CP, expect coexistence trade-offs; for a multi-MCU
 split (P4 + C6 Wi-Fi + H2 RCP) see the ESP-Thread-BR P4 example linked
 below. Adapted from `esp-idf/examples/openthread/ot_br`.
 
-## Support
+## Supported Platforms and Transports
 
-| Host                          | Folder              | Status |
-| ----------------------------- | ------------------- | :----: |
-| MCU host (ESP-IDF, esp32p4)   | `esp_host/`     |   Y    |
+### Supported Coprocessors
 
-| Coprocessor                                                        | Folder    | Status |
-| ----------------------------------------------------------------- | --------- | :----: |
-| RCP + Wi-Fi CP (ESP32-C5 / C6) — combined 802.15.4 radio + Wi-Fi   | `cp/`     |   Y    |
+OpenThread uses an 802.15.4 radio co-processor (RCP).
+
+| Coprocessor | ESP32-C6 | ESP32-H2 | ESP32-H4 | ESP32-C5 |
+| :---------: | :------: | :------: | :------: | :------: |
+| Support     | Yes      | Yes      | Yes      | Yes      |
+
+### Supported Host Devices
+
+| Host Device | ESP32-P4 | ESP32-H2 | Other MCUs | Linux |
+| :---------: | :------: | :------: | :--------: | :---: |
+| Support     | Yes | Yes | [Yes](https://github.com/espressif/esp-hosted/blob/master/docs/getting-started-mcu.md) | [Yes](https://github.com/espressif/esp-hosted/blob/master/docs/getting-started-linux.md) |
+
+### Supported Connection buses
+
+| Connection bus | SDIO | SPI Full-Duplex | SPI Half-Duplex | UART |
+| :------------- | :--: | :-------------: | :-------------: | :--: |
+| Linux host     | Yes  | Yes             | No              | No   |
+| MCU host       | Yes  | Yes             | Yes             | Yes  |
 
 For a multi-MCU split (P4 + C6 Wi-Fi + H2 RCP), see the
 [ESP-Thread-BR P4 example](https://github.com/espressif/esp-thread-br/blob/main/examples/basic_thread_border_router/README_esp32p4.md).
@@ -27,6 +41,15 @@ For a multi-MCU split (P4 + C6 Wi-Fi + H2 RCP), see the
 > Running OT and Wi-Fi together on the same ESP32-C6 CP shares one
 > radio — expect coexistence trade-offs. See the
 > [C6 RF coexistence matrix](https://docs.espressif.com/projects/esp-idf/en/latest/esp32c6/api-guides/coexist.html).
+<!-- common-stop -->
+
+## Directory layout
+
+```text
+openthread/border_router/
+├── cp/                  ESP coprocessor firmware
+└── esp_host/            ESP-IDF MCU host app
+```
 
 <table width="100%">
   <tr>
@@ -54,6 +77,7 @@ cd /path/to/esp_hosted
 . ./export.sh     # . ./export.fish for the fish shell
 ```
 
+<!-- coprocessor-start -->
 The co-processor is the OpenThread **RCP** *and* provides the Wi-Fi backbone for the border router (single-radio SW coexistence). Select the ESP-Hosted transport (RPC control):
 
 ```bash
@@ -108,6 +132,7 @@ Then flash and monitor:
 ```bash
 eh.py -p <cp_usb_serial_port> flash monitor
 ```
+<!-- coprocessor-stop -->
 
 <h3 id="mcu-host">2. MCU Host</h3>
 
@@ -119,6 +144,7 @@ cd /path/to/esp_hosted
 . ./export.sh     # . ./export.fish for the fish shell
 ```
 
+<!-- esp_host-start -->
 Select the transport (must match the co-processor), then configure the OpenThread RCP link:
 
 ```bash
@@ -176,6 +202,7 @@ Then flash and monitor:
 ```bash
 eh.py -p <host_usb_serial_port> flash monitor
 ```
+<!-- esp_host-stop -->
 
 ### 3. Verify
 

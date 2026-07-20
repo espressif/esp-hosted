@@ -13,9 +13,4 @@ CONFIG_ESP_HOSTED_HOST_FEAT_WIFI=y
 CONFIG_ESP_HOSTED_HOST_FEAT_GPIO_EXP=y
 CONFIG_ESP_HOSTED_HOST_FEAT_CP_EXT_COEX=y
 
-# Point the STA half at the emulator's built-in AP (available for connect-based
-# scenarios; the scalar set/get exerciser does not require a connection).
-CONFIG_ESP_WIFI_REMOTE_AP_SSID="myssid"
-CONFIG_ESP_WIFI_REMOTE_AP_PASSWORD="mypassword"
-
 CONFIG_FREERTOS_HZ=1000

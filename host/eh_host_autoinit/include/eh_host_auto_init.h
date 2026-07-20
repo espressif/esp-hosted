@@ -38,9 +38,10 @@ typedef struct {
         .priority  = (_prio),                                           \
     }
 
-/* Linker-provided bounds (gcc/clang auto-provide for C-identifier sections). */
-extern const eh_host_feat_desc_t __start_eh_host_feat_descs[];
-extern const eh_host_feat_desc_t __stop_eh_host_feat_descs[];
+/* Section bounds: ESP builds get these from the .lf SURROUND(); non-ESP builds
+ * PROVIDE the same names in eh_host_feat_descs_linux.ld. */
+extern const eh_host_feat_desc_t _eh_host_feat_descs_start[];
+extern const eh_host_feat_desc_t _eh_host_feat_descs_end[];
 
 /* Iterate descriptors in ascending priority order, calling each init_fn.
  * Returns first non-zero rc but continues on failure. Idempotent: a

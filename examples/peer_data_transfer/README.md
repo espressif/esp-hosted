@@ -1,5 +1,6 @@
 # peer_data_transfer (`examples/peer_data_transfer/`)
 
+<!-- common-start -->
 Demonstrates the `peer_data` custom-RPC channel: the host sends
 arbitrary application-defined messages identified by a `uint32_t`
 message ID, the CP echoes them back on a paired response ID, and the
@@ -16,18 +17,39 @@ Message-ID pairs used by the demo:
 - `MSG_ID_GHOST` — exceeds the configured callback table; expected
   to fail.
 
-## Support
+## Supported Platforms and Transports
 
-| Host                              | Folder                              | Status |
-| --------------------------------- | ----------------------------------- | :----: |
-| MCU host (ESP-IDF)                | `mcu_host/`                         |   Y   |
-| Linux user-space (C)              | `linux_802_3_host/c_app/`           |   Y   |
-| Linux kmod                        | `linux_802_3_host/kmod/`            |   Y   |
-| Linux user-space (Python ctypes)  | `linux_802_3_host/py_app/`          |   Y   |
+### Supported Coprocessors
 
-| Coprocessor                            | Status |
-| -------------------------------------- | :----: |
-| any Espressif chip (default ESP32-C6)  |   Y   |
+| Coprocessor | ESP32 | ESP32-C Series | ESP32-S Series |
+| :----------: | :---: | :------------: | :------------: |
+| Support     | Yes   | Yes            | Yes            |
+
+### Supported Host Devices
+
+| Host Device | ESP32-P4 | ESP32-H2 | Other MCUs | Linux |
+| :---------: | :------: | :------: | :--------: | :---: |
+| Support     | Yes | Yes | [Yes](https://github.com/espressif/esp-hosted/blob/master/docs/getting-started-mcu.md) | [Yes](https://github.com/espressif/esp-hosted/blob/master/docs/getting-started-linux.md) |
+
+### Supported Connection buses
+
+| Connection bus | SDIO | SPI Full-Duplex | SPI Half-Duplex | UART |
+| :------------- | :--: | :-------------: | :-------------: | :--: |
+| Linux host     | Yes  | Yes             | No              | No   |
+| MCU host       | Yes  | Yes             | Yes             | Yes  |
+<!-- common-stop -->
+
+## Directory layout
+
+```text
+peer_data_transfer/
+├── cp/                     ESP coprocessor firmware
+├── mcu_host/               ESP-IDF MCU host app
+└── linux_802_3_host/       Linux host
+     ├── c_app/             native C app
+     ├── kmod/              kernel module
+     └── py_app/            Python (ctypes) app
+```
 
 <table width="100%">
   <tr>
@@ -44,6 +66,7 @@ Message-ID pairs used by the demo:
 
 ---
 
+<!-- common-start -->
 ## Scenario
 
 The host registers a receive callback, sends application-defined data to the co-processor over the custom-data channel, and receives peer data back through the callback.
@@ -56,6 +79,7 @@ sequenceDiagram
     App->>CP: eh_host_peer_data_send() / esp_hosted_send_custom_data()
     CP-->>App: peer data delivered to the registered callback
 ```
+<!-- common-stop -->
 
 > [!IMPORTANT]
 > **New here? Get a base example working first.** Follow **[Getting Started: Linux](../../docs/getting-started-linux.md)** or **[Getting Started: MCU](../../docs/getting-started-mcu.md)** to wire the boards, install tools, choose a transport, and confirm the host↔co-processor handshake. The steps below only add what is specific to this example.
@@ -207,6 +231,7 @@ cd /path/to/esp_hosted
 . ./export.sh     # . ./export.fish for the fish shell
 ```
 
+<!-- coprocessor-start -->
 Peer-Data support is enabled by the co-processor's `sdkconfig.defaults`
 (`ESP_HOSTED_CP_FEAT_PEER_DATA`) — no extra option to enable. Select the
 transport via `eh.py menuconfig`:
@@ -244,6 +269,7 @@ Then flash and monitor:
 ```bash
 eh.py -p <cp_usb_serial_port> flash monitor
 ```
+<!-- coprocessor-stop -->
 
 <h3 id="mcu-host">2. MCU Host</h3>
 
@@ -255,6 +281,7 @@ cd /path/to/esp_hosted
 . ./export.sh     # . ./export.fish for the fish shell
 ```
 
+<!-- esp_host-start -->
 Select the transport (must match the co-processor):
 
 ```bash
@@ -307,6 +334,7 @@ Then flash and monitor:
 ```bash
 eh.py -p <host_usb_serial_port> flash monitor
 ```
+<!-- esp_host-stop -->
 
 ### 3. Verify
 

@@ -100,68 +100,8 @@ menu "CP core"
 		comment "HCI UART Settings from Bluetooth Component"
 		comment "To change Port, Baud Rate, Flow Control, select Component config ---> Bluetooth ---> Controller Options ---> HCI Config"
 
-		config ESP_HOSTED_BT_UART_PORT_ESP32
-			int "HCI UART Port"
-			range BTDM_CTRL_HCI_UART_NO BTDM_CTRL_HCI_UART_NO
-			help
-				UART Port for HCI
-
-		config ESP_HOSTED_BT_UART_BAUDRATE_ESP32
-			int "HCI UART Baudrate"
-			range BTDM_CTRL_HCI_UART_BAUDRATE BTDM_CTRL_HCI_UART_BAUDRATE
-			help
-				UART Baudrate for HCI. Please use standard baudrate.
 	endmenu
 
-	menu "HCI UART Settings"
-		depends on BT_ENABLED && BT_LE_HCI_INTERFACE_USE_UART && !IDF_TARGET_ESP32 && !IDF_TARGET_ESP32C3 && !IDF_TARGET_ESP32S3
-		comment "HCI UART Settings from Bluetooth Component"
-		comment "To change, select Component config ---> Bluetooth ---> Controller Options ---> HCI Config"
-
-		config ESP_HOSTED_BT_UART_PORT
-			int "HCI UART Port"
-			default BT_LE_HCI_UART_PORT if BT_LE_HCI_UART_PORT
-			default 1
-			help
-				UART Port for HCI
-
-		config ESP_HOSTED_BT_UART_TX_PIN
-			int "HCI UART Tx Pin"
-			default BT_LE_HCI_UART_TX_PIN if BT_LE_HCI_UART_TX_PIN
-			default 17
-			help
-				UART Tx Pin for HCI
-
-		config ESP_HOSTED_BT_UART_RX_PIN
-			int "HCI UART Rx Pin"
-			default BT_LE_HCI_UART_RX_PIN if BT_LE_HCI_UART_RX_PIN
-			default 16
-			help
-				UART Rx Pin for HCI
-
-		config ESP_HOSTED_BT_UART_RTS_PIN
-			depends on BT_LE_HCI_UART_FLOWCTRL
-			int "HCI UART RTS Pin"
-			default BT_LE_HCI_UART_RTS_PIN if BT_LE_HCI_UART_RTS_PIN
-			default 15
-			help
-				UART RTS Pin for HCI
-
-		config ESP_HOSTED_BT_UART_CTS_PIN
-			depends on BT_LE_HCI_UART_FLOWCTRL
-			int "HCI UART CTS Pin"
-			default BT_LE_HCI_UART_CTS_PIN if BT_LE_HCI_UART_CTS_PIN
-			default 14
-			help
-				UART CTS Pin for HCI
-
-		config ESP_HOSTED_BT_UART_BAUDRATE
-			int "HCI UART Baudrate"
-			default BT_LE_HCI_UART_BAUD if BT_LE_HCI_UART_BAUD
-			default 921600
-			help
-				UART Baudrate for HCI. Please use standard baudrate.
-	endmenu
 
 	menu "Core: Task & Queue Config"
 		config ESP_HOSTED_DEFAULT_TASK_STACK_SIZE

@@ -2,7 +2,7 @@
 #include <unistd.h>
 #include "esp_log.h"
 #include "esp_check.h"
-#include "eh_example_common.h"
+#include "esp_hosted_examples_common.h"
 
 static const char *TAG = "wifi_sta";
 

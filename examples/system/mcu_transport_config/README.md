@@ -1,5 +1,6 @@
 # mcu_transport_config (`examples/system/mcu_transport_config/`)
 
+<!-- common-start -->
 Configures the host-side transport (SDIO / SPI-FD / SPI-HD-dual /
 SPI-HD-quad / UART) programmatically at runtime, *before*
 `esp_hosted_init()`. The same Kconfig defaults are available via
@@ -7,18 +8,38 @@ SPI-HD-quad / UART) programmatically at runtime, *before*
 useful when the bus pins or clock have to come from the application
 (board ID, NVS, dip switch) rather than the build configuration.
 
-## Support
-
-| Host                              | Folder                       | Status |
-| --------------------------------- | ---------------------------- | :----: |
-| MCU host (ESP-IDF)                | `mcu_host/`                  |   Y   |
-
 (MCU-only — Linux host transport is configured via the bus driver,
 not this API.)
 
-| Coprocessor                            | Status |
-| -------------------------------------- | :----: |
-| any Espressif chip (default ESP32-C6)  |   Y   |
+## Supported Platforms and Transports
+
+### Supported Coprocessors
+
+| Coprocessor | ESP32 | ESP32-C Series | ESP32-S Series |
+| :----------: | :---: | :------------: | :------------: |
+| Support     | Yes   | Yes            | Yes            |
+
+### Supported Host Devices
+
+| Host Device | ESP32-P4 | ESP32-H2 | Other MCUs | Linux |
+| :---------: | :------: | :------: | :--------: | :---: |
+| Support     | Yes | Yes | [Yes](https://github.com/espressif/esp-hosted/blob/master/docs/getting-started-mcu.md) | [Yes](https://github.com/espressif/esp-hosted/blob/master/docs/getting-started-linux.md) |
+
+### Supported Connection buses
+
+| Connection bus | SDIO | SPI Full-Duplex | SPI Half-Duplex | UART |
+| :------------- | :--: | :-------------: | :-------------: | :--: |
+| Linux host     | Yes  | Yes             | No              | No   |
+| MCU host       | Yes  | Yes             | Yes             | Yes  |
+<!-- common-stop -->
+
+## Directory layout
+
+```text
+system/mcu_transport_config/
+├── cp/                  ESP coprocessor firmware
+└── mcu_host/            ESP-IDF MCU host app
+```
 
 <table width="100%">
   <tr>
@@ -46,6 +67,7 @@ cd /path/to/esp_hosted
 . ./export.sh     # . ./export.fish for the fish shell
 ```
 
+<!-- coprocessor-start -->
 This example ships no Kconfig of its own — the co-processor transport selection *is* the point. Pick the bus to match what the host will configure at runtime:
 
 ```bash
@@ -81,6 +103,7 @@ Then flash and monitor:
 ```bash
 eh.py -p <cp_usb_serial_port> flash monitor
 ```
+<!-- coprocessor-stop -->
 
 <h3 id="mcu-host">2. MCU Host</h3>
 
@@ -92,6 +115,7 @@ cd /path/to/esp_hosted
 . ./export.sh     # . ./export.fish for the fish shell
 ```
 
+<!-- esp_host-start -->
 There is no example-specific Kconfig — the host transport is exactly what this example overrides *in code* at runtime. The `menuconfig` transport choice sets the `INIT_DEFAULT_*` pin / clock defaults; the example then overwrites whichever fields it needs (SDIO 1- or 4-bit, SPI-FD, SPI-HD dual / quad, UART):
 
 ```bash
@@ -126,6 +150,7 @@ Then flash and monitor:
 ```bash
 eh.py -p <host_usb_serial_port> flash monitor
 ```
+<!-- esp_host-stop -->
 
 ### 3. Verify
 

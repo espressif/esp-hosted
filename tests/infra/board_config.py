@@ -116,7 +116,7 @@ def get_cp_host_type_options(cfg):
 def get_cp_board_options(cfg, slave_chip=None):
     """Return CP-side board options, filtered by IDF target (slave chip)."""
     choices = _get_cp_choices(cfg)
-    all_options = choices.get('ESP_HOST_DEV_BOARD', {}).get('options', [])
+    all_options = choices.get('ESP_HOSTED_DEV_BOARD', {}).get('options', [])
 
     if not slave_chip:
         return all_options

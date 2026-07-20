@@ -1,18 +1,37 @@
 # Wi-Fi enterprise (`wifi/enterprise`)
 
+<!-- common-start -->
 Wi-Fi station bring-up against an **enterprise (802.1X / EAP)** AP — the kind of network found in offices and universities, where each client authenticates with certificates or per-user credentials instead of a shared PSK. The radio runs on the **coprocessor** and the application on the **host**. The CP exposes the `eh_host_feat_wifi_ext_ent` extension; the host pulls in `wpa_supplicant`'s enterprise (EAP) machinery and mbedTLS. EAP configuration (method, identity, certificates, anonymous identity, etc.) is pushed from the host to the CP over RPC.
 
-## Support
+## Supported Platforms and Transports
 
-| Host                              | Folder        | Status |
-| --------------------------------- | ------------- | :----: |
-| MCU host (ESP-IDF)                | `mcu_host/`   |   Y    |
-| Linux user-space (any flavour)    | n/a           |   N    |
+### Supported Coprocessors
 
-| Coprocessor                                       | Status |
-| ------------------------------------------------- | :----: |
-| Any Espressif chip with Wi-Fi (default ESP32-C6)  |   Y    |
-| ESP32-H2 / H4                                     |   N    |
+| Coprocessor | ESP32 | ESP32-C Series | ESP32-S Series |
+| :----------: | :---: | :------------: | :------------: |
+| Support     | Yes   | Yes            | Yes            |
+
+### Supported Host Devices
+
+| Host Device | ESP32-P4 | ESP32-H2 | Other MCUs | Linux |
+| :---------: | :------: | :------: | :--------: | :---: |
+| Support     | Yes | Yes | [Yes](https://github.com/espressif/esp-hosted/blob/master/docs/getting-started-mcu.md) | [Yes](https://github.com/espressif/esp-hosted/blob/master/docs/getting-started-linux.md) |
+
+### Supported Connection buses
+
+| Connection bus | SDIO | SPI Full-Duplex | SPI Half-Duplex | UART |
+| :------------- | :--: | :-------------: | :-------------: | :--: |
+| Linux host     | Yes  | Yes             | No              | No   |
+| MCU host       | Yes  | Yes             | Yes             | Yes  |
+<!-- common-stop -->
+
+## Directory layout
+
+```text
+wifi/enterprise/
+├── cp/                  ESP coprocessor firmware
+└── mcu_host/            ESP-IDF MCU host app
+```
 
 <table width="100%">
   <tr>
@@ -40,6 +59,7 @@ cd /path/to/esp_hosted
 . ./export.sh     # . ./export.fish for the fish shell
 ```
 
+<!-- coprocessor-start -->
 The enterprise feature gate (`CONFIG_ESP_HOSTED_CP_FEAT_WIFI_EXT_ENT`) is preset in `cp/sdkconfig.defaults`; still enable the upstream EAP support (`ESP_WIFI_ENTERPRISE_SUPPORT` under Component config → Wi-Fi → Enterprise) and select the transport:
 
 ```bash
@@ -77,6 +97,7 @@ Then flash and monitor:
 ```bash
 eh.py -p <cp_usb_serial_port> flash monitor
 ```
+<!-- coprocessor-stop -->
 
 <h3 id="mcu-host">2. MCU Host</h3>
 
@@ -88,6 +109,7 @@ cd /path/to/esp_hosted
 . ./export.sh     # . ./export.fish for the fish shell
 ```
 
+<!-- esp_host-start -->
 Select the transport (must match the co-processor):
 
 ```bash
@@ -134,6 +156,7 @@ Then flash and monitor:
 ```bash
 eh.py -p <host_usb_serial_port> flash monitor
 ```
+<!-- esp_host-stop -->
 
 ### 3. Verify
 

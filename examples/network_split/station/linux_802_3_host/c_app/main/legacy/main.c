@@ -8,7 +8,7 @@
  *
  * Companion to the iperf scenario sibling.  Brings up the esp_hosted
  * host stack and connects to the configured AP via
- * eh_example_common's eh_example_connect().  Once connected, the
+ * esp_hosted_examples_common's eh_example_connect().  Once connected, the
  * Linux kernel netif (managed by the kmod) carries the IP plane —
  * `ifconfig esps0` shows the assigned address.
  *
@@ -29,7 +29,7 @@
 #include "nvs_flash.h"
 #include "esp_hosted.h"
 #include "esp_check.h"
-#include "eh_example_common.h"
+#include "esp_hosted_examples_common.h"
 
 static const char *TAG = "network_split station";
 

@@ -124,28 +124,11 @@ foreach(_t IN ITEMS
     endif()
 endforeach()
 
-# Pin eh_host_feat_descs into a known LOAD region; without explicit
-# `> region`, ld parks the orphan into TCM heap and heap_init overwrites
-# the descriptors. IDF-only. Region varies by chip/silicon rev.
-if(ESP_PLATFORM)
-    if(IDF_TARGET STREQUAL "esp32p4" AND CONFIG_ESP32P4_SELECTS_REV_LESS_V3)
-        set(EH_HOST_DESCS_REGION "sram_low")
-    elseif(IDF_TARGET STREQUAL "esp32p4" OR
-           IDF_TARGET STREQUAL "esp32c6" OR
-           IDF_TARGET STREQUAL "esp32c5")
-        set(EH_HOST_DESCS_REGION "sram_seg")
-    else()
-        set(EH_HOST_DESCS_REGION "dram0_0_seg")
-    endif()
-    set(_eh_host_descs_ld "${CMAKE_CURRENT_BINARY_DIR}/eh_host_feat_descs.ld")
-    configure_file(
-        "${CMAKE_CURRENT_LIST_DIR}/eh_host_feat_descs.ld.in"
-        "${_eh_host_descs_ld}"
-        @ONLY)
-    target_link_options(eh_host INTERFACE "-Wl,-T${_eh_host_descs_ld}")
-else()
-    # Linux/POSIX host build: still define descriptor start/stop
-    # symbols for eh_host_autoinit, but without IDF MEMORY regions.
+# eh_host_feat_descs placement:
+#  - ESP_PLATFORM: ldgen maps the section into flash_rodata via the component
+#    LDFRAGMENTS (host/eh_host_feat_descs.lf, wired in the root CMakeLists).
+#  - non-ESP (linux/posix): the GNU .ld below provides the section bounds.
+if(NOT ESP_PLATFORM)
     set(_eh_host_descs_linux_ld "${CMAKE_CURRENT_BINARY_DIR}/eh_host_feat_descs_linux.ld")
     configure_file(
         "${CMAKE_CURRENT_LIST_DIR}/eh_host_feat_descs_linux.ld.in"

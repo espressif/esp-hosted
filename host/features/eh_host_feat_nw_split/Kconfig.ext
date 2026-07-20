@@ -69,25 +69,25 @@ if ESP_HOSTED_HOST_FEAT_NW_SPLIT
 		  and CP-remote ranges non-overlapping.
 
 		menu "Host side (local) LWIP port config"
-			config LWIP_TCP_LOCAL_PORT_RANGE_START
+			config LWIP_TCP_LOCAL_PORT_RANGE_START  # ignore: multiple-definition
 				int "Host TCP start port"
 				default 49152
 				help
 				  Host-local TCP range start.
 
-			config LWIP_TCP_LOCAL_PORT_RANGE_END
+			config LWIP_TCP_LOCAL_PORT_RANGE_END  # ignore: multiple-definition
 				int "Host TCP end port"
 				default 61439
 				help
 				  Host-local TCP range end.
 
-			config LWIP_UDP_LOCAL_PORT_RANGE_START
+			config LWIP_UDP_LOCAL_PORT_RANGE_START  # ignore: multiple-definition
 				int "Host UDP start port"
 				default 49152
 				help
 				  Host-local UDP range start.
 
-			config LWIP_UDP_LOCAL_PORT_RANGE_END
+			config LWIP_UDP_LOCAL_PORT_RANGE_END  # ignore: multiple-definition
 				int "Host UDP end port"
 				default 61439
 				help
@@ -95,25 +95,25 @@ if ESP_HOSTED_HOST_FEAT_NW_SPLIT
 		endmenu
 
 		menu "CP side (remote) LWIP port config"
-			config LWIP_TCP_REMOTE_PORT_RANGE_START
+			config LWIP_TCP_REMOTE_PORT_RANGE_START  # ignore: multiple-definition
 				int "CP TCP start port"
 				default 61440
 				help
 				  CP-remote TCP range start.
 
-			config LWIP_TCP_REMOTE_PORT_RANGE_END
+			config LWIP_TCP_REMOTE_PORT_RANGE_END  # ignore: multiple-definition
 				int "CP TCP end port"
 				default 65535
 				help
 				  CP-remote TCP range end.
 
-			config LWIP_UDP_REMOTE_PORT_RANGE_START
+			config LWIP_UDP_REMOTE_PORT_RANGE_START  # ignore: multiple-definition
 				int "CP UDP start port"
 				default 61440
 				help
 				  CP-remote UDP range start.
 
-			config LWIP_UDP_REMOTE_PORT_RANGE_END
+			config LWIP_UDP_REMOTE_PORT_RANGE_END  # ignore: multiple-definition
 				int "CP UDP end port"
 				default 65535
 				help

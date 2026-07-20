@@ -8,9 +8,10 @@
  * mutex+cond while omitting semaphores, or vice versa.
  *
  * Timeout contract for `_wait_ms` APIs:
- *   timeout_ms == 0           → wait forever
- *   timeout_ms >  0           → return EH_HOST_PORT_ERR_TIMEOUT on deadline
- *   signal received in time   → EH_HOST_PORT_OK
+ *   timeout_ms == 0                         → poll (non-blocking)
+ *   timeout_ms == EH_HOST_PORT_WAIT_FOREVER → block until signalled
+ *   0 < timeout_ms < FOREVER                → EH_HOST_PORT_ERR_TIMEOUT on deadline
+ *   signal received in time                 → EH_HOST_PORT_OK
  *
  * ISR-safety:
  *   Only `eh_host_port_sem_post_from_isr` is ISR-safe, and only when

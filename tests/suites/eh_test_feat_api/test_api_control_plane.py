@@ -212,11 +212,8 @@ _SPI_ASSOC_FLAKE = ("emu-under-load: post-assoc wifi_sta_get_ap_info times out (
 @pytest.mark.parametrize('transport', [
     pytest.param('sdio', marks=pytest.mark.sanity),  # sanity: connect path on the reliable wire
     'uart',
-    'spi_hd',  # verified green 5/5 isolated — the flake is spi_fd-ONLY, not all-SPI
-    # spi_fd flakes only under parallel emu load: second_chance re-runs it isolated
-    # (usually recovers → green ↻); allow_fail keeps a both-fail non-blocking (red ⊗).
-    pytest.param('spi_fd', marks=[pytest.mark.allow_fail(reason=_SPI_ASSOC_FLAKE),
-                                  pytest.mark.second_chance]),
+    'spi_hd',
+    'spi_fd',
 ])
 @pytest.mark.second_chance
 @pytest.mark.xdist_group("emu_heavy")  # serialize: spi_fd assoc flakes under parallel load

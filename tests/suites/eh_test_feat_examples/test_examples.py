@@ -93,10 +93,9 @@ _SPI_FD_ASSOC_FLAKE = ("emu spi_fd assoc flake under parallel load — same spi_
 @pytest.mark.parametrize('transport', [
     pytest.param('sdio', marks=pytest.mark.sanity),  # sanity: real Wi-Fi join on the reliable wire
     'uart', 'spi_hd',
-    pytest.param('spi_fd', marks=[pytest.mark.allow_fail(reason=_SPI_FD_ASSOC_FLAKE),
-                                  pytest.mark.second_chance]),
+    pytest.param('spi_fd', marks=pytest.mark.second_chance),
 ])
-@pytest.mark.xdist_group("emu_heavy")  # serialize: spi_fd assoc flakes under parallel load
+@pytest.mark.xdist_group("emu_heavy")  # serialize heavy spi_fd assoc under parallel load
 def test_wifi_sta_connect(bench, bench_caps, wifi_ap, transport):
     """Real Wi-Fi join: build wifi/sta with the bench's AP creds and confirm the
     host connects through the co-processor. Needs a reachable AP → gated on the

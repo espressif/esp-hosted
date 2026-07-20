@@ -754,7 +754,7 @@ static void sdio_tx_aggregate_iter(void)
 		sdio_tx_aggr_cap = cap;
 	}
 
-	eh_host_port_sem_wait_ms(sem_to_slave_queue, 0);
+	eh_host_port_sem_wait_ms(sem_to_slave_queue, EH_HOST_PORT_WAIT_FOREVER);
 	if (!s_running)
 		return;
 
@@ -907,7 +907,7 @@ static void sdio_write_streaming_iter(void)
 	sendbuf = NULL;
 	free_func = NULL;
 
-	eh_host_port_sem_wait_ms(sem_to_slave_queue, 0);
+	eh_host_port_sem_wait_ms(sem_to_slave_queue, EH_HOST_PORT_WAIT_FOREVER);
 	if (!s_running) {
 		return;
 	}
@@ -1397,7 +1397,7 @@ static void sdio_data_to_rx_buf_task(void *pvParameters)
 	ESP_LOGI(TAG, "sdio_data_to_rx_buf_task started");
 
 	while (s_running) {
-		eh_host_port_sem_wait_ms(sem_double_buf_xfer_data, 0);
+		eh_host_port_sem_wait_ms(sem_double_buf_xfer_data, EH_HOST_PORT_WAIT_FOREVER);
 		if (!s_running) {
 			break;
 		}
@@ -1694,7 +1694,7 @@ static void sdio_process_rx_task(void *pvParameters)
 	ESP_LOGI(TAG, "Starting SDIO process rx task");
 
 	while (s_running) {
-		eh_host_port_sem_wait_ms(sem_from_slave_queue, 0);
+		eh_host_port_sem_wait_ms(sem_from_slave_queue, EH_HOST_PORT_WAIT_FOREVER);
 		if (!s_running) {
 			break;
 		}

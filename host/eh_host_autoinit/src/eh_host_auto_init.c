@@ -12,7 +12,19 @@
 
 size_t eh_host_auto_init_count(void)
 {
-    return (size_t)(__stop_eh_host_feat_descs - __start_eh_host_feat_descs);
+    uintptr_t s = (uintptr_t)_eh_host_feat_descs_start;
+    uintptr_t e = (uintptr_t)_eh_host_feat_descs_end;
+    size_t bytes = (size_t)(e - s);
+    /* Link-collected array: _start must be struct-aligned and the byte span a
+     * whole multiple of the entry size. A linker fill gap before _start would
+     * mis-index the walk and deref garbage names — skip instead of crashing. */
+    if ((s & (_Alignof(eh_host_feat_desc_t) - 1)) != 0 ||
+        (bytes % sizeof(eh_host_feat_desc_t)) != 0) {
+        EH_AUTO_INIT_LOG("auto_init: descriptor section misaligned "
+                   "(start=%p span=%uB) — skipping", (void *)s, (unsigned)bytes);
+        return 0;
+    }
+    return bytes / sizeof(eh_host_feat_desc_t);
 }
 
 static uint8_t *g_inited_flags;
@@ -39,14 +51,14 @@ static int ensure_flags(size_t n)
 
 static size_t desc_index(const eh_host_feat_desc_t *d)
 {
-    return (size_t)(d - __start_eh_host_feat_descs);
+    return (size_t)(d - _eh_host_feat_descs_start);
 }
 
 /* Stable insertion sort, ascending by priority; ties keep linker order. */
 static void sort_by_priority(const eh_host_feat_desc_t **out, size_t n)
 {
     for (size_t i = 0; i < n; ++i) {
-        out[i] = &__start_eh_host_feat_descs[i];
+        out[i] = &_eh_host_feat_descs_start[i];
     }
     for (size_t i = 1; i < n; ++i) {
         const eh_host_feat_desc_t *key = out[i];

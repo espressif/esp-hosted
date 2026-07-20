@@ -1,5 +1,5 @@
 name: "esp_hosted"
-version: "3.0.0"
+version: "3.0.1"
 description: "ESP-Hosted - Unified coprocessor connectivity"
 url: "https://github.com/espressif/esp-hosted"
 documentation: "https://docs.espressif.com/projects/esp-hosted"

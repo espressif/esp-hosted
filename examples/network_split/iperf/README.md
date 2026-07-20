@@ -1,5 +1,6 @@
 # network_split / iperf (`examples/network_split/iperf/`)
 
+<!-- common-start -->
 Wi-Fi runs on the coprocessor; the host runs its own LWIP / Linux-kernel
 TCP/IP stack. The CP forwards 802.3 frames into the host netif (via the
 network-split netif backend), so the host owns sockets in the
@@ -7,18 +8,39 @@ ephemeral port range (49152–61439) while the CP keeps low ports
 (61440–65535) for its own services. This example throws iperf3 at that
 split to measure throughput end-to-end.
 
-## Support
+## Supported Platforms and Transports
 
-| Host                       | Folder                       | Status |
-| -------------------------- | ---------------------------- | :----: |
-| MCU host (ESP-IDF)         | `mcu_host/`                  |   Y    |
-| Linux user-space (C)       | `linux_802_3_host/c_app/`    |   Y    |
-| Linux user-space (Python)  | `linux_802_3_host/py_app/`   |   Y    |
-| Linux kmod                 | `linux_802_3_host/kmod/`     |   Y    |
+### Supported Coprocessors
 
-| Coprocessor                                       | Folder         | Status |
-| ------------------------------------------------- | -------------- | :----: |
-| any Espressif chip with Wi-Fi (default ESP32-C6)  | `cp/` |   Y    |
+| Coprocessor | ESP32 | ESP32-C Series | ESP32-S Series |
+| :----------: | :---: | :------------: | :------------: |
+| Support     | Yes   | Yes            | Yes            |
+
+### Supported Host Devices
+
+| Host Device | ESP32-P4 | ESP32-H2 | Other MCUs | Linux |
+| :---------: | :------: | :------: | :--------: | :---: |
+| Support     | Yes | Yes | [Yes](https://github.com/espressif/esp-hosted/blob/master/docs/getting-started-mcu.md) | [Yes](https://github.com/espressif/esp-hosted/blob/master/docs/getting-started-linux.md) |
+
+### Supported Connection buses
+
+| Connection bus | SDIO | SPI Full-Duplex | SPI Half-Duplex | UART |
+| :------------- | :--: | :-------------: | :-------------: | :--: |
+| Linux host     | Yes  | Yes             | No              | No   |
+| MCU host       | Yes  | Yes             | Yes             | Yes  |
+<!-- common-stop -->
+
+## Directory layout
+
+```text
+network_split/iperf/
+├── cp/                  ESP coprocessor firmware
+├── mcu_host/            ESP-IDF MCU host app
+└── linux_802_3_host/    Linux host
+     ├── c_app/          native C app
+     ├── kmod/           kernel module
+     └── py_app/         Python (ctypes) app
+```
 
 <table width="100%">
   <tr>
@@ -256,6 +278,7 @@ cd /path/to/esp_hosted
 . ./export.sh     # . ./export.fish for the fish shell
 ```
 
+<!-- coprocessor-start -->
 Enable **Network Split** and select the transport via `eh.py menuconfig`:
 
 ```bash
@@ -329,6 +352,7 @@ Then flash and monitor:
 ```bash
 eh.py -p <cp_usb_serial_port> flash monitor
 ```
+<!-- coprocessor-stop -->
 
 <h3 id="mcu-host">2. MCU Host</h3>
 
@@ -340,6 +364,7 @@ cd /path/to/esp_hosted
 . ./export.sh     # . ./export.fish for the fish shell
 ```
 
+<!-- esp_host-start -->
 Select the transport (must match the co-processor):
 
 ```bash
@@ -422,6 +447,7 @@ Then flash and monitor:
 ```bash
 eh.py -p <host_usb_serial_port> flash monitor
 ```
+<!-- esp_host-stop -->
 
 ### 3. Verify
 

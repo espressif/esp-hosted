@@ -1,0 +1,18 @@
+# ESP_PLATFORM (CP is always ESP): place the EH_CP_FEAT_REGISTER descriptor array
+# into a declared region via ldgen (no manual MEMORY region -> no "undeclared
+# region" linker warning). Mirrors esp_trace/linker.lf: KEEP survives gc-sections;
+# SURROUND emits the _eh_cp_feat_descs_start/_end bounds walked by eh_cp_core.
+
+[sections:eh_cp_feat_descs]
+entries:
+    .eh_cp_feat_descs_dram
+
+[scheme:eh_cp_feat_descs_default]
+entries:
+    eh_cp_feat_descs -> flash_rodata
+
+[mapping:eh_cp_feat_descs]
+archive: *
+entries:
+    * (eh_cp_feat_descs_default);
+        eh_cp_feat_descs -> flash_rodata KEEP() ALIGN(4) SURROUND(eh_cp_feat_descs)

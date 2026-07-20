@@ -1,6 +1,26 @@
 # Unreleased - Main Branch
 
-## 3.0.0
+# Releases
+
+# $${\color{green} \text{3.0.1}}$$
+
+- registry cp/host example READMEs generated from the top README at publish time
+- added `wifi/iperf` coprocessor example
+- network-split examples use the shared `esp_hosted_examples_common` helper
+- board-agnostic example configs; dropped orphaned `sdkconfig.ci*` files
+- idempotent event-loop / netif init with default-netif wrappers
+- feature-descriptor linker placement fixes (ldgen, section alignment)
+- SDIO SW_AGGR build fails early on an unpatched ESP-IDF
+- UART and SPI-FD default the CP reset line to active-low
+- network-split code gated on the host feature, not a CP-only symbol
+- renamed board choice `ESP_HOST_DEV_BOARD` to `ESP_HOSTED_DEV_BOARD`
+- silenced benign multiple-definition report; dropped dead BT-UART symbols
+- emu test parity (spi_fd, OTA); physical-core-aware `--jobs`
+- default to ESP-IDF v6.0.2
+- portable semaphore semantics (0 = poll, WAIT_FOREVER = block)
+
+
+# $${\color{cyan} \text{3.0.0}}$$
 
 ### Migration and compatibility
 
@@ -21,7 +41,6 @@
 
 - `set-idf-path <dir>` reuses that SDK, checks patch state, and directs the user to `patch-idf` before a co-processor build when needed
 
-# Releases
 
 # $${\color{green} \text{2.12.11}}$$
 
