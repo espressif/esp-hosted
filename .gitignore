@@ -175,3 +175,6 @@ CLAUDE.md
 
 # registry README generator preview output (disposable)
 tmp_registry_readmes/
+
+# session scratch logs
+scratch*.log
