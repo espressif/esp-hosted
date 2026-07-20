@@ -2,6 +2,13 @@
 
 # Releases
 
+# $${\color{green} \text{3.0.2}}$$
+
+- dev-board support: P4x-C5, P4-EYE, M5Stack Tab5, and P4 C5/C6/C61 core boards (per-board GPIO defaults)
+- iTWT auto-enabled on Wi-Fi 6 coprocessors; iTWT console commands added to the api_exerciser
+- registry publish: strip bundled local-component deps so examples resolve from the copied `components/`
+- pre-commit: added codespell spell-check; version header auto-syncs from `idf_component.yml`
+
 # $${\color{green} \text{3.0.1}}$$
 
 - registry cp/host example READMEs generated from the top README at publish time
