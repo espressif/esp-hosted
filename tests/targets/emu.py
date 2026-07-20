@@ -141,6 +141,10 @@ class EmuTarget(BenchProvider):
             host_bus_ovl = []
         host_ovl = host_bus_ovl + list(spec.extra_ovl)
         cp_bus_ovl = list(cp_ovl)              # transport-derived only
+        # Base image assumes the P4-C6 Function-EV board so board-wired defaults
+        # (e.g. host-wakeup GPIO) resolve; product Kconfig keeps board=NONE -> -1.
+        if spec.cp_target == "esp32c6":
+            cp_bus_ovl.append("CONFIG_ESP_HOSTED_P4_DEV_BOARD_FUNC_BOARD=y")
         cp_ovl = cp_bus_ovl + list(spec.cp_extra_ovl)
 
         cp_fw = build_fw.build(spec.example, spec.cp_role, spec.cp_target, cp_ovl)
