@@ -192,7 +192,7 @@ menu "Example: CP Light Sleep on Host Deep Sleep"
 			comment "  Enable: Component config → Power Management → Power down Digital Peripheral"
 				depends on !PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
 
-			config ESP_HOSTED_CP_LIGHT_SLEEP_PERIPHERAL_POWERDOWN
+			config ESP_HOSTED_CP_LIGHT_SLEEP_PERIPHERAL_POWERDOWN  # ignore: multiple-definition
 				bool "Power down peripherals in light sleep (disables UART console)"
 				depends on ESP_HOSTED_CP_FEAT_HOST_PS_UNLOAD_BUS_WHILE_SLEEPING && PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
 				default y if ESP_HOSTED_CP_LIGHT_SLEEP_POWER_MAX
@@ -214,7 +214,7 @@ menu "Example: CP Light Sleep on Host Deep Sleep"
 		# Define PERIPHERAL_POWERDOWN for non-MANUAL modes too so MAX's
 		# `select` resolves.  visible-if keeps it hidden when not editable.
 		if !ESP_HOSTED_CP_LIGHT_SLEEP_POWER_MANUAL
-			config ESP_HOSTED_CP_LIGHT_SLEEP_PERIPHERAL_POWERDOWN
+			config ESP_HOSTED_CP_LIGHT_SLEEP_PERIPHERAL_POWERDOWN  # ignore: multiple-definition
 				bool
 				depends on ESP_HOSTED_CP_FEAT_HOST_PS_UNLOAD_BUS_WHILE_SLEEPING && PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
 				default y if ESP_HOSTED_CP_LIGHT_SLEEP_POWER_MAX
