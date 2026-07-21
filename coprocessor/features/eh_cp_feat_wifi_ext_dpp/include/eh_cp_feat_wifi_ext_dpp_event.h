@@ -14,11 +14,6 @@ typedef enum {
     EH_CP_FEAT_WIFI_EXT_DPP_EVT_URI_READY = 0,
     EH_CP_FEAT_WIFI_EXT_DPP_EVT_CFG_RECVD = 1,
     EH_CP_FEAT_WIFI_EXT_DPP_EVT_FAILED = 2,
-
-    /* Supplicant DPP events (IDF < 6.0) */
-    EH_CP_FEAT_WIFI_EXT_DPP_EVT_SUPP_URI_READY = 3,
-    EH_CP_FEAT_WIFI_EXT_DPP_EVT_SUPP_CFG_RECVD = 4,
-    EH_CP_FEAT_WIFI_EXT_DPP_EVT_SUPP_FAILED = 5,
 } eh_cp_feat_wifi_ext_dpp_evt_t;
 
 #endif /* EH_CP_FEAT_WIFI_EXT_DPP_EVENT_H */

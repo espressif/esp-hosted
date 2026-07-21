@@ -444,29 +444,30 @@ typedef struct {
     uint32_t  reason;
 } eh_rpc_itwt_probe_evt_t;
 
-/* DPP URI event: qrcode is heap-owned. */
-typedef struct {
-    eh_rpc_blob_t  qrcode;
-} eh_rpc_dpp_uri_evt_t;
-
-/* DPP Cfg Received event (flattened WifiStaConfig). */
-typedef struct {
-    uint8_t   ssid[EH_RPC_SSID_LEN + 1];
-    uint32_t  ssid_len;
-    uint8_t   password[EH_RPC_PASSWORD_LEN + 1];
-    uint8_t   bssid[EH_RPC_MAC_LEN];
-    bool      bssid_set;
-    int32_t   authmode;
-} eh_rpc_dpp_cfg_evt_t;
-
-typedef struct { int32_t  reason; } eh_rpc_dpp_fail_evt_t;
-
 /* WIFI_EVENT_DPP_* — distinct from Supplicant DPP above; routes to
  * WIFI_EVENT loop, not single-slot subscribers. */
 typedef struct {
     eh_rpc_blob_t  qrcode;
 } eh_rpc_wifi_dpp_uri_ready_evt_t;
 
+/**
+ * TODO: In IDF v6.1, the DPP config received structure was changed to this:
+ *
+ * typedef struct {
+ *   wifi_config_t wifi_cfg;
+ *   uint8_t total_conf;
+ *   esp_dpp_config_data_t configs[];
+ * } wifi_event_dpp_config_received_t;
+ *
+ * data in configs[0] is copied into wifi_cfg for backward compatibility
+ *
+ * A new API was introduced: `esp_supp_dpp_set_config(esp_dpp_config_data_t *config)`
+ *
+ * Application sequence is now:
+ * - pick one row from WIFI_EVENT_DPP_CFG_RECVD, call esp_wifi_set_config(),
+ *   call esp_supp_dpp_set_config() using connector values received from
+ *   WIFI_EVENT_DPP_CFG_RECVD, call esp_wifi_connect().
+ */
 typedef struct {
     uint8_t   ssid[EH_RPC_SSID_LEN + 1];
     uint32_t  ssid_len;
@@ -580,9 +581,6 @@ typedef struct eh_rpc_ctrl_cmd_s {
         eh_rpc_itwt_teardown_evt_t e_itwt_teardown;
         eh_rpc_itwt_suspend_evt_t  e_itwt_suspend;
         eh_rpc_itwt_probe_evt_t    e_itwt_probe;
-        eh_rpc_dpp_uri_evt_t       e_dpp_uri;
-        eh_rpc_dpp_cfg_evt_t       e_dpp_cfg;
-        eh_rpc_dpp_fail_evt_t      e_dpp_fail;
         eh_rpc_wifi_dpp_uri_ready_evt_t  e_wifi_dpp_uri_ready;
         eh_rpc_wifi_dpp_cfg_recvd_evt_t  e_wifi_dpp_cfg_recvd;
         eh_rpc_wifi_dpp_fail_evt_t       e_wifi_dpp_fail;

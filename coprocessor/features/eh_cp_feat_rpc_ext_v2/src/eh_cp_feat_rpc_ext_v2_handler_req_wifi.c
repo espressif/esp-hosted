@@ -2386,60 +2386,6 @@ esp_err_t req_wifi_sta_itwt_set_target_wake_time_offset(Rpc *req, Rpc *resp, voi
 #endif // EH_CP_FEAT_WIFI_EXT_ITWT_READY
 
 #if EH_CP_FEAT_WIFI_EXT_DPP_READY
-#if EH_CP_WIFI_SUPP_DPP
-void dpp_enrollee_event_cb(esp_supp_dpp_event_t event, void *data)
-{
-    switch (event) {
-    case ESP_SUPP_DPP_URI_READY:
-        if (data != NULL) {
-            // Create proper structure for SUPP DPP URI Ready
-            supp_wifi_event_dpp_uri_ready_t supp_uri_event;
-            char *uri_string = (char *)data;
-            supp_uri_event.uri_data_len = strlen(uri_string) + 1;
-            strncpy(supp_uri_event.uri, uri_string, DPP_URI_LEN_MAX - 1);
-            supp_uri_event.uri[DPP_URI_LEN_MAX - 1] = '\0';
-
-            esp_event_post(EH_CP_FEAT_WIFI_EXT_DPP_EVENT, EH_CP_FEAT_WIFI_EXT_DPP_EVT_SUPP_URI_READY,
-                &supp_uri_event, sizeof(supp_wifi_event_dpp_uri_ready_t),
-                EH_CP_TIMEOUT_IN_MSEC(EH_CP_EVT_DFLT_TIMEOUT));
-        } else {
-            ESP_LOGE(TAG, "ESP_SUPP_DPP_URI_READY with no URI data");
-        }
-        break;
-
-    case ESP_SUPP_DPP_CFG_RECVD:
-        if (data != NULL) {
-            // Create proper structure for SUPP DPP Config
-            supp_wifi_event_dpp_config_received_t supp_cfg_event;
-            memcpy(&supp_cfg_event.wifi_cfg, (wifi_config_t *)data, sizeof(wifi_config_t));
-
-            esp_event_post(EH_CP_FEAT_WIFI_EXT_DPP_EVENT, EH_CP_FEAT_WIFI_EXT_DPP_EVT_SUPP_CFG_RECVD,
-                &supp_cfg_event, sizeof(supp_wifi_event_dpp_config_received_t),
-                EH_CP_TIMEOUT_IN_MSEC(EH_CP_EVT_DFLT_TIMEOUT));
-        } else {
-            ESP_LOGE(TAG, "ESP_SUPP_DPP_CFG_RECVD with no wifi config data");
-        }
-        break;
-
-    case ESP_SUPP_DPP_FAIL:
-        {
-            // Create proper structure for SUPP DPP Fail
-            supp_wifi_event_dpp_failed_t supp_fail_event;
-            supp_fail_event.failure_reason = (int)(intptr_t)data;  // data is the reason code directly
-
-            esp_event_post(EH_CP_FEAT_WIFI_EXT_DPP_EVENT, EH_CP_FEAT_WIFI_EXT_DPP_EVT_SUPP_FAILED,
-                &supp_fail_event, sizeof(supp_wifi_event_dpp_failed_t),
-                EH_CP_TIMEOUT_IN_MSEC(EH_CP_EVT_DFLT_TIMEOUT));
-        }
-        break;
-
-    default:
-        ESP_LOGE(TAG, "Unknown ESP_SUPP DPP event: %d", event);
-        break;
-    }
-}
-#endif
-
 esp_err_t req_supp_dpp_init(Rpc *req, Rpc *resp, void *priv_data)
 {
 	RPC_TEMPLATE(RpcRespSuppDppInit, resp_supp_dpp_init,
@@ -2447,17 +2393,15 @@ esp_err_t req_supp_dpp_init(Rpc *req, Rpc *resp, void *priv_data)
 			rpc__resp__supp_dpp_init__init);
 
 	if (req_payload->cb) {
-#if EH_CP_WIFI_SUPP_DPP
-		// init with callback
-		ESP_LOGI(TAG, "dpp init with callback");
-		RPC_RET_FAIL_IF(esp_supp_dpp_init(dpp_enrollee_event_cb));
-#else
 		ESP_LOGE(TAG, "dpp init with callback NOT supported");
 		resp_payload->resp = ESP_ERR_INVALID_ARG;
-#endif
 	} else {
 		// init without callback
 		ESP_LOGI(TAG, "dpp init WITHOUT callback");
+		/*
+		 * esp_supp_dpp_init() parameters different
+		 * between ESP-IDF v5.5 and v6.0 and above
+		 */
 #if EH_CP_WIFI_SUPP_DPP
 		RPC_RET_FAIL_IF(esp_supp_dpp_init(NULL));
 #else
@@ -2484,12 +2428,20 @@ esp_err_t req_supp_dpp_bootstrap_gen(Rpc *req, Rpc *resp, void *priv_data)
 			RpcReqSuppDppBootstrapGen, req_supp_dpp_bootstrap_gen,
 			rpc__resp__supp_dpp_bootstrap_gen__init);
 
-	const char *chan_list = NULL;
+	char *chan_list = NULL;
+	size_t chan_list_len = 0;
 	esp_supp_dpp_bootstrap_t type;
 	const char *key = NULL;
 	const char *info = NULL;
 
-	chan_list = (const char *)req_payload->chan_list.data;
+	// allocate memory to hold the incoming channel list
+	// and convert it to a proper NULL terminated C-string
+	chan_list_len = req_payload->chan_list.len + 1;
+	chan_list = calloc(chan_list_len, sizeof(char));
+	if (!chan_list) {
+		return ESP_ERR_NO_MEM;
+	}
+	memcpy(chan_list, req_payload->chan_list.data, req_payload->chan_list.len);
 	type = req_payload->type;
 	if (req_payload->key.len) {
 		key = (const char *)req_payload->key.data;
@@ -2498,8 +2450,14 @@ esp_err_t req_supp_dpp_bootstrap_gen(Rpc *req, Rpc *resp, void *priv_data)
 		info = (const char *)req_payload->info.data;
 	}
 
-	RPC_RET_FAIL_IF(esp_supp_dpp_bootstrap_gen(chan_list, type, key, info));
+	// don't use RPC_RET_FAIL_IF as we need to free chan_list
+	int ret = esp_supp_dpp_bootstrap_gen(chan_list, type, key, info);
+	if (ret) {
+		resp_payload->resp = ret;
+		ESP_LOGE(TAG, "%s:%u failed [%d]", __func__,__LINE__, ret);
+	}
 
+	mem_free(chan_list);
 	return ESP_OK;
 }
 

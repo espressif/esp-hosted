@@ -3,7 +3,7 @@ config ESP_HOSTED_CP_FEAT_WIFI_EXT_DPP
     depends on ESP_HOSTED_CP_FEAT_WIFI
     default n
     help
-        Enables WiFi Easy Connect (DPP): supplicant and WiFi DPP event paths.
+        Enables WiFi Easy Connect (DPP) and WiFi DPP event paths.
 
 comment "⚠️  Enable [✓] ESP_WIFI_DPP_SUPPORT  (Component config → Wi-Fi → DPP)"
     depends on ESP_HOSTED_CP_FEAT_WIFI_EXT_DPP && !ESP_WIFI_DPP_SUPPORT

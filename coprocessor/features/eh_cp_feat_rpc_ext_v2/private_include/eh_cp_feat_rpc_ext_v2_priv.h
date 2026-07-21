@@ -479,8 +479,7 @@ esp_err_t req_set_dhcp_dns_status(Rpc *req, Rpc *resp, void *priv_data);
 
 typedef enum {
 	PAYLOAD_TYPE_RPC_RESP_WIFI_GET_CONFIG,
-	PAYLOAD_TYPE_RPC_EVENT_SUPP_DPP_GET_CONFIG,
-#if EH_CP_WIFI_DPP
+#if EH_CP_FEAT_WIFI_EXT_DPP_READY
 	PAYLOAD_TYPE_RPC_EVENT_WIFI_DPP_GET_CONFIG,
 #endif
 } rpc_payload_type_t;
@@ -491,52 +490,28 @@ esp_err_t req_iface_mac_addr_set_get(Rpc *req, Rpc *resp, void *priv_data);
 esp_err_t req_feature_control(Rpc *req, Rpc *resp, void *priv_data);
 
 #if EH_CP_FEAT_WIFI_EXT_DPP_READY
-#if EH_CP_WIFI_SUPP_DPP
-#include "esp_dpp.h"   /* supplicant-based DPP type esp_supp_dpp_event_t */
-void dpp_enrollee_event_cb(esp_supp_dpp_event_t event, void *data);
-esp_err_t rpc_evt_supp_dpp_uri_ready(Rpc *ntfy,
-          const uint8_t *data, ssize_t len);
-esp_err_t rpc_evt_supp_dpp_cfg_recvd(Rpc *ntfy,
-		const uint8_t *data, ssize_t len);
-esp_err_t rpc_evt_supp_dpp_fail(Rpc *ntfy,
-		const uint8_t *data, ssize_t len);
 esp_err_t req_supp_dpp_init(Rpc *req, Rpc *resp, void *priv_data);
 esp_err_t req_supp_dpp_deinit(Rpc *req, Rpc *resp, void *priv_data);
 esp_err_t req_supp_dpp_bootstrap_gen(Rpc *req, Rpc *resp, void *priv_data);
 esp_err_t req_supp_dpp_start_listen(Rpc *req, Rpc *resp, void *priv_data);
 esp_err_t req_supp_dpp_stop_listen(Rpc *req, Rpc *resp, void *priv_data);
-#endif // EH_CP_WIFI_SUPP_DPP
 
-#if EH_CP_WIFI_DPP
 esp_err_t rpc_evt_wifi_dpp_uri_ready(Rpc *ntfy,
 		const uint8_t *data, ssize_t len);
 esp_err_t rpc_evt_wifi_dpp_cfg_recvd(Rpc *ntfy,
 		const uint8_t *data, ssize_t len);
 esp_err_t rpc_evt_wifi_dpp_fail(Rpc *ntfy,
 		const uint8_t *data, ssize_t len);
-#endif // EH_CP_WIFI_DPP
-#endif
 
-#if EH_CP_FEAT_WIFI_EXT_DPP_READY
-// DPP URI length max (adjust based on your requirements)
-#define DPP_URI_LEN_MAX (512 + 1)
-
-typedef struct {
-    uint32_t uri_data_len;
-    char uri[DPP_URI_LEN_MAX];
-} supp_wifi_event_dpp_uri_ready_t;
-
-typedef struct {
-    wifi_config_t wifi_cfg;
-} supp_wifi_event_dpp_config_received_t;
-
-typedef struct {
-    int failure_reason;
-} supp_wifi_event_dpp_failed_t;
 #endif // EH_CP_FEAT_WIFI_EXT_DPP_READY
 
 /* Handlers for cross-extension events on the core bus.
  * Called from rpc_mcu init/deinit — NOT from the extension that posts them. */
+
+#if EH_CP_FEAT_WIFI_EXT_DPP_READY
+esp_err_t eh_cp_feat_register_dpp_evt_handlers(void);
+esp_err_t eh_cp_feat_unregister_dpp_evt_handlers(void);
+#endif
 
 esp_err_t eh_cp_feat_register_nw_split_evt_handlers(void);
 esp_err_t eh_cp_feat_unregister_nw_split_evt_handlers(void);

@@ -16,8 +16,7 @@ target_link_libraries(eh_cp_feat_wifi_ext_dpp
     PUBLIC
         eh_cp_core
         eh_common
-        idf::esp_event
-        idf::esp_wifi
+        idf::wpa_supplicant
 )
 
 if(TARGET eh_cp)

@@ -26,17 +26,7 @@
 #include "esp_idf_version.h"
 #include "esp_check.h"
 
-/** for ESP-IDF v5.5.0 and above, DPP events come in as Wi-Fi Events
- ** set EXAMPLE_DPP_USE_WIFI_EVENTS to 0 to use the older Supplicant
- ** based DPP events
- *
- ** Note: ESP-IDF v6.0 and above removed Supplicant based DPP events
- */
-#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 5, 0)
-#define EXAMPLE_DPP_USE_WIFI_EVENTS 1
-#else
-#define EXAMPLE_DPP_USE_WIFI_EVENTS 0
-#endif
+/** for ESP-IDF v5.5.0 and above, DPP events come in as Wi-Fi Events */
 
 #ifdef CONFIG_ESP_DPP_LISTEN_CHANNEL_LIST
 #define EXAMPLE_DPP_LISTEN_CHANNEL_LIST     CONFIG_ESP_DPP_LISTEN_CHANNEL_LIST
@@ -92,7 +82,6 @@ static void event_handler(void *arg, esp_event_base_t event_base,
         case WIFI_EVENT_STA_CONNECTED:
             ESP_LOGI(TAG, "Successfully connected to the AP ssid : %s ", s_dpp_wifi_config.sta.ssid);
             break;
-#if EXAMPLE_DPP_USE_WIFI_EVENTS
         case WIFI_EVENT_DPP_URI_READY:
             wifi_event_dpp_uri_ready_t *uri_data = event_data;
 			ESP_LOGW(TAG, "uri_data_len %d", uri_data->uri_data_len);
@@ -123,7 +112,6 @@ static void event_handler(void *arg, esp_event_base_t event_base,
                 xEventGroupSetBits(s_dpp_event_group, DPP_AUTH_FAIL_BIT);
             }
             break;
-#endif
         default:
             break;
         }
@@ -135,41 +123,6 @@ static void event_handler(void *arg, esp_event_base_t event_base,
         xEventGroupSetBits(s_dpp_event_group, DPP_CONNECTED_BIT);
     }
 }
-
-#if !EXAMPLE_DPP_USE_WIFI_EVENTS
-void dpp_enrollee_event_cb(esp_supp_dpp_event_t event, void *data)
-{
-    switch (event) {
-    case ESP_SUPP_DPP_URI_READY:
-        if (data != NULL) {
-            esp_qrcode_config_t cfg = ESP_QRCODE_CONFIG_DEFAULT();
-            ESP_LOGI(TAG, "Scan below QR Code to configure the enrollee:");
-            // delay a short while so printing the QR code isn't
-            // interrupted by messages from background tasks
-            vTaskDelay(500 / portTICK_PERIOD_MS);
-            esp_qrcode_generate(&cfg, (const char *)data);
-        }
-        break;
-    case ESP_SUPP_DPP_CFG_RECVD:
-        memcpy(&s_dpp_wifi_config, data, sizeof(s_dpp_wifi_config));
-        s_retry_num = 0;
-        esp_wifi_set_config(WIFI_IF_STA, &s_dpp_wifi_config);
-        esp_wifi_connect();
-        break;
-    case ESP_SUPP_DPP_FAIL:
-        if (s_retry_num < 5) {
-            ESP_LOGI(TAG, "DPP Auth failed (Reason: %s), retry...", esp_err_to_name((int)data));
-            ESP_ERROR_CHECK(esp_supp_dpp_start_listen());
-            s_retry_num++;
-        } else {
-            xEventGroupSetBits(s_dpp_event_group, DPP_AUTH_FAIL_BIT);
-        }
-        break;
-    default:
-        break;
-    }
-}
-#endif // !EXAMPLE_DPP_USE_WIFI_EVENTS
 
 esp_err_t dpp_enrollee_bootstrap(void)
 {
@@ -221,15 +174,13 @@ void dpp_enrollee_init(void)
     ESP_ERROR_CHECK(esp_wifi_init(&cfg));
 
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
-#if EXAMPLE_DPP_USE_WIFI_EVENTS
+
 #if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(6, 0, 0)
     ESP_ERROR_CHECK(esp_supp_dpp_init());
 #else
     ESP_ERROR_CHECK(esp_supp_dpp_init(NULL));
 #endif
-#else
-    ESP_ERROR_CHECK(esp_supp_dpp_init(dpp_enrollee_event_cb));
-#endif
+
     ESP_ERROR_CHECK(dpp_enrollee_bootstrap());
     ESP_ERROR_CHECK(esp_wifi_start());
 
