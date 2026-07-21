@@ -9,17 +9,17 @@ Sanity distribution — the default run (`eh.py test emu`) executes only the
 four transports once, with the slowest tests on faster wires. Keep this table in
 sync when adding/moving a mark (the reporter prints the live matrix at end-of-run).
 S = sanity wire · R = also under --regression · maint = @maintenance (reasoned) ·
-af = @allow_fail + @second_chance (runs; non-blocking red ⊗ if it fails both times,
-green ↻ if the isolated retry recovers it):
+sc = @second_chance (runs and BLOCKS like any wire; a parallel-load flake is re-run
+isolated — green ↻ if it recovers, a genuine both-times fail is a real ✗):
 
     scenario                          sdio  spi_fd  spi_hd  uart
     ------------------------------------------------------------
     control_plane (full RPC sweep)     R      S      R      R
     cp_fw_version                      R      R      R      S
     nw_split_host_ip                   R      R      R      R
-    nw_split_port_routing              S     af      R      R     spi_fd-ONLY flake (hd verified green)
+    nw_split_port_routing              S     sc      R      R     spi_fd load-flake (retry recovers)
     ota_littlefs (slowest)             S      R      R      R
-    wifi_connected                     R     af      R      S     spi_fd-ONLY flake (hd verified green)
+    wifi_connected                     R     sc      R      S     spi_fd load-flake (retry recovers)
     spi_hd_transport (HD-specific)     .      .      S      .
     api_exerciser (control_plane dup)  .      S      .      .     other wires @retired
     power_save (wake path)             S      .      .      R
@@ -29,25 +29,24 @@ green ↻ if the isolated retry recovers it):
 
 Full matrix under --regression: every transport-agnostic scenario runs on ALL four
 wires. The only cells NOT run are @maintenance (reasoned) or @retired
-(api_exerciser dup) — visible and reasoned, never silently omitted. The two spi_fd
-flake cells (wifi_connected, nw_split_port_routing) DO run, marked @allow_fail +
-@second_chance: they flake only under parallel emu load, so eh.py re-runs a phase-1
-failure ISOLATED (-n0) and takes that as final — recovered shows green ↻; a both-fail
-is non-blocking red ⊗ (pipeline stays green) so they stay visible until fixed.
+(api_exerciser dup) — visible and reasoned, never silently omitted. spi_fd now GATES
+like every other wire (no allow_fail): its systematic break — the emu defaulted the
+CP CS pin to GPIO 10 while the FUNC_BOARD CP uses 18, so the CP never armed a
+transaction and every spi_fd RPC timed out — is FIXED (emu.py now passes
+`--hosted-spi-cs-gpio`). What remains is a parallel-load flake, so spi_fd cells carry
+@second_chance only: a phase-1 failure is re-run ISOLATED (-n0) and that is final —
+recovered shows green ↻; a genuine both-times fail is a real ✗ that blocks.
 
 Two emu characteristics this design accommodates rather than dodges: (1) under
-`--jobs auto` host-CPU oversubscription the emulated C6 is starved, so post-assoc it
-stalls its RPC/app tasks while the SPI transport stays alive — a single-shot post-assoc
-RPC/data round-trip over SPI never gets answered. The SPI-slave WFI wall-pacing fix
-(esp-emulator `handle_wfi`, gated on `gpspi_slave.has_bridge()`) targets the underlying
-guest-clock divergence but does NOT reliably resolve it: a clean 3x verification still
-failed `wifi_connected[spi_fd]` ~1/3 with the identical `no response msg_id=294`
-signature. So `wifi_connected` and `nw_split_port_routing` carry @allow_fail +
-@second_chance on spi_fd (reasoned): they RUN, an isolated retry usually recovers the
-flake, and a residual failure is non-blocking until the emu-load starvation is actually
-resolved (or regression runs at non-oversubscribed concurrency); basic assoc over SPI is still
-proven on all four wires by `wifi_sta_connect` + `nw_split_host_ip`. Assoc-heavy sweeps
-are serialized via the `emu_heavy` xdist loadgroup; (2) the ×4 example boots share an
+`--jobs auto` host-CPU oversubscription the emulated C6 is starved, so the P4 host —
+running its firmware ~50x real-time — burns the 5s RPC-response window in ~100ms of
+wall-clock and times out a CP that just wasn't OS-co-scheduled in that sliver. The
+esp-emulator throttle fix (`maybe_throttle` now paces the P4 MASTER to wall-clock while
+the C6 slave stays flat-out) targets that skew and largely resolves it (parallel runs
+mostly fully clean); the residual is external CPU contention on the shared dev box,
+which @second_chance's isolated retry recovers. Basic assoc over SPI is also proven on
+all four wires by `wifi_sta_connect` + `nw_split_host_ip`. Assoc-heavy + all spi_fd
+sweeps are serialized via the `emu_heavy` xdist loadgroup; (2) the ×4 example boots share an
 `emu_boots` group so the breadth sweep serializes instead of flooding the 15-way run
 and starving the timing-sensitive power-save tests (which are themselves marginally
 flaky under full-load oversubscription — e.g. power_save_wake_mem[sdio] bring-up).
@@ -106,8 +105,9 @@ def pytest_collection_modifyitems(config, items):
 
     allow_fail + second_chance are enforced by eh.py post-run (they carry through to
     the events.jsonl the reporter writes); collection here just leaves them running.
-    A cell may carry BOTH (the spi_fd flakes do): the second_chance retry decides the
-    FINAL outcome, THEN allow_fail decides whether that outcome blocks the pipeline."""
+    A cell may carry BOTH (second_chance decides the FINAL outcome, THEN allow_fail
+    decides whether it blocks) — but spi_fd now carries second_chance ONLY, so a
+    genuine spi_fd failure blocks like every other wire."""
     regression = config.getoption("regression", default=False)
     excl_sanity = config.getoption("regression_exclude_sanity", default=False)
     retired, keep = [], []
@@ -119,22 +119,18 @@ def pytest_collection_modifyitems(config, items):
         if m:
             reason = m.kwargs.get("reason") or (m.args[0] if m.args else "") or "parked"
             item.add_marker(pytest.mark.skip(reason=f"maintenance: {reason}"))
-        # The emu spi_fd data/RPC path flakes under parallel-load oversubscription
-        # (transport-wide, not test-specific — clean isolated for the light cells, but
-        # the RPC/assoc-heavy ones can flake even on the isolated retry). Rather than
-        # whack-a-mole per cell, EVERY spi_fd cell auto-gets second_chance (isolated
-        # retry) AND allow_fail (a residual failure is NON-BLOCKING — the pipeline stays
-        # green, the summary shows the truth). This is a TEMPORARY blanket tolerance for
-        # the emu spi_fd flake: spi_fd does not gate CI until the spi_fd root is fixed
-        # (then drop this and restore per-cell blocking). Other wires still block.
-        # An explicit @allow_fail(reason=...) on a cell keeps its specific reason.
+        # spi_fd's systematic break (the emu CP CS-pin: emu defaulted CS to GPIO 10
+        # while FUNC_BOARD uses 18, so the CP never armed a transaction) is FIXED, so
+        # spi_fd now GATES like every other wire — NO allow_fail. What remains is
+        # transient CPU-starvation skew under parallel load on a shared box (the P4
+        # host advances its firmware 5s RPC timer while the CP emu is briefly
+        # OS-descheduled). second_chance (isolated retry) recovers that env noise;
+        # a genuine both-times failure is a real ✗ that blocks. spi_fd cells are also
+        # serialized into the one emu_heavy worker to cut concurrent emu-pairs.
         cs = getattr(item, "callspec", None)
         if cs and "spi_fd" in cs.params.values():
+            item.add_marker(pytest.mark.xdist_group("emu_heavy"))
             item.add_marker(pytest.mark.second_chance)
-            if not item.get_closest_marker("allow_fail"):
-                item.add_marker(pytest.mark.allow_fail(reason=(
-                    "emu spi_fd flake under parallel load (transport-wide, non-blocking "
-                    "until the spi_fd root is fixed)")))
         keep.append(item)
     deselected = list(retired)
     if excl_sanity:

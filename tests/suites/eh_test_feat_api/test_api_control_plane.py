@@ -21,7 +21,7 @@ import pytest
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))  # tests/
 from infra.expect_helper import eh_test_expect, FATAL_PATTERNS
-from targets.base import CAP_COEX_WIRED, CAP_GPIO_LOOPBACK
+from targets.base import CAP_COEX_WIRED, CAP_GPIO_LOOPBACK, CAP_WIFI_ITWT
 
 FAIL = FATAL_PATTERNS + ['bring-up timed out']
 EX = 'system/api_exerciser'
@@ -89,6 +89,7 @@ def _roundtrip(host, t, get_cmd, field, set_fmt, v1, v2):
     'uart', 'spi_hd', 'spi_fd',
 ])
 @pytest.mark.second_chance
+@pytest.mark.xdist_group("emu_heavy")  # serialize: spi_fd RPC stalls if the emu is CPU-starved under parallel load
 def test_control_plane(bench, transport):
     host, caps = _ready(bench, transport)
     t = transport
@@ -173,6 +174,18 @@ def test_control_plane(bench, transport):
     _ok(host, t, f'gpio_input_enable {GPIO_PIN}')
     _ok(host, t, f'gpio_set_pull_mode {GPIO_PIN} 1')
     _ok(host, t, f'gpio_reset_pin {GPIO_PIN}')
+
+    # ── wifi iTWT (individual TWT; auto-enabled on HE-capable slaves) ──────
+    # No AP/TWT peer on emu, so the setup family may reject — assert each RPC
+    # round-trips cleanly (well-formed line, any rc, no crash).
+    if CAP_WIFI_ITWT in caps:
+        _drivable(host, t, 'wifi_itwt_setup')
+        _drivable(host, t, 'wifi_itwt_suspend 0 100')
+        _drivable(host, t, 'wifi_itwt_probe 500')
+        _drivable(host, t, 'wifi_itwt_offset 0')
+        _drivable(host, t, 'wifi_itwt_teardown 0')
+        _drivable(host, t, 'wifi_itwt_flow_status')
+
 
     # ── external coex (config succeeds only where the coex wires exist) ───
     wired = CAP_COEX_WIRED in caps

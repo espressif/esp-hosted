@@ -1,5 +1,6 @@
 menuconfig ESP_HOSTED_HOST_FEAT_WIFI_EXT_ITWT
 	bool "WiFi iTWT"
+	default y if SLAVE_SOC_WIFI_HE_SUPPORT
 	default n
 	depends on ESP_HOSTED_HOST_FEAT_WIFI
 	depends on ESP_HOSTED_HOST_FEAT_RPC_EXT_V2_READY

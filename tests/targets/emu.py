@@ -14,7 +14,7 @@ import time
 from infra import build_fw, lab
 from infra.emu_dut import EmuDut, emu_bin, settle_check
 
-from .base import (CAP_GPIO_LOOPBACK, CAP_NET, CAP_WAKE,
+from .base import (CAP_GPIO_LOOPBACK, CAP_NET, CAP_WAKE, CAP_WIFI_ITWT,
                    Bench, BenchProvider, BenchSpec)
 
 _WAKE_GPIO = "2"     # CP→host wake line (framed bridge carries it as OP_WAKE)
@@ -24,14 +24,16 @@ _RESET_GPIO = "54"   # host→CP reset line (OP_RESET)
 # tests on the emu associate to this (real benches use lab.local.json wifi_ap).
 EMU_SOFTAP = {"ssid": "myssid", "password": "mypassword"}
 
-# ESP-Hosted SPI transport default GPIOs (generic C6 CP / P4 host targets).
-# handshake (FD only) + data-ready are slave→host; forwarded out-of-band.
-# host→CP reset is GPIO 12 on the SPI pinouts (active-high pulse).
+# ESP-Hosted SPI transport GPIOs, P4-C6 Function-EV board (both sides FUNC_BOARD).
+# handshake (FD only) + data-ready are slave→host, forwarded out-of-band as bridge
+# GPIO frames; the emu maps the CP's pin to the host's. Reset is _RESET_GPIO (54).
+# cp_cs is the CP's CS *input*: the emu replays the master's per-transaction CS
+# pulse on it so the CP's DEASSERT_HS_ON_CS edge ISR (arm-next) runs — FD stalls
+# without it (the emu's default is the old board's GPIO 10, not FUNC_BOARD's 18).
 _SPI_PINS = {
-    "spi_fd": {"cp_hs": "3", "cp_dr": "4",  "host_hs": "6",  "host_dr": "11"},
-    "spi_hd": {"cp_hs": None, "cp_dr": "11", "host_hs": None, "host_dr": "13"},
+    "spi_fd": {"cp_hs": "22", "cp_dr": "23", "cp_cs": "18", "host_hs": "16", "host_dr": "17"},
+    "spi_hd": {"cp_hs": None, "cp_dr": "2",  "cp_cs": "18", "host_hs": None, "host_dr": "6"},
 }
-_SPI_RESET_GPIO = "12"
 
 _emu_help_cache = {}
 
@@ -102,7 +104,8 @@ class EmuTarget(BenchProvider):
     # external-coex wiring, so coex config ops are drivable-only.
     transports = frozenset({"sdio", "uart", "spi_fd",
                             "spi_hd", "spi_hd_1", "spi_hd_2", "spi_hd_4"})
-    caps = frozenset({CAP_WAKE, CAP_GPIO_LOOPBACK, "wifi_ap"})
+    caps = frozenset({CAP_WAKE, CAP_GPIO_LOOPBACK, "wifi_ap",
+                      CAP_WIFI_ITWT})  # emu CP = C6 (HE)
 
     def __init__(self):
         pass  # per-bench resources come from lab.alloc_bench (survives EmuTarget churn)
@@ -138,8 +141,16 @@ class EmuTarget(BenchProvider):
         else:  # sdio
             cp_ovl = []
             host_bus_ovl = []
-        host_ovl = host_bus_ovl + list(spec.extra_ovl)
+        # Host also builds for the P4-C6 Function-EV board so its GPIOs (reset, SPI
+        # signals) match the CP's FUNC_BOARD pinout; else the two sides disagree.
+        host_board_ovl = (["CONFIG_ESP_HOSTED_P4_DEV_BOARD_FUNC_BOARD=y"]
+                          if spec.host_target == "esp32p4" else [])
+        host_ovl = host_board_ovl + host_bus_ovl + list(spec.extra_ovl)
         cp_bus_ovl = list(cp_ovl)              # transport-derived only
+        # Base image assumes the P4-C6 Function-EV board so board-wired defaults
+        # (e.g. host-wakeup GPIO) resolve; product Kconfig keeps board=NONE -> -1.
+        if spec.cp_target == "esp32c6":
+            cp_bus_ovl.append("CONFIG_ESP_HOSTED_P4_DEV_BOARD_FUNC_BOARD=y")
         cp_ovl = cp_bus_ovl + list(spec.cp_extra_ovl)
 
         cp_fw = build_fw.build(spec.example, spec.cp_role, spec.cp_target, cp_ovl)
@@ -182,9 +193,8 @@ class EmuTarget(BenchProvider):
         except OSError:
             pass
 
-        # Reset (host→CP) + wake (CP→host) GPIOs on both wires. Reset polarity must
-        # match the firmware: UART host defaults active-high, SDIO active-low — else
-        # the emu reads the release edge backwards and never warm-reboots the CP.
+        # Reset (host→CP) + wake (CP→host) GPIOs on both wires. On the P4-C6
+        # Function-EV board every transport shares one active-low EN on GPIO 54.
         if spi:
             # SPI (GPSPI2) master↔slave. Handshake (FD only) + data-ready are the
             # slave's out-of-band GPIOs, forwarded as bridge GPIO frames; the flag
@@ -192,17 +202,17 @@ class EmuTarget(BenchProvider):
             wire = "--hosted-spi-hd" if spi_hd else "--hosted-spi"
             pins = _SPI_PINS["spi_hd" if spi_hd else "spi_fd"]
             cp_sig = (["--hosted-spi-hs-gpio", pins["cp_hs"]] if pins["cp_hs"] else []) \
-                   + ["--hosted-spi-dr-gpio", pins["cp_dr"]]
+                   + ["--hosted-spi-dr-gpio", pins["cp_dr"]] \
+                   + ["--hosted-spi-cs-gpio", pins["cp_cs"]]
             host_sig = (["--hosted-spi-hs-gpio", pins["host_hs"]] if pins["host_hs"] else []) \
                      + ["--hosted-spi-dr-gpio", pins["host_dr"]]
             cp_bridge = [wire, f"bridge:slave:{sock}", *cp_sig]
-            # SPI host resets the CP with an active-high pulse on GPIO 12.
+            # P4-C6 Function-EV board: one active-low EN on GPIO 54 for every transport.
             host_bridge = [wire, f"bridge:host:{sock}", *host_sig,
-                           "--hosted-reset-gpio", _SPI_RESET_GPIO,
-                           "--hosted-reset-active-high"]
+                           "--hosted-reset-gpio", _RESET_GPIO]
         else:
             wire = "--hosted-uart" if uart else "--hosted"
-            reset_pol = ["--hosted-reset-active-high"] if uart else []
+            reset_pol = []   # FUNC_BOARD reset is active-low on every transport
             # Only wire the CP→host wake GPIO when the test actually uses wake — a
             # non-wake test shouldn't require an esp-emu new enough to know the flag.
             wake_arg = ["--hosted-wake-gpio", _WAKE_GPIO] if spec.wake else []

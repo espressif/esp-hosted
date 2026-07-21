@@ -59,6 +59,29 @@ jobs:
           mkdir -p examples/bluetooth/host_mcu/bluedroid/examples/hosted_hci/bt_hid_mouse/components
           cp -r examples/bluetooth/host_mcu/bluedroid/components/esp_hosted_hci_bluedroid examples/bluetooth/host_mcu/bluedroid/examples/hosted_hci/bt_hid_mouse/components/
 
+      - name: Strip bundled local-component deps from example manifests
+        run: |
+          set -e
+          for e in \
+            examples/network_split/station/cp \
+            examples/network_split/iperf/cp \
+            examples/power_save/host/network_split__host_deep_sleep/cp \
+            examples/power_save/host+cp/network_split__host_deep_sleep_cp_light_sleep/cp \
+            examples/network_split/station/mcu_host \
+            examples/network_split/iperf/mcu_host \
+            examples/bluetooth/host_mcu/nimble/examples/hosted_hci/bleprph_wifi_coex \
+            examples/bluetooth/host_mcu/nimble/examples/hosted_hci/bleprph_gatt \
+            examples/bluetooth/host_mcu/nimble/examples/hosted_hci/bleprph_minimal \
+            examples/bluetooth/host_mcu/bluedroid/examples/hosted_hci/ble_compatibility_test \
+            examples/bluetooth/host_mcu/bluedroid/examples/hosted_hci/ble_advertise_minimal \
+            examples/bluetooth/host_mcu/bluedroid/examples/hosted_hci/classic_bt_discovery \
+            examples/bluetooth/host_mcu/bluedroid/examples/hosted_hci/ble_gatt_server \
+            examples/bluetooth/host_mcu/bluedroid/examples/hosted_hci/controller_mac_addr \
+            examples/bluetooth/host_mcu/bluedroid/examples/hosted_hci/bt_hid_mouse ; do
+            python3 tools/ci/strip_bundled_deps.py "$e/main/idf_component.yml" \
+              esp_hosted_examples_common esp_hosted_hci_nimble esp_hosted_hci_bluedroid
+          done
+
       # Registry example pages: the registry publishes the cp/ mcu_host/ esp_host/
       # project dirs (not the top-level example README). Generate their READMEs
       # from the marker-tagged top README at publish time (see tools/gen_registry_readmes.py

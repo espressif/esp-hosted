@@ -16,6 +16,7 @@ CAP_NET = "net"               # a Net packet-stimulus is attached to this bench
 CAP_COEX_WIRED = "coex_wired" # external-coex physically wired (config ops return rc=0)
 CAP_GPIO_LOOPBACK = "gpio_loopback"  # GPIO reads back what was driven (emu models it;
                                      # real HW needs a physical loopback wire)
+CAP_WIFI_ITWT = "wifi_itwt"   # coprocessor supports 802.11ax iTWT (HE SoC: C5/C6/C61)
 
 
 @dataclass

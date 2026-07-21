@@ -21,6 +21,9 @@
 #if defined(CONFIG_ESP_HOSTED_HOST_FEAT_CP_EXT_COEX)
 #include "eh_host_cp_ext_coex.h"
 #endif
+#if defined(CONFIG_ESP_HOSTED_HOST_FEAT_WIFI_EXT_ITWT_READY)
+#include "eh_host_feat_wifi_ext_itwt.h"
+#endif
 
 /* The contract: exactly one newline-terminated line per command. */
 static void eh_out(const char *cmd, int rc, const char *fields)
@@ -515,6 +518,36 @@ static int cmd_wifi_sta_get_negotiated_phymode(int argc, char **argv)
 
 #endif /* FEAT_WIFI */
 
+#if defined(CONFIG_ESP_HOSTED_HOST_FEAT_WIFI_EXT_ITWT_READY)
+/* ── Wi-Fi iTWT (individual Target Wake Time) ───────────────────────── */
+static int cmd_wifi_itwt_setup(int argc, char **argv)
+{
+    /* args (all optional): setup_cmd bitmask_1 min_wake_dura wake_invl_mant twt_id timeout_ms */
+    uint32_t a[6] = { 1u, 0u, 255u, 512u, 0u, 5000u };
+    for (int i = 1; i < argc && i <= 6; i++) a[i - 1] = (uint32_t)strtoul(argv[i], NULL, 0);
+    eh_out_rc("wifi_itwt_setup",
+              eh_host_wifi_sta_itwt_setup(a[0], a[1], a[2], a[3], a[4], a[5]));
+    return 0;
+}
+static int cmd_wifi_itwt_teardown(int argc, char **argv)
+{ eh_out_rc("wifi_itwt_teardown", eh_host_wifi_sta_itwt_teardown(argc > 1 ? atoi(argv[1]) : 0)); return 0; }
+static int cmd_wifi_itwt_suspend(int argc, char **argv)
+{ eh_out_rc("wifi_itwt_suspend", eh_host_wifi_sta_itwt_suspend(argc > 1 ? atoi(argv[1]) : 0, argc > 2 ? atoi(argv[2]) : 0)); return 0; }
+static int cmd_wifi_itwt_probe(int argc, char **argv)
+{ eh_out_rc("wifi_itwt_probe", eh_host_wifi_sta_itwt_send_probe_req(argc > 1 ? atoi(argv[1]) : 1000)); return 0; }
+static int cmd_wifi_itwt_offset(int argc, char **argv)
+{ eh_out_rc("wifi_itwt_offset", eh_host_wifi_sta_itwt_set_target_wake_time_offset(argc > 1 ? atoi(argv[1]) : 0)); return 0; }
+static int cmd_wifi_itwt_flow_status(int argc, char **argv)
+{
+    int32_t bm = 0;
+    esp_err_t e = eh_host_wifi_sta_itwt_get_flow_id_status(&bm);
+    if (e == ESP_OK) { char f[24]; snprintf(f, sizeof(f), "bitmap=0x%x", (unsigned)bm); eh_out("wifi_itwt_flow_status", (int)e, f); }
+    else eh_out_rc("wifi_itwt_flow_status", e);
+    return 0;
+}
+#endif /* ITWT_READY */
+
+
 #if defined(CONFIG_ESP_HOSTED_HOST_FEAT_GPIO_EXP)
 static int cmd_gpio_init(int argc, char **argv)
 {
@@ -697,6 +730,14 @@ static const eh_api_entry_t s_cmds[] = {
     { "wifi_sta_get_aid",       cmd_wifi_sta_get_aid,      "wifi_sta_get_aid (connected)" },
     { "wifi_sta_get_ap_info",   cmd_wifi_sta_get_ap_info,  "wifi_sta_get_ap_info (connected)" },
     { "wifi_sta_get_negotiated_phymode", cmd_wifi_sta_get_negotiated_phymode, "wifi_sta_get_negotiated_phymode (connected)" },
+#endif
+#if defined(CONFIG_ESP_HOSTED_HOST_FEAT_WIFI_EXT_ITWT_READY)
+    { "wifi_itwt_setup",        cmd_wifi_itwt_setup,       "wifi_itwt_setup [setup_cmd bitmask_1 min_wake_dura wake_invl_mant twt_id timeout_ms]" },
+    { "wifi_itwt_teardown",     cmd_wifi_itwt_teardown,    "wifi_itwt_teardown [flow_id]" },
+    { "wifi_itwt_suspend",      cmd_wifi_itwt_suspend,     "wifi_itwt_suspend [flow_id] [suspend_ms]" },
+    { "wifi_itwt_probe",        cmd_wifi_itwt_probe,       "wifi_itwt_probe [timeout_ms]" },
+    { "wifi_itwt_offset",       cmd_wifi_itwt_offset,      "wifi_itwt_offset [offset_us]" },
+    { "wifi_itwt_flow_status",  cmd_wifi_itwt_flow_status, "wifi_itwt_flow_status" },
 #endif
 #if defined(CONFIG_ESP_HOSTED_HOST_FEAT_GPIO_EXP)
     { "gpio_init",              cmd_gpio_init,             "gpio_init" },

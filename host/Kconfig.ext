@@ -120,19 +120,27 @@ menu "Configure host"
 			bool "ESP32-P4-Function-EV-Board"
 			depends on ESP_HOSTED_HOST_TYPE_MCU && (ESP_HOSTED_CP_TARGET_ESP32C6 || ESP_HOSTED_CP_TARGET_ESP32C5 || ESP_HOSTED_CP_TARGET_ESP32C2)
 
-		config ESP32P4_EYE_C6_BOARD
+		config ESP32P4_EYE_C6_BOARD  # ignore: multiple-definition
 			bool "ESP32-P4-EYE Board (C6 CP)"
 			depends on ESP_HOSTED_CP_TARGET_ESP32C6
 
-		config ESP_HOSTED_P4_C5_CORE_BOARD
+		config ESP32P4_TAB5_C6_BOARD  # ignore: multiple-definition
+			bool "M5Stack Tab5 with on-board ESP32-C6"
+			depends on ESP_HOSTED_CP_TARGET_ESP32C6
+
+		config ESP_HOSTED_P4_C5_CORE_BOARD  # ignore: multiple-definition
 			bool "ESP32-P4 + C5 Core Board"
 			depends on ESP_HOSTED_CP_TARGET_ESP32C5
 
-		config ESP_HOSTED_P4_C6_CORE_BOARD
+		config ESP_HOSTED_P4X_C5_DEV_BOARD_FUNC_BOARD  # ignore: multiple-definition
+			bool "ESP32-P4X-Function-EV-Board with on-board C5"
+			depends on ESP_HOSTED_CP_TARGET_ESP32C5
+
+		config ESP_HOSTED_P4_C6_CORE_BOARD  # ignore: multiple-definition
 			bool "ESP32-P4 + C6 Core Board"
 			depends on ESP_HOSTED_CP_TARGET_ESP32C6
 
-		config ESP_HOSTED_P4_C61_CORE_BOARD
+		config ESP_HOSTED_P4_C61_CORE_BOARD  # ignore: multiple-definition
 			bool "ESP32-P4 + C61 Core Board"
 			depends on ESP_HOSTED_CP_TARGET_ESP32C61
 

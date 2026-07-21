@@ -79,6 +79,30 @@ menu "Configure coprocessor"
 			bool "ESP32-P4-Function-EV-Board"
 			depends on ESP_HOSTED_CP_FOR_MCU && IDF_TARGET_ESP32C6
 
+		config ESP_HOSTED_P4X_C5_DEV_BOARD_FUNC_BOARD
+			bool "ESP32-P4X-Function-EV-Board with on-board C5"
+			depends on ESP_HOSTED_CP_FOR_MCU && IDF_TARGET_ESP32C5
+
+		config ESP32P4_EYE_C6_BOARD
+			bool "ESP32-P4-EYE Board with on-board C6"
+			depends on ESP_HOSTED_CP_FOR_MCU && IDF_TARGET_ESP32C6
+
+		config ESP32P4_TAB5_C6_BOARD
+			bool "M5Stack Tab5 with on-board ESP32-C6"
+			depends on ESP_HOSTED_CP_FOR_MCU && IDF_TARGET_ESP32C6
+
+		config ESP_HOSTED_P4_C5_CORE_BOARD
+			bool "ESP32-P4-C5 Core Board with on-board C5"
+			depends on ESP_HOSTED_CP_FOR_MCU && IDF_TARGET_ESP32C5
+
+		config ESP_HOSTED_P4_C6_CORE_BOARD
+			bool "ESP32-P4-C6 Core Board with on-board C6"
+			depends on ESP_HOSTED_CP_FOR_MCU && IDF_TARGET_ESP32C6
+
+		config ESP_HOSTED_P4_C61_CORE_BOARD
+			bool "ESP32-P4-C61 Core Board with on-board C61"
+			depends on ESP_HOSTED_CP_FOR_MCU && IDF_TARGET_ESP32C61
+
 		config ESP_HOSTED_C2_C5_MODULE_SUB_BOARD
 			bool "ESP32-P4 EV Sub-Board for C2 & C5"
 			depends on ESP_HOSTED_CP_FOR_MCU && (IDF_TARGET_ESP32C2 || IDF_TARGET_ESP32C5)
