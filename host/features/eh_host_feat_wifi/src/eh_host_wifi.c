@@ -539,6 +539,11 @@ bool eh_host_wifi_rx_admitted(bool is_ap)
     return s_rx_admit[is_ap ? 1 : 0];
 }
 
+void eh_host_wifi_admit_rx(bool is_ap, bool admit)
+{
+    s_rx_admit[is_ap ? 1 : 0] = admit;
+}
+
 static void wifi_sta_connected_handler(const void *ctrl_cmd, void *ctx)
 {
     (void)ctx;

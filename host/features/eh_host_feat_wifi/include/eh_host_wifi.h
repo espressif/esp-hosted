@@ -24,6 +24,8 @@ extern "C" {
  * window, matching native's start/stop-scoped RX. is_ap selects AP, else STA. */
 bool eh_host_wifi_rx_admitted(bool is_ap);
 
+void eh_host_wifi_admit_rx(bool is_ap, bool admit);
+
 esp_err_t eh_host_wifi_init(const wifi_init_config_t *cfg);
 esp_err_t eh_host_wifi_deinit(void);
 esp_err_t eh_host_wifi_start(void);

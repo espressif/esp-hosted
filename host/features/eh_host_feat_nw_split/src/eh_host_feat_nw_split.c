@@ -19,6 +19,7 @@
 #include "eh_host_nw_split.h"
 #include "eh_host_auto_init.h"
 #include "eh_host_event.h"
+#include "eh_host_wifi.h"
 
 #define NW_SPLIT_TAG "eh_nw_split"
 
@@ -101,6 +102,8 @@ static void on_cp_dhcp_status(void *arg, esp_event_base_t base, int32_t id, void
                          &conn_evt, sizeof(conn_evt), 0);
     ESP_LOGD(NW_SPLIT_TAG,
              "synthesized STA_CONNECTED (CP gave IP without StaConnected)");
+
+    eh_host_wifi_admit_rx(false /*is_ap*/, true);
 
     esp_err_t rc = esp_netif_dhcpc_stop(s_state.netif);
     if (rc != ESP_OK && rc != ESP_ERR_ESP_NETIF_DHCP_ALREADY_STOPPED) {

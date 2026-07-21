@@ -71,7 +71,8 @@ static int wakeup_gpio_arm(void)
     eh_host_port_gpio_config_cfg_t in_cfg = {
         .gpio  = s_wakeup_gpio_desc,
         .dir   = EH_HOST_PORT_GPIO_DIR_INPUT,
-        .pull  = EH_HOST_PORT_GPIO_PULL_NONE,
+        .pull  = (EH_HOST_FEAT_POWER_SAVE_WAKEUP_GPIO_LEVEL == 1)
+                   ? EH_HOST_PORT_GPIO_PULL_DOWN : EH_HOST_PORT_GPIO_PULL_UP,
         .flags = 0,
     };
     if (eh_host_port_gpio_config(&in_cfg) != EH_HOST_PORT_OK) {

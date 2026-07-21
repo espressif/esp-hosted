@@ -86,7 +86,7 @@ eh_host_port_err_t eh_host_port_reset_slave(void)
 
 eh_host_port_err_t eh_host_port_restart_host(void)
 {
-    ESP_LOGE("eh_host_xport", "TRANSPORT_FAILURE: restarting host");
+    ESP_EARLY_LOGW("eh_host_xport", "TRANSPORT_FAILURE: restarting host");
     esp_restart();
     return EH_HOST_PORT_OK; /* unreachable */
 }
