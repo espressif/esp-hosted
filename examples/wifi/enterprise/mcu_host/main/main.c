@@ -34,8 +34,5 @@ void app_main(void)
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
     ESP_ERROR_CHECK(esp_wifi_start());
 
-    /* Initialize ESP-Hosted coprocessor.
-     * WiFi Enterprise EAP configuration is handled via RPC from the host;
-     * the CP's enterprise extension auto-initializes on the coprocessor. */
     ESP_ERROR_CHECK(esp_hosted_init());
 }
