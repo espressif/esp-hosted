@@ -50,9 +50,9 @@ void eh_host_auto_init_ctor(void)
         .stack_bytes = 4096,
         .priority    = 23,           /* DFLT_TASK_PRIO + 1 on FreeRTOS */
         .name        = "eh_init",
+        .flags       = EH_HOST_PORT_TASK_DETACHED,  /* one-shot, self-reaps */
     };
-    eh_host_port_task_t *t = NULL;
-    if (eh_host_port_task_create(&cfg, &t) != 0) {
+    if (eh_host_port_task_create(&cfg, NULL) != 0) {
         s_auto_init_status = -1;
         if (s_auto_init_sem) {
             eh_host_port_sem_post(s_auto_init_sem);

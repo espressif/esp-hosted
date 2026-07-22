@@ -22,17 +22,25 @@ extern "C" {
  * once it returns. */
 typedef void (*eh_host_port_task_fn_t)(void *arg);
 
+/* cfg.flags bits. */
+/* Fire-and-forget: task self-reaps on exit and is never joined/destroyed.
+ * `out` may be NULL; use for one-shot workers. */
+#define EH_HOST_PORT_TASK_DETACHED  (1u << 0)
+
 typedef struct {
     eh_host_port_task_fn_t fn;          /* REQUIRED */
     void             *arg;
     size_t            stack_bytes; /* 0 ⇒ impl default */
     int               priority;    /* impl-defined scale; 0 ⇒ default */
     const char       *name;        /* optional diagnostic name */
-    uint32_t          flags;       /* reserved, must be 0 */
+    uint32_t          flags;       /* EH_HOST_PORT_TASK_* bits; 0 for a joinable task */
 } eh_host_port_task_create_cfg_t;
 
-/* Create a task and begin executing `cfg->fn` in it.
- * Returns EH_HOST_PORT_OK + writes `*out`, or negative err on failure. */
+/* Create and start a task.
+ * - Joinable (flags=0): `out` required; caller must join()+destroy().
+ * - Detached (EH_HOST_PORT_TASK_DETACHED): `out` optional; task self-reaps.
+ * - Returns EH_HOST_PORT_OK or a negative error.
+ */
 eh_host_port_err_t eh_host_port_task_create(const eh_host_port_task_create_cfg_t *cfg,
                                    eh_host_port_task_t **out);
 

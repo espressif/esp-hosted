@@ -125,15 +125,18 @@ void eh_host_mcu_transport_dispatch_frame(const interface_buffer_handle_t *h)
                 /* Worker; running inline self-deadlocks against our own RX task. */
                 if (!s_auto_init_started && eh_host_auto_init_count() > 0) {
                     s_auto_init_started = 1;
+
+                    /* Detached one-shot: self-reaps on exit */
                     eh_host_port_task_create_cfg_t cfg = {
                         .fn = auto_init_features_task,
                         .stack_bytes = EH_HOST_DEFLT_TASK_STACK_BYTES,
                         .priority = EH_HOST_DEFLT_TASK_PRIORITY,
                         .name = "eh_auto_init",
+                        .flags = EH_HOST_PORT_TASK_DETACHED,
                     };
-                    eh_host_port_task_t *t = NULL;
-                    if (eh_host_port_task_create(&cfg, &t) != EH_HOST_PORT_OK) {
+                    if (eh_host_port_task_create(&cfg, NULL) != EH_HOST_PORT_OK) {
                         ESP_LOGE("eh_dispatch", "auto-init task spawn failed");
+                        s_auto_init_started = 0;
                     }
                 }
             }
