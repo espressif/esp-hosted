@@ -2,6 +2,15 @@
 
 # Releases
 
+# $${\color{green} \text{3.0.3}}$$
+
+- IDF 6.1+: skip PRIVATE-linking the source-less `esp_wifi_remote` shim (was a fatal configure error)
+- fix auto-init worker-task leak across CP deinit/re-init cycles
+- `shut_down_cp_when_unused` example: drop host power-save config
+- light-sleep example: gate peripheral power-down on SoC support
+- clear `esp_wifi_remote` channels on deinit; wakeup-GPIO pull matches idle level
+- add 10-cycle CP cold-boot soak test (heap-poisoned)
+
 # $${\color{green} \text{3.0.2}}$$
 
 - dev-board support: P4x-C5, P4-EYE, M5Stack Tab5, and P4 C5/C6/C61 core boards (per-board GPIO defaults)

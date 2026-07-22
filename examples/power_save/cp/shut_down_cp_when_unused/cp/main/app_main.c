@@ -14,18 +14,6 @@
 
 static const char *TAG = "power_save_example";
 
-#if !defined(CONFIG_ESP_HOSTED_CP_FEAT_HOST_PS_HOST_WAKEUP_GPIO) || (CONFIG_ESP_HOSTED_CP_FEAT_HOST_PS_HOST_WAKEUP_GPIO==-1)
-  #error "Configure correct host wake-up GPIO"
-#else
-  #define EXAMPLE_HOST_WAKEUP_GPIO CONFIG_ESP_HOSTED_CP_FEAT_HOST_PS_HOST_WAKEUP_GPIO
-#endif
-
-#ifdef CONFIG_ESP_HOSTED_CP_FEAT_HOST_PS_HOST_WAKEUP_GPIO_LEVEL_HIGH
-  #define EXAMPLE_HOST_GPIO_WAKEUP_LEVEL "high"
-#else
-  #define EXAMPLE_HOST_GPIO_WAKEUP_LEVEL "low"
-#endif
-
 void app_main(void)
 {
     /* Initialize NVS */
@@ -38,16 +26,5 @@ void app_main(void)
 
     esp_event_loop_create_default();
 
-    ESP_LOGI(TAG, "Power Save Extension Example");
-
-    // Register event handler
-    //                                         eh_cp_event_handler, NULL));
-
-    /* Extensions auto-register via EH_CP_EXT_REGISTER when enabled. */
-
-    ESP_LOGI(TAG, "Host can now enter deep sleep - coprocessor will wake it up on -");
-    ESP_LOGI(TAG, "1. Packet that needs to wake up host (configurable in extension");
-    ESP_LOGI(TAG, "2. Using CLI");
-
-    ESP_LOGI(TAG, "Host Wakeup GPIO [%u] and wakeup level[%s]", EXAMPLE_HOST_WAKEUP_GPIO, EXAMPLE_HOST_GPIO_WAKEUP_LEVEL);
+    ESP_LOGI(TAG, "shut_down_cp coprocessor ready (host controls power via reset)");
 }

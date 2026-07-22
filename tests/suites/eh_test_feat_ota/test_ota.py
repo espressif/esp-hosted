@@ -31,10 +31,28 @@ EX = 'ota/coprocessor_ota'
 ])
 def test_ota_littlefs(bench, transport):
     """Positive: the host reads the staged CP image from its LittleFS partition and
-    OTAs the coprocessor over the link — begin/write/end complete with no network."""
+    OTAs the coprocessor over the link — begin/write/end complete with no network.
+
+    Checked PER-PHASE (host-init → transfer-start → complete → activate) so a hang
+    fails fast at the phase that stalled instead of waiting out one long timeout with
+    no clue where it stuck. Only the transfer itself keeps a long wait — the firmware
+    logs no intermediate progress and UART is ~140s — and even that is scoped tight on
+    the fast wires so a stall there fails in 60s (not 240s) off UART."""
     b = bench(EX, 'mcu_host', transport, timeout='300s',
               overlay=['CONFIG_OTA_METHOD_LITTLEFS=y'],
               cp_app_to_host='components/ota_littlefs/slave_fw_bin/cp_app.bin')
     host = b['host']
-    r = eh_test_expect(host, r'OTA completed successfully', fail=FAIL, timeout=240)
-    assert r.ok, f'[{transport}] OTA (littlefs): {r.matched}'
+    # 1. host-side hosted link up
+    r = eh_test_expect(host, r'ESP-Hosted initialized successfully', fail=FAIL, timeout=30)
+    assert r.ok, f'[{transport}] OTA host-init: {r.matched}'
+    # 2. image found + verified in LittleFS, transfer begins (fails fast on missing/bad image)
+    r = eh_test_expect(host, r'Starting OTA from LittleFS', fail=FAIL, timeout=30)
+    assert r.ok, f'[{transport}] OTA transfer-start (image staged/verified): {r.matched}'
+    # 3. the transfer — no progress logging, UART ~140s so it needs the long wait; the
+    #    fast wires (~25s) fail a stall in 60s instead of 240s
+    xfer_timeout = 200 if transport == 'uart' else 60
+    r = eh_test_expect(host, r'OTA completed successfully', fail=FAIL, timeout=xfer_timeout)
+    assert r.ok, f'[{transport}] OTA transfer/complete: {r.matched}'
+    # 4. new image activated on the slave
+    r = eh_test_expect(host, r'New firmware activated', fail=FAIL, timeout=20)
+    assert r.ok, f'[{transport}] OTA activate: {r.matched}'

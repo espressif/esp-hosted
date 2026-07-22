@@ -22,6 +22,7 @@ struct eh_host_port_task {
     void              *arg;
     int                created;   /* 1 once pthread_create succeeded */
     int                joined;    /* 1 once pthread_join returned */
+    int                detached;  /* self-reap: free own wrapper on exit */
 };
 
 static void eh_port_task_wake_noop(int sig) { (void)sig; }
@@ -45,14 +46,23 @@ static void eh_port_task_install_wake_handler_once(void)
 static void *task_trampoline(void *p)
 {
     eh_host_port_task_t *t = (eh_host_port_task_t *)p;
+    int detached = t && t->detached;
     if (t && t->fn) t->fn(t->arg);
+    if (detached) {
+        /* Fire-and-forget: pthread is CREATE_DETACHED so the kernel reaps the
+         * thread; free our own wrapper. */
+        free(t);
+    }
     return NULL;
 }
 
 eh_host_port_err_t eh_host_port_task_create(const eh_host_port_task_create_cfg_t *cfg,
                                    eh_host_port_task_t **out)
 {
-    if (!cfg || !cfg->fn || !out) return EH_HOST_PORT_ERR_INVAL;
+    if (!cfg || !cfg->fn) return EH_HOST_PORT_ERR_INVAL;
+    if (cfg->flags & ~(uint32_t)EH_HOST_PORT_TASK_DETACHED) return EH_HOST_PORT_ERR_INVAL;
+    int detached = (cfg->flags & EH_HOST_PORT_TASK_DETACHED) != 0;
+    if (!detached && !out) return EH_HOST_PORT_ERR_INVAL;
 
     eh_port_task_install_wake_handler_once();
 
@@ -60,6 +70,7 @@ eh_host_port_err_t eh_host_port_task_create(const eh_host_port_task_create_cfg_t
     if (!t) return EH_HOST_PORT_ERR_NOMEM;
     t->fn  = cfg->fn;
     t->arg = cfg->arg;
+    t->detached = detached;
 
     pthread_attr_t attr;
     pthread_attr_init(&attr);
@@ -69,16 +80,29 @@ eh_host_port_err_t eh_host_port_task_create(const eh_host_port_task_create_cfg_t
                  : cfg->stack_bytes;
         pthread_attr_setstacksize(&attr, s);
     }
+    if (detached) {
+        pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
+    }
     /* cfg->priority ignored on Linux-user (no real-time default). */
 
-    int rc = pthread_create(&t->tid, &attr, task_trampoline, t);
+    /* Detached: `t` may be freed before pthread_create() returns; keep `tid`
+     * local to avoid a use-after-free.
+     */
+    pthread_t local_tid;
+    int rc = pthread_create(detached ? &local_tid : &t->tid, &attr, task_trampoline, t);
     pthread_attr_destroy(&attr);
     if (rc != 0) {
         free(t);
         return (rc == EAGAIN) ? EH_HOST_PORT_ERR_NOMEM : EH_HOST_PORT_ERR;
     }
-    t->created = 1;
 
+    if (detached) {
+        /* `t` may already be freed and `local_tid` may already be reaped/recycled,
+         * so don't touch either — skip naming for detached one-shots. */
+        return EH_HOST_PORT_OK;
+    }
+
+    t->created = 1;
     if (cfg->name) {
 #if defined(__linux__)
         pthread_setname_np(t->tid, cfg->name);

@@ -31,7 +31,10 @@ EXAMPLES = [
     # Feature examples: assert each BUILDS + BOOTS to its init line on the emu.
     ("ext_coex",                    r"External Coexistence configuration completed", 60),
     ("ota/coprocessor_ota",         r"ESP-Hosted initialized successfully",          60),
-    ("network_split/iperf",         r"Network Split Iperf Example",                  60),
+    # 'wifi_init_sta finished' (not the app_main banner) is the real ready line: it
+    # only prints after esp_hosted_init + wifi-over-hosted succeed (else ESP_ERROR_CHECK
+    # aborts), so it proves the hosted link came up, not just that app_main started.
+    ("network_split/iperf",         r"wifi_init_sta finished",                       60),
     # HW-only (excluded from emu): BT/OpenThread need a BLE/802.15.4 radio the emu
     # lacks; wifi/{itwt,dpp,enterprise} bus-fault at app_main entry on the emu
     # (read8 unmapped 0x5C) — verify on HW, and RCA whether that early crash is a

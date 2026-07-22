@@ -29,19 +29,26 @@
 
 struct eh_host_port_task {
     TaskHandle_t       handle;
-    SemaphoreHandle_t  exit_sem;
+    SemaphoreHandle_t  exit_sem;   /* NULL for detached (no join) */
     eh_host_port_task_fn_t  fn;
     void              *arg;
     int                joined;
     int                with_caps;  /* created via xTaskCreateWithCaps */
+    int                detached;   /* self-reap: free own wrapper on exit */
 };
 
 static void trampoline(void *p)
 {
     eh_host_port_task_t *t = (eh_host_port_task_t *)p;
     int with_caps = t && t->with_caps;
+    int detached  = t && t->detached;
     if (t && t->fn) t->fn(t->arg);
-    if (t && t->exit_sem) xSemaphoreGive(t->exit_sem);
+    if (detached) {
+        /* Fire-and-forget: free the wrapper, then self-delete. */
+        free(t);
+    } else if (t && t->exit_sem) {
+        xSemaphoreGive(t->exit_sem);
+    }
     if (with_caps) {
         vTaskDeleteWithCaps(NULL);
     } else {
@@ -52,13 +59,20 @@ static void trampoline(void *p)
 eh_host_port_err_t eh_host_port_task_create(const eh_host_port_task_create_cfg_t *cfg,
                                    eh_host_port_task_t **out)
 {
-    if (!cfg || !cfg->fn || !out) return EH_HOST_PORT_ERR_INVAL;
+    if (!cfg || !cfg->fn) return EH_HOST_PORT_ERR_INVAL;
+    if (cfg->flags & ~(uint32_t)EH_HOST_PORT_TASK_DETACHED) return EH_HOST_PORT_ERR_INVAL;
+    int detached = (cfg->flags & EH_HOST_PORT_TASK_DETACHED) != 0;
+    if (!detached && !out) return EH_HOST_PORT_ERR_INVAL;
     eh_host_port_task_t *t = calloc(1, sizeof(*t));
     if (!t) return EH_HOST_PORT_ERR_NOMEM;
     t->fn  = cfg->fn;
     t->arg = cfg->arg;
-    t->exit_sem = xSemaphoreCreateBinary();
-    if (!t->exit_sem) { free(t); return EH_HOST_PORT_ERR_NOMEM; }
+    t->detached = detached;
+    /* Detached tasks are never joined, so no exit semaphore is needed. */
+    if (!detached) {
+        t->exit_sem = xSemaphoreCreateBinary();
+        if (!t->exit_sem) { free(t); return EH_HOST_PORT_ERR_NOMEM; }
+    }
 
     size_t stack_bytes = cfg->stack_bytes ? cfg->stack_bytes
                                           : (size_t)EH_HOST_PORT_DFLT_TASK_STACK;
@@ -81,11 +95,14 @@ eh_host_port_err_t eh_host_port_task_create(const eh_host_port_task_create_cfg_t
     ok = xTaskCreate(trampoline, name, depth, t, prio, &t->handle);
 #endif
     if (ok != pdPASS) {
-        vSemaphoreDelete(t->exit_sem);
+        /* Task never started, so `t` is still ours to free (it isn't detached-
+         * reaped). exit_sem is NULL for detached. */
+        if (t->exit_sem) vSemaphoreDelete(t->exit_sem);
         free(t);
         return EH_HOST_PORT_ERR_NOMEM;
     }
-    *out = t;
+    /* Detached task owns `t` on success; it may already be freed. */
+    if (out) *out = t;
     return EH_HOST_PORT_OK;
 }
 

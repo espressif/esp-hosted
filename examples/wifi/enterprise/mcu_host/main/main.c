@@ -9,7 +9,7 @@
 #include "esp_event.h"
 #include "nvs_flash.h"
 
-#include "eh_cp.h"
+#include "esp_hosted.h"
 #include "esp_check.h"
 
 static const char *TAG = "wifi_enterprise_example";
@@ -34,8 +34,5 @@ void app_main(void)
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
     ESP_ERROR_CHECK(esp_wifi_start());
 
-    /* Initialize ESP-Hosted coprocessor.
-     * WiFi Enterprise EAP configuration is handled via RPC from the host.
-     * The enterprise extension auto-initializes via EH_CP_EXT_REGISTER. */
-    ESP_ERROR_CHECK(eh_cp_init());
+    ESP_ERROR_CHECK(esp_hosted_init());
 }

@@ -36,4 +36,5 @@ target_link_libraries(eh_host_feat_nw_split PRIVATE
     eh_host_feat_rpc_ext_v2
     eh_host_feat_rpc
     eh_proto_v2
+    eh_host_feat_wifi
 )
