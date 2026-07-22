@@ -23,6 +23,7 @@
 #include "esp_wifi_types.h"
 
 #include "eh_host_wifi.h"
+#include "eh_host_wifi_priv.h"
 
 #include "eh_host_feat_rpc_ext_v2_api_common.h"
 

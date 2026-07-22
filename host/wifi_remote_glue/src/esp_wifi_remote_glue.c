@@ -13,6 +13,7 @@
 
 #include "eh_host_sys.h"
 #include "eh_host_wifi.h"
+#include "eh_host_wifi_priv.h"
 #if EH_HOST_FEAT_WIFI_EXT_ITWT_READY
 #include "eh_host_wifi_itwt.h"
 #endif
@@ -62,8 +63,9 @@ esp_err_t esp_wifi_remote_deinit(void)
 {
     esp_err_t rc = eh_host_wifi_deinit();
 #if EH_HOST_TYPE_MCU && EH_HOST_FEAT_WIFI_READY
-    if (s_sta_ch) { esp_hosted_remove_channel(s_sta_ch); s_sta_ch = NULL; }
-    if (s_ap_ch)  { esp_hosted_remove_channel(s_ap_ch);  s_ap_ch  = NULL; }
+    /* Clear esp_wifi_remote channel pointers before freeing channels. */
+    if (s_sta_ch) { esp_wifi_remote_channel_set(WIFI_IF_STA, NULL, NULL); esp_hosted_remove_channel(s_sta_ch); s_sta_ch = NULL; }
+    if (s_ap_ch)  { esp_wifi_remote_channel_set(WIFI_IF_AP, NULL, NULL);  esp_hosted_remove_channel(s_ap_ch);  s_ap_ch  = NULL; }
 #endif
     return rc;
 }

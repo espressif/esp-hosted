@@ -20,6 +20,7 @@
 #include "eh_host_auto_init.h"
 #include "eh_host_event.h"
 #include "eh_host_wifi.h"
+#include "eh_host_wifi_priv.h"
 
 #define NW_SPLIT_TAG "eh_nw_split"
 

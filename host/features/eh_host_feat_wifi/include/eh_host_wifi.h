@@ -19,13 +19,6 @@
 extern "C" {
 #endif
 
-/* RX-admission gate read by the glue's RX guard. Core sets it at the lifecycle
- * edges (STA connect/stop, AP start/stop); default-false gates the post-wake
- * window, matching native's start/stop-scoped RX. is_ap selects AP, else STA. */
-bool eh_host_wifi_rx_admitted(bool is_ap);
-
-void eh_host_wifi_admit_rx(bool is_ap, bool admit);
-
 esp_err_t eh_host_wifi_init(const wifi_init_config_t *cfg);
 esp_err_t eh_host_wifi_deinit(void);
 esp_err_t eh_host_wifi_start(void);
@@ -103,7 +96,6 @@ esp_err_t eh_host_wifi_get_bandwidths(wifi_interface_t ifx, wifi_bandwidths_t *b
 esp_err_t eh_host_wifi_set_okc_support(bool enable);
 #endif
 
-/* TODO(wifi-rpc): V1 union lacks twt_config payload. */
 esp_err_t eh_host_wifi_sta_twt_config(wifi_twt_config_t *config);
 
 #ifdef __cplusplus
