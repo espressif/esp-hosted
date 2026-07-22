@@ -85,7 +85,7 @@ MODULE_AUTHOR("Amey Inamdar <amey.inamdar@espressif.com>");
 MODULE_AUTHOR("Mangesh Malusare <mangesh.malusare@espressif.com>");
 MODULE_AUTHOR("Yogesh Mantri <yogesh.mantri@espressif.com>");
 MODULE_DESCRIPTION("Host driver for ESP-Hosted solution");
-MODULE_VERSION("3.0.2");
+MODULE_VERSION("3.0.3");
 
 module_param(resetpin, int, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
 MODULE_PARM_DESC(resetpin, "Host's GPIO pin number which is connected to ESP32's EN to reset ESP32 device");
