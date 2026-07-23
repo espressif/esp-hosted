@@ -166,7 +166,13 @@ eh_host_port_err_t eh_host_port_power_save_wakeup_gpio_config(
      * setups; some targets require RTC-IO-capable pins. */
     rc = esp_sleep_enable_ext1_wakeup(
             1ULL << gpio,
+  #if CONFIG_IDF_TARGET_ESP32
+            /* ESP32 EXT1 only defines ALL_LOW/ANY_HIGH (no ANY_LOW). */
             wake_level ? ESP_EXT1_WAKEUP_ANY_HIGH : ESP_EXT1_WAKEUP_ALL_LOW);
+  #else
+            /* Post-ESP32: use ANY_LOW; ALL_LOW is deprecated. */
+            wake_level ? ESP_EXT1_WAKEUP_ANY_HIGH : ESP_EXT1_WAKEUP_ANY_LOW);
+  #endif
 #endif
     if (rc != ESP_OK) {
         ESP_LOGE(EH_HOST_PORT_RESET_TAG,

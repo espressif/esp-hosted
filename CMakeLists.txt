@@ -59,16 +59,6 @@ if(ESP_PLATFORM)
         target_link_libraries(${COMPONENT_LIB} INTERFACE eh_cp)
     endif()
 
-    # esp_wifi_remote becomes a source-less INTERFACE shim when IDF ships
-    # wifi-remote in-tree (marker esp_wifi/remote/Kconfig.wifi.in, added v6.1);
-    # its header then comes from esp_wifi (already REQUIRED) and PRIVATE-linking
-    # the empty shim is a fatal CMake error. Link the external component only when
-    # it's the real, source-bearing library (IDF < 6.1). Non-ESP hosts never reach
-    # here — they link the vendored esp_wifi_remote in host/wifi_remote_glue.
-    if(NOT EXISTS "$ENV{IDF_PATH}/components/esp_wifi/remote/Kconfig.wifi.in")
-        idf_component_optional_requires(PRIVATE esp_wifi_remote)
-    endif()
-
     if(CONFIG_ESP_HOSTED_CP_FEAT_WIFI_READY)
         idf_build_set_property(LINK_OPTIONS "-Wl,--wrap=esp_wifi_connect" APPEND)
     endif()
