@@ -1,5 +1,8 @@
 menuconfig ESP_HOSTED
 	bool "ESP-Hosted"
+	default n if ESP_HOST_WIFI_ENABLED
+	default n if ESP_WIFI_REMOTE_ENABLED && !ESP_WIFI_REMOTE_LIBRARY_HOSTED
+	default y if ESP_WIFI_REMOTE_ENABLED && ESP_WIFI_REMOTE_LIBRARY_HOSTED
 	default y
 
 if ESP_HOSTED
