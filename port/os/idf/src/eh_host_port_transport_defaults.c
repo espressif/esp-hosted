@@ -149,7 +149,19 @@ void eh_host_port_transport_check_max_freq(uint8_t chip_id)
                  (unsigned)EH_HOST_PORT_SDIO_CLOCK_FREQ_KHZ);
     }
 }
+#elif EH_HOST_TRANSPORT_BUS_UART && defined(ESP_PLATFORM)
+void eh_host_port_transport_check_max_freq(uint8_t chip_id)
+{
+    (void)chip_id;
+    /* 921600 is the practical stable ceiling (docs/design/uart.md, performance.md). */
+    unsigned baud = (unsigned)EH_HOST_PORT_UART_BAUD_RATE;
+    if (baud < 921600u) {
+        ESP_LOGW(TAG, "UART baud [%u] is below 921600, the reliable rate for this link "
+                      "(software flow control only). The UART peripheral itself can reach "
+                      "~5Mbaud (~2.5M on ESP32-C2) with hardware flow control.", baud);
+    }
+}
 #else
-/* TODO: UART/non-IDF stub — no per-chip max-baud table yet */
+/* non-IDF / no-transport stub */
 void eh_host_port_transport_check_max_freq(uint8_t chip_id) { (void)chip_id; }
 #endif
