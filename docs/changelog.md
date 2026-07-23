@@ -2,6 +2,10 @@
 
 # Releases
 
+# $${\color{green} \text{3.0.4}}$$
+
+- forbid enabling `esp_hosted` alongside native host Wi-Fi (shared SDIO bus): auto-default off, fatal error if both on
+
 # $${\color{green} \text{3.0.3}}$$
 
 - IDF 6.1+: skip PRIVATE-linking the source-less `esp_wifi_remote` shim (was a fatal configure error)
