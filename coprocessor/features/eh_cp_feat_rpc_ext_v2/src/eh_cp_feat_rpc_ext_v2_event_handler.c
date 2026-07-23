@@ -25,6 +25,10 @@
 #include "eh_cp_feat_nw_split_events.h"
 #endif
 
+#if EH_CP_FEAT_WIFI_EXT_DPP_READY
+#include "eh_cp_feat_wifi_ext_dpp_event.h"
+#endif
+
 #if EH_CP_FEAT_WIFI_READY
 #include "esp_wifi.h"
 #include "eh_cp_feat_wifi_event.h"
@@ -119,6 +123,74 @@ esp_err_t eh_cp_feat_unregister_nw_split_evt_handlers(void)
 	for (int i = 0; i < sizeof(nw_split_events)/sizeof(nw_split_events[0]); i++) {
 		EH_CHECK_OK_WARN(esp_event_handler_unregister(ESP_HOSTED_CP_FEAT_NW_SPLIT_EVENT, nw_split_events[i], ext_nw_split_event_dispatcher));
 	}
+	return ESP_OK;
+}
+#endif
+
+#if EH_CP_FEAT_WIFI_EXT_DPP_READY
+static void ext_dpp_event_dispatcher(void *handler_args, esp_event_base_t base,
+				int32_t event_id, void *event_data)
+{
+	ESP_LOGD(TAG, "Received event: %s, event_id=%ld", base, event_id);
+
+	if (base != EH_CP_FEAT_WIFI_EXT_DPP_EVENT) {
+		ESP_LOGW(TAG, "Unexpected event base: %s", base);
+		return;
+	}
+
+	switch (event_id) {
+		case EH_CP_FEAT_WIFI_EXT_DPP_EVT_URI_READY:
+			ESP_LOGD(TAG, "WIFI DPP uri ready");
+			wifi_event_dpp_uri_ready_t *uri = (wifi_event_dpp_uri_ready_t *)event_data;
+			int uri_len = uri->uri_data_len;
+			rpc_send_event_if_ready(event_id,
+					RPC_ID__Event_WifiDppUriReady,
+					event_data, sizeof(wifi_event_dpp_uri_ready_t) + uri_len);
+			break;
+		case EH_CP_FEAT_WIFI_EXT_DPP_EVT_CFG_RECVD:
+			ESP_LOGD(TAG, "WIFI DPP cfg received");
+			rpc_send_event_if_ready(event_id,
+					RPC_ID__Event_WifiDppCfgRecvd,
+					event_data, sizeof(wifi_event_dpp_config_received_t));
+			break;
+		case EH_CP_FEAT_WIFI_EXT_DPP_EVT_FAILED:
+			ESP_LOGD(TAG, "WIFI DPP failed");
+			rpc_send_event_if_ready(event_id,
+					RPC_ID__Event_WifiDppFail,
+					event_data, sizeof(wifi_event_dpp_failed_t));
+			break;
+		default:
+			ESP_LOGW(TAG, "Unknown DPP event ID: %ld", event_id);
+			break;
+	}
+}
+
+// only send Wi-Fi DPP events
+#define DEFINE_DPP_EVENTS eh_cp_feat_wifi_ext_dpp_evt_t dpp_events[] = { \
+    EH_CP_FEAT_WIFI_EXT_DPP_EVT_URI_READY,                               \
+    EH_CP_FEAT_WIFI_EXT_DPP_EVT_CFG_RECVD,                               \
+    EH_CP_FEAT_WIFI_EXT_DPP_EVT_FAILED,                                  \
+}
+
+esp_err_t eh_cp_feat_register_dpp_evt_handlers(void)
+{
+	DEFINE_DPP_EVENTS;
+
+	for (int i = 0; i < sizeof(dpp_events)/sizeof(dpp_events[0]); i++) {
+		EH_CHECK_OK_WARN(esp_event_handler_register(EH_CP_FEAT_WIFI_EXT_DPP_EVENT, dpp_events[i], ext_dpp_event_dispatcher, NULL));
+	}
+
+	return ESP_OK;
+}
+
+esp_err_t eh_cp_feat_unregister_dpp_evt_handlers(void)
+{
+	DEFINE_DPP_EVENTS;
+
+	for (int i = 0; i < sizeof(dpp_events)/sizeof(dpp_events[0]); i++) {
+		EH_CHECK_OK_WARN(esp_event_handler_unregister(EH_CP_FEAT_WIFI_EXT_DPP_EVENT, dpp_events[i], ext_dpp_event_dispatcher));
+	}
+
 	return ESP_OK;
 }
 #endif

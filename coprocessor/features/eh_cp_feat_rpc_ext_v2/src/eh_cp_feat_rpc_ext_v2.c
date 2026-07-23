@@ -201,6 +201,9 @@ esp_err_t eh_cp_feat_rpc_ext_v2_init(void)
 #if EH_CP_FEAT_NW_SPLIT_READY
     EH_CHECK_OK_WARN(eh_cp_feat_register_nw_split_evt_handlers());
 #endif
+#if EH_CP_FEAT_WIFI_EXT_DPP_READY
+    EH_CHECK_OK_WARN(eh_cp_feat_register_dpp_evt_handlers());
+#endif
 
 #if EH_CP_FEAT_PEER_DATA_READY
     eh_cp_feat_peer_data_register_send_fn(peer_data_rpc_send);
@@ -219,6 +222,9 @@ esp_err_t eh_cp_feat_rpc_ext_v2_deinit(void)
     eh_cp_feat_peer_data_register_send_fn(NULL);
 #endif
 
+#if EH_CP_FEAT_WIFI_EXT_DPP_READY
+    EH_CHECK_OK_WARN(eh_cp_feat_unregister_dpp_evt_handlers());
+#endif
 #if EH_CP_FEAT_WIFI_READY
     EH_CHECK_OK_WARN(eh_cp_feat_rpc_ext_v2_unregister_wifi_evt_handlers());
 #endif

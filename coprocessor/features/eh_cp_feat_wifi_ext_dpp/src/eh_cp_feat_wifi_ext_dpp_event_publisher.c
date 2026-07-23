@@ -15,7 +15,6 @@ ESP_EVENT_DEFINE_BASE(EH_CP_FEAT_WIFI_EXT_DPP_EVENT);
 static const char *TAG = "dpp_evt_pub";
 
 /* WiFi DPP events (IDF >= 5.5) */
-#if EH_CP_WIFI_DPP
 static void wifi_dpp_event_handler(void *arg, esp_event_base_t event_base,
         int32_t event_id, void *event_data)
 {
@@ -38,27 +37,20 @@ static void wifi_dpp_event_handler(void *arg, esp_event_base_t event_base,
             EH_CP_TIMEOUT_IN_MSEC(EH_CP_EVT_DFLT_TIMEOUT));
     }
 }
-#endif /* EH_CP_WIFI_DPP */
 
 esp_err_t eh_cp_wifi_dpp_event_publisher_init(void)
 {
-    ESP_LOGI(TAG, "DPP event publisher initializing");
-#if EH_CP_WIFI_DPP
     esp_event_handler_register(WIFI_EVENT, WIFI_EVENT_DPP_URI_READY, &wifi_dpp_event_handler, NULL);
     esp_event_handler_register(WIFI_EVENT, WIFI_EVENT_DPP_CFG_RECVD, &wifi_dpp_event_handler, NULL);
     esp_event_handler_register(WIFI_EVENT, WIFI_EVENT_DPP_FAILED, &wifi_dpp_event_handler, NULL);
-#endif
-    ESP_LOGI(TAG, "DPP event publisher initialized");
     return ESP_OK;
 }
 
 esp_err_t eh_cp_wifi_dpp_event_publisher_deinit(void)
 {
-#if EH_CP_WIFI_DPP
     esp_event_handler_unregister(WIFI_EVENT, WIFI_EVENT_DPP_URI_READY, &wifi_dpp_event_handler);
     esp_event_handler_unregister(WIFI_EVENT, WIFI_EVENT_DPP_CFG_RECVD, &wifi_dpp_event_handler);
     esp_event_handler_unregister(WIFI_EVENT, WIFI_EVENT_DPP_FAILED, &wifi_dpp_event_handler);
-#endif
     ESP_LOGI(TAG, "DPP event publisher deinitialized");
     return ESP_OK;
 }

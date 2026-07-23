@@ -59,18 +59,7 @@ esp_err_t eh_cp_feat_rpc_ext_v2_rpc_evt_dispatcher(Rpc *ntfy, void *priv_data, c
         } case RPC_ID__Event_DhcpDnsStatus: {
             ret = rpc_evt_Event_DhcpDnsStatus(ntfy, inbuf, inlen);
             break;
-#if EH_CP_WIFI_SUPP_DPP
-		} case RPC_ID__Event_SuppDppUriReady: {
-			ret = rpc_evt_supp_dpp_uri_ready(ntfy, inbuf, inlen);
-			break;
-		} case RPC_ID__Event_SuppDppCfgRecvd: {
-			ret = rpc_evt_supp_dpp_cfg_recvd(ntfy, inbuf, inlen);
-			break;
-		} case RPC_ID__Event_SuppDppFail: {
-			ret = rpc_evt_supp_dpp_fail(ntfy, inbuf, inlen);
-			break;
-#endif // EH_CP_WIFI_SUPP_DPP
-#if EH_CP_WIFI_DPP
+#if EH_CP_FEAT_WIFI_EXT_DPP_READY
 		} case RPC_ID__Event_WifiDppUriReady: {
 			ret = rpc_evt_wifi_dpp_uri_ready(ntfy, inbuf, inlen);
 			break;
@@ -80,7 +69,7 @@ esp_err_t eh_cp_feat_rpc_ext_v2_rpc_evt_dispatcher(Rpc *ntfy, void *priv_data, c
 		} case RPC_ID__Event_WifiDppFail: {
 			ret = rpc_evt_wifi_dpp_fail(ntfy, inbuf, inlen);
 			break;
-#endif // EH_CP_WIFI_DPP
+#endif // EH_CP_FEAT_WIFI_EXT_DPP_READY
 #endif // EH_CP_FEAT_WIFI_READY
         } case RPC_ID__Event_CustomRpc: {
             ret = rpc_evt_custom_rpc(ntfy, inbuf, inlen);

@@ -79,18 +79,7 @@ esp_err_t copy_wifi_sta_cfg_to_rpc_struct(void *payload, rpc_payload_type_t type
 		RPC_ALLOC_ELEMENT(WifiPmfConfig, p_c_sta->pmf_cfg, wifi_pmf_config__init);
 		break;
 		}
-	case PAYLOAD_TYPE_RPC_EVENT_SUPP_DPP_GET_CONFIG: {
-		RpcEventSuppDppCfgRecvd *ntfy_payload = (RpcEventSuppDppCfgRecvd *)payload;
-		NTFY_ALLOC_ELEMENT(WifiStaConfig, ntfy_payload->cfg->sta, wifi_sta_config__init);
-		p_c_sta = ntfy_payload->cfg->sta;
-		NTFY_COPY_STR(p_c_sta->ssid, p_a_sta->ssid, SSID_LENGTH);
-		NTFY_COPY_STR(p_c_sta->password, p_a_sta->password, PASSWORD_LENGTH);
-		NTFY_COPY_BYTES(p_c_sta->bssid, p_a_sta->bssid, BSSID_BYTES_SIZE);
-		NTFY_ALLOC_ELEMENT(WifiScanThreshold, p_c_sta->threshold, wifi_scan_threshold__init);
-		NTFY_ALLOC_ELEMENT(WifiPmfConfig, p_c_sta->pmf_cfg, wifi_pmf_config__init);
-		break;
-		}
-#if EH_CP_WIFI_DPP
+#if EH_CP_FEAT_WIFI_EXT_DPP_READY
 	case PAYLOAD_TYPE_RPC_EVENT_WIFI_DPP_GET_CONFIG: {
 		RpcEventWifiDppCfgRecvd *ntfy_payload = (RpcEventWifiDppCfgRecvd *)payload;
 		NTFY_ALLOC_ELEMENT(WifiStaConfig, ntfy_payload->cfg->sta, wifi_sta_config__init);
@@ -503,67 +492,6 @@ esp_err_t rpc_evt_Event_DhcpDnsStatus(Rpc *ntfy,
 
 
 #if EH_CP_FEAT_WIFI_EXT_DPP_READY
-#if EH_CP_WIFI_SUPP_DPP
-
-esp_err_t rpc_evt_supp_dpp_uri_ready(Rpc *ntfy,
-		const uint8_t *data, ssize_t len)
-{
-	uint8_t *uri = (uint8_t *)data;
-	int uri_len = len;
-
-	NTFY_TEMPLATE(RPC_ID__Event_SuppDppUriReady,
-			RpcEventSuppDppUriReady, event_supp_dpp_uri_ready,
-			rpc__event__supp_dpp_uri_ready__init);
-
-	NTFY_COPY_BYTES(ntfy_payload->qrcode, uri, uri_len);
-
-	ntfy_payload->resp = SUCCESS;
-	return ESP_OK;
-}
-
-esp_err_t rpc_evt_supp_dpp_cfg_recvd(Rpc *ntfy,
-		const uint8_t *data, ssize_t len)
-{
-	wifi_config_t *config = (wifi_config_t *)data;
-	wifi_sta_config_t *sta_config = &(config->sta);
-	esp_err_t res;
-
-	NTFY_TEMPLATE(RPC_ID__Event_SuppDppCfgRecvd,
-			RpcEventSuppDppCfgRecvd, event_supp_dpp_cfg_recvd,
-			rpc__event__supp_dpp_cfg_recvd__init);
-	NTFY_ALLOC_ELEMENT(WifiConfig, ntfy_payload->cfg, wifi_config__init);
-	ntfy_payload->cfg->u_case = WIFI_CONFIG__U_STA;
-
-	res = copy_wifi_sta_cfg_to_rpc_struct(ntfy_payload,
-			PAYLOAD_TYPE_RPC_EVENT_SUPP_DPP_GET_CONFIG, sta_config);
-
-	if (res == ESP_OK) {
-		ntfy_payload->resp = SUCCESS;
-		return ESP_OK;
-	} else {
-		ESP_LOGE(TAG, "NTFY: copy_wifi_sta_cfg_to_rpc_struct() FAILED");
-		return res;
-	}
- err:
-	return ESP_FAIL;
-}
-
-esp_err_t rpc_evt_supp_dpp_fail(Rpc *ntfy,
-		const uint8_t *data, ssize_t len)
-{
-	NTFY_TEMPLATE(RPC_ID__Event_SuppDppFail,
-			RpcEventSuppDppFail, event_supp_dpp_fail,
-			rpc__event__supp_dpp_fail__init);
-
-	int *reason = (int *)data;
-
-	ntfy_payload->reason = *reason;
-	ntfy_payload->resp = SUCCESS;
-	return ESP_OK;
-}
-#endif // EH_CP_WIFI_SUPP_DPP
-
-#if EH_CP_WIFI_DPP
 esp_err_t rpc_evt_wifi_dpp_uri_ready(Rpc *ntfy,
 		const uint8_t *data, ssize_t len)
 {
@@ -583,8 +511,9 @@ esp_err_t rpc_evt_wifi_dpp_uri_ready(Rpc *ntfy,
 esp_err_t rpc_evt_wifi_dpp_cfg_recvd(Rpc *ntfy,
 		const uint8_t *data, ssize_t len)
 {
-	wifi_config_t *config = (wifi_config_t *)data;
-	wifi_sta_config_t *sta_config = &(config->sta);
+	wifi_event_dpp_config_received_t *config = (wifi_event_dpp_config_received_t *)data;
+	wifi_config_t *wifi_config = &config->wifi_cfg;
+	wifi_sta_config_t *sta_config = &(wifi_config->sta);
 	esp_err_t res;
 
 	NTFY_TEMPLATE(RPC_ID__Event_WifiDppCfgRecvd,
@@ -614,13 +543,13 @@ esp_err_t rpc_evt_wifi_dpp_fail(Rpc *ntfy,
 			RpcEventWifiDppFail, event_wifi_dpp_fail,
 			rpc__event__wifi_dpp_fail__init);
 
-	int *reason = (int *)data;
+	wifi_event_dpp_failed_t *failed = (wifi_event_dpp_failed_t *)data;
+	int reason = failed->failure_reason;
 
-	ntfy_payload->reason = *reason;
+	ntfy_payload->reason = reason;
 	ntfy_payload->resp = SUCCESS;
 	return ESP_OK;
 }
-#endif // EH_CP_WIFI_DPP
 #endif // EH_CP_FEAT_WIFI_EXT_DPP_READY
 #endif // EH_CP_FEAT_WIFI_READY
 

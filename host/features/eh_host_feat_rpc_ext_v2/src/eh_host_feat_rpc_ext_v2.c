@@ -87,13 +87,6 @@ void eh_rpc_ctrl_cmd_free(eh_rpc_ctrl_cmd_t *c)
         }
         break;
 
-    case RPC_ID__Event_SuppDppUriReady:
-        if (c->u.e_dpp_uri.qrcode.data) {
-            free(c->u.e_dpp_uri.qrcode.data);
-            c->u.e_dpp_uri.qrcode.data = NULL;
-        }
-        break;
-
     case RPC_ID__Event_WifiDppUriReady:
         if (c->u.e_wifi_dpp_uri_ready.qrcode.data) {
             free(c->u.e_wifi_dpp_uri_ready.qrcode.data);

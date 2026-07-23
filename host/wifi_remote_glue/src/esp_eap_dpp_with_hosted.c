@@ -9,6 +9,7 @@
 #include "esp_wifi.h"
 
 #include "eh_host_port_master_config.h"
+#include "eh_host_port_wifi.h"
 
 #if EH_HOST_FEAT_WIFI_EXT_ENT_READY
 #include "eh_host_wifi_ent.h"
@@ -91,8 +92,25 @@ esp_err_t esp_eap_client_remote_set_eap_methods(esp_eap_method_t methods)
 
 #if EH_HOST_FEAT_WIFI_EXT_DPP_READY
 
+/**
+ * We only support Wi-Fi DPP Events, not Supplicant DPP Events.
+ * In IDF v5.5, cb is always NULL.
+ *
+ * Function parameter changed in esp_dpp.h between IDF v5.5 (cb) and v6.0 (void)
+ */
+#if EH_HOST_SUPP_DPP_SUPPORT
 esp_err_t esp_supp_dpp_init(esp_supp_dpp_event_cb_t evt_cb)
-{ return eh_host_wifi_dpp_init(evt_cb); }
+{
+  if (evt_cb) {
+	// supplicant callback no longer supported
+	return ESP_ERR_INVALID_ARG;
+  }
+  return eh_host_wifi_dpp_init(NULL);
+}
+#else
+esp_err_t esp_supp_dpp_init(void)
+{ return eh_host_wifi_dpp_init(NULL); }
+#endif
 
 esp_err_t esp_supp_dpp_deinit(void)
 { return eh_host_wifi_dpp_deinit(); }

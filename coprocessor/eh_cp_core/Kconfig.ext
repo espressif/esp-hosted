@@ -205,12 +205,6 @@ menu "CP core"
 	endmenu
 
 	menu "Core: Debug & Misc"
-		config ESP_HOSTED_CP_WIFI_DPP_SUPPORT
-			bool "Enable Wi-Fi Easy Connect (DPP)"
-			default n
-			help
-				Enable Wi-Fi Easy Connect (DPP) support for ESP-Hosted
-
 		menu "ESP-Hosted-CP Debugging"
 
 		#
