@@ -2,6 +2,12 @@ if(NOT CONFIG_ESP_HOSTED_HOST)
     return()
 endif()
 
+if(CONFIG_ESP_HOST_WIFI_ENABLED)
+	message(FATAL_ERROR
+		"esp_hosted and CONFIG_ESP_HOST_WIFI_ENABLED (native host Wi-Fi) "
+		"cannot both be enabled; both use the host SDIO bus. Disable one.")
+endif()
+
 
 if(CONFIG_ESP_HOSTED_HOST_FEAT_RPC_READY)
     add_subdirectory(features/eh_host_feat_rpc
