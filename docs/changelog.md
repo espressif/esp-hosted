@@ -1,10 +1,17 @@
-# Unreleased - Main Branch
+# Unreleased
 
 # Releases
 
+# $${\color{green} \text{3.0.5}}$$
+
+- host: drop the backward `esp_wifi_remote` dependency — its header now resolves transitively via `esp_wifi` (`app -> esp_wifi_remote -> esp_hosted`); non-ESP hosts unchanged
+- host/power: use `ESP_EXT1_WAKEUP_ANY_LOW` on post-ESP32 targets; keep `ALL_LOW` on ESP32
+
 # $${\color{green} \text{3.0.4}}$$
 
-- forbid enabling `esp_hosted` alongside native host Wi-Fi (shared SDIO bus): auto-default off, fatal error if both on
+- forbid enabling `esp_hosted` when CONFIG_ESP_HOST_WIFI_ENABLED=y
+- fixed Wi-Fi DPP feature on co-processor
+- **note:** DPP works only on ESP-IDF v5.5 and above with no or NULL supplicant callback
 
 # $${\color{green} \text{3.0.3}}$$
 
