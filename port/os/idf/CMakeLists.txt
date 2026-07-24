@@ -67,3 +67,7 @@ if(CONFIG_ESP_HOSTED_HOST_TRANSPORT_BUS_UART)
         target_link_libraries(eh_host_port_idf PRIVATE idf::esp_hal_uart)
     endif()
 endif()
+
+if(CONFIG_ESP_HOSTED_HOST_FEAT_OPENTHREAD_READY AND TARGET idf::esp_driver_uart)
+    target_link_libraries(eh_host_port_idf PRIVATE idf::esp_driver_uart)
+endif()
