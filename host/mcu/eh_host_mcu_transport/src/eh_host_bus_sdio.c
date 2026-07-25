@@ -1789,6 +1789,20 @@ static void sdio_process_rx_task(void *pvParameters)
 	}
 }
 
+/* Nudge if the configured SDIO clock is below the PCB maximum. */
+static void check_if_max_freq_used(void)
+{
+#ifdef CONFIG_IDF_TARGET
+	if (EH_HOST_PORT_SDIO_CLOCK_FREQ_KHZ < 40000) {
+		ESP_LOGW(TAG, "SDIO clock freq set to [%u]KHz, Max possible (on PCB) is 40000KHz", EH_HOST_PORT_SDIO_CLOCK_FREQ_KHZ);
+	}
+#else
+	if (EH_HOST_PORT_SDIO_CLOCK_FREQ_KHZ < 50000) {
+		ESP_LOGW(TAG, "SDIO clock freq set to [%u]KHz, Max possible (on PCB) is 50000KHz", EH_HOST_PORT_SDIO_CLOCK_FREQ_KHZ);
+	}
+#endif
+}
+
 static void *bus_init_internal(void)
 {
 	uint8_t prio_q_idx = 0;
@@ -1854,6 +1868,8 @@ static void *bus_init_internal(void)
 		assert(sdio_handle);
 	}
 
+	check_if_max_freq_used();
+
 	memset(&double_buf, 0, sizeof(double_buf_t));
 	sdio_rx_ring_reset();
 
@@ -1876,19 +1892,6 @@ static void *bus_init_internal(void)
 
 	ESP_LOGD(TAG, "sdio bus init done");
 	return sdio_handle;
-}
-
-void check_if_max_freq_used(uint8_t chip_type)
-{
-#ifdef CONFIG_IDF_TARGET
-	if (EH_HOST_PORT_SDIO_CLOCK_FREQ_KHZ < 40000) {
-		ESP_LOGW(TAG, "SDIO clock freq set to [%u]KHz, Max possible (on PCB) is 40000KHz", EH_HOST_PORT_SDIO_CLOCK_FREQ_KHZ);
-	}
-#else
-	if (EH_HOST_PORT_SDIO_CLOCK_FREQ_KHZ < 50000) {
-		ESP_LOGW(TAG, "SDIO clock freq set to [%u]KHz, Max possible (on PCB) is 50000KHz", EH_HOST_PORT_SDIO_CLOCK_FREQ_KHZ);
-	}
-#endif
 }
 
 #define CARD_INIT_DELAY_MS 100

@@ -4,13 +4,13 @@
 #include "eh_host_port_master_config.h"
 #include "eh_host_feat_wifi_ext_itwt.h"
 #include "eh_host_wifi_itwt.h"
+#include "eh_host_wifi_itwt_priv.h"
 #include "eh_host_auto_init.h"
 #include "eh_host_port.h"
 
 #if EH_HOST_FEAT_WIFI_EXT_ITWT_READY
 
 #define ITWT_TAG "eh_wifi_itwt"
-void eh_host_wifi_itwt_reset_subscribers(void);
 
 int eh_host_feat_wifi_ext_itwt_init(void)
 {
