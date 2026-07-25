@@ -1,7 +1,0 @@
-menu "BLE Peripheral Minimal config"
-
-config EXAMPLE_DEVICE_NAME
-    string "BLE device name (advertised)"
-    default "esp-hosted-nim"
-
-endmenu

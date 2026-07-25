@@ -1,7 +1,0 @@
-dependencies:
-  esp_hosted_hci_bluedroid:
-    override_path: "../../../../components/esp_hosted_hci_bluedroid"
-    version: "*"
-  espressif/esp_hosted:
-    version: "*"
-    override_path: "../../../../../../../.."

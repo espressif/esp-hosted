@@ -1,3 +1,0 @@
-# ESP32-S2 has no Bluetooth controller; keep BT disabled for this profile.
-CONFIG_BT_ENABLED=n
-CONFIG_ESP_HOSTED_CP_FEAT_BT=n
