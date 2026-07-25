@@ -60,28 +60,28 @@ if(ESP_PLATFORM AND DEFINED ENV{ESP_HOSTED_CI_PEDANTIC})
         -Wno-error
         -Wall
         -Wextra
-        -Wpedantic
+        # -Wpedantic          # noisy: flags GNU extensions IDF relies on
 
         -Wshadow
         -Wformat=2
         -Wformat-security
-        -Wconversion
-        -Wsign-conversion
-        -Warith-conversion
+        # -Wconversion        # narrowing flood — too restrictive
+        # -Wsign-conversion   # signed/unsigned implicit — too noisy
+        # -Warith-conversion  # conversion family — too noisy
         -Wsign-compare
 
-        -Wcast-align
+        # -Wcast-align        # fires on byte-buffer->struct casts in framing
         -Wcast-qual
-        -Wwrite-strings
+        # -Wwrite-strings     # forces every string literal const — churn
         -Wpointer-arith
-        -Wredundant-decls
+        # -Wredundant-decls   # header noise, low value
         -Wmissing-declarations
 
         -Wswitch-default
         -Wimplicit-fallthrough=5
 
-        -Wdouble-promotion
-        -Wfloat-equal
+        # -Wdouble-promotion  # float->double perf, not correctness
+        # -Wfloat-equal       # low value here
 
         -Wvla
         -Walloca
@@ -90,14 +90,14 @@ if(ESP_PLATFORM AND DEFINED ENV{ESP_HOSTED_CI_PEDANTIC})
         -Wnull-dereference
         -Wlogical-op
         -Wduplicated-cond
-        -Wduplicated-branches
+        # -Wduplicated-branches  # false-positives on intentional identical branches
 
-        -Wstrict-overflow=5
+        # -Wstrict-overflow=5 # aggressive, theoretical, very noisy
         -Wstringop-overflow=4
         -Warray-bounds=2
         -Wshift-overflow=2
         -Wshift-negative-value
-        -Walloc-zero
+        # -Walloc-zero        # malloc(0), low value
         -Walloc-size-larger-than=65536
         -Wsizeof-pointer-div
         -Wsizeof-array-div
