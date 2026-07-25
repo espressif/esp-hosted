@@ -32,6 +32,7 @@
 #define ESP_EXT_CAP_HOST_PS                       (1u << 10)
 #define ESP_EXT_CAP_NW_SPLIT                      (1u << 11)
 #define ESP_EXT_CAP_CUSTOM_RPC                    (1u << 12)
+#define EH_EXT_CAP_BT_INTERFACE                   (1u << 13)
 
 /* ── Tier 3: feat_caps[8] indices ──────────────────────────────────────── */
 /* Do not reuse indices; retired slots stay RSVD. */
