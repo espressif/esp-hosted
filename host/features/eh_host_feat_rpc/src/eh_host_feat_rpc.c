@@ -49,12 +49,12 @@ static int eh_rpc_wait_ready(uint32_t timeout_ms)
         return -1;
     }
 
-    uint64_t deadline = (esp_timer_get_time() / 1000) + timeout_ms;
+    uint64_t deadline = (uint64_t)(esp_timer_get_time() / 1000) + timeout_ms;
     while (!eh_rpc_link_ready()) {
         if (eh_rpc_is_inactive()) {
             return -1;
         }
-        if ((esp_timer_get_time() / 1000) >= deadline) {
+        if ((uint64_t)(esp_timer_get_time() / 1000) >= deadline) {
             return -1;
         }
         eh_host_port_task_delay_ms(10);

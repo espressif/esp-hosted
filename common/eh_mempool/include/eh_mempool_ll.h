@@ -110,7 +110,7 @@ struct os_mempool *os_mempool_info_get_next(struct os_mempool *,
         struct os_mempool_info *);
 
 /* Pool buffer size — in os_membuf_t units, NOT bytes. */
-#if (OS_CFG_ALIGNMENT == OS_CFG_ALIGN_4)
+#if (OS_ALIGNMENT == 4)
 #define OS_MEMPOOL_SIZE(n,blksize)      ((((blksize) + 3) / 4) * (n))
 typedef uint32_t os_membuf_t;
 #else

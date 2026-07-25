@@ -59,8 +59,8 @@ static void ehtc_utils_raw_tp_timer_func(void* arg)
 	/* Report decimal kbps to match host-side raw-TP logs. */
 	int32_t div = 1000;
 
-	actual_bandwidth_tx = (test_raw_tp_tx_len * 8.0) / TEST_RAW_TP__TIMEOUT;
-	actual_bandwidth_rx = (test_raw_tp_rx_len * 8.0) / TEST_RAW_TP__TIMEOUT;
+	actual_bandwidth_tx = ((double)test_raw_tp_tx_len * 8.0) / TEST_RAW_TP__TIMEOUT;
+	actual_bandwidth_rx = ((double)test_raw_tp_rx_len * 8.0) / TEST_RAW_TP__TIMEOUT;
 #if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 0, 0)
     ESP_LOGI(TAG,"%lu-%lu sec       Rx: %.2f Tx: %.2f kbps",
 	         (unsigned long)s_raw_tp_timer_count,
@@ -88,7 +88,7 @@ static void ehtc_utils_raw_tp_tx_task(void* pvParameters)
 	sleep(5);
 
 	raw_tp_tx_buf = tx_buf;
-	ptr = (uint32_t*)raw_tp_tx_buf;
+	ptr = (uint32_t *)(void *)raw_tp_tx_buf;
 	for (i=0; i<(TEST_RAW_TP__BUF_SIZE/4-1); i++, ptr++)
 		*ptr = 0xdeadbeef;
 

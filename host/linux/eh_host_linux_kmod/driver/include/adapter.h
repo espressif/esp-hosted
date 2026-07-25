@@ -117,7 +117,7 @@ typedef enum {
 	ESP_PRIV_EVENT_INIT = 0x22,
 } ESP_PRIV_EVENT_TYPE;
 
-/* Slave-to-host bootup TLV tags (carried in esp_priv_event payload). */
+/* Slave-to-host boot-up TLV tags (carried in esp_priv_event payload). */
 typedef enum {
 	ESP_PRIV_CAPABILITY        = 0x11, /* u8  */
 	ESP_PRIV_FIRMWARE_CHIP_ID  = 0x12, /* u8  */

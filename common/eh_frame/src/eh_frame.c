@@ -32,7 +32,7 @@ uint16_t eh_frame_checksum(const uint8_t *buf, uint16_t len)
     uint16_t sum = 0;
     uint16_t i;
     for (i = 0; i < len; i++)
-        sum += buf[i];
+        sum = (uint16_t)(sum + buf[i]);
     return sum;
 }
 
@@ -276,7 +276,7 @@ static eh_frame_result_t decode_v1(const uint8_t *buf,
     h->pkt_type     = hdr->priv_pkt_type;
     h->seq_num      = _from_le16(hdr->seq_num);
     h->payload_len  = len;
-    h->payload      = (uint8_t *)buf + offset;
+    h->payload      = (uint8_t *)(uintptr_t)buf + offset;
     h->throttle_cmd = hdr->throttle_cmd;
 
     return EH_FRAME_OK;
@@ -348,7 +348,7 @@ static eh_frame_result_t decode_v2(const uint8_t *buf,
     h->pkt_type     = hdr->priv_pkt_type;
     h->seq_num      = _from_le16(hdr->pkt_num);
     h->payload_len  = len;
-    h->payload      = (uint8_t *)buf + offset;
+    h->payload      = (uint8_t *)(uintptr_t)buf + offset;
     h->frag_seq     = hdr->frag_seq_num;
     h->tlv_offset   = hdr->tlv_offset;
 

@@ -14,6 +14,7 @@ extern "C" {
 
 #include "eh_host_port_master_config.h"
 #include "eh_host_mcu_transport.h"
+#include "eh_host_bus.h"
 
 /* Wire-notify slave on wake-from-PS. State half lives in feat_power_save. */
 static inline int eh_host_mcu_transport_bus_notify_slave_ps_exit(void)
@@ -58,7 +59,6 @@ int eh_host_bus_init(void);
 int eh_host_bus_deinit(void);
 int eh_host_bus_tx(interface_buffer_handle_t *bh);
 
-int eh_host_bus_is_tx_ready(void);
 
 /* PS coordination: weak default returns -ENOSYS for buses without impl. */
 int eh_host_bus_inform_slave_ps_enter(void);

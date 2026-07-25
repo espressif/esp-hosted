@@ -14,7 +14,7 @@
 #include "eh_host_port_task.h"
 #include "esp_log.h"
 
-/* Pre-creates lifecycle mutexes before the task spawns; defined in eh_host_core.c. */
+/* Defined in eh_host_core.c; pre-creates lifecycle mutexes before the task spawns. */
 void eh_host_core_lifecycle_locks_init(void);
 
 static eh_host_port_sem_t *s_auto_init_sem;
@@ -33,6 +33,7 @@ static void eh_host_auto_init_task(void *arg)
     }
 }
 
+void eh_host_auto_init_ctor(void);
 __attribute__((constructor))
 void eh_host_auto_init_ctor(void)
 {

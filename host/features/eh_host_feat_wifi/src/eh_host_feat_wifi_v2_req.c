@@ -143,16 +143,16 @@ static int compose_req_wifi_set_config(Rpc *rpc, const eh_rpc_ctrl_cmd_t *c,
         w->u_case = WIFI_CONFIG__U_STA;
         w->sta = sta;
 
-        sta->ssid.data     = (uint8_t *)cfg->ssid;
+        sta->ssid.data     = (uint8_t *)(uintptr_t)cfg->ssid;
         sta->ssid.len      = cfg->ssid_len ? cfg->ssid_len
                                            : strnlen((const char *)cfg->ssid,
                                                      EH_RPC_SSID_LEN);
-        sta->password.data = (uint8_t *)cfg->password;
+        sta->password.data = (uint8_t *)(uintptr_t)cfg->password;
         sta->password.len  = strnlen((const char *)cfg->password,
                                      EH_RPC_PASSWORD_LEN);
         sta->bssid_set     = cfg->bssid_set;
         if (cfg->bssid_set) {
-            sta->bssid.data = (uint8_t *)cfg->bssid;
+            sta->bssid.data = (uint8_t *)(uintptr_t)cfg->bssid;
             sta->bssid.len  = EH_RPC_MAC_LEN;
         }
         sta->channel         = cfg->channel;
@@ -185,7 +185,7 @@ static int compose_req_wifi_set_config(Rpc *rpc, const eh_rpc_ctrl_cmd_t *c,
         sta->sae_pk_mode       = cfg->sae_pk_mode;
         sta->failure_retry_cnt = cfg->failure_retry_cnt;
         if (cfg->sae_h2e_identifier_len) {
-            sta->sae_h2e_identifier.data = (uint8_t *)cfg->sae_h2e_identifier;
+            sta->sae_h2e_identifier.data = (uint8_t *)(uintptr_t)cfg->sae_h2e_identifier;
             sta->sae_h2e_identifier.len  = cfg->sae_h2e_identifier_len;
         }
     } else if (cfg->iface == 1 /* WIFI_IF_AP */) {
@@ -195,9 +195,9 @@ static int compose_req_wifi_set_config(Rpc *rpc, const eh_rpc_ctrl_cmd_t *c,
         w->u_case = WIFI_CONFIG__U_AP;
         w->ap = ap;
 
-        ap->ssid.data     = (uint8_t *)cfg->ssid;
+        ap->ssid.data     = (uint8_t *)(uintptr_t)cfg->ssid;
         ap->ssid.len      = cfg->ssid_len;
-        ap->password.data = (uint8_t *)cfg->password;
+        ap->password.data = (uint8_t *)(uintptr_t)cfg->password;
         ap->password.len  = strnlen((const char *)cfg->password,
                                     EH_RPC_PASSWORD_LEN);
         ap->ssid_len        = cfg->ssid_len;
@@ -255,7 +255,7 @@ static int compose_req_set_country_code(Rpc *rpc, const eh_rpc_ctrl_cmd_t *c,
 {
     ALLOC_PAYLOAD(RpcReqWifiSetCountryCode, req_wifi_set_country_code,
                   rpc__req__wifi_set_country_code__init);
-    p->country.data = (uint8_t *)c->u.country_code.cc;
+    p->country.data = (uint8_t *)(uintptr_t)c->u.country_code.cc;
     p->country.len  = strnlen((const char *)c->u.country_code.cc,
                               EH_RPC_COUNTRY_CC_LEN);
     p->ieee80211d_enabled = c->u.country_code.ieee80211d_enabled;
@@ -277,7 +277,7 @@ static int compose_req_set_country(Rpc *rpc, const eh_rpc_ctrl_cmd_t *c,
     WifiCountry *cc = (WifiCountry *)rpc_ext_v2_tracked_calloc(trk, sizeof(*cc));
     if (!cc) return -1;
     wifi_country__init(cc);
-    cc->cc.data       = (uint8_t *)c->u.wifi_country.cc;
+    cc->cc.data       = (uint8_t *)(uintptr_t)c->u.wifi_country.cc;
     cc->cc.len        = strnlen((const char *)c->u.wifi_country.cc,
                                 EH_RPC_COUNTRY_CC_LEN);
     cc->schan         = c->u.wifi_country.schan;
@@ -538,7 +538,7 @@ static int compose_req_wifi_ap_get_sta_aid(Rpc *rpc, const eh_rpc_ctrl_cmd_t *c,
     ALLOC_PAYLOAD(RpcReqWifiApGetStaAid, req_wifi_ap_get_sta_aid,
                   rpc__req__wifi_ap_get_sta_aid__init);
     /* Pointer-borrow inline 6B buffer; rpc__pack copies. */
-    p->mac.data = (uint8_t *)c->u.wifi_cfg.bssid;
+    p->mac.data = (uint8_t *)(uintptr_t)c->u.wifi_cfg.bssid;
     p->mac.len  = EH_RPC_MAC_LEN;
     return 0;
 }

@@ -17,8 +17,6 @@ extern "C" {
 
 #if EH_HOST_TRANSPORT_BUS_SDIO
 struct eh_host_sdio_config;
-struct eh_host_sdio_config eh_host_get_default_sdio_config(void);
-struct eh_host_sdio_config eh_host_get_default_sdio_iomux_config(void);
 #endif
 
 #if EH_HOST_TRANSPORT_BUS_SPI
@@ -28,7 +26,6 @@ struct eh_host_spi_config eh_host_get_default_spi_config(void);
 
 #if EH_HOST_TRANSPORT_BUS_SPI_HD
 struct eh_host_spi_hd_config;
-struct eh_host_spi_hd_config eh_host_get_default_spi_hd_config(void);
 #endif
 
 #if EH_HOST_TRANSPORT_BUS_UART

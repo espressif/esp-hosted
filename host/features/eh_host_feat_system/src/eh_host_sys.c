@@ -13,6 +13,7 @@
 #include "eh_host_feat_rpc_ext_v2.h"
 #include "eh_host_feat_rpc_ext_v2_types.h"
 #include "eh_host_feat_rpc.h"
+#include "eh_host_feat_system.h"
 #include "gen_v2.h"
 
 #include "eh_host_sys.h"

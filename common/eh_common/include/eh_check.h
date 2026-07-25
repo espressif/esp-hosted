@@ -17,6 +17,15 @@ void eh_check_failed(esp_err_t rc, const char *file, int line,
     __attribute__((__noreturn__));
 void eh_check_failed_warn(esp_err_t rc, const char *file, int line,
                           const char *function, const char *expression);
+void eh_check_narrow_warn(long long val, const char *what, const char *function);
+
+/* Cast to a smaller type and warn if data is lost. */
+#define EH_ASSIGN_NARROW(dst, src) do {                                        \
+        __typeof__(src) _eh_ns = (src);                                        \
+        (dst) = (__typeof__(dst))_eh_ns;                                       \
+        if ((__typeof__(src))(dst) != _eh_ns)                                  \
+            eh_check_narrow_warn((long long)(_eh_ns), #dst, __func__);         \
+    } while (0)
 
 static inline bool eh_check_rc_in(esp_err_t rc, size_t n,
                                   const esp_err_t *allowed)
@@ -28,7 +37,7 @@ static inline bool eh_check_rc_in(esp_err_t rc, size_t n,
 }
 
 #define EH_CHECK_OK(x, ...) do {                                            \
-        esp_err_t err_rc_ = (esp_err_t)(x);                                 \
+        esp_err_t err_rc_ = (x);                                            \
         static const esp_err_t _eh_allowed_[] =                             \
             { ESP_OK, ##__VA_ARGS__ };                                      \
         if (unlikely(!eh_check_rc_in(err_rc_,                               \
@@ -39,8 +48,8 @@ static inline bool eh_check_rc_in(esp_err_t rc, size_t n,
         }                                                                   \
     } while (0)
 
-#define EH_CHECK_OK_WARN(x, ...) ({                                         \
-        esp_err_t err_rc_ = (esp_err_t)(x);                                 \
+#define EH_CHECK_OK_WARN(x, ...) do {                                       \
+        esp_err_t err_rc_ = (x);                                            \
         static const esp_err_t _eh_allowed_[] =                             \
             { ESP_OK, ##__VA_ARGS__ };                                      \
         if (unlikely(!eh_check_rc_in(err_rc_,                               \
@@ -49,5 +58,4 @@ static inline bool eh_check_rc_in(esp_err_t rc, size_t n,
             eh_check_failed_warn(err_rc_, __FILE__, __LINE__,               \
                                  __func__, #x);                             \
         }                                                                   \
-        err_rc_;                                                            \
-    })
+    } while (0)

@@ -33,7 +33,7 @@ static inline uint16_t eh_tlv_builder_len(const eh_tlv_builder_t *b)
 
 static inline int eh_tlv_add_u8(eh_tlv_builder_t *b, uint8_t tag, uint8_t val)
 {
-    if (b->pos + 3 > b->max_len)
+    if (b->pos + 3u > b->max_len)
         return -1;
     b->buf[b->pos++] = tag;
     b->buf[b->pos++] = 1;
@@ -43,14 +43,14 @@ static inline int eh_tlv_add_u8(eh_tlv_builder_t *b, uint8_t tag, uint8_t val)
 
 static inline int eh_tlv_add_u32_le(eh_tlv_builder_t *b, uint8_t tag, uint32_t val)
 {
-    if (b->pos + 6 > b->max_len)
+    if (b->pos + 6u > b->max_len)
         return -1;
     b->buf[b->pos++] = tag;
     b->buf[b->pos++] = 4;
     b->buf[b->pos++] = (val)       & 0xff;
     b->buf[b->pos++] = (val >> 8)  & 0xff;
     b->buf[b->pos++] = (val >> 16) & 0xff;
-    b->buf[b->pos++] = (val >> 24) & 0xff;
+    b->buf[b->pos++] = (uint8_t)(val >> 24);
     return 0;
 }
 
@@ -62,7 +62,7 @@ static inline int eh_tlv_add_buf(eh_tlv_builder_t *b, uint8_t tag,
     b->buf[b->pos++] = tag;
     b->buf[b->pos++] = data_len;
     memcpy(&b->buf[b->pos], data, data_len);
-    b->pos += data_len;
+    b->pos = (uint16_t)(b->pos + data_len);
     return 0;
 }
 
@@ -75,7 +75,7 @@ static inline int eh_tlv_add_str(eh_tlv_builder_t *b, uint8_t tag, const char *s
 static inline int eh_tlv_add_u32_array_le(eh_tlv_builder_t *b, uint8_t tag,
                                           const uint32_t *arr, uint8_t count)
 {
-    uint16_t byte_len = (uint16_t)count * 4u;
+    uint16_t byte_len = (uint16_t)(count * 4u);
     if (byte_len > UINT8_MAX)
         return -1;
     if (b->pos + 2 + byte_len > b->max_len)
@@ -86,7 +86,7 @@ static inline int eh_tlv_add_u32_array_le(eh_tlv_builder_t *b, uint8_t tag,
         b->buf[b->pos++] = (arr[i])       & 0xff;
         b->buf[b->pos++] = (arr[i] >> 8)  & 0xff;
         b->buf[b->pos++] = (arr[i] >> 16) & 0xff;
-        b->buf[b->pos++] = (arr[i] >> 24) & 0xff;
+        b->buf[b->pos++] = (uint8_t)(arr[i] >> 24);
     }
     return 0;
 }
@@ -110,7 +110,7 @@ static inline int eh_tlv_read_next(eh_tlv_parser_t *p,
                                    uint8_t *tag, const uint8_t **val,
                                    uint8_t *val_len)
 {
-    if (p->pos + 2 > p->len)
+    if (p->pos + 2u > p->len)
         return -1;
     uint8_t t = p->buf[p->pos];
     uint8_t l = p->buf[p->pos + 1];
@@ -119,7 +119,7 @@ static inline int eh_tlv_read_next(eh_tlv_parser_t *p,
     *tag     = t;
     *val     = &p->buf[p->pos + 2];
     *val_len = l;
-    p->pos  += 2 + l;
+    p->pos  = (uint16_t)(p->pos + 2 + l);
     return 0;
 }
 
@@ -141,7 +141,7 @@ static inline uint32_t eh_tlv_val_u32_le(const uint8_t *val, uint8_t val_len)
 static inline int eh_tlv_val_u32_array_le(const uint8_t *val, uint8_t val_len,
                                           uint32_t *arr, uint8_t count)
 {
-    uint16_t byte_len = (uint16_t)count * 4u;
+    uint16_t byte_len = (uint16_t)(count * 4u);
     if (byte_len > UINT8_MAX || val_len < byte_len)
         return -1;
     for (uint8_t i = 0; i < count; i++) {

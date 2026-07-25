@@ -19,6 +19,7 @@
 #include "freertos/semphr.h"
 
 #include "eh_cp_feat_rpc.h"
+#include "eh_cp_feat_rpc_ll.h"
 #include "eh_log.h"
 
 static const char TAG[] = "ehcp_rpc_reg";
@@ -258,7 +259,7 @@ esp_err_t eh_cp_rpc_dispatch_req(uint32_t msg_id,
     for (size_t i = 0; i < s_req_count; i++) {
         ESP_LOGW(TAG, "  [%zu] [0x%04x .. 0x%04x] handler=%p",
                  i, s_req_table[i].id_min, s_req_table[i].id_max,
-                 (void *)s_req_table[i].handler);
+                 (void *)(uintptr_t)s_req_table[i].handler);
     }
     eh_cp_rpc_registry_unlock();
     return ESP_ERR_NOT_FOUND;

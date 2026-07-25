@@ -21,6 +21,8 @@
 
 extern esp_err_t __real_esp_netif_init(void);
 extern esp_err_t __real_esp_event_loop_create_default(void);
+esp_err_t __wrap_esp_netif_init(void);
+esp_err_t __wrap_esp_event_loop_create_default(void);
 
 esp_err_t __wrap_esp_netif_init(void)
 {

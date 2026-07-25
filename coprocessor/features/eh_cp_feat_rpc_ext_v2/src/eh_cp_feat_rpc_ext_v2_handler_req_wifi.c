@@ -415,6 +415,7 @@ static wifi_init_config_t * get_merged_init_config(wifi_init_config_t *dst_confi
 
 
 /* Caches config; if changed and Wi-Fi up, stops/deinits before re-init. */
+esp_err_t __wrap_esp_wifi_init(const wifi_init_config_t *config);
 esp_err_t __wrap_esp_wifi_init(const wifi_init_config_t *config)
 {
 	esp_err_t ret;
@@ -641,14 +642,14 @@ esp_err_t req_wifi_set_config(Rpc *req, Rpc *resp, void *priv_data)
 		if (p_a_sta->bssid_set)
 			RPC_REQ_COPY_BYTES(p_a_sta->bssid, p_c_sta->bssid, BSSID_BYTES_SIZE);
 
-		p_a_sta->channel = p_c_sta->channel;
-		p_a_sta->listen_interval = p_c_sta->listen_interval;
+		EH_ASSIGN_NARROW(p_a_sta->channel, p_c_sta->channel);
+		EH_ASSIGN_NARROW(p_a_sta->listen_interval, p_c_sta->listen_interval);
 		p_a_sta->sort_method = p_c_sta->sort_method;
 		if (p_c_sta->threshold) {
-			p_a_sta->threshold.rssi = p_c_sta->threshold->rssi;
+			EH_ASSIGN_NARROW(p_a_sta->threshold.rssi, p_c_sta->threshold->rssi);
 			p_a_sta->threshold.authmode = p_c_sta->threshold->authmode;
 #if EH_CP_IDF_GE_5_4
-			p_a_sta->threshold.rssi_5g_adjustment = p_c_sta->threshold->rssi_5g_adjustment;
+			EH_ASSIGN_NARROW(p_a_sta->threshold.rssi_5g_adjustment, p_c_sta->threshold->rssi_5g_adjustment);
 #endif
 		}
 		//p_a_sta->ssid_hidden = p_c_sta->ssid_hidden;
@@ -673,7 +674,7 @@ esp_err_t req_wifi_set_config(Rpc *req, Rpc *resp, void *priv_data)
 
 		p_a_sta->sae_pwe_h2e = p_c_sta->sae_pwe_h2e;
 		p_a_sta->sae_pk_mode = p_c_sta->sae_pk_mode;
-		p_a_sta->failure_retry_cnt = p_c_sta->failure_retry_cnt;
+		EH_ASSIGN_NARROW(p_a_sta->failure_retry_cnt, p_c_sta->failure_retry_cnt);
 
 		p_a_sta->he_dcm_set = EH_CP_GET_BIT(WIFI_STA_CONFIG_2_he_dcm_set_BIT, p_c_sta->he_bitmask);
 		/* WIFI_STA_CONFIG_2_he_dcm_max_constellation_tx is two bits wide */
@@ -715,15 +716,15 @@ esp_err_t req_wifi_set_config(Rpc *req, Rpc *resp, void *priv_data)
 		RPC_RET_FAIL_IF(!req_payload->cfg->ap);
 		/* esp_wifi_types.h says SSID should be NULL terminated if ssid_len is 0 */
 		RPC_REQ_COPY_STR(p_a_ap->ssid, p_c_ap->ssid, SSID_LENGTH);
-		p_a_ap->ssid_len = p_c_ap->ssid_len;
+		EH_ASSIGN_NARROW(p_a_ap->ssid_len, p_c_ap->ssid_len);
 		RPC_REQ_COPY_STR(p_a_ap->password, p_c_ap->password, PASSWORD_LENGTH);
-		p_a_ap->channel = p_c_ap->channel;
+		EH_ASSIGN_NARROW(p_a_ap->channel, p_c_ap->channel);
 		p_a_ap->authmode = p_c_ap->authmode;
-		p_a_ap->ssid_hidden = p_c_ap->ssid_hidden;
-		p_a_ap->max_connection = p_c_ap->max_connection;
-		p_a_ap->beacon_interval = p_c_ap->beacon_interval;
-		p_a_ap->csa_count = p_c_ap->csa_count;
-		p_a_ap->dtim_period = p_c_ap->dtim_period;
+		EH_ASSIGN_NARROW(p_a_ap->ssid_hidden, p_c_ap->ssid_hidden);
+		EH_ASSIGN_NARROW(p_a_ap->max_connection, p_c_ap->max_connection);
+		EH_ASSIGN_NARROW(p_a_ap->beacon_interval, p_c_ap->beacon_interval);
+		EH_ASSIGN_NARROW(p_a_ap->csa_count, p_c_ap->csa_count);
+		EH_ASSIGN_NARROW(p_a_ap->dtim_period, p_c_ap->dtim_period);
 		p_a_ap->pairwise_cipher = p_c_ap->pairwise_cipher;
 		p_a_ap->ftm_responder = p_c_ap->ftm_responder;
 		if (p_c_ap->pmf_cfg) {
@@ -735,12 +736,12 @@ esp_err_t req_wifi_set_config(Rpc *req, Rpc *resp, void *priv_data)
 		p_a_ap->transition_disable = p_c_ap->transition_disable;
 #endif
 #if EH_CP_IDF_GE_5_5
-		p_a_ap->sae_ext = p_c_ap->sae_ext;
+		p_a_ap->sae_ext = (p_c_ap->sae_ext);
 		if (p_c_ap->bss_max_idle_cfg) {
-			p_a_ap->bss_max_idle_cfg.period = p_c_ap->bss_max_idle_cfg->period;
+			EH_ASSIGN_NARROW(p_a_ap->bss_max_idle_cfg.period, p_c_ap->bss_max_idle_cfg->period);
 			p_a_ap->bss_max_idle_cfg.protected_keep_alive = p_c_ap->bss_max_idle_cfg->protected_keep_alive;
 		}
-		p_a_ap->gtk_rekey_interval = p_c_ap->gtk_rekey_interval;
+		EH_ASSIGN_NARROW(p_a_ap->gtk_rekey_interval, p_c_ap->gtk_rekey_interval);
 #endif
 
 		RPC_RET_FAIL_IF(esp_wifi_set_config(req_payload->iface, &cfg));
@@ -1011,7 +1012,7 @@ esp_err_t req_wifi_scan_start(Rpc *req, Rpc *resp, void *priv_data)
 		if (p_c->bssid.len)
 			p_a->bssid = p_c->bssid.data;
 
-		p_a->channel = p_c->channel;
+		EH_ASSIGN_NARROW(p_a->channel, p_c->channel);
 		p_a->show_hidden = p_c->show_hidden;
 		p_a->scan_type = p_c->scan_type;
 
@@ -1024,10 +1025,10 @@ esp_err_t req_wifi_scan_start(Rpc *req, Rpc *resp, void *priv_data)
 		p_a_st->active.min = p_c_st->active->min ;
 		p_a_st->active.max = p_c_st->active->max ;
 
-		p_a->home_chan_dwell_time = p_c->home_chan_dwell_time;
+		EH_ASSIGN_NARROW(p_a->home_chan_dwell_time, p_c->home_chan_dwell_time);
 
 		if (p_c->channel_bitmap) {
-			p_a->channel_bitmap.ghz_2_channels = p_c->channel_bitmap->ghz_2_channels;
+			EH_ASSIGN_NARROW(p_a->channel_bitmap.ghz_2_channels, p_c->channel_bitmap->ghz_2_channels);
 			p_a->channel_bitmap.ghz_5_channels = p_c->channel_bitmap->ghz_5_channels;
 		}
 	}
@@ -1236,7 +1237,7 @@ esp_err_t req_wifi_scan_get_ap_records(Rpc *req, Rpc *resp, void *priv_data)
 			RpcReqWifiScanGetApRecords, req_wifi_scan_get_ap_records,
 			rpc__resp__wifi_scan_get_ap_records__init);
 
-	number = req->req_wifi_scan_get_ap_records->number;
+	EH_ASSIGN_NARROW(number, req->req_wifi_scan_get_ap_records->number);
 	ESP_LOGD(TAG,"n_elem_scan_list predicted: %u\n", number);
 
 	p_a_ap_list = (wifi_ap_record_t *)calloc(number, sizeof(wifi_ap_record_t));
@@ -1456,9 +1457,9 @@ esp_err_t req_wifi_set_country(Rpc *req, Rpc *resp, void *priv_data)
 	wifi_country_t country = {0};
 	WifiCountry * p_c_country = req_payload->country;
 	RPC_REQ_COPY_BYTES(&country.cc[0], p_c_country->cc, sizeof(country.cc));
-	country.schan        = p_c_country->schan;
-	country.nchan        = p_c_country->nchan;
-	country.max_tx_power = p_c_country->max_tx_power;
+	EH_ASSIGN_NARROW(country.schan, p_c_country->schan);
+	EH_ASSIGN_NARROW(country.nchan, p_c_country->nchan);
+	EH_ASSIGN_NARROW(country.max_tx_power, p_c_country->max_tx_power);
 	country.policy       = p_c_country->policy;
 
 	RPC_RET_FAIL_IF(esp_wifi_set_country(&country));
@@ -1473,10 +1474,11 @@ esp_err_t req_wifi_get_country(Rpc *req, Rpc *resp, void *priv_data)
 			rpc__resp__wifi_get_country__init);
 
 	wifi_country_t country = {0};
+	WifiCountry * p_c_country;
 	RPC_RET_FAIL_IF(esp_wifi_get_country(&country));
 
 	RPC_ALLOC_ELEMENT(WifiCountry, resp_payload->country, wifi_country__init);
-	WifiCountry * p_c_country = resp_payload->country;
+	p_c_country = resp_payload->country;
 	RPC_RESP_COPY_BYTES(p_c_country->cc, &country.cc[0], sizeof(country.cc));
 	p_c_country->schan        = country.schan;
 	p_c_country->nchan        = country.nchan;
@@ -1494,10 +1496,11 @@ esp_err_t req_wifi_ap_get_sta_list(Rpc *req, Rpc *resp, void *priv_data)
 			rpc__resp__wifi_ap_get_sta_list__init);
 
 	wifi_sta_list_t sta;
+	WifiStaList * p_c_sta_list;
 	RPC_RET_FAIL_IF(esp_wifi_ap_get_sta_list(&sta));
 
 	RPC_ALLOC_ELEMENT(WifiStaList, resp_payload->sta_list, wifi_sta_list__init);
-	WifiStaList * p_c_sta_list = resp_payload->sta_list;
+	p_c_sta_list = resp_payload->sta_list;
 
 	resp_payload->sta_list->sta = (WifiStaInfo**)calloc(ESP_WIFI_MAX_CONN_NUM, sizeof(WifiStaInfo *));
 	if (!resp_payload->sta_list->sta) {
@@ -1615,8 +1618,8 @@ esp_err_t req_wifi_set_protocols(Rpc *req, Rpc *resp, void *priv_data)
 	resp_payload->ifx = ifx;
 
 	wifi_protocols_t protocols;
-	protocols.ghz_2g = req_payload->protocols->ghz_2g;
-	protocols.ghz_5g = req_payload->protocols->ghz_5g;
+	EH_ASSIGN_NARROW(protocols.ghz_2g, req_payload->protocols->ghz_2g);
+	EH_ASSIGN_NARROW(protocols.ghz_5g, req_payload->protocols->ghz_5g);
 
 	ESP_LOGI(TAG, "set protocols: ghz_2g %d, ghz_5g %d", protocols.ghz_2g, protocols.ghz_5g);
 
@@ -1849,7 +1852,7 @@ esp_err_t req_wifi_scan_params(Rpc *req, Rpc *resp, void *priv_data)
 			config.scan_time.passive = req_payload->config->scan_time->passive;
 			config.scan_time.active.min = req_payload->config->scan_time->active->min;
 			config.scan_time.active.max = req_payload->config->scan_time->active->max;
-			config.home_chan_dwell_time = req_payload->config->home_chan_dwell_time;
+			EH_ASSIGN_NARROW(config.home_chan_dwell_time, req_payload->config->home_chan_dwell_time);
 			ESP_LOGI(TAG, "rpc_wifi_scan_params_set: passive [%" PRIu32 "], active_min [%" PRIu32 "], active_max [%" PRIu32 "], home_chan_dwell_time [%" PRIu8 "]",
 				config.scan_time.passive, config.scan_time.active.min, config.scan_time.active.max, config.home_chan_dwell_time);
 			p_config = &config;
@@ -2306,10 +2309,10 @@ esp_err_t req_wifi_sta_itwt_setup(Rpc *req, Rpc *resp, void *priv_data)
 #if EH_CP_DECODE_WIFI_RESERVED_FIELD
 	p_a_cfg->reserved = WIFI_ITWT_CONFIG_1_GET_RESERVED_VAL(p_c_cfg->bitmask_1);
 #endif
-	p_a_cfg->min_wake_dura = p_c_cfg->min_wake_dura;
-	p_a_cfg->wake_invl_mant = p_c_cfg->wake_invl_mant;
-	p_a_cfg->twt_id = p_c_cfg->twt_id;
-	p_a_cfg->timeout_time_ms = p_c_cfg->timeout_time_ms;
+	EH_ASSIGN_NARROW(p_a_cfg->min_wake_dura, p_c_cfg->min_wake_dura);
+	EH_ASSIGN_NARROW(p_a_cfg->wake_invl_mant, p_c_cfg->wake_invl_mant);
+	EH_ASSIGN_NARROW(p_a_cfg->twt_id, p_c_cfg->twt_id);
+	EH_ASSIGN_NARROW(p_a_cfg->timeout_time_ms, p_c_cfg->timeout_time_ms);
 
 	RPC_RET_FAIL_IF(esp_wifi_sta_itwt_setup(&cfg));
 

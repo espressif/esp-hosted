@@ -19,6 +19,8 @@
 #include "eh_cp.h"
 #include "eh_cp_event.h"
 #include "eh_cp_feat_wifi_event.h"
+#include "eh_cp_feat_wifi.h"
+#include "eh_cp_feat_wifi_event_publisher.h"
 #include "eh_check.h"
 
 ESP_EVENT_DEFINE_BASE(EH_CP_FEAT_WIFI_EVENT);
@@ -43,6 +45,7 @@ static bool s_last_sta_connected_valid = false;
 static bool s_pending_connect_on_start = false;
 
 esp_err_t __real_esp_wifi_connect(void);
+esp_err_t __wrap_esp_wifi_connect(void);
 
 esp_err_t __wrap_esp_wifi_connect(void)
 {
@@ -226,7 +229,8 @@ esp_err_t eh_cp_feat_wifi_request_connect_with_config(const wifi_config_t *cfg)
 		return eh_cp_feat_wifi_request_disconnect(true);
 	}
 
-	if (esp_wifi_set_config(WIFI_IF_STA, (wifi_config_t *)cfg) != ESP_OK) {
+	wifi_config_t applied = *cfg;
+	if (esp_wifi_set_config(WIFI_IF_STA, &applied) != ESP_OK) {
 		ESP_LOGW(TAG, "Failed to set config immediately; caching");
 		eh_cp_feat_wifi_set_pending_sta_config(cfg, true);
 		return ESP_FAIL;
@@ -257,14 +261,15 @@ esp_err_t eh_cp_feat_wifi_set_sta_config(wifi_interface_t iface, const wifi_conf
 		changed = (memcmp(&current_cfg, cfg, sizeof(wifi_config_t)) != 0);
 	}
 
-	if (esp_wifi_set_config(iface, (wifi_config_t *)cfg) != ESP_OK) {
+	wifi_config_t applied = *cfg;
+	if (esp_wifi_set_config(iface, &applied) != ESP_OK) {
 		ESP_LOGW(TAG, "failed to set wifi config, caching instead");
 		s_sta_reconnect_required = true;
 		return eh_cp_feat_wifi_set_pending_sta_config(cfg, true);
 	}
 
 	ESP_LOGW(TAG, "Applied WiFi config SSID: %.*s",
-			sizeof(cfg->sta.ssid), (const char *)cfg->sta.ssid);
+			(int)sizeof(cfg->sta.ssid), (const char *)cfg->sta.ssid);
 	if (iface == WIFI_IF_STA) {
 		s_sta_reconnect_required = changed;
 	}

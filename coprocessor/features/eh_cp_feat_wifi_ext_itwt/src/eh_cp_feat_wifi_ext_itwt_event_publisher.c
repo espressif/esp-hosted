@@ -47,6 +47,9 @@ static void itwt_event_handler(void *arg, esp_event_base_t event_base,
     }
 }
 
+esp_err_t eh_cp_wifi_itwt_event_publisher_init(void);
+esp_err_t eh_cp_wifi_itwt_event_publisher_deinit(void);
+
 esp_err_t eh_cp_wifi_itwt_event_publisher_init(void)
 {
     int ret = 0;

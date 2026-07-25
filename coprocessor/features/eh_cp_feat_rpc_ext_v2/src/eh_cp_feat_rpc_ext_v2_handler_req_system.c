@@ -491,10 +491,13 @@ esp_err_t req_app_get_desc(Rpc *req, Rpc *resp, void *priv_data)
 			RpcReqAppGetDesc, req_app_get_desc,
 			rpc__resp__app_get_desc__init);
 
-	RPC_ALLOC_ELEMENT(EspAppDesc, resp_payload->app_desc, esp_app_desc__init);
-	EspAppDesc *p_c = resp_payload->app_desc;
+	EspAppDesc *p_c;
+	const esp_app_desc_t *app_desc;
 
-	const esp_app_desc_t *app_desc = esp_app_get_description();
+	RPC_ALLOC_ELEMENT(EspAppDesc, resp_payload->app_desc, esp_app_desc__init);
+	p_c = resp_payload->app_desc;
+
+	app_desc = esp_app_get_description();
 	if (app_desc) {
 		RPC_RESP_COPY_STR(p_c->project_name, app_desc->project_name, sizeof(app_desc->project_name));
 		RPC_RESP_COPY_STR(p_c->version, app_desc->version, sizeof(app_desc->version));
