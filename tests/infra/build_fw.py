@@ -106,8 +106,12 @@ def _fingerprint_roots(example_rel: str, role: str):
     common/ left a stale binary after editing examples/<ex>/common/*.c)."""
     src = _REPO / "examples" / example_rel / role
     ex_common = _REPO / "examples" / example_rel / "common"
+    # Shared example components (e.g. esp_hosted_hci_nimble) are pulled in via
+    # override_path; edits there must invalidate the cache too.
+    shared_components = _REPO / "examples" / "common_components"
     component = "coprocessor" if role == "cp" else "host"
-    return [src, ex_common, _REPO / component, _REPO / "common", _REPO / "port"]
+    return [src, ex_common, shared_components, _REPO / component,
+            _REPO / "common", _REPO / "port"]
 
 
 def _fingerprints(example_rel: str, role: str, target: str, overlay, inject=None):
