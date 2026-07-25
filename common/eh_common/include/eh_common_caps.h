@@ -60,6 +60,6 @@
 #define EH_PRIV_FIRMWARE_CHIP_ESP32H4       0x1Cu
 
 /* Bump when any bit above changes. */
-#define EH_CAPS_VERSION                   1u
+#define EH_CAPS_VERSION                   2u
 
 #endif /* EH_COMMON_CAPS_H */
