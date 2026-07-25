@@ -158,13 +158,11 @@ def process(example, dry_run, out_dir=None):
     return results
 
 
-def top_readmes(skip_bluetooth=True):
+def top_readmes():
     for readme in sorted(EXAMPLES.rglob("README.md")):
         d = readme.parent
         parts = d.relative_to(EXAMPLES).parts
         if "managed_components" in parts or "components" in parts:
-            continue
-        if skip_bluetooth and parts and parts[0] == "bluetooth":
             continue
         if (d / "cp").is_dir() or (d / "mcu_host").is_dir() or (d / "esp_host").is_dir():
             yield d
@@ -176,12 +174,11 @@ def main():
     ap.add_argument("--out", help="write generated files under this review dir "
                     "(mirrors repo paths) instead of in place")
     ap.add_argument("--example", help="one example dir (relative to repo root)")
-    ap.add_argument("--include-bluetooth", action="store_true")
     args = ap.parse_args()
 
     out_dir = Path(args.out).resolve() if args.out else None
     targets = [REPO / args.example] if args.example \
-        else list(top_readmes(skip_bluetooth=not args.include_bluetooth))
+        else list(top_readmes())
 
     total = warned = 0
     for ex in targets:
