@@ -139,8 +139,11 @@ def process(example, dry_run, out_dir=None):
     cp_body, host_body, has_cp, has_host = slice_readme(text)
     title = title_of(text)
     out = []
-    if has_cp and (example / "cp").is_dir():
-        out.append((example / "cp" / "README.md", render(title, "Coprocessor", cp_body)))
+    if has_cp:
+        # cp/ and any cp_<variant>/ (e.g. cp_wifi) all publish the coprocessor block.
+        for role in sorted(example.iterdir()):
+            if role.is_dir() and (role.name == "cp" or role.name.startswith("cp_")):
+                out.append((role / "README.md", render(title, "Coprocessor", cp_body)))
     if has_host:
         hd = host_dir(example)
         if hd:

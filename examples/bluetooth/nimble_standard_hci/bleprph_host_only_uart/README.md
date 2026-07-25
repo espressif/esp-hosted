@@ -101,6 +101,27 @@ Then flash and monitor:
 ```bash
 eh.py -p <cp_usb_serial_port> flash monitor
 ```
+
+### CP variants: `cp/` vs `cp_wifi/`
+
+This scenario ships two co-processor firmwares — pick one:
+
+| CP role     | BT controller (UART-H4) | Hosted Wi-Fi (SDIO/SPI) | Flash this when… |
+| :---------- | :---------------------: | :---------------------: | :--------------- |
+| `cp/`       | Yes                     | No                      | the host needs Bluetooth only (this NimBLE demo) |
+| `cp_wifi/`  | Yes                     | Yes                     | the product **also** needs Wi-Fi served to the host over the hosted bus |
+
+`cp_wifi/` is byte-for-byte the same firmware as `cp/` except it enables the
+Wi-Fi CP feature:
+
+```text
+CONFIG_ESP_HOSTED_CP_FEAT_WIFI=y          # Wi-Fi stack on the CP (served to the host over SDIO/SPI)
+```
+
+Build it identically from `.../bleprph_host_only_uart/cp_wifi`. The NimBLE host
+app in this example uses Bluetooth only, so `cp_wifi`'s Wi-Fi is consumed by a
+separate hosted-Wi-Fi host app (any `wifi/*` mcu_host example) running over the
+hosted bus in parallel — the BT path stays on the dedicated UART either way.
 <!-- coprocessor-stop -->
 
 ## MCU host (NimBLE, application UART transport)
