@@ -8,6 +8,9 @@ init round-trip completes — so it is the "controller works" signal.
 
 Advertising is reachable with esp-emu's built-in virtual BLE controller (no
 external peer / --ble-hci). Connect + GATT would additionally need Bumble.
+
+Runs on every transport: SDIO carries the H4 type byte inside the frame header;
+UART/SPI-FD/SPI-HD re-frame it via eh_host_mcu_hci_take_type.
 """
 
 import pytest
@@ -19,8 +22,9 @@ ADVERTISING = r'advertising as '
 
 
 @pytest.mark.sanity
-def test_bt_nimble_advertising_sdio(bench):
-    """NimBLE host reaches advertising over the SDIO hosted transport."""
-    b = bench(BT_EXAMPLE, "mcu_host", "sdio", timeout="150s")
-    r = eh_test_expect(b["host"], ADVERTISING, fail=FATAL_PATTERNS, timeout=120)
-    assert r.ok, "host did not reach 'advertising as'"
+@pytest.mark.parametrize("transport", ["sdio", "uart", "spi_fd", "spi_hd"])
+def test_bt_nimble_advertising(bench, transport):
+    """NimBLE host reaches advertising over each hosted transport."""
+    b = bench(BT_EXAMPLE, "mcu_host", transport, timeout="180s")
+    r = eh_test_expect(b["host"], ADVERTISING, fail=FATAL_PATTERNS, timeout=150)
+    assert r.ok, f"host did not reach 'advertising as' on {transport}"
