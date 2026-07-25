@@ -16,6 +16,8 @@
 
 #include "esp_err.h"
 #include "esp_log.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
 
 #include "sdkconfig.h"
 
@@ -130,7 +132,18 @@ void ble_transport_ll_deinit(void) { }
 
 esp_err_t esp_hosted_hci_nimble_setup(void)
 {
-    esp_err_t err = esp_hosted_connect_to_slave();
+    /* The CP may still be booting when the host reaches here — the minimal BT
+     * app boots fast while the CP does full controller init, and slower-handshake
+     * transports (UART/SPI-HD) widen the gap. connect_to_slave is idempotent, so
+     * retry until the CP is ready instead of aborting on the first miss. */
+    esp_err_t err = ESP_FAIL;
+    for (int attempt = 0; attempt < 50; attempt++) {
+        err = esp_hosted_connect_to_slave();
+        if (err == ESP_OK) {
+            break;
+        }
+        vTaskDelay(pdMS_TO_TICKS(100));
+    }
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "connect_to_slave failed: %s", esp_err_to_name(err));
         return err;
