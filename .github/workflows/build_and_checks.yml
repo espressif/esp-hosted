@@ -26,15 +26,11 @@ jobs:
         shell: bash
         run: |
           python3 tools/check_changelog.py
-      # Report-only for now: Bluetooth + the power_save straggler conform, but ~24
-      # pre-existing non-BT READMEs still lack `<!-- tags -->`. Flip to blocking
-      # (drop `|| true`) once those are addressed. See
-      # .meta2/changes/example-structure-spec/acceptance.md.
-      - name: Example structure (report-only)
+      - name: Example structure gate
         shell: bash
         run: |
-          python3 tools/check_example_structure.py || true
-          python3 tools/check_override_path_depth.py || true
+          python3 tools/check_example_structure.py
+          python3 tools/check_override_path_depth.py
 
   pre_commit:
     name: pre-commit
