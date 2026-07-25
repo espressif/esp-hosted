@@ -12,6 +12,7 @@
 #include "driver/sdmmc_host.h"
 
 #include "esp_log.h"
+#include "esp_idf_version.h"
 
 #include "eh_host_port_master_config.h"
 #include "eh_host_port.h"
@@ -46,7 +47,7 @@ typedef struct  {
 	struct eh_host_sdio_config config;
 } sdmmc_context_t;
 
-static sdmmc_context_t context = { 0 };
+static sdmmc_context_t s_sdmmc_context = { 0 };
 
 static eh_host_port_mutex_t *sdio_bus_lock;
 
@@ -299,7 +300,14 @@ int eh_host_port_sdio_deinit(void* ctx)
 		sdio_bus_lock = NULL;
 	}
 
+	/* Deinit only our SDMMC slot; the host may be shared with an SD card.
+	 * Older IDF deinitializes the whole host (slot-only deinit is unavailable).
+	 */
+#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 4, 0)
+	sdmmc_host_deinit_slot(context->config.slot);
+#else
 	sdmmc_host_deinit();
+#endif
 
 	return ESP_OK;
 }
@@ -312,7 +320,7 @@ void * eh_host_port_sdio_init(void)
 	/* Guard against multiple initialization */
 	if (sdio_bus_lock) {
 		ESP_LOGW(TAG, "SDIO already initialized, skipping");
-		return (void *)&context;
+		return (void *)&s_sdmmc_context;
 	}
 
 	sdmmc_slot_config_t slot_config = SDMMC_SLOT_CONFIG_DEFAULT();
@@ -327,7 +335,7 @@ void * eh_host_port_sdio_init(void)
 
 				if (EH_HOST_TRANSPORT_RC_OK == eh_host_sdio_get_config(&psdio_config)) {
 					// copy transport config
-					memcpy(&context.config, psdio_config, sizeof(struct eh_host_sdio_config));
+					memcpy(&s_sdmmc_context.config, psdio_config, sizeof(struct eh_host_sdio_config));
 					got_valid_config = true;
 				}
 			} else {
@@ -337,15 +345,15 @@ void * eh_host_port_sdio_init(void)
 	}
 	if (!got_valid_config) {
 		// no valid transport config: use values from esp_hosted_config.h
-		context.config.clock_freq_khz = EH_HOST_PORT_SDIO_CLOCK_FREQ_KHZ;
-		context.config.bus_width      = EH_HOST_PORT_SDIO_BUS_WIDTH;
-		context.config.slot           = EH_HOST_PORT_SDMMC_HOST_SLOT;
-		context.config.pin_clk.pin    = EH_HOST_PORT_SDIO_PIN_CLK;
-		context.config.pin_cmd.pin    = EH_HOST_PORT_SDIO_PIN_CMD;
-		context.config.pin_d0.pin     = EH_HOST_PORT_SDIO_PIN_D0;
-		context.config.pin_d1.pin     = EH_HOST_PORT_SDIO_PIN_D1;
-		context.config.pin_d2.pin     = EH_HOST_PORT_SDIO_PIN_D2;
-		context.config.pin_d3.pin     = EH_HOST_PORT_SDIO_PIN_D3;
+		s_sdmmc_context.config.clock_freq_khz = EH_HOST_PORT_SDIO_CLOCK_FREQ_KHZ;
+		s_sdmmc_context.config.bus_width      = EH_HOST_PORT_SDIO_BUS_WIDTH;
+		s_sdmmc_context.config.slot           = EH_HOST_PORT_SDMMC_HOST_SLOT;
+		s_sdmmc_context.config.pin_clk.pin    = EH_HOST_PORT_SDIO_PIN_CLK;
+		s_sdmmc_context.config.pin_cmd.pin    = EH_HOST_PORT_SDIO_PIN_CMD;
+		s_sdmmc_context.config.pin_d0.pin     = EH_HOST_PORT_SDIO_PIN_D0;
+		s_sdmmc_context.config.pin_d1.pin     = EH_HOST_PORT_SDIO_PIN_D1;
+		s_sdmmc_context.config.pin_d2.pin     = EH_HOST_PORT_SDIO_PIN_D2;
+		s_sdmmc_context.config.pin_d3.pin     = EH_HOST_PORT_SDIO_PIN_D3;
 	}
 
 	// initialise SDMMC host
@@ -356,27 +364,27 @@ void * eh_host_port_sdio_init(void)
 	}
 
 	// configure SDIO interface and slot
-	slot_config.width = context.config.bus_width;
+	slot_config.width = s_sdmmc_context.config.bus_width;
 #if defined(EH_HOST_PORT_SDIO_SOC_USE_GPIO_MATRIX)
-	slot_config.clk = context.config.pin_clk.pin;
-	slot_config.cmd = context.config.pin_cmd.pin;
-	slot_config.d0  = context.config.pin_d0.pin;
-	slot_config.d1  = context.config.pin_d1.pin;
-	slot_config.d2  = context.config.pin_d2.pin;
-	slot_config.d3  = context.config.pin_d3.pin;
+	slot_config.clk = s_sdmmc_context.config.pin_clk.pin;
+	slot_config.cmd = s_sdmmc_context.config.pin_cmd.pin;
+	slot_config.d0  = s_sdmmc_context.config.pin_d0.pin;
+	slot_config.d1  = s_sdmmc_context.config.pin_d1.pin;
+	slot_config.d2  = s_sdmmc_context.config.pin_d2.pin;
+	slot_config.d3  = s_sdmmc_context.config.pin_d3.pin;
 #endif
 
-	eh_host_port_sdio_workaround(context.config.slot, &slot_config);
+	eh_host_port_sdio_workaround(s_sdmmc_context.config.slot, &slot_config);
 
-	res = sdmmc_host_init_slot(context.config.slot, &slot_config);
+	res = sdmmc_host_init_slot(s_sdmmc_context.config.slot, &slot_config);
 	if (res != ESP_OK) {
-		ESP_LOGE(TAG, "init SDMMC Host slot %d failed", context.config.slot);
+		ESP_LOGE(TAG, "init SDMMC Host slot %d failed", s_sdmmc_context.config.slot);
 		return NULL;
 	}
 
 	// initialise connected SDIO card/slave
-	context.card = (sdmmc_card_t *)malloc(sizeof(sdmmc_card_t));
-	if (!context.card) {
+	s_sdmmc_context.card = (sdmmc_card_t *)malloc(sizeof(sdmmc_card_t));
+	if (!s_sdmmc_context.card) {
 		ESP_LOGE(TAG, "Failed to allocate memory for SDMMC card");
 		return NULL;
 	}
@@ -385,7 +393,7 @@ void * eh_host_port_sdio_init(void)
 	sdio_bus_lock = eh_host_port_mutex_create();
 	assert(sdio_bus_lock);
 
-	return (void *)&context;
+	return (void *)&s_sdmmc_context;
 }
 
 int eh_host_port_sdio_card_init(void *ctx, bool show_config)
