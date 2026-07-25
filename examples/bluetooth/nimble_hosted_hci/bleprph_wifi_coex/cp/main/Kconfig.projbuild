@@ -1,0 +1,10 @@
+menu "Bluetooth CP wifi_hosted_hci"
+
+config EXAMPLE_WIFI_HOSTED_HCI_CP
+    bool "Enable Wi-Fi + BT(VHCI) CP profile"
+    default y
+    help
+      This example enables Wi-Fi and Bluetooth controller-only mode on CP,
+      with BT HCI carried over ESP-Hosted VHCI path.
+
+endmenu

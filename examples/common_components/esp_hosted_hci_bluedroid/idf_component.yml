@@ -1,0 +1,11 @@
+description: "ESP-Hosted Bluedroid HCI bridge — translates Bluedroid HCI driver hooks to ESP-Hosted HCI byte pipe."
+url: "https://github.com/espressif/esp-hosted"
+
+dependencies:
+  idf: ">=5.0"
+  # Bluedroid host stack is provided by IDF's `bt` component — pulled
+  # in via CMakeLists REQUIRES; no managed-component entry needed.
+  # ESP-Hosted core is referenced as a sibling component when used
+  # from within the esp_hosted repo via EXTRA_COMPONENT_DIRS; when
+  # used as a managed component, the example's main/idf_component.yml
+  # would pin espressif/esp_hosted directly.

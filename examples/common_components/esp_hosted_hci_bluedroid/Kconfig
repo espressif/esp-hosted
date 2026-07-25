@@ -1,0 +1,19 @@
+menu "ESP-Hosted Bluedroid bridge"
+
+config ESP_HOSTED_HCI_BLUEDROID_RX_SCRATCH_SIZE
+    int "RX scratch buffer size (bytes)"
+    default 1100
+    range 260 4096
+    help
+      RX scratch buffer for H4 restitching. Default 1100 fits both
+      HCI events (max 257) and ACL (max 1027) with headroom. Shrink
+      for event-only memory-constrained builds; grow if your profile
+      uses extended ACL.
+
+config ESP_HOSTED_HCI_BLUEDROID_DEBUG
+    bool "Enable bridge debug logs"
+    default n
+    help
+      Verbose logging in the bridge. Useful during bring-up.
+
+endmenu
