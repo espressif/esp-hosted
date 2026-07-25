@@ -11,7 +11,9 @@
 #include "esp_log.h"
 #include "esp_netif.h"
 #include "esp_netif_net_stack.h"
-#include "lwip/netif.h"
+#ifdef ESP_PLATFORM
+#include "lwip/netif.h"   /* netif->input peek — IDF/lwip only */
+#endif
 #include "esp_wifi.h"
 #include "esp_wifi_default.h"
 #include "esp_wifi_netif.h"
@@ -58,11 +60,24 @@ static void on_sta_disconnected(void *arg, esp_event_base_t base, int32_t id, vo
 #endif
 
 #if !CONFIG_ESP_HOSTED_HOST_FEAT_NW_SPLIT_NETIF_INTERNAL_DHCP
-/* lwip netif added (netif_add done, so netif->input is bound)? */
+/* Is the STA netif added and safe to up? Read the netif's real state via the
+ * esp_netif stack-impl accessor (implemented on both ports).
+ *   ESP_PLATFORM: lwip binds netif->input on netif_add, so a bound input means
+ *     truly added (robust to event interleaving; the wake-path crash fix).
+ *   Linux: the impl is non-NULL only once the netif is started (esp_netif_up on
+ *     STA_START) — no lwip struct, so no ->input deref.
+ * Alternative (kept commented, weaker): reuse wifi's start latch —
+ *     return eh_host_wifi_sta_netif_started();
+ *   it is set in the RPC task before STA_START is processed, so an intention
+ *   rather than the netif's real state. */
 static bool nw_split_netif_added(void)
 {
+#ifdef ESP_PLATFORM
     struct netif *impl = (struct netif *)esp_netif_get_netif_impl(s_state.netif);
     return impl && impl->input;
+#else
+    return esp_netif_get_netif_impl(s_state.netif) != NULL;
+#endif
 }
 
 static void on_cp_dhcp_status(void *arg, esp_event_base_t base, int32_t id, void *data)

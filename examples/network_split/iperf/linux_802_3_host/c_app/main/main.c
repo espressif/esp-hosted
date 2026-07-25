@@ -13,7 +13,7 @@
 #include "eh_host.h"
 #include "eh_host_core.h"
 #include "esp_check.h"
-#include "protocol_examples_common.h"
+#include "esp_hosted_examples_common.h"
 
 static const char *TAG = "network_split iperf";
 
@@ -31,7 +31,7 @@ int main(int argc, char **argv)
 
     ESP_ERROR_CHECK(esp_netif_init());
     ESP_ERROR_CHECK(esp_event_loop_create_default());
-    ESP_ERROR_CHECK(example_connect());
+    ESP_ERROR_CHECK(eh_example_connect());
 
     ESP_LOGI(TAG, "==================================================");
     ESP_LOGI(TAG, " | network_split / iperf scenario — host up.    |");

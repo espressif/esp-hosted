@@ -545,6 +545,13 @@ void eh_host_wifi_admit_rx(bool is_ap, bool admit)
     s_rx_admit[is_ap ? 1 : 0] = admit;
 }
 
+/* Shelved with the nw_split latch alternative (see eh_host_feat_nw_split.c):
+ * bool eh_host_wifi_sta_netif_started(void)
+ * {
+ *     return s_sta_netif_started;
+ * }
+ */
+
 static void wifi_sta_connected_handler(const void *ctrl_cmd, void *ctx)
 {
     (void)ctx;

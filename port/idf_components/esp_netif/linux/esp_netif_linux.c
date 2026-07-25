@@ -31,6 +31,7 @@
 #include "esp_netif.h"
 #include "esp_netif_linux.h"
 #include "esp_netif_types.h"
+#include "esp_netif_net_stack.h"
 
 /* ── Constants ───────────────────────────────────────────────────────── */
 
@@ -1133,6 +1134,16 @@ esp_err_t esp_netif_tcpip_exec(esp_netif_callback_fn fn, void *ctx)
 {
     if (!fn) return ESP_ERR_INVALID_ARG;
     return fn(ctx);
+}
+
+/* ── Stack impl accessor ─────────────────────────────────────────────── */
+
+void *esp_netif_get_netif_impl(esp_netif_t *n)
+{
+    /* Linux has no separate stack-netif object; the esp_netif is its own impl.
+     * Report it only once started (esp_netif_up on STA_START) so callers can gate
+     * on "netif added" the way the lwip port gates on netif->input. */
+    return (n && n->up) ? n : NULL;
 }
 
 /* ── Stubs: impl-name, NAPT, hostname (not meaningful on kmod host) ─── */
