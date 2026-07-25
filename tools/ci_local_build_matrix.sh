@@ -13,12 +13,18 @@
 # Requires: docker (with enough disk for the IDF images) + this repo checked out.
 #
 # Usage:
-#   tools/ci_local_build_matrix.sh                                          # full spread
-#   tools/ci_local_build_matrix.sh --config-only                            # kconfig pass only (no compile)
-#   tools/ci_local_build_matrix.sh [--config-only] <idf_ver> <example_path> <target> [override]
+#   tools/ci_local_build_matrix.sh                              # full spread (console + log)
+#   tools/ci_local_build_matrix.sh --config-only               # kconfig pass only (no compile)
+#   tools/ci_local_build_matrix.sh [flags] <idf_ver> <example_path> <target> [override]
+#     flags: --config-only|-c   kconfig/configure pass only (no compile), for the pruner
+#            --console          write output to console only
+#            --log              write output to the log file only
+#            --both             write output to console AND log file (default)
 #     e.g. tools/ci_local_build_matrix.sh release-v5.5 examples/wifi/sta/cp esp32c6
 #          tools/ci_local_build_matrix.sh v5.5.1 examples/wifi/apsta/cp esp32c3 CONFIG_EH_TRANSPORT_CP_SPI=y
-#          tools/ci_local_build_matrix.sh --config-only 2>&1 | tee /tmp/eh.log   # then: eh_prune_stale_kconfig.py /tmp/eh.log
+#   Session output is logged to /tmp/eh_ci_build_matrix.log (overwritten each run;
+#   override path with EH_CI_LOG=/path). Then e.g.:
+#          tools/eh_prune_stale_kconfig.py /tmp/eh_ci_build_matrix.log
 
 set -u
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -125,15 +131,32 @@ run_cell() {
     "espressif/idf:${ver}" bash -lc "$(inner)" _ "${example}" "${target}" "${override}" "${CONFIG_ONLY:-0}"
 }
 
-# --config-only (-c): run the kconfig/configure pass only (no compilation) to
-# surface unknown-symbol warnings cheaply; pipe the output to
-# tools/eh_prune_stale_kconfig.py. Parsed here so the positional single-cell args
-# (ver example target [override]) still work after it.
+# Flags parsed here so the positional single-cell args (ver example target
+# [override]) still work after them. --config-only runs the kconfig/configure
+# pass only (no compile), for tools/eh_prune_stale_kconfig.py.
 CONFIG_ONLY=0
-if [ "${1:-}" = "--config-only" ] || [ "${1:-}" = "-c" ]; then
-  CONFIG_ONLY=1
-  shift
+OUTPUT_MODE=both
+while [ "$#" -gt 0 ]; do
+  case "${1:-}" in
+    --config-only|-c) CONFIG_ONLY=1; shift ;;
+    --console)        OUTPUT_MODE=console; shift ;;
+    --log)            OUTPUT_MODE=log; shift ;;
+    --both)           OUTPUT_MODE=both; shift ;;
+    *) break ;;
+  esac
+done
+
+# Session output: console / log / both (default). Log file is truncated (older
+# run replaced) each invocation; override the path with EH_CI_LOG.
+LOG_FILE="${EH_CI_LOG:-/tmp/eh_ci_build_matrix.log}"
+if [ "${OUTPUT_MODE}" != "console" ]; then
+  echo "[matrix] logging session output to ${LOG_FILE} (mode: ${OUTPUT_MODE})" >&2
 fi
+case "${OUTPUT_MODE}" in
+  log)  exec >"${LOG_FILE}" 2>&1 ;;
+  both) exec > >(tee "${LOG_FILE}") 2>&1 ;;
+  # console: no redirect
+esac
 
 if [ "$#" -ge 3 ]; then
   run_cell "$1" "$2" "$3" "${4:-}"; exit $?
