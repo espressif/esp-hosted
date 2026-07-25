@@ -113,3 +113,7 @@ if(CONFIG_ESP_HOSTED_HOST)
         target_link_libraries(eh_host INTERFACE esp_event)
     endif()
 endif()
+
+if(ESP_PLATFORM)
+    include("${EH_PATH}/tools/cmake/eh_ci_pedantic.cmake")
+endif()
