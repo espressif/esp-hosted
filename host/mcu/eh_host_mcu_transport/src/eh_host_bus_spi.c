@@ -14,6 +14,7 @@
 #include "eh_host_event.h"
 #include "eh_host_mcu_transport_priv.h"
 #include "eh_frame.h"
+#include "eh_host_mcu_hci_internal.h"
 #include "eh_common_header.h"
 
 #ifdef ESP_PLATFORM
@@ -240,7 +241,11 @@ static void eh_spi_rx_task(void *arg)
             continue;
         }
         if (h.payload && h.payload_len) {
-            eh_host_mcu_transport_dispatch_frame(&h);
+            if (h.if_type == ESP_HCI_IF) {
+                eh_host_mcu_hci_rx_deliver(h.payload, h.payload_len);
+            } else {
+                eh_host_mcu_transport_dispatch_frame(&h);
+            }
         }
     }
 
@@ -511,9 +516,22 @@ int eh_host_bus_tx(interface_buffer_handle_t *bh)
         if (bh && bh->free_buf_handle) bh->free_buf_handle(bh->priv_buffer_handle);
         return -1;
     }
-    const uint8_t *buf = bh->payload - sizeof(struct esp_payload_header);
-    size_t len = (size_t)bh->payload_len + sizeof(struct esp_payload_header);
+    const uint8_t *buf = bh->payload - eh_frame_hdr_size();
+    size_t len = (size_t)bh->payload_len + eh_frame_hdr_size();
 #ifdef ESP_PLATFORM
+    if (bh->if_type == ESP_HCI_IF && bh->payload_zcopy) {
+        ESP_LOGE(TAG, "HCI zerocopy is not supported on SPI");
+        if (bh->free_buf_handle) bh->free_buf_handle(bh->priv_buffer_handle);
+        return -1;
+    }
+    if (bh->if_type == ESP_HCI_IF && !bh->payload_zcopy) {
+        uint8_t *mframe = (uint8_t *)(uintptr_t)buf;
+        interface_buffer_handle_t hb = *bh;
+        hb.pkt_type = eh_host_mcu_hci_take_type(mframe + eh_frame_hdr_size(),
+                                                &hb.payload_len);
+        eh_frame_encode(mframe, &hb, hb.payload_len);
+        len = (size_t)eh_frame_hdr_size() + hb.payload_len;
+    }
     if (len > EH_SPI_MAX_BUF) {
         ESP_LOGE(TAG, "tx len %u > max %u", (unsigned)len, EH_SPI_MAX_BUF);
         if (bh->free_buf_handle) bh->free_buf_handle(bh->priv_buffer_handle);

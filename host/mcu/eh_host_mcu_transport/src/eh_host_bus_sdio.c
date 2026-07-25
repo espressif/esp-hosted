@@ -100,6 +100,7 @@ static inline void set_transport_state(int s) {
 
 #include "eh_host_mcu_transport_channels.h"
 #include "eh_host_mcu_hci_internal.h"
+#include "eh_host_bus.h"
 typedef eh_host_channel_t transport_channel_t;
 extern transport_channel_t *chan_arr[ESP_MAX_IF];
 
@@ -117,7 +118,7 @@ static inline void process_priv_communication(interface_buffer_handle_t *bh)
 struct esp_priv_event {
 	uint8_t  event_type;
 	uint8_t  event_len;
-	uint8_t  event_data[0];
+	uint8_t  event_data[];
 } __attribute__((packed));
 
 #define ESP_PRIV_EVENT_INIT  0x22
@@ -342,7 +343,7 @@ static inline void sdio_buffer_free(void *buf)
 #endif
 }
 
-void bus_deinit_internal(void *bus_handle)
+static void bus_deinit_internal(void *bus_handle)
 {
 	uint8_t prio_q_idx = 0;
 
@@ -694,11 +695,16 @@ static uint32_t sdio_aggr_build_frame(uint8_t *dst, interface_buffer_handle_t *b
 
 	memset(h, 0, sizeof(*h));
 	h->offset  = htole16(sizeof(struct esp_payload_header));
-	h->if_type = bh->if_type;
-	h->if_num  = bh->if_num;
+	h->if_type = bh->if_type & 0xFu;
+	h->if_num  = bh->if_num & 0xFu;
 	h->seq_num = htole16(bh->seq_num);
 	h->flags   = bh->flags;
 	UPDATE_HEADER_TX_PKT_NO(h);
+
+	if (h->if_type == ESP_HCI_IF && bh->payload_zcopy) {
+		ESP_LOGE(TAG, "HCI zerocopy is not supported on SDIO");
+		return 0;
+	}
 
 	if (h->if_type == ESP_HCI_IF && !bh->payload_zcopy) {
 		len = eh_host_mcu_hci_tx_pack(h, payload, bh->payload, len);
@@ -971,12 +977,17 @@ static void sdio_write_streaming_iter(void)
 
 		payload_header->len = htole16(len);
 		payload_header->offset = htole16(sizeof(struct esp_payload_header));
-		payload_header->if_type = buf_handle.if_type;
-		payload_header->if_num = buf_handle.if_num;
+		payload_header->if_type = buf_handle.if_type & 0x0Fu;
+		payload_header->if_num = buf_handle.if_num & 0x0Fu;
 		payload_header->seq_num = htole16(buf_handle.seq_num);
 		payload_header->flags = buf_handle.flags;
 
 		UPDATE_HEADER_TX_PKT_NO(payload_header);
+
+		if (payload_header->if_type == ESP_HCI_IF && buf_handle.payload_zcopy) {
+			ESP_LOGE(TAG, "HCI zerocopy is not supported on SDIO");
+			goto done;
+		}
 
 		if (payload_header->if_type == ESP_HCI_IF) {
 			if (!buf_handle.payload_zcopy) {
@@ -1778,7 +1789,7 @@ static void sdio_process_rx_task(void *pvParameters)
 	}
 }
 
-void *bus_init_internal(void)
+static void *bus_init_internal(void)
 {
 	uint8_t prio_q_idx = 0;
 
