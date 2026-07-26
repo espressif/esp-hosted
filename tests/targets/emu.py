@@ -230,8 +230,12 @@ class EmuTarget(BenchProvider):
         net_arg = ["--net", "user," + ",".join(
             f"hostfwd=tcp:127.0.0.1:{hp}-:{gp}" for gp, hp in fwd.items())] if fwd else []
 
+        # BLE connect/GATT via Bumble: forward the CP's HCI to a Bumble virtual
+        # controller (the host's peripheral HCI reaches it over the transport).
+        _ble_port = os.environ.get("EH_BLE_HCI_PORT")
+        ble_arg = ["--ble-hci", f"tcp:localhost:{_ble_port}"] if _ble_port else []
         cp = EmuDut("cp", [str(emu), "--chip", spec.cp_target, "--firmware", cp_flash,
-                           "--elf", cp_fw["elf"], *cp_bridge, *net_arg, "--timeout", timeout],
+                           "--elf", cp_fw["elf"], *cp_bridge, *ble_arg, *net_arg, "--timeout", timeout],
                     lab_tmp / f"cp_{spec.transport}.log")
         # Deterministic ordering: wait for the slave socket before the host connects
         # (polls; returns the instant it appears — no fixed sleep).
