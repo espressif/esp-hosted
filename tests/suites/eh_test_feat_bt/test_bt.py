@@ -43,12 +43,13 @@ BT_CELLS = [
     ("nimble_hosted_hci/bleprph_minimal", "spi_hd", r'advertising as '),
     ("nimble_hosted_hci/bleprph_gatt",    "sdio",   r'advertising as '),
     ("nimble_hosted_hci/bleprph_wifi_coex", "sdio", r'BLE Host Task Started'),
-    # NOTE: Bluedroid examples are NOT listed. They reach the hosted bridge, but
-    # bluedroid's strict HCI parser asserts on the emu built-in controller's short
-    # Command-Complete for LE init queries the emu doesn't implement (0x201C fixed,
-    # 0x2024 next, more likely — even controller_mac_addr crashes after the read).
-    # Completing the emu's LE HCI command set is the follow-up; add cells once it
-    # lands. NimBLE tolerates the gaps, so it is fully covered here.
+    # NOTE: Bluedroid is not in these BUILT-IN-controller advertising cells: its
+    # strict HCI parser asserts on the emu built-in controller's short Command-
+    # Complete for LE init queries the emu doesn't implement (0x201C fixed, 0x2024
+    # next...). NimBLE tolerates the gaps. Bluedroid IS covered end-to-end via
+    # test_bt_central_connect below (Bumble is a complete controller). Completing
+    # the emu built-in LE set to also cover bluedroid built-in advertising is a
+    # follow-up.
 ]
 
 
@@ -63,11 +64,19 @@ def test_bt_hosted(bench, example, transport, ready):
 
 
 @pytest.mark.sanity
-def test_bt_nimble_central_connect(bench, lab_tmp):
-    """Bumble (virtual central) scans, finds, and CONNECTS to the NimBLE host
-    peripheral over the hosted transport, then discovers its first service — the
-    ACL data path proven end to end (advertise -> scan -> connect). The CP
-    forwards its HCI to Bumble via --ble-hci (EH_BLE_HCI_PORT).
+@pytest.mark.parametrize("example", [
+    "nimble_hosted_hci/bleprph_gatt",
+    "bluedroid_hosted_hci/ble_gatt_server",
+])
+def test_bt_central_connect(bench, lab_tmp, example):
+    """Bumble (virtual central) scans, finds, and CONNECTS to the host peripheral
+    over the hosted transport, then discovers its first service — the ACL data
+    path proven end to end (advertise -> scan -> connect). The CP forwards its
+    HCI to Bumble via --ble-hci (EH_BLE_HCI_PORT).
+
+    Runs both host stacks: NimBLE and Bluedroid. Bumble is a *complete* controller
+    substitute, so it also answers the LE-init queries the emu built-in controller
+    lacked — this is what lets bluedroid work here (vs. the built-in path).
 
     Full GATT characteristic read/write still hits an ACL round-trip timeout
     (ATT_READ_BY_TYPE) over the hosted path — tracked as a follow-up."""
@@ -82,10 +91,9 @@ def test_bt_nimble_central_connect(bench, lab_tmp):
             bp = subprocess.Popen([str(_VENV_PY), str(_BUMBLE)], env=os.environ,
                                   stdout=bf, stderr=subprocess.STDOUT)
         time.sleep(3)  # let Bumble's TCP controller bind before the CP dials in
-        b = bench("bluetooth/nimble_hosted_hci/bleprph_gatt", "mcu_host", "sdio",
-                  timeout="150s")
+        b = bench(f"bluetooth/{example}", "mcu_host", "sdio", timeout="150s")
         r = eh_test_expect(b["host"], r'advertising as ', fail=FATAL_PATTERNS, timeout=90)
-        assert r.ok, "host peripheral did not advertise"
+        assert r.ok, f"{example} peripheral did not advertise"
         try:
             bp.wait(timeout=90)
         except subprocess.TimeoutExpired:
