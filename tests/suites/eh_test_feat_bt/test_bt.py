@@ -63,12 +63,31 @@ def test_bt_hosted(bench, example, transport, ready):
     assert r.ok, f"{example} did not reach {ready!r} on {transport}"
 
 
-@pytest.mark.sanity
-@pytest.mark.parametrize("example", [
-    "nimble_hosted_hci/bleprph_gatt",
-    "bluedroid_hosted_hci/ble_gatt_server",
+def _cc(example, transport, sanity=False):
+    return pytest.param(example, transport,
+                        id=f"{example.split('/')[-1]}-{transport}",
+                        marks=[pytest.mark.sanity] if sanity else [])
+
+
+# End-to-end connect over every transport. sdio is the @sanity representative
+# per scenario; uart/spi_fd/spi_hd run under --regression. Serialized onto one
+# xdist worker (xdist_group): each cell is heavy (Bumble + two emus), so letting
+# them pile up under parallel load starves the emu and Bumble misses the advert.
+@pytest.mark.xdist_group("bt_bumble")
+@pytest.mark.parametrize("example,transport", [
+    _cc("nimble_hosted_hci/bleprph_gatt", "sdio", sanity=True),
+    _cc("nimble_hosted_hci/bleprph_gatt", "uart"),
+    _cc("nimble_hosted_hci/bleprph_gatt", "spi_fd"),
+    _cc("bluedroid_hosted_hci/ble_gatt_server", "sdio", sanity=True),
+    _cc("bluedroid_hosted_hci/ble_gatt_server", "uart"),
+    _cc("bluedroid_hosted_hci/ble_gatt_server", "spi_fd"),
+    # NOTE: spi_hd omitted here. With the --ble-hci/Bumble connect config the
+    # host's SPI-HD bus bring-up (eh_reconfigure, 5s timeout) returns -EIO even in
+    # isolation -> connect_to_slave ESP_FAIL -> abort. spi_hd *advertising* via the
+    # built-in controller works (test_bt_hosted). spi_hd connect needs a bring-up
+    # investigation (likely CP-boot delay under --ble-hci) — tracked follow-up.
 ])
-def test_bt_central_connect(bench, lab_tmp, example):
+def test_bt_central_connect(bench, lab_tmp, example, transport):
     """Bumble (virtual central) scans, finds, and CONNECTS to the host peripheral
     over the hosted transport, then discovers its first service — the ACL data
     path proven end to end (advertise -> scan -> connect). The CP forwards its
@@ -91,11 +110,11 @@ def test_bt_central_connect(bench, lab_tmp, example):
             bp = subprocess.Popen([str(_VENV_PY), str(_BUMBLE)], env=os.environ,
                                   stdout=bf, stderr=subprocess.STDOUT)
         time.sleep(3)  # let Bumble's TCP controller bind before the CP dials in
-        b = bench(f"bluetooth/{example}", "mcu_host", "sdio", timeout="150s")
+        b = bench(f"bluetooth/{example}", "mcu_host", transport, timeout="240s")
         r = eh_test_expect(b["host"], r'advertising as ', fail=FATAL_PATTERNS, timeout=90)
         assert r.ok, f"{example} peripheral did not advertise"
         try:
-            bp.wait(timeout=90)
+            bp.wait(timeout=180)
         except subprocess.TimeoutExpired:
             pass
     finally:
