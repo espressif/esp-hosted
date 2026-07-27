@@ -38,5 +38,9 @@ CONFIG_OPENTHREAD_TASK_SIZE=3072
 CONFIG_OPENTHREAD_CONSOLE_ENABLE=n
 CONFIG_OPENTHREAD_LOG_LEVEL_DYNAMIC=n
 
+# SW coexistence ON (doc §2.1 canonical RCP) — keeps the OpenThread
+# capability set matched with the host, which sets RX_ON_WHEN_IDLE=n
+CONFIG_ESP_COEX_SW_COEXIST_ENABLE=y
+
 # Scenario feature gate
 CONFIG_ESP_HOSTED_CP_FEAT_OPENTHREAD=y

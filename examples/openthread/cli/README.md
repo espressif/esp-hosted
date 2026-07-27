@@ -107,7 +107,14 @@ CONFIG_ESP_HOSTED_CP_FEAT_OPENTHREAD=y   # ESP-Hosted OpenThread RCP feature
 CONFIG_OPENTHREAD_ENABLED=y              # OpenThread stack
 CONFIG_OPENTHREAD_RADIO=y                # Radio-Only (RCP) device
 CONFIG_ESP_HOSTED_CP_FEAT_WIFI=n         # Wi-Fi off on the RCP
+CONFIG_ESP_COEX_SW_COEXIST_ENABLE=y      # SW coexistence ON — matches host RX_ON_WHEN_IDLE=n
 ```
+
+> [!IMPORTANT]
+> `CONFIG_ESP_COEX_SW_COEXIST_ENABLE=y` is the canonical RCP setting
+> (doc §2.1). It changes the OpenThread capability set the RCP advertises,
+> so the host **must** pair it with `CONFIG_OPENTHREAD_RX_ON_WHEN_IDLE=n`
+> — a mismatch makes OpenThread init fail.
 
 `CONFIG_OPENTHREAD_RADIO=y` corresponds to *Component config → OpenThread → Thread Core Features → Thread device type → Radio Only Device*. Then flash and monitor:
 
