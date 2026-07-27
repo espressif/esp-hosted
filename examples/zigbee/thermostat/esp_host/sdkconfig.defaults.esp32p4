@@ -1,0 +1,12 @@
+# P4 host: PSRAM is REQUIRED (doc §2.2 — else the app will not start, out of memory).
+CONFIG_SPIRAM=y
+CONFIG_ESP_HOSTED_DFLT_TASK_FROM_SPIRAM=y
+
+# 4 MB flash to match the RCP co-processor. The Zigbee host keeps its own
+# non-OTA partitions.csv (factory + zb_storage / zb_fct) from sdkconfig.defaults;
+# host-side OTA is not part of the ported 2.x thermostat example.
+CONFIG_ESPTOOLPY_FLASHSIZE_4MB=y
+
+# SW coexistence on the RCP is ON, so disable this on the host to keep the
+# OpenThread / 802.15.4 capability set consistent (doc §2.2, §2.3.1).
+CONFIG_OPENTHREAD_RX_ON_WHEN_IDLE=n

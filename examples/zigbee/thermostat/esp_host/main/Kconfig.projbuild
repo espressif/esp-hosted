@@ -1,0 +1,11 @@
+menu "Example Configuration"
+    config GPIO_BOOT_ON_DEVKIT
+        int "BOOT GPIO on devkit"
+        default 9 if IDF_TARGET_ESP32H2
+        default 35 if IDF_TARGET_ESP32P4
+        default 9
+
+        help
+            The GPIO connected to the BOOT button on the devkits
+
+endmenu

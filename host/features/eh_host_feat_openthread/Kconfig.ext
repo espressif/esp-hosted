@@ -1,5 +1,5 @@
 menuconfig ESP_HOSTED_HOST_FEAT_OPENTHREAD
-	bool "OpenThread (RCP control)"
+	bool "OpenThread / Zigbee (RCP control)"
 	default n
 	depends on ESP_HOSTED_HOST && ESP_HOSTED_HOST_FEAT_RPC
 	depends on ESP_HOSTED_HOST_FEAT_RPC_EXT_V2_READY
@@ -125,7 +125,7 @@ config ESP_HOSTED_HOST_FEAT_OPENTHREAD_READY
 	default y if ESP_HOSTED_HOST_FEAT_OPENTHREAD && \
 	             ESP_HOSTED_HOST_FEAT_RPC_READY && \
 	             ESP_HOSTED_HOST_FEAT_RPC_EXT_V2_READY && \
-	             OPENTHREAD_ENABLED
+	             (OPENTHREAD_ENABLED || ZB_ENABLED)
 
-comment "⚠  Host OpenThread feature requires CONFIG_OPENTHREAD_ENABLED"
-	depends on ESP_HOSTED_HOST_FEAT_OPENTHREAD && !OPENTHREAD_ENABLED
+comment "⚠  Host OpenThread/Zigbee feature requires CONFIG_OPENTHREAD_ENABLED or CONFIG_ZB_ENABLED"
+	depends on ESP_HOSTED_HOST_FEAT_OPENTHREAD && !(OPENTHREAD_ENABLED || ZB_ENABLED)

@@ -1,0 +1,23 @@
+#
+# Partition Table
+#
+CONFIG_PARTITION_TABLE_CUSTOM=y
+CONFIG_PARTITION_TABLE_CUSTOM_FILENAME="partitions.csv"
+# end of Partition Table
+
+#
+# Zigbee
+#
+CONFIG_ZB_ENABLED=y
+# end of Zigbee
+
+### enable ESP-Hosted host + the RCP-control feature stack.
+# 3.x gates the RCP link behind explicit host feature symbols (2.x's
+# slave arch had them implicit). FEAT_OPENTHREAD depends on
+# ESP_HOSTED_HOST + FEAT_RPC + FEAT_RPC_EXT_V2_READY — without these,
+# Kconfig silently drops the RCP feature. (2.x: CONFIG_ESP_HOSTED_HOST_OT_ENABLE)
+CONFIG_ESP_HOSTED=y
+CONFIG_ESP_HOSTED_HOST_FEAT_RPC=y
+CONFIG_ESP_HOSTED_HOST_FEAT_RPC_EXT_V2=y
+CONFIG_ESP_HOSTED_HOST_FEAT_SYSTEM=y
+CONFIG_ESP_HOSTED_HOST_FEAT_OPENTHREAD=y

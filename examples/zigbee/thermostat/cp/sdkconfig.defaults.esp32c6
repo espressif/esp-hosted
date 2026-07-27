@@ -1,0 +1,15 @@
+# 1. CPU
+CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ_160=y
+
+# 2. BT off
+CONFIG_BT_ENABLED=n
+
+# 3. Partition Table
+CONFIG_PARTITION_TABLE_CUSTOM=y
+CONFIG_PARTITION_TABLE_CUSTOM_FILENAME="partitions_eh_cp_ota_4m.csv"
+
+# 4. Transport — default SDIO for P4 dev board pairing.  Override in
+#    sdkconfig.local for SPI / UART / SPI-HD.
+
+# 5. Optimisations
+CONFIG_COMPILER_OPTIMIZATION_PERF=y
