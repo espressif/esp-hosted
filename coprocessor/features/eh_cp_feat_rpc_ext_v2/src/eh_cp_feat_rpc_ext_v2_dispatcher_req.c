@@ -253,6 +253,10 @@ esp_err_t eh_cp_feat_rpc_ext_v2_rpc_req_dispatcher(Rpc *req, Rpc *resp, void *pr
             ret = req_wifi_get_inactive_time(req, resp, priv_data);
             break;
 
+        case RPC_ID__Req_WifiDisablePmfConfig:
+            ret = req_wifi_disable_pmf_config(req, resp, priv_data);
+            break;
+
 #endif // EH_CP_FEAT_WIFI_READY
 #if EH_CP_FEAT_NW_SPLIT_READY
         case RPC_ID__Req_SetDhcpDnsStatus:

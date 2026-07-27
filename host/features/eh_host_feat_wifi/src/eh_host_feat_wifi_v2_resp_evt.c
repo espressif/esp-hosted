@@ -1,4 +1,8 @@
-/* SPDX-License-Identifier: Apache-2.0 */
+/*
+ * SPDX-FileCopyrightText: 2026 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 /* Base Wi-Fi Resp + Event parse dispatch. */
 
 #include <string.h>
@@ -461,6 +465,11 @@ int rpc_ext_v2_parse_resp_wifi(const Rpc *rpc, eh_rpc_ctrl_cmd_t *c)
         if (!rpc->resp_wifi_get_inactive_time) return -1;
         c->resp_event_status = rpc->resp_wifi_get_inactive_time->resp;
         c->u.wifi_cfg.channel = rpc->resp_wifi_get_inactive_time->sec;
+        return 0;
+
+    case RPC_ID__Resp_WifiDisablePmfConfig:
+        if (!rpc->resp_wifi_disable_pmf_config) return -1;
+        c->resp_event_status = rpc->resp_wifi_disable_pmf_config->resp;
         return 0;
 
 #if EH_HOST_WIFI_DUALBAND_SUPPORT

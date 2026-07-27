@@ -1,5 +1,8 @@
-/* SPDX-License-Identifier: Apache-2.0 */
-/* Copyright 2025 Espressif Systems (Shanghai) PTE LTD */
+/*
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #ifndef __EH_CP_BASE_RPC_MCU_PRIV_H__
 #define __EH_CP_BASE_RPC_MCU_PRIV_H__
@@ -360,6 +363,7 @@ esp_err_t req_wifi_ap_get_sta_aid(Rpc *req, Rpc *resp, void *priv_data);
 /* Missing WiFi and System RPC Request Handlers */
 esp_err_t req_wifi_set_inactive_time(Rpc *req, Rpc *resp, void *priv_data);
 esp_err_t req_wifi_get_inactive_time(Rpc *req, Rpc *resp, void *priv_data);
+esp_err_t req_wifi_disable_pmf_config(Rpc *req, Rpc *resp, void *priv_data);
 
 /* Enterprise WiFi (EAP) RPC Request Handlers */
 esp_err_t req_wifi_sta_enterprise_enable(Rpc *req, Rpc *resp, void *priv_data);

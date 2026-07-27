@@ -1,4 +1,8 @@
-/* SPDX-License-Identifier: Apache-2.0 */
+/*
+ * SPDX-FileCopyrightText: 2026 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 /* V2 impls of WiFi core RPC wrappers and WiFi event handlers. */
 
 #define _POSIX_C_SOURCE 200809L
@@ -1044,6 +1048,19 @@ esp_err_t eh_host_wifi_get_inactive_time(wifi_interface_t ifx, uint16_t *sec)
                                          (void **)&r) != 0) return ESP_FAIL;
     int rc = r->resp_event_status;
     if (rc == 0) *sec = (uint16_t)r->u.wifi_cfg.channel;
+    eh_rpc_ctrl_cmd_free(r);
+    return (esp_err_t)rc;
+}
+
+esp_err_t eh_host_wifi_disable_pmf_config(wifi_interface_t ifx)
+{
+    eh_rpc_ctrl_cmd_t *req = eh_rpc_ctrl_cmd_alloc();
+    if (!req) return ESP_FAIL;
+    req->u.wifi_cfg.iface = (int32_t)ifx;
+    eh_rpc_ctrl_cmd_t *r = NULL;
+    if (eh_host_feat_rpc_request_sync(RPC_ID__Req_WifiDisablePmfConfig, req,
+                                         (void **)&r) != 0) return ESP_FAIL;
+    int rc = r->resp_event_status;
     eh_rpc_ctrl_cmd_free(r);
     return (esp_err_t)rc;
 }

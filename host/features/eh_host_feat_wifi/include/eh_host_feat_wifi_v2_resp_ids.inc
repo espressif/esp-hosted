@@ -41,6 +41,7 @@ case RPC_ID__Resp_WifiDeauthSta:
 case RPC_ID__Resp_WifiSetStorage:
 case RPC_ID__Resp_WifiSetInactiveTime:
 case RPC_ID__Resp_WifiGetInactiveTime:
+case RPC_ID__Resp_WifiDisablePmfConfig:
 case RPC_ID__Resp_WifiSetBand:
 case RPC_ID__Resp_WifiGetBand:
 case RPC_ID__Resp_WifiSetBandMode:

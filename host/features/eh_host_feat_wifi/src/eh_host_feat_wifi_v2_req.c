@@ -1,4 +1,8 @@
-/* SPDX-License-Identifier: Apache-2.0 */
+/*
+ * SPDX-FileCopyrightText: 2026 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 /* Base Wi-Fi request composers + dispatch picker. */
 
 /* strnlen needs POSIX.1-2008. */
@@ -498,6 +502,15 @@ static int compose_req_wifi_get_inactive_time(Rpc *rpc, const eh_rpc_ctrl_cmd_t 
     return 0;
 }
 
+static int compose_req_wifi_disable_pmf_config(Rpc *rpc, const eh_rpc_ctrl_cmd_t *c,
+                                               alloc_track_t *trk)
+{
+    ALLOC_PAYLOAD(RpcReqWifiDisablePmfConfig, req_wifi_disable_pmf_config,
+                  rpc__req__wifi_disable_pmf_config__init);
+    p->ifx = (uint32_t)c->u.wifi_cfg.iface;
+    return 0;
+}
+
 #if EH_HOST_WIFI_DUALBAND_SUPPORT
 static int compose_req_wifi_set_band(Rpc *rpc, const eh_rpc_ctrl_cmd_t *c,
                                      alloc_track_t *trk)
@@ -594,6 +607,7 @@ compose_fn rpc_ext_v2_pick_req_wifi(int32_t msg_id)
     case RPC_ID__Req_WifiSetStorage:        return compose_req_wifi_set_storage;
     case RPC_ID__Req_WifiSetInactiveTime:   return compose_req_wifi_set_inactive_time;
     case RPC_ID__Req_WifiGetInactiveTime:   return compose_req_wifi_get_inactive_time;
+    case RPC_ID__Req_WifiDisablePmfConfig:  return compose_req_wifi_disable_pmf_config;
 #if EH_HOST_WIFI_DUALBAND_SUPPORT
     case RPC_ID__Req_WifiSetBand:           return compose_req_wifi_set_band;
     case RPC_ID__Req_WifiGetBand:           return compose_req_wifi_get_band;

@@ -1,4 +1,8 @@
-/* SPDX-License-Identifier: Apache-2.0 */
+/*
+ * SPDX-FileCopyrightText: 2026 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 /* RPC API wrappers for the WiFi feature. */
 
 #ifndef EH_HOST_WIFI_H_
@@ -63,6 +67,7 @@ esp_err_t eh_host_wifi_get_channel(uint8_t *primary, wifi_second_chan_t *second)
 
 esp_err_t eh_host_wifi_set_inactive_time(wifi_interface_t ifx, uint16_t sec);
 esp_err_t eh_host_wifi_get_inactive_time(wifi_interface_t ifx, uint16_t *sec);
+esp_err_t eh_host_wifi_disable_pmf_config(wifi_interface_t ifx);
 
 esp_err_t eh_host_wifi_ap_get_sta_list(wifi_sta_list_t *sta);
 esp_err_t eh_host_wifi_ap_get_sta_aid(const uint8_t mac[6], uint16_t *aid);

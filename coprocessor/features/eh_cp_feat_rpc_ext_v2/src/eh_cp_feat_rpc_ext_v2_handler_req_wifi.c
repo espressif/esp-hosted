@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -1830,6 +1830,21 @@ esp_err_t req_wifi_get_inactive_time(Rpc *req, Rpc *resp, void *priv_data)
 	RPC_RET_FAIL_IF(esp_wifi_get_inactive_time(ifx, &sec));
 
 	resp_payload->sec = sec;
+
+	return ESP_OK;
+}
+
+esp_err_t req_wifi_disable_pmf_config(Rpc *req, Rpc *resp, void *priv_data)
+{
+	RPC_TEMPLATE(RpcRespWifiDisablePmfConfig, resp_wifi_disable_pmf_config,
+			RpcReqWifiDisablePmfConfig, req_wifi_disable_pmf_config,
+			rpc__resp__wifi_disable_pmf_config__init);
+
+	wifi_interface_t ifx = req_payload->ifx;
+
+	RPC_RET_FAIL_IF(esp_wifi_disable_pmf_config(ifx));
+
+	resp_payload->ifx = ifx;
 
 	return ESP_OK;
 }

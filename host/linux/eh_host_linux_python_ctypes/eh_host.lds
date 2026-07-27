@@ -182,6 +182,7 @@ EH_HOST_1.0 {
         eh_host_wifi_get_channel;
         eh_host_wifi_get_config;
         eh_host_wifi_get_country;
+        eh_host_wifi_disable_pmf_config;
         eh_host_wifi_get_country_code;
         eh_host_wifi_get_inactive_time;
         eh_host_wifi_get_max_tx_power;

@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2026 Espressif Systems (Shanghai) CO LTD
+# SPDX-License-Identifier: Apache-2.0
 """WiFi feature — STA lifecycle + scan + event ids.
 
 Wraps the C surface in
@@ -315,6 +317,10 @@ _set_inactive_time.restype  = c_int
 _get_inactive_time = _LIB.eh_host_wifi_get_inactive_time
 _get_inactive_time.argtypes = [c_int, POINTER(c_uint16)]
 _get_inactive_time.restype  = c_int
+
+_disable_pmf_config = _LIB.eh_host_wifi_disable_pmf_config
+_disable_pmf_config.argtypes = [c_int]
+_disable_pmf_config.restype  = c_int
 
 _set_storage = _LIB.eh_host_wifi_set_storage
 _set_storage.argtypes = [c_int]
@@ -649,6 +655,13 @@ def get_inactive_time(iface: int) -> int:
     if rc != 0:
         raise EhHostError("eh_host_wifi_get_inactive_time", rc)
     return out.value
+
+
+def disable_pmf_config(iface: int) -> None:
+    """Disable PMF (Protected Management Frames) config on `iface`."""
+    rc = _disable_pmf_config(iface)
+    if rc != 0:
+        raise EhHostError("eh_host_wifi_disable_pmf_config", rc)
 
 
 def set_storage(storage: int) -> None:
