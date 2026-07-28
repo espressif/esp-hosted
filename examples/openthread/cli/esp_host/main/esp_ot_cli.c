@@ -86,14 +86,8 @@ void app_main(void)
 
     ESP_ERROR_CHECK(nvs_flash_init());
     ESP_ERROR_CHECK(esp_event_loop_create_default());
-    /* Create the OpenThread netif unless the IDF knob explicitly disables it.
-     * CONFIG_OPENTHREAD_PLATFORM_NETIF was introduced in newer IDF; it is absent
-     * in older IDF (e.g. v5.5.x), where the netif is always created. The
-     * !defined() default-on keeps this example correct on every IDF version
-     * (symbol-presence check, not an IDF-version #ifdef). */
-#if !defined(CONFIG_OPENTHREAD_PLATFORM_NETIF) || CONFIG_OPENTHREAD_PLATFORM_NETIF
+    /* This example always needs the OpenThread netif; create it unconditionally. */
     ESP_ERROR_CHECK(esp_netif_init());
-#endif
     ESP_ERROR_CHECK(esp_vfs_eventfd_register(&eventfd_config));
 
 #if CONFIG_OPENTHREAD_CLI
@@ -102,9 +96,7 @@ void app_main(void)
 #endif
 
     static esp_openthread_config_t config = {
-#if !defined(CONFIG_OPENTHREAD_PLATFORM_NETIF) || CONFIG_OPENTHREAD_PLATFORM_NETIF
         .netif_config = ESP_NETIF_DEFAULT_OPENTHREAD(),
-#endif
         .platform_config = {
             .host_config = ESP_OPENTHREAD_DEFAULT_HOST_CONFIG(),
             .port_config = ESP_OPENTHREAD_DEFAULT_PORT_CONFIG(),
