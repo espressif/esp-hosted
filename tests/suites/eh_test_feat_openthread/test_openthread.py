@@ -120,7 +120,7 @@ cd build && python -m esptool --chip esp32c6 merge_bin -o merged_flash.bin @flas
 # and starves them. sdio is the sanity representative.
 @pytest.mark.sanity
 @pytest.mark.xdist_group("emu_heavy")
-@pytest.mark.parametrize("transport", ["sdio"])
+@pytest.mark.parametrize("transport", ["sdio", "spi_hd"])
 def test_ot_cli_2node_association(bench, lab_tmp, worker_id, transport):
     if not _IDF.exists():
         pytest.skip("ESP-IDF not available for the ot_cli peer build")
