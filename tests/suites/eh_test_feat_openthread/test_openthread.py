@@ -16,6 +16,33 @@ and back (MLE parent-response). That is the hosted-OpenThread works signal.
 
 The emu has no P4 PSRAM, so the host is built with SPIRAM off (and thus tasks
 from internal RAM) — an emu-target overlay only; real P4 HW keeps SPIRAM on.
+
+Sequence (time flows downward; one column per emulator process). Buses:
+  RCP <-> HOST = ESP-Hosted SDIO (--hosted, RPC/control) + a dedicated spinel
+  UART (--hosted-uart, 802.15.4 PDUs);  RCP <-> PEER = 802.15.4 RF (--thread-sim
+  UDP). RCP+HOST together are "Node A" (the hosted device); PEER is "Node B".
+
+  pytest        PEER (C6)          RCP (C6)              HOST (P4)
+    |  spawn peer   |                  |                     |
+    |-------------->| auto-start;      |                     |
+    |               | form partition   |                     |
+    |               | ==> LEADER       |                     |
+    |  bench(): build Node A, spawn RCP (slave) then HOST     |
+    |----------------------------------> | SDIO slave up      |
+    |------------------------------------------------------> | boot
+    |               |                  | <--- reset GPIO54 ---| host resets RCP
+    |               |                  | <=== SDIO RPC ======>| control-plane up (fw match)
+    |               |                  | <--- spinel UART --->| RCP reset OK; OT stack init
+    |               |                  |                     | auto-start ==> MLE attach
+    |               |  802.15.4 RF (--thread-sim UDP)         |
+    |               | <...RF...---------| <----- spinel ------| MLE Parent Request  (host->air)
+    |               | ---RF...--------> | ------ spinel ----->| MLE Parent Response (air->host)
+    |               |                  |                     | RLOC16 = parent+1 ==> CHILD
+    |  assert: HOST log "Role ... -> child"  AND  PEER log "-> leader"
+
+The child/leader + RLOC16=parent+1 is the end-to-end proof: a radio TX issued by
+the host's OT stack traversed spinel->RCP->esp_ieee802154->--thread-sim to the
+peer and the MLE response came all the way back.
 """
 
 import os
