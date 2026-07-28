@@ -118,6 +118,10 @@ cd build && python -m esptool --chip esp32c6 merge_bin -o merged_flash.bin @flas
 # loadgroup so it serializes with the other heavy/spi_fd cells (conftest funnels
 # those there) instead of adding a concurrent group that oversubscribes the box
 # and starves them. sdio is the sanity representative.
+# Transports: sdio + spi_hd. NOT uart — OpenThread needs a dedicated spinel
+# UART (UART1) for the 802.15.4 PDUs, so the ESP-Hosted control transport must
+# NOT also be UART (they collide on UART1 and the host never drives the RCP —
+# verified: host fails to attach). NOT spi_fd either (the emu clock-flaky wire).
 @pytest.mark.sanity
 @pytest.mark.xdist_group("emu_heavy")
 @pytest.mark.parametrize("transport", ["sdio", "spi_hd"])
