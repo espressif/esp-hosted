@@ -37,23 +37,32 @@ Sequence (time flows downward; one column per emulator process). Buses:
     |               |  802.15.4 RF (--thread-sim UDP)         |
     |               | <...RF...---------| <----- spinel ------| MLE Parent Request  (host->air)
     |               | ---RF...--------> | ------ spinel ----->| MLE Parent Response (air->host)
-    |               |                  |                     | RLOC16 = parent+1 ==> CHILD
-    |  assert: HOST log "Role ... -> child"  AND  PEER log "-> leader"
+    |               |                  |                     | Child ID Req/Resp ==> RLOC16 R
+    |  bench --------------------------------------------------> "ot neighbor table" to PEER
+    |               | prints its mesh view: Child @ 0xR       |
+    |  assert: HOST "Role -> child" + RLOC16 R;  PEER "-> leader";
+    |          PEER neighbor table lists a Child whose RLOC16 == R
 
-The child/leader + RLOC16=parent+1 is the end-to-end proof: a radio TX issued by
-the host's OT stack traversed spinel->RCP->esp_ieee802154->--thread-sim to the
-peer and the MLE response came all the way back.
+Two independent views prove the data plane: the host reaches Child with an RLOC16
+the peer assigned it (via the MLE Parent/Child-ID request-response exchange over
+the radio), and the leader -- queried over its own radio-formed mesh -- lists that
+same RLOC16 as a live Child neighbor. That round-trips host OT stack -> spinel ->
+RCP -> esp_ieee802154 -> --thread-sim -> peer and back, and the peer independently
+confirms it registered our host. (An ICMP ping additionally needs CSL / indirect-
+transmission timing the emu's WFI injection can't reproduce, so the peer's mesh
+view -- which the emu does model faithfully -- is the data-plane signal here; ICMP
+traffic is covered on real hardware.)
 """
 
 import os
+import re
 import subprocess
-import time
 from pathlib import Path
 
 import pytest
 
 from infra import lab
-from infra.emu_dut import emu_bin
+from infra.emu_dut import EmuDut, emu_bin
 from infra.expect_helper import eh_test_expect, FATAL_PATTERNS
 
 _REPO = Path(__file__).resolve().parents[3]
@@ -114,25 +123,26 @@ def test_ot_cli_2node_association(bench, lab_tmp, worker_id, transport):
     peer_bin, peer_elf = peer
 
     # Two disjoint UDP ports from this bench's reserved block: RCP binds PA and
-    # peers PB; the peer binds PB and peers PA (crossed --thread-sim link).
+    # peers PB; the peer binds PB and peers PA (crossed --thread-sim link). autoack
+    # models the 802.15.4 MAC ACK real radios send for ack-requested unicast.
     port = lab.alloc_bench(worker_id)["port"]
     pa, pb = port, port + 2
     plog = Path(lab_tmp) / "ot_peer.log"
+    hlog = Path(lab_tmp) / f"host_{transport}.log"       # bench writes the host DUT here
 
-    os.environ["EH_OT_SPINEL"] = "1"                                  # emu.py: spinel UART bridge
-    os.environ["EH_THREAD_SIM_CP"] = f"bind:{pa},peer:127.0.0.1:{pb}"  # emu.py: RCP radio bridge
-    peer_proc = None
+    os.environ["EH_OT_SPINEL"] = "1"                                          # emu.py: spinel UART bridge
+    os.environ["EH_THREAD_SIM_CP"] = f"bind:{pa},peer:127.0.0.1:{pb},autoack"  # emu.py: RCP radio bridge
+    peer = None
     try:
         # Bring the peer up first so it forms the partition (becomes Leader)
         # before the heavier host+RCP node finishes booting and attaches. Its
         # --timeout must outlast a COLD build of Node A (bench() builds cp+host
         # synchronously below, ~3 min first time) plus the host's attach, or the
-        # peer emu exits before the host ever reaches the radio.
-        with open(plog, "w") as pf:
-            peer_proc = subprocess.Popen(
-                [str(emu_bin()), "--chip", "esp32c6", "--firmware", peer_bin,
-                 "--elf", peer_elf, "--thread-sim", f"bind:{pb},peer:127.0.0.1:{pa}",
-                 "--timeout", "600s"], stdout=pf, stderr=subprocess.STDOUT)
+        # peer emu exits before the host ever reaches the radio. EmuDut (not raw
+        # Popen) so we can drive its `ot` console to read the leader's view.
+        peer = EmuDut("peer", [str(emu_bin()), "--chip", "esp32c6", "--firmware", peer_bin,
+                               "--elf", peer_elf, "--thread-sim",
+                               f"bind:{pb},peer:127.0.0.1:{pa},autoack", "--timeout", "600s"], plog)
 
         b = bench("openthread/cli", "esp_host", transport, timeout="150s",
                   overlay=_EMU_HOST_OVL)
@@ -143,16 +153,28 @@ def test_ot_cli_2node_association(bench, lab_tmp, worker_id, transport):
                       f"...peer log tail:\n{peer_out[-1500:]}")
         # Peer must have become Leader (the partition the host joined).
         assert "-> leader" in peer_out, f"peer never became Leader:\n{peer_out[-1500:]}"
+
+        # Data-plane cross-check: the RLOC16 the peer assigned the host during the
+        # MLE join, and the peer's own neighbor table listing that host as a live
+        # Child (role C). Two independent views of one association — the leader,
+        # queried over its radio-formed mesh, confirms it exchanged data with and
+        # registered our host. (ICMP ping needs CSL/indirect-TX timing the emu
+        # doesn't model; the peer's mesh view is what the emu represents faithfully.)
+        host_rlocs = re.findall(r'RLOC16 \w+ -> ([0-9a-fA-F]{4})', hlog.read_text())
+        assert host_rlocs, "host never printed an assigned RLOC16"
+        host_rloc = host_rlocs[-1].lower()
+
+        peer.write("ot neighbor table")
+        nb = eh_test_expect(peer, r'\|\s*C\s*\|\s*0x[0-9a-fA-F]{4}\s*\|', timeout=15)
+        peer_out = plog.read_text()
+        rows = re.findall(r'\|\s*C\s*\|\s*0x([0-9a-fA-F]{4})\s*\|', peer_out)
+        assert nb.ok and rows, (f"leader's neighbor table shows no Child row\n"
+                                f"...peer log tail:\n{peer_out[-1500:]}")
+        assert host_rloc in [x.lower() for x in rows], (
+            f"host RLOC16 0x{host_rloc} not a Child in the leader's neighbor table "
+            f"(rows={rows})\n...peer log tail:\n{peer_out[-1500:]}")
     finally:
         os.environ.pop("EH_OT_SPINEL", None)
         os.environ.pop("EH_THREAD_SIM_CP", None)
-        if peer_proc and peer_proc.poll() is None:
-            peer_proc.terminate()
-            try:
-                peer_proc.wait(timeout=5)
-            except subprocess.TimeoutExpired:
-                peer_proc.kill()
-                try:
-                    peer_proc.wait(timeout=5)
-                except subprocess.TimeoutExpired:
-                    pass
+        if peer is not None:
+            peer.stop()
