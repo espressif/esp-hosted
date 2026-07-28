@@ -114,10 +114,12 @@ cd build && python -m esptool --chip esp32c6 merge_bin -o merged_flash.bin @flas
     return str(bin_), str(elf)
 
 
-# Heavy cell (3 emus: host + RCP + peer). Serialize like the BT/Bumble cells so
-# parallel load doesn't starve the emus. sdio is the sanity representative.
+# Heaviest cell in the suite (3 emus: host + RCP + peer). Join the emu_heavy
+# loadgroup so it serializes with the other heavy/spi_fd cells (conftest funnels
+# those there) instead of adding a concurrent group that oversubscribes the box
+# and starves them. sdio is the sanity representative.
 @pytest.mark.sanity
-@pytest.mark.xdist_group("ot_thread")
+@pytest.mark.xdist_group("emu_heavy")
 @pytest.mark.parametrize("transport", ["sdio"])
 def test_ot_cli_2node_association(bench, lab_tmp, worker_id, transport):
     if not _IDF.exists():
