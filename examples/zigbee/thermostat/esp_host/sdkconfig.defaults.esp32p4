@@ -1,6 +1,8 @@
-# P4 host: PSRAM is REQUIRED (doc §2.2 — else the app will not start, out of memory).
-CONFIG_SPIRAM=y
-CONFIG_ESP_HOSTED_DFLT_TASK_FROM_SPIRAM=y
+# NOTE: unlike the doc's general §2.2 guidance, the 2.x thermostat example sets
+# no SPIRAM on the same ESP32-P4 host and runs — the thermostat fits in internal
+# RAM. We match 2.x (no CONFIG_SPIRAM): enabling it forced task stacks/heap into
+# PSRAM, which corrupts the allocator on this target. Re-add with a written
+# reason only if a real-HW build actually OOMs.
 
 # 4 MB flash to match the RCP co-processor. The Zigbee host keeps its own
 # non-OTA partitions.csv (factory + zb_storage / zb_fct) from sdkconfig.defaults;
