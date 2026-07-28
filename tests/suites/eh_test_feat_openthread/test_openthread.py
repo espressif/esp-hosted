@@ -40,23 +40,28 @@ Sequence (time flows downward; one column per emulator process). Buses:
     |               |                  |                     | Child ID Req/Resp ==> RLOC16 R
     |  bench --------------------------------------------------> "ot neighbor table" to PEER
     |               | prints its mesh view: Child @ 0xR       |
+    |  bench --------------------------------------------------> "ot ping <peer ll>" from HOST
+    |               | <=== ICMPv6 echo request (encrypted) ===  (host->air->peer)
+    |               | ===> ICMPv6 echo reply   (encrypted) ==>  (peer->air->host)
     |  assert: HOST "Role -> child" + RLOC16 R;  PEER "-> leader";
-    |          PEER neighbor table lists a Child whose RLOC16 == R
+    |          PEER neighbor table lists a Child whose RLOC16 == R;  ping 0% loss
 
-Two independent views prove the data plane: the host reaches Child with an RLOC16
-the peer assigned it (via the MLE Parent/Child-ID request-response exchange over
-the radio), and the leader -- queried over its own radio-formed mesh -- lists that
-same RLOC16 as a live Child neighbor. That round-trips host OT stack -> spinel ->
-RCP -> esp_ieee802154 -> --thread-sim -> peer and back, and the peer independently
-confirms it registered our host. (An ICMP ping additionally needs CSL / indirect-
-transmission timing the emu's WFI injection can't reproduce, so the peer's mesh
-view -- which the emu does model faithfully -- is the data-plane signal here; ICMP
-traffic is covered on real hardware.)
+Two data-plane checks. (1) Control: the host reaches Child with an RLOC16 the peer
+assigned it (MLE Parent/Child-ID exchange over the radio), and the leader -- queried
+over its own radio-formed mesh -- lists that same RLOC16 as a live Child neighbor.
+(2) Traffic: the host ICMPv6-pings the peer's link-local over the mesh and gets
+replies (0% loss). Both round-trip host OT stack -> spinel -> RCP -> esp_ieee802154
+-> --thread-sim -> peer and back. The ping additionally exercises 802.15.4 MAC link
+security: ESP does AES-CCM* in the radio HW (OT_RADIO_CAPS_TRANSMIT_SEC), which the
+emu reproduces in software (thread_sec.rs), else the peer's SW RX-decrypt drops the
+frame (RxErrSec); and EH_EMU_RADIO_PACE wall-paces idle WFI so the reply-timer can't
+race the cross-emu round-trip.
 """
 
 import os
 import re
 import subprocess
+import time
 from pathlib import Path
 
 import pytest
@@ -132,6 +137,7 @@ def test_ot_cli_2node_association(bench, lab_tmp, worker_id, transport):
 
     os.environ["EH_OT_SPINEL"] = "1"                                          # emu.py: spinel UART bridge
     os.environ["EH_THREAD_SIM_CP"] = f"bind:{pa},peer:127.0.0.1:{pb},autoack"  # emu.py: RCP radio bridge
+    os.environ["EH_EMU_RADIO_PACE"] = "1"     # wall-pace idle WFI so a ping reply-timer can't race the radio round-trip
     peer = None
     try:
         # Bring the peer up first so it forms the partition (becomes Leader)
@@ -154,12 +160,11 @@ def test_ot_cli_2node_association(bench, lab_tmp, worker_id, transport):
         # Peer must have become Leader (the partition the host joined).
         assert "-> leader" in peer_out, f"peer never became Leader:\n{peer_out[-1500:]}"
 
-        # Data-plane cross-check: the RLOC16 the peer assigned the host during the
-        # MLE join, and the peer's own neighbor table listing that host as a live
-        # Child (role C). Two independent views of one association — the leader,
-        # queried over its radio-formed mesh, confirms it exchanged data with and
-        # registered our host. (ICMP ping needs CSL/indirect-TX timing the emu
-        # doesn't model; the peer's mesh view is what the emu represents faithfully.)
+        # Data-plane check 1 (control): the RLOC16 the peer assigned the host
+        # during the MLE join, cross-checked against the peer's own neighbor
+        # table listing that host as a live Child (role C). Two independent views
+        # of one association — the leader, queried over its radio-formed mesh,
+        # confirms it exchanged data with and registered our host.
         host_rlocs = re.findall(r'RLOC16 \w+ -> ([0-9a-fA-F]{4})', hlog.read_text())
         assert host_rlocs, "host never printed an assigned RLOC16"
         host_rloc = host_rlocs[-1].lower()
@@ -173,8 +178,31 @@ def test_ot_cli_2node_association(bench, lab_tmp, worker_id, transport):
         assert host_rloc in [x.lower() for x in rows], (
             f"host RLOC16 0x{host_rloc} not a Child in the leader's neighbor table "
             f"(rows={rows})\n...peer log tail:\n{peer_out[-1500:]}")
+
+        # Data-plane check 2 (traffic): ping the peer's mesh-local link-local from
+        # the host over the Thread mesh and require replies. This drives real
+        # ICMPv6 echo end-to-end — host OT -> spinel -> RCP -> esp_ieee802154 ->
+        # --thread-sim -> peer and back — exercising MAC link security (the emu
+        # models the radio's AES-CCM* transform) and the RX path, not just the
+        # association relationship.
+        peer.write("ot ipaddr linklocal")
+        eh_test_expect(peer, r'fe80:[0-9a-fA-F:]+', timeout=10)
+        time.sleep(0.5)
+        lls = re.findall(r'^(fe80:[0-9a-fA-F:]{6,})\s*$', plog.read_text(), re.M)
+        assert lls, "peer never printed its link-local address"
+        peer_ll = lls[-1]
+        b["host"].write(f"ot ping {peer_ll} 32 3")
+        pr = eh_test_expect(b["host"], r'(\d+) packets received', fail=FATAL_PATTERNS, timeout=30)
+        assert pr.ok, f"no ping summary from the host pinging the peer {peer_ll}"
+        # Require at least one echo reply (the round-trip crosses two async emu
+        # bridges, so tolerate an occasional dropped packet but not total loss).
+        got = re.findall(r'(\d+) packets transmitted, (\d+) packets received', hlog.read_text())
+        assert got and int(got[-1][1]) >= 1, (
+            f"ICMP ping to {peer_ll} got no replies (result={got})\n"
+            f"...host log tail:\n{hlog.read_text()[-1200:]}")
     finally:
         os.environ.pop("EH_OT_SPINEL", None)
         os.environ.pop("EH_THREAD_SIM_CP", None)
+        os.environ.pop("EH_EMU_RADIO_PACE", None)
         if peer is not None:
             peer.stop()
