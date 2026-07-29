@@ -78,7 +78,7 @@ Hosted offers two ways for the host stack to reach the controller: **Standard HC
 
 ## NimBLE host stack
 
-The Hosted master implements the NimBLE transport API set: `ble_transport_ll_init`, `ble_transport_to_ll_acl_impl`, `ble_transport_to_ll_cmd_impl`, `ble_transport_to_hs_evt`, `ble_transport_to_hs_acl` (see `examples/bluetooth/host_mcu/nimble/components/esp_hosted_hci_nimble/src/esp_hosted_hci_nimble.c`).
+The Hosted master implements the NimBLE transport API set: `ble_transport_ll_init`, `ble_transport_to_ll_acl_impl`, `ble_transport_to_ll_cmd_impl`, `ble_transport_to_hs_evt`, `ble_transport_to_hs_acl` (see `examples/common_components/esp_hosted_hci_nimble/src/esp_hosted_hci_nimble.c`).
 
 ### Over Hosted HCI
 

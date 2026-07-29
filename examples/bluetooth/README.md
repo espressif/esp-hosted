@@ -9,45 +9,63 @@
 ## Hierarchy
 
 ```text
-examples/bluetooth/
-├── cp/
-│   ├── hosted_hci/mcu/cp/            # CP config for Hosted-HCI (VHCI)
-│   └── standard_hci_uart/mcu/cp/     # CP config for direct UART H4
-└── host_mcu/
-    ├── bluedroid/
-    │   ├── components/esp_hosted_hci_bluedroid/
-    │   └── examples/
-    │       ├── hosted_hci/
-    │       └── standard_hci_uart/
-    │           └── bluedroid_host_only_uart/
-    └── nimble/
-        ├── components/esp_hosted_hci_nimble/
-        └── examples/
-            ├── hosted_hci/
-            └── standard_hci_uart/
-                └── bleprph_host_only_uart/
+examples/bluetooth/<family>_<hci-variant>/<scenario>/<role>/
 ```
+
+- `<family>`      — host BT stack: `bluedroid` or `nimble`.
+- `<hci-variant>` — how HCI reaches the co-processor controller:
+  - `hosted_hci`   — VHCI carried over the ESP-Hosted transport (SDIO/SPI).
+  - `standard_hci` — plain H4 HCI over a dedicated UART (no RPC channel open).
+- `<role>` — `cp` (co-processor / controller-side firmware) and
+  `mcu_host` (generic ESP-IDF MCU host). A few scenarios add extra roles
+  (e.g. `cp_wifi` for a Wi-Fi + BLE coexistence controller build).
+
+```text
+examples/bluetooth/
+├── bluedroid_hosted_hci/
+│   ├── ble_advertise_minimal/{cp,mcu_host}
+│   ├── ble_compatibility_test/{cp,mcu_host}
+│   ├── ble_gatt_server/{cp,mcu_host}
+│   ├── bt_hid_mouse/{cp,mcu_host}
+│   ├── classic_bt_discovery/{cp,mcu_host}
+│   └── controller_mac_addr/{cp,mcu_host}
+├── bluedroid_standard_hci/
+│   └── bluedroid_host_only_uart/{cp,mcu_host}
+├── nimble_hosted_hci/
+│   ├── bleprph_gatt/{cp,mcu_host}
+│   ├── bleprph_minimal/{cp,mcu_host}
+│   └── bleprph_wifi_coex/{cp,mcu_host}
+└── nimble_standard_hci/
+    └── bleprph_host_only_uart/{cp,cp_wifi,mcu_host}
+```
+
+Shared host-side glue lives outside this tree in
+`examples/common_components/` (`esp_hosted_hci_bluedroid`,
+`esp_hosted_hci_nimble`, `esp_hosted_examples_common`,
+`nimble_peripheral_utils`).
 
 ## Pairing rules
 
-- `hosted_hci` host examples must pair with `cp/hosted_hci/...` CP firmware.
-- `standard_hci_uart` host examples must pair with `cp/standard_hci_uart/...` CP firmware.
-- Bluedroid vs NimBLE is host-stack choice only; CP is controller-side and transport-mode dependent.
+- A host build under `<family>_<hci-variant>/<scenario>/mcu_host` must be
+  flashed against the `cp` build of the **same scenario directory** — the
+  HCI variant (`hosted_hci` vs `standard_hci`) must match on both sides.
+- Bluedroid vs NimBLE is a host-stack choice only; the `cp` side is
+  controller + transport-mode dependent, not stack dependent.
 
-## Standard UART examples
+## Standard UART (`standard_hci`) examples
 
-- Bluedroid: `host_mcu/bluedroid/examples/standard_hci_uart/bluedroid_host_only_uart/`
-- NimBLE: `host_mcu/nimble/examples/standard_hci_uart/bleprph_host_only_uart/`
+- Bluedroid: `bluedroid_standard_hci/bluedroid_host_only_uart/`
+- NimBLE:    `nimble_standard_hci/bleprph_host_only_uart/`
 
-These are inherited from upstream IDF host-only UART examples with minimal path
-adaptation into this hierarchy.
-
-> The `standard_hci_uart` host examples themselves are pure upstream-IDF
-> HCI-over-UART (no `esp_hosted` dep). The matching CP firmware under
-> `cp/standard_hci_uart/...` uses the ESP-Hosted CP scaffolding only for
-> controller + UART-HCI plumbing — no RPC channel is open in this mode.
+These `mcu_host` projects are pure upstream-IDF HCI-over-UART host apps
+(no `esp_hosted` dependency). The matching `cp` firmware uses the
+ESP-Hosted CP scaffolding only for controller + UART-HCI plumbing — no
+RPC channel is open in this mode.
 
 ## Capability notes
 
-- Classic BT examples require ESP32 as CP.
-- BLE-only chips (C2/C3/C5/C6/C61/H2/S2/S3) work for BLE examples.
+- **Classic BT** examples (`classic_bt_discovery`, `bt_hid_mouse`) require
+  **ESP32** as the co-processor — only ESP32 has a BR/EDR radio.
+- **BLE-only** chips (C2/C3/C5/C6/C61/H2/S2/S3) work for the BLE examples,
+  except **ESP32-S2**, which has no Bluetooth radio and is excluded from
+  all Bluetooth builds.

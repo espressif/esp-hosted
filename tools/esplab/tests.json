@@ -1361,8 +1361,8 @@
           "support": "tbd:host BLE stack + VHCI bridge over SDIO not yet wired in the bench (emulator has a bumble HCI path to leverage)",
           "setup": "p4_c6_sdio",
           "build": {
-            "cp_dir": "examples/bluetooth/cp/hosted_hci",
-            "host_dir": "examples/bluetooth/host_mcu/nimble"
+            "cp_dir": "examples/bluetooth/nimble_hosted_hci/bleprph_gatt/cp",
+            "host_dir": "examples/bluetooth/nimble_hosted_hci/bleprph_gatt/mcu_host"
           },
           "cases": [
             {
@@ -1384,8 +1384,8 @@
           "support": "unsupported:emulator does not model a separate UART HCI stream independent of the SDIO RPC bridge",
           "setup": "p4_c6_sdio",
           "build": {
-            "cp_dir": "examples/bluetooth/cp/standard_hci_uart",
-            "host_dir": "examples/bluetooth/host_mcu/bluedroid"
+            "cp_dir": "examples/bluetooth/bluedroid_standard_hci/bluedroid_host_only_uart/cp",
+            "host_dir": "examples/bluetooth/bluedroid_standard_hci/bluedroid_host_only_uart/mcu_host"
           },
           "cases": [
             {
@@ -1407,8 +1407,8 @@
           "support": "unsupported:no 2.4GHz radio PHY or SW-coex arbitration modelled in the emulator",
           "setup": "p4_c6_sdio",
           "build": {
-            "cp_dir": "examples/bluetooth/cp/wifi_hosted_hci",
-            "host_dir": "examples/bluetooth/host_mcu/nimble"
+            "cp_dir": "examples/bluetooth/nimble_hosted_hci/bleprph_wifi_coex/cp",
+            "host_dir": "examples/bluetooth/nimble_hosted_hci/bleprph_wifi_coex/mcu_host"
           },
           "cases": [
             {

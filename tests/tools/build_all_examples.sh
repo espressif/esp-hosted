@@ -61,12 +61,13 @@ declare -A TRANSPORT_KCONFIG=(
 # Example path patterns → excluded chips (space-separated)
 # Only KNOWN build failures — don't over-exclude.  Patterns are
 # substring-matched against the path relative to repo root, so use
-# enough of the new-layout path to disambiguate (e.g. `bt/standard_hci`
-# rather than just `bt/`, since most examples have a `bt/` somewhere).
+# and matches union: a path may hit several keys (e.g. a classic-BT
+# example matches both `bluetooth/` and its scenario key).
 declare -A EXAMPLE_EXCLUDE_CHIPS=(
     [network_split]="esp32c2 esp32c3"
-    [bt/standard_hci]="esp32s2"
-    [bt/hosted_hci]="esp32s2"
+    [bluetooth/]="esp32s2"
+    [classic_bt_discovery]="esp32c2 esp32c3 esp32c5 esp32c6 esp32c61 esp32s2 esp32s3"
+    [bt_hid_mouse]="esp32c2 esp32c3 esp32c5 esp32c6 esp32c61 esp32s2 esp32s3"
     [power_save]="esp32c2"
     [wifi/enterprise]="esp32c2"
     [wifi/dpp]="esp32c2"
@@ -245,8 +246,9 @@ SKIP_RULES_FILE="$OUT_DIR/.skip_rules"
 cat > "$SKIP_RULES_FILE" << 'RULES'
 # pattern chip [chip ...]   (path-substring match against examples/<rel>)
 network_split        esp32c2 esp32c3
-bt/standard_hci      esp32s2
-bt/hosted_hci        esp32s2
+bluetooth/           esp32s2
+classic_bt_discovery esp32c2 esp32c3 esp32c5 esp32c6 esp32c61 esp32s2 esp32s3
+bt_hid_mouse         esp32c2 esp32c3 esp32c5 esp32c6 esp32c61 esp32s2 esp32s3
 power_save           esp32c2
 wifi/enterprise      esp32c2
 wifi/dpp             esp32c2
