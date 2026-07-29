@@ -852,12 +852,19 @@ Refer [RAW throughput guide](docs/Raw_TP_Testing.md) for verifying connection as
 </thead>
 <tbody>
 <tr>
-<td rowspan=2 align="center">ESP32</td>
-<td rowspan=1 align="center">SDIO</td>
-<td align="center">22.9 Mbps</td>
-<td align="center">15.6 Mbps</td>
-<td align="center">45.6 Mbps</td>
-<td align="center">20.4 Mbps</td>
+<td rowspan=3 align="center">ESP32</td>
+<td align="center">SDIO 2.4 GHz (40MHz)</td>
+<td align="center">43.5 Mbps</td>
+<td align="center">24.8 Mbps</td>
+<td align="center">47.6 Mbps</td>
+<td align="center">49.1 Mbps</td>
+</tr>
+<tr>
+<td align="center">SDIO 2.4 GHz (20MHz)</td>
+<td align="center">32.4 Mbps</td>
+<td align="center">28.3 Mbps</td>
+<td align="center">36.1 Mbps</td>
+<td align="center">41.7 Mbps</td>
 </tr>
 <tr>
 <td align="center">SPI</td>
@@ -904,12 +911,19 @@ Refer [RAW throughput guide](docs/Raw_TP_Testing.md) for verifying connection as
 <td align="center">65 Mbps</td>
 </tr>
 <tr>
-<td rowspan=2 align="center">ESP32-C6</td>
-<td align="center">SDIO</td>
-<td align="center">22.4 Mbps</td>
-<td align="center">25.6 Mbps</td>
-<td align="center">55.1 Mbps</td>
-<td align="center">29.8 Mbps</td>
+<td rowspan=3 align="center">ESP32-C6</td>
+<td align="center">SDIO 2.4 GHz (40MHz)</td>
+<td align="center">41.7 Mbps</td>
+<td align="center">51 Mbps</td>
+<td align="center">90.4 Mbps</td>
+<td align="center">58.4 Mbps</td>
+</tr>
+<tr>
+<td align="center">SDIO 2.4 GHz (20MHz)</td>
+<td align="center">40.9 Mbps</td>
+<td align="center">55.6 Mbps</td>
+<td align="center">67.8 Mbps</td>
+<td align="center">68.3 Mbps</td>
 </tr>
 <tr>
 <td align="center">SPI</td>
@@ -919,12 +933,19 @@ Refer [RAW throughput guide](docs/Raw_TP_Testing.md) for verifying connection as
 <td align="center">17.2 Mbps</td>
 </tr>
 <tr>
-<td rowspan=2 align="center">ESP32-C61</td>
-<td align="center">SDIO</td>
-<td align="center">13.6 Mbps</td>
-<td align="center">21.1 Mbps</td>
-<td align="center">52.3 Mbps</td>
-<td align="center">32.9 Mbps</td>
+<td rowspan=3 align="center">ESP32-C61</td>
+<td align="center">SDIO 2.4 GHz (40MHz)</td>
+<td align="center">42.3 Mbps</td>
+<td align="center">41.5 Mbps</td>
+<td align="center">57.2 Mbps</td>
+<td align="center">45.3 Mbps</td>
+</tr>
+<tr>
+<td align="center">SDIO 2.4 GHz (20MHz)</td>
+<td align="center">42.6 Mbps</td>
+<td align="center">40.7 Mbps</td>
+<td align="center">64 Mbps</td>
+<td align="center">44.6 Mbps</td>
 </tr>
 <tr>
 <td align="center">SPI</td>
@@ -935,6 +956,11 @@ Refer [RAW throughput guide](docs/Raw_TP_Testing.md) for verifying connection as
 </tr>
 </tbody>
 </table>
+
+> [!NOTE]
+> - **Host Platforms Used**:
+>   - **ESP32-C5**: Tested on **Raspberry Pi 5** with SDIO clock frequency set to **50 MHz**.
+>   - **Other Chipsets** (ESP32, ESP32-C3, ESP32-C6, ESP32-C61): Tested on **Raspberry Pi 4B** with SDIO clock frequency set to **41.67 MHz**.
 
 ---
 
