@@ -1,8 +1,18 @@
+/*
+ * SPDX-FileCopyrightText: 2026 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 /* SPDX-License-Identifier: Apache-2.0 */
 #include "esp_log.h"
 #include "nvs_flash.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "soc/soc_caps.h"
+
+#if !SOC_BT_CLASSIC_SUPPORTED
+#error "This hosted Classic-BT (BR/EDR) coprocessor example requires an ESP32 target (only ESP32 has a BR/EDR controller)."
+#endif
 
 static const char *TAG = "bt_cp_hosted_hci";
 

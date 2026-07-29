@@ -1,8 +1,18 @@
+/*
+ * SPDX-FileCopyrightText: 2026 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 /* SPDX-License-Identifier: Apache-2.0 */
 #include "esp_log.h"
 #include "nvs_flash.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "soc/soc_caps.h"
+
+#if !SOC_BLE_SUPPORTED
+#error "This hosted-BLE coprocessor example requires a BLE-capable target (excludes ESP32-S2)."
+#endif
 
 static const char *TAG = "bt_cp_standard_hci_uart";
 
