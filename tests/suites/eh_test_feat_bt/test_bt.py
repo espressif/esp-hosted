@@ -111,23 +111,34 @@ def test_bt_central_connect(bench, lab_tmp, worker_id, example, transport):
     port = lab.alloc_bench(worker_id)["port"]  # reserved per-worker range, not OS-ephemeral
     blog = Path(lab_tmp) / "bumble.log"
     os.environ["EH_BLE_HCI_PORT"] = str(port)
-    bp = None
-    try:
+    bp_box = []  # holds the Bumble proc; a list so the pre_launch closure can set it
+
+    def _start_bumble():
+        # Run by bench() AFTER the firmware is built, BEFORE the emus launch, so
+        # Bumble's connect deadline covers only emu bring-up. Starting it before the
+        # build (as this test used to) let a cold-cache build (minutes) outlast the
+        # deadline -> Bumble exits -> closes the HCI socket -> CP --ble-hci hits
+        # ECONNREFUSED and the whole cell fails. (bf closes here; the child keeps its
+        # dup'd fd, matching the previous behaviour.)
         with open(blog, "w") as bf:
-            bp = subprocess.Popen([str(_VENV_PY), "-u", str(_BUMBLE)], env=os.environ,
-                                  stdout=bf, stderr=subprocess.STDOUT)
-        # Start the emu only once Bumble is actually listening — no fixed-sleep race.
+            bp_box.append(subprocess.Popen([str(_VENV_PY), "-u", str(_BUMBLE)], env=os.environ,
+                                           stdout=bf, stderr=subprocess.STDOUT))
         if not _wait_listening(blog):
             pytest.fail("Bumble HCI controller never started listening")
-        b = bench(f"bluetooth/{example}", "mcu_host", transport, timeout="240s")
+
+    try:
+        b = bench(f"bluetooth/{example}", "mcu_host", transport, timeout="240s",
+                  pre_launch=_start_bumble)
         r = eh_test_expect(b["host"], r'advertising as ', fail=FATAL_PATTERNS, timeout=90)
         assert r.ok, f"{example} peripheral did not advertise"
-        try:
-            bp.wait(timeout=180)
-        except subprocess.TimeoutExpired:
-            pass
+        if bp_box:
+            try:
+                bp_box[0].wait(timeout=180)
+            except subprocess.TimeoutExpired:
+                pass
     finally:
         os.environ.pop("EH_BLE_HCI_PORT", None)
+        bp = bp_box[0] if bp_box else None
         if bp and bp.poll() is None:
             bp.terminate()
             try:

@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2026 Espressif Systems (Shanghai) CO LTD
+# SPDX-License-Identifier: Apache-2.0
 """Root conftest for all ESP-Hosted test substrates (emu / hw / linux).
 
 Puts tests/ on sys.path (so suites share infra/) and registers the event-bus
@@ -264,16 +266,22 @@ def bench(substrate, lab_tmp, worker_id):
 
     def _make(example, host_role="mcu_host", transport="sdio", timeout="60s",
               wake=False, overlay=None, cp_overlay=None, cp_ota_overlay=None,
-              hostfwd=(), cp_app_to_host=None):
+              hostfwd=(), cp_app_to_host=None, pre_launch=None):
         if transport not in target.transports:
             pytest.skip(f"{substrate} bench provides no transport={transport}")
+        # pre_launch: a callback run AFTER firmware is built but BEFORE the DUTs
+        # launch. Lets a test stand up an external peer (e.g. Bumble) whose connect
+        # deadline must cover only device bring-up, not the (possibly minutes-long,
+        # cold-cache) build. Only the emu target honours it; passed only when set so
+        # other targets' signatures are untouched.
+        extra = {"pre_launch": pre_launch} if pre_launch is not None else {}
         b = target.make(
             BenchSpec(example=example, host_role=host_role, transport=transport,
                       wake=wake, timeout=timeout, extra_ovl=tuple(overlay or ()),
                       cp_extra_ovl=tuple(cp_overlay or ()),
                       cp_ota_ovl=tuple(cp_ota_overlay or ()),
                       hostfwd=tuple(hostfwd), cp_app_to_host=cp_app_to_host),
-            worker_id=worker_id, lab_tmp=lab_tmp)
+            worker_id=worker_id, lab_tmp=lab_tmp, **extra)
         made.append(b)
         out = {"host": b.host, "cp": b.cp, "caps": b.caps}
         if b.net is not None:

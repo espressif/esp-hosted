@@ -112,7 +112,7 @@ class EmuTarget(BenchProvider):
     def __init__(self):
         pass  # per-bench resources come from lab.alloc_bench (survives EmuTarget churn)
 
-    def make(self, spec: BenchSpec, *, worker_id, lab_tmp) -> Bench:
+    def make(self, spec: BenchSpec, *, worker_id, lab_tmp, pre_launch=None) -> Bench:
         emu = emu_bin()
         timeout = os.environ.get("EH_EMU_TIMEOUT", spec.timeout)  # per-phase override
         transport = spec.transport
@@ -252,6 +252,13 @@ class EmuTarget(BenchProvider):
             spinel_host = ["--hosted-uart", f"bridge:host:{spin_sock}"]
         _ts_cp = os.environ.get("EH_THREAD_SIM_CP")
         thread_arg = ["--thread-sim", _ts_cp] if _ts_cp else []
+        # Firmware is built and bridges are resolved; the DUTs are about to launch.
+        # Run the test's pre_launch hook HERE so an external peer (e.g. Bumble)
+        # opens its connect window now — after the (possibly cold-cache, minutes-
+        # long) build, not before it. Placed after the prewarm-skip so a build-only
+        # prewarm pass never starts a peer with no emu to answer it.
+        if pre_launch is not None:
+            pre_launch()
         cp = EmuDut("cp", [str(emu), "--chip", spec.cp_target, "--firmware", cp_flash,
                            "--elf", cp_fw["elf"], *cp_bridge, *spinel_cp, *thread_arg,
                            *ble_arg, *net_arg, "--timeout", timeout],
