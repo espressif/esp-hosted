@@ -1,4 +1,8 @@
-/* SPDX-License-Identifier: Apache-2.0 */
+/*
+ * SPDX-FileCopyrightText: 2026 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 /* One-call init/deinit facade over vserial + base RPC + auto-init features. */
 
 #include <errno.h>
@@ -289,9 +293,10 @@ int eh_host_init(const eh_host_init_cfg_t *cfg)
     }
 
     rpc_cfg = (eh_host_feat_rpc_cfg_t){
-        .io_ops    = io_ops,
-        .proto_ops = eh_host_feat_rpc_ext_v2_proto_ops(),
-        .id_ranges = eh_host_feat_rpc_ext_v2_id_ranges(),
+        .io_ops          = io_ops,
+        .proto_ops       = eh_host_feat_rpc_ext_v2_proto_ops(),
+        .id_ranges       = eh_host_feat_rpc_ext_v2_id_ranges(),
+        .rpc_timeout_ms  = EH_HOST_RPC_TIMEOUT_MS,
     };
     rc = eh_host_feat_rpc_init(&rpc_cfg);
     if (rc != 0) {

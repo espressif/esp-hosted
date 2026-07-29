@@ -1,4 +1,8 @@
-/* SPDX-License-Identifier: Apache-2.0 */
+/*
+ * SPDX-FileCopyrightText: 2026 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include <stdbool.h>
 #include <stddef.h>
@@ -25,7 +29,8 @@
 
 esp_err_t eh_host_cp_ota_begin(void)
 {
-    return eh_rpc_do_empty_request(RPC_ID__Req_OTABegin);
+    return eh_rpc_do_empty_request_timeout(RPC_ID__Req_OTABegin,
+                                           EH_HOST_OTA_BEGIN_TIMEOUT_MS);
 }
 
 esp_err_t eh_host_cp_ota_write(const uint8_t *ota_data, uint32_t ota_data_len)

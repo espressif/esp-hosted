@@ -1,4 +1,8 @@
-/* SPDX-License-Identifier: Apache-2.0 */
+/*
+ * SPDX-FileCopyrightText: 2026 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include <stddef.h>
 #include <stdint.h>
@@ -31,6 +35,18 @@ esp_err_t eh_rpc_do_empty_request(int32_t msg_id)
 {
     eh_rpc_ctrl_cmd_t *req = eh_rpc_ctrl_cmd_alloc();
     if (!req) return ESP_FAIL;
+    eh_rpc_ctrl_cmd_t *r = NULL;
+    if (eh_host_feat_rpc_request_sync(msg_id, req, (void **)&r) != 0) return ESP_FAIL;
+    int rc = r->resp_event_status;
+    eh_rpc_ctrl_cmd_free(r);
+    return (esp_err_t)rc;
+}
+
+esp_err_t eh_rpc_do_empty_request_timeout(int32_t msg_id, uint32_t timeout_ms)
+{
+    eh_rpc_ctrl_cmd_t *req = eh_rpc_ctrl_cmd_alloc();
+    if (!req) return ESP_FAIL;
+    req->rsp_timeout_ms = timeout_ms;
     eh_rpc_ctrl_cmd_t *r = NULL;
     if (eh_host_feat_rpc_request_sync(msg_id, req, (void **)&r) != 0) return ESP_FAIL;
     int rc = r->resp_event_status;
