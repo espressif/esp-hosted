@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# SPDX-FileCopyrightText: 2026 Espressif Systems (Shanghai) CO LTD
+# SPDX-License-Identifier: Apache-2.0
 """Generate registry example READMEs from the top-level example README's markers.
 
 Publish-time only (run in the upload_component CI step); generated files are NOT
@@ -187,7 +189,7 @@ def main():
     for ex in targets:
         for path, warns in process(ex, args.dry_run, out_dir):
             total += 1
-            rel = path.relative_to(REPO)
+            rel = path.relative_to(out_dir if out_dir else REPO)
             if warns:
                 warned += 1
                 print(f"WARN {rel}: {'; '.join(warns)}", file=sys.stderr)

@@ -3,6 +3,24 @@
 <!-- common-start -->
 Runs a Zigbee **Home Automation Thermostat** (a Zigbee Coordinator) on the host. The co-processor is the 802.15.4 **Radio Co-Processor (RCP)** — the *same* stack-agnostic RCP used by OpenThread: the host drives the RCP lifecycle over ESP-Hosted (RPC) and exchanges 802.15.4 (spinel) traffic over a **dedicated UART**. Zigbee vs OpenThread is purely a host-side choice (the host links `esp-zigbee-lib` instead of `openthread`); the co-processor firmware is identical. Adapted from the [ESP Zigbee SDK Thermostat example](https://github.com/espressif/esp-zigbee-sdk/tree/main/examples/home_automation_devices/thermostat). See the [OpenThread and Zigbee Support](https://github.com/espressif/esp-hosted-mcu/blob/main/docs/openthread_zigbee.md) doc for the RCP architecture.
 
+The co-processor plays two roles: the **ESP-Hosted CP** (control, over the
+bus) and the **802.15.4 RCP** (radio, over the dedicated UART). Both are the
+same ESP32-C6 (Wi-Fi off) — two roles, not two chips, and not wired to each
+other. A working deployment is 3 SoCs: host, that co-processor, and a
+separate Zigbee end-device.
+
+```text
+  Host (ESP32-P4) - Zigbee Coordinator
+    |
+    |  ESP-Hosted bus (SDIO / SPI / UART)
+    +--- RPC: RCP control -----------> [ ESP-Hosted CP ]      (control stops here)
+    |
+    |  dedicated UART
+    +--- 802.15.4 spinel (data) -----> [ 802.15.4 RCP ] --- 802.15.4 RF ---> Zigbee end-device
+```
+
+Data path: host -> spinel UART -> RCP radio -> RF -> end-device (a sensor).
+
 ## Supported Platforms and Transports
 
 ### Supported Coprocessors
@@ -15,7 +33,7 @@ Zigbee uses an 802.15.4 radio co-processor (RCP) — the same RCP firmware as Op
 
 ### Supported Host Devices
 
-The Zigbee stack (`esp-zigbee-lib`) is ESP-IDF-only, so the host is an ESP-IDF device (role `esp_host`). PSRAM is required.
+The Zigbee stack (`esp-zigbee-lib`) is ESP-IDF-only, so the host is an ESP-IDF device (role `esp_host`). PSRAM is recommended to be used.
 
 | Host Device | ESP32-P4 | Other MCUs | Linux |
 | :---------: | :------: | :--------: | :---: |
@@ -148,13 +166,13 @@ Component config
                          └── (460800) Baud rate
 ```
 
-The host dependency config is **pre-set in `esp_host/sdkconfig.defaults`** (`sdkconfig.defaults.esp32p4` for the PSRAM part) — do not remove:
+The host dependency config is **pre-set in `esp_host/sdkconfig.defaults`** — do not remove:
 
 ```text
 CONFIG_ZB_ENABLED=y                          # Zigbee stack (esp-zigbee-lib)
 CONFIG_ESP_HOSTED_HOST_FEAT_OPENTHREAD=y     # host RCP-control feature (serves Zigbee too)
 CONFIG_ESP_HOSTED_HOST_FEAT_RPC_EXT_V2=y     # required RPC ext-v2 (FEAT_OPENTHREAD depends on it)
-CONFIG_SPIRAM=y                              # REQUIRED — host won't start without PSRAM
+CONFIG_SPIRAM=y                              # PSRAM integration
 CONFIG_ESP_HOSTED_DFLT_TASK_FROM_SPIRAM=y
 CONFIG_OPENTHREAD_RX_ON_WHEN_IDLE=n          # keep in sync with RCP coexistence
 ```

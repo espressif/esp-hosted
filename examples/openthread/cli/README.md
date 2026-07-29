@@ -3,6 +3,24 @@
 <!-- common-start -->
 Runs a full OpenThread CLI (`ot ...`) on the host. The co-processor is the 802.15.4 **Radio Co-Processor (RCP)**: the host drives the RCP lifecycle over ESP-Hosted (RPC) and exchanges 802.15.4 (spinel) traffic over a **dedicated UART**. Adapted from `esp-idf/examples/openthread/ot_cli`.
 
+The co-processor plays two roles: the **ESP-Hosted CP** (control, over the
+bus) and the **802.15.4 RCP** (radio, over the dedicated UART). Both are the
+same ESP32-C6 (Wi-Fi off) — two roles, not two chips, and not wired to each
+other. A working deployment is 3 SoCs: host, that co-processor, and a
+separate Thread peer.
+
+```text
+  Host (ESP32-P4) - OpenThread stack
+    |
+    |  ESP-Hosted bus (SDIO / SPI / UART)
+    +--- RPC: RCP control -----------> [ ESP-Hosted CP ]      (control stops here)
+    |
+    |  dedicated UART
+    +--- 802.15.4 spinel (data) -----> [ 802.15.4 RCP ] --- 802.15.4 RF ---> Thread peer
+```
+
+Data path: host -> spinel UART -> RCP radio -> RF -> peer (a separate SoC).
+
 ## Supported Platforms and Transports
 
 ### Supported Coprocessors

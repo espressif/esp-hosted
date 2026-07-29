@@ -12,6 +12,24 @@ one radio on the CP, expect coexistence trade-offs; for a multi-MCU
 split (P4 + C6 Wi-Fi + H2 RCP) see the ESP-Thread-BR P4 example linked
 below. Adapted from `esp-idf/examples/openthread/ot_br`.
 
+One co-processor plays two roles: a **Wi-Fi CP** (backhaul, over the bus)
+and an **802.15.4 RCP** (radio, over the dedicated UART), bridging a Thread
+mesh to the Wi-Fi LAN. Both are the same ESP32-C6 (coex) — two roles, not
+two chips, and not wired to each other.
+
+```text
+  Host (ESP32-P4) - OpenThread Border Router (mDNS / NAT64)
+    |
+    |  ESP-Hosted bus (SDIO / SPI)
+    +--- RPC: control + Wi-Fi ------> [ Wi-Fi CP ] ------- Wi-Fi RF -----> Wi-Fi AP / LAN
+    |
+    |  dedicated UART
+    +--- 802.15.4 spinel (data) ----> [ 802.15.4 RCP ] --- 802.15.4 RF --> Thread mesh
+```
+
+Wi-Fi RF leaves the Wi-Fi CP; 802.15.4 RF leaves the RCP radio. For a
+two-chip split (C6 Wi-Fi + H2 RCP) see the ESP-Thread-BR P4 example.
+
 ## Supported Platforms and Transports
 
 ### Supported Coprocessors
@@ -217,7 +235,7 @@ eh.py -p <host_usb_serial_port> flash monitor
 
 - Forming the Thread network uses the standard OT CLI (`ot dataset init
   new` / `commit active` / `ifconfig up` / `thread start`) — same
-  sequence as the [`thread/cli`](../cli/README.md) example.
+  sequence as the [`openthread/cli`](../cli/README.md) example.
 
 - 4 MB flash with a custom partition table (`partitions.csv`); mbedTLS
   ECJPAKE + DTLS enabled for Thread commissioning; multi-instance mDNS
