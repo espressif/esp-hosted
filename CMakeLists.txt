@@ -26,6 +26,12 @@ endif()
 if(ESP_PLATFORM)
     file(GLOB _eh_feat_incs LIST_DIRECTORIES true RELATIVE "${EH_PATH}"
         "${EH_PATH}/host/features/eh_host_feat_*/include")
+    # BT stack-port headers (examples/common_components); exposed on the
+    # esp_hosted surface so an example's main sees them via REQUIRES esp_hosted.
+    file(GLOB _eh_bt_port_incs LIST_DIRECTORIES true RELATIVE "${EH_PATH}"
+        "${EH_PATH}/examples/common_components/eh_host_nimble/include"
+        "${EH_PATH}/examples/common_components/eh_host_bluedroid/include")
+    list(APPEND _eh_feat_incs ${_eh_bt_port_incs})
 
     # ldgen places the feature-descriptor section into a declared region (no
     # "undeclared region" linker warning). Host and CP each map their own section.
@@ -36,12 +42,19 @@ if(ESP_PLATFORM)
         list(APPEND _eh_ldfragments "coprocessor/eh_cp_feat_descs.lf")
     endif()
 
+    # Pull in IDF's bt component only when a hosted-BT stack port is enabled.
+    set(_eh_bt_port_reqs "")
+    if(CONFIG_ESP_HOSTED_HOST_BT_PORT_NIMBLE OR CONFIG_ESP_HOSTED_HOST_BT_PORT_BLUEDROID)
+        list(APPEND _eh_bt_port_reqs bt)
+    endif()
+
     idf_component_register(NAME esp_hosted
         INCLUDE_DIRS host/compat/include ${_eh_feat_incs}
         REQUIRES esp_event esp_timer log esp_common esp_wifi
         PRIV_REQUIRES driver esp_driver_gpio esp_driver_spi esp_driver_sdmmc esp_driver_uart
                       esp_pm nvs_flash
                       protocomm  # eh_cp_feat_rpc when CP framework is built
+                      ${_eh_bt_port_reqs}
         LDFRAGMENTS ${_eh_ldfragments})
 
     # eh_host  — HOST-side aggregator; every host/ subdir self-attaches.
@@ -95,6 +108,17 @@ if(CONFIG_ESP_HOSTED_CP)
 endif()
 if(CONFIG_ESP_HOSTED_HOST)
     add_subdirectory("${EH_PATH}/host"         ${CMAKE_BINARY_DIR}/host)
+endif()
+# BT stack ports (examples/common_components) — gated internal libs of the
+# esp_hosted component; wired here (parent→child) so an example only sets the
+# Kconfig. feat_bt (added by host/ above) is available for the down-link.
+if(CONFIG_ESP_HOSTED_HOST_BT_PORT_NIMBLE)
+    add_subdirectory("${EH_PATH}/examples/common_components/eh_host_nimble"
+                     ${CMAKE_BINARY_DIR}/eh_host_nimble)
+endif()
+if(CONFIG_ESP_HOSTED_HOST_BT_PORT_BLUEDROID)
+    add_subdirectory("${EH_PATH}/examples/common_components/eh_host_bluedroid"
+                     ${CMAKE_BINARY_DIR}/eh_host_bluedroid)
 endif()
 add_subdirectory("${EH_PATH}/port"             ${CMAKE_BINARY_DIR}/port)
 

@@ -1,8 +1,11 @@
 # Role: HOST (MCU)
 CONFIG_ESP_HOSTED=y
 
-# Features: BT (Bluedroid)
+# Features: BT (Bluedroid) + the Bluedroid hosted-HCI port.
 CONFIG_ESP_HOSTED_HOST_FEAT_BT=y
+CONFIG_ESP_HOSTED_HOST_BT_PORT_BLUEDROID=y
+# P1: explicit eh_host_bluedroid_init() (auto-init path is a follow-up).
+CONFIG_ESP_HOSTED_HOST_BT_PORT_BLUEDROID_AUTO_INIT=n
 
 # Transport: MCU default
 

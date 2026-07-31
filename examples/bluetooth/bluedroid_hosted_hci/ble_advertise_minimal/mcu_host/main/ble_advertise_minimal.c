@@ -1,3 +1,8 @@
+/*
+ * SPDX-FileCopyrightText: 2026 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 /* SPDX-License-Identifier: Apache-2.0 */
 /*
  * ble_advertise_minimal.c — smallest Bluedroid + ESP-Hosted example.
@@ -24,7 +29,7 @@
 #include "esp_gap_ble_api.h"
 
 #include "esp_hosted.h"
-#include "esp_hosted_hci_bluedroid.h"
+#include "eh_host_bluedroid.h"
 #include "esp_check.h"
 
 #include "sdkconfig.h"
@@ -87,7 +92,7 @@ static void gap_event_handler(esp_gap_ble_cb_event_t event,
 #if CONFIG_EXAMPLE_USE_SETUP_HELPER
 static esp_err_t setup_hosted_and_bridge(void)
 {
-    return esp_hosted_hci_bluedroid_setup();
+    return eh_host_bluedroid_init();
 }
 #else
 static esp_err_t setup_hosted_and_bridge(void)

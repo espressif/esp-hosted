@@ -1,3 +1,8 @@
+/*
+ * SPDX-FileCopyrightText: 2026 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 /* SPDX-License-Identifier: Apache-2.0 */
 /*
  * bleprph_minimal.c — smallest NimBLE + ESP-Hosted example.
@@ -24,7 +29,7 @@
 #include "host/util/util.h"
 #include "services/gap/ble_svc_gap.h"
 
-#include "esp_hosted_hci_nimble.h"
+#include "eh_host_nimble.h"
 #include "esp_check.h"
 
 #include "sdkconfig.h"
@@ -143,7 +148,7 @@ void app_main(void)
     ESP_ERROR_CHECK(err);
 
     /* 2. ESP-Hosted + NimBLE bridge — only Hosted-specific call. */
-    ESP_ERROR_CHECK(esp_hosted_hci_nimble_setup());
+    ESP_ERROR_CHECK(eh_host_nimble_init());
 
     /* 3. Standard NimBLE init.  Bridge's strong overrides for
      *    ble_transport_to_ll_* are already linked in. */

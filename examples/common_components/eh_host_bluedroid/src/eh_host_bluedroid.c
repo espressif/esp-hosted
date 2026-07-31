@@ -1,11 +1,18 @@
+/*
+ * SPDX-FileCopyrightText: 2026 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 /* SPDX-License-Identifier: Apache-2.0 */
 /*
- * esp_hosted_hci_bluedroid.c — Bluedroid <-> ESP-Hosted HCI bridge.
+ * eh_host_bluedroid.c — Bluedroid <-> ESP-Hosted HCI port.
  *
- * Bluedroid speaks H4 (pkt-type | body) on both its send and recv
- * hooks, which is exactly the on-wire HCI form ESP-Hosted carries, so
- * this bridge is a thin forwarder. Stack-specific; lives outside the
- * core component so users can fork it freely.
+ * Bluedroid speaks H4 (pkt-type | body) on both its send and recv hooks,
+ * which is exactly the on-wire HCI form ESP-Hosted carries, so this port
+ * is a thin forwarder. init/deinit are public (auto-init at priority after
+ * feat_bt, or callable by the app when auto-init is disabled). The
+ * hosted_hci_bluedroid_* ops keep their upstream names — the compat header
+ * esp_hosted_bluedroid.h re-exports them for a bring-your-own-driver app.
  */
 
 #include <stdbool.h>
@@ -20,11 +27,15 @@
 
 #include "esp_bluedroid_hci.h"
 #include "esp_hosted.h"
-#include "esp_hosted_hci_bluedroid.h"
 
 #include "eh_host_feat_bt_mcu.h"
+#if defined(CONFIG_ESP_HOSTED_HOST_BT_PORT_BLUEDROID_AUTO_INIT)
+#include "eh_host_auto_init.h"
+#endif
 
-static const char TAG[] = "hci_bluedroid";
+#include "eh_host_bluedroid.h"
+
+static const char TAG[] = "eh_host_bluedroid";
 
 /* Single subscriber — Bluedroid is the only HCI host stack per build. */
 static esp_bluedroid_hci_driver_callbacks_t s_callback;
@@ -72,7 +83,7 @@ esp_err_t hosted_hci_bluedroid_register_host_callback(
 
 /* TX: Bluedroid → ESP-Hosted. `data` is an H4-prefixed buffer owned by
  * Bluedroid; the transport copies it synchronously, so pass it straight
- * through — no bridge-side copy. */
+ * through — no port-side copy. */
 void hosted_hci_bluedroid_send(uint8_t *data, uint16_t len)
 {
     if (!data || len == 0) return;
@@ -80,20 +91,22 @@ void hosted_hci_bluedroid_send(uint8_t *data, uint16_t len)
         ESP_LOGE(TAG, "hci tx failed (len=%u)", len);
 }
 
-esp_err_t esp_hosted_hci_bluedroid_setup(void)
+esp_err_t eh_host_bluedroid_init(void)
 {
     esp_err_t err = esp_hosted_connect_to_slave();
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "connect_to_slave failed: %s", esp_err_to_name(err));
         return err;
     }
+    /* feat_bt (lower priority) may already have brought the controller up;
+     * ESP_ERR_INVALID_STATE means "already done" — treat as success. */
     err = esp_hosted_bt_controller_init();
-    if (err != ESP_OK) {
+    if (err != ESP_OK && err != ESP_ERR_INVALID_STATE) {
         ESP_LOGE(TAG, "BT controller init failed: %s", esp_err_to_name(err));
         return err;
     }
     err = esp_hosted_bt_controller_enable();
-    if (err != ESP_OK) {
+    if (err != ESP_OK && err != ESP_ERR_INVALID_STATE) {
         ESP_LOGE(TAG, "BT controller enable failed: %s", esp_err_to_name(err));
         return err;
     }
@@ -108,11 +121,11 @@ esp_err_t esp_hosted_hci_bluedroid_setup(void)
         ESP_LOGE(TAG, "attach_hci_driver failed: %s", esp_err_to_name(err));
         return err;
     }
-    ESP_LOGI(TAG, "ESP-Hosted Bluedroid bridge ready");
+    ESP_LOGI(TAG, "ESP-Hosted Bluedroid port ready");
     return ESP_OK;
 }
 
-esp_err_t esp_hosted_hci_bluedroid_teardown(void)
+esp_err_t eh_host_bluedroid_deinit(void)
 {
     (void)hosted_hci_bluedroid_register_host_callback(NULL);
 
@@ -124,3 +137,11 @@ esp_err_t esp_hosted_hci_bluedroid_teardown(void)
         ESP_LOGW(TAG, "BT controller deinit failed: %s", esp_err_to_name(err));
     return ESP_OK;
 }
+
+/* Auto-init registration (priority 250 — after feat_bt's 150 so the HCI
+ * byte-pipe is up first; reverse on deinit). Compiled only when auto-init is
+ * chosen; with it off, init/deinit stay public for the app. */
+#if defined(CONFIG_ESP_HOSTED_HOST_BT_PORT_BLUEDROID_AUTO_INIT)
+EH_HOST_FEAT_REGISTER(eh_host_bluedroid_init, eh_host_bluedroid_deinit,
+                      "bt_port_bluedroid", 250);
+#endif

@@ -1,11 +1,17 @@
+/*
+ * SPDX-FileCopyrightText: 2026 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 /* SPDX-License-Identifier: Apache-2.0 */
 /*
- * esp_hosted_hci_nimble.c — NimBLE <-> ESP-Hosted HCI bridge.
+ * eh_host_nimble.c — NimBLE <-> ESP-Hosted HCI port.
  *
  * NimBLE's transport layer declares weak `ble_transport_to_ll_*`
  * functions; our strong overrides forward H4 frames to ESP-Hosted.
  * RX is wired via eh_host_bt_mcu_hci_register, which returns the bound
- * tx fn. Bridge code is stack-specific and lives outside the core.
+ * tx fn. init/deinit are public (auto-init at priority after feat_bt,
+ * or callable by the app when auto-init is disabled).
  */
 
 #include <stdint.h>
@@ -29,10 +35,13 @@
 
 #include "esp_hosted.h"
 #include "eh_host_feat_bt_mcu.h"
+#if defined(CONFIG_ESP_HOSTED_HOST_BT_PORT_NIMBLE_AUTO_INIT)
+#include "eh_host_auto_init.h"
+#endif
 
-#include "esp_hosted_hci_nimble.h"
+#include "eh_host_nimble.h"
 
-static const char TAG[] = "hci_nimble";
+static const char TAG[] = "eh_host_nimble";
 
 #define BLE_HCI_EVT_HDR_LEN (2)
 
@@ -130,7 +139,7 @@ void ble_transport_ll_init(void)   { }
 void ble_transport_ll_deinit(void) { }
 #endif
 
-esp_err_t esp_hosted_hci_nimble_setup(void)
+esp_err_t eh_host_nimble_init(void)
 {
     /* The CP may still be booting when the host reaches here — the minimal BT
      * app boots fast while the CP does full controller init, and slower-handshake
@@ -148,13 +157,15 @@ esp_err_t esp_hosted_hci_nimble_setup(void)
         ESP_LOGE(TAG, "connect_to_slave failed: %s", esp_err_to_name(err));
         return err;
     }
+    /* feat_bt (lower priority) may already have brought the controller up;
+     * ESP_ERR_INVALID_STATE means "already done" — treat as success. */
     err = esp_hosted_bt_controller_init();
-    if (err != ESP_OK) {
+    if (err != ESP_OK && err != ESP_ERR_INVALID_STATE) {
         ESP_LOGE(TAG, "BT controller init failed: %s", esp_err_to_name(err));
         return err;
     }
     err = esp_hosted_bt_controller_enable();
-    if (err != ESP_OK) {
+    if (err != ESP_OK && err != ESP_ERR_INVALID_STATE) {
         ESP_LOGE(TAG, "BT controller enable failed: %s", esp_err_to_name(err));
         return err;
     }
@@ -164,11 +175,11 @@ esp_err_t esp_hosted_hci_nimble_setup(void)
         return ESP_FAIL;
     }
     s_hci_tx = tx;
-    ESP_LOGI(TAG, "ESP-Hosted NimBLE bridge ready");
+    ESP_LOGI(TAG, "ESP-Hosted NimBLE port ready");
     return ESP_OK;
 }
 
-esp_err_t esp_hosted_hci_nimble_teardown(void)
+esp_err_t eh_host_nimble_deinit(void)
 {
     eh_host_bt_mcu_hci_unregister();
     s_hci_tx = hci_tx_unbound;
@@ -181,3 +192,11 @@ esp_err_t esp_hosted_hci_nimble_teardown(void)
         ESP_LOGW(TAG, "BT controller deinit failed: %s", esp_err_to_name(err));
     return ESP_OK;
 }
+
+/* Auto-init registration (priority 250 — after feat_bt's 150 so the HCI
+ * byte-pipe is up first; reverse on deinit). Compiled only when auto-init is
+ * chosen; with it off, eh_host_nimble_init/deinit stay public for the app. */
+#if defined(CONFIG_ESP_HOSTED_HOST_BT_PORT_NIMBLE_AUTO_INIT)
+EH_HOST_FEAT_REGISTER(eh_host_nimble_init, eh_host_nimble_deinit,
+                      "bt_port_nimble", 250);
+#endif

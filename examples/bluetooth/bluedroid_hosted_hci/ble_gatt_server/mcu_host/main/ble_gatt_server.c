@@ -1,3 +1,8 @@
+/*
+ * SPDX-FileCopyrightText: 2026 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 /* SPDX-License-Identifier: Apache-2.0 */
 /*
  * ble_gatt_server.c — Bluedroid + ESP-Hosted, connectable peripheral
@@ -22,7 +27,7 @@
 #include "esp_gatts_api.h"
 #include "esp_gatt_common_api.h"
 
-#include "esp_hosted_hci_bluedroid.h"
+#include "eh_host_bluedroid.h"
 #include "esp_check.h"
 #include "sdkconfig.h"
 
@@ -211,7 +216,7 @@ void app_main(void)
     ESP_ERROR_CHECK(err);
 
     /* ── ESP-Hosted setup — single line ─────────────────────────── */
-    ESP_ERROR_CHECK(esp_hosted_hci_bluedroid_setup());
+    ESP_ERROR_CHECK(eh_host_bluedroid_init());
 
     /* Bluedroid stack init+enable */
     esp_bluedroid_config_t cfg = BT_BLUEDROID_INIT_CONFIG_DEFAULT();
