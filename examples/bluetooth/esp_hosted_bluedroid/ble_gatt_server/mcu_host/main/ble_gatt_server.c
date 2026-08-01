@@ -3,7 +3,6 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-/* SPDX-License-Identifier: Apache-2.0 */
 /*
  * ble_gatt_server.c — Bluedroid + ESP-Hosted, connectable peripheral
  * with one custom service exposing a R/W characteristic and a Notify

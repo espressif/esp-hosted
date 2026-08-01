@@ -30,7 +30,7 @@ jobs:
         shell: bash
         run: |
           python3 tools/check_example_structure.py
-          python3 tools/check_override_path_depth.py
+          bash tools/check_override_path_depth.sh
 
   pre_commit:
     name: pre-commit

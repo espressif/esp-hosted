@@ -3,7 +3,6 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-/* SPDX-License-Identifier: Apache-2.0 */
 /*
  * ble_advertise_minimal.c — smallest Bluedroid + ESP-Hosted example.
  *

@@ -3,7 +3,6 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-/* SPDX-License-Identifier: Apache-2.0 */
 /*
  * bleprph_minimal.c — smallest NimBLE + ESP-Hosted example.
  *

@@ -1,6 +1,5 @@
 # SPDX-FileCopyrightText: 2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
-# SPDX-License-Identifier: Apache-2.0
 """Hosted Bluetooth on the emulator (NimBLE + Bluedroid, BLE only).
 
 The host (P4) runs the BT host stack; the CP (C6) is a controller-only
@@ -13,6 +12,7 @@ external peer). Connect/scan/GATT (ACL data path) needs Bumble + bench wiring �
 tracked separately. Classic BR/EDR is out of scope on the P4-C6 emu.
 """
 
+import contextlib
 import os
 import subprocess
 import time
@@ -69,42 +69,22 @@ def test_bt_hosted(bench, example, transport, ready):
     assert r.ok, f"{example} did not reach {ready!r} on {transport}"
 
 
-def _cc(example, transport, sanity=False):
-    return pytest.param(example, transport,
+def _cc(example, transport, ready=r'advertising as ', sanity=False):
+    return pytest.param(example, transport, ready,
                         id=f"{example.split('/')[-1]}-{transport}",
                         marks=[pytest.mark.sanity] if sanity else [])
 
 
-# End-to-end connect over every transport. sdio is the @sanity representative
-# per scenario; uart/spi_fd/spi_hd run under --regression. Serialized onto one
-# xdist worker (xdist_group): each cell is heavy (Bumble + two emus), so letting
-# them pile up under parallel load starves the emu and Bumble misses the advert.
-@pytest.mark.xdist_group("bt_bumble")
-@pytest.mark.parametrize("example,transport", [
-    _cc("esp_hosted_nimble/bleprph_gatt", "sdio", sanity=True),
-    _cc("esp_hosted_nimble/bleprph_gatt", "uart"),
-    _cc("esp_hosted_nimble/bleprph_gatt", "spi_fd"),
-    _cc("esp_hosted_nimble/bleprph_gatt", "spi_hd"),
-    _cc("esp_hosted_bluedroid/ble_gatt_server", "sdio", sanity=True),
-    _cc("esp_hosted_bluedroid/ble_gatt_server", "uart"),
-    _cc("esp_hosted_bluedroid/ble_gatt_server", "spi_fd"),
-    # NOTE: bluedroid spi_hd omitted, pending re-verification. The old
-    # connect_to_slave -EIO ordering cause is gone (the port no longer calls
-    # connect_to_slave — transport bring-up is automatic), so spi_hd may now
-    # work; re-enabling it is a tracked follow-up.
-])
-def test_bt_central_connect(bench, lab_tmp, worker_id, example, transport):
-    """Bumble (virtual central) scans, finds, and CONNECTS to the host peripheral
-    over the hosted transport, then discovers its first service — the ACL data
-    path proven end to end (advertise -> scan -> connect). The CP forwards its
-    HCI to Bumble via --ble-hci (EH_BLE_HCI_PORT).
+@contextlib.contextmanager
+def _bumble_bench(bench, lab_tmp, worker_id, example, transport, ready, wait_bumble=True):
+    """Run `example` (mcu_host) under a Bumble virtual central: Bumble scans+connects
+    over the hosted transport while the host advertises. Yields (bench, bumble_output)
+    once the host has reached `ready` and Bumble has finished (or timed out).
 
-    Runs both host stacks: NimBLE and Bluedroid. Bumble is a *complete* controller
-    substitute, so it also answers the LE-init queries the emu built-in controller
-    lacked — this is what lets bluedroid work here (vs. the built-in path).
-
-    Full GATT characteristic read/write still hits an ACL round-trip timeout
-    (ATT_READ_BY_TYPE) over the hosted path — tracked as a follow-up."""
+    Bumble is a *complete* controller substitute, so it answers the LE-init queries
+    the emu built-in controller lacks — this is what lets Bluedroid work here (vs.
+    the built-in-controller advertising path in test_bt_hosted). The CP forwards its
+    HCI to Bumble via --ble-hci (EH_BLE_HCI_PORT)."""
     if not _VENV_PY.exists() or not _BUMBLE.exists():
         pytest.skip("bumble / esp-emu tooling not available")
     port = lab.alloc_bench(worker_id)["port"]  # reserved per-worker range, not OS-ephemeral
@@ -128,13 +108,14 @@ def test_bt_central_connect(bench, lab_tmp, worker_id, example, transport):
     try:
         b = bench(f"bluetooth/{example}", "mcu_host", transport, timeout="240s",
                   pre_launch=_start_bumble)
-        r = eh_test_expect(b["host"], r'advertising as ', fail=FATAL_PATTERNS, timeout=90)
-        assert r.ok, f"{example} peripheral did not advertise"
-        if bp_box:
+        r = eh_test_expect(b["host"], ready, fail=FATAL_PATTERNS, timeout=90)
+        assert r.ok, f"{example} did not reach {ready!r} on {transport}"
+        if bp_box and wait_bumble:
             try:
                 bp_box[0].wait(timeout=180)
             except subprocess.TimeoutExpired:
                 pass
+        yield b, (blog.read_text() if blog.exists() else "")
     finally:
         os.environ.pop("EH_BLE_HCI_PORT", None)
         bp = bp_box[0] if bp_box else None
@@ -144,5 +125,70 @@ def test_bt_central_connect(bench, lab_tmp, worker_id, example, transport):
                 bp.wait(timeout=5)
             except subprocess.TimeoutExpired:
                 bp.kill()
-    out = blog.read_text() if blog.exists() else ""
-    assert "[+] Connected!" in out, f"bumble did not connect to the peripheral:\n...{out[-2000:]}"
+
+
+# End-to-end connect over every transport. sdio is the @sanity representative
+# per scenario; uart/spi_fd/spi_hd run under --regression. Serialized onto one
+# xdist worker (xdist_group): each cell is heavy (Bumble + two emus), so letting
+# them pile up under parallel load starves the emu and Bumble misses the advert.
+@pytest.mark.xdist_group("bt_bumble")
+@pytest.mark.parametrize("example,transport,ready", [
+    _cc("esp_hosted_nimble/bleprph_gatt", "sdio", sanity=True),
+    _cc("esp_hosted_nimble/bleprph_gatt", "uart"),
+    _cc("esp_hosted_nimble/bleprph_gatt", "spi_fd"),
+    _cc("esp_hosted_nimble/bleprph_gatt", "spi_hd"),
+    _cc("esp_hosted_bluedroid/ble_gatt_server", "sdio", sanity=True),
+    _cc("esp_hosted_bluedroid/ble_gatt_server", "uart"),
+    _cc("esp_hosted_bluedroid/ble_gatt_server", "spi_fd"),
+    # Second Bluedroid GATTS example (full compatibility-test attribute table),
+    # proving the connect path beyond ble_gatt_server. Its advertise log differs.
+    _cc("esp_hosted_bluedroid/ble_compatibility_test", "sdio",
+        ready=r'advertising start successfully'),
+    # NOTE: bluedroid spi_hd omitted, pending re-verification. The old
+    # connect_to_slave -EIO ordering cause is gone (the port no longer calls
+    # connect_to_slave — transport bring-up is automatic), so spi_hd may now
+    # work; re-enabling it is a tracked follow-up.
+])
+def test_bt_central_connect(bench, lab_tmp, worker_id, example, transport, ready):
+    """Bumble (virtual central) scans, finds, and CONNECTS to the host peripheral
+    over the hosted transport, then discovers its first service — the ACL data
+    path proven end to end (advertise -> scan -> connect).
+
+    Runs both host stacks: NimBLE and Bluedroid.
+
+    Full GATT characteristic read/write still hits an ACL round-trip timeout
+    (ATT_READ_BY_TYPE) over the hosted path — tracked as a follow-up."""
+    with _bumble_bench(bench, lab_tmp, worker_id, example, transport, ready) as (b, out):
+        assert "[+] Connected!" in out, f"bumble did not connect to the peripheral:\n...{out[-2000:]}"
+
+
+@pytest.mark.sanity
+@pytest.mark.xdist_group("bt_bumble")
+def test_bt_set_mac(bench, lab_tmp, worker_id):
+    """Setting the BT controller MAC takes effect on the co-processor controller.
+
+    controller_mac_addr reads the controller's BD_ADDR, sets a known one
+    (08:3a:8d:01:01:01) via esp_hosted_iface_mac_addr_set(ESP_MAC_BT), then reads
+    it back. The read is a live round-trip to the CP: it returns the CP's real
+    factory address *before* the set (observed 24:0a:c4:00:00:03) and the
+    configured address *after* — so reaching the post-set line proves the CP
+    controller accepted the new MAC, not merely that the host echoed it back.
+
+    Runs under Bumble as the controller: Bluedroid can't drive the emu built-in
+    controller (its strict HCI parser asserts — see test_bt_hosted), so Bumble
+    stands in so the app runs cleanly. The MAC proof is captured at boot, before
+    the stack advertises; we then wait for advertising to confirm a clean bring-up
+    before teardown.
+
+    On-air verification (a scanning central seeing the configured BD_ADDR) is not
+    reachable on the emu: in the Bumble path Bumble *is* the radio, so a CP-set MAC
+    never reaches it. Tracked as a follow-up."""
+    with _bumble_bench(bench, lab_tmp, worker_id,
+                       "esp_hosted_bluedroid/controller_mac_addr", "sdio",
+                       ready=r'New BT controller mac address is 08:3a:8d:01:01:01',
+                       wait_bumble=False) as (b, _out):
+        # gate above already asserted the round-trip; let Bluedroid finish coming
+        # up under Bumble so teardown is graceful (no mid-bring-up controller loss).
+        r = eh_test_expect(b["host"], r'Advertising start successfully',
+                           fail=FATAL_PATTERNS, timeout=30)
+        assert r.ok, "Bluedroid did not finish bring-up under Bumble after the MAC set"
