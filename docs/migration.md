@@ -9,105 +9,216 @@ This migration guide documents key changes in ESP-Hosted that users must be awar
 
 # $${\color{yellow} \text{3.0.0 - Migration to the Unified Release}}$$
 
-This release runs RPC-V2 on both MCU and Linux hosts. Migrate the
-**co-processor first, then the host**: the running host OTAs the co-processor
-over the existing link, so update the co-processor to the release image first,
-then bring the host to the same release. Finish with both on the same release.
+ESP-Hosted 3.x unifies MCU and Linux hosts on one RPC-V2 protocol and one
+programming model. In all cases: **upgrade the co-processor first, then the
+host**, and finish with both on 3.x.
 
-The OTA transfer itself — `esp_hosted_slave_ota_begin()` → repeated
-`esp_hosted_slave_ota_write()` → `esp_hosted_slave_ota_end()` →
-`esp_hosted_slave_ota_activate()` — is shown end to end in
-[ota/coprocessor_ota](../examples/ota/coprocessor_ota/README.md). This section
-covers only the migration steps and the supported pairs.
-
-## Upgrade steps
-
-```mermaid
-sequenceDiagram
-    participant H as Host (running)
-    participant CP as Co-processor
-    H->>CP: 1. OTA the release CP image<br/>(begin → write → end → activate)
-    CP-->>CP: reboot into release
-    Note over H: 2. update host to release<br/>MCU: OTA host app · Linux: rebuild kmod + user-space
-    Note over H,CP: both on the same release
-```
-
-## MCU host
-
-### Supported pairs
-
-| Running host | Running co-processor | Result | Required action |
-| --- | --- | --- | --- |
-| 3.0.0 | 3.0.0 | Supported - Perfect. | None. |
-| 3.0.0 **MCU host** | 2.x.x, 1.x.x, 0.0.6+ (streaming) | Supported (back-compat), strongly recommended upgrade | OTA the co-processor to the release image. |
-| <3.0.0 | 3.0.0 | Not supported | OTA the host image to 3.0.0, then validate the feature pair. |
-
-## Linux host
-
-### Supported pairs
-
-(RPC-V2) is default for MCU. Linux now migrated to (RPC-V2) from (RPC-V1). RPC messaging framing is changed from older Linux FG releases.
-
-**Difference:**
-(RPC-V1) - Older Linux used protobuf serialised custom 'CtrlMsg' structures. 
-(RPC-V2) - New unified RPC for MCU hosts and Linux hosts. now all three, co-processor, Linux and MCU host use same custom `RPC` structures.
-
-| Running host | Running co-processor | Result | Required action |
-| --- | --- | --- | --- |
-| 3.0.0 (RPC-V2) | 3.0.0 (RPC-V2) | Supported — Perfect. | None. |
-| Legacy FG Linux 1.x (RPC-V1) | 3.0.0 **(RPC-V1, build-time per generation)** | Supported for OTA purpose; phased deprecation planned | Build the co-processor for the FG generation (`CONFIG_ESP_HOSTED_CP_LINUX_PEER_FG_V1`); Plan OTA to 3.0.0 co-processor soon. |
-| Legacy FG Linux 2.x (RPC-V1) | 3.0.0 **(RPC-V1, build-time per generation)** | Supported for OTA purpose; phased deprecation planned | Build the co-processor for the FG generation (`CONFIG_ESP_HOSTED_CP_LINUX_PEER_FG_V2`); Plan OTA to 3.0.0 co-processor soon. |
-| FG Linux 1.x / 2.x (RPC-V1) | 3.0.0 co-processor (RPC-V2) | Not supported — wire RPC versions differ. | Build the co-processor for the FG generation (RPC-V1) as above, or move the host to 3.0.0. |
-
-> The Current **3.0.0 Linux host is RPC-V2 / SW-AGGR only** — it pairs with a current 3.0.0 co-processor and does **not** back-compat with FG (1.x / 2.x) slaves. FG interop is the other way round: an upstream **FG Linux host** with a 3.0.0 co-processor built for that generation.
-
-### Staged rollout keeping a legacy FG host
-
-To keep a legacy FG Linux host running for a while, build a co-processor image
-matching its generation. One image per generation — a co-processor binary does
-not switch RPC version at runtime:
+Pick your host and follow only that section:
 
 ```text
-Configure coprocessor → Which host this coprocessor connects to?
-  → Linux userspace host (802.3)
-     Linux host generation:
-       Upstream fg 1.x host (RPC V1)   CONFIG_ESP_HOSTED_CP_LINUX_PEER_FG_V1=y
-       Upstream fg 2.x host (RPC V1)   CONFIG_ESP_HOSTED_CP_LINUX_PEER_FG_V2=y
+          Which host are you migrating?
+                      |
+        +-------------+-------------+
+        |                           |
+    MCU host                    Linux host
+ ESP32 running your          Linux CPU + kernel
+ firmware (examples          module + user-space
+ mcu_host / esp_host)        library
+        |                           |
+        v                           v
+  see section A               see section B
 ```
 
-## Limitations
+----
 
-1. ESP-Hosted-NG has not yet been migrated.
-2. Existing ESP-Hosted-FG Linux applications are **not** source-compatible and require migration (explained below).
+## A. MCU host
 
-## Maintainability
+### Upgrade order
 
-### Issues
+```text
+Existing deployment
+   |
+   v
+Upgrade the 3.x co-processor firmware   (host OTAs it over the existing link)
+   |
+   v   co-processor reboots into 3.x
+   |
+   v
+OTA your host application to 3.x
+   |
+   v
+Host 3.x  +  co-processor 3.x
+```
 
-- Linux FG used a context-aware shortcut layer instead of the MCU RPC interface, despite sharing the same RPC structures and headers.
-- Maintaining separate Linux and MCU implementations across multiple co-processors was difficult, and one implementation often lagged behind the other.
+The OTA calls (`esp_hosted_slave_ota_begin OR eh_host_cp_ota_begin()` -> `write()` -> `end()` -> `activate()`) (check your existing ota method)
 
-### Resolution
+### Compatibility
 
-Linux user space now uses the **exact same RPC interface** as MCU hosts ([esp-hosted-mcu](https://github.com/espressif/esp-hosted-mcu)).
+| MCU host | Co-processor firmware | Status | Action |
+| --- | --- | --- | --- |
+| 3.x | 3.x | Supported | None |
+| 3.x | 0.0.6+ (streaming) / 1.x / 2.x | Back-compatible | Upgrade the co-processor (recommended) |
+| < 3.x | 3.x | Unsupported | Upgrade the host first |
 
-## Flexibility
+### Bluetooth
 
-1. Linux and MCU applications now follow the same programming model.
+Hosted Bluetooth moved out of the core. 2.x folded the stack-specific HCI
+adapter into the hosted core; 3.x keeps the core a stack-agnostic HCI byte pipe
+and moves the adapter into a per-stack bridge you add on top. The controller
+stays on the co-processor and your GAP/GATT code is unchanged.
 
-- The same ESP-IDF Wi-Fi APIs are used on both platforms.
-- Standard ESP-IDF Wi-Fi examples can now be reused on Linux with little or no changes.
+Boxes drawn with `#` are the ones that changed.
 
-For example, Linux and MCU applications can follow the familiar ESP-IDF flow:
+```text
+2.x — HCI adapter lives inside the core
+
+  +----------------------+
+  |     Application      |
+  +----------------------+
+             |
+  +----------------------+
+  |  Bluedroid / NimBLE  |
+  +----------------------+
+             |
+  ########################
+  #    ESP-Hosted core   #   <-- HCI adapter is in here
+  #  (HCI adapter here)  #
+  ########################
+             |
+  +----------------------+
+  |  BT controller (CP)  |
+  +----------------------+
+
+
+3.x — adapter split out into its own bridge
+
+  +----------------------+
+  |     Application      |
+  +----------------------+
+             |
+  +----------------------+
+  |  Bluedroid / NimBLE  |
+  +----------------------+
+             |
+  ##################################
+  #            HCI bridge           #   <== NEW
+  #  esp_hosted_hci_bluedroid/_nim  #
+  ##################################
+             |
+  ##################################
+  #          ESP-Hosted core        #   <== CHANGED: stack-agnostic HCI byte pipe
+  ##################################
+             |
+  +----------------------+
+  |  BT controller (CP)  |
+  +----------------------+
+```
+
+sdkconfig:
+
+```diff
+- CONFIG_ESP_HOSTED_ENABLE_BT_BLUEDROID       # or ..._ENABLE_BT_NIMBLE
+- CONFIG_ESP_HOSTED_BLUEDROID_HCI_VHCI        # or ..._NIMBLE_HCI_VHCI
++ CONFIG_ESP_HOSTED_HOST_FEAT_BT
++ # add one bridge component: esp_hosted_hci_bluedroid  OR  esp_hosted_hci_nimble
+```
+
+app_main():
+
+```diff
++ esp_hosted_hci_<stack>_setup();   // connect + controller + attach HCI
+  esp_bluedroid_init();             // or nimble_port_init() for NimBLE
+  esp_bluedroid_enable();
+```
+
+Bluedroid attaches at runtime (`esp_bluedroid_attach_hci_driver()`); NimBLE via
+link-time transport symbols. `esp_hosted_bt_controller_init/_enable/_disable/
+_deinit()` stay source-compatible.
+
+> [!WARNING]
+> The legacy BT Kconfig (`ESP_HOSTED_ENABLE_BT_BLUEDROID`, `BLUEDROID_HCI_VHCI`,
+> and the NimBLE equivalents) is removed. If a stale `sdkconfig` still sets one,
+> the build fails on purpose — switch to `CONFIG_ESP_HOSTED_HOST_FEAT_BT` and add
+> the HCI bridge component.
+
+----
+
+## B. Linux host
+
+Linux moves from RPC-V1 (protobuf `CtrlMsg`, ESP-Hosted-FG) to RPC-V2 — the same
+RPC the MCU host uses. Rebuild the kernel module and user-space library for 3.x.
+
+### Upgrade order
+
+```text
+Existing deployment
+   |
+   v
+Upgrade the 3.x co-processor firmware
+   |
+   v   co-processor reboots into 3.x
+   |
+   v
+Rebuild kernel module + user-space library for 3.x
+   |
+   v
+Host 3.x  +  co-processor 3.x
+```
+
+### Compatibility
+
+A 3.x Linux host is RPC-V2 only: it does **not** back-compat FG (1.x/2.x)
+slaves. FG interop runs the other way — an FG Linux host paired with a 3.x
+co-processor built for that FG generation.
+
+| Linux host | Co-processor firmware | Status |
+| --- | --- | --- |
+| 3.x | 3.x | Supported |
+| ESP-Hosted-FG 1.x | 3.x built `CONFIG_ESP_HOSTED_CP_LINUX_PEER_FG_V1` | Back-compatible; upgrade recommended |
+| ESP-Hosted-FG 2.x | 3.x built `CONFIG_ESP_HOSTED_CP_LINUX_PEER_FG_V2` | Back-compatible; upgrade recommended |
+| ESP-Hosted-FG 1.x / 2.x | Standard 3.x co-processor | Unsupported (RPC differs) |
+
+### Staged migration — keep an existing FG host
+
+Not upgrading the Linux host yet? Build the 3.x co-processor for its FG
+generation (one image per generation; no runtime RPC switch):
+
+```text
+Existing Linux host
+   |
+   +-- FG 1.x  ->  build 3.x CP with CONFIG_ESP_HOSTED_CP_LINUX_PEER_FG_V1=y
+   |
+   +-- FG 2.x  ->  build 3.x CP with CONFIG_ESP_HOSTED_CP_LINUX_PEER_FG_V2=y
+   |
+   v
+Back-compatible during migration (upgrade recommended)
+```
+
+Bluetooth on the Linux host uses the kernel's BlueZ stack, not the hosted HCI
+bridges — the MCU Bluetooth steps do not apply to Linux.
+
+----
+
+## C. Both hosts
+
+### Unified RPC model
+
+Linux now uses the same RPC as MCU hosts (previously RPC-V1 on Linux, RPC-V2 on
+MCU, maintained separately). One implementation, one programming model, shared
+examples, feature parity. The application flow is identical on both:
 
 ```c
 esp_wifi_init();
 esp_wifi_start();
-/* Wait for STA_STARTED */
-esp_wifi_connect();
-/* Wait for other Wi-Fi or IP esp_event and integration */
+esp_wifi_connect();   /* drive the rest via Wi-Fi / IP events */
+```
 
-2. Same co-processor usable be it Linux or MCU host
+### Limitations
+
+- ESP-Hosted-NG has not yet migrated to RPC-V2.
+- Existing ESP-Hosted-FG Linux applications are not source-compatible and
+  require migration to the unified RPC interface.
+
 
 ----
 
