@@ -27,7 +27,7 @@
 #include "esp_gatt_common_api.h"
 
 #include "esp_hosted.h"
-#include "esp_hosted_hci_bluedroid.h"
+#include "eh_host_bluedroid.h"
 
 #define DEBUG_ON  0
 

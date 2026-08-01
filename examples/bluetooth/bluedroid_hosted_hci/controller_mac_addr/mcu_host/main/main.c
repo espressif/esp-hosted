@@ -11,7 +11,7 @@
 #include "esp_mac.h"
 #include "nvs_flash.h"
 #include "esp_hosted.h"
-#include "esp_hosted_hci_bluedroid.h"
+#include "eh_host_bluedroid.h"
 #include "esp_system.h"
 
 /* BLE */

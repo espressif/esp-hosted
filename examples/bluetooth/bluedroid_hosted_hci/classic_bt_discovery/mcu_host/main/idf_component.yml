@@ -1,9 +1,9 @@
 dependencies:
-  esp_hosted_hci_bluedroid:
-    override_path: "../../../../../../examples/common_components/esp_hosted_hci_bluedroid"
-    version: "*"
   espressif/esp_hosted:
     version: "*"
     override_path: "../../../../../.."
+  # Owns the SLAVE_IDF_TARGET choice this example pins (CP=ESP32 for Classic BT).
+  espressif/esp_wifi_remote:
+    version: ">=1.3.1"
   idf:
     version: ">=5.5"

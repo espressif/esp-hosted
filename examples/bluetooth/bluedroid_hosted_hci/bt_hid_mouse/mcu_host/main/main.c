@@ -22,7 +22,7 @@
 #include "esp_idf_version.h"
 
 #include "esp_hosted.h"
-#include "esp_hosted_hci_bluedroid.h"
+#include "eh_host_bluedroid.h"
 
 #define REPORT_PROTOCOL_MOUSE_REPORT_SIZE      (4)
 #define REPORT_BUFFER_SIZE                     REPORT_PROTOCOL_MOUSE_REPORT_SIZE

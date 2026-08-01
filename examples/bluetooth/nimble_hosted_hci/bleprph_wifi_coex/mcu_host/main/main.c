@@ -27,7 +27,6 @@
 #include "bleprph.h"
 
 /* ESP-Hosted bridge — wires NimBLE's HCI hooks to the hosted controller. */
-#include "esp_hosted_hci_nimble.h"
 
 /* WIFI */
 #include <string.h>
@@ -432,10 +431,9 @@ app_main(void)
     ESP_ERROR_CHECK(eh_example_connect());
     do_ping_cmd();
 
-    /* ESP-Hosted: bring up the remote BT controller + wire the NimBLE bridge
-     * before NimBLE init. The only line added on top of the upstream IDF
-     * example (which assumes a native on-chip controller). */
-    ESP_ERROR_CHECK(esp_hosted_hci_nimble_setup());
+    /* ESP-Hosted brings up the remote BT controller + NimBLE bridge via
+     * Kconfig auto-init (FEAT_BT + BT_PORT_NIMBLE) before NimBLE init — no
+     * app call, unlike the upstream example's native on-chip controller. */
 
     ret = nimble_port_init();
     if (ret != ESP_OK) {

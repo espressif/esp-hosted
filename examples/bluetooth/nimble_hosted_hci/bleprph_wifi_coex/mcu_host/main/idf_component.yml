@@ -1,7 +1,4 @@
 dependencies:
-  esp_hosted_hci_nimble:
-    override_path: "../../../../../../examples/common_components/esp_hosted_hci_nimble"
-    version: "*"
   esp_hosted_examples_common:
     override_path: "../../../../../../examples/common_components/esp_hosted_examples_common"
     version: "*"

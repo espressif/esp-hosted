@@ -20,7 +20,7 @@
 #include "esp_bt_device.h"
 #include "esp_gap_bt_api.h"      /* Classic GAP (NOT esp_gap_ble_api.h) */
 
-#include "esp_hosted_hci_bluedroid.h"
+#include "eh_host_bluedroid.h"
 #include "esp_check.h"
 #include "sdkconfig.h"
 
@@ -102,7 +102,7 @@ void app_main(void)
     ESP_ERROR_CHECK(err);
 
     /* ── ESP-Hosted setup — same call as BLE examples ─────────── */
-    ESP_ERROR_CHECK(esp_hosted_hci_bluedroid_setup());
+    ESP_ERROR_CHECK(eh_host_bluedroid_init());
 
     /* Bluedroid init+enable */
     esp_bluedroid_config_t cfg = BT_BLUEDROID_INIT_CONFIG_DEFAULT();
