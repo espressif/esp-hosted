@@ -43,12 +43,12 @@ def _wait_listening(logpath, timeout=60):
 # prove each scenario/stack over the (already transport-proven) SDIO path.
 BT_CELLS = [
     # NimBLE (hosted VHCI)
-    ("nimble_hosted_hci/bleprph_minimal", "sdio",   r'advertising as '),
-    ("nimble_hosted_hci/bleprph_minimal", "uart",   r'advertising as '),
-    ("nimble_hosted_hci/bleprph_minimal", "spi_fd", r'advertising as '),
-    ("nimble_hosted_hci/bleprph_minimal", "spi_hd", r'advertising as '),
-    ("nimble_hosted_hci/bleprph_gatt",    "sdio",   r'advertising as '),
-    ("nimble_hosted_hci/bleprph_wifi_coex", "sdio", r'BLE Host Task Started'),
+    ("esp_hosted_nimble/bleprph_minimal", "sdio",   r'advertising as '),
+    ("esp_hosted_nimble/bleprph_minimal", "uart",   r'advertising as '),
+    ("esp_hosted_nimble/bleprph_minimal", "spi_fd", r'advertising as '),
+    ("esp_hosted_nimble/bleprph_minimal", "spi_hd", r'advertising as '),
+    ("esp_hosted_nimble/bleprph_gatt",    "sdio",   r'advertising as '),
+    ("esp_hosted_nimble/bleprph_wifi_coex", "sdio", r'BLE Host Task Started'),
     # NOTE: Bluedroid is not in these BUILT-IN-controller advertising cells: its
     # strict HCI parser asserts on the emu built-in controller's short Command-
     # Complete for LE init queries the emu doesn't implement (0x201C fixed, 0x2024
@@ -81,18 +81,17 @@ def _cc(example, transport, sanity=False):
 # them pile up under parallel load starves the emu and Bumble misses the advert.
 @pytest.mark.xdist_group("bt_bumble")
 @pytest.mark.parametrize("example,transport", [
-    _cc("nimble_hosted_hci/bleprph_gatt", "sdio", sanity=True),
-    _cc("nimble_hosted_hci/bleprph_gatt", "uart"),
-    _cc("nimble_hosted_hci/bleprph_gatt", "spi_fd"),
-    _cc("nimble_hosted_hci/bleprph_gatt", "spi_hd"),
-    _cc("bluedroid_hosted_hci/ble_gatt_server", "sdio", sanity=True),
-    _cc("bluedroid_hosted_hci/ble_gatt_server", "uart"),
-    _cc("bluedroid_hosted_hci/ble_gatt_server", "spi_fd"),
-    # NOTE: bluedroid spi_hd omitted. ble_gatt_server calls
-    # esp_hosted_hci_bluedroid_setup() at the top of app_main, before the CP
-    # reset/bring-up nimble does, so connect_to_slave hits -EIO immediately (a
-    # host-example init-ordering bug, distinct from the CP WFI-pacing fix that
-    # made nimble spi_hd connect work). Tracked follow-up.
+    _cc("esp_hosted_nimble/bleprph_gatt", "sdio", sanity=True),
+    _cc("esp_hosted_nimble/bleprph_gatt", "uart"),
+    _cc("esp_hosted_nimble/bleprph_gatt", "spi_fd"),
+    _cc("esp_hosted_nimble/bleprph_gatt", "spi_hd"),
+    _cc("esp_hosted_bluedroid/ble_gatt_server", "sdio", sanity=True),
+    _cc("esp_hosted_bluedroid/ble_gatt_server", "uart"),
+    _cc("esp_hosted_bluedroid/ble_gatt_server", "spi_fd"),
+    # NOTE: bluedroid spi_hd omitted, pending re-verification. The old
+    # connect_to_slave -EIO ordering cause is gone (the port no longer calls
+    # connect_to_slave — transport bring-up is automatic), so spi_hd may now
+    # work; re-enabling it is a tracked follow-up.
 ])
 def test_bt_central_connect(bench, lab_tmp, worker_id, example, transport):
     """Bumble (virtual central) scans, finds, and CONNECTS to the host peripheral

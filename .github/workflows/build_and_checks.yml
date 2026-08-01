@@ -80,8 +80,8 @@ jobs:
           - { idf_ver: "release-v6.0", path: "examples/wifi/itwt/cp",                         target: "esp32c5",  transport: "" }                                        # Wi-Fi 6
           - { idf_ver: "release-v6.0", path: "examples/network_split/station/cp",             target: "esp32c61", transport: "" }
           - { idf_ver: "release-v5.5", path: "examples/network_split/iperf/cp",               target: "esp32c6",  transport: "" }
-          - { idf_ver: "release-v5.5", path: "examples/bluetooth/nimble_hosted_hci/bleprph_gatt/cp",                     target: "esp32c6",  transport: "" }
-          - { idf_ver: "latest",       path: "examples/bluetooth/nimble_standard_hci/bleprph_host_only_uart/cp",        target: "esp32",    transport: "" }
+          - { idf_ver: "release-v5.5", path: "examples/bluetooth/esp_hosted_nimble/bleprph_gatt/cp",                     target: "esp32c6",  transport: "" }
+          - { idf_ver: "latest",       path: "examples/bluetooth/nimble_uart/bleprph_host_only_uart/cp",        target: "esp32",    transport: "" }
           - { idf_ver: "latest",       path: "examples/openthread/cli/cp",                    target: "esp32h2",  transport: "" }
           - { idf_ver: "release-v5.5", path: "examples/ota/coprocessor_ota/cp",               target: "esp32",    transport: "" }
           - { idf_ver: "v5.5.1",       path: "examples/ext_coex/cp",                          target: "esp32c6",  transport: "" }
@@ -97,9 +97,9 @@ jobs:
           - { idf_ver: "release-v6.0", path: "examples/network_split/iperf/mcu_host",         target: "esp32p4", transport: "" }
           - { idf_ver: "release-v5.5", path: "examples/wifi/enterprise/mcu_host",             target: "esp32p4", transport: "" }
           - { idf_ver: "v5.5.1",       path: "examples/power_save/host/network_split__host_deep_sleep/esp_host", target: "esp32p4", transport: "" }
-          - { idf_ver: "latest",       path: "examples/bluetooth/nimble_hosted_hci/bleprph_wifi_coex/mcu_host",          target: "esp32p4", transport: "" }
-          - { idf_ver: "release-v5.5", path: "examples/bluetooth/nimble_standard_hci/bleprph_host_only_uart/mcu_host",  target: "esp32h2", transport: "" }  # HOST on H2
-          - { idf_ver: "release-v5.5", path: "examples/bluetooth/bluedroid_hosted_hci/ble_gatt_server/mcu_host",        target: "esp32p4", transport: "" }  # bluedroid stack coverage
+          - { idf_ver: "latest",       path: "examples/bluetooth/esp_hosted_nimble/bleprph_wifi_coex/mcu_host",          target: "esp32p4", transport: "" }
+          - { idf_ver: "release-v5.5", path: "examples/bluetooth/nimble_uart/bleprph_host_only_uart/mcu_host",  target: "esp32h2", transport: "" }  # HOST on H2
+          - { idf_ver: "release-v5.5", path: "examples/bluetooth/esp_hosted_bluedroid/ble_gatt_server/mcu_host",        target: "esp32p4", transport: "" }  # bluedroid stack coverage
           - { idf_ver: "release-v5.5", path: "examples/gpio_expander/mcu_host",               target: "esp32p4", transport: "" }
           - { idf_ver: "latest",       path: "examples/openthread/cli/esp_host",              target: "esp32p4", transport: "" }
           - { idf_ver: "release-v6.0", path: "examples/ota/coprocessor_ota/mcu_host",         target: "esp32p4", transport: "" }

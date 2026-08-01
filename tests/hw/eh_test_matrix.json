@@ -39,16 +39,16 @@
       "description": "Heap memory stats via RPC; this-repo example is a 39-line stub (full impl in legacy)."
     },
     "bt_nimble": {
-      "cp": "examples/bluetooth/nimble_hosted_hci/bleprph_gatt/cp",
-      "host_this_repo": "examples/bluetooth/nimble_hosted_hci/bleprph_gatt/mcu_host",
+      "cp": "examples/bluetooth/esp_hosted_nimble/bleprph_gatt/cp",
+      "host_this_repo": "examples/bluetooth/esp_hosted_nimble/bleprph_gatt/mcu_host",
       "host_legacy": "host_nimble_bleprph_host_only_vhci",
       "coverage": { "this_repo": "ok", "legacy": "ok" },
       "tests": ["eh_test_feat_bt/test_bt.py"],
       "description": "BLE NimBLE VHCI advertising"
     },
     "bt_mac": {
-      "cp": "examples/bluetooth/bluedroid_hosted_hci/controller_mac_addr/cp",
-      "host_this_repo": "examples/bluetooth/bluedroid_hosted_hci/controller_mac_addr/mcu_host",
+      "cp": "examples/bluetooth/esp_hosted_bluedroid/controller_mac_addr/cp",
+      "host_this_repo": "examples/bluetooth/esp_hosted_bluedroid/controller_mac_addr/mcu_host",
       "host_legacy": "host_bt_controller_mac_addr",
       "coverage": { "this_repo": "ok", "legacy": "ok" },
       "tests": ["eh_test_feat_bt/test_bt_mac.py"],

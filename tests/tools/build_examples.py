@@ -13,7 +13,7 @@ Design goals:
 Usage:
   python3 build_examples.py --build-targets=esp32c6
   python3 build_examples.py --build-targets=esp32c2,esp32c6 --build-transports=sdio,spi-fd
-  python3 build_examples.py --build-targets=esp32c6 --build-examples=wifi/connect,bluetooth/nimble_standard_hci
+  python3 build_examples.py --build-targets=esp32c6 --build-examples=wifi/connect,bluetooth/nimble_uart
   python3 build_examples.py --build-targets=all --build-transports=all --shell=fish
   python3 build_examples.py --build-targets=esp32c2 --dry-run
   python3 build_examples.py --list-compat

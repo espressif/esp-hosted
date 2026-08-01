@@ -54,4 +54,4 @@ ignore:
     - port/idf_components/lwip/
     - port/idf_components/esp_netif/lwip/
     # Apache mynewt/NimBLE-derived example — upstream ASF header block.
-    - examples/bluetooth/nimble_hosted_hci/bleprph_wifi_coex/
+    - examples/bluetooth/esp_hosted_nimble/bleprph_wifi_coex/
