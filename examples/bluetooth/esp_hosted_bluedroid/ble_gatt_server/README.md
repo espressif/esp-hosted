@@ -7,8 +7,8 @@ Connectable BLE peripheral with a single custom 128-bit GATT service exposing a
 read/write characteristic and a notify characteristic. Standard Bluedroid
 GATT-server pattern (profile registration, GAP + GATTS callbacks, attribute
 table); Bluedroid runs on the **host** and the BT **controller** runs on the
-ESP-Hosted **co-processor** via the `eh_host_bluedroid` port (built into the
-`esp_hosted` component), reached over the hosted transport
+ESP-Hosted **co-processor**, bound to the hosted HCI with one call —
+`esp_hosted_bt_stack_setup()` — reached over the hosted transport
 (SDIO / SPI / SPI-HD / UART) via VHCI. The NimBLE counterpart is
 `bluetooth/esp_hosted_nimble/bleprph_gatt`.
 
@@ -139,22 +139,22 @@ BLE GATT Server config
 └── (1000) Notification interval (ms)                        ← range 100–60000
 ```
 
-The host dependency config is pre-set in `sdkconfig.defaults` (do not remove):
+The host dependency config is pre-set in `sdkconfig.defaults` (do not remove).
+`CONFIG_ESP_HOSTED_HOST_FEAT_BT` enables the BT host feature; the host stack is
+chosen by the IDF BT Kconfig (`CONFIG_BT_BLUEDROID_ENABLED`) — no separate hosted
+BT-port switch:
 
 ```text
 CONFIG_ESP_HOSTED_HOST_FEAT_BT=y                      # host BT feature (controller runs on the CP)
-CONFIG_ESP_HOSTED_HOST_BT_PORT_BLUEDROID=y           # Bluedroid HCI port (built into the esp_hosted component)
-CONFIG_ESP_HOSTED_HOST_BT_PORT_BLUEDROID_AUTO_INIT=n # app calls eh_host_bluedroid_init() explicitly (see below)
 CONFIG_BT_ENABLED=y                                  # BT host stack on
 CONFIG_BT_CONTROLLER_DISABLED=y                      # no local controller — CP supplies it
-CONFIG_BT_BLUEDROID_ENABLED=y                        # Bluedroid host stack
+CONFIG_BT_BLUEDROID_ENABLED=y                        # Bluedroid host stack (selects the hosted BT adapter)
 ```
 
-Auto-init is **off** on purpose: Bluedroid's HCI driver must attach
-synchronously *before* `esp_bluedroid_init()`, an ordering the background
-auto-init path can't guarantee — so `app_main()` calls the port helper
-`eh_host_bluedroid_init()` (from `eh_host_bluedroid.h`) itself. The port is
-documented in
+`app_main()` calls `esp_hosted_bt_stack_setup()` (from `esp_hosted_bt_stack.h`)
+once, after `esp_hosted_connect_to_slave()` and before `esp_bluedroid_init()` —
+it brings the controller up and binds Bluedroid to the hosted HCI. The adapter
+is documented in
 [Porting a BT stack to ESP-Hosted](https://github.com/espressif/esp-hosted/blob/master/docs/design/bluetooth.md#porting-a-bt-stack-to-esp-hosted).
 
 Then flash and monitor:

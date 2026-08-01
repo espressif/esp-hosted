@@ -26,10 +26,10 @@ config ESP_HOSTED_HOST_FEAT_BT_READY
 
 # Removed in 3.0 — kept only to fail the build on a stale hosted-BT sdkconfig.
 config ESP_HOSTED_ENABLE_BT_BLUEDROID
-	bool "[REMOVED 3.0] use esp_hosted_hci_bluedroid + ESP_HOSTED_HOST_FEAT_BT"
+	bool "[REMOVED 3.0] enable CONFIG_BT_BLUEDROID_ENABLED + ESP_HOSTED_HOST_FEAT_BT; call esp_hosted_bt_stack_setup()"
 config ESP_HOSTED_BLUEDROID_HCI_VHCI
-	bool "[REMOVED 3.0] use esp_hosted_hci_bluedroid + ESP_HOSTED_HOST_FEAT_BT"
+	bool "[REMOVED 3.0] enable CONFIG_BT_BLUEDROID_ENABLED + ESP_HOSTED_HOST_FEAT_BT; call esp_hosted_bt_stack_setup()"
 config ESP_HOSTED_ENABLE_BT_NIMBLE
-	bool "[REMOVED 3.0] use esp_hosted_hci_nimble + ESP_HOSTED_HOST_FEAT_BT"
+	bool "[REMOVED 3.0] enable CONFIG_BT_NIMBLE_ENABLED + ESP_HOSTED_HOST_FEAT_BT; call esp_hosted_bt_stack_setup()"
 config ESP_HOSTED_NIMBLE_HCI_VHCI
-	bool "[REMOVED 3.0] use esp_hosted_hci_nimble + ESP_HOSTED_HOST_FEAT_BT"
+	bool "[REMOVED 3.0] enable CONFIG_BT_NIMBLE_ENABLED + ESP_HOSTED_HOST_FEAT_BT; call esp_hosted_bt_stack_setup()"

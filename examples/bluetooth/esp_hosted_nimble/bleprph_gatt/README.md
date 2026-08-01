@@ -7,10 +7,11 @@ Connectable BLE peripheral exposing one custom 128-bit GATT service with two
 characteristics (read/write + notify). NimBLE runs on the **host**; the
 Bluetooth **controller** runs on the ESP-Hosted **co-processor**, reached over
 the hosted transport (SDIO / SPI / SPI-HD / UART) via VHCI.
-The app is standard NimBLE — the hosted NimBLE port is built into the
-`esp_hosted` component and [auto-inits at
-boot](https://github.com/espressif/esp-hosted/blob/master/docs/design/bluetooth.md#porting-a-bt-stack-to-esp-hosted), so
-there is no hosted-specific setup call. The bluedroid counterpart is
+The only ESP-Hosted-specific code is one call —
+`esp_hosted_bt_stack_setup()` — which brings the controller up and binds NimBLE
+to the hosted HCI; everything else is standard NimBLE. See [Porting a BT stack
+to ESP-Hosted](https://github.com/espressif/esp-hosted/blob/master/docs/design/bluetooth.md#porting-a-bt-stack-to-esp-hosted).
+The bluedroid counterpart is
 `bluetooth/esp_hosted_bluedroid/ble_gatt_server`.
 
 ## Supported Platforms and Transports
@@ -141,15 +142,15 @@ BLE Peripheral GATT config
 ```
 
 The host dependency config is pre-set in `sdkconfig.defaults` (do not remove).
-The two ESP-Hosted symbols enable the BT host feature and the NimBLE hosted
-port; the port is built into the `esp_hosted` component and auto-inits at boot:
+`CONFIG_ESP_HOSTED_HOST_FEAT_BT` enables the BT host feature; the host stack is
+chosen by the IDF BT Kconfig (`CONFIG_BT_NIMBLE_ENABLED`) — no separate hosted
+BT-port switch:
 
 ```text
 CONFIG_ESP_HOSTED_HOST_FEAT_BT=y        # host BT feature (controller runs on the CP)
-CONFIG_ESP_HOSTED_HOST_BT_PORT_NIMBLE=y # NimBLE hosted port — auto-inits at boot
 CONFIG_BT_ENABLED=y                     # BT host stack on
 CONFIG_BT_CONTROLLER_DISABLED=y         # no local controller — CP supplies it
-CONFIG_BT_NIMBLE_ENABLED=y              # NimBLE host stack
+CONFIG_BT_NIMBLE_ENABLED=y              # NimBLE host stack (selects the hosted BT adapter)
 ```
 
 Then flash and monitor:
@@ -163,6 +164,6 @@ eh.py -p <host_usb_serial_port> flash monitor
 - Test with any generic BLE explorer — LightBlue, nRF Connect, `bluetoothctl`.
 - Notifications are pushed via `ble_gatts_notify_custom` on the notify
   characteristic at the configured cadence.
-- `app_main` is standard NimBLE — no hosted-specific call; the NimBLE hosted
-  port auto-inits at boot.
+- `app_main` calls `esp_hosted_bt_stack_setup()` once — controller up + HCI
+  bound — then runs standard NimBLE (GAP + GATT server).
 <!-- esp_host-stop -->

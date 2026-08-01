@@ -63,9 +63,10 @@ The OTA calls (`esp_hosted_slave_ota_begin OR eh_host_cp_ota_begin()` -> `write(
 ### Bluetooth
 
 Hosted Bluetooth moved out of the core. 2.x folded the stack-specific HCI
-adapter into the hosted core; 3.x keeps the core a stack-agnostic HCI byte pipe
-and moves the adapter into a per-stack bridge you add on top. The controller
-stays on the co-processor and your GAP/GATT code is unchanged.
+adapter into the hosted core; 3.0 keeps the core a stack-agnostic HCI byte pipe
+and puts the stack glue in a built-in `esp_hosted_bt` adapter that you bind with
+one explicit call. The controller stays on the co-processor and your GAP/GATT
+code is unchanged.
 
 Boxes drawn with `#` are the ones that changed.
 
@@ -90,10 +91,10 @@ Boxes drawn with `#` are the ones that changed.
   +----------------------+
 
 
-3.x — adapter split out into its own bridge
+3.0 — stack glue split into the built-in esp_hosted_bt adapter
 
   +----------------------+
-  |     Application      |
+  |     Application      |   <== calls esp_hosted_bt_stack_setup() once
   +----------------------+
              |
   +----------------------+
@@ -101,8 +102,8 @@ Boxes drawn with `#` are the ones that changed.
   +----------------------+
              |
   ##################################
-  #            HCI bridge           #   <== NEW
-  #  esp_hosted_hci_bluedroid/_nim  #
+  #      esp_hosted_bt adapter      #   <== NEW: built-in HCI glue
+  #  (NimBLE / Bluedroid / custom)  #       (no separate component to add)
   ##################################
              |
   ##################################
@@ -114,32 +115,41 @@ Boxes drawn with `#` are the ones that changed.
   +----------------------+
 ```
 
-sdkconfig:
+sdkconfig — replace the legacy hosted BT knobs with the hosted feature flag plus
+the IDF BT stack you already select:
 
 ```diff
 - CONFIG_ESP_HOSTED_ENABLE_BT_BLUEDROID       # or ..._ENABLE_BT_NIMBLE
 - CONFIG_ESP_HOSTED_BLUEDROID_HCI_VHCI        # or ..._NIMBLE_HCI_VHCI
 + CONFIG_ESP_HOSTED_HOST_FEAT_BT
-+ # add one bridge component: esp_hosted_hci_bluedroid  OR  esp_hosted_hci_nimble
++ CONFIG_BT_NIMBLE_ENABLED                    # or CONFIG_BT_BLUEDROID_ENABLED
 ```
+
+The adapter picks the stack from the IDF BT Kconfig above — there is no hosted
+`BT_PORT` knob and no auto-init.
 
 app_main():
 
 ```diff
-+ esp_hosted_hci_<stack>_setup();   // connect + controller + attach HCI
++ #include "esp_hosted_bt_stack.h"
+  ...
++ esp_hosted_bt_stack_cfg_t cfg = ESP_HOSTED_BT_STACK_CONFIG_DEFAULT();
++ esp_hosted_bt_stack_setup(&cfg);  // (optional) set MAC, bring controller up, bind HCI
   esp_bluedroid_init();             // or nimble_port_init() for NimBLE
   esp_bluedroid_enable();
 ```
 
-Bluedroid attaches at runtime (`esp_bluedroid_attach_hci_driver()`); NimBLE via
-link-time transport symbols. `esp_hosted_bt_controller_init/_enable/_disable/
-_deinit()` stay source-compatible.
+Call `esp_hosted_bt_stack_setup()` after `esp_hosted_connect_to_slave()` and
+before the stack's own init; the app still owns the stack lifecycle. See the
+[Bluetooth design doc](design/bluetooth.md) for the full flow and the
+custom-stack path.
 
 > [!WARNING]
 > The legacy BT Kconfig (`ESP_HOSTED_ENABLE_BT_BLUEDROID`, `BLUEDROID_HCI_VHCI`,
 > and the NimBLE equivalents) is removed. If a stale `sdkconfig` still sets one,
-> the build fails on purpose — switch to `CONFIG_ESP_HOSTED_HOST_FEAT_BT` and add
-> the HCI bridge component.
+> the build fails on purpose — switch to `CONFIG_ESP_HOSTED_HOST_FEAT_BT`, enable
+> the IDF BT stack (`CONFIG_BT_NIMBLE_ENABLED` or `CONFIG_BT_BLUEDROID_ENABLED`),
+> and call `esp_hosted_bt_stack_setup()`.
 
 ----
 

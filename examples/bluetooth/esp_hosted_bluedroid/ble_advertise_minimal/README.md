@@ -4,13 +4,12 @@
 
 <!-- common-start -->
 Smallest possible Bluedroid + ESP-Hosted example: it brings the BT
-**controller** up on the ESP-Hosted **co-processor**, attaches Bluedroid's HCI
-driver via the `eh_host_bluedroid` port (built into the `esp_hosted`
-component), then starts non-connectable BLE advertising. Bluedroid runs on the
-**host**; the controller is reached over the hosted transport
-(SDIO / SPI / SPI-HD / UART) via VHCI. Steps 1-3 are the only
-ESP-Hosted-specific code — everything after `esp_bluedroid_init()` is standard
-IDF Bluedroid. The NimBLE counterpart is
+**controller** up on the ESP-Hosted **co-processor** and binds Bluedroid to the
+hosted HCI with one call — `esp_hosted_bt_stack_setup()` — then starts
+non-connectable BLE advertising. Bluedroid runs on the **host**; the controller
+is reached over the hosted transport (SDIO / SPI / SPI-HD / UART) via VHCI. That
+one call is the only ESP-Hosted-specific code — everything after
+`esp_bluedroid_init()` is standard IDF Bluedroid. The NimBLE counterpart is
 `bluetooth/esp_hosted_nimble/bleprph_minimal`.
 
 ## Supported Platforms and Transports
@@ -137,25 +136,24 @@ This example adds its own options under **BLE Advertise Minimal config**:
 ```text
 BLE Advertise Minimal config
 ├── (ESP_HOSTED_BLE) BLE device name (advertised)
-├── (100) Advertising interval (ms)                          ← range 20–10240
-└── [*] Use one-shot eh_host_bluedroid_init() helper
+└── (100) Advertising interval (ms)                          ← range 20–10240
 ```
 
-The host dependency config is pre-set in `sdkconfig.defaults` (do not remove):
+The host dependency config is pre-set in `sdkconfig.defaults` (do not remove).
+`CONFIG_ESP_HOSTED_HOST_FEAT_BT` enables the BT host feature; the host stack is
+chosen by the IDF BT Kconfig (`CONFIG_BT_BLUEDROID_ENABLED`) — no separate hosted
+BT-port switch:
 
 ```text
 CONFIG_ESP_HOSTED_HOST_FEAT_BT=y                      # host BT feature (controller runs on the CP)
-CONFIG_ESP_HOSTED_HOST_BT_PORT_BLUEDROID=y           # Bluedroid HCI port (built into the esp_hosted component)
-CONFIG_ESP_HOSTED_HOST_BT_PORT_BLUEDROID_AUTO_INIT=n # app calls eh_host_bluedroid_init() explicitly (see below)
 CONFIG_BT_ENABLED=y                                  # BT host stack on
 CONFIG_BT_CONTROLLER_DISABLED=y                      # no local controller — CP supplies it
-CONFIG_BT_BLUEDROID_ENABLED=y                        # Bluedroid host stack
+CONFIG_BT_BLUEDROID_ENABLED=y                        # Bluedroid host stack (selects the hosted BT adapter)
 ```
 
-Auto-init is **off** on purpose: Bluedroid's HCI driver must attach
-synchronously *before* `esp_bluedroid_init()`, an ordering the background
-auto-init path can't guarantee — so `app_main()` calls the port helper
-`eh_host_bluedroid_init()` (from `eh_host_bluedroid.h`) itself.
+`app_main()` calls `esp_hosted_bt_stack_setup()` (from `esp_hosted_bt_stack.h`)
+once, after `esp_hosted_connect_to_slave()` and before `esp_bluedroid_init()` —
+it brings the controller up and binds Bluedroid to the hosted HCI.
 
 Then flash and monitor:
 
@@ -167,11 +165,9 @@ eh.py -p <host_usb_serial_port> flash monitor
 
 - Scan with any generic BLE explorer — LightBlue, nRF Connect, `bluetoothctl` —
   and look for the advertised device name.
-- The one-shot `eh_host_bluedroid_init()` helper does controller init + enable
-  + HCI-driver attach in one call; disable it (set the option above to `n`) to
-  step through each stage individually with the low-level
-  `hosted_hci_bluedroid_*` ops.
-- The `eh_host_bluedroid` port is documented in
+- `app_main` calls `esp_hosted_bt_stack_setup()` once — it does controller
+  init + enable + HCI bind in one call — then runs standard Bluedroid.
+- The hosted BT adapter is documented in
   [Porting a BT stack to ESP-Hosted](https://github.com/espressif/esp-hosted/blob/master/docs/design/bluetooth.md#porting-a-bt-stack-to-esp-hosted).
 - ESP32 CP supplies BLE 4.2 only — do **not** enable
   `CONFIG_BT_BLE_50_FEATURES_SUPPORTED=y` against an ESP32 CP, the build will

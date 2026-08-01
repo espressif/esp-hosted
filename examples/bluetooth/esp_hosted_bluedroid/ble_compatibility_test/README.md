@@ -7,8 +7,8 @@ BLE interoperability / compatibility test app — a GATT server exercising a
 range of characteristics, MTU sizes, notifications, and connection parameters —
 used to validate BLE behaviour against phones and other centrals. Ports upstream
 `host_bluedroid_ble_compatibility_test` verbatim; the only ESP-Hosted-specific
-change is the HCI driver, supplied by the hosted `eh_host_bluedroid` port built
-into the `esp_hosted` component. Bluedroid runs on the **host**; the BT
+change is one call — `esp_hosted_bt_stack_setup()` — that brings the controller
+up and binds Bluedroid to the hosted HCI. Bluedroid runs on the **host**; the BT
 **controller** runs on the
 ESP-Hosted **co-processor**, reached over the hosted transport
 (SDIO / SPI / SPI-HD / UART) via VHCI.
@@ -135,21 +135,21 @@ Component config
 This example has no example-specific menuconfig options — the test
 characteristic layout lives in `main/ble_compatibility_test.{c,h}`.
 
-The host dependency config is pre-set in `sdkconfig.defaults` (do not remove):
+The host dependency config is pre-set in `sdkconfig.defaults` (do not remove).
+`CONFIG_ESP_HOSTED_HOST_FEAT_BT` enables the BT host feature; the host stack is
+chosen by the IDF BT Kconfig (`CONFIG_BT_BLUEDROID_ENABLED`) — no separate hosted
+BT-port switch:
 
 ```text
 CONFIG_ESP_HOSTED_HOST_FEAT_BT=y                       # host BT feature (controller runs on the CP)
-CONFIG_ESP_HOSTED_HOST_BT_PORT_BLUEDROID=y             # build the eh_host_bluedroid HCI port into esp_hosted
-CONFIG_ESP_HOSTED_HOST_BT_PORT_BLUEDROID_AUTO_INIT=n   # this example attaches the HCI driver itself
 CONFIG_BT_ENABLED=y                                    # BT host stack on
 CONFIG_BT_CONTROLLER_DISABLED=y                        # no local controller — CP supplies it
-CONFIG_BT_BLUEDROID_ENABLED=y                          # Bluedroid host stack
+CONFIG_BT_BLUEDROID_ENABLED=y                          # Bluedroid host stack (selects the hosted BT adapter)
 ```
 
-`AUTO_INIT=n` because this example attaches the HCI driver itself: `app_main`
-calls `hosted_hci_bluedroid_open()` and then `esp_bluedroid_attach_hci_driver()`
-with the `hosted_hci_bluedroid_*` ops declared in `eh_host_bluedroid.h` (see the
-`app_main` snippet under **Verify**). More detail:
+`app_main` calls `esp_hosted_bt_stack_setup()` once (see the snippet under
+**Verify**) to bring the controller up and bind Bluedroid to the hosted HCI.
+More detail:
 [Porting a BT stack to ESP-Hosted](https://github.com/espressif/esp-hosted/blob/master/docs/design/bluetooth.md#porting-a-bt-stack-to-esp-hosted).
 
 Then flash and monitor:
@@ -165,12 +165,8 @@ verbatim upstream Bluedroid:
 
 ```c
 esp_hosted_connect_to_slave();
-esp_hosted_bt_controller_init(); esp_hosted_bt_controller_enable();
-hosted_hci_bluedroid_open();
-esp_bluedroid_attach_hci_driver(&(esp_bluedroid_hci_driver_operations_t){
-    .send = hosted_hci_bluedroid_send,
-    .check_send_available = hosted_hci_bluedroid_check_send_available,
-    .register_host_callback = hosted_hci_bluedroid_register_host_callback });
+esp_hosted_bt_stack_cfg_t bt = ESP_HOSTED_BT_STACK_CONFIG_DEFAULT();
+ESP_ERROR_CHECK(esp_hosted_bt_stack_setup(&bt));  // controller up + HCI bound
 esp_bluedroid_init(); esp_bluedroid_enable();
 ```
 

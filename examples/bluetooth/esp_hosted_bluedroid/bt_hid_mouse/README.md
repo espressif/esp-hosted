@@ -5,8 +5,9 @@
 <!-- common-start -->
 Acts as a Bluetooth Classic HID mouse — pairs with a host (PC or phone) and
 sends mouse-movement reports. Ports upstream `host_bluedroid_bt_hid_mouse_device`
-verbatim; the only ESP-Hosted-specific change is the HCI driver, supplied by the
-hosted `eh_host_bluedroid` port built into the `esp_hosted` component. Bluedroid
+verbatim; the only ESP-Hosted-specific change is one call —
+`esp_hosted_bt_stack_setup()` — that brings the controller up and binds Bluedroid
+to the hosted HCI. Bluedroid
 + the HID device profile run
 on the **host**; the BR/EDR **controller** runs on the ESP-Hosted **co-processor**,
 reached over the hosted transport (SDIO / SPI / SPI-HD / UART) via VHCI.
@@ -145,24 +146,25 @@ HID Example Configuration
 └── (HID Mouse Example) Local Device Name
 ```
 
-The host dependency config is pre-set in `sdkconfig.defaults` (do not remove):
+The host dependency config is pre-set in `sdkconfig.defaults` (do not remove).
+`CONFIG_ESP_HOSTED_HOST_FEAT_BT` enables the BT host feature; the host stack is
+chosen by the IDF BT Kconfig (`CONFIG_BT_BLUEDROID_ENABLED`) — no separate hosted
+BT-port switch:
 
 ```text
 CONFIG_ESP_HOSTED_HOST_FEAT_BT=y                       # host BT feature (controller runs on the CP)
-CONFIG_ESP_HOSTED_HOST_BT_PORT_BLUEDROID=y             # build the eh_host_bluedroid HCI port into esp_hosted
-CONFIG_ESP_HOSTED_HOST_BT_PORT_BLUEDROID_AUTO_INIT=n   # this example attaches the HCI driver itself
 CONFIG_SLAVE_IDF_TARGET_ESP32=y                        # CP must be ESP32 — Classic BT (BR/EDR) only on ESP32
 CONFIG_BT_ENABLED=y                                    # BT host stack on
 CONFIG_BT_CONTROLLER_DISABLED=y                        # no local controller — CP supplies it
-CONFIG_BT_BLUEDROID_ENABLED=y                          # Bluedroid host stack
+CONFIG_BT_BLUEDROID_ENABLED=y                          # Bluedroid host stack (selects the hosted BT adapter)
 CONFIG_BT_CLASSIC_ENABLED=y                            # Classic BT (BR/EDR)
 CONFIG_BT_HID_ENABLED=y                                # HID profile
 CONFIG_BT_HID_DEVICE_ENABLED=y                         # HID device role
 ```
 
-`AUTO_INIT=n` because this example attaches the HCI driver itself: `app_main`
-calls `hosted_hci_bluedroid_open()` and then `esp_bluedroid_attach_hci_driver()`
-with the `hosted_hci_bluedroid_*` ops declared in `eh_host_bluedroid.h`. See
+`app_main` calls `esp_hosted_bt_stack_setup()` once, after
+`esp_hosted_connect_to_slave()` and before `esp_bluedroid_init()`, to bring the
+controller up and bind Bluedroid to the hosted HCI. See
 [Porting a BT stack to ESP-Hosted](https://github.com/espressif/esp-hosted/blob/master/docs/design/bluetooth.md#porting-a-bt-stack-to-esp-hosted).
 
 Then flash and monitor:

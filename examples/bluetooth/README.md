@@ -42,28 +42,37 @@ examples/bluetooth/
     └── bleprph_host_only_uart/{cp,cp_wifi,mcu_host}
 ```
 
-## Enabling the hosted-HCI port (Kconfig, no separate component)
+## Enabling the hosted BT adapter (Kconfig + one setup call)
 
-For the `esp_hosted_*` families the BT stack port is **built into the
-`esp_hosted` component** — there is no external bridge component to add. A host
-app just turns it on in Kconfig:
+For the `esp_hosted_*` families the BT stack adapter lives in
+`examples/common_components/esp_hosted_bt` and is built into the `esp_hosted`
+component — there is no external bridge component to add. A host app enables the
+BT feature plus its chosen IDF BT stack in Kconfig:
 
 ```ini
-CONFIG_ESP_HOSTED_HOST_FEAT_BT=y            # HCI byte-pipe over the transport
-CONFIG_ESP_HOSTED_HOST_BT_PORT_NIMBLE=y     # …or _BLUEDROID for the Bluedroid port
+CONFIG_ESP_HOSTED_HOST_FEAT_BT=y   # HCI byte-pipe over the transport
+CONFIG_BT_NIMBLE_ENABLED=y         # …or CONFIG_BT_BLUEDROID_ENABLED for Bluedroid
 ```
 
-- **NimBLE** auto-inits at boot (`..._BT_PORT_NIMBLE_AUTO_INIT`, default on) —
-  the example calls **no** ESP-Hosted setup function; it is pure NimBLE.
-- **Bluedroid** must attach its HCI driver *before* `esp_bluedroid_init()`, a
-  synchronous ordering auto-init can't guarantee, so Bluedroid examples set
-  `..._BT_PORT_BLUEDROID_AUTO_INIT=n` and call `eh_host_bluedroid_init()`
-  explicitly (or wire the `hosted_hci_bluedroid_*` driver ops themselves — see
-  `controller_mac_addr`). To port a different BT stack, see
-  [docs/design/bluetooth.md](../../docs/design/bluetooth.md#porting-a-bt-stack-to-esp-hosted).
+The host stack is chosen by the IDF BT Kconfig above — no separate hosted
+BT-port switch, and nothing auto-starts. Once, after
+`esp_hosted_connect_to_slave()` and before the stack's own init, the app binds
+the stack to the hosted HCI:
+
+```c
+#include "esp_hosted_bt_stack.h"
+esp_hosted_bt_stack_cfg_t bt = ESP_HOSTED_BT_STACK_CONFIG_DEFAULT();
+ESP_ERROR_CHECK(esp_hosted_bt_stack_setup(&bt));  // controller up + HCI bound
+```
+
+`esp_hosted_bt_stack_setup()` brings the co-processor controller up and wires
+the selected stack (NimBLE / Bluedroid / a custom stack) to the HCI byte-pipe;
+the app then runs its own stack lifecycle (`esp_bluedroid_init/enable` or
+`nimble_port_init`). To port a different BT stack, see
+[Porting a BT stack to ESP-Hosted](https://github.com/espressif/esp-hosted/blob/master/docs/design/bluetooth.md#porting-a-bt-stack-to-esp-hosted).
 
 The shared `esp_hosted_examples_common` helper (used by the Wi-Fi-coex example)
-still lives in `examples/common_components/`.
+also lives in `examples/common_components/`.
 
 ## Pairing rules
 

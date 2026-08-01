@@ -5,11 +5,11 @@
 <!-- common-start -->
 Reads — and optionally overrides — the BT controller's MAC address on the
 co-processor **before** the BT controller is initialised, then brings Bluedroid
-up through the hosted HCI driver (`eh_host_bluedroid`, built into the
-`esp_hosted` component) and advertises as a BLE beacon (`Bluedroid_Beacon`).
+up over the hosted HCI with one call — `esp_hosted_bt_stack_setup()` — and
+advertises as a BLE beacon (`Bluedroid_Beacon`).
 Ports upstream
 `host_bluedroid_bt_controller_mac_addr` verbatim; the only ESP-Hosted-specific
-change is the HCI driver. Bluedroid runs on the **host**; the BT **controller**
+change is that one call. Bluedroid runs on the **host**; the BT **controller**
 runs on the ESP-Hosted **co-processor**, reached over the hosted transport
 (SDIO / SPI / SPI-HD / UART) via VHCI.
 
@@ -139,20 +139,21 @@ Example Configuration
 └── [*] Update MAC Address of BT Controller
 ```
 
-The host dependency config is pre-set in `sdkconfig.defaults` (do not remove):
+The host dependency config is pre-set in `sdkconfig.defaults` (do not remove).
+`CONFIG_ESP_HOSTED_HOST_FEAT_BT` enables the BT host feature; the host stack is
+chosen by the IDF BT Kconfig (`CONFIG_BT_BLUEDROID_ENABLED`) — no separate hosted
+BT-port switch:
 
 ```text
 CONFIG_ESP_HOSTED_HOST_FEAT_BT=y                       # host BT feature (controller runs on the CP)
-CONFIG_ESP_HOSTED_HOST_BT_PORT_BLUEDROID=y             # build the eh_host_bluedroid HCI port into esp_hosted
-CONFIG_ESP_HOSTED_HOST_BT_PORT_BLUEDROID_AUTO_INIT=n   # this example attaches the HCI driver itself
 CONFIG_BT_ENABLED=y                                    # BT host stack on
 CONFIG_BT_CONTROLLER_DISABLED=y                        # no local controller — CP supplies it
-CONFIG_BT_BLUEDROID_ENABLED=y                          # Bluedroid host stack
+CONFIG_BT_BLUEDROID_ENABLED=y                          # Bluedroid host stack (selects the hosted BT adapter)
 ```
 
-`AUTO_INIT=n` because this example attaches the HCI driver itself: `app_main`
-calls `hosted_hci_bluedroid_open()` and then `esp_bluedroid_attach_hci_driver()`
-with the `hosted_hci_bluedroid_*` ops declared in `eh_host_bluedroid.h`. See
+`app_main` sets the MAC (`bt_mac_actions()`) **before** calling
+`esp_hosted_bt_stack_setup()`, which brings the controller up and binds Bluedroid
+to the hosted HCI. See
 [Porting a BT stack to ESP-Hosted](https://github.com/espressif/esp-hosted/blob/master/docs/design/bluetooth.md#porting-a-bt-stack-to-esp-hosted).
 
 Then flash and monitor:
@@ -166,7 +167,8 @@ eh.py -p <host_usb_serial_port> flash monitor
 - The monitor log prints the controller MAC before and (if enabled) after the
   override; the device advertises as `Bluedroid_Beacon`.
 - `esp_hosted_iface_mac_addr_set(ESP_MAC_BT, ...)` must run **before**
-  `esp_hosted_bt_controller_init()` — see `main/main.c`.
+  `esp_hosted_bt_stack_setup()` (which initialises the controller) — see
+  `main/main.c`.
 - The MAC override is **temporary** and reverts on co-processor reset. For a
   permanent change, burn the address into the co-processor's eFuse.
 <!-- esp_host-stop -->

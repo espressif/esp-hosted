@@ -7,10 +7,10 @@ Wi-Fi STA + BLE peripheral running concurrently, both radios on the same
 co-processor. Verbatim merge of the upstream IDF NimBLE `bleprph` and
 `protocols/icmp_echo` examples: the **host** connects to an AP, pings a target,
 and simultaneously advertises a GATT server. Wi-Fi comes up via the hosted
-auto-init (`override_path` = `esp_hosted`, no source changes); BLE likewise
-needs no hosted-specific call — the NimBLE hosted port is built into the
-`esp_hosted` component and [auto-inits at
-boot](https://github.com/espressif/esp-hosted/blob/master/docs/design/bluetooth.md#porting-a-bt-stack-to-esp-hosted).
+`override_path` = `esp_hosted` override (no source changes); BLE comes up via one
+ESP-Hosted call — `esp_hosted_bt_stack_setup()` — which brings the controller up
+and binds NimBLE to the hosted HCI. See [Porting a BT stack to
+ESP-Hosted](https://github.com/espressif/esp-hosted/blob/master/docs/design/bluetooth.md#porting-a-bt-stack-to-esp-hosted).
 The co-processor runs the combined Wi-Fi + BT controller firmware
 (`wifi_hosted_hci`), with BT HCI carried over the hosted transport
 (SDIO / SPI / SPI-HD / UART) via VHCI.
@@ -159,10 +159,9 @@ The host dependency config is pre-set in `sdkconfig.defaults` (do not remove):
 ```text
 CONFIG_ESP_HOSTED_HOST_FEAT_WIFI=y       # host Wi-Fi feature (remote radio on the CP)
 CONFIG_ESP_HOSTED_HOST_FEAT_BT=y         # host BT feature (controller runs on the CP)
-CONFIG_ESP_HOSTED_HOST_BT_PORT_NIMBLE=y  # NimBLE hosted port — auto-inits at boot
 CONFIG_BT_ENABLED=y                      # BT host stack on
 CONFIG_BT_CONTROLLER_DISABLED=y          # no local controller — CP supplies it
-CONFIG_BT_NIMBLE_ENABLED=y               # NimBLE host stack
+CONFIG_BT_NIMBLE_ENABLED=y               # NimBLE host stack (selects the hosted BT adapter)
 CONFIG_ESP_WIFI_REMOTE_LIBRARY_HOSTED=y  # Wi-Fi via esp_wifi_remote over Hosted
 ```
 
@@ -177,8 +176,8 @@ eh.py -p <host_usb_serial_port> flash monitor
 - Test with any BLE scanner (LightBlue, nRF Connect) **plus** an AP with
   internet reachability to the configured ping target — BLE advertising and the
   Wi-Fi ping stream run concurrently.
-- No hosted-specific call is needed on either radio: the NimBLE hosted port
-  auto-inits at boot, and Wi-Fi's `override_path` = `esp_hosted` swaps in the
-  hosted Wi-Fi implementation transparently — the source is verbatim IDF.
+- BLE comes up via one `esp_hosted_bt_stack_setup()` call; Wi-Fi's
+  `override_path` = `esp_hosted` swaps in the hosted Wi-Fi implementation
+  transparently — the source is otherwise verbatim IDF.
 - Currently IPv4-only.
 <!-- esp_host-stop -->
