@@ -28,7 +28,11 @@ if(ESP_PLATFORM)
         "${EH_PATH}/host/features/eh_host_feat_*/include")
     # BT adapter header (examples/common_components); exposed on the esp_hosted
     # surface so an example's main sees esp_hosted_bt_stack.h via REQUIRES esp_hosted.
-    list(APPEND _eh_feat_incs "examples/common_components/esp_hosted_bt/include")
+    # Only when the adapter is actually built (FEAT_BT) — else the core surface
+    # would reach into examples/ for every consumer with BT off.
+    if(CONFIG_ESP_HOSTED_HOST_FEAT_BT)
+        list(APPEND _eh_feat_incs "examples/common_components/esp_hosted_bt/include")
+    endif()
 
     # ldgen places the feature-descriptor section into a declared region (no
     # "undeclared region" linker warning). Host and CP each map their own section.

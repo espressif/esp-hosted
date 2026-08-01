@@ -58,6 +58,7 @@ static void nimble_rx(const uint8_t *frame, uint16_t len, void *user)
             return;
         }
         bool is_adv_report =
+            (blen > BLE_HCI_EVT_HDR_LEN) &&   /* a subevent byte (body[2]) is present */
             (body[0] == BLE_HCI_EVCODE_LE_META) &&
             (body[2] == BLE_HCI_LE_SUBEV_ADV_RPT ||
              body[2] == BLE_HCI_LE_SUBEV_EXT_ADV_RPT);

@@ -539,12 +539,14 @@ static void esp_zigbee_stack_main_task(void *pvParameters)
 	esp_hosted_openthread_radio_config_t hosted_radio_config = { 0 };
 	if (0 != esp_hosted_openthread_get_radio_config(&hosted_radio_config)) {
 		ESP_LOGE(TAG, "Failed to get OpenThread radio config from Hosted");
+		vTaskDelete(NULL);
 		return;
 	}
 
 #if CONFIG_ZB_RADIO_SPINEL_UART
 	if (hosted_radio_config.type != HOSTED_OPENTHREAD_TRANSPORT_UART) {
 		ESP_LOGE(TAG, "Invalid Hosted Radio Config: expected UART radio config");
+		vTaskDelete(NULL);
 		return;
 	}
 	config.platform_config.radio_config.radio_mode = ESP_ZIGBEE_RADIO_MODE_UART_RCP;
@@ -581,7 +583,12 @@ static void esp_zigbee_stack_main_task(void *pvParameters)
 
 void app_main(void)
 {
-    ESP_ERROR_CHECK(nvs_flash_init());
+    esp_err_t ret = nvs_flash_init();
+    if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
+        ESP_ERROR_CHECK(nvs_flash_erase());
+        ret = nvs_flash_init();
+    }
+    ESP_ERROR_CHECK(ret);
     ESP_ERROR_CHECK(nvs_flash_init_partition(ESP_ZIGBEE_STORAGE_PARTITION_NAME));
     ESP_LOGI(TAG, "Start ESP Zigbee Stack");
     xTaskCreate(esp_zigbee_stack_main_task, "Zigbee_main", 4096 * 2, NULL, 5, NULL);

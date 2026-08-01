@@ -270,11 +270,6 @@
 #else
 #  define EH_HOST_FEAT_BT_READY             0
 #endif
-#ifdef CONFIG_ESP_HOSTED_HOST_FEAT_BT_AUTO_INIT
-#  define EH_HOST_FEAT_BT_AUTO_INIT         1
-#else
-#  define EH_HOST_FEAT_BT_AUTO_INIT         0
-#endif
 
 /* OpenThread (RCP feature-control on hosted link) */
 #ifdef CONFIG_ESP_HOSTED_HOST_FEAT_OPENTHREAD

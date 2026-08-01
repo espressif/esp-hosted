@@ -99,6 +99,8 @@ void eh_bt_unbind_bluedroid(void)
     esp_bluedroid_detach_hci_driver();
     eh_host_bt_mcu_hci_unregister();
     s_hci_tx = hci_tx_unbound;
+    s_callback.notify_host_send_available = NULL;
+    s_callback.notify_host_recv           = NULL;
 }
 
 #endif /* CONFIG_BT_BLUEDROID_ENABLED */
