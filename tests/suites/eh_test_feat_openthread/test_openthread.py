@@ -66,13 +66,12 @@ from pathlib import Path
 
 import pytest
 
-from infra import lab
+from infra import lab, build_fw
 from infra.emu_dut import EmuDut, emu_bin
 from infra.expect_helper import eh_test_expect, FATAL_PATTERNS
 
 _REPO = Path(__file__).resolve().parents[3]
 _PEER_CACHE = _REPO / "tests/.work/ot_cli_peer"          # built once, reused
-_IDF = Path(os.path.expanduser("~/esp-idf"))
 
 # Emu-target host overlay: the emu models no P4 PSRAM, so SPIRAM must be off
 # (which also forces worker-task stacks to internal RAM); auto-start gives the
@@ -86,19 +85,31 @@ _EMU_HOST_OVL = (
 
 def _build_peer():
     """Build (once, cached) the monolithic native-radio C6 `ot_cli` peer from
-    ESP-IDF with a shared auto-start dataset. Returns (merged_bin, elf) or None
-    if IDF/toolchain is unavailable (test then skips)."""
+    ESP-IDF with a shared auto-start dataset. Returns (merged_bin, elf), or None
+    only when ESP-IDF or its ot_cli example is genuinely absent (the test then
+    skips). A real build FAILURE raises pytest.fail with the captured output — a
+    broken peer build must surface as red, not masquerade as a skip.
+
+    IDF comes from the harness's canonical resolver (eh.conf override -> .deps ->
+    $IDF_PATH; set via `eh.py set-idf-path`) — the same one every other build in
+    the suite uses — never a hardcoded home-dir path."""
     bin_ = _PEER_CACHE / "build/merged_flash.bin"
     elf = _PEER_CACHE / "build/esp_ot_cli.elf"
     if bin_.exists() and elf.exists():
         return str(bin_), str(elf)
-    src = _IDF / "examples/openthread/ot_cli"
+    idf = build_fw._idf_path_opt()
+    if not idf:
+        return None
+    src = Path(idf) / "examples/openthread/ot_cli"
     if not src.exists():
         return None
     _PEER_CACHE.parent.mkdir(parents=True, exist_ok=True)
+    # Pin IDF_PATH to the resolved IDF before sourcing, so export.sh activates
+    # *that* one (and its venv), not whatever happens to be active in the shell.
     script = f"""
 set -e
-. {_IDF}/export.sh >/dev/null 2>&1
+export IDF_PATH="{idf}"
+. "{idf}/export.sh" >/dev/null 2>&1
 rm -rf {_PEER_CACHE}
 cp -r {src} {_PEER_CACHE}
 printf 'CONFIG_OPENTHREAD_NETWORK_AUTO_START=y\\n' > {_PEER_CACHE}/sdkconfig.emu
@@ -110,7 +121,9 @@ cd build && python -m esptool --chip esp32c6 merge_bin -o merged_flash.bin @flas
     r = subprocess.run(["bash", "-c", script], capture_output=True, text=True,
                        timeout=int(os.environ.get("EH_BUILD_TIMEOUT", "1800")))
     if r.returncode != 0 or not bin_.exists():
-        return None
+        pytest.fail(f"ot_cli peer firmware build failed (rc={r.returncode})\n"
+                    f"...stdout tail:\n{r.stdout[-2000:]}\n"
+                    f"...stderr tail:\n{r.stderr[-2000:]}")
     return str(bin_), str(elf)
 
 
@@ -126,11 +139,9 @@ cd build && python -m esptool --chip esp32c6 merge_bin -o merged_flash.bin @flas
 @pytest.mark.xdist_group("emu_heavy")
 @pytest.mark.parametrize("transport", ["sdio", "spi_hd"])
 def test_ot_cli_2node_association(bench, lab_tmp, worker_id, transport):
-    if not _IDF.exists():
-        pytest.skip("ESP-IDF not available for the ot_cli peer build")
     peer = _build_peer()
     if peer is None:
-        pytest.skip("could not build the ot_cli peer firmware")
+        pytest.skip("ESP-IDF / ot_cli peer source unavailable (configure with eh.py set-idf-path)")
     peer_bin, peer_elf = peer
 
     # Two disjoint UDP ports from this bench's reserved block: RCP binds PA and
