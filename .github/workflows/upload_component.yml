@@ -35,23 +35,14 @@ jobs:
           cp -r examples/common_components/esp_hosted_examples_common examples/network_split/station/mcu_host/components/
           mkdir -p examples/network_split/iperf/mcu_host/components
           cp -r examples/common_components/esp_hosted_examples_common examples/network_split/iperf/mcu_host/components/
-          # ---- Bluetooth (canonical <stack>_<transport>/<scenario>/mcu_host layout) ----
-          # esp_hosted_hci_bluedroid -> bluedroid_hosted_hci mcu_host examples
-          for d in ble_advertise_minimal ble_compatibility_test ble_gatt_server bt_hid_mouse classic_bt_discovery controller_mac_addr; do
-            mkdir -p "examples/bluetooth/bluedroid_hosted_hci/$d/mcu_host/components"
-            cp -r examples/common_components/esp_hosted_hci_bluedroid "examples/bluetooth/bluedroid_hosted_hci/$d/mcu_host/components/"
-          done
-          # esp_hosted_hci_nimble -> nimble_hosted_hci mcu_host examples
-          for d in bleprph_gatt bleprph_minimal bleprph_wifi_coex; do
-            mkdir -p "examples/bluetooth/nimble_hosted_hci/$d/mcu_host/components"
-            cp -r examples/common_components/esp_hosted_hci_nimble "examples/bluetooth/nimble_hosted_hci/$d/mcu_host/components/"
-          done
-          # esp_hosted_examples_common -> BT Wi-Fi coex mcu_host
-          mkdir -p examples/bluetooth/nimble_hosted_hci/bleprph_wifi_coex/mcu_host/components
-          cp -r examples/common_components/esp_hosted_examples_common examples/bluetooth/nimble_hosted_hci/bleprph_wifi_coex/mcu_host/components/
-          # nimble_peripheral_utils -> standard_hci UART mcu_host
-          mkdir -p examples/bluetooth/nimble_standard_hci/bleprph_host_only_uart/mcu_host/components
-          cp -r examples/common_components/nimble_peripheral_utils examples/bluetooth/nimble_standard_hci/bleprph_host_only_uart/mcu_host/components/
+          # ---- Bluetooth ----
+          # The NimBLE/Bluedroid hosted-HCI stack ports are internal to esp_hosted
+          # (built from examples/common_components/eh_host_* by the root CMakeLists),
+          # so BT examples need no port bundling. nimble_uart/bleprph_host_only_uart
+          # carries nimble_peripheral_utils in-tree (mcu_host/components/). Only the
+          # Wi-Fi-coex example still bundles the shared examples_common helper:
+          mkdir -p examples/bluetooth/esp_hosted_nimble/bleprph_wifi_coex/mcu_host/components
+          cp -r examples/common_components/esp_hosted_examples_common examples/bluetooth/esp_hosted_nimble/bleprph_wifi_coex/mcu_host/components/
 
       - name: Strip bundled local-component deps from example manifests
         run: |
@@ -63,18 +54,9 @@ jobs:
             examples/power_save/host+cp/network_split__host_deep_sleep_cp_light_sleep/cp \
             examples/network_split/station/mcu_host \
             examples/network_split/iperf/mcu_host \
-            examples/bluetooth/nimble_hosted_hci/bleprph_gatt/mcu_host \
-            examples/bluetooth/nimble_hosted_hci/bleprph_minimal/mcu_host \
-            examples/bluetooth/nimble_hosted_hci/bleprph_wifi_coex/mcu_host \
-            examples/bluetooth/nimble_standard_hci/bleprph_host_only_uart/mcu_host \
-            examples/bluetooth/bluedroid_hosted_hci/ble_advertise_minimal/mcu_host \
-            examples/bluetooth/bluedroid_hosted_hci/ble_compatibility_test/mcu_host \
-            examples/bluetooth/bluedroid_hosted_hci/ble_gatt_server/mcu_host \
-            examples/bluetooth/bluedroid_hosted_hci/bt_hid_mouse/mcu_host \
-            examples/bluetooth/bluedroid_hosted_hci/classic_bt_discovery/mcu_host \
-            examples/bluetooth/bluedroid_hosted_hci/controller_mac_addr/mcu_host ; do
+            examples/bluetooth/esp_hosted_nimble/bleprph_wifi_coex/mcu_host ; do
             python3 tools/ci/strip_bundled_deps.py "$e/main/idf_component.yml" \
-              esp_hosted_examples_common esp_hosted_hci_nimble esp_hosted_hci_bluedroid nimble_peripheral_utils
+              esp_hosted_examples_common
           done
 
       # Registry example pages: the registry publishes the cp/ mcu_host/ esp_host/

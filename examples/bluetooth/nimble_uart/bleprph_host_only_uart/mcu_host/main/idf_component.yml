@@ -1,3 +1,0 @@
-dependencies:
-  nimble_peripheral_utils:
-    path: ../../../../../../examples/common_components/nimble_peripheral_utils
