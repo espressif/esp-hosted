@@ -47,3 +47,13 @@ endif # ESP_HOSTED_HOST_FEAT_BT
 config ESP_HOSTED_HOST_FEAT_BT_READY
 	bool
 	default y if ESP_HOSTED_HOST_FEAT_BT && ESP_HOSTED_HOST_FEAT_RPC_READY && ESP_HOSTED_HOST_FEAT_RPC_EXT_V2_READY
+
+# Removed in 3.0 — kept only to fail the build on a stale hosted-BT sdkconfig.
+config ESP_HOSTED_ENABLE_BT_BLUEDROID
+	bool "[REMOVED 3.0] use esp_hosted_hci_bluedroid + ESP_HOSTED_HOST_FEAT_BT"
+config ESP_HOSTED_BLUEDROID_HCI_VHCI
+	bool "[REMOVED 3.0] use esp_hosted_hci_bluedroid + ESP_HOSTED_HOST_FEAT_BT"
+config ESP_HOSTED_ENABLE_BT_NIMBLE
+	bool "[REMOVED 3.0] use esp_hosted_hci_nimble + ESP_HOSTED_HOST_FEAT_BT"
+config ESP_HOSTED_NIMBLE_HCI_VHCI
+	bool "[REMOVED 3.0] use esp_hosted_hci_nimble + ESP_HOSTED_HOST_FEAT_BT"
