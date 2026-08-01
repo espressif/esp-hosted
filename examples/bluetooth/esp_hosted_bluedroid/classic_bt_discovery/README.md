@@ -1,4 +1,4 @@
-# Classic BT Discovery — Bluedroid over Hosted HCI (`bluetooth/bluedroid_hosted_hci/classic_bt_discovery`)
+# Classic BT Discovery — Bluedroid over Hosted HCI (`bluetooth/esp_hosted_bluedroid/classic_bt_discovery`)
 
 <!-- tags: bluetooth, classic-bt, discovery, bluedroid, hosted-hci -->
 
@@ -37,7 +37,7 @@ C/S/H-series chips are BLE-only and will fail at controller init.
 ## Directory layout
 
 ```text
-bluetooth/bluedroid_hosted_hci/classic_bt_discovery/
+bluetooth/esp_hosted_bluedroid/classic_bt_discovery/
 ├── cp/          BR/EDR-controller co-processor firmware (ESP32 only, VHCI over hosted transport)
 └── mcu_host/    ESP-IDF Bluedroid host app (the inquiry scanner)
 ```
@@ -58,7 +58,7 @@ controller-only profile with BT HCI carried over the host bus (VHCI); you only
 select the transport (must match the host):
 
 ```bash
-cd examples/bluetooth/bluedroid_hosted_hci/classic_bt_discovery/cp
+cd examples/bluetooth/esp_hosted_bluedroid/classic_bt_discovery/cp
 eh.py set-target esp32
 eh.py menuconfig
 ```
@@ -118,7 +118,7 @@ eh.py -p <cp_usb_serial_port> flash monitor
 Select the transport (must match the co-processor):
 
 ```bash
-cd examples/bluetooth/bluedroid_hosted_hci/classic_bt_discovery/mcu_host
+cd examples/bluetooth/esp_hosted_bluedroid/classic_bt_discovery/mcu_host
 eh.py set-target esp32p4
 eh.py menuconfig
 ```
@@ -147,14 +147,23 @@ Classic BT Discovery config
 The host dependency config is pre-set in `sdkconfig.defaults` (do not remove):
 
 ```text
-CONFIG_ESP_HOSTED_HOST_FEAT_BT=y    # host BT feature (controller runs on the CP)
-CONFIG_SLAVE_IDF_TARGET_ESP32=y     # CP must be ESP32 — Classic BT (BR/EDR) only on ESP32
-CONFIG_BT_ENABLED=y                 # BT host stack on
-CONFIG_BT_CONTROLLER_DISABLED=y     # no local controller — CP supplies it
-CONFIG_BT_BLUEDROID_ENABLED=y       # Bluedroid host stack
-CONFIG_BT_CLASSIC_ENABLED=y         # Classic BT (BR/EDR) inquiry
-CONFIG_BT_BLE_ENABLED=y             # BLE also enabled (dual-mode)
+CONFIG_ESP_HOSTED_HOST_FEAT_BT=y                      # host BT feature (controller runs on the CP)
+CONFIG_ESP_HOSTED_HOST_BT_PORT_BLUEDROID=y           # Bluedroid HCI port (built into the esp_hosted component)
+CONFIG_ESP_HOSTED_HOST_BT_PORT_BLUEDROID_AUTO_INIT=n # app calls eh_host_bluedroid_init() explicitly (see below)
+CONFIG_SLAVE_IDF_TARGET_ESP32=y                      # CP must be ESP32 — Classic BT (BR/EDR) only on ESP32 (choice owned by esp_wifi_remote)
+CONFIG_BT_ENABLED=y                                  # BT host stack on
+CONFIG_BT_CONTROLLER_DISABLED=y                      # no local controller — CP supplies it
+CONFIG_BT_BLUEDROID_ENABLED=y                        # Bluedroid host stack
+CONFIG_BT_CLASSIC_ENABLED=y                          # Classic BT (BR/EDR) inquiry
+CONFIG_BT_BLE_ENABLED=y                              # BLE also enabled (dual-mode)
 ```
+
+Auto-init is **off** on purpose: Bluedroid's HCI driver must attach
+synchronously *before* `esp_bluedroid_init()`, an ordering the background
+auto-init path can't guarantee — so `app_main()` calls the port helper
+`eh_host_bluedroid_init()` (from `eh_host_bluedroid.h`) itself. The port is
+documented in
+[Porting a BT stack to ESP-Hosted](../../../../docs/design/bluetooth.md#porting-a-bt-stack-to-esp-hosted).
 
 Then flash and monitor:
 

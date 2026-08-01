@@ -1,12 +1,13 @@
-# BT Controller MAC Address — Bluedroid over Hosted HCI (`bluetooth/bluedroid_hosted_hci/controller_mac_addr`)
+# BT Controller MAC Address — Bluedroid over Hosted HCI (`bluetooth/esp_hosted_bluedroid/controller_mac_addr`)
 
 <!-- tags: bluetooth, ble, mac-address, bluedroid, hosted-hci -->
 
 <!-- common-start -->
 Reads — and optionally overrides — the BT controller's MAC address on the
 co-processor **before** the BT controller is initialised, then brings Bluedroid
-up through the shared `esp_hosted_hci_bluedroid` bridge and advertises as a BLE
-beacon (`Bluedroid_Beacon`). Ports upstream
+up through the hosted HCI driver (`eh_host_bluedroid`, built into the
+`esp_hosted` component) and advertises as a BLE beacon (`Bluedroid_Beacon`).
+Ports upstream
 `host_bluedroid_bt_controller_mac_addr` verbatim; the only ESP-Hosted-specific
 change is the HCI driver. Bluedroid runs on the **host**; the BT **controller**
 runs on the ESP-Hosted **co-processor**, reached over the hosted transport
@@ -36,7 +37,7 @@ runs on the ESP-Hosted **co-processor**, reached over the hosted transport
 ## Directory layout
 
 ```text
-bluetooth/bluedroid_hosted_hci/controller_mac_addr/
+bluetooth/esp_hosted_bluedroid/controller_mac_addr/
 ├── cp/          BT-controller co-processor firmware (VHCI over hosted transport)
 └── mcu_host/    ESP-IDF Bluedroid host app (MAC read/override + beacon)
 ```
@@ -56,7 +57,7 @@ controller-only profile with BT HCI carried over the host bus (VHCI); you only
 select the transport (must match the host):
 
 ```bash
-cd examples/bluetooth/bluedroid_hosted_hci/controller_mac_addr/cp
+cd examples/bluetooth/esp_hosted_bluedroid/controller_mac_addr/cp
 eh.py set-target <cp_chip>
 eh.py menuconfig
 ```
@@ -113,7 +114,7 @@ eh.py -p <cp_usb_serial_port> flash monitor
 Select the transport (must match the co-processor):
 
 ```bash
-cd examples/bluetooth/bluedroid_hosted_hci/controller_mac_addr/mcu_host
+cd examples/bluetooth/esp_hosted_bluedroid/controller_mac_addr/mcu_host
 eh.py set-target esp32p4
 eh.py menuconfig
 ```
@@ -141,11 +142,18 @@ Example Configuration
 The host dependency config is pre-set in `sdkconfig.defaults` (do not remove):
 
 ```text
-CONFIG_ESP_HOSTED_HOST_FEAT_BT=y    # host BT feature (controller runs on the CP)
-CONFIG_BT_ENABLED=y                 # BT host stack on
-CONFIG_BT_CONTROLLER_DISABLED=y     # no local controller — CP supplies it
-CONFIG_BT_BLUEDROID_ENABLED=y       # Bluedroid host stack
+CONFIG_ESP_HOSTED_HOST_FEAT_BT=y                       # host BT feature (controller runs on the CP)
+CONFIG_ESP_HOSTED_HOST_BT_PORT_BLUEDROID=y             # build the eh_host_bluedroid HCI port into esp_hosted
+CONFIG_ESP_HOSTED_HOST_BT_PORT_BLUEDROID_AUTO_INIT=n   # this example attaches the HCI driver itself
+CONFIG_BT_ENABLED=y                                    # BT host stack on
+CONFIG_BT_CONTROLLER_DISABLED=y                        # no local controller — CP supplies it
+CONFIG_BT_BLUEDROID_ENABLED=y                          # Bluedroid host stack
 ```
+
+`AUTO_INIT=n` because this example attaches the HCI driver itself: `app_main`
+calls `hosted_hci_bluedroid_open()` and then `esp_bluedroid_attach_hci_driver()`
+with the `hosted_hci_bluedroid_*` ops declared in `eh_host_bluedroid.h`. See
+[Porting a BT stack to ESP-Hosted](../../../../docs/design/bluetooth.md#porting-a-bt-stack-to-esp-hosted).
 
 Then flash and monitor:
 

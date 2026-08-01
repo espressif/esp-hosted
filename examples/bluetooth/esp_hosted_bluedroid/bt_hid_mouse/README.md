@@ -1,4 +1,4 @@
-# BT Classic HID Mouse — Bluedroid over Hosted HCI (`bluetooth/bluedroid_hosted_hci/bt_hid_mouse`)
+# BT Classic HID Mouse — Bluedroid over Hosted HCI (`bluetooth/esp_hosted_bluedroid/bt_hid_mouse`)
 
 <!-- tags: bluetooth, classic-bt, hid, bluedroid, hosted-hci -->
 
@@ -6,7 +6,8 @@
 Acts as a Bluetooth Classic HID mouse — pairs with a host (PC or phone) and
 sends mouse-movement reports. Ports upstream `host_bluedroid_bt_hid_mouse_device`
 verbatim; the only ESP-Hosted-specific change is the HCI driver, supplied by the
-shared `esp_hosted_hci_bluedroid` bridge. Bluedroid + the HID device profile run
+hosted `eh_host_bluedroid` port built into the `esp_hosted` component. Bluedroid
++ the HID device profile run
 on the **host**; the BR/EDR **controller** runs on the ESP-Hosted **co-processor**,
 reached over the hosted transport (SDIO / SPI / SPI-HD / UART) via VHCI.
 
@@ -37,7 +38,7 @@ C/S/H-series chips are BLE-only and will fail at controller init.
 ## Directory layout
 
 ```text
-bluetooth/bluedroid_hosted_hci/bt_hid_mouse/
+bluetooth/esp_hosted_bluedroid/bt_hid_mouse/
 ├── cp/          BR/EDR-controller co-processor firmware (ESP32 only, VHCI over hosted transport)
 └── mcu_host/    ESP-IDF Bluedroid host app (the HID mouse device)
 ```
@@ -58,7 +59,7 @@ controller-only profile with BT HCI carried over the host bus (VHCI); you only
 select the transport (must match the host):
 
 ```bash
-cd examples/bluetooth/bluedroid_hosted_hci/bt_hid_mouse/cp
+cd examples/bluetooth/esp_hosted_bluedroid/bt_hid_mouse/cp
 eh.py set-target esp32
 eh.py menuconfig
 ```
@@ -118,7 +119,7 @@ eh.py -p <cp_usb_serial_port> flash monitor
 Select the transport (must match the co-processor):
 
 ```bash
-cd examples/bluetooth/bluedroid_hosted_hci/bt_hid_mouse/mcu_host
+cd examples/bluetooth/esp_hosted_bluedroid/bt_hid_mouse/mcu_host
 eh.py set-target esp32p4
 eh.py menuconfig
 ```
@@ -147,15 +148,22 @@ HID Example Configuration
 The host dependency config is pre-set in `sdkconfig.defaults` (do not remove):
 
 ```text
-CONFIG_ESP_HOSTED_HOST_FEAT_BT=y    # host BT feature (controller runs on the CP)
-CONFIG_SLAVE_IDF_TARGET_ESP32=y     # CP must be ESP32 — Classic BT (BR/EDR) only on ESP32
-CONFIG_BT_ENABLED=y                 # BT host stack on
-CONFIG_BT_CONTROLLER_DISABLED=y     # no local controller — CP supplies it
-CONFIG_BT_BLUEDROID_ENABLED=y       # Bluedroid host stack
-CONFIG_BT_CLASSIC_ENABLED=y         # Classic BT (BR/EDR)
-CONFIG_BT_HID_ENABLED=y             # HID profile
-CONFIG_BT_HID_DEVICE_ENABLED=y      # HID device role
+CONFIG_ESP_HOSTED_HOST_FEAT_BT=y                       # host BT feature (controller runs on the CP)
+CONFIG_ESP_HOSTED_HOST_BT_PORT_BLUEDROID=y             # build the eh_host_bluedroid HCI port into esp_hosted
+CONFIG_ESP_HOSTED_HOST_BT_PORT_BLUEDROID_AUTO_INIT=n   # this example attaches the HCI driver itself
+CONFIG_SLAVE_IDF_TARGET_ESP32=y                        # CP must be ESP32 — Classic BT (BR/EDR) only on ESP32
+CONFIG_BT_ENABLED=y                                    # BT host stack on
+CONFIG_BT_CONTROLLER_DISABLED=y                        # no local controller — CP supplies it
+CONFIG_BT_BLUEDROID_ENABLED=y                          # Bluedroid host stack
+CONFIG_BT_CLASSIC_ENABLED=y                            # Classic BT (BR/EDR)
+CONFIG_BT_HID_ENABLED=y                                # HID profile
+CONFIG_BT_HID_DEVICE_ENABLED=y                         # HID device role
 ```
+
+`AUTO_INIT=n` because this example attaches the HCI driver itself: `app_main`
+calls `hosted_hci_bluedroid_open()` and then `esp_bluedroid_attach_hci_driver()`
+with the `hosted_hci_bluedroid_*` ops declared in `eh_host_bluedroid.h`. See
+[Porting a BT stack to ESP-Hosted](../../../../docs/design/bluetooth.md#porting-a-bt-stack-to-esp-hosted).
 
 Then flash and monitor:
 

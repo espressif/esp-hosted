@@ -82,14 +82,24 @@ Example Configuration
 
 Hosted-HCI and standard UART-HCI are mutually exclusive — enabling one disables the other. Make sure any UART GPIOs do not clash with the ESP-Hosted transport pins.
 
-The BT controller on the co-processor is **disabled by default** (since ESP-Hosted-MCU v2.5.2) so you can set the BT MAC first. Typical bring-up:
+For **Hosted-HCI**, enable the built-in stack port in Kconfig — there is no separate bridge component:
 
-1. `esp_hosted_connect_to_slave()` — initialise the transport.
+```ini
+CONFIG_ESP_HOSTED_HOST_FEAT_BT=y            # HCI byte-pipe over the transport
+CONFIG_ESP_HOSTED_HOST_BT_PORT_NIMBLE=y     # …or _BLUEDROID
+```
+
+- **NimBLE** auto-inits at boot — the app calls no ESP-Hosted function; it is pure NimBLE.
+- **BlueDroid** attaches its HCI driver before `esp_bluedroid_init()`, an ordering auto-init can't guarantee, so set `..._BT_PORT_BLUEDROID_AUTO_INIT=n` and call `eh_host_bluedroid_init()` explicitly. To port a different stack, see [Bluetooth Design → Porting a BT stack](../design/bluetooth.md#porting-a-bt-stack-to-esp-hosted).
+
+Under the hood the port drives the controller lifecycle. The controller is **disabled by default** (since ESP-Hosted-MCU v2.5.2) so the BT MAC can be set first; a bring-your-own-driver app does it manually:
+
+1. `esp_hosted_connect_to_slave()` — initialise the transport (automatic when the port is enabled).
 2. (Optional) `esp_hosted_iface_mac_addr_get()` / `esp_hosted_iface_mac_addr_set()` — read/set the BT MAC (temporary until reset).
 3. `esp_hosted_bt_controller_init()` then `esp_hosted_bt_controller_enable()`.
 4. Initialise your BT host stack (NimBLE or BlueDroid).
 
-**To disable / tear down:** deinit the host stack, then call `esp_hosted_bt_controller_disable()` and `esp_hosted_bt_controller_deinit()` (simply not initialising the controller leaves BT off).
+**To disable / tear down:** deinit the host stack, then call `esp_hosted_bt_controller_disable()` and `esp_hosted_bt_controller_deinit()`.
 
 ---
 

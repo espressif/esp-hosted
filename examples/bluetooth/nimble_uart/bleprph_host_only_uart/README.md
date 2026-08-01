@@ -1,4 +1,4 @@
-# BLE Peripheral — NimBLE Host over Standard HCI UART (`bluetooth/nimble_standard_hci/bleprph_host_only_uart`)
+# BLE Peripheral — NimBLE Host over Standard HCI UART (`bluetooth/nimble_uart/bleprph_host_only_uart`)
 
 <!-- tags: bluetooth, ble, nimble, standard-hci, uart -->
 
@@ -39,7 +39,7 @@ this scenario. ESP32-S2 has no BT controller and is unsupported.
 ## Directory layout
 
 ```text
-bluetooth/nimble_standard_hci/bleprph_host_only_uart/
+bluetooth/nimble_uart/bleprph_host_only_uart/
 ├── cp/          BT-controller co-processor firmware in native UART-H4 mode
 └── mcu_host/    ESP-IDF NimBLE host app with its own H4 UART transport
 ```
@@ -63,7 +63,7 @@ Bluetooth controller HCI mode before building. (`esp32c61` follows the `esp32c6`
 UART-H4 settings; `esp32s2` has no BT controller.)
 
 ```bash
-cd examples/bluetooth/nimble_standard_hci/bleprph_host_only_uart/cp
+cd examples/bluetooth/nimble_uart/bleprph_host_only_uart/cp
 eh.py set-target <cp_chip>
 eh.py menuconfig
 ```
@@ -133,7 +133,7 @@ controller is disabled and its built-in UART transport is disabled so the
 application transport is used instead.
 
 ```bash
-cd examples/bluetooth/nimble_standard_hci/bleprph_host_only_uart/mcu_host
+cd examples/bluetooth/nimble_uart/bleprph_host_only_uart/mcu_host
 eh.py set-target <host_chip>
 eh.py menuconfig
 ```

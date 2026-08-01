@@ -1,4 +1,4 @@
-# Classic BT Discovery — Bluedroid Host over Standard HCI UART (`bluetooth/bluedroid_standard_hci/bluedroid_host_only_uart`)
+# Classic BT Discovery — Bluedroid Host over Standard HCI UART (`bluetooth/bluedroid_uart/bluedroid_host_only_uart`)
 
 <!-- tags: bluetooth, classic-bt, bredr, bluedroid, standard-hci, uart -->
 
@@ -8,7 +8,7 @@ stack runs on the **host** MCU with its local controller disabled; it reaches th
 Bluetooth controller on the co-processor over a **dedicated physical UART in H4
 mode** (not the ESP-Hosted VHCI bridge). The host's own `uart_driver.c` is bound
 to Bluedroid via `esp_bluedroid_attach_hci_driver()`. This is the Bluedroid
-counterpart of `bluetooth/nimble_standard_hci/bleprph_host_only_uart` (NimBLE / BLE).
+counterpart of `bluetooth/nimble_uart/bleprph_host_only_uart` (NimBLE / BLE).
 
 ## Supported Platforms and Transports
 
@@ -40,7 +40,7 @@ host may separately use for Wi-Fi.
 ## Directory layout
 
 ```text
-bluetooth/bluedroid_standard_hci/bluedroid_host_only_uart/
+bluetooth/bluedroid_uart/bluedroid_host_only_uart/
 ├── cp/          BT-controller co-processor firmware (HCI on a dedicated UART, H4)
 └── mcu_host/    ESP-IDF Bluedroid host app (classic BT discovery over that UART)
 ```
@@ -62,7 +62,7 @@ devices, build the co-processor on an **ESP32** (the only Espressif controller
 with the classic profile) and keep BR/EDR enabled in the controller:
 
 ```bash
-cd examples/bluetooth/bluedroid_standard_hci/bluedroid_host_only_uart/cp
+cd examples/bluetooth/bluedroid_uart/bluedroid_host_only_uart/cp
 eh.py set-target esp32
 eh.py menuconfig
 ```
@@ -106,7 +106,7 @@ The host runs the Bluedroid stack with its **local controller disabled** and
 drives the HCI UART itself. Set the target and the example options:
 
 ```bash
-cd examples/bluetooth/bluedroid_standard_hci/bluedroid_host_only_uart/mcu_host
+cd examples/bluetooth/bluedroid_uart/bluedroid_host_only_uart/mcu_host
 eh.py set-target esp32p4
 eh.py menuconfig
 ```

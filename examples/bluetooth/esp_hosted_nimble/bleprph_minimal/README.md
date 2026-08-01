@@ -1,4 +1,4 @@
-# BLE Peripheral Minimal — NimBLE over Hosted HCI (`bluetooth/nimble_hosted_hci/bleprph_minimal`)
+# BLE Peripheral Minimal — NimBLE over Hosted HCI (`bluetooth/esp_hosted_nimble/bleprph_minimal`)
 
 <!-- tags: bluetooth, ble, advertising, nimble, hosted-hci -->
 
@@ -6,9 +6,11 @@
 Smallest possible NimBLE BLE peripheral — boots the BLE **controller** on the
 ESP-Hosted **co-processor**, then runs verbatim NimBLE **host** code (GAP init +
 connectable advertising). The controller is reached over the hosted transport
-(SDIO / SPI / SPI-HD / UART) via VHCI. The only hosted-specific call is
-`esp_hosted_hci_nimble_setup()` before `nimble_port_init()`. The Bluedroid
-counterpart is `bluetooth/bluedroid_hosted_hci/ble_advertise_minimal`.
+(SDIO / SPI / SPI-HD / UART) via VHCI. The app is standard NimBLE — the hosted
+NimBLE port is built into the `esp_hosted` component and [auto-inits at
+boot](../../../../docs/design/bluetooth.md#porting-a-bt-stack-to-esp-hosted), so
+there is no hosted-specific setup call. The Bluedroid counterpart is
+`bluetooth/esp_hosted_bluedroid/ble_advertise_minimal`.
 
 ## Supported Platforms and Transports
 
@@ -34,7 +36,7 @@ counterpart is `bluetooth/bluedroid_hosted_hci/ble_advertise_minimal`.
 ## Directory layout
 
 ```text
-bluetooth/nimble_hosted_hci/bleprph_minimal/
+bluetooth/esp_hosted_nimble/bleprph_minimal/
 ├── cp/          BT-controller co-processor firmware (VHCI over hosted transport)
 └── mcu_host/    ESP-IDF NimBLE host app (the advertiser)
 ```
@@ -54,7 +56,7 @@ controller-only profile with BT HCI carried over the host bus (VHCI); you only
 select the transport (must match the host):
 
 ```bash
-cd examples/bluetooth/nimble_hosted_hci/bleprph_minimal/cp
+cd examples/bluetooth/esp_hosted_nimble/bleprph_minimal/cp
 eh.py set-target <cp_chip>
 eh.py menuconfig
 ```
@@ -111,7 +113,7 @@ eh.py -p <cp_usb_serial_port> flash monitor
 Select the transport (must match the co-processor):
 
 ```bash
-cd examples/bluetooth/nimble_hosted_hci/bleprph_minimal/mcu_host
+cd examples/bluetooth/esp_hosted_nimble/bleprph_minimal/mcu_host
 eh.py set-target esp32p4
 eh.py menuconfig
 ```
@@ -136,13 +138,16 @@ BLE Peripheral Minimal config
 └── (esp-hosted-nim) BLE device name (advertised)
 ```
 
-The host dependency config is pre-set in `sdkconfig.defaults` (do not remove):
+The host dependency config is pre-set in `sdkconfig.defaults` (do not remove).
+The two ESP-Hosted symbols enable the BT host feature and the NimBLE hosted
+port; the port is built into the `esp_hosted` component and auto-inits at boot:
 
 ```text
-CONFIG_ESP_HOSTED_HOST_FEAT_BT=y    # host BT feature (controller runs on the CP)
-CONFIG_BT_ENABLED=y                 # BT host stack on
-CONFIG_BT_CONTROLLER_DISABLED=y     # no local controller — CP supplies it
-CONFIG_BT_NIMBLE_ENABLED=y          # NimBLE host stack
+CONFIG_ESP_HOSTED_HOST_FEAT_BT=y        # host BT feature (controller runs on the CP)
+CONFIG_ESP_HOSTED_HOST_BT_PORT_NIMBLE=y # NimBLE hosted port — auto-inits at boot
+CONFIG_BT_ENABLED=y                     # BT host stack on
+CONFIG_BT_CONTROLLER_DISABLED=y         # no local controller — CP supplies it
+CONFIG_BT_NIMBLE_ENABLED=y              # NimBLE host stack
 ```
 
 Then flash and monitor:
@@ -155,10 +160,9 @@ eh.py -p <host_usb_serial_port> flash monitor
 
 - Scan with any generic BLE explorer — LightBlue, nRF Connect, `bluetoothctl` —
   and connect to the advertised device name.
-- `esp_hosted_hci_nimble_setup()` is the only hosted-specific addition on top of
-  an otherwise verbatim NimBLE init sequence. The bridge's TX/RX overrides are
-  wired purely by being linked in — no explicit `attach_hci_driver` call (unlike
-  Bluedroid).
+- `app_main` is standard NimBLE — no hosted-specific call. The NimBLE hosted
+  port auto-inits at boot and its bridge TX/RX overrides are wired purely by
+  being linked in — no explicit `attach_hci_driver` call (unlike Bluedroid).
 - NimBLE is BLE-only. For Classic Bluetooth, use Bluedroid (see
-  `bluetooth/bluedroid_hosted_hci/`).
+  `bluetooth/esp_hosted_bluedroid/`).
 <!-- esp_host-stop -->

@@ -1,4 +1,4 @@
-# BLE + Wi-Fi Coexistence — NimBLE over Hosted HCI (`bluetooth/nimble_hosted_hci/bleprph_wifi_coex`)
+# BLE + Wi-Fi Coexistence — NimBLE over Hosted HCI (`bluetooth/esp_hosted_nimble/bleprph_wifi_coex`)
 
 <!-- tags: bluetooth, ble, wifi-coex, nimble, hosted-hci -->
 
@@ -7,8 +7,10 @@ Wi-Fi STA + BLE peripheral running concurrently, both radios on the same
 co-processor. Verbatim merge of the upstream IDF NimBLE `bleprph` and
 `protocols/icmp_echo` examples: the **host** connects to an AP, pings a target,
 and simultaneously advertises a GATT server. Wi-Fi comes up via the hosted
-auto-init (`override_path` = `esp_hosted`, no source changes); BLE comes up via
-the one-line `esp_hosted_hci_nimble_setup()` call before `nimble_port_init()`.
+auto-init (`override_path` = `esp_hosted`, no source changes); BLE likewise
+needs no hosted-specific call — the NimBLE hosted port is built into the
+`esp_hosted` component and [auto-inits at
+boot](../../../../docs/design/bluetooth.md#porting-a-bt-stack-to-esp-hosted).
 The co-processor runs the combined Wi-Fi + BT controller firmware
 (`wifi_hosted_hci`), with BT HCI carried over the hosted transport
 (SDIO / SPI / SPI-HD / UART) via VHCI.
@@ -37,7 +39,7 @@ The co-processor runs the combined Wi-Fi + BT controller firmware
 ## Directory layout
 
 ```text
-bluetooth/nimble_hosted_hci/bleprph_wifi_coex/
+bluetooth/esp_hosted_nimble/bleprph_wifi_coex/
 ├── cp/          Wi-Fi + BT-controller co-processor firmware (wifi_hosted_hci, VHCI over hosted transport)
 └── mcu_host/    ESP-IDF NimBLE host app (Wi-Fi STA + ping + GATT server)
 ```
@@ -59,7 +61,7 @@ HCI carried over the host bus (VHCI); you only select the transport (must match
 the host):
 
 ```bash
-cd examples/bluetooth/nimble_hosted_hci/bleprph_wifi_coex/cp
+cd examples/bluetooth/esp_hosted_nimble/bleprph_wifi_coex/cp
 eh.py set-target <cp_chip>
 eh.py menuconfig
 ```
@@ -117,7 +119,7 @@ eh.py -p <cp_usb_serial_port> flash monitor
 Select the transport (must match the co-processor):
 
 ```bash
-cd examples/bluetooth/nimble_hosted_hci/bleprph_wifi_coex/mcu_host
+cd examples/bluetooth/esp_hosted_nimble/bleprph_wifi_coex/mcu_host
 eh.py set-target esp32p4
 eh.py menuconfig
 ```
@@ -157,6 +159,7 @@ The host dependency config is pre-set in `sdkconfig.defaults` (do not remove):
 ```text
 CONFIG_ESP_HOSTED_HOST_FEAT_WIFI=y       # host Wi-Fi feature (remote radio on the CP)
 CONFIG_ESP_HOSTED_HOST_FEAT_BT=y         # host BT feature (controller runs on the CP)
+CONFIG_ESP_HOSTED_HOST_BT_PORT_NIMBLE=y  # NimBLE hosted port — auto-inits at boot
 CONFIG_BT_ENABLED=y                      # BT host stack on
 CONFIG_BT_CONTROLLER_DISABLED=y          # no local controller — CP supplies it
 CONFIG_BT_NIMBLE_ENABLED=y               # NimBLE host stack
@@ -174,9 +177,8 @@ eh.py -p <host_usb_serial_port> flash monitor
 - Test with any BLE scanner (LightBlue, nRF Connect) **plus** an AP with
   internet reachability to the configured ping target — BLE advertising and the
   Wi-Fi ping stream run concurrently.
-- The single line `esp_hosted_hci_nimble_setup()` before `nimble_port_init()` is
-  the ONLY hosted-specific addition to the verbatim IDF source. Wi-Fi requires no
-  source change — `override_path` = `esp_hosted` swaps in the hosted Wi-Fi
-  implementation transparently.
+- No hosted-specific call is needed on either radio: the NimBLE hosted port
+  auto-inits at boot, and Wi-Fi's `override_path` = `esp_hosted` swaps in the
+  hosted Wi-Fi implementation transparently — the source is verbatim IDF.
 - Currently IPv4-only.
 <!-- esp_host-stop -->

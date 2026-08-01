@@ -1,4 +1,4 @@
-# BLE Compatibility Test — Bluedroid over Hosted HCI (`bluetooth/bluedroid_hosted_hci/ble_compatibility_test`)
+# BLE Compatibility Test — Bluedroid over Hosted HCI (`bluetooth/esp_hosted_bluedroid/ble_compatibility_test`)
 
 <!-- tags: bluetooth, ble, gatt, bluedroid, hosted-hci -->
 
@@ -7,8 +7,9 @@ BLE interoperability / compatibility test app — a GATT server exercising a
 range of characteristics, MTU sizes, notifications, and connection parameters —
 used to validate BLE behaviour against phones and other centrals. Ports upstream
 `host_bluedroid_ble_compatibility_test` verbatim; the only ESP-Hosted-specific
-change is the HCI driver, supplied by the shared `esp_hosted_hci_bluedroid`
-bridge. Bluedroid runs on the **host**; the BT **controller** runs on the
+change is the HCI driver, supplied by the hosted `eh_host_bluedroid` port built
+into the `esp_hosted` component. Bluedroid runs on the **host**; the BT
+**controller** runs on the
 ESP-Hosted **co-processor**, reached over the hosted transport
 (SDIO / SPI / SPI-HD / UART) via VHCI.
 
@@ -36,7 +37,7 @@ ESP-Hosted **co-processor**, reached over the hosted transport
 ## Directory layout
 
 ```text
-bluetooth/bluedroid_hosted_hci/ble_compatibility_test/
+bluetooth/esp_hosted_bluedroid/ble_compatibility_test/
 ├── cp/          BT-controller co-processor firmware (VHCI over hosted transport)
 └── mcu_host/    ESP-IDF Bluedroid host app (the compatibility GATT server)
 ```
@@ -56,7 +57,7 @@ controller-only profile with BT HCI carried over the host bus (VHCI); you only
 select the transport (must match the host):
 
 ```bash
-cd examples/bluetooth/bluedroid_hosted_hci/ble_compatibility_test/cp
+cd examples/bluetooth/esp_hosted_bluedroid/ble_compatibility_test/cp
 eh.py set-target <cp_chip>
 eh.py menuconfig
 ```
@@ -113,7 +114,7 @@ eh.py -p <cp_usb_serial_port> flash monitor
 Select the transport (must match the co-processor):
 
 ```bash
-cd examples/bluetooth/bluedroid_hosted_hci/ble_compatibility_test/mcu_host
+cd examples/bluetooth/esp_hosted_bluedroid/ble_compatibility_test/mcu_host
 eh.py set-target esp32p4
 eh.py menuconfig
 ```
@@ -137,11 +138,19 @@ characteristic layout lives in `main/ble_compatibility_test.{c,h}`.
 The host dependency config is pre-set in `sdkconfig.defaults` (do not remove):
 
 ```text
-CONFIG_ESP_HOSTED_HOST_FEAT_BT=y    # host BT feature (controller runs on the CP)
-CONFIG_BT_ENABLED=y                 # BT host stack on
-CONFIG_BT_CONTROLLER_DISABLED=y     # no local controller — CP supplies it
-CONFIG_BT_BLUEDROID_ENABLED=y       # Bluedroid host stack
+CONFIG_ESP_HOSTED_HOST_FEAT_BT=y                       # host BT feature (controller runs on the CP)
+CONFIG_ESP_HOSTED_HOST_BT_PORT_BLUEDROID=y             # build the eh_host_bluedroid HCI port into esp_hosted
+CONFIG_ESP_HOSTED_HOST_BT_PORT_BLUEDROID_AUTO_INIT=n   # this example attaches the HCI driver itself
+CONFIG_BT_ENABLED=y                                    # BT host stack on
+CONFIG_BT_CONTROLLER_DISABLED=y                        # no local controller — CP supplies it
+CONFIG_BT_BLUEDROID_ENABLED=y                          # Bluedroid host stack
 ```
+
+`AUTO_INIT=n` because this example attaches the HCI driver itself: `app_main`
+calls `hosted_hci_bluedroid_open()` and then `esp_bluedroid_attach_hci_driver()`
+with the `hosted_hci_bluedroid_*` ops declared in `eh_host_bluedroid.h` (see the
+`app_main` snippet under **Verify**). More detail:
+[Porting a BT stack to ESP-Hosted](../../../../docs/design/bluetooth.md#porting-a-bt-stack-to-esp-hosted).
 
 Then flash and monitor:
 

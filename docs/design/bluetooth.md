@@ -78,11 +78,11 @@ Hosted offers two ways for the host stack to reach the controller: **Standard HC
 
 ## NimBLE host stack
 
-The Hosted master implements the NimBLE transport API set: `ble_transport_ll_init`, `ble_transport_to_ll_acl_impl`, `ble_transport_to_ll_cmd_impl`, `ble_transport_to_hs_evt`, `ble_transport_to_hs_acl` (see `examples/common_components/esp_hosted_hci_nimble/src/esp_hosted_hci_nimble.c`).
+The NimBLE port implements the NimBLE transport API set: `ble_transport_ll_init`, `ble_transport_to_ll_acl_impl`, `ble_transport_to_ll_cmd_impl`, `ble_transport_to_hs_evt`, `ble_transport_to_hs_acl` (see `examples/common_components/eh_host_nimble/src/eh_host_nimble.c`). The port is built into the `esp_hosted` component — see [Porting a BT stack to ESP-Hosted](#porting-a-bt-stack-to-esp-hosted).
 
 ### Over Hosted HCI
 
-**Initialization** — the app calls the one-shot `esp_hosted_hci_nimble_setup()` (Bluedroid: `esp_hosted_hci_bluedroid_setup()`): it connects to the co-processor, inits and enables the CP-side BT controller over RPC, and registers the HCI RX callback (binding the TX function). The transport TX overrides (`ble_transport_to_ll_*`) are strong link-time symbols, so NimBLE's own `ble_transport_ll_init()` has nothing left to do and is a no-op.
+**Initialization** — enable the port with `CONFIG_ESP_HOSTED_HOST_FEAT_BT=y` + `CONFIG_ESP_HOSTED_HOST_BT_PORT_NIMBLE=y`. It **auto-inits at boot** (`eh_host_nimble_init()` runs once the transport is up, before `app_main` proceeds): it inits and enables the CP-side BT controller over RPC and registers the HCI RX callback (binding the TX function). The app calls **no** ESP-Hosted function — the transport TX overrides (`ble_transport_to_ll_*`) are strong link-time symbols, so NimBLE's own `ble_transport_ll_init()` is a no-op. (Bluedroid cannot auto-init — its HCI driver must attach before `esp_bluedroid_init()` — so it calls `eh_host_bluedroid_init()` explicitly; see below.)
 
 ```mermaid
 sequenceDiagram
@@ -97,16 +97,14 @@ sequenceDiagram
     participant slave as Bluetooth Controller
     end
 
-    app ->> hhci : esp_hosted_hci_nimble_setup()
-    hhci ->> master : esp_hosted_connect_to_slave()
-    hhci ->> slave : esp_hosted_bt_controller_init() (RPC)
-    hhci ->> slave : esp_hosted_bt_controller_enable() (RPC)
+    Note over hhci : auto-init at boot (before app_main)
+    hhci ->> slave : eh_host_bt_controller_init() (RPC)
+    hhci ->> slave : eh_host_bt_controller_enable() (RPC)
     hhci ->> hhci : eh_host_bt_mcu_hci_register(rx_cb) — bind TX fn
-    hhci -->> app : ready
 
     app ->> ble : nimble_port_init()
     ble ->> +hhci : ble_transport_ll_init()
-    Note over hhci : no-op — wiring already done in setup()
+    Note over hhci : no-op — wiring already done by auto-init
     hhci -->> -ble :
 ```
 
@@ -257,7 +255,7 @@ Hosted implements the BlueDroid transport API set: `hosted_hci_bluedroid_open`, 
 
 ### Over Hosted HCI
 
-**Initialization:**
+**Initialization** — enable the port with `CONFIG_ESP_HOSTED_HOST_FEAT_BT=y` + `CONFIG_ESP_HOSTED_HOST_BT_PORT_BLUEDROID=y`. Bluedroid's HCI driver must attach **before** `esp_bluedroid_init()`, an ordering the async auto-init task can't guarantee, so set `CONFIG_ESP_HOSTED_HOST_BT_PORT_BLUEDROID_AUTO_INIT=n` and call the port helper `eh_host_bluedroid_init()` explicitly in `app_main` (it inits + enables the controller and attaches the HCI driver). A bring-your-own-driver app can instead wire the `hosted_hci_bluedroid_*` ops into `esp_bluedroid_hci_driver_operations_t` itself (see `examples/bluetooth/esp_hosted_bluedroid/controller_mac_addr`):
 
 ```mermaid
 sequenceDiagram
@@ -420,6 +418,65 @@ Depending on the co-processor, UART parameters (Tx/Rx pins, hardware flow contro
 
 > [!NOTE]
 > Make sure the Standard-HCI UART GPIO pins do not conflict with the GPIO pins used by the selected ESP-Hosted transport.
+
+---
+
+## Porting a BT stack to ESP-Hosted
+
+ESP-Hosted is stack-agnostic. The `eh_host_feat_bt` feature provides a raw HCI
+byte-pipe to the co-processor controller; a **stack port** is the thin glue that
+binds a particular host stack to that pipe. The two reference ports —
+`examples/common_components/eh_host_nimble` and `.../eh_host_bluedroid` — are
+built into the `esp_hosted` component (gated by Kconfig) and are the template
+for your own.
+
+**What `feat_bt` gives the port** (`eh_host_feat_bt.h`, `eh_host_feat_bt_mcu.h`):
+
+- `eh_host_bt_controller_init/enable/disable/deinit()` — CP-side controller
+  lifecycle over RPC (tolerate `ESP_ERR_INVALID_STATE`: `feat_bt` may already
+  have brought the controller up).
+- `eh_host_bt_mcu_hci_register(rx_cb, user)` → returns the **TX function** for
+  HCI frames (H4: `pkt-type | body`); `eh_host_bt_mcu_hci_unregister()`.
+
+**What the port does** — implement two directions and a lifecycle:
+
+1. **TX** — convert your stack's outgoing HCI to an H4 frame and hand it to the
+   TX function returned by `eh_host_bt_mcu_hci_register`.
+2. **RX** — in the `rx_cb`, parse the inbound H4 frame and dispatch it into your
+   stack (event vs ACL).
+3. **`eh_host_<stack>_init()` / `_deinit()`** — public `esp_err_t` entry points:
+   init = controller init/enable + `eh_host_bt_mcu_hci_register` (bind RX, keep
+   TX); deinit = unregister + controller disable/deinit. Do **not** call
+   `connect_to_slave` — transport bring-up is automatic.
+
+**Wire it in:**
+
+- **Kconfig** (`Kconfig.ext`): `config ESP_HOSTED_HOST_BT_PORT_<STACK>`
+  (depends on `ESP_HOSTED_HOST_FEAT_BT` and your stack being enabled) plus
+  `..._AUTO_INIT` (`default y`, `depends on ESP_HOSTED_HOST_AUTO_FEAT_INIT`).
+- **Auto-init** (`eh_host_auto_init.h`): under `#if CONFIG_..._AUTO_INIT`,
+  `EH_HOST_FEAT_REGISTER(eh_host_<stack>_init, eh_host_<stack>_deinit,
+  "bt_port_<stack>", 250)` — priority 250 runs after `feat_bt` (150) so the HCI
+  byte-pipe is up first.
+- **CMake**: `add_library(eh_host_<stack> STATIC ...)` gated by
+  `if(NOT CONFIG_ESP_HOSTED_HOST_BT_PORT_<STACK>) return()`; link
+  `eh_host_feat_bt` (+ `eh_host_autoinit` when auto-init is on) and your stack;
+  `target_link_options(... INTERFACE "-Wl,--undefined=eh_host_<stack>_init")` to
+  force the TU into the link; self-attach with
+  `target_link_libraries(eh_host INTERFACE eh_host_<stack>)`.
+
+**Two binding patterns** (from the reference ports):
+
+- **Link-time override** (NimBLE): the stack declares weak transport hooks
+  (`ble_transport_to_ll_*`); the port provides strong overrides. No app call —
+  it can **auto-init** at boot.
+- **Driver-ops attach** (Bluedroid): the app attaches an HCI driver ops struct
+  (`hosted_hci_bluedroid_*`) before initialising the stack. Because the attach
+  must complete **synchronously before** the stack's init, such a port sets
+  `..._AUTO_INIT=n` and the example calls `eh_host_<stack>_init()` explicitly.
+
+See the working ports and examples: `examples/bluetooth/esp_hosted_nimble/` and
+`examples/bluetooth/esp_hosted_bluedroid/`.
 
 ---
 

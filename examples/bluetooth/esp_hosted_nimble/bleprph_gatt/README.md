@@ -1,4 +1,4 @@
-# BLE GATT Server — NimBLE over Hosted HCI (`bluetooth/nimble_hosted_hci/bleprph_gatt`)
+# BLE GATT Server — NimBLE over Hosted HCI (`bluetooth/esp_hosted_nimble/bleprph_gatt`)
 
 <!-- tags: bluetooth, ble, gatt, nimble, hosted-hci -->
 
@@ -7,9 +7,11 @@ Connectable BLE peripheral exposing one custom 128-bit GATT service with two
 characteristics (read/write + notify). NimBLE runs on the **host**; the
 Bluetooth **controller** runs on the ESP-Hosted **co-processor**, reached over
 the hosted transport (SDIO / SPI / SPI-HD / UART) via VHCI.
-`esp_hosted_hci_nimble_setup()` brings up the remote controller immediately
-before `nimble_port_init()`; everything after is verbatim NimBLE — the
-bluedroid counterpart is `bluetooth/bluedroid_hosted_hci/ble_gatt_server`.
+The app is standard NimBLE — the hosted NimBLE port is built into the
+`esp_hosted` component and [auto-inits at
+boot](../../../../docs/design/bluetooth.md#porting-a-bt-stack-to-esp-hosted), so
+there is no hosted-specific setup call. The bluedroid counterpart is
+`bluetooth/esp_hosted_bluedroid/ble_gatt_server`.
 
 ## Supported Platforms and Transports
 
@@ -35,7 +37,7 @@ bluedroid counterpart is `bluetooth/bluedroid_hosted_hci/ble_gatt_server`.
 ## Directory layout
 
 ```text
-bluetooth/nimble_hosted_hci/bleprph_gatt/
+bluetooth/esp_hosted_nimble/bleprph_gatt/
 ├── cp/          BT-controller co-processor firmware (VHCI over hosted transport)
 └── mcu_host/    ESP-IDF NimBLE host app (the GATT server)
 ```
@@ -55,7 +57,7 @@ controller-only profile with BT HCI carried over the host bus (VHCI); you only
 select the transport (must match the host):
 
 ```bash
-cd examples/bluetooth/nimble_hosted_hci/bleprph_gatt/cp
+cd examples/bluetooth/esp_hosted_nimble/bleprph_gatt/cp
 eh.py set-target <cp_chip>
 eh.py menuconfig
 ```
@@ -112,7 +114,7 @@ eh.py -p <cp_usb_serial_port> flash monitor
 Select the transport (must match the co-processor):
 
 ```bash
-cd examples/bluetooth/nimble_hosted_hci/bleprph_gatt/mcu_host
+cd examples/bluetooth/esp_hosted_nimble/bleprph_gatt/mcu_host
 eh.py set-target esp32p4
 eh.py menuconfig
 ```
@@ -138,13 +140,16 @@ BLE Peripheral GATT config
 └── (1000) Notification interval (ms)                        ← range 100–60000
 ```
 
-The host dependency config is pre-set in `sdkconfig.defaults` (do not remove):
+The host dependency config is pre-set in `sdkconfig.defaults` (do not remove).
+The two ESP-Hosted symbols enable the BT host feature and the NimBLE hosted
+port; the port is built into the `esp_hosted` component and auto-inits at boot:
 
 ```text
-CONFIG_ESP_HOSTED_HOST_FEAT_BT=y    # host BT feature (controller runs on the CP)
-CONFIG_BT_ENABLED=y                 # BT host stack on
-CONFIG_BT_CONTROLLER_DISABLED=y     # no local controller — CP supplies it
-CONFIG_BT_NIMBLE_ENABLED=y          # NimBLE host stack
+CONFIG_ESP_HOSTED_HOST_FEAT_BT=y        # host BT feature (controller runs on the CP)
+CONFIG_ESP_HOSTED_HOST_BT_PORT_NIMBLE=y # NimBLE hosted port — auto-inits at boot
+CONFIG_BT_ENABLED=y                     # BT host stack on
+CONFIG_BT_CONTROLLER_DISABLED=y         # no local controller — CP supplies it
+CONFIG_BT_NIMBLE_ENABLED=y              # NimBLE host stack
 ```
 
 Then flash and monitor:
@@ -158,6 +163,6 @@ eh.py -p <host_usb_serial_port> flash monitor
 - Test with any generic BLE explorer — LightBlue, nRF Connect, `bluetoothctl`.
 - Notifications are pushed via `ble_gatts_notify_custom` on the notify
   characteristic at the configured cadence.
-- `esp_hosted_hci_nimble_setup()` is the only hosted-specific addition on top
-  of upstream NimBLE init.
+- `app_main` is standard NimBLE — no hosted-specific call; the NimBLE hosted
+  port auto-inits at boot.
 <!-- esp_host-stop -->
