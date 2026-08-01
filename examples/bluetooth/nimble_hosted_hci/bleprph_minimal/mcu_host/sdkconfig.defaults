@@ -2,10 +2,10 @@
 CONFIG_ESP_HOSTED=y
 
 # Features: BT (NimBLE) + the NimBLE hosted-HCI port.
+# The port auto-inits at boot by default (BT_PORT_NIMBLE_AUTO_INIT, on when
+# AUTO_FEAT_INIT is) — no sdkconfig knob and no app call needed.
 CONFIG_ESP_HOSTED_HOST_FEAT_BT=y
 CONFIG_ESP_HOSTED_HOST_BT_PORT_NIMBLE=y
-# P1: explicit eh_host_nimble_init() in app_main (auto-init path is a follow-up).
-CONFIG_ESP_HOSTED_HOST_BT_PORT_NIMBLE_AUTO_INIT=n
 
 # Transport: MCU default
 

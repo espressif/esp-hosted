@@ -22,8 +22,6 @@
 
 #include "esp_err.h"
 #include "esp_log.h"
-#include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
 
 #include "sdkconfig.h"
 
@@ -33,8 +31,8 @@
 #include "nimble/transport/hci_h4.h"   /* HCI_H4_{CMD,ACL,SCO,EVT} */
 #include "nimble/hci_common.h"
 
-#include "esp_hosted.h"
-#include "eh_host_feat_bt_mcu.h"
+#include "eh_host_feat_bt.h"       /* eh_host_bt_controller_* */
+#include "eh_host_feat_bt_mcu.h"   /* eh_host_bt_mcu_hci_register */
 #if defined(CONFIG_ESP_HOSTED_HOST_BT_PORT_NIMBLE_AUTO_INIT)
 #include "eh_host_auto_init.h"
 #endif
@@ -141,30 +139,18 @@ void ble_transport_ll_deinit(void) { }
 
 esp_err_t eh_host_nimble_init(void)
 {
-    /* The CP may still be booting when the host reaches here — the minimal BT
-     * app boots fast while the CP does full controller init, and slower-handshake
-     * transports (UART/SPI-HD) widen the gap. connect_to_slave is idempotent, so
-     * retry until the CP is ready instead of aborting on the first miss. */
-    esp_err_t err = ESP_FAIL;
-    for (int attempt = 0; attempt < 50; attempt++) {
-        err = esp_hosted_connect_to_slave();
-        if (err == ESP_OK) {
-            break;
-        }
-        vTaskDelay(pdMS_TO_TICKS(100));
-    }
-    if (err != ESP_OK) {
-        ESP_LOGE(TAG, "connect_to_slave failed: %s", esp_err_to_name(err));
-        return err;
-    }
-    /* feat_bt (lower priority) may already have brought the controller up;
+    /* Transport bring-up is not this port's concern — the boot constructor (or
+     * the app) connects to the slave before any feature runs. This port only
+     * binds NimBLE to feat_bt's HCI byte-pipe.
+     *
+     * feat_bt (lower priority) may already have brought the controller up;
      * ESP_ERR_INVALID_STATE means "already done" — treat as success. */
-    err = esp_hosted_bt_controller_init();
+    esp_err_t err = eh_host_bt_controller_init();
     if (err != ESP_OK && err != ESP_ERR_INVALID_STATE) {
         ESP_LOGE(TAG, "BT controller init failed: %s", esp_err_to_name(err));
         return err;
     }
-    err = esp_hosted_bt_controller_enable();
+    err = eh_host_bt_controller_enable();
     if (err != ESP_OK && err != ESP_ERR_INVALID_STATE) {
         ESP_LOGE(TAG, "BT controller enable failed: %s", esp_err_to_name(err));
         return err;
@@ -184,10 +170,10 @@ esp_err_t eh_host_nimble_deinit(void)
     eh_host_bt_mcu_hci_unregister();
     s_hci_tx = hci_tx_unbound;
 
-    esp_err_t err = esp_hosted_bt_controller_disable();
+    esp_err_t err = eh_host_bt_controller_disable();
     if (err != ESP_OK)
         ESP_LOGW(TAG, "BT controller disable failed: %s", esp_err_to_name(err));
-    err = esp_hosted_bt_controller_deinit(false);
+    err = eh_host_bt_controller_deinit(false);
     if (err != ESP_OK)
         ESP_LOGW(TAG, "BT controller deinit failed: %s", esp_err_to_name(err));
     return ESP_OK;

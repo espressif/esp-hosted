@@ -26,9 +26,9 @@
 #include "sdkconfig.h"
 
 #include "esp_bluedroid_hci.h"
-#include "esp_hosted.h"
 
-#include "eh_host_feat_bt_mcu.h"
+#include "eh_host_feat_bt.h"       /* eh_host_bt_controller_* */
+#include "eh_host_feat_bt_mcu.h"   /* eh_host_bt_mcu_hci_register */
 #if defined(CONFIG_ESP_HOSTED_HOST_BT_PORT_BLUEDROID_AUTO_INIT)
 #include "eh_host_auto_init.h"
 #endif
@@ -93,19 +93,18 @@ void hosted_hci_bluedroid_send(uint8_t *data, uint16_t len)
 
 esp_err_t eh_host_bluedroid_init(void)
 {
-    esp_err_t err = esp_hosted_connect_to_slave();
-    if (err != ESP_OK) {
-        ESP_LOGE(TAG, "connect_to_slave failed: %s", esp_err_to_name(err));
-        return err;
-    }
-    /* feat_bt (lower priority) may already have brought the controller up;
+    /* Transport bring-up is not this port's concern — the boot constructor (or
+     * the app) connects to the slave before any feature runs. This port only
+     * attaches Bluedroid to feat_bt's HCI byte-pipe.
+     *
+     * feat_bt (lower priority) may already have brought the controller up;
      * ESP_ERR_INVALID_STATE means "already done" — treat as success. */
-    err = esp_hosted_bt_controller_init();
+    esp_err_t err = eh_host_bt_controller_init();
     if (err != ESP_OK && err != ESP_ERR_INVALID_STATE) {
         ESP_LOGE(TAG, "BT controller init failed: %s", esp_err_to_name(err));
         return err;
     }
-    err = esp_hosted_bt_controller_enable();
+    err = eh_host_bt_controller_enable();
     if (err != ESP_OK && err != ESP_ERR_INVALID_STATE) {
         ESP_LOGE(TAG, "BT controller enable failed: %s", esp_err_to_name(err));
         return err;
@@ -129,10 +128,10 @@ esp_err_t eh_host_bluedroid_deinit(void)
 {
     (void)hosted_hci_bluedroid_register_host_callback(NULL);
 
-    esp_err_t err = esp_hosted_bt_controller_disable();
+    esp_err_t err = eh_host_bt_controller_disable();
     if (err != ESP_OK)
         ESP_LOGW(TAG, "BT controller disable failed: %s", esp_err_to_name(err));
-    err = esp_hosted_bt_controller_deinit(false);
+    err = eh_host_bt_controller_deinit(false);
     if (err != ESP_OK)
         ESP_LOGW(TAG, "BT controller deinit failed: %s", esp_err_to_name(err));
     return ESP_OK;

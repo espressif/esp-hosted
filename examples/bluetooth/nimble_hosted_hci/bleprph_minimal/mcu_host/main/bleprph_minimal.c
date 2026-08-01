@@ -29,7 +29,6 @@
 #include "host/util/util.h"
 #include "services/gap/ble_svc_gap.h"
 
-#include "eh_host_nimble.h"
 #include "esp_check.h"
 
 #include "sdkconfig.h"
@@ -147,8 +146,9 @@ void app_main(void)
     }
     ESP_ERROR_CHECK(err);
 
-    /* 2. ESP-Hosted + NimBLE bridge — only Hosted-specific call. */
-    ESP_ERROR_CHECK(eh_host_nimble_init());
+    /* 2. No Hosted-specific call: the boot constructor brings the transport up
+     *    and the NimBLE port's auto-init (ESP_HOSTED_HOST_BT_PORT_NIMBLE_AUTO_INIT)
+     *    binds HCI RX — both before app_main proceeds. */
 
     /* 3. Standard NimBLE init.  Bridge's strong overrides for
      *    ble_transport_to_ll_* are already linked in. */
