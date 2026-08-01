@@ -10,7 +10,7 @@ and simultaneously advertises a GATT server. Wi-Fi comes up via the hosted
 auto-init (`override_path` = `esp_hosted`, no source changes); BLE likewise
 needs no hosted-specific call — the NimBLE hosted port is built into the
 `esp_hosted` component and [auto-inits at
-boot](../../../../docs/design/bluetooth.md#porting-a-bt-stack-to-esp-hosted).
+boot](https://github.com/espressif/esp-hosted/blob/master/docs/design/bluetooth.md#porting-a-bt-stack-to-esp-hosted).
 The co-processor runs the combined Wi-Fi + BT controller firmware
 (`wifi_hosted_hci`), with BT HCI carried over the hosted transport
 (SDIO / SPI / SPI-HD / UART) via VHCI.

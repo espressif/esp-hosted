@@ -163,7 +163,7 @@ synchronously *before* `esp_bluedroid_init()`, an ordering the background
 auto-init path can't guarantee — so `app_main()` calls the port helper
 `eh_host_bluedroid_init()` (from `eh_host_bluedroid.h`) itself. The port is
 documented in
-[Porting a BT stack to ESP-Hosted](../../../../docs/design/bluetooth.md#porting-a-bt-stack-to-esp-hosted).
+[Porting a BT stack to ESP-Hosted](https://github.com/espressif/esp-hosted/blob/master/docs/design/bluetooth.md#porting-a-bt-stack-to-esp-hosted).
 
 Then flash and monitor:
 

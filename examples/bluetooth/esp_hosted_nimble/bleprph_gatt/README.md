@@ -9,7 +9,7 @@ Bluetooth **controller** runs on the ESP-Hosted **co-processor**, reached over
 the hosted transport (SDIO / SPI / SPI-HD / UART) via VHCI.
 The app is standard NimBLE — the hosted NimBLE port is built into the
 `esp_hosted` component and [auto-inits at
-boot](../../../../docs/design/bluetooth.md#porting-a-bt-stack-to-esp-hosted), so
+boot](https://github.com/espressif/esp-hosted/blob/master/docs/design/bluetooth.md#porting-a-bt-stack-to-esp-hosted), so
 there is no hosted-specific setup call. The bluedroid counterpart is
 `bluetooth/esp_hosted_bluedroid/ble_gatt_server`.
 

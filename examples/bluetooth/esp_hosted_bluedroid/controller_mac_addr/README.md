@@ -153,7 +153,7 @@ CONFIG_BT_BLUEDROID_ENABLED=y                          # Bluedroid host stack
 `AUTO_INIT=n` because this example attaches the HCI driver itself: `app_main`
 calls `hosted_hci_bluedroid_open()` and then `esp_bluedroid_attach_hci_driver()`
 with the `hosted_hci_bluedroid_*` ops declared in `eh_host_bluedroid.h`. See
-[Porting a BT stack to ESP-Hosted](../../../../docs/design/bluetooth.md#porting-a-bt-stack-to-esp-hosted).
+[Porting a BT stack to ESP-Hosted](https://github.com/espressif/esp-hosted/blob/master/docs/design/bluetooth.md#porting-a-bt-stack-to-esp-hosted).
 
 Then flash and monitor:
 

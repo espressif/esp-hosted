@@ -172,7 +172,7 @@ eh.py -p <host_usb_serial_port> flash monitor
   step through each stage individually with the low-level
   `hosted_hci_bluedroid_*` ops.
 - The `eh_host_bluedroid` port is documented in
-  [Porting a BT stack to ESP-Hosted](../../../../docs/design/bluetooth.md#porting-a-bt-stack-to-esp-hosted).
+  [Porting a BT stack to ESP-Hosted](https://github.com/espressif/esp-hosted/blob/master/docs/design/bluetooth.md#porting-a-bt-stack-to-esp-hosted).
 - ESP32 CP supplies BLE 4.2 only — do **not** enable
   `CONFIG_BT_BLE_50_FEATURES_SUPPORTED=y` against an ESP32 CP, the build will
   fail.
