@@ -182,6 +182,7 @@ static void show_config(void)
 #define BUFFER_UNAVAILABLE                0
 
 #define MAX_WRITE_BUF_RETRIES             50
+
 #define MAX_SDIO_WRITE_RETRY              2
 
 /* Lock at driver level (instead of HAL). */
@@ -213,6 +214,11 @@ static void * sdio_bus_lock;
 
 static uint8_t *reg_buf = NULL;
 #endif
+
+/* TX aggregation scratch (lazily DMA-alloc'd on first aggregate). Declared here,
+ * above bus_deinit_internal, so the deinit free sees it. */
+static uint8_t  *sdio_tx_aggr_buf = NULL;
+static uint32_t  sdio_tx_aggr_cap = 0;
 
 #if EH_HOST_USE_MEMPOOL
 static hosted_mempool_t * buf_mp_g;
@@ -417,11 +423,19 @@ static void bus_deinit_internal(void *bus_handle)
 	}
 
 #if DO_COMBINED_REG_READ
-    if (reg_buf) {
-        eh_host_port_dma_free(reg_buf);
-        reg_buf = NULL;
-    }
+	if (reg_buf) {
+		eh_host_port_dma_free(reg_buf);
+		reg_buf = NULL;
+	}
 #endif
+
+	/* TX aggregation scratch — lazily DMA-alloc'd on first aggregate; free it so a
+	 * warm re-init re-allocates instead of reusing a stale/dangling pointer. */
+	if (sdio_tx_aggr_buf) {
+		eh_host_port_dma_free(sdio_tx_aggr_buf);
+		sdio_tx_aggr_buf = NULL;
+		sdio_tx_aggr_cap = 0;
+	}
 
 #if defined(USE_DRIVER_LOCK)
 	if (sdio_bus_lock) {
@@ -520,6 +534,15 @@ static int sdio_read_regs(uint8_t * buf)
 #if EH_HOST_PORT_SDIO_HOST_RX_MODE != EH_HOST_PORT_SDIO_ALWAYS_HOST_RX_MAX_TRANSPORT_SIZE
 
 #if DO_COMBINED_REG_READ
+static inline bool sdio_pkt_len_reg_is_bus_fault(uint32_t reg_val)
+{
+	if (reg_val != UINT32_MAX)
+		return false;
+	ESP_LOGE(TAG, "PKT_LEN reg reads 0x%08"PRIx32
+		" (all 32 bits set): SDIO bus fault", reg_val);
+	return true;
+}
+
 static int sdio_get_len_from_slave(uint32_t *rx_size, uint32_t reg_val, bool is_lock_needed)
 {
 	uint32_t len = reg_val;
@@ -528,6 +551,9 @@ static int sdio_get_len_from_slave(uint32_t *rx_size, uint32_t reg_val, bool is_
 	if (!rx_size)
 		return ESP_FAIL;
 	*rx_size = 0;
+
+	if (sdio_pkt_len_reg_is_bus_fault(reg_val))
+		return ESP_ERR_INVALID_STATE;
 
 	len &= ESP_SLAVE_LEN_MASK;
 
@@ -569,6 +595,9 @@ static int sdio_get_len_from_slave(uint32_t *rx_size, bool is_lock_needed)
 		ESP_LOGE(TAG, "len read err: %d", ret);
 		return ret;
 	}
+
+	if (sdio_pkt_len_reg_is_bus_fault(len))
+		return ESP_ERR_INVALID_STATE;
 
 	len &= ESP_SLAVE_LEN_MASK;
 
@@ -682,8 +711,6 @@ static int sdio_tx_credit_ready(uint32_t buf_needed)
 #define SDIO_AGGR_CREDIT_WAIT_CTRL_MS 200
 #define SDIO_AGGR_NO_CREDIT_WEDGE     8
 
-static uint8_t  *sdio_tx_aggr_buf = NULL;
-static uint32_t  sdio_tx_aggr_cap = 0;
 static uint32_t  sdio_aggr_credit_timeouts = 0;
 
 /* Build one frame into the aggregate at dst; returns 4B-aligned length. */
@@ -754,9 +781,9 @@ static void sdio_tx_aggregate_iter(void)
 	bool has_ctrl = false, flush_after_pkt = false;
 	int pkt_prio = -1;
 
-	if (!sdio_tx_aggr_buf) {                      /* lazy, sized once */
+	if (!sdio_tx_aggr_buf) {
 		sdio_tx_aggr_buf = eh_host_port_dma_alloc_aligned(cap, HOSTED_MEM_ALIGNMENT_64);
-		assert(sdio_tx_aggr_buf);                 /* fail-fast (decided) */
+		assert(sdio_tx_aggr_buf);
 		sdio_tx_aggr_cap = cap;
 	}
 
@@ -1531,8 +1558,7 @@ static void sdio_read_task(void *pvParameters)
 	while (s_running) {
 
 		ESP_LOGD(TAG, "--- Wait for SDIO intr ---");
-		res = eh_host_port_sdio_wait_slave_intr(sdio_handle,
-				EH_HOST_PORT_WAIT_FOREVER);
+		res = eh_host_port_sdio_wait_slave_intr(sdio_handle, EH_HOST_PORT_WAIT_FOREVER);
 		ESP_LOGD(TAG, "--- SDIO intr received ---");
 
 		if (!s_running) {
@@ -1604,6 +1630,18 @@ static void sdio_read_task(void *pvParameters)
 #else
 		ret = sdio_get_len_from_slave(&len_from_slave, ACQUIRE_LOCK);
 #endif
+		if (ret == ESP_ERR_INVALID_STATE) {
+			/* Bus fault (PKT_LEN reg all-ones): a transport failure, not a stray
+			 * zero-length. Post the event and (optionally) restart — don't retry. */
+			SDIO_DRV_UNLOCK();
+			if (s_running) {
+				esp_event_post(EH_HOST_EVENT, (int32_t)EH_HOST_EVENT_TRANSPORT_FAILURE, NULL, 0, 0);
+#if EH_HOST_TRANSPORT_RESTART_ON_FAILURE
+				eh_host_port_restart_host();
+#endif
+			}
+			continue;
+		}
 		if (ret || !len_from_slave) {
 			ESP_LOGW(TAG, "invalid ret or len_from_slave: %d %ld", ret, len_from_slave);
 
