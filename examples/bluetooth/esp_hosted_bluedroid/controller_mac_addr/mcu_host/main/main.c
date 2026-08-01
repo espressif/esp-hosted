@@ -11,7 +11,7 @@
 #include "esp_mac.h"
 #include "nvs_flash.h"
 #include "esp_hosted.h"
-#include "eh_host_bluedroid.h"
+#include "esp_hosted_bt_stack.h"
 #include "esp_system.h"
 
 /* BLE */
@@ -149,28 +149,9 @@ void app_main(void)
     // changes to the MAC must be done before the BT Controller is initialised
     bt_mac_actions();
 
-    // init bt controller
-    if (ESP_OK != esp_hosted_bt_controller_init()) {
-        ESP_LOGW(TAG, "Failed to init bt controller");
-        return;
-    }
-
-    // enable bt controller
-    if (ESP_OK != esp_hosted_bt_controller_enable()) {
-        ESP_LOGW(TAG, "Failed to enable bt controller");
-        return;
-    }
-
-    // initialise ESP-Hosted connection for Bluedroid
-    hosted_hci_bluedroid_open();
-
-    /* get HCI driver operations */
-    esp_bluedroid_hci_driver_operations_t operations = {
-        .send = hosted_hci_bluedroid_send,
-        .check_send_available = hosted_hci_bluedroid_check_send_available,
-        .register_host_callback = hosted_hci_bluedroid_register_host_callback,
-    };
-    esp_bluedroid_attach_hci_driver(&operations);
+    /* ── ESP-Hosted setup — bind Bluedroid to the hosted HCI. ────── */
+    esp_hosted_bt_stack_cfg_t bt = ESP_HOSTED_BT_STACK_CONFIG_DEFAULT();
+    ESP_ERROR_CHECK(esp_hosted_bt_stack_setup(&bt));
 
     ret = esp_bluedroid_init();
     if (ret) {

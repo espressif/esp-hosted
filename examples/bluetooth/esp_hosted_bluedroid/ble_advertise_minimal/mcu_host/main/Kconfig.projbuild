@@ -12,13 +12,4 @@ config EXAMPLE_ADV_INTERVAL_MS
       Advertising interval as seen by Bluedroid's `adv_int_min/max`.
       Converted to 0.625 ms units internally.
 
-config EXAMPLE_USE_SETUP_HELPER
-    bool "Use one-shot eh_host_bluedroid_init() helper"
-    default y
-    help
-      If y, app_main() calls the port helper eh_host_bluedroid_init(),
-      which does controller_init+enable+attach_hci_driver in one line.
-      If n, app_main() calls each step individually (useful for
-      learning the sequence or for finer error handling).
-
 endmenu

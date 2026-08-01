@@ -30,11 +30,9 @@ if ESP_HOSTED
 
 	if ESP_HOSTED_HOST
 		orsource "host/Kconfig.ext"
-		# BT stack ports live in examples/common_components but are part of
-		# the esp_hosted component; source them here (parent→child) after
-		# host/ so their gates can depend on ESP_HOSTED_HOST_FEAT_BT.
-		orsource "examples/common_components/eh_host_nimble/Kconfig.ext"
-		orsource "examples/common_components/eh_host_bluedroid/Kconfig.ext"
+		# The BT stack adapter (examples/common_components/esp_hosted_bt) has no
+		# Kconfig of its own — the stack is chosen by the IDF BT Kconfig
+		# (BT_NIMBLE_ENABLED / BT_BLUEDROID_ENABLED); neither => the custom path.
 	endif
 
 endif

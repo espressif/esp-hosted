@@ -1,11 +1,9 @@
 # Role: HOST (MCU)
 CONFIG_ESP_HOSTED=y
 
-# Features: BT (Bluedroid)
+# Features: BT. The stack is chosen by the IDF BT Kconfig (BT_BLUEDROID_ENABLED
+# below); the app calls esp_hosted_bt_stack_setup().
 CONFIG_ESP_HOSTED_HOST_FEAT_BT=y
-# This example attaches the HCI driver itself, so opt out of port auto-init.
-CONFIG_ESP_HOSTED_HOST_BT_PORT_BLUEDROID=y
-CONFIG_ESP_HOSTED_HOST_BT_PORT_BLUEDROID_AUTO_INIT=n
 
 # CP target: ESP32 — Classic BT (BR/EDR) only exists on the original ESP32.
 CONFIG_SLAVE_IDF_TARGET_ESP32=y

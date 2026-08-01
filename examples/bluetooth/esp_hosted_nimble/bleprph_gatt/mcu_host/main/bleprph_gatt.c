@@ -2,8 +2,8 @@
 /*
  * bleprph_gatt.c — NimBLE peripheral with one GATT service.
  *
- * ESP-Hosted is enabled via Kconfig (FEAT_BT + BT_PORT_NIMBLE); the NimBLE
- * port auto-inits at boot. Everything else is stack-native NimBLE.
+ * The app calls esp_hosted_bt_stack_setup() once (controller + HCI bind)
+ * right before nimble_port_init(). Everything else is stack-native NimBLE.
  */
 
 #include <inttypes.h>
@@ -23,6 +23,7 @@
 #include "services/gatt/ble_svc_gatt.h"
 
 #include "esp_check.h"
+#include "esp_hosted_bt_stack.h"
 #include "sdkconfig.h"
 
 #define TAG "bleprph_gatt"
@@ -198,7 +199,11 @@ void app_main(void)
     }
     ESP_ERROR_CHECK(err);
 
-    /* NimBLE init+register services (ESP-Hosted NimBLE port auto-inited). */
+    /* Bring the hosted BT binding up: controller + HCI wired to NimBLE. */
+    esp_hosted_bt_stack_cfg_t bt = ESP_HOSTED_BT_STACK_CONFIG_DEFAULT();
+    ESP_ERROR_CHECK(esp_hosted_bt_stack_setup(&bt));
+
+    /* NimBLE init + register services. */
     ESP_ERROR_CHECK(nimble_port_init());
 
     ble_hs_cfg.sync_cb         = on_sync;

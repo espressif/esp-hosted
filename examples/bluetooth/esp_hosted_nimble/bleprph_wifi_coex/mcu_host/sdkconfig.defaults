@@ -1,10 +1,10 @@
 # Role: HOST (MCU)
 CONFIG_ESP_HOSTED=y
 
-# Features: Wi-Fi + BT (NimBLE) concurrent
+# Features: Wi-Fi + BT concurrent. The BT stack is chosen by the IDF BT
+# Kconfig (BT_NIMBLE_ENABLED below); the app calls esp_hosted_bt_stack_setup().
 CONFIG_ESP_HOSTED_HOST_FEAT_WIFI=y
 CONFIG_ESP_HOSTED_HOST_FEAT_BT=y
-CONFIG_ESP_HOSTED_HOST_BT_PORT_NIMBLE=y
 
 # Transport: MCU default
 

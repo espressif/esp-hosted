@@ -3,10 +3,6 @@ CONFIG_ESP_HOSTED=y
 
 # Features: BT (Bluedroid + Classic enabled)
 CONFIG_ESP_HOSTED_HOST_FEAT_BT=y
-# Bluedroid needs the HCI driver attached before esp_bluedroid_init(); call the
-# port init explicitly (see main) and opt out of auto-init.
-CONFIG_ESP_HOSTED_HOST_BT_PORT_BLUEDROID=y
-CONFIG_ESP_HOSTED_HOST_BT_PORT_BLUEDROID_AUTO_INIT=n
 
 # CP target: ESP32 — Classic BT (BR/EDR) only exists on the original ESP32.
 # Default cascade picks C6 otherwise, which is BLE-only.

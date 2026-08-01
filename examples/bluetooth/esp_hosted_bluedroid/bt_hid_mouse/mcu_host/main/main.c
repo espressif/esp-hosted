@@ -22,7 +22,7 @@
 #include "esp_idf_version.h"
 
 #include "esp_hosted.h"
-#include "eh_host_bluedroid.h"
+#include "esp_hosted_bt_stack.h"
 
 #define REPORT_PROTOCOL_MOUSE_REPORT_SIZE      (4)
 #define REPORT_BUFFER_SIZE                     REPORT_PROTOCOL_MOUSE_REPORT_SIZE
@@ -407,28 +407,9 @@ void app_main(void)
     }
     ESP_ERROR_CHECK( ret );
 
-    // initialise connection to co-processor
-    esp_hosted_connect_to_slave();
-
-    // init bt controller
-    if (ESP_OK != esp_hosted_bt_controller_init()) {
-        ESP_LOGE("INFO", "failed to init bt controller");
-    }
-
-    // enable bt controller
-    if (ESP_OK != esp_hosted_bt_controller_enable()) {
-        ESP_LOGE("INFO", "failed to enable bt controller");
-    }
-
-    hosted_hci_bluedroid_open();
-
-    /* get HCI driver operations */
-    esp_bluedroid_hci_driver_operations_t operations = {
-        .send = hosted_hci_bluedroid_send,
-        .check_send_available = hosted_hci_bluedroid_check_send_available,
-        .register_host_callback = hosted_hci_bluedroid_register_host_callback,
-    };
-    esp_bluedroid_attach_hci_driver(&operations);
+    /* ── ESP-Hosted setup — bind Bluedroid to the hosted HCI. ────── */
+    esp_hosted_bt_stack_cfg_t bt = ESP_HOSTED_BT_STACK_CONFIG_DEFAULT();
+    ESP_ERROR_CHECK(esp_hosted_bt_stack_setup(&bt));
 
     if ((ret = esp_bluedroid_init()) != ESP_OK) {
         ESP_LOGE(TAG, "%s initialize bluedroid failed: %s", __func__, esp_err_to_name(ret));

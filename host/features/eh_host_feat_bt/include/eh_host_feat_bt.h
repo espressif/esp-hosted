@@ -6,6 +6,7 @@
 #define EH_HOST_FEAT_BT_H_
 
 #include <stdbool.h>
+#include <stdint.h>
 
 #include "esp_err.h"
 
@@ -13,8 +14,9 @@
 extern "C" {
 #endif
 
-esp_err_t eh_host_feat_bt_init(void);
-esp_err_t eh_host_feat_bt_deinit(void);
+/* Apply the BT MAC before controller bring-up: `mac6` (runtime) wins, else the
+ * ESP_HOSTED_HOST_FEAT_BT_MAC Kconfig value, else no-op. Called by the adapter. */
+esp_err_t eh_host_bt_apply_mac(const uint8_t *mac6);
 
 esp_err_t eh_host_bt_controller_enable(void);
 esp_err_t eh_host_bt_controller_disable(void);

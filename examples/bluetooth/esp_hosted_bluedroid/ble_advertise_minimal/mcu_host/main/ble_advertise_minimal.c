@@ -28,8 +28,7 @@
 #include "esp_bt_device.h"
 #include "esp_gap_ble_api.h"
 
-#include "esp_hosted.h"
-#include "eh_host_bluedroid.h"
+#include "esp_hosted_bt_stack.h"
 #include "esp_check.h"
 
 #include "sdkconfig.h"
@@ -87,37 +86,13 @@ static void gap_event_handler(esp_gap_ble_cb_event_t event,
     }
 }
 
-/* ─── Bridge attach: either helper or step-by-step ─────────────────── */
+/* ─── Bridge attach: ESP-Hosted controller + HCI in one call ───────── */
 
-#if CONFIG_EXAMPLE_USE_SETUP_HELPER
 static esp_err_t setup_hosted_and_bridge(void)
 {
-    return eh_host_bluedroid_init();
+    esp_hosted_bt_stack_cfg_t bt = ESP_HOSTED_BT_STACK_CONFIG_DEFAULT();
+    return esp_hosted_bt_stack_setup(&bt);
 }
-#else
-static esp_err_t setup_hosted_and_bridge(void)
-{
-    esp_err_t err;
-
-    err = esp_hosted_connect_to_slave();
-    if (err != ESP_OK) return err;
-
-    err = esp_hosted_bt_controller_init();
-    if (err != ESP_OK) return err;
-
-    err = esp_hosted_bt_controller_enable();
-    if (err != ESP_OK) return err;
-
-    hosted_hci_bluedroid_open();
-
-    static const esp_bluedroid_hci_driver_operations_t ops = {
-        .send                   = hosted_hci_bluedroid_send,
-        .check_send_available   = hosted_hci_bluedroid_check_send_available,
-        .register_host_callback = hosted_hci_bluedroid_register_host_callback,
-    };
-    return esp_bluedroid_attach_hci_driver(&ops);
-}
-#endif
 
 /* ────────────────────────────────────────────────────────────────── */
 

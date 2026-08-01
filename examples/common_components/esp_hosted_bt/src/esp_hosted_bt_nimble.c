@@ -3,16 +3,14 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-/* SPDX-License-Identifier: Apache-2.0 */
 /*
- * eh_host_nimble.c — NimBLE <-> ESP-Hosted HCI port.
- *
- * NimBLE's transport layer declares weak `ble_transport_to_ll_*`
- * functions; our strong overrides forward H4 frames to ESP-Hosted.
- * RX is wired via eh_host_bt_mcu_hci_register, which returns the bound
- * tx fn. init/deinit are public (auto-init at priority after feat_bt,
- * or callable by the app when auto-init is disabled).
+ * NimBLE <-> ESP-Hosted HCI glue. NimBLE's weak ble_transport_to_ll_* are given
+ * strong overrides here (TX, link-time); RX is bound at eh_bt_bind_nimble().
+ * Controller bring-up is the dispatcher's job (esp_hosted_bt.c).
  */
+
+#include "sdkconfig.h"
+#if defined(CONFIG_BT_NIMBLE_ENABLED)
 
 #include <stdint.h>
 #include <stddef.h>
@@ -23,27 +21,19 @@
 #include "esp_err.h"
 #include "esp_log.h"
 
-#include "sdkconfig.h"
-
 #include "host/ble_hs_mbuf.h"
 #include "os/os_mbuf.h"
 #include "nimble/transport.h"
 #include "nimble/transport/hci_h4.h"   /* HCI_H4_{CMD,ACL,SCO,EVT} */
 #include "nimble/hci_common.h"
 
-#include "eh_host_feat_bt.h"       /* eh_host_bt_controller_* */
-#include "eh_host_feat_bt_mcu.h"   /* eh_host_bt_mcu_hci_register */
-#if defined(CONFIG_ESP_HOSTED_HOST_BT_PORT_NIMBLE_AUTO_INIT)
-#include "eh_host_auto_init.h"
-#endif
+#include "eh_host_feat_bt_mcu.h"        /* eh_host_bt_mcu_hci_register */
+#include "esp_hosted_bt_priv.h"
 
-#include "eh_host_nimble.h"
-
-static const char TAG[] = "eh_host_nimble";
+static const char TAG[] = "esp_hosted_bt_nimble";
 
 #define BLE_HCI_EVT_HDR_LEN (2)
 
-/* tx fn bound at register; never NULL (defaults to drop). */
 static int hci_tx_unbound(const uint8_t *frame, uint16_t len)
 { (void)frame; (void)len; return -1; }
 static eh_host_bt_mcu_hci_tx_fn_t s_hci_tx = hci_tx_unbound;
@@ -137,52 +127,22 @@ void ble_transport_ll_init(void)   { }
 void ble_transport_ll_deinit(void) { }
 #endif
 
-esp_err_t eh_host_nimble_init(void)
+esp_err_t eh_bt_bind_nimble(void)
 {
-    /* Transport bring-up is not this port's concern — the boot constructor (or
-     * the app) connects to the slave before any feature runs. This port only
-     * binds NimBLE to feat_bt's HCI byte-pipe.
-     *
-     * feat_bt (lower priority) may already have brought the controller up;
-     * ESP_ERR_INVALID_STATE means "already done" — treat as success. */
-    esp_err_t err = eh_host_bt_controller_init();
-    if (err != ESP_OK && err != ESP_ERR_INVALID_STATE) {
-        ESP_LOGE(TAG, "BT controller init failed: %s", esp_err_to_name(err));
-        return err;
-    }
-    err = eh_host_bt_controller_enable();
-    if (err != ESP_OK && err != ESP_ERR_INVALID_STATE) {
-        ESP_LOGE(TAG, "BT controller enable failed: %s", esp_err_to_name(err));
-        return err;
-    }
     eh_host_bt_mcu_hci_tx_fn_t tx = eh_host_bt_mcu_hci_register(nimble_rx, NULL);
     if (!tx) {
         ESP_LOGE(TAG, "HCI register failed");
         return ESP_FAIL;
     }
     s_hci_tx = tx;
-    ESP_LOGI(TAG, "ESP-Hosted NimBLE port ready");
+    ESP_LOGI(TAG, "NimBLE bound to hosted HCI");
     return ESP_OK;
 }
 
-esp_err_t eh_host_nimble_deinit(void)
+void eh_bt_unbind_nimble(void)
 {
     eh_host_bt_mcu_hci_unregister();
     s_hci_tx = hci_tx_unbound;
-
-    esp_err_t err = eh_host_bt_controller_disable();
-    if (err != ESP_OK)
-        ESP_LOGW(TAG, "BT controller disable failed: %s", esp_err_to_name(err));
-    err = eh_host_bt_controller_deinit(false);
-    if (err != ESP_OK)
-        ESP_LOGW(TAG, "BT controller deinit failed: %s", esp_err_to_name(err));
-    return ESP_OK;
 }
 
-/* Auto-init registration (priority 250 — after feat_bt's 150 so the HCI
- * byte-pipe is up first; reverse on deinit). Compiled only when auto-init is
- * chosen; with it off, eh_host_nimble_init/deinit stay public for the app. */
-#if defined(CONFIG_ESP_HOSTED_HOST_BT_PORT_NIMBLE_AUTO_INIT)
-EH_HOST_FEAT_REGISTER(eh_host_nimble_init, eh_host_nimble_deinit,
-                      "bt_port_nimble", 250);
-#endif
+#endif /* CONFIG_BT_NIMBLE_ENABLED */

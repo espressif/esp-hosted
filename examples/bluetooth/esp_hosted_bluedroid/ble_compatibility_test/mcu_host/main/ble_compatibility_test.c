@@ -27,7 +27,7 @@
 #include "esp_gatt_common_api.h"
 
 #include "esp_hosted.h"
-#include "eh_host_bluedroid.h"
+#include "esp_hosted_bt_stack.h"
 
 #define DEBUG_ON  0
 
@@ -659,25 +659,9 @@ void app_main(void)
         ESP_LOGW("INFO", "failed to get fw version");
     }
 
-    // init bt controller
-    if (ESP_OK != esp_hosted_bt_controller_init()) {
-        ESP_LOGW("INFO", "failed to init bt controller");
-    }
-
-    // enable bt controller
-    if (ESP_OK != esp_hosted_bt_controller_enable()) {
-        ESP_LOGW("INFO", "failed to enable bt controller");
-    }
-
-    hosted_hci_bluedroid_open();
-
-    /* get HCI driver operations */
-    esp_bluedroid_hci_driver_operations_t operations = {
-        .send = hosted_hci_bluedroid_send,
-        .check_send_available = hosted_hci_bluedroid_check_send_available,
-        .register_host_callback = hosted_hci_bluedroid_register_host_callback,
-    };
-    esp_bluedroid_attach_hci_driver(&operations);
+    /* ── ESP-Hosted setup — bind Bluedroid to the hosted HCI. ────── */
+    esp_hosted_bt_stack_cfg_t bt = ESP_HOSTED_BT_STACK_CONFIG_DEFAULT();
+    ESP_ERROR_CHECK(esp_hosted_bt_stack_setup(&bt));
 
 #if 0
     ESP_ERROR_CHECK(esp_bt_controller_mem_release(ESP_BT_MODE_CLASSIC_BT));

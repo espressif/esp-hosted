@@ -26,12 +26,9 @@ endif()
 if(ESP_PLATFORM)
     file(GLOB _eh_feat_incs LIST_DIRECTORIES true RELATIVE "${EH_PATH}"
         "${EH_PATH}/host/features/eh_host_feat_*/include")
-    # BT stack-port headers (examples/common_components); exposed on the
-    # esp_hosted surface so an example's main sees them via REQUIRES esp_hosted.
-    file(GLOB _eh_bt_port_incs LIST_DIRECTORIES true RELATIVE "${EH_PATH}"
-        "${EH_PATH}/examples/common_components/eh_host_nimble/include"
-        "${EH_PATH}/examples/common_components/eh_host_bluedroid/include")
-    list(APPEND _eh_feat_incs ${_eh_bt_port_incs})
+    # BT adapter header (examples/common_components); exposed on the esp_hosted
+    # surface so an example's main sees esp_hosted_bt_stack.h via REQUIRES esp_hosted.
+    list(APPEND _eh_feat_incs "examples/common_components/esp_hosted_bt/include")
 
     # ldgen places the feature-descriptor section into a declared region (no
     # "undeclared region" linker warning). Host and CP each map their own section.
@@ -42,9 +39,9 @@ if(ESP_PLATFORM)
         list(APPEND _eh_ldfragments "coprocessor/eh_cp_feat_descs.lf")
     endif()
 
-    # Pull in IDF's bt component only when a hosted-BT stack port is enabled.
+    # Pull in IDF's bt component only when a built-in BT host stack is enabled.
     set(_eh_bt_port_reqs "")
-    if(CONFIG_ESP_HOSTED_HOST_BT_PORT_NIMBLE OR CONFIG_ESP_HOSTED_HOST_BT_PORT_BLUEDROID)
+    if(CONFIG_BT_NIMBLE_ENABLED OR CONFIG_BT_BLUEDROID_ENABLED)
         list(APPEND _eh_bt_port_reqs bt)
     endif()
 
@@ -109,16 +106,13 @@ endif()
 if(CONFIG_ESP_HOSTED_HOST)
     add_subdirectory("${EH_PATH}/host"         ${CMAKE_BINARY_DIR}/host)
 endif()
-# BT stack ports (examples/common_components) — gated internal libs of the
-# esp_hosted component; wired here (parent→child) so an example only sets the
-# Kconfig. feat_bt (added by host/ above) is available for the down-link.
-if(CONFIG_ESP_HOSTED_HOST_BT_PORT_NIMBLE)
-    add_subdirectory("${EH_PATH}/examples/common_components/eh_host_nimble"
-                     ${CMAKE_BINARY_DIR}/eh_host_nimble)
-endif()
-if(CONFIG_ESP_HOSTED_HOST_BT_PORT_BLUEDROID)
-    add_subdirectory("${EH_PATH}/examples/common_components/eh_host_bluedroid"
-                     ${CMAKE_BINARY_DIR}/eh_host_bluedroid)
+# BT stack adapter (examples/common_components) — a gated internal lib of the
+# esp_hosted component; wired here (parent→child) so an example only enables the
+# BT feature and picks its stack via the IDF BT Kconfig. feat_bt (added by host/
+# above) is available for the down-link.
+if(CONFIG_ESP_HOSTED_HOST_FEAT_BT)
+    add_subdirectory("${EH_PATH}/examples/common_components/esp_hosted_bt"
+                     ${CMAKE_BINARY_DIR}/esp_hosted_bt)
 endif()
 add_subdirectory("${EH_PATH}/port"             ${CMAKE_BINARY_DIR}/port)
 
