@@ -270,7 +270,7 @@ esp_bluedroid_init();
 esp_bluedroid_enable();
 ```
 
-`esp_hosted_bt_host_stack_setup()` (optionally) applies the BT MAC, inits and enables the CP-side controller over RPC, then attaches the BlueDroid HCI driver ops. Because `setup()` runs synchronously in `app_main` before `esp_bluedroid_init()`, the attach-ordering hazard the old async auto-init had is gone. A bring-your-own-driver app can instead build the `esp_bluedroid_hci_driver_operations_t` over feat_bt's wires itself (see `examples/bluetooth/esp_hosted_bluedroid/controller_mac_addr`):
+`esp_hosted_bt_host_stack_setup()` (optionally) applies the BT MAC, inits and enables the CP-side controller over RPC, then attaches the BlueDroid HCI driver ops. Because `setup()` runs synchronously in `app_main` before `esp_bluedroid_init()`, the attach-ordering hazard the old async auto-init had is gone. A bring-your-own-driver app can instead build the `esp_bluedroid_hci_driver_operations_t` over feat_bt's wires itself (see [Porting a BT stack to ESP-Hosted](#porting-a-bt-stack-to-esp-hosted)):
 
 ```mermaid
 sequenceDiagram

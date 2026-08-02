@@ -166,7 +166,7 @@ eh.py -p <host_usb_serial_port> flash monitor
 
 - The monitor log prints the controller MAC before and (if enabled) after the
   override; the device advertises as `Bluedroid_Beacon`.
-- `esp_hosted_iface_mac_addr_set(ESP_MAC_BT, ...)` must run **before**
+- `esp_hosted_iface_mac_addr_set(mac, len, ESP_MAC_BT)` must run **before**
   `esp_hosted_bt_host_stack_setup()` (which initialises the controller) — see
   `main/main.c`.
 - The MAC override is **temporary** and reverts on co-processor reset. For a
