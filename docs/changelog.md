@@ -2,6 +2,14 @@
 
 # Releases
 
+# $${\color{green} \text{3.0.6}}$$
+
+- bt: renamed the host BT stack adapter + API `esp_hosted_bt_stack*` → `esp_hosted_bt_host_stack*` (component, header, `setup()`/`teardown()`, `ESP_HOSTED_BT_HOST_STACK_CONFIG_*`); no back-compat
+- bt (co-processor): Kconfig `ESP_HOSTED_BT_STACK_ENABLED` → `ESP_HOSTED_CP_BT_STACK_ENABLED`; no back-compat
+- examples/bt: new `esp_hosted_custom/hci_smoke` — bring-your-own BT stack (raw HCI via the custom path) showcase + test
+- docs: new public host API reference — [`docs/api-reference.md`](api-reference.md)
+- ci: premerge gate ran a missing `.py`; now `bash tools/check_override_path_depth.sh`
+
 # $${\color{green} \text{3.0.5}}$$
 
 - host: drop the backward `esp_wifi_remote` dependency — its header now resolves transitively via `esp_wifi` (`app -> esp_wifi_remote -> esp_hosted`); non-ESP hosts unchanged
