@@ -48,8 +48,8 @@ cp -r examples/common_components/esp_hosted_examples_common examples/network_spl
 mkdir -p examples/network_split/iperf/mcu_host/components
 cp -r examples/common_components/esp_hosted_examples_common examples/network_split/iperf/mcu_host/components/
 # ---- Bluetooth ----
-# The NimBLE/Bluedroid hosted-HCI stack ports are internal to esp_hosted (built
-# from examples/common_components/eh_host_* by the root CMakeLists), so BT
+# The NimBLE/Bluedroid hosted-HCI stack adapter is internal to esp_hosted (built
+# from examples/common_components/esp_hosted_bt_host_stack by the root CMakeLists), so BT
 # examples need no port bundling. nimble_uart/bleprph_host_only_uart carries
 # nimble_peripheral_utils in-tree (mcu_host/components/). Only the Wi-Fi-coex
 # example still bundles the shared examples_common helper:
