@@ -39,7 +39,7 @@ static void bluedroid_rx(const uint8_t *frame, uint16_t len, void *user)
 {
     (void)user;
     if (s_callback.notify_host_recv)
-        s_callback.notify_host_recv((uint8_t *)frame, len);
+        s_callback.notify_host_recv((uint8_t *)(uintptr_t)frame, len);
 }
 
 static void hosted_open(void)  { }

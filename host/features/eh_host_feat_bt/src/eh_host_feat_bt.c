@@ -1,4 +1,8 @@
-/* SPDX-License-Identifier: Apache-2.0 */
+/*
+ * SPDX-FileCopyrightText: 2026 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 /* BT host feature helpers (all host types). Controller lifecycle RPC lives in
  * eh_host_bt.c; the HCI byte pipe is MCU-only, in eh_host_feat_bt_mcu.c. There
  * is no BT auto-init: the esp_hosted_bt adapter drives setup explicitly and
@@ -41,7 +45,7 @@ esp_err_t eh_host_bt_apply_mac(const uint8_t *mac6)
     if (!use)
         return ESP_OK;                         /* else leave as-is */
 
-    esp_err_t e = eh_host_iface_mac_addr_set((uint8_t *)use, 6, ESP_MAC_BT);
+    esp_err_t e = eh_host_iface_mac_addr_set((uint8_t *)(uintptr_t)use, 6, ESP_MAC_BT);
     if (e != ESP_OK)
         ESP_LOGW(TAG, "set BT MAC failed: 0x%x", e);
     return e;

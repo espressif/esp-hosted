@@ -4,8 +4,8 @@
 #
 # Included once from the top-level CMakeLists.txt, AFTER all add_subdirectory()
 # calls (so every eh_* target already exists). Applies an aggressive warning set
-# with -Werror to every eh_* target only; IDF, vendored and third-party targets
-# are never touched. Each flag is probed once (cached) and applied only where the
+# to esp_hosted's own targets only (eh_* libraries + the esp_hosted_bt adapter);
+# IDF, vendored and third-party targets are never touched. Each flag is probed once (cached) and applied only where the
 # compiler supports it, so the set stays portable across GCC versions.
 #
 # Enable with:  ESP_HOSTED_CI_PEDANTIC=1 idf.py build
@@ -115,7 +115,10 @@ if(ESP_PLATFORM AND DEFINED ENV{ESP_HOSTED_CI_PEDANTIC})
     _eh_collect_targets(_eh_all_targets "${CMAKE_CURRENT_SOURCE_DIR}")
 
     foreach(_target IN LISTS _eh_all_targets)
-        if(NOT "${_target}" MATCHES "^eh_")
+        # esp_hosted's own targets: the eh_* libraries plus the esp_hosted_bt
+        # stack adapter (first-party, ships inside the esp_hosted pack though it
+        # lives under examples/common_components).
+        if(NOT ("${_target}" MATCHES "^eh_" OR "${_target}" STREQUAL "esp_hosted_bt"))
             continue()
         endif()
 

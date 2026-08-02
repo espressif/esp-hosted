@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2026 Espressif Systems (Shanghai) CO LTD
+# SPDX-License-Identifier: Apache-2.0
 """Firmware build cache — the copy-on-write build layer for the test framework.
 
 Principle (see .meta2/changes/eh-testlab-framework/execution-model.md §2):
@@ -106,7 +108,7 @@ def _fingerprint_roots(example_rel: str, role: str):
     common/ left a stale binary after editing examples/<ex>/common/*.c)."""
     src = _REPO / "examples" / example_rel / role
     ex_common = _REPO / "examples" / example_rel / "common"
-    # Shared example components (e.g. esp_hosted_hci_nimble) are pulled in via
+    # Shared example components (e.g. esp_hosted_bt) are pulled in via
     # override_path; edits there must invalidate the cache too.
     shared_components = _REPO / "examples" / "common_components"
     component = "coprocessor" if role == "cp" else "host"
