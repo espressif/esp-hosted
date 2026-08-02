@@ -1,8 +1,12 @@
-/* SPDX-License-Identifier: Apache-2.0 */
+/*
+ * SPDX-FileCopyrightText: 2026 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 /*
  * bleprph_gatt.c — NimBLE peripheral with one GATT service.
  *
- * The app calls esp_hosted_bt_stack_setup() once (controller + HCI bind)
+ * The app calls esp_hosted_bt_host_stack_setup() once (controller + HCI bind)
  * right before nimble_port_init(). Everything else is stack-native NimBLE.
  */
 
@@ -23,7 +27,7 @@
 #include "services/gatt/ble_svc_gatt.h"
 
 #include "esp_check.h"
-#include "esp_hosted_bt_stack.h"
+#include "esp_hosted_bt_host_stack.h"
 #include "sdkconfig.h"
 
 #define TAG "bleprph_gatt"
@@ -200,8 +204,8 @@ void app_main(void)
     ESP_ERROR_CHECK(err);
 
     /* Bring the hosted BT binding up: controller + HCI wired to NimBLE. */
-    esp_hosted_bt_stack_cfg_t bt = ESP_HOSTED_BT_STACK_CONFIG_DEFAULT();
-    ESP_ERROR_CHECK(esp_hosted_bt_stack_setup(&bt));
+    esp_hosted_bt_host_stack_cfg_t bt = ESP_HOSTED_BT_HOST_STACK_CONFIG_DEFAULT();
+    ESP_ERROR_CHECK(esp_hosted_bt_host_stack_setup(&bt));
 
     /* NimBLE init + register services. */
     ESP_ERROR_CHECK(nimble_port_init());

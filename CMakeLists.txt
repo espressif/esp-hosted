@@ -27,11 +27,11 @@ if(ESP_PLATFORM)
     file(GLOB _eh_feat_incs LIST_DIRECTORIES true RELATIVE "${EH_PATH}"
         "${EH_PATH}/host/features/eh_host_feat_*/include")
     # BT adapter header (examples/common_components); exposed on the esp_hosted
-    # surface so an example's main sees esp_hosted_bt_stack.h via REQUIRES esp_hosted.
+    # surface so an example's main sees esp_hosted_bt_host_stack.h via REQUIRES esp_hosted.
     # Only when the adapter is actually built (FEAT_BT) — else the core surface
     # would reach into examples/ for every consumer with BT off.
     if(CONFIG_ESP_HOSTED_HOST_FEAT_BT)
-        list(APPEND _eh_feat_incs "examples/common_components/esp_hosted_bt/include")
+        list(APPEND _eh_feat_incs "examples/common_components/esp_hosted_bt_host_stack/include")
     endif()
 
     # ldgen places the feature-descriptor section into a declared region (no
@@ -115,8 +115,8 @@ endif()
 # BT feature and picks its stack via the IDF BT Kconfig. feat_bt (added by host/
 # above) is available for the down-link.
 if(CONFIG_ESP_HOSTED_HOST_FEAT_BT)
-    add_subdirectory("${EH_PATH}/examples/common_components/esp_hosted_bt"
-                     ${CMAKE_BINARY_DIR}/esp_hosted_bt)
+    add_subdirectory("${EH_PATH}/examples/common_components/esp_hosted_bt_host_stack"
+                     ${CMAKE_BINARY_DIR}/esp_hosted_bt_host_stack)
 endif()
 add_subdirectory("${EH_PATH}/port"             ${CMAKE_BINARY_DIR}/port)
 

@@ -20,7 +20,7 @@ target_link_libraries(eh_host_feat_bt
         eh_common
 )
 
-# No BT auto-init: the esp_hosted_bt adapter calls setup explicitly.
+# No BT auto-init: the esp_hosted_bt_host_stack adapter calls setup explicitly.
 
 # HCI byte pipe is MCU-host-only (Linux user-space BT is kmod/BlueZ).
 if(CONFIG_ESP_HOSTED_HOST_TRANSPORT_MCU_READY)

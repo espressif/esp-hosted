@@ -7,7 +7,7 @@ BLE interoperability / compatibility test app — a GATT server exercising a
 range of characteristics, MTU sizes, notifications, and connection parameters —
 used to validate BLE behaviour against phones and other centrals. Ports upstream
 `host_bluedroid_ble_compatibility_test` verbatim; the only ESP-Hosted-specific
-change is one call — `esp_hosted_bt_stack_setup()` — that brings the controller
+change is one call — `esp_hosted_bt_host_stack_setup()` — that brings the controller
 up and binds Bluedroid to the hosted HCI. Bluedroid runs on the **host**; the BT
 **controller** runs on the
 ESP-Hosted **co-processor**, reached over the hosted transport
@@ -147,7 +147,7 @@ CONFIG_BT_CONTROLLER_DISABLED=y                        # no local controller —
 CONFIG_BT_BLUEDROID_ENABLED=y                          # Bluedroid host stack (selects the hosted BT adapter)
 ```
 
-`app_main` calls `esp_hosted_bt_stack_setup()` once (see the snippet under
+`app_main` calls `esp_hosted_bt_host_stack_setup()` once (see the snippet under
 **Verify**) to bring the controller up and bind Bluedroid to the hosted HCI.
 More detail:
 [Porting a BT stack to ESP-Hosted](https://github.com/espressif/esp-hosted/blob/master/docs/design/bluetooth.md#porting-a-bt-stack-to-esp-hosted).
@@ -165,8 +165,8 @@ verbatim upstream Bluedroid:
 
 ```c
 esp_hosted_connect_to_slave();
-esp_hosted_bt_stack_cfg_t bt = ESP_HOSTED_BT_STACK_CONFIG_DEFAULT();
-ESP_ERROR_CHECK(esp_hosted_bt_stack_setup(&bt));  // controller up + HCI bound
+esp_hosted_bt_host_stack_cfg_t bt = ESP_HOSTED_BT_HOST_STACK_CONFIG_DEFAULT();
+ESP_ERROR_CHECK(esp_hosted_bt_host_stack_setup(&bt));  // controller up + HCI bound
 esp_bluedroid_init(); esp_bluedroid_enable();
 ```
 

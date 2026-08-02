@@ -1,4 +1,8 @@
-/* SPDX-License-Identifier: Apache-2.0 */
+/*
+ * SPDX-FileCopyrightText: 2026 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 /*
  * classic_bt_discovery.c — Bluedroid Classic BT (BR/EDR) inquiry.
  * Requires ESP32 CP — Classic BT is unsupported on C/S/H-series.
@@ -20,7 +24,7 @@
 #include "esp_bt_device.h"
 #include "esp_gap_bt_api.h"      /* Classic GAP (NOT esp_gap_ble_api.h) */
 
-#include "esp_hosted_bt_stack.h"
+#include "esp_hosted_bt_host_stack.h"
 #include "esp_check.h"
 #include "sdkconfig.h"
 
@@ -102,8 +106,8 @@ void app_main(void)
     ESP_ERROR_CHECK(err);
 
     /* ── ESP-Hosted setup — same call as BLE examples ─────────── */
-    esp_hosted_bt_stack_cfg_t bt = ESP_HOSTED_BT_STACK_CONFIG_DEFAULT();
-    ESP_ERROR_CHECK(esp_hosted_bt_stack_setup(&bt));
+    esp_hosted_bt_host_stack_cfg_t bt = ESP_HOSTED_BT_HOST_STACK_CONFIG_DEFAULT();
+    ESP_ERROR_CHECK(esp_hosted_bt_host_stack_setup(&bt));
 
     /* Bluedroid init+enable */
     esp_bluedroid_config_t cfg = BT_BLUEDROID_INIT_CONFIG_DEFAULT();

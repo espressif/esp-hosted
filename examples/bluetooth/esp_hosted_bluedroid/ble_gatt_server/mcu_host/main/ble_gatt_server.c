@@ -26,7 +26,7 @@
 #include "esp_gatts_api.h"
 #include "esp_gatt_common_api.h"
 
-#include "esp_hosted_bt_stack.h"
+#include "esp_hosted_bt_host_stack.h"
 #include "esp_check.h"
 #include "sdkconfig.h"
 
@@ -215,8 +215,8 @@ void app_main(void)
     ESP_ERROR_CHECK(err);
 
     /* ── ESP-Hosted setup — bind Bluedroid to the hosted HCI. ────── */
-    esp_hosted_bt_stack_cfg_t bt = ESP_HOSTED_BT_STACK_CONFIG_DEFAULT();
-    ESP_ERROR_CHECK(esp_hosted_bt_stack_setup(&bt));
+    esp_hosted_bt_host_stack_cfg_t bt = ESP_HOSTED_BT_HOST_STACK_CONFIG_DEFAULT();
+    ESP_ERROR_CHECK(esp_hosted_bt_host_stack_setup(&bt));
 
     /* Bluedroid stack init+enable */
     esp_bluedroid_config_t cfg = BT_BLUEDROID_INIT_CONFIG_DEFAULT();

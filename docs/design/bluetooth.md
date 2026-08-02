@@ -78,25 +78,25 @@ Hosted offers two ways for the host stack to reach the controller: **Standard HC
 
 ## NimBLE host stack
 
-The NimBLE glue implements the NimBLE transport API set: `ble_transport_ll_init`, `ble_transport_to_ll_acl_impl`, `ble_transport_to_ll_cmd_impl`, `ble_transport_to_hs_evt`, `ble_transport_to_hs_acl` (see `examples/common_components/esp_hosted_bt/src/esp_hosted_bt_nimble.c`). It is part of the `esp_hosted_bt` stack adapter, built into the `esp_hosted` component — see [Porting a BT stack to ESP-Hosted](#porting-a-bt-stack-to-esp-hosted).
+The NimBLE glue implements the NimBLE transport API set: `ble_transport_ll_init`, `ble_transport_to_ll_acl_impl`, `ble_transport_to_ll_cmd_impl`, `ble_transport_to_hs_evt`, `ble_transport_to_hs_acl` (see `examples/common_components/esp_hosted_bt_host_stack/src/esp_hosted_bt_nimble.c`). It is part of the `esp_hosted_bt_host_stack` stack adapter, built into the `esp_hosted` component — see [Porting a BT stack to ESP-Hosted](#porting-a-bt-stack-to-esp-hosted).
 
 ### Over Hosted HCI
 
 **Initialization** — enable the HCI byte-pipe with `CONFIG_ESP_HOSTED_HOST_FEAT_BT=y` and select NimBLE with the IDF BT Kconfig (`CONFIG_BT_NIMBLE_ENABLED=y`); the adapter keys off that config, there is no hosted BT-port knob. The app makes one explicit call **before** `nimble_port_init()`:
 
 ```c
-esp_hosted_bt_stack_cfg_t cfg = ESP_HOSTED_BT_STACK_CONFIG_DEFAULT();
-ESP_ERROR_CHECK(esp_hosted_bt_stack_setup(&cfg));   // MAC (opt) + controller up + HCI bound
+esp_hosted_bt_host_stack_cfg_t cfg = ESP_HOSTED_BT_HOST_STACK_CONFIG_DEFAULT();
+ESP_ERROR_CHECK(esp_hosted_bt_host_stack_setup(&cfg));   // MAC (opt) + controller up + HCI bound
 ```
 
-`esp_hosted_bt_stack_setup()` (optionally) applies the BT MAC, inits and enables the CP-side controller over RPC, then binds the NimBLE glue: it registers the HCI RX callback and captures the TX function. NimBLE's outbound transport overrides (`ble_transport_to_ll_*`) are strong link-time symbols that route to that captured TX, so NimBLE's own `ble_transport_ll_init()` is a no-op. There is no auto-init and no background task — ordering is app-owned, top to bottom.
+`esp_hosted_bt_host_stack_setup()` (optionally) applies the BT MAC, inits and enables the CP-side controller over RPC, then binds the NimBLE glue: it registers the HCI RX callback and captures the TX function. NimBLE's outbound transport overrides (`ble_transport_to_ll_*`) are strong link-time symbols that route to that captured TX, so NimBLE's own `ble_transport_ll_init()` is a no-op. There is no auto-init and no background task — ordering is app-owned, top to bottom.
 
 ```mermaid
 sequenceDiagram
     participant app as App (example main)
     box transparent Hosted Master
     participant ble as NimBLE Host Stack
-    participant hhci as esp_hosted_bt adapter
+    participant hhci as esp_hosted_bt_host_stack adapter
     participant master as SPI/SDIO Interface
     end
 
@@ -104,7 +104,7 @@ sequenceDiagram
     participant slave as Bluetooth Controller
     end
 
-    app ->> +hhci : esp_hosted_bt_stack_setup(&cfg)
+    app ->> +hhci : esp_hosted_bt_host_stack_setup(&cfg)
     hhci ->> slave : eh_host_bt_controller_init() (RPC)
     hhci ->> slave : eh_host_bt_controller_enable() (RPC)
     hhci ->> hhci : eh_host_bt_mcu_hci_register(rx_cb) — capture TX fn
@@ -257,26 +257,26 @@ sequenceDiagram
 
 ## BlueDroid host stack
 
-The BlueDroid glue implements an HCI driver ops struct (`esp_bluedroid_hci_driver_operations_t`: `send` / `check_send_available` / `register_host_callback`) and attaches it to BlueDroid with `esp_bluedroid_attach_hci_driver()`. The glue records BlueDroid's `notify_host_recv` callback (used to deliver incoming HCI to the stack) and forwards outbound HCI to feat_bt's TX function. See `examples/common_components/esp_hosted_bt/src/esp_hosted_bt_bluedroid.c`.
+The BlueDroid glue implements an HCI driver ops struct (`esp_bluedroid_hci_driver_operations_t`: `send` / `check_send_available` / `register_host_callback`) and attaches it to BlueDroid with `esp_bluedroid_attach_hci_driver()`. The glue records BlueDroid's `notify_host_recv` callback (used to deliver incoming HCI to the stack) and forwards outbound HCI to feat_bt's TX function. See `examples/common_components/esp_hosted_bt_host_stack/src/esp_hosted_bt_bluedroid.c`.
 
 ### Over Hosted HCI
 
 **Initialization** — enable the HCI byte-pipe with `CONFIG_ESP_HOSTED_HOST_FEAT_BT=y` and select BlueDroid with the IDF BT Kconfig (`CONFIG_BT_BLUEDROID_ENABLED=y`); the adapter keys off that config. BlueDroid's HCI driver must attach **before** `esp_bluedroid_init()`, so the app makes the one explicit call **before** initialising the stack:
 
 ```c
-esp_hosted_bt_stack_cfg_t cfg = ESP_HOSTED_BT_STACK_CONFIG_DEFAULT();
-ESP_ERROR_CHECK(esp_hosted_bt_stack_setup(&cfg));   // MAC (opt) + controller up + HCI attached
+esp_hosted_bt_host_stack_cfg_t cfg = ESP_HOSTED_BT_HOST_STACK_CONFIG_DEFAULT();
+ESP_ERROR_CHECK(esp_hosted_bt_host_stack_setup(&cfg));   // MAC (opt) + controller up + HCI attached
 esp_bluedroid_init();
 esp_bluedroid_enable();
 ```
 
-`esp_hosted_bt_stack_setup()` (optionally) applies the BT MAC, inits and enables the CP-side controller over RPC, then attaches the BlueDroid HCI driver ops. Because `setup()` runs synchronously in `app_main` before `esp_bluedroid_init()`, the attach-ordering hazard the old async auto-init had is gone. A bring-your-own-driver app can instead build the `esp_bluedroid_hci_driver_operations_t` over feat_bt's wires itself (see `examples/bluetooth/esp_hosted_bluedroid/controller_mac_addr`):
+`esp_hosted_bt_host_stack_setup()` (optionally) applies the BT MAC, inits and enables the CP-side controller over RPC, then attaches the BlueDroid HCI driver ops. Because `setup()` runs synchronously in `app_main` before `esp_bluedroid_init()`, the attach-ordering hazard the old async auto-init had is gone. A bring-your-own-driver app can instead build the `esp_bluedroid_hci_driver_operations_t` over feat_bt's wires itself (see `examples/bluetooth/esp_hosted_bluedroid/controller_mac_addr`):
 
 ```mermaid
 sequenceDiagram
     box transparent Hosted Master
     participant bt as Host Application
-    participant hhci as esp_hosted_bt adapter
+    participant hhci as esp_hosted_bt_host_stack adapter
     participant master as SPI/SDIO Interface
     end
 
@@ -285,7 +285,7 @@ sequenceDiagram
     participant slave as Bluetooth Controller
     end
 
-    bt ->> +hhci : esp_hosted_bt_stack_setup(&cfg)
+    bt ->> +hhci : esp_hosted_bt_host_stack_setup(&cfg)
     hhci ->> slave : eh_host_bt_controller_init() + _enable() (RPC)
     hhci ->> hhci : esp_bluedroid_attach_hci_driver(ops)
     hhci -->> -bt :
@@ -440,11 +440,11 @@ Depending on the co-processor, UART parameters (Tx/Rx pins, hardware flow contro
 ## Porting a BT stack to ESP-Hosted
 
 ESP-Hosted is stack-agnostic. The `eh_host_feat_bt` feature provides a raw HCI
-byte-pipe to the co-processor controller; the `esp_hosted_bt` **stack adapter**
+byte-pipe to the co-processor controller; the `esp_hosted_bt_host_stack` **stack adapter**
 is the thin glue that binds a particular host stack to that pipe. It is one
 component — a stack-agnostic dispatcher (`esp_hosted_bt.c`) plus per-stack glue
 (`esp_hosted_bt_nimble.c`, `esp_hosted_bt_bluedroid.c`) — under
-`examples/common_components/esp_hosted_bt`, built into the `esp_hosted`
+`examples/common_components/esp_hosted_bt_host_stack`, built into the `esp_hosted`
 component and gated by the IDF BT Kconfig. NimBLE and BlueDroid ship built in;
 a **custom** stack is a first-class option and is the template for your own.
 
@@ -467,31 +467,31 @@ your TX. No new component, no Kconfig:
 ```c
 static void myble_rx(const uint8_t *f, uint16_t n, void *ctx) { MyBLE_feed_hci(ctx, f, n); }
 
-esp_hosted_bt_stack_cfg_t cfg = ESP_HOSTED_BT_STACK_CONFIG_CUSTOM(myble_rx, &my_ble);
-ESP_ERROR_CHECK(esp_hosted_bt_stack_setup(&cfg));  // controller up + register rx; fills cfg.custom.tx
+esp_hosted_bt_host_stack_cfg_t cfg = ESP_HOSTED_BT_HOST_STACK_CONFIG_CUSTOM(myble_rx, &my_ble);
+ESP_ERROR_CHECK(esp_hosted_bt_host_stack_setup(&cfg));  // controller up + register rx; fills cfg.custom.tx
 MyBLE_set_hci_tx(&my_ble, cfg.custom.tx);          // your stack sends through this
 ```
 
 With neither `CONFIG_BT_NIMBLE_ENABLED` nor `CONFIG_BT_BLUEDROID_ENABLED` set,
-`ESP_HOSTED_BT_STACK_CONFIG_DEFAULT()` resolves to the custom stack.
+`ESP_HOSTED_BT_HOST_STACK_CONFIG_DEFAULT()` resolves to the custom stack.
 
-**The config struct** (`esp_hosted_bt_stack.h`):
+**The config struct** (`esp_hosted_bt_host_stack.h`):
 
 ```c
 typedef struct {
-    esp_hosted_bt_stack_t stack;                    // NIMBLE / BLUEDROID / CUSTOM (from IDF Kconfig)
+    esp_hosted_bt_host_stack_t stack;                    // NIMBLE / BLUEDROID / CUSTOM (from IDF Kconfig)
     const uint8_t        *bt_mac;                   // NULL = Kconfig default; else set before controller
     bool                  bring_up_controller;      // setup does controller init+enable
     uint32_t              controller_ready_timeout_ms; // 0 = default bounded wait for CP BT
     struct { esp_hosted_bt_hci_rx_fn_t rx; void *ctx;
              esp_hosted_bt_hci_tx_fn_t tx; } custom; // CUSTOM only; tx is [out]
-} esp_hosted_bt_stack_cfg_t;
+} esp_hosted_bt_host_stack_cfg_t;
 ```
 
-`esp_hosted_bt_stack_setup()` runs the same ordered sequence for every stack:
+`esp_hosted_bt_host_stack_setup()` runs the same ordered sequence for every stack:
 (1) apply the MAC if requested (`cfg.bt_mac`, else `CONFIG_ESP_HOSTED_HOST_FEAT_BT_MAC`)
 before the controller; (2) `eh_host_bt_controller_init()` + `_enable()`;
-(3) bind the wires for the selected stack. `esp_hosted_bt_stack_teardown()` is
+(3) bind the wires for the selected stack. `esp_hosted_bt_host_stack_teardown()` is
 the symmetric counterpart (unbind + controller disable/deinit).
 
 **Two built-in binding patterns** (extend the dispatcher's `switch` and the
@@ -507,7 +507,7 @@ Kconfig `#if` partition to add a stack):
 
 The adapter uses native `eh_host_*` only (it sits below compat) — it never calls
 `esp_hosted_connect_to_slave`; the app owns transport bring-up and the stack
-lifecycle. See the working glue and examples: `examples/common_components/esp_hosted_bt`,
+lifecycle. See the working glue and examples: `examples/common_components/esp_hosted_bt_host_stack`,
 `examples/bluetooth/esp_hosted_nimble/`, and `examples/bluetooth/esp_hosted_bluedroid/`.
 
 ---

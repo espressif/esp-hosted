@@ -8,7 +8,7 @@ read/write characteristic and a notify characteristic. Standard Bluedroid
 GATT-server pattern (profile registration, GAP + GATTS callbacks, attribute
 table); Bluedroid runs on the **host** and the BT **controller** runs on the
 ESP-Hosted **co-processor**, bound to the hosted HCI with one call —
-`esp_hosted_bt_stack_setup()` — reached over the hosted transport
+`esp_hosted_bt_host_stack_setup()` — reached over the hosted transport
 (SDIO / SPI / SPI-HD / UART) via VHCI. The NimBLE counterpart is
 `bluetooth/esp_hosted_nimble/bleprph_gatt`.
 
@@ -151,7 +151,7 @@ CONFIG_BT_CONTROLLER_DISABLED=y                      # no local controller — C
 CONFIG_BT_BLUEDROID_ENABLED=y                        # Bluedroid host stack (selects the hosted BT adapter)
 ```
 
-`app_main()` calls `esp_hosted_bt_stack_setup()` (from `esp_hosted_bt_stack.h`)
+`app_main()` calls `esp_hosted_bt_host_stack_setup()` (from `esp_hosted_bt_host_stack.h`)
 once, after `esp_hosted_connect_to_slave()` and before `esp_bluedroid_init()` —
 it brings the controller up and binds Bluedroid to the hosted HCI. The adapter
 is documented in

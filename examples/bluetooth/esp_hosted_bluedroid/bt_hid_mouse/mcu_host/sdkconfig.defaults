@@ -2,7 +2,7 @@
 CONFIG_ESP_HOSTED=y
 
 # Features: BT. The stack is chosen by the IDF BT Kconfig (BT_BLUEDROID_ENABLED
-# below); the app calls esp_hosted_bt_stack_setup().
+# below); the app calls esp_hosted_bt_host_stack_setup().
 CONFIG_ESP_HOSTED_HOST_FEAT_BT=y
 
 # CP target: ESP32 — Classic BT (BR/EDR) only exists on the original ESP32.

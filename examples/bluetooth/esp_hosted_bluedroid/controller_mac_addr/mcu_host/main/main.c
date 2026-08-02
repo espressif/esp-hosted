@@ -11,7 +11,7 @@
 #include "esp_mac.h"
 #include "nvs_flash.h"
 #include "esp_hosted.h"
-#include "esp_hosted_bt_stack.h"
+#include "esp_hosted_bt_host_stack.h"
 #include "esp_system.h"
 
 /* BLE */
@@ -150,8 +150,8 @@ void app_main(void)
     bt_mac_actions();
 
     /* ── ESP-Hosted setup — bind Bluedroid to the hosted HCI. ────── */
-    esp_hosted_bt_stack_cfg_t bt = ESP_HOSTED_BT_STACK_CONFIG_DEFAULT();
-    ESP_ERROR_CHECK(esp_hosted_bt_stack_setup(&bt));
+    esp_hosted_bt_host_stack_cfg_t bt = ESP_HOSTED_BT_HOST_STACK_CONFIG_DEFAULT();
+    ESP_ERROR_CHECK(esp_hosted_bt_host_stack_setup(&bt));
 
     ret = esp_bluedroid_init();
     if (ret) {

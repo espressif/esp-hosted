@@ -64,7 +64,7 @@ The OTA calls (`esp_hosted_slave_ota_begin OR eh_host_cp_ota_begin()` -> `write(
 
 Hosted Bluetooth moved out of the core. 2.x folded the stack-specific HCI
 adapter into the hosted core; 3.0 keeps the core a stack-agnostic HCI byte pipe
-and puts the stack glue in a built-in `esp_hosted_bt` adapter that you bind with
+and puts the stack glue in a built-in `esp_hosted_bt_host_stack` adapter that you bind with
 one explicit call. The controller stays on the co-processor and your GAP/GATT
 code is unchanged.
 
@@ -91,10 +91,10 @@ Boxes drawn with `#` are the ones that changed.
   +----------------------+
 
 
-3.0 — stack glue split into the built-in esp_hosted_bt adapter
+3.0 — stack glue split into the built-in esp_hosted_bt_host_stack adapter
 
   +----------------------+
-  |     Application      |   <== calls esp_hosted_bt_stack_setup() once
+  |     Application      |   <== calls esp_hosted_bt_host_stack_setup() once
   +----------------------+
              |
   +----------------------+
@@ -102,7 +102,7 @@ Boxes drawn with `#` are the ones that changed.
   +----------------------+
              |
   ##################################
-  #      esp_hosted_bt adapter      #   <== NEW: built-in HCI glue
+  #      esp_hosted_bt_host_stack adapter      #   <== NEW: built-in HCI glue
   #  (NimBLE / Bluedroid / custom)  #       (no separate component to add)
   ##################################
              |
@@ -131,15 +131,15 @@ The adapter picks the stack from the IDF BT Kconfig above — there is no hosted
 app_main():
 
 ```diff
-+ #include "esp_hosted_bt_stack.h"
++ #include "esp_hosted_bt_host_stack.h"
   ...
-+ esp_hosted_bt_stack_cfg_t cfg = ESP_HOSTED_BT_STACK_CONFIG_DEFAULT();
-+ esp_hosted_bt_stack_setup(&cfg);  // (optional) set MAC, bring controller up, bind HCI
++ esp_hosted_bt_host_stack_cfg_t cfg = ESP_HOSTED_BT_HOST_STACK_CONFIG_DEFAULT();
++ esp_hosted_bt_host_stack_setup(&cfg);  // (optional) set MAC, bring controller up, bind HCI
   esp_bluedroid_init();             // or nimble_port_init() for NimBLE
   esp_bluedroid_enable();
 ```
 
-Call `esp_hosted_bt_stack_setup()` after `esp_hosted_connect_to_slave()` and
+Call `esp_hosted_bt_host_stack_setup()` after `esp_hosted_connect_to_slave()` and
 before the stack's own init; the app still owns the stack lifecycle. See the
 [Bluetooth design doc](design/bluetooth.md) for the full flow and the
 custom-stack path.
@@ -149,7 +149,7 @@ custom-stack path.
 > and the NimBLE equivalents) is removed. If a stale `sdkconfig` still sets one,
 > the build fails on purpose — switch to `CONFIG_ESP_HOSTED_HOST_FEAT_BT`, enable
 > the IDF BT stack (`CONFIG_BT_NIMBLE_ENABLED` or `CONFIG_BT_BLUEDROID_ENABLED`),
-> and call `esp_hosted_bt_stack_setup()`.
+> and call `esp_hosted_bt_host_stack_setup()`.
 
 ----
 

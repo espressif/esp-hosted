@@ -5,7 +5,7 @@
 <!-- common-start -->
 Smallest possible Bluedroid + ESP-Hosted example: it brings the BT
 **controller** up on the ESP-Hosted **co-processor** and binds Bluedroid to the
-hosted HCI with one call — `esp_hosted_bt_stack_setup()` — then starts
+hosted HCI with one call — `esp_hosted_bt_host_stack_setup()` — then starts
 non-connectable BLE advertising. Bluedroid runs on the **host**; the controller
 is reached over the hosted transport (SDIO / SPI / SPI-HD / UART) via VHCI. That
 one call is the only ESP-Hosted-specific code — everything after
@@ -151,7 +151,7 @@ CONFIG_BT_CONTROLLER_DISABLED=y                      # no local controller — C
 CONFIG_BT_BLUEDROID_ENABLED=y                        # Bluedroid host stack (selects the hosted BT adapter)
 ```
 
-`app_main()` calls `esp_hosted_bt_stack_setup()` (from `esp_hosted_bt_stack.h`)
+`app_main()` calls `esp_hosted_bt_host_stack_setup()` (from `esp_hosted_bt_host_stack.h`)
 once, after `esp_hosted_connect_to_slave()` and before `esp_bluedroid_init()` —
 it brings the controller up and binds Bluedroid to the hosted HCI.
 
@@ -165,7 +165,7 @@ eh.py -p <host_usb_serial_port> flash monitor
 
 - Scan with any generic BLE explorer — LightBlue, nRF Connect, `bluetoothctl` —
   and look for the advertised device name.
-- `app_main` calls `esp_hosted_bt_stack_setup()` once — it does controller
+- `app_main` calls `esp_hosted_bt_host_stack_setup()` once — it does controller
   init + enable + HCI bind in one call — then runs standard Bluedroid.
 - The hosted BT adapter is documented in
   [Porting a BT stack to ESP-Hosted](https://github.com/espressif/esp-hosted/blob/master/docs/design/bluetooth.md#porting-a-bt-stack-to-esp-hosted).

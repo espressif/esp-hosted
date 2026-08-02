@@ -8,7 +8,7 @@ characteristics (read/write + notify). NimBLE runs on the **host**; the
 Bluetooth **controller** runs on the ESP-Hosted **co-processor**, reached over
 the hosted transport (SDIO / SPI / SPI-HD / UART) via VHCI.
 The only ESP-Hosted-specific code is one call —
-`esp_hosted_bt_stack_setup()` — which brings the controller up and binds NimBLE
+`esp_hosted_bt_host_stack_setup()` — which brings the controller up and binds NimBLE
 to the hosted HCI; everything else is standard NimBLE. See [Porting a BT stack
 to ESP-Hosted](https://github.com/espressif/esp-hosted/blob/master/docs/design/bluetooth.md#porting-a-bt-stack-to-esp-hosted).
 The bluedroid counterpart is
@@ -164,6 +164,6 @@ eh.py -p <host_usb_serial_port> flash monitor
 - Test with any generic BLE explorer — LightBlue, nRF Connect, `bluetoothctl`.
 - Notifications are pushed via `ble_gatts_notify_custom` on the notify
   characteristic at the configured cadence.
-- `app_main` calls `esp_hosted_bt_stack_setup()` once — controller up + HCI
+- `app_main` calls `esp_hosted_bt_host_stack_setup()` once — controller up + HCI
   bound — then runs standard NimBLE (GAP + GATT server).
 <!-- esp_host-stop -->

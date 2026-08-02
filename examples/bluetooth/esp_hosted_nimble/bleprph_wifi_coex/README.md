@@ -8,7 +8,7 @@ co-processor. Verbatim merge of the upstream IDF NimBLE `bleprph` and
 `protocols/icmp_echo` examples: the **host** connects to an AP, pings a target,
 and simultaneously advertises a GATT server. Wi-Fi comes up via the hosted
 `override_path` = `esp_hosted` override (no source changes); BLE comes up via one
-ESP-Hosted call — `esp_hosted_bt_stack_setup()` — which brings the controller up
+ESP-Hosted call — `esp_hosted_bt_host_stack_setup()` — which brings the controller up
 and binds NimBLE to the hosted HCI. See [Porting a BT stack to
 ESP-Hosted](https://github.com/espressif/esp-hosted/blob/master/docs/design/bluetooth.md#porting-a-bt-stack-to-esp-hosted).
 The co-processor runs the combined Wi-Fi + BT controller firmware
@@ -176,7 +176,7 @@ eh.py -p <host_usb_serial_port> flash monitor
 - Test with any BLE scanner (LightBlue, nRF Connect) **plus** an AP with
   internet reachability to the configured ping target — BLE advertising and the
   Wi-Fi ping stream run concurrently.
-- BLE comes up via one `esp_hosted_bt_stack_setup()` call; Wi-Fi's
+- BLE comes up via one `esp_hosted_bt_host_stack_setup()` call; Wi-Fi's
   `override_path` = `esp_hosted` swaps in the hosted Wi-Fi implementation
   transparently — the source is otherwise verbatim IDF.
 - Currently IPv4-only.

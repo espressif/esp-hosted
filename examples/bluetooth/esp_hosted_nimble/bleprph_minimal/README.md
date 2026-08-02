@@ -7,7 +7,7 @@ Smallest possible NimBLE BLE peripheral — boots the BLE **controller** on the
 ESP-Hosted **co-processor**, then runs verbatim NimBLE **host** code (GAP init +
 connectable advertising). The controller is reached over the hosted transport
 (SDIO / SPI / SPI-HD / UART) via VHCI. The only ESP-Hosted-specific code is one
-call — `esp_hosted_bt_stack_setup()` — which brings the controller up and binds
+call — `esp_hosted_bt_host_stack_setup()` — which brings the controller up and binds
 NimBLE to the hosted HCI; everything else is standard NimBLE. See [Porting a BT
 stack to ESP-Hosted](https://github.com/espressif/esp-hosted/blob/master/docs/design/bluetooth.md#porting-a-bt-stack-to-esp-hosted).
 The Bluedroid counterpart is
@@ -161,7 +161,7 @@ eh.py -p <host_usb_serial_port> flash monitor
 
 - Scan with any generic BLE explorer — LightBlue, nRF Connect, `bluetoothctl` —
   and connect to the advertised device name.
-- `app_main` calls `esp_hosted_bt_stack_setup()` once — controller up + HCI
+- `app_main` calls `esp_hosted_bt_host_stack_setup()` once — controller up + HCI
   bound — then runs standard NimBLE (`nimble_port_init`, GAP advertising).
 - NimBLE is BLE-only. For Classic Bluetooth, use Bluedroid (see
   `bluetooth/esp_hosted_bluedroid/`).

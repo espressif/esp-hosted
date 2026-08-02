@@ -5,7 +5,7 @@
  */
 /* BT host feature helpers (all host types). Controller lifecycle RPC lives in
  * eh_host_bt.c; the HCI byte pipe is MCU-only, in eh_host_feat_bt_mcu.c. There
- * is no BT auto-init: the esp_hosted_bt adapter drives setup explicitly and
+ * is no BT auto-init: the esp_hosted_bt_host_stack adapter drives setup explicitly and
  * calls eh_host_bt_apply_mac() before bringing the controller up. */
 
 #include <stddef.h>

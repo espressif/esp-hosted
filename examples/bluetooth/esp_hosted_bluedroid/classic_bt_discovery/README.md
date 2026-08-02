@@ -159,7 +159,7 @@ CONFIG_BT_CLASSIC_ENABLED=y                          # Classic BT (BR/EDR) inqui
 CONFIG_BT_BLE_ENABLED=y                              # BLE also enabled (dual-mode)
 ```
 
-`app_main()` calls `esp_hosted_bt_stack_setup()` (from `esp_hosted_bt_stack.h`)
+`app_main()` calls `esp_hosted_bt_host_stack_setup()` (from `esp_hosted_bt_host_stack.h`)
 once, after `esp_hosted_connect_to_slave()` and before `esp_bluedroid_init()` —
 it brings the controller up and binds Bluedroid to the hosted HCI. The adapter
 is documented in

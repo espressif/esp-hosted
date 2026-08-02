@@ -21,7 +21,7 @@
 #include "eh_host_feat_bt.h"       /* eh_host_bt_controller_* + eh_host_bt_apply_mac */
 #include "eh_host_feat_bt_mcu.h"   /* eh_host_bt_mcu_hci_register (custom path) */
 
-#include "esp_hosted_bt_stack.h"
+#include "esp_hosted_bt_host_stack.h"
 #include "esp_hosted_bt_priv.h"
 
 static const char TAG[] = "esp_hosted_bt";
@@ -53,14 +53,14 @@ static esp_err_t bring_up_controller(uint32_t timeout_ms)
     return ESP_OK;
 }
 
-esp_err_t esp_hosted_bt_stack_setup(esp_hosted_bt_stack_cfg_t *cfg)
+esp_err_t esp_hosted_bt_host_stack_setup(esp_hosted_bt_host_stack_cfg_t *cfg)
 {
     if (!cfg) return ESP_ERR_INVALID_ARG;
 
     /* Guard: the requested stack must match what was compiled in. */
-    if (cfg->stack != ESP_HOSTED_BT_STACK_DEFAULT_TYPE) {
+    if (cfg->stack != ESP_HOSTED_BT_HOST_STACK_DEFAULT_TYPE) {
         ESP_LOGE(TAG, "cfg.stack (%d) != compiled stack (%d); check BT_NIMBLE/BLUEDROID Kconfig",
-                 cfg->stack, ESP_HOSTED_BT_STACK_DEFAULT_TYPE);
+                 cfg->stack, ESP_HOSTED_BT_HOST_STACK_DEFAULT_TYPE);
         return ESP_ERR_INVALID_STATE;
     }
 
@@ -73,14 +73,14 @@ esp_err_t esp_hosted_bt_stack_setup(esp_hosted_bt_stack_cfg_t *cfg)
 
     switch (cfg->stack) {
 #if defined(CONFIG_BT_NIMBLE_ENABLED)
-    case ESP_HOSTED_BT_STACK_NIMBLE:
+    case ESP_HOSTED_BT_HOST_STACK_NIMBLE:
         return eh_bt_bind_nimble();
 #endif
 #if defined(CONFIG_BT_BLUEDROID_ENABLED)
-    case ESP_HOSTED_BT_STACK_BLUEDROID:
+    case ESP_HOSTED_BT_HOST_STACK_BLUEDROID:
         return eh_bt_bind_bluedroid();
 #endif
-    case ESP_HOSTED_BT_STACK_CUSTOM:
+    case ESP_HOSTED_BT_HOST_STACK_CUSTOM:
         if (!cfg->custom.rx) {
             ESP_LOGE(TAG, "custom stack: cfg.custom.rx is NULL");
             return ESP_ERR_INVALID_ARG;
@@ -98,7 +98,7 @@ esp_err_t esp_hosted_bt_stack_setup(esp_hosted_bt_stack_cfg_t *cfg)
     return ESP_ERR_INVALID_STATE;
 }
 
-esp_err_t esp_hosted_bt_stack_teardown(void)
+esp_err_t esp_hosted_bt_host_stack_teardown(void)
 {
 #if defined(CONFIG_BT_NIMBLE_ENABLED)
     eh_bt_unbind_nimble();

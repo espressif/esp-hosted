@@ -25,7 +25,7 @@
 #include "console/console.h"
 #include "services/gap/ble_svc_gap.h"
 #include "bleprph.h"
-#include "esp_hosted_bt_stack.h"
+#include "esp_hosted_bt_host_stack.h"
 
 /* WIFI */
 #include <string.h>
@@ -431,8 +431,8 @@ app_main(void)
     do_ping_cmd();
 
     /* Bring the hosted BT binding up: controller + HCI wired to NimBLE. */
-    esp_hosted_bt_stack_cfg_t bt = ESP_HOSTED_BT_STACK_CONFIG_DEFAULT();
-    ESP_ERROR_CHECK(esp_hosted_bt_stack_setup(&bt));
+    esp_hosted_bt_host_stack_cfg_t bt = ESP_HOSTED_BT_HOST_STACK_CONFIG_DEFAULT();
+    ESP_ERROR_CHECK(esp_hosted_bt_host_stack_setup(&bt));
 
     ret = nimble_port_init();
     if (ret != ESP_OK) {

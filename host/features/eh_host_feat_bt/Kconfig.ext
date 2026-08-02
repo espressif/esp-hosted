@@ -14,7 +14,7 @@ if ESP_HOSTED_HOST_FEAT_BT
 		string "BT MAC address (xx:xx:xx:xx:xx:xx), blank = leave default"
 		default ""
 		help
-		  If non-empty, esp_hosted_bt_stack_setup() applies this BT MAC
+		  If non-empty, esp_hosted_bt_host_stack_setup() applies this BT MAC
 		  before bringing the controller up. A runtime cfg.bt_mac overrides
 		  it. 48-bit MAC as six colon-separated hex pairs.
 
@@ -26,10 +26,10 @@ config ESP_HOSTED_HOST_FEAT_BT_READY
 
 # Removed in 3.0 — kept only to fail the build on a stale hosted-BT sdkconfig.
 config ESP_HOSTED_ENABLE_BT_BLUEDROID
-	bool "[REMOVED 3.0] enable CONFIG_BT_BLUEDROID_ENABLED + ESP_HOSTED_HOST_FEAT_BT; call esp_hosted_bt_stack_setup()"
+	bool "[REMOVED 3.0] enable CONFIG_BT_BLUEDROID_ENABLED + ESP_HOSTED_HOST_FEAT_BT; call esp_hosted_bt_host_stack_setup()"
 config ESP_HOSTED_BLUEDROID_HCI_VHCI
-	bool "[REMOVED 3.0] enable CONFIG_BT_BLUEDROID_ENABLED + ESP_HOSTED_HOST_FEAT_BT; call esp_hosted_bt_stack_setup()"
+	bool "[REMOVED 3.0] enable CONFIG_BT_BLUEDROID_ENABLED + ESP_HOSTED_HOST_FEAT_BT; call esp_hosted_bt_host_stack_setup()"
 config ESP_HOSTED_ENABLE_BT_NIMBLE
-	bool "[REMOVED 3.0] enable CONFIG_BT_NIMBLE_ENABLED + ESP_HOSTED_HOST_FEAT_BT; call esp_hosted_bt_stack_setup()"
+	bool "[REMOVED 3.0] enable CONFIG_BT_NIMBLE_ENABLED + ESP_HOSTED_HOST_FEAT_BT; call esp_hosted_bt_host_stack_setup()"
 config ESP_HOSTED_NIMBLE_HCI_VHCI
-	bool "[REMOVED 3.0] enable CONFIG_BT_NIMBLE_ENABLED + ESP_HOSTED_HOST_FEAT_BT; call esp_hosted_bt_stack_setup()"
+	bool "[REMOVED 3.0] enable CONFIG_BT_NIMBLE_ENABLED + ESP_HOSTED_HOST_FEAT_BT; call esp_hosted_bt_host_stack_setup()"

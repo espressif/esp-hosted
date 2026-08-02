@@ -29,7 +29,7 @@
 #include "services/gap/ble_svc_gap.h"
 
 #include "esp_check.h"
-#include "esp_hosted_bt_stack.h"
+#include "esp_hosted_bt_host_stack.h"
 
 #include "sdkconfig.h"
 
@@ -147,8 +147,8 @@ void app_main(void)
     ESP_ERROR_CHECK(err);
 
     /* 2. Bring the hosted BT binding up: controller + HCI wired to NimBLE. */
-    esp_hosted_bt_stack_cfg_t bt = ESP_HOSTED_BT_STACK_CONFIG_DEFAULT();
-    ESP_ERROR_CHECK(esp_hosted_bt_stack_setup(&bt));
+    esp_hosted_bt_host_stack_cfg_t bt = ESP_HOSTED_BT_HOST_STACK_CONFIG_DEFAULT();
+    ESP_ERROR_CHECK(esp_hosted_bt_host_stack_setup(&bt));
 
     /* 3. Standard NimBLE init. TX overrides (ble_transport_to_ll_*) are linked in. */
     err = nimble_port_init();

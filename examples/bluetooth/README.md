@@ -45,7 +45,7 @@ examples/bluetooth/
 ## Enabling the hosted BT adapter (Kconfig + one setup call)
 
 For the `esp_hosted_*` families the BT stack adapter lives in
-`examples/common_components/esp_hosted_bt` and is built into the `esp_hosted`
+`examples/common_components/esp_hosted_bt_host_stack` and is built into the `esp_hosted`
 component — there is no external bridge component to add. A host app enables the
 BT feature plus its chosen IDF BT stack in Kconfig:
 
@@ -60,12 +60,12 @@ BT-port switch, and nothing auto-starts. Once, after
 the stack to the hosted HCI:
 
 ```c
-#include "esp_hosted_bt_stack.h"
-esp_hosted_bt_stack_cfg_t bt = ESP_HOSTED_BT_STACK_CONFIG_DEFAULT();
-ESP_ERROR_CHECK(esp_hosted_bt_stack_setup(&bt));  // controller up + HCI bound
+#include "esp_hosted_bt_host_stack.h"
+esp_hosted_bt_host_stack_cfg_t bt = ESP_HOSTED_BT_HOST_STACK_CONFIG_DEFAULT();
+ESP_ERROR_CHECK(esp_hosted_bt_host_stack_setup(&bt));  // controller up + HCI bound
 ```
 
-`esp_hosted_bt_stack_setup()` brings the co-processor controller up and wires
+`esp_hosted_bt_host_stack_setup()` brings the co-processor controller up and wires
 the selected stack (NimBLE / Bluedroid / a custom stack) to the HCI byte-pipe;
 the app then runs its own stack lifecycle (`esp_bluedroid_init/enable` or
 `nimble_port_init`). To port a different BT stack, see

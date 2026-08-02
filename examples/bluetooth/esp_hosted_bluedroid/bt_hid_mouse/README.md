@@ -6,7 +6,7 @@
 Acts as a Bluetooth Classic HID mouse — pairs with a host (PC or phone) and
 sends mouse-movement reports. Ports upstream `host_bluedroid_bt_hid_mouse_device`
 verbatim; the only ESP-Hosted-specific change is one call —
-`esp_hosted_bt_stack_setup()` — that brings the controller up and binds Bluedroid
+`esp_hosted_bt_host_stack_setup()` — that brings the controller up and binds Bluedroid
 to the hosted HCI. Bluedroid
 + the HID device profile run
 on the **host**; the BR/EDR **controller** runs on the ESP-Hosted **co-processor**,
@@ -162,7 +162,7 @@ CONFIG_BT_HID_ENABLED=y                                # HID profile
 CONFIG_BT_HID_DEVICE_ENABLED=y                         # HID device role
 ```
 
-`app_main` calls `esp_hosted_bt_stack_setup()` once, after
+`app_main` calls `esp_hosted_bt_host_stack_setup()` once, after
 `esp_hosted_connect_to_slave()` and before `esp_bluedroid_init()`, to bring the
 controller up and bind Bluedroid to the hosted HCI. See
 [Porting a BT stack to ESP-Hosted](https://github.com/espressif/esp-hosted/blob/master/docs/design/bluetooth.md#porting-a-bt-stack-to-esp-hosted).

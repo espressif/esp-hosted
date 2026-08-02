@@ -27,7 +27,7 @@
 #include "esp_bt_device.h"
 #include "esp_gap_ble_api.h"
 
-#include "esp_hosted_bt_stack.h"
+#include "esp_hosted_bt_host_stack.h"
 #include "esp_check.h"
 
 #include "sdkconfig.h"
@@ -89,8 +89,8 @@ static void gap_event_handler(esp_gap_ble_cb_event_t event,
 
 static esp_err_t setup_hosted_and_bridge(void)
 {
-    esp_hosted_bt_stack_cfg_t bt = ESP_HOSTED_BT_STACK_CONFIG_DEFAULT();
-    return esp_hosted_bt_stack_setup(&bt);
+    esp_hosted_bt_host_stack_cfg_t bt = ESP_HOSTED_BT_HOST_STACK_CONFIG_DEFAULT();
+    return esp_hosted_bt_host_stack_setup(&bt);
 }
 
 /* ────────────────────────────────────────────────────────────────── */
