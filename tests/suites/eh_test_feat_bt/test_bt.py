@@ -85,6 +85,11 @@ def _bumble_bench(bench, lab_tmp, worker_id, example, transport, ready, wait_bum
     the emu built-in controller lacks — this is what lets Bluedroid work here (vs.
     the built-in-controller advertising path in test_bt_hosted). The CP forwards its
     HCI to Bumble via --ble-hci (EH_BLE_HCI_PORT)."""
+    # Environment gate, NOT a masked failure: a checkout without the emu bench
+    # (esp-emu clone + Bumble in the venv) genuinely cannot run this cell — a
+    # new-user / build-only environment differs from the lab box, so skipping is
+    # correct here. ALL-GREEN forbids hiding a real failure, not skipping when the
+    # optional bench is absent (cf. the OT peer-source and nw_split AP skips).
     if not _VENV_PY.exists() or not _BUMBLE.exists():
         pytest.skip("bumble / esp-emu tooling not available")
     port = lab.alloc_bench(worker_id)["port"]  # reserved per-worker range, not OS-ephemeral
@@ -140,14 +145,11 @@ def _bumble_bench(bench, lab_tmp, worker_id, example, transport, ready, wait_bum
     _cc("esp_hosted_bluedroid/ble_gatt_server", "sdio", sanity=True),
     _cc("esp_hosted_bluedroid/ble_gatt_server", "uart"),
     _cc("esp_hosted_bluedroid/ble_gatt_server", "spi_fd"),
+    _cc("esp_hosted_bluedroid/ble_gatt_server", "spi_hd"),
     # Second Bluedroid GATTS example (full compatibility-test attribute table),
     # proving the connect path beyond ble_gatt_server. Its advertise log differs.
     _cc("esp_hosted_bluedroid/ble_compatibility_test", "sdio",
         ready=r'advertising start successfully'),
-    # NOTE: bluedroid spi_hd omitted, pending re-verification. The old
-    # connect_to_slave -EIO ordering cause is gone (the port no longer calls
-    # connect_to_slave — transport bring-up is automatic), so spi_hd may now
-    # work; re-enabling it is a tracked follow-up.
 ])
 def test_bt_central_connect(bench, lab_tmp, worker_id, example, transport, ready):
     """Bumble (virtual central) scans, finds, and CONNECTS to the host peripheral
