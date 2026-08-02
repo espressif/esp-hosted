@@ -264,7 +264,7 @@ menu "CP core"
 
 		# Bluetooth stack configuration
 		if ESP_HOSTED_CP && BT_ENABLED && !BT_CONTROLLER_ONLY
-			config ESP_HOSTED_BT_STACK_ENABLED
+			config ESP_HOSTED_CP_BT_STACK_ENABLED
 				bool "Enable BT stack: Advanced option: Handle bluetooth on your own at slave"
 				default n
 				help
@@ -274,7 +274,7 @@ menu "CP core"
 
 		config ESP_HOSTED_CP_BT_ENABLED
 			bool "Enable Bluetooth on coprocessor"
-			default y if BT_ENABLED && !ESP_HOSTED_BT_STACK_ENABLED && SOC_BT_SUPPORTED
+			default y if BT_ENABLED && !ESP_HOSTED_CP_BT_STACK_ENABLED && SOC_BT_SUPPORTED
 			default n
 
 		config ESP_HOSTED_CP_AUTO_START_BT_ON_HOSTED_INIT
