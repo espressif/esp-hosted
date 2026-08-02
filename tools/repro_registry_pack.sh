@@ -77,7 +77,7 @@ echo "=== [4/5] stage changelog at component root ==="
 cp docs/changelog.md CHANGELOG.md
 
 echo "=== [5/5] pack the component (components: esp_hosted:.) ==="
-compote component pack --name esp_hosted --version 3.0.1
+compote component pack --name esp_hosted   # version comes from idf_component.yml
 
 echo
 echo "=== ARCHIVE ==="
