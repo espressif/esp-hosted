@@ -1,0 +1,11 @@
+# Role: HOST (MCU) — CUSTOM BT stack (bring-your-own, raw HCI byte-pipe)
+CONFIG_ESP_HOSTED=y
+
+# BT feature = the HCI byte-pipe + CP controller lifecycle over RPC. No IDF BT
+# host stack (neither NimBLE nor Bluedroid) => ESP_HOSTED_BT_HOST_STACK_CONFIG_*
+# resolves to the CUSTOM path; the app drives raw HCI via the custom rx/tx.
+CONFIG_ESP_HOSTED_HOST_FEAT_BT=y
+
+# Transport: MCU default
+
+CONFIG_FREERTOS_HZ=1000

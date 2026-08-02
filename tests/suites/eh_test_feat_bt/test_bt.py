@@ -49,6 +49,9 @@ BT_CELLS = [
     ("esp_hosted_nimble/bleprph_minimal", "spi_hd", r'advertising as '),
     ("esp_hosted_nimble/bleprph_gatt",    "sdio",   r'advertising as '),
     ("esp_hosted_nimble/bleprph_wifi_coex", "sdio", r'BLE Host Task Started'),
+    # Custom stack (bring-your-own): raw-HCI Reset round-trips through the custom
+    # rx/tx path against the built-in controller — no NimBLE/Bluedroid, no Bumble.
+    ("esp_hosted_custom/hci_smoke", "sdio", r'custom rx: HCI Reset Command Complete'),
     # NOTE: Bluedroid is not in these BUILT-IN-controller advertising cells: its
     # strict HCI parser asserts on the emu built-in controller's short Command-
     # Complete for LE init queries the emu doesn't implement (0x201C fixed, 0x2024

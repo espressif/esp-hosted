@@ -16,6 +16,8 @@ examples/bluetooth/<family>/<scenario>/<role>/
   - `esp_hosted_nimble` / `esp_hosted_bluedroid` — **hosted HCI**: VHCI carried
     over the ESP-Hosted transport (SDIO / SPI / UART), using ESP-Hosted's
     built-in BT stack port. This is the common case.
+  - `esp_hosted_custom` — **hosted HCI**, but **bring-your-own stack**: bind your
+    own raw-HCI handler to the byte-pipe (no NimBLE / Bluedroid).
   - `nimble_uart` / `bluedroid_uart` — **standard HCI**: plain H4 HCI over a
     dedicated UART to the controller (no ESP-Hosted RPC channel). For comparison
     / bring-your-own-controller.
@@ -36,6 +38,8 @@ examples/bluetooth/
 │   ├── bleprph_gatt/{cp,mcu_host}
 │   ├── bleprph_minimal/{cp,mcu_host}
 │   └── bleprph_wifi_coex/{cp,mcu_host}
+├── esp_hosted_custom/             # bring-your-own stack, raw HCI over ESP-Hosted
+│   └── hci_smoke/{cp,mcu_host}
 ├── bluedroid_uart/                # Bluedroid over plain H4 UART (no ESP-Hosted)
 │   └── bluedroid_host_only_uart/{cp,mcu_host}
 └── nimble_uart/                   # NimBLE over plain H4 UART (no ESP-Hosted)
