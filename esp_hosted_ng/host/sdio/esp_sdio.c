@@ -19,6 +19,7 @@
 #include "esp_bt_api.h"
 #include <linux/kthread.h>
 #include <linux/ktime.h>
+#include <linux/jiffies.h>
 #include "esp_stats.h"
 #include "esp_utils.h"
 #include "esp_kernel_port.h"
@@ -125,7 +126,7 @@ static void esp_process_interrupt(struct esp_sdio_context *context, u32 int_stat
 static void esp_handle_isr(struct sdio_func *func)
 {
 	struct esp_sdio_context *context = NULL;
-	u32 *int_status;
+	u32 *regs;
 	int ret;
 
 	if (!func) {
@@ -143,25 +144,29 @@ static void esp_handle_isr(struct sdio_func *func)
 		return;
 	}
 
-	int_status = kmalloc(sizeof(u32), GFP_ATOMIC);
-
-	if (!int_status) {
+	/* Persistent DMA-safe buffer (allocated at probe) - no per-IRQ alloc.
+	 * regs[0]=INT_ST(0x58) [1]=0x5C [2]=PACKET_LEN(0x60) in one CMD53. */
+	regs = context->reg_buf;
+	if (!regs)
 		return;
-	}
 
-	/* Read interrupt status register */
 	ret = esp_read_reg(context, ESP_SLAVE_INT_ST_REG,
-			(u8 *) int_status, sizeof(*int_status), ACQUIRE_LOCK);
+			(u8 *) regs, 3 * sizeof(u32), ACQUIRE_LOCK);
 	CHECK_SDIO_RW_ERROR(ret);
 
-	esp_process_interrupt(context, *int_status);
+	/* Stash PACKET_LEN alongside INT_ST so the first read_packet skips its
+	 * own PACKET_LEN read (one fewer CMD53 per RX interrupt). */
+	if (!ret && (regs[0] & ESP_SLAVE_RX_NEW_PACKET_INT)) {
+		context->prefetch_len_raw = regs[2];
+		WRITE_ONCE(context->prefetch_len_valid, true);
+	}
+
+	esp_process_interrupt(context, regs[0]);
 
 	/* Clear interrupt status */
 	ret = esp_write_reg(context, ESP_SLAVE_INT_CLR_REG,
-			(u8 *) int_status, sizeof(*int_status), ACQUIRE_LOCK);
+			(u8 *) regs, sizeof(u32), ACQUIRE_LOCK);
 	CHECK_SDIO_RW_ERROR(ret);
-
-	kfree(int_status);
 }
 
 int generate_slave_intr(void *context, u8 data)
@@ -238,22 +243,23 @@ int esp_deinit_module(struct esp_adapter *adapter)
 
 static int esp_get_len_from_slave(struct esp_sdio_context *context, u32 *rx_size, u8 is_lock_needed)
 {
-	u32 *len;
+	u32 len_local;
+	u32 *len = &len_local;
 	u32 temp;
 	int ret = 0;
 
-	len = kmalloc(sizeof(u32), GFP_KERNEL);
-
-	if (!len) {
-		return -ENOMEM;
-	}
-
-	ret = esp_read_reg(context, ESP_SLAVE_PACKET_LEN_REG,
-			(u8 *) len, sizeof(*len), is_lock_needed);
-
-	if (ret) {
-		kfree(len);
-		return ret;
+	/* Combined reg read: the ISR may have already fetched PACKET_LEN alongside
+	 * INT_ST. Consume that prefetched value once instead of a second CMD53. */
+	if (READ_ONCE(context->prefetch_len_valid)) {
+		len_local = context->prefetch_len_raw;
+		WRITE_ONCE(context->prefetch_len_valid, false);
+	} else {
+		/* DMA-safe buffer allocated once at probe (no hot-path kmalloc). */
+		ret = esp_read_reg(context, ESP_SLAVE_PACKET_LEN_REG,
+				(u8 *) context->rx_len_buf, sizeof(u32), is_lock_needed);
+		if (ret)
+			return ret;
+		len_local = *context->rx_len_buf;
 	}
 
 	*len &= ESP_SLAVE_LEN_MASK;
@@ -269,12 +275,10 @@ static int esp_get_len_from_slave(struct esp_sdio_context *context, u32 *rx_size
 	if (*len > ESP_HOST_RX_AGGR_SIZE) {
 		esp_err("Len from slave[%d] exceeds max [%d]\n",
 				*len, ESP_HOST_RX_AGGR_SIZE);
-		kfree(len);
 		return -EMSGSIZE;
 	}
 	*rx_size = *len;
 
-	kfree(len);
 	return 0;
 }
 
@@ -341,6 +345,9 @@ static void esp_remove(struct sdio_func *func)
 			context->func = NULL;
 			context->adapter->dev = NULL;
 		}
+		kfree(context->reg_buf);
+		kfree(context->rx_len_buf);
+		context->reg_buf = context->rx_len_buf = NULL;
 		memset(context, 0, sizeof(struct esp_sdio_context));
 	}
 	esp_dbg("ESP SDIO cleanup completed\n");
@@ -655,6 +662,9 @@ static int write_packet(struct esp_adapter *adapter, struct sk_buff *skb)
 	H2E_HOST_STATS_INC(h2e_host_tx_queued);
 	skb_queue_tail(&(sdio_context.tx_q[prio]), skb);
 
+	/* Wake the TX kthread immediately instead of waiting for its poll. */
+	wake_up(&sdio_context.tx_waitq);
+
 	return 0;
 }
 
@@ -825,12 +835,20 @@ static int tx_process(void *data)
 			}
 
 		if (!aggr_len) {
-			usleep_range(10, 20);
+			/* No TX work pending: block waiting for an enqueue wakeup
+			 * instead of polling every 10-20ms. A short timeout acts as
+			 * a safety net in case a wakeup is missed. */
+			wait_event_interruptible_timeout(context->tx_waitq,
+				atomic_read(&queue_items[PRIO_Q_HIGH]) > 0 ||
+				atomic_read(&queue_items[PRIO_Q_MID]) > 0 ||
+				atomic_read(&queue_items[PRIO_Q_LOW]) > 0 ||
+				kthread_should_stop(),
+				usecs_to_jiffies(10000));
 			continue;
 		}
 		H2E_HOST_STATS_TIME_ADD(h2e_host_time_aggr_us, aggr_start);
 
-		buf_needed = (aggr_len + ESP_RX_BUFFER_SIZE - 1) / ESP_RX_BUFFER_SIZE;
+		buf_needed = (aggr_len + tx_aggr_size - 1) / tx_aggr_size;
 
 			/*If SDIO slave buffer is available to write then only write data
 			else wait till buffer is available*/
@@ -903,6 +921,20 @@ static struct esp_sdio_context *init_sdio_func(struct sdio_func *func, int *sdio
 
 	context->func = func;
 
+	/* DMA-safe reg buffers, allocated once before the IRQ is claimed (the ISR
+	 * uses reg_buf). Persistent for the device's life; freed in esp_remove. */
+	context->reg_buf = kmalloc(3 * sizeof(u32), GFP_KERNEL);
+	context->rx_len_buf = kmalloc(sizeof(u32), GFP_KERNEL);
+	if (!context->reg_buf || !context->rx_len_buf) {
+		kfree(context->reg_buf);
+		kfree(context->rx_len_buf);
+		context->reg_buf = context->rx_len_buf = NULL;
+		context->func = NULL;
+		return NULL;
+	}
+	context->prefetch_len_valid = false;
+	init_waitqueue_head(&context->tx_waitq);
+
 	sdio_claim_host(func);
 
 	/* Enable Function */
@@ -912,7 +944,10 @@ static struct esp_sdio_context *init_sdio_func(struct sdio_func *func, int *sdio
 		if (sdio_ret)
 			*sdio_ret = ret;
 		sdio_release_host(func);
-
+		kfree(context->reg_buf);
+		kfree(context->rx_len_buf);
+		context->reg_buf = context->rx_len_buf = NULL;
+		context->func = NULL;
 		return NULL;
 	}
 
@@ -925,7 +960,10 @@ static struct esp_sdio_context *init_sdio_func(struct sdio_func *func, int *sdio
 		if (sdio_ret)
 			*sdio_ret = ret;
 		sdio_release_host(func);
-
+		kfree(context->reg_buf);
+		kfree(context->rx_len_buf);
+		context->reg_buf = context->rx_len_buf = NULL;
+		context->func = NULL;
 		return NULL;
 	}
 
@@ -974,6 +1012,10 @@ static int esp_probe(struct sdio_func *func,
 	ret = init_context(context);
 	if (ret) {
 		deinit_sdio_func(func);
+		kfree(context->reg_buf);
+		kfree(context->rx_len_buf);
+		context->reg_buf = context->rx_len_buf = NULL;
+		context->func = NULL;
 		return ret;
 	}
 

@@ -73,7 +73,8 @@ static int host_rcv_pkt(uint8_t *data, uint16_t len)
 #if CONFIG_ESP_BT_DEBUG
     ESP_LOG_BUFFER_HEXDUMP("bt_tx", data, len, ESP_LOG_INFO);
 #endif
-    ret = xQueueSend(to_host_queue[PRIO_Q_MID], &buf_handle, portMAX_DELAY);
+    /* Use the common enqueue helper so a sleeping send_task is notified. */
+    ret = send_to_host(PRIO_Q_MID, &buf_handle);
 
     if (ret != pdTRUE) {
         ESP_LOGE(BT_TAG, "HCI send packet: Failed to send buffer\n");

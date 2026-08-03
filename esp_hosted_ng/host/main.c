@@ -1044,8 +1044,10 @@ static struct esp_adapter *init_adapter(void)
 {
 	memset(&adapter, 0, sizeof(adapter));
 
-	/* Prepare interface RX work */
-	adapter.if_rx_workqueue = alloc_workqueue("ESP_IF_RX_WORK_QUEUE", 0, 0);
+	/* Prepare interface RX work - high priority so RX processing isn't delayed
+	 * behind normal-priority kernel work (reduces ping latency jitter). */
+	adapter.if_rx_workqueue = alloc_workqueue("ESP_IF_RX_WORK_QUEUE",
+			WQ_HIGHPRI, 0);
 
 	if (!adapter.if_rx_workqueue) {
 		deinit_adapter();

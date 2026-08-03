@@ -1022,6 +1022,13 @@ esp_err_t initialise_wifi(void)
         return result;
     }
 
+    /* Disable Wi-Fi modem-sleep (default is WIFI_PS_MIN_MODEM). With modem
+     * sleep enabled the AP buffers downlink frames and delivers them at the
+     * DTIM beacon interval (~102ms), which shows up as a ~100ms sawtooth on
+     * ping latency for traffic sourced from peers behind the AP. esp_hosted
+     * is a line-powered adapter, so we trade power for minimum RX latency. */
+    esp_wifi_set_ps(WIFI_PS_NONE);
+
     esp_wifi_set_debug_log();
 
     /* Register to get events from wifi driver */

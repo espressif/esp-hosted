@@ -85,6 +85,10 @@ interface_handle_t *if_handle = NULL;
 
 QueueHandle_t to_host_queue[MAX_PRIORITY_QUEUES] = {NULL};
 
+/* send_task handle so producers can wake it via xTaskNotifyGive instead of
+ * the send_task polling every tick (vTaskDelay(1)). NULL until the task starts. */
+TaskHandle_t send_task_handle = NULL;
+
 #ifdef ESP_DEBUG_STATS
 static uint32_t h2e_rx_pkts;
 static uint32_t h2e_rx_bytes;
@@ -305,6 +309,9 @@ esp_err_t wlan_ap_rx_callback(void *buffer, uint16_t len, void *eb)
         goto DONE;
     }
 
+    if (send_task_handle)
+        xTaskNotifyGive(send_task_handle);
+
     return ESP_OK;
 
 DONE:
@@ -342,6 +349,9 @@ esp_err_t wlan_sta_rx_callback(void *buffer, uint16_t len, void *eb)
         ESP_LOGE(TAG, "Slave -> Host: Failed to send buffer\n");
         goto DONE;
     }
+
+    if (send_task_handle)
+        xTaskNotifyGive(send_task_handle);
 
     return ESP_OK;
 
@@ -484,7 +494,10 @@ static void process_low_prio_tx_packets(uint16_t queued, uint8_t *aggr_buf)
 
 esp_err_t send_to_host(uint8_t prio_q_idx, interface_buffer_handle_t *buf_handle)
 {
-    return xQueueSend(to_host_queue[prio_q_idx], buf_handle, portMAX_DELAY);
+    esp_err_t ret = xQueueSend(to_host_queue[prio_q_idx], buf_handle, portMAX_DELAY);
+    if (ret == pdTRUE && send_task_handle)
+        xTaskNotifyGive(send_task_handle);
+    return ret;
 }
 
 /* Send data to host */
@@ -531,7 +544,10 @@ void send_task(void* pvParameters)
             }
 #endif
         } else {
-            vTaskDelay(1);
+            /* All queues empty: block until a producer (RX callback or
+             * send_to_host) notifies us, instead of polling every tick
+             * (vTaskDelay(1) added up to 1 tick of latency per idle cycle). */
+            xTaskNotifyWait(0, ULONG_MAX, NULL, portMAX_DELAY);
         }
     }
 }
@@ -974,7 +990,7 @@ void app_main()
     }
 
     assert(xTaskCreate(recv_task, "recv_task", TASK_DEFAULT_STACK_SIZE, NULL, TASK_DEFAULT_PRIO, NULL) == pdTRUE);
-    assert(xTaskCreate(send_task, "send_task", TASK_DEFAULT_STACK_SIZE, NULL, TASK_DEFAULT_PRIO, NULL) == pdTRUE);
+    assert(xTaskCreate(send_task, "send_task", TASK_DEFAULT_STACK_SIZE, NULL, TASK_DEFAULT_PRIO, &send_task_handle) == pdTRUE);
 
     create_debugging_tasks();
 

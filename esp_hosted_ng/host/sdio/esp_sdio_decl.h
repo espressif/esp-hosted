@@ -8,6 +8,7 @@
 #ifndef _ESP_DECL_H_
 #define _ESP_DECL_H_
 
+#include <linux/wait.h>
 #include "esp.h"
 
 /* Interrupt Status */
@@ -84,6 +85,19 @@ struct esp_sdio_context {
 	u32                    rx_byte_count;
 	u32                    tx_buffer_count;
 	u32			sdio_clk_mhz;
+	/* TX kthread wakeup: enqueuing a skb wakes tx_process instead of
+	 * relying on its 10-20ms usleep poll. Driven by wake_up()/wait_event. */
+	wait_queue_head_t      tx_waitq;
+	/* Combined reg read: the ISR reads INT_ST..PACKET_LEN in one CMD53 and
+	 * stashes the raw length here so the first read_packet skips its own
+	 * PACKET_LEN read. Set in ISR, consumed once in esp_get_len_from_slave. */
+	bool                   prefetch_len_valid;
+	u32                    prefetch_len_raw;
+	/* DMA-safe SDIO reg buffers allocated once at probe (not per IRQ/packet):
+	 * reg_buf = ISR INT_ST..PACKET_LEN read (3 words); rx_len_buf = per-packet
+	 * PACKET_LEN read (1 word). */
+	u32                    *reg_buf;
+	u32                    *rx_len_buf;
 };
 
 #endif
