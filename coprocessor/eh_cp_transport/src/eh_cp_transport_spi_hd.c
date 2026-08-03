@@ -445,7 +445,6 @@ static void spi_hd_rx_task(void* pvParameters)
 {
 	int i;
 	uint8_t * buf = NULL;
-	esp_err_t ret = ESP_OK;
 	spi_slave_hd_data_t *rx_trans = NULL;
 	spi_slave_hd_data_t *ret_trans = NULL;
 	esp_err_t res;
@@ -496,7 +495,7 @@ static void spi_hd_rx_task(void* pvParameters)
 		// wait for incoming transactions
 		res = spi_slave_hd_get_trans_res(SPI_HOST, SPI_SLAVE_CHAN_RX,
 				&ret_trans, portMAX_DELAY);
-		if (ret) {
+		if (res) {
 			ESP_LOGV(TAG, "spi_slave_hd_get_trans_res returned failure");
 			continue;
 		}
