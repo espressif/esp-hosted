@@ -139,6 +139,10 @@ def _bumble_bench(bench, lab_tmp, worker_id, example, transport, ready, wait_bum
 # per scenario; uart/spi_fd/spi_hd run under --regression. Serialized onto one
 # xdist worker (xdist_group): each cell is heavy (Bumble + two emus), so letting
 # them pile up under parallel load starves the emu and Bumble misses the advert.
+# Heavy Bumble cell (2 emus + Bumble): reliable solo, but can flake under
+# parallel-load emu starvation (host's 5s controller RPC skews past the
+# OS-descheduled CP) — recover via the isolated retry, like spi_fd.
+@pytest.mark.second_chance
 @pytest.mark.xdist_group("bt_bumble")
 @pytest.mark.parametrize("example,transport,ready", [
     _cc("esp_hosted_nimble/bleprph_gatt", "sdio", sanity=True),
@@ -168,6 +172,7 @@ def test_bt_central_connect(bench, lab_tmp, worker_id, example, transport, ready
 
 
 @pytest.mark.sanity
+@pytest.mark.second_chance  # heavy Bumble cell; same parallel-load flake class as central_connect
 @pytest.mark.xdist_group("bt_bumble")
 def test_bt_set_mac(bench, lab_tmp, worker_id):
     """Setting the BT controller MAC takes effect on the co-processor controller.
