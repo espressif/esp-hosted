@@ -1,10 +1,5 @@
 
-set(srcs "src/eh_cp_cli_stub.c")
-if(CONFIG_ESP_HOSTED_CP_FEAT_CLI_READY)
-    list(APPEND srcs "src/eh_cp_cli.c")
-endif()
-
-add_library(eh_cp_feat_cli STATIC ${srcs})
+add_library(eh_cp_feat_cli STATIC "src/eh_cp_cli.c")
 
 target_include_directories(eh_cp_feat_cli
     PUBLIC

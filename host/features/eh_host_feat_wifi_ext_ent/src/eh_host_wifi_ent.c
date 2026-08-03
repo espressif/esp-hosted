@@ -191,32 +191,33 @@ esp_err_t eh_host_wifi_ent_set_certificate_and_key(
 
     eh_rpc_ctrl_cmd_t *req = eh_rpc_ctrl_cmd_alloc();
     if (!req) return ESP_FAIL;
+    /* set msg_id now so the error path frees blobs via eh_rpc_ctrl_cmd_free */
+    req->msg_id = RPC_ID__Req_EapSetCertificateAndKey;
 
     if (eh_rpc_blob_take(&req->u.eap_cert_key.client_cert,
-                  client_cert, (size_t)client_cert_len) != 0) goto fail;
+                         client_cert, (size_t)client_cert_len) != 0) {
+        eh_rpc_ctrl_cmd_free(req);
+        return ESP_FAIL;
+    }
     if (eh_rpc_blob_take(&req->u.eap_cert_key.private_key,
-                  private_key, (size_t)private_key_len) != 0) goto fail;
-    if (private_key_password && private_key_passwd_len > 0) {
-        if (eh_rpc_blob_take(&req->u.eap_cert_key.private_key_password,
-                      private_key_password, (size_t)private_key_passwd_len) != 0)
-            goto fail;
+                         private_key, (size_t)private_key_len) != 0) {
+        eh_rpc_ctrl_cmd_free(req);
+        return ESP_FAIL;
+    }
+    if (private_key_password && private_key_passwd_len > 0 &&
+        eh_rpc_blob_take(&req->u.eap_cert_key.private_key_password,
+                         private_key_password, (size_t)private_key_passwd_len) != 0) {
+        eh_rpc_ctrl_cmd_free(req);
+        return ESP_FAIL;
     }
 
     eh_rpc_ctrl_cmd_t *r = NULL;
-    if (eh_host_feat_rpc_request_sync(RPC_ID__Req_EapSetCertificateAndKey, req, (void **)&r) != 0) return ESP_FAIL;
-    int rc = r->resp_event_status;
-    eh_rpc_ctrl_cmd_free(r);
-    return (esp_err_t)rc;
+    if (eh_host_feat_rpc_request_sync(RPC_ID__Req_EapSetCertificateAndKey, req, (void **)&r) != 0)
+        return ESP_FAIL;
 
-fail:
-    if (req->u.eap_cert_key.client_cert.data)
-        free(req->u.eap_cert_key.client_cert.data);
-    if (req->u.eap_cert_key.private_key.data)
-        free(req->u.eap_cert_key.private_key.data);
-    if (req->u.eap_cert_key.private_key_password.data)
-        free(req->u.eap_cert_key.private_key_password.data);
-    free(req);
-    return ESP_FAIL;
+    esp_err_t rc = (esp_err_t)r->resp_event_status;
+    eh_rpc_ctrl_cmd_free(r);
+    return rc;
 }
 
 esp_err_t eh_host_wifi_ent_set_disable_time_check(bool disable)

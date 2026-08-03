@@ -21,15 +21,26 @@
 #include "esp_idf_version.h"
 #include "priv/eh_cp_feat_bt_cfg.h"
 
+#if defined(CONFIG_BT_ENABLED) && !defined(CONFIG_SOC_BT_SUPPORTED)
+#error "Bluetooth is enabled but this chip has no Bluetooth (CONFIG_SOC_BT_SUPPORTED is unset). Disable Bluetooth for this target."
+#endif
+
 #if defined(CONFIG_BT_ENABLED) && !defined(CONFIG_BT_CONTROLLER_ONLY) && !EH_CP_BT_STACK_ENABLED
 #error "BT Host is enabled. This consumes memory and is not needed by ESP-Hosted. Only BT Controller is sufficient."
 #error "============================================================================="
-#error "Option 1) Disable 'BT stack' by selecting:"
-#error "         idf.py menuconfig -> Component config -> Bluetooth -> Host -> Disabled"
+#error "Option 1) Disable the BT Host stack (keep only the controller) — idf.py menuconfig:"
+#error "         Component config"
+#error "          └─ Bluetooth"
+#error "             └─ Host  ->  Disabled"
 #error "============================================================================="
-#error "Option 2) Enable stack if you wish to handle bluetooth manually at slave:"
-#error "         idf.py menuconfig -> ESP-Hosted FG Slave Config -> Enable BT stack:"
-#error "         Advanced option: Handle bluetooth on your own at slave"
+#error "Option 2) Handle Bluetooth yourself on the co-processor — enable"
+#error "         CONFIG_ESP_HOSTED_CP_BT_STACK_ENABLED via idf.py menuconfig:"
+#error "         Component config"
+#error "          └─ ESP-Hosted"
+#error "             └─ Configure coprocessor"
+#error "                └─ CP core"
+#error "                   └─ Core: Debug & Misc"
+#error "                      └─ Enable BT stack: Advanced option: Handle bluetooth on your own at coprocessor"
 #error "============================================================================="
 #endif
 
