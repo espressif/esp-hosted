@@ -616,7 +616,7 @@ esp_err_t rpc_evt_mem_monitor(Rpc *ntfy, const uint8_t *inbuf, size_t inlen)
             RpcEventMemMonitor, event_mem_monitor,
             rpc__event__mem_monitor__init);
 
-    mem_monitor_evt_data_t *ptr = (mem_monitor_evt_data_t *)inbuf;
+    const mem_monitor_evt_data_t *ptr = (const mem_monitor_evt_data_t *)inbuf;
 
     NTFY_ALLOC_ELEMENT(HeapInfo, ntfy_payload->curr_internal, heap_info__init);
     NTFY_ALLOC_ELEMENT(MemInfo, ntfy_payload->curr_internal->mem_dma, mem_info__init);

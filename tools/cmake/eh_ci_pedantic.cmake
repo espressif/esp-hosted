@@ -68,7 +68,9 @@ if(ESP_PLATFORM AND DEFINED ENV{ESP_HOSTED_CI_PEDANTIC})
         # -Wconversion        # narrowing flood — too restrictive
         # -Wsign-conversion   # signed/unsigned implicit — too noisy
         # -Warith-conversion  # conversion family — too noisy
-        -Wsign-compare
+        # -Wsign-compare: same high-noise/low-signal class (loop-counter vs
+        # size) — dominated the output; -Wextra enables it, so disable after.
+        -Wno-sign-compare
 
         # -Wcast-align        # fires on byte-buffer->struct casts in framing
         -Wcast-qual

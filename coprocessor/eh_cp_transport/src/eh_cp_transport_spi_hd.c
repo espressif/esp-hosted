@@ -814,7 +814,7 @@ interface_context_t *interface_insert_driver(int (*event_handler)(uint8_t val))
 	return &context;
 }
 
-int interface_remove_driver()
+int interface_remove_driver(void)
 {
 	memset(&context, 0, sizeof(context));
 	return 0;

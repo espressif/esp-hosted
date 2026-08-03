@@ -206,8 +206,10 @@ static int crash_device_handler(int argc, char** argv)
 {
 	printf("Crashing the device now...\n");
 
-	// Writing at invalid address
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wnull-dereference"
 	*(int *) (0x0) = 0;
+#pragma GCC diagnostic pop
 	return ESP_OK;
 }
 

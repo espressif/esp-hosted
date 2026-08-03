@@ -1348,6 +1348,10 @@ static esp_err_t sdio_streaming_push_data_to_queue(uint8_t * buf, uint32_t buf_l
 	uint16_t offset = 0;
 	uint32_t packet_size;
 
+	if (!buf) {
+		return ESP_FAIL;
+	}
+
 	do {
 		if (!is_valid_sdio_rx_packet(buf, &len, &offset)) {
 			/* Drop rest of stream — undecodable after this error. */

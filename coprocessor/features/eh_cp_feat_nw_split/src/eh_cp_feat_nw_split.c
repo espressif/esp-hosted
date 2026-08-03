@@ -87,6 +87,7 @@ static bool s_sta_netif_input_ready = false;
 static bool s_nw_split_owns_sta_rxcb = false;
 
 extern esp_err_t __real_esp_wifi_internal_reg_rxcb(wifi_interface_t ifx, wifi_rxcb_t fn);
+esp_err_t __wrap_esp_wifi_internal_reg_rxcb(wifi_interface_t ifx, wifi_rxcb_t fn);
 
 esp_err_t __wrap_esp_wifi_internal_reg_rxcb(wifi_interface_t ifx, wifi_rxcb_t fn)
 {

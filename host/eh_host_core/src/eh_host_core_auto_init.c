@@ -6,10 +6,10 @@
  * panics on priority-inheritance bookkeeping. */
 #include "sdkconfig.h"
 #include <stdint.h>
+#include "eh_host_core.h"
 
 #if CONFIG_ESP_HOSTED_AUTO_CALL_INIT_BEFORE_APP_MAIN
 
-#include "eh_host_core.h"
 #include "eh_host_port_sync.h"
 #include "eh_host_port_task.h"
 #include "esp_log.h"

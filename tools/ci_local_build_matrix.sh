@@ -128,6 +128,7 @@ run_cell() {
     -v "${REPO_ROOT}":/esp_hosted \
     -v "${EH_CCACHE_DIR}":/root/.cache/ccache \
     -e HOME=/root -e CCACHE_MAXSIZE="${CCACHE_MAXSIZE:-10G}" \
+    -e ESP_HOSTED_CI_PEDANTIC \
     "espressif/idf:${ver}" bash -lc "$(inner)" _ "${example}" "${target}" "${override}" "${CONFIG_ONLY:-0}"
 }
 
