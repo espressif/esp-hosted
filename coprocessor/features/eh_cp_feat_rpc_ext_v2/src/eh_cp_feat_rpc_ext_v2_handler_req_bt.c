@@ -6,17 +6,41 @@
 
 #include "eh_cp_master_config.h"
 #if EH_CP_FEAT_RPC_EXT_V2_READY
-#include <string.h>
-#include "freertos/FreeRTOS.h"
-#include "freertos/event_groups.h"
+#if EH_CP_FEAT_BT_READY
+
 #include "esp_log.h"
-#include "eh_transport.h"
-#include "eh_cp_feat_rpc_ext_v2.h"
+#include "eh_cp_feat_rpc.h"
 #include "eh_cp_feat_rpc_ext_v2_priv.h"
+#include "eh_cp_feat_bt_core.h"
 
-#if defined(CONFIG_BT_ENABLED) && defined(CONFIG_SOC_BT_SUPPORTED)
-#include "esp_bt.h"
-#endif
+static const char *TAG = "ehcp_rpc_bt";
 
-/* TODO: BT RPC handlers (req_bt_init/deinit/enable/disable/...). */
+esp_err_t req_feature_control_bt(RpcReqFeatureControl *req_payload,
+                                 RpcRespFeatureControl *resp_payload)
+{
+	switch (req_payload->command) {
+	case RPC_FEATURE_COMMAND__Feature_Command_BT_Init:
+		RPC_RET_FAIL_IF(eh_cp_bt_init());
+		break;
+	case RPC_FEATURE_COMMAND__Feature_Command_BT_Deinit: {
+		bool mem_release =
+			(req_payload->option == RPC_FEATURE_OPTION__Feature_Option_BT_Deinit_Release_Memory);
+		RPC_RET_FAIL_IF(eh_cp_bt_deinit(mem_release));
+		break;
+	}
+	case RPC_FEATURE_COMMAND__Feature_Command_BT_Enable:
+		RPC_RET_FAIL_IF(eh_cp_bt_enable());
+		break;
+	case RPC_FEATURE_COMMAND__Feature_Command_BT_Disable:
+		RPC_RET_FAIL_IF(eh_cp_bt_disable());
+		break;
+	default:
+		ESP_LOGE(TAG, "error: invalid Bluetooth Feature Control");
+		resp_payload->resp = ESP_ERR_INVALID_ARG;
+		break;
+	}
+	return ESP_OK;
+}
+
+#endif /* EH_CP_FEAT_BT_READY */
 #endif /* EH_CP_FEAT_RPC_EXT_V2_READY */

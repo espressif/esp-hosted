@@ -300,6 +300,14 @@ esp_err_t req_get_coprocessor_fw_version(Rpc *req, Rpc *resp, void *priv_data);
 esp_err_t req_iface_mac_addr_set_get(Rpc *req, Rpc *resp, void *priv_data);
 esp_err_t req_iface_mac_addr_len_get(Rpc *req, Rpc *resp, void *priv_data);
 esp_err_t req_feature_control(Rpc *req, Rpc *resp, void *priv_data);
+#if EH_CP_FEAT_BT_READY
+esp_err_t req_feature_control_bt(RpcReqFeatureControl *req_payload,
+                                 RpcRespFeatureControl *resp_payload);
+#endif
+#if EH_CP_FEAT_OPENTHREAD_READY
+esp_err_t req_feature_control_openthread(RpcReqFeatureControl *req_payload,
+                                         RpcRespFeatureControl *resp_payload);
+#endif
 esp_err_t req_app_get_desc(Rpc *req, Rpc *resp, void *priv_data);
 #if EH_CP_FEAT_PEER_DATA_READY
 esp_err_t req_custom_rpc_handler(Rpc *req, Rpc *resp, void *priv_data);

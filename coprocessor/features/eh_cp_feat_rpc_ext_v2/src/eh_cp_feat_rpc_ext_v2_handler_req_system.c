@@ -26,13 +26,6 @@
 #endif
 #include "eh_cp.h"
 #include "esp_mac.h"
-#if EH_CP_FEAT_BT_READY
-#include "eh_cp_feat_bt_core.h"
-#endif
-#if EH_CP_FEAT_OPENTHREAD_READY
-esp_err_t req_feature_control_openthread(RpcReqFeatureControl *req_payload,
-                                         RpcRespFeatureControl *resp_payload);
-#endif
 
 static const char* TAG = "mcu_sys_rpc";
 
@@ -429,53 +422,18 @@ esp_err_t req_feature_control(Rpc *req, Rpc *resp, void *priv_data)
 	resp_payload->option  = req_payload->option;
 
 	if (req_payload->feature == RPC_FEATURE__Feature_Bluetooth) {
-		// decode the requested Bluetooth control
-		switch (req_payload->command) {
-		case RPC_FEATURE_COMMAND__Feature_Command_BT_Init:
-		#if EH_CP_FEAT_BT_READY
-			RPC_RET_FAIL_IF(eh_cp_bt_init());
-		#else
-			ESP_LOGE(TAG, "Bluetooth is not enabled");
-			resp_payload->resp = FAILURE;
-		#endif
-			break;
-		case RPC_FEATURE_COMMAND__Feature_Command_BT_Deinit:
-		#if EH_CP_FEAT_BT_READY
-			bool mem_release = false;
-			if (req_payload->option == RPC_FEATURE_OPTION__Feature_Option_BT_Deinit_Release_Memory) {
-				mem_release = true;
-			}
-			RPC_RET_FAIL_IF(eh_cp_bt_deinit(mem_release));
-		#else
-			ESP_LOGE(TAG, "Bluetooth is not enabled");
-			resp_payload->resp = FAILURE;
-		#endif
-			break;
-		case RPC_FEATURE_COMMAND__Feature_Command_BT_Enable:
-		#if EH_CP_FEAT_BT_READY
-			RPC_RET_FAIL_IF(eh_cp_bt_enable());
-		#else
-			ESP_LOGE(TAG, "Bluetooth is not enabled");
-			resp_payload->resp = FAILURE;
-		#endif
-			break;
-		case RPC_FEATURE_COMMAND__Feature_Command_BT_Disable:
-		#if EH_CP_FEAT_BT_READY
-			RPC_RET_FAIL_IF(eh_cp_bt_disable());
-		#else
-			ESP_LOGE(TAG, "Bluetooth is not enabled");
-			resp_payload->resp = FAILURE;
-		#endif
-			break;
-		default:
-			// invalid Bluetooth control feature
-			ESP_LOGE(TAG, "error: invalid Bluetooth Feature Control");
-			resp_payload->resp = ESP_ERR_INVALID_ARG;
-			break;
-		}
-#if EH_CP_FEAT_OPENTHREAD_READY
+#if EH_CP_FEAT_BT_READY
+		return req_feature_control_bt(req_payload, resp_payload);
+#else
+		ESP_LOGE(TAG, "Bluetooth is not enabled");
+		resp_payload->resp = FAILURE;
+#endif
 	} else if (req_payload->feature == RPC_FEATURE__Feature_Openthread_Rcp) {
+#if EH_CP_FEAT_OPENTHREAD_READY
 		return req_feature_control_openthread(req_payload, resp_payload);
+#else
+		ESP_LOGE(TAG, "Openthread is not enabled");
+		resp_payload->resp = FAILURE;
 #endif
 	} else {
 		// invalid feature
