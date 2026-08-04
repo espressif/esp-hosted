@@ -16,4 +16,7 @@ typedef enum {
     EH_CP_FEAT_WIFI_EXT_DPP_EVT_FAILED = 2,
 } eh_cp_feat_wifi_ext_dpp_evt_t;
 
+esp_err_t eh_cp_wifi_dpp_event_publisher_init(void);
+esp_err_t eh_cp_wifi_dpp_event_publisher_deinit(void);
+
 #endif /* EH_CP_FEAT_WIFI_EXT_DPP_EVENT_H */

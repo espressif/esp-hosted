@@ -15,6 +15,7 @@
 #include "eh_common_header.h"
 #include "eh_host_mcu_transport.h"
 #include "eh_host_mcu_transport_priv.h"
+#include "eh_host_bus.h"
 #include "eh_host_mcu_transport_channels.h"
 #include "eh_host_mcu_transport_init_event.h"
 #include "eh_host_mcu_transport_send_caps.h"

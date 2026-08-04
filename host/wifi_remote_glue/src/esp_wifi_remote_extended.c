@@ -1,4 +1,8 @@
-/* SPDX-License-Identifier: Apache-2.0 */
+/*
+ * SPDX-FileCopyrightText: 2026 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 /* Strong defs of esp_wifi_remote_* hooks not covered by
  * esp_wifi_remote_glue.c; each forwards to eh_host_wifi_* / eh_host_sys_*. */
 
@@ -115,6 +119,9 @@ esp_err_t esp_wifi_remote_set_inactive_time(wifi_interface_t ifx, uint16_t sec)
 
 esp_err_t esp_wifi_remote_get_inactive_time(wifi_interface_t ifx, uint16_t *sec)
 { return eh_host_wifi_get_inactive_time(ifx, sec); }
+
+esp_err_t esp_wifi_remote_disable_pmf_config(wifi_interface_t ifx)
+{ return eh_host_wifi_disable_pmf_config(ifx); }
 
 esp_err_t esp_wifi_remote_set_band(wifi_band_t band)
 { return eh_host_wifi_set_band(band); }

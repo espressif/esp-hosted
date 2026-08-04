@@ -18,7 +18,7 @@ static int compose_req_set_mac(Rpc *rpc, const eh_rpc_ctrl_cmd_t *c, alloc_track
     ALLOC_PAYLOAD(RpcReqSetMacAddress, req_set_mac_address,
                   rpc__req__set_mac_address__init);
     p->mode = c->u.wifi_mac.mode;
-    p->mac.data = (uint8_t *)c->u.wifi_mac.mac;
+    p->mac.data = (uint8_t *)(uintptr_t)c->u.wifi_mac.mac;
     p->mac.len  = EH_RPC_MAC_LEN;
     return 0;
 }
@@ -32,7 +32,7 @@ static int compose_req_iface_mac_addr(Rpc *rpc, const eh_rpc_ctrl_cmd_t *c,
     p->set  = c->u.iface_mac_addr.set ? 1 : 0;
     p->type = c->u.iface_mac_addr.type;
     if (p->set && c->u.iface_mac_addr.mac_len) {
-        p->mac.data = (uint8_t *)c->u.iface_mac_addr.mac;
+        p->mac.data = (uint8_t *)(uintptr_t)c->u.iface_mac_addr.mac;
         p->mac.len  = c->u.iface_mac_addr.mac_len;
     }
     return 0;

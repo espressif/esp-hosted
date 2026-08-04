@@ -17,8 +17,8 @@ static gpio_mode_t to_idf_mode(eh_host_port_gpio_dir_t d)
     case EH_HOST_PORT_GPIO_DIR_INPUT:        return GPIO_MODE_INPUT;
     case EH_HOST_PORT_GPIO_DIR_OUTPUT:       return GPIO_MODE_OUTPUT;
     case EH_HOST_PORT_GPIO_DIR_INPUT_OUTPUT: return GPIO_MODE_INPUT_OUTPUT;
+    default:                                 return GPIO_MODE_INPUT;
     }
-    return GPIO_MODE_INPUT;
 }
 
 eh_host_port_err_t eh_host_port_gpio_config(const eh_host_port_gpio_config_cfg_t *cfg)

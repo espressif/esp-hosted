@@ -1,0 +1,18 @@
+## IDF Component Manager Manifest File
+dependencies:
+  ## Required IDF version
+  idf:
+    version: ">=5.2"
+  espressif/esp-zigbee-lib:
+    version: ">=2.0.0"
+  espressif/esp_wifi_remote:
+    version: ">=0.10,<2.0"
+    rules:
+      - if: "target in [esp32p4, esp32h2]"
+      - if: "idf_version <6.1"
+  espressif/esp_hosted:
+    # 3.x in-tree build: local override_path instead of 2.x registry "~2"
+    override_path: "../../../../.."
+    rules:
+      - if: "target in [esp32p4, esp32h2]"
+    version: "*"

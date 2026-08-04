@@ -193,7 +193,7 @@ uint8_t power_save_started;
 static DRAM_ATTR uint8_t dummy_buffer[SPI_BUFFER_SIZE] __attribute__((aligned(4)));
 #endif
 
-static inline void spi_mempool_create()
+static inline void spi_mempool_create(void)
 {
 #ifdef CONFIG_ESP_CACHE_MALLOC
 	/* Create separate pools for TX and RX with optimized sizes */
@@ -309,7 +309,7 @@ interface_context_t *interface_insert_driver(int (*event_handler)(uint8_t val))
 	return &context;
 }
 
-int interface_remove_driver()
+int interface_remove_driver(void)
 {
 	memset(&context, 0, sizeof(context));
 	return 0;
@@ -639,11 +639,11 @@ static void spi_transaction_post_process_task(void* pvParameters)
 		}
 #endif
 
-		ESP_HEXLOGV("bus_tx:", (uint8_t*)spi_trans->tx_buffer, 16, 16);
+		ESP_HEXLOGV("bus_tx:", (const uint8_t*)spi_trans->tx_buffer, 16, 16);
 
 #if USE_STATIC_DUMMY_BUFFER
 		if (spi_trans->tx_buffer != dummy_buffer) {
-			spi_buffer_tx_free((void *)spi_trans->tx_buffer);
+			spi_buffer_tx_free((void *)(uintptr_t)spi_trans->tx_buffer);
 		}
 #else
 		spi_buffer_tx_free((void *)spi_trans->tx_buffer);

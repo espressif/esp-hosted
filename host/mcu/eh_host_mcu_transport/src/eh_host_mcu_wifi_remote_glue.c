@@ -33,6 +33,13 @@ int esp_hosted_tx(uint8_t iface_type, uint8_t iface_num,
                   uint8_t buff_zerocopy,
                   uint8_t *buffer_to_free,
                   void (*free_buf_func)(void *ptr),
+                  uint8_t flags);
+
+int esp_hosted_tx(uint8_t iface_type, uint8_t iface_num,
+                  uint8_t *payload_buf, uint16_t payload_len,
+                  uint8_t buff_zerocopy,
+                  uint8_t *buffer_to_free,
+                  void (*free_buf_func)(void *ptr),
                   uint8_t flags)
 {
     int rc;

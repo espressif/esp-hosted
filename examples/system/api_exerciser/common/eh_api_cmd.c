@@ -1,4 +1,8 @@
-/* SPDX-License-Identifier: Apache-2.0 */
+/*
+ * SPDX-FileCopyrightText: 2026 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 /* Generic eh_host_* console exerciser: one thin command per API, one uniform
  * result line. New coverage = a new table row + a pytest data file. */
 
@@ -269,6 +273,14 @@ static int cmd_wifi_get_inactive_time(int argc, char **argv)
     esp_err_t e = eh_host_wifi_get_inactive_time(ifx, &s);
     if (e == ESP_OK) { char f[24]; snprintf(f, sizeof(f), "sec=%u", (unsigned)s); eh_out("wifi_get_inactive_time", (int)e, f); }
     else eh_out_rc("wifi_get_inactive_time", e);
+    return 0;
+}
+
+static int cmd_wifi_disable_pmf_config(int argc, char **argv)
+{
+    wifi_interface_t ifx;
+    if (argc < 2 || parse_iface(argv[1], &ifx)) { eh_out("wifi_disable_pmf_config", -1, "err=USAGE"); return 0; }
+    eh_out_rc("wifi_disable_pmf_config", eh_host_wifi_disable_pmf_config(ifx));
     return 0;
 }
 
@@ -680,83 +692,84 @@ static int cmd_raw_tp(int argc, char **argv)
 #endif
 
 static const eh_api_entry_t s_cmds[] = {
-    { "sys_fw_version",         cmd_sys_fw_version,        "get CP firmware version" },
-    { "sys_get_mac",            cmd_sys_get_mac,           "sys_get_mac <sta|ap>" },
-    { "sys_set_mac",            cmd_sys_set_mac,           "sys_set_mac <sta|ap> <aa:bb:cc:dd:ee:ff>" },
-    { "sys_app_desc",           cmd_sys_app_desc,          "sys_app_desc — CP app descriptor (proj/ver)" },
+    { "sys_fw_version",         cmd_sys_fw_version,          "get CP firmware version" },
+    { "sys_get_mac",            cmd_sys_get_mac,             "sys_get_mac <sta|ap>" },
+    { "sys_set_mac",            cmd_sys_set_mac,             "sys_set_mac <sta|ap> <aa:bb:cc:dd:ee:ff>" },
+    { "sys_app_desc",           cmd_sys_app_desc,            "sys_app_desc — CP app descriptor (proj/ver)" },
 #if defined(CONFIG_ESP_HOSTED_HOST_FEAT_WIFI)
-    { "wifi_init",              cmd_wifi_init,             "wifi_init (defaults)" },
-    { "wifi_deinit",            cmd_wifi_deinit,           "wifi_deinit" },
-    { "wifi_start",             cmd_wifi_start,            "wifi_start" },
-    { "wifi_stop",              cmd_wifi_stop,             "wifi_stop" },
-    { "wifi_set_mode",          cmd_wifi_set_mode,         "wifi_set_mode <0-3>" },
-    { "wifi_get_mode",          cmd_wifi_get_mode,         "wifi_get_mode" },
-    { "wifi_set_ps",            cmd_wifi_set_ps,           "wifi_set_ps <0-2>" },
-    { "wifi_get_ps",            cmd_wifi_get_ps,           "wifi_get_ps" },
-    { "wifi_set_max_tx_power",  cmd_wifi_set_max_tx_power, "wifi_set_max_tx_power <dbm*4>" },
-    { "wifi_get_max_tx_power",  cmd_wifi_get_max_tx_power, "wifi_get_max_tx_power" },
-    { "wifi_set_country",       cmd_wifi_set_country,      "wifi_set_country <cc> <ieee80211d 0|1>" },
-    { "wifi_get_country",       cmd_wifi_get_country,      "wifi_get_country" },
-    { "wifi_set_channel",       cmd_wifi_set_channel,      "wifi_set_channel <primary> [second]" },
-    { "wifi_get_channel",       cmd_wifi_get_channel,      "wifi_get_channel" },
-    { "wifi_set_protocol",      cmd_wifi_set_protocol,     "wifi_set_protocol <sta|ap> <bitmap>" },
-    { "wifi_get_protocol",      cmd_wifi_get_protocol,     "wifi_get_protocol <sta|ap>" },
-    { "wifi_set_bandwidth",     cmd_wifi_set_bandwidth,    "wifi_set_bandwidth <sta|ap> <bw>" },
-    { "wifi_get_bandwidth",     cmd_wifi_get_bandwidth,    "wifi_get_bandwidth <sta|ap>" },
-    { "wifi_set_inactive_time", cmd_wifi_set_inactive_time,"wifi_set_inactive_time <sta|ap> <sec>" },
-    { "wifi_get_inactive_time", cmd_wifi_get_inactive_time,"wifi_get_inactive_time <sta|ap>" },
-    { "wifi_set_band",          cmd_wifi_set_band,         "wifi_set_band <1=2G|2=5G>" },
-    { "wifi_get_band",          cmd_wifi_get_band,         "wifi_get_band" },
-    { "wifi_set_band_mode",     cmd_wifi_set_band_mode,    "wifi_set_band_mode <1=2G|2=5G|3=auto>" },
-    { "wifi_get_band_mode",     cmd_wifi_get_band_mode,    "wifi_get_band_mode" },
-    { "wifi_cfg_reset",         cmd_wifi_cfg_reset,        "wifi_cfg_reset — clear staged config" },
-    { "wifi_cfg_set",           cmd_wifi_cfg_set,          "wifi_cfg_set <field> <val> (sta_ssid|sta_channel|ap_ssid|ap_channel|ap_authmode|ap_max_conn|ap_hidden|…)" },
-    { "wifi_set_config",        cmd_wifi_set_config,       "wifi_set_config <sta|ap> — apply staged config" },
-    { "wifi_get_config",        cmd_wifi_get_config,       "wifi_get_config <sta|ap>" },
-    { "wifi_set_config_null",   cmd_wifi_set_config_null,  "wifi_set_config_null — NULL-arg guard (neg)" },
-    { "wifi_scan_start",        cmd_wifi_scan_start,       "wifi_scan_start [block 0|1]" },
-    { "wifi_scan_stop",         cmd_wifi_scan_stop,        "wifi_scan_stop" },
-    { "wifi_clear_ap_list",     cmd_wifi_clear_ap_list,    "wifi_clear_ap_list" },
-    { "wifi_scan_get_ap_num",   cmd_wifi_scan_get_ap_num,  "wifi_scan_get_ap_num" },
-    { "wifi_scan_dump",         cmd_wifi_scan_dump,        "wifi_scan_dump (list scanned SSIDs)" },
-    { "wifi_connect",           cmd_wifi_connect,          "wifi_connect (uses staged sta config)" },
-    { "wifi_disconnect",        cmd_wifi_disconnect,       "wifi_disconnect" },
-    { "wifi_restore",           cmd_wifi_restore,          "wifi_restore" },
-    { "wifi_set_storage",       cmd_wifi_set_storage,      "wifi_set_storage <0=flash|1=ram>" },
-    { "wifi_ap_get_sta_list",   cmd_wifi_ap_get_sta_list,  "wifi_ap_get_sta_list (AP: associated STAs)" },
-    { "wifi_ap_get_sta_aid",    cmd_wifi_ap_get_sta_aid,   "wifi_ap_get_sta_aid <aa:bb:cc:dd:ee:ff>" },
-    { "wifi_deauth_sta",        cmd_wifi_deauth_sta,       "wifi_deauth_sta <aid>" },
-    { "wifi_sta_get_rssi",      cmd_wifi_sta_get_rssi,     "wifi_sta_get_rssi (connected)" },
-    { "wifi_sta_get_aid",       cmd_wifi_sta_get_aid,      "wifi_sta_get_aid (connected)" },
-    { "wifi_sta_get_ap_info",   cmd_wifi_sta_get_ap_info,  "wifi_sta_get_ap_info (connected)" },
+    { "wifi_init",              cmd_wifi_init,               "wifi_init (defaults)" },
+    { "wifi_deinit",            cmd_wifi_deinit,             "wifi_deinit" },
+    { "wifi_start",             cmd_wifi_start,              "wifi_start" },
+    { "wifi_stop",              cmd_wifi_stop,               "wifi_stop" },
+    { "wifi_set_mode",          cmd_wifi_set_mode,           "wifi_set_mode <0-3>" },
+    { "wifi_get_mode",          cmd_wifi_get_mode,           "wifi_get_mode" },
+    { "wifi_set_ps",            cmd_wifi_set_ps,             "wifi_set_ps <0-2>" },
+    { "wifi_get_ps",            cmd_wifi_get_ps,             "wifi_get_ps" },
+    { "wifi_set_max_tx_power",  cmd_wifi_set_max_tx_power,   "wifi_set_max_tx_power <dbm*4>" },
+    { "wifi_get_max_tx_power",  cmd_wifi_get_max_tx_power,   "wifi_get_max_tx_power" },
+    { "wifi_set_country",       cmd_wifi_set_country,        "wifi_set_country <cc> <ieee80211d 0|1>" },
+    { "wifi_get_country",       cmd_wifi_get_country,        "wifi_get_country" },
+    { "wifi_set_channel",       cmd_wifi_set_channel,        "wifi_set_channel <primary> [second]" },
+    { "wifi_get_channel",       cmd_wifi_get_channel,        "wifi_get_channel" },
+    { "wifi_set_protocol",      cmd_wifi_set_protocol,       "wifi_set_protocol <sta|ap> <bitmap>" },
+    { "wifi_get_protocol",      cmd_wifi_get_protocol,       "wifi_get_protocol <sta|ap>" },
+    { "wifi_set_bandwidth",     cmd_wifi_set_bandwidth,      "wifi_set_bandwidth <sta|ap> <bw>" },
+    { "wifi_get_bandwidth",     cmd_wifi_get_bandwidth,      "wifi_get_bandwidth <sta|ap>" },
+    { "wifi_set_inactive_time", cmd_wifi_set_inactive_time,  "wifi_set_inactive_time <sta|ap> <sec>" },
+    { "wifi_get_inactive_time", cmd_wifi_get_inactive_time,  "wifi_get_inactive_time <sta|ap>" },
+    { "wifi_disable_pmf_config",cmd_wifi_disable_pmf_config, "wifi_disable_pmf_config <sta|ap>" },
+    { "wifi_set_band",          cmd_wifi_set_band,           "wifi_set_band <1=2G|2=5G>" },
+    { "wifi_get_band",          cmd_wifi_get_band,           "wifi_get_band" },
+    { "wifi_set_band_mode",     cmd_wifi_set_band_mode,      "wifi_set_band_mode <1=2G|2=5G|3=auto>" },
+    { "wifi_get_band_mode",     cmd_wifi_get_band_mode,      "wifi_get_band_mode" },
+    { "wifi_cfg_reset",         cmd_wifi_cfg_reset,          "wifi_cfg_reset — clear staged config" },
+    { "wifi_cfg_set",           cmd_wifi_cfg_set,            "wifi_cfg_set <field> <val> (sta_ssid|sta_channel|ap_ssid|ap_channel|ap_authmode|ap_max_conn|ap_hidden|…)" },
+    { "wifi_set_config",        cmd_wifi_set_config,         "wifi_set_config <sta|ap> — apply staged config" },
+    { "wifi_get_config",        cmd_wifi_get_config,         "wifi_get_config <sta|ap>" },
+    { "wifi_set_config_null",   cmd_wifi_set_config_null,    "wifi_set_config_null — NULL-arg guard (neg)" },
+    { "wifi_scan_start",        cmd_wifi_scan_start,         "wifi_scan_start [block 0|1]" },
+    { "wifi_scan_stop",         cmd_wifi_scan_stop,          "wifi_scan_stop" },
+    { "wifi_clear_ap_list",     cmd_wifi_clear_ap_list,      "wifi_clear_ap_list" },
+    { "wifi_scan_get_ap_num",   cmd_wifi_scan_get_ap_num,    "wifi_scan_get_ap_num" },
+    { "wifi_scan_dump",         cmd_wifi_scan_dump,          "wifi_scan_dump (list scanned SSIDs)" },
+    { "wifi_connect",           cmd_wifi_connect,            "wifi_connect (uses staged sta config)" },
+    { "wifi_disconnect",        cmd_wifi_disconnect,         "wifi_disconnect" },
+    { "wifi_restore",           cmd_wifi_restore,            "wifi_restore" },
+    { "wifi_set_storage",       cmd_wifi_set_storage,        "wifi_set_storage <0=flash|1=ram>" },
+    { "wifi_ap_get_sta_list",   cmd_wifi_ap_get_sta_list,    "wifi_ap_get_sta_list (AP: associated STAs)" },
+    { "wifi_ap_get_sta_aid",    cmd_wifi_ap_get_sta_aid,     "wifi_ap_get_sta_aid <aa:bb:cc:dd:ee:ff>" },
+    { "wifi_deauth_sta",        cmd_wifi_deauth_sta,         "wifi_deauth_sta <aid>" },
+    { "wifi_sta_get_rssi",      cmd_wifi_sta_get_rssi,       "wifi_sta_get_rssi (connected)" },
+    { "wifi_sta_get_aid",       cmd_wifi_sta_get_aid,        "wifi_sta_get_aid (connected)" },
+    { "wifi_sta_get_ap_info",   cmd_wifi_sta_get_ap_info,    "wifi_sta_get_ap_info (connected)" },
     { "wifi_sta_get_negotiated_phymode", cmd_wifi_sta_get_negotiated_phymode, "wifi_sta_get_negotiated_phymode (connected)" },
 #endif
 #if defined(CONFIG_ESP_HOSTED_HOST_FEAT_WIFI_EXT_ITWT_READY)
-    { "wifi_itwt_setup",        cmd_wifi_itwt_setup,       "wifi_itwt_setup [setup_cmd bitmask_1 min_wake_dura wake_invl_mant twt_id timeout_ms]" },
-    { "wifi_itwt_teardown",     cmd_wifi_itwt_teardown,    "wifi_itwt_teardown [flow_id]" },
-    { "wifi_itwt_suspend",      cmd_wifi_itwt_suspend,     "wifi_itwt_suspend [flow_id] [suspend_ms]" },
-    { "wifi_itwt_probe",        cmd_wifi_itwt_probe,       "wifi_itwt_probe [timeout_ms]" },
-    { "wifi_itwt_offset",       cmd_wifi_itwt_offset,      "wifi_itwt_offset [offset_us]" },
-    { "wifi_itwt_flow_status",  cmd_wifi_itwt_flow_status, "wifi_itwt_flow_status" },
+    { "wifi_itwt_setup",        cmd_wifi_itwt_setup,         "wifi_itwt_setup [setup_cmd bitmask_1 min_wake_dura wake_invl_mant twt_id timeout_ms]" },
+    { "wifi_itwt_teardown",     cmd_wifi_itwt_teardown,      "wifi_itwt_teardown [flow_id]" },
+    { "wifi_itwt_suspend",      cmd_wifi_itwt_suspend,       "wifi_itwt_suspend [flow_id] [suspend_ms]" },
+    { "wifi_itwt_probe",        cmd_wifi_itwt_probe,         "wifi_itwt_probe [timeout_ms]" },
+    { "wifi_itwt_offset",       cmd_wifi_itwt_offset,        "wifi_itwt_offset [offset_us]" },
+    { "wifi_itwt_flow_status",  cmd_wifi_itwt_flow_status,   "wifi_itwt_flow_status" },
 #endif
 #if defined(CONFIG_ESP_HOSTED_HOST_FEAT_GPIO_EXP)
-    { "gpio_init",              cmd_gpio_init,             "gpio_init" },
-    { "gpio_set_level",         cmd_gpio_set_level,        "gpio_set_level <pin> <0|1>" },
-    { "gpio_get_level",         cmd_gpio_get_level,        "gpio_get_level <pin>" },
-    { "gpio_set_direction",     cmd_gpio_set_direction,    "gpio_set_direction <pin> <mode>" },
-    { "gpio_reset_pin",         cmd_gpio_reset_pin,        "gpio_reset_pin <pin>" },
-    { "gpio_input_enable",      cmd_gpio_input_enable,     "gpio_input_enable <pin>" },
-    { "gpio_set_pull_mode",     cmd_gpio_set_pull_mode,    "gpio_set_pull_mode <pin> <0=down|1=up>" },
+    { "gpio_init",              cmd_gpio_init,               "gpio_init" },
+    { "gpio_set_level",         cmd_gpio_set_level,          "gpio_set_level <pin> <0|1>" },
+    { "gpio_get_level",         cmd_gpio_get_level,          "gpio_get_level <pin>" },
+    { "gpio_set_direction",     cmd_gpio_set_direction,      "gpio_set_direction <pin> <mode>" },
+    { "gpio_reset_pin",         cmd_gpio_reset_pin,          "gpio_reset_pin <pin>" },
+    { "gpio_input_enable",      cmd_gpio_input_enable,       "gpio_input_enable <pin>" },
+    { "gpio_set_pull_mode",     cmd_gpio_set_pull_mode,      "gpio_set_pull_mode <pin> <0=down|1=up>" },
 #endif
 #if defined(CONFIG_ESP_HOSTED_HOST_FEAT_CP_EXT_COEX)
-    { "coex_init",              cmd_coex_init,             "coex_init" },
-    { "coex_set_work_mode",     cmd_coex_set_work_mode,    "coex_set_work_mode <0=leader|2=follower>" },
-    { "coex_set_grant_delay",   cmd_coex_set_grant_delay,  "coex_set_grant_delay <us>" },
-    { "coex_set_validate_high", cmd_coex_set_validate_high,"coex_set_validate_high <0|1>" },
-    { "coex_disable",           cmd_coex_disable,          "coex_disable" },
+    { "coex_init",              cmd_coex_init,               "coex_init" },
+    { "coex_set_work_mode",     cmd_coex_set_work_mode,      "coex_set_work_mode <0=leader|2=follower>" },
+    { "coex_set_grant_delay",   cmd_coex_set_grant_delay,    "coex_set_grant_delay <us>" },
+    { "coex_set_validate_high", cmd_coex_set_validate_high,  "coex_set_validate_high <0|1>" },
+    { "coex_disable",           cmd_coex_disable,            "coex_disable" },
 #endif
 #if CONFIG_ESP_HOSTED_RAW_THROUGHPUT_TRANSPORT
-    { "raw_tp",                 cmd_raw_tp,                "raw_tp start tx|rx|both | raw_tp stop" },
+    { "raw_tp",                 cmd_raw_tp,                  "raw_tp start tx|rx|both | raw_tp stop" },
 #endif
 };
 

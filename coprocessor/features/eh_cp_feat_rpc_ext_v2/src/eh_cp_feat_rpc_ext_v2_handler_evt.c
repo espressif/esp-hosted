@@ -30,8 +30,6 @@ static const char* TAG = "ehcp_mcu_rpc_evt";
 #define SUCCESS 0
 #define FAILURE -1
 
-extern uint32_t hb_num;
-
 esp_err_t rpc_evt_ESPInit(Rpc *ntfy)
 {
     NTFY_TEMPLATE_SIMPLE(RPC_ID__Event_ESPInit,
@@ -48,7 +46,7 @@ esp_err_t rpc_evt_heartbeat(Rpc *ntfy)
             RpcEventHeartbeat, event_heartbeat,
             rpc__event__heartbeat__init);
 
-    ntfy_payload->hb_num = hb_num;
+    EH_ASSIGN_NARROW(ntfy_payload->hb_num, hb_num);
     return ESP_OK;
 }
 
@@ -56,9 +54,9 @@ esp_err_t rpc_evt_heartbeat(Rpc *ntfy)
 
 /* Copy IDF sta_config into RPC payload — `type` selects destination shape. */
 esp_err_t copy_wifi_sta_cfg_to_rpc_struct(void *payload, rpc_payload_type_t type,
-		wifi_sta_config_t *sta_cfg)
+		const wifi_sta_config_t *sta_cfg)
 {
-	wifi_sta_config_t * p_a_sta = sta_cfg;
+	const wifi_sta_config_t * p_a_sta = sta_cfg;
 	WifiStaConfig * p_c_sta = NULL;
 
 	if (!payload) {
@@ -92,6 +90,9 @@ esp_err_t copy_wifi_sta_cfg_to_rpc_struct(void *payload, rpc_payload_type_t type
 		break;
 		}
 #endif
+	default: {
+		break;
+		}
 	}
 
 	if (!p_c_sta) {
@@ -148,11 +149,11 @@ esp_err_t copy_wifi_sta_cfg_to_rpc_struct(void *payload, rpc_payload_type_t type
 
 	/* WIFI_STA_CONFIG_2_he_dcm_max_constellation_tx is two bits wide */
 	if (p_a_sta->he_dcm_max_constellation_tx & 0x03) {
-		p_c_sta->he_bitmask |= (p_a_sta->he_dcm_max_constellation_tx & 0x03) << WIFI_STA_CONFIG_2_he_dcm_max_constellation_tx_BITS;
+		p_c_sta->he_bitmask |= (p_a_sta->he_dcm_max_constellation_tx & 0x03u) << WIFI_STA_CONFIG_2_he_dcm_max_constellation_tx_BITS;
 	}
 	/* WIFI_STA_CONFIG_2_he_dcm_max_constellation_rx is two bits wide */
 	if (p_a_sta->he_dcm_max_constellation_rx & 0x03) {
-		p_c_sta->he_bitmask |= (p_a_sta->he_dcm_max_constellation_rx & 0x03) << WIFI_STA_CONFIG_2_he_dcm_max_constellation_rx_BITS;
+		p_c_sta->he_bitmask |= (p_a_sta->he_dcm_max_constellation_rx & 0x03u) << WIFI_STA_CONFIG_2_he_dcm_max_constellation_rx_BITS;
 	}
 
 	if (p_a_sta->he_mcs9_enabled)
@@ -196,7 +197,7 @@ esp_err_t rpc_evt_sta_scan_done(Rpc *ntfy,
         const uint8_t *data, ssize_t len, int event_id)
 {
     WifiEventStaScanDone *p_c_scan = NULL;
-    wifi_event_sta_scan_done_t * p_a = (wifi_event_sta_scan_done_t*)data;
+    const wifi_event_sta_scan_done_t * p_a = (const wifi_event_sta_scan_done_t *)(const void *)data;
 
     NTFY_TEMPLATE(RPC_ID__Event_StaScanDone,
             RpcEventStaScanDone, event_sta_scan_done,
@@ -218,7 +219,7 @@ esp_err_t rpc_evt_sta_connected(Rpc *ntfy,
         const uint8_t *data, ssize_t len, int event_id)
 {
     WifiEventStaConnected *p_c = NULL;
-    wifi_event_sta_connected_t * p_a = (wifi_event_sta_connected_t*)data;
+    const wifi_event_sta_connected_t * p_a = (const wifi_event_sta_connected_t *)(const void *)data;
 
     NTFY_TEMPLATE(RPC_ID__Event_StaConnected,
             RpcEventStaConnected, event_sta_connected,
@@ -247,7 +248,7 @@ esp_err_t rpc_evt_sta_disconnected(Rpc *ntfy,
         const uint8_t *data, ssize_t len, int event_id)
 {
     WifiEventStaDisconnected *p_c = NULL;
-    wifi_event_sta_disconnected_t * p_a = (wifi_event_sta_disconnected_t*)data;
+    const wifi_event_sta_disconnected_t * p_a = (const wifi_event_sta_disconnected_t *)(const void *)data;
 
     NTFY_TEMPLATE(RPC_ID__Event_StaDisconnected,
             RpcEventStaDisconnected, event_sta_disconnected,
@@ -281,7 +282,7 @@ esp_err_t rpc_evt_ap_staconn_conn_disconn(Rpc *ntfy,
                 RpcEventAPStaConnected, event_ap_sta_connected,
                 rpc__event__ap__sta_connected__init);
 
-        wifi_event_ap_staconnected_t * p_a = (wifi_event_ap_staconnected_t *)data;
+        const wifi_event_ap_staconnected_t * p_a = (const wifi_event_ap_staconnected_t *)(const void *)data;
 
         NTFY_COPY_BYTES(ntfy_payload->mac, p_a->mac, sizeof(p_a->mac));
 
@@ -295,7 +296,7 @@ esp_err_t rpc_evt_ap_staconn_conn_disconn(Rpc *ntfy,
                 RpcEventAPStaDisconnected, event_ap_sta_disconnected,
                 rpc__event__ap__sta_disconnected__init);
 
-        wifi_event_ap_stadisconnected_t * p_a = (wifi_event_ap_stadisconnected_t *)data;
+        const wifi_event_ap_stadisconnected_t * p_a = (const wifi_event_ap_stadisconnected_t *)(const void *)data;
 
         NTFY_COPY_BYTES(ntfy_payload->mac, p_a->mac, sizeof(p_a->mac));
 
@@ -312,7 +313,7 @@ esp_err_t rpc_evt_ap_staconn_conn_disconn(Rpc *ntfy,
 esp_err_t rpc_evt_itwt_setup(Rpc *ntfy,
         const uint8_t *data, ssize_t len, int event_id)
 {
-    wifi_event_sta_itwt_setup_t *p_a = (wifi_event_sta_itwt_setup_t*)data;
+    const wifi_event_sta_itwt_setup_t * p_a = (const wifi_event_sta_itwt_setup_t *)(const void *)data;
     RpcEventStaItwtSetup *p_c = NULL;
 
     ESP_LOGI(TAG, "%s event:%u",__func__,event_id);
@@ -336,11 +337,11 @@ esp_err_t rpc_evt_itwt_setup(Rpc *ntfy,
 
     /* WIFI_ITWT_CONFIG_1_flow_id_BIT is three bits wide */
     if (p_a->config.flow_id & 0x07)
-        p_c->config->bitmask_1 |= (p_a->config.flow_id & 0x07) << WIFI_ITWT_CONFIG_1_flow_id_BIT;
+        p_c->config->bitmask_1 |= (p_a->config.flow_id & 0x07u) << WIFI_ITWT_CONFIG_1_flow_id_BIT;
 
     /* WIFI_ITWT_CONFIG_1_wake_invl_expn_BIT is five bits wide */
     if (p_a->config.wake_invl_expn & 0x1F)
-        p_c->config->bitmask_1 |= (p_a->config.wake_invl_expn & 0x1F) << WIFI_ITWT_CONFIG_1_wake_invl_expn_BIT;
+        p_c->config->bitmask_1 |= (p_a->config.wake_invl_expn & 0x1Fu) << WIFI_ITWT_CONFIG_1_wake_invl_expn_BIT;
 
     if (p_a->config.wake_duration_unit)
         EH_CP_SET_BIT(WIFI_ITWT_CONFIG_1_wake_duration_unit_BIT, p_c->config->bitmask_1);
@@ -364,7 +365,7 @@ esp_err_t rpc_evt_itwt_setup(Rpc *ntfy,
 esp_err_t rpc_evt_itwt_teardown(Rpc *ntfy,
         const uint8_t *data, ssize_t len, int event_id)
 {
-    wifi_event_sta_itwt_teardown_t *p_a = (wifi_event_sta_itwt_teardown_t*)data;
+    const wifi_event_sta_itwt_teardown_t * p_a = (const wifi_event_sta_itwt_teardown_t *)(const void *)data;
     RpcEventStaItwtTeardown *p_c = NULL;
 
     ESP_LOGI(TAG, "%s event:%u",__func__,event_id);
@@ -384,7 +385,7 @@ esp_err_t rpc_evt_itwt_teardown(Rpc *ntfy,
 esp_err_t rpc_evt_itwt_suspend(Rpc *ntfy,
         const uint8_t *data, ssize_t len, int event_id)
 {
-    wifi_event_sta_itwt_suspend_t *p_a = (wifi_event_sta_itwt_suspend_t*)data;
+    const wifi_event_sta_itwt_suspend_t * p_a = (const wifi_event_sta_itwt_suspend_t *)(const void *)data;
     RpcEventStaItwtSuspend *p_c = NULL;
     int i;
     int num_elements = sizeof(p_a->actual_suspend_time_ms) / sizeof(p_a->actual_suspend_time_ms[0]);
@@ -410,7 +411,7 @@ esp_err_t rpc_evt_itwt_suspend(Rpc *ntfy,
     for (i = 0; i < num_elements; i++) {
         p_c->actual_suspend_time_ms[i] = p_a->actual_suspend_time_ms[i];
     }
-    p_c->n_actual_suspend_time_ms = num_elements;
+    EH_ASSIGN_NARROW(p_c->n_actual_suspend_time_ms, num_elements);
  err:
     return ESP_OK;
 }
@@ -418,7 +419,7 @@ esp_err_t rpc_evt_itwt_suspend(Rpc *ntfy,
 esp_err_t rpc_evt_itwt_probe(Rpc *ntfy,
         const uint8_t *data, ssize_t len, int event_id)
 {
-    wifi_event_sta_itwt_probe_t *p_a = (wifi_event_sta_itwt_probe_t*)data;
+    const wifi_event_sta_itwt_probe_t * p_a = (const wifi_event_sta_itwt_probe_t *)(const void *)data;
     RpcEventStaItwtProbe *p_c = NULL;
 
     ESP_LOGI(TAG, "%s event:%u",__func__,event_id);
@@ -462,7 +463,7 @@ esp_err_t rpc_evt_Event_DhcpDnsStatus(Rpc *ntfy,
 #if EH_CP_FEAT_NW_SPLIT_READY && defined(CONFIG_LWIP_ENABLE)
     /* C9: event data is the nw_split status struct — use directly */
     {
-        eh_cp_feat_nw_split_status_t * p_a = (eh_cp_feat_nw_split_status_t*)data;
+        const eh_cp_feat_nw_split_status_t * p_a = (const eh_cp_feat_nw_split_status_t *)(const void *)data;
         if (!p_a) {
             ESP_LOGE(TAG, "Invalid network split status");
             ntfy_payload->resp = FAILURE;
@@ -495,7 +496,7 @@ esp_err_t rpc_evt_Event_DhcpDnsStatus(Rpc *ntfy,
 esp_err_t rpc_evt_wifi_dpp_uri_ready(Rpc *ntfy,
 		const uint8_t *data, ssize_t len)
 {
-	wifi_event_dpp_uri_ready_t *uri = (wifi_event_dpp_uri_ready_t *)data;
+	const wifi_event_dpp_uri_ready_t * uri = (const wifi_event_dpp_uri_ready_t *)(const void *)data;
 	int uri_len = uri->uri_data_len;
 
 	NTFY_TEMPLATE(RPC_ID__Event_WifiDppUriReady,
@@ -511,9 +512,9 @@ esp_err_t rpc_evt_wifi_dpp_uri_ready(Rpc *ntfy,
 esp_err_t rpc_evt_wifi_dpp_cfg_recvd(Rpc *ntfy,
 		const uint8_t *data, ssize_t len)
 {
-	wifi_event_dpp_config_received_t *config = (wifi_event_dpp_config_received_t *)data;
-	wifi_config_t *wifi_config = &config->wifi_cfg;
-	wifi_sta_config_t *sta_config = &(wifi_config->sta);
+	const wifi_event_dpp_config_received_t * config = (const wifi_event_dpp_config_received_t *)(const void *)data;
+	const wifi_config_t *wifi_config = &config->wifi_cfg;
+	const wifi_sta_config_t *sta_config = &(wifi_config->sta);
 	esp_err_t res;
 
 	NTFY_TEMPLATE(RPC_ID__Event_WifiDppCfgRecvd,
@@ -543,7 +544,7 @@ esp_err_t rpc_evt_wifi_dpp_fail(Rpc *ntfy,
 			RpcEventWifiDppFail, event_wifi_dpp_fail,
 			rpc__event__wifi_dpp_fail__init);
 
-	wifi_event_dpp_failed_t *failed = (wifi_event_dpp_failed_t *)data;
+	const wifi_event_dpp_failed_t * failed = (const wifi_event_dpp_failed_t *)(const void *)data;
 	int reason = failed->failure_reason;
 
 	ntfy_payload->reason = reason;
@@ -615,7 +616,7 @@ esp_err_t rpc_evt_mem_monitor(Rpc *ntfy, const uint8_t *inbuf, size_t inlen)
             RpcEventMemMonitor, event_mem_monitor,
             rpc__event__mem_monitor__init);
 
-    mem_monitor_evt_data_t *ptr = (mem_monitor_evt_data_t *)inbuf;
+    const mem_monitor_evt_data_t *ptr = (const mem_monitor_evt_data_t *)inbuf;
 
     NTFY_ALLOC_ELEMENT(HeapInfo, ntfy_payload->curr_internal, heap_info__init);
     NTFY_ALLOC_ELEMENT(MemInfo, ntfy_payload->curr_internal->mem_dma, mem_info__init);

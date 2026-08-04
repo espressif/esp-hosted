@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2026 Espressif Systems (Shanghai) CO LTD
+# SPDX-License-Identifier: Apache-2.0
 """EmuTarget — the esp-emu substrate: a C6 CP + P4 host joined by a Unix-socket
 bridge (SDIO or framed-UART). Each DUT is an `EmuDut` over one `esp-emu` process.
 
@@ -110,7 +112,7 @@ class EmuTarget(BenchProvider):
     def __init__(self):
         pass  # per-bench resources come from lab.alloc_bench (survives EmuTarget churn)
 
-    def make(self, spec: BenchSpec, *, worker_id, lab_tmp) -> Bench:
+    def make(self, spec: BenchSpec, *, worker_id, lab_tmp, pre_launch=None) -> Bench:
         emu = emu_bin()
         timeout = os.environ.get("EH_EMU_TIMEOUT", spec.timeout)  # per-phase override
         transport = spec.transport
@@ -230,8 +232,36 @@ class EmuTarget(BenchProvider):
         net_arg = ["--net", "user," + ",".join(
             f"hostfwd=tcp:127.0.0.1:{hp}-:{gp}" for gp, hp in fwd.items())] if fwd else []
 
+        # BLE connect/GATT via Bumble: forward the CP's HCI to a Bumble virtual
+        # controller (the host's peripheral HCI reaches it over the transport).
+        _ble_port = os.environ.get("EH_BLE_HCI_PORT")
+        ble_arg = ["--ble-hci", f"tcp:localhost:{_ble_port}"] if _ble_port else []
+        # OpenThread/Zigbee: the RCP↔host spinel link is a DEDICATED UART, separate
+        # from the SDIO/SPI control transport — bridge it as a 2nd --hosted-uart
+        # (UART1) over its own socket. The RCP's 802.15.4 radio rides --thread-sim
+        # to a peer (the test sets EH_THREAD_SIM_CP="bind:PA,peer:127.0.0.1:PB" and
+        # spawns that peer). Both env-driven, mirroring EH_BLE_HCI_PORT.
+        spinel_cp = spinel_host = []
+        if os.environ.get("EH_OT_SPINEL"):
+            spin_sock = lab.sock_path(worker_id, f"spin_{slot}")
+            try:
+                os.unlink(spin_sock)
+            except OSError:
+                pass
+            spinel_cp = ["--hosted-uart", f"bridge:slave:{spin_sock}"]
+            spinel_host = ["--hosted-uart", f"bridge:host:{spin_sock}"]
+        _ts_cp = os.environ.get("EH_THREAD_SIM_CP")
+        thread_arg = ["--thread-sim", _ts_cp] if _ts_cp else []
+        # Firmware is built and bridges are resolved; the DUTs are about to launch.
+        # Run the test's pre_launch hook HERE so an external peer (e.g. Bumble)
+        # opens its connect window now — after the (possibly cold-cache, minutes-
+        # long) build, not before it. Placed after the prewarm-skip so a build-only
+        # prewarm pass never starts a peer with no emu to answer it.
+        if pre_launch is not None:
+            pre_launch()
         cp = EmuDut("cp", [str(emu), "--chip", spec.cp_target, "--firmware", cp_flash,
-                           "--elf", cp_fw["elf"], *cp_bridge, *net_arg, "--timeout", timeout],
+                           "--elf", cp_fw["elf"], *cp_bridge, *spinel_cp, *thread_arg,
+                           *ble_arg, *net_arg, "--timeout", timeout],
                     lab_tmp / f"cp_{spec.transport}.log")
         # Deterministic ordering: wait for the slave socket before the host connects
         # (polls; returns the instant it appears — no fixed sleep).
@@ -239,7 +269,7 @@ class EmuTarget(BenchProvider):
         while not os.path.exists(sock) and time.time() < end and cp.proc.poll() is None:
             time.sleep(0.05)
         host = EmuDut("host", [str(emu), "--chip", spec.host_target, "--firmware", host_flash,
-                               "--elf", host_fw["elf"], *host_bridge, "--timeout", timeout],
+                               "--elf", host_fw["elf"], *host_bridge, *spinel_host, "--timeout", timeout],
                       lab_tmp / f"host_{spec.transport}.log")
 
         def down():

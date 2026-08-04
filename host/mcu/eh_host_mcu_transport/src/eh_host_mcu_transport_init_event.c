@@ -19,6 +19,7 @@
 #include "eh_host_mcu_transport_init_event.h"
 #include "esp_log.h"
 #include "eh_host_port_tags.h"   /* EH_HOST_PORT_RETAIN_ATTR */
+#include "eh_host_raw_tp_stats.h"
 
 /* Host always speaks RPC V2 (msg_id dispatch via rpc_v2.proto). */
 #define EH_HOST_RPC_WIRE_VERSION  ESP_HOSTED_RPC_VERSION_V2

@@ -141,6 +141,7 @@ static inline esp_err_t populate_buff_handle(interface_buffer_handle_t *buf_hand
 	populate_buff_handle(Buf_hdL, TypE, BuF, LeN, esp_wifi_internal_free_rx_buffer, eb, 0, 0, 0);
 
 
+esp_err_t wlan_ap_rx_callback(void *buffer, uint16_t len, void *eb);
 esp_err_t wlan_ap_rx_callback(void *buffer, uint16_t len, void *eb)
 {
 	interface_buffer_handle_t buf_handle = {0};
@@ -259,7 +260,8 @@ static void process_tx_pkt(interface_buffer_handle_t *buf_handle)
 
 static esp_err_t host_to_slave_reconfig(uint8_t *evt_buf, uint16_t len)
 {
-	uint8_t len_left = len, tag_len;
+	uint16_t len_left = len;
+	uint8_t tag_len;
 	uint8_t *pos;
 	int ret = ESP_OK;
 
@@ -273,7 +275,7 @@ static esp_err_t host_to_slave_reconfig(uint8_t *evt_buf, uint16_t len)
 		tag_len = *(pos + 1);
 
 		/* TLV is type(1) + len(1) + value(tag_len). */
-		if ((uint16_t)tag_len + 2 > len_left) {
+		if ((uint16_t)tag_len + 2u > len_left) {
 			ESP_LOGW(TAG, "TLV truncated: tag=0x%02x len=%u remaining=%u — aborting parse",
 			         *pos, tag_len, len_left);
 			break;
@@ -361,11 +363,11 @@ static esp_err_t host_to_slave_reconfig(uint8_t *evt_buf, uint16_t len)
 #endif
 				frame_cfg.checksum_enabled = EH_CP_CHECKSUM;
 				frame_cfg.hdr_version = ESP_HOSTED_HDR_VERSION_V2;
-				esp_err_t ret = eh_frame_init(&frame_cfg);
-				if (ret == ESP_OK) {
+				esp_err_t frame_rc = eh_frame_init(&frame_cfg);
+				if (frame_rc == ESP_OK) {
 					ESP_LOGI(TAG, "Frame component upgraded to V2 (20-byte header)");
 				} else {
-					ESP_LOGE(TAG, "Failed to upgrade frame component to V2: %d", ret);
+					ESP_LOGE(TAG, "Failed to upgrade frame component to V2: %d", frame_rc);
 				}
 			} else {
 				hdr_ver_negotiated = ESP_HOSTED_HDR_VERSION_V1;
@@ -556,7 +558,7 @@ static void process_rx_pkt(interface_buffer_handle_t *buf_handle)
 			goto done;
 		}
 
-		uint8_t *new_buf = realloc(s_serial_rx.data, s_serial_rx.len + payload_len);
+		uint8_t *new_buf = realloc(s_serial_rx.data, (size_t)(s_serial_rx.len + payload_len));
 		if (!new_buf) {
 			ESP_LOGE(TAG, "serial_rx_pkt: realloc failed (need %d bytes)",
 			         s_serial_rx.len + payload_len);
@@ -672,12 +674,12 @@ static void power_save_alert_task(void *pvParameters)
     vTaskDelete(NULL);
 }
 
-esp_err_t eh_cp_handle_power_save_alert(uint32_t event)
+static esp_err_t eh_cp_handle_power_save_alert(uint32_t event)
 {
 	return xTaskCreate(power_save_alert_task, "ps_alert_task", 3072, (void *)event, tskIDLE_PRIORITY + 5, NULL);
 }
 
-int event_handler(uint8_t val)
+static int event_handler(uint8_t val)
 {
 	switch(val) {
 		case ESP_OPEN_DATA_PATH:
@@ -720,6 +722,10 @@ int event_handler(uint8_t val)
 			datapath = 1;
 			if_handle->state = ACTIVE;
 			eh_cp_handle_power_save_alert(ESP_POWER_SAVE_OFF);
+			break;
+
+		default:
+			ESP_EARLY_LOGW(TAG, "event_handler: unknown event %u", (unsigned)val);
 			break;
 	}
 	return 0;
@@ -1081,7 +1087,7 @@ static void auto_feat_init_task(void *pvParameters)
         const eh_cp_feat_desc_t *d = &_eh_cp_feat_descs_start + i;
         ESP_LOGI(TAG, "  desc[%zu] name='%s' prio=%d init=%p deinit=%p @%p",
                  i, d->name ? d->name : "(null)", (int)d->priority,
-                 (void *)d->init_fn, (void *)d->deinit_fn, (const void *)d);
+                 (void *)(uintptr_t)d->init_fn, (void *)(uintptr_t)d->deinit_fn, (const void *)d);
     }
 
     if (n == 0) {

@@ -32,6 +32,15 @@ if ESP_HOSTED_HOST_FEAT_SYSTEM
 		default y
 		depends on ESP_HOSTED_HOST_AUTO_FEAT_INIT
 
+	config ESP_HOSTED_HOST_OTA_BEGIN_TIMEOUT_MS
+		int "OTA begin RPC timeout (ms)"
+		default 30000
+		range 5000 120000
+		help
+		  The CP erases its OTA partition inside the begin handler
+		  before replying, which can exceed the default sync-RPC
+		  timeout. Applied to OTA begin only.
+
 	config ESP_HOSTED_HOST_FEAT_OTA_READY
 		bool
 		default y if ESP_HOSTED_HOST_FEAT_OTA && \

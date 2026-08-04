@@ -19,7 +19,7 @@
 
 #define EH_HOST_RPC_SET_BIT(pos, val)             ((val) |= (1u << (pos)))
 
-#define EH_HOST_RPC_GET_BIT(pos, val)             (((val) & (1u << (pos))) ? 1 : 0)
+#define EH_HOST_RPC_GET_BIT(pos, val)             (((val) >> (pos)) & 1u)
 
 enum {
     EH_HOST_WIFI_SCAN_AP_REC_phy_11b_BIT       = 0,

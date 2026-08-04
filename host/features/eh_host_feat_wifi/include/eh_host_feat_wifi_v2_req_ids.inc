@@ -44,6 +44,7 @@
     case RPC_ID__Req_WifiSetStorage:
     case RPC_ID__Req_WifiSetInactiveTime:
     case RPC_ID__Req_WifiGetInactiveTime:
+    case RPC_ID__Req_WifiDisablePmfConfig:
     case RPC_ID__Req_WifiSetBand:
     case RPC_ID__Req_WifiGetBand:
     case RPC_ID__Req_WifiSetBandMode:

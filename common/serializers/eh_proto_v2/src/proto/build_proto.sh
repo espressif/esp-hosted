@@ -33,8 +33,8 @@ protoc \
     --c_out="${TMP_DIR}" \
     "${PROTO_FILE}"
 
-GEN_H="${TMP_DIR}/esp_hosted_rpc.pb-c.h"
-GEN_C="${TMP_DIR}/esp_hosted_rpc.pb-c.c"
+GEN_H="${TMP_DIR}/rpc_v2.pb-c.h"
+GEN_C="${TMP_DIR}/rpc_v2.pb-c.c"
 
 if [[ ! -f "${GEN_H}" || ! -f "${GEN_C}" ]]; then
     echo "Generated files missing"
@@ -49,7 +49,7 @@ mv -f "${GEN_C}" "${OUT_C}"
 
 # Rewrite include to match the renamed header.
 sed -i.bak \
-    -e 's|#include "esp_hosted_rpc.pb-c.h"|#include "gen_v2.h"|' \
+    -e 's|#include "rpc_v2.pb-c.h"|#include "gen_v2.h"|' \
     "${OUT_C}"
 rm -f "${OUT_C}.bak"
 

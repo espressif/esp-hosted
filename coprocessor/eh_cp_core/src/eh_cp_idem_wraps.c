@@ -4,6 +4,7 @@
 #include "esp_err.h"
 
 esp_err_t __real_esp_event_loop_create_default(void);
+esp_err_t __wrap_esp_event_loop_create_default(void);
 
 esp_err_t __wrap_esp_event_loop_create_default(void)
 {
@@ -18,6 +19,9 @@ esp_err_t __wrap_esp_event_loop_create_default(void)
 esp_err_t __real_esp_netif_init(void);
 esp_netif_t *__real_esp_netif_create_default_wifi_sta(void);
 esp_netif_t *__real_esp_netif_create_default_wifi_ap(void);
+esp_err_t __wrap_esp_netif_init(void);
+esp_netif_t *__wrap_esp_netif_create_default_wifi_sta(void);
+esp_netif_t *__wrap_esp_netif_create_default_wifi_ap(void);
 
 esp_err_t __wrap_esp_netif_init(void)
 {

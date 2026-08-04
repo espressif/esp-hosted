@@ -76,9 +76,9 @@ eh_host_port_err_t eh_host_port_task_create(const eh_host_port_task_create_cfg_t
 
     size_t stack_bytes = cfg->stack_bytes ? cfg->stack_bytes
                                           : (size_t)EH_HOST_PORT_DFLT_TASK_STACK;
-    UBaseType_t prio   = (UBaseType_t)(cfg->priority > 0
-                                        ? cfg->priority
-                                        : tskIDLE_PRIORITY + 5);
+    UBaseType_t prio   = cfg->priority > 0
+                             ? (UBaseType_t)cfg->priority
+                             : (UBaseType_t)(tskIDLE_PRIORITY + 5);
     const char *name = cfg->name ? cfg->name : "eh_host_port_task";
     uint32_t depth = (uint32_t)(stack_bytes / sizeof(StackType_t));
 

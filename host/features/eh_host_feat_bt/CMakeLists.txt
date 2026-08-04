@@ -20,14 +20,7 @@ target_link_libraries(eh_host_feat_bt
         eh_common
 )
 
-# Force-pull TU so EH_HOST_FEAT_REGISTER descriptor lands in feat_descs section.
-if(CONFIG_ESP_HOSTED_HOST_FEAT_BT_AUTO_INIT)
-    target_link_options(eh_host_feat_bt INTERFACE
-        "-Wl,--undefined=eh_host_feat_bt_init")
-endif()
-
-
-target_link_libraries(eh_host_feat_bt PRIVATE eh_host_autoinit)
+# No BT auto-init: the esp_hosted_bt_host_stack adapter calls setup explicitly.
 
 # HCI byte pipe is MCU-host-only (Linux user-space BT is kmod/BlueZ).
 if(CONFIG_ESP_HOSTED_HOST_TRANSPORT_MCU_READY)
@@ -44,7 +37,5 @@ target_link_libraries(eh_host_feat_bt PRIVATE
     eh_proto_v2
 )
 
-# AUTO_SET_MAC reaches into the system feature for eh_host_iface_mac_addr_set.
-if(CONFIG_ESP_HOSTED_HOST_FEAT_BT_AUTO_SET_MAC)
-    target_link_libraries(eh_host_feat_bt PRIVATE eh_host_feat_system)
-endif()
+# eh_host_bt_apply_mac() uses the system feature's MAC setter.
+target_link_libraries(eh_host_feat_bt PRIVATE eh_host_feat_system)

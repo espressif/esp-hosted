@@ -1,4 +1,8 @@
-/* SPDX-License-Identifier: Apache-2.0 */
+/*
+ * SPDX-FileCopyrightText: 2026 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 /* One-call init/deinit facade over vserial + base RPC + auto-init features. */
 
 #include <errno.h>
@@ -49,7 +53,9 @@ typedef enum {
 static eh_host_port_mutex_t  *s_bringup_lock;
 static volatile bringup_state_t s_bringup_state = BRINGUP_IDLE;
 
-/* Idempotent: second invocations are no-ops if the mutexes already exist. */
+/* Idempotent: second invocations are no-ops if the mutexes already exist.
+ * Internal bring-up detail (not public API); called by the auto-init constructor. */
+void eh_host_core_lifecycle_locks_init(void);
 void eh_host_core_lifecycle_locks_init(void)
 {
     if (!s_init_lock) {
@@ -132,8 +138,9 @@ static int vserial_up(eh_host_role_t role, const char *device_path)
     case EH_HOST_ROLE_LINUX_USER:
     case EH_HOST_ROLE_LINUX_KMOD:
         return vserial_up_linux(device_path);
+    default:
+        return -EINVAL;
     }
-    return -EINVAL;
 }
 
 static int vserial_down(eh_host_role_t role)
@@ -144,8 +151,9 @@ static int vserial_down(eh_host_role_t role)
     case EH_HOST_ROLE_LINUX_USER:
     case EH_HOST_ROLE_LINUX_KMOD:
         return vserial_down_linux();
+    default:
+        return -EINVAL;
     }
-    return -EINVAL;
 }
 
 static const eh_host_rpc_io_ops_t *vserial_ops(eh_host_role_t role)
@@ -156,8 +164,9 @@ static const eh_host_rpc_io_ops_t *vserial_ops(eh_host_role_t role)
     case EH_HOST_ROLE_LINUX_USER:
     case EH_HOST_ROLE_LINUX_KMOD:
         return vserial_ops_linux();
+    default:
+        return NULL;
     }
-    return NULL;
 }
 
 /* Reject a role whose vserial isn't compiled into this build. */
@@ -177,8 +186,9 @@ static int validate_role(eh_host_role_t role)
 #else
         return -EINVAL;
 #endif
+    default:
+        return -EINVAL;
     }
-    return -EINVAL;
 }
 
 /* cfg==NULL resolves to role implied by compile-time vserial. */
@@ -241,6 +251,11 @@ int eh_host_init(const eh_host_init_cfg_t *cfg)
 
     /* MCU-only: Linux user-space kmod owns the bus, no shadow to seed. */
     int rc;
+    int vserial_up_done = 0;
+    int rpc_inited      = 0;
+    int rpc_started     = 0;
+    const eh_host_rpc_io_ops_t *io_ops = NULL;
+    eh_host_feat_rpc_cfg_t rpc_cfg = {0};
 #if EH_HOST_TYPE_MCU
     if (!eh_host_transport_is_config_valid()) {
         if (eh_host_transport_set_default_config() != EH_HOST_TRANSPORT_RC_OK) {
@@ -265,26 +280,23 @@ int eh_host_init(const eh_host_init_cfg_t *cfg)
 
     s_role = cfg->role;
 
-    int vserial_up_done = 0;
-    int rpc_inited      = 0;
-    int rpc_started     = 0;
-
     rc = vserial_up(s_role, cfg->vserial_device_path);
     if (rc != 0) {
         goto fail;
     }
     vserial_up_done = 1;
 
-    const eh_host_rpc_io_ops_t *io_ops = vserial_ops(s_role);
+    io_ops = vserial_ops(s_role);
     if (io_ops == NULL) {
         rc = -EIO;
         goto rollback;
     }
 
-    eh_host_feat_rpc_cfg_t rpc_cfg = {
-        .io_ops    = io_ops,
-        .proto_ops = eh_host_feat_rpc_ext_v2_proto_ops(),
-        .id_ranges = eh_host_feat_rpc_ext_v2_id_ranges(),
+    rpc_cfg = (eh_host_feat_rpc_cfg_t){
+        .io_ops          = io_ops,
+        .proto_ops       = eh_host_feat_rpc_ext_v2_proto_ops(),
+        .id_ranges       = eh_host_feat_rpc_ext_v2_id_ranges(),
+        .rpc_timeout_ms  = EH_HOST_RPC_TIMEOUT_MS,
     };
     rc = eh_host_feat_rpc_init(&rpc_cfg);
     if (rc != 0) {

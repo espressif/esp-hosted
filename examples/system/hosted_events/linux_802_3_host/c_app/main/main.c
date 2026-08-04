@@ -24,7 +24,7 @@
 #include "eh_host_event.h"
 #include "esp_check.h"
 
-#include "protocol_examples_common.h"
+#include "esp_hosted_examples_common.h"
 
 #define HEARTBEAT_INTERVAL_SEC     5
 #define DO_HOSTED_RECOVERY         1
@@ -157,7 +157,7 @@ static bool app_esp_hosted_verify_up(void)
 static bool app_do_cp_recovery(void)
 {
 #if DO_HOSTED_RECOVERY
-    example_disconnect();
+    eh_example_disconnect();
     app_esp_hosted_deinit();
     return true;
 #elif DO_NOTHING
@@ -193,7 +193,7 @@ int main(int argc, char **argv)
                 ESP_LOGE(TAG, "failed to set heartbeat");
             }
 
-            ESP_ERROR_CHECK(example_connect());
+            ESP_ERROR_CHECK(eh_example_connect());
 
             eh_host_port_event_bits_t bits =
                 eh_host_port_event_group_wait_bits(s_eh_host_event_group,

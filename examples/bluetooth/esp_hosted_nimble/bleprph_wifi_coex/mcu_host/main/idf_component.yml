@@ -1,0 +1,11 @@
+dependencies:
+  esp_hosted_examples_common:
+    override_path: "../../../../../../examples/common_components/esp_hosted_examples_common"
+    version: "*"
+  espressif/esp_hosted:
+    version: "*"
+    override_path: "../../../../../.."
+  espressif/esp_wifi_remote:
+    version: ">=1.3.1"
+  idf:
+    version: ">=5.5"

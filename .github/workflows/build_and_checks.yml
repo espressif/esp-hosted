@@ -1,0 +1,136 @@
+name: "Build & Checks"
+
+# CI moved to GitLab (.gitlab-ci.yml). Auto-triggers disabled in place; kept for
+# reference / manual runs only. Do NOT re-enable push/PR/schedule without removing
+# the GitLab build jobs, or every push double-builds.
+on:
+  workflow_dispatch:   # manual only
+  # push:
+  #   branches:
+  #     - master
+  #     - unified_release
+  #     - ci/example-build-matrix-experiment
+  # pull_request:
+  #   types: [opened, synchronize, reopened, labeled]
+  # schedule:
+  #   - cron: '0 0 * * *' # Once per day at midnight
+
+jobs:
+  premerge_check:
+    name: Premerge checks (version + changelog)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      - name: Check fw version consistency (header <-> idf_component.yml)
+        shell: bash
+        run: |
+          python3 tools/check_fw_versions.py
+      - name: Check changelog has an entry for this version
+        shell: bash
+        run: |
+          python3 tools/check_changelog.py
+      - name: Example structure gate
+        shell: bash
+        run: |
+          python3 tools/check_example_structure.py
+          bash tools/check_override_path_depth.sh
+
+  pre_commit:
+    name: pre-commit
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Run pre-commit (changed files only)
+        shell: bash
+        run: |
+          pip install pre-commit
+          # Never --all-files: the copyright/license hook has a wide blast radius
+          # if run repo-wide. Always scope to the diff (mirrors esp_hosted_mcu CI).
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            git fetch --no-tags --depth=1 origin "${{ github.base_ref }}"
+            pre-commit run --from-ref "origin/${{ github.base_ref }}" --to-ref HEAD --show-diff-on-failure
+          else
+            pre-commit run --from-ref HEAD~1 --to-ref HEAD --show-diff-on-failure
+          fi
+
+  build_esp_hosted_examples:
+    name: Build esp_hosted examples
+    # Gate the expensive matrix on the cheap checks (mcu6 'pre' stage -> build).
+    needs: [premerge_check, pre_commit]
+    strategy:
+      fail-fast: false
+      # Spread, NOT full cross-product: each cell exercises a distinct
+      # (IDF tag/branch x scenario x chipset x transport) so all four dimensions
+      # are covered collectively without building every example on every chip.
+      # esp_hosted requires IDF >= 5.5. transport: empty => example default (SDIO).
+      matrix:
+        include:
+          # ============================ CO-PROCESSOR builds ============================
+          # chipset spread: esp32, c2, c3, c5, c6, c61, s3, h2 ; transport spread below.
+          - { idf_ver: "release-v5.5", path: "examples/wifi/sta/cp",                          target: "esp32c6",  transport: "" }                                        # sdio
+          - { idf_ver: "latest",       path: "examples/wifi/iperf/cp",                        target: "esp32c5",  transport: "" }                                        # sdio
+          - { idf_ver: "v5.5.1",       path: "examples/wifi/apsta/cp",                        target: "esp32c3",  transport: "CONFIG_EH_TRANSPORT_CP_SPI=y" }    # SPI
+          - { idf_ver: "release-v5.5", path: "examples/wifi/scan/cp",                         target: "esp32c2",  transport: "CONFIG_EH_TRANSPORT_CP_SPI_HD=y" } # SPI-HD
+          - { idf_ver: "latest",       path: "examples/wifi/softap/cp",                       target: "esp32s3",  transport: "CONFIG_EH_TRANSPORT_CP_UART=y" }   # UART
+          - { idf_ver: "v5.5",         path: "examples/wifi/dpp/cp",                          target: "esp32c6",  transport: "" }
+          - { idf_ver: "release-v6.0", path: "examples/wifi/itwt/cp",                         target: "esp32c5",  transport: "" }                                        # Wi-Fi 6
+          - { idf_ver: "release-v6.0", path: "examples/network_split/station/cp",             target: "esp32c61", transport: "" }
+          - { idf_ver: "release-v5.5", path: "examples/network_split/iperf/cp",               target: "esp32c6",  transport: "" }
+          - { idf_ver: "release-v5.5", path: "examples/bluetooth/esp_hosted_nimble/bleprph_gatt/cp",                     target: "esp32c6",  transport: "" }
+          - { idf_ver: "latest",       path: "examples/bluetooth/nimble_uart/bleprph_host_only_uart/cp",        target: "esp32",    transport: "" }
+          - { idf_ver: "latest",       path: "examples/openthread/cli/cp",                    target: "esp32h2",  transport: "" }
+          - { idf_ver: "release-v5.5", path: "examples/ota/coprocessor_ota/cp",               target: "esp32",    transport: "" }
+          - { idf_ver: "v5.5.1",       path: "examples/ext_coex/cp",                          target: "esp32c6",  transport: "" }
+          - { idf_ver: "release-v5.5", path: "examples/gpio_expander/cp",                     target: "esp32c3",  transport: "" }
+          - { idf_ver: "latest",       path: "examples/mem_monitor/cp",                       target: "esp32c2",  transport: "" }
+          - { idf_ver: "release-v6.0", path: "examples/peer_data_transfer/cp",                target: "esp32c6",  transport: "" }
+          - { idf_ver: "release-v5.5", path: "examples/system/api_exerciser/cp",              target: "esp32c6",  transport: "" }
+          - { idf_ver: "v5.5.1",       path: "examples/power_save/cp/shut_down_cp_when_unused/cp", target: "esp32c6", transport: "" }
+          # ================================ HOST builds ================================
+          # host role on BOTH p4 and h2 (h2 = no native Wi-Fi, gets it via the CP).
+          - { idf_ver: "latest",       path: "examples/wifi/iperf/mcu_host",                  target: "esp32p4", transport: "" }
+          - { idf_ver: "release-v5.5", path: "examples/wifi/sta/mcu_host",                    target: "esp32h2", transport: "" }  # HOST on H2
+          - { idf_ver: "release-v6.0", path: "examples/network_split/iperf/mcu_host",         target: "esp32p4", transport: "" }
+          - { idf_ver: "release-v5.5", path: "examples/wifi/enterprise/mcu_host",             target: "esp32p4", transport: "" }
+          - { idf_ver: "v5.5.1",       path: "examples/power_save/host/network_split__host_deep_sleep/esp_host", target: "esp32p4", transport: "" }
+          - { idf_ver: "latest",       path: "examples/bluetooth/esp_hosted_nimble/bleprph_wifi_coex/mcu_host",          target: "esp32p4", transport: "" }
+          - { idf_ver: "release-v5.5", path: "examples/bluetooth/nimble_uart/bleprph_host_only_uart/mcu_host",  target: "esp32h2", transport: "" }  # HOST on H2
+          - { idf_ver: "release-v5.5", path: "examples/bluetooth/esp_hosted_bluedroid/ble_gatt_server/mcu_host",        target: "esp32p4", transport: "" }  # bluedroid stack coverage
+          - { idf_ver: "release-v5.5", path: "examples/gpio_expander/mcu_host",               target: "esp32p4", transport: "" }
+          - { idf_ver: "latest",       path: "examples/openthread/cli/esp_host",              target: "esp32p4", transport: "" }
+          - { idf_ver: "release-v6.0", path: "examples/ota/coprocessor_ota/mcu_host",         target: "esp32p4", transport: "" }
+          - { idf_ver: "v5.5.1",       path: "examples/system/mcu_transport_config/mcu_host", target: "esp32p4", transport: "" }
+          - { idf_ver: "release-v6.0", path: "examples/mcu_hosted_sdio_sdmmc_combined/mcu_host", target: "esp32p4", transport: "" }
+    runs-on: ubuntu-latest
+    container: espressif/idf:${{ matrix.idf_ver }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: ccache
+        uses: hendrikmuhs/ccache-action@v1.2
+        with:
+            key: ${{ matrix.idf_ver }}
+      - name: Build ${{ matrix.path }} (${{ matrix.target }}${{ matrix.transport && ', override' || '' }}) with IDF-${{ matrix.idf_ver }}
+        shell: bash
+        run: |
+          export IDF_PYTHON_CHECK_CONSTRAINTS=yes
+          ${IDF_PATH}/install.sh --enable-ci
+          . ${IDF_PATH}/export.sh
+          # Held to the same flag level as esp_wifi_remote / any normal IDF
+          # component: IDF's -Werror=all plus the classes that block downstream
+          # (deprecated APIs, unused symbols). The heavier esp_hosted-only pedantic
+          # set (ESP_HOSTED_CI_PEDANTIC=1, see top CMakeLists.txt) is opt-in and can
+          # be re-enabled once the tree is clean against it.
+          export EXTRA_CFLAGS="-DIDF_CI_BUILD -Werror=deprecated-declarations -Werror=unused-variable -Werror=unused-but-set-variable -Werror=unused-function"
+          export EXTRA_CXXFLAGS="${EXTRA_CFLAGS}"
+          OVR=""
+          if [ -n "${{ matrix.transport }}" ]; then OVR="--override-sdkconfig-items=${{ matrix.transport }}"; fi
+          idf-build-apps build -p ${{ matrix.path }} --target ${{ matrix.target }} ${OVR} -vv

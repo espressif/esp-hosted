@@ -1,5 +1,8 @@
-/* SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD */
-/* SPDX-License-Identifier: Apache-2.0 */
+/*
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 /* BT-private: CONFIG_ESP_HOSTED_BT_* → EH_CP_BT_*. */
 
@@ -9,7 +12,7 @@
 #include "eh_cp_master_config.h"
 
 /* BT stack */
-#ifdef CONFIG_ESP_HOSTED_BT_STACK_ENABLED
+#ifdef CONFIG_ESP_HOSTED_CP_BT_STACK_ENABLED
 #  define EH_CP_BT_STACK_ENABLED                1
 #else
 #  define EH_CP_BT_STACK_ENABLED                0

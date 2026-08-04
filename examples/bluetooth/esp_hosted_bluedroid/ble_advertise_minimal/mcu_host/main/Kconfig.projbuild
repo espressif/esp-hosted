@@ -1,0 +1,15 @@
+menu "BLE Advertise Minimal config"
+
+config EXAMPLE_DEVICE_NAME
+    string "BLE device name (advertised)"
+    default "ESP_HOSTED_BLE"
+
+config EXAMPLE_ADV_INTERVAL_MS
+    int "Advertising interval (ms)"
+    default 100
+    range 20 10240
+    help
+      Advertising interval as seen by Bluedroid's `adv_int_min/max`.
+      Converted to 0.625 ms units internally.
+
+endmenu

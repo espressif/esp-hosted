@@ -14,6 +14,7 @@
 #include "eh_host_event.h"
 #include "eh_host_mcu_transport_priv.h"
 #include "eh_frame.h"
+#include "eh_host_mcu_hci_internal.h"
 #include "eh_common_header.h"
 #include "eh_common_header_v2.h"
 
@@ -95,7 +96,11 @@ static int eh_uart_try_decode_one(uint8_t *acc, size_t acc_len)
     interface_buffer_handle_t h = {0};
     eh_frame_result_t r = eh_frame_decode(acc, (uint16_t)total, &h);
     if (r == EH_FRAME_OK && h.payload && h.payload_len) {
-        eh_host_mcu_transport_dispatch_frame(&h);
+        if (h.if_type == ESP_HCI_IF) {
+            eh_host_mcu_hci_rx_deliver(h.payload, h.payload_len);
+        } else {
+            eh_host_mcu_transport_dispatch_frame(&h);
+        }
     } else if (r == EH_FRAME_INVALID || r == EH_FRAME_CORRUPT) {
         return -1;
     }
@@ -299,16 +304,29 @@ int eh_host_bus_tx(interface_buffer_handle_t *bh)
         return -1;
     }
     /* bh->payload points past wire header; recover frame start. */
-    const uint8_t *buf = header_only ? NULL : (bh->payload - sizeof(struct esp_payload_header));
-    struct esp_payload_header hdr = {0};
+    const uint8_t *buf = header_only ? NULL : (bh->payload - eh_frame_hdr_size());
+    uint8_t hdr[sizeof(eh_header_v2_t)] = {0}; /* fits V1 (12) or V2 (20) header */
     size_t len = 0;
     if (header_only) {
         interface_buffer_handle_t hb = { .if_type = ESP_SERIAL_IF, .flags = bh->flags };
-        eh_frame_encode((uint8_t *)&hdr, &hb, 0);
-        buf = (const uint8_t *)&hdr;
-        len = sizeof(struct esp_payload_header);
+        eh_frame_encode(hdr, &hb, 0);
+        buf = hdr;
+        len = eh_frame_hdr_size();
     } else {
-        len = (size_t)bh->payload_len + sizeof(struct esp_payload_header);
+        len = (size_t)bh->payload_len + eh_frame_hdr_size();
+    }
+    if (!header_only && bh->if_type == ESP_HCI_IF && bh->payload_zcopy) {
+        ESP_LOGE(TAG, "HCI zerocopy is not supported on UART");
+        if (bh->free_buf_handle) bh->free_buf_handle(bh->priv_buffer_handle);
+        return -1;
+    }
+    if (!header_only && bh->if_type == ESP_HCI_IF && !bh->payload_zcopy) {
+        uint8_t *mframe = (uint8_t *)(uintptr_t)buf;
+        interface_buffer_handle_t hb = *bh;
+        hb.pkt_type = eh_host_mcu_hci_take_type(mframe + eh_frame_hdr_size(),
+                                                &hb.payload_len);
+        eh_frame_encode(mframe, &hb, hb.payload_len);
+        len = (size_t)eh_frame_hdr_size() + hb.payload_len;
     }
     int rc = -1;
 
@@ -348,12 +366,6 @@ int eh_host_bus_is_tx_ready(void)
 static int eh_uart_send_ps_flag(uint8_t flag)
 {
     interface_buffer_handle_t bh = {0};
-    struct esp_payload_header hdr;
-    memset(&hdr, 0, sizeof(hdr));
-    hdr.if_type = ESP_SERIAL_IF;
-    hdr.offset  = sizeof(hdr);
-    hdr.flags   = flag;
-    bh.payload = ((uint8_t *)&hdr) + sizeof(hdr);
     bh.payload_len = 0;
     bh.flags = flag;
     return eh_host_bus_tx(&bh) < 0 ? -1 : 0;

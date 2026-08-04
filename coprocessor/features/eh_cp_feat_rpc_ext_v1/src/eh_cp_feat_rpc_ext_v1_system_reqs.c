@@ -349,7 +349,7 @@ esp_err_t configure_heartbeat(bool enable, int hb_duration)
 	int duration = hb_duration ;
 
 	if (!enable) {
-		ESP_LOGI(TAG, "Stop Heatbeat");
+		ESP_LOGI(TAG, "Stop Heartbeat");
 		stop_heartbeat();
 
 	} else {

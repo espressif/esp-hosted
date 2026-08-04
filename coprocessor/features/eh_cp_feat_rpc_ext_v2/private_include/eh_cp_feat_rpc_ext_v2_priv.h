@@ -1,5 +1,8 @@
-/* SPDX-License-Identifier: Apache-2.0 */
-/* Copyright 2025 Espressif Systems (Shanghai) PTE LTD */
+/*
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #ifndef __EH_CP_BASE_RPC_MCU_PRIV_H__
 #define __EH_CP_BASE_RPC_MCU_PRIV_H__
@@ -29,6 +32,7 @@
 #include "eh_cp_feat_rpc_ext_v2_bitmasks.h"
 //#include "eh_cp_ext_err_code_rpc.h"
 #include "eh_log.h"
+#include "eh_check.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -164,13 +168,13 @@ extern int g_private_key_passwd_len;
 
 #define RPC_RESP_COPY_STR(dest, src, max_len)                                   \
   if (src) {                                                                    \
-    dest.data = (uint8_t*)strndup((char*)src, max_len);                         \
+    dest.data = (uint8_t*)strndup((const char*)src, max_len);                         \
     if (!dest.data) {                                                           \
       ESP_LOGE(TAG, "%s:%u Failed to duplicate bytes\n",__func__,__LINE__);     \
       resp_payload->resp = FAILURE;                                             \
       return ESP_OK;                                                            \
     }                                                                           \
-    dest.len = min(max_len,strlen((char*)src)+1);                                 \
+    dest.len = min(max_len,strlen((const char*)src)+1);                                 \
   }
 
 #define RPC_RESP_COPY_BYTES_SRC_UNCHECKED(dest, src, num)                       \
@@ -194,12 +198,12 @@ extern int g_private_key_passwd_len;
 
 #define RPC_COPY_STR(dest, src, max_len)                                        \
   if (src) {                                                                    \
-    dest.data = (uint8_t*)strndup((char*)src, max_len);                         \
+    dest.data = (uint8_t*)strndup((const char*)src, max_len);                         \
     if (!dest.data) {                                                           \
       ESP_LOGE(TAG, "%s:%u Failed to duplicate bytes\n",__func__,__LINE__);     \
       return FAILURE;                                                           \
     }                                                                           \
-    dest.len = min(max_len,strlen((char*)src)+1);                                 \
+    dest.len = min(max_len,strlen((const char*)src)+1);                                 \
   }
 
 #define RPC_COPY_BYTES(dest, src, num)                                          \
@@ -266,13 +270,13 @@ extern int g_private_key_passwd_len;
 
   #define NTFY_COPY_STR(dest, src, max_len)                                       \
     if (src) {                                                                    \
-      dest.data = (uint8_t*)strndup((char*)src, max_len);                         \
+      dest.data = (uint8_t*)strndup((const char*)src, max_len);                         \
       if (!dest.data) {                                                           \
         ESP_LOGE(TAG, "%s:%u Failed to duplicate bytes\n",__func__,__LINE__);     \
         ntfy_payload->resp = FAILURE;                                             \
         return ESP_OK;                                                            \
       }                                                                           \
-      dest.len = min(max_len,strlen((char*)src)+1);                               \
+      dest.len = min(max_len,strlen((const char*)src)+1);                               \
     }
 
 /* Protocomm callbacks for protobuf processing - these exist in eh_cp_feat_rpc_ext_v2_rpc_core.c */
@@ -296,6 +300,14 @@ esp_err_t req_get_coprocessor_fw_version(Rpc *req, Rpc *resp, void *priv_data);
 esp_err_t req_iface_mac_addr_set_get(Rpc *req, Rpc *resp, void *priv_data);
 esp_err_t req_iface_mac_addr_len_get(Rpc *req, Rpc *resp, void *priv_data);
 esp_err_t req_feature_control(Rpc *req, Rpc *resp, void *priv_data);
+#if EH_CP_FEAT_BT_READY
+esp_err_t req_feature_control_bt(RpcReqFeatureControl *req_payload,
+                                 RpcRespFeatureControl *resp_payload);
+#endif
+#if EH_CP_FEAT_OPENTHREAD_READY
+esp_err_t req_feature_control_openthread(RpcReqFeatureControl *req_payload,
+                                         RpcRespFeatureControl *resp_payload);
+#endif
 esp_err_t req_app_get_desc(Rpc *req, Rpc *resp, void *priv_data);
 #if EH_CP_FEAT_PEER_DATA_READY
 esp_err_t req_custom_rpc_handler(Rpc *req, Rpc *resp, void *priv_data);
@@ -359,7 +371,7 @@ esp_err_t req_wifi_ap_get_sta_aid(Rpc *req, Rpc *resp, void *priv_data);
 /* Missing WiFi and System RPC Request Handlers */
 esp_err_t req_wifi_set_inactive_time(Rpc *req, Rpc *resp, void *priv_data);
 esp_err_t req_wifi_get_inactive_time(Rpc *req, Rpc *resp, void *priv_data);
-esp_err_t req_get_coprocessor_fw_version(Rpc *req, Rpc *resp, void *priv_data);
+esp_err_t req_wifi_disable_pmf_config(Rpc *req, Rpc *resp, void *priv_data);
 
 /* Enterprise WiFi (EAP) RPC Request Handlers */
 esp_err_t req_wifi_sta_enterprise_enable(Rpc *req, Rpc *resp, void *priv_data);
@@ -414,11 +426,6 @@ esp_err_t req_gpio_input_enable(Rpc *req, Rpc *resp, void *priv_data);
 esp_err_t req_gpio_set_pull_mode(Rpc *req, Rpc *resp, void *priv_data);
 #endif
 
-/* OTA RPC Request Handlers */
-esp_err_t req_ota_begin_handler(Rpc *req, Rpc *resp, void *priv_data);
-esp_err_t req_ota_write_handler(Rpc *req, Rpc *resp, void *priv_data);
-esp_err_t req_ota_end_handler(Rpc *req, Rpc *resp, void *priv_data);
-
 /* Conditional WiFi RPC Request Handlers */
 #if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 4, 0)
 esp_err_t req_wifi_set_protocols(Rpc *req, Rpc *resp, void *priv_data);
@@ -461,9 +468,12 @@ esp_err_t req_wifi_sta_itwt_send_probe_req(Rpc *req, Rpc *resp, void *priv_data)
 esp_err_t req_wifi_sta_itwt_set_target_wake_time_offset(Rpc *req, Rpc *resp, void *priv_data);
 #endif
 
+#if EH_CP_FEAT_WIFI_READY
 esp_err_t eh_cp_feat_rpc_ext_v2_register_wifi_evt_handlers(void);
-esp_err_t eh_cp_feat_rpc_ext_v2_register_system_evt_handlers(void);
 esp_err_t eh_cp_feat_rpc_ext_v2_unregister_wifi_evt_handlers(void);
+#endif
+
+esp_err_t eh_cp_feat_rpc_ext_v2_register_system_evt_handlers(void);
 esp_err_t eh_cp_feat_rpc_ext_v2_unregister_system_evt_handlers(void);
 
 
@@ -484,10 +494,7 @@ typedef enum {
 #endif
 } rpc_payload_type_t;
 esp_err_t copy_wifi_sta_cfg_to_rpc_struct(void *payload, rpc_payload_type_t type,
-		wifi_sta_config_t *sta_cfg);
-esp_err_t req_iface_mac_addr_len_get(Rpc *req, Rpc *resp, void *priv_data);
-esp_err_t req_iface_mac_addr_set_get(Rpc *req, Rpc *resp, void *priv_data);
-esp_err_t req_feature_control(Rpc *req, Rpc *resp, void *priv_data);
+		const wifi_sta_config_t *sta_cfg);
 
 #if EH_CP_FEAT_WIFI_EXT_DPP_READY
 esp_err_t req_supp_dpp_init(Rpc *req, Rpc *resp, void *priv_data);
@@ -515,14 +522,6 @@ esp_err_t eh_cp_feat_unregister_dpp_evt_handlers(void);
 
 esp_err_t eh_cp_feat_register_nw_split_evt_handlers(void);
 esp_err_t eh_cp_feat_unregister_nw_split_evt_handlers(void);
-
-/* MCU WiFi + system event handlers */
-#if EH_CP_FEAT_WIFI_READY
-esp_err_t eh_cp_feat_rpc_ext_v2_register_wifi_evt_handlers(void);
-esp_err_t eh_cp_feat_rpc_ext_v2_unregister_wifi_evt_handlers(void);
-#endif
-esp_err_t eh_cp_feat_rpc_ext_v2_register_system_evt_handlers(void);
-esp_err_t eh_cp_feat_rpc_ext_v2_unregister_system_evt_handlers(void);
 
 #ifdef __cplusplus
 }

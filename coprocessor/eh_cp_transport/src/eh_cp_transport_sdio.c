@@ -205,8 +205,8 @@ static inline uint16_t build_frame(uint8_t *dst, interface_buffer_handle_t *b)
 	uint16_t aligned = (uint16_t)SDIO_FRAME_STRIDE(frame_len);
 
 	memset(h, 0, SDIO_HDR_SIZE);
-	h->if_type = b->if_type;
-	h->if_num  = b->if_num;
+	h->if_type = b->if_type & 0xFu;
+	h->if_num  = b->if_num & 0xFu;
 	h->len     = htole16(b->payload_len);
 	h->offset  = htole16(SDIO_HDR_SIZE);
 	h->seq_num = htole16(b->seq_num);
@@ -544,7 +544,7 @@ static int sdio_read(interface_handle_t *if_handle, interface_buffer_handle_t *b
 
 	*buf_handle = (interface_buffer_handle_t){0};
 	if ((uint16_t)(blk_total - blk_pos) <= hdrsz ||
-	    eh_frame_decode(blk_base + blk_pos, blk_total - blk_pos, buf_handle) != EH_FRAME_OK ||
+	    eh_frame_decode(blk_base + blk_pos, (blk_total - blk_pos), buf_handle) != EH_FRAME_OK ||
 	    !buf_handle->payload_len) {
 		sdio_read_done(blk_handle);
 		blk_base = NULL; blk_handle = NULL; blk_total = 0; blk_pos = 0;
@@ -552,7 +552,7 @@ static int sdio_read(interface_handle_t *if_handle, interface_buffer_handle_t *b
 	}
 
 	{
-		uint16_t frame_len = buf_handle->payload_len + hdrsz;
+		uint16_t frame_len = (buf_handle->payload_len + hdrsz);
 		uint16_t aligned_len = (uint16_t)SDIO_FRAME_STRIDE(frame_len);
 
 		if ((uint32_t)blk_pos + aligned_len + hdrsz > blk_total) {
@@ -560,7 +560,7 @@ static int sdio_read(interface_handle_t *if_handle, interface_buffer_handle_t *b
 		} else {
 			interface_buffer_handle_t peek = {0};
 			if (eh_frame_decode_quiet(blk_base + blk_pos + aligned_len,
-					blk_total - blk_pos - aligned_len, &peek) != EH_FRAME_OK ||
+					(blk_total - blk_pos - aligned_len), &peek) != EH_FRAME_OK ||
 			    !peek.payload_len)
 				last_frame = true;
 		}
@@ -604,7 +604,7 @@ void generate_startup_event(uint8_t cap, uint32_t ext_cap, uint8_t raw_tp_cap,
 	event->event_type = eh_priv_event_init_wire();
 
 	eh_tlv_builder_t tlv;
-	uint16_t budget = MAX_TRANSPORT_BUF_SIZE - eh_frame_hdr_size() - 2;
+	uint16_t budget = (MAX_TRANSPORT_BUF_SIZE - eh_frame_hdr_size() - 2);
 	eh_tlv_builder_init(&tlv, event->event_data, budget);
 
 #if EH_TLV_V1
@@ -653,9 +653,9 @@ void generate_startup_event(uint8_t cap, uint32_t ext_cap, uint8_t raw_tp_cap,
 		struct eh_priv_sdio_buf_config bufcfg = {
 			.transport = EH_SDIO_CFG_TPORT_SDIO,
 			.e2h_mode = EH_CP_SDIO_TX_MODE,
-			.e2h_bufsz_512B = sdio_rx_buf_size / EH_SDIO_CFG_BUF_BLOCK,
+			.e2h_bufsz_512B = (sdio_rx_buf_size / EH_SDIO_CFG_BUF_BLOCK),
 			.h2e_mode = EH_CP_SDIO_TX_MODE,
-			.h2e_bufsz_512B = sdio_rx_buf_size / EH_SDIO_CFG_BUF_BLOCK,
+			.h2e_bufsz_512B = (sdio_rx_buf_size / EH_SDIO_CFG_BUF_BLOCK),
 		};
 
 		rc = eh_tlv_pack_v2(&tlv, CONFIG_IDF_FIRMWARE_CHIP_ID, cap, raw_tp_cap,

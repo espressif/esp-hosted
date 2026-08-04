@@ -101,8 +101,8 @@ static uint16_t read_le16(const uint8_t *buf) {
 
 // Helper function to safely write 16-bit value (little-endian)
 static void write_le16(uint8_t *buf, uint16_t value) {
-    buf[0] = value & 0xFF;
-    buf[1] = (value >> 8) & 0xFF;
+    buf[0] = value & 0xFFu;
+    buf[1] = (value >> 8) & 0xFFu;
 }
 
 static esp_err_t ensure_endpoint_capacity(size_t needed)
@@ -405,7 +405,7 @@ static esp_err_t protocomm_pserial_data_ready(protocomm_t *pc, const char *epnam
 		return ESP_FAIL;
 	}
 
-	if (len) {
+	if (len > 0) {
 		buf = (uint8_t *)malloc(len);
 		if (buf == NULL) {
 			ESP_LOGE(TAG,"%s Failed to allocate memory", __func__);
@@ -533,7 +533,7 @@ static void pserial_task(void *params)
 		} else if (arg.type == PROTO_REQ_ENDPOINT) {
 			/* Request */
 			len = pserial_cfg->recv(arg.data, arg.len);
-			if (len) {
+			if (len > 0) {
 				/*ESP_LOG_BUFFER_HEXDUMP("serial_rx", arg.data, len<16?len:16, ESP_LOG_INFO);*/
 				ret = protocomm_pserial_ctrl_req_handler(pc, arg.data, len);
 			}

@@ -33,11 +33,6 @@ typedef struct eh_host_itwt_probe_event    eh_host_itwt_probe_event_t;
 extern "C" {
 #endif
 
-/* Upstream signature: rpc_wifi_sta_itwt_setup(wifi_itwt_setup_config_t*)
- * on IDF ≥ 5.3, wifi_twt_setup_config_t* before that. Field layout is
- * identical across the rename, so the impl packs the bit-fields
- * (trigger / flow_type / flow_id / wake_invl_expn / wake_duration_unit)
- * into the wire's bitmask_1 the same way on both. */
 #if EH_HOST_WIFI_HE_GREATER_THAN_ESP_IDF_5_3
 esp_err_t eh_host_wifi_itwt_setup(const wifi_itwt_setup_config_t *setup_config);
 #else

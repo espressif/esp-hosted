@@ -11,6 +11,8 @@
 extern "C" {
 #endif
 
+int eh_host_feat_cli_init(void);
+int eh_host_feat_cli_deinit(void);
 esp_err_t eh_host_feat_cli_register_commands(void);
 
 #ifdef __cplusplus

@@ -1,0 +1,14 @@
+# NOTE: unlike the doc's general §2.2 guidance, the 2.x thermostat example sets
+# no SPIRAM on the same ESP32-P4 host and runs — the thermostat fits in internal
+# RAM. We match 2.x (no CONFIG_SPIRAM): enabling it forced task stacks/heap into
+# PSRAM, which corrupts the allocator on this target. Re-add with a written
+# reason only if a real-HW build actually OOMs.
+
+# 4 MB flash to match the RCP co-processor. The Zigbee host keeps its own
+# non-OTA partitions.csv (factory + zb_storage / zb_fct) from sdkconfig.defaults;
+# host-side OTA is not part of the ported 2.x thermostat example.
+CONFIG_ESPTOOLPY_FLASHSIZE_4MB=y
+
+# SW coexistence on the RCP is ON, so disable this on the host to keep the
+# OpenThread / 802.15.4 capability set consistent (doc §2.2, §2.3.1).
+CONFIG_OPENTHREAD_RX_ON_WHEN_IDLE=n

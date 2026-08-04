@@ -11,7 +11,9 @@
 #include "esp_log.h"
 #include "esp_netif.h"
 #include "esp_netif_net_stack.h"
-#include "lwip/netif.h"
+#ifdef ESP_PLATFORM
+#include "lwip/netif.h"   /* netif->input peek — IDF/lwip only */
+#endif
 #include "esp_wifi.h"
 #include "esp_wifi_default.h"
 #include "esp_wifi_netif.h"
@@ -58,11 +60,14 @@ static void on_sta_disconnected(void *arg, esp_event_base_t base, int32_t id, vo
 #endif
 
 #if !CONFIG_ESP_HOSTED_HOST_FEAT_NW_SPLIT_NETIF_INTERNAL_DHCP
-/* lwip netif added (netif_add done, so netif->input is bound)? */
 static bool nw_split_netif_added(void)
 {
+#ifdef ESP_PLATFORM
     struct netif *impl = (struct netif *)esp_netif_get_netif_impl(s_state.netif);
     return impl && impl->input;
+#else
+    return esp_netif_get_netif_impl(s_state.netif) != NULL;
+#endif
 }
 
 static void on_cp_dhcp_status(void *arg, esp_event_base_t base, int32_t id, void *data)
@@ -310,7 +315,10 @@ esp_err_t eh_host_nw_split_bind_mac(const uint8_t mac[6], uint16_t mtu)
         return ESP_ERR_INVALID_STATE;
     }
 
-    return esp_netif_set_mac(s_state.netif, (uint8_t *)mac);
+    /* esp_netif_set_mac takes non-const but only reads; copy to keep our const. */
+    uint8_t mac_copy[6];
+    memcpy(mac_copy, mac, sizeof(mac_copy));
+    return esp_netif_set_mac(s_state.netif, mac_copy);
 }
 
 EH_HOST_FEAT_REGISTER(eh_host_feat_nw_split_init,

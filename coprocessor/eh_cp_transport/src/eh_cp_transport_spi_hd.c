@@ -1,17 +1,8 @@
-// SPDX-License-Identifier: Apache-2.0
-// Copyright 2024 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include "eh_cp_master_config.h"
 
@@ -454,7 +445,6 @@ static void spi_hd_rx_task(void* pvParameters)
 {
 	int i;
 	uint8_t * buf = NULL;
-	esp_err_t ret = ESP_OK;
 	spi_slave_hd_data_t *rx_trans = NULL;
 	spi_slave_hd_data_t *ret_trans = NULL;
 	esp_err_t res;
@@ -471,7 +461,7 @@ static void spi_hd_rx_task(void* pvParameters)
 			ESP_LOGI(TAG, "Host has opened data path");
 			break;
 		}
-		vTaskDelay(1000 / portTICK_PERIOD_MS);
+		vTaskDelay(100 / portTICK_PERIOD_MS);
 	}
 
 	// prepare buffers and preload rx transactions
@@ -505,7 +495,7 @@ static void spi_hd_rx_task(void* pvParameters)
 		// wait for incoming transactions
 		res = spi_slave_hd_get_trans_res(SPI_HOST, SPI_SLAVE_CHAN_RX,
 				&ret_trans, portMAX_DELAY);
-		if (ret) {
+		if (res) {
 			ESP_LOGV(TAG, "spi_slave_hd_get_trans_res returned failure");
 			continue;
 		}
@@ -823,7 +813,7 @@ interface_context_t *interface_insert_driver(int (*event_handler)(uint8_t val))
 	return &context;
 }
 
-int interface_remove_driver()
+int interface_remove_driver(void)
 {
 	memset(&context, 0, sizeof(context));
 	return 0;
@@ -925,7 +915,7 @@ void generate_startup_event(uint8_t cap, uint32_t ext_cap, uint8_t raw_tp_cap,
 	ret = spi_slave_hd_queue_trans(SPI_HOST, SPI_SLAVE_CHAN_TX,
 				tx_trans, portMAX_DELAY);
 	if (ret != ESP_OK) {
-		ESP_LOGE(TAG , "statup: spi hd slave transmit error, ret : 0x%"PRIx16, ret);
+		ESP_LOGE(TAG , "startup: spi hd slave transmit error, ret : 0x%"PRIx16, ret);
 		spi_hd_buffer_tx_free(buf_handle.payload);
 		spi_hd_trans_tx_free(tx_trans);
 	}

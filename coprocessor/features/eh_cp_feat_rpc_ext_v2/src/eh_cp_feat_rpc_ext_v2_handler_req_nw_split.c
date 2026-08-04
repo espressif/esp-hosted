@@ -15,6 +15,7 @@
 #include "eh_cp_feat_rpc.h"
 #include "eh_cp_rpc.h"
 #include "eh_cp_feat_rpc_ext_v2_priv.h"
+#include "eh_transport_cp.h"
 
 #if EH_CP_FEAT_NW_SPLIT_READY
 #include "eh_cp_feat_nw_split_apis.h"

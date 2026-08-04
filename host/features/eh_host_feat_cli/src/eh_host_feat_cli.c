@@ -27,7 +27,6 @@ esp_err_t eh_host_feat_cli_register_commands(void)
     return rc;
 }
 
-/* External linkage required: --undefined pull-marker only resolves globals. */
 int eh_host_feat_cli_init(void)
 {
     return (eh_host_feat_cli_register_commands() == ESP_OK) ? 0 : -1;

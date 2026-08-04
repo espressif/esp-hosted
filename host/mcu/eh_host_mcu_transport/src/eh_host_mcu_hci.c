@@ -10,18 +10,47 @@
 #include <stdint.h>
 #include <string.h>
 
+#include "esp_log.h"
 #include "eh_common_header.h"               /* struct esp_payload_header */
 #include "eh_host_mcu_transport_channels.h" /* rx_handler typedef + set_rx_handler */
 #include "eh_host_mcu_hci_internal.h"       /* tx_pack + rx_deliver */
 
-/* TX (host→CP): stash the H4 type byte in the header, body follows. */
+#define TAG "eh_hci"
+
 uint16_t eh_host_mcu_hci_tx_pack(struct esp_payload_header *hdr,
-		uint8_t *dst, const uint8_t *src, uint16_t len)
+                                 uint8_t *dst,
+                                 const uint8_t *src,
+                                 uint16_t len)
 {
-	hdr->hci_pkt_type = src[0];
-	len -= 1;
-	memcpy(dst, &src[1], len);
-	return len;
+    if (len == 0U) {
+        ESP_LOGE(TAG, "Invalid HCI packet length: %u", len);
+        return 0;
+    }
+
+    hdr->hci_pkt_type = src[0];
+
+    len--; /* payload length */
+
+    if (len > 0U) {
+        memcpy(dst, src + 1, len);
+    }
+
+    return len;
+}
+
+uint8_t eh_host_mcu_hci_take_type(uint8_t *body, uint16_t *body_len)
+{
+    uint8_t t = 0;
+
+    if (body != NULL && body_len != NULL && *body_len > 0U) {
+        t = body[0];              /* H4 type byte */
+        (*body_len)--;            /* body length after dropping it */
+        if (*body_len > 0U) {
+            memmove(body, body + 1, *body_len);
+        }
+    }
+
+    return t;
 }
 
 /* RX (CP→host): deliver to the bound handler (defaults to drop). */

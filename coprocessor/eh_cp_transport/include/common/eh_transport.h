@@ -84,7 +84,7 @@ typedef enum {
 struct esp_priv_event {
 	uint8_t		event_type;
 	uint8_t		event_len;
-	uint8_t		event_data[0];
+	uint8_t		event_data[];
 }__attribute__((packed));
 
 static inline uint16_t compute_checksum(const uint8_t *buf, uint16_t len)

@@ -185,6 +185,7 @@ Flash `cp/` to the ESP coprocessor, then build and run one host role (`mcu_host`
 ## 6. References
 
 ### Important links
+- [Host API Reference](docs/api-reference.md)
 - [Changelog](docs/changelog.md)
 - [Migration Guide](docs/migration.md)
 - [Troubleshooting](docs/troubleshooting.md)

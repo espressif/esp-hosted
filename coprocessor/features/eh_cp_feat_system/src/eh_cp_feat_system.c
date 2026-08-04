@@ -23,6 +23,8 @@ static const char *TAG = "ehcp_system";
 static TimerHandle_t s_heartbeat_timer = NULL;
 static uint32_t s_hb_num = 0;
 
+esp_err_t eh_cp_feat_system_init(void);
+
 esp_err_t eh_cp_feat_system_init(void)
 {
 	ESP_LOGI(TAG, "system extension init");

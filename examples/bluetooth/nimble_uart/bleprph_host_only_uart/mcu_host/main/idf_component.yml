@@ -1,0 +1,6 @@
+## Standard NimBLE-over-UART host — no ESP-Hosted dependency.
+## nimble_peripheral_utils is a local component under ../components/ (auto-discovered,
+## pulled in via main/CMakeLists REQUIRES).
+dependencies:
+  idf:
+    version: ">=5.5"

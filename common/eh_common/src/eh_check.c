@@ -27,3 +27,10 @@ void eh_check_failed_warn(esp_err_t rc, const char *file, int line,
              (unsigned)rc, esp_err_to_name(rc),
              file, line, function, expression);
 }
+
+void eh_check_narrow_warn(long long val, const char *what, const char *function)
+{
+    ESP_LOGW("EH_ASSIGN_NARROW",
+             "%s: value %lld does not fit %s — truncated on assignment",
+             function, val, what);
+}

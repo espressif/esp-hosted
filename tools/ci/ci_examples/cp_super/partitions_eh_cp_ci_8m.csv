@@ -1,0 +1,7 @@
+# ESP-Hosted CI-only super build — 8 MB flash, single app slot. All CP features
+# enabled at once may exceed 4 MB; this table is build/link coverage headroom,
+# NOT a shipped layout (real examples use partitions_eh_cp_ota_*.csv).
+# Name,     Type, SubType, Offset,   Size
+nvs,        data, nvs,     0x9000,   0x6000
+phy_init,   data, phy,     0xf000,   0x1000
+factory,    app,  factory, 0x10000,  0x7E0000

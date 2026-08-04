@@ -905,7 +905,7 @@ def cmd_set_esp_emu(args) -> int:
 
 TESTVENV  = DEPS_DIR / "testvenv"
 TEST_PKGS = ["pytest", "pytest-xdist", "pytest-rerunfailures", "pytest-timeout",
-             "pyserial"]
+             "pyserial", "bumble"]
 # (flaky-HW retry via `eh.py test hw --reruns N`; xdist for `--jobs N`;
 #  pytest-timeout for the overall per-test cap; pyserial for the HW SerialDut)
 

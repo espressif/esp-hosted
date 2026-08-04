@@ -44,7 +44,7 @@ struct hosted_mempool * hosted_mempool_create(void *pre_allocated_mem,
 		goto free_buffs;
 	}
 
-	snprintf(str, MEMPOOL_NAME_STR_SIZE, "hosted_%p", pool);
+	snprintf(str, MEMPOOL_NAME_STR_SIZE, "hosted_%p", (void *)pool);
 
 	if (os_mempool_init(pool, num_blocks, block_size, heap, str)) {
 		ESP_LOGE(TAG, "os_mempool_init failed\n");

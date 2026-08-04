@@ -1,5 +1,4 @@
 add_library(eh_common STATIC
-    src/eh_common_stub.c
     src/eh_check.c
 )
 

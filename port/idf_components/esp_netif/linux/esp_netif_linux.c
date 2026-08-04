@@ -31,6 +31,7 @@
 #include "esp_netif.h"
 #include "esp_netif_linux.h"
 #include "esp_netif_types.h"
+#include "esp_netif_net_stack.h"
 
 /* ── Constants ───────────────────────────────────────────────────────── */
 
@@ -657,7 +658,7 @@ esp_err_t esp_netif_up(esp_netif_t *n)
      * DHCP only fires once the link associates (avoids dhcpcd
      * spinning while the radio waits for carrier).
      *
-     * Skip if app pre-empted via esp_netif_dhcps_stop() (status==STOPPED)
+     * Skip if app preempted via esp_netif_dhcps_stop() (status==STOPPED)
      * — symmetric with STA dhcpc gating. */
     if (r == ESP_OK && (n->flags & ESP_NETIF_DHCP_SERVER) &&
         n->dhcps_status != ESP_NETIF_DHCP_STOPPED) {
@@ -1135,6 +1136,16 @@ esp_err_t esp_netif_tcpip_exec(esp_netif_callback_fn fn, void *ctx)
     return fn(ctx);
 }
 
+/* ── Stack impl accessor ─────────────────────────────────────────────── */
+
+void *esp_netif_get_netif_impl(esp_netif_t *n)
+{
+    /* Linux has no separate stack-netif object; the esp_netif is its own impl.
+     * Report it only once started (esp_netif_up on STA_START) so callers can gate
+     * on "netif added" the way the lwip port gates on netif->input. */
+    return (n && n->up) ? n : NULL;
+}
+
 /* ── Stubs: impl-name, NAPT, hostname (not meaningful on kmod host) ─── */
 
 int esp_netif_get_netif_impl_index(esp_netif_t *n)
@@ -1254,7 +1265,7 @@ void esp_netif_action_disconnected(void *n, esp_event_base_t b,
                                    int32_t id, void *d)
 {
     /* Symmetric with action_connected — only stop if currently STARTED.
-     * If app pre-emptively called dhcpc_stop() for static IP, we skip
+     * If app preemptively called dhcpc_stop() for static IP, we skip
      * the redundant hook (already-stopped daemon is harmless, but
      * status tracking should reflect what actually ran). */
     esp_netif_t *netif = (esp_netif_t *)n;

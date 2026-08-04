@@ -143,7 +143,7 @@ int eh_host_feat_rpc_register_event(int32_t msg_id,
     g_evt_tbl[idx].head = node;
     eh_host_port_mutex_unlock(g_evt_mtx);
     ESP_LOGD("eh_host_feat_rpc", "evt_register: msg_id=%" PRId32 " cb=%p ctx=%p",
-               msg_id, (void *)cb, ctx);
+               msg_id, (void *)(uintptr_t)cb, ctx);
     return 0;
 }
 
@@ -246,7 +246,7 @@ int eh_rpc_evt_dispatch(int32_t msg_id, const void *ctrl_cmd)
     tl_dispatch_depth++;
     for (size_t i = 0; i < n; i++) {
         ESP_LOGD("eh_host_feat_rpc", "evt_dispatch: msg_id=%" PRId32 " -> cb[%zu]=%p ctx=%p",
-                   msg_id, i, (void *)snap[i].cb, snap[i].ctx);
+                   msg_id, i, (void *)(uintptr_t)snap[i].cb, snap[i].ctx);
         snap[i].cb(ctrl_cmd, snap[i].ctx);
     }
     tl_dispatch_depth--;

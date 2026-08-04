@@ -1499,6 +1499,15 @@ message Rpc_Resp_WifiGetInactiveTime {
 	uint32 sec = 2;
 }
 
+message Rpc_Req_WifiDisablePmfConfig {
+	uint32 ifx = 1;
+}
+
+message Rpc_Resp_WifiDisablePmfConfig {
+	int32 resp = 1;
+	uint32 ifx = 2;
+}
+
 message Rpc_Req_WifiStaItwtSetup {
 	wifi_itwt_setup_config setup_config = 1;
 }
@@ -2230,6 +2239,7 @@ message Rpc {
 
 		Rpc_Req_WifiSetCountryCode          req_wifi_set_country_code         = 334;
 		Rpc_Req_WifiGetCountryCode          req_wifi_get_country_code         = 335;
+		Rpc_Req_WifiDisablePmfConfig        req_wifi_disable_pmf_config       = 337;
 		Rpc_Req_WifiStaGetAid               req_wifi_sta_get_aid              = 338;
 		Rpc_Req_WifiStaGetNegotiatedPhymode req_wifi_sta_get_negotiated_phymode = 339;
 
@@ -2369,6 +2379,7 @@ message Rpc {
 
 		Rpc_Resp_WifiSetCountryCode         resp_wifi_set_country_code         = 590;
 		Rpc_Resp_WifiGetCountryCode         resp_wifi_get_country_code         = 591;
+		Rpc_Resp_WifiDisablePmfConfig       resp_wifi_disable_pmf_config       = 593;
 		Rpc_Resp_WifiStaGetAid              resp_wifi_sta_get_aid              = 594;
 		Rpc_Resp_WifiStaGetNegotiatedPhymode resp_wifi_sta_get_negotiated_phymode = 595;
 

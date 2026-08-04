@@ -40,12 +40,12 @@ esp_err_t eh_host_transport_tx(uint8_t if_type, uint8_t if_num,
 #endif
     }
 
-    size_t total = sizeof(struct esp_payload_header) + payload_len;
+    size_t total = eh_frame_hdr_size() + payload_len;
     /* MUST be DMA-capable; sdmmc/SPI master reject non-DMA buffers. */
     uint8_t *buf = (uint8_t *)eh_host_port_dma_alloc(total);
     if (!buf) return ESP_ERR_NO_MEM;
 
-    memcpy(buf + sizeof(struct esp_payload_header), payload, payload_len);
+    memcpy(buf + eh_frame_hdr_size(), payload, payload_len);
 
     /* Bus owns lifetime of `buf`. */
     interface_buffer_handle_t bh = {
@@ -53,7 +53,7 @@ esp_err_t eh_host_transport_tx(uint8_t if_type, uint8_t if_num,
         .if_type            = if_type,
         .if_num             = if_num,
         .flags              = flags,
-        .payload            = buf + sizeof(struct esp_payload_header),
+        .payload            = buf + eh_frame_hdr_size(),
         .payload_len        = payload_len,
         .payload_zcopy      = 0,
         .free_buf_handle    = eh_host_port_dma_free,
@@ -79,7 +79,7 @@ esp_err_t eh_host_transport_tx_zerocopy(uint8_t if_type, uint8_t if_num,
     }
 
     /* Caller-promised headroom. */
-    uint8_t *frame_start = payload - sizeof(struct esp_payload_header);
+    uint8_t *frame_start = payload - eh_frame_hdr_size();
 
     /* Zero-copy — caller retains ownership of `frame_start`. */
     interface_buffer_handle_t bh = {

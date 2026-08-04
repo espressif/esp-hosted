@@ -7,6 +7,9 @@
 #include "esp_err.h"
 #include "eh_cp.h"
 
+esp_err_t esp_hosted_init(void);
+esp_err_t esp_hosted_deinit(void);
+
 esp_err_t esp_hosted_init(void)   { return eh_cp_init(); }
 esp_err_t esp_hosted_deinit(void) { return eh_cp_deinit(); }
 
@@ -21,6 +24,7 @@ static void eh_cp_auto_init_task(void *arg)
     vTaskDelete(NULL);
 }
 
+void eh_cp_auto_init_ctor(void);
 __attribute__((constructor)) void eh_cp_auto_init_ctor(void)
 {
     xTaskCreate(eh_cp_auto_init_task, "eh_cp_init", 4096, NULL, 5, NULL);

@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# SPDX-FileCopyrightText: 2026 Espressif Systems (Shanghai) CO LTD
+# SPDX-License-Identifier: Apache-2.0
 """
 ESP-Hosted example build orchestrator.
 
@@ -11,7 +13,7 @@ Design goals:
 Usage:
   python3 build_examples.py --build-targets=esp32c6
   python3 build_examples.py --build-targets=esp32c2,esp32c6 --build-transports=sdio,spi-fd
-  python3 build_examples.py --build-targets=esp32c6 --build-examples=wifi/connect,bt/standard_hci
+  python3 build_examples.py --build-targets=esp32c6 --build-examples=wifi/connect,bluetooth/nimble_uart
   python3 build_examples.py --build-targets=all --build-transports=all --shell=fish
   python3 build_examples.py --build-targets=esp32c2 --dry-run
   python3 build_examples.py --list-compat
@@ -82,12 +84,17 @@ NO_WIFI_TARGETS: set[str] = set()
 # Example path substring → excluded chips.
 # Verified against IDF Kconfig + soc_caps.
 # Patterns are substring-matched against the path relative to repo root,
-# so use enough of the new-layout path to disambiguate (e.g. `bt/standard_hci`
-# rather than just `bt/`, since most examples have `bt/` somewhere).
+# and matches union: a path may hit several keys (e.g. a classic-BT
+# example matches both `bluetooth/` and its scenario key).
 EXAMPLE_EXCLUDE: dict[str, set[str]] = {
     "network_split":   {"esp32c2", "esp32c3"},
-    "bt/standard_hci": {"esp32s2"},
-    "bt/hosted_hci":   {"esp32s2"},
+    # BLE controller absent on esp32s2 → all Bluetooth examples excluded.
+    "bluetooth/":      {"esp32s2"},
+    # Classic BT (BR/EDR) is ESP32-only → exclude every other CP chip.
+    "classic_bt_discovery": {"esp32c2", "esp32c3", "esp32c5", "esp32c6",
+                             "esp32c61", "esp32s2", "esp32s3"},
+    "bt_hid_mouse":         {"esp32c2", "esp32c3", "esp32c5", "esp32c6",
+                             "esp32c61", "esp32s2", "esp32s3"},
     "power_save":      {"esp32c2"},
     "wifi/enterprise": {"esp32c2"},
     "wifi/dpp":        {"esp32c2"},

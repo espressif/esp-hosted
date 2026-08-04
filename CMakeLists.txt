@@ -26,6 +26,9 @@ endif()
 if(ESP_PLATFORM)
     file(GLOB _eh_feat_incs LIST_DIRECTORIES true RELATIVE "${EH_PATH}"
         "${EH_PATH}/host/features/eh_host_feat_*/include")
+    if(CONFIG_ESP_HOSTED_HOST_FEAT_BT)
+        list(APPEND _eh_feat_incs "examples/common_components/esp_hosted_bt_host_stack/include")
+    endif()
 
     # ldgen places the feature-descriptor section into a declared region (no
     # "undeclared region" linker warning). Host and CP each map their own section.
@@ -36,12 +39,18 @@ if(ESP_PLATFORM)
         list(APPEND _eh_ldfragments "coprocessor/eh_cp_feat_descs.lf")
     endif()
 
+    set(_eh_bt_port_reqs "")
+    if(CONFIG_BT_NIMBLE_ENABLED OR CONFIG_BT_BLUEDROID_ENABLED)
+        list(APPEND _eh_bt_port_reqs bt)
+    endif()
+
     idf_component_register(NAME esp_hosted
         INCLUDE_DIRS host/compat/include ${_eh_feat_incs}
         REQUIRES esp_event esp_timer log esp_common esp_wifi
         PRIV_REQUIRES driver esp_driver_gpio esp_driver_spi esp_driver_sdmmc esp_driver_uart
                       esp_pm nvs_flash
                       protocomm  # eh_cp_feat_rpc when CP framework is built
+                      ${_eh_bt_port_reqs}
         LDFRAGMENTS ${_eh_ldfragments})
 
     # eh_host  — HOST-side aggregator; every host/ subdir self-attaches.
@@ -96,6 +105,12 @@ endif()
 if(CONFIG_ESP_HOSTED_HOST)
     add_subdirectory("${EH_PATH}/host"         ${CMAKE_BINARY_DIR}/host)
 endif()
+
+if(CONFIG_ESP_HOSTED_HOST_FEAT_BT)
+    add_subdirectory("${EH_PATH}/examples/common_components/esp_hosted_bt_host_stack"
+                     ${CMAKE_BINARY_DIR}/esp_hosted_bt_host_stack)
+endif()
+
 add_subdirectory("${EH_PATH}/port"             ${CMAKE_BINARY_DIR}/port)
 
 if(CONFIG_ESP_HOSTED_HOST)
@@ -112,4 +127,8 @@ if(CONFIG_ESP_HOSTED_HOST)
     if(NOT ESP_PLATFORM AND TARGET esp_event)
         target_link_libraries(eh_host INTERFACE esp_event)
     endif()
+endif()
+
+if(ESP_PLATFORM)
+    include("${EH_PATH}/tools/cmake/eh_ci_pedantic.cmake")
 endif()

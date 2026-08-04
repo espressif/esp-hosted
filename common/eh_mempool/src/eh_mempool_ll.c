@@ -85,12 +85,12 @@ os_mempool_init(struct os_mempool *mp, uint16_t blocks, uint32_t block_size,
 	SLIST_FIRST(mp) = membuf;
 
 	block_addr = (uint8_t *)membuf;
-	block_ptr = (struct os_memblock *)block_addr;
+	block_ptr = (struct os_memblock *)(void *)block_addr;
 	while (blocks > 1) {
 		block_addr += true_block_size;
 		os_mempool_poison(block_addr, true_block_size);
-		SLIST_NEXT(block_ptr, mb_next) = (struct os_memblock *)block_addr;
-		block_ptr = (struct os_memblock *)block_addr;
+		SLIST_NEXT(block_ptr, mb_next) = (struct os_memblock *)(void *)block_addr;
+		block_ptr = (struct os_memblock *)(void *)block_addr;
 		--blocks;
 	}
 
@@ -139,14 +139,14 @@ os_mempool_clear(struct os_mempool *mp)
 	SLIST_FIRST(mp) = (void *)mp->mp_membuf_addr;
 
 	block_addr = (uint8_t *)mp->mp_membuf_addr;
-	block_ptr = (struct os_memblock *)block_addr;
+	block_ptr = (struct os_memblock *)(void *)block_addr;
 	blocks = mp->mp_num_blocks;
 
 	while (blocks > 1) {
 		block_addr += true_block_size;
 		os_mempool_poison(block_addr, true_block_size);
-		SLIST_NEXT(block_ptr, mb_next) = (struct os_memblock *)block_addr;
-		block_ptr = (struct os_memblock *)block_addr;
+		SLIST_NEXT(block_ptr, mb_next) = (struct os_memblock *)(void *)block_addr;
+		block_ptr = (struct os_memblock *)(void *)block_addr;
 		--blocks;
 	}
 
@@ -245,7 +245,7 @@ os_memblock_put_from_cb(struct os_mempool *mp, void *block_addr)
 
 	os_mempool_poison(block_addr, OS_MEMPOOL_TRUE_BLOCK_SIZE(mp));
 
-	block = (struct os_memblock *)block_addr;
+	block = (struct os_memblock *)(void *)block_addr;
 	OS_ENTER_CRITICAL();
 
 	SLIST_NEXT(block, mb_next) = SLIST_FIRST(mp);
@@ -277,7 +277,7 @@ os_memblock_put(struct os_mempool *mp, void *block_addr)
 
 	/* Duplicate-free check. */
 	SLIST_FOREACH(block, mp, mb_next) {
-		assert(block != (struct os_memblock *)block_addr);
+		assert(block != (struct os_memblock *)(void *)block_addr);
 	}
 #endif
 

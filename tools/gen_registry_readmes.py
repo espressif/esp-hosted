@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# SPDX-FileCopyrightText: 2026 Espressif Systems (Shanghai) CO LTD
+# SPDX-License-Identifier: Apache-2.0
 """Generate registry example READMEs from the top-level example README's markers.
 
 Publish-time only (run in the upload_component CI step); generated files are NOT
@@ -139,8 +141,11 @@ def process(example, dry_run, out_dir=None):
     cp_body, host_body, has_cp, has_host = slice_readme(text)
     title = title_of(text)
     out = []
-    if has_cp and (example / "cp").is_dir():
-        out.append((example / "cp" / "README.md", render(title, "Coprocessor", cp_body)))
+    if has_cp:
+        # cp/ and any cp_<variant>/ (e.g. cp_wifi) all publish the coprocessor block.
+        for role in sorted(example.iterdir()):
+            if role.is_dir() and (role.name == "cp" or role.name.startswith("cp_")):
+                out.append((role / "README.md", render(title, "Coprocessor", cp_body)))
     if has_host:
         hd = host_dir(example)
         if hd:
@@ -158,13 +163,11 @@ def process(example, dry_run, out_dir=None):
     return results
 
 
-def top_readmes(skip_bluetooth=True):
+def top_readmes():
     for readme in sorted(EXAMPLES.rglob("README.md")):
         d = readme.parent
         parts = d.relative_to(EXAMPLES).parts
         if "managed_components" in parts or "components" in parts:
-            continue
-        if skip_bluetooth and parts and parts[0] == "bluetooth":
             continue
         if (d / "cp").is_dir() or (d / "mcu_host").is_dir() or (d / "esp_host").is_dir():
             yield d
@@ -176,18 +179,17 @@ def main():
     ap.add_argument("--out", help="write generated files under this review dir "
                     "(mirrors repo paths) instead of in place")
     ap.add_argument("--example", help="one example dir (relative to repo root)")
-    ap.add_argument("--include-bluetooth", action="store_true")
     args = ap.parse_args()
 
     out_dir = Path(args.out).resolve() if args.out else None
     targets = [REPO / args.example] if args.example \
-        else list(top_readmes(skip_bluetooth=not args.include_bluetooth))
+        else list(top_readmes())
 
     total = warned = 0
     for ex in targets:
         for path, warns in process(ex, args.dry_run, out_dir):
             total += 1
-            rel = path.relative_to(REPO)
+            rel = path.relative_to(out_dir if out_dir else REPO)
             if warns:
                 warned += 1
                 print(f"WARN {rel}: {'; '.join(warns)}", file=sys.stderr)

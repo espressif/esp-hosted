@@ -37,9 +37,32 @@ def strip_deps(path, deps):
             continue
         out.append(lines[i])
         i += 1
+    out = _normalize_empty_deps(out)
     with open(path, "w") as f:
         f.write("".join(out))
     return removed
+
+
+def _normalize_empty_deps(lines):
+    """A top-level `dependencies:` left with no children after stripping serializes
+    as null and fails manifest validation ("Input should be a valid dictionary").
+    Rewrite such a childless block to an explicit empty dict."""
+    n = len(lines)
+    for idx, line in enumerate(lines):
+        if not re.match(r"^dependencies:\s*$", line):
+            continue
+        has_child = False
+        j = idx + 1
+        while j < n:
+            nxt = lines[j]
+            if nxt.strip() == "":
+                j += 1
+                continue
+            has_child = nxt[:1] in (" ", "\t")
+            break
+        if not has_child:
+            lines[idx] = "dependencies: {}\n"
+    return lines
 
 
 if __name__ == "__main__":

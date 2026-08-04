@@ -42,12 +42,12 @@ static int reconfigure_attempt(int force_reset)
         return -EIO;
     }
 
-    const uint64_t start_ms   = (esp_timer_get_time() / 1000);
+    const uint64_t start_ms   = (uint64_t)(esp_timer_get_time() / 1000);
     const uint32_t timeout_ms = EH_HOST_CONNECT_DOER_TIMEOUT_MS;
 
     while (!eh_host_mcu_transport_state_is_tx_ready()) {
         if (timeout_ms != 0 &&
-            ((esp_timer_get_time() / 1000) - start_ms) >= timeout_ms) {
+            ((uint64_t)(esp_timer_get_time() / 1000) - start_ms) >= timeout_ms) {
             return -EIO;
         }
         eh_host_port_task_delay_ms(EH_RECONFIGURE_POLL_MS);

@@ -8,6 +8,14 @@ if(CONFIG_ESP_HOST_WIFI_ENABLED)
 		"cannot both be enabled; both use the host SDIO bus. Disable one.")
 endif()
 
+# Removed in 3.0 — legacy hosted-BT enables. Fail loud on a stale sdkconfig.
+if(CONFIG_ESP_HOSTED_ENABLE_BT_BLUEDROID OR CONFIG_ESP_HOSTED_BLUEDROID_HCI_VHCI
+   OR CONFIG_ESP_HOSTED_ENABLE_BT_NIMBLE OR CONFIG_ESP_HOSTED_NIMBLE_HCI_VHCI)
+	message(FATAL_ERROR
+		"Hosted BT Kconfig changed in 3.0. See "
+		"https://github.com/espressif/esp-hosted/blob/unified_release/docs/migration.md")
+endif()
+
 
 if(CONFIG_ESP_HOSTED_HOST_FEAT_RPC_READY)
     add_subdirectory(features/eh_host_feat_rpc

@@ -1,17 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
-// Copyright 2015-2024 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include "eh_cp_master_config.h"
 
@@ -384,7 +376,13 @@ static void uart_rx_task(void* pvParameters)
 		 * consumer gets the offset-applied payload (matches the SDIO path). */
 		uint16_t off = (uint16_t)((const uint8_t *)buf_handle.payload - uart_scratch_buf);
 		buf = h_uart_buffer_rx_alloc(MEMSET_REQUIRED);
-		assert(buf);
+		if (!buf) {
+			/* RX pool momentarily drained (host not consuming fast enough) —
+			 * drop this frame instead of aborting, matching the SDIO path's
+			 * alloc-failure handling. The link stays up; RPC retransmits. */
+			ESP_LOGW(TAG, "uart rx: no rx buffer (pool drained), drop frame");
+			continue;
+		}
 
 		memcpy(buf, uart_scratch_buf, total_len);
 
@@ -722,7 +720,7 @@ interface_context_t *interface_insert_driver(int (*event_handler)(uint8_t val))
 	return &context;
 }
 
-int interface_remove_driver()
+int interface_remove_driver(void)
 {
 	memset(&context, 0, sizeof(context));
 	return 0;

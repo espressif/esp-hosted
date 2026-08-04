@@ -14,7 +14,7 @@
     len_to_print = display_len < buf_len ? display_len : buf_len;               \
     ESP_LOG_LEVEL_LOCAL(curr_level, tag1, "%s: buf_len[%d], print_len[%d]",     \
             tag2, (int)buf_len, (int)len_to_print);                             \
-    ESP_LOG_BUFFER_HEXDUMP(tag2, buff, len_to_print, curr_level);               \
+    ESP_LOG_BUFFER_HEXDUMP(tag2, buff, (uint16_t)len_to_print, curr_level);     \
   }
 
 #define ESP_HEXLOGE(tag2, buff, buf_len, display_len) \

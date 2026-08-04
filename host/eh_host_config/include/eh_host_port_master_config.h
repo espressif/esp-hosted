@@ -270,11 +270,6 @@
 #else
 #  define EH_HOST_FEAT_BT_READY             0
 #endif
-#ifdef CONFIG_ESP_HOSTED_HOST_FEAT_BT_AUTO_INIT
-#  define EH_HOST_FEAT_BT_AUTO_INIT         1
-#else
-#  define EH_HOST_FEAT_BT_AUTO_INIT         0
-#endif
 
 /* OpenThread (RCP feature-control on hosted link) */
 #ifdef CONFIG_ESP_HOSTED_HOST_FEAT_OPENTHREAD
@@ -308,6 +303,11 @@
 #  define EH_HOST_FEAT_OTA_AUTO_INIT        1
 #else
 #  define EH_HOST_FEAT_OTA_AUTO_INIT        0
+#endif
+#ifdef CONFIG_ESP_HOSTED_HOST_OTA_BEGIN_TIMEOUT_MS
+#  define EH_HOST_OTA_BEGIN_TIMEOUT_MS      CONFIG_ESP_HOSTED_HOST_OTA_BEGIN_TIMEOUT_MS
+#else
+#  define EH_HOST_OTA_BEGIN_TIMEOUT_MS      30000
 #endif
 
 /* PEER_DATA */

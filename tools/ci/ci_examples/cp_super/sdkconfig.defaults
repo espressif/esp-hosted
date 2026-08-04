@@ -1,0 +1,34 @@
+# ── CI-only super coprocessor ────────────────────────────────────────
+# Enables every chip-independent CP feature so ONE build proves they all
+# compile + link together. NOT a shipped example. Chip-specific overrides
+# (Wi-Fi absent on h2, 802.15.4 only on c6/h2) live in sdkconfig.defaults.<chip>.
+CONFIG_ESP_HOSTED=y
+CONFIG_ESP_HOSTED_CP=y
+CONFIG_ESP_HOSTED_CP_FOR_MCU=y
+CONFIG_ESP_HOSTED_CP_RPC_V2=y
+
+# All features on may exceed 4 MB — CI uses an 8 MB single-slot table for headroom.
+CONFIG_ESPTOOLPY_FLASHSIZE_8MB=y
+CONFIG_PARTITION_TABLE_CUSTOM=y
+CONFIG_PARTITION_TABLE_CUSTOM_FILENAME="partitions_eh_cp_ci_8m.csv"
+
+CONFIG_FREERTOS_HZ=1000
+CONFIG_ESP_WIFI_NVS_ENABLED=y
+
+# Wi-Fi + network-split (every cp_super chip has Wi-Fi except h2, which overrides off).
+CONFIG_ESP_HOSTED_CP_FEAT_WIFI=y
+CONFIG_ESP_HOSTED_CP_FEAT_NW_SPLIT=y
+
+# Bluetooth controller, HCI relayed to the host (every cp_super chip has BT).
+CONFIG_ESP_HOSTED_CP_FEAT_BT=y
+CONFIG_ESP_HOSTED_CP_BT_ENABLED=y
+CONFIG_ESP_HOSTED_CP_FEAT_BT_HCI_VHCI=y
+CONFIG_BT_ENABLED=y
+CONFIG_BT_CONTROLLER_ONLY=y
+
+# Chip-independent relays.
+CONFIG_ESP_HOSTED_CP_FEAT_PEER_DATA=y
+CONFIG_ESP_HOSTED_CP_FEAT_GPIO_EXP=y
+CONFIG_ESP_HOSTED_CP_FEAT_HOST_PS=y
+CONFIG_ESP_HOSTED_CP_FEAT_DEBUG=y
+CONFIG_ESP_HOSTED_CP_FEAT_CLI=y

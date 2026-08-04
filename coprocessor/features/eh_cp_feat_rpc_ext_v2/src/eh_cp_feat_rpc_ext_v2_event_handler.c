@@ -139,7 +139,7 @@ static void ext_dpp_event_dispatcher(void *handler_args, esp_event_base_t base,
 	}
 
 	switch (event_id) {
-		case EH_CP_FEAT_WIFI_EXT_DPP_EVT_URI_READY:
+		case EH_CP_FEAT_WIFI_EXT_DPP_EVT_URI_READY: {
 			ESP_LOGD(TAG, "WIFI DPP uri ready");
 			wifi_event_dpp_uri_ready_t *uri = (wifi_event_dpp_uri_ready_t *)event_data;
 			int uri_len = uri->uri_data_len;
@@ -147,21 +147,25 @@ static void ext_dpp_event_dispatcher(void *handler_args, esp_event_base_t base,
 					RPC_ID__Event_WifiDppUriReady,
 					event_data, sizeof(wifi_event_dpp_uri_ready_t) + uri_len);
 			break;
-		case EH_CP_FEAT_WIFI_EXT_DPP_EVT_CFG_RECVD:
+
+		} case EH_CP_FEAT_WIFI_EXT_DPP_EVT_CFG_RECVD: {
 			ESP_LOGD(TAG, "WIFI DPP cfg received");
 			rpc_send_event_if_ready(event_id,
 					RPC_ID__Event_WifiDppCfgRecvd,
 					event_data, sizeof(wifi_event_dpp_config_received_t));
 			break;
-		case EH_CP_FEAT_WIFI_EXT_DPP_EVT_FAILED:
+
+		} case EH_CP_FEAT_WIFI_EXT_DPP_EVT_FAILED: {
 			ESP_LOGD(TAG, "WIFI DPP failed");
 			rpc_send_event_if_ready(event_id,
 					RPC_ID__Event_WifiDppFail,
 					event_data, sizeof(wifi_event_dpp_failed_t));
 			break;
-		default:
+
+		} default: {
 			ESP_LOGW(TAG, "Unknown DPP event ID: %ld", event_id);
 			break;
+		}
 	}
 }
 
@@ -213,17 +217,15 @@ static void wifi_event_dispatcher(void *handler_args, esp_event_base_t base,
 									RPC_ID__Event_WifiEventNoArgs,
 				&wifi_event_id, sizeof(wifi_event_id));
 			break;
-		}
 
-		case EH_CP_FEAT_WIFI_EVT_STA_STOPPED: {
+		} case EH_CP_FEAT_WIFI_EVT_STA_STOPPED: {
 			int32_t wifi_event_id2 = WIFI_EVENT_STA_STOP;
 			rpc_send_event_if_ready(event_id,
 								RPC_ID__Event_WifiEventNoArgs,
 				&wifi_event_id2, sizeof(wifi_event_id2));
 			break;
-		}
 
-		case EH_CP_FEAT_WIFI_EVT_SOFTAP_STARTED:
+		} case EH_CP_FEAT_WIFI_EVT_SOFTAP_STARTED: {
 			ESP_LOGI(TAG, "softap started");
 			int32_t wifi_event_id3 = WIFI_EVENT_AP_START;
 			rpc_send_event_if_ready(event_id,
@@ -231,7 +233,7 @@ static void wifi_event_dispatcher(void *handler_args, esp_event_base_t base,
 				&wifi_event_id3, sizeof(wifi_event_id3));
 			break;
 
-		case EH_CP_FEAT_WIFI_EVT_SOFTAP_STOPPED:
+		} case EH_CP_FEAT_WIFI_EVT_SOFTAP_STOPPED: {
 			ESP_LOGI(TAG, "softap stopped");
 			int32_t wifi_event_id4 = WIFI_EVENT_AP_STOP;
 			rpc_send_event_if_ready(event_id,
@@ -239,7 +241,7 @@ static void wifi_event_dispatcher(void *handler_args, esp_event_base_t base,
 				&wifi_event_id4, sizeof(wifi_event_id4));
 			break;
 
-		case EH_CP_FEAT_WIFI_EVT_STA_CONNECTED_TO_AP:
+		} case EH_CP_FEAT_WIFI_EVT_STA_CONNECTED_TO_AP: {
 			ESP_LOGI(TAG, "Sta mode connected");
 			rpc_send_event_if_ready(event_id,
 								RPC_ID__Event_StaConnected,
@@ -248,28 +250,28 @@ static void wifi_event_dispatcher(void *handler_args, esp_event_base_t base,
 			memcpy(&mcu_lkg_sta_connected_event, event_data, sizeof(wifi_event_sta_connected_t));
 			break;
 
-		case EH_CP_FEAT_WIFI_EVT_STA_DISCONNECTED_FROM_AP:
+		} case EH_CP_FEAT_WIFI_EVT_STA_DISCONNECTED_FROM_AP: {
 			ESP_LOGI(TAG, "Sta mode disconnect");
 			rpc_send_event_if_ready(event_id,
 								RPC_ID__Event_StaDisconnected,
 				event_data, sizeof(wifi_event_sta_disconnected_t));
 			break;
 
-		case EH_CP_FEAT_WIFI_EVT_STA_CONNECTED_TO_ESP_SOFTAP:
+		} case EH_CP_FEAT_WIFI_EVT_STA_CONNECTED_TO_ESP_SOFTAP: {
 			ESP_LOGI(TAG, "station connected to ESP SoftAP");
 			rpc_send_event_if_ready(event_id,
 								RPC_ID__Event_AP_StaConnected,
 				event_data, sizeof(wifi_event_ap_staconnected_t));
 			break;
 
-		case EH_CP_FEAT_WIFI_EVT_STA_DISCONNECTED_FROM_ESP_SOFTAP:
+		} case EH_CP_FEAT_WIFI_EVT_STA_DISCONNECTED_FROM_ESP_SOFTAP: {
 			ESP_LOGI(TAG, "station disconnected from ESP SoftAP");
 			rpc_send_event_if_ready(event_id,
 								RPC_ID__Event_AP_StaDisconnected,
 				event_data, sizeof(wifi_event_ap_stadisconnected_t));
 			break;
 
-		case EH_CP_FEAT_WIFI_EVT_SCAN_DONE:
+		} case EH_CP_FEAT_WIFI_EVT_SCAN_DONE: {
 			ESP_LOGI(TAG, "Wi-Fi sta scan done");
 			mcu_scan_done = true;
 			rpc_send_event_if_ready(event_id,
@@ -277,9 +279,10 @@ static void wifi_event_dispatcher(void *handler_args, esp_event_base_t base,
 				event_data, sizeof(wifi_event_sta_scan_done_t));
 			break;
 
-		default:
+		} default: {
 			ESP_LOGW(TAG, "Unknown WiFi event ID: %ld", event_id);
 			break;
+		}
 	}
 }
 #endif

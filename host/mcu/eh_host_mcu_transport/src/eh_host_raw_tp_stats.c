@@ -38,7 +38,7 @@ static void raw_tp_timer_func(void *arg)
 {
     (void)arg;
     /* Report decimal kbps to match the Linux host raw-TP output. */
-    int32_t div = 1000;
+    uint32_t div = 1000;
     uint64_t actual_bandwidth_tx = (s_test_raw_tx_len * 8) / EH_HOST_PORT_RAW_TP_REPORT_INTERVAL;
     uint64_t actual_bandwidth_rx = (s_test_raw_rx_len * 8) / EH_HOST_PORT_RAW_TP_REPORT_INTERVAL;
 
