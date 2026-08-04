@@ -13,20 +13,35 @@ variables:
   IDF_VER: "v5.5.4"
   CCACHE_DIR: "$CI_PROJECT_DIR/.ccache"
 
-# Build + checks run on MRs, master, unified_release and any release/* branch.
-# (Deploy stays master/unified_release only — see deploy_master_github.)
-.rules_build: &rules_build
+# Spread the matrix across the merge boundary so no cell builds twice on the
+# MR->merge cycle. PRE = the MR gate (smallest set that still compiles every
+# distinct path: all transports, both arches, full feature superset, host +
+# both BT stacks). POST = breadth on the target branch (more chips, more IDF
+# versions, special-partition examples) before mirror/registry.
+# release/* branches match BOTH -> full coverage there (publish-critical, and
+# not part of the MR dedup), so direct pushes to a release branch build it all.
+.rules_pre: &rules_pre
   - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+  - if: '$CI_COMMIT_BRANCH =~ /^release/'
+.rules_post: &rules_post
   - if: '$CI_COMMIT_BRANCH == "master"'
   - if: '$CI_COMMIT_BRANCH == "unified_release"'
   - if: '$CI_COMMIT_BRANCH =~ /^release/'
+
+# Change-scoping (which SIDE to build for a given diff) is decided at run time by
+# tools/ci/decide_build.sh, because GitLab rules:changes cannot ignore a single
+# generated file (the fw-version header) — it only *includes* globs. So the build
+# jobs are created by the coarse PRE/POST rules below, then self-skip (cheaply,
+# before the IDF install) when decide_build.sh says their side isn't affected,
+# logging exactly why. A skip on an MR is still built by the unconditional POST
+# pipeline before mirror/registry.
 
 # ───────────────────────── pre: cheap gates ─────────────────────────
 premerge_check:
   stage: pre
   image: espressif/idf:${IDF_VER}
   tags: [build_fw]
-  rules: *rules_build
+  rules: *rules_pre
   script:
     - python3 tools/check_fw_versions.py
     - python3 tools/check_changelog.py
@@ -37,7 +52,7 @@ pre_commit:
   stage: pre
   image: espressif/idf:${IDF_VER}
   tags: [build_fw]
-  rules: *rules_build
+  rules: *rules_pre
   variables:
     GIT_DEPTH: 0
     # Release bypass: skip ONLY the copyright/license hook. The tree carries
@@ -58,6 +73,24 @@ pre_commit:
         pre-commit run --from-ref HEAD~1 --to-ref HEAD --show-diff-on-failure
       fi
 
+# Design test for the pipeline itself (docs/design/pipeline_design.md). Runs when
+# the pipeline or the test changes, so a rules edit can't silently break routing.
+pipeline_rules_test:
+  stage: pre
+  image: espressif/idf:${IDF_VER}
+  tags: [build_fw]
+  variables:
+    GIT_SUBMODULE_STRATEGY: none
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+      changes:
+        - .gitlab-ci.yml
+        - tools/ci/test_pipeline_rules.py
+        - tools/ci/decide_build.sh
+    - if: '$CI_COMMIT_BRANCH =~ /^release/'
+  script:
+    - python3 tools/ci/test_pipeline_rules.py
+
 # ──────────────────────── build: affordable spread ────────────────────────
 # Cost model: each cell is one container paying install + export + ccache warm-up,
 # so we minimise cells, not just apps. Two levers:
@@ -70,30 +103,34 @@ pre_commit:
   stage: build
   image: espressif/idf:${IDF_IMAGE}
   tags: [build_fw]
-  rules: *rules_build
+  # rules are set per concrete job — the pre/post split lives on the jobs below.
   cache:
     key: eh-build-${IDF_IMAGE}
     paths: [.ccache/]
   variables:
     IDF_CCACHE_ENABLE: "1"
     IDF_PYTHON_CHECK_CONSTRAINTS: "yes"
+    GIT_DEPTH: 0     # decide_build.sh needs history to diff against the base
   before_script:
-    - ${IDF_PATH}/install.sh --enable-ci
-    - . ${IDF_PATH}/export.sh
-    # Pedantic on esp_hosted's own targets only (eh_* + esp_hosted_bt_host_stack),
-    # mirroring esp_hosted_mcu. The set is warnings-only on our targets by design
-    # (tools/cmake/eh_ci_pedantic.cmake) — a global -Werror would trip on IDF's own
-    # headers we can't patch. The eh_build gate below therefore fails the job only
-    # when a warning's path is under OUR sources; IDF/vendored noise is ignored.
-    - export ESP_HOSTED_CI_PEDANTIC=1
-    - export EXTRA_CFLAGS="-DIDF_CI_BUILD"
-    - export EXTRA_CXXFLAGS="$EXTRA_CFLAGS"
+    # Heavy IDF setup — called from `script` only AFTER decide_build.sh says
+    # BUILD, so a self-skipped job never pays for install. Pedantic is
+    # warnings-only on eh_* targets (tools/cmake/eh_ci_pedantic.cmake); the
+    # eh_build gate fails a job only for warnings whose file is in the checkout.
+    - |
+      eh_setup() {
+        ${IDF_PATH}/install.sh --enable-ci
+        . ${IDF_PATH}/export.sh
+        export ESP_HOSTED_CI_PEDANTIC=1
+        export EXTRA_CFLAGS="-DIDF_CI_BUILD"
+        export EXTRA_CXXFLAGS="$EXTRA_CFLAGS"
+      }
     - |
       eh_build() {
         echo ">>> eh_build: idf-build-apps build $*"
-        set -o pipefail
+        # rc = idf-build-apps' own status (PIPESTATUS[0]), NOT tee's — tee almost
+        # always succeeds and would mask a failed build (the '| tail' trap earlier).
         idf-build-apps build "$@" -vv 2>&1 | tee /tmp/eh_build.log
-        rc=$?
+        rc=${PIPESTATUS[0]}
         if [ "$rc" -ne 0 ]; then echo ">>> BUILD FAILED (rc=$rc)"; return "$rc"; fi
         # A warning is OURS iff the file on the 'warning:' line lives inside THIS
         # checkout ($CI_PROJECT_DIR == .../esp_hosted) and not in a vendored/
@@ -120,82 +157,121 @@ pre_commit:
         echo "===================================================================="
       }
 
-# One dense CP build per radio chip (all 8 named), transport spread (SPI/SPI_HD/
-# UART explicit; SDIO = example default), IDF versions spread across cells.
+# [PRE] The MR gate: every transport (SPI/SPI_HD/UART explicit, SDIO default),
+# both arches (xtensa esp32/s3, riscv c6/c3/c2), the full feature superset
+# (c6 = wifi+BLE+OT), and classic BT (esp32). If a change breaks our code, a cell
+# here catches it — without a dev waiting on the whole matrix.
 build_cp_super:
   extends: .build
+  rules: *rules_pre
   parallel:
     matrix:
       - { IDF_IMAGE: "release-v5.5", TARGET: "esp32c6",  BUS: "" }                                   # full house: wifi+BLE+OT
-      - { IDF_IMAGE: "latest",       TARGET: "esp32",    BUS: "" }                                   # classic+BLE BT
-      - { IDF_IMAGE: "release-v6.0", TARGET: "esp32h2",  BUS: "" }                                   # BLE+OT, no wifi
+      - { IDF_IMAGE: "latest",       TARGET: "esp32",    BUS: "" }                                   # xtensa: classic+BLE BT + wifi/dpp/ent (IRAM-trimmed to co-fit)
       - { IDF_IMAGE: "v5.5.1",       TARGET: "esp32c3",  BUS: "CONFIG_EH_TRANSPORT_CP_SPI=y" }
       - { IDF_IMAGE: "latest",       TARGET: "esp32c2",  BUS: "CONFIG_EH_TRANSPORT_CP_SPI_HD=y" }
-      - { IDF_IMAGE: "release-v5.5", TARGET: "esp32s3",  BUS: "CONFIG_EH_TRANSPORT_CP_UART=y" }
-      - { IDF_IMAGE: "release-v6.0", TARGET: "esp32c5",  BUS: "" }
-      - { IDF_IMAGE: "v5.5.1",       TARGET: "esp32c61", BUS: "" }
+      - { IDF_IMAGE: "release-v5.5", TARGET: "esp32s3",  BUS: "CONFIG_EH_TRANSPORT_CP_UART=y" }        # xtensa
   script:
+    - if ! bash tools/ci/decide_build.sh cp; then echo ">>> cp not affected by this change — skipping"; exit 0; fi
+    - eh_setup
     # NOTE: plain `[ -n "$BUS" ] && OVR=...` returns 1 when BUS is empty, and
     # GitLab fails the job on any non-zero script line — use an if so it can't.
     - if [ -n "$BUS" ]; then OVR="--override-sdkconfig-items=$BUS"; else OVR=""; fi
     - eh_build -p tools/ci/ci_examples/cp_super --target $TARGET $OVR
 
-# CP examples deliberately excluded from cp_super (own partition / coex wiring).
+# [POST] Breadth on the target branch: remaining chips + the no-wifi+OT path (h2),
+# on more IDF versions. Same feature code, so lower marginal risk than PRE.
+build_cp_super_ext:
+  extends: .build
+  rules: *rules_post
+  parallel:
+    matrix:
+      - { IDF_IMAGE: "release-v6.0", TARGET: "esp32h2",  BUS: "" }   # BLE+OT, no wifi
+      - { IDF_IMAGE: "release-v6.0", TARGET: "esp32c5",  BUS: "" }
+      - { IDF_IMAGE: "v5.5.1",       TARGET: "esp32c61", BUS: "" }
+  script:
+    - if ! bash tools/ci/decide_build.sh cp; then echo ">>> cp not affected by this change — skipping"; exit 0; fi
+    - eh_setup
+    - if [ -n "$BUS" ]; then OVR="--override-sdkconfig-items=$BUS"; else OVR=""; fi
+    - eh_build -p tools/ci/ci_examples/cp_super --target $TARGET $OVR
+
+# [POST] CP examples excluded from cp_super (own partition / coex wiring, or a
+# BT HCI transport mode cp_super can't hold — cp_super pins VHCI, so the UART-HCI
+# relay branch (eh_cp_feat_bt_standard_hci_init) is only reachable via this example).
 build_cp_specials:
   extends: .build
+  rules: *rules_post
   parallel:
     matrix:
       - { IDF_IMAGE: "release-v5.5", TARGET: "esp32",   APP: "examples/ota/coprocessor_ota/cp" }
       - { IDF_IMAGE: "v5.5.1",       TARGET: "esp32c6", APP: "examples/ext_coex/cp" }
+      - { IDF_IMAGE: "release-v5.5", TARGET: "esp32c6", APP: "examples/bluetooth/nimble_uart/bleprph_host_only_uart/cp" }  # UART-HCI CP relay
   script:
+    - if ! bash tools/ci/decide_build.sh cp; then echo ">>> cp not affected by this change — skipping"; exit 0; fi
+    - eh_setup
     - eh_build -p $APP --target $TARGET
 
 # Host side: group all host examples for one (IDF, target) into a single container.
 # Each example keeps the IDF version its build was validated on. Covers the host
 # public-API surface, both BT host stacks (NimBLE + Bluedroid), and p4 + h2-host.
-build_host_v55_p4:
+build_host_v55_p4:            # [PRE] host libs + Bluedroid stack + gpio on p4
   extends: .build
+  rules: *rules_pre
   variables: { IDF_IMAGE: "release-v5.5" }
   script:
+    - if ! bash tools/ci/decide_build.sh host; then echo ">>> host not affected by this change — skipping"; exit 0; fi
+    - eh_setup
     - |
       eh_build --target esp32p4 \
         -p examples/wifi/enterprise/mcu_host \
            examples/bluetooth/esp_hosted_bluedroid/ble_gatt_server/mcu_host \
            examples/gpio_expander/mcu_host
 
-build_host_v55_h2:
+build_host_v55_h2:            # [PRE] h2 host + NimBLE stack
   extends: .build
+  rules: *rules_pre
   variables: { IDF_IMAGE: "release-v5.5" }
   script:
+    - if ! bash tools/ci/decide_build.sh host; then echo ">>> host not affected by this change — skipping"; exit 0; fi
+    - eh_setup
     - |
       eh_build --target esp32h2 \
         -p examples/wifi/sta/mcu_host \
            examples/bluetooth/nimble_uart/bleprph_host_only_uart/mcu_host
 
-build_host_latest_p4:
+build_host_latest_p4:         # [POST] iperf + nimble-coex + openthread (IDF latest)
   extends: .build
+  rules: *rules_post
   variables: { IDF_IMAGE: "latest" }
   script:
+    - if ! bash tools/ci/decide_build.sh host; then echo ">>> host not affected by this change — skipping"; exit 0; fi
+    - eh_setup
     - |
       eh_build --target esp32p4 \
         -p examples/wifi/iperf/mcu_host \
            examples/bluetooth/esp_hosted_nimble/bleprph_wifi_coex/mcu_host \
            examples/openthread/cli/esp_host
 
-build_host_v60_p4:
+build_host_v60_p4:            # [POST] nw_split + ota + sdmmc (IDF 6.0)
   extends: .build
+  rules: *rules_post
   variables: { IDF_IMAGE: "release-v6.0" }
   script:
+    - if ! bash tools/ci/decide_build.sh host; then echo ">>> host not affected by this change — skipping"; exit 0; fi
+    - eh_setup
     - |
       eh_build --target esp32p4 \
         -p examples/network_split/iperf/mcu_host \
            examples/ota/coprocessor_ota/mcu_host \
            examples/mcu_hosted_sdio_sdmmc_combined/mcu_host
 
-build_host_v551_p4:
+build_host_v551_p4:           # [POST] power_save + transport_config + api_exerciser (IDF 5.5.1)
   extends: .build
+  rules: *rules_post
   variables: { IDF_IMAGE: "v5.5.1" }
   script:
+    - if ! bash tools/ci/decide_build.sh host; then echo ">>> host not affected by this change — skipping"; exit 0; fi
+    - eh_setup
     - |
       eh_build --target esp32p4 \
         -p examples/power_save/host/network_split__host_deep_sleep/esp_host \
@@ -237,10 +313,9 @@ regression:
   script:
     # - eh.py test emu --auto-apply-idf-patches --timeout=18000
     - 'true'
-  rules:
-    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
-    - if: '$CI_COMMIT_BRANCH == "master"'
-    - if: '$CI_COMMIT_BRANCH == "unified_release"'
+  # [POST] the heavy emu run belongs on the target branch, not on every MR
+  # (a pre-merge emu-sanity subset can be added later if we want faster signal).
+  rules: *rules_post
 
 deploy_master_github:
   stage: deploy
@@ -249,16 +324,27 @@ deploy_master_github:
     - deploy
   needs:
     - regression
+  variables:
+    # Don't use the reused/dirtied CI working checkout at all. We push GitHub a
+    # PRISTINE full clone of the GitLab commit, so what lands there is an exact
+    # replica of GitLab — never build artifacts, managed_components, or submodule
+    # working trees. A full clone also structurally avoids the shallow-clone
+    # thin-pack failure. No submodule fetch: a superproject mirror pushes gitlinks.
+    GIT_STRATEGY: none
   rules:
     - if: '$CI_COMMIT_BRANCH == "master"'
     - if: '$CI_COMMIT_BRANCH == "unified_release"'
   script:
-    - mkdir -p ~/.ssh
-    - chmod 700 ~/.ssh
-    - echo -n $GH_KEY > ~/.ssh/id_rsa_base64
+    - mkdir -p ~/.ssh && chmod 700 ~/.ssh
+    - echo -n "$GH_KEY" > ~/.ssh/id_rsa_base64
     - base64 --decode --ignore-garbage ~/.ssh/id_rsa_base64 > ~/.ssh/id_rsa
     - chmod 600 ~/.ssh/id_rsa
     - echo -e "Host github.com\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config
-    - git remote remove github &>/dev/null || true
-    - git remote add github git@github.com:espressif/esp-hosted.git
-    - git push github "${CI_COMMIT_SHA}:refs/heads/${CI_COMMIT_REF_NAME}"
+    # Pristine copy: fresh full clone of the GitLab repo (job-token auth), push the
+    # exact commit to the mirror, then discard. No --force — a divergent GitHub
+    # branch must be a deliberate decision, not a silent overwrite.
+    - rm -rf /tmp/eh_mirror
+    - git clone "$CI_REPOSITORY_URL" /tmp/eh_mirror
+    - git -C /tmp/eh_mirror remote add github git@github.com:espressif/esp-hosted.git
+    - git -C /tmp/eh_mirror push github "${CI_COMMIT_SHA}:refs/heads/${CI_COMMIT_REF_NAME}"
+    - rm -rf /tmp/eh_mirror
