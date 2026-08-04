@@ -39,7 +39,7 @@ examples/bluetooth/
 │   ├── bleprph_minimal/{cp,mcu_host}
 │   └── bleprph_wifi_coex/{cp,mcu_host}
 ├── esp_hosted_custom/             # bring-your-own stack, raw HCI over ESP-Hosted
-│   └── hci_smoke/{cp,mcu_host}
+│   └── hci_demo/{cp,mcu_host}
 ├── bluedroid_uart/                # Bluedroid over plain H4 UART (no ESP-Hosted)
 │   └── bluedroid_host_only_uart/{cp,mcu_host}
 └── nimble_uart/                   # NimBLE over plain H4 UART (no ESP-Hosted)

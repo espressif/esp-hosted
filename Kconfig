@@ -30,9 +30,6 @@ if ESP_HOSTED
 
 	if ESP_HOSTED_HOST
 		orsource "host/Kconfig.ext"
-		# The BT stack adapter (examples/common_components/esp_hosted_bt_host_stack) has no
-		# Kconfig of its own — the stack is chosen by the IDF BT Kconfig
-		# (BT_NIMBLE_ENABLED / BT_BLUEDROID_ENABLED); neither => the custom path.
 	endif
 
 endif

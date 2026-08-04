@@ -84,6 +84,7 @@ static void show_config(void)
 #ifdef ESP_PLATFORM
 static spi_device_handle_t  s_spi_dev;
 static eh_host_port_task_t      *s_rx_task;
+static uint8_t                  *s_rx_buf;   /* RX DMA buf: alloc'd in init before the task, freed in deinit */
 static eh_host_port_sem_t       *s_trans_ready_sem;  /* posted from ISR on HS/DR */
 static eh_host_port_mutex_t     *s_bus_lock;
 static eh_host_port_queue_t     *s_tx_q;  /* queued DMA frame bufs; worker owns the bus */
@@ -170,16 +171,6 @@ static int eh_spi_enqueue_tx(const uint8_t *frame, size_t len)
 static void eh_spi_rx_task(void *arg)
 {
     (void)arg;
-    uint8_t *rx_buf = (uint8_t *)eh_spi_dma_alloc_zero(EH_SPI_MAX_BUF);
-    if (!rx_buf) {
-        ESP_LOGE(TAG, "rx buffer alloc failed, exiting task");
-        esp_event_post(EH_HOST_EVENT, (int32_t)EH_HOST_EVENT_TRANSPORT_FAILURE, NULL, 0, 0);
-#if EH_HOST_TRANSPORT_RESTART_ON_FAILURE
-        eh_host_port_restart_host();
-#endif
-        return;
-    }
-
     ESP_LOGI(TAG, "SPI RX task started");
 
     while (s_running) {
@@ -214,7 +205,7 @@ static void eh_spi_rx_task(void *arg)
         }
 
         eh_host_port_mutex_lock(s_bus_lock);
-        int rc = eh_spi_xfer_once(tx_buf, rx_buf);
+        int rc = eh_spi_xfer_once(tx_buf, s_rx_buf);
         eh_host_port_mutex_unlock(s_bus_lock);
         if (tx_buf) {
             eh_host_port_dma_free(tx_buf);
@@ -232,7 +223,7 @@ static void eh_spi_rx_task(void *arg)
 
         /* eh_frame_decode is zero-copy — h.payload points into rx_buf. */
         interface_buffer_handle_t h = {0};
-        eh_frame_result_t r = eh_frame_decode(rx_buf,
+        eh_frame_result_t r = eh_frame_decode(s_rx_buf,
                                               (uint16_t)EH_SPI_MAX_BUF, &h);
         if (r != EH_FRAME_OK) {
             if (r != EH_FRAME_DUMMY) {
@@ -249,7 +240,6 @@ static void eh_spi_rx_task(void *arg)
         }
     }
 
-    eh_host_port_dma_free(rx_buf);
     ESP_LOGI(TAG, "SPI RX task exiting");
 }
 #endif
@@ -349,6 +339,15 @@ static void eh_spi_gpio_isr_uninstall(void)
     eh_host_port_gpio_intr_disable(&dr_pin);
     s_isr_installed = 0;
 }
+/* Transport bring-up failed: notify the host and (optionally) restart to recover. */
+static void eh_spi_transport_failed(void)
+{
+    esp_event_post(EH_HOST_EVENT, (int32_t)EH_HOST_EVENT_TRANSPORT_FAILURE, NULL, 0, 0);
+#if EH_HOST_TRANSPORT_RESTART_ON_FAILURE
+    eh_host_port_restart_host();
+#endif
+}
+
 #endif /* ESP_PLATFORM */
 
 int eh_host_bus_init(void)
@@ -361,94 +360,58 @@ int eh_host_bus_init(void)
 
 #ifdef ESP_PLATFORM
     show_config();
-    s_trans_ready_sem = eh_host_port_sem_create();
-    if (!s_trans_ready_sem) {
-        return -1;
-    }
-    s_bus_lock = eh_host_port_mutex_create();
-    if (!s_bus_lock) {
-        eh_host_port_sem_destroy(s_trans_ready_sem);
-        s_trans_ready_sem = NULL;
-        return -1;
-    }
-    s_tx_q = eh_host_port_queue_create(EH_HOST_PORT_SPI_TX_Q, sizeof(uint8_t *));
-    if (!s_tx_q) {
-        eh_host_port_mutex_destroy(s_bus_lock);
-        s_bus_lock = NULL;
-        eh_host_port_sem_destroy(s_trans_ready_sem);
-        s_trans_ready_sem = NULL;
-        return -1;
-    }
-    /* Preallocated zeroed dummy TX reused for every RX-only transaction. */
-    s_tx_dummy = (uint8_t *)eh_spi_dma_alloc_zero(EH_SPI_MAX_BUF);
-    if (!s_tx_dummy) {
-        eh_host_port_dma_free(s_tx_dummy);
-        s_tx_dummy = NULL;
-        eh_host_port_queue_destroy(s_tx_q);
-        s_tx_q = NULL;
-        eh_host_port_mutex_destroy(s_bus_lock);
-        s_bus_lock = NULL;
-        eh_host_port_sem_destroy(s_trans_ready_sem);
-        s_trans_ready_sem = NULL;
-        return -1;
-    }
 
-    if (eh_spi_peripheral_init() != 0) {
-        eh_host_port_dma_free(s_tx_dummy);
-        s_tx_dummy = NULL;
-        eh_host_port_queue_destroy(s_tx_q);
-        s_tx_q = NULL;
-        eh_host_port_mutex_destroy(s_bus_lock);
-        s_bus_lock = NULL;
-        eh_host_port_sem_destroy(s_trans_ready_sem);
-        s_trans_ready_sem = NULL;
-        esp_event_post(EH_HOST_EVENT, (int32_t)EH_HOST_EVENT_TRANSPORT_FAILURE, NULL, 0, 0);
-#if EH_HOST_TRANSPORT_RESTART_ON_FAILURE
-        eh_host_port_restart_host();
-#endif
-        return -1;
-    }
-    if (eh_spi_gpio_isr_install() != 0) {
-        spi_bus_remove_device(s_spi_dev);
-        spi_bus_free(EH_SPI_HOST_ID);
-        eh_host_port_dma_free(s_tx_dummy);
-        s_tx_dummy = NULL;
-        eh_host_port_queue_destroy(s_tx_q);
-        s_tx_q = NULL;
-        eh_host_port_mutex_destroy(s_bus_lock);
-        s_bus_lock = NULL;
-        eh_host_port_sem_destroy(s_trans_ready_sem);
-        s_trans_ready_sem = NULL;
-        esp_event_post(EH_HOST_EVENT, (int32_t)EH_HOST_EVENT_TRANSPORT_FAILURE, NULL, 0, 0);
-#if EH_HOST_TRANSPORT_RESTART_ON_FAILURE
-        eh_host_port_restart_host();
-#endif
-        return -1;
-    }
-
-    s_running = 1;
+    /* Declared up front so the failure gotos below never jump over an
+     * initializer (keeps -Wjump-misses-init quiet). */
     eh_host_port_task_create_cfg_t tcfg = {
         .fn = eh_spi_rx_task, .arg = NULL,
         .stack_bytes = EH_SPI_TASK_STACK, .priority = EH_SPI_TASK_PRIO,
         .name = "eh_spi_rx",
     };
+
+    /* Acquire in order; any failure jumps to the matching rung of the
+     * reverse-order teardown ladder below. Each resource is freed exactly once. */
+    s_trans_ready_sem = eh_host_port_sem_create();
+    if (!s_trans_ready_sem)               return -1;
+
+    s_bus_lock = eh_host_port_mutex_create();
+    if (!s_bus_lock)                      goto fail_sem;
+
+    s_tx_q = eh_host_port_queue_create(EH_HOST_PORT_SPI_TX_Q, sizeof(uint8_t *));
+    if (!s_tx_q)                          goto fail_lock;
+
+    /* Preallocated zeroed dummy TX reused for every RX-only transaction. */
+    s_tx_dummy = (uint8_t *)eh_spi_dma_alloc_zero(EH_SPI_MAX_BUF);
+    if (!s_tx_dummy)                      goto fail_q;
+
+    /* RX DMA buffer up front (before the task) so an alloc failure fails bring-up
+     * cleanly instead of making the joinable rx task self-exit and orphan its
+     * handle. Freed in deinit. */
+    s_rx_buf = (uint8_t *)eh_spi_dma_alloc_zero(EH_SPI_MAX_BUF);
+    if (!s_rx_buf)                        goto fail_tx_dummy;
+
+    if (eh_spi_peripheral_init() != 0)  { eh_spi_transport_failed(); goto fail_rx_buf; }
+    if (eh_spi_gpio_isr_install() != 0) { eh_spi_transport_failed(); goto fail_peripheral; }
+
+    s_running = 1;
     if (eh_host_port_task_create(&tcfg, &s_rx_task) != EH_HOST_PORT_OK) {
         s_running = 0;
-        eh_spi_gpio_isr_uninstall();
-        spi_bus_remove_device(s_spi_dev);
-        spi_bus_free(EH_SPI_HOST_ID);
-        eh_host_port_dma_free(s_tx_dummy);
-        s_tx_dummy = NULL;
-        eh_host_port_queue_destroy(s_tx_q);
-        s_tx_q = NULL;
-        eh_host_port_mutex_destroy(s_bus_lock);
-        s_bus_lock = NULL;
-        eh_host_port_sem_destroy(s_trans_ready_sem);
-        s_trans_ready_sem = NULL;
-        return -1;
+        goto fail_isr;
     }
-#endif
     return 0;
+
+    /* ── reverse-order teardown ──────────────────────────────────────────── */
+fail_isr:        eh_spi_gpio_isr_uninstall();
+fail_peripheral: spi_bus_remove_device(s_spi_dev); spi_bus_free(EH_SPI_HOST_ID);
+fail_rx_buf:     eh_host_port_dma_free(s_rx_buf);              s_rx_buf = NULL;
+fail_tx_dummy:   eh_host_port_dma_free(s_tx_dummy);            s_tx_dummy = NULL;
+fail_q:          eh_host_port_queue_destroy(s_tx_q);           s_tx_q = NULL;
+fail_lock:       eh_host_port_mutex_destroy(s_bus_lock);       s_bus_lock = NULL;
+fail_sem:        eh_host_port_sem_destroy(s_trans_ready_sem);  s_trans_ready_sem = NULL;
+    return -1;
+#else
+    return 0;
+#endif
 }
 
 int eh_host_bus_connect_to_slave(void)
@@ -476,6 +439,10 @@ int eh_host_bus_deinit(void)
         eh_host_port_task_join(s_rx_task);
         eh_host_port_task_destroy(s_rx_task);
         s_rx_task = NULL;
+    }
+    if (s_rx_buf) {
+        eh_host_port_dma_free(s_rx_buf);
+        s_rx_buf = NULL;
     }
 
     eh_spi_gpio_isr_uninstall();

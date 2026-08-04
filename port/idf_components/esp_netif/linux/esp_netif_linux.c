@@ -658,7 +658,7 @@ esp_err_t esp_netif_up(esp_netif_t *n)
      * DHCP only fires once the link associates (avoids dhcpcd
      * spinning while the radio waits for carrier).
      *
-     * Skip if app pre-empted via esp_netif_dhcps_stop() (status==STOPPED)
+     * Skip if app preempted via esp_netif_dhcps_stop() (status==STOPPED)
      * — symmetric with STA dhcpc gating. */
     if (r == ESP_OK && (n->flags & ESP_NETIF_DHCP_SERVER) &&
         n->dhcps_status != ESP_NETIF_DHCP_STOPPED) {
@@ -1265,7 +1265,7 @@ void esp_netif_action_disconnected(void *n, esp_event_base_t b,
                                    int32_t id, void *d)
 {
     /* Symmetric with action_connected — only stop if currently STARTED.
-     * If app pre-emptively called dhcpc_stop() for static IP, we skip
+     * If app preemptively called dhcpc_stop() for static IP, we skip
      * the redundant hook (already-stopped daemon is harmless, but
      * status tracking should reflect what actually ran). */
     esp_netif_t *netif = (esp_netif_t *)n;

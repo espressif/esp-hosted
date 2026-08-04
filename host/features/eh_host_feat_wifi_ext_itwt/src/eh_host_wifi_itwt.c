@@ -17,8 +17,8 @@
 #include "eh_host_feat_rpc_ext_v2_types.h"
 #include "eh_host_feat_rpc.h"
 #include "gen_v2.h"
-#include "eh_host_wifi_itwt_priv.h"  /* prototype visible at definition (intra-feature) */
-#include "eh_rpc_bitmasks.h"    /* EH_HOST_RPC_SET_BIT / EH_HOST_WIFI_ITWT_CONFIG_1_*_BIT */
+#include "eh_host_wifi_itwt_priv.h"
+#include "eh_rpc_bitmasks.h"
 
 #include "esp_err.h"
 

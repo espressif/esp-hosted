@@ -32,6 +32,10 @@ extern "C" {
 typedef void (*esp_hosted_bt_hci_rx_fn_t)(const uint8_t *frame, uint16_t len, void *ctx);
 typedef int  (*esp_hosted_bt_hci_tx_fn_t)(const uint8_t *frame, uint16_t len);
 
+/* Bounded wait for the CP BT controller to come up (ms). Default for
+ * controller_ready_timeout_ms, and the finite fallback if a caller passes 0. */
+#define EH_BT_CTRL_DEFAULT_READY_TIMEOUT_MS  5000u
+
 typedef enum {
     ESP_HOSTED_BT_HOST_STACK_NIMBLE,
     ESP_HOSTED_BT_HOST_STACK_BLUEDROID,
@@ -42,7 +46,7 @@ typedef struct {
     esp_hosted_bt_host_stack_t stack;                    /* which host stack to bind */
     const uint8_t        *bt_mac;                   /* NULL: use Kconfig default / leave as-is; else set before controller */
     bool                  bring_up_controller;      /* true: setup does controller init+enable */
-    uint32_t              controller_ready_timeout_ms; /* 0: default; bounded wait/retry for CP BT */
+    uint32_t              controller_ready_timeout_ms; /* ms; bounded wait/retry for CP BT. 0 -> EH_BT_CTRL_DEFAULT_READY_TIMEOUT_MS */
 
     /* CUSTOM only: your RX handler + ctx in; setup fills tx (call it to send). */
     struct {
@@ -63,7 +67,8 @@ typedef struct {
 
 #define ESP_HOSTED_BT_HOST_STACK_CONFIG_DEFAULT() (esp_hosted_bt_host_stack_cfg_t){ \
     .stack = ESP_HOSTED_BT_HOST_STACK_DEFAULT_TYPE, \
-    .bt_mac = NULL, .bring_up_controller = true, .controller_ready_timeout_ms = 0, \
+    .bt_mac = NULL, .bring_up_controller = true, \
+    .controller_ready_timeout_ms = EH_BT_CTRL_DEFAULT_READY_TIMEOUT_MS, \
     .custom = { 0 } }
 
 /* Explicit + compile-time-guarded selectors (transparency + fail-before-flash). */

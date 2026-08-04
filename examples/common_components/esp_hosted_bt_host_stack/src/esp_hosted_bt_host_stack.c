@@ -27,11 +27,13 @@
 static const char TAG[] = "esp_hosted_bt";
 
 #define EH_BT_CTRL_RETRY_STEP_MS   100u
-#define EH_BT_CTRL_DEFAULT_TMO_MS  2000u   /* bounded wait for the CP BT to answer */
+
+/* 0 = down, 1 = up. Makes setup()/teardown() idempotent (single-caller). */
+static uint8_t s_bt_host_stack_up;
 
 static esp_err_t bring_up_controller(uint32_t timeout_ms)
 {
-    if (timeout_ms == 0) timeout_ms = EH_BT_CTRL_DEFAULT_TMO_MS;
+    if (timeout_ms == 0) timeout_ms = EH_BT_CTRL_DEFAULT_READY_TIMEOUT_MS;
 
     esp_err_t r = ESP_FAIL;
     uint32_t waited = 0;
@@ -56,6 +58,7 @@ static esp_err_t bring_up_controller(uint32_t timeout_ms)
 esp_err_t esp_hosted_bt_host_stack_setup(esp_hosted_bt_host_stack_cfg_t *cfg)
 {
     if (!cfg) return ESP_ERR_INVALID_ARG;
+    if (s_bt_host_stack_up) return ESP_OK;          /* idempotent: already set up */
 
     /* Guard: the requested stack must match what was compiled in. */
     if (cfg->stack != ESP_HOSTED_BT_HOST_STACK_DEFAULT_TYPE) {
@@ -71,14 +74,17 @@ esp_err_t esp_hosted_bt_host_stack_setup(esp_hosted_bt_host_stack_cfg_t *cfg)
         if (r != ESP_OK) return r;
     }
 
+    esp_err_t r = ESP_FAIL;
     switch (cfg->stack) {
 #if defined(CONFIG_BT_NIMBLE_ENABLED)
     case ESP_HOSTED_BT_HOST_STACK_NIMBLE:
-        return eh_bt_bind_nimble();
+        r = eh_bt_bind_nimble();
+        break;
 #endif
 #if defined(CONFIG_BT_BLUEDROID_ENABLED)
     case ESP_HOSTED_BT_HOST_STACK_BLUEDROID:
-        return eh_bt_bind_bluedroid();
+        r = eh_bt_bind_bluedroid();
+        break;
 #endif
     case ESP_HOSTED_BT_HOST_STACK_CUSTOM:
         if (!cfg->custom.rx) {
@@ -91,15 +97,20 @@ esp_err_t esp_hosted_bt_host_stack_setup(esp_hosted_bt_host_stack_cfg_t *cfg)
             return ESP_FAIL;
         }
         ESP_LOGI(TAG, "custom BT stack bound");
-        return ESP_OK;
+        r = ESP_OK;
+        break;
     default:
         return ESP_ERR_INVALID_STATE;
     }
-    return ESP_ERR_INVALID_STATE;
+
+    if (r == ESP_OK) s_bt_host_stack_up = 1;
+    return r;
 }
 
 esp_err_t esp_hosted_bt_host_stack_teardown(void)
 {
+    if (!s_bt_host_stack_up) return ESP_OK;         /* idempotent: already torn down */
+
 #if defined(CONFIG_BT_NIMBLE_ENABLED)
     eh_bt_unbind_nimble();
 #elif defined(CONFIG_BT_BLUEDROID_ENABLED)
@@ -113,5 +124,7 @@ esp_err_t esp_hosted_bt_host_stack_teardown(void)
     r = eh_host_bt_controller_deinit(false);
     if (r != ESP_OK && r != ESP_ERR_INVALID_STATE)
         ESP_LOGW(TAG, "controller deinit failed: 0x%x", r);
+
+    s_bt_host_stack_up = 0;
     return ESP_OK;
 }

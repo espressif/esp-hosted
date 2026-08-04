@@ -18,6 +18,7 @@ esp_err_t eh_cp_feat_debug_deinit(void);
 
 #if EH_CP_FEAT_DEBUG_HEAP_STATS_READY
 
+esp_err_t eh_cp_feat_debug_heap_stats_init(void);
 void eh_cp_feat_debug_heap_log(const char *label);
 void eh_cp_feat_debug_heap_cycle_begin(uint32_t cycle_n);
 void eh_cp_feat_debug_heap_cycle_end(uint32_t cycle_n);
@@ -26,6 +27,7 @@ bool eh_cp_feat_debug_heap_is_enabled(void);
 
 #else  /* sub-feature off → inline no-ops, caller needs no #ifdef */
 
+static inline esp_err_t eh_cp_feat_debug_heap_stats_init(void)          { return ESP_OK; }
 static inline void eh_cp_feat_debug_heap_log(const char *label)         { (void)label; }
 static inline void eh_cp_feat_debug_heap_cycle_begin(uint32_t cycle_n)  { (void)cycle_n; }
 static inline void eh_cp_feat_debug_heap_cycle_end(uint32_t cycle_n)    { (void)cycle_n; }

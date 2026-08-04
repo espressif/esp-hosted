@@ -10,12 +10,6 @@ static const char *TAG = "feat_debug";
 
 #if EH_CP_FEAT_DEBUG_READY
 
-#if EH_CP_FEAT_DEBUG_HEAP_STATS_READY
-esp_err_t eh_cp_feat_debug_heap_stats_init(void);
-#else
-static inline esp_err_t eh_cp_feat_debug_heap_stats_init(void) { return ESP_OK; }
-#endif
-
 esp_err_t eh_cp_feat_debug_init(void)
 {
 	esp_err_t ret = eh_cp_feat_debug_heap_stats_init();
