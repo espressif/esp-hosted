@@ -11,17 +11,14 @@
 
 static const char *TAG = "ehcp_bt";
 
-#if EH_CP_FEAT_BT_READY
+/* Only the VHCI path registers this rx cb (see common_init); guard the
+ * definition on the same condition so UART-HCI builds don't warn unused. */
+#if EH_CP_FEAT_BT_READY && EH_CP_BT_HCI
 static esp_err_t bt_hci_rx_cb(void *ctx, void *buf, uint16_t len, void *eb)
 {
 	(void)ctx;
 	(void)eb;
-#if EH_CP_BT_HCI
 	process_hci_rx_pkt((uint8_t *)buf, len);
-#else
-	(void)buf;
-	(void)len;
-#endif
 	return ESP_OK;
 }
 #endif

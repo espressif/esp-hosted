@@ -130,7 +130,7 @@ nothing.
 | `build_host_v55_p4` | build | `.rules_pre` | PRE | 1 | self-skip: `host` |
 | `build_host_v55_h2` | build | `.rules_pre` | PRE | 1 | self-skip: `host` |
 | `build_cp_super_ext` | build | `.rules_post` | POST | 3 | self-skip: `cp` |
-| `build_cp_specials` | build | `.rules_post` | POST | 2 | self-skip: `cp` |
+| `build_cp_specials` | build | `.rules_post` | POST | 3 | self-skip: `cp` |
 | `build_host_latest_p4` | build | `.rules_post` | POST | 1 | self-skip: `host` |
 | `build_host_v60_p4` | build | `.rules_post` | POST | 1 | self-skip: `host` |
 | `build_host_v551_p4` | build | `.rules_post` | POST | 1 | self-skip: `host` |
@@ -140,7 +140,7 @@ nothing.
 ("self-skip: X" = the job is created by its rule, then exits early via
 `decide_build.sh X` when side X isn't affected — before the IDF install.)
 
-Build cells: **7 PRE + 8 POST = 15**, no cell built twice.
+Build cells: **7 PRE + 9 POST = 16**, no cell built twice.
 
 ### What PRE (the MR gate) covers
 
@@ -158,10 +158,11 @@ can touch:
 
 ### What POST adds (breadth before publish)
 
-Remaining chips (h2 no-wifi+OT, c5, c61), the special-partition CP examples
-(`ota`, `ext_coex`), the other IDF versions (latest / 6.0 / 5.5.1 — version
-drift), and the rest of the host examples (iperf, nw_split, openthread, ota,
-sdmmc, api_exerciser, transport_config, nimble-coex).
+Remaining chips (h2 no-wifi+OT, c5, c61), the CP examples cp_super can't hold
+(`ota` + `ext_coex` own-partition/coex, and `nimble_uart .../cp` — the UART-HCI
+relay branch, since cp_super pins VHCI), the other IDF versions (latest / 6.0 /
+5.5.1 — version drift), and the rest of the host examples (iperf, nw_split,
+openthread, ota, sdmmc, api_exerciser, transport_config, nimble-coex).
 
 ## Publishing (deploy stage)
 

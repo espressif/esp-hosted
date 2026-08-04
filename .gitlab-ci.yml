@@ -195,7 +195,9 @@ build_cp_super_ext:
     - if [ -n "$BUS" ]; then OVR="--override-sdkconfig-items=$BUS"; else OVR=""; fi
     - eh_build -p tools/ci/ci_examples/cp_super --target $TARGET $OVR
 
-# [POST] CP examples excluded from cp_super (own partition / coex wiring).
+# [POST] CP examples excluded from cp_super (own partition / coex wiring, or a
+# BT HCI transport mode cp_super can't hold — cp_super pins VHCI, so the UART-HCI
+# relay branch (eh_cp_feat_bt_standard_hci_init) is only reachable via this example).
 build_cp_specials:
   extends: .build
   rules: *rules_post
@@ -203,6 +205,7 @@ build_cp_specials:
     matrix:
       - { IDF_IMAGE: "release-v5.5", TARGET: "esp32",   APP: "examples/ota/coprocessor_ota/cp" }
       - { IDF_IMAGE: "v5.5.1",       TARGET: "esp32c6", APP: "examples/ext_coex/cp" }
+      - { IDF_IMAGE: "release-v5.5", TARGET: "esp32c6", APP: "examples/bluetooth/nimble_uart/bleprph_host_only_uart/cp" }  # UART-HCI CP relay
   script:
     - if ! bash tools/ci/decide_build.sh cp; then echo ">>> cp not affected by this change — skipping"; exit 0; fi
     - eh_setup
