@@ -12,9 +12,9 @@ if(NOT CONFIG_ESP_HOSTED_HOST_FEAT_BT)
 endif()
 
 add_library(esp_hosted_bt_host_stack STATIC
-    "src/esp_hosted_bt.c"
-    "src/esp_hosted_bt_nimble.c"
-    "src/esp_hosted_bt_bluedroid.c"
+    "src/esp_hosted_bt_host_stack.c"
+    "src/esp_hosted_bt_host_stack_nimble.c"
+    "src/esp_hosted_bt_host_stack_bluedroid.c"
 )
 
 target_include_directories(esp_hosted_bt_host_stack PUBLIC "include")
@@ -36,11 +36,6 @@ target_link_libraries(esp_hosted_bt_host_stack
 if(CONFIG_BT_NIMBLE_ENABLED OR CONFIG_BT_BLUEDROID_ENABLED)
     target_link_libraries(esp_hosted_bt_host_stack PRIVATE idf::bt)
 endif()
-
-# Force the TU into the final link: NimBLE's strong ble_transport_* overrides,
-# and the public esp_hosted_bt_host_stack_setup entry point.
-target_link_options(esp_hosted_bt_host_stack INTERFACE
-    "-Wl,--undefined=esp_hosted_bt_host_stack_setup")
 
 # Self-attach to the host umbrella.
 if(TARGET eh_host)

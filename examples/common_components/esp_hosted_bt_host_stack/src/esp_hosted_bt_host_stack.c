@@ -22,7 +22,7 @@
 #include "eh_host_feat_bt_mcu.h"   /* eh_host_bt_mcu_hci_register (custom path) */
 
 #include "esp_hosted_bt_host_stack.h"
-#include "esp_hosted_bt_priv.h"
+#include "esp_hosted_bt_host_stack_priv.h"
 
 static const char TAG[] = "esp_hosted_bt";
 

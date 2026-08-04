@@ -78,7 +78,7 @@ Hosted offers two ways for the host stack to reach the controller: **Standard HC
 
 ## NimBLE host stack
 
-The NimBLE glue implements the NimBLE transport API set: `ble_transport_ll_init`, `ble_transport_to_ll_acl_impl`, `ble_transport_to_ll_cmd_impl`, `ble_transport_to_hs_evt`, `ble_transport_to_hs_acl` (see `examples/common_components/esp_hosted_bt_host_stack/src/esp_hosted_bt_nimble.c`). It is part of the `esp_hosted_bt_host_stack` stack adapter, built into the `esp_hosted` component — see [Porting a BT stack to ESP-Hosted](#porting-a-bt-stack-to-esp-hosted).
+The NimBLE glue implements the NimBLE transport API set: `ble_transport_ll_init`, `ble_transport_to_ll_acl_impl`, `ble_transport_to_ll_cmd_impl`, `ble_transport_to_hs_evt`, `ble_transport_to_hs_acl` (see `examples/common_components/esp_hosted_bt_host_stack/src/esp_hosted_bt_host_stack_nimble.c`). It is part of the `esp_hosted_bt_host_stack` stack adapter, built into the `esp_hosted` component — see [Porting a BT stack to ESP-Hosted](#porting-a-bt-stack-to-esp-hosted).
 
 ### Over Hosted HCI
 
@@ -257,7 +257,7 @@ sequenceDiagram
 
 ## BlueDroid host stack
 
-The BlueDroid glue implements an HCI driver ops struct (`esp_bluedroid_hci_driver_operations_t`: `send` / `check_send_available` / `register_host_callback`) and attaches it to BlueDroid with `esp_bluedroid_attach_hci_driver()`. The glue records BlueDroid's `notify_host_recv` callback (used to deliver incoming HCI to the stack) and forwards outbound HCI to feat_bt's TX function. See `examples/common_components/esp_hosted_bt_host_stack/src/esp_hosted_bt_bluedroid.c`.
+The BlueDroid glue implements an HCI driver ops struct (`esp_bluedroid_hci_driver_operations_t`: `send` / `check_send_available` / `register_host_callback`) and attaches it to BlueDroid with `esp_bluedroid_attach_hci_driver()`. The glue records BlueDroid's `notify_host_recv` callback (used to deliver incoming HCI to the stack) and forwards outbound HCI to feat_bt's TX function. See `examples/common_components/esp_hosted_bt_host_stack/src/esp_hosted_bt_host_stack_bluedroid.c`.
 
 ### Over Hosted HCI
 
@@ -443,7 +443,7 @@ ESP-Hosted is stack-agnostic. The `eh_host_feat_bt` feature provides a raw HCI
 byte-pipe to the co-processor controller; the `esp_hosted_bt_host_stack` **stack adapter**
 is the thin glue that binds a particular host stack to that pipe. It is one
 component — a stack-agnostic dispatcher (`esp_hosted_bt.c`) plus per-stack glue
-(`esp_hosted_bt_nimble.c`, `esp_hosted_bt_bluedroid.c`) — under
+(`esp_hosted_bt_host_stack_nimble.c`, `esp_hosted_bt_host_stack_bluedroid.c`) — under
 `examples/common_components/esp_hosted_bt_host_stack`, built into the `esp_hosted`
 component and gated by the IDF BT Kconfig. NimBLE and BlueDroid ship built in;
 a **custom** stack is a first-class option and is the template for your own.
