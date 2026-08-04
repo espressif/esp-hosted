@@ -303,7 +303,7 @@ static esp_err_t configure_heartbeat(bool enable, int hb_duration)
 	return ESP_ERR_INVALID_STATE;
 #else
 	if (!enable) {
-		ESP_LOGI(TAG, "Stop Heatbeat");
+		ESP_LOGI(TAG, "Stop Heartbeat");
 		eh_cp_feat_system_heartbeat_stop();
 
 	} else {

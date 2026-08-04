@@ -1831,7 +1831,6 @@ static void sdio_process_rx_task(void *pvParameters)
 	}
 }
 
-/* Nudge if the configured SDIO clock is below the PCB maximum. */
 static void check_if_max_freq_used(void)
 {
 #ifdef CONFIG_IDF_TARGET
@@ -1881,7 +1880,7 @@ static void *bus_init_internal(void)
 	assert(sdio_bus_lock);
 #endif
 
-	/* Counting sems sized to queue_size × MAX_PRIORITY_QUEUES so every
+	/* Counting semaphores sized to queue_size × MAX_PRIORITY_QUEUES so every
 	 * producer post is preserved during fragment bursts. */
 	sem_to_slave_queue = eh_host_port_sem_create_counting(
 	    (uint32_t)tx_queue_size * MAX_PRIORITY_QUEUES);

@@ -26,10 +26,6 @@ endif()
 if(ESP_PLATFORM)
     file(GLOB _eh_feat_incs LIST_DIRECTORIES true RELATIVE "${EH_PATH}"
         "${EH_PATH}/host/features/eh_host_feat_*/include")
-    # BT adapter header (examples/common_components); exposed on the esp_hosted
-    # surface so an example's main sees esp_hosted_bt_host_stack.h via REQUIRES esp_hosted.
-    # Only when the adapter is actually built (FEAT_BT) — else the core surface
-    # would reach into examples/ for every consumer with BT off.
     if(CONFIG_ESP_HOSTED_HOST_FEAT_BT)
         list(APPEND _eh_feat_incs "examples/common_components/esp_hosted_bt_host_stack/include")
     endif()
@@ -43,7 +39,6 @@ if(ESP_PLATFORM)
         list(APPEND _eh_ldfragments "coprocessor/eh_cp_feat_descs.lf")
     endif()
 
-    # Pull in IDF's bt component only when a built-in BT host stack is enabled.
     set(_eh_bt_port_reqs "")
     if(CONFIG_BT_NIMBLE_ENABLED OR CONFIG_BT_BLUEDROID_ENABLED)
         list(APPEND _eh_bt_port_reqs bt)
@@ -110,14 +105,12 @@ endif()
 if(CONFIG_ESP_HOSTED_HOST)
     add_subdirectory("${EH_PATH}/host"         ${CMAKE_BINARY_DIR}/host)
 endif()
-# BT stack adapter (examples/common_components) — a gated internal lib of the
-# esp_hosted component; wired here (parent→child) so an example only enables the
-# BT feature and picks its stack via the IDF BT Kconfig. feat_bt (added by host/
-# above) is available for the down-link.
+
 if(CONFIG_ESP_HOSTED_HOST_FEAT_BT)
     add_subdirectory("${EH_PATH}/examples/common_components/esp_hosted_bt_host_stack"
                      ${CMAKE_BINARY_DIR}/esp_hosted_bt_host_stack)
 endif()
+
 add_subdirectory("${EH_PATH}/port"             ${CMAKE_BINARY_DIR}/port)
 
 if(CONFIG_ESP_HOSTED_HOST)

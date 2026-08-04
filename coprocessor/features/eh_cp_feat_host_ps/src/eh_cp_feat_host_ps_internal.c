@@ -160,6 +160,9 @@ int is_host_wakeup_needed(interface_buffer_handle_t *buf_handle)
 			  wakup_needed = 1;
 			  goto end;
 			  break;
+
+		default:
+			  break;   /* unknown if_type: fall through to end (no wake) */
 	}
 
 end:

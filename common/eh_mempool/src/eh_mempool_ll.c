@@ -84,8 +84,6 @@ os_mempool_init(struct os_mempool *mp, uint16_t blocks, uint32_t block_size,
 	os_mempool_poison(membuf, true_block_size);
 	SLIST_FIRST(mp) = membuf;
 
-	/* block_addr stays os_membuf_t-aligned: membuf is aligned and true_block_size
-	 * is a whole number of membuf units, so the (void*) casts below are safe. */
 	block_addr = (uint8_t *)membuf;
 	block_ptr = (struct os_memblock *)(void *)block_addr;
 	while (blocks > 1) {

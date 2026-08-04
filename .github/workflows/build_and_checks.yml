@@ -1,15 +1,19 @@
 name: "Build & Checks"
 
+# CI moved to GitLab (.gitlab-ci.yml). Auto-triggers disabled in place; kept for
+# reference / manual runs only. Do NOT re-enable push/PR/schedule without removing
+# the GitLab build jobs, or every push double-builds.
 on:
-  push:
-    branches:
-      - master
-      - unified_release
-      - ci/example-build-matrix-experiment   # TEMP: imitate CI on the experiment branch (does not publish)
-  pull_request:
-    types: [opened, synchronize, reopened, labeled]
-  schedule:
-    - cron: '0 0 * * *' # Once per day at midnight
+  workflow_dispatch:   # manual only
+  # push:
+  #   branches:
+  #     - master
+  #     - unified_release
+  #     - ci/example-build-matrix-experiment
+  # pull_request:
+  #   types: [opened, synchronize, reopened, labeled]
+  # schedule:
+  #   - cron: '0 0 * * *' # Once per day at midnight
 
 jobs:
   premerge_check:

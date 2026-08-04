@@ -141,7 +141,6 @@ static inline esp_err_t populate_buff_handle(interface_buffer_handle_t *buf_hand
 	populate_buff_handle(Buf_hdL, TypE, BuF, LeN, esp_wifi_internal_free_rx_buffer, eb, 0, 0, 0);
 
 
-/* SoftAP RX path: forwards received frames to the host; registered by feat_wifi. */
 esp_err_t wlan_ap_rx_callback(void *buffer, uint16_t len, void *eb);
 esp_err_t wlan_ap_rx_callback(void *buffer, uint16_t len, void *eb)
 {

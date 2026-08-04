@@ -1,4 +1,4 @@
-# Custom BT Stack — raw HCI over Hosted (`bluetooth/esp_hosted_custom/hci_smoke`)
+# Custom BT Stack — raw HCI over Hosted (`bluetooth/esp_hosted_custom/hci_demo`)
 
 <!-- tags: bluetooth, ble, hci, custom-stack, bring-your-own-stack, hosted-hci -->
 
@@ -41,7 +41,7 @@ ESP-Hosted](https://github.com/espressif/esp-hosted/blob/master/docs/design/blue
 ## Directory layout
 
 ```text
-bluetooth/esp_hosted_custom/hci_smoke/
+bluetooth/esp_hosted_custom/hci_demo/
 ├── cp/         # co-processor: BT controller-only over hosted HCI (stack-agnostic)
 └── mcu_host/   # host: custom raw-HCI handler (no NimBLE / Bluedroid)
 ```
