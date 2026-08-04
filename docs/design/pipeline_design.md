@@ -151,8 +151,9 @@ can touch:
 - **both CPU arches** — xtensa (esp32, s3), riscv (c6, c3, c2)
 - **full feature superset** — c6 `cp_super` = wifi (incl. DPP/enterprise/iTWT) + BLE
   + OpenThread + all relays (peer-data, gpio-exp, host-ps, debug+mem-monitor, cli)
-- **BLE** — on every BLE-capable cell. (Classic/BTDM BT on esp32 is NOT built yet:
-  its Kconfig gates on pre-rename IDF symbols — tracked; see the note below.)
+- **BT** — BLE on every BLE-capable cell; classic/BTDM BT on esp32 (the esp32
+  `cp_super` override trims IRAM — Wi-Fi hot paths + FreeRTOS funcs to flash — so
+  the all-features build co-fits the BTDM controller)
 - **host libraries + both BT stacks** — Bluedroid (`host_v55_p4`), NimBLE (`host_v55_h2`), on p4 and h2
 
 ### What POST adds (breadth before publish)

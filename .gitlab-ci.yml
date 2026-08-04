@@ -167,7 +167,7 @@ build_cp_super:
   parallel:
     matrix:
       - { IDF_IMAGE: "release-v5.5", TARGET: "esp32c6",  BUS: "" }                                   # full house: wifi+BLE+OT
-      - { IDF_IMAGE: "latest",       TARGET: "esp32",    BUS: "" }                                   # xtensa + wifi/dpp/ent (BT unbuilt here: stale IDF Kconfig symbol — tracked)
+      - { IDF_IMAGE: "latest",       TARGET: "esp32",    BUS: "" }                                   # xtensa: classic+BLE BT + wifi/dpp/ent (IRAM-trimmed to co-fit)
       - { IDF_IMAGE: "v5.5.1",       TARGET: "esp32c3",  BUS: "CONFIG_EH_TRANSPORT_CP_SPI=y" }
       - { IDF_IMAGE: "latest",       TARGET: "esp32c2",  BUS: "CONFIG_EH_TRANSPORT_CP_SPI_HD=y" }
       - { IDF_IMAGE: "release-v5.5", TARGET: "esp32s3",  BUS: "CONFIG_EH_TRANSPORT_CP_UART=y" }        # xtensa
