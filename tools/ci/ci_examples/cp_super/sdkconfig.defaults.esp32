@@ -1,0 +1,9 @@
+# esp32 override for the CI-only cp_super aggregate.
+# esp32 has the tightest IRAM of the CP targets, and cp_super turns on EVERYTHING
+# (Wi-Fi + classic/BTDM BT + all relays), which overflows iram0_0_seg. This is a
+# compile+link coverage proof, not a perf build, so push Wi-Fi hot paths and
+# non-ISR FreeRTOS functions to flash to reclaim IRAM. Runtime throughput is
+# irrelevant here.
+CONFIG_ESP_WIFI_IRAM_OPT=n
+CONFIG_ESP_WIFI_RX_IRAM_OPT=n
+CONFIG_FREERTOS_PLACE_FUNCTIONS_INTO_FLASH=y
