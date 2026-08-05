@@ -1,5 +1,7 @@
 # Unreleased
 
+- host: fix memory leak by saving allocated GPIO ISRs in a list when enabled. GPIO ISR is deallocated from list and freed when disabled.
+
 # Releases
 
 # $${\color{green} \text{3.0.6}}$$

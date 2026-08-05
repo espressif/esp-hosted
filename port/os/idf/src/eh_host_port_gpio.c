@@ -1,3 +1,8 @@
+/*
+ * SPDX-FileCopyrightText: 2026 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 /* SPDX-License-Identifier: Apache-2.0 */
 /* IDF GPIO. ISR service installed lazily on first intr_enable. */
 
@@ -9,7 +14,11 @@
 #if EH_HOST_PORT_HAS_GPIO
 
 #ifdef ESP_PLATFORM
+#include <sys/queue.h>
 #include "driver/gpio.h"
+#include "esp_log.h"
+
+static const char *TAG = "eh_host_port_gpio";
 
 static gpio_mode_t to_idf_mode(eh_host_port_gpio_dir_t d)
 {
@@ -86,38 +95,88 @@ typedef struct {
     void                   *ctx;
 } isr_slot_t;
 
+// list to keep track of gpio isr entries
+struct entry {
+    isr_slot_t slot;
+    SLIST_ENTRY(entry) entries;
+};
+SLIST_HEAD(slisthead, entry);
+static struct slisthead head;
+static bool head_inited = false;
+
 static void EH_HOST_PORT_IRAM_ATTR gpio_isr_dispatch(void *arg)
 {
-    isr_slot_t *s = arg;
-    if (s && s->cb) s->cb(&s->gpio, s->ctx);
+    struct entry *s = arg;
+    if (s && s->slot.cb) s->slot.cb(&s->slot.gpio, s->slot.ctx);
 }
 
+/*
+ * Notes:
+ * - accept but don't add to list if a cfg reuses a registered gpio, with same cb
+ * - reject with error if a cfg reuses a registered gpio, but with a different cb
+ */
 eh_host_port_err_t eh_host_port_gpio_intr_enable(const eh_host_port_gpio_intr_enable_cfg_t *cfg)
 {
+    if (!head_inited) {
+        SLIST_INIT(&head);
+        head_inited = true;
+    }
+
     if (!cfg || !cfg->cb) return EH_HOST_PORT_ERR_INVAL;
+
+    struct entry *s;
+
+    // check if gpio is already in the list
+    SLIST_FOREACH(s, &head, entries) {
+        if (s->slot.gpio.pin == cfg->gpio.pin) {
+            if (s->slot.cb == cfg->cb) {
+                ESP_LOGD(TAG, "gpio intr with same cb already registered");
+                return EH_HOST_PORT_OK;
+            } else {
+                ESP_LOGW(TAG, "gpio intr with different cb already registered: rejecting");
+                return EH_HOST_PORT_ERR_INVAL;
+            }
+        }
+    }
+
+    // register the gpio and cb
     gpio_set_intr_type((gpio_num_t)cfg->gpio.pin, to_idf_intr(cfg->mode));
     if (!s_isr_svc_installed) {
         if (gpio_install_isr_service(0) == ESP_OK) s_isr_svc_installed = 1;
     }
-    isr_slot_t *s = calloc(1, sizeof(*s));
+    s = calloc(1, sizeof(*s));
     if (!s) return EH_HOST_PORT_ERR_NOMEM;
-    s->gpio = cfg->gpio;
-    s->cb   = cfg->cb;
-    s->ctx  = cfg->ctx;
+    s->slot.gpio = cfg->gpio;
+    s->slot.cb   = cfg->cb;
+    s->slot.ctx  = cfg->ctx;
     if (gpio_isr_handler_add((gpio_num_t)cfg->gpio.pin, gpio_isr_dispatch, s) != ESP_OK) {
         free(s);
         return EH_HOST_PORT_ERR;
     }
-    /* TODO: `s` leaks on intr_disable; need pin-indexed handle table */
+    // add s to our list
+    SLIST_INSERT_HEAD(&head, s, entries);
     return EH_HOST_PORT_OK;
 }
 
 eh_host_port_err_t eh_host_port_gpio_intr_disable(const eh_host_port_gpio_desc_t *gpio)
 {
     if (!gpio) return EH_HOST_PORT_ERR_INVAL;
-    gpio_isr_handler_remove((gpio_num_t)gpio->pin);
-    gpio_set_intr_type((gpio_num_t)gpio->pin, GPIO_INTR_DISABLE);
-    return EH_HOST_PORT_OK;
+    if (!head_inited) return EH_HOST_PORT_OK; // no gpio isrs registered yet
+
+    struct entry *s;
+
+    // iterate through the list and remove the entry, if found
+    SLIST_FOREACH(s, &head, entries) {
+        if (s->slot.gpio.pin == gpio->pin) {
+            gpio_set_intr_type((gpio_num_t)gpio->pin, GPIO_INTR_DISABLE);
+            gpio_isr_handler_remove((gpio_num_t)gpio->pin);
+            SLIST_REMOVE(&head, s, entry, entries);
+            free(s);
+            return EH_HOST_PORT_OK;
+        }
+    }
+    ESP_LOGD(TAG, "gpio intr not found: maybe already unregistered");
+    return EH_HOST_PORT_OK; // gpio isr not found in list
 }
 
 #endif /* EH_HOST_PORT_HAS_GPIO_INTR */
