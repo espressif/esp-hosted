@@ -34,6 +34,11 @@ menu "CP transport"
 		help
 			Mempool will help to alloc buffer without going to heap for every memory allocation or free
 
+orsource "./Kconfig.cp.spi"
+orsource "./Kconfig.cp.sdio"
+orsource "./Kconfig.cp.spi_hd"
+orsource "./Kconfig.cp.uart"
+
 	menu "Transport Test"
 		config ESP_RAW_THROUGHPUT_TRANSPORT
 			bool
@@ -56,8 +61,4 @@ menu "CP transport"
 			default 1
 	endmenu
 
-orsource "./Kconfig.cp.spi"
-orsource "./Kconfig.cp.sdio"
-orsource "./Kconfig.cp.spi_hd"
-orsource "./Kconfig.cp.uart"
 endmenu

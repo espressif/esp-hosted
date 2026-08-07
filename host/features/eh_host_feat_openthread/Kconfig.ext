@@ -46,11 +46,11 @@ if ESP_HOSTED_HOST_FEAT_OPENTHREAD
 			default 1
 			range 0 2
 
-		config ESP_HOSTED_OT_HOST_PIN_TO_RCP_TX
+		config ESP_HOSTED_OT_HOST_UART_TX_PIN_TO_RCP
 			int "Host TX pin (to RCP RX)"
 			default 11
 
-		config ESP_HOSTED_OT_HOST_PIN_TO_RCP_RX
+		config ESP_HOSTED_OT_HOST_UART_RX_PIN_TO_RCP
 			int "Host RX pin (from RCP TX)"
 			default 10
 
