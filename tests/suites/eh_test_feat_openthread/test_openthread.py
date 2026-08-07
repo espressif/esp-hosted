@@ -60,6 +60,7 @@ race the cross-emu round-trip.
 
 import os
 import re
+import shutil
 import subprocess
 import time
 from pathlib import Path
@@ -104,14 +105,52 @@ def _build_peer():
     if not src.exists():
         return None
     _PEER_CACHE.parent.mkdir(parents=True, exist_ok=True)
+
+    # Copy the example out of IDF (we never build in-tree), skipping the same
+    # artefacts build_fw.py skips. A copied build/ carries the SOURCE absolute
+    # paths in its CMake cache, and a copied managed_components/ + lock pin
+    # whatever was vendored there last — both produce confusing failures far
+    # from their cause.
+    if _PEER_CACHE.exists():
+        shutil.rmtree(_PEER_CACHE)
+    shutil.copytree(src, _PEER_CACHE, ignore=shutil.ignore_patterns(
+        "build", "managed_components", "dependencies.lock",
+        "sdkconfig", "sdkconfig.old", "*.bin"))
+
+    # Component manifests may reference sibling components by a path RELATIVE to
+    # their in-tree location (IDF does this for e.g. cmd_system:
+    # ../../../system/console/advanced/components/cmd_system). Those resolve
+    # correctly inside IDF and break the moment the example is copied out — the
+    # component manager then reports "the path field ... does not point to a
+    # directory" against a path under tests/, which is baffling unless you know
+    # the copy happened. Re-anchor every relative path: to the original source.
+    for man in _PEER_CACHE.rglob("idf_component.yml"):
+        rel_to_src = man.parent.relative_to(_PEER_CACHE)
+        anchor = (src / rel_to_src).resolve()
+        out, changed = [], False
+        for line in man.read_text().splitlines(keepends=True):
+            m = re.match(r"^(\s*path:\s*)(?!\$|/)(\S+)\s*$", line)
+            if m:
+                resolved = (anchor / m.group(2)).resolve()
+                line = f"{m.group(1)}{resolved}\n"
+                changed = True
+            out.append(line)
+        if changed:
+            man.write_text("".join(out))
+
+    # Fail loudly here rather than inside CMake if anything still dangles.
+    for man in _PEER_CACHE.rglob("idf_component.yml"):
+        for m in re.finditer(r"^\s*path:\s*(\S+)\s*$", man.read_text(), re.M):
+            p = m.group(1).replace("${IDF_PATH}", str(idf))
+            if not Path(p).is_dir():
+                pytest.fail(f"ot_cli peer: unresolvable dependency path in {man}: {p}")
+
     # Pin IDF_PATH to the resolved IDF before sourcing, so export.sh activates
     # *that* one (and its venv), not whatever happens to be active in the shell.
     script = f"""
 set -e
 export IDF_PATH="{idf}"
 . "{idf}/export.sh" >/dev/null 2>&1
-rm -rf {_PEER_CACHE}
-cp -r {src} {_PEER_CACHE}
 printf 'CONFIG_OPENTHREAD_NETWORK_AUTO_START=y\\n' > {_PEER_CACHE}/sdkconfig.emu
 cd {_PEER_CACHE}
 export SDKCONFIG_DEFAULTS='sdkconfig.defaults;sdkconfig.emu'

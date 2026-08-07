@@ -30,8 +30,8 @@ esp_err_t eh_host_port_openthread_get_radio_config(
     uart_config->flow_ctrl  = UART_HW_FLOWCTRL_DISABLE;
     uart_config->rx_flow_ctrl_thresh = 0;
     uart_config->source_clk = UART_SCLK_DEFAULT;
-    uart_config->rx_pin     = H_OT_PIN_TO_RCP_TX;
-    uart_config->tx_pin     = H_OT_PIN_TO_RCP_RX;
+    uart_config->rx_pin     = H_OT_UART_PIN_RX_TO_RCP;
+    uart_config->tx_pin     = H_OT_UART_PIN_TX_TO_RCP;
 
     return ESP_OK;
 #endif

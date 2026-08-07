@@ -30,6 +30,17 @@ def emu_bin():
     b = eh.emu_binary(d)
     if not b.exists():
         pytest.skip(f"esp-emu not built at {b} (cargo build --release)")
+    # Report which emu we are about to run, once per session, and shout if its
+    # binary predates its sources. A stale emu runs old code silently, and the
+    # resulting failure looks like a firmware/test bug rather than a build gap.
+    if not getattr(emu_bin, "_reported", False):
+        emu_bin._reported = True
+        rev = getattr(eh, "emu_revision", lambda _d: "")(d)
+        _log.info("[emu] %s%s", b, f"  rev {rev}" if rev else "")
+        if getattr(eh, "emu_stale", lambda _d: False)(d):
+            _log.warning("[emu] STALE: sources under %s are newer than the "
+                         "binary — run ./install.sh (rebuilds .deps) or "
+                         "cargo build --release there", d)
     return b
 
 

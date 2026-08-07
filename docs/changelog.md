@@ -1,5 +1,6 @@
 # Unreleased
 
+- host: updated OpenThread host configuration for UART Tx and Rx, and OpenThread document
 - host: fix memory leak by saving allocated GPIO ISRs in a list when enabled. GPIO ISR is deallocated from list and freed when disabled.
 
 # Releases

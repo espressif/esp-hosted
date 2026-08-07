@@ -62,24 +62,34 @@ Radio parameters (UART port, baud, pins) come from `eh_host_port_openthread_get_
 
 Enable the feature on both sides, then set the dedicated-UART parameters.
 
-```text
-Host:
-Component config
-└── ESP-Hosted config
-     └── [*] OpenThread                         (ESP_HOSTED_HOST_FEAT_OPENTHREAD, needs RPC ext-v2)
-          ├── Transport → (X) UART              (ESP_HOSTED_OT_HOST_TRANSPORT_UART)
-          ├── (1)  Host UART port               (ESP_HOSTED_OT_HOST_UART_PORT)
-          ├── (11) Host→RCP TX pin              (ESP_HOSTED_OT_HOST_PIN_TO_RCP_TX)
-          ├── (10) Host→RCP RX pin              (ESP_HOSTED_OT_HOST_PIN_TO_RCP_RX)
-          └── (460800) Baud                     (ESP_HOSTED_OT_HOST_UART_BAUDRATE)
+### Host:
 
-Co-processor (RCP):
-Example Configuration
-└── [*] OpenThread RCP                          (ESP_HOSTED_CP_FEAT_OPENTHREAD)
-     ├── Transport → (X) UART                   (ESP_HOSTED_OT_TRANSPORT_UART)
-     ├── (1) OT UART port                       (ESP_HOSTED_OT_UART_PORT)
-     ├── per-target TX / RX pins                (ESP_HOSTED_OT_UART_PIN_TX / _RX)
-     └── (460800) Baud                          (ESP_HOSTED_OT_UART_BAUDRATE)
+```text
+Component config
+└── ESP-Hosted
+    └── Configure host
+        └── Features
+            └── [*] OpenThread / Zigbee (RCP control)                             (ESP_HOSTED_HOST_FEAT_OPENTHREAD)
+                ├── OpenThread RCP transport (host side) → (X) Dedicated UART    (ESP_HOSTED_OT_HOST_TRANSPORT_UART)
+                ├── (1) UART port                                                 (ESP_HOSTED_OT_HOST_UART_PORT)
+                ├── (11) Host TX pin (to RCP RX)                                  (ESP_HOSTED_OT_HOST_UART_TX_PIN_TO_RCP)
+                ├── (10) Host RX pin (from RCP TX)                                (ESP_HOSTED_OT_HOST_UART_RX_PIN_TO_RCP)
+                └── (460800) Baud                                                 (ESP_HOSTED_OT_HOST_UART_BAUDRATE)
+```
+
+### Co-processor (RCP):
+
+```text
+Component config
+└── ESP-Hosted
+    └── Configure coprocessor
+        └── Features
+            └── [*] OpenThread RCP (Radio Co-Processor)                           (ESP_HOSTED_CP_FEAT_OPENTHREAD)
+                ├── OpenThread Transport → (X) UART                               (ESP_HOSTED_OT_TRANSPORT_UART)
+                ├── (1) UART Port to Use                                          (ESP_HOSTED_OT_UART_PORT)
+                ├── (21) TX GPIO number                                           (ESP_HOSTED_OT_UART_PIN_TX)
+                ├── (20) RX GPIO number                                           (ESP_HOSTED_OT_UART_PIN_RX)
+                └── (460800) Baud Rate                                            (ESP_HOSTED_OT_UART_BAUDRATE)
 ```
 
 The RCP firmware itself needs the ESP-IDF OpenThread radio config (`CONFIG_OPENTHREAD_ENABLED=y`, `CONFIG_OPENTHREAD_RADIO=y`, device type = Radio-only). The co-processor warns at build time if the OT UART port collides with the main Hosted UART transport port.

@@ -846,6 +846,51 @@ def emu_binary(d: Path) -> Path:
     return d / "target" / "release" / "esp-emu"
 
 
+def emu_stale(d: Path) -> bool:
+    """True when esp-emu needs a (re)build: binary missing, or any source newer
+    than it. Existence alone is not readiness - a checkout that has been pulled
+    or hand-edited since the last build silently runs old code, and the failure
+    then looks like a test bug rather than a stale binary (an emu missing a
+    --thread-sim fragment the tests pass, say)."""
+    b = emu_binary(d)
+    if not b.is_file():
+        return True
+    bt = b.stat().st_mtime
+    srcs = [d / "Cargo.toml", d / "Cargo.lock"]
+    srcs += (d / "src").rglob("*.rs") if (d / "src").is_dir() else []
+    return any(p.is_file() and p.stat().st_mtime > bt for p in srcs)
+
+
+def emu_revision(d: Path) -> str:
+    """`<short-sha> <branch>[ +dirty]` for reporting, or '' outside a git tree.
+    Printed wherever we report the emu so a version mismatch is attributable at
+    a glance instead of after an afternoon of debugging."""
+    def _q(*a):
+        try:
+            r = subprocess.run(["git", *a], cwd=str(d), capture_output=True,
+                               text=True, timeout=5)
+            return r.stdout.strip() if r.returncode == 0 else ""
+        except Exception:
+            return ""
+    sha = _q("rev-parse", "--short", "HEAD")
+    if not sha:
+        return ""
+    br = _q("rev-parse", "--abbrev-ref", "HEAD")
+    dirty = " +dirty" if _q("status", "--porcelain") else ""
+    return f"{sha} {br}{dirty}".strip()
+
+
+def emu_behind(d: Path) -> int:
+    """Commits the emu checkout is behind its upstream, 0 if unknown/current.
+    Uses only local refs - never fetches, so `install` stays offline-safe."""
+    try:
+        r = subprocess.run(["git", "rev-list", "--count", "HEAD..@{u}"],
+                           cwd=str(d), capture_output=True, text=True, timeout=5)
+        return int(r.stdout.strip()) if r.returncode == 0 else 0
+    except Exception:
+        return 0
+
+
 def cmd_get_idf_path(args) -> int:
     p = resolve_idf()
     if getattr(args, "raw", False):
@@ -880,9 +925,15 @@ def cmd_get_esp_emu(args) -> int:
             print(str(b)); return 0
         return 1
     if d:
-        st = f"{_GREEN}built{_RESET}" if b and b.is_file() else \
-             f"{_YELLOW}not built (cargo build --release){_RESET}"
-        print(f"{_GREEN}esp-emu:{_RESET} {d}  [{st}]")
+        if not (b and b.is_file()):
+            st = f"{_YELLOW}not built (cargo build --release){_RESET}"
+        elif emu_stale(d):
+            st = f"{_YELLOW}STALE - sources newer than binary{_RESET}"
+        else:
+            st = f"{_GREEN}built{_RESET}"
+        rev = emu_revision(d)
+        print(f"{_GREEN}esp-emu:{_RESET} {d}  [{st}]"
+              + (f"  rev {rev}" if rev else ""))
         return 0
     sys.stderr.write(f"{_YELLOW}esp-emu not found.{_RESET} "
                      f"Run ./install.sh --with-emu or `eh.py set-esp-emu <dir>`.\n")
@@ -2082,9 +2133,17 @@ def cmd_install(args) -> int:
     idf_ours = resolved_idf is not None and resolved_idf == idf_dir.resolve()
     idf_done = resolved_idf is not None and (not idf_ours or idf_mark.exists())
 
+    # We OWN .deps/esp-emu, so a stale binary there is ours to rebuild without
+    # asking. An emu the user pointed us at with `set-esp-emu` is theirs: never
+    # build in someone else's tree, just tell them it looks stale.
+    emu_ours = resolved_emu is not None and resolved_emu == emu_dir.resolve()
+    emu_is_stale = resolved_emu is not None and emu_stale(resolved_emu)
+    emu_stale_external = emu_is_stale and not emu_ours
+
     need_idf   = do_idf and not idf_done               # clone/submodules/toolchains
     need_fetch = do_emu and resolved_emu is None        # clone esp-emu
-    need_build = do_emu and not emu_built               # cargo build (fresh or resume)
+    # Rebuild on staleness, not mere presence - but only for our own clone.
+    need_build = do_emu and (not emu_built or (emu_is_stale and emu_ours))
 
     # Nothing to do for this mode -> report and exit; no prompt, no clone.
     if not need_idf and not need_fetch and not need_build:
@@ -2100,6 +2159,25 @@ def cmd_install(args) -> int:
         if do_emu:
             lines += [f"esp-emu : {resolved_emu}",
                       f"          binary {emu_binary(resolved_emu)}"]
+            rev = emu_revision(resolved_emu)
+            if rev:
+                lines.append(f"          rev    {rev}")
+            if not emu_ours:
+                lines.append("          (external - set via set-esp-emu; "
+                             "we never build in it)")
+            if emu_stale_external:
+                lines += ["",
+                          f"{_YELLOW}esp-emu sources are NEWER than its binary "
+                          f"— it may be running old code.{_RESET}",
+                          "Rebuild it yourself:  cargo build --release  in "
+                          f"{resolved_emu}"]
+            behind = emu_behind(resolved_emu)
+            if behind:
+                lines += ["",
+                          f"{_YELLOW}esp-emu is {behind} commit(s) behind its "
+                          f"upstream (no fetch performed).{_RESET}",
+                          "Update:  git -C "
+                          f"{resolved_emu} pull  then re-run this installer."]
         lines += ["", "Force a refresh: --force (both) | --force-idf | --force-emu.",
                   "Next:  . ./export.sh"]
         if do_emu:
@@ -2135,7 +2213,10 @@ def cmd_install(args) -> int:
             plan.append(f"esp-emu : reuse {resolved_emu}"
                         + ("" if emu_built else " (build only)"))
         if need_build:
-            plan.append(f"esp-emu : cargo build --release  ({emu_build_dir})")
+            why = "sources newer than binary" if (emu_built and emu_is_stale) \
+                  else "not built yet"
+            plan.append(f"esp-emu : cargo build --release  ({emu_build_dir})"
+                        f"  [{why}]")
     plan.append("")
     if do_emu:
         plan += ["First run: ~20-40 min (ESP-IDF toolchain download dominates;",
