@@ -3,7 +3,6 @@
 ## Procedure
 
 - Modify host driver code.
-- Modify ESP side code.
 - Pin connection setup.
 - Update Headers on BeagleV Fire for the build and load process.
 - Build the driver code to get the driver `.ko` file through cross-compiling.
