@@ -26,14 +26,10 @@ In esp_spi.c:
 In esp_spi.h:
 
 - Change the GPIOs being used. `HANDSHAKE_PIN` to `562` and `SPI_DATA_READY_PIN` to `563`
-  gpio562 on the BeagleV Fire coressponds to `P8_15` and serves as the `HANDSHAKE_PIN`
-  gpio563 on the BeagleV Fire coressponds to `P8_16` and serves as the `SPI_DATA_READY_PIN`
+  gpio562 on the BeagleV Fire coresponds to `P8_15` and serves as the `HANDSHAKE_PIN`
+  gpio563 on the BeagleV Fire coresponds to `P8_16` and serves as the `SPI_DATA_READY_PIN`
 
-In this setup, the reset pin wasnt used as manual resetting was being done on the esp.
-
-## Modifying esp-side code
-
-There isnt anything to change apart from adding logs to every stage in the compilation and running in the code. Otherwise the esp code is quite well and follow the `setup.md` on how to upload the code to ESP32.
+In this setup, the reset pin wasn't used as manual resetting was being done on the esp.
 
 ## Pin Connections
 
@@ -89,9 +85,9 @@ make target=spi ARCH=riscv CROSS_COMPILE=riscv64-linux-gnu- KERNEL=< path-to-lin
 
 This generates the `esp32_spi.ko` file which is the driver.
 
-## Transfer to BeagleV Fire
+## Transfer to BeagleV-Fire
 
-After the build process, transfer the file to BeagleV Fire using the `scp` command or whichever command yopu want to use.
+After the build process, transfer the file to BeagleV-Fire using the `scp` command or whichever command you want to use.
 
 ```bash
 scp esp-hosted/esp_hosted_ng/host/esp32_spi.ko debian@< beaglevfire-ip >:~/
@@ -128,7 +124,7 @@ This helps when monitoring the state of the driver while loading and also in ope
 
 After the driver is loaded, reset the ESP32C6 manually, and observe the logs on BeagleV Fire and ESP32C6 using `idf.py monitor`
 
-Check whether the ESP ahs been registered and the wlan interface created using command `ip a`
+Check whether the ESP has been registered and the wlan interface created using command `ip a`
 
 Expected results:
 
@@ -238,7 +234,7 @@ rtt min/avg/max/mdev = 6.531/90.162/372.532/131.142 ms
 
 ![ping google logs](images/wifi-9.png)
 
-You can also test the new connectionn by ssh-ing to the BeagleV Fire using the wlan ip by running this command from your PC terminal:
+You can also test the new connection by ssh-ing to the BeagleV Fire using the wlan ip by running this command from your PC terminal:
 
 ```bash
 ssh debian@<your_generated_beaglev_wlan_ip >
