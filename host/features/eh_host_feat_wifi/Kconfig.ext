@@ -17,6 +17,16 @@ if ESP_HOSTED_HOST_FEAT_WIFI
 		help
 		  Run eh_host_feat_wifi_init() from the auto-init walk.
 
+	config ESP_HOSTED_HOST_WIFI_SCAN_BLOCK_TIMEOUT_MS
+		int "Blocking scan RPC timeout (ms)"
+		default 30000
+		range 5000 120000
+		help
+		  esp_wifi_scan_start(cfg, block=true) returns only after the
+		  CP's scan completes; a dual-band sweep can take ~10 s, far
+		  past the default sync-RPC timeout. Applied to blocking scans
+		  only — a non-blocking scan keeps the default timeout.
+
 	config ESP_HOSTED_HOST_FEAT_WIFI_DECODE_RESERVED_FIELD
 		bool "Decode Wi-Fi reserved fields"
 		default n

@@ -402,12 +402,41 @@ esp_err_t eh_host_wifi_sta_get_ap_info(wifi_ap_record_t *out)
 
 esp_err_t eh_host_wifi_scan_start(const wifi_scan_config_t *cfg, bool block)
 {
-    /* TODO(wifi-rpc): wire scan_config_t fields once proto grows. */
-    (void)cfg;
+    /* cfg == NULL is legal and means "scan with IDF defaults". */
     eh_rpc_ctrl_cmd_t *req = eh_rpc_ctrl_cmd_alloc();
     if (!req) return ESP_FAIL;
-    req->u.wifi_scan_cfg.block   = block;
-    req->u.wifi_scan_cfg.cfg_set = false;
+
+    eh_rpc_wifi_scan_cfg_t *p = &req->u.wifi_scan_cfg;
+    p->block   = block;
+    p->cfg_set = (cfg != NULL);
+
+    if (cfg) {
+        /* ssid/bssid are caller-owned pointers: copy the bytes so nothing
+         * caller-owned has to outlive the call. NULL stays "absent". */
+        if (cfg->ssid) {
+            size_t slen = strnlen((const char *)cfg->ssid, EH_RPC_SSID_LEN);
+            memcpy(p->ssid, cfg->ssid, slen);
+            p->ssid[slen] = '\0';
+            p->ssid_set   = true;
+        }
+        if (cfg->bssid) {
+            memcpy(p->bssid, cfg->bssid, EH_RPC_MAC_LEN);
+            p->bssid_set = true;
+        }
+        p->channel              = cfg->channel;
+        p->show_hidden          = cfg->show_hidden;
+        p->scan_type            = (int32_t)cfg->scan_type;
+        p->passive              = cfg->scan_time.passive;
+        p->active_min           = cfg->scan_time.active.min;
+        p->active_max           = cfg->scan_time.active.max;
+        p->home_chan_dwell_time = cfg->home_chan_dwell_time;
+        p->ghz_2_channels       = cfg->channel_bitmap.ghz_2_channels;
+        p->ghz_5_channels       = cfg->channel_bitmap.ghz_5_channels;
+    }
+
+    if (block) {
+        req->rsp_timeout_ms = EH_HOST_WIFI_SCAN_BLOCK_TIMEOUT_MS;
+    }
 
     eh_rpc_ctrl_cmd_t *r = NULL;
     if (eh_host_feat_rpc_request_sync(RPC_ID__Req_WifiScanStart, req, (void **)&r) != 0) return ESP_FAIL;

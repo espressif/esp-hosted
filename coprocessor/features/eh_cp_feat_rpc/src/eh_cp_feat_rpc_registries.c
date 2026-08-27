@@ -51,6 +51,37 @@ static size_t           s_evt_cap   = 0;
 
 static SemaphoreHandle_t g_rpc_registry_mutex = NULL;
 
+/* Requests whose handler blocks: the transport runs these off its dispatcher.
+ * Policy lives here so the transport holds no feature knowledge.
+ * Marked at init and never removed, so the read path is lock-free. */
+#define EH_CP_RPC_SLOW_IDS_MAX  4u
+
+static uint16_t s_slow_ids[EH_CP_RPC_SLOW_IDS_MAX];
+static size_t   s_slow_count;
+
+esp_err_t eh_cp_rpc_req_register_slow(uint16_t msg_id)
+{
+    eh_cp_rpc_registry_lock();
+    if (s_slow_count >= EH_CP_RPC_SLOW_IDS_MAX) {
+        eh_cp_rpc_registry_unlock();
+        ESP_LOGE(TAG, "slow-req table full, 0x%04x not registered", msg_id);
+        return ESP_ERR_NO_MEM;
+    }
+    s_slow_ids[s_slow_count++] = msg_id;
+    eh_cp_rpc_registry_unlock();
+
+    ESP_LOGI(TAG, "++ RPC slow-req id [0x%04x] (off-dispatcher)", msg_id);
+    return ESP_OK;
+}
+
+bool eh_cp_rpc_req_is_slow(uint32_t msg_id)
+{
+    for (size_t i = 0; i < s_slow_count; i++) {
+        if (msg_id == s_slow_ids[i]) return true;
+    }
+    return false;
+}
+
 esp_err_t eh_cp_rpc_registries_init(void)
 {
     if (!g_rpc_registry_mutex) {

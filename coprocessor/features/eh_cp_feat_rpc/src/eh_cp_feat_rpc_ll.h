@@ -42,6 +42,7 @@ esp_err_t eh_cp_protocomm_process_rpc_evt(const char *epname,
                                                    void *data, int size);
 
 /* Serial transport helpers — implemented in ext_rpc_serial.c. */
+esp_err_t eh_cp_feat_rpc_serial_tx_lock_init(void);
 esp_err_t eh_cp_feat_rpc_serial_write(uint8_t *data, ssize_t len);
 ssize_t   eh_cp_feat_rpc_serial_read(uint8_t *data, ssize_t len);
 esp_err_t eh_cp_feat_rpc_serial_rx(void *ctx, void *buf, uint16_t len, void *eb);

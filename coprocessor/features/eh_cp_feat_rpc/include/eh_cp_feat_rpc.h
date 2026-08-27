@@ -50,6 +50,11 @@ typedef esp_err_t (*eh_rpc_evt_serialise_t)(void *ctx, const eh_rpc_evt_params_t
 esp_err_t eh_cp_rpc_req_register(uint16_t id_min, uint16_t id_max,
                                           eh_rpc_req_handler_t handler, void *ctx);
 esp_err_t eh_cp_rpc_req_unregister(uint16_t id_min, uint16_t id_max);
+
+/* Register a msg_id whose handler blocks; the transport then runs it off the
+ * dispatcher. Declared by the layer owning the id. */
+esp_err_t eh_cp_rpc_req_register_slow(uint16_t msg_id);
+bool      eh_cp_rpc_req_is_slow(uint32_t msg_id);
 esp_err_t eh_cp_rpc_evt_register(uint16_t id_min, uint16_t id_max,
                                           eh_rpc_evt_serialise_t serialise, void *ctx);
 esp_err_t eh_cp_rpc_evt_unregister(uint16_t id_min, uint16_t id_max);

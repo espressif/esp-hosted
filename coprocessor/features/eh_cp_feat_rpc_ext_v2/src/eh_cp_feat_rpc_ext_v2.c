@@ -180,6 +180,8 @@ esp_err_t eh_cp_feat_rpc_ext_v2_init(void)
         return ret;
     }
 
+    EH_CHECK_OK_WARN(eh_cp_rpc_req_register_slow(RPC_ID__Req_WifiScanStart));
+
     ret = eh_cp_rpc_evt_register(MCU_EVT_MSG_ID_MIN, MCU_EVT_MSG_ID_MAX,
                                          mcu_evt_adapter, NULL);
     if (ret != ESP_OK) {

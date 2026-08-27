@@ -52,6 +52,12 @@ static esp_err_t eh_cp_feat_rpc_init(void)
         return ret;
     }
 
+    ret = eh_cp_feat_rpc_serial_tx_lock_init();
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "serial tx lock init failed: %s", esp_err_to_name(ret));
+        return ret;
+    }
+
     ret = eh_cp_protocomm_init(eh_cp_feat_rpc_serial_write,
                                        eh_cp_feat_rpc_serial_read);
     if (ret != ESP_OK) {

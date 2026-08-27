@@ -118,3 +118,50 @@ def test_wifi_sta_connect(bench, bench_caps, wifi_ap, transport):
                        fail=FATAL_PATTERNS + ['connect to the AP fail', 'bring-up timed out'],
                        timeout=180)
     assert r.ok, f"wifi/sta join {wifi_ap['ssid']}: {r.matched}"
+
+
+@pytest.mark.wifi
+@pytest.mark.parametrize('transport', ['sdio', 'uart', 'spi_hd', 'spi_fd'])
+def test_wifi_scan_example_completes(bench, substrate, transport):
+    """Regression: a blocking scan must not starve the CP's RPC dispatcher.
+
+    wifi/scan calls esp_wifi_scan_start(NULL, block=true). The host forwards
+    block=true (eh_host_wifi_scan_start) and the CP runs
+    esp_wifi_scan_start(cfg, true) INLINE in pserial_task — the single task that
+    dispatches every RPC request AND every outgoing event. So for the whole scan
+    the CP answers nothing and emits nothing.
+
+    Two failures follow, both seen on P4 host + C5 CP over SDIO (esp-hosted
+    3.0.6):
+      * Req_GetMACAddress (0x101), issued from the host's sys_evt task by
+        esp_netif's STA_START action while the app task is still inside
+        scan_start, is never dispatched -> times out at exactly 5000 ms
+        ('wifi_init_default: esp_wifi_get_mac failed with -1').
+      * Req_WifiScanStart (0x11E) itself is answered only when the scan ends.
+        eh_host_wifi_scan_start never sets rsp_timeout_ms, so the deadline is the
+        default 5000 ms — shorter than a real C5 dual-band all-channel sweep.
+      Req_WifiScanGetApNum (0x120) then also times out and the app aborts at
+      ESP_ERROR_CHECK(esp_wifi_scan_get_ap_num()).
+
+    'request: no response' is in `fail` deliberately: it is the starvation's own
+    signature and fires ~5 s before the abort, so a regression names the starved
+    request instead of a generic timeout or a downstream panic.
+
+    HW-only, and skipped elsewhere rather than run green: the emu's C6 scan
+    model returns almost immediately, so on the emu this passes WITH the bug
+    present. A cell that cannot fail reads as coverage without being any, so it
+    is a visible skip there; the guard is a dual-band CP (C5) on HW, where the
+    scan outlasts the 5 s deadline. Not tagged @sanity for the same reason —
+    the default set runs on the emu. Existing scan coverage (api_exerciser /
+    test_api_control_plane) cannot catch either failure: its CLI drives one
+    request at a time, so nothing is ever queued behind the blocked dispatcher,
+    and it creates no netif, so no second task is in flight.
+    """
+    if substrate != 'hw':
+        pytest.skip('emu scan model returns instantly — cannot reproduce the '
+                    'dispatcher starvation; HW (dual-band CP) is the guard')
+    b = bench('wifi/scan', 'mcu_host', transport, timeout='150s')
+    host = b['host']
+    r = eh_test_expect(host, r'Total APs scanned = \d+',
+                       fail=FAIL + ['request: no response'], timeout=90)
+    assert r.ok, f'[{transport}] wifi/scan completed without starving the CP dispatcher: {r.matched}'
