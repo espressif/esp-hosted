@@ -4,6 +4,7 @@ set(common_shared_inc
 
 set(CORE_SRCS
     "src/eh_cp_core.c"
+    "src/eh_cp_host_ps_state.c"
     "src/eh_cp_registries.c"
     "src/esp_hosted_init.c"
     "src/eh_cp_idem_wraps.c"
@@ -49,9 +50,6 @@ target_link_libraries(eh_cp_core
 
 if(CONFIG_ESP_HOSTED_CP_FEAT_RPC_READY)
     target_link_libraries(eh_cp_core PUBLIC eh_cp_feat_rpc)
-endif()
-if(CONFIG_ESP_HOSTED_CP_FEAT_HOST_PS_READY)
-    target_link_libraries(eh_cp_core PUBLIC eh_cp_feat_host_ps)
 endif()
 if(CONFIG_ESP_HOSTED_CP_FEAT_BT_READY)
     target_link_libraries(eh_cp_core PUBLIC eh_cp_feat_bt)
