@@ -1,0 +1,4 @@
+# ESP32-P4 + ESP32-C5 core board — coprocessor (C5) side.
+# Selects the board's shared GPIO map (the SDIO lines every transport reuses)
+# and the host-wake GPIO. Pick the transport separately.
+CONFIG_ESP_HOSTED_P4_C5_CORE_BOARD=y

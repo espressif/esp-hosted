@@ -14,11 +14,16 @@
 #include "esp_hosted_examples_common.h"
 
 #include "host_ps_integration.h"
+#include "eh_cp_feat_host_ps.h"
 
 static const char *TAG = "nwspl_h_deep_sl_cp_light_sl";
 
 void app_main(void)
 {
+	/* Boot sequence: CP Boot → Wake Host → NVS / Transport Init → Host Communication
+     * Wake the host first to avoid a boot deadlock if the CP restarts OR silent crashes */
+    eh_cp_feat_host_ps_cp__boot_wake_host_early();
+
     ESP_LOGI(TAG, "ESP-Hosted network_split host-deep-sleep - CP-light-sleep starting...");
 
     /* Initialize NVS */

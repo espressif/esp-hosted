@@ -18,8 +18,8 @@
 #define MEMORY_LEAK_CHECKING 0
 #endif
 
-#if MEMORY_LEAK_CHECKING
 #include "eh_cp_utils.h"
+#if MEMORY_LEAK_CHECKING
 #include "eh_cp_feat_debug.h"
 #endif
 
@@ -70,9 +70,32 @@ static inline void start_cli_after_light_sleep(void)
 #endif
 }
 
+/* Optional host power-save counters (CONFIG_APP_CP_PS_STATS, default n). */
+#if CONFIG_APP_CP_PS_STATS
+	static uint32_t s_ps_sleeps;   /* host announced power-save entry */
+	static uint32_t s_ps_wakes;    /* host came back and the link is serviceable */
+
+	#define APP_CP_PS_STATS_SLEEP()  do { s_ps_sleeps++; } while (0)
+	#define APP_CP_PS_STATS_WAKE()   do { s_ps_wakes++; } while (0)
+
+	/* RAM-only counters; first-cycle marker helps identify a CP reboot. */
+	#define APP_CP_PS_STATS_LOG(at) \
+		ESP_EARLY_LOGI(TAG, "[ps_stats] %s sleeps=%u wakes=%u%s", \
+		               (at), (unsigned)s_ps_sleeps, (unsigned)s_ps_wakes, \
+		               (s_ps_sleeps <= 1u && s_ps_wakes == 0u) \
+		                   ? " (first cycle since this CP booted)" : "")
+#else
+	#define APP_CP_PS_STATS_SLEEP()  do { } while (0)
+	#define APP_CP_PS_STATS_WAKE()   do { } while (0)
+	#define APP_CP_PS_STATS_LOG(at)  do { } while (0)
+#endif
+
 static void on_prepare_cb(void)
 {
 	ESP_EARLY_LOGI(TAG, "==> Host preparing to enter power save");
+	eh_cp_utils_log_mem_stats(TAG, "ps_cycle");
+	APP_CP_PS_STATS_SLEEP();
+	APP_CP_PS_STATS_LOG("host->sleep");
 	optional_debug_log_heap_snapshot("on_prepare");
 	optional_debug_cycle_begin();
 }
@@ -104,6 +127,8 @@ static void off_prepare_cb(void)
 static void off_ready_cb(void)
 {
 	ESP_EARLY_LOGI(TAG, "==> Host power save off - device fully ready");
+	APP_CP_PS_STATS_WAKE();
+	APP_CP_PS_STATS_LOG("host->awake");
 	optional_debug_log_heap_snapshot("off_ready_before");
 
 	start_cli_after_light_sleep();

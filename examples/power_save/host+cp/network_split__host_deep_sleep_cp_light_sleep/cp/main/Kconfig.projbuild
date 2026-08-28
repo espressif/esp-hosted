@@ -240,4 +240,18 @@ menu "Example: CP Light Sleep on Host Deep Sleep"
 
 	endmenu
 
+
+    config APP_CP_PS_STATS
+        bool "Count host power-save cycles (RAM)"
+        default n
+        help
+            Keep two counters - host sleeps and host wakes - and log them at each
+            transition.
+
+            RAM, not NVS, deliberately: this coprocessor must survive every host
+            sleep/wake cycle, so the counters resetting to zero or going
+            backwards is itself the signal that it restarted.
+
+            Example-level only; nothing in the hosted libraries is involved.
+
 endmenu

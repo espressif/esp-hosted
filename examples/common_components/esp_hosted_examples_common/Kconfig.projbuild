@@ -14,7 +14,7 @@ menu "Example Connection Configuration"
 
     choice EH_EXAMPLE_WIFI_BAND
         prompt "WiFi band (dual-band CP, e.g. ESP32-C5)"
-        default EH_EXAMPLE_WIFI_BAND_2G
+        default EH_EXAMPLE_WIFI_BAND_AUTO
         help
             Only applies to a dual-band CP (SLAVE_SOC_WIFI_SUPPORT_5G). 2G is the
             most reliable for a 2.4 GHz AP; AUTO scans both bands but is slow and

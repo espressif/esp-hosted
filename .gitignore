@@ -178,3 +178,13 @@ tmp_registry_readmes/
 
 # session scratch logs
 scratch*.log
+
+# Power-save bench: generated build dirs, sdkconfigs, overlays, and readings
+# (local-only; power CSVs attach to the MR, not the repo)
+build_*/
+sdkconfig.hw_*
+sdkconfig.soak
+hw_*.defaults
+idf_*.defaults
+bench_measurements.csv
+sdkconfig.spihd*
