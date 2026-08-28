@@ -238,9 +238,9 @@ eh.py -p <host_usb_serial_port> flash monitor
   line high to signal wake, uncheck `Host wakeup GPIO active low` on
   the host so it wakes on a rising edge / high level.
 
-- See [`esp_host/README.md`](esp_host/README.md) for the
-  walk-through, [`esp_host/README_light_sleep.md`](esp_host/README_light_sleep.md)
+- See [`esp_host/readme.md`](esp_host/readme.md) for the
+  walk-through, [`esp_host/readme_light_sleep.md`](esp_host/readme_light_sleep.md)
   for the CP-side light-sleep integration details, and
-  [`esp_host/README_iperf.md`](esp_host/README_iperf.md) for
+  [`esp_host/readme_iperf.md`](esp_host/readme_iperf.md) for
   the throughput playbook.
 
