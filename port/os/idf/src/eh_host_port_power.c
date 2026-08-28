@@ -86,8 +86,11 @@ eh_host_port_err_t eh_host_port_reset_slave(void)
 
 eh_host_port_err_t eh_host_port_restart_host(void)
 {
-    ESP_EARLY_LOGW("eh_host_xport", "TRANSPORT_FAILURE: restarting host");
-    esp_restart();
+    ESP_EARLY_LOGW("eh_host_xport", "TRANSPORT_FAILURE: forcing host reset");
+
+	/* Force an immediate reset when transport recovery is not possible.
+     * Avoid esp_restart(), which may wait on the failed transport. */
+    abort();
     return EH_HOST_PORT_OK; /* unreachable */
 }
 
