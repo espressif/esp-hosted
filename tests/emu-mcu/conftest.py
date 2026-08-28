@@ -6,7 +6,7 @@ the SAME `dut` handle surface pytest-embedded gives HW tests, so an emu test
 reads identically to its HW twin:
 
     host, cp = dut[0], dut[1]
-    r = eh_test_expect(host, r'iperf>', timeout=40)
+    r = eh_test_expect(host, r'host>', timeout=40)
 
 Convention (identical to HW): dut[0] = Host (ESP32-P4), dut[1] = CP/Slave (C6).
 The launch logic lives in EmuTarget; these fixtures only choose a BenchSpec and
@@ -80,10 +80,12 @@ def emu_bench(lab_tmp, worker_id):
     target = EmuTarget()
     benches = []
 
-    def _make(example, host_role, transport, wake=False, timeout='60s'):
+    def _make(example, host_role, transport, wake=False, timeout='60s',
+              cp_extra_ovl=(), extra_ovl=()):
         b = target.make(
             BenchSpec(example=example, host_role=host_role, transport=transport,
-                      wake=wake, timeout=timeout),
+                      wake=wake, timeout=timeout,
+                      cp_extra_ovl=tuple(cp_extra_ovl), extra_ovl=tuple(extra_ovl)),
             worker_id=worker_id, lab_tmp=lab_tmp)
         benches.append(b)
         out = {'host': b.host, 'cp': b.cp}

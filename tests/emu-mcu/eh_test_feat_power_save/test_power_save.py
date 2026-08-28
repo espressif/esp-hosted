@@ -39,10 +39,10 @@ class TestHostPowerSave:
         host, cp = dut[0], dut[1]
 
         # ── Stage 1: bring-up + WiFi connect ──
-        r = eh_test_expect(host, r'iperf>', timeout=40)
+        r = eh_test_expect(host, r'host>', timeout=40)
         assert r.ok, f'CLI ready: {r.matched}'
 
-        host.write('sta_connect myssid mypassword')
+        host.write('sta myssid mypassword')
         r = eh_test_expect(host, r'IP_EVENT_STA_GOT_IP', fail=PS_FAIL, timeout=60)
         assert r.ok, f'GOT_IP: {r.matched}'
 
