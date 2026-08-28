@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-/* eh_mempool_ll.c — mynewt os_mempool implementation (vendored). */
+/* eh_mempool_ll.c — mynewt eh_mp_mempool implementation (vendored). */
 
 #include <string.h>
 #include <assert.h>
@@ -12,67 +12,67 @@
 #endif
 #include "eh_mempool_ll.h"
 
-#define OS_MEM_TRUE_BLOCK_SIZE(bsize)   OS_ALIGN(bsize, OS_ALIGNMENT)
-#define OS_MEMPOOL_TRUE_BLOCK_SIZE(mp) OS_MEM_TRUE_BLOCK_SIZE(mp->mp_block_size)
+#define EH_MP_MEM_TRUE_BLOCK_SIZE(bsize)   EH_MP_ALIGN(bsize, EH_MP_ALIGNMENT)
+#define EH_MP_MEMPOOL_TRUE_BLOCK_SIZE(mp) EH_MP_MEM_TRUE_BLOCK_SIZE(mp->mp_block_size)
 
-STAILQ_HEAD(, os_mempool) g_os_hosted_mempool_list =
+STAILQ_HEAD(, eh_mp_mempool) g_os_hosted_mempool_list =
     STAILQ_HEAD_INITIALIZER(g_os_hosted_mempool_list);
 
-#if MYNEWT_VAL(OS_MEMPOOL_POISON)
-static uint32_t os_mem_poison = 0xde7ec7ed;
+#if MYNEWT_VAL(EH_MP_MEMPOOL_POISON)
+static uint32_t eh_mp_mem_poison = 0xde7ec7ed;
 
 static void
-os_mempool_poison(void *start, int sz)
+eh_mp_mempool_poison(void *start, int sz)
 {
 	int i;
 	char *p = start;
 
-	for (i = sizeof(struct os_memblock); i < sz;
-			i = i + sizeof(os_mem_poison)) {
-		memcpy(p + i, &os_mem_poison, min(sizeof(os_mem_poison), sz - i));
+	for (i = sizeof(struct eh_mp_memblock); i < sz;
+			i = i + sizeof(eh_mp_mem_poison)) {
+		memcpy(p + i, &eh_mp_mem_poison, min(sizeof(eh_mp_mem_poison), sz - i));
 	}
 }
 
 static void
-os_mempool_poison_check(void *start, int sz)
+eh_mp_mempool_poison_check(void *start, int sz)
 {
 	int i;
 	char *p = start;
 
-	for (i = sizeof(struct os_memblock); i < sz;
-			i = i + sizeof(os_mem_poison)) {
-		assert(!memcmp(p + i, &os_mem_poison,
-					min(sizeof(os_mem_poison), sz - i)));
+	for (i = sizeof(struct eh_mp_memblock); i < sz;
+			i = i + sizeof(eh_mp_mem_poison)) {
+		assert(!memcmp(p + i, &eh_mp_mem_poison,
+					min(sizeof(eh_mp_mem_poison), sz - i)));
 	}
 }
 #else
-#define os_mempool_poison(start, sz)
-#define os_mempool_poison_check(start, sz)
+#define eh_mp_mempool_poison(start, sz)
+#define eh_mp_mempool_poison_check(start, sz)
 #endif
 
-os_error_t
-os_mempool_init(struct os_mempool *mp, uint16_t blocks, uint32_t block_size,
+eh_mp_error_t
+eh_mp_mempool_init(struct eh_mp_mempool *mp, uint16_t blocks, uint32_t block_size,
                 void *membuf, const char *name)
 {
 	int true_block_size;
 	uint8_t *block_addr;
-	struct os_memblock *block_ptr;
+	struct eh_mp_memblock *block_ptr;
 
 	if (!mp || (block_size == 0)) {
-		return OS_INVALID_PARM;
+		return EH_MP_INVALID_PARM;
 	}
 
 	if ((!membuf) && (blocks != 0)) {
-		return OS_INVALID_PARM;
+		return EH_MP_INVALID_PARM;
 	}
-	OS_INIT_CRITICAL();
+	EH_MP_INIT_CRITICAL();
 
 	if (membuf != NULL) {
-		if (((uintptr_t)membuf & (OS_ALIGNMENT - 1)) != 0) {
-			return OS_MEM_NOT_ALIGNED;
+		if (((uintptr_t)membuf & (EH_MP_ALIGNMENT - 1)) != 0) {
+			return EH_MP_MEM_NOT_ALIGNED;
 		}
 	}
-	true_block_size = OS_MEM_TRUE_BLOCK_SIZE(block_size);
+	true_block_size = EH_MP_MEM_TRUE_BLOCK_SIZE(block_size);
 
 	mp->mp_block_size = block_size;
 	mp->mp_num_free = blocks;
@@ -81,16 +81,16 @@ os_mempool_init(struct os_mempool *mp, uint16_t blocks, uint32_t block_size,
 	mp->mp_num_blocks = blocks;
 	mp->mp_membuf_addr = (uintptr_t)membuf;
 	mp->name = name;
-	os_mempool_poison(membuf, true_block_size);
+	eh_mp_mempool_poison(membuf, true_block_size);
 	SLIST_FIRST(mp) = membuf;
 
 	block_addr = (uint8_t *)membuf;
-	block_ptr = (struct os_memblock *)(void *)block_addr;
+	block_ptr = (struct eh_mp_memblock *)(void *)block_addr;
 	while (blocks > 1) {
 		block_addr += true_block_size;
-		os_mempool_poison(block_addr, true_block_size);
-		SLIST_NEXT(block_ptr, mb_next) = (struct os_memblock *)(void *)block_addr;
-		block_ptr = (struct os_memblock *)(void *)block_addr;
+		eh_mp_mempool_poison(block_addr, true_block_size);
+		SLIST_NEXT(block_ptr, mb_next) = (struct eh_mp_memblock *)(void *)block_addr;
+		block_ptr = (struct eh_mp_memblock *)(void *)block_addr;
 		--blocks;
 	}
 
@@ -98,96 +98,96 @@ os_mempool_init(struct os_mempool *mp, uint16_t blocks, uint32_t block_size,
 
 	STAILQ_INSERT_TAIL(&g_os_hosted_mempool_list, mp, mp_list);
 
-	return OS_OK;
+	return EH_MP_OK;
 }
 
-os_error_t
-os_mempool_ext_init(struct os_mempool_ext *mpe, uint16_t blocks,
+eh_mp_error_t
+eh_mp_mempool_ext_init(struct eh_mp_mempool_ext *mpe, uint16_t blocks,
                     uint32_t block_size, void *membuf, const char *name)
 {
 	int rc;
 
-	rc = os_mempool_init(&mpe->mpe_mp, blocks, block_size, membuf, name);
+	rc = eh_mp_mempool_init(&mpe->mpe_mp, blocks, block_size, membuf, name);
 	if (rc != 0) {
 		return rc;
 	}
 
-	mpe->mpe_mp.mp_flags = OS_MEMPOOL_F_EXT;
+	mpe->mpe_mp.mp_flags = EH_MP_MEMPOOL_F_EXT;
 	mpe->mpe_put_cb = NULL;
 	mpe->mpe_put_arg = NULL;
 
 	return 0;
 }
 
-os_error_t
-os_mempool_clear(struct os_mempool *mp)
+eh_mp_error_t
+eh_mp_mempool_clear(struct eh_mp_mempool *mp)
 {
-	struct os_memblock *block_ptr;
+	struct eh_mp_memblock *block_ptr;
 	int true_block_size;
 	uint8_t *block_addr;
 	uint16_t blocks;
 
 	if (!mp) {
-		return OS_INVALID_PARM;
+		return EH_MP_INVALID_PARM;
 	}
 
-	true_block_size = OS_MEM_TRUE_BLOCK_SIZE(mp->mp_block_size);
+	true_block_size = EH_MP_MEM_TRUE_BLOCK_SIZE(mp->mp_block_size);
 
 	mp->mp_num_free = mp->mp_num_blocks;
 	mp->mp_min_free = mp->mp_num_blocks;
-	os_mempool_poison((void *)mp->mp_membuf_addr, true_block_size);
+	eh_mp_mempool_poison((void *)mp->mp_membuf_addr, true_block_size);
 	SLIST_FIRST(mp) = (void *)mp->mp_membuf_addr;
 
 	block_addr = (uint8_t *)mp->mp_membuf_addr;
-	block_ptr = (struct os_memblock *)(void *)block_addr;
+	block_ptr = (struct eh_mp_memblock *)(void *)block_addr;
 	blocks = mp->mp_num_blocks;
 
 	while (blocks > 1) {
 		block_addr += true_block_size;
-		os_mempool_poison(block_addr, true_block_size);
-		SLIST_NEXT(block_ptr, mb_next) = (struct os_memblock *)(void *)block_addr;
-		block_ptr = (struct os_memblock *)(void *)block_addr;
+		eh_mp_mempool_poison(block_addr, true_block_size);
+		SLIST_NEXT(block_ptr, mb_next) = (struct eh_mp_memblock *)(void *)block_addr;
+		block_ptr = (struct eh_mp_memblock *)(void *)block_addr;
 		--blocks;
 	}
 
 	SLIST_NEXT(block_ptr, mb_next) = NULL;
 
-	return OS_OK;
+	return EH_MP_OK;
 }
 
-os_error_t
-os_mempool_ext_clear(struct os_mempool_ext *mpe)
+eh_mp_error_t
+eh_mp_mempool_ext_clear(struct eh_mp_mempool_ext *mpe)
 {
 	mpe->mpe_mp.mp_flags = 0;
 	mpe->mpe_put_cb = NULL;
 	mpe->mpe_put_arg = NULL;
 
-	return os_mempool_clear(&mpe->mpe_mp);
+	return eh_mp_mempool_clear(&mpe->mpe_mp);
 }
 
 void
-os_mempool_unregister(struct os_mempool *mp)
+eh_mp_mempool_unregister(struct eh_mp_mempool *mp)
 {
-	STAILQ_REMOVE(&g_os_hosted_mempool_list, mp, os_mempool, mp_list);
+	STAILQ_REMOVE(&g_os_hosted_mempool_list, mp, eh_mp_mempool, mp_list);
 }
 
 bool
-os_mempool_is_sane(const struct os_mempool *mp)
+eh_mp_mempool_is_sane(const struct eh_mp_mempool *mp)
 {
-	struct os_memblock *block;
+	struct eh_mp_memblock *block;
 
 	SLIST_FOREACH(block, mp, mb_next) {
-		if (!os_memblock_from(mp, block)) {
+		if (!eh_mp_memblock_from(mp, block)) {
 			return false;
 		}
-		os_mempool_poison_check(block, OS_MEMPOOL_TRUE_BLOCK_SIZE(mp));
+		eh_mp_mempool_poison_check(block, EH_MP_MEMPOOL_TRUE_BLOCK_SIZE(mp));
 	}
 
 	return true;
 }
 
 int
-os_memblock_from(const struct os_mempool *mp, const void *block_addr)
+eh_mp_memblock_from(const struct eh_mp_mempool *mp, const void *block_addr)
 {
 	uintptr_t true_block_size;
 	uintptr_t baddr_ptr;
@@ -197,7 +197,7 @@ os_memblock_from(const struct os_mempool *mp, const void *block_addr)
 			"Pointer to void must be native word size.");
 
 	baddr_ptr = (uintptr_t)block_addr;
-	true_block_size = OS_MEMPOOL_TRUE_BLOCK_SIZE(mp);
+	true_block_size = EH_MP_MEMPOOL_TRUE_BLOCK_SIZE(mp);
 	end = mp->mp_membuf_addr + (mp->mp_num_blocks * true_block_size);
 
 	if ((baddr_ptr < mp->mp_membuf_addr) || (baddr_ptr >= end)) {
@@ -212,13 +212,13 @@ os_memblock_from(const struct os_mempool *mp, const void *block_addr)
 }
 
 void *
-os_memblock_get(struct os_mempool *mp)
+eh_mp_memblock_get(struct eh_mp_mempool *mp)
 {
-	struct os_memblock *block;
+	struct eh_mp_memblock *block;
 
 	block = NULL;
 	if (mp) {
-		OS_ENTER_CRITICAL();
+		EH_MP_ENTER_CRITICAL();
 		if (mp->mp_num_free) {
 			block = SLIST_FIRST(mp);
 			SLIST_FIRST(mp) = SLIST_NEXT(block, mb_next);
@@ -228,25 +228,25 @@ os_memblock_get(struct os_mempool *mp)
 				mp->mp_min_free = mp->mp_num_free;
 			}
 		}
-		OS_EXIT_CRITICAL();
+		EH_MP_EXIT_CRITICAL();
 
 		if (block) {
-			os_mempool_poison_check(block, OS_MEMPOOL_TRUE_BLOCK_SIZE(mp));
+			eh_mp_mempool_poison_check(block, EH_MP_MEMPOOL_TRUE_BLOCK_SIZE(mp));
 		}
 	}
 
 	return (void *)block;
 }
 
-os_error_t
-os_memblock_put_from_cb(struct os_mempool *mp, void *block_addr)
+eh_mp_error_t
+eh_mp_memblock_put_from_cb(struct eh_mp_mempool *mp, void *block_addr)
 {
-	struct os_memblock *block;
+	struct eh_mp_memblock *block;
 
-	os_mempool_poison(block_addr, OS_MEMPOOL_TRUE_BLOCK_SIZE(mp));
+	eh_mp_mempool_poison(block_addr, EH_MP_MEMPOOL_TRUE_BLOCK_SIZE(mp));
 
-	block = (struct os_memblock *)(void *)block_addr;
-	OS_ENTER_CRITICAL();
+	block = (struct eh_mp_memblock *)(void *)block_addr;
+	EH_MP_ENTER_CRITICAL();
 
 	SLIST_NEXT(block, mb_next) = SLIST_FIRST(mp);
 	SLIST_FIRST(mp) = block;
@@ -254,49 +254,49 @@ os_memblock_put_from_cb(struct os_mempool *mp, void *block_addr)
 	/* TODO(mempool-safety): assert mp_num_free <= mp_num_blocks. */
 	mp->mp_num_free++;
 
-	OS_EXIT_CRITICAL();
+	EH_MP_EXIT_CRITICAL();
 
-	return OS_OK;
+	return EH_MP_OK;
 }
 
-os_error_t
-os_memblock_put(struct os_mempool *mp, void *block_addr)
+eh_mp_error_t
+eh_mp_memblock_put(struct eh_mp_mempool *mp, void *block_addr)
 {
-	struct os_mempool_ext *mpe;
+	struct eh_mp_mempool_ext *mpe;
 	int rc;
-#if MYNEWT_VAL(OS_MEMPOOL_CHECK)
-	struct os_memblock *block;
+#if MYNEWT_VAL(EH_MP_MEMPOOL_CHECK)
+	struct eh_mp_memblock *block;
 #endif
 
 	if ((mp == NULL) || (block_addr == NULL)) {
-		return OS_INVALID_PARM;
+		return EH_MP_INVALID_PARM;
 	}
 
-#if MYNEWT_VAL(OS_MEMPOOL_CHECK)
-	assert(os_memblock_from(mp, block_addr));
+#if MYNEWT_VAL(EH_MP_MEMPOOL_CHECK)
+	assert(eh_mp_memblock_from(mp, block_addr));
 
 	/* Duplicate-free check. */
 	SLIST_FOREACH(block, mp, mb_next) {
-		assert(block != (struct os_memblock *)(void *)block_addr);
+		assert(block != (struct eh_mp_memblock *)(void *)block_addr);
 	}
 #endif
 
 	/* Extended mempool with put cb: defer to callback. */
-	if (mp->mp_flags & OS_MEMPOOL_F_EXT) {
-		mpe = (struct os_mempool_ext *)mp;
+	if (mp->mp_flags & EH_MP_MEMPOOL_F_EXT) {
+		mpe = (struct eh_mp_mempool_ext *)mp;
 		if (mpe->mpe_put_cb != NULL) {
 			rc = mpe->mpe_put_cb(mpe, block_addr, mpe->mpe_put_arg);
 			return rc;
 		}
 	}
 
-	return os_memblock_put_from_cb(mp, block_addr);
+	return eh_mp_memblock_put_from_cb(mp, block_addr);
 }
 
-struct os_mempool *
-os_mempool_info_get_next(struct os_mempool *mp, struct os_mempool_info *omi)
+struct eh_mp_mempool *
+eh_mp_mempool_info_get_next(struct eh_mp_mempool *mp, struct eh_mp_mempool_info *omi)
 {
-	struct os_mempool *cur;
+	struct eh_mp_mempool *cur;
 
 	if (mp == NULL) {
 		cur = STAILQ_FIRST(&g_os_hosted_mempool_list);

@@ -11,7 +11,7 @@
 #ifdef CONFIG_ESP_CACHE_MALLOC
 #include "eh_mempool_ll.h"
 struct hosted_mempool {
-	struct os_mempool *pool;
+	struct eh_mp_mempool *pool;
 	uint8_t *heap;
 	uint8_t static_heap;
 	size_t num_blocks;
