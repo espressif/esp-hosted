@@ -727,8 +727,8 @@ static int event_handler(uint8_t val)
 				if (o && o->on_ps_event)
 					o->on_ps_event(ESP_POWER_SAVE_ON);
 			} else {
-				ESP_EARLY_LOGI(TAG, "PS_ON ignored in state %u",
-				               (unsigned)eh_cp_host_ps_get());
+				eh_cp_host_ps_state_t st = eh_cp_host_ps_get();
+				ESP_EARLY_LOGI(TAG, "PS_ON ignored in state %u", (unsigned)st);
 			}
 #else
 			eh_cp_recv_kick();

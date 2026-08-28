@@ -40,7 +40,7 @@ not materially change the parked current.
 
 ## Try it
 
-Build and flash the example (see the [readme](readme.md)), connect to your AP,
+Build and flash the example (see the [readme](README.md)), connect to your AP,
 and put the host to sleep. To read the parked current you need a current meter
 in the coprocessor's supply rail; the numbers above were taken with a Joulescope
 JS110.

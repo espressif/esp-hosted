@@ -5,6 +5,7 @@
  */
 
 #include "eh_cp_feat_host_ps_internal.h"
+#include "eh_cp_feat_host_ps.h"
 #include "eh_caps.h"
 #include "eh_interface.h"
 //#include "eh_cp_extension.h"

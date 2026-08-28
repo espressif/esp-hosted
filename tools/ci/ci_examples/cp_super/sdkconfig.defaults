@@ -36,6 +36,9 @@ CONFIG_BT_CONTROLLER_ONLY=y
 CONFIG_ESP_HOSTED_CP_FEAT_PEER_DATA=y
 CONFIG_ESP_HOSTED_CP_FEAT_GPIO_EXP=y
 CONFIG_ESP_HOSTED_CP_FEAT_HOST_PS=y
+# host-PS deep-sleep needs a valid wake GPIO (guarded by #error); cp_super has
+# no board profile, so pin it here — compile-only, any valid pin proves the path.
+CONFIG_ESP_HOSTED_CP_FEAT_HOST_PS_HOST_WAKEUP_GPIO=4
 CONFIG_ESP_HOSTED_CP_FEAT_DEBUG=y
 CONFIG_ESP_HOSTED_CP_FEAT_DEBUG_MEM_MONITOR=y
 CONFIG_ESP_HOSTED_CP_FEAT_CLI=y

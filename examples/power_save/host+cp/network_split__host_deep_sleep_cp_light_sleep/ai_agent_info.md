@@ -1,7 +1,7 @@
 # ai_agent_info — engineering reference
 
 Deeper technical reference for this example, for integrators, maintainers, and
-their AI agents. Complements the user docs (`readme.md`, `power_measurements.md`,
+their AI agents. Complements the user docs (`README.md`, `power_measurements.md`,
 `esp_host/readme_*.md`). Keep it factual; **never put real SSIDs/passwords here**
 — use `<SSID>` / `<PW>` placeholders.
 
