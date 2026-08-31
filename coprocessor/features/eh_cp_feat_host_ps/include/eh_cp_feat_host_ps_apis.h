@@ -55,12 +55,16 @@ int  eh_cp_feat_host_ps_set_callbacks(const host_power_save_callbacks_t *cbs);
 /** @brief Create the queue and worker task. Idempotent. */
 esp_err_t eh_cp_feat_host_ps_worker_start(void);
 
+/** @brief Delete the worker task and queue. Idempotent. */
+void eh_cp_feat_host_ps_worker_stop(void);
+
 /** @brief Queue a transition for the worker. Never blocks. */
 esp_err_t eh_cp_feat_host_ps_post_alert(uint32_t event);
 
 #else /* !EH_CP_FEAT_HOST_PS_READY - no host sleeps, so no worker and no queue */
 
 static inline esp_err_t eh_cp_feat_host_ps_worker_start(void) { return ESP_OK; }
+static inline void eh_cp_feat_host_ps_worker_stop(void) { }
 static inline esp_err_t eh_cp_feat_host_ps_post_alert(uint32_t e)
 {
 	(void)e;

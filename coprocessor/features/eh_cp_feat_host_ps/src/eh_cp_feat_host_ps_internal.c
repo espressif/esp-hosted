@@ -285,6 +285,7 @@ int host_power_save_set_callbacks(const host_power_save_callbacks_t *cbs)
 int host_power_save_deinit(void)
 {
 #if EH_CP_FEAT_HOST_PS_READY
+	eh_cp_feat_host_ps_worker_stop();
 #if EH_CP_FEAT_HOST_PS_DEEP_SLEEP
 	if (wakeup_sem) {
 		xSemaphoreTake(wakeup_sem, portMAX_DELAY);

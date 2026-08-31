@@ -41,6 +41,10 @@ esp_err_t eh_cp_feat_host_ps_cp__init(void)
 
 esp_err_t eh_cp_feat_host_ps_cp__deinit(void)
 {
+    if (s_host_ps_initialized) {
+        host_power_save_deinit();
+        s_host_ps_initialized = false;
+    }
     ESP_LOGI(TAG, "Power save extension deinitialized");
     return ESP_OK;
 }

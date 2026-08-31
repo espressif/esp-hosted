@@ -48,6 +48,18 @@ esp_err_t eh_cp_feat_host_ps_worker_start(void)
 	return ESP_OK;
 }
 
+void eh_cp_feat_host_ps_worker_stop(void)
+{
+	if (ps_alert_task_handle) {
+		vTaskDelete(ps_alert_task_handle);
+		ps_alert_task_handle = NULL;
+	}
+	if (ps_alert_q) {
+		vQueueDelete(ps_alert_q);
+		ps_alert_q = NULL;
+	}
+}
+
 esp_err_t eh_cp_feat_host_ps_post_alert(uint32_t event)
 {
 	if (!ps_alert_q) {
