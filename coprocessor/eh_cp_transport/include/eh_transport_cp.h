@@ -112,6 +112,9 @@ typedef struct {
 	uint8_t current_throttling;
 } slave_state_t;
 
+/* Wake recv_task when read() may become ready. Safe from task or ISR context. */
+void eh_cp_recv_kick(void);
+
 interface_context_t * interface_insert_driver(int (*callback)(uint8_t val));
 int interface_remove_driver(void);
 void generate_startup_event(uint8_t cap, uint32_t ext_cap, uint8_t raw_tp_cap,

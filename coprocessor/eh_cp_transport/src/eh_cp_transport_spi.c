@@ -2,6 +2,7 @@
 /* Copyright 2015-2025 Espressif Systems (Shanghai) PTE LTD */
 
 #include "eh_cp_master_config.h"
+#include "eh_cp_host_ps_state.h"
 #include "eh_tlv.h"
 #include "eh_tlv_defs.h"
 #include "eh_tlv_v1.h"
@@ -164,6 +165,23 @@ static SemaphoreHandle_t wait_cs_deassert_sem;
 static interface_handle_t * esp_spi_init(void);
 static int32_t esp_spi_write(interface_handle_t *handle,
 				interface_buffer_handle_t *buf_handle);
+
+static void spi_apply_ps_flags(uint8_t flags)
+{
+	if (flags & FLAG_POWER_SAVE_STARTED) {
+		ESP_LOGI(TAG, "Host informed starting to power sleep");
+		if (context.event_handler)
+			context.event_handler(ESP_POWER_SAVE_ON);
+	} else if (flags & FLAG_POWER_SAVE_STOPPED) {
+		ESP_LOGI(TAG, "Host informed that it waken up");
+		if (context.event_handler) {
+			context.event_handler(ESP_POWER_SAVE_OFF);
+			/* Re-announce: the host rebooted with its tx_ready gate shut. */
+			context.event_handler(ESP_OPEN_DATA_PATH);
+		}
+	}
+}
+
 static int esp_spi_read(interface_handle_t *if_handle, interface_buffer_handle_t * buf_handle);
 static esp_err_t esp_spi_reset(interface_handle_t *handle);
 static void esp_spi_deinit(interface_handle_t *handle);
@@ -186,8 +204,9 @@ static struct hosted_mempool * buf_mp_tx_g;
 static struct hosted_mempool * buf_mp_rx_g;
 static struct hosted_mempool * trans_mp_g;
 
-uint8_t power_save_started;
-#define IS_HOST_POWER_SAVING() (power_save_started)
+static volatile uint8_t spi_hw_loaded;
+
+#define IS_HOST_POWER_SAVING() (!eh_cp_host_ps_reachable())
 
 #if USE_STATIC_DUMMY_BUFFER
 static DRAM_ATTR uint8_t dummy_buffer[SPI_BUFFER_SIZE] __attribute__((aligned(4)));
@@ -440,17 +459,21 @@ void generate_startup_event(uint8_t cap, uint32_t ext_cap, uint8_t raw_tp_cap,
 #endif
 
 	set_dataready_gpio();
-	queue_next_transaction();
+	/* queue_next_transaction is done in spi_init for first kick start */
 }
 
 
 static void IRAM_ATTR spi_post_setup_cb(spi_slave_transaction_t *trans)
 {
+	spi_hw_loaded++;
 	set_handshake_gpio();
 }
 
 static void IRAM_ATTR spi_post_trans_cb(spi_slave_transaction_t *trans)
 {
+	if (spi_hw_loaded)
+		spi_hw_loaded--;
+	/* With DEASSERT_HS_ON_CS the CS ISR drops it; CS falls at transfer start. */
 #if !HS_DEASSERT_ON_CS
 	reset_handshake_gpio();
 #endif
@@ -529,6 +552,7 @@ static int process_spi_rx(interface_buffer_handle_t *buf_handle)
 
 	res = eh_frame_decode(raw_buf, raw_len, buf_handle);
 	if (res == EH_FRAME_DUMMY) {
+		spi_apply_ps_flags(buf_handle->flags);
 		return -1;
 	}
 	if (res != EH_FRAME_OK) {
@@ -536,22 +560,13 @@ static int process_spi_rx(interface_buffer_handle_t *buf_handle)
 		return -1;
 	}
 
+
 	UPDATE_HEADER_RX_PKT_NO((struct esp_payload_header *)raw_buf);
 
 	ESP_LOGV(TAG, "RX: if_type: %d len=%u flags=0x%x",
 		buf_handle->if_type, buf_handle->payload_len, buf_handle->flags);
 
-	if (buf_handle->flags & FLAG_POWER_SAVE_STARTED) {
-		ESP_LOGI(TAG, "Host informed starting to power sleep");
-		power_save_started = 1;
-		if (context.event_handler)
-			context.event_handler(ESP_POWER_SAVE_ON);
-	} else if (buf_handle->flags & FLAG_POWER_SAVE_STOPPED) {
-		ESP_LOGI(TAG, "Host informed that it waken up");
-		power_save_started = 0;
-		if (context.event_handler)
-			context.event_handler(ESP_POWER_SAVE_OFF);
-	}
+	spi_apply_ps_flags(buf_handle->flags);
 
 	buf_handle->free_buf_handle    = esp_spi_read_done;
 	buf_handle->priv_buffer_handle = raw_buf;
@@ -579,17 +594,20 @@ static int process_spi_rx(interface_buffer_handle_t *buf_handle)
 
 static void queue_next_transaction(void)
 {
-	spi_slave_transaction_t *spi_trans = NULL;
 	uint32_t len = 0;
-	uint8_t *tx_buffer = get_next_tx_buffer(&len);
-	if (unlikely(!tx_buffer)) {
-		ESP_LOGE(TAG , "Failed to queue new transaction\r\n");
+	uint8_t *tx_buffer;
+
+	spi_slave_transaction_t *spi_trans = spi_trans_alloc(MEMSET_REQUIRED);
+	if (unlikely(!spi_trans)) {
+		ESP_LOGE(TAG, "no free transaction descriptor");
 		return;
 	}
 
-	spi_trans = spi_trans_alloc(MEMSET_REQUIRED);
-	if (unlikely(!spi_trans)) {
-		assert(spi_trans);
+	tx_buffer = get_next_tx_buffer(&len);
+	if (unlikely(!tx_buffer)) {
+		ESP_LOGE(TAG , "Failed to queue new transaction\r\n");
+		spi_trans_free(spi_trans);
+		return;
 	}
 
 	spi_trans->rx_buffer = spi_buffer_rx_alloc(MEMSET_REQUIRED);
@@ -611,14 +629,6 @@ static void spi_transaction_post_process_task(void* pvParameters)
 
 	ESP_LOGI(TAG, "SPI post process task started");
 	for (;;) {
-#if EH_CP_FEAT_HOST_PS_UNLOAD_BUS_WHILE_SLEEPING
-		if (if_handle_g.state == DEINIT) {
-			vTaskDelay(pdMS_TO_TICKS(10));
-			ESP_LOGI(TAG, "spi deinit");
-			continue;
-		}
-#endif
-
 		memset(&rx_buf_handle, 0, sizeof(rx_buf_handle));
 
 		EH_CHECK_OK(spi_slave_get_trans_result(ESP_SPI_CONTROLLER, &spi_trans,
@@ -671,6 +681,7 @@ static void IRAM_ATTR gpio_disable_hs_isr_handler(void* arg)
 #if HS_DEASSERT_ON_CS
 	int level = gpio_get_level(GPIO_CS);
 	if (level == 0) {
+		/* Transfer starting: no longer available. Earliest correct instant on silicon. */
 		reset_handshake_gpio();
 	} else {
 		if (wait_cs_deassert_sem)
@@ -713,6 +724,9 @@ static interface_handle_t * esp_spi_init(void)
   #if EH_CP_IDF_SPI_SLAVE_EN_DIS
 		spi_slave_enable(ESP_SPI_CONTROLLER);
   #endif
+		if (spi_hw_loaded) {
+			set_handshake_gpio();
+		}
 		if_handle_g.state = ACTIVE;
 		return &if_handle_g;
 	}
@@ -868,6 +882,9 @@ static interface_handle_t * esp_spi_init(void)
 		assert(xTaskCreate(spi_transaction_post_process_task , "spi_post_process_task" ,
 					CONFIG_ESP_HOSTED_DEFAULT_TASK_STACK_SIZE, NULL,
 					CONFIG_ESP_HOSTED_TASK_PRIORITY_DEFAULT, NULL) == pdTRUE);
+
+		/* Kick-start the spi design */
+		queue_next_transaction();
 		hosted_constructs_init_done = 1;
 	}
 
@@ -1019,6 +1036,7 @@ static void esp_spi_deinit(interface_handle_t *handle)
   #if EH_CP_IDF_SPI_SLAVE_EN_DIS
 	spi_slave_disable(ESP_SPI_CONTROLLER);
   #endif
+	reset_handshake_gpio();
 	handle->state = DEINIT;
 	ESP_LOGI(TAG, "SPI deinit requested. Signaling spi task to exit.");
 #endif

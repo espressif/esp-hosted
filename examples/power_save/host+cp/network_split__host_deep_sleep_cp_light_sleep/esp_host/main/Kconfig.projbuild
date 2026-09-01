@@ -1,0 +1,82 @@
+menu "Host power save example"
+
+    config APP_WIFI_SSID
+        string "Default WiFi SSID"
+        default "myssid"
+        help
+            Used when NVS holds no credentials yet. `sta <ssid> <pass>`
+            overwrites what is stored in NVS.
+
+    config APP_WIFI_PASSWORD
+        string "Default WiFi password"
+        default "mypassword"
+
+    choice APP_CONTROL
+        prompt "Control"
+        default APP_CONTROL_CLI
+        help
+            Where settings come from. Either way the example adopts whatever
+            link the coprocessor already holds before configuring anything.
+
+        config APP_CONTROL_CLI
+            bool "Console"
+            help
+                Nothing is applied at boot unless credentials were stored by a
+                previous `sta` command. Drive everything from the prompt.
+
+        config APP_CONTROL_KCONFIG
+            bool "Kconfig"
+            help
+                Apply the settings below at boot.
+    endchoice
+
+    choice APP_WIFI_PS_MODE
+        prompt "Wi-Fi power save mode"
+        default APP_WIFI_PS_MIN_MODEM
+        help
+            Mirrors IDF's examples/wifi/power_save so measurements here are
+            comparable with it.
+
+            minimum modem: wake every DTIM to receive the beacon. Broadcast data
+            is not lost, but DTIM is chosen by the AP so the saving is bounded.
+            maximum modem: wake only every listen interval. Saves more, and is
+            the only mode in which the listen interval below applies, but
+            broadcast frames may be missed.
+
+        config APP_WIFI_PS_NONE
+            bool "none"
+        config APP_WIFI_PS_MIN_MODEM
+            bool "minimum modem"
+        config APP_WIFI_PS_MAX_MODEM
+            bool "maximum modem"
+    endchoice
+
+    config APP_WIFI_LISTEN_INTERVAL
+        int "STA listen interval (beacons)"
+        default 3
+        help
+            Beacons the radio may sleep through. Only honoured under
+            WIFI_PS_MAX_MODEM. Default 3 matches
+            CONFIG_EXAMPLE_WIFI_LISTEN_INTERVAL in IDF's wifi/power_save
+            example; it still goes out in the association request in every mode.
+
+    config APP_WIFI_MAX_RETRY
+        int "Reconnect attempts"
+        default 5
+
+    config APP_PS_NVS_STATS
+        bool "Count deep-sleep wakes in NVS"
+        default n
+        help
+            Keep boot/wake counters and the last wake cause in NVS, and print
+            them once the console is up.
+
+            On a USB-serial-JTAG console the lines printed either side of a deep
+            sleep are lost: output is buffered and sleep powers USB down before
+            it drains. Counters in NVS survive the sleep, so they show that the
+            host really slept and woke, and how many times.
+
+            Example-level only; nothing in the hosted libraries is involved.
+            One NVS commit per boot when enabled.
+
+endmenu

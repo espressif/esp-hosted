@@ -585,7 +585,8 @@ static void wifi_sta_connected_handler(const void *ctrl_cmd, void *ctx)
         s_sta_netif_started = true;
         wifi_event_post_logged(WIFI_EVENT_STA_START, NULL, 0);
     }
-    /* Associated → the STA netif is up and bound; admit DATA RX. */
+    /* Associated → the STA netif is up and bound; admit DATA RX.
+     * however, do not treat this flag alone as "safe to deliver". */
     s_rx_admit[0] = true;
     wifi_event_post_logged(WIFI_EVENT_STA_CONNECTED, &evt, sizeof(evt));
 }
@@ -737,9 +738,19 @@ static void wifi_event_no_args_handler(const void *ctrl_cmd, void *ctx)
         }
         break;
     case WIFI_EVENT_STA_STOP:
-        s_rx_admit[0] = false;  /* deny before netif teardown */
+        s_rx_admit[0] = false;  /* link down: deny DATA RX either way */
+#if CONFIG_ESP_HOSTED_HOST_FEAT_NW_SPLIT_NETIF_INTERNAL_STATIC
+        /* L2 = bus: the host's real L2 is the transport channel, still up. A
+         * relayed radio STOP must NOT tear the netif down — action_stop clears
+         * netif->input, and a following re-association delivers its IP/status
+         * before the late STA_START relay re-adds it, so the IP is dropped and
+         * the host is left addressless (the flaky wake+AP-switch failure). Keep
+         * the netif and the started-latch; treat STOP as link-down only. */
+        ESP_LOGD(EH_HOST_WIFI_TAG, "STA_STOP: link-down only, keeping bus-backed netif");
+#else
         s_sta_netif_started = false;
         wifi_event_post_logged(evt_id, NULL, 0);
+#endif
         break;
     case WIFI_EVENT_AP_START:
         if (!s_ap_netif_started) {

@@ -99,4 +99,17 @@ CONFIG_COMPILER_OPTIMIZATION_PERF=y
 
 #13. Mem optimizations
 #---------------------
-CONFIG_FREERTOS_PLACE_FUNCTIONS_INTO_FLASH=y
+CONFIG_FREERTOS_PLACE_FUNCTIONS_INTO_FLASH=n
+
+
+#14. Light-sleep current (Wi-Fi)
+#-------------------------------
+# Power down MAC/BB and use the enhanced light-sleep path
+CONFIG_ESP_PHY_MAC_BB_PD=y
+CONFIG_ESP_WIFI_ENHANCED_LIGHT_SLEEP=y
+
+# No secondary console: USB-serial-JTAG keeps its clock alive and blocks sleep.
+CONFIG_ESP_CONSOLE_SECONDARY_NONE=y
+
+# The host negotiates iTWT with the AP through this extension.
+CONFIG_ESP_HOSTED_CP_FEAT_WIFI_EXT_ITWT=y

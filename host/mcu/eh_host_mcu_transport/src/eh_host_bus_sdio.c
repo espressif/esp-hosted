@@ -1802,6 +1802,11 @@ static void sdio_process_rx_task(void *pvParameters)
 				(void)ret;
 #endif
 #endif
+			} else {
+				ESP_LOGW(TAG, "rx-drop: no channel for if_type=%u len=%u flags=0x%x",
+				         (unsigned)buf_handle->if_type,
+				         (unsigned)buf_handle->payload_len,
+				         (unsigned)buf_handle->flags);
 			}
 		} else if (buf_handle->if_type == ESP_PRIV_IF) {
 
@@ -2017,8 +2022,7 @@ static int ensure_slave_bus_ready(void *bus_handle)
 	if (eh_host_port_wakeup_reason_get() != EH_HOST_PORT_WAKEUP_UNKNOWN) {
 		ESP_LOGI(TAG, "Host woke up from power save");
 
-		/* Reset double-buf state to avoid post-wake race. */
-		eh_host_port_task_delay_ms(500);
+		/* Reset double-buf state to avoid a post-wake race */
 		sdio_rx_ring_reset();
 		if (sem_double_buf_xfer_data) {
 			while (eh_host_port_sem_try_wait(sem_double_buf_xfer_data) == ESP_OK);

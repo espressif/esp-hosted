@@ -13,12 +13,12 @@ struct hosted_mempool * hosted_mempool_create(void *pre_allocated_mem,
 {
 #ifdef CONFIG_ESP_CACHE_MALLOC
 	struct hosted_mempool *new = NULL;
-	struct os_mempool *pool = NULL;
+	struct eh_mp_mempool *pool = NULL;
 	uint8_t *heap = NULL;
 	char str[MEMPOOL_NAME_STR_SIZE] = {0};
 
 	if (!pre_allocated_mem) {
-		heap = (uint8_t *)MEM_ALLOC( MEMPOOL_ALIGNED(OS_MEMPOOL_BYTES(
+		heap = (uint8_t *)MEM_ALLOC( MEMPOOL_ALIGNED(EH_MP_MEMPOOL_BYTES(
 						num_blocks,block_size)));
 		if (!heap) {
 			ESP_LOGE(TAG, "mempool create failed, no mem\n");
@@ -38,7 +38,7 @@ struct hosted_mempool * hosted_mempool_create(void *pre_allocated_mem,
 	}
 
 	new = (struct hosted_mempool*)CALLOC(1, sizeof(struct hosted_mempool));
-	pool = (struct os_mempool *)CALLOC(1, sizeof(struct os_mempool));
+	pool = (struct eh_mp_mempool *)CALLOC(1, sizeof(struct eh_mp_mempool));
 
 	if(!new || !pool) {
 		goto free_buffs;
@@ -46,8 +46,8 @@ struct hosted_mempool * hosted_mempool_create(void *pre_allocated_mem,
 
 	snprintf(str, MEMPOOL_NAME_STR_SIZE, "hosted_%p", (void *)pool);
 
-	if (os_mempool_init(pool, num_blocks, block_size, heap, str)) {
-		ESP_LOGE(TAG, "os_mempool_init failed\n");
+	if (eh_mp_mempool_init(pool, num_blocks, block_size, heap, str)) {
+		ESP_LOGE(TAG, "eh_mp_mempool_init failed\n");
 		goto free_buffs;
 	}
 
@@ -85,7 +85,7 @@ void hosted_mempool_destroy(struct hosted_mempool *mempool)
 	ESP_LOGI(MEM_TAG, "Destroy mempool %p num_blk[%lu] blk_size:[%lu]", mempool->pool, mempool->num_blocks, mempool->block_size);
 #endif
 
-	os_mempool_unregister(mempool->pool);
+	eh_mp_mempool_unregister(mempool->pool);
 	FREE(mempool->pool);
 
 	if (!mempool->static_heap)
@@ -106,7 +106,7 @@ void * hosted_mempool_alloc(struct hosted_mempool *mempool,
 		return NULL;
 	}
 
-#if MYNEWT_VAL(OS_MEMPOOL_CHECK)
+#if MYNEWT_VAL(EH_MP_MEMPOOL_CHECK)
 	assert(mempool->heap);
 	assert(mempool->pool);
 #endif
@@ -116,7 +116,7 @@ void * hosted_mempool_alloc(struct hosted_mempool *mempool,
 		return NULL;
 	}
 
-	mem = os_memblock_get(mempool->pool);
+	mem = eh_mp_memblock_get(mempool->pool);
 #else
 	mem = MEM_ALLOC(MEMPOOL_ALIGNED(nbytes));
 #endif
@@ -140,12 +140,12 @@ int hosted_mempool_free(struct hosted_mempool *mempool, void *mem)
 		return MEMPOOL_FAIL;
 	}
 
-#if MYNEWT_VAL(OS_MEMPOOL_CHECK)
+#if MYNEWT_VAL(EH_MP_MEMPOOL_CHECK)
 	assert(mempool->heap);
 	assert(mempool->pool);
 #endif
 
-	return os_memblock_put(mempool->pool, mem);
+	return eh_mp_memblock_put(mempool->pool, mem);
 #else
 	FREE(mem);
 	return 0;

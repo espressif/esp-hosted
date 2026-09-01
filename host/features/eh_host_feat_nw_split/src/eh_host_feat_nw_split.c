@@ -70,6 +70,58 @@ static bool nw_split_netif_added(void)
 #endif
 }
 
+static void synthesize_sta_connected(void)
+{
+    /* Restore the connected event when the CP only reports the IP status. */
+    wifi_event_sta_connected_t conn_evt = {0};
+
+    (void)esp_event_post(WIFI_EVENT, WIFI_EVENT_STA_CONNECTED,
+                         &conn_evt, sizeof(conn_evt), 0);
+
+    ESP_LOGD(NW_SPLIT_TAG,
+             "synthesized STA_CONNECTED (CP gave IP without StaConnected)");
+
+    eh_host_wifi_admit_rx(false /*is_ap*/, true);
+}
+
+static void apply_cp_ip_status(const eh_host_nw_split_status_t *e)
+{
+    esp_err_t rc = esp_netif_dhcpc_stop(s_state.netif);
+
+    if (rc != ESP_OK && rc != ESP_ERR_ESP_NETIF_DHCP_ALREADY_STOPPED) {
+        ESP_LOGW(NW_SPLIT_TAG, "dhcpc_stop failed: 0x%x", rc);
+    }
+
+    if (esp_netif_set_ip_info(s_state.netif, &e->ipv4) != ESP_OK) {
+        ESP_LOGE(NW_SPLIT_TAG, "set_ip_info failed");
+        return;
+    }
+
+    if (e->dns_main.type == ESP_IPADDR_TYPE_V4 &&
+        e->dns_main.u_addr.ip4.addr != 0) {
+        esp_netif_dns_info_t dns = { .ip = e->dns_main };
+
+        rc = esp_netif_set_dns_info(s_state.netif, ESP_NETIF_DNS_MAIN, &dns);
+        if (rc != ESP_OK) {
+            ESP_LOGW(NW_SPLIT_TAG, "set_dns_info failed: 0x%x", rc);
+        }
+    }
+
+    ip_event_got_ip_t evt = {
+        .esp_netif  = s_state.netif,
+        .ip_info    = e->ipv4,
+        .ip_changed = true,
+    };
+
+    rc = esp_event_post(IP_EVENT, IP_EVENT_STA_GOT_IP, &evt, sizeof(evt), 0);
+    if (rc != ESP_OK) {
+        ESP_LOGW(NW_SPLIT_TAG, "GOT_IP post failed: 0x%x", rc);
+    }
+
+    ESP_LOGD(NW_SPLIT_TAG, "CP IP applied to host netif: " IPSTR,
+             IP2STR(&e->ipv4.ip));
+}
+
 static void on_cp_dhcp_status(void *arg, esp_event_base_t base, int32_t id, void *data)
 {
     (void)arg;
@@ -87,60 +139,36 @@ static void on_cp_dhcp_status(void *arg, esp_event_base_t base, int32_t id, void
         return;
     }
 
-    /* Wake ordering: the CP replays this status fast, but the real STA_START that
-     * re-adds the netif is relayed ~hundreds of ms later. Upping the netif now
-     * (via the synthesized STA_CONNECTED below) would hit an unadded netif and
-     * fault wlanif_input on a NULL netif->input. If it isn't added yet, stash the
-     * status; on_nw_split_sta_start re-drives it once STA_START adds the netif.
-     * Cold boot: STA_START already ran, so this applies immediately. */
+    /* The netif input may not be attached yet: the CP relays this IP status
+     * before the STA_START that re-adds the netif, and on slow transports that
+     * STA_START can be lost or arrive after a sticky started-latch has already
+     * suppressed it — leaving the host addressless. Stash the status AND
+     * self-drive the re-add: posting STA_START runs esp_netif's action_start
+     * (re-installs netif->input), then on_nw_split_sta_start re-drives this
+     * stash in order. AUTO_CONNECT_ON_START is off here, so STA_START has no
+     * reconnect side-effect. Recovery no longer depends on the CP's relay. */
     if (!nw_split_netif_added()) {
         s_state.pending = *e;
         s_state.status_pending = true;
+        ESP_LOGD(NW_SPLIT_TAG, "netif input not attached; stashing IP " IPSTR
+                 " and self-driving STA_START", IP2STR(&e->ipv4.ip));
+        (void)esp_event_post(WIFI_EVENT, WIFI_EVENT_STA_START, NULL, 0, 0);
         return;
     }
 
-    /* Synthesize WIFI_EVENT_STA_CONNECTED: when CP skips re-firing it for
-     * an already-associated network, esp_wifi_remote's default handler
-     * never installs the CHANNEL_STA rxcb, so echo replies get dropped.
-     * Idempotent if a real StaConnected later arrives. */
-    wifi_event_sta_connected_t conn_evt = {0};
-    (void)esp_event_post(WIFI_EVENT, WIFI_EVENT_STA_CONNECTED,
-                         &conn_evt, sizeof(conn_evt), 0);
-    ESP_LOGD(NW_SPLIT_TAG,
-             "synthesized STA_CONNECTED (CP gave IP without StaConnected)");
+    /* Skip duplicate IP updates. */
+    esp_netif_ip_info_t cur = {0};
 
-    eh_host_wifi_admit_rx(false /*is_ap*/, true);
-
-    esp_err_t rc = esp_netif_dhcpc_stop(s_state.netif);
-    if (rc != ESP_OK && rc != ESP_ERR_ESP_NETIF_DHCP_ALREADY_STOPPED) {
-        ESP_LOGW(NW_SPLIT_TAG, "dhcpc_stop failed: 0x%x", rc);
-    }
-
-    if (esp_netif_set_ip_info(s_state.netif, &e->ipv4) != ESP_OK) {
-        ESP_LOGE(NW_SPLIT_TAG, "set_ip_info failed");
+    if (esp_netif_get_ip_info(s_state.netif, &cur) == ESP_OK &&
+        cur.ip.addr != 0 && cur.ip.addr == e->ipv4.ip.addr) {
+        ESP_LOGD(NW_SPLIT_TAG,
+                 "CP status replay for unchanged IP " IPSTR " — skip",
+                 IP2STR(&e->ipv4.ip));
         return;
     }
 
-    if (e->dns_main.type == ESP_IPADDR_TYPE_V4 &&
-        e->dns_main.u_addr.ip4.addr != 0) {
-        esp_netif_dns_info_t dns = { .ip = e->dns_main };
-        rc = esp_netif_set_dns_info(s_state.netif, ESP_NETIF_DNS_MAIN, &dns);
-        if (rc != ESP_OK) {
-            ESP_LOGW(NW_SPLIT_TAG, "set_dns_info failed: 0x%x", rc);
-        }
-    }
-
-    ip_event_got_ip_t evt = {
-        .esp_netif  = s_state.netif,
-        .ip_info    = e->ipv4,
-        .ip_changed = true,
-    };
-    rc = esp_event_post(IP_EVENT, IP_EVENT_STA_GOT_IP, &evt, sizeof(evt), 0);
-    if (rc != ESP_OK) {
-        ESP_LOGW(NW_SPLIT_TAG, "GOT_IP post failed: 0x%x", rc);
-    }
-    ESP_LOGD(NW_SPLIT_TAG, "CP IP applied to host netif: " IPSTR,
-             IP2STR(&e->ipv4.ip));
+    synthesize_sta_connected();
+    apply_cp_ip_status(e);
 }
 
 /* On a host-power-save wake the CP relays STA_START (which re-adds the netif)
@@ -213,13 +241,6 @@ int eh_host_feat_nw_split_init(void)
     s_state.owns_netif = false;
     s_state.custom_netif = false;
 #else
-#if !CONFIG_WIFI_CMD_NO_LWIP
-    ESP_LOGE(NW_SPLIT_TAG,
-             "INTERNAL_* netif mode requires CONFIG_WIFI_CMD_NO_LWIP=y; "
-             "otherwise app/wifi-cmd and nw_split both create WIFI_STA_DEF");
-    return ESP_ERR_INVALID_STATE;
-#endif
-
     if (esp_netif_get_handle_from_ifkey("WIFI_STA_DEF") != NULL) {
         ESP_LOGE(NW_SPLIT_TAG,
                  "INTERNAL mode conflict: WIFI_STA_DEF already exists");

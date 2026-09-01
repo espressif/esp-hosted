@@ -47,11 +47,11 @@ def test_host_power_save(bench, bench_caps, wifi_ap):
     host, cp = b["host"], b["cp"]
 
     # ── bring-up + Wi-Fi connect ──
-    assert eh_test_expect(host, r"iperf>", fail=PS_FAIL, timeout=45).ok, "CLI ready"
+    assert eh_test_expect(host, r"host>", fail=PS_FAIL, timeout=45).ok, "CLI ready"
     # Creds are substrate-appropriate (see the wifi_ap fixture): the emu's modeled
     # SoftAP on emu, the real AP on hw/rpi. Config-driven — never hardcoded here.
     ssid, pw = (wifi_ap["ssid"], wifi_ap["password"]) if wifi_ap else ("myssid", "mypassword")
-    host.write(f"sta_connect {ssid} {pw}")
+    host.write(f"sta {ssid} {pw}")
     r = eh_test_expect(host, r"IP_EVENT_STA_GOT_IP", fail=PS_FAIL, timeout=60)
     assert r.ok, f"GOT_IP: {r.matched}"
     ip_buf = (host.pexpect_proc.before or b"").decode("utf-8", "replace")

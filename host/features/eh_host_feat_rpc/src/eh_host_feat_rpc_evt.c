@@ -216,6 +216,7 @@ int eh_rpc_evt_dispatch(int32_t msg_id, const void *ctrl_cmd)
     int idx = evt_index(msg_id);
     if (idx < 0) {
         eh_host_port_mutex_unlock(g_evt_mtx);
+        ESP_LOGW("eh_host_feat_rpc", "evt-drop: no subscriber for msg_id=%" PRId32, msg_id);
         return 0;
     }
     for (eh_rpc_evt_node_t *p = g_evt_tbl[idx].head; p; p = p->next) {

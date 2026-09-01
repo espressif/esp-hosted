@@ -19,7 +19,24 @@ from infra.emu_dut import EmuDut, emu_bin, settle_check
 from .base import (CAP_GPIO_LOOPBACK, CAP_NET, CAP_WAKE, CAP_WIFI_ITWT,
                    Bench, BenchProvider, BenchSpec)
 
-_WAKE_GPIO = "2"     # CP→host wake line (framed bridge carries it as OP_WAKE)
+# CP→host wake line (framed bridge carries it as OP_WAKE). Board- AND
+# transport-dependent, exactly like the firmware: these mirror the Kconfig
+# defaults for ESP_HOSTED_P4_DEV_BOARD_FUNC_BOARD, which is the board every emu
+# build selects. Keep them in step with:
+#   coprocessor/features/eh_cp_feat_host_ps/Kconfig.ext
+#     CP out : default 2 if FUNC_BOARD && !SPI_HD ; default 9 if FUNC_BOARD && SPI_HD
+#   host/features/eh_host_feat_power_save/Kconfig.ext
+#     host in: default 6 if FUNC_BOARD && !SPI_HD ; default 4 if FUNC_BOARD && SPI_HD
+# The host side needs no flag here - the host firmware arms its own Kconfig pin -
+# but it is recorded so the pairing is auditable against the schematic.
+_WAKE_GPIO_CP = {"spi_hd": "9"}          # every other wire uses 2
+_WAKE_GPIO_CP_DEFAULT = "2"
+
+
+def _wake_gpio_cp(transport):
+    """The CP-side wake pin for this wire, mirroring the firmware Kconfig."""
+    return _WAKE_GPIO_CP["spi_hd"] if transport.startswith("spi_hd") \
+        else _WAKE_GPIO_CP_DEFAULT
 _RESET_GPIO = "54"   # host→CP reset line (OP_RESET)
 
 # The emulator's C6 wifi model advertises a fixed WPA2-PSK SoftAP; STA-connect
@@ -125,7 +142,23 @@ class EmuTarget(BenchProvider):
                 import pytest
                 pytest.skip(f"esp-emu at {emu} lacks {flag} (rebuild esp-emulator)")
         if transport == "spi_fd":
-            cp_ovl = ["CONFIG_EH_TRANSPORT_CP_SPI=y"]
+            # DEASSERT_HS_ON_CS=n for the emulator only.
+            #
+            # On silicon CS falls at the START of a transfer, so deasserting
+            # handshake on that edge is the earliest correct instant and it closes
+            # the master's re-read race. The emulator does not model it that way:
+            # gpspi_slave.rs completes the transfer first and only then REPLAYS the
+            # CS pulse (complete_fd() -> cs_countdown = CS_PULSE_TICKS, ~32 ticks
+            # later), so the edge lands after the coprocessor has already reaped and
+            # re-armed, and the late ISR then lowers handshake while a transaction
+            # IS armed - the master stops clocking and the link stalls. Measured:
+            # 3/8 with CS-edge deassert here versus 6/8 with completion-based.
+            #
+            # So pick the deassert point that matches each platform's CS timing
+            # rather than bending the firmware to the model: hardware keeps the
+            # Kconfig default (=y), the emulator runs with it off.
+            cp_ovl = ["CONFIG_EH_TRANSPORT_CP_SPI=y",
+                      "CONFIG_EH_TRANSPORT_CP_SPI_DEASSERT_HS_ON_CS=n"]
             host_bus_ovl = ["CONFIG_ESP_HOSTED_HOST_TRANSPORT_BUS_SPI=y"]
         elif spi_hd:
             # spi_hd defaults to the Kconfig default (4-line); spi_hd_1/2/4
@@ -200,7 +233,11 @@ class EmuTarget(BenchProvider):
         if spi:
             # SPI (GPSPI2) master↔slave. Handshake (FD only) + data-ready are the
             # slave's out-of-band GPIOs, forwarded as bridge GPIO frames; the flag
-            # values differ per role (CP vs host pinout). No CP→host wake path.
+            # values differ per role (CP vs host pinout). The CP→host wake line is
+            # wired here too: it used to be omitted on SPI while caps still
+            # advertised CAP_WAKE, so a wake=True bench was accepted for a wire
+            # that physically had no way to wake the host - the host deep-slept
+            # and nothing could ever pulse it.
             wire = "--hosted-spi-hd" if spi_hd else "--hosted-spi"
             pins = _SPI_PINS["spi_hd" if spi_hd else "spi_fd"]
             cp_sig = (["--hosted-spi-hs-gpio", pins["cp_hs"]] if pins["cp_hs"] else []) \
@@ -208,7 +245,9 @@ class EmuTarget(BenchProvider):
                    + ["--hosted-spi-cs-gpio", pins["cp_cs"]]
             host_sig = (["--hosted-spi-hs-gpio", pins["host_hs"]] if pins["host_hs"] else []) \
                      + ["--hosted-spi-dr-gpio", pins["host_dr"]]
-            cp_bridge = [wire, f"bridge:slave:{sock}", *cp_sig]
+            spi_wake_arg = (["--hosted-wake-gpio", _wake_gpio_cp(transport)]
+                            if spec.wake else [])
+            cp_bridge = [wire, f"bridge:slave:{sock}", *cp_sig, *spi_wake_arg]
             # P4-C6 Function-EV board: one active-low EN on GPIO 54 for every transport.
             host_bridge = [wire, f"bridge:host:{sock}", *host_sig,
                            "--hosted-reset-gpio", _RESET_GPIO]
@@ -217,7 +256,8 @@ class EmuTarget(BenchProvider):
             reset_pol = []   # FUNC_BOARD reset is active-low on every transport
             # Only wire the CP→host wake GPIO when the test actually uses wake — a
             # non-wake test shouldn't require an esp-emu new enough to know the flag.
-            wake_arg = ["--hosted-wake-gpio", _WAKE_GPIO] if spec.wake else []
+            wake_arg = (["--hosted-wake-gpio", _wake_gpio_cp(transport)]
+                        if spec.wake else [])
             cp_bridge = [wire, f"bridge:slave:{sock}", *wake_arg]
             host_bridge = [wire, f"bridge:host:{sock}", "--hosted-reset-gpio", _RESET_GPIO, *reset_pol]
         # host-forward map: guest CP port → host loopback port. :22 (host-reserved)

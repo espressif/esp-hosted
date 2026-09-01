@@ -83,6 +83,8 @@ void eh_host_mcu_transport_priv_dispatch_rx(const uint8_t *buf, size_t len)
     eh_host_port_mutex_unlock(s_mtx);
     if (cb) {
         cb(buf, len, ctx);
+    } else {
+        ESP_LOGW("eh_dispatch", "rx-drop: no priv consumer, %u bytes", (unsigned)len);
     }
 }
 
@@ -201,6 +203,9 @@ void eh_host_mcu_transport_dispatch_frame(const interface_buffer_handle_t *h)
      * misparses the payload as an msg_id and jumps through a garbage handler. */
     if (h->if_type == ESP_STA_IF || h->if_type == ESP_AP_IF ||
         h->if_type == ESP_ETH_IF) {
+        ESP_LOGW("eh_dispatch", "rx-drop: no channel for if_type=%u len=%u flags=0x%x",
+                 (unsigned)h->if_type, (unsigned)h->payload_len,
+                 (unsigned)h->flags);
         return;
     }
 

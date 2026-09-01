@@ -5,6 +5,7 @@ endif()
 set(srcs
     "src/eh_cp_feat_host_ps.c"
     "src/eh_cp_feat_host_ps_internal.c"
+    "src/eh_cp_feat_host_ps_worker.c"
 )
 
 add_library(eh_cp_feat_host_ps STATIC ${srcs})

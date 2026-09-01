@@ -6,6 +6,7 @@
  */
 
 #include "eh_cp_master_config.h"
+#include "eh_cp_host_ps_state.h"
 
 #include <unistd.h>
 
@@ -141,8 +142,7 @@ static TaskHandle_t flow_ctrl_task_handle = NULL;
 static volatile bool uart_exit_requested = false;
 #endif
 
-uint8_t power_save_started;
-#define IS_HOST_POWER_SAVING() (power_save_started)
+#define IS_HOST_POWER_SAVING() (!eh_cp_host_ps_reachable())
 
 static void uart_rx_task(void* pvParameters);
 
@@ -281,14 +281,15 @@ static void uart_apply_ps_flags(uint8_t flags)
 {
 	if (flags & FLAG_POWER_SAVE_STARTED) {
 		ESP_LOGI(TAG, "Host informed starting to power sleep");
-		power_save_started = 1;
 		if (context.event_handler)
 			context.event_handler(ESP_POWER_SAVE_ON);
 	} else if (flags & FLAG_POWER_SAVE_STOPPED) {
 		ESP_LOGI(TAG, "Host informed that it waken up");
-		power_save_started = 0;
-		if (context.event_handler)
+		if (context.event_handler) {
 			context.event_handler(ESP_POWER_SAVE_OFF);
+			/* Re-announce */
+			context.event_handler(ESP_OPEN_DATA_PATH);
+		}
 	}
 }
 
@@ -659,11 +660,7 @@ static void h_uart_deinit(interface_handle_t * handle)
 	if (flow_ctrl_task_handle) { vTaskDelete(flow_ctrl_task_handle); flow_ctrl_task_handle = NULL; }
 	vTaskDelay(pdMS_TO_TICKS(20));    // let IDLE reap the TCBs/stacks
 
-	/* Deliberately do NOT signal ESP_CLOSE_DATA_PATH here: this deinit is only
-	 * the host-power-save bus unload, and the core must keep `datapath` set so an
-	 * incoming host-bound packet still reaches process_tx_pkt -> wakeup_host (it
-	 * drops packets while datapath==0). The SDIO transport unloads the same way.
-	 * A real teardown clears state via if_handle_g.state=DEINIT above. */
+	/* No ESP_CLOSE_DATA_PATH: an unload, not a shutdown. */
 
 	// flush + release the UART driver
 	ret = uart_flush_input(HOSTED_UART);

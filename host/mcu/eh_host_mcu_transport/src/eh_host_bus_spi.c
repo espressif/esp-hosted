@@ -416,6 +416,15 @@ fail_sem:        eh_host_port_sem_destroy(s_trans_ready_sem);  s_trans_ready_sem
 
 int eh_host_bus_connect_to_slave(void)
 {
+#if EH_HOST_FEAT_POWER_SAVE_READY
+    if (eh_host_port_wakeup_reason_get() != EH_HOST_PORT_WAKEUP_UNKNOWN) {
+        ESP_LOGI(TAG, "Host woke up from power save");
+        if (eh_host_bus_inform_slave_ps_exit() == 0) {
+            return 0;
+        }
+        ESP_LOGW(TAG, "could not inform slave of wake; resetting instead");
+    }
+#endif
     eh_host_port_err_t rst = eh_host_port_reset_slave();
     if (rst == EH_HOST_PORT_OK) {
         ESP_LOGI(TAG, "Slave reset issued; bringing up SPI");

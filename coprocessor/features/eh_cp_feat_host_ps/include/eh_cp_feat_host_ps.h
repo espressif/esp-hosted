@@ -39,6 +39,16 @@ esp_err_t eh_cp_feat_host_ps_cp__disable(void);
  */
 esp_err_t eh_cp_feat_host_ps_cp__wakeup_or_reset_host_on_coprocessor_boot(void);
 
+/*
+ * Fire the one-shot host wake-pulse at the very start of coprocessor boot,
+ * BEFORE eh_cp_init() and the slave-up TLV handshake. Call this as the first
+ * thing in app_main() so a host that is in deep sleep is already waking by the
+ * time the CP tries to talk to it — otherwise the CP hand-shakes a sleeping
+ * host and the bring-up stalls. Self-contained and idempotent (the later
+ * feature-init pulse becomes a no-op); compiles away when boot-wake is off.
+ */
+void eh_cp_feat_host_ps_cp__boot_wake_host_early(void);
+
 #ifdef __cplusplus
 }
 #endif

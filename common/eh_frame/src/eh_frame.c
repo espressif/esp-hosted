@@ -227,8 +227,15 @@ static eh_frame_result_t decode_v1(const uint8_t *buf,
     len    = _from_le16(hdr->len);
     offset = _from_le16(hdr->offset);
 
-    if (hdr->if_type == eh_if_type_dummy_wire() || len == 0)
+    if (hdr->if_type == eh_if_type_dummy_wire() || len == 0) {
+		/* Preserve power-save flags in header-only frames in DUMMY frame */
+        if (h) {
+            h->if_type = eh_if_type_from_wire(hdr->if_type);
+            h->if_num  = hdr->if_num;
+            h->flags   = hdr->flags;
+        }
         return EH_FRAME_DUMMY;
+    }
 
     /* Allow small offset padding (hdr_sz .. hdr_sz+3) for legacy hosts. */
     if ((offset < EH_FRAME_V1_MIN_OFFSET_BYTES) ||
@@ -304,8 +311,15 @@ static eh_frame_result_t decode_v2(const uint8_t *buf,
     len    = _from_le16(hdr->len);
     offset = _from_le16(hdr->offset);
 
-    if (hdr->if_type == eh_if_type_dummy_wire() || len == 0)
+    if (hdr->if_type == eh_if_type_dummy_wire() || len == 0) {
+		/* Preserve power-save flags in header-only frames in DUMMY frame */
+        if (h) {
+            h->if_type = eh_if_type_from_wire(hdr->if_type);
+            h->if_num  = hdr->if_num;
+            h->flags   = hdr->flags;
+        }
         return EH_FRAME_DUMMY;
+    }
 
     if (offset != hdr_sz) {
         if (warn)

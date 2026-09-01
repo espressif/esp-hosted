@@ -57,6 +57,10 @@
 #define EH_SPI_HD_REG_POLL_READS         3
 
 #define EH_SPI_HD_WR_BUF_MAX_RETRIES     25
+/* Post-wake credit wait, see the ps_wake tail of eh_host_bus_init(). Sized past
+ * the coprocessor's 100 ms SLAVE_CTRL poll plus its own 100 ms settle delay. */
+#define EH_SPIHD_PS_EXIT_CREDIT_WAIT_MS  600
+#define EH_SPIHD_PS_EXIT_CREDIT_POLL_MS  5
 
 #ifdef CONFIG_IDF_TARGET_ESP32
 #define EH_SPIHD_HOST_ID            HSPI_HOST
@@ -562,8 +566,15 @@ int eh_host_bus_init(void)
         goto fail_bus;
     }
 
+    int ps_wake = 0;
+#if EH_HOST_FEAT_POWER_SAVE_READY
+    ps_wake = (eh_host_port_wakeup_reason_get() != EH_HOST_PORT_WAKEUP_UNKNOWN);
+    if (ps_wake) {
+        ESP_LOGI(TAG, "Host woke up from power save");
+    }
+#endif
     /* Reset slave before wait_slave_ready (state reg meaningless until POR). */
-    {
+    if (!ps_wake) {
         eh_host_port_err_t rst = eh_host_port_reset_slave();
         if (rst == EH_HOST_PORT_OK) {
             ESP_LOGI(TAG, "Slave reset issued; bringing up SPI-HD");
@@ -600,6 +611,22 @@ int eh_host_bus_init(void)
             goto fail_isr;
         }
     }
+#if EH_HOST_FEAT_POWER_SAVE_READY
+    if (ps_wake) {
+        /* Last, and only with the rx task live, so the CP's answer cannot be missed:
+         * this is what re-opens the host's datapath after the sleep. */
+        for (uint32_t waited = 0; waited < EH_SPIHD_PS_EXIT_CREDIT_WAIT_MS;
+             waited += EH_SPIHD_PS_EXIT_CREDIT_POLL_MS) {
+            if (eh_host_bus_is_tx_ready() == 1) {
+                break;
+            }
+            eh_host_port_task_delay_ms(EH_SPIHD_PS_EXIT_CREDIT_POLL_MS);
+        }
+        if (eh_host_bus_inform_slave_ps_exit() != 0) {
+            ESP_LOGE(TAG, "ps_exit: not delivered; CP still thinks host sleeps");
+        }
+    }
+#endif
     return 0;
 
 fail_isr:
@@ -780,6 +807,7 @@ static int eh_spihd_send_ps_flag(uint8_t flag)
     interface_buffer_handle_t bh = {0};
     bh.payload_len = 0;
     bh.flags = flag;
+
     return eh_host_bus_tx(&bh) < 0 ? -1 : 0;
 }
 

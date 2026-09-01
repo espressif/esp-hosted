@@ -34,6 +34,7 @@
 #include "eh_cp_event.h"
 #include "eh_cp_rpc.h"
 #include "eh_cp_utils.h"
+#include "eh_cp_host_ps_state.h"
 #include "eh_common_fw_version.h"
 #include "eh_cp_transport_test.h"
 #include "eh_cp_core.h"
@@ -47,9 +48,6 @@
 
 static void auto_feat_init_task(void *pvParameters);
 
-#if EH_CP_FEAT_HOST_PS_READY
-#include "eh_cp_feat_host_ps_apis.h"
-#endif
 
 #define BYPASS_TX_PRIORITY_Q 1
 static const char TAG[] = "ehcp_core";
@@ -233,7 +231,8 @@ static void process_tx_pkt(interface_buffer_handle_t *buf_handle)
 
 	if (if_context && if_context->if_ops && if_context->if_ops->write) {
         #if EH_CP_FEAT_HOST_PS_READY
-        if (eh_cp_feat_host_ps_is_host_wakeup_needed(buf_handle)) {
+        const eh_cp_host_ps_ops_t *o = eh_cp_host_ps_ops();
+        if (o && o->wakeup_needed && o->wakeup_needed(buf_handle)) {
             uint16_t wakeup_pkt_display_len = 32;
             ESP_LOGI(TAG, "Host sleeping, trigger wake-up");
         #if EH_CP_FEAT_HOST_PS_PRINT_FULL_WAKEUP_PACKET
@@ -241,7 +240,7 @@ static void process_tx_pkt(interface_buffer_handle_t *buf_handle)
         #endif
             ESP_HEXLOGW("Wakeup_pkt", buf_handle->payload+EH_ESP_PAYLOAD_HEADER_OFFSET,
                     buf_handle->payload_len, wakeup_pkt_display_len);
-            host_awake = eh_cp_feat_host_ps_wakeup_host(portMAX_DELAY);
+            host_awake = o->wakeup ? o->wakeup(portMAX_DELAY) : 0;
             buf_handle->flags |= FLAG_WAKEUP_PKT;
         }
         #endif
@@ -607,27 +606,45 @@ done:
 
 }
 
+static inline bool recv_ready(void)
+{
+	return datapath && if_handle->state == ACTIVE && eh_cp_host_ps_reachable();
+}
+
+static TaskHandle_t s_recv_task_handle;
+
+IRAM_ATTR void eh_cp_recv_kick(void)
+{
+	if (!s_recv_task_handle)
+		return;
+
+	if (xPortInIsrContext()) {
+		BaseType_t yield = pdFALSE;
+
+		vTaskNotifyGiveFromISR(s_recv_task_handle, &yield);
+		if (yield)
+			portYIELD_FROM_ISR();
+	} else {
+		xTaskNotifyGive(s_recv_task_handle);
+	}
+}
+
 static void recv_task(void* pvParameters)
 {
 	interface_buffer_handle_t buf_handle = {0};
 
 	for (;;) {
 
-		if (!datapath) {
-			vTaskDelay(pdMS_TO_TICKS(20));
+		while (!recv_ready())
+			ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+
+		int len = if_context->if_ops->read(if_handle, &buf_handle);
+		if (len <= 0) {
 			continue;
 		}
-
-		if (if_context && if_context->if_ops && if_context->if_ops->read) {
-			int len = if_context->if_ops->read(if_handle, &buf_handle);
-			if (len <= 0) {
-				vTaskDelay(pdMS_TO_TICKS(1));
-				continue;
-			}
-			ESP_LOGD(TAG, "rx_read: len=%d if_type=%u flags=0x%02x seq=%u payload_len=%u",
-			         len, buf_handle.if_type, buf_handle.flags, buf_handle.seq_num,
-			         buf_handle.payload_len);
-		}
+		ESP_LOGD(TAG, "rx_read: len=%d if_type=%u flags=0x%02x seq=%u payload_len=%u",
+		         len, buf_handle.if_type, buf_handle.flags, buf_handle.seq_num,
+		         buf_handle.payload_len);
 
 		process_rx_pkt(&buf_handle);
 	}
@@ -660,24 +677,6 @@ int send_to_host_queue(interface_buffer_handle_t *buf_handle, uint8_t queue_type
 #endif
 }
 
-static void power_save_alert_task(void *pvParameters)
-{
-#if EH_CP_FEAT_HOST_PS_READY
-    uint32_t event = (uint32_t)pvParameters;
-	eh_cp_feat_host_ps_handle_alert(event);
-	//if (event == ESP_POWER_SAVE_OFF && host_reset_sem) {
-		//xSemaphoreGive(host_reset_sem);
-	//}
-#else
-    (void)pvParameters;
-#endif
-    vTaskDelete(NULL);
-}
-
-static esp_err_t eh_cp_handle_power_save_alert(uint32_t event)
-{
-	return xTaskCreate(power_save_alert_task, "ps_alert_task", 3072, (void *)event, tskIDLE_PRIORITY + 5, NULL);
-}
 
 static int event_handler(uint8_t val)
 {
@@ -687,6 +686,10 @@ static int event_handler(uint8_t val)
 			if (if_handle) {
 				if_handle->state = ACTIVE;
 				datapath = 1;
+#if EH_CP_FEAT_HOST_PS_READY
+				eh_cp_host_ps_set(EH_HOST_PS_AWAKE);
+#endif
+				eh_cp_recv_kick();
 				ESP_EARLY_LOGI(TAG, "Open Data Path");
 				if (host_reset_sem) {
 					ESP_EARLY_LOGI(TAG, "Open Data Path: giving host_reset_sem");
@@ -703,6 +706,7 @@ static int event_handler(uint8_t val)
 		case ESP_CLOSE_DATA_PATH:
 			datapath = 0;
 			datapath_open_pending = 0;
+			eh_cp_recv_kick();
 			if (if_handle) {
 				ESP_EARLY_LOGI(TAG, "Close Data Path");
 				if (if_handle->state > DEACTIVE) {
@@ -714,14 +718,38 @@ static int event_handler(uint8_t val)
 			break;
 
 		case ESP_POWER_SAVE_ON:
-			eh_cp_handle_power_save_alert(ESP_POWER_SAVE_ON);
+#if EH_CP_FEAT_HOST_PS_READY
+			/* Announce only from AWAKE (guarded). A PS_ON in any other state is
+			 * stale/duplicate - ignore it rather than tear down under a wake. */
+			if (eh_cp_host_ps_transition(EH_HOST_PS_AWAKE, EH_HOST_PS_ANNOUNCED)) {
+				const eh_cp_host_ps_ops_t *o = eh_cp_host_ps_ops();
+				eh_cp_recv_kick();
+				if (o && o->on_ps_event)
+					o->on_ps_event(ESP_POWER_SAVE_ON);
+			} else {
+				eh_cp_host_ps_state_t st = eh_cp_host_ps_get();
+				ESP_EARLY_LOGI(TAG, "PS_ON ignored in state %u", (unsigned)st);
+			}
+#else
+			eh_cp_recv_kick();
+#endif
 			break;
 
 		case ESP_POWER_SAVE_OFF:
 			ESP_EARLY_LOGI(TAG, "event_handler: ESP_POWER_SAVE_OFF");
 			datapath = 1;
 			if_handle->state = ACTIVE;
-			eh_cp_handle_power_save_alert(ESP_POWER_SAVE_OFF);
+#if EH_CP_FEAT_HOST_PS_READY
+			eh_cp_host_ps_set(EH_HOST_PS_AWAKE);
+#endif
+			eh_cp_recv_kick();
+#if EH_CP_FEAT_HOST_PS_READY
+			{
+				const eh_cp_host_ps_ops_t *o = eh_cp_host_ps_ops();
+				if (o && o->on_ps_event)
+					o->on_ps_event(ESP_POWER_SAVE_OFF);
+			}
+#endif
 			break;
 
 		default:
@@ -910,14 +938,16 @@ esp_err_t eh_cp_init_internal(void)
         return ESP_FAIL;
     }
 
+
     assert(xTaskCreate(recv_task , "recv_task" ,
             EH_CP_TASK_STACK_SIZE, NULL ,
-            EH_CP_TASK_PRIO_DEFAULT, NULL) == pdTRUE);
+            EH_CP_TASK_PRIO_DEFAULT, &s_recv_task_handle) == pdTRUE);
 
     if (datapath_open_pending) {
         datapath_open_pending = 0;
         if_handle->state = ACTIVE;
         datapath = 1;
+        eh_cp_recv_kick();
         if (host_reset_sem)
             xSemaphoreGive(host_reset_sem);
         ESP_LOGI(TAG, "Open Data Path (deferred)");

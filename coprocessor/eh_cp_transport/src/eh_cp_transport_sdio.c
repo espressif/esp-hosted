@@ -23,6 +23,7 @@
 #include "eh_header.h"
 #include "eh_transport.h"
 #include "eh_cp_master_config.h"
+#include "eh_cp_host_ps_state.h"
 #include "eh_caps.h"
 #include "eh_tlv.h"
 #include "eh_tlv_defs.h"
@@ -135,17 +136,36 @@ static const char *TAG = "SDIO_SLAVE";
 interface_context_t context;
 interface_handle_t if_handle_g;
 extern volatile uint8_t datapath;        /* set when the host opens the data path */
-uint8_t power_save_started;
 
-#define IS_HOST_POWER_SAVING() (power_save_started)
+/* Host power-save state is managed by eh_cp_host_ps_state.h */
+#define IS_HOST_POWER_SAVING() (!eh_cp_host_ps_reachable())
 
 static uint32_t sdio_rx_buf_size = MAX_TRANSPORT_BUF_SIZE;
 static uint8_t *sdio_slave_rx_buffer[SDIO_RX_BUFFER_NUM];
+
+/* Current position in the aggregate buffer. */
+static uint8_t *blk_base;
+static sdio_slave_buf_handle_t blk_handle;
+static uint16_t blk_total;
+static uint16_t blk_pos;
+#ifdef CONFIG_EH_TRANSPORT_CP_SDIO_AGGR_TRACE
+static uint16_t nsub;
+#endif
 
 static QueueHandle_t to_host_queue[MAX_PRIORITY_QUEUES]; /* per-priority to-host queues
 	 * (PRIO_Q_SERIAL/BT/OTHERS) - serial/control gets its own lane, drained ahead
 	 * of bulk data so RPC responses aren't batched behind a data aggregate. */
 static TaskHandle_t send_task_handle;
+static SemaphoreHandle_t s_sdio_tx_mtx;
+
+static inline esp_err_t sdio_tx_locked(uint8_t *buf, size_t len)
+{
+	esp_err_t r;
+	if (s_sdio_tx_mtx) xSemaphoreTake(s_sdio_tx_mtx, portMAX_DELAY);
+	r = sdio_slave_transmit(buf, len);
+	if (s_sdio_tx_mtx) xSemaphoreGive(s_sdio_tx_mtx);
+	return r;
+}
 
 #if TX_MODE == TX_MODE_SW_AGGR
 static uint8_t *tx_aggr_buf;             /* one persistent DMA aggregate buffer */
@@ -224,6 +244,19 @@ static inline uint16_t build_frame(uint8_t *dst, interface_buffer_handle_t *b)
 	h->checksum = htole16(compute_checksum(dst, frame_len));
 #endif
 	return aligned;
+}
+
+/* Wake send_task when work is available. */
+static inline void send_task_notify(void)
+{
+	if (send_task_handle)
+		xTaskNotifyGive(send_task_handle);
+}
+
+/* Wait for work or timeout. */
+static inline void send_task_wait_work(TickType_t ticks)
+{
+	ulTaskNotifyTake(pdTRUE, ticks);
 }
 
 /* ===================== single send_task ===================== */
@@ -316,7 +349,7 @@ static void process_tx_queue(QueueHandle_t q, uint16_t queued, uint8_t *aggr_buf
 		ESP_LOGI(TAG, "sdio aggr tx: packed %u frames (%u B)", nframes, aggr_len);
 #endif
 
-	if (aggr_len && sdio_slave_transmit(aggr_buf, aggr_len) != ESP_OK)
+	if (aggr_len && sdio_tx_locked(aggr_buf, aggr_len) != ESP_OK)
 		ESP_LOGE(TAG, "aggregate transmit failed");
 }
 
@@ -335,8 +368,9 @@ static void send_task(void *arg)
 			}
 		}
 
+		/* All lanes empty: sleep until sdio_write enqueues. Blocking here*/
 		if (!worked)
-			vTaskDelay(1);
+			send_task_wait_work(portMAX_DELAY);
 	}
 }
 
@@ -354,7 +388,7 @@ static void send_task(void *arg)
 		if (!datapath || !buf.payload || !buf.payload_len) { free_tx_buf(&buf); continue; }
 		total = SDIO_HDR_SIZE + buf.payload_len;
 		build_frame(tx_pkt_buf, &buf);
-		if (sdio_slave_transmit(tx_pkt_buf, total) != ESP_OK)
+		if (sdio_tx_locked(tx_pkt_buf, total) != ESP_OK)
 			ESP_LOGE(TAG, "packet transmit failed");
 		free_tx_buf(&buf);
 	}
@@ -374,6 +408,12 @@ static void reclaim_finished(void)
 		hosted_mempool_free(buf_mp_tx_g, done);
 		xSemaphoreGive(tx_stream_sem);
 	}
+}
+
+/* True when TX buffers are still owned by the HW queue. */
+static inline bool stream_tx_in_flight(void)
+{
+	return uxSemaphoreGetCount(tx_stream_sem) < SDIO_STREAM_QUEUE_SIZE;
 }
 
 static void process_tx_stream(QueueHandle_t q, uint16_t queued)
@@ -441,7 +481,8 @@ static void send_task(void *arg)
 
 		reclaim_finished();
 		if (!worked) {
-			vTaskDelay(1);
+			/* Keep reclaiming in-flight buffers; otherwise wait for new work. */
+			send_task_wait_work(stream_tx_in_flight() ? 1 : portMAX_DELAY);
 		} else if (stream_tx_acc >= STREAM_YIELD_BYTES) {
 			/* Sustained load: send_task (prio>idle) would otherwise never block
 			 * (HW queue drained as fast as filled) -> idle starves -> 5s task WDT.
@@ -498,20 +539,13 @@ static int32_t sdio_write(interface_handle_t *handle, interface_buffer_handle_t 
 		free_tx_buf(&q);
 		return ESP_FAIL;
 	}
+	send_task_notify();
 	return buf_handle->payload_len;
 }
 
 /* ===================== H2E receive (de-aggregating) ===================== */
 static int sdio_read(interface_handle_t *if_handle, interface_buffer_handle_t *buf_handle)
 {
-	static uint8_t *blk_base = NULL;
-	static sdio_slave_buf_handle_t blk_handle = NULL;
-	static uint16_t blk_total = 0;
-	static uint16_t blk_pos = 0;
-#ifdef CONFIG_EH_TRANSPORT_CP_SDIO_AGGR_TRACE
-	static uint16_t nsub = 0;
-#endif
-
 	esp_err_t ret;
 	size_t sdio_read_len = 0;
 	uint16_t hdrsz = eh_frame_hdr_size();
@@ -701,7 +735,7 @@ void generate_startup_event(uint8_t cap, uint32_t ext_cap, uint8_t raw_tp_cap,
 	}
 
 	buf_handle.payload_len = len + eh_frame_hdr_size();
-	if (sdio_slave_transmit(buf_handle.payload, buf_handle.payload_len) != ESP_OK)
+	if (sdio_tx_locked(buf_handle.payload, buf_handle.payload_len) != ESP_OK)
 		ESP_LOGE(TAG, "startup event transmit failed");
 	heap_caps_free(buf_handle.payload);
 }
@@ -749,6 +783,9 @@ static interface_handle_t *sdio_init(void)
 {
 	esp_err_t ret;
 	sdio_slave_buf_handle_t handle;
+
+	if (!s_sdio_tx_mtx)
+		s_sdio_tx_mtx = xSemaphoreCreateMutex();
 
 	sdio_rx_buf_size = sdio_hw_max_rx_buf_size();
 	ESP_LOGI(TAG, "rx_buf_size=%"PRIu32, sdio_rx_buf_size);
@@ -828,7 +865,9 @@ static interface_handle_t *sdio_init(void)
 	tx_pkt_buf = heap_caps_malloc(sdio_rx_buf_size, MALLOC_CAP_DMA);
 	assert(tx_pkt_buf);
 #elif TX_MODE == TX_MODE_STREAM
-	tx_stream_sem = xSemaphoreCreateCounting(SDIO_STREAM_QUEUE_SIZE, SDIO_STREAM_QUEUE_SIZE);
+	if (!tx_stream_sem) {
+		tx_stream_sem = xSemaphoreCreateCounting(SDIO_STREAM_QUEUE_SIZE, SDIO_STREAM_QUEUE_SIZE);
+	}
 	assert(tx_stream_sem);
 	/* Pre-allocated DMA TX pool (needs CONFIG_ESP_CACHE_MALLOC=y to actually pool;
 	 * otherwise hosted_mempool falls back to per-call malloc and STREAM WDT-hangs
@@ -900,8 +939,11 @@ static void sdio_deinit(interface_handle_t *handle)
 	/* let send_task finish its current iteration before deleting it. */
 	vTaskDelay(pdMS_TO_TICKS(20));
 	if (send_task_handle) {
-		vTaskDelete(send_task_handle);
+		/* Clear the handle before deleting the task to avoid late notifications. */
+		TaskHandle_t h = send_task_handle;
+
 		send_task_handle = NULL;
+		vTaskDelete(h);
 	}
 
 	/* reset + drain the send list so no stale completion breaks the next bring-up's first tx */
@@ -924,10 +966,23 @@ static void sdio_deinit(interface_handle_t *handle)
 
 	for (int p = 0; p < MAX_PRIORITY_QUEUES; p++) {
 		if (to_host_queue[p]) {
+			/* Queue owns the buffers; free any queued buffers before deletion. */
+			interface_buffer_handle_t q;
+			while (xQueueReceive(to_host_queue[p], &q, 0) == pdTRUE)
+				free_tx_buf(&q);
 			vQueueDelete(to_host_queue[p]);
 			to_host_queue[p] = NULL;
 		}
 	}
+
+	/* Drop the aggregate before freeing its backing buffers. */
+	blk_base = NULL;
+	blk_handle = NULL;
+	blk_total = 0;
+	blk_pos = 0;
+#ifdef CONFIG_EH_TRANSPORT_CP_SDIO_AGGR_TRACE
+	nsub = 0;
+#endif
 
 	for (int i = 0; i < SDIO_RX_BUFFER_NUM; i++) {
 		heap_caps_free(sdio_slave_rx_buffer[i]);
@@ -939,5 +994,11 @@ static void sdio_deinit(interface_handle_t *handle)
 	heap_caps_free(tx_pkt_buf); tx_pkt_buf = NULL;
 #elif TX_MODE == TX_MODE_STREAM
 	hosted_mempool_destroy(buf_mp_tx_g); buf_mp_tx_g = NULL;
+	if (s_sdio_tx_mtx) { vSemaphoreDelete(s_sdio_tx_mtx); s_sdio_tx_mtx = NULL; }
+	/* Preserve the semaphore and restore all buffer tokens. */
+	if (tx_stream_sem) {
+		while (uxSemaphoreGetCount(tx_stream_sem) < SDIO_STREAM_QUEUE_SIZE)
+			xSemaphoreGive(tx_stream_sem);
+	}
 #endif
 }
