@@ -13,6 +13,7 @@
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "freertos/semphr.h"
 
 #include "esp_log.h"
 #include "esp_err.h"
@@ -30,6 +31,22 @@
 
 static const char TAG[] = "ehcp_rpc_serial";
 
+/* Protect the fragment buffer from concurrent requests.
+ * Keep it alive until all senders have finished. */
+static SemaphoreHandle_t s_tx_mu;
+
+esp_err_t eh_cp_feat_rpc_serial_tx_lock_init(void)
+{
+    if (!s_tx_mu) {
+        s_tx_mu = xSemaphoreCreateMutex();
+        if (!s_tx_mu) {
+            ESP_LOGE(TAG, "tx lock alloc failed");
+            return ESP_ERR_NO_MEM;
+        }
+    }
+    return ESP_OK;
+}
+
 ssize_t eh_cp_feat_rpc_serial_read(uint8_t *data, ssize_t len)
 {
     (void)data;   /* arg.data already populated by protocomm_pserial_data_ready */
@@ -42,6 +59,8 @@ esp_err_t eh_cp_feat_rpc_serial_write(uint8_t *data, ssize_t len)
     int32_t   left_len = len;
     int32_t   frag_len = 0;
     static uint16_t seq_num = 0;
+
+    if (s_tx_mu) xSemaphoreTake(s_tx_mu, portMAX_DELAY);
 
     do {
         interface_buffer_handle_t buf_handle = {0};
@@ -65,6 +84,7 @@ esp_err_t eh_cp_feat_rpc_serial_write(uint8_t *data, ssize_t len)
         buf_handle.payload_len = frag_len;
 
         if (send_to_host_queue(&buf_handle, PRIO_Q_SERIAL)) {
+            if (s_tx_mu) xSemaphoreGive(s_tx_mu);
             free(data);
             return ESP_FAIL;
         }
@@ -74,6 +94,8 @@ esp_err_t eh_cp_feat_rpc_serial_write(uint8_t *data, ssize_t len)
         left_len -= frag_len;
         pos      += frag_len;
     } while (left_len);
+
+    if (s_tx_mu) xSemaphoreGive(s_tx_mu);
 
     return ESP_OK;
 }

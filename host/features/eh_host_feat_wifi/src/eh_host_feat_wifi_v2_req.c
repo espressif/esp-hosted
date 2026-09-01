@@ -249,8 +249,65 @@ static int compose_req_wifi_scan_start(Rpc *rpc, const eh_rpc_ctrl_cmd_t *c,
 {
     ALLOC_PAYLOAD(RpcReqWifiScanStart, req_wifi_scan_start,
                   rpc__req__wifi_scan_start__init);
-    p->block      = c->u.wifi_scan_cfg.block;
-    p->config_set = c->u.wifi_scan_cfg.cfg_set ? 1 : 0;
+    const eh_rpc_wifi_scan_cfg_t *sc = &c->u.wifi_scan_cfg;
+
+    /* block forwarded verbatim: the CP must run IDF's real blocking path. */
+    p->block      = sc->block;
+    p->config_set = sc->cfg_set ? 1 : 0;
+    if (!sc->cfg_set) {
+        /* NULL scan config is legal ("scan with defaults"): leave
+         * p->config NULL, CP maps that to esp_wifi_scan_start(NULL, ...). */
+        return 0;
+    }
+
+    WifiScanConfig *cfg = (WifiScanConfig *)
+        rpc_ext_v2_tracked_calloc(trk, sizeof(*cfg));
+    if (!cfg) return -1;
+    wifi_scan_config__init(cfg);
+
+    /* scan_time + nested active are MANDATORY once config_set: the CP fails
+     * the request on either being absent. */
+    WifiScanTime *st = (WifiScanTime *)rpc_ext_v2_tracked_calloc(trk, sizeof(*st));
+    if (!st) return -1;
+    wifi_scan_time__init(st);
+    WifiActiveScanTime *act = (WifiActiveScanTime *)
+        rpc_ext_v2_tracked_calloc(trk, sizeof(*act));
+    if (!act) return -1;
+    wifi_active_scan_time__init(act);
+    act->min    = sc->active_min;
+    act->max    = sc->active_max;
+    st->active  = act;
+    st->passive = sc->passive;
+    cfg->scan_time = st;
+
+    WifiScanChannelBitmap *bm = (WifiScanChannelBitmap *)
+        rpc_ext_v2_tracked_calloc(trk, sizeof(*bm));
+    if (!bm) return -1;
+    wifi_scan_channel_bitmap__init(bm);
+    bm->ghz_2_channels = sc->ghz_2_channels;
+    bm->ghz_5_channels = sc->ghz_5_channels;
+    cfg->channel_bitmap = bm;
+
+    /* ssid/bssid point into the ctrl_cmd, which outlives the pack. Absent
+     * (len 0) is what tells the CP to pass NULL to IDF — an empty non-NULL
+     * SSID would mean "scan for SSID \"\"" and match nothing. The SSID
+     * length INCLUDES the NUL: the CP hands the unpacked buffer straight to
+     * IDF, which reads it as a C string (matches 2.x strlen()+1). */
+    if (sc->ssid_set) {
+        cfg->ssid.data = (uint8_t *)(uintptr_t)sc->ssid;
+        cfg->ssid.len  = strnlen((const char *)sc->ssid, EH_RPC_SSID_LEN) + 1u;
+    }
+    if (sc->bssid_set) {
+        cfg->bssid.data = (uint8_t *)(uintptr_t)sc->bssid;
+        cfg->bssid.len  = EH_RPC_MAC_LEN;
+    }
+
+    cfg->channel              = sc->channel;
+    cfg->show_hidden          = sc->show_hidden;
+    cfg->scan_type            = sc->scan_type;
+    cfg->home_chan_dwell_time = sc->home_chan_dwell_time;
+
+    p->config = cfg;
     return 0;
 }
 

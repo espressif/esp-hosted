@@ -80,7 +80,11 @@ extern const eh_cp_feat_desc_t _eh_cp_feat_descs_end;
 extern EventGroupHandle_t g_auto_feat_init_done_eg;
 
 
-/* Extract msg_id (proto field 2 varint). Returns 2 on success, 0 if absent. */
+/* Rpc.msg_id proto field number. */
+#define EH_PROTO_FIELD_MSG_ID   2u
+
+/* Extract msg_id (proto field EH_PROTO_FIELD_MSG_ID varint).
+ * Returns EH_PROTO_FIELD_MSG_ID on success, 0 if absent. */
 uint32_t eh_proto_extract_msg_id(const uint8_t *buf, uint16_t len,
                                          uint32_t *msg_id_out);
 

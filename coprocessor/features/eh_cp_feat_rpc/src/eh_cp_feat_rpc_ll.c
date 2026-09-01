@@ -257,8 +257,13 @@ static bool rpc_ep_is_allowed(const char *epname, bool is_req)
     return (strcmp(epname, g_rpc_evt_ep) == 0);
 }
 
+/* may_offload: caller owns `in` and permits handing it to a task.
+ * *offloaded set => the task owns `in`; caller must not free it. */
+static esp_err_t slow_req_offload(protocomm_t *pc, uint8_t *data, size_t len);
+
 static esp_err_t protocomm_pserial_ctrl_req_handler(protocomm_t *pc,
-		uint8_t *in, size_t in_len)
+		uint8_t *in, size_t in_len,
+		bool may_offload, bool *offloaded)
 {
 	uint8_t *buf = in;
 	size_t total_len = 0, len = 0;
@@ -305,6 +310,20 @@ static esp_err_t protocomm_pserial_ctrl_req_handler(protocomm_t *pc,
 		         epname, g_rpc_req_ep);
 		return ESP_FAIL;
 	}
+
+	/* Blocking handlers must not hold the dispatcher. `data` is already the
+	 * inner protobuf, so no second parse. On failure, run inline. */
+	if (may_offload && offloaded) {
+		uint32_t msg_id = 0;
+		if (eh_proto_extract_msg_id(data, (uint16_t)data_len, &msg_id) ==
+		        EH_PROTO_FIELD_MSG_ID &&
+		    eh_cp_rpc_req_is_slow(msg_id) &&
+		    slow_req_offload(pc, in, in_len) == ESP_OK) {
+			*offloaded = true;
+			return ESP_OK;
+		}
+	}
+
 	ret = protocomm_req_handle(pc, epname, 0, data,
 			data_len, &out, (ssize_t *) &outlen);
 	if (ret != ESP_OK) {
@@ -512,6 +531,64 @@ static esp_err_t protocomm_pserial_remove_ep(const char *ep_name)
 	return ESP_ERR_NOT_FOUND;
 }
 
+/* Run slow requests outside pserial_task so the dispatcher stays responsive.
+ * Use one worker to keep blocking requests serialized and bounded. */
+#define SLOW_Q_MAX  2u
+
+typedef struct {
+	protocomm_t *pc;
+	uint8_t     *data;   /* owned once queued */
+	size_t       len;
+} slow_req_item_t;
+
+static QUEUE_HANDLE  s_slow_q;
+static TaskHandle_t  s_slow_task;
+
+static void slow_req_worker(void *params)
+{
+	(void)params;
+	slow_req_item_t item;
+
+	while (xQueueReceive(s_slow_q, &item, portMAX_DELAY) == pdTRUE) {
+		(void)protocomm_pserial_ctrl_req_handler(item.pc, item.data, item.len,
+		                                        false, NULL);
+		free(item.data);
+	}
+}
+
+/* ESP_OK => the worker owns `data`; on failure the caller keeps it. */
+static esp_err_t slow_req_offload(protocomm_t *pc, uint8_t *data, size_t len)
+{
+	if (!s_slow_q) return ESP_ERR_INVALID_STATE;
+
+	slow_req_item_t item = { .pc = pc, .data = data, .len = len };
+
+	/* Non-blocking: a full queue must never stall the dispatcher. */
+	if (xQueueSend(s_slow_q, &item, 0) != pdTRUE) {
+		ESP_LOGW(TAG, "slow-req queue full, running inline");
+		return ESP_FAIL;
+	}
+	return ESP_OK;
+}
+
+static esp_err_t slow_req_start(void)
+{
+	if (s_slow_q) return ESP_OK;   /* idempotent across re-init */
+
+	s_slow_q = xQueueCreate(SLOW_Q_MAX, sizeof(slow_req_item_t));
+	if (!s_slow_q) return ESP_ERR_NO_MEM;
+
+	if (xTaskCreate(slow_req_worker, "eh_rpc_slow",
+	                CONFIG_ESP_HOSTED_DEFAULT_TASK_STACK_SIZE, NULL,
+	                CONFIG_ESP_HOSTED_TASK_PRIORITY_DEFAULT,
+	                &s_slow_task) != pdPASS) {
+		vQueueDelete(s_slow_q);
+		s_slow_q = NULL;
+		return ESP_ERR_NO_MEM;
+	}
+	return ESP_OK;
+}
+
 static void pserial_task(void *params)
 {
 	protocomm_t *pc = (protocomm_t *) params;
@@ -534,8 +611,13 @@ static void pserial_task(void *params)
 			/* Request */
 			len = pserial_cfg->recv(arg.data, arg.len);
 			if (len > 0) {
+				bool offloaded = false;
 				/*ESP_LOG_BUFFER_HEXDUMP("serial_rx", arg.data, len<16?len:16, ESP_LOG_INFO);*/
-				ret = protocomm_pserial_ctrl_req_handler(pc, arg.data, len);
+				ret = protocomm_pserial_ctrl_req_handler(pc, arg.data, len,
+				                                        true, &offloaded);
+				if (offloaded) {
+					continue;   /* worker owns arg.data */
+				}
 			}
 		} else {
 			ESP_LOGE(TAG, "Unexpected. Invalid type found in the packet");
@@ -580,6 +662,10 @@ static esp_err_t protocomm_pserial_start(protocomm_t *pc,
 	xTaskCreate(pserial_task, "pserial_task", CONFIG_ESP_HOSTED_DEFAULT_TASK_STACK_SIZE,
 			(void *) pc, CONFIG_ESP_HOSTED_TASK_PRIORITY_DEFAULT, NULL);
 
+	if (slow_req_start() != ESP_OK) {
+		ESP_LOGW(TAG, "slow-req worker unavailable; blocking requests run inline");
+	}
+
 	return ESP_OK;
 }
 
@@ -602,6 +688,15 @@ static esp_err_t protocomm_pserial_stop(protocomm_t *pc)
 		if (arg.data) {
 			free(arg.data);
 			arg.data = NULL;
+		}
+	}
+
+	/* Queue and worker outlive stop() — the worker may be mid-request and there
+	 * is no join point. Drain so queued buffers are not leaked. */
+	if (s_slow_q) {
+		slow_req_item_t item;
+		while (xQueueReceive(s_slow_q, &item, 0) == pdTRUE) {
+			free(item.data);
 		}
 	}
 
@@ -630,7 +725,7 @@ static esp_err_t rpc_ll_slist_req_handler(uint32_t session_id,
 
     uint32_t msg_id = 0;
     uint32_t field  = eh_proto_extract_msg_id(inbuf, (uint16_t)inlen, &msg_id);
-    if (field != 2) {
+    if (field != EH_PROTO_FIELD_MSG_ID) {
         ESP_LOGE(TAG, "slist_req_handler: failed to extract msg_id (field=%"PRIu32")", field);
         return ESP_FAIL;
     }

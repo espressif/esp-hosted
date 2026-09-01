@@ -122,9 +122,26 @@ typedef struct {
     int32_t  dump_hesigb_enable;
 } eh_rpc_wifi_init_cfg_t;
 
+/* Req_WifiScanStart:
+ * - SSID/BSSID are copied from caller data.
+ * - Fields are valid only when cfg_set is true.
+ */
 typedef struct {
     bool     block;
     bool     cfg_set;
+    bool     ssid_set;                        /* cfg->ssid was non-NULL  */
+    bool     bssid_set;                       /* cfg->bssid was non-NULL */
+    uint8_t  ssid[EH_RPC_SSID_LEN + 1];       /* NUL-terminated copy     */
+    uint8_t  bssid[EH_RPC_MAC_LEN];
+    uint32_t channel;
+    bool     show_hidden;
+    int32_t  scan_type;                       /* wifi_scan_type_t        */
+    uint32_t passive;                         /* scan_time.passive       */
+    uint32_t active_min;                      /* scan_time.active.min    */
+    uint32_t active_max;                      /* scan_time.active.max    */
+    uint32_t home_chan_dwell_time;
+    uint32_t ghz_2_channels;                  /* channel_bitmap.*        */
+    uint32_t ghz_5_channels;
 } eh_rpc_wifi_scan_cfg_t;
 
 /* Req/Resp_WifiScanParams — mirrors wifi_scan_default_params_t. */
