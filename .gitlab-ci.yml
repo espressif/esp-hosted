@@ -283,8 +283,12 @@ deploy_master_github:
   image: $CI_DOCKER_REGISTRY/esp32-ci-env
   tags:
     - deploy
+  # legacy/fg-ng carries the FG + NG tree that master held before master became
+  # the redirect hub. It must stay reachable on GitHub, because existing links
+  # of the form .../esp-hosted/tree/master/esp_hosted_ng would otherwise 404.
   only:
     - master
+    - legacy/fg-ng
   script:
       - mkdir -p ~/.ssh
       - chmod 700 ~/.ssh
